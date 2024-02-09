@@ -237,7 +237,7 @@ public class DenseEncoding extends AEncode {
 				for(int r = 0; r < size; r++)
 					addValHashMapChar(lmC.getIndex(r) + rmC.getIndex(r) * nVL, r, m, (MapToChar) ret);
 			}
-			else 
+			else
 				for(int r = 0; r < size; r++)
 					addValHashMapChar(lm.getIndex(r) + rm.getIndex(r) * nVL, r, m, (MapToChar) ret);
 		}
@@ -247,7 +247,8 @@ public class DenseEncoding extends AEncode {
 		else {
 			combineDenseWithHashMapGeneric(lm, rm, size, nVL, ret, m);
 		}
-		return new DenseEncoding(MapToFactory.resize(ret, m.size()));
+		ret.setUnique(m.size());
+		return new DenseEncoding(ret);
 
 	}
 
@@ -262,7 +263,8 @@ public class DenseEncoding extends AEncode {
 		int newUID = 1;
 		for(int r = 0; r < size; r++)
 			newUID = addValMapToData(lm.getIndex(r) + rm.getIndex(r) * nVL, r, m, newUID, ret);
-		return new DenseEncoding(MapToFactory.resize(ret, newUID - 1));
+		ret.setUnique(newUID - 1);
+		return new DenseEncoding(ret);
 	}
 
 	protected static int addValMapToData(final int nv, final int r, final AMapToData map, int newId,

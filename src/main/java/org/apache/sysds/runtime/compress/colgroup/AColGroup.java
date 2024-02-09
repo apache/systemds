@@ -710,7 +710,6 @@ public abstract class AColGroup implements Serializable {
 				cgMoved.decompressToDenseBlock(newDict.getDenseBlock(), 0, nRow);
 			newDict.setNonZeros(nnz);
 			AColGroup cgUC = ColGroupUncompressed.create(newDict);
-			LOG.error(newDict);
 			cgUC.copyAndSet(_colIndexes);
 			return cgUC;
 		}

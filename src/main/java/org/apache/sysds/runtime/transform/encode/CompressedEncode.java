@@ -380,7 +380,7 @@ public class CompressedEncode {
 			}
 		}
 
-		ArrayCompressionStatistics stats = a.statistics(Math.min(1000, a.size())); // Take a small sample
+		ArrayCompressionStatistics stats = a.statistics(Math.min(10000, a.size())); // Take a small sample
 		
 		if(stats == null || !stats.shouldCompress) {
 			LOG.error("encode stats passthrough -> No Compress: " + stats);

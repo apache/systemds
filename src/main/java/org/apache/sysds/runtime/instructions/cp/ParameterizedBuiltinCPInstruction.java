@@ -272,6 +272,7 @@ public class ParameterizedBuiltinCPInstruction extends ComputationCPInstruction 
 			} else{
 				MatrixObject targetObj = ec.getMatrixObject(params.get("target"));
 				MatrixBlock target = targetObj.acquireRead();
+				LOG.error("Replace target class: " + target.getClass().getSimpleName());
 				double pattern = Double.parseDouble(params.get("pattern"));
 				double replacement = Double.parseDouble(params.get("replacement"));
 				MatrixBlock ret = target.replaceOperations(new MatrixBlock(), pattern, replacement);

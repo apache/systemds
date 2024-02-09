@@ -425,15 +425,18 @@ public final class CLALibLeftMultBy {
 		// perfect parallel over rows left.
 		final int rowBlockSize = Math.max(rt / k, 1);
 		final int threadsUsedOnRows = (int) Math.ceil((double) rt / rowBlockSize);
-		k = k / threadsUsedOnRows;
+		k = Math.max(1, k / threadsUsedOnRows);
 		// parallel over column blocks ... should be bigger than largest distinct.
+		// final int colBlockSize = Math.max(ct, 1);
+		final int s = Math.min(npa .size() + pa.size(), k);
+		k = Math.max(1, k / s); //
+		
 		// We set it to minimum 4k
 		final int colBlockSize = Math.max(ct / k, 64000);
 		final int threadsUsedOnColBlocks = (int) Math.ceil((double) ct / colBlockSize);
 		k = k / threadsUsedOnColBlocks;
-		// final int colBlockSize = Math.max(ct, 1);
-		final int s = k;
-		LOG.error("LMM threading: " + threadsUsedOnRows + " " + threadsUsedOnColBlocks + " " + s);
+
+		LOG.error("LMM threading: " + threadsUsedOnRows + " " + threadsUsedOnColBlocks + " " + s + " Threads Left: -> " + k);
 
 		final ArrayList<Future<MatrixBlock>> tasks = new ArrayList<>();
 		// allocate temp

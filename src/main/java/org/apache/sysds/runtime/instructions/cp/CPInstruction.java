@@ -38,9 +38,7 @@ import org.apache.sysds.runtime.privacy.propagation.PrivacyPropagator;
 
 public abstract class CPInstruction extends Instruction {
 	protected static final Log LOG = LogFactory.getLog(CPInstruction.class.getName());
-
 	public enum CPType {
-
 		AggregateUnary, AggregateBinary, AggregateTernary,
 		Unary, Binary, Ternary, Quaternary, BuiltinNary, Ctable,
 		MultiReturnParameterizedBuiltin, ParameterizedBuiltin, MultiReturnBuiltin, MultiReturnComplexMatrixBuiltin,

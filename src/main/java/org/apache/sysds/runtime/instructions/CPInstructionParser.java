@@ -397,7 +397,7 @@ public class CPInstructionParser extends InstructionParser {
 				return ReorgCPInstruction.parseInstruction(str);
 				
 			case Dnn:
-				return DnnCPInstruction.parseInstruction(str);
+				 return DnnCPInstruction.parseInstruction(str);
 				
 			case UaggOuterChain:
 				return UaggOuterChainCPInstruction.parseInstruction(str);

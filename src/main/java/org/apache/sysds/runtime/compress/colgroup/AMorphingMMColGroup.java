@@ -21,7 +21,6 @@ package org.apache.sysds.runtime.compress.colgroup;
 
 import java.util.Arrays;
 
-import org.apache.commons.lang3.NotImplementedException;
 import org.apache.sysds.runtime.compress.DMLCompressionException;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.IDictionary;
 import org.apache.sysds.runtime.compress.colgroup.indexes.ColIndexFactory;
@@ -92,7 +91,7 @@ public abstract class AMorphingMMColGroup extends AColGroupValue {
 	}
 
 	@Override
-	protected void decompressToSparseBlockTransposedSparseDictionary(SparseBlockMCSR db, SparseBlock sb, int nColOut) {
+	public void decompressToSparseBlockTransposed(SparseBlockMCSR db, int nColOut) {
 		LOG.warn("Should never call decompress on morphing group instead extract common values and combine all commons");
 		double[] cv = new double[db.getRows().length];
 		AColGroup b = extractCommon(cv);
@@ -119,16 +118,16 @@ public abstract class AMorphingMMColGroup extends AColGroupValue {
 				}
 			}
 		}
-		// b.decompressToSparseBlockTransposed(db, nColOut);
-		// decompressToSparseBlockTransposedCommonVector(db, nColOut, cv);
+	}
 
-		// decompressToDenseBlock(null, 0, 0, 0, 0);
-		// throw new NotImplementedException();
+	@Override
+	protected void decompressToSparseBlockTransposedSparseDictionary(SparseBlockMCSR db, SparseBlock sb, int nColOut) {
+		decompressToSparseBlockTransposed(db, nColOut);
 	}
 
 	@Override
 	protected void decompressToSparseBlockTransposedDenseDictionary(SparseBlockMCSR db, double[] dict, int nColOut) {
-		throw new NotImplementedException();
+		decompressToSparseBlockTransposed(db, nColOut);
 	}
 
 	private final void decompressToDenseBlockCommonVector(DenseBlock db, int rl, int ru, int offR, int offC,
@@ -153,17 +152,17 @@ public abstract class AMorphingMMColGroup extends AColGroupValue {
 		}
 	}
 
-	private final void decompressToSparseBlockTransposedCommonVector(SparseBlock db, int nColOut, double[] common) {
-		for(int j = 0; j < _colIndexes.size(); j++) {
-			final int rowOut = _colIndexes.get(j);
-			double v = common[rowOut];
-			if(v != 0) {
-				for(int i = 0; i < nColOut; i++) {
-					db.add(rowOut, i, v);
-				}
-			}
-		}
-	}
+	// private final void decompressToSparseBlockTransposedCommonVector(SparseBlock db, int nColOut, double[] common) {
+	// 	for(int j = 0; j < _colIndexes.size(); j++) {
+	// 		final int rowOut = _colIndexes.get(j);
+	// 		double v = common[rowOut];
+	// 		if(v != 0) {
+	// 			for(int i = 0; i < nColOut; i++) {
+	// 				db.add(rowOut, i, v);
+	// 			}
+	// 		}
+	// 	}
+	// }
 
 	@Override
 	protected final void decompressToSparseBlockSparseDictionary(SparseBlock ret, int rl, int ru, int offR, int offC,

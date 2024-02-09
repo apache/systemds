@@ -37,14 +37,14 @@ import org.apache.sysds.runtime.util.CommonThreadPool;
 
 public class CoCodeGreedy extends AColumnCoCoder {
 
-	private final Memorizer mem;
+	private final MemorizerV2 mem;
 
 	protected CoCodeGreedy(AComEst sizeEstimator, ACostEstimate costEstimator, CompressionSettings cs) {
 		super(sizeEstimator, costEstimator, cs);
-		mem = new Memorizer(sizeEstimator);
+		mem = new MemorizerV2(sizeEstimator, sizeEstimator.getNumColumns());
 	}
 
-	protected CoCodeGreedy(AComEst sizeEstimator, ACostEstimate costEstimator, CompressionSettings cs, Memorizer mem) {
+	protected CoCodeGreedy(AComEst sizeEstimator, ACostEstimate costEstimator, CompressionSettings cs, MemorizerV2 mem) {
 		super(sizeEstimator, costEstimator, cs);
 		this.mem = mem;
 	}

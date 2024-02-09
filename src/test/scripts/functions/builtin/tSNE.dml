@@ -20,5 +20,5 @@
 #-------------------------------------------------------------
 
 X = read($X);
-Y = tSNE(X, $reduced_dims, $perplexity, $lr, $momentum, $max_iter, $seed, $is_verbose)
+Y = tSNE(X, $reduced_dims, $perplexity, $lr, $momentum, $max_iter, $tol, $seed, $is_verbose, $print_iter)
 write(Y, $Y)

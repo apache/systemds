@@ -64,7 +64,9 @@ public class ComputationCostEstimator extends ACostEstimate {
 		else if(g.isEmpty() || g.isConst())
 			// const or densifying
 			return getCost(nRows, 1, nCols, 1, 1);
-		if(commonFraction > cvThreshold)
+		else if(g.isIncompressable())
+			return getCost(nRows* 10, nRows, nCols* 10, nRows* 10, sparsity); // make incompressable very expensive.
+		else if(commonFraction > cvThreshold)
 			return getCost(nRows, nRows - g.getLargestOffInstances(), nCols, nVals, sparsity);
 		else
 			return getCost(nRows, nRows, nCols, nVals, sparsity);

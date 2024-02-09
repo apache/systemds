@@ -70,11 +70,23 @@ public class CompressedEncode {
 	/** the Executor pool for parallel tasks of this encoder. */
 	private final ExecutorService pool;
 
+	private final boolean inputContainsCompressed;
+
 	private CompressedEncode(MultiColumnEncoder enc, FrameBlock in, int k) {
 		this.enc = enc;
 		this.in = in;
 		this.k = k;
 		this.pool = k > 1 ? CommonThreadPool.get(k) : null;
+		this.inputContainsCompressed = containsCompressed(in);
+	}
+
+	private boolean containsCompressed(FrameBlock in) {
+		for(Array<?> c : in.getColumns()) {
+			if(c instanceof ACompressedArray) {
+				return true;
+			}
+		}
+		return false;
 	}
 
 	public static MatrixBlock encode(MultiColumnEncoder enc, FrameBlock in, int k)
@@ -380,8 +392,10 @@ public class CompressedEncode {
 			}
 		}
 
-		ArrayCompressionStatistics stats = a.statistics(Math.min(a.size() / 100, a.size())); // Take a small sample
-		
+		// Take a small sample
+		ArrayCompressionStatistics stats = !inputContainsCompressed ? //
+			a.statistics(Math.min(1000, a.size())) : null;
+
 		if(stats == null || !stats.shouldCompress || stats.valueType != a.getValueType()) {
 			LOG.error("encode stats passthrough -> No Compress: " + stats);
 			double[] vals = (double[]) a.changeType(ValueType.FP64).get();

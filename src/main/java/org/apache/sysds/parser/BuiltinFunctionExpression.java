@@ -415,7 +415,7 @@ public class BuiltinFunctionExpression extends DataIdentifier {
 					
 				checkNumParameters(expressionTwo != null ? 2 : 1);
 				checkMatrixParam(expressionOne);
-				if(expressionTwo != null){
+				if(expressionTwo != null && expressionOne != null){
 					checkMatrixParam(expressionTwo);
 					if(expressionOne.getOutput().getDim1() != expressionTwo.getOutput().getDim1() || expressionOne.getOutput().getDim2() != expressionTwo.getOutput().getDim2())
 						raiseValidateError("The real and imaginary part of the provided matrix are of different dimensions.", false);
@@ -423,10 +423,12 @@ public class BuiltinFunctionExpression extends DataIdentifier {
     					raiseValidateError("This IFFT implementation is only defined for matrices with dimensions that are powers of 2.", false, LanguageErrorCodes.INVALID_PARAMETERS);
 					}
 				}
-
-				else if (!isPowerOfTwo(expressionOne.getOutput().getDim1()) || !isPowerOfTwo(expressionOne.getOutput().getDim2())) {
-    				raiseValidateError("This IFFT implementation is only defined for matrices with dimensions that are powers of 2.", false, LanguageErrorCodes.INVALID_PARAMETERS);
+				else if(expressionOne != null){
+					if (!isPowerOfTwo(expressionOne.getOutput().getDim1()) || !isPowerOfTwo(expressionOne.getOutput().getDim2())) {
+						raiseValidateError("This IFFT implementation is only defined for matrices with dimensions that are powers of 2.", false, LanguageErrorCodes.INVALID_PARAMETERS);
+					}
 				}
+				
 				
 				DataIdentifier ifftOut1 = (DataIdentifier) getOutputs()[0];
 				DataIdentifier ifftOut2 = (DataIdentifier) getOutputs()[1];

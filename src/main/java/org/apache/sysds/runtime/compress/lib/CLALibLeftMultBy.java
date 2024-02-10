@@ -368,7 +368,7 @@ public final class CLALibLeftMultBy {
 		final ExecutorService pool = CommonThreadPool.get(k);
 		try {
 			final int nG = npa.size() + pa.size();
-			final boolean useTmp = overlapping && nG > 1 || nG < k || true;
+			final boolean useTmp = overlapping && nG > 1 || (nG * 2 < k && ret.getNumColumns() < 1000);
 
 			// skip value to parallelize the pa groups without allocating new arrays
 			if(!useTmp)
@@ -859,6 +859,9 @@ public final class CLALibLeftMultBy {
 				MatrixBlock _ret = new MatrixBlock(_retR, _retC, tmpArr);
 			
 				LMMWithPreAgg(_pa, _that, _ret, _rl, _ru, _cl, _cu, _off, _skip, _rowSums, _k);
+
+				_ret.recomputeNonZeros();
+				_ret.examSparsity();
 				return _ret;
 			}
 			catch(Exception e) {

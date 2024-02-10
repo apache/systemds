@@ -35,6 +35,7 @@ import org.apache.sysds.runtime.compress.colgroup.ColGroupEmpty;
 import org.apache.sysds.runtime.compress.colgroup.ColGroupFactory;
 import org.apache.sysds.runtime.compress.colgroup.ColGroupUncompressed;
 import org.apache.sysds.runtime.compress.cost.ACostEstimate;
+import org.apache.sysds.runtime.compress.cost.ComputationCostEstimator;
 import org.apache.sysds.runtime.compress.cost.CostEstimatorBuilder;
 import org.apache.sysds.runtime.compress.cost.CostEstimatorFactory;
 import org.apache.sysds.runtime.compress.cost.InstructionTypeCounter;
@@ -333,7 +334,7 @@ public class CompressedMatrixBlockFactory {
 		final double scale = Math.sqrt(nCols);
 		final double threshold = _stats.estimatedCostCols / scale;
 
-		if(threshold < _stats.originalCost) {
+		if(threshold < _stats.originalCost * ((costEstimator instanceof ComputationCostEstimator) ? 15 : 0)) {
 			if(nCols > 1)
 				coCodePhase();
 			else // LOG a short cocode phase (since there is one column we don't cocode)

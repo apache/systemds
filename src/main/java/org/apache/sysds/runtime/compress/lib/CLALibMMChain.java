@@ -98,39 +98,39 @@ public final class CLALibMMChain {
 		// Morph the columns to efficient types for the operation.
 		x = filterColGroups(x);
 		double preFilterTime = t.stop();
-		
+
 		// Allow overlapping intermediate if the intermediate is guaranteed not to be overlapping.
 		final boolean allowOverlap = x.getColGroups().size() == 1 && isOverlappingAllowed();
 		
 		// Right hand side multiplication
 		MatrixBlock tmp = CLALibRightMultBy.rightMultByMatrix(x, v, null, k, true);
 
-		double rmmTime =  t.stop();
-		
+		double rmmTime = t.stop();
+
 		if(ctype == ChainType.XtwXv) { // Multiply intermediate with vector if needed
 			tmp = binaryMultW(tmp, w, k);
 		}
 
 		if(!allowOverlap && tmp instanceof CompressedMatrixBlock) {
 			tmp = decompressIntermediate((CompressedMatrixBlock) tmp, k);
-			
 		}
-		
+
 		double decompressTime = t.stop();
-		
-		if(tmp instanceof CompressedMatrixBlock) {
+
+
+
+		if(tmp instanceof CompressedMatrixBlock) 
 			// Compressed Compressed Matrix Multiplication
 			CLALibLeftMultBy.leftMultByMatrixTransposed(x, (CompressedMatrixBlock) tmp, out, k);
-		}
 		else
-		// LMM with Compressed - uncompressed multiplication.
-		CLALibLeftMultBy.leftMultByMatrixTransposed(x, tmp, out, k);
-		
-		double lmmTime =t.stop();
+			// LMM with Compressed - uncompressed multiplication.
+			CLALibLeftMultBy.leftMultByMatrixTransposed(x, tmp, out, k);
+
+		double lmmTime = t.stop();
 		if(out.getNumColumns() != 1) // transpose the output to make it a row output if needed
-		out = LibMatrixReorg.transposeInPlace(out, k);
-		
-		if(LOG.isDebugEnabled()){
+			out = LibMatrixReorg.transposeInPlace(out, k);
+
+		if(LOG.isDebugEnabled()) {
 			StringBuilder sb = new StringBuilder("\n");
 			sb.append("\nPreFilter Time      : " + preFilterTime);
 			sb.append("\nChain RMM           : " + rmmTime);
@@ -149,18 +149,18 @@ public final class CLALibMMChain {
 		final int cols = tmp.getNumColumns();
 		final int nCells = rows * cols;
 		final double[] tmpArr;
-		if(cacheIntermediate == null){
+		if(cacheIntermediate == null) {
 			tmpArr = new double[nCells];
 			cacheIntermediate = new ThreadLocal<>();
 			cacheIntermediate.set(tmpArr);
 		}
-		else{
+		else {
 			double[] cachedArr = cacheIntermediate.get();
-			if( cachedArr == null || cachedArr.length < nCells){
+			if(cachedArr == null || cachedArr.length < nCells) {
 				tmpArr = new double[nCells];
 				cacheIntermediate.set(tmpArr);
 			}
-			else{
+			else {
 				tmpArr = cachedArr;
 			}
 		}

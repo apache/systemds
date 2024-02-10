@@ -48,6 +48,7 @@ import org.apache.sysds.runtime.data.DenseBlock;
 import org.apache.sysds.runtime.data.SparseBlock;
 import org.apache.sysds.runtime.data.SparseBlockMCSR;
 import org.apache.sysds.runtime.data.SparseRow;
+import org.apache.sysds.runtime.data.SparseRowVector;
 import org.apache.sysds.runtime.functionobjects.Builtin;
 import org.apache.sysds.runtime.functionobjects.Builtin.BuiltinCode;
 import org.apache.sysds.runtime.functionobjects.CM;
@@ -1064,6 +1065,8 @@ public class ColGroupUncompressed extends AColGroup {
 		for(int c = 0; c < colsThis; c++) {
 			final int rowOut = _colIndexes.get(c);
 			SparseRow sbr = sb.get(rowOut);
+			if(sbr == null)
+				sbr = new SparseRowVector(4);
 			for(int r = 0; r < rowsThis; r++)
 				sbr = sbr.append(rowOut, valsThis[colsThis * r + c]);
 			sb.set(c, sbr, false);

@@ -371,10 +371,10 @@ public class CompressedEncode {
 
 	@SuppressWarnings("unchecked")
 	private AColGroup passThrough(ColumnEncoderComposite c) {
-		// TODO optimize to not construct full map but only some of it until aborting compression.
-		IColIndex colIndexes = ColIndexFactory.create(1);
-		int colId = c._colID;
-		Array<?> a = in.getColumn(colId - 1);
+		
+		final IColIndex colIndexes = ColIndexFactory.create(1);
+		final int colId = c._colID;
+		final Array<?> a = in.getColumn(colId - 1);
 		if(a instanceof ACompressedArray) { // already compressed great!
 			switch(a.getFrameArrayType()) {
 				case DDC:
@@ -403,9 +403,9 @@ public class CompressedEncode {
 		if(a.getValueType() != ValueType.BOOLEAN // if not booleans
 			&& (stats == null || !stats.shouldCompress || stats.valueType != a.getValueType())) {
 			double[] vals = (double[]) a.changeType(ValueType.FP64).get();
+		
 			MatrixBlock col = new MatrixBlock(a.size(), 1, vals);
 			col.recomputeNonZeros(k);
-			// lets make it an uncompressed column group.
 			return ColGroupUncompressed.create(colIndexes, col, false);
 		}
 		else {

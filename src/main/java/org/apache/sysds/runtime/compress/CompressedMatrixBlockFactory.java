@@ -279,6 +279,8 @@ public class CompressedMatrixBlockFactory {
 		_stats.originalSize = mb.getInMemorySize();
 		_stats.originalCost = costEstimator.getCost(mb);
 
+		final double orgSum = mb.sum(k).getDouble(0, 0);
+
 		if(mb.isEmpty()) // empty input return empty compression
 			return createEmpty();
 
@@ -299,7 +301,12 @@ public class CompressedMatrixBlockFactory {
 		if(res == null)
 			return abortCompression();
 
-		
+		final double afterComp = mb.sum(k).getDouble(0, 0);
+
+		final double deltaSum = Math.abs(orgSum - afterComp);
+
+		LOG.debug("compression Sum: Before:" + orgSum + " after: " + afterComp + " |delta|: " + deltaSum);
+
 		return new ImmutablePair<>(res, _stats);
 	}
 
@@ -463,8 +470,8 @@ public class CompressedMatrixBlockFactory {
 
 	private Pair<MatrixBlock, CompressionStatistics> abortCompression() {
 		LOG.warn("Compression aborted at phase: " + phase);
-		if(mb instanceof CompressedMatrixBlock){
-			MatrixBlock ucmb = ((CompressedMatrixBlock)mb).getUncompressed("Decompressing for abort: ", k);
+		if(mb instanceof CompressedMatrixBlock) {
+			MatrixBlock ucmb = ((CompressedMatrixBlock) mb).getUncompressed("Decompressing for abort: ", k);
 			return new ImmutablePair<>(ucmb, _stats);
 		}
 		return new ImmutablePair<>(mb, _stats);

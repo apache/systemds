@@ -382,9 +382,9 @@ public final class CLALibLeftMultBy {
 			final boolean useTmp = overlapping && nG > 1 || (nG * 2 < k && ret.getNumColumns() < 1000);
 
 			// skip value to parallelize the pa groups without allocating new arrays
-			if(!useTmp)
-				LMMParallelNoTempOut(npa, pa, that, ret, rowSums, overlapping, k, pool);
-			else
+			// if(!useTmp)
+			// 	LMMParallelNoTempOut(npa, pa, that, ret, rowSums, overlapping, k, pool);
+			// else
 				LMMParallelTempOut(npa, pa, that, ret, rowSums, overlapping, k, pool);
 		}
 		catch(Exception e) {
@@ -418,12 +418,10 @@ public final class CLALibLeftMultBy {
 
 			for(int off = 0; off < s; off++) { // only allocate k tasks at max
 				final int offT = off;
-				if(off == s - 1)
-					tasks.add(pool.submit(() -> LMMWithPreAgg(pa, that, ret, start, end, 0, ct, offT, s, rowSums, k)));
-				else
-					tasks.add(pool.submit(() -> LMMWithPreAgg(pa, that, ret, start, end, 0, ct, offT, s, null, k)));
+				tasks.add(pool.submit(() -> LMMWithPreAgg(pa, that, ret, start, end, 0, ct, offT, s, null, k)));
 			}
-			if(pa.isEmpty() && rowSums != null) // row sums task
+
+			if(rowSums != null) // row sums task
 				tasks.add(pool.submit(() -> rowSumDense(that, rowSums, start, end, 0, ct)));
 		}
 

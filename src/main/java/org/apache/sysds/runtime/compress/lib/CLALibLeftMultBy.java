@@ -53,7 +53,7 @@ public final class CLALibLeftMultBy {
 	private static final Log LOG = LogFactory.getLog(CLALibLeftMultBy.class.getName());
 
 	/** Reusable cache intermediate double array for temporary lmm */
-	private static ThreadLocal<Pair<Boolean,double[]>> cacheIntermediate = null;
+	private static ThreadLocal<Pair<Boolean, double[]>> cacheIntermediate = null;
 
 	private CLALibLeftMultBy() {
 		// private constructor
@@ -352,9 +352,10 @@ public final class CLALibLeftMultBy {
 					ret.sparseToDense();
 				outerProductParallel(rowSums, constV, ret, k);
 			}
+			releaseThreadLocal(); // done 
 
 			final double outerProd = t.stop();
-			if(LOG.isDebugEnabled()){
+			if(LOG.isDebugEnabled()) {
 				LOG.debug(String.format("LLM: filter: %10f Mult: %10f outer: %10f", filterGroupsTime, multTime, outerProd));
 			}
 		}
@@ -588,9 +589,16 @@ public final class CLALibLeftMultBy {
 		for(int row = 0; row < leftRowSum.length; row += blkz) {
 			final int rl = row;
 			final int ru = Math.min(leftRowSum.length, row + blkz);
-			for(int col = 0; col < rightColumnSum.length; col += blkz) {
+			final int colBz;
+			if(ru < row + blkz) {
+				colBz = 1024 * 1024 - ((ru - rl) * 1024) + 1024;
+			}
+			else {
+				colBz = blkz;
+			}
+			for(int col = 0; col < rightColumnSum.length; col += colBz) {
 				final int cl = col;
-				final int cu = Math.min(rightColumnSum.length, col + blkz);
+				final int cu = Math.min(rightColumnSum.length, col + colBz);
 				tasks.add(pool.submit(() -> {
 					outerProductRange(leftRowSum, rightColumnSum, result, rl, ru, cl, cu);
 				}));
@@ -831,7 +839,7 @@ public final class CLALibLeftMultBy {
 				cacheIntermediate.set(new Pair<>(true, tmpArr));
 			}
 			else if(cachedArr.getKey())
-				tmpArr =  new double[nCells]; // already in use return new allocation.
+				tmpArr = new double[nCells]; // already in use return new allocation.
 			else { // not in use, great fill with zeros.
 				tmpArr = cachedArr.getValue();
 				cacheIntermediate.set(new Pair<>(true, tmpArr));
@@ -839,6 +847,15 @@ public final class CLALibLeftMultBy {
 			}
 		}
 		return tmpArr;
+	}
+
+	private static void releaseThreadLocal() {
+
+		if(cacheIntermediate != null) {
+			final Pair<Boolean, double[]> cachedArr = cacheIntermediate.get();
+			cacheIntermediate.set(new Pair<>(false, cachedArr.getValue()));
+
+		}
 	}
 
 	private static class LMMPreAggTask implements Callable<MatrixBlock> {
@@ -876,9 +893,8 @@ public final class CLALibLeftMultBy {
 			try {
 				final double[] tmpArr = getThreadLocalDoubleArray(_retR * _retC);
 				MatrixBlock _ret = new MatrixBlock(_retR, _retC, tmpArr);
-
 				LMMWithPreAgg(_pa, _that, _ret, _rl, _ru, _cl, _cu, _off, _skip, _rowSums, _k);
-
+				releaseThreadLocal(); // not strictly safe but close enough.
 				return _ret;
 			}
 			catch(Exception e) {

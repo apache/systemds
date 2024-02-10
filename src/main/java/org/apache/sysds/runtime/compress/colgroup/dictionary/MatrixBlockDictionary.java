@@ -1365,26 +1365,30 @@ public class MatrixBlockDictionary extends ADictionary {
 		if(_data.isInSparseFormat()) {
 			SparseBlock sb = _data.getSparseBlock();
 			for(int i = 0; i < counts.length; i++) {
+				double rowSum = 0;
 				if(!sb.isEmpty(i)) {
 					final int count = counts[i];
 					final int apos = sb.pos(i);
 					final int alen = sb.size(i) + apos;
 					final double[] avals = sb.values(i);
 					for(int j = apos; j < alen; j++) {
-						tmpSum += count * avals[j];
+						rowSum += count * avals[j];
 					}
 				}
+				tmpSum += rowSum;
 			}
 		}
 		else {
 			double[] values = _data.getDenseBlockValues();
 			int off = 0;
 			for(int k = 0; k < counts.length; k++) {
+				double rowSum = 0;
 				final int countK = counts[k];
 				for(int j = 0; j < _data.getNumColumns(); j++) {
 					final double v = values[off++];
-					tmpSum += v * countK;
+					rowSum += v * countK;
 				}
+				tmpSum += rowSum;
 			}
 		}
 		return tmpSum;

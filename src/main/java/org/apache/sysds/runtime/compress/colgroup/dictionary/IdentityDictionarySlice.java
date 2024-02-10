@@ -172,18 +172,20 @@ public class IdentityDictionarySlice extends IdentityDictionary {
 
 	@Override
 	public void colProduct(double[] res, int[] counts, IColIndex colIndexes) {
-		for(int i = 0; i < colIndexes.size(); i++) {
-			res[colIndexes.get(i)] = 0;
-		}
+		throw new NotImplementedException();
+		// for(int i = 0; i < colIndexes.size(); i++) {
+		// 	res[colIndexes.get(i)] = 0;
+		// }
 	}
 
 	@Override
 	public double sum(int[] counts, int ncol) {
-		// number of rows, change this.
-		double s = 0.0;
-		for(int i = l; i < u; i++)
-			s += counts[i];
-		return s;
+		throw new NotImplementedException();
+		// // number of rows, change this.
+		// double s = 0.0;
+		// for(int i = l; i < u; i++)
+		// 	s += counts[i];
+		// return s;
 	}
 
 	@Override

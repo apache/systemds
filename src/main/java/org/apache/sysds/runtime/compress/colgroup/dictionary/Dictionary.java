@@ -616,10 +616,12 @@ public class Dictionary extends ADictionary {
 		double out = 0;
 		int valOff = 0;
 		for(int k = 0; k < counts.length; k++) {
+			double rowSum = 0;
 			int countK = counts[k];
 			for(int j = 0; j < nCol; j++) {
-				out += _values[valOff++] * countK;
+				rowSum += _values[valOff++] * countK;
 			}
+			out += rowSum;
 		}
 		return out;
 	}

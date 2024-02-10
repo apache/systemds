@@ -38,6 +38,9 @@ public class CoCodeHybrid extends AColumnCoCoder {
 	@Override
 	protected CompressedSizeInfo coCodeColumns(CompressedSizeInfo colInfos, int k) {
 		final int startSize = colInfos.getInfo().size();
+		final int pqColumnThreashold = Math.max(128, (_sest.getNumColumns() / startSize) * 100);
+		LOG.error(pqColumnThreashold);
+
 		if(startSize == 1)
 			return colInfos; // nothing to join when there only is one column
 		else if(startSize <= 16) {// Greedy all compare all if small number of columns
@@ -45,16 +48,21 @@ public class CoCodeHybrid extends AColumnCoCoder {
 			CoCodeGreedy gd = new CoCodeGreedy(_sest, _cest, _cs);
 			return colInfos.setInfo(gd.combine(colInfos.getInfo(), k));
 		}
-		else if(startSize > 1000)
-			return colInfos.setInfo(CoCodePriorityQue.join(colInfos.getInfo(), _sest, _cest, 1, k));
+		else if(startSize > 1000){
+			CoCodePriorityQue pq = new CoCodePriorityQue(_sest, _cest, _cs, pqColumnThreashold);
+
+			return colInfos.setInfo(pq.join(colInfos.getInfo(), 1, k));
+		}
 		LOG.debug("Using Hybrid CoCode Strategy: ");
 
 		final int PriorityQueGoal = startSize / 5;
 		if(PriorityQueGoal > 30) { // hybrid if there is a large number of columns to begin with
 			Timing time = new Timing(true);
-			colInfos.setInfo(CoCodePriorityQue.join(colInfos.getInfo(), _sest, _cest, PriorityQueGoal, k));
-			LOG.debug("Que based time: " + time.stop());
+			CoCodePriorityQue pq = new CoCodePriorityQue(_sest, _cest, _cs, pqColumnThreashold);
+			colInfos.setInfo(pq.join(colInfos.getInfo(), PriorityQueGoal, k));
 			final int pqSize = colInfos.getInfo().size();
+
+			LOG.debug("Que based time: " + time.stop());
 			if(pqSize < PriorityQueGoal || (pqSize < startSize && _cest instanceof ComputationCostEstimator)) {
 				CoCodeGreedy gd = new CoCodeGreedy(_sest, _cest, _cs);
 				colInfos.setInfo(gd.combine(colInfos.getInfo(), k));

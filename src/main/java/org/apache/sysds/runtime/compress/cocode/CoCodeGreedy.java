@@ -107,7 +107,7 @@ public class CoCodeGreedy extends AColumnCoCoder {
 					// In the case of workload we relax the requirement for the filter.
 					if(-Math.min(costC1, costC2) > changeInCost // change in cost cannot possibly be better.
 						|| (maxCombined < 0) // int overflow
-						|| (maxCombined > c1i.getNumRows() * 2)) // higher combined number of rows.
+						|| (maxCombined > c1i.getNumRows())) // higher combined number of rows.
 						continue;
 
 					// Combine the two column groups.
@@ -215,7 +215,7 @@ public class CoCodeGreedy extends AColumnCoCoder {
 				final int maxCombined = c1i.getNumVals() * c2i.getNumVals();
 
 				if(maxCombined < 0 // int overflow
-					|| maxCombined > c1i.getNumRows() * 2) // higher combined than number of rows.
+					|| maxCombined > c1i.getNumRows()) // higher combined than number of rows.
 					return null;
 
 				final IColIndex c = _c1._indexes.combine(_c2._indexes);

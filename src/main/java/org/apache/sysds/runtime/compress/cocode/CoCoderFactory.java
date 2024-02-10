@@ -142,7 +142,7 @@ public interface CoCoderFactory {
 			case STATIC:
 				return new CoCodeStatic(est, costEstimator, cs);
 			case PRIORITY_QUE:
-				return new CoCodePriorityQue(est, costEstimator, cs);
+				return new CoCodePriorityQue(est, costEstimator, cs, 128);
 			default:
 				throw new RuntimeException("Unsupported column group partition technique: " + type.toString());
 		}

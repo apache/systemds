@@ -202,8 +202,8 @@ public class CompressedEncode {
 		final Array<?> a = in.getColumn(colId - 1);
 		final List<ColumnEncoder> r = c.getEncoders();
 		final ColumnEncoderBin b = (ColumnEncoderBin) r.get(0);
-		final boolean containsNull = b.containsNull;
 		b.build(in);
+		final boolean containsNull = b.containsNull;
 		final IColIndex colIndexes = ColIndexFactory.create(1);
 
 		ADictionary d = createIncrementingVector(b._numBin, containsNull);
@@ -222,28 +222,28 @@ public class CompressedEncode {
 	private AMapToData binEncodeWithNulls(Array<?> a, ColumnEncoderBin b)
 		throws InterruptedException, ExecutionException {
 		AMapToData m = MapToFactory.create(a.size(), b._numBin + 1);
-		if(pool != null) {
-			List<Future<?>> tasks = new ArrayList<>();
-			final int rlen = a.size();
-			final int blockSize = Math.max(1000, rlen / k);
-			for(int i = 0; i < rlen; i += blockSize) {
-				final int start = i;
-				final int end = Math.min(rlen, i + blockSize);
-				tasks.add(pool.submit(() -> binEncodeWithNulls(a, b, m, start, end)));
-			}
-			for(Future<?> t : tasks)
-				t.get();
-		}
-		else {
+		// if(pool != null) {
+		// 	List<Future<?>> tasks = new ArrayList<>();
+		// 	final int rlen = a.size();
+		// 	final int blockSize = Math.max(1000, rlen / k);
+		// 	for(int i = 0; i < rlen; i += blockSize) {
+		// 		final int start = i;
+		// 		final int end = Math.min(rlen, i + blockSize);
+		// 		tasks.add(pool.submit(() -> binEncodeWithNulls(a, b, m, start, end)));
+		// 	}
+		// 	for(Future<?> t : tasks)
+		// 		t.get();
+		// }
+		// else {
 			binEncodeWithNulls(a, b, m, 0, a.size());
-		}
+		// }
 		return m;
 	}
 
 	private void binEncodeWithNulls(Array<?> a, ColumnEncoderBin b, AMapToData m, int l, int u) {
 		for(int i = l; i < u; i++) {
 			final double v = a.getAsNaNDouble(i);
-			try {
+			// try {
 				if(Double.isNaN(v))
 					m.set(i, b._numBin);
 				else {
@@ -252,10 +252,10 @@ public class CompressedEncode {
 						idx = 0;
 					m.set(i, idx);
 				}
-			}
-			catch(Exception e) {
-				m.set(i, (int) b.getCodeIndex(v - 0.00001) - 1);
-			}
+			// }
+			// catch(Exception e) {
+			// 	m.set(i, (int) b.getCodeIndex(v - 0.00001) - 1);
+			// }
 		}
 	}
 
@@ -310,7 +310,7 @@ public class CompressedEncode {
 		final double min = b.getBinMins()[0];
 		final double max = b.getBinMaxs()[b.getNumBin() - 1];
 		for(int i = l; i < u; i++) {
-			m.set(i, b.getEqWidthUnsafe(a.getAsDouble(i), min, max) - 1);
+			m.set(i, (int) b.getCodeIndex(a.getAsDouble(i), min, max) - 1);
 		}
 	}
 
@@ -331,8 +331,8 @@ public class CompressedEncode {
 		final Array<?> a = in.getColumn(colId - 1);
 		final List<ColumnEncoder> r = c.getEncoders();
 		final ColumnEncoderBin b = (ColumnEncoderBin) r.get(0);
+		b.build(in); // build first since we figure out if it contains null here.
 		final boolean containsNull = b.containsNull;
-		b.build(in);
 		IColIndex colIndexes = ColIndexFactory.create(0, b._numBin);
 		ADictionary d = new IdentityDictionary(colIndexes.size(), containsNull);
 		final AMapToData m;
@@ -397,8 +397,7 @@ public class CompressedEncode {
 			a.statistics(Math.min(1000, a.size())) : null;
 
 		if(a.getValueType() != ValueType.BOOLEAN // if not booleans
-			&& (stats == null || !stats.shouldCompress || stats.valueType != a.getValueType() )) {
-			LOG.error("encode stats passthrough -> No Compress: " + stats);
+			&& (stats == null || !stats.shouldCompress || stats.valueType != a.getValueType())) {
 			double[] vals = (double[]) a.changeType(ValueType.FP64).get();
 			MatrixBlock col = new MatrixBlock(a.size(), 1, vals);
 			col.recomputeNonZeros(k);
@@ -406,7 +405,6 @@ public class CompressedEncode {
 			return ColGroupUncompressed.create(colIndexes, col, false);
 		}
 		else {
-			LOG.error("encode stats passthrough -> Compress: " + stats);
 			boolean containsNull = a.containsNull();
 			HashMap<Object, Long> map = (HashMap<Object, Long>) a.getRecodeMap();
 			double[] vals = new double[map.size() + (containsNull ? 1 : 0)];

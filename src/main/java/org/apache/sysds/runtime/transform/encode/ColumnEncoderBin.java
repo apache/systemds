@@ -30,6 +30,7 @@ import java.util.PriorityQueue;
 import java.util.Random;
 import java.util.concurrent.Callable;
 
+import org.apache.commons.lang3.NotImplementedException;
 import org.apache.commons.lang3.tuple.MutableTriple;
 import org.apache.sysds.api.DMLScript;
 import org.apache.sysds.lops.Lop;
@@ -40,6 +41,8 @@ import org.apache.sysds.runtime.frame.data.columns.Array;
 import org.apache.sysds.runtime.frame.data.columns.StringArray;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.utils.stats.TransformStatistics;
+
+import scala.NotImplementedError;
 
 public class ColumnEncoderBin extends ColumnEncoder {
 	public static final String MIN_PREFIX = "min";
@@ -61,8 +64,9 @@ public class ColumnEncoderBin extends ColumnEncoder {
 	private double _colMins = -1f;
 	private double _colMaxs = -1f;
 
-
 	protected boolean containsNull = false;
+
+	protected boolean checkedForNull = false;
 
 	public ColumnEncoderBin() {
 		super(-1);
@@ -137,9 +141,11 @@ public class ColumnEncoderBin extends ColumnEncoder {
 
 		if(in instanceof FrameBlock){
 			final Array<?> c = ((FrameBlock )in).getColumn(_colID - 1);
-
 			containsNull = c.containsNull();
-	
+			checkedForNull = true;
+		}
+		else {
+			throw new NotImplementedException();
 		}
 
 		if(DMLScript.STATISTICS)
@@ -199,7 +205,7 @@ public class ColumnEncoderBin extends ColumnEncoder {
 		final Array<?> c = in.getColumn(_colID - 1);
 		final double mi = _binMins[0];
 		final double mx = _binMaxs[_binMaxs.length-1];
-		if(!(c instanceof StringArray) && containsNull)
+		if(!containsNull && checkedForNull)
 			for(int i = startInd; i < endInd; i++)
 				codes[i - startInd] = getCodeIndex(c.getAsDouble(i), mi, mx);
 		else 
@@ -223,10 +229,7 @@ public class ColumnEncoderBin extends ColumnEncoder {
 	protected final double getEqWidth(double inVal, double min, double max) {
 		if(max == min)
 			return 1;
-		if(_numBin <= 0)
-			throw new RuntimeException("Invalid num bins");
-		final int code = (int)(Math.ceil((inVal - min) / (max - min) * _numBin) );
-		return code > _numBin ? _numBin : code < 1 ? 1 : code;
+		return getEqWidthUnsafe(inVal, min, max);
 	}
 
 	protected final int getEqWidthUnsafe(double inVal){

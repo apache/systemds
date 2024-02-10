@@ -105,8 +105,8 @@ public class TransformCompressedTestMultiCol {
 		test("{dummycode:[C1,C2,C3]}");
 	}
 
-	@Test 
-	public void testDummyCodeV2(){
+	@Test
+	public void testDummyCodeV2() {
 		test("{ids:true, dummycode:[1,2,3]}");
 	}
 
@@ -152,18 +152,20 @@ public class TransformCompressedTestMultiCol {
 			MultiColumnEncoder encoderNormal = EncoderFactory.createEncoder(spec, data.getColumnNames(),
 				data.getNumColumns(), meta);
 			MatrixBlock outNormal = encoderNormal.encode(data, k);
-
 			TestUtils.compareMatrices(outNormal, outCompressed, 0, "Not Equal after apply");
-
+			meta = encoderNormal.getMetaData(meta);
 			MultiColumnEncoder ec2 = EncoderFactory.createEncoder(spec, data.getColumnNames(), data.getNumColumns(),
 				encoderNormal.getMetaData(null));
-			
+
+			FrameBlock metaBack = ec2.getMetaData(null);
+			TestUtils.compareFrames(meta, metaBack, false);
 			MatrixBlock outMeta12 = ec2.apply(data, k);
+
 			TestUtils.compareMatrices(outNormal, outMeta12, 0, "Not Equal after apply2");
 
 			MultiColumnEncoder ec = EncoderFactory.createEncoder(spec, data.getColumnNames(), data.getNumColumns(),
 				encoderCompressed.getMetaData(null));
-			
+
 			MatrixBlock outMeta1 = ec.apply(data, k);
 			TestUtils.compareMatrices(outNormal, outMeta1, 0, "Not Equal after apply");
 

@@ -87,7 +87,7 @@ public final class CLALibCombineGroups {
 		final List<AColGroup> ret = new ArrayList<>(csiI.size());
 		for(CompressedSizeInfoColGroup gi : csiI) {
 			List<AColGroup> groupsToCombine = findGroupsInIndex(gi.getColumns(), input);
-			AColGroup combined = combineN(groupsToCombine);
+			AColGroup combined = combineN(groupsToCombine, nRow);
 			combined = combined.morph(gi.getBestCompressionType(), nRow);
 			combined = filterFor ? combined.addVector(c) : combined;
 			ret.add(combined);
@@ -111,7 +111,7 @@ public final class CLALibCombineGroups {
 		for(CompressedSizeInfoColGroup gi : csiI) {
 			Future<AColGroup> fcg = pool.submit(() -> {
 				List<AColGroup> groupsToCombine = findGroupsInIndex(gi.getColumns(), filteredGroups);
-				AColGroup combined = combineN(groupsToCombine);
+				AColGroup combined = combineN(groupsToCombine, nRow);
 				combined = combined.morph(gi.getBestCompressionType(), nRow);
 				combined = filterFor ? combined.addVector(c) : combined;
 				return combined;
@@ -142,11 +142,11 @@ public final class CLALibCombineGroups {
 		return ret;
 	}
 
-	public static AColGroup combineN(List<AColGroup> groups) {
+	public static AColGroup combineN(List<AColGroup> groups, int nRows) {
 		AColGroup base = groups.get(0);
 		// Inefficient combine N but base line
 		for(int i = 1; i < groups.size(); i++)
-			base = combine(base, groups.get(i));
+			base = combine(base, groups.get(i), nRows);
 		return base;
 	}
 
@@ -191,6 +191,7 @@ public final class CLALibCombineGroups {
 				throw new DMLCompressionException("Invalid combine... not producing same sum: " + sumCombined + " vs  "
 					+ sumIndividual + "  abs error: " + Math.abs(sumCombined - sumIndividual));
 			}
+			return ret;
 		}
 		catch(NotImplementedException e) {
 			throw e;

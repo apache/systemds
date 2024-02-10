@@ -92,7 +92,7 @@ public class CombineColGroups {
 	@Test
 	public void combine() {
 		try {
-			AColGroup c = a.combine(b);
+			AColGroup c = a.combine(b, mb.getNumRows());
 			MatrixBlock ref = new MatrixBlock(mb.getNumRows(), mb.getNumColumns(), false);
 			ref.allocateDenseBlock();
 			c.decompressToDenseBlock(ref.getDenseBlock(), 0, mb.getNumRows());

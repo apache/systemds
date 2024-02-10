@@ -729,10 +729,11 @@ public abstract class AColGroup implements Serializable {
 	 * Combine this column group with another
 	 * 
 	 * @param other The other column group to combine with.
+	 * @param nRow The number of rows in both column groups.
 	 * @return A combined representation as a column group.
 	 */
-	public AColGroup combine(AColGroup other) {
-		return CLALibCombineGroups.combine(this, other);
+	public AColGroup combine(AColGroup other, int nRow) {
+		return CLALibCombineGroups.combine(this, other, nRow);
 	}
 
 	/**

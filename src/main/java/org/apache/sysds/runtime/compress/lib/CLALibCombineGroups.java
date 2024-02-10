@@ -157,11 +157,12 @@ public final class CLALibCombineGroups {
 	 * 
 	 * It is assumed that this method is not called with FOR groups
 	 * 
-	 * @param a The first group to combine.
-	 * @param b The second group to combine.
+	 * @param a    The first group to combine.
+	 * @param b    The second group to combine.
+	 * @param nRow The number of rows in the two groups.
 	 * @return A new column group containing the two.
 	 */
-	public static AColGroup combine(AColGroup a, AColGroup b) {
+	public static AColGroup combine(AColGroup a, AColGroup b, int nRow) {
 		try {
 
 			if(a instanceof IFrameOfReferenceGroup || b instanceof IFrameOfReferenceGroup)
@@ -177,12 +178,19 @@ public final class CLALibCombineGroups {
 				b = b.recompress();
 
 			long maxEst = (long) a.getNumValues() * b.getNumValues();
-
+			final AColGroup ret;
 			if(a instanceof AColGroupCompressed && b instanceof AColGroupCompressed //
 				&& (long) Integer.MAX_VALUE > maxEst)
-				return combineCompressed(combinedColumns, (AColGroupCompressed) a, (AColGroupCompressed) b);
+				ret = combineCompressed(combinedColumns, (AColGroupCompressed) a, (AColGroupCompressed) b);
 			else
-				return combineUC(combinedColumns, a, b);
+				ret = combineUC(combinedColumns, a, b);
+
+			double sumCombined = ret.getSum(nRow);
+			double sumIndividual = a.getSum(nRow) + b.getSum(nRow);
+			if(Math.abs(sumCombined - sumIndividual) > 0.001) {
+				throw new DMLCompressionException("Invalid combine... not producing same sum: " + sumCombined + " vs  "
+					+ sumIndividual + "  abs error: " + Math.abs(sumCombined - sumIndividual));
+			}
 		}
 		catch(NotImplementedException e) {
 			throw e;

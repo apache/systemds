@@ -130,9 +130,14 @@ m_lmCG = function(Matrix[Double] X, Matrix[Double] y, Integer icpt = 0,
 
     q = t(X) %*% (X %*% ssX_p)
 
+
+    
+
     if(intercept_status == 2) {
       q = scale_X * q + shift_X %*% q [m_ext, ]
     }
+
+    qi = q;
 
     q += lambda * p
     a = norm_r2 / sum(p * q)
@@ -144,7 +149,8 @@ m_lmCG = function(Matrix[Double] X, Matrix[Double] y, Integer icpt = 0,
     i = i + 1
     if(verbose){
       print("Iteration " + i + ":  ||r|| / ||r init|| = "
-        + sqrt(norm_r2 / norm_r2_initial))
+        + sqrt(norm_r2 / norm_r2_initial)
+        + "   :  " + sum(qi))
     }
   }
 

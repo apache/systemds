@@ -379,12 +379,12 @@ public final class CLALibLeftMultBy {
 		final ExecutorService pool = CommonThreadPool.get(k);
 		try {
 			final int nG = npa.size() + pa.size();
-			final boolean useTmp = overlapping && nG > 1 || (nG * 2 < k && ret.getNumColumns() < 1000);
+			final boolean useTmp = (overlapping && nG > 1) || (nG * 2 < k && ret.getNumColumns() < 1000);
 
 			// skip value to parallelize the pa groups without allocating new arrays
-			// if(!useTmp)
-			// 	LMMParallelNoTempOut(npa, pa, that, ret, rowSums, overlapping, k, pool);
-			// else
+			if(!useTmp)
+				LMMParallelNoTempOut(npa, pa, that, ret, rowSums, overlapping, k, pool);
+			else
 				LMMParallelTempOut(npa, pa, that, ret, rowSums, overlapping, k, pool);
 		}
 		catch(Exception e) {

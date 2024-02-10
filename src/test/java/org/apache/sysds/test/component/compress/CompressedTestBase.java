@@ -1062,9 +1062,11 @@ public abstract class CompressedTestBase extends TestBase {
 	@Test
 	public void testCompressAgain() {
 		try {
+			// LOG.error(cmb);
 			TestUtils.assertEqualColsAndRows(mb, cmb);
 			compareResultMatrices(mb, cmb, 1);
 			MatrixBlock cmba = CompressedMatrixBlockFactory.compress(cmb, _k).getLeft();
+			LOG.error(cmba);
 			compareResultMatrices(mb, cmba, 1);
 		}
 		catch(Exception e) {

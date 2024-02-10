@@ -710,8 +710,7 @@ public abstract class AColGroup implements Serializable {
 				cgMoved.decompressToDenseBlock(newDict.getDenseBlock(), 0, nRow);
 			newDict.setNonZeros(nnz);
 			AColGroup cgUC = ColGroupUncompressed.create(newDict);
-			cgUC.copyAndSet(_colIndexes);
-			return cgUC;
+			return  cgUC.copyAndSet(_colIndexes);
 		}
 		else {
 			throw new NotImplementedException("Morphing from : " + getCompType() + " to " + ct + " is not implemented");

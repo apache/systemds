@@ -52,8 +52,8 @@ import org.apache.sysds.runtime.util.CommonThreadPool;
 public final class CLALibLeftMultBy {
 	private static final Log LOG = LogFactory.getLog(CLALibLeftMultBy.class.getName());
 
-	/** Reusable cache intermediate double array for temporary lmm */
-	private static ThreadLocal<Pair<Boolean, double[]>> cacheIntermediate = null;
+	// /** Reusable cache intermediate double array for temporary lmm */
+	// private static ThreadLocal<Pair<Boolean, double[]>> cacheIntermediate = null;
 
 	private CLALibLeftMultBy() {
 		// private constructor
@@ -352,7 +352,7 @@ public final class CLALibLeftMultBy {
 					ret.sparseToDense();
 				outerProductParallel(rowSums, constV, ret, k);
 			}
-			releaseThreadLocal(); // done 
+			releaseThreadLocal(); // done
 
 			final double outerProd = t.stop();
 			if(LOG.isDebugEnabled()) {
@@ -825,37 +825,43 @@ public final class CLALibLeftMultBy {
 		}
 	}
 
-	private static double[] getThreadLocalDoubleArray(int nCells) {
-		final double[] tmpArr;
-		if(cacheIntermediate == null) {
-			tmpArr = new double[nCells];
-			cacheIntermediate = new ThreadLocal<>();
-			cacheIntermediate.set(new Pair<>(true, tmpArr));
-		}
-		else {
-			final Pair<Boolean, double[]> cachedArr = cacheIntermediate.get();
-			if(cachedArr == null) {
-				tmpArr = new double[nCells];
-				cacheIntermediate.set(new Pair<>(true, tmpArr));
-			}
-			else if(cachedArr.getKey())
-				tmpArr = new double[nCells]; // already in use return new allocation.
-			else { // not in use, great fill with zeros.
-				tmpArr = cachedArr.getValue();
-				cacheIntermediate.set(new Pair<>(true, tmpArr));
-				Arrays.fill(tmpArr, 0, nCells, 0.0);
-			}
-		}
-		return tmpArr;
+	private  static double[] getThreadLocalDoubleArray(int nCells) {
+		return new double[nCells];
+		// final double[] tmpArr;
+		// if(cacheIntermediate == null) {
+		// 	tmpArr = new double[nCells];
+		// 	cacheIntermediate = new ThreadLocal<>();
+		// 	cacheIntermediate.set(new Pair<>(true, tmpArr));
+		// }
+		// else {
+		// 	final Pair<Boolean, double[]> cachedArr = cacheIntermediate.get();
+		// 	if(cachedArr == null) {
+		// 		tmpArr = new double[nCells];
+		// 		cacheIntermediate.set(new Pair<>(true, tmpArr));
+		// 	}
+		// 	else if(cachedArr.getKey())
+		// 		tmpArr = new double[nCells]; // already in use return new allocation.
+		// 	else { // not in use, great fill with zeros.
+		// 		tmpArr = cachedArr.getValue();
+		// 		if(tmpArr.length < nCells) {
+		// 			double[] tmp2 = new double[nCells];
+		// 			cacheIntermediate.set(new Pair<>(true, tmp2));
+		// 			return tmp2;
+		// 		}
+		// 		cacheIntermediate.set(new Pair<>(true, tmpArr));
+		// 		Arrays.fill(tmpArr, 0, nCells, 0.0);
+		// 	}
+		// }
+		// return tmpArr;
 	}
 
-	private static void releaseThreadLocal() {
+	private  static void releaseThreadLocal() {
 
-		if(cacheIntermediate != null) {
-			final Pair<Boolean, double[]> cachedArr = cacheIntermediate.get();
-			cacheIntermediate.set(new Pair<>(false, cachedArr.getValue()));
+	// 	if(cacheIntermediate != null) {
+	// 		final Pair<Boolean, double[]> cachedArr = cacheIntermediate.get();
+	// 		cacheIntermediate.set(new Pair<>(false, cachedArr.getValue()));
 
-		}
+	// 	}
 	}
 
 	private static class LMMPreAggTask implements Callable<MatrixBlock> {

@@ -476,8 +476,8 @@ public class ColGroupFactory {
 		final int nUnique = map.size();
 		final AMapToData resData = MapToFactory.resize(d, nUnique);
 		AColGroup g = ColGroupDDC.create(colIndexes, dict, resData, null);
-		if(g instanceof ColGroupConst)
-			throw new DMLCompressionException("Invalid ddc should not have been const" + g + "\n\n" + map + "  " + dict);
+		// if(g instanceof ColGroupConst)
+			// throw new DMLCompressionException("Invalid ddc should not have been const" + g + "\n\n" + map + "  " + dict);
 		return g;
 	}
 

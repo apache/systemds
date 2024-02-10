@@ -381,9 +381,13 @@ public class CompressedEncode {
 					DDCArray<?> aDDC = (DDCArray<?>) a;
 					Array<?> dict = aDDC.getDict();
 					double[] vals = new double[dict.size()];
-					for(int i = 0; i < dict.size(); i++) {
-						vals[i] = dict.getAsDouble(i);
-					}
+					if(a.containsNull())
+						for(int i = 0; i < dict.size(); i++)
+							vals[i] = dict.getAsNaNDouble(i);
+					else 
+						for(int i = 0; i < dict.size(); i++)
+							vals[i] = dict.getAsDouble(i);
+					
 					ADictionary d = Dictionary.create(vals);
 
 					return ColGroupDDC.create(colIndexes, d, aDDC.getMap(), null);

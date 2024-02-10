@@ -38,11 +38,8 @@ import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.controlprogram.caching.CacheBlock;
 import org.apache.sysds.runtime.frame.data.FrameBlock;
 import org.apache.sysds.runtime.frame.data.columns.Array;
-import org.apache.sysds.runtime.frame.data.columns.StringArray;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.utils.stats.TransformStatistics;
-
-import scala.NotImplementedError;
 
 public class ColumnEncoderBin extends ColumnEncoder {
 	public static final String MIN_PREFIX = "min";

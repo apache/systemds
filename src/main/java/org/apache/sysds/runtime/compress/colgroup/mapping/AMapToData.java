@@ -903,7 +903,6 @@ public abstract class AMapToData implements Serializable {
 
 	public void lmSparseMatrixRow(SparseBlock sb, final int r, DenseBlock db, final IColIndex colIndexes,
 		final IDictionary dict) {
-		LOG.error(r);
 		if(sb.isEmpty(r))
 			return;
 		// dense output blocks locations

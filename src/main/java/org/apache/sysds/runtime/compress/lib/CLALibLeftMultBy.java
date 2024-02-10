@@ -45,6 +45,7 @@ import org.apache.sysds.runtime.matrix.data.LibMatrixBincell;
 import org.apache.sysds.runtime.matrix.data.LibMatrixMult;
 import org.apache.sysds.runtime.matrix.data.LibMatrixReorg;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
+import org.apache.sysds.runtime.matrix.data.Pair;
 import org.apache.sysds.runtime.matrix.operators.BinaryOperator;
 import org.apache.sysds.runtime.util.CommonThreadPool;
 
@@ -52,7 +53,7 @@ public final class CLALibLeftMultBy {
 	private static final Log LOG = LogFactory.getLog(CLALibLeftMultBy.class.getName());
 
 	/** Reusable cache intermediate double array for temporary lmm */
-	private static ThreadLocal<double[]> cacheIntermediate = null;
+	private static ThreadLocal<Pair<Boolean,double[]>> cacheIntermediate = null;
 
 	private CLALibLeftMultBy() {
 		// private constructor
@@ -823,16 +824,20 @@ public final class CLALibLeftMultBy {
 		if(cacheIntermediate == null) {
 			tmpArr = new double[nCells];
 			cacheIntermediate = new ThreadLocal<>();
-			cacheIntermediate.set(tmpArr);
+			cacheIntermediate.set(new Pair<>(true, tmpArr));
 		}
 		else {
-			double[] cachedArr = cacheIntermediate.get();
-			if(cachedArr == null || cachedArr.length < nCells) {
+			final Pair<Boolean, double[]> cachedArr = cacheIntermediate.get();
+			if(cachedArr == null) {
 				tmpArr = new double[nCells];
-				cacheIntermediate.set(tmpArr);
+				cacheIntermediate.set(new Pair<>(true, tmpArr));
 			}
-			else {
-				tmpArr = cachedArr;
+			else if(cachedArr.getKey())
+				tmpArr =  new double[nCells]; // already in use return new allocation.
+			else { // not in use, great fill with zeros.
+				tmpArr = cachedArr.getValue();
+				cacheIntermediate.set(new Pair<>(true, tmpArr));
+				Arrays.fill(tmpArr, 0, nCells, 0.0);
 			}
 		}
 		return tmpArr;
@@ -876,8 +881,6 @@ public final class CLALibLeftMultBy {
 
 				LMMWithPreAgg(_pa, _that, _ret, _rl, _ru, _cl, _cu, _off, _skip, _rowSums, _k);
 
-				_ret.recomputeNonZeros();
-				_ret.examSparsity();
 				return _ret;
 			}
 			catch(Exception e) {

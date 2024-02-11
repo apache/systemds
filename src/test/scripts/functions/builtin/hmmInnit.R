@@ -24,7 +24,7 @@ nStates = args[1]
 nSymbols = args[0]
 
 start_prob = rep(1/nStates,nStates)
-transition_prob = 0.5*diag(nStates) + array(0.5/(nStates),c(nStates,nStates))
+transition_prob = 0.3*diag(nStates) + array(0.7/(nStates),c(nStates,nStates))
 emission_prob = array(1/(nSymbols),c(nStates,nSymbols))
 
 writeMM(as(start_prob, "start_prob"), paste(args[2], "start_prob", sep=""));

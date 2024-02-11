@@ -157,7 +157,7 @@ public final class CLALibCombineGroups {
 		throws InterruptedException, ExecutionException {
 
 		Future<AColGroup>[] tree = (Future<AColGroup>[]) new Future[groups.size() / 2 + groups.size() % 2];
-	
+
 		// AColGroup base = groups.get(0);
 		// Inefficient combine N but base line
 		for(int i = 0; i < groups.size(); i += 2) {
@@ -169,18 +169,18 @@ public final class CLALibCombineGroups {
 			tree[tree.length - 1] = pool.submit(() -> groups.get(groups.size() - 1));
 		}
 
-		while(tree.length > 1){
-			final Future<AColGroup>[] treeTmp =  (Future<AColGroup>[]) new Future[tree.length / 2 + tree.length % 2];
+		while(tree.length > 1) {
+			final Future<AColGroup>[] treeTmp = (Future<AColGroup>[]) new Future[tree.length / 2 + tree.length % 2];
 			final Future<AColGroup>[] curTree = tree;
 			for(int i = 0; i < treeTmp.length; i += 2) {
 				final int c1 = i;
 				final int c2 = i + 1;
 				treeTmp[i / 2] = pool.submit(() -> combine(curTree[c1].get(), curTree[c2].get(), nRows));
 			}
-			if(treeTmp.length % 2 != 0) {
+			if(curTree.length % 2 != 0) {
 				treeTmp[treeTmp.length - 1] = pool.submit(() -> curTree[curTree.length - 1].get());
 			}
-			tree= treeTmp;
+			tree = treeTmp;
 		}
 
 		return tree[0].get();

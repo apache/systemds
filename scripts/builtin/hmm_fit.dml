@@ -28,7 +28,7 @@
 #
 # INPUT:
 # --------------------------------------------------------------------------------------------
-# observations_sequences    Observation Sequences to train the model on
+# observation_sequence      Observation Sequences to train the model on
 # iterations_count          Number of Iterations the Probabilities should be updated
 # start_prob                Start probabilities of initial hmm model
 # transition_prob           Transition probabilities of initial hmm model
@@ -82,7 +82,7 @@ m_hmm_fit = function(matrix[Double] observation_sequence, matrix[Double] start_p
 print_iteration = function(Integer iteration, matrix[Double] transition_prob,
                            matrix[Double] emission_prob, Double difference) 
     {
-        print("\n###########################################################################################################")
+        print("###########################################################################################################")
         print("Iteration " + toString(iteration) + "of the hmm_fit function:")
         print("Transition Probabilities after step " + toString(iteration) + ":\n" + toString(transition_prob))
         print("Emission Probabilities after step " + toString(iteration) + ":\n" + toString(emission_prob))

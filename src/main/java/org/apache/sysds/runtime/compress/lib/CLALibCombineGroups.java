@@ -145,7 +145,6 @@ public final class CLALibCombineGroups {
 		if(k > 0 && groups.size() > 3) {
 			// parallelize over a tree.
 			return combineNMergeTree(groups, nRows, pool, k);
-
 		}
 		else {
 			return combineNSingleAtATime(groups, nRows);
@@ -172,7 +171,7 @@ public final class CLALibCombineGroups {
 
 
 		AColGroup base = tree[0].get();
-		for(int i = 1; i < tree.length; i+= 2){
+		for(int i = 1; i < tree.length; i++){
 			base = combine(base, tree[i].get(),nRows);
 		}
 

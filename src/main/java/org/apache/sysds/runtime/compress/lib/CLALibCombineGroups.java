@@ -67,14 +67,16 @@ public final class CLALibCombineGroups {
 		// private constructor
 	}
 
-	public static List<AColGroup> combine(CompressedMatrixBlock cmb, CompressedSizeInfo csi, ExecutorService pool) {
+	public static List<AColGroup> combine(CompressedMatrixBlock cmb, CompressedSizeInfo csi, ExecutorService pool, int k)
+		throws InterruptedException, ExecutionException {
 		if(pool == null || csi.getInfo().size() == 1)
-			return combineSingleThread(cmb, csi);
+			return combineSingle(cmb, csi, pool, k);
 		else
 			return combineParallel(cmb, csi, pool);
 	}
 
-	private static List<AColGroup> combineSingleThread(CompressedMatrixBlock cmb, CompressedSizeInfo csi) {
+	private static List<AColGroup> combineSingle(CompressedMatrixBlock cmb, CompressedSizeInfo csi, ExecutorService pool,
+		int k) throws InterruptedException, ExecutionException {
 		List<AColGroup> input = cmb.getColGroups();
 		final int nRow = cmb.getNumRows();
 		final boolean filterFor = CLALibUtils.shouldFilterFOR(input);
@@ -87,7 +89,7 @@ public final class CLALibCombineGroups {
 		final List<AColGroup> ret = new ArrayList<>(csiI.size());
 		for(CompressedSizeInfoColGroup gi : csiI) {
 			List<AColGroup> groupsToCombine = findGroupsInIndex(gi.getColumns(), input);
-			AColGroup combined = combineN(groupsToCombine, nRow);
+			AColGroup combined = combineN(groupsToCombine, nRow, pool, k - csiI.size());
 			combined = combined.morph(gi.getBestCompressionType(), nRow);
 			combined = filterFor ? combined.addVector(c) : combined;
 			ret.add(combined);
@@ -97,7 +99,7 @@ public final class CLALibCombineGroups {
 	}
 
 	private static List<AColGroup> combineParallel(CompressedMatrixBlock cmb, CompressedSizeInfo csi,
-		ExecutorService pool) {
+		ExecutorService pool) throws InterruptedException, ExecutionException {
 		List<AColGroup> input = cmb.getColGroups();
 		final int nRow = cmb.getNumRows();
 		final boolean filterFor = CLALibUtils.shouldFilterFOR(input);
@@ -111,7 +113,7 @@ public final class CLALibCombineGroups {
 		for(CompressedSizeInfoColGroup gi : csiI) {
 			Future<AColGroup> fcg = pool.submit(() -> {
 				List<AColGroup> groupsToCombine = findGroupsInIndex(gi.getColumns(), filteredGroups);
-				AColGroup combined = combineN(groupsToCombine, nRow);
+				AColGroup combined = combineN(groupsToCombine, nRow, pool, nRow);
 				combined = combined.morph(gi.getBestCompressionType(), nRow);
 				combined = filterFor ? combined.addVector(c) : combined;
 				return combined;
@@ -121,13 +123,9 @@ public final class CLALibCombineGroups {
 
 		}
 		final List<AColGroup> ret = new ArrayList<>(csiI.size());
-		try {
-			for(Future<AColGroup> fcg : tasks) {
-				ret.add(fcg.get());
-			}
-		}
-		catch(InterruptedException | ExecutionException e) {
-			throw new RuntimeException(e);
+
+		for(Future<AColGroup> fcg : tasks) {
+			ret.add(fcg.get());
 		}
 
 		return ret;
@@ -142,7 +140,71 @@ public final class CLALibCombineGroups {
 		return ret;
 	}
 
-	public static AColGroup combineN(List<AColGroup> groups, int nRows) {
+	public static AColGroup combineN(List<AColGroup> groups, int nRows, ExecutorService pool, int k)
+		throws InterruptedException, ExecutionException {
+		if(k > 0 && groups.size() > 3) {
+			// parallelize over a tree.
+			return combineNMergeTree(groups, nRows, pool, k);
+
+		}
+		else {
+			return combineNSingleAtATime(groups, nRows);
+		}
+
+	}
+
+	@SuppressWarnings("unchecked")
+	public static AColGroup combineNMergeTree(List<AColGroup> groups, int nRows, ExecutorService pool, int k)
+		throws InterruptedException, ExecutionException {
+
+		Future<AColGroup>[] tree = (Future<AColGroup>[]) new Future[groups.size() / 2 + groups.size() % 2];
+
+		// AColGroup base = groups.get(0);
+		// Inefficient combine N but base line
+		for(int i = 0; i < groups.size(); i += 2) {
+			final int c1 = i;
+			final int c2 = i + 1;
+			tree[i / 2] = pool.submit(() -> combine(groups.get(c1), groups.get(c2), nRows));
+		}
+		if(groups.size() % 2 != 0) {
+			tree[tree.length - 1] = pool.submit(() -> groups.get(groups.size() - 1));
+		}
+
+		for(int s = 2; s < tree.length; s *= 2) {
+			for(int i = 0; i + s / 2 < tree.length; i += s) { // first level.
+				final int c1 = i;
+				final int c2 = i + s / 2;
+				Future<AColGroup> f = pool.submit(() -> {
+					AColGroup a = tree[c1].get();
+					AColGroup b = tree[c2].get();
+					return combine(a, b, nRows);
+				});
+				tree[i] = f;
+				tree[c2] = null;
+			}
+		}
+
+		// for(int i = 0; i < tree.length; i += 2){ // first level.
+		// final int c1 = i;
+		// final int c2 = i+1;
+		// Future<AColGroup> f = pool.submit(
+		// () -> {
+		// AColGroup a = tree[c1].get();
+		// AColGroup b = tree[c2].get();
+		// return combine(a,b,nRows);
+		// }
+		// );
+		// tree[i] = f;
+		// tree[c2] = null;
+		// }
+
+		// base = combine(base, groups.get(i), nRows);
+		// return base;
+
+		return tree[0].get();
+	}
+
+	public static AColGroup combineNSingleAtATime(List<AColGroup> groups, int nRows) {
 		AColGroup base = groups.get(0);
 		// Inefficient combine N but base line
 		for(int i = 1; i < groups.size(); i++)

@@ -178,7 +178,7 @@ public final class CLALibCombineGroups {
 				treeTmp[i / 2] = pool.submit(() -> combine(curTree[c1].get(), curTree[c2].get(), nRows));
 			}
 			if(curTree.length % 2 != 0) {
-				treeTmp[treeTmp.length - 1] = pool.submit(() -> curTree[curTree.length - 1].get());
+				treeTmp[treeTmp.length - 1] = curTree[curTree.length - 1];
 			}
 			tree = treeTmp;
 		}

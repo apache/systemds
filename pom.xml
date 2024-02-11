@@ -380,7 +380,7 @@
 						<configuration>
 							<target name="copy and rename JAR files">
 								<!-- https://ant.apache.org/manual/Tasks -->
-								<move
+								<copy
 									file="${project.build.directory}/${project.artifactId}-${project.version}-shaded.jar" 
 									tofile="${project.build.directory}/${project.artifactId}-${project.version}.jar"/>
 							</target>

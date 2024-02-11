@@ -170,38 +170,13 @@ public final class CLALibCombineGroups {
 			tree[tree.length - 1] = pool.submit(() -> groups.get(groups.size() - 1));
 		}
 
-		for(int s = 2; s < tree.length; s *= 2) {
-			for(int i = 0; i + s / 2 < tree.length; i += s) { // first level.
-				final int c1 = i;
-				final int c2 = i + s / 2;
-				Future<AColGroup> f = pool.submit(() -> {
-					AColGroup a = tree[c1].get();
-					AColGroup b = tree[c2].get();
-					return combine(a, b, nRows);
-				});
-				tree[i] = f;
-				tree[c2] = null;
-			}
+
+		AColGroup base = tree[0].get();
+		for(int i = 1; i < tree.length; i+= 2){
+			base = combine(base, tree[i].get(),nRows);
 		}
 
-		// for(int i = 0; i < tree.length; i += 2){ // first level.
-		// final int c1 = i;
-		// final int c2 = i+1;
-		// Future<AColGroup> f = pool.submit(
-		// () -> {
-		// AColGroup a = tree[c1].get();
-		// AColGroup b = tree[c2].get();
-		// return combine(a,b,nRows);
-		// }
-		// );
-		// tree[i] = f;
-		// tree[c2] = null;
-		// }
-
-		// base = combine(base, groups.get(i), nRows);
-		// return base;
-
-		return tree[0].get();
+		return base;
 	}
 
 	public static AColGroup combineNSingleAtATime(List<AColGroup> groups, int nRows) {

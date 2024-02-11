@@ -6,16 +6,15 @@
 <title>AMapToData (Apache SystemDS 3.2.0-SNAPSHOT API)</title>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 <link rel="stylesheet" type="text/css" href="../../../../../../../stylesheet.css" title="Style">
-<link rel="stylesheet" type="text/css" href="../../../../../../../jquery/jquery-ui.min.css" title="Style">
-<link rel="stylesheet" type="text/css" href="../../../../../../../jquery-ui.overrides.css" title="Style">
+<link rel="stylesheet" type="text/css" href="../../../../../../../jquery/jquery-ui.css" title="Style">
 <script type="text/javascript" src="../../../../../../../script.js"></script>
 <script type="text/javascript" src="../../../../../../../jquery/jszip/dist/jszip.min.js"></script>
 <script type="text/javascript" src="../../../../../../../jquery/jszip-utils/dist/jszip-utils.min.js"></script>
 <!--[if IE]>
 <script type="text/javascript" src="../../../../../../../jquery/jszip-utils/dist/jszip-utils-ie.min.js"></script>
 <![endif]-->
-<script type="text/javascript" src="../../../../../../../jquery/jquery-3.6.1.min.js"></script>
-<script type="text/javascript" src="../../../../../../../jquery/jquery-ui.min.js"></script>
+<script type="text/javascript" src="../../../../../../../jquery/jquery-3.5.1.js"></script>
+<script type="text/javascript" src="../../../../../../../jquery/jquery-ui.js"></script>
 </head>
 <body>
 <script type="text/javascript"><!--
@@ -27,7 +26,7 @@
     catch(err) {
     }
 //-->
-var data = {"i0":6,"i1":6,"i2":10,"i3":6,"i4":6,"i5":6,"i6":10,"i7":10,"i8":6,"i9":6,"i10":10,"i11":6,"i12":6,"i13":6,"i14":6,"i15":10,"i16":6,"i17":6,"i18":10,"i19":6,"i20":10,"i21":10,"i22":10,"i23":10,"i24":10,"i25":10,"i26":10,"i27":10,"i28":10,"i29":10,"i30":10,"i31":10,"i32":6,"i33":6,"i34":6,"i35":10,"i36":10,"i37":6,"i38":10,"i39":6,"i40":6,"i41":10,"i42":6};
+var data = {"i0":6,"i1":6,"i2":10,"i3":6,"i4":6,"i5":6,"i6":10,"i7":10,"i8":6,"i9":6,"i10":10,"i11":6,"i12":6,"i13":6,"i14":6,"i15":10,"i16":6,"i17":6,"i18":10,"i19":6,"i20":10,"i21":10,"i22":10,"i23":10,"i24":10,"i25":10,"i26":10,"i27":10,"i28":10,"i29":10,"i30":10,"i31":10,"i32":6,"i33":6,"i34":6,"i35":10,"i36":10,"i37":6,"i38":10,"i39":6,"i40":6,"i41":10,"i42":10,"i43":6};
 var tabs = {65535:["t0","All Methods"],2:["t2","Instance Methods"],4:["t3","Abstract Methods"],8:["t4","Concrete Methods"]};
 var altColor = "altColor";
 var rowColor = "rowColor";
@@ -161,7 +160,7 @@ implements <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base
 <ul class="blockList">
 <li class="blockList">
 <!-- ========== METHOD SUMMARY =========== -->
-<section>
+<section role="region">
 <ul class="blockList">
 <li class="blockList"><a id="method.summary">
 <!--   -->
@@ -500,6 +499,13 @@ implements <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr id="i42" class="altColor">
+<td class="colFirst"><code>void</code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#verify()">verify</a></span>()</code></th>
+<td class="colLast">
+<div class="block">Debugging verification that this mapping is correctly made.</div>
+</td>
+</tr>
+<tr id="i43" class="rowColor">
 <td class="colFirst"><code>abstract void</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#write(java.io.DataOutput)">write</a></span>&#8203;(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/io/DataOutput.html?is-external=true" title="class or interface in java.io" class="externalLink">DataOutput</a>&nbsp;out)</code></th>
 <td class="colLast">
@@ -524,7 +530,7 @@ implements <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base
 <ul class="blockList">
 <li class="blockList">
 <!-- ============ METHOD DETAIL ========== -->
-<section>
+<section role="region">
 <ul class="blockList">
 <li class="blockList"><a id="method.detail">
 <!--   -->
@@ -640,8 +646,8 @@ implements <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base
 <dd><code>n</code> - index to set.</dd>
 <dd><code>v</code> - the value to set it to.</dd>
 <dt><span class="returnLabel">Returns:</span></dt>
-<dd>v as encoded, note this value can be different that the one put in if the map is not able to represent
-         the value</dd>
+<dd>v as encoded, note this value can be different that the one put in if the map is not able to represent the
+         value</dd>
 </dl>
 </li>
 </ul>
@@ -1177,6 +1183,16 @@ implements <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base
 </dl>
 </li>
 </ul>
+<a id="verify()">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>verify</h4>
+<pre class="methodSignature">public&nbsp;void&nbsp;verify()</pre>
+<div class="block">Debugging verification that this mapping is correctly made.</div>
+</li>
+</ul>
 <a id="toString()">
 <!--   -->
 </a>
@@ -1259,7 +1275,7 @@ implements <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base
 </a></div>
 <!-- ======== END OF BOTTOM NAVBAR ======= -->
 </nav>
-<p class="legalCopy"><small>Copyright &#169; 2023 <a href="https://www.apache.org/">The Apache Software Foundation</a>. All rights reserved.</small></p>
+<p class="legalCopy"><small>Copyright &#169; 2024 <a href="https://www.apache.org/">The Apache Software Foundation</a>. All rights reserved.</small></p>
 </footer>
 </body>
 </html>

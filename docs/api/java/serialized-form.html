@@ -6,16 +6,15 @@
 <title>Serialized Form (Apache SystemDS 3.2.0-SNAPSHOT API)</title>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 <link rel="stylesheet" type="text/css" href="stylesheet.css" title="Style">
-<link rel="stylesheet" type="text/css" href="jquery/jquery-ui.min.css" title="Style">
-<link rel="stylesheet" type="text/css" href="jquery-ui.overrides.css" title="Style">
+<link rel="stylesheet" type="text/css" href="jquery/jquery-ui.css" title="Style">
 <script type="text/javascript" src="script.js"></script>
 <script type="text/javascript" src="jquery/jszip/dist/jszip.min.js"></script>
 <script type="text/javascript" src="jquery/jszip-utils/dist/jszip-utils.min.js"></script>
 <!--[if IE]>
 <script type="text/javascript" src="jquery/jszip-utils/dist/jszip-utils-ie.min.js"></script>
 <![endif]-->
-<script type="text/javascript" src="jquery/jquery-3.6.1.min.js"></script>
-<script type="text/javascript" src="jquery/jquery-ui.min.js"></script>
+<script type="text/javascript" src="jquery/jquery-3.5.1.js"></script>
+<script type="text/javascript" src="jquery/jquery-ui.js"></script>
 </head>
 <body>
 <script type="text/javascript"><!--
@@ -99,7 +98,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <div class="serializedFormContainer">
 <ul class="blockList">
 <li class="blockList">
-<section>
+<section role="region">
 <h2 title="Package">Package&nbsp;org.apache.sysds.api</h2>
 <ul class="blockList">
 <li class="blockList"><a id="org.apache.sysds.api.DMLException">
@@ -115,7 +114,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 </section>
 </li>
 <li class="blockList">
-<section>
+<section role="region">
 <h2 title="Package">Package&nbsp;org.apache.sysds.api.mlcontext</h2>
 <ul class="blockList">
 <li class="blockList"><a id="org.apache.sysds.api.mlcontext.MLContextException">
@@ -142,7 +141,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 </section>
 </li>
 <li class="blockList">
-<section>
+<section role="region">
 <h2 title="Package">Package&nbsp;org.apache.sysds.hops</h2>
 <ul class="blockList">
 <li class="blockList"><a id="org.apache.sysds.hops.HopsException">
@@ -158,7 +157,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 </section>
 </li>
 <li class="blockList">
-<section>
+<section role="region">
 <h2 title="Package">Package&nbsp;org.apache.sysds.hops.fedplanner</h2>
 <ul class="blockList">
 <li class="blockList"><a id="org.apache.sysds.hops.fedplanner.PrivacyConstraintLoader.PrivacyConstraintRetriever">
@@ -185,7 +184,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 </section>
 </li>
 <li class="blockList">
-<section>
+<section role="region">
 <h2 title="Package">Package&nbsp;org.apache.sysds.lops</h2>
 <ul class="blockList">
 <li class="blockList"><a id="org.apache.sysds.lops.LopsException">
@@ -201,7 +200,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 </section>
 </li>
 <li class="blockList">
-<section>
+<section role="region">
 <h2 title="Package">Package&nbsp;org.apache.sysds.parser</h2>
 <ul class="blockList">
 <li class="blockList"><a id="org.apache.sysds.parser.LanguageException">
@@ -252,7 +251,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 </section>
 </li>
 <li class="blockList">
-<section>
+<section role="region">
 <h2 title="Package">Package&nbsp;org.apache.sysds.runtime</h2>
 <ul class="blockList">
 <li class="blockList"><a id="org.apache.sysds.runtime.DMLRuntimeException">
@@ -277,7 +276,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 </section>
 </li>
 <li class="blockList">
-<section>
+<section role="region">
 <h2 title="Package">Package&nbsp;org.apache.sysds.runtime.codegen</h2>
 <ul class="blockList">
 <li class="blockList"><a id="org.apache.sysds.runtime.codegen.SpoofCellwise">
@@ -461,7 +460,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 </section>
 </li>
 <li class="blockList">
-<section>
+<section role="region">
 <h2 title="Package">Package&nbsp;org.apache.sysds.runtime.compress</h2>
 <ul class="blockList">
 <li class="blockList"><a id="org.apache.sysds.runtime.compress.CompressedMatrixBlock">
@@ -515,7 +514,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 </section>
 </li>
 <li class="blockList">
-<section>
+<section role="region">
 <h2 title="Package">Package&nbsp;org.apache.sysds.runtime.compress.colgroup</h2>
 <ul class="blockList">
 <li class="blockList"><a id="org.apache.sysds.runtime.compress.colgroup.AColGroup">
@@ -920,8 +919,8 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <li class="blockListLast">
 <h4>_data</h4>
 <pre><a href="org/apache/sysds/runtime/matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a> _data</pre>
-<div class="block">We store the contents of the columns as a MatrixBlock to take advantage of high-performance routines available
- for this data structure.</div>
+<div class="block">We store the contents of the columns as a MatrixBlock to take advantage of high-performance routines available for
+ this data structure.</div>
 </li>
 </ul>
 </li>
@@ -931,7 +930,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 </section>
 </li>
 <li class="blockList">
-<section>
+<section role="region">
 <h2 title="Package">Package&nbsp;org.apache.sysds.runtime.compress.colgroup.dictionary</h2>
 <ul class="blockList">
 <li class="blockList"><a id="org.apache.sysds.runtime.compress.colgroup.dictionary.ADictionary">
@@ -975,9 +974,14 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <li class="blockList">
 <h3>Serialized Fields</h3>
 <ul class="blockList">
-<li class="blockListLast">
+<li class="blockList">
 <h4>_values</h4>
 <pre>double[] _values</pre>
+</li>
+<li class="blockListLast">
+<h4>cache</h4>
+<pre><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/ref/SoftReference.html?is-external=true" title="class or interface in java.lang.ref" class="externalLink">SoftReference</a>&lt;<a href="org/apache/sysds/runtime/compress/colgroup/dictionary/MatrixBlockDictionary.html" title="class in org.apache.sysds.runtime.compress.colgroup.dictionary">MatrixBlockDictionary</a>&gt; cache</pre>
+<div class="block">A Cache to contain a MatrixBlock version of the dictionary.</div>
 </li>
 </ul>
 </li>
@@ -1107,7 +1111,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 </section>
 </li>
 <li class="blockList">
-<section>
+<section role="region">
 <h2 title="Package">Package&nbsp;org.apache.sysds.runtime.compress.colgroup.mapping</h2>
 <ul class="blockList">
 <li class="blockList"><a id="org.apache.sysds.runtime.compress.colgroup.mapping.AMapToData">
@@ -1272,7 +1276,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 </section>
 </li>
 <li class="blockList">
-<section>
+<section role="region">
 <h2 title="Package">Package&nbsp;org.apache.sysds.runtime.compress.colgroup.offset</h2>
 <ul class="blockList">
 <li class="blockList"><a id="org.apache.sysds.runtime.compress.colgroup.offset.AOffset">
@@ -1456,7 +1460,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 </section>
 </li>
 <li class="blockList">
-<section>
+<section role="region">
 <h2 title="Package">Package&nbsp;org.apache.sysds.runtime.compress.cost</h2>
 <ul class="blockList">
 <li class="blockList"><a id="org.apache.sysds.runtime.compress.cost.ACostEstimate">
@@ -1626,7 +1630,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 </section>
 </li>
 <li class="blockList">
-<section>
+<section role="region">
 <h2 title="Package">Package&nbsp;org.apache.sysds.runtime.compress.io</h2>
 <ul class="blockList">
 <li class="blockList"><a id="org.apache.sysds.runtime.compress.io.CompressedWriteBlock">
@@ -1711,7 +1715,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 </section>
 </li>
 <li class="blockList">
-<section>
+<section role="region">
 <h2 title="Package">Package&nbsp;org.apache.sysds.runtime.compress.utils</h2>
 <ul class="blockList">
 <li class="blockList"><a id="org.apache.sysds.runtime.compress.utils.CompressRDDClean">
@@ -1727,7 +1731,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 </section>
 </li>
 <li class="blockList">
-<section>
+<section role="region">
 <h2 title="Package">Package&nbsp;org.apache.sysds.runtime.controlprogram</h2>
 <ul class="blockList">
 <li class="blockList"><a id="org.apache.sysds.runtime.controlprogram.ParForProgramBlock.PartitionFormat">
@@ -1758,7 +1762,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 </section>
 </li>
 <li class="blockList">
-<section>
+<section role="region">
 <h2 title="Package">Package&nbsp;org.apache.sysds.runtime.controlprogram.caching</h2>
 <ul class="blockList">
 <li class="blockList"><a id="org.apache.sysds.runtime.controlprogram.caching.CacheableData">
@@ -1972,7 +1976,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 </section>
 </li>
 <li class="blockList">
-<section>
+<section role="region">
 <h2 title="Package">Package&nbsp;org.apache.sysds.runtime.controlprogram.context</h2>
 <ul class="blockList">
 <li class="blockList"><a id="org.apache.sysds.runtime.controlprogram.context.MatrixObjectFuture">
@@ -1999,7 +2003,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 </section>
 </li>
 <li class="blockList">
-<section>
+<section role="region">
 <h2 title="Package">Package&nbsp;org.apache.sysds.runtime.controlprogram.federated</h2>
 <ul class="blockList">
 <li class="blockList"><a id="org.apache.sysds.runtime.controlprogram.federated.FederatedRequest">
@@ -2385,7 +2389,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 </section>
 </li>
 <li class="blockList">
-<section>
+<section role="region">
 <h2 title="Package">Package&nbsp;org.apache.sysds.runtime.controlprogram.federated.monitoring.models</h2>
 <ul class="blockList">
 <li class="blockList"><a id="org.apache.sysds.runtime.controlprogram.federated.monitoring.models.BaseModel">
@@ -2796,7 +2800,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 </section>
 </li>
 <li class="blockList">
-<section>
+<section role="region">
 <h2 title="Package">Package&nbsp;org.apache.sysds.runtime.controlprogram.paramserv</h2>
 <ul class="blockList">
 <li class="blockList"><a id="org.apache.sysds.runtime.controlprogram.paramserv.FederatedPSControlThread">
@@ -3020,7 +3024,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 </section>
 </li>
 <li class="blockList">
-<section>
+<section role="region">
 <h2 title="Package">Package&nbsp;org.apache.sysds.runtime.controlprogram.paramserv.dp</h2>
 <ul class="blockList">
 <li class="blockList"><a id="org.apache.sysds.runtime.controlprogram.paramserv.dp.DataPartitionerSparkAggregator">
@@ -3155,7 +3159,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 </section>
 </li>
 <li class="blockList">
-<section>
+<section role="region">
 <h2 title="Package">Package&nbsp;org.apache.sysds.runtime.controlprogram.paramserv.homomorphicEncryption</h2>
 <ul class="blockList">
 <li class="blockList"><a id="org.apache.sysds.runtime.controlprogram.paramserv.homomorphicEncryption.PublicKey">
@@ -3182,7 +3186,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 </section>
 </li>
 <li class="blockList">
-<section>
+<section role="region">
 <h2 title="Package">Package&nbsp;org.apache.sysds.runtime.controlprogram.parfor</h2>
 <ul class="blockList">
 <li class="blockList"><a id="org.apache.sysds.runtime.controlprogram.parfor.DataPartitionerRemoteSparkMapper">
@@ -3556,7 +3560,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 </section>
 </li>
 <li class="blockList">
-<section>
+<section role="region">
 <h2 title="Package">Package&nbsp;org.apache.sysds.runtime.controlprogram.parfor.util</h2>
 <ul class="blockList">
 <li class="blockList"><a id="org.apache.sysds.runtime.controlprogram.parfor.util.PairWritableBlock">
@@ -3611,7 +3615,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 </section>
 </li>
 <li class="blockList">
-<section>
+<section role="region">
 <h2 title="Package">Package&nbsp;org.apache.sysds.runtime.data</h2>
 <ul class="blockList">
 <li class="blockList"><a id="org.apache.sysds.runtime.data.BasicTensorBlock">
@@ -4134,6 +4138,50 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 </li>
 </ul>
 </li>
+<li class="blockList"><a id="org.apache.sysds.runtime.data.SparseBlockDCSR">
+<!--   -->
+</a>
+<h3>Class <a href="org/apache/sysds/runtime/data/SparseBlockDCSR.html" title="class in org.apache.sysds.runtime.data">org.apache.sysds.runtime.data.SparseBlockDCSR</a> extends <a href="org/apache/sysds/runtime/data/SparseBlock.html" title="class in org.apache.sysds.runtime.data">SparseBlock</a> implements Serializable</h3>
+<dl class="nameValue">
+<dt>serialVersionUID:</dt>
+<dd>456844244252549431L</dd>
+</dl>
+<ul class="blockList">
+<li class="blockList">
+<h3>Serialized Fields</h3>
+<ul class="blockList">
+<li class="blockList">
+<h4>_colidx</h4>
+<pre>int[] _colidx</pre>
+</li>
+<li class="blockList">
+<h4>_nnzr</h4>
+<pre>int _nnzr</pre>
+</li>
+<li class="blockList">
+<h4>_rlen</h4>
+<pre>int _rlen</pre>
+</li>
+<li class="blockList">
+<h4>_rowidx</h4>
+<pre>int[] _rowidx</pre>
+</li>
+<li class="blockList">
+<h4>_rowptr</h4>
+<pre>int[] _rowptr</pre>
+</li>
+<li class="blockList">
+<h4>_size</h4>
+<pre>int _size</pre>
+</li>
+<li class="blockListLast">
+<h4>_values</h4>
+<pre>double[] _values</pre>
+</li>
+</ul>
+</li>
+</ul>
+</li>
 <li class="blockList"><a id="org.apache.sysds.runtime.data.SparseBlockMCSR">
 <!--   -->
 </a>
@@ -4301,7 +4349,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 </section>
 </li>
 <li class="blockList">
-<section>
+<section role="region">
 <h2 title="Package">Package&nbsp;org.apache.sysds.runtime.frame.data</h2>
 <ul class="blockList">
 <li class="blockList"><a id="org.apache.sysds.runtime.frame.data.FrameBlock">
@@ -4351,7 +4399,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 </section>
 </li>
 <li class="blockList">
-<section>
+<section role="region">
 <h2 title="Package">Package&nbsp;org.apache.sysds.runtime.frame.data.columns</h2>
 <ul class="blockList">
 <li class="blockList"><a id="org.apache.sysds.runtime.frame.data.columns.ColumnMetadata">
@@ -4382,7 +4430,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 </section>
 </li>
 <li class="blockList">
-<section>
+<section role="region">
 <h2 title="Package">Package&nbsp;org.apache.sysds.runtime.functionobjects</h2>
 <ul class="blockList">
 <li class="blockList"><a id="org.apache.sysds.runtime.functionobjects.And">
@@ -5039,7 +5087,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 </section>
 </li>
 <li class="blockList">
-<section>
+<section role="region">
 <h2 title="Package">Package&nbsp;org.apache.sysds.runtime.instructions.cp</h2>
 <ul class="blockList">
 <li class="blockList"><a id="org.apache.sysds.runtime.instructions.cp.BooleanObject">
@@ -5326,7 +5374,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 </section>
 </li>
 <li class="blockList">
-<section>
+<section role="region">
 <h2 title="Package">Package&nbsp;org.apache.sysds.runtime.instructions.fed</h2>
 <ul class="blockList">
 <li class="blockList"><a id="org.apache.sysds.runtime.instructions.fed.MultiReturnParameterizedBuiltinFEDInstruction.CreateFrameEncoder">
@@ -5594,7 +5642,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 </section>
 </li>
 <li class="blockList">
-<section>
+<section role="region">
 <h2 title="Package">Package&nbsp;org.apache.sysds.runtime.instructions.spark</h2>
 <ul class="blockList">
 <li class="blockList"><a id="org.apache.sysds.runtime.instructions.spark.AggregateUnarySPInstruction.RDDUAggFunction2">
@@ -5975,6 +6023,30 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 </li>
 </ul>
 </li>
+<li class="blockList"><a id="org.apache.sysds.runtime.instructions.spark.ParameterizedBuiltinSPInstruction.RDDContainsVectFunction">
+<!--   -->
+</a>
+<h3>Class <a href="org/apache/sysds/runtime/instructions/spark/ParameterizedBuiltinSPInstruction.RDDContainsVectFunction.html" title="class in org.apache.sysds.runtime.instructions.spark">org.apache.sysds.runtime.instructions.spark.ParameterizedBuiltinSPInstruction.RDDContainsVectFunction</a> extends <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Object.html?is-external=true" title="class or interface in java.lang" class="externalLink">Object</a> implements Serializable</h3>
+<dl class="nameValue">
+<dt>serialVersionUID:</dt>
+<dd>2228503788469700742L</dd>
+</dl>
+<ul class="blockList">
+<li class="blockList">
+<h3>Serialized Fields</h3>
+<ul class="blockList">
+<li class="blockList">
+<h4>_blocksize</h4>
+<pre>int _blocksize</pre>
+</li>
+<li class="blockListLast">
+<h4>_pbcPattern</h4>
+<pre><a href="org/apache/sysds/runtime/instructions/spark/data/PartitionedBroadcast.html" title="class in org.apache.sysds.runtime.instructions.spark.data">PartitionedBroadcast</a>&lt;<a href="org/apache/sysds/runtime/matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&gt; _pbcPattern</pre>
+</li>
+</ul>
+</li>
+</ul>
+</li>
 <li class="blockList"><a id="org.apache.sysds.runtime.instructions.spark.ParameterizedBuiltinSPInstruction.RDDFrameReplaceFunction">
 <!--   -->
 </a>
@@ -6343,7 +6415,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 </section>
 </li>
 <li class="blockList">
-<section>
+<section role="region">
 <h2 title="Package">Package&nbsp;org.apache.sysds.runtime.instructions.spark.data</h2>
 <ul class="blockList">
 <li class="blockList"><a id="org.apache.sysds.runtime.instructions.spark.data.BlockPartitioner">
@@ -6562,7 +6634,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 </section>
 </li>
 <li class="blockList">
-<section>
+<section role="region">
 <h2 title="Package">Package&nbsp;org.apache.sysds.runtime.instructions.spark.functions</h2>
 <ul class="blockList">
 <li class="blockList"><a id="org.apache.sysds.runtime.instructions.spark.functions.AggregateDropCorrectionFunction">
@@ -7358,7 +7430,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 </section>
 </li>
 <li class="blockList">
-<section>
+<section role="region">
 <h2 title="Package">Package&nbsp;org.apache.sysds.runtime.instructions.spark.utils</h2>
 <ul class="blockList">
 <li class="blockList"><a id="org.apache.sysds.runtime.instructions.spark.utils.FrameRDDConverterUtils.LongFrameToLongWritableFrameFunction">
@@ -7479,7 +7551,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 </section>
 </li>
 <li class="blockList">
-<section>
+<section role="region">
 <h2 title="Package">Package&nbsp;org.apache.sysds.runtime.io</h2>
 <ul class="blockList">
 <li class="blockList"><a id="org.apache.sysds.runtime.io.FileFormatPropertiesCSV">
@@ -7638,7 +7710,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 </section>
 </li>
 <li class="blockList">
-<section>
+<section role="region">
 <h2 title="Package">Package&nbsp;org.apache.sysds.runtime.io.hdf5</h2>
 <ul class="blockList">
 <li class="blockList"><a id="org.apache.sysds.runtime.io.hdf5.H5RuntimeException">
@@ -7654,7 +7726,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 </section>
 </li>
 <li class="blockList">
-<section>
+<section role="region">
 <h2 title="Package">Package&nbsp;org.apache.sysds.runtime.iogen</h2>
 <ul class="blockList">
 <li class="blockList"><a id="org.apache.sysds.runtime.iogen.CustomProperties">
@@ -7717,7 +7789,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 </section>
 </li>
 <li class="blockList">
-<section>
+<section role="region">
 <h2 title="Package">Package&nbsp;org.apache.sysds.runtime.matrix.data</h2>
 <ul class="blockList">
 <li class="blockList"><a id="org.apache.sysds.runtime.matrix.data.DnnParameters">
@@ -8000,7 +8072,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 </section>
 </li>
 <li class="blockList">
-<section>
+<section role="region">
 <h2 title="Package">Package&nbsp;org.apache.sysds.runtime.matrix.operators</h2>
 <ul class="blockList">
 <li class="blockList"><a id="org.apache.sysds.runtime.matrix.operators.AggregateBinaryOperator">
@@ -8442,7 +8514,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 </section>
 </li>
 <li class="blockList">
-<section>
+<section role="region">
 <h2 title="Package">Package&nbsp;org.apache.sysds.runtime.meta</h2>
 <ul class="blockList">
 <li class="blockList"><a id="org.apache.sysds.runtime.meta.DataCharacteristics">
@@ -8533,7 +8605,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 </section>
 </li>
 <li class="blockList">
-<section>
+<section role="region">
 <h2 title="Package">Package&nbsp;org.apache.sysds.runtime.privacy</h2>
 <ul class="blockList">
 <li class="blockList"><a id="org.apache.sysds.runtime.privacy.DMLPrivacyException">
@@ -8579,7 +8651,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 </section>
 </li>
 <li class="blockList">
-<section>
+<section role="region">
 <h2 title="Package">Package&nbsp;org.apache.sysds.runtime.transform</h2>
 <ul class="blockList">
 <li class="blockList"><a id="org.apache.sysds.runtime.transform.TfUtils">
@@ -8606,7 +8678,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 </section>
 </li>
 <li class="blockList">
-<section>
+<section role="region">
 <h2 title="Package">Package&nbsp;org.apache.sysds.runtime.transform.decode</h2>
 <ul class="blockList">
 <li class="blockList"><a id="org.apache.sysds.runtime.transform.decode.Decoder">
@@ -8821,7 +8893,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 </section>
 </li>
 <li class="blockList">
-<section>
+<section role="region">
 <h2 title="Package">Package&nbsp;org.apache.sysds.runtime.transform.encode</h2>
 <ul class="blockList">
 <li class="blockList"><a id="org.apache.sysds.runtime.transform.encode.ColumnEncoder">
@@ -9276,7 +9348,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 </section>
 </li>
 <li class="blockList">
-<section>
+<section role="region">
 <h2 title="Package">Package&nbsp;org.apache.sysds.runtime.transform.meta</h2>
 <ul class="blockList">
 <li class="blockList"><a id="org.apache.sysds.runtime.transform.meta.TfOffsetMap">
@@ -9307,7 +9379,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 </section>
 </li>
 <li class="blockList">
-<section>
+<section role="region">
 <h2 title="Package">Package&nbsp;org.apache.sysds.runtime.transform.tokenize</h2>
 <ul class="blockList">
 <li class="blockList"><a id="org.apache.sysds.runtime.transform.tokenize.Tokenizer">
@@ -9342,7 +9414,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 </section>
 </li>
 <li class="blockList">
-<section>
+<section role="region">
 <h2 title="Package">Package&nbsp;org.apache.sysds.runtime.transform.tokenize.applier</h2>
 <ul class="blockList">
 <li class="blockList"><a id="org.apache.sysds.runtime.transform.tokenize.applier.TokenizerApplier">
@@ -9438,7 +9510,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 </section>
 </li>
 <li class="blockList">
-<section>
+<section role="region">
 <h2 title="Package">Package&nbsp;org.apache.sysds.runtime.transform.tokenize.builder</h2>
 <ul class="blockList">
 <li class="blockList"><a id="org.apache.sysds.runtime.transform.tokenize.builder.TokenizerBuilder">
@@ -9510,7 +9582,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 </section>
 </li>
 <li class="blockList">
-<section>
+<section role="region">
 <h2 title="Package">Package&nbsp;org.apache.sysds.runtime.util</h2>
 <ul class="blockList">
 <li class="blockList"><a id="org.apache.sysds.runtime.util.FastStringTokenizer">
@@ -9624,7 +9696,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 </a></div>
 <!-- ======== END OF BOTTOM NAVBAR ======= -->
 </nav>
-<p class="legalCopy"><small>Copyright &#169; 2023 <a href="https://www.apache.org/">The Apache Software Foundation</a>. All rights reserved.</small></p>
+<p class="legalCopy"><small>Copyright &#169; 2024 <a href="https://www.apache.org/">The Apache Software Foundation</a>. All rights reserved.</small></p>
 </footer>
 </body>
 </html>

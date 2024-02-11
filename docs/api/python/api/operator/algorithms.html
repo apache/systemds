@@ -1,12 +1,14 @@
 <!DOCTYPE html>
-<html class="writer-html5" lang="en" >
+<html class="writer-html5" lang="en" data-content_root="../../">
 <head>
-  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Algorithms &mdash; SystemDS 3.2.0-dev documentation</title>
-      <link rel="stylesheet" href="../../static/pygments.css" type="text/css" />
-      <link rel="stylesheet" href="../../static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" type="text/css" href="../../static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="../../static/css/theme.css?v=19f00094" />
+
+  
   <!--[if lt IE 9]>
     <script src="../../static/js/html5shiv.min.js"></script>
   <![endif]-->
@@ -126,8 +128,11 @@
 <li class="toctree-l2"><a class="reference internal" href="#systemds.operator.algorithm.img_posterize"><code class="docutils literal notranslate"><span class="pre">img_posterize()</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="#systemds.operator.algorithm.img_posterize_linearized"><code class="docutils literal notranslate"><span class="pre">img_posterize_linearized()</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="#systemds.operator.algorithm.img_rotate"><code class="docutils literal notranslate"><span class="pre">img_rotate()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#systemds.operator.algorithm.img_rotate_linearized"><code class="docutils literal notranslate"><span class="pre">img_rotate_linearized()</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="#systemds.operator.algorithm.img_sample_pairing"><code class="docutils literal notranslate"><span class="pre">img_sample_pairing()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#systemds.operator.algorithm.img_sample_pairing_linearized"><code class="docutils literal notranslate"><span class="pre">img_sample_pairing_linearized()</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="#systemds.operator.algorithm.img_shear"><code class="docutils literal notranslate"><span class="pre">img_shear()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#systemds.operator.algorithm.img_shear_linearized"><code class="docutils literal notranslate"><span class="pre">img_shear_linearized()</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="#systemds.operator.algorithm.img_transform"><code class="docutils literal notranslate"><span class="pre">img_transform()</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="#systemds.operator.algorithm.img_transform_linearized"><code class="docutils literal notranslate"><span class="pre">img_transform_linearized()</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="#systemds.operator.algorithm.img_translate"><code class="docutils literal notranslate"><span class="pre">img_translate()</span></code></a></li>
@@ -620,7 +625,7 @@ in terms of classification accuracy</p>
 <dt class="sig sig-object py" id="systemds.operator.algorithm.auc">
 <span class="sig-prename descclassname"><span class="pre">systemds.operator.algorithm.</span></span><span class="sig-name descname"><span class="pre">auc</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">Y</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="node/matrix.html#systemds.operator.Matrix" title="systemds.operator.nodes.matrix.Matrix"><span class="pre">Matrix</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">P</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="node/matrix.html#systemds.operator.Matrix" title="systemds.operator.nodes.matrix.Matrix"><span class="pre">Matrix</span></a></span></em><span class="sig-paren">)</span><a class="headerlink" href="#systemds.operator.algorithm.auc" title="Link to this definition"></a></dt>
 <dd><blockquote>
-<div><p>This builting function computes the area under the ROC curve (AUC)
+<div><p>This builtin function computes the area under the ROC curve (AUC)
 for binary classifiers.</p>
 </div></blockquote>
 <dl class="field-list simple">
@@ -2531,6 +2536,27 @@ Uses nearest neighbor sampling.</p>
 </dd></dl>
 
 <dl class="py function">
+<dt class="sig sig-object py" id="systemds.operator.algorithm.img_rotate_linearized">
+<span class="sig-prename descclassname"><span class="pre">systemds.operator.algorithm.</span></span><span class="sig-name descname"><span class="pre">img_rotate_linearized</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">img_in</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="node/matrix.html#systemds.operator.Matrix" title="systemds.operator.nodes.matrix.Matrix"><span class="pre">Matrix</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">radians</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fill_value</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">s_cols</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">s_rows</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#systemds.operator.algorithm.img_rotate_linearized" title="Link to this definition"></a></dt>
+<dd><blockquote>
+<div><p>The Linearized Image Rotate function rotates the linearized input images counter-clockwise around the center.
+Uses nearest neighbor sampling.</p>
+</div></blockquote>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>img_in</strong> – Linearized input images as 2D matrix with top left corner at [1, 1]</p></li>
+<li><p><strong>radians</strong> – The value by which to rotate in radian.</p></li>
+<li><p><strong>fill_value</strong> – The background color revealed by the rotation</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Output images in linearized form as 2D matrix with top left corner at [1, 1]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
 <dt class="sig sig-object py" id="systemds.operator.algorithm.img_sample_pairing">
 <span class="sig-prename descclassname"><span class="pre">systemds.operator.algorithm.</span></span><span class="sig-name descname"><span class="pre">img_sample_pairing</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">img_in1</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="node/matrix.html#systemds.operator.Matrix" title="systemds.operator.nodes.matrix.Matrix"><span class="pre">Matrix</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">img_in2</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="node/matrix.html#systemds.operator.Matrix" title="systemds.operator.nodes.matrix.Matrix"><span class="pre">Matrix</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">weight</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#systemds.operator.algorithm.img_sample_pairing" title="Link to this definition"></a></dt>
 <dd><blockquote>
@@ -2541,6 +2567,27 @@ Uses nearest neighbor sampling.</p>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>img_in1</strong> – First input image</p></li>
 <li><p><strong>img_in2</strong> – Second input image</p></li>
+<li><p><strong>weight</strong> – The weight given to the second image.
+0 means only img_in1, 1 means only img_in2 will be visible</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Output image</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="systemds.operator.algorithm.img_sample_pairing_linearized">
+<span class="sig-prename descclassname"><span class="pre">systemds.operator.algorithm.</span></span><span class="sig-name descname"><span class="pre">img_sample_pairing_linearized</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">img_in1</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="node/matrix.html#systemds.operator.Matrix" title="systemds.operator.nodes.matrix.Matrix"><span class="pre">Matrix</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">img_in2</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="node/matrix.html#systemds.operator.Matrix" title="systemds.operator.nodes.matrix.Matrix"><span class="pre">Matrix</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">weight</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#systemds.operator.algorithm.img_sample_pairing_linearized" title="Link to this definition"></a></dt>
+<dd><blockquote>
+<div><p>The image sample pairing function blends two images together.</p>
+</div></blockquote>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>img_in1</strong> – input matrix/image (every row is a linearized image)</p></li>
+<li><p><strong>img_in2</strong> – Second input image (one image represented as a single row linearized matrix)</p></li>
 <li><p><strong>weight</strong> – The weight given to the second image.
 0 means only img_in1, 1 means only img_in2 will be visible</p></li>
 </ul>
@@ -2569,6 +2616,28 @@ Uses nearest neighbor sampling.</p>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
 <dd class="field-even"><p>Output image as 2D matrix with top left corner at [1, 1]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="systemds.operator.algorithm.img_shear_linearized">
+<span class="sig-prename descclassname"><span class="pre">systemds.operator.algorithm.</span></span><span class="sig-name descname"><span class="pre">img_shear_linearized</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">img_in</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="node/matrix.html#systemds.operator.Matrix" title="systemds.operator.nodes.matrix.Matrix"><span class="pre">Matrix</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">shear_x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">shear_y</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fill_value</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">s_cols</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">s_rows</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#systemds.operator.algorithm.img_shear_linearized" title="Link to this definition"></a></dt>
+<dd><blockquote>
+<div><p>This function applies a shearing transformation to linearized images.
+Uses nearest neighbor sampling.</p>
+</div></blockquote>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>img_in</strong> – Linearized input images as 2D matrix with top left corner at [1, 1]</p></li>
+<li><p><strong>shear_x</strong> – Shearing factor for horizontal shearing</p></li>
+<li><p><strong>shear_y</strong> – Shearing factor for vertical shearing</p></li>
+<li><p><strong>fill_value</strong> – The background color revealed by the shearing</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Output images in linearized form as 2D matrix with top left corner at [1, 1]</p>
 </dd>
 </dl>
 </dd></dl>

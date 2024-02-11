@@ -6,16 +6,15 @@
 <title>LibMatrixDatagen (Apache SystemDS 3.2.0-SNAPSHOT API)</title>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 <link rel="stylesheet" type="text/css" href="../../../../../../stylesheet.css" title="Style">
-<link rel="stylesheet" type="text/css" href="../../../../../../jquery/jquery-ui.min.css" title="Style">
-<link rel="stylesheet" type="text/css" href="../../../../../../jquery-ui.overrides.css" title="Style">
+<link rel="stylesheet" type="text/css" href="../../../../../../jquery/jquery-ui.css" title="Style">
 <script type="text/javascript" src="../../../../../../script.js"></script>
 <script type="text/javascript" src="../../../../../../jquery/jszip/dist/jszip.min.js"></script>
 <script type="text/javascript" src="../../../../../../jquery/jszip-utils/dist/jszip-utils.min.js"></script>
 <!--[if IE]>
 <script type="text/javascript" src="../../../../../../jquery/jszip-utils/dist/jszip-utils-ie.min.js"></script>
 <![endif]-->
-<script type="text/javascript" src="../../../../../../jquery/jquery-3.6.1.min.js"></script>
-<script type="text/javascript" src="../../../../../../jquery/jquery-ui.min.js"></script>
+<script type="text/javascript" src="../../../../../../jquery/jquery-3.5.1.js"></script>
+<script type="text/javascript" src="../../../../../../jquery/jquery-ui.js"></script>
 </head>
 <body>
 <script type="text/javascript"><!--
@@ -141,7 +140,7 @@ extends <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/ja
 <ul class="blockList">
 <li class="blockList">
 <!-- ========== METHOD SUMMARY =========== -->
-<section>
+<section role="region">
 <ul class="blockList">
 <li class="blockList"><a id="method.summary">
 <!--   -->
@@ -264,7 +263,7 @@ extends <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/ja
 <ul class="blockList">
 <li class="blockList">
 <!-- ============ METHOD DETAIL ========== -->
-<section>
+<section role="region">
 <ul class="blockList">
 <li class="blockList"><a id="method.detail">
 <!--   -->
@@ -363,18 +362,14 @@ public static&nbsp;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/j
                                         <a href="RandomMatrixGenerator.html" title="class in org.apache.sysds.runtime.matrix.data">RandomMatrixGenerator</a>&nbsp;rgen,
                                         org.apache.commons.math3.random.Well1024a&nbsp;bigrand,
                                         long&nbsp;bSeed)</pre>
-<div class="block">Function to generate a matrix of random numbers. This is invoked both
- from CP as well as from MR. In case of CP, it generates an entire matrix
- block-by-block. A <code>bigrand</code> is passed so that block-level
- seeds are generated internally. In case of MR, it generates a single
- block for given block-level seed <code>bSeed</code>.
+<div class="block">Function to generate a matrix of random numbers. This is invoked both from CP as well as from MR. In case of CP,
+ it generates an entire matrix block-by-block. A <code>bigrand</code> is passed so that block-level seeds are
+ generated internally. In case of MR, it generates a single block for given block-level seed <code>bSeed</code>.
  
- When pdf="uniform", cell values are drawn from uniform distribution in
- range <code>[min,max]</code>.
+ When pdf="uniform", cell values are drawn from uniform distribution in range <code>[min,max]</code>.
  
- When pdf="normal", cell values are drawn from standard normal
- distribution N(0,1). The range of generated values will always be
- (-Inf,+Inf).</div>
+ When pdf="normal", cell values are drawn from standard normal distribution N(0,1). The range of generated values
+ will always be (-Inf,+Inf).</div>
 <dl>
 <dt><span class="paramLabel">Parameters:</span></dt>
 <dd><code>out</code> - output matrix block</dd>
@@ -457,8 +452,8 @@ public static&nbsp;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/j
                                   int&nbsp;size,
                                   boolean&nbsp;replace,
                                   long&nbsp;seed)</pre>
-<div class="block">Generates a sample of size <code>size</code> from a range of values [1,range].
- <code>replace</code> defines if sampling is done with or without replacement.</div>
+<div class="block">Generates a sample of size <code>size</code> from a range of values [1,range]. <code>replace</code> defines if
+ sampling is done with or without replacement.</div>
 <dl>
 <dt><span class="paramLabel">Parameters:</span></dt>
 <dd><code>out</code> - output matrix block</dd>
@@ -538,7 +533,7 @@ public static&nbsp;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/j
 </a></div>
 <!-- ======== END OF BOTTOM NAVBAR ======= -->
 </nav>
-<p class="legalCopy"><small>Copyright &#169; 2023 <a href="https://www.apache.org/">The Apache Software Foundation</a>. All rights reserved.</small></p>
+<p class="legalCopy"><small>Copyright &#169; 2024 <a href="https://www.apache.org/">The Apache Software Foundation</a>. All rights reserved.</small></p>
 </footer>
 </body>
 </html>

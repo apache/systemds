@@ -6,16 +6,15 @@
 <title>IColIndex (Apache SystemDS 3.2.0-SNAPSHOT API)</title>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 <link rel="stylesheet" type="text/css" href="../../../../../../../stylesheet.css" title="Style">
-<link rel="stylesheet" type="text/css" href="../../../../../../../jquery/jquery-ui.min.css" title="Style">
-<link rel="stylesheet" type="text/css" href="../../../../../../../jquery-ui.overrides.css" title="Style">
+<link rel="stylesheet" type="text/css" href="../../../../../../../jquery/jquery-ui.css" title="Style">
 <script type="text/javascript" src="../../../../../../../script.js"></script>
 <script type="text/javascript" src="../../../../../../../jquery/jszip/dist/jszip.min.js"></script>
 <script type="text/javascript" src="../../../../../../../jquery/jszip-utils/dist/jszip-utils.min.js"></script>
 <!--[if IE]>
 <script type="text/javascript" src="../../../../../../../jquery/jszip-utils/dist/jszip-utils-ie.min.js"></script>
 <![endif]-->
-<script type="text/javascript" src="../../../../../../../jquery/jquery-3.6.1.min.js"></script>
-<script type="text/javascript" src="../../../../../../../jquery/jquery-ui.min.js"></script>
+<script type="text/javascript" src="../../../../../../../jquery/jquery-3.5.1.js"></script>
+<script type="text/javascript" src="../../../../../../../jquery/jquery-ui.js"></script>
 </head>
 <body>
 <script type="text/javascript"><!--
@@ -27,8 +26,8 @@
     catch(err) {
     }
 //-->
-var data = {"i0":6,"i1":6,"i2":6,"i3":6,"i4":6,"i5":6,"i6":6,"i7":6,"i8":6,"i9":6,"i10":6,"i11":6,"i12":6,"i13":6,"i14":6,"i15":6,"i16":6,"i17":6,"i18":6,"i19":6,"i20":6,"i21":6};
-var tabs = {65535:["t0","All Methods"],2:["t2","Instance Methods"],4:["t3","Abstract Methods"]};
+var data = {"i0":6,"i1":6,"i2":6,"i3":6,"i4":6,"i5":6,"i6":6,"i7":6,"i8":6,"i9":6,"i10":6,"i11":6,"i12":6,"i13":6,"i14":6,"i15":6,"i16":1,"i17":6,"i18":6,"i19":6,"i20":1,"i21":6,"i22":6,"i23":6,"i24":6,"i25":6};
+var tabs = {65535:["t0","All Methods"],1:["t1","Static Methods"],2:["t2","Instance Methods"],4:["t3","Abstract Methods"]};
 var altColor = "altColor";
 var rowColor = "rowColor";
 var tableTab = "tableTab";
@@ -125,7 +124,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <li class="blockList">
 <dl>
 <dt>All Known Implementing Classes:</dt>
-<dd><code><a href="AColIndex.html" title="class in org.apache.sysds.runtime.compress.colgroup.indexes">AColIndex</a></code>, <code><a href="ArrayIndex.html" title="class in org.apache.sysds.runtime.compress.colgroup.indexes">ArrayIndex</a></code>, <code><a href="RangeIndex.html" title="class in org.apache.sysds.runtime.compress.colgroup.indexes">RangeIndex</a></code>, <code><a href="SingleIndex.html" title="class in org.apache.sysds.runtime.compress.colgroup.indexes">SingleIndex</a></code>, <code><a href="TwoIndex.html" title="class in org.apache.sysds.runtime.compress.colgroup.indexes">TwoIndex</a></code>, <code><a href="TwoRangesIndex.html" title="class in org.apache.sysds.runtime.compress.colgroup.indexes">TwoRangesIndex</a></code></dd>
+<dd><code><a href="AColIndex.html" title="class in org.apache.sysds.runtime.compress.colgroup.indexes">AColIndex</a></code>, <code><a href="ArrayIndex.html" title="class in org.apache.sysds.runtime.compress.colgroup.indexes">ArrayIndex</a></code>, <code><a href="CombinedIndex.html" title="class in org.apache.sysds.runtime.compress.colgroup.indexes">CombinedIndex</a></code>, <code><a href="RangeIndex.html" title="class in org.apache.sysds.runtime.compress.colgroup.indexes">RangeIndex</a></code>, <code><a href="SingleIndex.html" title="class in org.apache.sysds.runtime.compress.colgroup.indexes">SingleIndex</a></code>, <code><a href="TwoIndex.html" title="class in org.apache.sysds.runtime.compress.colgroup.indexes">TwoIndex</a></code>, <code><a href="TwoRangesIndex.html" title="class in org.apache.sysds.runtime.compress.colgroup.indexes">TwoRangesIndex</a></code></dd>
 </dl>
 <hr>
 <pre>public interface <span class="typeNameLabel">IColIndex</span></pre>
@@ -137,7 +136,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <ul class="blockList">
 <li class="blockList">
 <!-- ======== NESTED CLASS SUMMARY ======== -->
-<section>
+<section role="region">
 <ul class="blockList">
 <li class="blockList"><a id="nested.class.summary">
 <!--   -->
@@ -167,14 +166,14 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 </ul>
 </section>
 <!-- ========== METHOD SUMMARY =========== -->
-<section>
+<section role="region">
 <ul class="blockList">
 <li class="blockList"><a id="method.summary">
 <!--   -->
 </a>
 <h3>Method Summary</h3>
 <table class="memberSummary">
-<caption><span id="t0" class="activeTableTab"><span>All Methods</span><span class="tabEnd">&nbsp;</span></span><span id="t2" class="tableTab"><span><a href="javascript:show(2);">Instance Methods</a></span><span class="tabEnd">&nbsp;</span></span><span id="t3" class="tableTab"><span><a href="javascript:show(4);">Abstract Methods</a></span><span class="tabEnd">&nbsp;</span></span></caption>
+<caption><span id="t0" class="activeTableTab"><span>All Methods</span><span class="tabEnd">&nbsp;</span></span><span id="t1" class="tableTab"><span><a href="javascript:show(1);">Static Methods</a></span><span class="tabEnd">&nbsp;</span></span><span id="t2" class="tableTab"><span><a href="javascript:show(2);">Instance Methods</a></span><span class="tabEnd">&nbsp;</span></span><span id="t3" class="tableTab"><span><a href="javascript:show(4);">Abstract Methods</a></span><span class="tabEnd">&nbsp;</span></span></caption>
 <tr>
 <th class="colFirst" scope="col">Modifier and Type</th>
 <th class="colSecond" scope="col">Method</th>
@@ -226,30 +225,51 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 </td>
 </tr>
 <tr id="i6" class="altColor">
+<td class="colFirst"><code>void</code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#decompressToDenseFromSparse(org.apache.sysds.runtime.data.SparseBlock,int,int,double%5B%5D)">decompressToDenseFromSparse</a></span>&#8203;(<a href="../../../data/SparseBlock.html" title="class in org.apache.sysds.runtime.data">SparseBlock</a>&nbsp;sb,
+                           int&nbsp;vr,
+                           int&nbsp;off,
+                           double[]&nbsp;c)</code></th>
+<td class="colLast">
+<div class="block">Decompress this column index into the dense c array.</div>
+</td>
+</tr>
+<tr id="i7" class="rowColor">
+<td class="colFirst"><code>void</code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#decompressVec(int,double%5B%5D,int,double%5B%5D,int)">decompressVec</a></span>&#8203;(int&nbsp;nCol,
+             double[]&nbsp;c,
+             int&nbsp;off,
+             double[]&nbsp;values,
+             int&nbsp;rowIdx)</code></th>
+<td class="colLast">
+<div class="block">Decompress into c using the values provided.</div>
+</td>
+</tr>
+<tr id="i8" class="altColor">
 <td class="colFirst"><code>boolean</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#equals(java.lang.Object)">equals</a></span>&#8203;(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Object.html?is-external=true" title="class or interface in java.lang" class="externalLink">Object</a>&nbsp;other)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i7" class="rowColor">
+<tr id="i9" class="rowColor">
 <td class="colFirst"><code>boolean</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#equals(org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex)">equals</a></span>&#8203;(<a href="IColIndex.html" title="interface in org.apache.sysds.runtime.compress.colgroup.indexes">IColIndex</a>&nbsp;other)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i8" class="altColor">
+<tr id="i10" class="altColor">
 <td class="colFirst"><code>long</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#estimateInMemorySize()">estimateInMemorySize</a></span>()</code></th>
 <td class="colLast">
 <div class="block">Get the in memory size of this object.</div>
 </td>
 </tr>
-<tr id="i9" class="rowColor">
+<tr id="i11" class="rowColor">
 <td class="colFirst"><code>int</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#findIndex(int)">findIndex</a></span>&#8203;(int&nbsp;i)</code></th>
 <td class="colLast">
 <div class="block">Find the index of the value given return negative if non existing.</div>
 </td>
 </tr>
-<tr id="i10" class="altColor">
+<tr id="i12" class="altColor">
 <td class="colFirst"><code>int</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#get(int)">get</a></span>&#8203;(int&nbsp;i)</code></th>
 <td class="colLast">
@@ -257,14 +277,14 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
  on indexes that are completely wrong, so all implementations that use this index should always be well behaved.</div>
 </td>
 </tr>
-<tr id="i11" class="rowColor">
+<tr id="i13" class="rowColor">
 <td class="colFirst"><code>long</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getExactSizeOnDisk()">getExactSizeOnDisk</a></span>()</code></th>
 <td class="colLast">
 <div class="block">Get the exact size on disk to enable preallocation of the disk output buffer sizes</div>
 </td>
 </tr>
-<tr id="i12" class="altColor">
+<tr id="i14" class="altColor">
 <td class="colFirst"><code>int[]</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getReorderingIndex()">getReorderingIndex</a></span>()</code></th>
 <td class="colLast">
@@ -272,47 +292,62 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
  set of column indexes.</div>
 </td>
 </tr>
-<tr id="i13" class="rowColor">
+<tr id="i15" class="rowColor">
 <td class="colFirst"><code>int</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#hashCode()">hashCode</a></span>()</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i14" class="altColor">
+<tr id="i16" class="altColor">
+<td class="colFirst"><code>static boolean</code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#inOrder(org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex,org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex)">inOrder</a></span>&#8203;(<a href="IColIndex.html" title="interface in org.apache.sysds.runtime.compress.colgroup.indexes">IColIndex</a>&nbsp;a,
+       <a href="IColIndex.html" title="interface in org.apache.sysds.runtime.compress.colgroup.indexes">IColIndex</a>&nbsp;b)</code></th>
+<td class="colLast">
+<div class="block">Indicate if the two given column indexes are in order such that the first set of indexes all are of lower value
+ than the second.</div>
+</td>
+</tr>
+<tr id="i17" class="rowColor">
 <td class="colFirst"><code>boolean</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#isContiguous()">isContiguous</a></span>()</code></th>
 <td class="colLast">
 <div class="block">Get if these columns are contiguous, meaning all indexes are integers at increments of 1.</div>
 </td>
 </tr>
-<tr id="i15" class="rowColor">
+<tr id="i18" class="altColor">
 <td class="colFirst"><code>boolean</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#isSorted()">isSorted</a></span>()</code></th>
 <td class="colLast">
 <div class="block">Get if the Index is sorted.</div>
 </td>
 </tr>
-<tr id="i16" class="altColor">
+<tr id="i19" class="rowColor">
 <td class="colFirst"><code><a href="IIterate.html" title="interface in org.apache.sysds.runtime.compress.colgroup.indexes">IIterate</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#iterator()">iterator</a></span>()</code></th>
 <td class="colLast">
 <div class="block">A Iterator of the indexes see the iterator interface for details.</div>
 </td>
 </tr>
-<tr id="i17" class="rowColor">
+<tr id="i20" class="altColor">
+<td class="colFirst"><code>static <a href="../../../matrix/data/Pair.html" title="class in org.apache.sysds.runtime.matrix.data">Pair</a>&lt;int[],&#8203;int[]&gt;</code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#reorderingIndexes(org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex,org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex)">reorderingIndexes</a></span>&#8203;(<a href="IColIndex.html" title="interface in org.apache.sysds.runtime.compress.colgroup.indexes">IColIndex</a>&nbsp;a,
+                 <a href="IColIndex.html" title="interface in org.apache.sysds.runtime.compress.colgroup.indexes">IColIndex</a>&nbsp;b)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr id="i21" class="rowColor">
 <td class="colFirst"><code><a href="IColIndex.html" title="interface in org.apache.sysds.runtime.compress.colgroup.indexes">IColIndex</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#shift(int)">shift</a></span>&#8203;(int&nbsp;i)</code></th>
 <td class="colLast">
 <div class="block">Return a new column index where the values are shifted by the specified amount.</div>
 </td>
 </tr>
-<tr id="i18" class="altColor">
+<tr id="i22" class="altColor">
 <td class="colFirst"><code>int</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#size()">size</a></span>()</code></th>
 <td class="colLast">
 <div class="block">Get the size of the index aka, how many columns is contained</div>
 </td>
 </tr>
-<tr id="i19" class="rowColor">
+<tr id="i23" class="rowColor">
 <td class="colFirst"><code><a href="IColIndex.SliceResult.html" title="class in org.apache.sysds.runtime.compress.colgroup.indexes">IColIndex.SliceResult</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#slice(int,int)">slice</a></span>&#8203;(int&nbsp;l,
      int&nbsp;u)</code></th>
@@ -320,14 +355,14 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <div class="block">Slice the range given.</div>
 </td>
 </tr>
-<tr id="i20" class="altColor">
+<tr id="i24" class="altColor">
 <td class="colFirst"><code><a href="IColIndex.html" title="interface in org.apache.sysds.runtime.compress.colgroup.indexes">IColIndex</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#sort()">sort</a></span>()</code></th>
 <td class="colLast">
 <div class="block">Sort the index and return a new object if there are modifications otherwise return this.</div>
 </td>
 </tr>
-<tr id="i21" class="rowColor">
+<tr id="i25" class="rowColor">
 <td class="colFirst"><code>void</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#write(java.io.DataOutput)">write</a></span>&#8203;(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/io/DataOutput.html?is-external=true" title="class or interface in java.io" class="externalLink">DataOutput</a>&nbsp;out)</code></th>
 <td class="colLast">
@@ -345,7 +380,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <ul class="blockList">
 <li class="blockList">
 <!-- ============ METHOD DETAIL ========== -->
-<section>
+<section role="region">
 <ul class="blockList">
 <li class="blockList"><a id="method.detail">
 <!--   -->
@@ -694,7 +729,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <a id="avgOfIndex()">
 <!--   -->
 </a>
-<ul class="blockListLast">
+<ul class="blockList">
 <li class="blockList">
 <h4>avgOfIndex</h4>
 <pre class="methodSignature">double&nbsp;avgOfIndex()</pre>
@@ -703,6 +738,78 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <dt><span class="returnLabel">Returns:</span></dt>
 <dd>The average of the indexes.</dd>
 </dl>
+</li>
+</ul>
+<a id="decompressToDenseFromSparse(org.apache.sysds.runtime.data.SparseBlock,int,int,double[])">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>decompressToDenseFromSparse</h4>
+<pre class="methodSignature">void&nbsp;decompressToDenseFromSparse&#8203;(<a href="../../../data/SparseBlock.html" title="class in org.apache.sysds.runtime.data">SparseBlock</a>&nbsp;sb,
+                                 int&nbsp;vr,
+                                 int&nbsp;off,
+                                 double[]&nbsp;c)</pre>
+<div class="block">Decompress this column index into the dense c array.</div>
+<dl>
+<dt><span class="paramLabel">Parameters:</span></dt>
+<dd><code>sb</code> - A sparse block to extract values out of and insert into c</dd>
+<dd><code>vr</code> - The row to extract from the sparse block</dd>
+<dd><code>off</code> - The offset that the row starts at in c.</dd>
+<dd><code>c</code> - The dense output to decompress into</dd>
+</dl>
+</li>
+</ul>
+<a id="decompressVec(int,double[],int,double[],int)">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>decompressVec</h4>
+<pre class="methodSignature">void&nbsp;decompressVec&#8203;(int&nbsp;nCol,
+                   double[]&nbsp;c,
+                   int&nbsp;off,
+                   double[]&nbsp;values,
+                   int&nbsp;rowIdx)</pre>
+<div class="block">Decompress into c using the values provided. The offset to start into c is off and then row index is similarly the
+ offset of values. nCol specify the number of values to add over.</div>
+<dl>
+<dt><span class="paramLabel">Parameters:</span></dt>
+<dd><code>nCol</code> - The number of columns to copy.</dd>
+<dd><code>c</code> - The output to add into</dd>
+<dd><code>off</code> - The offset to start in c</dd>
+<dd><code>values</code> - the values to copy from</dd>
+<dd><code>rowIdx</code> - The offset to start in values</dd>
+</dl>
+</li>
+</ul>
+<a id="inOrder(org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex,org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex)">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>inOrder</h4>
+<pre class="methodSignature">static&nbsp;boolean&nbsp;inOrder&#8203;(<a href="IColIndex.html" title="interface in org.apache.sysds.runtime.compress.colgroup.indexes">IColIndex</a>&nbsp;a,
+                       <a href="IColIndex.html" title="interface in org.apache.sysds.runtime.compress.colgroup.indexes">IColIndex</a>&nbsp;b)</pre>
+<div class="block">Indicate if the two given column indexes are in order such that the first set of indexes all are of lower value
+ than the second.</div>
+<dl>
+<dt><span class="paramLabel">Parameters:</span></dt>
+<dd><code>a</code> - the first column index</dd>
+<dd><code>b</code> - the second column index</dd>
+<dt><span class="returnLabel">Returns:</span></dt>
+<dd>If the first all is lower than the second.</dd>
+</dl>
+</li>
+</ul>
+<a id="reorderingIndexes(org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex,org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex)">
+<!--   -->
+</a>
+<ul class="blockListLast">
+<li class="blockList">
+<h4>reorderingIndexes</h4>
+<pre class="methodSignature">static&nbsp;<a href="../../../matrix/data/Pair.html" title="class in org.apache.sysds.runtime.matrix.data">Pair</a>&lt;int[],&#8203;int[]&gt;&nbsp;reorderingIndexes&#8203;(<a href="IColIndex.html" title="interface in org.apache.sysds.runtime.compress.colgroup.indexes">IColIndex</a>&nbsp;a,
+                                                 <a href="IColIndex.html" title="interface in org.apache.sysds.runtime.compress.colgroup.indexes">IColIndex</a>&nbsp;b)</pre>
 </li>
 </ul>
 </li>
@@ -774,7 +881,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 </a></div>
 <!-- ======== END OF BOTTOM NAVBAR ======= -->
 </nav>
-<p class="legalCopy"><small>Copyright &#169; 2023 <a href="https://www.apache.org/">The Apache Software Foundation</a>. All rights reserved.</small></p>
+<p class="legalCopy"><small>Copyright &#169; 2024 <a href="https://www.apache.org/">The Apache Software Foundation</a>. All rights reserved.</small></p>
 </footer>
 </body>
 </html>

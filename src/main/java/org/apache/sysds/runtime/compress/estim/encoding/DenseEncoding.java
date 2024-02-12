@@ -251,8 +251,7 @@ public class DenseEncoding extends AEncode {
 		if(lm instanceof MapToChar && rm instanceof MapToChar)
 			combineDenseWIthHashMapAllChar(lm, rm, size, nVL, ret, m);
 		else// some other combination
-			for(int r = 0; r < size; r++)
-				addValHashMapChar(lm.getIndex(r) + rm.getIndex(r) * nVL, r, m, ret);
+			combineDenseWIthHashMapCharOutGeneric(lm, rm, size, nVL, ret, m);
 	}
 
 	private final void combineDenseWIthHashMapCharOutGeneric(final AMapToData lm, final AMapToData rm, final int size,

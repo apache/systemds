@@ -6,16 +6,15 @@
 <title>DecoderPassThrough (Apache SystemDS 3.2.0-SNAPSHOT API)</title>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 <link rel="stylesheet" type="text/css" href="../../../../../../stylesheet.css" title="Style">
-<link rel="stylesheet" type="text/css" href="../../../../../../jquery/jquery-ui.min.css" title="Style">
-<link rel="stylesheet" type="text/css" href="../../../../../../jquery-ui.overrides.css" title="Style">
+<link rel="stylesheet" type="text/css" href="../../../../../../jquery/jquery-ui.css" title="Style">
 <script type="text/javascript" src="../../../../../../script.js"></script>
 <script type="text/javascript" src="../../../../../../jquery/jszip/dist/jszip.min.js"></script>
 <script type="text/javascript" src="../../../../../../jquery/jszip-utils/dist/jszip-utils.min.js"></script>
 <!--[if IE]>
 <script type="text/javascript" src="../../../../../../jquery/jszip-utils/dist/jszip-utils-ie.min.js"></script>
 <![endif]-->
-<script type="text/javascript" src="../../../../../../jquery/jquery-3.6.1.min.js"></script>
-<script type="text/javascript" src="../../../../../../jquery/jquery-ui.min.js"></script>
+<script type="text/javascript" src="../../../../../../jquery/jquery-3.5.1.js"></script>
+<script type="text/javascript" src="../../../../../../jquery/jquery-ui.js"></script>
 </head>
 <body>
 <script type="text/javascript"><!--
@@ -27,7 +26,7 @@
     catch(err) {
     }
 //-->
-var data = {"i0":10,"i1":10,"i2":10,"i3":10,"i4":10};
+var data = {"i0":10,"i1":10,"i2":10,"i3":10,"i4":10,"i5":10};
 var tabs = {65535:["t0","All Methods"],2:["t2","Instance Methods"],8:["t4","Concrete Methods"]};
 var altColor = "altColor";
 var rowColor = "rowColor";
@@ -156,7 +155,7 @@ extends <a href="Decoder.html" title="class in org.apache.sysds.runtime.transfor
 <ul class="blockList">
 <li class="blockList">
 <!-- ======== CONSTRUCTOR SUMMARY ======== -->
-<section>
+<section role="region">
 <ul class="blockList">
 <li class="blockList"><a id="constructor.summary">
 <!--   -->
@@ -177,7 +176,7 @@ extends <a href="Decoder.html" title="class in org.apache.sysds.runtime.transfor
 </ul>
 </section>
 <!-- ========== METHOD SUMMARY =========== -->
-<section>
+<section role="region">
 <ul class="blockList">
 <li class="blockList"><a id="method.summary">
 <!--   -->
@@ -200,10 +199,20 @@ extends <a href="Decoder.html" title="class in org.apache.sysds.runtime.transfor
 </tr>
 <tr id="i1" class="rowColor">
 <td class="colFirst"><code>void</code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#decode(org.apache.sysds.runtime.matrix.data.MatrixBlock,org.apache.sysds.runtime.frame.data.FrameBlock,int,int)">decode</a></span>&#8203;(<a href="../../matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;in,
+      <a href="../../frame/data/FrameBlock.html" title="class in org.apache.sysds.runtime.frame.data">FrameBlock</a>&nbsp;out,
+      int&nbsp;rl,
+      int&nbsp;ru)</code></th>
+<td class="colLast">
+<div class="block">Block decode row block</div>
+</td>
+</tr>
+<tr id="i2" class="altColor">
+<td class="colFirst"><code>void</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#initMetaData(org.apache.sysds.runtime.frame.data.FrameBlock)">initMetaData</a></span>&#8203;(<a href="../../frame/data/FrameBlock.html" title="class in org.apache.sysds.runtime.frame.data">FrameBlock</a>&nbsp;meta)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i2" class="altColor">
+<tr id="i3" class="rowColor">
 <td class="colFirst"><code>void</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#readExternal(java.io.ObjectInput)">readExternal</a></span>&#8203;(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/io/ObjectInput.html?is-external=true" title="class or interface in java.io" class="externalLink">ObjectInput</a>&nbsp;in)</code></th>
 <td class="colLast">
@@ -211,7 +220,7 @@ extends <a href="Decoder.html" title="class in org.apache.sysds.runtime.transfor
  hadoop writable serialization for efficient broadcast/rdd deserialization.</div>
 </td>
 </tr>
-<tr id="i3" class="rowColor">
+<tr id="i4" class="altColor">
 <td class="colFirst"><code><a href="Decoder.html" title="class in org.apache.sysds.runtime.transform.decode">Decoder</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#subRangeDecoder(int,int,int)">subRangeDecoder</a></span>&#8203;(int&nbsp;colStart,
                int&nbsp;colEnd,
@@ -220,7 +229,7 @@ extends <a href="Decoder.html" title="class in org.apache.sysds.runtime.transfor
 <div class="block">Returns a new Decoder that only handles a sub range of columns.</div>
 </td>
 </tr>
-<tr id="i4" class="altColor">
+<tr id="i5" class="rowColor">
 <td class="colFirst"><code>void</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#writeExternal(java.io.ObjectOutput)">writeExternal</a></span>&#8203;(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/io/ObjectOutput.html?is-external=true" title="class or interface in java.io" class="externalLink">ObjectOutput</a>&nbsp;os)</code></th>
 <td class="colLast">
@@ -234,7 +243,7 @@ extends <a href="Decoder.html" title="class in org.apache.sysds.runtime.transfor
 <!--   -->
 </a>
 <h3>Methods inherited from class&nbsp;org.apache.sysds.runtime.transform.decode.<a href="Decoder.html" title="class in org.apache.sysds.runtime.transform.decode">Decoder</a></h3>
-<code><a href="Decoder.html#getColnames()">getColnames</a>, <a href="Decoder.html#getSchema()">getSchema</a>, <a href="Decoder.html#setColnames(java.lang.String%5B%5D)">setColnames</a>, <a href="Decoder.html#updateIndexRanges(long%5B%5D,long%5B%5D)">updateIndexRanges</a></code></li>
+<code><a href="Decoder.html#decode(org.apache.sysds.runtime.matrix.data.MatrixBlock,org.apache.sysds.runtime.frame.data.FrameBlock,int)">decode</a>, <a href="Decoder.html#getColnames()">getColnames</a>, <a href="Decoder.html#getSchema()">getSchema</a>, <a href="Decoder.html#setColnames(java.lang.String%5B%5D)">setColnames</a>, <a href="Decoder.html#updateIndexRanges(long%5B%5D,long%5B%5D)">updateIndexRanges</a></code></li>
 </ul>
 <ul class="blockList">
 <li class="blockList"><a id="methods.inherited.from.class.java.lang.Object">
@@ -253,7 +262,7 @@ extends <a href="Decoder.html" title="class in org.apache.sysds.runtime.transfor
 <ul class="blockList">
 <li class="blockList">
 <!-- ========= CONSTRUCTOR DETAIL ======== -->
-<section>
+<section role="region">
 <ul class="blockList">
 <li class="blockList"><a id="constructor.detail">
 <!--   -->
@@ -272,7 +281,7 @@ extends <a href="Decoder.html" title="class in org.apache.sysds.runtime.transfor
 </ul>
 </section>
 <!-- ============ METHOD DETAIL ========== -->
-<section>
+<section role="region">
 <ul class="blockList">
 <li class="blockList"><a id="method.detail">
 <!--   -->
@@ -292,10 +301,33 @@ extends <a href="Decoder.html" title="class in org.apache.sysds.runtime.transfor
 <dt><span class="overrideSpecifyLabel">Specified by:</span></dt>
 <dd><code><a href="Decoder.html#decode(org.apache.sysds.runtime.matrix.data.MatrixBlock,org.apache.sysds.runtime.frame.data.FrameBlock)">decode</a></code>&nbsp;in class&nbsp;<code><a href="Decoder.html" title="class in org.apache.sysds.runtime.transform.decode">Decoder</a></code></dd>
 <dt><span class="paramLabel">Parameters:</span></dt>
-<dd><code>in</code> - input matrix block</dd>
-<dd><code>out</code> - output frame block</dd>
+<dd><code>in</code> - Input matrix block</dd>
+<dd><code>out</code> - Output frame block</dd>
 <dt><span class="returnLabel">Returns:</span></dt>
 <dd>returns given output frame block for convenience</dd>
+</dl>
+</li>
+</ul>
+<a id="decode(org.apache.sysds.runtime.matrix.data.MatrixBlock,org.apache.sysds.runtime.frame.data.FrameBlock,int,int)">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>decode</h4>
+<pre class="methodSignature">public&nbsp;void&nbsp;decode&#8203;(<a href="../../matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;in,
+                   <a href="../../frame/data/FrameBlock.html" title="class in org.apache.sysds.runtime.frame.data">FrameBlock</a>&nbsp;out,
+                   int&nbsp;rl,
+                   int&nbsp;ru)</pre>
+<div class="block"><span class="descfrmTypeLabel">Description copied from class:&nbsp;<code><a href="Decoder.html#decode(org.apache.sysds.runtime.matrix.data.MatrixBlock,org.apache.sysds.runtime.frame.data.FrameBlock,int,int)">Decoder</a></code></span></div>
+<div class="block">Block decode row block</div>
+<dl>
+<dt><span class="overrideSpecifyLabel">Specified by:</span></dt>
+<dd><code><a href="Decoder.html#decode(org.apache.sysds.runtime.matrix.data.MatrixBlock,org.apache.sysds.runtime.frame.data.FrameBlock,int,int)">decode</a></code>&nbsp;in class&nbsp;<code><a href="Decoder.html" title="class in org.apache.sysds.runtime.transform.decode">Decoder</a></code></dd>
+<dt><span class="paramLabel">Parameters:</span></dt>
+<dd><code>in</code> - input Matrix Block</dd>
+<dd><code>out</code> - output FrameBlock</dd>
+<dd><code>rl</code> - row start to decode</dd>
+<dd><code>ru</code> - row end to decode (not inclusive)</dd>
 </dl>
 </li>
 </ul>
@@ -451,7 +483,7 @@ extends <a href="Decoder.html" title="class in org.apache.sysds.runtime.transfor
 </a></div>
 <!-- ======== END OF BOTTOM NAVBAR ======= -->
 </nav>
-<p class="legalCopy"><small>Copyright &#169; 2023 <a href="https://www.apache.org/">The Apache Software Foundation</a>. All rights reserved.</small></p>
+<p class="legalCopy"><small>Copyright &#169; 2024 <a href="https://www.apache.org/">The Apache Software Foundation</a>. All rights reserved.</small></p>
 </footer>
 </body>
 </html>

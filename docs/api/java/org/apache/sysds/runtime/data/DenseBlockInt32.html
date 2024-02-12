@@ -6,16 +6,15 @@
 <title>DenseBlockInt32 (Apache SystemDS 3.2.0-SNAPSHOT API)</title>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 <link rel="stylesheet" type="text/css" href="../../../../../stylesheet.css" title="Style">
-<link rel="stylesheet" type="text/css" href="../../../../../jquery/jquery-ui.min.css" title="Style">
-<link rel="stylesheet" type="text/css" href="../../../../../jquery-ui.overrides.css" title="Style">
+<link rel="stylesheet" type="text/css" href="../../../../../jquery/jquery-ui.css" title="Style">
 <script type="text/javascript" src="../../../../../script.js"></script>
 <script type="text/javascript" src="../../../../../jquery/jszip/dist/jszip.min.js"></script>
 <script type="text/javascript" src="../../../../../jquery/jszip-utils/dist/jszip-utils.min.js"></script>
 <!--[if IE]>
 <script type="text/javascript" src="../../../../../jquery/jszip-utils/dist/jszip-utils-ie.min.js"></script>
 <![endif]-->
-<script type="text/javascript" src="../../../../../jquery/jquery-3.6.1.min.js"></script>
-<script type="text/javascript" src="../../../../../jquery/jquery-ui.min.js"></script>
+<script type="text/javascript" src="../../../../../jquery/jquery-3.5.1.js"></script>
+<script type="text/javascript" src="../../../../../jquery/jquery-ui.js"></script>
 </head>
 <body>
 <script type="text/javascript"><!--
@@ -159,7 +158,7 @@ extends <a href="DenseBlockDRB.html" title="class in org.apache.sysds.runtime.da
 <ul class="blockList">
 <li class="blockList">
 <!-- ======== NESTED CLASS SUMMARY ======== -->
-<section>
+<section role="region">
 <ul class="blockList">
 <li class="blockList"><a id="nested.class.summary">
 <!--   -->
@@ -176,7 +175,7 @@ extends <a href="DenseBlockDRB.html" title="class in org.apache.sysds.runtime.da
 </ul>
 </section>
 <!-- ======== CONSTRUCTOR SUMMARY ======== -->
-<section>
+<section role="region">
 <ul class="blockList">
 <li class="blockList"><a id="constructor.summary">
 <!--   -->
@@ -202,7 +201,7 @@ extends <a href="DenseBlockDRB.html" title="class in org.apache.sysds.runtime.da
 </ul>
 </section>
 <!-- ========== METHOD SUMMARY =========== -->
-<section>
+<section role="region">
 <ul class="blockList">
 <li class="blockList"><a id="method.summary">
 <!--   -->
@@ -385,7 +384,7 @@ extends <a href="DenseBlockDRB.html" title="class in org.apache.sysds.runtime.da
 <!--   -->
 </a>
 <h3>Methods inherited from class&nbsp;org.apache.sysds.runtime.data.<a href="DenseBlock.html" title="class in org.apache.sysds.runtime.data">DenseBlock</a></h3>
-<code><a href="DenseBlock.html#contains(double)">contains</a>, <a href="DenseBlock.html#equals(java.lang.Object)">equals</a>, <a href="DenseBlock.html#equals(org.apache.sysds.runtime.data.DenseBlock,double)">equals</a>, <a href="DenseBlock.html#estimateMemory(long,long)">estimateMemory</a>, <a href="DenseBlock.html#getCumODims(int)">getCumODims</a>, <a href="DenseBlock.html#getDim(int)">getDim</a>, <a href="DenseBlock.html#getNextIndexes(int%5B%5D)">getNextIndexes</a>, <a href="DenseBlock.html#numCols()">numCols</a>, <a href="DenseBlock.html#numDims()">numDims</a>, <a href="DenseBlock.html#numRows()">numRows</a>, <a href="DenseBlock.html#reset()">reset</a>, <a href="DenseBlock.html#reset(int%5B%5D)">reset</a>, <a href="DenseBlock.html#reset(int%5B%5D,double)">reset</a>, <a href="DenseBlock.html#reset(int,int)">reset</a>, <a href="DenseBlock.html#reset(int,int%5B%5D)">reset</a>, <a href="DenseBlock.html#reset(int,int,double)">reset</a>, <a href="DenseBlock.html#resetNoFill(int,int)">resetNoFill</a>, <a href="DenseBlock.html#set(int,int,int,int,org.apache.sysds.runtime.data.DenseBlock)">set</a>, <a href="DenseBlock.html#set(int,org.apache.sysds.runtime.instructions.cp.KahanObject)">set</a>, <a href="DenseBlock.html#set(java.lang.String)">set</a>, <a href="DenseBlock.html#set(org.apache.sysds.runtime.instructions.cp.KahanObject)">set</a>, <a href="DenseBlock.html#setDims(int%5B%5D)">setDims</a>, <a href="DenseBlock.html#size()">size</a>, <a href="DenseBlock.html#toString()">toString</a></code></li>
+<code><a href="DenseBlock.html#contains(double)">contains</a>, <a href="DenseBlock.html#contains(double%5B%5D,boolean)">contains</a>, <a href="DenseBlock.html#equals(java.lang.Object)">equals</a>, <a href="DenseBlock.html#equals(org.apache.sysds.runtime.data.DenseBlock,double)">equals</a>, <a href="DenseBlock.html#estimateMemory(long,long)">estimateMemory</a>, <a href="DenseBlock.html#fill(double)">fill</a>, <a href="DenseBlock.html#getCumODims(int)">getCumODims</a>, <a href="DenseBlock.html#getDim(int)">getDim</a>, <a href="DenseBlock.html#getNextIndexes(int%5B%5D)">getNextIndexes</a>, <a href="DenseBlock.html#numCols()">numCols</a>, <a href="DenseBlock.html#numDims()">numDims</a>, <a href="DenseBlock.html#numRows()">numRows</a>, <a href="DenseBlock.html#reset()">reset</a>, <a href="DenseBlock.html#reset(int%5B%5D)">reset</a>, <a href="DenseBlock.html#reset(int%5B%5D,double)">reset</a>, <a href="DenseBlock.html#reset(int,int)">reset</a>, <a href="DenseBlock.html#reset(int,int%5B%5D)">reset</a>, <a href="DenseBlock.html#reset(int,int,double)">reset</a>, <a href="DenseBlock.html#resetNoFill(int,int)">resetNoFill</a>, <a href="DenseBlock.html#set(int,int,int,int,org.apache.sysds.runtime.data.DenseBlock)">set</a>, <a href="DenseBlock.html#set(int,org.apache.sysds.runtime.instructions.cp.KahanObject)">set</a>, <a href="DenseBlock.html#set(java.lang.String)">set</a>, <a href="DenseBlock.html#set(org.apache.sysds.runtime.instructions.cp.KahanObject)">set</a>, <a href="DenseBlock.html#setDims(int%5B%5D)">setDims</a>, <a href="DenseBlock.html#size()">size</a>, <a href="DenseBlock.html#toString()">toString</a></code></li>
 </ul>
 <ul class="blockList">
 <li class="blockList"><a id="methods.inherited.from.class.java.lang.Object">
@@ -404,7 +403,7 @@ extends <a href="DenseBlockDRB.html" title="class in org.apache.sysds.runtime.da
 <ul class="blockList">
 <li class="blockList">
 <!-- ========= CONSTRUCTOR DETAIL ======== -->
-<section>
+<section role="region">
 <ul class="blockList">
 <li class="blockList"><a id="constructor.detail">
 <!--   -->
@@ -433,7 +432,7 @@ extends <a href="DenseBlockDRB.html" title="class in org.apache.sysds.runtime.da
 </ul>
 </section>
 <!-- ============ METHOD DETAIL ========== -->
-<section>
+<section role="region">
 <ul class="blockList">
 <li class="blockList"><a id="method.detail">
 <!--   -->
@@ -910,7 +909,7 @@ extends <a href="DenseBlockDRB.html" title="class in org.apache.sysds.runtime.da
 </a></div>
 <!-- ======== END OF BOTTOM NAVBAR ======= -->
 </nav>
-<p class="legalCopy"><small>Copyright &#169; 2023 <a href="https://www.apache.org/">The Apache Software Foundation</a>. All rights reserved.</small></p>
+<p class="legalCopy"><small>Copyright &#169; 2024 <a href="https://www.apache.org/">The Apache Software Foundation</a>. All rights reserved.</small></p>
 </footer>
 </body>
 </html>

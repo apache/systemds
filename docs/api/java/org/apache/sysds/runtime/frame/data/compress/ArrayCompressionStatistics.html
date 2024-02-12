@@ -6,16 +6,15 @@
 <title>ArrayCompressionStatistics (Apache SystemDS 3.2.0-SNAPSHOT API)</title>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 <link rel="stylesheet" type="text/css" href="../../../../../../../stylesheet.css" title="Style">
-<link rel="stylesheet" type="text/css" href="../../../../../../../jquery/jquery-ui.min.css" title="Style">
-<link rel="stylesheet" type="text/css" href="../../../../../../../jquery-ui.overrides.css" title="Style">
+<link rel="stylesheet" type="text/css" href="../../../../../../../jquery/jquery-ui.css" title="Style">
 <script type="text/javascript" src="../../../../../../../script.js"></script>
 <script type="text/javascript" src="../../../../../../../jquery/jszip/dist/jszip.min.js"></script>
 <script type="text/javascript" src="../../../../../../../jquery/jszip-utils/dist/jszip-utils.min.js"></script>
 <!--[if IE]>
 <script type="text/javascript" src="../../../../../../../jquery/jszip-utils/dist/jszip-utils-ie.min.js"></script>
 <![endif]-->
-<script type="text/javascript" src="../../../../../../../jquery/jquery-3.6.1.min.js"></script>
-<script type="text/javascript" src="../../../../../../../jquery/jquery-ui.min.js"></script>
+<script type="text/javascript" src="../../../../../../../jquery/jquery-3.5.1.js"></script>
+<script type="text/javascript" src="../../../../../../../jquery/jquery-ui.js"></script>
 </head>
 <body>
 <script type="text/javascript"><!--
@@ -141,7 +140,7 @@ extends <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/ja
 <ul class="blockList">
 <li class="blockList">
 <!-- =========== FIELD SUMMARY =========== -->
-<section>
+<section role="region">
 <ul class="blockList">
 <li class="blockList"><a id="field.summary">
 <!--   -->
@@ -161,7 +160,7 @@ extends <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/ja
 </tr>
 <tr class="rowColor">
 <td class="colFirst"><code>int</code></td>
-<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#bitPerValue">bitPerValue</a></span></code></th>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#bytePerValue">bytePerValue</a></span></code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr class="altColor">
@@ -170,21 +169,26 @@ extends <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/ja
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr class="rowColor">
+<td class="colFirst"><code>boolean</code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#containsNull">containsNull</a></span></code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="altColor">
 <td class="colFirst"><code>int</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#nUnique">nUnique</a></span></code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colFirst"><code>long</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#originalSize">originalSize</a></span></code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colFirst"><code>boolean</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#shouldCompress">shouldCompress</a></span></code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colFirst"><code><a href="../../../../common/Types.ValueType.html" title="enum in org.apache.sysds.common">Types.ValueType</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#valueType">valueType</a></span></code></th>
 <td class="colLast">&nbsp;</td>
@@ -194,7 +198,7 @@ extends <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/ja
 </ul>
 </section>
 <!-- ======== CONSTRUCTOR SUMMARY ======== -->
-<section>
+<section role="region">
 <ul class="blockList">
 <li class="blockList"><a id="constructor.summary">
 <!--   -->
@@ -207,10 +211,11 @@ extends <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/ja
 <th class="colLast" scope="col">Description</th>
 </tr>
 <tr class="altColor">
-<th class="colConstructorName" scope="row"><code><span class="memberNameLink"><a href="#%3Cinit%3E(int,int,boolean,org.apache.sysds.common.Types.ValueType,org.apache.sysds.runtime.frame.data.columns.ArrayFactory.FrameArrayType,long,long)">ArrayCompressionStatistics</a></span>&#8203;(int&nbsp;bitPerValue,
+<th class="colConstructorName" scope="row"><code><span class="memberNameLink"><a href="#%3Cinit%3E(int,int,boolean,org.apache.sysds.common.Types.ValueType,boolean,org.apache.sysds.runtime.frame.data.columns.ArrayFactory.FrameArrayType,long,long)">ArrayCompressionStatistics</a></span>&#8203;(int&nbsp;bytePerValue,
                           int&nbsp;nUnique,
                           boolean&nbsp;shouldCompress,
                           <a href="../../../../common/Types.ValueType.html" title="enum in org.apache.sysds.common">Types.ValueType</a>&nbsp;valueType,
+                          boolean&nbsp;containsNull,
                           <a href="../columns/ArrayFactory.FrameArrayType.html" title="enum in org.apache.sysds.runtime.frame.data.columns">ArrayFactory.FrameArrayType</a>&nbsp;bestType,
                           long&nbsp;originalSize,
                           long&nbsp;compressedSizeEstimate)</code></th>
@@ -221,7 +226,7 @@ extends <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/ja
 </ul>
 </section>
 <!-- ========== METHOD SUMMARY =========== -->
-<section>
+<section role="region">
 <ul class="blockList">
 <li class="blockList"><a id="method.summary">
 <!--   -->
@@ -257,7 +262,7 @@ extends <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/ja
 <ul class="blockList">
 <li class="blockList">
 <!-- ============ FIELD DETAIL =========== -->
-<section>
+<section role="region">
 <ul class="blockList">
 <li class="blockList"><a id="field.detail">
 <!--   -->
@@ -299,6 +304,15 @@ extends <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/ja
 <pre>public final&nbsp;<a href="../../../../common/Types.ValueType.html" title="enum in org.apache.sysds.common">Types.ValueType</a> valueType</pre>
 </li>
 </ul>
+<a id="containsNull">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>containsNull</h4>
+<pre>public final&nbsp;boolean containsNull</pre>
+</li>
+</ul>
 <a id="bestType">
 <!--   -->
 </a>
@@ -308,13 +322,13 @@ extends <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/ja
 <pre>public final&nbsp;<a href="../columns/ArrayFactory.FrameArrayType.html" title="enum in org.apache.sysds.runtime.frame.data.columns">ArrayFactory.FrameArrayType</a> bestType</pre>
 </li>
 </ul>
-<a id="bitPerValue">
+<a id="bytePerValue">
 <!--   -->
 </a>
 <ul class="blockList">
 <li class="blockList">
-<h4>bitPerValue</h4>
-<pre>public final&nbsp;int bitPerValue</pre>
+<h4>bytePerValue</h4>
+<pre>public final&nbsp;int bytePerValue</pre>
 </li>
 </ul>
 <a id="nUnique">
@@ -330,22 +344,23 @@ extends <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/ja
 </ul>
 </section>
 <!-- ========= CONSTRUCTOR DETAIL ======== -->
-<section>
+<section role="region">
 <ul class="blockList">
 <li class="blockList"><a id="constructor.detail">
 <!--   -->
 </a>
 <h3>Constructor Detail</h3>
-<a id="&lt;init&gt;(int,int,boolean,org.apache.sysds.common.Types.ValueType,org.apache.sysds.runtime.frame.data.columns.ArrayFactory.FrameArrayType,long,long)">
+<a id="&lt;init&gt;(int,int,boolean,org.apache.sysds.common.Types.ValueType,boolean,org.apache.sysds.runtime.frame.data.columns.ArrayFactory.FrameArrayType,long,long)">
 <!--   -->
 </a>
 <ul class="blockListLast">
 <li class="blockList">
 <h4>ArrayCompressionStatistics</h4>
-<pre>public&nbsp;ArrayCompressionStatistics&#8203;(int&nbsp;bitPerValue,
+<pre>public&nbsp;ArrayCompressionStatistics&#8203;(int&nbsp;bytePerValue,
                                   int&nbsp;nUnique,
                                   boolean&nbsp;shouldCompress,
                                   <a href="../../../../common/Types.ValueType.html" title="enum in org.apache.sysds.common">Types.ValueType</a>&nbsp;valueType,
+                                  boolean&nbsp;containsNull,
                                   <a href="../columns/ArrayFactory.FrameArrayType.html" title="enum in org.apache.sysds.runtime.frame.data.columns">ArrayFactory.FrameArrayType</a>&nbsp;bestType,
                                   long&nbsp;originalSize,
                                   long&nbsp;compressedSizeEstimate)</pre>
@@ -355,7 +370,7 @@ extends <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/ja
 </ul>
 </section>
 <!-- ============ METHOD DETAIL ========== -->
-<section>
+<section role="region">
 <ul class="blockList">
 <li class="blockList"><a id="method.detail">
 <!--   -->
@@ -443,7 +458,7 @@ extends <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/ja
 </a></div>
 <!-- ======== END OF BOTTOM NAVBAR ======= -->
 </nav>
-<p class="legalCopy"><small>Copyright &#169; 2023 <a href="https://www.apache.org/">The Apache Software Foundation</a>. All rights reserved.</small></p>
+<p class="legalCopy"><small>Copyright &#169; 2024 <a href="https://www.apache.org/">The Apache Software Foundation</a>. All rights reserved.</small></p>
 </footer>
 </body>
 </html>

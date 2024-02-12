@@ -6,16 +6,15 @@
 <title>AColIndex (Apache SystemDS 3.2.0-SNAPSHOT API)</title>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 <link rel="stylesheet" type="text/css" href="../../../../../../../stylesheet.css" title="Style">
-<link rel="stylesheet" type="text/css" href="../../../../../../../jquery/jquery-ui.min.css" title="Style">
-<link rel="stylesheet" type="text/css" href="../../../../../../../jquery-ui.overrides.css" title="Style">
+<link rel="stylesheet" type="text/css" href="../../../../../../../jquery/jquery-ui.css" title="Style">
 <script type="text/javascript" src="../../../../../../../script.js"></script>
 <script type="text/javascript" src="../../../../../../../jquery/jszip/dist/jszip.min.js"></script>
 <script type="text/javascript" src="../../../../../../../jquery/jszip-utils/dist/jszip-utils.min.js"></script>
 <!--[if IE]>
 <script type="text/javascript" src="../../../../../../../jquery/jszip-utils/dist/jszip-utils-ie.min.js"></script>
 <![endif]-->
-<script type="text/javascript" src="../../../../../../../jquery/jquery-3.6.1.min.js"></script>
-<script type="text/javascript" src="../../../../../../../jquery/jquery-ui.min.js"></script>
+<script type="text/javascript" src="../../../../../../../jquery/jquery-3.5.1.js"></script>
+<script type="text/javascript" src="../../../../../../../jquery/jquery-ui.js"></script>
 </head>
 <body>
 <script type="text/javascript"><!--
@@ -27,7 +26,7 @@
     catch(err) {
     }
 //-->
-var data = {"i0":10,"i1":10,"i2":10,"i3":10,"i4":10};
+var data = {"i0":10,"i1":10,"i2":10,"i3":10,"i4":10,"i5":10,"i6":10};
 var tabs = {65535:["t0","All Methods"],2:["t2","Instance Methods"],8:["t4","Concrete Methods"]};
 var altColor = "altColor";
 var rowColor = "rowColor";
@@ -137,7 +136,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 </dl>
 <dl>
 <dt>Direct Known Subclasses:</dt>
-<dd><code><a href="ArrayIndex.html" title="class in org.apache.sysds.runtime.compress.colgroup.indexes">ArrayIndex</a></code>, <code><a href="RangeIndex.html" title="class in org.apache.sysds.runtime.compress.colgroup.indexes">RangeIndex</a></code>, <code><a href="SingleIndex.html" title="class in org.apache.sysds.runtime.compress.colgroup.indexes">SingleIndex</a></code>, <code><a href="TwoIndex.html" title="class in org.apache.sysds.runtime.compress.colgroup.indexes">TwoIndex</a></code>, <code><a href="TwoRangesIndex.html" title="class in org.apache.sysds.runtime.compress.colgroup.indexes">TwoRangesIndex</a></code></dd>
+<dd><code><a href="ArrayIndex.html" title="class in org.apache.sysds.runtime.compress.colgroup.indexes">ArrayIndex</a></code>, <code><a href="CombinedIndex.html" title="class in org.apache.sysds.runtime.compress.colgroup.indexes">CombinedIndex</a></code>, <code><a href="RangeIndex.html" title="class in org.apache.sysds.runtime.compress.colgroup.indexes">RangeIndex</a></code>, <code><a href="SingleIndex.html" title="class in org.apache.sysds.runtime.compress.colgroup.indexes">SingleIndex</a></code>, <code><a href="TwoIndex.html" title="class in org.apache.sysds.runtime.compress.colgroup.indexes">TwoIndex</a></code>, <code><a href="TwoRangesIndex.html" title="class in org.apache.sysds.runtime.compress.colgroup.indexes">TwoRangesIndex</a></code></dd>
 </dl>
 <hr>
 <pre>public abstract class <span class="typeNameLabel">AColIndex</span>
@@ -150,7 +149,7 @@ implements <a href="IColIndex.html" title="interface in org.apache.sysds.runtime
 <ul class="blockList">
 <li class="blockList">
 <!-- ======== NESTED CLASS SUMMARY ======== -->
-<section>
+<section role="region">
 <ul class="blockList">
 <li class="blockList"><a id="nested.class.summary">
 <!--   -->
@@ -167,7 +166,7 @@ implements <a href="IColIndex.html" title="interface in org.apache.sysds.runtime
 </ul>
 </section>
 <!-- ======== CONSTRUCTOR SUMMARY ======== -->
-<section>
+<section role="region">
 <ul class="blockList">
 <li class="blockList"><a id="constructor.summary">
 <!--   -->
@@ -188,7 +187,7 @@ implements <a href="IColIndex.html" title="interface in org.apache.sysds.runtime
 </ul>
 </section>
 <!-- ========== METHOD SUMMARY =========== -->
-<section>
+<section role="region">
 <ul class="blockList">
 <li class="blockList"><a id="method.summary">
 <!--   -->
@@ -225,11 +224,32 @@ implements <a href="IColIndex.html" title="interface in org.apache.sysds.runtime
 </td>
 </tr>
 <tr id="i3" class="rowColor">
+<td class="colFirst"><code>void</code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#decompressToDenseFromSparse(org.apache.sysds.runtime.data.SparseBlock,int,int,double%5B%5D)">decompressToDenseFromSparse</a></span>&#8203;(<a href="../../../data/SparseBlock.html" title="class in org.apache.sysds.runtime.data">SparseBlock</a>&nbsp;sb,
+                           int&nbsp;vr,
+                           int&nbsp;off,
+                           double[]&nbsp;c)</code></th>
+<td class="colLast">
+<div class="block">Decompress this column index into the dense c array.</div>
+</td>
+</tr>
+<tr id="i4" class="altColor">
+<td class="colFirst"><code>void</code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#decompressVec(int,double%5B%5D,int,double%5B%5D,int)">decompressVec</a></span>&#8203;(int&nbsp;nCol,
+             double[]&nbsp;c,
+             int&nbsp;off,
+             double[]&nbsp;values,
+             int&nbsp;rowIdx)</code></th>
+<td class="colLast">
+<div class="block">Decompress into c using the values provided.</div>
+</td>
+</tr>
+<tr id="i5" class="rowColor">
 <td class="colFirst"><code>boolean</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#equals(java.lang.Object)">equals</a></span>&#8203;(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Object.html?is-external=true" title="class or interface in java.lang" class="externalLink">Object</a>&nbsp;other)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i4" class="altColor">
+<tr id="i6" class="altColor">
 <td class="colFirst"><code>int</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#hashCode()">hashCode</a></span>()</code></th>
 <td class="colLast">&nbsp;</td>
@@ -259,7 +279,7 @@ implements <a href="IColIndex.html" title="interface in org.apache.sysds.runtime
 <ul class="blockList">
 <li class="blockList">
 <!-- ========= CONSTRUCTOR DETAIL ======== -->
-<section>
+<section role="region">
 <ul class="blockList">
 <li class="blockList"><a id="constructor.detail">
 <!--   -->
@@ -278,7 +298,7 @@ implements <a href="IColIndex.html" title="interface in org.apache.sysds.runtime
 </ul>
 </section>
 <!-- ============ METHOD DETAIL ========== -->
-<section>
+<section role="region">
 <ul class="blockList">
 <li class="blockList"><a id="method.detail">
 <!--   -->
@@ -361,7 +381,7 @@ implements <a href="IColIndex.html" title="interface in org.apache.sysds.runtime
 <a id="containsAny(org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex)">
 <!--   -->
 </a>
-<ul class="blockListLast">
+<ul class="blockList">
 <li class="blockList">
 <h4>containsAny</h4>
 <pre class="methodSignature">public&nbsp;boolean&nbsp;containsAny&#8203;(<a href="IColIndex.html" title="interface in org.apache.sysds.runtime.compress.colgroup.indexes">IColIndex</a>&nbsp;idx)</pre>
@@ -374,6 +394,55 @@ implements <a href="IColIndex.html" title="interface in org.apache.sysds.runtime
 <dd><code>idx</code> - A List of indexes</dd>
 <dt><span class="returnLabel">Returns:</span></dt>
 <dd>If it is contained</dd>
+</dl>
+</li>
+</ul>
+<a id="decompressToDenseFromSparse(org.apache.sysds.runtime.data.SparseBlock,int,int,double[])">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>decompressToDenseFromSparse</h4>
+<pre class="methodSignature">public&nbsp;void&nbsp;decompressToDenseFromSparse&#8203;(<a href="../../../data/SparseBlock.html" title="class in org.apache.sysds.runtime.data">SparseBlock</a>&nbsp;sb,
+                                        int&nbsp;vr,
+                                        int&nbsp;off,
+                                        double[]&nbsp;c)</pre>
+<div class="block"><span class="descfrmTypeLabel">Description copied from interface:&nbsp;<code><a href="IColIndex.html#decompressToDenseFromSparse(org.apache.sysds.runtime.data.SparseBlock,int,int,double%5B%5D)">IColIndex</a></code></span></div>
+<div class="block">Decompress this column index into the dense c array.</div>
+<dl>
+<dt><span class="overrideSpecifyLabel">Specified by:</span></dt>
+<dd><code><a href="IColIndex.html#decompressToDenseFromSparse(org.apache.sysds.runtime.data.SparseBlock,int,int,double%5B%5D)">decompressToDenseFromSparse</a></code>&nbsp;in interface&nbsp;<code><a href="IColIndex.html" title="interface in org.apache.sysds.runtime.compress.colgroup.indexes">IColIndex</a></code></dd>
+<dt><span class="paramLabel">Parameters:</span></dt>
+<dd><code>sb</code> - A sparse block to extract values out of and insert into c</dd>
+<dd><code>vr</code> - The row to extract from the sparse block</dd>
+<dd><code>off</code> - The offset that the row starts at in c.</dd>
+<dd><code>c</code> - The dense output to decompress into</dd>
+</dl>
+</li>
+</ul>
+<a id="decompressVec(int,double[],int,double[],int)">
+<!--   -->
+</a>
+<ul class="blockListLast">
+<li class="blockList">
+<h4>decompressVec</h4>
+<pre class="methodSignature">public&nbsp;void&nbsp;decompressVec&#8203;(int&nbsp;nCol,
+                          double[]&nbsp;c,
+                          int&nbsp;off,
+                          double[]&nbsp;values,
+                          int&nbsp;rowIdx)</pre>
+<div class="block"><span class="descfrmTypeLabel">Description copied from interface:&nbsp;<code><a href="IColIndex.html#decompressVec(int,double%5B%5D,int,double%5B%5D,int)">IColIndex</a></code></span></div>
+<div class="block">Decompress into c using the values provided. The offset to start into c is off and then row index is similarly the
+ offset of values. nCol specify the number of values to add over.</div>
+<dl>
+<dt><span class="overrideSpecifyLabel">Specified by:</span></dt>
+<dd><code><a href="IColIndex.html#decompressVec(int,double%5B%5D,int,double%5B%5D,int)">decompressVec</a></code>&nbsp;in interface&nbsp;<code><a href="IColIndex.html" title="interface in org.apache.sysds.runtime.compress.colgroup.indexes">IColIndex</a></code></dd>
+<dt><span class="paramLabel">Parameters:</span></dt>
+<dd><code>nCol</code> - The number of columns to copy.</dd>
+<dd><code>c</code> - The output to add into</dd>
+<dd><code>off</code> - The offset to start in c</dd>
+<dd><code>values</code> - the values to copy from</dd>
+<dd><code>rowIdx</code> - The offset to start in values</dd>
 </dl>
 </li>
 </ul>
@@ -446,7 +515,7 @@ implements <a href="IColIndex.html" title="interface in org.apache.sysds.runtime
 </a></div>
 <!-- ======== END OF BOTTOM NAVBAR ======= -->
 </nav>
-<p class="legalCopy"><small>Copyright &#169; 2023 <a href="https://www.apache.org/">The Apache Software Foundation</a>. All rights reserved.</small></p>
+<p class="legalCopy"><small>Copyright &#169; 2024 <a href="https://www.apache.org/">The Apache Software Foundation</a>. All rights reserved.</small></p>
 </footer>
 </body>
 </html>

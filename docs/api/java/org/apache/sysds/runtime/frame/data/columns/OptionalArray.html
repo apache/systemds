@@ -6,16 +6,15 @@
 <title>OptionalArray (Apache SystemDS 3.2.0-SNAPSHOT API)</title>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 <link rel="stylesheet" type="text/css" href="../../../../../../../stylesheet.css" title="Style">
-<link rel="stylesheet" type="text/css" href="../../../../../../../jquery/jquery-ui.min.css" title="Style">
-<link rel="stylesheet" type="text/css" href="../../../../../../../jquery-ui.overrides.css" title="Style">
+<link rel="stylesheet" type="text/css" href="../../../../../../../jquery/jquery-ui.css" title="Style">
 <script type="text/javascript" src="../../../../../../../script.js"></script>
 <script type="text/javascript" src="../../../../../../../jquery/jszip/dist/jszip.min.js"></script>
 <script type="text/javascript" src="../../../../../../../jquery/jszip-utils/dist/jszip-utils.min.js"></script>
 <!--[if IE]>
 <script type="text/javascript" src="../../../../../../../jquery/jszip-utils/dist/jszip-utils-ie.min.js"></script>
 <![endif]-->
-<script type="text/javascript" src="../../../../../../../jquery/jquery-3.6.1.min.js"></script>
-<script type="text/javascript" src="../../../../../../../jquery/jquery-ui.min.js"></script>
+<script type="text/javascript" src="../../../../../../../jquery/jquery-3.5.1.js"></script>
+<script type="text/javascript" src="../../../../../../../jquery/jquery-ui.js"></script>
 </head>
 <body>
 <script type="text/javascript"><!--
@@ -27,7 +26,7 @@
     catch(err) {
     }
 //-->
-var data = {"i0":10,"i1":10,"i2":10,"i3":10,"i4":9,"i5":10,"i6":10,"i7":10,"i8":10,"i9":10,"i10":10,"i11":10,"i12":10,"i13":10,"i14":10,"i15":10,"i16":10,"i17":10,"i18":10,"i19":10,"i20":10,"i21":10,"i22":10,"i23":10,"i24":10,"i25":10,"i26":10,"i27":10,"i28":10,"i29":10,"i30":10,"i31":10,"i32":10,"i33":10,"i34":10,"i35":10,"i36":10,"i37":10,"i38":10,"i39":10,"i40":10};
+var data = {"i0":10,"i1":10,"i2":10,"i3":10,"i4":9,"i5":10,"i6":10,"i7":10,"i8":10,"i9":10,"i10":10,"i11":10,"i12":10,"i13":10,"i14":10,"i15":10,"i16":10,"i17":10,"i18":10,"i19":10,"i20":10,"i21":10,"i22":10,"i23":10,"i24":10,"i25":10,"i26":10,"i27":10,"i28":10,"i29":10,"i30":10,"i31":10,"i32":10,"i33":10,"i34":10,"i35":10,"i36":10,"i37":10,"i38":10,"i39":10,"i40":10,"i41":10};
 var tabs = {65535:["t0","All Methods"],1:["t1","Static Methods"],2:["t2","Instance Methods"],8:["t4","Concrete Methods"]};
 var altColor = "altColor";
 var rowColor = "rowColor";
@@ -150,7 +149,7 @@ extends <a href="Array.html" title="class in org.apache.sysds.runtime.frame.data
 <ul class="blockList">
 <li class="blockList">
 <!-- ======== NESTED CLASS SUMMARY ======== -->
-<section>
+<section role="region">
 <ul class="blockList">
 <li class="blockList"><a id="nested.class.summary">
 <!--   -->
@@ -167,7 +166,7 @@ extends <a href="Array.html" title="class in org.apache.sysds.runtime.frame.data
 </ul>
 </section>
 <!-- ======== CONSTRUCTOR SUMMARY ======== -->
-<section>
+<section role="region">
 <ul class="blockList">
 <li class="blockList"><a id="constructor.summary">
 <!--   -->
@@ -193,12 +192,17 @@ extends <a href="Array.html" title="class in org.apache.sysds.runtime.frame.data
 <th class="colConstructorName" scope="row"><code><span class="memberNameLink"><a href="#%3Cinit%3E(T%5B%5D)">OptionalArray</a></span>&#8203;(<a href="OptionalArray.html" title="type parameter in OptionalArray">T</a>[]&nbsp;a)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
+<tr class="rowColor">
+<th class="colConstructorName" scope="row"><code><span class="memberNameLink"><a href="#%3Cinit%3E(T%5B%5D,org.apache.sysds.common.Types.ValueType)">OptionalArray</a></span>&#8203;(<a href="OptionalArray.html" title="type parameter in OptionalArray">T</a>[]&nbsp;a,
+             <a href="../../../../common/Types.ValueType.html" title="enum in org.apache.sysds.common">Types.ValueType</a>&nbsp;vt)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
 </table>
 </li>
 </ul>
 </section>
 <!-- ========== METHOD SUMMARY =========== -->
-<section>
+<section role="region">
 <ul class="blockList">
 <li class="blockList"><a id="method.summary">
 <!--   -->
@@ -213,7 +217,7 @@ extends <a href="Array.html" title="class in org.apache.sysds.runtime.frame.data
 </tr>
 <tr id="i0" class="altColor">
 <td class="colFirst"><code><a href="../../../matrix/data/Pair.html" title="class in org.apache.sysds.runtime.matrix.data">Pair</a>&lt;<a href="../../../../common/Types.ValueType.html" title="enum in org.apache.sysds.common">Types.ValueType</a>,&#8203;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Boolean.html?is-external=true" title="class or interface in java.lang" class="externalLink">Boolean</a>&gt;</code></td>
-<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#analyzeValueType()">analyzeValueType</a></span>()</code></th>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#analyzeValueType(int)">analyzeValueType</a></span>&#8203;(int&nbsp;maxCells)</code></th>
 <td class="colLast">
 <div class="block">Analyze the column to figure out if the value type can be refined to a better type.</div>
 </td>
@@ -270,25 +274,30 @@ extends <a href="Array.html" title="class in org.apache.sysds.runtime.frame.data
 </td>
 </tr>
 <tr id="i8" class="altColor">
+<td class="colFirst"><code><a href="../../../compress/colgroup/mapping/AMapToData.html" title="class in org.apache.sysds.runtime.compress.colgroup.mapping">AMapToData</a></code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#createMapping(java.util.Map)">createMapping</a></span>&#8203;(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/Map.html?is-external=true" title="class or interface in java.util" class="externalLink">Map</a>&lt;<a href="OptionalArray.html" title="type parameter in OptionalArray">T</a>,&#8203;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Integer.html?is-external=true" title="class or interface in java.lang" class="externalLink">Integer</a>&gt;&nbsp;d)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr id="i9" class="rowColor">
 <td class="colFirst"><code>boolean</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#equals(org.apache.sysds.runtime.frame.data.columns.Array)">equals</a></span>&#8203;(<a href="Array.html" title="class in org.apache.sysds.runtime.frame.data.columns">Array</a>&lt;<a href="OptionalArray.html" title="type parameter in OptionalArray">T</a>&gt;&nbsp;other)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i9" class="rowColor">
+<tr id="i10" class="altColor">
 <td class="colFirst"><code>void</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#fill(java.lang.String)">fill</a></span>&#8203;(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;val)</code></th>
 <td class="colLast">
 <div class="block">fill the entire array with specific value.</div>
 </td>
 </tr>
-<tr id="i10" class="altColor">
+<tr id="i11" class="rowColor">
 <td class="colFirst"><code>void</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#fill(T)">fill</a></span>&#8203;(<a href="OptionalArray.html" title="type parameter in OptionalArray">T</a>&nbsp;val)</code></th>
 <td class="colLast">
 <div class="block">fill the entire array with specific value.</div>
 </td>
 </tr>
-<tr id="i11" class="rowColor">
+<tr id="i12" class="altColor">
 <td class="colFirst"><code><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Object.html?is-external=true" title="class or interface in java.lang" class="externalLink">Object</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#get()">get</a></span>()</code></th>
 <td class="colLast">
@@ -297,14 +306,14 @@ extends <a href="Array.html" title="class in org.apache.sysds.runtime.frame.data
  it is the responsibility of the caller to know what type it is.</div>
 </td>
 </tr>
-<tr id="i12" class="altColor">
+<tr id="i13" class="rowColor">
 <td class="colFirst"><code><a href="OptionalArray.html" title="type parameter in OptionalArray">T</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#get(int)">get</a></span>&#8203;(int&nbsp;index)</code></th>
 <td class="colLast">
 <div class="block">Get the value at a given index.</div>
 </td>
 </tr>
-<tr id="i13" class="rowColor">
+<tr id="i14" class="altColor">
 <td class="colFirst"><code>byte[]</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getAsByteArray()">getAsByteArray</a></span>()</code></th>
 <td class="colLast">
@@ -312,28 +321,28 @@ extends <a href="Array.html" title="class in org.apache.sysds.runtime.frame.data
  PythonAPI.</div>
 </td>
 </tr>
-<tr id="i14" class="altColor">
+<tr id="i15" class="rowColor">
 <td class="colFirst"><code>double</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getAsDouble(int)">getAsDouble</a></span>&#8203;(int&nbsp;i)</code></th>
 <td class="colLast">
 <div class="block">Get the index's value.</div>
 </td>
 </tr>
-<tr id="i15" class="rowColor">
+<tr id="i16" class="altColor">
 <td class="colFirst"><code>double</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getAsNaNDouble(int)">getAsNaNDouble</a></span>&#8203;(int&nbsp;i)</code></th>
 <td class="colLast">
 <div class="block">Get the index's value.</div>
 </td>
 </tr>
-<tr id="i16" class="altColor">
+<tr id="i17" class="rowColor">
 <td class="colFirst"><code>long</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getExactSerializedSize()">getExactSerializedSize</a></span>()</code></th>
 <td class="colLast">
 <div class="block">Get the exact serialized size on disk of this array.</div>
 </td>
 </tr>
-<tr id="i17" class="rowColor">
+<tr id="i18" class="altColor">
 <td class="colFirst"><code><a href="ArrayFactory.FrameArrayType.html" title="enum in org.apache.sysds.runtime.frame.data.columns">ArrayFactory.FrameArrayType</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getFrameArrayType()">getFrameArrayType</a></span>()</code></th>
 <td class="colLast">
@@ -341,69 +350,69 @@ extends <a href="Array.html" title="class in org.apache.sysds.runtime.frame.data
  there is ValueTypes.</div>
 </td>
 </tr>
-<tr id="i18" class="altColor">
+<tr id="i19" class="rowColor">
 <td class="colFirst"><code>long</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getInMemorySize()">getInMemorySize</a></span>()</code></th>
 <td class="colLast">
 <div class="block">Get in memory size, not counting reference to this object.</div>
 </td>
 </tr>
-<tr id="i19" class="rowColor">
+<tr id="i20" class="altColor">
 <td class="colFirst"><code><a href="ABooleanArray.html" title="class in org.apache.sysds.runtime.frame.data.columns">ABooleanArray</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getNulls()">getNulls</a></span>()</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i20" class="altColor">
+<tr id="i21" class="rowColor">
 <td class="colFirst"><code><a href="../../../../common/Types.ValueType.html" title="enum in org.apache.sysds.common">Types.ValueType</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getValueType()">getValueType</a></span>()</code></th>
 <td class="colLast">
 <div class="block">Get the current value type of this array.</div>
 </td>
 </tr>
-<tr id="i21" class="rowColor">
+<tr id="i22" class="altColor">
 <td class="colFirst"><code>double</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#hashDouble(int)">hashDouble</a></span>&#8203;(int&nbsp;idx)</code></th>
 <td class="colLast">
 <div class="block">Hash the given index of the array.</div>
 </td>
 </tr>
-<tr id="i22" class="altColor">
+<tr id="i23" class="rowColor">
 <td class="colFirst"><code>boolean</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#isEmpty()">isEmpty</a></span>()</code></th>
 <td class="colLast">
 <div class="block">Get if this array is empty, aka filled with empty values.</div>
 </td>
 </tr>
-<tr id="i23" class="rowColor">
+<tr id="i24" class="altColor">
 <td class="colFirst"><code>boolean</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#isNotEmpty(int)">isNotEmpty</a></span>&#8203;(int&nbsp;i)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i24" class="altColor">
+<tr id="i25" class="rowColor">
 <td class="colFirst"><code>boolean</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#isShallowSerialize()">isShallowSerialize</a></span>()</code></th>
 <td class="colLast">
 <div class="block">analyze if this array can be shallow serialized.</div>
 </td>
 </tr>
-<tr id="i25" class="rowColor">
+<tr id="i26" class="altColor">
 <td class="colFirst"><code>boolean</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#possiblyContainsNaN()">possiblyContainsNaN</a></span>()</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i26" class="altColor">
+<tr id="i27" class="rowColor">
 <td class="colFirst"><code>void</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#readFields(java.io.DataInput)">readFields</a></span>&#8203;(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/io/DataInput.html?is-external=true" title="class or interface in java.io" class="externalLink">DataInput</a>&nbsp;in)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i27" class="rowColor">
+<tr id="i28" class="altColor">
 <td class="colFirst"><code>void</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#reset(int)">reset</a></span>&#8203;(int&nbsp;size)</code></th>
 <td class="colLast">
 <div class="block">Reset the Array and set to a different size.</div>
 </td>
 </tr>
-<tr id="i28" class="altColor">
+<tr id="i29" class="rowColor">
 <td class="colFirst"><code><a href="Array.html" title="class in org.apache.sysds.runtime.frame.data.columns">Array</a>&lt;<a href="OptionalArray.html" title="type parameter in OptionalArray">T</a>&gt;</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#select(boolean%5B%5D,int)">select</a></span>&#8203;(boolean[]&nbsp;select,
       int&nbsp;nTrue)</code></th>
@@ -411,14 +420,14 @@ extends <a href="Array.html" title="class in org.apache.sysds.runtime.frame.data
 <div class="block">Slice out the true indices in the select input and return the sub array.</div>
 </td>
 </tr>
-<tr id="i29" class="rowColor">
+<tr id="i30" class="altColor">
 <td class="colFirst"><code><a href="Array.html" title="class in org.apache.sysds.runtime.frame.data.columns">Array</a>&lt;<a href="OptionalArray.html" title="type parameter in OptionalArray">T</a>&gt;</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#select(int%5B%5D)">select</a></span>&#8203;(int[]&nbsp;indices)</code></th>
 <td class="colLast">
 <div class="block">Slice out the specified indices and return the sub array.</div>
 </td>
 </tr>
-<tr id="i30" class="altColor">
+<tr id="i31" class="rowColor">
 <td class="colFirst"><code>void</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#set(int,double)">set</a></span>&#8203;(int&nbsp;index,
    double&nbsp;value)</code></th>
@@ -426,7 +435,7 @@ extends <a href="Array.html" title="class in org.apache.sysds.runtime.frame.data
 <div class="block">Set index to given double value (cast to the correct type of this array)</div>
 </td>
 </tr>
-<tr id="i31" class="rowColor">
+<tr id="i32" class="altColor">
 <td class="colFirst"><code>void</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#set(int,int,org.apache.sysds.runtime.frame.data.columns.Array)">set</a></span>&#8203;(int&nbsp;rl,
    int&nbsp;ru,
@@ -435,7 +444,7 @@ extends <a href="Array.html" title="class in org.apache.sysds.runtime.frame.data
 <div class="block">Set range to given arrays value</div>
 </td>
 </tr>
-<tr id="i32" class="altColor">
+<tr id="i33" class="rowColor">
 <td class="colFirst"><code>void</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#set(int,int,org.apache.sysds.runtime.frame.data.columns.Array,int)">set</a></span>&#8203;(int&nbsp;rl,
    int&nbsp;ru,
@@ -445,7 +454,7 @@ extends <a href="Array.html" title="class in org.apache.sysds.runtime.frame.data
 <div class="block">Set range to given arrays value with an offset into other array</div>
 </td>
 </tr>
-<tr id="i33" class="rowColor">
+<tr id="i34" class="altColor">
 <td class="colFirst"><code>void</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#set(int,java.lang.String)">set</a></span>&#8203;(int&nbsp;index,
    <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;value)</code></th>
@@ -453,7 +462,7 @@ extends <a href="Array.html" title="class in org.apache.sysds.runtime.frame.data
 <div class="block">Set index to the given value of the string parsed.</div>
 </td>
 </tr>
-<tr id="i34" class="altColor">
+<tr id="i35" class="rowColor">
 <td class="colFirst"><code>void</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#set(int,T)">set</a></span>&#8203;(int&nbsp;index,
    <a href="OptionalArray.html" title="type parameter in OptionalArray">T</a>&nbsp;value)</code></th>
@@ -461,7 +470,7 @@ extends <a href="Array.html" title="class in org.apache.sysds.runtime.frame.data
 <div class="block">Set index to the given value of same type</div>
 </td>
 </tr>
-<tr id="i35" class="rowColor">
+<tr id="i36" class="altColor">
 <td class="colFirst"><code>void</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#setFromOtherType(int,int,org.apache.sysds.runtime.frame.data.columns.Array)">setFromOtherType</a></span>&#8203;(int&nbsp;rl,
                 int&nbsp;ru,
@@ -470,7 +479,7 @@ extends <a href="Array.html" title="class in org.apache.sysds.runtime.frame.data
 <div class="block">Set range to given arrays value</div>
 </td>
 </tr>
-<tr id="i36" class="altColor">
+<tr id="i37" class="rowColor">
 <td class="colFirst"><code>void</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#setFromOtherTypeNz(int,int,org.apache.sysds.runtime.frame.data.columns.Array)">setFromOtherTypeNz</a></span>&#8203;(int&nbsp;rl,
                   int&nbsp;ru,
@@ -479,7 +488,7 @@ extends <a href="Array.html" title="class in org.apache.sysds.runtime.frame.data
 <div class="block">Set non default values in the range from the value array given</div>
 </td>
 </tr>
-<tr id="i37" class="rowColor">
+<tr id="i38" class="altColor">
 <td class="colFirst"><code>void</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#setNz(int,int,org.apache.sysds.runtime.frame.data.columns.Array)">setNz</a></span>&#8203;(int&nbsp;rl,
      int&nbsp;ru,
@@ -488,7 +497,7 @@ extends <a href="Array.html" title="class in org.apache.sysds.runtime.frame.data
 <div class="block">Set non default values in the range from the value array given</div>
 </td>
 </tr>
-<tr id="i38" class="altColor">
+<tr id="i39" class="rowColor">
 <td class="colFirst"><code><a href="Array.html" title="class in org.apache.sysds.runtime.frame.data.columns">Array</a>&lt;<a href="OptionalArray.html" title="type parameter in OptionalArray">T</a>&gt;</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#slice(int,int)">slice</a></span>&#8203;(int&nbsp;rl,
      int&nbsp;ru)</code></th>
@@ -496,12 +505,12 @@ extends <a href="Array.html" title="class in org.apache.sysds.runtime.frame.data
 <div class="block">Slice out the sub range and return new array with the specified type.</div>
 </td>
 </tr>
-<tr id="i39" class="rowColor">
+<tr id="i40" class="altColor">
 <td class="colFirst"><code><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#toString()">toString</a></span>()</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i40" class="altColor">
+<tr id="i41" class="rowColor">
 <td class="colFirst"><code>void</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#write(java.io.DataOutput)">write</a></span>&#8203;(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/io/DataOutput.html?is-external=true" title="class or interface in java.io" class="externalLink">DataOutput</a>&nbsp;out)</code></th>
 <td class="colLast">&nbsp;</td>
@@ -512,7 +521,7 @@ extends <a href="Array.html" title="class in org.apache.sysds.runtime.frame.data
 <!--   -->
 </a>
 <h3>Methods inherited from class&nbsp;org.apache.sysds.runtime.frame.data.columns.<a href="Array.html" title="class in org.apache.sysds.runtime.frame.data.columns">Array</a></h3>
-<code><a href="Array.html#baseMemoryCost()">baseMemoryCost</a>, <a href="Array.html#changeType(org.apache.sysds.common.Types.ValueType)">changeType</a>, <a href="Array.html#equals(java.lang.Object)">equals</a>, <a href="Array.html#findEmpty(boolean%5B%5D)">findEmpty</a>, <a href="Array.html#findEmptyInverse(boolean%5B%5D)">findEmptyInverse</a>, <a href="Array.html#getCache()">getCache</a>, <a href="Array.html#getIterator()">getIterator</a>, <a href="Array.html#getMinMaxLength()">getMinMaxLength</a>, <a href="Array.html#getRecodeMap()">getRecodeMap</a>, <a href="Array.html#setCache(java.lang.ref.SoftReference)">setCache</a>, <a href="Array.html#setFromOtherTypeNz(org.apache.sysds.runtime.frame.data.columns.Array)">setFromOtherTypeNz</a>, <a href="Array.html#setNz(org.apache.sysds.runtime.frame.data.columns.Array)">setNz</a>, <a href="Array.html#size()">size</a>, <a href="Array.html#statistics(int)">statistics</a></code></li>
+<code><a href="Array.html#analyzeValueType()">analyzeValueType</a>, <a href="Array.html#baseMemoryCost()">baseMemoryCost</a>, <a href="Array.html#changeType(org.apache.sysds.common.Types.ValueType)">changeType</a>, <a href="Array.html#changeType(org.apache.sysds.common.Types.ValueType,boolean)">changeType</a>, <a href="Array.html#equals(java.lang.Object)">equals</a>, <a href="Array.html#extractDouble(double%5B%5D,int,int)">extractDouble</a>, <a href="Array.html#findEmpty(boolean%5B%5D)">findEmpty</a>, <a href="Array.html#findEmptyInverse(boolean%5B%5D)">findEmptyInverse</a>, <a href="Array.html#getCache()">getCache</a>, <a href="Array.html#getIterator()">getIterator</a>, <a href="Array.html#getMinMaxLength()">getMinMaxLength</a>, <a href="Array.html#getRecodeMap()">getRecodeMap</a>, <a href="Array.html#safeChangeType(org.apache.sysds.common.Types.ValueType,boolean)">safeChangeType</a>, <a href="Array.html#setCache(java.lang.ref.SoftReference)">setCache</a>, <a href="Array.html#setFromOtherTypeNz(org.apache.sysds.runtime.frame.data.columns.Array)">setFromOtherTypeNz</a>, <a href="Array.html#setNz(org.apache.sysds.runtime.frame.data.columns.Array)">setNz</a>, <a href="Array.html#size()">size</a>, <a href="Array.html#statistics(int)">statistics</a></code></li>
 </ul>
 <ul class="blockList">
 <li class="blockList"><a id="methods.inherited.from.class.java.lang.Object">
@@ -531,7 +540,7 @@ extends <a href="Array.html" title="class in org.apache.sysds.runtime.frame.data
 <ul class="blockList">
 <li class="blockList">
 <!-- ========= CONSTRUCTOR DETAIL ======== -->
-<section>
+<section role="region">
 <ul class="blockList">
 <li class="blockList"><a id="constructor.detail">
 <!--   -->
@@ -546,6 +555,18 @@ extends <a href="Array.html" title="class in org.apache.sysds.runtime.frame.data
 <li class="blockList">
 <h4>OptionalArray</h4>
 <pre>public&nbsp;OptionalArray&#8203;(<a href="OptionalArray.html" title="type parameter in OptionalArray">T</a>[]&nbsp;a)</pre>
+</li>
+</ul>
+<a id="&lt;init&gt;(java.lang.Object[],org.apache.sysds.common.Types.ValueType)">
+<!--   -->
+</a><a id="&lt;init&gt;(T[],org.apache.sysds.common.Types.ValueType)">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>OptionalArray</h4>
+<pre>public&nbsp;OptionalArray&#8203;(<a href="OptionalArray.html" title="type parameter in OptionalArray">T</a>[]&nbsp;a,
+                     <a href="../../../../common/Types.ValueType.html" title="enum in org.apache.sysds.common">Types.ValueType</a>&nbsp;vt)</pre>
 </li>
 </ul>
 <a id="&lt;init&gt;(org.apache.sysds.runtime.frame.data.columns.Array,boolean)">
@@ -572,7 +593,7 @@ extends <a href="Array.html" title="class in org.apache.sysds.runtime.frame.data
 </ul>
 </section>
 <!-- ============ METHOD DETAIL ========== -->
-<section>
+<section role="region">
 <ul class="blockList">
 <li class="blockList"><a id="method.detail">
 <!--   -->
@@ -650,8 +671,8 @@ extends <a href="Array.html" title="class in org.apache.sysds.runtime.frame.data
 <div class="block"><span class="descfrmTypeLabel">Description copied from class:&nbsp;<code><a href="Array.html#get(int)">Array</a></code></span></div>
 <div class="block">Get the value at a given index.
  
- This method returns objects that have a high overhead in allocation. Therefore it is not as efficient as using
- the vectorized operations specified in the object.</div>
+ This method returns objects that have a high overhead in allocation. Therefore it is not as efficient as using the
+ vectorized operations specified in the object.</div>
 <dl>
 <dt><span class="overrideSpecifyLabel">Specified by:</span></dt>
 <dd><code><a href="Array.html#get(int)">get</a></code>&nbsp;in class&nbsp;<code><a href="Array.html" title="class in org.apache.sysds.runtime.frame.data.columns">Array</a>&lt;<a href="OptionalArray.html" title="type parameter in OptionalArray">T</a>&gt;</code></dd>
@@ -819,7 +840,7 @@ extends <a href="Array.html" title="class in org.apache.sysds.runtime.frame.data
 <div class="block"><span class="descfrmTypeLabel">Description copied from class:&nbsp;<code><a href="Array.html#set(int,int,org.apache.sysds.runtime.frame.data.columns.Array)">Array</a></code></span></div>
 <div class="block">Set range to given arrays value</div>
 <dl>
-<dt><span class="overrideSpecifyLabel">Specified by:</span></dt>
+<dt><span class="overrideSpecifyLabel">Overrides:</span></dt>
 <dd><code><a href="Array.html#set(int,int,org.apache.sysds.runtime.frame.data.columns.Array)">set</a></code>&nbsp;in class&nbsp;<code><a href="Array.html" title="class in org.apache.sysds.runtime.frame.data.columns">Array</a>&lt;<a href="OptionalArray.html" title="type parameter in OptionalArray">T</a>&gt;</code></dd>
 <dt><span class="paramLabel">Parameters:</span></dt>
 <dd><code>rl</code> - row lower</dd>
@@ -841,7 +862,7 @@ extends <a href="Array.html" title="class in org.apache.sysds.runtime.frame.data
 <div class="block"><span class="descfrmTypeLabel">Description copied from class:&nbsp;<code><a href="Array.html#set(int,int,org.apache.sysds.runtime.frame.data.columns.Array,int)">Array</a></code></span></div>
 <div class="block">Set range to given arrays value with an offset into other array</div>
 <dl>
-<dt><span class="overrideSpecifyLabel">Specified by:</span></dt>
+<dt><span class="overrideSpecifyLabel">Overrides:</span></dt>
 <dd><code><a href="Array.html#set(int,int,org.apache.sysds.runtime.frame.data.columns.Array,int)">set</a></code>&nbsp;in class&nbsp;<code><a href="Array.html" title="class in org.apache.sysds.runtime.frame.data.columns">Array</a>&lt;<a href="OptionalArray.html" title="type parameter in OptionalArray">T</a>&gt;</code></dd>
 <dt><span class="paramLabel">Parameters:</span></dt>
 <dd><code>rl</code> - row lower</dd>
@@ -1039,19 +1060,21 @@ extends <a href="Array.html" title="class in org.apache.sysds.runtime.frame.data
 </dl>
 </li>
 </ul>
-<a id="analyzeValueType()">
+<a id="analyzeValueType(int)">
 <!--   -->
 </a>
 <ul class="blockList">
 <li class="blockList">
 <h4>analyzeValueType</h4>
-<pre class="methodSignature">public&nbsp;<a href="../../../matrix/data/Pair.html" title="class in org.apache.sysds.runtime.matrix.data">Pair</a>&lt;<a href="../../../../common/Types.ValueType.html" title="enum in org.apache.sysds.common">Types.ValueType</a>,&#8203;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Boolean.html?is-external=true" title="class or interface in java.lang" class="externalLink">Boolean</a>&gt;&nbsp;analyzeValueType()</pre>
-<div class="block"><span class="descfrmTypeLabel">Description copied from class:&nbsp;<code><a href="Array.html#analyzeValueType()">Array</a></code></span></div>
+<pre class="methodSignature">public&nbsp;<a href="../../../matrix/data/Pair.html" title="class in org.apache.sysds.runtime.matrix.data">Pair</a>&lt;<a href="../../../../common/Types.ValueType.html" title="enum in org.apache.sysds.common">Types.ValueType</a>,&#8203;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Boolean.html?is-external=true" title="class or interface in java.lang" class="externalLink">Boolean</a>&gt;&nbsp;analyzeValueType&#8203;(int&nbsp;maxCells)</pre>
+<div class="block"><span class="descfrmTypeLabel">Description copied from class:&nbsp;<code><a href="Array.html#analyzeValueType(int)">Array</a></code></span></div>
 <div class="block">Analyze the column to figure out if the value type can be refined to a better type. The return is in two parts,
  first the type it can be, second if it contains nulls.</div>
 <dl>
 <dt><span class="overrideSpecifyLabel">Specified by:</span></dt>
-<dd><code><a href="Array.html#analyzeValueType()">analyzeValueType</a></code>&nbsp;in class&nbsp;<code><a href="Array.html" title="class in org.apache.sysds.runtime.frame.data.columns">Array</a>&lt;<a href="OptionalArray.html" title="type parameter in OptionalArray">T</a>&gt;</code></dd>
+<dd><code><a href="Array.html#analyzeValueType(int)">analyzeValueType</a></code>&nbsp;in class&nbsp;<code><a href="Array.html" title="class in org.apache.sysds.runtime.frame.data.columns">Array</a>&lt;<a href="OptionalArray.html" title="type parameter in OptionalArray">T</a>&gt;</code></dd>
+<dt><span class="paramLabel">Parameters:</span></dt>
+<dd><code>maxCells</code> - maximum number of cells to analyze</dd>
 <dt><span class="returnLabel">Returns:</span></dt>
 <dd>A better or equivalent value type to represent the column, including null information.</dd>
 </dl>
@@ -1306,6 +1329,19 @@ extends <a href="Array.html" title="class in org.apache.sysds.runtime.frame.data
 </dl>
 </li>
 </ul>
+<a id="createMapping(java.util.Map)">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>createMapping</h4>
+<pre class="methodSignature">public&nbsp;<a href="../../../compress/colgroup/mapping/AMapToData.html" title="class in org.apache.sysds.runtime.compress.colgroup.mapping">AMapToData</a>&nbsp;createMapping&#8203;(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/Map.html?is-external=true" title="class or interface in java.util" class="externalLink">Map</a>&lt;<a href="OptionalArray.html" title="type parameter in OptionalArray">T</a>,&#8203;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Integer.html?is-external=true" title="class or interface in java.lang" class="externalLink">Integer</a>&gt;&nbsp;d)</pre>
+<dl>
+<dt><span class="overrideSpecifyLabel">Overrides:</span></dt>
+<dd><code><a href="Array.html#createMapping(java.util.Map)">createMapping</a></code>&nbsp;in class&nbsp;<code><a href="Array.html" title="class in org.apache.sysds.runtime.frame.data.columns">Array</a>&lt;<a href="OptionalArray.html" title="type parameter in OptionalArray">T</a>&gt;</code></dd>
+</dl>
+</li>
+</ul>
 <a id="toString()">
 <!--   -->
 </a>
@@ -1388,7 +1424,7 @@ extends <a href="Array.html" title="class in org.apache.sysds.runtime.frame.data
 </a></div>
 <!-- ======== END OF BOTTOM NAVBAR ======= -->
 </nav>
-<p class="legalCopy"><small>Copyright &#169; 2023 <a href="https://www.apache.org/">The Apache Software Foundation</a>. All rights reserved.</small></p>
+<p class="legalCopy"><small>Copyright &#169; 2024 <a href="https://www.apache.org/">The Apache Software Foundation</a>. All rights reserved.</small></p>
 </footer>
 </body>
 </html>

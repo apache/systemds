@@ -6,16 +6,15 @@
 <title>MatrixBlock (Apache SystemDS 3.2.0-SNAPSHOT API)</title>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 <link rel="stylesheet" type="text/css" href="../../../../../../stylesheet.css" title="Style">
-<link rel="stylesheet" type="text/css" href="../../../../../../jquery/jquery-ui.min.css" title="Style">
-<link rel="stylesheet" type="text/css" href="../../../../../../jquery-ui.overrides.css" title="Style">
+<link rel="stylesheet" type="text/css" href="../../../../../../jquery/jquery-ui.css" title="Style">
 <script type="text/javascript" src="../../../../../../script.js"></script>
 <script type="text/javascript" src="../../../../../../jquery/jszip/dist/jszip.min.js"></script>
 <script type="text/javascript" src="../../../../../../jquery/jszip-utils/dist/jszip-utils.min.js"></script>
 <!--[if IE]>
 <script type="text/javascript" src="../../../../../../jquery/jszip-utils/dist/jszip-utils-ie.min.js"></script>
 <![endif]-->
-<script type="text/javascript" src="../../../../../../jquery/jquery-3.6.1.min.js"></script>
-<script type="text/javascript" src="../../../../../../jquery/jquery-ui.min.js"></script>
+<script type="text/javascript" src="../../../../../../jquery/jquery-3.5.1.js"></script>
+<script type="text/javascript" src="../../../../../../jquery/jquery-ui.js"></script>
 </head>
 <body>
 <script type="text/javascript"><!--
@@ -27,7 +26,7 @@
     catch(err) {
     }
 //-->
-var data = {"i0":10,"i1":10,"i2":9,"i3":10,"i4":10,"i5":10,"i6":10,"i7":10,"i8":10,"i9":10,"i10":10,"i11":10,"i12":10,"i13":10,"i14":10,"i15":10,"i16":10,"i17":10,"i18":10,"i19":10,"i20":10,"i21":10,"i22":10,"i23":10,"i24":10,"i25":10,"i26":10,"i27":10,"i28":10,"i29":10,"i30":10,"i31":9,"i32":10,"i33":10,"i34":10,"i35":10,"i36":10,"i37":10,"i38":10,"i39":10,"i40":10,"i41":10,"i42":10,"i43":10,"i44":10,"i45":10,"i46":10,"i47":9,"i48":10,"i49":10,"i50":10,"i51":10,"i52":10,"i53":10,"i54":10,"i55":10,"i56":10,"i57":10,"i58":10,"i59":10,"i60":10,"i61":10,"i62":10,"i63":10,"i64":10,"i65":10,"i66":10,"i67":10,"i68":9,"i69":10,"i70":9,"i71":9,"i72":9,"i73":10,"i74":9,"i75":10,"i76":9,"i77":9,"i78":9,"i79":10,"i80":10,"i81":10,"i82":9,"i83":9,"i84":9,"i85":10,"i86":9,"i87":10,"i88":10,"i89":10,"i90":10,"i91":10,"i92":10,"i93":10,"i94":10,"i95":10,"i96":10,"i97":9,"i98":10,"i99":10,"i100":10,"i101":10,"i102":10,"i103":10,"i104":10,"i105":10,"i106":10,"i107":10,"i108":10,"i109":10,"i110":10,"i111":10,"i112":10,"i113":10,"i114":10,"i115":10,"i116":10,"i117":10,"i118":10,"i119":10,"i120":10,"i121":10,"i122":10,"i123":10,"i124":10,"i125":10,"i126":10,"i127":9,"i128":10,"i129":10,"i130":10,"i131":10,"i132":10,"i133":10,"i134":10,"i135":10,"i136":10,"i137":10,"i138":10,"i139":10,"i140":10,"i141":10,"i142":10,"i143":10,"i144":10,"i145":9,"i146":10,"i147":10,"i148":10,"i149":10,"i150":10,"i151":10,"i152":10,"i153":10,"i154":10,"i155":10,"i156":10,"i157":10,"i158":10,"i159":10,"i160":9,"i161":9,"i162":9,"i163":9,"i164":10,"i165":10,"i166":10,"i167":10,"i168":10,"i169":10,"i170":10,"i171":10,"i172":10,"i173":10,"i174":10,"i175":10,"i176":10,"i177":10,"i178":10,"i179":10,"i180":10,"i181":10,"i182":10,"i183":10,"i184":10,"i185":10,"i186":10,"i187":9,"i188":10,"i189":9,"i190":10,"i191":10,"i192":10,"i193":10,"i194":10,"i195":10,"i196":10,"i197":10,"i198":10,"i199":10,"i200":10,"i201":10,"i202":10,"i203":10,"i204":10,"i205":10,"i206":10,"i207":10,"i208":10,"i209":10,"i210":10,"i211":10,"i212":10,"i213":10,"i214":10,"i215":10,"i216":10,"i217":9,"i218":10,"i219":10,"i220":10,"i221":10,"i222":10,"i223":10,"i224":10,"i225":10,"i226":10,"i227":10,"i228":10};
+var data = {"i0":10,"i1":10,"i2":9,"i3":10,"i4":10,"i5":10,"i6":10,"i7":10,"i8":10,"i9":10,"i10":10,"i11":10,"i12":10,"i13":9,"i14":10,"i15":10,"i16":10,"i17":10,"i18":10,"i19":10,"i20":10,"i21":10,"i22":10,"i23":10,"i24":10,"i25":10,"i26":10,"i27":10,"i28":10,"i29":10,"i30":10,"i31":9,"i32":10,"i33":10,"i34":10,"i35":10,"i36":10,"i37":10,"i38":10,"i39":10,"i40":10,"i41":10,"i42":10,"i43":10,"i44":10,"i45":10,"i46":10,"i47":9,"i48":10,"i49":10,"i50":10,"i51":10,"i52":10,"i53":10,"i54":10,"i55":10,"i56":10,"i57":10,"i58":10,"i59":10,"i60":10,"i61":10,"i62":10,"i63":10,"i64":10,"i65":10,"i66":10,"i67":10,"i68":10,"i69":10,"i70":9,"i71":10,"i72":9,"i73":9,"i74":9,"i75":10,"i76":9,"i77":10,"i78":9,"i79":9,"i80":9,"i81":10,"i82":10,"i83":10,"i84":9,"i85":9,"i86":9,"i87":10,"i88":9,"i89":10,"i90":10,"i91":10,"i92":10,"i93":10,"i94":10,"i95":10,"i96":10,"i97":10,"i98":10,"i99":10,"i100":10,"i101":9,"i102":10,"i103":10,"i104":10,"i105":10,"i106":10,"i107":10,"i108":10,"i109":10,"i110":10,"i111":10,"i112":10,"i113":10,"i114":10,"i115":10,"i116":10,"i117":10,"i118":10,"i119":10,"i120":10,"i121":10,"i122":10,"i123":10,"i124":10,"i125":10,"i126":10,"i127":10,"i128":10,"i129":10,"i130":10,"i131":9,"i132":10,"i133":10,"i134":10,"i135":10,"i136":10,"i137":10,"i138":10,"i139":10,"i140":10,"i141":10,"i142":10,"i143":10,"i144":10,"i145":10,"i146":10,"i147":10,"i148":10,"i149":9,"i150":10,"i151":10,"i152":10,"i153":10,"i154":10,"i155":10,"i156":10,"i157":10,"i158":10,"i159":10,"i160":10,"i161":10,"i162":10,"i163":9,"i164":9,"i165":9,"i166":9,"i167":10,"i168":10,"i169":10,"i170":10,"i171":10,"i172":10,"i173":10,"i174":10,"i175":10,"i176":10,"i177":10,"i178":10,"i179":10,"i180":10,"i181":10,"i182":10,"i183":10,"i184":10,"i185":10,"i186":10,"i187":10,"i188":10,"i189":10,"i190":9,"i191":10,"i192":9,"i193":10,"i194":10,"i195":10,"i196":10,"i197":10,"i198":10,"i199":10,"i200":10,"i201":10,"i202":10,"i203":10,"i204":10,"i205":10,"i206":10,"i207":10,"i208":10,"i209":10,"i210":10,"i211":10,"i212":10,"i213":10,"i214":10,"i215":10,"i216":10,"i217":10,"i218":10,"i219":10,"i220":10,"i221":9,"i222":10,"i223":10,"i224":10,"i225":10,"i226":10,"i227":10,"i228":10,"i229":10,"i230":10,"i231":10,"i232":10};
 var tabs = {65535:["t0","All Methods"],1:["t1","Static Methods"],2:["t2","Instance Methods"],8:["t4","Concrete Methods"]};
 var altColor = "altColor";
 var rowColor = "rowColor";
@@ -159,7 +158,7 @@ implements <a href="../../controlprogram/caching/CacheBlock.html" title="interfa
 <ul class="blockList">
 <li class="blockList">
 <!-- ======== NESTED CLASS SUMMARY ======== -->
-<section>
+<section role="region">
 <ul class="blockList">
 <li class="blockList"><a id="nested.class.summary">
 <!--   -->
@@ -189,7 +188,7 @@ implements <a href="../../controlprogram/caching/CacheBlock.html" title="interfa
 </ul>
 </section>
 <!-- =========== FIELD SUMMARY =========== -->
-<section>
+<section role="region">
 <ul class="blockList">
 <li class="blockList"><a id="field.summary">
 <!--   -->
@@ -252,7 +251,7 @@ implements <a href="../../controlprogram/caching/CacheBlock.html" title="interfa
 </ul>
 </section>
 <!-- ======== CONSTRUCTOR SUMMARY ======== -->
-<section>
+<section role="region">
 <ul class="blockList">
 <li class="blockList"><a id="constructor.summary">
 <!--   -->
@@ -346,7 +345,7 @@ implements <a href="../../controlprogram/caching/CacheBlock.html" title="interfa
 </ul>
 </section>
 <!-- ========== METHOD SUMMARY =========== -->
-<section>
+<section role="region">
 <ul class="blockList">
 <li class="blockList"><a id="method.summary">
 <!--   -->
@@ -386,14 +385,6 @@ implements <a href="../../controlprogram/caching/CacheBlock.html" title="interfa
 </tr>
 <tr id="i3" class="rowColor">
 <td class="colFirst"><code><a href="MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a></code></td>
-<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#aggregateUnaryOperations(org.apache.sysds.runtime.matrix.operators.AggregateUnaryOperator,org.apache.sysds.runtime.matrix.data.MatrixValue,int,org.apache.sysds.runtime.matrix.data.MatrixIndexes)">aggregateUnaryOperations</a></span>&#8203;(<a href="../operators/AggregateUnaryOperator.html" title="class in org.apache.sysds.runtime.matrix.operators">AggregateUnaryOperator</a>&nbsp;op,
-                        <a href="MatrixValue.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixValue</a>&nbsp;result,
-                        int&nbsp;blen,
-                        <a href="MatrixIndexes.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixIndexes</a>&nbsp;indexesIn)</code></th>
-<td class="colLast">&nbsp;</td>
-</tr>
-<tr id="i4" class="altColor">
-<td class="colFirst"><code><a href="MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#aggregateUnaryOperations(org.apache.sysds.runtime.matrix.operators.AggregateUnaryOperator,org.apache.sysds.runtime.matrix.data.MatrixValue,int,org.apache.sysds.runtime.matrix.data.MatrixIndexes,boolean)">aggregateUnaryOperations</a></span>&#8203;(<a href="../operators/AggregateUnaryOperator.html" title="class in org.apache.sysds.runtime.matrix.operators">AggregateUnaryOperator</a>&nbsp;op,
                         <a href="MatrixValue.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixValue</a>&nbsp;result,
                         int&nbsp;blen,
@@ -401,39 +392,39 @@ implements <a href="../../controlprogram/caching/CacheBlock.html" title="interfa
                         boolean&nbsp;inCP)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i5" class="rowColor">
+<tr id="i4" class="altColor">
 <td class="colFirst"><code>void</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#allocateAndResetSparseBlock(boolean,org.apache.sysds.runtime.data.SparseBlock.Type)">allocateAndResetSparseBlock</a></span>&#8203;(boolean&nbsp;clearNNZ,
                            <a href="../../data/SparseBlock.Type.html" title="enum in org.apache.sysds.runtime.data">SparseBlock.Type</a>&nbsp;stype)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i6" class="altColor">
+<tr id="i5" class="rowColor">
 <td class="colFirst"><code><a href="MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#allocateBlock()">allocateBlock</a></span>()</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i7" class="rowColor">
+<tr id="i6" class="altColor">
 <td class="colFirst"><code><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/concurrent/Future.html?is-external=true" title="class or interface in java.util.concurrent" class="externalLink">Future</a>&lt;<a href="MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&gt;</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#allocateBlockAsync()">allocateBlockAsync</a></span>()</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i8" class="altColor">
+<tr id="i7" class="rowColor">
 <td class="colFirst"><code><a href="MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#allocateDenseBlock()">allocateDenseBlock</a></span>()</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i9" class="rowColor">
+<tr id="i8" class="altColor">
 <td class="colFirst"><code>boolean</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#allocateDenseBlock(boolean)">allocateDenseBlock</a></span>&#8203;(boolean&nbsp;clearNNZ)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i10" class="altColor">
+<tr id="i9" class="rowColor">
 <td class="colFirst"><code>boolean</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#allocateDenseBlock(boolean,boolean)">allocateDenseBlock</a></span>&#8203;(boolean&nbsp;clearNNZ,
                   boolean&nbsp;containsDuplicates)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i11" class="rowColor">
+<tr id="i10" class="altColor">
 <td class="colFirst"><code>void</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#allocateDenseBlockUnsafe(int,int)">allocateDenseBlockUnsafe</a></span>&#8203;(int&nbsp;rl,
                         int&nbsp;cl)</code></th>
@@ -442,14 +433,22 @@ implements <a href="../../controlprogram/caching/CacheBlock.html" title="interfa
  This function should be called before calling any setValueDenseUnsafe()</div>
 </td>
 </tr>
-<tr id="i12" class="altColor">
+<tr id="i11" class="rowColor">
 <td class="colFirst"><code>boolean</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#allocateSparseRowsBlock()">allocateSparseRowsBlock</a></span>()</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i13" class="rowColor">
+<tr id="i12" class="altColor">
 <td class="colFirst"><code>boolean</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#allocateSparseRowsBlock(boolean)">allocateSparseRowsBlock</a></span>&#8203;(boolean&nbsp;clearNNZ)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr id="i13" class="rowColor">
+<td class="colFirst"><code>static <a href="MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a></code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#append(java.util.List,org.apache.sysds.runtime.matrix.data.MatrixBlock,boolean,int)">append</a></span>&#8203;(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/List.html?is-external=true" title="class or interface in java.util" class="externalLink">List</a>&lt;<a href="MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&gt;&nbsp;that,
+      <a href="MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;ret,
+      boolean&nbsp;cbind,
+      int&nbsp;k)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr id="i14" class="altColor">
@@ -702,6 +701,12 @@ implements <a href="../../controlprogram/caching/CacheBlock.html" title="interfa
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr id="i49" class="rowColor">
+<td class="colFirst"><code><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/List.html?is-external=true" title="class or interface in java.util" class="externalLink">List</a>&lt;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Integer.html?is-external=true" title="class or interface in java.lang" class="externalLink">Integer</a>&gt;</code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#containsVector(org.apache.sysds.runtime.matrix.data.MatrixBlock,boolean)">containsVector</a></span>&#8203;(<a href="MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;pattern,
+              boolean&nbsp;earlyAbort)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr id="i50" class="altColor">
 <td class="colFirst"><code>void</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#copy(int,int,int,int,org.apache.sysds.runtime.matrix.data.MatrixBlock,boolean)">copy</a></span>&#8203;(int&nbsp;rl,
     int&nbsp;ru,
@@ -713,14 +718,14 @@ implements <a href="../../controlprogram/caching/CacheBlock.html" title="interfa
 <div class="block">In-place copy of matrix src into the index range of the existing current matrix.</div>
 </td>
 </tr>
-<tr id="i50" class="altColor">
+<tr id="i51" class="rowColor">
 <td class="colFirst"><code>void</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#copy(org.apache.sysds.runtime.matrix.data.MatrixValue)">copy</a></span>&#8203;(<a href="MatrixValue.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixValue</a>&nbsp;thatValue)</code></th>
 <td class="colLast">
 <div class="block">Copy that MatrixValue into this MatrixValue.</div>
 </td>
 </tr>
-<tr id="i51" class="rowColor">
+<tr id="i52" class="altColor">
 <td class="colFirst"><code>void</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#copy(org.apache.sysds.runtime.matrix.data.MatrixValue,boolean)">copy</a></span>&#8203;(<a href="MatrixValue.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixValue</a>&nbsp;thatValue,
     boolean&nbsp;sp)</code></th>
@@ -728,25 +733,25 @@ implements <a href="../../controlprogram/caching/CacheBlock.html" title="interfa
 <div class="block">Copy that MatrixValue into this MatrixValue.</div>
 </td>
 </tr>
-<tr id="i52" class="altColor">
+<tr id="i53" class="rowColor">
 <td class="colFirst"><code><a href="MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#copyShallow(org.apache.sysds.runtime.matrix.data.MatrixBlock)">copyShallow</a></span>&#8203;(<a href="MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;that)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i53" class="rowColor">
+<tr id="i54" class="altColor">
 <td class="colFirst"><code><a href="../../instructions/cp/CM_COV_Object.html" title="class in org.apache.sysds.runtime.instructions.cp">CM_COV_Object</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#covOperations(org.apache.sysds.runtime.matrix.operators.COVOperator,org.apache.sysds.runtime.matrix.data.MatrixBlock)">covOperations</a></span>&#8203;(<a href="../operators/COVOperator.html" title="class in org.apache.sysds.runtime.matrix.operators">COVOperator</a>&nbsp;op,
              <a href="MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;that)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i54" class="altColor">
+<tr id="i55" class="rowColor">
 <td class="colFirst"><code><a href="../../instructions/cp/CM_COV_Object.html" title="class in org.apache.sysds.runtime.instructions.cp">CM_COV_Object</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#covOperations(org.apache.sysds.runtime.matrix.operators.COVOperator,org.apache.sysds.runtime.matrix.data.MatrixBlock,org.apache.sysds.runtime.matrix.data.MatrixBlock)">covOperations</a></span>&#8203;(<a href="../operators/COVOperator.html" title="class in org.apache.sysds.runtime.matrix.operators">COVOperator</a>&nbsp;op,
              <a href="MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;that,
              <a href="MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;weights)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i55" class="rowColor">
+<tr id="i56" class="altColor">
 <td class="colFirst"><code>void</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#ctableOperations(org.apache.sysds.runtime.matrix.operators.Operator,double,double,org.apache.sysds.runtime.matrix.data.CTableMap,org.apache.sysds.runtime.matrix.data.MatrixBlock)">ctableOperations</a></span>&#8203;(<a href="../operators/Operator.html" title="class in org.apache.sysds.runtime.matrix.operators">Operator</a>&nbsp;op,
                 double&nbsp;scalarThat,
@@ -762,7 +767,7 @@ implements <a href="../../controlprogram/caching/CacheBlock.html" title="interfa
  (w)  from scalar_input3 (scalarThat2)</div>
 </td>
 </tr>
-<tr id="i56" class="altColor">
+<tr id="i57" class="rowColor">
 <td class="colFirst"><code>void</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#ctableOperations(org.apache.sysds.runtime.matrix.operators.Operator,double,org.apache.sysds.runtime.matrix.data.MatrixValue,org.apache.sysds.runtime.matrix.data.CTableMap,org.apache.sysds.runtime.matrix.data.MatrixBlock)">ctableOperations</a></span>&#8203;(<a href="../operators/Operator.html" title="class in org.apache.sysds.runtime.matrix.operators">Operator</a>&nbsp;op,
                 double&nbsp;scalarThat,
@@ -778,7 +783,7 @@ implements <a href="../../controlprogram/caching/CacheBlock.html" title="interfa
  (i3,j3,w)  from input3 (that2)</div>
 </td>
 </tr>
-<tr id="i57" class="rowColor">
+<tr id="i58" class="altColor">
 <td class="colFirst"><code>void</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#ctableOperations(org.apache.sysds.runtime.matrix.operators.Operator,org.apache.sysds.runtime.matrix.data.MatrixIndexes,double,boolean,int,org.apache.sysds.runtime.matrix.data.CTableMap,org.apache.sysds.runtime.matrix.data.MatrixBlock)">ctableOperations</a></span>&#8203;(<a href="../operators/Operator.html" title="class in org.apache.sysds.runtime.matrix.operators">Operator</a>&nbsp;op,
                 <a href="MatrixIndexes.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixIndexes</a>&nbsp;ix1,
@@ -792,7 +797,7 @@ implements <a href="../../controlprogram/caching/CacheBlock.html" title="interfa
  matrix input.</div>
 </td>
 </tr>
-<tr id="i58" class="altColor">
+<tr id="i59" class="rowColor">
 <td class="colFirst"><code>void</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#ctableOperations(org.apache.sysds.runtime.matrix.operators.Operator,org.apache.sysds.runtime.matrix.data.MatrixValue,double,boolean,org.apache.sysds.runtime.matrix.data.CTableMap,org.apache.sysds.runtime.matrix.data.MatrixBlock)">ctableOperations</a></span>&#8203;(<a href="../operators/Operator.html" title="class in org.apache.sysds.runtime.matrix.operators">Operator</a>&nbsp;op,
                 <a href="MatrixValue.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixValue</a>&nbsp;thatVal,
@@ -811,7 +816,7 @@ implements <a href="../../controlprogram/caching/CacheBlock.html" title="interfa
  NOTE: This method supports both vectors and matrices.</div>
 </td>
 </tr>
-<tr id="i59" class="rowColor">
+<tr id="i60" class="altColor">
 <td class="colFirst"><code>void</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#ctableOperations(org.apache.sysds.runtime.matrix.operators.Operator,org.apache.sysds.runtime.matrix.data.MatrixValue,org.apache.sysds.runtime.matrix.data.MatrixValue,org.apache.sysds.runtime.matrix.data.CTableMap)">ctableOperations</a></span>&#8203;(<a href="../operators/Operator.html" title="class in org.apache.sysds.runtime.matrix.operators">Operator</a>&nbsp;op,
                 <a href="MatrixValue.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixValue</a>&nbsp;thatVal,
@@ -826,7 +831,7 @@ implements <a href="../../controlprogram/caching/CacheBlock.html" title="interfa
  (i1,j1,w)  from input3 (that2)</div>
 </td>
 </tr>
-<tr id="i60" class="altColor">
+<tr id="i61" class="rowColor">
 <td class="colFirst"><code>void</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#ctableOperations(org.apache.sysds.runtime.matrix.operators.Operator,org.apache.sysds.runtime.matrix.data.MatrixValue,org.apache.sysds.runtime.matrix.data.MatrixValue,org.apache.sysds.runtime.matrix.data.CTableMap,org.apache.sysds.runtime.matrix.data.MatrixBlock)">ctableOperations</a></span>&#8203;(<a href="../operators/Operator.html" title="class in org.apache.sysds.runtime.matrix.operators">Operator</a>&nbsp;op,
                 <a href="MatrixValue.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixValue</a>&nbsp;thatVal,
@@ -835,7 +840,7 @@ implements <a href="../../controlprogram/caching/CacheBlock.html" title="interfa
                 <a href="MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;resultBlock)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i61" class="rowColor">
+<tr id="i62" class="altColor">
 <td class="colFirst"><code><a href="MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#ctableSeqOperations(org.apache.sysds.runtime.matrix.data.MatrixValue,double,org.apache.sysds.runtime.matrix.data.MatrixBlock)">ctableSeqOperations</a></span>&#8203;(<a href="MatrixValue.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixValue</a>&nbsp;thatMatrix,
                    double&nbsp;thatScalar,
@@ -849,7 +854,7 @@ implements <a href="../../controlprogram/caching/CacheBlock.html" title="interfa
  (w)  from scalar_input3 (scalarThat2)</div>
 </td>
 </tr>
-<tr id="i62" class="altColor">
+<tr id="i63" class="rowColor">
 <td class="colFirst"><code><a href="MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#ctableSeqOperations(org.apache.sysds.runtime.matrix.data.MatrixValue,double,org.apache.sysds.runtime.matrix.data.MatrixBlock,boolean)">ctableSeqOperations</a></span>&#8203;(<a href="MatrixValue.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixValue</a>&nbsp;thatMatrix,
                    double&nbsp;thatScalar,
@@ -857,22 +862,28 @@ implements <a href="../../controlprogram/caching/CacheBlock.html" title="interfa
                    boolean&nbsp;updateClen)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i63" class="rowColor">
+<tr id="i64" class="altColor">
 <td class="colFirst"><code>void</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#denseToSparse(boolean)">denseToSparse</a></span>&#8203;(boolean&nbsp;allowCSR)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i64" class="altColor">
+<tr id="i65" class="rowColor">
+<td class="colFirst"><code>void</code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#denseToSparse(boolean,int)">denseToSparse</a></span>&#8203;(boolean&nbsp;allowCSR,
+             int&nbsp;k)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr id="i66" class="altColor">
 <td class="colFirst"><code>void</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#dropLastRowsOrColumns(org.apache.sysds.common.Types.CorrectionLocationType)">dropLastRowsOrColumns</a></span>&#8203;(<a href="../../../common/Types.CorrectionLocationType.html" title="enum in org.apache.sysds.common">Types.CorrectionLocationType</a>&nbsp;correctionLocation)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i65" class="rowColor">
+<tr id="i67" class="rowColor">
 <td class="colFirst"><code>boolean</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#equals(java.lang.Object)">equals</a></span>&#8203;(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Object.html?is-external=true" title="class or interface in java.lang" class="externalLink">Object</a>&nbsp;arg0)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i66" class="altColor">
+<tr id="i68" class="altColor">
 <td class="colFirst"><code>boolean</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#equals(org.apache.sysds.runtime.matrix.data.MatrixBlock)">equals</a></span>&#8203;(<a href="MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;arg0)</code></th>
 <td class="colLast">
@@ -880,66 +891,66 @@ implements <a href="../../controlprogram/caching/CacheBlock.html" title="interfa
  allocated such as sparse and dense.</div>
 </td>
 </tr>
-<tr id="i67" class="rowColor">
+<tr id="i69" class="rowColor">
 <td class="colFirst"><code>long</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#estimateSizeDenseInMemory()">estimateSizeDenseInMemory</a></span>()</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i68" class="altColor">
+<tr id="i70" class="altColor">
 <td class="colFirst"><code>static long</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#estimateSizeDenseInMemory(long,long)">estimateSizeDenseInMemory</a></span>&#8203;(long&nbsp;nrows,
                          long&nbsp;ncols)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i69" class="rowColor">
+<tr id="i71" class="rowColor">
 <td class="colFirst"><code>long</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#estimateSizeInMemory()">estimateSizeInMemory</a></span>()</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i70" class="altColor">
+<tr id="i72" class="altColor">
 <td class="colFirst"><code>static long</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#estimateSizeInMemory(long,long,double)">estimateSizeInMemory</a></span>&#8203;(long&nbsp;nrows,
                     long&nbsp;ncols,
                     double&nbsp;sparsity)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i71" class="rowColor">
+<tr id="i73" class="rowColor">
 <td class="colFirst"><code>static long</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#estimateSizeInMemory(long,long,long)">estimateSizeInMemory</a></span>&#8203;(long&nbsp;nrows,
                     long&nbsp;ncols,
                     long&nbsp;nnz)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i72" class="altColor">
+<tr id="i74" class="altColor">
 <td class="colFirst"><code>static long</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#estimateSizeInMemory(org.apache.sysds.runtime.meta.DataCharacteristics)">estimateSizeInMemory</a></span>&#8203;(<a href="../../meta/DataCharacteristics.html" title="class in org.apache.sysds.runtime.meta">DataCharacteristics</a>&nbsp;dc)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i73" class="rowColor">
+<tr id="i75" class="rowColor">
 <td class="colFirst"><code>long</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#estimateSizeOnDisk()">estimateSizeOnDisk</a></span>()</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i74" class="altColor">
+<tr id="i76" class="altColor">
 <td class="colFirst"><code>static long</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#estimateSizeOnDisk(long,long,long)">estimateSizeOnDisk</a></span>&#8203;(long&nbsp;nrows,
                   long&nbsp;ncols,
                   long&nbsp;nnz)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i75" class="rowColor">
+<tr id="i77" class="rowColor">
 <td class="colFirst"><code>long</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#estimateSizeSparseInMemory()">estimateSizeSparseInMemory</a></span>()</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i76" class="altColor">
+<tr id="i78" class="altColor">
 <td class="colFirst"><code>static long</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#estimateSizeSparseInMemory(long,long,double)">estimateSizeSparseInMemory</a></span>&#8203;(long&nbsp;nrows,
                           long&nbsp;ncols,
                           double&nbsp;sparsity)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i77" class="rowColor">
+<tr id="i79" class="rowColor">
 <td class="colFirst"><code>static long</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#estimateSizeSparseInMemory(long,long,double,boolean)">estimateSizeSparseInMemory</a></span>&#8203;(long&nbsp;nrows,
                           long&nbsp;ncols,
@@ -947,7 +958,7 @@ implements <a href="../../controlprogram/caching/CacheBlock.html" title="interfa
                           boolean&nbsp;allowCSR)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i78" class="altColor">
+<tr id="i80" class="altColor">
 <td class="colFirst"><code>static long</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#estimateSizeSparseInMemory(long,long,double,org.apache.sysds.runtime.data.SparseBlock.Type)">estimateSizeSparseInMemory</a></span>&#8203;(long&nbsp;nrows,
                           long&nbsp;ncols,
@@ -955,12 +966,12 @@ implements <a href="../../controlprogram/caching/CacheBlock.html" title="interfa
                           <a href="../../data/SparseBlock.Type.html" title="enum in org.apache.sysds.runtime.data">SparseBlock.Type</a>&nbsp;stype)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i79" class="rowColor">
+<tr id="i81" class="rowColor">
 <td class="colFirst"><code>long</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#estimateSizeSparseInMemory(org.apache.sysds.runtime.data.SparseBlock.Type)">estimateSizeSparseInMemory</a></span>&#8203;(<a href="../../data/SparseBlock.Type.html" title="enum in org.apache.sysds.runtime.data">SparseBlock.Type</a>&nbsp;stype)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i80" class="altColor">
+<tr id="i82" class="altColor">
 <td class="colFirst"><code>boolean</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#evalSparseFormatInMemory()">evalSparseFormatInMemory</a></span>()</code></th>
 <td class="colLast">
@@ -968,12 +979,12 @@ implements <a href="../../controlprogram/caching/CacheBlock.html" title="interfa
  memory.</div>
 </td>
 </tr>
-<tr id="i81" class="rowColor">
+<tr id="i83" class="rowColor">
 <td class="colFirst"><code>boolean</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#evalSparseFormatInMemory(boolean)">evalSparseFormatInMemory</a></span>&#8203;(boolean&nbsp;allowCSR)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i82" class="altColor">
+<tr id="i84" class="altColor">
 <td class="colFirst"><code>static boolean</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#evalSparseFormatInMemory(long,long,long)">evalSparseFormatInMemory</a></span>&#8203;(long&nbsp;nrows,
                         long&nbsp;ncols,
@@ -983,7 +994,7 @@ implements <a href="../../controlprogram/caching/CacheBlock.html" title="interfa
  in memory.</div>
 </td>
 </tr>
-<tr id="i83" class="rowColor">
+<tr id="i85" class="rowColor">
 <td class="colFirst"><code>static boolean</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#evalSparseFormatInMemory(long,long,long,boolean)">evalSparseFormatInMemory</a></span>&#8203;(long&nbsp;nrows,
                         long&nbsp;ncols,
@@ -991,12 +1002,12 @@ implements <a href="../../controlprogram/caching/CacheBlock.html" title="interfa
                         boolean&nbsp;allowCSR)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i84" class="altColor">
+<tr id="i86" class="altColor">
 <td class="colFirst"><code>static boolean</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#evalSparseFormatInMemory(org.apache.sysds.runtime.meta.DataCharacteristics)">evalSparseFormatInMemory</a></span>&#8203;(<a href="../../meta/DataCharacteristics.html" title="class in org.apache.sysds.runtime.meta">DataCharacteristics</a>&nbsp;dc)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i85" class="rowColor">
+<tr id="i87" class="rowColor">
 <td class="colFirst"><code>boolean</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#evalSparseFormatOnDisk()">evalSparseFormatOnDisk</a></span>()</code></th>
 <td class="colLast">
@@ -1004,7 +1015,7 @@ implements <a href="../../controlprogram/caching/CacheBlock.html" title="interfa
  disk.</div>
 </td>
 </tr>
-<tr id="i86" class="altColor">
+<tr id="i88" class="altColor">
 <td class="colFirst"><code>static boolean</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#evalSparseFormatOnDisk(long,long,long)">evalSparseFormatOnDisk</a></span>&#8203;(long&nbsp;nrows,
                       long&nbsp;ncols,
@@ -1014,7 +1025,7 @@ implements <a href="../../controlprogram/caching/CacheBlock.html" title="interfa
  on disk (or in any other serialized representation).</div>
 </td>
 </tr>
-<tr id="i87" class="rowColor">
+<tr id="i89" class="rowColor">
 <td class="colFirst"><code>void</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#examSparsity()">examSparsity</a></span>()</code></th>
 <td class="colLast">
@@ -1022,7 +1033,7 @@ implements <a href="../../controlprogram/caching/CacheBlock.html" title="interfa
  memory.</div>
 </td>
 </tr>
-<tr id="i88" class="altColor">
+<tr id="i90" class="altColor">
 <td class="colFirst"><code>void</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#examSparsity(boolean)">examSparsity</a></span>&#8203;(boolean&nbsp;allowCSR)</code></th>
 <td class="colLast">
@@ -1030,7 +1041,24 @@ implements <a href="../../controlprogram/caching/CacheBlock.html" title="interfa
  memory.</div>
 </td>
 </tr>
-<tr id="i89" class="rowColor">
+<tr id="i91" class="rowColor">
+<td class="colFirst"><code>void</code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#examSparsity(boolean,int)">examSparsity</a></span>&#8203;(boolean&nbsp;allowCSR,
+            int&nbsp;k)</code></th>
+<td class="colLast">
+<div class="block">Evaluates if this matrix block should be in sparse format in
+ memory.</div>
+</td>
+</tr>
+<tr id="i92" class="altColor">
+<td class="colFirst"><code>void</code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#examSparsity(int)">examSparsity</a></span>&#8203;(int&nbsp;k)</code></th>
+<td class="colLast">
+<div class="block">Evaluates if this matrix block should be in sparse format in
+ memory.</div>
+</td>
+</tr>
+<tr id="i93" class="rowColor">
 <td class="colFirst"><code><a href="MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#extractTriangular(org.apache.sysds.runtime.matrix.data.MatrixBlock,boolean,boolean,boolean)">extractTriangular</a></span>&#8203;(<a href="MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;ret,
                  boolean&nbsp;lower,
@@ -1038,22 +1066,22 @@ implements <a href="../../controlprogram/caching/CacheBlock.html" title="interfa
                  boolean&nbsp;values)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i90" class="altColor">
+<tr id="i94" class="altColor">
 <td class="colFirst"><code><a href="../../meta/DataCharacteristics.html" title="class in org.apache.sysds.runtime.meta">DataCharacteristics</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getDataCharacteristics()">getDataCharacteristics</a></span>()</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i91" class="rowColor">
+<tr id="i95" class="rowColor">
 <td class="colFirst"><code><a href="../../data/DenseBlock.html" title="class in org.apache.sysds.runtime.data">DenseBlock</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getDenseBlock()">getDenseBlock</a></span>()</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i92" class="altColor">
+<tr id="i96" class="altColor">
 <td class="colFirst"><code>double[]</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getDenseBlockValues()">getDenseBlockValues</a></span>()</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i93" class="rowColor">
+<tr id="i97" class="rowColor">
 <td class="colFirst"><code>double</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getDouble(int,int)">getDouble</a></span>&#8203;(int&nbsp;r,
          int&nbsp;c)</code></th>
@@ -1061,7 +1089,7 @@ implements <a href="../../controlprogram/caching/CacheBlock.html" title="interfa
 <div class="block">Returns the double value at the passed row and column.</div>
 </td>
 </tr>
-<tr id="i94" class="altColor">
+<tr id="i98" class="altColor">
 <td class="colFirst"><code>double</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getDoubleNaN(int,int)">getDoubleNaN</a></span>&#8203;(int&nbsp;r,
             int&nbsp;c)</code></th>
@@ -1069,74 +1097,74 @@ implements <a href="../../controlprogram/caching/CacheBlock.html" title="interfa
 <div class="block">Returns the double value at the passed row and column.</div>
 </td>
 </tr>
-<tr id="i95" class="rowColor">
+<tr id="i99" class="rowColor">
 <td class="colFirst"><code>long</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getExactSerializedSize()">getExactSerializedSize</a></span>()</code></th>
 <td class="colLast">
 <div class="block">Get the exact serialized size in bytes of the cache block.</div>
 </td>
 </tr>
-<tr id="i96" class="altColor">
+<tr id="i100" class="altColor">
 <td class="colFirst"><code>long</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getExactSizeOnDisk()">getExactSizeOnDisk</a></span>()</code></th>
 <td class="colLast">
 <div class="block">NOTE: The used estimates must be kept consistent with the respective write functions.</div>
 </td>
 </tr>
-<tr id="i97" class="rowColor">
+<tr id="i101" class="rowColor">
 <td class="colFirst"><code>static long</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getHeaderSize()">getHeaderSize</a></span>()</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i98" class="altColor">
+<tr id="i102" class="altColor">
 <td class="colFirst"><code>long</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getInMemorySize()">getInMemorySize</a></span>()</code></th>
 <td class="colLast">
 <div class="block">Get the in-memory size in bytes of the cache block.</div>
 </td>
 </tr>
-<tr id="i99" class="rowColor">
+<tr id="i103" class="rowColor">
 <td class="colFirst"><code>long</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getLength()">getLength</a></span>()</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i100" class="altColor">
+<tr id="i104" class="altColor">
 <td class="colFirst"><code>long</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getNonZeros()">getNonZeros</a></span>()</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i101" class="rowColor">
+<tr id="i105" class="rowColor">
 <td class="colFirst"><code>int</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getNumColumns()">getNumColumns</a></span>()</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i102" class="altColor">
+<tr id="i106" class="altColor">
 <td class="colFirst"><code>int</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getNumRows()">getNumRows</a></span>()</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i103" class="rowColor">
+<tr id="i107" class="rowColor">
 <td class="colFirst"><code><a href="../../data/SparseBlock.html" title="class in org.apache.sysds.runtime.data">SparseBlock</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getSparseBlock()">getSparseBlock</a></span>()</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i104" class="altColor">
+<tr id="i108" class="altColor">
 <td class="colFirst"><code><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/Iterator.html?is-external=true" title="class or interface in java.util" class="externalLink">Iterator</a>&lt;<a href="IJV.html" title="class in org.apache.sysds.runtime.matrix.data">IJV</a>&gt;</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getSparseBlockIterator()">getSparseBlockIterator</a></span>()</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i105" class="rowColor">
+<tr id="i109" class="rowColor">
 <td class="colFirst"><code><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/Iterator.html?is-external=true" title="class or interface in java.util" class="externalLink">Iterator</a>&lt;<a href="IJV.html" title="class in org.apache.sysds.runtime.matrix.data">IJV</a>&gt;</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getSparseBlockIterator(int,int)">getSparseBlockIterator</a></span>&#8203;(int&nbsp;rl,
                       int&nbsp;ru)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i106" class="altColor">
+<tr id="i110" class="altColor">
 <td class="colFirst"><code>double</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getSparsity()">getSparsity</a></span>()</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i107" class="rowColor">
+<tr id="i111" class="rowColor">
 <td class="colFirst"><code><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getString(int,int)">getString</a></span>&#8203;(int&nbsp;r,
          int&nbsp;c)</code></th>
@@ -1144,19 +1172,19 @@ implements <a href="../../controlprogram/caching/CacheBlock.html" title="interfa
 <div class="block">Returns the string of the value at the passed row and column.</div>
 </td>
 </tr>
-<tr id="i108" class="altColor">
+<tr id="i112" class="altColor">
 <td class="colFirst"><code>double</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getValue(int,int)">getValue</a></span>&#8203;(int&nbsp;r,
         int&nbsp;c)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i109" class="rowColor">
+<tr id="i113" class="rowColor">
 <td class="colFirst"><code>double</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getValueDenseUnsafe(int,int)">getValueDenseUnsafe</a></span>&#8203;(int&nbsp;r,
                    int&nbsp;c)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i110" class="altColor">
+<tr id="i114" class="altColor">
 <td class="colFirst"><code><a href="MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#groupedAggOperations(org.apache.sysds.runtime.matrix.data.MatrixValue,org.apache.sysds.runtime.matrix.data.MatrixValue,org.apache.sysds.runtime.matrix.data.MatrixValue,int,org.apache.sysds.runtime.matrix.operators.Operator)">groupedAggOperations</a></span>&#8203;(<a href="MatrixValue.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixValue</a>&nbsp;tgt,
                     <a href="MatrixValue.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixValue</a>&nbsp;wghts,
@@ -1167,7 +1195,7 @@ implements <a href="../../controlprogram/caching/CacheBlock.html" title="interfa
 <div class="block">Invocation from CP instructions.</div>
 </td>
 </tr>
-<tr id="i111" class="rowColor">
+<tr id="i115" class="rowColor">
 <td class="colFirst"><code><a href="MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#groupedAggOperations(org.apache.sysds.runtime.matrix.data.MatrixValue,org.apache.sysds.runtime.matrix.data.MatrixValue,org.apache.sysds.runtime.matrix.data.MatrixValue,int,org.apache.sysds.runtime.matrix.operators.Operator,int)">groupedAggOperations</a></span>&#8203;(<a href="MatrixValue.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixValue</a>&nbsp;tgt,
                     <a href="MatrixValue.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixValue</a>&nbsp;wghts,
@@ -1177,18 +1205,18 @@ implements <a href="../../controlprogram/caching/CacheBlock.html" title="interfa
                     int&nbsp;k)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i112" class="altColor">
+<tr id="i116" class="altColor">
 <td class="colFirst"><code>int</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#hashCode()">hashCode</a></span>()</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i113" class="rowColor">
+<tr id="i117" class="rowColor">
 <td class="colFirst"><code>void</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#incrementalAggregate(org.apache.sysds.runtime.matrix.operators.AggregateOperator,org.apache.sysds.runtime.matrix.data.MatrixValue)">incrementalAggregate</a></span>&#8203;(<a href="../operators/AggregateOperator.html" title="class in org.apache.sysds.runtime.matrix.operators">AggregateOperator</a>&nbsp;aggOp,
                     <a href="MatrixValue.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixValue</a>&nbsp;newWithCorrection)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i114" class="altColor">
+<tr id="i118" class="altColor">
 <td class="colFirst"><code>void</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#incrementalAggregate(org.apache.sysds.runtime.matrix.operators.AggregateOperator,org.apache.sysds.runtime.matrix.data.MatrixValue,org.apache.sysds.runtime.matrix.data.MatrixValue,boolean)">incrementalAggregate</a></span>&#8203;(<a href="../operators/AggregateOperator.html" title="class in org.apache.sysds.runtime.matrix.operators">AggregateOperator</a>&nbsp;aggOp,
                     <a href="MatrixValue.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixValue</a>&nbsp;correction,
@@ -1196,7 +1224,7 @@ implements <a href="../../controlprogram/caching/CacheBlock.html" title="interfa
                     boolean&nbsp;deep)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i115" class="rowColor">
+<tr id="i119" class="rowColor">
 <td class="colFirst"><code>void</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#init(double%5B%5D%5B%5D,int,int)">init</a></span>&#8203;(double[][]&nbsp;arr,
     int&nbsp;r,
@@ -1205,7 +1233,7 @@ implements <a href="../../controlprogram/caching/CacheBlock.html" title="interfa
 <div class="block">NOTE: This method is designed only for dense representation.</div>
 </td>
 </tr>
-<tr id="i116" class="altColor">
+<tr id="i120" class="altColor">
 <td class="colFirst"><code>void</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#init(double%5B%5D,int,int)">init</a></span>&#8203;(double[]&nbsp;arr,
     int&nbsp;r,
@@ -1214,39 +1242,41 @@ implements <a href="../../controlprogram/caching/CacheBlock.html" title="interfa
 <div class="block">NOTE: This method is designed only for dense representation.</div>
 </td>
 </tr>
-<tr id="i117" class="rowColor">
+<tr id="i121" class="rowColor">
 <td class="colFirst"><code>double</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#interQuartileMean()">interQuartileMean</a></span>()</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i118" class="altColor">
+<tr id="i122" class="altColor">
 <td class="colFirst"><code>boolean</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#isAllocated()">isAllocated</a></span>()</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i119" class="rowColor">
+<tr id="i123" class="rowColor">
 <td class="colFirst"><code>boolean</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#isEmpty()">isEmpty</a></span>()</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i120" class="altColor">
+<tr id="i124" class="altColor">
 <td class="colFirst"><code>boolean</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#isEmptyBlock()">isEmptyBlock</a></span>()</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i121" class="rowColor">
+<tr id="i125" class="rowColor">
 <td class="colFirst"><code>boolean</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#isEmptyBlock(boolean)">isEmptyBlock</a></span>&#8203;(boolean&nbsp;safe)</code></th>
-<td class="colLast">&nbsp;</td>
+<td class="colLast">
+<div class="block">Get if this MatrixBlock is an empty block.</div>
+</td>
 </tr>
-<tr id="i122" class="altColor">
+<tr id="i126" class="altColor">
 <td class="colFirst"><code>boolean</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#isInSparseFormat()">isInSparseFormat</a></span>()</code></th>
 <td class="colLast">
 <div class="block">Returns the current representation (true for sparse).</div>
 </td>
 </tr>
-<tr id="i123" class="rowColor">
+<tr id="i127" class="rowColor">
 <td class="colFirst"><code>boolean</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#isShallowSerialize()">isShallowSerialize</a></span>()</code></th>
 <td class="colLast">
@@ -1255,7 +1285,7 @@ implements <a href="../../controlprogram/caching/CacheBlock.html" title="interfa
  are almost identical allowing to avoid unnecessary deep serialize.</div>
 </td>
 </tr>
-<tr id="i124" class="altColor">
+<tr id="i128" class="altColor">
 <td class="colFirst"><code>boolean</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#isShallowSerialize(boolean)">isShallowSerialize</a></span>&#8203;(boolean&nbsp;inclConvert)</code></th>
 <td class="colLast">
@@ -1264,41 +1294,41 @@ implements <a href="../../controlprogram/caching/CacheBlock.html" title="interfa
  are almost identical allowing to avoid unnecessary deep serialize.</div>
 </td>
 </tr>
-<tr id="i125" class="rowColor">
+<tr id="i129" class="rowColor">
 <td class="colFirst"><code>boolean</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#isSparsePermutationMatrix()">isSparsePermutationMatrix</a></span>()</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i126" class="altColor">
+<tr id="i130" class="altColor">
 <td class="colFirst"><code>boolean</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#isThreadSafe()">isThreadSafe</a></span>()</code></th>
 <td class="colLast">
 <div class="block">Indicates if concurrent modifications of disjoint rows are thread-safe.</div>
 </td>
 </tr>
-<tr id="i127" class="rowColor">
+<tr id="i131" class="rowColor">
 <td class="colFirst"><code>static boolean</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#isThreadSafe(boolean)">isThreadSafe</a></span>&#8203;(boolean&nbsp;sparse)</code></th>
 <td class="colLast">
 <div class="block">Indicates if concurrent modifications of disjoint rows are thread-safe.</div>
 </td>
 </tr>
-<tr id="i128" class="altColor">
+<tr id="i132" class="altColor">
 <td class="colFirst"><code>boolean</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#isUltraSparse()">isUltraSparse</a></span>()</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i129" class="rowColor">
+<tr id="i133" class="rowColor">
 <td class="colFirst"><code>boolean</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#isUltraSparse(boolean)">isUltraSparse</a></span>&#8203;(boolean&nbsp;checkNnz)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i130" class="altColor">
+<tr id="i134" class="altColor">
 <td class="colFirst"><code>boolean</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#isVector()">isVector</a></span>()</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i131" class="rowColor">
+<tr id="i135" class="rowColor">
 <td class="colFirst"><code><a href="MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#leftIndexingOperations(org.apache.sysds.runtime.instructions.cp.ScalarObject,int,int,org.apache.sysds.runtime.matrix.data.MatrixBlock,org.apache.sysds.runtime.controlprogram.caching.MatrixObject.UpdateType)">leftIndexingOperations</a></span>&#8203;(<a href="../../instructions/cp/ScalarObject.html" title="class in org.apache.sysds.runtime.instructions.cp">ScalarObject</a>&nbsp;scalar,
                       int&nbsp;rl,
@@ -1309,7 +1339,7 @@ implements <a href="../../controlprogram/caching/CacheBlock.html" title="interfa
 <div class="block">Explicitly allow left indexing for scalars.</div>
 </td>
 </tr>
-<tr id="i132" class="altColor">
+<tr id="i136" class="altColor">
 <td class="colFirst"><code><a href="MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#leftIndexingOperations(org.apache.sysds.runtime.matrix.data.MatrixBlock,int,int,int,int,org.apache.sysds.runtime.matrix.data.MatrixBlock,org.apache.sysds.runtime.controlprogram.caching.MatrixObject.UpdateType)">leftIndexingOperations</a></span>&#8203;(<a href="MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;rhsMatrix,
                       int&nbsp;rl,
@@ -1320,7 +1350,7 @@ implements <a href="../../controlprogram/caching/CacheBlock.html" title="interfa
                       <a href="../../controlprogram/caching/MatrixObject.UpdateType.html" title="enum in org.apache.sysds.runtime.controlprogram.caching">MatrixObject.UpdateType</a>&nbsp;update)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i133" class="rowColor">
+<tr id="i137" class="rowColor">
 <td class="colFirst"><code><a href="MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#leftIndexingOperations(org.apache.sysds.runtime.matrix.data.MatrixBlock,org.apache.sysds.runtime.util.IndexRange,org.apache.sysds.runtime.matrix.data.MatrixBlock,org.apache.sysds.runtime.controlprogram.caching.MatrixObject.UpdateType)">leftIndexingOperations</a></span>&#8203;(<a href="MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;rhsMatrix,
                       <a href="../../util/IndexRange.html" title="class in org.apache.sysds.runtime.util">IndexRange</a>&nbsp;ixrange,
@@ -1328,38 +1358,38 @@ implements <a href="../../controlprogram/caching/CacheBlock.html" title="interfa
                       <a href="../../controlprogram/caching/MatrixObject.UpdateType.html" title="enum in org.apache.sysds.runtime.controlprogram.caching">MatrixObject.UpdateType</a>&nbsp;update)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i134" class="altColor">
+<tr id="i138" class="altColor">
 <td class="colFirst"><code>double</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#max()">max</a></span>()</code></th>
 <td class="colLast">
 <div class="block">Wrapper method for reduceall-max of a matrix.</div>
 </td>
 </tr>
-<tr id="i135" class="rowColor">
+<tr id="i139" class="rowColor">
 <td class="colFirst"><code><a href="MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#max(int)">max</a></span>&#8203;(int&nbsp;k)</code></th>
 <td class="colLast">
 <div class="block">Wrapper method for reduceall-max of a matrix.</div>
 </td>
 </tr>
-<tr id="i136" class="altColor">
+<tr id="i140" class="altColor">
 <td class="colFirst"><code>double</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#mean()">mean</a></span>()</code></th>
 <td class="colLast">
 <div class="block">Wrapper method for reduceall-mean of a matrix.</div>
 </td>
 </tr>
-<tr id="i137" class="rowColor">
+<tr id="i141" class="rowColor">
 <td class="colFirst"><code>double</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#mean(int)">mean</a></span>&#8203;(int&nbsp;k)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i138" class="altColor">
+<tr id="i142" class="altColor">
 <td class="colFirst"><code>double</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#median()">median</a></span>()</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i139" class="rowColor">
+<tr id="i143" class="rowColor">
 <td class="colFirst"><code><a href="MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#merge(org.apache.sysds.runtime.matrix.data.MatrixBlock,boolean)">merge</a></span>&#8203;(<a href="MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;that,
      boolean&nbsp;appendOnly)</code></th>
@@ -1368,14 +1398,14 @@ implements <a href="../../controlprogram/caching/CacheBlock.html" title="interfa
  block.</div>
 </td>
 </tr>
-<tr id="i140" class="altColor">
+<tr id="i144" class="altColor">
 <td class="colFirst"><code><a href="MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#merge(org.apache.sysds.runtime.matrix.data.MatrixBlock,boolean,boolean)">merge</a></span>&#8203;(<a href="MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;that,
      boolean&nbsp;appendOnly,
      boolean&nbsp;par)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i141" class="rowColor">
+<tr id="i145" class="rowColor">
 <td class="colFirst"><code><a href="MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#merge(org.apache.sysds.runtime.matrix.data.MatrixBlock,boolean,boolean,boolean)">merge</a></span>&#8203;(<a href="MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;that,
      boolean&nbsp;appendOnly,
@@ -1383,26 +1413,26 @@ implements <a href="../../controlprogram/caching/CacheBlock.html" title="interfa
      boolean&nbsp;deep)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i142" class="altColor">
+<tr id="i146" class="altColor">
 <td class="colFirst"><code>double</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#min()">min</a></span>()</code></th>
 <td class="colLast">
 <div class="block">Wrapper method for reduceall-min of a matrix.</div>
 </td>
 </tr>
-<tr id="i143" class="rowColor">
+<tr id="i147" class="rowColor">
 <td class="colFirst"><code>double</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#min(int)">min</a></span>&#8203;(int&nbsp;k)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i144" class="altColor">
+<tr id="i148" class="altColor">
 <td class="colFirst"><code>double</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#minNonZero()">minNonZero</a></span>()</code></th>
 <td class="colLast">
 <div class="block">Utility function for computing the min non-zero value.</div>
 </td>
 </tr>
-<tr id="i145" class="rowColor">
+<tr id="i149" class="rowColor">
 <td class="colFirst"><code>static <a href="MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#naryOperations(org.apache.sysds.runtime.matrix.operators.Operator,org.apache.sysds.runtime.matrix.data.MatrixBlock%5B%5D,org.apache.sysds.runtime.instructions.cp.ScalarObject%5B%5D,org.apache.sysds.runtime.matrix.data.MatrixBlock)">naryOperations</a></span>&#8203;(<a href="../operators/Operator.html" title="class in org.apache.sysds.runtime.matrix.operators">Operator</a>&nbsp;op,
               <a href="MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>[]&nbsp;matrices,
@@ -1410,14 +1440,14 @@ implements <a href="../../controlprogram/caching/CacheBlock.html" title="interfa
               <a href="MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;ret)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i146" class="altColor">
+<tr id="i150" class="altColor">
 <td class="colFirst"><code>void</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#permutationMatrixMultOperations(org.apache.sysds.runtime.matrix.data.MatrixValue,org.apache.sysds.runtime.matrix.data.MatrixValue,org.apache.sysds.runtime.matrix.data.MatrixValue)">permutationMatrixMultOperations</a></span>&#8203;(<a href="MatrixValue.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixValue</a>&nbsp;m2Val,
                                <a href="MatrixValue.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixValue</a>&nbsp;out1Val,
                                <a href="MatrixValue.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixValue</a>&nbsp;out2Val)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i147" class="rowColor">
+<tr id="i151" class="rowColor">
 <td class="colFirst"><code>void</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#permutationMatrixMultOperations(org.apache.sysds.runtime.matrix.data.MatrixValue,org.apache.sysds.runtime.matrix.data.MatrixValue,org.apache.sysds.runtime.matrix.data.MatrixValue,int)">permutationMatrixMultOperations</a></span>&#8203;(<a href="MatrixValue.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixValue</a>&nbsp;m2Val,
                                <a href="MatrixValue.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixValue</a>&nbsp;out1Val,
@@ -1425,38 +1455,31 @@ implements <a href="../../controlprogram/caching/CacheBlock.html" title="interfa
                                int&nbsp;k)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i148" class="altColor">
+<tr id="i152" class="altColor">
 <td class="colFirst"><code>double</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#pickValue(double)">pickValue</a></span>&#8203;(double&nbsp;quantile)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i149" class="rowColor">
+<tr id="i153" class="rowColor">
 <td class="colFirst"><code>double</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#pickValue(double,boolean)">pickValue</a></span>&#8203;(double&nbsp;quantile,
          boolean&nbsp;average)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i150" class="altColor">
+<tr id="i154" class="altColor">
 <td class="colFirst"><code><a href="MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#pickValues(org.apache.sysds.runtime.matrix.data.MatrixValue,org.apache.sysds.runtime.matrix.data.MatrixValue)">pickValues</a></span>&#8203;(<a href="MatrixValue.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixValue</a>&nbsp;quantiles,
           <a href="MatrixValue.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixValue</a>&nbsp;ret)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i151" class="rowColor">
-<td class="colFirst"><code><a href="MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a></code></td>
-<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#prepareAggregateUnaryOutput(org.apache.sysds.runtime.matrix.operators.AggregateUnaryOperator,org.apache.sysds.runtime.matrix.data.MatrixValue,int)">prepareAggregateUnaryOutput</a></span>&#8203;(<a href="../operators/AggregateUnaryOperator.html" title="class in org.apache.sysds.runtime.matrix.operators">AggregateUnaryOperator</a>&nbsp;op,
-                           <a href="MatrixValue.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixValue</a>&nbsp;result,
-                           int&nbsp;blen)</code></th>
-<td class="colLast">&nbsp;</td>
-</tr>
-<tr id="i152" class="altColor">
+<tr id="i155" class="rowColor">
 <td class="colFirst"><code>double</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#prod()">prod</a></span>()</code></th>
 <td class="colLast">
 <div class="block">Wrapper method for reduceall-product of a matrix.</div>
 </td>
 </tr>
-<tr id="i153" class="rowColor">
+<tr id="i156" class="altColor">
 <td class="colFirst"><code>void</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#putInto(org.apache.sysds.runtime.matrix.data.MatrixBlock,int,int,boolean)">putInto</a></span>&#8203;(<a href="MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;target,
        int&nbsp;rowOffset,
@@ -1466,7 +1489,7 @@ implements <a href="../../controlprogram/caching/CacheBlock.html" title="interfa
 <div class="block">Method for copying this matrix into a target matrix.</div>
 </td>
 </tr>
-<tr id="i154" class="altColor">
+<tr id="i157" class="rowColor">
 <td class="colFirst"><code><a href="MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#quaternaryOperations(org.apache.sysds.runtime.matrix.operators.QuaternaryOperator,org.apache.sysds.runtime.matrix.data.MatrixBlock,org.apache.sysds.runtime.matrix.data.MatrixBlock,org.apache.sysds.runtime.matrix.data.MatrixBlock,org.apache.sysds.runtime.matrix.data.MatrixBlock)">quaternaryOperations</a></span>&#8203;(<a href="../operators/QuaternaryOperator.html" title="class in org.apache.sysds.runtime.matrix.operators">QuaternaryOperator</a>&nbsp;qop,
                     <a href="MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;um,
@@ -1475,7 +1498,7 @@ implements <a href="../../controlprogram/caching/CacheBlock.html" title="interfa
                     <a href="MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;out)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i155" class="rowColor">
+<tr id="i158" class="altColor">
 <td class="colFirst"><code><a href="MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#quaternaryOperations(org.apache.sysds.runtime.matrix.operators.QuaternaryOperator,org.apache.sysds.runtime.matrix.data.MatrixBlock,org.apache.sysds.runtime.matrix.data.MatrixBlock,org.apache.sysds.runtime.matrix.data.MatrixBlock,org.apache.sysds.runtime.matrix.data.MatrixBlock,int)">quaternaryOperations</a></span>&#8203;(<a href="../operators/QuaternaryOperator.html" title="class in org.apache.sysds.runtime.matrix.operators">QuaternaryOperator</a>&nbsp;qop,
                     <a href="MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;U,
@@ -1485,32 +1508,32 @@ implements <a href="../../controlprogram/caching/CacheBlock.html" title="interfa
                     int&nbsp;k)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i156" class="altColor">
+<tr id="i159" class="rowColor">
 <td class="colFirst"><code>double</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#quickGetValue(int,int)">quickGetValue</a></span>&#8203;(int&nbsp;r,
              int&nbsp;c)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i157" class="rowColor">
+<tr id="i160" class="altColor">
 <td class="colFirst"><code>double</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#quickGetValueThreadSafe(int,int)">quickGetValueThreadSafe</a></span>&#8203;(int&nbsp;r,
                        int&nbsp;c)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i158" class="altColor">
+<tr id="i161" class="rowColor">
 <td class="colFirst"><code>void</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#quickSetRow(int,double%5B%5D)">quickSetRow</a></span>&#8203;(int&nbsp;r,
            double[]&nbsp;values)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i159" class="rowColor">
+<tr id="i162" class="altColor">
 <td class="colFirst"><code>void</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#quickSetValue(int,int,double)">quickSetValue</a></span>&#8203;(int&nbsp;r,
              int&nbsp;c,
              double&nbsp;v)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i160" class="altColor">
+<tr id="i163" class="rowColor">
 <td class="colFirst"><code>static <a href="MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#randOperations(int,int,double,double,double,java.lang.String,long)">randOperations</a></span>&#8203;(int&nbsp;rows,
               int&nbsp;cols,
@@ -1523,7 +1546,7 @@ implements <a href="../../controlprogram/caching/CacheBlock.html" title="interfa
 <div class="block">Function to generate the random matrix with specified dimensions (block sizes are not specified).</div>
 </td>
 </tr>
-<tr id="i161" class="rowColor">
+<tr id="i164" class="altColor">
 <td class="colFirst"><code>static <a href="MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#randOperations(int,int,double,double,double,java.lang.String,long,int)">randOperations</a></span>&#8203;(int&nbsp;rows,
               int&nbsp;cols,
@@ -1537,7 +1560,7 @@ implements <a href="../../controlprogram/caching/CacheBlock.html" title="interfa
 <div class="block">Function to generate the random matrix with specified dimensions (block sizes are not specified).</div>
 </td>
 </tr>
-<tr id="i162" class="altColor">
+<tr id="i165" class="rowColor">
 <td class="colFirst"><code>static <a href="MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#randOperations(org.apache.sysds.runtime.matrix.data.RandomMatrixGenerator,long)">randOperations</a></span>&#8203;(<a href="RandomMatrixGenerator.html" title="class in org.apache.sysds.runtime.matrix.data">RandomMatrixGenerator</a>&nbsp;rgen,
               long&nbsp;seed)</code></th>
@@ -1545,7 +1568,7 @@ implements <a href="../../controlprogram/caching/CacheBlock.html" title="interfa
 <div class="block">Function to generate the random matrix with specified dimensions and block dimensions.</div>
 </td>
 </tr>
-<tr id="i163" class="rowColor">
+<tr id="i166" class="altColor">
 <td class="colFirst"><code>static <a href="MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#randOperations(org.apache.sysds.runtime.matrix.data.RandomMatrixGenerator,long,int)">randOperations</a></span>&#8203;(<a href="RandomMatrixGenerator.html" title="class in org.apache.sysds.runtime.matrix.data">RandomMatrixGenerator</a>&nbsp;rgen,
               long&nbsp;seed,
@@ -1554,7 +1577,7 @@ implements <a href="../../controlprogram/caching/CacheBlock.html" title="interfa
 <div class="block">Function to generate the random matrix with specified dimensions and block dimensions.</div>
 </td>
 </tr>
-<tr id="i164" class="altColor">
+<tr id="i167" class="rowColor">
 <td class="colFirst"><code><a href="MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#randOperationsInPlace(org.apache.sysds.runtime.matrix.data.RandomMatrixGenerator,org.apache.commons.math3.random.Well1024a,long)">randOperationsInPlace</a></span>&#8203;(<a href="RandomMatrixGenerator.html" title="class in org.apache.sysds.runtime.matrix.data">RandomMatrixGenerator</a>&nbsp;rgen,
                      org.apache.commons.math3.random.Well1024a&nbsp;bigrand,
@@ -1563,7 +1586,7 @@ implements <a href="../../controlprogram/caching/CacheBlock.html" title="interfa
 <div class="block">Function to generate a matrix of random numbers.</div>
 </td>
 </tr>
-<tr id="i165" class="rowColor">
+<tr id="i168" class="altColor">
 <td class="colFirst"><code><a href="MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#randOperationsInPlace(org.apache.sysds.runtime.matrix.data.RandomMatrixGenerator,org.apache.commons.math3.random.Well1024a,long,int)">randOperationsInPlace</a></span>&#8203;(<a href="RandomMatrixGenerator.html" title="class in org.apache.sysds.runtime.matrix.data">RandomMatrixGenerator</a>&nbsp;rgen,
                      org.apache.commons.math3.random.Well1024a&nbsp;bigrand,
@@ -1573,7 +1596,7 @@ implements <a href="../../controlprogram/caching/CacheBlock.html" title="interfa
 <div class="block">Function to generate a matrix of random numbers.</div>
 </td>
 </tr>
-<tr id="i166" class="altColor">
+<tr id="i169" class="rowColor">
 <td class="colFirst"><code>void</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#readExternal(java.io.ObjectInput)">readExternal</a></span>&#8203;(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/io/ObjectInput.html?is-external=true" title="class or interface in java.io" class="externalLink">ObjectInput</a>&nbsp;is)</code></th>
 <td class="colLast">
@@ -1581,12 +1604,12 @@ implements <a href="../../controlprogram/caching/CacheBlock.html" title="interfa
  hadoop writable serialization for efficient broadcast/rdd deserialization.</div>
 </td>
 </tr>
-<tr id="i167" class="rowColor">
+<tr id="i170" class="altColor">
 <td class="colFirst"><code>void</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#readFields(java.io.DataInput)">readFields</a></span>&#8203;(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/io/DataInput.html?is-external=true" title="class or interface in java.io" class="externalLink">DataInput</a>&nbsp;in)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i168" class="altColor">
+<tr id="i171" class="rowColor">
 <td class="colFirst"><code>long</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#recomputeNonZeros()">recomputeNonZeros</a></span>()</code></th>
 <td class="colLast">
@@ -1594,20 +1617,20 @@ implements <a href="../../controlprogram/caching/CacheBlock.html" title="interfa
  of the entire matrix block.</div>
 </td>
 </tr>
-<tr id="i169" class="rowColor">
+<tr id="i172" class="altColor">
 <td class="colFirst"><code>long</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#recomputeNonZeros(int)">recomputeNonZeros</a></span>&#8203;(int&nbsp;k)</code></th>
 <td class="colLast">
 <div class="block">Recompute the number of nonZero values in parallel</div>
 </td>
 </tr>
-<tr id="i170" class="altColor">
+<tr id="i173" class="rowColor">
 <td class="colFirst"><code>long</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#recomputeNonZeros(int,int)">recomputeNonZeros</a></span>&#8203;(int&nbsp;rl,
                  int&nbsp;ru)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i171" class="rowColor">
+<tr id="i174" class="altColor">
 <td class="colFirst"><code>long</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#recomputeNonZeros(int,int,int,int)">recomputeNonZeros</a></span>&#8203;(int&nbsp;rl,
                  int&nbsp;ru,
@@ -1618,14 +1641,14 @@ implements <a href="../../controlprogram/caching/CacheBlock.html" title="interfa
  range of the matrix block.</div>
 </td>
 </tr>
-<tr id="i172" class="altColor">
+<tr id="i175" class="rowColor">
 <td class="colFirst"><code><a href="MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#removeEmptyOperations(org.apache.sysds.runtime.matrix.data.MatrixBlock,boolean,boolean)">removeEmptyOperations</a></span>&#8203;(<a href="MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;ret,
                      boolean&nbsp;rows,
                      boolean&nbsp;emptyReturn)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i173" class="rowColor">
+<tr id="i176" class="altColor">
 <td class="colFirst"><code><a href="MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#removeEmptyOperations(org.apache.sysds.runtime.matrix.data.MatrixBlock,boolean,boolean,org.apache.sysds.runtime.matrix.data.MatrixBlock)">removeEmptyOperations</a></span>&#8203;(<a href="MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;ret,
                      boolean&nbsp;rows,
@@ -1633,7 +1656,7 @@ implements <a href="../../controlprogram/caching/CacheBlock.html" title="interfa
                      <a href="MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;select)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i174" class="altColor">
+<tr id="i177" class="rowColor">
 <td class="colFirst"><code><a href="MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#reorgOperations(org.apache.sysds.runtime.matrix.operators.ReorgOperator,org.apache.sysds.runtime.matrix.data.MatrixValue,int,int,int)">reorgOperations</a></span>&#8203;(<a href="../operators/ReorgOperator.html" title="class in org.apache.sysds.runtime.matrix.operators">ReorgOperator</a>&nbsp;op,
                <a href="MatrixValue.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixValue</a>&nbsp;ret,
@@ -1642,32 +1665,32 @@ implements <a href="../../controlprogram/caching/CacheBlock.html" title="interfa
                int&nbsp;length)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i175" class="rowColor">
+<tr id="i178" class="altColor">
 <td class="colFirst"><code><a href="MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#replaceOperations(org.apache.sysds.runtime.matrix.data.MatrixValue,double,double)">replaceOperations</a></span>&#8203;(<a href="MatrixValue.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixValue</a>&nbsp;result,
                  double&nbsp;pattern,
                  double&nbsp;replacement)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i176" class="altColor">
+<tr id="i179" class="rowColor">
 <td class="colFirst"><code>void</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#reset()">reset</a></span>()</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i177" class="rowColor">
+<tr id="i180" class="altColor">
 <td class="colFirst"><code>void</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#reset(int,int)">reset</a></span>&#8203;(int&nbsp;rl,
      int&nbsp;cl)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i178" class="altColor">
+<tr id="i181" class="rowColor">
 <td class="colFirst"><code>void</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#reset(int,int,boolean)">reset</a></span>&#8203;(int&nbsp;rl,
      int&nbsp;cl,
      boolean&nbsp;sp)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i179" class="rowColor">
+<tr id="i182" class="altColor">
 <td class="colFirst"><code>void</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#reset(int,int,boolean,long)">reset</a></span>&#8203;(int&nbsp;rl,
      int&nbsp;cl,
@@ -1675,7 +1698,7 @@ implements <a href="../../controlprogram/caching/CacheBlock.html" title="interfa
      long&nbsp;estnnz)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i180" class="altColor">
+<tr id="i183" class="rowColor">
 <td class="colFirst"><code>void</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#reset(int,int,boolean,long,double)">reset</a></span>&#8203;(int&nbsp;rl,
      int&nbsp;cl,
@@ -1686,7 +1709,7 @@ implements <a href="../../controlprogram/caching/CacheBlock.html" title="interfa
 <div class="block">Internal canonical reset of dense and sparse matrix blocks.</div>
 </td>
 </tr>
-<tr id="i181" class="rowColor">
+<tr id="i184" class="altColor">
 <td class="colFirst"><code>void</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#reset(int,int,boolean,long,double,boolean)">reset</a></span>&#8203;(int&nbsp;rl,
      int&nbsp;cl,
@@ -1696,21 +1719,21 @@ implements <a href="../../controlprogram/caching/CacheBlock.html" title="interfa
      boolean&nbsp;dedup)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i182" class="altColor">
+<tr id="i185" class="rowColor">
 <td class="colFirst"><code>void</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#reset(int,int,double)">reset</a></span>&#8203;(int&nbsp;rl,
      int&nbsp;cl,
      double&nbsp;val)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i183" class="rowColor">
+<tr id="i186" class="altColor">
 <td class="colFirst"><code>void</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#reset(int,int,long)">reset</a></span>&#8203;(int&nbsp;rl,
      int&nbsp;cl,
      long&nbsp;estnnz)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i184" class="altColor">
+<tr id="i187" class="rowColor">
 <td class="colFirst"><code><a href="MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#rexpandOperations(org.apache.sysds.runtime.matrix.data.MatrixBlock,double,boolean,boolean,boolean,int)">rexpandOperations</a></span>&#8203;(<a href="MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;ret,
                  double&nbsp;max,
@@ -1720,21 +1743,21 @@ implements <a href="../../controlprogram/caching/CacheBlock.html" title="interfa
                  int&nbsp;k)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i185" class="rowColor">
+<tr id="i188" class="altColor">
 <td class="colFirst"><code><a href="MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#rowSum()">rowSum</a></span>()</code></th>
 <td class="colLast">
 <div class="block">Wrapper method for single threaded reduceall-rowSum of a matrix.</div>
 </td>
 </tr>
-<tr id="i186" class="altColor">
+<tr id="i189" class="rowColor">
 <td class="colFirst"><code><a href="MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#rowSum(int)">rowSum</a></span>&#8203;(int&nbsp;k)</code></th>
 <td class="colLast">
 <div class="block">Wrapper method for multi threaded reduceall-rowSum of a matrix.</div>
 </td>
 </tr>
-<tr id="i187" class="rowColor">
+<tr id="i190" class="altColor">
 <td class="colFirst"><code>static <a href="MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#sampleOperations(long,int,boolean,long)">sampleOperations</a></span>&#8203;(long&nbsp;range,
                 int&nbsp;size,
@@ -1742,13 +1765,13 @@ implements <a href="../../controlprogram/caching/CacheBlock.html" title="interfa
                 long&nbsp;seed)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i188" class="altColor">
+<tr id="i191" class="rowColor">
 <td class="colFirst"><code><a href="MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#scalarOperations(org.apache.sysds.runtime.matrix.operators.ScalarOperator,org.apache.sysds.runtime.matrix.data.MatrixValue)">scalarOperations</a></span>&#8203;(<a href="../operators/ScalarOperator.html" title="class in org.apache.sysds.runtime.matrix.operators">ScalarOperator</a>&nbsp;op,
                 <a href="MatrixValue.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixValue</a>&nbsp;result)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i189" class="rowColor">
+<tr id="i192" class="altColor">
 <td class="colFirst"><code>static <a href="MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#seqOperations(double,double,double)">seqOperations</a></span>&#8203;(double&nbsp;from,
              double&nbsp;to,
@@ -1757,34 +1780,34 @@ implements <a href="../../controlprogram/caching/CacheBlock.html" title="interfa
 <div class="block">Method to generate a sequence according to the given parameters.</div>
 </td>
 </tr>
-<tr id="i190" class="altColor">
+<tr id="i193" class="rowColor">
 <td class="colFirst"><code><a href="MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#seqOperationsInPlace(double,double,double)">seqOperationsInPlace</a></span>&#8203;(double&nbsp;from,
                     double&nbsp;to,
                     double&nbsp;incr)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i191" class="rowColor">
+<tr id="i194" class="altColor">
 <td class="colFirst"><code>long</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#setAllNonZeros()">setAllNonZeros</a></span>()</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i192" class="altColor">
+<tr id="i195" class="rowColor">
 <td class="colFirst"><code>void</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#setDenseBlock(org.apache.sysds.runtime.data.DenseBlock)">setDenseBlock</a></span>&#8203;(<a href="../../data/DenseBlock.html" title="class in org.apache.sysds.runtime.data">DenseBlock</a>&nbsp;dblock)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i193" class="rowColor">
+<tr id="i196" class="altColor">
 <td class="colFirst"><code>long</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#setNonZeros(long)">setNonZeros</a></span>&#8203;(long&nbsp;nnz)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i194" class="altColor">
+<tr id="i197" class="rowColor">
 <td class="colFirst"><code>void</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#setNumColumns(int)">setNumColumns</a></span>&#8203;(int&nbsp;c)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i195" class="rowColor">
+<tr id="i198" class="altColor">
 <td class="colFirst"><code>void</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#setNumRows(int)">setNumRows</a></span>&#8203;(int&nbsp;r)</code></th>
 <td class="colLast">
@@ -1792,19 +1815,19 @@ implements <a href="../../controlprogram/caching/CacheBlock.html" title="interfa
  and pmm for meta corrections.</div>
 </td>
 </tr>
-<tr id="i196" class="altColor">
+<tr id="i199" class="rowColor">
 <td class="colFirst"><code>void</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#setSparseBlock(org.apache.sysds.runtime.data.SparseBlock)">setSparseBlock</a></span>&#8203;(<a href="../../data/SparseBlock.html" title="class in org.apache.sysds.runtime.data">SparseBlock</a>&nbsp;sblock)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i197" class="rowColor">
+<tr id="i200" class="altColor">
 <td class="colFirst"><code>void</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#setValue(int,int,double)">setValue</a></span>&#8203;(int&nbsp;r,
         int&nbsp;c,
         double&nbsp;v)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i198" class="altColor">
+<tr id="i201" class="rowColor">
 <td class="colFirst"><code><a href="MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#slice(int,int)">slice</a></span>&#8203;(int&nbsp;rl,
      int&nbsp;ru)</code></th>
@@ -1812,7 +1835,7 @@ implements <a href="../../controlprogram/caching/CacheBlock.html" title="interfa
 <div class="block">Slice a sub block out of the current block and write into the given output block.</div>
 </td>
 </tr>
-<tr id="i199" class="rowColor">
+<tr id="i202" class="altColor">
 <td class="colFirst"><code><a href="MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#slice(int,int,boolean)">slice</a></span>&#8203;(int&nbsp;rl,
      int&nbsp;ru,
@@ -1821,7 +1844,7 @@ implements <a href="../../controlprogram/caching/CacheBlock.html" title="interfa
 <div class="block">Slice a sub block out of the current block and write into the given output block.</div>
 </td>
 </tr>
-<tr id="i200" class="altColor">
+<tr id="i203" class="rowColor">
 <td class="colFirst"><code><a href="MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#slice(int,int,int,int)">slice</a></span>&#8203;(int&nbsp;rl,
      int&nbsp;ru,
@@ -1831,7 +1854,7 @@ implements <a href="../../controlprogram/caching/CacheBlock.html" title="interfa
 <div class="block">Slice a sub block out of the current block and write into the given output block.</div>
 </td>
 </tr>
-<tr id="i201" class="rowColor">
+<tr id="i204" class="altColor">
 <td class="colFirst"><code><a href="MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#slice(int,int,int,int,boolean)">slice</a></span>&#8203;(int&nbsp;rl,
      int&nbsp;ru,
@@ -1842,7 +1865,7 @@ implements <a href="../../controlprogram/caching/CacheBlock.html" title="interfa
 <div class="block">Slice a sub block out of the current block and write into the given output block.</div>
 </td>
 </tr>
-<tr id="i202" class="altColor">
+<tr id="i205" class="rowColor">
 <td class="colFirst"><code><a href="MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#slice(int,int,int,int,boolean,org.apache.sysds.runtime.matrix.data.MatrixBlock)">slice</a></span>&#8203;(int&nbsp;rl,
      int&nbsp;ru,
@@ -1854,7 +1877,7 @@ implements <a href="../../controlprogram/caching/CacheBlock.html" title="interfa
 <div class="block">Slice a sub block out of the current block and write into the given output block.</div>
 </td>
 </tr>
-<tr id="i203" class="rowColor">
+<tr id="i206" class="altColor">
 <td class="colFirst"><code><a href="MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#slice(int,int,int,int,org.apache.sysds.runtime.matrix.data.MatrixBlock)">slice</a></span>&#8203;(int&nbsp;rl,
      int&nbsp;ru,
@@ -1865,7 +1888,7 @@ implements <a href="../../controlprogram/caching/CacheBlock.html" title="interfa
 <div class="block">Slice a sub block out of the current block and write into the given output block.</div>
 </td>
 </tr>
-<tr id="i204" class="altColor">
+<tr id="i207" class="rowColor">
 <td class="colFirst"><code>void</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#slice(java.util.ArrayList,org.apache.sysds.runtime.util.IndexRange,int,int,int,int,int)">slice</a></span>&#8203;(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/ArrayList.html?is-external=true" title="class or interface in java.util" class="externalLink">ArrayList</a>&lt;<a href="../../instructions/spark/data/IndexedMatrixValue.html" title="class in org.apache.sysds.runtime.instructions.spark.data">IndexedMatrixValue</a>&gt;&nbsp;outlist,
      <a href="../../util/IndexRange.html" title="class in org.apache.sysds.runtime.util">IndexRange</a>&nbsp;range,
@@ -1878,7 +1901,7 @@ implements <a href="../../controlprogram/caching/CacheBlock.html" title="interfa
 <div class="block">Slice out up to 4 matrixBlocks that are separated by the row and col Cuts.</div>
 </td>
 </tr>
-<tr id="i205" class="rowColor">
+<tr id="i208" class="altColor">
 <td class="colFirst"><code><a href="MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#slice(org.apache.sysds.runtime.util.IndexRange,org.apache.sysds.runtime.matrix.data.MatrixBlock)">slice</a></span>&#8203;(<a href="../../util/IndexRange.html" title="class in org.apache.sysds.runtime.util">IndexRange</a>&nbsp;ixrange,
      <a href="MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;ret)</code></th>
@@ -1886,37 +1909,37 @@ implements <a href="../../controlprogram/caching/CacheBlock.html" title="interfa
 <div class="block">Slice a sub block out of the current block and write into the given output block.</div>
 </td>
 </tr>
-<tr id="i206" class="altColor">
+<tr id="i209" class="rowColor">
 <td class="colFirst"><code><a href="MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#sortOperations()">sortOperations</a></span>()</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i207" class="rowColor">
+<tr id="i210" class="altColor">
 <td class="colFirst"><code><a href="MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#sortOperations(org.apache.sysds.runtime.matrix.data.MatrixValue)">sortOperations</a></span>&#8203;(<a href="MatrixValue.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixValue</a>&nbsp;weights)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i208" class="altColor">
+<tr id="i211" class="rowColor">
 <td class="colFirst"><code><a href="MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#sortOperations(org.apache.sysds.runtime.matrix.data.MatrixValue,org.apache.sysds.runtime.matrix.data.MatrixBlock)">sortOperations</a></span>&#8203;(<a href="MatrixValue.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixValue</a>&nbsp;weights,
               <a href="MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;result)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i209" class="rowColor">
+<tr id="i212" class="altColor">
 <td class="colFirst"><code><a href="MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#sortOperations(org.apache.sysds.runtime.matrix.data.MatrixValue,org.apache.sysds.runtime.matrix.data.MatrixBlock,int)">sortOperations</a></span>&#8203;(<a href="MatrixValue.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixValue</a>&nbsp;weights,
               <a href="MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;result,
               int&nbsp;k)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i210" class="altColor">
+<tr id="i213" class="rowColor">
 <td class="colFirst"><code>void</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#sortSparseRows()">sortSparseRows</a></span>()</code></th>
 <td class="colLast">
 <div class="block">Sorts all existing sparse rows by column indexes.</div>
 </td>
 </tr>
-<tr id="i211" class="rowColor">
+<tr id="i214" class="altColor">
 <td class="colFirst"><code>void</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#sortSparseRows(int,int)">sortSparseRows</a></span>&#8203;(int&nbsp;rl,
               int&nbsp;ru)</code></th>
@@ -1925,40 +1948,45 @@ implements <a href="../../controlprogram/caching/CacheBlock.html" title="interfa
  column indexes.</div>
 </td>
 </tr>
-<tr id="i212" class="altColor">
+<tr id="i215" class="rowColor">
 <td class="colFirst"><code>void</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#sparseToDense()">sparseToDense</a></span>()</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i213" class="rowColor">
+<tr id="i216" class="altColor">
+<td class="colFirst"><code>void</code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#sparseToDense(int)">sparseToDense</a></span>&#8203;(int&nbsp;k)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr id="i217" class="rowColor">
 <td class="colFirst"><code>double</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#sum()">sum</a></span>()</code></th>
 <td class="colLast">
 <div class="block">Wrapper method for reduceall-sum of a matrix.</div>
 </td>
 </tr>
-<tr id="i214" class="altColor">
+<tr id="i218" class="altColor">
 <td class="colFirst"><code><a href="MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#sum(int)">sum</a></span>&#8203;(int&nbsp;k)</code></th>
 <td class="colLast">
 <div class="block">Wrapper method for reduceall-sum of a matrix parallel</div>
 </td>
 </tr>
-<tr id="i215" class="rowColor">
+<tr id="i219" class="rowColor">
 <td class="colFirst"><code>double</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#sumSq()">sumSq</a></span>()</code></th>
 <td class="colLast">
 <div class="block">Wrapper method for reduceall-sumSq of a matrix.</div>
 </td>
 </tr>
-<tr id="i216" class="altColor">
+<tr id="i220" class="altColor">
 <td class="colFirst"><code>double</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#sumWeightForQuantile()">sumWeightForQuantile</a></span>()</code></th>
 <td class="colLast">
 <div class="block">In a given two column matrix, the second column denotes weights.</div>
 </td>
 </tr>
-<tr id="i217" class="rowColor">
+<tr id="i221" class="rowColor">
 <td class="colFirst"><code>static void</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#ternaryOperationCheck(boolean,boolean,boolean,int,int,int,int,int,int,int,int)">ternaryOperationCheck</a></span>&#8203;(boolean&nbsp;s1,
                      boolean&nbsp;s2,
@@ -1973,7 +2001,7 @@ implements <a href="../../controlprogram/caching/CacheBlock.html" title="interfa
                      int&nbsp;c3)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i218" class="altColor">
+<tr id="i222" class="altColor">
 <td class="colFirst"><code><a href="MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#ternaryOperations(org.apache.sysds.runtime.matrix.operators.TernaryOperator,org.apache.sysds.runtime.matrix.data.MatrixBlock,org.apache.sysds.runtime.matrix.data.MatrixBlock,org.apache.sysds.runtime.matrix.data.MatrixBlock)">ternaryOperations</a></span>&#8203;(<a href="../operators/TernaryOperator.html" title="class in org.apache.sysds.runtime.matrix.operators">TernaryOperator</a>&nbsp;op,
                  <a href="MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;m2,
@@ -1981,7 +2009,7 @@ implements <a href="../../controlprogram/caching/CacheBlock.html" title="interfa
                  <a href="MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;ret)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i219" class="rowColor">
+<tr id="i223" class="rowColor">
 <td class="colFirst"><code>void</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#toShallowSerializeBlock()">toShallowSerializeBlock</a></span>()</code></th>
 <td class="colLast">
@@ -1989,25 +2017,25 @@ implements <a href="../../controlprogram/caching/CacheBlock.html" title="interfa
  a form that is shallow serializable.</div>
 </td>
 </tr>
-<tr id="i220" class="altColor">
+<tr id="i224" class="altColor">
 <td class="colFirst"><code><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#toString()">toString</a></span>()</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i221" class="rowColor">
+<tr id="i225" class="rowColor">
 <td class="colFirst"><code><a href="MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#transposeSelfMatrixMultOperations(org.apache.sysds.runtime.matrix.data.MatrixBlock,org.apache.sysds.lops.MMTSJ.MMTSJType)">transposeSelfMatrixMultOperations</a></span>&#8203;(<a href="MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;out,
                                  <a href="../../../lops/MMTSJ.MMTSJType.html" title="enum in org.apache.sysds.lops">MMTSJ.MMTSJType</a>&nbsp;tstype)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i222" class="altColor">
+<tr id="i226" class="altColor">
 <td class="colFirst"><code><a href="MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#transposeSelfMatrixMultOperations(org.apache.sysds.runtime.matrix.data.MatrixBlock,org.apache.sysds.lops.MMTSJ.MMTSJType,int)">transposeSelfMatrixMultOperations</a></span>&#8203;(<a href="MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;out,
                                  <a href="../../../lops/MMTSJ.MMTSJType.html" title="enum in org.apache.sysds.lops">MMTSJ.MMTSJType</a>&nbsp;tstype,
                                  int&nbsp;k)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i223" class="rowColor">
+<tr id="i227" class="rowColor">
 <td class="colFirst"><code><a href="MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#uaggouterchainOperations(org.apache.sysds.runtime.matrix.data.MatrixBlock,org.apache.sysds.runtime.matrix.data.MatrixBlock,org.apache.sysds.runtime.matrix.data.MatrixBlock,org.apache.sysds.runtime.matrix.operators.BinaryOperator,org.apache.sysds.runtime.matrix.operators.AggregateUnaryOperator)">uaggouterchainOperations</a></span>&#8203;(<a href="MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;mbLeft,
                         <a href="MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;mbRight,
@@ -2016,23 +2044,23 @@ implements <a href="../../controlprogram/caching/CacheBlock.html" title="interfa
                         <a href="../operators/AggregateUnaryOperator.html" title="class in org.apache.sysds.runtime.matrix.operators">AggregateUnaryOperator</a>&nbsp;uaggOp)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i224" class="altColor">
+<tr id="i228" class="altColor">
 <td class="colFirst"><code><a href="MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#unaryOperations(org.apache.sysds.runtime.matrix.operators.UnaryOperator)">unaryOperations</a></span>&#8203;(<a href="../operators/UnaryOperator.html" title="class in org.apache.sysds.runtime.matrix.operators">UnaryOperator</a>&nbsp;op)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i225" class="rowColor">
+<tr id="i229" class="rowColor">
 <td class="colFirst"><code><a href="MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#unaryOperations(org.apache.sysds.runtime.matrix.operators.UnaryOperator,org.apache.sysds.runtime.matrix.data.MatrixValue)">unaryOperations</a></span>&#8203;(<a href="../operators/UnaryOperator.html" title="class in org.apache.sysds.runtime.matrix.operators">UnaryOperator</a>&nbsp;op,
                <a href="MatrixValue.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixValue</a>&nbsp;result)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i226" class="altColor">
+<tr id="i230" class="altColor">
 <td class="colFirst"><code>void</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#write(java.io.DataOutput)">write</a></span>&#8203;(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/io/DataOutput.html?is-external=true" title="class or interface in java.io" class="externalLink">DataOutput</a>&nbsp;out)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i227" class="rowColor">
+<tr id="i231" class="rowColor">
 <td class="colFirst"><code>void</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#writeExternal(java.io.ObjectOutput)">writeExternal</a></span>&#8203;(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/io/ObjectOutput.html?is-external=true" title="class or interface in java.io" class="externalLink">ObjectOutput</a>&nbsp;os)</code></th>
 <td class="colLast">
@@ -2040,7 +2068,7 @@ implements <a href="../../controlprogram/caching/CacheBlock.html" title="interfa
  hadoop writable serialization for efficient broadcast/rdd serialization.</div>
 </td>
 </tr>
-<tr id="i228" class="altColor">
+<tr id="i232" class="altColor">
 <td class="colFirst"><code><a href="MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#zeroOutOperations(org.apache.sysds.runtime.matrix.data.MatrixValue,org.apache.sysds.runtime.util.IndexRange,boolean)">zeroOutOperations</a></span>&#8203;(<a href="MatrixValue.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixValue</a>&nbsp;result,
                  <a href="../../util/IndexRange.html" title="class in org.apache.sysds.runtime.util">IndexRange</a>&nbsp;range,
@@ -2048,6 +2076,13 @@ implements <a href="../../controlprogram/caching/CacheBlock.html" title="interfa
 <td class="colLast">&nbsp;</td>
 </tr>
 </table>
+<ul class="blockList">
+<li class="blockList"><a id="methods.inherited.from.class.org.apache.sysds.runtime.matrix.data.MatrixValue">
+<!--   -->
+</a>
+<h3>Methods inherited from class&nbsp;org.apache.sysds.runtime.matrix.data.<a href="MatrixValue.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixValue</a></h3>
+<code><a href="MatrixValue.html#aggregateUnaryOperations(org.apache.sysds.runtime.matrix.operators.AggregateUnaryOperator,org.apache.sysds.runtime.matrix.data.MatrixValue,int,org.apache.sysds.runtime.matrix.data.MatrixIndexes)">aggregateUnaryOperations</a></code></li>
+</ul>
 <ul class="blockList">
 <li class="blockList"><a id="methods.inherited.from.class.java.lang.Object">
 <!--   -->
@@ -2065,7 +2100,7 @@ implements <a href="../../controlprogram/caching/CacheBlock.html" title="interfa
 <ul class="blockList">
 <li class="blockList">
 <!-- ============ FIELD DETAIL =========== -->
-<section>
+<section role="region">
 <ul class="blockList">
 <li class="blockList"><a id="field.detail">
 <!--   -->
@@ -2184,7 +2219,7 @@ implements <a href="../../controlprogram/caching/CacheBlock.html" title="interfa
 </ul>
 </section>
 <!-- ========= CONSTRUCTOR DETAIL ======== -->
-<section>
+<section role="region">
 <ul class="blockList">
 <li class="blockList"><a id="constructor.detail">
 <!--   -->
@@ -2342,7 +2377,7 @@ implements <a href="../../controlprogram/caching/CacheBlock.html" title="interfa
 </ul>
 </section>
 <!-- ============ METHOD DETAIL ========== -->
-<section>
+<section role="region">
 <ul class="blockList">
 <li class="blockList"><a id="method.detail">
 <!--   -->
@@ -2777,6 +2812,14 @@ implements <a href="../../controlprogram/caching/CacheBlock.html" title="interfa
 <li class="blockList">
 <h4>isEmptyBlock</h4>
 <pre class="methodSignature">public&nbsp;boolean&nbsp;isEmptyBlock&#8203;(boolean&nbsp;safe)</pre>
+<div class="block">Get if this MatrixBlock is an empty block. The call can potentially tricker a recomputation of non zeros if the
+ non-zero count is unknown.</div>
+<dl>
+<dt><span class="paramLabel">Parameters:</span></dt>
+<dd><code>safe</code> - True if we want to ensure the count non zeros if the nnz is unknown.</dd>
+<dt><span class="returnLabel">Returns:</span></dt>
+<dd>If the block is empty.</dd>
+</dl>
 </li>
 </ul>
 <a id="getDenseBlock()">
@@ -2930,6 +2973,16 @@ implements <a href="../../controlprogram/caching/CacheBlock.html" title="interfa
 <li class="blockList">
 <h4>containsValue</h4>
 <pre class="methodSignature">public&nbsp;boolean&nbsp;containsValue&#8203;(double&nbsp;pattern)</pre>
+</li>
+</ul>
+<a id="containsVector(org.apache.sysds.runtime.matrix.data.MatrixBlock,boolean)">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>containsVector</h4>
+<pre class="methodSignature">public&nbsp;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/List.html?is-external=true" title="class or interface in java.util" class="externalLink">List</a>&lt;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Integer.html?is-external=true" title="class or interface in java.lang" class="externalLink">Integer</a>&gt;&nbsp;containsVector&#8203;(<a href="MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;pattern,
+                                    boolean&nbsp;earlyAbort)</pre>
 </li>
 </ul>
 <a id="appendValue(int,int,double)">
@@ -3365,7 +3418,7 @@ implements <a href="../../controlprogram/caching/CacheBlock.html" title="interfa
 <ul class="blockList">
 <li class="blockList">
 <h4>examSparsity</h4>
-<pre class="methodSignature">public&nbsp;void&nbsp;examSparsity()</pre>
+<pre class="methodSignature">public final&nbsp;void&nbsp;examSparsity()</pre>
 <div class="block">Evaluates if this matrix block should be in sparse format in
  memory. Depending on the current representation, the state of the
  matrix block is changed to the right representation if necessary. 
@@ -3375,13 +3428,33 @@ implements <a href="../../controlprogram/caching/CacheBlock.html" title="interfa
  Allowing CSR format is default for this operation.</div>
 </li>
 </ul>
+<a id="examSparsity(int)">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>examSparsity</h4>
+<pre class="methodSignature">public final&nbsp;void&nbsp;examSparsity&#8203;(int&nbsp;k)</pre>
+<div class="block">Evaluates if this matrix block should be in sparse format in
+ memory. Depending on the current representation, the state of the
+ matrix block is changed to the right representation if necessary. 
+ Note that this consumes for the time of execution memory for both 
+ representations.
+ 
+ Allowing CSR format is default for this operation.</div>
+<dl>
+<dt><span class="paramLabel">Parameters:</span></dt>
+<dd><code>k</code> - parallelization degree</dd>
+</dl>
+</li>
+</ul>
 <a id="examSparsity(boolean)">
 <!--   -->
 </a>
 <ul class="blockList">
 <li class="blockList">
 <h4>examSparsity</h4>
-<pre class="methodSignature">public&nbsp;void&nbsp;examSparsity&#8203;(boolean&nbsp;allowCSR)</pre>
+<pre class="methodSignature">public final&nbsp;void&nbsp;examSparsity&#8203;(boolean&nbsp;allowCSR)</pre>
 <div class="block">Evaluates if this matrix block should be in sparse format in
  memory. Depending on the current representation, the state of the
  matrix block is changed to the right representation if necessary. 
@@ -3390,6 +3463,26 @@ implements <a href="../../controlprogram/caching/CacheBlock.html" title="interfa
 <dl>
 <dt><span class="paramLabel">Parameters:</span></dt>
 <dd><code>allowCSR</code> - allow CSR format on dense to sparse conversion</dd>
+</dl>
+</li>
+</ul>
+<a id="examSparsity(boolean,int)">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>examSparsity</h4>
+<pre class="methodSignature">public&nbsp;void&nbsp;examSparsity&#8203;(boolean&nbsp;allowCSR,
+                         int&nbsp;k)</pre>
+<div class="block">Evaluates if this matrix block should be in sparse format in
+ memory. Depending on the current representation, the state of the
+ matrix block is changed to the right representation if necessary. 
+ Note that this consumes for the time of execution memory for both 
+ representations.</div>
+<dl>
+<dt><span class="paramLabel">Parameters:</span></dt>
+<dd><code>allowCSR</code> - allow CSR format on dense to sparse conversion</dd>
+<dd><code>k</code> - parallelization degree</dd>
 </dl>
 </li>
 </ul>
@@ -3462,7 +3555,17 @@ implements <a href="../../controlprogram/caching/CacheBlock.html" title="interfa
 <ul class="blockList">
 <li class="blockList">
 <h4>denseToSparse</h4>
-<pre class="methodSignature">public&nbsp;void&nbsp;denseToSparse&#8203;(boolean&nbsp;allowCSR)</pre>
+<pre class="methodSignature">public final&nbsp;void&nbsp;denseToSparse&#8203;(boolean&nbsp;allowCSR)</pre>
+</li>
+</ul>
+<a id="denseToSparse(boolean,int)">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>denseToSparse</h4>
+<pre class="methodSignature">public&nbsp;void&nbsp;denseToSparse&#8203;(boolean&nbsp;allowCSR,
+                          int&nbsp;k)</pre>
 </li>
 </ul>
 <a id="sparseToDense()">
@@ -3471,7 +3574,16 @@ implements <a href="../../controlprogram/caching/CacheBlock.html" title="interfa
 <ul class="blockList">
 <li class="blockList">
 <h4>sparseToDense</h4>
-<pre class="methodSignature">public&nbsp;void&nbsp;sparseToDense()</pre>
+<pre class="methodSignature">public final&nbsp;void&nbsp;sparseToDense()</pre>
+</li>
+</ul>
+<a id="sparseToDense(int)">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>sparseToDense</h4>
+<pre class="methodSignature">public&nbsp;void&nbsp;sparseToDense&#8203;(int&nbsp;k)</pre>
 </li>
 </ul>
 <a id="recomputeNonZeros()">
@@ -4277,6 +4389,18 @@ implements <a href="../../controlprogram/caching/CacheBlock.html" title="interfa
 </dl>
 </li>
 </ul>
+<a id="append(java.util.List,org.apache.sysds.runtime.matrix.data.MatrixBlock,boolean,int)">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>append</h4>
+<pre class="methodSignature">public static&nbsp;<a href="MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;append&#8203;(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/List.html?is-external=true" title="class or interface in java.util" class="externalLink">List</a>&lt;<a href="MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&gt;&nbsp;that,
+                                 <a href="MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;ret,
+                                 boolean&nbsp;cbind,
+                                 int&nbsp;k)</pre>
+</li>
+</ul>
 <a id="append(org.apache.sysds.runtime.matrix.data.MatrixBlock,org.apache.sysds.runtime.matrix.data.MatrixBlock,boolean)">
 <!--   -->
 </a>
@@ -4713,22 +4837,6 @@ implements <a href="../../controlprogram/caching/CacheBlock.html" title="interfa
 </dl>
 </li>
 </ul>
-<a id="aggregateUnaryOperations(org.apache.sysds.runtime.matrix.operators.AggregateUnaryOperator,org.apache.sysds.runtime.matrix.data.MatrixValue,int,org.apache.sysds.runtime.matrix.data.MatrixIndexes)">
-<!--   -->
-</a>
-<ul class="blockList">
-<li class="blockList">
-<h4>aggregateUnaryOperations</h4>
-<pre class="methodSignature">public final&nbsp;<a href="MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;aggregateUnaryOperations&#8203;(<a href="../operators/AggregateUnaryOperator.html" title="class in org.apache.sysds.runtime.matrix.operators">AggregateUnaryOperator</a>&nbsp;op,
-                                                  <a href="MatrixValue.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixValue</a>&nbsp;result,
-                                                  int&nbsp;blen,
-                                                  <a href="MatrixIndexes.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixIndexes</a>&nbsp;indexesIn)</pre>
-<dl>
-<dt><span class="overrideSpecifyLabel">Specified by:</span></dt>
-<dd><code><a href="MatrixValue.html#aggregateUnaryOperations(org.apache.sysds.runtime.matrix.operators.AggregateUnaryOperator,org.apache.sysds.runtime.matrix.data.MatrixValue,int,org.apache.sysds.runtime.matrix.data.MatrixIndexes)">aggregateUnaryOperations</a></code>&nbsp;in class&nbsp;<code><a href="MatrixValue.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixValue</a></code></dd>
-</dl>
-</li>
-</ul>
 <a id="aggregateUnaryOperations(org.apache.sysds.runtime.matrix.operators.AggregateUnaryOperator,org.apache.sysds.runtime.matrix.data.MatrixValue,int,org.apache.sysds.runtime.matrix.data.MatrixIndexes,boolean)">
 <!--   -->
 </a>
@@ -4744,17 +4852,6 @@ implements <a href="../../controlprogram/caching/CacheBlock.html" title="interfa
 <dt><span class="overrideSpecifyLabel">Specified by:</span></dt>
 <dd><code><a href="MatrixValue.html#aggregateUnaryOperations(org.apache.sysds.runtime.matrix.operators.AggregateUnaryOperator,org.apache.sysds.runtime.matrix.data.MatrixValue,int,org.apache.sysds.runtime.matrix.data.MatrixIndexes,boolean)">aggregateUnaryOperations</a></code>&nbsp;in class&nbsp;<code><a href="MatrixValue.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixValue</a></code></dd>
 </dl>
-</li>
-</ul>
-<a id="prepareAggregateUnaryOutput(org.apache.sysds.runtime.matrix.operators.AggregateUnaryOperator,org.apache.sysds.runtime.matrix.data.MatrixValue,int)">
-<!--   -->
-</a>
-<ul class="blockList">
-<li class="blockList">
-<h4>prepareAggregateUnaryOutput</h4>
-<pre class="methodSignature">public&nbsp;<a href="MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;prepareAggregateUnaryOutput&#8203;(<a href="../operators/AggregateUnaryOperator.html" title="class in org.apache.sysds.runtime.matrix.operators">AggregateUnaryOperator</a>&nbsp;op,
-                                               <a href="MatrixValue.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixValue</a>&nbsp;result,
-                                               int&nbsp;blen)</pre>
 </li>
 </ul>
 <a id="dropLastRowsOrColumns(org.apache.sysds.common.Types.CorrectionLocationType)">
@@ -5771,7 +5868,7 @@ implements <a href="../../controlprogram/caching/CacheBlock.html" title="interfa
 </a></div>
 <!-- ======== END OF BOTTOM NAVBAR ======= -->
 </nav>
-<p class="legalCopy"><small>Copyright &#169; 2023 <a href="https://www.apache.org/">The Apache Software Foundation</a>. All rights reserved.</small></p>
+<p class="legalCopy"><small>Copyright &#169; 2024 <a href="https://www.apache.org/">The Apache Software Foundation</a>. All rights reserved.</small></p>
 </footer>
 </body>
 </html>

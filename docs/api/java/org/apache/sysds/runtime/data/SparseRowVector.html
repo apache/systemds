@@ -6,16 +6,15 @@
 <title>SparseRowVector (Apache SystemDS 3.2.0-SNAPSHOT API)</title>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 <link rel="stylesheet" type="text/css" href="../../../../../stylesheet.css" title="Style">
-<link rel="stylesheet" type="text/css" href="../../../../../jquery/jquery-ui.min.css" title="Style">
-<link rel="stylesheet" type="text/css" href="../../../../../jquery-ui.overrides.css" title="Style">
+<link rel="stylesheet" type="text/css" href="../../../../../jquery/jquery-ui.css" title="Style">
 <script type="text/javascript" src="../../../../../script.js"></script>
 <script type="text/javascript" src="../../../../../jquery/jszip/dist/jszip.min.js"></script>
 <script type="text/javascript" src="../../../../../jquery/jszip-utils/dist/jszip-utils.min.js"></script>
 <!--[if IE]>
 <script type="text/javascript" src="../../../../../jquery/jszip-utils/dist/jszip-utils-ie.min.js"></script>
 <![endif]-->
-<script type="text/javascript" src="../../../../../jquery/jquery-3.6.1.min.js"></script>
-<script type="text/javascript" src="../../../../../jquery/jquery-ui.min.js"></script>
+<script type="text/javascript" src="../../../../../jquery/jquery-3.5.1.js"></script>
+<script type="text/javascript" src="../../../../../jquery/jquery-ui.js"></script>
 </head>
 <body>
 <script type="text/javascript"><!--
@@ -155,7 +154,7 @@ extends <a href="SparseRow.html" title="class in org.apache.sysds.runtime.data">
 <ul class="blockList">
 <li class="blockList">
 <!-- =========== FIELD SUMMARY =========== -->
-<section>
+<section role="region">
 <ul class="blockList">
 <li class="blockList"><a id="field.summary">
 <!--   -->
@@ -180,7 +179,7 @@ extends <a href="SparseRow.html" title="class in org.apache.sysds.runtime.data">
 </ul>
 </section>
 <!-- ======== CONSTRUCTOR SUMMARY ======== -->
-<section>
+<section role="region">
 <ul class="blockList">
 <li class="blockList"><a id="constructor.summary">
 <!--   -->
@@ -208,21 +207,27 @@ extends <a href="SparseRow.html" title="class in org.apache.sysds.runtime.data">
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr class="rowColor">
-<th class="colConstructorName" scope="row"><code><span class="memberNameLink"><a href="#%3Cinit%3E(int)">SparseRowVector</a></span>&#8203;(int&nbsp;capacity)</code></th>
+<th class="colConstructorName" scope="row"><code><span class="memberNameLink"><a href="#%3Cinit%3E(double%5B%5D,int%5B%5D,int)">SparseRowVector</a></span>&#8203;(double[]&nbsp;v,
+               int[]&nbsp;i,
+               int&nbsp;nnz)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr class="altColor">
+<th class="colConstructorName" scope="row"><code><span class="memberNameLink"><a href="#%3Cinit%3E(int)">SparseRowVector</a></span>&#8203;(int&nbsp;capacity)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="rowColor">
 <th class="colConstructorName" scope="row"><code><span class="memberNameLink"><a href="#%3Cinit%3E(int,double%5B%5D,int)">SparseRowVector</a></span>&#8203;(int&nbsp;nnz,
                double[]&nbsp;v,
                int&nbsp;vlen)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <th class="colConstructorName" scope="row"><code><span class="memberNameLink"><a href="#%3Cinit%3E(int,int)">SparseRowVector</a></span>&#8203;(int&nbsp;estnnz,
                int&nbsp;maxnnz)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <th class="colConstructorName" scope="row"><code><span class="memberNameLink"><a href="#%3Cinit%3E(org.apache.sysds.runtime.data.SparseRow)">SparseRowVector</a></span>&#8203;(<a href="SparseRow.html" title="class in org.apache.sysds.runtime.data">SparseRow</a>&nbsp;that)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
@@ -231,7 +236,7 @@ extends <a href="SparseRow.html" title="class in org.apache.sysds.runtime.data">
 </ul>
 </section>
 <!-- ========== METHOD SUMMARY =========== -->
-<section>
+<section role="region">
 <ul class="blockList">
 <li class="blockList"><a id="method.summary">
 <!--   -->
@@ -254,7 +259,7 @@ extends <a href="SparseRow.html" title="class in org.apache.sysds.runtime.data">
 </td>
 </tr>
 <tr id="i1" class="rowColor">
-<td class="colFirst"><code>void</code></td>
+<td class="colFirst"><code><a href="SparseRowVector.html" title="class in org.apache.sysds.runtime.data">SparseRowVector</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#append(int,double)">append</a></span>&#8203;(int&nbsp;col,
       double&nbsp;v)</code></th>
 <td class="colLast">
@@ -345,7 +350,9 @@ extends <a href="SparseRow.html" title="class in org.apache.sysds.runtime.data">
 <tr id="i14" class="altColor">
 <td class="colFirst"><code>int</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#searchIndexesFirstGTE(int)">searchIndexesFirstGTE</a></span>&#8203;(int&nbsp;col)</code></th>
-<td class="colLast">&nbsp;</td>
+<td class="colLast">
+<div class="block">Get first index greater than equal column index.</div>
+</td>
 </tr>
 <tr id="i15" class="rowColor">
 <td class="colFirst"><code>int</code></td>
@@ -455,7 +462,7 @@ extends <a href="SparseRow.html" title="class in org.apache.sysds.runtime.data">
 <ul class="blockList">
 <li class="blockList">
 <!-- ============ FIELD DETAIL =========== -->
-<section>
+<section role="region">
 <ul class="blockList">
 <li class="blockList"><a id="field.detail">
 <!--   -->
@@ -480,7 +487,7 @@ extends <a href="SparseRow.html" title="class in org.apache.sysds.runtime.data">
 </ul>
 </section>
 <!-- ========= CONSTRUCTOR DETAIL ======== -->
-<section>
+<section role="region">
 <ul class="blockList">
 <li class="blockList"><a id="constructor.detail">
 <!--   -->
@@ -525,6 +532,17 @@ extends <a href="SparseRow.html" title="class in org.apache.sysds.runtime.data">
                        int[]&nbsp;i)</pre>
 </li>
 </ul>
+<a id="&lt;init&gt;(double[],int[],int)">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>SparseRowVector</h4>
+<pre>public&nbsp;SparseRowVector&#8203;(double[]&nbsp;v,
+                       int[]&nbsp;i,
+                       int&nbsp;nnz)</pre>
+</li>
+</ul>
 <a id="&lt;init&gt;(double[])">
 <!--   -->
 </a>
@@ -562,7 +580,7 @@ extends <a href="SparseRow.html" title="class in org.apache.sysds.runtime.data">
 </ul>
 </section>
 <!-- ============ METHOD DETAIL ========== -->
-<section>
+<section role="region">
 <ul class="blockList">
 <li class="blockList"><a id="method.detail">
 <!--   -->
@@ -774,8 +792,8 @@ extends <a href="SparseRow.html" title="class in org.apache.sysds.runtime.data">
 <ul class="blockList">
 <li class="blockList">
 <h4>append</h4>
-<pre class="methodSignature">public&nbsp;void&nbsp;append&#8203;(int&nbsp;col,
-                   double&nbsp;v)</pre>
+<pre class="methodSignature">public&nbsp;<a href="SparseRowVector.html" title="class in org.apache.sysds.runtime.data">SparseRowVector</a>&nbsp;append&#8203;(int&nbsp;col,
+                              double&nbsp;v)</pre>
 <div class="block"><span class="descfrmTypeLabel">Description copied from class:&nbsp;<code><a href="SparseRow.html#append(int,double)">SparseRow</a></code></span></div>
 <div class="block">Appends a value to the end of the sparse row.</div>
 <dl>
@@ -784,6 +802,8 @@ extends <a href="SparseRow.html" title="class in org.apache.sysds.runtime.data">
 <dt><span class="paramLabel">Parameters:</span></dt>
 <dd><code>col</code> - column index, zero-based</dd>
 <dd><code>v</code> - value</dd>
+<dt><span class="returnLabel">Returns:</span></dt>
+<dd>the row with an appended element</dd>
 </dl>
 </li>
 </ul>
@@ -833,6 +853,16 @@ extends <a href="SparseRow.html" title="class in org.apache.sysds.runtime.data">
 <li class="blockList">
 <h4>searchIndexesFirstGTE</h4>
 <pre class="methodSignature">public&nbsp;int&nbsp;searchIndexesFirstGTE&#8203;(int&nbsp;col)</pre>
+<div class="block"><span class="descfrmTypeLabel">Description copied from class:&nbsp;<code><a href="SparseRow.html#searchIndexesFirstGTE(int)">SparseRow</a></code></span></div>
+<div class="block">Get first index greater than equal column index.</div>
+<dl>
+<dt><span class="overrideSpecifyLabel">Specified by:</span></dt>
+<dd><code><a href="SparseRow.html#searchIndexesFirstGTE(int)">searchIndexesFirstGTE</a></code>&nbsp;in class&nbsp;<code><a href="SparseRow.html" title="class in org.apache.sysds.runtime.data">SparseRow</a></code></dd>
+<dt><span class="paramLabel">Parameters:</span></dt>
+<dd><code>col</code> - column to be greater than</dd>
+<dt><span class="returnLabel">Returns:</span></dt>
+<dd>index</dd>
+</dl>
 </li>
 </ul>
 <a id="searchIndexesFirstGT(int)">
@@ -842,6 +872,10 @@ extends <a href="SparseRow.html" title="class in org.apache.sysds.runtime.data">
 <li class="blockList">
 <h4>searchIndexesFirstGT</h4>
 <pre class="methodSignature">public&nbsp;int&nbsp;searchIndexesFirstGT&#8203;(int&nbsp;col)</pre>
+<dl>
+<dt><span class="overrideSpecifyLabel">Specified by:</span></dt>
+<dd><code><a href="SparseRow.html#searchIndexesFirstGT(int)">searchIndexesFirstGT</a></code>&nbsp;in class&nbsp;<code><a href="SparseRow.html" title="class in org.apache.sysds.runtime.data">SparseRow</a></code></dd>
+</dl>
 </li>
 </ul>
 <a id="deleteIndexRange(int,int)">
@@ -1024,7 +1058,7 @@ extends <a href="SparseRow.html" title="class in org.apache.sysds.runtime.data">
 </a></div>
 <!-- ======== END OF BOTTOM NAVBAR ======= -->
 </nav>
-<p class="legalCopy"><small>Copyright &#169; 2023 <a href="https://www.apache.org/">The Apache Software Foundation</a>. All rights reserved.</small></p>
+<p class="legalCopy"><small>Copyright &#169; 2024 <a href="https://www.apache.org/">The Apache Software Foundation</a>. All rights reserved.</small></p>
 </footer>
 </body>
 </html>

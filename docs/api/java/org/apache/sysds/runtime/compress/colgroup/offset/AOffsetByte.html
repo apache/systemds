@@ -6,16 +6,15 @@
 <title>AOffsetByte (Apache SystemDS 3.2.0-SNAPSHOT API)</title>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 <link rel="stylesheet" type="text/css" href="../../../../../../../stylesheet.css" title="Style">
-<link rel="stylesheet" type="text/css" href="../../../../../../../jquery/jquery-ui.min.css" title="Style">
-<link rel="stylesheet" type="text/css" href="../../../../../../../jquery-ui.overrides.css" title="Style">
+<link rel="stylesheet" type="text/css" href="../../../../../../../jquery/jquery-ui.css" title="Style">
 <script type="text/javascript" src="../../../../../../../script.js"></script>
 <script type="text/javascript" src="../../../../../../../jquery/jszip/dist/jszip.min.js"></script>
 <script type="text/javascript" src="../../../../../../../jquery/jszip-utils/dist/jszip-utils.min.js"></script>
 <!--[if IE]>
 <script type="text/javascript" src="../../../../../../../jquery/jszip-utils/dist/jszip-utils-ie.min.js"></script>
 <![endif]-->
-<script type="text/javascript" src="../../../../../../../jquery/jquery-3.6.1.min.js"></script>
-<script type="text/javascript" src="../../../../../../../jquery/jquery-ui.min.js"></script>
+<script type="text/javascript" src="../../../../../../../jquery/jquery-3.5.1.js"></script>
+<script type="text/javascript" src="../../../../../../../jquery/jquery-ui.js"></script>
 </head>
 <body>
 <script type="text/javascript"><!--
@@ -159,7 +158,7 @@ implements <a href="ISliceOffset.html" title="interface in org.apache.sysds.runt
 <ul class="blockList">
 <li class="blockList">
 <!-- ======== NESTED CLASS SUMMARY ======== -->
-<section>
+<section role="region">
 <ul class="blockList">
 <li class="blockList"><a id="nested.class.summary">
 <!--   -->
@@ -176,7 +175,7 @@ implements <a href="ISliceOffset.html" title="interface in org.apache.sysds.runt
 </ul>
 </section>
 <!-- ========== METHOD SUMMARY =========== -->
-<section>
+<section role="region">
 <ul class="blockList">
 <li class="blockList"><a id="method.summary">
 <!--   -->
@@ -216,14 +215,14 @@ implements <a href="ISliceOffset.html" title="interface in org.apache.sysds.runt
 <!--   -->
 </a>
 <h3>Methods inherited from class&nbsp;org.apache.sysds.runtime.compress.colgroup.offset.<a href="AOffset.html" title="class in org.apache.sysds.runtime.compress.colgroup.offset">AOffset</a></h3>
-<code><a href="AOffset.html#append(org.apache.sysds.runtime.compress.colgroup.offset.AOffset,int)">append</a>, <a href="AOffset.html#appendN(org.apache.sysds.runtime.compress.colgroup.AOffsetsGroup%5B%5D,int)">appendN</a>, <a href="AOffset.html#cacheIterator(org.apache.sysds.runtime.compress.colgroup.offset.AIterator,int)">cacheIterator</a>, <a href="AOffset.html#equals(org.apache.sysds.runtime.compress.colgroup.offset.AOffset)">equals</a>, <a href="AOffset.html#getExactSizeOnDisk()">getExactSizeOnDisk</a>, <a href="AOffset.html#getInMemorySize()">getInMemorySize</a>, <a href="AOffset.html#getIterator()">getIterator</a>, <a href="AOffset.html#getIterator(int)">getIterator</a>, <a href="AOffset.html#getOffsetIterator()">getOffsetIterator</a>, <a href="AOffset.html#getOffsetIterator(int)">getOffsetIterator</a>, <a href="AOffset.html#getSize()">getSize</a>, <a href="AOffset.html#moveIndex(int)">moveIndex</a>, <a href="AOffset.html#preAggregateDenseMap(org.apache.sysds.runtime.matrix.data.MatrixBlock,double%5B%5D,int,int,int,int,int,org.apache.sysds.runtime.compress.colgroup.mapping.AMapToData)">preAggregateDenseMap</a>, <a href="AOffset.html#preAggregateSparseMap(org.apache.sysds.runtime.data.SparseBlock,double%5B%5D,int,int,int,org.apache.sysds.runtime.compress.colgroup.mapping.AMapToData)">preAggregateSparseMap</a>, <a href="AOffset.html#reverse(int,org.apache.sysds.runtime.compress.colgroup.offset.AOffset)">reverse</a>, <a href="AOffset.html#slice(int,int)">slice</a>, <a href="AOffset.html#toString()">toString</a>, <a href="AOffset.html#write(java.io.DataOutput)">write</a></code></li>
+<code><a href="AOffset.html#append(org.apache.sysds.runtime.compress.colgroup.offset.AOffset,int)">append</a>, <a href="AOffset.html#appendN(org.apache.sysds.runtime.compress.colgroup.AOffsetsGroup%5B%5D,int)">appendN</a>, <a href="AOffset.html#cacheIterator(org.apache.sysds.runtime.compress.colgroup.offset.AIterator,int)">cacheIterator</a>, <a href="AOffset.html#constructSkipList()">constructSkipList</a>, <a href="AOffset.html#equals(java.lang.Object)">equals</a>, <a href="AOffset.html#equals(org.apache.sysds.runtime.compress.colgroup.offset.AOffset)">equals</a>, <a href="AOffset.html#getExactSizeOnDisk()">getExactSizeOnDisk</a>, <a href="AOffset.html#getInMemorySize()">getInMemorySize</a>, <a href="AOffset.html#getIterator()">getIterator</a>, <a href="AOffset.html#getIterator(int)">getIterator</a>, <a href="AOffset.html#getOffsetIterator()">getOffsetIterator</a>, <a href="AOffset.html#getOffsetIterator(int)">getOffsetIterator</a>, <a href="AOffset.html#getSize()">getSize</a>, <a href="AOffset.html#moveIndex(int)">moveIndex</a>, <a href="AOffset.html#preAggregateDenseMap(org.apache.sysds.runtime.matrix.data.MatrixBlock,double%5B%5D,int,int,int,int,int,org.apache.sysds.runtime.compress.colgroup.mapping.AMapToData)">preAggregateDenseMap</a>, <a href="AOffset.html#preAggregateSparseMap(org.apache.sysds.runtime.data.SparseBlock,double%5B%5D,int,int,int,org.apache.sysds.runtime.compress.colgroup.mapping.AMapToData)">preAggregateSparseMap</a>, <a href="AOffset.html#reverse(int,org.apache.sysds.runtime.compress.colgroup.offset.AOffset)">reverse</a>, <a href="AOffset.html#slice(int,int)">slice</a>, <a href="AOffset.html#toString()">toString</a>, <a href="AOffset.html#write(java.io.DataOutput)">write</a></code></li>
 </ul>
 <ul class="blockList">
 <li class="blockList"><a id="methods.inherited.from.class.java.lang.Object">
 <!--   -->
 </a>
 <h3>Methods inherited from class&nbsp;java.lang.<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Object.html?is-external=true" title="class or interface in java.lang" class="externalLink">Object</a></h3>
-<code><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Object.html?is-external=true#equals(java.lang.Object)" title="class or interface in java.lang" class="externalLink">equals</a>, <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Object.html?is-external=true#getClass()" title="class or interface in java.lang" class="externalLink">getClass</a>, <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Object.html?is-external=true#hashCode()" title="class or interface in java.lang" class="externalLink">hashCode</a>, <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Object.html?is-external=true#notify()" title="class or interface in java.lang" class="externalLink">notify</a>, <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Object.html?is-external=true#notifyAll()" title="class or interface in java.lang" class="externalLink">notifyAll</a>, <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Object.html?is-external=true#wait()" title="class or interface in java.lang" class="externalLink">wait</a>, <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Object.html?is-external=true#wait(long)" title="class or interface in java.lang" class="externalLink">wait</a>, <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Object.html?is-external=true#wait(long,int)" title="class or interface in java.lang" class="externalLink">wait</a></code></li>
+<code><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Object.html?is-external=true#getClass()" title="class or interface in java.lang" class="externalLink">getClass</a>, <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Object.html?is-external=true#hashCode()" title="class or interface in java.lang" class="externalLink">hashCode</a>, <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Object.html?is-external=true#notify()" title="class or interface in java.lang" class="externalLink">notify</a>, <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Object.html?is-external=true#notifyAll()" title="class or interface in java.lang" class="externalLink">notifyAll</a>, <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Object.html?is-external=true#wait()" title="class or interface in java.lang" class="externalLink">wait</a>, <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Object.html?is-external=true#wait(long)" title="class or interface in java.lang" class="externalLink">wait</a>, <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Object.html?is-external=true#wait(long,int)" title="class or interface in java.lang" class="externalLink">wait</a></code></li>
 </ul>
 <ul class="blockList">
 <li class="blockList"><a id="methods.inherited.from.class.org.apache.sysds.runtime.compress.colgroup.offset.ISliceOffset">
@@ -242,7 +241,7 @@ implements <a href="ISliceOffset.html" title="interface in org.apache.sysds.runt
 <ul class="blockList">
 <li class="blockList">
 <!-- ============ METHOD DETAIL ========== -->
-<section>
+<section role="region">
 <ul class="blockList">
 <li class="blockList"><a id="method.detail">
 <!--   -->
@@ -369,7 +368,7 @@ implements <a href="ISliceOffset.html" title="interface in org.apache.sysds.runt
 </a></div>
 <!-- ======== END OF BOTTOM NAVBAR ======= -->
 </nav>
-<p class="legalCopy"><small>Copyright &#169; 2023 <a href="https://www.apache.org/">The Apache Software Foundation</a>. All rights reserved.</small></p>
+<p class="legalCopy"><small>Copyright &#169; 2024 <a href="https://www.apache.org/">The Apache Software Foundation</a>. All rights reserved.</small></p>
 </footer>
 </body>
 </html>

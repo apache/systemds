@@ -6,16 +6,15 @@
 <title>Uses of Interface org.apache.sysds.parser.ParseInfo (Apache SystemDS 3.2.0-SNAPSHOT API)</title>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 <link rel="stylesheet" type="text/css" href="../../../../../stylesheet.css" title="Style">
-<link rel="stylesheet" type="text/css" href="../../../../../jquery/jquery-ui.min.css" title="Style">
-<link rel="stylesheet" type="text/css" href="../../../../../jquery-ui.overrides.css" title="Style">
+<link rel="stylesheet" type="text/css" href="../../../../../jquery/jquery-ui.css" title="Style">
 <script type="text/javascript" src="../../../../../script.js"></script>
 <script type="text/javascript" src="../../../../../jquery/jszip/dist/jszip.min.js"></script>
 <script type="text/javascript" src="../../../../../jquery/jszip-utils/dist/jszip-utils.min.js"></script>
 <!--[if IE]>
 <script type="text/javascript" src="../../../../../jquery/jszip-utils/dist/jszip-utils-ie.min.js"></script>
 <![endif]-->
-<script type="text/javascript" src="../../../../../jquery/jquery-3.6.1.min.js"></script>
-<script type="text/javascript" src="../../../../../jquery/jquery-ui.min.js"></script>
+<script type="text/javascript" src="../../../../../jquery/jquery-3.5.1.js"></script>
+<script type="text/javascript" src="../../../../../jquery/jquery-ui.js"></script>
 </head>
 <body>
 <script type="text/javascript"><!--
@@ -136,7 +135,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <li class="blockList">
 <ul class="blockList">
 <li class="blockList">
-<section><a id="org.apache.sysds.hops">
+<section role="region"><a id="org.apache.sysds.hops">
 <!--   -->
 </a>
 <h3>Uses of <a href="../ParseInfo.html" title="interface in org.apache.sysds.parser">ParseInfo</a> in <a href="../../hops/package-summary.html">org.apache.sysds.hops</a></h3>
@@ -302,7 +301,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 </section>
 </li>
 <li class="blockList">
-<section><a id="org.apache.sysds.hops.codegen">
+<section role="region"><a id="org.apache.sysds.hops.codegen">
 <!--   -->
 </a>
 <h3>Uses of <a href="../ParseInfo.html" title="interface in org.apache.sysds.parser">ParseInfo</a> in <a href="../../hops/codegen/package-summary.html">org.apache.sysds.hops.codegen</a></h3>
@@ -324,7 +323,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 </section>
 </li>
 <li class="blockList">
-<section><a id="org.apache.sysds.parser">
+<section role="region"><a id="org.apache.sysds.parser">
 <!--   -->
 </a>
 <h3>Uses of <a href="../ParseInfo.html" title="interface in org.apache.sysds.parser">ParseInfo</a> in <a href="../package-summary.html">org.apache.sysds.parser</a></h3>
@@ -458,20 +457,25 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 </tr>
 <tr class="altColor">
 <td class="colFirst"><code>class&nbsp;</code></td>
-<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="../MultiAssignmentStatement.html" title="class in org.apache.sysds.parser">MultiAssignmentStatement</a></span></code></th>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="../ListIdentifier.html" title="class in org.apache.sysds.parser">ListIdentifier</a></span></code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr class="rowColor">
 <td class="colFirst"><code>class&nbsp;</code></td>
-<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="../OutputStatement.html" title="class in org.apache.sysds.parser">OutputStatement</a></span></code></th>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="../MultiAssignmentStatement.html" title="class in org.apache.sysds.parser">MultiAssignmentStatement</a></span></code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr class="altColor">
 <td class="colFirst"><code>class&nbsp;</code></td>
-<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="../ParameterizedBuiltinFunctionExpression.html" title="class in org.apache.sysds.parser">ParameterizedBuiltinFunctionExpression</a></span></code></th>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="../OutputStatement.html" title="class in org.apache.sysds.parser">OutputStatement</a></span></code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr class="rowColor">
+<td class="colFirst"><code>class&nbsp;</code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="../ParameterizedBuiltinFunctionExpression.html" title="class in org.apache.sysds.parser">ParameterizedBuiltinFunctionExpression</a></span></code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="altColor">
 <td class="colFirst"><code>class&nbsp;</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="../ParForStatement.html" title="class in org.apache.sysds.parser">ParForStatement</a></span></code></th>
 <td class="colLast">
@@ -479,7 +483,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
  toString method for printing the 'parfor' keyword.</div>
 </td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colFirst"><code>class&nbsp;</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="../ParForStatementBlock.html" title="class in org.apache.sysds.parser">ParForStatementBlock</a></span></code></th>
 <td class="colLast">
@@ -487,42 +491,42 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
  for checking/setting optional parfor parameters and running the loop dependency analysis.</div>
 </td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colFirst"><code>class&nbsp;</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="../PathStatement.html" title="class in org.apache.sysds.parser">PathStatement</a></span></code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colFirst"><code>class&nbsp;</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="../PrintStatement.html" title="class in org.apache.sysds.parser">PrintStatement</a></span></code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colFirst"><code>class&nbsp;</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="../RelationalExpression.html" title="class in org.apache.sysds.parser">RelationalExpression</a></span></code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colFirst"><code>class&nbsp;</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="../Statement.html" title="class in org.apache.sysds.parser">Statement</a></span></code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colFirst"><code>class&nbsp;</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="../StatementBlock.html" title="class in org.apache.sysds.parser">StatementBlock</a></span></code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colFirst"><code>class&nbsp;</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="../StringIdentifier.html" title="class in org.apache.sysds.parser">StringIdentifier</a></span></code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colFirst"><code>class&nbsp;</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="../WhileStatement.html" title="class in org.apache.sysds.parser">WhileStatement</a></span></code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colFirst"><code>class&nbsp;</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="../WhileStatementBlock.html" title="class in org.apache.sysds.parser">WhileStatementBlock</a></span></code></th>
 <td class="colLast">&nbsp;</td>
@@ -671,7 +675,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 </section>
 </li>
 <li class="blockList">
-<section><a id="org.apache.sysds.parser.dml">
+<section role="region"><a id="org.apache.sysds.parser.dml">
 <!--   -->
 </a>
 <h3>Uses of <a href="../ParseInfo.html" title="interface in org.apache.sysds.parser">ParseInfo</a> in <a href="../dml/package-summary.html">org.apache.sysds.parser.dml</a></h3>
@@ -694,7 +698,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 </section>
 </li>
 <li class="blockList">
-<section><a id="org.apache.sysds.runtime.controlprogram">
+<section role="region"><a id="org.apache.sysds.runtime.controlprogram">
 <!--   -->
 </a>
 <h3>Uses of <a href="../ParseInfo.html" title="interface in org.apache.sysds.parser">ParseInfo</a> in <a href="../../runtime/controlprogram/package-summary.html">org.apache.sysds.runtime.controlprogram</a></h3>
@@ -766,7 +770,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 </section>
 </li>
 <li class="blockList">
-<section><a id="org.apache.sysds.runtime.meta">
+<section role="region"><a id="org.apache.sysds.runtime.meta">
 <!--   -->
 </a>
 <h3>Uses of <a href="../ParseInfo.html" title="interface in org.apache.sysds.parser">ParseInfo</a> in <a href="../../runtime/meta/package-summary.html">org.apache.sysds.runtime.meta</a></h3>
@@ -837,7 +841,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 </a></div>
 <!-- ======== END OF BOTTOM NAVBAR ======= -->
 </nav>
-<p class="legalCopy"><small>Copyright &#169; 2023 <a href="https://www.apache.org/">The Apache Software Foundation</a>. All rights reserved.</small></p>
+<p class="legalCopy"><small>Copyright &#169; 2024 <a href="https://www.apache.org/">The Apache Software Foundation</a>. All rights reserved.</small></p>
 </footer>
 </body>
 </html>

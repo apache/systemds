@@ -6,16 +6,15 @@
 <title>LibMatrixAgg (Apache SystemDS 3.2.0-SNAPSHOT API)</title>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 <link rel="stylesheet" type="text/css" href="../../../../../../stylesheet.css" title="Style">
-<link rel="stylesheet" type="text/css" href="../../../../../../jquery/jquery-ui.min.css" title="Style">
-<link rel="stylesheet" type="text/css" href="../../../../../../jquery-ui.overrides.css" title="Style">
+<link rel="stylesheet" type="text/css" href="../../../../../../jquery/jquery-ui.css" title="Style">
 <script type="text/javascript" src="../../../../../../script.js"></script>
 <script type="text/javascript" src="../../../../../../jquery/jszip/dist/jszip.min.js"></script>
 <script type="text/javascript" src="../../../../../../jquery/jszip-utils/dist/jszip-utils.min.js"></script>
 <!--[if IE]>
 <script type="text/javascript" src="../../../../../../jquery/jszip-utils/dist/jszip-utils-ie.min.js"></script>
 <![endif]-->
-<script type="text/javascript" src="../../../../../../jquery/jquery-3.6.1.min.js"></script>
-<script type="text/javascript" src="../../../../../../jquery/jquery-ui.min.js"></script>
+<script type="text/javascript" src="../../../../../../jquery/jquery-3.5.1.js"></script>
+<script type="text/javascript" src="../../../../../../jquery/jquery-ui.js"></script>
 </head>
 <body>
 <script type="text/javascript"><!--
@@ -27,7 +26,7 @@
     catch(err) {
     }
 //-->
-var data = {"i0":9,"i1":9,"i2":9,"i3":9,"i4":9,"i5":9,"i6":9,"i7":9,"i8":9,"i9":9,"i10":9,"i11":9,"i12":9,"i13":9,"i14":9,"i15":9,"i16":9,"i17":9,"i18":9,"i19":9};
+var data = {"i0":9,"i1":9,"i2":9,"i3":9,"i4":9,"i5":9,"i6":9,"i7":9,"i8":9,"i9":9,"i10":9,"i11":9,"i12":9,"i13":9,"i14":9,"i15":9,"i16":9,"i17":9,"i18":9,"i19":9,"i20":9,"i21":9};
 var tabs = {65535:["t0","All Methods"],1:["t1","Static Methods"],8:["t4","Concrete Methods"]};
 var altColor = "altColor";
 var rowColor = "rowColor";
@@ -158,7 +157,7 @@ extends <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/ja
 <ul class="blockList">
 <li class="blockList">
 <!-- ========== METHOD SUMMARY =========== -->
-<section>
+<section role="region">
 <ul class="blockList">
 <li class="blockList"><a id="method.summary">
 <!--   -->
@@ -255,6 +254,16 @@ extends <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/ja
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr id="i8" class="altColor">
+<td class="colFirst"><code>static <a href="MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a></code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#aggregateUnaryMatrix(org.apache.sysds.runtime.matrix.operators.AggregateUnaryOperator,org.apache.sysds.runtime.matrix.data.MatrixBlock,org.apache.sysds.runtime.matrix.data.MatrixValue,int,org.apache.sysds.runtime.matrix.data.MatrixIndexes,boolean)">aggregateUnaryMatrix</a></span>&#8203;(<a href="../operators/AggregateUnaryOperator.html" title="class in org.apache.sysds.runtime.matrix.operators">AggregateUnaryOperator</a>&nbsp;op,
+                    <a href="MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;in,
+                    <a href="MatrixValue.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixValue</a>&nbsp;result,
+                    int&nbsp;blen,
+                    <a href="MatrixIndexes.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixIndexes</a>&nbsp;indexesIn,
+                    boolean&nbsp;inCP)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr id="i9" class="rowColor">
 <td class="colFirst"><code>static void</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#countAgg(double%5B%5D,int%5B%5D,int%5B%5D,int,int)">countAgg</a></span>&#8203;(double[]&nbsp;a,
         int[]&nbsp;c,
@@ -263,7 +272,7 @@ extends <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/ja
         int&nbsp;len)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i9" class="rowColor">
+<tr id="i10" class="altColor">
 <td class="colFirst"><code>static void</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#countAgg(double%5B%5D,int%5B%5D,int,int)">countAgg</a></span>&#8203;(double[]&nbsp;a,
         int[]&nbsp;c,
@@ -271,14 +280,14 @@ extends <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/ja
         int&nbsp;len)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i10" class="altColor">
+<tr id="i11" class="rowColor">
 <td class="colFirst"><code>static <a href="MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#cumaggregateUnaryMatrix(org.apache.sysds.runtime.matrix.data.MatrixBlock,org.apache.sysds.runtime.matrix.data.MatrixBlock,org.apache.sysds.runtime.matrix.operators.UnaryOperator)">cumaggregateUnaryMatrix</a></span>&#8203;(<a href="MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;in,
                        <a href="MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;out,
                        <a href="../operators/UnaryOperator.html" title="class in org.apache.sysds.runtime.matrix.operators">UnaryOperator</a>&nbsp;uop)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i11" class="rowColor">
+<tr id="i12" class="altColor">
 <td class="colFirst"><code>static <a href="MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#cumaggregateUnaryMatrix(org.apache.sysds.runtime.matrix.data.MatrixBlock,org.apache.sysds.runtime.matrix.data.MatrixBlock,org.apache.sysds.runtime.matrix.operators.UnaryOperator,double%5B%5D)">cumaggregateUnaryMatrix</a></span>&#8203;(<a href="MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;in,
                        <a href="MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;out,
@@ -286,7 +295,7 @@ extends <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/ja
                        double[]&nbsp;agg)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i12" class="altColor">
+<tr id="i13" class="rowColor">
 <td class="colFirst"><code>static <a href="MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#cumaggregateUnaryMatrix(org.apache.sysds.runtime.matrix.data.MatrixBlock,org.apache.sysds.runtime.matrix.data.MatrixBlock,org.apache.sysds.runtime.matrix.operators.UnaryOperator,int)">cumaggregateUnaryMatrix</a></span>&#8203;(<a href="MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;in,
                        <a href="MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;out,
@@ -294,7 +303,7 @@ extends <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/ja
                        int&nbsp;k)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i13" class="rowColor">
+<tr id="i14" class="altColor">
 <td class="colFirst"><code>static void</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#groupedAggregate(org.apache.sysds.runtime.matrix.data.MatrixBlock,org.apache.sysds.runtime.matrix.data.MatrixBlock,org.apache.sysds.runtime.matrix.data.MatrixBlock,org.apache.sysds.runtime.matrix.data.MatrixBlock,int,org.apache.sysds.runtime.matrix.operators.Operator)">groupedAggregate</a></span>&#8203;(<a href="MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;groups,
                 <a href="MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;target,
@@ -304,7 +313,7 @@ extends <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/ja
                 <a href="../operators/Operator.html" title="class in org.apache.sysds.runtime.matrix.operators">Operator</a>&nbsp;op)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i14" class="altColor">
+<tr id="i15" class="rowColor">
 <td class="colFirst"><code>static void</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#groupedAggregate(org.apache.sysds.runtime.matrix.data.MatrixBlock,org.apache.sysds.runtime.matrix.data.MatrixBlock,org.apache.sysds.runtime.matrix.data.MatrixBlock,org.apache.sysds.runtime.matrix.data.MatrixBlock,int,org.apache.sysds.runtime.matrix.operators.Operator,int)">groupedAggregate</a></span>&#8203;(<a href="MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;groups,
                 <a href="MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;target,
@@ -315,17 +324,25 @@ extends <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/ja
                 int&nbsp;k)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i15" class="rowColor">
+<tr id="i16" class="altColor">
 <td class="colFirst"><code>static boolean</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#isSupportedUnaryAggregateOperator(org.apache.sysds.runtime.matrix.operators.AggregateUnaryOperator)">isSupportedUnaryAggregateOperator</a></span>&#8203;(<a href="../operators/AggregateUnaryOperator.html" title="class in org.apache.sysds.runtime.matrix.operators">AggregateUnaryOperator</a>&nbsp;op)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i16" class="altColor">
+<tr id="i17" class="rowColor">
 <td class="colFirst"><code>static boolean</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#isSupportedUnaryOperator(org.apache.sysds.runtime.matrix.operators.UnaryOperator)">isSupportedUnaryOperator</a></span>&#8203;(<a href="../operators/UnaryOperator.html" title="class in org.apache.sysds.runtime.matrix.operators">UnaryOperator</a>&nbsp;op)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i17" class="rowColor">
+<tr id="i18" class="altColor">
+<td class="colFirst"><code>static <a href="MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a></code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#prepareAggregateUnaryOutput(org.apache.sysds.runtime.matrix.data.MatrixBlock,org.apache.sysds.runtime.matrix.operators.AggregateUnaryOperator,org.apache.sysds.runtime.matrix.data.MatrixValue,int)">prepareAggregateUnaryOutput</a></span>&#8203;(<a href="MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;in,
+                           <a href="../operators/AggregateUnaryOperator.html" title="class in org.apache.sysds.runtime.matrix.operators">AggregateUnaryOperator</a>&nbsp;op,
+                           <a href="MatrixValue.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixValue</a>&nbsp;result,
+                           int&nbsp;blen)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr id="i19" class="rowColor">
 <td class="colFirst"><code>static void</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#recomputeIndexes(org.apache.sysds.runtime.matrix.data.MatrixBlock,org.apache.sysds.runtime.matrix.operators.AggregateUnaryOperator,int,org.apache.sysds.runtime.matrix.data.MatrixIndexes)">recomputeIndexes</a></span>&#8203;(<a href="MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;out,
                 <a href="../operators/AggregateUnaryOperator.html" title="class in org.apache.sysds.runtime.matrix.operators">AggregateUnaryOperator</a>&nbsp;op,
@@ -335,13 +352,13 @@ extends <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/ja
 <div class="block">Recompute outputs (e.g., maxindex or minindex) according to block indexes from MR.</div>
 </td>
 </tr>
-<tr id="i18" class="altColor">
+<tr id="i20" class="altColor">
 <td class="colFirst"><code>static boolean</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#satisfiesMultiThreadingConstraints(org.apache.sysds.runtime.matrix.data.MatrixBlock,int)">satisfiesMultiThreadingConstraints</a></span>&#8203;(<a href="MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;in,
                                   int&nbsp;k)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i19" class="rowColor">
+<tr id="i21" class="rowColor">
 <td class="colFirst"><code>static boolean</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#satisfiesMultiThreadingConstraints(org.apache.sysds.runtime.matrix.data.MatrixBlock,org.apache.sysds.runtime.matrix.data.MatrixBlock,org.apache.sysds.runtime.matrix.operators.AggregateUnaryOperator,int)">satisfiesMultiThreadingConstraints</a></span>&#8203;(<a href="MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;in,
                                   <a href="MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;out,
@@ -367,7 +384,7 @@ extends <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/ja
 <ul class="blockList">
 <li class="blockList">
 <!-- ============ METHOD DETAIL ========== -->
-<section>
+<section role="region">
 <ul class="blockList">
 <li class="blockList"><a id="method.detail">
 <!--   -->
@@ -415,6 +432,20 @@ extends <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/ja
 <dd><code>aggVal</code> - aggregate operator</dd>
 <dd><code>aop</code> - aggregate operator</dd>
 </dl>
+</li>
+</ul>
+<a id="aggregateUnaryMatrix(org.apache.sysds.runtime.matrix.operators.AggregateUnaryOperator,org.apache.sysds.runtime.matrix.data.MatrixBlock,org.apache.sysds.runtime.matrix.data.MatrixValue,int,org.apache.sysds.runtime.matrix.data.MatrixIndexes,boolean)">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>aggregateUnaryMatrix</h4>
+<pre class="methodSignature">public static&nbsp;<a href="MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;aggregateUnaryMatrix&#8203;(<a href="../operators/AggregateUnaryOperator.html" title="class in org.apache.sysds.runtime.matrix.operators">AggregateUnaryOperator</a>&nbsp;op,
+                                               <a href="MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;in,
+                                               <a href="MatrixValue.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixValue</a>&nbsp;result,
+                                               int&nbsp;blen,
+                                               <a href="MatrixIndexes.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixIndexes</a>&nbsp;indexesIn,
+                                               boolean&nbsp;inCP)</pre>
 </li>
 </ul>
 <a id="aggregateUnaryMatrix(org.apache.sysds.runtime.matrix.data.MatrixBlock,org.apache.sysds.runtime.matrix.data.MatrixBlock,org.apache.sysds.runtime.matrix.operators.AggregateUnaryOperator)">
@@ -662,13 +693,25 @@ extends <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/ja
 <a id="countAgg(double[],int[],int,int)">
 <!--   -->
 </a>
-<ul class="blockListLast">
+<ul class="blockList">
 <li class="blockList">
 <h4>countAgg</h4>
 <pre class="methodSignature">public static&nbsp;void&nbsp;countAgg&#8203;(double[]&nbsp;a,
                             int[]&nbsp;c,
                             int&nbsp;ai,
                             int&nbsp;len)</pre>
+</li>
+</ul>
+<a id="prepareAggregateUnaryOutput(org.apache.sysds.runtime.matrix.data.MatrixBlock,org.apache.sysds.runtime.matrix.operators.AggregateUnaryOperator,org.apache.sysds.runtime.matrix.data.MatrixValue,int)">
+<!--   -->
+</a>
+<ul class="blockListLast">
+<li class="blockList">
+<h4>prepareAggregateUnaryOutput</h4>
+<pre class="methodSignature">public static&nbsp;<a href="MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;prepareAggregateUnaryOutput&#8203;(<a href="MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;in,
+                                                      <a href="../operators/AggregateUnaryOperator.html" title="class in org.apache.sysds.runtime.matrix.operators">AggregateUnaryOperator</a>&nbsp;op,
+                                                      <a href="MatrixValue.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixValue</a>&nbsp;result,
+                                                      int&nbsp;blen)</pre>
 </li>
 </ul>
 </li>
@@ -740,7 +783,7 @@ extends <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/ja
 </a></div>
 <!-- ======== END OF BOTTOM NAVBAR ======= -->
 </nav>
-<p class="legalCopy"><small>Copyright &#169; 2023 <a href="https://www.apache.org/">The Apache Software Foundation</a>. All rights reserved.</small></p>
+<p class="legalCopy"><small>Copyright &#169; 2024 <a href="https://www.apache.org/">The Apache Software Foundation</a>. All rights reserved.</small></p>
 </footer>
 </body>
 </html>

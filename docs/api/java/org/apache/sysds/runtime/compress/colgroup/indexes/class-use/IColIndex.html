@@ -6,16 +6,15 @@
 <title>Uses of Interface org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex (Apache SystemDS 3.2.0-SNAPSHOT API)</title>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 <link rel="stylesheet" type="text/css" href="../../../../../../../../stylesheet.css" title="Style">
-<link rel="stylesheet" type="text/css" href="../../../../../../../../jquery/jquery-ui.min.css" title="Style">
-<link rel="stylesheet" type="text/css" href="../../../../../../../../jquery-ui.overrides.css" title="Style">
+<link rel="stylesheet" type="text/css" href="../../../../../../../../jquery/jquery-ui.css" title="Style">
 <script type="text/javascript" src="../../../../../../../../script.js"></script>
 <script type="text/javascript" src="../../../../../../../../jquery/jszip/dist/jszip.min.js"></script>
 <script type="text/javascript" src="../../../../../../../../jquery/jszip-utils/dist/jszip-utils.min.js"></script>
 <!--[if IE]>
 <script type="text/javascript" src="../../../../../../../../jquery/jszip-utils/dist/jszip-utils-ie.min.js"></script>
 <![endif]-->
-<script type="text/javascript" src="../../../../../../../../jquery/jquery-3.6.1.min.js"></script>
-<script type="text/javascript" src="../../../../../../../../jquery/jquery-ui.min.js"></script>
+<script type="text/javascript" src="../../../../../../../../jquery/jquery-3.5.1.js"></script>
+<script type="text/javascript" src="../../../../../../../../jquery/jquery-ui.js"></script>
 </head>
 <body>
 <script type="text/javascript"><!--
@@ -164,7 +163,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <li class="blockList">
 <ul class="blockList">
 <li class="blockList">
-<section><a id="org.apache.sysds.runtime.compress.bitmap">
+<section role="region"><a id="org.apache.sysds.runtime.compress.bitmap">
 <!--   -->
 </a>
 <h3>Uses of <a href="../IColIndex.html" title="interface in org.apache.sysds.runtime.compress.colgroup.indexes">IColIndex</a> in <a href="../../../bitmap/package-summary.html">org.apache.sysds.runtime.compress.bitmap</a></h3>
@@ -200,7 +199,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 </section>
 </li>
 <li class="blockList">
-<section><a id="org.apache.sysds.runtime.compress.cocode">
+<section role="region"><a id="org.apache.sysds.runtime.compress.cocode">
 <!--   -->
 </a>
 <h3>Uses of <a href="../IColIndex.html" title="interface in org.apache.sysds.runtime.compress.colgroup.indexes">IColIndex</a> in <a href="../../../cocode/package-summary.html">org.apache.sysds.runtime.compress.cocode</a></h3>
@@ -220,7 +219,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 </section>
 </li>
 <li class="blockList">
-<section><a id="org.apache.sysds.runtime.compress.colgroup">
+<section role="region"><a id="org.apache.sysds.runtime.compress.colgroup">
 <!--   -->
 </a>
 <h3>Uses of <a href="../IColIndex.html" title="interface in org.apache.sysds.runtime.compress.colgroup.indexes">IColIndex</a> in <a href="../../package-summary.html">org.apache.sysds.runtime.compress.colgroup</a></h3>
@@ -502,7 +501,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 </section>
 </li>
 <li class="blockList">
-<section><a id="org.apache.sysds.runtime.compress.colgroup.dictionary">
+<section role="region"><a id="org.apache.sysds.runtime.compress.colgroup.dictionary">
 <!--   -->
 </a>
 <h3>Uses of <a href="../IColIndex.html" title="interface in org.apache.sysds.runtime.compress.colgroup.indexes">IColIndex</a> in <a href="../../dictionary/package-summary.html">org.apache.sysds.runtime.compress.colgroup.dictionary</a></h3>
@@ -1286,6 +1285,176 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 </tr>
 <tr class="altColor">
 <td class="colFirst"><code>void</code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">Dictionary.</span><code><span class="memberNameLink"><a href="../../dictionary/Dictionary.html#MMDictScaling(org.apache.sysds.runtime.compress.colgroup.dictionary.IDictionary,org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex,org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex,org.apache.sysds.runtime.matrix.data.MatrixBlock,int%5B%5D)">MMDictScaling</a></span>&#8203;(<a href="../../dictionary/IDictionary.html" title="interface in org.apache.sysds.runtime.compress.colgroup.dictionary">IDictionary</a>&nbsp;right,
+             <a href="../IColIndex.html" title="interface in org.apache.sysds.runtime.compress.colgroup.indexes">IColIndex</a>&nbsp;rowsLeft,
+             <a href="../IColIndex.html" title="interface in org.apache.sysds.runtime.compress.colgroup.indexes">IColIndex</a>&nbsp;colsRight,
+             <a href="../../../../matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;result,
+             int[]&nbsp;scaling)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="rowColor">
+<td class="colFirst"><code>void</code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">IdentityDictionary.</span><code><span class="memberNameLink"><a href="../../dictionary/IdentityDictionary.html#MMDictScaling(org.apache.sysds.runtime.compress.colgroup.dictionary.IDictionary,org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex,org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex,org.apache.sysds.runtime.matrix.data.MatrixBlock,int%5B%5D)">MMDictScaling</a></span>&#8203;(<a href="../../dictionary/IDictionary.html" title="interface in org.apache.sysds.runtime.compress.colgroup.dictionary">IDictionary</a>&nbsp;right,
+             <a href="../IColIndex.html" title="interface in org.apache.sysds.runtime.compress.colgroup.indexes">IColIndex</a>&nbsp;rowsLeft,
+             <a href="../IColIndex.html" title="interface in org.apache.sysds.runtime.compress.colgroup.indexes">IColIndex</a>&nbsp;colsRight,
+             <a href="../../../../matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;result,
+             int[]&nbsp;scaling)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="altColor">
+<td class="colFirst"><code>void</code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">IDictionary.</span><code><span class="memberNameLink"><a href="../../dictionary/IDictionary.html#MMDictScaling(org.apache.sysds.runtime.compress.colgroup.dictionary.IDictionary,org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex,org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex,org.apache.sysds.runtime.matrix.data.MatrixBlock,int%5B%5D)">MMDictScaling</a></span>&#8203;(<a href="../../dictionary/IDictionary.html" title="interface in org.apache.sysds.runtime.compress.colgroup.dictionary">IDictionary</a>&nbsp;right,
+             <a href="../IColIndex.html" title="interface in org.apache.sysds.runtime.compress.colgroup.indexes">IColIndex</a>&nbsp;rowsLeft,
+             <a href="../IColIndex.html" title="interface in org.apache.sysds.runtime.compress.colgroup.indexes">IColIndex</a>&nbsp;colsRight,
+             <a href="../../../../matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;result,
+             int[]&nbsp;scaling)</code></th>
+<td class="colLast">
+<div class="block">Matrix multiplication of dictionaries
+ 
+ Note the left is this, and it is transposed</div>
+</td>
+</tr>
+<tr class="rowColor">
+<td class="colFirst"><code>void</code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">MatrixBlockDictionary.</span><code><span class="memberNameLink"><a href="../../dictionary/MatrixBlockDictionary.html#MMDictScaling(org.apache.sysds.runtime.compress.colgroup.dictionary.IDictionary,org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex,org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex,org.apache.sysds.runtime.matrix.data.MatrixBlock,int%5B%5D)">MMDictScaling</a></span>&#8203;(<a href="../../dictionary/IDictionary.html" title="interface in org.apache.sysds.runtime.compress.colgroup.dictionary">IDictionary</a>&nbsp;right,
+             <a href="../IColIndex.html" title="interface in org.apache.sysds.runtime.compress.colgroup.indexes">IColIndex</a>&nbsp;rowsLeft,
+             <a href="../IColIndex.html" title="interface in org.apache.sysds.runtime.compress.colgroup.indexes">IColIndex</a>&nbsp;colsRight,
+             <a href="../../../../matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;result,
+             int[]&nbsp;scaling)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="altColor">
+<td class="colFirst"><code>void</code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">PlaceHolderDict.</span><code><span class="memberNameLink"><a href="../../dictionary/PlaceHolderDict.html#MMDictScaling(org.apache.sysds.runtime.compress.colgroup.dictionary.IDictionary,org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex,org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex,org.apache.sysds.runtime.matrix.data.MatrixBlock,int%5B%5D)">MMDictScaling</a></span>&#8203;(<a href="../../dictionary/IDictionary.html" title="interface in org.apache.sysds.runtime.compress.colgroup.dictionary">IDictionary</a>&nbsp;right,
+             <a href="../IColIndex.html" title="interface in org.apache.sysds.runtime.compress.colgroup.indexes">IColIndex</a>&nbsp;rowsLeft,
+             <a href="../IColIndex.html" title="interface in org.apache.sysds.runtime.compress.colgroup.indexes">IColIndex</a>&nbsp;colsRight,
+             <a href="../../../../matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;result,
+             int[]&nbsp;scaling)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="rowColor">
+<td class="colFirst"><code>void</code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">QDictionary.</span><code><span class="memberNameLink"><a href="../../dictionary/QDictionary.html#MMDictScaling(org.apache.sysds.runtime.compress.colgroup.dictionary.IDictionary,org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex,org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex,org.apache.sysds.runtime.matrix.data.MatrixBlock,int%5B%5D)">MMDictScaling</a></span>&#8203;(<a href="../../dictionary/IDictionary.html" title="interface in org.apache.sysds.runtime.compress.colgroup.dictionary">IDictionary</a>&nbsp;right,
+             <a href="../IColIndex.html" title="interface in org.apache.sysds.runtime.compress.colgroup.indexes">IColIndex</a>&nbsp;rowsLeft,
+             <a href="../IColIndex.html" title="interface in org.apache.sysds.runtime.compress.colgroup.indexes">IColIndex</a>&nbsp;colsRight,
+             <a href="../../../../matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;result,
+             int[]&nbsp;scaling)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="altColor">
+<td class="colFirst"><code>void</code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">Dictionary.</span><code><span class="memberNameLink"><a href="../../dictionary/Dictionary.html#MMDictScalingDense(double%5B%5D,org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex,org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex,org.apache.sysds.runtime.matrix.data.MatrixBlock,int%5B%5D)">MMDictScalingDense</a></span>&#8203;(double[]&nbsp;left,
+                  <a href="../IColIndex.html" title="interface in org.apache.sysds.runtime.compress.colgroup.indexes">IColIndex</a>&nbsp;rowsLeft,
+                  <a href="../IColIndex.html" title="interface in org.apache.sysds.runtime.compress.colgroup.indexes">IColIndex</a>&nbsp;colsRight,
+                  <a href="../../../../matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;result,
+                  int[]&nbsp;scaling)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="rowColor">
+<td class="colFirst"><code>void</code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">IdentityDictionary.</span><code><span class="memberNameLink"><a href="../../dictionary/IdentityDictionary.html#MMDictScalingDense(double%5B%5D,org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex,org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex,org.apache.sysds.runtime.matrix.data.MatrixBlock,int%5B%5D)">MMDictScalingDense</a></span>&#8203;(double[]&nbsp;left,
+                  <a href="../IColIndex.html" title="interface in org.apache.sysds.runtime.compress.colgroup.indexes">IColIndex</a>&nbsp;rowsLeft,
+                  <a href="../IColIndex.html" title="interface in org.apache.sysds.runtime.compress.colgroup.indexes">IColIndex</a>&nbsp;colsRight,
+                  <a href="../../../../matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;result,
+                  int[]&nbsp;scaling)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="altColor">
+<td class="colFirst"><code>void</code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">IDictionary.</span><code><span class="memberNameLink"><a href="../../dictionary/IDictionary.html#MMDictScalingDense(double%5B%5D,org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex,org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex,org.apache.sysds.runtime.matrix.data.MatrixBlock,int%5B%5D)">MMDictScalingDense</a></span>&#8203;(double[]&nbsp;left,
+                  <a href="../IColIndex.html" title="interface in org.apache.sysds.runtime.compress.colgroup.indexes">IColIndex</a>&nbsp;rowsLeft,
+                  <a href="../IColIndex.html" title="interface in org.apache.sysds.runtime.compress.colgroup.indexes">IColIndex</a>&nbsp;colsRight,
+                  <a href="../../../../matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;result,
+                  int[]&nbsp;scaling)</code></th>
+<td class="colLast">
+<div class="block">Matrix multiplication of dictionaries left side dense and transposed right side is this.</div>
+</td>
+</tr>
+<tr class="rowColor">
+<td class="colFirst"><code>void</code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">MatrixBlockDictionary.</span><code><span class="memberNameLink"><a href="../../dictionary/MatrixBlockDictionary.html#MMDictScalingDense(double%5B%5D,org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex,org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex,org.apache.sysds.runtime.matrix.data.MatrixBlock,int%5B%5D)">MMDictScalingDense</a></span>&#8203;(double[]&nbsp;left,
+                  <a href="../IColIndex.html" title="interface in org.apache.sysds.runtime.compress.colgroup.indexes">IColIndex</a>&nbsp;rowsLeft,
+                  <a href="../IColIndex.html" title="interface in org.apache.sysds.runtime.compress.colgroup.indexes">IColIndex</a>&nbsp;colsRight,
+                  <a href="../../../../matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;result,
+                  int[]&nbsp;scaling)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="altColor">
+<td class="colFirst"><code>void</code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">PlaceHolderDict.</span><code><span class="memberNameLink"><a href="../../dictionary/PlaceHolderDict.html#MMDictScalingDense(double%5B%5D,org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex,org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex,org.apache.sysds.runtime.matrix.data.MatrixBlock,int%5B%5D)">MMDictScalingDense</a></span>&#8203;(double[]&nbsp;left,
+                  <a href="../IColIndex.html" title="interface in org.apache.sysds.runtime.compress.colgroup.indexes">IColIndex</a>&nbsp;rowsLeft,
+                  <a href="../IColIndex.html" title="interface in org.apache.sysds.runtime.compress.colgroup.indexes">IColIndex</a>&nbsp;colsRight,
+                  <a href="../../../../matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;result,
+                  int[]&nbsp;scaling)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="rowColor">
+<td class="colFirst"><code>void</code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">QDictionary.</span><code><span class="memberNameLink"><a href="../../dictionary/QDictionary.html#MMDictScalingDense(double%5B%5D,org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex,org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex,org.apache.sysds.runtime.matrix.data.MatrixBlock,int%5B%5D)">MMDictScalingDense</a></span>&#8203;(double[]&nbsp;left,
+                  <a href="../IColIndex.html" title="interface in org.apache.sysds.runtime.compress.colgroup.indexes">IColIndex</a>&nbsp;rowsLeft,
+                  <a href="../IColIndex.html" title="interface in org.apache.sysds.runtime.compress.colgroup.indexes">IColIndex</a>&nbsp;colsRight,
+                  <a href="../../../../matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;result,
+                  int[]&nbsp;scaling)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="altColor">
+<td class="colFirst"><code>void</code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">Dictionary.</span><code><span class="memberNameLink"><a href="../../dictionary/Dictionary.html#MMDictScalingSparse(org.apache.sysds.runtime.data.SparseBlock,org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex,org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex,org.apache.sysds.runtime.matrix.data.MatrixBlock,int%5B%5D)">MMDictScalingSparse</a></span>&#8203;(<a href="../../../../data/SparseBlock.html" title="class in org.apache.sysds.runtime.data">SparseBlock</a>&nbsp;left,
+                   <a href="../IColIndex.html" title="interface in org.apache.sysds.runtime.compress.colgroup.indexes">IColIndex</a>&nbsp;rowsLeft,
+                   <a href="../IColIndex.html" title="interface in org.apache.sysds.runtime.compress.colgroup.indexes">IColIndex</a>&nbsp;colsRight,
+                   <a href="../../../../matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;result,
+                   int[]&nbsp;scaling)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="rowColor">
+<td class="colFirst"><code>void</code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">IdentityDictionary.</span><code><span class="memberNameLink"><a href="../../dictionary/IdentityDictionary.html#MMDictScalingSparse(org.apache.sysds.runtime.data.SparseBlock,org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex,org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex,org.apache.sysds.runtime.matrix.data.MatrixBlock,int%5B%5D)">MMDictScalingSparse</a></span>&#8203;(<a href="../../../../data/SparseBlock.html" title="class in org.apache.sysds.runtime.data">SparseBlock</a>&nbsp;left,
+                   <a href="../IColIndex.html" title="interface in org.apache.sysds.runtime.compress.colgroup.indexes">IColIndex</a>&nbsp;rowsLeft,
+                   <a href="../IColIndex.html" title="interface in org.apache.sysds.runtime.compress.colgroup.indexes">IColIndex</a>&nbsp;colsRight,
+                   <a href="../../../../matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;result,
+                   int[]&nbsp;scaling)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="altColor">
+<td class="colFirst"><code>void</code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">IDictionary.</span><code><span class="memberNameLink"><a href="../../dictionary/IDictionary.html#MMDictScalingSparse(org.apache.sysds.runtime.data.SparseBlock,org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex,org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex,org.apache.sysds.runtime.matrix.data.MatrixBlock,int%5B%5D)">MMDictScalingSparse</a></span>&#8203;(<a href="../../../../data/SparseBlock.html" title="class in org.apache.sysds.runtime.data">SparseBlock</a>&nbsp;left,
+                   <a href="../IColIndex.html" title="interface in org.apache.sysds.runtime.compress.colgroup.indexes">IColIndex</a>&nbsp;rowsLeft,
+                   <a href="../IColIndex.html" title="interface in org.apache.sysds.runtime.compress.colgroup.indexes">IColIndex</a>&nbsp;colsRight,
+                   <a href="../../../../matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;result,
+                   int[]&nbsp;scaling)</code></th>
+<td class="colLast">
+<div class="block">Matrix multiplication of dictionaries left side sparse and transposed right side is this.</div>
+</td>
+</tr>
+<tr class="rowColor">
+<td class="colFirst"><code>void</code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">MatrixBlockDictionary.</span><code><span class="memberNameLink"><a href="../../dictionary/MatrixBlockDictionary.html#MMDictScalingSparse(org.apache.sysds.runtime.data.SparseBlock,org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex,org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex,org.apache.sysds.runtime.matrix.data.MatrixBlock,int%5B%5D)">MMDictScalingSparse</a></span>&#8203;(<a href="../../../../data/SparseBlock.html" title="class in org.apache.sysds.runtime.data">SparseBlock</a>&nbsp;left,
+                   <a href="../IColIndex.html" title="interface in org.apache.sysds.runtime.compress.colgroup.indexes">IColIndex</a>&nbsp;rowsLeft,
+                   <a href="../IColIndex.html" title="interface in org.apache.sysds.runtime.compress.colgroup.indexes">IColIndex</a>&nbsp;colsRight,
+                   <a href="../../../../matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;result,
+                   int[]&nbsp;scaling)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="altColor">
+<td class="colFirst"><code>void</code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">PlaceHolderDict.</span><code><span class="memberNameLink"><a href="../../dictionary/PlaceHolderDict.html#MMDictScalingSparse(org.apache.sysds.runtime.data.SparseBlock,org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex,org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex,org.apache.sysds.runtime.matrix.data.MatrixBlock,int%5B%5D)">MMDictScalingSparse</a></span>&#8203;(<a href="../../../../data/SparseBlock.html" title="class in org.apache.sysds.runtime.data">SparseBlock</a>&nbsp;left,
+                   <a href="../IColIndex.html" title="interface in org.apache.sysds.runtime.compress.colgroup.indexes">IColIndex</a>&nbsp;rowsLeft,
+                   <a href="../IColIndex.html" title="interface in org.apache.sysds.runtime.compress.colgroup.indexes">IColIndex</a>&nbsp;colsRight,
+                   <a href="../../../../matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;result,
+                   int[]&nbsp;scaling)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="rowColor">
+<td class="colFirst"><code>void</code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">QDictionary.</span><code><span class="memberNameLink"><a href="../../dictionary/QDictionary.html#MMDictScalingSparse(org.apache.sysds.runtime.data.SparseBlock,org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex,org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex,org.apache.sysds.runtime.matrix.data.MatrixBlock,int%5B%5D)">MMDictScalingSparse</a></span>&#8203;(<a href="../../../../data/SparseBlock.html" title="class in org.apache.sysds.runtime.data">SparseBlock</a>&nbsp;left,
+                   <a href="../IColIndex.html" title="interface in org.apache.sysds.runtime.compress.colgroup.indexes">IColIndex</a>&nbsp;rowsLeft,
+                   <a href="../IColIndex.html" title="interface in org.apache.sysds.runtime.compress.colgroup.indexes">IColIndex</a>&nbsp;colsRight,
+                   <a href="../../../../matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;result,
+                   int[]&nbsp;scaling)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="altColor">
+<td class="colFirst"><code>void</code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">Dictionary.</span><code><span class="memberNameLink"><a href="../../dictionary/Dictionary.html#MMDictSparse(org.apache.sysds.runtime.data.SparseBlock,org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex,org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex,org.apache.sysds.runtime.matrix.data.MatrixBlock)">MMDictSparse</a></span>&#8203;(<a href="../../../../data/SparseBlock.html" title="class in org.apache.sysds.runtime.data">SparseBlock</a>&nbsp;left,
             <a href="../IColIndex.html" title="interface in org.apache.sysds.runtime.compress.colgroup.indexes">IColIndex</a>&nbsp;rowsLeft,
             <a href="../IColIndex.html" title="interface in org.apache.sysds.runtime.compress.colgroup.indexes">IColIndex</a>&nbsp;colsRight,
@@ -1372,8 +1541,8 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
               int&nbsp;dictIdx,
               <a href="../IColIndex.html" title="interface in org.apache.sysds.runtime.compress.colgroup.indexes">IColIndex</a>&nbsp;cols)</code></th>
 <td class="colLast">
-<div class="block">Multiply the v value with the dictionary entry at dictIdx and add it to the ret matrix at the columns specified
- in the int array.</div>
+<div class="block">Multiply the v value with the dictionary entry at dictIdx and add it to the ret matrix at the columns specified in
+ the int array.</div>
 </td>
 </tr>
 <tr class="altColor">
@@ -1423,6 +1592,15 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 </tr>
 <tr class="rowColor">
 <td class="colFirst"><code><a href="../../dictionary/IDictionary.html" title="interface in org.apache.sysds.runtime.compress.colgroup.dictionary">IDictionary</a></code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">IdentityDictionarySlice.</span><code><span class="memberNameLink"><a href="../../dictionary/IdentityDictionarySlice.html#preaggValuesFromDense(int,org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex,org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex,double%5B%5D,int)">preaggValuesFromDense</a></span>&#8203;(int&nbsp;numVals,
+                     <a href="../IColIndex.html" title="interface in org.apache.sysds.runtime.compress.colgroup.indexes">IColIndex</a>&nbsp;colIndexes,
+                     <a href="../IColIndex.html" title="interface in org.apache.sysds.runtime.compress.colgroup.indexes">IColIndex</a>&nbsp;aggregateColumns,
+                     double[]&nbsp;b,
+                     int&nbsp;cut)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="altColor">
+<td class="colFirst"><code><a href="../../dictionary/IDictionary.html" title="interface in org.apache.sysds.runtime.compress.colgroup.dictionary">IDictionary</a></code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">IDictionary.</span><code><span class="memberNameLink"><a href="../../dictionary/IDictionary.html#preaggValuesFromDense(int,org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex,org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex,double%5B%5D,int)">preaggValuesFromDense</a></span>&#8203;(int&nbsp;numVals,
                      <a href="../IColIndex.html" title="interface in org.apache.sysds.runtime.compress.colgroup.indexes">IColIndex</a>&nbsp;colIndexes,
                      <a href="../IColIndex.html" title="interface in org.apache.sysds.runtime.compress.colgroup.indexes">IColIndex</a>&nbsp;aggregateColumns,
@@ -1432,7 +1610,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <div class="block">Pre Aggregate values for Right Matrix Multiplication.</div>
 </td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colFirst"><code><a href="../../dictionary/MatrixBlockDictionary.html" title="class in org.apache.sysds.runtime.compress.colgroup.dictionary">MatrixBlockDictionary</a></code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">MatrixBlockDictionary.</span><code><span class="memberNameLink"><a href="../../dictionary/MatrixBlockDictionary.html#preaggValuesFromDense(int,org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex,org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex,double%5B%5D,int)">preaggValuesFromDense</a></span>&#8203;(int&nbsp;numVals,
                      <a href="../IColIndex.html" title="interface in org.apache.sysds.runtime.compress.colgroup.indexes">IColIndex</a>&nbsp;colIndexes,
@@ -1441,7 +1619,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
                      int&nbsp;cut)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colFirst"><code><a href="../../dictionary/IDictionary.html" title="interface in org.apache.sysds.runtime.compress.colgroup.dictionary">IDictionary</a></code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">PlaceHolderDict.</span><code><span class="memberNameLink"><a href="../../dictionary/PlaceHolderDict.html#preaggValuesFromDense(int,org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex,org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex,double%5B%5D,int)">preaggValuesFromDense</a></span>&#8203;(int&nbsp;numVals,
                      <a href="../IColIndex.html" title="interface in org.apache.sysds.runtime.compress.colgroup.indexes">IColIndex</a>&nbsp;colIndexes,
@@ -1450,7 +1628,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
                      int&nbsp;cut)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colFirst"><code><a href="../../dictionary/IDictionary.html" title="interface in org.apache.sysds.runtime.compress.colgroup.dictionary">IDictionary</a></code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">QDictionary.</span><code><span class="memberNameLink"><a href="../../dictionary/QDictionary.html#preaggValuesFromDense(int,org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex,org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex,double%5B%5D,int)">preaggValuesFromDense</a></span>&#8203;(int&nbsp;numVals,
                      <a href="../IColIndex.html" title="interface in org.apache.sysds.runtime.compress.colgroup.indexes">IColIndex</a>&nbsp;colIndexes,
@@ -1459,7 +1637,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
                      int&nbsp;cut)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colFirst"><code>static void</code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">DictLibMatrixMult.</span><code><span class="memberNameLink"><a href="../../dictionary/DictLibMatrixMult.html#TSMMDictionaryWithScaling(org.apache.sysds.runtime.compress.colgroup.dictionary.IDictionary,int%5B%5D,org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex,org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex,org.apache.sysds.runtime.matrix.data.MatrixBlock)">TSMMDictionaryWithScaling</a></span>&#8203;(<a href="../../dictionary/IDictionary.html" title="interface in org.apache.sysds.runtime.compress.colgroup.dictionary">IDictionary</a>&nbsp;dict,
                          int[]&nbsp;counts,
@@ -1470,7 +1648,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <div class="block">Perform the full tsmm with the dictionary (allocating into the entire output matrix.)</div>
 </td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colFirst"><code>void</code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">Dictionary.</span><code><span class="memberNameLink"><a href="../../dictionary/Dictionary.html#TSMMToUpperTriangle(org.apache.sysds.runtime.compress.colgroup.dictionary.IDictionary,org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex,org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex,org.apache.sysds.runtime.matrix.data.MatrixBlock)">TSMMToUpperTriangle</a></span>&#8203;(<a href="../../dictionary/IDictionary.html" title="interface in org.apache.sysds.runtime.compress.colgroup.dictionary">IDictionary</a>&nbsp;right,
                    <a href="../IColIndex.html" title="interface in org.apache.sysds.runtime.compress.colgroup.indexes">IColIndex</a>&nbsp;rowsLeft,
@@ -1478,7 +1656,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
                    <a href="../../../../matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;result)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colFirst"><code>static void</code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">DictLibMatrixMult.</span><code><span class="memberNameLink"><a href="../../dictionary/DictLibMatrixMult.html#TSMMToUpperTriangle(org.apache.sysds.runtime.compress.colgroup.dictionary.IDictionary,org.apache.sysds.runtime.compress.colgroup.dictionary.IDictionary,org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex,org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex,org.apache.sysds.runtime.matrix.data.MatrixBlock)">TSMMToUpperTriangle</a></span>&#8203;(<a href="../../dictionary/IDictionary.html" title="interface in org.apache.sysds.runtime.compress.colgroup.dictionary">IDictionary</a>&nbsp;left,
                    <a href="../../dictionary/IDictionary.html" title="interface in org.apache.sysds.runtime.compress.colgroup.dictionary">IDictionary</a>&nbsp;right,
@@ -1489,7 +1667,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <div class="block">Does two matrix multiplications in one go but only add to the upper triangle.</div>
 </td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colFirst"><code>void</code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">IdentityDictionary.</span><code><span class="memberNameLink"><a href="../../dictionary/IdentityDictionary.html#TSMMToUpperTriangle(org.apache.sysds.runtime.compress.colgroup.dictionary.IDictionary,org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex,org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex,org.apache.sysds.runtime.matrix.data.MatrixBlock)">TSMMToUpperTriangle</a></span>&#8203;(<a href="../../dictionary/IDictionary.html" title="interface in org.apache.sysds.runtime.compress.colgroup.dictionary">IDictionary</a>&nbsp;right,
                    <a href="../IColIndex.html" title="interface in org.apache.sysds.runtime.compress.colgroup.indexes">IColIndex</a>&nbsp;rowsLeft,
@@ -1497,7 +1675,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
                    <a href="../../../../matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;result)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colFirst"><code>void</code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">IDictionary.</span><code><span class="memberNameLink"><a href="../../dictionary/IDictionary.html#TSMMToUpperTriangle(org.apache.sysds.runtime.compress.colgroup.dictionary.IDictionary,org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex,org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex,org.apache.sysds.runtime.matrix.data.MatrixBlock)">TSMMToUpperTriangle</a></span>&#8203;(<a href="../../dictionary/IDictionary.html" title="interface in org.apache.sysds.runtime.compress.colgroup.dictionary">IDictionary</a>&nbsp;right,
                    <a href="../IColIndex.html" title="interface in org.apache.sysds.runtime.compress.colgroup.indexes">IColIndex</a>&nbsp;rowsLeft,
@@ -1507,7 +1685,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <div class="block">Matrix multiplication but allocate output in upper triangle and twice if on diagonal, note this is left</div>
 </td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colFirst"><code>void</code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">MatrixBlockDictionary.</span><code><span class="memberNameLink"><a href="../../dictionary/MatrixBlockDictionary.html#TSMMToUpperTriangle(org.apache.sysds.runtime.compress.colgroup.dictionary.IDictionary,org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex,org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex,org.apache.sysds.runtime.matrix.data.MatrixBlock)">TSMMToUpperTriangle</a></span>&#8203;(<a href="../../dictionary/IDictionary.html" title="interface in org.apache.sysds.runtime.compress.colgroup.dictionary">IDictionary</a>&nbsp;right,
                    <a href="../IColIndex.html" title="interface in org.apache.sysds.runtime.compress.colgroup.indexes">IColIndex</a>&nbsp;rowsLeft,
@@ -1515,7 +1693,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
                    <a href="../../../../matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;result)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colFirst"><code>void</code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">PlaceHolderDict.</span><code><span class="memberNameLink"><a href="../../dictionary/PlaceHolderDict.html#TSMMToUpperTriangle(org.apache.sysds.runtime.compress.colgroup.dictionary.IDictionary,org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex,org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex,org.apache.sysds.runtime.matrix.data.MatrixBlock)">TSMMToUpperTriangle</a></span>&#8203;(<a href="../../dictionary/IDictionary.html" title="interface in org.apache.sysds.runtime.compress.colgroup.dictionary">IDictionary</a>&nbsp;right,
                    <a href="../IColIndex.html" title="interface in org.apache.sysds.runtime.compress.colgroup.indexes">IColIndex</a>&nbsp;rowsLeft,
@@ -1523,7 +1701,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
                    <a href="../../../../matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;result)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colFirst"><code>void</code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">QDictionary.</span><code><span class="memberNameLink"><a href="../../dictionary/QDictionary.html#TSMMToUpperTriangle(org.apache.sysds.runtime.compress.colgroup.dictionary.IDictionary,org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex,org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex,org.apache.sysds.runtime.matrix.data.MatrixBlock)">TSMMToUpperTriangle</a></span>&#8203;(<a href="../../dictionary/IDictionary.html" title="interface in org.apache.sysds.runtime.compress.colgroup.dictionary">IDictionary</a>&nbsp;right,
                    <a href="../IColIndex.html" title="interface in org.apache.sysds.runtime.compress.colgroup.indexes">IColIndex</a>&nbsp;rowsLeft,
@@ -1531,7 +1709,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
                    <a href="../../../../matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;result)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colFirst"><code>void</code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">Dictionary.</span><code><span class="memberNameLink"><a href="../../dictionary/Dictionary.html#TSMMToUpperTriangleDense(double%5B%5D,org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex,org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex,org.apache.sysds.runtime.matrix.data.MatrixBlock)">TSMMToUpperTriangleDense</a></span>&#8203;(double[]&nbsp;left,
                         <a href="../IColIndex.html" title="interface in org.apache.sysds.runtime.compress.colgroup.indexes">IColIndex</a>&nbsp;rowsLeft,
@@ -1539,7 +1717,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
                         <a href="../../../../matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;result)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colFirst"><code>void</code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">IdentityDictionary.</span><code><span class="memberNameLink"><a href="../../dictionary/IdentityDictionary.html#TSMMToUpperTriangleDense(double%5B%5D,org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex,org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex,org.apache.sysds.runtime.matrix.data.MatrixBlock)">TSMMToUpperTriangleDense</a></span>&#8203;(double[]&nbsp;left,
                         <a href="../IColIndex.html" title="interface in org.apache.sysds.runtime.compress.colgroup.indexes">IColIndex</a>&nbsp;rowsLeft,
@@ -1547,7 +1725,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
                         <a href="../../../../matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;result)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colFirst"><code>void</code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">IDictionary.</span><code><span class="memberNameLink"><a href="../../dictionary/IDictionary.html#TSMMToUpperTriangleDense(double%5B%5D,org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex,org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex,org.apache.sysds.runtime.matrix.data.MatrixBlock)">TSMMToUpperTriangleDense</a></span>&#8203;(double[]&nbsp;left,
                         <a href="../IColIndex.html" title="interface in org.apache.sysds.runtime.compress.colgroup.indexes">IColIndex</a>&nbsp;rowsLeft,
@@ -1557,7 +1735,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <div class="block">Matrix multiplication but allocate output in upper triangle and twice if on diagonal, note this is right</div>
 </td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colFirst"><code>void</code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">MatrixBlockDictionary.</span><code><span class="memberNameLink"><a href="../../dictionary/MatrixBlockDictionary.html#TSMMToUpperTriangleDense(double%5B%5D,org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex,org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex,org.apache.sysds.runtime.matrix.data.MatrixBlock)">TSMMToUpperTriangleDense</a></span>&#8203;(double[]&nbsp;left,
                         <a href="../IColIndex.html" title="interface in org.apache.sysds.runtime.compress.colgroup.indexes">IColIndex</a>&nbsp;rowsLeft,
@@ -1565,7 +1743,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
                         <a href="../../../../matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;result)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colFirst"><code>void</code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">PlaceHolderDict.</span><code><span class="memberNameLink"><a href="../../dictionary/PlaceHolderDict.html#TSMMToUpperTriangleDense(double%5B%5D,org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex,org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex,org.apache.sysds.runtime.matrix.data.MatrixBlock)">TSMMToUpperTriangleDense</a></span>&#8203;(double[]&nbsp;left,
                         <a href="../IColIndex.html" title="interface in org.apache.sysds.runtime.compress.colgroup.indexes">IColIndex</a>&nbsp;rowsLeft,
@@ -1573,7 +1751,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
                         <a href="../../../../matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;result)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colFirst"><code>void</code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">QDictionary.</span><code><span class="memberNameLink"><a href="../../dictionary/QDictionary.html#TSMMToUpperTriangleDense(double%5B%5D,org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex,org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex,org.apache.sysds.runtime.matrix.data.MatrixBlock)">TSMMToUpperTriangleDense</a></span>&#8203;(double[]&nbsp;left,
                         <a href="../IColIndex.html" title="interface in org.apache.sysds.runtime.compress.colgroup.indexes">IColIndex</a>&nbsp;rowsLeft,
@@ -1581,7 +1759,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
                         <a href="../../../../matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;result)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colFirst"><code>void</code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">Dictionary.</span><code><span class="memberNameLink"><a href="../../dictionary/Dictionary.html#TSMMToUpperTriangleDenseScaling(double%5B%5D,org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex,org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex,int%5B%5D,org.apache.sysds.runtime.matrix.data.MatrixBlock)">TSMMToUpperTriangleDenseScaling</a></span>&#8203;(double[]&nbsp;left,
                                <a href="../IColIndex.html" title="interface in org.apache.sysds.runtime.compress.colgroup.indexes">IColIndex</a>&nbsp;rowsLeft,
@@ -1590,7 +1768,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
                                <a href="../../../../matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;result)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colFirst"><code>void</code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">IdentityDictionary.</span><code><span class="memberNameLink"><a href="../../dictionary/IdentityDictionary.html#TSMMToUpperTriangleDenseScaling(double%5B%5D,org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex,org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex,int%5B%5D,org.apache.sysds.runtime.matrix.data.MatrixBlock)">TSMMToUpperTriangleDenseScaling</a></span>&#8203;(double[]&nbsp;left,
                                <a href="../IColIndex.html" title="interface in org.apache.sysds.runtime.compress.colgroup.indexes">IColIndex</a>&nbsp;rowsLeft,
@@ -1599,7 +1777,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
                                <a href="../../../../matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;result)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colFirst"><code>void</code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">IDictionary.</span><code><span class="memberNameLink"><a href="../../dictionary/IDictionary.html#TSMMToUpperTriangleDenseScaling(double%5B%5D,org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex,org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex,int%5B%5D,org.apache.sysds.runtime.matrix.data.MatrixBlock)">TSMMToUpperTriangleDenseScaling</a></span>&#8203;(double[]&nbsp;left,
                                <a href="../IColIndex.html" title="interface in org.apache.sysds.runtime.compress.colgroup.indexes">IColIndex</a>&nbsp;rowsLeft,
@@ -1610,7 +1788,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <div class="block">Matrix multiplication but allocate output in upper triangle and twice if on diagonal, note this is right</div>
 </td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colFirst"><code>void</code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">MatrixBlockDictionary.</span><code><span class="memberNameLink"><a href="../../dictionary/MatrixBlockDictionary.html#TSMMToUpperTriangleDenseScaling(double%5B%5D,org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex,org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex,int%5B%5D,org.apache.sysds.runtime.matrix.data.MatrixBlock)">TSMMToUpperTriangleDenseScaling</a></span>&#8203;(double[]&nbsp;left,
                                <a href="../IColIndex.html" title="interface in org.apache.sysds.runtime.compress.colgroup.indexes">IColIndex</a>&nbsp;rowsLeft,
@@ -1619,7 +1797,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
                                <a href="../../../../matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;result)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colFirst"><code>void</code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">PlaceHolderDict.</span><code><span class="memberNameLink"><a href="../../dictionary/PlaceHolderDict.html#TSMMToUpperTriangleDenseScaling(double%5B%5D,org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex,org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex,int%5B%5D,org.apache.sysds.runtime.matrix.data.MatrixBlock)">TSMMToUpperTriangleDenseScaling</a></span>&#8203;(double[]&nbsp;left,
                                <a href="../IColIndex.html" title="interface in org.apache.sysds.runtime.compress.colgroup.indexes">IColIndex</a>&nbsp;rowsLeft,
@@ -1628,7 +1806,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
                                <a href="../../../../matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;result)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colFirst"><code>void</code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">QDictionary.</span><code><span class="memberNameLink"><a href="../../dictionary/QDictionary.html#TSMMToUpperTriangleDenseScaling(double%5B%5D,org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex,org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex,int%5B%5D,org.apache.sysds.runtime.matrix.data.MatrixBlock)">TSMMToUpperTriangleDenseScaling</a></span>&#8203;(double[]&nbsp;left,
                                <a href="../IColIndex.html" title="interface in org.apache.sysds.runtime.compress.colgroup.indexes">IColIndex</a>&nbsp;rowsLeft,
@@ -1637,7 +1815,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
                                <a href="../../../../matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;result)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colFirst"><code>void</code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">Dictionary.</span><code><span class="memberNameLink"><a href="../../dictionary/Dictionary.html#TSMMToUpperTriangleScaling(org.apache.sysds.runtime.compress.colgroup.dictionary.IDictionary,org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex,org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex,int%5B%5D,org.apache.sysds.runtime.matrix.data.MatrixBlock)">TSMMToUpperTriangleScaling</a></span>&#8203;(<a href="../../dictionary/IDictionary.html" title="interface in org.apache.sysds.runtime.compress.colgroup.dictionary">IDictionary</a>&nbsp;right,
                           <a href="../IColIndex.html" title="interface in org.apache.sysds.runtime.compress.colgroup.indexes">IColIndex</a>&nbsp;rowsLeft,
@@ -1646,7 +1824,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
                           <a href="../../../../matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;result)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colFirst"><code>static void</code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">DictLibMatrixMult.</span><code><span class="memberNameLink"><a href="../../dictionary/DictLibMatrixMult.html#TSMMToUpperTriangleScaling(org.apache.sysds.runtime.compress.colgroup.dictionary.IDictionary,org.apache.sysds.runtime.compress.colgroup.dictionary.IDictionary,org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex,org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex,int%5B%5D,org.apache.sysds.runtime.matrix.data.MatrixBlock)">TSMMToUpperTriangleScaling</a></span>&#8203;(<a href="../../dictionary/IDictionary.html" title="interface in org.apache.sysds.runtime.compress.colgroup.dictionary">IDictionary</a>&nbsp;left,
                           <a href="../../dictionary/IDictionary.html" title="interface in org.apache.sysds.runtime.compress.colgroup.dictionary">IDictionary</a>&nbsp;right,
@@ -1658,7 +1836,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <div class="block">Does two matrix multiplications in one go but only add to the upper triangle with scaling.</div>
 </td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colFirst"><code>void</code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">IdentityDictionary.</span><code><span class="memberNameLink"><a href="../../dictionary/IdentityDictionary.html#TSMMToUpperTriangleScaling(org.apache.sysds.runtime.compress.colgroup.dictionary.IDictionary,org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex,org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex,int%5B%5D,org.apache.sysds.runtime.matrix.data.MatrixBlock)">TSMMToUpperTriangleScaling</a></span>&#8203;(<a href="../../dictionary/IDictionary.html" title="interface in org.apache.sysds.runtime.compress.colgroup.dictionary">IDictionary</a>&nbsp;right,
                           <a href="../IColIndex.html" title="interface in org.apache.sysds.runtime.compress.colgroup.indexes">IColIndex</a>&nbsp;rowsLeft,
@@ -1667,7 +1845,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
                           <a href="../../../../matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;result)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colFirst"><code>void</code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">IDictionary.</span><code><span class="memberNameLink"><a href="../../dictionary/IDictionary.html#TSMMToUpperTriangleScaling(org.apache.sysds.runtime.compress.colgroup.dictionary.IDictionary,org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex,org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex,int%5B%5D,org.apache.sysds.runtime.matrix.data.MatrixBlock)">TSMMToUpperTriangleScaling</a></span>&#8203;(<a href="../../dictionary/IDictionary.html" title="interface in org.apache.sysds.runtime.compress.colgroup.dictionary">IDictionary</a>&nbsp;right,
                           <a href="../IColIndex.html" title="interface in org.apache.sysds.runtime.compress.colgroup.indexes">IColIndex</a>&nbsp;rowsLeft,
@@ -1678,7 +1856,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <div class="block">Matrix multiplication but allocate output in upper triangle and twice if on diagonal, note this is left</div>
 </td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colFirst"><code>void</code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">MatrixBlockDictionary.</span><code><span class="memberNameLink"><a href="../../dictionary/MatrixBlockDictionary.html#TSMMToUpperTriangleScaling(org.apache.sysds.runtime.compress.colgroup.dictionary.IDictionary,org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex,org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex,int%5B%5D,org.apache.sysds.runtime.matrix.data.MatrixBlock)">TSMMToUpperTriangleScaling</a></span>&#8203;(<a href="../../dictionary/IDictionary.html" title="interface in org.apache.sysds.runtime.compress.colgroup.dictionary">IDictionary</a>&nbsp;right,
                           <a href="../IColIndex.html" title="interface in org.apache.sysds.runtime.compress.colgroup.indexes">IColIndex</a>&nbsp;rowsLeft,
@@ -1687,7 +1865,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
                           <a href="../../../../matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;result)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colFirst"><code>void</code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">PlaceHolderDict.</span><code><span class="memberNameLink"><a href="../../dictionary/PlaceHolderDict.html#TSMMToUpperTriangleScaling(org.apache.sysds.runtime.compress.colgroup.dictionary.IDictionary,org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex,org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex,int%5B%5D,org.apache.sysds.runtime.matrix.data.MatrixBlock)">TSMMToUpperTriangleScaling</a></span>&#8203;(<a href="../../dictionary/IDictionary.html" title="interface in org.apache.sysds.runtime.compress.colgroup.dictionary">IDictionary</a>&nbsp;right,
                           <a href="../IColIndex.html" title="interface in org.apache.sysds.runtime.compress.colgroup.indexes">IColIndex</a>&nbsp;rowsLeft,
@@ -1696,7 +1874,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
                           <a href="../../../../matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;result)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colFirst"><code>void</code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">QDictionary.</span><code><span class="memberNameLink"><a href="../../dictionary/QDictionary.html#TSMMToUpperTriangleScaling(org.apache.sysds.runtime.compress.colgroup.dictionary.IDictionary,org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex,org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex,int%5B%5D,org.apache.sysds.runtime.matrix.data.MatrixBlock)">TSMMToUpperTriangleScaling</a></span>&#8203;(<a href="../../dictionary/IDictionary.html" title="interface in org.apache.sysds.runtime.compress.colgroup.dictionary">IDictionary</a>&nbsp;right,
                           <a href="../IColIndex.html" title="interface in org.apache.sysds.runtime.compress.colgroup.indexes">IColIndex</a>&nbsp;rowsLeft,
@@ -1705,7 +1883,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
                           <a href="../../../../matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;result)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colFirst"><code>void</code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">Dictionary.</span><code><span class="memberNameLink"><a href="../../dictionary/Dictionary.html#TSMMToUpperTriangleSparse(org.apache.sysds.runtime.data.SparseBlock,org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex,org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex,org.apache.sysds.runtime.matrix.data.MatrixBlock)">TSMMToUpperTriangleSparse</a></span>&#8203;(<a href="../../../../data/SparseBlock.html" title="class in org.apache.sysds.runtime.data">SparseBlock</a>&nbsp;left,
                          <a href="../IColIndex.html" title="interface in org.apache.sysds.runtime.compress.colgroup.indexes">IColIndex</a>&nbsp;rowsLeft,
@@ -1713,7 +1891,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
                          <a href="../../../../matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;result)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colFirst"><code>void</code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">IdentityDictionary.</span><code><span class="memberNameLink"><a href="../../dictionary/IdentityDictionary.html#TSMMToUpperTriangleSparse(org.apache.sysds.runtime.data.SparseBlock,org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex,org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex,org.apache.sysds.runtime.matrix.data.MatrixBlock)">TSMMToUpperTriangleSparse</a></span>&#8203;(<a href="../../../../data/SparseBlock.html" title="class in org.apache.sysds.runtime.data">SparseBlock</a>&nbsp;left,
                          <a href="../IColIndex.html" title="interface in org.apache.sysds.runtime.compress.colgroup.indexes">IColIndex</a>&nbsp;rowsLeft,
@@ -1721,7 +1899,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
                          <a href="../../../../matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;result)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colFirst"><code>void</code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">IDictionary.</span><code><span class="memberNameLink"><a href="../../dictionary/IDictionary.html#TSMMToUpperTriangleSparse(org.apache.sysds.runtime.data.SparseBlock,org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex,org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex,org.apache.sysds.runtime.matrix.data.MatrixBlock)">TSMMToUpperTriangleSparse</a></span>&#8203;(<a href="../../../../data/SparseBlock.html" title="class in org.apache.sysds.runtime.data">SparseBlock</a>&nbsp;left,
                          <a href="../IColIndex.html" title="interface in org.apache.sysds.runtime.compress.colgroup.indexes">IColIndex</a>&nbsp;rowsLeft,
@@ -1731,7 +1909,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <div class="block">Matrix multiplication but allocate output in upper triangle and twice if on diagonal, note this is right</div>
 </td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colFirst"><code>void</code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">MatrixBlockDictionary.</span><code><span class="memberNameLink"><a href="../../dictionary/MatrixBlockDictionary.html#TSMMToUpperTriangleSparse(org.apache.sysds.runtime.data.SparseBlock,org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex,org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex,org.apache.sysds.runtime.matrix.data.MatrixBlock)">TSMMToUpperTriangleSparse</a></span>&#8203;(<a href="../../../../data/SparseBlock.html" title="class in org.apache.sysds.runtime.data">SparseBlock</a>&nbsp;left,
                          <a href="../IColIndex.html" title="interface in org.apache.sysds.runtime.compress.colgroup.indexes">IColIndex</a>&nbsp;rowsLeft,
@@ -1739,7 +1917,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
                          <a href="../../../../matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;result)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colFirst"><code>void</code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">PlaceHolderDict.</span><code><span class="memberNameLink"><a href="../../dictionary/PlaceHolderDict.html#TSMMToUpperTriangleSparse(org.apache.sysds.runtime.data.SparseBlock,org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex,org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex,org.apache.sysds.runtime.matrix.data.MatrixBlock)">TSMMToUpperTriangleSparse</a></span>&#8203;(<a href="../../../../data/SparseBlock.html" title="class in org.apache.sysds.runtime.data">SparseBlock</a>&nbsp;left,
                          <a href="../IColIndex.html" title="interface in org.apache.sysds.runtime.compress.colgroup.indexes">IColIndex</a>&nbsp;rowsLeft,
@@ -1747,7 +1925,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
                          <a href="../../../../matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;result)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colFirst"><code>void</code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">QDictionary.</span><code><span class="memberNameLink"><a href="../../dictionary/QDictionary.html#TSMMToUpperTriangleSparse(org.apache.sysds.runtime.data.SparseBlock,org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex,org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex,org.apache.sysds.runtime.matrix.data.MatrixBlock)">TSMMToUpperTriangleSparse</a></span>&#8203;(<a href="../../../../data/SparseBlock.html" title="class in org.apache.sysds.runtime.data">SparseBlock</a>&nbsp;left,
                          <a href="../IColIndex.html" title="interface in org.apache.sysds.runtime.compress.colgroup.indexes">IColIndex</a>&nbsp;rowsLeft,
@@ -1755,7 +1933,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
                          <a href="../../../../matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;result)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colFirst"><code>void</code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">Dictionary.</span><code><span class="memberNameLink"><a href="../../dictionary/Dictionary.html#TSMMToUpperTriangleSparseScaling(org.apache.sysds.runtime.data.SparseBlock,org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex,org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex,int%5B%5D,org.apache.sysds.runtime.matrix.data.MatrixBlock)">TSMMToUpperTriangleSparseScaling</a></span>&#8203;(<a href="../../../../data/SparseBlock.html" title="class in org.apache.sysds.runtime.data">SparseBlock</a>&nbsp;left,
                                 <a href="../IColIndex.html" title="interface in org.apache.sysds.runtime.compress.colgroup.indexes">IColIndex</a>&nbsp;rowsLeft,
@@ -1764,7 +1942,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
                                 <a href="../../../../matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;result)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colFirst"><code>void</code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">IdentityDictionary.</span><code><span class="memberNameLink"><a href="../../dictionary/IdentityDictionary.html#TSMMToUpperTriangleSparseScaling(org.apache.sysds.runtime.data.SparseBlock,org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex,org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex,int%5B%5D,org.apache.sysds.runtime.matrix.data.MatrixBlock)">TSMMToUpperTriangleSparseScaling</a></span>&#8203;(<a href="../../../../data/SparseBlock.html" title="class in org.apache.sysds.runtime.data">SparseBlock</a>&nbsp;left,
                                 <a href="../IColIndex.html" title="interface in org.apache.sysds.runtime.compress.colgroup.indexes">IColIndex</a>&nbsp;rowsLeft,
@@ -1773,7 +1951,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
                                 <a href="../../../../matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;result)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colFirst"><code>void</code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">IDictionary.</span><code><span class="memberNameLink"><a href="../../dictionary/IDictionary.html#TSMMToUpperTriangleSparseScaling(org.apache.sysds.runtime.data.SparseBlock,org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex,org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex,int%5B%5D,org.apache.sysds.runtime.matrix.data.MatrixBlock)">TSMMToUpperTriangleSparseScaling</a></span>&#8203;(<a href="../../../../data/SparseBlock.html" title="class in org.apache.sysds.runtime.data">SparseBlock</a>&nbsp;left,
                                 <a href="../IColIndex.html" title="interface in org.apache.sysds.runtime.compress.colgroup.indexes">IColIndex</a>&nbsp;rowsLeft,
@@ -1784,7 +1962,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <div class="block">Matrix multiplication but allocate output in upper triangle and twice if on diagonal, note this is right</div>
 </td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colFirst"><code>void</code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">MatrixBlockDictionary.</span><code><span class="memberNameLink"><a href="../../dictionary/MatrixBlockDictionary.html#TSMMToUpperTriangleSparseScaling(org.apache.sysds.runtime.data.SparseBlock,org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex,org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex,int%5B%5D,org.apache.sysds.runtime.matrix.data.MatrixBlock)">TSMMToUpperTriangleSparseScaling</a></span>&#8203;(<a href="../../../../data/SparseBlock.html" title="class in org.apache.sysds.runtime.data">SparseBlock</a>&nbsp;left,
                                 <a href="../IColIndex.html" title="interface in org.apache.sysds.runtime.compress.colgroup.indexes">IColIndex</a>&nbsp;rowsLeft,
@@ -1793,7 +1971,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
                                 <a href="../../../../matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;result)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colFirst"><code>void</code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">PlaceHolderDict.</span><code><span class="memberNameLink"><a href="../../dictionary/PlaceHolderDict.html#TSMMToUpperTriangleSparseScaling(org.apache.sysds.runtime.data.SparseBlock,org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex,org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex,int%5B%5D,org.apache.sysds.runtime.matrix.data.MatrixBlock)">TSMMToUpperTriangleSparseScaling</a></span>&#8203;(<a href="../../../../data/SparseBlock.html" title="class in org.apache.sysds.runtime.data">SparseBlock</a>&nbsp;left,
                                 <a href="../IColIndex.html" title="interface in org.apache.sysds.runtime.compress.colgroup.indexes">IColIndex</a>&nbsp;rowsLeft,
@@ -1802,7 +1980,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
                                 <a href="../../../../matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;result)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colFirst"><code>void</code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">QDictionary.</span><code><span class="memberNameLink"><a href="../../dictionary/QDictionary.html#TSMMToUpperTriangleSparseScaling(org.apache.sysds.runtime.data.SparseBlock,org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex,org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex,int%5B%5D,org.apache.sysds.runtime.matrix.data.MatrixBlock)">TSMMToUpperTriangleSparseScaling</a></span>&#8203;(<a href="../../../../data/SparseBlock.html" title="class in org.apache.sysds.runtime.data">SparseBlock</a>&nbsp;left,
                                 <a href="../IColIndex.html" title="interface in org.apache.sysds.runtime.compress.colgroup.indexes">IColIndex</a>&nbsp;rowsLeft,
@@ -1811,7 +1989,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
                                 <a href="../../../../matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;result)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colFirst"><code>void</code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">Dictionary.</span><code><span class="memberNameLink"><a href="../../dictionary/Dictionary.html#TSMMWithScaling(int%5B%5D,org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex,org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex,org.apache.sysds.runtime.matrix.data.MatrixBlock)">TSMMWithScaling</a></span>&#8203;(int[]&nbsp;counts,
                <a href="../IColIndex.html" title="interface in org.apache.sysds.runtime.compress.colgroup.indexes">IColIndex</a>&nbsp;rows,
@@ -1819,7 +1997,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
                <a href="../../../../matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;ret)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colFirst"><code>void</code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">IdentityDictionary.</span><code><span class="memberNameLink"><a href="../../dictionary/IdentityDictionary.html#TSMMWithScaling(int%5B%5D,org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex,org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex,org.apache.sysds.runtime.matrix.data.MatrixBlock)">TSMMWithScaling</a></span>&#8203;(int[]&nbsp;counts,
                <a href="../IColIndex.html" title="interface in org.apache.sysds.runtime.compress.colgroup.indexes">IColIndex</a>&nbsp;rows,
@@ -1827,7 +2005,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
                <a href="../../../../matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;ret)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colFirst"><code>void</code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">IDictionary.</span><code><span class="memberNameLink"><a href="../../dictionary/IDictionary.html#TSMMWithScaling(int%5B%5D,org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex,org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex,org.apache.sysds.runtime.matrix.data.MatrixBlock)">TSMMWithScaling</a></span>&#8203;(int[]&nbsp;counts,
                <a href="../IColIndex.html" title="interface in org.apache.sysds.runtime.compress.colgroup.indexes">IColIndex</a>&nbsp;rows,
@@ -1837,7 +2015,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <div class="block">Transpose self matrix multiplication with a scaling factor on each pair of values.</div>
 </td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colFirst"><code>void</code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">MatrixBlockDictionary.</span><code><span class="memberNameLink"><a href="../../dictionary/MatrixBlockDictionary.html#TSMMWithScaling(int%5B%5D,org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex,org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex,org.apache.sysds.runtime.matrix.data.MatrixBlock)">TSMMWithScaling</a></span>&#8203;(int[]&nbsp;counts,
                <a href="../IColIndex.html" title="interface in org.apache.sysds.runtime.compress.colgroup.indexes">IColIndex</a>&nbsp;rows,
@@ -1845,7 +2023,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
                <a href="../../../../matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;ret)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colFirst"><code>void</code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">PlaceHolderDict.</span><code><span class="memberNameLink"><a href="../../dictionary/PlaceHolderDict.html#TSMMWithScaling(int%5B%5D,org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex,org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex,org.apache.sysds.runtime.matrix.data.MatrixBlock)">TSMMWithScaling</a></span>&#8203;(int[]&nbsp;counts,
                <a href="../IColIndex.html" title="interface in org.apache.sysds.runtime.compress.colgroup.indexes">IColIndex</a>&nbsp;rows,
@@ -1853,7 +2031,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
                <a href="../../../../matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;ret)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colFirst"><code>void</code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">QDictionary.</span><code><span class="memberNameLink"><a href="../../dictionary/QDictionary.html#TSMMWithScaling(int%5B%5D,org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex,org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex,org.apache.sysds.runtime.matrix.data.MatrixBlock)">TSMMWithScaling</a></span>&#8203;(int[]&nbsp;counts,
                <a href="../IColIndex.html" title="interface in org.apache.sysds.runtime.compress.colgroup.indexes">IColIndex</a>&nbsp;rows,
@@ -1866,7 +2044,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 </section>
 </li>
 <li class="blockList">
-<section><a id="org.apache.sysds.runtime.compress.colgroup.functional">
+<section role="region"><a id="org.apache.sysds.runtime.compress.colgroup.functional">
 <!--   -->
 </a>
 <h3>Uses of <a href="../IColIndex.html" title="interface in org.apache.sysds.runtime.compress.colgroup.indexes">IColIndex</a> in <a href="../../functional/package-summary.html">org.apache.sysds.runtime.compress.colgroup.functional</a></h3>
@@ -1890,7 +2068,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 </section>
 </li>
 <li class="blockList">
-<section><a id="org.apache.sysds.runtime.compress.colgroup.indexes">
+<section role="region"><a id="org.apache.sysds.runtime.compress.colgroup.indexes">
 <!--   -->
 </a>
 <h3>Uses of <a href="../IColIndex.html" title="interface in org.apache.sysds.runtime.compress.colgroup.indexes">IColIndex</a> in <a href="../package-summary.html">org.apache.sysds.runtime.compress.colgroup.indexes</a></h3>
@@ -1914,22 +2092,27 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 </tr>
 <tr class="altColor">
 <td class="colFirst"><code>class&nbsp;</code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="../CombinedIndex.html" title="class in org.apache.sysds.runtime.compress.colgroup.indexes">CombinedIndex</a></span></code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="rowColor">
+<td class="colFirst"><code>class&nbsp;</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="../RangeIndex.html" title="class in org.apache.sysds.runtime.compress.colgroup.indexes">RangeIndex</a></span></code></th>
 <td class="colLast">
 <div class="block">A Range index that contain a lower and upper bound of the indexes that is symbolize.</div>
 </td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colFirst"><code>class&nbsp;</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="../SingleIndex.html" title="class in org.apache.sysds.runtime.compress.colgroup.indexes">SingleIndex</a></span></code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colFirst"><code>class&nbsp;</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="../TwoIndex.html" title="class in org.apache.sysds.runtime.compress.colgroup.indexes">TwoIndex</a></span></code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colFirst"><code>class&nbsp;</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="../TwoRangesIndex.html" title="class in org.apache.sysds.runtime.compress.colgroup.indexes">TwoRangesIndex</a></span></code></th>
 <td class="colLast">&nbsp;</td>
@@ -1985,48 +2168,53 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 </tr>
 <tr class="altColor">
 <td class="colFirst"><code><a href="../IColIndex.html" title="interface in org.apache.sysds.runtime.compress.colgroup.indexes">IColIndex</a></code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">CombinedIndex.</span><code><span class="memberNameLink"><a href="../CombinedIndex.html#combine(org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex)">combine</a></span>&#8203;(<a href="../IColIndex.html" title="interface in org.apache.sysds.runtime.compress.colgroup.indexes">IColIndex</a>&nbsp;other)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="rowColor">
+<td class="colFirst"><code><a href="../IColIndex.html" title="interface in org.apache.sysds.runtime.compress.colgroup.indexes">IColIndex</a></code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">IColIndex.</span><code><span class="memberNameLink"><a href="../IColIndex.html#combine(org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex)">combine</a></span>&#8203;(<a href="../IColIndex.html" title="interface in org.apache.sysds.runtime.compress.colgroup.indexes">IColIndex</a>&nbsp;other)</code></th>
 <td class="colLast">
 <div class="block">combine the indexes of this colIndex with another, it is expected that all calls to this contains unique indexes,
  and no copies of values.</div>
 </td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colFirst"><code><a href="../IColIndex.html" title="interface in org.apache.sysds.runtime.compress.colgroup.indexes">IColIndex</a></code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">RangeIndex.</span><code><span class="memberNameLink"><a href="../RangeIndex.html#combine(org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex)">combine</a></span>&#8203;(<a href="../IColIndex.html" title="interface in org.apache.sysds.runtime.compress.colgroup.indexes">IColIndex</a>&nbsp;other)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colFirst"><code><a href="../IColIndex.html" title="interface in org.apache.sysds.runtime.compress.colgroup.indexes">IColIndex</a></code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">SingleIndex.</span><code><span class="memberNameLink"><a href="../SingleIndex.html#combine(org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex)">combine</a></span>&#8203;(<a href="../IColIndex.html" title="interface in org.apache.sysds.runtime.compress.colgroup.indexes">IColIndex</a>&nbsp;other)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colFirst"><code><a href="../IColIndex.html" title="interface in org.apache.sysds.runtime.compress.colgroup.indexes">IColIndex</a></code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">TwoIndex.</span><code><span class="memberNameLink"><a href="../TwoIndex.html#combine(org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex)">combine</a></span>&#8203;(<a href="../IColIndex.html" title="interface in org.apache.sysds.runtime.compress.colgroup.indexes">IColIndex</a>&nbsp;other)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colFirst"><code><a href="../IColIndex.html" title="interface in org.apache.sysds.runtime.compress.colgroup.indexes">IColIndex</a></code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">TwoRangesIndex.</span><code><span class="memberNameLink"><a href="../TwoRangesIndex.html#combine(org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex)">combine</a></span>&#8203;(<a href="../IColIndex.html" title="interface in org.apache.sysds.runtime.compress.colgroup.indexes">IColIndex</a>&nbsp;other)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colFirst"><code>static <a href="../IColIndex.html" title="interface in org.apache.sysds.runtime.compress.colgroup.indexes">IColIndex</a></code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">ColIndexFactory.</span><code><span class="memberNameLink"><a href="../ColIndexFactory.html#combineIndexes(java.util.List)">combineIndexes</a></span>&#8203;(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/List.html?is-external=true" title="class or interface in java.util" class="externalLink">List</a>&lt;<a href="../IColIndex.html" title="interface in org.apache.sysds.runtime.compress.colgroup.indexes">IColIndex</a>&gt;&nbsp;idx)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colFirst"><code>static <a href="../IColIndex.html" title="interface in org.apache.sysds.runtime.compress.colgroup.indexes">IColIndex</a></code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">ColIndexFactory.</span><code><span class="memberNameLink"><a href="../ColIndexFactory.html#create(int)">create</a></span>&#8203;(int&nbsp;nCol)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colFirst"><code>static <a href="../IColIndex.html" title="interface in org.apache.sysds.runtime.compress.colgroup.indexes">IColIndex</a></code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">ColIndexFactory.</span><code><span class="memberNameLink"><a href="../ColIndexFactory.html#create(int%5B%5D)">create</a></span>&#8203;(int[]&nbsp;indexes)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colFirst"><code>static <a href="../IColIndex.html" title="interface in org.apache.sysds.runtime.compress.colgroup.indexes">IColIndex</a></code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">ColIndexFactory.</span><code><span class="memberNameLink"><a href="../ColIndexFactory.html#create(int,int)">create</a></span>&#8203;(int&nbsp;l,
       int&nbsp;u)</code></th>
@@ -2034,17 +2222,17 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <div class="block">Create an Index range of the given values</div>
 </td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colFirst"><code>static <a href="../IColIndex.html" title="interface in org.apache.sysds.runtime.compress.colgroup.indexes">IColIndex</a></code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">ColIndexFactory.</span><code><span class="memberNameLink"><a href="../ColIndexFactory.html#create(org.apache.sysds.runtime.compress.utils.IntArrayList)">create</a></span>&#8203;(<a href="../../../utils/IntArrayList.html" title="class in org.apache.sysds.runtime.compress.utils">IntArrayList</a>&nbsp;indexes)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colFirst"><code>static <a href="../IColIndex.html" title="interface in org.apache.sysds.runtime.compress.colgroup.indexes">IColIndex</a></code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">ColIndexFactory.</span><code><span class="memberNameLink"><a href="../ColIndexFactory.html#createI(int...)">createI</a></span>&#8203;(int...&nbsp;indexes)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colFirst"><code>static <a href="../IColIndex.html" title="interface in org.apache.sysds.runtime.compress.colgroup.indexes">IColIndex</a></code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">ColIndexFactory.</span><code><span class="memberNameLink"><a href="../ColIndexFactory.html#getColumnMapping(org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex,org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex)">getColumnMapping</a></span>&#8203;(<a href="../IColIndex.html" title="interface in org.apache.sysds.runtime.compress.colgroup.indexes">IColIndex</a>&nbsp;comb,
                 <a href="../IColIndex.html" title="interface in org.apache.sysds.runtime.compress.colgroup.indexes">IColIndex</a>&nbsp;a)</code></th>
@@ -2052,14 +2240,19 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <div class="block">Provide a mapping from a to the combined columns shifted over to column positions in the combined.</div>
 </td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colFirst"><code>static <a href="../IColIndex.html" title="interface in org.apache.sysds.runtime.compress.colgroup.indexes">IColIndex</a></code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">ColIndexFactory.</span><code><span class="memberNameLink"><a href="../ColIndexFactory.html#read(java.io.DataInput)">read</a></span>&#8203;(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/io/DataInput.html?is-external=true" title="class or interface in java.io" class="externalLink">DataInput</a>&nbsp;in)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colFirst"><code><a href="../IColIndex.html" title="interface in org.apache.sysds.runtime.compress.colgroup.indexes">IColIndex</a></code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">ArrayIndex.</span><code><span class="memberNameLink"><a href="../ArrayIndex.html#shift(int)">shift</a></span>&#8203;(int&nbsp;i)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="rowColor">
+<td class="colFirst"><code><a href="../IColIndex.html" title="interface in org.apache.sysds.runtime.compress.colgroup.indexes">IColIndex</a></code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">CombinedIndex.</span><code><span class="memberNameLink"><a href="../CombinedIndex.html#shift(int)">shift</a></span>&#8203;(int&nbsp;i)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr class="altColor">
@@ -2081,27 +2274,32 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 </tr>
 <tr class="rowColor">
 <td class="colFirst"><code><a href="../IColIndex.html" title="interface in org.apache.sysds.runtime.compress.colgroup.indexes">IColIndex</a></code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">CombinedIndex.</span><code><span class="memberNameLink"><a href="../CombinedIndex.html#sort()">sort</a></span>()</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="altColor">
+<td class="colFirst"><code><a href="../IColIndex.html" title="interface in org.apache.sysds.runtime.compress.colgroup.indexes">IColIndex</a></code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">IColIndex.</span><code><span class="memberNameLink"><a href="../IColIndex.html#sort()">sort</a></span>()</code></th>
 <td class="colLast">
 <div class="block">Sort the index and return a new object if there are modifications otherwise return this.</div>
 </td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colFirst"><code><a href="../IColIndex.html" title="interface in org.apache.sysds.runtime.compress.colgroup.indexes">IColIndex</a></code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">RangeIndex.</span><code><span class="memberNameLink"><a href="../RangeIndex.html#sort()">sort</a></span>()</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colFirst"><code><a href="../IColIndex.html" title="interface in org.apache.sysds.runtime.compress.colgroup.indexes">IColIndex</a></code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">SingleIndex.</span><code><span class="memberNameLink"><a href="../SingleIndex.html#sort()">sort</a></span>()</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colFirst"><code><a href="../IColIndex.html" title="interface in org.apache.sysds.runtime.compress.colgroup.indexes">IColIndex</a></code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">TwoIndex.</span><code><span class="memberNameLink"><a href="../TwoIndex.html#sort()">sort</a></span>()</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colFirst"><code><a href="../IColIndex.html" title="interface in org.apache.sysds.runtime.compress.colgroup.indexes">IColIndex</a></code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">TwoRangesIndex.</span><code><span class="memberNameLink"><a href="../TwoRangesIndex.html#sort()">sort</a></span>()</code></th>
 <td class="colLast">&nbsp;</td>
@@ -2129,39 +2327,44 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 </tr>
 <tr class="altColor">
 <td class="colFirst"><code><a href="../IColIndex.html" title="interface in org.apache.sysds.runtime.compress.colgroup.indexes">IColIndex</a></code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">CombinedIndex.</span><code><span class="memberNameLink"><a href="../CombinedIndex.html#combine(org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex)">combine</a></span>&#8203;(<a href="../IColIndex.html" title="interface in org.apache.sysds.runtime.compress.colgroup.indexes">IColIndex</a>&nbsp;other)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="rowColor">
+<td class="colFirst"><code><a href="../IColIndex.html" title="interface in org.apache.sysds.runtime.compress.colgroup.indexes">IColIndex</a></code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">IColIndex.</span><code><span class="memberNameLink"><a href="../IColIndex.html#combine(org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex)">combine</a></span>&#8203;(<a href="../IColIndex.html" title="interface in org.apache.sysds.runtime.compress.colgroup.indexes">IColIndex</a>&nbsp;other)</code></th>
 <td class="colLast">
 <div class="block">combine the indexes of this colIndex with another, it is expected that all calls to this contains unique indexes,
  and no copies of values.</div>
 </td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colFirst"><code><a href="../IColIndex.html" title="interface in org.apache.sysds.runtime.compress.colgroup.indexes">IColIndex</a></code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">RangeIndex.</span><code><span class="memberNameLink"><a href="../RangeIndex.html#combine(org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex)">combine</a></span>&#8203;(<a href="../IColIndex.html" title="interface in org.apache.sysds.runtime.compress.colgroup.indexes">IColIndex</a>&nbsp;other)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colFirst"><code><a href="../IColIndex.html" title="interface in org.apache.sysds.runtime.compress.colgroup.indexes">IColIndex</a></code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">SingleIndex.</span><code><span class="memberNameLink"><a href="../SingleIndex.html#combine(org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex)">combine</a></span>&#8203;(<a href="../IColIndex.html" title="interface in org.apache.sysds.runtime.compress.colgroup.indexes">IColIndex</a>&nbsp;other)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colFirst"><code><a href="../IColIndex.html" title="interface in org.apache.sysds.runtime.compress.colgroup.indexes">IColIndex</a></code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">TwoIndex.</span><code><span class="memberNameLink"><a href="../TwoIndex.html#combine(org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex)">combine</a></span>&#8203;(<a href="../IColIndex.html" title="interface in org.apache.sysds.runtime.compress.colgroup.indexes">IColIndex</a>&nbsp;other)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colFirst"><code><a href="../IColIndex.html" title="interface in org.apache.sysds.runtime.compress.colgroup.indexes">IColIndex</a></code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">TwoRangesIndex.</span><code><span class="memberNameLink"><a href="../TwoRangesIndex.html#combine(org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex)">combine</a></span>&#8203;(<a href="../IColIndex.html" title="interface in org.apache.sysds.runtime.compress.colgroup.indexes">IColIndex</a>&nbsp;other)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colFirst"><code>boolean</code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">AColIndex.</span><code><span class="memberNameLink"><a href="../AColIndex.html#contains(org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex,org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex)">contains</a></span>&#8203;(<a href="../IColIndex.html" title="interface in org.apache.sysds.runtime.compress.colgroup.indexes">IColIndex</a>&nbsp;a,
         <a href="../IColIndex.html" title="interface in org.apache.sysds.runtime.compress.colgroup.indexes">IColIndex</a>&nbsp;b)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colFirst"><code>boolean</code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">IColIndex.</span><code><span class="memberNameLink"><a href="../IColIndex.html#contains(org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex,org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex)">contains</a></span>&#8203;(<a href="../IColIndex.html" title="interface in org.apache.sysds.runtime.compress.colgroup.indexes">IColIndex</a>&nbsp;a,
         <a href="../IColIndex.html" title="interface in org.apache.sysds.runtime.compress.colgroup.indexes">IColIndex</a>&nbsp;b)</code></th>
@@ -2169,17 +2372,22 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <div class="block">This contains method is not strict since it only verifies one element is contained from each a and b.</div>
 </td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colFirst"><code>boolean</code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">AColIndex.</span><code><span class="memberNameLink"><a href="../AColIndex.html#containsAny(org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex)">containsAny</a></span>&#8203;(<a href="../IColIndex.html" title="interface in org.apache.sysds.runtime.compress.colgroup.indexes">IColIndex</a>&nbsp;idx)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colFirst"><code>boolean</code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">IColIndex.</span><code><span class="memberNameLink"><a href="../IColIndex.html#containsAny(org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex)">containsAny</a></span>&#8203;(<a href="../IColIndex.html" title="interface in org.apache.sysds.runtime.compress.colgroup.indexes">IColIndex</a>&nbsp;idx)</code></th>
 <td class="colLast">
 <div class="block">Analyze if this column group contain any of the given column Ids.</div>
 </td>
+</tr>
+<tr class="altColor">
+<td class="colFirst"><code>boolean</code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">RangeIndex.</span><code><span class="memberNameLink"><a href="../RangeIndex.html#containsAny(org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex)">containsAny</a></span>&#8203;(<a href="../IColIndex.html" title="interface in org.apache.sysds.runtime.compress.colgroup.indexes">IColIndex</a>&nbsp;idx)</code></th>
+<td class="colLast">&nbsp;</td>
 </tr>
 <tr class="rowColor">
 <td class="colFirst"><code>boolean</code></td>
@@ -2207,36 +2415,56 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 </tr>
 <tr class="rowColor">
 <td class="colFirst"><code>boolean</code></td>
-<th class="colSecond" scope="row"><span class="typeNameLabel">IColIndex.</span><code><span class="memberNameLink"><a href="../IColIndex.html#equals(org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex)">equals</a></span>&#8203;(<a href="../IColIndex.html" title="interface in org.apache.sysds.runtime.compress.colgroup.indexes">IColIndex</a>&nbsp;other)</code></th>
+<th class="colSecond" scope="row"><span class="typeNameLabel">CombinedIndex.</span><code><span class="memberNameLink"><a href="../CombinedIndex.html#equals(org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex)">equals</a></span>&#8203;(<a href="../IColIndex.html" title="interface in org.apache.sysds.runtime.compress.colgroup.indexes">IColIndex</a>&nbsp;other)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr class="altColor">
+<td class="colFirst"><code>boolean</code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">IColIndex.</span><code><span class="memberNameLink"><a href="../IColIndex.html#equals(org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex)">equals</a></span>&#8203;(<a href="../IColIndex.html" title="interface in org.apache.sysds.runtime.compress.colgroup.indexes">IColIndex</a>&nbsp;other)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="rowColor">
 <td class="colFirst"><code>boolean</code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">RangeIndex.</span><code><span class="memberNameLink"><a href="../RangeIndex.html#equals(org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex)">equals</a></span>&#8203;(<a href="../IColIndex.html" title="interface in org.apache.sysds.runtime.compress.colgroup.indexes">IColIndex</a>&nbsp;other)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colFirst"><code>boolean</code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">SingleIndex.</span><code><span class="memberNameLink"><a href="../SingleIndex.html#equals(org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex)">equals</a></span>&#8203;(<a href="../IColIndex.html" title="interface in org.apache.sysds.runtime.compress.colgroup.indexes">IColIndex</a>&nbsp;other)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colFirst"><code>boolean</code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">TwoIndex.</span><code><span class="memberNameLink"><a href="../TwoIndex.html#equals(org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex)">equals</a></span>&#8203;(<a href="../IColIndex.html" title="interface in org.apache.sysds.runtime.compress.colgroup.indexes">IColIndex</a>&nbsp;other)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colFirst"><code>boolean</code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">TwoRangesIndex.</span><code><span class="memberNameLink"><a href="../TwoRangesIndex.html#equals(org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex)">equals</a></span>&#8203;(<a href="../IColIndex.html" title="interface in org.apache.sysds.runtime.compress.colgroup.indexes">IColIndex</a>&nbsp;other)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colFirst"><code>static <a href="../IColIndex.html" title="interface in org.apache.sysds.runtime.compress.colgroup.indexes">IColIndex</a></code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">ColIndexFactory.</span><code><span class="memberNameLink"><a href="../ColIndexFactory.html#getColumnMapping(org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex,org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex)">getColumnMapping</a></span>&#8203;(<a href="../IColIndex.html" title="interface in org.apache.sysds.runtime.compress.colgroup.indexes">IColIndex</a>&nbsp;comb,
                 <a href="../IColIndex.html" title="interface in org.apache.sysds.runtime.compress.colgroup.indexes">IColIndex</a>&nbsp;a)</code></th>
 <td class="colLast">
 <div class="block">Provide a mapping from a to the combined columns shifted over to column positions in the combined.</div>
 </td>
+</tr>
+<tr class="altColor">
+<td class="colFirst"><code>static boolean</code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">IColIndex.</span><code><span class="memberNameLink"><a href="../IColIndex.html#inOrder(org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex,org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex)">inOrder</a></span>&#8203;(<a href="../IColIndex.html" title="interface in org.apache.sysds.runtime.compress.colgroup.indexes">IColIndex</a>&nbsp;a,
+       <a href="../IColIndex.html" title="interface in org.apache.sysds.runtime.compress.colgroup.indexes">IColIndex</a>&nbsp;b)</code></th>
+<td class="colLast">
+<div class="block">Indicate if the two given column indexes are in order such that the first set of indexes all are of lower value
+ than the second.</div>
+</td>
+</tr>
+<tr class="rowColor">
+<td class="colFirst"><code>static <a href="../../../../matrix/data/Pair.html" title="class in org.apache.sysds.runtime.matrix.data">Pair</a>&lt;int[],&#8203;int[]&gt;</code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">IColIndex.</span><code><span class="memberNameLink"><a href="../IColIndex.html#reorderingIndexes(org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex,org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex)">reorderingIndexes</a></span>&#8203;(<a href="../IColIndex.html" title="interface in org.apache.sysds.runtime.compress.colgroup.indexes">IColIndex</a>&nbsp;a,
+                 <a href="../IColIndex.html" title="interface in org.apache.sysds.runtime.compress.colgroup.indexes">IColIndex</a>&nbsp;b)</code></th>
+<td class="colLast">&nbsp;</td>
 </tr>
 </tbody>
 </table>
@@ -2255,10 +2483,24 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 </tr>
 </tbody>
 </table>
+<table class="useSummary">
+<caption><span>Constructors in <a href="../package-summary.html">org.apache.sysds.runtime.compress.colgroup.indexes</a> with parameters of type <a href="../IColIndex.html" title="interface in org.apache.sysds.runtime.compress.colgroup.indexes">IColIndex</a></span><span class="tabEnd">&nbsp;</span></caption>
+<tr>
+<th class="colFirst" scope="col">Constructor</th>
+<th class="colLast" scope="col">Description</th>
+</tr>
+<tbody>
+<tr class="altColor">
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="../CombinedIndex.html#%3Cinit%3E(org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex,org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex)">CombinedIndex</a></span>&#8203;(<a href="../IColIndex.html" title="interface in org.apache.sysds.runtime.compress.colgroup.indexes">IColIndex</a>&nbsp;l,
+             <a href="../IColIndex.html" title="interface in org.apache.sysds.runtime.compress.colgroup.indexes">IColIndex</a>&nbsp;r)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+</tbody>
+</table>
 </section>
 </li>
 <li class="blockList">
-<section><a id="org.apache.sysds.runtime.compress.colgroup.scheme">
+<section role="region"><a id="org.apache.sysds.runtime.compress.colgroup.scheme">
 <!--   -->
 </a>
 <h3>Uses of <a href="../IColIndex.html" title="interface in org.apache.sysds.runtime.compress.colgroup.indexes">IColIndex</a> in <a href="../../scheme/package-summary.html">org.apache.sysds.runtime.compress.colgroup.scheme</a></h3>
@@ -2411,7 +2653,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 </section>
 </li>
 <li class="blockList">
-<section><a id="org.apache.sysds.runtime.compress.estim">
+<section role="region"><a id="org.apache.sysds.runtime.compress.estim">
 <!--   -->
 </a>
 <h3>Uses of <a href="../IColIndex.html" title="interface in org.apache.sysds.runtime.compress.colgroup.indexes">IColIndex</a> in <a href="../../../estim/package-summary.html">org.apache.sysds.runtime.compress.estim</a></h3>
@@ -2582,7 +2824,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 </section>
 </li>
 <li class="blockList">
-<section><a id="org.apache.sysds.runtime.compress.estim.encoding">
+<section role="region"><a id="org.apache.sysds.runtime.compress.estim.encoding">
 <!--   -->
 </a>
 <h3>Uses of <a href="../IColIndex.html" title="interface in org.apache.sysds.runtime.compress.colgroup.indexes">IColIndex</a> in <a href="../../../estim/encoding/package-summary.html">org.apache.sysds.runtime.compress.estim.encoding</a></h3>
@@ -2627,7 +2869,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 </section>
 </li>
 <li class="blockList">
-<section><a id="org.apache.sysds.runtime.compress.lib">
+<section role="region"><a id="org.apache.sysds.runtime.compress.lib">
 <!--   -->
 </a>
 <h3>Uses of <a href="../IColIndex.html" title="interface in org.apache.sysds.runtime.compress.colgroup.indexes">IColIndex</a> in <a href="../../../lib/package-summary.html">org.apache.sysds.runtime.compress.lib</a></h3>
@@ -2650,7 +2892,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 </section>
 </li>
 <li class="blockList">
-<section><a id="org.apache.sysds.runtime.compress.plan">
+<section role="region"><a id="org.apache.sysds.runtime.compress.plan">
 <!--   -->
 </a>
 <h3>Uses of <a href="../IColIndex.html" title="interface in org.apache.sysds.runtime.compress.colgroup.indexes">IColIndex</a> in <a href="../../../plan/package-summary.html">org.apache.sysds.runtime.compress.plan</a></h3>
@@ -2674,7 +2916,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 </section>
 </li>
 <li class="blockList">
-<section><a id="org.apache.sysds.runtime.compress.readers">
+<section role="region"><a id="org.apache.sysds.runtime.compress.readers">
 <!--   -->
 </a>
 <h3>Uses of <a href="../IColIndex.html" title="interface in org.apache.sysds.runtime.compress.colgroup.indexes">IColIndex</a> in <a href="../../../readers/package-summary.html">org.apache.sysds.runtime.compress.readers</a></h3>
@@ -2707,7 +2949,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 </section>
 </li>
 <li class="blockList">
-<section><a id="org.apache.sysds.runtime.compress.utils">
+<section role="region"><a id="org.apache.sysds.runtime.compress.utils">
 <!--   -->
 </a>
 <h3>Uses of <a href="../IColIndex.html" title="interface in org.apache.sysds.runtime.compress.colgroup.indexes">IColIndex</a> in <a href="../../../utils/package-summary.html">org.apache.sysds.runtime.compress.utils</a></h3>
@@ -2779,7 +3021,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 </a></div>
 <!-- ======== END OF BOTTOM NAVBAR ======= -->
 </nav>
-<p class="legalCopy"><small>Copyright &#169; 2023 <a href="https://www.apache.org/">The Apache Software Foundation</a>. All rights reserved.</small></p>
+<p class="legalCopy"><small>Copyright &#169; 2024 <a href="https://www.apache.org/">The Apache Software Foundation</a>. All rights reserved.</small></p>
 </footer>
 </body>
 </html>

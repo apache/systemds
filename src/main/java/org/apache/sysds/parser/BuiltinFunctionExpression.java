@@ -509,6 +509,37 @@ public class BuiltinFunctionExpression extends DataIdentifier {
 
 			break;
 		}
+		case STFT:
+		{
+			checkNumParameters(3);
+			checkMatrixParam(getFirstExpr());
+
+			// setup output properties
+			DataIdentifier stftOut1 = (DataIdentifier) getOutputs()[0];
+			DataIdentifier stftOut2 = (DataIdentifier) getOutputs()[1];
+
+			// if (getFirstExpr().getOutput().getDim2() != 1 ||  getFirstExpr().getOutput().getDim2() != 2) {
+			// 	raiseValidateError("Eigen Decomposition can only be done on a square matrix. Input matrix is rectangular (rows=" + getFirstExpr().getOutput().getDim1() + ", cols="+ getFirstExpr().getOutput().getDim2() +")", conditional);
+			// }
+
+			checkMatrixParam(getSecondExpr());
+			checkMatrixParam(getThirdExpr());
+
+			// Output1 - stft Values
+			stftOut1.setDataType(DataType.MATRIX);
+			stftOut1.setValueType(ValueType.FP64);
+			stftOut1.setDimensions(getFirstExpr().getOutput().getDim1(), getFirstExpr().getOutput().getDim2());
+			stftOut1.setBlocksize(getFirstExpr().getOutput().getBlocksize());
+
+			// Output2 - stft Vectors
+			stftOut2.setDataType(DataType.MATRIX);
+			stftOut2.setValueType(ValueType.FP64);
+			stftOut2.setDimensions(getFirstExpr().getOutput().getDim1(), getFirstExpr().getOutput().getDim2());
+			stftOut2.setBlocksize(getFirstExpr().getOutput().getBlocksize());
+
+			break;
+
+		}
 		case REMOVE: {
 			checkNumParameters(2);
 			checkListParam(getFirstExpr());

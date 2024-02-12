@@ -6,9 +6,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -53,15 +53,16 @@ import static org.apache.sysds.runtime.matrix.data.LibMatrixFourier.fft;
 import static org.apache.sysds.runtime.matrix.data.LibMatrixFourier.ifft;
 import static org.apache.sysds.runtime.matrix.data.LibMatrixFourier.fft_linearized;
 import static org.apache.sysds.runtime.matrix.data.LibMatrixFourier.ifft_linearized;
+import static org.apache.sysds.runtime.matrix.data.LibMatrixSTFT.stft;
 
 /**
- * Library for matrix operations that need invocation of 
- * Apache Commons Math library. 
- * 
+ * Library for matrix operations that need invocation of
+ * Apache Commons Math library.
+ *
  * This library currently supports following operations:
- * matrix inverse, matrix decompositions (QR, LU, Eigen), solve 
+ * matrix inverse, matrix decompositions (QR, LU, Eigen), solve
  */
-public class LibCommonsMath 
+public class LibCommonsMath
 {
 	private static final Log LOG = LogFactory.getLog(LibCommonsMath.class.getName());
 	private static final double RELATIVE_SYMMETRY_THRESHOLD = 1e-6;
@@ -70,11 +71,11 @@ public class LibCommonsMath
 	private LibCommonsMath() {
 		//prevent instantiation via private constructor
 	}
-	
+
 	public static boolean isSupportedUnaryOperation( String opcode ) {
 		return ( opcode.equals("inverse") || opcode.equals("cholesky") );
 	}
-	
+
 	public static boolean isSupportedMultiReturnOperation( String opcode ) {
 
 		switch (opcode) {
@@ -85,16 +86,17 @@ public class LibCommonsMath
 			case "ifft":
 			case "fft_linearized":
 			case "ifft_linearized":
+			case "stft":
 			case "svd": return true;
 			default: return false;
 		}
 
 	}
-	
+
 	public static boolean isSupportedMatrixMatrixOperation( String opcode ) {
 		return ( opcode.equals("solve") );
 	}
-		
+
 	public static MatrixBlock unaryOperations(MatrixBlock inj, String opcode) {
 		Array2DRowRealMatrix matrixInput = DataConverter.convertToArray2DRowRealMatrix(inj);
 		if(opcode.equals("inverse"))
@@ -117,6 +119,10 @@ public class LibCommonsMath
 			return computeEigenQR(in, num_iterations, tol, threads);
 		else
 			return multiReturnOperations(in, opcode, threads, 1);
+	}
+
+	public static MatrixBlock[] multiReturnOperations(MatrixBlock in, String opcode, int windowSize, int overlap) {
+		return computeSTFT(in, null, windowSize, overlap);
 	}
 
 	public static MatrixBlock[] multiReturnOperations(MatrixBlock in, String opcode, int threads, long seed) {
@@ -167,10 +173,10 @@ public class LibCommonsMath
 		}
 		return null;
 	}
-	
+
 	/**
 	 * Function to solve a given system of equations.
-	 * 
+	 *
 	 * @param in1 matrix object 1
 	 * @param in2 matrix object 2
 	 * @return matrix block
@@ -180,62 +186,62 @@ public class LibCommonsMath
 		//to avoid unnecessary conversion as QR internally creates a BlockRealMatrix
 		BlockRealMatrix matrixInput = DataConverter.convertToBlockRealMatrix(in1);
 		BlockRealMatrix vectorInput = DataConverter.convertToBlockRealMatrix(in2);
-		
+
 		/*LUDecompositionImpl ludecompose = new LUDecompositionImpl(matrixInput);
 		DecompositionSolver lusolver = ludecompose.getSolver();
 		RealMatrix solutionMatrix = lusolver.solve(vectorInput);*/
-		
+
 		// Setup a solver based on QR Decomposition
 		QRDecomposition qrdecompose = new QRDecomposition(matrixInput);
 		DecompositionSolver solver = qrdecompose.getSolver();
 		// Invoke solve
 		RealMatrix solutionMatrix = solver.solve(vectorInput);
-		
+
 		return DataConverter.convertToMatrixBlock(solutionMatrix);
 	}
-	
+
 	/**
 	 * Function to perform QR decomposition on a given matrix.
-	 * 
+	 *
 	 * @param in matrix object
 	 * @return array of matrix blocks
 	 */
 	private static MatrixBlock[] computeQR(MatrixBlock in) {
 		Array2DRowRealMatrix matrixInput = DataConverter.convertToArray2DRowRealMatrix(in);
-		
+
 		// Perform QR decomposition
 		QRDecomposition qrdecompose = new QRDecomposition(matrixInput);
 		RealMatrix H = qrdecompose.getH();
 		RealMatrix R = qrdecompose.getR();
-		
+
 		// Read the results into native format
 		MatrixBlock mbH = DataConverter.convertToMatrixBlock(H.getData());
 		MatrixBlock mbR = DataConverter.convertToMatrixBlock(R.getData());
 
 		return new MatrixBlock[] { mbH, mbR };
 	}
-	
+
 	/**
 	 * Function to perform LU decomposition on a given matrix.
-	 * 
+	 *
 	 * @param in matrix object
 	 * @return array of matrix blocks
 	 */
 	private static MatrixBlock[] computeLU(MatrixBlock in) {
 		if(in.getNumRows() != in.getNumColumns()) {
 			throw new DMLRuntimeException(
-				"LU Decomposition can only be done on a square matrix. Input matrix is rectangular (rows="
-					+ in.getNumRows() + ", cols=" + in.getNumColumns() + ")");
+					"LU Decomposition can only be done on a square matrix. Input matrix is rectangular (rows="
+							+ in.getNumRows() + ", cols=" + in.getNumColumns() + ")");
 		}
-		
+
 		Array2DRowRealMatrix matrixInput = DataConverter.convertToArray2DRowRealMatrix(in);
-		
+
 		// Perform LUP decomposition
 		LUDecomposition ludecompose = new LUDecomposition(matrixInput);
 		RealMatrix P = ludecompose.getP();
 		RealMatrix L = ludecompose.getL();
 		RealMatrix U = ludecompose.getU();
-		
+
 		// Read the results into native format
 		MatrixBlock mbP = DataConverter.convertToMatrixBlock(P.getData());
 		MatrixBlock mbL = DataConverter.convertToMatrixBlock(L.getData());
@@ -243,20 +249,20 @@ public class LibCommonsMath
 
 		return new MatrixBlock[] { mbP, mbL, mbU };
 	}
-	
+
 	/**
 	 * Function to perform Eigen decomposition on a given matrix.
 	 * Input must be a symmetric matrix.
-	 * 
+	 *
 	 * @param in matrix object
 	 * @return array of matrix blocks
 	 */
 	private static MatrixBlock[] computeEigen(MatrixBlock in) {
 		if ( in.getNumRows() != in.getNumColumns() ) {
 			throw new DMLRuntimeException("Eigen Decomposition can only be done on a square matrix. "
-				+ "Input matrix is rectangular (rows=" + in.getNumRows() + ", cols="+ in.getNumColumns() +")");
+					+ "Input matrix is rectangular (rows=" + in.getNumRows() + ", cols="+ in.getNumColumns() +")");
 		}
-		
+
 		EigenDecomposition eigendecompose = null;
 		try {
 			Array2DRowRealMatrix matrixInput = DataConverter.convertToArray2DRowRealMatrix(in);
@@ -266,7 +272,7 @@ public class LibCommonsMath
 			LOG.warn("Eigen: "+ ex.getMessage()+". Falling back to regularized eigen factorization.");
 			eigendecompose = computeEigenRegularized(in);
 		}
-		
+
 		RealMatrix eVectorsMatrix = eigendecompose.getV();
 		double[][] eVectors = eVectorsMatrix.getData();
 		double[] eValues = eigendecompose.getRealEigenvalues();
@@ -277,7 +283,7 @@ public class LibCommonsMath
 	private static EigenDecomposition computeEigenRegularized(MatrixBlock in) {
 		if( in == null || in.isEmptyBlock(false) )
 			throw new DMLRuntimeException("Invalid empty block");
-		
+
 		//slightly modify input for regularization (pos/neg)
 		MatrixBlock in2 = new MatrixBlock(in, false);
 		DenseBlock a = in2.getDenseBlock();
@@ -289,10 +295,10 @@ public class LibCommonsMath
 				avals[apos+j] += Math.signum(v) * EIGEN_LAMBDA;
 			}
 		}
-		
+
 		//run eigen decomposition
 		return new EigenDecomposition(
-			DataConverter.convertToArray2DRowRealMatrix(in2));
+				DataConverter.convertToArray2DRowRealMatrix(in2));
 	}
 
 	/**
@@ -409,6 +415,30 @@ public class LibCommonsMath
 	private static MatrixBlock[] computeIFFT_LINEARIZED(MatrixBlock re, int threads){
 		return computeIFFT_LINEARIZED(re, null, threads);
 	}
+	
+	/**
+	 * Function to perform STFT on a given matrix.
+	 *
+	 * @param in1 matrix object
+	 * @param in2 matrix object
+	 * @param windowSize of stft
+	 * @param overlap of stft
+	 * @return array of matrix blocks
+	 */
+	private static MatrixBlock[] computeSTFT(MatrixBlock in1, MatrixBlock in2, int windowSize, int overlap) {
+		if (in1 == null || in1.isEmptyBlock(false))
+			throw new DMLRuntimeException("Invalid empty block");
+
+		// run stft
+		if (in2 != null) {
+			in1.sparseToDense();
+			in2.sparseToDense();
+			return stft(in1, in2, windowSize, overlap);
+		} else {
+			in1.sparseToDense();
+			return stft(in1, windowSize, overlap);
+		}
+
 
 	/**
 	 * Performs Singular Value Decomposition. Calls Apache Commons Math SVD.
@@ -416,7 +446,7 @@ public class LibCommonsMath
 	 * U is the left singular matrix, Sigma is the singular values matrix returned as a
 	 * column matrix and Vt is the transpose of the right singular matrix V.
 	 * However, the returned array has  { U, Sigma, V}
-	 * 
+	 *
 	 * @param in Input matrix
 	 * @return An array containing U, Sigma & V
 	 */
@@ -434,17 +464,17 @@ public class LibCommonsMath
 
 		return new MatrixBlock[] { U, Sigma, V };
 	}
-	
+
 	/**
 	 * Function to compute matrix inverse via matrix decomposition.
-	 * 
+	 *
 	 * @param in commons-math3 Array2DRowRealMatrix
 	 * @return matrix block
 	 */
 	private static MatrixBlock computeMatrixInverse(Array2DRowRealMatrix in) {
 		if(!in.isSquare())
 			throw new DMLRuntimeException("Input to inv() must be square matrix -- given: a " + in.getRowDimension()
-				+ "x" + in.getColumnDimension() + " matrix.");
+					+ "x" + in.getColumnDimension() + " matrix.");
 
 		QRDecomposition qrdecompose = new QRDecomposition(in);
 		DecompositionSolver solver = qrdecompose.getSolver();
@@ -454,18 +484,18 @@ public class LibCommonsMath
 	}
 
 	/**
-	 * Function to compute Cholesky decomposition of the given input matrix. 
+	 * Function to compute Cholesky decomposition of the given input matrix.
 	 * The input must be a real symmetric positive-definite matrix.
-	 * 
+	 *
 	 * @param in commons-math3 Array2DRowRealMatrix
 	 * @return matrix block
 	 */
 	private static MatrixBlock computeCholesky(Array2DRowRealMatrix in) {
 		if(!in.isSquare())
 			throw new DMLRuntimeException("Input to cholesky() must be square matrix -- given: a "
-				+ in.getRowDimension() + "x" + in.getColumnDimension() + " matrix.");
+					+ in.getRowDimension() + "x" + in.getColumnDimension() + " matrix.");
 		CholeskyDecomposition cholesky = new CholeskyDecomposition(in, RELATIVE_SYMMETRY_THRESHOLD,
-			CholeskyDecomposition.DEFAULT_ABSOLUTE_POSITIVITY_THRESHOLD);
+				CholeskyDecomposition.DEFAULT_ABSOLUTE_POSITIVITY_THRESHOLD);
 		RealMatrix rmL = cholesky.getL();
 		return DataConverter.convertToMatrixBlock(rmL.getData());
 	}
@@ -506,8 +536,8 @@ public class LibCommonsMath
 	private static MatrixBlock[] computeEigenLanczos(MatrixBlock in, int threads, long seed) {
 		if(in.getNumRows() != in.getNumColumns()) {
 			throw new DMLRuntimeException(
-				"Lanczos algorithm and Eigen Decomposition can only be done on a square matrix. "
-					+ "Input matrix is rectangular (rows=" + in.getNumRows() + ", cols=" + in.getNumColumns() + ")");
+					"Lanczos algorithm and Eigen Decomposition can only be done on a square matrix. "
+							+ "Input matrix is rectangular (rows=" + in.getNumRows() + ", cols=" + in.getNumColumns() + ")");
 		}
 
 		int m = in.getNumRows();
@@ -560,7 +590,7 @@ public class LibCommonsMath
 	private static MatrixBlock[] computeQR2(MatrixBlock in, int threads) {
 		if(in.getNumRows() != in.getNumColumns()) {
 			throw new DMLRuntimeException("QR2 Decomposition can only be done on a square matrix. "
-				+ "Input matrix is rectangular (rows=" + in.getNumRows() + ", cols=" + in.getNumColumns() + ")");
+					+ "Input matrix is rectangular (rows=" + in.getNumRows() + ", cols=" + in.getNumColumns() + ")");
 		}
 
 		int m = in.rlen;
@@ -617,7 +647,7 @@ public class LibCommonsMath
 	private static MatrixBlock[] computeEigenQR(MatrixBlock in, int num_iterations, double tol, int threads) {
 		if(in.getNumRows() != in.getNumColumns()) {
 			throw new DMLRuntimeException("Eigen Decomposition (QR) can only be done on a square matrix. "
-				+ "Input matrix is rectangular (rows=" + in.getNumRows() + ", cols=" + in.getNumColumns() + ")");
+					+ "Input matrix is rectangular (rows=" + in.getNumRows() + ", cols=" + in.getNumColumns() + ")");
 		}
 
 		int m = in.rlen;
@@ -640,7 +670,7 @@ public class LibCommonsMath
 		double[] eval = new double[m];
 		for(int i = 0; i < m; i++)
 			eval[i] = check[i*m+i];
-		
+
 		double[] evec = Q_prod.getDenseBlockValues();
 		return sortEVs(eval, evec);
 	}

@@ -336,6 +336,7 @@ public class CPInstructionParser extends InstructionParser {
 		String2CPInstructionType.put("ifft", CPType.MultiReturnComplexMatrixBuiltin);
 		String2CPInstructionType.put("fft_linearized", CPType.MultiReturnBuiltin);
 		String2CPInstructionType.put("ifft_linearized", CPType.MultiReturnComplexMatrixBuiltin);
+		String2CPInstructionType.put( "stft", CPType.MultiReturnBuiltin);
 		String2CPInstructionType.put( "svd",   CPType.MultiReturnBuiltin);
 
 		String2CPInstructionType.put( "partition", CPType.Partition);

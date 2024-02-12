@@ -309,6 +309,7 @@ public enum Builtins {
 	STATSNA("statsNA", true),
 	STRATSTATS("stratstats", true),
 	STEPLM("steplm",true, ReturnType.MULTI_RETURN),
+	STFT("stft", false, ReturnType.MULTI_RETURN),
 	SQRT("sqrt", false),
 	SUM("sum", false),
 	SVD("svd", false, ReturnType.MULTI_RETURN),

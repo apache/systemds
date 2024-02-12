@@ -124,6 +124,14 @@ public class MultiReturnBuiltinCPInstruction extends ComputationCPInstruction {
 			return new MultiReturnBuiltinCPInstruction(null, null, outputs, opcode, str);
 
 		}
+		else if ( opcode.equalsIgnoreCase("stft") ) {
+			// one input and two outputs
+			CPOperand in1 = new CPOperand(parts[1]);
+			outputs.add ( new CPOperand(parts[2], ValueType.FP64, DataType.MATRIX) );
+			outputs.add ( new CPOperand(parts[3], ValueType.FP64, DataType.MATRIX) );
+
+			return new MultiReturnBuiltinCPInstruction(null, in1, outputs, opcode, str);
+		}
 		else if ( opcode.equalsIgnoreCase("svd") ) {
 			CPOperand in1 = new CPOperand(parts[1]);
 

@@ -28,13 +28,14 @@ systems - that either provide homogeneous tensors or 2D Datasets - and in order 
 the underlying data model are DataTensors, i.e., tensors (multi-dimensional arrays) whose first dimension may have a
 heterogeneous and nested schema.
 
-**Quick Start** [Install, Quick Start and Hello World](https://apache.github.io/systemds/site/install.html)
 
-**Documentation:** [SystemDS Documentation](https://apache.github.io/systemds/)
+Resource | Links
+---------|------
+**Quick Start** | [Install, Quick Start and Hello World](https://apache.github.io/systemds/site/install.html)
+**Documentation:** | [SystemDS Documentation](https://apache.github.io/systemds/)
+**Python Documentation** | [Python SystemDS Documentation](https://apache.github.io/systemds/api/python/index.html)
+**Issue Tracker** | [Jira Dashboard](https://issues.apache.org/jira/secure/Dashboard.jspa?selectPageId=12335852)
 
-**Python Documentation** [Python SystemDS Documentation](https://apache.github.io/systemds/api/python/index.html)
-
-**Issue Tracker** [Jira Dashboard](https://issues.apache.org/jira/secure/Dashboard.jspa?selectPageId=12335852)
 
 **Status and Build:** SystemDS is renamed from SystemML which is an **Apache Top Level Project**.
 To build from source visit [SystemDS Install from source](https://apache.github.io/systemds/site/install.html)

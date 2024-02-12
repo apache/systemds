@@ -172,7 +172,7 @@ public final class CLALibCombineGroups {
 		while(tree.length > 1) {
 			final Future<AColGroup>[] treeTmp = (Future<AColGroup>[]) new Future[tree.length / 2 + tree.length % 2];
 			final Future<AColGroup>[] curTree = tree;
-			for(int i = 0; i < treeTmp.length; i += 2) {
+			for(int i = 0; i < curTree.length; i += 2) {
 				final int c1 = i;
 				final int c2 = i + 1;
 				treeTmp[i / 2] = pool.submit(() -> combine(curTree[c1].get(), curTree[c2].get(), nRows));

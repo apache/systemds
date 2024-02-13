@@ -19,7 +19,9 @@
 
 package org.apache.sysds.test.functions.builtin.part1;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 
 import org.apache.sysds.common.Types.ExecMode;
 import org.apache.sysds.runtime.matrix.data.MatrixValue.CellIndex;
@@ -64,14 +66,21 @@ public class BuiltinHmmInnitTest extends AutomatedTestBase {
         try{
             loadTestConfiguration(getTestConfiguration(TEST_NAME));
 			String HOME = SCRIPT_DIR + TEST_DIR;
-
             fullDMLScriptName = HOME + TEST_NAME + ".dml";
-			programArgs = new String[]{"-args", "observation_count=" + observation_count, 
-                                       "hiddenstates_count=" + hiddenstates_count, "verbose=" + verbose, 
-                                       "random_mode=" + random_mode, "sp_path=" + output("start_prob"),
-                                       "tp_path=" + output("transition_prob"), "ep_path=" + output("emission_prob")};
+            fullRScriptName = HOME + TEST_NAME + ".R";
 
-			fullRScriptName = HOME + TEST_NAME + ".R";
+            List<String> proArgs = new ArrayList<>();
+			proArgs.add("-args");
+			proArgs.add("observation_sequence=" + String.valueOf(observation_count));
+			proArgs.add("hiddenstates_count=" + String.valueOf(hiddenstates_count));
+			proArgs.add("verbose=" + verbose);
+			proArgs.add("random_mode=" + random_mode);
+			proArgs.add("sp_path=" + output("start_prob"));
+			proArgs.add("tp_path=" + output("transition_prob"));
+			proArgs.add("ep_path=" + output("emission_prob"));
+            
+            programArgs = proArgs.toArray(new String[proArgs.size()]);
+			
 			rCmd = getRCmd(observation_count, hiddenstates_count, expectedDir());
 
             runTest(true, false, null, -1);
@@ -100,4 +109,5 @@ public class BuiltinHmmInnitTest extends AutomatedTestBase {
         }
     }
  }
+ 
  

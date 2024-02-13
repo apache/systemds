@@ -57,6 +57,7 @@ public class BuiltinHmmInnitTest extends AutomatedTestBase {
 	public void testVerboseHmmInnitHybrid() {
 		runHmmInnit(TEST_NAME, ExecMode.HYBRID, true, false);
 	}
+    
     private void runHmmInnit(String testname, ExecMode execMode, boolean verbose, boolean random_mode) {
         ExecMode modeOld = setExecMode(execMode);
 

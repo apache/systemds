@@ -85,7 +85,7 @@ public class STFTTest {
 	public void matrix_block_one_dim_test3(){
 
 		MatrixBlock re = new MatrixBlock(1, 8,  new double[]{10, 5, -3, 8, 15, -6, 2, 0});
-		MatrixBlock im = new MatrixBlock(1, 8,  new double[8]);
+		MatrixBlock im = new MatrixBlock(1, 8,  new double[]{0, 0, 0, 0, 0, 0, 0, 0});
 
 		MatrixBlock[] res = stft(re, im, 4, 2);
 

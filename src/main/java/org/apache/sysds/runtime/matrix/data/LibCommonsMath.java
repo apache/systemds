@@ -122,7 +122,36 @@ public class LibCommonsMath
 	}
 
 	public static MatrixBlock[] multiReturnOperations(MatrixBlock in, String opcode, int windowSize, int overlap) {
-		return computeSTFT(in, null, windowSize, overlap);
+		if(opcode.equals("stft"))
+			return computeSTFT(in, null, windowSize, overlap);
+		else if(opcode.equals("qr"))
+			return computeQR(in);
+		else if (opcode.equals("qr2"))
+			return computeQR2(in, windowSize);
+		else if (opcode.equals("lu"))
+			return computeLU(in);
+		else if (opcode.equals("eigen"))
+			return computeEigen(in);
+		else if (opcode.equals("eigen_lanczos"))
+			return computeEigenLanczos(in, windowSize, overlap);
+		else if (opcode.equals("eigen_qr"))
+			return computeEigenQR(in, windowSize);
+		else if (opcode.equals("svd"))
+			return computeSvd(in);
+		else if (opcode.equals("fft"))
+			return computeFFT(in);
+		else if (opcode.equals("ifft"))
+			return computeIFFT(in, null);
+		return null;
+	}
+
+	public static MatrixBlock[] multiReturnOperations(MatrixBlock in1, MatrixBlock in2, String opcode, int windowSize, int overlap) {
+		if(opcode.equals("stft"))
+			return computeSTFT(in1, in2, windowSize, overlap);
+		else if(opcode.equals("ifft"))
+			return computeIFFT(in1, in2);
+		else
+			return null;
 	}
 
 	public static MatrixBlock[] multiReturnOperations(MatrixBlock in, String opcode, int threads, long seed) {
@@ -438,7 +467,7 @@ public class LibCommonsMath
 			in1.sparseToDense();
 			return stft(in1, windowSize, overlap);
 		}
-
+	}
 
 	/**
 	 * Performs Singular Value Decomposition. Calls Apache Commons Math SVD.

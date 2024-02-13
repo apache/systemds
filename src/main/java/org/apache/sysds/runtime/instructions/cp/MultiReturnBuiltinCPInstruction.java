@@ -21,6 +21,7 @@ package org.apache.sysds.runtime.instructions.cp;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.sysds.common.Types.DataType;
@@ -157,7 +158,7 @@ public class MultiReturnBuiltinCPInstruction extends ComputationCPInstruction {
 	public void processInstruction(ExecutionContext ec) {
 		if(!LibCommonsMath.isSupportedMultiReturnOperation(getOpcode()))
 			throw new DMLRuntimeException("Invalid opcode in MultiReturnBuiltin instruction: " + getOpcode());
-		
+
 		MatrixBlock in = ec.getMatrixInput(input1.getName());
 		MatrixBlock[] out = LibCommonsMath.multiReturnOperations(in, getOpcode());
 		ec.releaseMatrixInput(input1.getName());

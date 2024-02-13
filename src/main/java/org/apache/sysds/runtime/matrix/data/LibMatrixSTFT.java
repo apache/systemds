@@ -63,6 +63,9 @@ public class LibMatrixSTFT {
 		}
 
 		int stepSize = windowSize - overlap;
+		if (stepSize == 0) {
+			throw new IllegalArgumentException("windowSize - overlap is zero");
+		}
 		int totalFrames = (signal_re.length - overlap + stepSize - 1) / stepSize;
 		int out_len = totalFrames * windowSize;
 

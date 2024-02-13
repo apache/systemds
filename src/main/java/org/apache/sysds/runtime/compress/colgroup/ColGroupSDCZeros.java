@@ -23,6 +23,7 @@ import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
 import java.util.Arrays;
+import java.util.List;
 
 import org.apache.commons.lang3.NotImplementedException;
 import org.apache.sysds.runtime.DMLRuntimeException;
@@ -542,7 +543,7 @@ public class ColGroupSDCZeros extends ASDCZero implements IMapToDataGroup {
 
 	@Override
 	public void preAggregateSparse(SparseBlock sb, double[] preAgg, int rl, int ru, int cl, int cu) {
-		if(cl != 0 || cu < _indexes.getOffsetToLast()){
+		if(cl != 0 || cu < _indexes.getOffsetToLast()) {
 			throw new NotImplementedException();
 		}
 		_data.preAggregateSparse(sb, preAgg, rl, ru, _indexes);
@@ -951,6 +952,24 @@ public class ColGroupSDCZeros extends ASDCZero implements IMapToDataGroup {
 			db.append(_colIndexes.get(c), v, dict[di * rowOut + c]);
 		}
 
+	}
+
+	@Override
+	public AColGroupCompressed combineWithSameIndex(int nCol, AColGroup right) {
+		ColGroupSDCZeros rightSDC = ((ColGroupSDCZeros) right);
+		IDictionary b = rightSDC.getDictionary();
+		IDictionary combined = DictionaryFactory.cBindDictionaries(_dict, b, this.getNumCols(), right.getNumCols());
+		IColIndex combinedColIndex = _colIndexes.combine(right.getColIndices().shift(nCol));
+		return new ColGroupSDCZeros(combinedColIndex, this.getNumRows(), combined, _indexes, _data, getCachedCounts());
+	}
+
+	@Override
+	public AColGroupCompressed combineWithSameIndex(int nCol, List<AColGroup> right) {
+		final IDictionary combined = combineDictionaries(nCol, right);
+		final IColIndex combinedColIndex = combineColIndexes(nCol, right);
+
+		// return new ColGroupDDC(combinedColIndex, combined, _data, getCachedCounts());
+		return new ColGroupSDCZeros(combinedColIndex, this.getNumRows(), combined, _indexes, _data, getCachedCounts());
 	}
 
 	public String toString() {

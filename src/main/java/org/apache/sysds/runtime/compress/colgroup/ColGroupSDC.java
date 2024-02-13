@@ -23,6 +23,7 @@ import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
 import java.util.Arrays;
+import java.util.List;
 
 import org.apache.commons.lang3.NotImplementedException;
 import org.apache.sysds.runtime.DMLRuntimeException;
@@ -688,7 +689,7 @@ public class ColGroupSDC extends ASDC implements IMapToDataGroup {
 
 		final int last = Math.min(_indexes.getOffsetToLast(), ru);
 		int c = 0;
-		
+
 		while(it.value() < last && c < points.length) {
 			while(it.value() < last && it.value() < points[c].o) {
 				it.next();
@@ -748,11 +749,37 @@ public class ColGroupSDC extends ASDC implements IMapToDataGroup {
 
 			return ColGroupDDC.create(_colIndexes, nDict, nMap, null);
 		}
-		
 
 		else {
 			return super.morph(ct, nRow);
 		}
+	}
+
+	@Override
+	public AColGroupCompressed combineWithSameIndex(int nCol, List<AColGroup> right) {
+
+		final IDictionary combined = combineDictionaries(nCol, right);
+		final IColIndex combinedColIndex = combineColIndexes(nCol, right);
+		final double[] combinedDefaultTuple = IContainDefaultTuple.combineDefaultTuples(_defaultTuple, right);
+
+		// return new ColGroupDDC(combinedColIndex, combined, _data, getCachedCounts());
+		return new ColGroupSDC(combinedColIndex, this.getNumRows(), combined, combinedDefaultTuple, _indexes, _data,
+			getCachedCounts());
+	}
+
+	@Override
+	public AColGroupCompressed combineWithSameIndex(int nCol, AColGroup right) {
+		ColGroupSDC rightSDC = ((ColGroupSDC) right);
+		IDictionary b = rightSDC.getDictionary();
+		IDictionary combined = DictionaryFactory.cBindDictionaries(_dict, b, this.getNumCols(), right.getNumCols());
+		IColIndex combinedColIndex = _colIndexes.combine(right.getColIndices().shift(nCol));
+		double[] combinedDefaultTuple = new double[_defaultTuple.length + rightSDC._defaultTuple.length];
+		System.arraycopy(_defaultTuple, 0, combinedDefaultTuple, 0, _defaultTuple.length);
+		System.arraycopy(rightSDC._defaultTuple, 0, combinedDefaultTuple, _defaultTuple.length,
+			rightSDC._defaultTuple.length);
+
+		return new ColGroupSDC(combinedColIndex, this.getNumRows(), combined, combinedDefaultTuple, _indexes, _data,
+			getCachedCounts());
 	}
 
 	@Override

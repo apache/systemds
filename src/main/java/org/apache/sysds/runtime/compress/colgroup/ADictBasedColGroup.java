@@ -20,10 +20,13 @@ package org.apache.sysds.runtime.compress.colgroup;
 
 import java.io.DataOutput;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
+import org.apache.sysds.runtime.compress.colgroup.dictionary.DictionaryFactory;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.IDictionary;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.IdentityDictionary;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.MatrixBlockDictionary;
@@ -90,19 +93,19 @@ public abstract class ADictBasedColGroup extends AColGroupCompressed implements 
 			if(mb.isInSparseFormat())
 				decompressToSparseBlockTransposedSparseDictionary(sb, mb.getSparseBlock(), nColOut);
 			else
-				decompressToSparseBlockTransposedDenseDictionary(sb, mb.getDenseBlockValues(),nColOut);
+				decompressToSparseBlockTransposedDenseDictionary(sb, mb.getDenseBlockValues(), nColOut);
 		}
 		else if(_dict instanceof MatrixBlockDictionary) {
 			final MatrixBlockDictionary md = (MatrixBlockDictionary) _dict;
 			final MatrixBlock mb = md.getMatrixBlock();
 			// The dictionary is never empty.
 			if(mb.isInSparseFormat())
-				decompressToSparseBlockTransposedSparseDictionary(sb, mb.getSparseBlock(),nColOut);
+				decompressToSparseBlockTransposedSparseDictionary(sb, mb.getSparseBlock(), nColOut);
 			else
-				decompressToSparseBlockTransposedDenseDictionary(sb, mb.getDenseBlockValues(),nColOut);
+				decompressToSparseBlockTransposedDenseDictionary(sb, mb.getDenseBlockValues(), nColOut);
 		}
 		else
-			decompressToSparseBlockTransposedDenseDictionary(sb, _dict.getValues(),nColOut);
+			decompressToSparseBlockTransposedDenseDictionary(sb, _dict.getValues(), nColOut);
 	}
 
 	protected abstract void decompressToDenseBlockTransposedSparseDictionary(DenseBlock db, int rl, int ru,
@@ -111,9 +114,11 @@ public abstract class ADictBasedColGroup extends AColGroupCompressed implements 
 	protected abstract void decompressToDenseBlockTransposedDenseDictionary(DenseBlock db, int rl, int ru,
 		double[] dict);
 
-	protected abstract void decompressToSparseBlockTransposedSparseDictionary(SparseBlockMCSR db, SparseBlock dict, int nColOut);
+	protected abstract void decompressToSparseBlockTransposedSparseDictionary(SparseBlockMCSR db, SparseBlock dict,
+		int nColOut);
 
-	protected abstract void decompressToSparseBlockTransposedDenseDictionary(SparseBlockMCSR db, double[] dict, int nColOut);
+	protected abstract void decompressToSparseBlockTransposedDenseDictionary(SparseBlockMCSR db, double[] dict,
+		int nColOut);
 
 	@Override
 	public final void decompressToDenseBlock(DenseBlock db, int rl, int ru, int offR, int offC) {
@@ -349,6 +354,17 @@ public abstract class ADictBasedColGroup extends AColGroupCompressed implements 
 	}
 
 	protected abstract AColGroup copyAndSet(IColIndex colIndexes, IDictionary newDictionary);
+
+	protected IDictionary combineDictionaries(int nCol, List<AColGroup> right) {
+		List<IDictionary> dicts = new ArrayList<>(right.size() + 1);
+		dicts.add(getDictionary());
+		for(int i = 0; i < right.size(); i++) {
+			ADictBasedColGroup a = ((ADictBasedColGroup) right.get(i));
+			dicts.add(a.getDictionary());
+		}
+		return DictionaryFactory.cBindDictionaries(getNumCols(), dicts);
+
+	}
 
 	@Override
 	public double getSparsity() {

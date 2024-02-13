@@ -23,6 +23,7 @@ import java.io.DataOutput;
 import java.io.IOException;
 import java.io.Serializable;
 import java.util.Collection;
+import java.util.List;
 
 import org.apache.commons.lang3.NotImplementedException;
 import org.apache.commons.logging.Log;
@@ -710,7 +711,7 @@ public abstract class AColGroup implements Serializable {
 				cgMoved.decompressToDenseBlock(newDict.getDenseBlock(), 0, nRow);
 			newDict.setNonZeros(nnz);
 			AColGroup cgUC = ColGroupUncompressed.create(newDict);
-			return  cgUC.copyAndSet(_colIndexes);
+			return cgUC.copyAndSet(_colIndexes);
 		}
 		else {
 			throw new NotImplementedException("Morphing from : " + getCompType() + " to " + ct + " is not implemented");
@@ -729,7 +730,7 @@ public abstract class AColGroup implements Serializable {
 	 * Combine this column group with another
 	 * 
 	 * @param other The other column group to combine with.
-	 * @param nRow The number of rows in both column groups.
+	 * @param nRow  The number of rows in both column groups.
 	 * @return A combined representation as a column group.
 	 */
 	public AColGroup combine(AColGroup other, int nRow) {
@@ -783,6 +784,41 @@ public abstract class AColGroup implements Serializable {
 	 */
 	public boolean sameIndexStructure(AColGroup that) {
 		return false;
+	}
+
+	/**
+	 * C bind the list of column groups with this column group. the list of elements provided in the index of each list
+	 * is guaranteed to have the same index structures
+	 * 
+	 * @param nCol  The number of columns to shift the right hand side column groups over when combining, this should
+	 *              only effect the column indexes
+	 * @param right The right hand side column groups to combine. NOTE only the index offset of the second nested list
+	 *              should be used. The reason for providing this nested list is to avoid redundant allocations in
+	 *              calling methods.
+	 * @return A combined compressed column group of the same type as this!.
+	 */
+	public AColGroup combineWithSameIndex(int nCol, List<AColGroup> right) {
+		throw new NotImplementedException("Combine of : " + this.getClass().getSimpleName()  + " not implemented");
+	}
+
+	/**
+	 * C bind the given column group to this.
+	 * 
+	 * @param nCol  The number of columns in this.
+	 * @param right The column group to c-bind.
+	 * @return a new combined column groups.
+	 */
+	public AColGroup combineWithSameIndex(int nCol, AColGroup right) {
+		throw new NotImplementedException("Combine of : " + this.getClass().getSimpleName()  + " not implemented");
+	}
+
+	protected IColIndex combineColIndexes(final int nCol, List<AColGroup> right){
+		IColIndex combinedColIndex = _colIndexes;
+		for(int i = 0; i < right.size(); i++) {
+			int off = nCol * i + nCol;
+			combinedColIndex = combinedColIndex.combine(right.get(i).getColIndices().shift(off));
+		}
+		return combinedColIndex;
 	}
 
 	@Override

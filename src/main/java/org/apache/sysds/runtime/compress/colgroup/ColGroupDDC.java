@@ -22,7 +22,6 @@ package org.apache.sysds.runtime.compress.colgroup;
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
@@ -56,7 +55,6 @@ import org.apache.sysds.runtime.functionobjects.Minus;
 import org.apache.sysds.runtime.functionobjects.Plus;
 import org.apache.sysds.runtime.matrix.data.LibMatrixMult;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
-import org.apache.sysds.runtime.matrix.data.Pair;
 import org.apache.sysds.runtime.matrix.operators.BinaryOperator;
 import org.apache.sysds.runtime.matrix.operators.ScalarOperator;
 import org.apache.sysds.runtime.matrix.operators.UnaryOperator;
@@ -850,21 +848,17 @@ public class ColGroupDDC extends APreAgg implements IMapToDataGroup {
 	}
 
 	@Override
-	public AColGroupCompressed combineWithSameIndex(int index, int nCol, List<List<AColGroup>> right) {
-		List<Pair<Integer, IDictionary>> dicts = new ArrayList<>(right.size() + 1);
-		dicts.add(new Pair<>(_colIndexes.size(), getDictionary()));
-		for(int i = 0; i < right.size(); i++) {
-			ColGroupDDC a = ((ColGroupDDC) right.get(i).get(index));
-			dicts.add(new Pair<>(a._colIndexes.size(), a.getDictionary()));
-		}
-		IDictionary combined = DictionaryFactory.cBindDictionaries(dicts);
+	public AColGroupCompressed combineWithSameIndex(int nCol, List<AColGroup> right) {
+		final IDictionary combined = combineDictionaries(nCol, right);
+		final IColIndex combinedColIndex = combineColIndexes(nCol, right);
+		return new ColGroupDDC(combinedColIndex, combined, _data, getCachedCounts());
+	}
 
-		IColIndex combinedColIndex = _colIndexes;
-		for(int i = 0; i < right.size(); i++) {
-			int off = nCol * i + nCol;
-			combinedColIndex = combinedColIndex.combine(right.get(i).get(index).getColIndices().shift(off));
-		}
-
+	@Override
+	public AColGroupCompressed combineWithSameIndex(int nCol, AColGroup right) {
+		IDictionary b = ((ColGroupDDC) right).getDictionary();
+		IDictionary combined = DictionaryFactory.cBindDictionaries(_dict, b, this.getNumCols(), right.getNumCols());
+		IColIndex combinedColIndex = _colIndexes.combine(right.getColIndices().shift(nCol));
 		return new ColGroupDDC(combinedColIndex, combined, _data, getCachedCounts());
 	}
 

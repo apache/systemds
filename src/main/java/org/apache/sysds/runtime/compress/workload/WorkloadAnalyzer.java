@@ -245,7 +245,7 @@ public class WorkloadAnalyzer {
 		else if(sb instanceof WhileStatementBlock) {
 			WhileStatementBlock wsb = (WhileStatementBlock) sb;
 			WhileStatement wstmt = (WhileStatement) wsb.getStatement(0);
-			node = new WTreeNode(WTNodeType.WHILE, 10);
+			node = new WTreeNode(WTNodeType.WHILE, 100);
 			createWorkloadTree(wsb.getPredicateHops(), prog, node, fStack);
 
 			for(StatementBlock csb : wstmt.getBody())

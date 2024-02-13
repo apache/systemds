@@ -28,5 +28,5 @@ transition_prob <- 0.3 * diag(hiddenstates_count) + array(0.7 / (hiddenstates_co
 emission_prob <- array(1 / (observation_count), c(hiddenstates_count, observation_count)) # nolint: line_length_linter.
 
 writeMM(as(start_prob, "start_prob"), paste(args[2], "start_prob", sep = ""))
-writeMM(as(transition_prob, "transition_prob"), paste(args[2], "transition_prob", sep="")) # nolint: line_length_linter.
+writeMM(as(transition_prob, "transition_prob"), paste(args[2], "transition_prob", sep = "")) # nolint: line_length_linter.
 writeMM(as(emission_prob, "emission_prob"), paste(args[2], "emission_prob", sep = "")) # nolint: line_length_linter.

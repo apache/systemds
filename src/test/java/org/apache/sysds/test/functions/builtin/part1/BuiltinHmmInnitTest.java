@@ -49,17 +49,12 @@ public class BuiltinHmmInnitTest extends AutomatedTestBase {
 	}
 
 	@Test
-	public void testVerboseGridSearchLmCodegenCP() {
-		runHmmInnit(TEST_NAME, ExecMode.SINGLE_NODE, true, false);
-	}
-
-    @Test
-	public void testVerboseGridSearchLmCP() {
+	public void testVerboseHmmInnitCP() {
 		runHmmInnit(TEST_NAME, ExecMode.SINGLE_NODE, true, false);
 	}
 	
 	@Test
-	public void testVerboseGridSearchLmHybrid() {
+	public void testVerboseHmmInnitHybrid() {
 		runHmmInnit(TEST_NAME, ExecMode.HYBRID, true, false);
 	}
     private void runHmmInnit(String testname, ExecMode execMode, boolean verbose, boolean random_mode) {

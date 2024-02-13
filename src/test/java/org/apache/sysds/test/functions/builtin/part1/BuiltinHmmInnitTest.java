@@ -71,14 +71,13 @@ public class BuiltinHmmInnitTest extends AutomatedTestBase {
 
             List<String> proArgs = new ArrayList<>();
 			proArgs.add("-args");
-			proArgs.add("observation_sequence=" + String.valueOf(observation_count));
-			proArgs.add("hiddenstates_count=" + String.valueOf(hiddenstates_count));
+			proArgs.add("observation_sequence=" + observation_count);
+			proArgs.add("hiddenstates_count=" + hiddenstates_count);
 			proArgs.add("verbose=" + verbose);
 			proArgs.add("random_mode=" + random_mode);
 			proArgs.add("sp_path=" + output("start_prob"));
 			proArgs.add("tp_path=" + output("transition_prob"));
 			proArgs.add("ep_path=" + output("emission_prob"));
-            
             programArgs = proArgs.toArray(new String[proArgs.size()]);
 			
 			rCmd = getRCmd(observation_count, hiddenstates_count, expectedDir());
@@ -109,5 +108,4 @@ public class BuiltinHmmInnitTest extends AutomatedTestBase {
         }
     }
  }
- 
  

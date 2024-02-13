@@ -18,3 +18,15 @@
 # under the License.
 #
 #-------------------------------------------------------------
+
+observation_sequence = read($os_input_path);
+start_prob = read($sp_input_path);
+transition_prob = read($tp_input_path);
+emission_prob = read($ep_input_path)
+
+[transition_prob, emission_prob, diff_tracker] = hmm_fit_test(observation_sequence, start_prob, transition_prob, emission_prob, $num_iterations, $verbose)
+
+write(transition_prob, $tp_output_path)
+write(emission_prob, $ep_output_path)
+write(diff_tracker, $diff_output_path)
+

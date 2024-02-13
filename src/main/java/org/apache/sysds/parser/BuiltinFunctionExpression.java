@@ -581,7 +581,6 @@ public class BuiltinFunctionExpression extends DataIdentifier {
 		}
 		case STFT:
 		{
-			checkNumParameters(3);
 			checkMatrixParam(getFirstExpr());
 
 			// setup output properties
@@ -592,8 +591,8 @@ public class BuiltinFunctionExpression extends DataIdentifier {
 			// 	raiseValidateError("Eigen Decomposition can only be done on a square matrix. Input matrix is rectangular (rows=" + getFirstExpr().getOutput().getDim1() + ", cols="+ getFirstExpr().getOutput().getDim2() +")", conditional);
 			// }
 
-			checkMatrixParam(getSecondExpr());
-			checkMatrixParam(getThirdExpr());
+			//checkMatrixParam(getSecondExpr());
+			//checkMatrixParam(getThirdExpr());
 
 			// Output1 - stft Values
 			stftOut1.setDataType(DataType.MATRIX);

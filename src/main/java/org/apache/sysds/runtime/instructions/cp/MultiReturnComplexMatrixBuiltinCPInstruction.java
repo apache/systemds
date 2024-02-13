@@ -107,7 +107,7 @@ public class MultiReturnComplexMatrixBuiltinCPInstruction extends ComputationCPI
             outputs.add(new CPOperand(parts[3], ValueType.FP64, DataType.MATRIX));
 
             return new MultiReturnComplexMatrixBuiltinCPInstruction(null, in1, outputs, opcode, str);
-        }
+    }
         else if (parts.length == 6 &&opcode.equalsIgnoreCase("stft")) {
             CPOperand in1 = new CPOperand(parts[1]);
             CPOperand windowSize = new CPOperand(parts[2]);

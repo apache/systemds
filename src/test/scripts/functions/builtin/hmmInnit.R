@@ -20,13 +20,15 @@
 #-------------------------------------------------------------
 
 args <- commandArgs(TRUE)
-hiddenstates_count <- as.integer(args[1])
-observation_count <- as.integer(args[0])
+hiddenstates_count <- as.integer(args[2])
+observation_count <- as.integer(args[1])
+library(HMM)
 
-start_prob <- rep(1 / hiddenstates_count, hiddenstates_count)
-transition_prob <- 0.3 * diag(hiddenstates_count) + array(0.7 / (hiddenstates_count), c(hiddenstates_count, hiddenstates_count)) # nolint: line_length_linter.
-emission_prob <- array(1 / (observation_count), c(hiddenstates_count, observation_count)) # nolint: line_length_linter.
+states <- 1:hiddenstates_count
+symbols <- 1:observation_count
 
-writeMM(as(start_prob, "start_prob"), paste(args[2], "start_prob", sep = ""))
-writeMM(as(transition_prob, "transition_prob"), paste(args[2], "transition_prob", sep = "")) # nolint: line_length_linter.
-writeMM(as(emission_prob, "emission_prob"), paste(args[2], "emission_prob", sep = "")) # nolint: line_length_linter.
+hmm <- initHMM(States = states, Symbols = symbols)
+
+writeMM(as(hmm$startProbs, "start_prob"), paste(args[2], "start_prob", sep = "")) # nolint: line_length_linter.
+writeMM(as(hmm$transProbs, "transition_prob"), paste(args[2], "transition_prob", sep = "")) # nolint: line_length_linter.
+writeMM(as(hmm$emissionProbs, "emission_prob"), paste(args[2], "emission_prob", sep = "")) # nolint: line_length_linter.

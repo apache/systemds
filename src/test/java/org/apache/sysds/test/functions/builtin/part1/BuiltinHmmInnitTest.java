@@ -72,7 +72,7 @@ public class BuiltinHmmInnitTest extends AutomatedTestBase {
             List<String> proArgs = new ArrayList<>();
 			proArgs.add("-args");
 			proArgs.add("observation_sequence=" + observation_count);
-			proArgs.add("hiddenstates_count=" + hiddenstates_count);
+			proArgs.add("hiddenstates_count=" + String.valueOf(hiddenstates_count));
 			proArgs.add("verbose=" + verbose);
 			proArgs.add("random_mode=" + random_mode);
 			proArgs.add("sp_path=" + output("start_prob"));
@@ -97,11 +97,10 @@ public class BuiltinHmmInnitTest extends AutomatedTestBase {
                 TestUtils.compareMatrices(dml_start_prob, r_start_prob, eps, "ml_start_prob", "r_start_prob");
                 TestUtils.compareMatrices(dml_transition_prob, r_transition_prob, eps, "dml_transition_prob", "r_transition_prob");
                 TestUtils.compareMatrices(dml_emission_prob, r_emission_prob, eps, "dml_emission_prob", "r_emission_prob");
-            } 
-
-            if(verbose) 
+            } // TODO assert correctness for random mode
+            if(verbose) {
 				Assert.assertTrue(Statistics.getCPHeavyHitterCount("print")>5);
-
+            }
         }
         finally {
             resetExecMode(modeOld);

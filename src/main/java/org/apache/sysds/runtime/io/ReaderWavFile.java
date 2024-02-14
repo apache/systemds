@@ -30,6 +30,7 @@ import javax.sound.sampled.UnsupportedAudioFileException;
 
 public class ReaderWavFile {
 
+	/*
 	public static double[] readMonoAudioFromWavFile(String filePath) {
 
 		try {
@@ -45,6 +46,7 @@ public class ReaderWavFile {
 		}
 
 	}
+	*/
 
 	public static double[] readMonoAudioFromWavFile(InputStream inputStream) {
 

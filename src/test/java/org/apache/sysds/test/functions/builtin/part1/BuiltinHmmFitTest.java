@@ -51,12 +51,12 @@ public class BuiltinHmmFitTest extends AutomatedTestBase {
 	}
 
     @Test
-	public void testVerboseHmmInnitCP() {
+	public void testVerboseHmmFitCP() {
 		runHmmFit(TEST_NAME, ExecMode.SINGLE_NODE, true, false);
 	}
 	
 	@Test
-	public void testVerboseHmmInnitHybrid() {
+	public void testVerboseHmmFitHybrid() {
 		runHmmFit(TEST_NAME, ExecMode.HYBRID, true, false);
 	}
 

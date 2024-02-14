@@ -30,7 +30,6 @@ import javax.sound.sampled.UnsupportedAudioFileException;
 
 public class ReaderWavFile {
 
-	/*
 	public static double[] readMonoAudioFromWavFile(String filePath) {
 
 		try {
@@ -40,13 +39,13 @@ public class ReaderWavFile {
 			audioInputStream.close();
 			return audioValues;
 
-		} catch (UnsupportedAudioFileException | IOException e) {
+		}
+		catch(UnsupportedAudioFileException | IOException e) {
 			e.printStackTrace();
 			return null;
 		}
 
 	}
-	*/
 
 	public static double[] readMonoAudioFromWavFile(InputStream inputStream) {
 
@@ -56,13 +55,8 @@ public class ReaderWavFile {
 
 			// collapse channels to mono channel
 			int channels = 1;
-			AudioFormat monoAudioFormat = new AudioFormat(
-					audioInputStream.getFormat().getSampleRate(),
-					audioInputStream.getFormat().getSampleSizeInBits(),
-					channels,
-					true,
-					false
-			);
+			AudioFormat monoAudioFormat = new AudioFormat(audioInputStream.getFormat().getSampleRate(),
+				audioInputStream.getFormat().getSampleSizeInBits(), channels, true, false);
 			AudioInputStream monoAudioInputStream = AudioSystem.getAudioInputStream(monoAudioFormat, audioInputStream);
 
 			// curation of audio
@@ -75,13 +69,13 @@ public class ReaderWavFile {
 			int bytesRead = audioInputStream.read(audioData);
 
 			// read operation failed
-			if (bytesRead == -1) {
+			if(bytesRead == -1) {
 				return null;
 			}
 
 			// convert byte array to double array
 			double[] audioValues = new double[numFrames];
-			for (int i = 0, frameIndex = 0; i < bytesRead; i += frameSize, frameIndex++) {
+			for(int i = 0, frameIndex = 0; i < bytesRead; i += frameSize, frameIndex++) {
 				// 16-bit PCM encoding
 				// combine two bytes into a 16-bit integer (short)
 				short sampleValue = (short) ((audioData[i + 1] << 8) | (audioData[i] & 0xFF));
@@ -94,7 +88,8 @@ public class ReaderWavFile {
 			audioInputStream.close();
 			return audioValues;
 
-		} catch (UnsupportedAudioFileException | IOException e) {
+		}
+		catch(UnsupportedAudioFileException | IOException e) {
 			e.printStackTrace();
 			return null;
 		}

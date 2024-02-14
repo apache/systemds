@@ -24,22 +24,18 @@ import org.apache.sysds.runtime.io.ReaderWavFile;
 import java.net.URL;
 
 import java.io.InputStream;
-import java.io.FileInputStream;
-import java.io.BufferedInputStream;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 
 import java.util.List;
 import java.util.ArrayList;
-import java.util.Set;
-import java.util.HashSet;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
 public class LibMatrixKeywordSpotting {
 
-	public LibMatrixKeywordSpotting() {
+	public static void main(String[] args) {
 
 		// load all data
 		String url = "http://storage.googleapis.com/download.tensorflow.org/data/mini_speech_commands.zip";
@@ -58,11 +54,13 @@ public class LibMatrixKeywordSpotting {
 		}
 
 		// TODO:
-		// csv for spectograms
-		// csv for labels
+		// csv for spectrograms
+		// csv for labels - use index?
+		// if we use index we also need a csv to translate index back to command
+
 	}
 
-	private void loadAllData(String url, List<double[]> waves, List<String> labels) {
+	private static void loadAllData(String url, List<double[]> waves, List<String> labels) {
 
 		try {
 			// get zip data
@@ -80,7 +78,7 @@ public class LibMatrixKeywordSpotting {
 
 	}
 
-	private byte[] getBytesZipFile(URL url) throws IOException {
+	private static byte[] getBytesZipFile(URL url) throws IOException {
 
 		InputStream in = url.openConnection().getInputStream();
 
@@ -96,7 +94,7 @@ public class LibMatrixKeywordSpotting {
 
 	}
 
-	private List<String> getDirectories(byte[] zipData) throws IOException {
+	private static List<String> getDirectories(byte[] zipData) throws IOException {
 
 		List<String> dirs = new ArrayList<>();
 		ZipInputStream stream = new ZipInputStream(new ByteArrayInputStream(zipData));
@@ -116,7 +114,7 @@ public class LibMatrixKeywordSpotting {
 		return dirs;
 	}
 
-	private void readWaveFiles(byte[] zipData, List<String> dirs, List<double[]> waves, List<String> labels)
+	private static void readWaveFiles(byte[] zipData, List<String> dirs, List<double[]> waves, List<String> labels)
 		throws IOException {
 
 		ZipInputStream stream = new ZipInputStream(new ByteArrayInputStream(zipData));
@@ -138,7 +136,7 @@ public class LibMatrixKeywordSpotting {
 
 	}
 
-	private double[] convertWaveToMagnitudesSpectrogram(double[] wave) {
+	private static double[] convertWaveToMagnitudesSpectrogram(double[] wave) {
 
 		// length=255, overlap=128
 		// TODO: adjust stft

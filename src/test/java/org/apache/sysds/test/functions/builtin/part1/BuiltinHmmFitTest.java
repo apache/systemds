@@ -52,16 +52,16 @@ public class BuiltinHmmFitTest extends AutomatedTestBase {
 
     @Test
 	public void testVerboseHmmFitCP() {
-		runHmmFit(TEST_NAME, ExecMode.SINGLE_NODE, true, false);
+		runHmmFit(TEST_NAME, ExecMode.SINGLE_NODE, true);
 	}
 	
 	@Test
 	public void testVerboseHmmFitHybrid() {
-		runHmmFit(TEST_NAME, ExecMode.HYBRID, true, false);
+		runHmmFit(TEST_NAME, ExecMode.HYBRID, true);
 	}
 
 
-    private void runHmmFit(String testname, ExecMode execMode, boolean verbose, boolean random_mode) {
+    private void runHmmFit(String testname, ExecMode execMode, boolean verbose) {
 
 		ExecMode modeOld = setExecMode(execMode);
 

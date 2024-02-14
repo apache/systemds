@@ -37,7 +37,7 @@ import org.junit.Test;
 
 public class BuiltinHmmInnitTest extends AutomatedTestBase {
 
-    private final static String TEST_NAME = "HmmInnit";
+    private final static String TEST_NAME = "hmmInnit";
 	private final static String TEST_DIR = "functions/builtin/";
 	private static final String TEST_CLASS_DIR = TEST_DIR + BuiltinHmmInnitTest.class.getSimpleName() + "/";
 

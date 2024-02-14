@@ -37,7 +37,7 @@ public class BuiltinHmmFitTest extends AutomatedTestBase {
     
     private final static String TEST_NAME = "hmmFit";
 	private final static String TEST_DIR = "functions/builtin/";
-	private static final String TEST_CLASS_DIR = TEST_DIR + BuiltinHmmInnitTest.class.getSimpleName() + "/";
+	private static final String TEST_CLASS_DIR = TEST_DIR + BuiltinHmmFitTest.class.getSimpleName() + "/";
 
 	private final static Integer observation_length = 20;    
 	private final static Integer observation_count = 10;

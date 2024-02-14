@@ -1,6 +1,6 @@
 print("hello")
-M = matrix("0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15", rows=1, cols=16)
-[r,i] = stft(M, 4, 2)
+M = matrix("0 0 0 0 0 0", rows=1, cols=6)
+I = matrix("0 0 0 0 0 0", rows=1, cols=6)
+[r,i] = stft(M, I, 4, 3)
 print(toString(r))
 print(toString(i))
-

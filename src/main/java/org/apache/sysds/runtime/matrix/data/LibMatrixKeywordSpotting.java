@@ -96,15 +96,11 @@ public class LibMatrixKeywordSpotting {
 
 	private void loadAllData(){
 
-		// doesn't work for url
-		// String url = "http://storage.googleapis.com/download.tensorflow.org/data/mini_speech_commands.zip";
-		// Set<String> dirs = Set.of("yes", "no");
-
-		String zipFilePath = "./src/main/java/org/apache/sysds/runtime/matrix/data/mini_speech_commands_slimmed.zip";
+		String url = "http://storage.googleapis.com/download.tensorflow.org/data/mini_speech_commands.zip";
 
 		try {
 			// get zip data
-			byte[] zipData = getZipData(new FileInputStream(zipFilePath));
+			byte[] zipData = getZipData(new URL(url));
 
 			// get folder names
 			Set<String> dirs = getDirectories(zipData);
@@ -131,7 +127,7 @@ public class LibMatrixKeywordSpotting {
 		while ((entry = stream.getNextEntry()) != null) {
 			if (entry.isDirectory()) {
 				String dir = entry.getName();
-				// remove / at the end
+				// remove "/" at the end
 				dirs.add(dir.substring(mainDirLength, dir.length() - 1));
 			}
 		}
@@ -172,7 +168,8 @@ public class LibMatrixKeywordSpotting {
 
 	}
 
-	private byte[] getZipData(InputStream in) throws IOException {
+	private byte[] getZipData(URL url) throws IOException {
+		InputStream in = url.openConnection().getInputStream();
 
 		ByteArrayOutputStream out = new ByteArrayOutputStream();
 		byte[] dataBuffer = new byte[1024];
@@ -183,11 +180,6 @@ public class LibMatrixKeywordSpotting {
 		}
 
 		return out.toByteArray();
-	}
-
-	private byte[] getZipData(URL url) throws IOException {
-		InputStream in = new BufferedInputStream(url.openStream());
-		return getZipData(in);
 	}
 
 }

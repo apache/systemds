@@ -349,6 +349,16 @@ public class LibCommonsMath
 		return fft(re, threads);
 	}
 
+	private static boolean isMatrixAllZeros(MatrixBlock matrix) {
+		// Fast check for sparse representation
+		if (matrix.isInSparseFormat()) {
+			return matrix.getNonZeros() == 0;
+		}
+		// Dense format check
+		double sum = matrix.sum();
+		return sum == 0;
+	}
+
 	/**
 	 * Function to perform IFFT on a given matrix.
 	 *
@@ -483,6 +493,16 @@ public class LibCommonsMath
 			re.sparseToDense();
 			return stft(re, windowSize, overlap, threads);
 		}
+	}
+
+	/**
+	 * Function to perform STFT on a given matrix.
+	 *
+	 * @param re matrix object
+	 * @return array of matrix blocks
+	 */
+	private static MatrixBlock[] computeSTFT(MatrixBlock re, int windowSize, int overlap, int threads) {
+		return computeSTFT(re, null, windowSize, overlap, threads);
 	}
 
 	/**

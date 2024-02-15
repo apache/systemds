@@ -112,27 +112,37 @@ public class LibMatrixKeywordSpotting {
 
 	}
 
-	private static void saveToCSV(String path, List<?> data) {
+	private static void readWaveFiles(byte[] zipData, List<String> dirs, List<double[]> waves, List<String> labels)
+		throws IOException {
 
-		try(PrintWriter out = new PrintWriter(new BufferedWriter(new FileWriter(path)))) {
+		ZipInputStream stream = new ZipInputStream(new ByteArrayInputStream(zipData));
+		ZipEntry entry;
+		String dir = dirs.get(0);
 
-			for(Object elem : data) {
-				if(elem instanceof int[]) {
-					String str = Arrays.toString((int[]) elem);
-					// remove brackets
-					out.print(str.substring(1, str.length() - 1));
+		while((entry = stream.getNextEntry()) != null) {
+			if(entry.getName().endsWith(".wav")) {
+				if(!entry.getName().contains(dir)){
+					dir = findDir(entry, dirs);
 				}
-				else {
-					out.print(elem);
-				}
-				out.println();
+				// read file
+				// TODO: isn't working: we need an audioInputStream!
+				double[] data = ReaderWavFile.readMonoAudioFromWavFile(new ByteArrayInputStream(entry.getExtra()));
+				waves.add(data);
+				labels.add(dir);
 			}
-
-		}
-		catch(IOException e) {
-			e.printStackTrace();
 		}
 
+	}
+
+	private static String findDir(ZipEntry entry,  List<String> dirs){
+
+		for (String dir : dirs){
+			if(entry.getName().startsWith(dir)){
+				return dir;
+			}
+		}
+
+		return null;
 	}
 
 }

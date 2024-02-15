@@ -27,6 +27,7 @@ import java.io.InputStream;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.FileInputStream;
 
 import java.util.List;
 import java.util.ArrayList;
@@ -45,18 +46,11 @@ public class LibMatrixKeywordSpotting {
 		List<String> labels = new ArrayList<>();
 		loadAllData(url, waves, labels);
 
-		// convert waveforms to magnitudes of spectrogram
-		// uses stft
-		List<double[]> spectrograms = new ArrayList<>();
-		for(double[] wave : waves) {
-			double[] magnitudes = convertWaveToMagnitudesSpectrogram(wave);
-			spectrograms.add(magnitudes);
-		}
-
 		// TODO:
-		// csv for spectrograms
+		// csv for waves
 		// csv for labels - use index?
 		// if we use index we also need a csv to translate index back to command
+		// don't forget magnitudes after stft!
 
 	}
 
@@ -80,7 +74,9 @@ public class LibMatrixKeywordSpotting {
 
 	private static byte[] getBytesZipFile(URL url) throws IOException {
 
-		InputStream in = url.openConnection().getInputStream();
+		//InputStream in = url.openConnection().getInputStream();
+		String zipFilePath = "./src/main/java/org/apache/sysds/runtime/matrix/data/mini_speech_commands_slimmed.zip";
+		InputStream in = new FileInputStream(zipFilePath);
 
 		ByteArrayOutputStream out = new ByteArrayOutputStream();
 		byte[] dataBuffer = new byte[1024];
@@ -122,33 +118,28 @@ public class LibMatrixKeywordSpotting {
 		String dir = dirs.get(0);
 
 		while((entry = stream.getNextEntry()) != null) {
-			if(!entry.isDirectory() && entry.getName().startsWith(dir) && entry.getName().endsWith(".wav")) {
-
+			if(entry.getName().endsWith(".wav")) {
+				if(!entry.getName().contains(dir)){
+					dir = findDir(entry, dirs);
+				}
 				// read file
 				double[] data = ReaderWavFile.readMonoAudioFromWavFile(new ByteArrayInputStream(entry.getExtra()));
 				waves.add(data);
 				labels.add(dir);
 			}
-			else {
-				dir = dirs.get(dirs.indexOf(dir) + 1);
-			}
 		}
 
 	}
 
-	private static double[] convertWaveToMagnitudesSpectrogram(double[] wave) {
+	private static String findDir(ZipEntry entry,  List<String> dirs){
 
-		// length=255, overlap=128
-		// TODO: adjust stft
-		double[][] spectrogram = LibMatrixSTFT.one_dim_stft(wave, 255, 128);
-
-		int cols = spectrogram[0].length;
-		double[] magnitudes = new double[cols];
-		for(int i = 0; i < cols; i++) {
-			magnitudes[i] = Math.sqrt(Math.pow(spectrogram[0][i], 2) + Math.pow(spectrogram[0][i], 2));
+		for (String dir : dirs){
+			if(entry.getName().startsWith(dir)){
+				return dir;
+			}
 		}
 
-		return magnitudes;
+		return null;
 	}
 
 }

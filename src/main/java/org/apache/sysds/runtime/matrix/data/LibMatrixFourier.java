@@ -24,7 +24,7 @@ import org.apache.commons.math3.util.FastMath;
 public class LibMatrixFourier {
 
 	/**
-	 * Function to perform FFT on two given matrices.
+	 * Function to perform FFT for two given matrices.
 	 * The first one represents the real values and the second one the imaginary values.
 	 * The output also contains one matrix for the real and one for the imaginary values.
 	 *
@@ -38,13 +38,13 @@ public class LibMatrixFourier {
 		int cols = re.getNumColumns();
 		if(!isPowerOfTwo(rows) || !isPowerOfTwo(cols)) throw new RuntimeException("false dimensions");
 
-		fft(re.getDenseBlockValues(), im.getDenseBlockValues(), rows, cols);
+		fft(re.getDenseBlockValues(), im.getDenseBlockValues(), rows, cols, true);
 
 		return new MatrixBlock[]{re, im};
 	}
 
 	/**
-	 * Function to perform IFFT on two given matrices.
+	 * Function to perform IFFT for two given matrices.
 	 * The first one represents the real values and the second one the imaginary values.
 	 * The output also contains one matrix for the real and one for the imaginary values.
 	 *
@@ -58,13 +58,53 @@ public class LibMatrixFourier {
 		int cols = re.getNumColumns();
 		if(!isPowerOfTwo(rows) || !isPowerOfTwo(cols)) throw new RuntimeException("false dimensions");
 
-		ifft(re.getDenseBlockValues(), im.getDenseBlockValues(), rows, cols);
+		ifft(re.getDenseBlockValues(), im.getDenseBlockValues(), rows, cols, true);
 
 		return new MatrixBlock[]{re, im};
 	}
 
 	/**
-	 * Function to perform FFT on two given double arrays.
+	 * Function to perform FFT for each row of two given matrices.
+	 * The first one represents the real values and the second one the imaginary values.
+	 * The output also contains one matrix for the real and one for the imaginary values.
+	 *
+	 * @param re matrix object representing the real values
+	 * @param im matrix object representing the imaginary values
+	 * @return array of two matrix blocks
+	 */
+	public static MatrixBlock[] fft_linearized(MatrixBlock re, MatrixBlock im){
+
+		int rows = re.getNumRows();
+		int cols = re.getNumColumns();
+		if(!isPowerOfTwo(rows) || !isPowerOfTwo(cols)) throw new RuntimeException("false dimensions");
+
+		fft(re.getDenseBlockValues(), im.getDenseBlockValues(), rows, cols, false);
+
+		return new MatrixBlock[]{re, im};
+	}
+
+	/**
+	 * Function to perform IFFT for each row of two given matrices.
+	 * The first one represents the real values and the second one the imaginary values.
+	 * The output also contains one matrix for the real and one for the imaginary values.
+	 *
+	 * @param re matrix object representing the real values
+	 * @param im matrix object representing the imaginary values
+	 * @return array of two matrix blocks
+	 */
+	public static MatrixBlock[] ifft_linearized(MatrixBlock re, MatrixBlock im){
+
+		int rows = re.getNumRows();
+		int cols = re.getNumColumns();
+		if(!isPowerOfTwo(rows) || !isPowerOfTwo(cols)) throw new RuntimeException("false dimensions");
+
+		ifft(re.getDenseBlockValues(), im.getDenseBlockValues(), rows, cols, false);
+
+		return new MatrixBlock[]{re, im};
+	}
+
+	/**
+	 * Function to perform FFT for two given double arrays.
 	 * The first one represents the real values and the second one the imaginary values.
 	 * Both arrays get updated and contain the result.
 	 *
@@ -72,8 +112,9 @@ public class LibMatrixFourier {
 	 * @param im array representing the imaginary values
 	 * @param rows number of rows
 	 * @param cols number of rows
+	 * @param inclColCalc if true, fft is also calculated for each column, otherwise only for each row
 	 */
-	public static void fft(double[] re, double[] im, int rows, int cols) {
+	public static void fft(double[] re, double[] im, int rows, int cols, boolean inclColCalc) {
 
 		double[] re_inter = new double[rows*cols];
 		double[] im_inter = new double[rows*cols];
@@ -82,14 +123,16 @@ public class LibMatrixFourier {
 			fft_one_dim(re, im, re_inter, im_inter, i*cols, (i+1)*cols, cols, 1);
 		}
 
-		for(int j = 0; j < cols; j++){
-			fft_one_dim(re, im, re_inter, im_inter, j, j+rows*cols, rows, cols);
+		if(inclColCalc){
+			for(int j = 0; j < cols; j++){
+				fft_one_dim(re, im, re_inter, im_inter, j, j+rows*cols, rows, cols);
+			}
 		}
 
 	}
 
 	/**
-	 * Function to perform IFFT on two given double arrays.
+	 * Function to perform IFFT for two given double arrays.
 	 * The first one represents the real values and the second one the imaginary values.
 	 * Both arrays get updated and contain the result.
 	 *
@@ -97,15 +140,17 @@ public class LibMatrixFourier {
 	 * @param im array representing the imaginary values
 	 * @param rows number of rows
 	 * @param cols number of rows
+	 * @param inclColCalc if true, fft is also calculated for each column, otherwise only for each row
 	 */
-	public static void ifft(double[] re, double[] im, int rows, int cols) {
+	public static void ifft(double[] re, double[] im, int rows, int cols, boolean inclColCalc) {
 
 		double[] re_inter = new double[rows*cols];
 		double[] im_inter = new double[rows*cols];
 
-		for(int j = 0; j < cols; j++){
-			ifft_one_dim(re, im, re_inter, im_inter, j, j+rows*cols, rows, cols);
-
+		if(inclColCalc) {
+			for (int j = 0; j < cols; j++) {
+				ifft_one_dim(re, im, re_inter, im_inter, j, j + rows * cols, rows, cols);
+			}
 		}
 
 		for(int i = 0; i < rows; i++){
@@ -115,7 +160,7 @@ public class LibMatrixFourier {
 	}
 
 	/**
-	 * Function to perform one-dimensional FFT on two given double arrays. The first one represents the real values and
+	 * Function to perform one-dimensional FFT for two given double arrays. The first one represents the real values and
 	 * the second one the imaginary values. Both arrays get updated and contain the result.
 	 *
 	 * @param re       array representing the real values
@@ -211,7 +256,7 @@ public class LibMatrixFourier {
 	}
 
 	/**
-	 * Function to perform FFT on a given matrices.
+	 * Function to perform FFT for a given matrix.
 	 * The given matrix only represents real values.
 	 * The output contains one matrix for the real and one for the imaginary values.
 	 *
@@ -223,7 +268,7 @@ public class LibMatrixFourier {
 	}
 
 	/**
-	 * Function to perform IFFT on a given matrices.
+	 * Function to perform IFFT for a given matrix.
 	 * The given matrix only represents real values.
 	 * The output contains one matrix for the real and one for the imaginary values.
 	 *
@@ -232,6 +277,30 @@ public class LibMatrixFourier {
 	 */
 	public static MatrixBlock[] ifft(MatrixBlock re){
 		return ifft(re, new MatrixBlock(re.getNumRows(),re.getNumColumns(), new double[re.getNumRows()*re.getNumColumns()]));
+	}
+
+	/**
+	 * Function to perform FFT for each row of a given matrix.
+	 * The given matrix only represents real values.
+	 * The output contains one matrix for the real and one for the imaginary values.
+	 *
+	 * @param re matrix object representing the real values
+	 * @return array of two matrix blocks
+	 */
+	public static MatrixBlock[] fft_linearized(MatrixBlock re){
+		return fft_linearized(re, new MatrixBlock(re.getNumRows(),re.getNumColumns(), new double[re.getNumRows()*re.getNumColumns()]));
+	}
+
+	/**
+	 * Function to perform IFFT for each row of a given matrix.
+	 * The given matrix only represents real values.
+	 * The output contains one matrix for the real and one for the imaginary values.
+	 *
+	 * @param re matrix object representing the real values
+	 * @return array of two matrix blocks
+	 */
+	public static MatrixBlock[] ifft_linearized(MatrixBlock re){
+		return ifft_linearized(re, new MatrixBlock(re.getNumRows(),re.getNumColumns(), new double[re.getNumRows()*re.getNumColumns()]));
 	}
 
 }

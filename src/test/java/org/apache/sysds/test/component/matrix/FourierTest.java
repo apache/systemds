@@ -24,6 +24,8 @@ import org.junit.Test;
 
 import static org.apache.sysds.runtime.matrix.data.LibMatrixFourier.fft;
 import static org.apache.sysds.runtime.matrix.data.LibMatrixFourier.ifft;
+import static org.apache.sysds.runtime.matrix.data.LibMatrixFourier.fft_linearized;
+import static org.apache.sysds.runtime.matrix.data.LibMatrixFourier.ifft_linearized;
 
 import static org.junit.Assert.assertArrayEquals;
 
@@ -302,6 +304,39 @@ public class FourierTest {
 
 		assertArrayEquals(expected_re, res[0].getDenseBlockValues(), 0.0001);
 		assertArrayEquals(expected_im, res[1].getDenseBlockValues(), 0.0001);
+
+	}
+
+	@Test
+	public void test_fft_linearized() {
+
+		MatrixBlock re = new MatrixBlock(2, 4, new double[] {0, 18, -15, 3, 0, 18, -15, 3});
+		MatrixBlock im = new MatrixBlock(1, 4, new double[8]);
+
+		double[] expected_re = {6, 15, -36, 15, 6, 15, -36, 15};
+		double[] expected_im = {0, -15, 0, 15, 0, -15, 0, 15};
+
+		fft_linearized(re, im);
+
+		assertArrayEquals(expected_re, re.getDenseBlockValues(), 0.0001);
+		assertArrayEquals(expected_im, im.getDenseBlockValues(), 0.0001);
+
+	}
+
+	@Test
+	public void test_ifft_linearized() {
+
+		double[] in_re = new double[] {1, -2, 3, -4, 1, -2, 3, -4};
+		double[] in_im = new double[] {0, 0, 0, 0, 0, 0, 0, 0};
+
+		MatrixBlock re = new MatrixBlock(2, 4, in_re);
+		MatrixBlock im = new MatrixBlock(2, 4, in_im);
+
+		MatrixBlock[] inter = fft_linearized(re, im);
+		MatrixBlock[] res = ifft_linearized(inter[0], inter[1]);
+
+		assertArrayEquals(in_re, res[0].getDenseBlockValues(), 0.0001);
+		assertArrayEquals(in_im, res[1].getDenseBlockValues(), 0.0001);
 
 	}
 

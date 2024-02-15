@@ -85,6 +85,21 @@ public class MultiReturnComplexMatrixBuiltinCPInstruction extends ComputationCPI
             outputs.add(new CPOperand(parts[3], ValueType.FP64, DataType.MATRIX));
 
             return new MultiReturnComplexMatrixBuiltinCPInstruction(null, in1, outputs, opcode, str);
+        } else if (parts.length == 5 && opcode.equalsIgnoreCase("ifft_linearized")) {
+            // one input and two outputs
+            CPOperand in1 = new CPOperand(parts[1]);
+            CPOperand in2 = new CPOperand(parts[2]);
+            outputs.add(new CPOperand(parts[3], ValueType.FP64, DataType.MATRIX));
+            outputs.add(new CPOperand(parts[4], ValueType.FP64, DataType.MATRIX));
+
+            return new MultiReturnComplexMatrixBuiltinCPInstruction(null, in1, in2, outputs, opcode, str);
+        } else if (parts.length == 4 && opcode.equalsIgnoreCase("ifft_linearized")) {
+            // one input and two outputs
+            CPOperand in1 = new CPOperand(parts[1]);
+            outputs.add(new CPOperand(parts[2], ValueType.FP64, DataType.MATRIX));
+            outputs.add(new CPOperand(parts[3], ValueType.FP64, DataType.MATRIX));
+
+            return new MultiReturnComplexMatrixBuiltinCPInstruction(null, in1, outputs, opcode, str);
         }
 
         {

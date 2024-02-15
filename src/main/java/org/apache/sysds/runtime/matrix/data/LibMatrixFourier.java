@@ -76,7 +76,7 @@ public class LibMatrixFourier {
 
 		int rows = re.getNumRows();
 		int cols = re.getNumColumns();
-		if(!isPowerOfTwo(rows) || !isPowerOfTwo(cols))
+		if(!isPowerOfTwo(cols))
 			throw new RuntimeException("false dimensions");
 
 		fft(re.getDenseBlockValues(), im.getDenseBlockValues(), rows, cols, false);
@@ -97,7 +97,7 @@ public class LibMatrixFourier {
 
 		int rows = re.getNumRows();
 		int cols = re.getNumColumns();
-		if(!isPowerOfTwo(rows) || !isPowerOfTwo(cols))
+		if(!isPowerOfTwo(cols))
 			throw new RuntimeException("false dimensions");
 
 		ifft(re.getDenseBlockValues(), im.getDenseBlockValues(), rows, cols, false);

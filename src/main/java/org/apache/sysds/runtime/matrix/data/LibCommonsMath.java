@@ -51,6 +51,8 @@ import org.apache.sysds.runtime.util.DataConverter;
 
 import static org.apache.sysds.runtime.matrix.data.LibMatrixFourier.fft;
 import static org.apache.sysds.runtime.matrix.data.LibMatrixFourier.ifft;
+import static org.apache.sysds.runtime.matrix.data.LibMatrixFourier.fft_linearized;
+import static org.apache.sysds.runtime.matrix.data.LibMatrixFourier.ifft_linearized;
 
 /**
  * Library for matrix operations that need invocation of 
@@ -81,6 +83,8 @@ public class LibCommonsMath
 			case "eigen":
 			case "fft":
 			case "ifft":
+			case "fft_linearized":
+			case "ifft_linearized":
 			case "svd": return true;
 			default: return false;
 		}
@@ -134,6 +138,10 @@ public class LibCommonsMath
 			return computeFFT(in);
 		else if (opcode.equals("ifft"))
 			return computeIFFT(in, null);
+		else if (opcode.equals("fft_linearized"))
+			return computeFFT_LINEARIZED(in);
+		else if (opcode.equals("ifft_linearized"))
+			return computeIFFT_LINEARIZED(in, null);
 		return null;
 	}
 
@@ -143,6 +151,8 @@ public class LibCommonsMath
 		switch (opcode) {
 			case "ifft":
 				return computeIFFT(in1, in2);
+			case "ifft_linearized":
+				return computeIFFT_LINEARIZED(in1, in2);
 			default:
 				return null;
 		}
@@ -288,38 +298,99 @@ public class LibCommonsMath
 	/**
 	 * Function to perform FFT on a given matrix.
 	 *
-	 * @param in matrix object
+	 * @param re matrix object
 	 * @return array of matrix blocks
 	 */
-	private static MatrixBlock[] computeFFT(MatrixBlock in) {
-		if (in == null || in.isEmptyBlock(false))
+	private static MatrixBlock[] computeFFT(MatrixBlock re) {
+		if(re == null)
 			throw new DMLRuntimeException("Invalid empty block");
-
+		if (re.isEmptyBlock(false)) {
+			// Return the original matrix as the result
+			return new MatrixBlock[]{re, new MatrixBlock(re.getNumRows(), re.getNumColumns(), true)}; // Assuming you need to return two matrices: the real part and an imaginary part initialized to 0.
+		}
 		// run fft
-		in.sparseToDense();
-		return fft(in);
+		re.sparseToDense();
+		return fft(re);
+	}
+
+	private static boolean isMatrixAllZeros(MatrixBlock matrix) {
+		// Fast check for sparse representation
+		if (matrix.isInSparseFormat()) {
+			return matrix.getNonZeros() == 0;
+		}
+		// Dense format check
+		double sum = matrix.sum();
+		return sum == 0;
 	}
 
 	/**
 	 * Function to perform IFFT on a given matrix.
 	 *
-	 * @param in matrix object
+	 * @param re matrix object
+	 * @param im matrix object
 	 * @return array of matrix blocks
 	 */
-	private static MatrixBlock[] computeIFFT(MatrixBlock in1, MatrixBlock in2) {
-		if (in1 == null || in1.isEmptyBlock(false))
+	private static MatrixBlock[] computeIFFT(MatrixBlock re, MatrixBlock im) {
+		if (re == null)
 			throw new DMLRuntimeException("Invalid empty block");
 
 		// run ifft
-		if (in2 != null) {
-			in1.sparseToDense();
-			in2.sparseToDense();
-			return ifft(in1, in2);
+		if (im != null && !im.isEmptyBlock(false)) {
+			re.sparseToDense();
+			im.sparseToDense();
+			return ifft(re, im);
 		} else {
-			in1.sparseToDense();
-			return ifft(in1);
+			if (re.isEmptyBlock(false)) {
+				// Return the original matrix as the result
+				return new MatrixBlock[]{re, new MatrixBlock(re.getNumRows(), re.getNumColumns(), true)}; // Assuming you need to return two matrices: the real part and an imaginary part initialized to 0.
+			}
+			re.sparseToDense();
+			return ifft(re);
 		}
+	}
 
+	/**
+	 * Function to perform FFT_LINEARIZED on a given matrix.
+	 *
+	 * @param re matrix object
+	 * @return array of matrix blocks
+	 */
+	private static MatrixBlock[] computeFFT_LINEARIZED(MatrixBlock re) {
+		if(re == null)
+			throw new DMLRuntimeException("Invalid empty block");
+		if (re.isEmptyBlock(false)) {
+			// Return the original matrix as the result
+			return new MatrixBlock[]{re, new MatrixBlock(re.getNumRows(), re.getNumColumns(), true)}; // Assuming you need to return two matrices: the real part and an imaginary part initialized to 0.
+		}
+		// run fft
+		re.sparseToDense();
+		return fft_linearized(re);
+	}
+
+	/**
+	 * Function to perform IFFT_LINEARIZED on a given matrix.
+	 *
+	 * @param re matrix object
+	 * @param im matrix object
+	 * @return array of matrix blocks
+	 */
+	private static MatrixBlock[] computeIFFT_LINEARIZED(MatrixBlock re, MatrixBlock im) {
+		if (re == null)
+			throw new DMLRuntimeException("Invalid empty block");
+
+		// run ifft
+		if (im != null && !im.isEmptyBlock(false)) {
+			re.sparseToDense();
+			im.sparseToDense();
+			return ifft_linearized(re, im);
+		} else {
+			if (re.isEmptyBlock(false)) {
+				// Return the original matrix as the result
+				return new MatrixBlock[]{re, new MatrixBlock(re.getNumRows(), re.getNumColumns(), true)}; // Assuming you need to return two matrices: the real part and an imaginary part initialized to 0.
+			}
+			re.sparseToDense();
+			return ifft_linearized(re);
+		}
 	}
 
 	/**

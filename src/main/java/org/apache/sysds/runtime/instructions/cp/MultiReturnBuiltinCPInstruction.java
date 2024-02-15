@@ -90,7 +90,7 @@ public class MultiReturnBuiltinCPInstruction extends ComputationCPInstruction {
 			return new MultiReturnBuiltinCPInstruction(null, in1, outputs, opcode, str);
 			
 		}
-		else if (opcode.equalsIgnoreCase("fft")) {
+		else if(parts.length == 4 && opcode.equalsIgnoreCase("fft")) {
 			// one input and two outputs
 			CPOperand in1 = new CPOperand(parts[1]);
 			outputs.add(new CPOperand(parts[2], ValueType.FP64, DataType.MATRIX));
@@ -98,7 +98,32 @@ public class MultiReturnBuiltinCPInstruction extends ComputationCPInstruction {
 
 			return new MultiReturnBuiltinCPInstruction(null, in1, outputs, opcode, str);
 
-		} 
+		}
+		else if(parts.length == 3 && opcode.equalsIgnoreCase("fft")) {
+			// one input and two outputs
+			outputs.add(new CPOperand(parts[1], ValueType.FP64, DataType.MATRIX));
+			outputs.add(new CPOperand(parts[2], ValueType.FP64, DataType.MATRIX));
+
+			return new MultiReturnBuiltinCPInstruction(null, null, outputs, opcode, str);
+
+		}
+		else if(parts.length == 4 && opcode.equalsIgnoreCase("fft_linearized")) {
+			// one input and two outputs
+			CPOperand in1 = new CPOperand(parts[1]);
+			outputs.add(new CPOperand(parts[2], ValueType.FP64, DataType.MATRIX));
+			outputs.add(new CPOperand(parts[3], ValueType.FP64, DataType.MATRIX));
+
+			return new MultiReturnBuiltinCPInstruction(null, in1, outputs, opcode, str);
+
+		}
+		else if(parts.length == 3 && opcode.equalsIgnoreCase("fft_linearized")) {
+			// one input and two outputs
+			outputs.add(new CPOperand(parts[1], ValueType.FP64, DataType.MATRIX));
+			outputs.add(new CPOperand(parts[2], ValueType.FP64, DataType.MATRIX));
+
+			return new MultiReturnBuiltinCPInstruction(null, null, outputs, opcode, str);
+
+		}
 		else if ( opcode.equalsIgnoreCase("svd") ) {
 			CPOperand in1 = new CPOperand(parts[1]);
 

@@ -524,6 +524,8 @@ public class BuiltinFunctionExpression extends DataIdentifier {
 				if (!isPowerOfTwo(((ConstIdentifier) getSecondExpr().getOutput()).getLongValue())) {
 					raiseValidateError("This FFT implementation is only defined for matrices with dimensions that are powers of 2." +
 							"The window size (2nd argument) is not a power of two", false, LanguageErrorCodes.INVALID_PARAMETERS);
+				} else if (((ConstIdentifier) getSecondExpr().getOutput()).getLongValue() <= ((ConstIdentifier) getThirdExpr().getOutput()).getLongValue()) {
+					raiseValidateError("Overlap can't be larger than or equal to the window size.", false, LanguageErrorCodes.INVALID_PARAMETERS);
 				}
 			} else if (_args.length == 4) {
 				checkMatrixParam(getSecondExpr());
@@ -532,10 +534,10 @@ public class BuiltinFunctionExpression extends DataIdentifier {
 				if (!isPowerOfTwo(((ConstIdentifier) getThirdExpr().getOutput()).getLongValue())) {
 					raiseValidateError("This FFT implementation is only defined for matrices with dimensions that are powers of 2." +
 							"The window size (3rd argument) is not a power of two", false, LanguageErrorCodes.INVALID_PARAMETERS);
-				} else if (getFirstExpr().getOutput().getDim2() != getSecondExpr().getOutput().getDim2()) {
+				} else if (getFirstExpr().getOutput().getDim1() != getSecondExpr().getOutput().getDim1() || getFirstExpr().getOutput().getDim2() != getSecondExpr().getOutput().getDim2()) {
 					raiseValidateError("The real and imaginary part of the provided matrix are of different dimensions.", false);
-				} else if (getFirstExpr().getOutput().getDim1() != 1 || getSecondExpr().getOutput().getDim1() != 1) {
-					raiseValidateError("This FFT implementation is only defined for one-dimensional matrices.", false, LanguageErrorCodes.INVALID_PARAMETERS);
+				} else if (((ConstIdentifier) getThirdExpr().getOutput()).getLongValue() <= ((ConstIdentifier) getFourthExpr().getOutput()).getLongValue()) {
+					raiseValidateError("Overlap can't be larger than or equal to the window size.", false, LanguageErrorCodes.INVALID_PARAMETERS);
 				}
 			}
 

@@ -464,15 +464,21 @@ public class LibCommonsMath
 		} else {
 			if (re.isEmptyBlock(false)) {
 				// Return the original matrix as the result
+				int rows = re.getNumRows();
+				int cols = re.getNumColumns();
+
 				int stepSize = windowSize - overlap;
 				if (stepSize == 0) {
-					throw new IllegalArgumentException("(windowSize - overlap) is zero");
+					throw new IllegalArgumentException("windowSize - overlap is zero");
 				}
-				int totalFrames = (re.getNumColumns() - overlap + stepSize - 1) / stepSize;
-				int out_len = totalFrames * windowSize;
+
+				int numberOfFramesPerRow = (cols - overlap + stepSize - 1) / stepSize;
+				int rowLength= numberOfFramesPerRow * windowSize;
+				int out_len = rowLength * rows;
+
 				double[] out_zero = new double[out_len];
 
-				return new MatrixBlock[]{new MatrixBlock(1, out_len, out_zero), new MatrixBlock(1, out_len, out_zero)};
+				return new MatrixBlock[]{new MatrixBlock(rows, rowLength, out_zero), new MatrixBlock(rows, rowLength, out_zero)};
 				}
 			re.sparseToDense();
 			return stft(re, windowSize, overlap);

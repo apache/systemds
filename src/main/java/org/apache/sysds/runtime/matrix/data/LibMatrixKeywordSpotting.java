@@ -25,8 +25,12 @@ import org.apache.sysds.runtime.io.DownloaderZip;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.FileWriter;
+import java.io.PrintWriter;
+import java.io.BufferedWriter;
 
 import java.util.List;
+import java.util.Arrays;
 import java.util.ArrayList;
 
 public class LibMatrixKeywordSpotting {
@@ -51,11 +55,9 @@ public class LibMatrixKeywordSpotting {
 		// delete data
 		FileUtils.deleteDirectory(new File(sourceDirPath));
 
-		// TODO:
-		// csv for waves
-		// csv for labels - use index?
-		// if we use index we also need a csv to translate index back to command
-		// don't forget magnitudes after stft!
+		saveToCSV("./tmp/waves", waves);
+		saveToCSV("./tmp/labels", labels);
+		saveToCSV("./tmp/commands", commands);
 
 	}
 
@@ -99,9 +101,35 @@ public class LibMatrixKeywordSpotting {
 		File dir = new File(path);
 
 		File[] waveFiles = dir.listFiles();
+		if(waveFiles == null)
+			return;
+
 		for(File file : waveFiles) {
 			waves.add(ReaderWavFile.readMonoAudioFromWavFile(file.getPath()));
 			labels.add(commands.indexOf(command));
+		}
+
+	}
+
+	private static void saveToCSV(String path, List<?> data) {
+
+		try(PrintWriter out = new PrintWriter(new BufferedWriter(new FileWriter(path)))) {
+
+			for(Object elem : data) {
+				if(elem instanceof double[]) {
+					String str = Arrays.toString((double[]) elem);
+					// remove brackets
+					out.print(str.substring(1, str.length() - 1));
+				}
+				else {
+					out.print(elem);
+				}
+				out.println();
+			}
+
+		}
+		catch(IOException e) {
+			e.printStackTrace();
 		}
 
 	}

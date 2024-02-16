@@ -39,13 +39,14 @@ public class DownloaderZip {
 			ZipEntry entry;
 			int cnt = 0;
 			while((entry = in.getNextEntry()) != null) {
-				StringBuilder path = new StringBuilder(dest.getPath()).append('/').append(entry.getName());
-				File file = new File(path.toString());
+				String path = dest.getPath() + '/' + entry.getName();
+				File file = new File(path);
 
 				if(entry.isDirectory()) {
 					file.mkdirs();
 					continue;
 				}
+
 				if(entry.getName().startsWith(startsWith) && entry.getName().endsWith(endsWith)) {
 
 					/*

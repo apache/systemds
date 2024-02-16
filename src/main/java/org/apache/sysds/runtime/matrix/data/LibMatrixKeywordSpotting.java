@@ -37,7 +37,7 @@ public class LibMatrixKeywordSpotting {
 		File dest = new File("./tmp");
 		String startsWith = "mini_speech_commands";
 		String endsWith = ".wav";
-		// DownloaderZip.downloaderZip(url, dest, startsWith, endsWith);
+		DownloaderZip.downloaderZip(url, dest, startsWith, endsWith);
 
 		// zip contains command folders which contain corresponding .wav files
 		List<double[]> waves = new ArrayList<>();

@@ -19,32 +19,33 @@
 
 package org.apache.sysds.runtime.matrix.data;
 
-import org.apache.sysds.runtime.io.ReaderWavFile;
+import org.apache.sysds.runtime.io.*;
 
-import java.net.URL;
-
-import java.io.InputStream;
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
+import java.io.File;
 import java.io.IOException;
-import java.io.FileInputStream;
+
 
 import java.util.List;
 import java.util.ArrayList;
-import java.util.zip.ZipEntry;
-import java.util.zip.ZipInputStream;
 
 public class LibMatrixKeywordSpotting {
 
 	public static void main(String[] args) {
 
-		// load all data
+		// download data
 		String url = "http://storage.googleapis.com/download.tensorflow.org/data/mini_speech_commands.zip";
+		File dest = new File("./tmp");
+		String startsWith = "mini_speech_commands";
+		String endsWith = ".wav";
+		DownloaderZip.downloaderZip(url, dest, startsWith, endsWith);
 
 		// zip contains command folders which contain corresponding .wav files
 		List<double[]> waves = new ArrayList<>();
-		List<String> labels = new ArrayList<>();
-		loadAllData(url, waves, labels);
+		List<Integer> labels = new ArrayList<>();
+		List<String> commands = new ArrayList<>();
+
+		String sourceDir = "./tmp/mini_speech_commands";
+		extractData(sourceDir, waves, labels, commands);
 
 		// TODO:
 		// csv for waves
@@ -54,16 +55,16 @@ public class LibMatrixKeywordSpotting {
 
 	}
 
-	private static void loadAllData(String url, List<double[]> waves, List<String> labels) {
+	private static void extractData(String sourceDir, List<double[]> waves, List<Integer> labels, List<String> commands) {
 
 		try {
-			// get zip data
-			byte[] zipData = getBytesZipFile(new URL(url));
 
-			// get folder names
-			List<String> dirs = getDirectories(zipData);
+			// get directory names
+			getDirectories(sourceDir, commands);
 
-			readWaveFiles(zipData, dirs, waves, labels);
+			for(String command : commands){
+				readWaveFiles(sourceDir, command, waves, labels, commands);
+			}
 
 		}
 		catch(IOException e) {
@@ -72,74 +73,31 @@ public class LibMatrixKeywordSpotting {
 
 	}
 
-	private static byte[] getBytesZipFile(URL url) throws IOException {
 
-		//InputStream in = url.openConnection().getInputStream();
-		String zipFilePath = "./src/main/java/org/apache/sysds/runtime/matrix/data/mini_speech_commands_slimmed.zip";
-		InputStream in = new FileInputStream(zipFilePath);
+	private static void getDirectories(String sourceDir, List<String> commands) throws IOException {
 
-		ByteArrayOutputStream out = new ByteArrayOutputStream();
-		byte[] dataBuffer = new byte[1024];
+		File[] subDirs = new File(sourceDir).listFiles();
+		if(subDirs == null) return;
 
-		int bytesRead;
-		while((bytesRead = in.read(dataBuffer, 0, 1024)) != -1) {
-			out.write(dataBuffer, 0, bytesRead);
-		}
-
-		return out.toByteArray();
-
-	}
-
-	private static List<String> getDirectories(byte[] zipData) throws IOException {
-
-		List<String> dirs = new ArrayList<>();
-		ZipInputStream stream = new ZipInputStream(new ByteArrayInputStream(zipData));
-
-		// exclude main directory
-		ZipEntry entry = stream.getNextEntry();
-		int mainDirLength = entry.getName().length();
-
-		while((entry = stream.getNextEntry()) != null) {
-			if(entry.isDirectory()) {
-				String dir = entry.getName();
-				// remove "/" at the end
-				dirs.add(dir.substring(mainDirLength, dir.length() - 1));
-			}
-		}
-
-		return dirs;
-	}
-
-	private static void readWaveFiles(byte[] zipData, List<String> dirs, List<double[]> waves, List<String> labels)
-		throws IOException {
-
-		ZipInputStream stream = new ZipInputStream(new ByteArrayInputStream(zipData));
-		ZipEntry entry;
-		String dir = dirs.get(0);
-
-		while((entry = stream.getNextEntry()) != null) {
-			if(entry.getName().endsWith(".wav")) {
-				if(!entry.getName().contains(dir)){
-					dir = findDir(entry, dirs);
-				}
-				// read file
-				double[] data = ReaderWavFile.readMonoAudioFromWavFile(new ByteArrayInputStream(entry.getExtra()));
-				waves.add(data);
-				labels.add(dir);
+		for(File c: subDirs){
+			if(c.isDirectory()){
+				commands.add(c.getName());
 			}
 		}
 
 	}
 
-	private static String findDir(ZipEntry entry,  List<String> dirs){
+	private static void readWaveFiles(String sourceDir, String command, List<double[]> waves, List<Integer> labels, List<String> commands){
 
-		for (String dir : dirs){
-			if(entry.getName().startsWith(dir)){
-				return dir;
-			}
+		String path = sourceDir + '/' + command;
+		File dir = new File(path);
+
+		File[] waveFiles = dir.listFiles();
+		for(File file: waveFiles){
+			waves.add(ReaderWavFile.readMonoAudioFromWavFile(file.getPath()));
+			labels.add(commands.indexOf(command));
 		}
 
-		return null;
 	}
 
 }

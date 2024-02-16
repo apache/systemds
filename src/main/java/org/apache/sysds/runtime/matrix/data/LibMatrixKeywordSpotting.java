@@ -19,18 +19,19 @@
 
 package org.apache.sysds.runtime.matrix.data;
 
-import org.apache.sysds.runtime.io.*;
+import org.apache.commons.io.FileUtils;
+import org.apache.sysds.runtime.io.ReaderWavFile;
+import org.apache.sysds.runtime.io.DownloaderZip;
 
 import java.io.File;
 import java.io.IOException;
-
 
 import java.util.List;
 import java.util.ArrayList;
 
 public class LibMatrixKeywordSpotting {
 
-	public static void main(String[] args) {
+	public static void main(String[] args) throws IOException {
 
 		// download data
 		String url = "http://storage.googleapis.com/download.tensorflow.org/data/mini_speech_commands.zip";
@@ -44,8 +45,11 @@ public class LibMatrixKeywordSpotting {
 		List<Integer> labels = new ArrayList<>();
 		List<String> commands = new ArrayList<>();
 
-		String sourceDir = "./tmp/mini_speech_commands";
-		extractData(sourceDir, waves, labels, commands);
+		String sourceDirPath = "./tmp/mini_speech_commands";
+		extractData(sourceDirPath, waves, labels, commands);
+
+		// delete data
+		FileUtils.deleteDirectory(new File(sourceDirPath));
 
 		// TODO:
 		// csv for waves
@@ -55,14 +59,15 @@ public class LibMatrixKeywordSpotting {
 
 	}
 
-	private static void extractData(String sourceDir, List<double[]> waves, List<Integer> labels, List<String> commands) {
+	private static void extractData(String sourceDir, List<double[]> waves, List<Integer> labels,
+		List<String> commands) {
 
 		try {
 
 			// get directory names
 			getDirectories(sourceDir, commands);
 
-			for(String command : commands){
+			for(String command : commands) {
 				readWaveFiles(sourceDir, command, waves, labels, commands);
 			}
 
@@ -73,27 +78,28 @@ public class LibMatrixKeywordSpotting {
 
 	}
 
-
 	private static void getDirectories(String sourceDir, List<String> commands) throws IOException {
 
 		File[] subDirs = new File(sourceDir).listFiles();
-		if(subDirs == null) return;
+		if(subDirs == null)
+			return;
 
-		for(File c: subDirs){
-			if(c.isDirectory()){
+		for(File c : subDirs) {
+			if(c.isDirectory()) {
 				commands.add(c.getName());
 			}
 		}
 
 	}
 
-	private static void readWaveFiles(String sourceDir, String command, List<double[]> waves, List<Integer> labels, List<String> commands){
+	private static void readWaveFiles(String sourceDir, String command, List<double[]> waves, List<Integer> labels,
+		List<String> commands) {
 
 		String path = sourceDir + '/' + command;
 		File dir = new File(path);
 
 		File[] waveFiles = dir.listFiles();
-		for(File file: waveFiles){
+		for(File file : waveFiles) {
 			waves.add(ReaderWavFile.readMonoAudioFromWavFile(file.getPath()));
 			labels.add(commands.indexOf(command));
 		}

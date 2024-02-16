@@ -36,8 +36,10 @@ public class DownloaderZip {
 			ZipInputStream in = new ZipInputStream(
 				new BufferedInputStream(new URL(url).openConnection().getInputStream()));
 
-			ZipEntry entry;
 			int cnt = 0;
+			System.out.println("start downloading");
+
+			ZipEntry entry;
 			while((entry = in.getNextEntry()) != null) {
 				String path = dest.getPath() + '/' + entry.getName();
 				File file = new File(path);
@@ -66,14 +68,11 @@ public class DownloaderZip {
 					if(cnt % 50 == 0) {
 						System.out.println(cnt + "/8008");
 					}
-
-					// TODO: only for debugging
-					if(cnt == 200) {
-						break;
-					}
 				}
 
 			}
+
+			System.out.println("finished downloading");
 
 		}
 		catch(IOException e) {

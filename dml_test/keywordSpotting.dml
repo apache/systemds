@@ -1,0 +1,41 @@
+
+
+X = read("shuffled_features.csv", format="csv")
+y = read("shuffled_labels_minus_and_plus.csv", format="csv")
+
+# Add a train test split.
+[X_train, X_test, y_train, y_test] = split(X=X, Y=y, seed= 13)
+
+# Preprocess with fft Optionally move before split.
+[X_train_re, X_train_im] = stft(X_train, 256, 128)
+[X_test_re, X_test_im] = stft(X_test, 256, 128)
+
+
+X_train_re_sq = X_train_re^2
+X_train_im_sq = X_train_im^2
+
+
+X_test_re_sq = X_test_re^2
+X_test_im_sq = X_test_im^2
+
+
+# Sum the squared matrices
+sum_X_train_sq = X_train_re_sq + X_train_im_sq
+sum_X_test_sq = X_test_re_sq + X_test_im_sq
+
+# Compute the square root of each element in the sum matrix to get the magnitudes
+magnitudes_train = sqrt(sum_X_train_sq)
+magnitudes_test = sqrt(sum_X_test_sq)
+
+bias = lm(X=magnitudes_train, y=y_train, reg=1e-3, maxi=5, verbose=TRUE)
+predictions = lmPredict(X=magnitudes_test, B=bias, verbose=FALSE)
+
+sign_predictions = sign(predictions)
+sign_Y = sign(y_test)
+
+correct = sum(sign_predictions == sign_Y)
+total = nrow(y_test)
+accuracy = correct / total
+
+#print(toString(predictions))
+print(toString(accuracy))

@@ -46,7 +46,7 @@ public class ReaderWavFile {
 
 	}
 
-	public static int[] readMonoAudioFromWavFile(AudioInputStream audioInputStream) {
+	public static double[] readMonoAudioFromWavFile(AudioInputStream audioInputStream) {
 
 		try {
 
@@ -79,10 +79,13 @@ public class ReaderWavFile {
 			}
 
 			// close mono audio stream
+			// close mono audio stream
 			monoAudioInputStream.close();
+
 			return audioValues;
 
 		}
+		catch(IOException e) {
 		catch(IOException e) {
 			e.printStackTrace();
 			return null;

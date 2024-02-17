@@ -47,13 +47,9 @@ public class LibMatrixKeywordSpotting {
 		DownloaderZip.downloaderZip(url, dest, startsWith, endsWith);
 
 		// zip contains command folders which contain corresponding .wav files
-		// TODO: write directly into the csv
 		List<int[]> waves = new ArrayList<>();
-		List<Integer> labels = new ArrayList<>();
-		List<String> commands = new ArrayList<>();
-
-		String sourceDirPath = "./tmp/mini_speech_commands";
-		extractData(sourceDirPath, waves, labels, commands);
+		List<String> labels = new ArrayList<>();
+		loadAllData(url, waves, labels);
 
 		// delete data
 		// FileUtils.deleteDirectory(new File(sourceDirPath));
@@ -64,8 +60,7 @@ public class LibMatrixKeywordSpotting {
 
 	}
 
-	private static void extractData(String sourceDir, List<int[]> waves, List<Integer> labels,
-		List<String> commands) {
+	private static void loadAllData(String url, List<int[]> waves, List<String> labels) {
 
 		try {
 
@@ -83,17 +78,21 @@ public class LibMatrixKeywordSpotting {
 
 	}
 
-	private static void getDirectories(String sourceDir, List<String> commands) throws IOException {
+	private static byte[] getBytesZipFile(URL url) throws IOException {
 
-		File[] subDirs = new File(sourceDir).listFiles();
-		if(subDirs == null)
-			return;
+		InputStream in = url.openConnection().getInputStream();
+		// String zipFilePath = "./src/main/java/org/apache/sysds/runtime/matrix/data/mini_speech_commands_slimmed.zip";
+		// InputStream in = new FileInputStream(zipFilePath);
 
-		for(File c : subDirs) {
-			if(c.isDirectory()) {
-				commands.add(c.getName());
-			}
+		ByteArrayOutputStream out = new ByteArrayOutputStream();
+		byte[] dataBuffer = new byte[1024];
+
+		int bytesRead;
+		while((bytesRead = in.read(dataBuffer, 0, 1024)) != -1) {
+			out.write(dataBuffer, 0, bytesRead);
 		}
+
+		return out.toByteArray();
 
 	}
 
@@ -114,7 +113,7 @@ public class LibMatrixKeywordSpotting {
 
 	}
 
-	private static void readWaveFiles(byte[] zipData, List<String> dirs, List<double[]> waves, List<String> labels)
+	private static void readWaveFiles(byte[] zipData, List<String> dirs, List<int[]> waves, List<String> labels)
 		throws IOException {
 
 		ZipInputStream stream = new ZipInputStream(new ByteArrayInputStream(zipData));
@@ -131,7 +130,7 @@ public class LibMatrixKeywordSpotting {
 				AudioFormat format = new AudioFormat( AudioFormat.Encoding.PCM_SIGNED, 16000, 16, 1, 2, 16000, false);
 				int length = (int) Math.ceil((double) entry.getExtra().length / format.getFrameSize());
 				AudioInputStream audio = new AudioInputStream(new ByteArrayInputStream(entry.getExtra()), format, length);
-				double[] data = ReaderWavFile.readMonoAudioFromWavFile(audio);
+				int[] data = ReaderWavFile.readMonoAudioFromWavFile(audio);
 				waves.add(data);
 				labels.add(dir);
 			}

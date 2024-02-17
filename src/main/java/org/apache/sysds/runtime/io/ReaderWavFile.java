@@ -30,10 +30,12 @@ import javax.sound.sampled.UnsupportedAudioFileException;
 public class ReaderWavFile {
 
 	public static int[] readMonoAudioFromWavFile(String filePath) {
+	public static int[] readMonoAudioFromWavFile(String filePath) {
 
 		try {
 			// open audio file
 			AudioInputStream audioInputStream = AudioSystem.getAudioInputStream(new File(filePath));
+			int[] audioValues = readMonoAudioFromWavFile(audioInputStream);
 			int[] audioValues = readMonoAudioFromWavFile(audioInputStream);
 			audioInputStream.close();
 			return audioValues;
@@ -46,7 +48,7 @@ public class ReaderWavFile {
 
 	}
 
-	public static double[] readMonoAudioFromWavFile(AudioInputStream audioInputStream) {
+	public static int[] readMonoAudioFromWavFile(AudioInputStream audioInputStream) {
 
 		try {
 
@@ -70,9 +72,12 @@ public class ReaderWavFile {
 				return null;
 			}
 
-			// convert byte array to double array
+			// convert byte array to int array
 			int[] audioValues = new int[numFrames];
 			for(int i = 0, frameIndex = 0; i < bytesRead; i += frameSize, frameIndex++) {
+				// only use 8 most significant bits
+				int sampleValue = audioData[i + 1] << 8;
+				audioValues[frameIndex] = sampleValue;
 				// only use 8 most significant bits
 				int sampleValue = audioData[i + 1] << 8;
 				audioValues[frameIndex] = sampleValue;

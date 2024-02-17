@@ -19,39 +19,17 @@
 
 package org.apache.sysds.runtime.io;
 
-import java.io.File;
 import java.io.IOException;
 
 import javax.sound.sampled.AudioSystem;
 import javax.sound.sampled.AudioFormat;
 import javax.sound.sampled.AudioInputStream;
-import javax.sound.sampled.UnsupportedAudioFileException;
 
 public class ReaderWavFile {
-
-	public static int[] readMonoAudioFromWavFile(String filePath) {
-	public static int[] readMonoAudioFromWavFile(String filePath) {
-
-		try {
-			// open audio file
-			AudioInputStream audioInputStream = AudioSystem.getAudioInputStream(new File(filePath));
-			int[] audioValues = readMonoAudioFromWavFile(audioInputStream);
-			int[] audioValues = readMonoAudioFromWavFile(audioInputStream);
-			audioInputStream.close();
-			return audioValues;
-
-		}
-		catch(UnsupportedAudioFileException | IOException e) {
-			e.printStackTrace();
-			return null;
-		}
-
-	}
 
 	public static int[] readMonoAudioFromWavFile(AudioInputStream audioInputStream) {
 
 		try {
-
 			// collapse channels to mono channel
 			int channels = 1;
 			AudioFormat monoAudioFormat = new AudioFormat(audioInputStream.getFormat().getSampleRate(),
@@ -88,7 +66,6 @@ public class ReaderWavFile {
 			monoAudioInputStream.close();
 
 			return audioValues;
-
 		}
 		catch(IOException e) {
 		catch(IOException e) {

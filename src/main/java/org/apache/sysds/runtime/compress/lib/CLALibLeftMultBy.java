@@ -35,6 +35,7 @@ import org.apache.sysds.runtime.compress.DMLCompressionException;
 import org.apache.sysds.runtime.compress.colgroup.AColGroup;
 import org.apache.sysds.runtime.compress.colgroup.APreAgg;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.IdentityDictionary;
+import org.apache.sysds.runtime.controlprogram.parfor.stat.Timing;
 import org.apache.sysds.runtime.data.DenseBlock;
 import org.apache.sysds.runtime.data.SparseBlock;
 import org.apache.sysds.runtime.data.SparseBlockCSR;
@@ -420,11 +421,11 @@ public final class CLALibLeftMultBy {
 						final int startC = bloC;
 						final int endC = Math.min(bloC + colBlockSize, ct);
 						npaSubTask.add(pool.submit(() -> {
-							// Timing t = new Timing();
+							Timing t = new Timing();
 							final double[] tmp = new double[ret.getNumRows() * ret.getNumColumns()];
 							final MatrixBlock tmpBlock = new MatrixBlock(ret.getNumRows(), ret.getNumColumns(), tmp);
 							g.leftMultByMatrixNoPreAgg(that, tmpBlock, start, end, startC, endC);
-							// LOG.debug("noPreAggTiming: " + t);
+							LOG.debug("noPreAggTiming: " + t);
 							return tmpBlock;
 						}));
 					}

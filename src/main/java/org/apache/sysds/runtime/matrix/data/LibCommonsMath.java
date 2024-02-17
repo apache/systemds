@@ -400,7 +400,7 @@ public class LibCommonsMath
 	 * @param re matrix object
 	 * @return array of matrix blocks
 	 */
-	computeIFFT_LINEARIZED(MatrixBlock re){
+	private static MatrixBlock[] computeIFFT_LINEARIZED(MatrixBlock re){
 		return computeIFFT_LINEARIZED(re, null);
 	}
 

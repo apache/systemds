@@ -345,8 +345,8 @@ public class LibCommonsMath
 			return new MatrixBlock[]{re, new MatrixBlock(re.getNumRows(), re.getNumColumns(), true)}; // Assuming you need to return two matrices: the real part and an imaginary part initialized to 0.
 		}
 		// run fft
-		re.sparseToDense();
-		return fft(re, threads);
+		in.sparseToDense();
+		return fft(in);
 	}
 
 	private static boolean isMatrixAllZeros(MatrixBlock matrix) {
@@ -493,16 +493,6 @@ public class LibCommonsMath
 			re.sparseToDense();
 			return stft(re, windowSize, overlap, threads);
 		}
-	}
-
-	/**
-	 * Function to perform STFT on a given matrix.
-	 *
-	 * @param re matrix object
-	 * @return array of matrix blocks
-	 */
-	private static MatrixBlock[] computeSTFT(MatrixBlock re, int windowSize, int overlap, int threads) {
-		return computeSTFT(re, null, windowSize, overlap, threads);
 	}
 
 	/**

@@ -108,6 +108,10 @@ public class LibMatrixKeywordSpotting {
 			}
 		}
 
+		commandsCSV.close();
+		labelsCSV.close();
+		wavesCSV.close();
+
 	}
 
 	private static boolean isWavFileToProcess(ZipEntry entry) {

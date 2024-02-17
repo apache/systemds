@@ -63,8 +63,10 @@ public class LibMatrixSTFT {
 		for (int h = 0; h < rows; h++){
 			for (int i = 0; i < numberOfFramesPerRow; i++) {
 				for (int j = 0; j < windowSize; j++) {
-					stftOutput_re[h * rowLength + i * windowSize + j] = ((i * stepSize + j) < cols) ? re.getDenseBlockValues()[h * cols + i * stepSize + j] : 0;
-					stftOutput_im[h * rowLength + i * windowSize + j] = ((i * stepSize + j) < cols) ? im.getDenseBlockValues()[h * cols + i * stepSize + j] : 0;
+					if ((i * stepSize + j) < cols) {
+						stftOutput_re[h * rowLength + i * windowSize + j] = re.getDenseBlockValues()[h * cols + i * stepSize + j];
+						stftOutput_im[h * rowLength + i * windowSize + j] = im.getDenseBlockValues()[h * cols + i * stepSize + j];
+					}
 				}
 				fft_one_dim(stftOutput_re, stftOutput_im, re_inter, im_inter, h * rowLength + i * windowSize, h * rowLength + (i+1) * windowSize, windowSize, 1);
 			}

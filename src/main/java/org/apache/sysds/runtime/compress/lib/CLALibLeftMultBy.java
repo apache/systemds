@@ -353,7 +353,7 @@ public final class CLALibLeftMultBy {
 
 			// final double outerProd = t.stop();
 			// if(LOG.isDebugEnabled()) {
-			// 	LOG.debug(String.format("LLM: filter: %10f Mult: %10f outer: %10f", filterGroupsTime, multTime, outerProd));
+			// LOG.debug(String.format("LLM: filter: %10f Mult: %10f outer: %10f", filterGroupsTime, multTime, outerProd));
 			// }
 		}
 		else {
@@ -412,30 +412,38 @@ public final class CLALibLeftMultBy {
 
 			for(AColGroup g : npa) { // all groups get their own task
 				final List<Future<MatrixBlock>> npaSubTask = new ArrayList<>();
-				final int colBlockSize = Math.max(ct / k, 64000);
+				if(ret.getNumColumns() < 1000000) {
 
-				for(int bloC = 0; bloC < ct; bloC += colBlockSize) {
-					final int startC = bloC;
-					final int endC = Math.min(bloC + colBlockSize, ct);
-					npaSubTask.add(pool.submit(() -> {
-						// Timing t = new Timing();
-						double[] tmp = new double[ret.getNumRows()* ret.getNumColumns()];
-						MatrixBlock tmpBlock = new MatrixBlock(ret.getNumRows(), ret.getNumColumns(), tmp);
-						g.leftMultByMatrixNoPreAgg(that, tmpBlock, start, end, startC, endC);
-						// LOG.debug("noPreAggTiming: " + t);
-						return tmpBlock;
+					final int colBlockSize = Math.max(ct / Math.max((k - pa.size()), 2), 64000);
+
+					for(int bloC = 0; bloC < ct; bloC += colBlockSize) {
+						final int startC = bloC;
+						final int endC = Math.min(bloC + colBlockSize, ct);
+						npaSubTask.add(pool.submit(() -> {
+							// Timing t = new Timing();
+							final double[] tmp = new double[ret.getNumRows() * ret.getNumColumns()];
+							final MatrixBlock tmpBlock = new MatrixBlock(ret.getNumRows(), ret.getNumColumns(), tmp);
+							g.leftMultByMatrixNoPreAgg(that, tmpBlock, start, end, startC, endC);
+							// LOG.debug("noPreAggTiming: " + t);
+							return tmpBlock;
+						}));
+					}
+
+					tasks.add(pool.submit(() -> {
+						try {
+							for(Future<MatrixBlock> f : npaSubTask)
+								addInPlace(f.get(), ret);
+						}
+						catch(InterruptedException | ExecutionException e) {
+							throw new RuntimeException(e);
+						}
 					}));
 				}
-
-				tasks.add(pool.submit(() -> {
-					try {
-						for(Future<MatrixBlock> f : npaSubTask) 
-							addInPlace(f.get(), ret);
-					}
-					catch(InterruptedException | ExecutionException e) {
-						throw new RuntimeException(e);
-					}
-				}));
+				else {
+					tasks.add(pool.submit(() -> {
+						g.leftMultByMatrixNoPreAgg(that, ret, start, end, 0, ct);
+					}));
+				}
 
 			}
 

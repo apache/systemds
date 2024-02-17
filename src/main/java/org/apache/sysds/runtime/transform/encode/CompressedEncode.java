@@ -124,15 +124,12 @@ public class CompressedEncode {
 
 	private List<AColGroup> multiThread(List<ColumnEncoderComposite> encoders)
 		throws InterruptedException, ExecutionException {
-
 		try {
-			List<EncodeTask> tasks = new ArrayList<>(encoders.size());
-
+			List<Future<AColGroup>> tasks = new ArrayList<>(encoders.size());
 			for(ColumnEncoderComposite c : encoders)
-				tasks.add(new EncodeTask(c));
-
+				tasks.add(pool.submit(() -> encode(c)));
 			List<AColGroup> groups = new ArrayList<>(encoders.size());
-			for(Future<AColGroup> t : pool.invokeAll(tasks))
+			for(Future<AColGroup> t : tasks)
 				groups.add(t.get());
 			return groups;
 		}
@@ -507,19 +504,6 @@ public class CompressedEncode {
 		ADictionary d = new IdentityDictionary(colIndexes.size(), nulls);
 		AMapToData m = createHashMappingAMapToData(a, domain, nulls);
 		return ColGroupDDC.create(colIndexes, d, m, null);
-	}
-
-	private class EncodeTask implements Callable<AColGroup> {
-
-		ColumnEncoderComposite c;
-
-		protected EncodeTask(ColumnEncoderComposite c) {
-			this.c = c;
-		}
-
-		public AColGroup call() throws Exception {
-			return encode(c);
-		}
 	}
 
 	private void logging(MatrixBlock mb) {

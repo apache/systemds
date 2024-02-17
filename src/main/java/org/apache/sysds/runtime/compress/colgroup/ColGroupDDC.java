@@ -32,9 +32,12 @@ import org.apache.sysds.runtime.compress.DMLCompressionException;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.Dictionary;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.DictionaryFactory;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.IDictionary;
+import org.apache.sysds.runtime.compress.colgroup.dictionary.IdentityDictionary;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.MatrixBlockDictionary;
+import org.apache.sysds.runtime.compress.colgroup.indexes.ArrayIndex;
 import org.apache.sysds.runtime.compress.colgroup.indexes.ColIndexFactory;
 import org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex;
+import org.apache.sysds.runtime.compress.colgroup.indexes.RangeIndex;
 import org.apache.sysds.runtime.compress.colgroup.mapping.AMapToData;
 import org.apache.sysds.runtime.compress.colgroup.mapping.MapToFactory;
 import org.apache.sysds.runtime.compress.colgroup.offset.AOffsetIterator;
@@ -538,6 +541,37 @@ public class ColGroupDDC extends APreAgg implements IMapToDataGroup {
 	@Override
 	public void preAggregateDense(MatrixBlock m, double[] preAgg, int rl, int ru, int cl, int cu) {
 		_data.preAggregateDense(m, preAgg, rl, ru, cl, cu);
+	}
+
+	@Override
+	public void leftMMIdentityPreAggregateDense(MatrixBlock that, MatrixBlock ret, int rl, int ru, int cl, int cu) {
+		DenseBlock db = that.getDenseBlock();
+		DenseBlock retDB = ret.getDenseBlock();
+		if(rl == ru - 1)
+			leftMMIdentityPreAggregateDenseSingleRow(db.values(rl), db.pos(rl), retDB.values(rl), retDB.pos(rl), cl, cu);
+		else
+			throw new NotImplementedException();
+	}
+
+	private void leftMMIdentityPreAggregateDenseSingleRow(double[] values, int pos, double[] values2, int pos2, int cl,
+		int cu) {
+		IdentityDictionary a = (IdentityDictionary) _dict;
+		if(!(_colIndexes instanceof RangeIndex))
+			throw new NotImplementedException();
+		final int firstCol = _colIndexes.get(0);
+		pos += cl; // left side matrix position offset.
+		if(a.withEmpty()) {
+			final int nVal = _dict.getNumberOfValues(_colIndexes.size()) - 1;
+			for(int rc = cl; rc < cu; rc++, pos++) {
+				final int idx = _data.getIndex(rc);
+				if(idx != nVal)
+					values2[firstCol + idx] += values[pos];
+			}
+		}
+		else {
+			for(int rc = cl; rc < cu; rc++, pos++)
+				values2[firstCol + _data.getIndex(rc)] += values[pos];
+		}
 	}
 
 	@Override

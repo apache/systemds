@@ -118,6 +118,10 @@ public class IdentityDictionary extends ADictionary {
 		return r == c ? 1 : 0;
 	}
 
+	public boolean withEmpty(){
+		return withEmpty;
+	}
+
 	@Override
 	public long getInMemorySize() {
 		return 4 + 4 + 8; // int + padding + softReference

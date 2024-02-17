@@ -137,7 +137,7 @@ public class MapToInt extends AMapToData {
 	}
 
 	@Override
-	protected void preAggregateDenseToRowVec8(double[] mV, double[] preAV, int rc, int off){
+	protected void preAggregateDenseToRowVec8(double[] mV, double[] preAV, int rc, int off) {
 		preAV[getIndex(rc)] += mV[off];
 		preAV[getIndex(rc + 1)] += mV[off + 1];
 		preAV[getIndex(rc + 2)] += mV[off + 2];
@@ -147,7 +147,6 @@ public class MapToInt extends AMapToData {
 		preAV[getIndex(rc + 6)] += mV[off + 6];
 		preAV[getIndex(rc + 7)] += mV[off + 7];
 	}
-
 
 	@Override
 	protected void preAggregateDenseMultiRowContiguousBy8(double[] mV, int nCol, int nVal, double[] preAV, int rl,
@@ -290,5 +289,30 @@ public class MapToInt extends AMapToData {
 		return e instanceof MapToInt && //
 			e.getUnique() == getUnique() && //
 			Arrays.equals(((MapToInt) e)._data, _data);
+	}
+
+	@Override
+	public void decompressToRange(double[] c, int rl, int ru, int offR, double[] values) {
+		// OVERWRITTEN FOR JIT COMPILE!
+		if(offR == 0)
+			decompressToRangeNoOff(c, rl, ru, values);
+		else
+			decompressToRangeOff(c, rl, ru, offR, values);
+	}
+
+	@Override
+	public void decompressToRangeOff(double[] c, int rl, int ru, int offR, double[] values) {
+		for(int i = rl, offT = rl + offR; i < ru; i++, offT++)
+			c[offT] += values[getIndex(i)];
+	}
+
+	@Override
+	public void decompressToRangeNoOff(double[] c, int rl, int ru, double[] values) {
+		// OVERWRITTEN FOR JIT COMPILE!
+		final int h = (ru - rl) % 8;
+		for(int rc = rl; rc < rl + h; rc++)
+			c[rc] += values[getIndex(rc)];
+		for(int rc = rl + h; rc < ru; rc += 8)
+			decompressToRangeNoOffBy8(c, rc, values);
 	}
 }

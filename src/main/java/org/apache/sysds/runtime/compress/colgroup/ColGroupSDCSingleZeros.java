@@ -367,6 +367,12 @@ public class ColGroupSDCSingleZeros extends ASDCZero {
 			preAggregateDenseGeneric(m, preAgg, rl, ru, cl, cu);
 	}
 
+	@Override
+	public void leftMMIdentityPreAggregateDense(MatrixBlock that, MatrixBlock ret, int rl, int ru, int cl,
+	int cu){
+		throw new NotImplementedException();
+	}
+
 	private void preAggregateDenseGeneric(MatrixBlock m, double[] preAgg, int rl, int ru, int cl, int cu) {
 		final AIterator it = _indexes.getIterator(cl);
 		final DenseBlock db = m.getDenseBlock();

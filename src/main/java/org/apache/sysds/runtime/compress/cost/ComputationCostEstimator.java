@@ -146,7 +146,10 @@ public class ComputationCostEstimator extends ACostEstimate {
 	private double leftMultCost(double nRowsScanned, double nRows, double nCols, double nVals, double sparsity) {
 		// left multiplication want more co-coding.
 		// therefore, increase the cost if we have few columns
-		double preScalingCost = Math.max(nRowsScanned, nRows);
+		double preScalingCost = Math.max(nRowsScanned, nRows) * 2;
+		if ((nCols == nVals || nCols == nVals +1) && nVals > 1000){
+				preScalingCost = 0;
+		}
 		// if(nCols == 1) {
 		// 	nCols *= 4;
 		// 	preScalingCost *= 5.0;

@@ -341,8 +341,10 @@ public class MapToChar extends AMapToData {
 		for(int i = apos; i < alen; i++)
 			dict.multiplyScalar(aval[i], retV, pos, getIndex(aix[i]), colIndexes);
 	}
+
 	@Override
 	public void decompressToRange(double[] c, int rl, int ru, int offR, double[] values) {
+		// OVERWRITTEN FOR JIT COMPILE!
 		if(offR == 0)
 			decompressToRangeNoOff(c, rl, ru, values);
 		else

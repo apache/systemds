@@ -191,7 +191,7 @@ public class ColGroupEmpty extends AColGroupCompressed
 	}
 
 	@Override
-	public AColGroup rightMultByMatrix(MatrixBlock right, IColIndex allCols) {
+	public AColGroup rightMultByMatrix(MatrixBlock right, IColIndex allCols, int k) {
 		return null;
 	}
 

@@ -1822,8 +1822,8 @@ public class ColGroupTest extends ColGroupBase {
 	public void rightMultWithAllCols(MatrixBlock right) {
 		try {
 			final IColIndex cols = ColIndexFactory.create(right.getNumColumns());
-			AColGroup b = base.rightMultByMatrix(right, cols);
-			AColGroup o = other.rightMultByMatrix(right, cols);
+			AColGroup b = base.rightMultByMatrix(right, cols, 1);
+			AColGroup o = other.rightMultByMatrix(right, cols, 1);
 			if(!(b == null && o == null))
 				compare(b, o);
 		}

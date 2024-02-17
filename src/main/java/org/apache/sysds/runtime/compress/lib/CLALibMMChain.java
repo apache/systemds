@@ -117,8 +117,6 @@ public final class CLALibMMChain {
 
 		double decompressTime = t.stop();
 
-
-
 		if(tmp instanceof CompressedMatrixBlock) 
 			// Compressed Compressed Matrix Multiplication
 			CLALibLeftMultBy.leftMultByMatrixTransposed(x, (CompressedMatrixBlock) tmp, out, k);

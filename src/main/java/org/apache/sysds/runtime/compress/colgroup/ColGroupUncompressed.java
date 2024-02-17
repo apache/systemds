@@ -368,40 +368,49 @@ public class ColGroupUncompressed extends AColGroup {
 	}
 
 	protected void lmmNPDense(double[] mV, int nCol, double[] retV, int nColRet, int rl, int ru, int cl, int cu) {
+		if(_data.isInSparseFormat())
+			lmmNPDenseSparse(mV, nCol, retV, nColRet, rl, ru, cl, cu);
+		else
+			lmmNPDenseDense(mV, nCol, retV, nColRet, rl, ru, cl, cu);
+	}
 
-		if(_data.isInSparseFormat()) {
-			final SparseBlock sb = _data.getSparseBlock();
-			for(int r = rl; r < ru; r++) {
-				final int off = r * nCol;
-				final int offR = r * nColRet;
-				for(int c = cl; c < cu; c++) {
-					if(sb.isEmpty(c))
-						continue;
-					final int apos = sb.pos(c);
-					final int alen = sb.size(c) + apos;
-					final int[] aix = sb.indexes(c);
-					final double[] aval = sb.values(c);
-					final double v = mV[off + c];
-					for(int i = apos; i < alen; i++)
-						retV[offR + _colIndexes.get(aix[i])] += v * aval[i];
-
-				}
+	protected void lmmNPDenseSparse(double[] mV, int nCol, double[] retV, int nColRet, int rl, int ru, int cl, int cu) {
+		final SparseBlock sb = _data.getSparseBlock();
+		for(int r = rl; r < ru; r++) {
+			final int off = r * nCol;
+			final int offR = r * nColRet;
+			for(int c = cl; c < cu; c++) {
+				if(sb.isEmpty(c))
+					continue;
+				final int apos = sb.pos(c);
+				final int alen = sb.size(c) + apos;
+				final int[] aix = sb.indexes(c);
+				final double[] aval = sb.values(c);
+				final double v = mV[off + c];
+				for(int i = apos; i < alen; i++)
+					retV[offR + _colIndexes.get(aix[i])] += v * aval[i];
 			}
 		}
-		else {
-			final double[] dV = _data.getDenseBlockValues();
-			final int nColD = _colIndexes.size();
-			for(int r = rl; r < ru; r++) { // I
-				final int off = r * nCol;
-				final int offR = r * nColRet;
-				for(int c = cl; c < cu; c++) { // K
-					final int offD = c * nColD;
-					final double v = mV[off + c];
-					for(int i = 0; i < nColD; i++) // J
-						retV[offR + _colIndexes.get(i)] += v * dV[offD + i];
-				}
+	}
+
+	protected void lmmNPDenseDense(double[] mV, int nCol, double[] retV, int nColRet, int rl, int ru, int cl, int cu) {
+		final double[] dV = _data.getDenseBlockValues();
+		final int nColD = _colIndexes.size();
+		for(int r = rl; r < ru; r++) { // I
+			final int off = r * nCol;
+			final int offR = r * nColRet;
+			for(int c = cl; c < cu; c++) { // K
+				lmmNPDenseDenseJ(nColD, c, mV, off, retV, offR, dV);
 			}
 		}
+	}
+
+	private void lmmNPDenseDenseJ(final int nColD, final int c, final double[] mV, final int off, final double[] retV,
+		final int offR, final double[] dV) {
+		final int offD = c * nColD;
+		final double v = mV[off + c];
+		for(int i = 0; i < nColD; i++) // J
+			retV[offR + _colIndexes.get(i)] += v * dV[offD + i];
 	}
 
 	@Override
@@ -751,7 +760,7 @@ public class ColGroupUncompressed extends AColGroup {
 	}
 
 	@Override
-	public AColGroup rightMultByMatrix(MatrixBlock right, IColIndex allCols) {
+	public AColGroup rightMultByMatrix(MatrixBlock right, IColIndex allCols, int k) {
 		final int nColR = right.getNumColumns();
 		final IColIndex outputCols = allCols != null ? allCols : ColIndexFactory.create(nColR);
 
@@ -787,7 +796,7 @@ public class ColGroupUncompressed extends AColGroup {
 			subBlockRight.setNonZeros(_data.getNumColumns() * nColR);
 		}
 		MatrixBlock out = new MatrixBlock(_data.getNumRows(), nColR, false);
-		LibMatrixMult.matrixMult(_data, subBlockRight, out);
+		LibMatrixMult.matrixMult(_data, subBlockRight, out, k);
 		return create(out, outputCols);
 
 	}

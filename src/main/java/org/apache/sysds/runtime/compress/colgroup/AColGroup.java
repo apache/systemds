@@ -369,7 +369,7 @@ public abstract class AColGroup implements Serializable {
 	 * @return The new Column Group or null that is the result of the matrix multiplication.
 	 */
 	public final AColGroup rightMultByMatrix(MatrixBlock right) {
-		return rightMultByMatrix(right, null);
+		return rightMultByMatrix(right, null, 1);
 	}
 
 	/**
@@ -382,7 +382,7 @@ public abstract class AColGroup implements Serializable {
 	 *                full, can be set to null.
 	 * @return The new Column Group or null that is the result of the matrix multiplication.
 	 */
-	public abstract AColGroup rightMultByMatrix(MatrixBlock right, IColIndex allCols);
+	public abstract AColGroup rightMultByMatrix(MatrixBlock right, IColIndex allCols, int k);
 
 	/**
 	 * Do a transposed self matrix multiplication on the left side t(x) %*% x. but only with this column group.

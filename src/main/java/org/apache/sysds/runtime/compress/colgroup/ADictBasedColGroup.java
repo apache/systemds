@@ -243,7 +243,7 @@ public abstract class ADictBasedColGroup extends AColGroupCompressed implements 
 	}
 
 	@Override
-	public final AColGroup rightMultByMatrix(MatrixBlock right, IColIndex allCols) {
+	public final AColGroup rightMultByMatrix(MatrixBlock right, IColIndex allCols, int k) {
 		if(right.isEmpty())
 			return null;
 

@@ -164,7 +164,7 @@ public final class CLALibDecompress {
 		int colOffset, int nRows, int k, boolean reset) {
 
 		final int blklen = Math.max(nRows / k, 512);
-		ExecutorService pool = CommonThreadPool.get(k);
+		final ExecutorService pool = CommonThreadPool.get(k);
 		try {
 			List<Future<?>> tasks = new ArrayList<>(nRows / blklen);
 			for(int r = 0; r < nRows; r += blklen) {

@@ -542,6 +542,12 @@ public class ColGroupSDCZeros extends ASDCZero implements IMapToDataGroup {
 	}
 
 	@Override
+	public void leftMMIdentityPreAggregateDense(MatrixBlock that, MatrixBlock ret, int rl, int ru, int cl,
+	int cu){
+		throw new NotImplementedException();
+	}
+
+	@Override
 	public void preAggregateSparse(SparseBlock sb, double[] preAgg, int rl, int ru, int cl, int cu) {
 		if(cl != 0 || cu < _indexes.getOffsetToLast()) {
 			throw new NotImplementedException();

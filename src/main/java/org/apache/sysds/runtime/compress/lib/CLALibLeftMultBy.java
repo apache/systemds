@@ -21,8 +21,6 @@ package org.apache.sysds.runtime.compress.lib;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
-import java.util.Comparator;
 import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
@@ -36,7 +34,7 @@ import org.apache.sysds.runtime.compress.CompressedMatrixBlock;
 import org.apache.sysds.runtime.compress.DMLCompressionException;
 import org.apache.sysds.runtime.compress.colgroup.AColGroup;
 import org.apache.sysds.runtime.compress.colgroup.APreAgg;
-import org.apache.sysds.runtime.controlprogram.parfor.stat.Timing;
+import org.apache.sysds.runtime.compress.colgroup.dictionary.IdentityDictionary;
 import org.apache.sysds.runtime.data.DenseBlock;
 import org.apache.sysds.runtime.data.SparseBlock;
 import org.apache.sysds.runtime.data.SparseBlockCSR;
@@ -313,7 +311,7 @@ public final class CLALibLeftMultBy {
 		final List<APreAgg> preAggGroups = new ArrayList<>();
 
 		if(shouldFilter) {
-			Timing t = new Timing();
+			// Timing t = new Timing();
 			final double[] constV;
 			// if(CLALibUtils.alreadyPreFiltered(colGroups, ret.getNumColumns())) {
 			// constV = CLALibUtils.filterGroupsAndSplitPreAggOneConst(colGroups, noPreAggGroups, preAggGroups);
@@ -323,7 +321,7 @@ public final class CLALibLeftMultBy {
 			CLALibUtils.filterGroupsAndSplitPreAgg(colGroups, constV, noPreAggGroups, preAggGroups);
 			// }
 
-			final double filterGroupsTime = t.stop();
+			// final double filterGroupsTime = t.stop();
 
 			// Sort so that the big expensive preAgg groups are first to balance threads
 			// if(k * 2 < colGroups.size())
@@ -341,7 +339,7 @@ public final class CLALibLeftMultBy {
 			else
 				rowSums = that.rowSum(k).getDenseBlockValues();
 
-			final double multTime = t.stop();
+			// final double multTime = t.stop();
 
 			// add the correction layer for the subtracted common values.
 			if(rowSums != null) {
@@ -353,15 +351,15 @@ public final class CLALibLeftMultBy {
 			}
 			releaseThreadLocal(); // done
 
-			final double outerProd = t.stop();
-			if(LOG.isDebugEnabled()) {
-				LOG.debug(String.format("LLM: filter: %10f Mult: %10f outer: %10f", filterGroupsTime, multTime, outerProd));
-			}
+			// final double outerProd = t.stop();
+			// if(LOG.isDebugEnabled()) {
+			// 	LOG.debug(String.format("LLM: filter: %10f Mult: %10f outer: %10f", filterGroupsTime, multTime, outerProd));
+			// }
 		}
 		else {
 			CLALibUtils.splitPreAgg(colGroups, noPreAggGroups, preAggGroups);
 			// Sort so that the big expensive preAgg groups are first.
-			Collections.sort(preAggGroups, Comparator.comparing(AColGroup::getNumValues).reversed());
+			// Collections.sort(preAggGroups, Comparator.comparing(AColGroup::getNumValues).reversed());
 			if(k == 1 || colGroups.size() == 1)
 				LMMTaskExec(noPreAggGroups, preAggGroups, that, ret, 0, lr, null, k);
 			else
@@ -413,7 +411,32 @@ public final class CLALibLeftMultBy {
 			final int end = Math.min(blo + rowBlockSize, rt);
 
 			for(AColGroup g : npa) { // all groups get their own task
-				tasks.add(pool.submit(() -> g.leftMultByMatrixNoPreAgg(that, ret, start, end, 0, that.getNumColumns())));
+				final List<Future<MatrixBlock>> npaSubTask = new ArrayList<>();
+				final int colBlockSize = Math.max(ct / k, 64000);
+
+				for(int bloC = 0; bloC < ct; bloC += colBlockSize) {
+					final int startC = bloC;
+					final int endC = Math.min(bloC + colBlockSize, ct);
+					npaSubTask.add(pool.submit(() -> {
+						// Timing t = new Timing();
+						double[] tmp = new double[ret.getNumRows()* ret.getNumColumns()];
+						MatrixBlock tmpBlock = new MatrixBlock(ret.getNumRows(), ret.getNumColumns(), tmp);
+						g.leftMultByMatrixNoPreAgg(that, tmpBlock, start, end, startC, endC);
+						// LOG.debug("noPreAggTiming: " + t);
+						return tmpBlock;
+					}));
+				}
+
+				tasks.add(pool.submit(() -> {
+					try {
+						for(Future<MatrixBlock> f : npaSubTask) 
+							addInPlace(f.get(), ret);
+					}
+					catch(InterruptedException | ExecutionException e) {
+						throw new RuntimeException(e);
+					}
+				}));
+
 			}
 
 			for(int off = 0; off < s; off++) { // only allocate k tasks at max
@@ -449,8 +472,8 @@ public final class CLALibLeftMultBy {
 		final int threadsUsedOnColBlocks = (int) Math.ceil((double) ct / colBlockSize);
 		k = k / threadsUsedOnColBlocks;
 
-		LOG.error(
-			"LMM threading: " + threadsUsedOnRows + " " + threadsUsedOnColBlocks + " " + s + " Threads Left: -> " + k);
+		// LOG.error(
+		// "LMM threading: " + threadsUsedOnRows + " " + threadsUsedOnColBlocks + " " + s + " Threads Left: -> " + k);
 
 		final ArrayList<Future<MatrixBlock>> tasks = new ArrayList<>();
 		// allocate temp
@@ -700,6 +723,7 @@ public final class CLALibLeftMultBy {
 	private static void LMMWithPreAggDense(final List<APreAgg> preAggCGs, final MatrixBlock that, final MatrixBlock ret,
 		final int rl, final int ru, final int cl, final int cu, final int off, final int skip, final double[] rowSum,
 		final int k) throws InterruptedException, ExecutionException {
+		// Timing t = new Timing();
 
 		// ExecutorService pool = CommonThreadPool.get(k);
 		/** The column block size for preAggregating column groups */
@@ -721,7 +745,7 @@ public final class CLALibLeftMultBy {
 
 		// Allocate temporary Result matrix
 		// guaranteed to be large enough for all groups
-		final MatrixBlock tmpRes = new MatrixBlock(rowBlockSize, ret.getNumColumns(), false);
+		MatrixBlock tmpRes = null;
 
 		// For each row block
 		for(int rlt = rl; rlt < ru; rlt += rowBlockSize) {
@@ -731,19 +755,13 @@ public final class CLALibLeftMultBy {
 				final int gu = Math.min(gl + (colGroupBlocking * skip), nColGroups);
 				// For each column group in the current block allocate the pre aggregate array.
 				// or reset the pre aggregate.
-				for(int j = gl, p = 0; j < gu; j += skip, p++) {
-					final int preAggNCol = preAggCGs.get(j).getPreAggregateSize();
-					final int len = (rut - rlt) * preAggNCol;
-					if(preAgg[p] == null || preAgg[p].length < len)
-						preAgg[p] = new double[len];
-					else
-						Arrays.fill(preAgg[p], 0, (rut - rlt) * preAggNCol, 0);
-				}
+				for(int j = gl, p = 0; j < gu; j += skip, p++)
+					preAllocate(preAggCGs, j, rut, rlt, preAgg, p);
 
 				for(int clt = cl; clt < cu; clt += colBZ) {
 					final int cut = Math.min(clt + colBZ, cu);
 					for(int j = gl, p = 0; j < gu; j += skip, p++)
-						preAggCGs.get(j).preAggregateDense(that, preAgg[p], rlt, rut, clt, cut);
+						preAggregate(that, ret, preAggCGs, rut, rlt, clt, cut, j, preAgg, p);
 					if(gu == nColGroups)
 						rowSum(that, rowSum, rlt, rut, clt, cut);
 				}
@@ -751,12 +769,46 @@ public final class CLALibLeftMultBy {
 				// Multiply out the PreAggregate to the output matrix.
 				for(int j = gl, p = 0; j < gu; j += skip, p++) {
 					final APreAgg cg = preAggCGs.get(j);
-					final int preAggNCol = cg.getPreAggregateSize();
-					final MatrixBlock preAggThis = new MatrixBlock((rut - rlt), preAggNCol, preAgg[p]);
-					cg.mmWithDictionary(preAggThis, tmpRes, ret, 1, rlt, rut);
+					if(cg.getDictionary() instanceof IdentityDictionary)
+						continue;
+
+					if(tmpRes == null)
+						tmpRes = new MatrixBlock(rowBlockSize, ret.getNumColumns(), false);
+					postMultiply(ret, tmpRes, preAgg, p, cg, rut, rlt);
 				}
 			}
 		}
+
+		// LOG.debug("SingleCallLMMTime: " + t.stop());
+	}
+
+	private static void preAllocate(List<APreAgg> preAggCGs, int j, int rut, int rlt, double[][] preAgg, int p) {
+		final APreAgg cg = preAggCGs.get(j);
+		if(cg.getDictionary() instanceof IdentityDictionary)
+			return;
+		final int preAggNCol = cg.getPreAggregateSize();
+
+		final int len = (rut - rlt) * preAggNCol;
+		if(preAgg[p] == null || preAgg[p].length < len)
+			preAgg[p] = new double[len];
+		else
+			Arrays.fill(preAgg[p], 0, (rut - rlt) * preAggNCol, 0);
+	}
+
+	private static void preAggregate(MatrixBlock that, MatrixBlock ret, List<APreAgg> preAggCGs, int rut, int rlt,
+		int clt, int cut, int j, double[][] preAgg, int p) {
+		final APreAgg cg = preAggCGs.get(j);
+		if(cg.getDictionary() instanceof IdentityDictionary)
+			cg.leftMMIdentityPreAggregateDense(that, ret, rlt, rut, clt, cut);
+		else
+			cg.preAggregateDense(that, preAgg[p], rlt, rut, clt, cut);
+	}
+
+	private static void postMultiply(MatrixBlock ret, MatrixBlock tmpRes, double[][] preAgg, int p, APreAgg cg, int rut,
+		int rlt) {
+		final int preAggNCol = cg.getPreAggregateSize();
+		final MatrixBlock preAggThis = new MatrixBlock((rut - rlt), preAggNCol, preAgg[p]);
+		cg.mmWithDictionary(preAggThis, tmpRes, ret, 1, rlt, rut);
 	}
 
 	public static double[] rowSum(MatrixBlock mb, int rl, int ru, int cl, int cu) {
@@ -797,6 +849,7 @@ public final class CLALibLeftMultBy {
 
 	private static void rowSumDense(MatrixBlock that, double[] rowSum, int rl, int ru, int cl, int cu) {
 		if(rowSum != null) {
+			// Timing t = new Timing();
 			final DenseBlock db = that.getDenseBlock();
 			if(db == null) {
 				throw new DMLCompressionException("Invalid call should not happen that the matrix block is sparse");
@@ -821,46 +874,48 @@ public final class CLALibLeftMultBy {
 					rowSum[r] += tmp;
 				}
 			}
+
+			// LOG.debug("RowSumTiming: " + t.stop());
 		}
 	}
 
-	private  static double[] getThreadLocalDoubleArray(int nCells) {
+	private static double[] getThreadLocalDoubleArray(int nCells) {
 		return new double[nCells];
 		// final double[] tmpArr;
 		// if(cacheIntermediate == null) {
-		// 	tmpArr = new double[nCells];
-		// 	cacheIntermediate = new ThreadLocal<>();
-		// 	cacheIntermediate.set(new Pair<>(true, tmpArr));
+		// tmpArr = new double[nCells];
+		// cacheIntermediate = new ThreadLocal<>();
+		// cacheIntermediate.set(new Pair<>(true, tmpArr));
 		// }
 		// else {
-		// 	final Pair<Boolean, double[]> cachedArr = cacheIntermediate.get();
-		// 	if(cachedArr == null) {
-		// 		tmpArr = new double[nCells];
-		// 		cacheIntermediate.set(new Pair<>(true, tmpArr));
-		// 	}
-		// 	else if(cachedArr.getKey())
-		// 		tmpArr = new double[nCells]; // already in use return new allocation.
-		// 	else { // not in use, great fill with zeros.
-		// 		tmpArr = cachedArr.getValue();
-		// 		if(tmpArr.length < nCells) {
-		// 			double[] tmp2 = new double[nCells];
-		// 			cacheIntermediate.set(new Pair<>(true, tmp2));
-		// 			return tmp2;
-		// 		}
-		// 		cacheIntermediate.set(new Pair<>(true, tmpArr));
-		// 		Arrays.fill(tmpArr, 0, nCells, 0.0);
-		// 	}
+		// final Pair<Boolean, double[]> cachedArr = cacheIntermediate.get();
+		// if(cachedArr == null) {
+		// tmpArr = new double[nCells];
+		// cacheIntermediate.set(new Pair<>(true, tmpArr));
+		// }
+		// else if(cachedArr.getKey())
+		// tmpArr = new double[nCells]; // already in use return new allocation.
+		// else { // not in use, great fill with zeros.
+		// tmpArr = cachedArr.getValue();
+		// if(tmpArr.length < nCells) {
+		// double[] tmp2 = new double[nCells];
+		// cacheIntermediate.set(new Pair<>(true, tmp2));
+		// return tmp2;
+		// }
+		// cacheIntermediate.set(new Pair<>(true, tmpArr));
+		// Arrays.fill(tmpArr, 0, nCells, 0.0);
+		// }
 		// }
 		// return tmpArr;
 	}
 
-	private  static void releaseThreadLocal() {
+	private static void releaseThreadLocal() {
 
-	// 	if(cacheIntermediate != null) {
-	// 		final Pair<Boolean, double[]> cachedArr = cacheIntermediate.get();
-	// 		cacheIntermediate.set(new Pair<>(false, cachedArr.getValue()));
+		// if(cacheIntermediate != null) {
+		// final Pair<Boolean, double[]> cachedArr = cacheIntermediate.get();
+		// cacheIntermediate.set(new Pair<>(false, cachedArr.getValue()));
 
-	// 	}
+		// }
 	}
 
 	private static class LMMPreAggTask implements Callable<MatrixBlock> {

@@ -427,6 +427,12 @@ public class ColGroupNegativeTests {
 			throw new UnsupportedOperationException(
 				"Unimplemented method 'decompressToSparseBlockTransposedDenseDictionary'");
 		}
+
+		@Override
+		public void leftMMIdentityPreAggregateDense(MatrixBlock that, MatrixBlock ret, int rl, int ru, int cl, int cu) {
+			// TODO Auto-generated method stub
+			throw new UnsupportedOperationException("Unimplemented method 'leftMMIdentityPreAggregateDense'");
+		}
 	}
 
 	private class FakeDictBasedColGroup extends ADictBasedColGroup {

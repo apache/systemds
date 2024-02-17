@@ -95,6 +95,8 @@ public final class CLALibRightMultBy {
 	}
 
 	private static CompressedMatrixBlock RMMOverlapping(CompressedMatrixBlock m1, MatrixBlock that, int k) {
+		
+		// final Timing t = new Timing();
 		final int rl = m1.getNumRows();
 		final int cr = that.getNumColumns();
 		final int rr = that.getNumRows(); // shared dim
@@ -115,11 +117,12 @@ public final class CLALibRightMultBy {
 			constV = null;
 		}
 
+		// final double preFilter = t.stop();
 		if(k == 1)
 			RMMSingle(filteredGroups, that, retCg);
 		else
 			RMMParallel(filteredGroups, that, retCg, k);
-
+		// final double mult = t.stop();
 		if(constV != null) {
 			final MatrixBlock cb = new MatrixBlock(1, constV.length, constV);
 			final MatrixBlock cbRet = new MatrixBlock(1, that.getNumColumns(), false);
@@ -135,6 +138,9 @@ public final class CLALibRightMultBy {
 
 		CLALibUtils.addEmptyColumn(retCg, cr);
 
+		// final double finalize = t.stop();
+
+		// LOG.debug(String.format("RMM: filter: %10f Mult: %10f out: %10f", preFilter, mult, finalize));
 		return ret;
 	}
 
@@ -166,7 +172,7 @@ public final class CLALibRightMultBy {
 
 	private static MatrixBlock RMM(CompressedMatrixBlock m1, MatrixBlock that, int k) {
 
-		Timing t = new Timing();
+		// Timing t = new Timing();
 		// this version returns a decompressed result.
 		final int rl = m1.getNumRows();
 		final int cr = that.getNumColumns();
@@ -204,7 +210,7 @@ public final class CLALibRightMultBy {
 			constV = null;
 		}
 
-		LOG.debug("RMM Filtered : " + t.stop());
+		// LOG.debug("RMM Filtered : " + t.stop());
 
 		final List<AColGroup> retCg = new ArrayList<>(filteredGroups.size());
 		if(k == 1)
@@ -213,7 +219,7 @@ public final class CLALibRightMultBy {
 			RMMParallel(filteredGroups, that, retCg, k);
 
 		
-		LOG.debug("RMM Groups done : " + t.stop());
+		// LOG.debug("RMM Groups done : " + t.stop());
 
 		if(constV != null) {
 			MatrixBlock constVMB = new MatrixBlock(1, constV.length, constV);
@@ -223,7 +229,7 @@ public final class CLALibRightMultBy {
 		}
 
 
-		LOG.debug("RMM Const done: " + t.stop());
+		// LOG.debug("RMM Const done: " + t.stop());
 
 		final Timing time = new Timing(true);
 
@@ -233,7 +239,7 @@ public final class CLALibRightMultBy {
 		if(DMLScript.STATISTICS) 
 			DMLCompressionStatistics.addDecompressTime(time.stop(), k);
 		
-		LOG.debug("RMM Decompress done: " + t.stop());
+		// LOG.debug("RMM Decompress done: " + t.stop());
 		return ret;
 	}
 
@@ -250,7 +256,7 @@ public final class CLALibRightMultBy {
 		boolean containsNull = false;
 		final IColIndex allCols = ColIndexFactory.create(that.getNumColumns());
 		for(AColGroup g : filteredGroups) {
-			AColGroup retG = g.rightMultByMatrix(that, allCols);
+			AColGroup retG = g.rightMultByMatrix(that, allCols, 1);
 			if(retG != null)
 				retCg.add(retG);
 			else
@@ -266,7 +272,7 @@ public final class CLALibRightMultBy {
 			final IColIndex allCols = ColIndexFactory.create(that.getNumColumns());
 			List<Callable<AColGroup>> tasks = new ArrayList<>(filteredGroups.size());
 			for(AColGroup g : filteredGroups)
-				tasks.add(new RightMatrixMultTask(g, that, allCols));
+				tasks.add(new RightMatrixMultTask(g, that, allCols, k));
 			for(Future<AColGroup> fg : pool.invokeAll(tasks)) {
 				AColGroup g = fg.get();
 				if(g != null)
@@ -288,17 +294,19 @@ public final class CLALibRightMultBy {
 		private final AColGroup _colGroup;
 		private final MatrixBlock _b;
 		private final IColIndex _allCols;
+		private final int _k;
 
-		protected RightMatrixMultTask(AColGroup colGroup, MatrixBlock b, IColIndex allCols) {
+		protected RightMatrixMultTask(AColGroup colGroup, MatrixBlock b, IColIndex allCols, int k) {
 			_colGroup = colGroup;
 			_b = b;
 			_allCols = allCols;
+			_k = k;
 		}
 
 		@Override
 		public AColGroup call() {
 			try {
-				return _colGroup.rightMultByMatrix(_b, _allCols);
+				return _colGroup.rightMultByMatrix(_b, _allCols, _k);
 			}
 			catch(Exception e) {
 				throw new DMLRuntimeException(e);

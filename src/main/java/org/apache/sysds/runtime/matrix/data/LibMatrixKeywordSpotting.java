@@ -45,7 +45,8 @@ public class LibMatrixKeywordSpotting {
 		DownloaderZip.downloaderZip(url, dest, startsWith, endsWith);
 
 		// zip contains command folders which contain corresponding .wav files
-		List<double[]> waves = new ArrayList<>();
+		// TODO: write directly into the csv
+		List<int[]> waves = new ArrayList<>();
 		List<Integer> labels = new ArrayList<>();
 		List<String> commands = new ArrayList<>();
 
@@ -53,7 +54,7 @@ public class LibMatrixKeywordSpotting {
 		extractData(sourceDirPath, waves, labels, commands);
 
 		// delete data
-		FileUtils.deleteDirectory(new File(sourceDirPath));
+		// FileUtils.deleteDirectory(new File(sourceDirPath));
 
 		saveToCSV("./tmp/waves", waves);
 		saveToCSV("./tmp/labels", labels);
@@ -61,7 +62,7 @@ public class LibMatrixKeywordSpotting {
 
 	}
 
-	private static void extractData(String sourceDir, List<double[]> waves, List<Integer> labels,
+	private static void extractData(String sourceDir, List<int[]> waves, List<Integer> labels,
 		List<String> commands) {
 
 		try {
@@ -94,7 +95,7 @@ public class LibMatrixKeywordSpotting {
 
 	}
 
-	private static void readWaveFiles(String sourceDir, String command, List<double[]> waves, List<Integer> labels,
+	private static void readWaveFiles(String sourceDir, String command, List<int[]> waves, List<Integer> labels,
 		List<String> commands) {
 
 		String path = sourceDir + '/' + command;
@@ -116,8 +117,8 @@ public class LibMatrixKeywordSpotting {
 		try(PrintWriter out = new PrintWriter(new BufferedWriter(new FileWriter(path)))) {
 
 			for(Object elem : data) {
-				if(elem instanceof double[]) {
-					String str = Arrays.toString((double[]) elem);
+				if(elem instanceof int[]) {
+					String str = Arrays.toString((int[]) elem);
 					// remove brackets
 					out.print(str.substring(1, str.length() - 1));
 				}

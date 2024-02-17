@@ -137,11 +137,11 @@ public class LibCommonsMath
 		else if (opcode.equals("fft"))
 			return computeFFT(in);
 		else if (opcode.equals("ifft"))
-			return computeIFFT(in, null);
+			return computeIFFT(in);
 		else if (opcode.equals("fft_linearized"))
 			return computeFFT_LINEARIZED(in);
 		else if (opcode.equals("ifft_linearized"))
-			return computeIFFT_LINEARIZED(in, null);
+			return computeIFFT_LINEARIZED(in);
 		return null;
 	}
 
@@ -313,16 +313,6 @@ public class LibCommonsMath
 		return fft(re);
 	}
 
-	private static boolean isMatrixAllZeros(MatrixBlock matrix) {
-		// Fast check for sparse representation
-		if (matrix.isInSparseFormat()) {
-			return matrix.getNonZeros() == 0;
-		}
-		// Dense format check
-		double sum = matrix.sum();
-		return sum == 0;
-	}
-
 	/**
 	 * Function to perform IFFT on a given matrix.
 	 *
@@ -347,6 +337,17 @@ public class LibCommonsMath
 			re.sparseToDense();
 			return ifft(re);
 		}
+	}
+
+
+	/**
+	 * Function to perform IFFT on a given matrix.
+	 *
+	 * @param re matrix object
+	 * @return array of matrix blocks
+	 */
+	private static MatrixBlock[] computeIFFT(MatrixBlock re) {
+		return computeIFFT(re, null);
 	}
 
 	/**
@@ -391,6 +392,16 @@ public class LibCommonsMath
 			re.sparseToDense();
 			return ifft_linearized(re);
 		}
+	}
+    
+	/**
+	 * Function to perform IFFT_LINEARIZED on a given matrix
+	 * 
+	 * @param re matrix object
+	 * @return array of matrix blocks
+	 */
+	computeIFFT_LINEARIZED(MatrixBlock re){
+		return computeIFFT_LINEARIZED(re, null);
 	}
 
 	/**

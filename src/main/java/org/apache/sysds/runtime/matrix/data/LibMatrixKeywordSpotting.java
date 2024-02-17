@@ -62,9 +62,9 @@ public class LibMatrixKeywordSpotting {
 
 	private static void saveDataToCSV(String basePath, ZipInputStream zipStream) throws IOException {
 
-		PrintWriter commandsCSV = new PrintWriter(new BufferedWriter(new FileWriter(basePath + "commands")));
-		PrintWriter wavesCSV = new PrintWriter(new BufferedWriter(new FileWriter(basePath + "waves")));
-		PrintWriter labelsCSV = new PrintWriter(new BufferedWriter(new FileWriter(basePath + "labels")));
+		PrintWriter commandsCSV = new PrintWriter(new BufferedWriter(new FileWriter(basePath + "commands.csv")));
+		PrintWriter wavesCSV = new PrintWriter(new BufferedWriter(new FileWriter(basePath + "waves.csv")));
+		PrintWriter labelsCSV = new PrintWriter(new BufferedWriter(new FileWriter(basePath + "labels.csv")));
 
 		List<String> commands = new ArrayList<>();
 

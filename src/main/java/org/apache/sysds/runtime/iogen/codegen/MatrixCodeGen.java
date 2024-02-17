@@ -42,7 +42,7 @@ public class MatrixCodeGen extends TemplateCodeGenBase {
 			"import java.util.HashSet;\n" +
 			"import org.apache.sysds.runtime.io.IOUtilFunctions; \n" +
 			"import org.apache.sysds.runtime.util.UtilFunctions; \n" +
-			"import org.apache.commons.lang.mutable.MutableInt; \n" +
+			"import org.apache.commons.lang3.mutable.MutableInt; \n" +
 			"import org.apache.sysds.runtime.iogen.template.TemplateUtil; \n" +
 			"public class "+className+" extends "+javaBaseClass+" {\n" +
 			"public "+className+"(CustomProperties _props) {\n" +

@@ -23,7 +23,7 @@ import org.junit.Test;
 
 public class FrameGenerateReaderCustomTest extends GenerateReaderFrameTest {
 
-	private final static String TEST_NAME = "FrameGenerateReaderCSVTest";
+	private final static String TEST_NAME = "FrameGenerateReaderCustomTest";
 
 	@Override
 	protected String getTestName() {

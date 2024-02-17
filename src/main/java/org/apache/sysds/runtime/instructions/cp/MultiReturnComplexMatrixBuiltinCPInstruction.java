@@ -101,8 +101,7 @@ public class MultiReturnComplexMatrixBuiltinCPInstruction extends ComputationCPI
 
             return new MultiReturnComplexMatrixBuiltinCPInstruction(null, in1, outputs, opcode, str);
         }
-
-        {
+        else {
             throw new DMLRuntimeException("Invalid opcode in MultiReturnBuiltin instruction: " + opcode);
         }
 

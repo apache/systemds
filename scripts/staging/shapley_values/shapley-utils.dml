@@ -113,6 +113,40 @@ return (Matrix[Double] X_shuffled){
   X_shuffled = X[,1:num_col]
 }
 
+toDecimal = function(Matrix[Double] m, Matrix[Double] pow2)
+return(Matrix[Double] d){
+  #pow2 = (2^(ncol(m)-t(seq(1,ncol(m),1))))
+  d = rowSums(m *  pow2)
+}
+
+toBinary = function(Matrix[Double] d, Matrix[Double] pow2)
+return(Matrix[Double] m){
+  #pow2 = 2^(ncols-t(seq(1,ncols,1)))
+  m = d %/% pow2 %% 2
+}
+
+repeatRows = function(Matrix[Double] m, Integer n_times)
+return(Matrix[Double] m){
+  #get indices for new rows (e.g. 1,1,1,2,2,2 for 2 rows, each replicated 3 times)
+  indices = ceil(seq(1,nrow(m)*n_times,1) / n_times)
+  #to one hot, so we get a replication matrix R
+  R = toOneHot(indices, nrow(m))
+  #matrix-mulitply to repeat rows
+  m = R %*% m
+}
+
+repeatMatrix = function(Matrix[Double] m, Integer n_times)
+return(Matrix[Double] m){
+  n_rows=nrow(m)
+  n_cols=ncol(m)
+  #reshape to row vector
+  m = matrix(m, rows=1, cols=length(m))
+  #broadcast
+  m = matrix(1, rows=n_times, cols=1) * m
+  #reshape to get matrix
+  m = matrix(m, rows=n_rows*n_times, cols=n_cols)
+}
+
 u_vprint = function(String message, Boolean verbose){
   if(verbose){
     print("shapley-sampling::"+message)

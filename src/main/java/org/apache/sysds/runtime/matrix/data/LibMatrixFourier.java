@@ -21,24 +21,30 @@ package org.apache.sysds.runtime.matrix.data;
 
 import org.apache.commons.math3.util.FastMath;
 
+import org.apache.sysds.runtime.util.CommonThreadPool;
+
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.TimeUnit;
+
 public class LibMatrixFourier {
 
 	/**
 	 * Function to perform FFT for two given matrices. The first one represents the real values and the second one the
 	 * imaginary values. The output also contains one matrix for the real and one for the imaginary values.
 	 *
-	 * @param re matrix object representing the real values
-	 * @param im matrix object representing the imaginary values
+	 * @param re      matrix object representing the real values
+	 * @param im      matrix object representing the imaginary values
+	 * @param threads number of threads
 	 * @return array of two matrix blocks
 	 */
-	public static MatrixBlock[] fft(MatrixBlock re, MatrixBlock im) {
+	public static MatrixBlock[] fft(MatrixBlock re, MatrixBlock im, int threads) {
 
 		int rows = re.getNumRows();
 		int cols = re.getNumColumns();
 		if(!isPowerOfTwo(rows) || !isPowerOfTwo(cols))
 			throw new RuntimeException("false dimensions");
 
-		fft(re.getDenseBlockValues(), im.getDenseBlockValues(), rows, cols, true);
+		fft(re.getDenseBlockValues(), im.getDenseBlockValues(), rows, cols, threads, true);
 
 		return new MatrixBlock[] {re, im};
 	}
@@ -47,18 +53,19 @@ public class LibMatrixFourier {
 	 * Function to perform IFFT for two given matrices. The first one represents the real values and the second one the
 	 * imaginary values. The output also contains one matrix for the real and one for the imaginary values.
 	 *
-	 * @param re matrix object representing the real values
-	 * @param im matrix object representing the imaginary values
+	 * @param re      matrix object representing the real values
+	 * @param im      matrix object representing the imaginary values
+	 * @param threads number of threads
 	 * @return array of two matrix blocks
 	 */
-	public static MatrixBlock[] ifft(MatrixBlock re, MatrixBlock im) {
+	public static MatrixBlock[] ifft(MatrixBlock re, MatrixBlock im, int threads) {
 
 		int rows = re.getNumRows();
 		int cols = re.getNumColumns();
 		if(!isPowerOfTwo(rows) || !isPowerOfTwo(cols))
 			throw new RuntimeException("false dimensions");
 
-		ifft(re.getDenseBlockValues(), im.getDenseBlockValues(), rows, cols, true);
+		ifft(re.getDenseBlockValues(), im.getDenseBlockValues(), rows, cols, threads, true);
 
 		return new MatrixBlock[] {re, im};
 	}
@@ -68,18 +75,19 @@ public class LibMatrixFourier {
 	 * second one the imaginary values. The output also contains one matrix for the real and one for the imaginary
 	 * values.
 	 *
-	 * @param re matrix object representing the real values
-	 * @param im matrix object representing the imaginary values
+	 * @param re      matrix object representing the real values
+	 * @param im      matrix object representing the imaginary values
+	 * @param threads number of threads
 	 * @return array of two matrix blocks
 	 */
-	public static MatrixBlock[] fft_linearized(MatrixBlock re, MatrixBlock im) {
+	public static MatrixBlock[] fft_linearized(MatrixBlock re, MatrixBlock im, int threads) {
 
 		int rows = re.getNumRows();
 		int cols = re.getNumColumns();
 		if(!isPowerOfTwo(cols))
 			throw new RuntimeException("false dimensions");
 
-		fft(re.getDenseBlockValues(), im.getDenseBlockValues(), rows, cols, false);
+		fft(re.getDenseBlockValues(), im.getDenseBlockValues(), rows, cols, threads, false);
 
 		return new MatrixBlock[] {re, im};
 	}
@@ -89,18 +97,19 @@ public class LibMatrixFourier {
 	 * second one the imaginary values. The output also contains one matrix for the real and one for the imaginary
 	 * values.
 	 *
-	 * @param re matrix object representing the real values
-	 * @param im matrix object representing the imaginary values
+	 * @param re      matrix object representing the real values
+	 * @param im      matrix object representing the imaginary values
+	 * @param threads number of threads
 	 * @return array of two matrix blocks
 	 */
-	public static MatrixBlock[] ifft_linearized(MatrixBlock re, MatrixBlock im) {
+	public static MatrixBlock[] ifft_linearized(MatrixBlock re, MatrixBlock im, int threads) {
 
 		int rows = re.getNumRows();
 		int cols = re.getNumColumns();
 		if(!isPowerOfTwo(cols))
 			throw new RuntimeException("false dimensions");
 
-		ifft(re.getDenseBlockValues(), im.getDenseBlockValues(), rows, cols, false);
+		ifft(re.getDenseBlockValues(), im.getDenseBlockValues(), rows, cols, threads, false);
 
 		return new MatrixBlock[] {re, im};
 	}
@@ -113,21 +122,28 @@ public class LibMatrixFourier {
 	 * @param im          array representing the imaginary values
 	 * @param rows        number of rows
 	 * @param cols        number of rows
+	 * @param threads     number of threads
 	 * @param inclColCalc if true, fft is also calculated for each column, otherwise only for each row
 	 */
-	public static void fft(double[] re, double[] im, int rows, int cols, boolean inclColCalc) {
+	public static void fft(double[] re, double[] im, int rows, int cols, int threads, boolean inclColCalc) {
 
 		double[] re_inter = new double[rows * cols];
 		double[] im_inter = new double[rows * cols];
 
-		for(int i = 0; i < rows; i++) {
-			fft_one_dim(re, im, re_inter, im_inter, i * cols, (i + 1) * cols, cols, 1);
-		}
+		ExecutorService pool = CommonThreadPool.get(threads);
 
-		if(inclColCalc) {
+		for(int i = 0; i < rows; i++) {
+			final int finalI = i;
+			pool.submit(() -> fft_one_dim(re, im, re_inter, im_inter, finalI * cols, (finalI + 1) * cols, cols, 1));
+		}
+		awaitParallelExecution(pool);
+
+		if(inclColCalc && rows > 1) {
 			for(int j = 0; j < cols; j++) {
-				fft_one_dim(re, im, re_inter, im_inter, j, j + rows * cols, rows, cols);
+				final int finalJ = j;
+				pool.submit(() -> fft_one_dim(re, im, re_inter, im_inter, finalJ, finalJ + rows * cols, rows, cols));
 			}
+			awaitParallelExecution(pool);
 		}
 
 	}
@@ -140,22 +156,29 @@ public class LibMatrixFourier {
 	 * @param im          array representing the imaginary values
 	 * @param rows        number of rows
 	 * @param cols        number of rows
+	 * @param threads     number of threads
 	 * @param inclColCalc if true, fft is also calculated for each column, otherwise only for each row
 	 */
-	public static void ifft(double[] re, double[] im, int rows, int cols, boolean inclColCalc) {
+	public static void ifft(double[] re, double[] im, int rows, int cols, int threads, boolean inclColCalc) {
 
 		double[] re_inter = new double[rows * cols];
 		double[] im_inter = new double[rows * cols];
 
-		if(inclColCalc) {
+		ExecutorService pool = CommonThreadPool.get(threads);
+
+		if(inclColCalc && rows > 1) {
 			for(int j = 0; j < cols; j++) {
-				ifft_one_dim(re, im, re_inter, im_inter, j, j + rows * cols, rows, cols);
+				final int finalJ = j;
+				pool.submit(() -> ifft_one_dim(re, im, re_inter, im_inter, finalJ, finalJ + rows * cols, rows, cols));
 			}
+			awaitParallelExecution(pool);
 		}
 
 		for(int i = 0; i < rows; i++) {
-			ifft_one_dim(re, im, re_inter, im_inter, i * cols, (i + 1) * cols, cols, 1);
+			final int finalI = i;
+			pool.submit(() -> ifft_one_dim(re, im, re_inter, im_inter, finalI * cols, (finalI + 1) * cols, cols, 1));
 		}
+		awaitParallelExecution(pool);
 
 	}
 
@@ -262,48 +285,69 @@ public class LibMatrixFourier {
 	 * Function to perform FFT for a given matrix. The given matrix only represents real values. The output contains one
 	 * matrix for the real and one for the imaginary values.
 	 *
-	 * @param re matrix object representing the real values
+	 * @param re      matrix object representing the real values
+	 * @param threads number of threads
 	 * @return array of two matrix blocks
 	 */
-	public static MatrixBlock[] fft(MatrixBlock re) {
+	public static MatrixBlock[] fft(MatrixBlock re, int threads) {
 		return fft(re,
-			new MatrixBlock(re.getNumRows(), re.getNumColumns(), new double[re.getNumRows() * re.getNumColumns()]));
+			new MatrixBlock(re.getNumRows(), re.getNumColumns(), new double[re.getNumRows() * re.getNumColumns()]),
+			threads);
 	}
 
 	/**
 	 * Function to perform IFFT for a given matrix. The given matrix only represents real values. The output contains
 	 * one matrix for the real and one for the imaginary values.
 	 *
-	 * @param re matrix object representing the real values
+	 * @param re      matrix object representing the real values
+	 * @param threads number of threads
 	 * @return array of two matrix blocks
 	 */
-	public static MatrixBlock[] ifft(MatrixBlock re) {
+	public static MatrixBlock[] ifft(MatrixBlock re, int threads) {
 		return ifft(re,
-			new MatrixBlock(re.getNumRows(), re.getNumColumns(), new double[re.getNumRows() * re.getNumColumns()]));
+			new MatrixBlock(re.getNumRows(), re.getNumColumns(), new double[re.getNumRows() * re.getNumColumns()]),
+			threads);
 	}
 
 	/**
 	 * Function to perform FFT for each row of a given matrix. The given matrix only represents real values. The output
 	 * contains one matrix for the real and one for the imaginary values.
 	 *
-	 * @param re matrix object representing the real values
+	 * @param re      matrix object representing the real values
+	 * @param threads number of threads
 	 * @return array of two matrix blocks
 	 */
-	public static MatrixBlock[] fft_linearized(MatrixBlock re) {
+	public static MatrixBlock[] fft_linearized(MatrixBlock re, int threads) {
 		return fft_linearized(re,
-			new MatrixBlock(re.getNumRows(), re.getNumColumns(), new double[re.getNumRows() * re.getNumColumns()]));
+			new MatrixBlock(re.getNumRows(), re.getNumColumns(), new double[re.getNumRows() * re.getNumColumns()]),
+			threads);
 	}
 
 	/**
 	 * Function to perform IFFT for each row of a given matrix. The given matrix only represents real values. The output
 	 * contains one matrix for the real and one for the imaginary values.
 	 *
-	 * @param re matrix object representing the real values
+	 * @param re      matrix object representing the real values
+	 * @param threads number of threads
 	 * @return array of two matrix blocks
 	 */
-	public static MatrixBlock[] ifft_linearized(MatrixBlock re) {
+	public static MatrixBlock[] ifft_linearized(MatrixBlock re, int threads) {
 		return ifft_linearized(re,
-			new MatrixBlock(re.getNumRows(), re.getNumColumns(), new double[re.getNumRows() * re.getNumColumns()]));
+			new MatrixBlock(re.getNumRows(), re.getNumColumns(), new double[re.getNumRows() * re.getNumColumns()]),
+			threads);
+	}
+
+	private static void awaitParallelExecution(ExecutorService pool) {
+
+		try {
+			int timeout = 100;
+			if(!pool.awaitTermination(timeout, TimeUnit.SECONDS)) {
+				pool.shutdownNow();
+			}
+		}
+		catch(InterruptedException e) {
+			e.printStackTrace();
+		}
 	}
 
 }

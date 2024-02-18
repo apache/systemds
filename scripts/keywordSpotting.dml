@@ -1,7 +1,7 @@
 
 
-X = read("features.csv", format="csv")
-y = read("labels.csv", format="csv")
+X = read("tmp/shuffled_features.csv", format="csv")
+y = read("tmp/shuffled_labels_minus_and_plus.csv", format="csv")
 
 # Add a train test split.
 [X_train, X_test, y_train, y_test] = split(X=X, Y=y, seed= 13)

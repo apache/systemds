@@ -62,9 +62,9 @@ public class LibMatrixKeywordSpotting {
 
 	private static void saveDataToCSV(String basePath, ZipInputStream zipStream) throws IOException {
 
-		PrintWriter commandsCSV = new PrintWriter(new BufferedWriter(new FileWriter(basePath + "commands.csv")));
-		PrintWriter wavesCSV = new PrintWriter(new BufferedWriter(new FileWriter(basePath + "waves.csv")));
-		PrintWriter labelsCSV = new PrintWriter(new BufferedWriter(new FileWriter(basePath + "labels.csv")));
+		PrintWriter commandsCSV = new PrintWriter(new BufferedWriter(new FileWriter(basePath + "commands1.csv")));
+		PrintWriter wavesCSV = new PrintWriter(new BufferedWriter(new FileWriter(basePath + "waves1.csv")));
+		PrintWriter labelsCSV = new PrintWriter(new BufferedWriter(new FileWriter(basePath + "labels1.csv")));
 
 		List<String> commands = new ArrayList<>();
 
@@ -95,7 +95,7 @@ public class LibMatrixKeywordSpotting {
 				AudioFormat format = new AudioFormat(AudioFormat.Encoding.PCM_SIGNED, 16000, 16, 1, 2, 16000, false);
 				int length = (int) Math.ceil((double) entry.getExtra().length / format.getFrameSize());
 				AudioInputStream audio = new AudioInputStream(new ByteArrayInputStream(entry.getExtra()), format,
-					length);
+						length);
 				int[] data = ReaderWavFile.readMonoAudioFromWavFile(audio);
 
 				// save to csv

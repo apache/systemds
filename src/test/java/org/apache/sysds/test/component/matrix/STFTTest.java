@@ -42,6 +42,12 @@ public class STFTTest {
 		double[] expected_re = {6, -2, -2, -2, 14, -2, -2, -2, 22, -2, -2, -2, 30, -2, -2, -2, 38, -2, -2, -2, 46, -2, -2, -2, 54, -2, -2, -2};
 		double[] expected_im = {0, 2, 0, -2, 0, 2, 0, -2, 0, 2, 0, -2, 0, 2, 0, -2, 0, 2, 0, -2, 0, 2, 0, -2, 0, 2, 0, -2};
 
+		/*
+		for (int i = 0; i < res_re.length; i++) {
+			System.out.println(res_re[i] + res_im[i]);
+		}
+
+		 */
 		assertArrayEquals(expected_re, res_re, 0.0001);
 		assertArrayEquals(expected_im, res_im, 0.0001);
 

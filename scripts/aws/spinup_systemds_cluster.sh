@@ -46,9 +46,12 @@ set_config "SPARK_EXECUTOR_MEMORY" $SPARK_EXECUTOR_MEMORY
 set_config "SPARK_DRIVER_MEMORY" "1G"
 set_config "BUCKET" $BUCKET-$(((RANDOM % 999) + 1000))
 
-#Create systemDS bucket
-aws s3api create-bucket --bucket $BUCKET --region $REGION &> /dev/null
-aws s3api create-bucket --bucket $BUCKET-logs --region $REGION &> /dev/null
+#Source again to update the changes for the current session
+source systemds_cluster.config
+
+#Create systemDS bucket (LocationConstraint configuration required regions outside of us-east-1)
+aws s3api create-bucket --bucket $BUCKET --region $REGION --create-bucket-configuration LocationConstraint=$REGION &> /dev/null
+aws s3api create-bucket --bucket $BUCKET-logs --region $REGION --create-bucket-configuration LocationConstraint=$REGION &> /dev/null
 
 # Upload Jar and scripts to s3
 aws s3 sync $SYSTEMDS_TARGET_DIRECTORY s3://$BUCKET --exclude "*" --include "*.dml" --include "*config.xml" --include "*DS.jar*"
@@ -60,11 +63,18 @@ if [ ! -f ${KEYPAIR_NAME}.pem ]; then
     echo "${KEYPAIR_NAME}.pem private key created!"
 fi
 
+#Get the first available subnet in the default VPC of the region
+DEFAULT_SUBNET=$(aws ec2 describe-subnets --region eu-central-1 \
+  --filter "Name=defaultForAz,Values=true" --query "Subnets[0].SubnetId" --output text)
+
 #Create the cluster
+#Note: Ganglia not available since emr-6.15.0: exchange with AmazonCloudWatchAgent
+#Note: '--availability-zone ANY' enforce assigning a default subnet to the cluster
 CLUSTER_INFO=$(aws emr create-cluster \
- --applications Name=Ganglia Name=Spark \
+ --applications Name=AmazonCloudWatchAgent Name=Spark \
  --ec2-attributes '{"KeyName":"'${KEYPAIR_NAME}'",
-  "InstanceProfile":"EMR_EC2_DefaultRole"}'\
+  "InstanceProfile":"EMR_EC2_DefaultRole",
+  "SubnetId": "'${DEFAULT_SUBNET}'"}'\
  --service-role EMR_DefaultRole \
  --enable-debugging \
  --release-label $EMR_VERSION \
@@ -104,6 +114,6 @@ echo "Cluster info:"
 export CLUSTER_URL=$(aws emr describe-cluster --cluster-id $CLUSTER_ID | jq .Cluster.MasterPublicDnsName | tr -d '"')
 
 aws emr ssh --cluster-id $CLUSTER_ID --key-pair-file ${KEYPAIR_NAME}.pem --region $REGION \
-    --command 'aws s3 cp s3://system-ds-bucket/target . --recursive --exclude "*" --include "*DS.jar*"'
+    --command 'aws s3 cp s3://'${BUCKET}' . --recursive --exclude "*" --include "*DS.jar*"'
 
 echo "Spinup finished."

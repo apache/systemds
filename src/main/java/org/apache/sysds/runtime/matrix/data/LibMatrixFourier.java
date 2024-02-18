@@ -217,31 +217,7 @@ public class LibMatrixFourier {
 						return;
 
 					int startSub = start + sub * minStep + isOdd * (step / 2);
-
-					// first iterates over even indices, then over odd indices
-					for(int j = startSub, cnt = 0; cnt < subNum / 2; j += 2 * step, cnt++) {
-
-						double omega_pow_re = FastMath.cos(cnt * angle);
-						double omega_pow_im = FastMath.sin(cnt * angle);
-
-						// calculate m using the result of odd index
-						double m_re = omega_pow_re * re[j + step] - omega_pow_im * im[j + step];
-						double m_im = omega_pow_re * im[j + step] + omega_pow_im * re[j + step];
-
-						int index = startSub + cnt * step;
-						re_inter[index] = re[j] + m_re;
-						re_inter[index + (stop - start) / 2] = re[j] - m_re;
-
-						im_inter[index] = im[j] + m_im;
-						im_inter[index + (stop - start) / 2] = im[j] - m_im;
-					}
-
-					for(int j = startSub; j < startSub + (stop - start); j += step) {
-						re[j] = re_inter[j];
-						im[j] = im_inter[j];
-						re_inter[j] = 0;
-						im_inter[j] = 0;
-					}
+					fft_one_dim_sub(re, im, re_inter, im_inter, start, stop, startSub, subNum, step, angle);
 
 				}
 
@@ -251,6 +227,62 @@ public class LibMatrixFourier {
 
 	}
 
+	/**
+	 * Function to perform one-dimensional FFT for subArrays of two given double arrays. The first one represents the
+	 * real values and the second one the imaginary values. Both arrays get updated and contain the result.
+	 *
+	 * @param re       array representing the real values
+	 * @param im       array representing the imaginary values
+	 * @param re_inter array for the real values of intermediate results
+	 * @param im_inter array for the imaginary values of intermediate results
+	 * @param start    start index (incl.)
+	 * @param stop     stop index (excl.)
+	 * @param startSub start index of subarray (incl.)
+	 * @param subNum   number of elements in subarray
+	 * @param step     step size between elements in subarray
+	 * @param angle    angle
+	 */
+	private static void fft_one_dim_sub(double[] re, double[] im, double[] re_inter, double[] im_inter, int start,
+		int stop, int startSub, int subNum, int step, double angle) {
+
+		for(int j = startSub, cnt = 0; cnt < subNum / 2; j += 2 * step, cnt++) {
+
+			double omega_pow_re = FastMath.cos(cnt * angle);
+			double omega_pow_im = FastMath.sin(cnt * angle);
+
+			// calculate m using the result of odd index
+			double m_re = omega_pow_re * re[j + step] - omega_pow_im * im[j + step];
+			double m_im = omega_pow_re * im[j + step] + omega_pow_im * re[j + step];
+
+			int index = startSub + cnt * step;
+			re_inter[index] = re[j] + m_re;
+			re_inter[index + (stop - start) / 2] = re[j] - m_re;
+
+			im_inter[index] = im[j] + m_im;
+			im_inter[index + (stop - start) / 2] = im[j] - m_im;
+		}
+
+		for(int j = startSub; j < startSub + (stop - start); j += step) {
+			re[j] = re_inter[j];
+			im[j] = im_inter[j];
+			re_inter[j] = 0;
+			im_inter[j] = 0;
+		}
+	}
+
+	/**
+	 * Function to perform one-dimensional IFFT for two given double arrays. The first one represents the real values
+	 * and the second one the imaginary values. Both arrays get updated and contain the result.
+	 *
+	 * @param re       array representing the real values
+	 * @param im       array representing the imaginary values
+	 * @param re_inter array for the real values of intermediate results
+	 * @param im_inter array for the imaginary values of intermediate results
+	 * @param start    start index (incl.)
+	 * @param stop     stop index (excl.)
+	 * @param num      number of values used for fft
+	 * @param minStep  step size between values used for fft
+	 */
 	private static void ifft_one_dim(double[] re, double[] im, double[] re_inter, double[] im_inter, int start,
 		int stop, int num, int minStep) {
 
@@ -260,7 +292,6 @@ public class LibMatrixFourier {
 		}
 
 		// apply fft
-		// fft_one_dim_recursive(re, im, re_inter, im_inter, start, step, num, subArraySize);
 		fft_one_dim(re, im, re_inter, im_inter, start, stop, num, minStep);
 
 		// conjugate and scale result

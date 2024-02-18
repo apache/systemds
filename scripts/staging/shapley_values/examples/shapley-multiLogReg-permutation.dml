@@ -23,7 +23,7 @@
 
 # run the script staging/learnedSampling/1_Data_Model_Prep.dml to prepare the model
 
-source("../shapley-permutation.dml") as shapleyPermutation
+source("../shapley-permutation-opt.dml") as shapleyPermutation
 
 X_bg = read("../data/Adult_X.csv")
 y = read("../data/Adult_y.csv")
@@ -55,7 +55,12 @@ print("Resulting phis:\n"+toString(S))
 #transpose it to make it fit the representation of values in the SHAP python package
 S = t(S)
 # write values to csv
-write(S, "../data/Adult_shap-values_permutation_"+n_permutations+"perm_"+integration_samples+"samples.csv", format="csv")
+write_to_file = ifdef($write_to_file, 1)
+if( write_to_file == 1){
+  print("Writing to file")
+  write(S, "../data/Adult_shap-values_permutation_"+n_permutations+"perm_"+integration_samples+"samples.csv", format="csv")
+}
+
 
 
 

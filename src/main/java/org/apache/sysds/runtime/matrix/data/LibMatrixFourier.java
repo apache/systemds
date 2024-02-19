@@ -23,7 +23,12 @@ import org.apache.commons.math3.util.FastMath;
 
 import org.apache.sysds.runtime.util.CommonThreadPool;
 
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
 public class LibMatrixFourier {
@@ -130,20 +135,45 @@ public class LibMatrixFourier {
 		double[] re_inter = new double[rows * cols];
 		double[] im_inter = new double[rows * cols];
 
-		ExecutorService pool = CommonThreadPool.get(threads);
+		final ExecutorService pool = CommonThreadPool.get(threads);
 
-		for(int i = 0; i < rows; i++) {
-			final int finalI = i;
-			pool.submit(() -> fft_one_dim(re, im, re_inter, im_inter, finalI * cols, (finalI + 1) * cols, cols, 1));
-		}
-		awaitParallelExecution(pool);
+		final List<Future<?>> tasks = new ArrayList<>();
 
-		if(inclColCalc && rows > 1) {
-			for(int j = 0; j < cols; j++) {
-				final int finalJ = j;
-				pool.submit(() -> fft_one_dim(re, im, re_inter, im_inter, finalJ, finalJ + rows * cols, rows, cols));
+		try {
+			final int rBlz = Math.max(rows / threads, 32);
+
+			for(int i = 0; i < rows; i += rBlz){
+				final int start = i;
+				final int end = Math.min(i + rBlz, rows);
+
+				tasks.add( pool.submit(() -> {
+					for(int j = start; j < end; j++) {
+						final int finalI = j;
+						fft_one_dim(re, im, re_inter, im_inter, finalI * cols, (finalI + 1) * cols, cols, 1);
+					}
+				}));
 			}
-			awaitParallelExecution(pool);
+
+			for(Future<?> f : tasks)
+				f.get();
+				
+			tasks.clear();
+			if(inclColCalc && rows > 1) {
+				for(int j = 0; j < cols; j++) {	
+					final int finalJ = j;
+					tasks.add( pool.submit(() -> 
+					fft_one_dim(re, im, re_inter, im_inter, finalJ, finalJ + rows * cols, rows, cols)));
+				}
+			}
+				
+			for(Future<?> f : tasks)
+			f.get();
+				
+		} catch (InterruptedException | ExecutionException e) {
+			throw new RuntimeException(e);
+		}
+		finally{
+			pool.shutdown();
 		}
 
 	}

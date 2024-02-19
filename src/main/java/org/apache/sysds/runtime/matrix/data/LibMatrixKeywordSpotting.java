@@ -85,7 +85,7 @@ public class LibMatrixKeywordSpotting {
 				// remove "/" at the end
 				String command = dir.substring(mainDir.length(), dir.length() - 1);
 
-				if(command.equals("yes") || command.equals("no")){
+				if(command.equals("yes") || command.equals("no")) {
 					commands.add(command);
 					// save to csv
 					commandsCSV.print(command);
@@ -99,7 +99,7 @@ public class LibMatrixKeywordSpotting {
 				AudioFormat format = new AudioFormat(AudioFormat.Encoding.PCM_SIGNED, 16000, 16, 1, 2, 16000, false);
 				int length = (int) Math.ceil((double) entry.getExtra().length / format.getFrameSize());
 				AudioInputStream audio = new AudioInputStream(new ByteArrayInputStream(entry.getExtra()), format,
-						length);
+					length);
 				int[] data = ReaderWavFile.readMonoAudioFromWavFile(audio);
 
 				// save to csv
@@ -126,7 +126,7 @@ public class LibMatrixKeywordSpotting {
 			return false;
 
 		String command = getCommand(entry);
-		if(!command.equals("yes") && !command.equals("no")){
+		if(!command.equals("yes") && !command.equals("no")) {
 			return false;
 		}
 

@@ -357,7 +357,7 @@ public class BuiltinFunctionExpression extends DataIdentifier {
 		}
 		case FFT: {
 			checkNumParameters(1);
-			checkMatrixParam(expressionOne);
+			checkMatrixParam(getFirstExpr());
 
 			DataIdentifier fftOut1 = (DataIdentifier) getOutputs()[0];
 			DataIdentifier fftOut2 = (DataIdentifier) getOutputs()[1];

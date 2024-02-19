@@ -139,9 +139,9 @@ public class LibCommonsMath
 		else if (opcode.equals("svd"))
 			return computeSvd(in);
 		else if (opcode.equals("fft"))
-			return computeFFT(in);
+			return computeFFT(in, 1);
 		else if (opcode.equals("ifft"))
-			return computeIFFT(in);
+			return computeIFFT(in, 1);
 		return null;
 	}
 
@@ -149,7 +149,7 @@ public class LibCommonsMath
 		if(opcode.equals("stft"))
 			return computeSTFT(in1, in2, windowSize, overlap);
 		else if(opcode.equals("ifft"))
-			return computeIFFT(in1, in2);
+			return computeIFFT(in1, in2, 1);
 		else
 			return null;
 	}

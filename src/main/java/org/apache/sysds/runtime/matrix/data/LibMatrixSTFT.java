@@ -23,6 +23,17 @@ import org.apache.commons.math3.util.FastMath;
 import static org.apache.sysds.runtime.matrix.data.LibMatrixFourier.fft_one_dim;
 import static org.apache.sysds.runtime.matrix.data.LibMatrixFourier.isPowerOfTwo;
 
+
+import org.apache.sysds.runtime.util.CommonThreadPool;
+
+import java.util.ArrayList;
+import java.util.concurrent.Future;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.ExecutionException;
+import org.apache.sysds.runtime.util.CommonThreadPool;
+import java.util.List;
+import java.util.concurrent.TimeUnit;
+
 public class LibMatrixSTFT {
 
 	/**
@@ -60,16 +71,35 @@ public class LibMatrixSTFT {
 		double[] re_inter = new double[out_len];
 		double[] im_inter = new double[out_len];
 
-		for (int h = 0; h < rows; h++){
-			for (int i = 0; i < numberOfFramesPerRow; i++) {
-				for (int j = 0; j < windowSize; j++) {
-					if ((i * stepSize + j) < cols) {
-						stftOutput_re[h * rowLength + i * windowSize + j] = re.getDenseBlockValues()[h * cols + i * stepSize + j];
-						stftOutput_im[h * rowLength + i * windowSize + j] = im.getDenseBlockValues()[h * cols + i * stepSize + j];
+		int threads = 1;
+		final ExecutorService pool = CommonThreadPool.get(threads);
+
+		final List<Future<?>> tasks = new ArrayList<>();
+
+		try {
+			for (int h = 0; h < rows; h++){
+				for (int i = 0; i < numberOfFramesPerRow; i++) {
+					for (int j = 0; j < windowSize; j++) {
+						if ((i * stepSize + j) < cols) {
+							stftOutput_re[h * rowLength + i * windowSize + j] = re.getDenseBlockValues()[h * cols + i * stepSize + j];
+							stftOutput_im[h * rowLength + i * windowSize + j] = im.getDenseBlockValues()[h * cols + i * stepSize + j];
+						}
 					}
+					final int finalI = i;
+					final int finalH = h;
+					tasks.add( pool.submit(() -> {
+						fft_one_dim(stftOutput_re, stftOutput_im, re_inter, im_inter, finalH * rowLength + finalI * windowSize, finalH * rowLength + (finalI+1) * windowSize, windowSize, 1);
+					}));
 				}
-				fft_one_dim(stftOutput_re, stftOutput_im, re_inter, im_inter, h * rowLength + i * windowSize, h * rowLength + (i+1) * windowSize, windowSize, 1);
 			}
+			for(Future<?> f : tasks)
+				f.get();
+		}
+		catch(InterruptedException | ExecutionException e) {
+			throw new RuntimeException(e);
+		}
+		finally {
+			pool.shutdown();
 		}
 
 		return new MatrixBlock[]{new MatrixBlock(rows, rowLength, stftOutput_re), new MatrixBlock(rows, rowLength, stftOutput_im)};

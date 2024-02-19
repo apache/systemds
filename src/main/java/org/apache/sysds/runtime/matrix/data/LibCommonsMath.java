@@ -107,11 +107,11 @@ public class LibCommonsMath
 	}
 
 	public static MatrixBlock[] multiReturnOperations(MatrixBlock in, String opcode) {
-		return multiReturnOperations(in, opcode, 1, 1);
+		return multiReturnOperations(in, opcode, 1, (long) 1);
 	}
 
 	public static MatrixBlock[] multiReturnOperations(MatrixBlock in1, MatrixBlock in2, String opcode) {
-		return multiReturnOperations(in1, in2, opcode, 1, 1);
+		return multiReturnOperations(in1, in2, opcode, 1, (long) 1);
 	}
 
 	public static MatrixBlock[] multiReturnOperations(MatrixBlock in, String opcode, int threads, int num_iterations, double tol) {
@@ -123,7 +123,7 @@ public class LibCommonsMath
 
 	public static MatrixBlock[] multiReturnOperations(MatrixBlock in, String opcode, int windowSize, int overlap) {
 		if(opcode.equals("stft"))
-			return computeSTFT(in, windowSize, overlap);
+			return computeSTFT(in, windowSize, overlap, 1);
 		else if(opcode.equals("qr"))
 			return computeQR(in);
 		else if (opcode.equals("qr2"))
@@ -147,7 +147,7 @@ public class LibCommonsMath
 
 	public static MatrixBlock[] multiReturnOperations(MatrixBlock in1, MatrixBlock in2, String opcode, int windowSize, int overlap) {
 		if(opcode.equals("stft"))
-			return computeSTFT(in1, in2, windowSize, overlap);
+			return computeSTFT(in1, in2, windowSize, overlap, 1);
 		else if(opcode.equals("ifft"))
 			return computeIFFT(in1, in2, 1);
 		else
@@ -454,13 +454,13 @@ public class LibCommonsMath
 	 * @param overlap of stft
 	 * @return array of matrix blocks
 	 */
-	private static MatrixBlock[] computeSTFT(MatrixBlock re, MatrixBlock im, int windowSize, int overlap) {
+	private static MatrixBlock[] computeSTFT(MatrixBlock re, MatrixBlock im, int windowSize, int overlap, int threads) {
 		if (re == null) {
 			throw new DMLRuntimeException("Invalid empty block");
 		} else if (im != null && !im.isEmptyBlock(false)) {
 			re.sparseToDense();
 			im.sparseToDense();
-			return stft(re, im, windowSize, overlap);
+			return stft(re, im, windowSize, overlap, threads);
 		} else {
 			if (re.isEmptyBlock(false)) {
 				// Return the original matrix as the result
@@ -481,7 +481,7 @@ public class LibCommonsMath
 				return new MatrixBlock[]{new MatrixBlock(rows, rowLength, out_zero), new MatrixBlock(rows, rowLength, out_zero)};
 				}
 			re.sparseToDense();
-			return stft(re, windowSize, overlap);
+			return stft(re, windowSize, overlap, threads);
 		}
 	}
 
@@ -491,8 +491,8 @@ public class LibCommonsMath
 	 * @param re matrix object
 	 * @return array of matrix blocks
 	 */
-	private static MatrixBlock[] computeSTFT(MatrixBlock re, int windowSize, int overlap) {
-		return computeSTFT(re, null, windowSize, overlap);
+	private static MatrixBlock[] computeSTFT(MatrixBlock re, int windowSize, int overlap, int threads) {
+		return computeSTFT(re, null, windowSize, overlap, threads);
 	}
 
 	/**

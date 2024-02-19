@@ -27,12 +27,14 @@ import static org.apache.sysds.runtime.matrix.data.LibMatrixSTFT.stft;
 
 public class STFTTest {
 
+	int threads = Runtime.getRuntime().availableProcessors();
+
 	@Test
 	public void simple_test() {
 
 		MatrixBlock re = new MatrixBlock(1, 16,  new double[]{0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15});
 
-		MatrixBlock[] res = stft(re, 4, 2);
+		MatrixBlock[] res = stft(re, 4, 2, threads);
 
 		double[] res_re = res[0].getDenseBlockValues();
 		double[] res_im = res[1].getDenseBlockValues();
@@ -50,7 +52,7 @@ public class STFTTest {
 
 		MatrixBlock re = new MatrixBlock(1, 15,  new double[]{0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14});
 
-		MatrixBlock[] res = stft(re, 4, 2);
+		MatrixBlock[] res = stft(re, 4, 2, threads);
 
 		double[] res_re = res[0].getDenseBlockValues();
 		double[] res_im = res[1].getDenseBlockValues();
@@ -74,7 +76,7 @@ public class STFTTest {
 
 		MatrixBlock re = new MatrixBlock(1, 4,  new double[]{0, 18, -15, 3});
 
-		MatrixBlock[] res = stft(re, 4, 0);
+		MatrixBlock[] res = stft(re, 4, 0, threads);
 
 		double[] res_re = res[0].getDenseBlockValues();
 		double[] res_im = res[1].getDenseBlockValues();
@@ -92,7 +94,7 @@ public class STFTTest {
 
 		MatrixBlock re = new MatrixBlock(1, 8,  new double[]{10, 5, -3, 8, 15, -6, 2, 0});
 
-		MatrixBlock[] res = stft(re, 4, 2);
+		MatrixBlock[] res = stft(re, 4, 2, threads);
 
 		double[] res_re = res[0].getDenseBlockValues();
 		double[] res_im = res[1].getDenseBlockValues();
@@ -111,7 +113,7 @@ public class STFTTest {
 		MatrixBlock re = new MatrixBlock(1, 8,  new double[]{10, 5, -3, 8, 15, -6, 2, 0});
 		MatrixBlock im = new MatrixBlock(1, 8,  new double[]{0, 0, 0, 0, 0, 0, 0, 0});
 
-		MatrixBlock[] res = stft(re, im, 4, 2);
+		MatrixBlock[] res = stft(re, im, 4, 2, threads);
 
 		double[] res_re = res[0].getDenseBlockValues();
 		double[] res_im = res[1].getDenseBlockValues();
@@ -129,7 +131,7 @@ public class STFTTest {
 
 		MatrixBlock re = new MatrixBlock(2, 8,  new double[]{0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15});
 
-		MatrixBlock[] res = stft(re, 4, 1);
+		MatrixBlock[] res = stft(re, 4, 1, threads);
 
 		double[] res_re = res[0].getDenseBlockValues();
 		double[] res_im = res[1].getDenseBlockValues();
@@ -147,7 +149,7 @@ public class STFTTest {
 
 		MatrixBlock re = new MatrixBlock(4, 4,  new double[]{0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15});
 
-		MatrixBlock[] res = stft(re, 4, 0);
+		MatrixBlock[] res = stft(re, 4, 0, threads);
 
 		double[] res_re = res[0].getDenseBlockValues();
 		double[] res_im = res[1].getDenseBlockValues();
@@ -165,7 +167,7 @@ public class STFTTest {
 
 		MatrixBlock re = new MatrixBlock(4, 5,  new double[]{0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19});
 
-		MatrixBlock[] res = stft(re, 4, 1);
+		MatrixBlock[] res = stft(re, 4, 1, threads);
 
 		double[] res_re = res[0].getDenseBlockValues();
 		double[] res_im = res[1].getDenseBlockValues();

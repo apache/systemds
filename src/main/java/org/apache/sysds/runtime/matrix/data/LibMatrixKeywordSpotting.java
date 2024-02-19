@@ -43,6 +43,8 @@ public class LibMatrixKeywordSpotting {
 	 * Please download the
 	 * <a href="http://storage.googleapis.com/download.tensorflow.org/data/mini_speech_commands.zip">zip file</a> before
 	 * running. Save it in "./tmp".
+	 *
+	 * @param args args
 	 */
 	public static void main(String[] args) {
 
@@ -62,9 +64,9 @@ public class LibMatrixKeywordSpotting {
 
 	private static void saveDataToCSV(String basePath, ZipInputStream zipStream) throws IOException {
 
-		PrintWriter commandsCSV = new PrintWriter(new BufferedWriter(new FileWriter(basePath + "commands1.csv")));
-		PrintWriter wavesCSV = new PrintWriter(new BufferedWriter(new FileWriter(basePath + "waves1.csv")));
-		PrintWriter labelsCSV = new PrintWriter(new BufferedWriter(new FileWriter(basePath + "labels1.csv")));
+		PrintWriter commandsCSV = new PrintWriter(new BufferedWriter(new FileWriter(basePath + "commands.csv")));
+		PrintWriter wavesCSV = new PrintWriter(new BufferedWriter(new FileWriter(basePath + "waves.csv")));
+		PrintWriter labelsCSV = new PrintWriter(new BufferedWriter(new FileWriter(basePath + "labels.csv")));
 
 		List<String> commands = new ArrayList<>();
 
@@ -81,12 +83,14 @@ public class LibMatrixKeywordSpotting {
 
 				String dir = entry.getName();
 				// remove "/" at the end
-				String name = dir.substring(mainDir.length(), dir.length() - 1);
+				String command = dir.substring(mainDir.length(), dir.length() - 1);
 
-				commands.add(name);
-				// save to csv
-				commandsCSV.print(name);
-				commandsCSV.println();
+				if(command.equals("yes") || command.equals("no")){
+					commands.add(command);
+					// save to csv
+					commandsCSV.print(command);
+					commandsCSV.println();
+				}
 
 			}
 			else if(isWavFileToProcess(entry)) {
@@ -120,6 +124,11 @@ public class LibMatrixKeywordSpotting {
 
 		if(!path.endsWith(".wav"))
 			return false;
+
+		String command = getCommand(entry);
+		if(!command.equals("yes") && !command.equals("no")){
+			return false;
+		}
 
 		int end = path.lastIndexOf('/');
 		String file = path.substring(end + 1);

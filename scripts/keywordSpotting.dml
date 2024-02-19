@@ -1,7 +1,7 @@
 
 
-X = read("tmp/shuffled_features.csv", format="csv")
-y = read("tmp/shuffled_labels_minus_and_plus.csv", format="csv")
+X = read("tmp/waves.csv", format="csv")
+y = read("tmp/labels.csv", format="csv")
 
 Xy = cbind(X, y)
 num_col = ncol(Xy)

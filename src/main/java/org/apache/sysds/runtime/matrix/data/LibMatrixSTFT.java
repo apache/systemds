@@ -62,7 +62,7 @@ public class LibMatrixSTFT {
 		double[] re_inter = new double[out_len];
 		double[] im_inter = new double[out_len];
 
-		ExecutorService pool = CommonThreadPool.get(1);
+		//ExecutorService pool = CommonThreadPool.get(1);
 
 		final ExecutorService pool = CommonThreadPool.get(threads);
 

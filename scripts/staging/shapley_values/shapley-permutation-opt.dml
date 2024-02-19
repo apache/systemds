@@ -75,7 +75,68 @@ return (Matrix[Double] phis, Double expected){
   expected = mean(expected_m)
 }
 
-# Prepeares a boolean mask for removing features according to permutaion.
+shapley_permutations_multirow = function(String model_function, list[unknown] model_args, Matrix[Double] x_multirow, Matrix[Double] X_bg, Integer n_permutations = 10, Integer integration_samples = 100, Integer seed = -1, Integer verbose = 1)
+return (Matrix[Double] row_phis, Double expected){
+  shapleyUtils::u_vprint("Running permutation explainer for "+nrow(x_multirow)+" rows.", verbose)
+  shapleyUtils::u_vprint("The total number of predictions will be "+toString(ncol(x_multirow)*2*n_permutations*integration_samples)+".", verbose )
+
+  #important lengths and offsets
+  perm_length = ncol(x_multirow)
+  full_mask_offset = perm_length * 2 * integration_samples
+
+  # sample from X_bg
+  X_bg_samples = shapleyUtils::sample_with_potential_replace(X_bg=X_bg, samples=integration_samples, seed=seed )
+  row_phis         = matrix(0, rows=nrow(x_multirow), cols=perm_length)
+  expected_m   = matrix(0, rows=nrow(x_multirow), cols=n_permutations)
+
+
+  #prepare masks for all permutations, since it stays the same for every row
+  permutations    = matrix(0, rows=n_permutations, cols=perm_length)
+  masks_for_permutations = matrix(0, rows=perm_length*2*n_permutations*integration_samples, cols=perm_length)
+  #masked_bg_for_permutations = matrix(0, rows=perm_length*2*n_permutations*integration_samples, cols=perm_length)
+
+  parfor (i in 1:n_permutations){
+    permutations[i] = t(sample(perm_length,perm_length, seed=((seed+1)*i)-1))
+    perm_mask = prepare_mask_for_permutaion(permutation=permutations[i])
+    offset = (i-1) * full_mask_offset + 1
+    masks_for_permutations[offset:offset+full_mask_offset-1] = prepare_full_mask(perm_mask, integration_samples)
+  }
+
+  #replicate background and mask it, since it also can stay the same for every row
+  masked_bg_for_permutations = prepare_masked_X_bg(masks_for_permutations, X_bg_samples)
+
+  parfor (i in 1:nrow(x_multirow)){
+    #apply masks and bg data for all permutations at once
+    X_test = apply_full_mask(x_multirow[i], masks_for_permutations, masked_bg_for_permutations)
+
+    # generate args for call to model
+    X_arg = append(list(X=X_test), model_args)
+
+    # call model
+    P = eval(model_function, X_arg)
+    # compute means, deviding n_rows by integration_samples
+    P = compute_means_from_predictions(P=P, integration_samples=integration_samples)
+
+    #iterate through permutations to compute phis
+    phis = matrix(0, rows=perm_length, cols=2*n_permutations)
+    parfor(j in 1:n_permutations){
+      #offset of predictions in predictions for all permutations
+      offset = (j-1) * 2 * perm_length + 1
+      #predictions for this permutation
+      P_perm = P[offset:offset+2*perm_length-1]
+      #compute phis for this permutation
+      phis[,2*j-1:2*j] = compute_phis_from_prediction_means(P_perm = P_perm, permutation=permutations[j])
+      #store expected value from this permutation, this whenever we mask out everything and don't use anything from the row.
+      expected_m[i,j] = as.scalar(P_perm[1,1])
+    }
+    # compute phis for this row from all permutations
+    row_phis[i] = t(rowMeans(phis))
+  }
+  #compute expected of model from all rows
+  expected = mean(expected_m)
+}
+
+# Prepares a boolean mask for removing features according to permutaion.
 # The resulting matrix needs to be inflated to a sample set by using prepare_samples_from_mask() before calling the model.
 #
 # INPUT:
@@ -133,6 +194,25 @@ return (Matrix[Double] X_masked){
   mask_repeated = shapleyUtils::repeatRows(mask,nrow(X_bg_samples))
   X_bg_samples_repeated = shapleyUtils::repeatMatrix(X_bg_samples, nrow(mask))
   X_masked = (X_bg_samples_repeated * !mask_repeated) + (mask_repeated * x)
+}
+
+prepare_full_mask = function(Matrix[Double] mask, Integer n_integration_samples)
+  return (Matrix[Double] x_mask_full){
+  x_mask_full = shapleyUtils::repeatRows(mask,n_integration_samples)
+}
+
+prepare_masked_X_bg = function(Matrix[Double] x_mask_full, Matrix[Double] X_bg_samples)
+return (Matrix[Double] masked_X_bg){
+  #Repeat background once for every row in original mask.
+  #Since x_mask_full was already replicated row-wise by the number of rows in X_bg_samples, we devide by it.
+  masked_X_bg = shapleyUtils::repeatMatrix(X_bg_samples, nrow(x_mask_full)/nrow(X_bg_samples))
+  masked_X_bg = masked_X_bg * !x_mask_full
+}
+
+apply_full_mask = function(Matrix[Double] x_row, Matrix[Double] x_mask_full, Matrix[Double] masked_X_bg)
+return (Matrix[Double] X_masked){
+  #add the masked data from this row
+  X_masked = masked_X_bg + (x_mask_full * x_row)
 }
 
 # Performs the integration by taking means.

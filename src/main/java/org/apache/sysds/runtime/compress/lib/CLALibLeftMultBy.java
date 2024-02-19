@@ -415,7 +415,7 @@ public final class CLALibLeftMultBy {
 				final List<Future<MatrixBlock>> npaSubTask = new ArrayList<>();
 				if(ret.getNumColumns() < 1000000) {
 
-					final int colBlockSize = Math.max(ct / Math.max((k - pa.size()), 2), 64000);
+					final int colBlockSize = Math.max(ct / Math.max(k, 2), 64000);
 
 					for(int bloC = 0; bloC < ct; bloC += colBlockSize) {
 						final int startC = bloC;

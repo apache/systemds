@@ -230,10 +230,11 @@ public final class CLALibCombineGroups {
 				ret = combineUC(combinedColumns, a, b);
 
 			double sumCombined = ret.getSum(nRow);
-			double sumIndividual = a.getSum(nRow) + b.getSum(nRow);
-			if(Math.abs(sumCombined - sumIndividual) > 0.001) {
+			double sumIndividualA = a.getSum(nRow);
+			double sumIndividualB = b.getSum(nRow);
+			if(Math.abs(sumCombined - sumIndividualA - sumIndividualB) > Math.abs(((sumIndividualA + sumIndividualB) / 1000000))) {
 				throw new DMLCompressionException("Invalid combine... not producing same sum: " + sumCombined + " vs  "
-					+ sumIndividual + "  abs error: " + Math.abs(sumCombined - sumIndividual));
+					+ sumIndividualA + " : " + sumIndividualB + "  abs error: " + Math.abs(sumCombined - sumIndividualA - sumIndividualB));
 			}
 			return ret;
 		}

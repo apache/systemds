@@ -46,8 +46,12 @@ public class CLALibReorg {
 		// SwapIndex is transpose
 		if(op.fn instanceof SwapIndex && cmb.getNumColumns() == 1) {
 			MatrixBlock tmp = cmb.decompress(op.getNumThreads());
+
 			long nz = tmp.setNonZeros(tmp.getNonZeros());
-			tmp = new MatrixBlock(tmp.getNumColumns(), tmp.getNumRows(), tmp.getDenseBlockValues());
+			if(tmp.isInSparseFormat())
+				tmp = new MatrixBlock(tmp.getNumColumns(), tmp.getNumRows(), nz, tmp.getSparseBlock());
+			else
+				tmp = new MatrixBlock(tmp.getNumColumns(), tmp.getNumRows(), tmp.getDenseBlockValues());
 			tmp.setNonZeros(nz);
 			return tmp;
 		}

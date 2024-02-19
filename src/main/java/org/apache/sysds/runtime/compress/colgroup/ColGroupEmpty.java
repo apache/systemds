@@ -22,6 +22,7 @@ package org.apache.sysds.runtime.compress.colgroup;
 import java.io.DataInput;
 import java.io.IOException;
 import java.util.Arrays;
+import java.util.List;
 
 import org.apache.commons.lang3.NotImplementedException;
 import org.apache.sysds.runtime.DMLRuntimeException;
@@ -423,5 +424,22 @@ public class ColGroupEmpty extends AColGroupCompressed
 	@Override
 	public void sparseSelection(MatrixBlock selection, MatrixBlock ret, int rl, int ru) {
 		throw new NotImplementedException();
+	}
+
+	@Override
+	public AColGroup combineWithSameIndex(int nCol, List<AColGroup> right) {
+		for(AColGroup g : right) {
+			if(!(g instanceof ColGroupEmpty))
+				throw new NotImplementedException("Combine on Empty column only allowing empty column groups");
+		}
+
+		IColIndex combinedIndex = _colIndexes;
+		int i = 0;
+		for(AColGroup g : right){
+			i+= 1;
+			combinedIndex = combinedIndex.combine(g.getColIndices().shift(nCol * i));
+		}
+
+		return new ColGroupEmpty(combinedIndex);
 	}
 }

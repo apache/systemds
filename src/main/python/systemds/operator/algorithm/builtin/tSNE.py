@@ -35,6 +35,16 @@ def tSNE(X: Matrix,
      This function performs dimensionality reduction using tSNE algorithm based on
      the paper: Visualizing Data using t-SNE, Maaten et. al.
     
+     There exists a variant of t-SNE, implemented in sklearn, that first reduces the
+     dimenisonality of the data using PCA to reduce noise and then applies t-SNE for
+     further dimensionality reduction. A script of this can be found in the tutorials
+     folder: scripts/tutorials/tsne/pca-tsne.dml
+    
+     For direct reference and tips on choosing the dimension for the PCA pre-processing,
+     you can visit:
+     https://github.com/scikit-learn/scikit-learn/blob/main/sklearn/manifold/_t_sne.py
+     https://lvdmaaten.github.io/tsne/
+    
     
     
     :param X: Data Matrix of shape
@@ -44,9 +54,12 @@ def tSNE(X: Matrix,
     :param lr: Learning rate
     :param momentum: Momentum Parameter
     :param max_iter: Number of iterations
+    :param tol: Tolerance for early stopping in gradient descent
     :param seed: The seed used for initial values.
         If set to -1 random seeds are selected.
     :param is_verbose: Print debug information
+    :param print_iter: Intervals of printing out the L1 norm values. Parameter not relevant if
+        is_verbose = FALSE.
     :return: Data Matrix of shape (number of data points, reduced_dims)
     """
 

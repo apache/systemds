@@ -134,7 +134,6 @@ public class LibMatrixFourier {
 		double[] im_inter = new double[rows * cols];
 
 		final ExecutorService pool = CommonThreadPool.get(threads);
-
 		final List<Future<?>> tasks = new ArrayList<>();
 
 		try {
@@ -144,7 +143,6 @@ public class LibMatrixFourier {
 			for(int i = 0; i < rows; i += rBlz) {
 				final int start = i;
 				final int end = Math.min(i + rBlz, rows);
-
 				tasks.add(pool.submit(() -> {
 					for(int j = start; j < end; j++) {
 						fft_one_dim(re, im, re_inter, im_inter, j * cols, (j + 1) * cols, cols, 1);
@@ -160,7 +158,6 @@ public class LibMatrixFourier {
 				for(int j = 0; j < cols; j += cBlz) {
 					final int start = j;
 					final int end = Math.min(j + cBlz, cols);
-
 					tasks.add(pool.submit(() -> {
 						for(int i = start; i < end; i++) {
 							fft_one_dim(re, im, re_inter, im_inter, i, i + rows * cols, rows, cols);
@@ -171,7 +168,6 @@ public class LibMatrixFourier {
 				for(Future<?> f : tasks)
 					f.get();
 			}
-
 		}
 		catch(InterruptedException | ExecutionException e) {
 			throw new RuntimeException(e);
@@ -199,7 +195,6 @@ public class LibMatrixFourier {
 		double[] im_inter = new double[rows * cols];
 
 		ExecutorService pool = CommonThreadPool.get(threads);
-
 		final List<Future<?>> tasks = new ArrayList<>();
 
 		try {
@@ -207,11 +202,9 @@ public class LibMatrixFourier {
 			final int cBlz = Math.max(cols / threads, 32);
 
 			if(inclColCalc && rows > 1) {
-
 				for(int j = 0; j < cols; j += cBlz) {
 					final int start = j;
 					final int end = Math.min(j + cBlz, cols);
-
 					tasks.add(pool.submit(() -> {
 						for(int i = start; i < end; i++) {
 							ifft_one_dim(re, im, re_inter, im_inter, i, i + rows * cols, rows, cols);
@@ -227,7 +220,6 @@ public class LibMatrixFourier {
 			for(int i = 0; i < rows; i += rBlz) {
 				final int start = i;
 				final int end = Math.min(i + rBlz, rows);
-
 				tasks.add(pool.submit(() -> {
 					for(int j = start; j < end; j++) {
 						ifft_one_dim(re, im, re_inter, im_inter, j * cols, (j + 1) * cols, cols, 1);
@@ -237,7 +229,6 @@ public class LibMatrixFourier {
 
 			for(Future<?> f : tasks)
 				f.get();
-
 		}
 		catch(InterruptedException | ExecutionException e) {
 			throw new RuntimeException(e);
@@ -270,27 +261,43 @@ public class LibMatrixFourier {
 
 		// even indices
 		for(int step = minStep * (num / 2), subNum = 2; subNum <= num; step /= 2, subNum *= 2) {
-
 			double angle = -2 * FastMath.PI / subNum;
-
-			// use ceil for the main (sub)array
-			for(int sub = 0; sub < FastMath.ceil(num / (2 * (double) subNum)); sub++) {
-
-				for(int isOdd = 0; isOdd < 2; isOdd++) {
-
-					// no odd values for main (sub)array
-					if(isOdd == 1 && subNum == num)
-						return;
-
-					int startSub = start + sub * minStep + isOdd * (step / 2);
-					fft_one_dim_sub(re, im, re_inter, im_inter, start, stop, startSub, subNum, step, angle);
-
-				}
-
-			}
-
+			fft_one_dim_iter_sub(re, im, re_inter, im_inter, start, stop, num, minStep, subNum, step, angle);
 		}
+	}
 
+	/**
+	 * Function to call one-dimensional FFT for all subArrays of two given double arrays. The first one represents the
+	 * real values and the second one the imaginary values. Both arrays get updated and contain the result.
+	 *
+	 * @param re       array representing the real values
+	 * @param im       array representing the imaginary values
+	 * @param re_inter array for the real values of intermediate results
+	 * @param im_inter array for the imaginary values of intermediate results
+	 * @param start    start index (incl.)
+	 * @param stop     stop index (excl.)
+	 * @param num      number of values used for fft
+	 * @param minStep  step size between values used for fft
+	 * @param subNum   number of elements in subarray
+	 * @param step     step size between elements in subarray
+	 * @param angle    angle
+	 */
+	private static void fft_one_dim_iter_sub(double[] re, double[] im, double[] re_inter, double[] im_inter, int start,
+		int stop, int num, int minStep, int subNum, int step, double angle) {
+
+		// use ceil for the main (sub)array
+		for(int sub = 0; sub < FastMath.ceil(num / (2 * (double) subNum)); sub++) {
+
+			int startSub = start + sub * minStep;
+			fft_one_dim_sub(re, im, re_inter, im_inter, start, stop, startSub, subNum, step, angle);
+
+			// no odd values for main (sub)array
+			if(subNum == num)
+				return;
+
+			startSub = start + sub * minStep + step / 2;
+			fft_one_dim_sub(re, im, re_inter, im_inter, start, stop, startSub, subNum, step, angle);
+		}
 	}
 
 	/**
@@ -365,7 +372,6 @@ public class LibMatrixFourier {
 			re[i] = re[i] / num;
 			im[i] = -im[i] / num;
 		}
-
 	}
 
 	/**

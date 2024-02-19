@@ -23,13 +23,11 @@ import org.apache.commons.math3.util.FastMath;
 
 import org.apache.sysds.runtime.util.CommonThreadPool;
 
-
-import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.ExecutorService;
+import java.util.ArrayList;
 import java.util.concurrent.Future;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.ExecutionException;
 
 public class LibMatrixFourier {
 
@@ -141,38 +139,44 @@ public class LibMatrixFourier {
 
 		try {
 			final int rBlz = Math.max(rows / threads, 32);
+			final int cBlz = Math.max(cols / threads, 32);
 
-			for(int i = 0; i < rows; i += rBlz){
+			for(int i = 0; i < rows; i += rBlz) {
 				final int start = i;
 				final int end = Math.min(i + rBlz, rows);
 
-				tasks.add( pool.submit(() -> {
+				tasks.add(pool.submit(() -> {
 					for(int j = start; j < end; j++) {
-						final int finalI = j;
-						fft_one_dim(re, im, re_inter, im_inter, finalI * cols, (finalI + 1) * cols, cols, 1);
+						fft_one_dim(re, im, re_inter, im_inter, j * cols, (j + 1) * cols, cols, 1);
 					}
 				}));
 			}
 
 			for(Future<?> f : tasks)
 				f.get();
-				
+
 			tasks.clear();
 			if(inclColCalc && rows > 1) {
-				for(int j = 0; j < cols; j++) {	
-					final int finalJ = j;
-					tasks.add( pool.submit(() -> 
-					fft_one_dim(re, im, re_inter, im_inter, finalJ, finalJ + rows * cols, rows, cols)));
+				for(int j = 0; j < cols; j += cBlz) {
+					final int start = j;
+					final int end = Math.min(j + cBlz, cols);
+
+					tasks.add(pool.submit(() -> {
+						for(int i = start; i < end; i++) {
+							fft_one_dim(re, im, re_inter, im_inter, i, i + rows * cols, rows, cols);
+						}
+					}));
 				}
+
+				for(Future<?> f : tasks)
+					f.get();
 			}
-				
-			for(Future<?> f : tasks)
-			f.get();
-				
-		} catch (InterruptedException | ExecutionException e) {
+
+		}
+		catch(InterruptedException | ExecutionException e) {
 			throw new RuntimeException(e);
 		}
-		finally{
+		finally {
 			pool.shutdown();
 		}
 
@@ -196,19 +200,51 @@ public class LibMatrixFourier {
 
 		ExecutorService pool = CommonThreadPool.get(threads);
 
-		if(inclColCalc && rows > 1) {
-			for(int j = 0; j < cols; j++) {
-				final int finalJ = j;
-				pool.submit(() -> ifft_one_dim(re, im, re_inter, im_inter, finalJ, finalJ + rows * cols, rows, cols));
-			}
-			awaitParallelExecution(pool);
-		}
+		final List<Future<?>> tasks = new ArrayList<>();
 
-		for(int i = 0; i < rows; i++) {
-			final int finalI = i;
-			pool.submit(() -> ifft_one_dim(re, im, re_inter, im_inter, finalI * cols, (finalI + 1) * cols, cols, 1));
+		try {
+			final int rBlz = Math.max(rows / threads, 32);
+			final int cBlz = Math.max(cols / threads, 32);
+
+			if(inclColCalc && rows > 1) {
+
+				for(int j = 0; j < cols; j += cBlz) {
+					final int start = j;
+					final int end = Math.min(j + cBlz, cols);
+
+					tasks.add(pool.submit(() -> {
+						for(int i = start; i < end; i++) {
+							ifft_one_dim(re, im, re_inter, im_inter, i, i + rows * cols, rows, cols);
+						}
+					}));
+				}
+
+				for(Future<?> f : tasks)
+					f.get();
+			}
+
+			tasks.clear();
+			for(int i = 0; i < rows; i += rBlz) {
+				final int start = i;
+				final int end = Math.min(i + rBlz, rows);
+
+				tasks.add(pool.submit(() -> {
+					for(int j = start; j < end; j++) {
+						ifft_one_dim(re, im, re_inter, im_inter, j * cols, (j + 1) * cols, cols, 1);
+					}
+				}));
+			}
+
+			for(Future<?> f : tasks)
+				f.get();
+
 		}
-		awaitParallelExecution(pool);
+		catch(InterruptedException | ExecutionException e) {
+			throw new RuntimeException(e);
+		}
+		finally {
+			pool.shutdown();
+		}
 
 	}
 
@@ -396,19 +432,6 @@ public class LibMatrixFourier {
 		return ifft_linearized(re,
 			new MatrixBlock(re.getNumRows(), re.getNumColumns(), new double[re.getNumRows() * re.getNumColumns()]),
 			threads);
-	}
-
-	private static void awaitParallelExecution(ExecutorService pool) {
-
-		try {
-			int timeout = 100;
-			if(!pool.awaitTermination(timeout, TimeUnit.SECONDS)) {
-				pool.shutdownNow();
-			}
-		}
-		catch(InterruptedException e) {
-			e.printStackTrace();
-		}
 	}
 
 }

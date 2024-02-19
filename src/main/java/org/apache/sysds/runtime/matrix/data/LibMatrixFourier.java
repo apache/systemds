@@ -24,12 +24,16 @@ import org.apache.commons.math3.util.FastMath;
 import org.apache.sysds.runtime.util.CommonThreadPool;
 
 import java.util.List;
+import java.util.HashMap;
 import java.util.ArrayList;
 import java.util.concurrent.Future;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.ExecutionException;
 
 public class LibMatrixFourier {
+
+	static HashMap<Double, Double> sinCache = new HashMap<>();
+	static HashMap<Double, Double> cosCache = new HashMap<>();
 
 	/**
 	 * Function to perform FFT for two given matrices. The first one represents the real values and the second one the
@@ -320,8 +324,8 @@ public class LibMatrixFourier {
 
 		for(int j = startSub, cnt = 0; cnt < subNum / 2; j += 2 * step, cnt++) {
 
-			double omega_pow_re = FastMath.cos(cnt * angle);
-			double omega_pow_im = FastMath.sin(cnt * angle);
+			double omega_pow_re = cos(cnt * angle);
+			double omega_pow_im = sin(cnt * angle);
 
 			// calculate m using the result of odd index
 			double m_re = omega_pow_re * re[j + step] - omega_pow_im * im[j + step];
@@ -438,6 +442,20 @@ public class LibMatrixFourier {
 		return ifft_linearized(re,
 			new MatrixBlock(re.getNumRows(), re.getNumColumns(), new double[re.getNumRows() * re.getNumColumns()]),
 			threads);
+	}
+
+	private static double sin(double angle){
+		if (!sinCache.containsKey(angle)) {
+			sinCache.put(angle, FastMath.sin(angle));
+		}
+		return sinCache.get(angle);
+	}
+
+	private static double cos(double angle){
+		if (!cosCache.containsKey(angle)) {
+			cosCache.put(angle, FastMath.cos(angle));
+		}
+		return cosCache.get(angle);
 	}
 
 }

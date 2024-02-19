@@ -33,6 +33,7 @@ import org.apache.sysds.runtime.data.DenseBlock;
 import org.apache.sysds.runtime.data.SparseBlock;
 import org.apache.sysds.runtime.data.SparseBlockMCSR;
 import org.apache.sysds.runtime.functionobjects.SwapIndex;
+import org.apache.sysds.runtime.matrix.data.LibMatrixReorg;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.matrix.operators.ReorgOperator;
 import org.apache.sysds.runtime.util.CommonThreadPool;
@@ -48,7 +49,7 @@ public class CLALibReorg {
 			MatrixBlock tmp = cmb.decompress(op.getNumThreads());
 			long nz = tmp.setNonZeros(tmp.getNonZeros());
 			if(tmp.isInSparseFormat())
-				tmp = new MatrixBlock(tmp.getNumColumns(), tmp.getNumRows(), nz, tmp.getSparseBlock());
+				return LibMatrixReorg.transpose(tmp); // edge case...
 			else
 				tmp = new MatrixBlock(tmp.getNumColumns(), tmp.getNumRows(), tmp.getDenseBlockValues());
 			tmp.setNonZeros(nz);

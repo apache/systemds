@@ -454,22 +454,18 @@ public class LibMatrixFourier {
 	}
 
 	private static double sin(double angle, HashMap<Double, Double> cache) {
-
 		if(!cache.containsKey(angle)) {
 			cache.put(angle, FastMath.sin(angle));
 			limitCache(cache);
 		}
-
 		return cache.get(angle);
 	}
 
 	private static double cos(double angle, HashMap<Double, Double> cache) {
-
 		if(!cache.containsKey(angle)) {
 			cache.put(angle, FastMath.cos(angle));
 			limitCache(cache);
 		}
-
 		return cache.get(angle);
 	}
 

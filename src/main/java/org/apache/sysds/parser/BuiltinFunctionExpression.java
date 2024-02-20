@@ -357,7 +357,7 @@ public class BuiltinFunctionExpression extends DataIdentifier {
 		}
 		case FFT: {
 			checkNumParameters(1);
-			checkMatrixParam(expressionOne);
+			checkMatrixParam(getFirstExpr());
 
 			DataIdentifier fftOut1 = (DataIdentifier) getOutputs()[0];
 			DataIdentifier fftOut2 = (DataIdentifier) getOutputs()[1];
@@ -558,55 +558,6 @@ public class BuiltinFunctionExpression extends DataIdentifier {
 					raiseValidateError("The real and imaginary part of the provided matrix are of different dimensions.", false);
 				} else if (((ConstIdentifier) getThirdExpr().getOutput()).getLongValue() <= ((ConstIdentifier) getFourthExpr().getOutput()).getLongValue()) {
 					raiseValidateError("Overlap can't be larger than or equal to the window size.", false, LanguageErrorCodes.INVALID_PARAMETERS);
-				}
-			}
-
-			// setup output properties
-			DataIdentifier stftOut1 = (DataIdentifier) getOutputs()[0];
-			DataIdentifier stftOut2 = (DataIdentifier) getOutputs()[1];
-
-			// Output1 - stft Values
-			stftOut1.setDataType(DataType.MATRIX);
-			stftOut1.setValueType(ValueType.FP64);
-			stftOut1.setDimensions(getFirstExpr().getOutput().getDim1(), getFirstExpr().getOutput().getDim2());
-			stftOut1.setBlocksize(getFirstExpr().getOutput().getBlocksize());
-
-			// Output2 - stft Vectors
-			stftOut2.setDataType(DataType.MATRIX);
-			stftOut2.setValueType(ValueType.FP64);
-			stftOut2.setDimensions(getFirstExpr().getOutput().getDim1(), getFirstExpr().getOutput().getDim2());
-			stftOut2.setBlocksize(getFirstExpr().getOutput().getBlocksize());
-
-			break;
-		}
-		case STFT:
-		{
-			checkMatrixParam(getFirstExpr());
-
-			if ((getFirstExpr() == null || getSecondExpr() == null || getThirdExpr() == null) && _args.length > 0) {
-				raiseValidateError("Missing argument for function " + this.getOpCode(), false,
-						LanguageErrorCodes.INVALID_PARAMETERS);
-			} else if (getFifthExpr() != null) {
-				raiseValidateError("Invalid number of arguments for function " + this.getOpCode().toString().toLowerCase()
-						+ "(). This function only takes 3 or 4 arguments.", false);
-			} else if (_args.length == 3) {
-				checkScalarParam(getSecondExpr());
-				checkScalarParam(getThirdExpr());
-				if (!isPowerOfTwo(((ConstIdentifier) getSecondExpr().getOutput()).getLongValue())) {
-					raiseValidateError("This FFT implementation is only defined for matrices with dimensions that are powers of 2." +
-							"The window size (2nd argument) is not a power of two", false, LanguageErrorCodes.INVALID_PARAMETERS);
-				}
-			} else if (_args.length == 4) {
-				checkMatrixParam(getSecondExpr());
-				checkScalarParam(getThirdExpr());
-				checkScalarParam(getFourthExpr());
-				if (!isPowerOfTwo(((ConstIdentifier) getThirdExpr().getOutput()).getLongValue())) {
-					raiseValidateError("This FFT implementation is only defined for matrices with dimensions that are powers of 2." +
-							"The window size (3rd argument) is not a power of two", false, LanguageErrorCodes.INVALID_PARAMETERS);
-				} else if (getFirstExpr().getOutput().getDim2() != getSecondExpr().getOutput().getDim2()) {
-					raiseValidateError("The real and imaginary part of the provided matrix are of different dimensions.", false);
-				} else if (getFirstExpr().getOutput().getDim1() != 1 || getSecondExpr().getOutput().getDim1() != 1) {
-					raiseValidateError("This FFT implementation is only defined for one-dimensional matrices.", false, LanguageErrorCodes.INVALID_PARAMETERS);
 				}
 			}
 

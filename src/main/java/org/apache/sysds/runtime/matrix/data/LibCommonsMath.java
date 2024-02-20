@@ -181,7 +181,7 @@ public class LibCommonsMath
 	}
 
 	public static MatrixBlock[] multiReturnOperations(MatrixBlock in1, MatrixBlock in2, String opcode, int threads,
-			long seed) {
+													  long seed) {
 
 		switch (opcode) {
 			case "ifft":
@@ -345,18 +345,8 @@ public class LibCommonsMath
 			return new MatrixBlock[]{re, new MatrixBlock(re.getNumRows(), re.getNumColumns(), true)}; // Assuming you need to return two matrices: the real part and an imaginary part initialized to 0.
 		}
 		// run fft
-		in.sparseToDense();
-		return fft(in);
-	}
-
-	private static boolean isMatrixAllZeros(MatrixBlock matrix) {
-		// Fast check for sparse representation
-		if (matrix.isInSparseFormat()) {
-			return matrix.getNonZeros() == 0;
-		}
-		// Dense format check
-		double sum = matrix.sum();
-		return sum == 0;
+		re.sparseToDense();
+		return fft(re, threads);
 	}
 
 	/**
@@ -443,10 +433,10 @@ public class LibCommonsMath
 			return ifft_linearized(re, threads);
 		}
 	}
-    
+
 	/**
 	 * Function to perform IFFT_LINEARIZED on a given matrix
-	 * 
+	 *
 	 * @param re matrix object
 	 * @param threads number of threads
 	 * @return array of matrix blocks
@@ -454,7 +444,7 @@ public class LibCommonsMath
 	private static MatrixBlock[] computeIFFT_LINEARIZED(MatrixBlock re, int threads){
 		return computeIFFT_LINEARIZED(re, null, threads);
 	}
-	
+
 	/**
 	 * Function to perform STFT on a given matrix.
 	 *
@@ -489,7 +479,7 @@ public class LibCommonsMath
 				double[] out_zero = new double[out_len];
 
 				return new MatrixBlock[]{new MatrixBlock(rows, rowLength, out_zero), new MatrixBlock(rows, rowLength, out_zero)};
-				}
+			}
 			re.sparseToDense();
 			return stft(re, windowSize, overlap, threads);
 		}

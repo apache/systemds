@@ -33,7 +33,7 @@ public class ReaderWavFile {
 			// collapse channels to mono channel
 			int channels = 1;
 			AudioFormat monoAudioFormat = new AudioFormat(audioInputStream.getFormat().getSampleRate(),
-				audioInputStream.getFormat().getSampleSizeInBits(), channels, true, false);
+					audioInputStream.getFormat().getSampleSizeInBits(), channels, true, false);
 			AudioInputStream monoAudioInputStream = AudioSystem.getAudioInputStream(monoAudioFormat, audioInputStream);
 
 			// curation of audio
@@ -46,18 +46,18 @@ public class ReaderWavFile {
 			int bytesRead = audioInputStream.read(audioData);
 
 			// read operation failed
-			if(bytesRead == -1) {
+			if (bytesRead == -1) {
 				return null;
 			}
 
 			// convert byte array to int array
 			int[] audioValues = new int[numFrames];
-			for(int i = 0, frameIndex = 0; i < bytesRead; i += frameSize, frameIndex++) {
+			for (int i = 0, frameIndex = 0; i < bytesRead; i += frameSize, frameIndex++) {
 				// only use 8 most significant bits
 				int sampleValue = audioData[i + 1] << 8;
 				audioValues[frameIndex] = sampleValue;
 				// only use 8 most significant bits
-				int sampleValue = audioData[i + 1] << 8;
+				sampleValue = audioData[i + 1] << 8;
 				audioValues[frameIndex] = sampleValue;
 			}
 
@@ -66,13 +66,9 @@ public class ReaderWavFile {
 			monoAudioInputStream.close();
 
 			return audioValues;
-		}
-		catch(IOException e) {
-		catch(IOException e) {
+		} catch (IOException e) {
 			e.printStackTrace();
 			return null;
 		}
-
 	}
-
 }

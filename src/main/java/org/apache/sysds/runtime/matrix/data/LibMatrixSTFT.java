@@ -62,8 +62,6 @@ public class LibMatrixSTFT {
 		double[] re_inter = new double[out_len];
 		double[] im_inter = new double[out_len];
 
-		//ExecutorService pool = CommonThreadPool.get(1);
-
 		final ExecutorService pool = CommonThreadPool.get(threads);
 
 		final List<Future<?>> tasks = new ArrayList<>();
@@ -93,28 +91,6 @@ public class LibMatrixSTFT {
 			pool.shutdown();
 		}
 
-
-		/*
-		for (int i = 0; i < stftOutput_re.length; i++) {
-			System.out.println(stftOutput_re[i] + stftOutput_im[i]);
-		}
-
-		 */
-		int i = 0;
-		while (i < 1000000000) {
-			i = i + 1;
-		}
-		i = 0;
-		while (i < 1000000000) {
-			i = i + 1;
-		}
-		i = 0;
-		while (i < 1000000000) {
-			i = i + 1;
-		}
-
-
-
 		return new MatrixBlock[]{new MatrixBlock(rows, rowLength, stftOutput_re), new MatrixBlock(rows, rowLength, stftOutput_im)};
 	}
 
@@ -132,4 +108,5 @@ public class LibMatrixSTFT {
 	public static MatrixBlock[] stft(MatrixBlock re, int windowSize, int overlap, int threads){
 		return stft(re, new MatrixBlock(re.getNumRows(), re.getNumColumns(),  new double[re.getNumRows() * re.getNumColumns()]), windowSize, overlap, threads);
 	}
+
 }

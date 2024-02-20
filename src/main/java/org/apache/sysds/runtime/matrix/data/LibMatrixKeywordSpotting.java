@@ -36,6 +36,8 @@ import java.util.List;
 import java.util.Arrays;
 import java.util.Arrays;
 import java.util.ArrayList;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipInputStream;
 
 public class LibMatrixKeywordSpotting {
 

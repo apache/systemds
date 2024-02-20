@@ -23,6 +23,7 @@ import org.apache.commons.math3.util.FastMath;
 
 import org.apache.sysds.runtime.util.CommonThreadPool;
 
+import java.lang.ref.SoftReference;
 import java.util.List;
 import java.util.HashMap;
 import java.util.ArrayList;
@@ -32,8 +33,8 @@ import java.util.concurrent.ExecutionException;
 
 public class LibMatrixFourier {
 
-	static HashMap<Double, Double> sinCache = new HashMap<>();
-	static HashMap<Double, Double> cosCache = new HashMap<>();
+	static SoftReference<HashMap<Double, Double>> sinCacheRef = new SoftReference<>(new HashMap<>());
+	static SoftReference<HashMap<Double, Double>> cosCacheRef = new SoftReference<>(new HashMap<>());
 
 	/**
 	 * Function to perform FFT for two given matrices. The first one represents the real values and the second one the
@@ -322,10 +323,18 @@ public class LibMatrixFourier {
 	private static void fft_one_dim_sub(double[] re, double[] im, double[] re_inter, double[] im_inter, int start,
 		int stop, int startSub, int subNum, int step, double angle) {
 
+		HashMap<Double, Double> sinCache = sinCacheRef.get();
+		HashMap<Double, Double> cosCache = cosCacheRef.get();
+
+		if(sinCache == null)
+			sinCache = new HashMap<>();
+		if(cosCache == null)
+			cosCache = new HashMap<>();
+
 		for(int j = startSub, cnt = 0; cnt < subNum / 2; j += 2 * step, cnt++) {
 
-			double omega_pow_re = cos(cnt * angle);
-			double omega_pow_im = sin(cnt * angle);
+			double omega_pow_re = cos(cnt * angle, cosCache);
+			double omega_pow_im = sin(cnt * angle, sinCache);
 
 			// calculate m using the result of odd index
 			double m_re = omega_pow_re * re[j + step] - omega_pow_im * im[j + step];
@@ -444,18 +453,31 @@ public class LibMatrixFourier {
 			threads);
 	}
 
-	private static double sin(double angle){
-		if (!sinCache.containsKey(angle)) {
-			sinCache.put(angle, FastMath.sin(angle));
+	private static double sin(double angle, HashMap<Double, Double> cache) {
+
+		if(!cache.containsKey(angle)) {
+			cache.put(angle, FastMath.sin(angle));
+			limitCache(cache);
 		}
-		return sinCache.get(angle);
+
+		return cache.get(angle);
 	}
 
-	private static double cos(double angle){
-		if (!cosCache.containsKey(angle)) {
-			cosCache.put(angle, FastMath.cos(angle));
+	private static double cos(double angle, HashMap<Double, Double> cache) {
+
+		if(!cache.containsKey(angle)) {
+			cache.put(angle, FastMath.cos(angle));
+			limitCache(cache);
 		}
-		return cosCache.get(angle);
+
+		return cache.get(angle);
+	}
+
+	private static void limitCache(HashMap<Double, Double> cache) {
+		if(cache.size() > 1000) {
+			// remove oldest key
+			cache.remove(cache.keySet().iterator().next());
+		}
 	}
 
 }

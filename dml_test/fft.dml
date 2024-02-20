@@ -1,5 +1,0 @@
-print("hello")
-M = matrix("0 18 -15 3", rows=1, cols=4)
-[r,i] = fft(M)
-print(toString(r))
-print(toString(i))

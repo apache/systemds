@@ -17,6 +17,7 @@ import io.github.spencerpark.jupyter.kernel.display.DisplayData;
 import io.github.spencerpark.jupyter.kernel.util.CharPredicate;
 import io.github.spencerpark.jupyter.kernel.util.SimpleAutoCompleter;
 import io.github.spencerpark.jupyter.kernel.util.StringSearch;
+import org.apache.sysds.runtime.instructions.cp.ScalarObject;
 
 import javax.script.ScriptContext;
 import javax.script.ScriptEngine;
@@ -26,6 +27,8 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class ISystemDsKernel extends BaseKernel{
     //private static final NashornScriptEngineFactory NASHORN_ENGINE_FACTORY = new NashornScriptEngineFactory();
@@ -60,6 +63,7 @@ public class ISystemDsKernel extends BaseKernel{
     private final Connection connection = new Connection();
     private int sca;
     private HashMap<String, Object> hashMap = new HashMap<>();
+    private HashMap<String, double[][]> hashMapForMatrix = new HashMap<>();
 
     public ISystemDsKernel() {
 
@@ -80,8 +84,111 @@ public class ISystemDsKernel extends BaseKernel{
                         + "  R[i,] = sum(X[i,])"
                         + "print(sum(R))";*/
 
+    public double[][] stringToDoubleArray(String matrixString) {
+        // Split the input string into rows.
+        String[] rows = matrixString.split(";");
 
-    void analyzeVariables(Hop hop, HashSet<String> inVars, HashSet<String> outVars) {
+        // Prepare the resulting double array with the correct number of rows.
+        double[][] matrix = new double[rows.length][];
+
+        for (int i = 0; i < rows.length; i++) {
+            // Split each row into its individual values.
+            String[] values = rows[i].split(",");
+
+            // Prepare the row array.
+            matrix[i] = new double[values.length];
+
+            for (int j = 0; j < values.length; j++) {
+                // Convert each value to double and store in the matrix.
+                try {
+                    matrix[i][j] = Double.parseDouble(values[j].trim()); // Trim to remove any leading or trailing spaces.
+                } catch (NumberFormatException e) {
+                    // Handle the case where the string cannot be parsed as a double.
+                    System.err.println("Error parsing '" + values[j] + "' as double.");
+                    // Optionally, initialize to a default value or throw an exception.
+                }
+            }
+        }
+
+        return matrix;
+    }
+
+
+    public static Set<String> extractOutputVariables(String script) {
+        Set<String> outputVariables = new HashSet<>(); // Use a set to avoid duplicates
+        String[] lines = script.split("\\n"); // Split the script into lines
+
+        // Pattern to extract variable names (considering words before '=' and ignoring whitespace)
+        Pattern pattern = Pattern.compile("\\s*(\\w+)\\s*(?:\\[.*\\])?\\s*=.*");
+
+        for (String line : lines) {
+            Matcher matcher = pattern.matcher(line);
+            if (matcher.find()) {
+                outputVariables.add(matcher.group(1)); // Add the variable name to the set
+            }
+        }
+
+        return outputVariables;
+    }
+
+    public static Set<String> findInputVariables(String script) {
+        // Split the script into lines and then into individual statements
+        String[] statements = script.replace("\n", ";").split(";");
+
+        Set<String> definedVariables = new HashSet<>();
+        Set<String> usedVariables = new HashSet<>();
+
+        // Pattern to match identifiers that are not purely numeric and not followed by '(' (to exclude function calls)
+        // and not enclosed in quotes.
+        Pattern variablePattern = Pattern.compile("\\b[a-zA-Z]\\w*\\b(?!\\()");
+        Pattern stringPattern = Pattern.compile("\"[^\"]*\"|'[^']*'");
+
+        for (String statement : statements) {
+            statement = statement.trim(); // Trim whitespace from each statement
+
+            // Remove string literals from the statement before analyzing
+            Matcher stringMatcher = stringPattern.matcher(statement);
+            String statementWithoutStrings = stringMatcher.replaceAll("");
+
+            // Check for variable definitions and uses in the modified statement
+            Matcher varMatcher = variablePattern.matcher(statementWithoutStrings);
+            while (varMatcher.find()) {
+                usedVariables.add(varMatcher.group());
+            }
+
+            // Check for variable definitions (assuming simple assignment statements)
+            String[] parts = statementWithoutStrings.split("=");
+            if (parts.length == 2) {
+                String potentialVariable = parts[0].trim();
+                if (variablePattern.matcher(potentialVariable).matches()) {
+                    definedVariables.add(potentialVariable);
+                }
+            }
+        }
+
+        // Input variables are those that are used but not defined within the script
+        usedVariables.removeAll(definedVariables);
+
+        return usedVariables;
+    }
+
+    public static Object createObject(String type, ScalarObject value) {
+        System.out.println("type: "+type);
+        switch (type) {
+            case "class org.apache.sysds.runtime.instructions.cp.StringObject":
+                return value.getStringValue();
+            case "class org.apache.sysds.runtime.instructions.cp.BooleanObject":
+                return value.getBooleanValue();
+            case "class org.apache.sysds.runtime.instructions.cp.DoubleObject":
+                return value.getDoubleValue();
+            case "class org.apache.sysds.runtime.instructions.cp.IntObject":
+                return Integer.parseInt(value.getStringValue());
+            default:
+                throw new IllegalArgumentException("Unsupported type: " + type);
+        }
+    }
+
+    /*void analyzeVariables(Hop hop, HashSet<String> inVars, HashSet<String> outVars) {
         // Check if the hop is a DataOp
         if (hop instanceof DataOp) {
             DataOp dataOp = (DataOp) hop;
@@ -101,34 +208,27 @@ public class ISystemDsKernel extends BaseKernel{
         for (Hop inputHop : hop.getInput()) {
             analyzeVariables(inputHop, inVars, outVars);
         }
-    }
+    }*/
     void analyzeStatementBlock(StatementBlock sb, HashSet<String> outVars) {
         // Extract variable names from 'updated' and 'kill' sets and add them to outVars
         if (sb.variablesUpdated() != null) {
-
             outVars.addAll(sb.variablesUpdated().getVariableNames());
-
         }
-
     }
 
     @Override
     public DisplayData eval(String expr) throws Exception {
 
-        HashSet<String> inputVaraibles = new HashSet<>();
-        HashSet<String> outputVaraibles = new HashSet<>();
+        //HashSet<String> inputVariables = new HashSet<>();
+        //HashSet<String> outputVariables = new HashSet<>();
+        String[] outputArray;
+        Set<String> set1 = findInputVariables(expr);
+        Set<String> setoutputs = findInputVariables(expr);
 
-        if (this.hashMap.size() > 0){
-            int i = 0;
-            for (String in: this.hashMap.keySet()
-            ) {
-                i++;
-                expr =  in + "= read(\"./tmp/doesntexist" + i+ "\", data_type=\"scalar\", value_type=\"string\");\n"+ expr  ;
-            }
-            i = 0;
 
-        }
-       DMLParserWrapper dmlParser = new DMLParserWrapper();
+
+
+       /*DMLParserWrapper dmlParser = new DMLParserWrapper();
         DMLProgram dml_program = dmlParser.parse(null,expr,null);
         DMLTranslator translator = new DMLTranslator(dml_program);
         translator.validateParseTree(dml_program);
@@ -139,55 +239,102 @@ public class ISystemDsKernel extends BaseKernel{
 
 
         for (StatementBlock sb : dml_program.getStatementBlocks()) {
-            //System.out.println(sb.toString());
-            // Get HOPs for each statement block
-            //ArrayList<Hop> hops = sb.getHops();
-            //ArrayList<Lop> lops = sb.getLops();
-            analyzeStatementBlock(sb, outputVaraibles);
+            analyzeStatementBlock(sb, outputVariables);
+        }*/
+        int i = 0;
+        for (String str: set1
+        ) {
+            i++;
+            if(this.hashMapForMatrix.get(str) != null){
+                expr =  str + "= read(\"./tmp/doesntexist" + str+ "\", data_type=\"matrix\");\n"+ expr  ;
+            }
+            else{
+                expr =  str + "= read(\"./tmp/doesntexist" + i+ "\", data_type=\"scalar\", value_type=\"string\");\n"+ expr  ;
+            }
         }
+        //i = 0;
 
-
-        String[] outputArray;
-        //System.out.println("size: " + this.hashMap.size());
-        //System.out.println("hash: " + this.hashMap.entrySet());
-        if (this.hashMap.size() > 0){
-            outputArray = outputVaraibles.toArray(new String[0]);
+        if (this.hashMap.size() > 0 || this.hashMapForMatrix.size()>0){
+            setoutputs.addAll(extractOutputVariables(expr));
+            setoutputs.addAll(set1);
+            outputArray = setoutputs.toArray(new String[0]);
 
             for (String out: outputArray
             ) {
                 //System.out.println("out: "+out);
                 expr =  expr + ";\nwrite("+out+", './tmp/"+out+"');" ;
             }
-            //System.out.println("expr: "+expr);
+            System.out.println("expr: "+expr);
             //PreparedScript preparedScript = this.connection.prepareScript(expr,new String[]{"b"}, outputArray);
-            PreparedScript preparedScript = this.connection.prepareScript(expr,this.hashMap.keySet().toArray(new String[0]), outputArray);
+            PreparedScript preparedScript = this.connection.prepareScript(expr,set1.toArray(new String[0]), outputArray);
             //preparedScript.setScalar("b",7,true);
             //inScalar1 = read("./tmp/doesntexist1", data_type="scalar");
             //\nwrite(outString, './tmp/outString');
-            for (String key: this.hashMap.keySet().toArray(new String[0])
+            for (String key: set1
                  ) {
-                //System.out.println("key: "+key);
-                preparedScript.setScalar(key, Integer.parseInt(this.hashMap.get(key).toString()));
+                System.out.println("hello: " + key);
+                if(this.hashMapForMatrix.get(key) != null){
+
+                    double [][] matrix = this.hashMapForMatrix.get(key);
+
+                    preparedScript.setMatrix(key, matrix);
+
+                }
+                else {
+                    switch (this.hashMap.get(key).getClass().getSimpleName()) {
+                        case "String":
+                            preparedScript.setScalar(key, this.hashMap.get(key).toString());
+                            break; // Prevent fall-through
+                        case "Boolean":
+                            preparedScript.setScalar(key, Boolean.parseBoolean(this.hashMap.get(key).toString()));
+                            break; // Prevent fall-through
+                        case "Double":
+                            preparedScript.setScalar(key, Double.parseDouble(this.hashMap.get(key).toString()));
+                            break; // Prevent fall-through
+                        case "Integer":
+                            preparedScript.setScalar(key, Integer.parseInt(this.hashMap.get(key).toString()));
+                            break; // Prevent fall-through
+
+                        default:
+                            throw new IllegalArgumentException("Unsupported type " + this.hashMap.get(key).getClass().getSimpleName());
+                    }
+                }
+
 
             }
 
+
             ResultVariables res =  preparedScript.executeScript();
+            //System.out.println(res.);
             for (String output: outputArray) {
                 // Retrieve and store the output variable values
-                Object value = res.getScalarObject(output);
+                Types.DataType dt = res.getDataType(output);
+                System.out.println("output is: " + output);
+                System.out.println("datatype is: " + dt);
+                if(dt.isMatrix()){
+                    this.hashMapForMatrix.put(output, res.getMatrix(output));
+                }
 
-                this.hashMap.put(output, value);
+                else{
+                    ScalarObject tmp = res.getScalarObject(output);
+
+                    Object value = createObject(tmp.getClass().toString(), tmp);
+                    this.hashMap.put(output, value);
+                }
+
             }
         }
         else {
-            outputArray = outputVaraibles.toArray(new String[0]);
+            setoutputs.addAll(extractOutputVariables(expr));
+            setoutputs.addAll(set1);
+            outputArray = setoutputs.toArray(new String[0]);
             //new String[]{"Z"}
             for (String out: outputArray
                  ) {
-                //System.out.println("out: "+out);
+                System.out.println("out: "+out);
                 expr =  expr + ";\nwrite("+out+", './tmp/"+out+"');"  ;
             }
-            //System.out.println("expr: "+expr);
+            System.out.println("expr: "+expr);
             PreparedScript preparedScript = this.connection.prepareScript(expr,new String[]{}, outputArray);
 
 
@@ -196,10 +343,27 @@ public class ISystemDsKernel extends BaseKernel{
             ResultVariables res =  preparedScript.executeScript();
             for (String output: outputArray) {
                 // Retrieve and store the output variable values
+                Types.DataType dt = res.getDataType(output);
+                System.out.println("output is: " + output);
+                System.out.println("datatype is: " + dt);
+                if(dt.isMatrix()){
 
-                Object value = res.getScalarObject(output);
+                    //Object value = res.getMatrix(output);
+                    //System.out.println(res.getMatrix(output).length);
 
-                this.hashMap.put(output, value);
+                    this.hashMapForMatrix.put(output, res.getMatrix(output));
+
+
+                }
+                else{
+                    ScalarObject tmp = res.getScalarObject(output);
+                    Object value = createObject(tmp.getClass().toString(), tmp);
+                    System.out.println("value: "+value);
+                    this.hashMap.put(output, value);
+                }
+
+
+
             }
         }
 

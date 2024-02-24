@@ -716,4 +716,80 @@ public abstract class SparseBlock implements Serializable, Block
 			}
 		}
 	}
+	private class SparseBlockIteratorOverRows implements Iterator<Integer>{
+		private int _rlen = 0; //row upper
+		private int _curRow = -1; //current row
+		private boolean _noNext = false; //end indicator
+		private int _searchIndex = 0;
+		private int _previousSearchIndex = -1;
+
+		protected SparseBlockIteratorOverRows(int ru) {
+			_rlen = ru;
+			_curRow = 0;
+			_searchIndex = setSearchIndex(_curRow, ru);
+			if(_searchIndex == -1){
+				_noNext = true;
+			}
+		}
+
+		protected SparseBlockIteratorOverRows(int rl, int ru) {
+			_rlen = ru;
+			_curRow = rl;
+			_searchIndex = setSearchIndex(_curRow, ru);
+			if(_searchIndex == -1){
+				_noNext = true;
+			}
+		}
+
+		@Override
+		public boolean hasNext() {
+			return !_noNext;
+		}
+
+		@Override
+		public Integer next( ) {
+			if(SparseBlock.this instanceof SparseBlockDCSR || SparseBlock.this instanceof SparseBlockCOO) {
+				_curRow = nextNonZeroRowIndex(_searchIndex, _rlen);
+				_previousSearchIndex = _searchIndex;
+				_searchIndex = updateSearchIndex(_previousSearchIndex, _rlen);
+				if(_previousSearchIndex == _searchIndex) {
+					_noNext = true;
+				}
+				return _curRow;
+			}
+			else if(SparseBlock.this instanceof SparseBlockCSR) {
+				_curRow = nextNonZeroRowIndex(_searchIndex, _rlen);
+				_searchIndex = updateSearchIndex(_curRow, _rlen);
+				_searchIndex = setSearchIndex(_searchIndex, _rlen); // special case: single non-zero row
+				if(_curRow == _previousSearchIndex || _curRow==_searchIndex || _searchIndex==-1) {
+					_noNext = true;
+					_searchIndex=_curRow;
+				}
+				_previousSearchIndex = _curRow;
+				return _curRow;
+			}
+			else{ //MCSR
+				_previousSearchIndex = nextNonZeroRowIndex(_searchIndex, _rlen);
+				_curRow = updateSearchIndex(_previousSearchIndex,_rlen);
+				if(_previousSearchIndex == _curRow){
+					_noNext = true;
+				}else {
+					_searchIndex=_curRow;
+				}
+				return _previousSearchIndex;
+			}
+		}
+
+		@Override
+		public void remove() {
+			throw new RuntimeException("SparseBlockIterator is unsupported!");
+		}
+
+		/**
+		 * Moves cursor to next non-zero row or indicates that no more
+		 * rows are available.
+		 */
+
+
+	}
 }

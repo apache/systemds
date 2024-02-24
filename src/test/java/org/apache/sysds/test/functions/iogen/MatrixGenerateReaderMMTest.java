@@ -23,7 +23,7 @@ import org.junit.Test;
 
 public class MatrixGenerateReaderMMTest extends GenerateReaderMatrixTest {
 
-	private final static String TEST_NAME = "FrameGenerateReaderLibSVMTest";
+	private final static String TEST_NAME = "MatrixGenerateReaderMMTest";
 
 	@Override
 	protected String getTestName() {

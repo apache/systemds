@@ -23,7 +23,7 @@ import org.junit.Test;
 
 public class FrameGenerateReaderXMLTest extends GenerateReaderFrameTest {
 
-	private final static String TEST_NAME = "FrameGenerateReaderJSONTest";
+	private final static String TEST_NAME = "FrameGenerateReaderXMLTest";
 
 	@Override
 	protected String getTestName() {

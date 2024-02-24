@@ -327,6 +327,37 @@ public class SparseBlockDCSR extends SparseBlock
 	}
 
 	@Override
+	public  int nextNonZeroRowIndex(int r, int ru){
+		return _rowidx[r];
+	}
+	@Override
+	public int setSearchIndex(int r, int ru){
+		int insertionPoint=-1;
+		int result = Arrays.binarySearch(_rowidx, r);
+		if(result < 0) {
+			insertionPoint = -result - 1;
+			if (_rowidx[insertionPoint] == ru) {
+				return -1; // Return -1 if insertionPoint is ru
+			}
+			return insertionPoint;
+		}else{
+			if (_rowidx[result] == ru) {
+				return -1; // Return -1 if insertionPoint is ru
+			}
+			return result;
+		}
+	}
+
+	@Override
+	public  int updateSearchIndex(int r, int ru){
+		int nextIndex = r+1;
+		if(nextIndex>=_rowidx.length || _rowidx[nextIndex]>= ru){
+			nextIndex = r;
+		}
+		return nextIndex;
+	}
+
+	@Override
 	public boolean set(int r, int c, double v) {
 		int rowIndex = Arrays.binarySearch(_rowidx, 0, _nnzr, r);
 		boolean rowExists = rowIndex >= 0;

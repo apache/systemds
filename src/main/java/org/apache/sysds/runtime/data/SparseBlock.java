@@ -306,6 +306,12 @@ public abstract class SparseBlock implements Serializable, Block
 	 * @return starting position of row r
 	 */
 	public abstract int pos(int r);
+
+	public abstract int nextNonZeroRowIndex(int r, int ru);
+
+	public abstract int setSearchIndex(int r, int ru);
+
+	public abstract int updateSearchIndex(int r, int ru);
 	
 	
 	////////////////////////

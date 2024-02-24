@@ -558,6 +558,18 @@ public abstract class SparseBlock implements Serializable, Block
 		//default generic iterator, override if necessary
 		return new SparseBlockIterator(rl, Math.min(ru,numRows()));
 	}
+
+	public Iterator<Integer> getIteratorNonZeroRows(){
+		return new SparseBlockIteratorOverRows(numRows());
+	}
+
+	public Iterator<Integer> getIteratorNonZeroRows(int ru){
+		return new SparseBlockIteratorOverRows(ru);
+	}
+
+	public Iterator<Integer> getIteratorNonZeroRows(int rl, int ru){
+		return new SparseBlockIteratorOverRows(rl, ru);
+	}
 	
 	@Override 
 	public abstract String toString();

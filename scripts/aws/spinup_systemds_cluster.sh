@@ -63,13 +63,12 @@ if [ ! -f ${KEYPAIR_NAME}.pem ]; then
     echo "${KEYPAIR_NAME}.pem private key created!"
 fi
 
-#Get the first available subnet in the default VPC of the region
-DEFAULT_SUBNET=$(aws ec2 describe-subnets --region eu-central-1 \
+#Get the first available subnet in the default VPC of the configured region
+DEFAULT_SUBNET=$(aws ec2 describe-subnets --region $REGION \
   --filter "Name=defaultForAz,Values=true" --query "Subnets[0].SubnetId" --output text)
 
 #Create the cluster
-#Note: Ganglia not available since emr-6.15.0: exchange with AmazonCloudWatchAgent
-#Note: '--availability-zone ANY' enforce assigning a default subnet to the cluster
+#Note: Ganglia not available since emr-6.15.0: exchanged with AmazonCloudWatchAgent
 CLUSTER_INFO=$(aws emr create-cluster \
  --applications Name=AmazonCloudWatchAgent Name=Spark \
  --ec2-attributes '{"KeyName":"'${KEYPAIR_NAME}'",

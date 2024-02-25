@@ -71,12 +71,9 @@ public abstract class GenerateReaderFrameTest extends AutomatedTestBase {
 				parallel);
 			FrameReader fr = gr.getReader();
 			fr.readFrameFromHDFS(dataFileName, sampleSchema, rows, sampleSchema.length);
-
-			// TODO Verify the frameblock contains the correct values.
-
 		}
 		catch(Exception exception) {
-			exception.printStackTrace();
+			throw new RuntimeException(exception);
 		}
 		finally {
 			rtplatform = oldPlatform;

@@ -33,29 +33,12 @@ public abstract class GenerateReaderMatrixTest extends AutomatedTestBase {
 
 	protected final static String TEST_DIR = "functions/iogen/";
 	protected final static String TEST_CLASS_DIR = TEST_DIR + GenerateReaderMatrixTest.class.getSimpleName() + "/";
-	protected String sampleRaw;
-	protected double[][] sampleMatrix;
-
 	protected abstract String getTestName();
 
 	@Override
 	public void setUp() {
 		TestUtils.clearAssertionInformation();
 		addTestConfiguration(getTestName(), new TestConfiguration(TEST_DIR, getTestName(), new String[] {"Y"}));
-	}
-
-	protected void generateRandomSymmetric(int size, double min, double max, double sparsity, boolean isSkew) {
-		sampleMatrix = getRandomMatrix(size, size, min, max, sparsity, 714);
-		int conf = isSkew ? -1 : 1;
-		for(int i = 0; i < size; i++) {
-			for(int j = 0; j <= i; j++) {
-
-				if(i != j)
-					sampleMatrix[i][j] = sampleMatrix[j][i] * conf;
-				else
-					sampleMatrix[i][j] = 0;
-			}
-		}
 	}
 
 	@SuppressWarnings("unused")
@@ -90,7 +73,7 @@ public abstract class GenerateReaderMatrixTest extends AutomatedTestBase {
 
 		}
 		catch(Exception exception) {
-			exception.printStackTrace();
+			throw new RuntimeException(exception);
 		}
 		finally {
 			rtplatform = oldPlatform;

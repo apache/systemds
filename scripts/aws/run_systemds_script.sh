@@ -41,7 +41,7 @@ fi
 
 dml_filename=$(basename $1)
 
-STEP_INFO=$(aws emr add-steps --cluster-id $CLUSTER_ID --steps "Type=Spark,
+STEP_INFO=$(aws emr add-steps --cluster-id $CLUSTER_ID  --region $REGION --steps "Type=Spark,
   Name='SystemDS Spark Program',
   ActionOnFailure=CONTINUE,
   Args=[
@@ -54,7 +54,7 @@ STEP_INFO=$(aws emr add-steps --cluster-id $CLUSTER_ID --steps "Type=Spark,
 
 STEP_ID=$(echo $STEP_INFO | jq .StepIds | tr -d '"' | tr -d ']' | tr -d '[' | tr -d '[:space:]' )
 echo "Waiting for the step to finish"
-aws emr wait step-complete --cluster-id $CLUSTER_ID --step-id $STEP_ID
+aws emr wait step-complete --cluster-id $CLUSTER_ID --step-id $STEP_ID --region $REGION
 
-aws emr ssh --cluster-id $CLUSTER_ID --key-pair-file ${KEYPAIR_NAME}.pem --command "cat /mnt/var/log/hadoop/steps/$STEP_ID/stderr"
-aws emr ssh --cluster-id $CLUSTER_ID --key-pair-file ${KEYPAIR_NAME}.pem --command "cat /mnt/var/log/hadoop/steps/$STEP_ID/stdout"
+aws emr ssh --cluster-id $CLUSTER_ID --key-pair-file ${KEYPAIR_NAME}.pem --region $REGION --command "cat /mnt/var/log/hadoop/steps/$STEP_ID/stderr"
+aws emr ssh --cluster-id $CLUSTER_ID --key-pair-file ${KEYPAIR_NAME}.pem --region $REGION --command "cat /mnt/var/log/hadoop/steps/$STEP_ID/stdout"

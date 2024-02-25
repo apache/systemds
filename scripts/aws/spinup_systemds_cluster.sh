@@ -49,9 +49,11 @@ set_config "BUCKET" $BUCKET-$(((RANDOM % 999) + 1000))
 #Source again to update the changes for the current session
 source systemds_cluster.config
 
-#Create systemDS bucket (LocationConstraint configuration required regions outside of us-east-1)
-aws s3api create-bucket --bucket $BUCKET --region $REGION --create-bucket-configuration LocationConstraint=$REGION &> /dev/null
-aws s3api create-bucket --bucket $BUCKET-logs --region $REGION --create-bucket-configuration LocationConstraint=$REGION &> /dev/null
+#Create systemDS bucket
+#LocationConstraint configuration required regions outside of us-east-1
+if [ "$REGION" = "us-east-1" ]; then LOCATION_CONSTRAINT=""; else LOCATION_CONSTRAINT="--create-bucket-configuration LocationConstraint=$REGION"; fi
+aws s3api create-bucket --bucket $BUCKET --region $REGION $LOCATION_CONSTRAINT &> /dev/null
+aws s3api create-bucket --bucket $BUCKET-logs --region $REGION $LOCATION_CONSTRAINT &> /dev/null
 
 # Upload Jar and scripts to s3
 aws s3 sync $SYSTEMDS_TARGET_DIRECTORY s3://$BUCKET --exclude "*" --include "*.dml" --include "*config.xml" --include "*DS.jar*"
@@ -87,7 +89,13 @@ CLUSTER_INFO=$(aws emr create-cluster \
                         "InstanceGroupType":"CORE",
                         "InstanceType":"'${INSTANCES_TYPE}'",
                         "Name":"Core Instance Group"}]'\
- --configurations '[{"Classification":"spark","Properties":{"maximizeResourceAllocation": "true"}}]'\
+ --configurations '[{"Classification":"spark","Properties":{"maximizeResourceAllocation": "true"}},
+                     {"Classification": "spark-env",
+                         "Configurations": [{
+                           "Classification": "export",
+                           "Properties": {"JAVA_HOME": "/usr/lib/jvm/jre-11"}
+                         }]
+                     }]'\
  --scale-down-behavior TERMINATE_AT_TASK_COMPLETION \
  --region $REGION)
 
@@ -98,19 +106,20 @@ set_config "CLUSTER_ID" $CLUSTER_ID
 ip_address=$(curl ipecho.net/plain ; echo)
 
 #Add your ip to the security group
-aws ec2 create-security-group --group-name ElasticMapReduce-master --description "info" &> /dev/null
+aws ec2 create-security-group --group-name ElasticMapReduce-master --description "info" --region $REGION &> /dev/null
 aws ec2 authorize-security-group-ingress \
     --group-name ElasticMapReduce-master \
     --protocol tcp \
     --port 22 \
-    --cidr "${ip_address}"/24 &> /dev/null
+    --cidr "${ip_address}"/24 \
+    --region $REGION &> /dev/null
 
 # Wait for cluster to start
 echo "Waiting for cluster running state"
-aws emr wait cluster-running --cluster-id $CLUSTER_ID
+aws emr wait cluster-running --cluster-id $CLUSTER_ID --region $REGION
 
 echo "Cluster info:"
-export CLUSTER_URL=$(aws emr describe-cluster --cluster-id $CLUSTER_ID | jq .Cluster.MasterPublicDnsName | tr -d '"')
+export CLUSTER_URL=$(aws emr describe-cluster --cluster-id $CLUSTER_ID --region $REGION | jq .Cluster.MasterPublicDnsName | tr -d '"')
 
 aws emr ssh --cluster-id $CLUSTER_ID --key-pair-file ${KEYPAIR_NAME}.pem --region $REGION \
     --command 'aws s3 cp s3://'${BUCKET}' . --recursive --exclude "*" --include "*DS.jar*"'

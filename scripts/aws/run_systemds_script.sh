@@ -32,7 +32,7 @@ fi
 
 source systemds_cluster.config
 
-aws s3 cp $1 s3://system-ds-bucket/ --exclude "*" --include "*.dml"
+aws s3 cp $1 s3://${BUCKET} --exclude "*" --include "*.dml"
 
 if [ ! -z "$2" ]
 then
@@ -50,7 +50,7 @@ STEP_INFO=$(aws emr add-steps --cluster-id $CLUSTER_ID --steps "Type=Spark,
         --driver-memory,$SPARK_DRIVER_MEMORY,
         --num-executors,$SPARK_NUM_EXECUTORS,
         --conf,spark.driver.maxResultSize=0,
-        $SYSTEMDS_JAR_PATH, -f, s3://system-ds-bucket/$dml_filename, -exec, $SYSTEMDS_EXEC_MODE,$args,-stats, -explain]")
+        $SYSTEMDS_JAR_PATH, -f, s3://$BUCKET/$dml_filename, -exec, $SYSTEMDS_EXEC_MODE,$args,-stats, -explain]")
 
 STEP_ID=$(echo $STEP_INFO | jq .StepIds | tr -d '"' | tr -d ']' | tr -d '[' | tr -d '[:space:]' )
 echo "Waiting for the step to finish"

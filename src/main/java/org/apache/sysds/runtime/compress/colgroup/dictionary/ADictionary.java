@@ -175,9 +175,8 @@ public abstract class ADictionary implements IDictionary, Serializable {
 
 	@Override
 	public void put(SparseBlock sb, int idx, int rowOut, int nCol, IColIndex columns) {
-		for(int i = 0; i < nCol; i++) {
+		for(int i = 0; i < nCol; i++)
 			sb.append(rowOut, columns.get(i), getValue(idx, i, nCol));
-		}
 	}
 
 	@Override

@@ -461,10 +461,22 @@ public class StringArray extends Array<String> {
 
 	@Override
 	protected Array<Double> changeTypeDouble(Array<Double> retA, int l, int u) {
-		final double[] ret = (double[]) retA.get();
-		for(int i = l; i < u; i++)
-			ret[i] = DoubleArray.parseDouble(_data[i]);
-		return retA;
+		try{
+			final double[] ret = (double[]) retA.get();
+			for(int i = l; i < u; i++)
+				ret[i] = DoubleArray.parseDouble(_data[i]);
+			return retA;
+		}
+		catch(Exception e){
+			Pair<ValueType, Boolean> t = analyzeValueType();
+			if(t.getKey() == ValueType.BOOLEAN){
+				changeTypeBoolean().changeType(retA, l, u);
+			}
+			else {
+				throw e;
+			}
+			return retA;
+		}
 	}
 
 	@Override

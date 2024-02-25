@@ -117,6 +117,9 @@ public final class CLALibLeftMultBy {
 	 */
 	public static MatrixBlock leftMultByMatrix(CompressedMatrixBlock right, MatrixBlock left, MatrixBlock ret, int k) {
 		try {
+
+			// return LibMatrixMult.matrixMult(left, right.getUncompressed(), ret, k); // uncompressed example
+
 			if(left.isEmpty() || right.isEmpty())
 				return prepareEmptyReturnMatrix(right, left, ret, false);
 
@@ -134,8 +137,11 @@ public final class CLALibLeftMultBy {
 	}
 
 	private static boolean isSelectionMatrix(MatrixBlock mb) {
-		if(mb.getNonZeros() <= mb.getNumRows() && mb.isInSparseFormat()) {// good start.
+		// See if the input is potentially only containing one nonzero per row.
+		if(mb.getNonZeros() <= mb.getNumRows() && mb.isInSparseFormat()) {
+
 			SparseBlock sb = mb.getSparseBlock();
+			// verify every row only contain one 1 value.
 			for(int i = 0; i < mb.getNumRows(); i++) {
 				if(sb.isEmpty(i))
 					continue;
@@ -454,7 +460,7 @@ public final class CLALibLeftMultBy {
 			}
 
 			if(rowSums != null) // row sums task
-				tasks.add(pool.submit(() -> rowSumDense(that, rowSums, start, end, 0, ct)));
+				tasks.add(pool.submit(() -> rowSum(that, rowSums, start, end, 0, ct)));
 		}
 
 		for(Future<?> future : tasks)
@@ -827,7 +833,9 @@ public final class CLALibLeftMultBy {
 	}
 
 	private static void rowSum(MatrixBlock mb, double[] rowSum, int rl, int ru, int cl, int cu) {
-		if(mb.isInSparseFormat())
+		if(mb.isEmpty())
+			return; // should not happen that it is empty, then there is a bug somewhere else.
+		else if(mb.isInSparseFormat())
 			rowSumSparse(mb.getSparseBlock(), rowSum, rl, ru, cl, cu);
 		else
 			rowSumDense(mb, rowSum, rl, ru, cl, cu);
@@ -861,7 +869,7 @@ public final class CLALibLeftMultBy {
 			// Timing t = new Timing();
 			final DenseBlock db = that.getDenseBlock();
 			if(db == null) {
-				throw new DMLCompressionException("Invalid call should not happen that the matrix block is sparse");
+				throw new DMLCompressionException("Invalid call should not happen that the matrix block is sparse ");
 			}
 			else if(db.isContiguous()) {
 				final double[] thatV = db.values(0);

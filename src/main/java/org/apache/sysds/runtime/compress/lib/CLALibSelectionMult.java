@@ -19,7 +19,10 @@
 
 package org.apache.sysds.runtime.compress.lib;
 
+import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Future;
 
 import org.apache.commons.lang3.NotImplementedException;
 import org.apache.commons.logging.Log;
@@ -29,6 +32,7 @@ import org.apache.sysds.runtime.compress.colgroup.AColGroup;
 import org.apache.sysds.runtime.compress.utils.IntArrayList;
 import org.apache.sysds.runtime.data.SparseBlock;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
+import org.apache.sysds.runtime.util.CommonThreadPool;
 
 /**
  * This lib is responsible for selecting and extracting specific rows or columns from a compressed matrix.
@@ -53,6 +57,7 @@ public class CLALibSelectionMult {
 			right.recomputeNonZeros();
 
 		boolean sparseOut = right.getSparsity() < 0.3;
+		// sparseOut = false;
 		ret.reset(left.getNumRows(), right.getNumColumns(), sparseOut);
 		ret.allocateBlock();
 		final List<AColGroup> preFilter = right.getColGroups();
@@ -62,7 +67,6 @@ public class CLALibSelectionMult {
 			// final List<AColGroup> noPreAggGroups = new ArrayList<>();
 			// final List<APreAgg> preAggGroups = new ArrayList<>();
 			final List<AColGroup> morphed = CLALibUtils.filterGroups(preFilter, constV);
-
 			if(sparseOut) {
 				leftSparseSelection(morphed, left, ret, k);
 				double[] rowSums = left.rowSum(k).getDenseBlockValues();
@@ -85,9 +89,44 @@ public class CLALibSelectionMult {
 	}
 
 	private static void leftSparseSelection(List<AColGroup> right, MatrixBlock left, MatrixBlock ret, int k) {
-		for(AColGroup g : right)
-			g.sparseSelection(left, ret, 0, left.getNumRows());
-		left.getSparseBlock().sort();
+
+		final int rowLeft = left.getNumRows();
+		if(k <= 0 || rowLeft < 1000) {
+
+			for(AColGroup g : right)
+				g.sparseSelection(left, ret, 0, rowLeft);
+			ret.getSparseBlock().sort();
+		}
+		else {
+			ExecutorService pool = CommonThreadPool.get(k);
+			try {
+
+				List<Future<?>> tasks = new ArrayList<>();
+				final int blkz = Math.max(rowLeft / k, 1000);
+				for(int i = 0; i < rowLeft; i += blkz) {
+					final int start = i;
+					final int end = Math.min(rowLeft, i + blkz);
+					tasks.add(pool.submit(() -> {
+						for(AColGroup g : right)
+							g.sparseSelection(left, ret, start, end);
+						SparseBlock sb = ret.getSparseBlock();
+						for(int j = start; j < end; j++) {
+							if(!sb.isEmpty(j))
+								sb.sort(j);
+						}
+					}));
+				}
+
+				for(Future<?> t : tasks)
+					t.get();
+			}
+			catch(Exception e) {
+				throw new RuntimeException(e);
+			}
+			finally {
+				pool.shutdown();
+			}
+		}
 	}
 
 	private static void leftDenseSelection(List<AColGroup> right, MatrixBlock left, MatrixBlock ret, int k) {

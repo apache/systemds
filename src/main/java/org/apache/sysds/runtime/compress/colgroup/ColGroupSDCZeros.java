@@ -542,8 +542,7 @@ public class ColGroupSDCZeros extends ASDCZero implements IMapToDataGroup {
 	}
 
 	@Override
-	public void leftMMIdentityPreAggregateDense(MatrixBlock that, MatrixBlock ret, int rl, int ru, int cl,
-	int cu){
+	public void leftMMIdentityPreAggregateDense(MatrixBlock that, MatrixBlock ret, int rl, int ru, int cl, int cu) {
 		throw new NotImplementedException();
 	}
 
@@ -878,7 +877,38 @@ public class ColGroupSDCZeros extends ASDCZero implements IMapToDataGroup {
 	}
 
 	@Override
+	public AColGroup morph(CompressionType ct, int nRow) {
+		// if(ct == getCompType())
+		// return this;
+		// else if (ct == CompressionType.SDCFOR)
+		// return this; // it does not make sense to change to FOR.
+		if(ct == CompressionType.DDC) {
+			AMapToData retMap = MapToFactory.create(_numRows, _data.getUnique() + 1);
+			IDictionary combinedDict = _dict.append(getDefaultTuple());
+			retMap.fill(_data.getUnique());
+
+			AIterator it = _indexes.getIterator();
+			while(it.value() < _indexes.getOffsetToLast()) {
+				retMap.set(it.value(), _data.getIndex(it.getDataIndex()));
+				it.next();
+			}
+			retMap.set(it.value(), _data.getIndex(it.getDataIndex()));
+
+			return ColGroupDDC.create(_colIndexes, combinedDict, retMap, null);
+
+		}
+		else
+			return super.morph(ct, nRow);
+	}
+
+	@Override
 	public void sparseSelection(MatrixBlock selection, MatrixBlock ret, int rl, int ru) {
+
+		// test with morphing to DDC
+		// AColGroup b = morph(CompressionType.DDC, _numRows);
+		// b.sparseSelection(selection, ret, rl, ru);
+		// return;
+		
 		final SparseBlock sb = selection.getSparseBlock();
 		final SparseBlock sr = ret.getSparseBlock();
 		final int nCol = _colIndexes.size();
@@ -886,34 +916,26 @@ public class ColGroupSDCZeros extends ASDCZero implements IMapToDataGroup {
 		if(it == null)
 			throw new NotImplementedException("Not Implemented fill with default");
 
-		P[] points = ColGroupUtils.getSortedSelection(sb, rl, ru);
-
-		_data.verify();
-
-		// LOG.error(this);
-		final int last = Math.min(_indexes.getOffsetToLast(), ru);
+		final P[] points = ColGroupUtils.getSortedSelection(sb, rl, ru);
+		final int last = _indexes.getOffsetToLast();
 		int c = 0;
-		while(it.value() < last && c < points.length) {
-			while(it.value() < last && it.value() < points[c].o) {
-				it.next();
-			}
-			if(it.value() >= last) {
-				break;
-			}
-			final int of = it.value();
+		int of = it.value();
+		while(of < last && c < points.length) {
 			if(points[c].o == of) {
-				try {
-
+				_dict.put(sr, _data.getIndex(it.getDataIndex()), points[c].r, nCol, _colIndexes);
+				c++;
+				while(c < points.length && points[c].o == of){
 					_dict.put(sr, _data.getIndex(it.getDataIndex()), points[c].r, nCol, _colIndexes);
-					it.next();
+					c++;
 				}
-				catch(Exception e) {
-					throw new DMLCompressionException(it + " " + points[c] + " fail", e);
-				}
+				of = it.next();
 			}
-			c++;
+			else if(points[c].o < of)
+				c++;
+			else
+				of = it.next();
 		}
-		if(it.value() == ru) {
+		while(c < points.length && of == points[c].o) {
 			_dict.put(sr, _data.getIndex(it.getDataIndex()), points[c].r, nCol, _colIndexes);
 			c++;
 		}
@@ -937,26 +959,27 @@ public class ColGroupSDCZeros extends ASDCZero implements IMapToDataGroup {
 
 	@Override
 	protected void decompressToSparseBlockTransposedDenseDictionary(SparseBlockMCSR db, double[] dict, int nColOut) {
-		AIterator it = _indexes.getIterator();
+		throw new NotImplementedException();
+		// AIterator it = _indexes.getIterator();
 
-		final int rowOut = _colIndexes.size();
-		final int last = _indexes.getOffsetToLast();
+		// final int rowOut = _colIndexes.size();
+		// final int last = _indexes.getOffsetToLast();
 
-		int v = it.value();
-		while(v < last) {
-			final int di = _data.getIndex(it.getDataIndex());
-			for(int c = 0; c < rowOut; c++) {
-				db.append(_colIndexes.get(c), v, dict[di * rowOut + c]);
-			}
-			v = it.next();
-		}
+		// int v = it.value();
+		// while(v < last) {
+		// 	final int di = _data.getIndex(it.getDataIndex());
+		// 	for(int c = 0; c < rowOut; c++) {
+		// 		db.append(_colIndexes.get(c), v, dict[di * rowOut + c]);
+		// 	}
+		// 	v = it.next();
+		// }
 
-		// take last element.
+		// // take last element.
 
-		final int di = _data.getIndex(it.getDataIndex());
-		for(int c = 0; c < rowOut; c++) {
-			db.append(_colIndexes.get(c), v, dict[di * rowOut + c]);
-		}
+		// final int di = _data.getIndex(it.getDataIndex());
+		// for(int c = 0; c < rowOut; c++) {
+		// 	db.append(_colIndexes.get(c), v, dict[di * rowOut + c]);
+		// }
 
 	}
 

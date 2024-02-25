@@ -340,7 +340,7 @@ public abstract class AColGroup implements Serializable {
 	 * 
 	 * @param db   Target DenseBlock
 	 * @param rl   Row to start decompression from
-	 * @param ru   Row to end decompression at
+	 * @param ru   Row to end decompression at (not inclusive)
 	 * @param offR Row offset into the target to decompress
 	 * @param offC Column offset into the target to decompress
 	 */
@@ -354,7 +354,7 @@ public abstract class AColGroup implements Serializable {
 	 * 
 	 * @param sb   Target SparseBlock
 	 * @param rl   Row to start decompression from
-	 * @param ru   Row to end decompression at
+	 * @param ru   Row to end decompression at (not inclusive)
 	 * @param offR Row offset into the target to decompress
 	 * @param offC Column offset into the target to decompress
 	 */

@@ -34,7 +34,6 @@ import org.apache.sysds.runtime.compress.colgroup.dictionary.DictionaryFactory;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.IDictionary;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.IdentityDictionary;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.MatrixBlockDictionary;
-import org.apache.sysds.runtime.compress.colgroup.indexes.ArrayIndex;
 import org.apache.sysds.runtime.compress.colgroup.indexes.ColIndexFactory;
 import org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex;
 import org.apache.sysds.runtime.compress.colgroup.indexes.RangeIndex;
@@ -819,23 +818,25 @@ public class ColGroupDDC extends APreAgg implements IMapToDataGroup {
 
 	@Override
 	public void sparseSelection(MatrixBlock selection, MatrixBlock ret, int rl, int ru) {
+		// morph(CompressionType.UNCOMPRESSED, _data.size()).sparseSelection(selection, ret, rl, ru);;
 		final SparseBlock sb = selection.getSparseBlock();
 		final SparseBlock retB = ret.getSparseBlock();
 		for(int r = rl; r < ru; r++) {
 			if(sb.isEmpty(r))
 				continue;
-
 			final int sPos = sb.pos(r);
-			final int rowCompressed = sb.indexes(r)[sPos];
+			final int rowCompressed = sb.indexes(r)[sPos]; // column index with 1
 			decompressToSparseBlock(retB, rowCompressed, rowCompressed + 1, r - rowCompressed, 0);
 		}
 	}
 
 	@Override
 	public AColGroup morph(CompressionType ct, int nRow) {
+		// return this;
 		if(ct == getCompType())
 			return this;
 		else if(ct == CompressionType.SDC) {
+			// return this;
 			int[] counts = getCounts();
 			int maxId = maxIndex(counts);
 			double[] def = _dict.getRow(maxId, _colIndexes.size());

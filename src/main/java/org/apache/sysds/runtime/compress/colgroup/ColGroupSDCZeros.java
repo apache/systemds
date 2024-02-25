@@ -912,9 +912,9 @@ public class ColGroupSDCZeros extends ASDCZero implements IMapToDataGroup {
 		final SparseBlock sb = selection.getSparseBlock();
 		final SparseBlock sr = ret.getSparseBlock();
 		final int nCol = _colIndexes.size();
-		final AIterator it = _indexes.getIterator(rl);
-		if(it == null)
-			throw new NotImplementedException("Not Implemented fill with default");
+		final AIterator it = _indexes.getIterator();
+		if(it == null) // simple no matches but should not happen.
+			return;
 
 		final P[] points = ColGroupUtils.getSortedSelection(sb, rl, ru);
 		final int last = _indexes.getOffsetToLast();

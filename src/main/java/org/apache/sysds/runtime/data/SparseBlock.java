@@ -316,8 +316,22 @@ public abstract class SparseBlock implements Serializable, Block
 	 */
 	public abstract int nextNonZeroRowIndex(int r, int ru);
 
+	/**
+	 * Get the starting index in the row array.
+	 *
+	 * @param r  inclusive lower row index starting at 0
+	 * @param ru exclusive upper row index starting at 0
+	 * @return starting index in row array
+	 */
 	public abstract int setSearchIndex(int r, int ru);
 
+	/**
+	 * Get the next index in the row array.
+	 *
+	 * @param r  previous row index starting at 0
+	 * @param ru exclusive upper row index starting at 0
+	 * @return next index in row array
+	 */
 	public abstract int updateSearchIndex(int r, int ru);
 	
 	
@@ -846,7 +860,5 @@ public abstract class SparseBlock implements Serializable, Block
 		 * Moves cursor to next non-zero row or indicates that no more
 		 * rows are available.
 		 */
-
-
 	}
 }

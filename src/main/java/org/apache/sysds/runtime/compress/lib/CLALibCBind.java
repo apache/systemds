@@ -159,29 +159,34 @@ public final class CLALibCBind {
 	private static CompressedMatrixBlock cbindAllCompressedAligned(CompressedMatrixBlock left, MatrixBlock[] right,
 		final int k) throws InterruptedException, ExecutionException {
 
-		ExecutorService pool = CommonThreadPool.get(k);
-		final List<AColGroup> gl = left.getColGroups();
-		final List<Future<AColGroup>> tasks = new ArrayList<>();
-		final int nCol = left.getNumColumns();
-		for(int i = 0; i < gl.size(); i++) {
-			final AColGroup gli = gl.get(i);
-			tasks.add(pool.submit( () -> {
-				List<AColGroup> combines = new ArrayList<>();
-				final int cId = gli.getColIndices().get(0);
-				for(int j = 0; j < right.length; j++){
-					combines.add( ((CompressedMatrixBlock)right[j]).getColGroupForColumn(cId) );
-				}
-				return gli.combineWithSameIndex(nCol, combines); 
-			}));
+		final ExecutorService pool = CommonThreadPool.get(k);
+		try{
+			final List<AColGroup> gl = left.getColGroups();
+			final List<Future<AColGroup>> tasks = new ArrayList<>();
+			final int nCol = left.getNumColumns();
+			for(int i = 0; i < gl.size(); i++) {
+				final AColGroup gli = gl.get(i);
+				tasks.add(pool.submit( () -> {
+					List<AColGroup> combines = new ArrayList<>();
+					final int cId = gli.getColIndices().get(0);
+					for(int j = 0; j < right.length; j++){
+						combines.add( ((CompressedMatrixBlock)right[j]).getColGroupForColumn(cId) );
+					}
+					return gli.combineWithSameIndex(nCol, combines); 
+				}));
+			}
+	
+			final List<AColGroup> retCG = new ArrayList<>(gl.size());
+			for(Future<AColGroup> t : tasks)
+				retCG.add(t.get());
+	
+			int totalCol = nCol + right.length * nCol;
+	
+			return new CompressedMatrixBlock(left.getNumRows(), totalCol, -1, false, retCG);
 		}
-
-		final List<AColGroup> retCG = new ArrayList<>(gl.size());
-		for(Future<AColGroup> t : tasks)
-			retCG.add(t.get());
-
-		int totalCol = nCol + right.length * nCol;
-
-		return new CompressedMatrixBlock(left.getNumRows(), totalCol, -1, false, retCG);
+		finally{
+			pool.shutdown();
+		}
 
 	}
 

@@ -260,15 +260,15 @@ public class LibMatrixMult
 
 		// core multi-threaded matrix mult computation
 		// (currently: always parallelization over number of rows)
+		ExecutorService pool = CommonThreadPool.get(k);
 		try {
-			ExecutorService pool = CommonThreadPool.get(k);
 			ArrayList<MatrixMultTask> tasks = new ArrayList<>();
 			ArrayList<Integer> blklens = UtilFunctions.getBalancedBlockSizesDefault(num, k, (pm2r || pm2c));
 			for(int i = 0, lb = 0; i < blklens.size(); lb += blklens.get(i), i++)
 				tasks.add(new MatrixMultTask(m1, m2, ret, tm2, pm2r, pm2c, m1Perm, sparse, lb, lb + blklens.get(i)));
 			// execute tasks
 			List<Future<Object>> taskret = pool.invokeAll(tasks);
-			pool.shutdown();
+
 			// aggregate partial results (nnz, ret for vector/matrix)
 			ret.nonZeros = 0; // reset after execute
 			for(Future<Object> task : taskret) {
@@ -282,6 +282,9 @@ public class LibMatrixMult
 		}
 		catch(Exception ex) {
 			throw new DMLRuntimeException(ex);
+		}
+		finally{
+			pool.shutdown();
 		}
 
 		// post-processing (nnz maintained in parallel)
@@ -378,14 +381,14 @@ public class LibMatrixMult
 		
 		//core matrix mult chain computation
 		//(currently: always parallelization over number of rows)
+		ExecutorService pool = CommonThreadPool.get(k);
 		try {
-			ExecutorService pool = CommonThreadPool.get(k);
 			ArrayList<Integer> blklens = UtilFunctions.getBalancedBlockSizesDefault(mX.rlen, k, true);
 			ArrayList<MatrixMultChainTask> tasks = new ArrayList<>();
 			for( int i=0, lb=0; i<blklens.size(); lb+=blklens.get(i), i++ )
 				tasks.add(new MatrixMultChainTask(mX, mV, mW, ct, lb, lb+blklens.get(i)));
 			List<Future<double[]>> taskret = pool.invokeAll(tasks);
-			pool.shutdown();
+		
 			//aggregate partial results and error handling
 			double[][] a = new double[taskret.size()][];
 			for(int i=0; i<taskret.size(); i++)
@@ -394,6 +397,9 @@ public class LibMatrixMult
 		}
 		catch(Exception ex) {
 			throw new DMLRuntimeException(ex);
+		}
+		finally{
+			pool.shutdown();
 		}
 		
 		//post-processing
@@ -610,20 +616,22 @@ public class LibMatrixMult
 		}
 		
 		//Timing time = new Timing(true);
-		
+
+		ExecutorService pool = CommonThreadPool.get(k);
 		try {
-			ExecutorService pool = CommonThreadPool.get(k);
 			ArrayList<MatrixMultWSLossTask> tasks = new ArrayList<>();
 			int blklen = (int)(Math.ceil((double)mX.rlen/k));
 			for( int i=0; i<k & i*blklen<mX.rlen; i++ )
 				tasks.add(new MatrixMultWSLossTask(mX, mU, mV, mW, wt, i*blklen, Math.min((i+1)*blklen, mX.rlen)));
 			List<Future<Double>> taskret = pool.invokeAll(tasks);
-			pool.shutdown();
 			//aggregate partial results
 			sumScalarResults(taskret, ret);
 		} 
 		catch( Exception e ) {
 			throw new DMLRuntimeException(e);
+		}
+		finally{
+			pool.shutdown();
 		}
 
 		//add correction for sparse wsloss w/o weight
@@ -688,16 +696,15 @@ public class LibMatrixMult
 		ret.sparse = mW.sparse;
 		ret.allocateBlock();
 		
-		try 
-		{
-			ExecutorService pool = CommonThreadPool.get(k);
+		ExecutorService pool = CommonThreadPool.get(k);
+		try {
 			ArrayList<MatrixMultWSigmoidTask> tasks = new ArrayList<>();
 			int blklen = (int)(Math.ceil((double)mW.rlen/k));
 			for( int i=0; i<k & i*blklen<mW.rlen; i++ )
 				tasks.add(new MatrixMultWSigmoidTask(mW, mU, mV, ret, wt, i*blklen, Math.min((i+1)*blklen, mW.rlen)));
 			//execute tasks
 			List<Future<Long>> taskret = pool.invokeAll(tasks);
-			pool.shutdown();
+			
 			//aggregate partial nnz and check for errors
 			ret.nonZeros = 0; //reset after execute
 			for( Future<Long> task : taskret )
@@ -705,6 +712,9 @@ public class LibMatrixMult
 		} 
 		catch (Exception e) {
 			throw new DMLRuntimeException(e);
+		}
+		finally{
+			pool.shutdown();
 		}
 
 		//post-processing (nnz maintained in parallel)

@@ -72,8 +72,8 @@ public class CoCodePriorityQue extends AColumnCoCoder {
 
 	private List<CompressedSizeInfoColGroup> combineMultiThreaded(List<CompressedSizeInfoColGroup> groups,
 		AComEst sEst, ACostEstimate cEst, int minNumGroups, int k) {
+		final ExecutorService pool = CommonThreadPool.get(k);
 		try {
-			final ExecutorService pool = CommonThreadPool.get(k);
 			final List<PQTask> tasks = new ArrayList<>();
 			final int blkSize = Math.max(groups.size() / k, 500);
 			for(int i = 0; i < groups.size(); i += blkSize)
@@ -92,6 +92,9 @@ public class CoCodePriorityQue extends AColumnCoCoder {
 		}
 		catch(Exception e) {
 			throw new DMLCompressionException("Failed parallel priority que cocoding", e);
+		}
+		finally{
+			pool.shutdown();
 		}
 	}
 

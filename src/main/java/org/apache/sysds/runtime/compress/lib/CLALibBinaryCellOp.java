@@ -254,8 +254,8 @@ public final class CLALibBinaryCellOp {
 	private static void binaryMVRowMultiThread(List<AColGroup> oldColGroups, double[] v, BinaryOperator op, boolean left,
 		List<AColGroup> newColGroups, boolean isRowSafe, int k) {
 		final ExecutorService pool = CommonThreadPool.get(k);
-		final ArrayList<BinaryMVRowTask> tasks = new ArrayList<>();
 		try {
+			final ArrayList<BinaryMVRowTask> tasks = new ArrayList<>();
 			if(left)
 				for(AColGroup grp : oldColGroups)
 					tasks.add(new BinaryMVRowTaskLeft(grp, v, op, isRowSafe));
@@ -268,10 +268,11 @@ public final class CLALibBinaryCellOp {
 
 		}
 		catch(InterruptedException | ExecutionException e) {
-			pool.shutdown();
 			throw new DMLRuntimeException(e);
 		}
-		pool.shutdown();
+		finally{
+			pool.shutdown();
+		}
 	}
 
 	private static CompressedMatrixBlock binaryMVRow(CompressedMatrixBlock m1, MatrixBlock m2, CompressedMatrixBlock ret,
@@ -425,8 +426,8 @@ public final class CLALibBinaryCellOp {
 		final int blkz = ret.getNumRows() / k;
 		long nnz = 0;
 		final ExecutorService pool = CommonThreadPool.get(op.getNumThreads());
-		final ArrayList<Callable<Long>> tasks = new ArrayList<>();
 		try {
+			final ArrayList<Callable<Long>> tasks = new ArrayList<>();
 			for(int i = 0; i < nRows; i += blkz) {
 				if(left)
 					tasks.add(new BinaryMVColLeftTaskDense(m1, m2, ret, i, Math.min(nRows, i + blkz), op));
@@ -452,8 +453,8 @@ public final class CLALibBinaryCellOp {
 		final int blkz = Math.max(nRows / k, 64);
 		long nnz = 0;
 		final ExecutorService pool = CommonThreadPool.get(op.getNumThreads());
-		final ArrayList<Callable<Long>> tasks = new ArrayList<>();
 		try {
+			final ArrayList<Callable<Long>> tasks = new ArrayList<>();
 			for(int i = 0; i < nRows; i += blkz) {
 				if(left)
 					throw new NotImplementedException();
@@ -495,8 +496,8 @@ public final class CLALibBinaryCellOp {
 		final int blkz = ret.getNumRows() / k;
 		long nnz = 0;
 		final ExecutorService pool = CommonThreadPool.get(op.getNumThreads());
-		final ArrayList<Callable<Long>> tasks = new ArrayList<>();
 		try {
+			final ArrayList<Callable<Long>> tasks = new ArrayList<>();
 			for(int i = 0; i < nRows; i += blkz)
 				tasks.add(new BinaryMMTask(m1, m2, ret, i, Math.min(nRows, i + blkz), op, left));
 
@@ -506,6 +507,9 @@ public final class CLALibBinaryCellOp {
 		}
 		catch(InterruptedException | ExecutionException e) {
 			throw new DMLRuntimeException(e);
+		}
+		finally{
+			pool.shutdown();
 		}
 		return nnz;
 	}

@@ -98,7 +98,7 @@ public class CLALibSelectionMult {
 			ret.getSparseBlock().sort();
 		}
 		else {
-			ExecutorService pool = CommonThreadPool.get(k);
+			final ExecutorService pool = CommonThreadPool.get(k);
 			try {
 
 				List<Future<?>> tasks = new ArrayList<>();

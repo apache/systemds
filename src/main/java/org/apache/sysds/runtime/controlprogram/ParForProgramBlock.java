@@ -105,6 +105,7 @@ import org.apache.sysds.runtime.lineage.LineageItem;
 import org.apache.sysds.runtime.lineage.LineageItemUtils;
 import org.apache.sysds.runtime.meta.DataCharacteristics;
 import org.apache.sysds.runtime.util.CollectionUtils;
+import org.apache.sysds.runtime.util.CommonThreadPool;
 import org.apache.sysds.runtime.util.ProgramConverter;
 import org.apache.sysds.runtime.util.UtilFunctions;
 import org.apache.sysds.utils.stats.ParForStatistics;
@@ -764,7 +765,7 @@ public class ParForProgramBlock extends ForProgramBlock {
 			LocalParWorker[] workers = new LocalParWorker[_numThreads];
 			IntStream.range(0, _numThreads).forEach(i -> {
 				workers[i] = createParallelWorker( _pwIDs[i], queue, ec, i);
-				threads[i] = new Thread( workers[i] );
+				threads[i] = new Thread( workers[i] , "PARFOR");
 				threads[i].setPriority(Thread.MAX_PRIORITY);
 			});
 			
@@ -805,8 +806,10 @@ public class ParForProgramBlock extends ForProgramBlock {
 			
 			// Step 3) join all threads (wait for finished work)
 			LineageCacheConfig.setReuseLineageTraces(false); //disable lineage trace reuse
-			for( Thread thread : threads )
+			for( Thread thread : threads ){
+				CommonThreadPool.shutdownAsyncPools(thread);
 				thread.join();
+			}
 			
 			if( _monitor ) 
 				StatisticMonitor.putPFStat(_ID, Stat.PARFOR_WAIT_EXEC_T, time.stop());

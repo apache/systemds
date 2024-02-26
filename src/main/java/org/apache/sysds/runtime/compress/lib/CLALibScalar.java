@@ -185,10 +185,11 @@ public final class CLALibScalar {
 			ret.allocateColGroupList(newColGroups);
 		}
 		catch(InterruptedException | ExecutionException e) {
-			pool.shutdown();
 			throw new DMLRuntimeException(e);
 		}
-		pool.shutdown();
+		finally{
+			pool.shutdown();
+		}
 	}
 
 	private static List<ScalarTask> partition(ScalarOperator sop, List<AColGroup> colGroups) {

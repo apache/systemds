@@ -78,6 +78,7 @@ public class ConfigurationManager{
 				LOG.warn(e.getMessage());
 			}
 		});
+		pool.shutdown();
 	}
 	
 	

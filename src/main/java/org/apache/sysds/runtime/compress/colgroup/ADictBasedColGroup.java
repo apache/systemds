@@ -357,12 +357,18 @@ public abstract class ADictBasedColGroup extends AColGroupCompressed implements 
 
 	protected IDictionary combineDictionaries(int nCol, List<AColGroup> right) {
 		List<IDictionary> dicts = new ArrayList<>(right.size() + 1);
-		dicts.add(getDictionary());
-		for(int i = 0; i < right.size(); i++) {
-			ADictBasedColGroup a = ((ADictBasedColGroup) right.get(i));
-			dicts.add(a.getDictionary());
+		try{
+
+			dicts.add(getDictionary());
+			for(int i = 0; i < right.size(); i++) {
+				ADictBasedColGroup a = ((ADictBasedColGroup) right.get(i));
+				dicts.add(a.getDictionary());
+			}
+			return DictionaryFactory.cBindDictionaries(getNumCols(), dicts);
 		}
-		return DictionaryFactory.cBindDictionaries(getNumCols(), dicts);
+		catch(Exception e){
+			throw new RuntimeException( dicts +"", e);
+		}
 
 	}
 

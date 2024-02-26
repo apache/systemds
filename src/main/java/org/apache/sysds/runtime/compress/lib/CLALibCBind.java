@@ -236,14 +236,14 @@ public final class CLALibCBind {
 		final double compressedSize = ret.getInMemorySize();
 		final double uncompressedSize = MatrixBlock.estimateSizeInMemory(m, n, ret.getSparsity());
 
-		if(compressedSize < uncompressedSize)
+		// if(compressedSize < uncompressedSize)
 			return ret;
-		else {
-			final double ratio = uncompressedSize / compressedSize;
-			String message = String.format("Decompressing c bind matrix because it had to small compression ratio: %2.3f",
-				ratio);
-			return ret.getUncompressed(message);
-		}
+		// else {
+		// 	final double ratio = uncompressedSize / compressedSize;
+		// 	String message = String.format("Decompressing c bind matrix because it had to small compression ratio: %2.3f",
+		// 		ratio);
+		// 	return ret.getUncompressed(message);
+		// }
 	}
 
 	private static MatrixBlock appendRightEmpty(CompressedMatrixBlock left, MatrixBlock right, int m, int n) {

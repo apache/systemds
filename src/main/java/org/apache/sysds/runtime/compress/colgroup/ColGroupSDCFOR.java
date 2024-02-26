@@ -23,6 +23,7 @@ import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
 import java.util.Arrays;
+import java.util.List;
 
 import org.apache.commons.lang3.NotImplementedException;
 import org.apache.sysds.runtime.compress.CompressedMatrixBlock;
@@ -533,6 +534,48 @@ public class ColGroupSDCFOR extends ASDC implements IMapToDataGroup, IFrameOfRef
 	public void sparseSelection(MatrixBlock selection, MatrixBlock ret, int rl, int ru) {
 		throw new NotImplementedException();
 	}
+
+
+	@Override
+	public AColGroupCompressed combineWithSameIndex(int nCol, List<AColGroup> right) {
+
+		final IDictionary combined = combineDictionaries(nCol, right);
+		final IColIndex combinedColIndex = combineColIndexes(nCol, right);
+		final double[] combinedDefaultTuple = IContainDefaultTuple.combineDefaultTuples(_reference, right);
+
+		// return new ColGroupDDC(combinedColIndex, combined, _data, getCachedCounts());
+		return new ColGroupSDC(combinedColIndex, this.getNumRows(), combined, combinedDefaultTuple, _indexes, _data,
+			getCachedCounts());
+	}
+
+	@Override
+	public AColGroupCompressed combineWithSameIndex(int nCol, AColGroup right) {
+		// if(right instanceof ColGroupSDCZeros){
+		// 	ColGroupSDCZeros rightSDC = ((ColGroupSDCZeros) right);
+		// 	IDictionary b = rightSDC.getDictionary();
+		// 	IDictionary combined = DictionaryFactory.cBindDictionaries(_dict, b, this.getNumCols(), right.getNumCols());
+		// 	IColIndex combinedColIndex = _colIndexes.combine(right.getColIndices().shift(nCol));
+		// 	double[] combinedDefaultTuple = new double[_reference.length + right.getNumCols()];
+		// 	System.arraycopy(_reference, 0, combinedDefaultTuple, 0, _reference.length);
+
+		// 	return new ColGroupSDC(combinedColIndex, this.getNumRows(), combined, combinedDefaultTuple, _indexes, _data,
+		// 		getCachedCounts());
+		// }
+		// else{
+			ColGroupSDCFOR rightSDC = ((ColGroupSDCFOR) right);
+			IDictionary b = rightSDC.getDictionary();
+			IDictionary combined = DictionaryFactory.cBindDictionaries(_dict, b, this.getNumCols(), right.getNumCols());
+			IColIndex combinedColIndex = _colIndexes.combine(right.getColIndices().shift(nCol));
+			double[] combinedDefaultTuple = new double[_reference.length + rightSDC._reference.length];
+			System.arraycopy(_reference, 0, combinedDefaultTuple, 0, _reference.length);
+			System.arraycopy(rightSDC._reference, 0, combinedDefaultTuple, _reference.length,
+				rightSDC._reference.length);
+	
+			return new ColGroupSDC(combinedColIndex, this.getNumRows(), combined, combinedDefaultTuple, _indexes, _data,
+				getCachedCounts());
+		// }
+	}
+
 
 	@Override
 	public String toString() {

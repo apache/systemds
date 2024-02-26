@@ -42,6 +42,8 @@ public class CLALibReorg {
 
 	protected static final Log LOG = LogFactory.getLog(CLALibReorg.class.getName());
 
+	public static boolean warned = false;
+
 	public static MatrixBlock reorg(CompressedMatrixBlock cmb, ReorgOperator op, MatrixBlock ret, int startRow,
 		int startColumn, int length) {
 		// SwapIndex is transpose
@@ -64,8 +66,9 @@ public class CLALibReorg {
 		else {
 			// Allow transpose to be compressed output. In general we need to have a transposed flag on
 			// the compressed matrix. https://issues.apache.org/jira/browse/SYSTEMDS-3025
-			String message = op.getClass().getSimpleName() + " -- " + op.fn.getClass().getSimpleName();
+			String message = !warned ? op.getClass().getSimpleName() + " -- " + op.fn.getClass().getSimpleName() : null;
 			MatrixBlock tmp = cmb.getUncompressed(message, op.getNumThreads());
+			warned = true;
 			return tmp.reorgOperations(op, ret, startRow, startColumn, length);
 		}
 	}

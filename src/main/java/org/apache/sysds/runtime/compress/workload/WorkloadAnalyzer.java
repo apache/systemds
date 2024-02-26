@@ -546,6 +546,10 @@ public class WorkloadAnalyzer {
 				setDecompressionOnAllInputs(hop, parent);
 				return;
 			}
+			else if(hop instanceof ReorgOp){
+				setDecompressionOnAllInputs(hop, parent);
+				return;
+			}
 			else {
 				LOG.warn("Unknown Matrix Hop:" + hop.getClass().getSimpleName() + "\n" + Explain.explain(hop));
 				setDecompressionOnAllInputs(hop, parent);

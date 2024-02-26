@@ -552,11 +552,10 @@ public class ColGroupDDC extends APreAgg implements IMapToDataGroup {
 			throw new NotImplementedException();
 	}
 
-	private void leftMMIdentityPreAggregateDenseSingleRow(double[] values, int pos, double[] values2, int pos2, int cl,
-		int cu) {
+	private void leftMMIdentityPreAggregateDenseSingleRowRangeIndex(double[] values, int pos, double[] values2, int pos2,
+		int cl, int cu) {
 		IdentityDictionary a = (IdentityDictionary) _dict;
-		if(!(_colIndexes instanceof RangeIndex))
-			throw new NotImplementedException();
+
 		final int firstCol = _colIndexes.get(0);
 		pos += cl; // left side matrix position offset.
 		if(a.withEmpty()) {
@@ -570,6 +569,29 @@ public class ColGroupDDC extends APreAgg implements IMapToDataGroup {
 		else {
 			for(int rc = cl; rc < cu; rc++, pos++)
 				values2[firstCol + _data.getIndex(rc)] += values[pos];
+		}
+	}
+
+	private void leftMMIdentityPreAggregateDenseSingleRow(double[] values, int pos, double[] values2, int pos2, int cl,
+		int cu) {
+		IdentityDictionary a = (IdentityDictionary) _dict;
+		if(_colIndexes instanceof RangeIndex)
+			leftMMIdentityPreAggregateDenseSingleRowRangeIndex(values, pos, values2, pos2, cl, cu);
+		else {
+
+			pos += cl; // left side matrix position offset.
+			if(a.withEmpty()) {
+				final int nVal = _dict.getNumberOfValues(_colIndexes.size()) - 1;
+				for(int rc = cl; rc < cu; rc++, pos++) {
+					final int idx = _data.getIndex(rc);
+					if(idx != nVal)
+						values2[_colIndexes.get(_data.getIndex(rc))] += values[pos];
+				}
+			}
+			else {
+				for(int rc = cl; rc < cu; rc++, pos++)
+					values2[_colIndexes.get(_data.getIndex(rc))] += values[pos];
+			}
 		}
 	}
 

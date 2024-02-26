@@ -427,6 +427,18 @@ public class ColGroupEmpty extends AColGroupCompressed
 	}
 
 	@Override
+	public AColGroup combineWithSameIndex(int nCol, AColGroup right) {
+
+		if(!(right instanceof ColGroupEmpty))
+			throw new NotImplementedException("Combine on Empty column only allowing empty column groups");
+
+		IColIndex combIndex = _colIndexes.combine(right.getColIndices().shift(nCol));
+
+		return new ColGroupEmpty(combIndex);
+
+	}
+
+	@Override
 	public AColGroup combineWithSameIndex(int nCol, List<AColGroup> right) {
 		for(AColGroup g : right) {
 			if(!(g instanceof ColGroupEmpty))
@@ -435,8 +447,8 @@ public class ColGroupEmpty extends AColGroupCompressed
 
 		IColIndex combinedIndex = _colIndexes;
 		int i = 0;
-		for(AColGroup g : right){
-			i+= 1;
+		for(AColGroup g : right) {
+			i += 1;
 			combinedIndex = combinedIndex.combine(g.getColIndices().shift(nCol * i));
 		}
 

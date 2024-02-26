@@ -26,8 +26,9 @@ import java.lang.ref.SoftReference;
 import java.math.BigDecimal;
 import java.math.MathContext;
 import java.util.Arrays;
+import java.util.HashSet;
+import java.util.Set;
 
-import org.apache.commons.lang3.NotImplementedException;
 import org.apache.sysds.hops.OptimizerUtils;
 import org.apache.sysds.runtime.compress.DMLCompressionException;
 import org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex;
@@ -751,7 +752,7 @@ public class Dictionary extends ADictionary {
 	}
 
 	@Override
-	public int[] countNNZZeroColumns(int[] counts){
+	public int[] countNNZZeroColumns(int[] counts) {
 		final int nRow = counts.length;
 		final int nCol = _values.length / nRow;
 
@@ -760,7 +761,7 @@ public class Dictionary extends ADictionary {
 			for(int j = 0; j < nCol; j++) {
 				final int off = i * nCol + j;
 				if(_values[off] != 0)
-					ret[j] +=  counts[i];
+					ret[j] += counts[i];
 			}
 		}
 		return ret;
@@ -917,21 +918,56 @@ public class Dictionary extends ADictionary {
 
 	@Override
 	public IDictionary replaceWithReference(double pattern, double replace, double[] reference) {
-		if(Util.eq(pattern, Double.NaN))
-			throw new NotImplementedException();
-		final double[] retV = new double[_values.length];
 		final int nCol = reference.length;
 		final int nRow = _values.length / nCol;
-		int off = 0;
-		for(int i = 0; i < nRow; i++) {
-			for(int j = 0; j < nCol; j++) {
-				final double ref = reference[j];
-				final double v = _values[off];
-				retV[off] = Math.abs(v + ref - pattern) < 0.000001 ? replace - ref : v;
-				off++;
+		if(Util.eq(pattern, Double.NaN)) {
+			Set<Integer> colsWithNan = null;
+			for(int i = 0; i < reference.length; i++) {
+				if(Util.eq(reference[i], Double.NaN)) {
+					if(colsWithNan == null)
+						colsWithNan = new HashSet<>();
+					colsWithNan.add(i);
+					reference[i] = replace;
+				}
+			}
+
+			if(colsWithNan != null) {
+				final double[] retV = new double[_values.length];
+				for(int i = 0; i < nRow; i++) {
+					int off = i * reference.length;
+					for(int j = 0; j < nCol; j++) {
+						final int cell = off + j;
+						if(colsWithNan.contains(j)) {
+
+							retV[cell] = 0;
+						}
+						else if(Util.eq(_values[cell], Double.NaN)) {
+							retV[cell] = replace;
+						}
+						else {
+							retV[cell] = _values[cell];
+						}
+					}
+				}
+				return create(retV);
+			}
+			else {
+				return create(_values);
 			}
 		}
-		return create(retV);
+		else {
+			final double[] retV = new double[_values.length];
+			int off = 0;
+			for(int i = 0; i < nRow; i++) {
+				for(int j = 0; j < nCol; j++) {
+					final double ref = reference[j];
+					final double v = _values[off];
+					retV[off] = Math.abs(v + ref - pattern) < 0.000001 ? replace - ref : v;
+					off++;
+				}
+			}
+			return create(retV);
+		}
 	}
 
 	@Override

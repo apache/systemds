@@ -84,6 +84,9 @@ public class CompressedMatrixBlockFactory {
 	/** Compression information gathered through the sampling, used for the actual compression decided */
 	private CompressedSizeInfo compressionGroups;
 
+	// /** Indicate if the compression aborts we should decompress*/
+	// private boolean shouldDecompress = false;
+
 	private CompressedMatrixBlockFactory(MatrixBlock mb, int k, CompressionSettingsBuilder compSettings,
 		ACostEstimate costEstimator) {
 		this(mb, k, compSettings.create(), costEstimator);
@@ -334,7 +337,9 @@ public class CompressedMatrixBlockFactory {
 		final double scale = Math.sqrt(nCols);
 		final double threshold = _stats.estimatedCostCols / scale;
 
-		if(threshold < _stats.originalCost * ((costEstimator instanceof ComputationCostEstimator) ? 15 : 0)) {
+		if(threshold < _stats.originalCost * (
+			(costEstimator instanceof ComputationCostEstimator) && !(mb instanceof CompressedMatrixBlock)
+			 ? 15 : 0.8)) {
 			if(nCols > 1)
 				coCodePhase();
 			else // LOG a short cocode phase (since there is one column we don't cocode)

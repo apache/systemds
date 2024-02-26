@@ -1526,7 +1526,9 @@ public class MatrixBlockDictionary extends ADictionary {
 	public long getNumberNonZeros(int[] counts, int nCol) {
 
 		long nnz = 0;
-		if(_data.isInSparseFormat()) {
+		if(_data.getSparseBlock() == null && _data.getDenseBlock() == null)
+			return nnz;
+		else if(_data.isInSparseFormat()) {
 			SparseBlock sb = _data.getSparseBlock();
 			for(int i = 0; i < counts.length; i++)
 				if(!sb.isEmpty(i))

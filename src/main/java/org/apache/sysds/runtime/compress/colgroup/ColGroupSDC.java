@@ -769,17 +769,32 @@ public class ColGroupSDC extends ASDC implements IMapToDataGroup {
 
 	@Override
 	public AColGroupCompressed combineWithSameIndex(int nCol, AColGroup right) {
-		ColGroupSDC rightSDC = ((ColGroupSDC) right);
-		IDictionary b = rightSDC.getDictionary();
-		IDictionary combined = DictionaryFactory.cBindDictionaries(_dict, b, this.getNumCols(), right.getNumCols());
-		IColIndex combinedColIndex = _colIndexes.combine(right.getColIndices().shift(nCol));
-		double[] combinedDefaultTuple = new double[_defaultTuple.length + rightSDC._defaultTuple.length];
-		System.arraycopy(_defaultTuple, 0, combinedDefaultTuple, 0, _defaultTuple.length);
-		System.arraycopy(rightSDC._defaultTuple, 0, combinedDefaultTuple, _defaultTuple.length,
-			rightSDC._defaultTuple.length);
-
-		return new ColGroupSDC(combinedColIndex, this.getNumRows(), combined, combinedDefaultTuple, _indexes, _data,
-			getCachedCounts());
+		if(right instanceof ColGroupSDCZeros){
+			ColGroupSDCZeros rightSDC = ((ColGroupSDCZeros) right);
+			IDictionary b = rightSDC.getDictionary();
+			IDictionary combined = DictionaryFactory.cBindDictionaries(_dict, b, this.getNumCols(), right.getNumCols());
+			IColIndex combinedColIndex = _colIndexes.combine(right.getColIndices().shift(nCol));
+			double[] combinedDefaultTuple = new double[_defaultTuple.length + right.getNumCols()];
+			System.arraycopy(_defaultTuple, 0, combinedDefaultTuple, 0, _defaultTuple.length);
+			// System.arraycopy(rightSDC._defaultTuple, 0, combinedDefaultTuple, _defaultTuple.length,
+				// rightSDC._defaultTuple.length);
+	
+			return new ColGroupSDC(combinedColIndex, this.getNumRows(), combined, combinedDefaultTuple, _indexes, _data,
+				getCachedCounts());
+		}
+		else{
+			ColGroupSDC rightSDC = ((ColGroupSDC) right);
+			IDictionary b = rightSDC.getDictionary();
+			IDictionary combined = DictionaryFactory.cBindDictionaries(_dict, b, this.getNumCols(), right.getNumCols());
+			IColIndex combinedColIndex = _colIndexes.combine(right.getColIndices().shift(nCol));
+			double[] combinedDefaultTuple = new double[_defaultTuple.length + rightSDC._defaultTuple.length];
+			System.arraycopy(_defaultTuple, 0, combinedDefaultTuple, 0, _defaultTuple.length);
+			System.arraycopy(rightSDC._defaultTuple, 0, combinedDefaultTuple, _defaultTuple.length,
+				rightSDC._defaultTuple.length);
+	
+			return new ColGroupSDC(combinedColIndex, this.getNumRows(), combined, combinedDefaultTuple, _indexes, _data,
+				getCachedCounts());
+		}
 	}
 
 	@Override

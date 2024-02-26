@@ -21,7 +21,9 @@ package org.apache.sysds.runtime.util;
 
 import java.util.Collection;
 import java.util.List;
+import java.util.Map.Entry;
 import java.util.concurrent.Callable;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -60,8 +62,9 @@ public class CommonThreadPool implements ExecutorService {
 	 * pool.
 	 */
 	private static final ExecutorService shared = ForkJoinPool.commonPool();
+
 	/** A secondary thread local executor that use a custom number of threads */
-	private static CommonThreadPool shared2 = null;
+	private static ConcurrentHashMap<Thread, CommonThreadPool> shared2 = null;
 	/** The number of threads used in the custom secondary executor */
 	private static int shared2K = -1;
 	/** Dynamic thread pool, that dynamically allocate threads as tasks come in. */
@@ -70,9 +73,8 @@ public class CommonThreadPool implements ExecutorService {
 	private final ExecutorService _pool;
 
 	/**
-	 * Constructor of the threadPool.
-	 * This is intended not to be used except for tests.
-	 * Please use the static constructors.
+	 * Constructor of the threadPool. This is intended not to be used except for tests. Please use the static
+	 * constructors.
 	 * 
 	 * @param pool The thread pool instance to use.
 	 */
@@ -102,19 +104,21 @@ public class CommonThreadPool implements ExecutorService {
 	public synchronized static ExecutorService get(int k) {
 		if(size == k)
 			return shared;
-		else if(Thread.currentThread().getName().equals("main")) {
-			if(shared2 != null && shared2K == k)
-				return shared2;
-			else if(shared2 == null) {
-				shared2 = new CommonThreadPool(new ForkJoinPool(k));
-				shared2K = k;
-				return shared2;
+		else {
+			Thread thisThread = Thread.currentThread();
+			if(shared2 == null) {
+				shared2 = new ConcurrentHashMap<>();
+				CommonThreadPool pool = new CommonThreadPool(Executors.newFixedThreadPool(k));
+				shared2.put(thisThread, pool);
+				return pool;
 			}
-			else
-				return new CommonThreadPool(Executors.newFixedThreadPool(k));
+			else {
+				CommonThreadPool pool = shared2.get(thisThread);
+				pool = pool == null || pool.isShutdown() ? new CommonThreadPool(Executors.newFixedThreadPool(k)) : pool;
+				shared2.put(thisThread, pool);
+				return pool;
+			}
 		}
-		else
-			return new CommonThreadPool(Executors.newFixedThreadPool(k));
 	}
 
 	/**
@@ -145,7 +149,7 @@ public class CommonThreadPool implements ExecutorService {
 		catch(Exception ex) {
 			throw new DMLRuntimeException(ex);
 		}
-		finally{
+		finally {
 			pool.shutdown();
 		}
 	}
@@ -157,7 +161,7 @@ public class CommonThreadPool implements ExecutorService {
 	 * @return A dynamic thread pool.
 	 */
 	public synchronized static ExecutorService getDynamicPool() {
-		if(asyncPool != null && !(asyncPool.isShutdown() || asyncPool.isTerminated()) )
+		if(asyncPool != null && !(asyncPool.isShutdown() || asyncPool.isTerminated()))
 			return asyncPool;
 		else {
 			asyncPool = Executors.newCachedThreadPool();
@@ -175,15 +179,15 @@ public class CommonThreadPool implements ExecutorService {
 			asyncPool = null;
 		}
 		if(shared2 != null) {
-			// shutdown shared custom thread count pool
-			shared2.shutdown();
-			shared2 = null;
-			shared2K = -1;
+			for(Entry<Thread, CommonThreadPool> pool : shared2.entrySet()){
+				pool.getValue().shutdown();
+				shared2.remove(pool.getKey());
+			}
 		}
 	}
 
 	public final boolean isCached() {
-		return _pool.equals(shared) || this.equals(shared2);
+		return _pool.equals(shared) || (shared2 != null && this.equals(shared2.get(Thread.currentThread())));
 	}
 
 	@Override

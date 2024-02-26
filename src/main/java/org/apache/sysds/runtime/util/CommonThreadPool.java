@@ -116,7 +116,7 @@ public class CommonThreadPool implements ExecutorService {
 				return pool;
 			}
 			else {
-				CommonThreadPool pool = shared2.get(threadName);
+				CommonThreadPool pool = shared2.get(thisThread);
 				pool = pool == null || pool.isShutdown() ? new CommonThreadPool(Executors.newFixedThreadPool(k)) : pool;
 				shared2.put(thisThread, pool);
 				return pool;

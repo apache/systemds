@@ -585,7 +585,7 @@ public abstract class SparseBlock implements Serializable, Block
 	 * traversal over rows that contain at least one non-zero element, skipping entirely zero rows. The returned Integer
 	 * represents the index of a non-zero row.
 	 *
-	 * @return Iterator<Integer> An iterator over non-zero row indices.
+	 * @return Integer iterator
 	 */
 
 	public Iterator<Integer> getIteratorNonZeroRows() {
@@ -598,7 +598,7 @@ public abstract class SparseBlock implements Serializable, Block
 	 * represents the index of a non-zero row.
 	 *
 	 * @param ru exclusive upper row index starting at 0
-	 * @return Iterator<Integer> An iterator over non-zero row indices.
+	 * @return Integer iterator
 	 */
 
 	public Iterator<Integer> getIteratorNonZeroRows(int ru) {
@@ -612,7 +612,7 @@ public abstract class SparseBlock implements Serializable, Block
 	 *
 	 * @param rl inclusive lower row index starting at 0
 	 * @param ru exclusive upper row index starting at 0
-	 * @return Iterator<Integer> An iterator over non-zero row indices.
+	 * @return Integer iterator
 	 */
 	public Iterator<Integer> getIteratorNonZeroRows(int rl, int ru) {
 		return new SparseBlockIteratorOverRows(rl, ru);

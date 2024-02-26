@@ -102,12 +102,12 @@ public class CommonThreadPool implements ExecutorService {
 	 * @return The executor with specified parallelism
 	 */
 	public synchronized static ExecutorService get(int k) {
-		if(size == k)
-			return shared;
 		final Thread thisThread = Thread.currentThread();
 		final String threadName = thisThread.getName();
-		if (threadName.equals("main")
-		 || threadName.contains("PARFOR")
+		final boolean mainThread = threadName.equals("main");
+		if(size == k  && mainThread)
+			return shared;
+		if (mainThread || threadName.equals("PARFOR")
 		 ) {
 			if(shared2 == null) {
 				shared2 = new ConcurrentHashMap<>();
@@ -123,7 +123,7 @@ public class CommonThreadPool implements ExecutorService {
 			}
 		}
 		else{
-			return new CommonThreadPool(Executors.newFixedThreadPool(k));
+			return Executors.newFixedThreadPool(k);
 		}
 	}
 

@@ -311,7 +311,7 @@ public abstract class SparseBlock implements Serializable, Block
 	 * Get the next non-zero row index in the row array.
 	 *
 	 * @param r  previous row index starting at 0
-	 * @param ru  exclusive upper row index starting at 0
+	 * @param ru exclusive upper row index starting at 0
 	 * @return next non-zero row index
 	 */
 	public abstract int nextNonZeroRowIndex(int r, int ru);
@@ -579,43 +579,42 @@ public abstract class SparseBlock implements Serializable, Block
 		//default generic iterator, override if necessary
 		return new SparseBlockIterator(rl, Math.min(ru,numRows()));
 	}
+
 	/**
-	 * Get an iterator over the indices of non-zero rows within the entire sparse block.
-	 * This iterator facilitates traversal over rows that contain at least one
-	 * non-zero element, skipping entirely zero rows. The returned Integer represents
-	 * the index of a non-zero row.
+	 * Get an iterator over the indices of non-zero rows within the entire sparse block. This iterator facilitates
+	 * traversal over rows that contain at least one non-zero element, skipping entirely zero rows. The returned Integer
+	 * represents the index of a non-zero row.
 	 *
 	 * @return Iterator<Integer> An iterator over non-zero row indices.
 	 */
 
-	public Iterator<Integer> getIteratorNonZeroRows(){
+	public Iterator<Integer> getIteratorNonZeroRows() {
 		return new SparseBlockIteratorOverRows(numRows());
 	}
+
 	/**
-	 * Get an iterator over the indices of non-zero rows within the sub-block [0,ru).
-	 * This iterator facilitates traversal over rows that contain at least one
-	 * non-zero element, skipping entirely zero rows. The returned Integer represents
-	 * the index of a non-zero row.
+	 * Get an iterator over the indices of non-zero rows within the sub-block [0,ru). This iterator facilitates
+	 * traversal over rows that contain at least one non-zero element, skipping entirely zero rows. The returned Integer
+	 * represents the index of a non-zero row.
 	 *
-	 * @param ru   exclusive upper row index starting at 0
+	 * @param ru exclusive upper row index starting at 0
 	 * @return Iterator<Integer> An iterator over non-zero row indices.
 	 */
 
-	public Iterator<Integer> getIteratorNonZeroRows(int ru){
+	public Iterator<Integer> getIteratorNonZeroRows(int ru) {
 		return new SparseBlockIteratorOverRows(ru);
 	}
 
 	/**
-	 * Get an iterator over the indices of non-zero rows within the sub-block [rl,ru).
-	 * This iterator facilitates traversal over rows that contain at least one
-	 * non-zero element, skipping entirely zero rows. The returned Integer represents
-	 * the index of a non-zero row.
+	 * Get an iterator over the indices of non-zero rows within the sub-block [rl,ru). This iterator facilitates
+	 * traversal over rows that contain at least one non-zero element, skipping entirely zero rows. The returned Integer
+	 * represents the index of a non-zero row.
 	 *
-	 * @param rl   inclusive lower row index starting at 0
-	 * @param ru   exclusive upper row index starting at 0
+	 * @param rl inclusive lower row index starting at 0
+	 * @param ru exclusive upper row index starting at 0
 	 * @return Iterator<Integer> An iterator over non-zero row indices.
 	 */
-	public Iterator<Integer> getIteratorNonZeroRows(int rl, int ru){
+	public Iterator<Integer> getIteratorNonZeroRows(int rl, int ru) {
 		return new SparseBlockIteratorOverRows(rl, ru);
 	}
 	
@@ -787,7 +786,7 @@ public abstract class SparseBlock implements Serializable, Block
 	 * api in an implementation-agnostic manner.
 	 *
 	 */
-	private class SparseBlockIteratorOverRows implements Iterator<Integer>{
+	private class SparseBlockIteratorOverRows implements Iterator<Integer> {
 		private int _rlen = 0; //row upper
 		private int _curRow = -1; //current row
 		private boolean _noNext = false; //end indicator
@@ -798,7 +797,7 @@ public abstract class SparseBlock implements Serializable, Block
 			_rlen = ru;
 			_curRow = 0;
 			_searchIndex = setSearchIndex(_curRow, ru);
-			if(_searchIndex == -1){
+			if(_searchIndex == -1) {
 				_noNext = true;
 			}
 		}
@@ -807,7 +806,7 @@ public abstract class SparseBlock implements Serializable, Block
 			_rlen = ru;
 			_curRow = rl;
 			_searchIndex = setSearchIndex(_curRow, ru);
-			if(_searchIndex == -1){
+			if(_searchIndex == -1) {
 				_noNext = true;
 			}
 		}
@@ -818,7 +817,7 @@ public abstract class SparseBlock implements Serializable, Block
 		}
 
 		@Override
-		public Integer next( ) {
+		public Integer next() {
 			if(SparseBlock.this instanceof SparseBlockDCSR || SparseBlock.this instanceof SparseBlockCOO) {
 				_curRow = nextNonZeroRowIndex(_searchIndex, _rlen);
 				_previousSearchIndex = _searchIndex;
@@ -832,20 +831,21 @@ public abstract class SparseBlock implements Serializable, Block
 				_curRow = nextNonZeroRowIndex(_searchIndex, _rlen);
 				_searchIndex = updateSearchIndex(_curRow, _rlen);
 				_searchIndex = setSearchIndex(_searchIndex, _rlen); // special case: single non-zero row
-				if(_curRow == _previousSearchIndex || _curRow==_searchIndex || _searchIndex==-1) {
+				if(_curRow == _previousSearchIndex || _curRow == _searchIndex || _searchIndex == -1) {
 					_noNext = true;
-					_searchIndex=_curRow;
+					_searchIndex = _curRow;
 				}
 				_previousSearchIndex = _curRow;
 				return _curRow;
 			}
-			else{ //MCSR
+			else { //MCSR
 				_previousSearchIndex = nextNonZeroRowIndex(_searchIndex, _rlen);
-				_curRow = updateSearchIndex(_previousSearchIndex,_rlen);
-				if(_previousSearchIndex == _curRow){
+				_curRow = updateSearchIndex(_previousSearchIndex, _rlen);
+				if(_previousSearchIndex == _curRow) {
 					_noNext = true;
-				}else {
-					_searchIndex=_curRow;
+				}
+				else {
+					_searchIndex = _curRow;
 				}
 				return _previousSearchIndex;
 			}

@@ -313,18 +313,19 @@ public class SparseBlockMCSR extends SparseBlock
 	}
 
 	@Override
-	public  int nextNonZeroRowIndex(int r, int ru){
-		for(int i = r; i<ru; i++) {
-			if(_rows[i] != null){
+	public int nextNonZeroRowIndex(int r, int ru) {
+		for(int i = r; i < ru; i++) {
+			if(_rows[i] != null) {
 				return i;
 			}
 		}
 		return r;
 	}
+
 	@Override
-	public  int setSearchIndex(int r, int ru){
-		for(int i = r; i<ru; i++){
-			if(_rows[i] !=null){
+	public int setSearchIndex(int r, int ru) {
+		for(int i = r; i < ru; i++) {
+			if(_rows[i] != null) {
 				return i;
 			}
 		}
@@ -332,9 +333,9 @@ public class SparseBlockMCSR extends SparseBlock
 	}
 
 	@Override
-	public  int updateSearchIndex(int r, int ru){
-		for (int i = r; i<ru; i++){
-			if(_rows[i] != null && i !=r){
+	public int updateSearchIndex(int r, int ru) {
+		for(int i = r; i < ru; i++) {
+			if(_rows[i] != null && i != r) {
 				return i;
 			}
 		}

@@ -23,7 +23,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
@@ -423,6 +422,9 @@ public class CompressedEncode {
 	private AMapToData createMappingAMapToData(Array<?> a, Map<?, Long> map, boolean containsNull) {
 		final int si = map.size();
 		final int nRow = in.getNumRows();
+		if(!containsNull && a instanceof DDCArray)
+			return ((DDCArray<?>)a).getMap();
+
 		final AMapToData m = MapToFactory.create(nRow, si + (containsNull ? 1 : 0));
 		if(containsNull)
 			return createMappingAMapToDataWithNull(a, map, si, nRow, m);

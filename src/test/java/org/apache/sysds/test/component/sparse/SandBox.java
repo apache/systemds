@@ -49,7 +49,7 @@ public class SandBox extends AutomatedTestBase {
                     {0, 0, 0, 0, 0, 0}, // Row 3: All zeros
                     {0, 30, 0, 40, 0, 0}, // Row 4: Non-zero
                     {0, 0, 0, 0, 0, 0}, // Row 5: All zeros
-                    {0, 0, 50, 60, 70, 0}, // Row 6: Non-zero
+                    {9, 3, 50, 60, 70, 0}, // Row 6: Non-zero
                     {0, 0, 0, 0, 0, 0}, // Row 7: All zeros
                     {0, 0, 0, 0, 0, 80} // Row 8: Non-zero
             };
@@ -68,10 +68,10 @@ public class SandBox extends AutomatedTestBase {
                     {0, 0, 0, 0, 0, 0}, // Row 2: Non-zero
                     {0, 0, 0, 0, 0, 0}, // Row 3: All zeros
                     {0, 0, 0, 0, 0, 0}, // Row 4: Non-zero
-                    {0, 0, 0, 0, 0, 0}, // Row 5: All zeros
+                    {0, 10, 10, 10, 10, 0}, // Row 5: All zeros
                     {0, 0, 0, 0, 0, 0}, // Row 6: Non-zero
                     {0, 0, 0, 0, 0, 0}, // Row 7: All zeros
-                    {0, 0, 0, 0, 0, 70} // Row 8: Non-zero
+                    {0, 0, 0, 0, 0, 0} // Row 8: Non-zero
             };
 
             //init sparse block
@@ -98,10 +98,13 @@ public class SandBox extends AutomatedTestBase {
 
             Iterator<Integer> iter = sblock.getIteratorNonZeroRows(0,8);
             //System.out.println(iter.next());
+            //int nextRow = -1;
             while(iter.hasNext()){
+                //nextRow = iter.next();
                 System.out.println(iter.next());
             }
             //System.out.println(iter.next());
+            //System.out.println(nextRow);
 
 
         }

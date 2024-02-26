@@ -350,12 +350,12 @@ public class SparseBlockCOO extends SparseBlock
 		if(result < 0) {
 			insertionPoint = -result - 1;
 			if (_rindexes[insertionPoint] == ru) {
-				return -1; // Return -1 if insertionPoint is ru
+				return -1;
 			}
 			return insertionPoint;
 		}else{
 			if (_rindexes[result] == ru) {
-				return -1; // Return -1 if insertionPoint is ru
+				return -1;
 			}
 			return result;
 		}

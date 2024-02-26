@@ -19,7 +19,9 @@
 
 package org.apache.sysds.test.component.sparse;
 
+import java.util.ArrayList;
 import java.util.Iterator;
+import java.util.List;
 
 import org.apache.sysds.runtime.data.SparseBlockDCSR;
 import org.junit.Assert;
@@ -35,10 +37,11 @@ import org.apache.sysds.test.AutomatedTestBase;
 import org.apache.sysds.test.TestUtils;
 
 /**
- * This is a sparse matrix block component test for sparse block iterator 
- * functionality. In order to achieve broad coverage, we test against 
- * full and partial iterators as well as different sparsity values.
- * 
+ * This is a component test for sparse matrix block, focusing on the iterator
+ * functionality for both general iteration over non-zero cells and specific iteration over non-zero rows.
+ * To ensure comprehensive coverage, the tests encompass full and partial iterators,
+ * different sparsity values, and explicitly verify the correct identification and iteration
+ * over non-zero rows in the matrix.
  */
 public class SparseBlockIterator extends AutomatedTestBase 
 {
@@ -220,6 +223,28 @@ public class SparseBlockIterator extends AutomatedTestBase
 			}
 			if( count != nnz )
 				Assert.fail("Wrong number of values returned by iterator: "+count+", expected: "+nnz);
+
+			// check iterator over non-zero rows
+			List<Integer> manualNonZeroRows = new ArrayList<>();
+			List<Integer> iteratorNonZeroRows = new ArrayList<>();
+			Iterator<Integer> iterRows = !partial ? sblock.getIteratorNonZeroRows() :
+				sblock.getIteratorNonZeroRows(rl, rows);
+
+			for(int i = rl; i<rows; i++){
+				if(!sblock.isEmpty(i)){
+					manualNonZeroRows.add(i);
+				}
+			}
+
+			while(iterRows.hasNext()){
+				iteratorNonZeroRows.add(iterRows.next());
+			}
+
+			// Compare the results
+			if (!manualNonZeroRows.equals(iteratorNonZeroRows)) {
+				Assert.fail("Verification of iterator over non-zero rows failed.");
+			}
+
 		}
 		catch(Exception ex) {
 			ex.printStackTrace();

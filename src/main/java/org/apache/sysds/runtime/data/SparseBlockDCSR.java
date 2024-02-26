@@ -337,12 +337,12 @@ public class SparseBlockDCSR extends SparseBlock
 		if(result < 0) {
 			insertionPoint = -result - 1;
 			if (_rowidx[insertionPoint] == ru) {
-				return -1; // Return -1 if insertionPoint is ru
+				return -1;
 			}
 			return insertionPoint;
 		}else{
 			if (_rowidx[result] == ru) {
-				return -1; // Return -1 if insertionPoint is ru
+				return -1;
 			}
 			return result;
 		}

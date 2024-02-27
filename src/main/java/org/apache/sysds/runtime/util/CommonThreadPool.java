@@ -122,7 +122,6 @@ public class CommonThreadPool implements ExecutorService {
 			else {
 				CommonThreadPool pool = shared2.get(thisThread.getId());
 				if( pool == null ){
-					LOG.error("Creating new pool");
 					pool = new CommonThreadPool(new ForkJoinPool(k));
 					shared2.put(thisThread.getId(), pool);
 					return pool;

@@ -21,6 +21,7 @@ package org.apache.sysds.runtime.compress.colgroup;
 
 import java.io.DataInput;
 import java.io.IOException;
+import java.util.List;
 
 import org.apache.commons.lang3.NotImplementedException;
 import org.apache.sysds.runtime.compress.DMLCompressionException;
@@ -697,6 +698,35 @@ public class ColGroupConst extends ADictBasedColGroup implements IContainDefault
 	@Override
 	protected void decompressToSparseBlockTransposedDenseDictionary(SparseBlockMCSR db, double[] dict, int nColOut) {
 		throw new NotImplementedException();
+	}
+
+	@Override
+	public AColGroup combineWithSameIndex(int nCol, AColGroup right) {
+		if(!(right instanceof ColGroupConst))
+			throw new NotImplementedException("Combine on Const column only allowing const column groups");
+
+		final IColIndex combIndex = _colIndexes.combine(right.getColIndices().shift(nCol));
+		final IDictionary b = ((ColGroupConst) right).getDictionary();
+		final IDictionary combined = DictionaryFactory.cBindDictionaries(_dict, b, this.getNumCols(), right.getNumCols());
+		return create(combIndex, combined);
+
+	}
+
+	@Override
+	public AColGroup combineWithSameIndex(int nCol, List<AColGroup> right) {
+		for(AColGroup g : right) {
+			if(!(g instanceof ColGroupConst))
+				throw new NotImplementedException("Combine on Const column only allowing const column groups");
+		}
+		IColIndex combinedIndex = _colIndexes;
+		int i = 0;
+		for(AColGroup g : right) {
+			i += 1;
+			combinedIndex = combinedIndex.combine(g.getColIndices().shift(nCol * i));
+		}
+		final IDictionary combined = combineDictionaries(nCol, right);
+
+		return create(combinedIndex, combined);
 	}
 
 }

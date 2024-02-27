@@ -338,16 +338,27 @@ return (Matrix[Double] row_phis, Double expected){
 #
 # INPUT:
 # ---------------------------------------------------------------------------------------
-# permutation    A single permutation of features.
+# permutation    A single permutation of varying features.
+# n_non_varying_inds The number of feature that do not vary in the background data. Can be retrieved e.g. by looking at std.dev
 # ---------------------------------------------------------------------------------------
 #
 # OUTPUT:
 # -----------------------------------------------------------------------------
 # mask           Boolean mask.
 # -----------------------------------------------------------------------------
-prepare_mask_for_permutaion = function(Matrix[Double] permutation)
+prepare_mask_for_permutaion = function(Matrix[Double] permutation, Integer n_non_varying_inds=0)
 return (Matrix[Double] masks){
-  perm_cols = ncol(permutation)
+  #total number of features
+  perm_len = ncol(permutation)+n_non_varying_inds
+  if(n_non_varying_inds > 0){
+    #prep full constructor with placeholders
+    mask_constructor = matrix(perm_len+1, rows=1, cols = perm_len)
+    mask_constructor[1,perm_len-ncol(permutation)+1:perm_len] = permutation
+  }else{
+    mask_constructor=permutation
+  }
+
+  perm_cols = ncol(mask_constructor)
 
   # we compute mask on reverse permutation wnd reverse it later to get desired shape
 
@@ -359,15 +370,20 @@ return (Matrix[Double] masks){
   perm_mask_rows = removeEmpty(target=matrix(perm_mask_rows, rows=1, cols=length(perm_mask_rows)), margin="cols")
 
   # create column indicator for ctable
-  rev_permutation = t(rev(t(permutation)))
+  rev_permutation = t(rev(t(mask_constructor)))
   #TODO: col-vector and matrix mult?
   perm_mask_cols = matrix(1, rows=perm_cols, cols=perm_cols) * rev_permutation
   perm_mask_cols = lower.tri(target=perm_mask_cols, diag=TRUE, values=TRUE)
   perm_mask_cols = removeEmpty(target = matrix(perm_mask_cols, cols=length(perm_mask_cols), rows=1), margin="cols")
 
   #ctable
-  masks = table(perm_mask_rows, perm_mask_cols, perm_cols, perm_cols)
+  masks = table(perm_mask_rows, perm_mask_cols, perm_len, perm_len)
+  if(n_non_varying_inds > 0){
+    #truncate non varying rows
+    masks = masks[1:ncol(permutation)]
+  }
   # add inverted mask and revert order for desired shape for forward and backward pass
+  # this leaves zeros for non varying inds in the backwards pass, but since non-varying, who cares
   masks = rev(rbind(masks, !masks))
 }
 
@@ -457,7 +473,7 @@ compute_means_from_predictions = function(Matrix[Double] P, Integer integration_
 #                       Col 1 holds forward-pass, col 2 holds backward pass.
 #                       Has to be averaged later.
 # -----------------------------------------------------------------------------
-compute_phis_from_prediction_means = function(Matrix[Double] P_perm, Matrix[Double] permutation)
+compute_phis_from_prediction_means = function(Matrix[Double] P_perm, Matrix[Double] permutation, Matrix[Double] non_varying_inds=as.matrix(-1))
   return(Matrix[Double] phis){
   perm_len=ncol(permutation)
 
@@ -475,6 +491,14 @@ compute_phis_from_prediction_means = function(Matrix[Double] P_perm, Matrix[Doub
   #compute last backward, because we reuse result from index 1 to have less model calls
   phis[perm_len,3] = P_perm[2*perm_len] - P_perm[1]
 
+  if (sum(non_varying_inds)>0){
+    #append non varying inds, if not the default
+    #prepare additional phis
+    additional_phis = matrix(0, rows=ncol(non_varying_inds), cols=3)
+    #add non varying inds to first col for sorting
+    additional_phis[,1]=t(non_varying_inds)
+    phis = rbind(phis,additional_phis)
+  }
   #sort according to permutation and truncate first col
   phis = order(target=phis, by=1)
   phis = phis[,2:3]

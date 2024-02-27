@@ -107,11 +107,11 @@ public class CommonThreadPool implements ExecutorService {
 		final Thread thisThread = Thread.currentThread();
 		final String threadName = thisThread.getName();
 		final boolean mainThread = threadName.equals("main");
-		LOG.error("Asking for K  " + k + " Threads");
-
+		
 		if(k == 1) {
 			return new EagerExecutor();
 		}
+		LOG.error("Asking for K  " + k + " Threads");
 		if(size == k && mainThread)
 			return shared;
 		if(mainThread || threadName.equals("PARFOR")) {

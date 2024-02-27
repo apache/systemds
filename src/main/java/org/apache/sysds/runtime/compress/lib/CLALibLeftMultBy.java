@@ -117,8 +117,7 @@ public final class CLALibLeftMultBy {
 	 */
 	public static MatrixBlock leftMultByMatrix(CompressedMatrixBlock right, MatrixBlock left, MatrixBlock ret, int k) {
 		try {
-
-			// return LibMatrixMult.matrixMult(left, right.getUncompressed(), ret, k); // uncompressed example
+// return LibMatrixMult.matrixMult(left, right.getUncompressed(), ret, k); // uncompressed example
 
 			if(left.isEmpty() || right.isEmpty())
 				return prepareEmptyReturnMatrix(right, left, ret, false);

@@ -934,25 +934,36 @@ public class Dictionary extends ADictionary {
 			if(colsWithNan != null) {
 				final double[] retV = new double[_values.length];
 				for(int i = 0; i < nRow; i++) {
-					int off = i * reference.length;
+					final int off = i * reference.length;
 					for(int j = 0; j < nCol; j++) {
 						final int cell = off + j;
-						if(colsWithNan.contains(j)) {
-
+						if(colsWithNan.contains(j))
 							retV[cell] = 0;
-						}
-						else if(Util.eq(_values[cell], Double.NaN)) {
+						else if(Util.eq(_values[cell], Double.NaN))
 							retV[cell] = replace;
-						}
-						else {
+						else
 							retV[cell] = _values[cell];
-						}
+
 					}
 				}
 				return create(retV);
 			}
 			else {
-				return create(_values);
+				final double[] retV = new double[_values.length];
+
+				for(int i = 0; i < nRow; i++) {
+					final int off = i * reference.length;
+					for(int j = 0; j < nCol; j++) {
+						final int cell = off + j;
+						if(Util.eq(_values[cell], Double.NaN))
+							retV[cell] = replace;
+
+						else
+							retV[cell] = _values[cell];
+
+					}
+				}
+				return create(retV);
 			}
 		}
 		else {

@@ -25,6 +25,8 @@ import java.io.IOException;
 import java.math.BigDecimal;
 import java.math.MathContext;
 import java.util.Arrays;
+import java.util.HashSet;
+import java.util.Set;
 
 import org.apache.commons.lang3.NotImplementedException;
 import org.apache.sysds.runtime.compress.DMLCompressionException;
@@ -1989,10 +1991,6 @@ public class MatrixBlockDictionary extends ADictionary {
 	@Override
 	public IDictionary replaceWithReference(double pattern, double replace, double[] reference) {
 		if(Util.eq(pattern, Double.NaN)) {
-			for(int i = 0; i < reference.length; i++) {
-				if(Util.eq(reference[i], Double.NaN))
-					throw new NotImplementedException();
-			}
 			return replaceWithReferenceNan(replace, reference);
 		}
 
@@ -2047,37 +2045,97 @@ public class MatrixBlockDictionary extends ADictionary {
 		final MatrixBlock ret = new MatrixBlock(nRow, nCol, false);
 		ret.allocateDenseBlock();
 
-		final double[] retV = ret.getDenseBlockValues();
-		int off = 0;
-		if(_data.isInSparseFormat()) {
-			final SparseBlock sb = _data.getSparseBlock();
-			for(int i = 0; i < nRow; i++) {
-				if(sb.isEmpty(i))
-					continue;
+		Set<Integer> colsWithNan = null;
+		for(int i = 0; i < reference.length; i++) {
+			if(Util.eq(reference[i], Double.NaN)) {
+				if(colsWithNan == null)
+					colsWithNan = new HashSet<>();
+				colsWithNan.add(i);
+				reference[i] = replace;
+			}
+		}
 
-				final int apos = sb.pos(i);
-				final int alen = sb.size(i) + apos;
-				final double[] avals = sb.values(i);
-				int j = 0;
-				for(int k = apos; k < alen; k++) {
-					final double v = avals[k];
-					retV[off++] = Util.eq(Double.NaN, v) ? -reference[j] : v;
+		if(colsWithNan == null) {
+
+			final double[] retV = ret.getDenseBlockValues();
+			int off = 0;
+			if(_data.isInSparseFormat()) {
+				final SparseBlock sb = _data.getSparseBlock();
+				for(int i = 0; i < nRow; i++) {
+					if(sb.isEmpty(i))
+						continue;
+
+					final int apos = sb.pos(i);
+					final int alen = sb.size(i) + apos;
+					final double[] avals = sb.values(i);
+					int j = 0;
+					for(int k = apos; k < alen; k++) {
+						final double v = avals[k];
+						retV[off++] = Util.eq(Double.NaN, v) ? -reference[j] : v;
+					}
 				}
 			}
+			else {
+				final double[] values = _data.getDenseBlockValues();
+				for(int i = 0; i < nRow; i++) {
+					for(int j = 0; j < nCol; j++) {
+						final double v = values[off];
+						retV[off++] = Util.eq(Double.NaN, v) ? -reference[j] : v;
+					}
+				}
+			}
+
+			ret.recomputeNonZeros();
+			ret.examSparsity();
+			return MatrixBlockDictionary.create(ret);
 		}
 		else {
-			final double[] values = _data.getDenseBlockValues();
-			for(int i = 0; i < nRow; i++) {
-				for(int j = 0; j < nCol; j++) {
-					final double v = values[off];
-					retV[off++] = Util.eq(Double.NaN, v) ? -reference[j] : v;
+
+			final double[] retV = ret.getDenseBlockValues();
+			if(_data.isInSparseFormat()) {
+				final SparseBlock sb = _data.getSparseBlock();
+				for(int i = 0; i < nRow; i++) {
+					if(sb.isEmpty(i))
+						continue;
+					int off = i* nCol;
+					final int apos = sb.pos(i);
+					final int alen = sb.size(i) + apos;
+					final double[] avals = sb.values(i);
+					final int[] aidx = sb.indexes(i);
+					for(int k = apos; k < alen; k++) {
+						final int c = aidx[k];
+						final int outIdx = off + aidx[k];
+						final double v = avals[k];
+						if(colsWithNan.contains(c))
+							retV[outIdx]  = 0;
+						else if (Util.eq(v, Double.NaN))
+							retV[outIdx] = replace- reference[c];
+						else 
+							retV[outIdx] = v;
+					}
 				}
 			}
-		}
+			else {
+				int off = 0;
+				final double[] values = _data.getDenseBlockValues();
+				for(int i = 0; i < nRow; i++) {
+					for(int j = 0; j < nCol; j++) {
+						final double v = values[off];
 
-		ret.recomputeNonZeros();
-		ret.examSparsity();
-		return MatrixBlockDictionary.create(ret);
+						if(colsWithNan.contains(j))
+							retV[off++]  = 0;
+						else if (Util.eq(v, Double.NaN))
+							retV[off++] = replace- reference[j];
+						else 
+							retV[off++] = v;
+					}
+				}
+			}
+
+			ret.recomputeNonZeros();
+			ret.examSparsity();
+			return MatrixBlockDictionary.create(ret);
+		}
 
 	}
 

@@ -29,7 +29,6 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.Future;
-import java.util.concurrent.FutureTask;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
@@ -107,23 +106,24 @@ public class CommonThreadPool implements ExecutorService {
 		final Thread thisThread = Thread.currentThread();
 		final String threadName = thisThread.getName();
 		final boolean mainThread = threadName.equals("main");
-		
+
 		if(k == 1) {
-			return new EagerExecutor();
+			throw new NotImplementedException("not valid to ask for 1 thread");
+			// return new EagerExecutor();
 		}
-		LOG.error("Asking for K  " + k + " Threads");
+		// LOG.error("Asking for K " + k + " Threads");
 		if(size == k && mainThread)
 			return shared;
 		if(mainThread || threadName.equals("PARFOR")) {
 			if(shared2 == null) {
 				shared2 = new ConcurrentHashMap<>();
-				CommonThreadPool pool = new CommonThreadPool(Executors.newFixedThreadPool(k));
+				CommonThreadPool pool = new CommonThreadPool(new ForkJoinPool(k));
 				shared2.put(thisThread, pool);
 				return pool;
 			}
 			else {
 				CommonThreadPool pool = shared2.get(thisThread);
-				pool = pool == null || pool.isShutdown() ? new CommonThreadPool(Executors.newFixedThreadPool(k)) : pool;
+				pool = pool == null || pool.isShutdown() ? new CommonThreadPool(new ForkJoinPool(k)) : pool;
 				shared2.put(thisThread, pool);
 				return pool;
 			}
@@ -185,30 +185,54 @@ public class CommonThreadPool implements ExecutorService {
 	 * Shutdown the cached thread pools.
 	 */
 	public synchronized static void shutdownAsyncPools() {
+		LOG.error("Calling shutdown on all processes");
 		if(asyncPool != null) {
 			// shutdown prefetch/broadcast thread pool
 			asyncPool.shutdown();
 			asyncPool = null;
 		}
 		if(shared2 != null) {
-			for(Entry<Thread, CommonThreadPool> pool : shared2.entrySet()) {
-				pool.getValue()._pool.shutdown();
-				shared2.remove(pool.getKey());
+			LOG.error(shared2);
+
+			try {
+				ConcurrentHashMap<Thread, CommonThreadPool> sharedT = shared2;
+				shared2 = null;
+				for(Entry<Thread, CommonThreadPool> e : sharedT.entrySet()) {
+					LOG.error("Calling shutdown on all processes: " + e);
+					for(Runnable a : e.getValue()._pool.shutdownNow())
+						a.wait();
+				}
+			}
+			catch(Exception e1) {
+				throw new RuntimeException(e1);
 			}
 		}
 	}
 
-	public synchronized static void shutdownAsyncPools(Thread parforThread) {
+	public synchronized static void shutdownAsyncPools(Thread thread) {
 		if(shared2 != null) {
-			CommonThreadPool p = shared2.get(parforThread);
-			if(p != null) {
-				p._pool.shutdown();
+			LOG.error("Shutdown thread Pool: " + thread);
+			LOG.error(shared2);
+			CommonThreadPool p = shared2.get(thread);
+			try {
+				if(p != null) {
+					for(Runnable a : p._pool.shutdownNow())
+						a.wait();
+				}
+				shared2.remove(thread);
+			}
+			catch(InterruptedException e) {
+				throw new RuntimeException(e);
 			}
 		}
+	}
+
+	public static synchronized boolean generalCached() {
+		return shared2 != null && shared2.get(Thread.currentThread()) != null;
 	}
 
 	public final boolean isCached() {
-		return _pool.equals(shared) || (shared2 != null && this.equals(shared2.get(Thread.currentThread())));
+		return _pool.equals(shared) || generalCached();
 	}
 
 	@Override
@@ -279,83 +303,83 @@ public class CommonThreadPool implements ExecutorService {
 		return _pool.invokeAny(tasks);
 	}
 
-	private static class EagerExecutor implements ExecutorService {
+	// private static class EagerExecutor implements ExecutorService {
 
-		protected EagerExecutor(){
-			// nothing
-		}
+	// protected EagerExecutor(){
+	// // nothing
+	// }
 
-		@Override
-		public void execute(Runnable command) {
-			command.run();
-		}
+	// @Override
+	// public void execute(Runnable command) {
+	// command.run();
+	// }
 
-		@Override
-		public void shutdown() {
-			// nothing
-		}
+	// @Override
+	// public void shutdown() {
+	// // nothing
+	// }
 
-		@Override
-		public List<Runnable> shutdownNow() {
-			return null;
-		}
+	// @Override
+	// public List<Runnable> shutdownNow() {
+	// return null;
+	// }
 
-		@Override
-		public boolean isShutdown() {
-			return true;
-		}
+	// @Override
+	// public boolean isShutdown() {
+	// return false;
+	// }
 
-		@Override
-		public boolean isTerminated() {
-			return true;
-		}
+	// @Override
+	// public boolean isTerminated() {
+	// return false;
+	// }
 
-		@Override
-		public boolean awaitTermination(long timeout, TimeUnit unit) throws InterruptedException {
-			return true;
-		}
+	// @Override
+	// public boolean awaitTermination(long timeout, TimeUnit unit) throws InterruptedException {
+	// return true;
+	// }
 
-		@Override
-		public <T> Future<T> submit(Callable<T> task) {
-			return new FutureTask<>(() -> task.call());
-		}
+	// @Override
+	// public <T> Future<T> submit(Callable<T> task) {
+	// return new FutureTask<>(() -> task.call());
+	// }
 
-		@Override
-		public <T> Future<T> submit(Runnable task, T result) {
-			return new FutureTask<>(() -> {
-				task.run();
-				return result;
-			});
-		}
+	// @Override
+	// public <T> Future<T> submit(Runnable task, T result) {
+	// return new FutureTask<>(() -> {
+	// task.run();
+	// return result;
+	// });
+	// }
 
-		@Override
-		public Future<?> submit(Runnable task) {
-			return new FutureTask<>(() -> {
-				task.run();
-				return null;
-			});
-		}
+	// @Override
+	// public Future<?> submit(Runnable task) {
+	// return new FutureTask<>(() -> {
+	// task.run();
+	// return null;
+	// });
+	// }
 
-		@Override
-		public <T> List<Future<T>> invokeAll(Collection<? extends Callable<T>> tasks) throws InterruptedException {
-			throw new NotImplementedException();
-		}
+	// @Override
+	// public <T> List<Future<T>> invokeAll(Collection<? extends Callable<T>> tasks) throws InterruptedException {
+	// throw new NotImplementedException();
+	// }
 
-		@Override
-		public <T> List<Future<T>> invokeAll(Collection<? extends Callable<T>> tasks, long timeout, TimeUnit unit) {
-			throw new NotImplementedException();
-		}
+	// @Override
+	// public <T> List<Future<T>> invokeAll(Collection<? extends Callable<T>> tasks, long timeout, TimeUnit unit) {
+	// throw new NotImplementedException();
+	// }
 
-		@Override
-		public <T> T invokeAny(Collection<? extends Callable<T>> tasks) throws InterruptedException, ExecutionException {
-			throw new NotImplementedException();
-		}
+	// @Override
+	// public <T> T invokeAny(Collection<? extends Callable<T>> tasks) throws InterruptedException, ExecutionException {
+	// throw new NotImplementedException();
+	// }
 
-		@Override
-		public <T> T invokeAny(Collection<? extends Callable<T>> tasks, long timeout, TimeUnit unit)
-			throws InterruptedException, ExecutionException, TimeoutException {
-			throw new NotImplementedException();
-		}
+	// @Override
+	// public <T> T invokeAny(Collection<? extends Callable<T>> tasks, long timeout, TimeUnit unit)
+	// throws InterruptedException, ExecutionException, TimeoutException {
+	// throw new NotImplementedException();
+	// }
 
-	}
+	// }
 }

@@ -756,13 +756,13 @@ public class ParForProgramBlock extends ForProgramBlock {
 		//restrict recompilation to thread local memory
 		setMemoryBudget();
 		
+		final LocalTaskQueue<Task> queue = new LocalTaskQueue<>();
+		final Thread[] threads         = new Thread[_numThreads];
+		final LocalParWorker[] workers = new LocalParWorker[_numThreads];
 		try
 		{
 			// Step 1) create task queue and init workers in parallel
 			// (including preparation of update-in-place variables)
-			LocalTaskQueue<Task> queue = new LocalTaskQueue<>();
-			Thread[] threads         = new Thread[_numThreads];
-			LocalParWorker[] workers = new LocalParWorker[_numThreads];
 			IntStream.range(0, _numThreads).forEach(i -> {
 				workers[i] = createParallelWorker( _pwIDs[i], queue, ec, i);
 				threads[i] = new Thread( workers[i] , "PARFOR");
@@ -807,7 +807,6 @@ public class ParForProgramBlock extends ForProgramBlock {
 			// Step 3) join all threads (wait for finished work)
 			LineageCacheConfig.setReuseLineageTraces(false); //disable lineage trace reuse
 			for( Thread thread : threads ){
-				CommonThreadPool.shutdownAsyncPools(thread);
 				thread.join();
 			}
 			
@@ -867,6 +866,13 @@ public class ParForProgramBlock extends ForProgramBlock {
 				StatisticMonitor.putPFStat(_ID, Stat.PARFOR_WAIT_RESULTS_T, time.stop());
 				StatisticMonitor.putPFStat(_ID, Stat.PARFOR_NUMTASKS, numExecutedTasks);
 				StatisticMonitor.putPFStat(_ID, Stat.PARFOR_NUMITERS, numExecutedIterations);
+			}
+
+			if(threads!= null){
+				for(Thread t : threads){
+					CommonThreadPool.shutdownAsyncPools(t);
+				}
+
 			}
 		}
 	}

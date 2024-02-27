@@ -411,9 +411,15 @@ public class MatrixBlock extends MatrixValue implements CacheBlock<MatrixBlock>,
 	}
 	
 	public Future<MatrixBlock> allocateBlockAsync() {
-		ExecutorService pool = CommonThreadPool.get();
-		return (pool != null) ? pool.submit(() -> allocateBlock()) : //async
-			ConcurrentUtils.constantFuture(allocateBlock()); //fallback sync
+		final ExecutorService pool = CommonThreadPool.get();
+		try{
+			return (pool != null) ? pool.submit(() -> allocateBlock()) : //async
+				ConcurrentUtils.constantFuture(allocateBlock()); //fallback sync
+		}
+		finally{
+			if(pool != null)
+				pool.shutdown();
+		}
 	}
 
 	public final MatrixBlock allocateBlock() {

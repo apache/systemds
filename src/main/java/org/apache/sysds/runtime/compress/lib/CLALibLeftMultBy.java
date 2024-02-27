@@ -565,22 +565,44 @@ public final class CLALibLeftMultBy {
 
 	private static void outerProductParallel(final double[] leftRowSum, final double[] rightColumnSum,
 		final MatrixBlock result, int k) {
-		ExecutorService pool = CommonThreadPool.get(k);
-		try {
-			for(Future<?> t : outerProductParallelTasks(leftRowSum, rightColumnSum, result, pool)) {
-				t.get();
+		if(k > 1) {
+			final ExecutorService pool = CommonThreadPool.get(k);
+			try {
+				for(Future<?> t : outerProductParallelTasks(leftRowSum, rightColumnSum, result, pool)) {
+					t.get();
+				}
+			}
+			catch(Exception e) {
+				throw new RuntimeException(e);
+			}
+			finally {
+				pool.shutdown();
 			}
 		}
-		catch(Exception e) {
-			throw new RuntimeException(e);
-		}
-		finally {
-			pool.shutdown();
+		else {
+			outerProduct(leftRowSum, rightColumnSum, result);
 		}
 	}
 
 	private static void outerProduct(final double[] leftRowSum, final double[] rightColumnSum, MatrixBlock result) {
-		outerProductRange(leftRowSum, rightColumnSum, result, 0, leftRowSum.length, 0, rightColumnSum.length);
+		final int blkz = 1024;
+		for(int row = 0; row < leftRowSum.length; row += blkz) {
+			final int rl = row;
+			final int ru = Math.min(leftRowSum.length, row + blkz);
+			final int colBz;
+			if(ru < row + blkz) {
+				colBz = 1024 * 1024 - ((ru - rl) * 1024) + 1024;
+			}
+			else {
+				colBz = blkz;
+			}
+			for(int col = 0; col < rightColumnSum.length; col += colBz) {
+				final int cl = col;
+				final int cu = Math.min(rightColumnSum.length, col + colBz);
+				outerProductRange(leftRowSum, rightColumnSum, result, rl, ru, cl, cu);
+
+			}
+		}
 	}
 
 	private static void outerProductRange(final double[] leftRowSum, final double[] rightColumnSum,

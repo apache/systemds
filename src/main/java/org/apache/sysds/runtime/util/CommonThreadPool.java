@@ -29,9 +29,11 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.Future;
+import java.util.concurrent.FutureTask;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
+import org.apache.commons.lang3.NotImplementedException;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.runtime.DMLRuntimeException;
@@ -105,10 +107,14 @@ public class CommonThreadPool implements ExecutorService {
 		final Thread thisThread = Thread.currentThread();
 		final String threadName = thisThread.getName();
 		final boolean mainThread = threadName.equals("main");
-		if(size == k  && mainThread)
+		LOG.error("Asking for K  " + k + " Threads");
+
+		if(k == 1) {
+			return new EagerExecutor();
+		}
+		if(size == k && mainThread)
 			return shared;
-		if (mainThread || threadName.equals("PARFOR")
-		 ) {
+		if(mainThread || threadName.equals("PARFOR")) {
 			if(shared2 == null) {
 				shared2 = new ConcurrentHashMap<>();
 				CommonThreadPool pool = new CommonThreadPool(Executors.newFixedThreadPool(k));
@@ -122,7 +128,7 @@ public class CommonThreadPool implements ExecutorService {
 				return pool;
 			}
 		}
-		else{
+		else {
 			return Executors.newFixedThreadPool(k);
 		}
 	}
@@ -185,17 +191,17 @@ public class CommonThreadPool implements ExecutorService {
 			asyncPool = null;
 		}
 		if(shared2 != null) {
-			for(Entry<Thread, CommonThreadPool> pool : shared2.entrySet()){
+			for(Entry<Thread, CommonThreadPool> pool : shared2.entrySet()) {
 				pool.getValue()._pool.shutdown();
 				shared2.remove(pool.getKey());
 			}
 		}
 	}
 
-	public synchronized static void shutdownAsyncPools(Thread parforThread){
-		if(shared2 != null){
+	public synchronized static void shutdownAsyncPools(Thread parforThread) {
+		if(shared2 != null) {
 			CommonThreadPool p = shared2.get(parforThread);
-			if(p != null){
+			if(p != null) {
 				p._pool.shutdown();
 			}
 		}
@@ -271,5 +277,85 @@ public class CommonThreadPool implements ExecutorService {
 	public <T> T invokeAny(Collection<? extends Callable<T>> tasks, long timeout, TimeUnit unit)
 		throws InterruptedException, ExecutionException, TimeoutException {
 		return _pool.invokeAny(tasks);
+	}
+
+	private static class EagerExecutor implements ExecutorService {
+
+		protected EagerExecutor(){
+			// nothing
+		}
+
+		@Override
+		public void execute(Runnable command) {
+			command.run();
+		}
+
+		@Override
+		public void shutdown() {
+			// nothing
+		}
+
+		@Override
+		public List<Runnable> shutdownNow() {
+			return null;
+		}
+
+		@Override
+		public boolean isShutdown() {
+			return true;
+		}
+
+		@Override
+		public boolean isTerminated() {
+			return true;
+		}
+
+		@Override
+		public boolean awaitTermination(long timeout, TimeUnit unit) throws InterruptedException {
+			return true;
+		}
+
+		@Override
+		public <T> Future<T> submit(Callable<T> task) {
+			return new FutureTask<>(() -> task.call());
+		}
+
+		@Override
+		public <T> Future<T> submit(Runnable task, T result) {
+			return new FutureTask<>(() -> {
+				task.run();
+				return result;
+			});
+		}
+
+		@Override
+		public Future<?> submit(Runnable task) {
+			return new FutureTask<>(() -> {
+				task.run();
+				return null;
+			});
+		}
+
+		@Override
+		public <T> List<Future<T>> invokeAll(Collection<? extends Callable<T>> tasks) throws InterruptedException {
+			throw new NotImplementedException();
+		}
+
+		@Override
+		public <T> List<Future<T>> invokeAll(Collection<? extends Callable<T>> tasks, long timeout, TimeUnit unit) {
+			throw new NotImplementedException();
+		}
+
+		@Override
+		public <T> T invokeAny(Collection<? extends Callable<T>> tasks) throws InterruptedException, ExecutionException {
+			throw new NotImplementedException();
+		}
+
+		@Override
+		public <T> T invokeAny(Collection<? extends Callable<T>> tasks, long timeout, TimeUnit unit)
+			throws InterruptedException, ExecutionException, TimeoutException {
+			throw new NotImplementedException();
+		}
+
 	}
 }

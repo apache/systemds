@@ -202,11 +202,11 @@ public class CommonThreadPool implements ExecutorService {
 	}
 
 	public final boolean isCached() {
-		return _pool.equals(shared) || (shared2 != null && this.equals(shared2.get(Thread.currentThread().getName())));
+		return _pool.equals(shared) || (shared2 != null && this.equals(shared2.get(Thread.currentThread())));
 	}
 
 	@Override
-	public void shutdown() {
+	public synchronized void shutdown() {
 		if(!isCached())
 			_pool.shutdown();
 	}

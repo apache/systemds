@@ -108,10 +108,8 @@ public class CommonThreadPool implements ExecutorService {
 		final boolean mainThread = threadName.equals("main");
 
 		if(k == 1) {
-			throw new NotImplementedException("not valid to ask for 1 thread");
-			// return new EagerExecutor();
+			throw new NotImplementedException("not valid to ask for 1 thread executors");
 		}
-		// LOG.error("Asking for K " + k + " Threads");
 		if(size == k && mainThread)
 			return shared;
 		if(mainThread || threadName.equals("PARFOR")) {
@@ -185,20 +183,17 @@ public class CommonThreadPool implements ExecutorService {
 	 * Shutdown the cached thread pools.
 	 */
 	public synchronized static void shutdownAsyncPools() {
-		LOG.error("Calling shutdown on all processes");
 		if(asyncPool != null) {
 			// shutdown prefetch/broadcast thread pool
 			asyncPool.shutdown();
 			asyncPool = null;
 		}
 		if(shared2 != null) {
-			LOG.error(shared2);
 
 			try {
 				ConcurrentHashMap<Thread, CommonThreadPool> sharedT = shared2;
 				shared2 = null;
 				for(Entry<Thread, CommonThreadPool> e : sharedT.entrySet()) {
-					LOG.error("Calling shutdown on all processes: " + e);
 					for(Runnable a : e.getValue()._pool.shutdownNow())
 						a.wait();
 				}
@@ -211,8 +206,6 @@ public class CommonThreadPool implements ExecutorService {
 
 	public synchronized static void shutdownAsyncPools(Thread thread) {
 		if(shared2 != null) {
-			LOG.error("Shutdown thread Pool: " + thread);
-			LOG.error(shared2);
 			CommonThreadPool p = shared2.get(thread);
 			try {
 				if(p != null) {

@@ -57,7 +57,7 @@ public final class CLALibTSMM {
 		final List<AColGroup> groups = cmb.getColGroups();
 		
 		final int numColumns = cmb.getNumColumns();
-		if(groups.size() > numColumns){
+		if(groups.size() >= numColumns){
 			MatrixBlock m = cmb.getUncompressed("TSMM to many columngroups",k);
 			LibMatrixMult.matrixMultTransposeSelf(m, ret, true, k);
 			return ret;

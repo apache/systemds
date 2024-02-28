@@ -247,7 +247,8 @@ public class LibMatrixBincell {
  			|| ret.getLength() < PAR_NUMCELL_THRESHOLD2
 			|| ((op.sparseSafe || isSparseSafeDivide(op, m2))
 				&& !(atype == BinaryAccessType.MATRIX_MATRIX
-					|| atype.isMatrixVector() && isAllDense(m1, m2, ret))))
+					|| atype.isMatrixVector() && isAllDense(m1, m2, ret)))
+			|| !CommonThreadPool.useParallelismOnThread())
 		{
 			bincellOpMatrixSingle(m1, m2, ret, op,atype);
 		}

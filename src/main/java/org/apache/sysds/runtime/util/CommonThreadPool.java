@@ -301,6 +301,18 @@ public class CommonThreadPool implements ExecutorService {
 		return _pool.invokeAny(tasks);
 	}
 
+	public static boolean useParallelizmOnThread(){
+		Thread t = Thread.currentThread();
+		String name = t.getName();
+		switch(name){
+			case "main":
+			case "PARFOR":
+				return true;
+			default:
+				return false;
+		}
+	}
+
 	// private static class EagerExecutor implements ExecutorService {
 
 	// protected EagerExecutor(){

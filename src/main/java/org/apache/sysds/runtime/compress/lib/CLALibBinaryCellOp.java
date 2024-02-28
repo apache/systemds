@@ -495,21 +495,28 @@ public final class CLALibBinaryCellOp {
 		final int k = op.getNumThreads();
 		final int blkz = ret.getNumRows() / k;
 		long nnz = 0;
-		final ExecutorService pool = CommonThreadPool.get(op.getNumThreads());
-		try {
-			final ArrayList<Callable<Long>> tasks = new ArrayList<>();
+		if(k <= 1){
 			for(int i = 0; i < nRows; i += blkz)
-				tasks.add(new BinaryMMTask(m1, m2, ret, i, Math.min(nRows, i + blkz), op, left));
+				nnz += new BinaryMMTask(m1, m2, ret, i, Math.min(nRows, i + blkz), op, left).call();
+		}
+		else{
 
-			for(Future<Long> f : pool.invokeAll(tasks))
-				nnz += f.get();
-			pool.shutdown();
-		}
-		catch(InterruptedException | ExecutionException e) {
-			throw new DMLRuntimeException(e);
-		}
-		finally{
-			pool.shutdown();
+			final ExecutorService pool = CommonThreadPool.get(op.getNumThreads());
+			try {
+				final ArrayList<Callable<Long>> tasks = new ArrayList<>();
+				for(int i = 0; i < nRows; i += blkz)
+					tasks.add(new BinaryMMTask(m1, m2, ret, i, Math.min(nRows, i + blkz), op, left));
+	
+				for(Future<Long> f : pool.invokeAll(tasks))
+					nnz += f.get();
+				pool.shutdown();
+			}
+			catch(InterruptedException | ExecutionException e) {
+				throw new DMLRuntimeException(e);
+			}
+			finally{
+				pool.shutdown();
+			}
 		}
 		return nnz;
 	}

@@ -60,6 +60,7 @@ public final class CLALibTSMM {
 		if(groups.size() >= numColumns){
 			MatrixBlock m = cmb.getUncompressed("TSMM to many columngroups",k);
 			LibMatrixMult.matrixMultTransposeSelf(m, ret, true, k);
+			return ;
 		}
 		final int numRows = cmb.getNumRows();
 		final boolean shouldFilter = CLALibUtils.shouldPreFilter(groups);
@@ -114,7 +115,6 @@ public final class CLALibTSMM {
 	private static void tsmmColGroupsMultiThreadOverlapping(List<AColGroup> groups, MatrixBlock ret, int nRows, int k) {
 		LOG.warn("fallback to single threaded for now");
 		tsmmColGroupsSingleThread(groups, ret, nRows);
-		throw new NotImplementedException();
 	}
 
 	private static void tsmmColGroupsMultiThread(List<AColGroup> groups, MatrixBlock ret, int nRows, int k) {

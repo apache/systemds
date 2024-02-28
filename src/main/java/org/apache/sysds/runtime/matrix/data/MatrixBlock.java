@@ -1401,7 +1401,7 @@ public class MatrixBlock extends MatrixValue implements CacheBlock<MatrixBlock>,
 		if(sparse && sparseBlock!=null)
 			return recomputeNonZeros();
 		else if(!sparse && denseBlock!=null){
-			if((long) rlen * clen < 10000)
+			if((long) rlen * clen < 10000 || k == 1)
 				return recomputeNonZeros();
 			final ExecutorService pool = CommonThreadPool.get(k);
 			try {

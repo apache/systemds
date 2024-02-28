@@ -278,6 +278,9 @@ public class CompressedMatrixBlockFactory {
 			return new ImmutablePair<>(mb, null);
 		}
 
+		if(!(costEstimator instanceof ComputationCostEstimator))
+			throw new DMLCompressionException("Invalid optimizer, should be cost");
+
 		_stats.denseSize = MatrixBlock.estimateSizeInMemory(mb.getNumRows(), mb.getNumColumns(), 1.0);
 		_stats.sparseSize = MatrixBlock.estimateSizeSparseInMemory(mb.getNumRows(), mb.getNumColumns(), mb.getSparsity());
 		_stats.originalSize = mb.getInMemorySize();

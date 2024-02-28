@@ -163,18 +163,16 @@ public class ColGroupSDCZeros extends ASDCZero implements IMapToDataGroup {
 	private final void decompressToDenseBlockDenseDictionaryPostSingleColContiguous(DenseBlock db, int rl, int ru,
 		int offR, int offC, double[] values, AIterator it) {
 		final int lastOff = _indexes.getOffsetToLast() + offR;
-		final int nCol = db.getDim(1);
+		final int of = offR + offC;
 		final double[] c = db.values(0);
-		it.setOff(it.value() + offR);
-		offC += _colIndexes.get(0);
-		while(it.value() < lastOff) {
-			final int off = it.value() * nCol + offC;
-			c[off] += values[_data.getIndex(it.getDataIndex())];
-			it.next();
-		}
-		final int off = it.value() * nCol + offC;
-		c[off] += values[_data.getIndex(it.getDataIndex())];
-		it.setOff(it.value() - offR);
+		it.setOff(it.value() + of);
+		decToDBDDSCP(c, values, it, _data, lastOff);
+		it.setOff(it.value() - of);
+	}
+
+	private static void decToDBDDSCP(double[] c, double[] values, AIterator it, AMapToData m, int last){
+		decToDBDDSC(c, values, it, m, last);
+		c[it.value()] += values[m.getIndex(it.getDataIndex())];
 	}
 
 	private final void decompressToDenseBlockDenseDictioanryPostAllCols(DenseBlock db, int rl, int ru, int offR,

@@ -53,8 +53,15 @@ public final class CLALibTSMM {
 	 * @param k   The parallelization degree allowed
 	 */
 	public static void leftMultByTransposeSelf(CompressedMatrixBlock cmb, MatrixBlock ret, int k) {
+		
 		final List<AColGroup> groups = cmb.getColGroups();
+		
 		final int numColumns = cmb.getNumColumns();
+		if(groups.size() > numColumns){
+			MatrixBlock m = cmb.getUncompressed("TSMM to many columngroups",k);
+			LibMatrixMult.matrixMultTransposeSelf(m, ret, true, k);
+			return ret;
+		}
 		final int numRows = cmb.getNumRows();
 		final boolean shouldFilter = CLALibUtils.shouldPreFilter(groups);
 		final boolean overlapping = cmb.isOverlapping();
@@ -64,8 +71,10 @@ public final class CLALibTSMM {
 			tsmmColGroups(filteredGroups, ret, numRows, overlapping, k);
 			addCorrectionLayer(filteredGroups, ret, numRows, numColumns, constV);
 		}
-		else
+		else{
+
 			tsmmColGroups(groups, ret, numRows, overlapping, k);
+		}
 
 		ret.setNonZeros(LibMatrixMult.copyUpperToLowerTriangle(ret));
 		ret.examSparsity();

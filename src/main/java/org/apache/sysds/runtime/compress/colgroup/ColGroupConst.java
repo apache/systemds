@@ -714,9 +714,12 @@ public class ColGroupConst extends ADictBasedColGroup implements IContainDefault
 
 	@Override
 	public AColGroup combineWithSameIndex(int nCol, List<AColGroup> right) {
-		for(AColGroup g : right) {
-			if(!(g instanceof ColGroupConst))
+		for(int i = 0; i < right.size(); i++) {
+			AColGroup g = right.get(i);
+
+			if(!(g instanceof ColGroupConst ) || !(g instanceof ColGroupEmpty)){
 				throw new NotImplementedException("Combine on Const column only allowing const column groups");
+			}
 		}
 		IColIndex combinedIndex = _colIndexes;
 		int i = 0;

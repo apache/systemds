@@ -26,6 +26,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
+import org.apache.sysds.runtime.compress.colgroup.dictionary.Dictionary;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.DictionaryFactory;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.IDictionary;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.IdentityDictionary;
@@ -361,8 +362,13 @@ public abstract class ADictBasedColGroup extends AColGroupCompressed implements 
 
 			dicts.add(getDictionary());
 			for(int i = 0; i < right.size(); i++) {
-				ADictBasedColGroup a = ((ADictBasedColGroup) right.get(i));
-				dicts.add(a.getDictionary());
+				if(right instanceof ColGroupEmpty){
+					dicts.add(Dictionary.createNoCheck(new double[nCol]));
+				}
+				else{
+					ADictBasedColGroup a = ((ADictBasedColGroup) right.get(i));
+					dicts.add(a.getDictionary());
+				}
 			}
 			return DictionaryFactory.cBindDictionaries(getNumCols(), dicts);
 		}

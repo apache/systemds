@@ -60,7 +60,6 @@ public final class CLALibTSMM {
 		if(groups.size() >= numColumns){
 			MatrixBlock m = cmb.getUncompressed("TSMM to many columngroups",k);
 			LibMatrixMult.matrixMultTransposeSelf(m, ret, true, k);
-			return ret;
 		}
 		final int numRows = cmb.getNumRows();
 		final boolean shouldFilter = CLALibUtils.shouldPreFilter(groups);

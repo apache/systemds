@@ -301,7 +301,7 @@ public class CommonThreadPool implements ExecutorService {
 		return _pool.invokeAny(tasks);
 	}
 
-	public static boolean useParallelizmOnThread(){
+	public static boolean useParallelismOnThread(){
 		Thread t = Thread.currentThread();
 		String name = t.getName();
 		switch(name){

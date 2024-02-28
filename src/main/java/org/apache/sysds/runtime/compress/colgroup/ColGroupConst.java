@@ -717,8 +717,9 @@ public class ColGroupConst extends ADictBasedColGroup implements IContainDefault
 		for(int i = 0; i < right.size(); i++) {
 			AColGroup g = right.get(i);
 
-			if(!(g instanceof ColGroupConst ) || !(g instanceof ColGroupEmpty)){
-				throw new NotImplementedException("Combine on Const column only allowing const column groups");
+			if(!(g instanceof ColGroupConst) || !(g instanceof ColGroupEmpty)) {
+				throw new NotImplementedException(
+					"Combine on Const column only allowing const column groups: " + g.getClass().getSimpleName());
 			}
 		}
 		IColIndex combinedIndex = _colIndexes;

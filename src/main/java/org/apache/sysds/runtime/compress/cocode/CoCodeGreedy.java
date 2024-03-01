@@ -37,14 +37,14 @@ import org.apache.sysds.runtime.util.CommonThreadPool;
 
 public class CoCodeGreedy extends AColumnCoCoder {
 
-	private final Memorizer mem;
+	private final MemorizerV2 mem;
 
 	protected CoCodeGreedy(AComEst sizeEstimator, ACostEstimate costEstimator, CompressionSettings cs) {
 		super(sizeEstimator, costEstimator, cs);
-		mem = new Memorizer(sizeEstimator);
+		mem = new MemorizerV2(sizeEstimator, sizeEstimator.getNumColumns());
 	}
 
-	protected CoCodeGreedy(AComEst sizeEstimator, ACostEstimate costEstimator, CompressionSettings cs, Memorizer mem) {
+	protected CoCodeGreedy(AComEst sizeEstimator, ACostEstimate costEstimator, CompressionSettings cs, MemorizerV2 mem) {
 		super(sizeEstimator, costEstimator, cs);
 		this.mem = mem;
 	}
@@ -66,115 +66,125 @@ public class CoCodeGreedy extends AColumnCoCoder {
 		final List<ColIndexes> workSet = new ArrayList<>(inputColumns.size());
 		k = k <= 0 ? InfrastructureAnalyzer.getLocalParallelism() : k;
 		final ExecutorService pool = CommonThreadPool.get(k);
-		for(int i = 0; i < inputColumns.size(); i++) {
-			CompressedSizeInfoColGroup g = inputColumns.get(i);
-			workSet.add(new ColIndexes(g.getColumns()));
-		}
+		try {
+			for(int i = 0; i < inputColumns.size(); i++) {
+				CompressedSizeInfoColGroup g = inputColumns.get(i);
+				workSet.add(new ColIndexes(g.getColumns()));
+			}
 
-		if(k > 1)
-			parallelFirstCombine(workSet, pool);
+			if(k > 1)
+				parallelFirstCombine(workSet, pool);
 
-		// second layer to keep the second best combination
-		double secondChange = 0;
-		CompressedSizeInfoColGroup secondTmp = null;
-		ColIndexes secondSelectedJ = null, secondSelected1 = null, secondSelected2 = null;
+			// second layer to keep the second best combination
+			double secondChange = 0;
+			CompressedSizeInfoColGroup secondTmp = null;
+			ColIndexes secondSelectedJ = null, secondSelected1 = null, secondSelected2 = null;
 
-		// Process merging iterations until no more change
-		while(workSet.size() > 1) {
-			if(secondChange != 0)
-				mem.incst4();
-			// maintain selected
-			double changeInCost = secondChange;
-			CompressedSizeInfoColGroup tmp = secondTmp;
-			ColIndexes selectedJ = secondSelectedJ, selected1 = secondSelected1, selected2 = secondSelected2;
+			// Process merging iterations until no more change
+			while(workSet.size() > 1) {
+				if(secondChange != 0)
+					mem.incst4();
+				// maintain selected
+				double changeInCost = secondChange;
+				CompressedSizeInfoColGroup tmp = secondTmp;
+				ColIndexes selectedJ = secondSelectedJ, selected1 = secondSelected1, selected2 = secondSelected2;
 
-			for(int i = 0; i < workSet.size(); i++) {
-				for(int j = i + 1; j < workSet.size(); j++) {
-					final ColIndexes c1 = workSet.get(i);
-					final ColIndexes c2 = workSet.get(j);
-					final double costC1 = _cest.getCost(mem.get(c1));
-					final double costC2 = _cest.getCost(mem.get(c2));
+				for(int i = 0; i < workSet.size(); i++) {
+					for(int j = i + 1; j < workSet.size(); j++) {
+						final ColIndexes c1 = workSet.get(i);
+						final ColIndexes c2 = workSet.get(j);
+						final CompressedSizeInfoColGroup c1i = mem.get(c1);
+						final CompressedSizeInfoColGroup c2i = mem.get(c2);
 
-					mem.incst1();
+						final double costC1 = _cest.getCost(c1i);
+						final double costC2 = _cest.getCost(c2i);
 
-					// Pruning filter : skip dominated candidates
-					// Since even if the entire size of one of the column lists is removed,
-					// it still does not improve compression.
-					// In the case of workload we relax the requirement for the filter.
-					if(-Math.min(costC1, costC2) > changeInCost)
-						continue;
+						mem.incst1();
+						final int maxCombined = c1i.getNumVals() * c2i.getNumVals();
 
-					// Combine the two column groups.
-					// and Memorize the new Combine.
-					final IColIndex c = c1._indexes.combine(c2._indexes);
-					final ColIndexes cI = new ColIndexes(c);
-					final CompressedSizeInfoColGroup c1c2Inf = mem.getOrCreate(cI, c1, c2);
-					final double costC1C2 = _cest.getCost(c1c2Inf);
-					final double newCostIfJoined = costC1C2 - costC1 - costC2;
+						// Pruning filter : skip dominated candidates
+						// Since even if the entire size of one of the column lists is removed,
+						// it still does not improve compression.
+						// In the case of workload we relax the requirement for the filter.
+						if(-Math.min(costC1, costC2) > changeInCost // change in cost cannot possibly be better.
+							|| (maxCombined < 0) // int overflow
+							|| (maxCombined > c1i.getNumRows())) // higher combined number of rows.
+							continue;
 
-					// Select the best Combine of either the currently selected
-					// or keep the old one.
-					if(newCostIfJoined < 0) {
-						if(tmp == null) {
-							changeInCost = newCostIfJoined;
-							tmp = c1c2Inf;
-							selectedJ = cI;
-							selected1 = c1;
-							selected2 = c2;
-						}
-						else if((newCostIfJoined < changeInCost ||
-							newCostIfJoined == changeInCost && c1c2Inf.getColumns().size() < tmp.getColumns().size())) {
+						// Combine the two column groups.
+						// and Memorize the new Combine.
+						final IColIndex c = c1._indexes.combine(c2._indexes);
+						final ColIndexes cI = new ColIndexes(c);
+						final CompressedSizeInfoColGroup c1c2Inf = mem.getOrCreate(cI, c1, c2);
+						final double costC1C2 = _cest.getCost(c1c2Inf);
+						final double newCostIfJoined = costC1C2 - costC1 - costC2;
 
-							if(selected1 != secondSelected1 && selected2 != secondSelected2) {
-								secondTmp = tmp;
-								secondSelectedJ = selectedJ;
-								secondSelected1 = selected1;
-								secondSelected2 = selected2;
-								secondChange = changeInCost;
+						// Select the best Combine of either the currently selected
+						// or keep the old one.
+						if(newCostIfJoined < 0) {
+							if(tmp == null) {
+								changeInCost = newCostIfJoined;
+								tmp = c1c2Inf;
+								selectedJ = cI;
+								selected1 = c1;
+								selected2 = c2;
 							}
+							else if((newCostIfJoined < changeInCost ||
+								newCostIfJoined == changeInCost && c1c2Inf.getColumns().size() < tmp.getColumns().size())) {
 
-							changeInCost = newCostIfJoined;
-							tmp = c1c2Inf;
-							selectedJ = cI;
-							selected1 = c1;
-							selected2 = c2;
+								if(selected1 != secondSelected1 && selected2 != secondSelected2) {
+									secondTmp = tmp;
+									secondSelectedJ = selectedJ;
+									secondSelected1 = selected1;
+									secondSelected2 = selected2;
+									secondChange = changeInCost;
+								}
+
+								changeInCost = newCostIfJoined;
+								tmp = c1c2Inf;
+								selectedJ = cI;
+								selected1 = c1;
+								selected2 = c2;
+							}
 						}
 					}
 				}
-			}
 
-			if(tmp != null) {
-				// remove from workset
-				workSet.remove(selected1);
-				workSet.remove(selected2);
-				mem.remove(selected1, selected2); // remove all memorized values of the combined columns
+				if(tmp != null) {
+					// remove from workset
+					workSet.remove(selected1);
+					workSet.remove(selected2);
+					mem.remove(selected1, selected2); // remove all memorized values of the combined columns
 
-				// ColIndexes combined = new ColIndexes(tmp.getColumns());
-				mem.put(selectedJ, tmp); // add back the new combination to memorizer
-				workSet.add(selectedJ);
-				if(selectedJ.contains(secondSelected1, secondSelected2)) {
-					secondTmp = null;
-					secondSelectedJ = null;
-					secondSelected1 = null;
-					secondSelected2 = null;
-					secondChange = 0;
+					// ColIndexes combined = new ColIndexes(tmp.getColumns());
+					mem.put(selectedJ, tmp); // add back the new combination to memorizer
+					workSet.add(selectedJ);
+					if(selectedJ.contains(secondSelected1, secondSelected2)) {
+						secondTmp = null;
+						secondSelectedJ = null;
+						secondSelected1 = null;
+						secondSelected2 = null;
+						secondChange = 0;
+					}
+
 				}
-
+				else
+					break;
 			}
-			else
-				break;
+
+			if(LOG.isDebugEnabled())
+				LOG.debug("Memorizer stats:" + mem.stats());
+			mem.resetStats();
+
+			List<CompressedSizeInfoColGroup> ret = new ArrayList<>(workSet.size());
+			for(ColIndexes w : workSet)
+				ret.add(mem.get(w));
+
+			return ret;
 		}
-
-		if(LOG.isDebugEnabled())
-			LOG.debug("Memorizer stats:" + mem.stats());
-		mem.resetStats();
-
-		pool.shutdown();
-		List<CompressedSizeInfoColGroup> ret = new ArrayList<>(workSet.size());
-		for(ColIndexes w : workSet)
-			ret.add(mem.get(w));
-
-		return ret;
+		finally {
+			pool.shutdown();
+		}
 	}
 
 	protected void parallelFirstCombine(List<ColIndexes> workSet, ExecutorService pool) {
@@ -202,10 +212,20 @@ public class CoCodeGreedy extends AColumnCoCoder {
 		}
 
 		@Override
-		public Object call() {
-			final IColIndex c = _c1._indexes.combine(_c2._indexes);
-			final ColIndexes cI = new ColIndexes(c);
-			mem.getOrCreate(cI, _c1, _c2);
+		public Object call() throws Exception {
+			final CompressedSizeInfoColGroup c1i = mem.get(_c1);
+			final CompressedSizeInfoColGroup c2i = mem.get(_c2);
+			if(c1i != null && c2i != null) {
+				final int maxCombined = c1i.getNumVals() * c2i.getNumVals();
+
+				if(maxCombined < 0 // int overflow
+					|| maxCombined > c1i.getNumRows()) // higher combined than number of rows.
+					return null;
+
+				final IColIndex c = _c1._indexes.combine(_c2._indexes);
+				final ColIndexes cI = new ColIndexes(c);
+				mem.getOrCreate(cI, _c1, _c2);
+			}
 			return null;
 		}
 	}

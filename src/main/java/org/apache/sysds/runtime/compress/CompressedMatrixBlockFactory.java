@@ -35,6 +35,7 @@ import org.apache.sysds.runtime.compress.colgroup.ColGroupEmpty;
 import org.apache.sysds.runtime.compress.colgroup.ColGroupFactory;
 import org.apache.sysds.runtime.compress.colgroup.ColGroupUncompressed;
 import org.apache.sysds.runtime.compress.cost.ACostEstimate;
+import org.apache.sysds.runtime.compress.cost.ComputationCostEstimator;
 import org.apache.sysds.runtime.compress.cost.CostEstimatorBuilder;
 import org.apache.sysds.runtime.compress.cost.CostEstimatorFactory;
 import org.apache.sysds.runtime.compress.cost.InstructionTypeCounter;
@@ -82,6 +83,9 @@ public class CompressedMatrixBlockFactory {
 	private AComEst informationExtractor;
 	/** Compression information gathered through the sampling, used for the actual compression decided */
 	private CompressedSizeInfo compressionGroups;
+
+	// /** Indicate if the compression aborts we should decompress*/
+	// private boolean shouldDecompress = false;
 
 	private CompressedMatrixBlockFactory(MatrixBlock mb, int k, CompressionSettingsBuilder compSettings,
 		ACostEstimate costEstimator) {
@@ -274,16 +278,21 @@ public class CompressedMatrixBlockFactory {
 			return new ImmutablePair<>(mb, null);
 		}
 
+		if(!(costEstimator instanceof ComputationCostEstimator))
+			throw new DMLCompressionException("Invalid optimizer, should be cost");
+
 		_stats.denseSize = MatrixBlock.estimateSizeInMemory(mb.getNumRows(), mb.getNumColumns(), 1.0);
 		_stats.sparseSize = MatrixBlock.estimateSizeSparseInMemory(mb.getNumRows(), mb.getNumColumns(), mb.getSparsity());
 		_stats.originalSize = mb.getInMemorySize();
 		_stats.originalCost = costEstimator.getCost(mb);
 
+		final double orgSum = mb.sum(k).getDouble(0, 0);
+
 		if(mb.isEmpty()) // empty input return empty compression
 			return createEmpty();
 
 		res = new CompressedMatrixBlock(mb); // copy metadata and allocate soft reference
-
+		logInit();
 		classifyPhase();
 		if(compressionGroups == null)
 			return abortCompression();
@@ -298,6 +307,12 @@ public class CompressedMatrixBlockFactory {
 
 		if(res == null)
 			return abortCompression();
+
+		final double afterComp = mb.sum(k).getDouble(0, 0);
+
+		final double deltaSum = Math.abs(orgSum - afterComp);
+
+		LOG.debug("compression Sum: Before:" + orgSum + " after: " + afterComp + " |delta|: " + deltaSum);
 
 		return new ImmutablePair<>(res, _stats);
 	}
@@ -325,7 +340,9 @@ public class CompressedMatrixBlockFactory {
 		final double scale = Math.sqrt(nCols);
 		final double threshold = _stats.estimatedCostCols / scale;
 
-		if(threshold < _stats.originalCost) {
+		if(threshold < _stats.originalCost * (
+			(costEstimator instanceof ComputationCostEstimator) && !(mb instanceof CompressedMatrixBlock)
+			 ? 15 : 0.8)) {
 			if(nCols > 1)
 				coCodePhase();
 			else // LOG a short cocode phase (since there is one column we don't cocode)
@@ -396,7 +413,7 @@ public class CompressedMatrixBlockFactory {
 				compSettings.transposed = false;
 				break;
 			default:
-				compSettings.transposed = transposeHeuristics(compressionGroups.getNumberColGroups() , mb);
+				compSettings.transposed = transposeHeuristics(compressionGroups.getNumberColGroups(), mb);
 		}
 	}
 
@@ -432,20 +449,20 @@ public class CompressedMatrixBlockFactory {
 
 		_stats.compressedSize = res.getInMemorySize();
 		_stats.compressedCost = costEstimator.getCost(res.getColGroups(), res.getNumRows());
-
-		final double ratio = _stats.getRatio();
-		final double denseRatio = _stats.getDenseRatio();
-
 		_stats.setColGroupsCounts(res.getColGroups());
-		if(ratio < 1 && denseRatio < 100.0) {
+
+		if(_stats.compressedCost > _stats.originalCost) {
 			LOG.info("--dense size:        " + _stats.denseSize);
 			LOG.info("--original size:     " + _stats.originalSize);
 			LOG.info("--compressed size:   " + _stats.compressedSize);
-			LOG.info("--compression ratio: " + ratio);
+			LOG.info("--compression ratio: " + _stats.getRatio());
+			LOG.info("--original Cost:     " + _stats.originalCost);
+			LOG.info("--Compressed Cost:   " + _stats.compressedCost);
+			LOG.info("--Cost Ratio:        " + _stats.getCostRatio());
 			LOG.debug("--col groups types   " + _stats.getGroupsTypesString());
 			LOG.debug("--col groups sizes   " + _stats.getGroupsSizesString());
 			logLengths();
-			LOG.info("Abort block compression because compression ratio is less than 1.");
+			LOG.info("Abort block compression because cost ratio is less than 1. ");
 			res = null;
 			setNextTimePhase(time.stop());
 			DMLCompressionStatistics.addCompressionTime(getLastTimePhase(), phase);
@@ -462,7 +479,21 @@ public class CompressedMatrixBlockFactory {
 
 	private Pair<MatrixBlock, CompressionStatistics> abortCompression() {
 		LOG.warn("Compression aborted at phase: " + phase);
+		if(mb instanceof CompressedMatrixBlock) {
+			MatrixBlock ucmb = ((CompressedMatrixBlock) mb).getUncompressed("Decompressing for abort: ", k);
+			return new ImmutablePair<>(ucmb, _stats);
+		}
 		return new ImmutablePair<>(mb, _stats);
+	}
+
+	private void logInit() {
+		if(LOG.isDebugEnabled()) {
+			LOG.debug("--Seed used for comp : " + compSettings.seed);
+			LOG.debug(String.format("--number columns to compress: %10d", mb.getNumColumns()));
+			LOG.debug(String.format("--number rows to compress   : %10d", mb.getNumRows()));
+			LOG.debug(String.format("--sparsity                  : %10.5f", mb.getSparsity()));
+			LOG.debug(String.format("--nonZeros                  : %10d", mb.getNonZeros()));
+		}
 	}
 
 	private void logPhase() {
@@ -476,7 +507,6 @@ public class CompressedMatrixBlockFactory {
 			else {
 				switch(phase) {
 					case 0:
-						LOG.debug("--Seed used for comp : " + compSettings.seed);
 						LOG.debug("--compression phase " + phase + " Classify  : " + getLastTimePhase());
 						LOG.debug("--Individual Columns Estimated Compression: " + _stats.estimatedSizeCols);
 						if(mb instanceof CompressedMatrixBlock) {

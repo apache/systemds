@@ -32,6 +32,7 @@ import org.apache.sysds.runtime.compress.DMLCompressionException;
 import org.apache.sysds.runtime.compress.colgroup.IMapToDataGroup;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.Dictionary;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.IDictionary;
+import org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex;
 import org.apache.sysds.runtime.compress.colgroup.mapping.MapToFactory.MAP_TYPE;
 import org.apache.sysds.runtime.compress.colgroup.offset.AOffset;
 import org.apache.sysds.runtime.compress.colgroup.offset.AOffsetIterator;
@@ -239,7 +240,7 @@ public abstract class AMapToData implements Serializable {
 			preAggregateDenseToRowVec8(mV, preAV, rc, off);
 	}
 
-	protected void preAggregateDenseToRowVec8(double[] mV, double[] preAV, int rc, int off){
+	protected void preAggregateDenseToRowVec8(double[] mV, double[] preAV, int rc, int off) {
 		preAV[getIndex(rc)] += mV[off];
 		preAV[getIndex(rc + 1)] += mV[off + 1];
 		preAV[getIndex(rc + 2)] += mV[off + 2];
@@ -898,6 +899,55 @@ public abstract class AMapToData implements Serializable {
 				}
 			}
 		}
+	}
+
+	public void lmSparseMatrixRow(SparseBlock sb, final int r, DenseBlock db, final IColIndex colIndexes,
+		final IDictionary dict) {
+		if(sb.isEmpty(r))
+			return;
+		// dense output blocks locations
+		final int pos = db.pos(r);
+		final double[] retV = db.values(r);
+
+		// sparse left block locations
+		final int apos = sb.pos(r);
+		final int alen = sb.size(r) + apos;
+		final int[] aix = sb.indexes(r);
+		final double[] aval = sb.values(r);
+
+		for(int i = apos; i < alen; i++)
+			dict.multiplyScalar(aval[i], retV, pos, getIndex(aix[i]), colIndexes);
+	}
+
+	public void decompressToRange(double[] c, int rl, int ru, int offR, double[] values) {
+		if(offR == 0)
+			decompressToRangeNoOff(c, rl, ru, values);
+		else
+			decompressToRangeOff(c, rl, ru, offR, values);
+	}
+
+	public void decompressToRangeOff(double[] c, int rl, int ru, int offR, double[] values) {
+		for(int i = rl, offT = rl + offR; i < ru; i++, offT++)
+			c[offT] += values[getIndex(i)];
+	}
+
+	protected void decompressToRangeNoOffBy8(double[] c, int r, double[] values) {
+		c[r] += values[getIndex(r)];
+		c[r + 1] += values[getIndex(r + 1)];
+		c[r + 2] += values[getIndex(r + 2)];
+		c[r + 3] += values[getIndex(r + 3)];
+		c[r + 4] += values[getIndex(r + 4)];
+		c[r + 5] += values[getIndex(r + 5)];
+		c[r + 6] += values[getIndex(r + 6)];
+		c[r + 7] += values[getIndex(r + 7)];
+	}
+
+	public void decompressToRangeNoOff(double[] c, int rl, int ru, double[] values) {
+		final int h = (ru - rl) % 8;
+		for(int rc = rl; rc < rl + h; rc++)
+			c[rc] += values[getIndex(rc)];
+		for(int rc = rl + h; rc < ru; rc += 8)
+			decompressToRangeNoOffBy8(c, rc, values);
 	}
 
 	@Override

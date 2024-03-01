@@ -81,6 +81,7 @@ public abstract class ACostEstimate implements Serializable {
 		double c = 0;
 		for(CompressedSizeInfoColGroup g : i.getInfo())
 			c += getCost(g);
+		
 		return c;
 	}
 

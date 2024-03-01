@@ -20,6 +20,8 @@
 package org.apache.sysds.runtime.frame.data.compress;
 
 import org.apache.sysds.common.Types.ValueType;
+import org.apache.sysds.conf.ConfigurationManager;
+import org.apache.sysds.conf.DMLConfig;
 import org.apache.sysds.runtime.frame.data.columns.ArrayFactory.FrameArrayType;
 
 public class ArrayCompressionStatistics {
@@ -48,8 +50,12 @@ public class ArrayCompressionStatistics {
 	@Override
 	public String toString() {
 		StringBuilder sb = new StringBuilder();
-		sb.append(String.format("Compressed Stats: size:%8d->%8d, Use:%10s, Unique:%6d, ValueType:%7s", originalSize,
-			compressedSizeEstimate, bestType == null ? "None" : bestType.toString(), nUnique, valueType));
+		if(ConfigurationManager.getDMLConfig().getDoubleValue(DMLConfig.COMPRESSED_SAMPLING_RATIO) < 1)
+			sb.append(String.format("Compressed Stats: size:%8d->%8d, Use:%10s, EstUnique:%6d, ValueType:%7s",
+				originalSize, compressedSizeEstimate, bestType == null ? "None" : bestType.toString(), nUnique, valueType));
+		else
+			sb.append(String.format("Compressed Stats: size:%8d->%8d, Use:%10s, Unique:%6d, ValueType:%7s", originalSize,
+				compressedSizeEstimate, bestType == null ? "None" : bestType.toString(), nUnique, valueType));
 		return sb.toString();
 	}
 }

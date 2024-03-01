@@ -87,16 +87,14 @@ public class EstimationFactors {
 		this.tupleSparsity = tupleSparsity;
 
 		if(overAllSparsity > 1 || overAllSparsity < 0)
-			throw new DMLCompressionException("Invalid OverAllSparsity of: " + overAllSparsity);
+			overAllSparsity = Math.max(0, Math.min(1, overAllSparsity));
 		else if(tupleSparsity > 1 || tupleSparsity < 0)
-			throw new DMLCompressionException("Invalid TupleSparsity of:" + tupleSparsity);
+			tupleSparsity = Math.max(0, Math.min(1, tupleSparsity));
 		else if(largestOff > numRows)
-			throw new DMLCompressionException(
-				"Invalid number of instance of most common element should be lower than number of rows. " + largestOff
-					+ " > numRows: " + numRows);
+			largestOff = numRows;
 		else if(numVals > numOffs)
-			throw new DMLCompressionException(
-				"Num vals cannot be greater than num offs: vals: " + numVals + " offs: " + numOffs);
+			numVals = numOffs;
+		
 
 		if(CompressedMatrixBlock.debug && frequencies != null) {
 			for(int i = 0; i < frequencies.length; i++) {

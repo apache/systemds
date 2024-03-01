@@ -21,7 +21,9 @@ package org.apache.sysds.runtime.util;
 
 import java.util.Collection;
 import java.util.List;
+import java.util.Map.Entry;
 import java.util.concurrent.Callable;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -30,6 +32,7 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
+import org.apache.commons.lang3.NotImplementedException;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.runtime.DMLRuntimeException;
@@ -60,19 +63,19 @@ public class CommonThreadPool implements ExecutorService {
 	 * pool.
 	 */
 	private static final ExecutorService shared = ForkJoinPool.commonPool();
-	/** A secondary thread local executor that use a custom number of threads */
-	private static CommonThreadPool shared2 = null;
-	/** The number of threads used in the custom secondary executor */
-	private static int shared2K = -1;
+
+	/** A secondary thread local executor that use a custom number of threads for PARFOR */
+	private static ConcurrentHashMap<Long, CommonThreadPool> shared2 = null;
+	// /** The number of threads used in the custom secondary executor */
+	// private static int shared2K = -1;
 	/** Dynamic thread pool, that dynamically allocate threads as tasks come in. */
 	private static ExecutorService asyncPool = null;
 	/** This common thread pool */
 	private final ExecutorService _pool;
 
 	/**
-	 * Constructor of the threadPool.
-	 * This is intended not to be used except for tests.
-	 * Please use the static constructors.
+	 * Constructor of the threadPool. This is intended not to be used except for tests. Please use the static
+	 * constructors.
 	 * 
 	 * @param pool The thread pool instance to use.
 	 */
@@ -100,21 +103,37 @@ public class CommonThreadPool implements ExecutorService {
 	 * @return The executor with specified parallelism
 	 */
 	public synchronized static ExecutorService get(int k) {
-		if(size == k)
-			return shared;
-		else if(Thread.currentThread().getName().equals("main")) {
-			if(shared2 != null && shared2K == k)
-				return shared2;
-			else if(shared2 == null) {
-				shared2 = new CommonThreadPool(new ForkJoinPool(k));
-				shared2K = k;
-				return shared2;
-			}
-			else
-				return new CommonThreadPool(Executors.newFixedThreadPool(k));
+		final Thread thisThread = Thread.currentThread();
+		final String threadName = thisThread.getName();
+		final boolean mainThread = threadName.equals("main");
+
+		if(k == 1) {
+			throw new NotImplementedException("not valid to ask for 1 thread executors");
 		}
-		else
-			return new CommonThreadPool(Executors.newFixedThreadPool(k));
+		if(size == k && mainThread)
+			return shared;
+		if(mainThread || threadName.contains("PARFOR")) {
+			if(shared2 == null) {
+				shared2 = new ConcurrentHashMap<>();
+				CommonThreadPool pool = new CommonThreadPool(new ForkJoinPool(k));
+				shared2.put(thisThread.getId(), pool);
+				return pool;
+			}
+			else {
+				CommonThreadPool pool = shared2.get(thisThread.getId());
+				if( pool == null ){
+					pool = new CommonThreadPool(new ForkJoinPool(k));
+					shared2.put(thisThread.getId(), pool);
+					return pool;
+				}
+				else{
+					return pool;
+				}
+			}
+		}
+		else {
+			return Executors.newFixedThreadPool(k);
+		}
 	}
 
 	/**
@@ -124,7 +143,7 @@ public class CommonThreadPool implements ExecutorService {
 	 * @return If we have a cached thread pool.
 	 */
 	public static boolean isSharedTPThreads(int k) {
-		return size == k || shared2K == k || shared2K == -1;
+		return size == k;
 	}
 
 	/**
@@ -145,7 +164,7 @@ public class CommonThreadPool implements ExecutorService {
 		catch(Exception ex) {
 			throw new DMLRuntimeException(ex);
 		}
-		finally{
+		finally {
 			pool.shutdown();
 		}
 	}
@@ -157,7 +176,7 @@ public class CommonThreadPool implements ExecutorService {
 	 * @return A dynamic thread pool.
 	 */
 	public synchronized static ExecutorService getDynamicPool() {
-		if(asyncPool != null && !(asyncPool.isShutdown() || asyncPool.isTerminated()) )
+		if(asyncPool != null && !(asyncPool.isShutdown() || asyncPool.isTerminated()))
 			return asyncPool;
 		else {
 			asyncPool = Executors.newCachedThreadPool();
@@ -175,19 +194,47 @@ public class CommonThreadPool implements ExecutorService {
 			asyncPool = null;
 		}
 		if(shared2 != null) {
-			// shutdown shared custom thread count pool
-			shared2.shutdown();
-			shared2 = null;
-			shared2K = -1;
+
+			try {
+				ConcurrentHashMap<Long, CommonThreadPool> sharedT = shared2;
+				shared2 = null;
+				for(Entry<Long, CommonThreadPool> e : sharedT.entrySet()) {
+					for(Runnable a : e.getValue()._pool.shutdownNow())
+						a.wait();
+				}
+			}
+			catch(Exception e1) {
+				throw new RuntimeException(e1);
+			}
 		}
 	}
 
+	public synchronized static void shutdownAsyncPools(Thread thread) {
+		if(shared2 != null) {
+			CommonThreadPool p = shared2.get(thread.getId());
+			try {
+				if(p != null) {
+					for(Runnable a : p._pool.shutdownNow())
+						a.wait();
+				}
+				shared2.remove(thread.getId());
+			}
+			catch(InterruptedException e) {
+				throw new RuntimeException(e);
+			}
+		}
+	}
+
+	public static synchronized boolean generalCached() {
+		return shared2 != null && shared2.get(Thread.currentThread().getId()) != null;
+	}
+
 	public final boolean isCached() {
-		return _pool.equals(shared) || this.equals(shared2);
+		return _pool.equals(shared) || generalCached();
 	}
 
 	@Override
-	public void shutdown() {
+	public synchronized void shutdown() {
 		if(!isCached())
 			_pool.shutdown();
 	}
@@ -253,4 +300,96 @@ public class CommonThreadPool implements ExecutorService {
 		throws InterruptedException, ExecutionException, TimeoutException {
 		return _pool.invokeAny(tasks);
 	}
+
+	public static boolean useParallelismOnThread(){
+		Thread t = Thread.currentThread();
+		String name = t.getName();
+		switch(name){
+			case "main":
+			case "PARFOR":
+				return true;
+			default:
+				return false;
+		}
+	}
+
+	// private static class EagerExecutor implements ExecutorService {
+
+	// protected EagerExecutor(){
+	// // nothing
+	// }
+
+	// @Override
+	// public void execute(Runnable command) {
+	// command.run();
+	// }
+
+	// @Override
+	// public void shutdown() {
+	// // nothing
+	// }
+
+	// @Override
+	// public List<Runnable> shutdownNow() {
+	// return null;
+	// }
+
+	// @Override
+	// public boolean isShutdown() {
+	// return false;
+	// }
+
+	// @Override
+	// public boolean isTerminated() {
+	// return false;
+	// }
+
+	// @Override
+	// public boolean awaitTermination(long timeout, TimeUnit unit) throws InterruptedException {
+	// return true;
+	// }
+
+	// @Override
+	// public <T> Future<T> submit(Callable<T> task) {
+	// return new FutureTask<>(() -> task.call());
+	// }
+
+	// @Override
+	// public <T> Future<T> submit(Runnable task, T result) {
+	// return new FutureTask<>(() -> {
+	// task.run();
+	// return result;
+	// });
+	// }
+
+	// @Override
+	// public Future<?> submit(Runnable task) {
+	// return new FutureTask<>(() -> {
+	// task.run();
+	// return null;
+	// });
+	// }
+
+	// @Override
+	// public <T> List<Future<T>> invokeAll(Collection<? extends Callable<T>> tasks) throws InterruptedException {
+	// throw new NotImplementedException();
+	// }
+
+	// @Override
+	// public <T> List<Future<T>> invokeAll(Collection<? extends Callable<T>> tasks, long timeout, TimeUnit unit) {
+	// throw new NotImplementedException();
+	// }
+
+	// @Override
+	// public <T> T invokeAny(Collection<? extends Callable<T>> tasks) throws InterruptedException, ExecutionException {
+	// throw new NotImplementedException();
+	// }
+
+	// @Override
+	// public <T> T invokeAny(Collection<? extends Callable<T>> tasks, long timeout, TimeUnit unit)
+	// throws InterruptedException, ExecutionException, TimeoutException {
+	// throw new NotImplementedException();
+	// }
+
+	// }
 }

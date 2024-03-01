@@ -25,6 +25,8 @@ import static org.junit.Assert.fail;
 
 import java.util.Random;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.common.Types.ValueType;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.frame.data.FrameBlock;
@@ -32,7 +34,11 @@ import org.apache.sysds.runtime.frame.data.lib.FrameLibApplySchema;
 import org.junit.Test;
 
 public class FrameApplySchema {
-
+	protected static final Log LOG = LogFactory.getLog(FrameApplySchema.class.getName());
+	
+	static{
+		FrameLibApplySchema.PAR_ROW_THRESHOLD = 10;
+	}
 	@Test
 	public void testApplySchemaStringToBoolean() {
 		try {
@@ -139,6 +145,20 @@ public class FrameApplySchema {
 		ValueType[] schema = new ValueType[] {ValueType.UNKNOWN, ValueType.INT32, ValueType.INT32};
 		fb = FrameLibApplySchema.applySchema(fb, schema, 3);
 		assertEquals(ValueType.UNKNOWN, fb.getSchema()[0]);
+	}
+
+	@Test
+	public void testUnkownColumnDefaultToStringPar() {
+		try{
+			FrameBlock fb = genStringContainingInteger(100, 3);
+			ValueType[] schema = new ValueType[] {ValueType.UNKNOWN, ValueType.INT32, ValueType.INT32};
+			fb = FrameLibApplySchema.applySchema(fb, schema, 3);
+			assertEquals(ValueType.UNKNOWN, fb.getSchema()[0]);
+		}
+		catch(Exception e){
+			e.printStackTrace();
+			fail(e.getMessage());
+		}
 	}
 
 	private FrameBlock genStringContainingInteger(int row, int col) {

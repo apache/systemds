@@ -212,6 +212,9 @@ public class DMLScript
 			}
 			errorPrint(e);
 		}
+		finally{
+			CommonThreadPool.shutdownAsyncPools();
+		}
 	}
 
 	/**

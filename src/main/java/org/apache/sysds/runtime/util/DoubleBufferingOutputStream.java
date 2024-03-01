@@ -62,15 +62,23 @@ public class DoubleBufferingOutputStream extends FilterOutputStream {
 	{
 		try {
 			synchronized(_buff) {
-				//block until buffer is free to use
-				_locks[_pos].get();
 				
-				//copy for asynchronous write because b is reused higher up
-				System.arraycopy(b, off, _buff[_pos], 0, len);
+				byte [] b_pos = _buff[_pos];
 				
-				//submit write request 
-				_locks[_pos] = _pool.submit(new WriteTask(_buff[_pos], len));
-				_pos = (_pos+1) % _buff.length;
+				if(b_pos.length > len){
+					// block until buffer is free to use
+					_locks[_pos].get();
+					System.arraycopy(b, off, b_pos, 0, len);
+					// submit write request 
+					_locks[_pos] = _pool.submit(new WriteTask(b_pos, len));
+					// copy for asynchronous write because b is reused higher up
+					_pos = (_pos+1) % _buff.length;
+				}
+				else{
+					// we already have the byte array in hand, but we do not do it async
+					// since there would be no guarantee that the caller does not modify the array.
+					writeBuffer(b, off, len);
+				}
 			}
 		}
 		catch(Exception ex) {

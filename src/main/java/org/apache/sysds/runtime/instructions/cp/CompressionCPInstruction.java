@@ -119,7 +119,7 @@ public class CompressionCPInstruction extends ComputationCPInstruction {
 
 		// Get and clear workload tree entry for this compression instruction.
 		final WTreeRoot root = (_singletonLookupID != 0) ? (WTreeRoot) m.get(_singletonLookupID) : null;
-		m.removeKey(_singletonLookupID);
+		// m.removeKey(_singletonLookupID);
 
 		final int k = OptimizerUtils.getConstrainedNumThreads(-1);
 
@@ -137,6 +137,7 @@ public class CompressionCPInstruction extends ComputationCPInstruction {
 		if(LOG.isTraceEnabled())
 			LOG.trace(compResult.getRight());
 		MatrixBlock out = compResult.getLeft();
+		LOG.error("Compression output class: " + out.getClass().getSimpleName());
 		// Set output and release input
 		ec.releaseMatrixInput(input1.getName());
 		ec.setMatrixOutput(output.getName(), out);

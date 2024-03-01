@@ -59,7 +59,7 @@ import org.apache.sysds.runtime.compress.cost.InstructionTypeCounter;
 import org.apache.sysds.runtime.compress.estim.ComEstFactory;
 import org.apache.sysds.runtime.compress.estim.CompressedSizeInfo;
 import org.apache.sysds.runtime.compress.estim.CompressedSizeInfoColGroup;
-import org.apache.sysds.runtime.compress.lib.CLALibAppend;
+import org.apache.sysds.runtime.compress.lib.CLALibCBind;
 import org.apache.sysds.runtime.functionobjects.Builtin;
 import org.apache.sysds.runtime.functionobjects.Builtin.BuiltinCode;
 import org.apache.sysds.runtime.functionobjects.Divide;
@@ -256,7 +256,7 @@ public abstract class CompressedTestBase extends TestBase {
 				case C_BIND_SELF:
 					if(cmb instanceof CompressedMatrixBlock) {
 						CompressedMatrixBlock cmbc = (CompressedMatrixBlock) cmb;
-						cmb = CLALibAppend.append(cmbc, cmbc, _k);
+						cmb = CLALibCBind.cbind(cmbc, cmbc, _k);
 						mb = mb.append(mb, new MatrixBlock());
 						cols *= 2;
 					}
@@ -307,7 +307,8 @@ public abstract class CompressedTestBase extends TestBase {
 					}
 					else if(ov == OverLapping.PLUS_ROW_VECTOR) {
 
-						MatrixBlock v = TestUtils.generateTestMatrixBlock(1, cols, -1, 1, 1.0, 4);
+						MatrixBlock v = TestUtils.generateTestMatrixBlock(1, cols, 0, 4, 1.0, 4);
+						v = TestUtils.ceil(v);
 						BinaryOperator bop = new BinaryOperator(Plus.getPlusFnObject(), _k);
 						mb = mb.binaryOperations(bop, v, null);
 						cmb = cmb.binaryOperations(bop, v, null);
@@ -493,6 +494,8 @@ public abstract class CompressedTestBase extends TestBase {
 			// matrix-vector compressed
 			MatrixBlock ret2 = cmb.chainMatrixMultOperations(vector1, vector2, new MatrixBlock(), ctype, _k);
 
+		LOG.error(cmb);
+
 			// compare result with input
 			compareResultMatricesPercentDistance(ucRet, ret2, 0.99, 0.99);
 		}
@@ -504,13 +507,15 @@ public abstract class CompressedTestBase extends TestBase {
 
 	@Test
 	public void testVectorMatrixMult() {
-		MatrixBlock vector = TestUtils.generateTestMatrixBlock(1, rows, 0.9, 1.5, 1.0, 3);
+		MatrixBlock vector = TestUtils.generateTestMatrixBlock(1, rows, 0, 5, 1.0, 3);
+		vector = TestUtils.ceil(vector);
 		testLeftMatrixMatrix(vector);
 	}
 
 	@Test
 	public void testLeftMatrixMatrixMultSmall() {
-		MatrixBlock matrix = TestUtils.generateTestMatrixBlock(3, rows, 0.9, 1.5, 1.0, 3);
+		MatrixBlock matrix = TestUtils.generateTestMatrixBlock(3, rows, 0, 5, 1.0, 3);
+		matrix = TestUtils.ceil(matrix);
 		testLeftMatrixMatrix(matrix);
 	}
 
@@ -522,7 +527,8 @@ public abstract class CompressedTestBase extends TestBase {
 
 	@Test
 	public void testLeftMatrixMatrixMultSparse() {
-		MatrixBlock matrix = TestUtils.generateTestMatrixBlock(2, rows, 0.9, 1.5, .1, 3);
+		MatrixBlock matrix = TestUtils.generateTestMatrixBlock(2, rows, 0, 5, .1, 3);
+		matrix = TestUtils.ceil(matrix);
 		testLeftMatrixMatrix(matrix);
 	}
 
@@ -1056,9 +1062,11 @@ public abstract class CompressedTestBase extends TestBase {
 	@Test
 	public void testCompressAgain() {
 		try {
+			// LOG.error(cmb);
 			TestUtils.assertEqualColsAndRows(mb, cmb);
 			compareResultMatrices(mb, cmb, 1);
 			MatrixBlock cmba = CompressedMatrixBlockFactory.compress(cmb, _k).getLeft();
+			LOG.error(cmba);
 			compareResultMatrices(mb, cmba, 1);
 		}
 		catch(Exception e) {

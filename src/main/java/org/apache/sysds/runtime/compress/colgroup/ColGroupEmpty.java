@@ -22,7 +22,9 @@ package org.apache.sysds.runtime.compress.colgroup;
 import java.io.DataInput;
 import java.io.IOException;
 import java.util.Arrays;
+import java.util.List;
 
+import org.apache.commons.lang3.NotImplementedException;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.compress.DMLCompressionException;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.ADictionary;
@@ -43,6 +45,7 @@ import org.apache.sysds.runtime.compress.estim.encoding.EncodingFactory;
 import org.apache.sysds.runtime.compress.estim.encoding.IEncode;
 import org.apache.sysds.runtime.data.DenseBlock;
 import org.apache.sysds.runtime.data.SparseBlock;
+import org.apache.sysds.runtime.data.SparseBlockMCSR;
 import org.apache.sysds.runtime.functionobjects.Builtin;
 import org.apache.sysds.runtime.functionobjects.ValueFunction;
 import org.apache.sysds.runtime.instructions.cp.CM_COV_Object;
@@ -53,7 +56,7 @@ import org.apache.sysds.runtime.matrix.operators.ScalarOperator;
 import org.apache.sysds.runtime.matrix.operators.UnaryOperator;
 
 public class ColGroupEmpty extends AColGroupCompressed
-	implements IContainADictionary, IContainDefaultTuple, AOffsetsGroup ,IMapToDataGroup{
+	implements IContainADictionary, IContainDefaultTuple, AOffsetsGroup, IMapToDataGroup {
 	private static final long serialVersionUID = -2307677253622099958L;
 
 	/**
@@ -86,6 +89,16 @@ public class ColGroupEmpty extends AColGroupCompressed
 
 	@Override
 	public void decompressToSparseBlock(SparseBlock sb, int rl, int ru, int offR, int offC) {
+		// do nothing.
+	}
+
+	@Override
+	public void decompressToDenseBlockTransposed(DenseBlock db, int rl, int ru) {
+		// do nothing.
+	}
+
+	@Override
+	public void decompressToSparseBlockTransposed(SparseBlockMCSR sb, int nColOut) {
 		// do nothing.
 	}
 
@@ -179,7 +192,7 @@ public class ColGroupEmpty extends AColGroupCompressed
 	}
 
 	@Override
-	public AColGroup rightMultByMatrix(MatrixBlock right, IColIndex allCols) {
+	public AColGroup rightMultByMatrix(MatrixBlock right, IColIndex allCols, int k) {
 		return null;
 	}
 
@@ -403,4 +416,42 @@ public class ColGroupEmpty extends AColGroupCompressed
 		return MapToFactory.create(0, 0);
 	}
 
+	@Override
+	public double getSparsity() {
+		return 0.0;
+	}
+
+	@Override
+	public void sparseSelection(MatrixBlock selection, MatrixBlock ret, int rl, int ru) {
+		throw new NotImplementedException();
+	}
+
+	@Override
+	public AColGroup combineWithSameIndex(int nRow, int nCol, AColGroup right) {
+
+		if(!(right instanceof ColGroupEmpty))
+			throw new NotImplementedException("Combine on Empty column only allowing empty column groups");
+
+		IColIndex combIndex = _colIndexes.combine(right.getColIndices().shift(nCol));
+
+		return new ColGroupEmpty(combIndex);
+
+	}
+
+	@Override
+	public AColGroup combineWithSameIndex(int nRow, int nCol, List<AColGroup> right) {
+		for(AColGroup g : right) {
+			if(!(g instanceof ColGroupEmpty))
+				throw new NotImplementedException("Combine on Empty column only allowing empty column groups");
+		}
+
+		IColIndex combinedIndex = _colIndexes;
+		int i = 0;
+		for(AColGroup g : right) {
+			i += 1;
+			combinedIndex = combinedIndex.combine(g.getColIndices().shift(nCol * i));
+		}
+
+		return new ColGroupEmpty(combinedIndex);
+	}
 }

@@ -373,7 +373,12 @@ public class ColumnEncoderRecode extends ColumnEncoder {
 		sb.append(": ");
 		sb.append(_colID);
 		sb.append(" --- map: ");
-		sb.append(_rcdMap);
+		if(_rcdMap.size() < 1000){
+			sb.append(_rcdMap);
+		}
+		else{
+			sb.append("Map to big to print but size is : " + _rcdMap.size());
+		}
 		return sb.toString();
 	}
 

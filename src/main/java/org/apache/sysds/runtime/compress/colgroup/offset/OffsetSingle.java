@@ -90,12 +90,10 @@ public class OffsetSingle extends AOffset {
 
 	@Override
 	public OffsetSliceInfo slice(int l, int u) {
-
 		if(l <= off && u > off)
 			return new OffsetSliceInfo(0, 1, new OffsetSingle(off - l));
 		else
-			return new OffsetSliceInfo(-1, -1, new OffsetEmpty());
-
+			return emptySlice;
 	}
 
 	@Override

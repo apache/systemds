@@ -19,6 +19,7 @@
 
 package org.apache.sysds.runtime.frame.data.columns;
 
+import org.apache.sysds.common.Types.ValueType;
 import org.apache.sysds.runtime.compress.DMLCompressionException;
 import org.apache.sysds.runtime.frame.data.compress.ArrayCompressionStatistics;
 
@@ -121,4 +122,51 @@ public abstract class ACompressedArray<T> extends Array<T> {
 		return null;
 	}
 
+	@Override 
+	public abstract Array<?> changeType(ValueType t);
+
+	@Override
+	protected Array<Boolean> changeTypeBitSet(Array<Boolean> ret, int l, int u) {
+		throw new DMLCompressionException("Invalid to change sub compressed array");
+	}
+
+	@Override
+	protected Array<Boolean> changeTypeBoolean(Array<Boolean> retA, int l, int u) {
+		throw new DMLCompressionException("Invalid to change sub compressed array");
+	}
+
+	@Override
+	protected Array<Double> changeTypeDouble(Array<Double> retA, int l, int u) {
+		throw new DMLCompressionException("Invalid to change sub compressed array");
+	}
+
+	@Override
+	protected Array<Float> changeTypeFloat(Array<Float> retA, int l, int u) {
+		throw new DMLCompressionException("Invalid to change sub compressed array");
+	}
+
+	@Override
+	protected Array<Integer> changeTypeInteger(Array<Integer> retA, int l, int u) {
+		throw new DMLCompressionException("Invalid to change sub compressed array");
+	}
+
+	@Override
+	protected Array<Long> changeTypeLong(Array<Long> retA, int l, int u) {
+		throw new DMLCompressionException("Invalid to change sub compressed array");
+	}
+
+	@Override
+	protected Array<String> changeTypeString(Array<String> retA, int l, int u) {
+		throw new DMLCompressionException("Invalid to change sub compressed array");
+	}
+
+	@Override
+	protected Array<Character> changeTypeCharacter(Array<Character> retA, int l, int u) {
+		throw new DMLCompressionException("Invalid to change sub compressed array");
+	}
+
+	@Override
+	protected Array<Object> changeTypeHash64(Array<Object> retA, int l, int u) {
+		throw new DMLCompressionException("Invalid to change sub compressed array");
+	}
 }

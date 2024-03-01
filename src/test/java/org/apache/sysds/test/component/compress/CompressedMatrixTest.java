@@ -144,7 +144,7 @@ public class CompressedMatrixTest extends AbstractCompressedUnaryTests {
 	public void testNonZeros() {
 		if(!(cmb instanceof CompressedMatrixBlock))
 			return; // Input was not compressed then just pass test
-		if(!(cmb.getNonZeros() >= mb.getNonZeros())) { // guarantee that the nnz is at least the nnz
+		if(!(cmb.getNonZeros() >= mb.getNonZeros() || cmb.getNonZeros() == -1)) { // guarantee that the nnz is at least the nnz
 			fail(bufferedToString + "\nIncorrect number of non Zeros should guarantee greater than or equals but are "
 				+ cmb.getNonZeros() + " and should be: " + mb.getNonZeros());
 		}

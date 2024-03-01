@@ -264,8 +264,18 @@ public class RaggedArray<T> extends Array<T> {
 	}
 
 	@Override
+	protected Array<Boolean> changeTypeBitSet(Array<Boolean> ret, int l, int u) {
+		return _a.changeTypeBitSet(ret, l, u);
+	}
+
+	@Override
 	protected Array<Boolean> changeTypeBoolean() {
 		return _a.changeTypeBoolean();
+	}
+
+	@Override
+	protected Array<Boolean> changeTypeBoolean(Array<Boolean> retA, int l, int u) {
+		return _a.changeTypeBoolean(retA, l, u);
 	}
 
 	@Override
@@ -274,8 +284,18 @@ public class RaggedArray<T> extends Array<T> {
 	}
 
 	@Override
+	protected Array<Double> changeTypeDouble(Array<Double> retA, int l, int u) {
+		return _a.changeTypeDouble(retA, l, u);
+	}
+
+	@Override
 	protected Array<Float> changeTypeFloat() {
 		return _a.changeTypeFloat();
+	}
+
+	@Override
+	protected Array<Float> changeTypeFloat(Array<Float> retA, int l, int u) {
+		return _a.changeTypeFloat(retA, l, u);
 	}
 
 	@Override
@@ -284,8 +304,18 @@ public class RaggedArray<T> extends Array<T> {
 	}
 
 	@Override
+	protected Array<Integer> changeTypeInteger(Array<Integer> retA, int l, int u) {
+		return _a.changeTypeInteger(retA, l, u);
+	}
+
+	@Override
 	protected Array<Long> changeTypeLong() {
 		return _a.changeTypeLong();
+	}
+
+	@Override
+	protected Array<Long> changeTypeLong(Array<Long> retA, int l, int u) {
+		return _a.changeTypeLong(retA, l, u);
 	}
 
 	@Override
@@ -294,13 +324,43 @@ public class RaggedArray<T> extends Array<T> {
 	}
 
 	@Override
+	protected Array<Object> changeTypeHash64(Array<Object> retA, int l, int u) {
+		return _a.changeTypeHash64(retA, l, u);
+	}
+
+	@Override
+	protected Array<Object> changeTypeHash32() {
+		return _a.changeTypeHash32();
+	}
+
+	@Override
+	protected Array<Object> changeTypeHash32(Array<Object> retA, int l, int u) {
+		return _a.changeTypeHash32(retA, l, u);
+	}
+
+	@Override
 	protected Array<String> changeTypeString() {
 		return _a.changeTypeString();
 	}
 
 	@Override
+	protected Array<String> changeTypeString(Array<String> retA, int l, int u) {
+		return _a.changeTypeString(retA, l, u);
+	}
+
+	@Override
 	protected Array<Character> changeTypeCharacter() {
 		return _a.changeTypeCharacter();
+	}
+
+	@Override
+	protected Array<Character> changeTypeCharacter(Array<Character> retA, int l, int u) {
+		return _a.changeTypeCharacter(retA, l, u);
+	}
+
+	@Override 
+	public Array<?> changeTypeWithNulls(ValueType t) {
+		throw new NotImplementedException("Not Implemented ragged array with nulls");
 	}
 
 	@Override
@@ -376,7 +436,7 @@ public class RaggedArray<T> extends Array<T> {
 		if(other._size == this._size && //
 			other.getValueType() == this.getValueType() && //
 			other instanceof RaggedArray) {
-			if(other == this){// same pointer
+			if(other == this) {// same pointer
 				return true;
 			}
 			RaggedArray<T> ot = (RaggedArray<T>) other;

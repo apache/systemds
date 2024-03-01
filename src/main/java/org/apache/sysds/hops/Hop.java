@@ -1099,6 +1099,12 @@ public abstract class Hop implements ParseInfo {
 	// ========================================================================================
 
 	
+	protected boolean isScalarOrVectorBellowBlockSize(){
+		return getDataType().isScalar() || (dimsKnown() && 
+			(( _dc.getRows() == 1 && _dc.getCols() < ConfigurationManager.getBlocksize())
+			|| _dc.getCols() == 1 && _dc.getRows() < ConfigurationManager.getBlocksize()));
+	}
+
 	protected boolean isVector() {
 		return (dimsKnown() && (_dc.getRows() == 1 || _dc.getCols() == 1) );
 	}
@@ -1700,6 +1706,11 @@ public abstract class Hop implements ParseInfo {
 		lop.setMemoryEstimates(getOutputMemEstimate(), getMemEstimate(),
 			getIntermediateMemEstimate(), getSpBroadcastSize());
 		lop.setComputeEstimate(ComputeCost.getHOPComputeCost(this));
+	}
+
+	protected boolean hasSparkOutput(){
+		return (this.optFindExecType() == ExecType.SPARK
+			|| (this instanceof DataOp && ((DataOp)this).hasOnlyRDD()));
 	}
 
 	/**

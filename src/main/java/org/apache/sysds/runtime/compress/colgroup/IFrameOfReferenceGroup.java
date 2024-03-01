@@ -22,7 +22,7 @@ package org.apache.sysds.runtime.compress.colgroup;
 /**
  * Interface for frame of reference groups.
  */
-public interface IFrameOfReferenceGroup {
+public interface IFrameOfReferenceGroup extends IContainDefaultTuple {
 	/**
 	 * extract common value from group and return non morphing group
 	 * 
@@ -30,4 +30,5 @@ public interface IFrameOfReferenceGroup {
 	 * @return A non morphing column group with decompression instructions.
 	 */
 	public AColGroup extractCommon(double[] constV);
+
 }

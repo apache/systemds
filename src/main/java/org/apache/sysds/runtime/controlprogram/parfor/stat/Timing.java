@@ -76,4 +76,9 @@ public class Timing {
 		double tmp = stop();
 		System.out.println("PARFOR: time = " + tmp + "ms");
 	}
+
+	@Override
+	public String toString(){
+		return "Timing: " + stop();
+	}
 }

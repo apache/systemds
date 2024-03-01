@@ -88,12 +88,13 @@ public final class CLALibSlice {
 			final List<MatrixBlock> mbs = new ArrayList<>(tasks.size());
 			for(Future<MatrixBlock> f : pool.invokeAll(tasks))
 				mbs.add(f.get());
-			pool.shutdown();
 			return mbs;
 		}
 		catch(Exception e) {
-			pool.shutdown();
 			throw new DMLRuntimeException("Failed slicing compressed matrix block", e);
+		}
+		finally{
+			pool.shutdown();
 		}
 	}
 

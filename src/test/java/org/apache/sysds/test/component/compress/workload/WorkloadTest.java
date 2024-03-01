@@ -86,7 +86,7 @@ public class WorkloadTest {
 		// Simple tests no loops verifying basic behavior
 		tests.add(new Object[] {0, 0, 0, 0, 0, 0, 1, 0, false, false, "sum.dml", args});
 		tests.add(new Object[] {0, 0, 0, 0, 0, 0, 1, 0, false, false, "mean.dml", args});
-		tests.add(new Object[] {0, 0, 0, 0, 0, 0, 1, 1, false, false, "plus.dml", args});
+		tests.add(new Object[] {0, 0, 0, 0, 0, 0, 2, 1, false, false, "plus.dml", args});
 		tests.add(new Object[] {0, 0, 0, 0, 0, 0, 2, 0, false, false, "sliceCols.dml", args});
 		tests.add(new Object[] {0, 0, 0, 0, 0, 0, 2, 0, false, false, "sliceIndex.dml", args});
 		// tests.add(new Object[] {0, 0, 0, 1, 0, 0, 0, 0, false, false, "leftMult.dml", args});
@@ -105,9 +105,9 @@ public class WorkloadTest {
 		// Builtins:
 		// nr 11:
 		tests.add(new Object[] {0, 0, 0, 0, 0, 0, 6, 0, true, false, "functions/scale.dml", args});
-		tests.add(new Object[] {0, 0, 0, 0, 0, 0, 5, 0, true, true, "functions/scale.dml", args});
+		tests.add(new Object[] {0, 0, 0, 0, 0, 0, 4, 0, false, true, "functions/scale.dml", args});
 		tests.add(new Object[] {0, 0, 0, 0, 0, 0, 6, 0, true, false, "functions/scale_continued.dml", args});
-		tests.add(new Object[] {0, 0, 0, 0, 0, 0, 6, 0, true, true, "functions/scale_continued.dml", args});
+		tests.add(new Object[] {0, 0, 0, 0, 0, 0, 5, 0, true, true, "functions/scale_continued.dml", args});
 		tests.add(new Object[] {0, 0, 0, 0, 0, 0, 2, 0, false, true, "functions/scale_onlySide.dml", args});
 		tests.add(new Object[] {0, 0, 0, 0, 0, 0, 6, 0, true, false, "functions/scale_onlySide.dml", args});
 

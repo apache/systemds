@@ -838,7 +838,7 @@ public abstract class AColGroup implements Serializable {
 	 */
 	public AColGroup combineWithSameIndex(int nRow, int nCol, AColGroup right) {
 
-		IColIndex combinedColIndex = _colIndexes.combine(right._colIndexes);
+		IColIndex combinedColIndex = _colIndexes.combine(right._colIndexes.shift(nCol));
 
 		MatrixBlock decompressTarget = new MatrixBlock(nRow, combinedColIndex.size(), false);
 

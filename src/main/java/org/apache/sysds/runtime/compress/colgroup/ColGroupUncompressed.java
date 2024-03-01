@@ -1097,7 +1097,7 @@ public class ColGroupUncompressed extends AColGroup {
 	}
 
 	@Override
-	public AColGroup combineWithSameIndex(int nCol, AColGroup right) {
+	public AColGroup combineWithSameIndex(int nRow, int nCol, AColGroup right) {
 		ColGroupUncompressed rightUC = ((ColGroupUncompressed) right);
 		IColIndex combinedColIndex = _colIndexes.combine(right.getColIndices().shift(nCol));
 		MatrixBlock combined = _data.append(rightUC._data, null, true);
@@ -1105,7 +1105,7 @@ public class ColGroupUncompressed extends AColGroup {
 	}
 
 	@Override
-	public AColGroup combineWithSameIndex(int nCol, List<AColGroup> right) {
+	public AColGroup combineWithSameIndex(int nRow, int nCol, List<AColGroup> right) {
 		final IColIndex combinedColIndex = combineColIndexes(nCol, right);
 		MatrixBlock[] cbindOther = new MatrixBlock[right.size()];
 		for(int i = 0; i < right.size(); i++) {

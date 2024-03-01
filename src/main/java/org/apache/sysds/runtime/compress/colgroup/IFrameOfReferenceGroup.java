@@ -19,12 +19,10 @@
 
 package org.apache.sysds.runtime.compress.colgroup;
 
-import java.util.List;
-
 /**
  * Interface for frame of reference groups.
  */
-public interface IFrameOfReferenceGroup extends IContainDefaultTuple{
+public interface IFrameOfReferenceGroup extends IContainDefaultTuple {
 	/**
 	 * extract common value from group and return non morphing group
 	 * 

@@ -511,7 +511,7 @@ public class ColGroupDDCFOR extends AMorphingMMColGroup implements IFrameOfRefer
 	}
 
 	@Override
-	public AColGroup combineWithSameIndex(int nCol, List<AColGroup> right) {
+	public AColGroup combineWithSameIndex(int nRow, int nCol, List<AColGroup> right) {
 		final IDictionary combined = combineDictionaries(nCol, right);
 		final IColIndex combinedColIndex = combineColIndexes(nCol, right);
 		final double[] combinedReference = IContainDefaultTuple.combineDefaultTuples(_reference, right);
@@ -520,7 +520,7 @@ public class ColGroupDDCFOR extends AMorphingMMColGroup implements IFrameOfRefer
 	}
 
 	@Override
-	public AColGroup combineWithSameIndex(int nCol, AColGroup right) {
+	public AColGroup combineWithSameIndex(int nRow, int nCol, AColGroup right) {
 		IDictionary b = ((ColGroupDDCFOR) right).getDictionary();
 		IDictionary combined = DictionaryFactory.cBindDictionaries(_dict, b, this.getNumCols(), right.getNumCols());
 		IColIndex combinedColIndex = _colIndexes.combine(right.getColIndices().shift(nCol));

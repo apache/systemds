@@ -633,7 +633,7 @@ public class ColGroupSDCSingle extends ASDC {
 	}
 
 	@Override
-	public AColGroupCompressed combineWithSameIndex(int nCol, AColGroup right) {
+	public AColGroupCompressed combineWithSameIndex(int nRow, int nCol, AColGroup right) {
 		ColGroupSDCSingle rightSDC = ((ColGroupSDCSingle) right);
 		IDictionary b = rightSDC.getDictionary();
 		IDictionary combined = DictionaryFactory.cBindDictionaries(_dict, b, this.getNumCols(), right.getNumCols());
@@ -648,7 +648,7 @@ public class ColGroupSDCSingle extends ASDC {
 	}
 
 	@Override
-	public AColGroupCompressed combineWithSameIndex(int nCol, List<AColGroup> right) {
+	public AColGroupCompressed combineWithSameIndex(int nRow, int nCol, List<AColGroup> right) {
 		final IDictionary combined = combineDictionaries(nCol, right);
 		final IColIndex combinedColIndex = combineColIndexes(nCol, right);
 		final double[] combinedDefaultTuple = IContainDefaultTuple.combineDefaultTuples(_defaultTuple, right);

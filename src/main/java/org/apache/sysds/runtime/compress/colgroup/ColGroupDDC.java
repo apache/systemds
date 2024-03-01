@@ -905,14 +905,14 @@ public class ColGroupDDC extends APreAgg implements IMapToDataGroup {
 	}
 
 	@Override
-	public AColGroupCompressed combineWithSameIndex(int nCol, List<AColGroup> right) {
+	public AColGroupCompressed combineWithSameIndex(int nRow, int nCol, List<AColGroup> right) {
 		final IDictionary combined = combineDictionaries(nCol, right);
 		final IColIndex combinedColIndex = combineColIndexes(nCol, right);
 		return new ColGroupDDC(combinedColIndex, combined, _data, getCachedCounts());
 	}
 
 	@Override
-	public AColGroupCompressed combineWithSameIndex(int nCol, AColGroup right) {
+	public AColGroupCompressed combineWithSameIndex(int nRow, int nCol, AColGroup right) {
 		IDictionary b = ((ColGroupDDC) right).getDictionary();
 		IDictionary combined = DictionaryFactory.cBindDictionaries(_dict, b, this.getNumCols(), right.getNumCols());
 		IColIndex combinedColIndex = _colIndexes.combine(right.getColIndices().shift(nCol));

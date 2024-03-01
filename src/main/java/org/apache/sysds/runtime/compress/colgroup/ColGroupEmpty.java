@@ -427,7 +427,7 @@ public class ColGroupEmpty extends AColGroupCompressed
 	}
 
 	@Override
-	public AColGroup combineWithSameIndex(int nCol, AColGroup right) {
+	public AColGroup combineWithSameIndex(int nRow, int nCol, AColGroup right) {
 
 		if(!(right instanceof ColGroupEmpty))
 			throw new NotImplementedException("Combine on Empty column only allowing empty column groups");
@@ -439,7 +439,7 @@ public class ColGroupEmpty extends AColGroupCompressed
 	}
 
 	@Override
-	public AColGroup combineWithSameIndex(int nCol, List<AColGroup> right) {
+	public AColGroup combineWithSameIndex(int nRow, int nCol, List<AColGroup> right) {
 		for(AColGroup g : right) {
 			if(!(g instanceof ColGroupEmpty))
 				throw new NotImplementedException("Combine on Empty column only allowing empty column groups");

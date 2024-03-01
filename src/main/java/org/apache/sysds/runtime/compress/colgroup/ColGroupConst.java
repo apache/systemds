@@ -701,9 +701,9 @@ public class ColGroupConst extends ADictBasedColGroup implements IContainDefault
 	}
 
 	@Override
-	public AColGroup combineWithSameIndex(int nCol, AColGroup right) {
+	public AColGroup combineWithSameIndex(int nRow, int nCol, AColGroup right) {
 		if(!(right instanceof ColGroupConst))
-			throw new NotImplementedException("Combine on Const column only allowing const column groups");
+			return super.combineWithSameIndex(nRow, nCol, right);
 
 		final IColIndex combIndex = _colIndexes.combine(right.getColIndices().shift(nCol));
 		final IDictionary b = ((ColGroupConst) right).getDictionary();
@@ -713,13 +713,12 @@ public class ColGroupConst extends ADictBasedColGroup implements IContainDefault
 	}
 
 	@Override
-	public AColGroup combineWithSameIndex(int nCol, List<AColGroup> right) {
+	public AColGroup combineWithSameIndex(int nRow, int nCol, List<AColGroup> right) {
 		for(int i = 0; i < right.size(); i++) {
 			AColGroup g = right.get(i);
 
 			if(!(g instanceof ColGroupConst) || !(g instanceof ColGroupEmpty)) {
-				throw new NotImplementedException(
-					"Combine on Const column only allowing const column groups: " + g.getClass().getSimpleName() + " " + i);
+				return super.combineWithSameIndex(nRow, nCol, right);
 			}
 		}
 		IColIndex combinedIndex = _colIndexes;

@@ -756,7 +756,7 @@ public class ColGroupSDC extends ASDC implements IMapToDataGroup {
 	}
 
 	@Override
-	public AColGroupCompressed combineWithSameIndex(int nCol, List<AColGroup> right) {
+	public AColGroupCompressed combineWithSameIndex(int nRow, int nCol, List<AColGroup> right) {
 
 		final IDictionary combined = combineDictionaries(nCol, right);
 		final IColIndex combinedColIndex = combineColIndexes(nCol, right);
@@ -768,7 +768,7 @@ public class ColGroupSDC extends ASDC implements IMapToDataGroup {
 	}
 
 	@Override
-	public AColGroupCompressed combineWithSameIndex(int nCol, AColGroup right) {
+	public AColGroupCompressed combineWithSameIndex(int nRow, int nCol, AColGroup right) {
 		if(right instanceof ColGroupSDCZeros){
 			ColGroupSDCZeros rightSDC = ((ColGroupSDCZeros) right);
 			IDictionary b = rightSDC.getDictionary();

@@ -28,11 +28,14 @@ import java.util.List;
 import org.apache.commons.lang3.NotImplementedException;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.sysds.runtime.compress.CompressionSettings;
+import org.apache.sysds.runtime.compress.CompressionSettingsBuilder;
 import org.apache.sysds.runtime.compress.colgroup.indexes.ColIndexFactory;
 import org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex;
 import org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex.SliceResult;
 import org.apache.sysds.runtime.compress.colgroup.scheme.ICLAScheme;
 import org.apache.sysds.runtime.compress.cost.ComputationCostEstimator;
+import org.apache.sysds.runtime.compress.estim.CompressedSizeInfo;
 import org.apache.sysds.runtime.compress.estim.CompressedSizeInfoColGroup;
 import org.apache.sysds.runtime.compress.estim.encoding.IEncode;
 import org.apache.sysds.runtime.compress.lib.CLALibCombineGroups;
@@ -790,6 +793,7 @@ public abstract class AColGroup implements Serializable {
 	 * C bind the list of column groups with this column group. the list of elements provided in the index of each list
 	 * is guaranteed to have the same index structures
 	 * 
+	 * @param nRow  The number of rows contained in all right and this column group.
 	 * @param nCol  The number of columns to shift the right hand side column groups over when combining, this should
 	 *              only effect the column indexes
 	 * @param right The right hand side column groups to combine. NOTE only the index offset of the second nested list
@@ -797,22 +801,67 @@ public abstract class AColGroup implements Serializable {
 	 *              calling methods.
 	 * @return A combined compressed column group of the same type as this!.
 	 */
-	public AColGroup combineWithSameIndex(int nCol, List<AColGroup> right) {
-		throw new NotImplementedException("Combine of : " + this.getClass().getSimpleName()  + " not implemented");
+	public AColGroup combineWithSameIndex(int nRow, int nCol, List<AColGroup> right) {
+		// default decompress... nasty !
+
+		IColIndex combinedColIndex = combineColIndexes(nCol, right);
+
+		MatrixBlock decompressTarget = new MatrixBlock(nRow, combinedColIndex.size(), false);
+
+		decompressTarget.allocateDenseBlock();
+		DenseBlock db = decompressTarget.getDenseBlock();
+		final int nColInThisGroup = _colIndexes.size();
+		this.copyAndSet(ColIndexFactory.create(nColInThisGroup)).decompressToDenseBlock(db, 0, nRow);
+
+		for(int i = 0; i < right.size(); i++) {
+			right.get(i).copyAndSet(ColIndexFactory.create(i * nColInThisGroup, i * nColInThisGroup + nColInThisGroup))
+				.decompressToDenseBlock(db, 0, nRow);
+		}
+
+		decompressTarget.setNonZeros(nRow * combinedColIndex.size());
+
+		CompressedSizeInfoColGroup ci = new CompressedSizeInfoColGroup(ColIndexFactory.create(combinedColIndex.size()),
+			nRow, nRow, CompressionType.DDC);
+		CompressedSizeInfo csi = new CompressedSizeInfo(ci);
+
+		CompressionSettings cs = new CompressionSettingsBuilder().create();
+		return ColGroupFactory.compressColGroups(decompressTarget, csi, cs).get(0).copyAndSet(combinedColIndex);
 	}
 
 	/**
 	 * C bind the given column group to this.
 	 * 
+	 * @param nRow  The number of rows contained in the right and this column group.
 	 * @param nCol  The number of columns in this.
 	 * @param right The column group to c-bind.
 	 * @return a new combined column groups.
 	 */
-	public AColGroup combineWithSameIndex(int nCol, AColGroup right) {
-		throw new NotImplementedException("Combine of : " + this.getClass().getSimpleName()  + " not implemented");
+	public AColGroup combineWithSameIndex(int nRow, int nCol, AColGroup right) {
+
+		IColIndex combinedColIndex = _colIndexes.combine(right._colIndexes);
+
+		MatrixBlock decompressTarget = new MatrixBlock(nRow, combinedColIndex.size(), false);
+
+		decompressTarget.allocateDenseBlock();
+		DenseBlock db = decompressTarget.getDenseBlock();
+		final int nColInThisGroup = _colIndexes.size();
+		this.copyAndSet(ColIndexFactory.create(nColInThisGroup)).decompressToDenseBlock(db, 0, nRow);
+
+		right.copyAndSet(ColIndexFactory.create(nColInThisGroup, nColInThisGroup + nColInThisGroup))
+			.decompressToDenseBlock(db, 0, nRow);
+
+		decompressTarget.setNonZeros(nRow * combinedColIndex.size());
+
+		CompressedSizeInfoColGroup ci = new CompressedSizeInfoColGroup(ColIndexFactory.create(combinedColIndex.size()),
+			nRow, nRow, CompressionType.DDC);
+		CompressedSizeInfo csi = new CompressedSizeInfo(ci);
+
+		CompressionSettings cs = new CompressionSettingsBuilder().create();
+		return ColGroupFactory.compressColGroups(decompressTarget, csi, cs).get(0).copyAndSet(combinedColIndex);
+		// throw new NotImplementedException("Combine of : " + this.getClass().getSimpleName() + " not implemented");
 	}
 
-	protected IColIndex combineColIndexes(final int nCol, List<AColGroup> right){
+	protected IColIndex combineColIndexes(final int nCol, List<AColGroup> right) {
 		IColIndex combinedColIndex = _colIndexes;
 		for(int i = 0; i < right.size(); i++) {
 			int off = nCol * i + nCol;

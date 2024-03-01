@@ -150,7 +150,7 @@ public final class CLALibCBind {
 			int aColumnInGroup = glj.getColIndices().get(0);
 			AColGroup grj = right.getColGroupForColumn(aColumnInGroup);
 			// parallel combine...
-			retCG.add(glj.combineWithSameIndex(left.getNumColumns(), grj));
+			retCG.add(glj.combineWithSameIndex(left.getNumRows(), left.getNumColumns(), grj));
 		}
 		return new CompressedMatrixBlock(left.getNumRows(), left.getNumColumns() + right.getNumColumns(),
 			left.getNonZeros() + right.getNonZeros(), false, retCG);
@@ -160,37 +160,36 @@ public final class CLALibCBind {
 		final int k) throws InterruptedException, ExecutionException {
 
 		final ExecutorService pool = CommonThreadPool.get(k);
-		try{
+		try {
 			final List<AColGroup> gl = left.getColGroups();
 			final List<Future<AColGroup>> tasks = new ArrayList<>();
 			final int nCol = left.getNumColumns();
+			final int nRow = left.getNumRows();
 			for(int i = 0; i < gl.size(); i++) {
 				final AColGroup gli = gl.get(i);
-				tasks.add(pool.submit( () -> {
+				tasks.add(pool.submit(() -> {
 					List<AColGroup> combines = new ArrayList<>();
 					final int cId = gli.getColIndices().get(0);
-					for(int j = 0; j < right.length; j++){
-						combines.add( ((CompressedMatrixBlock)right[j]).getColGroupForColumn(cId) );
+					for(int j = 0; j < right.length; j++) {
+						combines.add(((CompressedMatrixBlock) right[j]).getColGroupForColumn(cId));
 					}
-					return gli.combineWithSameIndex(nCol, combines); 
+					return gli.combineWithSameIndex(nRow, nCol, combines);
 				}));
 			}
-	
+
 			final List<AColGroup> retCG = new ArrayList<>(gl.size());
 			for(Future<AColGroup> t : tasks)
 				retCG.add(t.get());
-	
+
 			int totalCol = nCol + right.length * nCol;
-	
+
 			return new CompressedMatrixBlock(left.getNumRows(), totalCol, -1, false, retCG);
 		}
-		finally{
+		finally {
 			pool.shutdown();
 		}
 
 	}
-
-
 
 	private static MatrixBlock appendLeftUncompressed(MatrixBlock left, CompressedMatrixBlock right, final int m,
 		final int n) {
@@ -238,16 +237,16 @@ public final class CLALibCBind {
 		ret.setNonZeros(left.getNonZeros() + right.getNonZeros());
 		ret.setOverlapping(left.isOverlapping() || right.isOverlapping());
 
-		final double compressedSize = ret.getInMemorySize();
-		final double uncompressedSize = MatrixBlock.estimateSizeInMemory(m, n, ret.getSparsity());
+		// final double compressedSize = ret.getInMemorySize();
+		// final double uncompressedSize = MatrixBlock.estimateSizeInMemory(m, n, ret.getSparsity());
 
 		// if(compressedSize < uncompressedSize)
-			return ret;
+		return ret;
 		// else {
-		// 	final double ratio = uncompressedSize / compressedSize;
-		// 	String message = String.format("Decompressing c bind matrix because it had to small compression ratio: %2.3f",
-		// 		ratio);
-		// 	return ret.getUncompressed(message);
+		// final double ratio = uncompressedSize / compressedSize;
+		// String message = String.format("Decompressing c bind matrix because it had to small compression ratio: %2.3f",
+		// ratio);
+		// return ret.getUncompressed(message);
 		// }
 	}
 

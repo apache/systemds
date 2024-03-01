@@ -979,7 +979,7 @@ public class ColGroupSDCSingleZeros extends ASDCZero {
 	}
 
 	@Override
-	public AColGroupCompressed combineWithSameIndex(int nCol, AColGroup right) {
+	public AColGroupCompressed combineWithSameIndex(int nRow, int nCol, AColGroup right) {
 		ColGroupSDCSingleZeros rightSDC = ((ColGroupSDCSingleZeros) right);
 		IDictionary b = rightSDC.getDictionary();
 		IDictionary combined = DictionaryFactory.cBindDictionaries(_dict, b, this.getNumCols(), right.getNumCols());
@@ -989,7 +989,7 @@ public class ColGroupSDCSingleZeros extends ASDCZero {
 	}
 
 	@Override
-	public AColGroupCompressed combineWithSameIndex(int nCol, List<AColGroup> right) {
+	public AColGroupCompressed combineWithSameIndex(int nRow, int nCol, List<AColGroup> right) {
 		final IDictionary combined = combineDictionaries(nCol, right);
 		final IColIndex combinedColIndex = combineColIndexes(nCol, right);
 

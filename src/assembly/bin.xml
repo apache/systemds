@@ -114,6 +114,7 @@
 				<include>*:re2j*</include>
 				<include>*:reload4j*</include>
 				<include>*:slf4j-api*</include>
+				<include>*:slf4j-reload4j*</include>
 				<include>*:spark-core*</include>
 				<include>*:spark-common-utils*</include>
 				<include>*:stax2-api*</include>

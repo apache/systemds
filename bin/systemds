@@ -431,10 +431,8 @@ if [ $WORKER == 1 ]; then
   print_out "#  starting Federated worker on port $PORT"
   print_out "###############################################################################"
   CMD=" \
-  java $SYSTEMDS_STANDALONE_OPTS \
-  -cp $CLASSPATH \
-  $LOG4JPROPFULL \
-  org.apache.sysds.api.DMLScript \
+  java $LOG4JPROPFULL \
+  -jar $SYSTEMDS_JAR_FILE \
   -w $PORT \
   $CONFIG_FILE \
   $*"
@@ -446,10 +444,8 @@ elif [ "$FEDMONITORING" == 1 ]; then
   print_out "#  starting Federated backend monitoring on port $PORT"
   print_out "###############################################################################"
   CMD=" \
-  java $SYSTEMDS_STANDALONE_OPTS \
-  -cp $CLASSPATH \
-  $LOG4JPROPFULL \
-  org.apache.sysds.api.DMLScript \
+  java $LOG4JPROPFULL \
+  -jar $SYSTEMDS_JAR_FILE \
   -fedMonitoring $PORT \
   $CONFIG_FILE \
   $*"
@@ -461,10 +457,8 @@ elif [ $SYSDS_DISTRIBUTED == 0 ]; then
   print_out "#  Running script $SCRIPT_FILE locally with opts: $*"
   print_out "###############################################################################"
   CMD=" \
-  java $SYSTEMDS_STANDALONE_OPTS \
-  -cp $CLASSPATH \
-  $LOG4JPROPFULL \
-  org.apache.sysds.api.DMLScript \
+  java $LOG4JPROPFULL \
+  -jar $SYSTEMDS_JAR_FILE \
   -f $SCRIPT_FILE \
   -exec $SYSDS_EXEC_MODE \
   $CONFIG_FILE \

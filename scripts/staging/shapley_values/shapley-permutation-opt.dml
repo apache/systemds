@@ -43,7 +43,7 @@ source("../shapley-utils.dml") as shapleyUtils
 # S              Matrix holding the shapley values of each desired feature in the cols.
 # expected       Double holding the average prediction of the instances.
 # -----------------------------------------------------------------------------
-shapley_permutation_explainer = function(String model_function, list[unknown] model_args, Matrix[Double] x, Matrix[Double] X_bg, Integer n_permutations = 2, Integer integration_samples = 100, Integer desired_max_batch_size=-1, String execution_policy="auto", Integer seed = -1, Integer verbose = 1)
+shapley_permutation_explainer = function(String model_function, list[unknown] model_args, Matrix[Double] x, Matrix[Double] X_bg, Integer n_permutations = 2, Integer integration_samples = 100, Integer desired_max_batch_size=-1, String execution_policy="auto", Integer remove_non_var=0, Integer seed = -1, Integer verbose = 1)
 return (Matrix[Double] phis, Double expected){
   shapleyUtils::u_vprint("SHAPLEY PERMUTATION EXPLAINER", verbose)
   #number of instances in x
@@ -79,7 +79,7 @@ return (Matrix[Double] phis, Double expected){
     if (desired_max_batch_size < aprox_total_rows_by_row){
       shapleyUtils::u_vprint("WARN::The desired_max_batch_size is above the number of samples for a single model call in the case of \"by-row\", which will be "+aprox_total_rows_by_row+". \nKeep in mind, that the maximum number of rows in all matrices at one time, including masks etc. is more than 3x larger.", verbose)
     }
-    [phis, expected] = shapley_permutations_by_row(model_function, model_args, x, X_bg, n_permutations, integration_samples, seed, verbose)
+    [phis, expected] = shapley_permutations_by_row(model_function, model_args, x, X_bg, n_permutations, integration_samples, remove_non_var, seed, verbose)
     ran = 1
   }
 
@@ -152,7 +152,7 @@ return (Matrix[Double] phis, Double expected){
 
     P = compute_means_from_predictions(P=P, integration_samples=integration_samples)
 
-    phis[,2*i-1:2*i] = compute_phis_from_prediction_means(P_perm = P, permutation=permutation)
+    phis[,2*i-1:2*i] = compute_phis_from_prediction_means(P=P, permutations=permutation)
     expected_m[1,i] = as.scalar(P[1,1])
   }
 
@@ -190,10 +190,11 @@ return (Matrix[Double] phis, Double expected){
 # S              Matrix holding the shapley values along the cols, one row per instance.
 # expected       Double holding the average prediction of all instances.
 # -----------------------------------------------------------------------------
-shapley_permutations_by_row = function(String model_function, list[unknown] model_args, Matrix[Double] x_multirow, Matrix[Double] X_bg, Integer n_permutations = 10, Integer integration_samples = 100, Integer seed = -1, Integer verbose = 1)
+shapley_permutations_by_row = function(String model_function, list[unknown] model_args, Matrix[Double] x_multirow, Matrix[Double] X_bg, Integer n_permutations = 10, Integer integration_samples = 100, Integer remove_non_var=1, Integer seed = -1, Integer verbose = 1)
 return (Matrix[Double] row_phis, Double expected){
   shapleyUtils::u_vprint("--> Permutation Explainer (by-row) for "+nrow(x_multirow)+" rows.", verbose)
-  shapleyUtils::u_vprint("The total number of predictions will be "+toString(ncol(x_multirow)*2*n_permutations*integration_samples*nrow(x_multirow))+" in "+nrow(x_multirow)+" parallel cals.", verbose )
+  shapleyUtils::u_vprint("The total number of predictions will be up to "+toString(ncol(x_multirow)*2*n_permutations*integration_samples*nrow(x_multirow))+" in "+nrow(x_multirow)+" parallel cals.", verbose )
+  shapleyUtils::u_vprint("Remove non-varying: "+as.boolean(remove_non_var), verbose )
 
   #important lengths and offsets
   perm_length = ncol(x_multirow)
@@ -201,8 +202,11 @@ return (Matrix[Double] row_phis, Double expected){
 
   #sample from X_bg
   X_bg_samples = shapleyUtils::sample_with_potential_replace(X_bg=X_bg, samples=integration_samples, seed=seed )
-  row_phis         = matrix(0, rows=nrow(x_multirow), cols=perm_length)
-  expected_m   = matrix(0, rows=nrow(x_multirow), cols=n_permutations)
+  row_phis     = matrix(0, rows=nrow(x_multirow), cols=perm_length)
+  expected_m   = matrix(0, rows=nrow(x_multirow), cols=1)
+
+  #stats
+  non_var_inds_stats = matrix(0, rows=nrow(x_multirow), cols=2)
 
 
   #prepare masks for all permutations, since it stays the same for every row
@@ -221,9 +225,30 @@ return (Matrix[Double] row_phis, Double expected){
   masked_bg_for_permutations = prepare_masked_X_bg(masks_for_permutations, X_bg_samples)
 
   parfor (i in 1:nrow(x_multirow)){
-    #apply masks and bg data for all permutations at once
-    X_test = apply_full_mask(x_multirow[i], masks_for_permutations, masked_bg_for_permutations)
+    if(remove_non_var == 1){
+      # try to remove inds that do not vary from the background
+      non_var_inds = get_non_varying_inds(x_multirow[i], X_bg_samples)
+      # give some info for the first 5 rows
+      if (ncol(x_multirow) > length(non_var_inds)+2){
+        #remove samples and masks for non varying features
+        [i_masks_for_permutations, i_masked_bg_for_permutations] = remove_inds(masks_for_permutations, masked_bg_for_permutations, permutations, non_var_inds, integration_samples)
+        non_var_inds_stats[i,1] = length(non_var_inds)
+      }else{
+        # we would remove all but two features, whichs breaks the removal algorithm
+        non_var_inds = as.matrix(-1)
+        i_masks_for_permutations = masks_for_permutations
+        i_masked_bg_for_permutations = masked_bg_for_permutations
+      }
+    } else {
+      non_var_inds = as.matrix(-1)
+      i_masks_for_permutations = masks_for_permutations
+      i_masked_bg_for_permutations = masked_bg_for_permutations
+    }
 
+    #apply masks and bg data for all permutations at once
+    X_test = apply_full_mask(x_multirow[i], i_masks_for_permutations, i_masked_bg_for_permutations)
+    #store actual model cals
+    non_var_inds_stats[i,2] = nrow(X_test)
     #generate args for call to model
     X_arg = append(list(X=X_test), model_args)
 
@@ -232,23 +257,20 @@ return (Matrix[Double] row_phis, Double expected){
     #compute means, deviding n_rows by integration_samples
     P = compute_means_from_predictions(P=P, integration_samples=integration_samples)
 
-    #iterate through permutations to compute phis
-    phis = matrix(0, rows=perm_length, cols=2*n_permutations)
-    parfor(j in 1:n_permutations, check=0){
-      #offset of predictions in predictions for all permutations
-      offset_p = (j-1) * 2 * perm_length + 1
-      #predictions for this permutation
-      P_perm = P[offset_p:offset_p+2*perm_length-1]
-      #compute phis for this permutation
-      phis[,2*j-1:2*j] = compute_phis_from_prediction_means(P_perm = P_perm, permutation=permutations[j])
-      #store expected value from this permutation, this whenever we mask out everything and don't use anything from the row.
-      expected_m[i,j] = as.scalar(P_perm[1,1])
-    }
+    #compute phis
+    [phis, e] = compute_phis_from_prediction_means(P=P, permutations=permutations, non_var_inds=non_var_inds)
+    expected_m[i] = e
     #compute phis for this row from all permutations
-    row_phis[i] = t(rowMeans(phis))
+    row_phis[i] = t(phis)
   }
   #compute expected of model from all rows
   expected = mean(expected_m)
+  if(remove_non_var){
+    shapleyUtils::u_vprint("Avg non-varying features: "+mean(non_var_inds_stats[,1]), verbose )
+    total = sum(non_var_inds_stats[,2])
+    reduction = total / (ncol(x_multirow)*2*n_permutations*integration_samples*nrow(x_multirow))
+    shapleyUtils::u_vprint("Actual model cals in total: "+total+" (reduction of "+reduction+")", verbose )
+  }
 }
 
 # Computes shapley values for a multiple instance by running through permutations in parallel.
@@ -292,9 +314,9 @@ return (Matrix[Double] row_phis, Double expected){
   #sample from X_bg
   X_bg_samples = shapleyUtils::sample_with_potential_replace(X_bg=X_bg, samples=integration_samples, seed=seed)
   #will hold all phis from all permutations as col-vectors and instances stacked in rows
-  #[inst1_perm1.1 inst1_perm1.2 inst1_perm2.1 inst1_perm1.2]
-  #[inst2_perm1.1 inst2_perm1.2 inst2_perm2.1 inst2_perm1.2]
-  row_phis     = matrix(0, rows=nrow(x_multirow)*perm_length, cols=2*n_permutations)
+  #[inst1_perm1 inst1_perm2]
+  #[inst2_perm1 inst2_perm2]
+  row_phis     = matrix(0, rows=nrow(x_multirow)*perm_length, cols=n_permutations)
   expected_m   = matrix(0, rows=nrow(x_multirow), cols=n_permutations)
 
 
@@ -323,14 +345,30 @@ return (Matrix[Double] row_phis, Double expected){
 
       #instance cols are stacked on top of each other
       #the phis for every instance are stored in columns next to each other, i.e. in a row of columns
-      row_phis[(j-1)*perm_length+1:j*perm_length,2*i-1:2*i] = compute_phis_from_prediction_means(P_perm=P, permutation=permutation)
-      #store expecetd value
-      expected_m[j,i] = as.scalar(P[1,1])
+      #looks odd, thats because we use a new version, that could run on all permutations at once
+      [row_phis[(j-1)*perm_length+1:j*perm_length,i], expected_m[j,i]] = compute_phis_from_prediction_means(P=P, permutations=permutation)
     }
   }
   # compute means of permutations of every instance and reshape so we have one instances in rows
   row_phis = matrix(rowMeans(row_phis), rows=nrow(x_multirow), cols=perm_length)
   expected = mean(expected_m)
+}
+
+#computes which indices do not vary from the background
+get_non_varying_inds = function(Matrix[Double] x, Matrix[Double] X_bg)
+return (Matrix[Double] non_varying_inds){
+  #from numpy.isclose
+  rtol = 1e-05
+  atol = 1e-08
+  means = colMeans(X_bg)
+  # compute distance metrics
+  diff = abs(x - means)
+  rdist = atol + rtol * abs(means)
+  non_varying_inds = (diff <= rdist)
+  # translate to indices
+  non_varying_inds = t(seq(1,ncol(x))) * non_varying_inds
+  # remove the ones that do vary
+  non_varying_inds = removeEmpty(target=non_varying_inds, margin="cols")
 }
 
 # Prepares a boolean mask for removing features according to permutaion.
@@ -383,7 +421,6 @@ return (Matrix[Double] masks){
     masks = masks[1:ncol(permutation)]
   }
   # add inverted mask and revert order for desired shape for forward and backward pass
-  # this leaves zeros for non varying inds in the backwards pass, but since non-varying, who cares
   masks = rev(rbind(masks, !masks))
 }
 
@@ -428,6 +465,68 @@ return (Matrix[Double] X_masked){
   X_masked = masked_X_bg + (x_mask_full * x_row)
 }
 
+remove_inds = function(Matrix[Double] masks, Matrix[Double] masked_X_bg, Matrix[Double] full_permutations, Matrix[Double] non_var_inds, Integer batch_size)
+return(Matrix[Double] sub_mask, Matrix[Double] sub_masked_X_bg){
+  offsets = seq(0,length(full_permutations)-ncol(full_permutations), ncol(full_permutations))
+
+  ###
+  # get row indices from permutations
+  total_row_index = full_permutations + offsets
+  total_row_index = matrix(total_row_index, rows=length(total_row_index), cols=1)
+
+  row_index = toOneHot(total_row_index, nrow(total_row_index))
+  ####
+  # get indices for all permutations as boolean mask
+  # repeat inds for every permutation
+  non_var_inds = matrix(1, rows=nrow(full_permutations), cols=ncol(non_var_inds)) * non_var_inds
+  #add offset
+  non_var_total = non_var_inds + offsets
+  #reshape into col-vec
+  non_var_total = matrix(non_var_total,rows=length(non_var_total), cols=1, byrow=FALSE)
+  non_var_mask = toOneHot(non_var_total, nrow(total_row_index))
+
+  non_var_mask = colSums(non_var_mask)
+
+  ###
+  # multiply to get mask
+  non_var_rows = row_index %*% t(non_var_mask)
+
+  ####
+  # unfold to full mask length
+  # reshape to add for each permutations
+  reshaped_rows = matrix(non_var_rows, rows=ncol(full_permutations), cols=nrow(full_permutations), byrow=FALSE)
+
+  reshaped_rows_full = matrix(0,rows=1,cols=ncol(reshaped_rows))
+
+  #rbind to manipulate all perms at once
+  if( sum(reshaped_rows[nrow(reshaped_rows)]) > 0 ){
+    #fix last row issue by setting last zero to one, if 1 in last row
+    row_indicator = (!reshaped_rows) * seq(1, nrow(reshaped_rows), 1)
+    row_indicator = colMaxs(row_indicator)
+    row_indicator = t(toOneHot(t(row_indicator), nrow(reshaped_rows)))
+    reshaped_rows_2 = reshaped_rows[1:nrow(reshaped_rows)-1] + row_indicator[1:nrow(reshaped_rows)-1]
+    reshaped_rows_full = rbind(reshaped_rows_full,reshaped_rows,reshaped_rows_2)
+  }else{
+    reshaped_rows_full = rbind(reshaped_rows_full,reshaped_rows,reshaped_rows[1:nrow(reshaped_rows)-1])
+  }
+
+  #reshaped_rows_full[nrow(reshaped_rows_full)] = reshaped_rows[nrow(reshaped_rows)] | reshaped_rows[nrow(reshaped_rows)-1]
+  #reshape into col-vec
+  non_var_total = matrix(reshaped_rows_full, rows=length(reshaped_rows_full), cols=1, byrow=FALSE)
+
+  #replicate, if masks already replicated
+  if (batch_size > 1){
+    non_var_total = matrix(1, rows=nrow(non_var_total), cols=batch_size) * non_var_total
+    non_var_total = matrix(non_var_total, rows=length(non_var_total), cols=1)
+  }
+
+  #remove from mask according to this vector
+  removed_short_mask = removeEmpty(target=masks, select=!non_var_total, margin="rows")
+  #set to 1 where non varying
+  sub_mask = removed_short_mask | non_var_mask[1, 1:ncol(removed_short_mask)]
+  sub_masked_X_bg = removeEmpty(target=masked_X_bg, select=!non_var_total, margin="rows")
+}
+
 # Performs the integration by taking means.
 #
 # INPUT:
@@ -462,44 +561,55 @@ compute_means_from_predictions = function(Matrix[Double] P, Integer integration_
 #
 # INPUT:
 # ---------------------------------------------------------------------------------------
-# P_perm                Predictions for one permutation.
-# permutation           Permutation to get the feature indices from.
+# P                     Predictions for multiple permutation.
+# permutations          Permutations to get the feature indices from.
 # ---------------------------------------------------------------------------------------
 #
 # OUTPUT:
 # -----------------------------------------------------------------------------
 # phis                  Phis or shapley values computed from this permutation.
 #                       Every row holds the phis for the corresponding feature.
-#                       Col 1 holds forward-pass, col 2 holds backward pass.
-#                       Has to be averaged later.
 # -----------------------------------------------------------------------------
-compute_phis_from_prediction_means = function(Matrix[Double] P_perm, Matrix[Double] permutation, Matrix[Double] non_varying_inds=as.matrix(-1))
-  return(Matrix[Double] phis){
-  perm_len=ncol(permutation)
+compute_phis_from_prediction_means = function(Matrix[Double] P, Matrix[Double] permutations, Matrix[Double] non_var_inds=as.matrix(-1))
+return(Matrix[Double] phis, Double expected){
+  perm_len=ncol(permutations)
+  n_non_var_inds = 0
+  partial_permutations = permutations
 
-  #prepare phis
-  phis = matrix(0, rows=perm_len, cols=3)
-  #add permuation to first col for sorting
-  phis[,1]=t(permutation)
+  if(sum(non_var_inds)>0){
+    n_non_var_inds = ncol(non_var_inds)
+    #flatten perms to remove from all perms at once
+    perms_flattened = matrix(permutations, rows=length(permutations), cols=1)
+    rem_selector = outer(perms_flattened, non_var_inds, "==")
+    rem_selector = rowSums(rem_selector)
+    partial_permutations = removeEmpty(target=perms_flattened, select=!rem_selector, margin="rows")
+    #reshape
+    partial_permutations = matrix(partial_permutations, rows=perm_len-n_non_var_inds, cols=nrow(permutations))
+    perm_len = perm_len-n_non_var_inds
+  }
+
+  #reshape P to get one col per permutation
+  P_perm = matrix(P, rows=2*perm_len, cols=nrow(permutations), byrow=FALSE)
 
   #compute forward results (inds_with - inds_without)
-  phis[,2] = P_perm[2:perm_len+1] - P_perm[1:perm_len]
+  forward_phis = P_perm[2:perm_len+1] - P_perm[1:perm_len]
 
   #compute backwards results reverse of (inds_with - inds_without) for first n-1 phis
-  phis[1:perm_len-1,3] = P_perm[perm_len+1:2*perm_len-1] - P_perm[perm_len+2:2*perm_len]
-
+  # --> breaks, if only on feature changes
+  backward_phis = P_perm[perm_len+1:2*perm_len-1] - P_perm[perm_len+2:2*perm_len]
   #compute last backward, because we reuse result from index 1 to have less model calls
-  phis[perm_len,3] = P_perm[2*perm_len] - P_perm[1]
+  backward_phis = rbind(backward_phis, P_perm[2*perm_len] - P_perm[1])
 
-  if (sum(non_varying_inds)>0){
-    #append non varying inds, if not the default
-    #prepare additional phis
-    additional_phis = matrix(0, rows=ncol(non_varying_inds), cols=3)
-    #add non varying inds to first col for sorting
-    additional_phis[,1]=t(non_varying_inds)
-    phis = rbind(phis,additional_phis)
-  }
-  #sort according to permutation and truncate first col
-  phis = order(target=phis, by=1)
-  phis = phis[,2:3]
+  ###
+  #avg forward and backward
+  forward_phis = matrix(forward_phis, rows=length(forward_phis), cols=1, byrow=FALSE)
+  backward_phis = matrix(backward_phis, rows=length(backward_phis), cols=1, byrow=FALSE)
+  avg_phis = (forward_phis + backward_phis) / 2
+
+  #aggregate to get only one phi per feature (and implicitly add zeros for non var inds)
+  perms_flattened = matrix(partial_permutations, rows=length(partial_permutations), cols=1)
+  phis = aggregate(target=avg_phis, groups=perms_flattened, fn="mean", ngroups=ncol(permutations))
+
+  #get expected from first row
+  expected=mean(P_perm[1])
 }

@@ -36,6 +36,8 @@ integration_samples = ifdef($integration_samples, 10)
 execution_policy = ifdef($execution_policy, "auto")
 # you set the total number of rows from the commandline using `-nvargs rows_to_explain=10`
 rows_to_explain = ifdef($rows_to_explain, 10)
+# set remove_non_var
+remove_non_var = ifdef($remove_non_var, 0)
 print("Computing shapley values for "+rows_to_explain+" rows with "+n_permutations+" permutatitons, "+integration_samples+" samples to marginalise masked features.")
 #select instances to compute shapley values for
 x = X_bg[2:rows_to_explain+1,]
@@ -52,6 +54,7 @@ x = X_bg[2:rows_to_explain+1,]
   integration_samples=integration_samples,
   desired_max_batch_size=-1,
   execution_policy=execution_policy,
+  remove_non_var=remove_non_var,
   seed=-1,
   verbose=1
 )

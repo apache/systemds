@@ -35,11 +35,8 @@
 m_kmeansPredict = function(Matrix[Double] X, Matrix[Double] C)
   return (Matrix[Double] Y)
 {
- 
-    D =  -2 * (X %*% t(C)) + t(rowSums (C ^ 2));
-    P = (D <= rowMins (D));
-    aggr_P = t(cumsum (t(P)));
-    Y = rowSums (aggr_P == 0) + 1
-
+  D =  -2 * (X %*% t(C)) + t(rowSums(C^2));
+  P = (D <= rowMins (D));
+  Y = rowIndexMax(P);
 }
 

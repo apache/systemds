@@ -158,6 +158,12 @@ public abstract class Lop
 	protected boolean _asynchronous = false;
 
 	/**
+	 * Refers to the pipeline to which this lop belongs to.
+	 * This is used for identifying parallel execution of lops.
+	 */
+	protected int _pipelineID = -1;
+
+	/**
 	 * Estimated size for the output produced by this Lop in bytes.
 	 */
 	protected double _outputMemEstimate = OptimizerUtils.INVALID_SIZE;
@@ -416,6 +422,14 @@ public abstract class Lop
 
 	public boolean isAsynchronousOp() {
 		return _asynchronous;
+	}
+
+	public void setPipelineID(int id) {
+		_pipelineID = id;
+	}
+
+	public int getPipelineID() {
+		return _pipelineID;
 	}
 
 	public void setMemoryEstimates(double outMem, double totMem, double interMem, double bcMem) {

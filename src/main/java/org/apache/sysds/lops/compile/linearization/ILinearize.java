@@ -66,7 +66,7 @@ public class ILinearize {
 	public static Log LOG = LogFactory.getLog(ILinearize.class.getName());
 
 	public enum DagLinearization {
-		DEPTH_FIRST, BREADTH_FIRST, MIN_INTERMEDIATE, MAX_PARALLELIZE, AUTO
+		DEPTH_FIRST, BREADTH_FIRST, MIN_INTERMEDIATE, MAX_PARALLELIZE, AUTO, PIPELINE_DEPTH_FIRST;
 	}
 
 	public static List<Lop> linearize(List<Lop> v) {
@@ -82,6 +82,8 @@ public class ILinearize {
 					return doMinIntermediateSort(v);
 				case BREADTH_FIRST:
 					return doBreadthFirstSort(v);
+				case PIPELINE_DEPTH_FIRST:
+					return PipelineAwareLinearize.pipelineDepthFirst(v);
 				case DEPTH_FIRST:
 				default:
 					return depthFirst(v);
@@ -101,7 +103,7 @@ public class ILinearize {
 	 * @param v List of lops to sort
 	 * @return Sorted list of lops
 	 */
-	private static List<Lop> depthFirst(List<Lop> v) {
+	protected static List<Lop> depthFirst(List<Lop> v) {
 		// partition nodes into leaf/inner nodes and dag root nodes,
 		// + sort leaf/inner nodes by ID to force depth-first scheduling
 		// + append root nodes in order of their original definition

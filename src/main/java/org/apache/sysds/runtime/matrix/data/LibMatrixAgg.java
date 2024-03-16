@@ -489,7 +489,7 @@ public class LibMatrixAgg {
 		if( in1.isEmptyBlock(false) || !satisfiesMultiThreadingConstraints(in1, k) )
 			return aggregateCmCov(in1, in2, in3, fn);
 		
-		CM_COV_Object ret = new CM_COV_Object();
+		CM_COV_Object ret = null;
 		
 		try {
 			ExecutorService pool = CommonThreadPool.get(k);
@@ -500,6 +500,7 @@ public class LibMatrixAgg {
 			List<Future<CM_COV_Object>> rtasks = pool.invokeAll(tasks);
 			pool.shutdown();
 			//aggregate partial results and error handling
+			ret = rtasks.get(0).get();
 			for( int i=1; i<rtasks.size(); i++ )
 				fn.execute(ret, rtasks.get(i).get());
 		}

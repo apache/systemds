@@ -253,6 +253,7 @@ public enum Builtins {
 	OUTLIER_IQR_APPLY("outlierByIQRApply", true),
 	OUTLIER_SD("outlierBySd", true),
 	OUTLIER_SD_APPLY("outlierBySdApply", true),
+	PAGERANK("pageRank", true),
 	PCA("pca", true),
 	PCAINVERSE("pcaInverse", true),
 	PCATRANSFORM("pcaTransform", true),

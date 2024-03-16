@@ -19,25 +19,14 @@
 #
 #-------------------------------------------------------------
 
-# How to invoke this dml script PageRank.dml?
-# Assume PAGE_RANK_HOME is set to the home of the dml script
-# Assume input and output directories are on hdfs as INPUT_DIR and OUTPUT_DIR
-# Assume rows = 1000 and cols = 1000 for g,  rows = 1000 and cols = 1 for p, rows = 1000 and cols = 1 for e, rows = 1 and cols = 1000 for u,
-# Assume alpha = 0.85, max_iteration = 3
-# hadoop jar SystemDS.jar -f $PAGE_RANK_HOME/PageRank.dml -args "$INPUT_DIR/g" "$INPUT_DIR/p" "$INPUT_DIR/e" "$INPUT_DIR/u" 0.85 3 "$OUPUT_DIR/w"
-
 G = read($1);
-# dense
 p = read($2);
 e = read($3);
 u = read($4);
 alpha = $5;
-max_iteration = $6;
-i = 0;
+maxi = $6;
 
-while(i < max_iteration) {
-	p = alpha * (G %*% p) + (1 - alpha) * (e %*% u %*% p);
-	i = i + 1;
-}
+p = pageRank(G=G, p=p, e=e, u=u, alpha=alpha, max_iter=maxi);
 
 write(p, $7, format="text");
+

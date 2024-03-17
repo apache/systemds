@@ -190,6 +190,8 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 			hi = simplifyCumsumColOrFullAggregates(hi);          //e.g., colSums(cumsum(X)) -> cumSums(X*seq(nrow(X),1))
 			hi = simplifyCumsumReverse(hop, hi, i);              //e.g., rev(cumsum(rev(X))) -> X + colSums(X) - cumsum(X)
 
+			hi = simplifyNotOverComparisons(hop, hi, i);         //e.g., !(A>B) -> (A<=B)
+			
 			//hi = removeUnecessaryPPred(hop, hi, i);            //e.g., ppred(X,X,"==")->matrix(1,rows=nrow(X),cols=ncol(X))
 
 			//process childs recursively after rewrites (to investigate pattern newly created by rewrites)
@@ -1977,6 +1979,40 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 			hi = minus;
 			LOG.debug("Applied simplifyCumsumReverse (line "+hi.getBeginLine()+")");
 		}
+		return hi;
+	}
+	
+	private static Hop simplifyNotOverComparisons(Hop parent, Hop hi, int pos){
+		if(HopRewriteUtils.isUnary(hi, OpOp1.NOT) && hi.getInput(0) instanceof BinaryOp
+			&& hi.getInput(0).getParent().size() == 1) //NOT is only consumer
+		{
+			Hop binaryOperator = hi.getInput(0);
+			Hop A = binaryOperator.getInput(0);
+			Hop B = binaryOperator.getInput(1);
+			Hop newHop = null;
+
+			// !(A>B) -> A<=B
+			if(HopRewriteUtils.isBinary(binaryOperator, OpOp2.GREATER)) {
+				newHop = HopRewriteUtils.createBinary(A, B, OpOp2.LESSEQUAL);
+			}
+			// !(A<B) -> A>=B
+			else if(HopRewriteUtils.isBinary(binaryOperator, OpOp2.LESS)) {
+				newHop = HopRewriteUtils.createBinary(A, B, OpOp2.GREATEREQUAL);
+			}
+			// !(A==B) -> A!=B, including !(A==0) -> A!=0
+			else if(HopRewriteUtils.isBinary(binaryOperator, OpOp2.EQUAL)) {
+				newHop = HopRewriteUtils.createBinary(A, B, OpOp2.NOTEQUAL);
+			}
+			//TODO add remaining cases of comparison operators
+
+			if(parent != null && newHop != null) {
+				HopRewriteUtils.replaceChildReference(parent, hi, newHop, pos);
+				HopRewriteUtils.cleanupUnreferenced(hi);
+				hi = newHop;
+				LOG.debug("Applied simplifyNotOverComparisons (line " + hi.getBeginLine() + ")");
+			}
+		}
+
 		return hi;
 	}
 	

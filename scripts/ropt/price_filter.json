@@ -1,0 +1,17 @@
+[
+  {
+    "Type": "TERM_MATCH",
+    "Field": "operatingSystem",
+    "Value": "Linux"
+  },
+  {
+    "Type": "TERM_MATCH",
+    "Field": "tenancy",
+    "Value": "Shared"
+  },
+  {
+    "Type": "TERM_MATCH",
+    "Field": "preInstalledSw",
+    "Value": "NA"
+  }
+]

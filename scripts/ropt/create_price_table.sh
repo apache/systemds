@@ -25,11 +25,23 @@ fi
 # Create the CSV file ---------------
 echo "Fetching list of all supported instance types..."
 # header
-echo "API_Name,Memory,vCPUs" > "$TABLE_FILE"
-# data for the instances
-aws emr list-supported-instance-types --release-label "emr-7.0.0" \
-  --query 'SupportedInstanceTypes[].{API_Name: Type, Memory: MemoryGB, vCPUs: VCPU}' \
-  | jq -r '.[] | [.API_Name , .Memory, .vCPUs] | @csv' | tr -d '"' >> "$TABLE_FILE"
+echo "API_Name,Memory,vCPUs,Family" > "$TABLE_FILE"
+# query supported instances and general capabilities
+GET_INSTANCE_CMD="aws emr list-supported-instance-types --release-label emr-7.0.0 --region $REGION"
+JQ_INFO_QUERY='.SupportedInstanceTypes[] | [.Type, .MemoryGB, .VCPU, .InstanceFamilyId] | @csv'
+# $GET_INSTANCE_CMD | jq -r '.SupportedInstanceTypes[] | [.Type, .MemoryGB, .VCPU, .InstanceFamilyId] | @csv' | tr -d '"'
+# init call
+tmp_output=$($GET_INSTANCE_CMD)
+while true; do
+  printf "%s" "$(echo $tmp_output | jq -r "$JQ_INFO_QUERY" | tr -d '"')" >> "$TABLE_FILE"
+  MARKER=$(echo $tmp_output | jq -r '.Marker')
+  if [ "$MARKER" = "null" ]; then
+    break
+  else
+    echo "" >> "$TABLE_FILE"
+    tmp_output=$(aws emr list-supported-instance-types --release-label emr-7.0.0 --region $REGION --marker $MARKER)
+  fi
+done
 
 if [ $? -ne 0 ]; then echo "Command failed."; exit 1; fi
 echo "...List (API_Name, Memory, vCPUs) fetched."

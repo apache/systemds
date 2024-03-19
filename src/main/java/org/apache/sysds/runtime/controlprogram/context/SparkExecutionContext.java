@@ -159,6 +159,25 @@ public class SparkExecutionContext extends ExecutionContext
 		return _spctx;
 	}
 
+	public static void initVirtualSparkContext(SparkConf sparkConf) {
+		if (_spctx != null) {
+			for (Tuple2<String, String> pair : sparkConf.getAll()) {
+				_spctx.sc().getConf().set(pair._1, pair._2);
+			}
+		} else {
+
+			try {
+				_spctx = new JavaSparkContext(sparkConf);
+				// assumes NON-legacy spark version
+				_sconf = new SparkClusterConfig();
+			} catch (Exception e) {
+				throw new RuntimeException(e);
+			}
+		}
+
+		_sconf.analyzeSparkConfiguation(sparkConf);
+	}
+
 	public synchronized static JavaSparkContext getSparkContextStatic() {
 		initSparkContext();
 		if(_spctx.sc().isStopped()){

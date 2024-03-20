@@ -81,7 +81,6 @@ public class FederatedL2SVMPlanningTest extends AutomatedTestBase {
 	}
 
 	@Test
-	@Ignore
 	public void runL2SVMFunctionFOUTTest(){
 		String[] expectedHeavyHitters = new String[]{ "fed_fedinit", "fed_ba+*", "fed_tak+*", "fed_+*",
 			"fed_max", "fed_1-*", "fed_tsmm", "fed_>"};
@@ -90,7 +89,6 @@ public class FederatedL2SVMPlanningTest extends AutomatedTestBase {
 	}
 
 	@Test
-	@Ignore
 	public void runL2SVMFunctionHeuristicTest(){
 		String[] expectedHeavyHitters = new String[]{ "fed_fedinit", "fed_ba+*"};
 		setTestConf("SystemDS-config-heuristic.xml");

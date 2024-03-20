@@ -92,10 +92,19 @@ public class FederatedPlannerUtils {
 	 * @param funcStatement The <code>FunctionStatement</code> of the called function
 	 * @param transientWrites map of transient writes
 	 */
-	public static void mapFunctionOutputs(FunctionOp sbHop, FunctionStatement funcStatement, Map<String,Hop> transientWrites) {
-		for (int i = 0; i < sbHop.getOutputVariableNames().length; ++i) {
+	public static void mapFunctionOutputs(FunctionOp sbHop, FunctionStatement funcStatement,
+		Map<String, Hop> transientWrites) {
+		for(int i = 0; i < sbHop.getOutputVariableNames().length; ++i) {
 			Hop outputWrite = transientWrites.get(funcStatement.getOutputParams().get(i).getName());
 			transientWrites.put(sbHop.getOutputVariableNames()[i], outputWrite);
 		}
+	}
+
+	public static Map<String, Hop> createFunctionFedVarTable(Map<String, Hop> paramMap, FunctionOp sbHop) {
+		Map<String, Hop> funcParamMap = FederatedPlannerUtils.getParamMap(sbHop);
+		if(paramMap != null)
+			funcParamMap.putAll(paramMap);
+		paramMap = funcParamMap;
+		return paramMap;
 	}
 }

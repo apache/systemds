@@ -19,6 +19,7 @@
 
 package org.apache.sysds.hops.fedplanner;
 
+import java.util.HashMap;
 import java.util.Map;
 
 import org.apache.sysds.common.Types;
@@ -28,6 +29,7 @@ import org.apache.sysds.hops.AggBinaryOp;
 import org.apache.sysds.hops.AggUnaryOp;
 import org.apache.sysds.hops.BinaryOp;
 import org.apache.sysds.hops.DataOp;
+import org.apache.sysds.hops.FunctionOp;
 import org.apache.sysds.hops.Hop;
 import org.apache.sysds.hops.TernaryOp;
 import org.apache.sysds.hops.fedplanner.FTypes.FType;

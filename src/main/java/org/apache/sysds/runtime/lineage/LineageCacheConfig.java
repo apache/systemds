@@ -124,6 +124,8 @@ public class LineageCacheConfig
 	private static boolean DELAYED_CACHING_GPU = true;
 	private static boolean DELAYED_CACHING_RDD = true;
 
+	private static boolean MULTI_BACKEND_REUSE = true;
+
 	//-------------DISK SPILLING RELATED CONFIGURATIONS--------------//
 
 	//private static boolean _allowSpill = false;
@@ -400,6 +402,10 @@ public class LineageCacheConfig
 
 	public static boolean isLineageTraceReuse() {
 		return _reuseLineageTraces;
+	}
+
+	public static boolean isMultiBackendReuse() {
+		return MULTI_BACKEND_REUSE;
 	}
 
 	public static boolean isDelayedCaching() {

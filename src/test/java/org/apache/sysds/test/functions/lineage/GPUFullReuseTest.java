@@ -85,7 +85,7 @@ public class GPUFullReuseTest extends AutomatedTestBase{
 
 		AutomatedTestBase.TEST_GPU = true;  //adds '-gpu'
 		List<String> proArgs = new ArrayList<>();
-		proArgs.add("-explain");
+		//proArgs.add("-explain");
 		proArgs.add("-stats");
 		proArgs.add("-args");
 		proArgs.add(output("R"));

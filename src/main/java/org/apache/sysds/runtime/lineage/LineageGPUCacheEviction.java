@@ -133,6 +133,7 @@ public class LineageGPUCacheEviction
 
 	// Speculative eviction
 	public static void removeAllEntries(double evictFrac) {
+		//System.out.println("Removing all entries from GPU cache");
 		List<Long> sizes = new ArrayList<>(freeQueues.keySet());
 		for (Long size : sizes) {
 			TreeSet<LineageCacheEntry> freeList = freeQueues.get(size);

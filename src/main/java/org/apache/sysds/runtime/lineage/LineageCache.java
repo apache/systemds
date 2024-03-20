@@ -297,7 +297,6 @@ public class LineageCache
 					if (e.getCacheStatus() == LineageCacheStatus.TOCACHE)  //not cached yet
 						return false;
 				}
-				//TODO: support reusing RDD output of functions
 
 				funcOutputs.put(boundVarName, boundValue);
 				LineageItem orig = e._origItem;
@@ -638,6 +637,12 @@ public class LineageCache
 			}
 			else if (inst instanceof GPUInstruction) {
 				// TODO: gpu multi-return instructions
+				if (!LineageCacheConfig.isMultiBackendReuse()) {
+					// Multi-backend reuse is disabled
+					instLI = ec.getLineageItem(((GPUInstruction) inst)._output);
+					removePlaceholder(instLI);
+					return;
+				}
 				Data gpudata = ec.getVariable(((GPUInstruction) inst)._output);
 				liGPUObj = gpudata instanceof MatrixObject ?
 						ec.getMatrixObject(((GPUInstruction)inst)._output).
@@ -653,6 +658,11 @@ public class LineageCache
 				&& (ec.getVariable(((ComputationSPInstruction) inst).output) instanceof MatrixObject)
 				&& (ec.getCacheableData(((ComputationSPInstruction)inst).output.getName())).hasRDDHandle()) {
 				instLI = ec.getLineageItem(((ComputationSPInstruction) inst).output);
+				if (!LineageCacheConfig.isMultiBackendReuse()) {
+					// Multi-backend reuse is disabled
+					removePlaceholder(instLI);
+					return;
+				}
 				putValueRDD(inst, instLI, ec, computetime);
 				return;
 			}
@@ -667,6 +677,11 @@ public class LineageCache
 				}
 				else if (inst instanceof ComputationSPInstruction) { //collects or prefetches
 					instLI = ec.getLineageItem(((ComputationSPInstruction) inst).output);
+					if (!LineageCacheConfig.isMultiBackendReuse()) {
+						// Multi-backend reuse is disabled
+						removePlaceholder(instLI);
+						return;
+					}
 					liData = Arrays.asList(Pair.of(instLI, ec.getVariable(((ComputationSPInstruction) inst).output)));
 				}
 
@@ -856,6 +871,9 @@ public class LineageCache
 		if(!(data instanceof MatrixObject) && !(data instanceof ScalarObject)) {
 			return;
 		}
+		// No async. OP reuse if multi-backend reuse is disabled
+		if (!LineageCacheConfig.isMultiBackendReuse())
+			return;
 
 		synchronized( _cache )
 		{

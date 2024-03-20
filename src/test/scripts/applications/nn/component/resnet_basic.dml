@@ -534,9 +534,10 @@ values_test_residual_layer_forward = function() {
 
     blocks_weights = list(block1_weights, block2_weights)
     ema_means_vars = list(block1_EMAs, block2_EMAs)
-    [out, Hout, Wout, ema_means_vars_upd] = resnet::basic_reslayer_forward(X, Hin, Win, blocks,
-                                                              strideh, stridew, C_in, C_base,
-                                                              blocks_weights, mode, ema_means_vars)
+    block_type = "basic"
+    [out, Hout, Wout, ema_means_vars_upd] = resnet::reslayer_forward(X, Hin, Win, block_type,
+                                                      blocks, strideh, stridew, C_in, C_base,
+                                                      blocks_weights, mode, ema_means_vars)
 
     test_util::check_all_close(out, expected_out, 0.0001)
 }

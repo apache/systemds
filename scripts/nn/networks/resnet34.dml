@@ -87,6 +87,7 @@ forward = function(matrix[double] X, int Hin, int Win,
      *     the same exact structure as the input EMAs list.
      */
     layer_sizes = list(3, 4, 6, 3)
-    [out, ema_means_vars_upd] = resnet::resnet_basic_forward(X, Hin, Win,
-                                layer_sizes, model, mode, ema_means_vars)
+    block_type = "basic"
+    [out, ema_means_vars_upd] = resnet::resnet_forward(X, Hin, Win, block_type,
+                                      layer_sizes, model, mode, ema_means_vars)
 }

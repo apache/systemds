@@ -697,7 +697,9 @@ public class HopRewriteUtils {
 	}
 	
 	public static ParameterizedBuiltinOp createParameterizedBuiltinOp(Hop input, LinkedHashMap<String,Hop> args, ParamBuiltinOp op) {
-		ParameterizedBuiltinOp pbop = new ParameterizedBuiltinOp("tmp", DataType.MATRIX, ValueType.FP64, op, args);
+		DataType dt = op == ParamBuiltinOp.TOSTRING ? DataType.SCALAR : DataType.MATRIX;
+		ValueType vt = op == ParamBuiltinOp.TOSTRING ? ValueType.STRING : ValueType.FP64;
+		ParameterizedBuiltinOp pbop = new ParameterizedBuiltinOp("tmp", dt, vt, op, args);
 		pbop.setBlocksize(input.getBlocksize());
 		copyLineNumbers(input, pbop);
 		pbop.refreshSizeInformation();

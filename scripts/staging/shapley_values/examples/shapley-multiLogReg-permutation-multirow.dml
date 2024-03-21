@@ -24,6 +24,7 @@
 # run the script staging/learnedSampling/1_Data_Model_Prep.dml to prepare the model
 
 source("../shapley-permutation-opt.dml") as shapleyPermutation
+source("../shapley-permutation.dml") as shapleyPermutationLegacy
 
 X_bg = read("../data/Adult_X.csv")
 y = read("../data/Adult_y.csv")
@@ -45,19 +46,42 @@ x = X_bg[2:rows_to_explain+1,]
 #print("Samples: \n"+toString(x))
 
 #compute shapley values
-[S, expected] = shapleyPermutation::shapley_permutation_explainer(
-  model_function="shap_multiLogRegPredict_custom",
-  model_args=list(B=B),
-  x=x,
-  X_bg=X_bg,
-  n_permutations=n_permutations,
-  integration_samples=integration_samples,
-  desired_max_batch_size=-1,
-  execution_policy=execution_policy,
-  remove_non_var=remove_non_var,
-  seed=-1,
-  verbose=1
-)
+if(execution_policy != 'legacy-iterative'){
+
+  [S, expected] = shapleyPermutation::shapley_permutation_explainer(
+    model_function="shap_multiLogRegPredict_custom",
+    model_args=list(B=B),
+    x=x,
+    X_bg=X_bg,
+    n_permutations=n_permutations,
+    integration_samples=integration_samples,
+    desired_max_batch_size=-1,
+    execution_policy=execution_policy,
+    remove_non_var=remove_non_var,
+    seed=-1,
+    verbose=1
+  )
+} else {
+  print("Using iterative legacy approach.")
+  S = matrix(0, rows=nrow(x), cols=ncol(x))
+  expected = matrix(0, rows=nrow(x), cols=1)
+  parfor (i in 1:nrow(x), check=0){
+    [phis, e] = shapleyPermutationLegacy::shapley_permutations(
+      model_function="shap_multiLogRegPredict_custom",
+      model_args=list(B=B),
+      x=x[i],
+      X_bg=X_bg,
+      n_permutations=n_permutations,
+      integration_samples=integration_samples,
+      seed=-1,
+      verbose=0
+    )
+    S[i] = phis
+    expected[i] = e
+  }
+  expected = mean(expected)
+
+}
 print("Expected: "+toString(expected))
 print("Resulting phis rowsum:\n"+toString(rowSums(S)))
 

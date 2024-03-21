@@ -149,6 +149,14 @@ return(Matrix[Double] m){
 
 u_vprint = function(String message, Boolean verbose){
   if(verbose){
-    print("shapley-sampling::"+message)
+    print("shapley::"+message)
   }
+}
+
+u_pm = function(String name, Matrix[Double] m){
+  print(name+":\n"+toString(m))
+}
+u_pmr= function(String name, Matrix[Double] m){
+  m = cbind((seq(1,nrow(m),1)),m)
+  print(name+":\n"+toString(m))
 }

@@ -63,13 +63,11 @@ return (Matrix[Double] phis, Double expected){
   if (execution_policy == "auto"){
     shapleyUtils::u_vprint("Finding best execution policy, since none was set.", verbose)
     #do computation permutation by permutation
-    if (desired_max_batch_size < aprox_total_rows_by_row | n_instances < 3 ){
-      shapleyUtils::u_vprint("Using \"by-permutaion\", because the desired_max_batch_size of "+desired_max_batch_size+" is below the max number of possible total rows.", verbose)
+    if (desired_max_batch_size < aprox_total_rows_by_row | n_instances < n_permutations ){
       shapleyUtils::u_vprint("The number of samples for a single model call in the case of \"by-row\" would be "+aprox_total_rows_by_row+". \nKeep in mind, that the maximum number of rows in all matrices at one time, including masks etc. is more than 3x larger.", verbose)
       [phis, expected] = shapley_permutations_by_permutation(model_function, model_args, x, X_bg, n_permutations, integration_samples, seed, verbose)
       ran = 1
     }else{
-      shapleyUtils::u_vprint("Using \"by-row\", because the desired_max_batch_size of "+desired_max_batch_size+" is above the max number of possible total rows of "+aprox_total_rows_by_row+" for this policy.", verbose)
       [phis, expected] = shapley_permutations_by_row(model_function, model_args, x, X_bg, n_permutations, integration_samples, seed, verbose)
       ran = 1
     }
@@ -93,8 +91,8 @@ return (Matrix[Double] phis, Double expected){
     phis = matrix(0, rows=nrow(x), cols=ncol(x))
     expected = matrix(0, rows=nrow(x), cols=1)
     parfor (i in 1:nrow(x), check=0){
-      [phis_t, e] = shapley_permutations_legacy(model_function, model_args, x[i], X_bg, n_permutations, integration_samples, seed, verbose)
-      phis[i] = phis
+      [phis_t, e] = shapley_permutations_legacy(model_function, model_args, x[i], X_bg, n_permutations, integration_samples, seed, 0)
+      phis[i] = phis_t
       expected[i] = e
     }
     expected = mean(expected)
@@ -134,7 +132,7 @@ return (Matrix[Double] phis, Double expected){
   shapleyUtils::u_vprint("The total number of predictions will be "+toString(ncol(x)*2*n_permutations*integration_samples)+" in "+n_permutations+" parallel calls to the model.", verbose )
   # sample from X_bg
   X_bg_samples = shapleyUtils::sample_with_potential_replace(X_bg=X_bg, samples=integration_samples, seed=seed )
-  phis         = matrix(0, rows=ncol(x), cols=2*n_permutations)
+  phis         = matrix(0, rows=ncol(x), cols=n_permutations)
   expected_m   = matrix(0, rows=1, cols=n_permutations)
   parfor (i in 1:n_permutations, check=0){
     #get random permutation (or with seed)
@@ -152,7 +150,7 @@ return (Matrix[Double] phis, Double expected){
 
     P = compute_means_from_predictions(P=P, integration_samples=integration_samples)
 
-    phis[,2*i-1:2*i] = compute_phis_from_prediction_means(P=P, permutations=permutation)
+    phis[,i] = compute_phis_from_prediction_means(P=P, permutations=permutation)
     expected_m[1,i] = as.scalar(P[1,1])
   }
 
@@ -160,7 +158,7 @@ return (Matrix[Double] phis, Double expected){
   expected = mean(expected_m)
 }
 
-# Computes shapley values for a multiple instance in parallel.
+# Computes shapley values for multiple instances in parallel. This is the best approach for large datasets
 # The resulting matrix phis holds the shapley values for each feature in the column given by the index of the feature in the sample.
 #
 # This execution policy first creates two large matrices for masks and masked background data for all permutations and
@@ -174,13 +172,18 @@ return (Matrix[Double] phis, Double expected){
 #
 # INPUT:
 # ---------------------------------------------------------------------------------------
-# model_function  The function of the model to be evaluated as a String. This function has to take a matrix of samples and return a vector of predictions.
-#                 It might be usefull to wrap the model into a function the takes and returns the desired shapes and use this wrapper here.
+# model_function  The function of the model to be evaluated as a String. This function has to take a matrix of samples
+#                 and return a vector of predictions.
+#                 It might be usefull to wrap the model into a function the takes and returns the desired shapes and
+#                 use this wrapper here.
 # model_args      Arguments in order for the model, if desired. This will be prepended by the created instances-matrix.
 # x_multirow      Multiple instances as rows for which to compute the shapley values.
 # X_bg            The background dataset from which to pull the random samples to perform Monte Carlo integration.
-# n_permutations  The number of permutaions. Defaults to 10. Theoretical 1 should already be enough for models with up to second order interaction effects.
+# n_permutations  The number of permutaions. Defaults to 10. Theoretical 1 should already be enough for models with up
+#                 to second order interaction effects.
 # integration_samples Number of samples from X_bg used for marginalization.
+# remove_non_var  If set, for every instance the varaince of each feature is checked against this feature in the
+#                 background data. If it does not change, we do not run any model cals for it.
 # seed            A seed, in case the sampling has to be deterministic.
 # verbose         A boolean to enable logging of each step of the function.
 # ---------------------------------------------------------------------------------------
@@ -190,10 +193,14 @@ return (Matrix[Double] phis, Double expected){
 # S              Matrix holding the shapley values along the cols, one row per instance.
 # expected       Double holding the average prediction of all instances.
 # -----------------------------------------------------------------------------
-shapley_permutations_by_row = function(String model_function, list[unknown] model_args, Matrix[Double] x_multirow, Matrix[Double] X_bg, Integer n_permutations = 10, Integer integration_samples = 100, Integer remove_non_var=1, Integer seed = -1, Integer verbose = 1)
+shapley_permutations_by_row = function(String model_function, list[unknown] model_args, Matrix[Double] x_multirow,
+  Matrix[Double] X_bg, Integer n_permutations = 10, Integer integration_samples = 100, Integer remove_non_var=1,
+  Integer seed = -1, Integer verbose = 1)
 return (Matrix[Double] row_phis, Double expected){
   shapleyUtils::u_vprint("--> Permutation Explainer (by-row) for "+nrow(x_multirow)+" rows.", verbose)
-  shapleyUtils::u_vprint("The total number of predictions will be up to "+toString(ncol(x_multirow)*2*n_permutations*integration_samples*nrow(x_multirow))+" in "+nrow(x_multirow)+" parallel cals.", verbose )
+  total_preds=ncol(x_multirow)*2*n_permutations*integration_samples*nrow(x_multirow)
+  shapleyUtils::u_vprint("The total number of predictions will be up to "+toString(total_preds)+" in "+nrow(x_multirow)+
+    " parallel cals.", verbose )
   shapleyUtils::u_vprint("Remove non-varying: "+as.boolean(remove_non_var), verbose )
 
   #important lengths and offsets
@@ -218,7 +225,7 @@ return (Matrix[Double] row_phis, Double expected){
     permutations[i] = t(sample(perm_length,perm_length, seed=((seed+1)*i)-1))
     perm_mask = prepare_mask_for_permutaion(permutation=permutations[i])
     offset_masks = (i-1) * full_mask_offset + 1
-    masks_for_permutations[offset_masks:offset_masks+full_mask_offset-1] = prepare_full_mask(perm_mask, integration_samples)
+    masks_for_permutations[offset_masks:offset_masks+full_mask_offset-1]=prepare_full_mask(perm_mask, integration_samples)
   }
 
   #replicate background and mask it, since it also can stay the same for every row
@@ -273,25 +280,31 @@ return (Matrix[Double] row_phis, Double expected){
   }
 }
 
-# Computes shapley values for a multiple instance by running through permutations in parallel.
-# The resulting matrix phis holds the shapley values for each feature in the column given by the index of the feature in the sample.
+# Computes shapley values for multiple instances by iterating through permutations in parallel.
+# The resulting matrix phis holds the shapley values for each feature in the column given by
+# the index of the feature in the sample.
 #
-# This execution policy iterates through the permutations in parallel and creates two matrices for masks and masked background data.
+# This execution policy iterates through the permutations in parallel and creates two matrices for masks and
+# masked background data.
 # This mask is then used in paralell on all instances in x to compute predictions and phis.
 # While the prepared matrices are smaller by #permuations (2 * #features * #integration_samples * #features),
 # the preparation of a row for the model call is now one element-wise multiplication of this mask with the row and
 # an addition to the masked background data per permutation, since masks are only created permutation-based.
-# If the number of permutations and integration samples is larger, the memory of the system is too small, or you desire a larger degree of thread-parallelisation
+# If the number of permutations and integration samples is larger, the memory of the system is too small,
+# or you desire a larger degree of thread-parallelisation
 # this allows for good performance with a smaller memory footprint.
 #
 # INPUT:
 # ---------------------------------------------------------------------------------------
-# model_function  The function of the model to be evaluated as a String. This function has to take a matrix of samples and return a vector of predictions.
-#                 It might be usefull to wrap the model into a function the takes and returns the desired shapes and use this wrapper here.
+# model_function  The function of the model to be evaluated as a String.
+#                 This function has to take a matrix of samples and return a vector of predictions.
+#                 It might be usefull to wrap the model into a function that takes and returns the desired shapes
+#                 and use this wrapper here.
 # model_args      Arguments in order for the model, if desired. This will be prepended by the created instances-matrix.
 # x_multirow      Multiple instances as rows for which to compute the shapley values.
 # X_bg            The background dataset from which to pull the random samples to perform Monte Carlo integration.
-# n_permutations  The number of permutaions. Defaults to 10. Theoretical 1 should already be enough for models with up to second order interaction effects.
+# n_permutations  The number of permutaions. Defaults to 10.
+#                 Theoretical 1 should already be enough for models with up to second order interaction effects.
 # integration_samples Number of samples from X_bg used for marginalization.
 # seed            A seed, in case the sampling has to be deterministic.
 # verbose         A boolean to enable logging of each step of the function.
@@ -302,10 +315,14 @@ return (Matrix[Double] row_phis, Double expected){
 # S              Matrix holding the shapley values along the cols, one row per instance.
 # expected       Double holding the average prediction of all instances.
 # -----------------------------------------------------------------------------
-shapley_permutations_by_permutation = function(String model_function, list[unknown] model_args, Matrix[Double] x_multirow, Matrix[Double] X_bg, Integer n_permutations = 10, Integer integration_samples = 100, Integer seed = -1, Integer verbose = 1)
+shapley_permutations_by_permutation = function(String model_function, list[unknown] model_args,
+  Matrix[Double] x_multirow, Matrix[Double] X_bg, Integer n_permutations = 10, Integer integration_samples = 100,
+  Integer seed = -1, Integer verbose = 1)
 return (Matrix[Double] row_phis, Double expected){
   shapleyUtils::u_vprint("--> Permutation Explainer (by-permutation) for "+nrow(x_multirow)+" rows.", verbose)
-  shapleyUtils::u_vprint("The total number of predictions will be "+toString(ncol(x_multirow)*2*n_permutations*integration_samples*nrow(x_multirow))+" in "+n_permutations*nrow(x_multirow)+" parallel cals .", verbose )
+  total_preds=ncol(x_multirow)*2*n_permutations*integration_samples*nrow(x_multirow)
+  shapleyUtils::u_vprint("The total number of predictions will be "+toString(total_preds)+" in "
+    +n_permutations*nrow(x_multirow)+" parallel cals .", verbose )
 
   #important lengths and offsets
   perm_length = ncol(x_multirow)
@@ -354,7 +371,22 @@ return (Matrix[Double] row_phis, Double expected){
   expected = mean(expected_m)
 }
 
-#computes which indices do not vary from the background
+# Computes which indices do not vary from the background.
+# Uses the appraoch from numpy.isclose() and compares to the mean of each feature in the bg data.
+# If a value is close to the mean of the data, there is likely to be low varaince in the data.
+# On average, this is an acceptble meassure, since we will NOT ignore this feature,
+# if another datapoint is significantly different from the current one,
+# beacause the mean of the bg data does not change.
+#
+# INPUT:
+# -----------------------------------------------------------------------------
+# x     One single instance.
+# X_bg  Background dataset.
+# -----------------------------------------------------------------------------
+# OUTPUT:
+# -----------------------------------------------------------------------------
+# non_varying_inds A row-vector with all the indices that do not vary from the background dataset.
+# -----------------------------------------------------------------------------
 get_non_varying_inds = function(Matrix[Double] x, Matrix[Double] X_bg)
 return (Matrix[Double] non_varying_inds){
   #from numpy.isclose
@@ -376,8 +408,9 @@ return (Matrix[Double] non_varying_inds){
 #
 # INPUT:
 # ---------------------------------------------------------------------------------------
-# permutation    A single permutation of varying features.
-# n_non_varying_inds The number of feature that do not vary in the background data. Can be retrieved e.g. by looking at std.dev
+# permutation         A single permutation of varying features.
+# n_non_varying_inds  The number of feature that do not vary in the background data.
+#                     Can be retrieved e.g. by looking at std.dev
 # ---------------------------------------------------------------------------------------
 #
 # OUTPUT:
@@ -465,7 +498,26 @@ return (Matrix[Double] X_masked){
   X_masked = masked_X_bg + (x_mask_full * x_row)
 }
 
-remove_inds = function(Matrix[Double] masks, Matrix[Double] masked_X_bg, Matrix[Double] full_permutations, Matrix[Double] non_var_inds, Integer batch_size)
+# Removes all rows from the prepared masks and background data whenever their feature is marked as non-varying.
+#
+# INPUT:
+# ---------------------------------------------------------------------------------------
+# masks               Prepared and replicated mask for a singel instance.
+# masked_X_bg         Prepared and replicated background data.
+# full_permutations   The permutations from which the masks and bd data were created.
+# non_var_inds        A row-vector containiing the indices that were found to be not varying for this instance.
+# integration_samples The number samples over which each row is integarted.
+# ---------------------------------------------------------------------------------------
+#
+# OUTPUT:
+# -----------------------------------------------------------------------------
+# sub_mask            A subset of masks where for each permutation the rows that correspond to
+#                     non-varying features are removed.
+# sub_masked_X_bg     A subset of the background data where for each permutation the rows that correspond to
+#                     non-varying features are removed.
+# -----------------------------------------------------------------------------
+remove_inds = function(Matrix[Double] masks, Matrix[Double] masked_X_bg, Matrix[Double] full_permutations,
+  Matrix[Double] non_var_inds, Integer integration_samples)
 return(Matrix[Double] sub_mask, Matrix[Double] sub_masked_X_bg){
   offsets = seq(0,length(full_permutations)-ncol(full_permutations), ncol(full_permutations))
 
@@ -509,21 +561,19 @@ return(Matrix[Double] sub_mask, Matrix[Double] sub_masked_X_bg){
   }else{
     reshaped_rows_full = rbind(reshaped_rows_full,reshaped_rows,reshaped_rows[1:nrow(reshaped_rows)-1])
   }
-
-  #reshaped_rows_full[nrow(reshaped_rows_full)] = reshaped_rows[nrow(reshaped_rows)] | reshaped_rows[nrow(reshaped_rows)-1]
   #reshape into col-vec
   non_var_total = matrix(reshaped_rows_full, rows=length(reshaped_rows_full), cols=1, byrow=FALSE)
 
   #replicate, if masks already replicated
-  if (batch_size > 1){
-    non_var_total = matrix(1, rows=nrow(non_var_total), cols=batch_size) * non_var_total
+  if (integration_samples > 1){
+    non_var_total = matrix(1, rows=nrow(non_var_total), cols=integration_samples) * non_var_total
     non_var_total = matrix(non_var_total, rows=length(non_var_total), cols=1)
   }
 
   #remove from mask according to this vector
-  removed_short_mask = removeEmpty(target=masks, select=!non_var_total, margin="rows")
+  sub_mask = removeEmpty(target=masks, select=!non_var_total, margin="rows")
   #set to 1 where non varying
-  sub_mask = removed_short_mask | non_var_mask[1, 1:ncol(removed_short_mask)]
+  #sub_mask = removed_short_mask | non_var_mask[1, 1:ncol(removed_short_mask)]
   sub_masked_X_bg = removeEmpty(target=masked_X_bg, select=!non_var_total, margin="rows")
 }
 
@@ -570,7 +620,8 @@ compute_means_from_predictions = function(Matrix[Double] P, Integer integration_
 # phis                  Phis or shapley values computed from this permutation.
 #                       Every row holds the phis for the corresponding feature.
 # -----------------------------------------------------------------------------
-compute_phis_from_prediction_means = function(Matrix[Double] P, Matrix[Double] permutations, Matrix[Double] non_var_inds=as.matrix(-1))
+compute_phis_from_prediction_means = function(Matrix[Double] P, Matrix[Double] permutations,
+  Matrix[Double] non_var_inds=as.matrix(-1))
 return(Matrix[Double] phis, Double expected){
   perm_len=ncol(permutations)
   n_non_var_inds = 0

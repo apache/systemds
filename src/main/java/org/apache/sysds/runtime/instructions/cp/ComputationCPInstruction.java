@@ -35,7 +35,7 @@ import org.apache.sysds.runtime.matrix.operators.Operator;
 public abstract class ComputationCPInstruction extends CPInstruction implements LineageTraceable {
 
 	public final CPOperand output;
-	public final CPOperand input1, input2, input3;
+	public final CPOperand input1, input2, input3, input4;
 
 	protected ComputationCPInstruction(CPType type, Operator op, CPOperand in1, CPOperand in2, CPOperand out, String opcode,
 			String istr) {
@@ -43,6 +43,7 @@ public abstract class ComputationCPInstruction extends CPInstruction implements 
 		input1 = in1;
 		input2 = in2;
 		input3 = null;
+		input4 = null;
 		output = out;
 	}
 
@@ -52,10 +53,21 @@ public abstract class ComputationCPInstruction extends CPInstruction implements 
 		input1 = in1;
 		input2 = in2;
 		input3 = in3;
+		input4 = null;
 		output = out;
 	}
 
-	public String getOutputVariableName() {
+	protected ComputationCPInstruction(CPType type, Operator op, CPOperand in1, CPOperand in2, CPOperand out, String opcode,
+									   String istr, CPOperand windowSize, CPOperand overlap) {
+		super(type, op, opcode, istr);
+		input1 = in1;
+		input2 = in2;
+		input3 = windowSize;
+		input4 = overlap;
+		output = out;
+	}
+
+    public String getOutputVariableName() {
 		return output.getName();
 	}
 
@@ -64,7 +76,7 @@ public abstract class ComputationCPInstruction extends CPInstruction implements 
 	}
 
 	public CPOperand[] getInputs(){
-		return new CPOperand[]{input1, input2, input3};
+		return new CPOperand[]{input1, input2, input3, input4};
 	}
 
 	public boolean hasFrameInput() {
@@ -73,6 +85,8 @@ public abstract class ComputationCPInstruction extends CPInstruction implements 
 		if (input2 != null && input2.isFrame())
 			return true;
 		if (input3 != null && input3.isFrame())
+			return true;
+		if (input4 != null && input4.isFrame())
 			return true;
 		return false;
 	}

@@ -1,0 +1,34 @@
+
+X = read("tmp/waves.csv", format="csv")
+y = read("tmp/labels.csv", format="csv")
+
+Xy = cbind(X, y)
+num_col = ncol(Xy)
+y_rand = rand(rows=nrow(Xy), cols=1, min=0, max=1, pdf="uniform")
+Xy_shuffled = order(target = cbind(Xy, y_rand), by = num_col + 1)
+Xy_shuffled = Xy_shuffled[,1:num_col] # Remove the random column
+X_shuffled = Xy_shuffled[,1:(num_col-1)] # Features, excluding the last column which is labels
+y_shuffled = Xy_shuffled[,num_col] # Labels, the last column
+
+[X_train, X_test, y_train, y_test] = split(X=X_shuffled, Y=y_shuffled, seed= 13)
+
+[X_train_re, X_train_im] = stft(X_train, 4, 2)
+[X_test_re, X_test_im] = stft(X_test, 4, 2)
+
+X_train_re_sq = X_train_re^2
+X_train_im_sq = X_train_im^2
+
+X_test_re_sq = X_test_re^2
+X_test_im_sq = X_test_im^2
+
+sum_X_train_sq = X_train_re_sq + X_train_im_sq
+sum_X_test_sq = X_test_re_sq + X_test_im_sq
+
+magnitudes_train = sqrt(sum_X_train_sq)
+magnitudes_test = sqrt(sum_X_test_sq)
+
+bias = lm(X=magnitudes_train, y=y_train, reg=1e-1, maxi=10, verbose=TRUE)
+predictions = lmPredict(X=magnitudes_test, B=bias, verbose=FALSE)
+
+accuracy = auc(Y=y_test, P=predictions)
+print(toString(accuracy))

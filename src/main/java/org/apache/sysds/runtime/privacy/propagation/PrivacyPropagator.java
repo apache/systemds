@@ -282,6 +282,7 @@ public class PrivacyPropagator
 			case Ternary:
 			case Unary:
 			case MultiReturnBuiltin:
+			case MultiReturnComplexMatrixBuiltin:
 			case MultiReturnParameterizedBuiltin:
 			case MatrixIndexing:
 				return mergePrivacyConstraintsFromInput( inst, ec, OperatorType.NonAggregate );

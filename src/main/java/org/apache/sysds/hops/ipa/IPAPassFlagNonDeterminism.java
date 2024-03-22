@@ -19,9 +19,10 @@
 
 package org.apache.sysds.hops.ipa;
 
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 
 import org.apache.sysds.api.DMLScript;
 import org.apache.sysds.hops.FunctionOp;
@@ -56,7 +57,7 @@ public class IPAPassFlagNonDeterminism extends IPAPass {
 		
 		try {
 			// Find the individual functions and statementblocks with non-determinism.
-			HashSet<String> ndfncs = new HashSet<>();
+			Set<String> ndfncs = new HashSet<>();
 			for (String fkey : fgraph.getReachableFunctions()) {
 				FunctionStatementBlock fsblock = prog.getFunctionStatementBlock(fkey);
 				FunctionStatement fnstmt = (FunctionStatement)fsblock.getStatement(0);
@@ -88,7 +89,7 @@ public class IPAPassFlagNonDeterminism extends IPAPass {
 		return false;
 	}
 
-	private boolean rIsNonDeterministicFnc (String fname, ArrayList<StatementBlock> sbs) 
+	private boolean rIsNonDeterministicFnc (String fname, List<StatementBlock> sbs) 
 	{
 		boolean isND = false;
 		for (StatementBlock sb : sbs)
@@ -124,7 +125,7 @@ public class IPAPassFlagNonDeterminism extends IPAPass {
 		return isND;
 	}
 	
-	private void rMarkNondeterministicSBs (ArrayList<StatementBlock> sbs, HashSet<String> ndfncs)
+	private void rMarkNondeterministicSBs (List<StatementBlock> sbs, Set<String> ndfncs)
 	{
 		for (StatementBlock sb : sbs)
 		{
@@ -156,7 +157,7 @@ public class IPAPassFlagNonDeterminism extends IPAPass {
 		}
 	}
 	
-	private boolean rMarkNondeterministicHop(Hop hop, HashSet<String> ndfncs) {
+	private boolean rMarkNondeterministicHop(Hop hop, Set<String> ndfncs) {
 		if (hop.isVisited())
 			return false;
 
@@ -182,7 +183,7 @@ public class IPAPassFlagNonDeterminism extends IPAPass {
 		return isND;
 	}
 	
-	private void propagate2Callers (FunctionCallGraph fgraph, HashSet<String> ndfncs, HashSet<String> fstack, String fkey) {
+	private void propagate2Callers (FunctionCallGraph fgraph, Set<String> ndfncs, Set<String> fstack, String fkey) {
 		Collection<String> cfkeys = fgraph.getCalledFunctions(fkey);
 		if (cfkeys != null) {
 			for (String cfkey : cfkeys) {

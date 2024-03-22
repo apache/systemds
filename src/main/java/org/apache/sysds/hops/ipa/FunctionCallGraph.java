@@ -24,6 +24,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 import java.util.Stack;
@@ -58,18 +59,18 @@ public class FunctionCallGraph
 	
 	//unrolled function call graph, in call direction
 	//(mapping from function keys to called function keys)
-	private final HashMap<String, HashSet<String>> _fGraph;
+	private final Map<String, Set<String>> _fGraph;
 	
 	//program-wide function call operators per target function
 	//(mapping from function keys to set of its function calls)
-	private final HashMap<String, ArrayList<FunctionOp>> _fCalls;
-	private final HashMap<String, ArrayList<StatementBlock>> _fCallsSB;
+	private final Map<String, List<FunctionOp>> _fCalls;
+	private final Map<String, List<StatementBlock>> _fCallsSB;
 	
 	//subset of direct or indirect recursive functions
-	private final HashSet<String> _fRecursive;
+	private final Set<String> _fRecursive;
 
 	//subset of side-effect-free functions
-	private final HashSet<String> _fSideEffectFree;
+	private final Set<String> _fSideEffectFree;
 	
 	// a boolean value to indicate if exists the second order function (e.g. eval, paramserv)
 	// and the UDFs that are marked secondorder="true"
@@ -168,7 +169,7 @@ public class FunctionCallGraph
 		_fCallsSB.remove(fkey);
 		_fRecursive.remove(fkey);
 		_fGraph.remove(fkey);
-		for( Entry<String, HashSet<String>> e : _fGraph.entrySet() )
+		for( Entry<String, Set<String>> e : _fGraph.entrySet() )
 			e.getValue().removeIf(s -> s.equals(fkey));
 	}
 	
@@ -195,8 +196,8 @@ public class FunctionCallGraph
 	 * @param fkey new function key of called function
 	 */
 	public void replaceFunctionCalls(String fkeyOld, String fkey) {
-		ArrayList<FunctionOp> fopTmp = _fCalls.get(fkeyOld);
-		ArrayList<StatementBlock> sbTmp =_fCallsSB.get(fkeyOld);
+		List<FunctionOp> fopTmp = _fCalls.get(fkeyOld);
+		List<StatementBlock> sbTmp =_fCallsSB.get(fkeyOld);
 		_fCalls.remove(fkeyOld);
 		_fCallsSB.remove(fkeyOld);
 		_fCalls.put(fkey, fopTmp);
@@ -205,7 +206,7 @@ public class FunctionCallGraph
 		_fRecursive.remove(fkeyOld);
 		_fSideEffectFree.remove(fkeyOld);
 		_fGraph.remove(fkeyOld);
-		for( HashSet<String> hs : _fGraph.values() )
+		for( Set<String> hs : _fGraph.values() )
 			hs.remove(fkeyOld);
 	}
 	
@@ -350,7 +351,7 @@ public class FunctionCallGraph
 		try {
 			//construct the main function call graph
 			Stack<String> fstack = new Stack<>();
-			HashSet<String> lfset = new HashSet<>();
+			Set<String> lfset = new HashSet<>();
 			_fGraph.put(MAIN_FUNCTION_KEY, new HashSet<String>());
 			for( StatementBlock sblk : prog.getStatementBlocks() )
 				ret |= rConstructFunctionCallGraph(MAIN_FUNCTION_KEY, sblk, fstack, lfset);
@@ -373,7 +374,7 @@ public class FunctionCallGraph
 		
 		try {
 			Stack<String> fstack = new Stack<>();
-			HashSet<String> lfset = new HashSet<>();
+			Set<String> lfset = new HashSet<>();
 			_fGraph.put(MAIN_FUNCTION_KEY, new HashSet<String>());
 			return rConstructFunctionCallGraph(MAIN_FUNCTION_KEY, sb, fstack, lfset);
 		}
@@ -382,7 +383,7 @@ public class FunctionCallGraph
 		}
 	}
 	
-	private boolean rConstructFunctionCallGraph(String fkey, StatementBlock sb, Stack<String> fstack, HashSet<String> lfset) {
+	private boolean rConstructFunctionCallGraph(String fkey, StatementBlock sb, Stack<String> fstack, Set<String> lfset) {
 		boolean ret = false;
 		if (sb instanceof WhileStatementBlock) {
 			WhileStatement ws = (WhileStatement)sb.getStatement(0);
@@ -408,7 +409,7 @@ public class FunctionCallGraph
 		} 
 		else {
 			// For generic StatementBlock
-			ArrayList<Hop> hopsDAG = sb.getHops();
+			List<Hop> hopsDAG = sb.getHops();
 			if( hopsDAG == null || hopsDAG.isEmpty() ) 
 				return false; //nothing to do
 
@@ -428,7 +429,7 @@ public class FunctionCallGraph
 		return ret;
 	}
 	
-	private boolean rConstructFunctionCallGraph(Hop hop, String fkey, StatementBlock sb, Stack<String> fstack, HashSet<String> lfset) {
+	private boolean rConstructFunctionCallGraph(Hop hop, String fkey, StatementBlock sb, Stack<String> fstack, Set<String> lfset) {
 		boolean ret = false;
 		if( hop.isVisited() )
 			return ret;
@@ -452,7 +453,7 @@ public class FunctionCallGraph
 		return ret;
 	}
 	
-	private boolean addFunctionOpToGraph(FunctionOp fop, String fkey, StatementBlock sb, Stack<String> fstack, HashSet<String> lfset) {
+	private boolean addFunctionOpToGraph(FunctionOp fop, String fkey, StatementBlock sb, Stack<String> fstack, Set<String> lfset) {
 		try{
 			boolean ret = false;
 			String lfkey = fop.getFunctionKey();
@@ -523,7 +524,7 @@ public class FunctionCallGraph
 		}
 		else {
 			// For generic StatementBlock
-			ArrayList<Hop> hopsDAG = sb.getHops();
+			List<Hop> hopsDAG = sb.getHops();
 			if( hopsDAG == null || hopsDAG.isEmpty() ) 
 				return false; //nothing to do
 			//function ops can only occur as root nodes of the dag

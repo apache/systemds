@@ -25,9 +25,10 @@ import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Set;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -142,9 +143,9 @@ public class Recompiler {
 	};
 	
 	// additional reused objects to avoid repeated, incremental reallocation on deepCopyDags
-	private static ThreadLocal<HashMap<Long,Hop>> _memoHop = new ThreadLocal<>() {
-		@Override protected HashMap<Long,Hop> initialValue() { return new HashMap<>(); }
-		@Override public HashMap<Long,Hop> get() { var tmp = super.get(); tmp.clear(); return tmp; }
+	private static ThreadLocal<Map<Long,Hop>> _memoHop = new ThreadLocal<>() {
+		@Override protected Map<Long,Hop> initialValue() { return new HashMap<>(); }
+		@Override public Map<Long,Hop> get() { var tmp = super.get(); tmp.clear(); return tmp; }
 	};
 	
 	public enum ResetType {
@@ -488,7 +489,7 @@ public class Recompiler {
 	 * @param fnStack function stack
 	 * @param et execution type
 	 */
-	public static void recompileProgramBlockHierarchy2Forced( ArrayList<ProgramBlock> pbs, long tid, HashSet<String> fnStack, ExecType et ) {
+	public static void recompileProgramBlockHierarchy2Forced( ArrayList<ProgramBlock> pbs, long tid, Set<String> fnStack, ExecType et ) {
 		synchronized( pbs ) {
 			for( ProgramBlock pb : pbs )
 				rRecompileProgramBlock2Forced(pb, tid, fnStack, et);
@@ -575,7 +576,7 @@ public class Recompiler {
 		try {
 			//note: need memo table over all independent DAGs in order to 
 			//account for shared transient reads (otherwise more instructions generated)
-			HashMap<Long, Hop> memo = _memoHop.get(); //orig ID, new clone
+			Map<Long, Hop> memo = _memoHop.get(); //orig ID, new clone
 			for( Hop hopRoot : hops )
 				ret.add(rDeepCopyHopsDag(hopRoot, memo));
 		}
@@ -596,7 +597,7 @@ public class Recompiler {
 		Hop ret = null;
 		
 		try {
-			HashMap<Long, Hop> memo = _memoHop.get(); //orig ID, new clone
+			Map<Long, Hop> memo = _memoHop.get(); //orig ID, new clone
 			ret = rDeepCopyHopsDag(hops, memo);
 		}
 		catch(Exception ex) {
@@ -606,7 +607,7 @@ public class Recompiler {
 		return ret;
 	}
 	
-	private static Hop rDeepCopyHopsDag( Hop hop, HashMap<Long,Hop> memo ) 
+	private static Hop rDeepCopyHopsDag( Hop hop, Map<Long,Hop> memo ) 
 		throws CloneNotSupportedException
 	{
 		Hop ret = memo.get(hop.getHopID());
@@ -628,7 +629,7 @@ public class Recompiler {
 	}
 	
 
-	public static void updateFunctionNames(ArrayList<Hop> hops, long pid) 
+	public static void updateFunctionNames(List<Hop> hops, long pid) 
 	{
 		Hop.resetVisitStatus(hops);
 		for( Hop hopRoot : hops  )
@@ -1041,7 +1042,7 @@ public class Recompiler {
 		status.trackRecompile(fsb.requiresPredicateRecompilation());
 	}
 	
-	public static void rRecompileProgramBlock2Forced( ProgramBlock pb, long tid, HashSet<String> fnStack, ExecType et ) {
+	public static void rRecompileProgramBlock2Forced( ProgramBlock pb, long tid, Set<String> fnStack, ExecType et ) {
 		if (pb instanceof WhileProgramBlock)
 		{
 			WhileProgramBlock pbTmp = (WhileProgramBlock)pb;
@@ -1130,7 +1131,9 @@ public class Recompiler {
 		}
 	}
 
-	private static void rRecompileProgramBlock2Forced(String fnamespace, String fname, Program prog, long tid, HashSet<String> fnStack, ExecType et) {
+	private static void rRecompileProgramBlock2Forced(String fnamespace, String fname,
+		Program prog, long tid, Set<String> fnStack, ExecType et)
+	{
 		String fKey = DMLProgram.constructFunctionKey(fnamespace, fname);
 		if( !fnStack.contains(fKey) ) { //memoization for multiple calls, recursion
 			fnStack.add(fKey);
@@ -1159,11 +1162,11 @@ public class Recompiler {
 		}
 	}
 	
-	public static void extractDAGOutputStatistics(ArrayList<Hop> hops, LocalVariableMap vars) {
+	public static void extractDAGOutputStatistics(List<Hop> hops, LocalVariableMap vars) {
 		extractDAGOutputStatistics(hops, vars, true);
 	}
 	
-	public static void extractDAGOutputStatistics(ArrayList<Hop> hops, LocalVariableMap vars, boolean overwrite) {
+	public static void extractDAGOutputStatistics(List<Hop> hops, LocalVariableMap vars, boolean overwrite) {
 		for( Hop hop : hops ) //for all hop roots
 			extractDAGOutputStatistics(hop, vars, overwrite);
 	}
@@ -1384,7 +1387,7 @@ public class Recompiler {
 		else if ( hop instanceof DataGenOp )
 		{
 			DataGenOp d = (DataGenOp) hop;
-			HashMap<String,Integer> params = d.getParamIndexMap();
+			Map<String,Integer> params = d.getParamIndexMap();
 			if (   d.getOp() == OpOpDG.RAND || d.getOp()==OpOpDG.SINIT 
 				|| d.getOp() == OpOpDG.SAMPLE || d.getOp() == OpOpDG.FRAMEINIT ) 
 			{
@@ -1394,7 +1397,7 @@ public class Recompiler {
 					int ix1 = params.get(DataExpression.RAND_ROWS);
 					int ix2 = params.get(DataExpression.RAND_COLS);
 					//update rows/cols by evaluating simple expression of literals, nrow, ncol, scalars, binaryops
-					HashMap<Long, Long> memo = new HashMap<>();
+					Map<Long, Long> memo = new HashMap<>();
 					d.refreshRowsParameterInformation(d.getInput().get(ix1), vars, memo);
 					d.refreshColsParameterInformation(d.getInput().get(ix2), vars, memo);
 					if( !(initUnknown & d.dimsKnown()) )
@@ -1407,7 +1410,7 @@ public class Recompiler {
 				int ix1 = params.get(Statement.SEQ_FROM);
 				int ix2 = params.get(Statement.SEQ_TO);
 				int ix3 = params.get(Statement.SEQ_INCR);
-				HashMap<Long, Double> memo = new HashMap<>();
+				Map<Long, Double> memo = new HashMap<>();
 				double from = Hop.computeBoundsInformation(d.getInput().get(ix1), vars, memo);
 				double to = Hop.computeBoundsInformation(d.getInput().get(ix2), vars, memo);
 				double incr = Hop.computeBoundsInformation(d.getInput().get(ix3), vars, memo);
@@ -1437,7 +1440,7 @@ public class Recompiler {
 			if (hop.getDataType() != DataType.TENSOR) {
 				hop.refreshSizeInformation(); //update incl reset
 				if (!hop.dimsKnown()) {
-					HashMap<Long, Long> memo = new HashMap<>();
+					Map<Long, Long> memo = new HashMap<>();
 					hop.refreshRowsParameterInformation(hop.getInput().get(1), vars, memo);
 					hop.refreshColsParameterInformation(hop.getInput().get(2), vars, memo);
 				}
@@ -1455,7 +1458,7 @@ public class Recompiler {
 					hop.setDim2(1);
 				}
 				else {
-					HashMap<Long, Double> memo = new HashMap<>();
+					Map<Long, Double> memo = new HashMap<>();
 					double rl = Hop.computeBoundsInformation(hop.getInput().get(1), vars, memo);
 					double ru = Hop.computeBoundsInformation(hop.getInput().get(2), vars, memo);
 					double cl = Hop.computeBoundsInformation(hop.getInput().get(3), vars, memo);

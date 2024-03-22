@@ -19,8 +19,9 @@
 
 package org.apache.sysds.hops.ipa;
 
-import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 import org.apache.sysds.hops.BinaryOp;
 import org.apache.sysds.hops.DataGenOp;
@@ -59,7 +60,7 @@ public class IPAPassRemoveConstantBinaryOps extends IPAPass
 	public boolean rewriteProgram( DMLProgram prog, FunctionCallGraph fgraph, FunctionCallSizeInfo fcallSizes ) {
 		//approach: scan over top-level program (guaranteed to be unconditional),
 		//collect ones=matrix(1,...); remove b(*)ones if not outer operation
-		HashMap<String, Hop> mOnes = new HashMap<>();
+		Map<String, Hop> mOnes = new HashMap<>();
 		
 		for( StatementBlock sb : prog.getStatementBlocks() )  {
 			//pruning updated variables
@@ -81,7 +82,7 @@ public class IPAPassRemoveConstantBinaryOps extends IPAPass
 		return false;
 	}
 	
-	private static void collectMatrixOfOnes(ArrayList<Hop> roots, HashMap<String,Hop> mOnes)
+	private static void collectMatrixOfOnes(List<Hop> roots, Map<String,Hop> mOnes)
 	{
 		if( roots == null )
 			return;
@@ -96,7 +97,7 @@ public class IPAPassRemoveConstantBinaryOps extends IPAPass
 			}
 	}
 	
-	private static void rRemoveConstantBinaryOp(StatementBlock sb, HashMap<String,Hop> mOnes) {
+	private static void rRemoveConstantBinaryOp(StatementBlock sb, Map<String,Hop> mOnes) {
 		if( sb instanceof IfStatementBlock )
 		{
 			IfStatementBlock isb = (IfStatementBlock) sb;
@@ -131,7 +132,7 @@ public class IPAPassRemoveConstantBinaryOps extends IPAPass
 		}
 	}
 	
-	private static void rRemoveConstantBinaryOp(Hop hop, HashMap<String,Hop> mOnes)
+	private static void rRemoveConstantBinaryOp(Hop hop, Map<String,Hop> mOnes)
 	{
 		if( hop.isVisited() )
 			return;

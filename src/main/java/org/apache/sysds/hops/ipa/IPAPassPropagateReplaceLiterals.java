@@ -19,7 +19,6 @@
 
 package org.apache.sysds.hops.ipa;
 
-import java.util.ArrayList;
 import java.util.List;
 
 import org.apache.sysds.common.Types.OpOpData;
@@ -72,7 +71,7 @@ public class IPAPassPropagateReplaceLiterals extends IPAPass
 			if( fcallSizes.hasSafeLiterals(fkey) ) {
 				FunctionStatementBlock fsb = prog.getFunctionStatementBlock(fkey);
 				FunctionStatement fstmt = (FunctionStatement)fsb.getStatement(0);
-				ArrayList<DataIdentifier> finputs = fstmt.getInputParams();
+				List<DataIdentifier> finputs = fstmt.getInputParams();
 				
 				//populate call vars with amenable literals
 				LocalVariableMap callVars = new LocalVariableMap();
@@ -154,7 +153,7 @@ public class IPAPassPropagateReplaceLiterals extends IPAPass
 		}
 	}
 	
-	private static void replaceLiterals(ArrayList<Hop> roots, LocalVariableMap constants) {
+	private static void replaceLiterals(List<Hop> roots, LocalVariableMap constants) {
 		if( roots == null )
 			return;
 		

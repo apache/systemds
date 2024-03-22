@@ -24,6 +24,7 @@ import org.apache.sysds.runtime.controlprogram.ProgramBlock;
 import org.apache.sysds.runtime.meta.DataCharacteristics;
 
 import java.util.HashMap;
+import java.util.Map;
 
 public class RecompileStatus 
 {
@@ -37,7 +38,7 @@ public class RecompileStatus
 	private boolean _requiresRecompile = false;
 	
 	//collection of extracted statistics for control flow reconciliation
-	private final HashMap<String, DataCharacteristics> _lastTWrites;
+	private final Map<String, DataCharacteristics> _lastTWrites;
 	
 	public RecompileStatus() {
 		this(0, true, ResetType.NO_RESET, false);
@@ -55,7 +56,7 @@ public class RecompileStatus
 		_initialCodegen = initialCodegen;
 	}
 	
-	public HashMap<String, DataCharacteristics> getTWriteStats() {
+	public Map<String, DataCharacteristics> getTWriteStats() {
 		return _lastTWrites;
 	}
 	

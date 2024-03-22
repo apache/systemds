@@ -20,6 +20,7 @@
 package org.apache.sysds.hops.recompile;
 
 import java.util.ArrayList;
+import java.util.List;
 
 import org.apache.sysds.api.DMLScript;
 import org.apache.sysds.hops.AggUnaryOp;
@@ -93,7 +94,7 @@ public class LiteralReplacement
 					//because hop c marked as visited, and (2) repeated evaluation of uagg ops
 					
 					if( c.getParent().size() > 1 ) { //multiple parents
-						ArrayList<Hop> parents = new ArrayList<>(c.getParent());
+						List<Hop> parents = new ArrayList<>(c.getParent());
 						for( Hop p : parents ) {
 							int pos = HopRewriteUtils.getChildReferencePos(p, c);
 							HopRewriteUtils.removeChildReferenceByPos(p, c, pos);
@@ -369,7 +370,7 @@ public class LiteralReplacement
 				&& HopRewriteUtils.isData(in, OpOpData.TRANSIENTREAD) ) {
 				ListObject list = (ListObject)ec.getVariables().get(in.getName());
 				if( list.getLength() <= 128 ) {
-					ArrayList<Hop> tmp = new ArrayList<>();
+					List<Hop> tmp = new ArrayList<>();
 					for( int i=0; i < list.getLength(); i++ ) {
 						String varname = Dag.getNextUniqueVarname(DataType.MATRIX);
 						MatrixObject mo = (MatrixObject) list.slice(i);

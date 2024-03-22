@@ -252,7 +252,7 @@ public class FunctionCallSizeInfo
 			if( flist == null || flist.isEmpty() ) //robustness removed functions
 				continue;
 			FunctionOp first = flist.get(0);
-			HashSet<Integer> tmp = new HashSet<>();
+			Set<Integer> tmp = new HashSet<>();
 			for( int j=0; j<first.getInput().size(); j++ ) {
 				//if nnz known it is safe to propagate those nnz because for multiple calls 
 				//we checked of equivalence and hence all calls have the same nnz
@@ -271,7 +271,7 @@ public class FunctionCallSizeInfo
 				continue;
 			FunctionOp first = flist.get(0);
 			//initialize w/ all literals of first call
-			HashSet<Integer> tmp = new HashSet<>();
+			Set<Integer> tmp = new HashSet<>();
 			for( int j=0; j<first.getInput().size(); j++ )
 				if( first.getInput().get(j) instanceof LiteralOp )
 					tmp.add(j);

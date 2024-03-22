@@ -23,6 +23,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import org.apache.sysds.common.Types.OpOp1;
@@ -72,7 +73,7 @@ public class IPAPassRemoveUnnecessaryCheckpoints extends IPAPass
 		//collect checkpoints; determine if used before update; remove first checkpoint
 		//on second checkpoint if update in between and not used before update
 		
-		HashMap<String, Hop> chkpointCand = new HashMap<>();
+		Map<String, Hop> chkpointCand = new HashMap<>();
 		
 		for( StatementBlock sb : dmlp.getStatementBlocks() ) 
 		{
@@ -123,7 +124,7 @@ public class IPAPassRemoveUnnecessaryCheckpoints extends IPAPass
 		
 			//collect checkpoints and remove unnecessary checkpoints
 			if( HopRewriteUtils.isLastLevelStatementBlock(sb) ) {
-				ArrayList<Hop> tmp = collectCheckpoints(sb.getHops());
+				List<Hop> tmp = collectCheckpoints(sb.getHops());
 				for( Hop chkpoint : tmp ) {
 					if( chkpointCand.containsKey(chkpoint.getName()) ) {
 						chkpointCand.get(chkpoint.getName()).setRequiresCheckpoint(false);
@@ -140,7 +141,7 @@ public class IPAPassRemoveUnnecessaryCheckpoints extends IPAPass
 		//after update if not used before update (best effort move which often avoids
 		//the second checkpoint on loops even though used in between)
 		
-		HashMap<String, Hop> chkpointCand = new HashMap<>();
+		Map<String, Hop> chkpointCand = new HashMap<>();
 		
 		for( StatementBlock sb : dmlp.getStatementBlocks() ) 
 		{
@@ -197,7 +198,7 @@ public class IPAPassRemoveUnnecessaryCheckpoints extends IPAPass
 		
 			//collect checkpoints
 			if( HopRewriteUtils.isLastLevelStatementBlock(sb) ) {
-				ArrayList<Hop> tmp = collectCheckpoints(sb.getHops());
+				List<Hop> tmp = collectCheckpoints(sb.getHops());
 				for( Hop chkpoint : tmp )
 					chkpointCand.put(chkpoint.getName(), chkpoint);
 			}
@@ -219,19 +220,17 @@ public class IPAPassRemoveUnnecessaryCheckpoints extends IPAPass
 		}
 	}
 	
-	private static ArrayList<Hop> collectCheckpoints(ArrayList<Hop> roots)
-	{
-		ArrayList<Hop> ret = new ArrayList<>();
+	private static List<Hop> collectCheckpoints(List<Hop> roots) {
+		List<Hop> ret = new ArrayList<>();
 		if( roots != null ) {
 			Hop.resetVisitStatus(roots);
 			for( Hop root : roots )
 				rCollectCheckpoints(root, ret);
 		}
-		
 		return ret;
 	}
 	
-	private static void rCollectCheckpoints(Hop hop, ArrayList<Hop> checkpoints)
+	private static void rCollectCheckpoints(Hop hop, List<Hop> checkpoints)
 	{
 		if( hop.isVisited() )
 			return;

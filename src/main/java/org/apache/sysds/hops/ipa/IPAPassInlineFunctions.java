@@ -19,10 +19,10 @@
 
 package org.apache.sysds.hops.ipa;
 
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import org.apache.sysds.common.Types.OpOpData;
@@ -76,7 +76,7 @@ public class IPAPassInlineFunctions extends IPAPass
 					LOG.debug("IPA: Inline function '"+fkey+"'");
 				
 				//replace all relevant function calls 
-				ArrayList<Hop> hops = fstmt.getBody().get(0).getHops();
+				List<Hop> hops = fstmt.getBody().get(0).getHops();
 				List<FunctionOp> fcalls = fgraph.getFunctionCalls(fkey);
 				List<StatementBlock> fcallsSB = fgraph.getFunctionCallsSB(fkey);
 				boolean removedAll = true;
@@ -98,10 +98,10 @@ public class IPAPassInlineFunctions extends IPAPass
 					}
 					
 					//step 1: deep copy hop dag
-					ArrayList<Hop> hops2 = Recompiler.deepCopyHopsDag(hops);
+					List<Hop> hops2 = Recompiler.deepCopyHopsDag(hops);
 					
 					//step 2: replace inputs
-					HashMap<String,Hop> inMap = new HashMap<>();
+					Map<String,Hop> inMap = new HashMap<>();
 					for(int j=0; j<op.getInput().size(); j++) {
 						String argName = op.getInputVariableNames()[j];
 						DataIdentifier di = fstmt.getInputParam(argName);
@@ -113,7 +113,7 @@ public class IPAPassInlineFunctions extends IPAPass
 					replaceTransientReads(hops2, inMap);
 					
 					//step 3: replace outputs
-					HashMap<String,String> outMap = new HashMap<>();
+					Map<String,String> outMap = new HashMap<>();
 					String[] opOutputs = op.getOutputVariableNames();
 					for(int j=0; j<opOutputs.length; j++)
 						outMap.put(fstmt.getOutputParams().get(j).getName(), opOutputs[j]);
@@ -148,7 +148,7 @@ public class IPAPassInlineFunctions extends IPAPass
 		return ret;
 	}
 	
-	private static boolean containsFunctionOp(ArrayList<Hop> hops) {
+	private static boolean containsFunctionOp(List<Hop> hops) {
 		if( hops==null || hops.isEmpty() )
 			return false;
 		Hop.resetVisitStatus(hops);
@@ -157,7 +157,7 @@ public class IPAPassInlineFunctions extends IPAPass
 		return ret;
 	}
 	
-	private static int countOperators(ArrayList<Hop> hops) {
+	private static int countOperators(List<Hop> hops) {
 		if( hops==null || hops.isEmpty() )
 			return 0;
 		Hop.resetVisitStatus(hops);
@@ -179,14 +179,14 @@ public class IPAPassInlineFunctions extends IPAPass
 		return count;
 	}
 	
-	private static void replaceTransientReads(ArrayList<Hop> hops, HashMap<String, Hop> inMap) {
+	private static void replaceTransientReads(List<Hop> hops, Map<String, Hop> inMap) {
 		Hop.resetVisitStatus(hops);
 		for( Hop hop : hops )
 			rReplaceTransientReads(hop, inMap);
 		Hop.resetVisitStatus(hops);
 	}
 	
-	private static void rReplaceTransientReads(Hop current, HashMap<String, Hop> inMap) {
+	private static void rReplaceTransientReads(Hop current, Map<String, Hop> inMap) {
 		if( current.isVisited() )
 			return;
 		for( int i=0; i<current.getInput().size(); i++ ) {

@@ -1457,7 +1457,7 @@ public class OptimizerUtils
 	 * @param valMemo ?
 	 * @return size expression
 	 */
-	public static long rEvalSimpleLongExpression( Hop root, HashMap<Long, Long> valMemo ) 
+	public static long rEvalSimpleLongExpression( Hop root, Map<Long, Long> valMemo ) 
 	{
 		long ret = Long.MAX_VALUE;
 		
@@ -1470,7 +1470,7 @@ public class OptimizerUtils
 		return ret;
 	}
 	
-	public static long rEvalSimpleLongExpression( Hop root, HashMap<Long, Long> valMemo, LocalVariableMap vars ) 
+	public static long rEvalSimpleLongExpression( Hop root, Map<Long, Long> valMemo, LocalVariableMap vars ) 
 	{
 		long ret = Long.MAX_VALUE;
 		
@@ -1483,7 +1483,7 @@ public class OptimizerUtils
 		return ret;
 	}
 	
-	public static double rEvalSimpleDoubleExpression( Hop root, HashMap<Long, Double> valMemo ) 
+	public static double rEvalSimpleDoubleExpression( Hop root, Map<Long, Double> valMemo ) 
 	{
 		//memoization (prevent redundant computation of common subexpr)
 		if( valMemo.containsKey(root.getHopID()) )
@@ -1510,7 +1510,7 @@ public class OptimizerUtils
 		return ret;
 	}
 	
-	public static double rEvalSimpleDoubleExpression( Hop root, HashMap<Long, Double> valMemo, LocalVariableMap vars ) 
+	public static double rEvalSimpleDoubleExpression( Hop root, Map<Long, Double> valMemo, LocalVariableMap vars ) 
 	{
 		//memoization (prevent redundant computation of common subexpr)
 		if( valMemo.containsKey(root.getHopID()) )
@@ -1538,7 +1538,7 @@ public class OptimizerUtils
 		return ret;
 	}
 
-	protected static double rEvalSimpleUnaryDoubleExpression( Hop root, HashMap<Long, Double> valMemo ) 
+	protected static double rEvalSimpleUnaryDoubleExpression( Hop root, Map<Long, Double> valMemo ) 
 	{
 		//memoization (prevent redundant computation of common subexpr)
 		if( valMemo.containsKey(root.getHopID()) )
@@ -1576,7 +1576,7 @@ public class OptimizerUtils
 		return ret;
 	}
 
-	protected static double rEvalSimpleUnaryDoubleExpression( Hop root, HashMap<Long, Double> valMemo, LocalVariableMap vars ) 
+	protected static double rEvalSimpleUnaryDoubleExpression( Hop root, Map<Long, Double> valMemo, LocalVariableMap vars ) 
 	{
 		//memoization (prevent redundant computation of common subexpr)
 		if( valMemo.containsKey(root.getHopID()) )
@@ -1614,7 +1614,7 @@ public class OptimizerUtils
 		return ret;
 	}
 
-	protected static double rEvalSimpleBinaryDoubleExpression( Hop root, HashMap<Long, Double> valMemo ) 
+	protected static double rEvalSimpleBinaryDoubleExpression( Hop root, Map<Long, Double> valMemo ) 
 	{
 		//memoization (prevent redundant computation of common subexpr)
 		if( valMemo.containsKey(root.getHopID()) )
@@ -1649,7 +1649,7 @@ public class OptimizerUtils
 		return ret;
 	}
 
-	protected static double rEvalSimpleTernaryDoubleExpression( Hop root, HashMap<Long, Double> valMemo ) {
+	protected static double rEvalSimpleTernaryDoubleExpression( Hop root, Map<Long, Double> valMemo ) {
 		//memoization (prevent redundant computation of common subexpr)
 		if( valMemo.containsKey(root.getHopID()) )
 			return valMemo.get(root.getHopID());
@@ -1666,7 +1666,7 @@ public class OptimizerUtils
 		return ret;
 	}
 	
-	protected static double rEvalSimpleBinaryDoubleExpression( Hop root, HashMap<Long, Double> valMemo, LocalVariableMap vars ) 
+	protected static double rEvalSimpleBinaryDoubleExpression( Hop root, Map<Long, Double> valMemo, LocalVariableMap vars ) 
 	{
 		//memoization (prevent redundant computation of common subexpr)
 		if( valMemo.containsKey(root.getHopID()) )

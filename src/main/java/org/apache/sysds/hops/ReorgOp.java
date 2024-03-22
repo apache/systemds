@@ -30,7 +30,7 @@ import org.apache.sysds.lops.Transform;
 import org.apache.sysds.runtime.meta.DataCharacteristics;
 import org.apache.sysds.runtime.meta.MatrixCharacteristics;
 
-import java.util.ArrayList;
+import java.util.List;
 
 /**
  *  Reorg (cell) operation: aij
@@ -66,7 +66,7 @@ public class ReorgOp extends MultiThreadedHop
 		refreshSizeInformation();
 	}
 	
-	public ReorgOp(String l, DataType dt, ValueType vt, ReOrgOp o, ArrayList<Hop> inp) 
+	public ReorgOp(String l, DataType dt, ValueType vt, ReOrgOp o, List<Hop> inp) 
 	{
 		super(l, dt, vt);
 		_op = o;

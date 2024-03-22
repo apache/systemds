@@ -23,6 +23,9 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.stream.IntStream;
 
 import org.apache.sysds.common.Types.OpOpData;
@@ -90,7 +93,7 @@ public class IPAPassForwardFunctionCalls extends IPAPass
 		return false;
 	}
 	
-	private static boolean singleFunctionOp(ArrayList<Hop> hops) {
+	private static boolean singleFunctionOp(List<Hop> hops) {
 		if( hops==null || hops.isEmpty() || hops.size()!=1 )
 			return false;
 		return hops.get(0) instanceof FunctionOp;
@@ -114,7 +117,7 @@ public class IPAPassForwardFunctionCalls extends IPAPass
 	
 	private static boolean isFirstSubsetOfSecond(String[] first, String[] second) {
 		//build phase: second
-		HashSet<String> probe = new HashSet<>();
+		Set<String> probe = new HashSet<>();
 		for( String s : second )
 			probe.add(s);
 		//probe phase: first
@@ -123,13 +126,13 @@ public class IPAPassForwardFunctionCalls extends IPAPass
 	
 	private static void reconcileFunctionInputsInPlace(FunctionOp call1, FunctionOp call2) {
 		//prepare all input of call2 for probing
-		HashMap<String,Hop> probe = new HashMap<>();
+		Map<String,Hop> probe = new HashMap<>();
 		for( int i=0; i<call2.getInput().size(); i++ )
 			probe.put(call2.getInputVariableNames()[i], call2.getInput().get(i));
 		
 		//construct new named inputs for call1 (in right order)
-		ArrayList<String> varNames = new ArrayList<>();
-		ArrayList<Hop> inputs = new ArrayList<>();
+		List<String> varNames = new ArrayList<>();
+		List<Hop> inputs = new ArrayList<>();
 		for( int i=0; i<call1.getInput().size(); i++ )
 			if( probe.containsKey(call1.getInputVariableNames()[i]) ) {
 				varNames.add(call1.getInputVariableNames()[i]);

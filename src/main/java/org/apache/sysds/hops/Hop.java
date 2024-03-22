@@ -23,6 +23,8 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -954,7 +956,7 @@ public abstract class Hop implements ParseInfo {
 		h._parent.add(this);
 	}
 	
-	public void addAllInputs( ArrayList<Hop> list ) {
+	public void addAllInputs( List<Hop> list ) {
 		for( Hop h : list )
 			addInput(h);
 	}
@@ -1130,13 +1132,13 @@ public abstract class Hop implements ParseInfo {
 		return _dataType.isScalar() || _dc.colsKnown();
 	}
 	
-	public static void resetVisitStatus( ArrayList<Hop> hops ) {
+	public static void resetVisitStatus( List<Hop> hops ) {
 		if( hops != null )
 			for( Hop hopRoot : hops )
 				hopRoot.resetVisitStatus();
 	}
 	
-	public static void resetVisitStatus( ArrayList<Hop> hops, boolean force ) {
+	public static void resetVisitStatus( List<Hop> hops, boolean force ) {
 		if( !force )
 			resetVisitStatus(hops);
 		else {
@@ -1413,7 +1415,7 @@ public abstract class Hop implements ParseInfo {
 		setDim1(computeSizeInformation(input, vars));
 	}
 
-	public void refreshRowsParameterInformation( Hop input, LocalVariableMap vars, HashMap<Long,Long> memo ) {
+	public void refreshRowsParameterInformation( Hop input, LocalVariableMap vars, Map<Long,Long> memo ) {
 		setDim1(computeSizeInformation(input, vars, memo));
 	}
 	
@@ -1421,7 +1423,7 @@ public abstract class Hop implements ParseInfo {
 		setDim2(computeSizeInformation(input, vars));
 	}
 	
-	public void refreshColsParameterInformation( Hop input, LocalVariableMap vars, HashMap<Long,Long> memo ) {
+	public void refreshColsParameterInformation( Hop input, LocalVariableMap vars, Map<Long,Long> memo ) {
 		setDim2(computeSizeInformation(input, vars, memo));
 	}
 
@@ -1429,7 +1431,7 @@ public abstract class Hop implements ParseInfo {
 		return computeSizeInformation(input, vars, new HashMap<Long,Long>());
 	}
 	
-	public long computeSizeInformation( Hop input, LocalVariableMap vars, HashMap<Long,Long> memo )
+	public long computeSizeInformation( Hop input, LocalVariableMap vars, Map<Long,Long> memo )
 	{
 		long ret = -1;
 		try {
@@ -1460,7 +1462,7 @@ public abstract class Hop implements ParseInfo {
 		return computeBoundsInformation(input, vars, new HashMap<Long, Double>());
 	}
 	
-	public static double computeBoundsInformation( Hop input, LocalVariableMap vars, HashMap<Long, Double> memo ) {
+	public static double computeBoundsInformation( Hop input, LocalVariableMap vars, Map<Long, Double> memo ) {
 		double ret = Double.MAX_VALUE;
 		try {
 			ret = OptimizerUtils.rEvalSimpleDoubleExpression(input, memo, vars);

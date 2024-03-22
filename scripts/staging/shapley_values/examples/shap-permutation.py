@@ -34,7 +34,7 @@ import datetime
 import argparse
 parser=argparse.ArgumentParser(description="Run permutation shap and time it.")
 parser.add_argument("--data-path-x", default="../data/Adult_X.csv", help="Path to CSV with X data.")
-parser.add_argument("--data-path-y", default="../data/Adult_Y.csv", help="Path to CSV with y data.")
+parser.add_argument("--data-path-y", default="../data/Adult_y.csv", help="Path to CSV with y data.")
 parser.add_argument("--result-path", default="../data/python_shap_permutation.csv", help="Path to append results to.")
 parser.add_argument("--n-instances", help="Number of instances.", default=1)
 parser.add_argument("--n-permutations", help="Number of permutations.", default=1)

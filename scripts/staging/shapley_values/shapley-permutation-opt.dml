@@ -363,7 +363,9 @@ return (Matrix[Double] row_phis, Double expected){
       #instance cols are stacked on top of each other
       #the phis for every instance are stored in columns next to each other, i.e. in a row of columns
       #looks odd, thats because we use a new version, that could run on all permutations at once
-      [row_phis[(j-1)*perm_length+1:j*perm_length,i], expected_m[j,i]] = compute_phis_from_prediction_means(P=P, permutations=permutation)
+      [phis, e] = compute_phis_from_prediction_means(P=P, permutations=permutation)
+      row_phis[(j-1)*perm_length+1:j*perm_length,i] = phis
+      expected_m[j,i] = e
     }
   }
   # compute means of permutations of every instance and reshape so we have one instances in rows
@@ -611,8 +613,10 @@ compute_means_from_predictions = function(Matrix[Double] P, Integer integration_
 #
 # INPUT:
 # ---------------------------------------------------------------------------------------
-# P                     Predictions for multiple permutation.
+# P                     Predictions for multiple permutations.
 # permutations          Permutations to get the feature indices from.
+# non_var_inds          Matrix holding the indices of non-varying features in the permutation that were ignored
+#                       during prediction. These will be remove from the <permutations> during computation of the phis.
 # ---------------------------------------------------------------------------------------
 #
 # OUTPUT:

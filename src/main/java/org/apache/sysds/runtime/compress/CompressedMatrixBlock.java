@@ -645,6 +645,12 @@ public class CompressedMatrixBlock extends MatrixBlock {
 			return false;
 		}
 	}
+	
+	@Override
+	public boolean containsValue(double pattern, int k) {
+		//TODO parallel contains value
+		return containsValue(pattern);
+	}
 
 	@Override
 	public double max() {

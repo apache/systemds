@@ -542,7 +542,7 @@ public class InterProceduralAnalysis {
 					+ "does not exist in function signature of "+fop.getFunctionKey()+".");
 			Hop input = inputOps.get(i);
 			
-			if( input.getDataType()==DataType.MATRIX )
+			if( !input.getDataType().isScalar() ) //matrix/frame/list/tensor
 			{
 				//propagate matrix characteristics
 				MatrixObject mo = new MatrixObject(ValueType.FP64, null);
@@ -617,7 +617,8 @@ public class InterProceduralAnalysis {
 					}
 				}
 				// Update or add to the calling program's variable map.
-				if( di.getDataType()==DataType.MATRIX && tmpVars.keySet().contains(fvarname) ) {
+				// for matrices, frames, lists, and tensors
+				if( !di.getDataType().isScalar() && tmpVars.keySet().contains(fvarname) ) {
 					MatrixObject moIn = (MatrixObject) tmpVars.get(fvarname);
 					if( !callVars.keySet().contains(pvarname) || overwrite ) { //not existing so far
 						MatrixObject moOut = createOutputMatrix(moIn.getNumRows(), moIn.getNumColumns(), moIn.getNnz());

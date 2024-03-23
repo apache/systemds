@@ -665,14 +665,17 @@ public abstract class DenseBlock implements Serializable, Block
 	 * (note that NaN==NaN yields false).
 	 * 
 	 * @param pattern checked pattern
+	 * @param rl row lower bound (inclusive)
+	 * @param ru row upper bound (exclusive)
 	 * @return true if pattern appears at least once, otherwise false
 	 */
-	public boolean contains(double pattern) {
+	public boolean contains(double pattern, int rl, int ru) {
 		boolean NaNpattern = Double.isNaN(pattern);
-		for(int i=0; i<numBlocks(); i++) {
-			double[] vals = valuesAt(i);
-			int len = size(i);
-			for(int j=0; j<len; j++)
+		int clen = _odims[0];
+		for(int i=rl; i<ru; i++) {
+			double[] vals = values(i);
+			int pos = pos(i);
+			for(int j=pos; j<pos+clen; j++)
 				if(vals[j]==pattern || (NaNpattern && Double.isNaN(vals[j])))
 					return true;
 		}

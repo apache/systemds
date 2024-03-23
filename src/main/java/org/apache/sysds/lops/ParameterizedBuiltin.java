@@ -72,6 +72,10 @@ public class ParameterizedBuiltin extends Lop
 		return _operation; 
 	}
 	
+	public void setNumThreads(int k) {
+		_numThreads = k;
+	}
+	
 	public int getInputIndex(String name) { 
 		Lop n = _inputParams.get(name);
 		for(int i=0; i<getInputs().size(); i++) 
@@ -211,10 +215,11 @@ public class ParameterizedBuiltin extends Lop
 			sb.append(OPERAND_DELIMITOR);
 		}
 		
-		if( getExecType()==ExecType.CP && _operation == ParamBuiltinOp.REXPAND ) {
+		if( getExecType()==ExecType.CP 
+			&& (_operation==ParamBuiltinOp.REXPAND || _operation==ParamBuiltinOp.CONTAINS ) ) {
 			sb.append( "k" );
 			sb.append( Lop.NAME_VALUE_SEPARATOR );
-			sb.append( _numThreads );	
+			sb.append( _numThreads );
 			sb.append(OPERAND_DELIMITOR);
 		}
 		

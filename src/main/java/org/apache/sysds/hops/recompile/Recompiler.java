@@ -1179,7 +1179,7 @@ public class Recompiler {
 			if( !vars.keySet().contains(varName) || overwrite ) //not existing so far
 			{
 				//extract matrix sizes for size propagation
-				if( hop.getDataType()==DataType.MATRIX )
+				if( !hop.getDataType().isScalar()) //matrix/frame/list/tensor
 				{
 					MatrixObject mo = new MatrixObject(ValueType.FP64, null);
 					DataCharacteristics mc = new MatrixCharacteristics(hop.getDim1(),
@@ -1187,13 +1187,6 @@ public class Recompiler {
 					MetaDataFormat meta = new MetaDataFormat(mc,null);
 					mo.setMetaData(meta);	
 					vars.put(varName, mo);
-				} else if( hop.getDataType()==DataType.TENSOR ) {
-					TensorObject to = new TensorObject(hop.getValueType(), null);
-					DataCharacteristics mc = new MatrixCharacteristics(hop.getDim1(),
-						hop.getDim2(), ConfigurationManager.getBlocksize(), hop.getNnz());
-					MetaDataFormat meta = new MetaDataFormat(mc,null);
-					to.setMetaData(meta);
-					vars.put(varName, to);
 				}
 				//extract scalar constants for second constant propagation
 				else if( hop.getDataType()==DataType.SCALAR )

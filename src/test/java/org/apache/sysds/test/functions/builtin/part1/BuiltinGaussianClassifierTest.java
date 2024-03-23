@@ -89,19 +89,9 @@ public class BuiltinGaussianClassifierTest extends AutomatedTestBase
 		fullDMLScriptName = HOME + TEST_NAME + ".dml";
 
 		double varSmoothing = 1e-9;
-
-		List<String> proArgs = new ArrayList<>();
-		proArgs.add("-args");
-		proArgs.add(input("X"));
-		proArgs.add(input("Y"));
-		proArgs.add(String.valueOf(varSmoothing));
-		proArgs.add(output("priors"));
-		proArgs.add(output("means"));
-		proArgs.add(output("determinants"));
-		proArgs.add(output("invcovs"));
-
-		programArgs = proArgs.toArray(new String[proArgs.size()]);
-
+		programArgs = new String[] {"-args",
+			input("X"), input("Y"), String.valueOf(varSmoothing),
+			output("priors"), output("means"), output("determinants"), output("invcovs")};
 		rCmd = getRCmd(inputDir(), Double.toString(varSmoothing), expectedDir());
 		
 		double[][] X = getRandomMatrix(rows, cols, 0, 100, sparsity, -1);

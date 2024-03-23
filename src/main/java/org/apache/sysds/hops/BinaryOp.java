@@ -1018,8 +1018,10 @@ public class BinaryOp extends MultiThreadedHop {
 			setDim2(0);
 		}
 		else if ( getDataType() == DataType.LIST ) {
-			if( input1.getDataType().isList() && input1.rowsKnown() ) {
-				setDim1(input1.getDim1() + 1);
+			if( (op == OpOp2.CBIND || op == OpOp2.RBIND)
+				&& input1.getDataType().isList() ) {
+				//always derive from input to allow unsetting
+				setDim1(input1.rowsKnown() ? input1.getDim1() + 1 : -1);
 				setDim2(1); //always col-vector
 			}
 		}

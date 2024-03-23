@@ -438,7 +438,7 @@ public class FunctionCallGraph
 		for( Hop h : hop.getInput() )
 			rConstructFunctionCallGraph(h, fkey, sb, fstack, lfset);
 		
-		if( HopRewriteUtils.isParameterBuiltinOp(hop, ParamBuiltinOp.PARAMSERV)
+		if( HopRewriteUtils.isParameterizedBuiltinOp(hop, ParamBuiltinOp.PARAMSERV)
 			&& HopRewriteUtils.knownParamservFunctions(hop, sb.getDMLProg()))
 		{
 			ParameterizedBuiltinOp pop = (ParameterizedBuiltinOp) hop;

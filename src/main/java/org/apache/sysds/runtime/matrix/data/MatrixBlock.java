@@ -35,6 +35,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
+import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 import org.apache.commons.lang3.ArrayUtils;
@@ -766,6 +767,10 @@ public class MatrixBlock extends MatrixValue implements CacheBlock<MatrixBlock>,
 	}
 	
 	public boolean containsValue(double pattern) {
+		return containsValue(pattern, 1);
+	}
+	
+	public boolean containsValue(double pattern, int k) {
 		//fast paths: infer from meta data only
 		if(isEmptyBlock(true))
 			return pattern==0;
@@ -774,9 +779,23 @@ public class MatrixBlock extends MatrixValue implements CacheBlock<MatrixBlock>,
 		
 		//make a pass over the data to determine if it includes the
 		//pattern, with early abort as soon as the pattern is found
+		if( k == 1 ) {
+			return containsValue(pattern, 0, rlen);
+		}
+		else {
+			ExecutorService pool = CommonThreadPool.get(k);
+			List<Future<Boolean>> tasks = UtilFunctions.getTaskRangesDefault(rlen, k).stream()
+				.map(p -> pool.submit(() -> containsValue(pattern, p.getKey(), p.getValue())))
+				.collect(Collectors.toList()); //submit all before waiting
+			pool.shutdown();
+			return tasks.stream().anyMatch(t -> UtilFunctions.getSafe(t));
+		}
+	}
+	
+	private boolean containsValue(double pattern, int rl, int ru) {
 		return isInSparseFormat() ?
-			getSparseBlock().contains(pattern) :
-			getDenseBlock().contains(pattern);
+			getSparseBlock().contains(pattern, rl, ru) :
+			getDenseBlock().contains(pattern, rl, ru);
 	}
 	
 	public List<Integer> containsVector(MatrixBlock pattern, boolean earlyAbort) {
@@ -3040,7 +3059,7 @@ public class MatrixBlock extends MatrixValue implements CacheBlock<MatrixBlock>,
 		
 		//early abort for comparisons w/ special values
 		if( Builtin.isBuiltinCode(op.fn, BuiltinCode.ISNAN, BuiltinCode.ISNA))
-			if( !containsValue(op.getPattern()) ) {
+			if( !containsValue(op.getPattern(), op.getNumThreads()) ) {
 				return new MatrixBlock(rlen, clen, true); //avoid unnecessary allocation
 			}
 		

@@ -474,12 +474,13 @@ public abstract class SparseBlock implements Serializable, Block
 	 * (note that NaN==NaN yields false).
 	 * 
 	 * @param pattern checked pattern
+	 * @param rl row lower bound (inclusive)
+	 * @param ru row upper bound (exclusive)
 	 * @return true if pattern appears at least once, otherwise false
 	 */
-	public boolean contains(double pattern) {
+	public boolean contains(double pattern, int rl, int ru) {
 		boolean NaNpattern = Double.isNaN(pattern);
-		int rlen = numRows();
-		for(int i=0; i<rlen; i++) {
+		for(int i=rl; i<ru; i++) {
 			if( isEmpty(i) ) continue;
 			int apos = pos(i);
 			int alen = size(i);

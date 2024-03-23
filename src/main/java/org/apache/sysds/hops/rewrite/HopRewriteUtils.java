@@ -1204,18 +1204,18 @@ public class HopRewriteUtils {
 		return (hop instanceof AggUnaryOp && ((AggUnaryOp)hop).getOp()==AggOp.SUM_SQ);
 	}
 
-	public static boolean isParameterBuiltinOp(Hop hop, ParamBuiltinOp type) {
+	public static boolean isParameterizedBuiltinOp(Hop hop, ParamBuiltinOp type) {
 		return hop instanceof ParameterizedBuiltinOp && ((ParameterizedBuiltinOp) hop).getOp().equals(type);
 	}
 	
 	public static boolean isRemoveEmpty(Hop hop, boolean rows) {
-		return isParameterBuiltinOp(hop, ParamBuiltinOp.RMEMPTY)
+		return isParameterizedBuiltinOp(hop, ParamBuiltinOp.RMEMPTY)
 			&& HopRewriteUtils.isLiteralOfValue(
 				((ParameterizedBuiltinOp)hop).getParameterHop("margin"), rows?"rows":"cols");
 	}
 
 	public static boolean isRemoveEmpty(Hop hop) {
-		return isParameterBuiltinOp(hop, ParamBuiltinOp.RMEMPTY);
+		return isParameterizedBuiltinOp(hop, ParamBuiltinOp.RMEMPTY);
 	}
 	
 	public static boolean isNary(Hop hop, OpOpN type) {
@@ -1660,7 +1660,7 @@ public class HopRewriteUtils {
 		if( hop.isVisited() ) return false;
 		hop.setVisited();
 		return HopRewriteUtils.isNary(hop, OpOpN.EVAL)
-			|| (HopRewriteUtils.isParameterBuiltinOp(hop, ParamBuiltinOp.PARAMSERV) 
+			|| (HopRewriteUtils.isParameterizedBuiltinOp(hop, ParamBuiltinOp.PARAMSERV) 
 				&& !knownParamservFunctions(hop))
 			|| hop.getInput().stream().anyMatch(c -> containsSecondOrderBuiltin(c));
 	}

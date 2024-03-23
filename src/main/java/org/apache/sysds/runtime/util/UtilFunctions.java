@@ -33,6 +33,8 @@ import java.util.Map;
 import java.util.Random;
 import java.util.Set;
 import java.util.TimeZone;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -247,6 +249,17 @@ public class UtilFunctions {
 		return pos;
 	}
 
+	public static List<Pair<Integer,Integer>> getTaskRangesDefault(int len, int k) {
+		List<Pair<Integer,Integer>> ret = new ArrayList<>();
+		int nk = roundToNext(Math.min(8*k,len/32), k);
+		int beg = 0;
+		for(Integer blen : getBalancedBlockSizes(len, nk)) {
+			ret.add(new Pair<>(beg, beg+blen)); 
+			beg = beg+blen;
+		}
+		return ret;
+	}
+	
 	public static ArrayList<Integer> getBalancedBlockSizesDefault(int len, int k, boolean constK) {
 		int nk = constK ? k : roundToNext(Math.min(8*k,len/32), k);
 		return getBalancedBlockSizes(len, nk);
@@ -1326,6 +1339,14 @@ public class UtilFunctions {
 		for (int i = 0; i < result.length; i++)
 			result[i] = String.valueOf(original[i]);
 		return result;
+	}
+	
+	public static <T> T getSafe(Future<T> task) {
+		try {
+			return task.get();
+		} catch (InterruptedException | ExecutionException e) {
+			throw new DMLRuntimeException(e);
+		}
 	}
 
 	public static double[] convertStringToDoubleArray(String[] original) {

@@ -249,12 +249,13 @@ public class ParameterizedBuiltinCPInstruction extends ComputationCPInstruction 
 		}
 		else if(opcode.equalsIgnoreCase("contains")) {
 			String varName = params.get("target");
+			int k = Integer.parseInt(params.get("k")); //num threads
 			MatrixBlock target = ec.getMatrixInput(varName);
 			Data pattern = ec.getVariable(params.get("pattern"));
 			if( pattern == null ) //literal
 				pattern = ScalarObjectFactory.createScalarObject(ValueType.FP64, params.get("pattern"));
 			boolean ret = pattern.getDataType().isScalar() ?
-				target.containsValue(((ScalarObject)pattern).getDoubleValue()) : 
+				target.containsValue(((ScalarObject)pattern).getDoubleValue(), k) : 
 				(target.containsVector(((MatrixObject)pattern).acquireRead(), true).size()>0);
 			ec.releaseMatrixInput(varName);
 			if(!pattern.getDataType().isScalar())

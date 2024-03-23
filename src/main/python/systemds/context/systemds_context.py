@@ -37,6 +37,7 @@ from typing import Dict, Iterable, Sequence, Tuple, Union
 import numpy as np
 import pandas as pd
 from py4j.java_gateway import GatewayParameters, JavaGateway, Py4JNetworkError
+from systemds.operator.nodes.multi_return import MultiReturn
 from systemds.operator import (Frame, List, Matrix, OperationNode, Scalar,
                                Source, Combine)
 from systemds.script_building import DMLScript, OutputType
@@ -402,6 +403,42 @@ class SystemDSContext(object):
         named_input_nodes = {'rows': shape[0], 'cols': shape[1]}
         return Matrix(self, 'matrix', unnamed_input_nodes, named_input_nodes)
 
+    def fft(self, real_input: 'Matrix') -> 'MultiReturn':
+        """
+        Performs the Fast Fourier Transform (FFT) on the matrix.
+
+        :param real_input: The real part of the input matrix.
+        :return: A MultiReturn object representing the real and imaginary parts of the FFT output.
+        """
+
+        real_output = OperationNode(self, '', output_type=OutputType.MATRIX, is_python_local_data=False)
+        imag_output = OperationNode(self, '', output_type=OutputType.MATRIX, is_python_local_data=False)
+        
+        fft_node = MultiReturn(self, 'fft', [real_output, imag_output], [real_input])
+
+        return fft_node
+
+
+    def ifft(self, real_input: 'Matrix', imag_input: 'Matrix' = None) -> 'MultiReturn':
+        """
+        Performs the Inverse Fast Fourier Transform (IFFT) on a complex matrix.
+        
+        :param real_input: The real part of the input matrix.
+        :param imag_input: The imaginary part of the input matrix (optional).
+        :return: A MultiReturn object representing the real and imaginary parts of the IFFT output.
+        """
+
+        real_output = OperationNode(self, '', output_type=OutputType.MATRIX, is_python_local_data=False)
+        imag_output = OperationNode(self, '', output_type=OutputType.MATRIX, is_python_local_data=False)
+        
+        if imag_input is not None:
+            ifft_node = MultiReturn(self, 'ifft', [real_output, imag_output], [real_input, imag_input])
+        else:
+            ifft_node = MultiReturn(self, 'ifft', [real_output, imag_output], [real_input])
+        
+        return ifft_node
+
+
     def seq(self, start: Union[float, int], stop: Union[float, int] = None,
             step: Union[float, int] = 1) -> 'Matrix':
         """Create a single column vector with values from `start` to `stop` and an increment of `step`.
@@ -690,3 +727,4 @@ class SystemDSContext(object):
         # Reset all handlers to only this new handler.
         self._log.handlers = [f_handler]
         self._log.debug("Logging setup done")
+

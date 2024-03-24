@@ -64,11 +64,11 @@ public class DDCArray<T> extends ACompressedArray<T> {
 	}
 
 	public <J> DDCArray<J> setDict(Array<J> dict) {
-		return new DDCArray<J>(dict, map);
+		return new DDCArray<>(dict, map);
 	}
 
 	public DDCArray<T> nullDict() {
-		return new DDCArray<T>(null, map);
+		return new DDCArray<>(null, map);
 	}
 
 	private static int getTryThreshold(ValueType t, int allRows, long inMemSize) {

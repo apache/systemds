@@ -67,7 +67,7 @@ public class IPAPassRewriteFederatedPlan extends IPAPass {
 	private void generatePlan(DMLProgram prog, FunctionCallGraph fgraph, FunctionCallSizeInfo fcallSizes, String splanner){
 		FederatedPlanner planner = FederatedPlanner.isCompiled(splanner) ?
 			FederatedPlanner.valueOf(splanner.toUpperCase()) :
-			FederatedPlanner.COMPILE_COST_BASED;
+			FederatedPlanner.COMPILE_FED_HEURISTIC;
 
 		// run planner rewrite with forced federated exec types
 		planner.getPlanner().rewriteProgram(prog, fgraph, fcallSizes);

@@ -27,6 +27,7 @@ import org.apache.sysds.runtime.meta.MatrixCharacteristics;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 
 /**
  * Memoization Table (hop id, worst-case matrix characteristics).
@@ -97,7 +98,7 @@ public class MemoTable
 		_memo.put(hopID, dc);
 	}
 	
-	public DataCharacteristics[] getAllInputStats(ArrayList<Hop> inputs )
+	public DataCharacteristics[] getAllInputStats(List<Hop> inputs )
 	{
 		if( inputs == null )
 			return null;

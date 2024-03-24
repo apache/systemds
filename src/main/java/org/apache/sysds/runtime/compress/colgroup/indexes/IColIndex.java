@@ -282,7 +282,7 @@ public interface IColIndex {
 			bi.next();
 		}
 
-		return new Pair<int[],int[]>(ar, br);
+		return new Pair<>(ar, br);
 	}
 
 	/** A Class for slice results containing indexes for the slicing of dictionaries, and the resulting column index */

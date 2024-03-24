@@ -397,7 +397,7 @@ public class WorkloadAnalyzer {
 			}
 			else if(hop instanceof BinaryOp) {
 				if(HopRewriteUtils.isBinary(hop, OpOp2.CBIND)) {
-					ArrayList<Hop> in = hop.getInput();
+					List<Hop> in = hop.getInput();
 					o = new OpNormal(hop, true);
 					if(isOverlapping(in.get(0)) || isOverlapping(in.get(1))) {
 						overlapping.add(hop.getHopID());
@@ -412,7 +412,7 @@ public class WorkloadAnalyzer {
 					return;
 				}
 				else {
-					ArrayList<Hop> in = hop.getInput();
+					List<Hop> in = hop.getInput();
 					final boolean ol0 = isOverlapping(in.get(0));
 					final boolean ol1 = isOverlapping(in.get(1));
 					final boolean ol = ol0 || ol1;

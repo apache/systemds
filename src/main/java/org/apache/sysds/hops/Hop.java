@@ -86,9 +86,9 @@ public abstract class Hop implements ParseInfo {
 	protected UpdateType _updateType = UpdateType.COPY;
 
 	/** The output Hops that are connected to this Hop */
-	protected ArrayList<Hop> _parent = new ArrayList<>();
+	protected List<Hop> _parent = new ArrayList<>();
 	/** The input Hops that are connected to this Hop */
-	protected ArrayList<Hop> _input = new ArrayList<>();
+	protected List<Hop> _input = new ArrayList<>();
 
 	/** Currently used exec type */
 	protected ExecType _etype = null; 
@@ -929,11 +929,11 @@ public abstract class Hop implements ParseInfo {
 		return false;
 	}
 
-	public ArrayList<Hop> getParent() {
+	public List<Hop> getParent() {
 		return _parent;
 	}
 
-	public ArrayList<Hop> getInput() {
+	public List<Hop> getInput() {
 		return _input;
 	}
 	

@@ -20,6 +20,7 @@
 package org.apache.sysds.hops;
 
 import java.util.ArrayList;
+import java.util.List;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -122,9 +123,7 @@ public class DnnOp extends MultiThreadedHop {
 		
 		ExecType et = optFindExecType();
 		
-		ArrayList<Hop> inputs = getInput();
-		switch( op )
-		{
+		switch( op ) {
 			case MAX_POOL:
 			case MAX_POOL_BACKWARD:
 			case AVG_POOL:
@@ -135,7 +134,7 @@ public class DnnOp extends MultiThreadedHop {
 			case BIASADD:
 			case BIASMULT: {
 				if(et == ExecType.CP || et == ExecType.GPU) {
-					setLops(constructDnnLops(et, inputs));
+					setLops(constructDnnLops(et, getInput()));
 					break;
 				}
 				throw new HopsException("Unimplemented DnnOp for execution type: " + et.name());
@@ -144,7 +143,7 @@ public class DnnOp extends MultiThreadedHop {
 			case CHANNEL_SUMS:
 			case UPDATE_NESTEROV_X: {
 				if(et == ExecType.GPU) {
-					setLops(constructDnnLops(et, inputs));
+					setLops(constructDnnLops(et, getInput()));
 					break;
 				}
 				throw new HopsException("Unimplemented DnnOp for execution type: " + et.name());
@@ -254,7 +253,7 @@ public class DnnOp extends MultiThreadedHop {
 		return null;
 	}
 	
-	public Lop constructDnnLops(ExecType et, ArrayList<Hop> inputs) {
+	public Lop constructDnnLops(ExecType et, List<Hop> inputs) {
 		if(inputs.size() != getNumExpectedInputs()) 
 			throw new HopsException("Incorrect number of inputs for " + op.name());
 		
@@ -262,7 +261,7 @@ public class DnnOp extends MultiThreadedHop {
 		// ---------------------------------------------------------------
 		// Deal with fused operators and contruct lhsInputLop/optionalRhsInputLop
 		Lop lhsInputLop = null; Lop optionalRhsInputLop = null;
-		ArrayList<Hop> inputsOfPotentiallyFusedOp = inputs;
+		List<Hop> inputsOfPotentiallyFusedOp = inputs;
 		
 		OpOpDnn lopOp = op;
 		// RELU_MAX_POOLING and RELU_MAX_POOLING_BACKWARD is extremely useful for CP backend 

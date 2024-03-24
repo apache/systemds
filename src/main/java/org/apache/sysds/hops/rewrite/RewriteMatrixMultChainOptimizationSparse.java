@@ -19,8 +19,8 @@
 
 package org.apache.sysds.hops.rewrite;
 
-import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 
 import org.apache.commons.lang3.mutable.MutableInt;
 import org.apache.sysds.common.Types.OpOpData;
@@ -48,7 +48,7 @@ import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 public class RewriteMatrixMultChainOptimizationSparse extends RewriteMatrixMultChainOptimization
 {
 	@Override
-	protected void optimizeMMChain(Hop hop, ArrayList<Hop> mmChain, ArrayList<Hop> mmOperators, ProgramRewriteStatus state) {
+	protected void optimizeMMChain(Hop hop, List<Hop> mmChain, List<Hop> mmOperators, ProgramRewriteStatus state) {
 		// Step 2: construct dims array and input matrices
 		double[] dimsArray = new double[mmChain.size() + 1];
 		boolean dimsKnown = getDimsArray( hop, mmChain, dimsArray );
@@ -127,7 +127,7 @@ public class RewriteMatrixMultChainOptimizationSparse extends RewriteMatrixMultC
 		return split;
 	}
 	
-	private static boolean getInputMatrices(Hop hop, ArrayList<Hop> chain, MMNode[] sketchArray, ProgramRewriteStatus state) {
+	private static boolean getInputMatrices(Hop hop, List<Hop> chain, MMNode[] sketchArray, ProgramRewriteStatus state) {
 		boolean inputsAvail = true;
 		LocalVariableMap vars = state.getVariables();
 		

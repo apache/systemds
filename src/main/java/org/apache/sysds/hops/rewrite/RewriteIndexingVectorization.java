@@ -254,7 +254,6 @@ public class RewriteIndexingVectorization extends HopRewriteRule
 		}
 	}
 	
-	@SuppressWarnings("unchecked")
 	private static Hop vectorizeLeftIndexing( Hop hop )
 	{
 		Hop ret = hop;
@@ -315,8 +314,8 @@ public class RewriteIndexingVectorization extends HopRewriteRule
 					
 					//new row left indexing operator (for all parents, only intermediates are guaranteed to have 1 parent)
 					//(note: it's important to clone the parent list before creating newLix on top of ihop0)
-					ArrayList<Hop> ihop0parents = (ArrayList<Hop>) ihop0.getParent().clone();
-					ArrayList<Integer> ihop0parentsPos = new ArrayList<>();
+					List<Hop> ihop0parents = new ArrayList<>(ihop0.getParent());
+					List<Integer> ihop0parentsPos = new ArrayList<>();
 					for( Hop parent : ihop0parents ) {
 						int posp = HopRewriteUtils.getChildReferencePos(parent, ihop0);
 						HopRewriteUtils.removeChildReferenceByPos(parent, ihop0, posp); //input data
@@ -394,8 +393,8 @@ public class RewriteIndexingVectorization extends HopRewriteRule
 					
 					//new row left indexing operator (for all parents, only intermediates are guaranteed to have 1 parent)
 					//(note: it's important to clone the parent list before creating newLix on top of ihop0)
-					ArrayList<Hop> ihop0parents = (ArrayList<Hop>) ihop0.getParent().clone();
-					ArrayList<Integer> ihop0parentsPos = new ArrayList<>();
+					List<Hop> ihop0parents = new ArrayList<>(ihop0.getParent());
+					List<Integer> ihop0parentsPos = new ArrayList<>();
 					for( Hop parent : ihop0parents ) {
 						int posp = HopRewriteUtils.getChildReferencePos(parent, ihop0);
 						HopRewriteUtils.removeChildReferenceByPos(parent, ihop0, posp); //input data

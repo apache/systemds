@@ -21,6 +21,7 @@ package org.apache.sysds.hops.rewrite;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map.Entry;
 
 import org.apache.sysds.common.Types.OpOpData;
@@ -41,7 +42,6 @@ public class RewriteRemoveReadAfterWrite extends HopRewriteRule
 {
 	
 	@Override
-	@SuppressWarnings("unchecked")
 	public ArrayList<Hop> rewriteHopDAGs(ArrayList<Hop> roots, ProgramRewriteStatus state)
 	{
 		if( roots == null )
@@ -66,7 +66,7 @@ public class RewriteRemoveReadAfterWrite extends HopRewriteRule
 			{
 				//rewire read consumers to write input
 				Hop input = writes.get(rfname).getInput().get(0);
-				ArrayList<Hop> parents = (ArrayList<Hop>) rhop.getParent().clone();
+				List<Hop> parents = new ArrayList<>(rhop.getParent());
 				for( Hop p : parents )
 					HopRewriteUtils.replaceChildReference(p, rhop, input);
 			}

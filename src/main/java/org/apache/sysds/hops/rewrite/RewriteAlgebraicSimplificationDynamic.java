@@ -562,7 +562,6 @@ public class RewriteAlgebraicSimplificationDynamic extends HopRewriteRule
 		return hi;
 	}
 	
-	@SuppressWarnings("unchecked")
 	private static Hop fuseDatagenAndReorgOperation(Hop parent, Hop hi, int pos)
 	{
 		if( HopRewriteUtils.isTransposeOperation(hi)
@@ -575,7 +574,7 @@ public class RewriteAlgebraicSimplificationDynamic extends HopRewriteRule
 			{
 				//relink all parents and dataop (remove transpose)
 				HopRewriteUtils.removeAllChildReferences(hi);
-				ArrayList<Hop> parents = (ArrayList<Hop>) hi.getParent().clone();
+				List<Hop> parents = new ArrayList<>(hi.getParent());
 				for( int i=0; i<parents.size(); i++ ) {
 					Hop lparent = parents.get(i);
 					int ppos = HopRewriteUtils.getChildReferencePos(lparent, hi);
@@ -600,7 +599,6 @@ public class RewriteAlgebraicSimplificationDynamic extends HopRewriteRule
 		return hi;
 	}
 
-	@SuppressWarnings("unchecked")
 	private static Hop simplifyColwiseAggregate( Hop parent, Hop hi, int pos ) {
 		if( hi instanceof AggUnaryOp  ) 
 		{
@@ -636,7 +634,7 @@ public class RewriteAlgebraicSimplificationDynamic extends HopRewriteRule
 					else if( input.getDim2() == 1 )
 					{
 						//get old parents (before creating cast over aggregate)
-						ArrayList<Hop> parents = (ArrayList<Hop>) hi.getParent().clone();
+						List<Hop> parents = new ArrayList<>(hi.getParent());
 
 						//simplify col-aggregate to full aggregate
 						uhi.setDirection(Direction.RowCol);
@@ -662,7 +660,6 @@ public class RewriteAlgebraicSimplificationDynamic extends HopRewriteRule
 		return hi;
 	}
 
-	@SuppressWarnings("unchecked")
 	private static Hop simplifyRowwiseAggregate( Hop parent, Hop hi, int pos ) {
 		if( hi instanceof AggUnaryOp  ) 
 		{
@@ -701,7 +698,7 @@ public class RewriteAlgebraicSimplificationDynamic extends HopRewriteRule
 					else if( input.getDim1() == 1 )
 					{
 						//get old parents (before creating cast over aggregate)
-						ArrayList<Hop> parents = (ArrayList<Hop>) hi.getParent().clone();
+						List<Hop> parents = new ArrayList<>(hi.getParent());
 
 						//simplify row-aggregate to full aggregate
 						uhi.setDirection(Direction.RowCol);
@@ -1270,7 +1267,6 @@ public class RewriteAlgebraicSimplificationDynamic extends HopRewriteRule
 		return hi;
 	}
 	
-	@SuppressWarnings("unchecked")
 	private static Hop pushdownBinaryOperationOnDiag(Hop parent, Hop hi, int pos) 
 	{
 		//diag(X)*7 --> diag(X*7) in order to (1) reduce required memory for b(*) and
@@ -1304,8 +1300,8 @@ public class RewriteAlgebraicSimplificationDynamic extends HopRewriteRule
 			{
 				//remove all parent links to binary op (since we want to reorder
 				//we cannot just look at the current parent)
-				ArrayList<Hop> parents = (ArrayList<Hop>) hi.getParent().clone();
-				ArrayList<Integer> parentspos = new ArrayList<>(); 
+				List<Hop> parents = new ArrayList<>(hi.getParent());
+				List<Integer> parentspos = new ArrayList<>(); 
 				for(Hop lparent : parents) {
 					int lpos = HopRewriteUtils.getChildReferencePos(lparent, hi);
 					HopRewriteUtils.removeChildReferenceByPos(lparent, hi, lpos);
@@ -2525,7 +2521,6 @@ public class RewriteAlgebraicSimplificationDynamic extends HopRewriteRule
 	 * @param pos position
 	 * @return high-level operator
 	 */
-	@SuppressWarnings("unchecked")
 	private static Hop reorderMinusMatrixMult(Hop parent, Hop hi, int pos) 
 	{
 		if( HopRewriteUtils.isMatrixMultiply(hi) ) //X%*%Y
@@ -2545,7 +2540,7 @@ public class RewriteAlgebraicSimplificationDynamic extends HopRewriteRule
 				HopRewriteUtils.removeChildReference(hi, hileft);
 				
 				//get old parents (before creating minus over matrix mult)
-				ArrayList<Hop> parents = (ArrayList<Hop>) hi.getParent().clone();
+				List<Hop> parents = new ArrayList<>(hi.getParent());
 				
 				//create new operators 
 				BinaryOp minus = HopRewriteUtils.createBinary(new LiteralOp(0), hi, OpOp2.MINUS);
@@ -2579,7 +2574,7 @@ public class RewriteAlgebraicSimplificationDynamic extends HopRewriteRule
 				HopRewriteUtils.removeChildReference(hi, hiright);
 				
 				//get old parents (before creating minus over matrix mult)
-				ArrayList<Hop> parents = (ArrayList<Hop>) hi.getParent().clone();
+				List<Hop> parents = new ArrayList<>(hi.getParent());
 				
 				//create new operators 
 				BinaryOp minus = HopRewriteUtils.createBinary(new LiteralOp(0), hi, OpOp2.MINUS);

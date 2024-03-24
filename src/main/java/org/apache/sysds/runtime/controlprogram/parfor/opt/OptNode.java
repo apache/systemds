@@ -23,6 +23,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Set;
 
 import org.apache.commons.lang3.ArrayUtils;
@@ -82,7 +83,7 @@ public class OptNode
 	}
 
 	//child nodes
-	private ArrayList<OptNode>        _childs  = null;
+	private List<OptNode>              _childs  = null;
 
 	//node configuration 
 	private long                      _id      = -1;
@@ -178,17 +179,17 @@ public class OptNode
 		_childs.add( child );
 	}
 	
-	public void addChilds( ArrayList<OptNode> childs ) {
+	public void addChilds( List<OptNode> childs ) {
 		if( _childs==null )
 			_childs = new ArrayList<>();
 		_childs.addAll( childs );
 	}
 	
-	public void setChilds(ArrayList<OptNode> childs) {
+	public void setChilds(List<OptNode> childs) {
 		_childs = childs;
 	}
 	
-	public ArrayList<OptNode> getChilds() {
+	public List<OptNode> getChilds() {
 		return _childs;
 	}
 	

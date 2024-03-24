@@ -21,6 +21,7 @@ package org.apache.sysds.hops.rewrite;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 
 import org.apache.commons.lang3.mutable.MutableInt;
 import org.apache.sysds.hops.AggBinaryOp;
@@ -108,9 +109,9 @@ public class RewriteMatrixMultChainOptimization extends HopRewriteRule
 				+ ", " + hop.getHopID() + ", " + hop.getName() + ")");
 		}
 		
-		ArrayList<Hop> mmChain = new ArrayList<>();
-		ArrayList<Hop> mmOperators = new ArrayList<>();
-		ArrayList<Hop> tempList;
+		List<Hop> mmChain = new ArrayList<>();
+		List<Hop> mmOperators = new ArrayList<>();
+		List<Hop> tempList;
 
 		// Step 1: Identify the chain (mmChain) & clear all links among the Hops
 		// that are involved in mmChain.
@@ -181,7 +182,7 @@ public class RewriteMatrixMultChainOptimization extends HopRewriteRule
 			optimizeMMChain(hop, mmChain, mmOperators, state);
 	}
 	
-	protected void optimizeMMChain(Hop hop, ArrayList<Hop> mmChain, ArrayList<Hop> mmOperators, ProgramRewriteStatus state) {
+	protected void optimizeMMChain(Hop hop, List<Hop> mmChain, List<Hop> mmOperators, ProgramRewriteStatus state) {
 		// Step 2: construct dims array
 		double[] dimsArray = new double[mmChain.size() + 1];
 		boolean dimsKnown = getDimsArray( hop, mmChain, dimsArray );
@@ -264,8 +265,8 @@ public class RewriteMatrixMultChainOptimization extends HopRewriteRule
 	 * @param split optimal order
 	 * @param level log level
 	 */
-	protected final void mmChainRelinkHops(Hop h, int i, int j, ArrayList<Hop> mmChain,
-		ArrayList<Hop> mmOperators, MutableInt opIndex, int[][] split, int level)
+	protected final void mmChainRelinkHops(Hop h, int i, int j, List<Hop> mmChain,
+		List<Hop> mmOperators, MutableInt opIndex, int[][] split, int level)
 	{
 		//NOTE: the opIndex is a MutableInt in order to get the correct positions
 		//in ragged chains like ((((a, b), c), (D, E), f), e) that might be given
@@ -319,7 +320,7 @@ public class RewriteMatrixMultChainOptimization extends HopRewriteRule
 		}
 	}
 
-	protected static void clearLinksWithinChain( Hop hop, ArrayList<Hop> operators ) 
+	protected static void clearLinksWithinChain( Hop hop, List<Hop> operators ) 
 	{
 		for( int i=0; i < operators.size(); i++ ) {
 			Hop op = operators.get(i);
@@ -346,7 +347,7 @@ public class RewriteMatrixMultChainOptimization extends HopRewriteRule
 	 * @param dimsArray dimension array
 	 * @return true if all dimensions known
 	 */
-	protected static boolean getDimsArray( Hop hop, ArrayList<Hop> chain, double[] dimsArray )
+	protected static boolean getDimsArray( Hop hop, List<Hop> chain, double[] dimsArray )
 	{
 		boolean dimsKnown = true;
 		

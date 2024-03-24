@@ -21,6 +21,7 @@ package org.apache.sysds.hops.rewrite;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 
 import org.apache.sysds.hops.DataOp;
 import org.apache.sysds.hops.Hop;
@@ -186,7 +187,7 @@ public class RewriteCommonSubexpressionElimination extends HopRewriteRule
 						hop.getParent().remove(j);
 						
 						//replace h2 w/ h1 in h2-parent inputs
-						ArrayList<Hop> parent = h2.getParent();
+						List<Hop> parent = h2.getParent();
 						for( Hop p : parent )
 							for( int k=0; k<p.getInput().size(); k++ )
 								if( p.getInput().get(k)==h2 ) {

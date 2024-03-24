@@ -21,6 +21,7 @@ package org.apache.sysds.hops.rewrite;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 
 import org.apache.commons.lang3.mutable.MutableInt;
 import org.apache.sysds.common.Types;
@@ -150,7 +151,7 @@ public class RewriteMatrixMultChainOptimizationTranspose extends HopRewriteRule
 				mmChainIndex++;
 			}
 			else {
-				ArrayList<Hop> tempList = mmChain.get(mmChainIndex).getInput();
+				List<Hop> tempList = mmChain.get(mmChainIndex).getInput();
 				if( tempList.size() != 2 ) {
 					throw new HopsException(hop.printErrorLocation() + "Hops::rule_OptimizeMMChain(): AggBinary must have exactly two inputs.");
 				}

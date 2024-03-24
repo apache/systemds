@@ -22,6 +22,7 @@ package org.apache.sysds.hops.rewrite;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 
 import org.apache.sysds.api.DMLScript;
 import org.apache.sysds.hops.AggUnaryOp;
@@ -309,7 +310,7 @@ public class RewriteGPUSpecificOps extends HopRewriteRule {
 				&& OptimizerUtils.rEvalSimpleDoubleExpression(getFirstInput(h), new HashMap<>()) == expectedValue;
 	}
 	
-	private static boolean isAnyBinaryAdd(ArrayList<Hop> hops) {
+	private static boolean isAnyBinaryAdd(List<Hop> hops) {
 		if(hops != null) {
 			for(Hop h : hops) {
 				if(h instanceof BinaryOp && ((BinaryOp)h).getOp() == OpOp2.PLUS)
@@ -466,7 +467,7 @@ public class RewriteGPUSpecificOps extends HopRewriteRule {
 	 * @param mu value of mu
 	 * @return an array [ema_mean_upd, ema_mean] if any of the expression matched, else null
 	 */
-	private static Hop [] getUpdatedMovingAverageExpressions(ArrayList<Hop> rhsTimesOps, double mu) {
+	private static Hop[] getUpdatedMovingAverageExpressions(List<Hop> rhsTimesOps, double mu) {
 		if(rhsTimesOps == null || rhsTimesOps.size() == 0)
 			return null;
 		
@@ -490,7 +491,7 @@ public class RewriteGPUSpecificOps extends HopRewriteRule {
 	 * @param rhsTimesOps hop representing BinaryOp of expression (1-mu)*mean
 	 * @return value of mu if the expression matched else null 
 	 */
-	private static Double getMuFromUpdatedMovingAverageExpressions(ArrayList<Hop> rhsTimesOps) {
+	private static Double getMuFromUpdatedMovingAverageExpressions(List<Hop> rhsTimesOps) {
 		if(rhsTimesOps == null || rhsTimesOps.size() == 0)
 			return null;
 		

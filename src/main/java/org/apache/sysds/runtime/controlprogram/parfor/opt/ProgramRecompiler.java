@@ -20,6 +20,7 @@
 package org.apache.sysds.runtime.controlprogram.parfor.opt;
 
 import java.util.ArrayList;
+import java.util.List;
 
 import org.apache.sysds.common.Types.ExecType;
 import org.apache.sysds.conf.ConfigurationManager;
@@ -373,8 +374,7 @@ public class ProgramRecompiler
 		if( hop.isVisited() )
 			return ret;
 		
-		ArrayList<Hop> in = hop.getInput();
-		
+		List<Hop> in = hop.getInput();
 		if( hop instanceof IndexingOp )
 		{
 			String inMatrix = hop.getInput().get(0).getName();
@@ -409,8 +409,7 @@ public class ProgramRecompiler
 		if( hop.isVisited() )
 			return ret;
 		
-		ArrayList<Hop> in = hop.getInput();
-		
+		List<Hop> in = hop.getInput();
 		if( hop instanceof IndexingOp )
 		{
 			String inMatrix = hop.getInput().get(0).getName();

@@ -442,9 +442,9 @@ public class OptTreeConverter
 		return ret;
 	}
 
-	public static ArrayList<OptNode> rCreateAbstractOptNodes(Hop hop, LocalVariableMap vars, OptTreePlanMappingAbstract hlMap, Set<String> memo) {
-		ArrayList<OptNode> ret = new ArrayList<>(); 
-		ArrayList<Hop> in = hop.getInput();
+	public static List<OptNode> rCreateAbstractOptNodes(Hop hop, LocalVariableMap vars, OptTreePlanMappingAbstract hlMap, Set<String> memo) {
+		List<OptNode> ret = new ArrayList<>(); 
+		List<Hop> in = hop.getInput();
 	
 		if( hop.isVisited() )
 			return ret;

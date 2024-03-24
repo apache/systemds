@@ -20,6 +20,7 @@
 package org.apache.sysds.hops.rewrite;
 
 import java.util.ArrayList;
+import java.util.List;
 
 import org.apache.sysds.common.Types.OpOp1;
 import org.apache.sysds.common.Types.OpOpData;
@@ -86,7 +87,7 @@ public class RewriteRemoveDanglingParentReferences extends HopRewriteRule
 		}
 		
 		//process node itself and children recursively
-		ArrayList<Hop> inputs = hop.getInput();
+		List<Hop> inputs = hop.getInput();
 		if( !pin && hop.getParent().isEmpty() && !isValidRootNode(hop) ) {
 			HopRewriteUtils.cleanupUnreferenced(hop);
 			count++;

@@ -20,7 +20,6 @@
 package org.apache.sysds.runtime.controlprogram.paramserv;
 
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map.Entry;
@@ -344,8 +343,7 @@ public class ParamservUtils {
 			mhop.setMaxNumThreads(k);
 			recompiled = true;
 		}
-		ArrayList<Hop> inputs = hop.getInput();
-		for (Hop h : inputs) {
+		for (Hop h : hop.getInput()) {
 			recompiled |= rAssignParallelismAndRecompile(h, k, recompiled);
 		}
 		hop.setVisited();

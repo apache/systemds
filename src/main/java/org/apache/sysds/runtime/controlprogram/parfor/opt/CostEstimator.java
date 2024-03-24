@@ -19,8 +19,8 @@
 
 package org.apache.sysds.runtime.controlprogram.parfor.opt;
 
-import java.util.ArrayList;
 import java.util.Collection;
+import java.util.List;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -207,16 +207,16 @@ public abstract class CostEstimator
 		return -1;
 	}
 
-	protected double getMaxEstimate( TestMeasure measure, ArrayList<OptNode> nodes, ExecType et ) {
+	protected double getMaxEstimate( TestMeasure measure, List<OptNode> nodes, ExecType et ) {
 		return nodes.stream().mapToDouble(n -> getEstimate(measure, n, et))
 			.max().orElse(Double.NEGATIVE_INFINITY);
 	}
 
-	protected double getSumEstimate( TestMeasure measure, ArrayList<OptNode> nodes, ExecType et ) {
+	protected double getSumEstimate( TestMeasure measure, List<OptNode> nodes, ExecType et ) {
 		return nodes.stream().mapToDouble(n -> getEstimate(measure, n, et)).sum();
 	}
 
-	protected double getWeightedEstimate( TestMeasure measure, ArrayList<OptNode> nodes, ExecType et ) {
+	protected double getWeightedEstimate( TestMeasure measure, List<OptNode> nodes, ExecType et ) {
 		return nodes.stream().mapToDouble(n -> getEstimate(measure, n, et)).sum() / nodes.size(); //weighting
 	}
 }

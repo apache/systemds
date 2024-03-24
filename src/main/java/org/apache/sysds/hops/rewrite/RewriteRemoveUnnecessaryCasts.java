@@ -20,6 +20,7 @@
 package org.apache.sysds.hops.rewrite;
 
 import java.util.ArrayList;
+import java.util.List;
 
 import org.apache.sysds.hops.Hop;
 import org.apache.sysds.hops.UnaryOp;
@@ -60,7 +61,6 @@ public class RewriteRemoveUnnecessaryCasts extends HopRewriteRule
 		return root;
 	}
 
-	@SuppressWarnings("unchecked")
 	private void rule_RemoveUnnecessaryCasts( Hop hop )
 	{
 		//check mark processed
@@ -68,7 +68,7 @@ public class RewriteRemoveUnnecessaryCasts extends HopRewriteRule
 			return;
 		
 		//recursively process childs
-		ArrayList<Hop> inputs = hop.getInput();
+		List<Hop> inputs = hop.getInput();
 		for( int i=0; i<inputs.size(); i++ )
 			rule_RemoveUnnecessaryCasts( inputs.get(i) );
 		
@@ -82,11 +82,11 @@ public class RewriteRemoveUnnecessaryCasts extends HopRewriteRule
 			//if input/output types match, no need to cast
 			if( vtIn == vtOut && vtIn != ValueType.UNKNOWN ) 
 			{
-				ArrayList<Hop> parents = hop.getParent();
+				List<Hop> parents = hop.getParent();
 				for( int i=0; i<parents.size(); i++ ) //for all parents 
 				{
 					Hop p = parents.get(i);
-					ArrayList<Hop> pin = p.getInput();
+					List<Hop> pin = p.getInput();
 					for( int j=0; j<pin.size(); j++ ) //for all parent childs
 					{
 						Hop pinj = pin.get(j);
@@ -112,7 +112,7 @@ public class RewriteRemoveUnnecessaryCasts extends HopRewriteRule
 				|| (uop1.getOp()==OpOp1.CAST_AS_SCALAR && uop2.getOp()==OpOp1.CAST_AS_MATRIX) ) {
 				Hop input = uop2.getInput().get(0);
 				//rewire parents
-				ArrayList<Hop> parents = (ArrayList<Hop>) hop.getParent().clone();
+				List<Hop> parents = new ArrayList<>(hop.getParent());
 				for( Hop p : parents )
 					HopRewriteUtils.replaceChildReference(p, hop, input);
 			}

@@ -24,6 +24,7 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.SortedSet;
@@ -125,7 +126,7 @@ public class RewriteElementwiseMultChainOptimization extends HopRewriteRule {
 	}
 
 	private static void recurseInputs(final Hop parent) {
-		final ArrayList<Hop> inputs = parent.getInput();
+		final List<Hop> inputs = parent.getInput();
 		for (int i = 0; i < inputs.size(); i++) {
 			final Hop input = inputs.get(i);
 			final Hop newInput = rule_RewriteEMult(input);
@@ -308,14 +309,14 @@ public class RewriteElementwiseMultChainOptimization extends HopRewriteRule {
 	 * @return Whether this interior emult or any child emult has a foreign parent.
 	 */
 	private static boolean checkForeignParent(final Set<BinaryOp> emults, final BinaryOp child) {
-		final ArrayList<Hop> parents = child.getParent();
+		final List<Hop> parents = child.getParent();
 		if (parents.size() > 1)
 			for (final Hop parent : parents)
 				if (!(parent instanceof BinaryOp) || !emults.contains(parent))
 					return false;
 		// child does not have foreign parents
 
-		final ArrayList<Hop> inputs = child.getInput();
+		final List<Hop> inputs = child.getInput();
 		final Hop left = inputs.get(0), right = inputs.get(1);
 		return  (!isBinaryMult(left) || checkForeignParent(emults, (BinaryOp)left)) &&
 				(!isBinaryMult(right) || checkForeignParent(emults, (BinaryOp)right));
@@ -334,7 +335,7 @@ public class RewriteElementwiseMultChainOptimization extends HopRewriteRule {
 		// TODO proper handling of DAGs (avoid collecting the same leaf multiple times)
 		// TODO exclude hops with unknown dimensions and move rewrites to dynamic rewrites 
 		
-		final ArrayList<Hop> inputs = root.getInput();
+		final List<Hop> inputs = root.getInput();
 		final Hop left = inputs.get(0), right = inputs.get(1);
 
 		if (isBinaryMult(left))

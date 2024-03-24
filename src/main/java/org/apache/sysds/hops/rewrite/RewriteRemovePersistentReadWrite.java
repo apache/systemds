@@ -34,6 +34,7 @@ import org.apache.sysds.runtime.meta.MetaDataFormat;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 
 /**
  * This rewrite is a custom rewrite for JMLC in order to replace all persistent reads
@@ -95,7 +96,7 @@ public class RewriteRemovePersistentReadWrite extends HopRewriteRule
 			return;
 		
 		//recursively process childs
-		ArrayList<Hop> inputs = hop.getInput();
+		List<Hop> inputs = hop.getInput();
 		for( int i=0; i<inputs.size(); i++ )
 			rule_RemovePersistentDataOp( inputs.get(i) );
 

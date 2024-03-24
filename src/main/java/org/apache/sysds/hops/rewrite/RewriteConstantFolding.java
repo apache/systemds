@@ -191,9 +191,8 @@ public class RewriteConstantFolding extends HopRewriteRule
 		return _tmpEC;
 	}
 	
-	private static boolean isApplicableBinaryOp( Hop hop )
-	{
-		ArrayList<Hop> in = hop.getInput();
+	private static boolean isApplicableBinaryOp( Hop hop ) {
+		List<Hop> in = hop.getInput();
 		return (   hop instanceof BinaryOp 
 				&& in.get(0) instanceof LiteralOp 
 				&& in.get(1) instanceof LiteralOp
@@ -205,7 +204,7 @@ public class RewriteConstantFolding extends HopRewriteRule
 	}
 	
 	private static boolean isApplicableUnaryOp( Hop hop ) {
-		ArrayList<Hop> in = hop.getInput();
+		List<Hop> in = hop.getInput();
 		return (   hop instanceof UnaryOp 
 				&& in.get(0) instanceof LiteralOp 
 				&& ((UnaryOp)hop).getOp() != OpOp1.EXISTS
@@ -226,16 +225,16 @@ public class RewriteConstantFolding extends HopRewriteRule
 	}
 	
 	private static boolean isApplicableFalseConjunctivePredicate( Hop hop ) {
-		ArrayList<Hop> in = hop.getInput();
-		return (   HopRewriteUtils.isBinary(hop, OpOp2.AND) && hop.getDataType().isScalar()
-				&& ( (in.get(0) instanceof LiteralOp && !((LiteralOp)in.get(0)).getBooleanValue())
-				   ||(in.get(1) instanceof LiteralOp && !((LiteralOp)in.get(1)).getBooleanValue())) );
+		List<Hop> in = hop.getInput();
+		return (HopRewriteUtils.isBinary(hop, OpOp2.AND) && hop.getDataType().isScalar()
+			&& ( (in.get(0) instanceof LiteralOp && !((LiteralOp)in.get(0)).getBooleanValue())
+				||(in.get(1) instanceof LiteralOp && !((LiteralOp)in.get(1)).getBooleanValue())) );
 	}
 	
 	private static boolean isApplicableTrueDisjunctivePredicate( Hop hop ) {
-		ArrayList<Hop> in = hop.getInput();
-		return (   HopRewriteUtils.isBinary(hop, OpOp2.OR) && hop.getDataType().isScalar()
-				&& ( (in.get(0) instanceof LiteralOp && ((LiteralOp)in.get(0)).getBooleanValue())
-				   ||(in.get(1) instanceof LiteralOp && ((LiteralOp)in.get(1)).getBooleanValue())) );
+		List<Hop> in = hop.getInput();
+		return (HopRewriteUtils.isBinary(hop, OpOp2.OR) && hop.getDataType().isScalar()
+			&& ( (in.get(0) instanceof LiteralOp && ((LiteralOp)in.get(0)).getBooleanValue())
+				||(in.get(1) instanceof LiteralOp && ((LiteralOp)in.get(1)).getBooleanValue())) );
 	}
 }

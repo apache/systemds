@@ -1234,11 +1234,10 @@ public class OptimizerRuleBased extends Optimizer {
 
 	protected void rAssignRemainingParallelism(OptNode n, int parforK, int opsK) 
 	{
-		ArrayList<OptNode> childs = n.getChilds();
-		if( childs != null ) 
+		if( n.getChilds() != null ) 
 		{
 			boolean recompileSB = false;
-			for( OptNode c : childs )
+			for( OptNode c : n.getChilds() )
 			{
 				//NOTE: we cannot shortcut with c.setSerialParFor() on par=1 because
 				//this would miss to recompile multi-threaded hop operations
@@ -1548,8 +1547,7 @@ public class OptimizerRuleBased extends Optimizer {
 			{
 				//check that all parents are transpose-safe operations
 				//(even a transient write would not be safe due to indirection into other DAGs)
-				ArrayList<Hop> parent = h.getParent();
-				for( Hop p : parent )
+				for( Hop p : h.getParent() )
 					ret &= p.isTransposeSafe();
 			}
 		}

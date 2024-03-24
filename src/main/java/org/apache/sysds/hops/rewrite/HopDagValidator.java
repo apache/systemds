@@ -23,6 +23,7 @@ import static org.apache.sysds.hops.HopsException.check;
 
 import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -106,7 +107,7 @@ public class HopDagValidator {
 					"not properly linked to its parent pid=%d %s",
 					parent.getHopID(), parent.getClass().getName());
 
-		final ArrayList<Hop> input = hop.getInput();
+		final List<Hop> input = hop.getInput();
 		final DataType dt = hop.getDataType();
 		final ValueType vt = hop.getValueType();
 

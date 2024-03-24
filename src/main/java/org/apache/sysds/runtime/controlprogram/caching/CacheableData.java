@@ -245,7 +245,6 @@ public abstract class CacheableData<T extends CacheBlock<?>> extends Data
 		_hdfsFileName = that._hdfsFileName;
 		_hdfsFileExists = that._hdfsFileExists; 
 		_gpuObjects = that._gpuObjects;
-		_privacyConstraint = that._privacyConstraint;
 		_dirtyFlag = that._dirtyFlag;
 		_compressed = that._compressed;
 		_compressedSize = that._compressedSize;
@@ -1139,8 +1138,8 @@ public abstract class CacheableData<T extends CacheBlock<?>> extends Data
 			}
 			
 			//write the actual meta data file
-			HDFSTool.writeMetaDataFile (filePathAndName + ".mtd", valueType, 
-				getSchema(), dataType, dc, fmt, formatProperties, _privacyConstraint);
+			HDFSTool.writeMetaDataFile (filePathAndName + ".mtd",
+				valueType, getSchema(), dataType, dc, fmt, formatProperties);
 		}
 	}
 

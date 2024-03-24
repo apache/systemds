@@ -35,7 +35,6 @@ import org.apache.sysds.hops.OptimizerUtils;
 import org.apache.sysds.hops.codegen.cplan.CNode;
 import org.apache.sysds.hops.codegen.cplan.CNodeMultiAgg;
 import org.apache.sysds.hops.codegen.cplan.CNodeTpl;
-import org.apache.sysds.hops.fedplanner.MemoTable;
 import org.apache.sysds.hops.ipa.FunctionCallGraph;
 import org.apache.sysds.lops.Lop;
 import org.apache.sysds.parser.DMLProgram;
@@ -80,9 +79,6 @@ public class Explain
 	private static final boolean SHOW_DATA_DEPENDENCIES     = true;
 	private static final boolean SHOW_DATA_FLOW_PROPERTIES  = true;
 
-	//federated execution plan alternatives
-	private static MemoTable MEMO_TABLE;
-
 	//different explain levels
 	public enum ExplainType {
 		NONE, 	  // explain disabled
@@ -106,14 +102,6 @@ public class Explain
 		public int numChkpts = 0;
 	}
 
-	/**
-	 * Store memo table for adding additional explain info regarding hops.
-	 * @param memoTable to store in Explain
-	 */
-	public static void setMemo(MemoTable memoTable){
-		MEMO_TABLE = memoTable;
-	}
-
 	//////////////
 	// public explain interface
 
@@ -125,7 +113,6 @@ public class Explain
 		return "# EXPLAIN ("+type.name()+"):\n"
 				+ Explain.explainMemoryBudget(counts)+"\n"
 				+ Explain.explainDegreeOfParallelism(counts)
-				+ Explain.explainMemoTableSize()
 				+ Explain.explain(prog, rtprog, type, counts);
 	}
 
@@ -184,12 +171,6 @@ public class Explain
 		}
 
 		return sb.toString();
-	}
-
-	private static String explainMemoTableSize(){
-		if ( MEMO_TABLE != null )
-			return "\n# Number of HOPs in Memo = " + MEMO_TABLE.getSize();
-		else return "";
 	}
 
 	public static String explain(DMLProgram prog, Program rtprog, ExplainType type) {
@@ -622,19 +603,6 @@ public class Explain
 
 		if ( hop.getFederatedOutput() != FederatedOutput.NONE )
 			sb.append(" ").append(hop.getFederatedOutput()).append(" ");
-
-		if ( MEMO_TABLE != null && MEMO_TABLE.containsHop(hop) ){
-			List<String> fedAlts = MEMO_TABLE.getFedOutAlternatives(hop);
-			if ( fedAlts != null ){
-				sb.append(" [ ");
-				for ( String fedAlt : fedAlts )
-					sb.append(fedAlt).append(" ");
-				sb.append("]");
-			}
-		}
-
-		if ( hop.getPrivacy() != null )
-			sb.append(" ").append(hop.getPrivacy().getPrivacyLevel().name());
 
 		sb.append('\n');
 

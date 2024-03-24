@@ -21,16 +21,11 @@ package org.apache.sysds.runtime.controlprogram.federated;
 
 import java.io.Serializable;
 import java.util.Arrays;
-import java.util.EnumMap;
-import java.util.Map;
-import java.util.concurrent.atomic.LongAdder;
 
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.controlprogram.caching.CacheBlock;
 import org.apache.sysds.runtime.lineage.LineageItem;
-import org.apache.sysds.runtime.privacy.CheckedConstraintsLog;
-import org.apache.sysds.runtime.privacy.PrivacyConstraint.PrivacyLevel;
 
 public class FederatedResponse implements Serializable {
 	private static final long serialVersionUID = 3142180026498695091L;
@@ -41,8 +36,7 @@ public class FederatedResponse implements Serializable {
 
 	private ResponseType _status;
 	private Object[] _data;
-	private Map<PrivacyLevel, LongAdder> checkedConstraints;
-
+	
 	private transient LineageItem _linItem = null; // not included in serialized object
 
 	public FederatedResponse(ResponseType status) {
@@ -87,7 +81,6 @@ public class FederatedResponse implements Serializable {
 	}
 
 	public Object[] getData() throws Exception {
-		updateCheckedConstraintsLog();
 		if(!isSuccessful())
 			throwExceptionFromResponse();
 		return _data;
@@ -124,24 +117,6 @@ public class FederatedResponse implements Serializable {
 				"Unknown runtime exception in handling of federated request by federated worker.");
 	}
 
-	/**
-	 * Set checked privacy constraints in response if the provided map is not empty. If the map is empty, it means that
-	 * no privacy constraints were found.
-	 * 
-	 * @param checkedConstraints map of checked constraints from the PrivacyMonitor
-	 */
-	public void setCheckedConstraints(Map<PrivacyLevel, LongAdder> checkedConstraints) {
-		if(checkedConstraints != null && !checkedConstraints.isEmpty()) {
-			this.checkedConstraints = new EnumMap<>(PrivacyLevel.class);
-			this.checkedConstraints.putAll(checkedConstraints);
-		}
-	}
-
-	public void updateCheckedConstraintsLog() {
-		if(checkedConstraints != null && !checkedConstraints.isEmpty())
-			CheckedConstraintsLog.addCheckedConstraints(checkedConstraints);
-	}
-
 	public LineageItem getLineageItem() {
 		return _linItem;
 	}
@@ -152,11 +127,6 @@ public class FederatedResponse implements Serializable {
 		sb.append(this.getClass().getSimpleName().toString());
 		sb.append(" response:").append(_status);
 		sb.append("\ndata:\n").append(Arrays.toString(_data));
-		if(checkedConstraints != null) {
-			sb.append("\ncheckedConstraints:\n");
-			sb.append(checkedConstraints);
-		}
-
 		return sb.toString();
 	}
 }

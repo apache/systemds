@@ -56,7 +56,6 @@ public class FederatedRequest implements Serializable {
 	private long _id;
 	private long _tid;
 	private List<Object> _data;
-	private boolean _checkPrivacy;
 	private List<Long> _checksums;
 	private long _pid;
 	private String _lineageTrace; // the serialized lineage trace of a put object
@@ -85,7 +84,6 @@ public class FederatedRequest implements Serializable {
 		_id = id;
 		_data = data;
 		_pid = Long.valueOf(IDHandler.getProcessID());
-		setCheckPrivacy();
 	}
 
 	public RequestType getType() {
@@ -128,18 +126,6 @@ public class FederatedRequest implements Serializable {
 
 	public FederatedRequest deepClone() {
 		return new FederatedRequest(_method, _id, new ArrayList<>(_data));
-	}
-
-	public void setCheckPrivacy(boolean checkPrivacy){
-		this._checkPrivacy = checkPrivacy;
-	}
-
-	public void setCheckPrivacy(){
-		setCheckPrivacy(DMLScript.CHECK_PRIVACY);
-	}
-
-	public boolean checkPrivacy(){
-		return _checkPrivacy;
 	}
 
 	public void setChecksum() {

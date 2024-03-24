@@ -91,7 +91,6 @@ import org.apache.sysds.runtime.controlprogram.paramserv.rpc.PSRpcFactory;
 import org.apache.sysds.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
 import org.apache.sysds.runtime.controlprogram.parfor.stat.Timing;
 import org.apache.sysds.runtime.matrix.operators.Operator;
-import org.apache.sysds.runtime.privacy.PrivacyConstraint;
 import org.apache.sysds.runtime.util.ProgramConverter;
 import org.apache.sysds.utils.stats.ParamServStatistics;
 
@@ -266,10 +265,6 @@ public class ParamservBuiltinCPInstruction extends ParameterizedBuiltinCPInstruc
 	private boolean useHomomorphicEncryption(DataPartitionFederatedScheme.Result result,
 		int workerNum, boolean modelAvg, boolean weighting){
 		boolean use_homomorphic_encryption = getHe();
-		for (int i = 0; i < workerNum; i++) {
-			use_homomorphic_encryption = use_homomorphic_encryption || checkIsPrivate(result._pFeatures.get(i));
-			use_homomorphic_encryption = use_homomorphic_encryption || checkIsPrivate(result._pLabels.get(i));
-		}
 		if ( use_homomorphic_encryption ){
 			if ( !modelAvg )
 				throw new DMLRuntimeException("can't use homomorphic encryption without modelAvg");
@@ -712,11 +707,6 @@ public class ParamservBuiltinCPInstruction extends ParameterizedBuiltinCPInstruc
 		if (!getUpdateType().isSBP())
 			LOG.warn("Specifying number of backup-workers without SBP mode has no effect");
 		return Integer.parseInt(getParam(PS_NUM_BACKUP_WORKERS));
-	}
-
-	private boolean checkIsPrivate(MatrixObject obj) {
-		PrivacyConstraint pc = obj.getPrivacyConstraint();
-		return pc != null && pc.hasPrivateElements();
 	}
 
 	private boolean getHe() {

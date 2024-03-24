@@ -25,8 +25,6 @@ import org.apache.sysds.common.Types.DataType;
 import org.apache.sysds.common.Types.FileFormat;
 import org.apache.sysds.common.Types.ValueType;
 import org.apache.sysds.parser.LanguageException.LanguageErrorCodes;
-import org.apache.sysds.runtime.privacy.PrivacyConstraint;
-import org.apache.sysds.runtime.privacy.PrivacyConstraint.PrivacyLevel;
 
 public abstract class Identifier extends Expression
 {
@@ -37,7 +35,6 @@ public abstract class Identifier extends Expression
 	protected int _blocksize;
 	protected long _nnz;
 	protected FileFormat _format;
-	protected PrivacyConstraint _privacy;
 
 	public Identifier() {
 		_dim1 = -1;
@@ -66,7 +63,6 @@ public abstract class Identifier extends Expression
 		_blocksize = i.getBlocksize();
 		_nnz = i.getNnz();
 		_format = i.getFileFormat();
-		_privacy = i.getPrivacy();
 	}
 	
 	public void setDimensionValueProperties(Identifier i) {
@@ -105,14 +101,6 @@ public abstract class Identifier extends Expression
 		_nnz = nnzs;
 	}
 
-	public void setPrivacy(PrivacyLevel privacyLevel){
-		_privacy = new PrivacyConstraint(privacyLevel);
-	}
-
-	public void setPrivacy(PrivacyConstraint privacyConstraint){
-		_privacy = privacyConstraint;
-	}
-	
 	public long getDim1(){
 		return _dim1;
 	}
@@ -145,10 +133,6 @@ public abstract class Identifier extends Expression
 		return _nnz;
 	}
 
-	public PrivacyConstraint getPrivacy(){
-		return _privacy;
-	}
-	
 	@Override
 	public void validateExpression(HashMap<String,DataIdentifier> ids, HashMap<String,ConstIdentifier> constVars, boolean conditional) 
 	{

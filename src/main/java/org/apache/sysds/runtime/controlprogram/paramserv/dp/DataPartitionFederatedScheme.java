@@ -84,11 +84,9 @@ public abstract class DataPartitionFederatedScheme {
 				// Create sliced matrix object
 				MatrixObject slice = new MatrixObject(fedMatrix.getValueType(), Dag.getNextUniqueVarname(Types.DataType.MATRIX));
 				slice.setMetaData(new MetaDataFormat(
-						new MatrixCharacteristics(range.getSize(0), range.getSize(1)),
-						Types.FileFormat.BINARY)
+					new MatrixCharacteristics(range.getSize(0), range.getSize(1)),
+					Types.FileFormat.BINARY)
 				);
-				slice.setPrivacyConstraints(fedMatrix.getPrivacyConstraint());
-
 				// Create new federation map
 				List<Pair<FederatedRange, FederatedData>> newFedHashMap = new ArrayList<>();
 				newFedHashMap.add(Pair.of(range, data));

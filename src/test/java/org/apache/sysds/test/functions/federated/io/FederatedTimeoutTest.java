@@ -102,15 +102,9 @@ public class FederatedTimeoutTest extends AutomatedTestBase {
 			clientSocket = new ServerSocket(port1);
 			clientSocket2 = new ServerSocket(port2);
 			MatrixObject fed = FederatedTestObjectConstructor.constructFederatedInput(rows,
-				cols,
-				blocksize,
-				host,
-				begins,
-				ends,
-				new int[] {port1, port2},
-				new String[] {input("X1"), input("X2")},
-				input("X.json"));
-			writeInputFederatedWithMTD("X.json", fed, null);
+				cols, blocksize, host, begins, ends, new int[] {port1, port2},
+				new String[] {input("X1"), input("X2")}, input("X.json"));
+			writeInputFederatedWithMTD("X.json", fed);
 
 		}
 		catch(DMLRuntimeException e) {

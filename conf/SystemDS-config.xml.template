@@ -21,7 +21,7 @@
     <!-- local fs tmp working directory-->
     <sysds.localtmpdir>/tmp/systemds</sysds.localtmpdir>
 
-    <!-- hdfs tmp working directory--> 
+    <!-- hdfs tmp working directory-->
     <sysds.scratch>scratch_space</sysds.scratch>
 
     <!-- compiler optimization level, valid values: 0 | 1 | 2 | 3 | 4, default: 2 -->
@@ -124,7 +124,7 @@
     <!-- enables compiler assisted partial rewrites (e.g. Append-TSMM) -->
     <sysds.lineage.compilerassisted>true</sysds.lineage.compilerassisted>
     
-    <!-- set the federated plan generator (none, [runtime], compile_fed_all, compile_fed_heuristic, compile_cost_based) -->
+    <!-- set the federated plan generator (none, [runtime], compile_fed_all, compile_fed_heuristic) -->
     <sysds.federated.planner>runtime</sysds.federated.planner>
 
     <!-- set the degree of parallelism of the federated worker event loop (<=0 means number of virtual cores) -->

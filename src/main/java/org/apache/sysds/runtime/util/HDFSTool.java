@@ -65,7 +65,6 @@ import org.apache.sysds.runtime.io.MatrixReader;
 import org.apache.sysds.runtime.io.MatrixReaderFactory;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.meta.DataCharacteristics;
-import org.apache.sysds.runtime.privacy.PrivacyConstraint;
 import org.apache.wink.json4j.JSONException;
 import org.apache.wink.json4j.OrderedJSONObject;
 
@@ -372,7 +371,7 @@ public class HDFSTool
 	public static void writeScalarToHDFS(ScalarObject scalar, String fname) {
 		try {
 			writeObjectToHDFS(scalar.getValue(), fname);
-			writeScalarMetaDataFile(fname +".mtd", scalar.getValueType(), scalar.getPrivacyConstraint());
+			writeScalarMetaDataFile(fname +".mtd", scalar.getValueType());
 
 			FileSystem fs = IOUtilFunctions.getFileSystem(fname);
 			if (fs instanceof LocalFileSystem) {
@@ -406,35 +405,20 @@ public class HDFSTool
 			br.write(obj.toString());
 		}
 	}
-	
+
 	public static void writeMetaDataFile(String mtdfile, ValueType vt, DataCharacteristics mc, FileFormat fmt)
 		throws IOException {
-		writeMetaDataFile(mtdfile, vt, null, DataType.MATRIX, mc, fmt);
+		writeMetaDataFile(mtdfile, vt, null, DataType.MATRIX, mc, fmt, null);
 	}
 
-	public static void writeMetaDataFile(String mtdfile, ValueType vt, DataCharacteristics mc, FileFormat fmt, PrivacyConstraint privacyConstraint)
-		throws IOException {
-		writeMetaDataFile(mtdfile, vt, null, DataType.MATRIX, mc, fmt, null, privacyConstraint);
-	}
-	
 	public static void writeMetaDataFile(String mtdfile, ValueType vt, ValueType[] schema, DataType dt, DataCharacteristics mc, FileFormat fmt)
 		throws IOException {
-		writeMetaDataFile(mtdfile, vt, schema, dt, mc, fmt, (PrivacyConstraint) null);
-	}
-
-	public static void writeMetaDataFile(String mtdfile, ValueType vt, ValueType[] schema, DataType dt, DataCharacteristics mc, FileFormat fmt, PrivacyConstraint privacyConstraint)
-		throws IOException {
-		writeMetaDataFile(mtdfile, vt, schema, dt, mc, fmt, null, privacyConstraint);
+		writeMetaDataFile(mtdfile, vt, schema, dt, mc, fmt, null);
 	}
 
 	public static void writeMetaDataFile(String mtdfile, ValueType vt, DataCharacteristics dc, FileFormat fmt, FileFormatProperties formatProperties)
 		throws IOException {
 		writeMetaDataFile(mtdfile, vt, null, DataType.MATRIX, dc, fmt, formatProperties);
-	}
-
-	public static void writeMetaDataFile(String mtdfile, ValueType vt, DataCharacteristics dc, FileFormat fmt, FileFormatProperties formatProperties, PrivacyConstraint privacyConstraint)
-		throws IOException {
-		writeMetaDataFile(mtdfile, vt, null, DataType.MATRIX, dc, fmt, formatProperties, privacyConstraint);
 	}
 	
 	public static void writeMetaDataFileFrame(String mtdfile, ValueType[] schema,  DataCharacteristics dc,
@@ -446,17 +430,10 @@ public class HDFSTool
 			FileFormat fmt, FileFormatProperties formatProperties) 
 		throws IOException 
 	{
-		writeMetaDataFile(mtdfile, vt, schema, dt, dc, fmt, formatProperties, null);
-	}
-
-	public static void writeMetaDataFile(String mtdfile, ValueType vt, ValueType[] schema, DataType dt, DataCharacteristics dc,
-			FileFormat fmt, FileFormatProperties formatProperties, PrivacyConstraint privacyConstraint) 
-		throws IOException 
-	{
 		Path path = new Path(mtdfile);
 		FileSystem fs = IOUtilFunctions.getFileSystem(path);
 		try( BufferedWriter br = new BufferedWriter(new OutputStreamWriter(fs.create(path,true))) ) {
-			String mtd = metaDataToString(vt, schema, dt, dc, fmt, formatProperties, privacyConstraint);
+			String mtd = metaDataToString(vt, schema, dt, dc, fmt, formatProperties);
 			br.write(mtd);
 		} catch (Exception e) {
 			throw new IOException("Error creating and writing metadata JSON file", e);
@@ -466,16 +443,10 @@ public class HDFSTool
 	public static void writeScalarMetaDataFile(String mtdfile, ValueType vt) 
 		throws IOException 
 	{
-		writeScalarMetaDataFile(mtdfile, vt, null);
-	}
-
-	public static void writeScalarMetaDataFile(String mtdfile, ValueType vt, PrivacyConstraint privacyConstraint) 
-		throws IOException 
-	{
 		Path path = new Path(mtdfile);
 		FileSystem fs = IOUtilFunctions.getFileSystem(path);
 		try( BufferedWriter br = new BufferedWriter(new OutputStreamWriter(fs.create(path,true))) ) {
-			String mtd = metaDataToString(vt, null, DataType.SCALAR, null, FileFormat.TEXT, null, privacyConstraint);
+			String mtd = metaDataToString(vt, null, DataType.SCALAR, null, FileFormat.TEXT, null);
 			br.write(mtd);
 		} 
 		catch (Exception e) {
@@ -483,8 +454,9 @@ public class HDFSTool
 		}
 	}
 
-	public static String metaDataToString(ValueType vt, ValueType[] schema, DataType dt, DataCharacteristics dc,
-			FileFormat fmt, FileFormatProperties formatProperties, PrivacyConstraint privacyConstraint) throws JSONException, DMLRuntimeException
+	public static String metaDataToString(ValueType vt, ValueType[] schema, DataType dt,
+		DataCharacteristics dc, FileFormat fmt, FileFormatProperties formatProperties)
+		throws JSONException, DMLRuntimeException
 	{
 		OrderedJSONObject mtd = new OrderedJSONObject(); // maintain order in output file
 
@@ -546,11 +518,6 @@ public class HDFSTool
 
 		SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss z");
 		mtd.put(DataExpression.CREATEDPARAM, sdf.format(new Date()));
-
-		//add privacy constraints
-		if ( privacyConstraint != null ){
-			privacyConstraint.toJson(mtd);
-		}
 
 		return mtd.toString(4); // indent with 4 spaces	
 	}

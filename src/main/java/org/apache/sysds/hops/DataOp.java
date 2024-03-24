@@ -326,7 +326,6 @@ public class DataOp extends Hop {
 		}
 		
 		setLineNumbers(l);
-		setPrivacy(l);
 		setLops(l);
 		
 		//add reblock/checkpoint lops if necessary

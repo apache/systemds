@@ -33,7 +33,6 @@ import org.apache.sysds.runtime.instructions.cp.FunctionCallCPInstruction;
 import org.apache.sysds.runtime.instructions.spark.SPInstruction;
 import org.apache.sysds.runtime.lineage.LineageCacheConfig.ReuseCacheType;
 import org.apache.sysds.runtime.lineage.LineageCacheStatistics;
-import org.apache.sysds.runtime.privacy.CheckedConstraintsLog;
 import org.apache.sysds.utils.stats.CodegenStatistics;
 import org.apache.sysds.utils.stats.RecompileStatistics;
 import org.apache.sysds.utils.stats.NativeStatistics;
@@ -679,9 +678,6 @@ public class Statistics
 			sb.append("Total JVM GC time:\t\t" + ((double)getJVMgcTime())/1000 + " sec.\n");
 			sb.append("Heavy hitter instructions:\n" + getHeavyHitters(maxHeavyHitters));
 		}
-
-		if (DMLScript.CHECK_PRIVACY)
-			sb.append(CheckedConstraintsLog.display());
 
 		if(DMLScript.FED_STATISTICS) {
 			sb.append("\n");

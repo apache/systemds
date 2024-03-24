@@ -80,7 +80,7 @@ public class FederatedReaderCSV extends AutomatedTestBase {
 			// Thread.sleep(10000);
 			MatrixObject fed = FederatedTestObjectConstructor.constructFederatedInput(dim, dim, blocksize, host, begins,
 				ends, new int[] {port1}, new String[] {input("X1")}, input("X.json"));
-			writeInputFederatedWithMTD("X.json", fed, null);
+			writeInputFederatedWithMTD("X.json", fed);
 
 			// Run reference dml script with normal matrix
 

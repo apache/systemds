@@ -40,10 +40,7 @@ import org.apache.sysds.parser.LanguageException;
 import org.apache.sysds.parser.ParseException;
 import org.apache.sysds.parser.StringIdentifier;
 import org.apache.sysds.runtime.DMLRuntimeException;
-import org.apache.sysds.runtime.controlprogram.caching.CacheableData;
 import org.apache.sysds.runtime.io.IOUtilFunctions;
-import org.apache.sysds.runtime.privacy.PrivacyConstraint;
-import org.apache.sysds.runtime.privacy.propagation.PrivacyPropagator;
 import org.apache.sysds.runtime.util.HDFSTool;
 import org.apache.sysds.utils.JSONHelper;
 import org.apache.wink.json4j.JSONArray;
@@ -73,7 +70,6 @@ public class MetaDataAll extends DataIdentifier {
 		catch(JSONException e) {
 			e.printStackTrace();
 		}
-		setPrivacy(PrivacyConstraint.PrivacyLevel.None);
 		parseMetaDataParams();
 	}
 
@@ -84,14 +80,12 @@ public class MetaDataAll extends DataIdentifier {
 		catch(Exception e) {
 			throw new DMLRuntimeException(e);
 		}
-		setPrivacy(PrivacyConstraint.PrivacyLevel.None);
 		parseMetaDataParams();
 	}
 
 	public MetaDataAll(String mtdFileName, boolean conditional, boolean parseMeta) {
 		setFilename(mtdFileName);
 		_metaObj = readMetadataFile(mtdFileName, conditional);
-		setPrivacy(PrivacyConstraint.PrivacyLevel.None);
 		if(parseMeta)
 			parseMetaDataParams();
 	}
@@ -172,8 +166,6 @@ public class MetaDataAll extends DataIdentifier {
 			case DataExpression.FORMAT_TYPE: setFormatTypeString((String) val); break;
 			case DataExpression.DATATYPEPARAM: setDataType(Types.DataType.valueOf(((String) val).toUpperCase())); break;
 			case DataExpression.VALUETYPEPARAM: setValueType(Types.ValueType.fromExternalString((String) val)); break;
-			case DataExpression.PRIVACY: setPrivacy(PrivacyConstraint.PrivacyLevel.valueOf((String) val)); break;
-			case DataExpression.FINE_GRAINED_PRIVACY:  setFineGrainedPrivacy(val.toString()); break;
 			case DataExpression.DELIM_DELIMITER: setDelim(val.toString()); break;
 			case DataExpression.SCHEMAPARAM: setSchema(val.toString()); break;
 			case DataExpression.DELIM_HAS_HEADER_ROW:
@@ -191,10 +183,6 @@ public class MetaDataAll extends DataIdentifier {
 
 	public boolean mtdExists() {
 		return _metaObj != null && !_metaObj.isEmpty();
-	}
-
-	public CacheableData<?> parseAndSetPrivacyConstraint(CacheableData<?> cd) throws JSONException {
-		return (CacheableData<?>) PrivacyPropagator.parseAndSetPrivacyConstraint(cd, _metaObj);
 	}
 
 	public String getFormatTypeString() {

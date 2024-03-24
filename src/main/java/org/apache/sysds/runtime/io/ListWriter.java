@@ -53,8 +53,7 @@ public class ListWriter
 		try {
 			//write basic list meta data
 			HDFSTool.writeMetaDataFile(fname + ".mtd", lo.getValueType(), null,
-				lo.getDataType(), dc, FileFormat.safeValueOf(fmtStr),
-				props, lo.getPrivacyConstraint());
+				lo.getDataType(), dc, FileFormat.safeValueOf(fmtStr), props);
 			
 			//create folder for list w/ appropriate permissions
 			HDFSTool.createDirIfNotExistOnHDFS(fname,

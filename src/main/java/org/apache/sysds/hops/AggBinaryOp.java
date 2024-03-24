@@ -649,7 +649,6 @@ public class AggBinaryOp extends MultiThreadedHop {
 		}
 		
 		setLineNumbers(matmultCP);
-		setPrivacy(matmultCP);
 		setLops(matmultCP);
 	}
 

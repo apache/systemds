@@ -51,7 +51,6 @@ import org.apache.sysds.runtime.controlprogram.Program;
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContextFactory;
 import org.apache.sysds.runtime.lineage.LineageItemUtils;
-import org.apache.sysds.runtime.privacy.CheckedConstraintsLog;
 import org.apache.sysds.utils.Explain;
 import org.apache.sysds.utils.Statistics;
 import org.apache.sysds.utils.Explain.ExplainCounts;
@@ -375,8 +374,6 @@ public class ScriptExecutor {
 		Statistics.resetNoOfExecutedJobs();
 		if (statistics)
 			Statistics.reset();
-		if ( DMLScript.CHECK_PRIVACY )
-			CheckedConstraintsLog.reset();
 	}
 
 	/**

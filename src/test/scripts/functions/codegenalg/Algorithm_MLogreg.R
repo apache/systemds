@@ -28,10 +28,10 @@ Y_vec = readMM(paste(args[1], "Y.mtx", sep=""));
 intercept = as.integer(args[2]);
 tol = as.double(args[3]);
 maxiter = as.integer(args[4]);
+regularization = as.double(args[5]);
 
 intercept_status = intercept;
-regularization = 0.001;
-maxinneriter = 0;
+maxinneriter = 20;
 
 print ("BEGIN MULTINOMIAL LOGISTIC REGRESSION SCRIPT");
 
@@ -207,7 +207,7 @@ while (! converge)
 	# Consider the big "obj" and "obj_new" rounding-off their small difference below:
 
 	actred = (obj - obj_new);
-	
+
 	rho = actred / qk;
 	is_rho_accepted = (rho > eta0);
 	snorm = sqrt (sum (S ^ 2));
@@ -277,4 +277,4 @@ if (intercept_status == 2) {
     B_out = B;
 }
 
-writeMM(as(B_out,"CsparseMatrix"), paste(args[5], "w", sep=""));
+writeMM(as(B_out,"CsparseMatrix"), paste(args[6], "w", sep=""));

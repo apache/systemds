@@ -7,9 +7,9 @@
 # to you under the Apache License, Version 2.0 (the
 # "License"); you may not use this file except in compliance
 # with the License.  You may obtain a copy of the License at
-# 
+#
 #   http://www.apache.org/licenses/LICENSE-2.0
-# 
+#
 # Unless required by applicable law or agreed to in writing,
 # software distributed under the License is distributed on an
 # "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -19,10 +19,8 @@
 #
 #-------------------------------------------------------------
 
-cmdLine_fmt = ifdef($FMT, "csv")
+X = read($X);
+Y = read($Y);
+w = lmCG(X=X, y=Y, icpt=$icpt, tol=$tol, reg=$reg, maxi=$maxi);
+write(w, $B);
 
-raw = read($DATA_PATH);
-specJson = read($TRANSFORM_SPEC_PATH, data_type="scalar", value_type="string");
-
-A = transform(target=raw, transformPath=$TRANSFORM_PATH, spec=specJson, outputNames=$OUTPUT_NAMES);
-write(A, $OUTPUT_DATA_PATH, format=cmdLine_fmt);

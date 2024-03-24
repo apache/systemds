@@ -42,6 +42,7 @@ public class AlgorithmMLogreg extends AutomatedTestBase {
 	private final static String TEST_CLASS_DIR = TEST_DIR + AlgorithmMLogreg.class.getSimpleName() + "/";
 
 	private final static double eps = 1e-5;
+	private final static double reg = 0.001;
 	
 	private final static int rows = 2468;
 	private final static int cols = 227;
@@ -400,13 +401,13 @@ public class AlgorithmMLogreg extends AutomatedTestBase {
 			TestConfiguration config = getTestConfiguration(TEST_NAME);
 			loadTestConfiguration(config);
 			
-			fullDMLScriptName = "scripts/algorithms/MultiLogReg.dml";
+			fullDMLScriptName = getScript();
 			programArgs = new String[]{ "-stats", "-nvargs", "X="+input("X"), "Y="+input("Y"),
 				"icpt="+String.valueOf(intercept), "tol="+String.valueOf(epsilon),
-				"moi="+String.valueOf(maxiter), "reg=0.001", "B="+output("w")};
+				"moi="+String.valueOf(maxiter), "reg="+String.valueOf(reg), "B="+output("w")};
 
-			rCmd = getRCmd(inputDir(), String.valueOf(intercept),String.valueOf(epsilon),
-				String.valueOf(maxiter), expectedDir());
+			rCmd = getRCmd(inputDir(), String.valueOf(intercept), String.valueOf(epsilon),
+				String.valueOf(maxiter), String.valueOf(reg), expectedDir());
 
 			OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION = rewrites;
 			

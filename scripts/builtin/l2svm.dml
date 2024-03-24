@@ -74,17 +74,17 @@ m_l2svm = function(Matrix[Double] X, Matrix[Double] Y, Boolean intercept = FALSE
   # Scale inputs to -1 for negative, and 1 for positive classification
   if(check_min != -1 | check_max != +1)
     Y = 2/(check_max - check_min)*Y - (check_min + check_max)/(check_max - check_min)
-    
+
   # If column_id is -1 then we assume that it's called from within MSVM
   if(verbose & columnId == -1)
     print('Running L2-SVM ')
 
-  # Add Bias 
+  # Add Bias
   if (intercept) {
     ones  = matrix(1, rows=nrow(X), cols=1)
     X = cbind(X, ones);
   }
-  
+
   w = matrix(0, rows=ncol(X), cols=1)
   Xw = matrix(0, rows=nrow(X), cols=1)
 

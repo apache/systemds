@@ -19,8 +19,6 @@
 
 package org.apache.sysds.test.functions.mlcontext;
 
-import static org.apache.sysds.api.mlcontext.ScriptFactory.dmlFromFile;
-
 import org.apache.log4j.Logger;
 import org.apache.sysds.api.mlcontext.Script;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
@@ -33,8 +31,6 @@ import java.util.HashMap;
 public class MLContextLinregTest extends MLContextTestBase {
 	protected static Logger log = Logger.getLogger(MLContextLinregTest.class);
 
-	protected final static String TEST_SCRIPT_CG = "scripts/algorithms/LinearRegCG.dml";
-	protected final static String TEST_SCRIPT_DS = "scripts/algorithms/LinearRegDS.dml";
 	private final static double sparsity1 = 0.7; // dense
 	private final static double sparsity2 = 0.1; // sparse
 
@@ -88,7 +84,10 @@ public class MLContextLinregTest extends MLContextTestBase {
 
 		switch (type) {
 		case CG:
-			Script lrcg = dmlFromFile(TEST_SCRIPT_CG);
+			Script lrcg = new Script(
+				  "X = read($X);\n"
+				+ "y = read($Y);\n"
+				+ "beta_out = lmCG(X=X, y=y, icpt=$icpt, tol=$tol, maxi=$maxi, reg=$reg);\n");
 			lrcg.in("X", X).in("y", Y).in("$icpt", "0").in("$tol", "0.000001").in("$maxi", "0").in("$reg", "0.000001")
 					.out("beta_out");
 			outmat = ml.execute(lrcg).getMatrix("beta_out").toMatrixBlock();
@@ -96,7 +95,10 @@ public class MLContextLinregTest extends MLContextTestBase {
 			break;
 
 		case DS:
-			Script lrds = dmlFromFile(TEST_SCRIPT_DS);
+			Script lrds = new Script(
+				  "X = read($X);\n"
+				+ "y = read($Y);\n"
+				+ "beta_out = lmDS(X=X, y=y, icpt=$icpt, reg=$reg);\n");
 			lrds.in("X", X).in("y", Y).in("$icpt", "0").in("$reg", "0.000001").out("beta_out");
 			outmat = ml.execute(lrds).getMatrix("beta_out").toMatrixBlock();
 

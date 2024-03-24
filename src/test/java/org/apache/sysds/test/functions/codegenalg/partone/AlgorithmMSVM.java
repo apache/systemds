@@ -183,7 +183,7 @@ public class AlgorithmMSVM extends AutomatedTestBase
 			TestConfiguration config = getTestConfiguration(TEST_NAME);
 			loadTestConfiguration(config);
 			
-			fullDMLScriptName = "scripts/algorithms/m-svm.dml";
+			fullDMLScriptName = getScript();
 			programArgs = new String[]{ "-stats", "-nvargs", "X="+input("X"), "Y="+input("Y"),
 					"icpt="+String.valueOf(intercept), "tol="+String.valueOf(epsilon), "reg=0.001",
 					"maxiter="+String.valueOf(maxiter), "model="+output("w"), "Log= "};

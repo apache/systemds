@@ -315,7 +315,7 @@ public class AlgorithmKMeans extends AutomatedTestBase
 			TestConfiguration config = getTestConfiguration(TEST_NAME);
 			loadTestConfiguration(config);
 			
-			fullDMLScriptName = "scripts/algorithms/Kmeans.dml";
+			fullDMLScriptName = getScript();
 			programArgs = new String[]{ "-stats",
 				"-nvargs", "X="+input("X"), "k="+String.valueOf(centroids), "runs="+String.valueOf(runs), 
 				"tol="+String.valueOf(epsilon), "maxi="+String.valueOf(maxiter), "C="+output("C")};

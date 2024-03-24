@@ -255,8 +255,7 @@ public class GLMTest extends AutomatedTestBase
 		proArgs.add("Y=" + input("Y"));
 		proArgs.add("B=" + output("betas_SYSTEMDS"));
 		programArgs = proArgs.toArray(new String[proArgs.size()]);
-		
-		fullDMLScriptName = "scripts/algorithms/GLM.dml";
+		fullDMLScriptName = getScript();
 		
 		rCmd = getRCmd(input("X.mtx"), input("Y.mtx"), String.format ("%d", distFamilyType), String.format ("%f", distParam),
 				String.format ("%d", linkType), String.format ("%f", linkPower), "1" /*intercept*/, "0.000000000001" /*tolerance (espilon)*/,

@@ -125,9 +125,4 @@ for(iter_class in 1:num_classes){
   w[,iter_class] = as.matrix(w_class)
 }
 
-extra_model_params = matrix(0, 2, ncol(w))
-extra_model_params[1, 1] = intercept
-extra_model_params[2, 1] = dimensions
-w = t(cbind(t(w), t(extra_model_params)))
-
 writeMM(as(w,"CsparseMatrix"), paste(args[5], "w", sep=""));

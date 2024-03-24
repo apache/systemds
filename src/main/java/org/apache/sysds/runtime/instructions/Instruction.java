@@ -26,7 +26,6 @@ import org.apache.sysds.lops.Lop;
 import org.apache.sysds.parser.DataIdentifier;
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysds.runtime.matrix.operators.Operator;
-import org.apache.sysds.runtime.privacy.PrivacyConstraint;
 
 public abstract class Instruction 
 {
@@ -66,9 +65,6 @@ public abstract class Instruction
 	protected int endLine = -1;  
 	protected int beginCol = -1; 
 	protected int endCol = -1;
-
-	//privacy meta data
-	protected PrivacyConstraint privacyConstraint = null;
 	
 	public String getFilename() {
 		return filename;
@@ -128,18 +124,6 @@ public abstract class Instruction
 			this.beginCol = oldInst.beginCol;
 			this.endCol = oldInst.endCol;
 		}
-	}
-
-	public void setPrivacyConstraint(Lop lop){
-		privacyConstraint = lop.getPrivacyConstraint();
-	}
-
-	public void setPrivacyConstraint(PrivacyConstraint pc){
-		privacyConstraint = pc;
-	}
-
-	public PrivacyConstraint getPrivacyConstraint(){
-		return privacyConstraint;
 	}
 
 	public Operator getOperator() {

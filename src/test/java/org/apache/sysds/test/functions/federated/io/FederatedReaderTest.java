@@ -97,15 +97,11 @@ public class FederatedReaderTest extends AutomatedTestBase {
 
 		try {
 			MatrixObject fed = FederatedTestObjectConstructor.constructFederatedInput(rows,
-				cols,
-				blocksize,
-				host,
-				begins,
-				ends,
+				cols, blocksize, host, begins, ends,
 				workerCount == 2 ? new int[] {port1, port2} : new int[] {port1},
 				workerCount == 2 ? new String[] {input("X1"), input("X2")} : new String[] {input("X1")},
 				input("X.json"));
-			writeInputFederatedWithMTD("X.json", fed, null);
+			writeInputFederatedWithMTD("X.json", fed);
 			// Run reference dml script with normal matrix
 
 			if(workerCount == 1) {

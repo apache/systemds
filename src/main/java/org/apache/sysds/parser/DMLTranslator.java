@@ -2191,7 +2191,6 @@ public class DMLTranslator
 		if( source.getOpCode()==DataExpression.DataOp.READ )
 			((DataOp)currBuiltinOp).setInputBlocksize(target.getBlocksize());
 		else if ( source.getOpCode() == DataExpression.DataOp.WRITE ) {
-			((DataOp)currBuiltinOp).setPrivacy(hops.get(target.getName()).getPrivacy());
 			if( source.getVarParam(DataExpression.ROWBLOCKCOUNTPARAM) != null )
 				currBuiltinOp.setBlocksize(Integer.parseInt(
 					source.getVarParam(DataExpression.ROWBLOCKCOUNTPARAM).toString()));
@@ -2913,7 +2912,6 @@ public class DMLTranslator
 		if( id.getNnz()>= 0 )
 			h.setNnz(id.getNnz());
 		h.setBlocksize(id.getBlocksize());
-		h.setPrivacy(id.getPrivacy());
 	}
 
 	private boolean prepareReadAfterWrite( DMLProgram prog, HashMap<String, DataIdentifier> pWrites ) {

@@ -77,8 +77,6 @@ import org.apache.sysds.runtime.matrix.operators.Operator;
 import org.apache.sysds.runtime.meta.MatrixCharacteristics;
 import org.apache.sysds.runtime.meta.MetaDataAll;
 import org.apache.sysds.runtime.meta.MetaDataFormat;
-import org.apache.sysds.runtime.privacy.DMLPrivacyException;
-import org.apache.sysds.runtime.privacy.PrivacyMonitor;
 import org.apache.sysds.utils.Statistics;
 import org.apache.sysds.utils.stats.ParamServStatistics;
 
@@ -185,7 +183,7 @@ public class FederatedWorkerHandler extends ChannelInboundHandlerAdapter {
 		try {
 			return createResponse(requests, remoteHost);
 		}
-		catch(DMLPrivacyException | FederatedWorkerHandlerException ex) {
+		catch(FederatedWorkerHandlerException ex) {
 			// Here we control the error message, therefore it is allowed to send the stack trace with the response
 			LOG.error("Exception in FederatedWorkerHandler while processing requests:\n"
 				+ Arrays.toString(requests), ex);
@@ -200,7 +198,7 @@ public class FederatedWorkerHandler extends ChannelInboundHandlerAdapter {
 	}
 
 	private FederatedResponse createResponse(FederatedRequest[] requests, String remoteHost)
-		throws DMLPrivacyException, FederatedWorkerHandlerException, Exception {
+		throws FederatedWorkerHandlerException, Exception {
 			
 		FederatedResponse response = null; // last response
 		boolean containsCLEAR = false;
@@ -215,9 +213,6 @@ public class FederatedWorkerHandler extends ChannelInboundHandlerAdapter {
 			final ExecutionContextMap ecm = _flt.getECM(remoteHost, request.getPID());
 			logRequests(request, i, requests.length);
 
-			PrivacyMonitor.setCheckPrivacy(request.checkPrivacy());
-			PrivacyMonitor.clearCheckedConstraints();
-
 			var eventStage = new EventStageModel();
 			// execute command and handle privacy constraints
 			final FederatedResponse tmp = executeCommand(request, ecm, eventStage);
@@ -229,8 +224,6 @@ public class FederatedWorkerHandler extends ChannelInboundHandlerAdapter {
 
 				event.stages.add(eventStage);
 			}
-
-			conditionalAddCheckedConstraints(request, tmp);
 
 			// select the response
 			if(!tmp.isSuccessful()) {
@@ -304,13 +297,8 @@ public class FederatedWorkerHandler extends ChannelInboundHandlerAdapter {
 		}
 	}
 
-	private static void conditionalAddCheckedConstraints(FederatedRequest request, FederatedResponse response) {
-		if(request.checkPrivacy())
-			response.setCheckedConstraints(PrivacyMonitor.getCheckedConstraints());
-	}
-
 	private FederatedResponse executeCommand(FederatedRequest request, ExecutionContextMap ecm, EventStageModel eventStage)
-		throws DMLPrivacyException, FederatedWorkerHandlerException, Exception
+		throws FederatedWorkerHandlerException, Exception
 	{
 		final RequestType method = request.getType();
 		FederatedResponse result = null;
@@ -458,12 +446,11 @@ public class FederatedWorkerHandler extends ChannelInboundHandlerAdapter {
 				mc.setCols(mtd.getDim2());
 				mc.setNonZeros(mtd.getNnz());
 				header = mtd.getHasHeader();
-				cd = mtd.parseAndSetPrivacyConstraint(cd);
 				fmt = mtd.getFileFormat();
 				delim = mtd.getDelim();
 			}
 		}
-		catch(DMLPrivacyException | FederatedWorkerHandlerException ex) {
+		catch(FederatedWorkerHandlerException ex) {
 			throw ex;
 		}
 		catch(Exception ex) {
@@ -567,7 +554,6 @@ public class FederatedWorkerHandler extends ChannelInboundHandlerAdapter {
 	
 			// get variable and construct response
 			Data dataObject = ec.getVariable(String.valueOf(request.getID()));
-			dataObject = PrivacyMonitor.handlePrivacy(dataObject);
 			switch(dataObject.getDataType()) {
 				case TENSOR:
 				case MATRIX:
@@ -670,8 +656,9 @@ public class FederatedWorkerHandler extends ChannelInboundHandlerAdapter {
 
 			eventStage.operation = udf.getClass().getSimpleName();
 
-			Data[] inputs = Arrays.stream(udf.getInputIDs()).mapToObj(id -> ec.getVariable(String.valueOf(id)))
-				.map(PrivacyMonitor::handlePrivacy).toArray(Data[]::new);
+			Data[] inputs = Arrays.stream(udf.getInputIDs())
+				.mapToObj(id -> ec.getVariable(String.valueOf(id)))
+				.toArray(Data[]::new);
 
 			// trace lineage
 			if(DMLScript.LINEAGE)
@@ -691,7 +678,7 @@ public class FederatedWorkerHandler extends ChannelInboundHandlerAdapter {
 			LineageCache.putValue(udf, ec, t1 - t0);
 			return res;
 		}
-		catch(DMLPrivacyException | FederatedWorkerHandlerException ex) {
+		catch(FederatedWorkerHandlerException ex) {
 			LOG.debug("FederatedWorkerHandler Privacy Constraint " +
 				"exception thrown when processing EXEC_UDF request ", ex);
 			throw ex;
@@ -709,7 +696,7 @@ public class FederatedWorkerHandler extends ChannelInboundHandlerAdapter {
 			ecm.clear();
 			FederatedStatistics.removeDataObjects();
 		}
-		catch(DMLPrivacyException | FederatedWorkerHandlerException ex) {
+		catch(FederatedWorkerHandlerException ex) {
 			throw ex;
 		}
 		catch(Exception ex) {
@@ -751,7 +738,6 @@ public class FederatedWorkerHandler extends ChannelInboundHandlerAdapter {
 					new FederatedWorkerHandlerException("Error while sending response."))).channel().close().sync();
 			}
 			else {
-				PrivacyMonitor.clearCheckedConstraints();
 				channelFuture.channel().close().sync();
 			}
 		}

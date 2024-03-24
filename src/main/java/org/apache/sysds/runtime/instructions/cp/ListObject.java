@@ -41,7 +41,6 @@ import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.meta.DataCharacteristics;
 import org.apache.sysds.runtime.meta.MatrixCharacteristics;
 import org.apache.sysds.runtime.meta.MetaDataFormat;
-import org.apache.sysds.runtime.privacy.PrivacyConstraint;
 
 public class ListObject extends Data implements Externalizable {
 	private static final long serialVersionUID = 3652422061598967358L;
@@ -377,7 +376,6 @@ public class ListObject extends Data implements Externalizable {
 			Data d = getData(i);
 			out.writeObject(d.getDataType());
 			out.writeObject(d.getValueType());
-			out.writeObject(d.getPrivacyConstraint());
 			switch(d.getDataType()) {
 				case LIST:
 					ListObject lo = (ListObject) d;
@@ -444,7 +442,6 @@ public class ListObject extends Data implements Externalizable {
 		for(int i = 0; i < length; i++) {
 			DataType dataType = (DataType) in.readObject();
 			ValueType valueType = (ValueType) in.readObject();
-			PrivacyConstraint privacyConstraint = (PrivacyConstraint) in.readObject();
 			Data d;
 			switch(dataType) {
 				case LIST:
@@ -495,7 +492,6 @@ public class ListObject extends Data implements Externalizable {
 				default:
 					throw new DMLRuntimeException("Unable to deserialize datatype " + dataType);
 			}
-			d.setPrivacyConstraints(privacyConstraint);
 			_data.add(d);
 		}
 	}

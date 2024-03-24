@@ -19,10 +19,8 @@
 
 package org.apache.sysds.runtime.instructions.fed;
 
-import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysds.runtime.instructions.Instruction;
 import org.apache.sysds.runtime.matrix.operators.Operator;
-import org.apache.sysds.runtime.privacy.propagation.PrivacyPropagator;
 
 public abstract class FEDInstruction extends Instruction {
 
@@ -108,12 +106,5 @@ public abstract class FEDInstruction extends Instruction {
 
 	public void setTID(long tid) {
 		_tid = tid;
-	}
-
-	@Override
-	public Instruction preprocessInstruction(ExecutionContext ec) {
-		Instruction tmp = super.preprocessInstruction(ec);
-		tmp = PrivacyPropagator.preprocessInstruction(tmp, ec);
-		return tmp;
 	}
 }

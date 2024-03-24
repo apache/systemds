@@ -53,7 +53,6 @@ import org.apache.sysds.runtime.lineage.LineageCacheConfig.ReuseCacheType;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.meta.MetaData;
 import org.apache.sysds.runtime.meta.MetaDataFormat;
-import org.apache.sysds.runtime.privacy.propagation.PrivacyPropagator;
 import org.apache.sysds.utils.stats.RecompileStatistics;
 import org.apache.sysds.utils.Statistics;
 
@@ -265,9 +264,6 @@ public abstract class ProgramBlock implements ParseInfo {
 					Statistics.maintainCPHeavyHitters(tmp.getExtendedOpcode(), System.nanoTime() - t0);
 				}
 			}
-
-			// propagate input privacy constraints to output
-			PrivacyPropagator.postProcessInstruction(tmp, ec);
 
 			// optional trace information (instruction and runtime)
 			if(LOG.isTraceEnabled()) {

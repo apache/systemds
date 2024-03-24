@@ -48,9 +48,6 @@ import org.apache.sysds.runtime.controlprogram.parfor.stat.InfrastructureAnalyze
 import org.apache.sysds.runtime.io.FileFormatPropertiesMM;
 import org.apache.sysds.runtime.io.IOUtilFunctions;
 import org.apache.sysds.runtime.meta.MetaDataAll;
-import org.apache.sysds.runtime.privacy.PrivacyConstraint;
-import org.apache.sysds.runtime.privacy.PrivacyConstraint.PrivacyLevel;
-import org.apache.sysds.runtime.privacy.PrivacyUtils;
 import org.apache.sysds.runtime.util.HDFSTool;
 import org.apache.sysds.runtime.util.UtilFunctions;
 
@@ -1185,8 +1182,6 @@ public class DataExpression extends DataIdentifier
 					nnz = Long.valueOf(ennz.toString());
 					getOutput().setNnz(nnz);
 				}
-				
-				setPrivacy();
 
 				// Following dimension checks must be done when data type = MATRIX_DATA_TYPE 
 				// initialize size of target data identifier to UNKNOWN
@@ -1256,11 +1251,9 @@ public class DataExpression extends DataIdentifier
 			else if ( dataTypeString.equalsIgnoreCase(Statement.SCALAR_DATA_TYPE)) {
 				getOutput().setDataType(DataType.SCALAR);
 				getOutput().setNnz(-1L);
-				setPrivacy();
 			}
 			else if ( dataTypeString.equalsIgnoreCase(DataType.LIST.name())) {
 				getOutput().setDataType(DataType.LIST);
-				setPrivacy();
 			}
 			else{
 				raiseValidateError("Unknown Data Type " + dataTypeString + ". Valid  values: " 
@@ -2357,23 +2350,5 @@ public class DataExpression extends DataIdentifier
 	public boolean isRead()
 	{
 		return (_opcode == DataOp.READ);
-	}
-
-	/**
-	 * Sets privacy of identifier if privacy variable parameter is set.  
-	 */
-	private void setPrivacy(){
-		Expression eprivacy = getVarParam(PRIVACY);
-		Expression eFineGrainedPrivacy = getVarParam(FINE_GRAINED_PRIVACY);
-		if ( eprivacy != null || eFineGrainedPrivacy != null ){
-			PrivacyConstraint privacyConstraint = new PrivacyConstraint();
-			if ( eprivacy != null ){
-				privacyConstraint.setPrivacyLevel(PrivacyLevel.valueOf(eprivacy.toString()));
-			}
-			if ( eFineGrainedPrivacy != null ){
-				PrivacyUtils.setFineGrainedPrivacy(privacyConstraint, eFineGrainedPrivacy);
-			}
-			getOutput().setPrivacy(privacyConstraint);
-		}
 	}
 } // end class

@@ -503,20 +503,6 @@ public class IfStatementBlock extends StatementBlock
 		return liveInReturn;
 	}
 
-	@Override
-	public void updateRepetitionEstimates(double repetitions){
-		this.repetitions = repetitions;
-		getPredicateHops().updateRepetitionEstimates(this.repetitions);
-		for ( Statement statement : getStatements() ){
-			IfStatement ifStatement = (IfStatement) statement;
-			double blockLevelReps = repetitions / 2;
-			for ( StatementBlock ifBodySB : ifStatement.getIfBody() )
-				ifBodySB.updateRepetitionEstimates(blockLevelReps);
-			for ( StatementBlock elseBodySB : ifStatement.getElseBody() )
-				elseBodySB.updateRepetitionEstimates(blockLevelReps);
-		}
-	}
-	
 	/////////
 	// materialized hops recompilation flags
 	////

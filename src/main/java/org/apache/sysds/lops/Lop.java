@@ -30,8 +30,6 @@ import org.apache.sysds.common.Types.ExecType;
 import org.apache.sysds.hops.OptimizerUtils;
 import org.apache.sysds.lops.compile.Dag;
 import org.apache.sysds.runtime.instructions.fed.FEDInstruction.FederatedOutput;
-import org.apache.sysds.runtime.privacy.PrivacyConstraint;
-
 
 /**
  * Base class for all Lops.
@@ -113,11 +111,6 @@ public abstract class Lop
 	 */
 	protected ArrayList<Lop> inputs;
 	protected ArrayList<Lop> outputs;
-
-	/**
-	 * Privacy Constraint
-	 */
-	protected PrivacyConstraint privacyConstraint;
 
 	/**
 	 * Field defining if prefetch should be activated for operation.
@@ -376,18 +369,6 @@ public abstract class Lop
 	 */
 	public void removeOutput(Lop op) {
 		outputs.remove(op);
-	}
-
-	/**
-	 * Method to set privacy constraint of Lop.
-	 * @param privacy privacy constraint instance
-	 */
-	public void setPrivacyConstraint(PrivacyConstraint privacy){
-		privacyConstraint = privacy;
-	}
-
-	public PrivacyConstraint getPrivacyConstraint(){
-		return privacyConstraint;
 	}
 
 	public void activatePrefetch(){

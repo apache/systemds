@@ -202,12 +202,6 @@ public class DMLProgram
 		}
 	}
 
-	public void updateRepetitionEstimates(){
-		for ( StatementBlock stmBlock : getStatementBlocks() ){
-			stmBlock.updateRepetitionEstimates(1);
-		}
-	}
-	
 	@Override
 	public String toString(){
 		StringBuilder sb = new StringBuilder();

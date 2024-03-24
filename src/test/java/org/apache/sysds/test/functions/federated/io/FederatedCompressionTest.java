@@ -112,7 +112,7 @@ public class FederatedCompressionTest extends AutomatedTestBase {
 
 			MatrixObject fed = FederatedTestObjectConstructor.constructFederatedInput(dim, dim, blocksize, host, begins,
 				ends, new int[] {port1}, new String[] {input("X1")}, input("X.json"));
-			writeInputFederatedWithMTD("X.json", fed, null);
+			writeInputFederatedWithMTD("X.json", fed);
 
 			// Run reference dml script with normal matrix
 			fullDMLScriptName = SCRIPT_DIR + "functions/federated/io/" + TEST_NAME + "1Reference.dml";

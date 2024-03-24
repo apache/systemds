@@ -22,7 +22,6 @@ package org.apache.sysds.parser;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.List;
 
 import org.apache.sysds.conf.ConfigurationManager;
 import org.apache.sysds.hops.Hop;
@@ -32,7 +31,6 @@ import org.apache.sysds.lops.Lop;
 
 public class WhileStatementBlock extends StatementBlock 
 {
-	
 	private Hop _predicateHops;
 	private Lop _predicateLops = null;
 	private boolean _requiresPredicateRecompile = false;
@@ -317,19 +315,6 @@ public class WhileStatementBlock extends StatementBlock
 		liveInReturn.addVariables(_liveIn);
 		
 		return liveInReturn;
-	}
-
-	@Override
-	public void updateRepetitionEstimates(double repetitions){
-		this.repetitions = repetitions * DEFAULT_LOOP_REPETITIONS;
-		if ( getPredicateHops() != null )
-			getPredicateHops().updateRepetitionEstimates(this.repetitions);
-		for(Statement statement : getStatements()) {
-			List<StatementBlock> children = ((WhileStatement)statement).getBody();
-			for ( StatementBlock stmBlock : children ){
-				stmBlock.updateRepetitionEstimates(this.repetitions);
-			}
-		}
 	}
 	
 	/////////

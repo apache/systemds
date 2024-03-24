@@ -109,7 +109,7 @@ public class FederatedSSLTest extends AutomatedTestBase {
 			//(because federated matrix creation added to federated sites - blocks on clear)
 			//However, there seems to be a regression regarding the SSL handling in general
 			FederatedData.resetFederatedSites();
-			writeInputFederatedWithMTD("X.json", fed, null);
+			writeInputFederatedWithMTD("X.json", fed);
 			// Run reference dml script with normal matrix
 			fullDMLScriptName = SCRIPT_DIR + "functions/federated/io/" + TEST_NAME + (rowPartitioned ? "Row" : "Col")
 				+ "2Reference.dml";

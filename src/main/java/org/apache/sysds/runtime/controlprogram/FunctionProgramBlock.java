@@ -33,7 +33,7 @@ import org.apache.sysds.conf.DMLConfig;
 import org.apache.sysds.hops.OptimizerUtils;
 import org.apache.sysds.hops.fedplanner.AFederatedPlanner;
 import org.apache.sysds.hops.fedplanner.FTypes;
-import org.apache.sysds.hops.fedplanner.FederatedPlannerCostbased;
+import org.apache.sysds.hops.fedplanner.FTypes.FederatedPlanner;
 import org.apache.sysds.hops.recompile.Recompiler;
 import org.apache.sysds.hops.recompile.Recompiler.ResetType;
 import org.apache.sysds.parser.DataIdentifier;
@@ -194,10 +194,9 @@ public class FunctionProgramBlock extends ProgramBlock implements FunctionBlock
 	 */
 	private void recompileFederatedPlan(LocalVariableMap variableMap) {
 		String splanner = ConfigurationManager.getDMLConfig()
-				.getTextValue(DMLConfig.FEDERATED_PLANNER);
-		AFederatedPlanner planner = FTypes.FederatedPlanner.isCompiled(splanner) ?
-				FTypes.FederatedPlanner.valueOf(splanner.toUpperCase()).getPlanner() :
-				new FederatedPlannerCostbased();
+			.getTextValue(DMLConfig.FEDERATED_PLANNER);
+		AFederatedPlanner planner = FederatedPlanner
+			.valueOf(splanner.toUpperCase()).getPlanner();
 		if (planner == null)
 			// unreachable, if planner does not support compilation cost based would be chosen
 			throw new DMLRuntimeException(

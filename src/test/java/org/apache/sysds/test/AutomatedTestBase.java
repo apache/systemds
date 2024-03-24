@@ -35,7 +35,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
@@ -63,7 +62,6 @@ import org.apache.sysds.hops.OptimizerUtils;
 import org.apache.sysds.hops.fedplanner.FTypes.FType;
 import org.apache.sysds.lops.Lop;
 import org.apache.sysds.lops.compile.Dag;
-import org.apache.sysds.parser.DataExpression;
 import org.apache.sysds.parser.ParseException;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.DMLScriptException;
@@ -87,15 +85,10 @@ import org.apache.sysds.runtime.matrix.data.MatrixValue.CellIndex;
 import org.apache.sysds.runtime.meta.MatrixCharacteristics;
 import org.apache.sysds.runtime.meta.MetaDataAll;
 import org.apache.sysds.runtime.meta.MetaDataFormat;
-import org.apache.sysds.runtime.privacy.CheckedConstraintsLog;
-import org.apache.sysds.runtime.privacy.PrivacyConstraint;
-import org.apache.sysds.runtime.privacy.PrivacyConstraint.PrivacyLevel;
-import org.apache.sysds.runtime.privacy.PrivacyUtils;
 import org.apache.sysds.runtime.util.DataConverter;
 import org.apache.sysds.runtime.util.HDFSTool;
 import org.apache.sysds.utils.ParameterBuilder;
 import org.apache.sysds.utils.Statistics;
-import org.apache.wink.json4j.JSONException;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
@@ -581,33 +574,17 @@ public abstract class AutomatedTestBase {
 	protected double[][] writeInputMatrixWithMTD(String name, double[][] matrix, long nnz, boolean bIncludeR) {
 		MatrixCharacteristics mc = new MatrixCharacteristics(matrix.length, matrix[0].length,
 			OptimizerUtils.DEFAULT_BLOCKSIZE, nnz);
-		return writeInputMatrixWithMTD(name, matrix, bIncludeR, mc, null);
+		return writeInputMatrixWithMTD(name, matrix, bIncludeR, mc);
 	}
 
 	protected double[][] writeInputMatrixWithMTD(String name, double[][] matrix, boolean bIncludeR,
 		MatrixCharacteristics mc) {
-		return writeInputMatrixWithMTD(name, matrix, bIncludeR, mc, null);
-	}
-
-	protected double[][] writeInputMatrixWithMTD(String name, double[][] matrix, PrivacyConstraint privacyConstraint) {
-		return writeInputMatrixWithMTD(name, matrix, false, null, privacyConstraint);
-	}
-
-	protected double[][] writeInputMatrixWithMTD(String name, double[][] matrix, boolean bIncludeR,
-		PrivacyConstraint privacyConstraint) {
-		MatrixCharacteristics mc = new MatrixCharacteristics(matrix.length, matrix[0].length,
-			OptimizerUtils.DEFAULT_BLOCKSIZE, -1);
-		return writeInputMatrixWithMTD(name, matrix, bIncludeR, mc, privacyConstraint);
-	}
-
-	protected double[][] writeInputMatrixWithMTD(String name, double[][] matrix, boolean bIncludeR,
-		MatrixCharacteristics mc, PrivacyConstraint privacyConstraint) {
 		writeInputMatrix(name, matrix, bIncludeR);
 
 		// write metadata file
 		try {
 			String completeMTDPath = baseDirectory + INPUT_DIR + name + ".mtd";
-			HDFSTool.writeMetaDataFile(completeMTDPath, ValueType.FP64, mc, FileFormat.TEXT, privacyConstraint);
+			HDFSTool.writeMetaDataFile(completeMTDPath, ValueType.FP64, mc, FileFormat.TEXT);
 		}
 		catch(IOException e) {
 			e.printStackTrace();
@@ -617,12 +594,12 @@ public abstract class AutomatedTestBase {
 		return matrix;
 	}
 
-	protected void writeInputFederatedWithMTD(String name, MatrixObject fm, PrivacyConstraint privacyConstraint){
+	protected void writeInputFederatedWithMTD(String name, MatrixObject fm){
 		writeFederatedInputMatrix(name, fm.getFedMapping());
 		MatrixCharacteristics mc = (MatrixCharacteristics)fm.getDataCharacteristics();
 		try {
 			String completeMTDPath = baseDirectory + INPUT_DIR + name + ".mtd";
-			HDFSTool.writeMetaDataFile(completeMTDPath, ValueType.FP64, mc, FileFormat.FEDERATED, privacyConstraint);
+			HDFSTool.writeMetaDataFile(completeMTDPath, ValueType.FP64, mc, FileFormat.FEDERATED);
 		}
 		catch(IOException e) {
 			e.printStackTrace();
@@ -662,12 +639,6 @@ public abstract class AutomatedTestBase {
 	protected void rowFederateLocallyAndWriteInputMatrixWithMTD(String name,
 		double[][] matrix, int numFederatedWorkers, List<Integer> ports, double[][] ranges)
 	{
-		rowFederateLocallyAndWriteInputMatrixWithMTD(name, matrix, numFederatedWorkers, ports, ranges, null);
-	}
-
-	protected void rowFederateLocallyAndWriteInputMatrixWithMTD(String name,
-		double[][] matrix, int numFederatedWorkers, List<Integer> ports, double[][] ranges, PrivacyConstraint privacyConstraint)
-	{
 		// check matrix non empty
 		if(matrix.length == 0 || matrix[0].length == 0)
 			return;
@@ -692,7 +663,7 @@ public abstract class AutomatedTestBase {
 			// write slice
 			writeInputMatrixWithMTD(path, Arrays.copyOfRange(matrix, (int)lowerBound, (int)upperBound),
 				false, new MatrixCharacteristics((long) examplesForWorkerI, ncol,
-				OptimizerUtils.DEFAULT_BLOCKSIZE, (long) examplesForWorkerI * ncol), privacyConstraint);
+				OptimizerUtils.DEFAULT_BLOCKSIZE, (long) examplesForWorkerI * ncol));
 
 			// generate fedmap entry
 			FederatedRange range = new FederatedRange(new long[]{(long) lowerBound, 0}, new long[]{(long) upperBound, ncol});
@@ -703,7 +674,7 @@ public abstract class AutomatedTestBase {
 		federatedMatrixObject.setFedMapping(new FederationMap(FederationUtils.getNextFedDataID(), fedHashMap));
 		federatedMatrixObject.getFedMapping().setType(FType.ROW);
 
-		writeInputFederatedWithMTD(name, federatedMatrixObject, privacyConstraint);
+		writeInputFederatedWithMTD(name, federatedMatrixObject);
 	}
 
 	protected double[][] generateBalancedFederatedRowRanges(int numFederatedWorkers, int dataSetSize) {
@@ -1009,60 +980,6 @@ public abstract class AutomatedTestBase {
 	public static MetaDataAll getMetaData(String fileName, String outputDir) {
 		String fname = baseDirectory + outputDir + fileName + ".mtd";
 		return new MetaDataAll(fname, false, true);
-	}
-
-	/**
-	 * Returns the privacy constraint as read from metadata file.
-	 * @param fileName name of file
-	 * @return loaded privacy constraint
-	 * @throws DMLRuntimeException in case of problems with reading the metadata file
-	 */
-	public static PrivacyConstraint getPrivacyConstraintFromMetaData(String fileName, String dir) throws DMLRuntimeException {
-		PrivacyConstraint outputPrivacyConstraint = new PrivacyConstraint();
-		try {
-			MetaDataAll metadata = getMetaData(fileName, dir);
-			Object metaValue;
-			if ( metadata.mtdExists() ){
-				if ( (metaValue = metadata.getPrivacy()) != null){
-					outputPrivacyConstraint.setPrivacyLevel(((PrivacyConstraint) metaValue).getPrivacyLevel());
-				} else {
-					outputPrivacyConstraint.setPrivacyLevel(PrivacyLevel.None);
-				}
-				if ((metaValue = metadata.getFineGrainedPrivacy()) != null ){
-					PrivacyUtils.putFineGrainedConstraintsFromString(outputPrivacyConstraint.getFineGrainedPrivacy(), (String) metaValue);
-				}
-			}
-		} catch (JSONException e){
-			throw new DMLRuntimeException("Exception when reading from meta data file", e);
-		}
-		return outputPrivacyConstraint;
-	}
-
-	public static PrivacyConstraint getPrivacyConstraintFromMetaData(String fileName) throws DMLRuntimeException {
-		return getPrivacyConstraintFromMetaData(fileName, OUTPUT_DIR);
-	}
-
-	public static String readDMLMetaDataPrivacyValue(String fileName, String outputDir, String key) {
-		MetaDataAll meta = getMetaData(fileName, outputDir);
-		return key.equals(DataExpression.FINE_GRAINED_PRIVACY) ? meta.getFineGrainedPrivacy() : meta.getPrivacy().getPrivacyLevel().name();
-	}
-
-	/**
-	 * Call readDMLMetaDataValue but fail test in case of JSONException or NullPointerException.
-	 * 
-	 * @param fileName  of metadata file
-	 * @param outputDir directory of metadata file
-	 * @param key       key to find in metadata
-	 * @return value retrieved from metadata for the given key
-	 */
-	public static String readDMLMetaDataPrivacyValueCatchException(String fileName, String outputDir, String key) {
-		try {
-			return readDMLMetaDataPrivacyValue(fileName, outputDir, key);
-		}
-		catch(NullPointerException e) {
-			fail("Privacy constraint not written to output metadata file:\n" + e);
-			return null;
-		}
 	}
 
 	public static ValueType readDMLMetaDataValueType(String fileName) {
@@ -2452,22 +2369,6 @@ public abstract class AutomatedTestBase {
 			}
 		}
 		return (count >= minCount && callCount >= minCallCount);
-	}
-
-	protected boolean checkedPrivacyConstraintsContains(PrivacyLevel... levels) {
-		for(PrivacyLevel level : levels)
-			if(!(CheckedConstraintsLog.getCheckedConstraints().containsKey(level)))
-				return false;
-		return true;
-	}
-
-	protected boolean checkedPrivacyConstraintsAbove(Map<PrivacyLevel, Long> levelCounts) {
-		for(Map.Entry<PrivacyLevel, Long> levelCount : levelCounts.entrySet()) {
-			if(!(CheckedConstraintsLog.getCheckedConstraints().get(levelCount.getKey()).longValue() >= levelCount
-				.getValue()))
-				return false;
-		}
-		return true;
 	}
 
 	/**

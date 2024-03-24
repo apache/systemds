@@ -34,7 +34,6 @@ public class FTypes
 				case COMPILE_FED_HEURISTIC:
 					return new FederatedPlannerFedHeuristic();
 				case COMPILE_COST_BASED:
-					return new FederatedPlannerCostbased();
 				case NONE:
 				case RUNTIME:
 				default:

@@ -369,7 +369,6 @@ public class Dag<N extends Lop>
 						currInstr.setLocation(n);
 						// TODO find a more direct way of communicating the privacy constraints
 						// (visible to runtime explain); This change should apply to all occurrences.
-						currInstr.setPrivacyConstraint(n);
 						insts.add(currInstr);
 					} catch (DMLRuntimeException e) {
 						throw new LopsException(n.printErrorLocation() + "error generating instructions from input variables in Dag -- \n", e);
@@ -435,10 +434,7 @@ public class Dag<N extends Lop>
 			if (locationInfo != null)
 				currInstr.setLocation(locationInfo);
 			else
-			{
 				currInstr.setLocation(node);
-				currInstr.setPrivacyConstraint(node);
-			}
 			
 			inst.add(currInstr);
 			excludeRemoveInstruction(label, deleteInst);
@@ -636,20 +632,11 @@ public class Dag<N extends Lop>
 						 throw new LopsException("Error parsing the instruction:" + inst_string);
 					}
 					if (node._beginLine != 0)
-					{
 						currInstr.setLocation(node);
-						currInstr.setPrivacyConstraint(node);
-					}
 					else if ( !node.getOutputs().isEmpty() )
-					{
 						currInstr.setLocation(node.getOutputs().get(0));
-						currInstr.setPrivacyConstraint(node.getOutputs().get(0));
-					}
 					else if ( !node.getInputs().isEmpty() )
-					{
 						currInstr.setLocation(node.getInputs().get(0));
-						currInstr.setPrivacyConstraint(node.getInputs().get(0));
-					}
 					
 					inst.add(currInstr);
 				} catch (Exception e) {
@@ -799,8 +786,6 @@ public class Dag<N extends Lop>
 				Instruction currInstr = VariableCPInstruction.prepareRemoveInstruction(oparams.getLabel());
 				
 				currInstr.setLocation(node);
-				currInstr.setPrivacyConstraint(node);
-				
 				out.addLastInstruction(currInstr);
 			}
 			else if(!(node instanceof FunctionCallCP)) //general case
@@ -821,16 +806,12 @@ public class Dag<N extends Lop>
 					oparams.getUpdateType());
 				
 				createvarInst.setLocation(node);
-				createvarInst.setPrivacyConstraint(node);
-				
 				out.addPreInstruction(createvarInst);
 
 				// temp file as well as the variable has to be deleted at the end
 				Instruction currInstr = VariableCPInstruction.prepareRemoveInstruction(oparams.getLabel());
 				
 				currInstr.setLocation(node);
-				currInstr.setPrivacyConstraint(node);
-				
 				out.addLastInstruction(currInstr);
 			}
 			else {
@@ -848,15 +829,10 @@ public class Dag<N extends Lop>
 							new MatrixCharacteristics(fnOutParams.getNumRows(), fnOutParams.getNumCols(), (int)fnOutParams.getBlocksize(), fnOutParams.getNnz()),
 							oparams.getUpdateType());
 						
-						if (node._beginLine != 0){
+						if (node._beginLine != 0)
 							createvarInst.setLocation(node);
-							createvarInst.setPrivacyConstraint(node);
-						}
-						else {
+						else
 							createvarInst.setLocation(fnOut);
-							createvarInst.setPrivacyConstraint(fnOut);
-						}
-						
 						out.addPreInstruction(createvarInst);
 					}
 				}
@@ -1005,9 +981,8 @@ public class Dag<N extends Lop>
 							SPInstructionParser.parseSingleInstruction(io_inst) :
 							CPInstructionParser.parseSingleInstruction(io_inst);
 						Lop useNode = (!node.getInputs().isEmpty() 
-						&& node.getInputs().get(0)._beginLine != 0) ? node.getInputs().get(0) : node; 
+							&& node.getInputs().get(0)._beginLine != 0) ? node.getInputs().get(0) : node; 
 						currInstr.setLocation(useNode);
-						currInstr.setPrivacyConstraint(useNode);
 						
 						out.addLastInstruction(currInstr);
 					}

@@ -22,6 +22,7 @@ package org.apache.sysds.runtime.data;
 import java.io.DataInput;
 import java.io.IOException;
 import java.util.Arrays;
+import java.util.Iterator;
 
 import org.apache.sysds.runtime.util.SortUtils;
 import org.apache.sysds.runtime.util.UtilFunctions;
@@ -463,37 +464,6 @@ public class SparseBlockCSR extends SparseBlock
 	@Override
 	public int pos(int r) {
 		return _ptr[r];
-	}
-
-	@Override
-	public int nextNonZeroRowIndex(int r, int ru) {
-		for(int i = r; i < ru; i++) {
-			if(_ptr[i] < _ptr[i + 1]) {
-				return i;
-			}
-		}
-		return r - 1;
-	}
-
-	@Override
-	public int setSearchIndex(int r, int ru) {
-		if(_ptr[r] == _ptr[ru]) {
-			return -1; //zero matrix
-		}
-		return r;
-	}
-
-	@Override
-	public int updateSearchIndex(int r, int ru) {
-		if(r + 2 == ru && _ptr[r + 1] == _ptr[r + 2]) {
-			return r;
-		}
-		else if(r + 1 == ru) {
-			return r;
-		}
-		else {
-			return r + 1;
-		}
 	}
 
 	@Override
@@ -1021,6 +991,33 @@ public class SparseBlockCSR extends SparseBlock
 		return false;
 	}
 
+	@Override
+	public Iterator<Integer> getNonEmptyRowsIterator(int rl, int ru) {
+		return new NonEmptyRowsIteratorCSR(rl, ru);
+	}
+	
+	public class NonEmptyRowsIteratorCSR implements Iterator<Integer> {
+		private int _rpos;
+		private final int _ru;
+		
+		public NonEmptyRowsIteratorCSR(int rl, int ru) {
+			_rpos = rl;
+			_ru = ru;
+		}
+		
+		@Override
+		public boolean hasNext() {
+			while( _rpos<_ru && isEmpty(_rpos) )
+				_rpos++;
+			return _rpos < _ru;
+		}
+
+		@Override
+		public Integer next() {
+			return _rpos++;
+		}
+	}
+	
 	///////////////////////////
 	// private helper methods
 	

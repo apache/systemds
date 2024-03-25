@@ -342,39 +342,6 @@ public class SparseBlockDCSR extends SparseBlock
 	}
 
 	@Override
-	public int nextNonZeroRowIndex(int r, int ru) {
-		return _rowidx[r];
-	}
-
-	@Override
-	public int setSearchIndex(int r, int ru) {
-		int insertionPoint = -1;
-		int result = Arrays.binarySearch(_rowidx, r);
-		if(result < 0) {
-			insertionPoint = -result - 1;
-			if(_rowidx[insertionPoint] == ru) {
-				return -1;
-			}
-			return insertionPoint;
-		}
-		else {
-			if(_rowidx[result] == ru) {
-				return -1;
-			}
-			return result;
-		}
-	}
-
-	@Override
-	public int updateSearchIndex(int r, int ru) {
-		int nextIndex = r + 1;
-		if(nextIndex >= _rowidx.length || _rowidx[nextIndex] >= ru) {
-			nextIndex = r;
-		}
-		return nextIndex;
-	}
-
-	@Override
 	public boolean set(int r, int c, double v) {
 		int rowIndex = Arrays.binarySearch(_rowidx, 0, _nnzr, r);
 		boolean rowExists = rowIndex >= 0;
@@ -807,6 +774,31 @@ public class SparseBlockDCSR extends SparseBlock
 				return true;
 		return false;
 	}
+	
+	@Override
+	public Iterator<Integer> getNonEmptyRowsIterator(int rl, int ru) {
+		return new NonEmptyRowsIteratorDCSR(rl, ru);
+	}
+	
+	public class NonEmptyRowsIteratorDCSR implements Iterator<Integer> {
+		private int _rpos;
+		private final int _ru;
+		
+		public NonEmptyRowsIteratorDCSR(int rl, int ru) {
+			_rpos = (rl==0) ? 0 : posRowIndex(rl);
+			_ru = ru;
+		}
+		
+		@Override
+		public boolean hasNext() {
+			return _rpos < _nnzr && _rowidx[_rpos] < _ru;
+		}
+
+		@Override
+		public Integer next() {
+			return _rowidx[_rpos++];
+		}
+	}
 
 	///////////////////////////
 	// private helper methods
@@ -987,8 +979,14 @@ public class SparseBlockDCSR extends SparseBlock
 	}
 
 	private void incrRowPtr(int rowIndex, int cnt) {
-
 		for( int i = rowIndex; i < _nnzr + 1; i++ )
 			_rowptr[i] += cnt;
+	}
+	
+	private int posRowIndex(int r) {
+		int rowIndex = Arrays.binarySearch(_rowidx, 0, _nnzr, r);
+		if( rowIndex < 0 )
+			rowIndex = -rowIndex - 1;
+		return rowIndex;
 	}
 }

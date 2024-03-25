@@ -233,8 +233,8 @@ public class SparseBlockIterator extends AutomatedTestBase {
 			List<Integer> manualNonZeroRows = new ArrayList<>();
 			List<Integer> iteratorNonZeroRows = new ArrayList<>();
 			Iterator<Integer> iterRows = !partial ?
-				sblock.getNonEmptyRowIterator() :
-				sblock.getNonEmptyRowIterator(rl, rows);
+				sblock.getNonEmptyRowsIterator(0, rows) :
+				sblock.getNonEmptyRowsIterator(rl, rows);
 
 			for(int i = rl; i < rows; i++)
 				if(!sblock.isEmpty(i))

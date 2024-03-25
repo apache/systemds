@@ -466,6 +466,37 @@ public class SparseBlockCSR extends SparseBlock
 	}
 
 	@Override
+	public int nextNonZeroRowIndex(int r, int ru) {
+		for(int i = r; i < ru; i++) {
+			if(_ptr[i] < _ptr[i + 1]) {
+				return i;
+			}
+		}
+		return r - 1;
+	}
+
+	@Override
+	public int setSearchIndex(int r, int ru) {
+		if(_ptr[r] == _ptr[ru]) {
+			return -1; //zero matrix
+		}
+		return r;
+	}
+
+	@Override
+	public int updateSearchIndex(int r, int ru) {
+		if(r + 2 == ru && _ptr[r + 1] == _ptr[r + 2]) {
+			return r;
+		}
+		else if(r + 1 == ru) {
+			return r;
+		}
+		else {
+			return r + 1;
+		}
+	}
+
+	@Override
 	public boolean set(int r, int c, double v) {
 		int pos = pos(r);
 		int len = size(r);

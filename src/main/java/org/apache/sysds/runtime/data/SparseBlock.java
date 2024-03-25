@@ -306,6 +306,33 @@ public abstract class SparseBlock implements Serializable, Block
 	 * @return starting position of row r
 	 */
 	public abstract int pos(int r);
+
+	/**
+	 * Get the next non-zero row index in the row array.
+	 *
+	 * @param r  previous row index starting at 0
+	 * @param ru exclusive upper row index starting at 0
+	 * @return next non-zero row index
+	 */
+	public abstract int nextNonZeroRowIndex(int r, int ru);
+
+	/**
+	 * Get the starting index in the row array.
+	 *
+	 * @param r  inclusive lower row index starting at 0
+	 * @param ru exclusive upper row index starting at 0
+	 * @return starting index in row array
+	 */
+	public abstract int setSearchIndex(int r, int ru);
+
+	/**
+	 * Get the next index in the row array.
+	 *
+	 * @param r  previous row index starting at 0
+	 * @param ru exclusive upper row index starting at 0
+	 * @return next index in row array
+	 */
+	public abstract int updateSearchIndex(int r, int ru);
 	
 	
 	////////////////////////
@@ -553,6 +580,30 @@ public abstract class SparseBlock implements Serializable, Block
 		//default generic iterator, override if necessary
 		return new SparseBlockIterator(rl, Math.min(ru,numRows()));
 	}
+
+	/**
+	 * Get an iterator over the indices of non-empty rows within the entire sparse block.
+	 * This iterator facilitates traversal over rows that contain at least one non-zero element,
+	 * skipping entirely zero rows. The returned integers represent the indexes of non-empty rows.
+	 *
+	 * @return iterator
+	 */
+	public Iterator<Integer> getNonEmptyRowIterator() {
+		return new SparseNonEmptyRowIterator(0, numRows());
+	}
+
+	/**
+	 * Get an iterator over the indices of non-zero rows within the sub-block [rl,ru).
+	 * This iterator facilitates traversal over rows that contain at least one non-zero element,
+	 * skipping entirely zero rows. The returned integers represent the indexes of non-empty rows.
+	 *
+	 * @param rl inclusive lower row index starting at 0
+	 * @param ru exclusive upper row index starting at 0
+	 * @return Integer iterator
+	 */
+	public Iterator<Integer> getNonEmptyRowIterator(int rl, int ru) {
+		return new SparseNonEmptyRowIterator(rl, ru);
+	}
 	
 	@Override 
 	public abstract String toString();
@@ -716,5 +767,73 @@ public abstract class SparseBlock implements Serializable, Block
 				_curValues = values(_curRow);
 			}
 		}
+	}
+	
+	//TODO: move to individual sparse blocks for performance/separation -> MB
+	private class SparseNonEmptyRowIterator implements Iterator<Integer> {
+		private int _rlen = 0; //row upper
+		private int _curRow = -1; //current row
+		private boolean _noNext = false; //end indicator
+		private int _searchIndex = 0;
+		private int _previousSearchIndex = -1;
+
+		protected SparseNonEmptyRowIterator(int rl, int ru) {
+			_rlen = ru;
+			_curRow = rl;
+			_searchIndex = setSearchIndex(_curRow, ru);
+			if(_searchIndex == -1) {
+				_noNext = true;
+			}
+		}
+
+		@Override
+		public boolean hasNext() {
+			return !_noNext;
+		}
+
+		@Override
+		public Integer next() {
+			if(SparseBlock.this instanceof SparseBlockDCSR || SparseBlock.this instanceof SparseBlockCOO) {
+				_curRow = nextNonZeroRowIndex(_searchIndex, _rlen);
+				_previousSearchIndex = _searchIndex;
+				_searchIndex = updateSearchIndex(_previousSearchIndex, _rlen);
+				if(_previousSearchIndex == _searchIndex) {
+					_noNext = true;
+				}
+				return _curRow;
+			}
+			else if(SparseBlock.this instanceof SparseBlockCSR) {
+				_curRow = nextNonZeroRowIndex(_searchIndex, _rlen);
+				_searchIndex = updateSearchIndex(_curRow, _rlen);
+				_searchIndex = setSearchIndex(_searchIndex, _rlen); // special case: single non-zero row
+				if(_curRow == _previousSearchIndex || _curRow == _searchIndex || _searchIndex == -1) {
+					_noNext = true;
+					_searchIndex = _curRow;
+				}
+				_previousSearchIndex = _curRow;
+				return _curRow;
+			}
+			else { //MCSR
+				_previousSearchIndex = nextNonZeroRowIndex(_searchIndex, _rlen);
+				_curRow = updateSearchIndex(_previousSearchIndex, _rlen);
+				if(_previousSearchIndex == _curRow) {
+					_noNext = true;
+				}
+				else {
+					_searchIndex = _curRow;
+				}
+				return _previousSearchIndex;
+			}
+		}
+
+		@Override
+		public void remove() {
+			throw new RuntimeException("SparseBlockIterator is unsupported!");
+		}
+
+		/**
+		 * Moves cursor to next non-zero row or indicates that no more
+		 * rows are available.
+		 */
 	}
 }

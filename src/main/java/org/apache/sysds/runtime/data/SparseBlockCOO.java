@@ -355,43 +355,6 @@ public class SparseBlockCOO extends SparseBlock
 	}
 
 	@Override
-	public int nextNonZeroRowIndex(int r, int ru) {
-		return _rindexes[r];
-	}
-
-	@Override
-	public int setSearchIndex(int r, int ru) {
-		int insertionPoint = -1;
-		int result = Arrays.binarySearch(_rindexes, r);
-		if(result < 0) {
-			insertionPoint = -result - 1;
-			if(_rindexes[insertionPoint] == ru) {
-				return -1;
-			}
-			return insertionPoint;
-		}
-		else {
-			if(_rindexes[result] == ru) {
-				return -1;
-			}
-			return result;
-		}
-	}
-
-	@Override
-	public int updateSearchIndex(int r, int ru) {
-		int currentRow = _rindexes[r];
-		int i = r;
-		while(i < _rindexes.length && _rindexes[i] < ru) {
-			if(_rindexes[i] != currentRow) {
-				return i;
-			}
-			i++;
-		}
-		return r;
-	}
-
-	@Override
 	public boolean set(int r, int c, double v) {
 		int pos = pos(r);
 		int len = size(r);
@@ -767,14 +730,14 @@ public class SparseBlockCOO extends SparseBlock
 
 		@Override
 		public IJV next( ) {
-			retijv.set(_rindexes[_pos], _cindexes[_pos], _values[_pos++]);			
+			retijv.set(_rindexes[_pos], _cindexes[_pos], _values[_pos++]);
 			return retijv;
 		}
 
 		@Override
 		public void remove() {
-			throw new RuntimeException("SparseBlockCOOIterator is unsupported!");			
-		}		
+			throw new RuntimeException("SparseBlockCOOIterator is unsupported!");
+		}
 	}
 	
 	/**
@@ -802,5 +765,33 @@ public class SparseBlockCOO extends SparseBlock
 	 */
 	public double[] values() {
 		return _values;
+	}
+	
+	@Override
+	public Iterator<Integer> getNonEmptyRowsIterator(int rl, int ru) {
+		return new NonEmptyRowsIteratorCOO(rl, ru);
+	}
+	
+	public class NonEmptyRowsIteratorCOO implements Iterator<Integer> {
+		private int _rpos;
+		private final int _ru;
+		
+		public NonEmptyRowsIteratorCOO(int rl, int ru) {
+			_rpos = rl;
+			_ru = ru;
+		}
+		
+		@Override
+		public boolean hasNext() {
+			//TODO specialize for COO, but but equivalent to existing sparse ops
+			while( _rpos<_ru && isEmpty(_rpos) )
+				_rpos++;
+			return _rpos < _ru;
+		}
+
+		@Override
+		public Integer next() {
+			return _rpos++;
+		}
 	}
 }

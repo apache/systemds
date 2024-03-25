@@ -19,6 +19,8 @@
 
 package org.apache.sysds.runtime.data;
 
+import java.util.Iterator;
+
 import org.apache.sysds.utils.MemoryEstimates;
 
 /**
@@ -340,36 +342,6 @@ public class SparseBlockMCSR extends SparseBlock
 	}
 
 	@Override
-	public int nextNonZeroRowIndex(int r, int ru) {
-		for(int i = r; i < ru; i++) {
-			if(_rows[i] != null) {
-				return i;
-			}
-		}
-		return r;
-	}
-
-	@Override
-	public int setSearchIndex(int r, int ru) {
-		for(int i = r; i < ru; i++) {
-			if(_rows[i] != null) {
-				return i;
-			}
-		}
-		return -1;
-	}
-
-	@Override
-	public int updateSearchIndex(int r, int ru) {
-		for(int i = r; i < ru; i++) {
-			if(_rows[i] != null && i != r) {
-				return i;
-			}
-		}
-		return r;
-	}
-
-	@Override
 	public boolean set(int r, int c, double v) {
 		if( !isAllocated(r) )
 			_rows[r] = new SparseRowScalar();
@@ -515,6 +487,33 @@ public class SparseBlockMCSR extends SparseBlock
 		}
 		
 		return sb.toString();
+	}
+	
+	@Override
+	public Iterator<Integer> getNonEmptyRowsIterator(int rl, int ru) {
+		return new NonEmptyRowsIteratorMCSR(rl, ru);
+	}
+	
+	public class NonEmptyRowsIteratorMCSR implements Iterator<Integer> {
+		private int _rpos;
+		private final int _ru;
+		
+		public NonEmptyRowsIteratorMCSR(int rl, int ru) {
+			_rpos = rl;
+			_ru = ru;
+		}
+		
+		@Override
+		public boolean hasNext() {
+			while( _rpos<_ru && isEmpty(_rpos) )
+				_rpos++;
+			return _rpos < _ru;
+		}
+
+		@Override
+		public Integer next() {
+			return _rpos++;
+		}
 	}
 	
 	/**

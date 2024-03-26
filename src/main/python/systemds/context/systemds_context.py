@@ -155,7 +155,7 @@ class SystemDSContext(object):
         """Build the command line argument for the startup of the JVM
         :param port: The port address to use if -1 chose random port."""
 
-        command = ["java", "-cp"]
+        command = ["java", "-jar"]
         root = os.environ.get("SYSTEMDS_ROOT")
         if root == None:
             # If there is no systemds install default to use the PIP packaged java files.
@@ -164,24 +164,28 @@ class SystemDSContext(object):
         # nt means its Windows
         cp_separator = ";" if os.name == "nt" else ":"
 
+        # Find the SystemDS jar file...
         if os.environ.get("SYSTEMDS_ROOT") != None:
             lib_release = os.path.join(root, "lib")
-            lib_cp = os.path.join(root, "target", "lib")
+            systemds_cp = os.path.join(root, "target", "SystemDS.jar")
             if os.path.exists(lib_release):
-                classpath = cp_separator.join([os.path.join(lib_release, '*')])
-            elif os.path.exists(lib_cp):
-                systemds_cp = os.path.join(root, "target", "SystemDS.jar")
-                classpath = cp_separator.join(
-                    [os.path.join(lib_cp, '*'), systemds_cp])
+                classpath = os.path.join(root, "SystemDS.jar")
+                if not os.path.exists( classpath):
+                    for f in os.listdir(user_input):
+                # else: 
+
+                # classpath = cp_separator.join([os.path.join(lib_release, '*')])
+            elif os.path.exists(systemds_cp):
+                classpath = cp_separator.join([systemds_cp])
             else:
                 raise ValueError(
-                    "Invalid setup at SYSTEMDS_ROOT env variable path " + lib_cp)
+                    "Invalid setup at SYSTEMDS_ROOT env variable path " + systemds_cp)
         else:
-            lib1 = os.path.join(root, "lib", "*")
-            lib2 = os.path.join(root, "lib")
-            classpath = cp_separator.join([lib1, lib2])
+            classpath = cp_separator.join([])
 
         command.append(classpath)
+        print(command)
+        exit(-1)
 
         if os.environ.get("LOG4JPROP") == None:
             files = glob(os.path.join(root, "conf", "log4j*.properties"))

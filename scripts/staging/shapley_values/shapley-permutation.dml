@@ -1,0 +1,195 @@
+#-------------------------------------------------------------
+#
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+#
+#-------------------------------------------------------------
+#TODO: get path from project src?
+source("../shapley-utils.dml") as shapleyUtils
+
+
+# Computes shapley values by running throgh permutations.
+# The resulting matrix phis holds the shapley values for each feature in the column given by the index of the feature in the sample.
+#
+# INPUT:
+# ---------------------------------------------------------------------------------------
+# model_function  The function of the model to be evaluated as a String. This function has to take a matrix of samples and return a vector of predictions.
+#                 It might be usefull to wrap the model into a function the takes and returns the desired shapes and use this wrapper here.
+# model_args      Arguments in order for the model, if desired. This will be prepended by the created instances-matrix.
+# x               Single sample for which to compute the shapley values.
+# X_bg            The background dataset from which to pull the random samples to perform Monte Carlo integration.
+# n_permutations  The number of permutaions. Defaults to 10. Theoretical 1 should already be enough for models with up to second order interaction effects.
+# seed            A seed, in case the sampling has to be deterministic.
+# verbose         A boolean to enable logging of each step of the function.
+# ---------------------------------------------------------------------------------------
+#
+# OUTPUT:
+# -----------------------------------------------------------------------------
+# S              Matrix holding the shapley values of each desired feature in the col given by the index in feature_indices.
+# expected       Double holding the average prediction of the instances.
+# -----------------------------------------------------------------------------
+shapley_permutations = function(String model_function, list[unknown] model_args, Matrix[Double] x, Matrix[Double] X_bg, Integer n_permutations = 10, Integer integration_samples = 100, Integer seed = -1, Integer verbose = 1)
+return (Matrix[Double] phis, Double expected){
+  shapleyUtils::u_vprint("Running permutation explainer", verbose)
+  shapleyUtils::u_vprint("The total number of predictions will be "+toString(ncol(x)*2*n_permutations*integration_samples)+" in "+n_permutations+" parallel calls to the model.", verbose )
+  # sample from X_bg
+  X_bg_samples = shapleyUtils::sample_with_potential_replace(X_bg=X_bg, samples=integration_samples, always_shuffle=1, seed=seed )
+  phis         = matrix(0, rows=n_permutations, cols=ncol(x))
+  expected_m     = matrix(0, rows=1, cols=n_permutations)
+  parfor (i in 1:n_permutations){
+    #get random permutation (or with seed)
+    permutation = t(sample(ncol(x),ncol(x), seed=((seed+1)*i)-1))
+
+    mask = prepare_mask_for_permutaion(permutation=permutation)
+
+    X_test = prepare_samples_from_mask(x=x, mask=mask, X_bg_samples=X_bg_samples)
+
+    # generate args for call to model
+    X_arg = append(list(X=X_test), model_args)
+
+    # call model
+    P = eval(model_function, X_arg)
+
+    P = compute_means_from_predictions(P=P, integration_samples=integration_samples)
+
+    phis[i, ] = compute_phis_from_prediction_means(P_perm = P, permutation=permutation)
+    expected_m[1,i] = as.scalar(P[1,1])
+  }
+  phis = colMeans(phis)/2
+  expected = mean(expected_m)
+}
+
+# Prepeares a boolean mask for removing features according to permutaion.
+# The resulting matrix needs to be inflated to a sample set by using prepare_samples_from_mask() before calling the model.
+#
+# INPUT:
+# ---------------------------------------------------------------------------------------
+# permutation    A single permutation of features.
+# ---------------------------------------------------------------------------------------
+#
+# OUTPUT:
+# -----------------------------------------------------------------------------
+# mask           Boolean mask.
+# -----------------------------------------------------------------------------
+prepare_mask_for_permutaion = function(Matrix[Double] permutation)
+return (Matrix[Double] masks){
+
+  masks = matrix(0, rows=ncol(permutation)*2, cols=ncol(permutation))
+  tmp_mask = matrix(0, rows=1, cols=ncol(permutation))
+  #iter over permutaion
+  #forwards
+  for (index in 1:ncol(permutation)){
+    #set mask to 1 for every feature in permutation up to the current index
+    tmp_mask[1,as.scalar(permutation[1,index])] = 1
+    masks[index+1,] = tmp_mask
+  }
+
+  #backwards
+  for (index in 1:ncol(permutation)-1){
+    #set mask to 0 for every feature removed to imitate backwards steps, leave last 0000 mask, because we can reuse first row
+    tmp_mask[1,as.scalar(permutation[1,index])] = 0
+    masks[ncol(permutation)+index+1, ] = tmp_mask
+  }
+}
+
+# Converts boolean mask to samples by using samples from X_bg_samples to perform Monte-Carlo integration.
+#
+# INPUT:
+# ---------------------------------------------------------------------------------------
+# x              A single base sample.
+# mask           Boolean mask with 1, where from x, and 0, where integrated over background data.
+# X_bg_samples   Background data. Every mask row will be used with every row from X_bg_samples, so keep it small.
+# ---------------------------------------------------------------------------------------
+#
+# OUTPUT:
+# -----------------------------------------------------------------------------
+# X_masked       A full masked data set to call the model.
+# -----------------------------------------------------------------------------
+prepare_samples_from_mask = function(Matrix[Double] x, Matrix[Double] mask, Matrix[Double] X_bg_samples)
+return (Matrix[Double] X_masked){
+  #prepare X_masked
+  X_masked = matrix(0, rows=nrow(mask)*nrow(X_bg_samples),cols=ncol(mask))
+  for (i in 1:nrow(mask)){
+    lower = (i-1) * nrow(X_bg_samples) + 1
+    upper = lower + nrow(X_bg_samples) - 1
+    X_masked[lower:upper,] = (X_bg_samples * !mask[i,]) + (mask[i,] * x)
+  }
+}
+
+# Performs the integration by taking means.
+#
+# INPUT:
+# ---------------------------------------------------------------------------------------
+# P                     Predictions from model.
+# integration_samples   Number of samples over which to take the mean.
+# ---------------------------------------------------------------------------------------
+#
+# OUTPUT:
+# -----------------------------------------------------------------------------
+# P_means               The means of the sample groups.
+# -----------------------------------------------------------------------------
+compute_means_from_predictions = function(Matrix[Double] P, Integer integration_samples)
+  return (Matrix[Double] P_means){
+  P_means = matrix(0, rows=nrow(P)/integration_samples, cols=ncol(P))
+  idx = 1
+  #group by integration batch and compute mean
+  for (means_i in 1:nrow(P_means)){
+    P_means[means_i,]=colMeans(P[idx:idx+integration_samples-1,])
+    idx = idx+integration_samples
+  }
+}
+
+# Computes phis from predictions for a permutation.
+#
+# INPUT:
+# ---------------------------------------------------------------------------------------
+# P_perm                Predictions for one permutation.
+# permutation           Permutation to get the feature indices from.
+# ---------------------------------------------------------------------------------------
+#
+# OUTPUT:
+# -----------------------------------------------------------------------------
+# phis                  Phis or shapley values computed from this permutation.
+#                       Attention: Has to be devided by 2, which is done later to reduce number of calls.
+# -----------------------------------------------------------------------------
+compute_phis_from_prediction_means = function(Matrix[Double] P_perm, Matrix[Double] permutation)
+  return(Matrix[Double] phis){
+  perm_len=ncol(permutation)
+  phis = matrix(0, rows=1, cols=perm_len)
+
+  for (ind in 1:perm_len){
+
+    #forward
+    #P_perm has 0000 mask at row 1, followed by e.g. 0001 etc.
+    perm_ind_with = ind+1
+    perm_ind_without = ind
+    phi_j = P_perm[perm_ind_with]-P_perm[perm_ind_without]
+
+    #backward
+    #For backwards, the contributions for the first feature of the permutaion would be last, but we constructed P_perm
+    #backwards for algorithmic simplicity, meaning it is first again.
+    #However, we have to also compute the difference backwards, because prediction order is reversed
+    perm_ind_with=perm_len+ind
+    #mod twice the perm_len to get back to first entry for 0000 mask
+    perm_ind_without=(perm_len+ind)%%(2*perm_len)+1
+    phi_j = phi_j + P_perm[perm_ind_with]-P_perm[perm_ind_without]
+
+    # add to phis
+    feature_ind = as.scalar(permutation[1,ind])
+    phis[1,feature_ind] =  phi_j
+  }
+}

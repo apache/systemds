@@ -88,7 +88,7 @@ public class ReaderTextCSVParallel extends MatrixReader {
 
 		InputSplit[] splits = informat.getSplits(_job, _numThreads);
 		splits = IOUtilFunctions.sortInputSplits(splits);
-
+		
 		// check existence and non-empty file
 		checkValidInputFile(fs, path);
 
@@ -162,10 +162,15 @@ public class ReaderTextCSVParallel extends MatrixReader {
 		_rLen = 0;
 		_cLen = 0;
 
+		//overlap output allocation and count-row pass
+		ExecutorService pool = CommonThreadPool.get(_numThreads);
+		Future<MatrixBlock> ret = (rlen<0 || clen<0 || estnnz<0) ? null :
+			pool.submit(() -> createOutputMatrixBlock(rlen, clen, blen, estnnz, true, true));
+
 		FileInputFormat.addInputPath(_job, path);
 		TextInputFormat informat = new TextInputFormat();
 		informat.configure(_job);
-
+		
 		// count number of entities in the first non-header row
 		LongWritable key = new LongWritable();
 		Text oneLine = new Text();
@@ -182,14 +187,13 @@ public class ReaderTextCSVParallel extends MatrixReader {
 
 		// count rows in parallel per split
 		try {
-			ExecutorService pool = CommonThreadPool.get(_numThreads);
 			ArrayList<CountRowsTask> tasks = new ArrayList<>();
 			boolean hasHeader = _props.hasHeader();
 			for(InputSplit split : splits) {
 				tasks.add(new CountRowsTask(split, informat, _job, hasHeader));
 				hasHeader = false;
 			}
-
+			
 			// collect row counts for offset computation
 			// early error notify in case not all tasks successful
 			_offsets = new SplitOffsetInfos(tasks.size());
@@ -222,11 +226,12 @@ public class ReaderTextCSVParallel extends MatrixReader {
 				_cLen = (int) clen;
 			}
 		}
-
+		
 		// allocate target matrix block based on given size;
 		// need to allocate sparse as well since lock-free insert into target
 		long estnnz2 = (estnnz < 0) ? (long) _rLen * _cLen : estnnz;
-		return createOutputMatrixBlock(_rLen, _cLen, blen, estnnz2, true, true);
+		return (ret!=null) ? UtilFunctions.getSafe(ret) :
+			createOutputMatrixBlock(_rLen, _cLen, blen, estnnz2, true, true);
 	}
 
 	private static class SplitOffsetInfos {

@@ -381,20 +381,41 @@ public class BuiltinFunctionExpression extends DataIdentifier {
 			break;
 		}
 		case FFT: {
-			checkNumParameters(1);
-			checkMatrixParam(getFirstExpr());
 
-			// setup output properties
+			Expression expressionOne = getFirstExpr();
+			Expression expressionTwo = getSecondExpr();
+
+			if(expressionOne == null) {
+				raiseValidateError("The first argument to " + _opcode + " cannot be null.", false,
+					LanguageErrorCodes.INVALID_PARAMETERS);
+			}
+			else if(expressionOne.getOutput() == null || expressionOne.getOutput().getDim1() == 0 ||
+				expressionOne.getOutput().getDim2() == 0) {
+				raiseValidateError("The first argument to " + _opcode + " cannot be an empty matrix.", false,
+					LanguageErrorCodes.INVALID_PARAMETERS);
+			}
+			else if(expressionTwo != null) {
+				raiseValidateError("Too many arguments. This FFT implementation is only defined for real inputs.", false,
+					LanguageErrorCodes.INVALID_PARAMETERS);
+			}
+			else if(!isPowerOfTwo(expressionOne.getOutput().getDim1()) ||
+				!isPowerOfTwo(expressionOne.getOutput().getDim2())) {
+				raiseValidateError(
+					"This FFT implementation is only defined for matrices with dimensions that are powers of 2.", false,
+					LanguageErrorCodes.INVALID_PARAMETERS);
+			}
+
+			checkNumParameters(1);
+			checkMatrixParam(expressionOne);
+
 			DataIdentifier fftOut1 = (DataIdentifier) getOutputs()[0];
 			DataIdentifier fftOut2 = (DataIdentifier) getOutputs()[1];
 
-			// Output1 - FFT Values
 			fftOut1.setDataType(DataType.MATRIX);
 			fftOut1.setValueType(ValueType.FP64);
 			fftOut1.setDimensions(getFirstExpr().getOutput().getDim1(), getFirstExpr().getOutput().getDim2());
 			fftOut1.setBlocksize(getFirstExpr().getOutput().getBlocksize());
 
-			// Output2 - FFT Vectors
 			fftOut2.setDataType(DataType.MATRIX);
 			fftOut2.setValueType(ValueType.FP64);
 			fftOut2.setDimensions(getFirstExpr().getOutput().getDim1(), getFirstExpr().getOutput().getDim2());
@@ -405,16 +426,53 @@ public class BuiltinFunctionExpression extends DataIdentifier {
 		}
 		case IFFT: {
 			Expression expressionTwo = getSecondExpr();
-			checkNumParameters(getSecondExpr() != null ? 2 : 1);
-			checkMatrixParam(getFirstExpr());
-			if (expressionTwo != null)
-				checkMatrixParam(getSecondExpr());
+			Expression expressionOne = getFirstExpr();
 
-			// setup output properties
+			if(expressionOne == null) {
+				raiseValidateError("The first argument to " + _opcode + " cannot be null.", false,
+					LanguageErrorCodes.INVALID_PARAMETERS);
+			}
+			else if(expressionOne.getOutput() == null || expressionOne.getOutput().getDim1() == 0 ||
+				expressionOne.getOutput().getDim2() == 0) {
+				raiseValidateError("The first argument to " + _opcode + " cannot be an empty matrix.", false,
+					LanguageErrorCodes.INVALID_PARAMETERS);
+			}
+			else if(expressionTwo != null) {
+				if(expressionTwo.getOutput() == null || expressionTwo.getOutput().getDim1() == 0 ||
+					expressionTwo.getOutput().getDim2() == 0) {
+					raiseValidateError("The second argument to " + _opcode
+						+ " cannot be an empty matrix. Provide either only a real matrix or a filled real and imaginary one.",
+						false, LanguageErrorCodes.INVALID_PARAMETERS);
+				}
+			}
+
+			checkNumParameters(expressionTwo != null ? 2 : 1);
+			checkMatrixParam(expressionOne);
+			if(expressionTwo != null && expressionOne != null) {
+				checkMatrixParam(expressionTwo);
+				if(expressionOne.getOutput().getDim1() != expressionTwo.getOutput().getDim1() ||
+					expressionOne.getOutput().getDim2() != expressionTwo.getOutput().getDim2())
+					raiseValidateError("The real and imaginary part of the provided matrix are of different dimensions.",
+						false);
+				else if(!isPowerOfTwo(expressionTwo.getOutput().getDim1()) ||
+					!isPowerOfTwo(expressionTwo.getOutput().getDim2())) {
+					raiseValidateError(
+						"This IFFT implementation is only defined for matrices with dimensions that are powers of 2.", false,
+						LanguageErrorCodes.INVALID_PARAMETERS);
+				}
+			}
+			else if(expressionOne != null) {
+				if(!isPowerOfTwo(expressionOne.getOutput().getDim1()) ||
+					!isPowerOfTwo(expressionOne.getOutput().getDim2())) {
+					raiseValidateError(
+						"This IFFT implementation is only defined for matrices with dimensions that are powers of 2.", false,
+						LanguageErrorCodes.INVALID_PARAMETERS);
+				}
+			}
+
 			DataIdentifier ifftOut1 = (DataIdentifier) getOutputs()[0];
 			DataIdentifier ifftOut2 = (DataIdentifier) getOutputs()[1];
 
-			// Output1 - ifft Values
 			ifftOut1.setDataType(DataType.MATRIX);
 			ifftOut1.setValueType(ValueType.FP64);
 			ifftOut1.setDimensions(getFirstExpr().getOutput().getDim1(), getFirstExpr().getOutput().getDim2());
@@ -433,20 +491,24 @@ public class BuiltinFunctionExpression extends DataIdentifier {
 			Expression expressionOne = getFirstExpr();
 			Expression expressionTwo = getSecondExpr();
 
-			if (expressionOne == null) {
-				raiseValidateError("The first argument to " + _opcode + " cannot be null.", false, LanguageErrorCodes.INVALID_PARAMETERS);
+			if(expressionOne == null) {
+				raiseValidateError("The first argument to " + _opcode + " cannot be null.", false,
+					LanguageErrorCodes.INVALID_PARAMETERS);
 			}
-
-			else if (expressionOne.getOutput() == null || expressionOne.getOutput().getDim1() == 0 || expressionOne.getOutput().getDim2() == 0) {
-				raiseValidateError("The first argument to " + _opcode + " cannot be an empty matrix.", false, LanguageErrorCodes.INVALID_PARAMETERS);
+			else if(expressionOne.getOutput() == null || expressionOne.getOutput().getDim1() == 0 ||
+				expressionOne.getOutput().getDim2() == 0) {
+				raiseValidateError("The first argument to " + _opcode + " cannot be an empty matrix.", false,
+					LanguageErrorCodes.INVALID_PARAMETERS);
 			}
-
-			else if (expressionTwo != null) {
-				raiseValidateError("Too many arguments. This FFT_LINEARIZED implementation is only defined for real inputs.", false, LanguageErrorCodes.INVALID_PARAMETERS);
+			else if(expressionTwo != null) {
+				raiseValidateError(
+					"Too many arguments. This FFT_LINEARIZED implementation is only defined for real inputs.", false,
+					LanguageErrorCodes.INVALID_PARAMETERS);
 			}
-
-			else if (!isPowerOfTwo(expressionOne.getOutput().getDim2())) {
-				raiseValidateError("This FFT_LINEARIZED implementation is only defined for matrices with columns that are powers of 2.", false, LanguageErrorCodes.INVALID_PARAMETERS);
+			else if(!isPowerOfTwo(expressionOne.getOutput().getDim2())) {
+				raiseValidateError(
+					"This FFT_LINEARIZED implementation is only defined for matrices with columns that are powers of 2.",
+					false, LanguageErrorCodes.INVALID_PARAMETERS);
 			}
 
 			checkNumParameters(1);
@@ -472,33 +534,43 @@ public class BuiltinFunctionExpression extends DataIdentifier {
 			Expression expressionTwo = getSecondExpr();
 			Expression expressionOne = getFirstExpr();
 
-			if (expressionOne == null) {
-				raiseValidateError("The first argument to " + _opcode + " cannot be null.", false, LanguageErrorCodes.INVALID_PARAMETERS);
+			if(expressionOne == null) {
+				raiseValidateError("The first argument to " + _opcode + " cannot be null.", false,
+					LanguageErrorCodes.INVALID_PARAMETERS);
 			}
-
-			else if (expressionOne.getOutput() == null || expressionOne.getOutput().getDim1() == 0 || expressionOne.getOutput().getDim2() == 0) {
-				raiseValidateError("The first argument to " + _opcode + " cannot be an empty matrix.", false, LanguageErrorCodes.INVALID_PARAMETERS);
+			else if(expressionOne.getOutput() == null || expressionOne.getOutput().getDim1() == 0 ||
+				expressionOne.getOutput().getDim2() == 0) {
+				raiseValidateError("The first argument to " + _opcode + " cannot be an empty matrix.", false,
+					LanguageErrorCodes.INVALID_PARAMETERS);
 			}
-
-			else if (expressionTwo != null){
-				if(expressionTwo.getOutput() == null || expressionTwo.getOutput().getDim1() == 0 || expressionTwo.getOutput().getDim2() == 0) {
-					raiseValidateError("The second argument to " + _opcode + " cannot be an empty matrix. Provide either only a real matrix or a filled real and imaginary one.", false, LanguageErrorCodes.INVALID_PARAMETERS);
+			else if(expressionTwo != null) {
+				if(expressionTwo.getOutput() == null || expressionTwo.getOutput().getDim1() == 0 ||
+					expressionTwo.getOutput().getDim2() == 0) {
+					raiseValidateError("The second argument to " + _opcode
+						+ " cannot be an empty matrix. Provide either only a real matrix or a filled real and imaginary one.",
+						false, LanguageErrorCodes.INVALID_PARAMETERS);
 				}
 			}
 
 			checkNumParameters(expressionTwo != null ? 2 : 1);
 			checkMatrixParam(expressionOne);
-			if(expressionTwo != null && expressionOne != null){
+			if(expressionTwo != null && expressionOne != null) {
 				checkMatrixParam(expressionTwo);
-				if(expressionOne.getOutput().getDim1() != expressionTwo.getOutput().getDim1() || expressionOne.getOutput().getDim2() != expressionTwo.getOutput().getDim2())
-					raiseValidateError("The real and imaginary part of the provided matrix are of different dimensions.", false);
-				else if (!isPowerOfTwo(expressionTwo.getOutput().getDim2())) {
-					raiseValidateError("This IFFT_LINEARIZED implementation is only defined for matrices with columns that are powers of 2.", false, LanguageErrorCodes.INVALID_PARAMETERS);
+				if(expressionOne.getOutput().getDim1() != expressionTwo.getOutput().getDim1() ||
+					expressionOne.getOutput().getDim2() != expressionTwo.getOutput().getDim2())
+					raiseValidateError("The real and imaginary part of the provided matrix are of different dimensions.",
+						false);
+				else if(!isPowerOfTwo(expressionTwo.getOutput().getDim2())) {
+					raiseValidateError(
+						"This IFFT_LINEARIZED implementation is only defined for matrices with columns that are powers of 2.",
+						false, LanguageErrorCodes.INVALID_PARAMETERS);
 				}
 			}
-			else if(expressionOne != null){
-				if (!isPowerOfTwo(expressionOne.getOutput().getDim2())) {
-					raiseValidateError("This IFFT_LINEARIZED implementation is only defined for matrices with columns that are powers of 2.", false, LanguageErrorCodes.INVALID_PARAMETERS);
+			else if(expressionOne != null) {
+				if(!isPowerOfTwo(expressionOne.getOutput().getDim2())) {
+					raiseValidateError(
+						"This IFFT_LINEARIZED implementation is only defined for matrices with columns that are powers of 2.",
+						false, LanguageErrorCodes.INVALID_PARAMETERS);
 				}
 			}
 

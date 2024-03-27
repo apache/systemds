@@ -175,7 +175,10 @@ class SystemDSContext(object):
                 if not os.path.exists(classpath):
                     for f in os.listdir(root):
                         if "systemds" in f:
-                            classpath = os.path.join(root, f)
+                            if os.path.exists(classpath):
+                               raise(ValueError("Invalid setup there were multiple conflicting systemds jar fines in" + root)) 
+                            else:
+                                classpath = os.path.join(root, f)
                     if not os.path.exists(classpath):
                         raise ValueError(
                             "Invalid setup did not find SystemDS jar file in " + root)

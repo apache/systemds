@@ -151,6 +151,7 @@ from .builtin.outlierByIQR import outlierByIQR
 from .builtin.outlierByIQRApply import outlierByIQRApply 
 from .builtin.outlierBySd import outlierBySd 
 from .builtin.outlierBySdApply import outlierBySdApply 
+from .builtin.pageRank import pageRank 
 from .builtin.pca import pca 
 from .builtin.pcaInverse import pcaInverse 
 from .builtin.pcaTransform import pcaTransform 
@@ -327,6 +328,7 @@ __all__ = ['WoE',
  'outlierByIQRApply',
  'outlierBySd',
  'outlierBySdApply',
+ 'pageRank',
  'pca',
  'pcaInverse',
  'pcaTransform',

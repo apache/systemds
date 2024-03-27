@@ -26,6 +26,7 @@ from systemds.examples.tutorials.mnist import DataManager
 from systemds.operator.algorithm import multiLogReg, multiLogRegPredict
 
 d = DataManager()
+print("data Loaded")
 
 with SystemDSContext() as sds:
     # Train Data
@@ -37,4 +38,4 @@ with SystemDSContext() as sds:
     Yt = sds.from_numpy(d.get_test_labels()) + 1.0
     [_, _, acc] = multiLogRegPredict(Xt, bias, Y=Yt).compute()
 
-logging.info(acc)
+print("accuracy", acc)

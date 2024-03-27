@@ -144,3 +144,7 @@ scripts/perftest/fed/temp
 src/test/scripts/functions/iogen/*.raw
 src/test/scripts/functions/pipelines/intermediates/regression/*
 src/test/scripts/functions/pipelines/intermediates/classification/*
+
+
+src/main/python/venv
+src/main/python/systemds/SystemDS.jar

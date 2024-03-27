@@ -167,6 +167,7 @@ class SystemDSContext(object):
 
         # Find the SystemDS jar file.
         if root != None: # root path was set
+            logging.debug("SYSTEMDS_ROOT was set, searching for jar file")
             lib_release = os.path.join(root, "lib")
             systemds_cp = os.path.join(root, "target", "SystemDS.jar")
             if os.path.exists(lib_release): # It looks like it was a release path for root.
@@ -174,13 +175,10 @@ class SystemDSContext(object):
                 if not os.path.exists(classpath):
                     for f in os.listdir(root):
                         if "systemds" in f:
-                            print(f)
+                            classpath = os.path.join(root, f)
                     if not os.path.exists(classpath):
                         raise ValueError(
                             "Invalid setup did not find SystemDS jar file in " + root)
-                # else: 
-
-                # classpath = cp_separator.join([os.path.join(lib_release, '*')])
             elif os.path.exists(systemds_cp):
                 classpath = cp_separator.join([systemds_cp])
             else:

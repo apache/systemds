@@ -357,8 +357,8 @@ public class LibMatrixFourier {
 	}
 
 	/**
-	 * Function to perform one-dimensional IFFT for two given double arrays. The first one represents the real values
-	 * and the second one the imaginary values. Both arrays get updated and contain the result.
+	 * Function to perform one-dimensional IFFT for two given double arrays. The first one represents the real values and
+	 * the second one the imaginary values. Both arrays get updated and contain the result.
 	 *
 	 * @param re       array representing the real values
 	 * @param im       array representing the imaginary values
@@ -369,8 +369,8 @@ public class LibMatrixFourier {
 	 * @param num      number of values used for fft
 	 * @param minStep  step size between values used for fft
 	 */
-	private static void ifft_one_dim(double[] re, double[] im, double[] re_inter, double[] im_inter, int start,
-		int stop, int num, int minStep) {
+	private static void ifft_one_dim(double[] re, double[] im, double[] re_inter, double[] im_inter, int start, int stop,
+		int num, int minStep) {
 
 		// conjugate input
 		for(int i = start; i < start + num * minStep; i += minStep) {
@@ -412,8 +412,8 @@ public class LibMatrixFourier {
 	}
 
 	/**
-	 * Function to perform IFFT for a given matrix. The given matrix only represents real values. The output contains
-	 * one matrix for the real and one for the imaginary values.
+	 * Function to perform IFFT for a given matrix. The given matrix only represents real values. The output contains one
+	 * matrix for the real and one for the imaginary values.
 	 *
 	 * @param re      matrix object representing the real values
 	 * @param threads number of threads

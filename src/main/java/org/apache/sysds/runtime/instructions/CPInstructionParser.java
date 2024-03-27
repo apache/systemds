@@ -290,7 +290,9 @@ public class CPInstructionParser extends InstructionParser {
 		String2CPInstructionType.put( "bias_multiply"      , CPType.Dnn);
 		String2CPInstructionType.put( "batch_norm2d",           CPType.Dnn);
 		String2CPInstructionType.put( "batch_norm2d_backward",  CPType.Dnn);
-		
+		String2CPInstructionType.put( "lstm"      , CPType.Dnn);
+		String2CPInstructionType.put( "lstm_backward"      , CPType.Dnn);
+
 		// Quaternary instruction opcodes
 		String2CPInstructionType.put( "wsloss"  , CPType.Quaternary);
 		String2CPInstructionType.put( "wsigmoid", CPType.Quaternary);
@@ -332,10 +334,10 @@ public class CPInstructionParser extends InstructionParser {
 		String2CPInstructionType.put( "qr",    CPType.MultiReturnBuiltin);
 		String2CPInstructionType.put( "lu",    CPType.MultiReturnBuiltin);
 		String2CPInstructionType.put( "eigen", CPType.MultiReturnBuiltin);
-		String2CPInstructionType.put("fft", CPType.MultiReturnBuiltin);
-		String2CPInstructionType.put("ifft", CPType.MultiReturnComplexMatrixBuiltin);
-		String2CPInstructionType.put("fft_linearized", CPType.MultiReturnBuiltin);
-		String2CPInstructionType.put("ifft_linearized", CPType.MultiReturnComplexMatrixBuiltin);
+		String2CPInstructionType.put( "fft",   CPType.MultiReturnBuiltin);
+		String2CPInstructionType.put( "ifft",  CPType.MultiReturnComplexMatrixBuiltin);
+		String2CPInstructionType.put( "fft_linearized", CPType.MultiReturnBuiltin);
+		String2CPInstructionType.put( "ifft_linearized", CPType.MultiReturnComplexMatrixBuiltin);
 		String2CPInstructionType.put( "svd",   CPType.MultiReturnBuiltin);
 
 		String2CPInstructionType.put( "partition", CPType.Partition);

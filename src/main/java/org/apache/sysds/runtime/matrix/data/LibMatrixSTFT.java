@@ -28,6 +28,9 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.ExecutionException;
 import java.util.List;
 
+/**
+ * Liberary file containing methods to perform short time fourier transformations.
+ */
 public class LibMatrixSTFT {
 
 	/**

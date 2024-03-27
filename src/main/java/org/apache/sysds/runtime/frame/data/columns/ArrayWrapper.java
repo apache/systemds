@@ -6,9 +6,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -17,29 +17,32 @@
  * under the License.
  */
 
-package org.apache.sysds.runtime.io;
+package org.apache.sysds.runtime.frame.data.columns;
 
-import java.util.List;
+import java.io.DataInput;
+import java.io.DataOutput;
+import java.io.IOException;
 
-import org.apache.sysds.hops.OptimizerUtils;
-import org.apache.sysds.runtime.frame.data.FrameBlock;
-import org.apache.sysds.runtime.frame.data.columns.Array;
-import org.apache.sysds.runtime.frame.data.lib.FrameLibCompress;
-import org.apache.sysds.runtime.matrix.data.Pair;
+import org.apache.hadoop.io.Writable;
 
-public class FrameWriterCompressed extends FrameWriterBinaryBlockParallel {
+public class ArrayWrapper implements Writable {
 
-	private final boolean parallel;
+	public Array<?> _a; 
 
-	public FrameWriterCompressed(boolean parallel) {
-		this.parallel = parallel;
+	public ArrayWrapper(Array<?> a){
+		_a = a;
 	}
 
 	@Override
-	protected Pair<List<Pair<Integer, Array<?>>>, FrameBlock> extractDictionaries(FrameBlock src) {
-		int k = parallel ? OptimizerUtils.getParallelBinaryWriteParallelism() : 1;
-		FrameBlock compressed = FrameLibCompress.compress(src, k);
-		return super.extractDictionaries(compressed);
+	public void write(DataOutput out) throws IOException {
+		out.writeInt(_a.size());
+		_a.write(out);
 	}
 
+	@Override
+	public void readFields(DataInput in) throws IOException {
+		int s = in.readInt();
+		_a = ArrayFactory.read(in, s);
+	}
+	
 }

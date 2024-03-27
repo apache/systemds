@@ -42,7 +42,7 @@ public class LibMatrixSTFT {
 	 * @param im         Matrix object representing the imaginary values
 	 * @param windowSize Size of window
 	 * @param overlap    Size of overlap
-	 * @param thrads     The number of threads to use
+	 * @param threads    The number of threads to use
 	 * @return array of two matrix blocks
 	 */
 	public static MatrixBlock[] stft(MatrixBlock re, MatrixBlock im, int windowSize, int overlap, int threads) {

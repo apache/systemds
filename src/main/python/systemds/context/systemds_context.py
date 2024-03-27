@@ -158,17 +158,17 @@ class SystemDSContext(object):
         # Base command
         command = ["java", "-cp"]
 
-        # find the operating system specifc separator, nt means its Windows
+        # Find the operating system specifc separator, nt means its Windows
         cp_separator = ";" if os.name == "nt" else ":"
         root = os.environ.get("SYSTEMDS_ROOT")
 
         if root == None:
-            # If there is no systemds install default to use the PIP packaged java files.
+            # If there is no systemds install default to use the pip packaged java files.
             root = os.path.join(get_module_dir())
 
         # Find the SystemDS jar file.
         if root != None: # root path was set
-            logging.debug("SYSTEMDS_ROOT was set, searching for jar file")
+            self._log.debug("SYSTEMDS_ROOT was set, searching for jar file")
             lib_release = os.path.join(root, "lib")
             systemds_cp = os.path.join(root, "target", "SystemDS.jar")
             if os.path.exists(lib_release): # It looks like it was a release path for root.
@@ -189,12 +189,11 @@ class SystemDSContext(object):
                 raise ValueError(
                     "Invalid setup at SYSTEMDS_ROOT env variable path " + root)
         else: # root path was not set use the pip installed SystemDS
-            logging.warning("SYSTEMDS_ROOT was unset, defaulting to python packaged jar files")
+            self._log.warning("SYSTEMDS_ROOT was unset, defaulting to python packaged jar files")
             systemds_cp = os.path.join(root,"SystemDS.jar")
             classpath = cp_separator.join([systemds_cp])
 
         command.append(classpath)
-
 
         # Find the logging configuration file.
         if os.environ.get("LOG4JPROP") == None:
@@ -213,17 +212,19 @@ class SystemDSContext(object):
             if os.path.exists(logging_file):
                 command.append("-Dlog4j.configuration=file:" +os.environ.get("LOG4JPROP"))
             else:
-                logging.warning("LOG4JPROP is set but path is invalid: " + str(logging_file))
+                self._log.warning("LOG4JPROP is set but path is invalid: " + str(logging_file))
 
         # Specify the main function inside SystemDS to launch in java.
         command.append("org.apache.sysds.api.PythonDMLScript")
 
+        # Find the configuration file for systemds.
+        # TODO: refine the choise of configuration file
         files = glob(os.path.join(root, "conf", "SystemDS*.xml"))
         if len(files) > 1:
             self._log.warning(
                 "Multiple config files found selecting: " + files[0])
         if len(files) == 0:
-            self._log.warning("No log4j file found at: "
+            self._log.warning("No xml config file found at: "
                               + os.path.join(root, "conf")
                               + " therefore using default settings")
         else:
@@ -238,7 +239,8 @@ class SystemDSContext(object):
         command.append("--python")
         command.append(str(actual_port))
 
-        logging.info("Command "  + str(command))
+        self._log.info("Command "  + str(command))
+        self._log.info("Port used for communication: " + str(actual_port))
 
         return command, actual_port
 

@@ -291,6 +291,10 @@ public class FunctionOp extends Hop
 				// 2 matrices of size same as the input
 				return 2*OptimizerUtils.estimateSizeExactSparsity(getInput().get(0).getDim1(), getInput().get(0).getDim2(), 1.0);
 			}
+			else if ( getFunctionName().equalsIgnoreCase("stft") ) {
+				// 2 matrices of size same as the input
+				return 2*OptimizerUtils.estimateSizeExactSparsity(getInput().get(0).getDim1(), getInput().get(0).getDim2(), 1.0);
+			}
 			else if (getFunctionName().equalsIgnoreCase("batch_norm2d") || getFunctionName().equalsIgnoreCase("batch_norm2d_backward") ||
 					getFunctionName().equalsIgnoreCase("batch_norm2d_train") || getFunctionName().equalsIgnoreCase("batch_norm2d_test")) {
 				return 0; 

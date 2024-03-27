@@ -155,23 +155,29 @@ class SystemDSContext(object):
         """Build the command line argument for the startup of the JVM
         :param port: The port address to use if -1 chose random port."""
 
-        command = ["java", "-jar"]
+        # Base command
+        command = ["java", "-cp"]
+
+        # find the operating system specifc separator, nt means its Windows
+        cp_separator = ";" if os.name == "nt" else ":"
         root = os.environ.get("SYSTEMDS_ROOT")
+
         if root == None:
-            # If there is no systemds install default to use the PIP packaged java files.
             root = os.path.join(get_module_dir())
 
-        # nt means its Windows
-        cp_separator = ";" if os.name == "nt" else ":"
-
-        # Find the SystemDS jar file...
-        if os.environ.get("SYSTEMDS_ROOT") != None:
+        # Find the SystemDS jar file.
+        if root != None: # root path was set
             lib_release = os.path.join(root, "lib")
             systemds_cp = os.path.join(root, "target", "SystemDS.jar")
-            if os.path.exists(lib_release):
+            if os.path.exists(lib_release): # It looks like it was a release path for root.
                 classpath = os.path.join(root, "SystemDS.jar")
-                if not os.path.exists( classpath):
-                    for f in os.listdir(user_input):
+                if not os.path.exists(classpath):
+                    for f in os.listdir(root):
+                        if "systemds" in f:
+                            print(f)
+                    if not os.path.exists(classpath):
+                        raise ValueError(
+                            "Invalid setup did not find SystemDS jar file in " + root)
                 # else: 
 
                 # classpath = cp_separator.join([os.path.join(lib_release, '*')])
@@ -179,13 +185,14 @@ class SystemDSContext(object):
                 classpath = cp_separator.join([systemds_cp])
             else:
                 raise ValueError(
-                    "Invalid setup at SYSTEMDS_ROOT env variable path " + systemds_cp)
-        else:
-            classpath = cp_separator.join([])
+                    "Invalid setup at SYSTEMDS_ROOT env variable path " + root)
+        else: # root path was not set
+            logging.warning("SYSTEMDS_ROOT was unset, defaulting to python packaged jar files")
+            systemds_cp = os.path.join(root,"SystemDS.jar")
+            classpath = cp_separator.join([systemds_cp])
+
 
         command.append(classpath)
-        print(command)
-        exit(-1)
 
         if os.environ.get("LOG4JPROP") == None:
             files = glob(os.path.join(root, "conf", "log4j*.properties"))
@@ -201,7 +208,9 @@ class SystemDSContext(object):
         else:
             command.append("-Dlog4j.configuration=file:" +os.environ.get("LOG4JPROP"))
 
+
         command.append("org.apache.sysds.api.PythonDMLScript")
+
 
         files = glob(os.path.join(root, "conf", "SystemDS*.xml"))
         if len(files) > 1:
@@ -222,6 +231,8 @@ class SystemDSContext(object):
 
         command.append("--python")
         command.append(str(actual_port))
+
+        logging.info("Command "  + str(command))
 
         return command, actual_port
 

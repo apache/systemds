@@ -160,7 +160,8 @@ public class FunctionCallIdentifier extends DataIdentifier
 			for( ParameterExpression paramExpr : _paramExprs )
 				if(!params.contains(paramExpr.getName()))
 					raiseValidateError("Named function call parameter '"+paramExpr.getName()+"'"
-						+ " does not exist in signature of function '"+fstmt.getName()+"'.");
+						+ " does not exist in signature of function '"+fstmt.getName()+"'. "
+						+ "Function signature: "+Arrays.toString(fstmt.getInputParamNames()));
 		}
 		
 		// Step 7: constant propagation into function call statement

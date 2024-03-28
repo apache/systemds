@@ -296,13 +296,19 @@ public class LibMatrixAgg {
 					new RowAggTask(in, out, aggtype, uaop, lb, lb+blklens.get(i)) :
 					new PartialAggTask(in, out, aggtype, uaop, lb, lb+blklens.get(i)) );
 			}
-			pool.invokeAll(tasks);
+			List<Future<Object>> rtasks = pool.invokeAll(tasks);
 			pool.shutdown();
 			//aggregate partial results
-			if( !(uaop.indexFn instanceof ReduceCol) ) {
+			if( uaop.indexFn instanceof ReduceCol ) {
+				//error handling and nnz aggregation
+				out.setNonZeros(rtasks.stream()
+					.mapToLong(t -> (long)UtilFunctions.getSafe(t)).sum());
+			}
+			else { //colAgg()/agg()
 				out.copy(((PartialAggTask)tasks.get(0)).getResult(), false); //for init
 				for( int i=1; i<tasks.size(); i++ )
 					aggregateFinalResult(uaop.aggOp, out, ((PartialAggTask)tasks.get(i)).getResult());
+				out.recomputeNonZeros();
 			}
 		}
 		catch(Exception ex) {
@@ -310,7 +316,6 @@ public class LibMatrixAgg {
 		}
 		
 		//cleanup output and change representation (if necessary)
-		out.recomputeNonZeros();
 		out.examSparsity();
 		
 		//System.out.println("uagg k="+k+" ("+in.rlen+","+in.clen+","+in.sparse+") in "+time.stop()+"ms.");
@@ -3778,7 +3783,7 @@ public class LibMatrixAgg {
 				aggregateUnaryMatrixDense(_in, _ret, _aggtype, _uaop.aggOp.increOp.fn, _uaop.indexFn, _rl, _ru);
 			else
 				aggregateUnaryMatrixSparse(_in, _ret, _aggtype, _uaop.aggOp.increOp.fn, _uaop.indexFn, _rl, _ru);
-			return null;
+			return _ret.recomputeNonZeros(_rl, _ru-1);
 		}
 	}
 

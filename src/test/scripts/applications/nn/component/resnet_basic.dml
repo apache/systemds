@@ -21,6 +21,7 @@
 
 source("scripts/nn/networks/resnet.dml") as resnet
 source("src/test/scripts/applications/nn/util.dml") as test_util
+source("scripts/nn/layers/conv2d_builtin.dml") as conv2d
 
 
 basic_test_basic_block_forward = function(int C_in, int C_base, int strideh, int stridew,
@@ -59,8 +60,8 @@ basic_test_basic_block_forward = function(int C_in, int C_base, int strideh, int
         ema_means_vars = append(ema_means_vars, ema_var_bn3)
     }
 
-    [out, Hout, Wout, ema_means_vars_up] = resnet::basic_block_forward(X, weights, C_in, C_base, Hin, Win,
-                                                                    strideh, stridew, mode, ema_means_vars)
+    [out, Hout, Wout, ema_means_vars_up, cached_out, cached_means_vars] = resnet::basic_block_forward(X, weights, C_in,
+        C_base, Hin, Win, strideh, stridew, mode, ema_means_vars)
     Hout_expected = Hin / strideh; Wout_expected = Win / strideh
     out_cols_expected = C_base * Hout_expected * Wout_expected
     if (Hout_expected != Hout | Wout_expected != Wout | out_cols_expected != ncol(out)) {
@@ -98,8 +99,8 @@ values_test_basic_block_forward_1 = function() {
     ema_var_bn2 = matrix(0, rows=C_base, cols=1)
     ema_means_vars = list(ema_mean_bn1, ema_var_bn1, ema_mean_bn2, ema_var_bn2)
 
-    [out, Hout, Wout, ema_means_vars_up] = resnet::basic_block_forward(X, weights, C_in, C_base, Hin, Win,
-                                                                strideh, stridew, mode, ema_means_vars)
+    [out, Hout, Wout, ema_means_vars_up, cached_out, cached_means_vars] = resnet::basic_block_forward(X, weights, C_in,
+        C_base, Hin, Win, strideh, stridew, mode, ema_means_vars)
 
     out_expected = matrix("1.1192019  0.13680267 0.3965159  0.09488004 1.5221035  0.60268176 0.870202   0.3568437 0.19053036 2.023053   2.810772   2.7142973 1.4163418  2.2421117  0.22204155 0.         0.31268513 0.14521259 0.57843214 0.65275586 0.         0.02211368 0.4826215  0.65296173 1.2726448  0.6964331  1.6637247  1.2155424 2.3015604  3.9708042  1.6967016  0.40145046
                            1.1192019  0.13680267 0.3965159  0.09488004 1.5221035  0.60268176 0.870202   0.3568437 0.19053036 2.023053   2.810772   2.7142973 1.4163418  2.2421117  0.22204155 0.         0.31268513 0.14521259 0.57843214 0.65275586 0.         0.02211368 0.4826215  0.65296173 1.2726448  0.6964331  1.6637247  1.2155424 2.3015604  3.9708042  1.6967016  0.40145046",
@@ -147,8 +148,8 @@ values_test_basic_block_forward_2 = function() {
     ema_var_bn3 = matrix(0, rows=C_base, cols=1)
     ema_means_vars = list(ema_mean_bn1, ema_var_bn1, ema_mean_bn2, ema_var_bn2, ema_mean_bn3, ema_var_bn3)
 
-    [out, Hout, Wout, ema_means_vars_up] = resnet::basic_block_forward(X, weights, C_in, C_base, Hin, Win,
-                                                                strideh, stridew, mode, ema_means_vars)
+    [out, Hout, Wout, ema_means_vars_up, cached_out, cached_means_vars] = resnet::basic_block_forward(X, weights, C_in,
+        C_base, Hin, Win, strideh, stridew, mode, ema_means_vars)
 
     out_expected = matrix("0.         0.         0.33147347 1.4695541  0.         0.9726007  0.         0.9382379
                            0.         0.         0.33147347 1.4695541  0.         0.9726007  0.         0.9382379 ",
@@ -202,8 +203,8 @@ values_test_basic_block_forward_3 = function() {
     ema_var_bn3 = matrix(0, rows=C_base, cols=1)
     ema_means_vars = list(ema_mean_bn1, ema_var_bn1, ema_mean_bn2, ema_var_bn2, ema_mean_bn3, ema_var_bn3)
 
-    [out, Hout, Wout, ema_means_vars_up] = resnet::basic_block_forward(X, weights, C_in, C_base, Hin, Win,
-                                                                strideh, stridew, mode, ema_means_vars)
+    [out, Hout, Wout, ema_means_vars_up, cached_out, cached_means_vars] = resnet::basic_block_forward(X, weights, C_in,
+        C_base, Hin, Win, strideh, stridew, mode, ema_means_vars)
 
     out_expected = matrix("0.         1.576729   0.         0.14989257  0.         0.         1.5978024  0.         1.6740767  0.         0.         0.         0.89626473 1.0869961  0.         0.
                            0.         1.576729   0.         0.14989257  0.         0.         1.5978024  0.         1.6740767  0.         0.         0.         0.89626473 1.0869961  0.         0.        ",
@@ -534,11 +535,336 @@ values_test_residual_layer_forward = function() {
 
     blocks_weights = list(block1_weights, block2_weights)
     ema_means_vars = list(block1_EMAs, block2_EMAs)
-    [out, Hout, Wout, ema_means_vars_upd] = resnet::basic_reslayer_forward(X, Hin, Win, blocks,
-                                                              strideh, stridew, C_in, C_base,
-                                                              blocks_weights, mode, ema_means_vars)
+    block_type = "basic"
+    [out, Hout, Wout, ema_means_vars_upd, cached_out, cached_means_vars] = resnet::reslayer_forward(X, Hin, Win,
+        block_type, blocks, strideh, stridew, C_in, C_base, blocks_weights, mode, ema_means_vars)
 
     test_util::check_all_close(out, expected_out, 0.0001)
+}
+
+values_test_basic_block_backward = function() {
+    /*
+     * Testing of values for forward pass of basic block against PyTorch.
+     */
+    strideh = 2; stridew = 2
+    C_in = 2; C_base = 4
+    Hin = 4; Win = 4
+    N = 2
+    X = matrix(seq(1, N*C_in*Hin*Win), rows=N, cols=C_in*Hin*Win)
+    W_conv1 = matrix("0.22795902  0.17547427  0.21921514
+             0.13373677  0.1449876  -0.20703636
+             0.1049294  -0.07758546  0.01650636
+
+             0.09977336  0.14042483 -0.10443689
+             0.18606941  0.07984604  0.1862065
+            -0.0245543  -0.00999866 -0.06876408
+
+
+            -0.21368428  0.11649923  0.1329887
+            -0.03319308 -0.18250495  0.16087545
+            -0.0010442  -0.06631051  0.11644398
+
+            -0.19472131 -0.0089076  -0.00361156
+             0.11273773 -0.04975031 -0.22203343
+             0.12707166  0.05724771 -0.19370714
+
+
+            -0.03382689 -0.2220618   0.09851243
+            -0.04797092 -0.15873244  0.10475938
+            -0.14053479  0.14056166  0.16246034
+
+            -0.22719866 -0.18615595  0.13337635
+            -0.18140101  0.05603398  0.11490373
+             0.0046075  -0.11261812  0.01054354
+
+
+             0.06122501  0.18338178  0.21308573
+             0.00820886  0.01341644 -0.08846006
+            -0.04187146 -0.05795708  0.07099648
+
+             0.0377063  -0.19591397  0.08679475
+             0.05578776 -0.01468489 -0.22213465
+             0.21319999 -0.19887432  0.00093569
+        ", rows=C_base, cols=C_in*3*3)
+    gamma_bn1 = matrix(1, rows=C_base, cols=1)
+    beta_bn1 = matrix(0, rows=C_base, cols=1)
+    W_conv2 = matrix("-0.15316814  0.01649837  0.02066648
+             0.15951438  0.14952205  0.05908944
+             0.12360035  0.16258992 -0.05275005
+
+            -0.09005231  0.10635151 -0.06287201
+             0.0140198   0.00389086 -0.13122693
+            -0.01728405  0.06940794  0.1438715
+
+            -0.06239128 -0.04787713  0.12102707
+            -0.09782796 -0.12092899  0.15389048
+             0.13240601 -0.07352956 -0.04799255
+
+            -0.04824746  0.15890409 -0.09615827
+             0.00646619  0.07214041  0.05696104
+             0.09033443 -0.15197693 -0.1104077
+
+
+             0.12790756 -0.14982054 -0.08584315
+             0.1374556   0.06672513  0.05649196
+            -0.15129058  0.07952888  0.07835837
+
+             0.05553712 -0.02423525  0.12602611
+            -0.03570884  0.07482989 -0.07258789
+            -0.15282819  0.09200995  0.00603025
+
+            -0.05926096  0.0686207   0.11548664
+            -0.08733666 -0.14680144 -0.11286473
+             0.01421845 -0.04764497  0.15172698
+
+            -0.13044584  0.04871863 -0.14850675
+            -0.13645135 -0.11802016 -0.01737686
+             0.10504811 -0.13870925 -0.07346682
+
+
+            -0.0705896  -0.09258682  0.1341825
+             0.05714887 -0.06405389 -0.14810124
+             0.06753898  0.00227241  0.06100388
+
+             0.09614421  0.12490447 -0.09217326
+            -0.04312347  0.08090664  0.12942137
+             0.04428639  0.0577697   0.12196468
+
+             0.10778381 -0.10680336  0.11534978
+            -0.0510295  -0.01859938  0.01497144
+            -0.03191304  0.06286548  0.11793233
+
+            -0.12459338  0.09700234 -0.11604425
+             0.09004898 -0.02339827  0.15153421
+             0.06829721 -0.01891816 -0.0645818
+
+
+             0.03223832  0.10086165 -0.13695073
+            -0.01531534  0.07804878 -0.00895005
+            -0.03381938 -0.10908765  0.03976715
+
+            -0.01888643  0.08189081 -0.01315074
+            -0.05945349 -0.03236644 -0.07914945
+            -0.06206207 -0.01699001  0.0371331
+
+             0.04449199  0.05730323  0.05018614
+            -0.16624898 -0.00204407  0.05084966
+             0.1588928  -0.00098683 -0.08426523
+
+            -0.04337545  0.06106292 -0.00310864
+            -0.05939015 -0.02901964 -0.12184718
+            -0.09405826  0.11087091 -0.10842602
+        ", rows=C_base, cols=C_base*3*3)
+    gamma_bn2 = matrix(1, rows=C_base, cols=1)
+    beta_bn2 = matrix(0, rows=C_base, cols=1)
+    W_conv_down = matrix("0.31054777
+
+             0.3262263
+
+
+             0.46358436
+
+            -0.51710904
+
+
+             0.18096805
+
+             0.32488567
+
+
+            -0.29951102
+
+            -0.40844375
+        ", rows=C_base, cols=C_in)
+    gamma_bn3 = matrix(1, rows=C_base, cols=1)
+    beta_bn3 = matrix(0, rows=C_base, cols=1)
+
+    weights = list(W_conv1, gamma_bn1, beta_bn1, W_conv2, gamma_bn2, beta_bn2, W_conv_down, gamma_bn3, beta_bn3)
+    mode = "train"
+
+    ema_mean_bn1 = matrix(0, rows=C_base, cols=1)
+    ema_var_bn1 = matrix(0, rows=C_base, cols=1)
+    ema_mean_bn2 = matrix(0, rows=C_base, cols=1)
+    ema_var_bn2 = matrix(0, rows=C_base, cols=1)
+    ema_mean_bn3 = matrix(0, rows=C_base, cols=1)
+    ema_var_bn3 = matrix(0, rows=C_base, cols=1)
+    ema_means_vars = list(ema_mean_bn1, ema_var_bn1, ema_mean_bn2, ema_var_bn2, ema_mean_bn3, ema_var_bn3)
+
+    [out, Hout, Wout, ema_means_vars_up, cached_out, cached_means_vars] = resnet::basic_block_forward(X, weights, C_in,
+        C_base, Hin, Win, strideh, stridew, mode, ema_means_vars)
+
+    dOut = matrix("-0.0625     -0.0625
+                   -0.0625     -0.05511813
+
+                   -0.03883262 -0.05729559
+                    0.04194808 -0.03308601
+
+                   -0.04001789 -0.0625
+                   -0.0625     -0.03310877
+
+                   -0.0625      0.02698019
+                   -0.00352125  0.04049902
+
+
+                   -0.0625      0.04098879
+                    0.02273786  0.10461447
+
+                   -0.0625     -0.0625
+                    0.00151762 -0.0625
+
+                   -0.00950899 -0.05501665
+                   -0.0625     -0.0141529
+
+                   -0.0625     -0.0625
+                   -0.0625     -0.03729285",
+                   rows=N, cols=C_base*Hout*Wout)
+
+    [dX, gradients] = resnet::basic_block_backward(dOut, cached_out, weights, C_in, C_base,
+        strideh, stridew, cached_means_vars)
+
+    dW_conv1_exp = matrix("-0.02246146  0.10423277  0.1029001
+                           -0.05089705  0.10958684  0.10958683
+                           -0.07130328  0.10958684  0.10958684
+
+                           -0.10713803  0.08291006  0.08157738
+                           -0.13252197  0.10958683  0.10958685
+                           -0.1529282   0.10958683  0.10958683
+
+
+                           -0.02584631  0.06710234  0.06838104
+                           -0.34364033 -0.17614923 -0.17614923
+                           -0.3919655  -0.17614925 -0.17614923
+
+                           -0.1790472   0.0875615   0.08884021
+                           -0.53694105 -0.17614923 -0.17614923
+                           -0.58526623 -0.17614922 -0.17614925
+
+
+                           -0.13346207 -0.03711003 -0.04283796
+                           -0.17548679 -0.3563866  -0.35638663
+                           -0.1589087  -0.3563866  -0.35638663
+
+                           -0.21392906 -0.12875691 -0.13448483
+                           -0.1091744  -0.35638666 -0.35638663
+                           -0.09259631 -0.3563867  -0.3563866
+
+
+                           -0.10748374 -0.15856032 -0.15569028
+                           -0.15130743 -0.26214042 -0.2621404
+                           -0.18142992 -0.2621404  -0.26214042
+
+                           -0.01991791 -0.1126398  -0.10976979
+                           -0.27179736 -0.26214045 -0.26214042
+                           -0.30191985 -0.26214045 -0.2621404 ",
+                           rows=C_base, cols=C_in*3*3)
+    test_util::check_all_close(as.matrix(gradients[1]), dW_conv1_exp, 0.0001)
+
+    dW_bn1_exp = matrix(" 0.11060466 -0.02107318 -0.0812627  -0.00814073", rows=C_base, cols=1)
+    test_util::check_all_close(as.matrix(gradients[2]), dW_bn1_exp, 0.0001)
+
+    db_bn1_exp = matrix(" 0.01407476 -0.07577097  0.09522599  0.07362167", rows=C_base, cols=1)
+    test_util::check_all_close(as.matrix(gradients[3]), db_bn1_exp, 0.0001)
+
+    dW_conv2_exp = matrix(" 0.00000000e+00  6.27728775e-02  4.55777068e-03
+                            7.02145845e-02  5.98357618e-01  6.22697920e-02
+                            1.20493323e-02  1.22186027e-01  1.86003119e-01
+
+                           -2.30462596e-01 -3.63258511e-01 -1.50781767e-02
+                           -1.57529697e-01 -2.15406895e-01  2.45092548e-02
+                           -1.97134074e-02 -2.55168434e-02 -7.79616646e-04
+
+                            2.15687096e-01  1.35737220e-02 -2.27542143e-04
+                            1.13740548e-01  1.09955356e-01 -2.35504449e-05
+                            1.39786359e-02  6.76771551e-02  0.00000000e+00
+
+                           -9.22712237e-02 -2.82834589e-01 -1.38832042e-02
+                           -1.52194882e-02  2.60263085e-02  9.82659869e-03
+                            0.00000000e+00  1.41863674e-02  1.05086461e-01
+
+
+                            0.00000000e+00  5.18248565e-02 -6.42012283e-02
+                            5.79686798e-02  4.33321059e-01 -5.52755892e-01
+                            2.53020395e-02  2.54378200e-01  3.95552069e-01
+
+                           -1.31259233e-01  8.39732587e-02  4.01174039e-01
+                           -2.59595156e-01 -3.81430775e-01  7.20100850e-02
+                           -9.93236750e-02 -1.69444025e-01 -5.55632524e-02
+
+                            2.05957323e-01 -2.13401914e-01  5.07378485e-03
+                            1.25175878e-01  1.10367373e-01 -1.67843944e-03
+                           -3.87407765e-02  9.45824534e-02  0.00000000e+00
+
+                           -5.25527745e-02 -5.58004305e-02  3.09570760e-01
+                           -7.66815916e-02 -1.37685180e-01 -1.52672842e-01
+                            0.00000000e+00 -9.84215960e-02  1.30307078e-01
+
+
+                            0.00000000e+00  1.21219526e-03  5.99100720e-03
+                            1.35590055e-03 -3.04231290e-02  7.05613419e-02
+                           -5.36800846e-02 -4.34169441e-01  1.18018150e-01
+
+                           -1.83993857e-02  2.74298918e-02  1.34550676e-01
+                            5.64235747e-02  3.97945419e-02  4.81129810e-03
+                            3.42092514e-02  2.82005444e-02 -1.89568941e-02
+
+                           -2.42714863e-03  5.99674359e-02  1.22890016e-03
+                           -2.24024475e-01  1.11650631e-01 -5.72644640e-04
+                           -1.25298709e-01  2.60425620e-02  0.00000000e+00
+
+                           -7.36663491e-03  2.65299832e-03  7.49798343e-02
+                            2.64108200e-02  5.34383431e-02  6.85021579e-02
+                            0.00000000e+00 -1.81864589e-01  3.47672515e-02
+
+
+                            0.00000000e+00 -7.43892491e-02 -7.71372812e-03
+                           -8.32080767e-02 -7.09796607e-01 -8.08604732e-02
+                           -1.06588183e-02 -9.39640850e-02 -7.12726489e-02
+
+                            2.23416343e-01  2.80079544e-01 -8.82177129e-02
+                            2.54184335e-01  3.47144812e-01 -1.16981082e-01
+                            7.17329308e-02  6.99866414e-02 -2.60418989e-02
+
+                           -2.79086232e-01 -5.31585366e-02 -7.40691903e-04
+                           -1.04264751e-01 -1.04167528e-01 -7.86666467e-04
+                            5.14573716e-02 -5.00418246e-02  0.00000000e+00
+
+                            8.94500837e-02  2.54736274e-01 -4.51924093e-02
+                            5.53805046e-02  8.24335217e-03 -1.32365167e-01
+                            0.00000000e+00  1.07619762e-01 -8.57934728e-02",
+                            rows=C_base, cols=C_base*3*3)
+    test_util::check_all_close(as.matrix(gradients[4]), dW_conv2_exp, 0.0001)
+
+    dW_bn2_exp = matrix(" 0.1440372   0.14261805 -0.06086085 -0.01561027", rows=C_base, cols=1)
+    test_util::check_all_close(as.matrix(gradients[5]), dW_bn2_exp, 0.0001)
+
+    db_bn2_exp = matrix(" 0.11322299 -0.08574851 -0.15180519  0.02666511", rows=C_base, cols=1)
+    test_util::check_all_close(as.matrix(gradients[6]), db_bn2_exp, 0.0001)
+
+    dW_conv3_exp = matrix(" 8.9406967e-08
+
+                           1.1920929e-07
+
+
+                           2.5063753e-05
+
+                           2.4765730e-05
+
+
+                          -1.1175871e-08
+
+                          -2.9802322e-08
+
+
+                          -2.2351742e-08
+
+                          -2.9802322e-08", rows=C_base, cols=C_in)
+    test_util::check_all_close(as.matrix(gradients[7]), dW_conv3_exp, 0.0001)
+
+    dW_bn3_exp = matrix(" 0.22805437 -0.10600837  0.00529851  0.10261551", rows=C_base, cols=1)
+    test_util::check_all_close(as.matrix(gradients[8]), dW_bn3_exp, 0.0001)
+
+    db_bn3_exp = matrix(" 0.11322299 -0.08574851 -0.15180519  0.02666511", rows=C_base, cols=1)
+    test_util::check_all_close(as.matrix(gradients[9]), db_bn3_exp, 0.0001)
 }
 
 
@@ -627,3 +953,10 @@ values_test_basic_block_forward_3()
  * of 2 and 4.
  */
 values_test_residual_layer_forward()
+
+/*
+ * *** Residual Layer Backward Pass Testing ***
+ */
+
+values_test_basic_block_backward()
+

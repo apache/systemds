@@ -22,19 +22,17 @@
 source("scripts/nn/networks/resnet.dml") as resnet
 source("scripts/nn/networks/resnet_util.dml") as util
 
-/*
- * Forward and backward pass.
- */
-
 forward = function(matrix[double] X, int Hin, int Win,
-                   list[unknown] model, string mode,
-                   list[unknown] ema_means_vars)
+                            list[unknown] model, string mode,
+                            list[unknown] ema_means_vars)
     return (matrix[double] out, list[unknown] ema_means_vars_upd,
             list[unknown] cached_out, list[unknown] cached_means_vars) {
     /*
-     * Forward pass of the ResNet 18 model as introduced in
+     * Forward pass of the ResNet101 as introduced in
      * "Deep Residual Learning for Image Recognition" by
-     * Kaiming He et. al. and inspired by PyTorch.
+     * Kaiming He et. al., refined in "ResNet v1.5 for
+     * PyTorch" by NVIDIA and inspired by the PyTorch
+     * implementation.
      *
      * Inputs:
      * - X: Inputs, of shape (N, C_in*Hin*Win).
@@ -56,14 +54,14 @@ forward = function(matrix[double] X, int Hin, int Win,
      *         with 512 base channels.
      *      List of residual layers 1, 2, 3 & 4 have
      *      the content/order:
-     *      -> 1: List of weights for first residual
-     *            block.
-     *      -> 2: List of weights for second residual
-     *            block.
+     *      -> i: List of weights for residual block i.
+     *            with i in {1, ..., layer_sizes[layer]}
      *         Each list of weights for a residual block
      *         must follow the same order as defined in
-     *         the documentation of basic_block_forward().
-     *   -> 8: Weights of fully connected layer, of shape (512, classes)
+     *         the documentation of bottleneck_block_forward().
+     *   -> 8: Weights of fully connected layer, of shape (C_out, classes)
+     *         where C_out = 512 for basic block type and C_out = 2048
+     *         for bottleneck block type.
      *   -> 9: Bias of fully connected layer, of shape (1, classes)
      * - mode: 'train' or 'test' to indicate if the model is currently
      *     being trained or tested for badge normalization layers.
@@ -78,15 +76,15 @@ forward = function(matrix[double] X, int Hin, int Win,
      *   -> 6: List of EMA means and vars for residual layer 4.
      *      Lists for EMAs of layer 1, 2, 3 & 4 must have the
      *      following order:
-     *      -> 1: List of EMA means and vars for residual block 1.
-     *      -> 2: List of EMA means and vars for residual block 2.
+     *      -> i: List of EMA means and vars for residual block i.
+     *            with i in {1, ..., layer_sizes[layer]}
      *         Each list of EMAs for a residual block
      *         must follow the same order as defined in
-     *         the documentation of basic_block_forward().
-     * -> NOTICE: The lists of the first blocks for layer 2, 3 and 4
-     *            must include weights and EMAs for 1 extra conv layer
-     *            and a batch norm layer for the downsampling on the
-     *            identity path.
+     *         the documentation bottleneck_block_forward().
+     * - NOTICE: The lists of the first blocks for layer 2, 3 and 4
+     *           must include weights and EMAs for 1 extra conv layer
+     *           and a batch norm layer for the downsampling on the
+     *           identity path.
      *
      * Outputs:
      * - out: Outputs, of shape (N, classes)
@@ -99,8 +97,8 @@ forward = function(matrix[double] X, int Hin, int Win,
      *     each batch normalization layer. This is required for the
      *     backward pass of the network.
      */
-    layer_sizes = list(2, 2, 2, 2)
-    block_type = "basic"
+    layer_sizes = list(3, 4, 23, 3)
+    block_type = "bottleneck"
     [out, ema_means_vars_upd, cached_out, cached_means_vars] = resnet::resnet_forward(X, Hin, Win, block_type,
         layer_sizes, model, mode, ema_means_vars)
 }
@@ -109,7 +107,7 @@ backward = function(matrix[double] dOut, list[unknown] cached_out,
                     list[unknown] model, list[unknown] cached_means_vars)
     return (matrix[double] dX, list[unknown] gradients) {
     /*
-     * Backward pass of the ResNet 18 model as introduced in
+     * Backward pass of the ResNet 101 model as introduced in
      * "Deep Residual Learning for Image Recognition" by
      * Kaiming He et. al. and inspired by PyTorch.
      *
@@ -129,7 +127,7 @@ backward = function(matrix[double] dOut, list[unknown] cached_out,
      * - cached_means_vars: List of cached means and vars returned
      *     by the forward pass. It has the same structure as the
      *     ema_means_vars for the forward pass.
-[O     * -> NOTICE: Use the exact list returned by the forward
+     * -> NOTICE: Use the exact list returned by the forward
      *            pass without modification.
      *
      * Outputs:
@@ -141,8 +139,8 @@ backward = function(matrix[double] dOut, list[unknown] cached_out,
      * -> NOTICE: To update the parameters of the model, use
      *            one of the provided utility functions.
      */
-    layer_sizes = list(2, 2, 2, 2)
-    block_type = "basic"
+    layer_sizes = list(3, 4, 23, 3)
+    block_type = "bottleneck"
     [dX, gradients] = resnet::resnet_backward(dOut, cached_out, block_type, layer_sizes, model, cached_means_vars)
 }
 
@@ -171,8 +169,8 @@ init = function(int classes, int seed)
      *     The structure is described in the forward pass
      *     documentation.
      */
-    layer_sizes = list(2, 2, 2, 2)
-    [model, emas] = resnet::init(classes, "basic", layer_sizes, seed)
+    layer_sizes = list(3, 4, 23, 3)
+    [model, emas] = resnet::init(classes, "bottleneck", layer_sizes, seed)
 }
 
 /*
@@ -183,7 +181,7 @@ init_adagrad_optim_params = function(int classes)
     return(list[unknown] params) {
     /*
      * Initializes the state of the adagrad optimizer for every
-     * learnable parameter of ResNet 18.
+     * learnable parameter of ResNet 101.
      *
      * Inputs:
      * - classes: Number of network output classes.
@@ -193,8 +191,8 @@ init_adagrad_optim_params = function(int classes)
      *     as weights of the forward and backward pass. It can be
      *     directly passed to the update parameter function.
      */
-    layer_sizes = list(2, 2, 2, 2)
-    params = util::init_optim("adagrad", classes, "basic", layer_sizes)
+    layer_sizes = list(3, 4, 23, 3)
+    params = util::init_optim("adagrad", classes, "bottleneck", layer_sizes)
 }
 
 update_params_with_adagrad = function(list[unknown] model, list[unknown] gradients,
@@ -217,17 +215,17 @@ update_params_with_adagrad = function(list[unknown] model, list[unknown] gradien
      * - model_upd: Updated model parameters.
      * - optim_state_upd: Updated model states for all parameters.
      */
-    layer_sizes = list(2, 2, 2, 2)
+    layer_sizes = list(3, 4, 23, 3)
     hyper_params = list(lr, epsilon)
-    [optim_state_upd, model_upd] = util::update_params("adagrad", optim_state, hyper_params, gradients, model, "basic",
-        layer_sizes)
+    [optim_state_upd, model_upd] = util::update_params("adagrad", optim_state, hyper_params, gradients, model,
+        "bottleneck", layer_sizes)
 }
 
 init_adam_optim_params = function(int classes)
     return(list[unknown] params) {
     /*
      * Initializes the state of the adam optimizer for every
-     * learnable parameter of ResNet 18.
+     * learnable parameter of ResNet 101.
      *
      * Inputs:
      * - classes: Number of network output classes.
@@ -237,8 +235,8 @@ init_adam_optim_params = function(int classes)
      *     as weights of the forward and backward pass. It can be
      *     directly passed to the update parameter function.
      */
-    layer_sizes = list(2, 2, 2, 2)
-    params = util::init_optim("adam", classes, "basic", layer_sizes)
+    layer_sizes = list(3, 4, 23, 3)
+    params = util::init_optim("adam", classes, "bottleneck", layer_sizes)
 }
 
 update_params_with_adam = function(list[unknown] model, list[unknown] gradients,
@@ -267,17 +265,17 @@ update_params_with_adam = function(list[unknown] model, list[unknown] gradients,
      * - model_upd: Updated model parameters.
      * - optim_state_upd: Updated model states for all parameters.
      */
-    layer_sizes = list(2, 2, 2, 2)
+    layer_sizes = list(3, 4, 23, 3)
     hyper_params = list(lr, beta1, beta2, epsilon, t)
-    [optim_state_upd, model_upd] = util::update_params("adam", optim_state, hyper_params, gradients, model, "basic",
-        layer_sizes)
+    [optim_state_upd, model_upd] = util::update_params("adam", optim_state, hyper_params, gradients, model,
+        "bottleneck", layer_sizes)
 }
 
 init_rmsprop_optim_params = function(int classes)
     return(list[unknown] params) {
     /*
      * Initializes the state of the rmsprop optimizer for every
-     * learnable parameter of ResNet 18.
+     * learnable parameter of ResNet 101.
      *
      * Inputs:
      * - classes: Number of network output classes.
@@ -287,8 +285,8 @@ init_rmsprop_optim_params = function(int classes)
      *     as weights of the forward and backward pass. It can be
      *     directly passed to the update parameter function.
      */
-    layer_sizes = list(2, 2, 2, 2)
-    params = util::init_optim("rmsprop", classes, "basic", layer_sizes)
+    layer_sizes = list(3, 4, 23, 3)
+    params = util::init_optim("rmsprop", classes, "bottleneck", layer_sizes)
 }
 
 update_params_with_rmsprop = function(list[unknown] model, list[unknown] gradients,
@@ -313,10 +311,10 @@ update_params_with_rmsprop = function(list[unknown] model, list[unknown] gradien
      * - model_upd: Updated model parameters.
      * - optim_state_upd: Updated model states for all parameters.
      */
-    layer_sizes = list(2, 2, 2, 2)
+    layer_sizes = list(3, 4, 23, 3)
     hyper_params = list(lr, decay_rate, epsilon)
-    [optim_state_upd, model_upd] = util::update_params("rmsprop", optim_state, hyper_params, gradients, model, "basic",
-        layer_sizes)
+    [optim_state_upd, model_upd] = util::update_params("rmsprop", optim_state, hyper_params, gradients, model,
+        "bottleneck", layer_sizes)
 }
 
 update_params_with_sgd = function(list[unknown] model,
@@ -335,10 +333,10 @@ update_params_with_sgd = function(list[unknown] model,
      * Outputs:
      * - model_upd: Updated model parameters.
      */
-    layer_sizes = list(2, 2, 2, 2)
+    layer_sizes = list(3, 4, 23, 3)
     hyper_params = list(lr)
     optim_state = list()
-    [optim_state_upd, model_upd] = util::update_params("sgd", optim_state, hyper_params, gradients, model, "basic",
+    [optim_state_upd, model_upd] = util::update_params("sgd", optim_state, hyper_params, gradients, model, "bottleneck",
         layer_sizes)
 }
 
@@ -346,7 +344,7 @@ init_sgd_momentum_optim_params = function(int classes)
     return(list[unknown] params) {
     /*
      * Initializes the state of the sgd momentum optimizer for
-     * every learnable parameter of ResNet 18.
+     * every learnable parameter of ResNet 101.
      *
      * Inputs:
      * - classes: Number of network output classes.
@@ -356,8 +354,8 @@ init_sgd_momentum_optim_params = function(int classes)
      *     as weights of the forward and backward pass. It can be
      *     directly passed to the update parameter function.
      */
-    layer_sizes = list(2, 2, 2, 2)
-    params = util::init_optim("sgd_momentum", classes, "basic", layer_sizes)
+    layer_sizes = list(3, 4, 23, 3)
+    params = util::init_optim("sgd_momentum", classes, "bottleneck", layer_sizes)
 }
 
 update_params_with_sgd_momentum = function(list[unknown] model,
@@ -382,17 +380,17 @@ update_params_with_sgd_momentum = function(list[unknown] model,
      * - model_upd: Updated model parameters.
      * - optim_state_upd: Updated model states for all parameters.
      */
-    layer_sizes = list(2, 2, 2, 2)
+    layer_sizes = list(3, 4, 23, 3)
     hyper_params = list(lr, mu)
-    [optim_state_upd, model_upd] = util::update_params("sgd_momentum", optim_state, hyper_params, gradients, model, "basic",
-        layer_sizes)
+    [optim_state_upd, model_upd] = util::update_params("sgd_momentum", optim_state, hyper_params, gradients, model,
+        "bottleneck", layer_sizes)
 }
 
 init_sgd_nesterov_optim_params = function(int classes)
     return(list[unknown] params) {
     /*
      * Initializes the state of the nesterov optimizer for every
-     * learnable parameter of ResNet 18.
+     * learnable parameter of ResNet 101.
      *
      * Inputs:
      * - classes: Number of network output classes.
@@ -402,8 +400,8 @@ init_sgd_nesterov_optim_params = function(int classes)
      *     as weights of the forward and backward pass. It can be
      *     directly passed to the update parameter function.
      */
-    layer_sizes = list(2, 2, 2, 2)
-    params = util::init_optim("nesterov", classes, "basic", layer_sizes)
+    layer_sizes = list(3, 4, 23, 3)
+    params = util::init_optim("nesterov", classes, "bottleneck", layer_sizes)
 }
 
 update_params_with_sgd_nesterov = function(list[unknown] model,
@@ -428,9 +426,9 @@ update_params_with_sgd_nesterov = function(list[unknown] model,
      * - model_upd: Updated model parameters.
      * - optim_state_upd: Updated model states for all parameters.
      */
-    layer_sizes = list(2, 2, 2, 2)
+    layer_sizes = list(3, 4, 23, 3)
     hyper_params = list(lr, mu)
-    [optim_state_upd, model_upd] = util::update_params("sgd_nesterov", optim_state, hyper_params, gradients, model, "basic",
-        layer_sizes)
+    [optim_state_upd, model_upd] = util::update_params("sgd_nesterov", optim_state, hyper_params, gradients, model,
+        "bottleneck", layer_sizes)
 }
 

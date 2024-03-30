@@ -1,0 +1,437 @@
+#-------------------------------------------------------------
+#
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+#
+#-------------------------------------------------------------
+
+source("nn/optim/adam.dml") as adam
+source("nn/optim/adagrad.dml") as adagrad
+source("nn/optim/rmsprop.dml") as rmsprop
+source("nn/optim/sgd.dml") as sgd
+source("nn/optim/sgd_momentum.dml") as sgd_momentum
+source("nn/optim/sgd_nesterov.dml") as sgd_nesterov
+
+
+init_optim_adam_basic_block = function(int C_in, int C_base, boolean downsample)
+    return (list[unknown] block_params) {
+    # Conv 1
+    m_W_conv1 = matrix(0, rows=C_base, cols=C_in*3*3); v_W_conv1 = matrix(0, rows=C_base, cols=C_in*3*3)
+    # BN 1
+    m_W_bn1 = matrix(0, rows=C_base, cols=1); v_W_bn1 = matrix(0, rows=C_base, cols=1)
+    m_b_bn1 = matrix(0, rows=C_base, cols=1); v_b_bn1 = matrix(0, rows=C_base, cols=1)
+    # Conv 2
+    m_W_conv2 = matrix(0, rows=C_base, cols=C_base*3*3); v_W_conv2 = matrix(0, rows=C_base, cols=C_base*3*3)
+    # BN 2
+    m_W_bn2 = matrix(0, rows=C_base, cols=1); v_W_bn2 = matrix(0, rows=C_base, cols=1)
+    m_b_bn2 = matrix(0, rows=C_base, cols=1); v_b_bn2 = matrix(0, rows=C_base, cols=1)
+
+    block_params = list(list(m_W_conv1, v_W_conv1), list(m_W_bn1, v_W_bn1), list(m_b_bn1, v_b_bn1),
+        list(m_W_conv2, v_W_conv2), list(m_W_bn2, v_W_bn2), list(m_b_bn2, v_b_bn2))
+
+    if (downsample) {
+        # Conv 3
+        m_W_conv3 = matrix(0, rows=C_base, cols=C_in); v_W_conv3 = matrix(0, rows=C_base, cols=C_in)
+        # BN 3
+        m_W_bn3 = matrix(0, rows=C_base, cols=1); v_W_bn3 = matrix(0, rows=C_base, cols=1)
+        m_b_bn3 = matrix(0, rows=C_base, cols=1); v_b_bn3 = matrix(0, rows=C_base, cols=1)
+        block_params = append(block_params, list(m_W_conv3, v_W_conv3))
+        block_params = append(block_params, list(m_W_bn3, v_W_bn3))
+        block_params = append(block_params, list(m_b_bn3, v_b_bn3))
+    }
+}
+
+init_optim_other_basic_block = function(int C_in, int C_base, boolean downsample)
+    return (list[unknown] block_params) {
+    # Conv 1
+    s_W_conv1 = matrix(0, rows=C_base, cols=C_in*3*3)
+    # BN 1
+    s_W_bn1 = matrix(0, rows=C_base, cols=1)
+    s_b_bn1 = matrix(0, rows=C_base, cols=1)
+    # Conv 2
+    s_W_conv2 = matrix(0, rows=C_base, cols=C_base*3*3)
+    # BN 2
+    s_W_bn2 = matrix(0, rows=C_base, cols=1)
+    s_b_bn2 = matrix(0, rows=C_base, cols=1)
+
+    block_params = list(s_W_conv1, s_W_bn1, s_b_bn1, s_W_conv2, s_W_bn2, s_b_bn2)
+
+    if (downsample) {
+        # Conv 3
+        s_W_conv3 = matrix(0, rows=C_base, cols=C_in)
+        # BN 3
+        s_W_bn3 = matrix(0, rows=C_base, cols=1)
+        s_b_bn3 = matrix(0, rows=C_base, cols=1)
+        block_params = append(block_params, s_W_conv3)
+        block_params = append(block_params, s_W_bn3)
+        block_params = append(block_params, s_b_bn3)
+    }
+}
+
+init_optim_other_bottleneck_block = function(int C_in, int C_base, boolean downsample)
+    return (list[unknown] block_params) {
+    # Conv 1
+    s_W_conv1 = matrix(0, rows=C_base, cols=C_in)
+    # BN 1
+    s_W_bn1 = matrix(0, rows=C_base, cols=1)
+    s_b_bn1 = matrix(0, rows=C_base, cols=1)
+    # Conv 2
+    s_W_conv2 = matrix(0, rows=C_base, cols=C_base*3*3)
+    # BN 2
+    s_W_bn2 = matrix(0, rows=C_base, cols=1)
+    s_b_bn2 = matrix(0, rows=C_base, cols=1)
+    # Conv 3
+    s_W_conv3 = matrix(0, rows=4*C_base, cols=C_base)
+    # BN 3
+    s_W_bn3 = matrix(0, rows=4*C_base, cols=1)
+    s_b_bn3 = matrix(0, rows=4*C_base, cols=1)
+
+    block_params = list(s_W_conv1, s_W_bn1, s_b_bn1, s_W_conv2, s_W_bn2, s_b_bn2, s_W_conv3, s_W_bn3, s_b_bn3)
+
+    if (downsample) {
+        # Conv 4
+        s_W_conv4 = matrix(0, rows=4*C_base, cols=C_in)
+        # BN 4
+        s_W_bn4 = matrix(0, rows=4*C_base, cols=1)
+        s_b_bn4 = matrix(0, rows=4*C_base, cols=1)
+        block_params = append(block_params, s_W_conv4)
+        block_params = append(block_params, s_W_bn4)
+        block_params = append(block_params, s_b_bn4)
+    }
+}
+
+init_optim_adam_bottleneck_block = function(int C_in, int C_base, boolean downsample)
+    return (list[unknown] block_params) {
+    # Conv 1
+    m_W_conv1 = matrix(0, rows=C_base, cols=C_in); v_W_conv1 = matrix(0, rows=C_base, cols=C_in)
+    # BN 1
+    m_W_bn1 = matrix(0, rows=C_base, cols=1); v_W_bn1 = matrix(0, rows=C_base, cols=1)
+    m_b_bn1 = matrix(0, rows=C_base, cols=1); v_b_bn1 = matrix(0, rows=C_base, cols=1)
+    # Conv 2
+    m_W_conv2 = matrix(0, rows=C_base, cols=C_base*3*3); v_W_conv2 = matrix(0, rows=C_base, cols=C_base*3*3)
+    # BN 2
+    m_W_bn2 = matrix(0, rows=C_base, cols=1); v_W_bn2 = matrix(0, rows=C_base, cols=1)
+    m_b_bn2 = matrix(0, rows=C_base, cols=1); v_b_bn2 = matrix(0, rows=C_base, cols=1)
+    # Conv 3
+    m_W_conv3 = matrix(0, rows=4*C_base, cols=C_base); v_W_conv3 = matrix(0, rows=4*C_base, cols=C_base)
+    # BN 3
+    m_W_bn3 = matrix(0, rows=4*C_base, cols=1); v_W_bn3 = matrix(0, rows=4*C_base, cols=1)
+    m_b_bn3 = matrix(0, rows=4*C_base, cols=1); v_b_bn3 = matrix(0, rows=4*C_base, cols=1)
+
+    block_params = list(list(m_W_conv1, v_W_conv1), list(m_W_bn1, v_W_bn1), list(m_b_bn1, v_b_bn1),
+            list(m_W_conv2, v_W_conv2), list(m_W_bn2, v_W_bn2), list(m_b_bn2, v_b_bn2), list(m_W_conv3, v_W_conv3),
+            list(m_W_bn3, v_W_bn3), list(m_b_bn3, v_b_bn3))
+
+    if (downsample) {
+        # Conv 4
+        m_W_conv4 = matrix(0, rows=4*C_base, cols=C_in); v_W_conv4 = matrix(0, rows=4*C_base, cols=C_in)
+        # BN 4
+        m_W_bn4 = matrix(0, rows=4*C_base, cols=1); v_W_bn4 = matrix(0, rows=4*C_base, cols=1)
+        m_b_bn4 = matrix(0, rows=4*C_base, cols=1); v_b_bn4 = matrix(0, rows=4*C_base, cols=1)
+        block_params = append(block_params, list(m_W_conv4, v_W_conv4))
+        block_params = append(block_params, list(m_W_bn4, v_W_bn4))
+        block_params = append(block_params, list(m_b_bn4, v_b_bn4))
+    }
+}
+
+init_optim = function(string optimizer, int classes, string block_type, list[unknown] layer_sizes)
+    return (list[unknown] params) {
+    params = list()
+
+    C_in = 3
+    # Conv 7x7
+    if (optimizer == "adam") {
+        m_W_conv1 = matrix(0, rows=64, cols=C_in*7*7)
+        v_W_conv1 = matrix(0, rows=64, cols=C_in*7*7)
+        params = append(params, list(m_W_conv1, v_W_conv1))
+    } else {
+        s_W_conv1 = matrix(0, rows=64, cols=C_in*7*7)
+        params = append(params, s_W_conv1)
+    }
+    C_in = 64
+    # Batch norm
+    if (optimizer == "adam") {
+        m_W_bn1 = matrix(0, rows=C_in, cols=1); v_W_bn1 = matrix(0, rows=C_in, cols=1)
+        m_b_bn1 = matrix(0, rows=C_in, cols=1); v_b_bn1 = matrix(0, rows=C_in, cols=1)
+        params = append(params, list(m_W_bn1, v_W_bn1))
+        params = append(params, list(m_b_bn1, v_b_bn1))
+    } else {
+        s_W_bn1 = matrix(0, rows=C_in, cols=1)
+        s_b_bn1 = matrix(0, rows=C_in, cols=1)
+        params = append(params, s_W_bn1)
+        params = append(params, s_b_bn1)
+    }
+
+    # residual layers
+    C_bases = list(64, 128, 256, 512)
+    strides = list(1, 2, 2, 2)
+    for (layer in 1:4) {
+        layer_size = as.integer(as.scalar(layer_sizes[layer]))
+        C_base = as.integer(as.scalar(C_bases[layer]))
+        stride = as.integer(as.scalar(strides[layer]))
+        optim_layer = list()
+
+        if (block_type == "basic") {
+            # basic blocks
+            for (block in 1:layer_size) {
+                downsample = block == 1 & stride > 1
+                if (optimizer == "adam")
+                    optim_block = init_optim_adam_basic_block(C_in, C_base, downsample)
+                else
+                    optim_block = init_optim_other_basic_block(C_in, C_base, downsample)
+                optim_layer = append(optim_layer, optim_block)
+
+                C_in = C_base
+            }
+        } else {
+            # bottleneck blocks
+            for (block in 1:layer_size) {
+                downsample = block == 1
+                if (optimizer == "adam")
+                    optim_block = init_optim_adam_bottleneck_block(C_in, C_base, downsample)
+                else
+                    optim_block = init_optim_other_bottleneck_block(C_in, C_base, downsample)
+                optim_layer = append(optim_layer, optim_block)
+
+                C_in = 4*C_base
+            }
+        }
+
+        params = append(params, optim_layer)
+    }
+
+    # affine
+    if (optimizer == "adam") {
+        m_W_fc = matrix(0, rows=C_in, cols=classes); v_W_fc = matrix(0, rows=C_in, cols=classes)
+        m_b_fc = matrix(0, rows=1, cols=classes); v_b_fc = matrix(0, rows=1, cols=classes)
+        params = append(params, list(m_W_fc, v_W_fc))
+        params = append(params, list(m_b_fc, v_b_fc))
+    } else {
+        s_W_fc = matrix(0, rows=C_in, cols=classes)
+        s_b_fc = matrix(0, rows=1, cols=classes)
+        params = append(params, s_W_fc)
+        params = append(params, s_b_fc)
+    }
+}
+
+update_param = function(int index, string optimizer, list[unknown] optim_params, list[unknown] optim_hyper_params,
+    list[unknown] gradients, list[unknown] params, list[unknown] optim_params_upd, list[unknown] params_upd)
+    return (list[unknown] optim_params_upd, list[unknown] params_upd) {
+    grad = as.matrix(gradients[index])
+    param = as.matrix(params[index])
+
+    if (optimizer == "sgd") {
+        lr = as.scalar(optim_hyper_params[1])
+
+        param_upd = sgd::update(param, grad, lr)
+    } else if (optimizer == "adam") {
+        lr = as.scalar(optim_hyper_params[1])
+        beta1 = as.scalar(optim_hyper_params[2])
+        beta2 = as.scalar(optim_hyper_params[3])
+        epsilon = as.scalar(optim_hyper_params[4])
+        t = as.integer(as.scalar(optim_hyper_params[5]))
+
+        adam_params = as.list(optim_params[index])
+        m = as.matrix(adam_params[1])
+        v = as.matrix(adam_params[2])
+
+        [param_upd, m_upd, v_upd] = adam::update(param, grad, lr, beta1, beta2, epsilon, t, m, v)
+        optim_params_upd = append(optim_params_upd, list(m_upd, v_upd))
+    } else if (optimizer == "adagrad") {
+        lr = as.scalar(optim_hyper_params[1])
+        epsilon = as.scalar(optim_hyper_params[2])
+
+        cache = as.matrix(optim_params[index])
+
+        [param_upd, cache_upd] = adagrad::update(param, grad, lr, epsilon, cache)
+        optim_params_upd = append(optim_params_upd, cache_upd)
+    } else if (optimizer == "rmsprop") {
+        lr = as.scalar(optim_hyper_params[1])
+        decay_rate = as.scalar(optim_hyper_params[2])
+        epsilon = as.scalar(optim_hyper_params[3])
+
+        cache = as.matrix(optim_params[index])
+
+        [param_upd, cache_upd] = rmsprop::update(param, grad, lr, decay_rate, epsilon, cache)
+        optim_params_upd = append(optim_params_upd, cache_upd)
+    } else if (optimizer == "sgd_momentum") {
+        lr = as.scalar(optim_hyper_params[1])
+        mu = as.scalar(optim_hyper_params[2])
+
+        v = as.matrix(optim_params[index])
+
+        [param_upd, v_upd] = sgd_momentum::update(param, grad, lr, mu, v)
+        optim_params_upd = append(optim_params_upd, v_upd)
+    } else if (optimizer == "sgd_nesterov") {
+        lr = as.scalar(optim_hyper_params[1])
+        mu = as.scalar(optim_hyper_params[2])
+
+        v = as.matrix(optim_params[index])
+
+        [param_upd, v_upd] = sgd_nesterov::update(param, grad, lr, mu, v)
+        optim_params_upd = append(optim_params_upd, v_upd)
+    }
+    params_upd = append(params_upd, param_upd)
+}
+
+update_basic_block_params = function(string optimizer, list[unknown] optim_params, list[unknown] optim_hyper_params,
+    list[unknown] gradients, list[unknown] params, boolean downsample)
+    return (list[unknown] optim_params_upd, list[unknown] params_upd) {
+    params_upd = list()
+    optim_params_upd = list()
+
+    # Conv 1
+    [optim_params_upd, params_upd] = update_param(1, optimizer, optim_params, optim_hyper_params, gradients, params,
+        optim_params_upd, params_upd)
+    # Batch Norm 1
+    [optim_params_upd, params_upd] = update_param(2, optimizer, optim_params, optim_hyper_params, gradients, params,
+        optim_params_upd, params_upd)
+    [optim_params_upd, params_upd] = update_param(3, optimizer, optim_params, optim_hyper_params, gradients, params,
+        optim_params_upd, params_upd)
+    # Conv 2
+    [optim_params_upd, params_upd] = update_param(4, optimizer, optim_params, optim_hyper_params, gradients, params,
+        optim_params_upd, params_upd)
+    # Batch Norm 2
+    [optim_params_upd, params_upd] = update_param(5, optimizer, optim_params, optim_hyper_params, gradients, params,
+        optim_params_upd, params_upd)
+    [optim_params_upd, params_upd] = update_param(6, optimizer, optim_params, optim_hyper_params, gradients, params,
+        optim_params_upd, params_upd)
+
+    if (downsample) {
+        # Conv 3
+        [optim_params_upd, params_upd] = update_param(7, optimizer, optim_params, optim_hyper_params, gradients, params,
+            optim_params_upd, params_upd)
+        # Batch Norm 3
+        [optim_params_upd, params_upd] = update_param(8, optimizer, optim_params, optim_hyper_params, gradients, params,
+            optim_params_upd, params_upd)
+        [optim_params_upd, params_upd] = update_param(9, optimizer, optim_params, optim_hyper_params, gradients, params,
+            optim_params_upd, params_upd)
+    }
+}
+
+update_bottleneck_block_params = function(string optimizer, list[unknown] optim_params,
+    list[unknown] optim_hyper_params, list[unknown] gradients, list[unknown] params, boolean downsample)
+    return (list[unknown] optim_params_upd, list[unknown] params_upd) {
+    params_upd = list()
+    optim_params_upd = list()
+
+    # Conv 1
+    [optim_params_upd, params_upd] = update_param(1, optimizer, optim_params, optim_hyper_params, gradients, params,
+        optim_params_upd, params_upd)
+    # Batch Norm 1
+    [optim_params_upd, params_upd] = update_param(2, optimizer, optim_params, optim_hyper_params, gradients, params,
+        optim_params_upd, params_upd)
+    [optim_params_upd, params_upd] = update_param(3, optimizer, optim_params, optim_hyper_params, gradients, params,
+        optim_params_upd, params_upd)
+    # Conv 2
+    [optim_params_upd, params_upd] = update_param(4, optimizer, optim_params, optim_hyper_params, gradients, params,
+        optim_params_upd, params_upd)
+    # Batch Norm 2
+    [optim_params_upd, params_upd] = update_param(5, optimizer, optim_params, optim_hyper_params, gradients, params,
+        optim_params_upd, params_upd)
+    [optim_params_upd, params_upd] = update_param(6, optimizer, optim_params, optim_hyper_params, gradients, params,
+        optim_params_upd, params_upd)
+    # Conv 3
+    [optim_params_upd, params_upd] = update_param(7, optimizer, optim_params, optim_hyper_params, gradients, params,
+        optim_params_upd, params_upd)
+    # Batch Norm 3
+    [optim_params_upd, params_upd] = update_param(8, optimizer, optim_params, optim_hyper_params, gradients, params,
+        optim_params_upd, params_upd)
+    [optim_params_upd, params_upd] = update_param(9, optimizer, optim_params, optim_hyper_params, gradients, params,
+        optim_params_upd, params_upd)
+
+    if (downsample) {
+        # Conv 4
+        [optim_params_upd, params_upd] = update_param(10, optimizer, optim_params, optim_hyper_params, gradients, params,
+            optim_params_upd, params_upd)
+        # Batch Norm 4
+        [optim_params_upd, params_upd] = update_param(11, optimizer, optim_params, optim_hyper_params, gradients, params,
+            optim_params_upd, params_upd)
+        [optim_params_upd, params_upd] = update_param(12, optimizer, optim_params, optim_hyper_params, gradients, params,
+            optim_params_upd, params_upd)
+    }
+}
+
+update_params = function(string optimizer, list[unknown] optim_params, list[unknown] optim_hyper_params,
+    list[unknown] gradients, list[unknown] model, string block_type, list[unknown] layer_sizes)
+    return (list[unknown] optim_params_upd, list[unknown] model_upd) {
+
+    optim_params_upd = list()
+    model_upd = list()
+
+    # Conv 1 7x7
+    [optim_params_upd, model_upd] = update_param(1, optimizer, optim_params, optim_hyper_params, gradients, model,
+        optim_params_upd, model_upd)
+    # Batch Norm 1
+    [optim_params_upd, model_upd] = update_param(2, optimizer, optim_params, optim_hyper_params, gradients, model,
+        optim_params_upd, model_upd)
+    [optim_params_upd, model_upd] = update_param(3, optimizer, optim_params, optim_hyper_params, gradients, model,
+        optim_params_upd, model_upd)
+
+    # Residual Layers
+    strides = list(1, 2, 2, 2)
+    for (layer in 1:4) {
+        stride = as.integer(as.scalar(strides[layer]))
+        layer_size = as.integer(as.scalar(layer_sizes[layer]))
+        layer_params = as.list(model[layer + 3])
+        layer_grads = as.list(gradients[layer + 3])
+        if (optimizer != "sgd") {
+            layer_optim_params = as.list(optim_params[layer + 3])
+        }
+
+        layer_optim_params_upd = list()
+        layer_params_upd = list()
+
+        for (block in 1:layer_size) {
+            block_params = as.list(layer_params[block])
+            block_grads = as.list(layer_grads[block])
+            if (optimizer != "sgd") {
+                block_optim_params = as.list(layer_optim_params[block])
+            } else {
+                block_optim_params = list()
+            }
+
+            if (block_type == "basic") {
+                downsample = block == 1 & stride > 1
+                [block_optim_params_upd, block_params_upd] = update_basic_block_params(optimizer, block_optim_params,
+                    optim_hyper_params, block_grads, block_params, downsample)
+            } else {
+                # bottleneck blocks
+                downsample = block == 1
+                [block_optim_params_upd, block_params_upd] = update_bottleneck_block_params(optimizer,
+                    block_optim_params, optim_hyper_params, block_grads, block_params, downsample)
+            }
+
+            if (optimizer != "sgd") {
+                layer_optim_params_upd = append(layer_optim_params_upd, block_optim_params_upd)
+            }
+            layer_params_upd = append(layer_params_upd, block_params_upd)
+        }
+
+        if (optimizer != "sgd") {
+            optim_params_upd = append(optim_params_upd, layer_optim_params_upd)
+        }
+        model_upd = append(model_upd, layer_params_upd)
+    }
+
+    # Affine
+    [optim_params_upd, model_upd] = update_param(8, optimizer, optim_params, optim_hyper_params, gradients, model,
+        optim_params_upd, model_upd)
+    [optim_params_upd, model_upd] = update_param(9, optimizer, optim_params, optim_hyper_params, gradients, model,
+        optim_params_upd, model_upd)
+}
+

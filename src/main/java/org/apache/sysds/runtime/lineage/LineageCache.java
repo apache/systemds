@@ -1214,6 +1214,7 @@ public class LineageCache
 		// Mark for distributed caching and change status
 		persistRDDIntern(centry, estimatedSize);
 		centry.setCacheStatus(LineageCacheStatus.PERSISTEDRDD);
+		//centry.getRDDObject().getRDD().count(); //eager caching (experimental)
 		return false;
 	}
 

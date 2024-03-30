@@ -138,11 +138,18 @@ public class LineageSparkCacheEviction
 		return SPARK_STORAGE_LIMIT;
 	}
 
+	// NOTE: _sparkStorageSize doesn't represent the true size as we maintain total size based on estimations
 	protected static void updateSize(long space, boolean addspace) {
 		_sparkStorageSize += addspace ? space : -space;
-		// NOTE: this doesn't represent the true size as we maintain total size based on estimations
+
+		// Debug print: actual vs estimated size
+		//System.out.println("Storage space used = "+(SparkExecutionContext.getStorageSpaceUsed()/1024)/1024+" MB, "
+		//	+"Estimated used = "+(_sparkStorageSize/1024)/1024 +" MB, "+"Limit = "+(getSparkStorageLimit()/1024)/1024+" MB");
 	}
 
+	// FIXME: Actual memory usage is often way more than the estimated,
+	//   mostly due to not tracking the compiler-placed checkpoints.
+	//   Always use actual as getStorageSpaceUsed() is not expensive (verify).
 	protected static boolean isBelowThreshold(long estimateSize) {
 		boolean available = (estimateSize + _sparkStorageSize) <= getSparkStorageLimit();
 		if (!available)
@@ -175,6 +182,8 @@ public class LineageSparkCacheEviction
 			}
 			// Also detach the child RDDs to be GCed
 			e.getRDDObject().removeAllChild();
+			// Update actual storage used (including compiler-placed checkpoints)
+			_sparkStorageSize = SparkExecutionContext.getStorageSpaceUsed();
 		}
 		// TODO: Cleanup the child RDDs of the persisted RDDs
 		//  which are never reused after the second hit.

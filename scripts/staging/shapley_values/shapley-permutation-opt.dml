@@ -138,7 +138,7 @@ return (Matrix[Double] phis, Double expected){
     #get random permutation (or with seed)
     permutation = t(sample(ncol(x),ncol(x), seed=((seed+1)*i)-1))
 
-    mask = prepare_mask_for_permutaion(permutation=permutation)
+    mask = prepare_mask_for_permutation(permutation=permutation)
 
     X_test = prepare_samples_from_mask(x=x, mask=mask, X_bg_samples=X_bg_samples)
 
@@ -223,7 +223,7 @@ return (Matrix[Double] row_phis, Double expected){
 
   parfor (i in 1:n_permutations, check=0){
     permutations[i] = t(sample(perm_length,perm_length, seed=((seed+1)*i)-1))
-    perm_mask = prepare_mask_for_permutaion(permutation=permutations[i])
+    perm_mask = prepare_mask_for_permutation(permutation=permutations[i])
     offset_masks = (i-1) * full_mask_offset + 1
     masks_for_permutations[offset_masks:offset_masks+full_mask_offset-1]=prepare_full_mask(perm_mask, integration_samples)
   }
@@ -342,7 +342,7 @@ return (Matrix[Double] row_phis, Double expected){
 
   parfor (i in 1:n_permutations, check=0){
     permutation = t(sample(perm_length,perm_length, seed=((seed+1)*i)-1))
-    perm_mask = prepare_mask_for_permutaion(permutation=permutation)
+    perm_mask = prepare_mask_for_permutation(permutation=permutation)
     masks = prepare_full_mask(perm_mask, integration_samples)
 
     #replicate background and mask it, since it also can stay the same for every row
@@ -419,8 +419,20 @@ return (Matrix[Double] non_varying_inds){
 # -----------------------------------------------------------------------------
 # mask           Boolean mask.
 # -----------------------------------------------------------------------------
-prepare_mask_for_permutaion = function(Matrix[Double] permutation, Integer n_non_varying_inds=0)
+prepare_mask_for_permutation = function(Matrix[Double] permutation, Integer n_non_varying_inds=0, Matrix[Double] partitions = as.matrix(-1))
 return (Matrix[Double] masks){
+
+  if(sum(partitions)!=-1){
+    #can't use n_non_varying_inds and partitions at the same time
+    if(n_non_varying_inds > 0){
+      stop("prepare_mask_for_permutation:ERROR: Can't use n_non_varying_inds and partitions at the same time.")
+    }
+    #number of features not in permutation is diff between start and end of partitions, since first feature remains in permutation
+    skip_inds = partitions[,2] - partitions[,1]
+    #skip these inds by treating them as non varying
+    n_non_varying_inds = sum(skip_inds)
+  }
+
   #total number of features
   perm_len = ncol(permutation)+n_non_varying_inds
   if(n_non_varying_inds > 0){
@@ -454,7 +466,18 @@ return (Matrix[Double] masks){
   if(n_non_varying_inds > 0){
     #truncate non varying rows
     masks = masks[1:ncol(permutation)]
+
+    #replicate mask from first feature of each partionton to entire partitions
+    if(sum(partitions)!=-1){
+      for ( i in 1:nrow(partitions) ){
+        p_start = as.scalar(partitions[i,1])
+        p_end   = as.scalar(partitions[i,2])
+        test = masks[,p_start] %*% matrix(1, rows=1, cols=p_end-p_start)
+        masks[,p_start+1:p_end] = test
+      }
+    }
   }
+
   # add inverted mask and revert order for desired shape for forward and backward pass
   masks = rev(rbind(masks, !masks))
 }

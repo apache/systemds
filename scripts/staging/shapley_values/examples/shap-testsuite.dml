@@ -27,21 +27,21 @@ source("../shapley-permutation.dml") as SP
 #verbose
 v = 0
 
-#prepare_mask_for_permutaion
+#prepare_mask_for_permutation
 perm = matrix("3 1 2", cols=3, rows=1)
 pm("perm", perm)
-a = SPO::prepare_mask_for_permutaion(permutation=perm)
-b = SP::prepare_mask_for_permutaion(permutation=perm)
+a = SPO::prepare_mask_for_permutation(permutation=perm)
+b = SP::prepare_mask_for_permutation(permutation=perm)
 r = matrix("0 0 0 0 0 1 1 0 1 1 1 1 1 1 0 0 1 0", rows=6, cols=3)
-assertEqual("prepare_mask_for_permutaion", a, b, r, v)
+assertEqual("prepare_mask_for_permutation", a, b, r, v)
 
 #prepare_mask_for_partial_permutaion
 perm = matrix("4 1 2", cols=3, rows=1)
 pm("perm", perm)
-a = SPO::prepare_mask_for_permutaion(permutation=perm, n_non_varying_inds=2)
+a = SPO::prepare_mask_for_permutation(permutation=perm, n_non_varying_inds=2)
 b=a
 r = matrix("0 0 1 0 1 0 0 1 1 1 1 0 1 1 1 1 1 0 1 0 1 1 0 0 0 0 1 0 0 0", rows=6, cols=5)
-assertEqual("prepare_mask_for_permutaion", a, b, r, v)
+assertEqual("prepare_mask_for_permutation", a, b, r, v)
 
 
 #prepare_samples_from_mask

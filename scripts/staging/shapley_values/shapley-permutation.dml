@@ -54,7 +54,7 @@ return (Matrix[Double] phis, Double expected){
     #get random permutation (or with seed)
     permutation = t(sample(ncol(x),ncol(x), seed=((seed+1)*i)-1))
 
-    mask = prepare_mask_for_permutaion(permutation=permutation)
+    mask = prepare_mask_for_permutation(permutation=permutation)
 
     X_test = prepare_samples_from_mask(x=x, mask=mask, X_bg_samples=X_bg_samples)
 
@@ -85,7 +85,7 @@ return (Matrix[Double] phis, Double expected){
 # -----------------------------------------------------------------------------
 # mask           Boolean mask.
 # -----------------------------------------------------------------------------
-prepare_mask_for_permutaion = function(Matrix[Double] permutation)
+prepare_mask_for_permutation = function(Matrix[Double] permutation)
 return (Matrix[Double] masks){
 
   masks = matrix(0, rows=ncol(permutation)*2, cols=ncol(permutation))

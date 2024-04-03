@@ -25,10 +25,12 @@
 # ------------------------------------------------------------------------------
 # G           Input Matrix
 # p           initial page rank vector (number of nodes), e.g., rand intialized
+#             default rand initialized with seed
 # e           additional customization, default vector of ones
-# u           personalization vector (number of nodes)
+# u           personalization vector (number of nodes), default vector of ones
 # alpha       teleport probability
 # max_iter    maximum number of iterations
+# seed        seed for default rand initialization of page rank vector
 # ------------------------------------------------------------------------------
 #
 # OUTPUT:
@@ -36,10 +38,20 @@
 # pprime      computed pagerank
 # ---------------------------------------------------------------------------
 
-m_pageRank = function (Matrix[Double] G, Matrix[Double] p,
-  Matrix[Double] e, Matrix[Double] u, Double alpha = 0.85, Int max_iter = 20)
+m_pageRank = function (Matrix[Double] G, Matrix[Double] p = as.matrix(1),
+  Matrix[Double] e = as.matrix(1), Matrix[Double] u = as.matrix(1),
+  Double alpha = 0.85, Int max_iter = 20, Int seed = -1)
   return (Matrix[double] pprime)
 {
+  # default vectorized if not passed
+  if( length(p) == 1 )
+    p = rand(rows=ncol(G), cols=1, seed=seed);
+  if( length(e) == 1 )
+    e = matrix(1, rows=nrow(G), cols=1);
+  if( length(u) == 1 )
+    u = matrix(1, rows=1, cols=ncol(G));
+
+  # page rank computation via power iterations
   i = 0;
   while( i < max_iter ) {
     p = alpha * (G %*% p) + (1 - alpha) * (e %*% u %*% p);
@@ -47,4 +59,3 @@ m_pageRank = function (Matrix[Double] G, Matrix[Double] p,
   }
   pprime = p
 }
-

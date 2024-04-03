@@ -1019,7 +1019,10 @@ public class LibMatrixMult
 			if( m==1 && n==1 ) {            //DOT PRODUCT
 				double[] avals = a.valuesAt(0);
 				double[] bvals = b.valuesAt(0);
-				c.set(0, 0, dotProduct(avals, bvals, cd));
+				if( ru > m ) //pm2r - parallelize over common dim
+					c.set(0, 0, dotProduct(avals, bvals, rl, rl, ru-rl));
+				else
+					c.set(0, 0, dotProduct(avals, bvals, cd));
 			}
 			else if( n>1 && cd == 1 ) {     //OUTER PRODUCT
 				double[] avals = a.valuesAt(0);
@@ -4460,8 +4463,8 @@ public class LibMatrixMult
 	private static boolean checkParMatrixMultRightInputRows( MatrixBlock m1, MatrixBlock m2, int k ) {
 		//parallelize over rows in rhs matrix if number of rows in lhs/output is very small
 		double jvmMem = InfrastructureAnalyzer.getLocalMaxMemory();
-		return (m1.rlen==1 && LOW_LEVEL_OPTIMIZATION && m2.clen>1 && !(m1.isUltraSparse()||m2.isUltraSparse()))
-			|| (m1.rlen<=16 && LOW_LEVEL_OPTIMIZATION && m2.clen>1 && m2.rlen > m1.rlen 
+		return (m1.rlen==1 && LOW_LEVEL_OPTIMIZATION && !(m1.isUltraSparse()||m2.isUltraSparse()))
+			|| (m1.rlen<=16 && LOW_LEVEL_OPTIMIZATION && m2.rlen > m1.rlen 
 			   && ( !m1.isUltraSparse() && !(m1.sparse & m2.sparse) ) //dense-dense / sparse-dense / dense-sparse
 			   && (long)k * 8 * m1.rlen * m2.clen < Math.max(MEM_OVERHEAD_THRESHOLD,0.01*jvmMem) );
 	}

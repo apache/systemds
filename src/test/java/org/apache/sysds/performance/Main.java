@@ -32,6 +32,7 @@ import org.apache.sysds.performance.generators.IGenerate;
 import org.apache.sysds.performance.generators.MatrixFile;
 import org.apache.sysds.performance.matrix.MatrixMulPerformance;
 import org.apache.sysds.performance.matrix.MatrixStorage;
+import org.apache.sysds.performance.matrix.SparseAppend;
 import org.apache.sysds.runtime.data.SparseBlock;
 import org.apache.sysds.runtime.frame.data.FrameBlock;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
@@ -114,6 +115,9 @@ public class Main {
 				break;
 			case 1003:
 				run1003(args);
+				break;
+			case 1004:
+				run1004(args);
 				break;
 			default:
 				break;
@@ -317,6 +321,10 @@ public class Main {
 		ms.testBalancedDims(SparseBlock.Type.CSR, sparsity, numEntries, resolution, maxRowColRatio, repetitions);
 		ms.testBalancedDims(SparseBlock.Type.COO, sparsity, numEntries, resolution, maxRowColRatio, repetitions);
 		ms.testBalancedDims(SparseBlock.Type.DCSR, sparsity, numEntries, resolution, maxRowColRatio, repetitions);
+	}
+
+	private static void run1004(String[] args){
+		new SparseAppend(args);
 	}
 
 	public static void main(String[] args) {

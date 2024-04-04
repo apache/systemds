@@ -144,3 +144,6 @@ scripts/perftest/fed/temp
 src/test/scripts/functions/iogen/*.raw
 src/test/scripts/functions/pipelines/intermediates/regression/*
 src/test/scripts/functions/pipelines/intermediates/classification/*
+
+venv
+venv/*

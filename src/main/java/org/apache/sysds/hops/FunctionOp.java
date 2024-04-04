@@ -42,7 +42,7 @@ import org.apache.sysds.runtime.meta.DataCharacteristics;
  * Note: Currently, we support expressions in function arguments along with function calls
  * in expressions with single outputs, leaving multiple outputs handling as it is.
  */
-public class FunctionOp extends Hop
+public class FunctionOp extends MultiThreadedHop
 {
 	public enum FunctionType{
 		DML,
@@ -342,7 +342,14 @@ public class FunctionOp extends Hop
 			tmp.add( in.constructLops() );
 		
 		//construct function call
-		FunctionCallCP fcall = new FunctionCallCP(tmp, _fnamespace, _fname, _inputNames, _outputNames, _outputHops, _opt, et);
+		final FunctionCallCP fcall;
+		if(isMultiThreadedOpType()) {
+			fcall = new FunctionCallCP(tmp, _fnamespace, _fname, _inputNames, _outputNames, _outputHops, _opt, et,
+				OptimizerUtils.getConstrainedNumThreads(_maxNumThreads));
+		}
+		else {
+			fcall = new FunctionCallCP(tmp, _fnamespace, _fname, _inputNames, _outputNames, _outputHops, _opt, et);
+		}
 		setLineNumbers(fcall);
 		setLops(fcall);
 		
@@ -358,13 +365,14 @@ public class FunctionOp extends Hop
 			// Lop matrixOut = lop.getFunctionOutputs().get(0);
 			Lop compressionInstruction = null;
 		
+			final int k = OptimizerUtils.getConstrainedNumThreads(_maxNumThreads);
 			if(_compressedWorkloadTree != null) {
 				SingletonLookupHashMap m = SingletonLookupHashMap.getMap();
 				int singletonID = m.put(_compressedWorkloadTree);
-				compressionInstruction = new Compression(getLops(), DataType.MATRIX, ValueType.FP64, et, singletonID);
+				compressionInstruction = new Compression(getLops(), DataType.MATRIX, ValueType.FP64, et, singletonID, k);
 			}
 			else
-				compressionInstruction = new Compression(getLops(), DataType.MATRIX, ValueType.FP64, et, 0);
+				compressionInstruction = new Compression(getLops(), DataType.MATRIX, ValueType.FP64, et, 0, k);
 			
 
 			setOutputDimensions( compressionInstruction );
@@ -426,6 +434,11 @@ public class FunctionOp extends Hop
 	@Override
 	public void refreshSizeInformation() {
 		//do nothing
+	}
+
+	@Override
+	public boolean isMultiThreadedOpType() {
+		return isBuiltinFunction();
 	}
 	
 	@Override

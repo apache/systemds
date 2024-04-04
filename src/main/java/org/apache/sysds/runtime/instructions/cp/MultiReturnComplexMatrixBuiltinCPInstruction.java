@@ -36,24 +36,28 @@ import org.apache.sysds.runtime.matrix.operators.Operator;
 
 public class MultiReturnComplexMatrixBuiltinCPInstruction extends ComputationCPInstruction {
 
-	protected ArrayList<CPOperand> _outputs;
+	protected final ArrayList<CPOperand> _outputs;
+	protected final int _numThreads;
 
 	private MultiReturnComplexMatrixBuiltinCPInstruction(Operator op, CPOperand input1, CPOperand input2,
-		ArrayList<CPOperand> outputs, String opcode, String istr) {
+		ArrayList<CPOperand> outputs, String opcode, String istr, int threads) {
 		super(CPType.MultiReturnBuiltin, op, input1, input2, outputs.get(0), opcode, istr);
 		_outputs = outputs;
+		_numThreads = threads;
 	}
 
 	private MultiReturnComplexMatrixBuiltinCPInstruction(Operator op, CPOperand input1, ArrayList<CPOperand> outputs,
-		String opcode, String istr) {
+		String opcode, String istr, int threads) {
 		super(CPType.MultiReturnBuiltin, op, input1, null, outputs.get(0), opcode, istr);
 		_outputs = outputs;
+		_numThreads = threads;
 	}
 
 	private MultiReturnComplexMatrixBuiltinCPInstruction(Operator op, CPOperand input1, CPOperand input2,
-		CPOperand input3, CPOperand input4, ArrayList<CPOperand> outputs, String opcode, String istr) {
+		CPOperand input3, CPOperand input4, ArrayList<CPOperand> outputs, String opcode, String istr, int threads) {
 		super(CPType.MultiReturnBuiltin, op, input1, input2, input3, input4, outputs.get(0), opcode, istr);
 		_outputs = outputs;
+		_numThreads = threads;
 	}
 
 	public CPOperand getOutput(int i) {
@@ -74,60 +78,66 @@ public class MultiReturnComplexMatrixBuiltinCPInstruction extends ComputationCPI
 		// first part is always the opcode
 		String opcode = parts[0];
 
-		if(parts.length == 5 && opcode.equalsIgnoreCase("ifft")) {
+		if(parts.length == 6 && opcode.equalsIgnoreCase("ifft")) {
 			// one input and two outputs
 			CPOperand in1 = new CPOperand(parts[1]);
 			CPOperand in2 = new CPOperand(parts[2]);
 			outputs.add(new CPOperand(parts[3], ValueType.FP64, DataType.MATRIX));
 			outputs.add(new CPOperand(parts[4], ValueType.FP64, DataType.MATRIX));
+			int threads = Integer.parseInt(parts[5]);
 
-			return new MultiReturnComplexMatrixBuiltinCPInstruction(null, in1, in2, outputs, opcode, str);
+			return new MultiReturnComplexMatrixBuiltinCPInstruction(null, in1, in2, outputs, opcode, str, threads);
 		}
-		else if(parts.length == 4 && opcode.equalsIgnoreCase("ifft")) {
+		else if(parts.length == 5 && opcode.equalsIgnoreCase("ifft")) {
 			// one input and two outputs
 			CPOperand in1 = new CPOperand(parts[1]);
 			outputs.add(new CPOperand(parts[2], ValueType.FP64, DataType.MATRIX));
 			outputs.add(new CPOperand(parts[3], ValueType.FP64, DataType.MATRIX));
+			int threads = Integer.parseInt(parts[4]);
 
-			return new MultiReturnComplexMatrixBuiltinCPInstruction(null, in1, outputs, opcode, str);
+			return new MultiReturnComplexMatrixBuiltinCPInstruction(null, in1, outputs, opcode, str, threads);
+		}
+		else if(parts.length == 6 && opcode.equalsIgnoreCase("ifft_linearized")) {
+			// one input and two outputs
+			CPOperand in1 = new CPOperand(parts[1]);
+			CPOperand in2 = new CPOperand(parts[2]);
+			outputs.add(new CPOperand(parts[3], ValueType.FP64, DataType.MATRIX));
+			outputs.add(new CPOperand(parts[4], ValueType.FP64, DataType.MATRIX));
+			int threads = Integer.parseInt(parts[5]);
+
+			return new MultiReturnComplexMatrixBuiltinCPInstruction(null, in1, in2, outputs, opcode, str, threads);
 		}
 		else if(parts.length == 5 && opcode.equalsIgnoreCase("ifft_linearized")) {
 			// one input and two outputs
 			CPOperand in1 = new CPOperand(parts[1]);
-			CPOperand in2 = new CPOperand(parts[2]);
-			outputs.add(new CPOperand(parts[3], ValueType.FP64, DataType.MATRIX));
-			outputs.add(new CPOperand(parts[4], ValueType.FP64, DataType.MATRIX));
-
-			return new MultiReturnComplexMatrixBuiltinCPInstruction(null, in1, in2, outputs, opcode, str);
-		}
-		else if(parts.length == 4 && opcode.equalsIgnoreCase("ifft_linearized")) {
-			// one input and two outputs
-			CPOperand in1 = new CPOperand(parts[1]);
 			outputs.add(new CPOperand(parts[2], ValueType.FP64, DataType.MATRIX));
 			outputs.add(new CPOperand(parts[3], ValueType.FP64, DataType.MATRIX));
+			int threads = Integer.parseInt(parts[4]);
 
-			return new MultiReturnComplexMatrixBuiltinCPInstruction(null, in1, outputs, opcode, str);
+			return new MultiReturnComplexMatrixBuiltinCPInstruction(null, in1, outputs, opcode, str, threads);
 		}
-		else if(parts.length == 6 && opcode.equalsIgnoreCase("stft")) {
+		else if(parts.length == 7 && opcode.equalsIgnoreCase("stft")) {
 			CPOperand in1 = new CPOperand(parts[1]);
 			CPOperand windowSize = new CPOperand(parts[2]);
 			CPOperand overlap = new CPOperand(parts[3]);
 			outputs.add(new CPOperand(parts[4], ValueType.FP64, DataType.MATRIX));
 			outputs.add(new CPOperand(parts[5], ValueType.FP64, DataType.MATRIX));
+			int threads = Integer.parseInt(parts[6]);
 
 			return new MultiReturnComplexMatrixBuiltinCPInstruction(null, in1, null, windowSize, overlap, outputs, opcode,
-				str);
+				str, threads);
 		}
-		else if(parts.length == 7 && opcode.equalsIgnoreCase("stft")) {
+		else if(parts.length == 8 && opcode.equalsIgnoreCase("stft")) {
 			CPOperand in1 = new CPOperand(parts[1]);
 			CPOperand in2 = new CPOperand(parts[2]);
 			CPOperand windowSize = new CPOperand(parts[3]);
 			CPOperand overlap = new CPOperand(parts[4]);
 			outputs.add(new CPOperand(parts[5], ValueType.FP64, DataType.MATRIX));
 			outputs.add(new CPOperand(parts[6], ValueType.FP64, DataType.MATRIX));
+			int threads = Integer.parseInt(parts[7]);
 
 			return new MultiReturnComplexMatrixBuiltinCPInstruction(null, in1, in2, windowSize, overlap, outputs, opcode,
-				str);
+				str, threads);
 		}
 		else {
 			throw new DMLRuntimeException("Invalid opcode in MultiReturnBuiltin instruction: " + opcode);
@@ -156,7 +166,7 @@ public class MultiReturnComplexMatrixBuiltinCPInstruction extends ComputationCPI
 			throw new DMLRuntimeException("Invalid opcode in MultiReturnBuiltin instruction: " + getOpcode());
 
 		MatrixBlock in = ec.getMatrixInput(input1.getName());
-		MatrixBlock[] out = LibCommonsMath.multiReturnOperations(in, getOpcode());
+		MatrixBlock[] out = LibCommonsMath.multiReturnOperations(in, getOpcode(), _numThreads);
 
 		ec.releaseMatrixInput(input1.getName());
 

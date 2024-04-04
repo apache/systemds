@@ -19,19 +19,23 @@
 
 package org.apache.sysds.runtime.matrix.data;
 
-import org.apache.commons.math3.util.FastMath;
+import java.lang.ref.SoftReference;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Future;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+import org.apache.commons.math3.util.FastMath;
+import org.apache.sysds.runtime.compress.utils.Util;
 import org.apache.sysds.runtime.util.CommonThreadPool;
 
-import java.lang.ref.SoftReference;
-import java.util.List;
-import java.util.HashMap;
-import java.util.ArrayList;
-import java.util.concurrent.Future;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.ExecutionException;
-
 public class LibMatrixFourier {
+
+	protected static final Log LOG = LogFactory.getLog(LibMatrixFourier.class.getName());
 
 	static SoftReference<HashMap<Double, Double>> sinCacheRef = new SoftReference<>(new HashMap<>());
 	static SoftReference<HashMap<Double, Double>> cosCacheRef = new SoftReference<>(new HashMap<>());
@@ -46,15 +50,22 @@ public class LibMatrixFourier {
 	 * @return array of two matrix blocks
 	 */
 	public static MatrixBlock[] fft(MatrixBlock re, MatrixBlock im, int threads) {
-
 		int rows = re.getNumRows();
 		int cols = re.getNumColumns();
 		if(!isPowerOfTwo(rows) || !isPowerOfTwo(cols))
 			throw new RuntimeException("false dimensions");
 
-		fft(re.getDenseBlockValues(), im.getDenseBlockValues(), rows, cols, threads, true);
+		MatrixBlock re_out = new MatrixBlock();
+		re_out.copy(re, false);
+		MatrixBlock im_out = new MatrixBlock();
+		im_out.copy(im, false);
 
-		return new MatrixBlock[] {re, im};
+		fft(re_out.getDenseBlockValues(), im_out.getDenseBlockValues(), rows, cols, threads, true);
+
+		re_out.recomputeNonZeros(threads);
+		im_out.recomputeNonZeros(threads);
+
+		return new MatrixBlock[] {re_out, im_out};
 	}
 
 	/**
@@ -73,9 +84,17 @@ public class LibMatrixFourier {
 		if(!isPowerOfTwo(rows) || !isPowerOfTwo(cols))
 			throw new RuntimeException("false dimensions");
 
-		ifft(re.getDenseBlockValues(), im.getDenseBlockValues(), rows, cols, threads, true);
+		MatrixBlock re_out = new MatrixBlock();
+		re_out.copy(re, false);
+		MatrixBlock im_out = new MatrixBlock();
+		im_out.copy(im, false);
 
-		return new MatrixBlock[] {re, im};
+		ifft(re_out.getDenseBlockValues(), im_out.getDenseBlockValues(), rows, cols, threads, true);
+
+		re_out.recomputeNonZeros(threads);
+		im_out.recomputeNonZeros(threads);
+
+		return new MatrixBlock[] {re_out, im_out};
 	}
 
 	/**
@@ -89,15 +108,21 @@ public class LibMatrixFourier {
 	 * @return array of two matrix blocks
 	 */
 	public static MatrixBlock[] fft_linearized(MatrixBlock re, MatrixBlock im, int threads) {
-
 		int rows = re.getNumRows();
 		int cols = re.getNumColumns();
 		if(!isPowerOfTwo(cols))
 			throw new RuntimeException("false dimensions");
 
-		fft(re.getDenseBlockValues(), im.getDenseBlockValues(), rows, cols, threads, false);
+		MatrixBlock re_out = new MatrixBlock();
+		re_out.copy(re, false);
+		MatrixBlock im_out = new MatrixBlock();
+		im_out.copy(im, false);
 
-		return new MatrixBlock[] {re, im};
+		fft(re_out.getDenseBlockValues(), im_out.getDenseBlockValues(), rows, cols, threads, false);
+
+		re_out.recomputeNonZeros(threads);
+		im_out.recomputeNonZeros(threads);
+		return new MatrixBlock[] {re_out, im_out};
 	}
 
 	/**
@@ -117,9 +142,17 @@ public class LibMatrixFourier {
 		if(!isPowerOfTwo(cols))
 			throw new RuntimeException("false dimensions");
 
-		ifft(re.getDenseBlockValues(), im.getDenseBlockValues(), rows, cols, threads, false);
+		MatrixBlock re_out = new MatrixBlock();
+		re_out.copy(re, false);
+		MatrixBlock im_out = new MatrixBlock();
+		im_out.copy(im, false);
 
-		return new MatrixBlock[] {re, im};
+		ifft(re_out.getDenseBlockValues(), im_out.getDenseBlockValues(), rows, cols, threads, false);
+
+		re_out.recomputeNonZeros(threads);
+		im_out.recomputeNonZeros(threads);
+
+		return new MatrixBlock[] {re_out, im_out};
 	}
 
 	/**
@@ -454,26 +487,29 @@ public class LibMatrixFourier {
 	}
 
 	private static double sin(double angle, HashMap<Double, Double> cache) {
-		if(!cache.containsKey(angle)) {
-			cache.put(angle, FastMath.sin(angle));
-			limitCache(cache);
+		final double v = cache.getOrDefault(angle, -100.0);
+		if(Util.eq(v, -100.0)) { // value not in cache.
+			final double res = FastMath.sin(angle);
+			if(cache.size() < 1000)
+				cache.put(angle, res);
+			return res;
 		}
-		return cache.get(angle);
+		else
+			return v;
+
 	}
 
 	private static double cos(double angle, HashMap<Double, Double> cache) {
-		if(!cache.containsKey(angle)) {
-			cache.put(angle, FastMath.cos(angle));
-			limitCache(cache);
+		double v = cache.getOrDefault(angle, -100.0);
+		if(Util.eq(v, -100.0)) { // value not in cache.
+			double res = FastMath.cos(angle);
+			if(cache.size() < 1000)
+				cache.put(angle, res);
+			return res;
 		}
-		return cache.get(angle);
-	}
+		else
+			return v;
 
-	private static void limitCache(HashMap<Double, Double> cache) {
-		if(cache.size() > 1000) {
-			// remove oldest key
-			cache.remove(cache.keySet().iterator().next());
-		}
 	}
 
 }

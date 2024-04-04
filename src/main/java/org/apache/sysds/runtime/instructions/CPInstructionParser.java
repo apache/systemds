@@ -57,6 +57,7 @@ import org.apache.sysds.runtime.instructions.cp.LocalCPInstruction;
 import org.apache.sysds.runtime.instructions.cp.MMChainCPInstruction;
 import org.apache.sysds.runtime.instructions.cp.MMTSJCPInstruction;
 import org.apache.sysds.runtime.instructions.cp.MultiReturnBuiltinCPInstruction;
+import org.apache.sysds.runtime.instructions.cp.MultiReturnComplexMatrixBuiltinCPInstruction;
 import org.apache.sysds.runtime.instructions.cp.MultiReturnParameterizedBuiltinCPInstruction;
 import org.apache.sysds.runtime.instructions.cp.PMMJCPInstruction;
 import org.apache.sysds.runtime.instructions.cp.ParameterizedBuiltinCPInstruction;
@@ -291,7 +292,7 @@ public class CPInstructionParser extends InstructionParser {
 		String2CPInstructionType.put( "batch_norm2d_backward",  CPType.Dnn);
 		String2CPInstructionType.put( "lstm"      , CPType.Dnn);
 		String2CPInstructionType.put( "lstm_backward"      , CPType.Dnn);
-		
+
 		// Quaternary instruction opcodes
 		String2CPInstructionType.put( "wsloss"  , CPType.Quaternary);
 		String2CPInstructionType.put( "wsigmoid", CPType.Quaternary);
@@ -333,6 +334,10 @@ public class CPInstructionParser extends InstructionParser {
 		String2CPInstructionType.put( "qr",    CPType.MultiReturnBuiltin);
 		String2CPInstructionType.put( "lu",    CPType.MultiReturnBuiltin);
 		String2CPInstructionType.put( "eigen", CPType.MultiReturnBuiltin);
+		String2CPInstructionType.put( "fft",   CPType.MultiReturnBuiltin);
+		String2CPInstructionType.put( "ifft",  CPType.MultiReturnComplexMatrixBuiltin);
+		String2CPInstructionType.put( "fft_linearized", CPType.MultiReturnBuiltin);
+		String2CPInstructionType.put( "ifft_linearized", CPType.MultiReturnComplexMatrixBuiltin);
 		String2CPInstructionType.put( "svd",   CPType.MultiReturnBuiltin);
 
 		String2CPInstructionType.put( "partition", CPType.Partition);
@@ -424,6 +429,9 @@ public class CPInstructionParser extends InstructionParser {
 			
 			case MultiReturnParameterizedBuiltin:
 				return MultiReturnParameterizedBuiltinCPInstruction.parseInstruction(str);
+		
+			case MultiReturnComplexMatrixBuiltin:
+				return MultiReturnComplexMatrixBuiltinCPInstruction.parseInstruction(str);
 				
 			case MultiReturnBuiltin:
 				return MultiReturnBuiltinCPInstruction.parseInstruction(str);

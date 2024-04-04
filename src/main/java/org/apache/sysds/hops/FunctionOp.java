@@ -201,6 +201,26 @@ public class FunctionOp extends Hop
 				long outputValues = OptimizerUtils.estimateSizeExactSparsity(getOutputs().get(1).getDim1(), 1, 1.0);
 				return outputVectors+outputValues; 
 			}
+			else if ( getFunctionName().equalsIgnoreCase("fft") ) {
+				long outputRe = OptimizerUtils.estimateSizeExactSparsity(getOutputs().get(0).getDim1(), getOutputs().get(0).getDim2(), 1.0);
+				long outputIm = OptimizerUtils.estimateSizeExactSparsity(getOutputs().get(1).getDim1(), getOutputs().get(1).getDim2(), 1.0);
+				return outputRe+outputIm;
+			}
+			else if ( getFunctionName().equalsIgnoreCase("ifft") ) {
+				long outputRe = OptimizerUtils.estimateSizeExactSparsity(getOutputs().get(0).getDim1(), getOutputs().get(0).getDim2(), 1.0);
+				long outputIm = OptimizerUtils.estimateSizeExactSparsity(getOutputs().get(1).getDim1(), getOutputs().get(1).getDim2(), 1.0);
+				return outputRe+outputIm;
+			}
+			else if ( getFunctionName().equalsIgnoreCase("fft_linearized") ) {
+				long outputRe = OptimizerUtils.estimateSizeExactSparsity(getOutputs().get(0).getDim1(), getOutputs().get(0).getDim2(), 1.0);
+				long outputIm = OptimizerUtils.estimateSizeExactSparsity(getOutputs().get(1).getDim1(), getOutputs().get(1).getDim2(), 1.0);
+				return outputRe+outputIm;
+			}
+			else if ( getFunctionName().equalsIgnoreCase("ifft_linearized") ) {
+				long outputRe = OptimizerUtils.estimateSizeExactSparsity(getOutputs().get(0).getDim1(), getOutputs().get(0).getDim2(), 1.0);
+				long outputIm = OptimizerUtils.estimateSizeExactSparsity(getOutputs().get(1).getDim1(), getOutputs().get(1).getDim2(), 1.0);
+				return outputRe+outputIm;
+			}
 			else if ( getFunctionName().equalsIgnoreCase("lstm") || getFunctionName().equalsIgnoreCase("lstm_backward") ) {
 				// TODO: To allow for initial version to always run on the GPU
 				return 0; 
@@ -249,6 +269,22 @@ public class FunctionOp extends Hop
 				// One matrix of size original input and three 1D vectors (used to represent tridiagonal matrix)
 				return OptimizerUtils.estimateSizeExactSparsity(getInput().get(0).getDim1(), getInput().get(0).getDim2(), 1.0) 
 						+ 3*OptimizerUtils.estimateSizeExactSparsity(getInput().get(0).getDim1(), 1, 1.0); 
+			}
+			else if ( getFunctionName().equalsIgnoreCase("fft") ) {
+				// 2 matrices of size same as the input
+				return 2*OptimizerUtils.estimateSizeExactSparsity(getInput().get(0).getDim1(), getInput().get(0).getDim2(), 1.0);
+			}
+			else if ( getFunctionName().equalsIgnoreCase("ifft") ) {
+				// 2 matrices of size same as the input
+				return 2*OptimizerUtils.estimateSizeExactSparsity(getInput().get(0).getDim1(), getInput().get(0).getDim2(), 1.0);
+			}
+			else if ( getFunctionName().equalsIgnoreCase("fft_linearized") ) {
+				// 2 matrices of size same as the input
+				return 2*OptimizerUtils.estimateSizeExactSparsity(getInput().get(0).getDim1(), getInput().get(0).getDim2(), 1.0);
+			}
+			else if ( getFunctionName().equalsIgnoreCase("ifft_linearized") ) {
+				// 2 matrices of size same as the input
+				return 2*OptimizerUtils.estimateSizeExactSparsity(getInput().get(0).getDim1(), getInput().get(0).getDim2(), 1.0);
 			}
 			else if (getFunctionName().equalsIgnoreCase("batch_norm2d") || getFunctionName().equalsIgnoreCase("batch_norm2d_backward") ||
 					getFunctionName().equalsIgnoreCase("batch_norm2d_train") || getFunctionName().equalsIgnoreCase("batch_norm2d_test")) {

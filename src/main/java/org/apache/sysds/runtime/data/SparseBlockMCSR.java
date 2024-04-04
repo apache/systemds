@@ -378,12 +378,13 @@ public class SparseBlockMCSR extends SparseBlock
 	
 	@Override
 	public final void append(final int r, final int c, final double v) {
+		// Perf verified in java -jar target/systemds-3.3.0-SNAPSHOT-perf.jar 1004 1000 100000
 		if(v == 0)
 			return;
 		else if(_rows[r] == null)
-			_rows[r] = new SparseRowScalar(c, v);
-		else 
-			_rows[r] = _rows[r].append(c, v); 
+			_rows[r] = new SparseRowScalar().append(c, v);
+		else
+			_rows[r] = _rows[r].append(c, v);
 	}
 
 	@Override

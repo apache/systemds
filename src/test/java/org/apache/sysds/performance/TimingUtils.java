@@ -63,6 +63,20 @@ public interface TimingUtils {
 	// System.out.println(time.stop());
 	// }
 
+/**
+	 * Time the function given assuming that it should put result into the given time array at index i.
+	 * 
+	 * @param f     The function to time
+	 * @param rep the number of repetitions
+	 */
+	public static double[] time(F f, int rep) {
+		double[] times = new double[rep];
+		for(int i = 0; i < rep; i ++)
+			time(f, times, i);
+		
+		return times;
+	}
+	
 	/**
 	 * Time the function given assuming that it should put result into the given time array at index i.
 	 * 

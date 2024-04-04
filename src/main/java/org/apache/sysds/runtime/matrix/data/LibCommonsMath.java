@@ -53,6 +53,7 @@ import static org.apache.sysds.runtime.matrix.data.LibMatrixFourier.fft;
 import static org.apache.sysds.runtime.matrix.data.LibMatrixFourier.ifft;
 import static org.apache.sysds.runtime.matrix.data.LibMatrixFourier.fft_linearized;
 import static org.apache.sysds.runtime.matrix.data.LibMatrixFourier.ifft_linearized;
+import static org.apache.sysds.runtime.matrix.data.LibMatrixSTFT.stft;
 
 /**
  * Library for matrix operations that need invocation of 
@@ -85,6 +86,7 @@ public class LibCommonsMath
 			case "ifft":
 			case "fft_linearized":
 			case "ifft_linearized":
+			case "stft":
 			case "svd": return true;
 			default: return false;
 		}
@@ -413,6 +415,57 @@ public class LibCommonsMath
 	 */
 	private static MatrixBlock[] computeIFFT_LINEARIZED(MatrixBlock re, int threads) {
 		return computeIFFT_LINEARIZED(re, null, threads);
+	}
+
+
+	/**
+	 * Function to perform STFT on a given matrix.
+	 *
+	 * @param re matrix object
+	 * @param im matrix object
+	 * @param windowSize of stft
+	 * @param overlap of stft
+	 * @return array of matrix blocks
+	 */
+	private static MatrixBlock[] computeSTFT(MatrixBlock re, MatrixBlock im, int windowSize, int overlap, int threads) {
+		if (re == null) {
+			throw new DMLRuntimeException("Invalid empty block");
+		} else if (im != null && !im.isEmptyBlock(false)) {
+			re.sparseToDense();
+			im.sparseToDense();
+			return stft(re, im, windowSize, overlap, threads);
+		} else {
+			if (re.isEmptyBlock(false)) {
+				// Return the original matrix as the result
+				int rows = re.getNumRows();
+				int cols = re.getNumColumns();
+
+				int stepSize = windowSize - overlap;
+				if (stepSize == 0) {
+					throw new IllegalArgumentException("windowSize - overlap is zero");
+				}
+
+				int numberOfFramesPerRow = (cols - overlap + stepSize - 1) / stepSize;
+				int rowLength= numberOfFramesPerRow * windowSize;
+				int out_len = rowLength * rows;
+
+				double[] out_zero = new double[out_len];
+
+				return new MatrixBlock[]{new MatrixBlock(rows, rowLength, out_zero), new MatrixBlock(rows, rowLength, out_zero)};
+				}
+			re.sparseToDense();
+			return stft(re, windowSize, overlap, threads);
+		}
+	}
+
+	/**
+	 * Function to perform STFT on a given matrix.
+	 *
+	 * @param re matrix object
+	 * @return array of matrix blocks
+	 */
+	private static MatrixBlock[] computeSTFT(MatrixBlock re, int windowSize, int overlap, int threads) {
+		return computeSTFT(re, null, windowSize, overlap, threads);
 	}
 
 	/**

@@ -50,6 +50,12 @@ public class MultiReturnComplexMatrixBuiltinCPInstruction extends ComputationCPI
 		_outputs = outputs;
 	}
 
+	private MultiReturnComplexMatrixBuiltinCPInstruction(Operator op, CPOperand input1, CPOperand input2,
+		CPOperand input3, CPOperand input4, ArrayList<CPOperand> outputs, String opcode, String istr) {
+		super(CPType.MultiReturnBuiltin, op, input1, input2, input3, input4, outputs.get(0), opcode, istr);
+		_outputs = outputs;
+	}
+
 	public CPOperand getOutput(int i) {
 		return _outputs.get(i);
 	}
@@ -102,6 +108,27 @@ public class MultiReturnComplexMatrixBuiltinCPInstruction extends ComputationCPI
 
 			return new MultiReturnComplexMatrixBuiltinCPInstruction(null, in1, outputs, opcode, str);
 		}
+		else if(parts.length == 6 && opcode.equalsIgnoreCase("stft")) {
+			CPOperand in1 = new CPOperand(parts[1]);
+			CPOperand windowSize = new CPOperand(parts[2]);
+			CPOperand overlap = new CPOperand(parts[3]);
+			outputs.add(new CPOperand(parts[4], ValueType.FP64, DataType.MATRIX));
+			outputs.add(new CPOperand(parts[5], ValueType.FP64, DataType.MATRIX));
+
+			return new MultiReturnComplexMatrixBuiltinCPInstruction(null, in1, null, windowSize, overlap, outputs, opcode,
+				str);
+		}
+		else if(parts.length == 7 && opcode.equalsIgnoreCase("stft")) {
+			CPOperand in1 = new CPOperand(parts[1]);
+			CPOperand in2 = new CPOperand(parts[2]);
+			CPOperand windowSize = new CPOperand(parts[3]);
+			CPOperand overlap = new CPOperand(parts[4]);
+			outputs.add(new CPOperand(parts[5], ValueType.FP64, DataType.MATRIX));
+			outputs.add(new CPOperand(parts[6], ValueType.FP64, DataType.MATRIX));
+
+			return new MultiReturnComplexMatrixBuiltinCPInstruction(null, in1, in2, windowSize, overlap, outputs, opcode,
+				str);
+		}
 		else {
 			throw new DMLRuntimeException("Invalid opcode in MultiReturnBuiltin instruction: " + opcode);
 		}
@@ -114,7 +141,11 @@ public class MultiReturnComplexMatrixBuiltinCPInstruction extends ComputationCPI
 
 	@Override
 	public void processInstruction(ExecutionContext ec) {
-		if(input2 == null)
+		if(getOpcode().equals("stft") && input2 == null)
+			processSTFTInstruction(ec);
+		else if(getOpcode().equals("stft"))
+			processSTFTTwoInstruction(ec);
+		else if(input2 == null)
 			processOneInputInstruction(ec);
 		else
 			processTwoInputInstruction(ec);
@@ -141,6 +172,38 @@ public class MultiReturnComplexMatrixBuiltinCPInstruction extends ComputationCPI
 		MatrixBlock in1 = ec.getMatrixInput(input1.getName());
 		MatrixBlock in2 = ec.getMatrixInput(input2.getName());
 		MatrixBlock[] out = LibCommonsMath.multiReturnOperations(in1, in2, getOpcode());
+		ec.releaseMatrixInput(input1.getName(), input2.getName());
+
+		for(int i = 0; i < _outputs.size(); i++) {
+			ec.setMatrixOutput(_outputs.get(i).getName(), out[i]);
+		}
+	}
+
+	private void processSTFTInstruction(ExecutionContext ec) {
+		if(!LibCommonsMath.isSupportedMultiReturnOperation(getOpcode()))
+			throw new DMLRuntimeException("Invalid opcode in MultiReturnBuiltin instruction: " + getOpcode());
+
+		MatrixBlock in1 = ec.getMatrixInput(input1.getName());
+		// MatrixBlock in2 = ec.getMatrixInput(input2.getName());
+		int windowSize = Integer.parseInt(input3.getName());
+		int overlap = Integer.parseInt(input4.getName());
+		MatrixBlock[] out = LibCommonsMath.multiReturnOperations(in1, getOpcode(), windowSize, overlap);
+		ec.releaseMatrixInput(input1.getName());
+
+		for(int i = 0; i < _outputs.size(); i++) {
+			ec.setMatrixOutput(_outputs.get(i).getName(), out[i]);
+		}
+	}
+
+	private void processSTFTTwoInstruction(ExecutionContext ec) {
+		if(!LibCommonsMath.isSupportedMultiReturnOperation(getOpcode()))
+			throw new DMLRuntimeException("Invalid opcode in MultiReturnBuiltin instruction: " + getOpcode());
+
+		MatrixBlock in1 = ec.getMatrixInput(input1.getName());
+		MatrixBlock in2 = ec.getMatrixInput(input2.getName());
+		int windowSize = Integer.parseInt(input3.getName());
+		int overlap = Integer.parseInt(input4.getName());
+		MatrixBlock[] out = LibCommonsMath.multiReturnOperations(in1, in2, getOpcode(), windowSize, overlap);
 		ec.releaseMatrixInput(input1.getName(), input2.getName());
 
 		for(int i = 0; i < _outputs.size(); i++) {

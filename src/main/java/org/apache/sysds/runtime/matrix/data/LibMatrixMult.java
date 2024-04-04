@@ -1400,11 +1400,18 @@ public class LibMatrixMult
 	}
 	
 	private static void matrixMultSparseDenseMVTallRHS(SparseBlock a, DenseBlock b, DenseBlock c, int cd, long xsp, int rl, int ru) {
-		double[] bvals = b.valuesAt(0);
-		double[] cvals = c.valuesAt(0);
-		
 		final int blocksizeI = 512; //8KB curk+cvals in L1
 		final int blocksizeK = (int)Math.max(2048,2048*xsp/32); //~256KB bvals in L2
+		
+		//short-cut to kernel w/o cache blocking if no benefit
+		if( blocksizeK >= cd ) {
+			matrixMultSparseDenseMVShortRHS(a, b, c, cd, rl, ru);
+			return;
+		}
+		
+		//sparse matrix-vector w/ cache blocking (keep front of positions)
+		double[] bvals = b.valuesAt(0);
+		double[] cvals = c.valuesAt(0);
 		int[] curk = new int[blocksizeI];
 		
 		for( int bi = rl; bi < ru; bi+=blocksizeI ) {

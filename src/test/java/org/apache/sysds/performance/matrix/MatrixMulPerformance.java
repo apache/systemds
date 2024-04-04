@@ -19,6 +19,8 @@
 
 package org.apache.sysds.performance.matrix;
 
+import java.util.Arrays;
+
 import org.apache.sysds.runtime.data.SparseBlock;
 import org.apache.sysds.runtime.data.SparseBlockCOO;
 import org.apache.sysds.runtime.data.SparseBlockCSR;
@@ -28,8 +30,6 @@ import org.apache.sysds.runtime.instructions.InstructionUtils;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.util.DataConverter;
 import org.apache.sysds.test.TestUtils;
-
-import java.util.Arrays;
 
 public class MatrixMulPerformance {
 

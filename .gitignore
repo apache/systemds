@@ -64,7 +64,6 @@ buildNumber.properties
 _site/
 
 # Tutorial data mnist
-src/main/python/systemds/examples/tutorials/*/
 scripts/nn/examples/data/*
 
 # User configuration files

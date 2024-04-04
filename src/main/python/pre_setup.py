@@ -80,6 +80,16 @@ if not os.path.exists(CONF_DIR):
 shutil.copy(os.path.join(SYSTEMDS_ROOT,'conf', 'log4j.properties'), os.path.join(this_path, PYTHON_DIR, 'conf', 'log4j.properties'))
 shutil.copy(os.path.join(SYSTEMDS_ROOT,'conf', 'SystemDS-config-defaults.xml'), os.path.join(this_path, PYTHON_DIR, 'conf', 'SystemDS-config-defaults.xml'))
 
+
+# Take SystemDS file.
+shutil.copy(os.path.join(SYSTEMDS_ROOT, 'target', 'SystemDS.jar'), os.path.join(PYTHON_DIR, 'SystemDS.jar'))
+
+# remove redundant SystemDS file inside lib.
+for file in os.listdir(os.path.join(PYTHON_DIR, 'lib')):
+    if "systemds" in file:
+        if "extra" not in file: 
+           os.remove(os.path.join(PYTHON_DIR, 'lib', file))
+
 SYSTEMDS_ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.getcwd())))
 shutil.copyfile(os.path.join(SYSTEMDS_ROOT, 'LICENSE'), 'LICENSE')
 shutil.copyfile(os.path.join(SYSTEMDS_ROOT, 'NOTICE'), 'NOTICE')

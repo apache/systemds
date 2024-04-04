@@ -19,6 +19,11 @@
 
 package org.apache.sysds.runtime.matrix.data;
 
+import static org.apache.sysds.runtime.matrix.data.LibMatrixFourier.fft;
+import static org.apache.sysds.runtime.matrix.data.LibMatrixFourier.fft_linearized;
+import static org.apache.sysds.runtime.matrix.data.LibMatrixFourier.ifft;
+import static org.apache.sysds.runtime.matrix.data.LibMatrixFourier.ifft_linearized;
+
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.commons.math3.exception.MaxCountExceededException;
@@ -33,27 +38,21 @@ import org.apache.commons.math3.linear.RealMatrix;
 import org.apache.commons.math3.linear.SingularValueDecomposition;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.data.DenseBlock;
-import org.apache.sysds.runtime.functionobjects.Multiply;
-import org.apache.sysds.runtime.functionobjects.Divide;
-import org.apache.sysds.runtime.functionobjects.SwapIndex;
-import org.apache.sysds.runtime.functionobjects.MinusMultiply;
 import org.apache.sysds.runtime.functionobjects.Builtin;
+import org.apache.sysds.runtime.functionobjects.Divide;
+import org.apache.sysds.runtime.functionobjects.MinusMultiply;
+import org.apache.sysds.runtime.functionobjects.Multiply;
+import org.apache.sysds.runtime.functionobjects.SwapIndex;
 import org.apache.sysds.runtime.instructions.InstructionUtils;
-import org.apache.sysds.runtime.matrix.operators.RightScalarOperator;
-import org.apache.sysds.runtime.matrix.operators.LeftScalarOperator;
-import org.apache.sysds.runtime.matrix.operators.ScalarOperator;
-import org.apache.sysds.runtime.matrix.operators.UnaryOperator;
-import org.apache.sysds.runtime.matrix.operators.TernaryOperator;
-import org.apache.sysds.runtime.matrix.operators.ReorgOperator;
 import org.apache.sysds.runtime.matrix.operators.AggregateBinaryOperator;
 import org.apache.sysds.runtime.matrix.operators.BinaryOperator;
+import org.apache.sysds.runtime.matrix.operators.LeftScalarOperator;
+import org.apache.sysds.runtime.matrix.operators.ReorgOperator;
+import org.apache.sysds.runtime.matrix.operators.RightScalarOperator;
+import org.apache.sysds.runtime.matrix.operators.ScalarOperator;
+import org.apache.sysds.runtime.matrix.operators.TernaryOperator;
+import org.apache.sysds.runtime.matrix.operators.UnaryOperator;
 import org.apache.sysds.runtime.util.DataConverter;
-
-import static org.apache.sysds.runtime.matrix.data.LibMatrixFourier.fft;
-import static org.apache.sysds.runtime.matrix.data.LibMatrixFourier.ifft;
-import static org.apache.sysds.runtime.matrix.data.LibMatrixFourier.fft_linearized;
-import static org.apache.sysds.runtime.matrix.data.LibMatrixFourier.ifft_linearized;
-import static org.apache.sysds.runtime.matrix.data.LibMatrixSTFT.stft;
 
 /**
  * Library for matrix operations that need invocation of 
@@ -106,8 +105,12 @@ public class LibCommonsMath
 		return null;
 	}
 
-	public static MatrixBlock[] multiReturnOperations(MatrixBlock in, String opcode) {
-		return multiReturnOperations(in, opcode, 1, 1);
+	// public static MatrixBlock[] multiReturnOperations(MatrixBlock in, String opcode) {
+	// 	return multiReturnOperations(in, opcode, 1, 1);
+	// }
+
+	public static MatrixBlock[] multiReturnOperations(MatrixBlock in, String opcode, int threads) {
+		return multiReturnOperations(in, opcode, threads, 1);
 	}
 
 	public static MatrixBlock[] multiReturnOperations(MatrixBlock in1, MatrixBlock in2, String opcode) {
@@ -418,55 +421,55 @@ public class LibCommonsMath
 	}
 
 
-	/**
-	 * Function to perform STFT on a given matrix.
-	 *
-	 * @param re matrix object
-	 * @param im matrix object
-	 * @param windowSize of stft
-	 * @param overlap of stft
-	 * @return array of matrix blocks
-	 */
-	private static MatrixBlock[] computeSTFT(MatrixBlock re, MatrixBlock im, int windowSize, int overlap, int threads) {
-		if (re == null) {
-			throw new DMLRuntimeException("Invalid empty block");
-		} else if (im != null && !im.isEmptyBlock(false)) {
-			re.sparseToDense();
-			im.sparseToDense();
-			return stft(re, im, windowSize, overlap, threads);
-		} else {
-			if (re.isEmptyBlock(false)) {
-				// Return the original matrix as the result
-				int rows = re.getNumRows();
-				int cols = re.getNumColumns();
+	// /**
+	//  * Function to perform STFT on a given matrix.
+	//  *
+	//  * @param re matrix object
+	//  * @param im matrix object
+	//  * @param windowSize of stft
+	//  * @param overlap of stft
+	//  * @return array of matrix blocks
+	//  */
+	// private static MatrixBlock[] computeSTFT(MatrixBlock re, MatrixBlock im, int windowSize, int overlap, int threads) {
+	// 	if (re == null) {
+	// 		throw new DMLRuntimeException("Invalid empty block");
+	// 	} else if (im != null && !im.isEmptyBlock(false)) {
+	// 		re.sparseToDense();
+	// 		im.sparseToDense();
+	// 		return stft(re, im, windowSize, overlap, threads);
+	// 	} else {
+	// 		if (re.isEmptyBlock(false)) {
+	// 			// Return the original matrix as the result
+	// 			int rows = re.getNumRows();
+	// 			int cols = re.getNumColumns();
 
-				int stepSize = windowSize - overlap;
-				if (stepSize == 0) {
-					throw new IllegalArgumentException("windowSize - overlap is zero");
-				}
+	// 			int stepSize = windowSize - overlap;
+	// 			if (stepSize == 0) {
+	// 				throw new IllegalArgumentException("windowSize - overlap is zero");
+	// 			}
 
-				int numberOfFramesPerRow = (cols - overlap + stepSize - 1) / stepSize;
-				int rowLength= numberOfFramesPerRow * windowSize;
-				int out_len = rowLength * rows;
+	// 			int numberOfFramesPerRow = (cols - overlap + stepSize - 1) / stepSize;
+	// 			int rowLength= numberOfFramesPerRow * windowSize;
+	// 			int out_len = rowLength * rows;
 
-				double[] out_zero = new double[out_len];
+	// 			double[] out_zero = new double[out_len];
 
-				return new MatrixBlock[]{new MatrixBlock(rows, rowLength, out_zero), new MatrixBlock(rows, rowLength, out_zero)};
-				}
-			re.sparseToDense();
-			return stft(re, windowSize, overlap, threads);
-		}
-	}
+	// 			return new MatrixBlock[]{new MatrixBlock(rows, rowLength, out_zero), new MatrixBlock(rows, rowLength, out_zero)};
+	// 			}
+	// 		re.sparseToDense();
+	// 		return stft(re, windowSize, overlap, threads);
+	// 	}
+	// }
 
-	/**
-	 * Function to perform STFT on a given matrix.
-	 *
-	 * @param re matrix object
-	 * @return array of matrix blocks
-	 */
-	private static MatrixBlock[] computeSTFT(MatrixBlock re, int windowSize, int overlap, int threads) {
-		return computeSTFT(re, null, windowSize, overlap, threads);
-	}
+	// /**
+	//  * Function to perform STFT on a given matrix.
+	//  *
+	//  * @param re matrix object
+	//  * @return array of matrix blocks
+	//  */
+	// private static MatrixBlock[] computeSTFT(MatrixBlock re, int windowSize, int overlap, int threads) {
+	// 	return computeSTFT(re, null, windowSize, overlap, threads);
+	// }
 
 	/**
 	 * Performs Singular Value Decomposition. Calls Apache Commons Math SVD.

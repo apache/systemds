@@ -55,36 +55,46 @@ class TestLineageTrace(unittest.TestCase):
                         for x in m_res.get_lineage_trace().split("\n")]
 
       
-        sysds_trace = create_execute_and_trace_dml(trace_test_1)
+        sysds_trace = self.create_execute_and_trace_dml(trace_test_1)
 
         # It is not guarantied, that the two lists 100% align to be the same.
         # Therefore for now, we only compare if the command is the same, in same order.
         python_trace_commands = [x[:1] for x in python_trace]
         dml_script_commands = [x[:1] for x in sysds_trace]
+        if(len(python_trace_commands) == 0):
+            self.fail("Error in pythonscript execution")
+        if(len(dml_script_commands) == 0):
+            self.fail("Error in DML script execution")
+        
         self.assertEqual(python_trace_commands[0], dml_script_commands[0])
 
 
-def create_execute_and_trace_dml(script: str):
-    if not os.path.exists(temp_dir):
-        os.makedirs(temp_dir)
+    def create_execute_and_trace_dml(self, script: str):
+        if not os.path.exists(temp_dir):
+            os.makedirs(temp_dir)
 
-    # Call SYSDS!
-    result_file_name = temp_dir + "/tmp_res.txt"
-
-    command = "systemds " + script + \
-        " > " + result_file_name + " 2> /dev/null"
-    os.system(command)
-    return parse_trace(result_file_name)
+        # Call SYSDS!
+        result_file_name = temp_dir + "/tmp_res.txt"
+        os.environ["SYSDS_QUIET"] = "0"
+        os.system("which systemds")
+        command = "systemds " + script + \
+            " > " + result_file_name + " 2> /dev/null"
+        status = os.system(command)
+        if status < 0:
+            self.fail("systemds call failed.")
+        return parse_trace(result_file_name)
 
 
 def parse_trace(path: str):
     data = []
     with open(path, "r") as log:
         for line in log:
-            data.append(line.strip().split("°"))
+            print(line)
+            if "°" in line:
+                data.append(line.strip().split("°"))
 
     # Remove the last 4 lines of the System output because they are after lintrace.
-    return data[:-4]
+    return data
 
 
 if __name__ == "__main__":

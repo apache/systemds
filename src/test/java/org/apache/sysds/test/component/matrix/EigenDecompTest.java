@@ -21,6 +21,7 @@ package org.apache.sysds.test.component.matrix;
 
 import static org.junit.Assert.fail;
 
+import org.apache.commons.lang3.NotImplementedException;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.runtime.matrix.data.LibCommonsMath;
@@ -120,6 +121,8 @@ public class EigenDecompTest {
 				case QR:
 					m = LibCommonsMath.multiReturnOperations(in, "eigen_qr", threads, 1);
 					break;
+				default:
+					throw new NotImplementedException();
 			}
 
 			isValidDecomposition(in, m[1], m[0], tol, t.toString());

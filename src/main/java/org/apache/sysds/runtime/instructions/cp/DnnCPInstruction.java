@@ -247,7 +247,7 @@ public class DnnCPInstruction extends UnaryCPInstruction {
 			return new DnnCPInstruction(in, in2, out, opcode, str, k, Double.parseDouble(parts[5]));
 		}
 		else if (opcode.equalsIgnoreCase("batch_norm2d")) {
-			InstructionUtils.checkNumFields(parts, 13);
+			InstructionUtils.checkNumFields(parts, 14);
 			CPOperand in1 = new CPOperand(parts[1]); // image
 			CPOperand in2 = new CPOperand(parts[2]); // scale
 			CPOperand in3 = new CPOperand(parts[3]); // bias
@@ -261,10 +261,12 @@ public class DnnCPInstruction extends UnaryCPInstruction {
 			CPOperand out3 = new CPOperand(parts[11]); // retRunningVar
 			CPOperand out4 = new CPOperand(parts[12]); // resultSaveMean
 			CPOperand out5 = new CPOperand(parts[13]); // resultSaveInvVariance
+			// int threads = Integer.parseInt(parts[14]);
+			
 			return new DnnCPInstruction(in1, in2, in3, in4, in5, in6, in7, in8, out, out2, out3, out4, out5, opcode, str, 0);
 		}
 		else if (opcode.equalsIgnoreCase("batch_norm2d_backward")) {
-			InstructionUtils.checkNumFields(parts, 9);
+			InstructionUtils.checkNumFields(parts, 10);
 			CPOperand in1 = new CPOperand(parts[1]); // image
 			CPOperand in2 = new CPOperand(parts[2]); // dout
 			CPOperand in3 = new CPOperand(parts[3]); // scale
@@ -274,10 +276,11 @@ public class DnnCPInstruction extends UnaryCPInstruction {
 			CPOperand out = new CPOperand(parts[7]);  // dX
 			CPOperand out2 = new CPOperand(parts[8]); // dScale
 			CPOperand out3 = new CPOperand(parts[9]); // dBias
+			// int threads = Integer.parseInt(parts[10]);
 			return new DnnCPInstruction(in1, in2, in3, in4, in5, in6, null, null, out, out2, out3, null, null, opcode, str, 0);
 		}
 		else if (opcode.equalsIgnoreCase("lstm")) {
-			InstructionUtils.checkNumFields(parts, 11);
+			InstructionUtils.checkNumFields(parts, 12);
 			CPOperand in1 = new CPOperand(parts[1]);
 			CPOperand in2 = new CPOperand(parts[2]);
 			CPOperand in3 = new CPOperand(parts[3]);
@@ -289,9 +292,10 @@ public class DnnCPInstruction extends UnaryCPInstruction {
 			CPOperand out3 = new CPOperand(parts[9]);
 			CPOperand out4 = new CPOperand(parts[10]);
 			CPOperand out5 = new CPOperand(parts[11]);
+			// int threads = Integer.parseInt(parts[12]);
 			return new DnnCPInstruction(in1, in2, in3, in4, in5, in6, null, null, out1, out2, out3, out4, out5, opcode, str, 0);
 		} if(opcode.equalsIgnoreCase("lstm_backward")){
-			InstructionUtils.checkNumFields(parts, 16);
+			InstructionUtils.checkNumFields(parts, 17);
 			CPOperand in1 = new CPOperand(parts[1]);
 			CPOperand in2 = new CPOperand(parts[2]);
 			CPOperand in3 = new CPOperand(parts[3]);
@@ -309,6 +313,7 @@ public class DnnCPInstruction extends UnaryCPInstruction {
 			CPOperand out3 = new CPOperand(parts[14]);
 			CPOperand out4 = new CPOperand(parts[15]);
 			CPOperand out5 = new CPOperand(parts[16]);
+			// int threads = Integer.parseInt(parts[17]);
 			return new DnnCPInstruction(in1, in2, in3, in4, in5, in6, in7, in8, in9, in10, in11, out1, out2, out3, out4, out5, opcode, str, 0);
 		}
 		else {

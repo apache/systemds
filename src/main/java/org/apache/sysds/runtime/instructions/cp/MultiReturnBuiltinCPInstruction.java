@@ -22,6 +22,7 @@ package org.apache.sysds.runtime.instructions.cp;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.apache.commons.lang3.NotImplementedException;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.sysds.common.Types.DataType;
 import org.apache.sysds.common.Types.ValueType;
@@ -37,11 +38,13 @@ import org.apache.sysds.runtime.matrix.operators.Operator;
 public class MultiReturnBuiltinCPInstruction extends ComputationCPInstruction {
 
 	protected ArrayList<CPOperand> _outputs;
+	protected int _numThreads;
 
 	private MultiReturnBuiltinCPInstruction(Operator op, CPOperand input1, ArrayList<CPOperand> outputs, String opcode,
-			String istr) {
+			String istr, int threads) {
 		super(CPType.MultiReturnBuiltin, op, input1, null, outputs.get(0), opcode, istr);
 		_outputs = outputs;
+		_numThreads = threads;
 	}
 	
 	public CPOperand getOutput(int i) {
@@ -56,7 +59,7 @@ public class MultiReturnBuiltinCPInstruction extends ComputationCPInstruction {
 		return _outputs.parallelStream().map(output -> output.getName()).toArray(String[]::new);
 	}
 	
-	public static MultiReturnBuiltinCPInstruction parseInstruction ( String str ) {
+	public static MultiReturnBuiltinCPInstruction parseInstruction(String str ) {
 		String[] parts = InstructionUtils.getInstructionPartsWithValueType(str);
 		ArrayList<CPOperand> outputs = new ArrayList<>();
 		// first part is always the opcode
@@ -67,8 +70,9 @@ public class MultiReturnBuiltinCPInstruction extends ComputationCPInstruction {
 			CPOperand in1 = new CPOperand(parts[1]);
 			outputs.add ( new CPOperand(parts[2], ValueType.FP64, DataType.MATRIX) );
 			outputs.add ( new CPOperand(parts[3], ValueType.FP64, DataType.MATRIX) );
+			int threads = Integer.parseInt(parts[4]);
 			
-			return new MultiReturnBuiltinCPInstruction(null, in1, outputs, opcode, str);
+			return new MultiReturnBuiltinCPInstruction(null, in1, outputs, opcode, str, threads);
 		}
 		else if ( opcode.equalsIgnoreCase("lu") ) {
 			CPOperand in1 = new CPOperand(parts[1]);
@@ -77,8 +81,9 @@ public class MultiReturnBuiltinCPInstruction extends ComputationCPInstruction {
 			outputs.add ( new CPOperand(parts[2], ValueType.FP64, DataType.MATRIX) );
 			outputs.add ( new CPOperand(parts[3], ValueType.FP64, DataType.MATRIX) );
 			outputs.add ( new CPOperand(parts[4], ValueType.FP64, DataType.MATRIX) );
+			int threads = Integer.parseInt(parts[5]);
 			
-			return new MultiReturnBuiltinCPInstruction(null, in1, outputs, opcode, str);
+			return new MultiReturnBuiltinCPInstruction(null, in1, outputs, opcode, str, threads);
 			
 		}
 		else if ( opcode.equalsIgnoreCase("eigen") ) {
@@ -86,42 +91,45 @@ public class MultiReturnBuiltinCPInstruction extends ComputationCPInstruction {
 			CPOperand in1 = new CPOperand(parts[1]);
 			outputs.add ( new CPOperand(parts[2], ValueType.FP64, DataType.MATRIX) );
 			outputs.add ( new CPOperand(parts[3], ValueType.FP64, DataType.MATRIX) );
-			
-			return new MultiReturnBuiltinCPInstruction(null, in1, outputs, opcode, str);
-			
+			int threads = Integer.parseInt(parts[4]);
+			return new MultiReturnBuiltinCPInstruction(null, in1, outputs, opcode, str, threads);
 		}
-		else if(parts.length == 4 && opcode.equalsIgnoreCase("fft")) {
+		else if( opcode.equalsIgnoreCase("fft")){
+			if(parts.length == 5) {
+				// one input and two outputs
+				CPOperand in1 = new CPOperand(parts[1]);
+				outputs.add(new CPOperand(parts[2], ValueType.FP64, DataType.MATRIX));
+				outputs.add(new CPOperand(parts[3], ValueType.FP64, DataType.MATRIX));
+				int threads = Integer.parseInt(parts[4]);
+				return new MultiReturnBuiltinCPInstruction(null, in1, outputs, opcode, str, threads);
+			}
+			else if(parts.length == 4) {
+				// one input and two outputs
+				outputs.add(new CPOperand(parts[1], ValueType.FP64, DataType.MATRIX));
+				outputs.add(new CPOperand(parts[2], ValueType.FP64, DataType.MATRIX));
+				int threads = Integer.parseInt(parts[3]);
+				return new MultiReturnBuiltinCPInstruction(null, null, outputs, opcode, str, threads);
+			}
+			else 
+				throw new NotImplementedException("Invalid number of arguments for FFT.");
+		}
+		else if(parts.length == 5 && opcode.equalsIgnoreCase("fft_linearized")) {
 			// one input and two outputs
 			CPOperand in1 = new CPOperand(parts[1]);
 			outputs.add(new CPOperand(parts[2], ValueType.FP64, DataType.MATRIX));
 			outputs.add(new CPOperand(parts[3], ValueType.FP64, DataType.MATRIX));
+			int threads = Integer.parseInt(parts[4]);
 
-			return new MultiReturnBuiltinCPInstruction(null, in1, outputs, opcode, str);
-
-		}
-		else if(parts.length == 3 && opcode.equalsIgnoreCase("fft")) {
-			// one input and two outputs
-			outputs.add(new CPOperand(parts[1], ValueType.FP64, DataType.MATRIX));
-			outputs.add(new CPOperand(parts[2], ValueType.FP64, DataType.MATRIX));
-
-			return new MultiReturnBuiltinCPInstruction(null, null, outputs, opcode, str);
-
-		}
-		else if(parts.length == 4 && opcode.equalsIgnoreCase("fft_linearized")) {
-			// one input and two outputs
-			CPOperand in1 = new CPOperand(parts[1]);
-			outputs.add(new CPOperand(parts[2], ValueType.FP64, DataType.MATRIX));
-			outputs.add(new CPOperand(parts[3], ValueType.FP64, DataType.MATRIX));
-
-			return new MultiReturnBuiltinCPInstruction(null, in1, outputs, opcode, str);
+			return new MultiReturnBuiltinCPInstruction(null, in1, outputs, opcode, str, threads);
 
 		}
 		else if(parts.length == 3 && opcode.equalsIgnoreCase("fft_linearized")) {
 			// one input and two outputs
 			outputs.add(new CPOperand(parts[1], ValueType.FP64, DataType.MATRIX));
 			outputs.add(new CPOperand(parts[2], ValueType.FP64, DataType.MATRIX));
+			int threads = Integer.parseInt(parts[3]);
 
-			return new MultiReturnBuiltinCPInstruction(null, null, outputs, opcode, str);
+			return new MultiReturnBuiltinCPInstruction(null, null, outputs, opcode, str, threads);
 
 		}
 		else if ( opcode.equalsIgnoreCase("stft") ) {
@@ -129,8 +137,9 @@ public class MultiReturnBuiltinCPInstruction extends ComputationCPInstruction {
 			CPOperand in1 = new CPOperand(parts[1]);
 			outputs.add ( new CPOperand(parts[2], ValueType.FP64, DataType.MATRIX) );
 			outputs.add ( new CPOperand(parts[3], ValueType.FP64, DataType.MATRIX) );
+			int threads = Integer.parseInt(parts[4]);
 
-			return new MultiReturnBuiltinCPInstruction(null, in1, outputs, opcode, str);
+			return new MultiReturnBuiltinCPInstruction(null, in1, outputs, opcode, str, threads);
 		}
 		else if ( opcode.equalsIgnoreCase("svd") ) {
 			CPOperand in1 = new CPOperand(parts[1]);
@@ -139,8 +148,9 @@ public class MultiReturnBuiltinCPInstruction extends ComputationCPInstruction {
 			outputs.add ( new CPOperand(parts[2], ValueType.FP64, DataType.MATRIX) );
 			outputs.add ( new CPOperand(parts[3], ValueType.FP64, DataType.MATRIX) );
 			outputs.add ( new CPOperand(parts[4], ValueType.FP64, DataType.MATRIX) );
+			int threads = Integer.parseInt(parts[5]);
 			
-			return new MultiReturnBuiltinCPInstruction(null, in1, outputs, opcode, str);
+			return new MultiReturnBuiltinCPInstruction(null, in1, outputs, opcode, str, threads);
 
 		}
 		else {
@@ -159,7 +169,7 @@ public class MultiReturnBuiltinCPInstruction extends ComputationCPInstruction {
 			throw new DMLRuntimeException("Invalid opcode in MultiReturnBuiltin instruction: " + getOpcode());
 		
 		MatrixBlock in = ec.getMatrixInput(input1.getName());
-		MatrixBlock[] out = LibCommonsMath.multiReturnOperations(in, getOpcode());
+		MatrixBlock[] out = LibCommonsMath.multiReturnOperations(in, getOpcode(), _numThreads);
 		ec.releaseMatrixInput(input1.getName());
 		for(int i=0; i < _outputs.size(); i++) {
 			ec.setMatrixOutput(_outputs.get(i).getName(), out[i]);

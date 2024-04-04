@@ -502,15 +502,17 @@ public abstract class Hop implements ParseInfo {
 			ExecType et = getExecutionModeForCompression();
 
 			Lop compressionInstruction = null;
-		
+			
+			//TODO generalize threads
+			final int k = OptimizerUtils.getConstrainedNumThreads(-1); 
 			if(requiresCompression()) {
 				if(_compressedWorkloadTree != null) {
 					SingletonLookupHashMap m = SingletonLookupHashMap.getMap();
 					int singletonID = m.put(_compressedWorkloadTree);
-					compressionInstruction = new Compression(getLops(), getDataType(), getValueType(), et, singletonID);
+					compressionInstruction = new Compression(getLops(), getDataType(), getValueType(), et, singletonID, k);
 				}
 				else
-					compressionInstruction = new Compression(getLops(), getDataType(), getValueType(), et, 0);
+					compressionInstruction = new Compression(getLops(), getDataType(), getValueType(), et, 0, k);
 			}
 			else if(_requiresDeCompression && et != ExecType.SPARK) // Disabled spark decompression instruction.
 				compressionInstruction = new DeCompression(getLops(), getDataType(), getValueType(), et);

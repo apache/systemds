@@ -28,6 +28,7 @@ public class Compression extends Lop {
 	public static final String OPCODE = "compress";
 
 	private final int _singletonLookupKey;
+	private final int _numThreads;
 
 	public enum CompressConfig {
 		TRUE, FALSE, COST, AUTO, WORKLOAD;
@@ -41,12 +42,13 @@ public class Compression extends Lop {
 		}
 	}
 
-	public Compression(Lop input, DataType dt, ValueType vt, ExecType et, int singletonLookupKey) {
+	public Compression(Lop input, DataType dt, ValueType vt, ExecType et, int singletonLookupKey, int numThreads) {
 		super(Lop.Type.Checkpoint, dt, vt);
 		addInput(input);
 		input.addOutput(this);
 		lps.setProperties(inputs, et);
 		_singletonLookupKey = singletonLookupKey;
+		_numThreads = numThreads;
 	}
 
 	@Override
@@ -80,6 +82,12 @@ public class Compression extends Lop {
 			sb.append(OPERAND_DELIMITOR);
 			sb.append(_singletonLookupKey);
 		}
+
+		if(getExecType().equals(ExecType.CP) || getExecType().equals(ExecType.FED)){
+			sb.append(OPERAND_DELIMITOR);
+			sb.append(_numThreads);
+		}
+		
 		
 		return sb.toString();
 	}

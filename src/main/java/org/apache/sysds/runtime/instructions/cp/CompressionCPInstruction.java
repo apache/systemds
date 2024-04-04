@@ -43,43 +43,51 @@ public class CompressionCPInstruction extends ComputationCPInstruction {
 	private static final Log LOG = LogFactory.getLog(CompressionCPInstruction.class.getName());
 
 	private final int _singletonLookupID;
+	private final int _numThreads;
 
-	/** This is only for binned compression with 2 outputs*/
+	/** This is only for binned compression with 2 outputs */
 	protected final List<CPOperand> _outputs;
 
 	private CompressionCPInstruction(Operator op, CPOperand in, CPOperand out, String opcode, String istr,
-		int singletonLookupID) {
+		int singletonLookupID, int numThreads) {
 		super(CPType.Compression, op, in, null, null, out, opcode, istr);
 		_outputs = null;
 		this._singletonLookupID = singletonLookupID;
+		this._numThreads = numThreads;
 	}
 
-	private CompressionCPInstruction(Operator op, CPOperand in1, CPOperand in2, List<CPOperand> out, String opcode, String istr,
-		int singletonLookupID) {
+	private CompressionCPInstruction(Operator op, CPOperand in1, CPOperand in2, List<CPOperand> out, String opcode,
+		String istr, int singletonLookupID, int numThreads) {
 		super(CPType.Compression, op, in1, in2, null, out.get(0), opcode, istr);
 		_outputs = out;
 		this._singletonLookupID = singletonLookupID;
+		this._numThreads = numThreads;
 	}
 
 	public static CompressionCPInstruction parseInstruction(String str) {
-		InstructionUtils.checkNumFields(str, 2, 3, 4);
+		InstructionUtils.checkNumFields(str, 3, 4, 5);
 		String[] parts = InstructionUtils.getInstructionPartsWithValueType(str);
 		String opcode = parts[0];
 		CPOperand in1 = new CPOperand(parts[1]);
 		CPOperand out = new CPOperand(parts[2]);
-		if(parts.length == 5) {
-			/** Compression with bins that returns two outputs*/
+		if(parts.length == 6) {
+			/** Compression with bins that returns two outputs */
 			List<CPOperand> outputs = new ArrayList<>();
 			outputs.add(new CPOperand(parts[3]));
 			outputs.add(new CPOperand(parts[4]));
-			return new CompressionCPInstruction(null, in1, out, outputs, opcode, str, 0);
+			int numThreads = Integer.parseInt(parts[5]);
+			return new CompressionCPInstruction(null, in1, out, outputs, opcode, str, 0, numThreads);
 		}
-		else if(parts.length == 4) {
+		else if(parts.length == 5) {
 			int treeNodeID = Integer.parseInt(parts[3]);
-			return new CompressionCPInstruction(null, in1, out, opcode, str, treeNodeID);
+			int numThreads = Integer.parseInt(parts[4]);
+			return new CompressionCPInstruction(null, in1, out, opcode, str, treeNodeID, numThreads);
 		}
-		else
-			return new CompressionCPInstruction(null, in1, out, opcode, str, 0);
+		else {
+
+			int numThreads = Integer.parseInt(parts[3]);
+			return new CompressionCPInstruction(null, in1, out, opcode, str, 0, numThreads);
+		}
 	}
 
 	@Override
@@ -101,12 +109,13 @@ public class CompressionCPInstruction extends ComputationCPInstruction {
 			final MatrixBlock X = ec.getMatrixInput(input1.getName());
 			out = CLALibBinCompress.binCompress(X, d, k);
 			ec.releaseMatrixInput(input1.getName());
-		} else {
+		}
+		else {
 			final FrameBlock X = ec.getFrameInput(input1.getName());
 			out = CLALibBinCompress.binCompress(X, d, k);
 			ec.releaseFrameInput(input1.getName());
 		}
-		
+
 		// Set output and release input
 		ec.releaseMatrixInput(input2.getName());
 		ec.setMatrixOutput(_outputs.get(0).getName(), out.getKey());
@@ -121,13 +130,11 @@ public class CompressionCPInstruction extends ComputationCPInstruction {
 		final WTreeRoot root = (_singletonLookupID != 0) ? (WTreeRoot) m.get(_singletonLookupID) : null;
 		m.removeKey(_singletonLookupID);
 
-		final int k = OptimizerUtils.getConstrainedNumThreads(-1);
-
 		if(ec.isFrameObject(input1.getName()))
-			processFrameBlockCompression(ec, ec.getFrameInput(input1.getName()), k, root);
+			processFrameBlockCompression(ec, ec.getFrameInput(input1.getName()), _numThreads, root);
 		else if(ec.isMatrixObject(input1.getName()))
-			processMatrixBlockCompression(ec, ec.getMatrixInput(input1.getName()), k, root);
-		else{
+			processMatrixBlockCompression(ec, ec.getMatrixInput(input1.getName()), _numThreads, root);
+		else {
 			throw new NotImplementedException("Not supported other types of input for compression than frame and matrix");
 		}
 	}

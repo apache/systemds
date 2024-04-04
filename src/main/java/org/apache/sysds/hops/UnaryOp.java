@@ -137,7 +137,7 @@ public class UnaryOp extends MultiThreadedHop
 			Lop ret = null;
 			switch(_op){
 				case COMPRESS:
-					ret = new Compression(input.constructLops(), getDataType(), getValueType(), optFindExecType(), 0);
+					ret = new Compression(input.constructLops(), getDataType(), getValueType(), optFindExecType(), 0, k);
 					break;
 				case DECOMPRESS:
 					ret = new DeCompression(input.constructLops(), getDataType(), getValueType(), optFindExecType());

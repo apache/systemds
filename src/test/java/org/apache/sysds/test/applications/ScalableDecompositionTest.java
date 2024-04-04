@@ -211,7 +211,7 @@ public class ScalableDecompositionTest extends AutomatedTestBase
 					MatrixBlock A = MatrixBlock.randOperations(rows, cols, 1.0, -5, 10, "uniform", 7);
 					writeInputMatrixWithMTD("A", A, false);
 					runTest(true, false, null, -1);
-					MatrixBlock[] C = LibCommonsMath.multiReturnOperations(A, "lu");
+					MatrixBlock[] C = LibCommonsMath.multiReturnOperations(A, "lu", 1);
 					String[] outputs = new String[]{"C","D","E"};
 					for(int i=0; i<outputs.length; i++) {
 						HashMap<CellIndex, Double> dmlfile = readDMLMatrixFromOutputDir(outputs[i]);
@@ -223,7 +223,7 @@ public class ScalableDecompositionTest extends AutomatedTestBase
 					MatrixBlock A = MatrixBlock.randOperations(rows, cols, 1.0, -5, 10, "uniform", 7);
 					writeInputMatrixWithMTD("A", A, false);
 					runTest(true, false, null, -1);
-					MatrixBlock[] C = LibCommonsMath.multiReturnOperations(A, "qr");
+					MatrixBlock[] C = LibCommonsMath.multiReturnOperations(A, "qr", 1);
 					String[] outputs = new String[]{"C","D","E"};
 					for(int i=0; i<outputs.length; i++) {
 						HashMap<CellIndex, Double> dmlfile = readDMLMatrixFromOutputDir(outputs[i]);

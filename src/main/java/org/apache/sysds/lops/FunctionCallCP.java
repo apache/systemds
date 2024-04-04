@@ -38,11 +38,18 @@ public class FunctionCallCP extends Lop
 	private String[] _inputNames;
 	private String[] _outputNames;
 	private ArrayList<Lop> _outputLops = null;
-	private boolean _opt;
+	private final boolean _opt;
+	private final int _numThreads;
 
 	public FunctionCallCP(ArrayList<Lop> inputs, String fnamespace, String fname, String[] inputNames,
 		String[] outputNames, ArrayList<Hop> outputHops, boolean opt, ExecType et) {
-		this(inputs, fnamespace, fname, inputNames, outputNames, et);
+		this(inputs, fnamespace, fname, inputNames, outputNames, outputHops, opt, et, 1);
+		
+	}
+
+	public FunctionCallCP(ArrayList<Lop> inputs, String fnamespace, String fname, String[] inputNames,
+		String[] outputNames, ArrayList<Hop> outputHops, boolean opt, ExecType et, int threads) {
+		this(inputs, fnamespace, fname, inputNames, outputNames, opt, et, threads);
 		if(outputHops != null) {
 			_outputLops = new ArrayList<>();
 			setLevel();
@@ -56,27 +63,33 @@ public class FunctionCallCP extends Lop
 				}
 			}
 		}
-		_opt = opt;
 	}
 	
-	public FunctionCallCP(ArrayList<Lop> inputs, String fnamespace, String fname, String[] inputNames, String[] outputNames, ExecType et) 
-	{
+	public FunctionCallCP(ArrayList<Lop> inputs, String fnamespace, String fname, String[] inputNames,
+		String[] outputNames, boolean opt, ExecType et) {
+		this(inputs, fnamespace, fname, inputNames, outputNames, opt, et, 1);
+	}
+
+	public FunctionCallCP(ArrayList<Lop> inputs, String fnamespace, String fname, String[] inputNames,
+		String[] outputNames, boolean opt, ExecType et, int threads) {
 		super(Lop.Type.FunctionCallCP, DataType.UNKNOWN, ValueType.UNKNOWN);
-		//note: data scalar in order to prevent generation of redundant createvar, rmvar
-		
+		// note: data scalar in order to prevent generation of redundant createvar, rmvar
+
 		_fnamespace = fnamespace;
 		_fname = fname;
 		_inputNames = inputNames;
 		_outputNames = outputNames;
-		
-		//wire inputs
-		for( Lop in : inputs ) {
-			addInput( in );
-			in.addOutput( this );
+
+		// wire inputs
+		for(Lop in : inputs) {
+			addInput(in);
+			in.addOutput(this);
 		}
-		
-		//lop properties: always in CP
+
+		// lop properties: always in CP
 		lps.setProperties(inputs, et);
+		_opt = opt;
+		_numThreads = threads;
 	}
 
 	public ArrayList<Lop> getFunctionOutputs() {
@@ -115,6 +128,13 @@ public class FunctionCallCP extends Lop
 		for(int i=0; i< _outputNames.length; i++) {
 			sb.append(Lop.OPERAND_DELIMITOR);
 			sb.append(_outputNames[i]);
+		}
+
+		if(getExecType().equals(ExecType.CP)){
+			if(!(_fname.toLowerCase().equals("remove"))){
+				sb.append(Lop.OPERAND_DELIMITOR);
+				sb.append(_numThreads);
+			}
 		}
 		
 		return sb.toString();

@@ -19,19 +19,22 @@
 
 package org.apache.sysds.test.component.matrix;
 
+import static org.apache.sysds.runtime.matrix.data.LibMatrixFourier.fft;
+import static org.apache.sysds.runtime.matrix.data.LibMatrixFourier.fft_linearized;
+import static org.apache.sysds.runtime.matrix.data.LibMatrixFourier.ifft;
+import static org.apache.sysds.runtime.matrix.data.LibMatrixFourier.ifft_linearized;
+import static org.junit.Assert.assertArrayEquals;
+import static org.junit.Assert.fail;
+
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.junit.Test;
 
-import static org.apache.sysds.runtime.matrix.data.LibMatrixFourier.fft;
-import static org.apache.sysds.runtime.matrix.data.LibMatrixFourier.ifft;
-import static org.apache.sysds.runtime.matrix.data.LibMatrixFourier.fft_linearized;
-import static org.apache.sysds.runtime.matrix.data.LibMatrixFourier.ifft_linearized;
-
-import static org.junit.Assert.assertArrayEquals;
-
 public class FourierTest {
 
-	int threads = Runtime.getRuntime().availableProcessors();
+	protected static final Log LOG = LogFactory.getLog(FourierTest.class.getName());
+	int threads = 2;
 
 	@Test
 	public void test_fft_one_dim() {
@@ -42,10 +45,10 @@ public class FourierTest {
 		double[] expected_re = {6, 15, -36, 15};
 		double[] expected_im = {0, -15, 0, 15};
 
-		fft(re, im, threads);
+		MatrixBlock[] ret = fft(re, im, threads);
 
-		assertArrayEquals(expected_re, re.getDenseBlockValues(), 0.0001);
-		assertArrayEquals(expected_im, im.getDenseBlockValues(), 0.0001);
+		assertArrayEquals(expected_re, ret[0].getDenseBlockValues(), 0.0001);
+		assertArrayEquals(expected_im, ret[1].getDenseBlockValues(), 0.0001);
 
 	}
 
@@ -58,10 +61,10 @@ public class FourierTest {
 		double[] expected_re = {35, 4.89949, 15, -14.89949, -45, -14.89949, 15, 4.89949};
 		double[] expected_im = {0, 18.58579, -16, -21.41421, 0, 21.41421, 16, -18.58579};
 
-		fft(re, im, threads);
+		MatrixBlock[] ret = fft(re, im, threads);
 
-		assertArrayEquals(expected_re, re.getDenseBlockValues(), 0.0001);
-		assertArrayEquals(expected_im, im.getDenseBlockValues(), 0.0001);
+		assertArrayEquals(expected_re, ret[0].getDenseBlockValues(), 0.0001);
+		assertArrayEquals(expected_im, ret[1].getDenseBlockValues(), 0.0001);
 	}
 
 	@Test
@@ -89,8 +92,8 @@ public class FourierTest {
 		MatrixBlock re = new MatrixBlock(1, 4, in_re);
 		MatrixBlock im = new MatrixBlock(1, 4, in_im);
 
-		MatrixBlock[] inter = fft(re, im, threads);
-		MatrixBlock[] res = ifft(inter[0], inter[1], threads);
+		MatrixBlock[] inter = fft(re, im, 1);
+		MatrixBlock[] res = ifft(inter[0], inter[1], 1);
 
 		assertArrayEquals(in_re, res[0].getDenseBlockValues(), 0.0001);
 		assertArrayEquals(in_im, res[1].getDenseBlockValues(), 0.0001);
@@ -258,7 +261,7 @@ public class FourierTest {
 				0.975167392001707, 0.44595301043682656, 0.18401328301977316, 0.7158585484384759, 0.3240126702723025,
 				0.740836665073052, 0.8890279623888511, 0.8841266040978419, 0.3058930798936259, 0.8987579873722049});
 
-		MatrixBlock im = new MatrixBlock(1, 16,
+		MatrixBlock im = new MatrixBlock(8,8,
 			new double[] {0.8572457113722648, 0.668182795310341, 0.9739416721141464, 0.8189153345383146,
 				0.6425950286263254, 0.3569634253534639, 0.19715070300424575, 0.8915344479242211, 0.39207930659031054,
 				0.1625193685179268, 0.2523438052868171, 0.30940628850519547, 0.7461468672112159, 0.7123766750132684,
@@ -301,43 +304,62 @@ public class FourierTest {
 			1.1079219041153268, 0.1094531803830765, 3.488182265163636, -1.5698242466218544, -0.1013387045518459,
 			0.9269290699615746, -0.699890233104248, 3.617209720991753, -0.5565163478425035, 3.502962737763559};
 
-		MatrixBlock[] res = fft(re, im, threads);
+		try {
 
-		assertArrayEquals(expected_re, res[0].getDenseBlockValues(), 0.0001);
-		assertArrayEquals(expected_im, res[1].getDenseBlockValues(), 0.0001);
+			MatrixBlock[] res = fft(re, im, threads);
+			assertArrayEquals(expected_re, res[0].getDenseBlockValues(), 0.0001);
+			assertArrayEquals(expected_im, res[1].getDenseBlockValues(), 0.0001);
+		}
+		catch(Exception e) {
+			e.printStackTrace();
+			fail(e.getMessage());
+		}
 
 	}
 
 	@Test
 	public void test_fft_linearized() {
 
-		MatrixBlock re = new MatrixBlock(2, 4, new double[] {0, 18, -15, 3, 0, 18, -15, 3});
-		MatrixBlock im = new MatrixBlock(1, 4, new double[8]);
-
-		double[] expected_re = {6, 15, -36, 15, 6, 15, -36, 15};
-		double[] expected_im = {0, -15, 0, 15, 0, -15, 0, 15};
-
-		fft_linearized(re, im, threads);
-
-		assertArrayEquals(expected_re, re.getDenseBlockValues(), 0.0001);
-		assertArrayEquals(expected_im, im.getDenseBlockValues(), 0.0001);
+		try{
+			MatrixBlock re = new MatrixBlock(2, 4, new double[] {0, 18, -15, 3, 0, 18, -15, 3});
+			MatrixBlock im = new MatrixBlock(2, 4, new double[8]);
+	
+			double[] expected_re = {6, 15, -36, 15, 6, 15, -36, 15};
+			double[] expected_im = {0, -15, 0, 15, 0, -15, 0, 15};
+	
+			MatrixBlock[] res = fft_linearized(re, im, threads);
+	
+			assertArrayEquals(expected_re, res[0].getDenseBlockValues(), 0.0001);
+			assertArrayEquals(expected_im, res[1].getDenseBlockValues(), 0.0001);
+		}
+		catch(Exception e ){
+			e.printStackTrace();
+			fail(e.getMessage());
+		}
 
 	}
 
 	@Test
 	public void test_ifft_linearized() {
 
-		double[] in_re = new double[] {1, -2, 3, -4, 1, -2, 3, -4};
-		double[] in_im = new double[] {0, 0, 0, 0, 0, 0, 0, 0};
+		try {
 
-		MatrixBlock re = new MatrixBlock(2, 4, in_re);
-		MatrixBlock im = new MatrixBlock(2, 4, in_im);
+			double[] in_re = new double[] {1, -2, 3, -4, 1, -2, 3, -4};
+			double[] in_im = new double[] {0, 0, 0, 0, 0, 0, 0, 0};
 
-		MatrixBlock[] inter = fft_linearized(re, im, threads);
-		MatrixBlock[] res = ifft_linearized(inter[0], inter[1], threads);
+			MatrixBlock re = new MatrixBlock(2, 4, in_re);
+			MatrixBlock im = new MatrixBlock(2, 4, in_im);
 
-		assertArrayEquals(in_re, res[0].getDenseBlockValues(), 0.0001);
-		assertArrayEquals(in_im, res[1].getDenseBlockValues(), 0.0001);
+			MatrixBlock[] inter = fft_linearized(re, im, threads);
+			MatrixBlock[] res = ifft_linearized(inter[0], inter[1], threads);
+
+			assertArrayEquals(in_re, res[0].getDenseBlockValues(), 0.0001);
+			assertArrayEquals(in_im, res[1].getDenseBlockValues(), 0.0001);
+		}
+		catch(Exception e) {
+			e.printStackTrace();
+			fail(e.getMessage());
+		}
 
 	}
 

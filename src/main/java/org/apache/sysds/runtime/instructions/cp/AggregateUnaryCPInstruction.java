@@ -19,6 +19,8 @@
 
 package org.apache.sysds.runtime.instructions.cp;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.api.DMLScript;
 import org.apache.sysds.common.Types.DataType;
 import org.apache.sysds.common.Types.ExecMode;
@@ -44,7 +46,7 @@ import org.apache.sysds.runtime.meta.DataCharacteristics;
 import org.apache.sysds.utils.Explain;
 
 public class AggregateUnaryCPInstruction extends UnaryCPInstruction {
-	// private static final Log LOG = LogFactory.getLog(AggregateUnaryCPInstruction.class.getName());
+	protected static final Log LOG = LogFactory.getLog(AggregateUnaryCPInstruction.class.getName());
 
 	public enum AUType {
 		NROW, NCOL, LENGTH, EXISTS, LINEAGE, 
@@ -118,7 +120,7 @@ public class AggregateUnaryCPInstruction extends UnaryCPInstruction {
 	public void processInstruction( ExecutionContext ec ) {
 		String outputName = output.getName();
 		String opcode = getOpcode();
-		
+
 		switch( _type ) {
 			case NROW:
 			case NCOL:

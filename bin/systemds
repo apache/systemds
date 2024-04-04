@@ -64,7 +64,7 @@ else
 fi;
 
 # when using find, look in the directories in this order
-DIR_SEARCH_ORDER=". $SYSTEMDS_ROOT $SYSTEMDS_ROOT/conf  $SYSTEMDS_ROOT/lib $SYSTEMDS_ROOT/src $SYSTEMDS_ROOT/target"
+DIR_SEARCH_ORDER="$SYSTEMDS_ROOT/target . $SYSTEMDS_ROOT $SYSTEMDS_ROOT/conf  $SYSTEMDS_ROOT/lib $SYSTEMDS_ROOT/src"
 ordered_find() {
   result=""
   for dir in $(echo "$DIR_SEARCH_ORDER" | tr ' ' '\n') ; do
@@ -292,17 +292,30 @@ if [ -z "$FEDMONITORING" ] ; then
   FEDMONITORING=0
 fi
 
-# find me a SystemDS jar file to run
-if [ -z "$SYSTEMDS_JAR_FILE" ];then
-  SYSTEMDS_JAR_FILE=$(ordered_find "systemds.jar")
-  if [ -z "$SYSTEMDS_JAR_FILE" ];then
-    SYSTEMDS_JAR_FILE=$(ordered_find "systemds-?.?.?.jar")
-    if [ -z "$SYSTEMDS_JAR_FILE" ];then
+# find a SystemDS jar file to run
+if [ -z ${SYSTEMDS_JAR_FILE+x} ]; then # If it is not found yet.
+  if [ ! -z ${SYSTEMDS_ROOT+x} ]; then # Check currently set SYSETMDS_ROOT
+    # Current SYSTEMDS_ROOT is set and is a directory.
+    if [ -d "$SYSTEMDS_ROOT/target" ] && [ -d "$SYSTEMDS_ROOT/.git" ]; then 
+      # Current path is most likely a build directory of systemds
       SYSTEMDS_JAR_FILE=$(ordered_find "systemds-?.?.?-SNAPSHOT.jar")
     fi
+  fi 
+fi 
+
+# If no jar file is found, start searching
+if [ -z ${SYSTEMDS_JAR_FILE+x} ]; then 
+  SYSTEMDS_JAR_FILE=$(ordered_find "systemds.jar")
+  if [ -z ${SYSTEMDS_JAR_FILE+x} ]; then
+    SYSTEMDS_JAR_FILE=$(ordered_find "systemds-?.?.?.jar")
+    if [ -z ${SYSTEMDS_JAR_FILE+x} ]; then
+      SYSTEMDS_JAR_FILE=$(ordered_find "systemds-?.?.?-SNAPSHOT.jar")
+      if [ -z ${SYSTEMDS_JAR_FILE+x} ]; then
+        echo "wARNING: Unable to find SystemDS jar file to launch"
+        exit -1
+      fi  
+    fi
   fi
-else
-  print_out "Using user supplied systemds jar file $SYSTEMDS_JAR_FILE"
 fi
 
 if [[ "$*" == *-config* ]]; then
@@ -402,17 +415,11 @@ NATIVE_LIBS="$SYSTEMDS_ROOT${DIR_SEP}target${DIR_SEP}classes${DIR_SEP}lib"
 export PATH=${HADOOP_REL}${DIR_SEP}bin${PATH_SEP}${PATH}${PATH_SEP}$NATIVE_LIBS
 export LD_LIBRARY_PATH=${HADOOP_REL}${DIR_SEP}bin${PATH_SEP}${LD_LIBRARY_PATH}
 
-# set java class path
-CLASSPATH="${SYSTEMDS_JAR_FILE}${PATH_SEP} \
-          ${SYSTEMDS_ROOT}${DIR_SEP}lib${DIR_SEP}*${PATH_SEP} \
-          ${SYSTEMDS_ROOT}${DIR_SEP}target${DIR_SEP}lib${DIR_SEP}*"
-# trim whitespace (introduced by the line breaks above)
-CLASSPATH=$(echo "${CLASSPATH}" | tr -d '[:space:]')
 
 if [ $PRINT_SYSDS_HELP == 1 ]; then
   echo "----------------------------------------------------------------------"
   echo "Further help on SystemDS arguments:"
-  java -cp "$CLASSPATH" org.apache.sysds.api.DMLScript -help
+  java -jar $SYSTEMDS_JAR_FILE org.apache.sysds.api.DMLScript -help
   exit 1
 fi
 
@@ -422,7 +429,6 @@ print_out "#  SYSTEMDS_JAR_FILE= $SYSTEMDS_JAR_FILE"
 print_out "#  SYSDS_EXEC_MODE= $SYSDS_EXEC_MODE"
 print_out "#  CONFIG_FILE= $CONFIG_FILE"
 print_out "#  LOG4JPROP= $LOG4JPROP"
-print_out "#  CLASSPATH= $CLASSPATH"
 print_out "#  HADOOP_HOME= $HADOOP_HOME"
 
 #build the command to run

@@ -75,8 +75,6 @@ class TestLineageTrace(unittest.TestCase):
 
         # Call SYSDS!
         result_file_name = temp_dir + "/tmp_res.txt"
-        os.environ["SYSDS_QUIET"] = "0"
-        os.system("which systemds")
         command = "systemds " + script + \
             " > " + result_file_name + " 2> /dev/null"
         status = os.system(command)
@@ -89,7 +87,6 @@ def parse_trace(path: str):
     data = []
     with open(path, "r") as log:
         for line in log:
-            print(line)
             if "°" in line:
                 data.append(line.strip().split("°"))
 

@@ -142,7 +142,7 @@ public class DenseBlockBool extends DenseBlockDRB
 	}
 
 	@Override
-	protected void fillBlock(int bix, int fromIndex, int toIndex, double v) {
+	public void fillBlock(int bix, int fromIndex, int toIndex, double v) {
 		_data.set(fromIndex, toIndex, v != 0);
 	}
 

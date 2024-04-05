@@ -22,37 +22,75 @@ package org.apache.sysds.runtime.frame.data.columns;
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
-import java.nio.ByteBuffer;
-import java.nio.ByteOrder;
 import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Map;
 
+import org.apache.commons.lang3.NotImplementedException;
 import org.apache.sysds.common.Types.ValueType;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.frame.data.columns.ArrayFactory.FrameArrayType;
 import org.apache.sysds.runtime.matrix.data.Pair;
-import org.apache.sysds.runtime.util.UtilFunctions;
 import org.apache.sysds.utils.MemoryEstimates;
 
-public class IntegerArray extends Array<Integer> {
+public class HashIntegerArray extends Array<Object> {
 	private int[] _data;
 
-	public IntegerArray(int[] data) {
+	public HashIntegerArray(int[] data) {
 		super(data.length);
 		_data = data;
 	}
 
-	public int[] get() {
+	public HashIntegerArray(String[] data) {
+		super(data.length);
+		_data = new int[data.length];
+		for(int i = 0; i < data.length; i++) {
+			_data[i] = parseHashInt(data[i]);
+		}
+	}
+
+	@Override
+	public Object get() {
+		throw new NotImplementedException("Invalid to get underlying array in Hash");
+	}
+
+	@Override
+	public Object get(int index) {
+		return Long.toHexString(_data[index]);
+	}
+
+	@Override
+	public Object getInternal(int index) {
+		return Integer.valueOf(_data[index]);
+	}
+
+	public long getLong(int index) {
+		return _data[index];
+	}
+
+	public int getInt(int index) {
+		return _data[index];
+	}
+
+	protected int[] getInts() {
 		return _data;
 	}
 
 	@Override
-	public Integer get(int index) {
-		return _data[index];
+	public void set(int index, Object value) {
+		if(value instanceof String)
+			_data[index] = parseHashInt((String) value);
+		else if(value instanceof Integer)
+			_data[index] = (int) value;
+		else if(value == null)
+			_data[index] = 0;
+		else
+			throw new NotImplementedException("not supported : " + value);
 	}
 
 	@Override
-	public void set(int index, Integer value) {
-		_data[index] = (value != null) ? value : 0;
+	public void set(int index, String value) {
+		_data[index] = parseHashInt(value);
 	}
 
 	@Override
@@ -61,80 +99,91 @@ public class IntegerArray extends Array<Integer> {
 	}
 
 	@Override
-	public void set(int index, String value) {
-		set(index, parseInt(value));
-	}
-
-	@Override
-	public void set(int rl, int ru, Array<Integer> value) {
+	public void set(int rl, int ru, Array<Object> value) {
 		set(rl, ru, value, 0);
 	}
 
 	@Override
 	public void setFromOtherType(int rl, int ru, Array<?> value) {
-		final ValueType vt = value.getValueType();
 		for(int i = rl; i <= ru; i++)
-			_data[i] = UtilFunctions.objectToInteger(vt, value.get(i));
-
+			_data[i] = parseHashInt(value.get(i));
 	}
 
 	@Override
-	public void set(int rl, int ru, Array<Integer> value, int rlSrc) {
-		try {
-			// try system array copy.
-			// but if it does not work, default to get.
-			System.arraycopy(value.get(), rlSrc, _data, rl, ru - rl + 1);
+	public void setNz(int rl, int ru, Array<Object> value) {
+		if(value instanceof HashIntegerArray) {
+			int[] thatVals = ((HashIntegerArray) value)._data;
+			for(int i = rl; i <= ru; i++)
+				if(thatVals[i] != 0)
+					_data[i] = thatVals[i];
 		}
-		catch(Exception e) {
-			super.set(rl, ru, value, rlSrc);
+		else {
+			throw new NotImplementedException("Not supported type of array: " + value.getClass().getSimpleName());
 		}
-	}
-
-	@Override
-	public void setNz(int rl, int ru, Array<Integer> value) {
-		int[] data2 = ((IntegerArray) value)._data;
-		for(int i = rl; i <= ru; i++)
-			if(data2[i] != 0)
-				_data[i] = data2[i];
 	}
 
 	@Override
 	public void setFromOtherTypeNz(int rl, int ru, Array<?> value) {
-		final ValueType vt = value.getValueType();
-		for(int i = rl; i <= ru; i++) {
-			int v = UtilFunctions.objectToInteger(vt, value.get(i));
-			if(v != 0)
-				_data[i] = v;
+		if(value instanceof HashIntegerArray)
+			setNz(rl, ru, (HashIntegerArray) value);
+		else if(value instanceof StringArray) {
+			StringArray st = ((StringArray) value);
+			for(int i = rl; i <= ru; i++)
+				if(st.get(i) != null)
+					_data[i] = parseHashInt(st.get(i));
+		}
+		else {
+			throw new NotImplementedException("Not supported type of array: " + value.getClass().getSimpleName());
 		}
 	}
 
 	@Override
-	public void append(String value) {
-		append(parseInt(value));
+	public void append(Object value) {
+		append(parseHashInt(value));
 	}
 
 	@Override
-	public void append(Integer value) {
+	public void append(String value) {
+		append(parseHashInt(value));
+	}
+
+	public void append(int value) {
 		if(_data.length <= _size)
 			_data = Arrays.copyOf(_data, newSize());
-		_data[_size++] = (value != null) ? value : 0;
+		_data[_size++] = value;
 	}
 
 	@Override
-	public Array<Integer> append(Array<Integer> other) {
-		final int endSize = this._size + other.size();
-		final int[] ret = new int[endSize];
-		System.arraycopy(_data, 0, ret, 0, this._size);
-		System.arraycopy(other.get(), 0, ret, this._size, other.size());
-		if(other instanceof OptionalArray)
-			return OptionalArray.appendOther((OptionalArray<Integer>) other, new IntegerArray(ret));
-		else
-			return new IntegerArray(ret);
+	public Array<Object> append(Array<Object> other) {
+		if(other instanceof HashIntegerArray) {
+
+			final int endSize = this._size + other.size();
+			final int[] ret = new int[endSize];
+			System.arraycopy(_data, 0, ret, 0, this._size);
+			System.arraycopy(((HashIntegerArray) other)._data, 0, ret, this._size, other.size());
+			if(other instanceof OptionalArray)
+				return OptionalArray.appendOther((OptionalArray<Object>) other, new HashIntegerArray(ret));
+			else
+				return new HashIntegerArray(ret);
+		}
+		else if(other instanceof OptionalArray) {
+			OptionalArray<Object> ot = (OptionalArray<Object>) other;
+			if(ot._a instanceof HashIntegerArray) {
+				Array<Object> a = this.append(ot._a);
+				return OptionalArray.appendOther(ot, a);
+			}
+			else {
+				throw new NotImplementedException("Invalid call with not hashArray");
+			}
+		}
+		else {
+			throw new NotImplementedException(other.getClass().getSimpleName() + "  not append supported in hashColumn");
+		}
 	}
 
 	@Override
 	public void write(DataOutput out) throws IOException {
-		out.writeByte(FrameArrayType.INT32.ordinal());
+		out.writeByte(FrameArrayType.HASH32.ordinal());
 		for(int i = 0; i < _size; i++)
 			out.writeInt(_data[i]);
 	}
@@ -147,15 +196,16 @@ public class IntegerArray extends Array<Integer> {
 	}
 
 	@Override
-	public Array<Integer> clone() {
-		return new IntegerArray(Arrays.copyOf(_data, _size));
+	public Array<Object> clone() {
+		return new HashIntegerArray(Arrays.copyOf(_data, _size));
 	}
 
 	@Override
-	public Array<Integer> slice(int rl, int ru) {
-		return new IntegerArray(Arrays.copyOfRange(_data, rl, ru));
+	public Array<Object> slice(int rl, int ru) {
+		return new HashIntegerArray(Arrays.copyOfRange(_data, rl, ru));
 	}
 
+	@Override
 	public void reset(int size) {
 		if(_data.length < size || _data.length > 2 * size)
 			_data = new int[size];
@@ -167,26 +217,35 @@ public class IntegerArray extends Array<Integer> {
 
 	@Override
 	public byte[] getAsByteArray() {
-		ByteBuffer intBuffer = ByteBuffer.allocate(4 * _size);
-		intBuffer.order(ByteOrder.LITTLE_ENDIAN);
-		for(int i = 0; i < _size; i++)
-			intBuffer.putInt(_data[i]);
-		return intBuffer.array();
+		throw new NotImplementedException("Unclear how this byte array should look like for Hash");
 	}
 
 	@Override
 	public ValueType getValueType() {
-		return ValueType.INT32;
+		return ValueType.HASH32;
+	}
+
+	@Override
+	protected Map<Object, Integer> getDictionary() {
+		final Map<Object, Integer> dict = new HashMap<>();
+		Integer id = 0;
+		for(int i = 0; i < size(); i++) {
+			final Integer v = dict.get(_data[i]);
+			if(v == null)
+				dict.put(_data[i], id++);
+		}
+
+		return dict;
 	}
 
 	@Override
 	public Pair<ValueType, Boolean> analyzeValueType(int maxCells) {
-		return new Pair<>(ValueType.INT32, false);
+		return new Pair<>(ValueType.HASH32, false);
 	}
 
 	@Override
 	public FrameArrayType getFrameArrayType() {
-		return FrameArrayType.INT32;
+		return FrameArrayType.HASH32;
 	}
 
 	@Override
@@ -205,8 +264,7 @@ public class IntegerArray extends Array<Integer> {
 	protected Array<Boolean> changeTypeBitSet(Array<Boolean> ret, int l, int u) {
 		for(int i = l; i < u; i++) {
 			if(_data[i] != 0 && _data[i] != 1)
-				throw new DMLRuntimeException(
-					"Unable to change to Boolean from Integer array because of value:" + _data[i]);
+				throw new DMLRuntimeException("Unable to change to Boolean from Hash array because of value:" + _data[i]);
 			ret.set(i, _data[i] == 0 ? false : true);
 		}
 		return ret;
@@ -216,9 +274,8 @@ public class IntegerArray extends Array<Integer> {
 	protected Array<Boolean> changeTypeBoolean(Array<Boolean> retA, int l, int u) {
 		boolean[] ret = (boolean[]) retA.get();
 		for(int i = l; i < u; i++) {
-			if(_data[i] < 0 || _data[i] > 1)
-				throw new DMLRuntimeException(
-					"Unable to change to Boolean from Integer array because of value:" + _data[i]);
+			if(_data[i] != 0 && _data[i] != 1)
+				throw new DMLRuntimeException("Unable to change to Boolean from Hash array because of value:" + _data[i]);
 			ret[i] = _data[i] == 0 ? false : true;
 		}
 		return retA;
@@ -241,13 +298,9 @@ public class IntegerArray extends Array<Integer> {
 	}
 
 	@Override
-	protected Array<Integer> changeTypeInteger() {
-		return this;
-	}
-
-	@Override
 	protected Array<Integer> changeTypeInteger(Array<Integer> retA, int l, int u) {
 		int[] ret = (int[]) retA.get();
+		// TODO use Array Copy for improved speed.
 		for(int i = l; i < u; i++)
 			ret[i] = _data[i];
 		return retA;
@@ -271,7 +324,7 @@ public class IntegerArray extends Array<Integer> {
 
 	@Override
 	protected Array<Object> changeTypeHash32() {
-		return new HashIntegerArray(_data);
+		return this;
 	}
 
 	@Override
@@ -286,7 +339,7 @@ public class IntegerArray extends Array<Integer> {
 	protected Array<String> changeTypeString(Array<String> retA, int l, int u) {
 		String[] ret = (String[]) retA.get();
 		for(int i = l; i < u; i++)
-			ret[i] = Integer.toString(_data[i]);
+			ret[i] = get(i).toString();
 		return retA;
 	}
 
@@ -294,19 +347,22 @@ public class IntegerArray extends Array<Integer> {
 	public Array<Character> changeTypeCharacter(Array<Character> retA, int l, int u) {
 		char[] ret = (char[]) retA.get();
 		for(int i = l; i < u; i++)
-			ret[i] = Integer.toString(_data[i]).charAt(0);
+			ret[i] = get(i).toString().charAt(0);
 		return retA;
 	}
 
 	@Override
 	public void fill(String value) {
-		fill(parseInt(value));
+		fill(parseHashInt(value));
 	}
 
 	@Override
+	public void fill(Object value) {
+		fill(parseHashInt(value));
+	}
+
 	public void fill(Integer value) {
-		value = value != null ? value : 0;
-		Arrays.fill(_data, value);
+		Arrays.fill(_data, value != null ? value : 0);
 	}
 
 	@Override
@@ -314,19 +370,23 @@ public class IntegerArray extends Array<Integer> {
 		return _data[i];
 	}
 
-	public static int parseInt(String s) {
+	public static int parseHashInt(Object s) {
+		if(s == null)
+			return 0;
+		else if(s instanceof String)
+			return parseHashInt((String) s);
+		else if(s instanceof Long)
+			return (Integer) s;
+		else
+			throw new NotImplementedException("not supported" + s);
+	}
+
+	public static int parseHashInt(String s) {
 		if(s == null || s.isEmpty())
 			return 0;
-		try {
-			return Integer.parseInt(s);
-		}
-		catch(NumberFormatException e) {
-			// we use exceptions as normal behavior here since we want faster default parsing.
-			if(s.contains("."))
-				return (int) Double.parseDouble(s);
-			else
-				throw e;
-		}
+		// edge case handling, makes it safer to use the long unsigned passing, and
+		// then casting to int.
+		return (int) Long.parseUnsignedLong(s, 16);
 	}
 
 	@Override
@@ -337,27 +397,27 @@ public class IntegerArray extends Array<Integer> {
 	@Override
 	public boolean isEmpty() {
 		for(int i = 0; i < _size; i++)
-			if(_data[i] != 0)
+			if(_data[i] != 0L)
 				return false;
 		return true;
 	}
 
 	@Override
-	public Array<Integer> select(int[] indices) {
+	public Array<Object> select(int[] indices) {
 		final int[] ret = new int[indices.length];
 		for(int i = 0; i < indices.length; i++)
 			ret[i] = _data[indices[i]];
-		return new IntegerArray(ret);
+		return new HashIntegerArray(ret);
 	}
 
 	@Override
-	public Array<Integer> select(boolean[] select, int nTrue) {
+	public Array<Object> select(boolean[] select, int nTrue) {
 		final int[] ret = new int[nTrue];
 		int k = 0;
 		for(int i = 0; i < select.length; i++)
 			if(select[i])
 				ret[k++] = _data[i];
-		return new IntegerArray(ret);
+		return new HashIntegerArray(ret);
 	}
 
 	@Override
@@ -367,13 +427,13 @@ public class IntegerArray extends Array<Integer> {
 
 	@Override
 	public double hashDouble(int idx) {
-		return Integer.hashCode(_data[idx]);
+		return Long.hashCode(_data[idx]);
 	}
 
 	@Override
-	public boolean equals(Array<Integer> other) {
-		if(other instanceof IntegerArray)
-			return Arrays.equals(_data, ((IntegerArray) other)._data);
+	public boolean equals(Array<Object> other) {
+		if(other instanceof HashIntegerArray)
+			return Arrays.equals(_data, ((HashIntegerArray) other)._data);
 		else
 			return false;
 	}

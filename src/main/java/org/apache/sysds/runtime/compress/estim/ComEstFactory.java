@@ -114,7 +114,7 @@ public interface ComEstFactory {
 	 * @param maxSampleSize     The maximum sample size
 	 * @return The sample size to use.
 	 */
-	private static int getSampleSize(double samplePower, int nRows, int nCols, double sparsity, int minSampleSize,
+	public static int getSampleSize(double samplePower, int nRows, int nCols, double sparsity, int minSampleSize,
 		int maxSampleSize) {
 
 		// Start sample size at the min sample size as the basis sample.

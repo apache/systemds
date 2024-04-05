@@ -292,7 +292,7 @@ public class DenseBlockFP64DEDUP extends DenseBlockDRB
 	}
 
 	@Override
-	protected void fillBlock(int bix, int fromIndex, int toIndex, double v) {
+	public void fillBlock(int bix, int fromIndex, int toIndex, double v) {
 		int roffset = fromIndex / _emb_size;
 		int coffset = fromIndex % _emb_size;
 		int r2offset = fromIndex / _emb_size;

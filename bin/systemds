@@ -20,14 +20,6 @@
 #
 #-------------------------------------------------------------
 
-##############################################################
-# This script is part of the SystemDS binary release. It is
-# meant to work out of the box when unzipping the
-# systemds-<version>.zip (or tbz) file.
-#
-# Make configuration changes here:
-##############################################################
-
 #  If not set by env,  set to 1 to run spark-submit instead of local java
 #  This should be used to run with spark-submit instead of java
 if [[ -z "$SYSDS_DISTRIBUTED" ]]; then
@@ -56,11 +48,8 @@ print_out()
 }
 
 if [[ -z $SYSTEMDS_ROOT ]] ; then
-  SYSTEMDS_ROOT=.
+  SYSTEMDS_ROOT=$(pwd)
   print_out "SYSTEMDS_ROOT not set defaulting to current dir $(pwd)"
-else
-  # construct a relative path
-  SYSTEMDS_ROOT=$(realpath --relative-to=. ${SYSTEMDS_ROOT})
 fi;
 
 # when using find, look in the directories in this order
@@ -95,22 +84,19 @@ fi
 # check if log4j config file exists, otherwise unset
 # to run with a non fatal complaint by SystemDS
 if [ -z "$LOG4JPROP" ] ; then
-  LOG4JPROP=$(ordered_find "log4j*properties")
+  # before wild card search look obvious places.
+  if [ -f "$SYSTEMDS_ROOT/conf/log4j.properties" ]; then 
+    LOG4JPROP="$SYSTEMDS_ROOT/conf/log4j.properties"
+  elif [ -f "$SYSTEMDS_ROOT/log4j.properties" ]; then 
+    LOG4JPROP="$SYSTEMDS_ROOT/conf/log4j.properties"
+  else # wildcard search
+    LOG4JPROP=$(ordered_find "log4j*properties")
+  fi
+fi
 
-  if [ -z "${LOG4JPROP}" ]; then
-    LOG4JPROP=""
-  else
-    LOG4JPROPFULL="-Dlog4j.configuration=file:$LOG4JPROP"
-  fi
-else
-  # L4J was set by env var. Unset if that setting is wrong
-  LOG4JPROP2=$(find "$LOG4JPROP")
-  if [ -z "${LOG4JPROP2}" ]; then
-    LOG4JPROP=""
-  else
-    LOG4JPROP=$LOG4JPROP
-    LOG4JPROPFULL="-Dlog4j.configuration=file:$LOG4JPROP2"
-  fi
+# If the LOG4J variable is declared or found.
+if [ -f "${LOG4JPROP}" ]; then
+  LOG4JPROPFULL="-Dlog4j.configuration=file:$LOG4JPROP"
 fi
 
 if [ -n "${SYSTEMDS_DISTRIBUTED_OPTS}" ]; then
@@ -121,25 +107,16 @@ else
       --master yarn \
       --deploy-mode client \
       --driver-memory 100g \
-      --conf spark.driver.extraJavaOptions=\"-Xms100g -Xmn10g -Dlog4j.configuration=file:$LOG4JPROP\" \
-      --conf spark.executor.extraJavaOptions=\"-Dlog4j.configuration=file:$LOG4JPROP\" \
+      --conf spark.driver.extraJavaOptions=\"-Xms100g -Xmn10g -Dlog4j.configuration=file:$LOG4JPROPFULL\" \
+      --conf spark.executor.extraJavaOptions=\"-Dlog4j.configuration=file:$LOG4JPROPFULL\" \
       --conf spark.executor.heartbeatInterval=100s \
-      --files $LOG4JPROP \
+      --files $LOG4JPROPFULL \
       --conf spark.network.timeout=512s \
       --num-executors 4 \
       --executor-memory 64g \
       --executor-cores 16 "
 fi
 
-
-##############################################################
-# No need to touch the content below. These commands launch
-# SystemDS based on the settings above.
-##############################################################
-
-
-#-------------------------------------------------------------
-# some helper functions
 
 # error help print
 PRINT_SYSDS_HELP=0
@@ -298,12 +275,15 @@ if [ -z ${SYSTEMDS_JAR_FILE+x} ]; then # If it is not found yet.
     # Current SYSTEMDS_ROOT is set and is a directory.
     if [ -d "$SYSTEMDS_ROOT/target" ] && [ -d "$SYSTEMDS_ROOT/.git" ]; then 
       # Current path is most likely a build directory of systemds
-      SYSTEMDS_JAR_FILE=$(ordered_find "systemds-?.?.?-SNAPSHOT.jar")
+      SYSTEMDS_JAR_FILE=$(find "$SYSTEMDS_ROOT/target" -maxdepth 1 -iname ""systemds-?.?.?-SNAPSHOT.jar"" -print -quit)
+    elif [ -d "$SYSTEMDS_ROOT" ] && [ -d "$SYSTEMDS_ROOT/lib" ]; then
+      # Most likely a release directory.
+      SYSTEMDS_JAR_FILE=$(find "$SYSTEMDS_ROOT" -maxdepth 1 -iname ""systemds-?.?.?-SNAPSHOT.jar"" -print -quit)
     fi
   fi 
 fi 
 
-# If no jar file is found, start searching
+# If no jar file is found, start searching --- expected + 70 ms execution time
 if [ -z ${SYSTEMDS_JAR_FILE+x} ]; then 
   SYSTEMDS_JAR_FILE=$(ordered_find "systemds.jar")
   if [ -z ${SYSTEMDS_JAR_FILE+x} ]; then
@@ -351,11 +331,21 @@ if [[ "$*" == *-config* ]]; then
     CONFIG_FILE=""
   fi
 elif [ -z "$CONFIG_FILE" ] ; then
-  # same as above: set config file param if the file exists
-  CONFIG_FILE=$(ordered_find "SystemDS-config-defaults.xml")
-  if [ -z "$CONFIG_FILE" ]; then
+
+  # default search for config file 
+  if [ -f "$SYSTEMDS_ROOT/conf/SystemDS-config-defaults.xml" ]; then 
+    CONFIG_FILE="$SYSTEMDS_ROOT/conf/SystemDS-config-defaults.xml"
+  elif [ -f "$SYSTEMDS_ROOT/SystemDS-config-defaults.xml" ]; then 
+    CONFIG_FILE="$SYSTEMDS_ROOT/conf/SystemDS-config-defaults.xml"
+  else # wildcard search
+    # same as above: set config file param if the file exists
+    CONFIG_FILE=$(ordered_find "SystemDS-config-defaults.xml")
+  fi
+
+  if [ -z "$CONFIG_FILE" ]; then # Second search if still not found.
     CONFIG_FILE=$(ordered_find "SystemDS-config.xml")
   fi
+
   if [ -z "$CONFIG_FILE" ]; then
     CONFIG_FILE=""
   else
@@ -381,39 +371,25 @@ for i in "${myArray[@]}"; do
   (( INDEX=INDEX+1 ))
 done
 
-if [ $SYSDS_DISTRIBUTED -ne 0 ] && [[ $SYSDS_EXEC_MODE == "singlenode" ]]; then
-  echo "Error: Can not run on Spark with execution mode singlenode"
-  exit 1
-fi
-
 # find absolute path to hadoop home in SYSTEMDS_ROOT
 if [ -z "$HADOOP_HOME" ]; then
-  HADOOP_HOME=$(realpath "$(find "$SYSTEMDS_ROOT" -iname hadoop | tail -n 1 )")
-  export HADOOP_HOME
+  HADOOP_HOME="$(find "$SYSTEMDS_ROOT" -iname hadoop | tail -n 1 )"
 fi
-# add hadoop home to path and lib path for loading hadoop jni
-HADOOP_REL=$(realpath --relative-to=. "$HADOOP_HOME")
 
-# default directory separator unix style
-DIR_SEP=/
 # detect operating system to set correct path separator
 if [ "$OSTYPE" == "win32" ] ||  [ "$OSTYPE" == "msys" ] ||  [ "$OSTYPE" == "cygwin" ]; then
   PATH_SEP=\;
   DIR_SEP=\\
-  HADOOP_REL="${HADOOP_REL////\\}"
 else
+  # default directory separator unix style
+  DIR_SEP=/
   PATH_SEP=:
 fi
 
-# make the jar path relative to skip issues with Windows paths
-JARNAME=$(basename "$SYSTEMDS_JAR_FILE")
-
-# relative path to jar file
-SYSTEMDS_JAR_FILE=$(realpath --relative-to=. "$(dirname "$SYSTEMDS_JAR_FILE")")${DIR_SEP}${JARNAME}
 
 NATIVE_LIBS="$SYSTEMDS_ROOT${DIR_SEP}target${DIR_SEP}classes${DIR_SEP}lib"
-export PATH=${HADOOP_REL}${DIR_SEP}bin${PATH_SEP}${PATH}${PATH_SEP}$NATIVE_LIBS
-export LD_LIBRARY_PATH=${HADOOP_REL}${DIR_SEP}bin${PATH_SEP}${LD_LIBRARY_PATH}
+PATH=${HADOOP_HOME}${DIR_SEP}bin${PATH_SEP}${PATH}${PATH_SEP}$NATIVE_LIBS
+LD_LIBRARY_PATH=${HADOOP_HOME}${DIR_SEP}bin${PATH_SEP}${LD_LIBRARY_PATH}
 
 
 if [ $PRINT_SYSDS_HELP == 1 ]; then
@@ -423,19 +399,20 @@ if [ $PRINT_SYSDS_HELP == 1 ]; then
   exit 1
 fi
 
-print_out "###############################################################################"
-print_out "#  SYSTEMDS_ROOT= $SYSTEMDS_ROOT"
-print_out "#  SYSTEMDS_JAR_FILE= $SYSTEMDS_JAR_FILE"
-print_out "#  SYSDS_EXEC_MODE= $SYSDS_EXEC_MODE"
-print_out "#  CONFIG_FILE= $CONFIG_FILE"
-print_out "#  LOG4JPROP= $LOG4JPROP"
-print_out "#  HADOOP_HOME= $HADOOP_HOME"
-
-#build the command to run
-if [ $WORKER == 1 ]; then
-  print_out "#"
-  print_out "#  starting Federated worker on port $PORT"
+if [ $SYSDS_QUIET != 0 ]; then
   print_out "###############################################################################"
+  print_out "#  SYSTEMDS_ROOT= $SYSTEMDS_ROOT"
+  print_out "#  SYSTEMDS_JAR_FILE= $SYSTEMDS_JAR_FILE"
+  print_out "#  SYSDS_EXEC_MODE= $SYSDS_EXEC_MODE"
+  print_out "#  CONFIG_FILE= $CONFIG_FILE"
+  print_out "#  LOG4JPROP= $LOG4JPROPFULL"
+  print_out "#  HADOOP_HOME= $HADOOP_HOME"
+  print_out "#"
+fi
+
+# Build the command to run
+if [ $WORKER == 1 ]; then
+  print_out "#  starting Federated worker on port $PORT"
   CMD=" \
   java $SYSTEMDS_STANDALONE_OPTS \
   $LOG4JPROPFULL \
@@ -443,13 +420,8 @@ if [ $WORKER == 1 ]; then
   -w $PORT \
   $CONFIG_FILE \
   $*"
-  print_out "Executing command: $CMD"
-  print_out  ""
-
 elif [ "$FEDMONITORING" == 1 ]; then
-  print_out "#"
   print_out "#  starting Federated backend monitoring on port $PORT"
-  print_out "###############################################################################"
   CMD=" \
   java $SYSTEMDS_STANDALONE_OPTS \
   $LOG4JPROPFULL \
@@ -457,13 +429,9 @@ elif [ "$FEDMONITORING" == 1 ]; then
   -fedMonitoring $PORT \
   $CONFIG_FILE \
   $*"
-  print_out "Executing command: $CMD"
-  print_out  ""
-
 elif [ $SYSDS_DISTRIBUTED == 0 ]; then
-  print_out "#"
   print_out "#  Running script $SCRIPT_FILE locally with opts: $*"
-  print_out "###############################################################################"
+
   CMD=" \
   java $SYSTEMDS_STANDALONE_OPTS \
   $LOG4JPROPFULL \
@@ -472,13 +440,8 @@ elif [ $SYSDS_DISTRIBUTED == 0 ]; then
   -exec $SYSDS_EXEC_MODE \
   $CONFIG_FILE \
   $*"
-  print_out "Executing command:  $CMD"
-  print_out ""
 else
-  print_out "#"
   print_out "#  Running script $SCRIPT_FILE distributed with opts: $*"
-  print_out "###############################################################################"
-  export SPARK_MAJOR_VERSION=2
   CMD=" \
   spark-submit $SYSTEMDS_DISTRIBUTED_OPTS \
   $SYSTEMDS_JAR_FILE \
@@ -486,8 +449,11 @@ else
   -exec $SYSDS_EXEC_MODE \
   $CONFIG_FILE \
   $*"
-  print_out "Executing command: $CMD"
-  print_out  ""
+fi
+
+if [ $SYSDS_QUIET != 0 ]; then
+  print_out "#  Executing command: $CMD"
+  print_out "###############################################################################"
 fi
 
 # run

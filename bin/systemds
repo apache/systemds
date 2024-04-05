@@ -163,7 +163,7 @@ if [ -z "$1" ] ; then
     echo "Wrong Usage. Add -help for additional parameters.";
     echo ""
     printUsage;
-    exit 0
+    exit -1
 fi
 
 #This loop handles the parameters to the run-script, not the ones passed to SystemDS.

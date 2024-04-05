@@ -88,7 +88,7 @@ if [ -z "$LOG4JPROP" ] ; then
   if [ -f "$SYSTEMDS_ROOT/conf/log4j.properties" ]; then 
     LOG4JPROP="$SYSTEMDS_ROOT/conf/log4j.properties"
   elif [ -f "$SYSTEMDS_ROOT/log4j.properties" ]; then 
-    LOG4JPROP="$SYSTEMDS_ROOT/conf/log4j.properties"
+    LOG4JPROP="$SYSTEMDS_ROOT/log4j.properties"
   else # wildcard search
     LOG4JPROP=$(ordered_find "log4j*properties")
   fi
@@ -107,10 +107,10 @@ else
       --master yarn \
       --deploy-mode client \
       --driver-memory 100g \
-      --conf spark.driver.extraJavaOptions=\"-Xms100g -Xmn10g -Dlog4j.configuration=file:$LOG4JPROPFULL\" \
-      --conf spark.executor.extraJavaOptions=\"-Dlog4j.configuration=file:$LOG4JPROPFULL\" \
+      --conf spark.driver.extraJavaOptions=\"-Xms100g -Xmn10g -Dlog4j.configuration=file:$LOG4JPROP\" \
+      --conf spark.executor.extraJavaOptions=\"-Dlog4j.configuration=file:$LOG4JPROP\" \
       --conf spark.executor.heartbeatInterval=100s \
-      --files $LOG4JPROPFULL \
+      --files $LOG4JPROP \
       --conf spark.network.timeout=512s \
       --num-executors 4 \
       --executor-memory 64g \
@@ -119,7 +119,6 @@ fi
 
 
 # error help print
-PRINT_SYSDS_HELP=0
 function printUsage {
 cat << EOF
 
@@ -157,9 +156,6 @@ local java Set SYSDS_QUIET=1 to omit extra information printed by this run
 script.
 
 EOF
-if [ ${PRINT_SYSDS_HELP} -eq 0 ]; then
-  exit 0
-fi
 }
 
 # print an error if no argument is supplied.
@@ -167,16 +163,18 @@ if [ -z "$1" ] ; then
     echo "Wrong Usage. Add -help for additional parameters.";
     echo ""
     printUsage;
+    exit 0
 fi
 
 #This loop handles the parameters to the run-script, not the ones passed to SystemDS.
 #To not confuse getopts with SystemDS parameters, only the first two params are considered
 #here. If more run-script params are needed, adjust the next line accordingly
+PRINT_SYSDS_HELP=0
 while getopts ":hr:f:" options "$1$2"; do
   case $options in
     h ) echo "Help requested. Will exit after extended usage message!"
-        PRINT_SYSDS_HELP=1
         printUsage
+        PRINT_SYSDS_HELP=1
         break
         ;;
     \? ) echo "Unknown parameter -$OPTARG"

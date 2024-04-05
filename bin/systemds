@@ -397,7 +397,7 @@ if [ $PRINT_SYSDS_HELP == 1 ]; then
   exit 1
 fi
 
-if [ $SYSDS_QUIET != 0 ]; then
+if [ $SYSDS_QUIET == 0 ]; then
   print_out "###############################################################################"
   print_out "#  SYSTEMDS_ROOT= $SYSTEMDS_ROOT"
   print_out "#  SYSTEMDS_JAR_FILE= $SYSTEMDS_JAR_FILE"
@@ -449,7 +449,7 @@ else
   $*"
 fi
 
-if [ $SYSDS_QUIET != 0 ]; then
+if [ $SYSDS_QUIET == 0 ]; then
   print_out "#  Executing command: $CMD"
   print_out "###############################################################################"
 fi

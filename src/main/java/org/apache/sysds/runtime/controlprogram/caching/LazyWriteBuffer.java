@@ -27,10 +27,6 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.api.DMLScript;
 import org.apache.sysds.hops.OptimizerUtils;
-import org.apache.sysds.runtime.data.SparseBlock.Type;
-import org.apache.sysds.runtime.data.SparseBlockFactory;
-import org.apache.sysds.runtime.data.SparseBlockMCSR;
-import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.util.LocalFileUtils;
 
 public class LazyWriteBuffer {
@@ -58,16 +54,11 @@ public class LazyWriteBuffer {
 		throws IOException
 	{
 		//obtain basic meta data of cache block
+		//(size refers to potentially compact converted shallow-serialize
+		//representation if the current in-memory size does not yet qualify)
 		long lSize = getCacheBlockSize(cb);
 
-		if(lSize > _limit){ // if this block goes above limit
-			cb = compact(cb); // try to compact it
-			lSize = getCacheBlockSize(cb); // and update to new size of block
-			if(lSize > _limit){// if we are still above limit
-				reAllocate(lSize); // try to compact all blocks in memory.
-			}
-		}
-
+		//check if size is too large for entire buffer pool (bypass to file system)
 		boolean requiresWrite = (lSize > _limit        //global buffer limit
 			|| !ByteBuffer.isValidCapacity(lSize, cb)); //local buffer limit
 		int numEvicted = 0;
@@ -105,41 +96,6 @@ public class LazyWriteBuffer {
 		}
 		
 		return numEvicted;
-	}
-
-	private static CacheBlock<?> compact(CacheBlock<?> cb){
-		// compact this block 
-		if(cb instanceof MatrixBlock){
-			MatrixBlock mb = (MatrixBlock) cb;
-
-			// convert MCSR to CSR
-			if(mb.isInSparseFormat() && mb.getSparseBlock() instanceof SparseBlockMCSR)
-				mb.setSparseBlock(SparseBlockFactory.copySparseBlock(Type.MCSR, mb.getSparseBlock(), false));
-		
-			return mb;
-		}
-		else {
-			return cb;
-		}
-	}
-
-	private static int reAllocate(long lSize) {
-		int numReAllocated = 0;
-		synchronized(_mQueue) {
-			if(_size + lSize > _limit) {
-				// compact all elements in buffer.
-				for(Entry<String, ByteBuffer> elm : _mQueue.entrySet()) {
-					ByteBuffer bf = elm.getValue();
-					if(bf._cdata != null){ // not serialized to bytes.
-						long before = getCacheBlockSize(bf._cdata);
-						bf._cdata = compact(bf._cdata);
-						long after = getCacheBlockSize(bf._cdata);
-						_size -= before - after;
-					}
-				}
-			}
-		}
-		return numReAllocated;
 	}
 
 	private static int evict(long lSize) throws IOException {

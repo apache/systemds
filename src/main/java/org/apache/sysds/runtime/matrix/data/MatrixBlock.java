@@ -413,8 +413,13 @@ public class MatrixBlock extends MatrixValue implements CacheBlock<MatrixBlock>,
 	
 	public Future<MatrixBlock> allocateBlockAsync() {
 		ExecutorService pool = CommonThreadPool.get();
-		return (pool != null) ? pool.submit(() -> allocateBlock()) : //async
-			ConcurrentUtils.constantFuture(allocateBlock()); //fallback sync
+		try{
+			return (pool != null) ? pool.submit(() -> allocateBlock()) : //async
+				ConcurrentUtils.constantFuture(allocateBlock()); //fallback sync
+		}
+		finally{
+			pool.shutdown();
+		}
 	}
 
 	public final MatrixBlock allocateBlock() {
@@ -784,11 +789,15 @@ public class MatrixBlock extends MatrixValue implements CacheBlock<MatrixBlock>,
 		}
 		else {
 			ExecutorService pool = CommonThreadPool.get(k);
-			List<Future<Boolean>> tasks = UtilFunctions.getTaskRangesDefault(rlen, k).stream()
-				.map(p -> pool.submit(() -> containsValue(pattern, p.getKey(), p.getValue())))
-				.collect(Collectors.toList()); //submit all before waiting
-			pool.shutdown();
-			return tasks.stream().anyMatch(t -> UtilFunctions.getSafe(t));
+			try{
+				List<Future<Boolean>> tasks = UtilFunctions.getTaskRangesDefault(rlen, k).stream()
+					.map(p -> pool.submit(() -> containsValue(pattern, p.getKey(), p.getValue())))
+					.collect(Collectors.toList()); //submit all before waiting
+				return tasks.stream().anyMatch(t -> UtilFunctions.getSafe(t));
+			}
+			finally{
+				pool.shutdown();
+			}
 		}
 	}
 	

@@ -52,20 +52,19 @@ public class FrameReaderJSONLParallel extends FrameReaderJSONL
 		InputSplit[] splits = inputFormat.getSplits(jobConf, numThreads);
 		splits = IOUtilFunctions.sortInputSplits(splits);
 
+		ExecutorService pool = CommonThreadPool.get(numThreads);
 		try{
-			ExecutorService executorPool = CommonThreadPool.get(numThreads);
 
 			//compute num rows per split
 			ArrayList<CountRowsTask> countRowsTasks = new ArrayList<>();
 			for (InputSplit split : splits){
 				countRowsTasks.add(new CountRowsTask(split, inputFormat, jobConf));
 			}
-			List<Future<Long>> ret = executorPool.invokeAll(countRowsTasks);
 
 			//compute row offset per split via cumsum on row counts
 			long offset = 0;
 			List<Long> offsets = new ArrayList<>();
-			for( Future<Long> rc : ret ) {
+			for(Future<Long> rc : pool.invokeAll(countRowsTasks)) {
 				offsets.add(offset);
 				offset += rc.get();
 			}
@@ -75,10 +74,13 @@ public class FrameReaderJSONLParallel extends FrameReaderJSONL
 			for( int i=0; i<splits.length; i++ )
 				readRowsTasks.add(new ReadRowsTask(splits[i], inputFormat,
 					jobConf, dest, schemaMap, offsets.get(i).intValue()));
-			CommonThreadPool.invokeAndShutdown(executorPool, readRowsTasks);
+			CommonThreadPool.invokeAndShutdown(pool, readRowsTasks);
 		}
 		catch (Exception e) {
 			throw new IOException("Failed parallel read of JSONL input.", e);
+		}
+		finally{
+			pool.shutdown();
 		}
 	}
 

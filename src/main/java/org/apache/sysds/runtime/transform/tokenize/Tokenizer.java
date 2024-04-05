@@ -111,7 +111,9 @@ public class Tokenizer implements Serializable {
 				LOG.error("MT tokenize failed");
 				e.printStackTrace();
 			}
-			pool.shutdown();
+			finally{
+				pool.shutdown();
+			}
 		} else {
 			build(in, k);
 			out.ensureAllocatedColumns(tokenizerApplier.getNumRows(this.internalRepresentation));
@@ -173,8 +175,9 @@ public class Tokenizer implements Serializable {
 				LOG.error("MT Tokenizer apply failed");
 				e.printStackTrace();
 			}
-			pool.shutdown();
-
+			finally{
+				pool.shutdown();
+			}
 		}else{
 			lastRow = tokenizerApplier.applyInternalRepresentation(this.internalRepresentation, out);
 		}
@@ -212,8 +215,9 @@ public class Tokenizer implements Serializable {
 				LOG.error("MT Tokenizer build failed");
 				e.printStackTrace();
 			}
-			pool.shutdown();
-
+			finally{
+				pool.shutdown();
+			}
 		}else{
 			tokenizerBuilder.createInternalRepresentation(in, this.internalRepresentation);
 			tokenizerApplier.build(this.internalRepresentation, 0, -1);

@@ -90,15 +90,17 @@ public final class FrameLibDetectSchema {
 				tasks.add(new DetectValueTypeTask(in.getColumn(i), sampleSize));
 			final List<Future<Pair<ValueType, Boolean>>> ret = pool.invokeAll(tasks);
 			final String[] schemaInfo = new String[cols];
-			pool.shutdown();
+
 			for(int i = 0; i < cols; i++)
 				assign(schemaInfo, ret.get(i).get(), i);
 
 			return schemaInfo;
 		}
 		catch(ExecutionException | InterruptedException e) {
-			pool.shutdown();
 			throw new DMLRuntimeException("Exception interrupted or exception thrown in detectSchema", e);
+		}
+		finally{
+			pool.shutdown();
 		}
 	}
 

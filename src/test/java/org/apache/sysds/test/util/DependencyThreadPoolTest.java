@@ -50,40 +50,52 @@ public class DependencyThreadPoolTest extends AutomatedTestBase {
 	@Test
 	public void testSimpleDependency() throws InterruptedException, ExecutionException {
 		DependencyThreadPool pool = new DependencyThreadPool(4);
-		TestObj global = new TestObj();
-		TestTaskAdd task1 = new TestTaskAdd(1, 5, global);
-		TestTaskMult task2 = new TestTaskMult(2, 20, global);
-		List<? extends Callable<?>> tasks = Arrays.asList(task1, task2);
-		List<List<? extends Callable<?>>> dependencies = new ArrayList<>();
-		dependencies.add(Collections.singletonList(task2));
-		dependencies.add(null);
-		List<Future<Future<?>>> futures = pool.submitAll(tasks, dependencies);
-		for(Future<Future<?>> ff : futures) {
-			ff.get().get();
+		try{
+
+			TestObj global = new TestObj();
+			TestTaskAdd task1 = new TestTaskAdd(1, 5, global);
+			TestTaskMult task2 = new TestTaskMult(2, 20, global);
+			List<? extends Callable<?>> tasks = Arrays.asList(task1, task2);
+			List<List<? extends Callable<?>>> dependencies = new ArrayList<>();
+			dependencies.add(Collections.singletonList(task2));
+			dependencies.add(null);
+			List<Future<Future<?>>> futures = pool.submitAll(tasks, dependencies);
+			for(Future<Future<?>> ff : futures) {
+				ff.get().get();
+			}
+			Assert.assertEquals(5, global.value);
 		}
-		Assert.assertEquals(5, global.value);
+		finally{
+			pool.shutdown();
+		}
 	}
 
 	@Test
 	public void testMultipleDependency() throws InterruptedException, ExecutionException {
 		DependencyThreadPool pool = new DependencyThreadPool(4);
-		TestObj global = new TestObj();
-		TestTaskMult task1 = new TestTaskMult(1, 20, global);
-		TestTaskAdd task2 = new TestTaskAdd(2, 5, global);
-		TestTaskMult task3 = new TestTaskMult(3, 20, global);
-		TestTaskAdd task4 = new TestTaskAdd(4, 10, global);
+		try{
 
-		List<? extends Callable<?>> tasks = Arrays.asList(task1, task2, task3, task4);
-		List<List<? extends Callable<?>>> dependencies = new ArrayList<>();
-		dependencies.add(Collections.singletonList(task2));
-		dependencies.add(null);
-		dependencies.add(Collections.singletonList(task2));
-		dependencies.add(Arrays.asList(task3, task1));
-		List<Future<Future<?>>> futures = pool.submitAll(tasks, dependencies);
-		for(Future<Future<?>> ff : futures) {
-			ff.get().get();
+			TestObj global = new TestObj();
+			TestTaskMult task1 = new TestTaskMult(1, 20, global);
+			TestTaskAdd task2 = new TestTaskAdd(2, 5, global);
+			TestTaskMult task3 = new TestTaskMult(3, 20, global);
+			TestTaskAdd task4 = new TestTaskAdd(4, 10, global);
+	
+			List<? extends Callable<?>> tasks = Arrays.asList(task1, task2, task3, task4);
+			List<List<? extends Callable<?>>> dependencies = new ArrayList<>();
+			dependencies.add(Collections.singletonList(task2));
+			dependencies.add(null);
+			dependencies.add(Collections.singletonList(task2));
+			dependencies.add(Arrays.asList(task3, task1));
+			List<Future<Future<?>>> futures = pool.submitAll(tasks, dependencies);
+			for(Future<Future<?>> ff : futures) {
+				ff.get().get();
+			}
+			Assert.assertEquals(2010, global.value);
 		}
-		Assert.assertEquals(2010, global.value);
+		finally{
+			pool.shutdown();
+		}
 	}
 
 	private static class TestObj {

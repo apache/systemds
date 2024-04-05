@@ -94,9 +94,8 @@ public class ReaderTextCellParallel extends ReaderTextCell
 		}
 		final int par2 = par;
 		
-		try 
-		{
-			ExecutorService pool = CommonThreadPool.get(par);
+		ExecutorService pool = CommonThreadPool.get(par);
+		try {
 			InputSplit[] splits = informat.getSplits(job, par);
 			
 			//count nnz per row for sparse preallocation
@@ -122,11 +121,10 @@ public class ReaderTextCellParallel extends ReaderTextCell
 			List<ReadTask> tasks = Arrays.stream(splits)
 				.map(s ->new ReadTask(s, informat, job, dest, rlen, clen, _isMMFile, _mmProps))
 				.collect(Collectors.toList());
-			List<Future<Long>> rt2 = pool.invokeAll(tasks);
-			
+
 			//check for exceptions and aggregate nnz
 			long lnnz = 0;
-			for( Future<Long> task : rt2 )
+			for(Future<Long> task : pool.invokeAll(tasks))
 				lnnz += task.get();
 			
 			//post-processing
@@ -134,10 +132,12 @@ public class ReaderTextCellParallel extends ReaderTextCell
 			if( dest.isInSparseFormat() ) 
 				sortSparseRowsParallel(dest, rlen, _numThreads, pool);
 			
-			pool.shutdown();
 		} 
 		catch (Exception e) {
 			throw new IOException("Threadpool issue, while parallel read.", e);
+		}
+		finally{
+			pool.shutdown();
 		}
 	}
 	

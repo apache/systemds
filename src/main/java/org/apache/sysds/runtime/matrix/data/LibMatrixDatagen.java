@@ -21,7 +21,6 @@
 package org.apache.sysds.runtime.matrix.data;
 
 import java.util.ArrayList;
-import java.util.List;
 import java.util.Random;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
@@ -312,8 +311,8 @@ public class LibMatrixDatagen
 		//generate seeds independent of parallelizations
 		long[] seeds = generateSeedsForCP(bigrand, nrb, ncb);
 		long nnz = 0;
+		ExecutorService pool = CommonThreadPool.get(k);
 		try {
-			ExecutorService pool = CommonThreadPool.get(k);
 			ArrayList<RandTask> tasks = new ArrayList<>();
 			int blklen = ((int)(Math.ceil((double)parnb/k)));
 			for( int i=0; i<k & i*blklen<parnb; i++ ) {
@@ -324,14 +323,15 @@ public class LibMatrixDatagen
 				long[] lseeds = sliceSeedsForCP(seeds, rl, ru, cl, cu, nrb, ncb);
 				tasks.add(new RandTask(rl, ru, cl, cu, out, rgen, bSeed, lseeds) );
 			}
-			//execute, handle errors, and aggregate nnz
-			List<Future<Long>> ret = pool.invokeAll(tasks);
-			pool.shutdown();
-			for(Future<Long> rc : ret) 
+
+			for(Future<Long> rc : pool.invokeAll(tasks)) 
 				nnz += rc.get();
 		} 
 		catch (Exception e) {
 			throw new DMLRuntimeException(e);
+		}
+		finally{
+			pool.shutdown();
 		}
 		
 		out.setNonZeros(nnz);

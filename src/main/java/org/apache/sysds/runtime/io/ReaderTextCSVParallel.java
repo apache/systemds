@@ -146,14 +146,16 @@ public class ReaderTextCSVParallel extends MatrixReader {
 
 			// check return codes and aggregate nnz
 			long lnnz = 0;
-			for(Future<Long> rt : pool.invokeAll(tasks)) {
+			for(Future<Long> rt : pool.invokeAll(tasks))
 				lnnz += rt.get();
-			}
-			pool.shutdown();
+			
 			dest.setNonZeros(lnnz);
 		}
 		catch(Exception e) {
 			throw new IOException("Thread pool issue, while parallel read.", e);
+		}
+		finally{
+			pool.shutdown();
 		}
 	}
 
@@ -164,29 +166,30 @@ public class ReaderTextCSVParallel extends MatrixReader {
 
 		//overlap output allocation and count-row pass
 		ExecutorService pool = CommonThreadPool.get(_numThreads);
-		Future<MatrixBlock> ret = (rlen<0 || clen<0 || estnnz<0) ? null :
-			pool.submit(() -> createOutputMatrixBlock(rlen, clen, blen, estnnz, true, true));
-
-		FileInputFormat.addInputPath(_job, path);
-		TextInputFormat informat = new TextInputFormat();
-		informat.configure(_job);
 		
-		// count number of entities in the first non-header row
-		LongWritable key = new LongWritable();
-		Text oneLine = new Text();
-		RecordReader<LongWritable, Text> reader = informat.getRecordReader(splits[0], _job, Reporter.NULL);
-		try {
-			if(reader.next(key, oneLine)) {
-				String cellStr = oneLine.toString().trim();
-				_cLen = StringUtils.countMatches(cellStr, _props.getDelim()) + 1;
-			}
-		}
-		finally {
-			IOUtilFunctions.closeSilently(reader);
-		}
-
 		// count rows in parallel per split
 		try {
+			Future<MatrixBlock> ret = (rlen<0 || clen<0 || estnnz<0) ? null :
+				pool.submit(() -> createOutputMatrixBlock(rlen, clen, blen, estnnz, true, true));
+			
+			FileInputFormat.addInputPath(_job, path);
+			TextInputFormat informat = new TextInputFormat();
+			informat.configure(_job);
+			
+			// count number of entities in the first non-header row
+			LongWritable key = new LongWritable();
+			Text oneLine = new Text();
+			RecordReader<LongWritable, Text> reader = informat.getRecordReader(splits[0], _job, Reporter.NULL);
+			try {
+				if(reader.next(key, oneLine)) {
+					String cellStr = oneLine.toString().trim();
+					_cLen = StringUtils.countMatches(cellStr, _props.getDelim()) + 1;
+				}
+			}
+			finally {
+				IOUtilFunctions.closeSilently(reader);
+			}
+
 			ArrayList<CountRowsTask> tasks = new ArrayList<>();
 			boolean hasHeader = _props.hasHeader();
 			for(InputSplit split : splits) {
@@ -205,33 +208,36 @@ public class ReaderTextCSVParallel extends MatrixReader {
 				_rLen = _rLen + lnrow;
 				i++;
 			}
-			pool.shutdown();
+		
+
+			// robustness for wrong dimensions which are already compiled into the plan
+			if((rlen != -1 && _rLen != rlen) || (clen != -1 && _cLen != clen)) {
+				String msg = "Read matrix dimensions differ from meta data: [" + _rLen + "x" + _cLen + "] vs. [" + rlen
+					+ "x" + clen + "].";
+				if(rlen < _rLen || clen < _cLen) {
+					// a) specified matrix dimensions too small
+					throw new DMLRuntimeException(msg);
+				}
+				else {
+					// b) specified matrix dimensions too large -> padding and warning
+					LOG.warn(msg);
+					_rLen = (int) rlen;
+					_cLen = (int) clen;
+				}
+			}
+
+			// allocate target matrix block based on given size;
+			// need to allocate sparse as well since lock-free insert into target
+			long estnnz2 = (estnnz < 0) ? (long) _rLen * _cLen : estnnz;
+			return (ret!=null) ? UtilFunctions.getSafe(ret) :
+				createOutputMatrixBlock(_rLen, _cLen, blen, estnnz2, true, true);
 		}
 		catch(Exception e) {
 			throw new IOException("Thread pool Error " + e.getMessage(), e);
 		}
-
-		// robustness for wrong dimensions which are already compiled into the plan
-		if((rlen != -1 && _rLen != rlen) || (clen != -1 && _cLen != clen)) {
-			String msg = "Read matrix dimensions differ from meta data: [" + _rLen + "x" + _cLen + "] vs. [" + rlen
-				+ "x" + clen + "].";
-			if(rlen < _rLen || clen < _cLen) {
-				// a) specified matrix dimensions too small
-				throw new DMLRuntimeException(msg);
-			}
-			else {
-				// b) specified matrix dimensions too large -> padding and warning
-				LOG.warn(msg);
-				_rLen = (int) rlen;
-				_cLen = (int) clen;
-			}
+		finally{
+			pool.shutdown();
 		}
-		
-		// allocate target matrix block based on given size;
-		// need to allocate sparse as well since lock-free insert into target
-		long estnnz2 = (estnnz < 0) ? (long) _rLen * _cLen : estnnz;
-		return (ret!=null) ? UtilFunctions.getSafe(ret) :
-			createOutputMatrixBlock(_rLen, _cLen, blen, estnnz2, true, true);
 	}
 
 	private static class SplitOffsetInfos {

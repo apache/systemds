@@ -171,23 +171,24 @@ public final class CLALibLeftMultBy {
 		ret.allocateDenseBlock();
 		ret.setNonZeros((long) ret.getNumRows() * ret.getNumColumns());
 
-		final ExecutorService ex = CommonThreadPool.get(k);
-		final List<Future<MatrixBlock>> t = new ArrayList<>();
-
-		for(int j = 0; j < fLeft.size(); j++) {
-			final int jj = j;
-			t.add(ex.submit(() -> {
-				MatrixBlock retT = new MatrixBlock(ret.getNumRows(), ret.getNumColumns(), false);
-				retT.allocateDenseBlock();
-				for(int i = 0; i < fRight.size(); i++) {
-					fRight.get(i).leftMultByAColGroup(fLeft.get(jj), retT, sd);
-				}
-				retT.examSparsity(true);
-				return retT;
-			}));
-		}
+		final ExecutorService pool = CommonThreadPool.get(k);
 
 		try {
+			final List<Future<MatrixBlock>> t = new ArrayList<>();
+
+			for(int j = 0; j < fLeft.size(); j++) {
+				final int jj = j;
+				t.add(pool.submit(() -> {
+					MatrixBlock retT = new MatrixBlock(ret.getNumRows(), ret.getNumColumns(), false);
+					retT.allocateDenseBlock();
+					for(int i = 0; i < fRight.size(); i++) {
+						fRight.get(i).leftMultByAColGroup(fLeft.get(jj), retT, sd);
+					}
+					retT.examSparsity(true);
+					return retT;
+				}));
+			}
+
 			final double[] retV = ret.getDenseBlockValues();
 			if(containsLeft && containsRight)
 				// if both -- multiply the left and right vectors scaling by number of shared dim
@@ -214,7 +215,7 @@ public final class CLALibLeftMultBy {
 			throw new DMLCompressionException("Failed parallel Left Compressed Mult", e);
 		}
 		finally {
-			ex.shutdown();
+			pool.shutdown();
 		}
 		return ret;
 	}
@@ -372,10 +373,11 @@ public final class CLALibLeftMultBy {
 
 		}
 		catch(InterruptedException | ExecutionException e) {
-			pool.shutdown();
 			throw new DMLRuntimeException(e);
 		}
-		pool.shutdown();
+		finally{
+			pool.shutdown();
+		}
 	}
 
 	private static void LMMTaskExec(List<AColGroup> npa, List<APreAgg> pa, MatrixBlock that, MatrixBlock ret, int rl,

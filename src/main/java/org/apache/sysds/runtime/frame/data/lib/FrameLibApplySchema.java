@@ -166,7 +166,6 @@ public class FrameLibApplySchema {
 		}
 		finally{
 			pool.shutdown();
-
 		}
 	}
 

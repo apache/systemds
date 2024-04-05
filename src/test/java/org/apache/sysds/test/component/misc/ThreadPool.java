@@ -146,7 +146,7 @@ public class ThreadPool {
 		CommonThreadPool.shutdownAsyncPools();
 		ExecutorService x = CommonThreadPool.get(5);
 		ExecutorService y = CommonThreadPool.get(7);
-		assertNotEquals(x, y);
+		assertEquals(x, y);
 		x.shutdown();
 		int v = x.submit(() -> 5).get();
 		int v2 = y.submit(() -> 5).get();
@@ -170,11 +170,16 @@ public class ThreadPool {
 	@Test
 	public void testFromOtherThreadInfrastructureParallelism() throws InterruptedException, ExecutionException {
 		CommonThreadPool.shutdownAsyncPools();
+		Thread.currentThread().setName("main");
 		final int k = InfrastructureAnalyzer.getLocalParallelism();
 		ExecutorService x = CommonThreadPool.get(k);
 		Future<ExecutorService> a = x.submit(() -> CommonThreadPool.get(k));
+
+		// make sure that we wait a bit to allow the other thread to spawn and start working
+		Thread.sleep(100);
+
 		ExecutorService y = a.get();
-		assertEquals(x, y);
+		assertNotEquals(x, y);
 		CommonThreadPool.shutdownAsyncPools();
 	}
 
@@ -195,38 +200,6 @@ public class ThreadPool {
 		ExecutorService x = CommonThreadPool.getDynamicPool();
 		ExecutorService y = CommonThreadPool.getDynamicPool();
 		assertEquals(x, y);
-		CommonThreadPool.shutdownAsyncPools();
-	}
-
-	@Test
-	public void isSharedTPThreads() throws InterruptedException, ExecutionException {
-		CommonThreadPool.shutdownAsyncPools();
-		for(int i = 0; i < 10; i++)
-			assertTrue(CommonThreadPool.isSharedTPThreads(i));
-
-		CommonThreadPool.shutdownAsyncPools();
-	}
-
-	@Test
-	public void isSharedTPThreadsCommonSize() throws InterruptedException, ExecutionException {
-		CommonThreadPool.shutdownAsyncPools();
-		assertTrue(CommonThreadPool.isSharedTPThreads(InfrastructureAnalyzer.getLocalParallelism()));
-		CommonThreadPool.shutdownAsyncPools();
-	}
-
-	@Test
-	public void isSharedTPThreadsFalse() throws InterruptedException, ExecutionException {
-		CommonThreadPool.shutdownAsyncPools();
-		String name = Thread.currentThread().getName();
-		Thread.currentThread().setName("main");
-		CommonThreadPool.get(18);
-		for(int i = 1; i < 10; i++)
-			if(i != InfrastructureAnalyzer.getLocalParallelism())
-				assertFalse("" + i, CommonThreadPool.isSharedTPThreads(i));
-		assertTrue(CommonThreadPool.isSharedTPThreads(18));
-		assertFalse(CommonThreadPool.isSharedTPThreads(19));
-
-		Thread.currentThread().setName(name);
 		CommonThreadPool.shutdownAsyncPools();
 	}
 
@@ -295,8 +268,8 @@ public class ThreadPool {
 	}
 
 	@Test
-	public void mock1() throws NoSuchFieldException, SecurityException, IllegalArgumentException,
-		IllegalAccessException, InterruptedException, ExecutionException, TimeoutException {
+	public void mock1() throws NoSuchFieldException, SecurityException, IllegalArgumentException, IllegalAccessException,
+		InterruptedException, ExecutionException, TimeoutException {
 
 		ExecutorService p = mock(ExecutorService.class);
 		ExecutorService c = new CommonThreadPool(p);
@@ -347,8 +320,8 @@ public class ThreadPool {
 	}
 
 	@Test
-	public void mock2() throws NoSuchFieldException, SecurityException, IllegalArgumentException,
-		IllegalAccessException, InterruptedException, ExecutionException, TimeoutException {
+	public void mock2() throws NoSuchFieldException, SecurityException, IllegalArgumentException, IllegalAccessException,
+		InterruptedException, ExecutionException, TimeoutException {
 
 		CommonThreadPool p = mock(CommonThreadPool.class);
 		when(p.isShutdown()).thenCallRealMethod();
@@ -396,5 +369,50 @@ public class ThreadPool {
 	}
 
 	private interface FI extends Future<Integer> {
+	}
+
+	ExecutorService a;
+
+	@Test
+	public void parforTest() throws Exception {
+		Thread t = new Thread(() -> {
+			assertTrue(CommonThreadPool.useParallelismOnThread());
+			a = CommonThreadPool.get(3);
+		}, "PARFOR_T1");
+
+		t.start();
+		t.join();
+		ExecutorService aa = a;
+		CommonThreadPool.shutdownAsyncPools(t);
+		CommonThreadPool.shutdownAsyncPools(t);
+		t = new Thread(() -> {
+			a = CommonThreadPool.get(3);
+		}, "PARFOR_T2");
+
+		t.start();
+		t.join();
+		ExecutorService bb = a;
+		assertNotEquals(aa, bb);
+		CommonThreadPool.shutdownAsyncPools(t);
+	}
+
+	@Test
+	public void notParallelismThread() throws Exception {
+		Thread t = new Thread(() -> {
+			assertFalse(CommonThreadPool.useParallelismOnThread());
+		}, "PR_T1");
+		t.start();
+		t.join();
+		CommonThreadPool.shutdownAsyncPools(t);
+	}
+
+	@Test
+	public void ParallelismThread() throws Exception {
+		Thread t = new Thread(() -> {
+			assertTrue(CommonThreadPool.useParallelismOnThread());
+		}, "main");
+		t.start();
+		t.join();
+		CommonThreadPool.shutdownAsyncPools(t);
 	}
 }

@@ -112,14 +112,20 @@ public class InformationLoss {
 
 	private static Pair<MatrixBlock, MatrixBlock> getMinMax(final MatrixBlock org) throws Exception {
 		ExecutorService pool = CommonThreadPool.get(16);
+		try{
 
-		Future<MatrixBlock> minF = pool.submit(() -> org.colMin(16));
-		Future<MatrixBlock> maxF = pool.submit(() -> org.colMax(16));
+			Future<MatrixBlock> minF = pool.submit(() -> org.colMin(16));
+			Future<MatrixBlock> maxF = pool.submit(() -> org.colMax(16));
+	
+			MatrixBlock min = minF.get();
+			MatrixBlock max = maxF.get();
+	
+			return new Pair<>(min, max);
+		}
+		finally{
+			pool.shutdown();
+		}
 
-		MatrixBlock min = minF.get();
-		MatrixBlock max = maxF.get();
-
-		return new Pair<>(min, max);
 	}
 
 	private static void writeRandomMatrix(String path) throws IOException {
@@ -156,18 +162,23 @@ public class InformationLoss {
 
 		final MatrixBlock delta = delta(f, org, spec);
 		ExecutorService pool = CommonThreadPool.get(16);
+		try{
 
-		Future<Double> minF = pool.submit(() -> delta.min(16));
-		Future<Double> maxF = pool.submit(() -> delta.max(16).quickGetValue(0, 0));
-		Future<Double> meanF = pool
-			.submit(() -> delta.sum(16).quickGetValue(0, 0) / (delta.getNumRows() * delta.getNumColumns()));
+			Future<Double> minF = pool.submit(() -> delta.min(16));
+			Future<Double> maxF = pool.submit(() -> delta.max(16).quickGetValue(0, 0));
+			Future<Double> meanF = pool
+				.submit(() -> delta.sum(16).quickGetValue(0, 0) / (delta.getNumRows() * delta.getNumColumns()));
+	
+			double min = minF.get();
+			double max = maxF.get();
+			double mean = meanF.get();
 
-		double min = minF.get();
-		double max = maxF.get();
-		double mean = meanF.get();
+			System.out.println(String.format("%e, %e, %e", min, max, mean));
+		}
+		finally{
+			pool.shutdown();
+		}
 
-		pool.shutdown();
-		System.out.println(String.format("%e, %e, %e", min, max, mean));
 	}
 
 	private static String generateSpec(int bins, int cols, String technique) {

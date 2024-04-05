@@ -21,7 +21,6 @@ package org.apache.sysds.runtime.io;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
@@ -47,24 +46,22 @@ public class FrameReaderBinaryBlockParallel extends FrameReaderBinaryBlock
 	{
 		int numThreads = OptimizerUtils.getParallelBinaryReadParallelism();
 		
-		try 
-		{
+		ExecutorService pool = CommonThreadPool.get(numThreads);
+		try {
 			//create read tasks for all files
-			ExecutorService pool = CommonThreadPool.get(numThreads);
 			ArrayList<ReadFileTask> tasks = new ArrayList<>();
 			for( Path lpath : IOUtilFunctions.getSequenceFilePaths(fs, path) )
 				tasks.add(new ReadFileTask(lpath, job, fs, dest));
 
-			//wait until all tasks have been executed
-			List<Future<Object>> rt = pool.invokeAll(tasks);
-			pool.shutdown();
-			
 			//check for exceptions
-			for( Future<Object> task : rt )
+			for(Future<Object> task : pool.invokeAll(tasks))
 				task.get();
 		} 
 		catch (Exception e) {
 			throw new IOException("Failed parallel read of binary block input.", e);
+		}
+		finally{
+			pool.shutdown();
 		}
 	}
 

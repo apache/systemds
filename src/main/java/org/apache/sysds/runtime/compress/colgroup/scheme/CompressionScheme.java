@@ -207,8 +207,6 @@ public class CompressionScheme {
 			List<AColGroup> retA = new ArrayList<>(Arrays.asList(ret));
 		
 			return new CompressedMatrixBlock(nRow, nCol, mb.getNonZeros(), false, retA);
-			
-
 		}
 		catch(Exception e) {
 			throw new DMLCompressionException("Failed encoding", e);

@@ -172,9 +172,9 @@ public class LibMatrixFourier {
 		double[] im_inter = new double[rows * cols];
 
 		final ExecutorService pool = CommonThreadPool.get(threads);
-		final List<Future<?>> tasks = new ArrayList<>();
-
+		
 		try {
+			final List<Future<?>> tasks = new ArrayList<>();
 			final int rBlz = Math.max(rows / threads, 32);
 			final int cBlz = Math.max(cols / threads, 32);
 
@@ -233,9 +233,9 @@ public class LibMatrixFourier {
 		double[] im_inter = new double[rows * cols];
 
 		ExecutorService pool = CommonThreadPool.get(threads);
-		final List<Future<?>> tasks = new ArrayList<>();
-
+		
 		try {
+			final List<Future<?>> tasks = new ArrayList<>();
 			final int rBlz = Math.max(rows / threads, 32);
 			final int cBlz = Math.max(cols / threads, 32);
 

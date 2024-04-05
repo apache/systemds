@@ -34,7 +34,6 @@ import org.apache.sysds.runtime.util.HDFSTool;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
@@ -64,9 +63,8 @@ public class FrameWriterJSONLParallel extends FrameWriterJSONL {
 		FileSystem fileSystem = IOUtilFunctions.getFileSystem(path, jobConf);
 
 		//create and execute tasks
-		try
-		{
-			ExecutorService pool = CommonThreadPool.get(numThreads);
+		ExecutorService pool = CommonThreadPool.get(numThreads);
+		try {
 			ArrayList<WriteFileTask> tasks = new ArrayList<>();
 			int blklen = (int)Math.ceil((double)rlen / numThreads);
 			for(int i=0; i<numThreads & i*blklen<rlen; i++) {
@@ -74,12 +72,8 @@ public class FrameWriterJSONLParallel extends FrameWriterJSONL {
 				tasks.add(new WriteFileTask(newPath, fileSystem, src, i*blklen, (int)Math.min((i+1)*blklen, rlen), schemaMap));
 			}
 
-			//wait until all tasks have been executed
-			List<Future<Object>> rt = pool.invokeAll(tasks);
-			pool.shutdown();
-
 			//check for exceptions
-			for( Future<Object> task : rt )
+			for( Future<Object> task : pool.invokeAll(tasks) )
 				task.get();
 
 			// delete crc files if written to local file system
@@ -91,6 +85,9 @@ public class FrameWriterJSONLParallel extends FrameWriterJSONL {
 		}
 		catch (Exception e) {
 			throw new IOException("Failed parallel write of JSONL output.", e);
+		}
+		finally{
+			pool.shutdown();
 		}
 	}
 

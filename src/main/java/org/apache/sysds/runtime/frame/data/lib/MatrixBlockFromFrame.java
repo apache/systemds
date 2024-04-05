@@ -90,7 +90,6 @@ public interface MatrixBlockFromFrame {
 		}
 		catch(Exception e){
 			throw new RuntimeException(e);
-
 		}
 		finally{
 			pool.shutdown();

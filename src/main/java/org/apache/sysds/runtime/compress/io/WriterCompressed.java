@@ -246,8 +246,8 @@ public final class WriterCompressed extends MatrixWriter {
 
 		setupWrite();
 		final ExecutorService pool = CommonThreadPool.get(k);
-		final ArrayList<Callable<Object>> tasks = new ArrayList<>();
 		try {
+			final ArrayList<Callable<Object>> tasks = new ArrayList<>();
 			if(writers == null) {
 				writers = new Future[k];
 				writerLocks = new Lock[k];

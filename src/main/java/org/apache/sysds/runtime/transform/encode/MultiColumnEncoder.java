@@ -518,9 +518,9 @@ public class MultiColumnEncoder implements Encoder {
 		int[] sampleInds = ComEstSample.getSortedSample(in.getNumRows(), sampleSize, seed, 1);
 
 		// Concurrent (column-wise) recode map size estimation
-		ExecutorService myPool = CommonThreadPool.get(k);
+		ExecutorService pool = CommonThreadPool.get(k);
 		try {
-			myPool.submit(() -> {
+			pool.submit(() -> {
 				rcList.stream().parallel().forEach(e -> {
 					e.computeRCDMapSizeEstimate(in, sampleInds);
 				});
@@ -528,6 +528,9 @@ public class MultiColumnEncoder implements Encoder {
 		}
 		catch(Exception ex) {
 			throw new DMLRuntimeException(ex);
+		}
+		finally{
+			pool.shutdown();
 		}
 
 		if(DMLScript.STATISTICS) {
@@ -653,10 +656,10 @@ public class MultiColumnEncoder implements Encoder {
 
 
 	private void outputMatrixPostProcessingParallel(MatrixBlock output, int k) {
-		ExecutorService myPool = CommonThreadPool.get(k);
+		ExecutorService pool = CommonThreadPool.get(k);
 		try {
 			// Collect the row indices that need compaction
-			Set<Integer> indexSet = myPool.submit(() -> _columnEncoders.stream().parallel()
+			Set<Integer> indexSet = pool.submit(() -> _columnEncoders.stream().parallel()
 				.map(ColumnEncoderComposite::getSparseRowsWZeros).flatMap(l -> {
 					if(l == null)
 						return null;
@@ -664,11 +667,11 @@ public class MultiColumnEncoder implements Encoder {
 				}).collect(Collectors.toSet())).get();
 
 			// Check if the set is empty
-			boolean emptySet = myPool.submit(() -> indexSet.stream().parallel().allMatch(Objects::isNull)).get();
+			boolean emptySet = pool.submit(() -> indexSet.stream().parallel().allMatch(Objects::isNull)).get();
 
 			// Concurrently compact the rows
 			if(emptySet) {
-				myPool.submit(() -> {
+				pool.submit(() -> {
 					indexSet.stream().parallel().forEach(row -> {
 						output.getSparseBlock().get(row).compact();
 					});
@@ -679,7 +682,7 @@ public class MultiColumnEncoder implements Encoder {
 			throw new DMLRuntimeException(ex);
 		}
 		finally {
-			myPool.shutdown();
+			pool.shutdown();
 		}
 
 		output.recomputeNonZeros();

@@ -19,6 +19,14 @@
 
 package org.apache.sysds.runtime.io;
 
+import java.io.BufferedInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.ArrayList;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Future;
+
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.mapred.FileInputFormat;
@@ -30,14 +38,6 @@ import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.io.hdf5.H5Constants;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.util.CommonThreadPool;
-import java.io.BufferedInputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.concurrent.Callable;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Future;
 
 public class ReaderHDF5Parallel extends ReaderHDF5 {
 
@@ -72,8 +72,8 @@ public class ReaderHDF5Parallel extends ReaderHDF5 {
 		MatrixBlock src = computeHDF5Size(files, fs, _props.getDatasetName());
 
 		//create and execute tasks
+		ExecutorService pool = CommonThreadPool.get(_numThreads);
 		try {
-			ExecutorService pool = CommonThreadPool.get(_numThreads);
 			int bufferSize = (src.getNumColumns() * src.getNumRows()) * 8 + H5Constants.STATIC_HEADER_SIZE;
 			ArrayList<ReadHDF5Task> tasks = new ArrayList<>();
 			rlen = src.getNumRows();
@@ -87,18 +87,17 @@ public class ReaderHDF5Parallel extends ReaderHDF5 {
 				tasks.add(new ReadHDF5Task(bis, _props.getDatasetName(), src, rl, ru));
 			}
 
-			//wait until all tasks have been executed
-			List<Future<Object>> rt = pool.invokeAll(tasks);
-			pool.shutdown();
-
-			//check for exceptions
-			for(Future<Object> task : rt)
+			for(Future<Object> task : pool.invokeAll(tasks))
 				task.get();
+			
+			return src;
 		}
 		catch(Exception e) {
 			throw new IOException("Failed parallel read of HDF5 input.", e);
 		}
-		return src;
+		finally{
+			pool.shutdown();
+		}
 	}
 
 	@Override

@@ -103,8 +103,8 @@ public abstract class FrameGenerateReaderParallel extends FrameReader {
 		informat.configure(job);
 
 		// count rows in parallel per split
+		ExecutorService pool = CommonThreadPool.get(_numThreads);
 		try {
-			ExecutorService pool = CommonThreadPool.get(_numThreads);
 			if(_props.getRowIndexStructure().getProperties() == RowIndexStructure.IndexProperties.Identity) {
 				ArrayList<IOUtilFunctions.CountRowsTask> tasks = new ArrayList<>();
 				for(InputSplit split : splits)
@@ -121,7 +121,6 @@ public abstract class FrameGenerateReaderParallel extends FrameReader {
 					_rLen = _rLen + lnrow;
 					i++;
 				}
-				pool.shutdown();
 			}
 			if(_props.getRowIndexStructure()
 				.getProperties() == RowIndexStructure.IndexProperties.CellWiseExist || _props.getRowIndexStructure()
@@ -140,7 +139,6 @@ public abstract class FrameGenerateReaderParallel extends FrameReader {
 					_offsets.setLenghtPerSplit(i, lnrow);
 					i++;
 				}
-				pool.shutdown();
 			}
 			else if(_props.getRowIndexStructure().getProperties() == RowIndexStructure.IndexProperties.SeqScatter) {
 				_offsets = new TemplateUtil.SplitOffsetInfos(splits.length);
@@ -168,11 +166,13 @@ public abstract class FrameGenerateReaderParallel extends FrameReader {
 					_rLen += nrows;
 					i++;
 				}
-				pool.shutdown();
 			}
 		}
 		catch(Exception e) {
 			throw new IOException("Thread pool Error " + e.getMessage(), e);
+		}
+		finally{
+			pool.shutdown();
 		}
 
 		// robustness for wrong dimensions which are already compiled into the plan
@@ -216,15 +216,17 @@ public abstract class FrameGenerateReaderParallel extends FrameReader {
 			// create read tasks for all splits
 			ArrayList<ReadTask> tasks = new ArrayList<>();
 			int splitCount = 0;
-			for(InputSplit split : splits) {
+			for(InputSplit split : splits)
 				tasks.add(new ReadTask(split, informat, dest, splitCount++));
-			}
-			pool.invokeAll(tasks);
-			pool.shutdown();
-
+			
+			for(Future<Long> f : pool.invokeAll(tasks))
+				f.get();
 		}
 		catch(Exception e) {
 			throw new IOException("Threadpool issue, while parallel read.", e);
+		}
+		finally{
+			pool.shutdown();
 		}
 	}
 

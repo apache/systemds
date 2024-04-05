@@ -33,7 +33,6 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Future;
 
 public class CTable extends ValueFunction 
 {
@@ -166,40 +165,38 @@ public class CTable extends ValueFunction
 			// Each task builds a separate CTableMap in a lock-free manner
 			for(int startRow = 0, i = 0; i < blockSizes.length; startRow += blockSizes[i], i++)
 				tasks.add(getPartialCTableTask(in1, in2, w, startRow, blockSizes[i], partialMaps));
-			List<Future<Object>> taskret = pool.invokeAll(tasks);
-			for(var task : taskret)
+
+			for(var task : pool.invokeAll(tasks))
 				task.get();
+
+
+			ArrayList<CTableMap> newPartialMaps = new ArrayList<>();
+			// Cascade-merge all the partial CTableMaps
+			while(partialMaps.size() > 1) {
+				newPartialMaps.clear();
+				tasks = new ArrayList<>();
+				int count;
+				// Each task merges 2 maps and returns the merged map
+				for (count=0; count+1<partialMaps.size(); count=count+2)
+					tasks.add(getMergePartialCTMapsTask(partialMaps.get(count),
+						partialMaps.get(count+1), newPartialMaps));
+
+				for(var task : pool.invokeAll(tasks))
+					task.get();
+				
+				// Copy the remaining maps to be merged in the future iterations
+				if (count < partialMaps.size())
+					newPartialMaps.add(partialMaps.get(count));
+				partialMaps.clear();
+				partialMaps.addAll(newPartialMaps);
+			}
 		}
 		catch(Exception ex) {
 			throw new DMLRuntimeException(ex);
 		}
-
-		ArrayList<CTableMap> newPartialMaps = new ArrayList<>();
-		// Cascade-merge all the partial CTableMaps
-		while(partialMaps.size() > 1) {
-			newPartialMaps.clear();
-			List<Callable<Object>> tasks = new ArrayList<>();
-			int count;
-			// Each task merges 2 maps and returns the merged map
-			for (count=0; count+1<partialMaps.size(); count=count+2)
-				tasks.add(getMergePartialCTMapsTask(partialMaps.get(count),
-					partialMaps.get(count+1), newPartialMaps));
-
-			try {
-				List<Future<Object>> taskret = pool.invokeAll(tasks);
-				for(var task : taskret)
-					task.get();
-			}
-			catch(Exception ex) {
-				throw new DMLRuntimeException(ex);
-			}
-			// Copy the remaining maps to be merged in the future iterations
-			if (count < partialMaps.size())
-				newPartialMaps.add(partialMaps.get(count));
-			partialMaps.clear();
-			partialMaps.addAll(newPartialMaps);
+		finally{
+			pool.shutdown();
 		}
-		pool.shutdown();
 		// Deep copy the last merged map into the result map
 		var map = partialMaps.get(0);
 		Iterator<LongLongDoubleHashMap.ADoubleEntry> iter = map.getIterator();

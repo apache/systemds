@@ -19,25 +19,25 @@
 
 package org.apache.sysds.runtime.iogen;
 
-import org.apache.sysds.hops.OptimizerUtils;
-import org.apache.sysds.lops.Lop;
-import org.apache.sysds.runtime.frame.data.FrameBlock;
-import org.apache.sysds.runtime.matrix.data.MatrixBlock;
-import org.apache.sysds.runtime.matrix.data.Pair;
-import org.apache.sysds.runtime.util.CommonThreadPool;
-
 import java.util.ArrayList;
 import java.util.BitSet;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
+
+import org.apache.sysds.hops.OptimizerUtils;
+import org.apache.sysds.lops.Lop;
+import org.apache.sysds.runtime.DMLRuntimeException;
+import org.apache.sysds.runtime.frame.data.FrameBlock;
+import org.apache.sysds.runtime.matrix.data.MatrixBlock;
+import org.apache.sysds.runtime.matrix.data.Pair;
+import org.apache.sysds.runtime.util.CommonThreadPool;
 
 public class FormatIdentifyer {
 	private int[][] mapRow;
@@ -145,6 +145,8 @@ public class FormatIdentifyer {
 						break;
 					}
 				}
+				if(raw == null)
+					throw new DMLRuntimeException("Invalid raw");
 				HashMap<String, Long> indexDelimCount = new HashMap<>();
 				String valueDelim = null;
 				String indexDelim = null;
@@ -1181,8 +1183,8 @@ public class FormatIdentifyer {
 		LongestCommonSubsequence lcs = new LongestCommonSubsequence();
 
 		int numThreads = OptimizerUtils.getParallelTextWriteParallelism();
+		ExecutorService pool = CommonThreadPool.get(numThreads);
 		try {
-			ExecutorService pool = CommonThreadPool.get(numThreads);
 			ArrayList<BuildColsKeyPatternSingleRowTask> tasks = new ArrayList<>();
 			int blklen = (int) Math.ceil((double) ncols / (numThreads * numThreads));
 			for(int i = 0; i < numThreads; i++) {
@@ -1198,18 +1200,16 @@ public class FormatIdentifyer {
 						prefixesRemovedReverseSort, keys, colSuffixes, lcs, colIndexes));
 			}
 
-			//wait until all tasks have been executed
-			List<Future<Object>> rt = pool.invokeAll(tasks);
-			pool.shutdown();
-
-			//check for exceptions
-			for(Future<Object> task : rt)
+			for(Future<Object> task : pool.invokeAll(tasks))
 				task.get();
+			return  new Pair<>(keys, colSuffixes);
 		}
 		catch(Exception e) {
 			throw new RuntimeException("Failed parallel ColsKeyPatternSingleRow.", e);
 		}
-		return  new Pair<>(keys, colSuffixes);
+		finally{
+			pool.shutdown();
+		}
 	}
 
 	private class BuildColsKeyPatternSingleRowTask implements Callable<Object> {

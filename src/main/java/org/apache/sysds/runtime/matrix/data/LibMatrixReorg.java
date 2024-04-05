@@ -508,8 +508,8 @@ public class LibMatrixReorg {
 			//sort index vector on extracted data (unstable)
 			SortUtils.sortByValue(0, rlen, values, vix);
 		} else {
+			ExecutorService pool = CommonThreadPool.get(k);
 			try {
-				ExecutorService pool = CommonThreadPool.get(k);
 				ArrayList<SortTask> tasks = new ArrayList<>();
 				
 				// sort smaller blocks.
@@ -524,6 +524,9 @@ public class LibMatrixReorg {
 			}
 			catch(Exception ex) {
 				throw new DMLRuntimeException(ex);
+			}
+			finally{
+				pool.shutdown();
 			}
 		}
 
@@ -1002,11 +1005,12 @@ public class LibMatrixReorg {
 					tasks.add(new TransposeDenseToSparseTask(a, rows, 0, m, i, Math.min(i + rbz, n)));
 				for(Future<Object> task : pool.invokeAll(tasks))
 					task.get();
-				pool.shutdown();
 			}
 			catch(Exception ex) {
-				pool.shutdown();
 				throw new DMLRuntimeException(ex);
+			}
+			finally{
+				pool.shutdown();
 			}
 		}
 
@@ -1510,8 +1514,8 @@ public class LibMatrixReorg {
 	 */
 	private static void transposeInPlaceTrivial(double[] values, int rowAndCols, int k){
 		if(rowAndCols > 15){
+			ExecutorService pool = CommonThreadPool.get(k);
 			try{
-				ExecutorService pool = CommonThreadPool.get(k);
 				ArrayList<TransposeInPlaceTrivialTask> tasks = new ArrayList<>();
 				int blklen = 128;
 				for(int i = 0; i * blklen < rowAndCols; i++){
@@ -1523,12 +1527,15 @@ public class LibMatrixReorg {
 				}
 	
 				List<Future<Object>> rtasks = pool.invokeAll(tasks);
-				pool.shutdown();
+
 				for(Future<Object> rt : rtasks)
 					rt.get();
 			}
 			catch(InterruptedException | ExecutionException ex) {
 				throw new DMLRuntimeException("Failed parallel transpose in place with equal number col and rows.", ex);
+			}
+			finally{
+				pool.shutdown();
 			}
 		}else{
 			for(int rowidx = 0; rowidx < rowAndCols; rowidx++){
@@ -1588,75 +1595,69 @@ public class LibMatrixReorg {
 		}
 
 		ExecutorService pool = CommonThreadPool.get(k);
-		ArrayList<Callable<Object>> tasks = new ArrayList<>();
-
+		
 		// Column rotate Gather
-		if(c> 1){
-			if(m > 10 && n > 100){
-				try{
-					int blkz = Math.max((n - c)/k, 1);
-					for(int j = c; j * blkz< n; j++){
-						tasks.add(new rTask(A,j*blkz,Math.min((j+1) * blkz,n),b,n,m));
+		try {
+			ArrayList<Callable<Object>> tasks = new ArrayList<>();
+			if(c > 1) {
+				if(m > 10 && n > 100) {
+					int blkz = Math.max((n - c) / k, 1);
+					for(int j = c; j * blkz < n; j++) {
+						tasks.add(new rTask(A, j * blkz, Math.min((j + 1) * blkz, n), b, n, m));
 					}
 					for(Future<Object> rt : pool.invokeAll(tasks))
 						rt.get();
 					tasks.clear();
+
 				}
-				catch(InterruptedException | ExecutionException ex) {
-					throw new DMLRuntimeException("Failed parallel c2r transpose in column rotate step", ex);
+				else {
+					for(int j = c; j < n; j++) {
+						rj(tmp, A, j, b, n, m);
+					}
 				}
+			}
+
+			// Row shuffle Scatter
+			if(m > 10 && n > 100) {
+				int blkz = Math.max(m / k, 1);
+				for(int i = 0; i * blkz < m; i++) {
+					tasks.add(new dTask(A, i * blkz, Math.min((i + 1) * blkz, m), b, n, m));
+				}
+				for(Future<Object> rt : pool.invokeAll(tasks))
+					rt.get();
+				tasks.clear();
+
 			}
 			else {
-				for(int j = c; j< n; j++){
-					rj(tmp, A, j, b, n, m);
+				for(int i = 0; i < m; i++) {
+					di(tmp, A, i, b, n, m);
 				}
 			}
-		}
 
-		// Row shuffle Scatter
-		if(m > 10 && n > 100){
-			try{
-				int blkz = Math.max(m/k, 1);
-				for(int i = 0; i * blkz< m; i++){
-					tasks.add(new dTask(A,i*blkz,Math.min((i+1) * blkz,m),b,n,m));
+			// Column shuffle Gather
+			if(m > 10 && n > 100) {
+				int blkz = Math.max(n / k, 1);
+				for(int j = 0; j * blkz < n; j++) {
+					tasks.add(new sTask(A, j * blkz, Math.min((j + 1) * blkz, n), a, n, m));
 				}
 				for(Future<Object> rt : pool.invokeAll(tasks))
 					rt.get();
 				tasks.clear();
-			}
-			catch(InterruptedException | ExecutionException ex) {
-				throw new DMLRuntimeException("Failed parallel c2r transpose in row shuffle step", ex);
-			}
-		}
-		else{
-			for (int i = 0; i< m; i++){
-				di(tmp, A, i ,b, n, m);
-			}
-		}
 
-
-		// Column shuffle Gather
-		if(m > 10 && n > 100){
-			try{
-				int blkz = Math.max(n/k,1);
-				for(int j = 0; j * blkz< n; j++){
-					tasks.add(new sTask(A,j*blkz,Math.min((j+1) * blkz,n),a,n,m));
+			}
+			else {
+				for(int j = 0; j < n; j++) {
+					sj(tmp, A, j, a, n, m);
 				}
-				for(Future<Object> rt : pool.invokeAll(tasks))
-					rt.get();
-				tasks.clear();
 			}
-			catch(InterruptedException | ExecutionException ex) {
-				throw new DMLRuntimeException("Failed parallel c2r transpose in column shuffle", ex);
-			}
+			memPool.remove();
 		}
-		else {
-
-			for(int j = 0; j< n; j++){
-				sj(tmp, A, j, a, n, m);
-			}
+		catch(InterruptedException | ExecutionException ex) {
+			throw new DMLRuntimeException("Failed parallel c2r transpose in column rotate step", ex);
 		}
-		memPool.remove();
+		finally{
+			pool.shutdown();
+		}
 	}
 
 	private static void rj(double[] tmp, double[] A, int j, int b, int n, int m){
@@ -1812,79 +1813,75 @@ public class LibMatrixReorg {
 		}
 
 		ExecutorService pool = CommonThreadPool.get(k);
-		ArrayList<Callable<Object>> tasks = new ArrayList<>();
-
-		if(m > 10 && n > 100){
-			try{
-				int blkz = Math.max(n/k,1);
-				for(int j = 0; j * blkz< n; j++){
-					tasks.add(new s_invTask(A,j*blkz,Math.min((j+1) * blkz,n),a,n,m));
+		
+		try {
+			ArrayList<Callable<Object>> tasks = new ArrayList<>();
+			if(m > 10 && n > 100) {
+				int blkz = Math.max(n / k, 1);
+				for(int j = 0; j * blkz < n; j++) {
+					tasks.add(new s_invTask(A, j * blkz, Math.min((j + 1) * blkz, n), a, n, m));
 				}
 				for(Future<Object> rt : pool.invokeAll(tasks))
 					rt.get();
 				tasks.clear();
-			}
-			catch(InterruptedException | ExecutionException ex) {
-				throw new DMLRuntimeException("Failed parallel r2c transpose in place in inverse colum shuffle.", ex);
-			}
-		}
-		else {
-			for(int j = 0; j< n; j++){
-				sj_inv(tmp, A, j, a, n, m);
-			}
-		}
 
-		if(m > 10 && n > 100){
-			try{
-				int blkz = Math.max(m/k,1);
-				for(int i = 0; i * blkz< m; i++){
-					tasks.add(new d_invTask(A,i*blkz,Math.min((i+1) * blkz,m), a_inv, b, c, n, m));
+			}
+			else {
+				for(int j = 0; j < n; j++) {
+					sj_inv(tmp, A, j, a, n, m);
+				}
+			}
+
+			if(m > 10 && n > 100) {
+				int blkz = Math.max(m / k, 1);
+				for(int i = 0; i * blkz < m; i++) {
+					tasks.add(new d_invTask(A, i * blkz, Math.min((i + 1) * blkz, m), a_inv, b, c, n, m));
 				}
 				for(Future<Object> rt : pool.invokeAll(tasks))
 					rt.get();
 				tasks.clear();
+
 			}
-			catch(InterruptedException | ExecutionException ex) {
-				throw new DMLRuntimeException("Failed parallel r2c transpose in placein inverse row shuffle step.", ex);
-			}
-		}
-		else{
-			if( b * b < 0){
-				// if there is a risk for overflow use the safe method.
-				for (int i = 0; i< m; i++)
-					di_inv_safe(tmp, A, i, a_inv, b, c, n, m);
-			}
-			else{
-				for (int i = 0; i< m; i++)
-					di_inv(tmp, A, i, a_inv, b, c, n, m);
+			else {
+				if(b * b < 0) {
+					// if there is a risk for overflow use the safe method.
+					for(int i = 0; i < m; i++)
+						di_inv_safe(tmp, A, i, a_inv, b, c, n, m);
+				}
+				else {
+					for(int i = 0; i < m; i++)
+						di_inv(tmp, A, i, a_inv, b, c, n, m);
+				}
+
 			}
 
-		}
-
-		if(c > 1){
-			if(m > 10 && n > 100){
-				try{
-					int blkz = Math.max((n - c)/k,1);
-					for(int j = c; j * blkz< n; j++){
-						tasks.add(new r_invTask(A,j*blkz,Math.min((j+1) * blkz,n),b,n,m));
+			if(c > 1) {
+				if(m > 10 && n > 100) {
+					int blkz = Math.max((n - c) / k, 1);
+					for(int j = c; j * blkz < n; j++) {
+						tasks.add(new r_invTask(A, j * blkz, Math.min((j + 1) * blkz, n), b, n, m));
 					}
 					for(Future<Object> rt : pool.invokeAll(tasks))
 						rt.get();
 					tasks.clear();
-				}
-				catch(InterruptedException | ExecutionException ex) {
-					throw new DMLRuntimeException("Failed parallel r2c transpose in place inverse column rotate step.", ex);
-				}
-			}
-			else {
 
-				for(int j = c; j< n; j++){
-					rj_inv(tmp, A, j, b, n,m);
+				}
+				else {
+
+					for(int j = c; j < n; j++) {
+						rj_inv(tmp, A, j, b, n, m);
+					}
 				}
 			}
+
+			memPool.remove();
 		}
-
-		memPool.remove();
+		catch(InterruptedException | ExecutionException ex) {
+			throw new DMLRuntimeException("Failed parallel r2c transpose in place in inverse colum shuffle.", ex);
+		}
+		finally {
+			pool.shutdown();
+		}
 	}
 
 	private static void sj_inv(double[] tmp, double[] A, int j, int a, int n, int m){
@@ -3203,20 +3200,22 @@ public class LibMatrixReorg {
 			rnnz = rexpandColumns(in, ret, max, cast, ignore, 0, rlen);
 		}
 		else {
+			ExecutorService pool = CommonThreadPool.get(k);
 			try {
-				ExecutorService pool = CommonThreadPool.get(k);
 				ArrayList<RExpandColsTask> tasks = new ArrayList<>();
 				int blklen = (int)(Math.ceil((double)rlen/k/8));
 				for( int i=0; i<8*k & i*blklen<rlen; i++ )
 					tasks.add(new RExpandColsTask(in, ret, 
 						max, cast, ignore, i*blklen, Math.min((i+1)*blklen, rlen)));
-				List<Future<Long>> taskret = pool.invokeAll(tasks);	
-				pool.shutdown();
-				for( Future<Long> task : taskret )
+
+				for( Future<Long> task : pool.invokeAll(tasks) )
 					rnnz += task.get();
 			}
 			catch(Exception ex) {
 				throw new DMLRuntimeException(ex);
+			}
+			finally{
+				pool.shutdown();
 			}
 		}
 		
@@ -3337,8 +3336,8 @@ public class LibMatrixReorg {
 		int vlen = values.length;
 		int mergeBlockSize = blockLength * 2;
 		if (mergeBlockSize <= vlen + blockLength){
+			ExecutorService pool = CommonThreadPool.get(k);
 			try {
-				ExecutorService pool = CommonThreadPool.get(k);
 				ArrayList<MergeTask> tasks = new ArrayList<>();
 				for( int i=0; i*mergeBlockSize<vlen; i++ ){
 					int start = i*mergeBlockSize;
@@ -3353,6 +3352,9 @@ public class LibMatrixReorg {
 			}
 			catch(Exception ex) {
 				throw new DMLRuntimeException(ex);
+			}
+			finally{
+				pool.shutdown();
 			}
 		} 
 	}

@@ -70,14 +70,19 @@ public class ConfigurationManager{
 		_cconf = new CompilerConfig();
 
 		final ExecutorService pool = CommonThreadPool.get();
-		loaded = pool.submit(() ->{
-			try{
-				IOUtilFunctions.getFileSystem(_rJob);
-			}
-			catch(Exception e){
-				LOG.warn(e.getMessage());
-			}
-		});
+		try{
+			loaded = pool.submit(() ->{
+				try{
+					IOUtilFunctions.getFileSystem(_rJob);
+				}
+				catch(Exception e){
+					LOG.warn(e.getMessage());
+				}
+			});
+		}
+		finally{
+			pool.shutdown();
+		}
 	}
 	
 	

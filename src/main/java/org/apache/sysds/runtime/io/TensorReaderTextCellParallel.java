@@ -58,24 +58,24 @@ public class TensorReaderTextCellParallel extends TensorReaderTextCell {
 			ret = new TensorBlock(schema[0], idims).allocateBlock();
 		else
 			ret = new TensorBlock(schema, idims).allocateBlock();
+		ExecutorService pool = CommonThreadPool.get(_numThreads);
 		try {
-			ExecutorService pool = CommonThreadPool.get(_numThreads);
 			InputSplit[] splits = informat.getSplits(job, _numThreads);
 			
 			//create and execute read tasks for all splits
 			List<TensorReaderTextCellParallel.ReadTask> tasks = Arrays.stream(splits)
 					.map(s -> new TensorReaderTextCellParallel.ReadTask(s, informat, job, ret))
 					.collect(Collectors.toList());
-			List<Future<Object>> rt = pool.invokeAll(tasks);
-			
-			//check for exceptions
-			for (Future<Object> task : rt)
+
+			for (Future<Object> task : pool.invokeAll(tasks))
 				task.get();
 			
-			pool.shutdown();
 		}
 		catch (Exception e) {
 			throw new IOException("Threadpool issue, while parallel read.", e);
+		}
+		finally{
+			pool.shutdown();
 		}
 		return ret;
 	}

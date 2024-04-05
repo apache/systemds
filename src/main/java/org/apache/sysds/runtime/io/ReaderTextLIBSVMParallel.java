@@ -24,6 +24,7 @@ import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Future;
 
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
@@ -111,16 +112,15 @@ public class ReaderTextLIBSVMParallel extends MatrixReader {
 
 		ExecutorService pool = CommonThreadPool.get(_numThreads);
 
-		try
-		{
+		try {
 			// create read tasks for all splits
 			ArrayList<LIBSVMReadTask> tasks = new ArrayList<>();
 			int splitCount = 0;
 			for (InputSplit split : splits) {
 				tasks.add( new LIBSVMReadTask(split, _offsets, informat, job, dest, rlen, clen, splitCount++) );
 			}
-			pool.invokeAll(tasks);
-			pool.shutdown();
+			for(Future<Object> f : pool.invokeAll(tasks))
+				f.get();
 
 			// check return codes and aggregate nnz
 			long lnnz = 0;
@@ -136,6 +136,9 @@ public class ReaderTextLIBSVMParallel extends MatrixReader {
 		catch (Exception e) {
 			throw new IOException("Threadpool issue, while parallel read.", e);
 		}
+		finally{
+			pool.shutdown();
+		}
 	}
 
 	private MatrixBlock computeLIBSVMSizeAndCreateOutputMatrixBlock(InputSplit[] splits, Path path,
@@ -150,15 +153,13 @@ public class ReaderTextLIBSVMParallel extends MatrixReader {
 		informat.configure(job);
 
 		// count rows in parallel per split
-		try
-		{
-			ExecutorService pool = CommonThreadPool.get(_numThreads);
+		ExecutorService pool = CommonThreadPool.get(_numThreads);
+		try {
 			ArrayList<CountRowsTask> tasks = new ArrayList<>();
 			for (InputSplit split : splits) {
 				tasks.add(new CountRowsTask(split, informat, job));
 			}
 			pool.invokeAll(tasks);
-			pool.shutdown();
 
 			// collect row counts for offset computation
 			// early error notify in case not all tasks successful
@@ -173,6 +174,9 @@ public class ReaderTextLIBSVMParallel extends MatrixReader {
 		}
 		catch (Exception e) {
 			throw new IOException("Threadpool Error " + e.getMessage(), e);
+		}
+		finally{
+			pool.shutdown();
 		}
 
 		//robustness for wrong dimensions which are already compiled into the plan

@@ -55,10 +55,9 @@ public class FrameReaderTextCellParallel extends FrameReaderTextCell
 		TextInputFormat informat = new TextInputFormat();
 		informat.configure(job);
 		
-		try 
-		{
+		ExecutorService pool = CommonThreadPool.get(numThreads);
+		try {
 			//create read tasks for all splits
-			ExecutorService pool = CommonThreadPool.get(numThreads);
 			InputSplit[] splits = informat.getSplits(job, numThreads);
 			ArrayList<ReadTask> tasks = new ArrayList<>();
 			for( InputSplit split : splits )
@@ -66,14 +65,16 @@ public class FrameReaderTextCellParallel extends FrameReaderTextCell
 			
 			//wait until all tasks have been executed
 			List<Future<Object>> rt = pool.invokeAll(tasks);
-			pool.shutdown();
-				
+
 			//check for exceptions
 			for( Future<Object> task : rt )
 				task.get();
 		} 
 		catch (Exception e) {
 			throw new IOException("Failed parallel read of text cell input.", e);
+		}
+		finally{
+			pool.shutdown();
 		}
 	}
 

@@ -244,11 +244,10 @@ public abstract class SpoofRowwise extends SpoofOperator
 		
 		//core parallel execute
 		ExecutorService pool = CommonThreadPool.get(k);
-		ArrayList<Integer> blklens = UtilFunctions
-			.getBalancedBlockSizesDefault(m, k, (long)m*n<16*PAR_NUMCELL_THRESHOLD);
 		
-		try
-		{
+		try {
+			ArrayList<Integer> blklens = UtilFunctions
+				.getBalancedBlockSizesDefault(m, k, (long)m*n<16*PAR_NUMCELL_THRESHOLD);
 			if( _type.isColumnAgg() || _type == RowType.FULL_AGG ) {
 				//execute tasks
 				ArrayList<ParColAggTask> tasks = new ArrayList<>();
@@ -275,7 +274,6 @@ public abstract class SpoofRowwise extends SpoofOperator
 				out.setNonZeros(nnz);
 			}
 			
-			pool.shutdown();
 			if( flipOut ) {
 				fixTransposeDimensions(out);
 				out = LibMatrixReorg.transpose(out, new MatrixBlock(
@@ -285,6 +283,9 @@ public abstract class SpoofRowwise extends SpoofOperator
 		}
 		catch(Exception ex) {
 			throw new DMLRuntimeException(ex);
+		}
+		finally{
+			pool.shutdown();
 		}
 		
 		return out;

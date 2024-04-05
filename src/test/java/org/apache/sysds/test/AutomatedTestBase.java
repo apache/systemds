@@ -1358,20 +1358,23 @@ public abstract class AutomatedTestBase {
 	 */
 	protected ByteArrayOutputStream runTest(boolean newWay, boolean exceptionExpected, Class<?> expectedException,
 		String errMessage, int maxSparkInst) {
-		ExecutorService executor = Executors.newSingleThreadExecutor();
 		try{
-			return executor.submit(() -> 
-				runTestWithTimeout(newWay,exceptionExpected,expectedException,errMessage, maxSparkInst))//
-				.get(TEST_TIMEOUT, TimeUnit.SECONDS);
+			final List<ByteArrayOutputStream> out =  new ArrayList<>();
+			Thread t = new Thread(
+				() -> out.add(runTestWithTimeout(newWay,exceptionExpected,expectedException,errMessage, maxSparkInst)),
+				"TestRunner_main");
+			t.start();
+			
+			t.join(TEST_TIMEOUT * 1000);
+			if(t.isAlive())
+				throw new TimeoutException("Test failed to finish in time");
+			return out.get(0);
 		}
 		catch(TimeoutException e){
-			throw new RuntimeException("Our tests should run faster than 1000 sec each",e);
+			throw new RuntimeException("Our tests should run faster than 1000 sec each", e);
 		}
 		catch(Exception e){
 			throw new RuntimeException(e);
-		}
-		finally{
-			executor.shutdown();
 		}
 	}
 	

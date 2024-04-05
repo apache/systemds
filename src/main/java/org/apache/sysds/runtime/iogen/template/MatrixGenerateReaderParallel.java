@@ -100,8 +100,8 @@ public abstract class MatrixGenerateReaderParallel extends MatrixReader {
 		long estnnz2 = -1;
 
 		// count rows in parallel per split
+		ExecutorService pool = CommonThreadPool.get(_numThreads);
 		try {
-			ExecutorService pool = CommonThreadPool.get(_numThreads);
 			if(_props.getRowIndexStructure().getProperties() == RowIndexStructure.IndexProperties.Identity) {
 				ArrayList<IOUtilFunctions.CountRowsTask> tasks = new ArrayList<>();
 				for(InputSplit split : splits)
@@ -118,7 +118,6 @@ public abstract class MatrixGenerateReaderParallel extends MatrixReader {
 					_rLen = _rLen + lnrow;
 					i++;
 				}
-				pool.shutdown();
 				estnnz2 = (estnnz < 0) ? (long) _rLen * _cLen : estnnz;
 			}
 			else if(_props.getRowIndexStructure().getProperties() == RowIndexStructure.IndexProperties.CellWiseExist ||
@@ -148,7 +147,6 @@ public abstract class MatrixGenerateReaderParallel extends MatrixReader {
 						_rLen = Math.max(lnrow, _rLen);
 						i++;
 					}
-					pool.shutdown();
 				}
 				estnnz2 = -1;
 			}
@@ -169,12 +167,14 @@ public abstract class MatrixGenerateReaderParallel extends MatrixReader {
 					_rLen = _rLen + splitInfo.getNrows();
 					i++;
 				}
-				pool.shutdown();
 				estnnz2 = (estnnz < 0) ? (long) _rLen * _cLen : estnnz;
 			}
 		}
 		catch(Exception e) {
 			throw new IOException("Thread pool Error " + e.getMessage(), e);
+		}
+		finally{
+			pool.shutdown();
 		}
 
 		// robustness for wrong dimensions which are already compiled into the plan

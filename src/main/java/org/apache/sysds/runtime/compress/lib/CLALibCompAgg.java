@@ -253,13 +253,13 @@ public final class CLALibCompAgg {
 		int k) {
 
 		final ExecutorService pool = CommonThreadPool.get(k);
-		final ArrayList<UnaryAggregateTask> tasks = new ArrayList<>();
-
-		final int r = m1.getNumRows();
-		final int c = m1.getNumColumns();
-		final List<AColGroup> colGroups = m1.getColGroups();
-
+		
 		try {
+			final ArrayList<UnaryAggregateTask> tasks = new ArrayList<>();
+	
+			final int r = m1.getNumRows();
+			final int c = m1.getNumColumns();
+			final List<AColGroup> colGroups = m1.getColGroups();
 			// compute all compressed column groups
 			if(op.indexFn instanceof ReduceCol) {
 				final int blkz = CompressionSettings.BITMAP_BLOCK_SZ;
@@ -277,10 +277,11 @@ public final class CLALibCompAgg {
 			reduceFutures(futures, ret, op, m1.isOverlapping());
 		}
 		catch(InterruptedException | ExecutionException e) {
-			pool.shutdown();
 			throw new DMLRuntimeException("Aggregate In parallel failed.", e);
 		}
-		pool.shutdown();
+		finally{
+			pool.shutdown();
+		}
 	}
 
 	private static double[][] getPreAgg(AggregateUnaryOperator opm, List<AColGroup> groups) {
@@ -413,28 +414,33 @@ public final class CLALibCompAgg {
 		MatrixBlock ret, AggregateUnaryOperator op) throws InterruptedException {
 		final int k = op.getNumThreads();
 		final ExecutorService pool = CommonThreadPool.get(k);
-		final ArrayList<UAOverlappingTask> tasks = new ArrayList<>();
-		final int nCol = m1.getNumColumns();
-		final int nRow = m1.getNumRows();
-		final int blklen = Math.max(64, nRow / k);
-		final List<AColGroup> groups = m1.getColGroups();
-		final boolean shouldFilter = CLALibUtils.shouldPreFilter(groups);
-		if(shouldFilter) {
-			final double[] constV = new double[nCol];
-			final List<AColGroup> filteredGroups = CLALibUtils.filterGroups(groups, constV);
-			final AColGroup cRet = ColGroupConst.create(constV);
-			filteredGroups.add(cRet);
-			for(int i = 0; i < nRow; i += blklen)
-				tasks.add(new UAOverlappingTask(filteredGroups, ret, i, Math.min(i + blklen, nRow), op, nCol));
-		}
-		else {
-			for(int i = 0; i < nRow; i += blklen)
-				tasks.add(new UAOverlappingTask(groups, ret, i, Math.min(i + blklen, nRow), op, nCol));
-		}
+		try{
 
-		List<Future<MatrixBlock>> futures = pool.invokeAll(tasks);
-		pool.shutdown();
-		return futures;
+			final ArrayList<UAOverlappingTask> tasks = new ArrayList<>();
+			final int nCol = m1.getNumColumns();
+			final int nRow = m1.getNumRows();
+			final int blklen = Math.max(64, nRow / k);
+			final List<AColGroup> groups = m1.getColGroups();
+			final boolean shouldFilter = CLALibUtils.shouldPreFilter(groups);
+			if(shouldFilter) {
+				final double[] constV = new double[nCol];
+				final List<AColGroup> filteredGroups = CLALibUtils.filterGroups(groups, constV);
+				final AColGroup cRet = ColGroupConst.create(constV);
+				filteredGroups.add(cRet);
+				for(int i = 0; i < nRow; i += blklen)
+					tasks.add(new UAOverlappingTask(filteredGroups, ret, i, Math.min(i + blklen, nRow), op, nCol));
+			}
+			else {
+				for(int i = 0; i < nRow; i += blklen)
+					tasks.add(new UAOverlappingTask(groups, ret, i, Math.min(i + blklen, nRow), op, nCol));
+			}
+	
+			List<Future<MatrixBlock>> futures = pool.invokeAll(tasks);
+			return futures;
+		}
+		finally{
+			pool.shutdown();
+		}
 	}
 
 	private static List<List<AColGroup>> createTaskPartition(List<AColGroup> colGroups, int k) {

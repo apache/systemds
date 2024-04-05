@@ -44,15 +44,15 @@ public class AsyncCompressTest {
 
 	@Test
 	public void empty() {
-		assertTrue(runTest(new MatrixBlock(1000, 30, 0.0)));
+		assertTrue(runTest(new MatrixBlock(1000, 30, 0.0), true));
 	}
 
 	@Test
 	public void notCompressable() {
-		assertFalse(runTest(TestUtils.generateTestMatrixBlock(100, 100, 0, 1.0, 1.0, 13)));
+		assertFalse(runTest(TestUtils.generateTestMatrixBlock(100, 100, 0, 1.0, 1.0, 13), false));
 	}
 
-	public boolean runTest(MatrixBlock mb) {
+	public boolean runTest(MatrixBlock mb, boolean compressible) {
 		try {
 			MatrixCharacteristics matrixCharacteristics = new MatrixCharacteristics(mb.getNumRows(), mb.getNumColumns(),
 				-1, 0);
@@ -63,15 +63,12 @@ public class AsyncCompressTest {
 			ExecutionContext ec = new ExecutionContext(vars);
 			ec.setVariable("mb1", mbo);
 
-			CompressedMatrixBlockFactory.compressAsync(ec, "mb1");
+			CompressedMatrixBlockFactory.compressAsync(ec, "mb1").get();
 
-			for(int i = 0; i < 5; i++) {
-				Thread.sleep(i * 100);
-				MatrixBlock m = mbo.acquireReadAndRelease();
-				if(m instanceof CompressedMatrixBlock)
-					return true;
-			}
-			return false;
+
+
+			MatrixBlock m = mbo.acquireReadAndRelease();
+			return m instanceof CompressedMatrixBlock;
 		}
 
 		catch(Exception e) {

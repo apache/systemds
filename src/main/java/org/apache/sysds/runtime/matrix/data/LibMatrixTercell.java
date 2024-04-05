@@ -57,9 +57,9 @@ public class LibMatrixTercell
 		
 		//execute ternary cell operations
 		if( op.getNumThreads() > 1 && ret.getLength() > PAR_NUMCELL_THRESHOLD) {
+			ExecutorService pool = CommonThreadPool.get(op.getNumThreads());
 			try {
 				//execute binary cell operations
-				ExecutorService pool = CommonThreadPool.get(op.getNumThreads());
 				ArrayList<TercellTask> tasks = new ArrayList<>();
 				ArrayList<Integer> blklens = UtilFunctions
 					.getBalancedBlockSizesDefault(ret.rlen, op.getNumThreads(), false);
@@ -71,10 +71,12 @@ public class LibMatrixTercell
 				ret.nonZeros = 0; //reset after execute
 				for( Future<Long> task : taskret )
 					ret.nonZeros += task.get();
-				pool.shutdown();
 			}
 			catch(InterruptedException | ExecutionException ex) {
 				throw new DMLRuntimeException(ex);
+			}
+			finally{
+				pool.shutdown();
 			}
 		}
 		else {

@@ -60,10 +60,9 @@ public class FrameReaderTextCSVParallel extends FrameReaderTextCSV
 		InputSplit[] splits = informat.getSplits(job, numThreads); 
 		splits = IOUtilFunctions.sortInputSplits(splits);
 
-		try 
-		{
+		ExecutorService pool = CommonThreadPool.get(numThreads);
+		try {
 			// get number of threads pool to use the common thread pool.
-			ExecutorService pool = CommonThreadPool.get(numThreads);
 			
 			//compute num rows per split
 			ArrayList<CountRowsTask> tasks = new ArrayList<>();
@@ -87,6 +86,9 @@ public class FrameReaderTextCSVParallel extends FrameReaderTextCSV
 		} 
 		catch (Exception e) {
 			throw new IOException("Failed parallel read of text csv input.", e);
+		}
+		finally{
+			pool.shutdown();
 		}
 	}
 
@@ -113,6 +115,11 @@ public class FrameReaderTextCSVParallel extends FrameReaderTextCSV
 			List<Future<Integer>> cret = pool.invokeAll(tasks);
 			for( Future<Integer> count : cret ) 
 				nrow += count.get().intValue();
+			
+			if(nrow > Integer.MAX_VALUE)
+				throw new DMLRuntimeException("invalid read with over Integer number of rows");
+				
+			return new Pair<>((int)nrow, ncol);
 		}
 		catch (Exception e) {
 			throw new IOException("Failed parallel read of text csv input.", e);
@@ -120,10 +127,6 @@ public class FrameReaderTextCSVParallel extends FrameReaderTextCSV
 		finally {
 			pool.shutdown();
 		}
-		if(nrow > Integer.MAX_VALUE)
-			throw new DMLRuntimeException("invalid read with over Integer number of rows");
-
-		return new Pair<>((int)nrow, ncol);
 	}
 
 	private static class CountRowsTask implements Callable<Integer> {

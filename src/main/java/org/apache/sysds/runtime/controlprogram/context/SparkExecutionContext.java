@@ -1168,9 +1168,9 @@ public class SparkExecutionContext extends ExecutionContext
 
 	private static void blockPartitionsToMatrixBlockMultiThreaded(List<Tuple2<MatrixIndexes, MatrixBlock>> tuples,
 		MatrixBlock out, LongAdder aNnz, int blen) {
+		final int k = InfrastructureAnalyzer.getLocalParallelism();
+		final ExecutorService pool = CommonThreadPool.get(k);
 		try {
-			final int k = InfrastructureAnalyzer.getLocalParallelism();
-			final ExecutorService pool = CommonThreadPool.get(k);
 			final ArrayList<BlockPartitionToMatrixBlockTask> tasks = new ArrayList<>();
 			final int tSize = tuples.size();
 			final int blockSize = Math.max(tSize / k / 2, 1);
@@ -1181,10 +1181,12 @@ public class SparkExecutionContext extends ExecutionContext
 			for(Future<Object> f : pool.invokeAll(tasks))
 				f.get();
 
-			pool.shutdown();
 		}
 		catch(InterruptedException | ExecutionException ex) {
 			throw new DMLRuntimeException("Parallel block partitions to matrix block failed", ex);
+		}
+		finally{
+			pool.shutdown();
 		}
 	}
 

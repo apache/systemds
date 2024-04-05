@@ -108,24 +108,24 @@ public final class CLALibTSMM {
 	}
 
 	private static void tsmmColGroupsMultiThread(List<AColGroup> groups, MatrixBlock ret, int nRows, int k) {
-		final ExecutorService pool = CommonThreadPool.get(k);
-		final ArrayList<Callable<MatrixBlock>> tasks = new ArrayList<>((groups.size() * (1 + groups.size())) / 2);
-		for(int i = 0; i < groups.size(); i++) {
-			final AColGroup g = groups.get(i);
-			tasks.add(new TSMMTask(g, ret, nRows)); // self
-			for(int j = i + 1; j < groups.size(); j++)
-				tasks.add(new TSMMColGroupTask(g, groups.get(j), ret)); // all remaining others
-		}
-
+		final ExecutorService pool = CommonThreadPool.get(k);		
 		try {
+			final ArrayList<Callable<MatrixBlock>> tasks = new ArrayList<>((groups.size() * (1 + groups.size())) / 2);
+			for(int i = 0; i < groups.size(); i++) {
+				final AColGroup g = groups.get(i);
+				tasks.add(new TSMMTask(g, ret, nRows)); // self
+				for(int j = i + 1; j < groups.size(); j++)
+					tasks.add(new TSMMColGroupTask(g, groups.get(j), ret)); // all remaining others
+			}
 			for(Future<MatrixBlock> future : pool.invokeAll(tasks))
 				future.get();
 		}
 		catch(InterruptedException | ExecutionException e) {
-			pool.shutdown();
 			throw new DMLRuntimeException(e);
 		}
-		pool.shutdown();
+		finally{
+			pool.shutdown();
+		}
 	}
 
 	private static void outerProductUpperTriangle(final double[] leftRowSum, final double[] rightColumnSum,

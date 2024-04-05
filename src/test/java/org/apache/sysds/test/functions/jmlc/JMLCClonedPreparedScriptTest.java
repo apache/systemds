@@ -94,6 +94,7 @@ public class JMLCClonedPreparedScriptTest extends AutomatedTestBase
 		int k = InfrastructureAnalyzer.getLocalParallelism();
 		
 		boolean failed = false;
+		ExecutorService pool = Executors.newFixedThreadPool(k);
 		try( Connection conn = new Connection() ) {
 			conn.setConfigTypes(false, CompilerConfig.ConfigType.PARALLEL_LOCAL_OR_REMOTE_PARFOR);
 			DMLScript.STATISTICS = true;
@@ -101,7 +102,6 @@ public class JMLCClonedPreparedScriptTest extends AutomatedTestBase
 			PreparedScript pscript = conn.prepareScript(
 				script, new String[]{}, new String[]{"out"});
 			
-			ExecutorService pool = Executors.newFixedThreadPool(k);
 			ArrayList<JMLCTask> tasks = new ArrayList<>();
 			for(int i=0; i<num; i++)
 				tasks.add(new JMLCTask(pscript, clone));
@@ -109,11 +109,13 @@ public class JMLCClonedPreparedScriptTest extends AutomatedTestBase
 			for(Future<Double> ret : taskrets)
 				if( ret.get() != 700 )
 					throw new RuntimeException("wrong results: "+ret.get());
-			pool.shutdown();
 		}
 		catch(Exception ex) {
 			ex.printStackTrace();
 			failed = true;
+		}
+		finally{
+			pool.shutdown();
 		}
 		
 		//check expected failure

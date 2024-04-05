@@ -19,6 +19,15 @@
 
 package org.apache.sysds.runtime.iogen;
 
+import java.io.BufferedReader;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Future;
+
 import org.apache.sysds.common.Types;
 import org.apache.sysds.hops.OptimizerUtils;
 import org.apache.sysds.runtime.frame.data.FrameBlock;
@@ -27,16 +36,6 @@ import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.matrix.data.Pair;
 import org.apache.sysds.runtime.util.CommonThreadPool;
 import org.apache.sysds.runtime.util.UtilFunctions;
-
-import java.io.BufferedReader;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.concurrent.Callable;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Future;
 
 public class ReaderMappingIndex {
 	private int[][] mapRow;
@@ -94,8 +93,8 @@ public class ReaderMappingIndex {
 		this.nlines = rawList.size();
 		this.sampleRawIndexes = new RawIndex[this.nlines];
 		int numThreads = OptimizerUtils.getParallelTextWriteParallelism();
+		ExecutorService pool = CommonThreadPool.get(numThreads);
 		try {
-			ExecutorService pool = CommonThreadPool.get(numThreads);
 			ArrayList<BuildRawIndexTask> tasks = new ArrayList<>();
 			int blklen = (int) Math.ceil((double) nlines / numThreads);
 			for(int i = 0; i < numThreads; i++) {
@@ -103,16 +102,15 @@ public class ReaderMappingIndex {
 				int endIndex = Math.min((i + 1) * blklen, nlines);
 				tasks.add(new BuildRawIndexTask(rawList, this.sampleRawIndexes, beginIndex, endIndex));
 			}
-			//wait until all tasks have been executed
-			List<Future<Object>> rt = pool.invokeAll(tasks);
-			pool.shutdown();
 
-			//check for exceptions
-			for(Future<Object> task : rt)
+			for(Future<Object> task : pool.invokeAll(tasks))
 				task.get();
 		}
 		catch(Exception e) {
 			throw new RuntimeException("Failed parallel ReadRaw.", e);
+		}
+		finally{
+			pool.shutdown();
 		}
 
 	}

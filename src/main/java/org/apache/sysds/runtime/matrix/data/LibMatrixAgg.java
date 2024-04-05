@@ -286,8 +286,8 @@ public class LibMatrixAgg {
 
 		//core multi-threaded unary aggregate computation
 		//(currently: always parallelization over number of rows)
+		ExecutorService pool = CommonThreadPool.get(k);
 		try {
-			ExecutorService pool = CommonThreadPool.get(k);
 			ArrayList<AggTask> tasks = new ArrayList<>();
 			ArrayList<Integer> blklens = UtilFunctions.getBalancedBlockSizesDefault(m, k,
 				(uaop.indexFn instanceof ReduceRow)); //use static partitioning for col*()
@@ -297,7 +297,7 @@ public class LibMatrixAgg {
 					new PartialAggTask(in, out, aggtype, uaop, lb, lb+blklens.get(i)) );
 			}
 			List<Future<Object>> rtasks = pool.invokeAll(tasks);
-			pool.shutdown();
+
 			//aggregate partial results
 			if( uaop.indexFn instanceof ReduceCol ) {
 				//error handling and nnz aggregation
@@ -313,6 +313,9 @@ public class LibMatrixAgg {
 		}
 		catch(Exception ex) {
 			throw new DMLRuntimeException(ex);
+		}
+		finally{
+			pool.shutdown();
 		}
 		
 		//cleanup output and change representation (if necessary)
@@ -400,8 +403,8 @@ public class LibMatrixAgg {
 		
 		//core multi-threaded unary aggregate computation
 		//(currently: always parallelization over number of rows)
+		ExecutorService pool = CommonThreadPool.get(k);
 		try {
-			ExecutorService pool = CommonThreadPool.get(k);
 			int blklen = (int)(Math.ceil((double)m/k));
 			
 			//step 1: compute aggregates per row partition
@@ -430,9 +433,7 @@ public class LibMatrixAgg {
 					DataConverter.convertToDoubleVector(tmp2.slice(i-1, i-1, 0, n2-1, new MatrixBlock()), false);
 				tasks2.add( new CumAggTask(in, agg, out, aggtype, uop, i*blklen, Math.min((i+1)*blklen, m)) );
 			}
-			List<Future<Long>> taskret2 = pool.invokeAll(tasks2);
-			pool.shutdown();
-			
+			List<Future<Long>> taskret2 = pool.invokeAll(tasks2);		
 			//step 4: aggregate nnz
 			out.nonZeros = 0; 
 			for( Future<Long> task : taskret2 )
@@ -440,6 +441,9 @@ public class LibMatrixAgg {
 		}
 		catch(Exception ex) {
 			throw new DMLRuntimeException(ex);
+		}
+		finally{
+			pool.shutdown();
 		}
 		
 		//cleanup output and change representation (if necessary)
@@ -496,14 +500,14 @@ public class LibMatrixAgg {
 		
 		CM_COV_Object ret = null;
 		
+		ExecutorService pool = CommonThreadPool.get(k);
 		try {
-			ExecutorService pool = CommonThreadPool.get(k);
 			ArrayList<AggCmCovTask> tasks = new ArrayList<>();
 			ArrayList<Integer> blklens = UtilFunctions.getBalancedBlockSizesDefault(in1.rlen, k, false);
 			for( int i=0, lb=0; i<blklens.size(); lb+=blklens.get(i), i++ )
 				tasks.add(new AggCmCovTask(in1, in2, in3, fn, lb, lb+blklens.get(i)));
 			List<Future<CM_COV_Object>> rtasks = pool.invokeAll(tasks);
-			pool.shutdown();
+			
 			//aggregate partial results and error handling
 			ret = rtasks.get(0).get();
 			for( int i=1; i<rtasks.size(); i++ )
@@ -511,6 +515,9 @@ public class LibMatrixAgg {
 		}
 		catch(Exception ex) {
 			throw new DMLRuntimeException(ex);
+		}
+		finally{
+			pool.shutdown();
 		}
 		
 		return ret;
@@ -560,15 +567,15 @@ public class LibMatrixAgg {
 			
 		//Timing time = new Timing(true);
 		
+		ExecutorService pool = CommonThreadPool.get(k);
 		try {
-			ExecutorService pool = CommonThreadPool.get(k);
 			ArrayList<AggTernaryTask> tasks = new ArrayList<>();
 			int blklen = (int)(Math.ceil((double)in1.rlen/k));
 			IndexFunction ixFn = op.indexFn;
 			for( int i=0; i<k & i*blklen<in1.rlen; i++ )
 				tasks.add( new AggTernaryTask(in1, in2, in3, ret, ixFn, i*blklen, Math.min((i+1)*blklen, in1.rlen)));
 			List<Future<MatrixBlock>> rtasks = pool.invokeAll(tasks);	
-			pool.shutdown();
+
 			//aggregate partial results and error handling
 			ret.copy(rtasks.get(0).get(), false); //for init
 			for( int i=1; i<rtasks.size(); i++ )
@@ -576,6 +583,9 @@ public class LibMatrixAgg {
 		}
 		catch(Exception ex) {
 			throw new DMLRuntimeException(ex);
+		}
+		finally{
+			pool.shutdown();
 		}
 		
 		//cleanup output and change representation (if necessary)
@@ -635,19 +645,22 @@ public class LibMatrixAgg {
 		
 		//core multi-threaded grouped aggregate computation
 		//(currently: parallelization over columns to avoid additional memory requirements)
+		ExecutorService pool = CommonThreadPool.get(k);
 		try {
-			ExecutorService pool = CommonThreadPool.get(k);
 			ArrayList<GrpAggTask> tasks = new ArrayList<>();
 			int blklen = (int)(Math.ceil((double)target.clen/k));
 			for( int i=0; i<k & i*blklen<target.clen; i++ )
 				tasks.add( new GrpAggTask(groups, target, weights, result, numGroups, op, i*blklen, Math.min((i+1)*blklen, target.clen)) );
 			List<Future<Object>> taskret = pool.invokeAll(tasks);
-			pool.shutdown();
+
 			for(Future<Object> task : taskret)
 				task.get(); //error handling
 		}
 		catch(Exception ex) {
 			throw new DMLRuntimeException(ex);
+		}
+		finally{
+			pool.shutdown();
 		}
 		
 		//postprocessing

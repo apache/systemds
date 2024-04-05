@@ -292,7 +292,9 @@ public final class CLALibDecompress {
 		catch(InterruptedException | ExecutionException ex) {
 			throw new DMLCompressionException("Parallel decompression failed", ex);
 		}
-		pool.shutdown();
+		finally{
+			pool.shutdown();
+		}
 	}
 
 	private static void decompressSparseMultiThread(MatrixBlock ret, List<AColGroup> filteredGroups, int rlen,
@@ -307,10 +309,11 @@ public final class CLALibDecompress {
 				rt.get();
 		}
 		catch(InterruptedException | ExecutionException ex) {
-			pool.shutdown();
 			throw new DMLCompressionException("Parallel decompression failed", ex);
 		}
-		pool.shutdown();
+		finally{
+			pool.shutdown();
+		}
 	}
 
 	/**

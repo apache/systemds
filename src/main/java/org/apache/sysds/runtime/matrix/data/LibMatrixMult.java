@@ -412,14 +412,14 @@ public class LibMatrixMult
 		
 		//core matrix mult chain computation
 		//(currently: always parallelization over number of rows)
+		ExecutorService pool = CommonThreadPool.get(k);
 		try {
-			ExecutorService pool = CommonThreadPool.get(k);
 			ArrayList<Integer> blklens = UtilFunctions.getBalancedBlockSizesDefault(mX.rlen, k, true);
 			ArrayList<MatrixMultChainTask> tasks = new ArrayList<>();
 			for( int i=0, lb=0; i<blklens.size(); lb+=blklens.get(i), i++ )
 				tasks.add(new MatrixMultChainTask(mX, mV, mW, ct, lb, lb+blklens.get(i)));
 			List<Future<double[]>> taskret = pool.invokeAll(tasks);
-			pool.shutdown();
+
 			//aggregate partial results and error handling
 			double[][] a = new double[taskret.size()][];
 			for(int i=0; i<taskret.size(); i++)
@@ -428,6 +428,9 @@ public class LibMatrixMult
 		}
 		catch(Exception ex) {
 			throw new DMLRuntimeException(ex);
+		}
+		finally{
+			pool.shutdown();
 		}
 		
 		//post-processing
@@ -579,18 +582,20 @@ public class LibMatrixMult
 		ret1.sparse = false;	  // no need to check isThreadSafe
 		ret1.allocateDenseBlock();
 		
-		try
-		{
-			ExecutorService pool = CommonThreadPool.get(k);
+		ExecutorService pool = CommonThreadPool.get(k);
+		try {
 			ArrayList<MatrixMultPermuteTask> tasks = new ArrayList<>();
 			int blklen = (int)(Math.ceil((double)pm1.rlen/k));
 			for( int i=0; i<k & i*blklen<pm1.rlen; i++ )
 				tasks.add(new MatrixMultPermuteTask(pm1, m2, ret1, ret2, i*blklen, Math.min((i+1)*blklen, pm1.rlen)));
-			pool.invokeAll(tasks);
-			pool.shutdown();
+			for(Future<Object> f : pool.invokeAll(tasks))
+				f.get();
 		} 
-		catch (InterruptedException e) {
+		catch (Exception e) {
 			throw new DMLRuntimeException(e);
+		}
+		finally{
+			pool.shutdown();
 		}
 		
 		//post-processing
@@ -650,19 +655,20 @@ public class LibMatrixMult
 		
 		//Timing time = new Timing(true);
 		
+		ExecutorService pool = CommonThreadPool.get(k);
 		try {
-			ExecutorService pool = CommonThreadPool.get(k);
 			ArrayList<MatrixMultWSLossTask> tasks = new ArrayList<>();
 			int blklen = (int)(Math.ceil((double)mX.rlen/k));
 			for( int i=0; i<k & i*blklen<mX.rlen; i++ )
 				tasks.add(new MatrixMultWSLossTask(mX, mU, mV, mW, wt, i*blklen, Math.min((i+1)*blklen, mX.rlen)));
-			List<Future<Double>> taskret = pool.invokeAll(tasks);
-			pool.shutdown();
-			//aggregate partial results
-			sumScalarResults(taskret, ret);
+	
+			sumScalarResults(pool.invokeAll(tasks), ret);
 		} 
 		catch( Exception e ) {
 			throw new DMLRuntimeException(e);
+		}
+		finally{
+			pool.shutdown();
 		}
 
 		//add correction for sparse wsloss w/o weight
@@ -727,23 +733,23 @@ public class LibMatrixMult
 		ret.sparse = mW.sparse;
 		ret.allocateBlock();
 		
-		try 
-		{
-			ExecutorService pool = CommonThreadPool.get(k);
+		ExecutorService pool = CommonThreadPool.get(k);
+		try {
 			ArrayList<MatrixMultWSigmoidTask> tasks = new ArrayList<>();
 			int blklen = (int)(Math.ceil((double)mW.rlen/k));
 			for( int i=0; i<k & i*blklen<mW.rlen; i++ )
 				tasks.add(new MatrixMultWSigmoidTask(mW, mU, mV, ret, wt, i*blklen, Math.min((i+1)*blklen, mW.rlen)));
-			//execute tasks
-			List<Future<Long>> taskret = pool.invokeAll(tasks);
-			pool.shutdown();
+
 			//aggregate partial nnz and check for errors
 			ret.nonZeros = 0; //reset after execute
-			for( Future<Long> task : taskret )
+			for( Future<Long> task : pool.invokeAll(tasks) )
 				ret.nonZeros += task.get();
 		} 
 		catch (Exception e) {
 			throw new DMLRuntimeException(e);
+		}
+		finally{
+			pool.shutdown();
 		}
 
 		//post-processing (nnz maintained in parallel)
@@ -836,9 +842,8 @@ public class LibMatrixMult
 			return;
 		}
 		
-		try 
-		{
-			ExecutorService pool = CommonThreadPool.get(k);
+		ExecutorService pool = CommonThreadPool.get(k);
+		try {
 			ArrayList<MatrixMultWDivTask> tasks = new ArrayList<>();
 			//create tasks (for wdivmm-left, parallelization over columns;
 			//for wdivmm-right, parallelization over rows; both ensure disjoint results)
@@ -852,17 +857,18 @@ public class LibMatrixMult
 				for( int i=0; i<k & i*blklen<mW.rlen; i++ )
 					tasks.add(new MatrixMultWDivTask(mW, mU, mV, mX, ret, wt, i*blklen, Math.min((i+1)*blklen, mW.rlen), 0, mW.clen));
 			}
-			//execute tasks
-			List<Future<Long>> taskret = pool.invokeAll(tasks);
-			pool.shutdown();
+
 			//aggregate partial nnz and check for errors
 			ret.nonZeros = 0;  //reset after execute
-			for( Future<Long> task : taskret )
+			for( Future<Long> task : pool.invokeAll(tasks) )
 				ret.nonZeros += task.get();
 		} 
 		catch (Exception e) {
 			throw new DMLRuntimeException(e);
 		} 
+		finally{
+			pool.shutdown();
+		}
 
 		//post-processing
 		ret.examSparsity();
@@ -909,20 +915,21 @@ public class LibMatrixMult
 		ret.sparse = false;
 		ret.allocateDenseBlock();
 		
-		try 
-		{
-			ExecutorService pool = CommonThreadPool.get(k);
+		ExecutorService pool = CommonThreadPool.get(k);
+		try {
 			ArrayList<MatrixMultWCeTask> tasks = new ArrayList<>();
 			int blklen = (int)(Math.ceil((double)mW.rlen/k));
 			for( int i=0; i<k & i*blklen<mW.rlen; i++ )
 				tasks.add(new MatrixMultWCeTask(mW, mU, mV, eps, wt, i*blklen, Math.min((i+1)*blklen, mW.rlen)));
 			List<Future<Double>> taskret = pool.invokeAll(tasks);
-			pool.shutdown();
 			//aggregate partial results
 			sumScalarResults(taskret, ret);
 		} 
 		catch( Exception e ) {
 			throw new DMLRuntimeException(e);
+		}
+		finally{
+			pool.shutdown();
 		}
 		
 		//System.out.println("MMWCe "+wt.toString()+" k="+k+" ("+mW.isInSparseFormat()+","+mW.getNumRows()+","+mW.getNumColumns()+","+mW.getNonZeros()+")x" +
@@ -977,23 +984,23 @@ public class LibMatrixMult
 		ret.sparse = mW.sparse;
 		ret.allocateBlock();
 		
-		try 
-		{
-			ExecutorService pool = CommonThreadPool.get(k);
+		ExecutorService pool = CommonThreadPool.get(k);
+		try {
 			ArrayList<MatrixMultWuTask> tasks = new ArrayList<>();
 			int blklen = (int)(Math.ceil((double)mW.rlen/k));
 			for( int i=0; i<k & i*blklen<mW.rlen; i++ )
 				tasks.add(new MatrixMultWuTask(mW, mU, mV, ret, wt, fn, i*blklen, Math.min((i+1)*blklen, mW.rlen)));
-			//execute tasks
-			List<Future<Long>> taskret = pool.invokeAll(tasks);
-			pool.shutdown();
+
 			//aggregate partial nnz and check for errors
 			ret.nonZeros = 0; //reset after execute
-			for( Future<Long> task : taskret )
+			for( Future<Long> task : pool.invokeAll(tasks) )
 				ret.nonZeros += task.get();
 		} 
 		catch (Exception e) {
 			throw new DMLRuntimeException(e);
+		}
+		finally{
+			pool.shutdown();
 		}
 
 		//post-processing (nnz maintained in parallel)

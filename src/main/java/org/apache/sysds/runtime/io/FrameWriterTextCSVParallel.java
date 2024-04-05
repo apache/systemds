@@ -21,7 +21,6 @@ package org.apache.sysds.runtime.io;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
@@ -71,9 +70,8 @@ public class FrameWriterTextCSVParallel extends FrameWriterTextCSV
 		FileSystem fs = IOUtilFunctions.getFileSystem(path, job);
 		
 		//create and execute tasks
-		try 
-		{
-			ExecutorService pool = CommonThreadPool.get(numThreads);
+		ExecutorService pool = CommonThreadPool.get(numThreads);
+		try {
 			ArrayList<WriteFileTask> tasks = new ArrayList<>();
 			int blklen = (int)Math.ceil((double)rlen / numThreads);
 			for(int i=0; i<numThreads & i*blklen<rlen; i++) {
@@ -81,12 +79,7 @@ public class FrameWriterTextCSVParallel extends FrameWriterTextCSV
 				tasks.add(new WriteFileTask(newPath, job, fs, src, i*blklen, (int)Math.min((i+1)*blklen, rlen), csvprops));
 			}
 
-			//wait until all tasks have been executed
-			List<Future<Object>> rt = pool.invokeAll(tasks);	
-			pool.shutdown();
-			
-			//check for exceptions 
-			for( Future<Object> task : rt )
+			for( Future<Object> task : pool.invokeAll(tasks) )
 				task.get();
 			
 			// delete crc files if written to local file system
@@ -98,6 +91,9 @@ public class FrameWriterTextCSVParallel extends FrameWriterTextCSV
 		} 
 		catch (Exception e) {
 			throw new IOException("Failed parallel write of csv output.", e);
+		}
+		finally{
+			pool.shutdown();
 		}
 	}
 	

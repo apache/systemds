@@ -127,6 +127,8 @@ public class LocalFileUtils
 	public static Writable readWritableFromLocal(String fname, Writable ret)
 		throws IOException
 	{
+		if(fname == null)
+			throw new IOException("Cannot read from null fname");
 		FileInputStream fis = new FileInputStream(fname);
 		DataInput in = !(ret instanceof MatrixBlock) ? 
 			new DataInputStream(new BufferedInputStream(fis, BUFFER_SIZE)) :

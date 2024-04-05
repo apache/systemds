@@ -114,8 +114,8 @@ public class LibMatrixBincell {
 			int k = op.getNumThreads();
 			DenseBlock a = m1.getDenseBlock();
 			DenseBlock c = ret.getDenseBlock();
+			ExecutorService pool = CommonThreadPool.get(k);
 			try {
-				ExecutorService pool = CommonThreadPool.get(k);
 				ArrayList<UncellTask> tasks = new ArrayList<>();
 				ArrayList<Integer> blklens = UtilFunctions.getBalancedBlockSizesDefault(ret.rlen, k, false);
 				for( int i=0, lb=0; i<blklens.size(); lb+=blklens.get(i), i++ )
@@ -126,10 +126,12 @@ public class LibMatrixBincell {
 				ret.nonZeros = 0; //reset after execute
 				for( Future<Long> task : taskret )
 					ret.nonZeros += task.get();
-				pool.shutdown();
 			}
 			catch(InterruptedException | ExecutionException ex) {
 				throw new DMLRuntimeException(ex);
+			}
+			finally{
+				pool.shutdown();
 			}
 		}
 		else {
@@ -188,9 +190,9 @@ public class LibMatrixBincell {
 		//preallocate dense/sparse block for multi-threaded operations
 		ret.allocateBlock();
 		
+		ExecutorService pool = CommonThreadPool.get(k);
 		try {
 			//execute binary cell operations
-			ExecutorService pool = CommonThreadPool.get(k);
 			ArrayList<BincellScalarTask> tasks = new ArrayList<>();
 			ArrayList<Integer> blklens = UtilFunctions.getBalancedBlockSizesDefault(ret.rlen, k, false);
 			for( int i=0, lb=0; i<blklens.size(); lb+=blklens.get(i), i++ )
@@ -201,10 +203,12 @@ public class LibMatrixBincell {
 			ret.nonZeros = 0; //reset after execute
 			for( Future<Long> task : taskret )
 				ret.nonZeros += task.get();
-			pool.shutdown();
 		}
 		catch(InterruptedException | ExecutionException ex) {
 			throw new DMLRuntimeException(ex);
+		}
+		finally{
+			pool.shutdown();
 		}
 		
 		//ensure empty results sparse representation 
@@ -263,9 +267,9 @@ public class LibMatrixBincell {
 		//preallocate dense/sparse block for multi-threaded operations
 		ret.allocateBlock(); //chosen outside
 		
+		ExecutorService pool = CommonThreadPool.get(k);
 		try {
 			//execute binary cell operations
-			ExecutorService pool = CommonThreadPool.get(k);
 			ArrayList<BincellTask> tasks = new ArrayList<>();
 			ArrayList<Integer> blklens = UtilFunctions.getBalancedBlockSizesDefault(ret.rlen, k, false);
 			for( int i=0, lb=0; i<blklens.size(); lb+=blklens.get(i), i++ )
@@ -276,10 +280,12 @@ public class LibMatrixBincell {
 			ret.nonZeros = 0; //reset after execute
 			for( Future<Long> task : taskret )
 				ret.nonZeros += task.get();
-			pool.shutdown();
 		}
 		catch(InterruptedException | ExecutionException ex) {
 			throw new DMLRuntimeException(ex);
+		}
+		finally{
+			pool.shutdown();
 		}
 		
 		//ensure empty results sparse representation

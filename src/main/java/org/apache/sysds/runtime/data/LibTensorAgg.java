@@ -68,21 +68,23 @@ public class LibTensorAgg {
 		}
 		int numThreads = uaop.getNumThreads();
 		if (satisfiesMultiThreadingConstraints(in, numThreads)) {
+			ExecutorService pool = CommonThreadPool.get(numThreads);
 			try {
-				ExecutorService pool = CommonThreadPool.get(numThreads);
 				ArrayList<AggTask> tasks = new ArrayList<>();
 				ArrayList<Integer> blklens = UtilFunctions.getBalancedBlockSizesDefault(in.getDim(0), numThreads, false);
 				for (int i = 0, lb = 0; i < blklens.size(); lb += blklens.get(i), i++) {
 					tasks.add(new PartialAggTask(in, out, aggType, uaop, lb, lb + blklens.get(i)));
 				}
 				pool.invokeAll(tasks);
-				pool.shutdown();
 				//aggregate partial results
 				out.copy(((PartialAggTask) tasks.get(0)).getResult()); //for init
 				for (int i = 1; i < tasks.size(); i++)
 					aggregateFinalResult(uaop.aggOp, out, ((PartialAggTask) tasks.get(i)).getResult());
 			} catch (Exception ex) {
 				throw new DMLRuntimeException(ex);
+			}
+			finally{
+				pool.shutdown();
 			}
 		} else {
 			// Actually a complete aggregation

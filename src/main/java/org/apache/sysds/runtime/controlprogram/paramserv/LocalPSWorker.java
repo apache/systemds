@@ -21,6 +21,7 @@ package org.apache.sysds.runtime.controlprogram.paramserv;
 
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 
 import org.apache.commons.lang3.concurrent.ConcurrentUtils;
@@ -89,8 +90,9 @@ public class LocalPSWorker extends PSWorker implements Callable<Void> {
 			// Pull the global parameters from ps
 			ListObject params = pullModel();
 			Future<ListObject> accGradients = ConcurrentUtils.constantFuture(null);
-			if(_tpool == null)
-				_tpool = CommonThreadPool.get();
+
+
+			ExecutorService pool = CommonThreadPool.get();
 
 			try {
 				for (int j = 0; j < batchIter; j++) {
@@ -105,7 +107,7 @@ public class LocalPSWorker extends PSWorker implements Callable<Void> {
 						accGradients = ConcurrentUtils.constantFuture(null);
 					}
 					else{
-						accGradients = _tpool.submit(() -> ParamservUtils.accrueGradients(
+						accGradients = pool.submit(() -> ParamservUtils.accrueGradients(
 							accGradientsPrev, gradients, false, !localUpdate));
 					}
 					
@@ -122,6 +124,9 @@ public class LocalPSWorker extends PSWorker implements Callable<Void> {
 			catch(ExecutionException | InterruptedException ex) {
 				throw new DMLRuntimeException(ex);
 			}
+			finally{
+				pool.shutdown();
+			}
 
 			accNumEpochs(1);
 			if(LOG.isDebugEnabled()) {
@@ -133,8 +138,9 @@ public class LocalPSWorker extends PSWorker implements Callable<Void> {
 	private void computeNBatches(long dataSize, int batchIter) {
 		ListObject model = null;
 		Future<ListObject> accGradients = ConcurrentUtils.constantFuture(null);
-		for(int i = 0; i < _epochs; i++) {
-			try {
+		ExecutorService pool = CommonThreadPool.get();
+		try {
+			for(int i = 0; i < _epochs; i++) {
 				for(int j = 0; j < batchIter; j++) {
 					boolean localUpdate = j < batchIter;
 					if( j % _nbatches == 0 )
@@ -143,7 +149,7 @@ public class LocalPSWorker extends PSWorker implements Callable<Void> {
 					// Accumulate the intermediate gradients (async for overlap w/ model updates
 					// and gradient computation, sequential over gradient matrices to avoid deadlocks)
 					ListObject accGradientsPrev = accGradients.get();
-					accGradients = _tpool
+					accGradients = pool
 						.submit(() -> ParamservUtils.accrueGradients(accGradientsPrev, gradients, false, !localUpdate));
 					// Update the local model with gradients
 					if(localUpdate | _modelAvg)
@@ -157,14 +163,17 @@ public class LocalPSWorker extends PSWorker implements Callable<Void> {
 					}
 					accNumBatches(1);
 				}
+				accNumEpochs(1);
+				if(LOG.isDebugEnabled()) {
+					LOG.debug(String.format("%s: finished %d epoch.", getWorkerName(), i + 1));
+				}
 			}
-			catch(ExecutionException | InterruptedException ex) {
-				throw new DMLRuntimeException(ex);
-			}
-			accNumEpochs(1);
-			if(LOG.isDebugEnabled()) {
-				LOG.debug(String.format("%s: finished %d epoch.", getWorkerName(), i + 1));
-			}
+		}
+		catch(ExecutionException | InterruptedException ex) {
+			throw new DMLRuntimeException(ex);
+		}
+		finally{
+			pool.shutdown();
 		}
 	}
 

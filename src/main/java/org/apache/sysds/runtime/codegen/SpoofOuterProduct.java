@@ -131,9 +131,8 @@ public abstract class SpoofOuterProduct extends SpoofOperator
 		final long nnz = inputs.get(0).getNonZeros();
 		double sum = 0;
 		
-		try 
-		{
-			ExecutorService pool = CommonThreadPool.get(k);
+		ExecutorService pool = CommonThreadPool.get(k);
+		try {
 			ArrayList<ParOuterProdAggTask> tasks = new ArrayList<>();
 			int numThreads2 = getPreferredNumberOfTasks(m, n, nnz, k, numThreads);
 			int blklen = (int)(Math.ceil((double)m/numThreads2));
@@ -142,13 +141,15 @@ public abstract class SpoofOuterProduct extends SpoofOperator
 					m, n, k, _outerProductType, i*blklen, Math.min((i+1)*blklen,m), 0, n));
 			//execute tasks
 			List<Future<Double>> taskret = pool.invokeAll(tasks);
-			pool.shutdown();
 			for( Future<Double> task : taskret )
 				sum += task.get();
 		} 
 		catch (Exception e) {
 			throw new DMLRuntimeException(e);
 		} 
+		finally{
+			pool.shutdown();
+		}
 		
 		return new DoubleObject(sum);
 	}
@@ -272,9 +273,8 @@ public abstract class SpoofOuterProduct extends SpoofOperator
 		
 		MatrixBlock a = inputs.get(0);
 		
-		try 
-		{
-			ExecutorService pool = CommonThreadPool.get(numThreads);
+		ExecutorService pool = CommonThreadPool.get(numThreads);
+		try {
 			ArrayList<ParExecTask> tasks = new ArrayList<>();
 			//create tasks (for wdivmm-left, parallelization over columns;
 			//for wdivmm-right, parallelization over rows; both ensure disjoint results)
@@ -295,15 +295,17 @@ public abstract class SpoofOuterProduct extends SpoofOperator
 						_outerProductType, i*blklen, Math.min((i+1)*blklen,m), 0, n));
 			}
 			List<Future<Long>> taskret = pool.invokeAll(tasks);
-			pool.shutdown();
 			for( Future<Long> task : taskret )
 				out.setNonZeros(out.getNonZeros() + task.get());
+			out.examSparsity();
+			return out;
 		} 
 		catch (Exception e) {
 			throw new DMLRuntimeException(e);
 		}
-		out.examSparsity();
-		return out;
+		finally{
+			pool.shutdown();
+		}
 	}
 	
 	private static int getPreferredNumberOfTasks(int m, int n, long nnz, int rank, int k) {

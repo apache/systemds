@@ -238,8 +238,8 @@ public abstract class AComEst {
 	}
 
 	private List<CompressedSizeInfoColGroup> CompressedSizeInfoColGroupParallel(int clen, int k) {
+		final ExecutorService pool = CommonThreadPool.get(k);
 		try {
-			final ExecutorService pool = CommonThreadPool.get(k);
 			if(!_cs.transposed && !_data.isEmpty() && _data.isInSparseFormat()) {
 				LOG.debug("Extracting number of nonzeros in each column");
 				List<Future<int[]>> nnzFutures = LibMatrixReorg.countNNZColumnsFuture(_data, k, pool);
@@ -260,12 +260,13 @@ public abstract class AComEst {
 			for(Future<Object> f : pool.invokeAll(tasks))
 				f.get();
 
-			pool.shutdown();
 			return Arrays.asList(res);
-
 		}
 		catch(Exception e) {
 			throw new DMLCompressionException("Multithreaded first extraction failed", e);
+		}
+		finally{
+			pool.shutdown();
 		}
 	}
 

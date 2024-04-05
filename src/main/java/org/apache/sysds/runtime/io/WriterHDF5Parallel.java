@@ -19,6 +19,12 @@
 
 package org.apache.sysds.runtime.io;
 
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Future;
+
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.LocalFileSystem;
 import org.apache.hadoop.fs.Path;
@@ -31,13 +37,6 @@ import org.apache.sysds.runtime.controlprogram.parfor.stat.InfrastructureAnalyze
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.util.CommonThreadPool;
 import org.apache.sysds.runtime.util.HDFSTool;
-
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.concurrent.Callable;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Future;
 
 public class WriterHDF5Parallel extends WriterHDF5 {
 
@@ -69,8 +68,8 @@ public class WriterHDF5Parallel extends WriterHDF5 {
 		HDFSTool.createDirIfNotExistOnHDFS(path, DMLConfig.DEFAULT_SHARED_DIR_PERMISSION);
 
 		//create and execute tasks
+		ExecutorService pool = CommonThreadPool.get(numThreads);
 		try {
-			ExecutorService pool = CommonThreadPool.get(numThreads);
 			ArrayList<WriteHDF5Task> tasks = new ArrayList<>();
 			int rlen = src.getNumRows();
 			int blklen = (int) Math.ceil((double) rlen / numThreads);
@@ -79,12 +78,7 @@ public class WriterHDF5Parallel extends WriterHDF5 {
 				tasks.add(new WriteHDF5Task(newPath, job, fs, src, i * blklen, Math.min((i + 1) * blklen, rlen)));
 			}
 
-			//wait until all tasks have been executed
-			List<Future<Object>> rt = pool.invokeAll(tasks);
-			pool.shutdown();
-
-			//check for exceptions
-			for(Future<Object> task : rt)
+			for(Future<Object> task : pool.invokeAll(tasks))
 				task.get();
 
 			// delete crc files if written to local file system
@@ -96,6 +90,9 @@ public class WriterHDF5Parallel extends WriterHDF5 {
 		}
 		catch(Exception e) {
 			throw new IOException("Failed parallel write of HDF5 output.", e);
+		}
+		finally{
+			pool.shutdown();
 		}
 	}
 

@@ -119,8 +119,8 @@ public abstract class SpoofMultiAggregate extends SpoofOperator
 		}
 		else  //MULTI-THREADED
 		{
+			ExecutorService pool = CommonThreadPool.get(k);
 			try {
-				ExecutorService pool = CommonThreadPool.get(k);
 				ArrayList<ParAggTask> tasks = new ArrayList<>();
 				int nk = UtilFunctions.roundToNext(Math.min(8*k,m/32), k);
 				int blklen = (int)(Math.ceil((double)m/nk));
@@ -129,7 +129,6 @@ public abstract class SpoofMultiAggregate extends SpoofOperator
 						m, n, sparseSafe, i*blklen, Math.min((i+1)*blklen, m))); 
 				//execute tasks
 				List<Future<double[]>> taskret = pool.invokeAll(tasks);	
-				pool.shutdown();
 			
 				//aggregate partial results
 				ArrayList<double[]> pret = new ArrayList<>();
@@ -139,6 +138,9 @@ public abstract class SpoofMultiAggregate extends SpoofOperator
 			}
 			catch(Exception ex) {
 				throw new DMLRuntimeException(ex);
+			}
+			finally{
+				pool.shutdown();
 			}
 		}
 	

@@ -105,6 +105,7 @@ import org.apache.sysds.runtime.lineage.LineageItem;
 import org.apache.sysds.runtime.lineage.LineageItemUtils;
 import org.apache.sysds.runtime.meta.DataCharacteristics;
 import org.apache.sysds.runtime.util.CollectionUtils;
+import org.apache.sysds.runtime.util.CommonThreadPool;
 import org.apache.sysds.runtime.util.ProgramConverter;
 import org.apache.sysds.runtime.util.UtilFunctions;
 import org.apache.sysds.utils.stats.ParForStatistics;
@@ -632,10 +633,10 @@ public class ParForProgramBlock extends ForProgramBlock {
 		//eager rdd caching of variables for spark in order prevent read/write contention
 		handleSparkEagerCaching( ec );
 		
-		if( _monitor ) 
+		if( time != null ) 
 			StatisticMonitor.putPFStat(_ID, Stat.PARFOR_INIT_DATA_T, time.stop());
 		
-		// initialize iter var to form value
+		// initialize iter var to from value
 		IntObject iterVar = new IntObject(from.getLongValue());
 		
 		///////
@@ -755,16 +756,16 @@ public class ParForProgramBlock extends ForProgramBlock {
 		//restrict recompilation to thread local memory
 		setMemoryBudget();
 		
+		final LocalTaskQueue<Task> queue = new LocalTaskQueue<>();
+		final Thread[] threads         = new Thread[_numThreads];
+		final LocalParWorker[] workers = new LocalParWorker[_numThreads];
 		try
 		{
 			// Step 1) create task queue and init workers in parallel
 			// (including preparation of update-in-place variables)
-			LocalTaskQueue<Task> queue = new LocalTaskQueue<>();
-			Thread[] threads         = new Thread[_numThreads];
-			LocalParWorker[] workers = new LocalParWorker[_numThreads];
 			IntStream.range(0, _numThreads).forEach(i -> {
 				workers[i] = createParallelWorker( _pwIDs[i], queue, ec, i);
-				threads[i] = new Thread( workers[i] );
+				threads[i] = new Thread( workers[i] , "PARFOR");
 				threads[i].setPriority(Thread.MAX_PRIORITY);
 			});
 			
@@ -865,6 +866,10 @@ public class ParForProgramBlock extends ForProgramBlock {
 				StatisticMonitor.putPFStat(_ID, Stat.PARFOR_NUMTASKS, numExecutedTasks);
 				StatisticMonitor.putPFStat(_ID, Stat.PARFOR_NUMITERS, numExecutedIterations);
 			}
+
+			if(threads != null) 
+				for(Thread t : threads) 
+					CommonThreadPool.shutdownAsyncPools(t);
 		}
 	}
 
@@ -887,7 +892,7 @@ public class ParForProgramBlock extends ForProgramBlock {
 		HashMap<String, byte[]> clsMap = new HashMap<>();
 		String program = ProgramConverter.serializeParForBody(body, clsMap);
 		
-		if( _monitor ) 
+		if( time != null ) 
 			StatisticMonitor.putPFStat(_ID, Stat.PARFOR_INIT_PARWRK_T, time.stop());
 		
 		// Step 2) create tasks 
@@ -898,7 +903,7 @@ public class ParForProgramBlock extends ForProgramBlock {
 		List<Task> tasks = partitioner.createTasks();
 		long numCreatedTasks = tasks.size();
 		
-		if( _monitor )
+		if( time != null ) 
 			StatisticMonitor.putPFStat(_ID, Stat.PARFOR_INIT_TASKS_T, time.stop());
 		
 		//handle broadcast / export of inputs
@@ -911,7 +916,7 @@ public class ParForProgramBlock extends ForProgramBlock {
 		RemoteParForJobReturn ret = RemoteParForSpark.runJob(_ID, program,
 			clsMap, tasks, ec, brVars, _resultVars, _enableCPCaching, _numThreads, topLevelPF);
 		
-		if( _monitor ) 
+		if( time != null ) 
 			StatisticMonitor.putPFStat(_ID, Stat.PARFOR_WAIT_EXEC_T, time.stop());
 		
 		// Step 4) collecting results from each parallel worker
@@ -929,7 +934,7 @@ public class ParForProgramBlock extends ForProgramBlock {
 		if( flagForced ) //see step 0
 			releaseForcedRecompile(0);
 		
-		if( _monitor ) {
+		if( time != null ) {
 			StatisticMonitor.putPFStat(_ID, Stat.PARFOR_WAIT_RESULTS_T, time.stop());
 			StatisticMonitor.putPFStat(_ID, Stat.PARFOR_NUMTASKS, numExecutedTasks);
 			StatisticMonitor.putPFStat(_ID, Stat.PARFOR_NUMITERS, numExecutedIterations);
@@ -955,7 +960,7 @@ public class ParForProgramBlock extends ForProgramBlock {
 		HashMap<String, byte[]> clsMap = new HashMap<>(); 
 		String program = ProgramConverter.serializeParForBody( body, clsMap );
 		
-		if( _monitor ) 
+		if( time != null ) 
 			StatisticMonitor.putPFStat(_ID, Stat.PARFOR_INIT_PARWRK_T, time.stop());
 		
 		// Step 3) create tasks 
@@ -964,7 +969,7 @@ public class ParForProgramBlock extends ForProgramBlock {
 		long numIterations = partitioner.getNumIterations();
 		long numCreatedTasks = numIterations;//partitioner.createTasks().size();
 		
-		if( _monitor )
+		if( time != null ) 
 			StatisticMonitor.putPFStat(_ID, Stat.PARFOR_INIT_TASKS_T, time.stop());
 		
 		//write matrices to HDFS, except DP matrix which is the input to the RemoteDPParForSpark job
@@ -974,8 +979,8 @@ public class ParForProgramBlock extends ForProgramBlock {
 		RemoteParForJobReturn ret = RemoteDPParForSpark.runJob(
 			_ID, _iterPredVar, _colocatedDPMatrix, program, clsMap, resultFile, inputMatrix,
 			ec, inputDPF, FileFormat.BINARY, _tSparseCol, _enableCPCaching, _numThreads);
-		
-		if( _monitor ) 
+
+		if( time != null ) 
 			StatisticMonitor.putPFStat(_ID, Stat.PARFOR_WAIT_EXEC_T, time.stop());
 		
 		// Step 5) collecting results from each parallel worker
@@ -990,7 +995,7 @@ public class ParForProgramBlock extends ForProgramBlock {
 			releaseForcedRecompile(0);
 		inputMatrix.unsetPartitioned();
 		
-		if( _monitor ) {
+		if( time != null )  {
 			StatisticMonitor.putPFStat(_ID, Stat.PARFOR_WAIT_RESULTS_T, time.stop());
 			StatisticMonitor.putPFStat(_ID, Stat.PARFOR_NUMTASKS, numExecutedTasks);
 			StatisticMonitor.putPFStat(_ID, Stat.PARFOR_NUMITERS, numExecutedIterations);

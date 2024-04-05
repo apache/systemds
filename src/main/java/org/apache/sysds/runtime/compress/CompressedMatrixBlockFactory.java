@@ -22,6 +22,8 @@ package org.apache.sysds.runtime.compress;
 import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Future;
 
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.Pair;
@@ -50,6 +52,7 @@ import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysds.runtime.controlprogram.parfor.stat.Timing;
 import org.apache.sysds.runtime.matrix.data.LibMatrixReorg;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
+import org.apache.sysds.runtime.util.CommonThreadPool;
 import org.apache.sysds.utils.DMLCompressionStatistics;
 
 /**
@@ -156,26 +159,32 @@ public class CompressedMatrixBlockFactory {
 		return compress(mb, k, compSettings, (WTreeRoot) null);
 	}
 
-	public static void compressAsync(ExecutionContext ec, String varName) {
-		compressAsync(ec, varName, null);
+	public static Future<Void>  compressAsync(ExecutionContext ec, String varName) {
+		return compressAsync(ec, varName, null);
 	}
 
-	public static void compressAsync(ExecutionContext ec, String varName, InstructionTypeCounter ins) {
+	public static Future<Void> compressAsync(ExecutionContext ec, String varName, InstructionTypeCounter ins) {
 		LOG.debug("Compressing Async");
-		CompletableFuture.runAsync(() -> {
-			// method call or code to be asynch.
-			CacheableData<?> data = ec.getCacheableData(varName);
-			if(data instanceof MatrixObject) {
-				MatrixObject mo = (MatrixObject) data;
-				MatrixBlock mb = mo.acquireReadAndRelease();
-				MatrixBlock mbc = CompressedMatrixBlockFactory.compress(mo.acquireReadAndRelease(), ins).getLeft();
-				if(mbc instanceof CompressedMatrixBlock) {
-					ExecutionContext.createCacheableData(mb);
-					mo.acquireModify(mbc);
-					mo.release();
+		final ExecutorService pool = CommonThreadPool.get(); // We have to guarantee that a thread pool is allocated.
+		return CompletableFuture.runAsync(() -> {
+			// method call or code to be async
+			try{
+				CacheableData<?> data = ec.getCacheableData(varName);
+				if(data instanceof MatrixObject) {
+					MatrixObject mo = (MatrixObject) data;
+					MatrixBlock mb = mo.acquireReadAndRelease();
+					MatrixBlock mbc = CompressedMatrixBlockFactory.compress(mo.acquireReadAndRelease(), ins).getLeft();
+					if(mbc instanceof CompressedMatrixBlock) {
+						ExecutionContext.createCacheableData(mb);
+						mo.acquireModify(mbc);
+						mo.release();
+					}
 				}
 			}
-		});
+			finally{
+				pool.shutdown();
+			}
+		}, pool);
 	}
 
 	/**

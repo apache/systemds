@@ -167,8 +167,8 @@ public final class CLALibScalar {
 		if(colGroups == null)
 			return;
 		final ExecutorService pool = CommonThreadPool.get(k);
-		List<ScalarTask> tasks = partition(sop, colGroups);
 		try {
+			List<ScalarTask> tasks = partition(sop, colGroups);
 			List<Future<List<AColGroup>>> rtasks = pool.invokeAll(tasks);
 			List<AColGroup> newColGroups = new ArrayList<>();
 			for(Future<List<AColGroup>> f : rtasks) {
@@ -177,10 +177,11 @@ public final class CLALibScalar {
 			ret.allocateColGroupList(newColGroups);
 		}
 		catch(InterruptedException | ExecutionException e) {
-			pool.shutdown();
 			throw new DMLRuntimeException(e);
 		}
-		pool.shutdown();
+		finally{
+			pool.shutdown();
+		}
 	}
 
 	private static List<ScalarTask> partition(ScalarOperator sop, List<AColGroup> colGroups) {

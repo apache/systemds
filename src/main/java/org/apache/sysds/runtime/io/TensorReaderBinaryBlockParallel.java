@@ -33,7 +33,6 @@ import org.apache.sysds.runtime.util.UtilFunctions;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
@@ -50,27 +49,25 @@ public class TensorReaderBinaryBlockParallel extends TensorReaderBinaryBlock {
 			ret = new TensorBlock(schema[0], idims).allocateBlock();
 		else
 			ret = new TensorBlock(schema, idims).allocateBlock();
+		ExecutorService pool = CommonThreadPool.get(_numThreads);
 		try {
 			//create read tasks for all files
-			ExecutorService pool = CommonThreadPool.get(_numThreads);
 			ArrayList<TensorReaderBinaryBlockParallel.ReadFileTask> tasks = new ArrayList<>();
 			for (Path lpath : IOUtilFunctions.getSequenceFilePaths(fs, path)) {
 				TensorReaderBinaryBlockParallel.ReadFileTask t = new TensorReaderBinaryBlockParallel.ReadFileTask(lpath, job, ret, dims, blen);
 				tasks.add(t);
 			}
 			
-			//wait until all tasks have been executed
-			List<Future<Object>> rt = pool.invokeAll(tasks);
-			pool.shutdown();
-			
-			//check for exceptions
-			for (Future<Object> task : rt)
+			for (Future<Object> task : pool.invokeAll(tasks))
 				task.get();
+			return ret;
 		}
 		catch (Exception e) {
 			throw new IOException("Failed parallel read of binary block input.", e);
 		}
-		return ret;
+		finally{
+			pool.shutdown();
+		}
 	}
 	
 	private static class ReadFileTask implements Callable<Object> {

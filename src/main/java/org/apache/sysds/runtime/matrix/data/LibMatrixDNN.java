@@ -702,10 +702,13 @@ public class LibMatrixDNN {
 			}
 			else {
 				ExecutorService pool = CommonThreadPool.get(k);
-				List<Future<Long>> taskret = pool.invokeAll(tasks);
-				pool.shutdown();
-				for( Future<Long> task : taskret )
-					lnnz += task.get();
+				try{
+					for( Future<Long> task : pool.invokeAll(tasks) )
+						lnnz += task.get();
+				}
+				finally{
+					pool.shutdown();
+				}
 			}
 		} 
 		catch (Exception e) {

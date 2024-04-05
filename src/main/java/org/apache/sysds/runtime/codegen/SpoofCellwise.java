@@ -175,8 +175,8 @@ public abstract class SpoofCellwise extends SpoofOperator {
 		}
 		else  //MULTI-THREADED
 		{
+			ExecutorService pool = CommonThreadPool.get(k);
 			try {
-				ExecutorService pool = CommonThreadPool.get(k);
 				ArrayList<ParAggTask> tasks = new ArrayList<>();
 				int nk = UtilFunctions.roundToNext(Math.min(8*k,m/32), k);
 				int blklen = (int)(Math.ceil((double)m/nk));
@@ -184,7 +184,6 @@ public abstract class SpoofCellwise extends SpoofOperator {
 					tasks.add(new ParAggTask(a, b, scalars, m, n, sparseSafe, i*blklen, Math.min((i+1)*blklen, m)));
 				//execute tasks
 				List<Future<Double>> taskret = pool.invokeAll(tasks);
-				pool.shutdown();
 				
 				//aggregate partial results
 				ValueFunction vfun = getAggFunction();
@@ -202,6 +201,9 @@ public abstract class SpoofCellwise extends SpoofOperator {
 			}
 			catch(Exception ex) {
 				throw new DMLRuntimeException(ex);
+			}
+			finally{
+				pool.shutdown();
 			}
 		}
 		
@@ -268,8 +270,8 @@ public abstract class SpoofCellwise extends SpoofOperator {
 		}
 		else  //MULTI-THREADED
 		{
+			ExecutorService pool = CommonThreadPool.get(k);
 			try {
-				ExecutorService pool = CommonThreadPool.get(k);
 				ArrayList<ParExecTask> tasks = new ArrayList<>();
 				int nk = UtilFunctions.roundToNext(Math.min(8*k,m/32), k);
 				int blklen = (int)(Math.ceil((double)m/nk));
@@ -278,7 +280,6 @@ public abstract class SpoofCellwise extends SpoofOperator {
 						sparseSafe, i*blklen, Math.min((i+1)*blklen, m)));
 				//execute tasks
 				List<Future<Long>> taskret = pool.invokeAll(tasks);
-				pool.shutdown();
 				
 				//aggregate nnz and error handling
 				for( Future<Long> task : taskret )
@@ -303,6 +304,9 @@ public abstract class SpoofCellwise extends SpoofOperator {
 			}
 			catch(Exception ex) {
 				throw new DMLRuntimeException(ex);
+			}
+			finally{
+				pool.shutdown();
 			}
 		}
 		

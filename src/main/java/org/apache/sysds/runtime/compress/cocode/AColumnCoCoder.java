@@ -26,6 +26,10 @@ import org.apache.sysds.runtime.compress.cost.ACostEstimate;
 import org.apache.sysds.runtime.compress.estim.AComEst;
 import org.apache.sysds.runtime.compress.estim.CompressedSizeInfo;
 
+/**
+ * Main abstract class for the co-coding of columns to combine different compression statistics and calculate the
+ * combinations of columns
+ */
 public abstract class AColumnCoCoder {
 
 	protected static final Log LOG = LogFactory.getLog(AColumnCoCoder.class.getName());
@@ -34,8 +38,7 @@ public abstract class AColumnCoCoder {
 	protected final ACostEstimate _cest;
 	protected final CompressionSettings _cs;
 
-	protected AColumnCoCoder(AComEst sizeEstimator, ACostEstimate costEstimator,
-		CompressionSettings cs) {
+	protected AColumnCoCoder(AComEst sizeEstimator, ACostEstimate costEstimator, CompressionSettings cs) {
 		_sest = sizeEstimator;
 		_cest = costEstimator;
 		_cs = cs;

@@ -63,16 +63,18 @@ public interface CoCoderFactory {
 		AColumnCoCoder co = createColumnGroupPartitioner(cs.columnPartitioner, est, costEstimator, cs);
 
 		// Find out if any of the groups are empty.
-		final boolean containsEmptyOrConst = containsEmptyOrConst(colInfos);
+		final boolean containsEmptyConstOrIncompressable = containsEmptyConstOrIncompressable(colInfos);
 
 		// if there are no empty or const columns then try cocode algorithms for all columns
-		if(!containsEmptyOrConst)
+		if(!containsEmptyConstOrIncompressable)
 			return co.coCodeColumns(colInfos, k);
 		else {
 			// filtered empty groups
 			final List<IColIndex> emptyCols = new ArrayList<>();
 			// filtered const groups
 			final List<IColIndex> constCols = new ArrayList<>();
+			// incompressable groups
+			final List<IColIndex> incompressable = new ArrayList<>();
 			// filtered groups -- in the end starting with all groups
 			final List<CompressedSizeInfoColGroup> groups = new ArrayList<>();
 
@@ -85,13 +87,15 @@ public interface CoCoderFactory {
 					emptyCols.add(g.getColumns());
 				else if(g.isConst())
 					constCols.add(g.getColumns());
+				else if(g.isIncompressable())
+					incompressable.add(g.getColumns());
 				else
 					groups.add(g);
 			}
 
 			// overwrite groups.
 			colInfos.compressionInfo = groups;
-			
+
 			// cocode remaining groups
 			if(!groups.isEmpty()) {
 				colInfos = co.coCodeColumns(colInfos, k);
@@ -109,14 +113,19 @@ public interface CoCoderFactory {
 				colInfos.compressionInfo.add(new CompressedSizeInfoColGroup(idx, nRow, CompressionType.CONST));
 			}
 
+			if(incompressable.size() > 0) {
+				final IColIndex idx = ColIndexFactory.combineIndexes(incompressable);
+				colInfos.compressionInfo.add(new CompressedSizeInfoColGroup(idx, nRow, CompressionType.UNCOMPRESSED));
+			}
+
 			return colInfos;
 
 		}
 	}
 
-	private static boolean containsEmptyOrConst(CompressedSizeInfo colInfos) {
+	private static boolean containsEmptyConstOrIncompressable(CompressedSizeInfo colInfos) {
 		for(CompressedSizeInfoColGroup g : colInfos.compressionInfo)
-			if(g.isEmpty() || g.isConst())
+			if(g.isEmpty() || g.isConst() || g.isIncompressable())
 				return true;
 		return false;
 	}
@@ -133,9 +142,9 @@ public interface CoCoderFactory {
 			case STATIC:
 				return new CoCodeStatic(est, costEstimator, cs);
 			case PRIORITY_QUE:
-				return new CoCodePriorityQue(est, costEstimator, cs);
+				return new CoCodePriorityQue(est, costEstimator, cs, 128);
 			default:
-				throw new RuntimeException("Unsupported column group partitioner: " + type.toString());
+				throw new RuntimeException("Unsupported column group partition technique: " + type.toString());
 		}
 	}
 }

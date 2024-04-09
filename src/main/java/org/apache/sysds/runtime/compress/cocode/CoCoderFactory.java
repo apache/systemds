@@ -113,7 +113,7 @@ public interface CoCoderFactory {
 				colInfos.compressionInfo.add(new CompressedSizeInfoColGroup(idx, nRow, CompressionType.CONST));
 			}
 
-			if(incompressable.size() >0){
+			if(incompressable.size() > 0) {
 				final IColIndex idx = ColIndexFactory.combineIndexes(incompressable);
 				colInfos.compressionInfo.add(new CompressedSizeInfoColGroup(idx, nRow, CompressionType.UNCOMPRESSED));
 			}

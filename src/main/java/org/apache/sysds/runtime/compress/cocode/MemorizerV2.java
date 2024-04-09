@@ -27,7 +27,7 @@ import org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex;
 import org.apache.sysds.runtime.compress.estim.AComEst;
 import org.apache.sysds.runtime.compress.estim.CompressedSizeInfoColGroup;
 
-public class MemorizerV2{
+public class MemorizerV2 {
 	private final AComEst _sEst;
 
 	private final Map<ColIndexes, CompressedSizeInfoColGroup>[] mem;
@@ -47,9 +47,8 @@ public class MemorizerV2{
 		final IColIndex gi = key._indexes;
 		final int bucketID = gi.get(0);
 		Map<ColIndexes, CompressedSizeInfoColGroup> bucket = mem[bucketID];
-		if(bucket == null){
-			bucket = mem[bucketID] = new HashMap<>(); 
-		}
+		if(bucket == null)
+			bucket = mem[bucketID] = new HashMap<>();
 		bucket.put(key, val);
 	}
 
@@ -60,14 +59,6 @@ public class MemorizerV2{
 	public void remove(ColIndexes c1, ColIndexes c2) {
 		mem[c1._indexes.get(0)] = null;
 		mem[c2._indexes.get(0)] = null;
-		// mem.remove(c1);
-		// mem.remove(c2);
-		// Iterator<Entry<ColIndexes, CompressedSizeInfoColGroup>> i = mem.entrySet().iterator();
-		// while(i.hasNext()) {
-		// 	final ColIndexes eci = i.next().getKey();
-		// 	if(eci.contains(c1, c2))
-		// 		i.remove();
-		// }
 	}
 
 	public CompressedSizeInfoColGroup getOrCreate(ColIndexes cI, ColIndexes c1, ColIndexes c2) {

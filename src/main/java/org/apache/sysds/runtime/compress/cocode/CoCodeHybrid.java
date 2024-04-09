@@ -48,7 +48,7 @@ public class CoCodeHybrid extends AColumnCoCoder {
 			CoCodeGreedy gd = new CoCodeGreedy(_sest, _cest, _cs);
 			return colInfos.setInfo(gd.combine(colInfos.getInfo(), k));
 		}
-		else if(startSize > 1000){
+		else if(startSize > 1000) {
 			CoCodePriorityQue pq = new CoCodePriorityQue(_sest, _cest, _cs, pqColumnThreashold);
 
 			return colInfos.setInfo(pq.join(colInfos.getInfo(), 1, k));

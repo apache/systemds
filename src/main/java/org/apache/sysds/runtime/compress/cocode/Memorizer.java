@@ -51,8 +51,6 @@ public class Memorizer {
 	}
 
 	public void remove(ColIndexes c1, ColIndexes c2) {
-		// mem.remove(c1);
-		// mem.remove(c2);
 		Iterator<Entry<ColIndexes, CompressedSizeInfoColGroup>> i = mem.entrySet().iterator();
 		while(i.hasNext()) {
 			final ColIndexes eci = i.next().getKey();

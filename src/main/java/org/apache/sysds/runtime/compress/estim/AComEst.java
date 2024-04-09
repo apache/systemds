@@ -22,7 +22,6 @@ package org.apache.sysds.runtime.compress.estim;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 
@@ -63,10 +62,20 @@ public abstract class AComEst {
 		_cs = cs;
 	}
 
+	/**
+	 * Get the number of rows in the overall compressing block.
+	 * 
+	 * @return The number of rows
+	 */
 	public int getNumRows() {
 		return _cs.transposed ? _data.getNumColumns() : _data.getNumRows();
 	}
 
+	/**
+	 * Get the number of columns in the overall compressing block.
+	 * 
+	 * @return The number of cols
+	 */
 	public int getNumColumns() {
 		return _cs.transposed ? _data.getNumRows() : _data.getNumColumns();
 	}
@@ -221,6 +230,13 @@ public abstract class AComEst {
 	protected abstract CompressedSizeInfoColGroup combine(IColIndex combinedColumns, CompressedSizeInfoColGroup g1,
 		CompressedSizeInfoColGroup g2, int maxDistinct);
 
+	/**
+	 * Collect the compressed size for all individual columns using the available k parallelism degree.
+	 * 
+	 * @param clen The number of total columns
+	 * @param k    The parallelization degree
+	 * @return A list of the individual columns compressibility.
+	 */
 	protected List<CompressedSizeInfoColGroup> CompressedSizeInfoColGroup(int clen, int k) {
 		if(k <= 1)
 			return CompressedSizeInfoColGroupSingleThread(clen);
@@ -228,6 +244,12 @@ public abstract class AComEst {
 			return CompressedSizeInfoColGroupParallel(clen, k);
 	}
 
+	/**
+	 * Compress the column groups using a single thread.
+	 * 
+	 * @param clen the number of total columns
+	 * @return A list of the individual columns compressibility.
+	 */
 	private List<CompressedSizeInfoColGroup> CompressedSizeInfoColGroupSingleThread(int clen) {
 		List<CompressedSizeInfoColGroup> ret = new ArrayList<>(clen);
 		if(!_cs.transposed && !_data.isEmpty() && _data.isInSparseFormat())
@@ -237,6 +259,13 @@ public abstract class AComEst {
 		return ret;
 	}
 
+	/**
+	 * Collect the compressed size for all individual columns using the available k parallelism degree.
+	 * 
+	 * @param clen The number of total columns
+	 * @param k    The parallelization degree
+	 * @return A list of the individual columns compressibility.
+	 */
 	private List<CompressedSizeInfoColGroup> CompressedSizeInfoColGroupParallel(int clen, int k) {
 		final ExecutorService pool = CommonThreadPool.get(k);
 		try {
@@ -249,15 +278,22 @@ public abstract class AComEst {
 
 			CompressedSizeInfoColGroup[] res = new CompressedSizeInfoColGroup[clen];
 			final int blkz = Math.max(1, clen / (k * 10));
-			final ArrayList<SizeEstimationTask> tasks = new ArrayList<>(clen / blkz + 1);
+			final ArrayList<Future<Object>> tasks = new ArrayList<>(clen / blkz + 1);
 
 			if(blkz != 1)
 				LOG.debug("Extracting column samples in blocks of " + blkz);
 
-			for(int col = 0; col < clen; col += blkz)
-				tasks.add(new SizeEstimationTask(res, col, Math.min(clen, col + blkz)));
+			for(int col = 0; col < clen; col += blkz) {
+				final int start = col;
+				final int end = Math.min(clen, col + blkz);
+				tasks.add(pool.submit(() -> {
+					for(int c = start; c < end; c++)
+						res[c] = getColGroupInfo(new SingleIndex(c));
+					return null;
+				}));
+			}
 
-			for(Future<Object> f : pool.invokeAll(tasks))
+			for(Future<Object> f : tasks)
 				f.get();
 
 			return Arrays.asList(res);
@@ -265,32 +301,8 @@ public abstract class AComEst {
 		catch(Exception e) {
 			throw new DMLCompressionException("Multithreaded first extraction failed", e);
 		}
-		finally{
+		finally {
 			pool.shutdown();
-		}
-	}
-
-	private class SizeEstimationTask implements Callable<Object> {
-		final CompressedSizeInfoColGroup[] _res;
-		final int _cs;
-		final int _ce;
-
-		private SizeEstimationTask(CompressedSizeInfoColGroup[] res, int cs, int ce) {
-			_res = res;
-			_cs = cs;
-			_ce = ce;
-		}
-
-		@Override
-		public Object call() {
-			try {
-				for(int c = _cs; c < _ce; c++)
-					_res[c] = getColGroupInfo(new SingleIndex(c));
-				return null;
-			}
-			catch(Exception e) {
-				throw new DMLCompressionException("ColGroup extraction failed", e);
-			}
 		}
 	}
 

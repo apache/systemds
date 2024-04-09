@@ -20,53 +20,62 @@
 package org.apache.sysds.runtime.compress.cocode;
 
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.Map;
-import java.util.Map.Entry;
 
 import org.apache.sysds.runtime.compress.DMLCompressionException;
+import org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex;
 import org.apache.sysds.runtime.compress.estim.AComEst;
 import org.apache.sysds.runtime.compress.estim.CompressedSizeInfoColGroup;
 
-public class Memorizer {
+public class MemorizerV2{
 	private final AComEst _sEst;
-	private final Map<ColIndexes, CompressedSizeInfoColGroup> mem;
+
+	private final Map<ColIndexes, CompressedSizeInfoColGroup>[] mem;
 	private int st1 = 0, st2 = 0, st3 = 0, st4 = 0;
 
-	public Memorizer(AComEst sEst) {
+	@SuppressWarnings("unchecked")
+	public MemorizerV2(AComEst sEst, int nCol) {
 		_sEst = sEst;
-		mem = new HashMap<>();
+		mem = new Map[nCol];
 	}
 
 	public void put(CompressedSizeInfoColGroup g) {
-		mem.put(new ColIndexes(g.getColumns()), g);
+		put(new ColIndexes(g.getColumns()), g);
 	}
 
 	public void put(ColIndexes key, CompressedSizeInfoColGroup val) {
-		mem.put(key, val);
+		final IColIndex gi = key._indexes;
+		final int bucketID = gi.get(0);
+		Map<ColIndexes, CompressedSizeInfoColGroup> bucket = mem[bucketID];
+		if(bucket == null){
+			bucket = mem[bucketID] = new HashMap<>(); 
+		}
+		bucket.put(key, val);
 	}
 
 	public CompressedSizeInfoColGroup get(ColIndexes c) {
-		return mem.get(c);
+		return mem[c._indexes.get(0)].get(c);
 	}
 
 	public void remove(ColIndexes c1, ColIndexes c2) {
+		mem[c1._indexes.get(0)] = null;
+		mem[c2._indexes.get(0)] = null;
 		// mem.remove(c1);
 		// mem.remove(c2);
-		Iterator<Entry<ColIndexes, CompressedSizeInfoColGroup>> i = mem.entrySet().iterator();
-		while(i.hasNext()) {
-			final ColIndexes eci = i.next().getKey();
-			if(eci.contains(c1, c2))
-				i.remove();
-		}
+		// Iterator<Entry<ColIndexes, CompressedSizeInfoColGroup>> i = mem.entrySet().iterator();
+		// while(i.hasNext()) {
+		// 	final ColIndexes eci = i.next().getKey();
+		// 	if(eci.contains(c1, c2))
+		// 		i.remove();
+		// }
 	}
 
 	public CompressedSizeInfoColGroup getOrCreate(ColIndexes cI, ColIndexes c1, ColIndexes c2) {
-		CompressedSizeInfoColGroup g = mem.get(cI);
+		CompressedSizeInfoColGroup g = get(cI);
 		st2++;
 		if(g == null) {
-			final CompressedSizeInfoColGroup left = mem.get(c1);
-			final CompressedSizeInfoColGroup right = mem.get(c2);
+			final CompressedSizeInfoColGroup left = get(c1);
+			final CompressedSizeInfoColGroup right = get(c2);
 			if(left != null && right != null) {
 				st3++;
 				g = _sEst.combine(cI._indexes, left, right);
@@ -76,7 +85,7 @@ public class Memorizer {
 							"Combination returned less distinct values on: \n" + left + "\nand\n" + right + "\nEq\n" + g);
 				}
 				synchronized(this) {
-					mem.put(cI, g);
+					put(cI, g);
 				}
 			}
 

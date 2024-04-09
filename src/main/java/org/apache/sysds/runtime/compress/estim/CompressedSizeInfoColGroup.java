@@ -129,6 +129,10 @@ public class CompressedSizeInfoColGroup {
 				_sizes.put(ct,
 					(double) ColGroupSizes.estimateInMemorySizeCONST(columns.size(), columns.isContiguous(), 1.0, false));
 				break;
+			case UNCOMPRESSED:
+				_sizes.put(ct, (double) ColGroupSizes.estimateInMemorySizeUncompressed(nRows, columns.isContiguous(),
+					columns.size(), 1.0));
+				break;
 			default:
 				throw new DMLCompressionException("Invalid instantiation of const Cost");
 		}
@@ -206,6 +210,10 @@ public class CompressedSizeInfoColGroup {
 		return _map;
 	}
 
+	public void setMap(IEncode map) {
+		_map = map;
+	}
+
 	public boolean containsZeros() {
 		return _facts.numOffs < _facts.numRows;
 	}
@@ -227,6 +235,11 @@ public class CompressedSizeInfoColGroup {
 
 	public boolean isConst() {
 		return _bestCompressionType == CompressionType.CONST || _sizes.containsKey(CompressionType.CONST);
+	}
+
+	public boolean isIncompressable() {
+		return _bestCompressionType == CompressionType.UNCOMPRESSED;
+
 	}
 
 	private static double getCompressionSize(IColIndex cols, CompressionType ct, EstimationFactors fact) {
@@ -284,6 +297,15 @@ public class CompressedSizeInfoColGroup {
 		sb.append(" Sizes: " + _sizes);
 		sb.append(" facts: " + _facts);
 		sb.append(" mapIsNull: " + (_map == null));
+		if(_map != null) {
+			String s = _map.toString();
+			if(s.length() > 1000) {
+				sb.append(s, 0, 1000);
+			}
+			else {
+				sb.append(s);
+			}
+		}
 		return sb.toString();
 	}
 

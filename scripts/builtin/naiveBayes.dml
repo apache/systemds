@@ -19,21 +19,21 @@
 #
 #-------------------------------------------------------------
 
-# The naiveBayes-function computes the class conditional probabilities and class priors.
+# This builtin function implements a NaiveBayes classification.
 #
 # INPUT:
-# ----------------------------------------------------------------------------------------
-# D        One dimensional column matrix with N rows.
-# C        One dimensional column matrix with N rows.
-# laplace  Any Double value.
-# verbose  Boolean value.
-# ----------------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
+# D        Input feature matrix of shape N x M
+# C        Class label vector (positive integers) of shape N x 1.
+# laplace  Laplace smoothing correction (prevent zero probabilities)
+# verbose  Flag for verbose debug output
+# ------------------------------------------------------------------------------
 #
 # OUTPUT:
-# --------------------------------------------------------------------------------------------------
-# prior              Class priors, One dimensional column matrix with N rows.
-# classConditionals  Class conditional probabilities, One dimensional column matrix with N rows.
-# --------------------------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
+# prior              Class prior probabilities
+# classConditionals  Class conditional feature distributions
+# ------------------------------------------------------------------------------
 
 m_naiveBayes = function(Matrix[Double] D,
   Matrix[Double] C, Double laplace = 1, Boolean verbose = TRUE)
@@ -49,18 +49,18 @@ m_naiveBayes = function(Matrix[Double] D,
   # sanity checks of data and arguments
   if(minFeatureVal < 0)
     stop("naiveBayes: Stopping due to invalid argument: Multinomial naive Bayes "
-       + " is meant for count-based feature values, minimum value in X is negative")
+       + " is meant for count-based feature values, minimum value in D is negative")
   if(numRows < 2)
     stop("naiveBayes: Stopping due to invalid inputs: "
        + "Not possible to learn a classifier without at least 2 rows")
   if(minLabelVal < 1)
-    stop("naiveBayes: Stopping due to invalid argument: Label vector (Y) must be recoded")
+    stop("naiveBayes: Stopping due to invalid argument: Label vector (C) must be recoded")
   if(numClasses == 1)
     stop("naiveBayes: Stopping due to invalid argument: "
-       + "Maximum label value is 1, need more than one class to learn a multi-class classifier")	
+       + "Maximum label value is 1, need more than one class to learn a multi-class classifier")
   if(sum(abs(C%%1 == 0)) != numRows)
-    stop("naiveBayes: Stopping due to invalid argument: " 
-       + "Please ensure that Y contains (positive) integral labels")
+    stop("naiveBayes: Stopping due to invalid argument: "
+       + "Please ensure that C contains (positive) integral labels")
   if(laplaceCorrection < 0)
     stop("naiveBayes: Stopping due to invalid argument: "
        + "Laplacian correction (laplace) must be non-negative")
@@ -88,3 +88,4 @@ m_naiveBayes = function(Matrix[Double] D,
     print("Training Accuracy (%): " + acc);
   }
 }
+

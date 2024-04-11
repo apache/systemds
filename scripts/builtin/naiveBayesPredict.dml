@@ -19,20 +19,20 @@
 #
 #-------------------------------------------------------------
 
-# The naiveBaysePredict-function predicts the scoring with a naive Bayes model.
+# This builtin function implements the prediction for NaiveBayes classification.
 #
 # INPUT:
-# ---------------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 # X     Matrix of test data with N rows.
-# P     Class priors, One dimensional column matrix with N rows.
-# C     Class conditional probabilities, matrix with N rows
-# ---------------------------------------------------------------------------------------
+# P     Class prior probabilities
+# C     Class conditional feature distributions
+# ------------------------------------------------------------------------------
 #
 # OUTPUT:
-# ---------------------------------------------------------------------------------------
-# Y     A matrix containing the top-K item-ids with highest predicted ratings.
-# YRaw  A matrix containing predicted ratings.
-# ---------------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
+# Y     A matrix containing the top-K item-ids with highest predicted class.
+# YRaw  A matrix containing predicted class.
+# ------------------------------------------------------------------------------
 
 m_naiveBayesPredict = function(Matrix[Double] X, Matrix[Double] P, Matrix[Double] C)
  return (Matrix[Double] YRaw, Matrix[Double] Y)
@@ -45,3 +45,4 @@ m_naiveBayesPredict = function(Matrix[Double] X, Matrix[Double] P, Matrix[Double
   YRaw = X_w_ones %*% t(log(model));
   Y = rowIndexMax(YRaw);
 }
+

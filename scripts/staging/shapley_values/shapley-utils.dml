@@ -93,7 +93,7 @@ if ( length(samples_list) == 1){
 }
 }
 
-# Simple utility function to shuffle (from shuffle.dml, but without storing to file)
+# Simple utility function to shuffle (from shuffle.dml, but without storing to file). Shuffles rows.
 #
 # INPUT:
 # ---------------------------------------------------------------------------------------
@@ -112,6 +112,66 @@ return (Matrix[Double] X_shuffled){
   X = order(target = cbind(X, y), by = num_col + 1)
   X_shuffled = X[,1:num_col]
 }
+
+u_range = function(Integer start, Integer end)
+return (Matrix[Double] range){
+  range = t(cumsum(matrix(1, rows=end-start+1, cols=1)))
+  range = range+start-1
+}
+
+# Computed partitions from metadata.
+# Takes the columns of a metadata frame returned from transformencode(),
+# that correspond to the selected features of the model.
+#
+# INPUT:
+# ---------------------------------------------------------------------------------------
+# metadata                    Part of Frame that contains the columns corresponding
+#                             to the features used by the model.
+# skip_singel_val_partitions  Remove columns from partitions that represent single features.
+# ---------------------------------------------------------------------------------------
+#
+# OUTPUT:
+# -----------------------------------------------------------------------------
+# partitions      Matrix containing the partitions with the first element of a partition in the first row
+#                 and the last one in the second row
+# -----------------------------------------------------------------------------
+meatadataToPartitions = function(Frame[Unknown] metadata, Integer skip_single_val_partitions=1)
+return (Matrix[Double] partitions){
+  #map vals to 1
+  iMeta = map(metadata, 'x -> x != null ? 1 : 0')
+  #replace NaNs to count vals per feature
+  iMeta = replace(target=as.matrix(iMeta), pattern=NaN, replacement=0)
+  #count number of vals per feature
+  iMeta = colSums(iMeta)
+  #replace 0 with 1, because there is still one feature in the final data
+  iMeta = replace(target=iMeta, pattern=0, replacement=1)
+  #get last index via cumsum
+  iMeta = t(cumsum(t(iMeta)))
+  #get first elemnt by adding 1 to prior last element
+  t1=matrix(1,rows=1, cols=ncol(iMeta))
+  t1[,2:ncol(iMeta)] = iMeta[,1:ncol(iMeta)-1]+1
+  #rbind to get first elem in first row and last in second
+  partitions=rbind(t1, iMeta)
+
+  if (skip_single_val_partitions == 1){
+    rm_selector = partitions[1,] != partitions[2,]
+    partitions = removeEmpty(target=partitions, margin="cols", select=rm_selector)
+  }
+}
+
+removePartitionsFromFeatures = function(Matrix[Double] features, Matrix[Double] partitions)
+return (Matrix[Double] short_features){
+  #remove from features
+  rm_mask = matrix(0, rows=1, cols=ncol(features))
+  for (i in 1:ncol(partitions)){
+    part_start = as.scalar(partitions[1,i])
+    part_end   = as.scalar(partitions[2,i])
+    #include part_start as representative of partition
+    rm_mask = rm_mask + (features > part_start) * (features <= part_end)
+  }
+  short_features = removeEmpty(target=features, margin="cols", select=!rm_mask)
+}
+
 
 toDecimal = function(Matrix[Double] m, Matrix[Double] pow2)
 return(Matrix[Double] d){

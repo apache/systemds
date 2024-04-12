@@ -194,8 +194,8 @@ return (Matrix[Double] phis, Double expected){
 # expected       Double holding the average prediction of all instances.
 # -----------------------------------------------------------------------------
 shapley_permutations_by_row = function(String model_function, list[unknown] model_args, Matrix[Double] x_multirow,
-  Matrix[Double] X_bg, Integer n_permutations = 10, Integer integration_samples = 100, Integer remove_non_var=1,
-  Integer seed = -1, Integer verbose = 1)
+  Matrix[Double] X_bg, Integer n_permutations = 10, Integer integration_samples = 100, Integer remove_non_var=0,
+  Matrix[Double] partitions=as.matrix(-1), Integer seed = -1, Integer verbose = 1)
 return (Matrix[Double] row_phis, Double expected){
   shapleyUtils::u_vprint("--> Permutation Explainer (by-row) for "+nrow(x_multirow)+" rows.", verbose)
   total_preds=ncol(x_multirow)*2*n_permutations*integration_samples*nrow(x_multirow)
@@ -203,8 +203,18 @@ return (Matrix[Double] row_phis, Double expected){
     " parallel cals.", verbose )
   shapleyUtils::u_vprint("Remove non-varying: "+as.boolean(remove_non_var), verbose )
 
+  #start with all features
+  features=shapleyUtils::u_range(1, ncol(x_multirow))
+
+  if(sum(partitions) != -1){
+    if(remove_non_var != 0){
+      stop("shapley_permutations_by_row:ERROR: Can't use n_non_varying_inds and partitions at the same time.")
+    }
+    features=shapleyUtils::removePartitionsFromFeatures(features, partitions)
+  }
+
   #important lengths and offsets
-  perm_length = ncol(x_multirow)
+  perm_length = ncol(features)
   full_mask_offset = perm_length * 2 * integration_samples
 
   #sample from X_bg
@@ -222,8 +232,9 @@ return (Matrix[Double] row_phis, Double expected){
   #masked_bg_for_permutations = matrix(0, rows=perm_length*2*n_permutations*integration_samples, cols=perm_length)
 
   parfor (i in 1:n_permutations, check=0){
-    permutations[i] = t(sample(perm_length,perm_length, seed=((seed+1)*i)-1))
-    perm_mask = prepare_mask_for_permutation(permutation=permutations[i])
+    #permutations[i] = t(sample(perm_length,perm_length, seed=((seed+1)*i)-1))
+    permutations[i] = t(shapleyUtils::u_shuffle(t(features)))
+    perm_mask = prepare_mask_for_permutation(permutation=permutations[i], partitions=partitions)
     offset_masks = (i-1) * full_mask_offset + 1
     masks_for_permutations[offset_masks:offset_masks+full_mask_offset-1]=prepare_full_mask(perm_mask, integration_samples)
   }
@@ -411,24 +422,28 @@ return (Matrix[Double] non_varying_inds){
 # INPUT:
 # ---------------------------------------------------------------------------------------
 # permutation         A single permutation of varying features.
+#                     If using partitions, remove them beforhand by using removePartitionsFromFeatures() from the utils.
 # n_non_varying_inds  The number of feature that do not vary in the background data.
 #                     Can be retrieved e.g. by looking at std.dev
+# partitions          Matrix with first elemnt of partition in first row and last element of partition in second row.
+#                     Used to treat partitions as one feature when creating masks. Useful for one-hot-encoded features.
 # ---------------------------------------------------------------------------------------
 #
 # OUTPUT:
 # -----------------------------------------------------------------------------
 # mask           Boolean mask.
 # -----------------------------------------------------------------------------
-prepare_mask_for_permutation = function(Matrix[Double] permutation, Integer n_non_varying_inds=0, Matrix[Double] partitions = as.matrix(-1))
+prepare_mask_for_permutation = function(Matrix[Double] permutation, Integer n_non_varying_inds=0,
+       Matrix[Double] partitions=as.matrix(-1))
 return (Matrix[Double] masks){
-
   if(sum(partitions)!=-1){
     #can't use n_non_varying_inds and partitions at the same time
     if(n_non_varying_inds > 0){
       stop("prepare_mask_for_permutation:ERROR: Can't use n_non_varying_inds and partitions at the same time.")
     }
     #number of features not in permutation is diff between start and end of partitions, since first feature remains in permutation
-    skip_inds = partitions[,2] - partitions[,1]
+    skip_inds = partitions[2,] - partitions[1,]
+
     #skip these inds by treating them as non varying
     n_non_varying_inds = sum(skip_inds)
   }
@@ -469,9 +484,9 @@ return (Matrix[Double] masks){
 
     #replicate mask from first feature of each partionton to entire partitions
     if(sum(partitions)!=-1){
-      for ( i in 1:nrow(partitions) ){
-        p_start = as.scalar(partitions[i,1])
-        p_end   = as.scalar(partitions[i,2])
+      for ( i in 1:ncol(partitions) ){
+        p_start = as.scalar(partitions[1,i])
+        p_end   = as.scalar(partitions[2,i])
         test = masks[,p_start] %*% matrix(1, rows=1, cols=p_end-p_start)
         masks[,p_start+1:p_end] = test
       }

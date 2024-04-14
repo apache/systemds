@@ -22,9 +22,11 @@
 
 
 # run the script staging/learnedSampling/1_Data_Model_Prep.dml to prepare the model
+# also, store meatadata M from transformencode to use partitions
 
 source("../shapley-permutation-opt.dml") as shapleyPermutation
 source("../shapley-permutation.dml") as shapleyPermutationLegacy
+source("../shapley-utils.dml") as shapleyUtils
 
 X_bg = read("../data/Adult_X.csv")
 y = read("../data/Adult_y.csv")
@@ -39,6 +41,16 @@ execution_policy = ifdef($execution_policy, "auto")
 rows_to_explain = ifdef($rows_to_explain, 10)
 # set remove_non_var
 remove_non_var = ifdef($remove_non_var, 0)
+# use partitions
+use_partitions = ifdef($use_partitions, 0)
+if (use_partitions == 1){
+  metadata = read("../data/Adult_meta.csv")
+  metadata = metadata[,2:(ncol(metadata)-1)]
+  partitions=shapleyUtils::meatadataToPartitions(metadata=metadata)
+} else {
+  partitions = as.matrix(-1)
+}
+
 print("Computing shapley values for "+rows_to_explain+" rows with "+n_permutations+" permutatitons, "+integration_samples+" samples to marginalise masked features.")
 #select instances to compute shapley values for
 x = X_bg[2:rows_to_explain+1,]
@@ -58,6 +70,7 @@ if(execution_policy != 'legacy-iterative'){
     desired_max_batch_size=-1,
     execution_policy=execution_policy,
     remove_non_var=remove_non_var,
+    partitions=partitions,
     seed=-1,
     verbose=1
   )

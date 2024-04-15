@@ -85,4 +85,11 @@ def get_path_to_script_layers() -> str:
     root = os.environ.get("SYSTEMDS_ROOT")
     if root is None:
         root = get_module_dir()
-    return os.path.join(root, "scripts", "nn", "layers")
+    p =  os.path.join(root, "scripts", "nn", "layers")
+    if not os.path.exists(p):
+        # Probably inside the SystemDS repository therefore go to the source nn layers.
+        p = os.path.join(root, "..", "..", "..", "..",  "scripts", "nn", "layers" )
+    if os.path.exists(p):
+        return p
+    else:
+        raise Exception("Invalid script layer path: " + p)

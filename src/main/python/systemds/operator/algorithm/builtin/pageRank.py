@@ -30,9 +30,6 @@ from systemds.utils.consts import VALID_INPUT_TYPES
 
 
 def pageRank(G: Matrix,
-             p: Matrix,
-             e: Matrix,
-             u: Matrix,
              **kwargs: Dict[str, VALID_INPUT_TYPES]):
     """
      DML builtin method for PageRank algorithm (power iterations)
@@ -41,14 +38,16 @@ def pageRank(G: Matrix,
     
     :param G: Input Matrix
     :param p: initial page rank vector (number of nodes), e.g., rand intialized
+        default rand initialized with seed
     :param e: additional customization, default vector of ones
-    :param u: personalization vector (number of nodes)
+    :param u: personalization vector (number of nodes), default vector of ones
     :param alpha: teleport probability
     :param max_iter: maximum number of iterations
+    :param seed: seed for default rand initialization of page rank vector
     :return: computed pagerank
     """
 
-    params_dict = {'G': G, 'p': p, 'e': e, 'u': u}
+    params_dict = {'G': G}
     params_dict.update(kwargs)
     return Matrix(G.sds_context,
         'pageRank',

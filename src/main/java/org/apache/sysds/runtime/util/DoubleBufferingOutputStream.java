@@ -62,7 +62,7 @@ public class DoubleBufferingOutputStream extends FilterOutputStream {
 				final byte[] b_pos = _buff[_pos];
 				// block until buffer is free to use
 				_locks[_pos].get();
-				if(b_pos.length > len) {
+				if(b_pos.length >= len) {
 					// copy the block into the buffer.
 					System.arraycopy(b, off, b_pos, 0, len);
 					// submit write request guaranteed to be sequential since it is using a single thread.

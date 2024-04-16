@@ -233,20 +233,20 @@ public class LocalFileUtils
 	 * @param doubleBuffering overlay serialization and I/O
 	 * @throws IOException if IOException occurs
 	 */
-	public static void writeWritableToLocal(String fname, Writable mb, boolean doubleBuffering)
-		throws IOException
-	{
-		OutputStream fos = new FileOutputStream( fname );
-		if( doubleBuffering )
-			fos = new DoubleBufferingOutputStream(fos, 2, BUFFER_SIZE);
-		FastBufferedDataOutputStream out = new FastBufferedDataOutputStream(fos, BUFFER_SIZE);
-		
+	public static void writeWritableToLocal(String fname, Writable mb, boolean doubleBuffering) throws IOException {
+		final OutputStream fos;
+		if(doubleBuffering)
+			fos = new DoubleBufferingOutputStream(new FileOutputStream(fname), 2, BUFFER_SIZE);
+		else 
+			fos = new FileOutputStream(fname);
+		final FastBufferedDataOutputStream out = new FastBufferedDataOutputStream(fos, BUFFER_SIZE);
+	
 		try {
 			mb.write(out);
 		}
 		finally {
-			IOUtilFunctions.closeSilently(out); //incl double buffering
-			IOUtilFunctions.closeSilently(fos);
+			IOUtilFunctions.closeSilently(out); // incl double buffering
+			// IOUtilFunctions.closeSilently(fos);
 		}
 	}
 

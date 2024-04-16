@@ -146,12 +146,12 @@ public class IOUtilFunctions {
 		return String.format("0-m-%05d", pos);
 	}
 	
-	public static void closeSilently( Closeable io ) {
+	public static void closeSilently(Closeable io) {
 		try {
-			if( io != null )
+			if(io != null)
 				io.close();
 		}
-		catch (Exception ex) {
+		catch(Exception ex) {
 			LOG.error("Failed to close IO resource.", ex);
 		}
 	}

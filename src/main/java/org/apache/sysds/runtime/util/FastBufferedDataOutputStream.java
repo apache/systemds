@@ -42,8 +42,11 @@ import org.apache.sysds.runtime.matrix.data.MatrixBlockDataOutput;
  */
 public class FastBufferedDataOutputStream extends FilterOutputStream implements DataOutput, MatrixBlockDataOutput
 {
+	/** The buffer to copy bytes into before writing out */
 	protected byte[] _buff;
+	/** The maximum size of the buffer */
 	protected int _bufflen;
+	/** The current fill amount of the buffer */
 	protected int _count;
 
 	public FastBufferedDataOutputStream(OutputStream out) {
@@ -54,7 +57,7 @@ public class FastBufferedDataOutputStream extends FilterOutputStream implements 
 		super(out);
 		if(size <= 0)
 			throw new IllegalArgumentException("Buffer size <= 0.");
-		if( size%8 != 0 )
+		if(size % 8 != 0)
 			throw new IllegalArgumentException("Buffer size not a multiple of 8.");
 		_buff = new byte[size];
 		_bufflen = size;
@@ -68,19 +71,21 @@ public class FastBufferedDataOutputStream extends FilterOutputStream implements 
 	}
 
 	@Override
-	public void write(byte[] b, int off, int len) 
-		throws IOException 
-	{
-		if (len >= _bufflen) {
-			flushBuffer();
+	public void write(byte[] b, int off, int len) throws IOException {
+		if(len > _bufflen) {
+			// If we write a byte array that is larger than the buffer
+			flushBuffer(); // flush the buffer first and
+			// forward the array directly
 			out.write(b, off, len);
-			return;
 		}
-		if (len > _bufflen - _count) {
-			flushBuffer();
+		else{
+			if (len > _bufflen - _count) 
+				// if the write is larger than what is left in the buffer.
+				flushBuffer();
+			
+			System.arraycopy(b, off, _buff, _count, len);
+			_count += len;
 		}
-		System.arraycopy(b, off, _buff, _count, len);
-		_count += len;
 	}
 
 	@Override
@@ -89,6 +94,11 @@ public class FastBufferedDataOutputStream extends FilterOutputStream implements 
 		out.flush();
 	}
 
+	/**
+	 * Flush the buffer to empty the current content and reset the counting pointer to 0
+	 * 
+	 * @throws IOException Throws an IOException on errors.
+	 */
 	private void flushBuffer() throws IOException {
 		if(_count > 0) {
 			out.write(_buff, 0, _count);

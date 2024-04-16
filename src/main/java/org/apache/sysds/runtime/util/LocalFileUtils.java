@@ -245,8 +245,7 @@ public class LocalFileUtils
 			mb.write(out);
 		}
 		finally {
-			IOUtilFunctions.closeSilently(out); // incl double buffering
-			// IOUtilFunctions.closeSilently(fos);
+			IOUtilFunctions.closeSilently(out);
 		}
 	}
 

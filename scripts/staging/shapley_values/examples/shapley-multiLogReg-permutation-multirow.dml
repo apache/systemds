@@ -103,8 +103,10 @@ S = t(S)
 # write values to csv
 write_to_file = ifdef($write_to_file, 1)
 if( write_to_file == 1){
+  #custom tag for results
+  file_tag = ifdef($file_tag, "")
   print("Writing to file")
-  write(S, "../data/Adult_shap-values_permutation_"+n_permutations+"perm_"+integration_samples+"samples.csv", format="csv")
+  write(S, "../data/Adult_shap-values_permutation_"+n_permutations+"perm_"+integration_samples+"samples"+file_tag+".csv", format="csv")
 }
 
 

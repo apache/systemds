@@ -75,6 +75,9 @@ public class DoubleBufferingOutputStream extends FilterOutputStream {
 					// To avoid this we simply write the given byte array without a buffer.
 					// This approach only works if the caller adhere to not modify the byte array given
 					_locks[_pos] = _pool.submit(() -> writeBuffer(b, off, len));
+					// get the task to reduce the risk ( and at least block the current thread) 
+					// to avoid race conditions from callers.
+					_locks[_pos].get(); 
 				}
 				_pos = (_pos + 1) % _buff.length;
 			}

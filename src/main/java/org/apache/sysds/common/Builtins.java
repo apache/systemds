@@ -477,6 +477,7 @@ public enum Builtins {
 
 	public static String getInternalFName(String name, DataType dt) {
 		return !contains(name, true, false) ? name : // private builtin
-				(dt.isMatrix() ? "m_" : "s_") + name;    // public builtin
+				(dt.isMatrix() ? "m_" :              // public builtin
+				 dt.isFrame() ? "f_" : "s_") + name;
 	}
 }

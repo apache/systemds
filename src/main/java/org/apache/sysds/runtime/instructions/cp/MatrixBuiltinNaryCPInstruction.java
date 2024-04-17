@@ -24,7 +24,9 @@ import java.util.List;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.sysds.runtime.DMLRuntimeException;
+import org.apache.sysds.runtime.controlprogram.caching.CacheBlock;
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
+import org.apache.sysds.runtime.frame.data.FrameBlock;
 import org.apache.sysds.runtime.lineage.LineageItem;
 import org.apache.sysds.runtime.lineage.LineageItemUtils;
 import org.apache.sysds.runtime.lineage.LineageTraceable;
@@ -42,16 +44,24 @@ public class MatrixBuiltinNaryCPInstruction extends BuiltinNaryCPInstruction imp
 		//separate scalars and matrices and pin all input matrices
 		List<MatrixBlock> matrices = ec.getMatrixInputs(inputs, true);
 		List<ScalarObject> scalars = ec.getScalarInputs(inputs);
+		List<FrameBlock> frames = ec.getFrameInputs(inputs);
 		
-		MatrixBlock outBlock = null;
+		CacheBlock<?> outBlock = null;
 		if( "cbind".equals(getOpcode()) || "rbind".equals(getOpcode()) ) {
 			boolean cbind = "cbind".equals(getOpcode());
-			//robustness for empty lists: create 0-by-0 matrix block
-			outBlock = matrices.size() == 0 ? new MatrixBlock(0, 0, 0) : 
-				matrices.get(0).append(matrices.subList(1, matrices.size())
-					.toArray(new MatrixBlock[0]), new MatrixBlock(), cbind);
+			if(frames.size() == 0 ) { //matrix/scalar
+	 			//robustness for empty lists: create 0-by-0 matrix block
+				outBlock = matrices.size() == 0 ? new MatrixBlock(0, 0, 0) : 
+					matrices.get(0).append(matrices.subList(1, matrices.size())
+						.toArray(new MatrixBlock[0]), new MatrixBlock(), cbind);
+			}
+			else {
+				//TODO native nary frame append
+				outBlock = frames.get(0);
+				for(int i=1; i<frames.size(); i++)
+					outBlock = ((FrameBlock)outBlock).append(frames.get(i), cbind);
+			}
 		}
-		
 		else if( ArrayUtils.contains(new String[]{"nmin", "nmax", "n+"}, getOpcode()) ) {
 			outBlock = MatrixBlock.naryOperations(_optr, matrices.toArray(new MatrixBlock[0]),
 				scalars.toArray(new ScalarObject[0]), new MatrixBlock());
@@ -62,12 +72,16 @@ public class MatrixBuiltinNaryCPInstruction extends BuiltinNaryCPInstruction imp
 		
 		//release inputs and set output matrix or scalar
 		ec.releaseMatrixInputs(inputs, true);
+		ec.releaseFrameInputs(inputs);
 		if( output.getDataType().isMatrix()) {
-			ec.setMatrixOutput(output.getName(), outBlock);
+			ec.setMatrixOutput(output.getName(), (MatrixBlock)outBlock);
+		}
+		else if( output.getDataType().isFrame()) {
+			ec.setFrameOutput(output.getName(), (FrameBlock)outBlock);
 		}
 		else {
 			ec.setVariable(output.getName(), ScalarObjectFactory.createScalarObject(
-				output.getValueType(), outBlock.quickGetValue(0, 0)));
+				output.getValueType(), ((MatrixBlock)outBlock).quickGetValue(0, 0)));
 		}
 	}
 	

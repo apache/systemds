@@ -46,7 +46,7 @@ source("scripts/pipelines/scripts/utils.dml") as utils;
 source("scripts/builtin/topk_cleaning.dml") as topk;
 source("scripts/builtin/bandit.dml") as bandit;
 
-s_fit_pipeline = function(Frame[Unknown] trainData, Frame[Unknown] testData, Frame[Unknown] metaData = as.frame("NULL"),
+f_fit_pipeline = function(Frame[Unknown] trainData, Frame[Unknown] testData, Frame[Unknown] metaData = as.frame("NULL"),
   Frame[Unknown] pip, Frame[Unknown] applyFunc, Matrix[Double] hp, Integer cvk=3, String evaluationFunc, Matrix[Double] evalFunHp,
   Boolean isLastLabel = TRUE, Boolean correctTypos=FALSE)
 return (Matrix[Double] scores, Matrix[Double] cleanTrain, Matrix[Double] cleanTest, List[Unknown] externalState, List[Unknown] iState)

@@ -44,7 +44,7 @@
 
 source("scripts/builtin/topk_cleaning.dml") as topk;
 
-s_apply_pipeline = function(Frame[Unknown] testData, Frame[Unknown] metaData = as.frame("NULL"), Frame[Unknown] pip,
+f_apply_pipeline = function(Frame[Unknown] testData, Frame[Unknown] metaData = as.frame("NULL"), Frame[Unknown] pip,
  Frame[Unknown] applyFunc, Matrix[Double] hp, Boolean isLastLabel = TRUE,List[Unknown] exState, List[Unknown] iState, Boolean correctTypos=FALSE)
   return (Matrix[Double] eXtest)
 {

@@ -26,7 +26,7 @@ source("scripts/pipelines/scripts/utils.dml") as utils;
 source("scripts/pipelines/scripts/enumerateLogical.dml") as lg;
 source("scripts/builtin/bandit.dml") as bandit;
 
-s_topk_cleaning = function(Frame[Unknown] dataTrain, Frame[Unknown] dataTest = as.frame("NULL"), Frame[Unknown] metaData = as.frame("NULL"), Frame[Unknown] primitives,
+f_topk_cleaning = function(Frame[Unknown] dataTrain, Frame[Unknown] dataTest = as.frame("NULL"), Frame[Unknown] metaData = as.frame("NULL"), Frame[Unknown] primitives,
   Frame[Unknown] parameters, Frame[String] refSol = as.frame("NaN"), String evaluationFunc, Matrix[Double] evalFunHp, Integer topK = 5, Integer resource_val = 20,
   Integer max_iter = 10, Double lq = 0.1, Double uq=0.7, Double sample = 1.0, Double expectedIncrease=1.0, Integer seed = -1, Boolean cv=TRUE, Integer cvk = 2, 
   Boolean isLastLabel = TRUE, Integer rowCount = 3700,

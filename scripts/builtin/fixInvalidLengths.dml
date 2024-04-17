@@ -35,7 +35,7 @@
 # M     ---
 # -------------------
 
-s_fixInvalidLengths = function(Frame[Unknown] F1, Matrix[Double] mask, Double ql = 0.05, Double qu = 0.99)
+f_fixInvalidLengths = function(Frame[Unknown] F1, Matrix[Double] mask, Double ql = 0.05, Double qu = 0.99)
 return (Frame[Unknown] X, Matrix[Double] mask, Matrix[Double] qLow, Matrix[Double] qUp)
 {
   length = map(F1, "x -> x.length()")

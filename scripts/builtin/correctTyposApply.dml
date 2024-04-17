@@ -50,7 +50,7 @@
 # ---------------------------------------------------------------------------------------------
 
 
-s_correctTyposApply = function(Frame[String] strings, Double frequency_threshold = 0.05, Integer distance_threshold = 2, Matrix[Double] distance_matrix, Frame[Unknown] dict)
+f_correctTyposApply = function(Frame[String] strings, Double frequency_threshold = 0.05, Integer distance_threshold = 2, Matrix[Double] distance_matrix, Frame[Unknown] dict)
   return (Frame[String] Y)
 {
   strings = map(strings, "s -> s.toLowerCase()");

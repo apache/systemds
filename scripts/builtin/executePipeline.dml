@@ -49,7 +49,7 @@
 # changesByOp    ---
 # --------------------------------------------------------------------------------------
 
-s_executePipeline = function(Frame[String] pipeline, Matrix[Double] Xtrain,  Matrix[Double] Ytrain, 
+f_executePipeline = function(Frame[String] pipeline, Matrix[Double] Xtrain,  Matrix[Double] Ytrain, 
   Matrix[Double] Xtest,  Matrix[Double] Ytest, List[Unknown] metaList, Matrix[Double] hyperParameters, Matrix[Double] hpForPruning = as.matrix(0),
   Matrix[Double] changesByOp = as.matrix(0), Integer flagsCount, Boolean test = FALSE, Boolean verbose)
   return (Matrix[Double] Xtrain, Matrix[Double] Ytrain, Matrix[Double] Xtest, Matrix[Double] Ytest,

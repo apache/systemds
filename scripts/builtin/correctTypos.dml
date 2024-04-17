@@ -47,7 +47,7 @@
 
 # TODO: future: add parameter for list of words that are sure to be correct
 
-s_correctTypos = function(Frame[String] strings, Double frequency_threshold=0.05, Integer distance_threshold=2,  Boolean is_verbose=FALSE)
+f_correctTypos = function(Frame[String] strings, Double frequency_threshold=0.05, Integer distance_threshold=2,  Boolean is_verbose=FALSE)
   return (Frame[String] Y, Double frequency_threshold, Integer distance_threshold, Matrix[Double] distance_matrix, Frame[Unknown] dict)
 {
   if(is_verbose)

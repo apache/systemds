@@ -34,7 +34,7 @@
 # Y     Frame X including detected disguised missing values
 # -------------------------------------------------------------------------------------------------
 
-s_dmv = function(Frame[String] X, Double threshold=0.8, String replace="NA") return (Frame[String] Y) {
+f_dmv = function(Frame[String] X, Double threshold=0.8, String replace="NA") return (Frame[String] Y) {
   if( threshold < 0 | threshold > 1 )
     stop("Stopping due to invalid input, threshold required in interval [0, 1] found " + threshold)
 

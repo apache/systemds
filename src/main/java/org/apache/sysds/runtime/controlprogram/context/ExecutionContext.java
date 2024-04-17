@@ -310,7 +310,7 @@ public class ExecutionContext {
 		if( dat == null )
 			throw new DMLRuntimeException(getNonExistingVarError(varname));
 		if( !(dat instanceof FrameObject) )
-			throw new DMLRuntimeException("Variable '"+varname+"' is not a frame.");
+			throw new DMLRuntimeException("Variable '"+varname+"' is not a frame: "+dat.getDataType());
 		return (FrameObject) dat;
 	}
 
@@ -513,6 +513,10 @@ public class ExecutionContext {
 		getMatrixObject(varName).getGPUObject(getGPUContext(0)).releaseInput();
 	}
 	
+	public FrameBlock getFrameInput(CPOperand input) {
+		return getFrameInput(input.getName());
+	}
+	
 	/**
 	 * Pins a frame variable into memory and returns the internal frame block.
 	 *
@@ -530,6 +534,11 @@ public class ExecutionContext {
 	 */
 	public void releaseFrameInput(String varName) {
 		getFrameObject(varName).release();
+	}
+	
+	public void releaseFrameInputs(CPOperand[] inputs) {
+		Arrays.stream(inputs).filter(in -> in.isFrame())
+			.forEach(in -> releaseFrameInput(in.getName()));
 	}
 
 	public void releaseTensorInput(String varName) {
@@ -723,6 +732,11 @@ public class ExecutionContext {
 	public List<ScalarObject> getScalarInputs(CPOperand[] inputs) {
 		return Arrays.stream(inputs).filter(in -> in.isScalar())
 			.map(in -> getScalarInput(in)).collect(Collectors.toList());
+	}
+	
+	public List<FrameBlock> getFrameInputs(CPOperand[] inputs) {
+		return Arrays.stream(inputs).filter(in -> in.isFrame())
+			.map(in -> getFrameInput(in)).collect(Collectors.toList());
 	}
 	
 	public void releaseMatrixInputs(CPOperand[] inputs) {

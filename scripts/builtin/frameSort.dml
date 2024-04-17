@@ -33,7 +33,7 @@
 # f_ordered  sorted dataset by column 1 in decreasing order
 # -----------------------------------------------------------------------------------------
 
-s_frameSort = function(Frame[String] F, Matrix[Double] mask, Boolean orderDesc = TRUE)
+f_frameSort = function(Frame[String] F, Matrix[Double] mask, Boolean orderDesc = TRUE)
 return (Frame[String] f_ordered)
 {
   index = vectorToCsv(mask)

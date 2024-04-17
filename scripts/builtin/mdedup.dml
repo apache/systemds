@@ -38,7 +38,7 @@
 # MD    Matrix nx1 of duplicates
 # -------------------------------------------------------------------------------
 
-s_mdedup = function(Frame[String] X, Matrix[Double] LHSfeatures, Matrix[Double] LHSthreshold,
+f_mdedup = function(Frame[String] X, Matrix[Double] LHSfeatures, Matrix[Double] LHSthreshold,
     Matrix[Double] RHSfeatures, Matrix[Double] RHSthreshold, Boolean verbose)
   return(Matrix[Double] MD)
 {

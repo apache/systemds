@@ -82,7 +82,7 @@
 #                  If there are no wrong instances to show (0 constrains fulfilled) --> WrongInstances=matrix(0,1,2)
 # ----------------------------------------------------------------------------------------------
 
-s_denialConstraints = function(Frame[Unknown] dataFrame, Frame[Unknown] constraintsFrame)
+f_denialConstraints = function(Frame[Unknown] dataFrame, Frame[Unknown] constraintsFrame)
 return(Matrix[double] WrongInstances)
 {
   print("DENIAL CONSTRAINTS");

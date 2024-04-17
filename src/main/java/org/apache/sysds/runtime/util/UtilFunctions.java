@@ -445,7 +445,7 @@ public class UtilFunctions {
 	 * 
 	 * @param low   lower bound (inclusive)
 	 * @param up    upper bound (inclusive)
-	 * @param incr  increment 
+	 * @param incr  increment
 	 * @return list of integers
 	 */
 	public static List<Integer> getSeqList(int low, int up, int incr) {
@@ -460,7 +460,7 @@ public class UtilFunctions {
 	 * 
 	 * @param low   lower bound (inclusive)
 	 * @param up    upper bound (inclusive)
-	 * @param incr  increment 
+	 * @param incr  increment
 	 * @return array of integers
 	 */
 	public static int[] getSeqArray(int low, int up, int incr) {
@@ -778,7 +778,7 @@ public class UtilFunctions {
 		byte ret = Byte.MIN_VALUE;
 		for( int i=0; i<array.length; i++ )
 			ret = (array[i]>ret)?array[i]:ret;
-		return ret;	
+		return ret;
 	}
 	
 	public static String unquote(String s) {
@@ -1362,5 +1362,65 @@ public class UtilFunctions {
 //		return ret;
 
 		return Arrays.stream(original).mapToDouble(Double::parseDouble).toArray();
+	}
+	
+	/**
+	 * Computes the word error rate (Levenshtein distance at word level):
+	 * wer =  (numSubst + numDel + numIns) / length(r)
+	 * 
+	 * This code has been adapted from Apache Commons Lang 3.12 
+	 * (getLevenshteinDistance, but for words instead of characters).
+	 * 
+	 * @param r reference string
+	 * @param h hypothesis string
+	 * @return word error rate (WER)
+	 */
+	public static double getWordErrorRate(String r, String h) {
+		if (r == null || h == null) {
+			throw new IllegalArgumentException("Strings must not be null");
+		}
+
+		//prepare string sequences 
+		String[] s = r.split(" ");
+		String[] t = h.split(" ");
+		int n = s.length;
+		int m = t.length;
+		
+		//basic size handling
+		if( n == 0 || m == 0 )
+			return Math.max(n, m);
+		if (n > m) {
+			// swap the input strings to consume less memory
+			String[] tmp = s;
+			s = t;
+			t = tmp;
+			n = m;
+			m = t.length;
+		}
+
+		final int[] p = new int[n + 1];
+		int i; // iterates through s
+		int j; // iterates through t
+		int upper_left;
+		int upper;
+		
+		String t_j; // jth word of t
+		int cost;
+		for (i = 0; i <= n; i++) {
+			p[i] = i;
+		}
+		for (j = 1; j <= m; j++) {
+			upper_left = p[0];
+			t_j = t[j - 1];
+			p[0] = j;
+			for (i = 1; i <= n; i++) {
+				upper = p[i];
+				cost = s[i - 1].equals(t_j) ? 0 : 1;
+				p[i] = Math.min(Math.min(p[i - 1] + 1, p[i] + 1), upper_left + cost);
+				upper_left = upper;
+			}
+		}
+		//wer = number of edits / length
+		return (double)p[n] / Math.max(n, m);
 	}
 }

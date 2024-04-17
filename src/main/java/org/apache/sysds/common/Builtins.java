@@ -328,6 +328,7 @@ public enum Builtins {
 	VAR("var", false),
 	VALUE_SWAP("valueSwap", false),
 	VECTOR_TO_CSV("vectorToCsv", true),
+	WER("wer", true, false),
 	WINSORIZE("winsorize", true, false), //TODO parameterize w/ prob, min/max val
 	WINSORIZEAPPLY("winsorizeApply", true, false), //TODO parameterize w/ prob, min/max val
 	WOE("WoE", true ),

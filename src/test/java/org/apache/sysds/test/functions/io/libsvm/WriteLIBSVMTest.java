@@ -38,27 +38,33 @@ public abstract class WriteLIBSVMTest extends WriteLIBSVMTestBase {
 
 	private final static double eps = 1e-9;
 
-	@Test public void testlibsvm1_Seq_CP() {
+	@Test
+	public void testlibsvm1_Seq_CP() {
 		runWriteLIBSVMTest(getId(), ExecMode.SINGLE_NODE, false, getLIBSVMConfig(), false);
 	}
 
-	@Test public void testlibsvm2_Seq_CP() {
+	@Test
+	public void testlibsvm2_Seq_CP() {
 		runWriteLIBSVMTest(getId(), ExecMode.SINGLE_NODE, false, getLIBSVMConfig(), true);
 	}
 
-	@Test public void testlibsvm1_Pllel_CP() {
+	@Test
+	public void testlibsvm1_Pllel_CP() {
 		runWriteLIBSVMTest(getId(), ExecMode.SINGLE_NODE, true, getLIBSVMConfig(), true);
 	}
 
-	@Test public void testlibsvm2_Pllel_CP() {
+	@Test
+	public void testlibsvm2_Pllel_CP() {
 		runWriteLIBSVMTest(getId(), ExecMode.SINGLE_NODE, true, getLIBSVMConfig(), false);
 	}
 
-	@Test public void testlibsvm1_SP() {
+	@Test
+	public void testlibsvm1_SP() {
 		runWriteLIBSVMTest(getId(), ExecMode.SPARK, false, getLIBSVMConfig(), true);
 	}
 
-	@Test public void testlibsvm2_SP() {
+	@Test
+	public void testlibsvm2_SP() {
 		runWriteLIBSVMTest(getId(), ExecMode.SPARK, false, getLIBSVMConfig(), false);
 	}
 

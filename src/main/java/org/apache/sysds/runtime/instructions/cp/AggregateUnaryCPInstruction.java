@@ -203,7 +203,7 @@ public class AggregateUnaryCPInstruction extends UnaryCPInstruction {
 				CountDistinctOperator op = (CountDistinctOperator) _optr;
 
 				if (op.getDirection().isRowCol()) {
-					long res = (long) LibMatrixCountDistinct.estimateDistinctValues(input, op).getValue(0, 0);
+					long res = (long) LibMatrixCountDistinct.estimateDistinctValues(input, op).get(0, 0);
 					ec.releaseMatrixInput(input1.getName());
 					ec.setScalarOutput(outputName, new IntObject(res));
 				} else {  // Row/Col
@@ -247,7 +247,7 @@ public class AggregateUnaryCPInstruction extends UnaryCPInstruction {
 
 					ec.releaseMatrixInput(input1.getName());
 					if (output.getDataType() == DataType.SCALAR) {
-						DoubleObject ret = new DoubleObject(resultBlock.getValue(0, 0));
+						DoubleObject ret = new DoubleObject(resultBlock.get(0, 0));
 						ec.setScalarOutput(outputName, ret);
 					} else {
 						// since the computed value is a scalar, allocate a "temp" output matrix

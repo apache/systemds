@@ -37,7 +37,7 @@ public class ConstMatrix implements Const<MatrixBlock> {
 		this.nVal = (int) LibMatrixCountDistinct
 			.estimateDistinctValues(mb,
 				new CountDistinctOperator(AUType.COUNT_DISTINCT, Types.Direction.RowCol, ReduceAll.getReduceAllFnObject()))
-			.getValue(0, 0);
+			.get(0, 0);
 	}
 
 	public ConstMatrix(int r, int c, int nVal, double s) {

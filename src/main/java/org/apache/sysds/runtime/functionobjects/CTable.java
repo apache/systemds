@@ -110,8 +110,8 @@ public class CTable extends ValueFunction
 		}
 		
 		//add value
-		ctableResult.quickSetValue((int)row-1, (int)col-1,
-				ctableResult.quickGetValue((int)row-1, (int)col-1) + w);
+		ctableResult.set((int)row-1, (int)col-1,
+			ctableResult.get((int)row-1, (int)col-1) + w);
 	}
 
 	public int execute(int row, double v2, double w, int maxCol, int[] retIx, double[] retVals) 
@@ -239,9 +239,9 @@ public class CTable extends ValueFunction
 			int endInd = UtilFunctions.getEndIndex(_in1.getNumRows(), _startInd, _blockSize);
 			for( int i=_startInd; i<endInd; i++ )
 			{
-				double v1 = _in1.quickGetValue(i, 0);
-				double v2 = _in2.quickGetValue(i, 0);
-				double w = _w.quickGetValue(i, 0);
+				double v1 = _in1.get(i, 0);
+				double v2 = _in2.get(i, 0);
+				double w = _w.get(i, 0);
 				ctable.execute(v1, v2, w, false, ctmap);
 			}
 			synchronized(_partialCTmaps) {

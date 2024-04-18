@@ -224,7 +224,7 @@ public class QuantilePickFEDInstruction extends BinaryFEDInstruction {
 
 		// Add min to the result
 		MatrixBlock res = new MatrixBlock(quantileValues.getNumRows() + 1, 1, false);
-		res.setValue(0,0, globalMin);
+		res.set(0,0, globalMin);
 		res.copy(1, quantileValues.getNumRows(), 0, 0,  quantileValues,false);
 
 		return res;
@@ -335,7 +335,7 @@ public class QuantilePickFEDInstruction extends BinaryFEDInstruction {
 				if(hist instanceof ImmutablePair)
 					retBuckets.put(i, hist); // set value if returned double instead of bin
 				else
-					out.setValue(i, 0, (Double) hist);
+					out.set(i, 0, (Double) hist);
 			}
 		}
 
@@ -636,7 +636,7 @@ public class QuantilePickFEDInstruction extends BinaryFEDInstruction {
 				for(Map.Entry<Integer, ImmutablePair<Double, Double>> entry : _ranges.entrySet()) {
 					// Find value within computed bin
 					if(entry.getValue().left <= val && val <= entry.getValue().right) {
-						res.setValue(entry.getKey(), 0,val);
+						res.set(entry.getKey(), 0,val);
 						break;
 					}
 				}
@@ -660,9 +660,9 @@ public class QuantilePickFEDInstruction extends BinaryFEDInstruction {
 		@Override
 		public FederatedResponse execute(ExecutionContext ec, Data... data) {
 			MatrixBlock mb = ((MatrixObject) data[0]).acquireReadAndRelease();
-			double[] ret = new double[]{mb.getNumColumns() == 2 ? mb.colMin().quickGetValue(0, 0) : mb.min(),
-				mb.getNumColumns() == 2 ? mb.colMax().quickGetValue(0, 0) : mb.max(),
-				mb.getNumColumns() == 2 ? mb.colSum().quickGetValue(0, 1) : 0,
+			double[] ret = new double[]{mb.getNumColumns() == 2 ? mb.colMin().get(0, 0) : mb.min(),
+				mb.getNumColumns() == 2 ? mb.colMax().get(0, 0) : mb.max(),
+				mb.getNumColumns() == 2 ? mb.colSum().get(0, 1) : 0,
 				mb.getNumColumns() == 2 ? mb.sumWeightForQuantile() : 0};
 			return new FederatedResponse(FederatedResponse.ResponseType.SUCCESS, ret);
 		}
@@ -754,7 +754,7 @@ public class QuantilePickFEDInstruction extends BinaryFEDInstruction {
 			MatrixBlock picked;
 			if (_quantiles.getLength() == 1) {
 				return new FederatedResponse(FederatedResponse.ResponseType.SUCCESS,
-					new Object[] {mb.pickValue(_quantiles.getValue(0, 0))});
+					new Object[] {mb.pickValue(_quantiles.get(0, 0))});
 			}
 			else {
 				picked = mb.pickValues(_quantiles, new MatrixBlock());

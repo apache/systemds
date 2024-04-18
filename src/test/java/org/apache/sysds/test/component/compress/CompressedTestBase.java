@@ -529,30 +529,30 @@ public abstract class CompressedTestBase extends TestBase {
 	@Test
 	public void testLeftMatrixMatrixMultSparseCustom() {
 		MatrixBlock matrix = new MatrixBlock(2, rows, true);
-		matrix.quickSetValue(1, rows - 1, 99);
+		matrix.set(1, rows - 1, 99);
 		testLeftMatrixMatrix(matrix);
 	}
 
 	@Test
 	public void testLeftMatrixMatrixMultSparseCustom2() {
 		MatrixBlock matrix = new MatrixBlock(2, rows, true);
-		matrix.quickSetValue(1, 0, 99);
+		matrix.set(1, 0, 99);
 		testLeftMatrixMatrix(matrix);
 	}
 
 	@Test
 	public void testLeftMatrixMatrixMultSparseCustom3() {
 		MatrixBlock matrix = new MatrixBlock(2, rows, true);
-		matrix.quickSetValue(0, 0, -99);
-		matrix.quickSetValue(1, 0, 99);
+		matrix.set(0, 0, -99);
+		matrix.set(1, 0, 99);
 		testLeftMatrixMatrix(matrix);
 	}
 
 	@Test
 	public void testLeftMatrixMatrixMultSparseCustom4() {
 		MatrixBlock matrix = new MatrixBlock(2, rows, true);
-		matrix.quickSetValue(0, rows - 1, -99);
-		matrix.quickSetValue(1, 0, 99);
+		matrix.set(0, rows - 1, -99);
+		matrix.set(1, 0, 99);
 		testLeftMatrixMatrix(matrix);
 	}
 
@@ -615,7 +615,7 @@ public abstract class CompressedTestBase extends TestBase {
 
 	public void testRightMatrixMatrix(MatrixBlock matrix) {
 		try {
-			matrix.quickSetValue(0, 0, 10);
+			matrix.set(0, 0, 10);
 			// Make Operator
 			AggregateBinaryOperator abop = InstructionUtils.getMatMultOperator(_k);
 

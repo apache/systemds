@@ -124,7 +124,7 @@ public class BitmapEncoder {
 			// This case is slow, because it does a binary search in each row of the sparse input. (if sparse)
 			// and does get value in dense cases with multi blocks.
 			for(int i = 0; i < nRows; i++)
-				distinctVals.appendValue(rawBlock.quickGetValue(i, colIndex), i);
+				distinctVals.appendValue(rawBlock.get(i, colIndex), i);
 		}
 		return distinctVals;
 	}

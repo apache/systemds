@@ -255,7 +255,7 @@ public class RDDSortUtils
 		//flip sort indices from <source ix in target pos> to <target ix in source pos>
 		MatrixBlock sortedIxSrc = new MatrixBlock(sortedIx.getNumRows(), 1, false); 
 		for (int i=0; i < sortedIx.getNumRows(); i++) 
-			sortedIxSrc.quickSetValue((int)sortedIx.quickGetValue(i,0)-1, 0, i+1);
+			sortedIxSrc.set((int)sortedIx.get(i,0)-1, 0, i+1);
 
 		//broadcast index vector
 		PartitionedBlock<MatrixBlock> pmb = new PartitionedBlock<>(sortedIxSrc, blen);
@@ -306,8 +306,8 @@ public class RDDSortUtils
 			
 			for( int i=0; i<mb1.getNumRows(); i++) {
 				ret.add(new DoublePair(
-						mb1.quickGetValue(i, 0),
-						mb2.quickGetValue(i, 0)));
+						mb1.get(i, 0),
+						mb2.get(i, 0)));
 			}
 			
 			return ret.iterator();
@@ -335,7 +335,7 @@ public class RDDSortUtils
 			
 			long ixoffset = (ix.getRowIndex()-1)*_blen;
 			for( int i=0; i<mb.getNumRows(); i++) {
-				double val = mb.quickGetValue(i, 0);
+				double val = mb.get(i, 0);
 				ret.add(new Tuple2<>(new ValueIndexPair(val,ixoffset+i+1), val));
 			}
 			
@@ -460,7 +460,7 @@ public class RDDSortUtils
 					mb = new MatrixBlock((int)len, 1, false);	
 				}
 				
-				mb.quickSetValue(pos, 0, val._1);
+				mb.set(pos, 0, val._1);
 			}
 			
 			//flush last block
@@ -507,8 +507,8 @@ public class RDDSortUtils
 					mb = new MatrixBlock((int)len, 2, false);
 				}
 				
-				mb.quickSetValue(pos, 0, val._1.val1);
-				mb.quickSetValue(pos, 1, val._1.val2);
+				mb.set(pos, 0, val._1.val1);
+				mb.set(pos, 1, val._1.val2);
 			}
 			
 			//flush last block
@@ -557,7 +557,7 @@ public class RDDSortUtils
 					mb = new MatrixBlock((int)len, 1, false);	
 				}
 				
-				mb.quickSetValue(pos, 0, val._1.ix);
+				mb.set(pos, 0, val._1.ix);
 			}
 			
 			//flush last block
@@ -606,7 +606,7 @@ public class RDDSortUtils
 					mb = new MatrixBlock((int)len, 1, false);	
 				}
 				
-				mb.quickSetValue(pos, 0, val._2+1);
+				mb.set(pos, 0, val._2+1);
 			}
 			
 			//flush last block
@@ -700,7 +700,7 @@ public class RDDSortUtils
 					mb = new MatrixBlock((int)len, 1, false);
 				}
 				
-				mb.quickSetValue(pos, 0, val._1.ix);
+				mb.set(pos, 0, val._1.ix);
 			}
 			
 			//flush last block
@@ -771,7 +771,7 @@ public class RDDSortUtils
 					MatrixBlock data = _currBlk._2()._1();
 					MatrixBlock mbTargetIndex = _currBlk._2()._2();
 					
-					long valix = (long) mbTargetIndex.getValue(_currPos, 0);
+					long valix = (long) mbTargetIndex.get(_currPos, 0);
 					long rix = UtilFunctions.computeBlockIndex(valix, _blen);
 					int pos = UtilFunctions.computeCellInBlock(valix, _blen);
 					int len = UtilFunctions.computeBlockSize(_rlen, rix, _blen);
@@ -861,7 +861,7 @@ public class RDDSortUtils
 					MatrixBlock data = _currBlk._2();
 					MatrixBlock mbTargetIndex = _pmb.value().getBlock((int)ixmap.getRowIndex(), 1);
 					
-					long valix = (long) mbTargetIndex.getValue(_currPos, 0);
+					long valix = (long) mbTargetIndex.get(_currPos, 0);
 					long rix = UtilFunctions.computeBlockIndex(valix, _blen);
 					int pos = UtilFunctions.computeCellInBlock(valix, _blen);
 					int len = UtilFunctions.computeBlockSize(_rlen, rix, _blen);

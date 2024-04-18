@@ -141,11 +141,11 @@ public class ColGroupUncompressed extends AColGroup {
 		if(transposed)
 			for(int i = 0; i < m; i++)
 				for(int j = 0; j < n; j++)
-					mb.appendValue(i, j, rawBlock.quickGetValue(colIndexes.get(j), i));
+					mb.appendValue(i, j, rawBlock.get(colIndexes.get(j), i));
 		else
 			for(int i = 0; i < m; i++)
 				for(int j = 0; j < n; j++)
-					mb.appendValue(i, j, rawBlock.quickGetValue(i, colIndexes.get(j)));
+					mb.appendValue(i, j, rawBlock.get(i, colIndexes.get(j)));
 
 		mb.recomputeNonZeros();
 		mb.examSparsity();
@@ -275,7 +275,7 @@ public class ColGroupUncompressed extends AColGroup {
 
 	@Override
 	public double getIdx(int r, int colIdx) {
-		return _data.quickGetValue(r, colIdx);
+		return _data.get(r, colIdx);
 	}
 
 	@Override
@@ -903,7 +903,7 @@ public class ColGroupUncompressed extends AColGroup {
 		// TODO add sparse optmization
 		for(int r = 0; r < _data.getNumRows(); r++)
 			for(int c = 0; c < _data.getNumColumns(); c++)
-				ret.quickSetValue(r, c, _data.quickGetValue(r, reordering[c]));
+				ret.set(r, c, _data.get(r, reordering[c]));
 		return create(newColIndex, ret, false);
 	}
 

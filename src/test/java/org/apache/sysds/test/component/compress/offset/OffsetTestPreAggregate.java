@@ -189,7 +189,7 @@ public abstract class OffsetTestPreAggregate {
 	protected abstract void preAggMapRowOne1(int row);
 
 	protected void verifyPreAggMapRowOne1(double[] preAV, int row) {
-		double v = leftM.getValue(row, data[1]);
+		double v = leftM.get(row, data[1]);
 		if(preAV[1] != v)
 			fail("\naggregate to wrong index");
 		if(!Precision.equals(preAV[0], s[row] - v, eps))
@@ -200,8 +200,8 @@ public abstract class OffsetTestPreAggregate {
 	public abstract void preAggMapAllRowsOne1();
 
 	protected void verifyPreAggAllOne1(double[] preAV) {
-		double v1 = leftM.getValue(0, data[1]);
-		double v2 = leftM.getValue(1, data[1]);
+		double v1 = leftM.get(0, data[1]);
+		double v2 = leftM.get(1, data[1]);
 		if(preAV[1] != v1)
 			fail("\naggregate to wrong index");
 		if(preAV[3] != v2)
@@ -225,8 +225,8 @@ public abstract class OffsetTestPreAggregate {
 	protected abstract void preAggMapSubOfRow(int row);
 
 	protected void verifyPreAggMapSubOfRow(double[] preAV, int row) {
-		double v = leftM.getValue(row, data[1]);
-		double v2 = leftM.getValue(row, data[data.length - 1]);
+		double v = leftM.get(row, data[1]);
+		double v2 = leftM.get(row, data[data.length - 1]);
 		if(preAV[1] != v)
 			fail("\naggregate to wrong index");
 		if(!Precision.equals(preAV[0], s[row] - v - v2, eps))
@@ -256,8 +256,8 @@ public abstract class OffsetTestPreAggregate {
 	protected abstract void preAggMapSubOfRowV2(int row, int nVal);
 
 	protected void verifyPreAggMapSubOfRowV2(double[] preAV, int row) {
-		double v = leftM.getValue(row, data[1]);
-		double v2 = leftM.getValue(row, data[data.length - 1]) + leftM.getValue(row, data[data.length - 2]);
+		double v = leftM.get(row, data[1]);
+		double v2 = leftM.get(row, data[data.length - 1]) + leftM.get(row, data[data.length - 2]);
 		if(preAV[1] != v)
 			fail("\naggregate to wrong index");
 		if(!Precision.equals(preAV[0], s[row] - v - v2, eps))
@@ -335,7 +335,7 @@ public abstract class OffsetTestPreAggregate {
 
 	protected void compareMultiRowAgg(double[] agg, int rl, int ru) {
 		for(int r = rl, of = 0; r < ru; r++, of++) {
-			double v = leftM.getValue(r, data[1]);
+			double v = leftM.get(r, data[1]);
 
 			if(agg[of * 2 + 1] != v)
 				fail("\naggregate to wrong index");
@@ -404,8 +404,8 @@ public abstract class OffsetTestPreAggregate {
 
 	protected void compareMultiRowAggBeforeLast(double[] agg, int rl, int ru) {
 		for(int r = rl, of = 0; r < ru; r++, of++) {
-			double v = leftM.getValue(r, data[1]);
-			double v2 = leftM.getValue(r, data[data.length - 1]);
+			double v = leftM.get(r, data[1]);
+			double v2 = leftM.get(r, data[data.length - 1]);
 			if(agg[of * 2 + 1] != v)
 				fail("\naggregate to wrong index");
 			if(!Precision.equals(agg[of * 2], s[r] - v - v2, eps))

@@ -158,7 +158,7 @@ public class SpoofSPInstruction extends SPInstruction {
 				out = in.mapPartitionsToPair(new CellwiseFunction(_class.getName(),
 					_classBytes, bcVect2, bcMatrices, scalars, mcIn.getBlocksize()), true);
 				MatrixBlock tmpMB = RDDAggregateUtils.aggStable(out, aggop);
-				sec.setVariable(_out.getName(), new DoubleObject(tmpMB.getValue(0, 0)));
+				sec.setVariable(_out.getName(), new DoubleObject(tmpMB.get(0, 0)));
 			}
 		}
 		else if(_class.getSuperclass() == SpoofMultiAggregate.class) //MAGG
@@ -196,7 +196,7 @@ public class SpoofSPInstruction extends SPInstruction {
 				out = in.mapPartitionsToPair(new OuterProductFunction(
 					_class.getName(), _classBytes, bcVect2, bcMatrices, scalars), true);
 				MatrixBlock tmp = RDDAggregateUtils.sumStable(out);
-				sec.setVariable(_out.getName(), new DoubleObject(tmp.getValue(0, 0)));
+				sec.setVariable(_out.getName(), new DoubleObject(tmp.get(0, 0)));
 			}
 		}
 		else if( _class.getSuperclass() == SpoofRowwise.class ) { //ROW
@@ -218,7 +218,7 @@ public class SpoofSPInstruction extends SPInstruction {
 					sec.setMatrixOutput(_out.getName(), tmpMB);
 				else
 					sec.setScalarOutput(_out.getName(),
-						new DoubleObject(tmpMB.quickGetValue(0, 0)));
+						new DoubleObject(tmpMB.get(0, 0)));
 			}
 			else //row-agg or no-agg
 			{
@@ -501,7 +501,7 @@ public class SpoofSPInstruction extends SPInstruction {
 				if( _op.getCellType()==CellType.FULL_AGG ) {
 					ScalarObject obj = _op.execute(inputs, _scalars, 1, rix);
 					blkOut.reset(1, 1);
-					blkOut.quickSetValue(0, 0, obj.getDoubleValue());
+					blkOut.set(0, 0, obj.getDoubleValue());
 				}
 				else {
 					if( _op.getCellType()==CellType.ROW_AGG )
@@ -613,7 +613,7 @@ public class SpoofSPInstruction extends SPInstruction {
 				if(((SpoofOuterProduct)_op).getOuterProdType()==OutProdType.AGG_OUTER_PRODUCT) {
 					ScalarObject obj = _op.execute(inputs, _scalars,1);
 					blkOut.reset(1, 1);
-					blkOut.quickSetValue(0, 0, obj.getDoubleValue());
+					blkOut.set(0, 0, obj.getDoubleValue());
 				}
 				else {
 					blkOut = _op.execute(inputs, _scalars, blkOut);

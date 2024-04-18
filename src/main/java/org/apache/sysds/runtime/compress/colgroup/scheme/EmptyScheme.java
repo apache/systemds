@@ -54,7 +54,7 @@ public class EmptyScheme extends ACLAScheme {
 		// should be optimized.
 		for(int r = 0; r < nRow; r++) {
 			for(int c = 0; c < nColScheme; c++) {
-				double v = data.quickGetValue(r, columns.get(c));
+				double v = data.get(r, columns.get(c));
 				if(v != 0)
 					return updateToHigherScheme(data, columns);
 			}
@@ -123,7 +123,7 @@ public class EmptyScheme extends ACLAScheme {
 		// try with const
 		double[] vals = new double[cols.size()];
 		for(int c = 0; c < cols.size(); c++)
-			vals[c] = data.quickGetValue(0, c);
+			vals[c] = data.get(0, c);
 
 		return ConstScheme.create(columns, vals).update(data, columns);
 	}
@@ -132,7 +132,7 @@ public class EmptyScheme extends ACLAScheme {
 		// try with const
 		double[] vals = new double[cols.size()];
 		for(int c = 0; c < cols.size(); c++)
-			vals[c] = data.quickGetValue(c, 0);
+			vals[c] = data.get(c, 0);
 
 		return ConstScheme.create(columns, vals).updateT(data, columns);
 	}

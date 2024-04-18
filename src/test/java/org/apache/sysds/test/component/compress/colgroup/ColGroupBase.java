@@ -259,18 +259,18 @@ public abstract class ColGroupBase {
 	protected static void addSingle(ArrayList<Object[]> tests) {
 		MatrixBlock mb = new MatrixBlock(100, 100, true);
 		MatrixBlock mv = new MatrixBlock(100, 1, true);
-		mv.quickSetValue(4, 0, 1);
-		mv.quickSetValue(45, 0, 2);
-		mv.quickSetValue(2, 0, 3);
-		mv.quickSetValue(66, 0, 4);
-		mv.quickSetValue(99, 0, 5);
+		mv.set(4, 0, 1);
+		mv.set(45, 0, 2);
+		mv.set(2, 0, 3);
+		mv.set(66, 0, 4);
+		mv.set(99, 0, 5);
 		BinaryOperator bop = new BinaryOperator(Plus.getPlusFnObject(), 1);
 		MatrixBlock mbr = mb.binaryOperations(bop, mv, null);
 		MatrixBlock mbrc = new MatrixBlock();
 		mbrc.copy(mbr);
 
 		for(int i = 0; i < 100; i++)
-			mbrc.quickSetValue(0, i, 100);
+			mbrc.set(0, i, 100);
 
 		mbrc.recomputeNonZeros();
 		addAll(tests, mbrc, ColIndexFactory.create(10));
@@ -281,7 +281,7 @@ public abstract class ColGroupBase {
 
 		for(int j : new int[] {1, 5, 23, 51, 62})
 			for(int i = 0; i < 100; i++)
-				mbr2.quickSetValue(j, i, 100 * j);
+				mbr2.set(j, i, 100 * j);
 
 		mbr2.recomputeNonZeros();
 		addAll(tests, mbr2, ColIndexFactory.create(10));
@@ -299,7 +299,7 @@ public abstract class ColGroupBase {
 
 			for(int j : new int[] {1, 4, 44, 87})
 				for(int i = 0; i < 100; i++)
-					mb.quickSetValue(i, j, 100);
+					mb.set(i, j, 100);
 
 			mb.recomputeNonZeros();
 			addAll(tests, mb, ColIndexFactory.create(10));
@@ -319,7 +319,7 @@ public abstract class ColGroupBase {
 
 			for(int j : new int[] {0, 4, 44, 87})
 				for(int i : new int[] {0, 4, 13, 24, 56, 92})
-					mb.quickSetValue(i, j, 100);
+					mb.set(i, j, 100);
 
 			mb.recomputeNonZeros();
 			addAll(tests, mb, ColIndexFactory.create(1));
@@ -330,7 +330,7 @@ public abstract class ColGroupBase {
 
 			for(int j : new int[] {44, 87})
 				for(int i : new int[] {56, 92})
-					mb2.quickSetValue(i, j, 100);
+					mb2.set(i, j, 100);
 
 			mb2.recomputeNonZeros();
 			addAll(tests, mb2, ColIndexFactory.create(100));
@@ -339,7 +339,7 @@ public abstract class ColGroupBase {
 
 			for(int j : new int[] {1, 2})
 				for(int i : new int[] {1, 2})
-					mb3.quickSetValue(i, j, 100);
+					mb3.set(i, j, 100);
 
 			mb3.recomputeNonZeros();
 			addAll(tests, mb3, ColIndexFactory.create(100));

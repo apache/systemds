@@ -155,7 +155,7 @@ public class TransformCompressedTestSingleColBinSpecific {
 				// Assert that each bucket has the same number of elements
 				MatrixBlock colSum = outNormal.colSum();
 				for(int i = 0; i < colSum.getNumColumns(); i++)
-					assertEquals(colSum.quickGetValue(0, 0), colSum.quickGetValue(0, i), 0.001);
+					assertEquals(colSum.get(0, 0), colSum.get(0, i), 0.001);
 			}
 		}
 

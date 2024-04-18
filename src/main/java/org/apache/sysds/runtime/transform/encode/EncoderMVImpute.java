@@ -228,8 +228,8 @@ public class EncoderMVImpute extends LegacyEncoder {
 		for(int i = 0; i < in.getNumRows(); i++) {
 			for(int j = 0; j < _colList.length; j++) {
 				int colID = _colList[j];
-				if(Double.isNaN(out.quickGetValue(i, colID - 1)))
-					out.quickSetValue(i, colID - 1, Double.parseDouble(_replacementList[j]));
+				if(Double.isNaN(out.get(i, colID - 1)))
+					out.set(i, colID - 1, Double.parseDouble(_replacementList[j]));
 			}
 		}
 		if(DMLScript.STATISTICS)

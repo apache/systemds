@@ -235,9 +235,9 @@ public class CompressedEncode {
 
 		MatrixBlock bins = new MatrixBlock(nVals + (NaN ? 1 : 0), 1, false);
 		for(int i = 0; i < nVals; i++)
-			bins.quickSetValue(i, 0, i + 1);
+			bins.set(i, 0, i + 1);
 		if(NaN)
-			bins.quickSetValue(nVals, 0, Double.NaN);
+			bins.set(nVals, 0, Double.NaN);
 
 		return MatrixBlockDictionary.create(bins);
 
@@ -271,9 +271,9 @@ public class CompressedEncode {
 			return ColGroupConst.create(colIndexes, new double[] {1});
 		MatrixBlock incrementing = new MatrixBlock(domain + (containsNull ? 1 : 0), 1, false);
 		for(int i = 0; i < domain; i++)
-			incrementing.quickSetValue(i, 0, i + 1);
+			incrementing.set(i, 0, i + 1);
 		if(containsNull)
-			incrementing.quickSetValue(domain, 0, Double.NaN);
+			incrementing.set(domain, 0, Double.NaN);
 
 		ADictionary d = MatrixBlockDictionary.create(incrementing);
 
@@ -398,9 +398,9 @@ public class CompressedEncode {
 
 		MatrixBlock incrementing = new MatrixBlock(domain + (nulls ? 1 : 0), 1, false);
 		for(int i = 0; i < domain; i++)
-			incrementing.quickSetValue(i, 0, i + 1);
+			incrementing.set(i, 0, i + 1);
 		if(nulls)
-			incrementing.quickSetValue(domain, 0, Double.NaN);
+			incrementing.set(domain, 0, Double.NaN);
 
 		ADictionary d = MatrixBlockDictionary.create(incrementing);
 

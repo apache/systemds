@@ -119,7 +119,7 @@ public class ReblockRecompileTest extends AutomatedTestBase
 			HashMap<CellIndex, Double> dmlfile = new HashMap<>();
 			for( int i=0; i<mo.getNumRows(); i++ )
 				for( int j=0; j<mo.getNumColumns(); j++ )
-					dmlfile.put(new CellIndex(i+1,j+1), mo.getValue(i, j));
+					dmlfile.put(new CellIndex(i+1,j+1), mo.get(i, j));
 				
 			HashMap<CellIndex, Double> rfile  = readRMatrixFromExpectedDir("Rout");
 			boolean flag = TestUtils.compareMatrices(dmlfile, rfile, eps, "DML", "R");

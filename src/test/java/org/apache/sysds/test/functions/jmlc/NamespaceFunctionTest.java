@@ -114,7 +114,7 @@ public class NamespaceFunctionTest extends AutomatedTestBase
 		//compare results
 		for(int i=0; i<rows; i++)
 			for(int j=0; j<cols; j++)
-				Assert.assertEquals(X.quickGetValue(i, j)+10,
-					Z.quickGetValue(i, j), 1e-10);
+				Assert.assertEquals(X.get(i, j)+10,
+					Z.get(i, j), 1e-10);
 	}
 }

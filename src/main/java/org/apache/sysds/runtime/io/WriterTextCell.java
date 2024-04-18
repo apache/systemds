@@ -30,6 +30,7 @@ import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.mapred.JobConf;
 import org.apache.sysds.conf.ConfigurationManager;
 import org.apache.sysds.runtime.DMLRuntimeException;
+import org.apache.sysds.runtime.data.DenseBlock;
 import org.apache.sysds.runtime.matrix.data.IJV;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.util.HDFSTool;
@@ -109,22 +110,23 @@ public class WriterTextCell extends MatrixWriter
 			}
 			else //DENSE
 			{
-				for( int i=rl; i<ru; i++ )
-				{
-					String rowIndex = Integer.toString(i+1);
-					for( int j=0; j<clen; j++ )
-					{
-						double lvalue = src.getValueDenseUnsafe(i, j);
-						if( lvalue != 0 ) //for nnz
-						{
-							sb.append(rowIndex);
-							sb.append(' ');
-							sb.append( j+1 );
-							sb.append(' ');
-							sb.append( lvalue );
-							sb.append('\n');
-							br.write( sb.toString() ); //same as append
-							sb.setLength(0); 
+				if( !src.isEmpty() ) {
+					DenseBlock d = src.getDenseBlock();
+					for( int i=rl; i<ru; i++ ) {
+						String rowIndex = Integer.toString(i+1);
+						for( int j=0; j<clen; j++ ) {
+							double lvalue = d.get(i, j);
+							if( lvalue != 0 ) //for nnz
+							{
+								sb.append(rowIndex);
+								sb.append(' ');
+								sb.append( j+1 );
+								sb.append(' ');
+								sb.append( lvalue );
+								sb.append('\n');
+								br.write( sb.toString() ); //same as append
+								sb.setLength(0); 
+							}
 						}
 					}
 				}

@@ -881,7 +881,7 @@ public class LibMatrixBincell {
 		int clen = m1.clen;
 		SparseBlock a = m1.sparseBlock;
 		for(int i = 0; i < rlen; i++) {
-			double v2 = m2.quickGetValue(i, 0);
+			double v2 = m2.get(i, 0);
 
 			if((skipEmpty && (a == null || a.isEmpty(i) || v2 == 0)) || ((a == null || a.isEmpty(i)) && v2 == 0)) {
 				continue; // skip empty rows
@@ -935,7 +935,7 @@ public class LibMatrixBincell {
 					// empty left
 					fillZeroValues(op, m2, ret, skipEmpty, i, lastIx + 1, aix[j]);
 					// actual value
-					double v2 = m2.quickGetValue(0, aix[j]);
+					double v2 = m2.get(0, aix[j]);
 					double v = op.fn.execute(avals[j], v2);
 					ret.appendValue(i, aix[j], v);
 					lastIx = aix[j];
@@ -1104,21 +1104,21 @@ public class LibMatrixBincell {
 			for( int i=0; i<rlen; i++ )
 			{
 				//replicate vector value
-				double v2 = m2.quickGetValue(i, 0);
+				double v2 = m2.get(i, 0);
 				if( skipEmpty && v2 == 0 ) //skip zero rows
 					continue;
 				
 				if(isMultiply && v2 == 1) //ROW COPY
 				{
 					for( int j=0; j<clen; j++ ) {
-						double v1 = m1.quickGetValue(i, j);
+						double v1 = m1.get(i, j);
 						ret.appendValue(i, j, v1);
 					}
 				}
 				else //GENERAL CASE
 				{
 					for( int j=0; j<clen; j++ ) {
-						double v1 = m1.quickGetValue(i, j);
+						double v1 = m1.get(i, j);
 						double v = op.fn.execute( v1, v2 );
 						ret.appendValue(i, j, v);
 					}
@@ -1142,7 +1142,7 @@ public class LibMatrixBincell {
 				for( int i=0; i<rlen; i++ ) {
 					c.allocate(i, blen);
 					for( int j=0; j<blen; j++ )
-						c.append(i, bix[j], m1.quickGetValue(i, bix[j]) * bvals[j]);
+						c.append(i, bix[j], m1.get(i, bix[j]) * bvals[j]);
 				}
 				ret.setNonZeros(c.size());
 			}
@@ -1150,8 +1150,8 @@ public class LibMatrixBincell {
 			{
 				for( int i=0; i<rlen; i++ )
 					for( int j=0; j<clen; j++ ) {
-						double v1 = m1.quickGetValue(i, j);
-						double v2 = m2.quickGetValue(0, j); //replicated vector value
+						double v1 = m1.get(i, j);
+						double v2 = m2.get(0, j); //replicated vector value
 						double v = op.fn.execute( v1, v2 );
 						ret.appendValue(i, j, v);
 					}
@@ -1175,9 +1175,9 @@ public class LibMatrixBincell {
 		}
 		else {
 			for(int r=0; r<rlen; r++) {
-				double v1 = m1.quickGetValue(r, 0);
+				double v1 = m1.get(r, 0);
 				for(int c=0; c<clen; c++) {
-					double v2 = m2.quickGetValue(0, c);
+					double v2 = m2.get(0, c);
 					double v = op.fn.execute( v1, v2 );
 					ret.appendValue(r, c, v);
 				}
@@ -1462,7 +1462,7 @@ public class LibMatrixBincell {
 			if( ret.sparse && !b.sparse )
 				ret.sparseBlock.allocate(i, alen);
 			for(int k = apos; k < apos+alen; k++) {
-				double in2 = b.quickGetValue(i, aix[k]);
+				double in2 = b.get(i, aix[k]);
 				if( in2==0 ) continue;
 				double val = op.fn.execute(avals[k], in2);
 				lnnz += (val != 0) ? 1 : 0;
@@ -1479,8 +1479,8 @@ public class LibMatrixBincell {
 		long lnnz = 0;
 		for(int r=rl; r<ru; r++)
 			for(int c=0; c<clen; c++) {
-				double in1 = m1.quickGetValue(r, c);
-				double in2 = m2.quickGetValue(r, c);
+				double in1 = m1.get(r, c);
+				double in2 = m2.get(r, c);
 				if( in1==0 && in2==0) continue;
 				double val = op.fn.execute(in1, in2);
 				lnnz += (val != 0) ? 1 : 0;
@@ -1520,7 +1520,7 @@ public class LibMatrixBincell {
 		for( int bi=0; bi<dc.numBlocks(); bi++ ) {
 			double[] c = dc.valuesAt(bi);
 			for( int r=bi*dc.blockSize(), off=0; r<rlen; r++, off+=clen ) {
-				double value = m1.quickGetValue(r, 0);
+				double value = m1.get(r, 0);
 				int ixPos1 = Arrays.binarySearch(b, value);
 				int ixPos2 = ixPos1;
 				if( ixPos1 >= 0 ) { //match, scan to next val
@@ -1555,9 +1555,9 @@ public class LibMatrixBincell {
 		long lnnz = 0;
 		if( atype == BinaryAccessType.MATRIX_COL_VECTOR ) { //MATRIX - COL_VECTOR
 			for(int r=rl; r<ru; r++) {
-				double v2 = m2.quickGetValue(r, 0);
+				double v2 = m2.get(r, 0);
 				for(int c=0; c<clen; c++) {
-					double v1 = m1.quickGetValue(r, c);
+					double v1 = m1.get(r, c);
 					double v = op.fn.execute( v1, v2 );
 					ret.appendValuePlain(r, c, v);
 					lnnz += (v!=0) ? 1 : 0;
@@ -1567,8 +1567,8 @@ public class LibMatrixBincell {
 		else if( atype == BinaryAccessType.MATRIX_ROW_VECTOR ) { //MATRIX - ROW_VECTOR
 			for(int r=rl; r<ru; r++)
 				for(int c=0; c<clen; c++) {
-					double v1 = m1.quickGetValue(r, c);
-					double v2 = m2.quickGetValue(0, c);
+					double v1 = m1.get(r, c);
+					double v2 = m2.get(0, c);
 					double v = op.fn.execute( v1, v2 );
 					ret.appendValuePlain(r, c, v);
 					lnnz += (v!=0) ? 1 : 0;
@@ -1582,9 +1582,9 @@ public class LibMatrixBincell {
 			} 
 			else {
 				for(int r=rl; r<ru; r++) {
-					double v1 = m1.quickGetValue(r, 0);
+					double v1 = m1.get(r, 0);
 					for(int c=0; c<clen2; c++) {
-						double v2 = m2.quickGetValue(0, c);
+						double v2 = m2.get(0, c);
 						double v = op.fn.execute( v1, v2 );
 						lnnz += (v != 0) ? 1 : 0;
 						ret.appendValuePlain(r, c, v);
@@ -1611,8 +1611,8 @@ public class LibMatrixBincell {
 			else {
 				for(int r=rl; r<ru; r++)
 					for(int c=0; c<clen; c++) {
-						double v1 = m1.quickGetValue(r, c);
-						double v2 = m2.quickGetValue(r, c);
+						double v1 = m1.get(r, c);
+						double v2 = m2.get(r, c);
 						double v = op.fn.execute( v1, v2 );
 						ret.appendValuePlain(r, c, v);
 						lnnz += (v!=0) ? 1 : 0;
@@ -2090,10 +2090,10 @@ public class LibMatrixBincell {
 		final int clen = m1ret.clen;
 		for(int r=0; r<rlen; r++)
 			for(int c=0; c<clen; c++) {
-				double thisvalue = m1ret.quickGetValue(r, c);
-				double thatvalue = m2.quickGetValue(r, c);
+				double thisvalue = m1ret.get(r, c);
+				double thatvalue = m2.get(r, c);
 				double resultvalue = op.fn.execute(thisvalue, thatvalue);
-				m1ret.quickSetValue(r, c, resultvalue);
+				m1ret.set(r, c, resultvalue);
 			}
 	}
 	
@@ -2106,11 +2106,11 @@ public class LibMatrixBincell {
 		{
 			for(int r=0; r<rlen; r++) {
 				//replicated value
-				double v2 = m2.quickGetValue(r, 0);
+				double v2 = m2.get(r, 0);
 				for(int c=0; c<clen; c++) {
-					double v1 = m1ret.quickGetValue(r, c);
+					double v1 = m1ret.get(r, c);
 					double v = op.fn.execute( v1, v2 );
-					m1ret.quickSetValue(r, c, v);
+					m1ret.set(r, c, v);
 				}
 			}
 		}
@@ -2118,20 +2118,20 @@ public class LibMatrixBincell {
 		{
 			for(int r=0; r<rlen; r++)
 				for(int c=0; c<clen; c++) {
-					double v1 = m1ret.quickGetValue(r, c);
-					double v2 = m2.quickGetValue(0, c); //replicated value
+					double v1 = m1ret.get(r, c);
+					double v2 = m2.get(0, c); //replicated value
 					double v = op.fn.execute( v1, v2 );
-					m1ret.quickSetValue(r, c, v);
+					m1ret.set(r, c, v);
 				}
 		}
 		else // MATRIX - MATRIX
 		{
 			for(int r=0; r<rlen; r++)
 				for(int c=0; c<clen; c++) {
-					double v1 = m1ret.quickGetValue(r, c);
-					double v2 = m2.quickGetValue(r, c);
+					double v1 = m1ret.get(r, c);
+					double v2 = m2.get(r, c);
 					double v = op.fn.execute( v1, v2 );
-					m1ret.quickSetValue(r, c, v);
+					m1ret.set(r, c, v);
 				}
 		}
 	}

@@ -302,7 +302,7 @@ public class DataFrameVectorFrameConversionTest extends AutomatedTestBase
 			for( int j=0, j2=0; j<mb.getNumColumns(); j++, j2++ ) {
 				if( schema[j2] != ValueType.UNKNOWN ) {
 					row[j2+off] = UtilFunctions
-						.doubleToObject(schema[j2], mb.quickGetValue(i, j));
+						.doubleToObject(schema[j2], mb.get(i, j));
 				}
 				else {
 					double[] tmp = DataConverter.convertToDoubleVector(

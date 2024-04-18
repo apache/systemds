@@ -48,14 +48,14 @@ public interface LinearRegression {
 		if(nCol == 1) {
 			if(transposed) {
 				for(int rowIdx = 0; rowIdx < nRows; rowIdx++) {
-					double value = rawBlock.getValue(colIndexes.get(0), rowIdx);
+					double value = rawBlock.get(colIndexes.get(0), rowIdx);
 					colSums[0] += value;
 					weightedColSums[0] += (rowIdx + 1) * value;
 				}
 			}
 			else {
 				for(int rowIdx = 0; rowIdx < nRows; rowIdx++) {
-					double value = rawBlock.getValue(rowIdx, colIndexes.get(0));
+					double value = rawBlock.get(rowIdx, colIndexes.get(0));
 					colSums[0] += value;
 					weightedColSums[0] += (rowIdx + 1) * value;
 				}

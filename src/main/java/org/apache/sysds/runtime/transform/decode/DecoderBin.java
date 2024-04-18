@@ -66,7 +66,7 @@ public class DecoderBin extends Decoder {
 		for( int i=rl; i< ru; i++ ) {
 			for( int j=0; j<_colList.length; j++ ) {
 				final Array<?> a = out.getColumn(_colList[j] - 1);
-				final double val = in.quickGetValue(i, _colList[j] - 1);
+				final double val = in.get(i, _colList[j] - 1);
 				if(!Double.isNaN(val)){
 					final int key = (int) Math.round(val);
 					double bmin = _binMins[j][key - 1];

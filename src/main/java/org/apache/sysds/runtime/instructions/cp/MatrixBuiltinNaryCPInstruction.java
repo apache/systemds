@@ -81,7 +81,7 @@ public class MatrixBuiltinNaryCPInstruction extends BuiltinNaryCPInstruction imp
 		}
 		else {
 			ec.setVariable(output.getName(), ScalarObjectFactory.createScalarObject(
-				output.getValueType(), ((MatrixBlock)outBlock).quickGetValue(0, 0)));
+				output.getValueType(), ((MatrixBlock)outBlock).get(0, 0)));
 		}
 	}
 	

@@ -109,7 +109,7 @@ public class MatrixCell extends MatrixValue implements Serializable
 	}
 
 	@Override
-	public double getValue(int r, int c) {
+	public double get(int r, int c) {
 		return value;
 	}
 
@@ -154,8 +154,8 @@ public class MatrixCell extends MatrixValue implements Serializable
 	}
 
 	@Override
-	public void setValue(int r, int c, double v) {
-		value=v;	
+	public void set(int r, int c, double v) {
+		value=v;
 	}
 
 	@Override

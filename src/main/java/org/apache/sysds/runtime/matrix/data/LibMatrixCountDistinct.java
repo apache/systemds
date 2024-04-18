@@ -170,7 +170,7 @@ public interface LibMatrixCountDistinct {
 				}
 			}
 
-			blkOut.setValue(0, 0, distinctCount);
+			blkOut.set(0, 0, distinctCount);
 		} else if (op.getDirection().isRow()) {
 			blkOut = new MatrixBlock(blkIn.getNumRows(), 1, false, blkIn.getNumRows());
 			blkOut.allocateBlock();
@@ -186,7 +186,7 @@ public interface LibMatrixCountDistinct {
 						for (int cix=0; cix<blkIn.getNumColumns(); ++cix) {
 							distinct.add(data[db.pos(rix, cix)]);
 						}
-						blkOut.setValue(rix, 0, distinct.size());
+						blkOut.set(rix, 0, distinct.size());
 					}
 				}
 			} else if (blkIn.getSparseBlock() != null) {
@@ -205,7 +205,7 @@ public interface LibMatrixCountDistinct {
 						distinct.clear();
 						data = sb.values(rix);
 						countDistinctValuesNaive(data, distinct);
-						blkOut.setValue(rix, 0, distinct.size());
+						blkOut.set(rix, 0, distinct.size());
 					}
 				} else if (SparseBlockFactory.isSparseBlockType(sb, SparseBlock.Type.CSR)) {
 					// Casting is safe given if-condition
@@ -225,7 +225,7 @@ public interface LibMatrixCountDistinct {
 						for (int colOffset=0; colOffset<clen; ++colOffset) {
 							distinct.add(data[rpos + colOffset]);
 						}
-						blkOut.setValue(rix, 0, distinct.size());
+						blkOut.set(rix, 0, distinct.size());
 					}
 				} else { // COO
 					if (!(sb instanceof SparseBlockCOO)) {
@@ -249,7 +249,7 @@ public interface LibMatrixCountDistinct {
 						if (i + 1 < rixs.length) {  // rixs[i] != rixs[i + 1]
 							distinct.add(data[i]);
 						}
-						blkOut.setValue(rix, 0, distinct.size());
+						blkOut.set(rix, 0, distinct.size());
 						rix = (i + 1 < rixs.length)? rixs[i + 1] : rix;
 						i++;
 					}
@@ -345,7 +345,7 @@ public interface LibMatrixCountDistinct {
 			}
 			// Fill in output block with column aggregation results
 			for (int cix : distinctValuesByCol.keySet()) {
-				blkOut.setValue(0, cix, distinctValuesByCol.get(cix).size());
+				blkOut.set(0, cix, distinctValuesByCol.get(cix).size());
 			}
 		}
 

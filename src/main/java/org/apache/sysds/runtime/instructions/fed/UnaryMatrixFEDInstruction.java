@@ -187,7 +187,7 @@ public class UnaryMatrixFEDInstruction extends UnaryFEDInstruction {
 		for(int i = 0; i < tmp.length; i++)
 			try {
 				MatrixBlock curr = ((MatrixBlock) tmp[i].get().getData()[0]);
-				prod.setValue(i, 0, curr.getValue(curr.getNumRows()-1, 0));
+				prod.set(i, 0, curr.get(curr.getNumRows()-1, 0));
 			}
 			catch(Exception e) {
 				throw new DMLRuntimeException("Federated Get data failed with exception on UnaryMatrixFEDInstruction", e);
@@ -214,7 +214,7 @@ public class UnaryMatrixFEDInstruction extends UnaryFEDInstruction {
 		for(int i = 0; i < tmp.length; i++)
 			try {
 				MatrixBlock curr = ((MatrixBlock) tmp[i].get().getData()[0]);
-				prod.setValue(i, 1, curr.getValue(curr.getNumRows()-1, 1));
+				prod.set(i, 1, curr.get(curr.getNumRows()-1, 1));
 				firstValues.copy(i, i, 0,1, curr.slice(0, 0), true);
 			}
 			catch(Exception e) {
@@ -229,8 +229,8 @@ public class UnaryMatrixFEDInstruction extends UnaryFEDInstruction {
 
 		for(int i = 0; i < scalingValues.getNumRows()-1; i++) {
 			int step = (int) mo1.getFedMapping().getFederatedRanges()[i + 1].getBeginDims()[0];
-			condition.setValue(step, 0, 0.0);
-			mb2.setValue(step, 0, scalingValues.getValue(i + 1, 0));
+			condition.set(step, 0, 0.0);
+			mb2.set(step, 0, scalingValues.get(i + 1, 0));
 		}
 
 		MatrixObject cond = ExecutionContext.createMatrixObject(condition);

@@ -156,7 +156,7 @@ public abstract class SpoofRowwise extends SpoofOperator
 		MatrixBlock out = ( k > 1 ) ?
 			execute(inputs, scalarObjects, new MatrixBlock(1,1,false), k) :
 			execute(inputs, scalarObjects, new MatrixBlock(1,1,false));
-		return new DoubleObject(out.quickGetValue(0, 0));
+		return new DoubleObject(out.get(0, 0));
 	}
 	
 	@Override

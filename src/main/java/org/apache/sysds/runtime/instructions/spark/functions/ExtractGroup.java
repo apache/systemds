@@ -68,7 +68,7 @@ public abstract class ExtractGroup implements Serializable
 			
 			for(int i=0; i<tmp.getNumRows(); i++) {
 				for( int j=0; j<tmp.getNumColumns(); j++ ) {
-					double tmpval = tmp.quickGetValue(i, j);
+					double tmpval = tmp.get(i, j);
 					if( tmpval != 0 ) {
 						WeightedCell weightedCell = new WeightedCell();
 						weightedCell.setValue(tmpval);
@@ -83,13 +83,13 @@ public abstract class ExtractGroup implements Serializable
 		else 
 		{
 			for(int i = 0; i < group.getNumRows(); i++) {
-				long groupVal = UtilFunctions.toLong(group.quickGetValue(i, 0));
+				long groupVal = UtilFunctions.toLong(group.get(i, 0));
 				if(groupVal < 1) {
 					throw new Exception("Expected group values to be greater than equal to 1 but found " + groupVal);
 				}
 				for( int j=0; j<target.getNumColumns(); j++ ) {
 					WeightedCell weightedCell = new WeightedCell();
-					weightedCell.setValue(target.quickGetValue(i, j));
+					weightedCell.setValue(target.get(i, j));
 					weightedCell.setWeight(1);
 					MatrixIndexes ixout = new MatrixIndexes(groupVal,coloff+j+1);
 					groupValuePairs.add(new Tuple2<>(ixout, weightedCell));

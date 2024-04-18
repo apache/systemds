@@ -47,8 +47,8 @@ public abstract class CountDistinctSketch implements MatrixSketch {
 
 	protected void validateSketchMetadata(MatrixBlock corrBlock) {
 		// (nHashes, k, D) row vector
-		if(corrBlock.getNumColumns() < 3 || corrBlock.getValue(0, 0) < 0 || corrBlock.getValue(0, 1) < 0 ||
-			corrBlock.getValue(0, 2) < 0) {
+		if(corrBlock.getNumColumns() < 3 || corrBlock.get(0, 0) < 0 
+			|| corrBlock.get(0, 1) < 0 || corrBlock.get(0, 2) < 0) {
 			throw new DMLRuntimeException("Sketch metadata is corrupt");
 		}
 	}

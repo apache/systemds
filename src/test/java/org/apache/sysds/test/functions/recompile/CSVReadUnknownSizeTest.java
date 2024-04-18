@@ -125,7 +125,7 @@ public class CSVReadUnknownSizeTest extends AutomatedTestBase {
 				{
 					Double tmp = dmlfile.get(new CellIndex(i+1,j+1));
 					
-					double expectedValue = mb.quickGetValue(i, j);
+					double expectedValue = mb.get(i, j);
 					double actualValue =  (tmp==null)?0.0:tmp;
 					
 					if (expectedValue != actualValue) {

@@ -52,9 +52,9 @@ public class ExtractGroupNWeights implements PairFlatMapFunction<Tuple2<MatrixIn
 		ArrayList<Tuple2<MatrixIndexes, WeightedCell>> groupValuePairs = new ArrayList<>();
 		for(int i = 0; i < group.getNumRows(); i++) {
 			WeightedCell weightedCell = new WeightedCell();
-			weightedCell.setValue(target.quickGetValue(i, 0));
-			weightedCell.setWeight(weight.quickGetValue(i, 0));
-			long groupVal = UtilFunctions.toLong(group.quickGetValue(i, 0));
+			weightedCell.setValue(target.get(i, 0));
+			weightedCell.setWeight(weight.get(i, 0));
+			long groupVal = UtilFunctions.toLong(group.get(i, 0));
 			if(groupVal < 1) {
 				throw new Exception("Expected group values to be greater than equal to 1 but found " + groupVal);
 			}

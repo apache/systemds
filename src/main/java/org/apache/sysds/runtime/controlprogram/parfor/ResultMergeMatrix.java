@@ -116,7 +116,7 @@ public abstract class ResultMergeMatrix extends ResultMerge<MatrixObject> {
 		for(int j = 0; j < n; j++) {
 			final double valOld = compare.get(i, j);
 			if(!Util.eq(0.0, valOld)) // NaN awareness
-				out.quickSetValue(i, j, 0);
+				out.set(i, j, 0);
 		}
 	}
 
@@ -139,8 +139,8 @@ public abstract class ResultMergeMatrix extends ResultMerge<MatrixObject> {
 			final double valOld = compare.get(i, aix[apos]);
 			final double valNew = aval[apos];
 			if(!Util.eq(valNew, valOld)) { // NaN awareness
-				double value = out.quickGetValue(i, aix[apos]) + (valNew - valOld);
-				out.quickSetValue(i, aix[apos], value);
+				double value = out.get(i, aix[apos]) + (valNew - valOld);
+				out.set(i, aix[apos], value);
 			}
 		}
 	}
@@ -168,8 +168,8 @@ public abstract class ResultMergeMatrix extends ResultMerge<MatrixObject> {
 			final double valOld = compare.get(i, j);
 			final double valNew = aix[apos] == j ? aval[apos] : 0.0;
 			if(!Util.eq(valNew, valOld)) { // NaN awareness
-				double value = !_isAccum ? valNew : (out.quickGetValue(i, j) + (valNew - valOld));
-				out.quickSetValue(i, j, value);
+				double value = !_isAccum ? valNew : (out.get(i, j) + (valNew - valOld));
+				out.set(i, j, value);
 			}
 			if(aposValid)
 				apos++;
@@ -177,8 +177,8 @@ public abstract class ResultMergeMatrix extends ResultMerge<MatrixObject> {
 		for(; j < n; j++) {
 			final double valOld = compare.get(i, j);
 			if(valOld != 0) {
-				double value = (out.quickGetValue(i, j) - valOld);
-				out.quickSetValue(i, j, value);
+				double value = (out.get(i, j) - valOld);
+				out.set(i, j, value);
 			}
 		}
 
@@ -188,10 +188,10 @@ public abstract class ResultMergeMatrix extends ResultMerge<MatrixObject> {
 		for(int i = 0; i < m; i++) {
 			for(int j = 0; j < n; j++) {
 				final double valOld = compare.get(i, j);
-				final double valNew = in.quickGetValue(i, j); // input value
+				final double valNew = in.get(i, j); // input value
 				if(!Util.eq(valNew, valOld)) { // NaN awareness
-					double value = !_isAccum ? valNew : (out.quickGetValue(i, j) + (valNew - valOld));
-					out.quickSetValue(i, j, value);
+					double value = !_isAccum ? valNew : (out.get(i, j) + (valNew - valOld));
+					out.set(i, j, value);
 				}
 			}
 		}

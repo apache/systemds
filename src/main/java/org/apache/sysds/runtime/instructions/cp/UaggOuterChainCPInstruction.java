@@ -94,7 +94,7 @@ public class UaggOuterChainCPInstruction extends UnaryCPInstruction {
 		
 		if(_uaggOp.indexFn instanceof ReduceAll ) { //RC AGG (output is scalar)
 			ec.setMatrixOutput(output.getName(),
-				new MatrixBlock(mbOut.quickGetValue(0, 0)));
+				new MatrixBlock(mbOut.get(0, 0)));
 		}
 		else { //R/C AGG (output is rdd)
 			mbOut.examSparsity();

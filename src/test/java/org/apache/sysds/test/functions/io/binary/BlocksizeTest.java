@@ -156,8 +156,8 @@ public class BlocksizeTest extends AutomatedTestBase
 				output("X"), FileFormat.BINARY, rows, cols, outBlksize, -1);
 			for( int i=0; i<mb.getNumRows(); i++ )
 				for( int j=0; j<mb.getNumColumns(); j++ ) {
-					double val1 = mb.quickGetValue(i, j) * 7;
-					double val2 = mb2.quickGetValue(i, j);
+					double val1 = mb.get(i, j) * 7;
+					double val2 = mb2.get(i, j);
 					Assert.assertEquals(val1, val2, eps);
 				}
 		}

@@ -122,7 +122,7 @@ public class TransposeTwiceTest {
 		int nCol = in.getNumColumns();
 		for(int i = 0; i < nRow; i++) {
 			for(int j = 0; j < nCol; j++) {
-				assertEquals(in.quickGetValue(i, j), inT.quickGetValue(j, i), 0.0);
+				assertEquals(in.get(i, j), inT.get(j, i), 0.0);
 			}
 		}
 	}

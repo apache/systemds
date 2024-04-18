@@ -260,7 +260,7 @@ public class EncodeSampleCustom {
 	private static MatrixBlock getSparseNaNMatrix() {
 		MatrixBlock m = new MatrixBlock(100, 100, true);
 		for(int i = 0; i < m.getNumRows(); i++)
-			m.setValue(i, i, Double.NaN);
+			m.set(i, i, Double.NaN);
 		return m;
 	}
 

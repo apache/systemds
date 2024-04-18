@@ -592,15 +592,15 @@ public class LibCommonsMath
 			if(i < m - 1) {
 				w1 = w1.ternaryOperations(op_minus_mul, v1, alpha, new MatrixBlock());
 				w1 = w1.ternaryOperations(op_minus_mul, v0, beta, new MatrixBlock());
-				beta.setValue(0, 0, Math.sqrt(w1.sumSq()));
+				beta.set(0, 0, Math.sqrt(w1.sumSq()));
 				v0.copy(v1);
 				op_div_scalar = op_div_scalar.setConstant(beta.getDouble(0, 0));
 				w1.scalarOperations(op_div_scalar, v1);
 
-				T.setValue(i + 1, i, beta.getValue(0, 0));
-				T.setValue(i, i + 1, beta.getValue(0, 0));
+				T.set(i + 1, i, beta.get(0, 0));
+				T.set(i, i + 1, beta.get(0, 0));
 			}
-			T.setValue(i, i, alpha.getValue(0, 0));
+			T.set(i, i, alpha.get(0, 0));
 		}
 
 		MatrixBlock[] e = computeEigen(T);
@@ -631,7 +631,7 @@ public class LibCommonsMath
 
 		MatrixBlock Q_n = new MatrixBlock(m, m, true);
 		for(int i = 0; i < m; i++) {
-			Q_n.setValue(i, i, 1.0);
+			Q_n.set(i, i, 1.0);
 		}
 
 		ReorgOperator op_t = new ReorgOperator(SwapIndex.getSwapIndexFnObject(), threads);
@@ -644,7 +644,7 @@ public class LibCommonsMath
 			MatrixBlock z = A_n.slice(k, m - 1, k, k);
 			MatrixBlock uk = new MatrixBlock(m - k, 1, 0.0);
 			uk.copy(z);
-			uk.setValue(0, 0, uk.getValue(0, 0) + Math.signum(z.getValue(0, 0)) * Math.sqrt(z.sumSq()));
+			uk.set(0, 0, uk.get(0, 0) + Math.signum(z.get(0, 0)) * Math.sqrt(z.sumSq()));
 			op_div_scalar = op_div_scalar.setConstant(Math.sqrt(uk.sumSq()));
 			uk = uk.scalarOperations(op_div_scalar, new MatrixBlock());
 
@@ -686,7 +686,7 @@ public class LibCommonsMath
 
 		MatrixBlock Q_prod = new MatrixBlock(m, m, 0.0);
 		for(int i = 0; i < m; i++) {
-			Q_prod.setValue(i, i, 1.0);
+			Q_prod.set(i, i, 1.0);
 		}
 
 		for(int i = 0; i < num_iterations; i++) {
@@ -723,7 +723,7 @@ public class LibCommonsMath
 		for(int k = 0; k < m - 2; k++) {
 			MatrixBlock ajk = A_n.slice(0, m - 1, k, k);
 			for(int i = 0; i <= k; i++) {
-				ajk.setValue(i, 0, 0.0);
+				ajk.set(i, 0, 0.0);
 			}
 			double alpha = Math.sqrt(ajk.sumSq());
 			double ak1k = A_n.getDouble(k + 1, k);
@@ -732,13 +732,13 @@ public class LibCommonsMath
 			double r = Math.sqrt(0.5 * (alpha * alpha - ak1k * alpha));
 			MatrixBlock v = new MatrixBlock(m, 1, 0.0);
 			v.copy(ajk);
-			v.setValue(k + 1, 0, ak1k - alpha);
+			v.set(k + 1, 0, ak1k - alpha);
 			ScalarOperator op_div_scalar = new RightScalarOperator(Divide.getDivideFnObject(), 2 * r, threads);
 			v = v.scalarOperations(op_div_scalar, new MatrixBlock());
 
 			MatrixBlock P = new MatrixBlock(m, m, 0.0);
 			for(int i = 0; i < m; i++) {
-				P.setValue(i, i, 1.0);
+				P.set(i, i, 1.0);
 			}
 
 			ReorgOperator op_t = new ReorgOperator(SwapIndex.getSwapIndexFnObject(), threads);

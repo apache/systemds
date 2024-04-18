@@ -55,13 +55,13 @@ public class DRSparkScheme extends DataPartitionSparkScheme {
 		// For each row, find out the shifted place
 		return IntStream.range(0, mb.getNumRows()).mapToObj(r -> {
 			MatrixBlock rowMB = ParamservUtils.sliceMatrixBlock(mb, r + 1, r + 1);
-			long shiftedPosition = (long) partialPerm.getValue(r, 0);
+			long shiftedPosition = (long) partialPerm.get(r, 0);
 
 			// Get the shifted block and position
 			int shiftedBlkID = (int) (shiftedPosition / OptimizerUtils.DEFAULT_BLOCKSIZE + 1);
 
 			MatrixBlock indicator = _workerIndicator.getBlock(shiftedBlkID, 1);
-			int workerID = (int) indicator.getValue((int) shiftedPosition / OptimizerUtils.DEFAULT_BLOCKSIZE, 0);
+			int workerID = (int) indicator.get((int) shiftedPosition / OptimizerUtils.DEFAULT_BLOCKSIZE, 0);
 			return new Tuple2<>(workerID, new Tuple2<>(shiftedPosition, rowMB));
 		}).collect(Collectors.toList());
 	}

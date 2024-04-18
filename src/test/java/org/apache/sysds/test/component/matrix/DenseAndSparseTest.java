@@ -205,7 +205,7 @@ public class DenseAndSparseTest {
 		assertEquals(a.getNonZeros(), b.getNonZeros());
 		for(int i = 0; i < n; i++) {
 			for(int j = 0; j < m; j++) {
-				assertEquals(a.quickGetValue(i, j), b.quickGetValue(i, j), 0.000000);
+				assertEquals(a.get(i, j), b.get(i, j), 0.000000);
 			}
 		}
 	}

@@ -174,13 +174,13 @@ public class ColumnEncoderDummycode extends ColumnEncoder {
 			for (int ii=i; ii<lim; ii++) {
 				double val = vals[ii-rowStart];
 				if(Double.isNaN(val)) {
-					out.quickSetValue(ii, outputCol, 0); //0 if NaN
+					out.set(ii, outputCol, 0); //0 if NaN
 					continue;
 				}
 				int nCol = outputCol + (int) val - 1;
 				if(nCol != outputCol)
-					out.quickSetValue(ii, outputCol, 0);
-				out.quickSetValue(ii, nCol, 1);
+					out.set(ii, outputCol, 0);
+				out.set(ii, nCol, 1);
 			}
 		}
 	}
@@ -327,7 +327,5 @@ public class ColumnEncoderDummycode extends ColumnEncoder {
 		public String toString() {
 			return getClass().getSimpleName() + "<ColId: " + _encoder._colID + ">";
 		}
-
 	}
-
 }

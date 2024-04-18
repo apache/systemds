@@ -257,7 +257,7 @@ public class EstimatorSampleRa extends SparsityEstimator
 			else {
 				for(int i=0; i<mb.getNumRows(); i++)
 					for(int j=0; j<mb.getNumColumns(); j++)
-						if( mb.quickGetValue(i, j) != 0 )
+						if( mb.get(i, j) != 0 )
 							indexes[row?i:j].add(row?j:i);
 			}
 		}

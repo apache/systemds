@@ -269,7 +269,7 @@ public class MatrixMarketFormatTest extends AutomatedTestBase
 					int bi = (symmetry == MMSymmetry.GENERAL) ? 0 :
 						(symmetry == MMSymmetry.SYMMETRIC) ? j : j+1;
 					for(int i=bi; i<tmp.getNumRows(); i++) {
-						double val = tmp.quickGetValue(i, j);
+						double val = tmp.get(i, j);
 						br.write(String.valueOf((field == MMField.INTEGER) ?
 							(int) val : val) + "\n" );
 					}

@@ -51,7 +51,7 @@ public class Py4jConverterUtils {
 			double val = buf1.getDouble();
 			int rowIndex = buf2.getInt();
 			int colIndex = buf3.getInt();
-			mb.setValue(rowIndex, colIndex, val);
+			mb.set(rowIndex, colIndex, val);
 		}
 		mb.recomputeNonZeros();
 		mb.examSparsity();

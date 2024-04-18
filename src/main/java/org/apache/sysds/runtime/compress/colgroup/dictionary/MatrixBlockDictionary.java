@@ -132,12 +132,12 @@ public class MatrixBlockDictionary extends ADictionary {
 		if(row > _data.getNumRows())
 			return 0;
 		final int col = i % nCol;
-		return _data.quickGetValue(row, col);
+		return _data.get(row, col);
 	}
 
 	@Override
 	public final double getValue(int r, int c, int nCol) {
-		return _data.quickGetValue(r, c);
+		return _data.get(r, c);
 	}
 
 	@Override
@@ -2186,7 +2186,7 @@ public class MatrixBlockDictionary extends ADictionary {
 		// TODO add sparse exploitation.
 		for(int r = 0; r < _data.getNumRows(); r++)
 			for(int c = 0; c < _data.getNumColumns(); c++)
-				ret.quickSetValue(r, c, _data.quickGetValue(r, reorder[c]));
+				ret.set(r, c, _data.get(r, reorder[c]));
 
 		return create(ret, false);
 	}

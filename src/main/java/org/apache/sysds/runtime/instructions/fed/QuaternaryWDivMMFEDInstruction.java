@@ -102,7 +102,7 @@ public class QuaternaryWDivMMFEDInstruction extends QuaternaryFEDInstruction
 			else {
 				eps = (_input4.getDataType() == DataType.SCALAR) ?
 					ec.getScalarInput(_input4) :
-					new DoubleObject(ec.getMatrixInput(_input4).quickGetValue(0, 0));
+					new DoubleObject(ec.getMatrixInput(_input4).get(0, 0));
 			}
 		}
 

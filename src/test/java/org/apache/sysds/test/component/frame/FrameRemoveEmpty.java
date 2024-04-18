@@ -203,7 +203,7 @@ public class FrameRemoveEmpty {
 	public void removeEmptyRowsSelect() {
 		FrameBlock in = getTestCase2();
 		MatrixBlock select = new MatrixBlock(10, 1, false);
-		select.setValue(3, 0, 1);
+		select.set(3, 0, 1);
 		FrameBlock out = in.removeEmptyOperations(true, true, select);
 		assertEquals(2, out.getNumColumns());
 		assertEquals(1, out.getNumRows());
@@ -214,8 +214,8 @@ public class FrameRemoveEmpty {
 	public void removeEmptyRowsSelect_2() {
 		FrameBlock in = getTestCase2();
 		MatrixBlock select = new MatrixBlock(10, 1, false);
-		select.setValue(3, 0, 1);
-		select.setValue(4, 0, 1);
+		select.set(3, 0, 1);
+		select.set(4, 0, 1);
 		FrameBlock out = in.removeEmptyOperations(true, true, select);
 		assertEquals(2, out.getNumColumns());
 		assertEquals(2, out.getNumRows());
@@ -303,7 +303,7 @@ public class FrameRemoveEmpty {
 		FrameBlock in = getTestCase2();
 		in.setColumnName(1, "HelloThere");
 		MatrixBlock select = new MatrixBlock(10, 1, 1.0);
-		select.setValue(0, 0, 0);
+		select.set(0, 0, 0);
 		FrameBlock out = in.removeEmptyOperations(true, true, select);
 		assertEquals(2, out.getNumColumns());
 		assertEquals(9, out.getNumRows());

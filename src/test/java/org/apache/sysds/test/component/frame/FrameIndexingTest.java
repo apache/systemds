@@ -132,7 +132,7 @@ public class FrameIndexingTest extends AutomatedTestBase
 				mbC = mbA.leftIndexingOperations(mbB, rl, ru, cl, cu, new MatrixBlock(), UpdateType.COPY);
 				
 				//frame indexing
-				frame3 = frame1.leftIndexingOperations(frame2, rl, ru, cl, cu, new FrameBlock());				
+				frame3 = frame1.leftIndexingOperations(frame2, rl, ru, cl, cu, new FrameBlock());
 			}
 			
 			//check basic meta data
@@ -145,8 +145,8 @@ public class FrameIndexingTest extends AutomatedTestBase
 				for( int i=0; i<ru-rl+1; i++ ) {
 					for( int j=0; j<lschema.length; j++ )	{
 						double tmp = UtilFunctions.objectToDouble(lschema[j], frame3.get(i, j));
-						if( tmp != mbC.quickGetValue(i, j) )
-							Assert.fail("Wrong get value for cell ("+i+","+j+"): "+tmp+", expected: "+mbC.quickGetValue(i, j));
+						if( tmp != mbC.get(i, j) )
+							Assert.fail("Wrong get value for cell ("+i+","+j+"): "+tmp+", expected: "+mbC.get(i, j));
 					}		
 				}
 			}

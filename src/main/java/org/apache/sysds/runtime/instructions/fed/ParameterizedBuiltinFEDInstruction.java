@@ -1041,7 +1041,7 @@ public class ParameterizedBuiltinFEDInstruction extends ComputationFEDInstructio
 					}
 
 					if(!isEmpty)
-						ret.setValue(i, 0, 1.0);
+						ret.set(i, 0, 1.0);
 				}
 			} else {
 				for(int i = 0; i < fb.getNumColumns(); i++) {
@@ -1051,7 +1051,7 @@ public class ParameterizedBuiltinFEDInstruction extends ComputationFEDInstructio
 						.allMatch(e -> ArrayUtils.contains(new double[]{0.0, Double.NaN}, UtilFunctions.objectToDoubleSafe(type, e)));
 
 					if(!isEmpty)
-						ret.setValue(0, i,1.0);
+						ret.set(0, i,1.0);
 				}
 			}
 

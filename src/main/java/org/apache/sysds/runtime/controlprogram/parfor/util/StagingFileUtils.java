@@ -180,7 +180,7 @@ public class StagingFileUtils
 					int row = st.nextInt();
 					int col = st.nextInt();
 					double lvalue = st.nextDouble();
-					tmp.quickSetValue(row, col, lvalue);
+					tmp.set(row, col, lvalue);
 				}
 			}
 			else {

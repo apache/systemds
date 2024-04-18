@@ -64,7 +64,7 @@ public class DecoderDummycode extends Decoder
 		for( int i=rl; i<ru; i++ )
 			for( int j=0; j<_colList.length; j++ )
 				for( int k=_clPos[j]; k<_cuPos[j]; k++ )
-					if( in.quickGetValue(i, k-1) != 0 ) {
+					if( in.get(i, k-1) != 0 ) {
 						int col = _colList[j] - 1;
 						out.set(i, col, UtilFunctions.doubleToObject(
 							out.getSchema()[col], k-_clPos[j]+1));

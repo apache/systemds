@@ -81,7 +81,7 @@ public final class CLALibAggTernaryOp {
 
 			// if any is constant.
 			if(isConst(m1)) {
-				double v = m1.quickGetValue(0, 0);
+				double v = m1.get(0, 0);
 				if(v == 1.0)
 					return new CLALibAggTernaryOp(m2, m3, null, ret, op, inCP).exec();
 			}

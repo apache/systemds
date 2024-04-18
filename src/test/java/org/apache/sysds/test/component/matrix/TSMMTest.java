@@ -65,21 +65,21 @@ public class TSMMTest {
 		MatrixBlock mb1 = new MatrixBlock(100, 100, true); // dense cols sparse block
 		for(int j : new int[] {1, 4, 44, 87})
 			for(int i = 0; i < 100; i++)
-				mb1.quickSetValue(i, j, 100);
+				mb1.set(i, j, 100);
 		for(int t = 0; t < threads.length; t++)
 			tests.add(new Object[] {mb1, threads[t]});
 
 		MatrixBlock mb2 = new MatrixBlock(100, 100, true); // sparse but specific
 		for(int j : new int[] {44, 87})
 			for(int i : new int[] {56, 92})
-				mb2.quickSetValue(i, j, 100);
+				mb2.set(i, j, 100);
 		for(int t = 0; t < threads.length; t++)
 			tests.add(new Object[] {mb2, threads[t]});
 
 		MatrixBlock mb3 = new MatrixBlock(100, 100, true); // dense rows sparse block
 		for(int j : new int[] {1, 4, 44, 87})
 			for(int i = 0; i < 100; i++)
-				mb3.quickSetValue(j, i, 100);
+				mb3.set(j, i, 100);
 		for(int t = 0; t < threads.length; t++)
 			tests.add(new Object[] {mb3, threads[t]});
 		return tests;

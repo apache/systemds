@@ -1438,9 +1438,9 @@ public class FrameBlock implements CacheBlock<FrameBlock>, Externalizable {
 
 		FrameBlock outBlock = new FrameBlock(this);
 		for(int i = 0; i < this.getNumColumns(); i++) {
-			if(feaLen.quickGetValue(0, i) == -1)
+			if(feaLen.get(0, i) == -1)
 				continue;
-			int validLength = (int) feaLen.quickGetValue(0, i);
+			int validLength = (int) feaLen.get(0, i);
 			Array obj = this.getColumn(i);
 			for(int j = 0; j < obj.size(); j++) {
 				if(obj.get(j) == null)

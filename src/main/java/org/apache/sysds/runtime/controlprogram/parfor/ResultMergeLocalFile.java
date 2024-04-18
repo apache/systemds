@@ -657,10 +657,11 @@ public class ResultMergeLocalFile extends ResultMergeMatrix
 							}
 						}
 						else {
+							DenseBlock d = mb.getDenseBlock();
 							for( int i=0; i<blen; i++ )
 								for( int j=0; j<blen; j++ )
 								{
-									double lvalue = mb.getValueDenseUnsafe(i, j);
+									double lvalue = d.get(i, j);
 									if( lvalue != 0 ) //for nnz
 									{
 										sb.append(row_offset+i);

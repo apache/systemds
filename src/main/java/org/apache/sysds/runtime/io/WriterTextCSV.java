@@ -35,6 +35,7 @@ import org.apache.hadoop.io.IOUtils;
 import org.apache.hadoop.mapred.JobConf;
 import org.apache.sysds.conf.ConfigurationManager;
 import org.apache.sysds.runtime.DMLRuntimeException;
+import org.apache.sysds.runtime.data.DenseBlock;
 import org.apache.sysds.runtime.data.SparseBlock;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.util.HDFSTool;
@@ -205,6 +206,7 @@ public class WriterTextCSV extends MatrixWriter
 			}
 			else //DENSE
 			{
+				DenseBlock d = src.getDenseBlock();
 				for( int i=rl; i<ru; i++ ) 
 				{
 					//write row chunk-wise to prevent OOM on large number of columns
@@ -212,7 +214,7 @@ public class WriterTextCSV extends MatrixWriter
 					{
 						for( int j=bj; j<Math.min(clen,bj+BLOCKSIZE_J); j++ )
 						{
-							double lvalue = src.getValueDenseUnsafe(i, j);
+							double lvalue = d!=null ? d.get(i, j) : 0;
 							if( lvalue != 0 ) //for nnz
 								sb.append(lvalue);
 							else if( !csvsparse ) 
@@ -222,7 +224,7 @@ public class WriterTextCSV extends MatrixWriter
 								sb.append(delim);
 						}
 						br.write( sb.toString() );
-			            sb.setLength(0);
+						sb.setLength(0);
 					}
 					
 					sb.append('\n');

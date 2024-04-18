@@ -47,7 +47,7 @@ public class BitMapSparseTest {
 		for(int i = 0; i < 10; i++){
 			double v = i % 3;
 			if(v != 0)
-				mb.setValue(i, 0, i % 3);
+				mb.set(i, 0, i % 3);
 		}
 		ABitmap m = BitmapEncoder.extractBitmap(colIndexes, mb, false, 3, false);
 		assertEquals(m.containsZero(), true);
@@ -64,7 +64,7 @@ public class BitMapSparseTest {
 		for(int i = 0; i < 10; i++){
 			double v = i % 3;
 			if(v != 0)
-				mb.setValue(i, 0, i % 3);
+				mb.set(i, 0, i % 3);
 		}
 		ABitmap m = BitmapEncoder.extractBitmap(colIndexes, mb, false, 3, false);
 		assertEquals(m.containsZero(), true);

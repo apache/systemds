@@ -148,7 +148,7 @@ public class CountDistinctTest {
 				});
 			}
 			else {
-				int out = (int) LibMatrixCountDistinct.estimateDistinctValues(in, op).getValue(0, 0);
+				int out = (int) LibMatrixCountDistinct.estimateDistinctValues(in, op).get(0, 0);
 				int count = out;
 				boolean success = Math.abs(nrUnique - count) <= nrUnique * epsilon;
 				StringBuilder sb = new StringBuilder();

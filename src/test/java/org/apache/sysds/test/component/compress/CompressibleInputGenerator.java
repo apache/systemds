@@ -135,9 +135,9 @@ public class CompressibleInputGenerator {
 				pointer += before;
 				for(int i = before; i < nr - after; i++) {
 					if(transpose)
-						output.quickSetValue(colNr, pointer, values.get(valuePointer));
+						output.set(colNr, pointer, values.get(valuePointer));
 					else
-						output.quickSetValue(pointer, colNr, values.get(valuePointer));
+						output.set(pointer, colNr, values.get(valuePointer));
 
 					pointer++;
 				}
@@ -146,9 +146,9 @@ public class CompressibleInputGenerator {
 				if(valuePointer == values.size() && after == 0) {
 					while(pointer < rows) {
 						if(transpose)
-							output.quickSetValue(colNr, pointer, values.get(nrUnique - 1));
+							output.set(colNr, pointer, values.get(nrUnique - 1));
 						else
-							output.quickSetValue(pointer, colNr, values.get(nrUnique - 1));
+							output.set(pointer, colNr, values.get(nrUnique - 1));
 						pointer++;
 					}
 				}
@@ -182,9 +182,9 @@ public class CompressibleInputGenerator {
 			if(transpose && output.isInSparseFormat())
 				output.appendValue(0, x, d);
 			else if(transpose)
-				output.quickSetValue(0, x, d);
+				output.set(0, x, d);
 			else
-				output.quickSetValue(x, 0, d);
+				output.set(x, 0, d);
 		}
 
 		int diff = max - min;
@@ -194,19 +194,19 @@ public class CompressibleInputGenerator {
 			for(int x = 0; x < rows; x++) {
 				if(r.nextDouble() < sparsity) {
 					if(transpose && output.isInSparseFormat()) {
-						int v = (int) (output.getValue(0, x) * y);
+						int v = (int) (output.get(0, x) * y);
 						double d = Math.abs(v % diff) + min;
 						output.appendValue(y, x, d);
 					}
 					else if(transpose) {
-						int v = (int) (output.getValue(0, x) * y);
+						int v = (int) (output.get(0, x) * y);
 						double d = Math.abs(v % diff) + min;
-						output.quickSetValue(y, x, d);
+						output.set(y, x, d);
 					}
 					else {
-						int v = (int) (output.getValue(x, 0) * y);
+						int v = (int) (output.get(x, 0) * y);
 						double d = Math.abs(v % diff) + min;
-						output.quickSetValue(x, y, d);
+						output.set(x, y, d);
 					}
 				}
 			}
@@ -224,9 +224,9 @@ public class CompressibleInputGenerator {
 			for(int x = 0; x < rows; x++) {
 				if(r.nextDouble() > sparsity) {
 					if(transpose)
-						output.quickSetValue(0, x, 0);
+						output.set(0, x, 0);
 					else
-						output.quickSetValue(x, 0, 0);
+						output.set(x, 0, 0);
 				}
 			}
 		}

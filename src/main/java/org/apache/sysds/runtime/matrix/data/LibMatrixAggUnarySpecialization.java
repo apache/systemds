@@ -93,7 +93,7 @@ public class LibMatrixAggUnarySpecialization {
 				tempCellIndex.set(i, j);
 				op.indexFn.execute(tempCellIndex, tempCellIndex);
 				incrementalAggregateUnaryHelp(op.aggOp, result, tempCellIndex.row, tempCellIndex.column,
-					mb.quickGetValue(i, j), buffer);
+					mb.get(i, j), buffer);
 			}
 	}
 
@@ -110,11 +110,11 @@ public class LibMatrixAggUnarySpecialization {
 				else
 					throw new DMLRuntimeException("unrecognized correctionLocation: " + aggOp.correction);
 
-				buffer._sum = result.quickGetValue(row, column);
-				buffer._correction = result.quickGetValue(corRow, corCol);
+				buffer._sum = result.get(row, column);
+				buffer._correction = result.get(corRow, corCol);
 				buffer = (KahanObject) aggOp.increOp.fn.execute(buffer, newvalue);
-				result.quickSetValue(row, column, buffer._sum);
-				result.quickSetValue(corRow, corCol, buffer._correction);
+				result.set(row, column, buffer._sum);
+				result.set(corRow, corCol, buffer._correction);
 			}
 			else if(aggOp.correction == CorrectionLocationType.NONE) {
 				throw new DMLRuntimeException("unrecognized correctionLocation: " + aggOp.correction);
@@ -133,19 +133,19 @@ public class LibMatrixAggUnarySpecialization {
 				}
 				else
 					throw new DMLRuntimeException("unrecognized correctionLocation: " + aggOp.correction);
-				buffer._sum = result.quickGetValue(row, column);
-				buffer._correction = result.quickGetValue(corRow, corCol);
-				double count = result.quickGetValue(countRow, countCol) + 1.0;
+				buffer._sum = result.get(row, column);
+				buffer._correction = result.get(corRow, corCol);
+				double count = result.get(countRow, countCol) + 1.0;
 				buffer = (KahanObject) aggOp.increOp.fn.execute(buffer, newvalue, count);
-				result.quickSetValue(row, column, buffer._sum);
-				result.quickSetValue(corRow, corCol, buffer._correction);
-				result.quickSetValue(countRow, countCol, count);
+				result.set(row, column, buffer._sum);
+				result.set(corRow, corCol, buffer._correction);
+				result.set(countRow, countCol, count);
 			}
 
 		}
 		else {
-			newvalue = aggOp.increOp.fn.execute(result.quickGetValue(row, column), newvalue);
-			result.quickSetValue(row, column, newvalue);
+			newvalue = aggOp.increOp.fn.execute(result.get(row, column), newvalue);
+			result.set(row, column, newvalue);
 		}
 	}
 

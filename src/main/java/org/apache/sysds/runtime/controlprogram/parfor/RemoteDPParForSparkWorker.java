@@ -258,7 +258,7 @@ public class RemoteDPParForSparkWorker extends ParWorker implements PairFlatMapF
 					PairWritableCell pairValue = (PairWritableCell)valueList.iterator().next();
 					if( pairValue.indexes.getColumnIndex()<0 )
 						continue; //cells used to ensure empty partitions
-					partition.quickSetValue(0, (int)pairValue.indexes.getColumnIndex()-1, pairValue.cell.getValue());
+					partition.set(0, (int)pairValue.indexes.getColumnIndex()-1, pairValue.cell.getValue());
 				}
 				break;
 			case COLUMN_WISE:
@@ -270,7 +270,7 @@ public class RemoteDPParForSparkWorker extends ParWorker implements PairFlatMapF
 					if( _tSparseCol )
 						partition.appendValue(0,(int)pairValue.indexes.getRowIndex()-1, pairValue.cell.getValue());
 					else
-						partition.quickSetValue((int)pairValue.indexes.getRowIndex()-1, 0, pairValue.cell.getValue());
+						partition.set((int)pairValue.indexes.getRowIndex()-1, 0, pairValue.cell.getValue());
 				}
 				break;
 			default: 

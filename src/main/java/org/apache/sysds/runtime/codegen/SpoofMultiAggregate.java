@@ -254,15 +254,15 @@ public abstract class SpoofMultiAggregate extends SpoofOperator
 		
 		for( int k=0; k< aggOps.length; k++ ) {
 			if( vfun[k] instanceof KahanFunction ) {
-				KahanObject kbuff = new KahanObject(c.quickGetValue(0, k), 0);
+				KahanObject kbuff = new KahanObject(c.get(0, k), 0);
 				KahanPlus kplus = KahanPlus.getKahanPlusFnObject();
-				kplus.execute2(kbuff, b.quickGetValue(0, k));
-				c.quickSetValue(0, k, kbuff._sum);
+				kplus.execute2(kbuff, b.get(0, k));
+				c.set(0, k, kbuff._sum);
 			}
 			else {
-				double cval = c.quickGetValue(0, k);
-				double bval = b.quickGetValue(0, k);
-				c.quickSetValue(0, k, vfun[k].execute(cval, bval));
+				double cval = c.get(0, k);
+				double bval = b.get(0, k);
+				c.set(0, k, vfun[k].execute(cval, bval));
 			}
 		}
 	}

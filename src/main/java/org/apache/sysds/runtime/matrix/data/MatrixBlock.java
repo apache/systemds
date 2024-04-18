@@ -681,28 +681,9 @@ public class MatrixBlock extends MatrixValue implements CacheBlock<MatrixBlock>,
 		//get iterator over sparse block
 		return sparseBlock.getIterator(rl, ru);
 	}
-	
-	@Override
-	public double getValue(int r, int c) 
-	{
-		//matrix bounds check 
-		if( r >= rlen || c >= clen )
-			throw new RuntimeException("indexes ("+r+","+c+") out of range ("+rlen+","+clen+")");
-		
-		return quickGetValue(r, c);
-	}
-	
-	@Override
-	public void setValue(int r, int c, double v) 
-	{
-		//matrix bounds check 
-		if( r >= rlen || c >= clen )
-			throw new RuntimeException("indexes ("+r+","+c+") out of range ("+rlen+","+clen+")");
 
-		quickSetValue(r, c, v);
-	}
-
-	public double quickGetValue(int r, int c) {
+	@Override
+	public double get(int r, int c) {
 		if( sparse && sparseBlock!=null )
 			return sparseBlock.get(r, c);
 		else if( !sparse && denseBlock!=null )
@@ -710,7 +691,8 @@ public class MatrixBlock extends MatrixValue implements CacheBlock<MatrixBlock>,
 		return 0;
 	}
 
-	public void quickSetValue(int r, int c, double v) 
+	@Override
+	public void set(int r, int c, double v) 
 	{
 		if(sparse) {
 			//early abort
@@ -742,7 +724,7 @@ public class MatrixBlock extends MatrixValue implements CacheBlock<MatrixBlock>,
 		}
 	}
 
-	public void quickSetRow(int r, double[] values){
+	public void setRow(int r, double[] values){
 		if(sparse)
 			throw new NotImplementedException();
 		else{
@@ -751,24 +733,6 @@ public class MatrixBlock extends MatrixValue implements CacheBlock<MatrixBlock>,
 			nonZeros += UtilFunctions.computeNnz(values, 0, values.length) - denseBlock.countNonZeros(r);
 			denseBlock.set(r, values);
 		}
-	}
-
-	public double quickGetValueThreadSafe(int r, int c) {
-		if(sparse) {
-			if(!(sparseBlock instanceof SparseBlockMCSR))
-				throw new RuntimeException("Only MCSR Blocks are supported for Multithreaded sparse get.");
-			synchronized (sparseBlock.get(r)) {
-				return sparseBlock.get(r,c);
-			}
-		}
-		else
-			return denseBlock.get(r,c);
-	}
-
-	public double getValueDenseUnsafe(int r, int c) {
-		if(denseBlock==null)
-			return 0;
-		return denseBlock.get(r, c);
 	}
 	
 	public boolean containsValue(double pattern) {
@@ -899,7 +863,7 @@ public class MatrixBlock extends MatrixValue implements CacheBlock<MatrixBlock>,
 			int[] cols = row.indexes();
 			double[] vals = row.values();
 			for(int i=0; i<row.size(); i++)
-				quickSetValue(r, cols[i], vals[i]);
+				set(r, cols[i], vals[i]);
 		}
 	}
 
@@ -1005,7 +969,7 @@ public class MatrixBlock extends MatrixValue implements CacheBlock<MatrixBlock>,
 		double min = Double.POSITIVE_INFINITY;
 		for( int i=0; i<rlen; i++ )
 			for( int j=0; j<clen; j++ ){
-				double val = quickGetValue(i, j);
+				double val = get(i, j);
 				if( val != 0 )
 					min = Math.min(min, val);
 			}
@@ -1022,7 +986,7 @@ public class MatrixBlock extends MatrixValue implements CacheBlock<MatrixBlock>,
 		MatrixBlock out = new MatrixBlock(1, 1, false);
 		LibMatrixAgg.aggregateUnaryMatrix(this, out,
 			InstructionUtils.parseBasicAggregateUnaryOperator("ua*", 1));
-		return out.quickGetValue(0, 0);
+		return out.get(0, 0);
 	}
 	
 	/**
@@ -1038,7 +1002,7 @@ public class MatrixBlock extends MatrixValue implements CacheBlock<MatrixBlock>,
 		MatrixBlock out = new MatrixBlock(1, 3, false);
 		LibMatrixAgg.aggregateUnaryMatrix(this, out,
 			InstructionUtils.parseBasicAggregateUnaryOperator("uamean", k));
-		return out.quickGetValue(0, 0);
+		return out.get(0, 0);
 	}
 
 	/**
@@ -1054,7 +1018,7 @@ public class MatrixBlock extends MatrixValue implements CacheBlock<MatrixBlock>,
 		MatrixBlock out = new MatrixBlock(1, 1, false);
 		LibMatrixAgg.aggregateUnaryMatrix(this, out,
 			InstructionUtils.parseBasicAggregateUnaryOperator("uamin", k));
-		return out.quickGetValue(0, 0);
+		return out.get(0, 0);
 	}
 
 	/**
@@ -1091,7 +1055,7 @@ public class MatrixBlock extends MatrixValue implements CacheBlock<MatrixBlock>,
 	 * @return the maximum value of all values in the matrix
 	 */
 	public double max() {
-		return max(1).quickGetValue(0,0);
+		return max(1).get(0,0);
 	}
 
 	/**
@@ -1184,7 +1148,7 @@ public class MatrixBlock extends MatrixValue implements CacheBlock<MatrixBlock>,
 		//execute operation
 		MatrixBlock out = new MatrixBlock(1, 2, false);
 		LibMatrixAgg.aggregateUnaryMatrix(this, out, auop);
-		return out.quickGetValue(0, 0);
+		return out.get(0, 0);
 	}
 
 	////////
@@ -3165,9 +3129,9 @@ public class MatrixBlock extends MatrixValue implements CacheBlock<MatrixBlock>,
 		final boolean s1 = (r1 == 1 && c1 == 1);
 		final boolean s2 = (r2 == 1 && c2 == 1);
 		final boolean s3 = (r3 == 1 && c3 == 1);
-		final double d1 = s1 ? quickGetValue(0, 0) : Double.NaN;
-		final double d2 = s2 ? m2.quickGetValue(0, 0) : Double.NaN;
-		final double d3 = s3 ? m3.quickGetValue(0, 0) : Double.NaN;
+		final double d1 = s1 ? get(0, 0) : Double.NaN;
+		final double d2 = s2 ? m2.get(0, 0) : Double.NaN;
+		final double d3 = s3 ? m3.get(0, 0) : Double.NaN;
 		final int m = Math.max(Math.max(r1, r2), r3);
 		final int n = Math.max(Math.max(c1, c2), c3);
 		final long nnz = nonZeros;
@@ -3188,7 +3152,7 @@ public class MatrixBlock extends MatrixValue implements CacheBlock<MatrixBlock>,
 			}
 			else {
 				//fill output with given scalar value
-				double tmpVal = tmp.quickGetValue(0, 0);
+				double tmpVal = tmp.get(0, 0);
 				if( tmpVal != 0 ) {
 					ret.allocateDenseBlock();
 					ret.denseBlock.set(tmpVal);
@@ -3257,12 +3221,12 @@ public class MatrixBlock extends MatrixValue implements CacheBlock<MatrixBlock>,
 			for(int r=0; r<rlen; r++)
 				for(int c=0; c<clen; c++)
 				{
-					buffer._sum=this.quickGetValue(r, c);
-					buffer._correction=cor.quickGetValue(0, c);
-					buffer=(KahanObject) aggOp.increOp.fn.execute(buffer, newWithCor.quickGetValue(r, c), 
-							newWithCor.quickGetValue(r+1, c));
-					quickSetValue(r, c, buffer._sum);
-					cor.quickSetValue(0, c, buffer._correction);
+					buffer._sum=this.get(r, c);
+					buffer._correction=cor.get(0, c);
+					buffer=(KahanObject) aggOp.increOp.fn.execute(buffer, newWithCor.get(r, c), 
+							newWithCor.get(r+1, c));
+					set(r, c, buffer._sum);
+					cor.set(0, c, buffer._correction);
 				}
 		}
 		else if(aggOp.correction==CorrectionLocationType.LASTCOLUMN) {
@@ -3282,20 +3246,20 @@ public class MatrixBlock extends MatrixValue implements CacheBlock<MatrixBlock>,
 					// very similar blocks of special-case code. If one block is
 					// modified, the other needs to be changed to match.
 					for(int r=0; r<rlen; r++){
-						double currMaxValue = cor.quickGetValue(r, 0);
-						long newMaxIndex = (long)newWithCor.quickGetValue(r, 0);
-						double newMaxValue = newWithCor.quickGetValue(r, 1);
+						double currMaxValue = cor.get(r, 0);
+						long newMaxIndex = (long)newWithCor.get(r, 0);
+						double newMaxValue = newWithCor.get(r, 1);
 						double update = aggOp.increOp.fn.execute(newMaxValue, currMaxValue);
 						
 						if (2.0 == update) {
 							// Return value of 2 ==> both values the same, break ties
 							// in favor of higher index.
-							long curMaxIndex = (long) quickGetValue(r,0);
-							quickSetValue(r, 0, Math.max(curMaxIndex, newMaxIndex));
+							long curMaxIndex = (long) get(r,0);
+							set(r, 0, Math.max(curMaxIndex, newMaxIndex));
 						} else if(1.0 == update){
 							// Return value of 1 ==> new value is better; use its index
-							quickSetValue(r, 0, newMaxIndex);
-							cor.quickSetValue(r, 0, newMaxValue);
+							set(r, 0, newMaxIndex);
+							cor.set(r, 0, newMaxValue);
 						} else {
 							// Other return value ==> current answer is best
 						}
@@ -3305,11 +3269,11 @@ public class MatrixBlock extends MatrixValue implements CacheBlock<MatrixBlock>,
 					for(int r=0; r<rlen; r++)
 						for(int c=0; c<clen; c++)
 						{
-							buffer._sum=this.quickGetValue(r, c);
-							buffer._correction=cor.quickGetValue(r, 0);
-							buffer=(KahanObject) aggOp.increOp.fn.execute(buffer, newWithCor.quickGetValue(r, c), newWithCor.quickGetValue(r, c+1));
-							quickSetValue(r, c, buffer._sum);
-							cor.quickSetValue(r, 0, buffer._correction);
+							buffer._sum=this.get(r, c);
+							buffer._correction=cor.get(r, 0);
+							buffer=(KahanObject) aggOp.increOp.fn.execute(buffer, newWithCor.get(r, c), newWithCor.get(r, c+1));
+							set(r, c, buffer._sum);
+							cor.set(r, 0, buffer._correction);
 						}
 				}
 		}
@@ -3336,11 +3300,11 @@ public class MatrixBlock extends MatrixValue implements CacheBlock<MatrixBlock>,
 							for( int j=bpos; j<bpos+blen; j++)
 							{
 								int c = bix[j];
-								buffer._sum = this.quickGetValue(r, c);
-								buffer._correction = cor.quickGetValue(r, c);
+								buffer._sum = this.get(r, c);
+								buffer._correction = cor.get(r, c);
 								buffer = (KahanObject) aggOp.increOp.fn.execute(buffer, bvals[j]);
-								quickSetValue(r, c, buffer._sum);
-								cor.quickSetValue(r, c, buffer._correction);
+								set(r, c, buffer._sum);
+								cor.set(r, c, buffer._correction);
 							}
 						}
 					}
@@ -3350,11 +3314,11 @@ public class MatrixBlock extends MatrixValue implements CacheBlock<MatrixBlock>,
 				{
 					for(int r=0; r<rlen; r++)
 						for(int c=0; c<clen; c++) {
-							buffer._sum=this.quickGetValue(r, c);
-							buffer._correction=cor.quickGetValue(r, c);
-							buffer=(KahanObject) aggOp.increOp.fn.execute(buffer, newWithCor.quickGetValue(r, c));
-							quickSetValue(r, c, buffer._sum);
-							cor.quickSetValue(r, c, buffer._correction);
+							buffer._sum=this.get(r, c);
+							buffer._correction=cor.get(r, c);
+							buffer=(KahanObject) aggOp.increOp.fn.execute(buffer, newWithCor.get(r, c));
+							set(r, c, buffer._sum);
+							cor.set(r, c, buffer._correction);
 						}
 				}
 			
@@ -3368,17 +3332,17 @@ public class MatrixBlock extends MatrixValue implements CacheBlock<MatrixBlock>,
 			for(int r=0; r<rlen; r++)
 				for(int c=0; c<clen; c++)
 				{
-					buffer._sum=this.quickGetValue(r, c);
-					n=cor.quickGetValue(0, c);
-					buffer._correction=cor.quickGetValue(1, c);
-					mu2=newWithCor.quickGetValue(r, c);
-					n2=newWithCor.quickGetValue(r+1, c);
+					buffer._sum=this.get(r, c);
+					n=cor.get(0, c);
+					buffer._correction=cor.get(1, c);
+					mu2=newWithCor.get(r, c);
+					n2=newWithCor.get(r+1, c);
 					n=n+n2;
 					double toadd=(mu2-buffer._sum)*n2/n;
 					buffer=(KahanObject) aggOp.increOp.fn.execute(buffer, toadd);
-					quickSetValue(r, c, buffer._sum);
-					cor.quickSetValue(0, c, n);
-					cor.quickSetValue(1, c, buffer._correction);
+					set(r, c, buffer._sum);
+					cor.set(0, c, n);
+					cor.set(1, c, buffer._correction);
 				}
 		}
 		else if(aggOp.correction==CorrectionLocationType.LASTTWOCOLUMNS) {
@@ -3386,17 +3350,17 @@ public class MatrixBlock extends MatrixValue implements CacheBlock<MatrixBlock>,
 			for(int r=0; r<rlen; r++)
 				for(int c=0; c<clen; c++)
 				{
-					buffer._sum=this.quickGetValue(r, c);
-					n=cor.quickGetValue(r, 0);
-					buffer._correction=cor.quickGetValue(r, 1);
-					mu2=newWithCor.quickGetValue(r, c);
-					n2=newWithCor.quickGetValue(r, c+1);
+					buffer._sum=this.get(r, c);
+					n=cor.get(r, 0);
+					buffer._correction=cor.get(r, 1);
+					mu2=newWithCor.get(r, c);
+					n2=newWithCor.get(r, c+1);
 					n=n+n2;
 					double toadd=(mu2-buffer._sum)*n2/n;
 					buffer=(KahanObject) aggOp.increOp.fn.execute(buffer, toadd);
-					quickSetValue(r, c, buffer._sum);
-					cor.quickSetValue(r, 0, n);
-					cor.quickSetValue(r, 1, buffer._correction);
+					set(r, c, buffer._sum);
+					cor.set(r, 0, n);
+					cor.set(r, 1, buffer._correction);
 				}
 		}
 		else if (aggOp.correction == CorrectionLocationType.LASTFOURROWS
@@ -3411,30 +3375,30 @@ public class MatrixBlock extends MatrixValue implements CacheBlock<MatrixBlock>,
 				for (int c=0; c<clen; c++) {
 					// extract current values: { var | mean, count, m2 correction, mean correction }
 					// note: m2 = var * (n - 1)
-					cbuff_curr.w = cor.quickGetValue(1, c); // count
-					cbuff_curr.m2._sum = quickGetValue(r, c) * (cbuff_curr.w - 1); // m2
-					cbuff_curr.mean._sum = cor.quickGetValue(0, c); // mean
-					cbuff_curr.m2._correction = cor.quickGetValue(2, c);
-					cbuff_curr.mean._correction = cor.quickGetValue(3, c);
+					cbuff_curr.w = cor.get(1, c); // count
+					cbuff_curr.m2._sum = get(r, c) * (cbuff_curr.w - 1); // m2
+					cbuff_curr.mean._sum = cor.get(0, c); // mean
+					cbuff_curr.m2._correction = cor.get(2, c);
+					cbuff_curr.mean._correction = cor.get(3, c);
 
 					// extract partial values: { var | mean, count, m2 correction, mean correction }
 					// note: m2 = var * (n - 1)
-					cbuff_part.w = newWithCor.quickGetValue(r+2, c); // count
-					cbuff_part.m2._sum = newWithCor.quickGetValue(r, c) * (cbuff_part.w - 1); // m2
-					cbuff_part.mean._sum = newWithCor.quickGetValue(r+1, c); // mean
-					cbuff_part.m2._correction = newWithCor.quickGetValue(r+3, c);
-					cbuff_part.mean._correction = newWithCor.quickGetValue(r+4, c);
+					cbuff_part.w = newWithCor.get(r+2, c); // count
+					cbuff_part.m2._sum = newWithCor.get(r, c) * (cbuff_part.w - 1); // m2
+					cbuff_part.mean._sum = newWithCor.get(r+1, c); // mean
+					cbuff_part.m2._correction = newWithCor.get(r+3, c);
+					cbuff_part.mean._correction = newWithCor.get(r+4, c);
 
 					// calculate incremental aggregated variance
 					cbuff_curr = (CM_COV_Object) aggOp.increOp.fn.execute(cbuff_curr, cbuff_part);
 
 					// store updated values: { var | mean, count, m2 correction, mean correction }
 					double var = cbuff_curr.getRequiredResult(AggregateOperationTypes.VARIANCE);
-					quickSetValue(r, c, var);
-					cor.quickSetValue(0, c, cbuff_curr.mean._sum); // mean
-					cor.quickSetValue(1, c, cbuff_curr.w); // count
-					cor.quickSetValue(2, c, cbuff_curr.m2._correction);
-					cor.quickSetValue(3, c, cbuff_curr.mean._correction);
+					set(r, c, var);
+					cor.set(0, c, cbuff_curr.mean._sum); // mean
+					cor.set(1, c, cbuff_curr.w); // count
+					cor.set(2, c, cbuff_curr.m2._correction);
+					cor.set(3, c, cbuff_curr.mean._correction);
 				}
 		}
 		else if (aggOp.correction == CorrectionLocationType.LASTFOURCOLUMNS
@@ -3449,30 +3413,30 @@ public class MatrixBlock extends MatrixValue implements CacheBlock<MatrixBlock>,
 				for (int c=0; c<clen; c++) {
 					// extract current values: { var | mean, count, m2 correction, mean correction }
 					// note: m2 = var * (n - 1)
-					cbuff_curr.w = cor.quickGetValue(r, 1); // count
-					cbuff_curr.m2._sum = quickGetValue(r, c) * (cbuff_curr.w - 1); // m2
-					cbuff_curr.mean._sum = cor.quickGetValue(r, 0); // mean
-					cbuff_curr.m2._correction = cor.quickGetValue(r, 2);
-					cbuff_curr.mean._correction = cor.quickGetValue(r, 3);
+					cbuff_curr.w = cor.get(r, 1); // count
+					cbuff_curr.m2._sum = get(r, c) * (cbuff_curr.w - 1); // m2
+					cbuff_curr.mean._sum = cor.get(r, 0); // mean
+					cbuff_curr.m2._correction = cor.get(r, 2);
+					cbuff_curr.mean._correction = cor.get(r, 3);
 
 					// extract partial values: { var | mean, count, m2 correction, mean correction }
 					// note: m2 = var * (n - 1)
-					cbuff_part.w = newWithCor.quickGetValue(r, c+2); // count
-					cbuff_part.m2._sum = newWithCor.quickGetValue(r, c) * (cbuff_part.w - 1); // m2
-					cbuff_part.mean._sum = newWithCor.quickGetValue(r, c+1); // mean
-					cbuff_part.m2._correction = newWithCor.quickGetValue(r, c+3);
-					cbuff_part.mean._correction = newWithCor.quickGetValue(r, c+4);
+					cbuff_part.w = newWithCor.get(r, c+2); // count
+					cbuff_part.m2._sum = newWithCor.get(r, c) * (cbuff_part.w - 1); // m2
+					cbuff_part.mean._sum = newWithCor.get(r, c+1); // mean
+					cbuff_part.m2._correction = newWithCor.get(r, c+3);
+					cbuff_part.mean._correction = newWithCor.get(r, c+4);
 
 					// calculate incremental aggregated variance
 					cbuff_curr = (CM_COV_Object) aggOp.increOp.fn.execute(cbuff_curr, cbuff_part);
 
 					// store updated values: { var | mean, count, m2 correction, mean correction }
 					double var = cbuff_curr.getRequiredResult(AggregateOperationTypes.VARIANCE);
-					quickSetValue(r, c, var);
-					cor.quickSetValue(r, 0, cbuff_curr.mean._sum); // mean
-					cor.quickSetValue(r, 1, cbuff_curr.w); // count
-					cor.quickSetValue(r, 2, cbuff_curr.m2._correction);
-					cor.quickSetValue(r, 3, cbuff_curr.mean._correction);
+					set(r, c, var);
+					cor.set(r, 0, cbuff_curr.mean._sum); // mean
+					cor.set(r, 1, cbuff_curr.w); // count
+					cor.set(r, 2, cbuff_curr.m2._correction);
+					cor.set(r, 3, cbuff_curr.mean._correction);
 				}
 		}
 		else
@@ -3496,12 +3460,12 @@ public class MatrixBlock extends MatrixValue implements CacheBlock<MatrixBlock>,
 				for(int r=0; r<rlen-1; r++)
 					for(int c=0; c<clen; c++)
 					{
-						buffer._sum=this.quickGetValue(r, c);
-						buffer._correction=this.quickGetValue(r+1, c);
-						buffer=(KahanObject) aggOp.increOp.fn.execute(buffer, newWithCor.quickGetValue(r, c), 
-								newWithCor.quickGetValue(r+1, c));
-						quickSetValue(r, c, buffer._sum);
-						quickSetValue(r+1, c, buffer._correction);
+						buffer._sum=this.get(r, c);
+						buffer._correction=this.get(r+1, c);
+						buffer=(KahanObject) aggOp.increOp.fn.execute(buffer, newWithCor.get(r, c), 
+								newWithCor.get(r+1, c));
+						set(r, c, buffer._sum);
+						set(r+1, c, buffer._correction);
 					}
 			}	
 		}
@@ -3524,20 +3488,20 @@ public class MatrixBlock extends MatrixValue implements CacheBlock<MatrixBlock>,
 				// very similar blocks of special-case code. If one block is
 				// modified, the other needs to be changed to match.
 				for(int r = 0; r < rlen; r++){
-					double currMaxValue = quickGetValue(r, 1);
-					long newMaxIndex = (long)newWithCor.quickGetValue(r, 0);
-					double newMaxValue = newWithCor.quickGetValue(r, 1);
+					double currMaxValue = get(r, 1);
+					long newMaxIndex = (long)newWithCor.get(r, 0);
+					double newMaxValue = newWithCor.get(r, 1);
 					double update = aggOp.increOp.fn.execute(newMaxValue, currMaxValue);
 	
 					if (2.0 == update) {
 						// Return value of 2 ==> both values the same, break ties
 						// in favor of higher index.
-						long curMaxIndex = (long) quickGetValue(r,0);
-						quickSetValue(r, 0, Math.max(curMaxIndex, newMaxIndex));
+						long curMaxIndex = (long) get(r,0);
+						set(r, 0, Math.max(curMaxIndex, newMaxIndex));
 					} else if(1.0 == update){
 						// Return value of 1 ==> new value is better; use its index
-						quickSetValue(r, 0, newMaxIndex);
-						quickSetValue(r, 1, newMaxValue);
+						set(r, 0, newMaxIndex);
+						set(r, 1, newMaxValue);
 					} else {
 						// Other return value ==> current answer is best
 					}
@@ -3553,11 +3517,11 @@ public class MatrixBlock extends MatrixValue implements CacheBlock<MatrixBlock>,
 					for(int r=0; r<rlen; r++)
 						for(int c=0; c<clen-1; c++)
 						{
-							buffer._sum=this.quickGetValue(r, c);
-							buffer._correction=this.quickGetValue(r, c+1);
-							buffer=(KahanObject) aggOp.increOp.fn.execute(buffer, newWithCor.quickGetValue(r, c), newWithCor.quickGetValue(r, c+1));
-							quickSetValue(r, c, buffer._sum);
-							quickSetValue(r, c+1, buffer._correction);
+							buffer._sum=this.get(r, c);
+							buffer._correction=this.get(r, c+1);
+							buffer=(KahanObject) aggOp.increOp.fn.execute(buffer, newWithCor.get(r, c), newWithCor.get(r, c+1));
+							set(r, c, buffer._sum);
+							set(r, c+1, buffer._correction);
 						}
 				}
 			}
@@ -3568,17 +3532,17 @@ public class MatrixBlock extends MatrixValue implements CacheBlock<MatrixBlock>,
 			for(int r=0; r<rlen-2; r++)
 				for(int c=0; c<clen; c++)
 				{
-					buffer._sum=this.quickGetValue(r, c);
-					n=this.quickGetValue(r+1, c);
-					buffer._correction=this.quickGetValue(r+2, c);
-					mu2=newWithCor.quickGetValue(r, c);
-					n2=newWithCor.quickGetValue(r+1, c);
+					buffer._sum=this.get(r, c);
+					n=this.get(r+1, c);
+					buffer._correction=this.get(r+2, c);
+					mu2=newWithCor.get(r, c);
+					n2=newWithCor.get(r+1, c);
 					n=n+n2;
 					double toadd=(mu2-buffer._sum)*n2/n;
 					buffer=(KahanObject) aggOp.increOp.fn.execute(buffer, toadd);
-					quickSetValue(r, c, buffer._sum);
-					quickSetValue(r+1, c, n);
-					quickSetValue(r+2, c, buffer._correction);
+					set(r, c, buffer._sum);
+					set(r+1, c, n);
+					set(r+2, c, buffer._correction);
 				}
 			
 		}else if(aggOp.correction==CorrectionLocationType.LASTTWOCOLUMNS)
@@ -3587,17 +3551,17 @@ public class MatrixBlock extends MatrixValue implements CacheBlock<MatrixBlock>,
 			for(int r=0; r<rlen; r++)
 				for(int c=0; c<clen-2; c++)
 				{
-					buffer._sum=this.quickGetValue(r, c);
-					n=this.quickGetValue(r, c+1);
-					buffer._correction=this.quickGetValue(r, c+2);
-					mu2=newWithCor.quickGetValue(r, c);
-					n2=newWithCor.quickGetValue(r, c+1);
+					buffer._sum=this.get(r, c);
+					n=this.get(r, c+1);
+					buffer._correction=this.get(r, c+2);
+					mu2=newWithCor.get(r, c);
+					n2=newWithCor.get(r, c+1);
 					n=n+n2;
 					double toadd=(mu2-buffer._sum)*n2/n;
 					buffer=(KahanObject) aggOp.increOp.fn.execute(buffer, toadd);
-					quickSetValue(r, c, buffer._sum);
-					quickSetValue(r, c+1, n);
-					quickSetValue(r, c+2, buffer._correction);
+					set(r, c, buffer._sum);
+					set(r, c+1, n);
+					set(r, c+2, buffer._correction);
 				}
 		}
 		else if (aggOp.correction == CorrectionLocationType.LASTFOURROWS
@@ -3612,30 +3576,30 @@ public class MatrixBlock extends MatrixValue implements CacheBlock<MatrixBlock>,
 				for (int c=0; c<clen; c++) {
 					// extract current values: { var | mean, count, m2 correction, mean correction }
 					// note: m2 = var * (n - 1)
-					cbuff_curr.w = quickGetValue(r+2, c); // count
-					cbuff_curr.m2._sum = quickGetValue(r, c) * (cbuff_curr.w - 1); // m2
-					cbuff_curr.mean._sum = quickGetValue(r+1, c); // mean
-					cbuff_curr.m2._correction = quickGetValue(r+3, c);
-					cbuff_curr.mean._correction = quickGetValue(r+4, c);
+					cbuff_curr.w = get(r+2, c); // count
+					cbuff_curr.m2._sum = get(r, c) * (cbuff_curr.w - 1); // m2
+					cbuff_curr.mean._sum = get(r+1, c); // mean
+					cbuff_curr.m2._correction = get(r+3, c);
+					cbuff_curr.mean._correction = get(r+4, c);
 
 					// extract partial values: { var | mean, count, m2 correction, mean correction }
 					// note: m2 = var * (n - 1)
-					cbuff_part.w = newWithCor.quickGetValue(r+2, c); // count
-					cbuff_part.m2._sum = newWithCor.quickGetValue(r, c) * (cbuff_part.w - 1); // m2
-					cbuff_part.mean._sum = newWithCor.quickGetValue(r+1, c); // mean
-					cbuff_part.m2._correction = newWithCor.quickGetValue(r+3, c);
-					cbuff_part.mean._correction = newWithCor.quickGetValue(r+4, c);
+					cbuff_part.w = newWithCor.get(r+2, c); // count
+					cbuff_part.m2._sum = newWithCor.get(r, c) * (cbuff_part.w - 1); // m2
+					cbuff_part.mean._sum = newWithCor.get(r+1, c); // mean
+					cbuff_part.m2._correction = newWithCor.get(r+3, c);
+					cbuff_part.mean._correction = newWithCor.get(r+4, c);
 
 					// calculate incremental aggregated variance
 					cbuff_curr = (CM_COV_Object) aggOp.increOp.fn.execute(cbuff_curr, cbuff_part);
 
 					// store updated values: { var | mean, count, m2 correction, mean correction }
 					double var = cbuff_curr.getRequiredResult(AggregateOperationTypes.VARIANCE);
-					quickSetValue(r, c, var);
-					quickSetValue(r+1, c, cbuff_curr.mean._sum); // mean
-					quickSetValue(r+2, c, cbuff_curr.w); // count
-					quickSetValue(r+3, c, cbuff_curr.m2._correction);
-					quickSetValue(r+4, c, cbuff_curr.mean._correction);
+					set(r, c, var);
+					set(r+1, c, cbuff_curr.mean._sum); // mean
+					set(r+2, c, cbuff_curr.w); // count
+					set(r+3, c, cbuff_curr.m2._correction);
+					set(r+4, c, cbuff_curr.mean._correction);
 				}
 		}
 		else if (aggOp.correction == CorrectionLocationType.LASTFOURCOLUMNS
@@ -3650,30 +3614,30 @@ public class MatrixBlock extends MatrixValue implements CacheBlock<MatrixBlock>,
 				for (int c=0; c<clen-4; c++) {
 					// extract current values: { var | mean, count, m2 correction, mean correction }
 					// note: m2 = var * (n - 1)
-					cbuff_curr.w = quickGetValue(r, c+2); // count
-					cbuff_curr.m2._sum = quickGetValue(r, c) * (cbuff_curr.w - 1); // m2
-					cbuff_curr.mean._sum = quickGetValue(r, c+1); // mean
-					cbuff_curr.m2._correction = quickGetValue(r, c+3);
-					cbuff_curr.mean._correction = quickGetValue(r, c+4);
+					cbuff_curr.w = get(r, c+2); // count
+					cbuff_curr.m2._sum = get(r, c) * (cbuff_curr.w - 1); // m2
+					cbuff_curr.mean._sum = get(r, c+1); // mean
+					cbuff_curr.m2._correction = get(r, c+3);
+					cbuff_curr.mean._correction = get(r, c+4);
 
 					// extract partial values: { var | mean, count, m2 correction, mean correction }
 					// note: m2 = var * (n - 1)
-					cbuff_part.w = newWithCor.quickGetValue(r, c+2); // count
-					cbuff_part.m2._sum = newWithCor.quickGetValue(r, c) * (cbuff_part.w - 1); // m2
-					cbuff_part.mean._sum = newWithCor.quickGetValue(r, c+1); // mean
-					cbuff_part.m2._correction = newWithCor.quickGetValue(r, c+3);
-					cbuff_part.mean._correction = newWithCor.quickGetValue(r, c+4);
+					cbuff_part.w = newWithCor.get(r, c+2); // count
+					cbuff_part.m2._sum = newWithCor.get(r, c) * (cbuff_part.w - 1); // m2
+					cbuff_part.mean._sum = newWithCor.get(r, c+1); // mean
+					cbuff_part.m2._correction = newWithCor.get(r, c+3);
+					cbuff_part.mean._correction = newWithCor.get(r, c+4);
 
 					// calculate incremental aggregated variance
 					cbuff_curr = (CM_COV_Object) aggOp.increOp.fn.execute(cbuff_curr, cbuff_part);
 
 					// store updated values: { var | mean, count, m2 correction, mean correction }
 					double var = cbuff_curr.getRequiredResult(AggregateOperationTypes.VARIANCE);
-					quickSetValue(r, c, var);
-					quickSetValue(r, c+1, cbuff_curr.mean._sum); // mean
-					quickSetValue(r, c+2, cbuff_curr.w); // count
-					quickSetValue(r, c+3, cbuff_curr.m2._correction);
-					quickSetValue(r, c+4, cbuff_curr.mean._correction);
+					set(r, c, var);
+					set(r, c+1, cbuff_curr.mean._sum); // mean
+					set(r, c+2, cbuff_curr.w); // count
+					set(r, c+3, cbuff_curr.m2._correction);
+					set(r, c+4, cbuff_curr.mean._correction);
 				}
 		}
 		else
@@ -4033,7 +3997,7 @@ public class MatrixBlock extends MatrixValue implements CacheBlock<MatrixBlock>,
 			}
 		}
 		else {
-			ret.quickSetValue(0, 0, init);
+			ret.set(0, 0, init);
 		}
 		
 		return ret;
@@ -4235,7 +4199,7 @@ public class MatrixBlock extends MatrixValue implements CacheBlock<MatrixBlock>,
 
 		if(rl==ru && cl==cu) { //specific case: cell update
 			//copy single value and update nnz
-			result.quickSetValue(rl, cl, src.quickGetValue(0, 0));
+			result.set(rl, cl, src.get(0, 0));
 		}
 		else { //general case
 			//handle csr sparse blocks separately to avoid repeated shifting on column-wise access
@@ -4302,7 +4266,7 @@ public class MatrixBlock extends MatrixValue implements CacheBlock<MatrixBlock>,
 					DEFAULT_INPLACE_SPARSEBLOCK, ret.sparseBlock, false);
 		}
 		
-		ret.quickSetValue(rl, cl, inVal);
+		ret.set(rl, cl, inVal);
 		return ret;
 	}
 	
@@ -4906,11 +4870,11 @@ public class MatrixBlock extends MatrixValue implements CacheBlock<MatrixBlock>,
 		if( wtflag ) // w/ weights
 		{
 			for ( int i=0; i<rlen; i++ ) {
-				d = quickGetValue(i,0);
-				w = wts.quickGetValue(i,0);
+				d = get(i,0);
+				w = wts.get(i,0);
 				if ( d != 0 ) {
-					tdw.quickSetValue(ind, 0, d);
-					tdw.quickSetValue(ind, 1, w);
+					tdw.set(ind, 0, d);
+					tdw.set(ind, 1, w);
 					ind++;
 				}
 				else
@@ -4921,16 +4885,16 @@ public class MatrixBlock extends MatrixValue implements CacheBlock<MatrixBlock>,
 		{
 			zero_wt = getNumRows() - getNonZeros();
 			for( int i=0; i<rlen; i++ ) {
-				d = quickGetValue(i,0);
+				d = get(i,0);
 				if( d != 0 ){
-					tdw.quickSetValue(ind, 0, d);
-					tdw.quickSetValue(ind, 1, 1);
+					tdw.set(ind, 0, d);
+					tdw.set(ind, 1, 1);
 					ind++;
 				}
 			}
 		}
-		tdw.quickSetValue(0, 0, 0.0);
-		tdw.quickSetValue(0, 1, zero_wt); //num zeros in input
+		tdw.set(0, 0, 0.0);
+		tdw.set(0, 1, zero_wt); //num zeros in input
 		
 		// Sort td and tw based on values inside td (ascending sort), incl copy into result
 		SortIndex sfn = new SortIndex(1, false, false);
@@ -4952,20 +4916,20 @@ public class MatrixBlock extends MatrixValue implements CacheBlock<MatrixBlock>,
 		// find q25 as sum of weights (but excluding from mean)
 		double psum = 0; int i = -1;
 		while(psum < q25i && i < getNumRows())
-			psum += quickGetValue(++i, 1);
+			psum += get(++i, 1);
 		double q25Part = psum-q25d; 
-		double q25Val = quickGetValue(i, 0);
+		double q25Val = get(i, 0);
 		
 		// compute mean and find q75 as sum of weights (including in mean)
 		double sum = 0;
 		while(psum < q75i && i < getNumRows()) {
-			double v1 = quickGetValue(++i, 0);
-			double v2 = quickGetValue(i, 1);
+			double v1 = get(++i, 0);
+			double v2 = get(i, 1);
 			psum += v2;
 			sum += v1 * v2;
 		}
 		double q75Part = psum-q75d;
-		double q75Val = quickGetValue(i, 0);
+		double q75Val = get(i, 0);
 		
 		//compute final IQM, incl. correction for q25 and q75 portions 
 		return computeIQMCorrection(sum, sum_wt, q25Part, q25Val, q75Part, q75Val);
@@ -4992,7 +4956,7 @@ public class MatrixBlock extends MatrixValue implements CacheBlock<MatrixBlock>,
 			output.reset(qs.rlen, qs.clen, false);
 		
 		for ( int i=0; i < qs.rlen; i++ ) {
-			output.quickSetValue(i, 0, this.pickValue(qs.quickGetValue(i,0)) );
+			output.set(i, 0, this.pickValue(qs.get(i,0)) );
 		}
 		
 		return output;
@@ -5018,33 +4982,33 @@ public class MatrixBlock extends MatrixValue implements CacheBlock<MatrixBlock>,
 		int t = 0, i=-1;
 		do {
 			i++;
-			t += quickGetValue(i,1);
+			t += get(i,1);
 		} while(t<pos && i < getNumRows());
 		
-		if ( quickGetValue(i,1) != 0 ) {
+		if ( get(i,1) != 0 ) {
 			// i^th value is present in the data set, simply return it
 			if ( average ) {
 				if(pos < t) {
-					return quickGetValue(i,0);
+					return get(i,0);
 				}
-				if(quickGetValue(i+1,1) != 0)
-					return (quickGetValue(i,0)+quickGetValue(i+1,0))/2;
+				if(get(i+1,1) != 0)
+					return (get(i,0)+get(i+1,0))/2;
 				else
 					// (i+1)^th value is 0. So, fetch (i+2)^th value
-					return (quickGetValue(i,0)+quickGetValue(i+2,0))/2;
+					return (get(i,0)+get(i+2,0))/2;
 			}
 			else 
-				return quickGetValue(i, 0);
+				return get(i, 0);
 		}
 		else {
 			// i^th value is not present in the data set. 
 			// It can only happen in the case where i^th value is 0.0; and 0.0 is not present in the data set (but introduced by sort).
 			if ( i+1 < getNumRows() )
 				// when 0.0 is not the last element in the sorted order
-				return quickGetValue(i+1,0);
+				return get(i+1,0);
 			else
 				// when 0.0 is the last element in the sorted order (input data is all negative)
-				return quickGetValue(i-1,0);
+				return get(i-1,0);
 		}
 	}
 	
@@ -5057,7 +5021,7 @@ public class MatrixBlock extends MatrixValue implements CacheBlock<MatrixBlock>,
 	public double sumWeightForQuantile() {
 		double sum_wt = 0;
 		for (int i=0; i < getNumRows(); i++ ) {
-			double tmp = quickGetValue(i, 1);
+			double tmp = get(i, 1);
 			sum_wt += tmp;
 			
 			// test all values not just final sum_wt to ensure that non-integer weights
@@ -5407,8 +5371,8 @@ public class MatrixBlock extends MatrixValue implements CacheBlock<MatrixBlock>,
 		//(because input values of 0 are invalid and have to result in errors) 
 		for( int i=0; i<rlen; i++ )
 			for( int j=0; j<clen; j++ ) {
-				double v1 = this.quickGetValue(i, j);
-				double w = that2.quickGetValue(i, j);
+				double v1 = this.get(i, j);
+				double w = that2.get(i, j);
 				ctable.execute(v1, v2, w, false, resultMap, resultBlock);
 			}
 		
@@ -5437,7 +5401,7 @@ public class MatrixBlock extends MatrixValue implements CacheBlock<MatrixBlock>,
 		//(because input values of 0 are invalid and have to result in errors) 
 		for( int i=0; i<rlen; i++ )
 			for( int j=0; j<clen; j++ ) {
-				double v1 = this.quickGetValue(i, j);
+				double v1 = this.get(i, j);
 				ctable.execute(v1, v2, w, false, resultMap, resultBlock);
 			}
 		
@@ -5464,7 +5428,7 @@ public class MatrixBlock extends MatrixValue implements CacheBlock<MatrixBlock>,
 		//(because input values of 0 are invalid and have to result in errors) 
 		for( int i=0; i<rlen; i++ )
 			for( int j=0; j<clen; j++ ) {
-				double v1 = this.quickGetValue(i, j);
+				double v1 = this.get(i, j);
 				if( left )
 					ctable.execute(offset+i+1, v1, w, false, resultMap, resultBlock);
 				else
@@ -5529,8 +5493,8 @@ public class MatrixBlock extends MatrixValue implements CacheBlock<MatrixBlock>,
 			//(because input values of 0 are invalid and have to result in errors) 
 			for( int i=0; i<rlen; i++ )
 				for( int j=0; j<clen; j++ ) {
-					double v1 = this.quickGetValue(i, j);
-					double v2 = that.quickGetValue(i, j);
+					double v1 = this.get(i, j);
+					double v2 = that.get(i, j);
 					ctable.execute(v1, v2, w, ignoreZeros, resultMap, resultBlock);
 				}
 		}
@@ -5563,7 +5527,7 @@ public class MatrixBlock extends MatrixValue implements CacheBlock<MatrixBlock>,
 		//each row in resultBlock will be allocated and will contain exactly one value
 		int maxCol = 0;
 		for( int i=0; i<rlen; i++ ) {
-			double v2 = that.quickGetValue(i, 0);
+			double v2 = that.get(i, 0);
 			maxCol = ctable.execute(i+1, v2, w, maxCol, indexes, values);
 			rptr[i] = i;
 		}
@@ -5632,9 +5596,9 @@ public class MatrixBlock extends MatrixValue implements CacheBlock<MatrixBlock>,
 			else {
 				for(int i = 0; i < rlen; i++)
 					for(int j = 0; j < clen; j++) {
-						double v1 = this.quickGetValue(i, j);
-						double v2 = that.quickGetValue(i, j);
-						double w = that2.quickGetValue(i, j);
+						double v1 = this.get(i, j);
+						double v2 = that.get(i, j);
+						double w = that2.get(i, j);
 						ctable.execute(v1, v2, w, false, resultMap);
 					}
 			}
@@ -5644,9 +5608,9 @@ public class MatrixBlock extends MatrixValue implements CacheBlock<MatrixBlock>,
 			for( int i=0; i<rlen; i++ )
 				for( int j=0; j<clen; j++ )
 				{
-					double v1 = this.quickGetValue(i, j);
-					double v2 = that.quickGetValue(i, j);
-					double w = that2.quickGetValue(i, j);
+					double v1 = this.get(i, j);
+					double v2 = that.get(i, j);
+					double w = that2.get(i, j);
 					ctable.execute(v1, v2, w, false, resultBlock);
 				}
 			resultBlock.recomputeNonZeros();
@@ -5704,7 +5668,7 @@ public class MatrixBlock extends MatrixValue implements CacheBlock<MatrixBlock>,
 		}
 		else if( qop.wtype4 != null ){ //wcemm
 			MatrixBlock W = qop.wtype4.hasFourInputs() ? checkType(wm) : null;
-			double eps = (W != null && W.getNumRows() == 1 && W.getNumColumns() == 1) ? W.quickGetValue(0, 0) : qop.getScalar();
+			double eps = (W != null && W.getNumRows() == 1 && W.getNumColumns() == 1) ? W.get(0, 0) : qop.getScalar();
 			
 			if( k > 1 )
 				LibMatrixMult.matrixMultWCeMM(X, U, V, eps, R, qop.wtype4, k);
@@ -6021,7 +5985,7 @@ public class MatrixBlock extends MatrixValue implements CacheBlock<MatrixBlock>,
 
 
 	public double getDouble(int r, int c){
-		return quickGetValue(r, c);
+		return get(r, c);
 	}
 
 	@Override
@@ -6030,7 +5994,7 @@ public class MatrixBlock extends MatrixValue implements CacheBlock<MatrixBlock>,
 	}
 
 	public String getString(int r, int c){
-		double v = quickGetValue(r, c);
+		double v = get(r, c);
 		// NaN gets converted to null here since check for null is faster than string comp
 		if(Double.isNaN(v))
 			return null;

@@ -258,19 +258,18 @@ public class DataConverter {
 
 		if( mb.getNonZeros() > 0 )
 		{
-			if( mb.isInSparseFormat() )
-			{
+			if( mb.isInSparseFormat() ) {
 				Iterator<IJV> iter = mb.getSparseBlockIterator();
 				while( iter.hasNext() ) {
 					IJV cell = iter.next();
 					ret[cell.getI()*cols+cell.getJ()] = (cell.getV() != 0.0);
 				}
 			}
-			else
-			{
+			else {
+				DenseBlock d = mb.getDenseBlock();
 				for( int i=0, cix=0; i<rows; i++ )
 					for( int j=0; j<cols; j++, cix++)
-						ret[cix] = (mb.getValueDenseUnsafe(i, j) != 0.0);
+						ret[cix] = (d.get(i, j) != 0.0);
 			}
 		}
 
@@ -308,9 +307,10 @@ public class DataConverter {
 		}
 		else {
 			int[] indices = new int[(int) mb.getNonZeros()];
+			DenseBlock d = mb.getDenseBlock();
 			for(int i = 0, aix=0, cix=0; i < rows; i++)
 				for(int j = 0; j < cols; j++, aix++)
-					if(mb.getValueDenseUnsafe(i, j) != 0.0)
+					if(d.get(i, j) != 0.0)
 						indices[cix++] = aix;
 			return indices;
 		}
@@ -331,9 +331,10 @@ public class DataConverter {
 		}
 		else {
 			//memcopy row major representation if at least 1 non-zero
+			DenseBlock d = mb.getDenseBlock();
 			for( int i=0, cix=0; i<rows; i++ )
 				for( int j=0; j<cols; j++, cix++ )
-					ret[cix] = (int)(mb.getValueDenseUnsafe(i, j));
+					ret[cix] = (int)(d.get(i, j));
 		}
 		return ret;
 	}
@@ -353,9 +354,10 @@ public class DataConverter {
 		}
 		else {
 			//memcopy row major representation if at least 1 non-zero
+			DenseBlock d = mb.getDenseBlock();
 			for( int i=0, cix=0; i<rows; i++ )
 				for( int j=0; j<cols; j++, cix++ )
-					ret[cix] = (int)(mb.getValueDenseUnsafe(i, j));
+					ret[cix] = (int)(d.get(i, j));
 		}
 		return ret;
 	}
@@ -440,9 +442,10 @@ public class DataConverter {
 		}
 		else
 		{
+			DenseBlock d = mb.getDenseBlock();
 			for( int i=0; i<rows; i++ )
 				for( int j=0; j<cols; j++ )
-					ret.add( mb.getValueDenseUnsafe(i, j) );
+					ret.add( d!=null?d.get(i, j) : 0 );
 		}
 
 		return ret;
@@ -562,7 +565,7 @@ public class DataConverter {
 				int rix = (int)index.getRowIndex();
 				int cix = (int)index.getColumnIndex();
 				if( value != 0 && rix<=rlen && cix<=clen )
-					mb.quickSetValue( rix-1, cix-1, value );
+					mb.set( rix-1, cix-1, value );
 			}
 		}
 
@@ -778,9 +781,10 @@ public class DataConverter {
 					}
 				}
 				else { //DENSE
+					DenseBlock d = mb.getDenseBlock();
 					for( int i=0; i<rows; i++ )
 						for( int j=0; j<cols; j++ )
-							ret[j].appendValue(i, 0, mb.getValueDenseUnsafe(i, j));
+							ret[j].appendValue(i, 0, d!=null?d.get(i, j) : 0);
 				}
 			}
 		}
@@ -838,7 +842,7 @@ public class DataConverter {
 			rm.getColumnDimension(), false).allocateDenseBlock();
 		for(int i=0; i<ret.getNumRows(); i++)
 			for(int j=0; j<ret.getNumColumns(); j++)
-				ret.quickSetValue(i, j, rm.getEntry(i, j));
+				ret.set(i, j, rm.getEntry(i, j));
 		ret.examSparsity();
 		return ret;
 	}
@@ -932,7 +936,7 @@ public class DataConverter {
 			} else {	// Block is in dense format
 				for (int i=0; i<rowLength; i++){
 					for (int j=0; j<colLength; j++){
-						double value = mb.getValue(i, j);
+						double value = mb.get(i, j);
 						if (value != 0.0){
 							sb.append(i+1).append(separator).append(j+1).append(separator);
 							sb.append(dfFormat(df, value)).append(lineseparator);
@@ -944,13 +948,13 @@ public class DataConverter {
 		else {	// Dense Print Format
 			for (int i=0; i<rowLength; i++){
 				for (int j=0; j<colLength-1; j++){
-					Double value = mb.quickGetValue(i, j);
+					Double value = mb.get(i, j);
 					if (value.equals(-0.0d))
 						value = 0.0;
 					sb.append(dfFormat(df, value));
 					sb.append(separator);
 				}
-				Double value = mb.quickGetValue(i, colLength-1);
+				Double value = mb.get(i, colLength-1);
 				if (value.equals(-0.0d))
 					value = 0.0;
 				sb.append(dfFormat(df, value));	// Do not put separator after last element
@@ -1237,7 +1241,7 @@ public class DataConverter {
 				}
 				tDims = new int[(int) in.getLength()];
 				for (int i = 0; i < in.getLength(); i++) {
-					tDims[i] = UtilFunctions.toInt(in.getValue(colVec ? 0 : i, colVec ? i : 0));
+					tDims[i] = UtilFunctions.toInt(in.get(colVec ? 0 : i, colVec ? i : 0));
 				}
 				ec.releaseMatrixInput(dims.getName());
 			}

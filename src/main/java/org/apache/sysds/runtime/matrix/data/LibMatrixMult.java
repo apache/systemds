@@ -1992,7 +1992,7 @@ public class LibMatrixMult
 				double bval = bvals[j];
 				int bix = bixs[j];
 				for(int i = rl; i < ru; i++) 
-					retV[i *kd + bix] += bval * m1.quickGetValue(i, k);
+					retV[i *kd + bix] += bval * m1.get(i, k);
 			}
 		}
 	}
@@ -2079,10 +2079,10 @@ public class LibMatrixMult
 				double bval = bvals[j];
 				int bix = bixs[j];
 				for(int i = rl; i < ru; i++) {
-					double cvald = bval * m1.quickGetValue(i, k);
+					double cvald = bval * m1.get(i, k);
 					if(cvald != 0) {
-						double cval = ret.quickGetValue(i, bix);
-						ret.quickSetValue(i, bix, cval + cvald);
+						double cval = ret.get(i, bix);
+						ret.set(i, bix, cval + cvald);
 					}
 				}
 			}
@@ -2812,7 +2812,7 @@ public class LibMatrixMult
 				}
 			}
 		}
-		ret.quickSetValue(0, 0, wsloss);
+		ret.set(0, 0, wsloss);
 	}
 
 	private static void matrixMultWSLossSparseDense(MatrixBlock mX, MatrixBlock mU, MatrixBlock mV, MatrixBlock mW, MatrixBlock ret, WeightsType wt, int rl, int ru)
@@ -2847,7 +2847,7 @@ public class LibMatrixMult
 				else {
 					//O(n log m) where n/m is nnz in w/x 
 					for( int k=wpos; k<wpos+wlen; k++ ) {
-						double xi = mX.quickGetValue(i, wix[k]);
+						double xi = mX.get(i, wix[k]);
 						double uvij = dotProduct(uvals, v.values(wix[k]), uix, v.pos(wix[k]), cd);
 						wsloss += wval[k]*(xi-uvij)*(xi-uvij);
 					}
@@ -2894,8 +2894,8 @@ public class LibMatrixMult
 				double[] uvals = u.values(i);
 				int uix = u.pos(i);
 				for( int j=0; j<n; j++ ) {
-					double xij = mX.quickGetValue(i, j);
-					double wij = mW.quickGetValue(i, j);
+					double xij = mX.get(i, j);
+					double wij = mW.get(i, j);
 					double uvij = 0;
 					if( wij != 0 )
 						uvij = dotProduct(uvals, v.values(j), uix, v.pos(j), cd);
@@ -2940,7 +2940,7 @@ public class LibMatrixMult
 			}
 		}
 		
-		ret.quickSetValue(0, 0, wsloss);
+		ret.set(0, 0, wsloss);
 	}
 
 	private static void matrixMultWSLossGeneric (MatrixBlock mX, MatrixBlock mU, MatrixBlock mV, MatrixBlock mW, MatrixBlock ret, WeightsType wt, int rl, int ru)
@@ -2964,7 +2964,7 @@ public class LibMatrixMult
 					double[] wval = w.values(i);
 					for( int k=wpos; k<wpos+wlen; k++ ) {
 						double uvij = dotProductGeneric(mU, mV, i, wix[k], cd);
-						double xi = mX.quickGetValue(i, wix[k]);
+						double xi = mX.get(i, wix[k]);
 						wsloss += wval[k]*(xi-uvij)*(xi-uvij);
 					}
 				}
@@ -2978,7 +2978,7 @@ public class LibMatrixMult
 					for( int j=0; j<n; j++)
 						if( wvals[wix+j] != 0 ) {
 							double uvij = dotProductGeneric(mU, mV, i, j, cd);
-							double xij = mX.quickGetValue(i, j);
+							double xij = mX.get(i, j);
 							wsloss += wvals[wix+j]*(xij-uvij)*(xij-uvij);
 						}
 				}
@@ -3025,8 +3025,8 @@ public class LibMatrixMult
 			// approach: iterate over all cells of X maybe sparse and dense
 			for( int i=rl; i<ru; i++ )
 				for( int j=0; j<n; j++) {
-					double xij = mX.quickGetValue(i, j);
-					double wij = mW.quickGetValue(i, j);
+					double xij = mX.get(i, j);
+					double wij = mW.get(i, j);
 					double uvij = 0;
 					if( wij != 0 )
 						uvij = dotProductGeneric(mU, mV, i, j, cd);
@@ -3071,7 +3071,7 @@ public class LibMatrixMult
 			}
 		}
 
-		ret.quickSetValue(0, 0, wsloss);
+		ret.set(0, 0, wsloss);
 	}
 	
 	private static void addMatrixMultWSLossNoWeightCorrection(MatrixBlock mU, MatrixBlock mV, MatrixBlock ret, int k) {
@@ -3079,7 +3079,7 @@ public class LibMatrixMult
 		MatrixBlock tmp2 = new MatrixBlock(mU.clen, mU.clen, false);
 		matrixMultTransposeSelf(mU, tmp1, true, k);
 		matrixMultTransposeSelf(mV, tmp2, true, k);
-		ret.quickSetValue(0, 0, ret.quickGetValue(0, 0) + 
+		ret.set(0, 0, ret.get(0, 0) + 
 			((tmp1.sparse || tmp2.sparse) ? dotProductGeneric(tmp1, tmp2) :
 			dotProduct(tmp1.getDenseBlockValues(), tmp2.getDenseBlockValues(), mU.clen*mU.clen)));
 	}
@@ -3234,7 +3234,7 @@ public class LibMatrixMult
 		final boolean minus = wt.isMinus();
 		final boolean four = wt.hasFourInputs();
 		final boolean scalar = wt.hasScalar();
-		final double eps = scalar ? mX.quickGetValue(0, 0) : 0;
+		final double eps = scalar ? mX.get(0, 0) : 0;
 		final int cd = mU.clen;
 		
 		DenseBlock w = mW.getDenseBlock();
@@ -3285,7 +3285,7 @@ public class LibMatrixMult
 		final boolean minus = wt.isMinus();
 		final boolean four = wt.hasFourInputs();
 		final boolean scalar = wt.hasScalar();
-		final double eps = scalar ? mX.quickGetValue(0, 0) : 0;
+		final double eps = scalar ? mX.get(0, 0) : 0;
 		final int cd = mU.clen;
 		
 		SparseBlock w = mW.sparseBlock;
@@ -3384,7 +3384,7 @@ public class LibMatrixMult
 		final boolean minus = wt.isMinus();
 		final boolean four = wt.hasFourInputs();
 		final boolean scalar = wt.hasScalar();
-		final double eps = scalar ? mX.quickGetValue(0, 0) : 0;
+		final double eps = scalar ? mX.get(0, 0) : 0;
 		final int cd = mU.clen;
 
 		//output always in dense representation
@@ -3410,7 +3410,7 @@ public class LibMatrixMult
 						ret.appendValue(i, wix[k], uvij);
 					}
 					else if( four ) { //left/right
-						double xij = scalar ? eps : mX.quickGetValue(i, wix[k]);
+						double xij = scalar ? eps : mX.get(i, wix[k]);
 						wdivmm(wval[k], xij, mU, mV, cvals, i, wix[k], left, scalar, cd);
 					}
 					else { //left/right minus/default
@@ -3432,7 +3432,7 @@ public class LibMatrixMult
 							cvals[ix+j] = dotProductGeneric(mU,mV, i, j, cd);
 						}
 						else if( four ) { //left/right
-							double xij = scalar ? eps : mX.quickGetValue(i, j);
+							double xij = scalar ? eps : mX.get(i, j);
 							wdivmm(wvals[ix+j], xij, mU, mV, cvals, i, j, left, scalar, cd);
 						}
 						else { //left/right minus/default
@@ -3475,7 +3475,7 @@ public class LibMatrixMult
 				}
 			}
 		}
-		ret.quickSetValue(0, 0, wceval);
+		ret.set(0, 0, wceval);
 	}
 
 	private static void matrixMultWCeMMSparseDense(MatrixBlock mW, MatrixBlock mU, MatrixBlock mV, double eps, MatrixBlock ret, WCeMMType wt, int rl, int ru)
@@ -3517,7 +3517,7 @@ public class LibMatrixMult
 				}
 			}
 		}
-		ret.quickSetValue(0, 0, wceval);
+		ret.set(0, 0, wceval);
 	}
 
 	private static void matrixMultWCeMMGeneric(MatrixBlock mW, MatrixBlock mU, MatrixBlock mV, double eps, MatrixBlock ret, WCeMMType wt, int rl, int ru)
@@ -3558,7 +3558,7 @@ public class LibMatrixMult
 			}
 		}
 
-		ret.quickSetValue(0, 0, wceval);
+		ret.set(0, 0, wceval);
 	}
 
 	private static void matrixMultWuMMDense(MatrixBlock mW, MatrixBlock mU, MatrixBlock mV, MatrixBlock ret, WUMMType wt, ValueFunction fn, int rl, int ru) {
@@ -4276,7 +4276,7 @@ public class LibMatrixMult
 		
 		//compute final mm
 		for( int k2=0; k2<len; k2++ )
-			c[cix+k2] += b.quickGetValue(bix, k2) * wtmp;
+			c[cix+k2] += b.get(bix, k2) * wtmp;
 	}
 
 	private static void wdivmm( final double wij, final double xij, MatrixBlock u, MatrixBlock v, double[] c, final int uix, final int vix, final boolean left, final boolean scalar, final int len )
@@ -4294,7 +4294,7 @@ public class LibMatrixMult
 		
 		//compute final mm
 		for( int k2=0; k2<len; k2++ )
-			c[cix+k2] += b.quickGetValue(bix, k2) * wtmp;
+			c[cix+k2] += b.get(bix, k2) * wtmp;
 	}
 
 	private static double wumm( final double wij, double[] u, double[] v, final int uix, final int vix, final boolean flagmult, ValueFunction fn, final int len ) {
@@ -4323,7 +4323,7 @@ public class LibMatrixMult
 	{
 		double val = 0;
 		for( int k2=0; k2<len; k2++ )
-			val += a.quickGetValue(ai, k2) * b.quickGetValue(bi, k2);
+			val += a.get(ai, k2) * b.get(bi, k2);
 		
 		return val;
 	}
@@ -4333,7 +4333,7 @@ public class LibMatrixMult
 		double val = 0;
 		for( int i=0; i<a.getNumRows(); i++ )
 			for( int j=0; j<a.getNumColumns(); j++ )
-				val += a.quickGetValue(i, j) * b.quickGetValue(i, j);
+				val += a.get(i, j) * b.get(i, j);
 		
 		return val;
 	}
@@ -4637,7 +4637,7 @@ public class LibMatrixMult
 		double val = 0;
 		for(Future<Double> task : tasks)
 			val += task.get();
-		ret.quickSetValue(0, 0, val);
+		ret.set(0, 0, val);
 	}
 
 	@SuppressWarnings("unused")
@@ -4870,7 +4870,7 @@ public class LibMatrixMult
 			else
 				matrixMultWSLossGeneric(_mX, _mU, _mV, _mW, _ret, _wt, _rl, _ru);
 
-			return _ret.quickGetValue(0, 0);
+			return _ret.get(0, 0);
 		}
 	}
 
@@ -4989,7 +4989,7 @@ public class LibMatrixMult
 				matrixMultWCeMMGeneric(_mW, _mU, _mV, _eps, _ret, _wt, _rl, _ru);
 			
 			
-			return _ret.quickGetValue(0, 0);
+			return _ret.get(0, 0);
 		}
 	}
 

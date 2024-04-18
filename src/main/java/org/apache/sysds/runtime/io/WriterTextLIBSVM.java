@@ -132,7 +132,7 @@ public class WriterTextLIBSVM extends MatrixWriter {
 
 					// append dense row
 					for( int j=0; j<clen-1; j++ ) {
-						double val = d!=null ? d.get(i, clen-1) : 0;
+						double val = d!=null ? d.get(i, j) : 0;
 						if( val != 0 ) {
 							sb.append(_props.getDelim());
 							appendIndexValLibsvm(sb, j, val);

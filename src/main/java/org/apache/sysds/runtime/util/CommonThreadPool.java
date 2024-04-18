@@ -37,8 +37,6 @@ import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
 
-import scala.NotImplementedError;
-
 /**
  * This common thread pool provides an abstraction to obtain a shared thread pool.
  * 

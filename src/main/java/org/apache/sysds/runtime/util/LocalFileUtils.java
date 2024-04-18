@@ -234,21 +234,16 @@ public class LocalFileUtils
 	 * @throws IOException if IOException occurs
 	 */
 	public static void writeWritableToLocal(String fname, Writable mb, boolean doubleBuffering) throws IOException {
-		final FastBufferedDataOutputStream out = //
-			new FastBufferedDataOutputStream(getOut(fname, doubleBuffering), BUFFER_SIZE);
+		OutputStream fout = doubleBuffering ?
+			new DoubleBufferingOutputStream(new FileOutputStream(fname), 2, BUFFER_SIZE) :
+			new FileOutputStream(fname);
+		FastBufferedDataOutputStream dout = new FastBufferedDataOutputStream(fout, BUFFER_SIZE);
 		try {
-			mb.write(out);
+			mb.write(dout);
 		}
 		finally {
-			IOUtilFunctions.closeSilently(out);
+			IOUtilFunctions.closeSilently(dout);
 		}
-	}
-
-	private static OutputStream getOut(String fname, boolean doubleBuffering) throws IOException{
-		if(doubleBuffering)
-			return new DoubleBufferingOutputStream(new FileOutputStream(fname), 2, BUFFER_SIZE);
-		else
-			return new FileOutputStream(fname);
 	}
 
 	public static void writeByteArrayToLocal( String fname, byte[] data )

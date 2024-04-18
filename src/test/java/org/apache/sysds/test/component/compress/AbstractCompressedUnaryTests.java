@@ -299,14 +299,14 @@ public abstract class AbstractCompressedUnaryTests extends CompressedTestBase {
 			}
 			else {
 				if(aggType == AggType.PRODUCT) {
-					if(Double.isInfinite(ret2.quickGetValue(0, 0))){
+					if(Double.isInfinite(ret2.get(0, 0))){
 						if(!printedWarningForProduct.get()) {
 							printedWarningForProduct.set(true);
 							LOG.warn("Product not equal because of double rounding upwards");
 						}
 						return;	
 					}
-					if(Math.abs(ret2.quickGetValue(0, 0)) <= 1E-16) {
+					if(Math.abs(ret2.get(0, 0)) <= 1E-16) {
 						if(!printedWarningForProduct.get()) {
 							printedWarningForProduct.set(true);
 							LOG.warn("Product not equal because of  double rounding downwards");

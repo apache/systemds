@@ -1068,8 +1068,8 @@ public class TestUtils {
 
 		for(int i = 0; i < rows && countErrors < 20; i++) {
 			for(int j = 0; j < cols && countErrors < 20; j++) {
-				final double v1 = expectedMatrix.quickGetValue(i, j);
-				final double v2 = actualMatrix.quickGetValue(i, j);
+				final double v1 = expectedMatrix.get(i, j);
+				final double v2 = actualMatrix.get(i, j);
 				if(v1 == 0 && v2 == 0)
 					continue;
 				else if(v1 == 0 || v2 == 0) {
@@ -1326,12 +1326,12 @@ public class TestUtils {
 
 		for(int i = 0; i < rows && countErrors < 20; i++) {
 			for(int j = 0; j < cols && countErrors < 20; j++) {
-				final double distance = getPercentDistance(expectedMatrix.quickGetValue(i, j),
-					actualMatrix.quickGetValue(i, j), ignoreZero);
+				final double distance = getPercentDistance(expectedMatrix.get(i, j),
+					actualMatrix.get(i, j), ignoreZero);
 				sumPercentDistance += distance;
 				if(distance < percentDistanceAllowed) {
-					message += ("\nExpected: " + expectedMatrix.quickGetValue(i, j) + " vs actual: "
-						+ actualMatrix.quickGetValue(i, j) + " at " + i + " " + j + " Distance in percent " + distance);
+					message += ("\nExpected: " + expectedMatrix.get(i, j) + " vs actual: "
+						+ actualMatrix.get(i, j) + " at " + i + " " + j + " Distance in percent " + distance);
 					countErrors++;
 				}
 			}
@@ -2088,7 +2088,7 @@ public class TestUtils {
 		MatrixBlock m = MatrixBlock.randOperations(rows, cols, sparsity, min, max, "Uniform", seed);
 		for(int i = 0; i < rows; i++) {
 			for(int j = i+1; j < cols; j++) {
-				m.setValue(i,j, m.getValue(j,i));
+				m.set(i,j, m.get(j,i));
 			}
 		}
 		return m;
@@ -2881,7 +2881,7 @@ public class TestUtils {
 						value.reset(rows, cols, sparseFormat);
 						for (int k = 0; k < rows; k++) {
 							for (int l = 0; l < cols; l++) {
-								value.setValue(k, l, matrix[i + k][j + l]);
+								value.set(k, l, matrix[i + k][j + l]);
 							}
 						}
 						writer.append(index, value);

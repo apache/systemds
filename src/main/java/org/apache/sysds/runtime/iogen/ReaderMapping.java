@@ -134,7 +134,7 @@ public class ReaderMapping {
 					HashSet<Integer> checkedLines = new HashSet<>();
 					while(checkedLines.size() < nlines) {
 						RawIndex ri = this.sampleRawIndexes[itRow];
-						Pair<Integer, Integer> pair = this.isMatrix ? ri.findValue(this.sampleMatrix.getValue(r, c)) : ri.findValue(this.sampleFrame.get(r, c), this.schema[c]);
+						Pair<Integer, Integer> pair = this.isMatrix ? ri.findValue(this.sampleMatrix.get(r, c)) : ri.findValue(this.sampleFrame.get(r, c), this.schema[c]);
 						if(pair != null) {
 							this.mapRow[r][c] = itRow;
 							this.mapCol[r][c] = pair.getKey();
@@ -274,7 +274,7 @@ public class ReaderMapping {
 					if(this.isMatrix) {
 						HashSet<Double> patternValueSet = new HashSet<>();
 						for(int c = 0; c < ncols; c++)
-							patternValueSet.add(this.sampleMatrix.getValue(r, c));
+							patternValueSet.add(this.sampleMatrix.get(r, c));
 						if(patternValueSet.size() == 1) {
 							vtc0 = Types.ValueType.FP64;
 							patternMap = true;
@@ -303,7 +303,7 @@ public class ReaderMapping {
 	private boolean checkValueIsNotNullZero(int r, int c) {
 		boolean result;
 		if(this.isMatrix)
-			result = this.sampleMatrix.getValue(r, c) != 0;
+			result = this.sampleMatrix.get(r, c) != 0;
 		else {
 			if(this.sampleFrame.getSchema()[c].isNumeric())
 				result = this.sampleFrame.getDouble(r, c) != 0;
@@ -317,7 +317,7 @@ public class ReaderMapping {
 	private boolean checkSymmetricValue(int r, int c, int a) {
 		boolean result;
 		if(this.isMatrix)
-			result = this.sampleMatrix.getValue(r, c) == this.sampleMatrix.getValue(c, r) * a;
+			result = this.sampleMatrix.get(r, c) == this.sampleMatrix.get(c, r) * a;
 		else if(this.sampleFrame.getSchema()[c].isNumeric())
 			result = this.sampleFrame.getDouble(r, c) == this.sampleFrame.getDouble(c, r) * a;
 		else
@@ -365,7 +365,7 @@ public class ReaderMapping {
 	public boolean compareCellValue (int r, int c, String value){
 		if(isMatrix)
 			try {
-				return sampleMatrix.getValue(r, c) == UtilFunctions.objectToDouble(Types.ValueType.FP64, value);
+				return sampleMatrix.get(r, c) == UtilFunctions.objectToDouble(Types.ValueType.FP64, value);
 			}
 			catch(Exception exception){
 				return false;

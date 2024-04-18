@@ -49,6 +49,7 @@ import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.controlprogram.caching.FrameObject;
 import org.apache.sysds.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysds.runtime.controlprogram.context.SparkExecutionContext;
+import org.apache.sysds.runtime.data.DenseBlock;
 import org.apache.sysds.runtime.frame.data.FrameBlock;
 import org.apache.sysds.runtime.instructions.spark.data.DatasetObject;
 import org.apache.sysds.runtime.instructions.spark.data.RDDObject;
@@ -976,13 +977,14 @@ public class MLContextConversionUtil {
 					list.add(sb.toString());
 				}
 			} else {
+				DenseBlock d = mb.getDenseBlock();
 				for (int i = 0; i < rows; i++) {
 					StringBuilder sb = new StringBuilder();
 					for (int j = 0; j < cols; j++) {
 						if (j > 0) {
 							sb.append(",");
 						}
-						sb.append(mb.getValueDenseUnsafe(i, j));
+						sb.append(d.get(i, j));
 					}
 					list.add(sb.toString());
 				}
@@ -1056,6 +1058,7 @@ public class MLContextConversionUtil {
 				}
 			} else {
 				StringBuilder sb = null;
+				DenseBlock d = mb.getDenseBlock();
 				for (int i = 0; i < rows; i++) {
 					sb = new StringBuilder();
 					for (int j = 0; j < cols; j++) {
@@ -1064,7 +1067,7 @@ public class MLContextConversionUtil {
 						sb.append(" ");
 						sb.append(j + 1);
 						sb.append(" ");
-						sb.append(mb.getValueDenseUnsafe(i, j));
+						sb.append(d.get(i, j));
 						list.add(sb.toString());
 					}
 				}

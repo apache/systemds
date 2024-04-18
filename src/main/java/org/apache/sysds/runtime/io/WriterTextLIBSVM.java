@@ -28,6 +28,7 @@ import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.mapred.JobConf;
 import org.apache.sysds.conf.ConfigurationManager;
 import org.apache.sysds.runtime.DMLRuntimeException;
+import org.apache.sysds.runtime.data.DenseBlock;
 import org.apache.sysds.runtime.data.SparseBlock;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.util.HDFSTool;
@@ -123,14 +124,15 @@ public class WriterTextLIBSVM extends MatrixWriter {
 			}
 			else //DENSE
 			{
+				DenseBlock d = src.getDenseBlock();
 				for( int i=rl; i<rlen; i++ ) {
 					// append the class label as the 1st column
-					double label = src.getValueDenseUnsafe(i, clen-1);
+					double label = d!=null ? d.get(i, clen-1) : 0;
 					sb.append(label);
 
 					// append dense row
 					for( int j=0; j<clen-1; j++ ) {
-						double val = src.getValueDenseUnsafe(i, j);
+						double val = d!=null ? d.get(i, clen-1) : 0;
 						if( val != 0 ) {
 							sb.append(_props.getDelim());
 							appendIndexValLibsvm(sb, j, val);

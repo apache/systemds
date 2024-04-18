@@ -380,12 +380,12 @@ public class ColGroupLinearFunctional extends AColGroupCompressed {
 			double slope_accum = 0.0;
 
 			for(int c = 0; c < _colIndexes.size(); c++) {
-				bias_accum += right.getValue(_colIndexes.get(c), j) * getInterceptForColumn(c);
-				slope_accum += right.getValue(_colIndexes.get(c), j) * getSlopeForColumn(c);
+				bias_accum += right.get(_colIndexes.get(c), j) * getInterceptForColumn(c);
+				slope_accum += right.get(_colIndexes.get(c), j) * getSlopeForColumn(c);
 			}
 
 			for(int r = 0; r < _numRows; r++) {
-				result.setValue(r, j, bias_accum + (r + 1) * slope_accum);
+				result.set(r, j, bias_accum + (r + 1) * slope_accum);
 			}
 		}
 

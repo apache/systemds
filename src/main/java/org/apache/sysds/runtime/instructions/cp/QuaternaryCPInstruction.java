@@ -126,7 +126,7 @@ public class QuaternaryCPInstruction extends ComputationCPInstruction {
 				if (input4.getDataType() == DataType.MATRIX) {
 					ec.releaseMatrixInput(input4.getName());
 				}
-			ec.setVariable(output.getName(), new DoubleObject(out.quickGetValue(0, 0)));
+			ec.setVariable(output.getName(), new DoubleObject(out.get(0, 0)));
 		}
 		else { //wsigmoid / wdivmm / wumm
 			if( qop.wtype3 != null && qop.wtype3.hasFourInputs() )

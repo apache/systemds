@@ -79,7 +79,7 @@ public class ColumnEncoderWordEmbedding extends ColumnEncoder {
 	private double[] getEmbeddedingFromEmbeddingMatrix(long r){
 		double[] embedding = new double[getDomainSize()];
 		for (int i = 0; i < getDomainSize(); i++) {
-			embedding[i] = this._wordEmbeddings.quickGetValue((int) r, _colID - 1 + i);
+			embedding[i] = this._wordEmbeddings.get((int) r, _colID - 1 + i);
 		}
 		return embedding;
 	}
@@ -93,7 +93,7 @@ public class ColumnEncoderWordEmbedding extends ColumnEncoder {
 				continue;
 			double[] embedding = _embMap.get(key);
 			if(embedding != null)
-				out.quickSetRow(i, embedding);
+				out.setRow(i, embedding);
 		}
 	}
 

@@ -92,7 +92,7 @@ public class StringInitCPInstruction extends UnaryCPInstruction {
 			Double dval = Double.parseDouble(sval);
 			int rix = (int) (i / _clen);
 			int cix = (int) (i % _clen);
-			outBlk.quickSetValue(rix, cix, dval);
+			outBlk.set(rix, cix, dval);
 		}
 		
 		//examine right output representation

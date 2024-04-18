@@ -139,8 +139,8 @@ public class SerializeTest extends AutomatedTestBase
 			for( int i=0; i<mb.getNumRows(); i++ )
 				for( int j=0; j<mb.getNumColumns(); j++ )
 				{
-					double val1 = mb.quickGetValue(i, j) * 7;
-					double val2 = mb2.quickGetValue(i, j);
+					double val1 = mb.get(i, j) * 7;
+					double val2 = mb2.get(i, j);
 					Assert.assertEquals(val1, val2, eps);
 				}
 		}
@@ -177,7 +177,7 @@ public class SerializeTest extends AutomatedTestBase
 			MatrixBlock mout = encoder_ser.apply(data);
 			for (int i = 0; i < mout.getNumRows(); i++) {
 				for (int j = 0; j < mout.getNumColumns(); j++) {
-					assert mout.quickGetValue(i, j) == X[i][j];
+					assert mout.get(i, j) == X[i][j];
 				}
 			}
 		} catch (IOException e) {
@@ -219,8 +219,8 @@ public class SerializeTest extends AutomatedTestBase
 			for( int i=0; i<mb.getNumRows(); i++ )
 				for( int j=0; j<mb.getNumColumns(); j++ )
 				{
-					double val1 = mb.quickGetValue(i, j);
-					double val2 = mb2.quickGetValue(i, j);
+					double val1 = mb.get(i, j);
+					double val2 = mb2.get(i, j);
 					Assert.assertEquals(val1, val2, eps);
 				}
 

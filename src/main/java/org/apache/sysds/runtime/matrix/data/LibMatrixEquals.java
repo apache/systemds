@@ -193,7 +193,7 @@ public class LibMatrixEquals {
 		final int cols = a.getNumColumns();
 		for(int i = 0; i < rows; i++)
 			for(int j = 0; j < cols; j++)
-				if(Math.abs(a.quickGetValue(i, j) - b.quickGetValue(i, j)) > eps)
+				if(Math.abs(a.get(i, j) - b.get(i, j)) > eps)
 					return false;
 		return true;
 	}

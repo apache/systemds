@@ -263,10 +263,10 @@ public class FederationUtils {
 				for (int i = 0; i < ffr.length - 1; i++)
 					for (int j = 0; j < dim; j++)
 						if (fedType.get() == FType.COL)
-							tmp[i + 1].setValue(j, 0, isMin ? Double.min(tmp[i].getValue(j, 0), tmp[i + 1].getValue(j, 0)) :
-								Double.max(tmp[i].getValue(j, 0), tmp[i + 1].getValue(j, 0)));
-						else tmp[i + 1].setValue(0, j, isMin ? Double.min(tmp[i].getValue(0, j), tmp[i + 1].getValue(0, j)) :
-							Double.max(tmp[i].getValue(0, j), tmp[i + 1].getValue(0, j)));
+							tmp[i + 1].set(j, 0, isMin ? Double.min(tmp[i].get(j, 0), tmp[i + 1].get(j, 0)) :
+								Double.max(tmp[i].get(j, 0), tmp[i + 1].get(j, 0)));
+						else tmp[i + 1].set(0, j, isMin ? Double.min(tmp[i].get(0, j), tmp[i + 1].get(0, j)) :
+							Double.max(tmp[i].get(0, j), tmp[i + 1].get(0, j)));
 				return tmp[ffr.length-1];
 			}
 		}
@@ -312,11 +312,11 @@ public class FederationUtils {
 				MatrixBlock next = (MatrixBlock) ffr[i].get().getData()[0];
 				size = map.getFederatedRanges()[i-1].getEndDimsInt()[1];
 				for(int j = 0; j < prev.getNumRows(); j++) {
-					next.setValue(j, 0, next.getValue(j, 0) + size);
-					if((prev.getValue(j, 1) > next.getValue(j, 1) && !isMin) ||
-						(prev.getValue(j, 1) < next.getValue(j, 1) && isMin)) {
-						next.setValue(j, 0, prev.getValue(j, 0));
-						next.setValue(j, 1, prev.getValue(j, 1));
+					next.set(j, 0, next.get(j, 0) + size);
+					if((prev.get(j, 1) > next.get(j, 1) && !isMin) ||
+						(prev.get(j, 1) < next.get(j, 1) && isMin)) {
+						next.set(j, 0, prev.get(j, 0));
+						next.set(j, 1, prev.get(j, 1));
 					}
 				}
 				prev = next;
@@ -392,10 +392,10 @@ public class FederationUtils {
 			if(aop.aggOp.increOp.fn instanceof Builtin){
 				// then we know it is a Min or Max based on the previous check.
 				boolean isMin = ((Builtin) aop.aggOp.increOp.fn).getBuiltinCode() == BuiltinCode.MIN;
-				return new DoubleObject(aggMinMax(ffr, isMin, true,  Optional.empty()).getValue(0,0));
+				return new DoubleObject(aggMinMax(ffr, isMin, true,  Optional.empty()).get(0,0));
 			}
 			else if( aop.aggOp.increOp.fn instanceof Mean ) {
-				return new DoubleObject(aggMean(ffr, map).getValue(0,0));
+				return new DoubleObject(aggMean(ffr, map).get(0,0));
 			}
 			else if(aop.aggOp.increOp.fn instanceof CM) {
 				long size1 = map.getFederatedRanges()[0].getSize();
@@ -485,19 +485,19 @@ public class FederationUtils {
 				MatrixBlock ret = new MatrixBlock(ffr.length, 1, false);
 				MatrixBlock res = new MatrixBlock(0);
 				for(int i = 0; i < ffr.length; i++)
-					ret.setValue(i, 0, ((ScalarObject)ffr[i].get().getData()[0]).getDoubleValue());
+					ret.set(i, 0, ((ScalarObject)ffr[i].get().getData()[0]).getDoubleValue());
 				LibMatrixAgg.aggregateUnaryMatrix(ret, res,
 					new AggregateUnaryOperator(new AggregateOperator(1, Multiply.getMultiplyFnObject()),
 						ReduceAll.getReduceAllFnObject()));
-				return new DoubleObject(res.quickGetValue(0, 0));
+				return new DoubleObject(res.get(0, 0));
 			}
 			else if(aop.aggOp.increOp.fn instanceof Builtin){
 				// then we know it is a Min or Max based on the previous check.
 				boolean isMin = ((Builtin) aop.aggOp.increOp.fn).getBuiltinCode() == BuiltinCode.MIN;
-				return new DoubleObject(aggMinMax(ffr, isMin, true,  Optional.empty()).getValue(0,0));
+				return new DoubleObject(aggMinMax(ffr, isMin, true,  Optional.empty()).get(0,0));
 			}
 			else if( aop.aggOp.increOp.fn instanceof Mean ) {
-				return new DoubleObject(aggMean(ffr, map).getValue(0,0));
+				return new DoubleObject(aggMean(ffr, map).get(0,0));
 			}
 			else { //if (aop.aggOp.increOp.fn instanceof KahanFunction)
 				double sum = 0; //uak+

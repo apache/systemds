@@ -51,9 +51,9 @@ public class ReadersTest {
 
 		MatrixBlock mb = new MatrixBlock(3, 2, false);
 		mb.allocateDenseBlock();
-		mb.setValue(0, 0, 4);
-		mb.setValue(1, 0, 3);
-		mb.setValue(2, 1, 5);
+		mb.set(0, 0, 4);
+		mb.set(1, 0, 3);
+		mb.set(2, 1, 5);
 
 		ReaderColumnSelection r = ReaderColumnSelection.createReader(mb, ColIndexFactory.create(2), false);
 		DblArray d = null;

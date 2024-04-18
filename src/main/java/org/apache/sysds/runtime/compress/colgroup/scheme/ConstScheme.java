@@ -53,7 +53,7 @@ public class ConstScheme extends ACLAScheme {
 		final int nColScheme = vals.length;
 		for(int r = 0; r < nRow; r++)
 			for(int c = 0; c < nColScheme; c++) {
-				final double v = data.quickGetValue(r, cols.get(c));
+				final double v = data.get(r, cols.get(c));
 				if(!Util.eq(v, vals[c]))
 					return updateToDDC(data, columns);
 			}
@@ -87,7 +87,7 @@ public class ConstScheme extends ACLAScheme {
 			final int row = cols.get(r);
 			final double def = vals[r];
 			for(int c = 0; c < nCol; c++) {
-				final double v = data.quickGetValue(row, c);
+				final double v = data.get(row, c);
 				if(!Util.eq(v, def))
 					return updateToDDCT(data, columns);
 			}

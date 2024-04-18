@@ -44,7 +44,7 @@ public class LibMatrixSketch {
 				// obtain set of unique items (dense input vector)
 				HashSet<Double> hashSet = new HashSet<>();
 				for( int i=0; i<rlen; i++ ) {
-					hashSet.add(blkIn.quickGetValue(i, 0));
+					hashSet.add(blkIn.get(i, 0));
 				}
 				
 				// allocate output block and place values
@@ -52,7 +52,7 @@ public class LibMatrixSketch {
 				blkOut = new MatrixBlock(rlen2, 1, false).allocateBlock();
 				Iterator<Double> iter = hashSet.iterator();
 				for( int i=0; i<rlen2; i++ ) {
-					blkOut.quickSetValue(i, 0, iter.next());
+					blkOut.set(i, 0, iter.next());
 				}
 				break;
 

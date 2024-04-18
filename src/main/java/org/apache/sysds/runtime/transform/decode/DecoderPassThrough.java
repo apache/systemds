@@ -65,7 +65,7 @@ public class DecoderPassThrough extends Decoder
 			for( int j=0; j<clen; j++ ) {
 				int srcColID = _srcCols[j];
 				int tgtColID = _colList[j];
-				double val = in.quickGetValue(i, srcColID-1);
+				double val = in.get(i, srcColID-1);
 				out.set(i, tgtColID-1,
 					UtilFunctions.doubleToObject(_schema[tgtColID-1], val));
 			}

@@ -35,18 +35,18 @@ public class UnaryOpTest {
 	static final UnaryOperator op = new UnaryOperator(Builtin.getBuiltinFnObject(BuiltinCode.ROUND));
 	
 	static {
-		m.setValue(3, 3, 4.2);
+		m.set(3, 3, 4.2);
 	}
 
 	@Test
 	public void testBasic() {
-		assertTrue(m.getValue(3, 3) == 4.2);
+		assertTrue(m.get(3, 3) == 4.2);
 	}
 
 	@Test
 	public void testDirectUnaryOp() {
 		MatrixBlock mr = m.unaryOperations(op, null);
-		assertTrue(mr.getValue(3, 3) == 4);
+		assertTrue(mr.get(3, 3) == 4);
 	}
 
 	@Test
@@ -55,7 +55,7 @@ public class UnaryOpTest {
 		sb.copy(m);
 		sb.setSparseBlock(new SparseBlockCSR(sb.getSparseBlock()));
 		MatrixBlock mr = sb.unaryOperations(op, null);
-		assertTrue(mr.getValue(3, 3) == 4);
+		assertTrue(mr.get(3, 3) == 4);
 	}
 
 	@Test
@@ -63,6 +63,6 @@ public class UnaryOpTest {
 		MatrixBlock sb = new MatrixBlock(1, 1, false);
 		sb.copy(m);
 		MatrixBlock mr = sb.unaryOperations(op, null);
-		assertTrue(mr.getValue(3, 3) == 4);
+		assertTrue(mr.get(3, 3) == 4);
 	}
 }

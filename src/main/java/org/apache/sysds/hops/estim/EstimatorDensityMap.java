@@ -215,7 +215,7 @@ public class EstimatorDensityMap extends SparsityEstimator
 		m1Map.toSparsity();
 		for(int i=0; i<m1Map.getNumRows(); i++)
 			for(int j=0; j<m1Map.getNumColumns(); j++)
-				out.quickSetValue(i, j, 1-m1Map.get(i, j));
+				out.set(i, j, 1-m1Map.get(i, j));
 		return new DensityMap(out, m1Map.getNumRowsOrig(),
 			m1Map.getNumColumnsOrig(), _b, m1Map._scaled);
 	}
@@ -281,7 +281,7 @@ public class EstimatorDensityMap extends SparsityEstimator
 		}
 		
 		public double get(int r, int c) {
-			return _map.quickGetValue(r, c);
+			return _map.get(r, c);
 		}
 		
 		public void toSparsity() {
@@ -352,7 +352,7 @@ public class EstimatorDensityMap extends SparsityEstimator
 			else {
 				for(int i=0; i<_rlen; i++) {
 					for(int j=0; j<_clen; j++) {
-						double aval = in.quickGetValue(i, j);
+						double aval = in.get(i, j);
 						if( aval != 0 )
 							c.incr(i/_b, j/_b);
 					}

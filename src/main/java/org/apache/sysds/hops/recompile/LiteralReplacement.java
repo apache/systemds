@@ -212,7 +212,7 @@ public class LiteralReplacement
 				MatrixBlock mBlock = mo.acquireRead();
 				if( mBlock.getNumRows()!=1 || mBlock.getNumColumns()!=1 )
 					throw new DMLRuntimeException("Dimension mismatch - unable to cast matrix of dimension ("+mBlock.getNumRows()+" x "+mBlock.getNumColumns()+") to scalar.");
-				double value = mBlock.getValue(0,0);
+				double value = mBlock.get(0,0);
 				mo.release();
 				
 				//literal substitution (always double)
@@ -253,7 +253,7 @@ public class LiteralReplacement
 				if( mo.getNumRows()*mo.getNumColumns() < REPLACE_LITERALS_MAX_MATRIX_SIZE )
 				{
 					MatrixBlock mBlock = mo.acquireRead();
-					double value = mBlock.getValue((int)rlval-1,(int)clval-1);
+					double value = mBlock.get((int)rlval-1,(int)clval-1);
 					mo.release();
 					
 					//literal substitution (always double)

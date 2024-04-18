@@ -662,7 +662,7 @@ public abstract class SpoofOuterProduct extends SpoofOperator
 				executeCellwiseDense(_a.getDenseBlock(), _u, _v, _b, _scalars, out.getDenseBlock(), _rlen, _clen, _k, _type, _rl, _ru, _cl, _cu);
 			else
 				executeCellwiseSparse(_a.getSparseBlock(), _u, _v, _b, _scalars, out, _rlen, _clen, _k, _a.getNonZeros(), _type, _rl, _ru, _cl, _cu);
-			return out.quickGetValue(0, 0);
+			return out.get(0, 0);
 		}
 	}
 }

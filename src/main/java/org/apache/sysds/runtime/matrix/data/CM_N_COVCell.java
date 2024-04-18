@@ -83,7 +83,7 @@ public class CM_N_COVCell extends MatrixValue
 	}
 
 	@Override
-	public double getValue(int r, int c) {
+	public double get(int r, int c) {
 		throw new RuntimeException("operation not supported for CM_N_COVCell");
 	}
 
@@ -136,7 +136,7 @@ public class CM_N_COVCell extends MatrixValue
 	}
 
 	@Override
-	public void setValue(int r, int c, double v) {
+	public void set(int r, int c, double v) {
 		throw new RuntimeException("operation not supported for CM_N_COVCell");
 	}
 

@@ -106,7 +106,7 @@ public class ExtractBlockForBinaryReblock implements PairFlatMapFunction<Tuple2<
 					}
 					for(int i2 = 0; i2 <= (int)(rowUpper-rowLower); i2++)
 						for(int j2 = 0; j2 <= (int)(colUpper-colLower); j2++)
-							blk.appendValue(cixi+i2, cixj+j2, in.quickGetValue(aixi+i2, aixj+j2));
+							blk.appendValue(cixi+i2, cixj+j2, in.get(aixi+i2, aixj+j2));
 				}
 				retVal.add(new Tuple2<>(indx, blk));
 			}

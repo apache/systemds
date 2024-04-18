@@ -789,9 +789,9 @@ public class MultiColumnEncoder implements Encoder {
 			else {
 				ni++;
 			}
-			out.quickSetValue(i, 0, colID);
-			out.quickSetValue(i, 1, nColID);
-			out.quickSetValue(i, 2, ni);
+			out.set(i, 0, colID);
+			out.set(i, 1, nColID);
+			out.set(i, 2, ni);
 		}
 		return out;
 	}

@@ -63,9 +63,9 @@ public class TransformApplyUnknownsTest extends AutomatedTestBase {
 			Assert.assertEquals(out.getNumRows(), data2.getNumRows());
 			Assert.assertEquals(out.getNumColumns(), data2.getNumColumns());
 			for(int i=1; i<=rows; i++)
-				Assert.assertEquals(i, out.quickGetValue(i-1, 0), 1e-8);
+				Assert.assertEquals(i, out.get(i-1, 0), 1e-8);
 			for(int i=rows+1; i<=rows+10; i++)
-				Assert.assertTrue(Double.isNaN(out.quickGetValue(i-1, 0)));
+				Assert.assertTrue(Double.isNaN(out.get(i-1, 0)));
 		} 
 		catch (DMLRuntimeException e) {
 			throw new RuntimeException(e);
@@ -94,11 +94,11 @@ public class TransformApplyUnknownsTest extends AutomatedTestBase {
 			Assert.assertEquals(out.getNumColumns(), data2.getNumColumns());
 			for(int i=-5; i<=rows+5; i++) {
 				if( i < 1 )
-					Assert.assertEquals(1, out.quickGetValue(i+5, 0), 0.0);
+					Assert.assertEquals(1, out.get(i+5, 0), 0.0);
 				else if(i > rows)
-					Assert.assertEquals(out.quickGetValue(out.getNumRows()-1, 0), out.quickGetValue(i+5, 0), 0.0);
+					Assert.assertEquals(out.get(out.getNumRows()-1, 0), out.get(i+5, 0), 0.0);
 				else
-					Assert.assertEquals(((i-1)/10+1), out.quickGetValue(i+5, 0), 1e-8);
+					Assert.assertEquals(((i-1)/10+1), out.get(i+5, 0), 1e-8);
 			}
 		}
 		catch (Exception e) {

@@ -113,7 +113,7 @@ public class CTableMap
 				int rix = (int)e.getKey1();
 				int cix = (int)e.getKey2();
 				if( value != 0 && rix<=rlen && cix<=clen )
-					mb.quickSetValue( rix-1, cix-1, value );
+					mb.set( rix-1, cix-1, value );
 			}
 		}
 		

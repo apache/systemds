@@ -46,9 +46,9 @@ public final class CLALibTernaryOp {
 		final boolean s1 = (r1 == 1 && c1 == 1);
 		final boolean s2 = (r2 == 1 && c2 == 1);
 		final boolean s3 = (r3 == 1 && c3 == 1);
-		final double d1 = s1 ? m1.quickGetValue(0, 0) : Double.NaN;
-		final double d2 = s2 ? m2.quickGetValue(0, 0) : Double.NaN;
-		final double d3 = s3 ? m3.quickGetValue(0, 0) : Double.NaN;
+		final double d1 = s1 ? m1.get(0, 0) : Double.NaN;
+		final double d2 = s2 ? m2.get(0, 0) : Double.NaN;
+		final double d3 = s3 ? m3.get(0, 0) : Double.NaN;
 		final int m = Math.max(Math.max(r1, r2), r3);
 		final int n = Math.max(Math.max(c1, c2), c3);
 

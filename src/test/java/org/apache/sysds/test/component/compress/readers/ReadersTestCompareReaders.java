@@ -84,14 +84,14 @@ public class ReadersTestCompareReaders {
 		// only one row is set
 		mb = new MatrixBlock(100, 10, false);
 		for(int i = 0; i < 10; i++)
-			mb.quickSetValue(3, i, 231);
+			mb.set(3, i, 231);
 		if(!mb.isInSparseFormat())
 			tests.add(new Object[] {mb});
 
 		// only one col is set
 		mb = new MatrixBlock(100, 10, false);
 		for(int i = 0; i < 100; i++)
-			mb.quickSetValue(i, 4, 231);
+			mb.set(i, 4, 231);
 		if(!mb.isInSparseFormat())
 			tests.add(new Object[] {mb});
 

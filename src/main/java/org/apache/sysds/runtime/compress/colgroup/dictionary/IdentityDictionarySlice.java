@@ -221,7 +221,7 @@ public class IdentityDictionarySlice extends IdentityDictionary {
 	private MatrixBlockDictionary createMBDict() {
 		MatrixBlock identity = new MatrixBlock(nRowCol, u - l, true);
 		for(int i = l; i < u; i++)
-			identity.quickSetValue(i, i - l, 1.0);
+			identity.set(i, i - l, 1.0);
 		return new MatrixBlockDictionary(identity);
 	}
 

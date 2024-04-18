@@ -78,15 +78,15 @@ public class AggregateTernarySPInstruction extends ComputationSPInstruction {
 		}
 		else { //2 inputs (third is literal 1)
 			out = in1.join( in2 )
-					 .mapToPair(new RDDAggregateTernaryFunction2(aggop));				
+					 .mapToPair(new RDDAggregateTernaryFunction2(aggop));
 		}
 		
 		//aggregate partial results
 		if( aggop.indexFn instanceof ReduceAll ) //tak+*
 		{
-			//aggregate and create output (no lineage because scalar)	   
+			//aggregate and create output (no lineage because scalar)
 			MatrixBlock tmp = RDDAggregateUtils.sumStable(out.values());
-			DoubleObject ret = new DoubleObject(tmp.getValue(0, 0));
+			DoubleObject ret = new DoubleObject(tmp.get(0, 0));
 			sec.setVariable(output.getName(), ret);	
 		}
 		else if( mcIn.dimsKnown() && mcIn.getCols()<=mcIn.getBlocksize() ) //tack+* single block

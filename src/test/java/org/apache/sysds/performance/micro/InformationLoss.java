@@ -165,9 +165,9 @@ public class InformationLoss {
 		try{
 
 			Future<Double> minF = pool.submit(() -> delta.min(16));
-			Future<Double> maxF = pool.submit(() -> delta.max(16).quickGetValue(0, 0));
+			Future<Double> maxF = pool.submit(() -> delta.max(16).get(0, 0));
 			Future<Double> meanF = pool
-				.submit(() -> delta.sum(16).quickGetValue(0, 0) / (delta.getNumRows() * delta.getNumColumns()));
+				.submit(() -> delta.sum(16).get(0, 0) / (delta.getNumRows() * delta.getNumColumns()));
 	
 			double min = minF.get();
 			double max = maxF.get();

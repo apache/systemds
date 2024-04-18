@@ -500,7 +500,7 @@ public class LibMatrixReorg {
 		double[] values = new double[rlen];
 		for( int i=0; i<rlen; i++ ) {
 			vix[i] = i;
-			values[i] = in.quickGetValue(i, by[0]-1);
+			values[i] = in.get(i, by[0]-1);
 		}
 
 		// step 4: split the data into number of blocks of PAR_NUMCELL_THRESHOLD_SORT (1024) elements.
@@ -726,7 +726,7 @@ public class LibMatrixReorg {
 			long clen = linData.getNumColumns();
 			
 			for( int i=0; i<linOffset.getNumRows(); i++ ) {
-				long rix = (long)linOffset.quickGetValue(i, 0);
+				long rix = (long)linOffset.get(i, 0);
 				if( rix <= 0 || rix > rlen ) //skip empty row / cut-off rows
 					continue;
 				
@@ -753,7 +753,7 @@ public class LibMatrixReorg {
 			long clen = len;
 			
 			for( int i=0; i<linOffset.getNumColumns(); i++ ) {
-				long cix = (long)linOffset.quickGetValue(0, i);
+				long cix = (long)linOffset.get(0, i);
 				if( cix <= 0 || cix > clen ) //skip empty col / cut-off cols
 					continue;
 				
@@ -2212,7 +2212,7 @@ public class LibMatrixReorg {
 					cix = new int[(int)in.nonZeros];
 					vals = new double[(int)in.nonZeros];
 					for( int i=0, pos=0; i<rlen; i++ ) {
-						double val = in.quickGetValue(i, 0);
+						double val = in.get(i, 0);
 						if( val != 0 ) {
 							cix[pos] = i;
 							vals[pos] = val;
@@ -2228,7 +2228,7 @@ public class LibMatrixReorg {
 				out.allocateBlock();
 				SparseBlock sblock = out.sparseBlock;
 				for(int i=0; i<rlen; i++) {
-					double val = in.quickGetValue(i, 0);
+					double val = in.get(i, 0);
 					if( val != 0 ) {
 						sblock.allocate(i, 1);
 						sblock.append(i, i, val);
@@ -2238,7 +2238,7 @@ public class LibMatrixReorg {
 		}
 		else { //DENSE
 			for( int i=0; i<rlen; i++ ) {
-				double val = in.quickGetValue(i, 0);
+				double val = in.get(i, 0);
 				if( val != 0 )
 					out.appendValue(i, i, val);
 			}
@@ -2262,7 +2262,7 @@ public class LibMatrixReorg {
 		int rlen = in.rlen;
 		int nnz = 0;
 		for( int i=0; i<rlen; i++ ) {
-			double val = in.quickGetValue(i, i);
+			double val = in.get(i, i);
 			if( val != 0 ) {
 				c.set(i, 0, val);
 				nnz++;
@@ -3241,7 +3241,7 @@ public class LibMatrixReorg {
 		for( int i=rl; i<ru; i++ )
 		{
 			//get value and cast if necessary (table)
-			double val = in.quickGetValue(i, 0);
+			double val = in.get(i, 0);
 			if( cast )
 				val = UtilFunctions.toLong(val);
 			
@@ -3281,7 +3281,7 @@ public class LibMatrixReorg {
 		}
 		else if( in.sparse ){ //SPARSE
 			for( int i=0; i<len; i++ )
-				tmp[i] = in.quickGetValue(ixin+i, 0);
+				tmp[i] = in.get(ixin+i, 0);
 		}
 		else { //DENSE
 			System.arraycopy(in.getDenseBlockValues(), ixin, tmp, 0, len);
@@ -3373,7 +3373,7 @@ public class LibMatrixReorg {
 				double old = values[i];
 				//extract values of next column
 				for(int j=i; j<i+len+1; j++)
-					values[j] = in.quickGetValue(vix[j], by[off]-1);
+					values[j] = in.get(vix[j], by[off]-1);
 				//sort values, incl recursive decent
 				SortUtils.sortByValue(i, i+len+1, values, vix);
 				if( off+1 < by.length )
@@ -3397,7 +3397,7 @@ public class LibMatrixReorg {
 				if( off < by.length ) {
 					//extract values of next column
 					for(int j=i; j<i+len+1; j++)
-						values[j] = in.quickGetValue(vix[j], by[off]-1);
+						values[j] = in.get(vix[j], by[off]-1);
 					sortIndexesStable(i, i+len+1, values, vix, in, by, off+1);
 				}
 				else //unstable sort of run indexes (equal value guaranteed)
@@ -3474,12 +3474,11 @@ public class LibMatrixReorg {
 		}
 
 		@Override
-		public int compare(Integer arg0, Integer arg1) 
-		{			
-			double val0 = _mb.quickGetValue(arg0, _col);
-			double val1 = _mb.quickGetValue(arg1, _col);			
+		public int compare(Integer arg0, Integer arg1) {
+			double val0 = _mb.get(arg0, _col);
+			double val1 = _mb.get(arg1, _col);
 			return (val0 < val1 ? -1 : (val0 == val1 ? 0 : 1));
-		}		
+		}
 	}
 
 
@@ -3528,8 +3527,8 @@ public class LibMatrixReorg {
 		@Override
 		public int compare(Integer arg0, Integer arg1) 
 		{			
-			double val0 = _mb.quickGetValue(arg0, _col);
-			double val1 = _mb.quickGetValue(arg1, _col);	
+			double val0 = _mb.get(arg0, _col);
+			double val1 = _mb.get(arg1, _col);
 			return (val0 > val1 ? -1 : (val0 == val1 ? 0 : 1));
 		}		
 	}

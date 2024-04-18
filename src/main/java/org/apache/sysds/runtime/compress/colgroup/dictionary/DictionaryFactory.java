@@ -373,10 +373,10 @@ public interface DictionaryFactory {
 				int ia = r % ra;
 				int ib = r / ra;
 				for(int c = 0; c < nca; c++)
-					out.quickSetValue(o, c, ma.quickGetValue(ia, c));
+					out.set(o, c, ma.get(ia, c));
 
 				for(int c = 0; c < ncb; c++)
-					out.quickSetValue(o, c + nca, mb.quickGetValue(ib, c));
+					out.set(o, c + nca, mb.get(ib, c));
 
 			}
 		}
@@ -386,10 +386,10 @@ public interface DictionaryFactory {
 				int ia = r % ra;
 				int ib = r / ra;
 				for(int c = 0; c < nca; c++)
-					out.quickSetValue(r, c, ma.quickGetValue(ia, c));
+					out.set(r, c, ma.get(ia, c));
 
 				for(int c = 0; c < ncb; c++)
-					out.quickSetValue(r, c + nca, mb.quickGetValue(ib, c));
+					out.set(r, c + nca, mb.get(ib, c));
 
 			}
 		}
@@ -412,19 +412,19 @@ public interface DictionaryFactory {
 		for(int r = 0; r < ra; r++) {
 
 			for(int c = 0; c < nca; c++)
-				out.quickSetValue(r, c, ma.quickGetValue(r, c));
+				out.set(r, c, ma.get(r, c));
 			for(int c = 0; c < ncb; c++)
-				out.quickSetValue(r, c + nca, tub[c]);
+				out.set(r, c + nca, tub[c]);
 		}
 
 		for(int r = ra; r < out.getNumRows(); r++) {
 			int ia = r % ra;
 			int ib = r / ra - 1;
 			for(int c = 0; c < nca; c++) // all good.
-				out.quickSetValue(r, c, ma.quickGetValue(ia, c));
+				out.set(r, c, ma.get(ia, c));
 
 			for(int c = 0; c < ncb; c++)
-				out.quickSetValue(r, c + nca, mb.quickGetValue(ib, c));
+				out.set(r, c + nca, mb.get(ib, c));
 
 		}
 		return new MatrixBlockDictionary(out);
@@ -450,9 +450,9 @@ public interface DictionaryFactory {
 
 				int o = filter.get(r);
 				for(int c = 0; c < nca; c++)
-					out.quickSetValue(o, c, ma.quickGetValue(r, c));
+					out.set(o, c, ma.get(r, c));
 				for(int c = 0; c < ncb; c++)
-					out.quickSetValue(o, c + nca, tub[c]);
+					out.set(o, c + nca, tub[c]);
 			}
 
 		}
@@ -464,10 +464,10 @@ public interface DictionaryFactory {
 				int ia = r % ra;
 				int ib = r / ra - 1;
 				for(int c = 0; c < nca; c++) // all good.
-					out.quickSetValue(o, c, ma.quickGetValue(ia, c));
+					out.set(o, c, ma.get(ia, c));
 
 				for(int c = 0; c < ncb; c++)
-					out.quickSetValue(o, c + nca, mb.quickGetValue(ib, c));
+					out.set(o, c + nca, mb.get(ib, c));
 
 			}
 		}
@@ -490,17 +490,17 @@ public interface DictionaryFactory {
 		// 0 row both default tuples
 
 		for(int c = 0; c < nca; c++)
-			out.quickSetValue(0, c, tua[c]);
+			out.set(0, c, tua[c]);
 
 		for(int c = 0; c < ncb; c++)
-			out.quickSetValue(0, c + nca, tub[c]);
+			out.set(0, c + nca, tub[c]);
 
 		// default case for b and all cases for a.
 		for(int r = 1; r < ra + 1; r++) {
 			for(int c = 0; c < nca; c++)
-				out.quickSetValue(r, c, ma.quickGetValue(r - 1, c));
+				out.set(r, c, ma.get(r - 1, c));
 			for(int c = 0; c < ncb; c++)
-				out.quickSetValue(r, c + nca, tub[c]);
+				out.set(r, c + nca, tub[c]);
 		}
 
 		for(int r = ra + 1; r < out.getNumRows(); r++) {
@@ -509,13 +509,13 @@ public interface DictionaryFactory {
 
 			if(ia == -1)
 				for(int c = 0; c < nca; c++)
-					out.quickSetValue(r, c, tua[c]);
+					out.set(r, c, tua[c]);
 			else
 				for(int c = 0; c < nca; c++)
-					out.quickSetValue(r, c, ma.quickGetValue(ia, c));
+					out.set(r, c, ma.get(ia, c));
 
 			for(int c = 0; c < ncb; c++) // all good here.
-				out.quickSetValue(r, c + nca, mb.quickGetValue(ib, c));
+				out.set(r, c + nca, mb.get(ib, c));
 
 		}
 
@@ -542,10 +542,10 @@ public interface DictionaryFactory {
 		if(filter.containsKey(0)) {
 			int o = filter.get(0);
 			for(int c = 0; c < nca; c++)
-				out.quickSetValue(o, c, tua[c]);
+				out.set(o, c, tua[c]);
 
 			for(int c = 0; c < ncb; c++)
-				out.quickSetValue(o, c + nca, tub[c]);
+				out.set(o, c + nca, tub[c]);
 		}
 
 		// default case for b and all cases for a.
@@ -553,9 +553,9 @@ public interface DictionaryFactory {
 			if(filter.containsKey(r)) {
 				int o = filter.get(r);
 				for(int c = 0; c < nca; c++)
-					out.quickSetValue(o, c, ma.quickGetValue(r - 1, c));
+					out.set(o, c, ma.get(r - 1, c));
 				for(int c = 0; c < ncb; c++)
-					out.quickSetValue(o, c + nca, tub[c]);
+					out.set(o, c + nca, tub[c]);
 			}
 		}
 
@@ -569,13 +569,13 @@ public interface DictionaryFactory {
 
 				if(ia == -1)
 					for(int c = 0; c < nca; c++)
-						out.quickSetValue(o, c, tua[c]);
+						out.set(o, c, tua[c]);
 				else
 					for(int c = 0; c < nca; c++)
-						out.quickSetValue(o, c, ma.quickGetValue(ia, c));
+						out.set(o, c, ma.get(ia, c));
 
 				for(int c = 0; c < ncb; c++) // all good here.
-					out.quickSetValue(o, c + nca, mb.quickGetValue(ib, c));
+					out.set(o, c + nca, mb.get(ib, c));
 			}
 		}
 
@@ -596,9 +596,9 @@ public interface DictionaryFactory {
 		// default case for b and all cases for a.
 		for(int r = 0; r < ra; r++) {
 			for(int c = 0; c < nca; c++)
-				out.quickSetValue(r, c, ma.quickGetValue(r, c));
+				out.set(r, c, ma.get(r, c));
 			for(int c = 0; c < ncb; c++)
-				out.quickSetValue(r, c + nca, tub[c]);
+				out.set(r, c + nca, tub[c]);
 		}
 
 		return new MatrixBlockDictionary(out);
@@ -623,9 +623,9 @@ public interface DictionaryFactory {
 		// // default case for b and all cases for a.
 		// for(int r = 0; r < ra; r++) {
 		// for(int c = 0; c < nca; c++)
-		// out.quickSetValue(r, c, ma.quickGetValue(r, c));
+		// out.set(r, c, ma.get(r, c));
 		// for(int c = 0; c < ncb; c++)
-		// out.quickSetValue(r, c + nca, tub[c]);
+		// out.set(r, c + nca, tub[c]);
 		// }
 
 		// return new MatrixBlockDictionary(out);
@@ -645,9 +645,9 @@ public interface DictionaryFactory {
 		// default case for b and all cases for a.
 		for(int r = 0; r < rb; r++) {
 			for(int c = 0; c < nca; c++)
-				out.quickSetValue(r, c, tua[c]);
+				out.set(r, c, tua[c]);
 			for(int c = 0; c < ncb; c++)
-				out.quickSetValue(r, c + nca, mb.quickGetValue(r, c));
+				out.set(r, c + nca, mb.get(r, c));
 		}
 
 		return new MatrixBlockDictionary(out);
@@ -672,9 +672,9 @@ public interface DictionaryFactory {
 		// // default case for b and all cases for a.
 		// for(int r = 0; r < rb; r++) {
 		// for(int c = 0; c < nca; c++)
-		// out.quickSetValue(r, c, tua[c]);
+		// out.set(r, c, tua[c]);
 		// for(int c = 0; c < ncb; c++)
-		// out.quickSetValue(r, c + nca, mb.quickGetValue(r, c));
+		// out.set(r, c + nca, mb.get(r, c));
 		// }
 
 		// return new MatrixBlockDictionary(out);

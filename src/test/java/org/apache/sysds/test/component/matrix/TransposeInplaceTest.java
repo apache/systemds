@@ -71,7 +71,7 @@ public class TransposeInplaceTest {
 			// very small test only verifying one cell...
 			for(int i = 0; i < rep; i++) {
 				LibMatrixReorg.reorgInPlace(in, opP);
-				Assert.assertEquals(org[1][0], in.quickGetValue(i % 2, 1 - i % 2), 0.00001);
+				Assert.assertEquals(org[1][0], in.get(i % 2, 1 - i % 2), 0.00001);
 			}
 		}
 		catch(Exception e) {

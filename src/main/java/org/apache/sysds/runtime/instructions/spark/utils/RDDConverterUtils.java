@@ -485,7 +485,7 @@ public class RDDConverterUtils {
 			ArrayList<LabeledPoint> ret = new ArrayList<>();
 			for( int i=0; i<arg0.getNumRows(); i++ ) {
 				MatrixBlock tmp = arg0.slice(i, i, 0, arg0.getNumColumns()-2, new MatrixBlock());
-				ret.add(new LabeledPoint(arg0.getValue(i, arg0.getNumColumns()-1), createVector(tmp)));
+				ret.add(new LabeledPoint(arg0.get(i, arg0.getNumColumns()-1), createVector(tmp)));
 			}
 
 			return ret.iterator();
@@ -962,7 +962,7 @@ public class RDDConverterUtils {
 				for(int j=0; j<blk.getNumColumns(); j++) {
 					if(j != 0)
 						sb.append(_props.getDelim());
-					double val = blk.quickGetValue(i, j);
+					double val = blk.get(i, j);
 					if(!(_props.isSparse() && val == 0))
 						sb.append(val);
 				}
@@ -1028,12 +1028,12 @@ public class RDDConverterUtils {
 			{
 				for(int i = 0; i < blk.getNumRows(); i++) {
 					// append the class label as the 1st column
-					double label = blk.quickGetValue(i, blk.getNumColumns() - 1);
+					double label = blk.get(i, blk.getNumColumns() - 1);
 					sb.append(label);
 
 					// append dense row
 					for(int j = 0; j < blk.getNumColumns() - 1; j++) {
-						double val = blk.quickGetValue(i, j);
+						double val = blk.get(i, j);
 						if(val != 0) {
 							sb.append(_props.getDelim());
 							appendIndexValLibsvm(sb, j, val);
@@ -1319,7 +1319,7 @@ public class RDDConverterUtils {
 					int cl = (kv._1().intValue()-1)*_blen;
 					MatrixBlock mb = kv._2();
 					for( int j=0; j<mb.getNumColumns(); j++ )
-						row[cl+j+1] = mb.quickGetValue(0, j);
+						row[cl+j+1] = mb.get(0, j);
 				}
 			}
 

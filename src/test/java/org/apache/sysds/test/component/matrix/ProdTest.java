@@ -35,7 +35,7 @@ public class ProdTest {
 		m.allocateSparseRowsBlock();
 
 		for(int i = 0; i < 10; i++)
-			m.setValue(0, i, 3);
+			m.set(0, i, 3);
 
 		mDense = new MatrixBlock(10, 10, false);
 		mDense.copy(m);

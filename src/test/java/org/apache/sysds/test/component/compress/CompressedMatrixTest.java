@@ -91,8 +91,8 @@ public class CompressedMatrixTest extends AbstractCompressedUnaryTests {
 			final int max = Math.min(r.nextInt(rows - min) + min, min + 1000);
 			for(int i = min; i < max; i++)
 				for(int j = 0; j < cols; j++) {
-					final double ulaVal = mb.getValue(i, j);
-					final double claVal = cmb.getValue(i, j); // calls quickGetValue internally
+					final double ulaVal = mb.get(i, j);
+					final double claVal = cmb.get(i, j); // calls quickGetValue internally
 					if(_cs != null && (_cs.lossy || overlappingType == OverLapping.SQUASH))
 						assertTrue(bufferedToString, TestUtils.compareCellValue(ulaVal, claVal, lossyTolerance, false));
 					else if(OverLapping.effectOnOutput(overlappingType))
@@ -118,8 +118,8 @@ public class CompressedMatrixTest extends AbstractCompressedUnaryTests {
 
 			for(int i = min; i < max; i++)
 				for(int j = 0; j < cols; j++) {
-					final double ulaVal = mb.quickGetValue(i, j);
-					final double claVal = cmb.quickGetValue(i, j); // calls quickGetValue internally
+					final double ulaVal = mb.get(i, j);
+					final double claVal = cmb.get(i, j); // calls quickGetValue internally
 					if(_cs != null && (_cs.lossy || overlappingType == OverLapping.SQUASH))
 						assertTrue(bufferedToString, TestUtils.compareCellValue(ulaVal, claVal, lossyTolerance, false));
 					else if(OverLapping.effectOnOutput(overlappingType))
@@ -491,7 +491,7 @@ public class CompressedMatrixTest extends AbstractCompressedUnaryTests {
 
 			MatrixBlock m2 = new MatrixBlock(1, 1, 0);
 			MatrixBlock ret1 = cmb.binaryOperations(op, m2, new MatrixBlock());
-			ScalarOperator sop = new RightScalarOperator(op.fn, m2.getValue(0, 0), op.getNumThreads());
+			ScalarOperator sop = new RightScalarOperator(op.fn, m2.get(0, 0), op.getNumThreads());
 			ucRet = mb.scalarOperations(sop, ucRet);
 
 			compareResultMatrices(ucRet, ret1, 1);

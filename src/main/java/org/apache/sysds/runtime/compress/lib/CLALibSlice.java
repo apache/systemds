@@ -169,7 +169,7 @@ public final class CLALibSlice {
 	private static MatrixBlock sliceSingle(CompressedMatrixBlock cmb, int row, int col) {
 		// get a single index, and return in a matrixBlock
 		MatrixBlock tmp = new MatrixBlock(1, 1, 0);
-		tmp.setValue(0, 0, cmb.getValue(row, col));
+		tmp.set(0, 0, cmb.get(row, col));
 		return tmp;
 	}
 

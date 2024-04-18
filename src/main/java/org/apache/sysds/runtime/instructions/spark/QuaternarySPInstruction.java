@@ -263,7 +263,7 @@ public class QuaternarySPInstruction extends ComputationSPInstruction {
 		{
 			//full aggregate and cast to scalar
 			MatrixBlock tmp = RDDAggregateUtils.sumStable(out);
-			DoubleObject ret = new DoubleObject(tmp.getValue(0, 0));
+			DoubleObject ret = new DoubleObject(tmp.get(0, 0));
 			sec.setVariable(output.getName(), ret);
 		}
 		else //map/redwsigmoid, map/redwdivmm, map/redwumm 

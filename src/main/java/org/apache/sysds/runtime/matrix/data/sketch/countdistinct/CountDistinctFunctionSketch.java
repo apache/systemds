@@ -51,10 +51,10 @@ public class CountDistinctFunctionSketch extends CountDistinctSketch {
 
 		long res = 0;
 		for (int i=0; i<blkInCorr.getNumRows(); ++i) {
-			res += blkInCorr.getValue(i, 1);
+			res += blkInCorr.get(i, 1);
 		}
 
-		blkOut.setValue(0, 0, res);
+		blkOut.set(0, 0, res);
 		return blkOut;
 	}
 
@@ -65,7 +65,7 @@ public class CountDistinctFunctionSketch extends CountDistinctSketch {
 
 		if (R == 1 && R == C) {
 			MatrixBlock blkOutCorr = new MatrixBlock(1, 2, false);
-			blkOutCorr.setValue(0, 1, 1);
+			blkOutCorr.set(0, 1, 1);
 			return new CorrMatrixBlock(blkIn, blkOutCorr);
 		}
 
@@ -97,8 +97,8 @@ public class CountDistinctFunctionSketch extends CountDistinctSketch {
 		int maxColumns = (int) Math.pow(OptimizerUtils.DEFAULT_BLOCKSIZE, 2);
 		for (int i=0; i<R; ++i) {
 			for (int j=0; j<C; ++j) {
-				short key = (short) extractRightKBitsFromIndex((long) blkIn.getValue(i, j), 52, 12);
-				long value = extractRightKBitsFromIndex((long) blkIn.getValue(i, j), 0, 52);
+				short key = (short) extractRightKBitsFromIndex((long) blkIn.get(i, j), 52, 12);
+				long value = extractRightKBitsFromIndex((long) blkIn.get(i, j), 0, 52);
 
 				// Update bit map with new (key, value)
 				Set<Long> fractions = bitMap.getOrDefault(key, new HashSet<>());
@@ -135,12 +135,12 @@ public class CountDistinctFunctionSketch extends CountDistinctSketch {
 		for (short key : bitMap.keySet()) {
 			Set<Long> fractions = bitMap.get(key);
 
-			blkOut.setValue(i, 0, key);
-			blkOut.setValue(i, 1, fractions.size());
+			blkOut.set(i, 0, key);
+			blkOut.set(i, 1, fractions.size());
 
 			int j = 2;
 			for (long fraction : fractions) {
-				blkOut.setValue(i, j, fraction);
+				blkOut.set(i, j, fraction);
 				++j;
 			}
 
@@ -155,13 +155,13 @@ public class CountDistinctFunctionSketch extends CountDistinctSketch {
 
 		// row_i: [exponent_i, N_i, fraction_i0, fraction_i1, .., fraction_iN, 0, .., 0]
 		for (int i=0; i<R; ++i) {
-			short key = (short) blkIn.getValue(i, 0);
+			short key = (short) blkIn.get(i, 0);
 			Set<Long> fractions = bitMap.getOrDefault(key, new HashSet<>());
 
-			int C = (int) blkIn.getValue(i, 1);
+			int C = (int) blkIn.get(i, 1);
 			int j = 0;
 			while (j < C) {
-				long fraction = (long) blkIn.getValue(i, j + 2);
+				long fraction = (long) blkIn.get(i, j + 2);
 				fractions.add(fraction);
 				++j;
 			}

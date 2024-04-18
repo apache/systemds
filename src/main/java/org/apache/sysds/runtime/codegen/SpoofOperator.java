@@ -199,7 +199,7 @@ public abstract class SpoofOperator implements Serializable
 	protected static double getValue(SideInput data, int rowIndex) {
 		//note: wrapper sideinput guaranteed to exist
 		return (data.ddat!=null) ? data.ddat.valuesAt(0)[rowIndex] :
-			(data.mdat!=null) ? data.mdat.quickGetValue(rowIndex, 0) : 0;
+			(data.mdat!=null) ? data.mdat.get(rowIndex, 0) : 0;
 	}
 	
 	protected static double getValue(SideInput data, int n, double rowIndex, double colIndex) {
@@ -213,7 +213,7 @@ public abstract class SpoofOperator implements Serializable
 		return (data.ddat!=null) ? data.ddat.get(rowIndex, colIndex) :
 			(data instanceof SideInputSparseCell) ? 
 			((SideInputSparseCell)data).next(rowIndex, colIndex) :
-			(data.mdat!=null) ? data.mdat.quickGetValue(rowIndex, colIndex) : 0;
+			(data.mdat!=null) ? data.mdat.get(rowIndex, colIndex) : 0;
 	}
 	
 	protected static double[] getVector(SideInput data, int n, double rowIndex, double colIndex) {

@@ -365,7 +365,7 @@ public class CombineGroupsTest {
 		MatrixBlock ret = new MatrixBlock(a.getNumRows(), a.getNumColumns(), a.getNonZeros());
 		for(int r = 0; r < a.getNumRows(); r++)
 			for(int c = 0; c < a.getNumColumns(); c++)
-				ret.quickSetValue(r, mix[c], a.quickGetValue(r, c));
+				ret.set(r, mix[c], a.get(r, c));
 		return ret;
 	}
 

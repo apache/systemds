@@ -77,7 +77,7 @@ public class AggregateTernaryCPInstruction extends ComputationCPInstruction {
 		if(!input3.isLiteral())
 			ec.releaseMatrixInput(input3.getName());
 		if(output.getDataType().isScalar())
-			ec.setScalarOutput(output.getName(), new DoubleObject(ret.quickGetValue(0, 0)));
+			ec.setScalarOutput(output.getName(), new DoubleObject(ret.get(0, 0)));
 		else
 			ec.setMatrixOutput(output.getName(), ret);
 	}

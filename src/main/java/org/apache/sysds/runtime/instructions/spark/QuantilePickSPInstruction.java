@@ -124,7 +124,7 @@ public class QuantilePickSPInstruction extends BinarySPInstruction {
 					int qlen = wt.length/3;
 					MatrixBlock out = new MatrixBlock(qlen,1,false);
 					IntStream.range(0, out.getNumRows())
-						.forEach(i -> out.quickSetValue(i, 0, wt[2*qlen+i+1]));
+						.forEach(i -> out.set(i, 0, wt[2*qlen+i+1]));
 					ec.setMatrixOutput(output.getName(), out);
 				}
 				break;
@@ -143,7 +143,7 @@ public class QuantilePickSPInstruction extends BinarySPInstruction {
 				JavaPairRDD<MatrixIndexes,MatrixBlock> out = in
 					.filter(new FilterFunction(key25+1,key75,mc.getBlocksize()))
 					.mapToPair(new ExtractAndSumFunction(key25+1, key75, mc.getBlocksize()));
-				double sum = RDDAggregateUtils.sumStable(out).getValue(0, 0);
+				double sum = RDDAggregateUtils.sumStable(out).get(0, 0);
 				double val = MatrixBlock.computeIQMCorrection(
 					sum, wt[0], wt[3], wt[5], wt[4], wt[6]);
 				ec.setScalarOutput(output.getName(), new DoubleObject(val));
@@ -233,7 +233,7 @@ public class QuantilePickSPInstruction extends BinarySPInstruction {
 		if( tmp.getNumRows() <= pos )
 			throw new DMLRuntimeException("Invalid key lookup for " +
 				pos + " in block of size " + tmp.getNumRows()+"x"+tmp.getNumColumns());
-		return val.get(0).quickGetValue((int)pos, 0);
+		return val.get(0).get((int)pos, 0);
 	}
 
 	public OperationTypes getOperationType() {
@@ -289,7 +289,7 @@ public class QuantilePickSPInstruction extends BinarySPInstruction {
 			int rl = (ix.getRowIndex() == _minRowIndex) ? _minPos : 0;
 			int ru = (ix.getRowIndex() == _maxRowIndex) ? _maxPos+1 : mb.getNumRows();
 			MatrixBlock ret = new MatrixBlock(1,2,false);
-			ret.setValue(0, 0, (mb.getNumColumns()==1) ? 
+			ret.set(0, 0, (mb.getNumColumns()==1) ? 
 				sum(mb, rl, ru) : sumWeighted(mb, rl, ru));
 			return new Tuple2<>(new MatrixIndexes(1,1), ret);
 		}
@@ -297,15 +297,15 @@ public class QuantilePickSPInstruction extends BinarySPInstruction {
 		private static double sum(MatrixBlock mb, int rl, int ru) {
 			double sum = 0;
 			for(int i=rl; i<ru; i++)
-				sum += mb.quickGetValue(i, 0);
+				sum += mb.get(i, 0);
 			return sum;
 		}
 		
 		private static double sumWeighted(MatrixBlock mb, int rl, int ru) {
 			double sum = 0;
 			for(int i=rl; i<ru; i++)
-				sum += mb.quickGetValue(i, 0)
-					* mb.quickGetValue(i, 1);
+				sum += mb.get(i, 0)
+					* mb.get(i, 1);
 			return sum;
  		}
 	}
@@ -368,12 +368,12 @@ public class QuantilePickSPInstruction extends BinarySPInstruction {
 				MatrixIndexes ix = tmp._1();
 				MatrixBlock mb = tmp._2();
 				for( int i=0; i<mb.getNumRows(); i++ ) {
-					double val = mb.quickGetValue(i, 1);
+					double val = mb.get(i, 1);
 					for( int j=0; j<qlen; j++ ) {
 						if( offset+val >= _qiKeys[qix[j]] ) {
 							long pos = UtilFunctions.computeCellIndex(ix.getRowIndex(), _mc.getBlocksize(), i);
 							double posPart = offset+val - _qdKeys[qix[j]];
-							ret.add(new Tuple2<>(qix[j], new double[]{pos, posPart, mb.quickGetValue(i, 0)}));
+							ret.add(new Tuple2<>(qix[j], new double[]{pos, posPart, mb.get(i, 0)}));
 							_qiKeys[qix[j]] = Long.MAX_VALUE;
 						}
 					}

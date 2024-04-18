@@ -48,7 +48,7 @@ public class BitMapTest {
 	@Test
 	public void constructBitMap() {
 		for(int i = 0; i < 10; i++)
-			mb.setValue(i, 0, 1 + i % 3);
+			mb.set(i, 0, 1 + i % 3);
 		ABitmap m = BitmapEncoder.extractBitmap(colIndexes, mb, false, 3, false);
 		assertEquals(m.containsZero(), false);
 		assertEquals(m.getNumColumns(), 1);
@@ -60,7 +60,7 @@ public class BitMapTest {
 	@Test
 	public void constructBitMapWithZeros() {
 		for(int i = 0; i < 10; i++)
-			mb.setValue(i, 0, i % 3);
+			mb.set(i, 0, i % 3);
 		ABitmap m = BitmapEncoder.extractBitmap(colIndexes, mb, false, 2, false);
 		assertEquals(m.containsZero(), true);
 		assertEquals(m.getNumColumns(), 1);
@@ -72,7 +72,7 @@ public class BitMapTest {
 	@Test
 	public void sortBitmap() {
 		for(int i = 0; i < 10; i++)
-			mb.setValue(i, 0, i > 7 ? 1 : 2);
+			mb.set(i, 0, i > 7 ? 1 : 2);
 		ABitmap m = BitmapEncoder.extractBitmap(colIndexes, mb, false, 2, true);
 		assertEquals(m.containsZero(), false);
 		assertEquals(m.getNumColumns(), 1);

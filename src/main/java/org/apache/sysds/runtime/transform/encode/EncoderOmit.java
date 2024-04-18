@@ -145,7 +145,7 @@ public class EncoderOmit extends LegacyEncoder {
 			// copy row if necessary
 			if(!rmRows[i]) {
 				for(int j = 0; j < out.getNumColumns(); j++)
-					ret.quickSetValue(pos, j, out.quickGetValue(i, j));
+					ret.set(pos, j, out.get(i, j));
 				pos++;
 			}
 		}

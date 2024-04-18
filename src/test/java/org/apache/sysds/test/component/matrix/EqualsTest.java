@@ -114,12 +114,12 @@ public class EqualsTest {
 		MatrixBlock m1 = new MatrixBlock(10, 10, 0.0);
 		MatrixBlock m2 = new MatrixBlock(10, 10, 0.0);
 
-		m1.setValue(1, 1, 3);
-		m1.setValue(1, 2, 3);
+		m1.set(1, 1, 3);
+		m1.set(1, 2, 3);
 
-		m2.setValue(1, 1, 3);
-		m2.setValue(1, 2, 3);
-		m2.setValue(1, 3, 3);
+		m2.set(1, 1, 3);
+		m2.set(1, 2, 3);
+		m2.set(1, 3, 3);
 
 		assertFalse(m1.equals(m2));
 		assertFalse(m2.equals(m1));
@@ -131,14 +131,14 @@ public class EqualsTest {
 		MatrixBlock m1 = new MatrixBlock(10, 10, 0.0);
 		MatrixBlock m2 = new MatrixBlock(10, 10, 0.0);
 
-		m1.setValue(1, 1, 3);
-		m1.setValue(1, 2, 3);
+		m1.set(1, 1, 3);
+		m1.set(1, 2, 3);
 
 		m1.setNonZeros(-1);
 
-		m2.setValue(1, 1, 3);
-		m2.setValue(1, 2, 3);
-		m2.setValue(1, 3, 3);
+		m2.set(1, 1, 3);
+		m2.set(1, 2, 3);
+		m2.set(1, 3, 3);
 
 		assertFalse(m1.equals(m2));
 		assertFalse(m2.equals(m1));
@@ -150,12 +150,12 @@ public class EqualsTest {
 		MatrixBlock m1 = new MatrixBlock(10, 10, 0.0);
 		MatrixBlock m2 = new MatrixBlock(10, 10, 0.0);
 
-		m1.setValue(1, 1, 3);
-		m1.setValue(1, 2, 3);
+		m1.set(1, 1, 3);
+		m1.set(1, 2, 3);
 
-		m2.setValue(1, 1, 3);
-		m2.setValue(1, 2, 3);
-		m2.setValue(1, 3, 3);
+		m2.set(1, 1, 3);
+		m2.set(1, 2, 3);
+		m2.set(1, 3, 3);
 
 		m2.setNonZeros(-1);
 
@@ -169,14 +169,14 @@ public class EqualsTest {
 		MatrixBlock m1 = new MatrixBlock(10, 10, 0.0);
 		MatrixBlock m2 = new MatrixBlock(10, 10, 0.0);
 
-		m1.setValue(1, 1, 3);
-		m1.setValue(1, 2, 3);
+		m1.set(1, 1, 3);
+		m1.set(1, 2, 3);
 
 		m1.setNonZeros(-1);
 
-		m2.setValue(1, 1, 3);
-		m2.setValue(1, 2, 3);
-		m2.setValue(1, 3, 3);
+		m2.set(1, 1, 3);
+		m2.set(1, 2, 3);
+		m2.set(1, 3, 3);
 
 		m2.setNonZeros(-1);
 

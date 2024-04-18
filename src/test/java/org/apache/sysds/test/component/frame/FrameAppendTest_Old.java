@@ -115,7 +115,7 @@ public class FrameAppendTest_Old extends AutomatedTestBase {
 			for(int i = 0; i < rows; i++)
 				for(int j = 0; j < lschema.length; j++) {
 					double tmp = UtilFunctions.objectToDouble(lschema[j], frame3.get(i, j));
-					double tmpm = Double.isNaN(mbC.quickGetValue(i, j)) ? 0.0 : mbC.quickGetValue(i, j);
+					double tmpm = Double.isNaN(mbC.get(i, j)) ? 0.0 : mbC.get(i, j);
 					tmp = (Double.isNaN(tmp) ? 0.0 : tmp);
 
 					if(tmp != tmpm)

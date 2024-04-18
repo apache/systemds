@@ -59,7 +59,7 @@ public class TransformApplyEmptyRecodeMapTest extends AutomatedTestBase
 			Assert.assertEquals(cols, out.getNumColumns());
 			for(int i=0; i<rows; i++)
 				for(int j=0; j<cols; j++)
-					Assert.assertTrue(Double.isNaN(out.quickGetValue(i, j)));
+					Assert.assertTrue(Double.isNaN(out.get(i, j)));
 		} 
 		catch (DMLRuntimeException e) {
 			throw new RuntimeException(e);

@@ -200,7 +200,7 @@ public class FrameFromMatrixBlockTest {
 
 		for(int i = 0; i < nRow; i++)
 			for(int j = 0; j < nCol; j++)
-				assertEquals(mb.getValue(i, j), fb.getDouble(i, j), 0.0000001);
+				assertEquals(mb.get(i, j), fb.getDouble(i, j), 0.0000001);
 
 	}
 
@@ -211,7 +211,7 @@ public class FrameFromMatrixBlockTest {
 
 		for(int i = 0; i < nRow; i++)
 			for(int j = 0; j < nCol; j++)
-				assertEquals(i + " " + j, mb.getValue(i, j), fb.getDouble(i, j), 0.0000001);
+				assertEquals(i + " " + j, mb.get(i, j), fb.getDouble(i, j), 0.0000001);
 
 	}
 

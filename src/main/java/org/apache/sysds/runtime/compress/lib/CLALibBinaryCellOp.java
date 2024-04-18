@@ -71,7 +71,7 @@ public final class CLALibBinaryCellOp {
 		MatrixBlock result) {
 
 		if(that.getNumRows() == 1 && that.getNumColumns() == 1) {
-			ScalarOperator sop = new RightScalarOperator(op.fn, that.getValue(0, 0), op.getNumThreads());
+			ScalarOperator sop = new RightScalarOperator(op.fn, that.get(0, 0), op.getNumThreads());
 			return CLALibScalar.scalarOperations(sop, m1, result);
 		}
 		else if(that.isEmpty())
@@ -98,7 +98,7 @@ public final class CLALibBinaryCellOp {
 	public static MatrixBlock binaryOperationsLeft(BinaryOperator op, CompressedMatrixBlock m1, MatrixBlock that,
 		MatrixBlock result) {
 		if(that.getNumRows() == 1 && that.getNumColumns() == 1) {
-			ScalarOperator sop = new LeftScalarOperator(op.fn, that.getValue(0, 0), op.getNumThreads());
+			ScalarOperator sop = new LeftScalarOperator(op.fn, that.get(0, 0), op.getNumThreads());
 			return CLALibScalar.scalarOperations(sop, m1, result);
 		}
 		if(that.isEmpty())

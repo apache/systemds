@@ -117,8 +117,8 @@ public class CumulativeAggregateSPInstruction extends AggregateUnarySPInstructio
 				MatrixBlock t1 = blkIn.unaryOperations(_uop, new MatrixBlock());
 				MatrixBlock t2 = blkIn.slice(0, blkIn.getNumRows()-1, 1, 1, new MatrixBlock());
 				blkOut.reset(1, 2);
-				blkOut.quickSetValue(0, 0, t1.quickGetValue(t1.getNumRows()-1, 0));
-				blkOut.quickSetValue(0, 1, t2.prod());
+				blkOut.set(0, 0, t1.get(t1.getNumRows()-1, 0));
+				blkOut.set(0, 1, t2.prod());
 			}
 			else { //general case
 				OperationsOnMatrixValues.performAggregateUnary( ixIn, blkIn, ixOut, blkOut, aop, _blen);

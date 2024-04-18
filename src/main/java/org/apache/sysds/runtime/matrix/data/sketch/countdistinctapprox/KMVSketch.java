@@ -102,11 +102,11 @@ public class KMVSketch extends CountDistinctSketch {
 			SmallestPriorityQueue spq = new SmallestPriorityQueue(k);
 			for (int i=0; i<blkIn.getNumRows(); ++i) {
 				for (int j=0; j<blkIn.getNumColumns(); ++j) {
-					spq.add(blkIn.getValue(i, j));
+					spq.add(blkIn.get(i, j));
 				}
 
 				long res = countDistinctValuesKMV(spq, k, M, D);
-				resultMatrix.setValue(i, 0, res);
+				resultMatrix.set(i, 0, res);
 
 				spq.clear();
 			}
@@ -125,11 +125,11 @@ public class KMVSketch extends CountDistinctSketch {
 			SmallestPriorityQueue spq = new SmallestPriorityQueue(k);
 			for (int j=0; j<blkIn.getNumColumns(); ++j) {
 				for (int i=0; i<blkIn.getNumRows(); ++i) {
-					spq.add(blkIn.getValue(i, j));
+					spq.add(blkIn.get(i, j));
 				}
 
 				long res = countDistinctValuesKMV(spq, k, M, D);
-				resultMatrix.setValue(0, j, res);
+				resultMatrix.set(0, j, res);
 
 				spq.clear();
 			}
@@ -252,15 +252,15 @@ public class KMVSketch extends CountDistinctSketch {
 
 		double kthSmallestHash;
 		if(op.getDirection().isRow() || op.getDirection().isRowCol()) {
-			kthSmallestHash = blkIn.getValue(idx, 0);
+			kthSmallestHash = blkIn.get(idx, 0);
 		}
 		else { // op.getDirection().isCol()
-			kthSmallestHash = blkIn.getValue(0, idx);
+			kthSmallestHash = blkIn.get(0, idx);
 		}
 
-		double nHashes = blkInCorr.getValue(idx, 0);
-		double k = blkInCorr.getValue(idx, 1);
-		double D = blkInCorr.getValue(idx, 2);
+		double nHashes = blkInCorr.get(idx, 0);
+		double k = blkInCorr.get(idx, 1);
+		double D = blkInCorr.get(idx, 2);
 
 		double D2 = D * D;
 		double M = (D2 > Integer.MAX_VALUE) ? Integer.MAX_VALUE : D2;
@@ -279,10 +279,10 @@ public class KMVSketch extends CountDistinctSketch {
 		}
 
 		if(op.getDirection().isRow() || op.getDirection().isRowCol()) {
-			blkOut.setValue(idx, 0, ceilEstimate);
+			blkOut.set(idx, 0, ceilEstimate);
 		}
 		else { // op.getDirection().isCol()
-			blkOut.setValue(0, idx, ceilEstimate);
+			blkOut.set(0, idx, ceilEstimate);
 		}
 	}
 
@@ -368,9 +368,9 @@ public class KMVSketch extends CountDistinctSketch {
 			// getMatrixValue() will short circuit and return 1 if nHashes = 0
 
 			// (nHashes, k, D) row matrix
-			sketchMetaMB.setValue(idx, 0, 0);
-			sketchMetaMB.setValue(idx, 1, k);
-			sketchMetaMB.setValue(idx, 2, D);
+			sketchMetaMB.set(idx, 0, 0);
+			sketchMetaMB.set(idx, 1, k);
+			sketchMetaMB.set(idx, 2, D);
 
 			return;
 		}
@@ -385,21 +385,21 @@ public class KMVSketch extends CountDistinctSketch {
 		while(!spq.isEmpty()) {
 			double toInsert = spq.poll();
 			if(op.getDirection().isRow()) {
-				sketchMB.setValue(idx, i, toInsert);
+				sketchMB.set(idx, i, toInsert);
 			}
 			else if(op.getDirection().isCol()) {
-				sketchMB.setValue(i, idx, toInsert);
+				sketchMB.set(i, idx, toInsert);
 			}
 			else {
-				sketchMB.setValue(idx, i, toInsert);
+				sketchMB.set(idx, i, toInsert);
 			}
 			++i;
 		}
 
 		// Last column contains the correction
-		sketchMetaMB.setValue(idx, 0, nHashes);
-		sketchMetaMB.setValue(idx, 1, k);
-		sketchMetaMB.setValue(idx, 2, D);
+		sketchMetaMB.set(idx, 0, nHashes);
+		sketchMetaMB.set(idx, 1, k);
+		sketchMetaMB.set(idx, 2, D);
 	}
 
 	@Override
@@ -494,13 +494,13 @@ public class KMVSketch extends CountDistinctSketch {
 		MatrixBlock combined = blkOut.getValue();
 		MatrixBlock combinedCorr = blkOut.getCorrection();
 
-		double nHashes0 = corr0.getValue(idx, 0);
-		double k0 = corr0.getValue(idx, 1);
-		double D0 = corr0.getValue(idx, 2);
+		double nHashes0 = corr0.get(idx, 0);
+		double k0 = corr0.get(idx, 1);
+		double D0 = corr0.get(idx, 2);
 
-		double nHashes1 = corr1.getValue(idx, 0);
-		double k1 = corr1.getValue(idx, 1);
-		double D1 = corr1.getValue(idx, 2);
+		double nHashes1 = corr1.get(idx, 0);
+		double k1 = corr1.get(idx, 1);
+		double D1 = corr1.get(idx, 2);
 
 		double nHashes = Math.max(nHashes0, nHashes1);
 		double k = Math.max(k0, k1);
@@ -511,10 +511,10 @@ public class KMVSketch extends CountDistinctSketch {
 		for(int i = 0; i < nHashes0; ++i) {
 			double val;
 			if(op.getDirection().isRow() || op.getDirection().isRowCol()) {
-				val = matrix0.getValue(idx, i);
+				val = matrix0.get(idx, i);
 			}
 			else { // op.getDirection().isCol()
-				val = matrix0.getValue(i, idx);
+				val = matrix0.get(i, idx);
 			}
 			hashUnion.add(val);
 		}
@@ -522,10 +522,10 @@ public class KMVSketch extends CountDistinctSketch {
 		for(int i = 0; i < nHashes1; ++i) {
 			double val;
 			if(op.getDirection().isRow() || op.getDirection().isRowCol()) {
-				val = matrix1.getValue(idx, i);
+				val = matrix1.get(idx, i);
 			}
 			else { // op.getDirection().isCol()
-				val = matrix1.getValue(i, idx);
+				val = matrix1.get(i, idx);
 			}
 			hashUnion.add(val);
 		}
@@ -534,17 +534,17 @@ public class KMVSketch extends CountDistinctSketch {
 		while(!hashUnion.isEmpty()) {
 			double val = hashUnion.poll();
 			if(op.getDirection().isRow() || op.getDirection().isRowCol()) {
-				combined.setValue(idx, i, val);
+				combined.set(idx, i, val);
 			}
 			else { // op.getDirection().isCol()
-				combined.setValue(i, idx, val);
+				combined.set(i, idx, val);
 			}
 			i++;
 		}
 
-		combinedCorr.setValue(idx, 0, nHashes);
-		combinedCorr.setValue(idx, 1, k);
-		combinedCorr.setValue(idx, 2, D);
+		combinedCorr.set(idx, 0, nHashes);
+		combinedCorr.set(idx, 1, k);
+		combinedCorr.set(idx, 2, D);
 	}
 
 	@Override

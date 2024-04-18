@@ -1777,8 +1777,8 @@ public class ColGroupTest extends ColGroupBase {
 	public void rightMultMatrixNotContainingValuesInColumns() {
 		MatrixBlock mb = new MatrixBlock(maxCol + 4, 10, false);
 		mb.allocateDenseBlock();
-		mb.setValue(maxCol + 1, 3, 2.0);
-		mb.setValue(maxCol + 3, 6, 2.0);
+		mb.set(maxCol + 1, 3, 2.0);
+		mb.set(maxCol + 3, 6, 2.0);
 		rightMult(mb);
 	}
 
@@ -1786,8 +1786,8 @@ public class ColGroupTest extends ColGroupBase {
 	public void rightMultMatrixNotContainingValuesInColumnsSparse() {
 		MatrixBlock mb = new MatrixBlock(maxCol + 4, 10, false);
 		mb.allocateDenseBlock();
-		mb.setValue(maxCol + 1, 3, 2.0);
-		mb.setValue(maxCol + 3, 6, 2.0);
+		mb.set(maxCol + 1, 3, 2.0);
+		mb.set(maxCol + 3, 6, 2.0);
 		mb.denseToSparse(true);
 		rightMult(mb);
 	}
@@ -1796,7 +1796,7 @@ public class ColGroupTest extends ColGroupBase {
 	public void rightMultMatrixSingleValue() {
 		MatrixBlock mb = new MatrixBlock(maxCol, 10, false);
 		mb.allocateDenseBlock();
-		mb.setValue(maxCol - 1, 3, 2.0);
+		mb.set(maxCol - 1, 3, 2.0);
 		rightMult(mb);
 	}
 
@@ -1805,7 +1805,7 @@ public class ColGroupTest extends ColGroupBase {
 		MatrixBlock mb = new MatrixBlock(maxCol, 10, false);
 		mb.allocateDenseBlock();
 		for(int i = 0; i < maxCol; i++) {
-			mb.setValue(i, i % 10, i);
+			mb.set(i, i % 10, i);
 		}
 		mb.denseToSparse(true);
 		rightMult(mb);
@@ -1816,7 +1816,7 @@ public class ColGroupTest extends ColGroupBase {
 		MatrixBlock mb = new MatrixBlock(maxCol, 10, false);
 		mb.allocateDenseBlock();
 		for(int i = 0; i < maxCol; i++) {
-			mb.setValue(i, i % 10, i);
+			mb.set(i, i % 10, i);
 		}
 		mb.denseToSparse(true);
 		rightMultWithAllCols(mb);

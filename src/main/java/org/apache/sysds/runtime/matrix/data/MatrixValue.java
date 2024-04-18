@@ -84,8 +84,8 @@ public abstract class MatrixValue implements WritableComparable
 	public abstract int getNumColumns();
 	public abstract long getNonZeros();
 
-	public abstract void setValue(int r, int c, double v);
-	public abstract double getValue(int r, int c);
+	public abstract void set(int r, int c, double v);
+	public abstract double get(int r, int c);
 
 	public abstract boolean isInSparseFormat();
 	public abstract boolean isEmpty();

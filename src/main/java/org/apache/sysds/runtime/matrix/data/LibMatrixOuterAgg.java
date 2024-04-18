@@ -369,9 +369,9 @@ public class LibMatrixOuterAgg
 		int agg0 = sumRowSumLtGeColSumGtLe(0.0, bv, bOp);
 		int m = in.rlen;
 		for( int i=0; i<m; i++ ) {
-			double ai = in.quickGetValue(i, 0);
+			double ai = in.get(i, 0);
 			int cnt = (ai == 0) ? agg0: sumRowSumLtGeColSumGtLe(ai, bv, bOp);
-			out.quickSetValue(i, 0, cnt);
+			out.set(i, 0, cnt);
 		}
 	}
 	
@@ -387,9 +387,9 @@ public class LibMatrixOuterAgg
 		int agg0 = sumRowSumGtLeColSumLtGe(0.0, bv, bOp);
 		int m = in.rlen;
 		for( int i=0; i<m; i++ ) {
-			double ai = in.quickGetValue(i, 0);
+			double ai = in.get(i, 0);
 			int cnt = (ai == 0) ? agg0: sumRowSumGtLeColSumLtGe(ai, bv, bOp);
-			out.quickSetValue(i, 0, cnt);
+			out.set(i, 0, cnt);
 		}
 	}
 	
@@ -406,9 +406,9 @@ public class LibMatrixOuterAgg
 		int agg0 = sumEqNe(0.0, bv, bOp);
 		int m = in.rlen;
 		for( int i=0; i<m; i++ ) {
-			double ai = in.quickGetValue(i, 0);
+			double ai = in.get(i, 0);
 			int cnt = (ai == 0) ? agg0: sumEqNe(ai, bv, bOp);
-			out.quickSetValue(i, 0, cnt);
+			out.set(i, 0, cnt);
 		}
 	}
 
@@ -471,10 +471,10 @@ public class LibMatrixOuterAgg
 		int agg0 = sumRowSumLtGeColSumGtLe(0.0, bv, bOp);
 		int m = in.rlen;
 		for( int i=0; i<m; i++ ) {
-			double ai = in.quickGetValue(i, 0);
+			double ai = in.get(i, 0);
 			int cnt = (ai == 0) ? agg0: sumRowSumLtGeColSumGtLe(ai, bv, bOp);
-			cnt += (int)out.quickGetValue(0, 0);
-			out.quickSetValue(0, 0, cnt);
+			cnt += (int)out.get(0, 0);
+			out.set(0, 0, cnt);
 		}
 	}
 	
@@ -491,10 +491,10 @@ public class LibMatrixOuterAgg
 		int m = in.rlen;
 		
 		for( int i=0; i<m; i++ ) {
-			double ai = in.quickGetValue(i, 0);
+			double ai = in.get(i, 0);
 			int cnt = (ai == 0) ? agg0: sumRowSumGtLeColSumLtGe(ai, bv, bOp);
-			cnt += (int)out.quickGetValue(0, 0);
-			out.quickSetValue(0, 0, cnt);
+			cnt += (int)out.get(0, 0);
+			out.set(0, 0, cnt);
 		}
 	}
 	
@@ -511,10 +511,10 @@ public class LibMatrixOuterAgg
 		int agg0 = sumEqNe(0.0, bv, bOp);
 		int m = in.rlen;
 		for( int i=0; i<m; i++ ) {
-			double ai = in.quickGetValue(i, 0);
+			double ai = in.get(i, 0);
 			int cnt = (ai == 0) ? agg0: sumEqNe(ai, bv, bOp);
-			cnt += (int)out.quickGetValue(0, 0);
-			out.quickSetValue(0, 0, cnt);
+			cnt += (int)out.get(0, 0);
+			out.set(0, 0, cnt);
 		}
 	}
 
@@ -531,9 +531,9 @@ public class LibMatrixOuterAgg
 		int ind0 = uarimaxLt(0.0, bv, bvi, bOp);
 		int m = in.rlen;
 		for( int i=0; i<m; i++ ) {
-			double ai = in.quickGetValue(i, 0);
+			double ai = in.get(i, 0);
 			int ind = (ai == 0) ? ind0: uarimaxLt(ai, bv, bvi, bOp);
-			out.quickSetValue(i, 0, ind);
+			out.set(i, 0, ind);
 		}
 	}
 	
@@ -550,9 +550,9 @@ public class LibMatrixOuterAgg
 		int m = in.rlen;
 		
 		for( int i=0; i<m; i++ ) {
-			double ai = in.quickGetValue(i, 0);
+			double ai = in.get(i, 0);
 			int ind = (ai == 0) ? ind0: uarimaxLe(ai, bv, bvi, bOp);
-			out.quickSetValue(i, 0, ind);
+			out.set(i, 0, ind);
 		}
 	}
 	
@@ -569,9 +569,9 @@ public class LibMatrixOuterAgg
 		int m = in.rlen;
 		
 		for( int i=0; i<m; i++ ) {
-			double ai = in.quickGetValue(i, 0);
+			double ai = in.get(i, 0);
 			int ind = (ai == 0) ? ind0: uarimaxGt(ai, bv, bvi, bOp);
-			out.quickSetValue(i, 0, ind);
+			out.set(i, 0, ind);
 		}
 	}
 	
@@ -588,9 +588,9 @@ public class LibMatrixOuterAgg
 		int ind0 = uarimaxGe(0.0, bv, bvi, bOp);
 		int m = in.rlen;
 		for( int i=0; i<m; i++ ) {
-			double ai = in.quickGetValue(i, 0);
+			double ai = in.get(i, 0);
 			int ind = (ai == 0) ? ind0: uarimaxGe(ai, bv, bvi, bOp);
-			out.quickSetValue(i, 0, ind);
+			out.set(i, 0, ind);
 		}
 	}
 	
@@ -607,9 +607,9 @@ public class LibMatrixOuterAgg
 		int ind0 = uarimaxEq(0.0, bv, bvi, bOp);
 		int m = in.rlen;
 		for( int i=0; i<m; i++ ) {
-			double ai = in.quickGetValue(i, 0);
+			double ai = in.get(i, 0);
 			int ind = (ai == 0) ? ind0: uarimaxEq(ai, bv, bvi, bOp);
-			out.quickSetValue(i, 0, ind);
+			out.set(i, 0, ind);
 		}
 	}
 
@@ -628,9 +628,9 @@ public class LibMatrixOuterAgg
 		int m = in.rlen;
 		
 		for( int i=0; i<m; i++ ) {
-			double ai = in.quickGetValue(i, 0);
+			double ai = in.get(i, 0);
 			int ind = (ai == 0) ? ind0: uarimaxNe(ai, bv, bvi, bOp);
-			out.quickSetValue(i, 0, ind);
+			out.set(i, 0, ind);
 		}
 	}
 
@@ -647,9 +647,9 @@ public class LibMatrixOuterAgg
 		int ind0 = uariminLt(0.0, bv, bvi, bOp);
 		int m = in.rlen;
 		for( int i=0; i<m; i++ ) {
-			double ai = in.quickGetValue(i, 0);
+			double ai = in.get(i, 0);
 			int ind = (ai == 0) ? ind0: uariminLt(ai, bv, bvi, bOp);
-			out.quickSetValue(i, 0, ind);
+			out.set(i, 0, ind);
 		}
 	}
 	
@@ -665,9 +665,9 @@ public class LibMatrixOuterAgg
 		int ind0 = uariminLe(0.0, bv, bvi, bOp);
 		int m = in.rlen;
 		for( int i=0; i<m; i++ ) {
-			double ai = in.quickGetValue(i, 0);
+			double ai = in.get(i, 0);
 			int ind = (ai == 0) ? ind0: uariminLe(ai, bv, bvi, bOp);
-			out.quickSetValue(i, 0, ind);
+			out.set(i, 0, ind);
 		}
 	}
 	
@@ -683,9 +683,9 @@ public class LibMatrixOuterAgg
 		int ind0 = uariminGt(0.0, bv, bvi, bOp);
 		int m = in.rlen;
 		for( int i=0; i<m; i++ ) {
-			double ai = in.quickGetValue(i, 0);
+			double ai = in.get(i, 0);
 			int ind = (ai == 0) ? ind0: uariminGt(ai, bv, bvi, bOp);
-			out.quickSetValue(i, 0, ind);
+			out.set(i, 0, ind);
 		}
 	}
 	
@@ -703,9 +703,9 @@ public class LibMatrixOuterAgg
 		int m = in.rlen;
 		
 		for( int i=0; i<m; i++ ) {
-			double ai = in.quickGetValue(i, 0);
+			double ai = in.get(i, 0);
 			int ind = (ai == 0) ? ind0: uariminGe(ai, bv, bvi, bOp);
-			out.quickSetValue(i, 0, ind);
+			out.set(i, 0, ind);
 		}
 	}
 	
@@ -722,9 +722,9 @@ public class LibMatrixOuterAgg
 		int ind0 = uariminEq(0.0, bv, bvi, bOp);
 		int m = in.rlen;
 		for( int i=0; i<m; i++ ) {
-			double ai = in.quickGetValue(i, 0);
+			double ai = in.get(i, 0);
 			int ind = (ai == 0) ? ind0: uariminEq(ai, bv, bvi, bOp);
-			out.quickSetValue(i, 0, ind);
+			out.set(i, 0, ind);
 		}
 	}
 
@@ -742,9 +742,9 @@ public class LibMatrixOuterAgg
 		int ind0 = uariminNe(0.0, bv, bvi, bOp);
 		int m = in.rlen;
 		for( int i=0; i<m; i++ ) {
-			double ai = in.quickGetValue(i, 0);
+			double ai = in.get(i, 0);
 			int ind = (ai == 0) ? ind0: uariminNe(ai, bv, bvi, bOp);
-			out.quickSetValue(i, 0, ind);
+			out.set(i, 0, ind);
 		}
 	}
 
@@ -761,9 +761,9 @@ public class LibMatrixOuterAgg
 		int agg0 = sumRowSumGtLeColSumLtGe(0.0, bv, bOp);
 		int m = in.clen;
 		for( int i=0; i<m; i++ ) {
-			double ai = in.quickGetValue(0, i);
+			double ai = in.get(0, i);
 			int cnt = (ai == 0) ? agg0: sumRowSumGtLeColSumLtGe(ai, bv, bOp);
-			out.quickSetValue(0, i, cnt);
+			out.set(0, i, cnt);
 		}
 	}
 
@@ -797,7 +797,7 @@ public class LibMatrixOuterAgg
 			double [] avals = sblock.values(j);
 			for (int i=apos; i < apos+alen; i++) {
 				int cnt = sumRowSumGtLeColSumLtGe(avals[i], bv, bOp);
-				out.quickSetValue(0, aix[i], cnt);
+				out.set(0, aix[i], cnt);
 			}
 		}
 	}
@@ -814,9 +814,9 @@ public class LibMatrixOuterAgg
 		int agg0 = sumRowSumLtGeColSumGtLe(0.0, bv, bOp);
 		int m = in.clen;
 		for( int i=0; i<m; i++ ) {
-			double ai = in.quickGetValue(0, i);
+			double ai = in.get(0, i);
 			int cnt = (ai == 0) ? agg0: sumRowSumLtGeColSumGtLe(ai, bv, bOp);
-			out.quickSetValue(0, i, cnt);
+			out.set(0, i, cnt);
 		}
 	}
 
@@ -850,7 +850,7 @@ public class LibMatrixOuterAgg
 			double [] avals = sblock.values(j);
 			for (int i=apos; i < apos+alen; i++) {
 				int cnt = sumRowSumLtGeColSumGtLe(avals[i], bv, bOp);
-				out.quickSetValue(0, aix[i], cnt);
+				out.set(0, aix[i], cnt);
 			}
 		}
 	}
@@ -868,9 +868,9 @@ public class LibMatrixOuterAgg
 		int m = in.clen;
 		
 		for( int i=0; i<m; i++ ) {
-			double ai = in.quickGetValue(0, i);
+			double ai = in.get(0, i);
 			int cnt = (ai == 0) ? agg0: sumEqNe(ai, bv, bOp);
-			out.quickSetValue(0, i, cnt);
+			out.set(0, i, cnt);
 		}
 	}
 
@@ -904,7 +904,7 @@ public class LibMatrixOuterAgg
 			double [] avals = sblock.values(j);
 			for (int i=apos; i < apos+alen; i++) {
 				int cnt = sumEqNe(avals[i], bv, bOp);
-				out.quickSetValue(0, aix[i], cnt);
+				out.set(0, aix[i], cnt);
 			}
 		}
 	}

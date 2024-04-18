@@ -52,7 +52,7 @@ public class ORSparkScheme extends DataPartitionSparkScheme {
 				MatrixBlock partialPerm = _globalPerms.get(workerID).getBlock(rblkID, 1);
 				return IntStream.range(0, mb.getNumRows()).mapToObj(r -> {
 					MatrixBlock rowMB = ParamservUtils.sliceMatrixBlock(mb, r + 1, r + 1);
-					long shiftedPosition = (long) partialPerm.getValue(r, 0);
+					long shiftedPosition = (long) partialPerm.get(r, 0);
 					return new Tuple2<>(workerID, new Tuple2<>(shiftedPosition, rowMB));
 				});
 			}).collect(Collectors.toList());

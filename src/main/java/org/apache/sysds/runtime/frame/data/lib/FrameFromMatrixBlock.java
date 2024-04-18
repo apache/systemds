@@ -95,7 +95,7 @@ public class FrameFromMatrixBlock {
 					case FP64:
 						break;
 					default:
-						final double v =  mb.quickGetValue(r, c);
+						final double v =  mb.get(r, c);
 						if(v > Integer.MAX_VALUE)
 							schema[c] = ValueType.FP64; // handle Integer overflow.
 						schema[c] = FrameUtil.isType(v, schema[c]);

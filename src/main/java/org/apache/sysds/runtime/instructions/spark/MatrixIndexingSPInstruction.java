@@ -90,11 +90,15 @@ public class MatrixIndexingSPInstruction extends IndexingSPInstruction {
 		long cu = ec.getScalarInput(colUpper).getLongValue();
 		IndexRange ixrange = new IndexRange(rl, ru, cl, cu);
 		
+		//check bounds
+		DataCharacteristics mcIn = sec.getDataCharacteristics(input1.getName());
+		if( mcIn.dimsKnown() && (ru>mcIn.getRows() || cu>mcIn.getCols()) )
+			throw new DMLRuntimeException("Index range out of bounds: "+ixrange+" "+mcIn);
+		
 		//right indexing
 		if( opcode.equalsIgnoreCase(RightIndex.OPCODE) )
 		{
 			//update and check output dimensions
-			DataCharacteristics mcIn = sec.getDataCharacteristics(input1.getName());
 			DataCharacteristics mcOut = sec.getDataCharacteristics(output.getName());
 			mcOut.set(ru-rl+1, cu-cl+1, mcIn.getBlocksize(), mcIn.getBlocksize());
 			mcOut.setNonZerosBound(Math.min(mcOut.getLength(), mcIn.getNonZerosBound()));
@@ -114,7 +118,7 @@ public class MatrixIndexingSPInstruction extends IndexingSPInstruction {
 				
 				//put output RDD handle into symbol table
 				sec.setRDDHandleForVariable(output.getName(), out);
-				sec.addLineageRDD(output.getName(), input1.getName());	
+				sec.addLineageRDD(output.getName(), input1.getName());
 			}
 		}
 		//left indexing
@@ -129,7 +133,7 @@ public class MatrixIndexingSPInstruction extends IndexingSPInstruction {
 			
 			//update and check output dimensions
 			DataCharacteristics mcOut = sec.getDataCharacteristics(output.getName());
-			DataCharacteristics mcLeft = ec.getDataCharacteristics(input1.getName());
+			DataCharacteristics mcLeft = mcIn;
 			mcOut.set(mcLeft.getRows(), mcLeft.getCols(), mcLeft.getBlocksize(), mcLeft.getBlocksize());
 			checkValidOutputDimensions(mcOut);
 			

@@ -253,6 +253,10 @@ public class LiteralReplacement
 				if( mo.getNumRows()*mo.getNumColumns() < REPLACE_LITERALS_MAX_MATRIX_SIZE )
 				{
 					MatrixBlock mBlock = mo.acquireRead();
+					if( rlval>mo.getNumRows() || clval>mo.getNumColumns() ) {
+						throw new DMLRuntimeException("Scalar indexing out-of-bounds:"
+							+ " ["+rlval+", "+clval+"] in "+mo.getDataCharacteristics());
+					}
 					double value = mBlock.get((int)rlval-1,(int)clval-1);
 					mo.release();
 					

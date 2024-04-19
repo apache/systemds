@@ -73,10 +73,10 @@ public class UnboundedScalarRightIndexingTest extends AutomatedTestBase
 			DMLScript.USE_LOCAL_SPARK_CONFIG = true;
 
 		try {
-		    TestConfiguration config = getTestConfiguration(TEST_NAME);
-		    loadTestConfiguration(config);
-	        
-	        String RI_HOME = SCRIPT_DIR + TEST_DIR;
+			TestConfiguration config = getTestConfiguration(TEST_NAME);
+			loadTestConfiguration(config);
+
+			String RI_HOME = SCRIPT_DIR + TEST_DIR;
 			fullDMLScriptName = RI_HOME + TEST_NAME + ".dml";
 			programArgs = new String[]{ "-args", String.valueOf(val) };
 			fullRScriptName = RI_HOME + TEST_NAME + ".R";

@@ -19,17 +19,8 @@
 #
 #-------------------------------------------------------------
 
-# Computes the confusion matrix for input vectors of predictions
-# and actual labels. We return both the counts and relative frequency
-# (normalized by sum of true labels)
-#
-# .. code-block::
-#
-#                   True Labels
-#                     1    2
-#                 1   TP | FP
-#   Predictions      ----+----
-#                 2   FN | TN
+# Computes the F1 score as the harmonic mean of precision and recall.
+# F1 = 2TP / (2TP + FP + FN)
 #
 # INPUT:
 # ------------------------------------------------------------------------------
@@ -39,24 +30,14 @@
 #
 # OUTPUT:
 # ------------------------------------------------------------------------------
-# confusionSum   the confusion matrix as absolute counts
-# confusionAvg   the confusion matrix as relative frequencies
+# score          the F1 score
 # ------------------------------------------------------------------------------
 
-m_confusionMatrix = function(Matrix[Double] P, Matrix[Double] Y)
-  return(Matrix[Double] confusionSum, Matrix[Double] confusionAvg)
+m_f1Score = function(Matrix[Double] P, Matrix[Double] Y)
+  return(Double score)
 {
-  dim = max(max(Y), max(P)) #ensure known dim
-
-  if(ncol(P) > 1  | ncol(Y) > 1)
-    stop("confusionMatrix: Invalid input number of cols should be 1 in both P ["+ncol(P)+"] and Y ["+ncol(Y)+"]")
-  if(nrow(P) != nrow(Y))
-    stop("confusionMatrix: The number of rows have to be equal in both P ["+nrow(P)+"] and Y ["+nrow(Y)+"]")
-  if(min(P) < 1 | min(Y) < 1)
-    stop("confusionMatrix: All Values in P and Y should be abore or equal to 1, min(P):" + min(P) + " min(Y):" + min(Y) )
-
-  confusionSum = table(P, Y, dim, dim)
-  # max to avoid division by 0, in case a colum contain no entries.
-  confusionAvg = confusionSum / max(1,colSums(confusionSum))
+  [cS, cA] = confusionMatrix(P, Y);
+  if(nrow(cS)>2 | ncol(cS)>2)
+    stop("f1Score: currently only supported for binary class labels.");
+  score = as.scalar(2*cS[1,1] / (2*cS[1,1] + cS[2,1] + cS[1,2]));
 }
-

@@ -29,6 +29,8 @@ import org.apache.sysds.runtime.matrix.data.MatrixValue.CellIndex;
 import org.apache.sysds.test.AutomatedTestBase;
 import org.apache.sysds.test.TestConfiguration;
 import org.apache.sysds.test.TestUtils;
+import org.apache.sysds.utils.Statistics;
+import org.junit.Assert;
 import org.junit.Test;
 
 public class BuiltinConfusionMatrixTest extends AutomatedTestBase {
@@ -114,8 +116,9 @@ public class BuiltinConfusionMatrixTest extends AutomatedTestBase {
 		runConfusionMatrixTest(y, p, res, ExecType.CP);
 	}
 
-	private void runConfusionMatrixTest(double[][] y, double[][] p, HashMap<MatrixValue.CellIndex, Double> res,
-		ExecType instType) {
+	private void runConfusionMatrixTest(double[][] y, double[][] p,
+		HashMap<MatrixValue.CellIndex, Double> res, ExecType instType)
+	{
 		ExecMode platformOld = setExecMode(instType);
 
 		try {
@@ -131,6 +134,9 @@ public class BuiltinConfusionMatrixTest extends AutomatedTestBase {
 
 			HashMap<MatrixValue.CellIndex, Double> dmlResult = readDMLMatrixFromOutputDir("B");
 			TestUtils.compareMatrices(dmlResult, res, eps, "DML_Result", "Expected");
+			
+			if( instType != ExecType.SPARK )
+				Assert.assertEquals(0, Statistics.getNoOfExecutedSPInst());
 		}
 		finally {
 			rtplatform = platformOld;

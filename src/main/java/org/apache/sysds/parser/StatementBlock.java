@@ -67,6 +67,7 @@ public class StatementBlock extends LiveVariableAnalysis implements ParseInfo
 	private HashMap<Lop.Type, List<Lop.Type>> _checkpointPositions = null;
 
 	protected double repetitions = 1;
+	private double loopDepRatio = 0; //ratio of loop dependent HOP dags
 	public final static double DEFAULT_LOOP_REPETITIONS = 10;
 
 	public StatementBlock() {
@@ -178,6 +179,15 @@ public class StatementBlock extends LiveVariableAnalysis implements ParseInfo
 	
 	public boolean isSplitDag() {
 		return _splitDag;
+	}
+
+	public double getLoopDepRatio() {
+		return loopDepRatio;
+	}
+
+	// maintain the ration of loop-dependent HOP dags in this block
+	public void setLoopDepRatio(double dep) {
+		loopDepRatio = dep;
 	}
 
 	private static boolean isMergeablePrintStatement(Statement stmt) {

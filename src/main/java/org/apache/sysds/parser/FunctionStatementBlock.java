@@ -255,6 +255,15 @@ public class FunctionStatementBlock extends StatementBlock implements FunctionBl
 		return _nondeterministic;
 	}
 
+	// Set the loop dependent hop ratio as the average of all SBs in this function
+	public void setAvgLoopDepRatio() {
+		double totDep = 0;
+		FunctionStatement fstmt = (FunctionStatement) _statements.get(0);
+		for (var sb : fstmt.getBody())
+			totDep += sb.getLoopDepRatio();
+		this.setLoopDepRatio(totDep/fstmt.getBody().size());
+	}
+
 	@Override
 	public FunctionBlock cloneFunctionBlock() {
 		return ProgramConverter

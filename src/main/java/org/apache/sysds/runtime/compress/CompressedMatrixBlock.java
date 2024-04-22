@@ -55,6 +55,7 @@ import org.apache.sysds.runtime.compress.lib.CLALibMatrixMult;
 import org.apache.sysds.runtime.compress.lib.CLALibMerge;
 import org.apache.sysds.runtime.compress.lib.CLALibReorg;
 import org.apache.sysds.runtime.compress.lib.CLALibReplace;
+import org.apache.sysds.runtime.compress.lib.CLALibReshape;
 import org.apache.sysds.runtime.compress.lib.CLALibRexpand;
 import org.apache.sysds.runtime.compress.lib.CLALibScalar;
 import org.apache.sysds.runtime.compress.lib.CLALibSlice;
@@ -101,6 +102,9 @@ public class CompressedMatrixBlock extends MatrixBlock {
 
 	/** Debugging flag for Compressed Matrices */
 	public static boolean debug = false;
+
+	/** Disallow caching of uncompressed Block */
+	public static boolean allowCachingUncompressed = true;
 
 	/**
 	 * Column groups
@@ -302,7 +306,7 @@ public class CompressedMatrixBlock extends MatrixBlock {
 	 * @return The cached decompressed matrix, if it does not exist return null
 	 */
 	public MatrixBlock getCachedDecompressed() {
-		if(decompressedVersion != null) {
+		if( allowCachingUncompressed && decompressedVersion != null) {
 			final MatrixBlock mb = decompressedVersion.get();
 			if(mb != null) {
 				DMLCompressionStatistics.addDecompressCacheCount();
@@ -648,6 +652,11 @@ public class CompressedMatrixBlock extends MatrixBlock {
 		MatrixBlock tmp = getUncompressed(
 			"slice for distribution to spark. (Could be implemented such that it does not decompress)");
 		tmp.slice(outlist, range, rowCut, colCut, blen, boundaryRlen, boundaryClen);
+	}
+
+	@Override 
+	public MatrixBlock reshape(int rows,int cols, boolean byRow){
+		return CLALibReshape.reshape(this, rows, cols, byRow);
 	}
 
 	@Override
@@ -1052,7 +1061,7 @@ public class CompressedMatrixBlock extends MatrixBlock {
 	}
 
 	public SoftReference<MatrixBlock> getSoftReferenceToDecompressed() {
-		return decompressedVersion;
+		return allowCachingUncompressed ? decompressedVersion : null;
 	}
 
 	public void clearSoftReferenceToDecompressed() {

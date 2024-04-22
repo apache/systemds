@@ -5953,6 +5953,11 @@ public class MatrixBlock extends MatrixValue implements CacheBlock<MatrixBlock>,
 		return LibMatrixEquals.equals(this, arg0);
 	}
 
+	public MatrixBlock reshape(int rows,int cols, boolean byRow){
+		MatrixBlock out = new MatrixBlock();
+		return LibMatrixReorg.reshape(this, out, rows, cols, byRow);
+	}
+
 	@Override
 	public final int hashCode() {
 		throw new RuntimeException("HashCode should never be called for matrix blocks.");

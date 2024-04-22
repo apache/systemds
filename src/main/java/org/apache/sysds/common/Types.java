@@ -58,7 +58,7 @@ public class Types
 			return this == FRAME;
 		}
 		public boolean isMatrixOrFrame() {
-			return isMatrix() | isFrame();
+			return isMatrix() || isFrame();
 		}
 		public boolean isScalar() {
 			return this == SCALAR;
@@ -115,7 +115,7 @@ public class Types
 				case "FP32":      return FP32;
 				case "FP64":
 				case "DOUBLE":    return FP64;
-				case "UINT4":	   return UINT4;
+				case "UINT4":     return UINT4;
 				case "UINT8":     return UINT8;
 				case "INT32":     return INT32;
 				case "INT64":
@@ -142,14 +142,14 @@ public class Types
 		 * @param b Second ValueType
 		 * @return The common highest type to represent both
 		 */
-		public static ValueType getHighestCommonType(ValueType a, ValueType b){
+		public static ValueType getHighestCommonType(ValueType a, ValueType b) {
 			if(a == b)
 				return a;
 			else if(b == UNKNOWN)
 				throw new DMLRuntimeException(
 					"Invalid or not implemented support for comparing valueType of: " + a + " and " + b);
-			
-			switch(a){
+
+			switch(a) {
 				case CHARACTER:
 					return STRING;
 				case HASH32:
@@ -161,8 +161,8 @@ public class Types
 							return a;
 					}
 				case HASH64:
-					switch(b){
-						case STRING: 
+					switch(b) {
+						case STRING:
 							return b;
 						default:
 							return a;
@@ -170,7 +170,7 @@ public class Types
 				case STRING:
 					return a;
 				case FP64:
-					switch(b){
+					switch(b) {
 						case CHARACTER:
 						case STRING:
 							return b;
@@ -178,47 +178,47 @@ public class Types
 							return a;
 					}
 				case FP32:
-				switch(b){
-					case CHARACTER:
-					case STRING:
-					case FP64:
-						return b;
-					default:
-						return a;
-				}
+					switch(b) {
+						case CHARACTER:
+						case STRING:
+						case FP64:
+							return b;
+						default:
+							return a;
+					}
 				case INT64:
-				switch(b){
-					case CHARACTER:
-					case STRING:
-					case FP64:
-					case FP32:
-						return b;
-					default:
-						return a;
-				}
+					switch(b) {
+						case CHARACTER:
+						case STRING:
+						case FP64:
+						case FP32:
+							return b;
+						default:
+							return a;
+					}
 				case INT32:
-				switch(b){
-					case CHARACTER:
-					case STRING:
-					case FP64:
-					case FP32:
-					case INT64:
-						return b;
-					default:
-						return a;
-				}
+					switch(b) {
+						case CHARACTER:
+						case STRING:
+						case FP64:
+						case FP32:
+						case INT64:
+							return b;
+						default:
+							return a;
+					}
 				case UINT8:
-				switch(b){
-					case CHARACTER:
-					case STRING:
-					case FP64:
-					case FP32:
-					case INT64:
-					case INT32:
-						return b;
-					default:
-						return a;
-				}
+					switch(b) {
+						case CHARACTER:
+						case STRING:
+						case FP64:
+						case FP32:
+						case INT64:
+						case INT32:
+							return b;
+						default:
+							return a;
+					}
 				case BOOLEAN:
 					return b; // always higher type in b;
 				case UNKNOWN:

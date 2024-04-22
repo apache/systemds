@@ -168,7 +168,7 @@ public class ColGroupSDCZeros extends ASDCZero implements IMapToDataGroup {
 		it.setOff(it.value() - of);
 	}
 
-	private static void decToDBDDSCP(double[] c, double[] values, AIterator it, AMapToData m, int last){
+	private static void decToDBDDSCP(double[] c, double[] values, AIterator it, AMapToData m, int last) {
 		decToDBDDSC(c, values, it, m, last);
 		c[it.value()] += values[m.getIndex(it.getDataIndex())];
 	}
@@ -904,7 +904,7 @@ public class ColGroupSDCZeros extends ASDCZero implements IMapToDataGroup {
 		// AColGroup b = morph(CompressionType.DDC, _numRows);
 		// b.sparseSelection(selection, ret, rl, ru);
 		// return;
-		
+
 		final SparseBlock sb = selection.getSparseBlock();
 		final SparseBlock sr = ret.getSparseBlock();
 		final int nCol = _colIndexes.size();
@@ -920,7 +920,7 @@ public class ColGroupSDCZeros extends ASDCZero implements IMapToDataGroup {
 			if(points[c].o == of) {
 				_dict.put(sr, _data.getIndex(it.getDataIndex()), points[c].r, nCol, _colIndexes);
 				c++;
-				while(c < points.length && points[c].o == of){
+				while(c < points.length && points[c].o == of) {
 					_dict.put(sr, _data.getIndex(it.getDataIndex()), points[c].r, nCol, _colIndexes);
 					c++;
 				}
@@ -963,18 +963,18 @@ public class ColGroupSDCZeros extends ASDCZero implements IMapToDataGroup {
 
 		// int v = it.value();
 		// while(v < last) {
-		// 	final int di = _data.getIndex(it.getDataIndex());
-		// 	for(int c = 0; c < rowOut; c++) {
-		// 		db.append(_colIndexes.get(c), v, dict[di * rowOut + c]);
-		// 	}
-		// 	v = it.next();
+		// final int di = _data.getIndex(it.getDataIndex());
+		// for(int c = 0; c < rowOut; c++) {
+		// db.append(_colIndexes.get(c), v, dict[di * rowOut + c]);
+		// }
+		// v = it.next();
 		// }
 
 		// // take last element.
 
 		// final int di = _data.getIndex(it.getDataIndex());
 		// for(int c = 0; c < rowOut; c++) {
-		// 	db.append(_colIndexes.get(c), v, dict[di * rowOut + c]);
+		// db.append(_colIndexes.get(c), v, dict[di * rowOut + c]);
 		// }
 
 	}
@@ -993,10 +993,15 @@ public class ColGroupSDCZeros extends ASDCZero implements IMapToDataGroup {
 		final IDictionary combined = combineDictionaries(nCol, right);
 		final IColIndex combinedColIndex = combineColIndexes(nCol, right);
 
-		// return new ColGroupDDC(combinedColIndex, combined, _data, getCachedCounts());
 		return new ColGroupSDCZeros(combinedColIndex, this.getNumRows(), combined, _indexes, _data, getCachedCounts());
 	}
 
+	@Override
+	public AColGroup[] splitReshape(int multiplier, int nRow, int nColOrg) {
+		throw new NotImplementedException("Unimplemented method 'splitReshape'");
+	}
+
+	@Override
 	public String toString() {
 		StringBuilder sb = new StringBuilder();
 		sb.append(super.toString());

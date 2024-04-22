@@ -433,6 +433,12 @@ public class ColGroupNegativeTests {
 			// TODO Auto-generated method stub
 			throw new UnsupportedOperationException("Unimplemented method 'leftMMIdentityPreAggregateDense'");
 		}
+
+		@Override
+		public AColGroup[] splitReshape(int multiplier, int nRow, int nColOrg) {
+			// TODO Auto-generated method stub
+			throw new UnsupportedOperationException("Unimplemented method 'splitReshape'");
+		}
 	}
 
 	private class FakeDictBasedColGroup extends ADictBasedColGroup {
@@ -715,6 +721,12 @@ public class ColGroupNegativeTests {
 			// TODO Auto-generated method stub
 			throw new UnsupportedOperationException(
 				"Unimplemented method 'decompressToSparseBlockTransposedDenseDictionary'");
+		}
+
+		@Override
+		public AColGroup[] splitReshape(int multiplier, int nRow, int nColOrg) {
+			// TODO Auto-generated method stub
+			throw new UnsupportedOperationException("Unimplemented method 'splitReshape'");
 		}
 	}
 }

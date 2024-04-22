@@ -353,16 +353,6 @@ public interface ColGroupUtils {
 		return points;
 	}
 
-	// public static void main(String[] args){
-	// SparseBlock sb = new SparseBlockMCSR(10);
-	// sb.add(0, 10, 1);
-	// sb.add(1, 1, 1);
-	// sb.add(2, 3, 1);
-	// sb.add(3, 11, 1);
-
-	// LOG.error(Arrays.toString(getSortedSelection(sb, 0, 10)));
-	// }
-
 	public static class P {
 		public final int r;
 		public final int o;

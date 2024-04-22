@@ -439,6 +439,19 @@ public class ColGroupEmpty extends AColGroupCompressed
 	}
 
 	@Override
+	public AColGroup[] splitReshape(int multiplier, int nRow, int nColOrg) {
+		final int s = _colIndexes.size();
+		final int[] newColumns = new int[s * multiplier];
+		for(int i = 0; i < multiplier; i++)
+			for(int j = 0; j < s; j++)
+				newColumns[i * s + j] = _colIndexes.get(j) + nColOrg * i;
+
+				LOG.error(_colIndexes);
+				LOG.error(Arrays.toString(newColumns));
+		return new AColGroup[]{new ColGroupEmpty(ColIndexFactory.create(newColumns))};
+	}
+
+	@Override
 	public AColGroup combineWithSameIndex(int nRow, int nCol, List<AColGroup> right) {
 		for(AColGroup g : right) {
 			if(!(g instanceof ColGroupEmpty))

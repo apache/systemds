@@ -659,6 +659,12 @@ public class ColGroupSDCSingle extends ASDC {
 	}
 
 	@Override
+	public AColGroup[] splitReshape(int multiplier, int nRow, int nColOrg) {
+		throw new NotImplementedException("Unimplemented method 'splitReshape'");
+	}
+
+
+	@Override
 	public String toString() {
 		StringBuilder sb = new StringBuilder();
 		sb.append(super.toString());

@@ -1180,4 +1180,10 @@ public class ColGroupRLE extends AColGroupOffset {
 		throw new NotImplementedException();
 	}
 
+	@Override
+	public AColGroup[] splitReshape(int multiplier, int nRow, int nColOrg) {
+		throw new NotImplementedException("Unimplemented method 'splitReshape'");
+	}
+
+
 }

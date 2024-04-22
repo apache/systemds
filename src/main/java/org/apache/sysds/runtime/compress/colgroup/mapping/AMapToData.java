@@ -950,6 +950,25 @@ public abstract class AMapToData implements Serializable {
 			decompressToRangeNoOffBy8(c, rc, values);
 	}
 
+	/**
+	 * Split this mapping into x smaller mappings according to round robin. 
+	 * 
+	 * @param multiplier The number of smaller mappings to construct
+	 * @return The list of smaller mappings
+	 */
+	public AMapToData[] splitReshapeDDC(int multiplier){
+
+		final int s = size();
+		AMapToData[] ret = new AMapToData[multiplier];
+		for(int i = 0; i < multiplier; i++)
+			ret[i] = MapToFactory.create(s / multiplier, getUnique());
+		
+		for(int i = 0; i < s; i++)
+			ret[i % multiplier].set(i / multiplier, getIndex(i));
+		
+		return ret;
+	}
+
 	@Override
 	public String toString() {
 		final int sz = size();

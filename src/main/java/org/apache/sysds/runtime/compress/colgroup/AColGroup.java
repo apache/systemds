@@ -864,12 +864,29 @@ public abstract class AColGroup implements Serializable {
 
 	protected IColIndex combineColIndexes(final int nCol, List<AColGroup> right) {
 		IColIndex combinedColIndex = _colIndexes;
-		for(int i = 0; i < right.size(); i++) {
-			int off = nCol * i + nCol;
-			combinedColIndex = combinedColIndex.combine(right.get(i).getColIndices().shift(off));
-		}
+		for(int i = 0; i < right.size(); i++)
+			combinedColIndex = combinedColIndex.combine(right.get(i).getColIndices().shift(nCol * i + nCol));
 		return combinedColIndex;
 	}
+
+	/**
+	 * This method returns a list of column groups that are naive splits of this column group as if it is reshaped.
+	 * 
+	 * This means the column groups rows are split into x number of other column groups where x is the multiplier.
+	 * 
+	 * The indexes are assigned round robbin to each of the output groups, meaning the first index is assigned.
+	 * 
+	 * If for instance the 4. column group is split by a 2 multiplier and there was 5 columns in total originally. The
+	 * output becomes 2 column groups at column index 4 and one at 9.
+	 * 
+	 * If possible the split column groups should reuse pointers back to the original dictionaries!
+	 * 
+	 * @param multiplier The number of column groups to split into
+	 * @param nRow       The number of rows in this column group in case the underlying column group does not know
+	 * @param nColOrg    The number of overall columns in the host CompressedMatrixBlock.
+	 * @return a list of split column groups
+	 */
+	public abstract AColGroup[] splitReshape(final int multiplier, final int nRow, final int nColOrg);
 
 	@Override
 	public String toString() {

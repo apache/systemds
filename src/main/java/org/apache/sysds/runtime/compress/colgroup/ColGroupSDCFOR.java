@@ -576,6 +576,12 @@ public class ColGroupSDCFOR extends ASDC implements IMapToDataGroup, IFrameOfRef
 		// }
 	}
 
+	@Override
+	public AColGroup[] splitReshape(int multiplier, int nRow, int nColOrg) {
+		throw new NotImplementedException("Unimplemented method 'splitReshape'");
+	}
+
+
 
 	@Override
 	public String toString() {

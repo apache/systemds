@@ -961,6 +961,18 @@ public class ColGroupDDC extends APreAgg implements IMapToDataGroup {
 	}
 
 	@Override
+	public AColGroup[] splitReshape(int multiplier, int nRow, int nColOrg) {
+		AMapToData[] maps = _data.splitReshapeDDC(multiplier);
+		AColGroup[] res = new AColGroup[multiplier];
+		for(int i = 0; i < multiplier; i++){
+			final IColIndex ci = i == 0 ? _colIndexes : _colIndexes.shift(i * nColOrg);
+			res[i] = create(ci, _dict, maps[i], null );
+		}
+		
+		return res;
+	}
+
+	@Override
 	public String toString() {
 		StringBuilder sb = new StringBuilder();
 		sb.append(super.toString());

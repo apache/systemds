@@ -494,7 +494,6 @@ public abstract class CompressedTestBase extends TestBase {
 			// matrix-vector compressed
 			MatrixBlock ret2 = cmb.chainMatrixMultOperations(vector1, vector2, new MatrixBlock(), ctype, _k);
 
-
 			// compare result with input
 			compareResultMatricesPercentDistance(ucRet, ret2, 0.99, 0.99);
 		}
@@ -1055,6 +1054,98 @@ public abstract class CompressedTestBase extends TestBase {
 		catch(Exception e) {
 			e.printStackTrace();
 			throw new DMLRuntimeException("Error in Slicing", e);
+		}
+	}
+
+
+	@Test
+	public void testReshape2() {
+		testReshape(2);
+	}
+
+	@Test
+	public void testReshape3() {
+		testReshape(3);
+	}
+
+	@Test
+	public void testReshape10() {
+		testReshape(10);
+	}
+
+	/**
+	 * Test the reshape mechanic of the compressed block by reshaping the matrix by making it x times wider.
+	 * 
+	 * @param multiplier the multiplier x.
+	 */
+	public void testReshape(int multiplier) {
+		try {
+			if((double) rows / multiplier != rows / multiplier)
+				return;
+
+			final MatrixBlock ret2 = cmb.reshape(rows / multiplier, cols * multiplier, true);
+			final MatrixBlock ret1 = mb.reshape(rows / multiplier, cols * multiplier, true);
+			compareResultMatrices(ret1, ret2, 1);
+		}
+		catch(Exception e) {
+			e.printStackTrace();
+			throw new DMLRuntimeException("Error in Reshape", e);
+		}
+	}
+
+	@Test
+	public void testReshape2_divider() {
+		testReshapeDivider(2);
+	}
+
+	@Test
+	public void testReshape3_divider() {
+		testReshapeDivider(3);
+	}
+
+	@Test
+	public void testReshape10_divider() {
+		testReshapeDivider(10);
+	}
+
+	/**
+	 * Test the reshape mechanic of the compressed block by reshaping the matrix by making it x times taller.
+	 * 
+	 * @param divider the divider x.
+	 */
+	public void testReshapeDivider(int divider) {
+		try {
+			if((double) cols /divider != cols / divider)
+				return;
+
+			final MatrixBlock ret2 = cmb.reshape(rows * divider, cols / divider, true);
+			final MatrixBlock ret1 = mb.reshape(rows * divider, cols / divider, true);
+			compareResultMatrices(ret1, ret2, 1);
+		}
+		catch(Exception e) {
+			e.printStackTrace();
+			throw new DMLRuntimeException("Error in Reshape", e);
+		}
+	}
+
+
+	@Test
+	public void testReshape_opposite() {
+		testReshape(cols, rows);
+	}
+
+	public void testReshape(int newRows, int newCols) {
+		try {
+			if((double) newRows * newCols != rows * cols)
+				return;
+
+			final MatrixBlock ret2 = cmb.reshape(newRows, newCols, true);
+			final MatrixBlock ret1 = mb.reshape(newRows, newCols, true);
+			compareResultMatrices(ret1, ret2, 1);
+		}
+		catch(Exception e) {
+			e.printStackTrace();
+			throw new DMLRuntimeException("Error in Reshape", e);
 		}
 	}
 

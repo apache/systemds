@@ -446,8 +446,6 @@ public class ColGroupEmpty extends AColGroupCompressed
 			for(int j = 0; j < s; j++)
 				newColumns[i * s + j] = _colIndexes.get(j) + nColOrg * i;
 
-				LOG.error(_colIndexes);
-				LOG.error(Arrays.toString(newColumns));
 		return new AColGroup[]{new ColGroupEmpty(ColIndexFactory.create(newColumns))};
 	}
 

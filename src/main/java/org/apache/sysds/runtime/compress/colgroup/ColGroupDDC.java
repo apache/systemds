@@ -968,7 +968,6 @@ public class ColGroupDDC extends APreAgg implements IMapToDataGroup {
 			final IColIndex ci = i == 0 ? _colIndexes : _colIndexes.shift(i * nColOrg);
 			res[i] = create(ci, _dict, maps[i], null );
 		}
-		
 		return res;
 	}
 

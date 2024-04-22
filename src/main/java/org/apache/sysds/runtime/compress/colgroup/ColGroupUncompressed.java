@@ -1102,7 +1102,14 @@ public class ColGroupUncompressed extends AColGroup {
 
 	@Override
 	public AColGroup[] splitReshape(int multiplier, int nRow, int nColOrg) {
-		throw new NotImplementedException("Unimplemented method 'splitReshape'");
+		final int s = _colIndexes.size();
+		final int[] newColumns = new int[s * multiplier];
+		for(int i = 0; i < multiplier; i++)
+			for(int j = 0; j < s; j++)
+				newColumns[i * s + j] = _colIndexes.get(j) + nColOrg * i;
+		MatrixBlock newData = _data.reshape(nRow/ multiplier, s * multiplier, true);
+		return new AColGroup[]{create(newData,ColIndexFactory.create(newColumns))};
+		// throw new NotImplementedException("Unimplemented method 'splitReshape'");
 	}
 
 	@Override

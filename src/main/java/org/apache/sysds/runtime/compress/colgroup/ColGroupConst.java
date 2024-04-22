@@ -721,7 +721,7 @@ public class ColGroupConst extends ADictBasedColGroup implements IContainDefault
 		for(int i = 0; i < multiplier; i++) {
 			for(int j = 0; j < s; j++)
 				newColumns[i * s + j] = _colIndexes.get(j) + nColOrg * i;
-			System.arraycopy(vals, 0, newConst, i * multiplier, s);
+			System.arraycopy(vals, 0, newConst, s * i, s);
 		}
 		return new AColGroup[] {create(ColIndexFactory.create(newColumns), newConst)};
 	}

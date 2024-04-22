@@ -46,6 +46,7 @@ import org.apache.sysds.runtime.compress.colgroup.offset.OffsetFactory;
 import org.apache.sysds.runtime.compress.cost.ComputationCostEstimator;
 import org.apache.sysds.runtime.compress.estim.encoding.EncodingFactory;
 import org.apache.sysds.runtime.compress.estim.encoding.IEncode;
+import org.apache.sysds.runtime.compress.utils.IntArrayList;
 import org.apache.sysds.runtime.compress.utils.Util;
 import org.apache.sysds.runtime.data.SparseBlock;
 import org.apache.sysds.runtime.functionobjects.Builtin;
@@ -797,11 +798,58 @@ public class ColGroupSDC extends ASDC implements IMapToDataGroup {
 		}
 	}
 
-	@Override
+@Override
 	public AColGroup[] splitReshape(int multiplier, int nRow, int nColOrg) {
-		throw new NotImplementedException("Unimplemented method 'splitReshape'");
-	}
+		IntArrayList[] splitOffs = new IntArrayList[multiplier];
+		IntArrayList[] tmpMaps = new IntArrayList[multiplier];
+		for(int i = 0; i < multiplier; i++) {
+			splitOffs[i] = new IntArrayList();
+			tmpMaps[i] = new IntArrayList();
+		}
 
+		AIterator it = _indexes.getIterator();
+		final int last = _indexes.getOffsetToLast();
+
+		while(it.value() != last) {
+			final int v = it.value(); // offset
+			final int d = it.getDataIndex(); // data index value
+			final int m = _data.getIndex(d);
+
+			final int outV = v / multiplier;
+			final int outM = v % multiplier;
+
+			tmpMaps[outM].appendValue(m);
+			splitOffs[outM].appendValue(outV);
+
+			it.next();
+		}
+
+		// last value
+		final int v = it.value();
+		final int d = it.getDataIndex();
+		final int m = _data.getIndex(d);
+		final int outV = v / multiplier;
+		final int outM = v % multiplier;
+		tmpMaps[outM].appendValue(m);
+		splitOffs[outM].appendValue(outV);
+
+		// iterate through all rows.
+
+		AOffset[] offs = new AOffset[multiplier];
+		AMapToData[] maps = new AMapToData[multiplier];
+		for(int i = 0; i < multiplier; i++) {
+			offs[i] = OffsetFactory.createOffset(splitOffs[i]);
+			maps[i] = MapToFactory.create(_data.getUnique(), tmpMaps[i]);
+		}
+
+		// assign columns
+		AColGroup[] res = new AColGroup[multiplier];
+		for(int i = 0; i < multiplier; i++) {
+			final IColIndex ci = i == 0 ? _colIndexes : _colIndexes.shift(i * nColOrg);
+			res[i] = create(ci, _numRows / multiplier, _dict, _defaultTuple, offs[i], maps[i], null);
+		}
+		return res;
+	}
 
 	@Override
 	public String toString() {

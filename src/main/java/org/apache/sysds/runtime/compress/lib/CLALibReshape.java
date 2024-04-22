@@ -24,6 +24,8 @@ import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.compress.CompressedMatrixBlock;
 import org.apache.sysds.runtime.compress.DMLCompressionException;
@@ -33,6 +35,8 @@ import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.util.CommonThreadPool;
 
 public class CLALibReshape {
+
+	protected static final Log LOG = LogFactory.getLog(CLALibReshape.class.getName());
 
 	/** The minimum number of rows threshold for returning a compressed output */
 	public static int COMPRESSED_RESHAPE_THRESHOLD = 1000;
@@ -94,7 +98,6 @@ public class CLALibReshape {
 		CompressedMatrixBlock ret = new CompressedMatrixBlock(rows, cols);
 		ret.allocateColGroupList(retGroups);
 		ret.setNonZeros(in.getNonZeros());
-
 		return ret;
 	}
 

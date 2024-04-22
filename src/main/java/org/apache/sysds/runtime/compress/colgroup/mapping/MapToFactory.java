@@ -42,18 +42,32 @@ public interface MapToFactory {
 	}
 
 	public static AMapToData create(int size, boolean zeros, IntArrayList[] values) {
-		AMapToData _data = create(size, values.length + (zeros ? 1 : 0));
-
+		final AMapToData _data = create(size, values.length + (zeros ? 1 : 0));
 		if(zeros)
 			_data.fill(values.length);
-
 		for(int i = 0; i < values.length; i++) {
 			final IntArrayList tmpList = values[i];
 			final int sz = tmpList.size();
-			for(int k = 0; k < sz; k++) {
+			for(int k = 0; k < sz; k++)
 				_data.set(tmpList.get(k), i);
-			}
 		}
+		return _data;
+	}
+
+	/**
+	 * Create AMapToData using the dynamic size IntArrayList.
+	 * 
+	 * @param unique The number of unique values to allow inside.
+	 * @param values The values to assign to incrementing indexes.
+	 * @return A new MapToData, guaranteed to be able to contain the number of unique values.
+	 */
+	public static AMapToData create(int unique, IntArrayList values) {
+		final int size = values.size();
+		final AMapToData _data = create(size, unique);
+
+		for(int k = 0; k < size; k++)
+			_data.set(k, values.get(k));
+
 		return _data;
 	}
 

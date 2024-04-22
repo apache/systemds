@@ -85,35 +85,41 @@ public class MarkForLineageReuse extends StatementBlockRewriteRule
 				}
 				else if (sb instanceof WhileStatementBlock) {
 					WhileStatement wstmt = (WhileStatement)sb.getStatement(0);
-					rUnmarkLoopDepVarsSB(wstmt.getBody(), newdepsbs, loopVar); 
+					rUnmarkLoopDepVarsSB(wstmt.getBody(), newdepsbs, loopVar);
 				}
 				else if (sb instanceof IfStatementBlock) {
 					IfStatement ifstmt = (IfStatement)sb.getStatement(0);
-					rUnmarkLoopDepVarsSB(ifstmt.getIfBody(), newdepsbs, loopVar); 
+					rUnmarkLoopDepVarsSB(ifstmt.getIfBody(), newdepsbs, loopVar);
 					if (ifstmt.getElseBody() != null)
-						rUnmarkLoopDepVarsSB(ifstmt.getElseBody(), newdepsbs, loopVar); 
+						rUnmarkLoopDepVarsSB(ifstmt.getElseBody(), newdepsbs, loopVar);
 				}
 				else if (sb instanceof FunctionStatementBlock) {
 					FunctionStatement fnstmt = (FunctionStatement)sb.getStatement(0);
 					rUnmarkLoopDepVarsSB(fnstmt.getBody(), newdepsbs, loopVar);
+					((FunctionStatementBlock) sb).setAvgLoopDepRatio();
 				}
 				else {
-					if (sb.getHops() != null)
-						for (int j=0; j<sb.variablesUpdated().getSize(); j++) {
+					if (sb.getHops() != null) {
+						for(int j = 0; j < sb.variablesUpdated().getSize(); j++) {
+							int hopCount = 0;
 							HashSet<String> newdeproots = new HashSet<>(deproots);
-							for (Hop hop : sb.getHops()) {
+							for(Hop hop : sb.getHops()) {
 								// find the loop dependent DAG roots
 								Hop.resetVisitStatus(sb.getHops());
 								HashSet<Long> dephops = new HashSet<>();
 								rUnmarkLoopDepVars(hop, loopVar, newdeproots, dephops);
+								if (dephops.size() > 0)
+									hopCount++;
 							}
-							if (!deproots.isEmpty() && deproots.equals(newdeproots))
-								// break if loop dependent DAGs are converged to a unvarying set
+							sb.setLoopDepRatio((double)hopCount/sb.getHops().size());
+							if(!deproots.isEmpty() && deproots.equals(newdeproots))
+								// break if loop dependent DAGs are converged to an unvarying set
 								break;
 							else
 								// iterate to propagate the loop dependents across all the DAGs in this SB
 								deproots.addAll(newdeproots);
 						}
+					}
 				}
 			}
 			deproots.addAll(newdepsbs);

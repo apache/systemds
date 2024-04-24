@@ -488,7 +488,7 @@ public final class CLALibBinaryCellOp {
 		MatrixBlock ret) {
 		final int nRows = m1.getNumRows();
 		final int k = op.getNumThreads();
-		final int blkz = ret.getNumRows() / k;
+		final int blkz = Math.max(ret.getNumRows() / k, 10);
 		long nnz = 0;
 		if(k <= 1) {
 			for(int i = 0; i < nRows; i += blkz)

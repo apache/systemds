@@ -1356,15 +1356,25 @@ public abstract class AutomatedTestBase {
 	protected ByteArrayOutputStream runTest(boolean newWay, boolean exceptionExpected, Class<?> expectedException,
 		String errMessage, int maxSparkInst) {
 		try{
-			final List<ByteArrayOutputStream> out =  new ArrayList<>();
+			final List<ByteArrayOutputStream> out = new ArrayList<>();
 			Thread t = new Thread(
-				() -> out.add(runTestWithTimeout(newWay,exceptionExpected,expectedException,errMessage, maxSparkInst)),
+				() -> out.add(runTestWithTimeout(newWay, exceptionExpected, expectedException, errMessage, maxSparkInst)),
 				"TestRunner_main");
+			Thread.UncaughtExceptionHandler h = new Thread.UncaughtExceptionHandler() {
+				@Override
+				public void uncaughtException(Thread th, Throwable ex) {
+					fail("Thread Failed test with message: " +ex.getMessage());
+				}
+			};
+			t.setUncaughtExceptionHandler(h);
 			t.start();
-			
+
 			t.join(TEST_TIMEOUT * 1000);
 			if(t.isAlive())
 				throw new TimeoutException("Test failed to finish in time");
+			if(out.size() <= 0) // hack in case the test failed return empty string.
+				fail("test failed");
+
 			return out.get(0);
 		}
 		catch(TimeoutException e){

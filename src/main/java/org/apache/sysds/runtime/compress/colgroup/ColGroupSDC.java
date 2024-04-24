@@ -770,7 +770,7 @@ public class ColGroupSDC extends ASDC implements IMapToDataGroup {
 
 	@Override
 	public AColGroupCompressed combineWithSameIndex(int nRow, int nCol, AColGroup right) {
-		if(right instanceof ColGroupSDCZeros){
+		if(right instanceof ColGroupSDCZeros) {
 			ColGroupSDCZeros rightSDC = ((ColGroupSDCZeros) right);
 			IDictionary b = rightSDC.getDictionary();
 			IDictionary combined = DictionaryFactory.cBindDictionaries(_dict, b, this.getNumCols(), right.getNumCols());
@@ -778,12 +778,12 @@ public class ColGroupSDC extends ASDC implements IMapToDataGroup {
 			double[] combinedDefaultTuple = new double[_defaultTuple.length + right.getNumCols()];
 			System.arraycopy(_defaultTuple, 0, combinedDefaultTuple, 0, _defaultTuple.length);
 			// System.arraycopy(rightSDC._defaultTuple, 0, combinedDefaultTuple, _defaultTuple.length,
-				// rightSDC._defaultTuple.length);
-	
+			// rightSDC._defaultTuple.length);
+
 			return new ColGroupSDC(combinedColIndex, this.getNumRows(), combined, combinedDefaultTuple, _indexes, _data,
 				getCachedCounts());
 		}
-		else{
+		else {
 			ColGroupSDC rightSDC = ((ColGroupSDC) right);
 			IDictionary b = rightSDC.getDictionary();
 			IDictionary combined = DictionaryFactory.cBindDictionaries(_dict, b, this.getNumCols(), right.getNumCols());
@@ -792,13 +792,13 @@ public class ColGroupSDC extends ASDC implements IMapToDataGroup {
 			System.arraycopy(_defaultTuple, 0, combinedDefaultTuple, 0, _defaultTuple.length);
 			System.arraycopy(rightSDC._defaultTuple, 0, combinedDefaultTuple, _defaultTuple.length,
 				rightSDC._defaultTuple.length);
-	
+
 			return new ColGroupSDC(combinedColIndex, this.getNumRows(), combined, combinedDefaultTuple, _indexes, _data,
 				getCachedCounts());
 		}
 	}
 
-@Override
+	@Override
 	public AColGroup[] splitReshape(int multiplier, int nRow, int nColOrg) {
 		IntArrayList[] splitOffs = new IntArrayList[multiplier];
 		IntArrayList[] tmpMaps = new IntArrayList[multiplier];

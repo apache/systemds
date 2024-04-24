@@ -880,7 +880,10 @@ public class DataConverter {
 		if (Double.isNaN(value) || Double.isInfinite(value)){
 			return Double.toString(value);
 		} else {
-			return df.format(value);
+			if(value == (long) value)
+				return Long.toString(((long)(value)));
+			else 
+				return df.format(value);
 		}
 	}
 

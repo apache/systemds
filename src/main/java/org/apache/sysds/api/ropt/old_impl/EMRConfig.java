@@ -1,4 +1,4 @@
-package org.apache.sysds.api.ropt;
+package org.apache.sysds.api.ropt.old_impl;
 
 import org.apache.wink.json4j.JSONArray;
 import org.apache.wink.json4j.JSONException;

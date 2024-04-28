@@ -1,9 +1,8 @@
-package org.apache.sysds.api.ropt;
+package org.apache.sysds.api.ropt.old_impl;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.spark.SparkConf;
-import org.apache.spark.internal.config.R;
 import org.apache.sysds.api.DMLOptions;
 import org.apache.sysds.api.DMLScript;
 import org.apache.sysds.conf.CompilerConfig;
@@ -18,7 +17,6 @@ import org.apache.sysds.runtime.controlprogram.context.ExecutionContextFactory;
 import org.apache.sysds.runtime.controlprogram.context.SparkExecutionContext;
 import org.apache.sysds.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
 import org.apache.sysds.runtime.instructions.Instruction;
-import org.apache.sysds.utils.Explain;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -107,7 +105,7 @@ public class ResourceOptimizer
     private static void recompile( ArrayList<ProgramBlock> pbs, CloudClusterConfig cc) {
         //init compiler memory budget
         setArtificialConfigs(cc);
-        OptimizerUtils.resetDefaultSize(); //dependent on cp, mr TODO: decide if needed
+        OptimizerUtils.resetDefaultSize();
 
         for (ProgramBlock pb : pbs) {
             recompile(pb);

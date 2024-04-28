@@ -1,9 +1,5 @@
-package org.apache.sysds.api.ropt;
+package org.apache.sysds.api.ropt.old_impl;
 
-
-import org.apache.spark.sql.sources.In;
-
-import java.util.ArrayList;
 
 public class CloudClusterConfig {
     // TODO: This of a real strategy for choosing the constants down

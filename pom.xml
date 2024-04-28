@@ -277,7 +277,7 @@
 								<manifest>
 									<addClasspath>true</addClasspath>
 									<classpathPrefix>lib/</classpathPrefix>
-									<mainClass>org.apache.sysds.api.ropt.EMRConfig</mainClass>
+									<mainClass>org.apache.sysds.api.ropt.Executor</mainClass>
 								</manifest>
 								<manifestEntries>
 									<Class-Path>SystemDS.jar ${project.artifactId}-${project.version}.jar</Class-Path>

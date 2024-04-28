@@ -288,6 +288,8 @@ public abstract class Hop implements ParseInfo {
 		}
 		else if ( DMLScript.getGlobalExecMode() == ExecMode.SPARK )
 			_etypeForced = ExecType.SPARK; // enabled with -exec spark option
+		else
+			_etypeForced = null;
 	}
 	
 	public void checkAndSetInvalidCPDimsAndSize()

@@ -165,7 +165,7 @@ public class SparkExecutionContext extends ExecutionContext
 				_spctx.sc().getConf().set(pair._1, pair._2);
 			}
 		} else {
-
+			handleIllegalReflectiveAccessSpark();
 			try {
 				_spctx = new JavaSparkContext(sparkConf);
 				// assumes NON-legacy spark version
@@ -240,7 +240,7 @@ public class SparkExecutionContext extends ExecutionContext
 		Target.class.getModule().addOpens("java.util.concurrent", se);
 	}
 
-	private synchronized static void initSparkContext(){
+	public synchronized static void initSparkContext(){
 		//check for redundant spark context init
 		if( _spctx != null )
 			return;

@@ -1,6 +1,7 @@
-package org.apache.sysds.api.ropt.old_impl;
+package org.apache.sysds.api.ropt;
 
 public class CloudOptimizerUtils {
+    public static final double MEM_FACTOR = 1.5;
 
     public static long toB( long mb )
     {

@@ -28,5 +28,4 @@
     <!-- enables multi-threaded operations in singlenode control program -->
     <sysds.cp.parallel.ops>true</sysds.cp.parallel.ops>
 
-
 </root>

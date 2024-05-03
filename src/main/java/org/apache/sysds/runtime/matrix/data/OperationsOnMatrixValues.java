@@ -31,174 +31,22 @@ import org.apache.sysds.runtime.compress.CompressedMatrixBlock;
 import org.apache.sysds.runtime.controlprogram.caching.CacheBlock;
 import org.apache.sysds.runtime.controlprogram.caching.MatrixObject.UpdateType;
 import org.apache.sysds.runtime.frame.data.FrameBlock;
-import org.apache.sysds.runtime.functionobjects.Builtin;
 import org.apache.sysds.runtime.instructions.spark.data.IndexedMatrixValue;
 import org.apache.sysds.runtime.instructions.spark.utils.SparkUtils;
 import org.apache.sysds.runtime.matrix.operators.AggregateBinaryOperator;
 import org.apache.sysds.runtime.matrix.operators.AggregateOperator;
 import org.apache.sysds.runtime.matrix.operators.AggregateUnaryOperator;
-import org.apache.sysds.runtime.matrix.operators.BinaryOperator;
 import org.apache.sysds.runtime.matrix.operators.Operator;
-import org.apache.sysds.runtime.matrix.operators.ReorgOperator;
 import org.apache.sysds.runtime.util.IndexRange;
 import org.apache.sysds.runtime.util.UtilFunctions;
 
 
 public class OperationsOnMatrixValues 
 {
-	public static void performReorg(MatrixIndexes indexesIn, MatrixValue valueIn, MatrixIndexes indexesOut, 
-			MatrixValue valueOut, ReorgOperator op, int startRow, int startColumn, int length) {
-		//operate on the value indexes first
-		op.fn.execute(indexesIn, indexesOut);
-		
-		//operation on the cells inside the value
-		valueIn.reorgOperations(op, valueOut, startRow, startColumn, length);
-	}
-
-	public static void performAppend(MatrixValue valueIn1, MatrixValue valueIn2,
-			ArrayList<IndexedMatrixValue> outlist, int blen, boolean cbind, boolean m2IsLast, int nextNCol) {
-		valueIn1.append(valueIn2, outlist, blen, cbind, m2IsLast, nextNCol);
-	}
-	
-	public static void performZeroOut(MatrixIndexes indexesIn, MatrixValue valueIn, 
-			MatrixIndexes indexesOut, MatrixValue valueOut, IndexRange range, boolean complementary) {
-		valueIn.zeroOutOperations(valueOut, range, complementary);
-		indexesOut.setIndexes(indexesIn);
-	}
-	
-	// ------------- Ternary Operations -------------
-	public static void performCtable(MatrixIndexes indexesIn1, MatrixValue valueIn1, MatrixIndexes indexesIn2, MatrixValue valueIn2, 
-			MatrixIndexes indexesIn3, MatrixValue valueIn3, CTableMap resultMap, MatrixBlock resultBlock, Operator op ) {
-		//operation on the cells inside the value
-		valueIn1.ctableOperations(op, valueIn2, valueIn3, resultMap, resultBlock);
-	}
-	
-	public static void performCtable(MatrixIndexes indexesIn1, MatrixValue valueIn1, MatrixIndexes indexesIn2, MatrixValue valueIn2, 
-			double scalarIn3, CTableMap resultMap, MatrixBlock resultBlock, Operator op) {
-		//operation on the cells inside the value
-		valueIn1.ctableOperations(op, valueIn2, scalarIn3, false, resultMap, resultBlock);
-	}
-	
-	public static void performCtable(MatrixIndexes indexesIn1, MatrixValue valueIn1, double scalarIn2, 
-			double scalarIn3, CTableMap resultMap, MatrixBlock resultBlock, Operator op ) {
-		//operation on the cells inside the value
-		valueIn1.ctableOperations(op, scalarIn2, scalarIn3, resultMap, resultBlock);
-	}
-	
-	public static void performCtable(MatrixIndexes indexesIn1, MatrixValue valueIn1, double scalarIn2, boolean left,
-			int blen, CTableMap resultMap, MatrixBlock resultBlock, Operator op ) {
-		//operation on the cells inside the value
-		valueIn1.ctableOperations(op, indexesIn1, scalarIn2, left, blen, resultMap, resultBlock);
-	}
-	
-	public static void performCtable(MatrixIndexes indexesIn1, MatrixValue valueIn1, double scalarIn2, 
-			MatrixIndexes indexesIn3, MatrixValue valueIn3, CTableMap resultMap, MatrixBlock resultBlock, Operator op ) {
-		//operation on the cells inside the value
-		valueIn1.ctableOperations(op, scalarIn2, valueIn3, resultMap, resultBlock);
-	}
-	// -----------------------------------------------------
-	
-	//binary operations are those that the indexes of both cells have to be matched
-	public static void performBinaryIgnoreIndexes(MatrixValue value1, MatrixValue value2, 
-			MatrixValue valueOut, BinaryOperator op) {
-		value1.binaryOperations(op, value2, valueOut);
-	}
-
-	public static void startAggregation(MatrixValue valueOut, MatrixValue correction, AggregateOperator op, 
-			int rlen, int clen, boolean sparseHint, boolean embeddedCorrection) {
-		int outRow=0, outCol=0, corRow=0, corCol=0;
-		if(!embeddedCorrection || op.existsCorrection())
-		{
-			if( !embeddedCorrection ) {
-				switch(op.correction)
-				{
-				case NONE:
-					outRow=rlen;
-					outCol=clen;
-					corRow=rlen;
-					corCol=clen;
-					break;
-				case LASTROW:
-					outRow=rlen-1;
-					outCol=clen;
-					corRow=1;
-					corCol=clen;
-					break;
-				case LASTCOLUMN:
-					if(op.increOp.fn instanceof Builtin 
-					   && ( ((Builtin)(op.increOp.fn)).bFunc == Builtin.BuiltinCode.MAXINDEX 
-					        || ((Builtin)(op.increOp.fn)).bFunc == Builtin.BuiltinCode.MININDEX) )
-					{
-						outRow = rlen;
-						outCol = 1;
-						corRow = rlen;
-						corCol = 1;
-					}
-					else{
-						outRow=rlen;
-						outCol=clen-1;
-						corRow=rlen;
-						corCol=1;
-					}
-					break;
-				case LASTTWOROWS:
-					outRow=rlen-2;
-					outCol=clen;
-					corRow=2;
-					corCol=clen;
-					break;
-				case LASTTWOCOLUMNS:
-					outRow=rlen;
-					outCol=clen-2;
-					corRow=rlen;
-					corCol=2;
-					break;
-				case LASTFOURROWS:
-					outRow=rlen-4;
-					outCol=clen;
-					corRow=4;
-					corCol=clen;
-					break;
-				case LASTFOURCOLUMNS:
-					outRow=rlen;
-					outCol=clen-4;
-					corRow=rlen;
-					corCol=4;
-					break;
-				default:
-						throw new DMLRuntimeException("unrecognized correctionLocation: "+op.correction);
-				}
-			}else
-			{
-				outRow=rlen;
-				outCol=clen;
-				corRow=rlen;
-				corCol=clen;
-			}
-			
-			//set initial values according to operator
-			if(op.initialValue==0) {
-				valueOut.reset(Math.max(outRow,0), Math.max(outCol,0), sparseHint);
-				correction.reset(Math.max(corRow,0), Math.max(corCol,0), false);
-			}
-			else {
-				valueOut.reset(Math.max(outRow, 0), Math.max(outCol,0), op.initialValue);
-				correction.reset(Math.max(corRow,0), Math.max(corCol,0), op.initialValue);
-			}
-		}
-		else {
-			if(op.initialValue==0)
-				valueOut.reset(rlen, clen, sparseHint);
-			else
-				valueOut.reset(rlen, clen, op.initialValue);
-		}
-	}
-	
 	public static void incrementalAggregation(MatrixValue valueAgg, MatrixValue correction, MatrixValue valueAdd, 
 			AggregateOperator op, boolean embeddedCorrection) {
 		incrementalAggregation(valueAgg, correction, valueAdd, op, embeddedCorrection, true);
 	}
-	
 	
 	public static void incrementalAggregation(MatrixValue valueAgg, MatrixValue correction, MatrixValue valueAdd, 
 			AggregateOperator op, boolean embeddedCorrection, boolean deep)
@@ -264,7 +112,7 @@ public class OperationsOnMatrixValues
 	 * @return A List containing pairs of MatrixIndices and CacheBlocks either containing MatrixBlock or FrameBlocks
 	 */
 	@SuppressWarnings("rawtypes")
-	public static List performSlice(IndexRange ixrange, int blen, int iix, int jix, CacheBlock in) {
+	public static List performSlice(IndexRange ixrange, int blen, int iix, int jix, CacheBlock<?> in) {
 		if( in instanceof MatrixBlock )
 			return performSlice(ixrange, blen, iix, jix, (MatrixBlock)in);
 		else if( in instanceof FrameBlock )
@@ -275,7 +123,7 @@ public class OperationsOnMatrixValues
 	@SuppressWarnings("rawtypes")
 	public static List performSlice(IndexRange ixrange, int blen, int iix, int jix, MatrixBlock in) {
 		IndexedMatrixValue imv = new IndexedMatrixValue(new MatrixIndexes(iix, jix), in);
-		ArrayList<IndexedMatrixValue> outlist = performSlice(imv, ixrange, blen);
+		List<IndexedMatrixValue> outlist = performSlice(imv, ixrange, blen);
 		return SparkUtils.fromIndexedMatrixBlockToPair(outlist);
 	}
 

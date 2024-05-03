@@ -331,8 +331,8 @@ public class UaggOuterChainSPInstruction extends BinarySPInstruction {
 					MatrixValue in2Val = _pbc.getBlock(1, bidx);
 					
 					//outer block operation
-					OperationsOnMatrixValues.performBinaryIgnoreIndexes(in1Val, in2Val, _tmpVal1, _bOp);
-						
+					in1Val.binaryOperations(_bOp, in2Val, _tmpVal1);
+					
 					//unary aggregate operation
 					OperationsOnMatrixValues.performAggregateUnary( in1Ix, _tmpVal1, outIx, _tmpVal2, _uaggOp, _blen);
 					

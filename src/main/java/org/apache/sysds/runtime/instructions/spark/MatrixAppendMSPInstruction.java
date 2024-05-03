@@ -30,7 +30,6 @@ import org.apache.sysds.runtime.instructions.spark.data.PartitionedBroadcast;
 import org.apache.sysds.runtime.instructions.spark.utils.SparkUtils;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.matrix.data.MatrixIndexes;
-import org.apache.sysds.runtime.matrix.data.OperationsOnMatrixValues;
 import org.apache.sysds.runtime.matrix.operators.Operator;
 import org.apache.sysds.runtime.meta.DataCharacteristics;
 import scala.Tuple2;
@@ -165,8 +164,8 @@ public class MatrixAppendMSPInstruction extends AppendMSPInstruction {
 						outlist.add(second);
 					}
 				}
-	
-				OperationsOnMatrixValues.performAppend(in1.getValue(), value_in2, outlist, _blen, _cbind, true, 0);	
+				
+				in1.getValue().append(value_in2, outlist, _blen, _cbind, true, 0);
 				ret.addAll(SparkUtils.fromIndexedMatrixBlock(outlist));
 			}
 			

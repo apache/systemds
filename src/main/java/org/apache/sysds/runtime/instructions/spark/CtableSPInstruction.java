@@ -38,7 +38,6 @@ import org.apache.sysds.runtime.instructions.spark.utils.SparkUtils;
 import org.apache.sysds.runtime.matrix.data.CTableMap;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.matrix.data.MatrixIndexes;
-import org.apache.sysds.runtime.matrix.data.OperationsOnMatrixValues;
 import org.apache.sysds.runtime.meta.DataCharacteristics;
 import org.apache.sysds.runtime.util.LongLongDoubleHashMap.ADoubleEntry;
 import scala.Tuple2;
@@ -245,13 +244,11 @@ public class CtableSPInstruction extends ComputationSPInstruction {
 			//local aggregation of entire partition
 			while( arg0.hasNext() ) {
 				Tuple2<MatrixIndexes,MatrixBlock[]> tmp = arg0.next();
-				MatrixIndexes ix = tmp._1();
 				MatrixBlock[] mb = tmp._2();
 				
 				switch( _ctableOp ) {
 					case CTABLE_TRANSFORM: {
-						OperationsOnMatrixValues.performCtable(ix, mb[0], ix,
-							mb[1], ix, mb[2], map, block, null);
+						mb[0].ctableOperations(null, mb[1], mb[2], map, block);
 						break;
 					}
 					case CTABLE_EXPAND_SCALAR_WEIGHT:
@@ -261,14 +258,12 @@ public class CtableSPInstruction extends ComputationSPInstruction {
 						break;
 					}
 					case CTABLE_TRANSFORM_HISTOGRAM: {
-						OperationsOnMatrixValues.performCtable(ix, mb[0],
-							_scalar_input2, _scalar_input3, map, block, null);
+						mb[0].ctableOperations(null, _scalar_input2, _scalar_input3, map, block);
 						break;
 					}
 					case CTABLE_TRANSFORM_WEIGHTED_HISTOGRAM: {
 						// 2nd and 3rd inputs are scalars
-						OperationsOnMatrixValues.performCtable(ix, mb[0],
-							_scalar_input2, ix, mb[1], map, block, null);
+						mb[0].ctableOperations(null, _scalar_input2, mb[1], map, block);
 						break;
 					}
 					default:

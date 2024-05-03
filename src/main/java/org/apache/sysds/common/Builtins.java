@@ -131,6 +131,7 @@ public enum Builtins {
 	EVAL("eval", false),
 	EVALLIST("evalList", false),
 	F1SCORE("f1Score", true),
+	FDR("fdr", "FDR", true),
 	FIT_PIPELINE("fit_pipeline", true),
 	FIX_INVALID_LENGTHS("fixInvalidLengths", true),
 	FIX_INVALID_LENGTHS_APPLY("fixInvalidLengthsApply", true),

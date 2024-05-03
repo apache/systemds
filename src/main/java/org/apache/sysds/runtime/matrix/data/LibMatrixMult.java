@@ -1378,14 +1378,15 @@ public class LibMatrixMult
 				if( a.isEmpty(i) ) continue; 
 				int apos = a.pos(i);
 				int alen = a.size(i);
-				// int[] aix = a.indexes(i);
+				int[] aix = a.indexes(i);
 				double[] avals = a.values(i);
 				double[] cvals = c.values(i);
 				int cix = c.pos(i);
 				for(int k = apos; k < apos+alen; k++) {
 					double val = avals[k];
-					double[] bvals = b.values(k);
-					int bix = b.pos(k);
+					int colIndex = aix[k];
+					double[] bvals = b.values(colIndex);
+					int bix = b.pos(colIndex);
 					for(int j = 0; j < n; j++)
 						cvals[cix+j] += val * bvals[bix+j];
 				}

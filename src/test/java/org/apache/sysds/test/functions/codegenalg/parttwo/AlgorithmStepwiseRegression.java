@@ -34,7 +34,8 @@ import org.junit.Test;
 
 public class AlgorithmStepwiseRegression extends AutomatedTestBase 
 {
-	private final static String TEST_NAME1 = "Algorithm_Stepwise";
+	private final static String TEST_NAME1 = "Algorithm_StepLM";
+	private final static String TEST_NAME2 = "Algorithm_StepGLM";
 	private final static String TEST_DIR = "functions/codegenalg/";
 	private final static String TEST_CLASS_DIR = TEST_DIR + AlgorithmStepwiseRegression.class.getSimpleName() + "/";
 
@@ -58,6 +59,7 @@ public class AlgorithmStepwiseRegression extends AutomatedTestBase
 	public void setUp() {
 		TestUtils.clearAssertionInformation();
 		addTestConfiguration(TEST_NAME1, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME1, new String[] { "w" })); 
+		addTestConfiguration(TEST_NAME2, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME2, new String[] { "w" })); 
 	}
 
 	@Test
@@ -188,18 +190,18 @@ public class AlgorithmStepwiseRegression extends AutomatedTestBase
 
 		try
 		{
-			String TEST_NAME = TEST_NAME1;
+			String TEST_NAME = (type==StepwiseType.LINREG_DS) ? TEST_NAME1 : TEST_NAME2;
 			TestConfiguration config = getTestConfiguration(TEST_NAME);
 			loadTestConfiguration(config);
+			String HOME = SCRIPT_DIR + TEST_DIR;
+			fullDMLScriptName = HOME + TEST_NAME + ".dml";
 			
 			if( type ==  StepwiseType.LINREG_DS) {
-				fullDMLScriptName = "scripts/algorithms/StepLinearRegDS.dml";
 				programArgs = new String[]{ "-stats", "-nvargs",
 					"X="+input("X"), "Y="+input("Y"), "icpt="+String.valueOf(icpt),
 					"thr="+String.valueOf(thr), "B="+output("B"), "S="+output("S")};
 			}
 			else { //GLM binomial probit
-				fullDMLScriptName = "scripts/algorithms/StepGLM.dml";
 				programArgs = new String[]{ "-stats", "-nvargs",
 					"X="+input("X"), "Y="+input("Y"), "icpt="+String.valueOf(icpt),
 					"thr="+String.valueOf(thr), "link=3", "yneg=0",

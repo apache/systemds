@@ -38,16 +38,16 @@
 #
 # INPUT:
 # ------------------------------------------------------------------------------------------
-# X        Location (on HDFS) to read the matrix X of feature vectors
-# Y        Location (on HDFS) to read the 1-column matrix Y of response values
+# X        Matrix X of feature vectors
+# Y        Single-column Matrix Y of response values
 # icpt     Intercept presence, shifting and rescaling the columns of X:
 #          0 = no intercept, no shifting, no rescaling;
 #          1 = add intercept, but neither shift nor rescale X;
 #          2 = add intercept, shift & rescale X columns to mean = 0, variance = 1
-# reg      learning rate
+# reg      Regularization parameter, 0 for no penalty
 # tol      Tolerance threshold to train until achieved
-# maxi     maximum iterations 0 means until tolerance is reached
-# verbose  If the algorithm should be verbose
+# maxi     Maximum iterations 0 means until tolerance is reached
+# verbose  Indicator for verbose debug output
 # ------------------------------------------------------------------------------------------
 #
 # OUTPUT:
@@ -67,7 +67,7 @@ m_steplm = function(Matrix[Double] X, Matrix[Double] y, Integer icpt = 0,
   # start from one feature and iteratively add features until AIC improves
   thr = 0.001;
 
-	if(verbose)
+  if(verbose)
     print("BEGIN STEPWISE LINEAR REGRESSION SCRIPT");
   X_orig = X;
   n = nrow(X_orig);
@@ -76,10 +76,10 @@ m_steplm = function(Matrix[Double] X, Matrix[Double] y, Integer icpt = 0,
   # BEGIN STEPWISE LINEAR REGRESSION
   columns_fixed = matrix(0, 1, m_orig);
   columns_fixed_ordered = matrix(0, 1, 1);
-  
+
   # X_global stores the best model found at each step
   X_global = matrix(0, n, 1);
-  
+
   if (icpt == 1 | icpt == 2) {
     beta = mean(y);
     AIC_best_orig = 2 + n * log(sum((beta - y) ^ 2) / n);
@@ -88,7 +88,7 @@ m_steplm = function(Matrix[Double] X, Matrix[Double] y, Integer icpt = 0,
     AIC_best_orig = n * log(sum(y ^ 2) / n);
   }
   if(verbose)
-	  print("Best AIC without any features: " + AIC_best_orig);
+    print("Best AIC without any features: " + AIC_best_orig);
   boa_ncol = ncol(X_orig) + as.integer(icpt!=0);
   beta_out_all = matrix(0, boa_ncol, m_orig);
 
@@ -107,14 +107,14 @@ m_steplm = function(Matrix[Double] X, Matrix[Double] y, Integer icpt = 0,
   beta_best = beta_out_all[, column_best];
   if (column_best == 0) {
     if(verbose)
-		  print("AIC of an empty model is " + AIC_best + " and adding no feature achieves more than " + (thr * 100) + "% decrease in AIC!");
+      print("AIC of an empty model is " + AIC_best + " and adding no feature achieves more than " + (thr * 100) + "% decrease in AIC!");
     B = matrix(0, m_orig, 1);
     if (icpt != 0)
       B = rbind(B, as.matrix(beta));
     S = matrix(0, 1, 1);
   }
   else {
-		if(verbose)
+    if(verbose)
       print("Best AIC " + AIC_best + " achieved with feature: " + column_best);
 
     columns_fixed[1, column_best] = 1;
@@ -152,7 +152,7 @@ m_steplm = function(Matrix[Double] X, Matrix[Double] y, Integer icpt = 0,
       if (as.scalar(columns_fixed[1, column_best]) == 0) {
         # new best feature found
         if(verbose)
-				  print("Best AIC " + AIC_best + " achieved with feature: " + column_best);
+          print("Best AIC " + AIC_best + " achieved with feature: " + column_best);
         columns_fixed[1, column_best] = 1;
         columns_fixed_ordered = cbind(columns_fixed_ordered, as.matrix(column_best));
         if (ncol(columns_fixed_ordered) == m_orig) {
@@ -168,7 +168,7 @@ m_steplm = function(Matrix[Double] X, Matrix[Double] y, Integer icpt = 0,
     }
     # run linear regression with selected set of features
     if( verbose )
-		  print("Running linear regression with selected features...");
+      print("Running linear regression with selected features...");
     [AIC, beta_out] = linear_regression(X_global, y, icpt, reg, tol, maxi, verbose);
     S = columns_fixed_ordered;
     if (icpt != 0)
@@ -178,13 +178,13 @@ m_steplm = function(Matrix[Double] X, Matrix[Double] y, Integer icpt = 0,
 }
 
 # Computes linear regression using lm and outputs AIC.
-linear_regression = function(Matrix[Double] X, Matrix[Double] y, Integer icpt, 
+linear_regression = function(Matrix[Double] X, Matrix[Double] y, Integer icpt,
   Double reg, Double tol, Integer maxi, Boolean verbose)
   return(Double AIC, Matrix[Double] beta)
 {
   # BEGIN THE DIRECT SOLVE ALGORITHM (EXTERNAL CALL)
   beta = lm(X = X, y = y, icpt = icpt, reg=reg, tol=tol, maxi=maxi, verbose=FALSE);
-  
+
   # PREPARE X for SCORING
   if( icpt != 0 )
     X = cbind(X, matrix(1,nrow(X),1))
@@ -224,3 +224,4 @@ reorder_matrix = function(
 checkAIC = function(Double AIC_cur, Double AIC_best, Double thr) return (Boolean R) {
   R = (AIC_cur < AIC_best) & (AIC_best-AIC_cur > abs(thr * AIC_best))
 }
+

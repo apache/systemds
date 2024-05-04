@@ -29,12 +29,17 @@ import sklearn as sk
 import time
 import os
 import datetime
+from sklearn.svm import SVC
+import datetime
+from joblib import load
 
 # for command line args
 import argparse
 parser=argparse.ArgumentParser(description="Run permutation shap and time it.")
-parser.add_argument("--data-path-x", default="../data/Adult_X.csv", help="Path to CSV with X data.")
-parser.add_argument("--data-path-y", default="../data/Adult_y.csv", help="Path to CSV with y data.")
+parser.add_argument("--data-dir", default="../data/adult/", help="Path to CSV with X data.")
+parser.add_argument("--data-x", default="Adult_X.csv", help="Path to CSV with X data.")
+parser.add_argument("--data-y", default="Adult_y.csv", help="Path to CSV with y data.")
+parser.add_argument("--model-type", default="multiLogReg", help="Model type to use.")
 parser.add_argument("--result-path", default="../data/python_shap_permutation.csv", help="Path to append results to.")
 parser.add_argument("--n-instances", help="Number of instances.", default=1)
 parser.add_argument("--n-permutations", help="Number of permutations.", default=1)
@@ -46,15 +51,13 @@ args=parser.parse_args()
 #%%
 #load prepared data into dataframe
 
-df_x = pd.read_csv(args.data_path_x, header=None)
-df_y = pd.read_csv(args.data_path_y, header=None)
+df_x = pd.read_csv(args.data_dir+args.data_x, header=None)
+df_y = pd.read_csv(args.data_dir+args.data_y, header=None)
 #%%
-#train model
+#load model
+model = load(args.data_dir+args.model_type+".joblib")
 X_train, X_test, y_train, y_test = sk.model_selection.train_test_split(df_x.values, df_y.values.ravel(), test_size=0.2, random_state=42)
 
-model = sk.linear_model.LogisticRegression(multi_class='multinomial', solver='lbfgs')
-
-model.fit(X_train, y_train)
 #%%
 #test model
 y_pred = model.predict(X_test)
@@ -66,11 +69,20 @@ if not args.silent:
     print(f"Confusion Matrix:\n{conf_matrix}")
 #%%
 #create SHAP  explainer
-#sampling_explainer = shap.explainers.SamplingExplainer(model.predict, df_x.values)
+
 if not args.silent:
     print(int(args.n_permutations))
 start_exp = time.time()
-permutation_explainer = shap.explainers.Permutation(model.predict_proba, df_x.values)
+permutation_explainer = None
+
+if args.model_type == "multiLogReg":
+    permutation_explainer = shap.explainers.Permutation(model.predict_proba, df_x.values)
+elif args.model_type == "l2svm":
+    permutation_explainer = shap.explainers.Permutation(model.predict, df_x.values)
+else:
+    print("Model of type "+args.model_type+" unknown.")
+    exit()
+
 shap_values = permutation_explainer(df_x.iloc[1:1+int(args.n_instances)],
                                     max_evals=2*len(df_x.iloc[1])*(int(args.n_permutations)+1))
 end_exp = time.time()

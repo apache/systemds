@@ -192,6 +192,7 @@ public enum Builtins {
 	IMPUTE_BY_MODE_APPLY("imputeByModeApply", true),
 	IMPUTE_FD("imputeByFD", true),
 	IMPUTE_FD_APPLY("imputeByFDApply", true),
+	INCSLICELINE("incSliceLine", true),
 	INTERQUANTILE("interQuantile", false),
 	INTERSECT("intersect", true),
 	INVERSE("inv", "inverse", false),

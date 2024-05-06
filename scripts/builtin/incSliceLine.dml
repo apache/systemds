@@ -78,7 +78,7 @@ m_incSliceLine = function(
   [params, k, maxL, minSup, alpha, tpEval, tpBlksz, selFeat] = storeParams(k, maxL, minSup, alpha, tpEval, tpBlksz, selFeat, params);
 
   # init debug matrix: levelID, enumerated S, valid S, TKmax, TKmin
-  D = matrix(0, 0, 5);
+  D = matrix(0, 0, 5); 
 
   # combine old and added feature matrices and error vectors
   if(nrow(oldX) == 0) {
@@ -97,12 +97,12 @@ m_incSliceLine = function(
   m = nrow(newX);
   n = ncol(newX);
 
-  # prepare offset vectors and one-hot encoded newX
-  fdom = colMaxs(newX);
+  # prepare offset vectors and one-hot encoded X
+  fdom = colMaxs(X);
   foffb = t(cumsum(t(fdom))) - fdom;
   foffe = t(cumsum(t(fdom)));
   rix = matrix(seq(1,m)%*%matrix(1,1,n), m*n, 1)
-  cix = matrix(newX + foffb, m*n, 1);
+  cix = matrix(X + foffb, m*n, 1);
   X2 = table(rix, cix, 1, m, as.scalar(foffe[,n]), FALSE); #one-hot encoded
 
   # One-hot encoding of addedX and oldX

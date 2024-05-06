@@ -18,10 +18,17 @@
 # under the License.
 #
 # -------------------------------------------------------------
+class Measure:
+    pass
 
-from systemds import context
-from systemds import operator
-from systemds import examples
-from systemds import scuro
 
-__all__ = ["context", "operator", "examples", "scuro"]
+class EuclideanDistance(Measure):
+    pass
+
+
+class CosineSimilarity(Measure):
+    pass
+
+
+class PearsonCorrelation(Measure):
+    pass

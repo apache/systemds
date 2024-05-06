@@ -18,10 +18,32 @@
 # under the License.
 #
 # -------------------------------------------------------------
+import os
 
-from systemds import context
-from systemds import operator
-from systemds import examples
-from systemds import scuro
+from modality.modality import Modality
+from modality.representation import Representation
 
-__all__ = ["context", "operator", "examples", "scuro"]
+
+class VideoModality(Modality):
+    def __init__(self, file_path: str, representation: Representation, start_index: int = 0):
+        super().__init__(representation, start_index)
+        self.file_path = file_path
+    
+    def file_sanity_check(self):
+        """
+        Checks if the file can be found is not empty
+        """
+        try:
+            file_size = os.path.getsize(self.file_path)
+        except:
+            raise (f"Error: File {0} not found!".format(self.file_path))
+        
+        if file_size == 0:
+            raise ("File {0} is empty".format(self.file_path))
+    
+    def read_chunk(self):
+        # Read chunk (self.params.window_size)
+        # self.representation.apply_representation()
+        # additional preprocessing?
+        # return numpy array
+        pass

@@ -27,7 +27,8 @@
 #
 # INPUT:
 # ---------------------------------------------------------------------------------------
-# X        Feature matrix in recoded/binned representation
+# newX     Feature matrix in recoded/binned representation
+# oldX     Original feature matrix 
 # e        Error vector of trained model
 # k        Number of subsets required
 # maxL     maximum level L (conjunctions of L predicates), 0 unlimited
@@ -45,16 +46,17 @@
 #
 # OUTPUT:
 # -----------------------------------------------------------------------------------------
-# TK    top-k slices (k x ncol(X) if successful)
+# TK    top-k slices (k x ncol(newX) if successful)
 # TKC   score, size, error of slices (k x 3)
 # D     debug matrix, populated with enumeration stats if verbose
 # L     lattice matrix 
 # RL    statistics matrix for all slices in L
 # -----------------------------------------------------------------------------------------
 
-m_incSliceLine = function(Matrix[Double] X, Matrix[Double] e, Int k = 4, 
+m_incSliceLine = function(Matrix[Double] newX, Matrix[Double] oldX = matrix(0, 0, 0), Matrix[Double] e, Int k = 4, 
     Int maxL = 0, Int minSup = 32, Double alpha = 0.5, Boolean tpEval = TRUE, 
-    Int tpBlksz = 16, Boolean selFeat = FALSE, Boolean verbose = FALSE, Matrix[Double] prevLattice = matrix(0, 0, 0) , Matrix[Double] prevRL = matrix(0, 0, 0))
+    Int tpBlksz = 16, Boolean selFeat = FALSE, Boolean verbose = FALSE, 
+    Matrix[Double] prevLattice = matrix(0, 0, 0) , Matrix[Double] prevRL = matrix(0, 0, 0))
   return(Matrix[Double] TK, Matrix[Double] TKC, Matrix[Double] D, Matrix[Double] L, Matrix[Double] RL)
 {
   t1 = time();
@@ -62,15 +64,15 @@ m_incSliceLine = function(Matrix[Double] X, Matrix[Double] e, Int k = 4,
   # init debug matrix: levelID, enumerated S, valid S, TKmax, TKmin
   D = matrix(0, 0, 5); 
 
-  m = nrow(X);
-  n = ncol(X);
+  m = nrow(newX);
+  n = ncol(newX);
 
-  # prepare offset vectors and one-hot encoded X
-  fdom = colMaxs(X);
+  # prepare offset vectors and one-hot encoded newX
+  fdom = colMaxs(newX);
   foffb = t(cumsum(t(fdom))) - fdom;
   foffe = t(cumsum(t(fdom)))
   rix = matrix(seq(1,m)%*%matrix(1,1,n), m*n, 1)
-  cix = matrix(X + foffb, m*n, 1);
+  cix = matrix(newX + foffb, m*n, 1);
   X2 = table(rix, cix, 1, m, as.scalar(foffe[,n]), FALSE); #one-hot encoded
 
   # initialize statistics and basic slices
@@ -78,7 +80,7 @@ m_incSliceLine = function(Matrix[Double] X, Matrix[Double] e, Int k = 4,
   eAvg = sum(e) / m; # average error
   [S, R, selCols] = createAndScoreBasicSlices(X2, e, eAvg, minSup, alpha, verbose); 
 
-  # initialize top-k
+  # initialize Lattice and Statistics
   L = S 
   RL = R
 

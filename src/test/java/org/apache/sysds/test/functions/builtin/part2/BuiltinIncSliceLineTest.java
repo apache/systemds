@@ -147,7 +147,7 @@ public class BuiltinIncSliceLineTest extends AutomatedTestBase {
 
     @Test
     public void testIncSliceLineCustomInputs1() {
-        double[][] X = {
+        double[][] newX = {
                 { 2, 1, 1, 2, 3, 2, 3, 3, 1, 2 },
                 { 2, 2, 2, 3, 4, 1, 2, 1, 3, 2 },
                 { 2, 1, 3, 3, 2, 2, 3, 1, 1, 4 },
@@ -188,12 +188,12 @@ public class BuiltinIncSliceLineTest extends AutomatedTestBase {
                 { 0.061, 2.796, 0.987, 5.000 },
                 { 0.038, 3.194, 0.878, 6.000 }
         };
-        testIncSliceLineCustomInputs(X, e, K, correctRes);
+        testIncSliceLineCustomInputs(newX, e, K, correctRes);
     }
 
     @Test
     public void testIncSliceLineCustomInputs2() {
-        double[][] X = {
+        double[][] newX = {
                 { 2, 1, 1, 1, 3, 4, 2, 2, 1, 2 },
                 { 3, 3, 3, 2, 1, 2, 3, 1, 4, 2 },
                 { 3, 2, 3, 1, 1, 1, 4, 3, 4, 2 },
@@ -236,12 +236,12 @@ public class BuiltinIncSliceLineTest extends AutomatedTestBase {
                 { 0.013, 3.091, 0.931, 5.000 }
         };
 
-        testIncSliceLineCustomInputs(X, e, K, correctRes);
+        testIncSliceLineCustomInputs(newX, e, K, correctRes);
     }
 
     @Test
     public void testIncSliceLineCustomInputs3() {
-        double[][] X = {
+        double[][] newX = {
                 { 2, 1, 1, 2, 3, 2, 3, 3, 1, 2 },
                 { 2, 2, 2, 3, 4, 1, 2, 1, 3, 2 },
                 { 2, 1, 3, 3, 2, 2, 3, 1, 1, 4 },
@@ -306,7 +306,7 @@ public class BuiltinIncSliceLineTest extends AutomatedTestBase {
                 { 0.009, 2.923, 0.897, 4.000 },
                 { 0.008, 3.391, 0.897, 5.000 }
         };
-        testIncSliceLineCustomInputs(X, e, K, correctRes);
+        testIncSliceLineCustomInputs(newX, e, K, correctRes);
     }
 
     // @Test
@@ -325,18 +325,18 @@ public class BuiltinIncSliceLineTest extends AutomatedTestBase {
 
             // run data preparation
             fullDMLScriptName = HOME + PREP_NAME + ".dml";
-            programArgs = new String[] { "-args", data, err, output("X"), output("e") };
+            programArgs = new String[] { "-args", data, err, output("newX"), output("e") };
             runTest(true, false, null, -1);
 
             // read output and store for dml and R
-            double[][] X = TestUtils.convertHashMapToDoubleArray(readDMLMatrixFromOutputDir("X"));
+            double[][] newX = TestUtils.convertHashMapToDoubleArray(readDMLMatrixFromOutputDir("newX"));
             double[][] e = TestUtils.convertHashMapToDoubleArray(readDMLMatrixFromOutputDir("e"));
-            writeInputMatrixWithMTD("X", X, true);
+            writeInputMatrixWithMTD("newX", newX, true);
             writeInputMatrixWithMTD("e", e, true);
 
             // execute main test
             fullDMLScriptName = HOME + TEST_NAME + ".dml";
-            programArgs = new String[] { "-args", input("X"), input("e"), String.valueOf(K),
+            programArgs = new String[] { "-args", input("newX"), input("e"), String.valueOf(K),
                     String.valueOf(!dp).toUpperCase(), String.valueOf(selCols).toUpperCase(),
                     String.valueOf(VERBOSE).toUpperCase(), output("R") };
 
@@ -346,7 +346,7 @@ public class BuiltinIncSliceLineTest extends AutomatedTestBase {
 
             // execute main test
             fullDMLScriptName = HOME + "slicefinder" + ".dml";
-            programArgs = new String[] { "-args", input("X"), input("e"), String.valueOf(K),
+            programArgs = new String[] { "-args", input("newX"), input("e"), String.valueOf(K),
                     String.valueOf(!dp).toUpperCase(), String.valueOf(selCols).toUpperCase(),
                     String.valueOf(VERBOSE).toUpperCase(), output("R") };
 
@@ -371,7 +371,7 @@ public class BuiltinIncSliceLineTest extends AutomatedTestBase {
         }
     }
 
-    public void testIncSliceLineCustomInputs(double[][] X, double[][] e, int K, double[][] correctRes) {
+    public void testIncSliceLineCustomInputs(double[][] newX, double[][] e, int K, double[][] correctRes) {
         boolean dp = true, selCols = false;
         ExecMode mode = ExecMode.SINGLE_NODE;
         ExecMode platformOld = setExecMode(mode);
@@ -381,11 +381,11 @@ public class BuiltinIncSliceLineTest extends AutomatedTestBase {
         try {
             loadTestConfiguration(getTestConfiguration(TEST_NAME));
 
-            writeInputMatrixWithMTD("X", X, false);
+            writeInputMatrixWithMTD("newX", newX, false);
             writeInputMatrixWithMTD("e", e, false);
 
             fullDMLScriptName = HOME + TEST_NAME + ".dml";
-            programArgs = new String[] { "-args", input("X"), input("e"), String.valueOf(K),
+            programArgs = new String[] { "-args", input("newX"), input("e"), String.valueOf(K),
                     String.valueOf(!dp).toUpperCase(), String.valueOf(selCols).toUpperCase(),
                     String.valueOf(VERBOSE).toUpperCase(), output("R") };
 

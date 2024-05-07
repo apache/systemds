@@ -28,7 +28,7 @@
 # INPUT:
 # ---------------------------------------------------------------------------------------
 # newX     Feature matrix in recoded/binned representation
-# oldX     Original feature matrix 
+# oldX     All-comprising feature matrix of previous runs in recoded/binned representation
 # e        Error vector of trained model
 # k        Number of subsets required
 # maxL     maximum level L (conjunctions of L predicates), 0 unlimited
@@ -51,13 +51,14 @@
 # D     debug matrix, populated with enumeration stats if verbose
 # L     lattice matrix 
 # RL    statistics matrix for all slices in L
+# Xout  feature matrix consisting of oldX and newX for next run
 # -----------------------------------------------------------------------------------------
 
 m_incSliceLine = function(Matrix[Double] newX, Matrix[Double] oldX = matrix(0, 0, 0), Matrix[Double] e, Int k = 4, 
     Int maxL = 0, Int minSup = 32, Double alpha = 0.5, Boolean tpEval = TRUE, 
     Int tpBlksz = 16, Boolean selFeat = FALSE, Boolean verbose = FALSE, 
     Matrix[Double] prevLattice = matrix(0, 0, 0) , Matrix[Double] prevRL = matrix(0, 0, 0))
-  return(Matrix[Double] TK, Matrix[Double] TKC, Matrix[Double] D, Matrix[Double] L, Matrix[Double] RL)
+  return(Matrix[Double] TK, Matrix[Double] TKC, Matrix[Double] D, Matrix[Double] L, Matrix[Double] RL, Matrix[Double] Xout)
 {
   t1 = time();
 
@@ -153,12 +154,22 @@ m_incSliceLine = function(Matrix[Double] newX, Matrix[Double] oldX = matrix(0, 0
 
   TK = decodeOneHot(TK, foffb, foffe);
 
+  # prepare output feature matrix for next run
+  if (nrow(oldX) > 0){
+    Xout = rbind(oldX, newX);
+  } else {
+    Xout = newX;
+  }
+
+  L = decodeOneHot(L, foffb, foffe)
+  
+
   if( verbose ) {
     print("SliceFinder: terminated at level "+level+":\n"
       + toString(TK) + "\n" + toString(TKC));
   }
 
-  print("Lattice: \n "+ toString(decodeOneHot(L, foffb, foffe)) +":\n"
+  print("Lattice: \n "+ toString(L) +":\n"
     + "Statistics: \n "+ toString(RL));
 }
 

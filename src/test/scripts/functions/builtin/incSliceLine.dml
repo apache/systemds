@@ -19,11 +19,11 @@
 #
 #-------------------------------------------------------------
 
-X = read($1);
+newX = read($1);
 e = read($2);
 
 # call slice finding
-[TS,TR] = incSliceLine(X=X, e=e, k=$3,
+[TS,TR] = incSliceLine(newX=newX, e=e, k=$3,
   alpha=0.95, minSup=4, tpEval=$4, selFeat=$5, verbose=$6);
 
 write(TR, $7)

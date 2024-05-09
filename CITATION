@@ -1,4 +1,4 @@
-@software{Apache SystemDS,
+@software{ApacheSystemDS,
   author    = {Apache SystemDS Development Team},
   title     = {{Apache SystemDS: An open source ML system for the end-to-end data science lifecycle}},
   url       = {https://github.com/apache/systemds},

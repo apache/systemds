@@ -76,7 +76,6 @@ import org.apache.sysds.runtime.frame.data.columns.ArrayWrapper;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.matrix.data.MatrixCell;
 import org.apache.sysds.runtime.matrix.data.MatrixIndexes;
-import org.apache.sysds.runtime.transform.TfUtils;
 import org.apache.sysds.runtime.util.LocalFileUtils;
 
 import io.airlift.compress.lzo.LzoCodec;
@@ -429,8 +428,13 @@ public class IOUtilFunctions {
 				return str.trim();
 			else 
 				return str;
-		}catch(Exception e){
-			throw new RuntimeException("failed trimming: " + str + " " + str.length(),e);
+		}
+		catch(NullPointerException e){
+			return null;
+			// throw new RuntimeException("The string was null", e);
+		}
+		catch(Exception e){
+			throw new RuntimeException("failed trimming: " + str + " " + str.length(), e);
 		}
 	}
 

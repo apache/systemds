@@ -33,6 +33,10 @@ public class SeqTableTest {
 
 	protected static final Log LOG = LogFactory.getLog(SeqTableTest.class.getName());
 
+	static{
+		LibMatrixTable.ALLOW_COMPRESSED_TABLE_SEQ = false; // allow the compressed tables.
+	}
+
 	@Test(expected = DMLRuntimeException.class)
 	public void test_notSameDim() {
 		MatrixBlock c = new MatrixBlock(20, 1, 0.0);

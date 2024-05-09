@@ -80,12 +80,15 @@ import org.apache.sysds.runtime.functionobjects.Builtin.BuiltinCode;
 import org.apache.sysds.runtime.io.FrameWriter;
 import org.apache.sysds.runtime.io.FrameWriterFactory;
 import org.apache.sysds.runtime.io.IOUtilFunctions;
+import org.apache.sysds.runtime.io.MatrixReaderFactory;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.matrix.data.MatrixCell;
 import org.apache.sysds.runtime.matrix.data.MatrixIndexes;
 import org.apache.sysds.runtime.matrix.data.MatrixValue.CellIndex;
 import org.apache.sysds.runtime.matrix.operators.UnaryOperator;
+import org.apache.sysds.runtime.meta.DataCharacteristics;
 import org.apache.sysds.runtime.meta.MatrixCharacteristics;
+import org.apache.sysds.runtime.meta.MetaDataAll;
 import org.apache.sysds.runtime.util.DataConverter;
 import org.apache.sysds.runtime.util.UtilFunctions;
 import org.junit.Assert;
@@ -527,6 +530,24 @@ public class TestUtils {
 
 		return expectedValues;
 	}
+
+	public static MatrixBlock readBinary(String path){
+		try{
+
+			MetaDataAll mba = new MetaDataAll(path + ".mtd", false, true);
+			if(!mba.mtdExists())
+				throw new IOException("File does not exist");
+			DataCharacteristics ds = mba.getDataCharacteristics();
+			FileFormat f = FileFormat.valueOf(mba.getFormatTypeString().toUpperCase());
+			return MatrixReaderFactory.createMatrixReader(f)
+				.readMatrixFromHDFS(path, ds.getRows(),ds.getCols(),ds.getBlocksize(),ds.getNonZeros());
+			
+		}
+		catch(Exception e){
+			throw new RuntimeException(e);
+		}
+	}
+
 
 	/**
 	 * Reads values from a matrix file in OS's FS in R format
@@ -3310,11 +3331,15 @@ public class TestUtils {
 	}
 
 	public static MatrixBlock round(MatrixBlock data) {
-		return data.unaryOperations(new UnaryOperator(Builtin.getBuiltinFnObject(BuiltinCode.ROUND),2, true), null);
+		return data.unaryOperations(new UnaryOperator(Builtin.getBuiltinFnObject(BuiltinCode.ROUND), 2, true), null);
 	}
 
-	public static MatrixBlock ceil(MatrixBlock data){
-		return data.unaryOperations(new UnaryOperator(Builtin.getBuiltinFnObject(BuiltinCode.CEIL),2, true), null);
+	public static MatrixBlock ceil(MatrixBlock data) {
+		return data.unaryOperations(new UnaryOperator(Builtin.getBuiltinFnObject(BuiltinCode.CEIL), 2, true), null);
+	}
+
+	public static MatrixBlock floor(MatrixBlock data) {
+		return data.unaryOperations(new UnaryOperator(Builtin.getBuiltinFnObject(BuiltinCode.FLOOR), 2, true), null);
 	}
 
 	public static double[][] floor(double[][] data) {

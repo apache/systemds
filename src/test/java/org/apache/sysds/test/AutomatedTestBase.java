@@ -75,6 +75,7 @@ import org.apache.sysds.runtime.io.FileFormatProperties;
 import org.apache.sysds.runtime.io.FileFormatPropertiesCSV;
 import org.apache.sysds.runtime.io.FrameReader;
 import org.apache.sysds.runtime.io.FrameReaderFactory;
+import org.apache.sysds.runtime.io.MatrixWriterFactory;
 import org.apache.sysds.runtime.io.ReaderWriterFederated;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.matrix.data.MatrixValue;
@@ -589,6 +590,28 @@ public abstract class AutomatedTestBase {
 		}
 
 		return matrix;
+	}
+
+
+	protected void writeBinaryWithMTD(String name, MatrixBlock matrix) {
+		MatrixCharacteristics mc = new MatrixCharacteristics(matrix.getNumRows(), matrix.getNumColumns(),
+			OptimizerUtils.DEFAULT_BLOCKSIZE, matrix.getNonZeros());
+		writeBinaryWithMTD(name, matrix, mc);
+	}
+
+	protected void writeBinaryWithMTD(String name, MatrixBlock matrix, MatrixCharacteristics mc) {
+			
+		try {
+			MatrixWriterFactory.createMatrixWriter(FileFormat.BINARY)//
+				.writeMatrixToHDFS(matrix, baseDirectory + INPUT_DIR + name, matrix.getNumRows(), 
+				matrix.getNumColumns(), mc.getBlocksize(), mc.getNonZeros());
+			String completeMTDPath = baseDirectory + INPUT_DIR + name + ".mtd";
+			HDFSTool.writeMetaDataFile(completeMTDPath, ValueType.FP64, mc, FileFormat.BINARY);
+		}
+		catch(IOException e) {
+			e.printStackTrace();
+			throw new RuntimeException(e);
+		}
 	}
 
 	protected void writeInputFederatedWithMTD(String name, MatrixObject fm){

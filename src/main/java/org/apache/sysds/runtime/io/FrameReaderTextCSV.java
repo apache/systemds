@@ -138,33 +138,16 @@ public class FrameReaderTextCSV extends FrameReader {
 			dest.setColumnNames(value.toString().split(delim));
 		}
 
-		// int k = 1;
-		// if(this instanceof FrameReaderTextCSVParallel)
-		// 	k = OptimizerUtils.getParallelTextReadParallelism();
-
-		// ExecutorService pool = k > 1 ? CommonThreadPool.get(k) : null;
-		// List<Future<?>> tasks = new ArrayList<>();
-
 		// Read the data
 		try {
 			Array<?>[] destA = dest.getColumns();
 			while(reader.next(key, value)) // foreach line
 			{
 				String cellStr = IOUtilFunctions.trim(value.toString());
-				// if(pool != null){
-				// 	final int r = row;
-				// 	tasks.add(pool.submit( () -> 
-				// 		parseLine(cellStr, delim, destA, r, (int) clen, dfillValue, sfillValue, isFill, naValues)));
-				// }
-				// else{
-					parseLine(cellStr, delim, destA, row, (int) clen, dfillValue, sfillValue, isFill, naValues);
-				// }
-				
+				parseLine(cellStr, delim, destA, row, (int) clen, dfillValue, sfillValue, isFill, naValues);
 				row++;
 			}
 
-			// for(Future<?> f : tasks)
-			// 	f.get();
 		}
 		catch(Exception e){
 			throw new DMLRuntimeException("Failed parsing string: \"" + value +"\"", e);
@@ -183,13 +166,11 @@ public class FrameReaderTextCSV extends FrameReader {
 		Set<String> naValues) {
 			try{
 				String[] parts = IOUtilFunctions.splitCSV(cellStr, delim, clen);
-		
 				assignColumns(row, (int)clen, destA, parts, naValues, isFill, dfillValue, sfillValue);
-		
 				IOUtilFunctions.checkAndRaiseErrorCSVNumColumns("", cellStr, parts, clen);
 			}
 			catch(Exception e){
-				throw new RuntimeException(e);
+				throw new RuntimeException("failed to parse: " + cellStr, e);
 			}
 	}
 
@@ -206,7 +187,7 @@ public class FrameReaderTextCSV extends FrameReader {
 		boolean emptyValuesFound = false;
 		for(int col = 0; col < nCol; col++) {
 			String part = IOUtilFunctions.trim(parts[col]);
-			if(part.isEmpty() || (naValues != null && naValues.contains(part))) {
+			if(part == null || part.isEmpty() || (naValues != null && naValues.contains(part))) {
 				if(isFill && dfillValue != 0)
 					destA[col].set(row, sfillValue);
 				emptyValuesFound = true;

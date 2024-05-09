@@ -25,6 +25,7 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.compress.lib.CLALibTable;
+import org.apache.sysds.runtime.matrix.data.LibMatrixTable;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.test.TestUtils;
 import org.junit.Test;
@@ -32,6 +33,10 @@ import org.junit.Test;
 public class SeqTableTest {
 
 	protected static final Log LOG = LogFactory.getLog(SeqTableTest.class.getName());
+
+	static{
+		LibMatrixTable.ALLOW_COMPRESSED_TABLE_SEQ = true; // allow the compressed tables.
+	}
 
 	@Test(expected = DMLRuntimeException.class)
 	public void test_notSameDim() {

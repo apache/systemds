@@ -72,6 +72,7 @@ import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.data.TensorBlock;
 import org.apache.sysds.runtime.data.TensorIndexes;
 import org.apache.sysds.runtime.frame.data.FrameBlock;
+import org.apache.sysds.runtime.frame.data.columns.ArrayWrapper;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.matrix.data.MatrixCell;
 import org.apache.sysds.runtime.matrix.data.MatrixIndexes;
@@ -648,10 +649,10 @@ public class IOUtilFunctions {
 			try {
 				if( reader.next(key, value) ) {
 					boolean hasValue = true;
-					if( value.toString().startsWith(TfUtils.TXMTD_MVPREFIX) )
-						hasValue = reader.next(key, value);
-					if( value.toString().startsWith(TfUtils.TXMTD_NDPREFIX) )
-						hasValue = reader.next(key, value);
+					// if( value.toString().startsWith(TfUtils.TXMTD_MVPREFIX) )
+					// 	hasValue = reader.next(key, value);
+					// if( value.toString().startsWith(TfUtils.TXMTD_NDPREFIX) )
+					// 	hasValue = reader.next(key, value);
 					String row = value.toString().trim();
 					if( hasValue && !row.isEmpty() ) {
 						ncol = IOUtilFunctions.countTokensCSV(row, delim);
@@ -888,6 +889,13 @@ public class IOUtilFunctions {
 	public static Writer getSeqWriterFrame(Path path, Configuration job, int replication) throws IOException {
 		return SequenceFile.createWriter(job, Writer.file(path), Writer.bufferSize(4096),
 			Writer.keyClass(LongWritable.class), Writer.valueClass(FrameBlock.class),
+			Writer.compression(getCompressionEncodingType(), getCompressionCodec()),
+			Writer.replication((short) (replication > 0 ? replication : 1)));
+	}
+
+	public static Writer getSeqWriterArray(Path path, Configuration job, int replication) throws IOException {
+		return SequenceFile.createWriter(job, Writer.file(path), Writer.bufferSize(4096),
+			Writer.keyClass(LongWritable.class), Writer.valueClass(ArrayWrapper.class),
 			Writer.compression(getCompressionEncodingType(), getCompressionCodec()),
 			Writer.replication((short) (replication > 0 ? replication : 1)));
 	}

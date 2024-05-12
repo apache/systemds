@@ -248,6 +248,20 @@ public abstract class ADictBasedColGroup extends AColGroupCompressed implements 
 		if(right.isEmpty())
 			return null;
 
+		LOG.error("valid for identity mm: is Identity " + (_dict instanceof IdentityDictionary ));
+		LOG.error("valid for identity mm: with empty? " + (right.getNumRows() == _colIndexes.size()));
+
+		LOG.error("valid for identity mm: is Rows     " + (right.getNumRows() == _colIndexes.size()));
+		LOG.error("valid for identity mm: is Allowed  " + (allowShallowIdentityRightMult()));
+		// is candidate for identity mm.
+		if(_dict instanceof IdentityDictionary //
+		   && !((IdentityDictionary) _dict).withEmpty()
+			&& right.getNumRows() == _colIndexes.size() //
+			&& allowShallowIdentityRightMult()){
+
+			return copyAndSet(allCols, MatrixBlockDictionary.create(right));
+		}
+
 		final int nCol = right.getNumColumns();
 		// make sure allCols is allocated
 		allCols = allCols == null ? ColIndexFactory.create(nCol) : allCols;
@@ -265,6 +279,8 @@ public abstract class ADictBasedColGroup extends AColGroupCompressed implements 
 			_dict.preaggValuesFromDense(nVals, _colIndexes, agCols, right.getDenseBlockValues(), nCol); // dense
 		return allocateRightMultiplication(right, agCols, preAgg);
 	}
+
+	protected abstract boolean allowShallowIdentityRightMult();
 
 	protected abstract AColGroup allocateRightMultiplication(MatrixBlock right, IColIndex colIndexes,
 		IDictionary preAgg);

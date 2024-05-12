@@ -745,5 +745,9 @@ public class ColGroupConst extends ADictBasedColGroup implements IContainDefault
 
 		return create(combinedIndex, combined);
 	}
-
+	
+	@Override
+	protected boolean allowShallowIdentityRightMult() {
+		return true;
+	}
 }

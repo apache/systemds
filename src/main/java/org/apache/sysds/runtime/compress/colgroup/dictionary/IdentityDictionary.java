@@ -555,7 +555,6 @@ public class IdentityDictionary extends ADictionary {
 	@Override
 	public IDictionary preaggValuesFromDense(final int numVals, final IColIndex colIndexes,
 		final IColIndex aggregateColumns, final double[] b, final int cut) {
-		// return getMBDict().preaggValuesFromDense(numVals, colIndexes, aggregateColumns, b, cut);
 		/**
 		 * This operations is Essentially a Identity matrix multiplication with a right hand side dense matrix, but we
 		 * need to slice out the right hand side from the input.

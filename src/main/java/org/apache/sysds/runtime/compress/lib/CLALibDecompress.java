@@ -30,6 +30,7 @@ import org.apache.commons.lang3.NotImplementedException;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.api.DMLScript;
+import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.compress.CompressedMatrixBlock;
 import org.apache.sysds.runtime.compress.DMLCompressionException;
 import org.apache.sysds.runtime.compress.colgroup.AColGroup;
@@ -100,7 +101,7 @@ public final class CLALibDecompress {
 		}
 
 		if(countNNz)
-			ret.recomputeNonZeros();
+			ret.recomputeNonZeros(k);
 	}
 
 	private static void decompressToSparseBlock(CompressedMatrixBlock cmb, MatrixBlock ret, int rowOffset,
@@ -198,7 +199,7 @@ public final class CLALibDecompress {
 		MatrixBlock ret = getUncompressedColGroupAndRemoveFromListOfColGroups(groups, overlapping, nRows, nCols);
 
 		if(ret != null && groups.size() == 0) {
-			ret.setNonZeros(ret.recomputeNonZeros());
+			ret.setNonZeros(ret.recomputeNonZeros(k));
 			return ret; // if uncompressedColGroup is only colGroup.
 		}
 
@@ -238,7 +239,7 @@ public final class CLALibDecompress {
 		else 
 			decompressDenseMultiThread(ret, filteredGroups, nRows, blklen, constV, eps, k, overlapping);
 
-		ret.recomputeNonZeros();
+		ret.recomputeNonZeros(k);
 		ret.examSparsity();
 
 		return ret;
@@ -361,6 +362,7 @@ public final class CLALibDecompress {
 			for(int i = 0; i < rlen; i += blklen)
 				tasks.add(new DecompressSparseTask(filteredGroups, ret, i, Math.min(i + blklen, rlen)));
 
+			LOG.error("tasks:" + tasks);
 			for(Future<Object> rt : pool.invokeAll(tasks))
 				rt.get();
 		}
@@ -497,14 +499,21 @@ public final class CLALibDecompress {
 		}
 
 		@Override
-		public Object call() {
-			final SparseBlock sb = _ret.getSparseBlock();
-			for(AColGroup grp : _colGroups)
-				grp.decompressToSparseBlock(_ret.getSparseBlock(), _rl, _ru);
-			for(int i = _rl; i < _ru; i++)
-				if(!sb.isEmpty(i))
-					sb.sort(i);
-			return null;
+		public Object call() throws Exception{
+			try{
+
+				final SparseBlock sb = _ret.getSparseBlock();
+				for(AColGroup grp : _colGroups)
+					grp.decompressToSparseBlock(_ret.getSparseBlock(), _rl, _ru);
+				for(int i = _rl; i < _ru; i++)
+					if(!sb.isEmpty(i))
+						sb.sort(i);
+				return null;
+			}
+			catch(Exception e){
+				e.printStackTrace();
+				throw new DMLRuntimeException(e);
+			}
 		}
 	}
 

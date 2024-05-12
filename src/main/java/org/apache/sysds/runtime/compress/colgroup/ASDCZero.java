@@ -262,4 +262,9 @@ public abstract class ASDCZero extends APreAgg implements AOffsetsGroup, IContai
 		else
 			return super.morph(ct, nRow);
 	}
+	
+	@Override
+	protected boolean allowShallowIdentityRightMult() {
+		return true;
+	}
 }

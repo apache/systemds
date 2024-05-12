@@ -1526,7 +1526,6 @@ public class MatrixBlockDictionary extends ADictionary {
 
 	@Override
 	public long getNumberNonZeros(int[] counts, int nCol) {
-
 		long nnz = 0;
 		if(_data.getSparseBlock() == null && _data.getDenseBlock() == null)
 			return nnz;
@@ -1541,6 +1540,8 @@ public class MatrixBlockDictionary extends ADictionary {
 			int off = 0;
 			for(int i = 0; i < counts.length; i++) {
 				int countThisTuple = 0;
+				if(counts[i] == 0)
+					continue;
 				for(int j = 0; j < _data.getNumColumns(); j++) {
 					double v = values[off++];
 					if(v != 0)

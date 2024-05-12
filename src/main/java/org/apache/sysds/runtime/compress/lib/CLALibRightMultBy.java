@@ -87,7 +87,7 @@ public final class CLALibRightMultBy {
 				if(retC.isOverlapping())
 					retC.setNonZeros((long) rr * rc); // set non zeros to fully dense in case of overlapping.
 				else
-					retC.recomputeNonZeros(); // recompute if non overlapping compressed out.
+					retC.recomputeNonZeros(k); // recompute if non overlapping compressed out.
 				return retC;
 			}
 		}
@@ -118,7 +118,7 @@ public final class CLALibRightMultBy {
 		}
 
 		// final double preFilter = t.stop();
-		if(k == 1)
+		if(k == 1 || filteredGroups.size() == 1)
 			RMMSingle(filteredGroups, that, retCg);
 		else
 			RMMParallel(filteredGroups, that, retCg, k);
@@ -267,6 +267,7 @@ public final class CLALibRightMultBy {
 
 	private static boolean RMMParallel(List<AColGroup> filteredGroups, MatrixBlock that, List<AColGroup> retCg, int k) {
 		final ExecutorService pool = CommonThreadPool.get(k);
+		LOG.error("Parallelizm in rmm" +  k);
 		boolean containsNull = false;
 		try {
 			final IColIndex allCols = ColIndexFactory.create(that.getNumColumns());

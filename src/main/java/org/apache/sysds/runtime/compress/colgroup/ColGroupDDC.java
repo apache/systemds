@@ -355,7 +355,8 @@ public class ColGroupDDC extends APreAgg implements IMapToDataGroup {
 				lmSparseMatrixNoPreAggSingleCol(matrix.getSparseBlock(), nColM, retV, nColRet, dictVals, rl, ru);
 		}
 		else if(!matrix.getDenseBlock().isContiguous())
-			lmDenseMatrixNoPreAggSingleColNonContiguous(matrix.getDenseBlock(), nColM, retV, nColRet, dictVals, rl, ru, cl, cu);
+			lmDenseMatrixNoPreAggSingleColNonContiguous(matrix.getDenseBlock(), nColM, retV, nColRet, dictVals, rl, ru, cl,
+				cu);
 		else
 			lmDenseMatrixNoPreAggSingleCol(matrix.getDenseBlockValues(), nColM, retV, nColRet, dictVals, rl, ru, cl, cu);
 	}
@@ -455,11 +456,10 @@ public class ColGroupDDC extends APreAgg implements IMapToDataGroup {
 		}
 	}
 
-	private void lmDenseMatrixNoPreAggSingleColNonContiguous(DenseBlock db, int nColM, DenseBlock retV, int nColRet, double[] vals,
-		int rl, int ru, int cl, int cu) {
+	private void lmDenseMatrixNoPreAggSingleColNonContiguous(DenseBlock db, int nColM, DenseBlock retV, int nColRet,
+		double[] vals, int rl, int ru, int cl, int cu) {
 		lmDenseMatrixNoPreAggSingleColNonContiguousInGeneric(db, nColM, retV, nColRet, vals, rl, ru, cl, cu);
 	}
-
 
 	private void lmDenseMatrixNoPreAggSingleCol(double[] mV, int nColM, DenseBlock retV, int nColRet, double[] vals,
 		int rl, int ru, int cl, int cu) {
@@ -469,8 +469,8 @@ public class ColGroupDDC extends APreAgg implements IMapToDataGroup {
 			lmDenseMatrixNoPreAggSingleColGeneric(mV, nColM, retV, nColRet, vals, rl, ru, cl, cu);
 	}
 
-	private void lmDenseMatrixNoPreAggSingleColNonContiguousInGeneric(DenseBlock db, int nColM, DenseBlock ret, int nColRet,
-		double[] vals, int rl, int ru, int cl, int cu) {
+	private void lmDenseMatrixNoPreAggSingleColNonContiguousInGeneric(DenseBlock db, int nColM, DenseBlock ret,
+		int nColRet, double[] vals, int rl, int ru, int cl, int cu) {
 		final int colOut = _colIndexes.get(0);
 		for(int r = rl; r < ru; r++) {
 			final int offL = db.pos(r);
@@ -547,12 +547,13 @@ public class ColGroupDDC extends APreAgg implements IMapToDataGroup {
 
 	private void lmDenseMatrixNoPreAggMultiCol(MatrixBlock matrix, MatrixBlock result, int rl, int ru, int cl, int cu) {
 		if(matrix.getDenseBlock().isContiguous())
-			lmDenseMatrixNoPreAggMultiColContiguous(matrix,result,rl,ru,cl,cu);	
-		else 
-			lmDenseMatrixNoPreAggMultiColNonContiguous(matrix.getDenseBlock(),result,rl,ru,cl,cu);
+			lmDenseMatrixNoPreAggMultiColContiguous(matrix, result, rl, ru, cl, cu);
+		else
+			lmDenseMatrixNoPreAggMultiColNonContiguous(matrix.getDenseBlock(), result, rl, ru, cl, cu);
 	}
-	
-	private void lmDenseMatrixNoPreAggMultiColContiguous(MatrixBlock matrix, MatrixBlock result, int rl, int ru, int cl, int cu) {
+
+	private void lmDenseMatrixNoPreAggMultiColContiguous(MatrixBlock matrix, MatrixBlock result, int rl, int ru, int cl,
+		int cu) {
 		final double[] retV = result.getDenseBlockValues();
 		final int nColM = matrix.getNumColumns();
 		final int nColRet = result.getNumColumns();
@@ -565,8 +566,8 @@ public class ColGroupDDC extends APreAgg implements IMapToDataGroup {
 		}
 	}
 
-
-	private void lmDenseMatrixNoPreAggMultiColNonContiguous(DenseBlock db, MatrixBlock result, int rl, int ru, int cl, int cu) {
+	private void lmDenseMatrixNoPreAggMultiColNonContiguous(DenseBlock db, MatrixBlock result, int rl, int ru, int cl,
+		int cu) {
 		final double[] retV = result.getDenseBlockValues();
 		final int nColRet = result.getNumColumns();
 		for(int r = rl; r < ru; r++) {
@@ -964,9 +965,9 @@ public class ColGroupDDC extends APreAgg implements IMapToDataGroup {
 	public AColGroup[] splitReshape(int multiplier, int nRow, int nColOrg) {
 		AMapToData[] maps = _data.splitReshapeDDC(multiplier);
 		AColGroup[] res = new AColGroup[multiplier];
-		for(int i = 0; i < multiplier; i++){
+		for(int i = 0; i < multiplier; i++) {
 			final IColIndex ci = i == 0 ? _colIndexes : _colIndexes.shift(i * nColOrg);
-			res[i] = create(ci, _dict, maps[i], null );
+			res[i] = create(ci, _dict, maps[i], null);
 		}
 		return res;
 	}
@@ -978,6 +979,11 @@ public class ColGroupDDC extends APreAgg implements IMapToDataGroup {
 		sb.append(String.format("\n%15s", "Data: "));
 		sb.append(_data);
 		return sb.toString();
+	}
+
+	@Override
+	protected boolean allowShallowIdentityRightMult() {
+		return true;
 	}
 
 }

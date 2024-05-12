@@ -439,6 +439,12 @@ public class ColGroupNegativeTests {
 			// TODO Auto-generated method stub
 			throw new UnsupportedOperationException("Unimplemented method 'splitReshape'");
 		}
+
+		@Override
+		protected boolean allowShallowIdentityRightMult() {
+			// TODO Auto-generated method stub
+			throw new UnsupportedOperationException("Unimplemented method 'allowShallowIdentityRightMult'");
+		}
 	}
 
 	private class FakeDictBasedColGroup extends ADictBasedColGroup {
@@ -727,6 +733,12 @@ public class ColGroupNegativeTests {
 		public AColGroup[] splitReshape(int multiplier, int nRow, int nColOrg) {
 			// TODO Auto-generated method stub
 			throw new UnsupportedOperationException("Unimplemented method 'splitReshape'");
+		}
+
+		@Override
+		protected boolean allowShallowIdentityRightMult() {
+			// TODO Auto-generated method stub
+			throw new UnsupportedOperationException("Unimplemented method 'allowShallowIdentityRightMult'");
 		}
 	}
 }

@@ -79,4 +79,9 @@ public abstract class ASDC extends AMorphingMMColGroup implements AOffsetsGroup 
 		else
 			return super.morph(ct, nRow);
 	}
+	
+	@Override
+	protected boolean allowShallowIdentityRightMult() {
+		return false;
+	}
 }

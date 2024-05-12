@@ -26,8 +26,10 @@ import java.io.ObjectInput;
 import java.io.ObjectOutput;
 import java.lang.ref.SoftReference;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 
@@ -42,9 +44,11 @@ import org.apache.sysds.lops.MapMultChain.ChainType;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.compress.colgroup.AColGroup;
 import org.apache.sysds.runtime.compress.colgroup.AColGroup.CompressionType;
+import org.apache.sysds.runtime.compress.colgroup.ADictBasedColGroup;
 import org.apache.sysds.runtime.compress.colgroup.ColGroupEmpty;
 import org.apache.sysds.runtime.compress.colgroup.ColGroupIO;
 import org.apache.sysds.runtime.compress.colgroup.ColGroupUncompressed;
+import org.apache.sysds.runtime.compress.colgroup.dictionary.IDictionary;
 import org.apache.sysds.runtime.compress.lib.CLALibBinaryCellOp;
 import org.apache.sysds.runtime.compress.lib.CLALibCBind;
 import org.apache.sysds.runtime.compress.lib.CLALibCMOps;
@@ -344,18 +348,16 @@ public class CompressedMatrixBlock extends MatrixBlock {
 		if(k <= 1 || isOverlapping() || _colGroups.size() <= 1)
 			return recomputeNonZeros();
 
-		ExecutorService pool = CommonThreadPool.get(k);
+		final ExecutorService pool = CommonThreadPool.get(k);
 		try {
-			long nnz = 0;
 			List<Future<Long>> tasks = new ArrayList<>();
 			for(AColGroup g : _colGroups)
 				tasks.add(pool.submit(() -> g.getNumberNonZeros(rlen)));
-			// nnz += g.getNumberNonZeros(rlen);
-			for(Future<Long> t : tasks) {
+			
+			long nnz = 0;
+			for(Future<Long> t : tasks)
 				nnz += t.get();
-			}
 			nonZeros = nnz;
-
 		}
 		catch(Exception e) {
 			throw new DMLRuntimeException("Failed to count non zeros", e);
@@ -400,9 +402,17 @@ public class CompressedMatrixBlock extends MatrixBlock {
 		if(cachedMemorySize <= -1L) {
 
 			long total = baseSizeInMemory();
-
-			for(AColGroup grp : _colGroups)
+			// take into consideration duplicate dictionaries
+			Set<IDictionary> dicts = new HashSet<>();
+			for(AColGroup grp : _colGroups){
+				if(grp instanceof ADictBasedColGroup){
+					IDictionary dg = ((ADictBasedColGroup) grp).getDictionary();
+					if(dicts.contains(dg))
+						total -= dg.getInMemorySize();
+					dicts.add(dg);
+				}
 				total += grp.estimateInMemorySize();
+			}
 			cachedMemorySize = total;
 			return total;
 		}
@@ -737,8 +747,22 @@ public class CompressedMatrixBlock extends MatrixBlock {
 
 	@Override
 	public boolean isEmptyBlock(boolean safe) {
-		final long nonZeros = getNonZeros();
-		return _colGroups == null || nonZeros == 0 || (nonZeros == -1 && recomputeNonZeros() == 0);
+		if(nonZeros > 1)
+			return false;
+		else if(_colGroups == null || nonZeros == 0)
+			return true;
+		else{
+			if(nonZeros == -1){
+				// try to use column groups
+				for(AColGroup g : _colGroups)
+					if(!g.isEmpty())
+						return false;
+				// Otherwise recompute non zeros.
+				recomputeNonZeros();
+			}
+
+			return getNonZeros() == 0;
+		}
 	}
 
 	@Override

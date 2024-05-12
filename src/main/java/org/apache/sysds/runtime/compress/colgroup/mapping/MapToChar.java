@@ -400,14 +400,16 @@ public class MapToChar extends AMapToData {
 		for(int i = 0; i < multiplier; i++)
 			ret[i] = new MapToChar(getUnique(), eachSize);
 		
-		for(int i = 0; i < s; i+= multiplier){
-			int off = i / multiplier;
-			for(int j = i; j < i + multiplier; j++){
-				ret[j % multiplier].set(off, getIndex(j));
-			}
-		}
+		for(int i = 0; i < s; i+= multiplier)
+			splitReshapeDDCRow(ret, multiplier, i);
 		
 		return ret;
+	}
+
+	private void splitReshapeDDCRow(MapToChar[] ret, int multiplier, int i){
+		int off = i / multiplier;
+		for(int j = i; j < i + multiplier; j++)
+			ret[j % multiplier].set(off, getIndex(j));	
 	}
 
 }

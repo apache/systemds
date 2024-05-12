@@ -90,7 +90,7 @@ public class CLALibReshape {
 	private MatrixBlock applyCompressed() throws Exception {
 		final int multiplier = rlen / rows;
 		final List<AColGroup> retGroups;
-		if(pool == null)
+		if(pool == null || in.getColGroups().size() == 1)
 			retGroups = applySingleThread(multiplier);
 		else
 			retGroups = applyParallel(multiplier);

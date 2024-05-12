@@ -406,7 +406,7 @@ public class MapToChar extends AMapToData {
 		return ret;
 	}
 
-	private void splitReshapeDDCRow(MapToChar[] ret, int multiplier, int i){
+	private void splitReshapeDDCRow(final MapToChar[] ret, final int multiplier, final int i){
 		int off = i / multiplier;
 		for(int j = i; j < i + multiplier; j++)
 			ret[j % multiplier].set(off, getIndex(j));	

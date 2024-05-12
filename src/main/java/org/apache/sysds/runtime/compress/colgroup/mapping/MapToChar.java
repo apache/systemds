@@ -392,15 +392,20 @@ public class MapToChar extends AMapToData {
 	}
 
 	@Override 
-	public AMapToData[] splitReshapeDDC(int multiplier){
+	public AMapToData[] splitReshapeDDC(final int multiplier){
 
 		final int s = size();
 		final MapToChar[] ret = new MapToChar[multiplier];
+		final int eachSize = s / multiplier;
 		for(int i = 0; i < multiplier; i++)
-			ret[i] = new MapToChar(getUnique(), s / multiplier);
+			ret[i] = new MapToChar(getUnique(), eachSize);
 		
-		for(int i = 0; i < s; i++)
-			ret[i % multiplier].set(i / multiplier, getIndex(i));
+		for(int i = 0; i < s; i+= multiplier){
+			int off = i / multiplier;
+			for(int j = i; j < i + multiplier; j++){
+				ret[j % multiplier].set(off, getIndex(j));
+			}
+		}
 		
 		return ret;
 	}

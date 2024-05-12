@@ -110,16 +110,22 @@ public class LibMatrixReplace {
 
 	private static void replaceSparseInSparseOut(MatrixBlock in, MatrixBlock ret, double pattern, double replacement) {
 		ret.allocateSparseRowsBlock();
-		SparseBlock a = in.sparseBlock;
-		SparseBlock c = ret.sparseBlock;
+		final SparseBlock a = in.sparseBlock;
+		final SparseBlock c = ret.sparseBlock;
 
-		for(int i = 0; i < in.rlen; i++) {
+		replaceSparseInSparseOut(a, c, pattern, replacement, 0, in.rlen);
+
+	}
+
+	private static void replaceSparseInSparseOut(SparseBlock a, SparseBlock c, double pattern, double replacement, int s,
+		int e) {
+		for(int i = s; i < e; i++) {
 			if(!a.isEmpty(i)) {
-				c.allocate(i);
-				int apos = a.pos(i);
-				int alen = a.size(i);
-				int[] aix = a.indexes(i);
-				double[] avals = a.values(i);
+				final int apos = a.pos(i);
+				final int alen = a.size(i);
+				final int[] aix = a.indexes(i);
+				final double[] avals = a.values(i);
+				c.allocate(i, alen);
 				for(int j = apos; j < apos + alen; j++) {
 					double val = avals[j];
 					if(val == pattern)
@@ -127,9 +133,9 @@ public class LibMatrixReplace {
 					else
 						c.append(i, aix[j], val);
 				}
+				c.compact(i);
 			}
 		}
-
 	}
 
 	private static void replace0InSparse(MatrixBlock in, MatrixBlock ret, double replacement) {

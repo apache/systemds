@@ -951,21 +951,26 @@ public abstract class AMapToData implements Serializable {
 	}
 
 	/**
-	 * Split this mapping into x smaller mappings according to round robin. 
+	 * Split this mapping into x smaller mappings according to round robin.
 	 * 
 	 * @param multiplier The number of smaller mappings to construct
 	 * @return The list of smaller mappings
 	 */
-	public AMapToData[] splitReshapeDDC(int multiplier){
+	public AMapToData[] splitReshapeDDC(final int multiplier) {
 
 		final int s = size();
-		AMapToData[] ret = new AMapToData[multiplier];
+		final AMapToData[] ret = new AMapToData[multiplier];
+		final int eachSize = s / multiplier;
 		for(int i = 0; i < multiplier; i++)
-			ret[i] = MapToFactory.create(s / multiplier, getUnique());
-		
-		for(int i = 0; i < s; i++)
-			ret[i % multiplier].set(i / multiplier, getIndex(i));
-		
+			ret[i] = MapToFactory.create(eachSize, getUnique());
+
+		for(int i = 0; i < s; i += multiplier) {
+			int off = i / multiplier;
+			for(int j = i; j < i + multiplier; j++) {
+				ret[j % multiplier].set(off, getIndex(j));
+			}
+		}
+
 		return ret;
 	}
 

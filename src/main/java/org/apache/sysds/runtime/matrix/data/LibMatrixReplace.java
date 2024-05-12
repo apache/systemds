@@ -42,7 +42,6 @@ public class LibMatrixReplace {
 		final int rlen = in.getNumRows();
 		final int clen = in.getNumColumns();
 		final long nonZeros = in.getNonZeros();
-
 		final boolean sparse = in.isInSparseFormat();
 
 		if(ret != null)

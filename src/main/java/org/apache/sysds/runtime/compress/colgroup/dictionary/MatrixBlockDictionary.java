@@ -1183,27 +1183,35 @@ public class MatrixBlockDictionary extends ADictionary {
 
 	@Override
 	public void colSum(double[] c, int[] counts, IColIndex colIndexes) {
-		if(_data.isInSparseFormat()) {
-			SparseBlock sb = _data.getSparseBlock();
-			for(int i = 0; i < counts.length; i++) {
-				if(!sb.isEmpty(i)) {
-					// double tmpSum = 0;
-					final int count = counts[i];
-					final int apos = sb.pos(i);
-					final int alen = sb.size(i) + apos;
-					final int[] aix = sb.indexes(i);
-					final double[] avals = sb.values(i);
-					for(int j = apos; j < alen; j++) {
-						c[colIndexes.get(aix[j])] += count * avals[j];
-					}
+		if(_data.isInSparseFormat())
+			colSumSparse(c, counts, colIndexes);
+		else
+			colSumDense(c, counts, colIndexes);
+	}
+
+	private void colSumSparse(double[] c, int[] counts, IColIndex colIndexes) {
+		SparseBlock sb = _data.getSparseBlock();
+		for(int i = 0; i < counts.length; i++) {
+			final int count = counts[i];
+			if(!sb.isEmpty(i) && count > 0) {
+				// double tmpSum = 0;
+				final int apos = sb.pos(i);
+				final int alen = sb.size(i) + apos;
+				final int[] aix = sb.indexes(i);
+				final double[] avals = sb.values(i);
+				for(int j = apos; j < alen; j++) {
+					c[colIndexes.get(aix[j])] += count * avals[j];
 				}
 			}
 		}
-		else {
-			double[] values = _data.getDenseBlockValues();
-			int off = 0;
-			for(int k = 0; k < counts.length; k++) {
-				final int countK = counts[k];
+	}
+
+	private void colSumDense(double[] c, int[] counts, IColIndex colIndexes) {
+		double[] values = _data.getDenseBlockValues();
+		int off = 0;
+		for(int k = 0; k < counts.length; k++) {
+			final int countK = counts[k];
+			if(countK > 0){
 				for(int j = 0; j < _data.getNumColumns(); j++) {
 					final double v = values[off++];
 					c[colIndexes.get(j)] += v * countK;

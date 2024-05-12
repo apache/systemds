@@ -61,34 +61,36 @@ public class LibMatrixReplace {
 		}
 
 		final boolean replaceNaN = Double.isNaN(pattern);
-		if(sparse) // SPARSE
-			replaceSparse(in, ret, pattern, replacement, replaceNaN);
-		else if(replaceNaN)
-			replaceDenseNaN(in, ret, replacement);
-		else
-			replaceDense(in, ret, pattern, replacement);
 
-		ret.recomputeNonZeros(k);
+		final long nnz;
+		if(sparse) // SPARSE
+			nnz = replaceSparse(in, ret, pattern, replacement, replaceNaN);
+		else if(replaceNaN)
+			nnz = replaceDenseNaN(in, ret, replacement);
+		else
+			nnz = replaceDense(in, ret, pattern, replacement);
+
+		ret.setNonZeros(nnz);
 		ret.examSparsity(k);
 		return ret;
 	}
 
-	private static void replaceSparse(MatrixBlock in, MatrixBlock ret, double pattern, double replacement,
+	private static long replaceSparse(MatrixBlock in, MatrixBlock ret, double pattern, double replacement,
 		boolean replaceNaN) {
 		if(replaceNaN)
-			replaceSparseInSparseOutReplaceNaN(in, ret, replacement);
+			return replaceSparseInSparseOutReplaceNaN(in, ret, replacement);
 		else if(pattern != 0d) // sparse safe.
-			replaceSparseInSparseOut(in, ret, pattern, replacement);
+			return replaceSparseInSparseOut(in, ret, pattern, replacement);
 		else // sparse unsafe
-			replace0InSparse(in, ret, replacement);
+			return replace0InSparse(in, ret, replacement);
 
 	}
 
-	private static void replaceSparseInSparseOutReplaceNaN(MatrixBlock in, MatrixBlock ret, double replacement) {
+	private static long replaceSparseInSparseOutReplaceNaN(MatrixBlock in, MatrixBlock ret, double replacement) {
 		ret.allocateSparseRowsBlock();
 		SparseBlock a = in.sparseBlock;
 		SparseBlock c = ret.sparseBlock;
-
+		long nnz = 0;
 		for(int i = 0; i < in.rlen; i++) {
 			if(!a.isEmpty(i)) {
 				int apos = a.pos(i);
@@ -104,21 +106,24 @@ public class LibMatrixReplace {
 						c.append(i, aix[j], val);
 				}
 				c.compact(i);
+				nnz += c.size(i);
 			}
 		}
+		return nnz;
 	}
 
-	private static void replaceSparseInSparseOut(MatrixBlock in, MatrixBlock ret, double pattern, double replacement) {
+	private static long replaceSparseInSparseOut(MatrixBlock in, MatrixBlock ret, double pattern, double replacement) {
 		ret.allocateSparseRowsBlock();
 		final SparseBlock a = in.sparseBlock;
 		final SparseBlock c = ret.sparseBlock;
 
-		replaceSparseInSparseOut(a, c, pattern, replacement, 0, in.rlen);
+		return replaceSparseInSparseOut(a, c, pattern, replacement, 0, in.rlen);
 
 	}
 
-	private static void replaceSparseInSparseOut(SparseBlock a, SparseBlock c, double pattern, double replacement, int s,
+	private static long replaceSparseInSparseOut(SparseBlock a, SparseBlock c, double pattern, double replacement, int s,
 		int e) {
+		long nnz = 0;
 		for(int i = s; i < e; i++) {
 			if(!a.isEmpty(i)) {
 				final int apos = a.pos(i);
@@ -134,11 +139,13 @@ public class LibMatrixReplace {
 						c.append(i, aix[j], val);
 				}
 				c.compact(i);
+				nnz += c.size(i);
 			}
 		}
+		return nnz;
 	}
 
-	private static void replace0InSparse(MatrixBlock in, MatrixBlock ret, double replacement) {
+	private static long replace0InSparse(MatrixBlock in, MatrixBlock ret, double replacement) {
 		ret.sparse = false;
 		ret.allocateDenseBlock();
 		SparseBlock a = in.sparseBlock;
@@ -148,7 +155,7 @@ public class LibMatrixReplace {
 		c.reset(in.rlen, in.clen, replacement);
 
 		if(a == null)// check for empty matrix
-			return;
+			return ((long) in.rlen) * in.clen;
 
 		// overwrite with existing values (via scatter)
 		for(int i = 0; i < in.rlen; i++) {
@@ -164,33 +171,41 @@ public class LibMatrixReplace {
 						cvals[cpos + aix[j]] = avals[j];
 			}
 		}
+		return ((long) in.rlen) * in.clen;
 
 	}
 
-	private static void replaceDense(MatrixBlock in, MatrixBlock ret, double pattern, double replacement) {
+	private static long replaceDense(MatrixBlock in, MatrixBlock ret, double pattern, double replacement) {
 		DenseBlock a = in.getDenseBlock();
 		DenseBlock c = ret.allocateDenseBlock().getDenseBlock();
+		long nnz = 0;
 		for(int bi = 0; bi < a.numBlocks(); bi++) {
 			int len = a.size(bi);
 			double[] avals = a.valuesAt(bi);
 			double[] cvals = c.valuesAt(bi);
 			for(int i = 0; i < len; i++) {
 				cvals[i] = avals[i] == pattern ? replacement : avals[i];
+				nnz += cvals[i] != 0 ? 1 : 0;
 			}
 		}
+		return nnz;
 	}
 
-	private static void replaceDenseNaN(MatrixBlock in, MatrixBlock ret, double replacement) {
+	private static long replaceDenseNaN(MatrixBlock in, MatrixBlock ret, double replacement) {
 		DenseBlock a = in.getDenseBlock();
 		DenseBlock c = ret.allocateDenseBlock().getDenseBlock();
+		long nnz = 0;
 		for(int bi = 0; bi < a.numBlocks(); bi++) {
 			int len = a.size(bi);
 			double[] avals = a.valuesAt(bi);
 			double[] cvals = c.valuesAt(bi);
 			for(int i = 0; i < len; i++) {
 				cvals[i] = Double.isNaN(avals[i]) ? replacement : avals[i];
+				nnz += cvals[i] != 0 ? 1 : 0;
 			}
 		}
+		return nnz;
+
 	}
 
 }

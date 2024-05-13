@@ -989,19 +989,19 @@ public abstract class AMapToData implements Serializable {
 		// for(int i = 0; i < s; i += multiplier)
 		// splitReshapeDDCRow(ret, multiplier, i);
 
-		final int blkz = Math.max(eachSize / 8, 2048) * multiplier;
-		for(int i = 0; i < s; i += blkz)
-			splitReshapeDDCBlock(ret, multiplier, i, Math.min(i + blkz, s));
 		// final int blkz = Math.max(eachSize / 8, 2048) * multiplier;
-		// List<Future<?>> tasks = new ArrayList<>();
-		// for(int i = 0; i < s; i += blkz) {
-		// 	final int start = i;
-		// 	final int end = Math.min(i + blkz, s);
-		// 	pool.submit(() -> splitReshapeDDCBlock(ret, multiplier, start, end));
-		// }
+		// for(int i = 0; i < s; i += blkz)
+		// 	splitReshapeDDCBlock(ret, multiplier, i, Math.min(i + blkz, s));
+		final int blkz = Math.max(eachSize / 8, 2048) * multiplier;
+		List<Future<?>> tasks = new ArrayList<>();
+		for(int i = 0; i < s; i += blkz) {
+			final int start = i;
+			final int end = Math.min(i + blkz, s);
+			tasks.add(pool.submit(() -> splitReshapeDDCBlock(ret, multiplier, start, end)));
+		}
 
-		// for(Future<?> t : tasks)
-		// 	t.get();
+		for(Future<?> t : tasks)
+			t.get();
 
 		return ret;
 	}

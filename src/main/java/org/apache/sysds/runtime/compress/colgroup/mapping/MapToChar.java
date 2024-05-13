@@ -92,6 +92,10 @@ public class MapToChar extends AMapToData {
 		_data[n] = (char) v;
 	}
 
+	public void set(int n, char v) {
+		_data[n] = v;
+	}
+
 	@Override
 	public int setAndGet(int n, int v) {
 		return _data[n] = (char) v;
@@ -407,9 +411,10 @@ public class MapToChar extends AMapToData {
 	}
 
 	private void splitReshapeDDCRow(final MapToChar[] ret, final int multiplier, final int i){
-		int off = i / multiplier;
-		for(int j = i; j < i + multiplier; j++)
-			ret[j % multiplier].set(off, getIndex(j));	
+		final int off = i / multiplier;
+		final int end = i + multiplier;
+		for(int j = i; j < end; j++)
+			ret[j % multiplier].set(off, _data[j]);	
 	}
 
 }

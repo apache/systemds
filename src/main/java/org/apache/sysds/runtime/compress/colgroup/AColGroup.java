@@ -24,6 +24,7 @@ import java.io.IOException;
 import java.io.Serializable;
 import java.util.Collection;
 import java.util.List;
+import java.util.concurrent.ExecutorService;
 
 import org.apache.commons.lang3.NotImplementedException;
 import org.apache.commons.logging.Log;
@@ -887,6 +888,32 @@ public abstract class AColGroup implements Serializable {
 	 * @return a list of split column groups
 	 */
 	public abstract AColGroup[] splitReshape(final int multiplier, final int nRow, final int nColOrg);
+
+	/**
+	 * This method returns a list of column groups that are naive splits of this column group as if it is reshaped.
+	 * 
+	 * This means the column groups rows are split into x number of other column groups where x is the multiplier.
+	 * 
+	 * The indexes are assigned round robbin to each of the output groups, meaning the first index is assigned.
+	 * 
+	 * If for instance the 4. column group is split by a 2 multiplier and there was 5 columns in total originally. The
+	 * output becomes 2 column groups at column index 4 and one at 9.
+	 * 
+	 * If possible the split column groups should reuse pointers back to the original dictionaries!
+	 * 
+	 * This specific variation is pushing down the parallelization given via the executor service provided. If not
+	 * overwritten the default is to call the normal split reshape
+	 * 
+	 * @param multiplier The number of column groups to split into
+	 * @param nRow       The number of rows in this column group in case the underlying column group does not know
+	 * @param nColOrg    The number of overall columns in the host CompressedMatrixBlock
+	 * @param pool       The executor service to submit parallel tasks to
+	 * @return a list of split column groups
+	 */
+	public AColGroup[] splitReshapePushDown(final int multiplier, final int nRow, final int nColOrg,
+		final ExecutorService pool) throws Exception {
+		return splitReshape(multiplier, nRow, nColOrg);
+	}
 
 	@Override
 	public String toString() {

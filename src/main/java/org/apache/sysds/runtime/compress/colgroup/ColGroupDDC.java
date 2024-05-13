@@ -24,6 +24,7 @@ import java.io.DataOutput;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.List;
+import java.util.concurrent.ExecutorService;
 
 import org.apache.commons.lang3.NotImplementedException;
 import org.apache.sysds.runtime.DMLRuntimeException;
@@ -964,6 +965,17 @@ public class ColGroupDDC extends APreAgg implements IMapToDataGroup {
 	@Override
 	public AColGroup[] splitReshape(int multiplier, int nRow, int nColOrg) {
 		AMapToData[] maps = _data.splitReshapeDDC(multiplier);
+		AColGroup[] res = new AColGroup[multiplier];
+		for(int i = 0; i < multiplier; i++) {
+			final IColIndex ci = i == 0 ? _colIndexes : _colIndexes.shift(i * nColOrg);
+			res[i] = create(ci, _dict, maps[i], null);
+		}
+		return res;
+	}
+
+	@Override
+	public AColGroup[] splitReshapePushDown(int multiplier, int nRow, int nColOrg, ExecutorService pool) throws Exception {
+		AMapToData[] maps = _data.splitReshapeDDCPushDown(multiplier, pool);
 		AColGroup[] res = new AColGroup[multiplier];
 		for(int i = 0; i < multiplier; i++) {
 			final IColIndex ci = i == 0 ? _colIndexes : _colIndexes.shift(i * nColOrg);

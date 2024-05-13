@@ -90,8 +90,10 @@ public class CLALibReshape {
 	private MatrixBlock applyCompressed() throws Exception {
 		final int multiplier = rlen / rows;
 		final List<AColGroup> retGroups;
-		if(pool == null || in.getColGroups().size() == 1)
+		if(pool == null)
 			retGroups = applySingleThread(multiplier);
+		else if (in.getColGroups().size() == 1)
+			retGroups = applyParallelPushDown(multiplier);
 		else
 			retGroups = applyParallel(multiplier);
 
@@ -113,6 +115,21 @@ public class CLALibReshape {
 
 		return retGroups;
 
+	}
+
+
+	private List<AColGroup> applyParallelPushDown(int multiplier) throws Exception {
+		List<AColGroup> groups = in.getColGroups();
+
+		List<AColGroup> retGroups = new ArrayList<>(groups.size() * multiplier);
+		for(AColGroup g : groups){
+			final AColGroup[] tg =  g.splitReshapePushDown(multiplier, rlen, clen, pool);
+
+			for(int i = 0; i < tg.length; i++)
+				retGroups.add(tg[i]);
+		}
+
+		return retGroups;
 	}
 
 	private List<AColGroup> applyParallel(int multiplier) throws Exception {

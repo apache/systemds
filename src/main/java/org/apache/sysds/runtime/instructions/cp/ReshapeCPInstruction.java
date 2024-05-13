@@ -98,7 +98,7 @@ public class ReshapeCPInstruction extends UnaryCPInstruction {
 			BooleanObject byRow = (BooleanObject) ec.getScalarInput(_opByRow.getName(), ValueType.BOOLEAN, _opByRow.isLiteral());
 
 			//execute operations
-			MatrixBlock out = in.reshape(rows,cols, byRow.getBooleanValue());
+			MatrixBlock out = in.reshape(rows, cols, byRow.getBooleanValue());
 			
 			//set output and release inputs
 			ec.releaseMatrixInput(input1.getName());

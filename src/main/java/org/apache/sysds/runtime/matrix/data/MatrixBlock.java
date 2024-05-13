@@ -5839,7 +5839,7 @@ public class MatrixBlock extends MatrixValue implements CacheBlock<MatrixBlock>,
 		return LibMatrixEquals.equals(this, arg0);
 	}
 
-	public MatrixBlock reshape(int rows,int cols, boolean byRow){
+	public MatrixBlock reshape(int rows, int cols, boolean byRow){
 		MatrixBlock out = new MatrixBlock();
 		return LibMatrixReorg.reshape(this, out, rows, cols, byRow);
 	}

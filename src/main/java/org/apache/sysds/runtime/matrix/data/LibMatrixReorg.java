@@ -592,7 +592,7 @@ public class LibMatrixReorg {
 	 * @param rowwise if true, reshape by row
 	 * @return output matrix
 	 */
-	public static MatrixBlock reshape( MatrixBlock in, MatrixBlock out, int rows, int cols, boolean rowwise ) {
+	public static MatrixBlock reshape(MatrixBlock in, MatrixBlock out, int rows, int cols, boolean rowwise) {
 		int rlen = in.rlen;
 		int clen = in.clen;
 		

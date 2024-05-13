@@ -21,6 +21,8 @@ package org.apache.sysds.test.component.compress.colgroup;
 
 import static org.junit.Assert.fail;
 
+import java.util.concurrent.ExecutorService;
+
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.DMLScriptException;
 import org.apache.sysds.runtime.compress.CompressionSettings;
@@ -445,6 +447,13 @@ public class ColGroupNegativeTests {
 			// TODO Auto-generated method stub
 			throw new UnsupportedOperationException("Unimplemented method 'allowShallowIdentityRightMult'");
 		}
+
+		@Override
+		public AColGroup[] splitReshapePushDown(int multiplier, int nRow, int nColOrg, ExecutorService pool)
+			throws Exception {
+			// TODO Auto-generated method stub
+			throw new UnsupportedOperationException("Unimplemented method 'splitReshapePushDown'");
+		}
 	}
 
 	private class FakeDictBasedColGroup extends ADictBasedColGroup {
@@ -739,6 +748,13 @@ public class ColGroupNegativeTests {
 		protected boolean allowShallowIdentityRightMult() {
 			// TODO Auto-generated method stub
 			throw new UnsupportedOperationException("Unimplemented method 'allowShallowIdentityRightMult'");
+		}
+
+		@Override
+		public AColGroup[] splitReshapePushDown(int multiplier, int nRow, int nColOrg, ExecutorService pool)
+			throws Exception {
+			// TODO Auto-generated method stub
+			throw new UnsupportedOperationException("Unimplemented method 'splitReshapePushDown'");
 		}
 	}
 }

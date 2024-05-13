@@ -986,9 +986,12 @@ public abstract class AMapToData implements Serializable {
 		for(int i = 0; i < multiplier; i++)
 			ret[i] = MapToFactory.create(eachSize, getUnique());
 
-		for(int i = 0; i < s; i += multiplier)
-		splitReshapeDDCRow(ret, multiplier, i);
+		// for(int i = 0; i < s; i += multiplier)
+		// splitReshapeDDCRow(ret, multiplier, i);
 
+		final int blkz = Math.max(eachSize / 8, 2048) * multiplier;
+		for(int i = 0; i < s; i += blkz)
+			splitReshapeDDCBlock(ret, multiplier, i, Math.min(i + blkz, s));
 		// final int blkz = Math.max(eachSize / 8, 2048) * multiplier;
 		// List<Future<?>> tasks = new ArrayList<>();
 		// for(int i = 0; i < s; i += blkz) {

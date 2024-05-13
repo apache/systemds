@@ -414,7 +414,7 @@ public class MapToChar extends AMapToData {
 		final int off = i / multiplier;
 		final int end = i + multiplier;
 		for(int j = i; j < end; j++)
-			ret[j % multiplier].set(off, _data[j]);	
+			ret[j % multiplier]._data[off] = _data[j];	
 	}
 
 }

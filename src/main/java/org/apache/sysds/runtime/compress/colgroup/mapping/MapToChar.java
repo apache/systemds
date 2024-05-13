@@ -399,28 +399,6 @@ public class MapToChar extends AMapToData {
 		v[getIndex(r8)] += td[tm.getIndex(r8)];
 	}
 
-	// @Override
-	// public AMapToData[] splitReshapeDDC(final int multiplier){
-
-	// final int s = size();
-	// final MapToChar[] ret = new MapToChar[multiplier];
-	// final int eachSize = s / multiplier;
-	// for(int i = 0; i < multiplier; i++)
-	// ret[i] = new MapToChar(getUnique(), eachSize);
-
-	// for(int i = 0; i < s; i+= multiplier)
-	// splitReshapeDDCRow(ret, multiplier, i);
-
-	// return ret;
-	// }
-
-	// private void splitReshapeDDCRow(final MapToChar[] ret, final int multiplier, final int i){
-	// final int off = i / multiplier;
-	// final int end = i + multiplier;
-	// for(int j = i; j < end; j++)
-	// ret[j % multiplier]._data[off] = _data[j];
-	// }
-
 	@Override
 	public AMapToData[] splitReshapeDDCPushDown(final int multiplier, final ExecutorService pool) throws Exception {
 		final int s = size();

@@ -45,11 +45,59 @@ public class CLALibTable {
 	public static MatrixBlock tableSeqOperations(int seqHeight, MatrixBlock A, int nColOut) {
 
 		final int[] map = new int[seqHeight];
-		boolean containsNull = false; // figure out if there are nulls.
-		int maxCol = 0;
+		int maxCol = constructInitialMapping(map, A);
+		boolean containsNull = maxCol < 0;
+		maxCol = Math.abs(maxCol);
 
-		for(int i = 0; i < seqHeight; i++) {
-			final double v2 = A.get(i, 0);
+		if(nColOut == -1)
+			nColOut = maxCol;
+		else if(nColOut < maxCol)
+			throw new DMLRuntimeException("invalid nColOut, requested: " + nColOut + " but have to be : " + maxCol);
+
+		final int nNulls = containsNull ? correctNulls(map, nColOut) : 0;
+
+		if(nColOut == 0) // edge case of empty zero dimension block.
+			return new MatrixBlock(seqHeight, 0, 0.0);
+		return createCompressedReturn(map, nColOut, seqHeight, nNulls, containsNull);
+	}
+
+	private static CompressedMatrixBlock createCompressedReturn(int[] map, int nColOut, int seqHeight, int nNulls,
+		boolean containsNull) {
+		// create a single DDC Column group.
+		final IColIndex i = ColIndexFactory.create(0, nColOut);
+		final ADictionary d = new IdentityDictionary(nColOut, containsNull);
+		final AMapToData m = MapToFactory.create(seqHeight, map, nColOut + (containsNull ? 1 : 0));
+		final AColGroup g = ColGroupDDC.create(i, d, m, null);
+
+		final CompressedMatrixBlock cmb = new CompressedMatrixBlock(seqHeight, nColOut);
+		cmb.allocateColGroup(g);
+		cmb.setNonZeros(seqHeight - nNulls);
+
+		return cmb;
+	}
+
+	private static int correctNulls(int[] map, int nColOut) {
+		int nNulls = 0;
+		for(int i = 0; i < map.length; i++) {
+			if(map[i] == -1) {
+				map[i] = nColOut;
+				nNulls++;
+			}
+
+		}
+		return nNulls;
+	}
+
+	private static int constructInitialMapping(int[] map, MatrixBlock A) {
+		if(A.isEmpty() || A.isInSparseFormat())
+			throw new DMLRuntimeException("not supported empty or sparse construction of seq table");
+		
+		int maxCol = 0;
+		boolean containsNull = false;
+		final double[] aVals = A.getDenseBlockValues();
+
+		for(int i = 0; i < map.length; i++) {
+			final double v2 = aVals[i];
 			if(Double.isNaN(v2)) {
 				map[i] = -1; // assign temporarily to -1
 				containsNull = true;
@@ -67,29 +115,6 @@ public class CLALibTable {
 			}
 		}
 
-		if(nColOut == -1)
-			nColOut = maxCol;
-
-		if(containsNull) { // correct for null.
-			for(int i = 0; i < seqHeight; i++) {
-				if(map[i] == -1)
-					map[i] = nColOut;
-			}
-		}
-
-		if(nColOut == 0) // edge case of empty zero dimension block.
-			return new MatrixBlock(seqHeight, 0, 0.0);
-
-		// create a single DDC Column group.
-		final IColIndex i = ColIndexFactory.create(0, nColOut);
-		final ADictionary d = new IdentityDictionary(nColOut, containsNull);
-		final AMapToData m = MapToFactory.create(seqHeight, map, nColOut + (containsNull ? 1 : 0));
-		final AColGroup g = ColGroupDDC.create(i, d, m, null);
-
-		final CompressedMatrixBlock cmb = new CompressedMatrixBlock(seqHeight, nColOut);
-		cmb.allocateColGroup(g);
-		cmb.recomputeNonZeros();
-
-		return cmb;
+		return containsNull ? maxCol * -1 : maxCol;
 	}
 }

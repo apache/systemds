@@ -1326,8 +1326,8 @@ public class BuiltinFunctionExpression extends DataIdentifier {
 			
 			// Check for validity of input arguments, and setup output dimensions
 			
-			// First input: is always of type MATRIX or Scalar(scalar is allowed instead of allocating sequence)
-			checkMatrixScalarParam(getFirstExpr());
+			// First input: is always of type MATRIX
+			checkMatrixParam(getFirstExpr());
 
 			if (getSecondExpr() == null)
 				raiseValidateError("Invalid number of arguments to table(). "

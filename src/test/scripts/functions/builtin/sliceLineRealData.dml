@@ -1,0 +1,53 @@
+#-------------------------------------------------------------
+#
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+#
+#-------------------------------------------------------------
+
+Forig = read($1, data_type="frame", format="csv", header=TRUE);
+F = Forig[,1:ncol(Forig)-1];
+y = as.matrix(Forig[,ncol(Forig)]);
+tfspec = read($2, data_type="scalar", value_type="string");
+[X, meta] = transformencode(target=F, spec=tfspec);
+
+meta = meta[,2:ncol(X)]
+X = X[,2:ncol(X)]
+
+# one hot encoding
+m = nrow(X)
+n = ncol(X)
+fdom = colMaxs(X);
+foffb = t(cumsum(t(fdom))) - fdom;
+foffe = t(cumsum(t(fdom)))
+rix = matrix(seq(1,m)%*%matrix(1,1,n), m*n, 1)
+cix = matrix(X + foffb, m*n, 1);
+X2 = table(rix, cix); #one-hot encoded
+
+# learn model
+B = lm(X=X2, y=y, icpt=2, reg=0.001, verbose=FALSE);
+yhat = lmPredict(X=X2, B=B, ytest=y, icpt=1, verbose=FALSE);
+acc = lmPredictStats(yhat, y, TRUE);
+e = (y-yhat)^2;
+
+# model debugging via sliceline
+[TK,TKC,D] = slicefinder(X=X, e=e, k=4, alpha=0.95, minSup=32, tpBlksz=16, verbose=TRUE)
+tfspec2 = "{ ids:true, recode:[1,2,5], bin:[{id:3, method:equi-width, numbins:10},{id:4, method:equi-width, numbins:10}]}"
+XYZ = sliceLineDebug(TK=TK, TKC=TKC, tfmeta=meta, tfspec=tfspec2)
+
+acc = acc[3,1];
+write(acc, $3);

@@ -52,7 +52,7 @@ m_lmPredictStats = function(Matrix[Double] yhat, Matrix[Double] ytest, Boolean l
     R2 = 1 - ss_res / (sum_sq_y_test - n * (sum_y_test/n)^2);
   else
     R2 = sum((yhat - mean_y_test)^2) / sum((ytest - mean_y_test)^2)
-  
+
   avg_tot = sum_y_test / n;
   ss_tot = sum_sq_y_test;
   ss_avg_tot = ss_tot - n * avg_tot ^ 2;

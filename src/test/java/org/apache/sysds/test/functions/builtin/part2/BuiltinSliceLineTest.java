@@ -31,12 +31,12 @@ import org.apache.sysds.test.AutomatedTestBase;
 import org.apache.sysds.test.TestConfiguration;
 import org.apache.sysds.test.TestUtils;
 
-public class BuiltinSliceFinderTest extends AutomatedTestBase
+public class BuiltinSliceLineTest extends AutomatedTestBase
 {
 	private static final String PREP_NAME = "slicefinderPrep";
 	private static final String TEST_NAME = "slicefinder";
 	private static final String TEST_DIR = "functions/builtin/";
-	private static final String TEST_CLASS_DIR = TEST_DIR + BuiltinSliceFinderTest.class.getSimpleName() + "/";
+	private static final String TEST_CLASS_DIR = TEST_DIR + BuiltinSliceLineTest.class.getSimpleName() + "/";
 	private static final boolean VERBOSE = true;
 	
 	private static final double[][] EXPECTED_TOPK = new double[][]{

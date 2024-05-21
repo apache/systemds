@@ -25,7 +25,7 @@ y = as.matrix(Forig[,ncol(Forig)]);
 tfspec = read($2, data_type="scalar", value_type="string");
 [X, meta] = transformencode(target=F, spec=tfspec);
 
-meta = meta[,2:ncol(X)]
+meta = meta[1:10,2:ncol(X)];
 X = X[,2:ncol(X)]
 
 # one hot encoding

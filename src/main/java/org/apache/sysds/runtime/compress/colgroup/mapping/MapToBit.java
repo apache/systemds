@@ -267,8 +267,8 @@ public class MapToBit extends AMapToData {
 	}
 
 	@Override
-	public void copyInt(int[] d) {
-		for(int i = 0; i < _size; i++)
+	public void copyInt(int[] d, int start, int end) {
+		for(int i = start; i < end; i++)
 			set(i, d[i]);
 	}
 

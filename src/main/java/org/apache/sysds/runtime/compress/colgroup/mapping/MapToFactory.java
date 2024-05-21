@@ -21,12 +21,17 @@ package org.apache.sysds.runtime.compress.colgroup.mapping;
 
 import java.io.DataInput;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Future;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.runtime.compress.DMLCompressionException;
 import org.apache.sysds.runtime.compress.bitmap.ABitmap;
 import org.apache.sysds.runtime.compress.utils.IntArrayList;
+import org.apache.sysds.runtime.util.CommonThreadPool;
 
 public interface MapToFactory {
 	static final Log LOG = LogFactory.getLog(MapToFactory.class.getName());
@@ -76,6 +81,20 @@ public interface MapToFactory {
 		_data.copyInt(values);
 		return _data;
 
+	}
+
+	public static AMapToData create(int size, int[] values, int nUnique, int k) {
+		AMapToData _data = create(size, nUnique);
+		ExecutorService pool = CommonThreadPool.get(k);
+		int blk = Math.max((values.length / k), 1024);
+		blk -= blk % 64; // ensure long size
+		List<Future<?>> tasks = new ArrayList<>();
+		for(int i = 0; i < values.length; i += blk){
+			int start = i;
+			int end = Math.min(i + blk, values.length);
+			tasks.add(pool.submit(() -> _data.copyInt(values, start, end)));
+		}
+		return _data;
 	}
 
 	/**

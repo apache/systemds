@@ -51,8 +51,9 @@ public class CLALibTable {
 
 	public static MatrixBlock tableSeqOperations(int seqHeight, MatrixBlock A, int nColOut) {
 
+		int k = InfrastructureAnalyzer.getLocalParallelism();
 		final int[] map = new int[seqHeight];
-		int maxCol = constructInitialMapping(map, A);
+		int maxCol = constructInitialMapping(map, A, k);
 		boolean containsNull = maxCol < 0;
 		maxCol = Math.abs(maxCol);
 
@@ -65,15 +66,15 @@ public class CLALibTable {
 
 		if(nColOut == 0) // edge case of empty zero dimension block.
 			return new MatrixBlock(seqHeight, 0, 0.0);
-		return createCompressedReturn(map, nColOut, seqHeight, nNulls, containsNull);
+		return createCompressedReturn(map, nColOut, seqHeight, nNulls, containsNull, k);
 	}
 
 	private static CompressedMatrixBlock createCompressedReturn(int[] map, int nColOut, int seqHeight, int nNulls,
-		boolean containsNull) {
+		boolean containsNull, int k) {
 		// create a single DDC Column group.
 		final IColIndex i = ColIndexFactory.create(0, nColOut);
 		final ADictionary d = new IdentityDictionary(nColOut, containsNull);
-		final AMapToData m = MapToFactory.create(seqHeight, map, nColOut + (containsNull ? 1 : 0));
+		final AMapToData m = MapToFactory.create(seqHeight, map, nColOut + (containsNull ? 1 : 0), k);
 		final AColGroup g = ColGroupDDC.create(i, d, m, null);
 
 		final CompressedMatrixBlock cmb = new CompressedMatrixBlock(seqHeight, nColOut);
@@ -94,11 +95,10 @@ public class CLALibTable {
 		return nNulls;
 	}
 
-	private static int constructInitialMapping(int[] map, MatrixBlock A) {
+	private static int constructInitialMapping(int[] map, MatrixBlock A, int k) {
 		if(A.isEmpty() || A.isInSparseFormat())
 			throw new DMLRuntimeException("not supported empty or sparse construction of seq table");
 
-		int k = InfrastructureAnalyzer.getLocalParallelism();
 		ExecutorService pool = CommonThreadPool.get(k);
 		try {
 

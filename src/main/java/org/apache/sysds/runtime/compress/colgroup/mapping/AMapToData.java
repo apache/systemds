@@ -817,7 +817,11 @@ public abstract class AMapToData implements Serializable {
 		copyInt(d.getData());
 	}
 
-	public abstract void copyInt(int[] d);
+	public void copyInt(int[] d) {
+		copyInt(d, 0, d.length);
+	}
+
+	public abstract void copyInt(int[] d, int start, int end);
 
 	public abstract void copyBit(BitSet d);
 

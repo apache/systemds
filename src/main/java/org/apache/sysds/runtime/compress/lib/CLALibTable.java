@@ -19,6 +19,11 @@
 
 package org.apache.sysds.runtime.compress.lib;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Future;
+
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.runtime.DMLRuntimeException;
@@ -31,7 +36,9 @@ import org.apache.sysds.runtime.compress.colgroup.indexes.ColIndexFactory;
 import org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex;
 import org.apache.sysds.runtime.compress.colgroup.mapping.AMapToData;
 import org.apache.sysds.runtime.compress.colgroup.mapping.MapToFactory;
+import org.apache.sysds.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
+import org.apache.sysds.runtime.util.CommonThreadPool;
 import org.apache.sysds.runtime.util.UtilFunctions;
 
 public class CLALibTable {
@@ -83,7 +90,6 @@ public class CLALibTable {
 				map[i] = nColOut;
 				nNulls++;
 			}
-
 		}
 		return nNulls;
 	}
@@ -91,12 +97,43 @@ public class CLALibTable {
 	private static int constructInitialMapping(int[] map, MatrixBlock A) {
 		if(A.isEmpty() || A.isInSparseFormat())
 			throw new DMLRuntimeException("not supported empty or sparse construction of seq table");
-		
+
+		int k = InfrastructureAnalyzer.getLocalParallelism();
+		ExecutorService pool = CommonThreadPool.get(k);
+		try {
+
+			int blkz = Math.max((map.length / k), 1000);
+			List<Future<Integer>> tasks = new ArrayList<>();
+			for(int i = 0; i < map.length; i+= blkz){
+				final int start = i;
+				final int end = Math.min(i + blkz, map.length);
+				tasks.add(pool.submit(() -> partialMapping(map, A, start, end)));
+			}
+
+			int maxCol = 0;
+			for( Future<Integer> f :  tasks){
+				int tmp = f.get();
+				if(Math.abs(tmp) >Math.abs(maxCol))
+					maxCol = tmp;
+			}
+			return maxCol;
+		}
+		catch(Exception e) {
+			throw new DMLRuntimeException(e);
+		}
+		finally {
+			pool.shutdown();
+		}
+
+	}
+
+	private static int partialMapping(int[] map, MatrixBlock A, int start, int end) {
+
 		int maxCol = 0;
 		boolean containsNull = false;
 		final double[] aVals = A.getDenseBlockValues();
 
-		for(int i = 0; i < map.length; i++) {
+		for(int i = start; i < end; i++) {
 			final double v2 = aVals[i];
 			if(Double.isNaN(v2)) {
 				map[i] = -1; // assign temporarily to -1
@@ -117,4 +154,5 @@ public class CLALibTable {
 
 		return containsNull ? maxCol * -1 : maxCol;
 	}
+
 }

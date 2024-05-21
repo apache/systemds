@@ -40,9 +40,7 @@ m_sliceLineDebug = function(Matrix[Double] TK,
   Matrix[Double] TKC, Frame[Unknown] tfmeta, String tfspec)
   return(Matrix[Double] S)
 {
-  # FIXME: frame toString always pads to 100 rows
-  # print("sliceLineDebug: input\n"+toString(TK)+"\n"+toString(TKC)+"\n"+toString(tfmeta));
-  print("sliceLineDebug:");
+  print("\nsliceLineDebug: input\n"+toString(TK)+"\n"+toString(TKC)+"\n"+toString(tfmeta));
 
   # prepare essential decoding info
   N = colnames(tfmeta);

@@ -38,7 +38,7 @@ public class BuiltinSliceLineRealDataTest extends AutomatedTestBase {
 
 	@Override
 	public void setUp() {
-		for(int i=1; i<=4; i++)
+		for(int i=1; i<=1; i++)
 			addTestConfiguration(TEST_NAME+i, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME, new String[] {"R"}));
 	}
 

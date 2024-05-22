@@ -248,11 +248,6 @@ public abstract class ADictBasedColGroup extends AColGroupCompressed implements 
 		if(right.isEmpty())
 			return null;
 
-		LOG.error("valid for identity mm: is Identity " + (_dict instanceof IdentityDictionary ));
-		LOG.error("valid for identity mm: with empty? " + (right.getNumRows() == _colIndexes.size()));
-
-		LOG.error("valid for identity mm: is Rows     " + (right.getNumRows() == _colIndexes.size()));
-		LOG.error("valid for identity mm: is Allowed  " + (allowShallowIdentityRightMult()));
 		// is candidate for identity mm.
 		if(_dict instanceof IdentityDictionary //
 		   && !((IdentityDictionary) _dict).withEmpty()

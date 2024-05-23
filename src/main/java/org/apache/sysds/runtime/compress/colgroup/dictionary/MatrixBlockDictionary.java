@@ -32,6 +32,7 @@ import org.apache.commons.lang3.NotImplementedException;
 import org.apache.sysds.runtime.compress.DMLCompressionException;
 import org.apache.sysds.runtime.compress.colgroup.indexes.ArrayIndex;
 import org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex;
+import org.apache.sysds.runtime.compress.colgroup.indexes.RangeIndex;
 import org.apache.sysds.runtime.compress.colgroup.indexes.SingleIndex;
 import org.apache.sysds.runtime.compress.colgroup.indexes.TwoIndex;
 import org.apache.sysds.runtime.compress.utils.Util;
@@ -1211,7 +1212,7 @@ public class MatrixBlockDictionary extends ADictionary {
 		int off = 0;
 		for(int k = 0; k < counts.length; k++) {
 			final int countK = counts[k];
-			if(countK > 0){
+			if(countK > 0) {
 				for(int j = 0; j < _data.getNumColumns(); j++) {
 					final double v = values[off++];
 					c[colIndexes.get(j)] += v * countK;
@@ -1906,6 +1907,10 @@ public class MatrixBlockDictionary extends ADictionary {
 		else if(aggregateColumns instanceof ArrayIndex)
 			preaggValuesFromDenseDictDenseAggArray(numVals, colIndexes, ((ArrayIndex) aggregateColumns).getArray(), b, cut,
 				ret);
+		else if(aggregateColumns instanceof RangeIndex) {
+			RangeIndex ri = (RangeIndex) aggregateColumns;
+			preaggValuesFromDenseDictDenseAggRange(numVals, colIndexes, ri.get(0), ri.get(0) + ri.size(), b, cut, ret);
+		}
 		else
 			preaggValuesFromDenseDictDenseGeneric(numVals, colIndexes, aggregateColumns, b, cut, ret);
 	}
@@ -1994,6 +1999,63 @@ public class MatrixBlockDictionary extends ADictionary {
 					for(int i = 0; i < az; i++)
 						ret[off + i] += v * b[idb + aggregateColumns[i]];
 				}
+			}
+		}
+	}
+
+	private void preaggValuesFromDenseDictDenseAggRange(final int numVals, final IColIndex colIndexes, final int s,
+		final int e, final double[] b, final int cut, final double[] ret) {
+		if(colIndexes instanceof RangeIndex) {
+			RangeIndex ri = (RangeIndex) colIndexes;
+
+			preaggValuesFromDenseDictDenseAggRangeRange(numVals, ri.get(0), ri.get(0) + ri.size(), s, e, b, cut, ret);
+
+		}
+
+		else
+			preaggValuesFromDenseDictDenseAggRangeGeneric(numVals, colIndexes, s, e, b, cut, ret);
+	}
+
+	private void preaggValuesFromDenseDictDenseAggRangeRange(final int numVals, final int ls, final int le, final int rs,
+		final int re, final double[] b, final int cut, final double[] ret) {
+		final int cz = le - ls;
+		final int az = re - rs;
+		// final int nCells = numVals * cz;
+		final double[] values = _data.getDenseBlockValues();
+
+		// Correctly named ikj matrix multiplication .
+		for(int i = 0; i < numVals; i++) {
+			final int offI = i * cz;
+			for(int k = 0; k < cz; k++) {
+				final int idb = (k + ls) * cut;
+				final int sOff = rs + idb;
+				final int eOff = re + idb;
+				final double v = values[offI + k];
+				for(int j = sOff, offOut = i * az; j < eOff; j++)
+					ret[offOut++] += v * b[j];
+			}
+		}
+	}
+
+	private void preaggValuesFromDenseDictDenseAggRangeGeneric(final int numVals, final IColIndex colIndexes,
+		final int s, final int e, final double[] b, final int cut, final double[] ret) {
+		final int cz = colIndexes.size();
+		final int nCells = numVals * cz;
+		final double[] values = _data.getDenseBlockValues();
+
+		// Correctly named ikj matrix multiplication .
+		// We loop through k the common dimension in the outer loop..
+		for(int k = 0; k < cz; k++) {
+			// offset into right matrix as in row of right matrix
+			// to get the row containing values without having to slice the right
+			// matrix.
+			final int idb = colIndexes.get(k) * cut;
+			final int sOff = s + idb;
+			final int eOff = e + idb;
+			for(int i = 0, off = 0; i < nCells; i += cz) { // entire output??
+				final double v = values[i + k];
+				for(int j = sOff; j < eOff; j++)
+					ret[off++] += v * b[j];
 			}
 		}
 	}

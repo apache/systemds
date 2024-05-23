@@ -96,7 +96,6 @@ public final class CLALibRightMultBy {
 
 	private static CompressedMatrixBlock RMMOverlapping(CompressedMatrixBlock m1, MatrixBlock that, int k) {
 		
-		// final Timing t = new Timing();
 		final int rl = m1.getNumRows();
 		final int cr = that.getNumColumns();
 		final int rr = that.getNumRows(); // shared dim
@@ -117,12 +116,11 @@ public final class CLALibRightMultBy {
 			constV = null;
 		}
 
-		// final double preFilter = t.stop();
 		if(k == 1 || filteredGroups.size() == 1)
 			RMMSingle(filteredGroups, that, retCg);
 		else
 			RMMParallel(filteredGroups, that, retCg, k);
-		// final double mult = t.stop();
+
 		if(constV != null) {
 			final MatrixBlock cb = new MatrixBlock(1, constV.length, constV);
 			final MatrixBlock cbRet = new MatrixBlock(1, that.getNumColumns(), false);
@@ -138,9 +136,6 @@ public final class CLALibRightMultBy {
 
 		CLALibUtils.addEmptyColumn(retCg, cr);
 
-		// final double finalize = t.stop();
-
-		// LOG.debug(String.format("RMM: filter: %10f Mult: %10f out: %10f", preFilter, mult, finalize));
 		return ret;
 	}
 
@@ -267,7 +262,6 @@ public final class CLALibRightMultBy {
 
 	private static boolean RMMParallel(List<AColGroup> filteredGroups, MatrixBlock that, List<AColGroup> retCg, int k) {
 		final ExecutorService pool = CommonThreadPool.get(k);
-		LOG.error("Parallelizm in rmm" +  k);
 		boolean containsNull = false;
 		try {
 			final IColIndex allCols = ColIndexFactory.create(that.getNumColumns());

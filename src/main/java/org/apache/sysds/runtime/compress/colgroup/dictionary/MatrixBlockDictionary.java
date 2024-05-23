@@ -2007,11 +2007,8 @@ public class MatrixBlockDictionary extends ADictionary {
 		final int e, final double[] b, final int cut, final double[] ret) {
 		if(colIndexes instanceof RangeIndex) {
 			RangeIndex ri = (RangeIndex) colIndexes;
-
 			preaggValuesFromDenseDictDenseAggRangeRange(numVals, ri.get(0), ri.get(0) + ri.size(), s, e, b, cut, ret);
-
 		}
-
 		else
 			preaggValuesFromDenseDictDenseAggRangeGeneric(numVals, colIndexes, s, e, b, cut, ret);
 	}

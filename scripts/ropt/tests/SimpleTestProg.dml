@@ -10,8 +10,9 @@ y = read (fileY);
 
 n = nrow (X);
 m = ncol (X);
+c = 38;
 
-beta = t(X)%*%y;
+beta = c*t(X)%*%y;
 
 #beta = matrix(0, rows = m, cols = 1);
 

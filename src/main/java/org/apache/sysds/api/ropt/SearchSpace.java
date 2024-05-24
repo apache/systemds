@@ -7,19 +7,20 @@ import java.util.Set;
 public class SearchSpace {
 
     public enum InstanceType {
-        M5, M5a, M6i, M6a, M6g, M7i, M7a, M7g, // general purpose - vCores:mem~=1:4
+        UNKNOWN, M5, M5a, M6i, M6a, M6g, M7i, M7a, M7g, // general purpose - vCores:mem~=1:4
         C5, C5a, C6i, C6a, C6g, C7i, C7a, C7g, // compute optimized - vCores:mem~=1:2
         R5, R5a, R6i, R6a, R6g, R7i, R7a, R7g; // memory optimized - vCores:mem~=1:8
     }
 
     public enum InstanceSize {
-        _XLARGE, _2XLARGE, _4XLARGE, _8XLARGE, _12XLARGE, _16XLARGE, _24XLARGE, _32XLARGE, _48XLARGE
+        UNKNOWN, _XLARGE, _2XLARGE, _4XLARGE, _8XLARGE, _12XLARGE, _16XLARGE, _24XLARGE, _32XLARGE, _48XLARGE
     }
 
     private static final String EC2_REGEX = "^([a-z]+)([0-9])(a|g|i?)\\.([a-z0-9]*)$";
     public static final int MIN_EXECUTORS = 0; // allow single node configuration
-    public static final int MAX_EXECUTORS = 10; // TODO: think of reasonable max number
-
+    public static final int MAX_EXECUTORS = 10; // TODO: change to 200 for prod
+    public static final int MAX_VCPUS_SUM = 32; // TODO: change to 1152 for prod
+    public static int ACTIVE_MAX_EXECUTORS = MAX_EXECUTORS;
     public static class SearchPoint {
         private final InstanceType instanceTypeExecutor;
         private final InstanceSize instanceSizeExecutor;
@@ -57,7 +58,7 @@ public class SearchSpace {
         }
 
         public String getInstanceNameExecutor() {
-            if (numberExecutors == 0 || instanceTypeExecutor == null || instanceSizeExecutor == null) {
+            if (numberExecutors == 0 || instanceTypeExecutor == InstanceType.UNKNOWN || instanceSizeExecutor == InstanceSize.UNKNOWN) {
                 return "";
             }
             return SearchSpace.getInstanceName(instanceTypeExecutor, instanceSizeExecutor);

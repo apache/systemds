@@ -16,7 +16,7 @@ public class GridSearch extends SearchStrategy {
     private SearchSpace.InstanceSize _currentDriverSize;
     private Iterator<SearchSpace.InstanceSize> _driverSizesIterator = null;
 
-    public GridSearch(SearchSpace searchSpace) {
+    public GridSearch(SearchSpace searchSpace, int softLimitNumExecutors) {
         super(searchSpace);
         _numberExecutors = SearchSpace.MIN_EXECUTORS;
         _driverTypesIterator = _searchSpace.getInstanceTypeDomainDriver().iterator();
@@ -115,18 +115,18 @@ public class GridSearch extends SearchStrategy {
 
         SearchSpace.SearchPoint nextPoint;
         if (_numberExecutors == 0) {
-            nextPoint = new SearchSpace.SearchPoint(null, null, _currentDriverType, _currentDriverSize, _numberExecutors);
+            nextPoint = new SearchSpace.SearchPoint(SearchSpace.InstanceType.UNKNOWN, SearchSpace.InstanceSize.UNKNOWN, _currentDriverType, _currentDriverSize, _numberExecutors);
         } else {
             nextPoint = new SearchSpace.SearchPoint(_currentExecutorType, _currentExecutorSize, _currentDriverType, _currentDriverSize, _numberExecutors);
         }
 
         // prepare next
         // parse all possible number of executors first (most inner iteration)
-        if (_numberExecutors < SearchSpace.MAX_EXECUTORS) {
+        if (_numberExecutors < SearchSpace.ACTIVE_MAX_EXECUTORS) {
             _numberExecutors++;
             return nextPoint;
         } else {
-            _numberExecutors = SearchSpace.MIN_EXECUTORS;
+            _numberExecutors = SearchSpace.ACTIVE_MAX_EXECUTORS;
         }
         // parse all possible combinations for executor instances for a certain driver instance
         _hasNext = getNextInstanceCombinationExecutor();

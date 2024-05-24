@@ -10,8 +10,9 @@ public class CloudInstance {
     private final int vCPUCores;
     private int numGPUs; // NOTE: to be used in the future
     private final double pricePerHour;
+    private final double gFlops;
 
-    public CloudInstance(String instanceName, long memoryMB, int vCPUCores, double pricePerHour) {
+    public CloudInstance(String instanceName, long memoryMB, int vCPUCores, double pricePerHour, double gFlops) {
         if (!instanceName.matches(AWSUtils.EC2_REGEX))
             throw new RuntimeException(instanceName+" is not a valid instance name");
         this.instanceName = instanceName;
@@ -20,6 +21,7 @@ public class CloudInstance {
         // NOT relevant for now
         this.numGPUs = 0;
         this.pricePerHour = pricePerHour;
+        this.gFlops = gFlops;
     }
 
     public String getInstanceName() {
@@ -49,6 +51,10 @@ public class CloudInstance {
 
     public double getPricePerHour() {
         return pricePerHour;
+    }
+
+    public double getGFlops() {
+        return gFlops;
     }
 
     public long getMemoryPerCore() {

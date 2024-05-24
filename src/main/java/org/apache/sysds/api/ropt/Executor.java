@@ -79,6 +79,7 @@ public class Executor {
 
         // NOTE: Dynamic recompilation is rather obsolete since the optimizer does NOT execute the script
         ConfigurationManager.getCompilerConfig().set(CompilerConfig.ConfigType.ALLOW_DYN_RECOMPILATION, false);
+        ConfigurationManager.getCompilerConfig().set(CompilerConfig.ConfigType.RESOURCE_OPTIMIZATION, true);
     }
 
     private static String validateAndLoadDMLOptions(DMLOptions dmlOptions) throws ParseException, IOException {

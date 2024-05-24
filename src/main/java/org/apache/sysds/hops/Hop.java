@@ -35,6 +35,7 @@ import org.apache.sysds.common.Types.OpOp1;
 import org.apache.sysds.common.Types.OpOp2;
 import org.apache.sysds.common.Types.OpOpData;
 import org.apache.sysds.common.Types.ValueType;
+import org.apache.sysds.conf.CompilerConfig.ConfigType;
 import org.apache.sysds.conf.ConfigurationManager;
 import org.apache.sysds.hops.cost.ComputeCost;
 import org.apache.sysds.hops.cost.FederatedCost;
@@ -288,7 +289,8 @@ public abstract class Hop implements ParseInfo {
 		}
 		else if ( DMLScript.getGlobalExecMode() == ExecMode.SPARK )
 			_etypeForced = ExecType.SPARK; // enabled with -exec spark option
-		else
+		else if ( DMLScript.getGlobalExecMode() == ExecMode.HYBRID
+				&& ConfigurationManager.getCompilerConfigFlag(ConfigType.RESOURCE_OPTIMIZATION))
 			_etypeForced = null;
 	}
 	

@@ -1,15 +1,18 @@
 package org.apache.sysds.api.ropt;
 
+import org.apache.commons.configuration2.interpol.ExprLookup;
 import org.apache.spark.SparkConf;
 import org.apache.sysds.api.DMLScript;
 import org.apache.sysds.api.ropt.SearchSpace.SearchPoint;
 import org.apache.sysds.api.ropt.CloudOptimizerUtils;
+import org.apache.sysds.api.ropt.cost.CostEstimationWrapper;
+import org.apache.sysds.api.ropt.cost.CostEstimatorStaticRuntime;
 import org.apache.sysds.api.ropt.strategies.GridSearch;
 import org.apache.sysds.api.ropt.strategies.SearchStrategy;
 import org.apache.sysds.common.Types;
 import org.apache.sysds.conf.ConfigurationManager;
+import org.apache.sysds.hops.Hop;
 import org.apache.sysds.hops.OptimizerUtils;
-import org.apache.sysds.hops.cost.CostEstimationWrapper;
 import org.apache.sysds.hops.recompile.Recompiler;
 import org.apache.sysds.parser.*;
 import org.apache.sysds.runtime.controlprogram.*;
@@ -20,12 +23,15 @@ import org.apache.sysds.runtime.controlprogram.parfor.stat.InfrastructureAnalyze
 import org.apache.sysds.runtime.instructions.Instruction;
 import org.apache.sysds.runtime.instructions.spark.SPInstruction;
 import org.apache.sysds.utils.Explain;
+import org.apache.sysds.api.ropt.SearchSpace.InstanceType;
+import org.apache.sysds.api.ropt.SearchSpace.InstanceSize;
 
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Set;
 
 import static org.apache.sysds.hops.recompile.Recompiler.recompileProgramBlockInstructions;
 
@@ -86,7 +92,8 @@ public class ResourceOptimizer {
         // get the AWS meta data
         loadInstanceInfoTable(AWSMetaFilePath);
         _searchSpace = new SearchSpace(_availableInstances);
-        _searchStrategy = new GridSearch(_searchSpace);
+        int softLimit = getSoftLimitNumberExecutorsBasedOnEstimates();
+        _searchStrategy = new GridSearch(_searchSpace, softLimit);
     }
 
     private void loadInstanceInfoTable(String instanceTablePath) throws IOException {
@@ -96,19 +103,20 @@ public class ResourceOptimizer {
         String parsedLine;
         // validate the file header
         parsedLine = br.readLine();
-        if (!parsedLine.equals("API_Name,Memory,vCPUs,Family,Price"))
+        if (!parsedLine.equals("API_Name,Memory,vCPUs,Family,Price,gFlops"))
             throw new IOException("Invalid CSV header inside: " + instanceTablePath);
 
 
         while ((parsedLine = br.readLine()) != null) {
             String[] values = parsedLine.split(",");
-            if (values.length != 5)
+            if (values.length != 6)
                 throw new IOException(String.format("Invalid CSV line(%d) inside: %s", lineCount, instanceTablePath));
             CloudInstance parsedInstance = new CloudInstance(
                     values[0],
                     (long)Double.parseDouble(values[1])*1024,
                     Integer.parseInt(values[2]),
-                    Double.parseDouble(values[4])
+                    Double.parseDouble(values[4]),
+                    Double.parseDouble(values[5])
             );
             _availableInstances.put(values[0], parsedInstance);
             lineCount++;
@@ -116,9 +124,26 @@ public class ResourceOptimizer {
     }
 
     protected OptimalSolution execute() {
+        SearchPoint lastSearchPoint = new SearchPoint(InstanceType.UNKNOWN, InstanceSize.UNKNOWN, InstanceType.UNKNOWN, InstanceSize.UNKNOWN, 0);
         while (_searchStrategy.hasNext()) {
             // Step 1
             SearchPoint searchPoint = _searchStrategy.enumerateNext();
+            if (!searchPoint.getInstanceTypeExecutor().
+                    equals(lastSearchPoint.getInstanceTypeExecutor())) {
+                // TODO: consider better way of setting the limit
+                SearchSpace.ACTIVE_MAX_EXECUTORS = getLimitNumberExecutorsBasedOnVCPUs(searchPoint);
+                // TODO: consider if check for the size is also needed
+                CloudInstance currentExecutorInstance = _availableInstances.get(searchPoint.getInstanceNameExecutor());
+                if (currentExecutorInstance != null)
+                    CostEstimatorStaticRuntime.setSP_FLOPS(currentExecutorInstance.getGFlops());
+            }
+            if (!searchPoint.getInstanceTypeDriver().
+                    equals(lastSearchPoint.getInstanceTypeDriver())) {
+                // TODO: consider if check for the size is also needed; NOTE: probably for the driver is more crucial
+                CloudInstance currentDriverInstance = _availableInstances.get(searchPoint.getInstanceNameDriver());
+                CostEstimatorStaticRuntime.setCP_FLOPS(currentDriverInstance.getGFlops());
+            }
+
             // Step 2
             Program recompiledProgram = recompile(searchPoint);
 
@@ -129,18 +154,11 @@ public class ResourceOptimizer {
             double cost = estimateCostMonetary(searchPoint, recompiledProgram);
             // Step 4
             _optimalSolution.update(searchPoint, cost);
+
+            lastSearchPoint = searchPoint;
         }
         System.out.println("Optimal solution: " + _optimalSolution.getSearchPoint().toString());
         return _optimalSolution;
-    }
-
-    private void initSearchStrategy(SearchStrategy strategy) throws IOException {
-        // load the instances' info first
-        loadInstanceInfoTable("");
-        // init the search space representation (object)
-        // TODO: decide if keeping reference to the search space in here is a good idea
-        SearchSpace searchSpace = new SearchSpace(_availableInstances);
-        _searchStrategy = new GridSearch(searchSpace);
     }
 
     public Program recompile(SearchPoint searchPoint) {
@@ -214,7 +232,7 @@ public class ResourceOptimizer {
         {
             BasicProgramBlock bpb = (BasicProgramBlock)pb;
             StatementBlock sb = bpb.getStatementBlock();
-            ArrayList<Instruction> inst = Recompiler.recompileHopsDag(sb, sb.getHops(), new LocalVariableMap(), null, true, true, 0);
+            ArrayList<Instruction> inst = Recompiler.recompileHopsDag(sb, sb.getHops(), new LocalVariableMap(), null, true, false, 0);
             bpb.setInstructions(inst);
             B.add(pb);
         }
@@ -232,7 +250,7 @@ public class ResourceOptimizer {
             DMLScript.setGlobalExecMode(Types.ExecMode.HYBRID);
 
             SparkConf sparkConf = SparkExecutionContext.createSystemDSSparkConf();
-            sparkConf.set("spark.master", "spark://localhost");
+            sparkConf.set("spark.master", "local[*]");
             sparkConf.set("spark.app.name", "SystemDS");
             sparkConf.set("spark.driver.maxResultSize", "1g"); // TODO: consider its meaning
             sparkConf.set("spark.memory.useLegacyMode", "false");
@@ -253,9 +271,9 @@ public class ResourceOptimizer {
 
 
     private double estimateCostTime(SearchPoint searchPoint, Program program) {
-        ExecutionContext execContext = ExecutionContextFactory.createContext();
+        ExecutionContext execContext = ExecutionContextFactory.createContext(program);
         // TODO: update or rewrite the cost class
-        double time = CostEstimationWrapper.getTimeEstimate(program, execContext);
+        double time = CostEstimationWrapper.getTimeEstimate(execContext);
         System.out.println("RUNTIME PROGRAM EVALUATED " + program.toString());
         if (DEBUGGING_ON) {
             System.out.println("Execution time for " + searchPoint.toString() + " is " + time + "s");
@@ -280,5 +298,36 @@ public class ResourceOptimizer {
         }
         return _availableInstances.get(driverInstanceName).getPricePerHour() +
                 _availableInstances.get(executorInstanceName).getPricePerHour()*searchPoint.getNumberExecutors();
+    }
+
+    public int getLimitNumberExecutorsBasedOnVCPUs(SearchPoint searchPoint) {
+        String driverInstanceName = searchPoint.getInstanceNameDriver();
+        String executorInstanceName = searchPoint.getInstanceNameExecutor();
+        if (executorInstanceName.equals("")) {
+            return SearchSpace.MAX_EXECUTORS;
+        }
+        int vCPUsPeDriver = _availableInstances.get(driverInstanceName).getVCPUCores();
+        int vCPUsPerExecutor = _availableInstances.get(executorInstanceName).getVCPUCores();
+        int maxAllowedExecutors = (SearchSpace.MAX_VCPUS_SUM - vCPUsPeDriver) / vCPUsPerExecutor;
+        return Math.min(maxAllowedExecutors, SearchSpace.MAX_EXECUTORS);
+    }
+
+    public int getSoftLimitNumberExecutorsBasedOnEstimates() {
+        int softLimit = 0;
+        for (ProgramBlock pb: _runtimeProgram.getProgramBlocks()) {
+            ArrayList<Hop> hops = pb.getStatementBlock().getHops();
+            for (Hop h: hops) {
+                double mem = h.getMemEstimate();
+                if (mem < 0) {
+                    continue;
+                }
+                double hdfsBlockSize = (double) InfrastructureAnalyzer.getHDFSBlockSize();
+                int numBlocks = (int) Math.ceil(mem / hdfsBlockSize);
+                if (numBlocks > softLimit) {
+                    softLimit = numBlocks;
+                }
+            }
+        }
+        return softLimit;
     }
 }

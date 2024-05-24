@@ -2026,15 +2026,18 @@ public class MatrixBlockDictionary extends ADictionary {
 				final int bke = Math.min(cz, bk + 100);
 				for(int bj = 0; bj < az; bj += 100) {
 					final int bje = Math.min(az, bj + 100);
-					for(int k = bk; k < bke; k++) {
-						final int idb = (k + ls) * cut;
-						final int sOff = rs + idb + bj;
-						final int eOff = rs + bje + idb;
-						for(int i = bi; i < bie; i++) {
-							final int offI = i * cz;
+					final int sOffT = rs + bj;
+					final int eOffT = rs + bje;
+					for(int i = bi; i < bie; i++) {
+						final int offI = i * cz;
+						final int offOutT =  i * az + bj;
+						for(int k = bk; k < bke; k++) {
+							final int idb = (k + ls) * cut;
+							final int sOff = sOffT + idb;
+							final int eOff = eOffT + idb;
 							final double v = values[offI + k];
-							for(int j = sOff, offOut = i * az + bj; j < eOff; j++)
-								ret[offOut++] += v * b[j];
+							for(int j = sOff, offOut = offOutT; j < eOff; j++, offOut++)
+								ret[offOut] += v * b[j];
 						}
 					}
 				}

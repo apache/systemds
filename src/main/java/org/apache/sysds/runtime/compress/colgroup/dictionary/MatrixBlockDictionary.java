@@ -2020,12 +2020,16 @@ public class MatrixBlockDictionary extends ADictionary {
 		// final int nCells = numVals * cz;
 		final double[] values = _data.getDenseBlockValues();
 		// Correctly named ikj matrix multiplication .
-		for(int bi = 0; bi < numVals; bi += 100) {
-			final int bie = Math.min(numVals, bi + 100);
-			for(int bk = 0; bk < cz; bk += 100) {
-				final int bke = Math.min(cz, bk + 100);
-				for(int bj = 0; bj < az; bj += 100) {
-					final int bje = Math.min(az, bj + 100);
+
+		final int blkzI = 32;
+		final int blkzK = 24;
+		final int blkzJ = 1024;
+		for(int bi = 0; bi < numVals; bi += blkzI) {
+			final int bie = Math.min(numVals, bi + blkzI);
+			for(int bk = 0; bk < cz; bk += blkzK) {
+				final int bke = Math.min(cz, bk + blkzK);
+				for(int bj = 0; bj < az; bj += blkzJ) {
+					final int bje = Math.min(az, bj + blkzJ);
 					final int sOffT = rs + bj;
 					final int eOffT = rs + bje;
 					for(int i = bi; i < bie; i++) {

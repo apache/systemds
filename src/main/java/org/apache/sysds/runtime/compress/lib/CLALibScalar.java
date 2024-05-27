@@ -108,10 +108,7 @@ public final class CLALibScalar {
 	}
 
 	private static MatrixBlock fusedScalarAndDecompress(CompressedMatrixBlock in, ScalarOperator sop) {
-
-
 		int k = sop.getNumThreads();
-
 		ExecutorService pool = CommonThreadPool.get(k);
 		try{
 
@@ -119,7 +116,7 @@ public final class CLALibScalar {
 			final List<AColGroup> groups = in.getColGroups();
 			out.allocateDenseBlock();
 			DenseBlock db = out.getDenseBlock();
-			final int blkz = Math.max(in.getNumRows() / k, 1024);
+			final int blkz = Math.max(in.getNumRows() / k, 256);
 			final List<Future<Long>> tasks = new ArrayList<>();
 			for(int i = 0; i < in.getNumRows(); i += blkz){
 				final int start = i;

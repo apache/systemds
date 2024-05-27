@@ -2032,26 +2032,31 @@ public class MatrixBlockDictionary extends ADictionary {
 					final int bje = Math.min(az, bj + blkzJ);
 					final int sOffT = rs + bj;
 					final int eOffT = rs + bje;
-					for(int i = bi; i < bie; i++) {
-						final int offI = i * cz;
-						final int offOutT =  i * az + bj;
-						for(int k = bk; k < bke; k++) {
-							final int idb = (k + ls) * cut;
-							final int sOff = sOffT + idb;
-							final int eOff = eOffT + idb;
-							final double v = values[offI + k];
-							int offOut = offOutT;
-							for(int j = sOff; j < eOff - (eOff % 4); j += 4, offOut += 4) {
-								ret[offOut] += v * b[j];
-								ret[offOut + 1] += v * b[j + 1];
-								ret[offOut + 2] += v * b[j + 2];
-								ret[offOut + 3] += v * b[j + 3];
-							}
-							for(int j = eOff - (eOff % 4); j < eOff; j++, offOut++) {
-								ret[offOut] += v * b[j];
-							}
-						}
-					}
+					preaggValuesFromDenseDictBlockedIKJ(values,b,ret, bi, bk,bj,bie,bke, cz,az,ls, cut,sOffT, eOffT );
+				}
+			}
+		}
+	}
+
+	private void preaggValuesFromDenseDictBlockedIKJ(double[] a, double[] b, double[] ret, int bi, int bk, int bj,
+		int bie, int bke, int cz, int az, int ls, int cut, int sOffT, int eOffT) {
+		for(int i = bi; i < bie; i++) {
+			final int offI = i * cz;
+			final int offOutT =  i * az + bj;
+			for(int k = bk; k < bke; k++) {
+				final int idb = (k + ls) * cut;
+				final int sOff = sOffT + idb;
+				final int eOff = eOffT + idb;
+				final double v = a[offI + k];
+				int offOut = offOutT;
+				for(int j = sOff; j < eOff - (eOff % 4); j += 4, offOut += 4) {
+					ret[offOut] += v * b[j];
+					ret[offOut + 1] += v * b[j + 1];
+					ret[offOut + 2] += v * b[j + 2];
+					ret[offOut + 3] += v * b[j + 3];
+				}
+				for(int j = eOff - (eOff % 4); j < eOff; j++, offOut++) {
+					ret[offOut] += v * b[j];
 				}
 			}
 		}

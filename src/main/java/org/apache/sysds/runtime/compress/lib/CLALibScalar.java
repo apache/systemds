@@ -31,12 +31,14 @@ import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.hops.OptimizerUtils;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.compress.CompressedMatrixBlock;
+import org.apache.sysds.runtime.compress.DMLCompressionException;
 import org.apache.sysds.runtime.compress.colgroup.AColGroup;
 import org.apache.sysds.runtime.compress.colgroup.ColGroupConst;
 import org.apache.sysds.runtime.compress.colgroup.ColGroupEmpty;
 import org.apache.sysds.runtime.compress.colgroup.ColGroupOLE;
 import org.apache.sysds.runtime.compress.colgroup.ColGroupUncompressed;
 import org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex;
+import org.apache.sysds.runtime.data.DenseBlock;
 import org.apache.sysds.runtime.functionobjects.Divide;
 import org.apache.sysds.runtime.functionobjects.Minus;
 import org.apache.sysds.runtime.functionobjects.Multiply;
@@ -60,8 +62,10 @@ public final class CLALibScalar {
 		// Timing time = new Timing(true);
 		if(isInvalidForCompressedOutput(m1, sop)) {
 			LOG.warn("scalar overlapping not supported for op: " + sop.fn.getClass().getSimpleName());
-			MatrixBlock m1d = m1.decompress(sop.getNumThreads());
-			return m1d.scalarOperations(sop, result);
+
+			return fusedScalarAndDecompress(m1, sop);
+			// MatrixBlock m1d = m1.decompress(sop.getNumThreads());
+			// return m1d.scalarOperations(sop, result);
 		}
 
 		CompressedMatrixBlock ret = setupRet(m1, result);
@@ -101,6 +105,58 @@ public final class CLALibScalar {
 		// System.out.println("CLA Scalar: " + sop + " " + m1.getNumRows() + ", " + m1.getNumColumns() + ", " + m1.getColGroups().size()
 		// 	+ " -- " + "\t\t" + time.stop());
 		return ret;
+	}
+
+	private static MatrixBlock fusedScalarAndDecompress(CompressedMatrixBlock in, ScalarOperator sop) {
+
+
+		int k = sop.getNumThreads();
+
+		ExecutorService pool = CommonThreadPool.get(k);
+		try{
+
+			MatrixBlock out = new MatrixBlock(in.getNumRows(), in.getNumColumns(), false);
+			final List<AColGroup> groups = in.getColGroups();
+			out.allocateDenseBlock();
+			DenseBlock db = out.getDenseBlock();
+			final int blkz = Math.max(in.getNumRows() / k, 1024);
+			final List<Future<Long>> tasks = new ArrayList<>();
+			for(int i = 0; i < in.getNumRows(); i += blkz){
+				final int start = i;
+				final int end =  Math.min(i + blkz, in.getNumRows());
+				tasks.add(pool.submit(()->{
+					for(AColGroup g : groups){
+						g.decompressToDenseBlock(db, start, end);
+					}
+					long nnz = 0;
+					for(int r = start; r < end ; r++){
+						double[] vals = db.values(r);
+						int off = db.pos(r);
+						for(int c = off; c < in.getNumColumns() + off; c++){
+							vals[c] = sop.executeScalar(vals[c]);
+							nnz += vals[c] == 0 ? 0 : 1;
+						}
+					}
+					return nnz;
+				}));
+			}
+			long nnz = 0;
+			for(Future<Long> t : tasks){
+				nnz += t.get();
+			}
+			out.setNonZeros(nnz);
+			out.examSparsity(true, k);
+			return out;
+		}
+		catch(Exception e){
+			throw new DMLCompressionException("failed fused scalar operation", e);
+		}
+		finally{
+			pool.shutdown();
+		}
+		
+			// MatrixBlock m1d = m1.decompress(sop.getNumThreads());
+			// return m1d.scalarOperations(sop, result);
 	}
 
 	private static CompressedMatrixBlock setupRet(CompressedMatrixBlock m1, MatrixValue result) {

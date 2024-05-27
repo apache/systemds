@@ -2040,8 +2040,6 @@ public class MatrixBlockDictionary extends ADictionary {
 							final int sOff = sOffT + idb;
 							final int eOff = eOffT + idb;
 							final double v = values[offI + k];
-							// for(int j = sOff, offOut = offOutT; j < eOff; j++, offOut++)
-							// 	ret[offOut] += v * b[j];
 							int offOut = offOutT;
 							for(int j = sOff; j < eOff - (eOff % 4); j += 4, offOut += 4) {
 								ret[offOut] += v * b[j];

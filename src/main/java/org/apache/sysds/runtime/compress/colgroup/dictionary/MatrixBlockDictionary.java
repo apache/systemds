@@ -1839,7 +1839,7 @@ public class MatrixBlockDictionary extends ADictionary {
 	double[] tmp = null;
 
 	@Override
-	public synchronized MatrixBlockDictionary preaggValuesFromDense(final int numVals, final IColIndex colIndexes,
+	public MatrixBlockDictionary preaggValuesFromDense(final int numVals, final IColIndex colIndexes,
 		final IColIndex aggregateColumns, final double[] b, final int cut) {
 		final double[] ret;
 		final int retLength = numVals * aggregateColumns.size();

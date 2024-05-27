@@ -1843,10 +1843,8 @@ public class MatrixBlockDictionary extends ADictionary {
 		final IColIndex aggregateColumns, final double[] b, final int cut) {
 		final double[] ret;
 		final int retLength = numVals * aggregateColumns.size();
-		if(tmp == null)
-			ret = tmp = new double[retLength];
-		else if (tmp.length >= retLength) {
-			Arrays.fill(tmp, 0, retLength, 0.0);
+		if (tmp != null && tmp.length == retLength) {
+			Arrays.fill(tmp, 0.0);
 			ret = tmp;
 		}
 		else 

@@ -2273,9 +2273,28 @@ public class LibMatrixBincell {
 		final double[] a = da.values(0);
 		final double[] c = dc.values(0);
 		long nnz = 0;
-		for(int i = rl * clen; i < ru * clen; i++) 
+		final int start = rl * clen;
+		final int end = ru * clen;
+		final int cells = end - start;
+
+		for(int i = start; i < end - (cells % 8); i += 8) 
+			nnz += unroll8Multiply(a, b, c, i);
+		for(int i = end - (cells % 8); i < end; i ++) 
 			if(0 != (c[i] = b * a[i]))
 				nnz ++;
+		return nnz;
+	}
+
+	private static long unroll8Multiply(double[] a, double b, double[] c, int i){
+		long nnz = 0;
+		nnz += (0 != (c[i] = b * a[i])) ? 1 : 0;
+		nnz += (0 != (c[i+1] = b * a[i+1])) ? 1 : 0;
+		nnz += (0 != (c[i+2] = b * a[i+2])) ? 1 : 0;
+		nnz += (0 != (c[i+3] = b * a[i+3])) ? 1 : 0;
+		nnz += (0 != (c[i+4] = b * a[i+4])) ? 1 : 0;
+		nnz += (0 != (c[i+5] = b * a[i+5])) ? 1 : 0;
+		nnz += (0 != (c[i+6] = b * a[i+6])) ? 1 : 0;
+		nnz += (0 != (c[i+7] = b * a[i+7])) ? 1 : 0;
 		return nnz;
 	}
 

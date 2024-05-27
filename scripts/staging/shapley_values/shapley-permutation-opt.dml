@@ -198,10 +198,10 @@ shapley_permutations_by_row = function(String model_function, list[unknown] mode
   Matrix[Double] partitions=as.matrix(-1), Integer seed = -1, Integer verbose = 1)
 return (Matrix[Double] row_phis, Double expected){
   shapleyUtils::u_vprint("--> Permutation Explainer (by-row) for "+nrow(x_multirow)+" rows.", verbose)
+  shapleyUtils::u_vprint("Number of Features: "+ncol(x_multirow), verbose )
   total_preds=ncol(x_multirow)*2*n_permutations*integration_samples*nrow(x_multirow)
-  shapleyUtils::u_vprint("The total number of predictions will be up to "+toString(total_preds)+" in "+nrow(x_multirow)+
+  shapleyUtils::u_vprint("Number of predictions: "+toString(total_preds)+" in "+nrow(x_multirow)+
     " parallel cals.", verbose )
-  shapleyUtils::u_vprint("Remove non-varying: "+as.boolean(remove_non_var), verbose )
 
   #start with all features
   features=shapleyUtils::u_range(1, ncol(x_multirow))
@@ -223,6 +223,7 @@ return (Matrix[Double] row_phis, Double expected){
   n_partition_features = total_features - perm_length
 
   #sample from X_bg
+  shapleyUtils::u_vprint("-> Sampling from X_bg", verbose )
   X_bg_samples = shapleyUtils::sample_with_potential_replace(X_bg=X_bg, samples=integration_samples, seed=seed )
   row_phis     = matrix(0, rows=nrow(x_multirow), cols=total_features)
   expected_m   = matrix(0, rows=nrow(x_multirow), cols=1)
@@ -232,6 +233,7 @@ return (Matrix[Double] row_phis, Double expected){
 
 
   #prepare masks for all permutations, since it stays the same for every row
+  shapleyUtils::u_vprint("-> Preparing reusable masks.", verbose )
   permutations    = matrix(0, rows=n_permutations, cols=perm_length)
   masks_for_permutations = matrix(0, rows=perm_length*2*n_permutations*integration_samples, cols=total_features)
   #masked_bg_for_permutations = matrix(0, rows=perm_length*2*n_permutations*integration_samples, cols=total_features)
@@ -246,6 +248,10 @@ return (Matrix[Double] row_phis, Double expected){
 
   #replicate background and mask it, since it also can stay the same for every row
   masked_bg_for_permutations = prepare_masked_X_bg(masks_for_permutations, X_bg_samples)
+  shapleyUtils::u_vprint("-> Computing phis in parallel.", verbose )
+
+  #use below parfor to force in spark
+  #parfor (i in 1:nrow(x_multirow), opt=CONSTRAINED, mode=REMOTE_SPARK ){
 
   parfor (i in 1:nrow(x_multirow)){
     if(remove_non_var == 1){

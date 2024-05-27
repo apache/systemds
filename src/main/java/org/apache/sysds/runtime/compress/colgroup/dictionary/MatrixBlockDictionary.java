@@ -1836,10 +1836,23 @@ public class MatrixBlockDictionary extends ADictionary {
 		return 1 + _data.getExactSizeOnDisk();
 	}
 
+	double[] tmp = null;
+
 	@Override
-	public MatrixBlockDictionary preaggValuesFromDense(final int numVals, final IColIndex colIndexes,
+	public synchronized MatrixBlockDictionary preaggValuesFromDense(final int numVals, final IColIndex colIndexes,
 		final IColIndex aggregateColumns, final double[] b, final int cut) {
-		final double[] ret = new double[numVals * aggregateColumns.size()];
+		final double[] ret;
+		final int retLength = numVals * aggregateColumns.size();
+		if(tmp == null)
+			ret = tmp = new double[retLength];
+		else if (tmp.length >= retLength) {
+			Arrays.fill(tmp, 0, retLength, 0.0);
+			ret = tmp;
+		}
+		else 
+			ret = tmp = new double[retLength];
+
+
 		if(_data.isInSparseFormat())
 			preaggValuesFromDenseDictSparse(numVals, colIndexes, aggregateColumns, b, cut, ret);
 		else

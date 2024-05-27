@@ -1836,20 +1836,11 @@ public class MatrixBlockDictionary extends ADictionary {
 		return 1 + _data.getExactSizeOnDisk();
 	}
 
-	double[] tmp = null;
-
 	@Override
 	public MatrixBlockDictionary preaggValuesFromDense(final int numVals, final IColIndex colIndexes,
 		final IColIndex aggregateColumns, final double[] b, final int cut) {
-		final double[] ret;
 		final int retLength = numVals * aggregateColumns.size();
-		if (tmp != null && tmp.length == retLength) {
-			Arrays.fill(tmp, 0.0);
-			ret = tmp;
-		}
-		else 
-			ret = tmp = new double[retLength];
-
+		final double[] ret = new double[retLength];
 
 		if(_data.isInSparseFormat())
 			preaggValuesFromDenseDictSparse(numVals, colIndexes, aggregateColumns, b, cut, ret);
@@ -2043,7 +2034,7 @@ public class MatrixBlockDictionary extends ADictionary {
 					final int bje = Math.min(az, bj + blkzJ);
 					final int sOffT = rs + bj;
 					final int eOffT = rs + bje;
-					preaggValuesFromDenseDictBlockedIKJ(values,b,ret, bi, bk,bj,bie,bke, cz,az,ls, cut,sOffT, eOffT );
+					preaggValuesFromDenseDictBlockedIKJ(values, b, ret, bi, bk, bj, bie, bke, cz, az, ls, cut, sOffT, eOffT);
 				}
 			}
 		}
@@ -2053,7 +2044,7 @@ public class MatrixBlockDictionary extends ADictionary {
 		int bie, int bke, int cz, int az, int ls, int cut, int sOffT, int eOffT) {
 		for(int i = bi; i < bie; i++) {
 			final int offI = i * cz;
-			final int offOutT =  i * az + bj;
+			final int offOutT = i * az + bj;
 			for(int k = bk; k < bke; k++) {
 				final int idb = (k + ls) * cut;
 				final int sOff = sOffT + idb;

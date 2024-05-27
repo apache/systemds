@@ -2049,15 +2049,16 @@ public class MatrixBlockDictionary extends ADictionary {
 				final int idb = (k + ls) * cut;
 				final int sOff = sOffT + idb;
 				final int eOff = eOffT + idb;
+				final int cells = eOff - sOff;
 				final double v = a[offI + k];
 				int offOut = offOutT;
-				for(int j = sOff; j < eOff - (eOff % 4); j += 4, offOut += 4) {
+				for(int j = sOff; j < eOff - (cells % 4); j += 4, offOut += 4) {
 					ret[offOut] += v * b[j];
 					ret[offOut + 1] += v * b[j + 1];
 					ret[offOut + 2] += v * b[j + 2];
 					ret[offOut + 3] += v * b[j + 3];
 				}
-				for(int j = eOff - (eOff % 4); j < eOff; j++, offOut++) {
+				for(int j = eOff - (cells % 4); j < eOff; j++, offOut++) {
 					ret[offOut] += v * b[j];
 				}
 			}

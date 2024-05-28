@@ -77,6 +77,7 @@ class TestAffine(unittest.TestCase):
         out = affine.forward(Xm).compute()
         self.assertEqual(len(out), 5)
         self.assertEqual(len(out[0]), 6)
+        assert_almost_equal(affine._X.compute(), Xm.compute())
 
         # test static method
         out = Affine.forward(Xm, Wm, bm).compute()
@@ -91,10 +92,13 @@ class TestAffine(unittest.TestCase):
 
         # test class method
         affine = Affine(self.sds, dim, m, 10)
-        [dx, dw, db] = affine.backward(doutm, Xm).compute()
+        gradients = affine.backward(doutm, Xm)
+        intermediate = affine._X.compute()
+        [dx, dw, db] = gradients.compute()
         assert len(dx) == 5 and len(dx[0]) == 6
         assert len(dw) == 6 and len(dx[0]) == 6
         assert len(db) == 1 and len(db[0]) == 6
+        assert_almost_equal(intermediate, dx)
 
         # test static method
         res = Affine.backward(doutm, Xm, Wm, bm).compute()

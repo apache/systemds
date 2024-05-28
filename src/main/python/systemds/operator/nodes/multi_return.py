@@ -47,7 +47,7 @@ class MultiReturn(OperationNode):
                          named_input_nodes, OutputType.MULTI_RETURN, False)
 
     def __getitem__(self, key):
-        self._outputs[key]
+        return self._outputs[key]
 
     def code_line(self, var_name: str, unnamed_input_vars: Sequence[str],
                   named_input_vars: Dict[str, str]) -> str:

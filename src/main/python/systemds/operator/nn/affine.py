@@ -18,20 +18,14 @@
 # under the License.
 #
 # -------------------------------------------------------------
-import os
-
 from systemds.context import SystemDSContext
-from systemds.operator import Matrix, Source, MultiReturn
-from systemds.utils.helpers import get_path_to_script_layers
+from systemds.operator import Matrix, MultiReturn
+from systemds.operator.nn.layer import Layer
 
 
-class Affine:
-    _source: Source = None
+class Affine(Layer):
     weight: Matrix
     bias: Matrix
-
-    def __new__(cls, *args, **kwargs):
-        return super().__new__(cls)
 
     def __init__(self, sds_context: SystemDSContext, d, m, seed=-1):
         """
@@ -40,11 +34,7 @@ class Affine:
         m: The number of neurons that are contained in the layer, 
             and the number of features output
         """
-        Affine._create_source(sds_context)
-
-        # bypassing overload limitation in python
-        self.forward = self._instance_forward
-        self.backward = self._instance_backward
+        super().__init__(sds_context, 'affine.dml')
 
         # init weight and bias
         self.weight = Matrix(sds_context, '')
@@ -64,7 +54,7 @@ class Affine:
         b: The bias added in the output.
         return out: An output matrix.
         """
-        Affine._create_source(X.sds_context)
+        Affine._create_source(X.sds_context, 'affine.dml')
         return Affine._source.forward(X, W, b)
 
     @staticmethod
@@ -77,7 +67,7 @@ class Affine:
         return dX, dW, db: The gradients of: input X, weights and bias.
         """
         sds = X.sds_context
-        Affine._create_source(sds)
+        Affine._create_source(sds, 'affine.dml')
         params_dict = {'dout': dout, 'X': X, 'W': W, 'b': b}
         dX = Matrix(sds, '')
         dW = Matrix(sds, '')
@@ -105,10 +95,3 @@ class Affine:
         return dX, dW,db: gradient of input, weights and bias, respectively
         """
         return Affine.backward(dout, X, self.weight, self.bias)
-
-    @staticmethod
-    def _create_source(sds: SystemDSContext):
-        if Affine._source is None or Affine._source.sds_context != sds:
-            path = get_path_to_script_layers()
-            path = os.path.join(path, "affine.dml")
-            Affine._source = sds.source(path, "affine")

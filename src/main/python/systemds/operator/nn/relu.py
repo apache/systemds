@@ -27,7 +27,7 @@ class ReLU(Layer):
     _source: Source = None
 
     def __init__(self, sds_context: SystemDSContext):
-        super().__init__(sds_context, 'relu.dml')
+        super().__init__(sds_context, "relu.dml")
 
     @staticmethod
     def forward(X: Matrix):
@@ -35,7 +35,7 @@ class ReLU(Layer):
         X: input matrix
         return out: output matrix
         """
-        ReLU._create_source(X.sds_context, 'relu.dml')
+        ReLU._create_source(X.sds_context, "relu.dml")
         return ReLU._source.forward(X)
 
     @staticmethod
@@ -45,7 +45,7 @@ class ReLU(Layer):
         X: input matrix
         return dX: gradient of input
         """
-        ReLU._create_source(dout.sds_context, 'relu.dml')
+        ReLU._create_source(dout.sds_context, "relu.dml")
         return ReLU._source.backward(dout, X)
 
     def _instance_forward(self, X: Matrix):

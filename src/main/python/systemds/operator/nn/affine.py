@@ -54,7 +54,7 @@ class Affine(Layer):
         b: The bias added in the output.
         return out: An output matrix.
         """
-        Affine._create_source(X.sds_context, 'affine.dml')
+        Affine._create_source(X.sds_context, "affine.dml")
         return Affine._source.forward(X, W, b)
 
     @staticmethod
@@ -67,7 +67,7 @@ class Affine(Layer):
         return dX, dW, db: The gradients of: input X, weights and bias.
         """
         sds = X.sds_context
-        Affine._create_source(sds, 'affine.dml')
+        Affine._create_source(sds, "affine.dml")
         params_dict = {'dout': dout, 'X': X, 'W': W, 'b': b}
         dX = Matrix(sds, '')
         dW = Matrix(sds, '')

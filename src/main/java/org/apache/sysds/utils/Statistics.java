@@ -669,7 +669,7 @@ public class Statistics
 
 			sb.append(TransformStatistics.displayStatistics());
 
-			if(ConfigurationManager.isCompressionEnabled()){
+			if(ConfigurationManager.isCompressionEnabled() || DMLCompressionStatistics.getDecompressionCount() > 0){
 				DMLCompressionStatistics.display(sb);
 			}
 

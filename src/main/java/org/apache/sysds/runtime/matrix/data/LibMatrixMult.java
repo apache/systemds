@@ -165,6 +165,10 @@ public class LibMatrixMult
 		else 
 			return matrixMult(m1, m2, ret, false, k);
 	}
+
+	public static MatrixBlock matrixMultNonNative(MatrixBlock m1, MatrixBlock m2, MatrixBlock ret, int k){
+		return matrixMult(m1, m2, ret, false, k);
+	}
 	
 	/**
 	 * Performs a matrix multiplication and stores the result in the output matrix.

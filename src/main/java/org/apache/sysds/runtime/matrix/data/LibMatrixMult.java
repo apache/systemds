@@ -160,7 +160,10 @@ public class LibMatrixMult
 	 * @return ret Matrix Block
 	 */
 	public static MatrixBlock matrixMult(MatrixBlock m1, MatrixBlock m2, MatrixBlock ret, int k) {
-		return matrixMult(m1, m2, ret, false, k);
+		if(NativeHelper.isNativeLibraryLoaded())
+			return LibMatrixNative.matrixMult(m1, m2, ret, k);
+		else 
+			return matrixMult(m1, m2, ret, false, k);
 	}
 	
 	/**

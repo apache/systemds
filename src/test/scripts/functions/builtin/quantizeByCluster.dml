@@ -58,7 +58,7 @@ if($test_case == "sub_cluster") {
   for(i in 1:subvectors-1)  {
     c_rows = $clusters
     perm = matrix(0, rows=c_rows, cols=c_rows)
-    s = sample(c_rows, c_rows, FALSE)
+    s = sample(c_rows, c_rows, FALSE, 2)
     parfor(i in 1:c_rows, check=0) {
       idx = as.scalar(s[i])
       perm[i, idx] = 1
@@ -84,7 +84,10 @@ else {
   vectors = rand(rows = rows, cols = $cols, min=min, max=max, pdf=$test_case, seed=2)
 }
 
-[codebook, codes] = quantizeByCluster(vectors, $subvector_size, $k, $runs, $max_iter, $eps, $vectors_per_cluster, 2)
+
+
+#todo potentially increase the number of centroids for kmeans to enable a better comparison
+[codebook, codes] = quantizeByCluster(vectors, $subvector_size, $k, $runs, $max_iter, $eps, $vectors_per_cluster, $sep, 2)
 [k_codebook, k_codes] = kmeans(vectors, $k, $runs, $max_iter, $eps, FALSE, $vectors_per_cluster, 2)
 
 #construct vectors from codes
@@ -94,8 +97,8 @@ k_result = computeVectors(k_codes, k_codebook)
 pq_distortion = colSums(rowSums((vectors - pq_result)^2)) / rows
 k_distortion = colSums(rowSums((vectors - k_result)^2)) / rows
 
-#print(toString(pq_distortion))
-#print(toString(k_distortion))
+print("Product quantization distortion: " + toString(pq_distortion))
+print("Kmeans distortion: " + toString(k_distortion))
 
 write(codes, $codes)
 write(codebook, $codebook)

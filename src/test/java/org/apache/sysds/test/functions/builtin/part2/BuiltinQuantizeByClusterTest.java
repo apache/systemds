@@ -44,6 +44,7 @@ public class BuiltinQuantizeByClusterTest extends AutomatedTestBase {
     @Parameter(6) public int runs;
     @Parameter(7) public int max_iter;
     @Parameter(8) public int vectors_per_cluster;
+    @Parameter(9) public boolean quantize_separately;
 
     private final static String TEST_NAME = "quantizeByCluster";
     private final static String TEST_DIR = "functions/builtin/";
@@ -51,17 +52,17 @@ public class BuiltinQuantizeByClusterTest extends AutomatedTestBase {
     private final static double eps = 1e-10;
     private final static double cluster_offset = 0.1;
 
-    @Parameterized.Parameters(name = "{0}: rows={1}, cols={2}, c={3}, subv_size={4}, k={5}, runs={6}, max_iter={7}, v_per_c={8}")
+    @Parameterized.Parameters(name = "{0}: rows={1}, cols={2}, c={3}, subv_size={4}, k={5}, runs={6}, max_iter={7}, v_per_c={8}, sep={9}")
     public static Collection<Object[]> data() {
         return Arrays.asList(new Object[][]{
-                        {"sub_cluster", 2048, 64, 20, 8, 20, 10, 1000, 40}, {"sub_cluster", 2048, 64, 20, 4, 20, 10, 1000, 40}, {"sub_cluster", 2048, 64, 20, 2, 20, 10, 1000, 40},
-                        {"sub_cluster", 2048, 64, 40, 8, 20, 10, 1000, 10}, {"sub_cluster", 2048, 64, 40, 4, 20, 10, 1000, 10}, {"sub_cluster", 2048, 64, 40, 2, 20, 10, 1000, 10},
-                        {"cluster", 2048, 64, 20, 8, 20, 10, 1000, 40}, {"cluster", 2048, 64, 20, 4, 20, 10, 1000, 40}, {"cluster", 2048, 64, 20, 2, 20, 10, 1000, 40},
-                        {"cluster", 2048, 64, 40, 8, 20, 10, 1000, 10}, {"cluster", 2048, 64, 40, 4, 20, 10, 1000, 10}, {"cluster", 2048, 64, 40, 2, 20, 10, 1000, 10},
-                        {"uniform", 2048, 64, 20, 8, 20, 10, 1000, 40}, {"uniform", 2048, 64, 20, 4, 20, 10, 1000, 40}, {"uniform", 2048, 64, 20, 2, 20, 10, 1000, 40},
-                        {"uniform", 2048, 64, 40, 8, 20, 10, 1000, 10}, {"uniform", 2048, 64, 40, 4, 20, 10, 1000, 10}, {"uniform", 2048, 64, 40, 2, 20, 10, 1000, 10},
-                        {"normal", 2048, 64, 20, 8, 20, 10, 1000, 40}, {"normal", 2048, 64, 20, 4, 20, 10, 1000, 40}, {"normal", 2048, 64, 20, 2, 20, 10, 1000, 40},
-                        {"normal", 2048, 64, 40, 8, 20, 10, 1000, 10}, {"normal", 2048, 64, 40, 4, 20, 10, 1000, 10}, {"normal", 2048, 64, 40, 2, 20, 10, 1000, 10},
+                        {"sub_cluster", 1024, 64, 12, 8, 12, 5, 1000, 40, true}, {"sub_cluster", 1024, 64, 6, 4, 6, 5, 1000, 40, true}, {"sub_cluster", 1024, 64, 3, 2, 3, 5, 1000, 40, true},
+                        {"sub_cluster", 1024, 64, 12, 8, 12, 5, 1000, 40, false}, {"sub_cluster", 1024, 64, 12, 4, 12, 5, 1000, 40, false}, {"sub_cluster", 1024, 64, 12, 2, 12, 5, 1000, 40, false},
+                        {"cluster", 1024, 64, 12, 8, 12, 5, 1000, 40, true}, {"cluster", 1024, 64, 6, 4, 20, 5, 1000, 40, true}, {"cluster", 1024, 64, 3, 2, 3, 5, 1000, 40, true},
+                        {"cluster", 1024, 64, 20, 8, 12, 5, 1000, 40, false}, {"cluster", 1024, 64, 20, 4, 20, 5, 1000, 40, false}, {"cluster", 1024, 64, 12, 2, 12, 5, 1000, 40, false},
+                        {"uniform", 1024, 64, 12, 8, 12, 5, 1000, 40, true}, {"uniform", 1024, 64, 6, 4, 20, 5, 1000, 40, true}, {"uniform", 1024, 64, 3, 2, 3, 5, 1000, 40, true},
+                        {"uniform", 1024, 64, 12, 8, 12, 5, 1000, 40, false}, {"uniform", 1024, 64, 12, 4, 12, 5, 1000, 40, false}, {"uniform", 1024, 64, 12, 2, 12, 5, 1000, 40, false},
+                        {"normal", 1024, 64, 12, 8, 12, 5, 1000, 40, true}, {"normal", 1024, 64, 6, 4, 6, 5, 1000, 40, true}, {"normal", 1024, 64, 3, 2, 3, 5, 1000, 40, true},
+                        {"normal", 1024, 64, 12, 8, 12, 5, 1000, 40, false}, {"normal", 1024, 64, 12, 4, 12, 5, 1000, 40, false}, {"normal", 1024, 64, 12, 2, 12, 5, 1000, 40, false},
                 }
         );
     }
@@ -85,7 +86,7 @@ public class BuiltinQuantizeByClusterTest extends AutomatedTestBase {
                 "pq_distortion=" + output("pq_distortion"), "k_distortion=" + output("k_distortion"),
                 "clusters=" + clusters, "test_case=" + test_case, "rows=" + rows,
                 "cols=" + cols, "subvector_size=" + subvector_size, "k=" + k, "runs=" + runs, "max_iter=" + max_iter,
-                "eps=" + eps, "vectors_per_cluster=" + vectors_per_cluster};
+                "eps=" + eps, "vectors_per_cluster=" + vectors_per_cluster, "sep=" + quantize_separately};
 
         runTest(true, EXCEPTION_NOT_EXPECTED, null, -1);
 

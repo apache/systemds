@@ -19,8 +19,8 @@
 #
 #-------------------------------------------------------------
 
-#concats rows of a matrix n times at the end
-concatMatrixRows = function (Matrix [Double] V, Integer N)
+#duplicate rows of matix n times
+duplicate_rows = function (Matrix [Double] V, Integer N)
   return(Matrix [Double] V)
 {
   tmp = V
@@ -30,7 +30,7 @@ concatMatrixRows = function (Matrix [Double] V, Integer N)
   V = tmp
 }
 
-computeVectors = function (Matrix [Double] codes, Matrix [Double] codebook)
+compute_vectors = function (Matrix [Double] codes, Matrix [Double] codebook)
   return(Matrix [Double] vectors)
 {
   vectors = matrix(0, rows=nrow(codes), cols=ncol(codes)*ncol(codebook))
@@ -41,59 +41,59 @@ computeVectors = function (Matrix [Double] codes, Matrix [Double] codebook)
   }
 }
 
+compute_permutation = function (Integer rows, Integer cols, Integer seed)
+  return(Matrix [Double] perm)
+{
+  perm = matrix(0, rows=rows, cols=cols)
+  s = sample(rows, rows, FALSE, seed)
+  parfor(i in 1:rows, check=0) {
+    idx = as.scalar(s[i])
+    perm[i, idx] = 1
+  }
+}
+
 max = 1
 min = -max
 offset = max / 10
 
-subvectors = $cols / $subvector_size
+subvector_size = $cols / $subspaces
 rows = $clusters * $vectors_per_cluster
 
+# Generate points by concatenating sub_points around sub_clusters
 if($test_case == "sub_cluster") {
-  # Generate points by concatenating sub_points around sub_clusters
   offset_matrix = rand(rows=rows, cols=$cols, min=-offset, max=offset, pdf="uniform", seed=2)
-  cluster_centers = rand(rows = $clusters, cols = $subvector_size, min=min, max=max, seed=2)
+  cluster_centers = rand(rows = $clusters, cols = subvector_size, min=min, max=max, seed=2)
   vectors = matrix(cluster_centers, nrow(cluster_centers), ncol(cluster_centers))
-  #todo is the permutation neccessary?
-  #concat rows with a random row permutation of cluster_centers
-  for(i in 1:subvectors-1)  {
-    c_rows = $clusters
-    perm = matrix(0, rows=c_rows, cols=c_rows)
-    s = sample(c_rows, c_rows, FALSE, 2)
-    parfor(i in 1:c_rows, check=0) {
-      idx = as.scalar(s[i])
-      perm[i, idx] = 1
-    }
-    vectors = cbind(vectors, perm %*% cluster_centers)
+  for(i in 1:$subspaces-1)  {
+    cluster_centers = rand(rows = $clusters, cols = subvector_size, min=min, max=max, seed=2)
+    vectors = cbind(vectors, cluster_centers)
   }
   #ensure correct number of vectors
-  vectors = concatMatrixRows(vectors, $vectors_per_cluster)
+  vectors = duplicate_rows(vectors, $vectors_per_cluster)
   vectors = vectors + offset_matrix
 }
+# Generate points around clusters
 else if ($test_case == "cluster") {
-  # Generate points around clusters
   cluster_centers = rand(rows = $clusters, cols = $cols, min=min, max=max, pdf="uniform", seed=2)
   vectors = matrix(cluster_centers, nrow(cluster_centers), ncol(cluster_centers))
   #ensure correct number of vectors
-  vectors = concatMatrixRows(vectors, $vectors_per_cluster)
-
+  vectors = duplicate_rows(vectors, $vectors_per_cluster)
   offset_matrix = rand(rows=rows, cols=$cols, min=-offset, max=offset, pdf="uniform", seed=2)
   vectors = vectors + offset_matrix
 }
+# Generate random points
 else {
-  # Generate random points
   vectors = rand(rows = rows, cols = $cols, min=min, max=max, pdf=$test_case, seed=2)
 }
 
-
-
-#todo potentially increase the number of centroids for kmeans to enable a better comparison
-[codebook, codes] = quantizeByCluster(vectors, $subvector_size, $k, $runs, $max_iter, $eps, $vectors_per_cluster, $sep, 2)
-[k_codebook, k_codes] = kmeans(vectors, $k, $runs, $max_iter, $eps, FALSE, $vectors_per_cluster, 2)
+[codebook, codes] = quantizeByCluster(vectors, $subspaces, $k, $runs, $max_iter, $eps, $vectors_per_cluster, $sep, 2)
+[k_codebook, k_codes] = kmeans(vectors, $k * $subspaces, $runs, $max_iter, $eps, FALSE, $vectors_per_cluster, 2)
 
 #construct vectors from codes
-pq_result = computeVectors(codes, codebook)
-k_result = computeVectors(k_codes, k_codebook)
+pq_result = compute_vectors(codes, codebook)
+k_result = compute_vectors(k_codes, k_codebook)
 
+#calculate distortion
 pq_distortion = colSums(rowSums((vectors - pq_result)^2)) / rows
 k_distortion = colSums(rowSums((vectors - k_result)^2)) / rows
 

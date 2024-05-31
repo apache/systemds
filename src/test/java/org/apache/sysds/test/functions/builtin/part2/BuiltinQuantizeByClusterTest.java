@@ -35,34 +35,42 @@ import org.junit.runners.Parameterized.Parameter;
 @RunWith(Parameterized.class)
 public class BuiltinQuantizeByClusterTest extends AutomatedTestBase {
 
-    @Parameter public String test_case;
-    @Parameter(1) public int rows;
-    @Parameter(2) public int cols;
-    @Parameter(3) public int clusters;
-    @Parameter(4) public int subvector_size;
-    @Parameter(5) public int k;
-    @Parameter(6) public int runs;
-    @Parameter(7) public int max_iter;
-    @Parameter(8) public int vectors_per_cluster;
-    @Parameter(9) public boolean quantize_separately;
+    @Parameter
+    public String test_case;
+    @Parameter(1)
+    public int rows;
+    @Parameter(2)
+    public int cols;
+    @Parameter(3)
+    public int clusters;
+    @Parameter(4)
+    public int subspaces;
+    @Parameter(5)
+    public int k;
+    @Parameter(6)
+    public int vectors_per_cluster;
+    @Parameter(7)
+    public boolean quantize_separately;
 
     private final static String TEST_NAME = "quantizeByCluster";
     private final static String TEST_DIR = "functions/builtin/";
     private final static String TEST_CLASS_DIR = TEST_DIR + BuiltinQuantizeByClusterTest.class.getSimpleName() + "/";
     private final static double eps = 1e-10;
-    private final static double cluster_offset = 0.1;
+    private final static int runs = 3;
+    private final static int max_iter = 1000;
+//    private final static double cluster_offset = 0.1;
 
-    @Parameterized.Parameters(name = "{0}: rows={1}, cols={2}, c={3}, subv_size={4}, k={5}, runs={6}, max_iter={7}, v_per_c={8}, sep={9}")
+    @Parameterized.Parameters(name = "{0}: rows={1}, cols={2}, c={3}, subspaces={4}, k={5}, v_per_c={6}, sep={7}")
     public static Collection<Object[]> data() {
         return Arrays.asList(new Object[][]{
-                        {"sub_cluster", 1024, 64, 12, 8, 12, 5, 1000, 40, true}, {"sub_cluster", 1024, 64, 6, 4, 6, 5, 1000, 40, true}, {"sub_cluster", 1024, 64, 3, 2, 3, 5, 1000, 40, true},
-                        {"sub_cluster", 1024, 64, 12, 8, 12, 5, 1000, 40, false}, {"sub_cluster", 1024, 64, 12, 4, 12, 5, 1000, 40, false}, {"sub_cluster", 1024, 64, 12, 2, 12, 5, 1000, 40, false},
-                        {"cluster", 1024, 64, 12, 8, 12, 5, 1000, 40, true}, {"cluster", 1024, 64, 6, 4, 20, 5, 1000, 40, true}, {"cluster", 1024, 64, 3, 2, 3, 5, 1000, 40, true},
-                        {"cluster", 1024, 64, 20, 8, 12, 5, 1000, 40, false}, {"cluster", 1024, 64, 20, 4, 20, 5, 1000, 40, false}, {"cluster", 1024, 64, 12, 2, 12, 5, 1000, 40, false},
-                        {"uniform", 1024, 64, 12, 8, 12, 5, 1000, 40, true}, {"uniform", 1024, 64, 6, 4, 20, 5, 1000, 40, true}, {"uniform", 1024, 64, 3, 2, 3, 5, 1000, 40, true},
-                        {"uniform", 1024, 64, 12, 8, 12, 5, 1000, 40, false}, {"uniform", 1024, 64, 12, 4, 12, 5, 1000, 40, false}, {"uniform", 1024, 64, 12, 2, 12, 5, 1000, 40, false},
-                        {"normal", 1024, 64, 12, 8, 12, 5, 1000, 40, true}, {"normal", 1024, 64, 6, 4, 6, 5, 1000, 40, true}, {"normal", 1024, 64, 3, 2, 3, 5, 1000, 40, true},
-                        {"normal", 1024, 64, 12, 8, 12, 5, 1000, 40, false}, {"normal", 1024, 64, 12, 4, 12, 5, 1000, 40, false}, {"normal", 1024, 64, 12, 2, 12, 5, 1000, 40, false},
+                        {"sub_cluster", 1024, 64, 12, 8, 12, 40, true},  {"sub_cluster", 1024, 64, 12, 4, 12, 40, true},  {"sub_cluster", 1024, 64, 12, 2, 12, 40, true},
+                        {"sub_cluster", 1024, 64, 12, 8, 12, 40, false}, {"sub_cluster", 1024, 64, 12, 4, 12, 40, false}, {"sub_cluster", 1024, 64, 12, 2, 12, 40, false},
+                        {"cluster",     1024, 64, 12, 8, 12, 40, true},  {"cluster",     1024, 64, 12, 4, 12, 40, true},  {"cluster",     1024, 64, 12, 2, 12, 40, true},
+                        {"cluster",     1024, 64, 20, 8, 12, 40, false}, {"cluster",     1024, 64, 12, 4, 12, 40, false}, {"cluster",     1024, 64, 12, 2, 12, 40, false},
+                        {"uniform",     1024, 64, 12, 8, 12, 40, true},  {"uniform",     1024, 64, 12, 4, 12, 40, true},  {"uniform",     1024, 64, 12, 2, 12, 40, true},
+                        {"uniform",     1024, 64, 12, 8, 12, 40, false}, {"uniform",     1024, 64, 12, 4, 12, 40, false}, {"uniform",     1024, 64, 12, 2, 12, 40, false},
+                        {"normal",      1024, 64, 12, 8, 12, 40, true},  {"normal",      1024, 64, 12, 4, 12, 40, true},  {"normal",      1024, 64, 12, 2, 12, 40, true},
+                        {"normal",      1024, 64, 12, 8, 12, 40, false}, {"normal",      1024, 64, 12, 4, 12, 40, false}, {"normal",      1024, 64, 12, 2, 12, 40, false},
                 }
         );
     }
@@ -85,7 +93,7 @@ public class BuiltinQuantizeByClusterTest extends AutomatedTestBase {
         programArgs = new String[]{"-nvargs", "codes=" + output("codes"), "codebook=" + output("codebook"),
                 "pq_distortion=" + output("pq_distortion"), "k_distortion=" + output("k_distortion"),
                 "clusters=" + clusters, "test_case=" + test_case, "rows=" + rows,
-                "cols=" + cols, "subvector_size=" + subvector_size, "k=" + k, "runs=" + runs, "max_iter=" + max_iter,
+                "cols=" + cols, "subspaces=" + subspaces, "k=" + k, "runs=" + runs, "max_iter=" + max_iter,
                 "eps=" + eps, "vectors_per_cluster=" + vectors_per_cluster, "sep=" + quantize_separately};
 
         runTest(true, EXCEPTION_NOT_EXPECTED, null, -1);
@@ -95,17 +103,17 @@ public class BuiltinQuantizeByClusterTest extends AutomatedTestBase {
         MatrixCharacteristics meta_codes = readDMLMetaDataFile("codes");
         MatrixCharacteristics meta_codebook = readDMLMetaDataFile("codebook");
         Assert.assertTrue("Matrix dimensions should be equal to expected dimensions",
-                meta_codes.getRows() == clusters * vectors_per_cluster && meta_codes.getCols() == cols / subvector_size);
-        Assert.assertEquals("Centroid dimensions should be equal to expected dimensions", meta_codebook.getCols(),
-                subvector_size);
+                meta_codes.getRows() == clusters * vectors_per_cluster && meta_codes.getCols() == subspaces);
+        Assert.assertEquals("Centroid dimensions should be equal to expected dimensions", cols / subspaces, meta_codebook.getCols()
+        );
 
         double pq_distortion = readDMLMatrixFromOutputDir("pq_distortion").get(new MatrixValue.CellIndex(1, 1));
         double k_distortion = readDMLMatrixFromOutputDir("k_distortion").get(new MatrixValue.CellIndex(1, 1));
 
         if (!test_case.equals("cluster")) {
-            Assert.assertTrue(pq_distortion < 1.2 * k_distortion);
+            Assert.assertTrue(pq_distortion < 1.2 * k_distortion + 0.1);
         } else {
-            Assert.assertTrue(pq_distortion < 20);
+            Assert.assertTrue(pq_distortion < 2 * k_distortion + 0.1);
         }
 
     }

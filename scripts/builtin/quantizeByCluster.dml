@@ -24,8 +24,8 @@
 # INPUT:
 # ---------------------------------------------------------------------------------------
 # X                             The input Matrix to perform product quantization on
-# M                             Size of the subvectors
-# k                             Size of the subcodebooks
+# M                             Number of subspaces
+# k                             Number of vectors in the subcodebooks
 # runs                          Number of runs (with different initial centroids)
 # max_iter                      Maximum number of iterations per run
 # eps                           Tolerance (epsilon) for WCSS change ratio
@@ -43,23 +43,23 @@
 # ---------------------------------------------------------------------------------------
 
 m_quantizeByCluster = function(Matrix[Double]X, Integer M = 4, Integer k = 10, Integer runs = 10,
-    Integer max_iter = 1000, Double eps = 1e-6, Integer avg_sample_size_per_centroid = 50, Integer separate=TRUE, Integer seed = -1)
+    Integer max_iter = 1000, Double eps = 1e-6, Integer avg_sample_size_per_centroid = 50, Boolean separate=TRUE, Integer seed = -1)
   return(Matrix[Double] codebook, Matrix[Double] codes)
 {
-num_chunks = ncol(X) / M
+subvector_size = ncol(X) / M
 #quantize subvectors together
 if(!separate) {
-  A = matrix(X, rows= nrow(X) * num_chunks, cols=M)
-  [codebook, B] = kmeans(A, k * num_chunks, runs, max_iter, eps, FALSE, avg_sample_size_per_centroid, seed)
-  codes = matrix(B, rows = nrow(B) / num_chunks, cols = ncol(B) * num_chunks)
+  A = matrix(X, rows= nrow(X) * M, cols=subvector_size)
+  [codebook, B] = kmeans(A, k * M, runs, max_iter, eps, FALSE, avg_sample_size_per_centroid, seed)
+  codes = matrix(B, rows = nrow(B) / M, cols = ncol(B) * M)
 }
 #quantize subvectors separately
 else {
   l = k
-  codebook = matrix(1, rows=l*num_chunks, cols=M)
-  codes = matrix(1, rows=nrow(X), cols=num_chunks)
-  parfor(i in 1:num_chunks, check=0) {
-     [tmp_cbook, tmp_c] = kmeans(X[,(i-1)*M+1:i*M], l, runs, max_iter, eps, FALSE, avg_sample_size_per_centroid, seed)
+  codebook = matrix(1, rows=l*M, cols=subvector_size)
+  codes = matrix(1, rows=nrow(X), cols=M)
+  parfor(i in 1:M, check=0) {
+     [tmp_cbook, tmp_c] = kmeans(X[,(i-1)*subvector_size+1:i*subvector_size], l, runs, max_iter, eps, FALSE, avg_sample_size_per_centroid, seed)
      codebook[(i-1)*l+1:i*l,] = tmp_cbook
      offset = matrix((i-1)*l, rows=nrow(codes), cols=1)
      codes[,i] = tmp_c + offset

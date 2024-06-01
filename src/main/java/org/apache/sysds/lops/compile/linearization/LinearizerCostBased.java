@@ -31,25 +31,25 @@ import java.util.List;
 import java.util.Stack;
 import java.util.stream.Collectors;
 
-public class CostBasedLinearize
+public class LinearizerCostBased extends IDagLinearizer
 {
-	public static List<Lop> getBestOrder(List<Lop> lops)
-	{
+	@Override
+	public List<Lop> linearize(List<Lop> v) {
 		// Simplify DAG by removing literals and transient inputs and outputs
 		List<Lop> removedLeaves = new ArrayList<>();
 		List<Lop> removedRoots = new ArrayList<>();
 		HashMap<Long, ArrayList<Lop>> removedInputs = new HashMap<>();
 		HashMap<Long, ArrayList<Lop>> removedOutputs = new HashMap<>();
-		simplifyDag(lops, removedLeaves, removedRoots, removedInputs, removedOutputs);
+		simplifyDag(v, removedLeaves, removedRoots, removedInputs, removedOutputs);
 		// TODO: Partition the DAG if connected by a single node. Optimize separately
 
 		// Collect the leaf nodes of the simplified DAG
-		List<Lop> leafNodes = lops.stream().filter(l -> l.getInputs().isEmpty()).collect(Collectors.toList());
+		List<Lop> leafNodes = v.stream().filter(l -> l.getInputs().isEmpty()).collect(Collectors.toList());
 
 		// For each leaf, find all possible orders starting from the given leaf
 		List<Order> finalOrders = new ArrayList<>();
 		for (Lop leaf : leafNodes)
-			generateOrders(leaf, leafNodes, finalOrders, lops.size());
+			generateOrders(leaf, leafNodes, finalOrders, v.size());
 
 		// TODO: Handle distributed and GPU operators (0 compute cost, memory overhead on collect)
 		// TODO: Asynchronous operators (max of compute costs, total operation memory overhead)

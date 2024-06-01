@@ -28,8 +28,8 @@ import java.util.stream.Collectors;
 import org.apache.sysds.lops.Lop;
 import org.apache.sysds.lops.OperatorOrderingUtils;
 
-public class PipelineAwareLinearize {
-
+public class LinearizerPipelineAware extends IDagLinearizer
+{
 	// Minimum number of nodes in DAG for applying algorithm
 	private final static int IGNORE_LIMIT = 0;
 
@@ -45,12 +45,12 @@ public class PipelineAwareLinearize {
 	* @param v List of lops to sort
 	* @return Sorted list of lops with set _pipelineID on the Lop Object
 	*/
-	public static List<Lop> pipelineDepthFirst(List<Lop> v) {
-
+	@Override
+	public List<Lop> linearize(List<Lop> v) {
 		// If size of DAG is smaller than IGNORE_LIMIT, give all nodes the same pipeline id
 		if(v.size() <= IGNORE_LIMIT) {
 			v.forEach(l -> l.setPipelineID(1));
-			return ILinearize.depthFirst(v);
+			return new LinearizerDepthFirst().linearize(v);
 		}
 
 		// Find all root nodes (starting points for the depth-first traversal)
@@ -74,11 +74,11 @@ public class PipelineAwareLinearize {
 		//DEVPrintDAG.asGraphviz("Step1", v);
 
 		// Step 2: Merge pipelines with only one node to another (connected) pipeline
-		PipelineAwareLinearize.mergeSingleNodePipelines(pipelineMap);
+		LinearizerPipelineAware.mergeSingleNodePipelines(pipelineMap);
 		//DEVPrintDAG.asGraphviz("Step2", v);
 
 		// Step 3: Merge small pipelines into bigger ones
-		PipelineAwareLinearize.mergeSmallPipelines(pipelineMap);
+		LinearizerPipelineAware.mergeSmallPipelines(pipelineMap);
 		//DEVPrintDAG.asGraphviz("Step3", v);
 
 		// Reset the visited status of all nodes

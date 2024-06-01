@@ -36,7 +36,8 @@ import org.junit.Test;
 import org.apache.sysds.common.Types.DataType;
 import org.apache.sysds.common.Types.OpOp2;
 import org.apache.sysds.common.Types.ValueType;
-import org.apache.sysds.lops.compile.linearization.ILinearize;
+import org.apache.sysds.lops.compile.linearization.IDagLinearizer;
+import org.apache.sysds.lops.compile.linearization.IDagLinearizerFactory;
 import org.apache.sysds.lops.Lop;
 import org.apache.sysds.conf.ConfigurationManager;
 import org.apache.sysds.conf.DMLConfig;
@@ -148,8 +149,9 @@ public class ILinearizeTest extends AutomatedTestBase {
 		lops.forEach(l -> {l.getInputs().remove(d1); l.getInputs().remove(d2);});
 
 		// RUN LINEARIZATION
-		ILinearize.linearize(lops);
-
+		IDagLinearizer dl = IDagLinearizerFactory.createDagLinearizer();
+		dl.linearize(lops); //TODO results
+		
 		// Set up expected pipelines
 		Map<Integer, List<Lop>> pipelineMap = new HashMap<>();
 		pipelineMap.put(4, Arrays.asList(n1, n2, n3, n4, n5, o1, o2));

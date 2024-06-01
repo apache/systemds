@@ -45,7 +45,7 @@ import org.apache.sysds.hops.codegen.SpoofCompiler.GeneratorAPI;
 import org.apache.sysds.hops.codegen.SpoofCompiler.PlanSelector;
 import org.apache.sysds.hops.fedplanner.FTypes.FederatedPlanner;
 import org.apache.sysds.lops.Compression;
-import org.apache.sysds.lops.compile.linearization.ILinearize.DagLinearization;
+import org.apache.sysds.lops.compile.linearization.IDagLinearizerFactory.DagLinearizer;
 import org.apache.sysds.parser.ParseException;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.io.IOUtilFunctions;
@@ -173,7 +173,7 @@ public class DMLConfig
 		_defaultVals.put(COMPRESSED_COST_MODEL,  "AUTO");
 		_defaultVals.put(COMPRESSED_TRANSPOSE,   "auto");
 		_defaultVals.put(COMPRESSED_TRANSFORMENCODE, "false");
-		_defaultVals.put(DAG_LINEARIZATION,      DagLinearization.DEPTH_FIRST.name());
+		_defaultVals.put(DAG_LINEARIZATION,      DagLinearizer.DEPTH_FIRST.name());
 		_defaultVals.put(CODEGEN,                "false" );
 		_defaultVals.put(CODEGEN_API,            GeneratorAPI.JAVA.name() );
 		_defaultVals.put(CODEGEN_COMPILER,       CompilerType.AUTO.name() );

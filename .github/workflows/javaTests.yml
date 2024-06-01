@@ -140,11 +140,16 @@ jobs:
     - name: Merge Jacoco Artifacts
       run: mvn jacoco:merge
 
-    - name: Process Classes 
+    - name: Process Classes
       run: mvn process-classes
 
     - name: Generate Code Coverage Report
       run: mvn jacoco:report
+
+    - name: Upload coverage to Codecov
+      uses: codecov/codecov-action@v2
+      with:
+        fail_ci_if_error: false
 
     - name: Upload Jacoco Report Artifact PR
       if: (github.repository_owner == 'apache') && (github.ref_name != 'main')

@@ -31,122 +31,122 @@ import org.apache.sysds.test.TestConfiguration;
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysds.runtime.instructions.cp.Data;
 
-import java.util.LinkedList;
 import java.util.Queue;
+import java.util.LinkedList;
 import java.util.List;
 
 public class PinVariablesTest extends AutomatedTestBase {
-    private final static String TEST_NAME = "PinVariables";
-    private final static String TEST_DIR = "functions/caching/";
-    private final static String TEST_CLASS_DIR = TEST_DIR + PinVariablesTest.class.getSimpleName() + "/";
+	private final static String TEST_NAME = "PinVariables";
+	private final static String TEST_DIR = "functions/caching/";
+	private final static String TEST_CLASS_DIR = TEST_DIR + PinVariablesTest.class.getSimpleName() + "/";
 
-    @Override
-    public void setUp() {
-        addTestConfiguration(TEST_NAME, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME));
-    }
+	@Override
+	public void setUp() {
+		addTestConfiguration(TEST_NAME, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME));
+	}
 
-    @Test
-    public void testPinNoLists() {
-        createMockDataAndCall(true, false, false);
-    }
+	@Test
+	public void testPinNoLists() {
+		createMockDataAndCall(true, false, false);
+	}
 
-    @Test
-    public void testPinShallowLists() {
-        createMockDataAndCall(true, true, false);
-    }
+	@Test
+	public void testPinShallowLists() {
+		createMockDataAndCall(true, true, false);
+	}
 
-    @Test
-    public void testPinNestedLists() {
-        createMockDataAndCall(true, true, true);
-    }
+	@Test
+	public void testPinNestedLists() {
+		createMockDataAndCall(true, true, true);
+	}
 
-    private void createMockDataAndCall(boolean matrices, boolean list, boolean nestedList) {
-        LocalVariableMap vars = new LocalVariableMap();
-        List<String> varList = new LinkedList<>();
-        Queue<Boolean> varStates = new LinkedList<>();
+	private void createMockDataAndCall(boolean matrices, boolean list, boolean nestedList) {
+		LocalVariableMap vars = new LocalVariableMap();
+		List<String> varList = new LinkedList<>();
+		Queue<Boolean> varStates = new LinkedList<>();
 
-        if (matrices) {
-            MatrixObject mat1 = new MatrixObject(Types.ValueType.FP64, "SomeFile1");
-            mat1.enableCleanup(true);
-            MatrixObject mat2 = new MatrixObject(Types.ValueType.FP64, "SomeFile2");
-            mat2.enableCleanup(true);
-            MatrixObject mat3 = new MatrixObject(Types.ValueType.FP64, "SomeFile3");
-            mat3.enableCleanup(false);
-            vars.put("mat1", mat1);
-            vars.put("mat2", mat2);
-            vars.put("mat3", mat3);
+		if (matrices) {
+			MatrixObject mat1 = new MatrixObject(Types.ValueType.FP64, "SomeFile1");
+			mat1.enableCleanup(true);
+			MatrixObject mat2 = new MatrixObject(Types.ValueType.FP64, "SomeFile2");
+			mat2.enableCleanup(true);
+			MatrixObject mat3 = new MatrixObject(Types.ValueType.FP64, "SomeFile3");
+			mat3.enableCleanup(false);
+			vars.put("mat1", mat1);
+			vars.put("mat2", mat2);
+			vars.put("mat3", mat3);
 
-            varList.add("mat2");
-            varList.add("mat3");
+			varList.add("mat2");
+			varList.add("mat3");
 
-            varStates.add(true);
-            varStates.add(false);
-        }
-        if (list) {
-            MatrixObject mat4 = new MatrixObject(Types.ValueType.FP64, "SomeFile4");
-            mat4.enableCleanup(true);
-            MatrixObject mat5 = new MatrixObject(Types.ValueType.FP64, "SomeFile5");
-            mat5.enableCleanup(false);
-            List<Data> l1_data = new LinkedList<>();
-            l1_data.add(mat4);
-            l1_data.add(mat5);
+			varStates.add(true);
+			varStates.add(false);
+		}
+		if (list) {
+			MatrixObject mat4 = new MatrixObject(Types.ValueType.FP64, "SomeFile4");
+			mat4.enableCleanup(true);
+			MatrixObject mat5 = new MatrixObject(Types.ValueType.FP64, "SomeFile5");
+			mat5.enableCleanup(false);
+			List<Data> l1_data = new LinkedList<>();
+			l1_data.add(mat4);
+			l1_data.add(mat5);
 
-            if (nestedList) {
-                MatrixObject mat6 = new MatrixObject(Types.ValueType.FP64, "SomeFile6");
-                mat4.enableCleanup(true);
-                List<Data> l2_data = new LinkedList<>();
-                l2_data.add(mat6);
-                ListObject l2 = new ListObject(l2_data);
-                l1_data.add(l2);
-            }
+			if (nestedList) {
+				MatrixObject mat6 = new MatrixObject(Types.ValueType.FP64, "SomeFile6");
+				mat4.enableCleanup(true);
+				List<Data> l2_data = new LinkedList<>();
+				l2_data.add(mat6);
+				ListObject l2 = new ListObject(l2_data);
+				l1_data.add(l2);
+			}
 
-            ListObject l1 = new ListObject(l1_data);
-            vars.put("l1", l1);
+			ListObject l1 = new ListObject(l1_data);
+			vars.put("l1", l1);
 
-            varList.add("l1");
+			varList.add("l1");
 
-            // cleanup flag of inner matrix (m4)
-            varStates.add(true);
-            varStates.add(false);
-            if (nestedList)
-                varStates.add(true);
-        }
+			// cleanup flag of inner matrix (m4)
+			varStates.add(true);
+			varStates.add(false);
+			if (nestedList)
+				varStates.add(true);
+		}
 
-        ExecutionContext ec = new ExecutionContext(vars);
+		ExecutionContext ec = new ExecutionContext(vars);
 
-        commonPinVariablesTest(ec, varList, varStates);
-    }
+		commonPinVariablesTest(ec, varList, varStates);
+	}
 
-    private void commonPinVariablesTest(ExecutionContext ec, List<String> varList, Queue<Boolean> varStatesExp) {
-        Queue<Boolean> varStates = ec.pinVariables(varList);
+	private void commonPinVariablesTest(ExecutionContext ec, List<String> varList, Queue<Boolean> varStatesExp) {
+		Queue<Boolean> varStates = ec.pinVariables(varList);
 
-        // check returned cleanupEnabled flags
-        Assert.assertEquals(varStatesExp, varStates);
+		// check returned cleanupEnabled flags
+		Assert.assertEquals(varStatesExp, varStates);
 
-        // assert updated cleanupEnabled flag to false
-        for (String varName : varList) {
-            Data dat = ec.getVariable(varName);
+		// assert updated cleanupEnabled flag to false
+		for (String varName : varList) {
+			Data dat = ec.getVariable(varName);
 
-            if (dat instanceof CacheableData<?>)
-                Assert.assertFalse(((CacheableData<?>)dat).isCleanupEnabled());
-            else if (dat instanceof ListObject) {
-                assertListFlagsDisabled((ListObject)dat);
-            }
-        }
+			if (dat instanceof CacheableData<?>)
+				Assert.assertFalse(((CacheableData<?>)dat).isCleanupEnabled());
+			else if (dat instanceof ListObject) {
+				assertListFlagsDisabled((ListObject)dat);
+			}
+		}
 
-        ec.unpinVariables(varList, varStates);
+		ec.unpinVariables(varList, varStates);
 
-        // check returned flags after unpinVariables()
-        Queue<Boolean> varStates2 = ec.pinVariables(varList);
-        Assert.assertEquals(varStatesExp, varStates2);
-    }
+		// check returned flags after unpinVariables()
+		Queue<Boolean> varStates2 = ec.pinVariables(varList);
+		Assert.assertEquals(varStatesExp, varStates2);
+	}
 
-    private void assertListFlagsDisabled(ListObject l) {
-        for (Data dat : l.getData()) {
-            if (dat instanceof CacheableData<?>)
-                Assert.assertFalse(((CacheableData<?>)dat).isCleanupEnabled());
-            else if (dat instanceof ListObject)
-                assertListFlagsDisabled((ListObject)dat);
-        }
-    }
+	private void assertListFlagsDisabled(ListObject l) {
+		for (Data dat : l.getData()) {
+			if (dat instanceof CacheableData<?>)
+				Assert.assertFalse(((CacheableData<?>)dat).isCleanupEnabled());
+			else if (dat instanceof ListObject)
+				assertListFlagsDisabled((ListObject)dat);
+		}
+	}
 }

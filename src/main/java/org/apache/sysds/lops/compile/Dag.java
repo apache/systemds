@@ -43,7 +43,8 @@ import org.apache.sysds.lops.Lop.Type;
 import org.apache.sysds.lops.LopsException;
 import org.apache.sysds.lops.OutputParameters;
 import org.apache.sysds.lops.UnaryCP;
-import org.apache.sysds.lops.compile.linearization.ILinearize;
+import org.apache.sysds.lops.compile.linearization.IDagLinearizer;
+import org.apache.sysds.lops.compile.linearization.IDagLinearizerFactory;
 import org.apache.sysds.parser.DataExpression;
 import org.apache.sysds.parser.StatementBlock;
 import org.apache.sysds.runtime.DMLRuntimeException;
@@ -175,7 +176,8 @@ public class Dag<N extends Lop>
 			scratch = config.getTextValue(DMLConfig.SCRATCH_SPACE) + "/";
 		}
 
-		List<Lop> node_v = ILinearize.linearize(nodes);
+		IDagLinearizer dl = IDagLinearizerFactory.createDagLinearizer();
+		List<Lop> node_v = dl.linearize(nodes);
 		prefetchFederated(node_v);
 
 		// do greedy grouping of operations

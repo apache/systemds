@@ -25,6 +25,7 @@ import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.mapred.JobConf;
 import org.apache.sysds.api.DMLScript;
 import org.apache.sysds.common.Types.DataType;
+import org.apache.sysds.common.Types.ExecType;
 import org.apache.sysds.common.Types.FileFormat;
 import org.apache.sysds.common.Types.ValueType;
 import org.apache.sysds.conf.CompilerConfig;
@@ -71,6 +72,7 @@ import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContextFactory;
 import org.apache.sysds.runtime.controlprogram.paramserv.SparkPSBody;
 import org.apache.sysds.runtime.controlprogram.parfor.ParForBody;
+import org.apache.sysds.runtime.controlprogram.parfor.opt.OptTreeConverter;
 import org.apache.sysds.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
 import org.apache.sysds.runtime.instructions.CPInstructionParser;
 import org.apache.sysds.runtime.instructions.Instruction;
@@ -1146,6 +1148,10 @@ public class ProgramConverter
 				sb.append( fkey );
 				sb.append( KEY_VALUE_DELIM );
 				FunctionProgramBlock fpb2 = prog.getFunctionProgramBlock(fkey, false);
+				if( OptTreeConverter.rContainsSparkInstruction(fpb2.getChildBlocks(), false) ) {
+					Recompiler.recompileProgramBlockHierarchy2Forced(
+						fpb2.getChildBlocks(), -1, new HashSet<>(), ExecType.CP);
+				}
 				sb.append( rSerializeProgramBlock(fpb2, clsMap) );
 			}
 			count++;

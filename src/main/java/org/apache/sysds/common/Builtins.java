@@ -274,6 +274,7 @@ public enum Builtins {
 	RANDOM_FOREST("randomForest", true),
 	RANDOM_FOREST_PREDICT("randomForestPredict", true),
 	RANGE("range", false),
+	RASELECTION("raSelection", true),
 	RBIND("rbind", false),
 	REMOVE("remove", false, ReturnType.MULTI_RETURN),
 	REV("rev", false),

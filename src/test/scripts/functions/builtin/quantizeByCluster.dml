@@ -41,17 +41,6 @@ compute_vectors = function (Matrix [Double] codes, Matrix [Double] codebook)
   }
 }
 
-compute_permutation = function (Integer rows, Integer cols, Integer seed)
-  return(Matrix [Double] perm)
-{
-  perm = matrix(0, rows=rows, cols=cols)
-  s = sample(rows, rows, FALSE, seed)
-  parfor(i in 1:rows, check=0) {
-    idx = as.scalar(s[i])
-    perm[i, idx] = 1
-  }
-}
-
 max = 1
 min = -max
 offset = max / 10

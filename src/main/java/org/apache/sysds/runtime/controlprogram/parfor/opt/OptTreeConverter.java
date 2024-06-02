@@ -530,6 +530,10 @@ public class OptTreeConverter
 		return ret;
 	}
 
+	public static boolean rContainsSparkInstruction( List<ProgramBlock> pbs, boolean inclFunctions ) {
+		return pbs.stream().anyMatch(pb -> rContainsSparkInstruction(pb, inclFunctions));
+	}
+	
 	public static boolean rContainsSparkInstruction( ProgramBlock pb, boolean inclFunctions )
 	{
 		boolean ret = false;

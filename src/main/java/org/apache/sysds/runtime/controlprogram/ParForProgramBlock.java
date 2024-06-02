@@ -1410,8 +1410,8 @@ public class ParForProgramBlock extends ForProgramBlock {
 		}
 		
 		//try recompile Spark instructions to CP
-		HashSet<String> fnStack = new HashSet<>();
-		Recompiler.recompileProgramBlockHierarchy2Forced(_childBlocks, tid, fnStack, ExecType.CP);
+		Recompiler.recompileProgramBlockHierarchy2Forced(
+			_childBlocks, tid, new HashSet<>(), ExecType.CP);
 		return true;
 	}
 

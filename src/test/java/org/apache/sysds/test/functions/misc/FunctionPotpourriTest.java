@@ -60,6 +60,7 @@ public class FunctionPotpourriTest extends AutomatedTestBase
 		"FunPotpourriEvalNamespace2",
 		"FunPotpourriBuiltinPrecedence",
 		"FunPotpourriParforEvalBuiltin",
+		"FunPotpourriParforEvalSpark",
 		"FunPotpourriEvalNamespace3",
 	};
 	
@@ -266,8 +267,13 @@ public class FunctionPotpourriTest extends AutomatedTestBase
 	}
 	
 	@Test
+	public void testFunctionParforEvalSpark() {
+		runFunctionTest( TEST_NAMES[28], null, true );
+	}
+	
+	@Test
 	public void testFunctionEvalNamespace3() {
-		runFunctionTest( TEST_NAMES[28], null, false );
+		runFunctionTest( TEST_NAMES[29], null, false );
 	}
 	
 	private void runFunctionTest(String testName, Class<?> error) {
@@ -291,7 +297,7 @@ public class FunctionPotpourriTest extends AutomatedTestBase
 	
 			if( testName.equals(TEST_NAMES[17]) )
 				Assert.assertTrue(heavyHittersContainsString("print"));
-			if( evalRewrite )
+			if( evalRewrite && !testName.equals(TEST_NAMES[28]) )
 				Assert.assertTrue(!heavyHittersContainsString("eval"));
 		}
 		finally {

@@ -18,10 +18,16 @@
 # under the License.
 #
 # -------------------------------------------------------------
+from modality.modality import Modality
+from modality.representation import Representation
 
-from systemds import context
-from systemds import operator
-from systemds import examples
-from systemds import scuro
 
-__all__ = ["context", "operator", "examples", "scuro"]
+class AlignedModality(Modality):
+    def __init__(self, representation: Representation):
+        """
+        Defines the modality that is created during the alignment process
+        :param representation: The representation for the aligned modality
+                              (made up of the #columns from the modalities that are being aligned)
+        """
+        super().__init__(representation)
+    

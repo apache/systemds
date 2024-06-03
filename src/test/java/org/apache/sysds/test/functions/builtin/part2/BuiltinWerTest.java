@@ -46,10 +46,10 @@ public class BuiltinWerTest extends AutomatedTestBase {
 		runWerTest(ExecType.CP);
 	}
 
-//	@Test
-//	public void testSpark() {
-//		runWerTest(ExecType.SPARK);
-//	}
+	@Test
+	public void testSpark() {
+		runWerTest(ExecType.SPARK);
+	}
 
 	private void runWerTest(ExecType instType) {
 		ExecMode platformOld = setExecMode(instType);

@@ -53,8 +53,7 @@ public class FrameAppendMSPInstruction extends AppendMSPInstruction {
 		//execute map-append operations (partitioning preserving if keys for blocks not changing)
 		JavaPairRDD<Long,FrameBlock> out = null;
 		if( preservesPartitioning(_cbind) ) {
-			out = in1.mapPartitionsToPair(
-					new MapSideAppendPartitionFunction(in2), true);
+			out = appendFrameMSP(in1, in2);
 		}
 		else 
 			throw new DMLRuntimeException("Append type rbind not supported for frame mappend, instead use rappend");
@@ -74,13 +73,20 @@ public class FrameAppendMSPInstruction extends AppendMSPInstruction {
 			sec.getFrameObject(output.getName()).setSchema(sec.getFrameObject(input1.getName()).getSchema());
 	}
 
+	public static JavaPairRDD<Long, FrameBlock> appendFrameMSP(JavaPairRDD<Long, FrameBlock> in1, PartitionedBroadcast<FrameBlock> in2) {
+		JavaPairRDD<Long, FrameBlock> out;
+		out = in1.mapPartitionsToPair(
+				new MapSideAppendPartitionFunction(in2), true);
+		return out;
+	}
+
 	private static boolean preservesPartitioning( boolean cbind ) {
 		//Partitions for input1 will be preserved in case of cbind, 
 		// where as in case of rbind partitions will not be preserved.
 		return cbind;
 	}
 
-	private static class MapSideAppendPartitionFunction implements  PairFlatMapFunction<Iterator<Tuple2<Long,FrameBlock>>, Long, FrameBlock> 
+	private static class MapSideAppendPartitionFunction implements  PairFlatMapFunction<Iterator<Tuple2<Long,FrameBlock>>, Long, FrameBlock>
 	{
 		private static final long serialVersionUID = -3997051891171313830L;
 
@@ -118,8 +124,17 @@ public class FrameAppendMSPInstruction extends AppendMSPInstruction {
 			
 				int rowix = (ix.intValue()-1)/OptimizerUtils.DEFAULT_FRAME_BLOCKSIZE+1;
 				int colix = 1;
+
 				
 				FrameBlock in2 = _pm.getBlock(rowix, colix);
+
+				//if misalignment -> slice out fb from RHS
+				if(in1.getNumRows() != in2.getNumRows()){
+					int start = ix.intValue() - 1 - (rowix-1)*OptimizerUtils.DEFAULT_FRAME_BLOCKSIZE;
+					int end = start + in1.getNumRows() - 1;
+					in2 = in2.slice(start, end);
+				}
+
 				FrameBlock out = in1.append(in2,  true); //cbind
 				return new Tuple2<>(ix, out);
 			}			

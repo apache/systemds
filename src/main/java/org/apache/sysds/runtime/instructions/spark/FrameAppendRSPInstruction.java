@@ -45,19 +45,9 @@ public class FrameAppendRSPInstruction extends AppendRSPInstruction {
 		JavaPairRDD<Long,FrameBlock> in2 = sec.getFrameBinaryBlockRDDHandleForVariable( input2.getName() );
 		JavaPairRDD<Long,FrameBlock> out = null;
 		long leftRows = sec.getDataCharacteristics(input1.getName()).getRows();
-		
-		if(_cbind) {
-			JavaPairRDD<Long,FrameBlock> in1Aligned = in1.mapToPair(new ReduceSideAppendAlignFunction(leftRows));
-			in1Aligned = FrameRDDAggregateUtils.mergeByKey(in1Aligned);
-			JavaPairRDD<Long,FrameBlock> in2Aligned = in2.mapToPair(new ReduceSideAppendAlignFunction(leftRows));
-			in2Aligned = FrameRDDAggregateUtils.mergeByKey(in2Aligned);
-			
-			out = in1Aligned.join(in2Aligned).mapValues(new ReduceSideColumnsFunction(_cbind));
-		} else {	//rbind
-			JavaPairRDD<Long,FrameBlock> right = in2.mapToPair( new ReduceSideAppendRowsFunction(leftRows));
-			out = in1.union(right);
-		}
-		
+
+		out = appendFrameRSP(in1, in2, leftRows, _cbind);
+
 		//put output RDD handle into symbol table
 		updateBinaryAppendOutputDataCharacteristics(sec, _cbind);
 		sec.setRDDHandleForVariable(output.getName(), out);
@@ -71,6 +61,19 @@ public class FrameAppendRSPInstruction extends AppendRSPInstruction {
 				sec.getFrameObject(input2.getName())));
 		else
 			sec.getFrameObject(output.getName()).setSchema(sec.getFrameObject(input1.getName()).getSchema());
+	}
+
+	public static JavaPairRDD<Long, FrameBlock> appendFrameRSP(JavaPairRDD<Long, FrameBlock> in1, JavaPairRDD<Long, FrameBlock> in2, long leftRows, boolean cbind) {
+		if(cbind) {
+			JavaPairRDD<Long,FrameBlock> in1Aligned = in1.mapToPair(new ReduceSideAppendAlignFunction(leftRows));
+			in1Aligned = FrameRDDAggregateUtils.mergeByKey(in1Aligned);
+			JavaPairRDD<Long,FrameBlock> in2Aligned = in2.mapToPair(new ReduceSideAppendAlignFunction(leftRows));
+			in2Aligned = FrameRDDAggregateUtils.mergeByKey(in2Aligned);
+			return in1Aligned.join(in2Aligned).mapValues(new ReduceSideColumnsFunction(cbind));
+		} else {	//rbind
+			JavaPairRDD<Long,FrameBlock> right = in2.mapToPair( new ReduceSideAppendRowsFunction(leftRows));
+			return in1.union(right);
+		}
 	}
 
 	private static class ReduceSideColumnsFunction implements Function<Tuple2<FrameBlock, FrameBlock>, FrameBlock> 
@@ -109,7 +112,7 @@ public class FrameAppendRSPInstruction extends AppendRSPInstruction {
 		}
 	}
 
-	private static class ReduceSideAppendAlignFunction implements PairFunction<Tuple2<Long, FrameBlock>, Long, FrameBlock> 
+	private static class ReduceSideAppendAlignFunction implements PairFunction<Tuple2<Long, FrameBlock>, Long, FrameBlock>
 	{
 		private static final long serialVersionUID = 5850400295183766409L;
 

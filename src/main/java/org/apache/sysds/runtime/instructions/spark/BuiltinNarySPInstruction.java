@@ -20,12 +20,19 @@
 package org.apache.sysds.runtime.instructions.spark;
 
 import org.apache.commons.lang3.ArrayUtils;
+import org.apache.commons.lang3.NotImplementedException;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.spark.api.java.function.Function;
+import org.apache.spark.api.java.function.PairFlatMapFunction;
 import org.apache.spark.api.java.function.PairFunction;
+import org.apache.sysds.hops.BinaryOp;
+import org.apache.sysds.hops.OptimizerUtils;
+import org.apache.sysds.runtime.DMLRuntimeException;
+import org.apache.sysds.runtime.controlprogram.caching.FrameObject;
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysds.runtime.controlprogram.context.SparkExecutionContext;
+import org.apache.sysds.runtime.frame.data.FrameBlock;
 import org.apache.sysds.runtime.functionobjects.Builtin;
 import org.apache.sysds.runtime.functionobjects.Plus;
 import org.apache.sysds.runtime.instructions.InstructionUtils;
@@ -47,7 +54,15 @@ import org.apache.sysds.runtime.meta.MatrixCharacteristics;
 import org.apache.sysds.runtime.util.UtilFunctions;
 import scala.Tuple2;
 
+import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
+
+import static org.apache.sysds.hops.BinaryOp.AppendMethod.MR_MAPPEND;
+import static org.apache.sysds.hops.BinaryOp.AppendMethod.MR_RAPPEND;
+import static org.apache.sysds.hops.OptimizerUtils.DEFAULT_FRAME_BLOCKSIZE;
+import static org.apache.sysds.runtime.instructions.spark.FrameAppendMSPInstruction.appendFrameMSP;
+import static org.apache.sysds.runtime.instructions.spark.FrameAppendRSPInstruction.appendFrameRSP;
 
 public class BuiltinNarySPInstruction extends SPInstruction implements LineageTraceable
 {
@@ -75,32 +90,82 @@ public class BuiltinNarySPInstruction extends SPInstruction implements LineageTr
 	public void processInstruction(ExecutionContext ec) {
 		SparkExecutionContext sec = (SparkExecutionContext)ec;
 		JavaPairRDD<MatrixIndexes,MatrixBlock> out = null;
-		DataCharacteristics mcOut = null;
+		DataCharacteristics dcout = null;
+		boolean inputIsMatrix = inputs[0].isMatrix();
+
 		
 		if( getOpcode().equals("cbind") || getOpcode().equals("rbind") ) {
 			//compute output characteristics
 			boolean cbind = getOpcode().equals("cbind");
-			mcOut = computeAppendOutputDataCharacteristics(sec, inputs, cbind);
-			
-			//get consolidated input via union over shifted and padded inputs
-			DataCharacteristics off = new MatrixCharacteristics(0, 0, mcOut.getBlocksize(), 0);
-			for( CPOperand input : inputs ) {
-				DataCharacteristics mcIn = sec.getDataCharacteristics(input.getName());
-				JavaPairRDD<MatrixIndexes,MatrixBlock> in = sec
-					.getBinaryMatrixBlockRDDHandleForVariable( input.getName() )
-					.flatMapToPair(new ShiftMatrix(off, mcIn, cbind))
-					.mapToPair(new PadBlocksFunction(mcOut)); //just padding
-				out = (out != null) ? out.union(in) : in;
-				updateAppendDataCharacteristics(mcIn, off, cbind);
+			dcout = computeAppendOutputDataCharacteristics(sec, inputs, cbind);
+			if(inputIsMatrix){
+				//get consolidated input via union over shifted and padded inputs
+				DataCharacteristics off = new MatrixCharacteristics(0, 0, dcout.getBlocksize(), 0);
+				for( CPOperand input : inputs ) {
+					DataCharacteristics mcIn = sec.getDataCharacteristics(input.getName());
+					JavaPairRDD<MatrixIndexes, MatrixBlock> in = sec
+							.getBinaryMatrixBlockRDDHandleForVariable(input.getName())
+							.flatMapToPair(new ShiftMatrix(off, mcIn, cbind))
+							.mapToPair(new PadBlocksFunction(dcout)); //just padding
+					out = (out != null) ? out.union(in) : in;
+					updateAppendDataCharacteristics(mcIn, off, cbind);
+				}
+				//aggregate partially overlapping blocks w/ single shuffle
+				int numPartOut = SparkUtils.getNumPreferredPartitions(dcout);
+				out = RDDAggregateUtils.mergeByKey(out, numPartOut, false);
 			}
-			
-			//aggregate partially overlapping blocks w/ single shuffle
-			int numPartOut = SparkUtils.getNumPreferredPartitions(mcOut);
-			out = RDDAggregateUtils.mergeByKey(out, numPartOut, false);
+			//FRAME
+			else {
+				JavaPairRDD<Long,FrameBlock> outFrame = 
+					sec.getFrameBinaryBlockRDDHandleForVariable( inputs[0].getName() );
+				dcout = new MatrixCharacteristics(sec.getDataCharacteristics(inputs[0].getName()));
+				FrameObject fo = new FrameObject(sec.getFrameObject(inputs[0].getName()));
+				boolean[] broadcasted = new boolean[inputs.length];
+				broadcasted[0] = false;
+
+				for(int i = 1; i < inputs.length; i++){
+					DataCharacteristics dcIn = sec.getDataCharacteristics(inputs[i].getName());
+					final int blk_size = dcout.getBlocksize() <= 0 ? DEFAULT_FRAME_BLOCKSIZE : dcout.getBlocksize();
+
+					broadcasted[i] = BinaryOp.FORCED_APPEND_METHOD == MR_MAPPEND
+						|| BinaryOp.FORCED_APPEND_METHOD == null && cbind && dcIn.getCols() <= blk_size 
+							&& OptimizerUtils.checkSparkBroadcastMemoryBudget(
+								dcout.getCols(), dcIn.getCols(), blk_size, dcIn.getNonZeros());
+
+					//easy case: broadcast & map
+					if(broadcasted[i]){
+						outFrame = appendFrameMSP(outFrame, sec.getBroadcastForFrameVariable(inputs[i].getName()));
+					}
+					//general case for frames:
+					else{
+						if(BinaryOp.FORCED_APPEND_METHOD != null && BinaryOp.FORCED_APPEND_METHOD != MR_RAPPEND)
+							throw new DMLRuntimeException("Forced append type ["
+								+BinaryOp.FORCED_APPEND_METHOD+"] is not supported for frames");
+
+						JavaPairRDD<Long,FrameBlock> in2 = 
+							sec.getFrameBinaryBlockRDDHandleForVariable(inputs[i].getName() );
+						outFrame = appendFrameRSP(outFrame, in2, dcout.getRows(), cbind);
+					}
+					updateAppendDataCharacteristics(dcIn, dcout, cbind);
+					if(cbind)
+						fo.setSchema(fo.mergeSchemas(sec.getFrameObject(inputs[i].getName())));
+				}
+
+				//set output RDD and add lineage
+				sec.getDataCharacteristics(output.getName()).set(dcout);
+				sec.setRDDHandleForVariable(output.getName(), outFrame);
+				sec.getFrameObject(output.getName()).setSchema(fo.getSchema());
+				for( int i = 0; i < inputs.length; i++)
+					if(broadcasted[i])
+						sec.addLineageBroadcast(output.getName(), inputs[i].getName());
+					else
+						sec.addLineageRDD(output.getName(), inputs[i].getName());
+				return;
+			}
 		}
 		else if( ArrayUtils.contains(new String[]{"nmin","nmax","n+"}, getOpcode()) ) {
 			//compute output characteristics
-			mcOut = computeMinMaxOutputDataCharacteristics(sec, inputs);
+			dcout = computeMinMaxOutputDataCharacteristics(sec, inputs);
 			
 			//get scalars and consolidated input via join
 			List<ScalarObject> scalars = sec.getScalarInputs(inputs);
@@ -118,13 +183,43 @@ public class BuiltinNarySPInstruction extends SPInstruction implements LineageTr
 		}
 		
 		//set output RDD and add lineage
-		sec.getDataCharacteristics(output.getName()).set(mcOut);
+		sec.getDataCharacteristics(output.getName()).set(dcout);
 		sec.setRDDHandleForVariable(output.getName(), out);
 		for( CPOperand input : inputs )
 			if( !input.isScalar() )
 				sec.addLineageRDD(output.getName(), input.getName());
 	}
-	
+
+	@SuppressWarnings("unused")
+	private static class AlignBlkTask implements PairFlatMapFunction<Tuple2<Long, FrameBlock>, Long, FrameBlock> {
+		private static final long serialVersionUID = 1333460067852261573L;
+		long max_rows;
+
+		public AlignBlkTask(long rows) {
+			max_rows = rows;
+		}
+
+		@Override
+		public Iterator<Tuple2<Long, FrameBlock>> call(Tuple2<Long, FrameBlock> longFrameBlockTuple2) throws Exception {
+			Long index = longFrameBlockTuple2._1;
+			FrameBlock fb = longFrameBlockTuple2._2;
+			ArrayList<Tuple2<Long, FrameBlock>> list = new ArrayList<Tuple2<Long, FrameBlock>>();
+			//single output block
+			if(max_rows <= DEFAULT_FRAME_BLOCKSIZE){
+				FrameBlock fbout = new FrameBlock(fb.getSchema());
+				fbout.ensureAllocatedColumns((int) max_rows);
+				fbout = fbout.leftIndexingOperations(fb,index.intValue() - 1, index.intValue() + fb.getNumRows() - 2,0, fb.getNumColumns()-1, null );
+				list.add(new Tuple2<>(1L, fbout));
+			} else {
+				throw new NotImplementedException("Other Alignment strategies need to be implemented");
+				//long aligned_index = (index / DEFAULT_FRAME_BLOCKSIZE)*OptimizerUtils.DEFAULT_FRAME_BLOCKSIZE+1;
+				//list.add(new Tuple2<>(index / DEFAULT_FRAME_BLOCKSIZE + 1, fb));
+			}
+
+			return list.iterator();
+		}
+	}
+
 	private static DataCharacteristics computeAppendOutputDataCharacteristics(SparkExecutionContext sec, CPOperand[] inputs, boolean cbind) {
 		DataCharacteristics mcIn1 = sec.getDataCharacteristics(inputs[0].getName());
 		DataCharacteristics mcOut = new MatrixCharacteristics(0, 0, mcIn1.getBlocksize(), 0);

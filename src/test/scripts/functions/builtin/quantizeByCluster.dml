@@ -29,8 +29,8 @@ duplicate_rows = function (Matrix [Double] V, Integer N)
   }
   V = tmp
 }
-
-compute_vectors = function (Matrix [Double] codes, Matrix [Double] codebook)
+#construct vectors from codes
+construct_vectors = function (Matrix [Double] codes, Matrix [Double] codebook)
   return(Matrix [Double] vectors)
 {
   vectors = matrix(0, rows=nrow(codes), cols=ncol(codes)*ncol(codebook))
@@ -79,8 +79,8 @@ else {
 [k_codebook, k_codes] = kmeans(vectors, $k * $subspaces, $runs, $max_iter, $eps, FALSE, $vectors_per_cluster, 2)
 
 #construct vectors from codes
-pq_result = compute_vectors(codes, codebook)
-k_result = compute_vectors(k_codes, k_codebook)
+pq_result = construct_vectors(codes, codebook)
+k_result = construct_vectors(k_codes, k_codebook)
 
 #calculate distortion
 pq_distortion = colSums(rowSums((vectors - pq_result)^2)) / rows

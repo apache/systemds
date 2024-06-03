@@ -85,8 +85,9 @@ public class BuiltinQuantizeByClusterTest extends AutomatedTestBase {
         runQuantizeByClusterTest();
     }
 
+    /*The tests use kmeans clustering as a baseline and check whether the distortion is within
+    a certain threshold.*/
     private void runQuantizeByClusterTest() {
-
         loadTestConfiguration(getTestConfiguration(TEST_NAME));
         String HOME = SCRIPT_DIR + TEST_DIR;
         fullDMLScriptName = HOME + TEST_NAME + ".dml";
@@ -103,13 +104,14 @@ public class BuiltinQuantizeByClusterTest extends AutomatedTestBase {
         MatrixCharacteristics meta_codes = readDMLMetaDataFile("codes");
         MatrixCharacteristics meta_codebook = readDMLMetaDataFile("codebook");
         Assert.assertTrue("Matrix dimensions should be equal to expected dimensions",
-                meta_codes.getRows() == clusters * vectors_per_cluster && meta_codes.getCols() == subspaces);
+                meta_codes.getRows() == (long) clusters * vectors_per_cluster && meta_codes.getCols() == subspaces);
         Assert.assertEquals("Centroid dimensions should be equal to expected dimensions", cols / subspaces, meta_codebook.getCols()
         );
 
         double pq_distortion = readDMLMatrixFromOutputDir("pq_distortion").get(new MatrixValue.CellIndex(1, 1));
         double k_distortion = readDMLMatrixFromOutputDir("k_distortion").get(new MatrixValue.CellIndex(1, 1));
 
+        //check if distortion is within a threshold
         if (!test_case.equals("cluster")) {
             Assert.assertTrue(pq_distortion < 1.2 * k_distortion + 0.1);
         } else {

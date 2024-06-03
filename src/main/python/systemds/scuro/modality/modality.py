@@ -19,9 +19,22 @@
 #
 # -------------------------------------------------------------
 
-from systemds import context
-from systemds import operator
-from systemds import examples
-from systemds import scuro
+from modality.representation import Representation
 
-__all__ = ["context", "operator", "examples", "scuro"]
+
+class Modality:
+    
+    def __init__(self, representation: Representation, start_index: int = 0):
+        """
+        Defines the modality that is to be aligned
+        :param representation: Specifies how the data should be represented for a specific modality
+        :param start_index: Defines the first index used for the alignment
+        """
+        self.representation = representation
+        self.start_index = start_index
+    
+    def read_chunk(self):
+        """
+        Extracts a data chunk of the modality according to the window size specified in params
+        """
+        raise NotImplementedError

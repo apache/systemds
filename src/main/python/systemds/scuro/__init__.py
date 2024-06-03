@@ -18,10 +18,3 @@
 # under the License.
 #
 # -------------------------------------------------------------
-
-from systemds import context
-from systemds import operator
-from systemds import examples
-from systemds import scuro
-
-__all__ = ["context", "operator", "examples", "scuro"]

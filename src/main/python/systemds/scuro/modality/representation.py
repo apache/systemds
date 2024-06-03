@@ -18,10 +18,13 @@
 # under the License.
 #
 # -------------------------------------------------------------
-
-from systemds import context
-from systemds import operator
-from systemds import examples
-from systemds import scuro
-
-__all__ = ["context", "operator", "examples", "scuro"]
+class Representation:
+    def __init__(self):
+        pass
+    
+    
+class PixelRepresentation(Representation):
+    def __init__(self):
+        super().__init__()
+    
+    

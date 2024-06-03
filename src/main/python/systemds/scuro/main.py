@@ -18,10 +18,22 @@
 # under the License.
 #
 # -------------------------------------------------------------
+from aligner.alignment import Alignment
+from aligner.alignment_strategy import ChunkedCrossCorrelation
+from modality.representation import PixelRepresentation
+from modality.video_modality import VideoModality
+from aligner.similarity_measures import CosineSimilarity
 
-from systemds import context
-from systemds import operator
-from systemds import examples
-from systemds import scuro
+# Setup modalities
+file_path_a = ''
+file_path_b = ''
+representation_a = PixelRepresentation()  # Concrete Representation
+representation_b = PixelRepresentation()  # Concrete Representation
+modality_a = VideoModality(file_path_a, representation_a)
+modality_b = VideoModality(file_path_b, representation_b)
 
-__all__ = ["context", "operator", "examples", "scuro"]
+# Align modalities
+alignment_strategy = ChunkedCrossCorrelation()  # Concrete Alignment Strategy
+similarity_measure = CosineSimilarity()
+aligner = Alignment(modality_a, modality_b, alignment_strategy, similarity_measure)
+aligned_modality = aligner.align_modalities()

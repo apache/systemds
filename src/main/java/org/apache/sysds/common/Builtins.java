@@ -271,6 +271,7 @@ public enum Builtins {
 	PSNR("psnr", true),
 	QR("qr", false, ReturnType.MULTI_RETURN),
 	QUANTILE("quantile", false),
+	QUANTIZEBYCLUSTER("quantizeByCluster", true),
 	RANDOM_FOREST("randomForest", true),
 	RANDOM_FOREST_PREDICT("randomForestPredict", true),
 	RANGE("range", false),

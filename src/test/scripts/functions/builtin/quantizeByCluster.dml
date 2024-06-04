@@ -1,0 +1,96 @@
+#-------------------------------------------------------------
+#
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+#
+#-------------------------------------------------------------
+
+#duplicate rows of matix n times
+duplicate_rows = function (Matrix [Double] V, Integer N)
+  return(Matrix [Double] V)
+{
+  tmp = V
+  for(i in seq(1, N-1, 1)) {
+    tmp = rbind(tmp, V)
+  }
+  V = tmp
+}
+#construct vectors from codes
+construct_vectors = function (Matrix [Double] codes, Matrix [Double] codebook)
+  return(Matrix [Double] vectors)
+{
+  vectors = matrix(0, rows=nrow(codes), cols=ncol(codes)*ncol(codebook))
+  parfor (i in 1:nrow(codes), check=0) {
+    parfor (j in 1:ncol(codes), check=0) {
+      vectors[i, 1 + (j-1)* ncol(codebook): j * ncol(codebook)] = codebook[as.scalar(codes[i, j])]
+    }
+  }
+}
+
+max = 1
+min = -max
+offset = max / 10
+
+subvector_size = $cols / $subspaces
+rows = $clusters * $vectors_per_cluster
+
+# Generate points by concatenating sub_points around sub_clusters
+if($test_case == "sub_cluster") {
+  offset_matrix = rand(rows=rows, cols=$cols, min=-offset, max=offset, pdf="uniform", seed=2)
+  cluster_centers = rand(rows = $clusters, cols = subvector_size, min=min, max=max, seed=2)
+  vectors = matrix(cluster_centers, nrow(cluster_centers), ncol(cluster_centers))
+  for(i in 1:$subspaces-1)  {
+    cluster_centers = rand(rows = $clusters, cols = subvector_size, min=min, max=max, seed=2)
+    vectors = cbind(vectors, cluster_centers)
+  }
+  #ensure correct number of vectors
+  vectors = duplicate_rows(vectors, $vectors_per_cluster)
+  vectors = vectors + offset_matrix
+}
+# Generate points around clusters
+else if ($test_case == "cluster") {
+  cluster_centers = rand(rows = $clusters, cols = $cols, min=min, max=max, pdf="uniform", seed=2)
+  vectors = matrix(cluster_centers, nrow(cluster_centers), ncol(cluster_centers))
+  #ensure correct number of vectors
+  vectors = duplicate_rows(vectors, $vectors_per_cluster)
+  offset_matrix = rand(rows=rows, cols=$cols, min=-offset, max=offset, pdf="uniform", seed=2)
+  vectors = vectors + offset_matrix
+}
+# Generate random points
+else {
+  vectors = rand(rows = rows, cols = $cols, min=min, max=max, pdf=$test_case, seed=2)
+}
+
+[codebook, codes] = quantizeByCluster(vectors, $subspaces, $k, $runs, $max_iter, $eps, $vectors_per_cluster, $sep, 2)
+[k_codebook, k_codes] = kmeans(vectors, $k * $subspaces, $runs, $max_iter, $eps, FALSE, $vectors_per_cluster, 2)
+
+#construct vectors from codes
+pq_result = construct_vectors(codes, codebook)
+k_result = construct_vectors(k_codes, k_codebook)
+
+#calculate distortion
+pq_distortion = colSums(rowSums((vectors - pq_result)^2)) / rows
+k_distortion = colSums(rowSums((vectors - k_result)^2)) / rows
+
+print("Product quantization distortion: " + toString(pq_distortion))
+print("Kmeans distortion: " + toString(k_distortion))
+
+write(codes, $codes)
+write(codebook, $codebook)
+write(pq_distortion, $pq_distortion)
+write(k_distortion, $k_distortion)
+

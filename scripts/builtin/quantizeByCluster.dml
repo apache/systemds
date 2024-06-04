@@ -1,0 +1,75 @@
+#-------------------------------------------------------------
+#
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+#
+#-------------------------------------------------------------
+
+# Builtin function that implements product quantization
+#
+# INPUT:
+# ---------------------------------------------------------------------------------------
+# X                             The input matrix to perform product quantization on
+# M                             Number of subspaces
+# k                             Number of vectors in the subcodebooks
+# runs                          Number of runs (with different initial centroids)
+# max_iter                      Maximum number of iterations per run
+# eps                           Tolerance (epsilon) for WCSS change ratio
+# avg_sample_size_per_centroid  Average number of records per centroid in data samples
+# separate                      Cluster subspaces separately. If value is set to true,
+#                               kmeans is run M times, once for each subspace. Otherwise
+#                               kmeans is run only once.
+# seed                          The seed used for initial sampling. If set to -1 random
+#                               seeds are selected.
+# ---------------------------------------------------------------------------------------
+#
+# OUTPUT:
+# ------------------------------------------------------------------------------------------
+# codebook  The matrix containing the centroids. If clustered separately, the ith
+#           subcodebook is the ith chunk of size k. The codebook matrix has the dimensions
+#           [k*M x ncol(X)/M].
+# codes     The mapping of vectors to centroids. Each vector of the input matrix X is mapped
+#           onto a vector of codes. The entries in the codes matrix are the indices of
+#           the vectors in the codebook. The codes matrix has the dimensions [nrow(X) x M].
+# ------------------------------------------------------------------------------------------
+
+m_quantizeByCluster = function(Matrix[Double]X, Integer M = 4, Integer k = 10, Integer runs = 10,
+    Integer max_iter = 1000, Double eps = 1e-6, Integer avg_sample_size_per_centroid = 50, Boolean separate=TRUE, Integer seed = -1)
+  return(Matrix[Double] codebook, Matrix[Double] codes)
+{
+  subvector_size = ncol(X) / M
+  #Kmeans is run just once for all subspaces together. Subvectors are mapped to vectors of the codebook of size k*M.
+  #The ith entry of a code vector has a value in [1, k*M].
+  if(!separate) {
+    A = matrix(X, rows= nrow(X) * M, cols=subvector_size)
+    [codebook, B] = kmeans(A, k * M, runs, max_iter, eps, FALSE, avg_sample_size_per_centroid, seed)
+    codes = matrix(B, rows = nrow(B) / M, cols = ncol(B) * M)
+  }
+  #Kmeans is run for every subspace separately. Subvectors are mapped to a subset of k vectors of the codebook.
+  #The ith entry of a code vector has a value in ((i-1)*k, i*k].
+  else {
+    l = k
+    codebook = matrix(1, rows=l*M, cols=subvector_size)
+    codes = matrix(1, rows=nrow(X), cols=M)
+    parfor(i in 1:M, check=0) {
+       [tmp_cbook, tmp_c] = kmeans(X[,(i-1)*subvector_size+1:i*subvector_size], l, runs, max_iter, eps, FALSE, avg_sample_size_per_centroid, seed)
+       codebook[(i-1)*l+1:i*l,] = tmp_cbook
+       offset = matrix((i-1)*l, rows=nrow(codes), cols=1)
+       codes[,i] = tmp_c + offset
+    }
+  }
+}

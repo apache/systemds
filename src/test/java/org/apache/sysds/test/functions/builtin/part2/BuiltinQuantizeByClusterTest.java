@@ -32,7 +32,9 @@ import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameter;
 
+
 @RunWith(Parameterized.class)
+@net.jcip.annotations.NotThreadSafe
 public class BuiltinQuantizeByClusterTest extends AutomatedTestBase {
 
 	@Parameter

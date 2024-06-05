@@ -43,6 +43,9 @@ public class FrameAppendDistTest extends AutomatedTestBase
 	private final static String TEST_NAME = "FrameAppend";
 	private final static String TEST_NAME2 = "FrameNAryAppend";
 	private final static String TEST_NAME3 = "FrameNAryAppendMisalign";
+	private final static String TEST_NAME4 = "FrameNAryAppendMisalignRSP";
+	private final static String TEST_NAME5 = "FrameNAryAppendMisalignRSP2";
+
 	private final static String TEST_DIR = "functions/frame/";
 	private final static String TEST_CLASS_DIR = TEST_DIR + FrameAppendDistTest.class.getSimpleName() + "/";
 
@@ -71,17 +74,19 @@ public class FrameAppendDistTest extends AutomatedTestBase
 		addTestConfiguration(TEST_NAME, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME, new String[] {"C"}));
 		addTestConfiguration(TEST_NAME2, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME2,new String[] {"C"}));
 		addTestConfiguration(TEST_NAME3, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME3,new String[] {"C"}));
+		addTestConfiguration(TEST_NAME4, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME4,new String[] {"C"}));
+		addTestConfiguration(TEST_NAME5, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME5,new String[] {"C"}));
 	}
 
 	@Test
 	public void testAppendInBlock1DenseSP() {
 		commonAppendTest(ExecMode.SPARK, rows1, rows1, cols1a, cols2a, false, AppendMethod.MR_RAPPEND, false, TEST_NAME);
-	}   
+	}
 	
 	@Test
 	public void testAppendInBlock1SparseSP() {
 		commonAppendTest(ExecMode.SPARK, rows1, rows1, cols1a, cols2a, true, AppendMethod.MR_RAPPEND, false, TEST_NAME);
-	}   
+	}
 	
 	@Test
 	public void testAppendInBlock1DenseRBindSP() {
@@ -116,22 +121,77 @@ public class FrameAppendDistTest extends AutomatedTestBase
 
 	@Test
 	public void testNAryCAppendMSP(){
-		commonAppendTest(ExecMode.SPARK ,100, 100, 5, 10, false, null, false, TEST_NAME2);;
+		commonAppendTest(ExecMode.SPARK ,100, 100, 5, 10, false, null, false, TEST_NAME2);
 	}
 
 	@Test
 	public void testNAryCAppendRSP(){
-		commonAppendTest(ExecMode.SPARK ,30, 30, 5, 1001, false, null, false, TEST_NAME2);;
+		commonAppendTest(ExecMode.SPARK ,30, 30, 5, 1001, false, null, false, TEST_NAME2);
 	}
 
 	@Test
 	public void testNAryRAppendSP(){
-		commonAppendTest(ExecMode.SPARK ,100, 100, 5, 5, false, null, true, TEST_NAME2);;
+		commonAppendTest(ExecMode.SPARK ,100, 100, 5, 5, false, null, true, TEST_NAME2);
 	}
 
 	@Test
 	public void testNAryAppendWithMisalignmentMSP(){
-		commonAppendTest(ExecMode.SPARK ,5, 10, 5, 5, false, null, false, TEST_NAME3);;
+		commonAppendTest(ExecMode.SPARK ,5, 10, 5, 5, false, null, false, TEST_NAME3);
+	}
+
+	@Test
+	public void testNAryAppendWithMisalignmentRSP() {
+		commonAppendTest(ExecMode.SPARK, 5, 10, 1001, 1001, false, null, false, TEST_NAME3);
+	}
+
+// NAryAppendWithMisalignmentRSP2:
+// LHS:                RHS:
+// +---------+         +-----+
+// |         |         +-----+
+// |         |         +-----+
+// |         |         +-----+
+// +---------+         +-----+
+	@Test
+	public void testNAryAppendWithMisalignmentRSP2(){
+		commonAppendTest(ExecMode.SPARK ,20, 5, 1001, 1005, false, null, false, TEST_NAME4);
+	}
+
+// NAryAppendWithMisalignmentRSP3:
+//      LHS:            RHS:
+//      +-----+         +---------+
+//      +-----+         |         |
+//      +-----+         |         |
+//      +-----+         |         |
+//      +-----+         +---------+
+	@Test
+	public void testNAryAppendWithMisalignmentRSP3(){
+		commonAppendTest(ExecMode.SPARK ,5, 20, 1001, 1005, false, null, false, TEST_NAME4);
+	}
+// NAryAppendWithMisalignmentRSP4:
+//      LHS:            RHS:
+//      +-----+         +---------+
+//      |     |         +---------+
+//      +-----+         |         |
+//      |     |         +---------+
+//      +-----+         |         |
+//      |     |         +---------+
+//      +-----+         |         |
+//      +-----+         +---------+
+	@Test
+	public void testNAryAppendWithMisalignmentRSP4(){
+		commonAppendTest(ExecMode.SPARK ,20, 5, 1001, 1001, false, null, false, TEST_NAME5);
+	}
+// NAryAppendWithMisalignmentRSP5:
+//      LHS:            RHS:
+//      +-----+         +---------+
+//      +-----+         |         |
+//      +-----+         +---------+
+//      +-----+         +---------+
+//      |     |         +---------+
+//      +-----+         +---------+
+	@Test
+	public void testNAryAppendWithMisalignmentRSP5(){
+		commonAppendTest(ExecMode.SPARK ,8, 20, 1001, 1001, false, null, false, TEST_NAME5);
 	}
 
 	
@@ -142,7 +202,7 @@ public class FrameAppendDistTest extends AutomatedTestBase
 		
 		ExecMode prevPlfm=rtplatform;
 		
-		double sparsity = (sparse) ? sparsity2 : sparsity1; 
+		double sparsity = (sparse) ? sparsity2 : sparsity1;
 		boolean sparkConfigOld = DMLScript.USE_LOCAL_SPARK_CONFIG;
 		//setOutputBuffering(true);
 		try

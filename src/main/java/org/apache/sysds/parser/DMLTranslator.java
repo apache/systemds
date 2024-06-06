@@ -2247,6 +2247,7 @@ public class DMLTranslator
 			case BATCH_NORM2D_BACKWARD:
 			case REMOVE:
 			case SVD:
+			case RCM:
 
 				// Number of outputs = size of targetList = #of identifiers in source.getOutputs
 				String[] outputNames = new String[targetList.size()]; 

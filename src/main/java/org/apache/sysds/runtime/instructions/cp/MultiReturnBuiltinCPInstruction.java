@@ -47,6 +47,13 @@ public class MultiReturnBuiltinCPInstruction extends ComputationCPInstruction {
 		_numThreads = threads;
 	}
 	
+	private MultiReturnBuiltinCPInstruction(Operator op, CPOperand input1, CPOperand input2, ArrayList<CPOperand> outputs, String opcode,
+			String istr, int threads) {
+		super(CPType.MultiReturnBuiltin, op, input1, input2, outputs.get(0), opcode, istr);
+		_outputs = outputs;
+		_numThreads = threads;
+	}
+	
 	public CPOperand getOutput(int i) {
 		return _outputs.get(i);
 	}
@@ -151,7 +158,6 @@ public class MultiReturnBuiltinCPInstruction extends ComputationCPInstruction {
 			int threads = Integer.parseInt(parts[5]);
 			
 			return new MultiReturnBuiltinCPInstruction(null, in1, outputs, opcode, str, threads);
-
 		}
 		else {
 			throw new DMLRuntimeException("Invalid opcode in MultiReturnBuiltin instruction: " + opcode);

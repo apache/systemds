@@ -251,8 +251,13 @@ public class FunctionOp extends MultiThreadedHop
 				long outputV = OptimizerUtils.estimateSizeExactSparsity(getOutputs().get(2).getDim1(), getOutputs().get(2).getDim2(), 1.0);
 				return outputU+outputSigma+outputV;
 			}
+			else if( getFunctionName().equalsIgnoreCase("rcm") ) {
+				long nr = Math.max(getInput(0).getDim1(), getInput(1).getDim1());
+				long nc = Math.max(getInput(0).getDim2(), getInput(1).getDim2());
+				return 2*OptimizerUtils.estimateSizeExactSparsity(nr, nc, 1.0); 
+			}
 			else
-				throw new RuntimeException("Invalid call of computeOutputMemEstimate in FunctionOp.");
+				throw new RuntimeException("Invalid call of computeOutputMemEstimate in FunctionOp: "+getFunctionName());
 		}
 	}
 	
@@ -299,7 +304,9 @@ public class FunctionOp extends MultiThreadedHop
 					getFunctionName().equalsIgnoreCase("batch_norm2d_train") || getFunctionName().equalsIgnoreCase("batch_norm2d_test")) {
 				return 0; 
 			}
-			else if ( getFunctionName().equalsIgnoreCase("lstm") ||  getFunctionName().equalsIgnoreCase("lstm_backward") ) {
+			else if ( getFunctionName().equalsIgnoreCase("lstm") 
+					||  getFunctionName().equalsIgnoreCase("lstm_backward")
+					|| getFunctionName().equalsIgnoreCase("rcm")) {
 				// TODO: To allow for initial version to always run on the GPU
 				return 0; 
 			}

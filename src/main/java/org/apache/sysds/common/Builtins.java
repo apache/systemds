@@ -277,6 +277,7 @@ public enum Builtins {
 	RANGE("range", false),
 	RASELECTION("raSelection", true),
 	RBIND("rbind", false),
+	RCM("rowClassMeet", "rcm", false, false, ReturnType.MULTI_RETURN),
 	REMOVE("remove", false, ReturnType.MULTI_RETURN),
 	REV("rev", false),
 	ROUND("round", false),

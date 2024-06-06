@@ -380,6 +380,23 @@ public class BuiltinFunctionExpression extends DataIdentifier {
 			
 			break;
 		}
+		case RCM: {
+			checkNumParameters(2);
+			checkMatrixParam(getFirstExpr());
+			checkMatrixParam(getSecondExpr());
+			long nr = Math.max(getFirstExpr().getOutput().getDim1(),
+				getSecondExpr().getOutput().getDim1());
+			long nc = Math.max(getFirstExpr().getOutput().getDim2(),
+				getSecondExpr().getOutput().getDim2());
+			for(int i=0; i<2; i++) {
+				DataIdentifier out = (DataIdentifier) getOutputs()[i];
+				out.setDataType(DataType.MATRIX);
+				out.setValueType(ValueType.FP64);
+				out.setDimensions(nr, nc);
+				out.setBlocksize(getFirstExpr().getOutput().getBlocksize());
+			}
+			break;
+		}
 		case FFT: {
 
 			Expression expressionOne = getFirstExpr();

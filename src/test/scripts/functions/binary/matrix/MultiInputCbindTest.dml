@@ -21,6 +21,12 @@
 
 A = read($1);
 B = read($2);
-[C,N] = rowClassMeet(A, B);
-write(C, $4);
+
+if( as.logical($3) ) {
+  A = matrix(A, rows=length(A), cols=1)
+  B = matrix(B, rows=length(B), cols=1)
+}
+
+R = cbind(cbind(A, B), A);
+write(R, $4);
 

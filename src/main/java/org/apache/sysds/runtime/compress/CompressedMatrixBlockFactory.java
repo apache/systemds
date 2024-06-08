@@ -359,7 +359,7 @@ public class CompressedMatrixBlockFactory {
 	private void coCodePhase() {
 
 		compressionGroups = CoCoderFactory.findCoCodesByPartitioning(informationExtractor, compressionGroups, k,
-			costEstimator, compSettings);
+			costEstimator, compSettings, true);
 
 		_stats.estimatedSizeCoCoded = compressionGroups.memoryEstimate();
 		_stats.estimatedCostCoCoded = costEstimator.getCost(compressionGroups);

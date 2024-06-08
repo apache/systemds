@@ -54,16 +54,20 @@ public interface CoCoderFactory {
 	 * @param k             The concurrency degree allowed for this operation.
 	 * @param costEstimator The Cost estimator to estimate the cost of the compression
 	 * @param cs            The compression settings used in the compression.
+	 * @param detectOneHotEncoding            Flag to Enable/Disable OHE Detection
 	 * @return The estimated (hopefully) best groups of ColGroups.
 	 */
 	public static CompressedSizeInfo findCoCodesByPartitioning(AComEst est, CompressedSizeInfo colInfos, int k,
-		ACostEstimate costEstimator, CompressionSettings cs) {
+		ACostEstimate costEstimator, CompressionSettings cs, boolean detectOneHotEncoding) {
 
 		// Use column group partitioner to create partitions of columns
 		AColumnCoCoder co = createColumnGroupPartitioner(cs.columnPartitioner, est, costEstimator, cs);
 
 		// Find out if any of the groups are empty.
 		final boolean containsEmptyConstOrIncompressable = containsEmptyConstOrIncompressable(colInfos);
+		if (detectOneHotEncoding) {
+			LOG.info("Flag Correct");
+		}
 
 		// if there are no empty or const columns then try cocode algorithms for all columns
 		if(!containsEmptyConstOrIncompressable)

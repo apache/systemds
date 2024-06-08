@@ -29,6 +29,7 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 
+import org.apache.commons.lang3.NotImplementedException;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.runtime.compress.CompressedMatrixBlock;
@@ -40,6 +41,7 @@ import org.apache.sysds.runtime.compress.colgroup.AColGroup.CompressionType;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.Dictionary;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.DictionaryFactory;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.IDictionary;
+import org.apache.sysds.runtime.compress.colgroup.dictionary.IdentityDictionary;
 import org.apache.sysds.runtime.compress.colgroup.functional.LinearRegression;
 import org.apache.sysds.runtime.compress.colgroup.indexes.ColIndexFactory;
 import org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex;
@@ -282,6 +284,10 @@ public class ColGroupFactory {
 			return compressSDCSingleColDirectBlock(colIndexes, cg.getNumVals());
 		}
 
+		else if(ct == CompressionType.OHE) {
+			return compressOHE(colIndexes,cg.getNumVals());
+		}
+
 		final ABitmap ubm = BitmapEncoder.extractBitmap(colIndexes, in, cg.getNumVals(), cs);
 		if(ubm == null) // no values ... therefore empty
 			return new ColGroupEmpty(colIndexes);
@@ -310,6 +316,25 @@ public class ColGroupFactory {
 			default:
 				throw new DMLCompressionException("Not implemented compression of " + ct + " in factory.");
 		}
+	}
+
+	private AColGroup compressOHE(IColIndex colIndexes, int numVals) {
+		//There are some edge cases, can be optimized further
+		// You have to make sure that it is actually OHE
+		// Make an evil case that the input is OHE except maybe the final row
+		if(cs.transposed){
+			throw new NotImplementedException("Not implemented");
+		}
+		AMapToData data = MapToFactory.create(in.getNumRows(), numVals);
+		for(int r=0;r<in.getNumRows();r++){
+			for(int c=0;c<colIndexes.size();c++){
+				if(in.get(r, colIndexes.get(c))==1){
+					data.set(r, c);
+					break;
+				}
+			}
+		}
+		return ColGroupDDC.create(colIndexes, new IdentityDictionary(numVals), data, null);
 	}
 
 	private AColGroup compressSDCSingleColDirectBlock(IColIndex colIndexes, int nVal) {

@@ -1,0 +1,32 @@
+#-------------------------------------------------------------
+#
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+#
+#-------------------------------------------------------------
+
+observation_sequence = read($os_input_path);
+start_prob = read($sp_input_path);
+transition_prob = read($tp_input_path);
+emission_prob = read($ep_input_path)
+
+[transition_prob, emission_prob, diff_tracker] = hmm_fit_test(observation_sequence, start_prob, transition_prob, emission_prob, $num_iterations, $verbose)
+
+write(transition_prob, $tp_output_path)
+write(emission_prob, $ep_output_path)
+write(diff_tracker, $diff_output_path)
+

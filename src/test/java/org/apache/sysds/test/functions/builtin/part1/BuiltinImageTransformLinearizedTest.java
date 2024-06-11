@@ -69,17 +69,17 @@ public class BuiltinImageTransformLinearizedTest extends AutomatedTestBase {
     }
 
     @Test
-    public void testImageTranslateLinearized() {
-        runImageTranslateLinearizedTest(false, ExecType.CP);
+    public void testImageTransformLinearized() {
+        runImageTransformLinearizedTest(false, ExecType.CP);
     }
 
     @Test
     @Ignore
-    public void testImageTranslateLinearizedSP() {
-        runImageTranslateLinearizedTest(true, ExecType.SPARK);
+    public void testImageTransformLinearizedSP() {
+        runImageTransformLinearizedTest(true, ExecType.SPARK);
     }
 
-    private void runImageTranslateLinearizedTest(boolean sparse, ExecType instType) {
+    private void runImageTransformLinearizedTest(boolean sparse, ExecType instType) {
         ExecMode platformOld = setExecMode(instType);
         disableOutAndExpectedDeletion();
 

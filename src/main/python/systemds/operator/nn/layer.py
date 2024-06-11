@@ -32,8 +32,9 @@ class Layer:
 
     _source: Source = None
 
-    def __init__(self, sds_context: SystemDSContext, dml_script: str):
-        self.__class__._create_source(sds_context, dml_script)
+    def __init__(self, sds_context: SystemDSContext = None, dml_script: str = None):
+        if sds_context is not None and dml_script is not None:
+            self.__class__._create_source(sds_context, dml_script)
 
         # bypassing overload limitation in python
         self.forward = self._instance_forward

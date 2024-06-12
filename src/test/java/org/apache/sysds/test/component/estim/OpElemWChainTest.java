@@ -23,6 +23,9 @@ import org.junit.Test;
 import org.apache.sysds.hops.estim.EstimatorBasicAvg;
 import org.apache.sysds.hops.estim.EstimatorBasicWorst;
 import org.apache.sysds.hops.estim.EstimatorBitsetMM;
+import org.apache.sysds.hops.estim.EstimatorLayeredGraph;
+import org.apache.sysds.hops.estim.EstimatorMatrixHistogram;
+import org.apache.sysds.hops.estim.EstimatorDensityMap;
 import org.apache.sysds.hops.estim.MMNode;
 import org.apache.sysds.hops.estim.SparsityEstimator;
 import org.apache.sysds.hops.estim.SparsityEstimator.OpCode;
@@ -73,7 +76,7 @@ public class OpElemWChainTest extends AutomatedTestBase
 	}
 	
 	//DensityMap
-	/*@Test
+	@Test
 	public void testDMMult() {
 		runSparsityEstimateTest(new EstimatorDensityMap(), m, n, sparsity, mult);
 	}
@@ -92,7 +95,7 @@ public class OpElemWChainTest extends AutomatedTestBase
 	@Test
 	public void testMNCPlus() {
 		runSparsityEstimateTest(new EstimatorMatrixHistogram(), m, n, sparsity, plus);
-	}*/
+	}
 	
 	//Bitset
 	@Test
@@ -106,15 +109,15 @@ public class OpElemWChainTest extends AutomatedTestBase
 	}
 	
 	//Layered Graph
-	/*@Test
+	@Test
 	public void testLGCasemult() {
-		runSparsityEstimateTest(new EstimatorLayeredGraph(), m, k, n, sparsity, mult);
+		runSparsityEstimateTest(new EstimatorLayeredGraph(), m, n, sparsity, mult);
 	}
 		
 	@Test
 	public void testLGCaseplus() {
-		runSparsityEstimateTest(new EstimatorLayeredGraph(), m, k, n, sparsity, plus);
-	}*/
+		runSparsityEstimateTest(new EstimatorLayeredGraph(), m, n, sparsity, plus);
+	}
 	
 	
 	private static void runSparsityEstimateTest(SparsityEstimator estim, int m, int n, double[] sp, OpCode op) {
@@ -148,6 +151,7 @@ public class OpElemWChainTest extends AutomatedTestBase
 				throw new NotImplementedException();
 		}
 		//compare estimated and real sparsity
-		TestUtils.compareScalars(est, m5.getSparsity(), (estim instanceof EstimatorBasicWorst) ? 9e-1 : 1e-2);
+		TestUtils.compareScalars(est, m5.getSparsity(), (estim instanceof EstimatorBasicWorst) ? 9e-1 :
+			(estim instanceof EstimatorLayeredGraph) ? 7e-2 : 1e-2);
 	}
 }

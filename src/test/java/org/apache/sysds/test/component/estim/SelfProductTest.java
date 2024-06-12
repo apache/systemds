@@ -27,6 +27,7 @@ import org.apache.sysds.hops.estim.EstimatorBasicWorst;
 import org.apache.sysds.hops.estim.EstimatorBitsetMM;
 import org.apache.sysds.hops.estim.EstimatorDensityMap;
 import org.apache.sysds.hops.estim.EstimatorMatrixHistogram;
+import org.apache.sysds.hops.estim.EstimatorLayeredGraph;
 import org.apache.sysds.hops.estim.EstimatorSample;
 import org.apache.sysds.hops.estim.SparsityEstimator;
 import org.apache.sysds.runtime.instructions.InstructionUtils;
@@ -127,6 +128,16 @@ public class SelfProductTest extends AutomatedTestBase
 	@Test
 	public void testSampling20Case2() {
 		runSparsityEstimateTest(new EstimatorSample(0.2), m, sparsity2);
+	}
+
+	@Test
+	public void testLayeredGraphCase1() {
+		runSparsityEstimateTest(new EstimatorLayeredGraph(), m, sparsity1);
+	}
+
+	@Test
+	public void testLayeredGraphCase2() {
+		runSparsityEstimateTest(new EstimatorLayeredGraph(), m, sparsity2);
 	}
 	
 	private static void runSparsityEstimateTest(SparsityEstimator estim, int n, double sp) {

@@ -19,6 +19,8 @@
 
 package org.apache.sysds.runtime.transform.encode;
 
+import static org.apache.sysds.runtime.transform.encode.EncodeBuildCache.getEncodeBuildCache;
+import static org.apache.sysds.runtime.transform.encode.EncoderType.Recode;
 import static org.apache.sysds.runtime.util.UtilFunctions.getEndIndex;
 
 import java.io.IOException;
@@ -174,7 +176,17 @@ public class ColumnEncoderRecode extends ColumnEncoder {
 		if(!isApplicable())
 			return;
 		long t0 = DMLScript.STATISTICS ? System.nanoTime() : 0;
-		makeRcdMap(in, _rcdMap, _colID, 0, in.getNumRows());
+
+		// Check cache if build result is already there
+		CacheKey key = new CacheKey(_colID, Recode);
+		EncodeBuildCache cache = getEncodeBuildCache();
+		Map<Object, Long> rcdMap = (Map<Object, Long>) cache.get(key);
+		if (rcdMap == null) {
+			makeRcdMap(in, _rcdMap, _colID, 0, in.getNumRows());
+		} else {
+			_rcdMap = (Map<Object, Long>) rcdMap;
+			cache.put(key, rcdMap);
+		}
 		if(DMLScript.STATISTICS){
 			TransformStatistics.incRecodeBuildTime(System.nanoTime() - t0);
 		}

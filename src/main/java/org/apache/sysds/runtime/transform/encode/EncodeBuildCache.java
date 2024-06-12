@@ -1,32 +1,44 @@
 package org.apache.sysds.runtime.transform.encode;
+import com.github.benmanes.caffeine.cache.Cache;
+import com.github.benmanes.caffeine.cache.Caffeine;
+import com.github.benmanes.caffeine.cache.Policy;
+import com.github.benmanes.caffeine.cache.stats.CacheStats;
+import org.checkerframework.checker.index.qual.NonNegative;
+import org.checkerframework.checker.nullness.qual.Nullable;
+import org.checkerframework.checker.nullness.qual.PolyNull;
 
-import java.util.HashMap;
+import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.ConcurrentMap;
+import java.util.function.Function;
+
 
 public class EncodeBuildCache {
 
-    // The integer key is the column ID, and the value is the ColumnEncoder for the given columnID
-    private HashMap<Integer, ColumnEncoder> cacheMap;
-    private Integer max = 20;
+    // The integer key is the column ID and what encoding type, and the value is the build output for the given columnID
 
-    public EncodeBuildCache() {
-        this.cacheMap = new HashMap<Integer, ColumnEncoder>();
+    private static Cache<CacheKey, Object> cache;
+    private static EncodeBuildCache _instance = null;
+
+    private EncodeBuildCache() {
+        cache = Caffeine.newBuilder()
+                .maximumSize(100) // Set your cache size here
+                .build();
     }
 
-    public HashMap<Integer, ColumnEncoder> getCacheMap() {
-        return cacheMap;
+    public static EncodeBuildCache getEncodeBuildCache() {
+        if (_instance == null) {
+            _instance = new EncodeBuildCache();
+        }
+        return _instance;
     }
 
-    public void setCacheMap(HashMap<Integer, ColumnEncoder> cacheMap) {
-        this.cacheMap = cacheMap;
+    public void put(CacheKey cacheKey, Object buildResult) {
+        cache.put(cacheKey, buildResult);
     }
 
-    public void put(Integer columnID, ColumnEncoder encoder) {
-        // TODO: if cachemap.size is at max, evict the least recently used column
-        cacheMap.put(columnID, encoder);
-    }
-
-    public ColumnEncoder get(Integer columnID) {
-        return cacheMap.get(columnID);
+    public Object get(CacheKey key) {
+        return cache.getIfPresent(key);
     }
 
     

@@ -21,9 +21,15 @@
 
 newX = read($1);
 e = read($2);
+m1 = read($8);
+m2 = read($9);
+m3 = read($10);
+r1 = read($11);
+r2 = read($12);
+r3 = read($13);
 
 # call slice finding
 [TS,TR] = incSliceLine(newX=newX, e=e, k=$3,
-  alpha=0.95, minSup=4, tpEval=$4, selFeat=$5, verbose=$6);
+  alpha=0.95, minSup=4, tpEval=$4, selFeat=$5, verbose=$6, m1=m1, m2=m2, m3=m3, r1=r1, r2=r2, r3=r3);
 
 write(TR, $7)

@@ -1,3 +1,5 @@
+#-------------------------------------------------------------
+#
 # Licensed to the Apache Software Foundation (ASF) under one
 # or more contributor license agreements.  See the NOTICE file
 # distributed with this work for additional information
@@ -15,6 +17,8 @@
 # specific language governing permissions and limitations
 # under the License.
 #
+#-------------------------------------------------------------
+
 # This builtin function implements SliceLine, a linear-algebra-based
 # ML model debugging technique for finding the top-k data slices where
 # a trained models performs significantly worse than on the overall
@@ -74,7 +78,7 @@ m_incSliceLine = function(
   [params, k, maxL, minSup, alpha, tpEval, tpBlksz, selFeat] = storeParams(k, maxL, minSup, alpha, tpEval, tpBlksz, selFeat, params);
 
   # init debug matrix: levelID, enumerated S, valid S, TKmax, TKmin
-  D = matrix(0, 0, 5); 
+  D = matrix(0, 0, 5);
 
   # combine old and added feature matrices and error vectors
   if(nrow(oldX) == 0) {
@@ -114,6 +118,22 @@ m_incSliceLine = function(
     cix_add = matrix(addedX + foffb_add, m_add * n, 1);
     addedX2 = table(rix_add, cix_add, 1, m_add, as.scalar(foffe_add[,n]), FALSE); # one-hot encoded
   } 
+
+  oneHotEncodedPrevLattice = list();
+  foffbPre = list();
+  foffePre = list();
+  print(length(prevLattice));
+
+  if(length(prevLattice) > 0) {
+    for (i in 1:length(prevLattice)) {
+      [onehmatrix, foffbNew, foffeNew] = oneHotEncode(as.matrix(prevLattice[i]));
+      oneHotEncodedPrevLattice = append(oneHotEncodedPrevLattice, onehmatrix);
+      foffbPre = append(foffbPre, foffbNew);
+      foffePre = append(foffePre, foffeNew);
+    }
+  }
+
+  print("oneHotEncodedPrevLattice: "+toString(oneHotEncodedPrevLattice));
 
   # prepare offset vectors and one-hot encoded newX
   fdom = colMaxs(newX);
@@ -532,7 +552,7 @@ evalSlice = function(Matrix[Double] X, Matrix[Double] e, Double eAvg,
 
   sm = t(colMaxs(I * e)); # maximum tuple error in slice
 
-  # Score of relative error and relative size
+  # score of relative error and relative size
   sc = score(ss, se, eAvg, alpha, nrow(X));
   R = cbind(sc, se, sm, ss);
 }

@@ -78,6 +78,8 @@ import java.util.stream.Collectors;
 public class LineageItemUtils {
 	
 	public static final String LPLACEHOLDER = "IN#";
+	public static final String FUNC_DELIM = "_";
+	private static final boolean FUNCTION_DEBUGGING = false; //enable for adding function-marker lineage entries
 
 	// opcode to represent the serialized bytes of a federated response in lineage cache
 	public static final String SERIALIZATION_OPCODE = "serialize";
@@ -118,6 +120,10 @@ public class LineageItemUtils {
 	private static String getString(LineageItem li) {
 		return getString(li.getType());
 	}
+
+	public static boolean isFunctionDebugging () {
+		return FUNCTION_DEBUGGING;
+	}
 	
 	public static String explainSingleLineageItem(LineageItem li) {
 		StringBuilder sb = new StringBuilder();
@@ -151,7 +157,7 @@ public class LineageItemUtils {
 		return Arrays.stream(operands).filter(c -> c!=null)
 			.map(c -> ec.getLineage().getOrCreate(c)).toArray(LineageItem[]::new);
 	}
-	
+
 	public static void traceFedUDF(ExecutionContext ec, FederatedUDF udf) {
 		if (udf.getLineageItem(ec) == null)
 			//TODO: trace all UDFs

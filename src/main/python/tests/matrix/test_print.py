@@ -46,7 +46,7 @@ class TestPrint(unittest.TestCase):
     def test_print_01(self):
         self.sds.from_numpy(np.array([1])).to_string().print().compute()
         sleep(0.2)
-        self.assertEqual(1,float(self.sds.get_stdout()[0]))
+        self.assertEqual(1,float(self.sds.get_stdout()[0].replace(",", ".")))
 
     def test_print_02(self):
         self.sds.scalar(1).print().compute()

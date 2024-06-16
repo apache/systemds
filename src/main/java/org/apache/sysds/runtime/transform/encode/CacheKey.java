@@ -1,5 +1,7 @@
 package org.apache.sysds.runtime.transform.encode;
 
+import java.util.Objects;
+
 public class CacheKey {
     private final int columnId;
     private final EncoderType encoderType;
@@ -23,6 +25,11 @@ public class CacheKey {
         if (o == null || getClass() != o.getClass()) return false;
         CacheKey cacheKey = (CacheKey) o;
         return columnId == cacheKey.columnId && encoderType == cacheKey.encoderType;
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(columnId, encoderType);
     }
 
     @Override

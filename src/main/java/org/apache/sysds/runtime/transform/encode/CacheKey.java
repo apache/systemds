@@ -24,4 +24,12 @@ public class CacheKey {
         CacheKey cacheKey = (CacheKey) o;
         return columnId == cacheKey.columnId && encoderType == cacheKey.encoderType;
     }
+
+    @Override
+    public String toString() {
+        return "CacheKey{" +
+                "columnId=" + columnId +
+                ", encoderType=" + encoderType +
+                '}';
+    }
 }

@@ -34,10 +34,16 @@ public class EncodeBuildCache {
     }
 
     public void put(CacheKey cacheKey, Object buildResult) {
+
         cache.put(cacheKey, buildResult);
+        System.out.printf("Putting %s in the cache;-)", cacheKey);
     }
 
     public Object get(CacheKey key) {
+
+        if (cache.getIfPresent(key)!= null){
+            System.out.printf("Getting %s from the cache;-)", key);
+        }
         return cache.getIfPresent(key);
     }
 

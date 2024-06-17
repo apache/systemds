@@ -27,10 +27,12 @@ import org.junit.Ignore;
 import org.junit.Test;
 
 import java.util.HashMap;
+import java.util.Objects;
 
 public class LSTMTest extends AutomatedTestBase {
 	String TEST_NAME1 = "LSTMForwardTest";
 	String TEST_NAME2 = "LSTMBackwardTest";
+	String TEST_NAME3 = "BILSTMForwardTest";
 	private final static String TEST_DIR = "functions/tensor/";
 
 	@Override
@@ -38,12 +40,36 @@ public class LSTMTest extends AutomatedTestBase {
 		TestUtils.clearAssertionInformation();
 		addTestConfiguration(TEST_NAME1, new TestConfiguration(TEST_DIR, TEST_NAME1));
 		addTestConfiguration(TEST_NAME2, new TestConfiguration(TEST_DIR, TEST_NAME2));
+		addTestConfiguration(TEST_NAME3, new TestConfiguration(TEST_DIR, TEST_NAME3));
 	}
 
 	@Test
 	public void testLSTMForwardLocalSingleSample1(){
 		runLSTMTest(1, 32, 1,1, TEST_NAME1);
 	}
+
+	// The BILSTM output is compared to output of pytorch's BI-LSTM Layer implementation with FP64.
+	// Expected results are saved at: "src/test/resources/expected/BILSTM_OUT_{batch_size}_{seq_length}_{num_features}_{hidden_size}.csv"
+	@Test
+	public void testBILSTMForwardLocalSingleSample1(){
+		runLSTMTest(3, 5, 2,2, 0, 1, 1e-5, TEST_NAME3,false);
+	}
+
+	@Test
+	public void testBILSTMForwardLocalSingleSample2(){
+		runLSTMTest(6, 5, 6,4, 0, 1, 1e-5, TEST_NAME3,false);
+	}
+
+	@Test
+	public void testBILSTMForwardLocalSingleSample3(){
+		runLSTMTest(10, 5, 2,6, 0, 1, 1e-5, TEST_NAME3,false);
+	}
+
+	@Test
+	public void testBILSTMForwardLocalSingleSample4(){
+		runLSTMTest(3, 5, 2,2, 0, 0, 1e-5, TEST_NAME3,false);
+	}
+
 
 	@Test
 	public void testLSTMForwardLocalSingleSample2(){
@@ -132,26 +158,40 @@ public class LSTMTest extends AutomatedTestBase {
 
 			//run script
 			//"-explain", "runtime",
-			programArgs = new String[]{"-stats","-args", String.valueOf(batch_size), String.valueOf(seq_length),
-					String.valueOf(num_features), String.valueOf(hidden_size), String.valueOf(debug), String.valueOf(seq),
-					output("1A"),output("1B"),output("2A"), output("2B"),output("3A"),output("3B"),"","","",""};
-			int offset = 0;
-			if(backward){
-				programArgs[14 + offset] = output("4A");
-				programArgs[15 + offset] = output("4B");
-				programArgs[16 + offset] = output("5A");
-				programArgs[17 + offset] = output("5B");
+			boolean bilstm = Objects.equals(testname, TEST_NAME3);
+			if(bilstm)
+				programArgs = new String[]{"-stats","-args", String.valueOf(batch_size), String.valueOf(seq_length),
+						String.valueOf(num_features), String.valueOf(hidden_size), String.valueOf(debug), String.valueOf(seq),
+						"src/test/resources/expected/BILSTM_OUT",output("1A")};
+			else{
+				programArgs = new String[]{"-stats","-args", String.valueOf(batch_size), String.valueOf(seq_length),
+						String.valueOf(num_features), String.valueOf(hidden_size), String.valueOf(debug), String.valueOf(seq),
+						output("1A"),output("1B"),output("2A"), output("2B"),output("3A"),output("3B"),"","","",""};
+				int offset = 0;
+				if(backward){
+					programArgs[14 + offset] = output("4A");
+					programArgs[15 + offset] = output("4B");
+					programArgs[16 + offset] = output("5A");
+					programArgs[17 + offset] = output("5B");
+				}
 			}
+
 			//output("4A"), output("4B"),output("5A"),output("5B")
 			runTest(true, EXCEPTION_NOT_EXPECTED, null, -1);
 
 			// Compare results
-			extracted(precision,"1");
-			extracted(precision,"2");
-			extracted(precision,"3");
-			if(backward){
-				extracted(precision,"4");
-				extracted(precision,"5");
+			if(bilstm){
+				Double max_error = (Double) readDMLScalarFromOutputDir("1A").values().toArray()[0];
+				assert max_error < precision;
+			}
+			else{
+				extracted(precision,"1");
+				extracted(precision,"2");
+				extracted(precision,"3");
+				if(backward){
+					extracted(precision,"4");
+					extracted(precision,"5");
+				}
 			}
 		}
 		catch(Exception ex) {

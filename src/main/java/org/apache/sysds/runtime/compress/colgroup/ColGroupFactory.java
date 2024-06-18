@@ -318,14 +318,21 @@ public class ColGroupFactory {
 		}
 	}
 
+
 	private AColGroup compressOHE(IColIndex colIndexes, int numVals) {
 		//There are some edge cases, can be optimized further
 		// You have to make sure that it is actually OHE
-		// Make an evil case that the input is OHE except maybe the final row
-		if(cs.transposed){
+		// Ensure numVals is valid
+		if (numVals <= 0) {
+			throw new DMLCompressionException("Number of values must be greater than 0 for one-hot encoding");
+		}
+	
+		// Check if the matrix is transposed
+		if(cs.transposed) {
 			throw new NotImplementedException("Not implemented");
 		}
-		AMapToData data = MapToFactory.create(in.getNumRows(), numVals);
+	
+			AMapToData data = MapToFactory.create(in.getNumRows(), numVals);
 		for(int r=0;r<in.getNumRows();r++){
 			for(int c=0;c<colIndexes.size();c++){
 				if(in.get(r, colIndexes.get(c))==1){
@@ -336,6 +343,7 @@ public class ColGroupFactory {
 		}
 		return ColGroupDDC.create(colIndexes, new IdentityDictionary(numVals), data, null);
 	}
+	
 
 	private AColGroup compressSDCSingleColDirectBlock(IColIndex colIndexes, int nVal) {
 		final DoubleCountHashMap cMap = new DoubleCountHashMap(nVal);

@@ -23,6 +23,7 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.runtime.compress.CompressionSettings;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.DictionaryFactory;
+import org.apache.sysds.runtime.compress.colgroup.dictionary.IdentityDictionary;
 import org.apache.sysds.runtime.compress.colgroup.indexes.ColIndexFactory;
 import org.apache.sysds.runtime.compress.colgroup.mapping.MapToFactory;
 import org.apache.sysds.runtime.compress.colgroup.offset.OffsetFactory;
@@ -127,6 +128,15 @@ public interface ColGroupSizes {
 		size += MemoryEstimates.doubleArrayCost(2L * nrColumns); // coefficients; per column, we store 2 doubles (slope &
 																					// intercept)
 		size += 4; // _numRows
+		return size;
+	}
+
+	// New method to estimate in-memory size for one-hot encoded columns
+	public static long estimateInMemorySizeOHE(int nrColumns, boolean contiguousColumns, int nrRows) {
+		long size = estimateInMemorySizeGroup(nrColumns, contiguousColumns);
+		// OHE specific estimations
+		size += IdentityDictionary.getInMemorySize(nrColumns); // Dictionary for unique values
+		size += MapToFactory.estimateInMemorySize(nrRows, nrColumns); // Mapping for rows to unique values
 		return size;
 	}
 }

@@ -129,6 +129,14 @@ class TestSequential(unittest.TestCase):
         self.assertEqual(len(model.layers), 2)
         self.assertEqual(layer.test_id, 3)
 
+    def test_reversed(self):
+        """
+        Test that reversed() returns an iterator over the layers in reverse order
+        """
+        model = Sequential([TestLayerImpl(1), TestLayerImpl(2), TestLayerImpl(3)])
+        for i, layer in enumerate(reversed(model)):
+            self.assertEqual(layer.test_id, 3 - i)
+
     def test_forward(self):
         """
         Test that forward() calls forward() on all layers
@@ -170,3 +178,38 @@ class TestSequential(unittest.TestCase):
         out_matrix = model.forward(in_matrix).compute()
         expected = np.array([[0.3120, -0.3120], [0.3120, -0.3120]])
         assert_almost_equal(out_matrix, expected)
+
+    def test_backward_actual_layers(self):
+        """
+        Test backward() with actual layers
+        """
+        params = [
+            np.array([[0.5, -0.5], [-0.5, 0.5]]),
+            np.array([[0.1, -0.1]]),
+            np.array([[0.4, -0.4], [-0.4, 0.4]]),
+            np.array([[0.2, -0.2]]),
+            np.array([[0.3, -0.3], [-0.3, 0.3]]),
+            np.array([[0.3, -0.3]]),
+        ]
+
+        model = Sequential(
+            [
+                Affine(self.sds, 2, 2),
+                ReLU(self.sds),
+                Affine(self.sds, 2, 2),
+                ReLU(self.sds),
+                Affine(self.sds, 2, 2),
+            ]
+        )
+
+        for i, layer in enumerate(model):
+            if isinstance(layer, Affine):
+                layer.weight = self.sds.from_numpy(params[i])
+                layer.bias = self.sds.from_numpy(params[i + 1])
+
+        in_matrix = self.sds.from_numpy(np.array([[1.0, 2.0], [3.0, 4.0]]))
+        out_matrix = model.forward(in_matrix)
+        gradient = model.backward(out_matrix, in_matrix).compute()
+
+        expected = np.array([[0.14976, -0.14976], [0.14976, -0.14976]])
+        assert_almost_equal(gradient, expected)

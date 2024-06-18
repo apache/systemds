@@ -18,6 +18,7 @@
 # under the License.
 #
 # -------------------------------------------------------------
+from systemds.operator import MultiReturn
 from systemds.operator.nn.layer import Layer
 
 
@@ -46,6 +47,9 @@ class Sequential(Layer):
     def __iter__(self):
         return iter(self.layers)
 
+    def __reversed__(self):
+        return reversed(self.layers)
+
     def push(self, layer: Layer):
         """
         Add layer
@@ -71,3 +75,19 @@ class Sequential(Layer):
         for layer in self:
             out = layer.forward(out)
         return out
+
+    def _instance_backward(self, dout, X):
+        """
+        Backward pass
+        :param dout: gradient of output, passed from the upstream
+        :param X: input matrix
+        :return: output matrix
+        """
+        dx = dout
+        for layer in reversed(self):
+            dx = layer.backward(dx, X)
+
+            # if MultiReturn, take only gradient of input
+            if isinstance(dx, MultiReturn):
+                dx = dx[0]
+        return dx

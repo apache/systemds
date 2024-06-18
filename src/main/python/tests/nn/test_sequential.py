@@ -27,7 +27,7 @@ from numpy.testing import assert_almost_equal
 from systemds.operator.nn.affine import Affine
 from systemds.operator.nn.relu import ReLU
 from systemds.operator.nn.sequential import Sequential
-from systemds.operator import Matrix
+from systemds.operator import Matrix, MultiReturn
 from systemds.operator.nn.layer import Layer
 from systemds.context import SystemDSContext
 
@@ -39,6 +39,9 @@ class TestLayerImpl(Layer):
 
     def _instance_forward(self, X: Matrix):
         return X + self.test_id
+
+    def _instance_backward(self, dout: Matrix, X: Matrix):
+        return dout - self.test_id
 
 
 class TestSequential(unittest.TestCase):
@@ -213,3 +216,30 @@ class TestSequential(unittest.TestCase):
 
         expected = np.array([[0.14976, -0.14976], [0.14976, -0.14976]])
         assert_almost_equal(gradient, expected)
+
+    def test_multireturn_forward_pass(self):
+        """
+        Test that forward() handles MultiReturn correctly
+        """
+        class MultiReturnImpl(Layer):
+            def _instance_forward(impl_self, X: Matrix):
+                return MultiReturn(self.sds, "test.dml", output_nodes=[X, 'some_random_return'])
+
+        model = Sequential(MultiReturnImpl(), TestLayerImpl(1))
+        in_matrix = self.sds.from_numpy(np.array([[1, 2], [3, 4]]))
+        out_matrix = model.forward(in_matrix).compute()
+        self.assertEqual(out_matrix.tolist(), [[2, 3], [4, 5]])
+
+    def test_multireturn_backward_pass(self):
+        """
+        Test that backward() handles MultiReturn correctly
+        """
+        class MultiReturnImpl(Layer):
+            def _instance_backward(impl_self, dout: Matrix, X: Matrix):
+                return MultiReturn(self.sds, "test.dml", output_nodes=[dout, X, 'some_random_return'])
+
+        model = Sequential(TestLayerImpl(1), MultiReturnImpl())
+        in_matrix = self.sds.from_numpy(np.array([[1, 2], [3, 4]]))
+        out_matrix = self.sds.from_numpy(np.array([[2, 3], [4, 5]]))
+        gradient = model.backward(out_matrix, in_matrix).compute()
+        self.assertEqual(gradient.tolist(), [[1, 2], [3, 4]])

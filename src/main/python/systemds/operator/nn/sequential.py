@@ -74,6 +74,10 @@ class Sequential(Layer):
         out = X
         for layer in self:
             out = layer.forward(out)
+
+            # if MultiReturn, take only output matrix
+            if isinstance(out, MultiReturn):
+                out = out[0]
         return out
 
     def _instance_backward(self, dout, X):

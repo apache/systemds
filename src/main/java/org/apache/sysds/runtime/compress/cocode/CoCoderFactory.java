@@ -63,16 +63,14 @@ public interface CoCoderFactory {
 		// Use column group partitioner to create partitions of columns
 		AColumnCoCoder co = createColumnGroupPartitioner(cs.columnPartitioner, est, costEstimator, cs);
 
-		// Find out if any of the groups are empty.
-		final boolean containsEmptyConstOrIncompressable = containsEmptyConstOrIncompressable(colInfos);
-		if (detectOneHotEncoding) {
-			LOG.info("Flag Correct");
-		}
+        boolean containsEmptyConstOrIncompressable = containsEmptyConstOrIncompressable(colInfos);
 
-		// if there are no empty or const columns then try cocode algorithms for all columns
-		if(!containsEmptyConstOrIncompressable)
-			return co.coCodeColumns(colInfos, k);
+        // If no empty, constant, incompressible groups and not OHE, cocode all columns
+        if (!containsEmptyConstOrIncompressable && !detectOneHotEncoding) {
+            return co.coCodeColumns(colInfos, k);
+		}
 		else {
+			
 			// filtered empty groups
 			final List<IColIndex> emptyCols = new ArrayList<>();
 			// filtered const groups
@@ -85,6 +83,9 @@ public interface CoCoderFactory {
 			final int nRow = colInfos.compressionInfo.get(0).getNumRows();
 
 			// filter groups
+			List<CompressedSizeInfoColGroup> currentCandidates = new ArrayList<>();
+        	List<List<CompressedSizeInfoColGroup>> oheGroups = new ArrayList<>();
+
 			for(int i = 0; i < colInfos.compressionInfo.size(); i++) {
 				CompressedSizeInfoColGroup g = colInfos.compressionInfo.get(i);
 				if(g.isEmpty())
@@ -93,12 +94,32 @@ public interface CoCoderFactory {
 					constCols.add(g.getColumns());
 				else if(g.isIncompressable())
 					incompressable.add(g.getColumns());
-				else
+				else if (isCandidate(g)) {
+                    currentCandidates.add(g);
+                    if (isHotEncoded(currentCandidates)) {
+                        oheGroups.add(new ArrayList<>(currentCandidates));
+                        currentCandidates.clear();
+                    }
+                } else {
 					groups.add(g);
+                    if (!currentCandidates.isEmpty()) {
+                        currentCandidates.clear();
+                    }
+                }
 			}
 
 			// overwrite groups.
 			colInfos.compressionInfo = groups;
+
+			for (List<CompressedSizeInfoColGroup> oheGroup : oheGroups) {
+                final List<IColIndex> oheIndexes = new ArrayList<>();
+                for (CompressedSizeInfoColGroup g : oheGroup) {
+                    oheIndexes.add(g.getColumns());
+                }
+                final IColIndex idx = ColIndexFactory.combineIndexes(oheIndexes);
+				groups.add(new CompressedSizeInfoColGroup(idx, nRow, CompressionType.OHE));
+                // colInfos.compressionInfo.add(new CompressedSizeInfoColGroup(idx, nRow, CompressionType.OHE));
+            }
 
 			// cocode remaining groups
 			if(!groups.isEmpty()) {
@@ -121,7 +142,7 @@ public interface CoCoderFactory {
 				final IColIndex idx = ColIndexFactory.combineIndexes(incompressable);
 				colInfos.compressionInfo.add(new CompressedSizeInfoColGroup(idx, nRow, CompressionType.UNCOMPRESSED));
 			}
-
+			
 			return colInfos;
 
 		}
@@ -132,6 +153,34 @@ public interface CoCoderFactory {
 			if(g.isEmpty() || g.isConst() || g.isIncompressable())
 				return true;
 		return false;
+	}
+
+	private static boolean isCandidate(CompressedSizeInfoColGroup g) {
+		// Check if the column has exactly 2 distinct value other than 0
+		return g.getNumVals() == 2;
+	}
+
+	private static boolean isHotEncoded(List<CompressedSizeInfoColGroup> colGroups) {
+		if (colGroups.isEmpty()) {
+			return false;
+		}
+	
+		int numCols = colGroups.size();
+		int totalNumVals = 0;
+		int totalNumOffs = 0;
+		int numRows = colGroups.get(0).getNumRows();
+	
+		for (CompressedSizeInfoColGroup g : colGroups) {
+			totalNumVals += g.getNumVals();
+			totalNumOffs += g.getNumOffs();
+		}
+	
+		if (totalNumVals / 2 != numCols || totalNumOffs != numRows) {
+			return false;
+		}
+	
+		LOG.info("ColGroup is OHE");
+		return true;
 	}
 
 	private static AColumnCoCoder createColumnGroupPartitioner(PartitionerType type, AComEst est,

@@ -25,7 +25,9 @@ from typing import TYPE_CHECKING, Dict, Iterable, Sequence, Union
 
 import numpy as np
 from py4j.java_gateway import JavaObject
-from systemds.operator import OperationNode, Scalar
+from systemds.operator.operation_node import OperationNode
+from systemds.operator.nodes.multi_return import MultiReturn
+from systemds.operator.nodes.scalar import Scalar
 from systemds.script_building.dag import OutputType
 from systemds.utils.consts import (BINARY_OPERATIONS, VALID_ARITHMETIC_TYPES,
                                    VALID_INPUT_TYPES)
@@ -342,6 +344,49 @@ class Matrix(OperationNode):
         :return: the OperationNode representing this operation
         """
         return Matrix(self.sds_context, 'cholesky', [self])
+    
+
+    def svd(self) -> 'Matrix':
+        """
+        Singular Value Decomposition of a matrix A (of size m x m), which decomposes into three matrices 
+        U, V, and S as A = U %% S %% t(V), where U is an m x m unitary matrix (i.e., orthogonal), 
+        V is an n x n unitary matrix (also orthogonal), 
+        and S is an m x n matrix with non-negative real numbers on the diagonal.
+
+        matrices U <(m x m)>, S <(m x n)>, and V <(n x n)>
+
+        :return: The MultiReturn node containing the three Matrices U,S, and V
+        """
+
+        U = Matrix(self.sds_context, '')
+        S = Matrix(self.sds_context, '')
+        V = Matrix(self.sds_context, '')
+        output_nodes = [U, S, V ]
+
+        op = MultiReturn(self.sds_context, 'svd', output_nodes, unnamed_input_nodes=[self])
+        return op
+    
+
+    def eigen(self) -> 'Matrix':
+        """
+        Computes Eigen decomposition of input matrix A. The Eigen decomposition consists of
+        two matrices V and w such that A = V %*% diag(w) %*% t(V). The columns of V are the
+        eigenvectors of the original matrix A. And, the eigen values are given by w.
+        It is important to note that this function can operate only on small-to-medium sized
+        input matrix that can fit in the main memory. For larger matrices, an out-of-memory
+        exception is raised.
+
+        This function returns two matrices w and V, where w is (m x 1) and V is of size (m x m).
+
+        :return: The MultiReturn node containing the two Matrices w and V
+        """
+        
+        V = Matrix(self.sds_context, '')
+        w = Matrix(self.sds_context, '')
+        output_nodes = [w,V]
+        op = MultiReturn(self.sds_context, 'eigen', output_nodes, unnamed_input_nodes=[self])
+        return op
+    
 
     def to_one_hot(self, num_classes: int) -> 'Matrix':
         """ OneHot encode the matrix.

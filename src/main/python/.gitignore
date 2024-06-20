@@ -45,6 +45,7 @@ tests/lineage/temp
 
 python_venv/
 venv
+.venv
 
 # Main Jar location for API communiation.
 systemds/SystemDS.jar

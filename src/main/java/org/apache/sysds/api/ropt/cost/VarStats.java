@@ -19,126 +19,71 @@
 
 package org.apache.sysds.api.ropt.cost;
 
-import org.apache.sysds.common.Types;
 import org.apache.sysds.hops.OptimizerUtils;
-import org.apache.sysds.runtime.controlprogram.caching.FrameObject;
-import org.apache.sysds.runtime.controlprogram.caching.TensorObject;
-import org.apache.sysds.runtime.controlprogram.federated.FederatedResponse;
-import org.apache.sysds.runtime.data.BasicTensorBlock;
-import org.apache.sysds.runtime.data.TensorBlock;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.meta.DataCharacteristics;
 import org.apache.sysds.runtime.meta.MatrixCharacteristics;
-import org.apache.sysds.runtime.meta.TensorCharacteristics;
 
 public class VarStats 
 {
-	DataCharacteristics _dc;
-	boolean _inmem = false;
+	MatrixCharacteristics _mc;
+	/**
+	 * Size in memory estimate
+	 * <li>-1 if not in memory yet</li>
+	 * <li>0 if scalar</li>
+	 */
+	long _memory;
+	/**
+	 * true if object modified since last saved, or
+	 * if HDFS file still doesn't exist
+	 */
+	boolean _dirty = false;
 
-	Types.DataType _dt = null;
-	
-//	public VarStats( long rlen, long clen, int blen, long nnz, boolean inmem ) {
-//		_dc = new MatrixCharacteristics(rlen, clen, blen, nnz);
-//		_inmem = inmem;
-//	}
+	RDDStats _rdd = null;
 
-	public VarStats(DataCharacteristics dc, boolean inmem, Types.DataType dataType) {
-		_dc = dc;
-		_inmem = inmem;
-		_dt = dataType;
+	Object[] _fileInfo = null;
+
+	public VarStats(DataCharacteristics dc) {
+		this(dc, -1);
 	}
 
-	public DataCharacteristics getDC() {
-		return _dc;
+	public VarStats(DataCharacteristics dc, long sizeEstimate) {
+		if (dc == null) {
+			_mc = null;
+		}
+		else if (dc instanceof MatrixCharacteristics) {
+			_mc = (MatrixCharacteristics) dc;
+		} else {
+			throw new RuntimeException("VarStats: expecting MatrixCharacteristics or null");
+		}
+		_memory = sizeEstimate;
 	}
-
-	public Types.DataType getDataType() { return _dt; }
 
 	public long getM() {
-		return _dc.getRows();
+		return _mc.getRows();
 	}
 
 	public long getN() {
-		return _dc.getCols();
+		return _mc.getCols();
 	}
 
 	public double getS() {
-		return !_dc.nnzKnown() ? 1.0 : getSparsity();
-	}
-	public double getSparsity() {
-		return OptimizerUtils.getSparsity(_dc);
+		return _mc == null? 1.0 : OptimizerUtils.getSparsity(_mc);
 	}
 
 	public long getCells() {
-		if (_dc instanceof TensorCharacteristics) {
-			long result = 1;
-			for (int i = 0; i < _dc.getNumDims(); i++) {
-				result *= _dc.getDim(i);
-			}
-			return result;
-		} else {
-			return _dc.getRows() * _dc.getCols();
-		}
+		return _mc.getRows() * _mc.getCols();
 	}
 
 	public double getCellsWithSparsity() {
 		if (isSparse())
-			return getSparsity() * getS();
+			return getCells() * getS();
 		return (double) getCells();
 	}
 
 	public boolean isSparse() {
-		if (_dc instanceof TensorCharacteristics) {
-			// TODO: consider if sparse tensors are handled differently
-			return false;
-		} else {
-			return MatrixBlock.evalSparseFormatInMemory(_dc);
-		}
+		return MatrixBlock.evalSparseFormatInMemory(_mc);
 	}
 
-	@Override
-	public String toString() {
-		StringBuilder sb = new StringBuilder();
-		sb.append("VarStats: ");
-		if (_dt == Types.DataType.MATRIX) {
-			sb.append("Matrix [");
-			sb.append("rlen = ");
-			sb.append(_dc.getRows());
-			sb.append(", clen = ");
-			sb.append(_dc.getCols());
-			sb.append(", nnz = ");
-			sb.append(_dc.getNonZeros());
-		} else if (_dt == Types.DataType.FRAME) {
-			sb.append("Frame [");
-			sb.append("rlen = ");
-			sb.append(_dc.getRows());
-			sb.append(", clen = ");
-			sb.append(_dc.getCols());
-			sb.append(", nnz = ");
-			sb.append(_dc.getNonZeros());
-		} else if (_dt == Types.DataType.TENSOR) {
-			sb.append("Tensor [dims=[");
-			for (int i = 0; i < _dc.getNumDims(); i++) {
-				sb.append(_dc.getDim(i));
-				sb.append(" ");
-			}
-			sb.replace(sb.length() - 1, sb.length(), "]");
-			sb.append(", nnz = ");
-			sb.append(_dc.getNonZeros());
-		} else if (_dt == Types.DataType.SCALAR) {
-			sb.append("Scalar");
-			return sb.toString();
-		}
-
-		sb.append(", inmem = ");
-		sb.append(_inmem);
-		sb.append("]");
-		return sb.toString();
-	}
-	
-	@Override
-	public Object clone() {
-		return new VarStats(_dc, _inmem, _dt);
-	}
+	// clone() needed?
 }

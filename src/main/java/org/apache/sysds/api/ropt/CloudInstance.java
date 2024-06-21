@@ -53,8 +53,8 @@ public class CloudInstance {
         return pricePerHour;
     }
 
-    public double getGFlops() {
-        return gFlops;
+    public long getFLOPS() {
+        return (long) (gFlops*1024)*1024*1024;
     }
 
     public long getMemoryPerCore() {

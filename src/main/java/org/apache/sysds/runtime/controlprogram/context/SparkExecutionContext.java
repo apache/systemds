@@ -484,6 +484,7 @@ public class SparkExecutionContext extends ExecutionContext
 		{
 			// parallelize hdfs-resident file
 			// For binary block, these are: SequenceFileInputFormat.class, MatrixIndexes.class, MatrixBlock.class
+			// TODO: Is that a bug because it triggers extra file reading? rdd is needed only for the first case
 			rdd = sc.hadoopFile( mo.getFileName(), inputInfo.inputFormatClass, inputInfo.keyClass, inputInfo.valueClass);
 			if(fmt == FileFormat.BINARY) 
 				//note: this copy is still required in Spark 1.4 because spark hands out whatever the inputformat
@@ -2029,7 +2030,7 @@ public class SparkExecutionContext extends ExecutionContext
 		}
 	}
 
-	private static class MemoryManagerParRDDs
+	public static class MemoryManagerParRDDs
 	{
 		private final long _limit;
 		private long _size;

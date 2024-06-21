@@ -4,12 +4,11 @@ import org.apache.sysds.common.Types;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 
-public class IOCostEstimator {
+public class IOCostUtils {
     // NOTE: this class does NOT include methods for estimating IO time
     //  for operation ot the local file system since they are not relevant at the moment
-    protected enum DataSource{
-        HDFS, S3
-    }
+    protected static final String S3_SOURCE_IDENTIFIER = "s3";
+    protected static final String HDFS_SOURCE_IDENTIFIER = "hdfs";
     //IO READ throughput
     private static final double DEFAULT_MBS_S3READ_BINARYBLOCK_DENSE = 200;
     private static final double DEFAULT_MBS_S3READ_BINARYBLOCK_SPARSE = 100;
@@ -49,13 +48,13 @@ public class IOCostEstimator {
      * @param format file format (null for binary)
      * @return estimated HDFS read time
      */
-    private static double getReadTime(long dm, long dn, double ds, DataSource source, Types.FileFormat format)
+    protected static double getReadTime(long dm, long dn, double ds, String source, Types.FileFormat format)
     {
         boolean sparse = MatrixBlock.evalSparseFormatOnDisk(dm, dn, (long)(ds*dm*dn));
         double ret = ((double)MatrixBlock.estimateSizeOnDisk(dm, dn, (long)(ds*dm*dn))) / (1024*1024);
 
         if (format == null || !format.isTextFormat()) {
-            if (source == DataSource.S3) {
+            if (source.equals(S3_SOURCE_IDENTIFIER)) {
                 if (sparse)
                     ret /= DEFAULT_MBS_S3READ_BINARYBLOCK_SPARSE;
                 else //dense
@@ -67,7 +66,7 @@ public class IOCostEstimator {
                     ret /= DEFAULT_MBS_HDFSREAD_BINARYBLOCK_DENSE;
             }
         } else {
-            if (source == DataSource.S3) {
+            if (source.equals(S3_SOURCE_IDENTIFIER)) {
                 if (sparse)
                     ret /= DEFAULT_MBS_S3READ_TEXT_SPARSE;
                 else //dense
@@ -82,13 +81,13 @@ public class IOCostEstimator {
         return ret;
     }
 
-    protected static double getWriteTime(long dm, long dn, double ds, DataSource source, Types.FileFormat format) {
+    protected static double getWriteTime(long dm, long dn, double ds, String source, Types.FileFormat format) {
         boolean sparse = MatrixBlock.evalSparseFormatOnDisk(dm, dn, (long)(ds*dm*dn));
         double bytes = MatrixBlock.estimateSizeOnDisk(dm, dn, (long)(ds*dm*dn));
         double mbytes = bytes / (1024*1024);
-        double ret = -1;
+        double ret;
 
-        if (source == DataSource.S3) {
+        if (source == S3_SOURCE_IDENTIFIER) {
             if (format.isTextFormat()) {
                 if (sparse)
                     ret = mbytes / DEFAULT_MBS_S3WRITE_TEXT_SPARSE;
@@ -126,7 +125,7 @@ public class IOCostEstimator {
      * @param numExecutors
      * @return
      */
-    private static double getTransmissionCost(long size, int numExecutors) {
+    protected static double getSparkTransmissionCost(long size, int numExecutors) {
         double transferTime = Math.max(((double) size / (DEFAULT_NETWORK_BANDWIDTH * numExecutors)), MIN_TRANSFER_TIME);
         double serializationTime = Math.max((size * SERIALIZATION_FACTOR) / CostEstimator.CP_FLOPS, MIN_SERIALIZATION_TIME);
         return DEFAULT_NETWORK_LATENCY +  transferTime + serializationTime;
@@ -141,7 +140,7 @@ public class IOCostEstimator {
      * @param numExecutors
      * @return
      */
-    private static double getShuffleCost(long size, int numExecutors) {
+    protected static double getShuffleCost(long size, int numExecutors) {
         double transferTime = Math.max(((double) size / (DEFAULT_NETWORK_BANDWIDTH * numExecutors)), MIN_TRANSFER_TIME);
         double serializationTime = Math.max((size * SERIALIZATION_FACTOR) / CostEstimator.SP_FLOPS, MIN_SERIALIZATION_TIME) / numExecutors;
         return DEFAULT_NETWORK_LATENCY * numExecutors +  transferTime + serializationTime;
@@ -156,29 +155,17 @@ public class IOCostEstimator {
      * @param numExecutors
      * @return
      */
-    private static double getBroadcastCost(long size, int numExecutors) {
+    protected static double getBroadcastCost(long size, int numExecutors) {
         double transferTime = Math.max(((double) size / (DEFAULT_NETWORK_BANDWIDTH)), MIN_TRANSFER_TIME);
         double serializationTime = Math.max((size * SERIALIZATION_FACTOR) / CostEstimator.CP_FLOPS, MIN_SERIALIZATION_TIME);
         return DEFAULT_NETWORK_LATENCY * numExecutors +  transferTime + serializationTime;
     }
 
-    private static double getLoadTime(VarStats input) {
-        if (input._mc == null || input._inmem) return 0.0; // _mc == null marks scalars
-        input._inmem = true;
-        // loading from RDD
-        if (input.rdd != null) {
-
+    public static String getDataSource(String fileName) {
+        String[] fileParts = fileName.split("://");
+        if (fileParts.length > 1) {
+            return fileParts[0].toLowerCase();
         }
-        // loading from a file
-        if (input._fileInfo == null)
-            throw new DMLRuntimeException("Time estimation is not possible without file info.");
-        else if (input._fileInfo._1.equals("hdfs")) {
-            // load from HDFS
-            return getHDFSReadTime(input.getM(), input.getN(), input.getS(), input._fileInfo._2);
-        } else if (input._fileInfo._1.equals("s3")) {
-            // load from S3
-
-        }
-        throw new DMLRuntimeException("Time estimation is not possible for data source: "+input._fileInfo._1.toUpperCase());
+        return HDFS_SOURCE_IDENTIFIER;
     }
 }

@@ -1,16 +1,13 @@
 package org.apache.sysds.api.ropt;
 
-import org.apache.commons.configuration2.interpol.ExprLookup;
 import org.apache.spark.SparkConf;
 import org.apache.sysds.api.DMLScript;
 import org.apache.sysds.api.ropt.SearchSpace.SearchPoint;
-import org.apache.sysds.api.ropt.CloudOptimizerUtils;
-import org.apache.sysds.api.ropt.cost.CostEstimationWrapper;
-import org.apache.sysds.api.ropt.cost.CostEstimatorStaticRuntime;
+import org.apache.sysds.api.ropt.cost.CostEstimationException;
+import org.apache.sysds.api.ropt.cost.CostEstimator;
 import org.apache.sysds.api.ropt.strategies.GridSearch;
 import org.apache.sysds.api.ropt.strategies.SearchStrategy;
 import org.apache.sysds.common.Types;
-import org.apache.sysds.conf.ConfigurationManager;
 import org.apache.sysds.hops.Hop;
 import org.apache.sysds.hops.OptimizerUtils;
 import org.apache.sysds.hops.recompile.Recompiler;
@@ -21,7 +18,6 @@ import org.apache.sysds.runtime.controlprogram.context.ExecutionContextFactory;
 import org.apache.sysds.runtime.controlprogram.context.SparkExecutionContext;
 import org.apache.sysds.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
 import org.apache.sysds.runtime.instructions.Instruction;
-import org.apache.sysds.runtime.instructions.spark.SPInstruction;
 import org.apache.sysds.utils.Explain;
 import org.apache.sysds.api.ropt.SearchSpace.InstanceType;
 import org.apache.sysds.api.ropt.SearchSpace.InstanceSize;
@@ -31,9 +27,6 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.Set;
-
-import static org.apache.sysds.hops.recompile.Recompiler.recompileProgramBlockInstructions;
 
 public class ResourceOptimizer {
     private static final boolean DEBUGGING_ON = true;
@@ -135,13 +128,13 @@ public class ResourceOptimizer {
                 // TODO: consider if check for the size is also needed
                 CloudInstance currentExecutorInstance = _availableInstances.get(searchPoint.getInstanceNameExecutor());
                 if (currentExecutorInstance != null)
-                    CostEstimatorStaticRuntime.setSP_FLOPS(currentExecutorInstance.getGFlops());
+                    CostEstimator.setSP_FLOPS(currentExecutorInstance.getFLOPS());
             }
             if (!searchPoint.getInstanceTypeDriver().
                     equals(lastSearchPoint.getInstanceTypeDriver())) {
                 // TODO: consider if check for the size is also needed; NOTE: probably for the driver is more crucial
                 CloudInstance currentDriverInstance = _availableInstances.get(searchPoint.getInstanceNameDriver());
-                CostEstimatorStaticRuntime.setCP_FLOPS(currentDriverInstance.getGFlops());
+                CostEstimator.setCP_FLOPS(currentDriverInstance.getFLOPS());
             }
 
             // Step 2
@@ -158,6 +151,7 @@ public class ResourceOptimizer {
             lastSearchPoint = searchPoint;
         }
         System.out.println("Optimal solution: " + _optimalSolution.getSearchPoint().toString());
+        // TODO: consider the edge case opt. solution == Double.MAX_VALUE (all search points had insufficient resources)
         return _optimalSolution;
     }
 
@@ -252,28 +246,38 @@ public class ResourceOptimizer {
             SparkConf sparkConf = SparkExecutionContext.createSystemDSSparkConf();
             sparkConf.set("spark.master", "local[*]");
             sparkConf.set("spark.app.name", "SystemDS");
-            sparkConf.set("spark.driver.maxResultSize", "1g"); // TODO: consider its meaning
+            //sparkConf.set("spark.driver.maxResultSize", "1g"); // TODO: ensure it should NOT be set
             sparkConf.set("spark.memory.useLegacyMode", "false");
             sparkConf.set("spark.executor.memory", executorInstance.getMemoryMB()+"m");
-            sparkConf.set("spark.storage.memoryFraction", "0.6"); // TODO: consider it better
+            sparkConf.set("spark.storage.memoryFraction", "0.7"); // TODO: ensure it is the same value encoded in SystemDS
             sparkConf.set("spark.executor.instances", Integer.toString(searchPoint.getNumberExecutors()));
             sparkConf.set("spark.executor.cores", Integer.toString(executorInstance.getVCPUCores()));
-            sparkConf.set("spark.default.parallelism", Integer.toString(searchPoint.getNumberExecutors())); // NOTE: What rule should be applied here?
+            sparkConf.set("spark.default.parallelism", Integer.toString(searchPoint.getNumberExecutors())); // TODO: What rule should be applied here?
 
             SparkExecutionContext.initVirtualSparkContext(sparkConf);
         } else {
             DMLScript.setGlobalExecMode(Types.ExecMode.SINGLE_NODE);
         }
-
-
-
     }
 
 
     private double estimateCostTime(SearchPoint searchPoint, Program program) {
         ExecutionContext execContext = ExecutionContextFactory.createContext(program);
         // TODO: update or rewrite the cost class
-        double time = CostEstimationWrapper.getTimeEstimate(execContext);
+        double time;
+        try {
+            CloudInstance driver = getDriverInstance(searchPoint);
+            CloudInstance executor = getExecutorInstance(searchPoint);
+            CostEstimator.setCP_FLOPS(driver.getFLOPS());
+            CostEstimator.setSP_FLOPS(executor == null? 1L: driver.getFLOPS()); // SP_FLOPS not relevant in that case
+            time = CostEstimator.estimateExecutionTime(program);
+        } catch (CostEstimationException e) {
+            // NOTE: in case of detected insufficient memory resources
+            //  'CostEstimationException' suggesting the current search point
+            //  should not considered as possible solution to the opt. problem
+            time = Double.MAX_VALUE;
+        }
+
         System.out.println("RUNTIME PROGRAM EVALUATED " + program.toString());
         if (DEBUGGING_ON) {
             System.out.println("Execution time for " + searchPoint.toString() + " is " + time + "s");
@@ -329,5 +333,16 @@ public class ResourceOptimizer {
             }
         }
         return softLimit;
+    }
+
+    private CloudInstance getDriverInstance(SearchPoint searchPoint) {
+        return _availableInstances.get(searchPoint.getInstanceNameDriver());
+    }
+
+    private CloudInstance getExecutorInstance(SearchPoint searchPoint) {
+        if (searchPoint.getInstanceNameExecutor().equals("")) {
+            return null;
+        }
+        return _availableInstances.get(searchPoint.getInstanceNameExecutor());
     }
 }

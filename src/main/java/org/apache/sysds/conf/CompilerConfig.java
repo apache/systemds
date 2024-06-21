@@ -78,9 +78,7 @@ public class CompilerConfig
 		CODEGEN_ENABLED,
 		
 		//federated runtime conversion
-		FEDERATED_RUNTIME,
-		// resource optimization mode
-		RESOURCE_OPTIMIZATION;
+		FEDERATED_RUNTIME;
 	}
 	
 	//default flags (exposed for testing purposes only)
@@ -109,7 +107,6 @@ public class CompilerConfig
 		_bmap.put(ConfigType.REJECT_READ_WRITE_UNKNOWNS, true);
 		_bmap.put(ConfigType.MLCONTEXT, false);
 		_bmap.put(ConfigType.CODEGEN_ENABLED, false);
-		_bmap.put(ConfigType.RESOURCE_OPTIMIZATION, false);
 		
 		_imap = new HashMap<>();
 		_imap.put(ConfigType.BLOCK_SIZE, OptimizerUtils.DEFAULT_BLOCKSIZE);

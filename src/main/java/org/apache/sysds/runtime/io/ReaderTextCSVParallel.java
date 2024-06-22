@@ -88,22 +88,22 @@ public class ReaderTextCSVParallel extends MatrixReader {
 
 		InputSplit[] splits = informat.getSplits(_job, _numThreads);
 		splits = IOUtilFunctions.sortInputSplits(splits);
-		
+
 		// check existence and non-empty file
 		checkValidInputFile(fs, path);
 
 		// allocate output matrix block
 		// First Read Pass (count rows/cols, determine offsets, allocate matrix block)
 		MatrixBlock ret = computeCSVSizeAndCreateOutputMatrixBlock(splits, path, rlen, clen, blen, estnnz);
-
+		
 		// Second Read Pass (read, parse strings, append to matrix block)
 		readCSVMatrixFromHDFS(splits, path, ret);
-
+		
 		// post-processing (representation-specific, change of sparse/dense block representation)
 		// - no sorting required for CSV because it is read in sorted order per row
 		// - nnz explicitly maintained in parallel for the individual splits
 		ret.examSparsity();
-
+		
 		// sanity check for parallel row count (since determined internally)
 		if(rlen >= 0 && rlen != ret.getNumRows())
 			throw new DMLRuntimeException("Read matrix inconsistent with given meta data: " + "expected nrow=" + rlen
@@ -351,11 +351,13 @@ public class ReaderTextCSVParallel extends MatrixReader {
 
 			while(reader.next(key, value)) { // foreach line
 				final String cellStr = value.toString().trim();
-				final String[] parts = IOUtilFunctions.split(cellStr, _props.getDelim());
 				double[] avals = a.values(_row);
 				int apos = a.pos(_row);
+				
+				final String[] parts = _cLen == 1 ? null :
+					IOUtilFunctions.split(cellStr, _props.getDelim());
 				for(int j = 0; j < _cLen; j++) { // foreach cell
-					String part = parts[j].trim();
+					String part = _cLen == 1 ? cellStr : parts[j].trim();
 					if(part.isEmpty()) {
 						noFillEmpty |= !_props.isFill();
 						cellValue = _props.getFillValue();
@@ -370,7 +372,7 @@ public class ReaderTextCSVParallel extends MatrixReader {
 				}
 				// sanity checks (number of columns, fill values)
 				IOUtilFunctions.checkAndRaiseErrorCSVEmptyField(cellStr, _props.isFill(), noFillEmpty);
-				IOUtilFunctions.checkAndRaiseErrorCSVNumColumns(_split.toString(), cellStr, parts, _cLen);
+				IOUtilFunctions.checkAndRaiseErrorCSVNumColumns(_split, cellStr, parts, _cLen);
 				_row++;
 			}
 
@@ -411,7 +413,7 @@ public class ReaderTextCSVParallel extends MatrixReader {
 				}
 				// sanity checks (number of columns, fill values)
 				IOUtilFunctions.checkAndRaiseErrorCSVEmptyField(cellStr, _props.isFill(), noFillEmpty);
-				IOUtilFunctions.checkAndRaiseErrorCSVNumColumns(_split.toString(), cellStr, parts, _cLen);
+				IOUtilFunctions.checkAndRaiseErrorCSVNumColumns(_split, cellStr, parts, _cLen);
 				_row++;
 			}
 			return nnz;
@@ -456,7 +458,7 @@ public class ReaderTextCSVParallel extends MatrixReader {
 
 				// sanity checks (number of columns, fill values)
 				IOUtilFunctions.checkAndRaiseErrorCSVEmptyField(cellStr, _props.isFill(), noFillEmpty);
-				IOUtilFunctions.checkAndRaiseErrorCSVNumColumns(_split.toString(), cellStr, parts, _cLen);
+				IOUtilFunctions.checkAndRaiseErrorCSVNumColumns(_split, cellStr, parts, _cLen);
 
 				_row++;
 			}
@@ -499,7 +501,7 @@ public class ReaderTextCSVParallel extends MatrixReader {
 
 				// sanity checks (number of columns, fill values)
 				IOUtilFunctions.checkAndRaiseErrorCSVEmptyField(cellStr, _props.isFill(), noFillEmpty);
-				IOUtilFunctions.checkAndRaiseErrorCSVNumColumns(_split.toString(), cellStr, parts, _cLen);
+				IOUtilFunctions.checkAndRaiseErrorCSVNumColumns(_split, cellStr, parts, _cLen);
 
 				_row++;
 			}
@@ -534,7 +536,7 @@ public class ReaderTextCSVParallel extends MatrixReader {
 					_col++;
 				}
 
-				IOUtilFunctions.checkAndRaiseErrorCSVNumColumns(_split.toString(), cellStr, parts, _cLen);
+				IOUtilFunctions.checkAndRaiseErrorCSVNumColumns(_split, cellStr, parts, _cLen);
 
 				_row++;
 			}

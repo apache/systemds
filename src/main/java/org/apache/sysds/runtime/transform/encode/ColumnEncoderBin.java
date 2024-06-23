@@ -29,6 +29,8 @@ import java.util.Random;
 import java.util.concurrent.Callable;
 
 import static org.apache.sysds.runtime.util.UtilFunctions.getEndIndex;
+import static org.apache.sysds.runtime.transform.encode.EncodeBuildCache.getEncodeBuildCache;
+import static org.apache.sysds.runtime.transform.encode.EncoderType.Bin;
 import org.apache.commons.lang3.tuple.MutableTriple;
 import org.apache.sysds.api.DMLScript;
 import org.apache.sysds.lops.Lop;
@@ -115,8 +117,19 @@ public class ColumnEncoderBin extends ColumnEncoder {
 	@Override
 	public void build(CacheBlock<?> in) {
 		long t0 = DMLScript.STATISTICS ? System.nanoTime() : 0;
+
+		// Check cache if build result is already there
+		CacheKey key = new CacheKey(_colID, Bin, _binMethod);
+		EncodeBuildCache cache = getEncodeBuildCache();
+
+		BinMinsMaxs cached_result = (BinMinsMaxs) cache.get(key);
+
 		if(!isApplicable())
 			return;
+		else if (cached_result != null) {
+			_binMins = cached_result.get_binMins();
+			_binMaxs = cached_result.get_binMaxs();
+		}
 		else if(_binMethod == BinMethod.EQUI_WIDTH) {
 			double[] pairMinMax = getMinMaxOfCol(in, _colID, 0, -1);
 			computeBins(pairMinMax[0], pairMinMax[1]);
@@ -124,6 +137,7 @@ public class ColumnEncoderBin extends ColumnEncoder {
 		else if(_binMethod == BinMethod.EQUI_HEIGHT) {
 			double[] sortedCol = prepareDataForEqualHeightBins(in, _colID, 0, -1);
 			computeEqualHeightBins(sortedCol, false);
+
 		}
 		else if(_binMethod == BinMethod.EQUI_HEIGHT_APPROX){
 			double[] vals = sampleDoubleColumn(in, _colID, SAMPLE_FRACTION, MINIMUM_SAMPLE_SIZE);
@@ -131,6 +145,11 @@ public class ColumnEncoderBin extends ColumnEncoder {
 			computeEqualHeightBins(vals, false);
 		}
 
+		if (cached_result == null) {
+			BinMinsMaxs binMinMax = new BinMinsMaxs(_binMins, _binMaxs);
+			cache.put(key, binMinMax);
+		}
+		
 		if(DMLScript.STATISTICS)
 			TransformStatistics.incBinningBuildTime(System.nanoTime()-t0);
 	}

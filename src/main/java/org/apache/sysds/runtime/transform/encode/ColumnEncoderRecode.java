@@ -182,12 +182,13 @@ public class ColumnEncoderRecode extends ColumnEncoder {
 		EncodeBuildCache cache = getEncodeBuildCache();
 		Map<Object, Long> rcdMap = (Map<Object, Long>) cache.get(key);
 		if (rcdMap == null) {
-			System.out.println("creating new rcmap\n");
+			LOG.debug(String.format("No entry found for key: %s, creating new rcmap\n", key));
 			makeRcdMap(in, _rcdMap, _colID, 0, in.getNumRows());
 			cache.put(key, _rcdMap);
+			LOG.debug(String.format("cache entry: %s\n", cache.get(key)));
 		} else {
-			System.out.println("using existing map\n");
-			_rcdMap = (Map<Object, Long>) rcdMap;
+			LOG.debug(String.format("using existing map: %s\n", rcdMap));
+			_rcdMap = rcdMap;
 		}
 		if(DMLScript.STATISTICS){
 			TransformStatistics.incRecodeBuildTime(System.nanoTime() - t0);

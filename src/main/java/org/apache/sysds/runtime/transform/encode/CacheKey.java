@@ -14,8 +14,7 @@ public class CacheKey {
         this.columnId = columnId;
         this.encoderType = encoderType;
         if (encoderType == EncoderType.Bin) {
-            // throw exception
-            this.binMethod = null;
+            throw new RuntimeException("Cannot set encoderType to Bin without specifying binMethod");
         }
         else {
             this.binMethod = null;

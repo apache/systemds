@@ -1,8 +1,10 @@
 package org.apache.sysds.api.ropt.cost;
 
 import org.apache.sysds.common.Types;
+import org.apache.sysds.hops.OptimizerUtils;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
+import org.apache.sysds.runtime.meta.MatrixCharacteristics;
 
 public class IOCostUtils {
     // NOTE: this class does NOT include methods for estimating IO time
@@ -36,6 +38,27 @@ public class IOCostUtils {
     private static final double SERIALIZATION_FACTOR = 10; // virtual unit - MB/(GFLOPS*s)
     private static final double MIN_TRANSFER_TIME = 0.001; // 1ms
     private static final double MIN_SERIALIZATION_TIME = 0.001; // 1ms (intended to include serialization and deserialization time)
+    private static final double DEFAULT_MBS_MEM_READ_BANDWIDTH = 32000; // TODO: dynamic value later
+    private static final double DEFAULT_MBS_MEM_WRITE_BANDWIDTH = 32000; // TODO: dynamic value later
+    protected static double getMemReadTime(VarStats stats) {
+        if (stats == null) return 0; // scalars
+        if (stats._memory < 0)
+            throw new DMLRuntimeException("VarStats should have estimated size before getting read time");
+        long size = stats._memory;
+        double sizeMB = (double) size / (1024 * 1024);
+
+        return sizeMB / DEFAULT_MBS_MEM_READ_BANDWIDTH;
+    }
+
+    protected static double getMemWriteTime(VarStats stats) {
+        if (stats == null) return 0; // scalars
+        if (stats._memory < 0)
+            throw new DMLRuntimeException("VarStats should have estimated size before getting write time");
+        long size = stats._memory;
+        double sizeMB = (double) size / (1024 * 1024);
+
+        return sizeMB / DEFAULT_MBS_MEM_WRITE_BANDWIDTH;
+    }
 
     /**
      * Returns the estimated read time from HDFS.

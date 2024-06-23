@@ -74,7 +74,6 @@ public class CostEstimator
 	protected static long CP_FLOPS = DEFAULT_FLOPS;
 	protected static long SP_FLOPS = DEFAULT_FLOPS;
 	protected static final VarStats _unknownStats = new VarStats(new MatrixCharacteristics(-1,-1,-1,-1));
-	protected static final VarStats _scalarStats = new VarStats(null);
 
 	// Non-static members
 	private SparkExecutionContext.MemoryManagerParRDDs _parRDDs;
@@ -260,30 +259,43 @@ public class CostEstimator
 		}
 	}
 
+	/**
+	 * Estimates the execution time of a single CP instruction
+	 * following the formula <i>C(p) = T_w + max(T_r, T_c)</i> with:
+	 * <li>T_w - instruction write (to mem.) time</li>
+	 * <li>T_r - instruction read (to mem.) time</li>
+	 * <li>T_c - instruction compute time</li>
+	 *
+	 * @param inst
+	 * @return
+	 * @throws CostEstimationException
+	 */
 	private double getTimeEstimateCPInst(CPInstruction inst) throws CostEstimationException {
 		double ret = 0;
 		if (inst instanceof VariableCPInstruction) {
 			String opcode = inst.getOpcode();
 			VariableCPInstruction varInst = (VariableCPInstruction) inst;
 			VarStats input = _stats.get(varInst.getInput1().getName());
-			if (!opcode.contains("var")) {
-				System.out.println("Compute estimation for "+varInst.getInput1().getName()+" for op "+opcode);
-				ret += getLoadTime(input); // I/O estimate
+			if (opcode.startsWith("cast")) {
+				ret += getLoadTime(input); // disk I/O estimate
+				double scanTime = IOCostUtils.getMemReadTime(input); // memory read cost
+				double computeTime = getNFLOP_CPVariableInst(varInst, input) / CP_FLOPS;
+				ret += Math.max(scanTime, computeTime);
+				CPOperand outputOperand = varInst.getOutput();
+				VarStats output = _stats.get(outputOperand.getName());
+				putInMemory(output);
+				ret += IOCostUtils.getMemWriteTime(input); // memory write cost
 			}
-			ret += getNFLOP_CPVariableInst(varInst, input) / CP_FLOPS;
-			if (opcode.equals("write")) {
+			else if (opcode.equals("write")) {
+				ret += getLoadTime(input); // disk I/O estimate
 				String fileName = inst.getFilename();
 				String dataSource = IOCostUtils.getDataSource(fileName);
 				String formatString = varInst.getInput3().getLiteral().getStringValue();
+				ret += getNFLOP_CPVariableInst(varInst, input) / CP_FLOPS; // compute time cost
 				ret += IOCostUtils.getWriteTime(input.getM(), input.getN(), input.getS(),
 						dataSource, Types.FileFormat.safeValueOf(formatString)); // I/O estimate
-			} else {
-				CPOperand outputOperand = varInst.getOutput();
-				if (outputOperand != null) {
-					VarStats output = _stats.get(outputOperand.getName());
-					putInMemory(output);
-				}
 			}
+
 			return ret;
 		}
 		else if (inst instanceof UnaryCPInstruction) {
@@ -307,11 +319,13 @@ public class CostEstimator
 				throw new DMLRuntimeException("Tensor is not supported for cost estimation");
 			VarStats input = _stats.get(unaryInst.input1.getName());
 			VarStats output = _stats.get(unaryInst.getOutput().getName());
-			System.out.println("Execute "+inst.getOpcode()+" for "+unaryInst.input1.getName()+" with output "+unaryInst.getOutput().getName());
-			ret += getLoadTime(input);
-			ret += getNFLOP_CPUnaryInst(unaryInst, input, output) / CP_FLOPS;
-			putInMemory(output);
 
+			ret += getLoadTime(input);
+			double scanTime = IOCostUtils.getMemReadTime(input);
+			double computeTime = getNFLOP_CPUnaryInst(unaryInst, input, output) / CP_FLOPS;
+			ret += Math.max(scanTime, computeTime);
+			putInMemory(output);
+			ret += IOCostUtils.getMemWriteTime(output);
 			return ret;
 		}
 		else if (inst instanceof BinaryCPInstruction) {
@@ -321,12 +335,14 @@ public class CostEstimator
 			VarStats input1 = _stats.get(binInst.input1.getName());
 			VarStats input2 = _stats.get(binInst.input2.getName());
 			VarStats output = _stats.get(binInst.output.getName());
-			System.out.println("Try load var: "+binInst.input1.getName()+" and "+binInst.input2.getName());
+
 			ret += getLoadTime(input1);
 			ret += getLoadTime(input2);
-			ret += getNFLOP_CPBinaryInst(binInst, input1, input2, output) / CP_FLOPS;
+			double scanTime = IOCostUtils.getMemReadTime(input1) + IOCostUtils.getMemReadTime(input2);
+			double computeTime = getNFLOP_CPBinaryInst(binInst, input1, input2, output) / CP_FLOPS;
+			ret += Math.max(scanTime, computeTime);
 			putInMemory(output);
-
+			ret += IOCostUtils.getMemWriteTime(output);
 			return ret;
 		}
 		else if (inst instanceof AggregateTernaryCPInstruction) {
@@ -335,9 +351,11 @@ public class CostEstimator
 			VarStats output = _stats.get(aggInst.getOutput().getName());
 
 			ret += getLoadTime(input);
-			ret += (double) (6 * input.getCells()) / CP_FLOPS;
+			double scanTime = IOCostUtils.getMemReadTime(input);
+			double computeTime = (double) (6 * input.getCells()) / CP_FLOPS;
+			ret += Math.max(scanTime, computeTime);
 			putInMemory(output);
-
+			ret += IOCostUtils.getMemWriteTime(output);
 			return ret;
 		}
 		else if (inst instanceof TernaryFrameScalarCPInstruction) {
@@ -349,9 +367,11 @@ public class CostEstimator
 			VarStats output = _stats.get(tInst.getOutput().getName());
 
 			ret += getLoadTime(input);
-			ret += (double) (4*input.getCells()) / CP_FLOPS; // 4 0 dummy factor
+			double scanTime = IOCostUtils.getMemReadTime(input);
+			double computeTime = (double) (4*input.getCells()) / CP_FLOPS; // 4 - dummy factor
+			ret += Math.max(scanTime, computeTime);
 			putInMemory(output);
-
+			ret += IOCostUtils.getMemWriteTime(output);
 			return ret;
 		}
 		else if (inst instanceof QuaternaryCPInstruction) {
@@ -364,10 +384,15 @@ public class CostEstimator
 			VarStats output = _stats.get(gInst.getOutput().getName());
 
 			ret += getLoadTime(input1) + getLoadTime(input2) + getLoadTime(input3) + getLoadTime(input4);
-			ret += (double) (input1.getCells() * input2.getCells() + input3.getCells() + input4.getCells())
+			double scanTime = IOCostUtils.getMemReadTime(input1)
+					+ IOCostUtils.getMemReadTime(input2)
+					+ IOCostUtils.getMemReadTime(input3)
+					+ IOCostUtils.getMemReadTime(input4);
+			double computeTime = (double) (input1.getCells() * input2.getCells() + input3.getCells() + input4.getCells())
 					/ CP_FLOPS;
+			ret += Math.max(scanTime, computeTime);
 			putInMemory(output);
-
+			ret += IOCostUtils.getMemWriteTime(output);
 			return ret;
 		}
 		else if (inst instanceof ScalarBuiltinNaryCPInstruction) {
@@ -377,17 +402,20 @@ public class CostEstimator
 			MatrixBuiltinNaryCPInstruction mInst = (MatrixBuiltinNaryCPInstruction) inst;
 			VarStats output = _stats.get(mInst.getOutput().getName());
 			int numMatrices = 0;
+			double scanTime = 0d;
 			for (CPOperand operand : mInst.getInputs()) {
 				if (operand.isMatrix()) {
-					VarStats inputStats = _stats.get(operand.getName());
-					ret += getLoadTime(inputStats);
+					VarStats input = _stats.get(operand.getName());
+					ret += getLoadTime(input);
+					scanTime += IOCostUtils.getMemReadTime(input);
 					numMatrices += 1;
 				}
 
 			}
-			ret += getNFLOP_CPMatrixBuiltinNaryInst(mInst, numMatrices, output) / CP_FLOPS;
+			double computeTime = getNFLOP_CPMatrixBuiltinNaryInst(mInst, numMatrices, output) / CP_FLOPS;
+			ret += Math.max(scanTime, computeTime);
 			putInMemory(output);
-
+			ret += IOCostUtils.getMemWriteTime(output);
 			return ret;
 		}
 		else if (inst instanceof EvalNaryCPInstruction) {
@@ -398,9 +426,13 @@ public class CostEstimator
 			VarStats input = _stats.get(mrbInst.input1.getName());
 
 			ret += getLoadTime(input);
-			ret += getNFLOP_CPMultiReturnBuiltinInst(mrbInst, input) / CP_FLOPS;
+			double scanTime = IOCostUtils.getMemReadTime(input);
+			double computeTime = getNFLOP_CPMultiReturnBuiltinInst(mrbInst, input) / CP_FLOPS;
+			ret += Math.max(scanTime, computeTime);
 			for (CPOperand operand : mrbInst.getOutputs()) {
-				putInMemory(_stats.get(operand.getName()));
+				VarStats output = _stats.get(operand.getName());
+				putInMemory(output);
+				ret += IOCostUtils.getMemWriteTime(output);
 			}
 			return ret;
 		}
@@ -412,7 +444,11 @@ public class CostEstimator
 			VarStats output = _stats.get(ctInst.getOutput().getName());
 
 			ret += getLoadTime(input1) + getLoadTime(input2) + getLoadTime(input3);
-			ret += (double) input1.getCellsWithSparsity() / CP_FLOPS;
+			double scanTime = IOCostUtils.getMemReadTime(input1)
+					+ IOCostUtils.getMemReadTime(input2)
+					+ IOCostUtils.getMemReadTime(input3);
+			double computeTime = (double) input1.getCellsWithSparsity() / CP_FLOPS;
+			ret += Math.max(scanTime, computeTime);
 			// TODO: figure out what dimensions to assign to the output matrix stats 'output'
 			throw new DMLRuntimeException("Operation "+inst.getOpcode()+" is not supported yet due to a unpredictable output");
 		}
@@ -423,9 +459,11 @@ public class CostEstimator
 			VarStats output = _stats.get(pmmInst.getOutput().getName());
 
 			ret += getLoadTime(input1) + getLoadTime(input2);
-			ret += input1.getCells() * input2.getCellsWithSparsity() / CP_FLOPS;
+			double scanTime = IOCostUtils.getMemReadTime(input1) + IOCostUtils.getMemReadTime(input2);
+			double computeTime = input1.getCells() * input2.getCellsWithSparsity() / CP_FLOPS;
+			ret += Math.max(scanTime, computeTime);
 			putInMemory(output);
-
+			ret += IOCostUtils.getMemWriteTime(output);
 			return ret;
 		}
 		else if (inst instanceof ParameterizedBuiltinCPInstruction) {
@@ -435,9 +473,11 @@ public class CostEstimator
 			VarStats output = _stats.get( parts[parts.length-1] );
 
 			ret += getLoadTime(input);
-			ret += getNFLOP_CPParameterizedBuiltinInst(paramInst, input, output) / CP_FLOPS;
+			double scanTime = IOCostUtils.getMemReadTime(input);
+			double computeTime = getNFLOP_CPParameterizedBuiltinInst(paramInst, input, output) / CP_FLOPS;
+			ret += Math.max(scanTime, computeTime);
 			putInMemory(output);
-
+			ret += IOCostUtils.getMemWriteTime(output);
 			return ret;
 		}
 		else if (inst instanceof MultiReturnParameterizedBuiltinCPInstruction) {

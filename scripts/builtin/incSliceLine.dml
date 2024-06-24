@@ -116,6 +116,13 @@ m_incSliceLine = function(
   # One-hot encoding of addedX
   
   addedX2 = oneHotEncodeUsingOffsets(addedX, foffb, foffe);
+  
+  if(length(prevLattice) > 0) {
+    prevLattice2 = oneHotEncodeUsingOffsets(prevLattice, foffb, foffe);
+  }else{
+    prevLattice2 = prevLattice;
+  }
+  
   /*
   addedX2 = matrix(0, 0, n);
   m_add = nrow(addedX);
@@ -136,6 +143,11 @@ m_incSliceLine = function(
   print("136: foffb: "+toString(foffb));
   print("175: selCols: "+toString(selCols));
 
+    # initialize Lattice and Statistics
+  L1 = matrix(0,0,ncol(X2));
+  RL = list();
+  L1 = rbind(L1, S);
+  RL = append(RL,R);
 
   # initialize top-k
   [TK, TKC] = maintainTopK(S, R, matrix(0,0,n2), matrix(0,0,4), k, minSup);
@@ -147,15 +159,13 @@ m_incSliceLine = function(
   }
 
   # reduced dataset to relevant attributes (minSup, err>0), S reduced on-the-fly
-  
-  if( selFeat )
+  if( selFeat ){
     X2 = removeEmpty(target=X2, margin="cols", select=t(selCols));
-
-  # initialize Lattice and Statistics
-  L1 = matrix(0,0,ncol(X2));
-  RL = list();
-  L1 = rbind(L1, S);
-  RL = append(RL,R);
+    addedX2 = removeEmpty(target=addedX2, margin="cols", select=t(selCols));
+    if(nrow(prevLattice2)>0) {
+      prevLattice2 = removeEmpty(target=prevLattice2, margin="cols", select=t(selCols));
+    }
+  }
 
   # lattice enumeration w/ size/error pruning, one iteration per level
   # termination condition (max #feature levels)
@@ -173,11 +183,13 @@ m_incSliceLine = function(
     # update lattice and statistics
     L1 = rbind(L1, S);
 
-    if(selFeat)
+    if(selFeat){
       S2 = removeEmpty(target=S, margin="cols", select=t(selCols));
+    }
 
       
     print("174: ncol(S2): "+toString(ncol(S2)));
+    print("175: ncol(prevLattice2): "+toString(ncol(prevLattice2)));
 
     if(verbose) {
       print("\nSliceFinder: level "+level+":")
@@ -192,13 +204,13 @@ m_incSliceLine = function(
         parfor( i in 1:ceil(nrow(S)/tpBlksz), check=0 ) {
           beg = (i-1)*tpBlksz + 1; 
           end = min(i*tpBlksz, nrow(R));
-          R[beg:end,] = evalSlice(X2, newE, eAvg, t(S2[beg:end,]), level, alpha, addedX2, prevLattice, prevRL, foffb, foffe);
+          R[beg:end,] = evalSlice(X2, newE, eAvg, t(S2[beg:end,]), level, alpha, addedX2, prevLattice2, prevRL, foffb, foffe);
 
         }
         RL = append(RL,R);
        } 
        else { # data-parallel
-        R = evalSlice(X2, newE, eAvg, t(S2), level, alpha, addedX2, prevLattice, prevRL, foffb, foffe);
+        R = evalSlice(X2, newE, eAvg, t(S2), level, alpha, addedX2, prevLattice2, prevRL, foffb, foffe);
 
         RL = append(RL,R);
       }
@@ -386,8 +398,9 @@ getPairedCandidates = function(Matrix[Double] S, Matrix[Double] R,
       end = as.scalar(foffe[1,j]);
       I = rowIndexMax(P[,beg:end]) * rowMaxs(P[,beg:end]);
       prod = 1;
-      if(j<ncol(dom))
+      if(j<ncol(dom)) {
         prod = prod(dom[1,(j+1):ncol(dom)])
+      }
       ID = ID + I * prod;
     }
 
@@ -435,15 +448,15 @@ evalSlice = function(Matrix[Double] X, Matrix[Double] e, Double eAvg,
 
   return(Matrix[Double] R)
 {
-
+  S = t(tS);
   tRemainingSEncoded = tS;
   ss1 = matrix(0,0,1);
   indexS = list();
-  if(length(prevLattice) > 0) {
+  if(nrow(prevLattice) > 0) {
     
     /*
     SIDs = list();
-    SOneHot = decodeOneHot(t(tS), foffb, foffe);
+    SOneHot = decodeOneHot(S, foffb, foffe);
 
     for (i in 1:nrow(SOneHot)) {
       sliceID = generateSliceID(SOneHot[i,]);
@@ -454,19 +467,22 @@ evalSlice = function(Matrix[Double] X, Matrix[Double] e, Double eAvg,
 
     # check if the slice is in the previous lattice
 
-    print("nrow t(tS): "+toString(nrow(t(tS))));
-    print("ncol t(tS): "+toString(ncol(t(tS))));
-    allSDecoded = decodeOneHot(t(tS), foffb, foffe);
+    print("466nrow S: "+toString(nrow(S)));
+    print("466ncol S: "+toString(ncol(S)));
+    print("468nrow prevLattice:"+toString(nrow(prevLattice)));
+    print("469ncol prevLattice:"+toString(ncol(prevLattice)));
+    #allSDecoded = decodeOneHot(S, foffb, foffe);
     
-    [indexS, indexPrevLattice] = matchingIndices(allSDecoded, prevLattice);
-    addedSDecoded = matrix(0,0,ncol(allSDecoded));
+    [indexS, indexPrevLattice] = matchingIndices(S, prevLattice);
+    addedSEncoded = matrix(0,0,ncol(S));
+    remainingSEncoded = matrix(0,0,ncol(S));
     
     if(length(indexPrevLattice) > 0) {
 
-      [addedSDecoded, remainingSDecoded] = storeSelectedAndRemainingRows(allSDecoded, indexS);
+      [addedSEncoded, remainingSEncoded] = storeSelectedAndRemainingRows(S, indexS);
 
-      tAddedSEncoded = t(oneHotEncodeUsingOffsets(addedSDecoded, foffb, foffe));
-      tRemainingSEncoded = t(oneHotEncodeUsingOffsets(remainingSDecoded, foffb, foffe));
+      tAddedSEncoded = t(addedSEncoded);
+      tRemainingSEncoded = t(remainingSEncoded);
       
       Iadded = (addedX2 %*% tAddedSEncoded) == l;   
       ssAdded = t(colSums(Iadded));  
@@ -490,7 +506,7 @@ evalSlice = function(Matrix[Double] X, Matrix[Double] e, Double eAvg,
 
   if(length(indexS) > 0) {
 
-    if(length(indexPrevLattice) < nrow(allSDecoded)){
+    if(length(indexPrevLattice) < nrow( S )){
       ss = combineSliceSizes(ss2,ss1,indexS);
     }else{
       ss = ss1;

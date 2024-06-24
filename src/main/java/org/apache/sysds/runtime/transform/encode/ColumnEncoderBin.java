@@ -121,7 +121,6 @@ public class ColumnEncoderBin extends ColumnEncoder {
 		// Check cache if build result is already there
 		CacheKey key = new CacheKey(_colID, Bin, _binMethod);
 		EncodeBuildCache cache = getEncodeBuildCache();
-
 		BinMinsMaxs cached_result = (BinMinsMaxs) cache.get(key);
 
 		if(!isApplicable())
@@ -129,6 +128,7 @@ public class ColumnEncoderBin extends ColumnEncoder {
 		else if (cached_result != null) {
 			_binMins = cached_result.get_binMins();
 			_binMaxs = cached_result.get_binMaxs();
+			LOG.debug(String.format("using existing bin boundaries. Object at: %s \n", cached_result));
 		}
 		else if(_binMethod == BinMethod.EQUI_WIDTH) {
 			double[] pairMinMax = getMinMaxOfCol(in, _colID, 0, -1);
@@ -146,8 +146,10 @@ public class ColumnEncoderBin extends ColumnEncoder {
 		}
 
 		if (cached_result == null) {
+			LOG.debug(String.format("No entry found for key: %s, creating new bin boundaries\n", key));
 			BinMinsMaxs binMinMax = new BinMinsMaxs(_binMins, _binMaxs);
 			cache.put(key, binMinMax);
+			LOG.debug(String.format("cache entry: %s\n", cache.get(key)));
 		}
 		
 		if(DMLScript.STATISTICS)
@@ -197,7 +199,7 @@ public class ColumnEncoderBin extends ColumnEncoder {
 		else{
 			for (int i=startInd; i<endInd; i++) {
 				double inVal = in.getDoubleNaN(i, _colID - 1);
-				codes[i-startInd] = getCodeIndex(inVal);;
+				codes[i-startInd] = getCodeIndex(inVal);
 			}
 		}
 		return codes;

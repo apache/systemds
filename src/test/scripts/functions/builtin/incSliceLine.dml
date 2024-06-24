@@ -21,12 +21,6 @@
 
 addedX = read($1);
 e = read($2);
-m1 = read($8);
-m2 = read($9);
-m3 = read($10);
-r1 = read($11);
-r2 = read($12);
-r3 = read($13);
 
 # call slice finding
 [TS,TR] = incSliceLine(addedX=addedX, newE=e, k=$3,

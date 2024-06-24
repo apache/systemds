@@ -123,6 +123,13 @@ m_incSliceLine = function(
   # One-hot encoding of addedX
   
   addedX2 = oneHotEncodeUsingOffsets(addedX, foffb, foffe);
+  
+  if(length(prevLattice) > 0) {
+    prevLattice2 = oneHotEncodeUsingOffsets(prevLattice, foffb, foffe);
+  }else{
+    prevLattice2 = prevLattice;
+  }
+  
   /*
   addedX2 = matrix(0, 0, n);
   if (nrow(addedX) > 0) {

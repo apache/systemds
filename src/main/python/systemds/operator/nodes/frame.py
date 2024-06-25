@@ -28,7 +28,10 @@ from typing import (TYPE_CHECKING, Dict, Iterable, Optional, Sequence, Tuple,
 import numpy as np
 import pandas as pd
 from py4j.java_gateway import JavaObject, JVMView
-from systemds.operator import Matrix, MultiReturn, OperationNode, Scalar
+from systemds.operator.operation_node import OperationNode
+from systemds.operator.nodes.multi_return import MultiReturn
+from systemds.operator.nodes.scalar import Scalar
+from systemds.operator.nodes.matrix import Matrix
 from systemds.script_building.dag import DAGNode, OutputType
 from systemds.utils.consts import VALID_INPUT_TYPES
 from systemds.utils.converters import (frame_block_to_pandas,

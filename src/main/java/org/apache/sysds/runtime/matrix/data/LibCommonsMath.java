@@ -24,6 +24,10 @@ import static org.apache.sysds.runtime.matrix.data.LibMatrixFourier.fft_lineariz
 import static org.apache.sysds.runtime.matrix.data.LibMatrixFourier.ifft;
 import static org.apache.sysds.runtime.matrix.data.LibMatrixFourier.ifft_linearized;
 
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Map.Entry;
+
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.commons.math3.exception.MaxCountExceededException;
@@ -37,6 +41,9 @@ import org.apache.commons.math3.linear.QRDecomposition;
 import org.apache.commons.math3.linear.RealMatrix;
 import org.apache.commons.math3.linear.SingularValueDecomposition;
 import org.apache.sysds.runtime.DMLRuntimeException;
+import org.apache.sysds.runtime.codegen.CodegenUtils;
+import org.apache.sysds.runtime.codegen.SpoofOperator.SideInput;
+import org.apache.sysds.runtime.compress.utils.IntArrayList;
 import org.apache.sysds.runtime.data.DenseBlock;
 import org.apache.sysds.runtime.functionobjects.Builtin;
 import org.apache.sysds.runtime.functionobjects.Divide;
@@ -53,6 +60,7 @@ import org.apache.sysds.runtime.matrix.operators.ScalarOperator;
 import org.apache.sysds.runtime.matrix.operators.TernaryOperator;
 import org.apache.sysds.runtime.matrix.operators.UnaryOperator;
 import org.apache.sysds.runtime.util.DataConverter;
+import org.apache.sysds.runtime.util.UtilFunctions;
 
 /**
  * Library for matrix operations that need invocation of 
@@ -78,13 +86,14 @@ public class LibCommonsMath
 	public static boolean isSupportedMultiReturnOperation( String opcode ) {
 
 		switch (opcode) {
-			case "qr":
-			case "lu":
 			case "eigen":
 			case "fft":
-			case "ifft":
 			case "fft_linearized":
+			case "ifft":
 			case "ifft_linearized":
+			case "lu":
+			case "qr":
+			case "rcm":
 			case "stft":
 			case "svd": return true;
 			default: return false;
@@ -158,6 +167,8 @@ public class LibCommonsMath
 				return computeIFFT(in1, in2, threads);
 			case "ifft_linearized":
 				return computeIFFT_LINEARIZED(in1, in2, threads);
+			case "rcm":
+				return computeRCM(in1, in2);
 			default:
 				return null;
 		}
@@ -815,5 +826,126 @@ public class LibCommonsMath
 		MatrixBlock evec = new MatrixBlock(n, n, false);
 		evec.init(eVectors, n, n);
 		return new MatrixBlock[] {eval, evec};
+	}
+	
+	/**
+	 * Performs following operation:
+	 * Computes the intersection ("meet") of equivalence classes for
+	 * each row of A and B, excluding 0-valued cells.
+	 * INPUT:
+	 *   A, B = matrices whose rows contain that row's class labels;
+	 *          for each i, rows A [i, ] and B [i, ] define two
+	 *          equivalence relations on some of the columns, which
+	 *          we want to intersect
+	 *   A [i, j] == A [i, k] != 0 if and only if (j ~ k) as defined
+	 *          by row A [i, ];
+	 *   A [i, j] == 0 means that j is excluded by A [i, ]
+	 *   B [i, j] is analogous
+	 *   NOTE 1: Either nrow(A) == nrow(B), or exactly one of A or B
+	 *   has one row that "applies" to each row of the other matrix.
+	 *   NOTE 2: If ncol(A) != ncol(B), we pad extra 0-columns up to
+	 *   max (ncol(A), ncol(B)).
+	 * OUTPUT:
+	 *   Both C and N have the same size as (the max of) A and B.
+	 *   C = matrix whose rows contain class labels that represent
+	 *       the intersection (coarsest common refinement) of the
+	 *       corresponding rows of A and B.
+	 *   C [i, j] == C [i, k] != 0 if and only if (j ~ k) as defined
+	 *       by both A [i, ] and B [j, ]
+	 *   C [i, j] == 0 if and only if A [i, j] == 0 or B [i, j] == 0
+	 *       Additionally, we guarantee that non-0 labels in C [i, ]
+	 *       will be integers from 1 to max (C [i, ]) without gaps.
+	 *       For A and B the labels can be arbitrary.
+	 *   N = matrix with class-size information for C-cells
+	 *   N [i, j] = count of {C [i, k] | C [i, j] == C [i, k] != 0}
+	 *
+	 * @param A first input matrix
+	 * @param B second input matrix
+	 * @return output matrices C and N
+	 */
+	private static MatrixBlock[] computeRCM(MatrixBlock A, MatrixBlock B) {
+		int nr = Math.max(A.getNumRows(), B.getNumRows());
+		int nc = Math.max(A.getNumColumns(), B.getNumColumns());
+		MatrixBlock C = new MatrixBlock(nr, nc, false).allocateBlock();
+		MatrixBlock N = new MatrixBlock(nr, nc, false).allocateBlock();
+		double[] dC = C.getDenseBlockValues();
+		double[] dN = N.getDenseBlockValues();
+		//wrap both A and B into side inputs for efficient sparse access
+		SideInput sB = CodegenUtils.createSideInput(B);
+		boolean mv = (B.getNumRows() == 1);
+		int numCols = Math.min(A.getNumColumns(), B.getNumColumns());
+
+		Map<ClassLabel, IntArrayList> classLabelMapping = new HashMap<>();
+		for(int i=0, ai=0; i < A.getNumRows(); i++, ai+=A.getNumColumns()) {
+			classLabelMapping.clear(); sB.reset();
+			if( A.isInSparseFormat() ) {
+				if(A.getSparseBlock()==null || A.getSparseBlock().isEmpty(i))
+					continue;
+				int alen = A.getSparseBlock().size(i);
+				int apos = A.getSparseBlock().pos(i);
+				int[] aix = A.getSparseBlock().indexes(i);
+				double[] avals = A.getSparseBlock().values(i);
+				for(int k=apos; k<apos+alen; k++) {
+					if( aix[k] >= numCols ) break;
+					int bval = (int)sB.getValue(mv?0:i, aix[k]);
+					if( bval != 0 ) {
+						ClassLabel key = new ClassLabel((int)avals[k], bval);
+						if(!classLabelMapping.containsKey(key))
+							classLabelMapping.put(key, new IntArrayList());
+						classLabelMapping.get(key).appendValue(aix[k]);
+					}
+				}
+			}
+			else {
+				double [] denseBlk = A.getDenseBlockValues();
+				if(denseBlk == null) break;
+				for(int j = 0; j < numCols; j++) {
+					int aVal = (int) denseBlk[ai+j];
+					int bVal = (int) sB.getValue(mv?0:i, j);
+					if(aVal != 0 && bVal != 0) {
+						ClassLabel key = new ClassLabel(aVal, bVal);
+						if(!classLabelMapping.containsKey(key))
+							classLabelMapping.put(key, new IntArrayList());
+						classLabelMapping.get(key).appendValue(j);
+					}
+				}
+			}
+
+			int labelID = 1;
+			for(Entry<ClassLabel, IntArrayList> entry : classLabelMapping.entrySet()) {
+				int nVal = entry.getValue().size();
+				int[] list = entry.getValue().extractValues();
+				for(int k=0, off=i*nc; k<nVal; k++) {
+					dN[off+list[k]] = nVal;
+					dC[off+list[k]] = labelID;
+				}
+				labelID++;
+			}
+		}
+
+		//prepare outputs
+		C.recomputeNonZeros(); C.examSparsity();
+		N.recomputeNonZeros(); N.examSparsity();
+		return new MatrixBlock[] {C, N};
+	}
+	
+	private static class ClassLabel {
+		public int aVal;
+		public int bVal;
+		public ClassLabel(int aVal, int bVal) {
+			this.aVal = aVal;
+			this.bVal = bVal;
+		}
+		@Override
+		public int hashCode() {
+			return UtilFunctions.intHashCode(aVal, bVal);
+		}
+		@Override
+		public boolean equals(Object o) {
+			if( !(o instanceof ClassLabel) )
+				return false;
+			ClassLabel that = (ClassLabel) o;
+			return aVal == that.aVal && bVal == that.bVal;
+		}
 	}
 }

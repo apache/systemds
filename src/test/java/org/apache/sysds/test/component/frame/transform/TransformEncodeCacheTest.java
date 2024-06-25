@@ -61,8 +61,7 @@ public class TransformEncodeCacheTest {
 
 	@BeforeClass
 	public static void setUp() {
-		FrameBlock setUpData = TestUtils.generateRandomFrameBlock(10, new ValueType[]{ValueType.FP32}, 231
-		);
+		FrameBlock setUpData = TestUtils.generateRandomFrameBlock(10, new ValueType[]{ValueType.FP32}, 231);
 
 		MultiColumnEncoder encoder = EncoderFactory.createEncoder("{recode:[C1]}", setUpData.getColumnNames(), setUpData.getNumColumns(), null);
 		try {
@@ -92,8 +91,7 @@ public class TransformEncodeCacheTest {
 						"{recode:[C3]}", "{recode:[C4]}",
 						"{recode:[C5]}", "{recode:[C6]}",
 						"{recode:[C7]}", "{recode:[C8]}",
-						"{recode:[C9]}", "{recode:[C10]}",
-						"{recode:[C11]}"),
+						"{recode:[C9]}", "{recode:[C10]}"),
 				Arrays.asList(
 						"{ids:true, bin:[{id:1, method:equi-width, numbins:4}]}",
 						"{ids:true, bin:[{id:2, method:equi-width, numbins:4}]}",
@@ -104,8 +102,7 @@ public class TransformEncodeCacheTest {
 						"{ids:true, bin:[{id:7, method:equi-width, numbins:4}]}",
 						"{ids:true, bin:[{id:8, method:equi-width, numbins:4}]}",
 						"{ids:true, bin:[{id:9, method:equi-width, numbins:4}]}",
-						"{ids:true, bin:[{id:10, method:equi-width, numbins:4}]}",
-						"{ids:true, bin:[{id:11, method:equi-width, numbins:4}]}")
+						"{ids:true, bin:[{id:10, method:equi-width, numbins:4}]}")
 		);
 		List<EncoderType> encoderTypes = Arrays.asList(EncoderType.Recode, EncoderType.Bin);
 
@@ -146,15 +143,15 @@ public class TransformEncodeCacheTest {
 
 	private void analyzePerformance(List<Long> durations) {
 
-		long firstRun = durations.remove(0);
+		long firstRun = durations.get(0);
 		int halfListSize = durations.size()/2;
 		List<Long> runsWithoutCache = durations.subList(0, halfListSize);
 		for (long duration: runsWithoutCache){
-			LOG.debug("duration without cache: " + duration/1_000_000.0);
+			LOG.info("duration without cache: " + duration/1_000_000.0);
 		}
 		List<Long> runsWithCache = durations.subList(halfListSize, durations.size());
 		for (long duration: runsWithCache){
-			LOG.debug("duration with cache: " + duration/1_000_000.0);
+			LOG.info("duration with cache: " + duration/1_000_000.0);
 		}
 
 		double averageWithoutCache = runsWithoutCache.stream().mapToLong(Long::longValue).average().orElse(Double.NaN);

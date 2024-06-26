@@ -27,7 +27,7 @@ from typing import (TYPE_CHECKING, Dict, Iterable, Optional, Sequence, Tuple,
 
 import numpy as np
 from py4j.java_gateway import JavaObject, JVMView
-from systemds.operator import OperationNode
+from systemds.operator.operation_node import OperationNode
 from systemds.script_building.dag import OutputType
 from systemds.utils.consts import (BINARY_OPERATIONS, VALID_ARITHMETIC_TYPES,
                                    VALID_INPUT_TYPES)

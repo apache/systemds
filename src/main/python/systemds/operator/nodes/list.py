@@ -25,7 +25,8 @@ from typing import Dict, Iterable, List, Sequence, Tuple, Union
 
 import numpy as np
 from py4j.java_gateway import JavaObject
-from systemds.operator import ListAccess, OperationNode
+from systemds.operator.operation_node import OperationNode
+from systemds.operator.nodes.list_access import ListAccess
 from systemds.script_building.dag import OutputType
 from systemds.utils.consts import VALID_INPUT_TYPES
 from systemds.utils.converters import numpy_to_matrix_block

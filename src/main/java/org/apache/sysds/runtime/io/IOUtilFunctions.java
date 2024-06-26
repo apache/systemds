@@ -176,14 +176,22 @@ public class IOUtilFunctions {
 		}
 	}
 
-	public static void checkAndRaiseErrorCSVNumColumns(String fname, String line, String[] parts, long ncol) 
+	public static void checkAndRaiseErrorCSVNumColumns(InputSplit split, String line, String[] parts, long ncol) 
+		throws IOException
+	{
+		int realncol = parts==null ? 1 : parts.length;
+		if( realncol != ncol ) {
+			checkAndRaiseErrorCSVNumColumns(split.toString(), line, parts, realncol);
+		}
+	}
+	
+	public static void checkAndRaiseErrorCSVNumColumns(String src, String line, String[] parts, long ncol) 
 		throws IOException
 	{
 		int realncol = parts.length;
-		
 		if( realncol != ncol ) {
 			throw new IOException("Invalid number of columns (" + realncol + ", expected=" + ncol + ") "
-					+ "found in delimited file (" + fname + ") for line: " + line + "\n" + Arrays.toString(parts));
+					+ "found in delimited file (" + src + ") for line: " + line + "\n" + Arrays.toString(parts));
 		}
 	}
 	

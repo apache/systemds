@@ -1,0 +1,93 @@
+#-------------------------------------------------------------
+#
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+#
+#-------------------------------------------------------------
+
+# This raSelection-function takes a matrix data set as input from where it performs
+# relational operations : selection
+#
+# INPUT:
+# ------------------------------------------------------------------------------
+# X         Matrix of input data [shape: N x M]
+# col       Integer indicating the column index to execute grupby command
+# ------------------------------------------------------------------------------
+#
+# OUTPUT:
+# ------------------------------------------------------------------------------
+# Y         Matrix of selected data [shape N' x M] with N' <= N
+# ------------------------------------------------------------------------------
+
+m_raGroupby = function (Matrix[Double] X, Integer col)
+  return (Matrix[Double] Y)
+{
+    # Extract and sort unique values from the specified column (1-based index)
+    uniqueValues = unique(X[, col])
+    order_uniqueValues = order(target = uniqueValues, by = 1);
+
+    # Calcute the number of groups
+    numGroups = nrow(uniqueValues)
+
+    # Determine the maximum number of rows in any group
+    maxRowsInGroup = 0
+    for(i in 1:numGroups){
+        groupValue = uniqueValues[i,1]
+        groupRows = ( X[,col] == groupValue )
+
+        groupSize = sum(groupRows)
+        if( groupSize > maxRowsInGroup ){
+            maxRowsInGroup = groupSize
+        }
+    }
+
+    # Define a zero matrix to put the group data into
+    Y=matrix(0,numGroups,maxRowsInGroup*(ncol(X)-1)+1)
+
+    # Put the ordered uniqueValues into first column of Y as group_id
+    Y[,1] = order_uniqueValues
+
+    # Loop for each group
+    for(i in 1:numGroups){
+        index = 0
+
+        # Iterate each row in matrix X to deal with group data
+        for ( j in 1:nrow(X) ) {
+            if ( as.scalar( X[j,col] == order_uniqueValues[i,1] )) {
+
+                # Define the formula of the start and end column position
+                startCol = index*(ncol(X)-1) +2
+                endCol = startCol + (ncol(X)-2)
+
+                if (col == 1) {
+                    # Case when the selected column is the first column
+                    Y[i,startCol:endCol]=X[j,2:ncol(X)]
+                }  else if (col == ncol(X)) {
+                    # Case when the selected column is the last column
+                    Y[i,startCol:endCol]=X[j,1:(ncol(X)-1)]
+                } else {
+                     # General case
+                     newRow = cbind(X[j, 1:(col-1)], X[j, (col+1):ncol(X)])
+                     Y[i,startCol:endCol]=newRow
+                }
+
+                index = index +1
+            }
+        }
+    }
+}
+

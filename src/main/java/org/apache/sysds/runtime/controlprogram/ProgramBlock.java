@@ -263,6 +263,10 @@ public abstract class ProgramBlock implements ParseInfo {
 				if(DMLScript.STATISTICS) {
 					Statistics.maintainCPHeavyHitters(tmp.getExtendedOpcode(), System.nanoTime() - t0);
 				}
+
+				if (DMLScript.STATISTICS_NGRAMS) {
+					Statistics.maintainNGrams(tmp.getExtendedOpcode(), System.nanoTime() - t0);
+				}
 			}
 
 			// optional trace information (instruction and runtime)

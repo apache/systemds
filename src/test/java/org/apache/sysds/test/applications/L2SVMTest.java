@@ -83,6 +83,7 @@ public class L2SVMTest extends AutomatedTestBase
 
 		List<String> proArgs = new ArrayList<>();
 		proArgs.add("-stats");
+		proArgs.add("-ngrams");
 		proArgs.add("-nvargs");
 		proArgs.add("X=" + input("X"));
 		proArgs.add("Y=" + input("Y"));

@@ -34,10 +34,11 @@ import org.apache.sysds.runtime.instructions.spark.SPInstruction;
 import org.apache.sysds.runtime.lineage.LineageCacheConfig.ReuseCacheType;
 import org.apache.sysds.runtime.lineage.LineageCacheStatistics;
 import org.apache.sysds.utils.stats.CodegenStatistics;
-import org.apache.sysds.utils.stats.RecompileStatistics;
+import org.apache.sysds.utils.stats.NGramBuilder;
 import org.apache.sysds.utils.stats.NativeStatistics;
-import org.apache.sysds.utils.stats.ParamServStatistics;
 import org.apache.sysds.utils.stats.ParForStatistics;
+import org.apache.sysds.utils.stats.ParamServStatistics;
+import org.apache.sysds.utils.stats.RecompileStatistics;
 import org.apache.sysds.utils.stats.SparkStatistics;
 import org.apache.sysds.utils.stats.TransformStatistics;
 
@@ -49,6 +50,7 @@ import java.util.Arrays;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -71,7 +73,8 @@ public class Statistics
 	private static long execEndTime = 0;
 	
 	//heavy hitter counts and times 
-	private static final ConcurrentHashMap<String,InstStats>_instStats = new ConcurrentHashMap<>();
+	private static final ConcurrentHashMap<String,InstStats> _instStats = new ConcurrentHashMap<>();
+	private static final ConcurrentHashMap<String, NGramBuilder<String>> _instStatsNGram = new ConcurrentHashMap<>();
 
 	// number of compiled/executed SP instructions
 	private static final LongAdder numExecutedSPInst = new LongAdder();
@@ -352,6 +355,92 @@ public class Statistics
 		//thread-local maintenance of instruction stats
 		tmp.time.add(timeNanos);
 		tmp.count.increment();
+	}
+
+	public static void maintainNGrams(String instName, long timeNanos) {
+		NGramBuilder<String> tmp = _instStatsNGram.computeIfAbsent(Thread.currentThread().getName(), k -> new NGramBuilder<>(String.class, DMLScript.STATISTICS_MAX_NGRAM_SIZE, s -> s));
+		tmp.append(instName);
+	}
+
+	public static NGramBuilder<String> mergeNGrams() {
+		NGramBuilder<String> builder = null;
+		for (Map.Entry<String, NGramBuilder<String>> entry : _instStatsNGram.entrySet()) {
+			if (builder == null)
+				builder = entry.getValue();
+			else
+				builder.merge(entry.getValue());
+		}
+		return builder == null ? new NGramBuilder<>(String.class, DMLScript.STATISTICS_MAX_NGRAM_SIZE, s -> s) : builder;
+	}
+
+	public static String getCommonNGrams(int num) {
+		if (num <= 0 || _instStatsNGram.size() <= 0)
+			return "-";
+
+		NGramBuilder<String> builder = mergeNGrams();
+		@SuppressWarnings("unchecked")
+		NGramBuilder.NGramEntry<String>[] topNGrams = builder.getTopK(num).toArray(NGramBuilder.NGramEntry[]::new);
+
+		final String numCol = "#";
+		final String instCol = "Instruction";
+		final String timeSCol = "Time(s)";
+		final String countCol = "Count";
+		StringBuilder sb = new StringBuilder();
+		int len = topNGrams.length;
+		int numHittersToDisplay = Math.min(num, len);
+		int maxNumLen = String.valueOf(numHittersToDisplay).length();
+		int maxInstLen = instCol.length();
+		int maxTimeSLen = timeSCol.length();
+		int maxCountLen = countCol.length();
+		DecimalFormat sFormat = new DecimalFormat("#,##0.000");
+
+		/*for (int i = 0; i < numHittersToDisplay; i++) {
+			Entry<String, InstStats> hh = tmp[len - 1 - i];
+			String instruction = hh.getKey();
+			long timeNs = hh.getValue().time.longValue();
+			double timeS = timeNs / 1000000000d;
+
+			maxInstLen = Math.max(maxInstLen, instruction.length());
+
+			String timeSString = sFormat.format(timeS);
+			maxTimeSLen = Math.max(maxTimeSLen, timeSString.length());
+
+			maxCountLen = Math.max(maxCountLen, String.valueOf(hh.getValue().count.longValue()).length());
+		}*/
+
+		maxInstLen = Math.min(maxInstLen, DMLScript.STATISTICS_MAX_WRAP_LEN);
+		sb.append(String.format( " %" + maxNumLen + "s  %-" + maxInstLen + "s  %"
+				+ maxTimeSLen + "s  %" + maxCountLen + "s", numCol, instCol, timeSCol, countCol));
+		sb.append("\n");
+		for (int i = 0; i < numHittersToDisplay; i++) {
+			String instruction = topNGrams[i].getIdentifier();
+			String [] wrappedInstruction = wrap(instruction, maxInstLen);
+
+			//long timeNs = tmp[len - 1 - i].getValue().time.longValue();
+			//double timeS = timeNs / 1000000000d;
+			String timeSString = sFormat.format(0.0);
+
+			long count = topNGrams[i].getOccurrences();
+			int numLines = wrappedInstruction.length;
+
+			for(int wrapIter = 0; wrapIter < numLines; wrapIter++) {
+				String instStr = (wrapIter < wrappedInstruction.length) ? wrappedInstruction[wrapIter] : "";
+				if(wrapIter == 0) {
+					// Display instruction count
+					sb.append(String.format(
+							" %" + maxNumLen + "d  %-" + maxInstLen + "s  %" + maxTimeSLen + "s  %" + maxCountLen + "d",
+							(i + 1), instStr, timeSString, count));
+				}
+				else {
+					sb.append(String.format(
+							" %" + maxNumLen + "s  %-" + maxInstLen + "s  %" + maxTimeSLen + "s  %" + maxCountLen + "s",
+							"", instStr, "", ""));
+				}
+				sb.append("\n");
+			}
+		}
+
+		return sb.toString();
 	}
 	
 	public static void maintainCPFuncCallStats(String instName) {
@@ -677,6 +766,10 @@ public class Statistics
 			sb.append("Total JVM GC count:\t\t" + getJVMgcCount() + ".\n");
 			sb.append("Total JVM GC time:\t\t" + ((double)getJVMgcTime())/1000 + " sec.\n");
 			sb.append("Heavy hitter instructions:\n" + getHeavyHitters(maxHeavyHitters));
+		}
+
+		if (DMLScript.STATISTICS_NGRAMS) {
+			sb.append("Most common n-grams:\n" + getCommonNGrams(10));
 		}
 
 		if(DMLScript.FED_STATISTICS) {

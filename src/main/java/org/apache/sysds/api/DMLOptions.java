@@ -53,7 +53,9 @@ public class DMLOptions {
 	public String               configFile    = null;             // Path to config file if default config and default config is to be overridden
 	public boolean              clean         = false;            // Whether to clean up all SystemDS working directories (FS, DFS)
 	public boolean              stats         = false;            // Whether to record and print the statistics
+	public boolean              stats_ngrams  = false;            // Whether to record and print the statistics n-grams
 	public int                  statsCount    = 10;               // Default statistics count
+	public int                  statsMaxNGramSize = 3;                // The maximum size of n-gram tuples
 	public boolean              fedStats      = false;            // Whether to record and print the federated statistics
 	public int                  fedStatsCount = 10;               // Default federated statistics count
 	public boolean              memStats      = false;            // max memory statistics
@@ -212,6 +214,19 @@ public class DMLOptions {
 				}
 			}
 		}
+
+		dmlOptions.stats_ngrams = line.hasOption("ngrams");
+		if (dmlOptions.stats_ngrams){
+			String nGramSize = line.getOptionValue("ngrams");
+			if (nGramSize != null) {
+				try {
+					dmlOptions.statsMaxNGramSize = Integer.parseInt(nGramSize);
+				} catch (NumberFormatException e) {
+					throw new org.apache.commons.cli.ParseException("Invalid argument specified for -ngrams option, must be a valid integer");
+				}
+			}
+		}
+
 		dmlOptions.fedStats = line.hasOption("fedStats");
 		if (dmlOptions.fedStats) {
 			String fedStatsCount = line.getOptionValue("fedStats");
@@ -335,6 +350,9 @@ public class DMLOptions {
 		Option statsOpt = OptionBuilder.withArgName("count")
 			.withDescription("monitors and reports summary execution statistics; heavy hitter <count> is 10 unless overridden; default off")
 			.hasOptionalArg().create("stats");
+		Option ngramsOpt = OptionBuilder.withArgName("maxN")
+			.withDescription("monitors and reports the most occurring n-grams")
+			.hasOptionalArg().create("ngrams");
 		Option fedStatsOpt = OptionBuilder.withArgName("count")
 			.withDescription("monitors and reports summary execution statistics of federated workers; heavy hitter <count> is 10 unless overridden; default off")
 			.hasOptionalArg().create("fedStats");
@@ -396,6 +414,7 @@ public class DMLOptions {
 		options.addOption(configOpt);
 		options.addOption(cleanOpt);
 		options.addOption(statsOpt);
+		options.addOption(ngramsOpt);
 		options.addOption(fedStatsOpt);
 		options.addOption(memOpt);
 		options.addOption(explainOpt);

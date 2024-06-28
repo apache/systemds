@@ -369,8 +369,6 @@ public class Statistics
 		for (Map.Entry<String, NGramBuilder<String, Long>> entry : _instStatsNGram.entrySet()) {
 			if (builder == null) {
 				builder = entry.getValue();
-
-
 			} else {
 				builder.merge(entry.getValue());
 

@@ -55,7 +55,9 @@ public class DMLOptions {
 	public boolean              stats         = false;            // Whether to record and print the statistics
 	public boolean              stats_ngrams  = false;            // Whether to record and print the statistics n-grams
 	public int                  statsCount    = 10;               // Default statistics count
-	public int                  statsMaxNGramSize = 3;                // The maximum size of n-gram tuples
+	public int                  statsMinNGramSize = 3;            // The minimum size of n-gram tuples
+	public int                  statsMaxNGramSize = 3;            // The maximum size of n-gram tuples
+	public int                  statsTopKNGrams = 10;             // How many of the most heavy hitting n-grams are displayed
 	public boolean              fedStats      = false;            // Whether to record and print the federated statistics
 	public int                  fedStatsCount = 10;               // Default federated statistics count
 	public boolean              memStats      = false;            // max memory statistics
@@ -217,10 +219,12 @@ public class DMLOptions {
 
 		dmlOptions.stats_ngrams = line.hasOption("ngrams");
 		if (dmlOptions.stats_ngrams){
-			String nGramSize = line.getOptionValue("ngrams");
-			if (nGramSize != null) {
+			String[] nGramArgs = line.getOptionValues("ngrams");
+			if (nGramArgs.length == 3) {
 				try {
-					dmlOptions.statsMaxNGramSize = Integer.parseInt(nGramSize);
+					dmlOptions.statsMinNGramSize = Integer.parseInt(nGramArgs[0]);
+					dmlOptions.statsMaxNGramSize = Integer.parseInt(nGramArgs[1]);
+					dmlOptions.statsTopKNGrams = Integer.parseInt(nGramArgs[2]);
 				} catch (NumberFormatException e) {
 					throw new org.apache.commons.cli.ParseException("Invalid argument specified for -ngrams option, must be a valid integer");
 				}
@@ -351,8 +355,8 @@ public class DMLOptions {
 			.withDescription("monitors and reports summary execution statistics; heavy hitter <count> is 10 unless overridden; default off")
 			.hasOptionalArg().create("stats");
 		Option ngramsOpt = OptionBuilder.withArgName("maxN")
-			.withDescription("monitors and reports the most occurring n-grams")
-			.hasOptionalArg().create("ngrams");
+			.withDescription("monitors and reports the most occurring n-grams; -ngrams <minN> <maxN> <topK>")
+			.hasOptionalArgs(3).create("ngrams");
 		Option fedStatsOpt = OptionBuilder.withArgName("count")
 			.withDescription("monitors and reports summary execution statistics of federated workers; heavy hitter <count> is 10 unless overridden; default off")
 			.hasOptionalArg().create("fedStats");

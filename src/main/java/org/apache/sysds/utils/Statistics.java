@@ -74,7 +74,7 @@ public class Statistics
 	
 	//heavy hitter counts and times 
 	private static final ConcurrentHashMap<String,InstStats> _instStats = new ConcurrentHashMap<>();
-	private static final ConcurrentHashMap<String, NGramBuilder<String>> _instStatsNGram = new ConcurrentHashMap<>();
+	private static final ConcurrentHashMap<String, NGramBuilder<String, Long>> _instStatsNGram = new ConcurrentHashMap<>();
 
 	// number of compiled/executed SP instructions
 	private static final LongAdder numExecutedSPInst = new LongAdder();
@@ -255,6 +255,8 @@ public class Statistics
 		DMLCompressionStatistics.reset();
 
 		FederatedStatistics.reset();
+
+		_instStatsNGram.clear();
 	}
 
 	public static void resetJITCompileTime(){
@@ -358,31 +360,44 @@ public class Statistics
 	}
 
 	public static void maintainNGrams(String instName, long timeNanos) {
-		NGramBuilder<String> tmp = _instStatsNGram.computeIfAbsent(Thread.currentThread().getName(), k -> new NGramBuilder<>(String.class, DMLScript.STATISTICS_MAX_NGRAM_SIZE, s -> s));
-		tmp.append(instName);
+		NGramBuilder<String, Long> tmp = _instStatsNGram.computeIfAbsent(Thread.currentThread().getName(), k -> new NGramBuilder<>(String.class, Long.class, DMLScript.STATISTICS_MAX_NGRAM_SIZE, DMLScript.STATISTICS_MIN_NGRAM_SIZE, s -> s, Long::sum));
+		tmp.append(instName, timeNanos);
 	}
 
-	public static NGramBuilder<String> mergeNGrams() {
-		NGramBuilder<String> builder = null;
-		for (Map.Entry<String, NGramBuilder<String>> entry : _instStatsNGram.entrySet()) {
-			if (builder == null)
+	public static NGramBuilder<String, Long> mergeNGrams() {
+		NGramBuilder<String, Long> builder = null;
+		for (Map.Entry<String, NGramBuilder<String, Long>> entry : _instStatsNGram.entrySet()) {
+			if (builder == null) {
 				builder = entry.getValue();
-			else
+
+
+			} else {
 				builder.merge(entry.getValue());
+
+				// Recursively merge children
+				NGramBuilder<String, Long> child1 = builder.getChild();
+				NGramBuilder<String, Long> child2 = entry.getValue().getChild();
+
+				while (child1 != null && child2 != null) {
+					child1.merge(child2);
+					child1 = child1.getChild();
+					child2 = child2.getChild();
+				}
+			}
 		}
-		return builder == null ? new NGramBuilder<>(String.class, DMLScript.STATISTICS_MAX_NGRAM_SIZE, s -> s) : builder;
+		return builder == null ? new NGramBuilder<>(String.class, Long.class, DMLScript.STATISTICS_MAX_NGRAM_SIZE, DMLScript.STATISTICS_MIN_NGRAM_SIZE, s -> s, Long::sum) : builder;
 	}
 
-	public static String getCommonNGrams(int num) {
+	public static String getCommonNGrams(NGramBuilder<String, Long> builder, int num) {
 		if (num <= 0 || _instStatsNGram.size() <= 0)
 			return "-";
 
-		NGramBuilder<String> builder = mergeNGrams();
+		//NGramBuilder<String, Long> builder = mergeNGrams();
 		@SuppressWarnings("unchecked")
-		NGramBuilder.NGramEntry<String>[] topNGrams = builder.getTopK(num).toArray(NGramBuilder.NGramEntry[]::new);
+		NGramBuilder.NGramEntry<String, Long>[] topNGrams = builder.getTopK(num, Comparator.comparing(NGramBuilder.NGramEntry::getCumStats), true).toArray(NGramBuilder.NGramEntry[]::new);
 
 		final String numCol = "#";
-		final String instCol = "Instruction";
+		final String instCol = "N-Gram";
 		final String timeSCol = "Time(s)";
 		final String countCol = "Count";
 		StringBuilder sb = new StringBuilder();
@@ -394,19 +409,18 @@ public class Statistics
 		int maxCountLen = countCol.length();
 		DecimalFormat sFormat = new DecimalFormat("#,##0.000");
 
-		/*for (int i = 0; i < numHittersToDisplay; i++) {
-			Entry<String, InstStats> hh = tmp[len - 1 - i];
-			String instruction = hh.getKey();
-			long timeNs = hh.getValue().time.longValue();
+		for (int i = 0; i < numHittersToDisplay; i++) {
+			long timeNs = topNGrams[i].getCumStats();
+			String instruction = topNGrams[i].getIdentifier();
 			double timeS = timeNs / 1000000000d;
 
-			maxInstLen = Math.max(maxInstLen, instruction.length());
+			maxInstLen = Math.max(maxInstLen, instruction.length() + 1);
 
 			String timeSString = sFormat.format(timeS);
 			maxTimeSLen = Math.max(maxTimeSLen, timeSString.length());
 
-			maxCountLen = Math.max(maxCountLen, String.valueOf(hh.getValue().count.longValue()).length());
-		}*/
+			maxCountLen = Math.max(maxCountLen, String.valueOf(topNGrams[i].getOccurrences()).length());
+		}
 
 		maxInstLen = Math.min(maxInstLen, DMLScript.STATISTICS_MAX_WRAP_LEN);
 		sb.append(String.format( " %" + maxNumLen + "s  %-" + maxInstLen + "s  %"
@@ -417,8 +431,8 @@ public class Statistics
 			String [] wrappedInstruction = wrap(instruction, maxInstLen);
 
 			//long timeNs = tmp[len - 1 - i].getValue().time.longValue();
-			//double timeS = timeNs / 1000000000d;
-			String timeSString = sFormat.format(0.0);
+			double timeS = topNGrams[i].getCumStats() / 1000000000d;
+			String timeSString = sFormat.format(timeS);
 
 			long count = topNGrams[i].getOccurrences();
 			int numLines = wrappedInstruction.length;
@@ -769,7 +783,11 @@ public class Statistics
 		}
 
 		if (DMLScript.STATISTICS_NGRAMS) {
-			sb.append("Most common n-grams:\n" + getCommonNGrams(10));
+			NGramBuilder<String, Long> currentNGram = mergeNGrams();
+			for (int n = DMLScript.STATISTICS_MAX_NGRAM_SIZE; n > 0 && currentNGram != null; n--) {
+				sb.append("Most common " + n + "-grams:\n" + getCommonNGrams(currentNGram, DMLScript.STATISTICS_TOP_K_NGRAMS));
+				currentNGram = currentNGram.getChild();
+			}
 		}
 
 		if(DMLScript.FED_STATISTICS) {

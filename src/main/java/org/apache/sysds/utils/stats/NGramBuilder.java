@@ -105,7 +105,7 @@ public class NGramBuilder<T, U> {
 		}
 	}
 
-	public NGramBuilder<T, U> getChild() {
+	public synchronized NGramBuilder<T, U> getChild() {
 		return smallerNGramBuilder;
 	}
 
@@ -153,7 +153,7 @@ public class NGramBuilder<T, U> {
 		}
 	}
 
-	public List<NGramEntry<T, U>> getTopK(int k) {
+	public synchronized List<NGramEntry<T, U>> getTopK(int k) {
 		return nGrams.entrySet().stream()
 				.sorted(Comparator.comparingLong((Map.Entry<String, NGramEntry<T, U>> v) -> v.getValue().occurrences).reversed())
 				.map(Map.Entry::getValue)
@@ -161,7 +161,7 @@ public class NGramBuilder<T, U> {
 				.collect(Collectors.toList());
 	}
 
-	public List<NGramEntry<T, U>> getTopK(int k, Comparator<NGramEntry<T, U>> comparator, boolean reversed) {
+	public synchronized List<NGramEntry<T, U>> getTopK(int k, Comparator<NGramEntry<T, U>> comparator, boolean reversed) {
 		return nGrams.entrySet().stream()
 				.sorted((e1, e2) -> reversed ? comparator.compare(e2.getValue(), e1.getValue()) : comparator.compare(e1.getValue(), e2.getValue()))
 				.map(Map.Entry::getValue)
@@ -169,7 +169,7 @@ public class NGramBuilder<T, U> {
 				.collect(Collectors.toList());
 	}
 
-	private void registerElement(String id, U stat) {
+	private synchronized void registerElement(String id, U stat) {
 		nGrams.compute(id, (key, entry) ->  {
 			if (entry == null) {
 				U cumStat = currentStats[0];
@@ -185,7 +185,7 @@ public class NGramBuilder<T, U> {
 				U cumStat = null;
 
 				for (int i = 0; i < stats.length; i++) {
-					stats[i] = statsMerger.apply(stats[i], stat);
+					stats[i] = statsMerger.apply(stats[i], currentStats[i]);
 					if (i == 0) {
 						cumStat = stats[0];
 					} else {

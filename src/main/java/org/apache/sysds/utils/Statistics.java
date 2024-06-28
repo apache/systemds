@@ -785,7 +785,7 @@ public class Statistics
 		if (DMLScript.STATISTICS_NGRAMS) {
 			NGramBuilder<String, Long> currentNGram = mergeNGrams();
 			for (int n = DMLScript.STATISTICS_MAX_NGRAM_SIZE; n > 0 && currentNGram != null; n--) {
-				sb.append("Most common " + n + "-grams:\n" + getCommonNGrams(currentNGram, DMLScript.STATISTICS_TOP_K_NGRAMS));
+				sb.append("Most common " + n + "-grams (sorted by absolute time):\n" + getCommonNGrams(currentNGram, DMLScript.STATISTICS_TOP_K_NGRAMS));
 				currentNGram = currentNGram.getChild();
 			}
 		}

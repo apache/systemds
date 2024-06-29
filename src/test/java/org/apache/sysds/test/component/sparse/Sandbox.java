@@ -56,10 +56,12 @@ public class Sandbox extends AutomatedTestBase{
 		 //System.out.println(sblock);
 
 		SparseBlock newBlock = new SparseBlockMCSC(sblock);
+		long nnz = sblock.size(0,4,0,6);
 
-		System.out.println(newBlock);
+		System.out.println(nnz);
 
-		System.out.println(((SparseBlockMCSR) sblock).getExactSizeInMemory());
+
+
 
 
 

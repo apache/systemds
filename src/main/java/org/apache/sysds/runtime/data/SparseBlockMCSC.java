@@ -344,8 +344,8 @@ public class SparseBlockMCSC extends SparseBlock{
 		long nnz = 0;
 		for(int i=cl; i<cu; i++) {
 			if(!isEmpty(i)) {
-				int start = posFIndexGTE(i, rl);
-				int end = posFIndexGTE(i, ru);
+				int start = posFIndexGTE(rl, i);
+				int end = posFIndexGTE(ru, i);
 				nnz += (start != -1) ? (end - start) : 0;
 			}
 		}

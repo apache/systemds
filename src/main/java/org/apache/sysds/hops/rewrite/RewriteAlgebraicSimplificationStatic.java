@@ -164,6 +164,7 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 			hi = pushdownUnaryAggTransposeOperation(hop, hi, i); //e.g., colSums(t(X)) -> t(rowSums(X))
 			hi = pushdownCSETransposeScalarOperation(hop, hi, i);//e.g., a=t(X), b=t(X^2) -> a=t(X), b=t(X)^2 for CSE t(X)
 			hi = pushdownSumBinaryMult(hop, hi, i);              //e.g., sum(lambda*X) -> lambda*sum(X)
+			hi = pullupAbs(hop, hi, i);                          //e.g., abs(X)*abs(Y) --> abs(X*Y)
 			hi = simplifyUnaryPPredOperation(hop, hi, i);        //e.g., abs(ppred()) -> ppred(), others: round, ceil, floor
 			hi = simplifyTransposedAppend(hop, hi, i);           //e.g., t(cbind(t(A),t(B))) -> rbind(A,B);
 			if(OptimizerUtils.ALLOW_OPERATOR_FUSION)
@@ -1122,6 +1123,25 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 		return hi;
 	}
 
+	private static Hop pullupAbs(Hop parent, Hop hi, int pos ) {
+		if( HopRewriteUtils.isBinary(hi, OpOp2.MULT)
+			&& HopRewriteUtils.isUnary(hi.getInput(0), OpOp1.ABS) 
+			&& hi.getInput(0).getParent().size()==1
+			&& HopRewriteUtils.isUnary(hi.getInput(1), OpOp1.ABS) 
+			&& hi.getInput(1).getParent().size()==1)
+		{
+			Hop operand1 = hi.getInput(0).getInput(0);
+			Hop operand2 = hi.getInput(1).getInput(0);
+			Hop bop = HopRewriteUtils.createBinary(operand1, operand2, OpOp2.MULT);
+			Hop uop = HopRewriteUtils.createUnary(bop, OpOp1.ABS);
+			HopRewriteUtils.replaceChildReference(parent, hi, uop, pos);
+			
+			LOG.debug("Applied pullupAbs (line "+hi.getBeginLine()+").");
+			return uop;
+		}
+		return hi;
+	}
+	
 	private static Hop simplifyUnaryPPredOperation( Hop parent, Hop hi, int pos )
 	{
 		if( hi instanceof UnaryOp && hi.getDataType()==DataType.MATRIX  //unaryop

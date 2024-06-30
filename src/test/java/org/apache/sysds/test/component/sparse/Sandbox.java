@@ -32,6 +32,12 @@ public class Sandbox extends AutomatedTestBase{
 						{0, 30, 0, 40, 0, 0},
 						{0, 0, 50, 60, 70, 0},
 						{0, 0, 0, 0, 0, 80}};
+		int rows = 4;
+		int cols = 6;
+		int rl = 0;
+		int ru = 4;
+		int cl = 0;
+		int cu = 6;
 
 		SparseBlock sblock = null;
 		MatrixBlock mbtmp = DataConverter.convertToMatrixBlock(A);
@@ -53,12 +59,18 @@ public class Sandbox extends AutomatedTestBase{
 				break;
 		}
 
-		 //System.out.println(sblock);
-
-		SparseBlock newBlock = new SparseBlockMCSC(sblock);
-		long nnz = sblock.size(0,4,0,6);
+		int nnz = 0;
+		for( int i=0; i<rows; i++ ) {
+			for( int j=0; j<cols; j++ ) {
+				nnz += (i>=rl && j>=cl && i<ru && j<cu && A[i][j]!=0) ? 1 : 0;
+			}
+		}
 
 		System.out.println(nnz);
+		SparseBlock newBlock = new SparseBlockMCSC(sblock);
+		long nnz2 = newBlock.size(rl,ru,cl,cu);
+
+		System.out.println(nnz2);
 
 
 

@@ -199,8 +199,7 @@ public class SparseBlockSize extends AutomatedTestBase
 			if( sblock.size(rl, ru, cl, cu) != nnz2 )
 				Assert.fail("Wrong number of range non-zeros: " +
 						sblock.size(rl, ru, cl, cu)+", expected: "+nnz2);
-			System.out.println(sblock.size(rl, ru, cl, cu));
-			System.out.println(nnz2);
+
 		}
 		catch(Exception ex) {
 			ex.printStackTrace();

@@ -45,16 +45,7 @@ m_raGroupby = function (Matrix[Double] X, Integer col, String method="nested-loo
   numGroups = nrow(uniqueValues)
 
   # Determine the maximum number of rows in any group
-  maxRowsInGroup = 0
-  for(i in 1:numGroups){
-    groupValue = uniqueValues[i,1]
-    groupRows = ( X[,col] == groupValue )
-
-    groupSize = sum(groupRows)
-    if( groupSize > maxRowsInGroup ){
-      maxRowsInGroup = groupSize
-    }
-  }
+  maxRowsInGroup = max(table(X[,col],1));
 
   # Define a zero matrix to put the group data into
   Y=matrix(0,numGroups,maxRowsInGroup*(ncol(X)-1)+1)

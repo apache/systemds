@@ -35,6 +35,7 @@ class Affine(Layer):
             and the number of features output
         """
         super().__init__(sds_context, 'affine.dml')
+        self._X = None
 
         # init weight and bias
         self.weight = Matrix(sds_context, '')
@@ -94,4 +95,6 @@ class Affine(Layer):
         X: The input to this layer.
         return dX, dW,db: gradient of input, weights and bias, respectively
         """
-        return Affine.backward(dout, X, self.weight, self.bias)
+        gradients = Affine.backward(dout, X, self.weight, self.bias)
+        self._X = gradients[0]
+        return gradients

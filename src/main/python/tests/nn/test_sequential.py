@@ -44,6 +44,18 @@ class TestLayerImpl(Layer):
         return dout - self.test_id
 
 
+class MultiReturnImpl(Layer):
+    def __init__(self, sds):
+        super().__init__()
+        self.sds = sds
+
+    def _instance_forward(self, X: Matrix):
+        return MultiReturn(self.sds, "test.dml", output_nodes=[X, 'some_random_return'])
+
+    def _instance_backward(self, dout: Matrix, X: Matrix):
+        return MultiReturn(self.sds, "test.dml", output_nodes=[dout, X, 'some_random_return'])
+
+
 class TestSequential(unittest.TestCase):
     sds: SystemDSContext = None
 
@@ -214,18 +226,25 @@ class TestSequential(unittest.TestCase):
         out_matrix = model.forward(in_matrix)
         gradient = model.backward(out_matrix, in_matrix).compute()
 
+        # Test returned gradient
         expected = np.array([[0.14976, -0.14976], [0.14976, -0.14976]])
         assert_almost_equal(gradient, expected)
+
+        # Test if layers have been updated correctly
+        expected_gradients = [
+            np.array([[0.14976, -0.14976], [0.14976, -0.14976]]),
+            np.array([[0.14976, -0.14976], [0.14976, -0.14976]]),
+            np.array([[0.1872, -0.1872], [0.1872, -0.1872]]),
+        ]
+        for i, layer in enumerate(model):
+            if isinstance(layer, Affine):
+                assert_almost_equal(layer._X.compute(), expected_gradients[int(i / 2)])
 
     def test_multireturn_forward_pass(self):
         """
         Test that forward() handles MultiReturn correctly
         """
-        class MultiReturnImpl(Layer):
-            def _instance_forward(impl_self, X: Matrix):
-                return MultiReturn(self.sds, "test.dml", output_nodes=[X, 'some_random_return'])
-
-        model = Sequential(MultiReturnImpl(), TestLayerImpl(1))
+        model = Sequential(MultiReturnImpl(self.sds), TestLayerImpl(1))
         in_matrix = self.sds.from_numpy(np.array([[1, 2], [3, 4]]))
         out_matrix = model.forward(in_matrix).compute()
         self.assertEqual(out_matrix.tolist(), [[2, 3], [4, 5]])
@@ -234,12 +253,52 @@ class TestSequential(unittest.TestCase):
         """
         Test that backward() handles MultiReturn correctly
         """
-        class MultiReturnImpl(Layer):
-            def _instance_backward(impl_self, dout: Matrix, X: Matrix):
-                return MultiReturn(self.sds, "test.dml", output_nodes=[dout, X, 'some_random_return'])
-
-        model = Sequential(TestLayerImpl(1), MultiReturnImpl())
+        model = Sequential(TestLayerImpl(1), MultiReturnImpl(self.sds))
         in_matrix = self.sds.from_numpy(np.array([[1, 2], [3, 4]]))
         out_matrix = self.sds.from_numpy(np.array([[2, 3], [4, 5]]))
         gradient = model.backward(out_matrix, in_matrix).compute()
+        self.assertEqual(gradient.tolist(), [[1, 2], [3, 4]])
+
+    def test_multireturn_variation_multiple(self):
+        """
+        Test that multiple MultiReturn after each other are handled correctly
+        """
+        model = Sequential(MultiReturnImpl(self.sds), MultiReturnImpl(self.sds))
+        in_matrix = self.sds.from_numpy(np.array([[1, 2], [3, 4]]))
+        out_matrix = model.forward(in_matrix).compute()
+        self.assertEqual(out_matrix.tolist(), [[1, 2], [3, 4]])
+        gradient = model.backward(self.sds.from_numpy(out_matrix), in_matrix).compute()
+        self.assertEqual(gradient.tolist(), [[1, 2], [3, 4]])
+
+    def test_multireturn_variation_single_to_multiple(self):
+        """
+        Test that a single return into multiple MultiReturn are handled correctly
+        """
+        model = Sequential(TestLayerImpl(1), MultiReturnImpl(self.sds), MultiReturnImpl(self.sds))
+        in_matrix = self.sds.from_numpy(np.array([[1, 2], [3, 4]]))
+        out_matrix = model.forward(in_matrix).compute()
+        self.assertEqual(out_matrix.tolist(), [[2, 3], [4, 5]])
+        gradient = model.backward(self.sds.from_numpy(out_matrix), in_matrix).compute()
+        self.assertEqual(gradient.tolist(), [[1, 2], [3, 4]])
+
+    def test_multireturn_variation_multiple_to_single(self):
+        """
+        Test that multiple MultiReturn into a single return are handled correctly
+        """
+        model = Sequential(MultiReturnImpl(self.sds), MultiReturnImpl(self.sds), TestLayerImpl(1))
+        in_matrix = self.sds.from_numpy(np.array([[1, 2], [3, 4]]))
+        out_matrix = model.forward(in_matrix).compute()
+        self.assertEqual(out_matrix.tolist(), [[2, 3], [4, 5]])
+        gradient = model.backward(self.sds.from_numpy(out_matrix), in_matrix).compute()
+        self.assertEqual(gradient.tolist(), [[1, 2], [3, 4]])
+
+    def test_multireturn_variation_sandwich(self):
+        """
+        Test that a single return between two MultiReturn are handled correctly
+        """
+        model = Sequential(MultiReturnImpl(self.sds), TestLayerImpl(1), MultiReturnImpl(self.sds))
+        in_matrix = self.sds.from_numpy(np.array([[1, 2], [3, 4]]))
+        out_matrix = model.forward(in_matrix).compute()
+        self.assertEqual(out_matrix.tolist(), [[2, 3], [4, 5]])
+        gradient = model.backward(self.sds.from_numpy(out_matrix), in_matrix).compute()
         self.assertEqual(gradient.tolist(), [[1, 2], [3, 4]])

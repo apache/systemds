@@ -362,6 +362,86 @@ public class SparseBlockMerge extends AutomatedTestBase
 	public void testMergeDCSR_COO_3()  {
 		runSparseBlockMergeTest(SparseBlock.Type.DCSR, SparseBlock.Type.COO, sparsity3);
 	}
+
+	@Test
+	public void testMergeMCSC_MCSC_0()  {
+		runSparseBlockMergeTest(SparseBlock.Type.MCSC, SparseBlock.Type.MCSC, sparsity0);
+	}
+
+	@Test
+	public void testMergeMCSC_MCSC_1()  {
+		runSparseBlockMergeTest(SparseBlock.Type.MCSC, SparseBlock.Type.MCSC, sparsity1);
+	}
+
+	@Test
+	public void testMergeMCSC_MCSC_2()  {
+		runSparseBlockMergeTest(SparseBlock.Type.MCSC, SparseBlock.Type.MCSC, sparsity2);
+	}
+
+	@Test
+	public void testMergeMCSC_MCSC_3()  {
+		runSparseBlockMergeTest(SparseBlock.Type.MCSC, SparseBlock.Type.MCSC, sparsity3);
+	}
+
+	@Test
+	public void testMergeMCSC_CSR_0()  {
+		runSparseBlockMergeTest(SparseBlock.Type.MCSC, SparseBlock.Type.CSR, sparsity0);
+	}
+
+	@Test
+	public void testMergeMCSC_CSR_1()  {
+		runSparseBlockMergeTest(SparseBlock.Type.MCSC, SparseBlock.Type.CSR, sparsity1);
+	}
+
+	@Test
+	public void testMergeMCSC_CSR_2()  {
+		runSparseBlockMergeTest(SparseBlock.Type.MCSC, SparseBlock.Type.CSR, sparsity2);
+	}
+
+	@Test
+	public void testMergeMCSC_CSR_3()  {
+		runSparseBlockMergeTest(SparseBlock.Type.MCSC, SparseBlock.Type.CSR, sparsity3);
+	}
+
+	@Test
+	public void testMergeMCSC_COO_0()  {
+		runSparseBlockMergeTest(SparseBlock.Type.MCSC, SparseBlock.Type.COO, sparsity0);
+	}
+
+	@Test
+	public void testMergeMCSC_COO_1()  {
+		runSparseBlockMergeTest(SparseBlock.Type.MCSC, SparseBlock.Type.COO, sparsity1);
+	}
+
+	@Test
+	public void testMergeMCSC_COO_2()  {
+		runSparseBlockMergeTest(SparseBlock.Type.MCSC, SparseBlock.Type.COO, sparsity2);
+	}
+
+	@Test
+	public void testMergeMCSC_COO_3()  {
+		runSparseBlockMergeTest(SparseBlock.Type.MCSC, SparseBlock.Type.COO, sparsity3);
+	}
+
+	@Test
+	public void testMergeMCSC_DCSR_0()  {
+		runSparseBlockMergeTest(SparseBlock.Type.MCSC, SparseBlock.Type.DCSR, sparsity0);
+	}
+
+	@Test
+	public void testMergeMCSC_DCSR_1()  {
+		runSparseBlockMergeTest(SparseBlock.Type.MCSC, SparseBlock.Type.DCSR, sparsity1);
+	}
+
+	@Test
+	public void testMergeMCSC_DCSR_2()  {
+		runSparseBlockMergeTest(SparseBlock.Type.MCSC, SparseBlock.Type.DCSR, sparsity2);
+	}
+
+	@Test
+	public void testMergeMCSC_DCSR_3()  {
+		runSparseBlockMergeTest(SparseBlock.Type.MCSC, SparseBlock.Type.DCSR, sparsity3);
+	}
 	
 	private void runSparseBlockMergeTest( SparseBlock.Type btype1, SparseBlock.Type btype2, double sparsity)
 	{

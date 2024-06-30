@@ -19,34 +19,39 @@
 #
 #-------------------------------------------------------------
 
-# This raSelection-function takes a matrix data set as input from where it performs
-# relational operations : selection
+# This raJoin-function takes two matrix datasets as input from where it performs
+# relational operations : join
 #
 # INPUT:
 # ------------------------------------------------------------------------------
-# X         Matrix of input data [shape: N x M]
-# col       Integer indicating the column index to execute selection command
-# op        String specifying the comparison operator (e.g., ">", "<", "==").
-# val       Constant value to compare the column values "with col op val"
+# A         Matrix of left input data [shape: N x M]
+# colA      Integer indicating the column index of matrix A to execute inner join command
+# B         Matrix of right left data [shape: N x M]
+# colA      Integer indicating the column index of matrix B to execute inner join command
+# method    Join implementation method (nested-loop)
 # ------------------------------------------------------------------------------
 #
 # OUTPUT:
 # ------------------------------------------------------------------------------
-# Y         Matrix of selected data [shape N' x M] with N' <= N
+# Y         Matrix of joined data [shape N' x M] with N' <= N
 # ------------------------------------------------------------------------------
 
-m_raSelection = function (Matrix[Double] X, Integer col, String op, Double val)
+m_raJoin = function (Matrix[Double] A, Integer colA, Matrix[Double] B,
+  Integer colB, String method="nested-loop")
   return (Matrix[Double] Y)
 {
-  # Dertimine the operators
-  I = ifelse(op == "==", X[,col] == val,
-        ifelse(op == "!=", X[,col] != val,
-        ifelse(op == "<",  X[,col] <  val,
-        ifelse(op == ">",  X[,col] >  val,
-        ifelse(op == "<=", X[,col] <= val,
-        X[,col] >= val)))))
+  # matrix of result data
+  Y = matrix(0, rows=0, cols=ncol(A) + ncol(B) )
 
-  # Perform actual selection
-  Y = removeEmpty(target=X, margin="rows", select=I);
+  for (i in 1:nrow(A)) {
+    for (j in 1:nrow(B)) {
+      if (as.scalar(A[i, colA] == B[j, colB])) {
+        # Combine the matching row from A and B to match
+        match = cbind(A[i,], B[j,])
+        # merge the match row into result Y
+        Y = rbind(Y, match)
+      }
+    }
+  }
 }
 

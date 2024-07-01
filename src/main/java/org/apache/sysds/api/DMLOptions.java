@@ -53,10 +53,9 @@ public class DMLOptions {
 	public String               configFile    = null;             // Path to config file if default config and default config is to be overridden
 	public boolean              clean         = false;            // Whether to clean up all SystemDS working directories (FS, DFS)
 	public boolean              stats         = false;            // Whether to record and print the statistics
-	public boolean              stats_ngrams  = false;            // Whether to record and print the statistics n-grams
+	public boolean              statsNGrams  = false;            // Whether to record and print the statistics n-grams
 	public int                  statsCount    = 10;               // Default statistics count
-	public int                  statsMinNGramSize = 3;            // The minimum size of n-gram tuples
-	public int                  statsMaxNGramSize = 3;            // The maximum size of n-gram tuples
+	public int[]                statsNGramSizes = { 3 };          // Default n-gram tuple sizes
 	public int                  statsTopKNGrams = 10;             // How many of the most heavy hitting n-grams are displayed
 	public boolean              fedStats      = false;            // Whether to record and print the federated statistics
 	public int                  fedStatsCount = 10;               // Default federated statistics count
@@ -217,14 +216,19 @@ public class DMLOptions {
 			}
 		}
 
-		dmlOptions.stats_ngrams = line.hasOption("ngrams");
-		if (dmlOptions.stats_ngrams){
+		dmlOptions.statsNGrams = line.hasOption("ngrams");
+		if (dmlOptions.statsNGrams){
 			String[] nGramArgs = line.getOptionValues("ngrams");
-			if (nGramArgs.length == 3) {
+			if (nGramArgs.length == 2) {
 				try {
-					dmlOptions.statsMinNGramSize = Integer.parseInt(nGramArgs[0]);
-					dmlOptions.statsMaxNGramSize = Integer.parseInt(nGramArgs[1]);
-					dmlOptions.statsTopKNGrams = Integer.parseInt(nGramArgs[2]);
+					String[] nGramSizeSplit = nGramArgs[0].split(",");
+					dmlOptions.statsNGramSizes = new int[nGramSizeSplit.length];
+
+					for (int i = 0; i < nGramSizeSplit.length; i++) {
+						dmlOptions.statsNGramSizes[i] = Integer.parseInt(nGramSizeSplit[i]);
+					}
+
+					dmlOptions.statsTopKNGrams = Integer.parseInt(nGramArgs[1]);
 				} catch (NumberFormatException e) {
 					throw new org.apache.commons.cli.ParseException("Invalid argument specified for -ngrams option, must be a valid integer");
 				}

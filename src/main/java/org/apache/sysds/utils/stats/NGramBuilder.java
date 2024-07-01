@@ -88,25 +88,14 @@ public class NGramBuilder<T, U> {
 	private final BiFunction<U, U, U> statsMerger;
 	//private final Function<NGramEntry<T, U>, U> statsMaintainer;
 	private final ConcurrentHashMap<String, NGramEntry<T, U>> nGrams;
-	private final NGramBuilder<T, U> smallerNGramBuilder;
 
 	@SuppressWarnings("unchecked")
-	public NGramBuilder(Class<T> clazz, Class<U> clazz2, int maxSize, int minSize, Function<T, String> idGenerator, BiFunction<U, U, U> statsMerger) {
-		currentNGram = (T[]) Array.newInstance(clazz, maxSize);
-		currentStats = (U[]) Array.newInstance(clazz2, maxSize);
+	public NGramBuilder(Class<T> clazz, Class<U> clazz2, int size, Function<T, String> idGenerator, BiFunction<U, U, U> statsMerger) {
+		currentNGram = (T[]) Array.newInstance(clazz, size);
+		currentStats = (U[]) Array.newInstance(clazz2, size);
 		this.idGenerator = idGenerator;
 		this.nGrams = new ConcurrentHashMap<>();
 		this.statsMerger = statsMerger;
-
-		if (maxSize > minSize) {
-			smallerNGramBuilder = new NGramBuilder<>(clazz, clazz2, maxSize-1, minSize, idGenerator, statsMerger);
-		} else {
-			smallerNGramBuilder = null;
-		}
-	}
-
-	public synchronized NGramBuilder<T, U> getChild() {
-		return smallerNGramBuilder;
 	}
 
 	public synchronized void merge(NGramBuilder<T, U> builder) {
@@ -126,9 +115,6 @@ public class NGramBuilder<T, U> {
 	}
 
 	public synchronized void append(T element, U stat) {
-		if (smallerNGramBuilder != null)
-			smallerNGramBuilder.append(element, stat);
-
 		currentNGram[currentIndex] = element;
 		currentStats[currentIndex] = stat;
 		currentIndex = (currentIndex + 1) % currentNGram.length;

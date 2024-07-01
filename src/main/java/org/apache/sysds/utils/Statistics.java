@@ -74,7 +74,7 @@ public class Statistics
 	
 	//heavy hitter counts and times 
 	private static final ConcurrentHashMap<String,InstStats> _instStats = new ConcurrentHashMap<>();
-	private static final ConcurrentHashMap<String, NGramBuilder<String, Long>> _instStatsNGram = new ConcurrentHashMap<>();
+	private static final ConcurrentHashMap<String, NGramBuilder<String, Long>[]> _instStatsNGram = new ConcurrentHashMap<>();
 
 	// number of compiled/executed SP instructions
 	private static final LongAdder numExecutedSPInst = new LongAdder();
@@ -360,30 +360,44 @@ public class Statistics
 	}
 
 	public static void maintainNGrams(String instName, long timeNanos) {
-		NGramBuilder<String, Long> tmp = _instStatsNGram.computeIfAbsent(Thread.currentThread().getName(), k -> new NGramBuilder<>(String.class, Long.class, DMLScript.STATISTICS_MAX_NGRAM_SIZE, DMLScript.STATISTICS_MIN_NGRAM_SIZE, s -> s, Long::sum));
-		tmp.append(instName, timeNanos);
+		NGramBuilder<String, Long>[] tmp = _instStatsNGram.computeIfAbsent(Thread.currentThread().getName(), k -> {
+			NGramBuilder<String, Long>[] threadEntry = new NGramBuilder[DMLScript.STATISTICS_NGRAM_SIZES.length];
+			for (int i = 0; i < threadEntry.length; i++) {
+				threadEntry[i] = new NGramBuilder<>(String.class, Long.class, DMLScript.STATISTICS_NGRAM_SIZES[i], s -> s, Long::sum);
+			}
+			return threadEntry;
+		});
+
+		for (int i = 0; i < tmp.length; i++)
+			tmp[i].append(instName, timeNanos);
 	}
 
-	public static NGramBuilder<String, Long> mergeNGrams() {
-		NGramBuilder<String, Long> builder = null;
-		for (Map.Entry<String, NGramBuilder<String, Long>> entry : _instStatsNGram.entrySet()) {
-			if (builder == null) {
-				builder = entry.getValue();
-			} else {
-				builder.merge(entry.getValue());
+	public static NGramBuilder<String, Long>[] mergeNGrams() {
+		NGramBuilder<String, Long>[] builders = new NGramBuilder[DMLScript.STATISTICS_NGRAM_SIZES.length];
 
-				// Recursively merge children
-				NGramBuilder<String, Long> child1 = builder.getChild();
-				NGramBuilder<String, Long> child2 = entry.getValue().getChild();
+		for (int i = 0; i < DMLScript.STATISTICS_NGRAM_SIZES.length; i++) {
+			for (Map.Entry<String, NGramBuilder<String, Long>[]> entry : _instStatsNGram.entrySet()) {
+				NGramBuilder<String, Long> mbuilder = entry.getValue()[i];
 
-				while (child1 != null && child2 != null) {
-					child1.merge(child2);
-					child1 = child1.getChild();
-					child2 = child2.getChild();
+				if (builders[i] == null) {
+					builders[i] = mbuilder;
+				} else {
+					builders[i].merge(mbuilder);
+
+					// Recursively merge children
+					/*NGramBuilder<String, Long> child1 = builder.getChild();
+					NGramBuilder<String, Long> child2 = entry.getValue().getChild();
+
+					while (child1 != null && child2 != null) {
+						child1.merge(child2);
+						child1 = child1.getChild();
+						child2 = child2.getChild();
+					}*/
 				}
 			}
 		}
-		return builder == null ? new NGramBuilder<>(String.class, Long.class, DMLScript.STATISTICS_MAX_NGRAM_SIZE, DMLScript.STATISTICS_MIN_NGRAM_SIZE, s -> s, Long::sum) : builder;
+
+		return builders;
 	}
 
 	public static String getCommonNGrams(NGramBuilder<String, Long> builder, int num) {
@@ -781,10 +795,9 @@ public class Statistics
 		}
 
 		if (DMLScript.STATISTICS_NGRAMS) {
-			NGramBuilder<String, Long> currentNGram = mergeNGrams();
-			for (int n = DMLScript.STATISTICS_MAX_NGRAM_SIZE; n > 0 && currentNGram != null; n--) {
-				sb.append("Most common " + n + "-grams (sorted by absolute time):\n" + getCommonNGrams(currentNGram, DMLScript.STATISTICS_TOP_K_NGRAMS));
-				currentNGram = currentNGram.getChild();
+			NGramBuilder<String, Long>[] mergedNGrams = mergeNGrams();
+			for (int i = 0; i < DMLScript.STATISTICS_NGRAM_SIZES.length; i++) {
+				sb.append("Most common " + DMLScript.STATISTICS_NGRAM_SIZES[i] + "-grams (sorted by absolute time):\n" + getCommonNGrams(mergedNGrams[i], DMLScript.STATISTICS_TOP_K_NGRAMS));
 			}
 		}
 

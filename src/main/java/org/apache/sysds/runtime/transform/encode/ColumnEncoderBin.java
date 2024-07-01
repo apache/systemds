@@ -119,7 +119,7 @@ public class ColumnEncoderBin extends ColumnEncoder {
 		long t0 = DMLScript.STATISTICS ? System.nanoTime() : 0;
 
 		// Check cache if build result is already there
-		CacheKey key = new CacheKey(_colID, Bin, _binMethod);
+		EncodeCacheKey key = new EncodeCacheKey(_colID, Bin, _binMethod);
 		EncodeBuildCache cache = getEncodeBuildCache();
 		BinMinsMaxs cached_result = (BinMinsMaxs) cache.get(key);
 

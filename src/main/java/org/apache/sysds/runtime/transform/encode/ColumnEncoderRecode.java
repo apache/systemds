@@ -178,7 +178,7 @@ public class ColumnEncoderRecode extends ColumnEncoder {
 		long t0 = DMLScript.STATISTICS ? System.nanoTime() : 0;
 
 		// Check cache if build result is already there
-		CacheKey key = new CacheKey(_colID, Recode);
+		EncodeCacheKey key = new EncodeCacheKey(_colID, Recode);
 		EncodeBuildCache cache = getEncodeBuildCache();
 		Map<Object, Long> rcdMap = (Map<Object, Long>) cache.get(key);
 		if (rcdMap == null) {

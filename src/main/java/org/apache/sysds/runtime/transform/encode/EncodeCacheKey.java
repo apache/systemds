@@ -4,13 +4,13 @@ import java.util.Objects;
 
 import org.apache.sysds.runtime.transform.encode.ColumnEncoderBin.BinMethod;
 
-public class CacheKey {
+public class EncodeCacheKey {
     private final int columnId;
     private final EncoderType encoderType;
 
     private final BinMethod binMethod;
 
-    public CacheKey(int columnId, EncoderType encoderType) {
+    public EncodeCacheKey(int columnId, EncoderType encoderType) {
         this.columnId = columnId;
         this.encoderType = encoderType;
         if (encoderType == EncoderType.Bin) {
@@ -21,7 +21,7 @@ public class CacheKey {
         }
     }
     
-    public CacheKey(int columnId, EncoderType encoderType, BinMethod binMethod) {
+    public EncodeCacheKey(int columnId, EncoderType encoderType, BinMethod binMethod) {
         this.columnId = columnId;
         this.encoderType = encoderType;
         this.binMethod = binMethod;
@@ -39,8 +39,8 @@ public class CacheKey {
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
-        CacheKey cacheKey = (CacheKey) o;
-        return columnId == cacheKey.columnId && encoderType == cacheKey.encoderType && binMethod == cacheKey.binMethod;
+        EncodeCacheKey encodeCacheKey = (EncodeCacheKey) o;
+        return columnId == encodeCacheKey.columnId && encoderType == encodeCacheKey.encoderType && binMethod == encodeCacheKey.binMethod;
     }
 
     @Override
@@ -50,7 +50,7 @@ public class CacheKey {
 
     @Override
     public String toString() {
-        return "CacheKey{" +
+        return "EncodeCacheKey{" +
                 "columnId=" + columnId +
                 ", encoderType=" + encoderType +
                 ", binMethod=" + binMethod +

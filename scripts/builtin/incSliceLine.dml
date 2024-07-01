@@ -137,11 +137,8 @@ m_incSliceLine = function(
   # initialize statistics and basic slices
   n2 = ncol(X2);     # one-hot encoded features
   eAvg = sum(newE) / m; # average error
-  [S, R, selCols] = createAndScoreBasicSlices(X2, newE, eAvg, minSup, alpha, verbose); 
-  print("134: ncol(S): "+toString(ncol(S)));
-  print("135: foffe: "+toString(foffe));
-  print("136: foffb: "+toString(foffb));
-  print("175: selCols: "+toString(selCols));
+  [S, R, selCols] = createAndScoreBasicSlices(X2, addedX2, prevLattice2, prevRL, newE, eAvg, minSup, alpha, verbose); 
+
 
     # initialize Lattice and Statistics
   L1 = matrix(0,0,ncol(X2));
@@ -159,6 +156,9 @@ m_incSliceLine = function(
   }
 
   # reduced dataset to relevant attributes (minSup, err>0), S reduced on-the-fly
+  ## All lines where selFeat is used are commented out because currently the tests still run into erros when selFeat is true
+  ## TODO: uncomment these lines and debug errors thrown when uncommented
+  /*
   if( selFeat ){
     X2 = removeEmpty(target=X2, margin="cols", select=t(selCols));
     addedX2 = removeEmpty(target=addedX2, margin="cols", select=t(selCols));
@@ -166,6 +166,8 @@ m_incSliceLine = function(
       prevLattice2 = removeEmpty(target=prevLattice2, margin="cols", select=t(selCols));
     }
   }
+  */
+  
 
   # lattice enumeration w/ size/error pruning, one iteration per level
   # termination condition (max #feature levels)
@@ -177,19 +179,18 @@ m_incSliceLine = function(
     # enumerate candidate join pairs, incl size/error pruning 
     nrS = nrow(S);
     S = getPairedCandidates(S, R, TK, TKC, k, level, eAvg, minSup, alpha, n2, foffb, foffe); 
-    print("166: ncol(S): "+toString(ncol(S)));
     S2 = S;
 
     # update lattice and statistics
     L1 = rbind(L1, S);
 
+    ## All lines where selFeat is used are commented out because currently the tests still run into erros when selFeat is true
+    ## TODO: uncomment these lines and debug errors thrown when uncommented
+    /*
     if(selFeat){
       S2 = removeEmpty(target=S, margin="cols", select=t(selCols));
     }
-
-      
-    print("174: ncol(S2): "+toString(ncol(S2)));
-    print("175: ncol(prevLattice2): "+toString(ncol(prevLattice2)));
+    */
 
     if(verbose) {
       print("\nSliceFinder: level "+level+":")
@@ -198,6 +199,9 @@ m_incSliceLine = function(
 
     if( nrow(S) > 0 ) {
       # extract and evaluate candidate slices
+    ## All lines where task-parallel computation is used are commented out because currently the tests still run into erros when tpEval is true
+    ## TODO: uncomment these lines and debug errors thrown when uncommented
+      /*
        if( tpEval ) { # task-parallel
         # hybrid task-parallel w/ 1 matrix-matrix for blocks of 16 matrix-vector 
         R = matrix(0, nrow(S), 4)
@@ -209,11 +213,12 @@ m_incSliceLine = function(
         }
         RL = append(RL,R);
        } 
-       else { # data-parallel
+       */
+       ##else { # data-parallel
         R = evalSlice(X2, newE, eAvg, t(S2), level, alpha, addedX2, prevLattice2, prevRL, foffb, foffe);
 
         RL = append(RL,R);
-      }
+      ##}
 
       # maintain top-k after evaluation
       [TK, TKC] = maintainTopK(S, R, TK, TKC, k, minSup);
@@ -258,33 +263,91 @@ m_incSliceLine = function(
   print("Time taken: "+(time()-t1));
 }
 
-createAndScoreBasicSlices = function(Matrix[Double] X2, Matrix[Double] e, 
+createAndScoreBasicSlices = function(Matrix[Double] X2, Matrix[Double] addedX2,
+    Matrix[Double] prevLattice, list[unknown] prevR,  Matrix[Double] e, 
     Double eAvg, Double minSup, Double alpha, Boolean verbose)
   return(Matrix[Double] S, Matrix[Double] R, Matrix[Double] selCols)
 {
   n2 = ncol(X2);
-  print("n2: "+toString(n2));
   cCnts = t(colSums(X2));    # column counts
   err = t(t(e) %*% X2);      # total error vector
   merr = t(colMaxs(X2 * e)); # maximum error vector
 
+  # addedX2 is oneHotEncoded with the same offsets as oldX2. Thus unchanged basic slices will have a colSum of 0. 
+  # compute vector of colSums for addedX2 to determine which slices are unchanged 
+  addedCCnts = t(colSums(addedX2)); 
+
+  ## the following lines had been used to add the unchanged slices to the working set of active slices. 
+  ## I left them here for now, in case they come in handy at a later point
+  # TODO: remove lines in case they are not needed anymore
+  /*
+
+  # Create the working set of active slices (#attr x #slices) and top k
+  selCols1 = (addedCCnts == 0);
+  attr1 = removeEmpty(target=seq(1,n2), margin="rows", select=selCols1);
+  R1 = matrix(0, 0, 4);
+  S1 = matrix(0, 0, n2);
+  if (sum(selCols1) > 0) {
+    S1 = table(seq(1,nrow(attr1)), attr1, nrow(attr1), n2);
+    for(j in 1:length(attr1)){
+      R1 = rbind(R1, findRowInRL(prevR, as.scalar(attr1[j])));
+    }
+  }
+  */
   if( verbose ) {
-    drop = as.integer(sum(cCnts < minSup | err == 0));
+    drop = as.integer(sum(cCnts < minSup | err == 0 ));
     print("SliceFinder: dropping "+drop+"/"+n2+" features below minSup = "+minSup+".");
   }
 
-  # working set of active slices (#attr x #slices) and top k
-  selCols = (cCnts >= minSup & err > 0);
+  # working set of active slices (#attr x #slices) and top k 
+  # only consider slices that have been changed (addedCCnts != 0) with cCnts >= minSup and non-zero err. 
+  # thus, here we remove all basic slices that are unchanged. 
+  selCols = (cCnts >= minSup & err > 0 & addedCCnts != 0);
   attr = removeEmpty(target=seq(1,n2), margin="rows", select=selCols);
   ss = removeEmpty(target=cCnts, margin="rows", select=selCols);
   se = removeEmpty(target=err, margin="rows", select=selCols);
   sm = removeEmpty(target=merr, margin="rows", select=selCols);
-  S = table(seq(1,nrow(attr)), attr, nrow(attr), n2);
-  print("261: ncol(S): "+toString(ncol(S)));
+  S2 = table(seq(1,nrow(attr)), attr, nrow(attr), n2);
+  #S = rbind(S, S1);
 
   # score 1-slices and create initial top-k 
   sc = score(ss, se, eAvg, alpha, nrow(X2));
-  R = cbind(sc, se, sm, ss);
+  R2 = cbind(sc, se, sm, ss);
+
+  S = matrix(0, 0, n2);
+  R = matrix(0, 0, 4);
+
+  j1 = 1;
+  j2 = 1;
+
+  # TODO: remove lines in case they are not needed anymore
+  # the following lines have been used to combine the changed slices and stats with the unchanged slices and stats
+  # currently not needed anymore. 
+/*
+  if (nrow(S1) > 0) {
+    for(j in 1:(nrow(selCols))) {
+      if(as.scalar(selCols[j]) == 1){
+        S = rbind(S, S2[j2,]);
+        R = rbind(R, R2[j2,]);
+        j2 = j2 + 1;
+      }
+      else {
+        S = rbind(S, S1[j1,]);
+        R = rbind(R, R1[j1,]);
+        j1 = j1 + 1;
+      }
+    }
+  } else {
+    S = S2;
+    R = R2;
+  }
+  */
+
+    S = S2;
+    R = R2;
+  # R = rbind(R, R1);
+
+
 }
 
 score = function(Matrix[Double] ss, Matrix[Double] se, Double eAvg, Double alpha, Integer n)
@@ -449,57 +512,47 @@ evalSlice = function(Matrix[Double] X, Matrix[Double] e, Double eAvg,
   return(Matrix[Double] R)
 {
   S = t(tS);
-  tRemainingSEncoded = tS;
+  tNewSEncoded = tS;
   ss1 = matrix(0,0,1);
   indexS = list();
+
+  # if we had a prevLattice compute slices for slices as sum of added inputs 
+  # and already computed size of slice in previous run, which can be found in prevRL. 
   if(nrow(prevLattice) > 0) {
+
+    # check if a slice is not new by finding it in the previous lattice.
     
-    /*
-    SIDs = list();
-    SOneHot = decodeOneHot(S, foffb, foffe);
-
-    for (i in 1:nrow(SOneHot)) {
-      sliceID = generateSliceID(SOneHot[i,]);
-      SIDs = append(SIDs, sliceID);
-    }
-    #print("SIDs: "+toString(SIDs));
-    */
-
-    # check if the slice is in the previous lattice
-
-    print("466nrow S: "+toString(nrow(S)));
-    print("466ncol S: "+toString(ncol(S)));
-    print("468nrow prevLattice:"+toString(nrow(prevLattice)));
-    print("469ncol prevLattice:"+toString(ncol(prevLattice)));
-    #allSDecoded = decodeOneHot(S, foffb, foffe);
-    
+    # compute indices of slices in S that are the same in prevLattice. 
     [indexS, indexPrevLattice] = matchingIndices(S, prevLattice);
-    addedSEncoded = matrix(0,0,ncol(S));
-    remainingSEncoded = matrix(0,0,ncol(S));
+    existingSEncoded = matrix(0,0,ncol(S));
+    newSEncoded = matrix(0,0,ncol(S));
     
     if(length(indexPrevLattice) > 0) {
+      # store all added slices in existingSEncoded and remaining slices in newSEncoded
+      [existingSEncoded, newSEncoded] = storeSelectedAndRemainingRows(S, indexS);
 
-      [addedSEncoded, remainingSEncoded] = storeSelectedAndRemainingRows(S, indexS);
-
-      tAddedSEncoded = t(addedSEncoded);
-      tRemainingSEncoded = t(remainingSEncoded);
-      
-      Iadded = (addedX2 %*% tAddedSEncoded) == l;   
+      # compute slice sizes within addedX2 of slices that were already in the previous lattice
+      tExistingSEncoded = t(existingSEncoded);
+      tNewSEncoded = t(newSEncoded);
+      Iadded = (addedX2 %*% tExistingSEncoded) == l;   
       ssAdded = t(colSums(Iadded));  
 
+      # find slice sizes of slice in prevLattice 
       rowsInPrevRL = matrix(0,0,4);
       for( j in 1: length(indexPrevLattice)) {
         rowInPrevRL = findRowInRL(prevRL, as.scalar(indexPrevLattice[j]));
         rowsInPrevRL = rbind(rowsInPrevRL, rowInPrevRL);
 
       }
+
+      # compute total slice size from the size in prevLattice and addedX2. 
       ss1 = rowsInPrevRL[,4] + ssAdded;
     }
 
   }
 
-  ## TODO: here we can get better. we are currently calculating all remaining slices from scratch for each level. However we only made use of
-  I2 = (X %*% tRemainingSEncoded) == l;    # slice indicator
+  # compute slice sizes for the slices that are new. 
+  I2 = (X %*% tNewSEncoded) == l;    # slice indicator
   ss2 = t(colSums(I2));     # absolute slice size (nnz)
   
   I = (X %*% tS) == l;    # slice indicator
@@ -578,33 +631,29 @@ oneHotEncode = function(Matrix[Double] X)
   X2 = removeEmpty(target=X2, margin="cols", select=t(selCols));
 }
 
+# TODO: remove if unused
+# function to align two one hot encoded matrices to the same dimensions based on their offsets.
 alignOneHotEncodedMatrices = function(Matrix[Double] X1, Matrix[Double] X2, Matrix[Double] foffb1, Matrix[Double] foffe1, Matrix[Double] foffb2, Matrix[Double] foffe2) 
   return(Matrix[Double] X1_aligned, Matrix[Double] X2_aligned, Matrix[Double] foffb1, Matrix[Double] foffe1) 
 {
-  # Determine the number of features
+
   numFeatures = ncol(foffb1);
   
-  # Initialize aligned matrices
   X1_aligned = X1;
   X2_aligned = X2;
 
   
-  # Iterate through each feature to align columns
   for (j in 1:numFeatures) {
-    # Determine the domain sizes for the current feature
     domainSize1 = as.scalar(foffe1[1, j]) - as.scalar(foffb1[1, j]);
     domainSize2 = as.scalar(foffe2[1, j]) - as.scalar(foffb2[1, j]);
     
-    # Find the maximum domain size for the current feature
     maxDomainSize = max(domainSize1, domainSize2);
     
-    # Calculate the number of columns to add for each matrix
     colsToAdd1 = maxDomainSize - domainSize1;
     colsToAdd2 = maxDomainSize - domainSize2;
       
 
-    
-    # Add columns of zeros to align the matrices
+  
     if (colsToAdd1 > 0 ) {
       if (j < numFeatures) {
         
@@ -624,15 +673,13 @@ alignOneHotEncodedMatrices = function(Matrix[Double] X1, Matrix[Double] X2, Matr
       }
     }
     
-    # Update foffe values to reflect the new domain sizes
     if (colsToAdd1 > 0) {
       foffe1[1, j] = foffe1[1, j] + colsToAdd1;
     }
     if (colsToAdd2 > 0) {
       foffe2[1, j] = foffe2[1, j] + colsToAdd2;
     }
-    
-    # Adjust foffb and foffe for subsequent features
+
     if (j < numFeatures) {
       foffb1[1, (j+1):numFeatures] = foffb1[1, (j+1):numFeatures] + colsToAdd1;
       foffe1[1, (j+1):numFeatures] = foffe1[1, (j+1):numFeatures] + colsToAdd1;
@@ -677,7 +724,7 @@ rowEquals = function(Matrix[Double] row1, Matrix[Double] row2) return(Boolean eq
   equal = sum(row1 != row2) == 0;
 }
 
-
+# function to find a row in the previous statistics 
 findRowInRL = function(list[unknown] prevRL, Integer index) return (Matrix[Double] rowInRL) {
   i = 1;
   prevSum = 0;
@@ -695,25 +742,21 @@ findRowInRL = function(list[unknown] prevRL, Integer index) return (Matrix[Doubl
   rowInRL = MatInRL[index - prevSum,];
 }
 
-
+# function to oneHotEncode but with predefined feature offsets, to have the same encoding for different datasets
 oneHotEncodeUsingOffsets = function(Matrix[Double] A, Matrix[Double] foffb, Matrix[Double] foffe)
   return(Matrix[Double] A_encoded)
 {
-  # Initialize parameters
   m = nrow(A);
   n = ncol(A);
   numFeatures = ncol(foffb);
   
-  # Initialize the one-hot encoded matrix with zeros
   maxDomainSize = as.scalar(foffe[1, ncol(foffe)]);
   A_encoded = matrix(0, m, maxDomainSize);
   
-  # Iterate through each feature to apply one-hot encoding
   for (j in 1:numFeatures) {
     beg = as.scalar(foffb[1, j]) + 1;
     end = as.scalar(foffe[1, j]);
     
-    # Apply one-hot encoding for the current feature
     for (i in 1:m) {
       value = as.scalar(A[i, j]);
       if (value > 0) {
@@ -723,28 +766,23 @@ oneHotEncodeUsingOffsets = function(Matrix[Double] A, Matrix[Double] foffb, Matr
   }
 }
 
-
+# function to store all rows from a matrix that are selected and all remaining ones
 storeSelectedAndRemainingRows = function(Matrix[Double] A, list[unknown] selectedIndices) 
   return (Matrix[Double] B, Matrix[Double] C) 
 {
-  # Initialize matrices
   m = nrow(A);
   n = ncol(A);
   
-  # Create a selection matrix for the given indices
   selectionMatrix = matrix(0, m, 1);
   for (i in 1:length(selectedIndices)) {
     selectionMatrix[as.scalar(selectedIndices[i]), 1] = 1;
   }
   
-  # Extract the selected rows into matrix B
   B = A * selectionMatrix;
   
-  # Extract the remaining rows into matrix C
   selectionMatrixComplement = 1 - selectionMatrix;
   C = A * selectionMatrixComplement;
   
-  # Use removeEmpty to eliminate zero rows (if any)
   B = removeEmpty(target=B, margin="rows");
   C = removeEmpty(target=C, margin="rows");
 }
@@ -752,21 +790,18 @@ storeSelectedAndRemainingRows = function(Matrix[Double] A, list[unknown] selecte
 combineSliceSizes = function(Matrix[Double] A, Matrix[Double] B, list[unknown] indices)
   return (Matrix[Double] C)
 {
-  # Initialize the result matrix C
   C = matrix(0, 0, ncol(A));
   
-  # Initialize counters for A and B
   aCounter = 1;
   bCounter = 1;
 
-  # Iterate through the rows of A and check against indices
   for (i in 1:(nrow(A)+ nrow(B))) {
     if (sum(as.matrix(indices) == i) > 0) {
-      # If the row index is in indices, add the next row from B to C
+
       C = rbind(C, B[bCounter,]);
       bCounter = bCounter + 1;
     } else {
-      # Otherwise, add the current row from A to C
+
       C = rbind(C, A[aCounter,]);
       aCounter = aCounter + 1;
     }

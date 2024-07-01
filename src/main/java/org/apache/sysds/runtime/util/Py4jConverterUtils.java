@@ -21,10 +21,16 @@ package org.apache.sysds.runtime.util;
 
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
+import java.nio.charset.StandardCharsets;
 
 import org.apache.sysds.common.Types;
 import org.apache.sysds.runtime.DMLRuntimeException;
+import org.apache.sysds.runtime.frame.data.columns.ArrayFactory;
+import org.apache.sysds.runtime.frame.data.columns.BooleanArray;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
+
+
+import org.apache.sysds.runtime.frame.data.columns.Array;
 
 /**
  * Utils for converting python data to java.
@@ -113,6 +119,59 @@ public class Py4jConverterUtils {
 		mb.examSparsity();
 		return mb;
 	}
+
+	public static Array<?> convert(byte[] data, int numElements, Types.ValueType valueType) {
+        if (data == null || valueType == null) {
+            throw new DMLRuntimeException("Invalid input data or value type.");
+        }
+
+        ByteBuffer buffer = ByteBuffer.wrap(data);
+
+        Array<?> array = ArrayFactory.allocate(valueType, numElements);
+
+        for (int i = 0; i < numElements; i++) {
+            switch (valueType) {
+                case UINT4:
+                    array.set(i, (int) (buffer.get() & 0xFF));
+                    break;
+                case UINT8:
+                    array.set(i, (int) (buffer.get() & 0xFF));
+                    break;
+                case INT32:
+                    array.set(i, buffer.getInt());
+                    break;
+                case INT64:
+                    array.set(i, buffer.getLong());
+                    break;
+                case FP32:
+                    array.set(i, buffer.getFloat());
+                    break;
+                case FP64:
+                    array.set(i, buffer.getDouble());
+                    break;
+                case BOOLEAN:
+                    ((BooleanArray) array).set(i, buffer.get() != 0);
+                    break;
+                case STRING:
+                    int strLen = buffer.getInt();
+                    byte[] strBytes = new byte[strLen];
+					buffer.get(strBytes);
+                    array.set(i, new String(strBytes, StandardCharsets.UTF_8));
+                    break;
+                case CHARACTER:
+                    array.set(i, (char) buffer.get());
+                    break;
+                case HASH64:
+                    array.set(i, buffer.getLong());
+                    break;
+                default:
+                    throw new DMLRuntimeException("Unsupported value type: " + valueType);
+            }
+        }
+
+        return array;
+    }
+
 
 	public static byte[] convertMBtoPy4JDenseArr(MatrixBlock mb) {
 		byte[] ret = null;

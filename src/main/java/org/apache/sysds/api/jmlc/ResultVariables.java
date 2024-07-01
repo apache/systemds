@@ -20,6 +20,7 @@
 package org.apache.sysds.api.jmlc;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Set;
 
 import org.apache.sysds.api.DMLException;
@@ -27,6 +28,7 @@ import org.apache.sysds.runtime.controlprogram.caching.FrameObject;
 import org.apache.sysds.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysds.runtime.frame.data.FrameBlock;
 import org.apache.sysds.runtime.instructions.cp.Data;
+import org.apache.sysds.runtime.instructions.cp.ListObject;
 import org.apache.sysds.runtime.instructions.cp.ScalarObject;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.util.DataConverter;
@@ -187,6 +189,33 @@ public class ResultVariables
 		if (!(dat instanceof ScalarObject))
 			throw new DMLException("Expected scalar result '" + varname + "' not a scalar.");
 		return (ScalarObject) dat;
+	}
+	
+	/**
+	 * Obtain the list represented by the given output variable.
+	 * 
+	 * @param varname
+	 *            output variable name
+	 * @return ListObject
+	 */
+	public List<Data> getList(String varname) {
+		return getListObject(varname).getData();
+	}
+	
+	/**
+	 * Obtain the ListObject represented by the given output variable.
+	 * 
+	 * @param varname
+	 *            output variable name
+	 * @return ListObject
+	 */
+	public ListObject getListObject(String varname) {
+		Data dat = _out.get(varname);
+		if( dat == null )
+			throw new DMLException("Non-existent output variable: " + varname);
+		if (!(dat instanceof ListObject))
+			throw new DMLException("Expected list result '" + varname + "' not a list.");
+		return (ListObject) dat;
 	}
 	
 	/**

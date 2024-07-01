@@ -113,6 +113,7 @@ public class NGramBuilder<T, U> {
 		builder.nGrams.forEach((k, v) -> nGrams.merge(k, v, (v1, v2) ->
 		{
 			v1.add(v2.occurrences);
+			v1.setCumStats(statsMerger.apply(v1.getCumStats(), v2.getCumStats()));
 			U[] stats1 = v1.getStats();
 			U[] stats2 = v2.getStats();
 

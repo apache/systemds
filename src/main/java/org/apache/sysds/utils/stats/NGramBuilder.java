@@ -1,6 +1,8 @@
 package org.apache.sysds.utils.stats;
 
 
+import org.apache.commons.lang3.function.TriFunction;
+
 import java.lang.reflect.Array;
 import java.util.Arrays;
 import java.util.Comparator;
@@ -12,6 +14,29 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 
 public class NGramBuilder<T, U> {
+
+	public static <T, U> String toCSV(String[] columnNames, List<NGramEntry<T, U>> entries, Function<NGramEntry<T, U>, String> statsMapper) {
+		StringBuilder builder = new StringBuilder(String.join(",", columnNames));
+		builder.append("\n");
+
+		for (NGramEntry<T, U> entry : entries) {
+			builder.append(entry.getIdentifier().replace(",", ";"));
+			builder.append(",");
+			builder.append(entry.getCumStats());
+			builder.append(",");
+
+			if (statsMapper != null) {
+				builder.append(statsMapper.apply(entry));
+				builder.append(",");
+			}
+
+			builder.append(entry.getOccurrences());
+			builder.append("\n");
+		}
+
+		return builder.toString();
+	}
+
 	public static class NGramEntry<T, U> {
 		private final String identifier;
 		private final T[] entry;
@@ -49,7 +74,7 @@ public class NGramBuilder<T, U> {
 			return cumStats;
 		}
 
-		U[] getStats() {
+		public U[] getStats() {
 			return stats;
 		}
 
@@ -86,7 +111,6 @@ public class NGramBuilder<T, U> {
 	private int currentSize = 0;
 	private final Function<T, String> idGenerator;
 	private final BiFunction<U, U, U> statsMerger;
-	//private final Function<NGramEntry<T, U>, U> statsMaintainer;
 	private final ConcurrentHashMap<String, NGramEntry<T, U>> nGrams;
 
 	@SuppressWarnings("unchecked")

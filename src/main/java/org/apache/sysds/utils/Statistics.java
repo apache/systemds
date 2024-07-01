@@ -375,25 +375,14 @@ public class Statistics
 	public static NGramBuilder<String, Long>[] mergeNGrams() {
 		NGramBuilder<String, Long>[] builders = new NGramBuilder[DMLScript.STATISTICS_NGRAM_SIZES.length];
 
+		for (int i = 0; i < builders.length; i++) {
+			builders[i] = new NGramBuilder<>(String.class, Long.class, DMLScript.STATISTICS_NGRAM_SIZES[i], s -> s, Long::sum);
+		}
+
 		for (int i = 0; i < DMLScript.STATISTICS_NGRAM_SIZES.length; i++) {
 			for (Map.Entry<String, NGramBuilder<String, Long>[]> entry : _instStatsNGram.entrySet()) {
 				NGramBuilder<String, Long> mbuilder = entry.getValue()[i];
-
-				if (builders[i] == null) {
-					builders[i] = mbuilder;
-				} else {
-					builders[i].merge(mbuilder);
-
-					// Recursively merge children
-					/*NGramBuilder<String, Long> child1 = builder.getChild();
-					NGramBuilder<String, Long> child2 = entry.getValue().getChild();
-
-					while (child1 != null && child2 != null) {
-						child1.merge(child2);
-						child1 = child1.getChild();
-						child2 = child2.getChild();
-					}*/
-				}
+				builders[i].merge(mbuilder);
 			}
 		}
 

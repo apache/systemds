@@ -19,11 +19,12 @@
 #
 #-------------------------------------------------------------
 
-A= read($1)
-colA = as.integer($2)
-B = read($3)
-colB = as.integer($4)
 
-result = raJoin(A, colA, B, colB, "nested-loop");
-write(result, $5);
+X1 = matrix(-1, $1, $2);
+X2 = -7 * X1;
+while(FALSE){}
+R0 = abs(X1) * abs(X2);
+while(FALSE){}
+R1 = sum(R0)
+write(R1, $3);
 

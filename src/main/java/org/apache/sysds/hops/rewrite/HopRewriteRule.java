@@ -33,7 +33,7 @@ import org.apache.sysds.hops.Hop;
 public abstract class HopRewriteRule 
 {
 	protected static final Log LOG = LogFactory.getLog(HopRewriteRule.class.getName());
-		
+	
 	/**
 	 * Handle a generic (last-level) hop DAG with multiple roots.
 	 * 

@@ -72,6 +72,9 @@ public class EncodeBuildCache {
         if (_cache.get(key) != null){
             LOG.debug(String.format("Getting %s from the cache\n", key));
         }
+        _evictionQueue.remove(key);
+        _evictionQueue.add(key);
+
         return _cache.get(key);
     }
 

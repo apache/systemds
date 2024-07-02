@@ -14,16 +14,22 @@ public class EncodeBuildCache {
     protected static final Log LOG = LogFactory.getLog(EncodeBuildCache.class.getName());
     private static volatile EncodeBuildCache _instance;
     private final Map<EncodeCacheKey, EncodeCacheEntry> _cache;
-    private static LinkedList<EncodeCacheEntry> _evictionQueue;
+    private static LinkedList<EncodeCacheKey> _evictionQueue;
     private static long _cacheSize;
     private static long _cacheLimit; //TODO: pull from yaml config
+
+    private static long _maxCacheMemory;
+
+    private static long _usedCacheMemory;
+
     private static long _startTimestamp;
 
     private EncodeBuildCache() {
         _cache = new ConcurrentHashMap<>();
         _evictionQueue = new LinkedList<>();
-        _cacheSize = 0;
         _cacheLimit = setCacheLimit(EncodeCacheConfig.CPU_CACHE_FRAC); //5%
+        _maxCacheMemory = _cacheLimit*Runtime.getRuntime().totalMemory();
+        _usedCacheMemory = 0;
         _startTimestamp = System.currentTimeMillis(); //TODO: do we need it?
     }
     // we chose the singleton pattern instead of making the cache a static class because it is lazy loaded
@@ -49,7 +55,25 @@ public class EncodeBuildCache {
 
         //TODO: check available space, evict if neccessary, delete as many objects as needed
         // the cache entry object has a getSize method that needs to be implemented
+        // estimate size of what should be entered in the cache
+        // then remove items from the cache
+
+
+        long entrySize = buildResult.getSize();
+        long freeMemory = _maxCacheMemory - _usedCacheMemory;
+
+        while (freeMemory < entrySize) {
+            EncodeCacheKey evictedKey = _evictionQueue.pop();
+            EncodeCacheEntry evictedEntry = _cache.get(evictedKey);
+            _usedCacheMemory -= evictedEntry.getSize();
+            _cache.remove(evictedKey);
+            freeMemory = _maxCacheMemory - _usedCacheMemory;
+        }
+
         _cache.put(key, buildResult);
+        _evictionQueue.add(key);
+        _usedCacheMemory += buildResult.getSize();
+
         //TODO: update eviction list, too
         //TODO: update cache size
         LOG.debug(String.format("Putting %s in the cache\n", key));

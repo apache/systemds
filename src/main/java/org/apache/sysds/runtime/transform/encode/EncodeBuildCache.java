@@ -53,20 +53,15 @@ public class EncodeBuildCache {
 
     public void put(EncodeCacheKey key, EncodeCacheEntry buildResult) {
 
-        //TODO: check available space, evict if neccessary, delete as many objects as needed
-        // the cache entry object has a getSize method that needs to be implemented
-        // estimate size of what should be entered in the cache
-        // then remove items from the cache
-
 
         long entrySize = buildResult.getSize();
         long freeMemory = _maxCacheMemory - _usedCacheMemory;
 
         while (freeMemory < entrySize) {
-            EncodeCacheKey evictedKey = _evictionQueue.pop();
+            EncodeCacheKey evictedKey = _evictionQueue.remove();
             EncodeCacheEntry evictedEntry = _cache.get(evictedKey);
-            _usedCacheMemory -= evictedEntry.getSize();
             _cache.remove(evictedKey);
+            _usedCacheMemory -= evictedEntry.getSize();
             freeMemory = _maxCacheMemory - _usedCacheMemory;
         }
 
@@ -74,8 +69,6 @@ public class EncodeBuildCache {
         _evictionQueue.add(key);
         _usedCacheMemory += buildResult.getSize();
 
-        //TODO: update eviction list, too
-        //TODO: update cache size
         LOG.debug(String.format("Putting %s in the cache\n", key));
     }
 

@@ -177,19 +177,27 @@ public class ColumnEncoderRecode extends ColumnEncoder {
 			return;
 		long t0 = DMLScript.STATISTICS ? System.nanoTime() : 0;
 
-		// Check cache if build result is already there
-		EncodeCacheKey key = new EncodeCacheKey(_colID, Recode);
-		EncodeBuildCache cache = getEncodeBuildCache();
-		Map<Object, Long> rcdMap = (Map<Object, Long>) cache.get(key);
-		if (rcdMap == null) {
-			LOG.debug(String.format("No entry found for key: %s, creating new rcmap\n", key));
-			makeRcdMap(in, _rcdMap, _colID, 0, in.getNumRows());
-			cache.put(key, new EncodeCacheEntry(key, _rcdMap));
-			LOG.debug(String.format("cache entry: %s\n", cache.get(key)));
+
+		if (EncodeCacheConfig._cacheEnabled) {
+			EncodeCacheKey key = new EncodeCacheKey(_colID, Recode);
+			EncodeBuildCache cache = getEncodeBuildCache();
+			Map<Object, Long> rcdMap = (Map<Object, Long>) cache.get(key);
+
+			if (rcdMap == null) {
+				LOG.debug(String.format("No entry found for key: %s, creating new rcdmap\n", key));
+				makeRcdMap(in, _rcdMap, _colID, 0, in.getNumRows());
+				cache.put(key, new EncodeCacheEntry(key, _rcdMap));
+				LOG.debug(String.format("cache entry: %s\n", cache.get(key)));
+			} else {
+				LOG.debug(String.format("using existing map: %s\n", rcdMap));
+				_rcdMap = rcdMap;
+			}
 		} else {
-			LOG.debug(String.format("using existing map: %s\n", rcdMap));
-			_rcdMap = rcdMap;
+			makeRcdMap(in, _rcdMap, _colID, 0, in.getNumRows());
 		}
+
+
+
 		if(DMLScript.STATISTICS){
 			TransformStatistics.incRecodeBuildTime(System.nanoTime() - t0);
 		}

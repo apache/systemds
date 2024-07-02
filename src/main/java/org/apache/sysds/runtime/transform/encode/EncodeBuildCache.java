@@ -33,20 +33,13 @@ public class EncodeBuildCache {
         _startTimestamp = System.currentTimeMillis(); //TODO: do we need it?
     }
     // we chose the singleton pattern instead of making the cache a static class because it is lazy loaded
-    public static EncodeBuildCache getInstance() {
+    public static EncodeBuildCache getEncodeBuildCache() {
         if (_instance == null) {
             synchronized (EncodeBuildCache.class) {
                 if (_instance == null) {
                     _instance = new EncodeBuildCache();
                 }
             }
-        }
-        return _instance;
-    }
-
-    public static EncodeBuildCache getEncodeBuildCache() {
-        if (_instance == null) {
-            _instance = new EncodeBuildCache();
         }
         return _instance;
     }

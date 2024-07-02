@@ -184,7 +184,7 @@ public class ColumnEncoderRecode extends ColumnEncoder {
 		if (rcdMap == null) {
 			LOG.debug(String.format("No entry found for key: %s, creating new rcmap\n", key));
 			makeRcdMap(in, _rcdMap, _colID, 0, in.getNumRows());
-			cache.put(key, _rcdMap);
+			cache.put(key, new EncodeCacheEntry(key, _rcdMap));
 			LOG.debug(String.format("cache entry: %s\n", cache.get(key)));
 		} else {
 			LOG.debug(String.format("using existing map: %s\n", rcdMap));

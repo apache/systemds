@@ -45,22 +45,11 @@ public class EncodeCacheEntry<T> { // uses generic to store any kind of object
         _timestamp = System.currentTimeMillis();
     }
 
-    //TODO: Copied the following from the lineageCacheEntry but not clear whether we need them
+    public synchronized Object getValue() {
+        return _value;
+    }
 
-    /*public synchronized Object getValue() {
-        try {
-            //wait until other thread completes operation
-            //in order to avoid redundant computation
-            while(_status == EncodeCacheStatus.EMPTY) {
-                wait();
-            }
-            //comes here if data is placed or the entry is removed by the running thread
-            return _value;
-        }
-        catch( InterruptedException ex ) {
-            throw new DMLRuntimeException(ex);
-        }
-    }*/
+    //TODO: Copied the following from the lineageCacheEntry but not clear whether we need them
 
     /*public synchronized void setValue(T val) {
         _value = val;

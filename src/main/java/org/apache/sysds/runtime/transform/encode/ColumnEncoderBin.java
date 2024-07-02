@@ -121,13 +121,14 @@ public class ColumnEncoderBin extends ColumnEncoder {
 		// Check cache if build result is already there
 		EncodeCacheKey key = new EncodeCacheKey(_colID, Bin, _binMethod);
 		EncodeBuildCache cache = getEncodeBuildCache();
-		BinMinsMaxs cached_result = (BinMinsMaxs) cache.get(key);
+		EncodeCacheEntry cached_result = cache.get(key);
 
 		if(!isApplicable())
 			return;
 		else if (cached_result != null) {
-			_binMins = cached_result.get_binMins();
-			_binMaxs = cached_result.get_binMaxs();
+			BinMinsMaxs binMinsMaxs = (BinMinsMaxs) cached_result.getValue();
+			_binMins = binMinsMaxs.get_binMins();
+			_binMaxs = binMinsMaxs.get_binMaxs();
 			LOG.debug(String.format("using existing bin boundaries. Object at: %s \n", cached_result));
 		}
 		else if(_binMethod == BinMethod.EQUI_WIDTH) {
@@ -148,7 +149,8 @@ public class ColumnEncoderBin extends ColumnEncoder {
 		if (cached_result == null) {
 			LOG.debug(String.format("No entry found for key: %s, creating new bin boundaries\n", key));
 			BinMinsMaxs binMinMax = new BinMinsMaxs(_binMins, _binMaxs);
-			cache.put(key, binMinMax);
+			EncodeCacheEntry<BinMinsMaxs> entry = new EncodeCacheEntry<>(key, binMinMax);
+			cache.put(key, entry);
 			LOG.debug(String.format("cache entry: %s\n", cache.get(key)));
 		}
 		

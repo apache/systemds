@@ -1,0 +1,143 @@
+#-------------------------------------------------------------
+#
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+#
+#-------------------------------------------------------------
+
+
+
+# run the script staging/learnedSampling/1_Data_Model_Prep.dml to prepare the model
+# also, store meatadata M from transformencode to use partitions
+
+source("../shapley-permutation-opt.dml") as shapleyPermutation
+source("../shapley-permutation.dml") as shapleyPermutationLegacy
+source("../shapley-utils.dml") as shapleyUtils
+
+# defaults
+model_type= ifdef($model_type, "multiLogRegPredict")
+model_function="shap_"+model_type+"_custom"
+data_dir  = ifdef($data_dir, "../data/adult/")
+X_bg_path = ifdef($X_bg_path, "Adult_X.csv")
+B_path    = ifdef($B_path, "Adult_W.csv")
+metadata_path = ifdef($metadata_path, "Adult_meta.csv")
+
+# set model
+if ( model_type != "multiLogRegPredict" & model_type != "l2svmPredict")
+  stop("Unknown model type: "+model_type)
+
+# set the total number of permutations from the commandline using `-nvargs n_permutations=10`
+n_permutations = ifdef($n_permutations, 3)
+
+# set the total number of integration_samples from the commandline using `-nvargs integration_samples=100`
+integration_samples = ifdef($integration_samples, 100)
+execution_policy = ifdef($execution_policy, "by-row")
+
+# you set the total number of rows from the commandline using `-nvargs rows_to_explain=10`
+rows_to_explain = ifdef($rows_to_explain, 10)
+
+# set remove_non_var
+remove_non_var = ifdef($remove_non_var, 0)
+
+# use partitions
+use_partitions = ifdef($use_partitions, 0)
+
+#read data
+X_bg = read(data_dir+X_bg_path)
+B = read(data_dir+B_path)
+
+if (use_partitions == 1){
+  metadata = read(data_dir+metadata_path)
+  if( metadata_path == "Adult_meta.csv")
+    metadata = metadata[,2:(ncol(metadata)-1)]
+  partitions=shapleyUtils::meatadataToPartitions(metadata=metadata)
+} else {
+  partitions = as.matrix(-1)
+}
+
+print("Computing shapley values for dataset "+X_bg_path+" and model "+model_type+".")
+print("Explaining "+rows_to_explain+" rows with "+n_permutations+" permutatitons, "+integration_samples+" samples to marginalise masked features.")
+
+#select instances to compute shapley values for
+x = X_bg[1:rows_to_explain,]
+
+
+#compute shapley values
+if(execution_policy != 'legacy-iterative'){
+
+  [S, expected] = shapleyPermutation::shapley_permutation_explainer(
+    model_function=model_function,
+    model_args=list(B=B),
+    x=x,
+    X_bg=X_bg,
+    n_permutations=n_permutations,
+    integration_samples=integration_samples,
+    desired_max_batch_size=-1,
+    execution_policy=execution_policy,
+    remove_non_var=remove_non_var,
+    partitions=partitions,
+    seed=-1,
+    verbose=1
+  )
+} else {
+  print("Using iterative legacy approach.")
+  S = matrix(0, rows=nrow(x), cols=ncol(x))
+  expected = matrix(0, rows=nrow(x), cols=1)
+  parfor (i in 1:nrow(x), check=0){
+    [phis, e] = shapleyPermutationLegacy::shapley_permutations(
+      model_function=model_function,
+      model_args=list(B=B),
+      x=x[i],
+      X_bg=X_bg,
+      n_permutations=n_permutations,
+      integration_samples=integration_samples,
+      seed=-1,
+      verbose=0
+    )
+    S[i] = phis
+    expected[i] = e
+  }
+  expected = mean(expected)
+
+}
+print("Expected: "+toString(expected))
+print("Resulting phis rowsum:\n"+toString(rowSums(S)))
+
+#transpose it to make it fit the representation of values in the SHAP python package
+S = t(S)
+# write values to csv
+write_to_file = ifdef($write_to_file, 1)
+if( write_to_file == 1){
+  #custom tag for results
+  file_tag = ifdef($file_tag, "")
+  print("Writing to file")
+  write(S, data_dir+"shap-values_permutation_"+n_permutations+"perm_"+integration_samples+"samples"+file_tag+".csv", format="csv")
+}
+
+
+# function to wrap multiLogRegPredict to make sure its outputs are compatible
+shap_multiLogRegPredict_custom = function(Matrix[Double] X, Matrix[Double] B)
+return( Matrix[Double] P){
+  [M,yhat,acc] = multiLogRegPredict(X=X, B=B,Y=matrix(0,0,0), verbose=FALSE)
+  P = M[,2]
+}
+
+# function to wrap l2svmPredict to make sure its outputs are compatible
+shap_l2svmPredict_custom = function(Matrix[Double] X, Matrix[Double] B)
+  return( Matrix[Double] P){
+  [P, n] = l2svmPredict(X=X, W=B, verbose=FALSE)
+}

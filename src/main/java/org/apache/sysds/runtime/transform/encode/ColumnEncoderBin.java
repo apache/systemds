@@ -154,7 +154,7 @@ public class ColumnEncoderBin extends ColumnEncoder {
 			} else {
 				LOG.debug(String.format("No entry found for key: %s, creating new bin boundaries\n", key));
 				computeBinsMinMax(in);
-				BinMinsMaxs binMinMax = new BinMinsMaxs(_binMins, _binMaxs);
+				BinMinsMaxs binMinMax = BinMinsMaxs.create(_binMins, _binMaxs);
 				EncodeCacheEntry<BinMinsMaxs> entry = new EncodeCacheEntry<>(key, binMinMax);
 				cache.put(key, entry);
 				LOG.debug(String.format("cache entry: %s\n", cache.get(key)));

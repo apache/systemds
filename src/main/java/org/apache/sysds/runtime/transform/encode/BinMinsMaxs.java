@@ -3,14 +3,23 @@ package org.apache.sysds.runtime.transform.encode;
 public class BinMinsMaxs {
 
     private final double[] _binMins;
+
     private final double[] _binMaxs;
 
     private final long _size;
 
-    public BinMinsMaxs(final double[] binMins, final double[] binMaxs) {
+    public static BinMinsMaxs create(final double[] binMins, final double[] binMaxs) {
+        if (binMins.length != binMaxs.length) {
+            throw new IllegalArgumentException("");
+        }
+        long size = computeSize(binMins, binMaxs);
+        return new BinMinsMaxs(binMins, binMaxs, size);
+    }
+
+    private BinMinsMaxs(final double[] binMins, final double[] binMaxs, final long size) {
         this._binMins = binMins;
         this._binMaxs = binMaxs;
-        this._size = computeSize();
+        this._size = size;
     }
 
     public double[] get_binMaxs() {

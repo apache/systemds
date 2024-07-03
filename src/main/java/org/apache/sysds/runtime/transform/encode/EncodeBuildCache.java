@@ -14,8 +14,8 @@ public class EncodeBuildCache {
     protected static final Log LOG = LogFactory.getLog(EncodeBuildCache.class.getName());
     private static volatile EncodeBuildCache _instance;
     private final Map<EncodeCacheKey, EncodeCacheEntry<Object>> _cache;
+    private static EncodeCacheConfig.EncodeCachePolicy _cachePolicy;
     private static LinkedList<EncodeCacheKey> _evictionQueue;
-    private static long _cacheSize;
     private static long _cacheLimit; //TODO: pull from yaml config
     private static long _usedCacheMemory;
     // Note: we omitted maintaining a timestamp since and ordered data structure is sufficient for LRU
@@ -23,6 +23,7 @@ public class EncodeBuildCache {
 
     private EncodeBuildCache() {
         _cache = new ConcurrentHashMap<>();
+        _cachePolicy = EncodeCacheConfig._cachepolicy;
         _evictionQueue = new LinkedList<>();
         _cacheLimit = setCacheLimit(EncodeCacheConfig.CPU_CACHE_FRAC); //5%
         _usedCacheMemory = 0;
@@ -41,8 +42,31 @@ public class EncodeBuildCache {
     }
 
     public synchronized void put(EncodeCacheKey key, EncodeCacheEntry buildResult) {
+        switch (_cachePolicy) {
+            case LRU:
+                evictLRU(key, buildResult);
+                break;
+            default:
+                throw new IllegalArgumentException("Unknown cache policy: " + _cachePolicy);
+        }
+    }
 
+    public synchronized EncodeCacheEntry get(EncodeCacheKey key) {
+        if (_cache.get(key) != null){
+            LOG.debug(String.format("Getting %s from the cache\n", key));
+        }
 
+        switch (_cachePolicy) {
+            case LRU:
+                updateQueueLRU(key);
+                break;
+            default:
+                throw new IllegalArgumentException("Unknown cache policy: " + _cachePolicy);
+        }
+        return _cache.get(key);
+    }
+
+    private synchronized void evictLRU(EncodeCacheKey key, EncodeCacheEntry buildResult){
         long entrySize = buildResult.getSize();
         long freeMemory = _cacheLimit - _usedCacheMemory;
 
@@ -61,15 +85,9 @@ public class EncodeBuildCache {
         LOG.debug(String.format("Putting %s in the cache\n", key));
     }
 
-    public synchronized EncodeCacheEntry get(EncodeCacheKey key) {
-
-        if (_cache.get(key) != null){
-            LOG.debug(String.format("Getting %s from the cache\n", key));
-        }
+    private synchronized void updateQueueLRU(EncodeCacheKey key){
         _evictionQueue.remove(key);
         _evictionQueue.add(key);
-
-        return _cache.get(key);
     }
 
     protected static long setCacheLimit(double fraction) {

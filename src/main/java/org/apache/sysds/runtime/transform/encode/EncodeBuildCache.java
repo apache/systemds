@@ -40,7 +40,7 @@ public class EncodeBuildCache {
         return _instance;
     }
 
-    public synchronized void put(EncodeCacheKey key, EncodeCacheEntry<Object> buildResult) {
+    public synchronized void put(EncodeCacheKey key, EncodeCacheEntry buildResult) {
 
 
         long entrySize = buildResult.getSize();
@@ -61,7 +61,7 @@ public class EncodeBuildCache {
         LOG.debug(String.format("Putting %s in the cache\n", key));
     }
 
-    public synchronized EncodeCacheEntry<Object> get(EncodeCacheKey key) {
+    public synchronized EncodeCacheEntry get(EncodeCacheKey key) {
 
         if (_cache.get(key) != null){
             LOG.debug(String.format("Getting %s from the cache\n", key));

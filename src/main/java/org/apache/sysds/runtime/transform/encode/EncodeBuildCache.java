@@ -13,21 +13,20 @@ public class EncodeBuildCache {
 
     protected static final Log LOG = LogFactory.getLog(EncodeBuildCache.class.getName());
     private static volatile EncodeBuildCache _instance;
-    private final Map<EncodeCacheKey, EncodeCacheEntry> _cache;
+    private final Map<EncodeCacheKey, EncodeCacheEntry<Object>> _cache;
     private static LinkedList<EncodeCacheKey> _evictionQueue;
     private static long _cacheSize;
     private static long _cacheLimit; //TODO: pull from yaml config
-
     private static long _usedCacheMemory;
+    // Note: we omitted maintaining a timestamp since and ordered data structure is sufficient for LRU
 
-    private static long _startTimestamp;
 
     private EncodeBuildCache() {
         _cache = new ConcurrentHashMap<>();
         _evictionQueue = new LinkedList<>();
         _cacheLimit = setCacheLimit(EncodeCacheConfig.CPU_CACHE_FRAC); //5%
         _usedCacheMemory = 0;
-        _startTimestamp = System.currentTimeMillis(); //TODO: do we need it?
+
     }
     // we chose the singleton pattern instead of making the cache a static class because it is lazy loaded
     public static EncodeBuildCache getEncodeBuildCache() {
@@ -41,7 +40,7 @@ public class EncodeBuildCache {
         return _instance;
     }
 
-    public synchronized void put(EncodeCacheKey key, EncodeCacheEntry buildResult) {
+    public synchronized void put(EncodeCacheKey key, EncodeCacheEntry<Object> buildResult) {
 
 
         long entrySize = buildResult.getSize();
@@ -49,7 +48,7 @@ public class EncodeBuildCache {
 
         while (freeMemory < entrySize) {
             EncodeCacheKey evictedKey = _evictionQueue.remove();
-            EncodeCacheEntry evictedEntry = _cache.get(evictedKey);
+            EncodeCacheEntry<Object> evictedEntry = _cache.get(evictedKey);
             _cache.remove(evictedKey);
             _usedCacheMemory -= evictedEntry.getSize();
             freeMemory = _cacheLimit - _usedCacheMemory;
@@ -62,10 +61,8 @@ public class EncodeBuildCache {
         LOG.debug(String.format("Putting %s in the cache\n", key));
     }
 
-    public synchronized EncodeCacheEntry get(EncodeCacheKey key) {
+    public synchronized EncodeCacheEntry<Object> get(EncodeCacheKey key) {
 
-        //TODO: update timestamp in the newly used cache entry
-        //TODO: move newly used key to the top of the eviction queue
         if (_cache.get(key) != null){
             LOG.debug(String.format("Getting %s from the cache\n", key));
         }
@@ -81,7 +78,5 @@ public class EncodeBuildCache {
         LOG.debug("Cache limit: "+ limit);
         return limit;
     }
-
-
 
 }

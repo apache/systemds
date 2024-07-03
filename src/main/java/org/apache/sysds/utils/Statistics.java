@@ -447,6 +447,19 @@ public class Statistics
 		return containsData ? sb.toString() : "-";
 	}
 
+	public static String getNGramAvgTimes(NGramStats[] stats, int prec) {
+		StringBuilder sb = new StringBuilder();
+		sb.append("(");
+		for (int i = 0; i < stats.length; i++) {
+			if (i != 0)
+				sb.append(", ");
+			double var = (stats[i].cumTimeNanos / 1000000000d) / stats[i].n;
+			sb.append(String.format(Locale.US, "%." + prec + "f", var));
+		}
+		sb.append(")");
+		return sb.toString();
+	}
+
 	public static String getCommonNGrams(NGramBuilder<String, NGramStats> builder, int num) {
 		if (num <= 0 || _instStatsNGram.size() <= 0)
 			return "-";

@@ -122,6 +122,10 @@ public class NGramBuilder<T, U> {
 		this.statsMerger = statsMerger;
 	}
 
+	public int getSize() {
+		return currentNGram.length;
+	}
+
 	public synchronized void merge(NGramBuilder<T, U> builder) {
 		builder.nGrams.forEach((k, v) -> nGrams.merge(k, v, (v1, v2) ->
 		{

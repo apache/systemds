@@ -250,6 +250,11 @@ public class ConfigurationManager{
 		return compress.isEnabled();
 	}
 
+	public static boolean isEncodeCacheEnabled(){
+
+		return getDMLConfig().getBooleanValue(DMLConfig.ENCODECACHE_ENABLED);
+	}
+
 	public static CompressConfig getCompressConfig(){
 		return CompressConfig.valueOf(getDMLConfig().getTextValue(DMLConfig.COMPRESSED_LINALG).toUpperCase());
 	}

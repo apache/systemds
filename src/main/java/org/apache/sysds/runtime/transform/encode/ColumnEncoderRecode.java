@@ -35,6 +35,7 @@ import java.util.Objects;
 import java.util.concurrent.Callable;
 
 import org.apache.sysds.api.DMLScript;
+import org.apache.sysds.conf.ConfigurationManager;
 import org.apache.sysds.lops.Lop;
 import org.apache.sysds.runtime.compress.estim.ComEstSample;
 import org.apache.sysds.runtime.compress.estim.sample.SampleEstimatorFactory;
@@ -179,7 +180,7 @@ public class ColumnEncoderRecode extends ColumnEncoder {
 		long t0 = DMLScript.STATISTICS ? System.nanoTime() : 0;
 
 
-		if (EncodeCacheConfig._cacheEnabled) {
+		if (ConfigurationManager.isEncodeCacheEnabled()) {
 			EncodeCacheKey key = new EncodeCacheKey(_colID, Recode);
 			EncodeBuildCache cache = getEncodeBuildCache();
 			EncodeCacheEntry<Object> entry = cache.get(key);

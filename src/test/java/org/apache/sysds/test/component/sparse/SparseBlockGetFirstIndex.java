@@ -315,7 +315,7 @@ public class SparseBlockGetFirstIndex extends AutomatedTestBase
 				Assert.fail("Wrong number of non-zeros: "+sblock.size()+", expected: "+nnz);
 
 			//check correct isEmpty return
-			if(sblock instanceof SparseBlockMCSC){
+			if(sblock instanceof SparseBlockMCSC) {
 				for(int i = 0; i < cols; i++)
 					if(sblock.isEmpty(i) != (cnnz[i] == 0))
 						Assert.fail("Wrong isEmpty(col) result for row nnz: " + cnnz[i]);
@@ -391,22 +391,22 @@ public class SparseBlockGetFirstIndex extends AutomatedTestBase
 		return -1;
 	}
 
-	private static int getFirstIxCol( double[][] A, int rix, int cix, IndexType type ) {
-		if( type==IndexType.GT ) {
-			for( int j=rix+1; j<rows; j++ )
-				if( A[j][cix] != 0 )
+	private static int getFirstIxCol(double[][] A, int rix, int cix, IndexType type) {
+		if(type == IndexType.GT) {
+			for(int j = rix + 1; j < rows; j++)
+				if(A[j][cix] != 0)
 					return j;
 			return -1;
 		}
-		else if( type==IndexType.GTE ) {
-			for( int j=rix; j<rows; j++ )
-				if( A[j][cix] != 0 )
+		else if(type == IndexType.GTE) {
+			for(int j = rix; j < rows; j++)
+				if(A[j][cix] != 0)
 					return j;
 			return -1;
 		}
-		else if( type==IndexType.LTE ) {
-			for( int j=rix; j>=0; j-- )
-				if( A[j][cix] != 0 )
+		else if(type == IndexType.LTE) {
+			for(int j = rix; j >= 0; j--)
+				if(A[j][cix] != 0)
 					return j;
 			return -1;
 		}

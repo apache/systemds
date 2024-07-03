@@ -17,7 +17,6 @@
  * under the License.
  */
 
-
 package org.apache.sysds.runtime.data;
 
 import java.util.*;
@@ -26,22 +25,18 @@ import org.apache.sysds.runtime.matrix.data.IJV;
 import org.apache.sysds.utils.MemoryEstimates;
 
 /**
- * SparseBlock implementation that realizes a 'modified compressed sparse column'
- * representation, where each compressed column is stored as a separate SparseRow
- * object which provides flexibility for unsorted column appends without the need
- * for global reshifting of values/indexes but it incurs additional memory
- * overhead per column for object/array headers per column which also slows down
- * memory-bound operations due to higher memory bandwidth requirements.
- *
+ * SparseBlock implementation that realizes a 'modified compressed sparse column' representation, where each compressed
+ * column is stored as a separate SparseRow object which provides flexibility for unsorted column appends without the
+ * need for global reshifting of values/indexes but it incurs additional memory overhead per column for object/array
+ * headers per column which also slows down memory-bound operations due to higher memory bandwidth requirements.
  */
 
-public class SparseBlockMCSC extends SparseBlock{
+public class SparseBlockMCSC extends SparseBlock {
 
 	private static final long serialVersionUID = 112364695245614881L;
 
 	private SparseRow[] _columns = null;
 	private int _clenInferred = -1;
-
 
 	public SparseBlockMCSC(SparseBlock sblock, int clen) {
 		_clenInferred = clen;
@@ -52,19 +47,19 @@ public class SparseBlockMCSC extends SparseBlock{
 		initialize(sblock);
 	}
 
-	private void initialize(SparseBlock sblock){
+	private void initialize(SparseBlock sblock) {
 		int clen = 0;
 
-		if(sblock instanceof SparseBlockMCSC){
-			SparseRow[] originalColumns = ((SparseBlockMCSC)sblock)._columns;
+		if(sblock instanceof SparseBlockMCSC) {
+			SparseRow[] originalColumns = ((SparseBlockMCSC) sblock)._columns;
 			_columns = new SparseRow[originalColumns.length];
-			for( int i=0; i<_columns.length; i++ ) {
+			for(int i = 0; i < _columns.length; i++) {
 				if(originalColumns[i] != null)
 					_columns[i] = originalColumns[i].copy(true);
 			}
 		}
 		else if(sblock instanceof SparseBlockMCSR) {
-			SparseRow[] originalRows = ((SparseBlockMCSR)sblock).getRows();
+			SparseRow[] originalRows = ((SparseBlockMCSR) sblock).getRows();
 			HashMap<Integer, Integer> columnSizes = new HashMap();
 			if(_clenInferred == -1) {
 				for(SparseRow row : originalRows) {
@@ -77,19 +72,20 @@ public class SparseBlockMCSC extends SparseBlock{
 				}
 				clen = columnSizes.keySet().stream().max(Integer::compare).orElseThrow(NoSuchElementException::new);
 				_columns = new SparseRow[clen + 1];
-			}else{
+			}
+			else {
 				_columns = new SparseRow[_clenInferred];
 			}
 
-			for(int i = 0; i<_columns.length; i++){
+			for(int i = 0; i < _columns.length; i++) {
 				int columnSize = columnSizes.getOrDefault(i, -1);
-				if(columnSize == -1){
+				if(columnSize == -1) {
 					continue;
 				}
 				else if(columnSize == 1) {
 					_columns[i] = new SparseRowScalar();
 				}
-				else{ //columnSize > 1
+				else { //columnSize > 1
 					_columns[i] = new SparseRowVector(columnSize);
 				}
 			}
@@ -97,11 +93,11 @@ public class SparseBlockMCSC extends SparseBlock{
 			int[] rowIndexes = null;
 			double[] values = null;
 			int rowPosition = 0;
-			for(SparseRow row : originalRows){
-				if(row != null && !row.isEmpty()){
+			for(SparseRow row : originalRows) {
+				if(row != null && !row.isEmpty()) {
 					rowIndexes = row.indexes();
 					values = row.values();
-					for(int i = 0; i<row.size(); i++) {
+					for(int i = 0; i < row.size(); i++) {
 						int rowIndex = rowIndexes[i];
 						double currentValue = values[i];
 						_columns[rowIndex].set(rowPosition, currentValue);
@@ -112,41 +108,39 @@ public class SparseBlockMCSC extends SparseBlock{
 
 		}
 		// general case SparseBlock
-		else{
+		else {
 			int numRows = sblock.numRows();
 			HashMap<Integer, Integer> columnSizes = new HashMap<>();
 			int[] columnIndexes = sblock.indexes(0);
-			for(int col : columnIndexes){
-				columnSizes.put(col, columnSizes.getOrDefault(col,0)+1);
+			for(int col : columnIndexes) {
+				columnSizes.put(col, columnSizes.getOrDefault(col, 0) + 1);
 			}
 
 			clen = columnSizes.keySet().stream().max(Integer::compare).orElseThrow(NoSuchElementException::new);
 			if(_clenInferred == -1)
-				_columns = new SparseRow[clen+1];
+				_columns = new SparseRow[clen + 1];
 			else
 				_columns = new SparseRow[_clenInferred];
-			for(int i = 0; i<_columns.length; i++){
+			for(int i = 0; i < _columns.length; i++) {
 				int columnSize = columnSizes.getOrDefault(i, -1);
-				if(columnSize == -1){
+				if(columnSize == -1) {
 					continue;
 				}
 				else if(columnSize == 1) {
 					_columns[i] = new SparseRowScalar();
 				}
-				else{ //columnSize > 1
+				else { //columnSize > 1
 					_columns[i] = new SparseRowVector(columnSize);
 				}
 			}
-
-
 
 			double[] vals = sblock.values(0);
 			int[] cols = sblock.indexes(0);
 			int row = 0;
 			int i = 0;
-			while(i<vals.length){
+			while(i < vals.length) {
 				int rowSize = sblock.size(row);
-				for(int j = i; j<i+rowSize; j++){
+				for(int j = i; j < i + rowSize; j++) {
 					_columns[cols[j]].set(row, vals[j]);
 				}
 				i += rowSize;
@@ -156,12 +150,11 @@ public class SparseBlockMCSC extends SparseBlock{
 	}
 
 	public SparseBlockMCSC(SparseRow[] cols, boolean deep) {
-		if( deep ) {
+		if(deep) {
 			_columns = new SparseRow[cols.length];
-			for( int i=0; i<_columns.length; i++ ) {
-				_columns[i] = (cols[i].size()==1) ? new SparseRowScalar(
-					cols[i].indexes()[0], cols[i].values()[0]) :
-					new SparseRowVector(cols[i]);
+			for(int i = 0; i < _columns.length; i++) {
+				_columns[i] = (cols[i].size() == 1) ? new SparseRowScalar(cols[i].indexes()[0],
+					cols[i].values()[0]) : new SparseRowVector(cols[i]);
 			}
 		}
 		else {
@@ -169,28 +162,27 @@ public class SparseBlockMCSC extends SparseBlock{
 		}
 	}
 
-	public SparseBlockMCSC(int clen){
+	public SparseBlockMCSC(int clen) {
 		_columns = new SparseRow[clen];
 	}
-
 
 	public SparseBlockMCSC(int rlen, int clen) {
 		this(clen);
 	}
 
 	/**
-	 * Get the estimated in-memory size of the sparse block in MCSC
-	 * with the given dimensions w/o accounting for overallocation.
+	 * Get the estimated in-memory size of the sparse block in MCSC with the given dimensions w/o accounting for
+	 * overallocation.
 	 *
-	 * @param nrows number of rows
-	 * @param ncols number of columns
+	 * @param nrows    number of rows
+	 * @param ncols    number of columns
 	 * @param sparsity sparsity ratio
 	 * @return memory estimate
 	 */
 	public static long estimateSizeInMemory(long nrows, long ncols, double sparsity) {
-		double nnz = Math.ceil(sparsity*nrows*ncols);
+		double nnz = Math.ceil(sparsity * nrows * ncols);
 		double clen = Math.min(nrows, nnz); // num sparse column objects
-		double rnnz = Math.max(SparseRowVector.initialCapacity, nnz/clen);
+		double rnnz = Math.max(SparseRowVector.initialCapacity, nnz / clen);
 
 		// Each sparse column has a fixed overhead of 16B (object) + 12B (3 ints),
 		// 24B (int array), 24B (double array), i.e., in total 76B
@@ -200,10 +192,10 @@ public class SparseBlockMCSC extends SparseBlock{
 		double size = 16; //object
 		size += MemoryEstimates.objectArrayCost(ncols); //references
 		long sparseColSize = 16; // object
-		sparseColSize += 2*4; // 2 integers + padding
+		sparseColSize += 2 * 4; // 2 integers + padding
 		sparseColSize += MemoryEstimates.intArrayCost(0);
 		sparseColSize += MemoryEstimates.doubleArrayCost(0);
-		sparseColSize += 12*Math.max(1, rnnz); //avoid bias by down cast for ultra-sparse
+		sparseColSize += 12 * Math.max(1, rnnz); //avoid bias by down cast for ultra-sparse
 		size += clen * sparseColSize; //sparse columns
 
 		// robustness for long overflows
@@ -212,24 +204,25 @@ public class SparseBlockMCSC extends SparseBlock{
 
 	/**
 	 * Computes the exact size in memory of the materialized block
+	 *
 	 * @return the exact size in memory
 	 */
 	public long getExactSizeInMemory() {
 		double size = 16; //object
 		size += MemoryEstimates.objectArrayCost(_columns.length); //references
 
-		for (SparseRow sc : _columns) {
-			if (sc == null)
+		for(SparseRow sc : _columns) {
+			if(sc == null)
 				continue;
 			long sparseColSize = 16; // object
-			if( sc instanceof SparseRowScalar ) {
+			if(sc instanceof SparseRowScalar) {
 				sparseColSize += 12;
 			}
 			else { //SparseRowVector
-				sparseColSize += 2*4; // 2 integers
+				sparseColSize += 2 * 4; // 2 integers
 				sparseColSize += MemoryEstimates.intArrayCost(0);
 				sparseColSize += MemoryEstimates.doubleArrayCost(0);
-				sparseColSize += 12*((SparseRowVector)sc).capacity();
+				sparseColSize += 12 * ((SparseRowVector) sc).capacity();
 			}
 			size += sparseColSize; //sparse columns
 		}
@@ -243,35 +236,31 @@ public class SparseBlockMCSC extends SparseBlock{
 
 	@Override
 	public void allocate(int c) {
-		if( !isAllocated(c) ) {
+		if(!isAllocated(c)) {
 			_columns[c] = new SparseRowVector();
 		}
 	}
 
 	@Override
 	public void allocate(int c, int nnz) {
-		if( !isAllocated(c) ) {
-			_columns[c] = (nnz == 1) ? new SparseRowScalar() :
-				new SparseRowVector(nnz);
+		if(!isAllocated(c)) {
+			_columns[c] = (nnz == 1) ? new SparseRowScalar() : new SparseRowVector(nnz);
 		}
 	}
 
 	@Override
 	public void allocate(int c, int ennz, int maxnnz) {
-		if( !isAllocated(c) ) {
-			_columns[c] = (ennz == 1) ? new SparseRowScalar() :
-				new SparseRowVector(ennz, maxnnz);
+		if(!isAllocated(c)) {
+			_columns[c] = (ennz == 1) ? new SparseRowScalar() : new SparseRowVector(ennz, maxnnz);
 		}
 	}
 
 	@Override
 	public void compact(int c) {
-		if( isAllocated(c) ){
-			if(_columns[c] instanceof SparseRowVector
-				&& _columns[c].size() > SparseBlock.INIT_CAPACITY
-				&& _columns[c].size() * SparseBlock.RESIZE_FACTOR1
-				< ((SparseRowVector)_columns[c]).capacity() ) {
-				((SparseRowVector)_columns[c]).compact();
+		if(isAllocated(c)) {
+			if(_columns[c] instanceof SparseRowVector && _columns[c].size() > SparseBlock.INIT_CAPACITY &&
+				_columns[c].size() * SparseBlock.RESIZE_FACTOR1 < ((SparseRowVector) _columns[c]).capacity()) {
+				((SparseRowVector) _columns[c]).compact();
 			}
 			else if(_columns[c] instanceof SparseRowScalar) {
 				SparseRowScalar s = (SparseRowScalar) _columns[c];
@@ -309,7 +298,7 @@ public class SparseBlockMCSC extends SparseBlock{
 
 	@Override
 	public void reset() {
-		for( SparseRow col : _columns ) {
+		for(SparseRow col : _columns) {
 			if(col != null) {
 				col.reset(col.size(), Integer.MAX_VALUE);
 			}
@@ -318,7 +307,7 @@ public class SparseBlockMCSC extends SparseBlock{
 
 	@Override
 	public void reset(int ennz, int maxnnz) {
-		for( SparseRow col : _columns ) {
+		for(SparseRow col : _columns) {
 			if(col != null) {
 				col.reset(ennz, maxnnz);
 			}
@@ -327,7 +316,7 @@ public class SparseBlockMCSC extends SparseBlock{
 
 	@Override
 	public void reset(int c, int ennz, int maxnnz) {
-		if( isAllocated(c) ) {
+		if(isAllocated(c)) {
 			_columns[c].reset(ennz, maxnnz);
 		}
 	}
@@ -335,7 +324,7 @@ public class SparseBlockMCSC extends SparseBlock{
 	@Override
 	public long size() {
 		long nnz = 0;
-		for( SparseRow col : _columns ) {
+		for(SparseRow col : _columns) {
 			if(col != null) {
 				nnz += col.size();
 			}
@@ -352,7 +341,7 @@ public class SparseBlockMCSC extends SparseBlock{
 	@Override
 	public long size(int cl, int cu) {
 		long nnz = 0;
-		for(int i = cl; i<cu; i++){
+		for(int i = cl; i < cu; i++) {
 			nnz += isAllocated(i) ? _columns[i].size() : 0;
 		}
 		return nnz;
@@ -361,7 +350,7 @@ public class SparseBlockMCSC extends SparseBlock{
 	@Override
 	public long size(int rl, int ru, int cl, int cu) {
 		long nnz = 0;
-		for(int i=cl; i<cu; i++) {
+		for(int i = cl; i < cu; i++) {
 			if(!isEmpty(i)) {
 				int start = posFIndexGTE(rl, i);
 				int end = posFIndexGTE(ru, i);
@@ -379,38 +368,40 @@ public class SparseBlockMCSC extends SparseBlock{
 	@Override
 	public boolean checkValidity(int rlen, int clen, long nnz, boolean strict) {
 		//1. Correct meta data
-		if( rlen < 0 || clen < 0 )
-			throw new RuntimeException("Invalid block dimensions: ("+rlen+", "+clen+").");
+		if(rlen < 0 || clen < 0)
+			throw new RuntimeException("Invalid block dimensions: (" + rlen + ", " + clen + ").");
 
 		//2. Correct array lengths
-		if( size() < nnz )
-			throw new RuntimeException("Incorrect size: "+size()+" (expected: "+nnz+").");
+		if(size() < nnz)
+			throw new RuntimeException("Incorrect size: " + size() + " (expected: " + nnz + ").");
 
 		//3. Sorted column indices per row
-		for( int i=0; i<clen; i++ ) {
-			if( isEmpty(i) ) continue;
+		for(int i = 0; i < clen; i++) {
+			if(isEmpty(i))
+				continue;
 			int apos = pos(i);
 			int alen = size(i);
 			int[] aix = indexes(i);
 			double[] avals = values(i);
-			for (int k = apos + 1; k < apos + alen; k++) {
-				if (aix[k-1] >= aix[k] | aix[k-1] < 0 ) {
+			for(int k = apos + 1; k < apos + alen; k++) {
+				if(aix[k - 1] >= aix[k] | aix[k - 1] < 0) {
 					throw new RuntimeException(
-						"Wrong sparse column ordering, at column=" + i + ", pos=" + k + " with row indexes " + aix[k - 1] +
-							">=" + aix[k]);
+						"Wrong sparse column ordering, at column=" + i + ", pos=" + k + " with row indexes " +
+							aix[k - 1] + ">=" + aix[k]);
 				}
-				if (avals[k] == 0) {
+				if(avals[k] == 0) {
 					throw new RuntimeException(
 						"The values are expected to be non zeros " + "but zero at column: " + i + ", row pos: " + k);
 				}
 			}
 		}
 		//4. A capacity that is no larger than nnz times resize factor
-		for( int i=0; i<clen; i++ ) {
-			long max_size = (long)Math.max(nnz*RESIZE_FACTOR1, INIT_CAPACITY);
-			if( !isEmpty(i) && values(i).length > max_size ) {
-				throw new RuntimeException("The capacity is larger than nnz times a resize factor(=2). "
-					+ "Actual length = " + values(i).length+", should not exceed "+max_size);
+		for(int i = 0; i < clen; i++) {
+			long max_size = (long) Math.max(nnz * RESIZE_FACTOR1, INIT_CAPACITY);
+			if(!isEmpty(i) && values(i).length > max_size) {
+				throw new RuntimeException(
+					"The capacity is larger than nnz times a resize factor(=2). " + "Actual length = " +
+						values(i).length + ", should not exceed " + max_size);
 			}
 		}
 
@@ -437,10 +428,10 @@ public class SparseBlockMCSC extends SparseBlock{
 
 	@Override
 	public boolean set(int r, int c, double v) {
-		if( !isAllocated(c) ) {
+		if(!isAllocated(c)) {
 			_columns[c] = new SparseRowScalar();
 		}
-		else if( _columns[c] instanceof SparseRowScalar && !_columns[c].isEmpty()) {
+		else if(_columns[c] instanceof SparseRowScalar && !_columns[c].isEmpty()) {
 			_columns[c] = new SparseRowVector(_columns[c]);
 		}
 		return _columns[c].set(r, v);
@@ -449,8 +440,8 @@ public class SparseBlockMCSC extends SparseBlock{
 	@Override
 	public void set(int c, SparseRow col, boolean deep) {
 		//copy values into existing column to avoid allocation
-		if( isAllocated(c) && _columns[c] instanceof SparseRowVector
-			&& ((SparseRowVector)_columns[c]).capacity() >= col.size() && deep ) {
+		if(isAllocated(c) && _columns[c] instanceof SparseRowVector &&
+			((SparseRowVector) _columns[c]).capacity() >= col.size() && deep) {
 			((SparseRowVector) _columns[c]).copy(col);
 			//set new sparse column (incl allocation if required)
 		}
@@ -461,10 +452,10 @@ public class SparseBlockMCSC extends SparseBlock{
 
 	@Override
 	public boolean add(int r, int c, double v) {
-		if( !isAllocated(c) ) {
+		if(!isAllocated(c)) {
 			_columns[c] = new SparseRowScalar();
 		}
-		else if( _columns[c] instanceof SparseRowScalar && !_columns[c].isEmpty()){
+		else if(_columns[c] instanceof SparseRowScalar && !_columns[c].isEmpty()) {
 			SparseRowScalar s = (SparseRowScalar) _columns[c];
 			if(s.getIndex() == r) {
 				return s.set(s.getIndex(), v + s.getValue());
@@ -491,40 +482,40 @@ public class SparseBlockMCSC extends SparseBlock{
 
 	@Override
 	public void setIndexRange(int c, int rl, int ru, double[] v, int vix, int vlen) {
-		if( !isAllocated(c) ) {
+		if(!isAllocated(c)) {
 			_columns[c] = new SparseRowVector();
 		}
-		else if( _columns[c] instanceof SparseRowScalar ) {
+		else if(_columns[c] instanceof SparseRowScalar) {
 			_columns[c] = new SparseRowVector(_columns[c]);
 		}
-		((SparseRowVector)_columns[c]).setIndexRange(rl, ru-1, v, vix, vlen);
+		((SparseRowVector) _columns[c]).setIndexRange(rl, ru - 1, v, vix, vlen);
 	}
 
 	@Override
 	public void setIndexRange(int c, int rl, int ru, double[] v, int[] vix, int vpos, int vlen) {
-		if( !isAllocated(c) ) {
+		if(!isAllocated(c)) {
 			_columns[c] = new SparseRowVector();
 		}
-		else if( _columns[c] instanceof SparseRowScalar ) {
+		else if(_columns[c] instanceof SparseRowScalar) {
 			_columns[c] = new SparseRowVector(_columns[c]);
 		}
 		//different sparse row semantics: upper bound inclusive
-		((SparseRowVector)_columns[c]).setIndexRange(rl, ru-1, v, vix, vpos, vlen);
+		((SparseRowVector) _columns[c]).setIndexRange(rl, ru - 1, v, vix, vpos, vlen);
 	}
 
 	@Override
 	public void deleteIndexRange(int c, int rl, int ru) {
 		//prior check with isEmpty(c) expected
 		//different sparse row semantics: upper bound inclusive
-		if( _columns[c] instanceof SparseRowScalar ) {
+		if(_columns[c] instanceof SparseRowScalar) {
 			_columns[c] = new SparseRowVector(_columns[c]);
 		}
-		((SparseRowVector)_columns[c]).deleteIndexRange(rl, ru-1);
+		((SparseRowVector) _columns[c]).deleteIndexRange(rl, ru - 1);
 	}
 
 	@Override
 	public void sort() {
-		for( SparseRow col : _columns ) {
+		for(SparseRow col : _columns) {
 			if(col != null && !col.isEmpty()) {
 				col.sort();
 			}
@@ -539,7 +530,7 @@ public class SparseBlockMCSC extends SparseBlock{
 
 	@Override
 	public double get(int r, int c) {
-		if( !isAllocated(c) ) {
+		if(!isAllocated(c)) {
 			return 0;
 		}
 		return _columns[c].get(r);
@@ -553,10 +544,10 @@ public class SparseBlockMCSC extends SparseBlock{
 	@Override
 	public int posFIndexLTE(int r, int c) {
 		//prior check with isEmpty(c) expected
-		if( _columns[c] instanceof SparseRowScalar ) {
+		if(_columns[c] instanceof SparseRowScalar) {
 			_columns[c] = new SparseRowVector(_columns[c]);
 		}
-		return ((SparseRowVector)_columns[c]).searchIndexesFirstLTE(r);
+		return ((SparseRowVector) _columns[c]).searchIndexesFirstLTE(r);
 	}
 
 	@Override
@@ -583,18 +574,18 @@ public class SparseBlockMCSC extends SparseBlock{
 		sb.append(", nnz=");
 		sb.append(size());
 		sb.append("\n");
-		final int colDigits = (int)Math.max(Math.ceil(Math.log10(nCol)),1) ;
-		for( int i=0; i<nCol; i++ ) {
+		final int colDigits = (int) Math.max(Math.ceil(Math.log10(nCol)), 1);
+		for(int i = 0; i < nCol; i++) {
 			if(isEmpty(i))
 				continue;
-			sb.append(String.format("%0"+colDigits+"d %s\n", i, _columns[i].toString()));
+			sb.append(String.format("%0" + colDigits + "d %s\n", i, _columns[i].toString()));
 		}
 
 		return sb.toString();
 	}
 
-	public SparseRow[] getCols(){
+	public SparseRow[] getCols() {
 		return _columns;
 	}
-	
+
 }

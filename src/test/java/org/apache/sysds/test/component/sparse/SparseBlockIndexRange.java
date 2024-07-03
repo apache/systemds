@@ -278,10 +278,8 @@ public class SparseBlockIndexRange extends AutomatedTestBase
 		}
 	}
 
-	private void runSparseBlockIndexRangeColumnTest( SparseBlock.Type btype, double sparsity, UpdateType utype)
-	{
-		try
-		{
+	private void runSparseBlockIndexRangeColumnTest(SparseBlock.Type btype, double sparsity, UpdateType utype) {
+		try {
 			//data generation
 			double[][] A = getRandomMatrix(rows, cols, -10, 10, sparsity, 456);
 
@@ -289,59 +287,50 @@ public class SparseBlockIndexRange extends AutomatedTestBase
 			SparseBlock sblock = null;
 			MatrixBlock mbtmp = DataConverter.convertToMatrixBlock(A);
 			SparseBlock srtmp = mbtmp.getSparseBlock();
-			switch( btype ) {
-				case MCSC: sblock = new SparseBlockMCSC(srtmp, cols); break;
+			switch(btype) {
+				case MCSC:
+					sblock = new SparseBlockMCSC(srtmp, cols);
+					break;
 			}
 
 			//delete range per row via set
-			if (utype == UpdateType.DELETE) {
-				for (int i = 0; i < cols; i++) {
+			if(utype == UpdateType.DELETE) {
+				for(int i = 0; i < cols; i++) {
 					sblock.deleteIndexRange(i, rl, ru);
-					for (int j = rl; j < ru; j++) {
+					for(int j = rl; j < ru; j++) {
 						A[j][i] = 0;  // Fill column-wise with zeros
 					}
 				}
 			}
-			else if( utype == UpdateType.INSERT ) {
-				double[] vals = new double[ru-rl];
-				for( int j=rl; j<ru; j++ )
-					vals[j-rl] = j;
-				for (int i = 0; i < cols; i++) {
+			else if(utype == UpdateType.INSERT) {
+				double[] vals = new double[ru - rl];
+				for(int j = rl; j < ru; j++)
+					vals[j - rl] = j;
+				for(int i = 0; i < cols; i++) {
 					sblock.setIndexRange(i, rl, ru, vals, 0, ru - rl);
-					for (int j = rl; j < ru; j++) {
+					for(int j = rl; j < ru; j++) {
 						A[j][i] = vals[j - rl];  // Update the matrix column-wise
 					}
 				}
 			}
 
 			//check for correct number of non-zeros
-			int[] cnnz = new int[cols]; int nnz = 0;
-			for( int i=0; i<cols; i++ ) {
-				for( int j=0; j<rows; j++ )
-					cnnz[i] += (A[j][i]!=0) ? 1 : 0;
+			int[] cnnz = new int[cols];
+			int nnz = 0;
+			for(int i = 0; i < cols; i++) {
+				for(int j = 0; j < rows; j++)
+					cnnz[i] += (A[j][i] != 0) ? 1 : 0;
 				nnz += cnnz[i];
 			}
-			if( nnz != sblock.size() )
-				Assert.fail("Wrong number of non-zeros: "+sblock.size()+", expected: "+nnz);
+			if(nnz != sblock.size())
+				Assert.fail("Wrong number of non-zeros: " + sblock.size() + ", expected: " + nnz);
 
 			//check correct isEmpty return
-			for( int i=0; i<cols; i++ )
-				if( sblock.isEmpty(i) != (cnnz[i]==0) )
-					Assert.fail("Wrong isEmpty(col) result for row nnz: "+cnnz[i]);
+			for(int i = 0; i < cols; i++)
+				if(sblock.isEmpty(i) != (cnnz[i] == 0))
+					Assert.fail("Wrong isEmpty(col) result for row nnz: " + cnnz[i]);
 
-			/*
-			//check correct values
-			Iterator<IJV> iter = sblock.getIterator();
-			int count = 0;
-			while( iter.hasNext() ) {
-				IJV cell = iter.next();
-				if( cell.getV() != A[cell.getI()][cell.getJ()] )
-					//Assert.fail("Wrong value returned by iterator: "+cell.getV()+", expected: "+A[cell.getI()][cell.getJ()]);
-				count++;
-			}
-			if( count != nnz )
-				Assert.fail("Wrong number of values returned by iterator: "+count+", expected: "+nnz);
-			 */
+			//TODO: Add 'check correct values', requires Iterator
 		}
 		catch(Exception ex) {
 			ex.printStackTrace();

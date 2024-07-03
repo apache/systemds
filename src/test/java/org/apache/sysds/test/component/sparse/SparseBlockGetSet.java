@@ -371,76 +371,79 @@ public class SparseBlockGetSet extends AutomatedTestBase
 		}
 	}
 
-	private void runSparseBlockGetSetColumnTest( SparseBlock.Type btype, double sparsity, InitType itype)
+	private void runSparseBlockGetSetColumnTest(SparseBlock.Type btype, double sparsity, InitType itype)
 	{
-		try
-		{
+		try {
 			//data generation
 			double[][] A = getRandomMatrix(rows, cols, -10, 10, sparsity, 7654321);
 
 			//init sparse block
 			SparseBlockMCSC sblock = null;
-			if( itype == InitType.BULK ) {
+			if(itype == InitType.BULK) {
 				MatrixBlock mbtmp = DataConverter.convertToMatrixBlock(A);
 				SparseBlock srtmp = mbtmp.getSparseBlock();
-				switch( btype ) {
-					case MCSC: sblock = new SparseBlockMCSC(srtmp, cols); break;
+				switch(btype) {
+					case MCSC:
+						sblock = new SparseBlockMCSC(srtmp, cols);
+						break;
 				}
 			}
-			else if( itype == InitType.SEQ_SET || itype == InitType.RAND_SET ) {
-				switch( btype ) {
-					case MCSC: sblock = new SparseBlockMCSC(rows, cols); break;
+			else if(itype == InitType.SEQ_SET || itype == InitType.RAND_SET) {
+				switch(btype) {
+					case MCSC:
+						sblock = new SparseBlockMCSC(rows, cols);
+						break;
 				}
-
 
 				if(itype == InitType.SEQ_SET) {
-					for( int i=0; i<cols; i++ )
-						for( int j=0; j<rows; j++ )
+					for(int i = 0; i < cols; i++)
+						for(int j = 0; j < rows; j++)
 							sblock.append(j, i, A[j][i]);
 				}
-				else if( itype == InitType.RAND_SET ) {
+				else if(itype == InitType.RAND_SET) {
 					LongLongDoubleHashMap map = new LongLongDoubleHashMap();
-					for( int i=0; i<cols; i++ )
-						for( int j=0; j<rows; j++ )
+					for(int i = 0; i < cols; i++)
+						for(int j = 0; j < rows; j++)
 							map.addValue(j, i, A[j][i]);
 					Iterator<ADoubleEntry> iter = map.getIterator();
-					while( iter.hasNext() ) { //random hash order
+					while(iter.hasNext()) { //random hash order
 						ADoubleEntry e = iter.next();
-						int r = (int)e.getKey1();
-						int c = (int)e.getKey2();
+						int r = (int) e.getKey1();
+						int c = (int) e.getKey2();
 						sblock.set(r, c, e.value);
 					}
 				}
 			}
 
 			//check basic meta data
-			if( sblock.numCols() != cols )
-				Assert.fail("Wrong number of cols: "+sblock.numCols()+", expected: "+cols);
+			if(sblock.numCols() != cols)
+				Assert.fail("Wrong number of cols: " + sblock.numCols() + ", expected: " + cols);
 
 			//check for correct number of non-zeros
-			int[] cnnz = new int[cols]; int nnz = 0;
-			for( int i=0; i<cols; i++ ) {
-				for( int j=0; j<rows; j++ )
-					cnnz[i] += (A[j][i]!=0) ? 1 : 0;
+			int[] cnnz = new int[cols];
+			int nnz = 0;
+			for(int i = 0; i < cols; i++) {
+				for(int j = 0; j < rows; j++)
+					cnnz[i] += (A[j][i] != 0) ? 1 : 0;
 				nnz += cnnz[i];
 			}
-			if( nnz != sblock.size() )
-				Assert.fail("Wrong number of non-zeros: "+sblock.size()+", expected: "+nnz);
+			if(nnz != sblock.size())
+				Assert.fail("Wrong number of non-zeros: " + sblock.size() + ", expected: " + nnz);
 
 			//check correct isEmpty return
-			for( int i=0; i<cols; i++ )
-				if( sblock.isEmpty(i) != (cnnz[i]==0) )
-					Assert.fail("Wrong isEmpty(col) result for row nnz: "+cnnz[i] + "(column: " + i + ")");
+			for(int i = 0; i < cols; i++)
+				if(sblock.isEmpty(i) != (cnnz[i] == 0))
+					Assert.fail("Wrong isEmpty(col) result for row nnz: " + cnnz[i] + "(column: " + i + ")");
 
 			//check correct values
-			for( int i=0; i<cols; i++ )
-				if( !sblock.isEmpty(i) )
-					for( int j=0; j<rows; j++ ) {
+			for(int i = 0; i < cols; i++)
+				if(!sblock.isEmpty(i))
+					for(int j = 0; j < rows; j++) {
 						double tmp = sblock.get(j, i);
-						if( tmp != A[j][i] )
-							Assert.fail("Wrong get value for cell ("+i+","+j+"): "+tmp+", expected: "+A[j][i]);
+						if(tmp != A[j][i])
+							Assert.fail(
+								"Wrong get value for cell (" + i + "," + j + "): " + tmp + ", expected: " + A[j][i]);
 					}
-
 
 		}
 		catch(Exception ex) {

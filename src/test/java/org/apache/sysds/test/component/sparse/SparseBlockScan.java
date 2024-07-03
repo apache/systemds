@@ -154,10 +154,10 @@ public class SparseBlockScan extends AutomatedTestBase
 				Assert.fail("Wrong number of non-zeros: "+sblock.size()+", expected: "+nnz);
 		
 			//check correct isEmpty return
-			if(sblock instanceof SparseBlockMCSC){
-				for( int i=0; i<cols; i++ )
-					if( sblock.isEmpty(i) != (cnnz[i]==0) )
-						Assert.fail("Wrong isEmpty(col) result for column nnz: "+cnnz[i]);
+			if(sblock instanceof SparseBlockMCSC) {
+				for(int i = 0; i < cols; i++)
+					if(sblock.isEmpty(i) != (cnnz[i] == 0))
+						Assert.fail("Wrong isEmpty(col) result for column nnz: " + cnnz[i]);
 			}
 			else {
 				for(int i = 0; i < rows; i++)

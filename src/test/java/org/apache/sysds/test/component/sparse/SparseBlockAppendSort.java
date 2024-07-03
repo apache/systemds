@@ -246,7 +246,8 @@ public class SparseBlockAppendSort extends AutomatedTestBase
 			sblock.sort();
 			
 			//check for correct number of non-zeros
-			int[] rnnz = new int[rows]; int nnz = 0;
+			int[] rnnz = new int[rows];
+			int nnz = 0;
 			int[] cnnz = new int[cols];
 			for( int i=0; i<rows; i++ ) {
 				for( int j=0; j<cols; j++ ) {
@@ -259,7 +260,7 @@ public class SparseBlockAppendSort extends AutomatedTestBase
 				Assert.fail("Wrong number of non-zeros: "+sblock.size()+", expected: "+nnz);
 
 			//check correct isEmpty return
-			if(sblock instanceof SparseBlockMCSC){
+			if(sblock instanceof SparseBlockMCSC) {
 				for(int i = 0; i < cols; i++)
 					if(sblock.isEmpty(i) != (cnnz[i] == 0))
 						Assert.fail("Wrong isEmpty(column) result for row nnz: " + cnnz[i]);
@@ -269,9 +270,9 @@ public class SparseBlockAppendSort extends AutomatedTestBase
 					if(sblock.isEmpty(i) != (rnnz[i] == 0))
 						Assert.fail("Wrong isEmpty(row) result for row nnz: " + rnnz[i]);
 			}
-		
+
 			//check correct values
-			if(sblock instanceof SparseBlockMCSC){
+			if(sblock instanceof SparseBlockMCSC) {
 				for(int i = 0; i < cols; i++)
 					if(!sblock.isEmpty(i))
 						for(int j = 0; j < rows; j++) {

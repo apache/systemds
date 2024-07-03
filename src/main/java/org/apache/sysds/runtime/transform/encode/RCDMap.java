@@ -4,15 +4,15 @@ import java.util.Map;
 
 public class RCDMap {
 
-    private final Map _rcdMap;
+    private final Map<Object, Long> _rcdMap;
     private final long size;
 
-    public RCDMap(Map _rcdMap, long size) {
+    public RCDMap(Map<Object, Long> _rcdMap, long size) {
         this._rcdMap = _rcdMap;
         this.size = size;
     }
 
-    public Map get_rcdMap() {
+    public Map<Object, Long> get_rcdMap() {
         return _rcdMap;
     }
 

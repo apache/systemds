@@ -244,7 +244,7 @@ public class LibCommonsMath
 		MatrixBlock eigenVectors = evResult[1];
 
 		// TODO: Count number of zeros on construction
-		realEigenValues.setNonZeros(realEigenValues.denseBlock.countNonZeros());
+		eigenVectors.setNonZeros(eigenVectors.denseBlock.countNonZeros());
 
 		return new MatrixBlock[] {realEigenValues, eigenVectors};
 	}

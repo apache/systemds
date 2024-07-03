@@ -19,4 +19,12 @@ public class RCDMap {
     public long getSize() {
         return size;
     }
+
+    @Override
+    public String toString() {
+        return "RCDMap{" +
+                "_rcdMap=" + _rcdMap +
+                ", size=" + size +
+                '}';
+    }
 }

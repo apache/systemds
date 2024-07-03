@@ -175,9 +175,16 @@ public class FunctionCallCPInstruction extends CPInstruction {
 			
 			//map lineage to function arguments
 			if( lineage != null ) {
-				LineageItem litem = _lineageInputs == null ? ec.getLineageItem(input) : _lineageInputs[i];
-				lineage.set(currFormalParam.getName(), (litem!=null) ? 
-					litem : ec.getLineage().getOrCreate(input));
+				LineageItem inLitem = _lineageInputs == null ? ec.getLineageItem(input) : _lineageInputs[i];
+				inLitem = inLitem != null ? inLitem : ec.getLineage().getOrCreate(input);
+				if (LineageItemUtils.isFunctionDebugging()) { //add a marker for function call
+					String funcOp = _functionName + LineageItemUtils.FUNC_DELIM + "INP"
+						+ LineageItemUtils.FUNC_DELIM + currFormalParam.getName();
+					LineageItem funcItem = new LineageItem(funcOp, new LineageItem[] {inLitem});
+					lineage.set(currFormalParam.getName(), funcItem);
+				}
+				else
+					lineage.set(currFormalParam.getName(), inLitem);
 			}
 		}
 		
@@ -249,8 +256,16 @@ public class FunctionCallCPInstruction extends CPInstruction {
 			ec.setVariable(boundVarName, boundValue);
 
 			//map lineage of function returns back to calling site
-			if( lineage != null ) //unchanged ref
-				ec.getLineage().set(boundVarName, lineage.get(retVarName));
+			if( lineage != null ) { //unchanged ref
+				LineageItem outLitem = lineage.get(retVarName);
+				if (LineageItemUtils.isFunctionDebugging()) { //add a marker for function return
+					String funcOp = _functionName + LineageItemUtils.FUNC_DELIM + "RET" + LineageItemUtils.FUNC_DELIM + boundVarName;
+					LineageItem funcItem = new LineageItem(funcOp, new LineageItem[] {outLitem});
+					ec.getLineage().set(boundVarName, funcItem);
+				}
+				else
+					ec.getLineage().set(boundVarName, outLitem);
+			}
 		}
 
 		// cleanup old data bound to output variable names

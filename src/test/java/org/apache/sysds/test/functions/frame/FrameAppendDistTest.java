@@ -22,6 +22,7 @@ package org.apache.sysds.test.functions.frame;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 
 import org.apache.sysds.api.DMLScript;
 import org.apache.sysds.common.Types.ExecMode;
@@ -40,6 +41,11 @@ import org.junit.Test;
 public class FrameAppendDistTest extends AutomatedTestBase
 {
 	private final static String TEST_NAME = "FrameAppend";
+	private final static String TEST_NAME2 = "FrameNAryAppend";
+	private final static String TEST_NAME3 = "FrameNAryAppendMisalign";
+	private final static String TEST_NAME4 = "FrameNAryAppendMisalignRSP";
+	private final static String TEST_NAME5 = "FrameNAryAppendMisalignRSP2";
+
 	private final static String TEST_DIR = "functions/frame/";
 	private final static String TEST_CLASS_DIR = TEST_DIR + FrameAppendDistTest.class.getSimpleName() + "/";
 
@@ -65,61 +71,140 @@ public class FrameAppendDistTest extends AutomatedTestBase
 	@Override
 	public void setUp() {
 		TestUtils.clearAssertionInformation();
-		addTestConfiguration(TEST_NAME, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME, 
-				new String[] {"C"}));
+		addTestConfiguration(TEST_NAME, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME, new String[] {"C"}));
+		addTestConfiguration(TEST_NAME2, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME2,new String[] {"C"}));
+		addTestConfiguration(TEST_NAME3, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME3,new String[] {"C"}));
+		addTestConfiguration(TEST_NAME4, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME4,new String[] {"C"}));
+		addTestConfiguration(TEST_NAME5, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME5,new String[] {"C"}));
 	}
 
 	@Test
 	public void testAppendInBlock1DenseSP() {
-		commonAppendTest(ExecMode.SPARK, rows1, rows1, cols1a, cols2a, false, AppendMethod.MR_RAPPEND, false);
-	}   
+		commonAppendTest(ExecMode.SPARK, rows1, rows1, cols1a, cols2a, false, AppendMethod.MR_RAPPEND, false, TEST_NAME);
+	}
 	
 	@Test
 	public void testAppendInBlock1SparseSP() {
-		commonAppendTest(ExecMode.SPARK, rows1, rows1, cols1a, cols2a, true, AppendMethod.MR_RAPPEND, false);
-	}   
+		commonAppendTest(ExecMode.SPARK, rows1, rows1, cols1a, cols2a, true, AppendMethod.MR_RAPPEND, false, TEST_NAME);
+	}
 	
 	@Test
 	public void testAppendInBlock1DenseRBindSP() {
-		commonAppendTest(ExecMode.SPARK, rows1, rows2, cols1a, cols1a, false, AppendMethod.MR_RAPPEND, true);
+		commonAppendTest(ExecMode.SPARK, rows1, rows2, cols1a, cols1a, false, AppendMethod.MR_RAPPEND, true, TEST_NAME);
 	}
 	
 	@Test
 	public void testAppendInBlock1SparseRBindSP() {
-		commonAppendTest(ExecMode.SPARK, rows1, rows1, cols1a, cols1a, true, AppendMethod.MR_RAPPEND, true);
+		commonAppendTest(ExecMode.SPARK, rows1, rows1, cols1a, cols1a, true, AppendMethod.MR_RAPPEND, true, TEST_NAME);
 	}
 	
 	//NOTE: mappend only applied for m2_cols<=blocksize
 	@Test
 	public void testMapAppendInBlock2DenseSP() {
-		commonAppendTest(ExecMode.SPARK, rows1, rows1, cols1b, cols2a, false, AppendMethod.MR_MAPPEND, false);
+		commonAppendTest(ExecMode.SPARK, rows1, rows1, cols1b, cols2a, false, AppendMethod.MR_MAPPEND, false, TEST_NAME);
 	}
 	
 	@Test
 	public void testMapAppendInBlock2SparseSP() {
-		commonAppendTest(ExecMode.SPARK, rows1, rows1, cols1b, cols2a, true, AppendMethod.MR_MAPPEND, false);
+		commonAppendTest(ExecMode.SPARK, rows1, rows1, cols1b, cols2a, true, AppendMethod.MR_MAPPEND, false, TEST_NAME);
 	}
 	
 	@Test
 	public void testMapAppendOutBlock2DenseSP() {
-		commonAppendTest(ExecMode.SPARK, rows1, rows1, cols1d, cols3d, false, AppendMethod.MR_MAPPEND, false);
+		commonAppendTest(ExecMode.SPARK, rows1, rows1, cols1d, cols3d, false, AppendMethod.MR_MAPPEND, false, TEST_NAME);
 	}
 	
 	@Test
 	public void testMapAppendOutBlock2SparseSP() {
-		commonAppendTest(ExecMode.SPARK, rows1, rows1, cols1d, cols3d, true, AppendMethod.MR_MAPPEND, false);
+		commonAppendTest(ExecMode.SPARK, rows1, rows1, cols1d, cols3d, true, AppendMethod.MR_MAPPEND, false, TEST_NAME);
 	}
+
+	@Test
+	public void testNAryCAppendMSP(){
+		commonAppendTest(ExecMode.SPARK ,100, 100, 5, 10, false, null, false, TEST_NAME2);
+	}
+
+	@Test
+	public void testNAryCAppendRSP(){
+		commonAppendTest(ExecMode.SPARK ,30, 30, 5, 1001, false, null, false, TEST_NAME2);
+	}
+
+	@Test
+	public void testNAryRAppendSP(){
+		commonAppendTest(ExecMode.SPARK ,100, 100, 5, 5, false, null, true, TEST_NAME2);
+	}
+
+	@Test
+	public void testNAryAppendWithMisalignmentMSP(){
+		commonAppendTest(ExecMode.SPARK ,5, 10, 5, 5, false, null, false, TEST_NAME3);
+	}
+
+	@Test
+	public void testNAryAppendWithMisalignmentRSP() {
+		commonAppendTest(ExecMode.SPARK, 5, 10, 1001, 1001, false, null, false, TEST_NAME3);
+	}
+
+// NAryAppendWithMisalignmentRSP2:
+// LHS:                RHS:
+// +---------+         +-----+
+// |         |         +-----+
+// |         |         +-----+
+// |         |         +-----+
+// +---------+         +-----+
+	@Test
+	public void testNAryAppendWithMisalignmentRSP2(){
+		commonAppendTest(ExecMode.SPARK ,20, 5, 1001, 1005, false, null, false, TEST_NAME4);
+	}
+
+// NAryAppendWithMisalignmentRSP3:
+//      LHS:            RHS:
+//      +-----+         +---------+
+//      +-----+         |         |
+//      +-----+         |         |
+//      +-----+         |         |
+//      +-----+         +---------+
+	@Test
+	public void testNAryAppendWithMisalignmentRSP3(){
+		commonAppendTest(ExecMode.SPARK ,5, 20, 1001, 1005, false, null, false, TEST_NAME4);
+	}
+// NAryAppendWithMisalignmentRSP4:
+//      LHS:            RHS:
+//      +-----+         +---------+
+//      |     |         +---------+
+//      +-----+         |         |
+//      |     |         +---------+
+//      +-----+         |         |
+//      |     |         +---------+
+//      +-----+         |         |
+//      +-----+         +---------+
+	@Test
+	public void testNAryAppendWithMisalignmentRSP4(){
+		commonAppendTest(ExecMode.SPARK ,20, 5, 1001, 1001, false, null, false, TEST_NAME5);
+	}
+// NAryAppendWithMisalignmentRSP5:
+//      LHS:            RHS:
+//      +-----+         +---------+
+//      +-----+         |         |
+//      +-----+         +---------+
+//      +-----+         +---------+
+//      |     |         +---------+
+//      +-----+         +---------+
+	@Test
+	public void testNAryAppendWithMisalignmentRSP5(){
+		commonAppendTest(ExecMode.SPARK ,8, 20, 1001, 1001, false, null, false, TEST_NAME5);
+	}
+
 	
 	public void commonAppendTest(ExecMode platform, int rows1, int rows2, int cols1, int cols2, boolean sparse,
-		AppendMethod forcedAppendMethod, boolean rbind)
+		AppendMethod forcedAppendMethod, boolean rbind, String test_name)
 	{
-		TestConfiguration config = getAndLoadTestConfiguration(TEST_NAME);
+		TestConfiguration config = getAndLoadTestConfiguration(test_name);
 		
 		ExecMode prevPlfm=rtplatform;
 		
-		double sparsity = (sparse) ? sparsity2 : sparsity1; 
+		double sparsity = (sparse) ? sparsity2 : sparsity1;
 		boolean sparkConfigOld = DMLScript.USE_LOCAL_SPARK_CONFIG;
-		setOutputBuffering(true);
+		//setOutputBuffering(true);
 		try
 		{
 			if(forcedAppendMethod != null) {
@@ -134,12 +219,12 @@ public class FrameAppendDistTest extends AutomatedTestBase
 			
 			/* This is for running the junit test the new way, i.e., construct the arguments directly */
 			String RI_HOME = SCRIPT_DIR + TEST_DIR;
-			fullDMLScriptName = RI_HOME + TEST_NAME + ".dml";
-			programArgs = new String[]{"-explain","-args",  input("A"), 
+			fullDMLScriptName = RI_HOME + test_name + ".dml";
+			programArgs = new String[]{"-explain","-args",  input("A"),
 				Long.toString(rows1), Long.toString(cols1), input("B"),
 				Long.toString(rows2), Long.toString(cols2), output("C"),
 				(rbind? "rbind": "cbind")};
-			fullRScriptName = RI_HOME + TEST_NAME + ".R";
+			fullRScriptName = RI_HOME + test_name + ".R";
 			rCmd = "Rscript" + " " + fullRScriptName + " " + 
 				inputDir() + " " + expectedDir() + " " + (rbind? "rbind": "cbind");
 	
@@ -157,14 +242,15 @@ public class FrameAppendDistTest extends AutomatedTestBase
 			runTest(true, exceptionExpected, null, expectedNumberOfJobs);
 			runRScript(true);
 
-			ValueType[] lschemaAB = rbind ? lschemaA : UtilFunctions.copyOf(lschemaA, lschemaB);
-			
+			ValueType[] lschemaOut = rbind ? lschemaA : UtilFunctions.copyOf(lschemaA, lschemaB);
+			if(!Objects.equals(test_name, TEST_NAME) && !rbind)
+				lschemaOut =  UtilFunctions.copyOf(lschemaOut, lschemaB);
 			for(String file: config.getOutputFiles())
 			{
 				FrameBlock frameBlock = readDMLFrameFromHDFS(file, FileFormat.BINARY);
 				FrameBlock frameRBlock = readRFrameFromHDFS(file + ".csv", FileFormat.CSV, frameBlock.getNumRows(),
 					frameBlock.getNumColumns());
-				verifyFrameData(frameBlock, frameRBlock, lschemaAB);
+				verifyFrameData(frameBlock, frameRBlock, lschemaOut);
 			}
 		}
 		catch(Exception ex) {

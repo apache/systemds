@@ -139,6 +139,14 @@ public class MultiReturnComplexMatrixBuiltinCPInstruction extends ComputationCPI
 			return new MultiReturnComplexMatrixBuiltinCPInstruction(null, in1, in2, windowSize, overlap, outputs, opcode,
 				str, threads);
 		}
+		else if ( opcode.equalsIgnoreCase("rcm") ) {
+			CPOperand in1 = new CPOperand(parts[1]);
+			CPOperand in2 = new CPOperand(parts[2]);
+			outputs.add ( new CPOperand(parts[3], ValueType.FP64, DataType.MATRIX) );
+			outputs.add ( new CPOperand(parts[4], ValueType.FP64, DataType.MATRIX) );
+			int threads = Integer.parseInt(parts[5]);
+			return new MultiReturnComplexMatrixBuiltinCPInstruction(null, in1, in2, outputs, opcode, str, threads);
+		}
 		else {
 			throw new DMLRuntimeException("Invalid opcode in MultiReturnBuiltin instruction: " + opcode);
 		}

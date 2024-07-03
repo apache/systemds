@@ -29,7 +29,7 @@ import org.apache.sysds.api.DMLScript;
 import org.apache.sysds.conf.CompilerConfig.ConfigType;
 import org.apache.sysds.hops.OptimizerUtils;
 import org.apache.sysds.lops.Compression.CompressConfig;
-import org.apache.sysds.lops.compile.linearization.ILinearize;
+import org.apache.sysds.lops.compile.linearization.IDagLinearizerFactory.DagLinearizer;
 import org.apache.sysds.runtime.io.IOUtilFunctions;
 import org.apache.sysds.runtime.util.CommonThreadPool;
 
@@ -272,7 +272,7 @@ public class ConfigurationManager{
 	}
 
 	public static boolean isMaxPrallelizeEnabled() {
-		return (getLinearizationOrder() == ILinearize.DagLinearization.MAX_PARALLELIZE
+		return (getLinearizationOrder() == DagLinearizer.MAX_PARALLELIZE
 			|| OptimizerUtils.MAX_PARALLELIZE_ORDER);
 	}
 
@@ -303,15 +303,14 @@ public class ConfigurationManager{
 		return OptimizerUtils.AUTO_GPU_CACHE_EVICTION;
 	}
 
-	public static ILinearize.DagLinearization getLinearizationOrder() {
+	public static DagLinearizer getLinearizationOrder() {
 		if (OptimizerUtils.COST_BASED_ORDERING)
-			return ILinearize.DagLinearization.AUTO;
+			return DagLinearizer.AUTO;
 		else if (OptimizerUtils.MAX_PARALLELIZE_ORDER)
-			return ILinearize.DagLinearization.MAX_PARALLELIZE;
+			return DagLinearizer.MAX_PARALLELIZE;
 		else
-			return ILinearize.DagLinearization
-			.valueOf(ConfigurationManager.getDMLConfig().getTextValue(DMLConfig.DAG_LINEARIZATION).toUpperCase());
-
+			return DagLinearizer.valueOf(ConfigurationManager.getDMLConfig()
+				.getTextValue(DMLConfig.DAG_LINEARIZATION).toUpperCase());
 	}
 
 	///////////////////////////////////////

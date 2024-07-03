@@ -41,7 +41,7 @@ public class EncodeBuildCache {
         return _instance;
     }
 
-    public void put(EncodeCacheKey key, EncodeCacheEntry buildResult) {
+    public synchronized void put(EncodeCacheKey key, EncodeCacheEntry buildResult) {
 
 
         long entrySize = buildResult.getSize();
@@ -62,7 +62,7 @@ public class EncodeBuildCache {
         LOG.debug(String.format("Putting %s in the cache\n", key));
     }
 
-    public EncodeCacheEntry get(EncodeCacheKey key) {
+    public synchronized EncodeCacheEntry get(EncodeCacheKey key) {
 
         //TODO: update timestamp in the newly used cache entry
         //TODO: move newly used key to the top of the eviction queue

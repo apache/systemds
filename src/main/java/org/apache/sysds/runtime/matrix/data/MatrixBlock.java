@@ -1948,7 +1948,8 @@ public class MatrixBlock extends MatrixValue implements CacheBlock<MatrixBlock>,
 			return this;
 		}
 		catch(Exception e){
-			throw new DMLRuntimeException("Failed merging blocks: "+ this + " \n " + that, e);
+			//throw new DMLRuntimeException("Failed merging blocks: "+ this + " \n " + that, e);
+			throw new DMLRuntimeException("Failed merging blocks: ", e);
 		}
 	}
 
@@ -2018,36 +2019,12 @@ public class MatrixBlock extends MatrixValue implements CacheBlock<MatrixBlock>,
 		}
 	}
 
+
 	private void mergeIntoSparse(MatrixBlock that, boolean appendOnly, boolean deep) {
 		SparseBlock a = sparseBlock;
 		final boolean COO = (a instanceof SparseBlockCOO);
 		final int m = rlen;
 		final int n = clen;
-		if(a instanceof SparseBlockMCSC){
-			SparseBlock b = that.sparseBlock;
-			for( int i=0; i<m; i++ ) {
-				if( b.isEmpty(i) ) continue;
-
-
-					boolean appended = false;
-					int bpos = b.pos(i);
-					int blen = b.size(i);
-					int[] bix = b.indexes(i);
-					double[] bval = b.values(i);
-					for( int j=bpos; j<bpos+blen; j++ ) {
-						if( bval[j] != 0 ) {
-							a.append(i, bix[j], bval[j]);
-							appended = true;
-						}
-					}
-					//only sort if value appended
-					if( !COO && !appendOnly && appended )
-						a.sort(i);
-
-			}
-
-		}
-
 		if( that.sparse ) { //SPARSE <- SPARSE
 			SparseBlock b = that.sparseBlock;
 			for( int i=0; i<m; i++ ) {
@@ -2069,7 +2046,7 @@ public class MatrixBlock extends MatrixValue implements CacheBlock<MatrixBlock>,
 						}
 					}
 					//only sort if value appended
-					if( !COO && !appendOnly && appended )
+					if(!COO && !appendOnly && appended )
 						a.sort(i);
 				}
 			}

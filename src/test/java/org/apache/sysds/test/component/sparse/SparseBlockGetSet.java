@@ -26,6 +26,7 @@ import org.apache.sysds.runtime.data.SparseBlock;
 import org.apache.sysds.runtime.data.SparseBlockCOO;
 import org.apache.sysds.runtime.data.SparseBlockCSR;
 import org.apache.sysds.runtime.data.SparseBlockMCSR;
+import org.apache.sysds.runtime.data.SparseBlockMCSC;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.util.DataConverter;
 import org.apache.sysds.runtime.util.LongLongDoubleHashMap;
@@ -239,6 +240,51 @@ public class SparseBlockGetSet extends AutomatedTestBase
 	public void testSparseBlockDCSR3Rand()  {
 		runSparseBlockGetSetTest(SparseBlock.Type.DCSR, sparsity3, InitType.RAND_SET);
 	}
+
+	@Test
+	public void testSparseBlockMCSC1Bulk()  {
+		runSparseBlockGetSetColumnTest(SparseBlock.Type.MCSC, sparsity1, InitType.BULK);
+	}
+
+	@Test
+	public void testSparseBlockMCSC2Bulk()  {
+		runSparseBlockGetSetColumnTest(SparseBlock.Type.MCSC, sparsity2, InitType.BULK);
+	}
+
+	@Test
+	public void testSparseBlockMCSC3Bulk()  {
+		runSparseBlockGetSetColumnTest(SparseBlock.Type.MCSC, sparsity3, InitType.BULK);
+	}
+
+	@Test
+	public void testSparseBlockMCSC1Seq()  {
+		runSparseBlockGetSetColumnTest(SparseBlock.Type.MCSC, sparsity1, InitType.SEQ_SET);
+	}
+
+	@Test
+	public void testSparseBlockMCSC2Seq()  {
+		runSparseBlockGetSetColumnTest(SparseBlock.Type.MCSC, sparsity2, InitType.SEQ_SET);
+	}
+
+	@Test
+	public void testSparseBlockMCSC3Seq()  {
+		runSparseBlockGetSetColumnTest(SparseBlock.Type.MCSC, sparsity3, InitType.SEQ_SET);
+	}
+
+	@Test
+	public void testSparseBlockMCSC1Rand()  {
+		runSparseBlockGetSetColumnTest(SparseBlock.Type.MCSC, sparsity1, InitType.RAND_SET);
+	}
+
+	@Test
+	public void testSparseBlockMCSC2Rand()  {
+		runSparseBlockGetSetColumnTest(SparseBlock.Type.MCSC, sparsity2, InitType.RAND_SET);
+	}
+
+	@Test
+	public void testSparseBlockMCSC3Rand()  {
+		runSparseBlockGetSetColumnTest(SparseBlock.Type.MCSC, sparsity3, InitType.RAND_SET);
+	}
 	
 	private void runSparseBlockGetSetTest( SparseBlock.Type btype, double sparsity, InitType itype)
 	{
@@ -246,7 +292,7 @@ public class SparseBlockGetSet extends AutomatedTestBase
 		{
 			//data generation
 			double[][] A = getRandomMatrix(rows, cols, -10, 10, sparsity, 7654321);
-			
+
 			//init sparse block
 			SparseBlock sblock = null;
 			if( itype == InitType.BULK ) {
@@ -266,7 +312,11 @@ public class SparseBlockGetSet extends AutomatedTestBase
 					case COO: sblock = new SparseBlockCOO(rows, cols); break;
 					case DCSR: sblock = new SparseBlockDCSR(rows, cols); break;
 				}
-				
+
+				if(sblock instanceof SparseBlockMCSC){
+
+				}
+
 				if(itype == InitType.SEQ_SET) {
 					for( int i=0; i<rows; i++ )
 						for( int j=0; j<cols; j++ )
@@ -284,13 +334,13 @@ public class SparseBlockGetSet extends AutomatedTestBase
 						int c = (int)e.getKey2();
 						sblock.set(r, c, e.value);
 					}
-				}	
+				}
 			}
-			
+
 			//check basic meta data
 			if( sblock.numRows() != rows )
 				Assert.fail("Wrong number of rows: "+sblock.numRows()+", expected: "+rows);
-			
+
 			//check for correct number of non-zeros
 			int[] rnnz = new int[rows]; int nnz = 0;
 			for( int i=0; i<rows; i++ ) {
@@ -300,12 +350,12 @@ public class SparseBlockGetSet extends AutomatedTestBase
 			}
 			if( nnz != sblock.size() )
 				Assert.fail("Wrong number of non-zeros: "+sblock.size()+", expected: "+nnz);
-		
+
 			//check correct isEmpty return
 			for( int i=0; i<rows; i++ )
 				if( sblock.isEmpty(i) != (rnnz[i]==0) )
 					Assert.fail("Wrong isEmpty(row) result for row nnz: "+rnnz[i] + "(row: " + i + ")");
-		
+
 			//check correct values
 			for( int i=0; i<rows; i++ )
 				if( !sblock.isEmpty(i) )
@@ -313,11 +363,90 @@ public class SparseBlockGetSet extends AutomatedTestBase
 						double tmp = sblock.get(i, j);
 						if( tmp != A[i][j] )
 							Assert.fail("Wrong get value for cell ("+i+","+j+"): "+tmp+", expected: "+A[i][j]);
-					}		
+					}
 		}
 		catch(Exception ex) {
 			ex.printStackTrace();
 			throw new RuntimeException(ex);
 		}
 	}
+
+	private void runSparseBlockGetSetColumnTest( SparseBlock.Type btype, double sparsity, InitType itype)
+	{
+		try
+		{
+			//data generation
+			double[][] A = getRandomMatrix(rows, cols, -10, 10, sparsity, 7654321);
+
+			//init sparse block
+			SparseBlockMCSC sblock = null;
+			if( itype == InitType.BULK ) {
+				MatrixBlock mbtmp = DataConverter.convertToMatrixBlock(A);
+				SparseBlock srtmp = mbtmp.getSparseBlock();
+				switch( btype ) {
+					case MCSC: sblock = new SparseBlockMCSC(srtmp, cols); break;
+				}
+			}
+			else if( itype == InitType.SEQ_SET || itype == InitType.RAND_SET ) {
+				switch( btype ) {
+					case MCSC: sblock = new SparseBlockMCSC(rows, cols); break;
+				}
+
+
+				if(itype == InitType.SEQ_SET) {
+					for( int i=0; i<cols; i++ )
+						for( int j=0; j<rows; j++ )
+							sblock.append(j, i, A[j][i]);
+				}
+				else if( itype == InitType.RAND_SET ) {
+					LongLongDoubleHashMap map = new LongLongDoubleHashMap();
+					for( int i=0; i<cols; i++ )
+						for( int j=0; j<rows; j++ )
+							map.addValue(j, i, A[j][i]);
+					Iterator<ADoubleEntry> iter = map.getIterator();
+					while( iter.hasNext() ) { //random hash order
+						ADoubleEntry e = iter.next();
+						int r = (int)e.getKey1();
+						int c = (int)e.getKey2();
+						sblock.set(r, c, e.value);
+					}
+				}
+			}
+
+			//check basic meta data
+			if( sblock.numCols() != cols )
+				Assert.fail("Wrong number of cols: "+sblock.numCols()+", expected: "+cols);
+
+			//check for correct number of non-zeros
+			int[] cnnz = new int[cols]; int nnz = 0;
+			for( int i=0; i<cols; i++ ) {
+				for( int j=0; j<rows; j++ )
+					cnnz[i] += (A[j][i]!=0) ? 1 : 0;
+				nnz += cnnz[i];
+			}
+			if( nnz != sblock.size() )
+				Assert.fail("Wrong number of non-zeros: "+sblock.size()+", expected: "+nnz);
+
+			//check correct isEmpty return
+			for( int i=0; i<cols; i++ )
+				if( sblock.isEmpty(i) != (cnnz[i]==0) )
+					Assert.fail("Wrong isEmpty(col) result for row nnz: "+cnnz[i] + "(column: " + i + ")");
+
+			//check correct values
+			for( int i=0; i<cols; i++ )
+				if( !sblock.isEmpty(i) )
+					for( int j=0; j<rows; j++ ) {
+						double tmp = sblock.get(j, i);
+						if( tmp != A[j][i] )
+							Assert.fail("Wrong get value for cell ("+i+","+j+"): "+tmp+", expected: "+A[j][i]);
+					}
+
+
+		}
+		catch(Exception ex) {
+			ex.printStackTrace();
+			throw new RuntimeException(ex);
+		}
+	}
+
 }

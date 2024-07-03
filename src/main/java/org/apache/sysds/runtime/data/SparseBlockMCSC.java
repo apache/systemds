@@ -22,6 +22,7 @@ package org.apache.sysds.runtime.data;
 
 import java.util.*;
 
+import org.apache.sysds.runtime.matrix.data.IJV;
 import org.apache.sysds.utils.MemoryEstimates;
 
 /**
@@ -39,10 +40,21 @@ public class SparseBlockMCSC extends SparseBlock{
 	private static final long serialVersionUID = 112364695245614881L;
 
 	private SparseRow[] _columns = null;
+	private int _clenInferred = -1;
 
-	public SparseBlockMCSC(SparseBlock sblock)
-	{
-		//special case SparseBlockMCSC
+
+	public SparseBlockMCSC(SparseBlock sblock, int clen) {
+		_clenInferred = clen;
+		initialize(sblock);
+	}
+
+	public SparseBlockMCSC(SparseBlock sblock) {
+		initialize(sblock);
+	}
+
+	private void initialize(SparseBlock sblock){
+		int clen = 0;
+
 		if(sblock instanceof SparseBlockMCSC){
 			SparseRow[] originalColumns = ((SparseBlockMCSC)sblock)._columns;
 			_columns = new SparseRow[originalColumns.length];
@@ -53,19 +65,21 @@ public class SparseBlockMCSC extends SparseBlock{
 		}
 		else if(sblock instanceof SparseBlockMCSR) {
 			SparseRow[] originalRows = ((SparseBlockMCSR)sblock).getRows();
-
 			HashMap<Integer, Integer> columnSizes = new HashMap();
-
-			for(SparseRow row : originalRows) {
-				if(row != null && !row.isEmpty()){
-					for(int i = 0; i<row.size(); i++){
-						int rowIndex = row.indexes()[i];
-						columnSizes.put(rowIndex, columnSizes.getOrDefault(rowIndex,0)+1);
+			if(_clenInferred == -1) {
+				for(SparseRow row : originalRows) {
+					if(row != null && !row.isEmpty()) {
+						for(int i = 0; i < row.size(); i++) {
+							int rowIndex = row.indexes()[i];
+							columnSizes.put(rowIndex, columnSizes.getOrDefault(rowIndex, 0) + 1);
+						}
 					}
 				}
+				clen = columnSizes.keySet().stream().max(Integer::compare).orElseThrow(NoSuchElementException::new);
+				_columns = new SparseRow[clen + 1];
+			}else{
+				_columns = new SparseRow[_clenInferred];
 			}
-			int clen = columnSizes.keySet().stream().max(Integer::compare).orElseThrow(NoSuchElementException::new);
-			_columns = new SparseRow[clen+1];
 
 			for(int i = 0; i<_columns.length; i++){
 				int columnSize = columnSizes.getOrDefault(i, -1);
@@ -106,9 +120,11 @@ public class SparseBlockMCSC extends SparseBlock{
 				columnSizes.put(col, columnSizes.getOrDefault(col,0)+1);
 			}
 
-
-			int clen = columnSizes.keySet().stream().max(Integer::compare).orElseThrow(NoSuchElementException::new);
-			_columns = new SparseRow[clen+1];
+			clen = columnSizes.keySet().stream().max(Integer::compare).orElseThrow(NoSuchElementException::new);
+			if(_clenInferred == -1)
+				_columns = new SparseRow[clen+1];
+			else
+				_columns = new SparseRow[_clenInferred];
 			for(int i = 0; i<_columns.length; i++){
 				int columnSize = columnSizes.getOrDefault(i, -1);
 				if(columnSize == -1){
@@ -121,6 +137,8 @@ public class SparseBlockMCSC extends SparseBlock{
 					_columns[i] = new SparseRowVector(columnSize);
 				}
 			}
+
+
 
 			double[] vals = sblock.values(0);
 			int[] cols = sblock.indexes(0);
@@ -154,6 +172,7 @@ public class SparseBlockMCSC extends SparseBlock{
 	public SparseBlockMCSC(int clen){
 		_columns = new SparseRow[clen];
 	}
+
 
 	public SparseBlockMCSC(int rlen, int clen) {
 		this(clen);
@@ -577,4 +596,5 @@ public class SparseBlockMCSC extends SparseBlock{
 	public SparseRow[] getCols(){
 		return _columns;
 	}
+	
 }

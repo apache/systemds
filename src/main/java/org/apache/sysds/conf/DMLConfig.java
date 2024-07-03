@@ -109,7 +109,8 @@ public class DMLConfig
 	public static final String COMPILERASSISTED_RW  = "sysds.lineage.compilerassisted"; // boolean: whether to apply compiler assisted rewrites
 	public static final String BUFFERPOOL_LIMIT     = "sysds.caching.bufferpoollimit"; // max buffer pool size in percentage
 	public static final String MEMORY_MANAGER       = "sysds.caching.memorymanager"; // static or unified memory manager
-	
+	public static final String ENCODECACHE_ENABLED		= "sysds.caching.encodecache"; // enable caching of build output in transformencode build phase
+
 	// Fraction of available memory to use. The available memory is computer when the GPUContext is created
 	// to handle the tradeoff on calling cudaMemGetInfo too often.
 	public static final String GPU_MEMORY_UTILIZATION_FACTOR = "sysds.gpu.memory.util.factor";

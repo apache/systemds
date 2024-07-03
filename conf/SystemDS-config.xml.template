@@ -36,7 +36,7 @@
     <!-- enables multi-threaded read/write in singlenode control program -->
     <sysds.cp.parallel.io>true</sysds.cp.parallel.io>
 
-    <!-- enalbe multi-threaded transformencode and apply -->
+    <!-- enable multi-threaded transformencode and apply -->
     <sysds.parallel.encode>true</sysds.parallel.encode>
 
     <!-- synchronization barrier between transformencode build and apply -->
@@ -147,6 +147,9 @@
 
     <!-- set memory manager (static, unified) -->
     <sysds.caching.memorymanager>static</sysds.caching.memorymanager>
+
+    <!-- enable caching of build output in transformencode build phase-->
+    <sysds.caching.encodecache>false</sysds.caching.encodecache>
 	
 	<!-- Asynchronously trigger prefetch (Spark intermediate) -->
     <sysds.async.prefetch>false</sysds.async.prefetch>

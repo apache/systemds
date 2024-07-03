@@ -33,6 +33,7 @@ import static org.apache.sysds.runtime.transform.encode.EncodeBuildCache.getEnco
 import static org.apache.sysds.runtime.transform.encode.EncoderType.Bin;
 import org.apache.commons.lang3.tuple.MutableTriple;
 import org.apache.sysds.api.DMLScript;
+import org.apache.sysds.conf.ConfigurationManager;
 import org.apache.sysds.lops.Lop;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.controlprogram.caching.CacheBlock;
@@ -138,7 +139,7 @@ public class ColumnEncoderBin extends ColumnEncoder {
 		if(!isApplicable())
 			return;
 
-		if (EncodeCacheConfig._cacheEnabled) {
+		if (ConfigurationManager.isEncodeCacheEnabled()) {
 			// Check cache if build result is already there
 			EncodeCacheKey key = new EncodeCacheKey(_colID, Bin, _binMethod);
 			EncodeBuildCache cache = getEncodeBuildCache();

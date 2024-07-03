@@ -1,5 +1,7 @@
 package org.apache.sysds.runtime.transform.encode;
 
+import java.util.Arrays;
+
 public class BinMinsMaxs {
 
     private final double[] _binMins;
@@ -45,4 +47,12 @@ public class BinMinsMaxs {
         return size;
     }
 
+    @Override
+    public String toString() {
+        return "BinMinsMaxs{" +
+                "_binMins=" + Arrays.toString(_binMins) +
+                ", _binMaxs=" + Arrays.toString(_binMaxs) +
+                ", _size=" + _size +
+                '}';
+    }
 }

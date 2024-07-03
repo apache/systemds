@@ -114,9 +114,29 @@ public class ColumnEncoderBin extends ColumnEncoder {
 			throw new RuntimeException(method + " is invalid");
 	}
 
+	private void computeBinsMinMax(CacheBlock<?> in) {
+		if(_binMethod == BinMethod.EQUI_WIDTH) {
+			double[] pairMinMax = getMinMaxOfCol(in, _colID, 0, -1);
+			computeBins(pairMinMax[0], pairMinMax[1]);
+		}
+		else if(_binMethod == BinMethod.EQUI_HEIGHT) {
+			double[] sortedCol = prepareDataForEqualHeightBins(in, _colID, 0, -1);
+			computeEqualHeightBins(sortedCol, false);
+
+		}
+		else if(_binMethod == BinMethod.EQUI_HEIGHT_APPROX){
+			double[] vals = sampleDoubleColumn(in, _colID, SAMPLE_FRACTION, MINIMUM_SAMPLE_SIZE);
+			Arrays.sort(vals);
+			computeEqualHeightBins(vals, false);
+		}
+	}
+
 	@Override
 	public void build(CacheBlock<?> in) {
 		long t0 = DMLScript.STATISTICS ? System.nanoTime() : 0;
+
+		if(!isApplicable())
+			return;
 
 		if (EncodeCacheConfig._cacheEnabled) {
 			// Check cache if build result is already there
@@ -124,52 +144,22 @@ public class ColumnEncoderBin extends ColumnEncoder {
 			EncodeBuildCache cache = getEncodeBuildCache();
 			EncodeCacheEntry cached_result = cache.get(key);
 
-			if(!isApplicable())
-				return;
-			else if (cached_result != null) {
+			if (cached_result != null) {
+				// Found the computed bin values in the cache
 				BinMinsMaxs binMinsMaxs = (BinMinsMaxs) cached_result.getValue();
 				_binMins = binMinsMaxs.get_binMins();
 				_binMaxs = binMinsMaxs.get_binMaxs();
 				LOG.debug(String.format("using existing bin boundaries. Object at: %s \n", cached_result));
-			}
-			else if(_binMethod == BinMethod.EQUI_WIDTH) {
-				double[] pairMinMax = getMinMaxOfCol(in, _colID, 0, -1);
-				computeBins(pairMinMax[0], pairMinMax[1]);
-			}
-			else if(_binMethod == BinMethod.EQUI_HEIGHT) {
-				double[] sortedCol = prepareDataForEqualHeightBins(in, _colID, 0, -1);
-				computeEqualHeightBins(sortedCol, false);
-
-			}
-			else if(_binMethod == BinMethod.EQUI_HEIGHT_APPROX){
-				double[] vals = sampleDoubleColumn(in, _colID, SAMPLE_FRACTION, MINIMUM_SAMPLE_SIZE);
-				Arrays.sort(vals);
-				computeEqualHeightBins(vals, false);
-			}
-
-			if (cached_result == null) {
+			} else {
 				LOG.debug(String.format("No entry found for key: %s, creating new bin boundaries\n", key));
+				computeBinsMinMax(in);
 				BinMinsMaxs binMinMax = new BinMinsMaxs(_binMins, _binMaxs);
 				EncodeCacheEntry<BinMinsMaxs> entry = new EncodeCacheEntry<>(key, binMinMax);
 				cache.put(key, entry);
 				LOG.debug(String.format("cache entry: %s\n", cache.get(key)));
 			}
-		} else {
-			if(!isApplicable())
-				return;
-			else if(_binMethod == BinMethod.EQUI_WIDTH) {
-				double[] pairMinMax = getMinMaxOfCol(in, _colID, 0, -1);
-				computeBins(pairMinMax[0], pairMinMax[1]);
-			}
-			else if(_binMethod == BinMethod.EQUI_HEIGHT) {
-				double[] sortedCol = prepareDataForEqualHeightBins(in, _colID, 0, -1);
-				computeEqualHeightBins(sortedCol, false);
-			}
-			else if(_binMethod == BinMethod.EQUI_HEIGHT_APPROX){
-				double[] vals = sampleDoubleColumn(in, _colID, SAMPLE_FRACTION, MINIMUM_SAMPLE_SIZE);
-				Arrays.sort(vals);
-				computeEqualHeightBins(vals, false);
-			}
+		} else { // Cache is not enabled, so always compute the bin boundaries
+			computeBinsMinMax(in);
 		}
 
 		if(DMLScript.STATISTICS)

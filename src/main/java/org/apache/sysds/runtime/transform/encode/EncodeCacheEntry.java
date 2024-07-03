@@ -19,13 +19,14 @@
 
 package org.apache.sysds.runtime.transform.encode;
 
-import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.transform.encode.EncodeCacheConfig.EncodeCacheStatus;
+
+import java.util.HashMap;
 
 public class EncodeCacheEntry<T> { // uses generic to store any kind of object
 
     protected final EncodeCacheKey _key; //TODO: do we need it in here too?
-    protected T _value; // generic, can be an rcMap or a BinBoundries object
+    protected T _value; // generic, can be an RCDMap or a BinBoundries object
     protected long _timestamp = 0;
     protected EncodeCacheConfig.EncodeCacheStatus _status; //TODO: do we need this?
 
@@ -66,14 +67,17 @@ public class EncodeCacheEntry<T> { // uses generic to store any kind of object
         notifyAll();
     }*/
 
-    public synchronized long getSize() {
-        //TODO: figure out a way to get the size of the generic object, wich could be an rcdMap or a BinMinsMaxs object
-        return 0;
+    public long getSize() {
+        if (_value instanceof BinMinsMaxs){ return ((BinMinsMaxs) _value).getSize(); }
+        if (_value instanceof RCDMap) { return ((RCDMap) _value).getSize(); }
+        else throw new RuntimeException("Cache entry does not contain bin boundaries or a recode map.");
     }
 
     public boolean isEmpty() { //
         return(_value == null);
     }
+
+
 
 
 

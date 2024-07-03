@@ -10,7 +10,7 @@ public class BinMinsMaxs {
     public BinMinsMaxs(final double[] binMins, final double[] binMaxs) {
         this._binMins = binMins;
         this._binMaxs = binMaxs;
-        _size = setSize();
+        this._size = setSize();
     }
 
     public double[] get_binMaxs() {

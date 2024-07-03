@@ -180,7 +180,7 @@ public class ColumnEncoderRecode extends ColumnEncoder {
 		long t0 = DMLScript.STATISTICS ? System.nanoTime() : 0;
 
 
-		if (ConfigurationManager.isEncodeCacheEnabled()) {
+		if (EncodeCacheConfig.isCacheEnabled()) {
 			EncodeCacheKey key = new EncodeCacheKey(_colID, Recode);
 			EncodeBuildCache cache = getEncodeBuildCache();
 			EncodeCacheEntry<Object> entry = cache.get(key);

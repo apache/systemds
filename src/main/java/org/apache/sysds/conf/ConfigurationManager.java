@@ -255,6 +255,11 @@ public class ConfigurationManager{
 		return getDMLConfig().getBooleanValue(DMLConfig.ENCODECACHE_ENABLED);
 	}
 
+	public static double getEncodeCacheMemoryFraction(){
+
+		return getDMLConfig().getDoubleValue(DMLConfig.ENCODECACHE_MEMORY_FRACTION);
+	}
+
 	public static CompressConfig getCompressConfig(){
 		return CompressConfig.valueOf(getDMLConfig().getTextValue(DMLConfig.COMPRESSED_LINALG).toUpperCase());
 	}

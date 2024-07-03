@@ -139,7 +139,7 @@ public class ColumnEncoderBin extends ColumnEncoder {
 		if(!isApplicable())
 			return;
 
-		if (ConfigurationManager.isEncodeCacheEnabled()) {
+		if (EncodeCacheConfig.isCacheEnabled()) {
 			// Check cache if build result is already there
 			EncodeCacheKey key = new EncodeCacheKey(_colID, Bin, _binMethod);
 			EncodeBuildCache cache = getEncodeBuildCache();

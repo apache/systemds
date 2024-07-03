@@ -14,9 +14,11 @@ public class EncodeBuildCache {
     protected static final Log LOG = LogFactory.getLog(EncodeBuildCache.class.getName());
     private static volatile EncodeBuildCache _instance;
     private final Map<EncodeCacheKey, EncodeCacheEntry<Object>> _cache;
+
+    private final EncodeCacheConfig _config;
     private static EncodeCacheConfig.EncodeCachePolicy _cachePolicy;
     private static LinkedList<EncodeCacheKey> _evictionQueue;
-    private static long _cacheLimit; //TODO: pull from yaml config
+    private static long _cacheLimit;
     private static long _usedCacheMemory;
     // Note: we omitted maintaining a timestamp since and ordered data structure is sufficient for LRU
 
@@ -25,8 +27,10 @@ public class EncodeBuildCache {
         _cache = new ConcurrentHashMap<>();
         _cachePolicy = EncodeCacheConfig._cachepolicy;
         _evictionQueue = new LinkedList<>();
-        _cacheLimit = setCacheLimit(EncodeCacheConfig.CPU_CACHE_FRAC); //5%
         _usedCacheMemory = 0;
+        _config = EncodeCacheConfig.create(); // reads values from ConfigurationManager or uses default ones
+        _cacheLimit = setCacheLimit(_config.getCacheMemoryFraction()); //5%
+
 
     }
     // we chose the singleton pattern instead of making the cache a static class because it is lazy loaded

@@ -150,6 +150,9 @@
 
     <!-- enable caching of build output in transformencode build phase-->
     <sysds.caching.encodecache>false</sysds.caching.encodecache>
+
+    <!-- percentage of heap to use for the encodecache -->
+    <sysds.caching.encodecachememoryfraction>0.05</sysds.caching.encodecachememoryfraction>
 	
 	<!-- Asynchronously trigger prefetch (Spark intermediate) -->
     <sysds.async.prefetch>false</sysds.async.prefetch>

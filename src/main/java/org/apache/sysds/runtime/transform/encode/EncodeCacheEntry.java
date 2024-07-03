@@ -49,13 +49,12 @@ public class EncodeCacheEntry<T> { // uses generic to store any kind of object
         return(_value == null);
     }
 
-
-
-
-
-
-
-
-
-
+    @Override
+    public String toString() {
+        return "EncodeCacheEntry{" +
+                "_key=" + _key +
+                ", _value=" + _value +
+                ", _timestamp=" + _timestamp +
+                '}';
+    }
 }

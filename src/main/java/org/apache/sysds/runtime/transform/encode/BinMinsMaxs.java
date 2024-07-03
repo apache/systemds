@@ -5,9 +5,12 @@ public class BinMinsMaxs {
     private final double[] _binMins;
     private final double[] _binMaxs;
 
+    private final long _size;
+
     public BinMinsMaxs(final double[] binMins, final double[] binMaxs) {
         this._binMins = binMins;
         this._binMaxs = binMaxs;
+        _size = setSize();
     }
 
     public double[] get_binMaxs() {
@@ -19,6 +22,10 @@ public class BinMinsMaxs {
     }
 
     public long getSize(){
+        return this._size;
+    }
+
+    private long setSize(){
         // object header: 16 bytes, reference to _binMins, _binMaxs: each 4 bytes,
         // array header: each 12 bytes, storage of array length: each 4 bytes
         // the constant object overhead is a minimum estimation as exact storage behaviour cannot be predicted

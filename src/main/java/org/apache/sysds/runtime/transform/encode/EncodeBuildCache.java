@@ -18,8 +18,6 @@ public class EncodeBuildCache {
     private static long _cacheSize;
     private static long _cacheLimit; //TODO: pull from yaml config
 
-    private static long _maxCacheMemory;
-
     private static long _usedCacheMemory;
 
     private static long _startTimestamp;
@@ -28,7 +26,6 @@ public class EncodeBuildCache {
         _cache = new ConcurrentHashMap<>();
         _evictionQueue = new LinkedList<>();
         _cacheLimit = setCacheLimit(EncodeCacheConfig.CPU_CACHE_FRAC); //5%
-        _maxCacheMemory = _cacheLimit*Runtime.getRuntime().totalMemory();
         _usedCacheMemory = 0;
         _startTimestamp = System.currentTimeMillis(); //TODO: do we need it?
     }
@@ -48,14 +45,14 @@ public class EncodeBuildCache {
 
 
         long entrySize = buildResult.getSize();
-        long freeMemory = _maxCacheMemory - _usedCacheMemory;
+        long freeMemory = _cacheLimit - _usedCacheMemory;
 
         while (freeMemory < entrySize) {
             EncodeCacheKey evictedKey = _evictionQueue.remove();
             EncodeCacheEntry evictedEntry = _cache.get(evictedKey);
             _cache.remove(evictedKey);
             _usedCacheMemory -= evictedEntry.getSize();
-            freeMemory = _maxCacheMemory - _usedCacheMemory;
+            freeMemory = _cacheLimit - _usedCacheMemory;
         }
 
         _cache.put(key, buildResult);

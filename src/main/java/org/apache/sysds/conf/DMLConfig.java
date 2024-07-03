@@ -213,6 +213,7 @@ public class DMLConfig
 		_defaultVals.put(ASYNC_PREFETCH,   "false" );
 		_defaultVals.put(ASYNC_SPARK_BROADCAST,  "false" );
 		_defaultVals.put(ASYNC_SPARK_CHECKPOINT,  "false" );
+		_defaultVals.put(ENCODECACHE_ENABLED,  "true" );
 	}
 	
 	public DMLConfig() {

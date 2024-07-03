@@ -10,7 +10,7 @@ public class BinMinsMaxs {
 
     public static BinMinsMaxs create(final double[] binMins, final double[] binMaxs) {
         if (binMins.length != binMaxs.length) {
-            throw new IllegalArgumentException("");
+            throw new IllegalArgumentException("Binmins and binmaxs must be the same length");
         }
         long size = computeSize(binMins, binMaxs);
         return new BinMinsMaxs(binMins, binMaxs, size);

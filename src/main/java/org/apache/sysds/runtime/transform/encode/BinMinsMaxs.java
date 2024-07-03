@@ -34,13 +34,13 @@ public class BinMinsMaxs {
         return this._size;
     }
 
-    private long computeSize(){
+    private static long computeSize(final double[] binMins, final double[] binMaxs){
         // object header: 16 bytes, reference to _binMins, _binMaxs: each 4 bytes,
         // array header: each 12 bytes, storage of array length: each 4 bytes
         // the constant object overhead is a minimum estimation as exact storage behaviour cannot be predicted
         int size = 56;
-        if (_binMins != null && _binMaxs != null) {
-            size += 2 *  8 * _binMins.length; // size of double: 8 bytes
+        if (binMins != null && binMaxs != null) {
+            size += 2 *  8 * binMins.length; // size of double: 8 bytes
         }
         return size;
     }

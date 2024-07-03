@@ -5,17 +5,17 @@ public class BinMinsMaxs {
     private final double[] _binMins;
     private final double[] _binMaxs;
 
-    public BinMinsMaxs(double[] binMins, double[] binMaxs) {
+    public BinMinsMaxs(final double[] binMins, final double[] binMaxs) {
         this._binMins = binMins;
         this._binMaxs = binMaxs;
     }
 
     public double[] get_binMaxs() {
-        return _binMaxs;
+        return this._binMaxs;
     }
 
     public double[] get_binMins() {
-        return _binMins;
+        return this._binMins;
     }
 
     public long getSize(){

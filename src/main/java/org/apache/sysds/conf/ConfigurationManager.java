@@ -250,15 +250,17 @@ public class ConfigurationManager{
 		return compress.isEnabled();
 	}
 
-	public static boolean isEncodeCacheEnabled(){
+	// flag to enable encode cache
+	/*public static boolean isEncodeCacheEnabled(){
 
 		return getDMLConfig().getBooleanValue(DMLConfig.ENCODECACHE_ENABLED);
-	}
+	}*/
 
-	public static double getEncodeCacheMemoryFraction(){
+	// flag for encode cache memory limit (fraction of heap size)
+	/*public static double getEncodeCacheMemoryFraction(){
 
 		return getDMLConfig().getDoubleValue(DMLConfig.ENCODECACHE_MEMORY_FRACTION);
-	}
+	}*/
 
 	public static CompressConfig getCompressConfig(){
 		return CompressConfig.valueOf(getDMLConfig().getTextValue(DMLConfig.COMPRESSED_LINALG).toUpperCase());

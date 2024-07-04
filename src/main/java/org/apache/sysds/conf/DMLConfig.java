@@ -109,8 +109,8 @@ public class DMLConfig
 	public static final String COMPILERASSISTED_RW  = "sysds.lineage.compilerassisted"; // boolean: whether to apply compiler assisted rewrites
 	public static final String BUFFERPOOL_LIMIT     = "sysds.caching.bufferpoollimit"; // max buffer pool size in percentage
 	public static final String MEMORY_MANAGER       = "sysds.caching.memorymanager"; // static or unified memory manager
-	public static final String ENCODECACHE_ENABLED		= "sysds.caching.encodecache"; // enable caching of build output in transformencode build phase
-	public static final String ENCODECACHE_MEMORY_FRACTION = "sysds.caching.encodecachememoryfraction"; // percentage of heap to use for the encodecache
+	/*public static final String ENCODECACHE_ENABLED		= "sysds.caching.encodecache"; // enable caching of build output in transformencode build phase
+	public static final String ENCODECACHE_MEMORY_FRACTION = "sysds.caching.encodecachememoryfraction"; // percentage of heap to use for the encodecache*/
 	// Fraction of available memory to use. The available memory is computer when the GPUContext is created
 	// to handle the tradeoff on calling cudaMemGetInfo too often.
 	public static final String GPU_MEMORY_UTILIZATION_FACTOR = "sysds.gpu.memory.util.factor";
@@ -213,8 +213,9 @@ public class DMLConfig
 		_defaultVals.put(ASYNC_PREFETCH,   "false" );
 		_defaultVals.put(ASYNC_SPARK_BROADCAST,  "false" );
 		_defaultVals.put(ASYNC_SPARK_CHECKPOINT,  "false" );
-		_defaultVals.put(ENCODECACHE_ENABLED,  "true" ); //
-		_defaultVals.put(ENCODECACHE_MEMORY_FRACTION,  "0.05" );
+		// default values for encode cache
+		/*_defaultVals.put(ENCODECACHE_ENABLED,  "true" ); //
+		_defaultVals.put(ENCODECACHE_MEMORY_FRACTION,  "0.05" );*/
 	}
 	
 	public DMLConfig() {

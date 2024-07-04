@@ -29,16 +29,18 @@ public class EncodeCacheConfig {
 
     public static EncodeCacheConfig create() {
         // get the values from the dml script, and if they cannot be found, use the default values from this class
-        try {
+        // block is commented out as long as the cache is under development and the configuration is not yet
+        // exposed to the user
+        /*try {
             final boolean enableCache = ConfigurationManager.isEncodeCacheEnabled();
             double memoryFraction = ConfigurationManager.getEncodeCacheMemoryFraction();
             return new EncodeCacheConfig(enableCache, memoryFraction);
 
-        } catch (Exception e) { // use default values
+        } catch (Exception e) { // use default values*/
             final boolean enableCache = true;
             double memoryFraction = 0.05;
             return new EncodeCacheConfig(enableCache, memoryFraction);
-        }
+
     }
 
     private EncodeCacheConfig(boolean cacheEnabled, double cacheMemoryFraction) {

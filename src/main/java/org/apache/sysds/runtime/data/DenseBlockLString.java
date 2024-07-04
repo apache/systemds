@@ -109,6 +109,13 @@ public class DenseBlockLString extends DenseBlockLDRB
 		Arrays.fill(_blocks[bix], fromIndex, toIndex, String.valueOf(v));
 	}
 
+	@Override 
+	public void fillRow(int r, double v){
+		int start = pos(r);
+		int end = start + getDim(1);
+		Arrays.fill(_blocks[index(r)], start, end, String.valueOf(v));
+	}
+
 	@Override
 	public DenseBlock set(String s) {
 		for (int i = 0; i < numBlocks() - 1; i++) {

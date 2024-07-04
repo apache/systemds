@@ -118,6 +118,14 @@ public class DenseBlockString extends DenseBlockDRB {
 		Arrays.fill(_data, fromIndex, toIndex, String.valueOf(v));
 	}
 
+	@Override 
+	public void fillRow(int r, double v){
+		int start = pos(r);
+		int end = start + getDim(1);
+		Arrays.fill(_data, start, end, String.valueOf(v));
+	}
+
+
 	@Override
 	protected void setInternal(int bix, int ix, double v) {
 		_data[ix] = String.valueOf(v);

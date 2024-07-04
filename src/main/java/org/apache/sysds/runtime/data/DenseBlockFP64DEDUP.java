@@ -317,6 +317,12 @@ public class DenseBlockFP64DEDUP extends DenseBlockDRB
 		}
 	}
 
+	@Override 
+	public void fillRow(int r, double v){
+		throw new NotImplementedException();
+	}
+
+
 	@Override
 	protected void setInternal(int bix, int ix, double v) {
 		set(bix, ix, v);

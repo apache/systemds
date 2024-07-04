@@ -139,6 +139,14 @@ public class DenseBlockFP64 extends DenseBlockDRB
 		Arrays.fill(_data, fromIndex, toIndex, v);
 	}
 
+	@Override 
+	public void fillRow(int r, double v){
+		int start = pos(r);
+		int end = start + getDim(1);
+		Arrays.fill(_data, start, end, v);
+	}
+
+
 	@Override
 	protected void setInternal(int bix, int ix, double v) {
 		_data[ix] = v;

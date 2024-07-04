@@ -109,6 +109,13 @@ public class DenseBlockLInt32 extends DenseBlockLDRB
 		Arrays.fill(_blocks[bix], fromIndex, toIndex, UtilFunctions.toInt(v));
 	}
 
+	@Override 
+	public void fillRow(int r, double v){
+		int start = pos(r);
+		int end = start + getDim(1);
+		Arrays.fill(_blocks[index(r)], start, end, UtilFunctions.toInt(v));
+	}
+
 	@Override
 	public DenseBlock set(int r, int c, double v) {
 		_blocks[index(r)][pos(r, c)] = UtilFunctions.toInt(v);

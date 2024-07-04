@@ -23,6 +23,7 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.runtime.compress.CompressedMatrixBlock;
 import org.apache.sysds.runtime.compress.CompressionSettings;
+import org.apache.sysds.runtime.compress.lib.CLALibSlice;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 
 public interface ComEstFactory {
@@ -37,13 +38,13 @@ public interface ComEstFactory {
 	 * @return A new CompressionSizeEstimator used to extract information of column groups
 	 */
 	public static AComEst createEstimator(MatrixBlock data, CompressionSettings cs, int k) {
-		if(data instanceof CompressedMatrixBlock)
-			return createCompressedEstimator((CompressedMatrixBlock) data, cs);
-
 		final int nRows = cs.transposed ? data.getNumColumns() : data.getNumRows();
 		final int nCols = cs.transposed ? data.getNumRows() : data.getNumColumns();
 		final double sparsity = data.getSparsity();
 		final int sampleSize = getSampleSize(cs, nRows, nCols, sparsity);
+		if(data instanceof CompressedMatrixBlock)
+			return createCompressedEstimator((CompressedMatrixBlock) data, cs, sampleSize, k);
+
 		if(data.isEmpty())
 			return createExactEstimator(data, cs);
 		return createEstimator(data, cs, sampleSize, k, nRows);
@@ -75,8 +76,17 @@ public interface ComEstFactory {
 		return new ComEstExact(data, cs);
 	}
 
-	private static ComEstCompressed createCompressedEstimator(CompressedMatrixBlock data, CompressionSettings cs) {
-		LOG.debug("Using Compressed Estimator");
+	private static AComEst createCompressedEstimator(CompressedMatrixBlock data, CompressionSettings cs, int sampleSize,
+		int k) {
+		if(sampleSize < data.getNumRows()) {
+			LOG.debug("Trying to sample");
+			final MatrixBlock slice = CLALibSlice.sliceRowsCompressed(data, 0, sampleSize);
+			if(slice instanceof CompressedMatrixBlock) {
+				LOG.debug("Using Sampled Compressed Estimator " + sampleSize);
+				return new ComEstCompressedSample((CompressedMatrixBlock) slice, cs, data, k);
+			}
+		}
+		LOG.debug("Using Full Compressed Estimator");
 		return new ComEstCompressed(data, cs);
 	}
 
@@ -106,15 +116,15 @@ public interface ComEstFactory {
 	 * 
 	 * The sampling is calculated based on the a power of the number of rows and a sampling fraction
 	 * 
-	 * @param samplePower       The sample power
-	 * @param nRows             The number of rows
-	 * @param nCols             The number of columns
-	 * @param sparsity          The sparsity of the input
-	 * @param minimumSampleSize The minimum sample size
-	 * @param maxSampleSize     The maximum sample size
+	 * @param samplePower   The sample power
+	 * @param nRows         The number of rows
+	 * @param nCols         The number of columns
+	 * @param sparsity      The sparsity of the input
+	 * @param minSampleSize The minimum sample size
+	 * @param maxSampleSize The maximum sample size
 	 * @return The sample size to use.
 	 */
-	private static int getSampleSize(double samplePower, int nRows, int nCols, double sparsity, int minSampleSize,
+	public static int getSampleSize(double samplePower, int nRows, int nCols, double sparsity, int minSampleSize,
 		int maxSampleSize) {
 
 		// Start sample size at the min sample size as the basis sample.
@@ -133,6 +143,9 @@ public interface ComEstFactory {
 
 		// adhere to maximum sample size.
 		sampleSize = Math.max(minSampleSize, Math.min(sampleSize, maxSampleSize));
+
+		// cap at number of rows.
+		sampleSize = Math.min(nRows, sampleSize);
 
 		return sampleSize;
 	}

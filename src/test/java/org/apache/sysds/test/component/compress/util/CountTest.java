@@ -42,6 +42,7 @@ public class CountTest {
 
 		try {
 			DCounts hs = h.sort();
+			
 			assertEquals(4, hs.count);
 		}
 		catch(Exception e) {

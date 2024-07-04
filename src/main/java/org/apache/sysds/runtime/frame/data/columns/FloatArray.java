@@ -25,10 +25,11 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.util.Arrays;
-import java.util.BitSet;
+import java.util.Map;
 
 import org.apache.sysds.common.Types.ValueType;
 import org.apache.sysds.runtime.DMLRuntimeException;
+import org.apache.sysds.runtime.compress.colgroup.mapping.AMapToData;
 import org.apache.sysds.runtime.frame.data.columns.ArrayFactory.FrameArrayType;
 import org.apache.sysds.runtime.matrix.data.Pair;
 import org.apache.sysds.runtime.util.UtilFunctions;
@@ -205,62 +206,32 @@ public class FloatArray extends Array<Float> {
 	}
 
 	@Override
-	protected Array<Boolean> changeTypeBitSet() {
-		BitSet ret = new BitSet(size());
-		for(int i = 0; i < size(); i++) {
+	protected Array<Boolean> changeTypeBitSet(Array<Boolean> ret, int l, int u) {
+		for(int i = l; i < u; i++) {
 			if(_data[i] != 0 && _data[i] != 1)
-				throw new DMLRuntimeException(
-					"Unable to change to Boolean from Integer array because of value:" + _data[i]);
+				throw new DMLRuntimeException("Unable to change to Boolean from Float array because of value:" + _data[i]);
 			ret.set(i, _data[i] == 0 ? false : true);
 		}
-		return new BitSetArray(ret, size());
+		return ret;
 	}
 
 	@Override
-	protected Array<Boolean> changeTypeBoolean() {
-		boolean[] ret = new boolean[size()];
-		for(int i = 0; i < size(); i++) {
+	protected Array<Boolean> changeTypeBoolean(Array<Boolean> retA, int l, int u) {
+		boolean[] ret = (boolean[]) retA.get();
+		for(int i = l; i < u; i++) {
 			if(_data[i] != 0 && _data[i] != 1)
-				throw new DMLRuntimeException(
-					"Unable to change to Boolean from Integer array because of value:" + _data[i]);
+				throw new DMLRuntimeException("Unable to change to Boolean from Float array because of value:" + _data[i]);
 			ret[i] = _data[i] == 0 ? false : true;
 		}
-		return new BooleanArray(ret);
+		return retA;
 	}
 
 	@Override
-	protected Array<Double> changeTypeDouble() {
-		double[] ret = new double[size()];
-		for(int i = 0; i < size(); i++)
+	protected Array<Double> changeTypeDouble(Array<Double> retA, int l, int u) {
+		double[] ret = (double[]) retA.get();
+		for(int i = l; i < u; i++)
 			ret[i] = _data[i];
-		return new DoubleArray(ret);
-	}
-
-	@Override
-	protected Array<Integer> changeTypeInteger() {
-		int[] ret = new int[size()];
-		for(int i = 0; i < size(); i++) {
-			if(_data[i] != (int) _data[i])
-				throw new DMLRuntimeException("Unable to change to integer from float array because of value:" + _data[i]);
-			ret[i] = (int) _data[i];
-		}
-		return new IntegerArray(ret);
-	}
-
-	@Override
-	protected Array<Long> changeTypeLong() {
-		long[] ret = new long[size()];
-		for(int i = 0; i < size(); i++)
-			ret[i] = (int) _data[i];
-		return new LongArray(ret);
-	}
-
-	@Override
-	protected Array<Object> changeTypeHash64() {
-		long[] ret = new long[size()];
-		for(int i = 0; i < size(); i++)
-			ret[i] = (int) _data[i];
-		return new HashLongArray(ret);
+		return retA;
 	}
 
 	@Override
@@ -269,19 +240,59 @@ public class FloatArray extends Array<Float> {
 	}
 
 	@Override
-	protected Array<String> changeTypeString() {
-		String[] ret = new String[size()];
-		for(int i = 0; i < size(); i++)
-			ret[i] = get(i).toString();
-		return new StringArray(ret);
+	protected Array<Float> changeTypeFloat(Array<Float> retA, int l, int u) {
+		float[] ret = (float[]) retA.get();
+		for(int i = l; i < u; i++)
+			ret[i] = _data[i];
+		return retA;
 	}
 
 	@Override
-	public Array<Character> changeTypeCharacter() {
-		char[] ret = new char[size()];
-		for(int i = 0; i < size(); i++)
-			ret[i] = CharArray.parseChar(get(i).toString());
-		return new CharArray(ret);
+	protected Array<Integer> changeTypeInteger(Array<Integer> retA, int l, int u) {
+		int[] ret = (int[]) retA.get();
+		for(int i = l; i < u; i++)
+			ret[i] = (int) _data[i];
+		return retA;
+	}
+
+	@Override
+	protected Array<Long> changeTypeLong(Array<Long> retA, int l, int u) {
+		long[] ret = (long[]) retA.get();
+		for(int i = l; i < u; i++)
+			ret[i] = (long) _data[i];
+		return retA;
+	}
+
+	@Override
+	protected Array<Object> changeTypeHash64(Array<Object> retA, int l, int u) {
+		long[] ret = ((HashLongArray) retA).getLongs();
+		for(int i = l; i < u; i++)
+			ret[i] = (long) _data[i];
+		return retA;
+	}
+
+	@Override
+	protected Array<Object> changeTypeHash32(Array<Object> retA, int l, int u) {
+		int[] ret = ((HashIntegerArray) retA).getInts();
+		for(int i = l; i < u; i++)
+			ret[i] = (int) _data[i];
+		return retA;
+	}
+
+	@Override
+	protected Array<String> changeTypeString(Array<String> retA, int l, int u) {
+		String[] ret = (String[]) retA.get();
+		for(int i = l; i < u; i++)
+			ret[i] = Float.toString(_data[i]);
+		return retA;
+	}
+
+	@Override
+	public Array<Character> changeTypeCharacter(Array<Character> retA, int l, int u) {
+		char[] ret = (char[]) retA.get();
+		for(int i = l; i < u; i++)
+			ret[i] = Float.toString(_data[i]).charAt(0);
+		return retA;
 	}
 
 	@Override
@@ -303,7 +314,7 @@ public class FloatArray extends Array<Float> {
 	public static float parseFloat(String value) {
 		if(value == null)
 			return 0.0f;
-		
+
 		final int len = value.length();
 		if(len == 0)
 			return 0.0f;
@@ -362,6 +373,14 @@ public class FloatArray extends Array<Float> {
 	}
 
 	@Override
+	public boolean containsNull() {
+		for(int i = 0; i < _size; i++)
+			if(Float.isNaN(_data[i]))
+				return true;
+		return false;
+	}
+
+	@Override
 	public boolean equals(Array<Float> other) {
 		if(other instanceof FloatArray)
 			return Arrays.equals(_data, ((FloatArray) other)._data);
@@ -372,6 +391,20 @@ public class FloatArray extends Array<Float> {
 	@Override
 	public boolean possiblyContainsNaN() {
 		return true;
+	}
+
+	@Override
+	protected int setAndAddToDict(Map<Float, Integer> rcd, AMapToData m, int i, Integer id) {
+		// JIT.
+		final Float val = _data[i];
+		final Integer v = rcd.get(val);
+		if(v == null) {
+			m.set(i, id);
+			rcd.put(val, id++);
+		}
+		else
+			m.set(i, v);
+		return id;
 	}
 
 	@Override

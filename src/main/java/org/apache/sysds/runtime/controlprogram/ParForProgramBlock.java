@@ -806,8 +806,9 @@ public class ParForProgramBlock extends ForProgramBlock {
 			
 			// Step 3) join all threads (wait for finished work)
 			LineageCacheConfig.setReuseLineageTraces(false); //disable lineage trace reuse
-			for( Thread thread : threads )
+			for( Thread thread : threads ){
 				thread.join();
+			}
 			
 			if( _monitor ) 
 				StatisticMonitor.putPFStat(_ID, Stat.PARFOR_WAIT_EXEC_T, time.stop());

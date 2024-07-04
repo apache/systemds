@@ -38,8 +38,8 @@ import org.apache.sysds.common.Types.ValueType;
 import org.apache.sysds.conf.ConfigurationManager;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.frame.data.FrameBlock;
+import org.apache.sysds.runtime.frame.data.columns.Array;
 import org.apache.sysds.runtime.matrix.data.Pair;
-import org.apache.sysds.runtime.transform.TfUtils;
 import org.apache.sysds.runtime.util.InputStreamInputFormat;
 
 /**
@@ -131,7 +131,6 @@ public class FrameReaderTextCSV extends FrameReader {
 		LongWritable key = new LongWritable();
 		Text value = new Text();
 		int row = rl;
-		final int nCol = dest.getNumColumns();
 
 		// handle header if existing
 		if(first && hasHeader) {
@@ -141,75 +140,66 @@ public class FrameReaderTextCSV extends FrameReader {
 
 		// Read the data
 		try {
-			String[] parts = null; // cache array for line reading.
+			Array<?>[] destA = dest.getColumns();
 			while(reader.next(key, value)) // foreach line
 			{
-				boolean emptyValuesFound = false;
 				String cellStr = IOUtilFunctions.trim(value.toString());
-				parts = IOUtilFunctions.splitCSV(cellStr, delim, parts);
-				// sanity checks for empty values and number of columns
-
-				final boolean mtdP = parts[0].equals(TfUtils.TXMTD_MVPREFIX);
-				final boolean mtdx = parts[0].equals(TfUtils.TXMTD_NDPREFIX);
-				// parse frame meta data (missing values / num distinct)
-				if(mtdP || mtdx) {
-					if(parts.length != dest.getNumColumns() + 1){
-						LOG.warn("Invalid metadata ");
-						parts = null;
-						continue;
-					}
-					else if(mtdP)
-						for(int j = 0; j < dest.getNumColumns(); j++)
-							dest.getColumnMetadata(j).setMvValue(parts[j + 1]);
-					else if(mtdx)
-						for(int j = 0; j < dest.getNumColumns(); j++)
-							dest.getColumnMetadata(j).setNumDistinct(Long.parseLong(parts[j + 1]));
-					parts = null;
-					continue;
-				}
-				assignColumns(row, nCol, dest, parts, naValues, isFill, dfillValue, sfillValue);
-				
-				IOUtilFunctions.checkAndRaiseErrorCSVEmptyField(cellStr, isFill, emptyValuesFound);
-				IOUtilFunctions.checkAndRaiseErrorCSVNumColumns("", cellStr, parts, clen);
+				parseLine(cellStr, delim, destA, row, (int) clen, dfillValue, sfillValue, isFill, naValues);
 				row++;
 			}
+
 		}
 		catch(Exception e){
 			throw new DMLRuntimeException("Failed parsing string: \"" + value +"\"", e);
 		}
 		finally {
+			// if(pool != null)
+			// 	pool.shutdown();
 			IOUtilFunctions.closeSilently(reader);
 		}
 
 		return row;
 	}
 
-	private boolean assignColumns(int row, int nCol, FrameBlock dest, String[] parts, Set<String> naValues,
-		boolean isFill, double dfillValue, String sfillValue) {
-		if(!isFill && naValues == null)
-			return assignColumnsNoFillNoNan(row, nCol, dest, parts);
-		else 
-			return assignColumnsGeneric(row, nCol, dest, parts, naValues, isFill, dfillValue, sfillValue);
+	private void parseLine(String cellStr, String delim, Array<?>[] destA , int row,
+		 int clen,  double dfillValue, String sfillValue, boolean isFill,
+		Set<String> naValues) {
+			try{
+				String[] parts = IOUtilFunctions.splitCSV(cellStr, delim, clen);
+				assignColumns(row, (int)clen, destA, parts, naValues, isFill, dfillValue, sfillValue);
+				IOUtilFunctions.checkAndRaiseErrorCSVNumColumns("", cellStr, parts, clen);
+			}
+			catch(Exception e){
+				throw new RuntimeException("failed to parse: " + cellStr, e);
+			}
 	}
 
-	private boolean assignColumnsGeneric(int row, int nCol, FrameBlock dest, String[] parts, Set<String> naValues,
+	private boolean assignColumns(int row, int nCol,  Array<?>[] destA, String[] parts, Set<String> naValues,
+		boolean isFill, double dfillValue, String sfillValue) {
+		if(!isFill && naValues == null)
+			return assignColumnsNoFillNoNan(row, nCol, destA, parts);
+		else 
+			return assignColumnsGeneric(row, nCol, destA, parts, naValues, isFill, dfillValue, sfillValue);
+	}
+
+	private boolean assignColumnsGeneric(int row, int nCol,  Array<?>[] destA, String[] parts, Set<String> naValues,
 		boolean isFill, double dfillValue, String sfillValue) {
 		boolean emptyValuesFound = false;
 		for(int col = 0; col < nCol; col++) {
 			String part = IOUtilFunctions.trim(parts[col]);
-			if(part.isEmpty() || (naValues != null && naValues.contains(part))) {
+			if(part == null || part.isEmpty() || (naValues != null && naValues.contains(part))) {
 				if(isFill && dfillValue != 0)
-					dest.set(row, col, sfillValue);
+					destA[col].set(row, sfillValue);
 				emptyValuesFound = true;
 			}
 			else
-				dest.set(row, col, part);
+				destA[col].set(row, part);
 		}
 
 		return emptyValuesFound;
 	}
 
-	private boolean assignColumnsNoFillNoNan(int row, int nCol, FrameBlock dest, String[] parts){
+	private boolean assignColumnsNoFillNoNan(int row, int nCol, Array<?>[] destA, String[] parts){
 		
 		boolean emptyValuesFound = false;
 		for(int col = 0; col < nCol; col++) {
@@ -217,7 +207,7 @@ public class FrameReaderTextCSV extends FrameReader {
 			if(part.isEmpty()) 
 				emptyValuesFound = true;
 			else
-				dest.set(row, col, part);
+				destA[col].set(row, part);
 		}
 
 		return emptyValuesFound;
@@ -255,32 +245,18 @@ public class FrameReaderTextCSV extends FrameReader {
 		}
 	}
 
-	protected static int countLinesInReader(RecordReader<LongWritable, Text> reader, long ncol, boolean header)
+	private static int countLinesInReader(RecordReader<LongWritable, Text> reader, long ncol, boolean header)
 		throws IOException {
 		final LongWritable key = new LongWritable();
 		final Text value = new Text();
 
 		int nrow = 0;
-		try {
-			// ignore header of first split
-			if(header)
-				reader.next(key, value);
-			while(reader.next(key, value)) {
-				// note the metadata can be located at any row when spark.
-				nrow += containsMetaTag(value) ? 0 : 1;
-			}
-			return nrow;
+		// ignore header of first split
+		if(header)
+			reader.next(key, value);
+		while(reader.next(key, value)) {
+			nrow ++;
 		}
-		finally {
-			IOUtilFunctions.closeSilently(reader);
-		}
-	}
-
-	private final static boolean containsMetaTag(Text val) {
-		if(val.charAt(0) == '#')
-			return val.find(TfUtils.TXMTD_MVPREFIX) > -1//
-				|| val.find(TfUtils.TXMTD_NDPREFIX) > -1;
-		else 
-			return false;
+		return nrow;
 	}
 }

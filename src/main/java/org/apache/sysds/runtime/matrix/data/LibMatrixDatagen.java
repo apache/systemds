@@ -373,7 +373,12 @@ public class LibMatrixDatagen
 			cur += incr;
 		}
 		
-		out.recomputeNonZeros();
+		if((incr > 0 && from > 0) || (incr < 0 && from < 0))
+			out.nonZeros = rows;
+		else if(from == 0 && incr != 0)
+			out.nonZeros = rows - 1;
+		else
+			out.recomputeNonZeros();
 	}
 
 	/**

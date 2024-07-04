@@ -35,21 +35,18 @@ import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.compress.CompressedMatrixBlock;
 import org.apache.sysds.runtime.compress.colgroup.AColGroup;
 import org.apache.sysds.runtime.compress.colgroup.ColGroupConst;
-import org.apache.sysds.runtime.compress.colgroup.ColGroupDDC;
 import org.apache.sysds.runtime.compress.colgroup.indexes.ColIndexFactory;
 import org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex;
 import org.apache.sysds.runtime.controlprogram.parfor.stat.Timing;
-import org.apache.sysds.runtime.functionobjects.Plus;
 import org.apache.sysds.runtime.matrix.data.LibMatrixMult;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
-import org.apache.sysds.runtime.matrix.operators.BinaryOperator;
 import org.apache.sysds.runtime.util.CommonThreadPool;
 import org.apache.sysds.utils.DMLCompressionStatistics;
 
 public final class CLALibRightMultBy {
 	private static final Log LOG = LogFactory.getLog(CLALibRightMultBy.class.getName());
 
-	private CLALibRightMultBy(){
+	private CLALibRightMultBy() {
 		// private constructor
 	}
 
@@ -77,6 +74,11 @@ public final class CLALibRightMultBy {
 			if(m2 instanceof CompressedMatrixBlock)
 				m2 = ((CompressedMatrixBlock) m2).getUncompressed("Uncompressed right side of right MM", k);
 
+			if(betterIfDecompressed(m1)) {
+				// perform uncompressed multiplication.
+				return decompressingMatrixMult(m1, m2, k);
+			}
+
 			if(!allowOverlap) {
 				LOG.trace("Overlapping output not allowed in call to Right MM");
 				return RMM(m1, m2, k);
@@ -90,14 +92,67 @@ public final class CLALibRightMultBy {
 				if(retC.isOverlapping())
 					retC.setNonZeros((long) rr * rc); // set non zeros to fully dense in case of overlapping.
 				else
-					retC.recomputeNonZeros(); // recompute if non overlapping compressed out.
+					retC.recomputeNonZeros(k); // recompute if non overlapping compressed out.
 				return retC;
 			}
+		}
+	}
+
+	private static MatrixBlock decompressingMatrixMult(CompressedMatrixBlock m1, MatrixBlock m2, int k) {
+		ExecutorService pool = CommonThreadPool.get(k);
+		try {
+			final int rl = m1.getNumRows();
+			final int cr = m2.getNumColumns();
+			// final int rr = m2.getNumRows(); // shared dim
+			final MatrixBlock ret = new MatrixBlock(rl, cr, false);
+			ret.allocateBlock();
+
+			// MatrixBlock m1uc = m1.decompress(k);
+			final List<Future<Long>> tasks = new ArrayList<>();
+			final List<AColGroup> groups = m1.getColGroups();
+			final int blkI = Math.max((int) Math.ceil((double) rl / k), 16);
+			final int blkJ = blkI > 16 ? cr : Math.max((cr / k), 512); // make it a multiplicative of 8.
+			for(int i = 0; i < rl; i += blkI) {
+				final int startI = i;
+				final int endI = Math.min(i + blkI, rl);
+				for(int j = 0; j < cr; j += blkJ){
+					final int startJ = j;
+					final int endJ = Math.min(j + blkJ, cr);
+					tasks.add(pool.submit(() -> {
+						for(AColGroup g : groups)
+							g.rightDecompressingMult(m2, ret, startI, endI, rl, startJ, endJ);
+						return ret.recomputeNonZeros(startI, endI - 1, startJ, endJ-1);
+					}));
+				}
+			}
+			long nnz = 0;
+			for(Future<Long> t : tasks)
+				nnz += t.get();
+
+			ret.setNonZeros(nnz);
+			ret.examSparsity();
+			return ret;
+		}
+		catch(InterruptedException | ExecutionException e) {
+			throw new DMLRuntimeException(e);
+		}
+		finally {
+			pool.shutdown();
 		}
 
 	}
 
+	private static boolean betterIfDecompressed(CompressedMatrixBlock m) {
+		for(AColGroup g : m.getColGroups()) {
+			if(g.getNumValues() * 2 >= m.getNumRows()) {
+				return true;
+			}
+		}
+		return false;
+	}
+
 	private static CompressedMatrixBlock RMMOverlapping(CompressedMatrixBlock m1, MatrixBlock that, int k) {
+
 		final int rl = m1.getNumRows();
 		final int cr = that.getNumColumns();
 		final int rr = that.getNumRows(); // shared dim
@@ -106,13 +161,19 @@ public final class CLALibRightMultBy {
 		final CompressedMatrixBlock ret = new CompressedMatrixBlock(rl, cr);
 
 		final boolean shouldFilter = CLALibUtils.shouldPreFilter(colGroups);
+		final double[] constV;
+		final List<AColGroup> filteredGroups;
 
-		double[] constV = shouldFilter ? new double[rr] : null;
-		final List<AColGroup> filteredGroups = CLALibUtils.filterGroups(colGroups, constV);
-		if(colGroups == filteredGroups)
+		if(shouldFilter) {
+			constV = new double[rr];
+			filteredGroups = CLALibUtils.filterGroups(colGroups, constV);
+		}
+		else {
+			filteredGroups = colGroups;
 			constV = null;
+		}
 
-		if(k == 1)
+		if(k == 1 || filteredGroups.size() == 1)
 			RMMSingle(filteredGroups, that, retCg);
 		else
 			RMMParallel(filteredGroups, that, retCg, k);
@@ -120,7 +181,7 @@ public final class CLALibRightMultBy {
 		if(constV != null) {
 			final MatrixBlock cb = new MatrixBlock(1, constV.length, constV);
 			final MatrixBlock cbRet = new MatrixBlock(1, that.getNumColumns(), false);
-			LibMatrixMult.matrixMult(cb, that, cbRet);
+			LibMatrixMult.matrixMult(cb, that, cbRet); // mm on row vector left.
 			if(!cbRet.isEmpty())
 				addConstant(cbRet, retCg);
 		}
@@ -136,35 +197,39 @@ public final class CLALibRightMultBy {
 	}
 
 	private static void addConstant(MatrixBlock constantRow, List<AColGroup> out) {
-		final int nCol = constantRow.getNumColumns();
-		int bestCandidate = -1;
-		int bestCandidateValuesSize = Integer.MAX_VALUE;
-		for(int i = 0; i < out.size(); i++) {
-			AColGroup g = out.get(i);
-			if(g instanceof ColGroupDDC && g.getNumCols() == nCol && g.getNumValues() < bestCandidateValuesSize)
-				bestCandidate = i;
-		}
+		// it is fairly safe to add the constant row to a column group.
+		// but it is not necessary the fastest.
+
+		// final int nCol = constantRow.getNumColumns();
+		// int bestCandidate = -1;
+		// int bestCandidateValuesSize = Integer.MAX_VALUE;
+		// for(int i = 0; i < out.size(); i++) {
+		// AColGroup g = out.get(i);
+		// if(g instanceof ColGroupDDC && g.getNumCols() == nCol && g.getNumValues() < bestCandidateValuesSize)
+		// bestCandidate = i;
+		// }
 
 		constantRow.sparseToDense();
 
-		if(bestCandidate != -1) {
-			AColGroup bc = out.get(bestCandidate);
-			out.remove(bestCandidate);
-			AColGroup ng = bc.binaryRowOpRight(new BinaryOperator(Plus.getPlusFnObject(), 1),
-				constantRow.getDenseBlockValues(), true);
-			out.add(ng);
-		}
-		else
-			out.add(ColGroupConst.create(constantRow.getDenseBlockValues()));
+		// if(bestCandidate != -1) {
+		// AColGroup bc = out.get(bestCandidate);
+		// out.remove(bestCandidate);
+		// AColGroup ng = bc.binaryRowOpRight(new BinaryOperator(Plus.getPlusFnObject(), 1),
+		// constantRow.getDenseBlockValues(), true);
+		// out.add(ng);
+		// }
+		// else
+		out.add(ColGroupConst.create(constantRow.getDenseBlockValues()));
 	}
 
 	private static MatrixBlock RMM(CompressedMatrixBlock m1, MatrixBlock that, int k) {
+
+		// Timing t = new Timing();
 		// this version returns a decompressed result.
 		final int rl = m1.getNumRows();
 		final int cr = that.getNumColumns();
 		final int rr = that.getNumRows(); // shared dim
 		final List<AColGroup> colGroups = m1.getColGroups();
-		final List<AColGroup> retCg = new ArrayList<>();
 
 		final boolean shouldFilter = CLALibUtils.shouldPreFilter(colGroups);
 
@@ -172,15 +237,33 @@ public final class CLALibRightMultBy {
 		MatrixBlock ret = new MatrixBlock(rl, cr, false);
 		final Future<MatrixBlock> f = ret.allocateBlockAsync();
 
-		double[] constV = shouldFilter ? new double[rr] : null;
-		final List<AColGroup> filteredGroups = CLALibUtils.filterGroups(colGroups, constV);
-		if(colGroups == filteredGroups)
-			constV = null;
+		double[] constV;
+		final List<AColGroup> filteredGroups;
 
+		if(shouldFilter) {
+			if(CLALibUtils.alreadyPreFiltered(colGroups, cr)) {
+				filteredGroups = new ArrayList<>(colGroups.size() - 1);
+				constV = CLALibUtils.filterGroupsAndSplitPreAggOneConst(colGroups, filteredGroups);
+			}
+			else {
+				constV = new double[rr];
+				filteredGroups = CLALibUtils.filterGroups(colGroups, constV);
+			}
+		}
+		else {
+			filteredGroups = colGroups;
+			constV = null;
+		}
+
+		// LOG.debug("RMM Filtered : " + t.stop());
+
+		final List<AColGroup> retCg = new ArrayList<>(filteredGroups.size());
 		if(k == 1)
 			RMMSingle(filteredGroups, that, retCg);
 		else
 			RMMParallel(filteredGroups, that, retCg, k);
+
+		// LOG.debug("RMM Groups done : " + t.stop());
 
 		if(constV != null) {
 			MatrixBlock constVMB = new MatrixBlock(1, constV.length, constV);
@@ -189,16 +272,17 @@ public final class CLALibRightMultBy {
 			constV = mmTemp.isEmpty() ? null : mmTemp.getDenseBlockValues();
 		}
 
+		// LOG.debug("RMM Const done: " + t.stop());
+
 		final Timing time = new Timing(true);
 
 		ret = asyncRet(f);
 		CLALibDecompress.decompressDenseMultiThread(ret, retCg, constV, 0, k, true);
 
-		if(DMLScript.STATISTICS) {
-			final double t = time.stop();
-			DMLCompressionStatistics.addDecompressTime(t, k);
-		}
+		if(DMLScript.STATISTICS)
+			DMLCompressionStatistics.addDecompressTime(time.stop(), k);
 
+		// LOG.debug("RMM Decompress done: " + t.stop());
 		return ret;
 	}
 
@@ -215,7 +299,7 @@ public final class CLALibRightMultBy {
 		boolean containsNull = false;
 		final IColIndex allCols = ColIndexFactory.create(that.getNumColumns());
 		for(AColGroup g : filteredGroups) {
-			AColGroup retG = g.rightMultByMatrix(that, allCols);
+			AColGroup retG = g.rightMultByMatrix(that, allCols, 1);
 			if(retG != null)
 				retCg.add(retG);
 			else
@@ -231,7 +315,7 @@ public final class CLALibRightMultBy {
 			final IColIndex allCols = ColIndexFactory.create(that.getNumColumns());
 			List<Callable<AColGroup>> tasks = new ArrayList<>(filteredGroups.size());
 			for(AColGroup g : filteredGroups)
-				tasks.add(new RightMatrixMultTask(g, that, allCols));
+				tasks.add(new RightMatrixMultTask(g, that, allCols, k));
 			for(Future<AColGroup> fg : pool.invokeAll(tasks)) {
 				AColGroup g = fg.get();
 				if(g != null)
@@ -243,7 +327,7 @@ public final class CLALibRightMultBy {
 		catch(InterruptedException | ExecutionException e) {
 			throw new DMLRuntimeException(e);
 		}
-		finally{
+		finally {
 			pool.shutdown();
 		}
 		return containsNull;
@@ -253,17 +337,19 @@ public final class CLALibRightMultBy {
 		private final AColGroup _colGroup;
 		private final MatrixBlock _b;
 		private final IColIndex _allCols;
+		private final int _k;
 
-		protected RightMatrixMultTask(AColGroup colGroup, MatrixBlock b, IColIndex allCols) {
+		protected RightMatrixMultTask(AColGroup colGroup, MatrixBlock b, IColIndex allCols, int k) {
 			_colGroup = colGroup;
 			_b = b;
 			_allCols = allCols;
+			_k = k;
 		}
 
 		@Override
 		public AColGroup call() {
 			try {
-				return _colGroup.rightMultByMatrix(_b, _allCols);
+				return _colGroup.rightMultByMatrix(_b, _allCols, _k);
 			}
 			catch(Exception e) {
 				throw new DMLRuntimeException(e);

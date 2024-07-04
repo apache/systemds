@@ -48,6 +48,7 @@ import org.apache.sysds.runtime.data.SparseBlock;
 import org.apache.sysds.runtime.data.TensorIndexes;
 import org.apache.sysds.runtime.frame.data.FrameBlock;
 import org.apache.sysds.runtime.frame.data.columns.CharArray;
+import org.apache.sysds.runtime.frame.data.columns.HashIntegerArray;
 import org.apache.sysds.runtime.frame.data.columns.HashLongArray;
 import org.apache.sysds.runtime.instructions.spark.data.IndexedMatrixValue;
 import org.apache.sysds.runtime.matrix.data.MatrixIndexes;
@@ -507,6 +508,7 @@ public class UtilFunctions {
 			case FP32:      return Float.parseFloat(in);
 			case CHARACTER: return CharArray.parseChar(in);
 			case HASH64:    return HashLongArray.parseHashLong(in);
+			case HASH32:    return HashIntegerArray.parseHashInt(in);
 			default: throw new RuntimeException("Unsupported value type: "+vt);
 		}
 	}
@@ -690,7 +692,7 @@ public class UtilFunctions {
 		if( in instanceof Double && vt == ValueType.FP64
 			|| in instanceof Float && vt == ValueType.FP32
 			|| in instanceof Long && (vt == ValueType.INT64 || vt == ValueType.HASH64)
-			|| in instanceof Integer && vt == ValueType.INT32
+			|| in instanceof Integer && (vt == ValueType.INT32 || vt == ValueType.HASH32)
 			|| in instanceof Boolean && vt == ValueType.BOOLEAN
 			|| in instanceof String && vt == ValueType.STRING )
 			return in; //quick path to avoid double parsing
@@ -855,10 +857,28 @@ public class UtilFunctions {
 		}
 	}
 	
-	public static int computeNnz(double[] a, int ai, int len) {
+	public static final int computeNnz(final double[] a, final int ai, final int len) {
 		int lnnz = 0;
-		for( int i=ai; i<ai+len; i++ )
-			lnnz += (a[i] != 0) ? 1 : 0;
+		final int end = ai + len;
+		final int h = (end - ai) % 8;
+
+		for(int i = ai; i < ai + h; i++)
+			lnnz += (a[i] != 0.0) ? 1 : 0;
+		for(int i = ai + h; i < end; i += 8)
+			lnnz += computeNnzBy8(a, i);
+		return lnnz;
+	}
+
+	private static final int computeNnzBy8(final double[] a, final int i) {
+		int lnnz = 0;
+		lnnz += (a[i] != 0.0) ? 1 : 0;
+		lnnz += (a[i+1] != 0.0) ? 1 : 0;
+		lnnz += (a[i+2] != 0.0) ? 1 : 0;
+		lnnz += (a[i+3] != 0.0) ? 1 : 0;
+		lnnz += (a[i+4] != 0.0) ? 1 : 0;
+		lnnz += (a[i+5] != 0.0) ? 1 : 0;
+		lnnz += (a[i+6] != 0.0) ? 1 : 0;
+		lnnz += (a[i+7] != 0.0) ? 1 : 0;
 		return lnnz;
 	}
 

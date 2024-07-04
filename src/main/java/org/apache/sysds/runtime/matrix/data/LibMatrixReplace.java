@@ -150,15 +150,13 @@ public class LibMatrixReplace {
 		SparseBlock a = in.sparseBlock;
 		DenseBlock c = ret.getDenseBlock();
 
-		// initialize with replacement (since all 0 values, see SPARSITY_TURN_POINT)
-		// c.reset(in.rlen, in.clen, replacement);
-
 		if(a == null)// check for empty matrix
 			return ((long) in.rlen) * in.clen;
 
 		// overwrite with existing values (via scatter)
 		for(int i = 0; i < in.rlen; i++) {
 			c.fillRow(i, replacement);
+
 			if(!a.isEmpty(i)) {
 				int apos = a.pos(i);
 				int cpos = c.pos(i);

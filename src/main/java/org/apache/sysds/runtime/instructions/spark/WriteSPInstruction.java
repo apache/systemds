@@ -139,6 +139,10 @@ public class WriteSPInstruction extends SPInstruction implements LineageTraceabl
 		return input2;
 	}
 
+	public CPOperand getInput3() {
+		return input3;
+	}
+
 	@Override
 	public void processInstruction(ExecutionContext ec) {
 		SparkExecutionContext sec = (SparkExecutionContext) ec;

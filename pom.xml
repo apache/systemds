@@ -261,6 +261,27 @@
 							</includes>
 						</configuration>
 					</execution>
+					<execution>
+						<id>ropt-jar</id>
+						<phase>package</phase>
+						<goals>
+							<goal>jar</goal>
+						</goals>
+						<configuration>
+							<classifier>ropt</classifier>
+							<forceCreation>true</forceCreation>
+							<archive>
+								<manifest>
+									<addClasspath>true</addClasspath>
+									<classpathPrefix>lib/</classpathPrefix>
+									<mainClass>org.apache.sysds.api.ropt.Executor</mainClass>
+								</manifest>
+								<manifestEntries>
+									<Class-Path>SystemDS.jar ${project.artifactId}-${project.version}.jar</Class-Path>
+								</manifestEntries>
+							</archive>
+						</configuration>
+					</execution>
 				</executions>
 			</plugin>
 
@@ -360,7 +381,6 @@
 								<!-- https://ant.apache.org/manual/Tasks -->
 								<copy file="${project.build.directory}/${project.artifactId}-${project.version}-shaded.jar" tofile="${project.build.directory}/SystemDS.jar" />
 								<move file="${project.build.directory}/${project.artifactId}-${project.version}.jar" tofile="${project.build.directory}/${project.artifactId}-${project.version}-unshaded.jar" />
-								
 							</target>
 						</configuration>
 						<goals>

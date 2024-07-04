@@ -84,7 +84,7 @@ import scala.Tuple2;
 public class RandSPInstruction extends UnarySPInstruction {
 	private static final Log LOG = LogFactory.getLog(RandSPInstruction.class.getName());
 	// internal configuration
-	private static final long INMEMORY_NUMBLOCKS_THRESHOLD = 1024 * 1024;
+	public static final long INMEMORY_NUMBLOCKS_THRESHOLD = 1024 * 1024;
 
 	private OpOpDG _method = null;
 	private final CPOperand rows, cols, dims;

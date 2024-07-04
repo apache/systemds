@@ -158,6 +158,7 @@ public class DataGenCPInstruction extends UnaryCPInstruction {
 	public String getDims() {
 		return dims.getName();
 	}
+	public CPOperand getDimsOperand() { return dims; }
 
 	public int getBlocksize() {
 		return blocksize;

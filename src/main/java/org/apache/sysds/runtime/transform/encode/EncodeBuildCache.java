@@ -74,7 +74,7 @@ public class EncodeBuildCache {
 
     }
 
-    public synchronized void put(EncodeCacheKey key, EncodeCacheEntry buildResult) {
+    public void put(EncodeCacheKey key, EncodeCacheEntry buildResult) {
         long entrySize = buildResult.getSize();
         long freeMemory = _cacheLimit - _usedCacheMemory;
         LOG.debug(String.format("Free memory in cache: %d", freeMemory));
@@ -93,7 +93,7 @@ public class EncodeBuildCache {
         LOG.info(String.format("Putting entry with size %d in cache: %s\n", buildResult.getSize(), buildResult));
     }
 
-    public synchronized EncodeCacheEntry get(EncodeCacheKey key) {
+    public EncodeCacheEntry get(EncodeCacheKey key) {
         try {
             EncodeCacheEntry entry = _cache.get(key);
 
@@ -114,7 +114,7 @@ public class EncodeBuildCache {
         return null;
     }
 
-    private synchronized void evict(EncodeCacheKey key, EncodeCacheEntry buildResult) {
+    private void evict(EncodeCacheKey key, EncodeCacheEntry buildResult) {
         switch (_cachePolicy) {
             case LRU:
                 evictLRU(key, buildResult);
@@ -122,7 +122,7 @@ public class EncodeBuildCache {
         }
     }
 
-    private synchronized void evictLRU(EncodeCacheKey key, EncodeCacheEntry buildResult) {
+    private void evictLRU(EncodeCacheKey key, EncodeCacheEntry buildResult) {
         long entrySize = buildResult.getSize();
 
         long freeMemory = _cacheLimit - _usedCacheMemory;
@@ -143,7 +143,7 @@ public class EncodeBuildCache {
         }
     }
 
-    private synchronized void updateQueueLRU(EncodeCacheKey key) {
+    private void updateQueueLRU(EncodeCacheKey key) {
         _evictionQueue.remove(key);
         _evictionQueue.add(key);
     }

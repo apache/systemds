@@ -31,6 +31,7 @@ import org.apache.sysds.performance.generators.GenMatrices;
 import org.apache.sysds.performance.generators.IGenerate;
 import org.apache.sysds.performance.generators.MatrixFile;
 import org.apache.sysds.performance.matrix.MatrixMulPerformance;
+import org.apache.sysds.performance.matrix.MatrixReplacePerf;
 import org.apache.sysds.performance.matrix.MatrixStorage;
 import org.apache.sysds.performance.matrix.SparseAppend;
 import org.apache.sysds.runtime.data.SparseBlock;
@@ -103,6 +104,9 @@ public class Main {
 				break;
 			case 16:
 				run16(args);
+				break;
+			case 17: 
+				run17(args);
 				break;
 			case 1000:
 				run1000(args);
@@ -202,6 +206,16 @@ public class Main {
 		int len = Integer.parseInt(args[1]);
 		MatrixBlock mb = TestUtils.ceil(TestUtils.generateTestMatrixBlock(len, len, 0, 100, 0.01, len + 1));
 		System.out.println(mb);
+	}
+
+	private static void run17(String[] args) throws Exception {
+		int rows = Integer.parseInt(args[1]);
+		int cols = Integer.parseInt(args[2]);
+		double spar = Double.parseDouble(args[3]);
+		int k = Integer.parseInt(args[4]);
+		MatrixBlock mb = TestUtils.ceil(TestUtils.generateTestMatrixBlock(rows, cols, 0, 100, spar, rows + 1));
+		IGenerate<MatrixBlock> g = new ConstMatrix(mb);
+		new MatrixReplacePerf(100, g, k).run();
 	}
 
 	private static void run1000(String[] args) {

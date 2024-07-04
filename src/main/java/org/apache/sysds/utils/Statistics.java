@@ -46,6 +46,7 @@ import java.lang.management.CompilationMXBean;
 import java.lang.management.GarbageCollectorMXBean;
 import java.lang.management.ManagementFactory;
 import java.text.DecimalFormat;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -430,15 +431,17 @@ public class Statistics
 		return builders;
 	}
 
-	public static String getNGramStdDevs(NGramStats[] stats, int prec) {
+	public static String getNGramStdDevs(NGramStats[] stats, int offset, int prec, boolean displayZero) {
 		StringBuilder sb = new StringBuilder();
 		sb.append("(");
 		boolean containsData = false;
+		int actualIndex;
 		for (int i = 0; i < stats.length; i++) {
 			if (i != 0)
 				sb.append(", ");
-			double var = 1000000000d * stats[i].n * Math.sqrt(stats[i].getTimeVariance()) / stats[i].cumTimeNanos;
-			if (var >= Math.pow(10, -prec)) {
+			actualIndex = (offset + i) % stats.length;
+			double var = 1000000000d * stats[actualIndex].n * Math.sqrt(stats[actualIndex].getTimeVariance()) / stats[actualIndex].cumTimeNanos;
+			if (displayZero || var >= Math.pow(10, -prec)) {
 				sb.append(String.format(Locale.US, "%." + prec + "f", var));
 				containsData = true;
 			}
@@ -447,17 +450,50 @@ public class Statistics
 		return containsData ? sb.toString() : "-";
 	}
 
-	public static String getNGramAvgTimes(NGramStats[] stats, int prec) {
+	public static String getNGramAvgTimes(NGramStats[] stats, int offset, int prec) {
 		StringBuilder sb = new StringBuilder();
 		sb.append("(");
+		int actualIndex;
 		for (int i = 0; i < stats.length; i++) {
 			if (i != 0)
 				sb.append(", ");
-			double var = (stats[i].cumTimeNanos / 1000000000d) / stats[i].n;
+			actualIndex = (offset + i) % stats.length;
+			double var = (stats[actualIndex].cumTimeNanos / 1000000000d) / stats[actualIndex].n;
 			sb.append(String.format(Locale.US, "%." + prec + "f", var));
 		}
 		sb.append(")");
 		return sb.toString();
+	}
+
+	public static String nGramToCSV(final NGramBuilder<String, NGramStats> mbuilder) {
+		ArrayList<String> colList = new ArrayList<>();
+		colList.add("N-Gram");
+		colList.add("Time[s]");
+
+		for (int j = 0; j < mbuilder.getSize(); j++)
+			colList.add("Col" + (j + 1));
+		for (int j = 0; j < mbuilder.getSize(); j++)
+			colList.add("Col" + (j + 1) + "::Mean(Time[s])");
+		for (int j = 0; j < mbuilder.getSize(); j++)
+			colList.add("Col" + (j + 1) + "::StdDev(Time[s])/Col" + (j + 1) + "::Mean(Time[s])");
+
+		colList.add("Count");
+
+		return NGramBuilder.toCSV(colList.toArray(new String[colList.size()]), mbuilder.getTopK(100000, Statistics.NGramStats.getComparator(), true), e -> {
+			StringBuilder builder = new StringBuilder();
+			builder.append(e.getIdentifier().replace("(", "").replace(")", "").replace(", ", ","));
+			builder.append(",");
+			builder.append(Statistics.getNGramAvgTimes(e.getStats(), e.getOffset(), 9).replace("-", "").replace("(", "").replace(")", ""));
+			builder.append(",");
+			String stdDevs = Statistics.getNGramStdDevs(e.getStats(), e.getOffset(), 9, true).replace("-", "").replace("(", "").replace(")", "");
+			if (stdDevs.isEmpty()) {
+				for (int j = 0; j < mbuilder.getSize()-1; j++)
+					builder.append(",");
+			} else {
+				builder.append(stdDevs);
+			}
+			return builder.toString();
+		});
 	}
 
 	public static String getCommonNGrams(NGramBuilder<String, NGramStats> builder, int num) {
@@ -492,7 +528,7 @@ public class Statistics
 			maxInstLen = Math.max(maxInstLen, instruction.length() + 1);
 
 			String timeSString = sFormat.format(timeS);
-			String timeSVarString = getNGramStdDevs(topNGrams[i].getStats(), 3);
+			String timeSVarString = getNGramStdDevs(topNGrams[i].getStats(), topNGrams[i].getOffset(), 3, false);
 			maxTimeSLen = Math.max(maxTimeSLen, timeSString.length());
 			maxTimeSVarLen = Math.max(maxTimeSVarLen, timeSVarString.length());
 
@@ -511,7 +547,7 @@ public class Statistics
 			double timeS = topNGrams[i].getCumStats().cumTimeNanos / 1000000000d;
 			double timeVar = topNGrams[i].getCumStats().getTimeVariance();
 			String timeSString = sFormat.format(timeS);
-			String timeVarString = getNGramStdDevs(topNGrams[i].getStats(), 3);//sFormat.format(timeVar);
+			String timeVarString = getNGramStdDevs(topNGrams[i].getStats(), topNGrams[i].getOffset(), 3, false);//sFormat.format(timeVar);
 
 			long count = topNGrams[i].getOccurrences();
 			int numLines = wrappedInstruction.length;

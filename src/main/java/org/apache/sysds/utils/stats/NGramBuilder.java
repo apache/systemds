@@ -1,8 +1,5 @@
 package org.apache.sysds.utils.stats;
 
-
-import org.apache.commons.lang3.function.TriFunction;
-
 import java.lang.reflect.Array;
 import java.util.Arrays;
 import java.util.Comparator;
@@ -78,6 +75,10 @@ public class NGramBuilder<T, U> {
 			return stats;
 		}
 
+		public int getOffset() {
+			return offset;
+		}
+
 		void setCumStats(U cumStats) {
 			this.cumStats = cumStats;
 		}
@@ -131,11 +132,15 @@ public class NGramBuilder<T, U> {
 		{
 			v1.add(v2.occurrences);
 			v1.setCumStats(statsMerger.apply(v1.getCumStats(), v2.getCumStats()));
+			int index1 = v1.offset;
+			int index2 = v2.offset;
 			U[] stats1 = v1.getStats();
 			U[] stats2 = v2.getStats();
 
 			for (int i = 0; i < stats1.length; i++) {
-				stats1[i] = statsMerger.apply(stats1[i], stats2[i]);
+				stats1[index1] = statsMerger.apply(stats1[index1], stats2[index2]);
+				index1 = (index1 + 1) % stats1.length;
+				index2 = (index2 + 1) % stats2.length;
 			}
 
 			return v1;
@@ -199,13 +204,19 @@ public class NGramBuilder<T, U> {
 				U[] stats = entry.getStats();
 				U cumStat = null;
 
+				int mCurrentIndex = currentIndex;
+				int mIndexEntry = entry.offset;
+
 				for (int i = 0; i < stats.length; i++) {
-					stats[i] = statsMerger.apply(stats[i], currentStats[i]);
+					stats[mIndexEntry] = statsMerger.apply(stats[mIndexEntry], currentStats[mCurrentIndex]);
 					if (i == 0) {
-						cumStat = stats[0];
+						cumStat = stats[mIndexEntry];
 					} else {
-						cumStat = statsMerger.apply(stats[i], cumStat);
+						cumStat = statsMerger.apply(stats[mIndexEntry], cumStat);
 					}
+
+					mCurrentIndex = (mCurrentIndex + 1) % stats.length;
+					mIndexEntry = (mIndexEntry + 1) % stats.length;
 				}
 
 				entry.setCumStats(cumStat);

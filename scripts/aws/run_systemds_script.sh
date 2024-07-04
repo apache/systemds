@@ -57,9 +57,5 @@ echo "Waiting for the step to finish"
 aws emr wait step-complete --cluster-id $CLUSTER_ID --step-id $STEP_ID --region $REGION
 
 aws emr ssh --cluster-id $CLUSTER_ID --key-pair-file ${KEYPAIR_NAME}.pem --region $REGION --command "cat /mnt/var/log/hadoop/steps/$STEP_ID/stderr"
-<<<<<<< Upstream, based on 8e1e53bacbf444625272462c90e1e9c2bfaf206a
 aws emr ssh --cluster-id $CLUSTER_ID --key-pair-file ${KEYPAIR_NAME}.pem --region $REGION --command "cat /mnt/var/log/hadoop/steps/$STEP_ID/stdout"
 
-=======
-aws emr ssh --cluster-id $CLUSTER_ID --key-pair-file ${KEYPAIR_NAME}.pem --region $REGION --command "cat /mnt/var/log/hadoop/steps/$STEP_ID/stdout"
->>>>>>> 8f04cfd Improve CP cost estimation

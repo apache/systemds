@@ -26,7 +26,6 @@ import org.apache.sysds.lops.RightIndex;
 import org.apache.sysds.common.Types.ExecType;
 import org.apache.sysds.lops.MMTSJ.MMTSJType;
 import org.apache.sysds.runtime.DMLRuntimeException;
-import org.apache.sysds.runtime.controlprogram.caching.CacheableData;
 import org.apache.sysds.runtime.controlprogram.caching.LazyWriteBuffer;
 import org.apache.sysds.runtime.instructions.CPInstructionParser;
 import org.apache.sysds.runtime.instructions.Instruction;
@@ -73,8 +72,7 @@ public class CostEstimatorStaticRuntime extends CostEstimator
 		if( !vs[0]._inmem ){
 			ltime += getHDFSReadTime( vs[0].getRows(), vs[0].getCols(), vs[0].getSparsity() );
 			//eviction costs
-			if( CacheableData.CACHING_WRITE_CACHE_ON_READ &&
-				LazyWriteBuffer.getWriteBufferLimit()<MatrixBlock.estimateSizeOnDisk(vs[0].getRows(), vs[0].getCols(), 
+			if( LazyWriteBuffer.getWriteBufferLimit()<MatrixBlock.estimateSizeOnDisk(vs[0].getRows(), vs[0].getCols(), 
 					(vs[0]._dc.getNonZeros()<0)? vs[0].getRows()*vs[0].getCols():vs[0]._dc.getNonZeros()) )
 			{
 				ltime += Math.abs( getFSWriteTime( vs[0].getRows(), vs[0].getCols(), vs[0].getSparsity() ));
@@ -84,8 +82,7 @@ public class CostEstimatorStaticRuntime extends CostEstimator
 		if( !vs[1]._inmem ){
 			ltime += getHDFSReadTime( vs[1].getRows(), vs[1].getCols(), vs[1].getSparsity() );
 			//eviction costs
-			if( CacheableData.CACHING_WRITE_CACHE_ON_READ &&
-				LazyWriteBuffer.getWriteBufferLimit()<MatrixBlock.estimateSizeOnDisk(vs[1].getRows(), vs[1].getCols(), (vs[1]._dc.getNonZeros()<0)? vs[1].getRows()*vs[1].getCols():vs[1]._dc.getNonZeros()) )
+			if( LazyWriteBuffer.getWriteBufferLimit()<MatrixBlock.estimateSizeOnDisk(vs[1].getRows(), vs[1].getCols(), (vs[1]._dc.getNonZeros()<0)? vs[1].getRows()*vs[1].getCols():vs[1]._dc.getNonZeros()) )
 			{
 				ltime += Math.abs( getFSWriteTime( vs[1].getRows(), vs[1].getCols(), vs[1].getSparsity()) );
 			}

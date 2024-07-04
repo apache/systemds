@@ -2017,6 +2017,7 @@ public class MatrixBlock extends MatrixValue implements CacheBlock<MatrixBlock>,
 		}
 	}
 
+
 	private void mergeIntoSparse(MatrixBlock that, boolean appendOnly, boolean deep) {
 		SparseBlock a = sparseBlock;
 		final boolean COO = (a instanceof SparseBlockCOO);
@@ -2043,7 +2044,7 @@ public class MatrixBlock extends MatrixValue implements CacheBlock<MatrixBlock>,
 						}
 					}
 					//only sort if value appended
-					if( !COO && !appendOnly && appended )
+					if(!COO && !appendOnly && appended )
 						a.sort(i);
 				}
 			}

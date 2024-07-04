@@ -19,13 +19,10 @@
 
 package org.apache.sysds.test.component.sparse;
 
-import org.apache.sysds.runtime.data.SparseBlockDCSR;
+import org.apache.sysds.runtime.data.SparseBlockFactory;
 import org.junit.Assert;
 import org.junit.Test;
 import org.apache.sysds.runtime.data.SparseBlock;
-import org.apache.sysds.runtime.data.SparseBlockCOO;
-import org.apache.sysds.runtime.data.SparseBlockCSR;
-import org.apache.sysds.runtime.data.SparseBlockMCSR;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.util.DataConverter;
 import org.apache.sysds.test.AutomatedTestBase;
@@ -40,7 +37,7 @@ import org.apache.sysds.test.TestUtils;
 public class SparseBlockAlignment extends AutomatedTestBase 
 {
 	private final static int rows = 324;
-	private final static int cols = 132;	
+	private final static int cols = 132;
 	private final static double sparsity1 = 0.09;
 	private final static double sparsity2 = 0.19;
 	private final static double sparsity3 = 0.29;
@@ -178,24 +175,12 @@ public class SparseBlockAlignment extends AutomatedTestBase
 			double[][] A = getRandomMatrix(rows, cols, -10, 10, sparsity, 1234); 
 			
 			//init sparse block
-			SparseBlock sblock = null;
 			MatrixBlock mbtmp = DataConverter.convertToMatrixBlock(A);
-			SparseBlock srtmp = mbtmp.getSparseBlock();			
-			switch( btype ) {
-				case MCSR: sblock = new SparseBlockMCSR(srtmp); break;
-				case CSR: sblock = new SparseBlockCSR(srtmp); break;
-				case COO: sblock = new SparseBlockCOO(srtmp); break;
-				case DCSR: sblock = new SparseBlockDCSR(srtmp); break;
-			}
+			SparseBlock srtmp = mbtmp.getSparseBlock();
+			SparseBlock sblock = SparseBlockFactory.copySparseBlock(btype, srtmp, true);
 			
 			//init second sparse block and deep copy
-			SparseBlock sblock2 = null;
-			switch( btype ) {
-				case MCSR: sblock2 = new SparseBlockMCSR(sblock); break;
-				case CSR: sblock2 = new SparseBlockCSR(sblock); break;
-				case COO: sblock2 = new SparseBlockCOO(sblock); break;
-				case DCSR: sblock2 = new SparseBlockDCSR(sblock); break;
-			}
+			SparseBlock sblock2 = SparseBlockFactory.copySparseBlock(btype, sblock, true);
 			
 			//modify second block if necessary
 			if( !positive ) {

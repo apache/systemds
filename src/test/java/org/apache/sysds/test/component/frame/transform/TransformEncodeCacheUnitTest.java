@@ -48,13 +48,13 @@ public class TransformEncodeCacheUnitTest {
             double setUpTime = (et - st)/1_000_000.0;
 
             _evicQueue = EncodeBuildCache.get_evictionQueue();
-            LOG.info(String.format("Successfully set up cache in %f milliseconds. " +
+            LOG.debug(String.format("Successfully set up cache in %f milliseconds. " +
                     "Size of eviction queue: %d", setUpTime, _evicQueue.size()));
 
             _cacheMap = EncodeBuildCache.get_cache();
 
             EncodeBuildCache.setCacheLimit(0.000005); // set to a lower bound for testing
-            LOG.info(String.format("Cache limit: %d", EncodeBuildCache.get_cacheLimit()));
+            LOG.debug(String.format("Cache limit: %d", EncodeBuildCache.get_cacheLimit()));
 
         } catch(DMLRuntimeException e){
             LOG.error("Creation of cache failed:" + e.getMessage());
@@ -80,7 +80,7 @@ public class TransformEncodeCacheUnitTest {
                 ColumnEncoderRecode encoder = new ColumnEncoderRecode(id + 1 ); //column ids start from 1
                 encoder.build(testData);
                 EncodeCacheKey key = _evicQueue.getLast();
-                System.out.printf("Size of entry %d: %d%n", id, _cacheMap.get(key).getSize());
+                LOG.debug(String.format("Size of entry %d: %d%n", id, _cacheMap.get(key).getSize()));
         });
 
         // no eviction: all build results are written into the cache
@@ -102,7 +102,7 @@ public class TransformEncodeCacheUnitTest {
             ColumnEncoderRecode encoder = new ColumnEncoderRecode(id + 1 ); //column ids start from 1
             encoder.build(testData);
             EncodeCacheKey key = _evicQueue.getLast(); // the put method adds new keys to the end of the eviction queue
-            System.out.printf("Size of entry %d: %d%n", id, _cacheMap.get(key).getSize());
+            LOG.debug(String.format("Size of entry %d: %d%n", id, _cacheMap.get(key).getSize()));
         });
 
         // eviction: evicting an entry when the cache limit is reached

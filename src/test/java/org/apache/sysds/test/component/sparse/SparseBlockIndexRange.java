@@ -22,13 +22,9 @@ package org.apache.sysds.test.component.sparse;
 import java.util.Arrays;
 import java.util.Iterator;
 
-import org.apache.sysds.runtime.data.SparseBlockDCSR;
+import org.apache.sysds.runtime.data.*;
 import org.junit.Assert;
 import org.junit.Test;
-import org.apache.sysds.runtime.data.SparseBlock;
-import org.apache.sysds.runtime.data.SparseBlockCOO;
-import org.apache.sysds.runtime.data.SparseBlockCSR;
-import org.apache.sysds.runtime.data.SparseBlockMCSR;
 import org.apache.sysds.runtime.matrix.data.IJV;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.util.DataConverter;
@@ -47,6 +43,8 @@ public class SparseBlockIndexRange extends AutomatedTestBase
 	private final static int cols = 549;	
 	private final static int cl = 245;
 	private final static int cu = 425;
+	private final static int rl = 245;
+	private final static int ru = 525;
 	private final static double sparsity1 = 0.12;
 	private final static double sparsity2 = 0.22;
 	private final static double sparsity3 = 0.32;
@@ -180,6 +178,36 @@ public class SparseBlockIndexRange extends AutomatedTestBase
 	public void testSparseBlockDCSR3Insert()  {
 		runSparseBlockIndexRangeTest(SparseBlock.Type.DCSR, sparsity3, UpdateType.INSERT);
 	}
+
+	@Test
+	public void testSparseBlockMCSC1Delete()  {
+		runSparseBlockIndexRangeColumnTest(SparseBlock.Type.MCSC, sparsity1, UpdateType.DELETE);
+	}
+
+	@Test
+	public void testSparseBlockMCSC2Delete()  {
+		runSparseBlockIndexRangeColumnTest(SparseBlock.Type.MCSC, sparsity2, UpdateType.DELETE);
+	}
+
+	@Test
+	public void testSparseBlockMCSC3Delete()  {
+		runSparseBlockIndexRangeColumnTest(SparseBlock.Type.MCSC, sparsity3, UpdateType.DELETE);
+	}
+
+	@Test
+	public void testSparseBlockMCSC1Insert()  {
+		runSparseBlockIndexRangeColumnTest(SparseBlock.Type.MCSC, sparsity1, UpdateType.INSERT);
+	}
+
+	@Test
+	public void testSparseBlockMCSC2Insert()  {
+		runSparseBlockIndexRangeColumnTest(SparseBlock.Type.MCSC, sparsity2, UpdateType.INSERT);
+	}
+
+	@Test
+	public void testSparseBlockMCSC3Insert()  {
+		runSparseBlockIndexRangeColumnTest(SparseBlock.Type.MCSC, sparsity3, UpdateType.INSERT);
+	}
 	
 	private void runSparseBlockIndexRangeTest( SparseBlock.Type btype, double sparsity, UpdateType utype)
 	{
@@ -197,6 +225,7 @@ public class SparseBlockIndexRange extends AutomatedTestBase
 				case CSR: sblock = new SparseBlockCSR(srtmp); break;
 				case COO: sblock = new SparseBlockCOO(srtmp); break;
 				case DCSR: sblock = new SparseBlockDCSR(srtmp); break;
+				case MCSC: sblock = new SparseBlockMCSC(srtmp, cols); break;
 			}
 			
 			//delete range per row via set
@@ -242,6 +271,67 @@ public class SparseBlockIndexRange extends AutomatedTestBase
 			}
 			if( count != nnz )
 				Assert.fail("Wrong number of values returned by iterator: "+count+", expected: "+nnz);
+		}
+		catch(Exception ex) {
+			ex.printStackTrace();
+			throw new RuntimeException(ex);
+		}
+	}
+
+	@SuppressWarnings("incomplete-switch")
+	private void runSparseBlockIndexRangeColumnTest(SparseBlock.Type btype, double sparsity, UpdateType utype) {
+		try {
+			//data generation
+			double[][] A = getRandomMatrix(rows, cols, -10, 10, sparsity, 456);
+
+			//init sparse block
+			SparseBlock sblock = null;
+			MatrixBlock mbtmp = DataConverter.convertToMatrixBlock(A);
+			SparseBlock srtmp = mbtmp.getSparseBlock();
+			switch(btype) {
+				case MCSC:
+					sblock = new SparseBlockMCSC(srtmp, cols);
+					break;
+			}
+
+			//delete range per row via set
+			if(utype == UpdateType.DELETE) {
+				for(int i = 0; i < cols; i++) {
+					sblock.deleteIndexRange(i, rl, ru);
+					for(int j = rl; j < ru; j++) {
+						A[j][i] = 0;  // Fill column-wise with zeros
+					}
+				}
+			}
+			else if(utype == UpdateType.INSERT) {
+				double[] vals = new double[ru - rl];
+				for(int j = rl; j < ru; j++)
+					vals[j - rl] = j;
+				for(int i = 0; i < cols; i++) {
+					sblock.setIndexRange(i, rl, ru, vals, 0, ru - rl);
+					for(int j = rl; j < ru; j++) {
+						A[j][i] = vals[j - rl];  // Update the matrix column-wise
+					}
+				}
+			}
+
+			//check for correct number of non-zeros
+			int[] cnnz = new int[cols];
+			int nnz = 0;
+			for(int i = 0; i < cols; i++) {
+				for(int j = 0; j < rows; j++)
+					cnnz[i] += (A[j][i] != 0) ? 1 : 0;
+				nnz += cnnz[i];
+			}
+			if(nnz != sblock.size())
+				Assert.fail("Wrong number of non-zeros: " + sblock.size() + ", expected: " + nnz);
+
+			//check correct isEmpty return
+			for(int i = 0; i < cols; i++)
+				if(sblock.isEmpty(i) != (cnnz[i] == 0))
+					Assert.fail("Wrong isEmpty(col) result for row nnz: " + cnnz[i]);
+
+			//TODO: Add 'check correct values', requires Iterator
 		}
 		catch(Exception ex) {
 			ex.printStackTrace();

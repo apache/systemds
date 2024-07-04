@@ -23,13 +23,10 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 
-import org.apache.sysds.runtime.data.SparseBlockDCSR;
+import org.apache.sysds.runtime.data.SparseBlockFactory;
 import org.junit.Assert;
 import org.junit.Test;
 import org.apache.sysds.runtime.data.SparseBlock;
-import org.apache.sysds.runtime.data.SparseBlockCOO;
-import org.apache.sysds.runtime.data.SparseBlockCSR;
-import org.apache.sysds.runtime.data.SparseBlockMCSR;
 import org.apache.sysds.runtime.matrix.data.IJV;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.util.DataConverter;
@@ -181,24 +178,10 @@ public class SparseBlockIterator extends AutomatedTestBase {
 			double[][] A = getRandomMatrix(rows, cols, -10, 10, sparsity, 8765432);
 
 			//init sparse block
-			SparseBlock sblock = null;
 			MatrixBlock mbtmp = DataConverter.convertToMatrixBlock(A);
 			SparseBlock srtmp = mbtmp.getSparseBlock();
-			switch(btype) {
-				case MCSR:
-					sblock = new SparseBlockMCSR(srtmp);
-					break;
-				case CSR:
-					sblock = new SparseBlockCSR(srtmp);
-					break;
-				case COO:
-					sblock = new SparseBlockCOO(srtmp);
-					break;
-				case DCSR:
-					sblock = new SparseBlockDCSR(srtmp);
-					break;
-			}
-
+			SparseBlock sblock = SparseBlockFactory.copySparseBlock(btype, srtmp, true);
+			
 			//check for correct number of non-zeros
 			int[] rnnz = new int[rows];
 			int nnz = 0;

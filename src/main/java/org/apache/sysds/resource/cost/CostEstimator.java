@@ -101,7 +101,7 @@ public class CostEstimator
 	 * @param program compiled runtime program
 	 * @return estimated time for execution of the program
 	 * given the resources set in {@link SparkExecutionContext}
-	 * @throws CostEstimationException
+	 * @throws CostEstimationException in case of errors
 	 */
 	public static double estimateExecutionTime(Program program) throws CostEstimationException {
 		CostEstimator estimator = new CostEstimator();

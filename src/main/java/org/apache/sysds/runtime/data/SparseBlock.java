@@ -52,6 +52,7 @@ public abstract class SparseBlock implements Serializable, Block
 		CSR,  // compressed sparse rows
 		DCSR, // double compressed sparse rows
 		MCSR, // modified compressed sparse rows (update-friendly)
+		MCSC, // modified compressed sparse column
 	}
 	
 	

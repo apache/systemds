@@ -362,6 +362,7 @@ public class SparseBlockMerge extends AutomatedTestBase
 	public void testMergeDCSR_COO_3()  {
 		runSparseBlockMergeTest(SparseBlock.Type.DCSR, SparseBlock.Type.COO, sparsity3);
 	}
+
 	
 	private void runSparseBlockMergeTest( SparseBlock.Type btype1, SparseBlock.Type btype2, double sparsity)
 	{

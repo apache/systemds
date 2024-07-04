@@ -72,10 +72,11 @@ public class TransformEncodeCacheTest {
 		}
 	}
 
+
 	@Parameters
 	public static Collection<Object[]> data() {
 		final ArrayList<Object[]> tests = new ArrayList<>();
-		final int k = 1;
+		final int[] threads = new int[] {1, 2, 4, 8};
 		FrameBlock testData = TestUtils.generateRandomFrameBlock(
 				10,
 				new ValueType[]{
@@ -107,7 +108,8 @@ public class TransformEncodeCacheTest {
 		List<EncoderType> encoderTypes = Arrays.asList(EncoderType.Recode, EncoderType.Bin);
 
 		for (int index = 0; index < specLists.size(); index++){
-			tests.add(new Object[]{testData, k, specLists.get(index), encoderTypes.get(index)});
+			for(int k : threads)
+				tests.add(new Object[]{testData, k, specLists.get(index), encoderTypes.get(index)});
 		}
 		return tests;
 	}

@@ -31,6 +31,9 @@ import org.apache.sysds.utils.MemoryEstimates;
  * column is stored as a separate SparseRow object which provides flexibility for unsorted column appends without the
  * need for global reshifting of values/indexes but it incurs additional memory overhead per column for object/array
  * headers per column which also slows down memory-bound operations due to higher memory bandwidth requirements.
+ *
+ * TODO implement row interface of sparse blocks (can be slow but must be correct;
+ * additionally, we can expose the column API for efficient use in specific operations)
  */
 
 public class SparseBlockMCSC extends SparseBlock {

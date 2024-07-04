@@ -49,11 +49,25 @@ set_config "BUCKET" $BUCKET-$(((RANDOM % 999) + 1000))
 #Source again to update the changes for the current session
 source systemds_cluster.config
 
+<<<<<<< Upstream, based on 8e1e53bacbf444625272462c90e1e9c2bfaf206a
+<<<<<<< HEAD
 #Create systemDS bucket
 #LocationConstraint configuration required regions outside of us-east-1
 if [ "$REGION" = "us-east-1" ]; then LOCATION_CONSTRAINT=""; else LOCATION_CONSTRAINT="--create-bucket-configuration LocationConstraint=$REGION"; fi
 aws s3api create-bucket --bucket $BUCKET --region $REGION $LOCATION_CONSTRAINT &> /dev/null
 aws s3api create-bucket --bucket $BUCKET-logs --region $REGION $LOCATION_CONSTRAINT &> /dev/null
+=======
+#Create systemDS bucket (LocationConstraint configuration required regions outside of us-east-1)
+aws s3api create-bucket --bucket $BUCKET --region $REGION --create-bucket-configuration LocationConstraint=$REGION &> /dev/null
+aws s3api create-bucket --bucket $BUCKET-logs --region $REGION --create-bucket-configuration LocationConstraint=$REGION &> /dev/null
+>>>>>>> ef2ced4379 (Fixing AWS scripts for emr-7.0.0)
+=======
+#Create systemDS bucket
+#LocationConstraint configuration required regions outside of us-east-1
+if [ "$REGION" = "us-east-1" ]; then LOCATION_CONSTRAINT=""; else LOCATION_CONSTRAINT="--create-bucket-configuration LocationConstraint=$REGION"; fi
+aws s3api create-bucket --bucket $BUCKET --region $REGION $LOCATION_CONSTRAINT &> /dev/null
+aws s3api create-bucket --bucket $BUCKET-logs --region $REGION $LOCATION_CONSTRAINT &> /dev/null
+>>>>>>> 8f04cfd Improve CP cost estimation
 
 # Upload Jar and scripts to s3
 aws s3 sync $SYSTEMDS_TARGET_DIRECTORY s3://$BUCKET --exclude "*" --include "*.dml" --include "*config.xml" --include "*DS.jar*"
@@ -65,12 +79,31 @@ if [ ! -f ${KEYPAIR_NAME}.pem ]; then
     echo "${KEYPAIR_NAME}.pem private key created!"
 fi
 
+<<<<<<< Upstream, based on 8e1e53bacbf444625272462c90e1e9c2bfaf206a
+<<<<<<< HEAD
 #Get the first available subnet in the default VPC of the configured region
 DEFAULT_SUBNET=$(aws ec2 describe-subnets --region $REGION \
   --filter "Name=defaultForAz,Values=true" --query "Subnets[0].SubnetId" --output text)
 
 #Create the cluster
 #Note: Ganglia not available since emr-6.15.0: exchanged with AmazonCloudWatchAgent
+=======
+#Get the first available subnet in the default VPC of the region
+DEFAULT_SUBNET=$(aws ec2 describe-subnets --region eu-central-1 \
+=======
+#Get the first available subnet in the default VPC of the configured region
+DEFAULT_SUBNET=$(aws ec2 describe-subnets --region $REGION \
+>>>>>>> f3b58ef AWS scripts for emr-7.0.0 update
+  --filter "Name=defaultForAz,Values=true" --query "Subnets[0].SubnetId" --output text)
+
+#Create the cluster
+<<<<<<< Upstream, based on 8e1e53bacbf444625272462c90e1e9c2bfaf206a
+#Note: Ganglia not available since emr-6.15.0: exchange with AmazonCloudWatchAgent
+#Note: '--availability-zone ANY' enforce assigning a default subnet to the cluster
+>>>>>>> ef2ced4379 (Fixing AWS scripts for emr-7.0.0)
+=======
+#Note: Ganglia not available since emr-6.15.0: exchanged with AmazonCloudWatchAgent
+>>>>>>> f3b58ef AWS scripts for emr-7.0.0 update
 CLUSTER_INFO=$(aws emr create-cluster \
  --applications Name=AmazonCloudWatchAgent Name=Spark \
  --ec2-attributes '{"KeyName":"'${KEYPAIR_NAME}'",

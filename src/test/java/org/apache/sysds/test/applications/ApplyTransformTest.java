@@ -181,17 +181,5 @@ public class ApplyTransformTest extends AutomatedTestBase{
 			if(!XDML.containsKey(cell4)) success = false;
 			else success = success && (dummy_coding_maps != " ") ? (XDML.get(cell4).doubleValue() == 1) : (XDML.get(cell4).doubleValue() == 2);
 		 }
-
-		NGramBuilder<String, Statistics.NGramStats>[] builders = Statistics.mergeNGrams();
-		for (int i = 0; i < builders.length; i++) {
-			try (FileWriter writer = new FileWriter("/Users/janniklindemann/Dev/MScThesis/NGramAnalysis/" + TEST_NAME + testCtr + "_" + DMLScript.STATISTICS_NGRAM_SIZES[i] + "-grams.csv")) {
-				writer.write(NGramBuilder.toCSV(new String[] { "N-Gram", "Time[s]", "StdDev(Time[s])/Mean(Time[s])", "Count" }, builders[i].getTopK(100000, Statistics.NGramStats.getComparator(), true), e -> Statistics.getNGramStdDevs(e.getStats(), 5).replace("-", "").replace(",", ";")));
-			} catch (IOException e) {
-
-			}
-		}
-		testCtr++;
 	 }
-
-	public static int testCtr = 1;
 }

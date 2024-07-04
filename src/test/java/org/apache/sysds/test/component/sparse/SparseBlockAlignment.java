@@ -106,6 +106,21 @@ public class SparseBlockAlignment extends AutomatedTestBase
 	public void testSparseBlockDCSR3Pos()  {
 		runSparseBlockScanTest(SparseBlock.Type.DCSR, sparsity3, true);
 	}
+	
+	@Test
+	public void testSparseBlockMCSC1Pos()  {
+		runSparseBlockScanTest(SparseBlock.Type.MCSC, sparsity1, true);
+	}
+
+	@Test
+	public void testSparseBlockMCSC2Pos()  {
+		runSparseBlockScanTest(SparseBlock.Type.MCSC, sparsity2, true);
+	}
+
+	@Test
+	public void testSparseBlockMCSC3Pos()  {
+		runSparseBlockScanTest(SparseBlock.Type.MCSC, sparsity3, true);
+	}
 
 	@Test
 	public void testSparseBlockMCSR1Neg()  {
@@ -166,7 +181,7 @@ public class SparseBlockAlignment extends AutomatedTestBase
 	public void testSparseBlockDCSR3Neg()  {
 		runSparseBlockScanTest(SparseBlock.Type.DCSR, sparsity3, false);
 	}
-	
+
 	private void runSparseBlockScanTest( SparseBlock.Type btype, double sparsity, boolean positive)
 	{
 		try

@@ -32,7 +32,7 @@ public class EncodeBuildCache {
 
     protected static final Log LOG = LogFactory.getLog(EncodeBuildCache.class.getName());
     private static volatile EncodeBuildCache _instance;
-    private final Map<EncodeCacheKey, EncodeCacheEntry<Object>> _cache;
+    private static Map<EncodeCacheKey, EncodeCacheEntry> _cache = null;
 
     private final EncodeCacheConfig _config;
     private static EncodeCacheConfig.EncodeCachePolicy _cachePolicy;
@@ -62,13 +62,26 @@ public class EncodeBuildCache {
         return _instance;
     }
 
+    public static void clear() {
+        try {
+            _evictionQueue.clear();
+            _cache.clear();
+            _usedCacheMemory = 0;
+        } catch(Exception e) {
+            LOG.error("Encode cache instance could not be cleared partially or completely. Cause: " + e.getMessage());
+        }
+
+
+    }
+
     public synchronized void put(EncodeCacheKey key, EncodeCacheEntry buildResult) {
         long entrySize = buildResult.getSize();
         long freeMemory = _cacheLimit - _usedCacheMemory;
         LOG.debug(String.format("Free memory in cache: %d", freeMemory));
 
         if (entrySize > _cacheLimit) {
-            throw new DMLRuntimeException(String.format("Size of build result exceeds cache limit. Size: %d ", buildResult.getSize()));
+            LOG.info(String.format("Size of build result exceeds cache limit. Size: %d ", buildResult.getSize()));
+            return;
         }
 
         if (freeMemory < entrySize) {
@@ -150,5 +163,13 @@ public class EncodeBuildCache {
 
     public static long get_usedCacheMemory() {
         return _usedCacheMemory;
+    }
+
+    public static Map<EncodeCacheKey, EncodeCacheEntry> get_cache() {
+        return _cache;
+    }
+
+    public static LinkedList<EncodeCacheKey> get_evictionQueue() {
+        return _evictionQueue;
     }
 }

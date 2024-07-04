@@ -186,8 +186,6 @@ public class UnifiedMemoryManager
 		_totCachedSize = 0;
 		_pinnedPhysicalMemSize = 0;
 		_pinnedVirtualMemSize = 0;
-		if( CacheableData.CACHING_BUFFER_PAGECACHE )
-			PageCache.init();
 	}
 
 	// Cleanup the unified memory manager
@@ -196,8 +194,6 @@ public class UnifiedMemoryManager
 			_mQueue.clear();
 		if( _fClean != null )
 			_fClean.close();
-		if( CacheableData.CACHING_BUFFER_PAGECACHE )
-			PageCache.clear();
 		_totCachedSize = 0;
 		_pinnedPhysicalMemSize = 0;
 		_pinnedVirtualMemSize = 0;

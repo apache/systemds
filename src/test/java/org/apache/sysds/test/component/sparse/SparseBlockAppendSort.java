@@ -26,6 +26,7 @@ import org.apache.sysds.runtime.data.SparseBlock;
 import org.apache.sysds.runtime.data.SparseBlockCOO;
 import org.apache.sysds.runtime.data.SparseBlockCSR;
 import org.apache.sysds.runtime.data.SparseBlockMCSR;
+import org.apache.sysds.runtime.data.SparseBlockMCSC;
 import org.apache.sysds.runtime.util.LongLongDoubleHashMap;
 import org.apache.sysds.runtime.util.LongLongDoubleHashMap.ADoubleEntry;
 import org.apache.sysds.test.AutomatedTestBase;
@@ -176,6 +177,36 @@ public class SparseBlockAppendSort extends AutomatedTestBase
 	public void testSparseBlockDCSR3Rand()  {
 		runSparseBlockAppendSortTest(SparseBlock.Type.DCSR, sparsity3, InitType.RAND_SET);
 	}
+
+	@Test
+	public void testSparseBlockMCSC1Seq()  {
+		runSparseBlockAppendSortTest(SparseBlock.Type.MCSC, sparsity1, InitType.SEQ_SET);
+	}
+
+	@Test
+	public void testSparseBlockMCSC2Seq()  {
+		runSparseBlockAppendSortTest(SparseBlock.Type.MCSC, sparsity2, InitType.SEQ_SET);
+	}
+
+	@Test
+	public void testSparseBlockMCSC3Seq()  {
+		runSparseBlockAppendSortTest(SparseBlock.Type.MCSC, sparsity3, InitType.SEQ_SET);
+	}
+
+	@Test
+	public void testSparseBlockMCSC1Rand()  {
+		runSparseBlockAppendSortTest(SparseBlock.Type.MCSC, sparsity1, InitType.RAND_SET);
+	}
+
+	@Test
+	public void testSparseBlockMCSC2Rand()  {
+		runSparseBlockAppendSortTest(SparseBlock.Type.MCSC, sparsity2, InitType.RAND_SET);
+	}
+
+	@Test
+	public void testSparseBlockMCSC3Rand()  {
+		runSparseBlockAppendSortTest(SparseBlock.Type.MCSC, sparsity3, InitType.RAND_SET);
+	}
 	
 	private void runSparseBlockAppendSortTest( SparseBlock.Type btype, double sparsity, InitType itype)
 	{
@@ -191,6 +222,7 @@ public class SparseBlockAppendSort extends AutomatedTestBase
 				case CSR: sblock = new SparseBlockCSR(rows, cols); break;
 				case COO: sblock = new SparseBlockCOO(rows, cols); break;
 				case DCSR: sblock = new SparseBlockDCSR(rows, cols); break;
+				case MCSC: sblock = new SparseBlockMCSC(rows, cols); break;
 			}
 			
 			if(itype == InitType.SEQ_SET) {
@@ -214,28 +246,54 @@ public class SparseBlockAppendSort extends AutomatedTestBase
 			sblock.sort();
 			
 			//check for correct number of non-zeros
-			int[] rnnz = new int[rows]; int nnz = 0;
+			int[] rnnz = new int[rows];
+			int nnz = 0;
+			int[] cnnz = new int[cols];
 			for( int i=0; i<rows; i++ ) {
-				for( int j=0; j<cols; j++ )
-					rnnz[i] += (A[i][j]!=0) ? 1 : 0;
+				for( int j=0; j<cols; j++ ) {
+					cnnz[j] += (A[i][j] != 0) ? 1 : 0;
+					rnnz[i] += (A[i][j] != 0) ? 1 : 0;
+				}
 				nnz += rnnz[i];
 			}
 			if( nnz != sblock.size() )
 				Assert.fail("Wrong number of non-zeros: "+sblock.size()+", expected: "+nnz);
-		
+
 			//check correct isEmpty return
-			for( int i=0; i<rows; i++ )
-				if( sblock.isEmpty(i) != (rnnz[i]==0) )
-					Assert.fail("Wrong isEmpty(row) result for row nnz: "+rnnz[i]);
-		
-			//check correct values			
-			for( int i=0; i<rows; i++ ) 
-				if( !sblock.isEmpty(i) )	
-					for( int j=0; j<cols; j++ )	{
+			if(sblock instanceof SparseBlockMCSC) {
+				for(int i = 0; i < cols; i++)
+					if(sblock.isEmpty(i) != (cnnz[i] == 0))
+						Assert.fail("Wrong isEmpty(column) result for row nnz: " + cnnz[i]);
+			}
+			else {
+				for(int i = 0; i < rows; i++)
+					if(sblock.isEmpty(i) != (rnnz[i] == 0))
+						Assert.fail("Wrong isEmpty(row) result for row nnz: " + rnnz[i]);
+			}
+
+			//check correct values
+			if(sblock instanceof SparseBlockMCSC) {
+				for(int i = 0; i < cols; i++) {
+					if(sblock.isEmpty(i)) continue;
+					for(int j = 0; j < rows; j++) {
+						double tmp = sblock.get(j, i);
+						if(tmp != A[j][i])
+							Assert.fail("Wrong get value for cell (" + i + "," + j + "): " + tmp + ", expected: " +
+								A[i][j]);
+					}
+				}
+			}
+			else {
+				for(int i = 0; i < rows; i++) {
+					if(sblock.isEmpty(i)) continue;
+					for(int j = 0; j < cols; j++) {
 						double tmp = sblock.get(i, j);
-						if( tmp != A[i][j] )
-							Assert.fail("Wrong get value for cell ("+i+","+j+"): "+tmp+", expected: "+A[i][j]);
-					}		
+						if(tmp != A[i][j])
+							Assert.fail("Wrong get value for cell (" + i + "," + j + "): " + tmp + ", expected: " +
+								A[i][j]);
+					}
+				}
+			}
 		}
 		catch(Exception ex) {
 			ex.printStackTrace();

@@ -21,7 +21,7 @@ package org.apache.sysds.runtime.transform.encode;
 
 import java.util.Arrays;
 
-public class BinMinsMaxs {
+public class BinBoundaries {
 
     private final double[] _binMins;
 
@@ -29,15 +29,15 @@ public class BinMinsMaxs {
 
     private final long _size;
 
-    public static BinMinsMaxs create(final double[] binMins, final double[] binMaxs) {
+    public static BinBoundaries create(final double[] binMins, final double[] binMaxs) {
         if (binMins.length != binMaxs.length) {
             throw new IllegalArgumentException("Binmins and binmaxs must be of the same length");
         }
         long size = computeSize(binMins, binMaxs);
-        return new BinMinsMaxs(binMins, binMaxs, size);
+        return new BinBoundaries(binMins, binMaxs, size);
     }
 
-    private BinMinsMaxs(final double[] binMins, final double[] binMaxs, final long size) {
+    private BinBoundaries(final double[] binMins, final double[] binMaxs, final long size) {
         this._binMins = binMins;
         this._binMaxs = binMaxs;
         this._size = size;

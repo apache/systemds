@@ -147,15 +147,15 @@ public class ColumnEncoderBin extends ColumnEncoder {
 
 			if (cached_result != null) {
 				// Found the computed bin values in the cache
-				BinMinsMaxs binMinsMaxs = (BinMinsMaxs) cached_result.getValue();
+				BinBoundaries binMinsMaxs = (BinBoundaries) cached_result.getValue();
 				_binMins = binMinsMaxs.get_binMins();
 				_binMaxs = binMinsMaxs.get_binMaxs();
 				LOG.debug(String.format("using existing bin boundaries. Object at: %s \n", cached_result));
 			} else {
 				LOG.debug(String.format("No entry found for key: %s, creating new bin boundaries\n", key));
 				computeBinsMinMax(in);
-				BinMinsMaxs binMinMax = BinMinsMaxs.create(_binMins, _binMaxs);
-				EncodeCacheEntry<BinMinsMaxs> entry = new EncodeCacheEntry<>(key, binMinMax);
+				BinBoundaries binMinMax = BinBoundaries.create(_binMins, _binMaxs);
+				EncodeCacheEntry<BinBoundaries> entry = new EncodeCacheEntry<>(key, binMinMax);
 				cache.put(key, entry);
 				LOG.debug(String.format("cache entry: %s\n", cache.get(key)));
 			}

@@ -42,7 +42,7 @@ public class EncodeCacheEntry<T> {
     }
 
     public long getSize() {
-        if (_value instanceof BinMinsMaxs){ return ((BinMinsMaxs) _value).getSize(); }
+        if (_value instanceof BinBoundaries){ return ((BinBoundaries) _value).getSize(); }
         if (_value instanceof RCDMap) { return ((RCDMap) _value).getSize(); }
         else throw new DMLRuntimeException("Cache entry does not contain bin boundaries or a recode map.");
     }

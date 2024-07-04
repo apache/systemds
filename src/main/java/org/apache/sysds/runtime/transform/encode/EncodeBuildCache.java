@@ -20,6 +20,7 @@
 package org.apache.sysds.runtime.transform.encode;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
 
 import java.util.LinkedList;
@@ -67,7 +68,7 @@ public class EncodeBuildCache {
         LOG.debug(String.format("Free memory in cache: %d", freeMemory));
 
         if (entrySize > _cacheLimit) {
-            throw new RuntimeException(String.format("Size of build result exceeds cache limit. Size: %d ", buildResult.getSize()));
+            throw new DMLRuntimeException(String.format("Size of build result exceeds cache limit. Size: %d ", buildResult.getSize()));
         }
 
         if (freeMemory < entrySize) {
@@ -76,7 +77,7 @@ public class EncodeBuildCache {
         _cache.put(key, buildResult);
         _evictionQueue.add(key);
         _usedCacheMemory += buildResult.getSize();
-        LOG.debug(String.format("Putting entry with size %d in cache: %s\n", buildResult.getSize(), buildResult));
+        LOG.info(String.format("Putting entry with size %d in cache: %s\n", buildResult.getSize(), buildResult));
     }
 
     public synchronized EncodeCacheEntry get(EncodeCacheKey key) {
@@ -124,7 +125,7 @@ public class EncodeBuildCache {
                 freeMemory = _cacheLimit - _usedCacheMemory;
 
             } catch (Exception e) {
-                throw new RuntimeException(e.getMessage());
+                throw new DMLRuntimeException(e.getMessage());
             }
         }
     }

@@ -19,7 +19,9 @@
 
 package org.apache.sysds.runtime.transform.encode;
 
-public class EncodeCacheEntry<T> { // uses generic to store any kind of object
+import org.apache.sysds.runtime.DMLRuntimeException;
+
+public class EncodeCacheEntry<T> {
 
     protected final EncodeCacheKey _key;
     protected T _value; // generic, can be an RCDMap or a BinBoundries object
@@ -31,7 +33,7 @@ public class EncodeCacheEntry<T> { // uses generic to store any kind of object
         _timestamp = System.currentTimeMillis();
     }
 
-    protected synchronized void updateTimestamp(){
+    protected synchronized void updateTimestamp(){ // not needed at the moment, but maybe in later extensions of the policies
         _timestamp = System.currentTimeMillis();
     }
 
@@ -42,7 +44,7 @@ public class EncodeCacheEntry<T> { // uses generic to store any kind of object
     public long getSize() {
         if (_value instanceof BinMinsMaxs){ return ((BinMinsMaxs) _value).getSize(); }
         if (_value instanceof RCDMap) { return ((RCDMap) _value).getSize(); }
-        else throw new RuntimeException("Cache entry does not contain bin boundaries or a recode map.");
+        else throw new DMLRuntimeException("Cache entry does not contain bin boundaries or a recode map.");
     }
 
     public boolean isEmpty() { //
@@ -53,7 +55,7 @@ public class EncodeCacheEntry<T> { // uses generic to store any kind of object
     public String toString() {
         return "EncodeCacheEntry{" +
                 "_key=" + _key +
-                ", _value=" + _value +
+                ", _value=" + _value.getClass() +
                 ", _timestamp=" + _timestamp +
                 '}';
     }

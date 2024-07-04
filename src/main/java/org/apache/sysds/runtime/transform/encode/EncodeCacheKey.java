@@ -21,6 +21,7 @@ package org.apache.sysds.runtime.transform.encode;
 
 import java.util.Objects;
 
+import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.transform.encode.ColumnEncoderBin.BinMethod;
 
 public class EncodeCacheKey {
@@ -33,7 +34,7 @@ public class EncodeCacheKey {
         this.columnId = columnId;
         this.encoderType = encoderType;
         if (encoderType == EncoderType.Bin) {
-            throw new RuntimeException("Cannot set encoderType to Bin without specifying binMethod");
+            throw new DMLRuntimeException("Cannot set encoderType to Bin without specifying binMethod");
         }
         else {
             this.binMethod = null;

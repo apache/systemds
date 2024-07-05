@@ -164,9 +164,8 @@ public class SparseBlockSize extends AutomatedTestBase
 			//check row nnz
 			for(int i = 0; i < rows; i++)
 				if(sblock.size(i) != rnnz[i])
-					Assert.fail(
-						"Wrong number of row non-zeros (" + i + "): " + sblock.size(i) + ", expected: " + rnnz[i]);
-			
+					Assert.fail("Wrong number of row non-zeros (" + i + "): " + sblock.size(i) + ", expected: " + rnnz[i]);
+
 			//check two row nnz
 			for(int i = 1; i < rows; i++)
 				if(sblock.size(i - 1, i + 1) != rnnz[i - 1] + rnnz[i]) {

@@ -142,48 +142,32 @@ public class SparseBlockScan extends AutomatedTestBase
 			
 			//check for correct number of non-zeros
 			int[] rnnz = new int[rows]; int nnz = 0;
-			int[] cnnz = new int[cols];
-			for( int i=0; i<rows; i++ ) {
-				for( int j=0; j<cols; j++ ) {
+			for(int i = 0; i < rows; i++) {
+				for(int j = 0; j < cols; j++)
 					rnnz[i] += (A[i][j] != 0) ? 1 : 0;
-					cnnz[j] += (A[i][j] != 0) ? 1 : 0;
-				}
 				nnz += rnnz[i];
 			}
-			if( nnz != sblock.size() )
-				Assert.fail("Wrong number of non-zeros: "+sblock.size()+", expected: "+nnz);
-		
+
+			if(nnz != sblock.size())
+				Assert.fail("Wrong number of non-zeros: " + sblock.size() + ", expected: " + nnz);
+
 			//check correct isEmpty return
-			if(sblock instanceof SparseBlockMCSC) {
-				for(int i = 0; i < cols; i++)
-					if(sblock.isEmpty(i) != (cnnz[i] == 0))
-						Assert.fail("Wrong isEmpty(col) result for column nnz: " + cnnz[i]);
-			}
-			else {
-				for(int i = 0; i < rows; i++)
-					if(sblock.isEmpty(i) != (rnnz[i] == 0))
-						Assert.fail("Wrong isEmpty(row) result for row nnz: " + rnnz[i]);
-			}
-		
+			for(int i = 0; i < rows; i++)
+				if(sblock.isEmpty(i) != (rnnz[i] == 0))
+					Assert.fail("Wrong isEmpty(row) result for row nnz: " + rnnz[i]);
+
 			//check correct values
-			int limit = rows;
-			if(sblock instanceof SparseBlockMCSC)
-				limit = cols;
 			int count = 0;
-			for( int i=0; i<limit; i++) {
+			for(int i = 0; i < rows; i++) {
 				int alen = sblock.size(i);
 				int apos = sblock.pos(i);
 				int[] aix = sblock.indexes(i);
 				double[] avals = sblock.values(i);
-				for( int j=0; j<alen; j++ ) {
-					if(sblock instanceof SparseBlockMCSC){
-						if( avals[apos+j] != A[aix[apos+j]][i] )
-							Assert.fail("Wrong value returned by scan: "+avals[apos+j]+", expected: "+A[i][apos+aix[j]]);
-					} else {
-						if( avals[apos+j] != A[i][aix[apos+j]] )
-							Assert.fail("Wrong value returned by scan: "+avals[apos+j]+", expected: "+A[i][apos+aix[j]]);
-					}
-					count++;		
+				for(int j = 0; j < alen; j++) {
+					if(avals[apos + j] != A[i][aix[apos + j]])
+						Assert.fail(
+							"Wrong value returned by scan: " + avals[apos + j] + ", expected: " + A[i][apos + aix[j]]);
+					count++;
 				}
 			}
 			if( count != nnz )

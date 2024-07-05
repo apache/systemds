@@ -147,60 +147,36 @@ public class SparseBlockSize extends AutomatedTestBase
 			
 			//prepare summary statistics nnz
 			int[] rnnz = new int[rows];
-			int[] cnnz = new int[cols];
 			int nnz = 0;
 			int nnz2 = 0;
 			for( int i=0; i<rows; i++ ) {
 				for( int j=0; j<cols; j++ ) {
-					cnnz[j] += (A[i][j]!=0) ? 1 : 0;
 					rnnz[i] += (A[i][j]!=0) ? 1 : 0;
-					nnz2 += (i>=rl && j>=cl && i<ru && j<cu && A[i][j]!=0) ? 1 : 0;
+					nnz2 += (i >= rl && j >= cl && i < ru && j < cu && A[i][j] != 0) ? 1 : 0;
 				}
 				nnz += rnnz[i];
 			}
-			
+
 			//check full block nnz
-			if( nnz != sblock.size() )
-				Assert.fail("Wrong number of non-zeros: "+sblock.size()+", expected: "+nnz);
+			if(nnz != sblock.size())
+				Assert.fail("Wrong number of non-zeros: " + sblock.size() + ", expected: " + nnz);
 
 			//check row nnz
-			//for MCSC we check columns
-			if(sblock instanceof SparseBlockMCSC) {
-				for(int i = 0; i < cols; i++)
-					if(sblock.size(i) != cnnz[i]) {
-						Assert.fail("Wrong number of column non-zeros (" + i + "): " + sblock.size(i) + ", expected: " +
-							cnnz[i]);
-					}
-			}
-			else {
-				for(int i = 0; i < rows; i++)
-					if(sblock.size(i) != rnnz[i]) {
-						Assert.fail(
-							"Wrong number of row non-zeros (" + i + "): " + sblock.size(i) + ", expected: " + rnnz[i]);
-					}
-			}
-
-			//check for two column nnz
-			if(sblock instanceof SparseBlockMCSC) {
-				for(int i = 1; i < cols; i++)
-					if(sblock.size(i - 1, i + 1) != cnnz[i - 1] + cnnz[i]) {
-						Assert.fail("Wrong number of column block non-zeros (" + (i - 1) + "," + (i + 1) + "): " +
-							sblock.size(i - 1, i + 1) + ", expected: " + cnnz[i - 1] + cnnz[i]);
-					}
-			}
-			else {
-				//check two row nnz
-				for(int i = 1; i < rows; i++)
-					if(sblock.size(i - 1, i + 1) != rnnz[i - 1] + rnnz[i]) {
-						Assert.fail("Wrong number of row block non-zeros (" + (i - 1) + "," + (i + 1) + "): " +
-							sblock.size(i - 1, i + 1) + ", expected: " + rnnz[i - 1] + rnnz[i]);
-					}
-			}
+			for(int i = 0; i < rows; i++)
+				if(sblock.size(i) != rnnz[i])
+					Assert.fail(
+						"Wrong number of row non-zeros (" + i + "): " + sblock.size(i) + ", expected: " + rnnz[i]);
 			
+			//check two row nnz
+			for(int i = 1; i < rows; i++)
+				if(sblock.size(i - 1, i + 1) != rnnz[i - 1] + rnnz[i]) {
+					Assert.fail("Wrong number of row block non-zeros (" + (i - 1) + "," + (i + 1) + "): " +
+						sblock.size(i - 1, i + 1) + ", expected: " + rnnz[i - 1] + rnnz[i]);
+				}
+
 			//check index range nnz
-			if( sblock.size(rl, ru, cl, cu) != nnz2 )
-				Assert.fail("Wrong number of range non-zeros: " +
-						sblock.size(rl, ru, cl, cu)+", expected: "+nnz2);
+			if(sblock.size(rl, ru, cl, cu) != nnz2)
+				Assert.fail("Wrong number of range non-zeros: " + sblock.size(rl, ru, cl, cu) + ", expected: " + nnz2);
 
 		}
 		catch(Exception ex) {

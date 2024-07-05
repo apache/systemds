@@ -419,6 +419,13 @@ public abstract class DenseBlock implements Serializable, Block
 	public abstract void fillBlock(int bix, int fromIndex, int toIndex, double v);
 
 	/**
+	 * Fill the DenseBlock row index with the value specified.
+	 * @param r The row to fill
+	 * @param v The value to fill it with.
+	 */
+	public abstract void fillRow(int r, double v);
+
+	/**
 	 * Set a value at a position given by block index and index in that block.
 	 * @param bix   block index
 	 * @param ix    block-array index

@@ -113,6 +113,13 @@ public class DenseBlockLFP32 extends DenseBlockLDRB
 		Arrays.fill(_blocks[bix], fromIndex, toIndex, (float)v);
 	}
 
+	@Override 
+	public void fillRow(int r, double v){
+		int start = pos(r);
+		int end = start + getDim(1);
+		Arrays.fill(_blocks[index(r)],start, end, (float)v);
+	}
+
 	@Override
 	public DenseBlock set(int r, int c, double v) {
 		_blocks[index(r)][pos(r, c)] = (float)v;

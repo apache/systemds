@@ -84,8 +84,6 @@ public abstract class CacheableData<T extends CacheBlock<?>> extends Data
 	public static final long CACHING_THRESHOLD = (long)Math.max(4*1024, //obj not s.t. caching
 		1e-5 * InfrastructureAnalyzer.getLocalMaxMemory());       //if below threshold [in bytes]
 	public static final RPolicy CACHING_BUFFER_POLICY = RPolicy.FIFO;
-	public static final boolean CACHING_BUFFER_PAGECACHE = false;
-	public static final boolean CACHING_WRITE_CACHE_ON_READ = false;
 	public static final String  CACHING_COUNTER_GROUP_NAME = "SystemDS Caching Counters";
 	public static final String  CACHING_EVICTION_FILEEXTENSION = ".dat";
 	public static final boolean CACHING_ASYNC_FILECLEANUP = true;
@@ -571,7 +569,7 @@ public abstract class CacheableData<T extends CacheBlock<?>> extends Data
 					_data = readBlobFromFederated(_fedMapping);
 
 					//mark for initial local write despite read operation
-					_requiresLocalWrite = CACHING_WRITE_CACHE_ON_READ;
+					_requiresLocalWrite = false;
 				}
 				else if( getRDDHandle()==null || getRDDHandle().allowsShortCircuitRead() ) {
 					if( DMLScript.STATISTICS )
@@ -585,7 +583,7 @@ public abstract class CacheableData<T extends CacheBlock<?>> extends Data
 					_data = readBlobFromHDFS( _hdfsFileName );
 					
 					//mark for initial local write despite read operation
-					_requiresLocalWrite = CACHING_WRITE_CACHE_ON_READ;
+					_requiresLocalWrite = false;
 				}
 				else {
 					//read matrix from rdd (incl execute pending rdd operations)
@@ -593,8 +591,7 @@ public abstract class CacheableData<T extends CacheBlock<?>> extends Data
 					_data = readBlobFromRDD( getRDDHandle(), writeStatus );
 					
 					//mark for initial local write (prevent repeated execution of rdd operations)
-					_requiresLocalWrite = writeStatus.booleanValue() ? 
-						CACHING_WRITE_CACHE_ON_READ : true;
+					_requiresLocalWrite = !writeStatus.booleanValue();
 				}
 				
 				setDirty(false);

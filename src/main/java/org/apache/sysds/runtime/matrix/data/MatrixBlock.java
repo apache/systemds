@@ -2017,6 +2017,7 @@ public class MatrixBlock extends MatrixValue implements CacheBlock<MatrixBlock>,
 		}
 	}
 
+
 	private void mergeIntoSparse(MatrixBlock that, boolean appendOnly, boolean deep) {
 		SparseBlock a = sparseBlock;
 		final boolean COO = (a instanceof SparseBlockCOO);
@@ -2043,7 +2044,7 @@ public class MatrixBlock extends MatrixValue implements CacheBlock<MatrixBlock>,
 						}
 					}
 					//only sort if value appended
-					if( !COO && !appendOnly && appended )
+					if(!COO && !appendOnly && appended )
 						a.sort(i);
 				}
 			}
@@ -5206,93 +5207,7 @@ public class MatrixBlock extends MatrixValue implements CacheBlock<MatrixBlock>,
 	@Override
 	public MatrixBlock replaceOperations(MatrixValue result, double pattern, double replacement) {
 		MatrixBlock ret = checkType(result);
-		examSparsity(); //ensure its in the right format
-		if(ret != null)
-			ret.reset(rlen, clen, sparse);
-		else
-			ret = new MatrixBlock(rlen, clen, sparse);
-		
-		//probe early abort conditions
-		if( nonZeros == 0 && pattern != 0  )
-			return ret;
-		if( !containsValue(pattern) )
-			return this; //avoid allocation + copy
-		if( isEmpty() && pattern==0 ) {
-			ret.reset(rlen, clen, replacement);
-			return ret;
-		}
-
-		boolean NaNpattern = Double.isNaN(pattern);
-		if( sparse ) //SPARSE
-		{
-			if( pattern != 0d ) //SPARSE <- SPARSE (sparse-safe)
-			{
-				ret.allocateSparseRowsBlock();
-				SparseBlock a = sparseBlock;
-				SparseBlock c = ret.sparseBlock;
-				
-				for( int i=0; i<rlen; i++ ) {
-					if( !a.isEmpty(i) ) {
-						c.allocate(i);
-						int apos = a.pos(i);
-						int alen = a.size(i);
-						int[] aix = a.indexes(i);
-						double[] avals = a.values(i);
-						for( int j=apos; j<apos+alen; j++ ) {
-							double val = avals[j];
-							if( val== pattern || (NaNpattern && Double.isNaN(val)) )
-								c.append(i, aix[j], replacement);
-							else
-								c.append(i, aix[j], val);
-						}
-					}
-				}
-			}
-			else //DENSE <- SPARSE
-			{
-				ret.sparse = false;
-				ret.allocateDenseBlock();
-				SparseBlock a = sparseBlock;
-				DenseBlock c = ret.getDenseBlock();
-				
-				//initialize with replacement (since all 0 values, see SPARSITY_TURN_POINT)
-				c.reset(rlen, clen, replacement);
-				
-				//overwrite with existing values (via scatter)
-				if( a != null  ) //check for empty matrix
-					for( int i=0; i<rlen; i++ ) {
-						if( !a.isEmpty(i) ) {
-							int apos = a.pos(i);
-							int cpos = c.pos(i);
-							int alen = a.size(i);
-							int[] aix = a.indexes(i);
-							double[] avals = a.values(i);
-							double[] cvals = c.values(i);
-							for( int j=apos; j<apos+alen; j++ )
-								if( avals[ j ] != 0 )
-									cvals[ cpos+aix[j] ] = avals[ j ];
-						}
-					}
-			}
-		}
-		else { //DENSE <- DENSE
-			DenseBlock a = getDenseBlock();
-			DenseBlock c = ret.allocateDenseBlock().getDenseBlock();
-			for( int bi=0; bi<a.numBlocks(); bi++ ) {
-				int len = a.size(bi);
-				double[] avals = a.valuesAt(bi);
-				double[] cvals = c.valuesAt(bi);
-				for( int i=0; i<len; i++ ) {
-					cvals[i] = (avals[i]== pattern 
-						|| (NaNpattern && Double.isNaN(avals[i]))) ?
-						replacement : avals[i];
-				}
-			}
-		}
-		
-		ret.recomputeNonZeros();
-		ret.examSparsity();
-		return ret;
+		return LibMatrixReplace.replaceOperations(this, ret, pattern, replacement);
 	}
 	
 	public MatrixBlock extractTriangular(MatrixBlock ret, boolean lower, boolean diag, boolean values) {

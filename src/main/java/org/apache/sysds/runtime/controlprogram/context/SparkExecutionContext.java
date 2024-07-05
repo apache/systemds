@@ -159,6 +159,25 @@ public class SparkExecutionContext extends ExecutionContext
 		return _spctx;
 	}
 
+	public static void initVirtualSparkContext(SparkConf sparkConf) {
+		if (_spctx != null) {
+			for (Tuple2<String, String> pair : sparkConf.getAll()) {
+				_spctx.sc().getConf().set(pair._1, pair._2);
+			}
+		} else {
+			handleIllegalReflectiveAccessSpark();
+			try {
+				_spctx = new JavaSparkContext(sparkConf);
+				// assumes NON-legacy spark version
+				_sconf = new SparkClusterConfig();
+			} catch (Exception e) {
+				throw new RuntimeException(e);
+			}
+		}
+
+		_sconf.analyzeSparkConfiguation(sparkConf);
+	}
+
 	public synchronized static JavaSparkContext getSparkContextStatic() {
 		initSparkContext();
 		if(_spctx.sc().isStopped()){
@@ -221,7 +240,7 @@ public class SparkExecutionContext extends ExecutionContext
 		Target.class.getModule().addOpens("java.util.concurrent", se);
 	}
 
-	private synchronized static void initSparkContext(){
+	public synchronized static void initSparkContext(){
 		//check for redundant spark context init
 		if( _spctx != null )
 			return;
@@ -465,6 +484,7 @@ public class SparkExecutionContext extends ExecutionContext
 		{
 			// parallelize hdfs-resident file
 			// For binary block, these are: SequenceFileInputFormat.class, MatrixIndexes.class, MatrixBlock.class
+			// TODO: Is that a bug because it triggers extra file reading? rdd is needed only for the first case
 			rdd = sc.hadoopFile( mo.getFileName(), inputInfo.inputFormatClass, inputInfo.keyClass, inputInfo.valueClass);
 			if(fmt == FileFormat.BINARY) 
 				//note: this copy is still required in Spark 1.4 because spark hands out whatever the inputformat
@@ -2012,7 +2032,7 @@ public class SparkExecutionContext extends ExecutionContext
 		}
 	}
 
-	private static class MemoryManagerParRDDs
+	public static class MemoryManagerParRDDs
 	{
 		private final long _limit;
 		private long _size;

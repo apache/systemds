@@ -103,6 +103,13 @@ public interface Util {
 		return rowVector;
 	}
 
+	/**
+	 * Nan Enabled equals operator returns true on Nan == Nan.
+	 * 
+	 * @param a value 1
+	 * @param b value 2
+	 * @return if they are equal on the bit level.
+	 */
 	public static boolean eq(double a, double b) {
 		long al = Double.doubleToRawLongBits(a);
 		long bl = Double.doubleToRawLongBits(b);

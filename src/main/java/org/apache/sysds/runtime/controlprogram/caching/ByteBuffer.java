@@ -61,8 +61,6 @@ public class ByteBuffer
 			if( !_shallow ) //SPARSE/DENSE -> SPARSE
 			{
 				//deep serialize (for compression)
-				if( CacheableData.CACHING_BUFFER_PAGECACHE )
-					_bdata = PageCache.getPage((int)_size);
 				if( _bdata==null )
 					_bdata = new byte[(int)_size];
 				DataOutput dout = new CacheDataOutput(_bdata);
@@ -133,8 +131,6 @@ public class ByteBuffer
 	{
 		//clear strong references to buffer/matrix
 		if( !_shallow ) {
-			if( CacheableData.CACHING_BUFFER_PAGECACHE )
-				PageCache.putPage(_bdata);
 			_bdata = null;
 		}
 		else {

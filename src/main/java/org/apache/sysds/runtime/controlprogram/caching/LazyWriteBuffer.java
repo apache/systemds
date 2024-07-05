@@ -183,8 +183,6 @@ public class LazyWriteBuffer {
 		_fClean = new CacheMaintenanceService();
 		_limit = OptimizerUtils.getBufferPoolLimit();
 		_size = 0;
-		if( CacheableData.CACHING_BUFFER_PAGECACHE )
-			PageCache.init();
 	}
 
 	public static void cleanup() {
@@ -192,8 +190,6 @@ public class LazyWriteBuffer {
 			_mQueue.clear();
 		if( _fClean != null )
 			_fClean.close();
-		if( CacheableData.CACHING_BUFFER_PAGECACHE )
-			PageCache.clear();
 	}
 
 	public static long getWriteBufferLimit() {

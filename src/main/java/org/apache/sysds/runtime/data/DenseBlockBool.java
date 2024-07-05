@@ -146,6 +146,13 @@ public class DenseBlockBool extends DenseBlockDRB
 		_data.set(fromIndex, toIndex, v != 0);
 	}
 
+	@Override 
+	public void fillRow(int r, double v){
+		int start = pos(r);
+		int end = start + getDim(1);
+		_data.set(start, end, v != 0);
+	}
+
 	@Override
 	protected void setInternal(int bix, int ix, double v) {
 		_data.set(ix, v != 0);

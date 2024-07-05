@@ -358,9 +358,9 @@ public class DMLOptions {
 		Option statsOpt = OptionBuilder.withArgName("count")
 			.withDescription("monitors and reports summary execution statistics; heavy hitter <count> is 10 unless overridden; default off")
 			.hasOptionalArg().create("stats");
-		Option ngramsOpt = OptionBuilder.withArgName("maxN")
-			.withDescription("monitors and reports the most occurring n-grams; -ngrams <minN> <maxN> <topK>")
-			.hasOptionalArgs(3).create("ngrams");
+		Option ngramsOpt = OptionBuilder//.withArgName("ngrams")
+			.withDescription("monitors and reports the most occurring n-grams; -ngrams <comma separated n's> <topK>")
+			.hasOptionalArgs(2).create("ngrams");
 		Option fedStatsOpt = OptionBuilder.withArgName("count")
 			.withDescription("monitors and reports summary execution statistics of federated workers; heavy hitter <count> is 10 unless overridden; default off")
 			.hasOptionalArg().create("fedStats");

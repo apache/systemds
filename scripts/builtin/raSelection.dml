@@ -27,7 +27,7 @@
 # X         Matrix of input data [shape: N x M]
 # col       Integer indicating the column index to execute selection command
 # op        String specifying the comparison operator (e.g., ">", "<", "==").
-# val       Constant value to compare the column values "with col op val'
+# val       Constant value to compare the column values "with col op val"
 # ------------------------------------------------------------------------------
 #
 # OUTPUT:

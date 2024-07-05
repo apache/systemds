@@ -241,7 +241,7 @@ public abstract class ProgramBlock implements ParseInfo {
 	private void executeSingleInstruction(Instruction currInst, ExecutionContext ec) {
 		try {
 			// start time measurement for statistics
-			long t0 = (DMLScript.STATISTICS || LOG.isTraceEnabled()) ? System.nanoTime() : 0;
+			long t0 = (DMLScript.STATISTICS || DMLScript.STATISTICS_NGRAMS || LOG.isTraceEnabled()) ? System.nanoTime() : 0;
 
 			// pre-process instruction (inst patching, listeners, lineage)
 			Instruction tmp = currInst.preprocessInstruction(ec);
@@ -262,6 +262,10 @@ public abstract class ProgramBlock implements ParseInfo {
 				// maintain aggregate statistics
 				if(DMLScript.STATISTICS) {
 					Statistics.maintainCPHeavyHitters(tmp.getExtendedOpcode(), System.nanoTime() - t0);
+				}
+
+				if (DMLScript.STATISTICS_NGRAMS) {
+					Statistics.maintainNGrams(tmp.getExtendedOpcode(), System.nanoTime() - t0);
 				}
 			}
 

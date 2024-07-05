@@ -69,6 +69,7 @@ fi
 DEFAULT_SUBNET=$(aws ec2 describe-subnets --region $REGION \
   --filter "Name=defaultForAz,Values=true" --query "Subnets[0].SubnetId" --output text)
 
+
 #Create the cluster
 #Note: Ganglia not available since emr-6.15.0: exchanged with AmazonCloudWatchAgent
 CLUSTER_INFO=$(aws emr create-cluster \

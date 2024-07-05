@@ -24,6 +24,7 @@ colA = as.integer($2)
 B = read($3)
 colB = as.integer($4)
 
-result = raJoin(A, colA, B, colB, "nested-loop");
+#result = raJoin(A, colA, B, colB, "nested-loop");
+result = raJoin(A, colA, B, colB, "sort-based");
 write(result, $5);
 

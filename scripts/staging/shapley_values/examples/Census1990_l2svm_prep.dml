@@ -53,36 +53,38 @@ write(M, "../data/census/census_dummycoding_meta.csv", format="csv")
 print("-> Creating lables via kmeans")
 [C,y] = kmeans(X=X2, k=4)
 
-# Continuous split ... aka not random.
-[xTrain, xTest, yTrain, yTest] = split(X=X2,Y=y)
+
 
 # LM only allows for 1 classification therefore we choose to classify label 0.
 # (if this is MNIST this would corespond to predicting when the value is 0 or not.)
 
-yTrain_corrected = (yTrain == min(yTrain))
-yTest_corrected = (yTest == min(yTrain))
+y_corrected = (y == min(y))
 
 
 # Scale input
-[x, Centering, ScaleFactor] = scale(xTrain, FALSE, FALSE)
-xTest = scaleApply(xTest, Centering, ScaleFactor)
+[X2, Centering, ScaleFactor] = scale(X2)
+
+# Continuous split ... aka not random.
+[xTrain, xTest, yTrain, yTest] = split(X=X2,Y=y_corrected)
 
 print("-> Saving prepared data for python model")
-py_sub_x=xTrain[1:30000]
+py_sub_x=X2[1:30000]
 write(py_sub_x, "../data/census/census_xTrain.csv", format="csv")
-py_sub_y=yTrain_corrected[1:30000]
+py_sub_y=y_corrected[1:30000]
 write(py_sub_y, "../data/census/census_yTrain_corrected.csv", format="csv")
-stop("STOP")
+
 # Last paper: tol=0.000000001 reg=0.001 maxiter=10
 print("-> Training L2SVM")
-bias = l2svm(X=x, Y=yTrain_corrected, maxIterations=90, verbose=TRUE, epsilon = 1e-17)
+bias = l2svm(X=py_sub_x, Y=py_sub_y, maxIterations=90, verbose=TRUE, epsilon = 1e-17)
 write(bias, "../data/census/census_bias.csv", format="csv")
 
 print("-> Testing L2SVM")
 [y_predict_test, n] = l2svmPredict(X=xTest, W=bias, verbose=TRUE)
-print(toString(y_predict_test[1]))
+print(toString(yTest[1:10]))
+print(toString(y_predict_test[1:10]))
+print(toString(n[1:10]))
 y_predict_classifications = (y_predict_test > 0.0) + 1
 
-[nn, ca_test] = confusionMatrix(y_predict_classifications, yTest_corrected + 1)
+[nn, ca_test] = confusionMatrix(y_predict_classifications, yTest + 1)
 print("Confusion: ")
 print(toString(ca_test))

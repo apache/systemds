@@ -498,8 +498,8 @@ return (Matrix[Double] masks){
       for ( i in 1:ncol(partitions) ){
         p_start = as.scalar(partitions[1,i])
         p_end   = as.scalar(partitions[2,i])
-        test = masks[,p_start] %*% matrix(1, rows=1, cols=p_end-p_start)
-        masks[,p_start+1:p_end] = test
+        proxy = masks[,p_start] %*% matrix(1, rows=1, cols=p_end-p_start)
+        masks[,p_start+1:p_end] = proxy
       }
     }
   }

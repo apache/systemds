@@ -40,9 +40,10 @@ parser.add_argument("--data-dir", default="../data/adult/", help="Path to CSV wi
 parser.add_argument("--data-x", default="Adult_X.csv", help="Path to CSV with X data.")
 parser.add_argument("--data-y", default="Adult_y.csv", help="Path to CSV with y data.")
 parser.add_argument("--model-type", default="multiLogReg", help="Model type to use.")
-parser.add_argument("--result-path", default="../data/python_shap_permutation.csv", help="Path to append results to.")
+parser.add_argument("--result-file-name", default="python_shap_values.csv", help="File to write computed shap values to.")
 parser.add_argument("--n-instances", help="Number of instances.", default=1)
 parser.add_argument("--n-permutations", help="Number of permutations.", default=1)
+parser.add_argument("--n-samples", help="Number of permutations.", default=100)
 parser.add_argument('--silent', action='store_true', help='Don\'t print a thing.')
 parser.add_argument('--just-print-t', action='store_true', help='Don\'t store, just print time at end.')
 args=parser.parse_args()
@@ -53,20 +54,26 @@ args=parser.parse_args()
 
 df_x = pd.read_csv(args.data_dir+args.data_x, header=None)
 df_y = pd.read_csv(args.data_dir+args.data_y, header=None)
+
+
 #%%
 #load model
 model = load(args.data_dir+args.model_type+".joblib")
 X_train, X_test, y_train, y_test = sk.model_selection.train_test_split(df_x.values, df_y.values.ravel(), test_size=0.2, random_state=42)
-
+if args.model_type == "ffn":
+    y_train = y_train - 1
+    y_test = y_test - 1
 #%%
 #test model
 y_pred = model.predict(X_test)
-accuracy = sk.metrics.accuracy_score(y_test, y_pred)
-conf_matrix = sk.metrics.confusion_matrix(y_test, y_pred)
 
-if not args.silent:
-    print(f"Accuracy: {accuracy}")
-    print(f"Confusion Matrix:\n{conf_matrix}")
+if args.model_type != "ffn":
+    accuracy = sk.metrics.accuracy_score(y_test, y_pred)
+    conf_matrix = sk.metrics.confusion_matrix(y_test, y_pred)
+
+    if not args.silent:
+        print(f"Accuracy: {accuracy}")
+        print(f"Confusion Matrix:\n{conf_matrix}")
 #%%
 #create SHAP  explainer
 
@@ -76,29 +83,32 @@ start_exp = time.time()
 permutation_explainer = None
 
 if args.model_type == "multiLogReg":
-    permutation_explainer = shap.explainers.Permutation(model.predict_proba, df_x.values)
+    permutation_explainer = shap.explainers.Permutation(model.predict_proba, shap.maskers.Independent(df_x.values, max_samples=int(args.n_samples)))
 elif args.model_type == "l2svm":
-    permutation_explainer = shap.explainers.Permutation(model.predict, df_x.values)
+    permutation_explainer = shap.explainers.Permutation(model.decision_function, shap.maskers.Independent(df_x.values, max_samples=int(args.n_samples)))
+elif args.model_type == "ffn":
+    predict_func = lambda x: model.predict(x, verbose=0)
+    permutation_explainer = shap.explainers.Permutation(predict_func, shap.maskers.Independent(df_x.values, max_samples=int(args.n_samples)))
 else:
     print("Model of type "+args.model_type+" unknown.")
     exit()
 
-shap_values = permutation_explainer(df_x.iloc[1:1+int(args.n_instances)],
-                                    max_evals=2*len(df_x.iloc[1])*(int(args.n_permutations)+1))
+# max evals sets permutaions like in shap code:
+# by default we run 10 permutations forward and backward
+#if max_evals == "auto":
+#    max_evals = 10 * 2 * len(fm)
+
+shap_values = permutation_explainer(df_x.iloc[0:int(args.n_instances)],
+                                    max_evals=2*len(df_x.iloc[1])*(int(args.n_permutations)), batch_size=10)
 end_exp = time.time()
 total_t=end_exp-start_exp
 
 if not args.silent:
     print("Time:", total_t, "s")
 #%%
-filename=args.result_path
-data = {
-    'recorded_at': [datetime.datetime.now()],
-    'num_instances': [args.n_instances],
-    'runtime_seconds': [total_t],
-}
+
 if args.just_print_t:
     print(str(total_t))
 else:
-    df_times=pd.DataFrame(data)
-    df_times.to_csv(filename, mode='a', header=not os.path.exists(filename))
+    df_shap_values = pd.DataFrame(shap_values.values)
+    df_shap_values.to_pickle(args.data_dir+args.result_file_name)

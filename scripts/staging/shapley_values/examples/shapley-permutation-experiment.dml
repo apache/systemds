@@ -27,6 +27,7 @@
 source("../shapley-permutation-opt.dml") as shapleyPermutation
 source("../shapley-permutation.dml") as shapleyPermutationLegacy
 source("../shapley-utils.dml") as shapleyUtils
+source("../../../nn/layers/feedForward.dml") as ff_pass
 
 # defaults
 model_type= ifdef($model_type, "multiLogRegPredict")
@@ -37,7 +38,7 @@ B_path    = ifdef($B_path, "Adult_W.csv")
 metadata_path = ifdef($metadata_path, "Adult_meta.csv")
 
 # set model
-if ( model_type != "multiLogRegPredict" & model_type != "l2svmPredict")
+if ( model_type != "multiLogRegPredict" & model_type != "l2svmPredict" & model_type != "lmPredict" & model_type != "ffPredict")
   stop("Unknown model type: "+model_type)
 
 # set the total number of permutations from the commandline using `-nvargs n_permutations=10`
@@ -61,12 +62,10 @@ X_bg = read(data_dir+X_bg_path)
 B = read(data_dir+B_path)
 
 if (use_partitions == 1){
-  metadata = read(data_dir+metadata_path)
-  if( metadata_path == "Adult_meta.csv")
-    metadata = metadata[,2:(ncol(metadata)-1)]
-  partitions=shapleyUtils::meatadataToPartitions(metadata=metadata)
+  #partitions can be generated from dummycoding-metadata using shapleyUtils::meatadataToPartitions(metadata=metadata)
+  partitions=read(data_dir+metadata_path)
 } else {
-  partitions = as.matrix(-1)
+  partitions=as.matrix(-1)
 }
 
 print("Computing shapley values for dataset "+X_bg_path+" and model "+model_type+".")
@@ -140,4 +139,18 @@ return( Matrix[Double] P){
 shap_l2svmPredict_custom = function(Matrix[Double] X, Matrix[Double] B)
   return( Matrix[Double] P){
   [P, n] = l2svmPredict(X=X, W=B, verbose=FALSE)
+}
+
+# function to wrap lmPredict to make sure its outputs are compatible
+shap_lmPredict_custom = function(Matrix[Double] X, Matrix[Double] B)
+  return( Matrix[Double] P){
+  P = lmPredict(X=X, B=B, ytest=matrix(0,1,1), verbose=FALSE)
+}
+
+# function to wrap ffPredict to make sure its outputs are compatible
+shap_ffPredict_custom = function(Matrix[Double] X, List[unknown] B)
+return( Matrix[Double] P){
+  #output = ff_pass::feedForward(X, B, TRUE)
+  #P = as.matrix(output[length(output)])
+  P = ffPredict(model=B, X=X, batch_size=512)
 }

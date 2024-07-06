@@ -172,19 +172,6 @@ return (Matrix[Double] short_features){
   short_features = removeEmpty(target=features, margin="cols", select=!rm_mask)
 }
 
-
-toDecimal = function(Matrix[Double] m, Matrix[Double] pow2)
-return(Matrix[Double] d){
-  #pow2 = (2^(ncol(m)-t(seq(1,ncol(m),1))))
-  d = rowSums(m *  pow2)
-}
-
-toBinary = function(Matrix[Double] d, Matrix[Double] pow2)
-return(Matrix[Double] m){
-  #pow2 = 2^(ncols-t(seq(1,ncols,1)))
-  m = d %/% pow2 %% 2
-}
-
 repeatRows = function(Matrix[Double] m, Integer n_times)
 return(Matrix[Double] m){
   #get indices for new rows (e.g. 1,1,1,2,2,2 for 2 rows, each replicated 3 times)
@@ -209,7 +196,7 @@ return(Matrix[Double] m){
 
 u_vprint = function(String message, Boolean verbose){
   if(verbose){
-    print("shapley::"+message)
+    print("shap-explainer::"+message)
   }
 }
 

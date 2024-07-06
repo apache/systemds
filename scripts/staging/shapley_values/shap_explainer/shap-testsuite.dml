@@ -1,0 +1,139 @@
+#-------------------------------------------------------------
+#
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+#
+#-------------------------------------------------------------
+
+# Tests the implementations by comparing their results agains an expected result.
+
+source("shap-explainer.dml") as shap
+source("./shap-utils.dml") as utils
+
+#verbose
+v = 0
+
+#prepare_mask_for_permutation
+perm = matrix("3 1 2", cols=3, rows=1)
+pm("perm", perm)
+a = shap::prepare_mask_for_permutation(permutation=perm)
+r = matrix("0 0 0 0 0 1 1 0 1 1 1 1 0 1 0 1 1 0", rows=6, cols=3)
+assertEqual("prepare_mask_for_permutation", a, r, v)
+
+#prepare_mask_for_partial_permutation
+perm = matrix("4 1 2", cols=3, rows=1)
+pm("perm", perm)
+a = shap::prepare_mask_for_permutation(permutation=perm, n_non_varying_inds=2)
+r = matrix("0 0 1 0 1   0 0 0 1 0   1 0 0 1 0   1 1 0 1 0    0 1 1 0 1  1 1 1 0 1", rows=6, cols=5)
+assertEqual("prepare_mask_for_partial_permutation", a, r, v)
+
+#prepare_mask_for_partitioned_permutation
+perm = matrix("4 1 2", cols=3, rows=1)
+partitions = matrix("2 4 3 5", cols=2, rows=2)
+pm("perm", perm)
+a = shap::prepare_mask_for_permutation(permutation=perm, partitions=partitions)
+r = matrix("0 0 0 0 0   0 0 0 1 1   1 0 0 1 1   1 1 1 1 1   0 1 1 0 0   1 1 1 0 0", rows=6, cols=5)
+assertEqual("prepare_mask_for_partitioned_permutation", a, r, v)
+
+#compute_means_from_predictions
+p = matrix("2 2 3 3 4 4", rows=6, cols=1)
+a = shap::compute_means_from_predictions(p, 2)
+r = matrix("2 3 4", rows=3, cols=1)
+assertEqual("compute_means_from_predictions", a, r, v)
+
+#compute_phis_from_prediction_means
+permutation = matrix("2 3 4 1 5", cols=5, rows=1)
+P_perm = matrix("10 21 22 23 24 100 31 32 33 34", rows=10, cols=1)
+a = shap::compute_phis_from_prediction_means(P=P_perm, permutations=permutation)
+a = t(a)
+r = matrix("1 38.5 1 1 48.5", rows=1, cols=5)
+assertEqual("compute_phis_from_prediction_means", a, r, 1)
+
+#compute_phis_from_prediction_means with non varying inds
+permutation = matrix("3 4 2 1 5", cols=5, rows=1)
+non_varying_inds= matrix("2", rows=1, cols=1)
+P_perm = matrix("10 22 23 24 100 31 32 33", rows=8, cols=1)
+a = shap::compute_phis_from_prediction_means(P=P_perm, permutations=permutation, non_var_inds=non_varying_inds)
+a = t(a)
+r = matrix("1 0 39.5 1 48.5", rows=1, cols=5)
+assertEqual("compute_phis_from_prediction_means  with non varying inds", a, r, v)
+
+#prepare_full_mask
+mask = matrix("1 0 0 1", rows=2, cols=2)
+a = shap::prepare_full_mask(mask, 3)
+a = utils::repeatRows(mask,3)
+r = matrix("1 0 1 0 1 0 0 1 0 1 0 1", rows=6, cols=2)
+assertEqual("prepare_full_mask", a, r, v)
+
+#prepare_masked_X_bg
+mask = matrix("1 0 0 1", rows=2, cols=2)
+full_mask = shap::prepare_full_mask(mask, 3)
+X_bg_samples = matrix("11 12 21 22 31 32", rows=3, cols=2)
+a = shap::prepare_masked_X_bg(full_mask, X_bg_samples)
+r = matrix("0 12 0 22 0 32 11 0 21 0 31 0", rows=6, cols=2)
+assertEqual("prepare_masked_X_bg", a, r, v)
+
+#apply_full_mask
+x_row = matrix("100 200", rows=1, cols=2)
+mask = matrix("1 0 0 1", rows=2, cols=2)
+full_mask = shap::prepare_full_mask(mask, 3)
+X_bg_samples = matrix("11 12 21 22 31 32", rows=3, cols=2)
+masked_X_bg = shap::prepare_masked_X_bg(full_mask, X_bg_samples)
+a = shap::apply_full_mask(x_row, full_mask, masked_X_bg)
+r = matrix("100 12 100 22 100 32 11 200 21 200 31 200", rows=6, cols=2)
+assertEqual("apply_full_mask", a, r, v)
+
+#shapley_permutations_multirow
+dummyModel = function(Matrix[Double] X, Double mult)
+return(Matrix[Double] P){
+  P = rowSums(X)*mult
+}
+model_args = list(mult=1)
+x_multirow = matrix("100 200 300    100 300 400    100 100 500", rows=3, cols=3)
+X_bg = matrix("11 12  13    21 22 23    31 32 33    41 42 43", rows=4, cols=3)
+n_permutations = 2
+integration_samples = 3
+seed = 42
+a = shap::shap_explainer_parallel("dummyModel", model_args, x_multirow, X_bg, n_permutations, integration_samples, 0, as.matrix(-1), seed, v)
+r = matrix("69 168 267 69 268 367 69 68 467", rows=3, cols=3)
+assertEqual("shapley_permutations_by_row", a, r, v)
+
+#get_non_varying_inds
+x = matrix("1 2 3", rows=1, cols=3)
+X_bg = matrix("7 2.0001 5 4 2 3.0001", rows=2, cols=3)
+a = shap::get_non_varying_inds(x, X_bg)
+r = matrix("2", rows=1, cols=1)
+assertEqual("get_non_varying_inds", a, r, v)
+
+assertEqual = function(String comp_name, Matrix[Double] a, Matrix[Double] r, Integer verbose){
+  print("--> Test: "+comp_name)
+  if (verbose != 0){
+    pm("Expected Result:",r)
+    pm("A:",a)
+  }
+  assert(nrow(a) == nrow(r))
+  assert(ncol(a) == ncol(r))
+  diff = a==r
+  assert(length(diff) == sum(diff))
+  print("SUCCESS")
+  print("\n=======================================\n")
+}
+
+
+pm = function(String name, Matrix[Double] m){
+  print(name+":\n"+toString(m))
+}

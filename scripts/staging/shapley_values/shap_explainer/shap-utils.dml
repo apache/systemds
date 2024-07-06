@@ -1,0 +1,276 @@
+#-------------------------------------------------------------
+#
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+#
+#-------------------------------------------------------------
+
+# Samples from the background data X_bg.
+# The function first uses all background samples without replacement, but if more samples are requested than
+# available in X_bg, it shuffles X_bg and pulls more samples from it, making it sampling with replacement.
+#
+# INPUT:
+# ---------------------------------------------------------------------------------------
+# X_bg            Matrix of background data
+# samples         Number of total samples
+# always_shuffle  Boolean to enable reshuffleing of X_bg, defaults to false.
+# seed            A seed for the shuffleing etc.
+# ---------------------------------------------------------------------------------------
+#
+# OUTPUT:
+# -----------------------------------------------------------------------------
+# X_sample        New Matrix containing #samples, from X_bg, potentially with replacement.
+# -----------------------------------------------------------------------------
+sample_with_potential_replace = function(Matrix[Double] X_bg, Integer samples, Boolean always_shuffle = 0, Integer seed)
+return (Matrix[Double] X_sample){
+  number_of_bg_samples = nrow(X_bg)
+
+  # expect to not use all from background and subsample from it
+  num_of_full_X_bg = 0
+  num_of_remainder_samples = samples
+
+  # shuffle background if desired
+  if(always_shuffle) {
+  X_bg = u_shuffle(X_bg)
+  }
+
+  # list to store references to generated matrices so we can rbind them in one call
+  samples_list = list()
+
+  # in case we need more than in the background data, use it multiple times with replacement
+  if(samples >= number_of_bg_samples)  {
+    u_vprint("WARN: More samples ("+toString(samples)+") are requested than available in the background dataset ("+toString(number_of_bg_samples)+"). Using replacement", 1)
+
+    # get number of full sets of background by integer division
+    num_of_full_X_bg = samples %/% number_of_bg_samples
+    # get remaining samples using modulo
+    num_of_remainder_samples = samples %% number_of_bg_samples
+
+    #use background data once
+    samples_list = append(samples_list, X_bg)
+
+    if(num_of_full_X_bg > 1){
+      # add shuffled versions of background data
+      for (i in 1:num_of_full_X_bg-1){
+      samples_list = append(samples_list, u_shuffle(X_bg))
+      }
+    }
+  }
+
+  # sample from background dataset for remaining samples
+  if (num_of_remainder_samples > 0){
+    # pick remaining samples
+    random_samples_indices = sample(number_of_bg_samples, num_of_remainder_samples, seed)
+
+    #contingency table to pick rows by multiplication
+    R_cont = table(random_samples_indices, random_samples_indices, number_of_bg_samples, number_of_bg_samples)
+
+    #pick samples by multiplication with contingency table of indices and removing empty rows
+    samples_list = append(samples_list, removeEmpty(target=t(t(X_bg) %*% R_cont), margin="rows"))
+  }
+
+
+  if ( length(samples_list) == 1){
+    #dont copy if only one matrix is in list, since this is a heavy hitter
+    X_sample = as.matrix(samples_list[1])
+  } else {
+    #single call to bind all generated samples into one large matrix
+    X_sample = rbind(samples_list)
+  }
+}
+
+# Simple utility function to shuffle (from shuffle.dml, but without storing to file). Shuffles rows.
+#
+# INPUT:
+# ---------------------------------------------------------------------------------------
+# X               Matrix to be shuffled
+# ---------------------------------------------------------------------------------------
+#
+# OUTPUT:
+# -----------------------------------------------------------------------------
+# X_shuffled      Matrix like X but ... shuffled...
+# -----------------------------------------------------------------------------
+u_shuffle = function(Matrix[Double] X)
+return (Matrix[Double] X_shuffled){
+  num_col = ncol(X)
+  # Random vector used to shuffle the dataset
+  y = rand(rows=nrow(X), cols=1, min=0, max=1, pdf="uniform")
+  X = order(target = cbind(X, y), by = num_col + 1)
+  X_shuffled = X[,1:num_col]
+}
+
+# Simple utility function to create a range of integers from start to end.
+#
+# INPUT:
+# ---------------------------------------------------------------------------------------
+# start           First integer of range.
+# stop            First integer of range.
+# ---------------------------------------------------------------------------------------
+#
+# OUTPUT:
+# -----------------------------------------------------------------------------
+# range           Matrix with range from start to end in its cols.
+# -----------------------------------------------------------------------------
+u_range = function(Integer start, Integer end)
+return (Matrix[Double] range){
+  range = t(cumsum(matrix(1, rows=end-start+1, cols=1)))
+  range = range+start-1
+}
+
+# Computes partitions from metadata.
+# Takes the columns of a metadata frame returned from transformencode(),
+# that correspond to the selected features of the model.
+#
+# INPUT:
+# ---------------------------------------------------------------------------------------
+# metadata                    Part of Frame that contains the columns corresponding
+#                             to the features used by the model.
+# skip_singel_val_partitions  Remove columns from partitions that represent single features.
+# ---------------------------------------------------------------------------------------
+#
+# OUTPUT:
+# -----------------------------------------------------------------------------
+# partitions      Matrix containing the partitions with the first element of a partition in the first row
+#                 and the last one in the second row
+# -----------------------------------------------------------------------------
+meatadataToPartitions = function(Frame[Unknown] metadata, Integer skip_single_val_partitions=1)
+return (Matrix[Double] partitions){
+  #map vals to 1
+  iMeta = map(metadata, 'x -> x != null ? 1 : 0')
+  #replace NaNs to count vals per feature
+  iMeta = replace(target=as.matrix(iMeta), pattern=NaN, replacement=0)
+  #count number of vals per feature
+  iMeta = colSums(iMeta)
+  #replace 0 with 1, because there is still one feature in the final data
+  iMeta = replace(target=iMeta, pattern=0, replacement=1)
+  #get last index via cumsum
+  iMeta = t(cumsum(t(iMeta)))
+  #get first elemnt by adding 1 to prior last element
+  t1=matrix(1,rows=1, cols=ncol(iMeta))
+  t1[,2:ncol(iMeta)] = iMeta[,1:ncol(iMeta)-1]+1
+  #rbind to get first elem in first row and last in second
+  partitions=rbind(t1, iMeta)
+
+  if (skip_single_val_partitions == 1){
+    rm_selector = partitions[1,] != partitions[2,]
+    partitions = removeEmpty(target=partitions, margin="cols", select=rm_selector)
+  }
+}
+
+# Removes features that are part of a partition.
+# Keeps first feature of partition as proxy for partition.
+#
+# INPUT:
+# ---------------------------------------------------------------------------------------
+# features        Matrix holding features in its cols.
+# partitions      Matirx holding start and end of partitions in the cols of the first and second row respectively.
+# ---------------------------------------------------------------------------------------
+#
+# OUTPUT:
+# -----------------------------------------------------------------------------
+# short_features  Matrix like fatures, but with the ones from partitiones removed.
+# -----------------------------------------------------------------------------
+removePartitionsFromFeatures = function(Matrix[Double] features, Matrix[Double] partitions)
+return (Matrix[Double] short_features){
+  #remove from features
+  rm_mask = matrix(0, rows=1, cols=ncol(features))
+  for (i in 1:ncol(partitions)){
+    part_start = as.scalar(partitions[1,i])
+    part_end   = as.scalar(partitions[2,i])
+    #include part_start as proxy of partition
+    rm_mask = rm_mask + (features > part_start) * (features <= part_end)
+  }
+  short_features = removeEmpty(target=features, margin="cols", select=!rm_mask)
+}
+
+# Replicates rows of the input matrix n-times.
+#
+# Example:
+# [1,2]
+# [3,4]
+# becomes
+# [1,2]
+# [1,2]
+# [3,4]
+# [3,4]
+#
+# INPUT:
+# -----------------------------------------------------------------------------
+# M        Matrix where rows will be replicated.
+# n_times  Number of replications.
+# -----------------------------------------------------------------------------
+#
+# OUTPUT:
+# -----------------------------------------------------------------------------
+# M         Matrix of replicated rows.
+# -----------------------------------------------------------------------------
+repeatRows = function(Matrix[Double] M, Integer n_times)
+return(Matrix[Double] M){
+  #get indices for new rows (e.g. 1,1,1,2,2,2 for 2 rows, each replicated 3 times)
+  indices = ceil(seq(1,nrow(M)*n_times,1) / n_times)
+
+  #to one hot, so we get a replication matrix R
+  R = toOneHot(indices, nrow(M))
+
+  #matrix-mulitply to repeat rows
+  M = R %*% M
+}
+
+# Replicates matrix n-times block-wise.
+#
+# Example:
+# [1,2]
+# [3,4]
+# becomes
+# [1,2]
+# [3,4]
+# [1,2]
+# [3,4]
+#
+# INPUT:
+# -----------------------------------------------------------------------------
+# M        Matrix where rows will be replicated.
+# n_times  Number of replications.
+# -----------------------------------------------------------------------------
+#
+# OUTPUT:
+# -----------------------------------------------------------------------------
+# M         Matrix of replicated rows.
+# -----------------------------------------------------------------------------
+repeatMatrix = function(Matrix[Double] M, Integer n_times)
+return(Matrix[Double] M){
+  n_rows=nrow(M)
+  n_cols=ncol(M)
+  #reshape to row vector
+  M = matrix(M, rows=1, cols=length(M))
+  #broadcast
+  M = matrix(1, rows=n_times, cols=1) * M
+  #reshape to get matrix
+  M = matrix(M, rows=n_rows*n_times, cols=n_cols)
+}
+
+#utility function to print with shap-explainer-tag
+u_vprint = function(String message, Boolean verbose){
+  if(verbose){
+  print("shap-explainer::"+message)
+  }
+}
+
+#utility function to print matricies and their names
+u_pm = function(String name, Matrix[Double] m){
+  print(name+":\n"+toString(m))
+}

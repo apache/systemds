@@ -43,15 +43,15 @@ import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 @RunWith(value = Parameterized.class)
-public class TransformEncodeCacheSingleThreadTest {
-	protected static final Log LOG = LogFactory.getLog(TransformEncodeCacheSingleThreadTest.class.getName());
+public class TransformEncodeCacheTest {
+	protected static final Log LOG = LogFactory.getLog(TransformEncodeCacheTest.class.getName());
 
 	private final FrameBlock data;
 	private final int k;
 	private final List<String> specs;
 	private final EncoderType encoderType;
 
-	public TransformEncodeCacheSingleThreadTest(FrameBlock data, int k, List<String> specs, EncoderType encoderType) {
+	public TransformEncodeCacheTest(FrameBlock data, int k, List<String> specs, EncoderType encoderType) {
 		this.data = data;
 		this.k = k;
 		this.specs = specs;

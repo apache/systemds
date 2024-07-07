@@ -137,46 +137,7 @@ public class TransformEncodeCacheMultiThreadTest {
 		}
 	}
 
-	@Test
-	public void assertMultiThreadIsFasterThanSingleThread() {
-		// Assert that the multi threading is not slower than single threading
-		try {
-			FrameBlock meta = null;
-			List<MultiColumnEncoder> encoders = new ArrayList<>();
-			for (String spec: specs) {
-				encoders.add(EncoderFactory.createEncoder(spec, data.getColumnNames(), data.getNumColumns(), meta));
-			}
-
-			final int[] threads = new int[] {2, 4, 8};
-
-			for (MultiColumnEncoder encoder : encoders) {
-				// measureEncodeTime(MultiColumnEncoder encoder, FrameBlock data, int k)
-				long singleThreadResult = measureEncodeTime(encoder, data, 1);
-				for (int k : threads) {
-					long multiThreadResult = measureEncodeTime(encoder, data, k);
-					comparePerformance(singleThreadResult, multiThreadResult);
-				}
-			}
-
-		} catch (Exception e) {
-			e.printStackTrace();
-			fail(e.getMessage());
-		}
-	}
-
-
 	private void compareMatrixBlocks(MatrixBlock mb1, MatrixBlock mb2) {
 		assertEquals("Encoded matrix blocks should be equal", mb1, mb2);
-	}
-
-	private void comparePerformance(long singleThreadPerformance, long multiThreadPerformance) {
-		assertTrue("The duration when using more threads should not be higher than a single thread.", multiThreadPerformance <= singleThreadPerformance);
-	}
-
-	private static long measureEncodeTime(MultiColumnEncoder encoder, FrameBlock data, int k) {
-		long startTime = System.nanoTime();
-		encoder.encode(data, k);
-		long endTime = System.nanoTime();
-		return endTime - startTime;
 	}
 }

@@ -27,7 +27,6 @@ import org.apache.sysds.runtime.transform.encode.EncoderFactory;
 import org.apache.sysds.runtime.transform.encode.EncoderType;
 import org.apache.sysds.runtime.transform.encode.MultiColumnEncoder;
 import org.apache.sysds.test.TestUtils;
-import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -44,15 +43,15 @@ import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 @RunWith(value = Parameterized.class)
-public class TransformEncodeCacheTest {
-	protected static final Log LOG = LogFactory.getLog(TransformEncodeCacheTest.class.getName());
+public class TransformEncodeCacheSingleThreadTest {
+	protected static final Log LOG = LogFactory.getLog(TransformEncodeCacheSingleThreadTest.class.getName());
 
 	private final FrameBlock data;
 	private final int k;
 	private final List<String> specs;
 	private final EncoderType encoderType;
 
-	public TransformEncodeCacheTest(FrameBlock data, int k, List<String> specs, EncoderType encoderType) {
+	public TransformEncodeCacheSingleThreadTest(FrameBlock data, int k, List<String> specs, EncoderType encoderType) {
 		this.data = data;
 		this.k = k;
 		this.specs = specs;
@@ -76,7 +75,7 @@ public class TransformEncodeCacheTest {
 	@Parameters
 	public static Collection<Object[]> data() {
 		final ArrayList<Object[]> tests = new ArrayList<>();
-		final int[] threads = new int[] {1, 2, 4, 8};
+		final int k = 1;
 		FrameBlock testData = TestUtils.generateRandomFrameBlock(
 				10,
 				new ValueType[]{
@@ -108,8 +107,7 @@ public class TransformEncodeCacheTest {
 		List<EncoderType> encoderTypes = Arrays.asList(EncoderType.Recode, EncoderType.Bin);
 
 		for (int index = 0; index < specLists.size(); index++){
-			for(int k : threads)
-				tests.add(new Object[]{testData, k, specLists.get(index), encoderTypes.get(index)});
+			tests.add(new Object[]{testData, k, specLists.get(index), encoderTypes.get(index)});
 		}
 		return tests;
 	}

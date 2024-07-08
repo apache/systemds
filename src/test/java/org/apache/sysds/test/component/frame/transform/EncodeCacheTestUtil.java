@@ -2,13 +2,18 @@ package org.apache.sysds.test.component.frame.transform;
 
 import org.apache.sysds.common.Types;
 import org.apache.sysds.runtime.frame.data.FrameBlock;
+import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.transform.encode.ColumnEncoder;
 import org.apache.sysds.runtime.transform.encode.MultiColumnEncoder;
 import org.apache.sysds.test.TestUtils;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
+import java.util.Random;
 import java.util.stream.Collectors;
+
+import static org.junit.Assert.assertEquals;
 
 public class EncodeCacheTestUtil {
 
@@ -64,5 +69,9 @@ public class EncodeCacheTestUtil {
         double avgExecTime = runs.stream()
                 .collect(Collectors.averagingLong(Long::longValue));
         return avgExecTime/1_000_000.0;
+    }
+
+    static void compareMatrixBlocks(MatrixBlock mb1, MatrixBlock mb2) {
+        assertEquals("Encoded matrix blocks should be equal", mb1, mb2);
     }
 }

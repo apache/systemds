@@ -37,9 +37,9 @@ public class EncodeCacheConfig {
             return new EncodeCacheConfig(enableCache, memoryFraction);
 
         } catch (Exception e) { // use default values*/
-            final boolean enableCache = true;
-            double memoryFraction = 0.05;
-            return new EncodeCacheConfig(enableCache, memoryFraction);
+        final boolean enableCache = true;
+        double memoryFraction = 0.05;
+        return new EncodeCacheConfig(enableCache, memoryFraction);
 
     }
 
@@ -62,7 +62,7 @@ public class EncodeCacheConfig {
 
     public static EncodeCachePolicy _cachepolicy = EncodeCachePolicy.LRU;
 
-    public void useCache(boolean use){
+    public static void useCache(boolean use){
         _cacheEnabled = use;
     }
 

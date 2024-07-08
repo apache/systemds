@@ -69,13 +69,11 @@ public class TransformEncodeCacheUnitTest {
     @Test
     public void testPutEvictionLRU_noEviction() {
 
-        int rowCount = 10;
-        FrameBlock testData = TestUtils.generateRandomFrameBlock(rowCount, new Types.ValueType[]{
-                        Types.ValueType.FP32, Types.ValueType.FP32, Types.ValueType.FP32}, 231);
-
         int columnCount = 3;
-        IntStream columnIds = IntStream.range(0, columnCount);
+        int rowCount = 10;
+        FrameBlock testData = EncodeCacheTestUtil.generateTestData(columnCount, rowCount);
 
+        IntStream columnIds = IntStream.range(0, columnCount);
         columnIds.forEach( id -> {
                 ColumnEncoderRecode encoder = new ColumnEncoderRecode(id + 1 ); //column ids start from 1
                 encoder.build(testData);
@@ -91,13 +89,11 @@ public class TransformEncodeCacheUnitTest {
     @Test
     public void testPutEvictionLRU_Eviction() {
 
-        int rowCount = 100;
-        FrameBlock testData = TestUtils.generateRandomFrameBlock(rowCount, new Types.ValueType[]{
-                Types.ValueType.FP32, Types.ValueType.FP32, Types.ValueType.FP32, Types.ValueType.FP32}, 231);
-
         int columnCount = 4;
-        IntStream columnIds = IntStream.range(0, columnCount);
+        int rowCount = 100;
+        FrameBlock testData = EncodeCacheTestUtil.generateTestData(columnCount, rowCount);
 
+        IntStream columnIds = IntStream.range(0, columnCount);
         columnIds.forEach( id -> {
             ColumnEncoderRecode encoder = new ColumnEncoderRecode(id + 1 ); //column ids start from 1
             encoder.build(testData);
@@ -113,9 +109,9 @@ public class TransformEncodeCacheUnitTest {
     @Test
     public void testPut_largeEntry() {
 
+        int columnCount = 1;
         int rowCount = 5000;
-        FrameBlock testData = TestUtils.generateRandomFrameBlock(rowCount, new Types.ValueType[]{
-                Types.ValueType.FP32}, 231);
+        FrameBlock testData = EncodeCacheTestUtil.generateTestData(columnCount, rowCount);
         ColumnEncoderRecode encoder = new ColumnEncoderRecode(1 ); //column ids start from 1
         encoder.build(testData);
 
@@ -127,9 +123,9 @@ public class TransformEncodeCacheUnitTest {
     @Test
     public void testGet() {
 
+        int columnCount = 1;
         int rowCount = 10;
-        FrameBlock testData = TestUtils.generateRandomFrameBlock(rowCount, new Types.ValueType[]{
-                Types.ValueType.FP32}, 231);
+        FrameBlock testData = EncodeCacheTestUtil.generateTestData(columnCount, rowCount);
         ColumnEncoderRecode encoder = new ColumnEncoderRecode(1 ); //column ids start from 1
         encoder.build(testData);
         Map<Object, Long> rcdMapInEncoder = encoder.getRcdMap();

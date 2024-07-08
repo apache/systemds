@@ -23,6 +23,7 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.common.Types.ValueType;
 import org.apache.sysds.runtime.frame.data.FrameBlock;
+import org.apache.sysds.runtime.transform.encode.EncodeBuildCache;
 import org.apache.sysds.runtime.transform.encode.EncoderFactory;
 import org.apache.sysds.runtime.transform.encode.EncoderType;
 import org.apache.sysds.runtime.transform.encode.MultiColumnEncoder;
@@ -69,6 +70,7 @@ public class TransformEncodeCacheTestSingleCol {
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
+		EncodeBuildCache.clear();
 	}
 
 	@Parameters

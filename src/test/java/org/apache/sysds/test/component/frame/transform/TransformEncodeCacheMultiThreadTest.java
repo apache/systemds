@@ -22,11 +22,10 @@ package org.apache.sysds.test.component.frame.transform;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.common.Types.ValueType;
+import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.frame.data.FrameBlock;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
-import org.apache.sysds.runtime.transform.encode.EncoderFactory;
-import org.apache.sysds.runtime.transform.encode.EncoderType;
-import org.apache.sysds.runtime.transform.encode.MultiColumnEncoder;
+import org.apache.sysds.runtime.transform.encode.*;
 import org.apache.sysds.test.TestUtils;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -34,10 +33,9 @@ import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameters;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.List;
+import javax.sound.midi.Soundbank;
+import java.util.*;
+import java.util.stream.Collectors;
 
 import static org.junit.Assert.*;
 
@@ -45,64 +43,79 @@ import static org.junit.Assert.*;
 public class TransformEncodeCacheMultiThreadTest {
 	protected static final Log LOG = LogFactory.getLog(TransformEncodeCacheMultiThreadTest.class.getName());
 
-	private final FrameBlock data;
-	private final int k;
-	private final List<String> specs;
-	private final EncoderType encoderType;
+	private final FrameBlock _data;
+	private final int _k;
+	private final List<String> _specs;
+	private final EncoderType _encoderType;
+	protected static LinkedList<EncodeCacheKey> _evicQueue = null;
+	protected static Map<EncodeCacheKey, EncodeCacheEntry> _cacheMap = null;
 
-	public TransformEncodeCacheMultiThreadTest(FrameBlock data, int k, List<String> specs, EncoderType encoderType) {
-		this.data = data;
-		this.k = k;
-		this.specs = specs;
-		this.encoderType = encoderType;
+	public TransformEncodeCacheMultiThreadTest(FrameBlock _data, int _k, List<String> _specs, EncoderType _encoderType) {
+		this._data = _data;
+		this._k = _k;
+		this._specs = _specs;
+		this._encoderType = _encoderType;
 	}
 
 	@BeforeClass
 	public static void setUp() {
-		FrameBlock setUpData = TestUtils.generateRandomFrameBlock(10, new ValueType[]{ValueType.FP32}, 231);
-
-		MultiColumnEncoder encoder = EncoderFactory.createEncoder("{recode:[C1]}", setUpData.getColumnNames(), setUpData.getNumColumns(), null);
 		try {
-			encoder.encode(setUpData, 1); // Setup encoding with a single thread
-		} catch (Exception e) {
-			e.printStackTrace();
+			long st = System.nanoTime();
+			EncodeBuildCache.getEncodeBuildCache();
+			long et = System.nanoTime();
+			double setUpTime = (et - st)/1_000_000.0;
+
+			_evicQueue = EncodeBuildCache.get_evictionQueue();
+			System.out.println((String.format("Successfully set up cache in %f milliseconds. " +
+					"Size of eviction queue: %d", setUpTime, _evicQueue.size())));
+
+			_cacheMap = EncodeBuildCache.get_cache();
+
+			//EncodeBuildCache.setCacheLimit(0.000005); // set to a lower bound for testing
+			System.out.println((String.format("Cache limit: %d", EncodeBuildCache.get_cacheLimit())));
+
+		} catch(DMLRuntimeException e){
+			LOG.error("Creation of cache failed:" + e.getMessage());
 		}
 	}
 
 	@Parameters
-	public static Collection<Object[]> data() {
+	public static Collection<Object[]> testParameters() {
 		final ArrayList<Object[]> tests = new ArrayList<>();
+
 		final int[] threads = new int[] {1, 2, 4, 8};
-		FrameBlock testData = TestUtils.generateRandomFrameBlock(
-				10,
-				new ValueType[]{
-						ValueType.FP32, ValueType.FP32, ValueType.FP32,
-						ValueType.FP32, ValueType.FP32, ValueType.FP32,
-						ValueType.FP32, ValueType.FP32, ValueType.FP32,
-						ValueType.FP32, ValueType.FP32},
-				231
-		);
-		List<List<String>> specLists = Arrays.asList(
-				Arrays.asList(
-						"{recode:[C1]}", "{recode:[C2]}",
-						"{recode:[C3]}", "{recode:[C4]}",
-						"{recode:[C5]}", "{recode:[C6]}",
-						"{recode:[C7]}", "{recode:[C8]}",
-						"{recode:[C9]}", "{recode:[C10]}"),
-				Arrays.asList(
-						"{ids:true, bin:[{id:1, method:equi-width, numbins:4}]}",
-						"{ids:true, bin:[{id:2, method:equi-width, numbins:4}]}",
-						"{ids:true, bin:[{id:3, method:equi-width, numbins:4}]}",
-						"{ids:true, bin:[{id:4, method:equi-width, numbins:4}]}",
-						"{ids:true, bin:[{id:5, method:equi-width, numbins:4}]}",
-						"{ids:true, bin:[{id:6, method:equi-width, numbins:4}]}",
-						"{ids:true, bin:[{id:7, method:equi-width, numbins:4}]}",
-						"{ids:true, bin:[{id:8, method:equi-width, numbins:4}]}",
-						"{ids:true, bin:[{id:9, method:equi-width, numbins:4}]}",
-						"{ids:true, bin:[{id:10, method:equi-width, numbins:4}]}")
-		);
+		//final int[] threads = new int[] {2, 4};
+
+		int numColumns = 50;
+		int numRows = 1000;
+
+		System.out.println(String.format("Number of columns (number of runs to average over): %d", numColumns));
+		System.out.println(String.format("Number of rows (size of build result): %d", numRows));
+
+		//create input data frame (numRows x numColumns)
+		ValueType[] valueTypes = new ValueType[numColumns];
+		for (int i = 0; i < numColumns; i++) {
+			valueTypes[i] = ValueType.FP32;
+		}
+		FrameBlock testData = TestUtils.generateRandomFrameBlock(numRows, valueTypes, 231);
+
+		//create a list of recode specs referring to one distinct column each
+		List<String> recodeSpecs = new ArrayList<>();
+		for (int i = 1; i <= numColumns; i++) {
+			recodeSpecs.add("{recode:[C" + i + "]}");
+		}
+
+		//create a list of bin specs referring to one distinct column each
+		List<String> binSpecs = new ArrayList<>();
+		for (int i = 1; i <= numColumns; i++) {
+			binSpecs.add("{ids:true, bin:[{id:" + i + ", method:equi-width, numbins:4}]}");
+		}
+
+		List<List<String>> specLists = Arrays.asList(recodeSpecs, binSpecs);
 		List<EncoderType> encoderTypes = Arrays.asList(EncoderType.Recode, EncoderType.Bin);
 
+		//create test cases for each combination of recoder type and thread number
+		// (2x5 tests running on numColumn distinct encoders)
 		for (int index = 0; index < specLists.size(); index++){
 			for(int k : threads)
 				tests.add(new Object[]{testData, k, specLists.get(index), encoderTypes.get(index)});
@@ -116,17 +129,17 @@ public class TransformEncodeCacheMultiThreadTest {
 		try {
 			FrameBlock meta = null;
 			List<MultiColumnEncoder> encoders = new ArrayList<>();
-			for (String spec: specs) {
-				encoders.add(EncoderFactory.createEncoder(spec, data.getColumnNames(), data.getNumColumns(), meta));
+			for (String spec: _specs) {
+				encoders.add(EncoderFactory.createEncoder(spec, _data.getColumnNames(), _data.getNumColumns(), meta));
 			}
 
 			final int[] threads = new int[] {2, 4, 8, 3};
 
 			for (MultiColumnEncoder encoder : encoders) {
 
-				MatrixBlock singleThreadResult = encoder.encode(data, 1);
+				MatrixBlock singleThreadResult = encoder.encode(_data, 1);
 				for (int k : threads) {
-					MatrixBlock multiThreadResult = encoder.encode(data, k);
+					MatrixBlock multiThreadResult = encoder.encode(_data, k);
 					compareMatrixBlocks(singleThreadResult, multiThreadResult);
 				}
 			}
@@ -137,7 +150,70 @@ public class TransformEncodeCacheMultiThreadTest {
 		}
 	}
 
+	@Test
+	public void compareCachePerformanceSingleAndMultithreaded(){
+
+		List<Long> durationsWithout = new ArrayList<>();
+		List<Long> durationsWith = new ArrayList<>();
+		try {
+			FrameBlock meta = null;
+			List<MultiColumnEncoder> encoders = new ArrayList<>();
+			for (String spec: _specs) {
+				//create an encoder for each column
+				encoders.add(EncoderFactory.createEncoder(spec, _data.getColumnNames(), _data.getNumColumns(), meta));
+			}
+
+			// first run, no cache entries present yet
+			for (MultiColumnEncoder encoder : encoders) {
+				durationsWithout.add(measureEncodeTime(encoder, _data, _k));
+			}
+
+			// second run, there is a cache entry for every spec now
+			for (MultiColumnEncoder encoder : encoders) {
+				durationsWith.add(measureEncodeTime(encoder, _data, _k));
+			}
+
+			int numExclusions = 10;
+			System.out.println(String.format("Number of runs to exlude: %d", numExclusions));
+			double avgExecTimeWithout = analyzePerformance(numExclusions, durationsWithout, false);
+			System.out.println(String.format("Average exec time for %s with %d threads without cache: %f", _encoderType, _k, avgExecTimeWithout/1_000_000.0));
+
+			double avgExecTimeWith = analyzePerformance(numExclusions, durationsWith, true);
+			System.out.println(String.format("Average exec time for %s with %d threads with cache: %f", _encoderType, _k, avgExecTimeWith/1_000_000.0));
+
+		} catch (Exception e) {
+			e.printStackTrace();
+			fail(e.getMessage());
+		}
+	}
+
 	private void compareMatrixBlocks(MatrixBlock mb1, MatrixBlock mb2) {
 		assertEquals("Encoded matrix blocks should be equal", mb1, mb2);
+	}
+
+	private static long measureEncodeTime(MultiColumnEncoder encoder, FrameBlock data, int k) {
+		long startTime = System.nanoTime();
+		encoder.encode(data, k);
+		long endTime = System.nanoTime();
+		return endTime - startTime;
+	}
+
+	private double analyzePerformance(int numExclusions, List<Long> runs, boolean withCache){
+		//exclude the first x runs
+		runs = runs.subList(numExclusions, runs.size());
+		/*for (long duration: runs){
+			double milisecs = duration/1_000_000.0;
+			if (withCache){
+				LOG.info("duration with cache: " + milisecs);
+			} else {
+				LOG.info("duration without cache: " + milisecs);
+			}
+		}*/
+		double avgExecTime = runs.stream()
+				.collect(Collectors.averagingLong(Long::longValue));
+
+		double stdDev = runs.stream()
+				.collect(Collectors.averagingLong(Long::longValue));
+		return avgExecTime;
 	}
 }

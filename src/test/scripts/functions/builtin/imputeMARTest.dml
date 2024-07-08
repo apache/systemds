@@ -1,0 +1,90 @@
+#-------------------------------------------------------------
+#
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+#
+#-------------------------------------------------------------
+
+# Prepare data
+X = read($X);
+M = read($Mask);
+imputationMethod = $method;
+iter = $iteration;
+targetCol = $targetCol;
+
+# MICE imputation
+mice_imputation = function(Matrix[Double] X, Matrix[Double] M, Integer iter) return (Matrix[Double] X_imputed) {
+    X_imputed = X;
+    for(i in 1:iter) {
+        for(j in 1:ncol(X)) {
+            if(sum(M[,j]) > 0) {
+                X_temp = X_imputed;
+                X_temp[, j] = X_temp[, j] * (1-M[,j]);
+                model = lm(X_imputed[,j], X_temp);
+                X_imputed[M[,j]==1, j] = predict(model, X_temp[M[,j]==1,]);
+            }
+        }
+    }
+}
+
+# Mean imputation
+mean_imputation = function(Matrix[Double] X, Matrix[Double] M) return (Matrix[Double] X_imputed) {
+    X_imputed = X;
+    for(j in 1:ncol(X)) {
+        if(sum(M[,j]) > 0) {
+            col_mean = mean(X[M[,j]==0, j]);
+            X_imputed[M[,j]==1, j] = col_mean;
+        }
+    }
+}
+
+
+if (imputationMethod == "MICE") {
+    X_imputed = mice_imputation(X, M, iter);
+} else if (imputationMethod == "MEAN") {
+    X_imputed = mean_imputation(X, M);
+} else {
+    stop("Invalid imputation method specified");
+}
+
+# Prepare data for logistic regression
+y = X_imputed[, targetCol];
+X_lr = X_imputed[, -targetCol];
+
+# Logistic regression
+model = glm(y, X_lr, family="binomial", verbose=FALSE);
+beta = model$coefficients;
+predictions = model$fitted.values;
+
+# Get AUC
+pos_label = rowIndexMax(matrix(1,1,2));
+auc = as.scalar(auroc(y, predictions, pos_label));
+
+# Calculate R-squared
+y_mean = mean(y);
+ss_tot = sum((y - y_mean)^2);
+ss_res = sum((y - predictions)^2);
+r_squared = 1 - (ss_res / ss_tot);
+
+# Output results
+write(beta, $LogReg);
+write(matrix(auc, 1, 1), $LogReg, format="csv", append=TRUE);
+write(matrix(r_squared, 1, 1), $LogReg, format="csv", append=TRUE);
+
+print("Imputation method: " + imputationMethod);
+print("AUC: " + auc);
+print("R-squared: " + r_squared);

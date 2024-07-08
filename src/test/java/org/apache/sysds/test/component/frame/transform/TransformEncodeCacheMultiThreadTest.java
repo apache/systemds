@@ -59,6 +59,7 @@ public class TransformEncodeCacheMultiThreadTest {
 
 	@BeforeClass
 	public static void setUp() {
+		EncodeCacheConfig.useCache(true);
 		try {
 			long st = System.nanoTime();
 			EncodeBuildCache.getEncodeBuildCache();
@@ -71,12 +72,12 @@ public class TransformEncodeCacheMultiThreadTest {
 
 			_cacheMap = EncodeBuildCache.get_cache();
 
-			//EncodeBuildCache.setCacheLimit(0.000005); // set to a lower bound for testing
 			System.out.println((String.format("Cache limit: %d", EncodeBuildCache.get_cacheLimit())));
 
 		} catch(DMLRuntimeException e){
 			LOG.error("Creation of cache failed:" + e.getMessage());
 		}
+		EncodeBuildCache.clear();
 	}
 
 	@Parameters
@@ -84,13 +85,13 @@ public class TransformEncodeCacheMultiThreadTest {
 		final ArrayList<Object[]> tests = new ArrayList<>();
 
 		final int[] threads = new int[] {1, 2, 4, 8};
-		//final int[] threads = new int[] {2, 4};
+		//final int[] threads = new int[] {2, 4, 8};
 
 		int numColumns = 50;
-		int numRows = 1000;
+		int numRows = 10000;
 
-		System.out.println(String.format("Number of columns (number of runs to average over): %d", numColumns));
-		System.out.println(String.format("Number of rows (size of build result): %d", numRows));
+		System.out.printf("Number of columns (number of runs to average over): %d%n", numColumns);
+		System.out.printf("Number of rows (size of build result): %d%n", numRows);
 
 		//create input data frame (numRows x numColumns)
 		ValueType[] valueTypes = new ValueType[numColumns];
@@ -165,21 +166,21 @@ public class TransformEncodeCacheMultiThreadTest {
 
 			// first run, no cache entries present yet
 			for (MultiColumnEncoder encoder : encoders) {
-				durationsWithout.add(measureEncodeTime(encoder, _data, _k));
+				durationsWithout.add(EncodeCacheTestUtil.measureEncodeTime(encoder, _data, _k));
 			}
 
 			// second run, there is a cache entry for every spec now
 			for (MultiColumnEncoder encoder : encoders) {
-				durationsWith.add(measureEncodeTime(encoder, _data, _k));
+				durationsWith.add(EncodeCacheTestUtil.measureEncodeTime(encoder, _data, _k));
 			}
 
 			int numExclusions = 10;
-			System.out.println(String.format("Number of runs to exlude: %d", numExclusions));
-			double avgExecTimeWithout = analyzePerformance(numExclusions, durationsWithout, false);
-			System.out.println(String.format("Average exec time for %s with %d threads without cache: %f", _encoderType, _k, avgExecTimeWithout/1_000_000.0));
+			System.out.printf("Number of runs to exlude: %d%n", numExclusions);
+			double avgExecTimeWithout = EncodeCacheTestUtil.analyzePerformance(numExclusions, durationsWithout, false);
+			System.out.printf("Average exec time for %s with %d threads without cache: %f%n", _encoderType, _k, avgExecTimeWithout);
 
-			double avgExecTimeWith = analyzePerformance(numExclusions, durationsWith, true);
-			System.out.println(String.format("Average exec time for %s with %d threads with cache: %f", _encoderType, _k, avgExecTimeWith/1_000_000.0));
+			double avgExecTimeWith = EncodeCacheTestUtil.analyzePerformance(numExclusions, durationsWith, true);
+			System.out.printf("Average exec time for %s with %d threads with cache: %f%n", _encoderType, _k, avgExecTimeWith);
 
 		} catch (Exception e) {
 			e.printStackTrace();
@@ -191,29 +192,5 @@ public class TransformEncodeCacheMultiThreadTest {
 		assertEquals("Encoded matrix blocks should be equal", mb1, mb2);
 	}
 
-	private static long measureEncodeTime(MultiColumnEncoder encoder, FrameBlock data, int k) {
-		long startTime = System.nanoTime();
-		encoder.encode(data, k);
-		long endTime = System.nanoTime();
-		return endTime - startTime;
-	}
 
-	private double analyzePerformance(int numExclusions, List<Long> runs, boolean withCache){
-		//exclude the first x runs
-		runs = runs.subList(numExclusions, runs.size());
-		/*for (long duration: runs){
-			double milisecs = duration/1_000_000.0;
-			if (withCache){
-				LOG.info("duration with cache: " + milisecs);
-			} else {
-				LOG.info("duration without cache: " + milisecs);
-			}
-		}*/
-		double avgExecTime = runs.stream()
-				.collect(Collectors.averagingLong(Long::longValue));
-
-		double stdDev = runs.stream()
-				.collect(Collectors.averagingLong(Long::longValue));
-		return avgExecTime;
-	}
 }

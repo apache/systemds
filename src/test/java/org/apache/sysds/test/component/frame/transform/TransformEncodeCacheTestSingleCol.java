@@ -65,45 +65,25 @@ public class TransformEncodeCacheTestSingleCol {
 
 		MultiColumnEncoder encoder = EncoderFactory.createEncoder("{recode:[C1]}", setUpData.getColumnNames(), setUpData.getNumColumns(), null);
 		try {
-			long duration = measureEncodeTime(encoder, setUpData, 1);
+			long duration = EncodeCacheTestUtil.measureEncodeTime(encoder, setUpData, 1);
 			LOG.info("Setup took " + duration/1_000_000.0 + " milliseconds");
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
-		EncodeBuildCache.clear();
 	}
 
 	@Parameters
 	public static Collection<Object[]> data() {
 		final ArrayList<Object[]> tests = new ArrayList<>();
 		final int k = 1;
-		FrameBlock testData = TestUtils.generateRandomFrameBlock(
-				10,
-				new ValueType[]{
-						ValueType.FP32, ValueType.FP32, ValueType.FP32,
-						ValueType.FP32, ValueType.FP32, ValueType.FP32,
-						ValueType.FP32, ValueType.FP32, ValueType.FP32,
-						ValueType.FP32, ValueType.FP32},
-				231
-		);
+
+		int numColumns = 10;
+		int numRows = 10;
+		FrameBlock testData = EncodeCacheTestUtil.generateTestData(numColumns, numRows);
+
 		List<List<String>> specLists = Arrays.asList(
-				Arrays.asList(
-						"{recode:[C1]}", "{recode:[C2]}",
-						"{recode:[C3]}", "{recode:[C4]}",
-						"{recode:[C5]}", "{recode:[C6]}",
-						"{recode:[C7]}", "{recode:[C8]}",
-						"{recode:[C9]}", "{recode:[C10]}"),
-				Arrays.asList(
-						"{ids:true, bin:[{id:1, method:equi-width, numbins:4}]}",
-						"{ids:true, bin:[{id:2, method:equi-width, numbins:4}]}",
-						"{ids:true, bin:[{id:3, method:equi-width, numbins:4}]}",
-						"{ids:true, bin:[{id:4, method:equi-width, numbins:4}]}",
-						"{ids:true, bin:[{id:5, method:equi-width, numbins:4}]}",
-						"{ids:true, bin:[{id:6, method:equi-width, numbins:4}]}",
-						"{ids:true, bin:[{id:7, method:equi-width, numbins:4}]}",
-						"{ids:true, bin:[{id:8, method:equi-width, numbins:4}]}",
-						"{ids:true, bin:[{id:9, method:equi-width, numbins:4}]}",
-						"{ids:true, bin:[{id:10, method:equi-width, numbins:4}]}")
+				EncodeCacheTestUtil.generateRecodeSpecs(numColumns),
+				EncodeCacheTestUtil.generateBinSpecs(numColumns)
 		);
 		List<EncoderType> encoderTypes = Arrays.asList(EncoderType.Recode, EncoderType.Bin);
 
@@ -122,9 +102,10 @@ public class TransformEncodeCacheTestSingleCol {
 			for (String spec: specs) {
 				encoders.add(EncoderFactory.createEncoder(spec, data.getColumnNames(), data.getNumColumns(), meta));
 			}
+			// encode twice with each encoder
 			for (int i = 0; i < 2; i ++){
 				for (MultiColumnEncoder encoder: encoders) {
-					durations.add(measureEncodeTime(encoder, data, k));
+					durations.add(EncodeCacheTestUtil.measureEncodeTime(encoder, data, k));
 				}
 			}
 			analyzePerformance(durations);
@@ -135,16 +116,10 @@ public class TransformEncodeCacheTestSingleCol {
 		}
 	}
 
-	private static long measureEncodeTime(MultiColumnEncoder encoder, FrameBlock data, int k) {
-		long startTime = System.nanoTime();
-		encoder.encode(data, k);
-		long endTime = System.nanoTime();
-		return endTime - startTime;
-	}
-
 	private void analyzePerformance(List<Long> durations) {
 
 		long firstRun = durations.get(0);
+		// get the first half of the list which contains the runs without any cache entry
 		int halfListSize = durations.size()/2;
 		List<Long> runsWithoutCache = durations.subList(0, halfListSize);
 		for (long duration: runsWithoutCache){

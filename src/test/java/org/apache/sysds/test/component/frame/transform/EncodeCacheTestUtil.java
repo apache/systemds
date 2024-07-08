@@ -61,21 +61,8 @@ public class EncodeCacheTestUtil {
     static double analyzePerformance(int numExclusions, List<Long> runs, boolean withCache){
         //exclude the first x runs
         runs = runs.subList(numExclusions, runs.size());
-		/*for (long duration: runs){
-			double milisecs = duration/1_000_000.0;
-			if (withCache){
-				LOG.info("duration with cache: " + milisecs);
-			} else {
-				LOG.info("duration without cache: " + milisecs);
-			}
-		}*/
         double avgExecTime = runs.stream()
                 .collect(Collectors.averagingLong(Long::longValue));
-
-        /*double stdDev = runs.stream()
-                .collect(Collectors.averagingLong(Long::longValue));*/
         return avgExecTime/1_000_000.0;
     }
-
-
 }

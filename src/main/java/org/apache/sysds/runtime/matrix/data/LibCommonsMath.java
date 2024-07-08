@@ -27,7 +27,6 @@ import static org.apache.sysds.runtime.matrix.data.LibMatrixFourier.ifft_lineari
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.Arrays;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -65,7 +64,6 @@ import org.apache.sysds.runtime.matrix.operators.TernaryOperator;
 import org.apache.sysds.runtime.matrix.operators.UnaryOperator;
 import org.apache.sysds.runtime.util.DataConverter;
 import org.apache.sysds.runtime.util.UtilFunctions;
-import org.apache.commons.math3.util.Precision;
 
 /**
  * Library for matrix operations that need invocation of 
@@ -79,7 +77,8 @@ public class LibCommonsMath
 	private static final Log LOG = LogFactory.getLog(LibCommonsMath.class.getName());
 	private static final double RELATIVE_SYMMETRY_THRESHOLD = 1e-6;
 	private static final double EIGEN_LAMBDA = 1e-8;
-	private static final double EIGEN_EPS = Precision.EPSILON;
+	// Machine epsilon 2^-53
+	private static final double EIGEN_MACHINE_EPS = 0x1.0p-53;
 	private static final int EIGEN_MAX_ITER = 30;
 
 	private LibCommonsMath() {
@@ -148,7 +147,8 @@ public class LibCommonsMath
 		else if (opcode.equals("lu"))
 			return computeLU(in);
 		else if (opcode.equals("eigen"))
-			return computeEigen(in);
+			return computeEigenDecompositionSymm(in, threads);
+			// return computeEigen(in);	
 		else if (opcode.equals("eigen_lanczos"))
 			return computeEigenLanczos(in, threads, seed);
 		else if (opcode.equals("eigen_qr"))
@@ -243,8 +243,7 @@ public class LibCommonsMath
 		MatrixBlock realEigenValues = evResult[0];
 		MatrixBlock eigenVectors = evResult[1];
 
-		// TODO: Count number of zeros on construction
-		eigenVectors.setNonZeros(eigenVectors.denseBlock.countNonZeros());
+		eigenVectors = LibMatrixReorg.transposeInPlace(eigenVectors, threads);
 
 		return new MatrixBlock[] {realEigenValues, eigenVectors};
 	}
@@ -253,51 +252,44 @@ public class LibCommonsMath
 		int threads) {
 		final int m = matrix.rlen;
 
-		// MatrixBlock householderVectors = ;
 		MatrixBlock householderVectors = matrix.extractTriangular(new MatrixBlock(m, m, false), false, true, true);
 		if(householderVectors.isInSparseFormat()) {
 			householderVectors.sparseToDense(threads);
 		}
 
-		final double[] z = new double[m];
-
-		// TODO: Consider sparse block case
 		final double[] hv = householderVectors.getDenseBlockValues();
 
 		for(int k = 0; k < m - 1; k++) {
-			final int k_kp1 = k * m + k + 1;
-			final int km = k * m;
+			final int rowKp1 = k * m + k + 1;
+			final int rowK = k * m;
 
 			// zero-out a row and a column simultaneously
-			main[k] = hv[km + k];
+			main[k] = hv[rowK + k];
 
-			// TODO: may or may not improve, seems it does not
-			// double xNormSqr = householderVectors.slice(k, k, k + 1, m - 1).sumSq();
-			// double xNormSqr = LibMatrixMult.dotProduct(hv, hv, k_kp1, k_kp1, m - (k + 1));
 			double xNormSqr = 0;
 			for(int j = k + 1; j < m; ++j) {
 				final double c = hv[k * m + j];
 				xNormSqr += c * c;
 			}
 
-			final double a = (hv[k_kp1] > 0) ? -FastMath.sqrt(xNormSqr) : FastMath.sqrt(xNormSqr);
+			final double a = (hv[rowKp1] > 0) ? -FastMath.sqrt(xNormSqr) : FastMath.sqrt(xNormSqr);
 
 			secondary[k] = a;
 
 			if(a != 0.0) {
 				// apply Householder transform from left and right simultaneously
-				hv[k_kp1] -= a;
+				hv[rowKp1] -= a;
 
-				final double beta = -1 / (a * hv[k_kp1]);
+				final double beta = -1 / (a * hv[rowKp1]);
 				double gamma = 0;
 
 				// compute a = beta A v, where v is the Householder vector
 				// this loop is written in such a way
 				// 1) only the upper triangular part of the matrix is accessed
 				// 2) access is cache-friendly for a matrix stored in rows
-				Arrays.fill(z, k + 1, m, 0);
+				final double[] z = new double[m];
 				for(int i = k + 1; i < m; ++i) {
-					final double hKI = hv[km + i];
+					final double hKI = hv[rowK + i];
 					double zI = hv[i * m + i] * hKI;
 					for(int j = i + 1; j < m; ++j) {
 						final double hIJ = hv[i * m + j];
@@ -306,24 +298,22 @@ public class LibCommonsMath
 					}
 					z[i] = beta * (z[i] + zI);
 
-					gamma += z[i] * hv[km + i];
+					gamma += z[i] * hv[rowK + i];
 				}
 
 				gamma *= beta / 2;
 
 				// compute z = z - gamma v
-				// LibMatrixMult.vectMultiplyAdd(-gamma, hv, z, k_kp1, k + 1, m - (k + 1));
 				for(int i = k + 1; i < m; ++i) {
-					z[i] -= gamma * hv[km + i];
+					z[i] -= gamma * hv[rowK + i];
 				}
 
 				// update matrix: A = A - v zT - z vT
 				// only the upper triangular part of the matrix is updated
 				for(int i = k + 1; i < m; ++i) {
-					final double hki = hv[km + i];
+					final double hki = hv[rowK + i];
 					for(int j = i; j < m; ++j) {
-						final double hkj = hv[km + j];
-
+						final double hkj = hv[rowK + j];
 						hv[i * m + j] -= (hki * z[j] + z[i] * hkj);
 					}
 				}
@@ -347,38 +337,39 @@ public class LibCommonsMath
 	public static MatrixBlock getQ(final double[] hv, double[] main, double[] secondary) {
 		final int m = main.length;
 
-		// orthogonal matrix, most operations are column major (TODO)
 		DenseBlock qaB = DenseBlockFactory.createDenseBlock(m, m);
+
 		double[] qaV = qaB.valuesAt(0);
 
 		// build up first part of the matrix by applying Householder transforms
 		for(int k = m - 1; k >= 1; --k) {
-			final int km = k * m;
-			final int km1m = (k - 1) * m;
+			final int rowK = k * m;
+			final int rowKm1 = (k - 1) * m;
 
-			qaV[km + k] = 1.0;
-			if(hv[km1m + k] != 0.0) {
-				final double inv = 1.0 / (secondary[k - 1] * hv[km1m + k]);
+			qaV[rowK + k] = 1.0;
+			if(hv[rowKm1 + k] != 0.0) {
+				final double inv = 1.0 / (secondary[k - 1] * hv[rowKm1 + k]);
 
 				double beta = 1.0 / secondary[k - 1];
 
-				qaV[km + k] = 1 + beta * hv[km1m + k];
+				qaV[rowK + k] = 1 + beta * hv[rowKm1 + k];
 
-				// TODO: may speedup vector operations
 				for(int i = k + 1; i < m; ++i) {
-					qaV[i * m + k] = beta * hv[km1m + i];
+					qaV[rowK + i] = beta * hv[rowKm1 + i];
 				}
 
 				for(int j = k + 1; j < m; ++j) {
+
 					beta = 0;
 					for(int i = k + 1; i < m; ++i) {
-						beta += qaV[m * i + j] * hv[km1m + i];
+						beta += qaV[m * j + i] * hv[rowKm1 + i];
 					}
 					beta *= inv;
-					qaV[m * k + j] = hv[km1m + k] * beta;
+
+					qaV[m * j + k] = hv[rowKm1 + k] * beta;
 
 					for(int i = k + 1; i < m; ++i) {
-						qaV[m * i + j] += beta * hv[km1m + i];
+						qaV[m * j + i] += beta * hv[rowKm1 + i];
 					}
 				}
 			}
@@ -386,6 +377,8 @@ public class LibCommonsMath
 
 		qaV[0] = 1.0;
 		MatrixBlock res = new MatrixBlock(m, m, qaB);
+		// Arbitrarily set non zero count, will set actual count at the end of the algorithm
+		res.setNonZeros(m * m);
 
 		return res;
 	}
@@ -402,10 +395,10 @@ public class LibCommonsMath
 	 * @return An array of two MatrixBlock objects: eigen values and eigen vectors.
 	 * @throws MaxCountExceededException If the maximum number of iterations is exceeded and convergence fails.
 	 */
-	private static MatrixBlock[] findEigenVectors(double[] main, double[] secondary, final MatrixBlock hhMatrix,
+	private static MatrixBlock[] findEigenVectors(double[] main, double[] secondary, MatrixBlock hhMatrix,
 		final int maxIter, int threads) {
 
-		DenseBlock hhDense = hhMatrix.getDenseBlock();
+		double[] hhvalues = hhMatrix.getDenseBlock().valuesAt(0);
 
 		final int n = hhMatrix.rlen;
 		MatrixBlock eigenValues = new MatrixBlock(n, 1, main);
@@ -422,13 +415,14 @@ public class LibCommonsMath
 			maxAbsoluteValue = FastMath.max(maxAbsoluteValue, FastMath.abs(ev[i]));
 			maxAbsoluteValue = FastMath.max(maxAbsoluteValue, FastMath.abs(e[i]));
 		}
+
 		// Make null any main and secondary value too small to be significant
 		if(maxAbsoluteValue != 0) {
 			for(int i = 0; i < n; i++) {
-				if(FastMath.abs(ev[i]) <= EIGEN_EPS * maxAbsoluteValue && ev[i] != 0.0) {
+				if(FastMath.abs(ev[i]) <= EIGEN_MACHINE_EPS * maxAbsoluteValue && ev[i] != 0.0) {
 					ev[i] = 0;
 				}
-				if(FastMath.abs(e[i]) <= EIGEN_EPS * maxAbsoluteValue && e[i] != 0.0) {
+				if(FastMath.abs(e[i]) <= EIGEN_MACHINE_EPS * maxAbsoluteValue && e[i] != 0.0) {
 					e[i] = 0;
 				}
 			}
@@ -436,85 +430,83 @@ public class LibCommonsMath
 
 		for(int j = 0; j < n; j++) {
 			int its = 0;
-			int m;
-			do {
+			int m = -1;
+			while(m != j) {
 				for(m = j; m < n - 1; m++) {
 					final double delta = FastMath.abs(ev[m]) + FastMath.abs(ev[m + 1]);
 					if(FastMath.abs(e[m]) + delta == delta) {
 						break;
 					}
 				}
-				if(m != j) {
-					if(its == maxIter) {
-						throw new MaxCountExceededException(LocalizedFormats.CONVERGENCE_FAILED, maxIter);
-					}
+				if(m == j)
+					break;
+				if(its == maxIter) {
+					throw new MaxCountExceededException(LocalizedFormats.CONVERGENCE_FAILED, maxIter);
+				}
 
-					its++;
-					double q = (ev[j + 1] - ev[j]) / (2 * e[j]);
-					double t = FastMath.sqrt(1 + q * q);
-					if(q < 0.0) {
-						q = ev[m] - ev[j] + e[j] / (q - t);
+				its++;
+				double q = (ev[j + 1] - ev[j]) / (2 * e[j]);
+				double t = FastMath.sqrt(1 + q * q);
+				if(q < 0.0) {
+					q = ev[m] - ev[j] + e[j] / (q - t);
+				}
+				else {
+					q = ev[m] - ev[j] + e[j] / (q + t);
+				}
+				double u = 0.0;
+				double s = 1.0;
+				double c = 1.0;
+				int i;
+				for(i = m - 1; i >= j; i--) {
+					double p = s * e[i];
+					double h = c * e[i];
+					if(FastMath.abs(p) >= FastMath.abs(q)) {
+						c = q / p;
+						t = FastMath.sqrt(c * c + 1.0);
+						e[i + 1] = p * t;
+						s = 1.0 / t;
+						c *= s;
 					}
 					else {
-						q = ev[m] - ev[j] + e[j] / (q + t);
+						s = p / q;
+						t = FastMath.sqrt(s * s + 1.0);
+						e[i + 1] = q * t;
+						c = 1.0 / t;
+						s *= c;
 					}
-					double u = 0.0;
-					double s = 1.0;
-					double c = 1.0;
-					int i;
-					for(i = m - 1; i >= j; i--) {
-						double p = s * e[i];
-						double h = c * e[i];
-						if(FastMath.abs(p) >= FastMath.abs(q)) {
-							c = q / p;
-							t = FastMath.sqrt(c * c + 1.0);
-							e[i + 1] = p * t;
-							s = 1.0 / t;
-							c *= s;
-						}
-						else {
-							s = p / q;
-							t = FastMath.sqrt(s * s + 1.0);
-							e[i + 1] = q * t;
-							c = 1.0 / t;
-							s *= c;
-						}
-						if(e[i + 1] == 0.0) {
-							ev[i + 1] -= u;
-							e[m] = 0.0;
-							break;
-						}
-						q = ev[i + 1] - u;
-						t = (ev[i] - q) * s + 2.0 * c * h;
-						u = s * t;
-						ev[i + 1] = q + u;
-						q = c * t - h;
-
-						for(int ia = 0; ia < n; ++ia) {
-							p = hhDense.get(ia, i + 1);
-							hhDense.set(ia, i + 1, s * hhDense.get(ia, i) + c * p);
-							hhDense.set(ia, i, c * hhDense.get(ia, i) - s * p);
-						}
+					if(e[i + 1] == 0.0) {
+						ev[i + 1] -= u;
+						e[m] = 0.0;
+						break;
 					}
+					q = ev[i + 1] - u;
+					t = (ev[i] - q) * s + 2.0 * c * h;
+					u = s * t;
+					ev[i + 1] = q + u;
+					q = c * t - h;
 
-					if(t == 0.0 && i >= j) {
-						continue;
+					for(int ia = 0; ia < n; ++ia) {
+						p = hhvalues[(i + 1) * n + ia];
+						hhvalues[(i + 1) * n + ia] = s * hhvalues[i * n + ia] + c * p;
+						hhvalues[i * n + ia] = c * hhvalues[i * n + ia] - s * p;
 					}
-					ev[j] -= u;
-					e[j] = q;
-					e[m] = 0.0;
-
 				}
+
+				if(t == 0.0 && i >= j) {
+					continue;
+				}
+				ev[j] -= u;
+				e[j] = q;
+				e[m] = 0.0;
 			}
-			while(m != j);
+
 		}
 
-		// Sort the eigen values (and vectors) in increase order
+		// Sort eigen values and vectors in decreasing order
 		for(int i = 0; i < n; i++) {
 			int k = i;
 			double p = ev[i];
 			for(int j = i + 1; j < n; j++) {
-				// reversed order from original implementation
 				if(ev[j] < p) {
 					k = j;
 					p = ev[j];
@@ -524,11 +516,9 @@ public class LibCommonsMath
 				ev[k] = ev[i];
 				ev[i] = p;
 				for(int j = 0; j < n; j++) {
-					// TODO: an operation like SwapIndex be faster?
-					p = hhDense.get(j, i);
-					hhDense.set(j, i, hhDense.get(j, k));
-					hhDense.set(j, k, p);
-
+					p = hhvalues[i * n + j];
+					hhvalues[i * n + j] = hhvalues[k * n + j];
+					hhvalues[k * n + j] = p;
 				}
 			}
 		}
@@ -542,7 +532,7 @@ public class LibCommonsMath
 		int zeros = 0;
 		if(maxAbsoluteValue != 0.0) {
 			for(int i = 0; i < n; i++) {
-				if(FastMath.abs(ev[i]) < EIGEN_EPS * maxAbsoluteValue) {
+				if(FastMath.abs(ev[i]) < EIGEN_MACHINE_EPS * maxAbsoluteValue) {
 					ev[i] = 0;
 					zeros++;
 				}
@@ -550,6 +540,7 @@ public class LibCommonsMath
 		}
 
 		eigenValues.setNonZeros(n - zeros);
+		hhMatrix.setNonZeros(hhMatrix.denseBlock.countNonZeros());
 
 		return new MatrixBlock[] {eigenValues, hhMatrix};
 	}

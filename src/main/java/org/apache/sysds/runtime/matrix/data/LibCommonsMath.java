@@ -147,8 +147,7 @@ public class LibCommonsMath
 		else if (opcode.equals("lu"))
 			return computeLU(in);
 		else if (opcode.equals("eigen"))
-			return computeEigenDecompositionSymm(in, threads);
-			// return computeEigen(in);	
+			return computeEigen(in);	
 		else if (opcode.equals("eigen_lanczos"))
 			return computeEigenLanczos(in, threads, seed);
 		else if (opcode.equals("eigen_qr"))

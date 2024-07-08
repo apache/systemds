@@ -220,15 +220,18 @@ public class LibCommonsMath
 	}
 
 	/**
-	 * Computes the eigen decomposition of a symmetric matrix.
+	 * Computes the eigen decomposition of a symmetric matrix using the Implicit QL Algorithm (Dubrulle et al., 1971).
 	 *
 	 * @param in      The input matrix to compute the eigen decomposition on.
 	 * @param threads The number of threads to use for computation.
 	 * @return An array of MatrixBlock objects containing the real eigen values and eigen vectors.
 	 */
 	public static MatrixBlock[] computeEigenDecompositionSymm(MatrixBlock in, int threads) {
+		if ( in.getNumRows() != in.getNumColumns() ) {
+			throw new DMLRuntimeException("Eigen Decomposition can only be done on a square and symmetric matrix. "
+				+ "Input matrix is rectangular (rows=" + in.getNumRows() + ", cols="+ in.getNumColumns() +")");
+		}
 
-		// TODO: Verify matrix is symmetric
 		final double[] mainDiag = new double[in.rlen];
 		final double[] secDiag = new double[in.rlen - 1];
 
@@ -384,12 +387,11 @@ public class LibCommonsMath
 	}
 
 	/**
-	 * Finds the eigen vectors corresponding to the given eigen values using the Householder transformation. (Dubrulle
-	 * et al., 1971).
+	 * Finds the eigen vectors corresponding to the given eigen values using the Householder transformation.
 	 *
 	 * @param main      The main diagonal of the tridiagonal matrix.
 	 * @param secondary The secondary diagonal of the tridiagonal matrix.
-	 * @param hhMatrix  The Householder matrix.
+	 * @param hhMatrix  The Householder matrix (Q).
 	 * @param maxIter   The maximum number of iterations for convergence.
 	 * @param threads   The number of threads to use for computation.
 	 * @return An array of two MatrixBlock objects: eigen values and eigen vectors.
@@ -401,6 +403,7 @@ public class LibCommonsMath
 		double[] hhvalues = hhMatrix.getDenseBlock().valuesAt(0);
 
 		final int n = hhMatrix.rlen;
+
 		MatrixBlock eigenValues = new MatrixBlock(n, 1, main);
 
 		double[] ev = eigenValues.denseBlock.valuesAt(0);
@@ -440,64 +443,11 @@ public class LibCommonsMath
 				}
 				if(m == j)
 					break;
-				if(its == maxIter) {
+				if(its == maxIter)
 					throw new MaxCountExceededException(LocalizedFormats.CONVERGENCE_FAILED, maxIter);
-				}
 
 				its++;
-				double q = (ev[j + 1] - ev[j]) / (2 * e[j]);
-				double t = FastMath.sqrt(1 + q * q);
-				if(q < 0.0) {
-					q = ev[m] - ev[j] + e[j] / (q - t);
-				}
-				else {
-					q = ev[m] - ev[j] + e[j] / (q + t);
-				}
-				double u = 0.0;
-				double s = 1.0;
-				double c = 1.0;
-				int i;
-				for(i = m - 1; i >= j; i--) {
-					double p = s * e[i];
-					double h = c * e[i];
-					if(FastMath.abs(p) >= FastMath.abs(q)) {
-						c = q / p;
-						t = FastMath.sqrt(c * c + 1.0);
-						e[i + 1] = p * t;
-						s = 1.0 / t;
-						c *= s;
-					}
-					else {
-						s = p / q;
-						t = FastMath.sqrt(s * s + 1.0);
-						e[i + 1] = q * t;
-						c = 1.0 / t;
-						s *= c;
-					}
-					if(e[i + 1] == 0.0) {
-						ev[i + 1] -= u;
-						e[m] = 0.0;
-						break;
-					}
-					q = ev[i + 1] - u;
-					t = (ev[i] - q) * s + 2.0 * c * h;
-					u = s * t;
-					ev[i + 1] = q + u;
-					q = c * t - h;
-
-					for(int ia = 0; ia < n; ++ia) {
-						p = hhvalues[(i + 1) * n + ia];
-						hhvalues[(i + 1) * n + ia] = s * hhvalues[i * n + ia] + c * p;
-						hhvalues[i * n + ia] = c * hhvalues[i * n + ia] - s * p;
-					}
-				}
-
-				if(t == 0.0 && i >= j) {
-					continue;
-				}
-				ev[j] -= u;
-				e[j] = q;
-				e[m] = 0.0;
+				formMatrixShift(e, ev, hhvalues, j, m);
 			}
 
 		}
@@ -543,6 +493,74 @@ public class LibCommonsMath
 		hhMatrix.setNonZeros(hhMatrix.denseBlock.countNonZeros());
 
 		return new MatrixBlock[] {eigenValues, hhMatrix};
+	}
+
+	/**
+	 * Performs a matrix shift operation on the given arrays. Implements 'imtqll' procedure (Dubrulle et al., 1971).
+	 * 
+	 * @param e        The array to store eigenvalues.
+	 * @param ev       The array (dense block) to store eigenvectors.
+	 * @param hhValues The array of Householder vectors.
+	 * @param j        The starting index for the matrix shift operation.
+	 * @param m        The ending index for the matrix shift operation.
+	 */
+	private static void formMatrixShift(double[] e, double[] ev, double[] hhValues, int j, int m) {
+		final int n = e.length;
+
+				double q = (ev[j + 1] - ev[j]) / (2 * e[j]);
+				double t = FastMath.sqrt(1 + q * q);
+				if(q < 0.0) {
+					q = ev[m] - ev[j] + e[j] / (q - t);
+				}
+				else {
+					q = ev[m] - ev[j] + e[j] / (q + t);
+				}
+
+				double u = 0.0;
+				double s = 1.0;
+				double c = 1.0;
+				int i;
+				for(i = m - 1; i >= j; i--) {
+					double p = s * e[i];
+					double h = c * e[i];
+					if(FastMath.abs(p) >= FastMath.abs(q)) {
+						c = q / p;
+						t = FastMath.sqrt(c * c + 1.0);
+						e[i + 1] = p * t;
+						s = 1.0 / t;
+						c *= s;
+					}
+					else {
+						s = p / q;
+						t = FastMath.sqrt(s * s + 1.0);
+						e[i + 1] = q * t;
+						c = 1.0 / t;
+						s *= c;
+					}
+					if(e[i + 1] == 0.0) {
+						ev[i + 1] -= u;
+						e[m] = 0.0;
+						break;
+					}
+					q = ev[i + 1] - u;
+					t = (ev[i] - q) * s + 2.0 * c * h;
+					u = s * t;
+					ev[i + 1] = q + u;
+					q = c * t - h;
+
+					for(int ia = 0; ia < n; ++ia) {
+				p = hhValues[(i + 1) * n + ia];
+				hhValues[(i + 1) * n + ia] = s * hhValues[i * n + ia] + c * p;
+				hhValues[i * n + ia] = c * hhValues[i * n + ia] - s * p;
+					}
+				}
+
+		if(t == 0.0 && i >= j)
+			return;
+
+				ev[j] -= u;
+				e[j] = q;
+				e[m] = 0.0;
 	}
 	
 	/**

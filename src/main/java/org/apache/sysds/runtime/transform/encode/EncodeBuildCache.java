@@ -34,7 +34,6 @@ public class EncodeBuildCache {
     private static volatile EncodeBuildCache _instance;
     private static Map<EncodeCacheKey, EncodeCacheEntry> _cache = null;
 
-    private final EncodeCacheConfig _config;
     private static EncodeCacheConfig.EncodeCachePolicy _cachePolicy;
     private static LinkedList<EncodeCacheKey> _evictionQueue;
     private static long _cacheLimit;
@@ -46,7 +45,7 @@ public class EncodeBuildCache {
         _cachePolicy = EncodeCacheConfig._cachepolicy;
         _evictionQueue = new LinkedList<>();
         _usedCacheMemory = 0;
-        _config = EncodeCacheConfig.create(); // reads values from ConfigurationManager or uses default ones
+        EncodeCacheConfig _config = EncodeCacheConfig.create(); // reads values from ConfigurationManager or uses default ones
         setCacheLimit(_config.getCacheMemoryFraction()); //5%
     }
 
@@ -67,6 +66,7 @@ public class EncodeBuildCache {
             _evictionQueue.clear();
             _cache.clear();
             _usedCacheMemory = 0;
+            LOG.debug("cache successfully cleared");
         } catch(Exception e) {
             LOG.error("Encode cache instance could not be cleared partially or completely. Cause: " + e.getMessage());
         }
@@ -80,7 +80,8 @@ public class EncodeBuildCache {
         LOG.debug(String.format("Free memory in cache: %d", freeMemory));
 
         if (entrySize > _cacheLimit) {
-            LOG.info(String.format("Size of build result exceeds cache limit. Size: %d ", buildResult.getSize()));
+            LOG.debug((String.format("Size of build result exceeds cache limit. Size: %d ", buildResult.getSize())));
+
             return;
         }
 
@@ -90,7 +91,7 @@ public class EncodeBuildCache {
         _cache.put(key, buildResult);
         _evictionQueue.add(key);
         _usedCacheMemory += buildResult.getSize();
-        LOG.info(String.format("Putting entry with size %d in cache: %s\n", buildResult.getSize(), buildResult));
+        LOG.debug(String.format("Putting entry with size %d in cache: %s\n", buildResult.getSize(), buildResult));
     }
 
     public EncodeCacheEntry get(EncodeCacheKey key) {
@@ -104,6 +105,7 @@ public class EncodeBuildCache {
                     case LRU:
                         updateQueueLRU(key);
                         break;
+                    //more policies can be added here
                 }
                 return entry;
             }
@@ -119,6 +121,7 @@ public class EncodeBuildCache {
             case LRU:
                 evictLRU(key, buildResult);
                 break;
+            //more policies can be added here
         }
     }
 
@@ -129,7 +132,7 @@ public class EncodeBuildCache {
 
         while (freeMemory < entrySize) {
             try {
-                System.out.println("Evicting using LRU policy..");
+                LOG.debug("Evicting using LRU policy..");
                 EncodeCacheKey evictedKey = _evictionQueue.remove();
                 EncodeCacheEntry<Object> evictedEntry = _cache.get(evictedKey);
                 _cache.remove(evictedKey);

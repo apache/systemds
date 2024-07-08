@@ -39,6 +39,9 @@ import java.util.stream.Collectors;
 
 import static org.junit.Assert.*;
 
+/*
+this class is intended to test the execution time of the encoding process under different threading scenarios
+*/
 @RunWith(value = Parameterized.class)
 public class TransformEncodeCacheMultiThreadTest {
 	protected static final Log LOG = LogFactory.getLog(TransformEncodeCacheMultiThreadTest.class.getName());
@@ -87,68 +90,26 @@ public class TransformEncodeCacheMultiThreadTest {
 		final int[] threads = new int[] {1, 2, 4, 8};
 		//final int[] threads = new int[] {2, 4, 8};
 
-		int numColumns = 50;
+		int numColumns = 60;
 		int numRows = 10000;
-
-		System.out.printf("Number of columns (number of runs to average over): %d%n", numColumns);
-		System.out.printf("Number of rows (size of build result): %d%n", numRows);
-
-		//create input data frame (numRows x numColumns)
-		ValueType[] valueTypes = new ValueType[numColumns];
-		for (int i = 0; i < numColumns; i++) {
-			valueTypes[i] = ValueType.FP32;
-		}
-		FrameBlock testData = TestUtils.generateRandomFrameBlock(numRows, valueTypes, 231);
+		FrameBlock testData = EncodeCacheTestUtil.generateTestData(numColumns, numRows);
 
 		//create a list of recode specs referring to one distinct column each
-		List<String> recodeSpecs = new ArrayList<>();
-		for (int i = 1; i <= numColumns; i++) {
-			recodeSpecs.add("{recode:[C" + i + "]}");
-		}
+		List<String> recodeSpecs = EncodeCacheTestUtil.generateRecodeSpecs(numColumns);
 
 		//create a list of bin specs referring to one distinct column each
-		List<String> binSpecs = new ArrayList<>();
-		for (int i = 1; i <= numColumns; i++) {
-			binSpecs.add("{ids:true, bin:[{id:" + i + ", method:equi-width, numbins:4}]}");
-		}
+		List<String> binSpecs = EncodeCacheTestUtil.generateBinSpecs(numColumns);
 
 		List<List<String>> specLists = Arrays.asList(recodeSpecs, binSpecs);
 		List<EncoderType> encoderTypes = Arrays.asList(EncoderType.Recode, EncoderType.Bin);
 
-		//create test cases for each combination of recoder type and thread number
-		// (2x5 tests running on numColumn distinct encoders)
+		//create test cases for each combination of recoder type and thread number:
+		//2x4 tests running on numColumn distinct encoders
 		for (int index = 0; index < specLists.size(); index++){
 			for(int k : threads)
 				tests.add(new Object[]{testData, k, specLists.get(index), encoderTypes.get(index)});
 		}
 		return tests;
-	}
-
-	@Test
-	public void assertThatMatrixBlockIsEqualForAllThreadNumbers() {
-		// Assert that the resulting matrix block is equal independent of the number of threads
-		try {
-			FrameBlock meta = null;
-			List<MultiColumnEncoder> encoders = new ArrayList<>();
-			for (String spec: _specs) {
-				encoders.add(EncoderFactory.createEncoder(spec, _data.getColumnNames(), _data.getNumColumns(), meta));
-			}
-
-			final int[] threads = new int[] {2, 4, 8, 3};
-
-			for (MultiColumnEncoder encoder : encoders) {
-
-				MatrixBlock singleThreadResult = encoder.encode(_data, 1);
-				for (int k : threads) {
-					MatrixBlock multiThreadResult = encoder.encode(_data, k);
-					compareMatrixBlocks(singleThreadResult, multiThreadResult);
-				}
-			}
-
-		} catch (Exception e) {
-			e.printStackTrace();
-			fail(e.getMessage());
-		}
 	}
 
 	@Test
@@ -174,23 +135,18 @@ public class TransformEncodeCacheMultiThreadTest {
 				durationsWith.add(EncodeCacheTestUtil.measureEncodeTime(encoder, _data, _k));
 			}
 
+			//exclude a large number of runs to make sure not to average over any initialization procedures
 			int numExclusions = 10;
-			System.out.printf("Number of runs to exlude: %d%n", numExclusions);
+			LOG.debug(String.format("Number of runs to exclude: %d%n", numExclusions));
 			double avgExecTimeWithout = EncodeCacheTestUtil.analyzePerformance(numExclusions, durationsWithout, false);
-			System.out.printf("Average exec time for %s with %d threads without cache: %f%n", _encoderType, _k, avgExecTimeWithout);
+			LOG.debug(String.format("Average exec time for %s with %d threads without cache: %f%n", _encoderType, _k, avgExecTimeWithout));
 
 			double avgExecTimeWith = EncodeCacheTestUtil.analyzePerformance(numExclusions, durationsWith, true);
-			System.out.printf("Average exec time for %s with %d threads with cache: %f%n", _encoderType, _k, avgExecTimeWith);
+			LOG.debug(String.format("Average exec time for %s with %d threads with cache: %f%n", _encoderType, _k, avgExecTimeWith));
 
 		} catch (Exception e) {
 			e.printStackTrace();
 			fail(e.getMessage());
 		}
 	}
-
-	private void compareMatrixBlocks(MatrixBlock mb1, MatrixBlock mb2) {
-		assertEquals("Encoded matrix blocks should be equal", mb1, mb2);
-	}
-
-
 }

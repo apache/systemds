@@ -33,12 +33,16 @@ import java.util.stream.IntStream;
 
 import static org.junit.Assert.assertEquals;
 
+/*
+this class is intended to test the execution time of the build phase isolated from the apply phase and other
+procedures during encoding
+*/
 public class TransformEncodeCacheBuildTest {
     protected static final Log LOG = LogFactory.getLog(TransformEncodeCacheBuildTest.class.getName());
     protected static LinkedList<EncodeCacheKey> _evicQueue = null;
     protected static Map<EncodeCacheKey, EncodeCacheEntry> _cacheMap = null;
-    protected static int _numColumns = 10;
-    protected static int _numRows = 1000;
+    protected static int _numColumns = 60;
+    protected static int _numRows = 10000;
     protected static FrameBlock _testData = EncodeCacheTestUtil.generateTestData(_numColumns, _numRows);
 
     @BeforeClass
@@ -50,13 +54,13 @@ public class TransformEncodeCacheBuildTest {
             double setUpTime = (et - st)/1_000_000.0;
 
             _evicQueue = EncodeBuildCache.get_evictionQueue();
-            LOG.debug(String.format("Successfully set up cache in %f milliseconds. " +
+            LOG.info(String.format("Successfully set up cache in %f milliseconds. " +
                     "Size of eviction queue: %d", setUpTime, _evicQueue.size()));
 
             _cacheMap = EncodeBuildCache.get_cache();
 
             EncodeBuildCache.setCacheLimit(0.05); // set to a lower bound for testing
-            LOG.debug(String.format("Cache limit: %d", EncodeBuildCache.get_cacheLimit()));
+            LOG.info(String.format("Cache limit: %d", EncodeBuildCache.get_cacheLimit()));
 
         } catch(DMLRuntimeException e){
             LOG.error("Creation of cache failed:" + e.getMessage());
@@ -112,8 +116,10 @@ public class TransformEncodeCacheBuildTest {
             secondBuildTimes.add(EncodeCacheTestUtil.measureBuildTime(encoder, _testData));
         });
 
-        double avgFirstBuild = EncodeCacheTestUtil.analyzePerformance(2, firstBuildTimes, cacheUsed);
-        double avgSecondBuild = EncodeCacheTestUtil.analyzePerformance(2, secondBuildTimes, cacheUsed);
+        int numExclusions = 10;
+        double avgFirstBuild = EncodeCacheTestUtil.analyzePerformance(numExclusions, firstBuildTimes, cacheUsed);
+        double avgSecondBuild = EncodeCacheTestUtil.analyzePerformance(numExclusions, secondBuildTimes, cacheUsed);
+        System.out.printf("number of excluded runs: %d%n", numExclusions);
         System.out.printf("Average build time in the first run: %f%n", avgFirstBuild);
         System.out.printf("Average build time in the second run: %f%n", avgSecondBuild);
     }

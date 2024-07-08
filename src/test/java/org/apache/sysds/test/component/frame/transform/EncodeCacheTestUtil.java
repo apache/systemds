@@ -1,5 +1,7 @@
 package org.apache.sysds.test.component.frame.transform;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.common.Types;
 import org.apache.sysds.runtime.frame.data.FrameBlock;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
@@ -16,11 +18,12 @@ import java.util.stream.Collectors;
 import static org.junit.Assert.assertEquals;
 
 public class EncodeCacheTestUtil {
+    protected static final Log LOG = LogFactory.getLog(EncodeCacheTestUtil.class.getName());
 
     public static FrameBlock generateTestData(int numColumns, int numRows) {
 
-        System.out.printf("Number of columns (number of runs to average over): %d%n", numColumns);
-        System.out.printf("Number of rows (size of build result): %d%n", numRows);
+        LOG.debug(String.format("Number of columns (number of runs to average over): %d%n", numColumns));
+        LOG.debug(String.format("Number of rows (size of build result): %d%n", numRows));
 
         //create input data frame (numRows x numColumns)
         Types.ValueType[] valueTypes = new Types.ValueType[numColumns];
@@ -28,7 +31,7 @@ public class EncodeCacheTestUtil {
             valueTypes[i] = Types.ValueType.FP32;
         }
         FrameBlock testData = TestUtils.generateRandomFrameBlock(numRows, valueTypes, 231);
-        System.out.printf("Size of test data: %d x %d%n", testData.getNumColumns(), testData.getNumRows());
+        LOG.debug(String.format("Size of test data: %d x %d%n", testData.getNumColumns(), testData.getNumRows()));
 
         return testData;
     }

@@ -111,6 +111,21 @@ public class SparseBlockDelete extends AutomatedTestBase
 	public void testSparseBlockDCSR3()  {
 		runSparseBlockDeleteTest(SparseBlock.Type.DCSR, sparsity3);
 	}
+
+	@Test
+	public void testSparseBlockMCSC1()  {
+		runSparseBlockDeleteTest(SparseBlock.Type.MCSC, sparsity1);
+	}
+
+	@Test
+	public void testSparseBlockMCSC2()  {
+		runSparseBlockDeleteTest(SparseBlock.Type.MCSC, sparsity2);
+	}
+
+	@Test
+	public void testSparseBlockMCSC3()  {
+		runSparseBlockDeleteTest(SparseBlock.Type.MCSC, sparsity3);
+	}
 	
 	private void runSparseBlockDeleteTest( SparseBlock.Type btype, double sparsity)
 	{
@@ -122,7 +137,7 @@ public class SparseBlockDelete extends AutomatedTestBase
 			//init sparse block
 			MatrixBlock mbtmp = DataConverter.convertToMatrixBlock(A);
 			SparseBlock srtmp = mbtmp.getSparseBlock();			
-			SparseBlock sblock = SparseBlockFactory.copySparseBlock(btype, srtmp, true);
+			SparseBlock sblock = SparseBlockFactory.copySparseBlock(btype, srtmp, true, cols);
 			
 			//delete range per row via set
 			for( int i=0; i<rows; i++ )

@@ -24,6 +24,7 @@ import java.util.Iterator;
 import java.util.List;
 
 import org.apache.sysds.runtime.data.SparseBlockFactory;
+import org.apache.sysds.runtime.data.SparseBlockMCSC;
 import org.junit.Assert;
 import org.junit.Test;
 import org.apache.sysds.runtime.data.SparseBlock;
@@ -172,6 +173,36 @@ public class SparseBlockIterator extends AutomatedTestBase {
 		runSparseBlockIteratorTest(SparseBlock.Type.DCSR, sparsity3, true);
 	}
 
+	@Test
+	public void testSparseBlockMCSC1Full() {
+		runSparseBlockIteratorTest(SparseBlock.Type.MCSC, sparsity1, false);
+	}
+
+	@Test
+	public void testSparseBlockMCSC2Full() {
+		runSparseBlockIteratorTest(SparseBlock.Type.MCSC, sparsity2, false);
+	}
+
+	@Test
+	public void testSparseBlockMCSC3Full() {
+		runSparseBlockIteratorTest(SparseBlock.Type.MCSC, sparsity3, false);
+	}
+
+	@Test
+	public void testSparseBlockMCSC1Partial() {
+		runSparseBlockIteratorTest(SparseBlock.Type.MCSC, sparsity1, true);
+	}
+
+	@Test
+	public void testSparseBlockMCSC2Partial() {
+		runSparseBlockIteratorTest(SparseBlock.Type.MCSC, sparsity2, true);
+	}
+
+	@Test
+	public void testSparseBlockMCSC3Partial() {
+		runSparseBlockIteratorTest(SparseBlock.Type.MCSC, sparsity3, true);
+	}
+
 	private void runSparseBlockIteratorTest(SparseBlock.Type btype, double sparsity, boolean partial) {
 		try {
 			//data generation
@@ -181,7 +212,7 @@ public class SparseBlockIterator extends AutomatedTestBase {
 			MatrixBlock mbtmp = DataConverter.convertToMatrixBlock(A);
 			SparseBlock srtmp = mbtmp.getSparseBlock();
 			SparseBlock sblock = SparseBlockFactory.copySparseBlock(btype, srtmp, true);
-			
+
 			//check for correct number of non-zeros
 			int[] rnnz = new int[rows];
 			int nnz = 0;
@@ -212,23 +243,23 @@ public class SparseBlockIterator extends AutomatedTestBase {
 			if(count != nnz)
 				Assert.fail("Wrong number of values returned by iterator: " + count + ", expected: " + nnz);
 
-			// check iterator over non-zero rows
-			List<Integer> manualNonZeroRows = new ArrayList<>();
-			List<Integer> iteratorNonZeroRows = new ArrayList<>();
-			Iterator<Integer> iterRows = !partial ?
-				sblock.getNonEmptyRowsIterator(0, rows) :
-				sblock.getNonEmptyRowsIterator(rl, rows);
+			if(!(btype == SparseBlock.Type.MCSC)){
+				// check iterator over non-zero rows
+				List<Integer> manualNonZeroRows = new ArrayList<>();
+				List<Integer> iteratorNonZeroRows = new ArrayList<>();
+				Iterator<Integer> iterRows = !partial ? sblock.getNonEmptyRowsIterator(0, rows) : sblock.getNonEmptyRowsIterator(rl, rows);
 
-			for(int i = rl; i < rows; i++)
-				if(!sblock.isEmpty(i))
-					manualNonZeroRows.add(i);
-			while(iterRows.hasNext()) {
-				iteratorNonZeroRows.add(iterRows.next());
-			}
+				for(int i = rl; i < rows; i++)
+					if(!sblock.isEmpty(i))
+						manualNonZeroRows.add(i);
+				while(iterRows.hasNext()) {
+					iteratorNonZeroRows.add(iterRows.next());
+				}
 
-			// Compare the results
-			if(!manualNonZeroRows.equals(iteratorNonZeroRows)) {
-				Assert.fail("Verification of iterator over non-zero rows failed.");
+				// Compare the results
+				if(!manualNonZeroRows.equals(iteratorNonZeroRows)) {
+					Assert.fail("Verification of iterator over non-zero rows failed.");
+				}
 			}
 		}
 		catch(Exception ex) {

@@ -281,7 +281,9 @@ public class SparseBlockMCSC extends SparseBlock {
 
 	@Override
 	public void compact(int r) {
-		//TODO: think about what to do here
+		for(int i = 0; i<_columns.length; i++){
+			compactCol(i);
+		}
 	}
 
 	public void compactCol(int c) {
@@ -416,10 +418,10 @@ public class SparseBlockMCSC extends SparseBlock {
 	public long size(int rl, int ru, int cl, int cu) {
 		long nnz = 0;
 		for(int i = cl; i < cu; i++) {
-			if(!isEmpty(i)) {
-				int start = posFIndexGTE(rl, i);
-				int end = posFIndexGTE(ru, i);
-				nnz += (start != -1) ? (end - start) : 0;
+			if(!isEmptyCol(i)) {
+				int start = posFIndexGTECol(rl, i);
+				int end = posFIndexLTECol(ru-1, i);
+				nnz += (start != -1) ? (end - start + 1) : 0;
 			}
 		}
 		return nnz;
@@ -703,13 +705,29 @@ public class SparseBlockMCSC extends SparseBlock {
 		return ((SparseRowVector) _columns[c]).searchIndexesFirstLTE(r);
 	}
 
+	public int posFIndexLTECol(int r, int c) {
+		//prior check with isEmpty(c) expected
+		if(_columns[c] instanceof SparseRowScalar) {
+			_columns[c] = new SparseRowVector(_columns[c]);
+		}
+		return ((SparseRowVector) _columns[c]).searchIndexesFirstLTE(r);
+	}
+
 	@Override
 	public int posFIndexGTE(int r, int c) {
 		return _columns[c].searchIndexesFirstGTE(r);
 	}
 
+	public int posFIndexGTECol(int r, int c) {
+		return _columns[c].searchIndexesFirstGTE(r);
+	}
+
 	@Override
 	public int posFIndexGT(int r, int c) {
+		return _columns[c].searchIndexesFirstGT(r);
+	}
+
+	public int posFIndexGTCol(int r, int c) {
 		return _columns[c].searchIndexesFirstGT(r);
 	}
 
@@ -739,5 +757,14 @@ public class SparseBlockMCSC extends SparseBlock {
 
 	public SparseRow[] getCols() {
 		return _columns;
+	}
+
+	public SparseRow[] getRows(){
+		//TODO: check if correct
+		SparseRow[] rows = new SparseRow[numRows()];
+		for(int i = 0; i < numRows(); i++){
+			rows[i] = get(i);
+		}
+		return rows;
 	}
 }

@@ -35,6 +35,7 @@ public class Sandbox extends AutomatedTestBase{
 							{0, 30, 0, 40, 0, 0},
 							{0, 0, 0, 60, 70, 0},
 							{0, 0, 0, 0, 0, 0}};
+			//double[][] A = getRandomMatrix(10, 10, -10, 10, 0.2, 456);
 
 			//init sparse block
 			SparseBlock sblock = null;
@@ -48,10 +49,12 @@ public class Sandbox extends AutomatedTestBase{
 				case MCSC: sblock = new SparseBlockMCSC(srtmp, 6); break;
 			}
 
-			//System.out.println(((SparseBlockMCSC)sblock).getCols()[0]);
+			System.out.println(sblock.getClass().getName());
 
-			SparseRow row = sblock.get(3);
-			System.out.println(row);
+			long res = sblock.size(0,4,0,6);
+			System.out.println(res);
+
+			//System.out.println(sblock.posFIndexGTE(1,3));
 
 
 

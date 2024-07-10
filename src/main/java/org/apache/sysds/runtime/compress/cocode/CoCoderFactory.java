@@ -25,6 +25,7 @@ import java.util.List;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.runtime.compress.CompressionSettings;
+import org.apache.sysds.runtime.compress.DMLCompressionException;
 import org.apache.sysds.runtime.compress.colgroup.AColGroup.CompressionType;
 import org.apache.sysds.runtime.compress.colgroup.indexes.ColIndexFactory;
 import org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex;
@@ -60,12 +61,15 @@ public interface CoCoderFactory {
 	public static CompressedSizeInfo findCoCodesByPartitioning(AComEst est, CompressedSizeInfo colInfos, int k,
 		ACostEstimate costEstimator, CompressionSettings cs, boolean detectOneHotEncoding) {
 
+		detectOneHotEncoding=false;
+		
+
 		// Use column group partitioner to create partitions of columns
 		AColumnCoCoder co = createColumnGroupPartitioner(cs.columnPartitioner, est, costEstimator, cs);
 
         boolean containsEmptyConstOrIncompressable = containsEmptyConstOrIncompressable(colInfos);
-
-        // If no empty, constant, incompressible groups and not OHE, cocode all columns
+        
+		// If no empty, constant, incompressible groups and not OHE, cocode all columns
         if (!containsEmptyConstOrIncompressable && !detectOneHotEncoding) {
             return co.coCodeColumns(colInfos, k);
 		}
@@ -85,6 +89,11 @@ public interface CoCoderFactory {
 			// filter groups
 			List<CompressedSizeInfoColGroup> currentCandidates = new ArrayList<>();
         	List<List<CompressedSizeInfoColGroup>> oheGroups = new ArrayList<>();
+			boolean isSample=false;
+			if(est.getClass().getSimpleName().equals("ComEstSample")){
+				isSample=true;
+				LOG.info("isSampleTrue");
+			}
 
 			for(int i = 0; i < colInfos.compressionInfo.size(); i++) {
 				CompressedSizeInfoColGroup g = colInfos.compressionInfo.get(i);
@@ -96,16 +105,26 @@ public interface CoCoderFactory {
 					incompressable.add(g.getColumns());
 				else if (isCandidate(g)) {
                     currentCandidates.add(g);
-                    if (isHotEncoded(currentCandidates)) {
+                    if (isHotEncoded(currentCandidates, isSample)) {
                         oheGroups.add(new ArrayList<>(currentCandidates));
                         currentCandidates.clear();
                     }
                 } else {
 					groups.add(g);
                     if (!currentCandidates.isEmpty()) {
-                        currentCandidates.clear();
+                        for(CompressedSizeInfoColGroup gg: currentCandidates)
+							groups.add(gg);
+						currentCandidates.clear();
                     }
                 }
+			}
+
+			// If currentCandidates is not empty, add it to groups
+			if (!currentCandidates.isEmpty()) { 
+				for (CompressedSizeInfoColGroup gg : currentCandidates) {
+					groups.add(gg);
+				}
+				currentCandidates.clear();
 			}
 
 			// overwrite groups.
@@ -122,6 +141,12 @@ public interface CoCoderFactory {
             }
 
 			// cocode remaining groups
+			if(colInfos.getInfo().size()<=0 && incompressable.size()<=0 && emptyCols.size()<=0 && constCols.size()==0 && oheGroups.size()<=0)
+			// Check why it's not added back
+			// Parsing out statistics to check the performance and if the sizes are smaller
+			//  
+				throw new DMLCompressionException("empty cocoders 1");
+			
 			if(!groups.isEmpty()) {
 				colInfos = co.coCodeColumns(colInfos, k);
 			}
@@ -142,10 +167,14 @@ public interface CoCoderFactory {
 				final IColIndex idx = ColIndexFactory.combineIndexes(incompressable);
 				colInfos.compressionInfo.add(new CompressedSizeInfoColGroup(idx, nRow, CompressionType.UNCOMPRESSED));
 			}
+
+			if(colInfos.getInfo().size()<=0)
+				throw new DMLCompressionException("empty cocoders 2");
 			
 			return colInfos;
 
 		}
+
 	}
 
 	private static boolean containsEmptyConstOrIncompressable(CompressedSizeInfo colInfos) {
@@ -157,15 +186,17 @@ public interface CoCoderFactory {
 
 	private static boolean isCandidate(CompressedSizeInfoColGroup g) {
 		// Check if the column has exactly 2 distinct value other than 0
+		LOG.info(g.getNumVals() + "-" + g.getNumRows() + "-" + g.getNumOffs());
 		return g.getNumVals() == 2;
 	}
 
-	private static boolean isHotEncoded(List<CompressedSizeInfoColGroup> colGroups) {
+	private static boolean isHotEncoded(List<CompressedSizeInfoColGroup> colGroups, boolean isSample) {
 		if (colGroups.isEmpty()) {
 			return false;
 		}
 	
 		int numCols = colGroups.size();
+		LOG.info("numCols: " + numCols);
 		int totalNumVals = 0;
 		int totalNumOffs = 0;
 		int numRows = colGroups.get(0).getNumRows();
@@ -174,10 +205,15 @@ public interface CoCoderFactory {
 			totalNumVals += g.getNumVals();
 			totalNumOffs += g.getNumOffs();
 		}
-	
-		if (totalNumVals / 2 != numCols || totalNumOffs != numRows) {
+
+		LOG.info("totalOffs: " + totalNumOffs + ", totalNumVals: " + totalNumVals);
+		double margin = isSample ? 0.0007 : 0.0;
+		if (totalNumVals / 2 != numCols || Math.abs(totalNumOffs - numRows) > numRows * margin) {
 			return false;
 		}
+		// if (totalNumVals / 2 != numCols || totalNumOffs != numRows) {
+		// 	return false;
+		// }
 	
 		LOG.info("ColGroup is OHE");
 		return true;

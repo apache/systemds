@@ -71,6 +71,10 @@ public abstract class AComEst {
 		return _cs.transposed ? _data.getNumColumns() : _data.getNumRows();
 	}
 
+	public int[] getNnzCols(){
+		return nnzCols;
+	}
+
 	/**
 	 * Get the number of columns in the overall compressing block.
 	 * 

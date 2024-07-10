@@ -319,31 +319,65 @@ public class ColGroupFactory {
 	}
 
 
+	// Old implementation
+	// private AColGroup compressOHE(IColIndex colIndexes, int numVals) {
+	// 	//There are some edge cases, can be optimized further
+	// 	// You have to make sure that it is actually OHE
+	// 	// Ensure numVals is valid
+	// 	if (numVals <= 0) {
+	// 		throw new DMLCompressionException("Number of values must be greater than 0 for one-hot encoding");
+	// 	}
+	
+	// 	// Check if the matrix is transposed
+	// 	if(cs.transposed) {
+	// 		throw new NotImplementedException("Not implemented");
+	// 	}
+	
+	// 	AMapToData data = MapToFactory.create(in.getNumRows(), numVals);
+	// 	for(int r=0;r<in.getNumRows();r++){
+	// 		for(int c=0;c<colIndexes.size();c++){
+	// 			if(in.get(r, colIndexes.get(c))==1){
+	// 				data.set(r, c);
+	// 				break;
+	// 			}
+	// 		}
+	// 	}
+	// 	return ColGroupDDC.create(colIndexes, new IdentityDictionary(numVals), data, null);
+	// }
+
+	//new implementation
 	private AColGroup compressOHE(IColIndex colIndexes, int numVals) {
-		//There are some edge cases, can be optimized further
-		// You have to make sure that it is actually OHE
 		// Ensure numVals is valid
 		if (numVals <= 0) {
 			throw new DMLCompressionException("Number of values must be greater than 0 for one-hot encoding");
 		}
 	
-		// Check if the matrix is transposed
-		if(cs.transposed) {
-			throw new NotImplementedException("Not implemented");
-		}
+		AMapToData data = MapToFactory.create(cs.transposed ? in.getNumColumns() : in.getNumRows(), numVals);
 	
-			AMapToData data = MapToFactory.create(in.getNumRows(), numVals);
-		for(int r=0;r<in.getNumRows();r++){
-			for(int c=0;c<colIndexes.size();c++){
-				if(in.get(r, colIndexes.get(c))==1){
-					data.set(r, c);
-					break;
+		if(cs.transposed) {
+			// Handle transposed matrix
+			for(int c = 0; c < in.getNumColumns(); c++){
+				for(int r = 0; r < colIndexes.size(); r++){
+					if(in.get(colIndexes.get(r), c) == 1){
+						data.set(c, r);
+						break;
+					}
+				}
+			}
+		} else {
+			// Handle non-transposed matrix
+			for(int r = 0; r < in.getNumRows(); r++){
+				for(int c = 0; c < colIndexes.size(); c++){
+					if(in.get(r, colIndexes.get(c)) == 1){
+						data.set(r, c);
+						break;
+					}
 				}
 			}
 		}
+	
 		return ColGroupDDC.create(colIndexes, new IdentityDictionary(numVals), data, null);
 	}
-	
 
 	private AColGroup compressSDCSingleColDirectBlock(IColIndex colIndexes, int nVal) {
 		final DoubleCountHashMap cMap = new DoubleCountHashMap(nVal);

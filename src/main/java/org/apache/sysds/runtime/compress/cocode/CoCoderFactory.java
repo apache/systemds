@@ -61,9 +61,6 @@ public interface CoCoderFactory {
 	public static CompressedSizeInfo findCoCodesByPartitioning(AComEst est, CompressedSizeInfo colInfos, int k,
 		ACostEstimate costEstimator, CompressionSettings cs, boolean detectOneHotEncoding) {
 
-		detectOneHotEncoding=false;
-		
-
 		// Use column group partitioner to create partitions of columns
 		AColumnCoCoder co = createColumnGroupPartitioner(cs.columnPartitioner, est, costEstimator, cs);
 
@@ -142,9 +139,6 @@ public interface CoCoderFactory {
 
 			// cocode remaining groups
 			if(colInfos.getInfo().size()<=0 && incompressable.size()<=0 && emptyCols.size()<=0 && constCols.size()==0 && oheGroups.size()<=0)
-			// Check why it's not added back
-			// Parsing out statistics to check the performance and if the sizes are smaller
-			//  
 				throw new DMLCompressionException("empty cocoders 1");
 			
 			if(!groups.isEmpty()) {

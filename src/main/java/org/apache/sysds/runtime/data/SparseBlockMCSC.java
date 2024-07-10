@@ -698,11 +698,9 @@ public class SparseBlockMCSC extends SparseBlock {
 
 	@Override
 	public int posFIndexLTE(int r, int c) {
-		//prior check with isEmpty(c) expected
-		if(_columns[c] instanceof SparseRowScalar) {
-			_columns[c] = new SparseRowVector(_columns[c]);
-		}
-		return ((SparseRowVector) _columns[c]).searchIndexesFirstLTE(r);
+		//prior check with isEmpty(r) expected
+		SparseRow row = get(r);
+		return ((SparseRowVector) row).searchIndexesFirstLTE(c);
 	}
 
 	public int posFIndexLTECol(int r, int c) {
@@ -715,7 +713,8 @@ public class SparseBlockMCSC extends SparseBlock {
 
 	@Override
 	public int posFIndexGTE(int r, int c) {
-		return _columns[c].searchIndexesFirstGTE(r);
+		SparseRow row = get(r);
+		return row.searchIndexesFirstGTE(c);
 	}
 
 	public int posFIndexGTECol(int r, int c) {
@@ -724,7 +723,8 @@ public class SparseBlockMCSC extends SparseBlock {
 
 	@Override
 	public int posFIndexGT(int r, int c) {
-		return _columns[c].searchIndexesFirstGT(r);
+		SparseRow row = get(r);
+		return row.searchIndexesFirstGT(c);
 	}
 
 	public int posFIndexGTCol(int r, int c) {

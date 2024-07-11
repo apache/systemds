@@ -243,24 +243,24 @@ public class SparseBlockIterator extends AutomatedTestBase {
 			if(count != nnz)
 				Assert.fail("Wrong number of values returned by iterator: " + count + ", expected: " + nnz);
 
-			if(!(btype == SparseBlock.Type.MCSC)){
-				// check iterator over non-zero rows
-				List<Integer> manualNonZeroRows = new ArrayList<>();
-				List<Integer> iteratorNonZeroRows = new ArrayList<>();
-				Iterator<Integer> iterRows = !partial ? sblock.getNonEmptyRowsIterator(0, rows) : sblock.getNonEmptyRowsIterator(rl, rows);
+			// check iterator over non-zero rows
+			List<Integer> manualNonZeroRows = new ArrayList<>();
+			List<Integer> iteratorNonZeroRows = new ArrayList<>();
+			Iterator<Integer> iterRows = !partial ? sblock.getNonEmptyRowsIterator(0,
+				rows) : sblock.getNonEmptyRowsIterator(rl, rows);
 
-				for(int i = rl; i < rows; i++)
-					if(!sblock.isEmpty(i))
-						manualNonZeroRows.add(i);
-				while(iterRows.hasNext()) {
-					iteratorNonZeroRows.add(iterRows.next());
-				}
-
-				// Compare the results
-				if(!manualNonZeroRows.equals(iteratorNonZeroRows)) {
-					Assert.fail("Verification of iterator over non-zero rows failed.");
-				}
+			for(int i = rl; i < rows; i++)
+				if(!sblock.isEmpty(i))
+					manualNonZeroRows.add(i);
+			while(iterRows.hasNext()) {
+				iteratorNonZeroRows.add(iterRows.next());
 			}
+
+			// Compare the results
+			if(!manualNonZeroRows.equals(iteratorNonZeroRows)) {
+				Assert.fail("Verification of iterator over non-zero rows failed.");
+			}
+
 		}
 		catch(Exception ex) {
 			ex.printStackTrace();

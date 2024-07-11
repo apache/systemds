@@ -8,6 +8,8 @@ import org.apache.sysds.runtime.util.DataConverter;
 import org.apache.sysds.test.AutomatedTestBase;
 import org.apache.sysds.test.TestUtils;
 
+import java.util.Iterator;
+
 public class Sandbox extends AutomatedTestBase{
 
 
@@ -31,10 +33,10 @@ public class Sandbox extends AutomatedTestBase{
 		try
 		{
 			//data generation
-			double[][] A = {{0, 20, 50, 0, 0, 0},
+			double[][] A = {{0, 0, 0, 0, 0, 0},
 							{0, 30, 0, 40, 0, 0},
-							{0, 0, 0, 60, 70, 0},
-							{0, 0, 0, 0, 0, 0}};
+							{0, 0, 0, 0, 0, 0},
+							{0, 9, 0, 0, 0, 0}};
 			//double[][] A = getRandomMatrix(10, 10, -10, 10, 0.2, 456);
 
 			//init sparse block
@@ -51,10 +53,15 @@ public class Sandbox extends AutomatedTestBase{
 
 			System.out.println(sblock.getClass().getName());
 
-			long res = sblock.size(0,4,0,6);
-			System.out.println(res);
+			//long res = sblock.size(0,4,0,6);
+			//System.out.println(res);
 
 			//System.out.println(sblock.posFIndexGTE(1,3));
+
+			Iterator<Integer> iterRows = sblock.getNonEmptyRowsIterator(0, 5);
+			while(iterRows.hasNext()) {
+				System.out.println(iterRows.next());
+			}
 
 
 

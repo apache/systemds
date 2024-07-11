@@ -698,6 +698,7 @@ public class SparseBlockMCSC extends SparseBlock {
 
 	@Override
 	public int posFIndexLTE(int r, int c) {
+		//TODO: make more efficent
 		//prior check with isEmpty(r) expected
 		SparseRow row = get(r);
 		return ((SparseRowVector) row).searchIndexesFirstLTE(c);
@@ -713,6 +714,7 @@ public class SparseBlockMCSC extends SparseBlock {
 
 	@Override
 	public int posFIndexGTE(int r, int c) {
+		//TODO: make more efficient
 		SparseRow row = get(r);
 		return row.searchIndexesFirstGTE(c);
 	}
@@ -723,6 +725,7 @@ public class SparseBlockMCSC extends SparseBlock {
 
 	@Override
 	public int posFIndexGT(int r, int c) {
+		//TODO: efficient
 		SparseRow row = get(r);
 		return row.searchIndexesFirstGT(c);
 	}
@@ -733,7 +736,29 @@ public class SparseBlockMCSC extends SparseBlock {
 
 	@Override
 	public Iterator<Integer> getNonEmptyRowsIterator(int rl, int ru) {
-		throw new UnsupportedOperationException("Non-empty rows iterator is not supported in column layouts.");
+		return new NonEmptyRowsIteratorMCSC(rl, ru);
+	}
+
+	public class NonEmptyRowsIteratorMCSC implements Iterator<Integer> {
+		private int _rpos;
+		private final int _ru;
+
+		public NonEmptyRowsIteratorMCSC(int rl, int ru) {
+			_rpos = rl;
+			_ru = ru;
+		}
+
+		@Override
+		public boolean hasNext() {
+			while( _rpos<_ru && isEmpty(_rpos) )
+				_rpos++;
+			return _rpos < _ru;
+		}
+
+		@Override
+		public Integer next() {
+			return _rpos++;
+		}
 	}
 
 	@Override
@@ -755,12 +780,20 @@ public class SparseBlockMCSC extends SparseBlock {
 		return sb.toString();
 	}
 
+	/**
+	 * Helper function for MCSC
+	 * @return the underlying array of columns {@link SparseRow}
+	 */
 	public SparseRow[] getCols() {
 		return _columns;
 	}
 
+	/**
+	 * Helper function for MCSC
+	 * @return the corresponding array of rows {@link SparseRow}
+	 */
+
 	public SparseRow[] getRows(){
-		//TODO: check if correct
 		SparseRow[] rows = new SparseRow[numRows()];
 		for(int i = 0; i < numRows(); i++){
 			rows[i] = get(i);

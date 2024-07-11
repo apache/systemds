@@ -245,7 +245,7 @@ public class SparseBlockMCSC extends SparseBlock {
 
 	@Override
 	public void allocate(int r) {
-		for(int i = 0; i< _columns.length; i++){
+		for(int i = 0; i < _columns.length; i++) {
 			if(!isAllocatedCol(i))
 				_columns[i] = new SparseRowVector();
 		}
@@ -281,7 +281,7 @@ public class SparseBlockMCSC extends SparseBlock {
 
 	@Override
 	public void compact(int r) {
-		for(int i = 0; i<_columns.length; i++){
+		for(int i = 0; i < _columns.length; i++) {
 			compactCol(i);
 		}
 	}
@@ -351,7 +351,7 @@ public class SparseBlockMCSC extends SparseBlock {
 
 	@Override
 	public void reset(int r, int ennz, int maxnnz) {
-		for(int i = 0; i<_columns.length; i++){
+		for(int i = 0; i < _columns.length; i++) {
 			if(isAllocatedCol(i)) {
 				if(_columns[i] instanceof SparseRowScalar && _columns[i].indexes()[0] == r)
 					_columns[i].set(r, 0);
@@ -381,7 +381,7 @@ public class SparseBlockMCSC extends SparseBlock {
 	@Override
 	public int size(int r) {
 		int nnz = 0;
-		for(int i = 0; i<_columns.length; i++){
+		for(int i = 0; i < _columns.length; i++) {
 			if(isAllocatedCol(i))
 				nnz += (_columns[i].get(r) != 0) ? 1 : 0;
 		}
@@ -393,12 +393,11 @@ public class SparseBlockMCSC extends SparseBlock {
 		return isAllocated(c) ? _columns[c].size() : 0;
 	}
 
-
 	@Override
 	public long size(int rl, int ru) {
 		long nnz = 0;
-		for(int i = 0; i < _columns.length; i++){
-			if(isAllocatedCol(i)){
+		for(int i = 0; i < _columns.length; i++) {
+			if(isAllocatedCol(i)) {
 				for(int j = rl; j < ru; j++)
 					nnz += (_columns[i].get(j) != 0) ? 1 : 0;
 			}
@@ -420,7 +419,7 @@ public class SparseBlockMCSC extends SparseBlock {
 		for(int i = cl; i < cu; i++) {
 			if(!isEmptyCol(i)) {
 				int start = posFIndexGTECol(rl, i);
-				int end = posFIndexLTECol(ru-1, i);
+				int end = posFIndexLTECol(ru - 1, i);
 				nnz += (start != -1) ? (end - start + 1) : 0;
 			}
 		}
@@ -429,7 +428,7 @@ public class SparseBlockMCSC extends SparseBlock {
 
 	@Override
 	public boolean isEmpty(int r) {
-		for(int i = 0; i <_columns.length; i++){
+		for(int i = 0; i < _columns.length; i++) {
 			if(!isAllocatedCol(i))
 				continue;
 			else if(_columns[i].get(r) != 0)
@@ -491,8 +490,8 @@ public class SparseBlockMCSC extends SparseBlock {
 		int nnz = size(r);
 		int[] idx = new int[nnz];
 		int index = 0;
-		for(int i = 0; i<_columns.length; i++){
-			if(isAllocatedCol(i) && _columns[i].get(r) != 0){
+		for(int i = 0; i < _columns.length; i++) {
+			if(isAllocatedCol(i) && _columns[i].get(r) != 0) {
 				idx[index] = i;
 				index++;
 			}
@@ -511,8 +510,8 @@ public class SparseBlockMCSC extends SparseBlock {
 		int nnz = size(r);
 		double[] vals = new double[nnz];
 		int index = 0;
-		for(int i = 0; i<_columns.length; i++){
-			if(isAllocatedCol(i) && _columns[i].get(r) != 0){
+		for(int i = 0; i < _columns.length; i++) {
+			if(isAllocatedCol(i) && _columns[i].get(r) != 0) {
 				vals[index] = _columns[i].get(r);
 				index++;
 			}
@@ -544,9 +543,9 @@ public class SparseBlockMCSC extends SparseBlock {
 
 	@Override
 	public void set(int r, SparseRow row, boolean deep) {
-		reset(r, 1,1);
+		reset(r, 1, 1);
 		int nnz = row.size();
-		for(int i = 0; i < nnz; i++){
+		for(int i = 0; i < nnz; i++) {
 			set(r, row.indexes()[i], row.values()[i]);
 		}
 	}
@@ -596,12 +595,11 @@ public class SparseBlockMCSC extends SparseBlock {
 	@Override
 	public void setIndexRange(int r, int cl, int cu, double[] v, int vix, int vlen) {
 		int idx = vix;
-		for(int i = cl; i<cu; i++){
-			set(r,i,v[idx]);
+		for(int i = cl; i < cu; i++) {
+			set(r, i, v[idx]);
 			idx++;
 		}
 	}
-
 
 	public void setIndexRangeCol(int c, int rl, int ru, double[] v, int vix, int vlen) {
 		if(!isAllocatedCol(c)) {
@@ -615,8 +613,8 @@ public class SparseBlockMCSC extends SparseBlock {
 
 	@Override
 	public void setIndexRange(int r, int cl, int cu, double[] v, int[] vix, int vpos, int vlen) {
-		for(int i = vpos; i<(vpos+vlen); i++){
-			set(r,vix[i], v[i]);
+		for(int i = vpos; i < (vpos + vlen); i++) {
+			set(r, vix[i], v[i]);
 		}
 	}
 
@@ -633,7 +631,7 @@ public class SparseBlockMCSC extends SparseBlock {
 
 	@Override
 	public void deleteIndexRange(int r, int cl, int cu) {
-		for(int i = cl; i< cu; i++){
+		for(int i = cl; i < cu; i++) {
 			if(isAllocatedCol(i)) {
 				if(_columns[i] instanceof SparseRowScalar && _columns[i].indexes()[0] == r)
 					_columns[i].set(r, 0);
@@ -684,7 +682,7 @@ public class SparseBlockMCSC extends SparseBlock {
 	public SparseRow get(int r) {
 		SparseRow row = (size(r) == 1) ? new SparseRowScalar() : new SparseRowVector(size(r));
 		double v = 0;
-		for(int i = 0; i < _columns.length; i++){
+		for(int i = 0; i < _columns.length; i++) {
 			v = get(r, i);
 			if(v != 0)
 				row.set(i, v);
@@ -747,7 +745,7 @@ public class SparseBlockMCSC extends SparseBlock {
 
 		@Override
 		public boolean hasNext() {
-			while( _rpos<_ru && isEmpty(_rpos) )
+			while(_rpos < _ru && isEmpty(_rpos))
 				_rpos++;
 			return _rpos < _ru;
 		}
@@ -779,6 +777,7 @@ public class SparseBlockMCSC extends SparseBlock {
 
 	/**
 	 * Helper function for MCSC
+	 *
 	 * @return the underlying array of columns {@link SparseRow}
 	 */
 	public SparseRow[] getCols() {
@@ -787,12 +786,13 @@ public class SparseBlockMCSC extends SparseBlock {
 
 	/**
 	 * Helper function for MCSC
+	 *
 	 * @return the corresponding array of rows {@link SparseRow}
 	 */
 
-	public SparseRow[] getRows(){
+	public SparseRow[] getRows() {
 		SparseRow[] rows = new SparseRow[numRows()];
-		for(int i = 0; i < numRows(); i++){
+		for(int i = 0; i < numRows(); i++) {
 			rows[i] = get(i);
 		}
 		return rows;
@@ -813,7 +813,7 @@ public class SparseBlockMCSC extends SparseBlock {
 
 		@Override
 		public boolean hasNext() {
-			while (_cpos < _cu && isEmptyCol(_cpos)) {
+			while(_cpos < _cu && isEmptyCol(_cpos)) {
 				_cpos++;
 			}
 			return _cpos < _cu;
@@ -826,14 +826,13 @@ public class SparseBlockMCSC extends SparseBlock {
 
 	}
 
-
 	private class SparseNonEmptyColumnIterable implements Iterable<Integer> {
 		private final int _cl; //column lower
 		private final int _cu; //column upper
 
 		protected SparseNonEmptyColumnIterable(int cl, int cu) {
 			_cl = cl;
-			_cu  =cu;
+			_cu = cu;
 		}
 
 		@Override

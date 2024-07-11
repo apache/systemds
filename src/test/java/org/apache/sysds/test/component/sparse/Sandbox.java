@@ -21,7 +21,7 @@ public class Sandbox extends AutomatedTestBase{
 
 	@Test
 	public void myTest()  {
-		runTest(SparseBlock.Type.CSR);
+		runTest(SparseBlock.Type.COO);
 	}
 
 

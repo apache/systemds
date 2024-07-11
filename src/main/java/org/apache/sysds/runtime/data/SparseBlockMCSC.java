@@ -698,7 +698,6 @@ public class SparseBlockMCSC extends SparseBlock {
 
 	@Override
 	public int posFIndexLTE(int r, int c) {
-		//TODO: make more efficent
 		//prior check with isEmpty(r) expected
 		SparseRow row = get(r);
 		return ((SparseRowVector) row).searchIndexesFirstLTE(c);
@@ -714,7 +713,6 @@ public class SparseBlockMCSC extends SparseBlock {
 
 	@Override
 	public int posFIndexGTE(int r, int c) {
-		//TODO: make more efficient
 		SparseRow row = get(r);
 		return row.searchIndexesFirstGTE(c);
 	}
@@ -725,7 +723,6 @@ public class SparseBlockMCSC extends SparseBlock {
 
 	@Override
 	public int posFIndexGT(int r, int c) {
-		//TODO: efficient
 		SparseRow row = get(r);
 		return row.searchIndexesFirstGT(c);
 	}
@@ -799,5 +796,50 @@ public class SparseBlockMCSC extends SparseBlock {
 			rows[i] = get(i);
 		}
 		return rows;
+	}
+
+	public Iterator<Integer> getNonEmptyColumnsIterator(int cl, int cu) {
+		return new NonEmptyColumnsIteratorMCSC(cl, cu);
+	}
+
+	public class NonEmptyColumnsIteratorMCSC implements Iterator<Integer> {
+		private int _cpos;
+		private final int _cu;
+
+		public NonEmptyColumnsIteratorMCSC(int cl, int cu) {
+			_cpos = cl;
+			_cu = cu;
+		}
+
+		@Override
+		public boolean hasNext() {
+			while (_cpos < _cu && isEmptyCol(_cpos)) {
+				_cpos++;
+			}
+			return _cpos < _cu;
+		}
+
+		@Override
+		public Integer next() {
+			return _cpos++;
+		}
+
+	}
+
+
+	private class SparseNonEmptyColumnIterable implements Iterable<Integer> {
+		private final int _cl; //column lower
+		private final int _cu; //column upper
+
+		protected SparseNonEmptyColumnIterable(int cl, int cu) {
+			_cl = cl;
+			_cu  =cu;
+		}
+
+		@Override
+		public Iterator<Integer> iterator() {
+			//use specialized non-empty row iterators of sparse blocks
+			return getNonEmptyColumnsIterator(_cl, _cu);
+		}
 	}
 }

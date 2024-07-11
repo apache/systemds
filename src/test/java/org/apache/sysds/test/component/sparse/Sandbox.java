@@ -35,7 +35,7 @@ public class Sandbox extends AutomatedTestBase{
 			//data generation
 			double[][] A = {{0, 0, 0, 0, 0, 0},
 							{0, 30, 0, 40, 0, 0},
-							{0, 0, 0, 0, 0, 0},
+							{1, 0, 0, 0, 0, 1},
 							{0, 9, 0, 0, 0, 0}};
 			//double[][] A = getRandomMatrix(10, 10, -10, 10, 0.2, 456);
 
@@ -58,7 +58,7 @@ public class Sandbox extends AutomatedTestBase{
 
 			//System.out.println(sblock.posFIndexGTE(1,3));
 
-			Iterator<Integer> iterRows = sblock.getNonEmptyRowsIterator(0, 5);
+			Iterator<Integer> iterRows = ((SparseBlockMCSC)sblock).getNonEmptyColumnsIterator(1, 6);
 			while(iterRows.hasNext()) {
 				System.out.println(iterRows.next());
 			}

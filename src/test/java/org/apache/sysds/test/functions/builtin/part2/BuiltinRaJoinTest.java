@@ -41,6 +41,8 @@ public class BuiltinRaJoinTest extends AutomatedTestBase
 		addTestConfiguration(TEST_NAME,new TestConfiguration(TEST_CLASS_DIR, TEST_NAME,new String[]{"result"}));
 	}
 
+	// TODO test all join methods
+	
 	@Test
 	public void testRaJoinTest() {
 		//generate actual dataset and variables
@@ -64,9 +66,9 @@ public class BuiltinRaJoinTest extends AutomatedTestBase
 		// Expected output matrix
 		double[][] Y = {
 				{1, 2, 3, 1, 2, 9},
+				{1, 3, 6, 1, 2, 9},
 				{4, 7, 8, 4, 7, 8},
 				{4, 7, 8, 4, 5, 10},
-				{1, 3, 6, 1, 2, 9},
 				{4, 3, 5, 4, 7, 8},
 				{4, 3, 5, 4, 5, 10},
 		};
@@ -107,7 +109,7 @@ public class BuiltinRaJoinTest extends AutomatedTestBase
 		double[][] A = {
 				{1, 2, 3, 4, 5},
 				{6, 7, 8, 9, 10},
-				{11, 12, 13, 14, 15},
+				{11, 12, 13, 14, 8},
 				{16, 17, 18, 19, 20},
 				{21, 22, 23, 24, 25}
 		};

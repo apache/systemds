@@ -142,7 +142,7 @@ public class SparseBlockSize extends AutomatedTestBase
 				case CSR: sblock = new SparseBlockCSR(srtmp); break;
 				case COO: sblock = new SparseBlockCOO(srtmp); break;
 				case DCSR: sblock = new SparseBlockDCSR(srtmp); break;
-				case MCSC: sblock = new SparseBlockMCSC(srtmp); break;
+				case MCSC: sblock = new SparseBlockMCSC(srtmp, cols); break;
 			}
 			
 			//prepare summary statistics nnz

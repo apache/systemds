@@ -21,7 +21,7 @@ public class Sandbox extends AutomatedTestBase{
 
 	@Test
 	public void myTest()  {
-		runTest(SparseBlock.Type.MCSC);
+		runTest(SparseBlock.Type.CSR);
 	}
 
 
@@ -33,10 +33,10 @@ public class Sandbox extends AutomatedTestBase{
 		try
 		{
 			//data generation
-			double[][] A = {{0, 0, 0, 0, 0, 0},
+			double[][] A = {{10, 20, 0, 0, 0, 0},
 							{0, 30, 0, 40, 0, 0},
-							{1, 0, 0, 0, 0, 1},
-							{0, 9, 0, 0, 0, 0}};
+							{0, 0, 50, 60, 70, 0},
+							{0, 0, 0, 0, 0, 80}};
 			//double[][] A = getRandomMatrix(10, 10, -10, 10, 0.2, 456);
 
 			//init sparse block
@@ -53,15 +53,16 @@ public class Sandbox extends AutomatedTestBase{
 
 			System.out.println(sblock.getClass().getName());
 
-			//long res = sblock.size(0,4,0,6);
-			//System.out.println(res);
+			long res = sblock.size(0,4,0,6);
+			System.out.println(res);
 
 			//System.out.println(sblock.posFIndexGTE(1,3));
 
+			/*
 			Iterator<Integer> iterRows = ((SparseBlockMCSC)sblock).getNonEmptyColumnsIterator(1, 6);
 			while(iterRows.hasNext()) {
 				System.out.println(iterRows.next());
-			}
+			}*/
 
 
 

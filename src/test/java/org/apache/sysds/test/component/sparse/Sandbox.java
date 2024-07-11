@@ -53,7 +53,7 @@ public class Sandbox extends AutomatedTestBase{
 
 			System.out.println(sblock.getClass().getName());
 
-			long res = sblock.size(0,4,0,6);
+			long res = sblock.size(0,4,0,5);
 			System.out.println(res);
 
 			//System.out.println(sblock.posFIndexGTE(1,3));

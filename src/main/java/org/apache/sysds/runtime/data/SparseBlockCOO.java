@@ -319,8 +319,12 @@ public class SparseBlockCOO extends SparseBlock
 		for(int i=rl; i<ru; i++)
 			if( !isEmpty(i) ) {
 				int start = internPosFIndexGTE(i, cl);
-				int end = internPosFIndexGTE(i, cu);
-				nnz += (start!=-1) ? (end-start) : 0;
+				int end = internPosFIndexLTE(i, cu-1);
+				//System.out.println("*********");
+				//System.out.println("start: " + start);
+				//System.out.println("end: " + end);
+				//System.out.println("*********");
+				nnz += (start!=-1 && end!=-1) ? (end-start+1) : 0;
 			}
 		return nnz;
 	}

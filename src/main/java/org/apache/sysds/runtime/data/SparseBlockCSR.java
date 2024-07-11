@@ -441,7 +441,7 @@ public class SparseBlockCSR extends SparseBlock
 			if( !isEmpty(i) ) {
 				int start = internPosFIndexGTE(i, cl);
 				int end = internPosFIndexLTE(i, cu-1);
-				nnz += (start!=-1) ? (end-start+1) : 0;
+				nnz += (start!=-1 && end!=-1) ? (end-start+1) : 0;
 			}
 		return nnz;
 	}

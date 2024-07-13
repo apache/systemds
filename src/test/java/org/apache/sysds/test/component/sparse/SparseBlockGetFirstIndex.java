@@ -345,8 +345,8 @@ public class SparseBlockGetFirstIndex extends AutomatedTestBase
 				}
 				int six = (sixpos >= 0) ? sblock.indexes(i)[sblock.pos(i) + sixpos] : -1;
 				if(six != ix) {
-					Assert.fail("Wrong index returned by index probe (" + itype.toString() + "," + i + "): " + six +
-						", expected: " + ix);
+					Assert.fail("Wrong index returned by index probe (" + itype.toString() + "," + i + "): " +
+						six + ", expected: " + ix);
 				}
 			}
 

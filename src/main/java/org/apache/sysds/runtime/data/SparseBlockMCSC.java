@@ -420,7 +420,7 @@ public class SparseBlockMCSC extends SparseBlock {
 			if(!isEmptyCol(i)) {
 				int start = posFIndexGTECol(rl, i);
 				int end = posFIndexLTECol(ru - 1, i);
-				nnz += (start != -1) ? (end - start + 1) : 0;
+				nnz += (start != -1 && end != -1) ? (end - start + 1) : 0;
 			}
 		}
 		return nnz;

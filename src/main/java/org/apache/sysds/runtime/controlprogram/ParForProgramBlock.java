@@ -755,6 +755,8 @@ public class ParForProgramBlock extends ForProgramBlock {
 		
 		//restrict recompilation to thread local memory
 		setMemoryBudget();
+
+		_numThreads = Math.min(_numThreads, ec.getNumGPUContexts());
 		
 		final LocalTaskQueue<Task> queue = new LocalTaskQueue<>();
 		final Thread[] threads         = new Thread[_numThreads];

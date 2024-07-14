@@ -182,6 +182,21 @@ public class SparseBlockAlignment extends AutomatedTestBase
 		runSparseBlockScanTest(SparseBlock.Type.DCSR, sparsity3, false);
 	}
 
+	@Test
+	public void testSparseBlockMCSC1Neg()  {
+		runSparseBlockScanTest(SparseBlock.Type.MCSC, sparsity1, false);
+	}
+
+	@Test
+	public void testSparseBlockMCSC2Neg()  {
+		runSparseBlockScanTest(SparseBlock.Type.MCSC, sparsity2, false);
+	}
+
+	@Test
+	public void testSparseBlockMCSC3Neg()  {
+		runSparseBlockScanTest(SparseBlock.Type.MCSC, sparsity3, false);
+	}
+
 	private void runSparseBlockScanTest( SparseBlock.Type btype, double sparsity, boolean positive)
 	{
 		try
@@ -192,10 +207,10 @@ public class SparseBlockAlignment extends AutomatedTestBase
 			//init sparse block
 			MatrixBlock mbtmp = DataConverter.convertToMatrixBlock(A);
 			SparseBlock srtmp = mbtmp.getSparseBlock();
-			SparseBlock sblock = SparseBlockFactory.copySparseBlock(btype, srtmp, true);
+			SparseBlock sblock = SparseBlockFactory.copySparseBlock(btype, srtmp, true, cols);
 			
 			//init second sparse block and deep copy
-			SparseBlock sblock2 = SparseBlockFactory.copySparseBlock(btype, sblock, true);
+			SparseBlock sblock2 = SparseBlockFactory.copySparseBlock(btype, sblock, true, cols);
 			
 			//modify second block if necessary
 			if( !positive ) {

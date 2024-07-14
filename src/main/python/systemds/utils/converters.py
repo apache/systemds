@@ -82,10 +82,10 @@ def matrix_block_to_numpy(jvm: JVMView, mb: JavaObject):
 
 
 def pandas_to_frame_block(sds, pd_df: pd.DataFrame):
-    """Converts a given numpy array, to internal matrix block representation.
+    """Converts a given pandas DataFrame to an internal FrameBlock representation.
 
-    :param sds: The current systemds context.
-    :param np_arr: the numpy array to convert to matrixblock.
+    :param sds: The current SystemDS context.
+    :param pd_df: The pandas DataFrame to convert to FrameBlock.
     """
     assert pd_df.ndim <= 2, "pd_df invalid, because it has more than 2 dimensions"
     rows = pd_df.shape[0]
@@ -132,12 +132,14 @@ def pandas_to_frame_block(sds, pd_df: pd.DataFrame):
 
         # convert and set data for each column
         for j, col_name in enumerate(col_names):
-            byte_data = []
             col_type = schema[j]
-            if col_type == jvm.org.apache.sysds.common.Types.ValueType.STRING :
-                byte_array = pd_df[col_name].apply(lambda x: struct.pack('>I', len(str(x))) + str(x).encode())
-                byte_data = b''.join(byte_array)
-            else :
+            if col_type == jvm.org.apache.sysds.common.Types.ValueType.STRING:
+                byte_data = bytearray()
+                for value in pd_df[col_name].astype(str):
+                    encoded_value = value.encode('utf-8')
+                    byte_data.extend(struct.pack('>I', len(encoded_value)))
+                    byte_data.extend(encoded_value)
+            else:
                 col_data = pd_df[col_name].fillna("").to_numpy()
                 byte_data = bytearray(col_data.tobytes())
 
@@ -148,7 +150,7 @@ def pandas_to_frame_block(sds, pd_df: pd.DataFrame):
 
     except Exception as e:
         sds.exception_and_close(e)
-
+        raise e
 
 def frame_block_to_pandas(sds, fb: JavaObject):
     """Converts a FrameBlock object in the JVM to a pandas dataframe.

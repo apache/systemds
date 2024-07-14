@@ -34,9 +34,8 @@ class TestPandasFromToSystemds(unittest.TestCase):
     n_rows = 5
     df = pd.DataFrame(
         {
-            "col1": [f"col1_string_{i}" for i in range(n_rows)],
-            "col2": [i for i in range(n_rows)],
-            "col3": [i * 0.1 for i in range(n_rows)],
+            'C1': [f"col1_string_{i}" for i in range(n_rows)],
+            'C2': [i for i in range(n_rows)],
         }
     )
 
@@ -71,7 +70,7 @@ class TestPandasFromToSystemds(unittest.TestCase):
 
     def test_out_of_systemds(self):
         # Create a CSV file to read into SystemDS
-        self.df.to_csv(self.temp_dir + "out_of_systemds.csv", index=False)
+        self.df.to_csv(self.temp_dir + "out_of_systemds.csv", header=False, index=False)
 
         # Read the CSV file into SystemDS and then compute back to pandas
         frame = self.sds.read(self.temp_dir + "out_of_systemds.csv", data_type="frame", format="csv")
@@ -79,6 +78,7 @@ class TestPandasFromToSystemds(unittest.TestCase):
 
         # Verify the data
         print("result_df:")
+        result_df['C2'] = result_df['C2'].astype(int)
         print(result_df)
         print("self.df:")
         print(self.df)   

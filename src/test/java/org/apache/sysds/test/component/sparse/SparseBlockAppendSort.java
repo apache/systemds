@@ -230,68 +230,45 @@ public class SparseBlockAppendSort extends AutomatedTestBase
 					for( int j=0; j<cols; j++ )
 						sblock.append(i, j, A[i][j]);
 			}
-			else if( itype == InitType.RAND_SET ) {
+			else if(itype == InitType.RAND_SET) {
 				LongLongDoubleHashMap map = new LongLongDoubleHashMap();
-				for( int i=0; i<rows; i++ )
-					for( int j=0; j<cols; j++ )
+				for(int i = 0; i < rows; i++)
+					for(int j = 0; j < cols; j++)
 						map.addValue(i, j, A[i][j]);
 				Iterator<ADoubleEntry> iter = map.getIterator();
-				while( iter.hasNext() ) { //random hash order
+				while(iter.hasNext()) { //random hash order
 					ADoubleEntry e = iter.next();
-					sblock.append((int)e.getKey1(), (int)e.getKey2(), e.value);
+					sblock.append((int) e.getKey1(), (int) e.getKey2(), e.value);
 				}
-			}	
-			
+			}
+
 			//sort appended values
 			sblock.sort();
-			
+
 			//check for correct number of non-zeros
-			int[] rnnz = new int[rows];
-			int nnz = 0;
-			int[] cnnz = new int[cols];
-			for( int i=0; i<rows; i++ ) {
-				for( int j=0; j<cols; j++ ) {
-					cnnz[j] += (A[i][j] != 0) ? 1 : 0;
+			int[] rnnz = new int[rows]; int nnz = 0;
+			for(int i = 0; i < rows; i++) {
+				for(int j = 0; j < cols; j++)
 					rnnz[i] += (A[i][j] != 0) ? 1 : 0;
-				}
 				nnz += rnnz[i];
 			}
-			if( nnz != sblock.size() )
-				Assert.fail("Wrong number of non-zeros: "+sblock.size()+", expected: "+nnz);
+
+			if(nnz != sblock.size())
+				Assert.fail("Wrong number of non-zeros: " + sblock.size() + ", expected: " + nnz);
 
 			//check correct isEmpty return
-			if(sblock instanceof SparseBlockMCSC) {
-				for(int i = 0; i < cols; i++)
-					if(sblock.isEmpty(i) != (cnnz[i] == 0))
-						Assert.fail("Wrong isEmpty(column) result for row nnz: " + cnnz[i]);
-			}
-			else {
-				for(int i = 0; i < rows; i++)
-					if(sblock.isEmpty(i) != (rnnz[i] == 0))
-						Assert.fail("Wrong isEmpty(row) result for row nnz: " + rnnz[i]);
-			}
+			for(int i = 0; i < rows; i++)
+				if(sblock.isEmpty(i) != (rnnz[i] == 0))
+					Assert.fail("Wrong isEmpty(row) result for row nnz: " + rnnz[i]);
 
 			//check correct values
-			if(sblock instanceof SparseBlockMCSC) {
-				for(int i = 0; i < cols; i++) {
-					if(sblock.isEmpty(i)) continue;
-					for(int j = 0; j < rows; j++) {
-						double tmp = sblock.get(j, i);
-						if(tmp != A[j][i])
-							Assert.fail("Wrong get value for cell (" + i + "," + j + "): " + tmp + ", expected: " +
-								A[i][j]);
-					}
-				}
-			}
-			else {
-				for(int i = 0; i < rows; i++) {
-					if(sblock.isEmpty(i)) continue;
-					for(int j = 0; j < cols; j++) {
-						double tmp = sblock.get(i, j);
-						if(tmp != A[i][j])
-							Assert.fail("Wrong get value for cell (" + i + "," + j + "): " + tmp + ", expected: " +
-								A[i][j]);
-					}
+			for(int i = 0; i < rows; i++) {
+				if(sblock.isEmpty(i))
+					continue;
+				for(int j = 0; j < cols; j++) {
+					double tmp = sblock.get(i, j);
+					if(tmp != A[i][j])
+						Assert.fail("Wrong get value for cell (" + i + "," + j + "): " + tmp + ", expected: " + A[i][j]);
 				}
 			}
 		}

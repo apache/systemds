@@ -312,15 +312,15 @@ public class SparseBlockCOO extends SparseBlock
 	public long size(int rl, int ru) {
 		return pos(ru) - pos(rl);
 	}
-	
+
 	@Override
 	public long size(int rl, int ru, int cl, int cu) {
 		long nnz = 0;
-		for(int i=rl; i<ru; i++)
-			if( !isEmpty(i) ) {
+		for(int i = rl; i < ru; i++)
+			if(!isEmpty(i)) {
 				int start = internPosFIndexGTE(i, cl);
-				int end = internPosFIndexGTE(i, cu);
-				nnz += (start!=-1) ? (end-start) : 0;
+				int end = internPosFIndexLTE(i, cu - 1);
+				nnz += (start != -1 && end != -1) ? (end - start + 1) : 0;
 			}
 		return nnz;
 	}

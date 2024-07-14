@@ -98,7 +98,7 @@ public class SparseBlockMemEstimate extends AutomatedTestBase
 		}
 		else { //ultra-sparse (pref COO)
 			if( memMCSC < memCOO )
-				Assert.fail("SparseBlockMCS memory estimate smaller than SparseBlockCOO estimate.");
+				Assert.fail("SparseBlockMCSC memory estimate smaller than SparseBlockCOO estimate.");
 			if( memMCSR < memCOO )
 				Assert.fail("SparseBlockMCSR memory estimate smaller than SparseBlockCOO estimate.");
 			if( memCSR < memCOO )

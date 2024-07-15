@@ -285,7 +285,8 @@ public class ColGroupFactory {
 		}
 
 		else if(ct == CompressionType.OHE) {
-			return compressOHE(colIndexes,cg.getNumVals());
+			boolean isSample = ce.getClass().getSimpleName().equals("ComEstSample");
+			return compressOHE(colIndexes,cg,isSample);
 		}
 
 		final ABitmap ubm = BitmapEncoder.extractBitmap(colIndexes, in, cg.getNumVals(), cs);
@@ -346,38 +347,105 @@ public class ColGroupFactory {
 	// }
 
 	//new implementation
-	private AColGroup compressOHE(IColIndex colIndexes, int numVals) {
+	// private AColGroup compressOHE(IColIndex colIndexes, int numVals) {
+	// 	// Ensure numVals is valid
+	// 	if (numVals <= 0) {
+	// 		throw new DMLCompressionException("Number of values must be greater than 0 for one-hot encoding");
+	// 	}
+	
+	// 	AMapToData data = MapToFactory.create(cs.transposed ? in.getNumColumns() : in.getNumRows(), numVals);
+	
+	// 	if(cs.transposed) {
+	// 		// Handle transposed matrix
+	// 		for(int c = 0; c < in.getNumColumns(); c++){
+	// 			for(int r = 0; r < colIndexes.size(); r++){
+	// 				if(in.get(colIndexes.get(r), c) == 1){
+	// 					data.set(c, r);
+	// 					break;
+	// 				}
+	// 			}
+	// 		}
+	// 	} else {
+	// 		// Handle non-transposed matrix
+	// 		for(int r = 0; r < in.getNumRows(); r++){
+	// 			for(int c = 0; c < colIndexes.size(); c++){
+	// 				if(in.get(r, colIndexes.get(c)) == 1){
+	// 					data.set(r, c);
+	// 					break;
+	// 				}
+	// 			}
+	// 		}
+	// 	}
+	
+	// 	return ColGroupDDC.create(colIndexes, new IdentityDictionary(numVals), data, null);
+	// }
+
+	private AColGroup compressOHE(IColIndex colIndexes, CompressedSizeInfoColGroup cg, boolean isSample) throws Exception {
 		// Ensure numVals is valid
+		int numVals = cg.getNumVals();
 		if (numVals <= 0) {
 			throw new DMLCompressionException("Number of values must be greater than 0 for one-hot encoding");
 		}
 	
-		AMapToData data = MapToFactory.create(cs.transposed ? in.getNumColumns() : in.getNumRows(), numVals);
+		AMapToData data;
 	
 		if(cs.transposed) {
 			// Handle transposed matrix
-			for(int c = 0; c < in.getNumColumns(); c++){
-				for(int r = 0; r < colIndexes.size(); r++){
-					if(in.get(colIndexes.get(r), c) == 1){
-						data.set(c, r);
-						break;
-					}
+			data = MapToFactory.create(cs.transposed ? in.getNumColumns() : in.getNumRows(), numVals+1);
+			SparseBlock sb = in.getSparseBlock();
+			data.fill(numVals+1);
+			for(int c = 0; c<colIndexes.size();c++)
+			{
+				int cidx = colIndexes.get(c);
+				if(sb.isEmpty(cidx))
+				{
+					return directCompressDDC(colIndexes,cg);
 				}
+				final int apos = sb.pos(cidx);
+				final int alen = sb.size(cidx) + apos;
+				final int[] aix = sb.indexes(cidx);
+				final double[] aval = sb.values(cidx);
+				for(int k = apos;k<alen;k++)
+				{
+					if((aval[k]!=1) || data.getIndex(aix[k]) != (numVals+1))
+						return directCompressDDC(colIndexes, cg);
+						
+					else
+						data.set(aix[k], c);
+					
+				}
+				
+
 			}
+			data.setUnique(numVals);
 		} else {
 			// Handle non-transposed matrix
+			data =  MapToFactory.create(cs.transposed ? in.getNumColumns() : in.getNumRows(), numVals);
 			for(int r = 0; r < in.getNumRows(); r++){
+				boolean foundOne = false;
 				for(int c = 0; c < colIndexes.size(); c++){
 					if(in.get(r, colIndexes.get(c)) == 1){
+						if(foundOne) {
+							// If another '1' is found in the same row, fall back to directCompressDDC
+							LOG.info("Rigorous check showed that it's not OHE");
+							return directCompressDDC(colIndexes, cg);
+						}
 						data.set(r, c);
-						break;
+						foundOne = true;
 					}
+				}
+				if(isSample && !foundOne) {
+					// If it's a sample and no '1' is found in the row, fall back to directCompressDDC
+					LOG.info("Rigorous check showed that it's not OHE");
+					return directCompressDDC(colIndexes, cg);
 				}
 			}
 		}
 	
 		return ColGroupDDC.create(colIndexes, new IdentityDictionary(numVals), data, null);
 	}
+	
+
 
 	private AColGroup compressSDCSingleColDirectBlock(IColIndex colIndexes, int nVal) {
 		final DoubleCountHashMap cMap = new DoubleCountHashMap(nVal);

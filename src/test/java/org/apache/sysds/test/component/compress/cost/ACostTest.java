@@ -72,7 +72,7 @@ public abstract class ACostTest {
 			double actualCostIndividual = ce.getCost(individualCols, nRows);
 
 			// cocode
-			CompressedSizeInfo cocodeGroups = CoCoderFactory.findCoCodesByPartitioning(ie, individualGroups, k, ce, cs, true);
+			CompressedSizeInfo cocodeGroups = CoCoderFactory.findCoCodesByPartitioning(ie, individualGroups, k, ce, cs);
 			double estimatedCostCoCode = ce.getCost(cocodeGroups);
 			List<AColGroup> cocodeCols = ColGroupFactory.compressColGroups(mb, cocodeGroups, cs, k);
 			double actualCostCoCode = ce.getCost(cocodeCols, nRows);

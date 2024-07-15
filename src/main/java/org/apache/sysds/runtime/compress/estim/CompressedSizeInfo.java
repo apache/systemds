@@ -109,6 +109,8 @@ public class CompressedSizeInfo {
 		StringBuilder sb = new StringBuilder();
 		if(compressionInfo == null)
 			return "";
+		if(compressionInfo.size()<=0)
+			return "";
 		sb.append("[");
 		sb.append(compressionInfo.get(0).getColumns().size());
 		for(int i = 1; i < compressionInfo.size(); i++)

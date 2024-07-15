@@ -55,19 +55,18 @@ public interface CoCoderFactory {
 	 * @param k             The concurrency degree allowed for this operation.
 	 * @param costEstimator The Cost estimator to estimate the cost of the compression
 	 * @param cs            The compression settings used in the compression.
-	 * @param detectOneHotEncoding            Flag to Enable/Disable OHE Detection
 	 * @return The estimated (hopefully) best groups of ColGroups.
 	 */
 	public static CompressedSizeInfo findCoCodesByPartitioning(AComEst est, CompressedSizeInfo colInfos, int k,
-		ACostEstimate costEstimator, CompressionSettings cs, boolean detectOneHotEncoding) {
-
+		ACostEstimate costEstimator, CompressionSettings cs) {
+		
 		// Use column group partitioner to create partitions of columns
 		AColumnCoCoder co = createColumnGroupPartitioner(cs.columnPartitioner, est, costEstimator, cs);
 
         boolean containsEmptyConstOrIncompressable = containsEmptyConstOrIncompressable(colInfos);
         
 		// If no empty, constant, incompressible groups and not OHE, cocode all columns
-        if (!containsEmptyConstOrIncompressable && !detectOneHotEncoding) {
+        if (!containsEmptyConstOrIncompressable && !cs.oneHotDetect) {
             return co.coCodeColumns(colInfos, k);
 		}
 		else {
@@ -89,7 +88,6 @@ public interface CoCoderFactory {
 			boolean isSample=false;
 			if(est.getClass().getSimpleName().equals("ComEstSample")){
 				isSample=true;
-				LOG.info("isSampleTrue");
 			}
 
 			for(int i = 0; i < colInfos.compressionInfo.size(); i++) {
@@ -180,7 +178,6 @@ public interface CoCoderFactory {
 
 	private static boolean isCandidate(CompressedSizeInfoColGroup g) {
 		// Check if the column has exactly 2 distinct value other than 0
-		LOG.info(g.getNumVals() + "-" + g.getNumRows() + "-" + g.getNumOffs());
 		return g.getNumVals() == 2;
 	}
 
@@ -190,7 +187,6 @@ public interface CoCoderFactory {
 		}
 	
 		int numCols = colGroups.size();
-		LOG.info("numCols: " + numCols);
 		int totalNumVals = 0;
 		int totalNumOffs = 0;
 		int numRows = colGroups.get(0).getNumRows();
@@ -200,7 +196,6 @@ public interface CoCoderFactory {
 			totalNumOffs += g.getNumOffs();
 		}
 
-		LOG.info("totalOffs: " + totalNumOffs + ", totalNumVals: " + totalNumVals);
 		double margin = isSample ? 0.0007 : 0.0;
 		if (totalNumVals / 2 != numCols || Math.abs(totalNumOffs - numRows) > numRows * margin) {
 			return false;

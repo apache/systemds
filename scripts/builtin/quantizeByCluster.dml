@@ -51,12 +51,17 @@ m_quantizeByCluster = function(Matrix[Double]X, Integer M = 4, Integer k = 10, I
     Integer max_iter = 1000, Double eps = 1e-6, Integer avg_sample_size_per_centroid = 50, Boolean separate=TRUE, Integer seed = -1)
   return(Matrix[Double] codebook, Matrix[Double] codes)
 {
+  #pad the data with zeros if the number of columns of the input matrix X are not divisible by M
+  if(ncol(X) %% M != 0) {
+    zeros = matrix(0, rows=nrow(X), cols= ((ncol(X) %/% M) +1) * M - ncol(X))
+    X = cbind(X, zeros)
+  }
   subvector_size = ncol(X) / M
   #Kmeans is run just once for all subspaces together. Subvectors are mapped to vectors of the codebook of size k*M.
   #The ith entry of a code vector has a value in [1, k*M].
   if(!separate) {
     A = matrix(X, rows= nrow(X) * M, cols=subvector_size)
-    [codebook, B] = kmeans(A, k * M, runs, max_iter, eps, FALSE, avg_sample_size_per_centroid, seed)
+    [codebook, B] = kmeans(A, k * M, runs, max_iter, eps, TRUE, avg_sample_size_per_centroid, seed)
     codes = matrix(B, rows = nrow(B) / M, cols = ncol(B) * M)
   }
   #Kmeans is run for every subspace separately. Subvectors are mapped to a subset of k vectors of the codebook.
@@ -66,7 +71,13 @@ m_quantizeByCluster = function(Matrix[Double]X, Integer M = 4, Integer k = 10, I
     codebook = matrix(1, rows=l*M, cols=subvector_size)
     codes = matrix(1, rows=nrow(X), cols=M)
     parfor(i in 1:M, check=0) {
-       [tmp_cbook, tmp_c] = kmeans(X[,(i-1)*subvector_size+1:i*subvector_size], l, runs, max_iter, eps, FALSE, avg_sample_size_per_centroid, seed)
+       [tmp_cbook, tmp_c] = kmeans(X[,(i-1)*subvector_size+1:i*subvector_size], l, runs, max_iter, eps, TRUE, avg_sample_size_per_centroid, seed)
+       #If no output is produced, use a single centroid
+       if(as.scalar(tmp_c[1,1]) == -1) {
+          tmp_cbook = matrix(0, rows=l, cols=subvector_size)
+          [centroid, tmp_c] = kmeans(X[,(i-1)*subvector_size+1:i*subvector_size], 1, runs, max_iter, eps, TRUE, avg_sample_size_per_centroid * l, seed)
+          tmp_cbook[1,] = centroid
+       }
        codebook[(i-1)*l+1:i*l,] = tmp_cbook
        offset = matrix((i-1)*l, rows=nrow(codes), cols=1)
        codes[,i] = tmp_c + offset

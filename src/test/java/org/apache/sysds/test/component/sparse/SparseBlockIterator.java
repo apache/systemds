@@ -23,13 +23,10 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 
-import org.apache.sysds.runtime.data.SparseBlockDCSR;
+import org.apache.sysds.runtime.data.SparseBlockFactory;
 import org.junit.Assert;
 import org.junit.Test;
 import org.apache.sysds.runtime.data.SparseBlock;
-import org.apache.sysds.runtime.data.SparseBlockCOO;
-import org.apache.sysds.runtime.data.SparseBlockCSR;
-import org.apache.sysds.runtime.data.SparseBlockMCSR;
 import org.apache.sysds.runtime.matrix.data.IJV;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.util.DataConverter;
@@ -175,29 +172,45 @@ public class SparseBlockIterator extends AutomatedTestBase {
 		runSparseBlockIteratorTest(SparseBlock.Type.DCSR, sparsity3, true);
 	}
 
+	@Test
+	public void testSparseBlockMCSC1Full() {
+		runSparseBlockIteratorTest(SparseBlock.Type.MCSC, sparsity1, false);
+	}
+
+	@Test
+	public void testSparseBlockMCSC2Full() {
+		runSparseBlockIteratorTest(SparseBlock.Type.MCSC, sparsity2, false);
+	}
+
+	@Test
+	public void testSparseBlockMCSC3Full() {
+		runSparseBlockIteratorTest(SparseBlock.Type.MCSC, sparsity3, false);
+	}
+
+	@Test
+	public void testSparseBlockMCSC1Partial() {
+		runSparseBlockIteratorTest(SparseBlock.Type.MCSC, sparsity1, true);
+	}
+
+	@Test
+	public void testSparseBlockMCSC2Partial() {
+		runSparseBlockIteratorTest(SparseBlock.Type.MCSC, sparsity2, true);
+	}
+
+	@Test
+	public void testSparseBlockMCSC3Partial() {
+		runSparseBlockIteratorTest(SparseBlock.Type.MCSC, sparsity3, true);
+	}
+
 	private void runSparseBlockIteratorTest(SparseBlock.Type btype, double sparsity, boolean partial) {
 		try {
 			//data generation
 			double[][] A = getRandomMatrix(rows, cols, -10, 10, sparsity, 8765432);
 
 			//init sparse block
-			SparseBlock sblock = null;
 			MatrixBlock mbtmp = DataConverter.convertToMatrixBlock(A);
 			SparseBlock srtmp = mbtmp.getSparseBlock();
-			switch(btype) {
-				case MCSR:
-					sblock = new SparseBlockMCSR(srtmp);
-					break;
-				case CSR:
-					sblock = new SparseBlockCSR(srtmp);
-					break;
-				case COO:
-					sblock = new SparseBlockCOO(srtmp);
-					break;
-				case DCSR:
-					sblock = new SparseBlockDCSR(srtmp);
-					break;
-			}
+			SparseBlock sblock = SparseBlockFactory.copySparseBlock(btype, srtmp, true);
 
 			//check for correct number of non-zeros
 			int[] rnnz = new int[rows];
@@ -232,9 +245,9 @@ public class SparseBlockIterator extends AutomatedTestBase {
 			// check iterator over non-zero rows
 			List<Integer> manualNonZeroRows = new ArrayList<>();
 			List<Integer> iteratorNonZeroRows = new ArrayList<>();
-			Iterator<Integer> iterRows = !partial ?
-				sblock.getNonEmptyRowsIterator(0, rows) :
-				sblock.getNonEmptyRowsIterator(rl, rows);
+			Iterator<Integer> iterRows = !partial
+				? sblock.getNonEmptyRowsIterator(0, rows)
+				: sblock.getNonEmptyRowsIterator(rl, rows);
 
 			for(int i = rl; i < rows; i++)
 				if(!sblock.isEmpty(i))
@@ -247,6 +260,7 @@ public class SparseBlockIterator extends AutomatedTestBase {
 			if(!manualNonZeroRows.equals(iteratorNonZeroRows)) {
 				Assert.fail("Verification of iterator over non-zero rows failed.");
 			}
+
 		}
 		catch(Exception ex) {
 			ex.printStackTrace();

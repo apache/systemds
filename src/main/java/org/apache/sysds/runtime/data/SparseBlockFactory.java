@@ -48,7 +48,12 @@ public abstract class SparseBlockFactory{
 		return ret;
 	}
 
-	public static SparseBlock copySparseBlock( SparseBlock.Type type, SparseBlock sblock, boolean forceCopy )
+	public static SparseBlock copySparseBlock(SparseBlock.Type type, SparseBlock sblock, boolean forceCopy) {
+		//Call this method in case 'type' is row format
+		return copySparseBlock(type, sblock, forceCopy, 1000); // Default clen value
+	}
+
+	public static SparseBlock copySparseBlock( SparseBlock.Type type, SparseBlock sblock, boolean forceCopy , int clen)
 	{
 		//sanity check for empty inputs
 		if( sblock == null )
@@ -65,6 +70,7 @@ public abstract class SparseBlockFactory{
 			case CSR: return new SparseBlockCSR(sblock);
 			case COO: return new SparseBlockCOO(sblock);
 			case DCSR: return new SparseBlockDCSR(sblock);
+			case MCSC: return new SparseBlockMCSC(sblock, clen);
 			default:
 				throw new RuntimeException("Unexpected sparse block type: "+type.toString());
 		}
@@ -86,6 +92,7 @@ public abstract class SparseBlockFactory{
 			case CSR: return SparseBlockCSR.estimateSizeInMemory(nrows, ncols, sparsity);
 			case COO: return SparseBlockCOO.estimateSizeInMemory(nrows, ncols, sparsity);
 			case DCSR: return SparseBlockDCSR.estimateSizeInMemory(nrows, ncols, sparsity);
+			case MCSC: return SparseBlockMCSC.estimateSizeInMemory(nrows, ncols, sparsity);
 			default:
 				throw new RuntimeException("Unexpected sparse block type: "+type.toString());
 		}

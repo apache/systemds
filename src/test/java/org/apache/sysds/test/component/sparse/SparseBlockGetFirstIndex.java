@@ -26,6 +26,7 @@ import org.apache.sysds.runtime.data.SparseBlock;
 import org.apache.sysds.runtime.data.SparseBlockCOO;
 import org.apache.sysds.runtime.data.SparseBlockCSR;
 import org.apache.sysds.runtime.data.SparseBlockMCSR;
+import org.apache.sysds.runtime.data.SparseBlockMCSC;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.util.DataConverter;
 import org.apache.sysds.test.AutomatedTestBase;
@@ -39,7 +40,7 @@ import org.apache.sysds.test.TestUtils;
  */
 public class SparseBlockGetFirstIndex extends AutomatedTestBase 
 {
-	private final static int rows = 571;
+	private final static int rows = 595;
 	private final static int cols = 595;
 	private final static double sparsity1 = 0.09;
 	private final static double sparsity2 = 0.19;
@@ -235,56 +236,120 @@ public class SparseBlockGetFirstIndex extends AutomatedTestBase
 	public void testSparseBlockDCSR3LTE()  {
 		runSparseBlockGetFirstIndexTest(SparseBlock.Type.DCSR, sparsity3, IndexType.LTE);
 	}
+
+	@Test
+	public void testSparseBlockMCSC1GT()  {
+		runSparseBlockGetFirstIndexTest(SparseBlock.Type.MCSC, sparsity1, IndexType.GT);
+	}
+
+	@Test
+	public void testSparseBlockMCSC2GT()  {
+		runSparseBlockGetFirstIndexTest(SparseBlock.Type.MCSC, sparsity2, IndexType.GT);
+	}
+
+	@Test
+	public void testSparseBlockMCSC3GT()  {
+		runSparseBlockGetFirstIndexTest(SparseBlock.Type.MCSC, sparsity3, IndexType.GT);
+	}
+
+	@Test
+	public void testSparseBlockMCSC1GTE()  {
+		runSparseBlockGetFirstIndexTest(SparseBlock.Type.MCSC, sparsity1, IndexType.GTE);
+	}
+
+	@Test
+	public void testSparseBlockMCSC2GTE()  {
+		runSparseBlockGetFirstIndexTest(SparseBlock.Type.MCSC, sparsity2, IndexType.GTE);
+	}
+
+	@Test
+	public void testSparseBlockMCSC3GTE()  {
+		runSparseBlockGetFirstIndexTest(SparseBlock.Type.MCSC, sparsity3, IndexType.GTE);
+	}
+
+	@Test
+	public void testSparseBlockMCSC1LTE()  {
+		runSparseBlockGetFirstIndexTest(SparseBlock.Type.MCSC, sparsity1, IndexType.LTE);
+	}
+
+	@Test
+	public void testSparseBlockMCSC2LTE()  {
+		runSparseBlockGetFirstIndexTest(SparseBlock.Type.MCSC, sparsity2, IndexType.LTE);
+	}
+
+	@Test
+	public void testSparseBlockMCSC3LTE()  {
+		runSparseBlockGetFirstIndexTest(SparseBlock.Type.MCSC, sparsity3, IndexType.LTE);
+	}
 	
 	private void runSparseBlockGetFirstIndexTest( SparseBlock.Type btype, double sparsity, IndexType itype)
 	{
 		try
 		{
 			//data generation
-			double[][] A = getRandomMatrix(rows, cols, -10, 10, sparsity, 3456); 
-			
+			double[][] A = getRandomMatrix(rows, cols, -10, 10, sparsity, 3456);
+
 			//init sparse block
 			SparseBlock sblock = null;
 			MatrixBlock mbtmp = DataConverter.convertToMatrixBlock(A);
 			SparseBlock srtmp = mbtmp.getSparseBlock();
-			switch( btype ) {
-				case MCSR: sblock = new SparseBlockMCSR(srtmp); break;
-				case CSR: sblock = new SparseBlockCSR(srtmp); break;
-				case COO: sblock = new SparseBlockCOO(srtmp); break;
-				case DCSR: sblock = new SparseBlockDCSR(srtmp); break;
+			switch(btype) {
+				case MCSR:
+					sblock = new SparseBlockMCSR(srtmp);
+					break;
+				case CSR:
+					sblock = new SparseBlockCSR(srtmp);
+					break;
+				case COO:
+					sblock = new SparseBlockCOO(srtmp);
+					break;
+				case DCSR:
+					sblock = new SparseBlockDCSR(srtmp);
+					break;
+				case MCSC:
+					sblock = new SparseBlockMCSC(srtmp, cols);
+					break;
 			}
-			
+
 			//check for correct number of non-zeros
-			int[] rnnz = new int[rows]; int nnz = 0;
-			for( int i=0; i<rows; i++ ) {
-				for( int j=0; j<cols; j++ )
-					rnnz[i] += (A[i][j]!=0) ? 1 : 0;
+			int[] rnnz = new int[rows];
+			int nnz = 0;
+			for(int i = 0; i < rows; i++) {
+				for(int j = 0; j < cols; j++)
+					rnnz[i] += (A[i][j] != 0) ? 1 : 0;
 				nnz += rnnz[i];
 			}
-			if( nnz != sblock.size() )
-				Assert.fail("Wrong number of non-zeros: "+sblock.size()+", expected: "+nnz);
-		
+
+			if(nnz != sblock.size())
+				Assert.fail("Wrong number of non-zeros: " + sblock.size() + ", expected: " + nnz);
+
 			//check correct isEmpty return
-			for( int i=0; i<rows; i++ )
-				if( sblock.isEmpty(i) != (rnnz[i]==0) )
-					Assert.fail("Wrong isEmpty(row) result for row nnz: "+rnnz[i]);
-		
+			for(int i = 0; i < rows; i++)
+				if(sblock.isEmpty(i) != (rnnz[i] == 0))
+					Assert.fail("Wrong isEmpty(row) result for row nnz: " + rnnz[i]);
+
 			//check correct index values
-			for( int i=0; i<rows; i++ ) {
+			for(int i = 0; i < rows; i++) {
 				int ix = getFirstIx(A, i, i, itype);
 				int sixpos = -1;
-				switch( itype ) {
-					case GT: sixpos = sblock.posFIndexGT(i, i); break;
-					case GTE: sixpos = sblock.posFIndexGTE(i, i); break;
-					case LTE: sixpos = sblock.posFIndexLTE(i, i); break;
+				switch(itype) {
+					case GT:
+						sixpos = sblock.posFIndexGT(i, i);
+						break;
+					case GTE:
+						sixpos = sblock.posFIndexGTE(i, i);
+						break;
+					case LTE:
+						sixpos = sblock.posFIndexLTE(i, i);
+						break;
 				}
-				int six = (sixpos>=0) ? 
-					sblock.indexes(i)[sblock.pos(i)+sixpos] : -1;
-				if( six != ix ) {
-					Assert.fail("Wrong index returned by index probe ("+
-							itype.toString()+","+i+"): "+six+", expected: "+ix);
+				int six = (sixpos >= 0) ? sblock.indexes(i)[sblock.pos(i) + sixpos] : -1;
+				if(six != ix) {
+					Assert.fail("Wrong index returned by index probe (" + itype.toString() + "," + i + "): " +
+						six + ", expected: " + ix);
 				}
 			}
+
 		}
 		catch(Exception ex) {
 			ex.printStackTrace();
@@ -314,4 +379,5 @@ public class SparseBlockGetFirstIndex extends AutomatedTestBase
 		
 		return -1;
 	}
+
 }

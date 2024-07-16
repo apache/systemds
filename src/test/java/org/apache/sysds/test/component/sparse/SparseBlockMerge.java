@@ -122,6 +122,26 @@ public class SparseBlockMerge extends AutomatedTestBase
 	public void testMergeMCSR_DCSR_3()  {
 		runSparseBlockMergeTest(SparseBlock.Type.MCSR, SparseBlock.Type.DCSR, sparsity3);
 	}
+
+	@Test
+	public void testMergeMCSR_MCSC_0()  {
+		runSparseBlockMergeTest(SparseBlock.Type.MCSR, SparseBlock.Type.MCSC, sparsity0);
+	}
+
+	@Test
+	public void testMergeMCSR_MCSC_1()  {
+		runSparseBlockMergeTest(SparseBlock.Type.MCSR, SparseBlock.Type.MCSC, sparsity1);
+	}
+
+	@Test
+	public void testMergeMCSR_MCSC_2()  {
+		runSparseBlockMergeTest(SparseBlock.Type.MCSR, SparseBlock.Type.MCSC, sparsity2);
+	}
+
+	@Test
+	public void testMergeMCSR_MCSC_3()  {
+		runSparseBlockMergeTest(SparseBlock.Type.MCSR, SparseBlock.Type.MCSC, sparsity3);
+	}
 	
 	@Test
 	public void testMergeCSR_CSR_0()  {
@@ -201,6 +221,26 @@ public class SparseBlockMerge extends AutomatedTestBase
 	@Test
 	public void testMergeCSR_COO_3()  {
 		runSparseBlockMergeTest(SparseBlock.Type.CSR, SparseBlock.Type.COO, sparsity3);
+	}
+
+	@Test
+	public void testMergeCSR_MCSC_0()  {
+		runSparseBlockMergeTest(SparseBlock.Type.CSR, SparseBlock.Type.MCSC, sparsity0);
+	}
+
+	@Test
+	public void testMergeCSR_MCSC_1()  {
+		runSparseBlockMergeTest(SparseBlock.Type.CSR, SparseBlock.Type.MCSC, sparsity1);
+	}
+
+	@Test
+	public void testMergeCSR_MCSC_2()  {
+		runSparseBlockMergeTest(SparseBlock.Type.CSR, SparseBlock.Type.MCSC, sparsity2);
+	}
+
+	@Test
+	public void testMergeCSR_MCSC_3()  {
+		runSparseBlockMergeTest(SparseBlock.Type.CSR, SparseBlock.Type.MCSC, sparsity3);
 	}
 	
 	@Test
@@ -284,6 +324,26 @@ public class SparseBlockMerge extends AutomatedTestBase
 	}
 
 	@Test
+	public void testMergeCOO_MCSC_0()  {
+		runSparseBlockMergeTest(SparseBlock.Type.COO, SparseBlock.Type.MCSC, sparsity0);
+	}
+
+	@Test
+	public void testMergeCOO_MCSC_1()  {
+		runSparseBlockMergeTest(SparseBlock.Type.COO, SparseBlock.Type.MCSC, sparsity1);
+	}
+
+	@Test
+	public void testMergeCOO_MCSC_2()  {
+		runSparseBlockMergeTest(SparseBlock.Type.COO, SparseBlock.Type.MCSC, sparsity2);
+	}
+
+	@Test
+	public void testMergeCOO_MCSC_3()  {
+		runSparseBlockMergeTest(SparseBlock.Type.COO, SparseBlock.Type.MCSC, sparsity3);
+	}
+
+	@Test
 	public void testMergeDCSR_DCSR_0()  {
 		runSparseBlockMergeTest(SparseBlock.Type.DCSR, SparseBlock.Type.DCSR, sparsity0);
 	}
@@ -362,7 +422,109 @@ public class SparseBlockMerge extends AutomatedTestBase
 	public void testMergeDCSR_COO_3()  {
 		runSparseBlockMergeTest(SparseBlock.Type.DCSR, SparseBlock.Type.COO, sparsity3);
 	}
-	
+
+	@Test
+	public void testMergeDCSR_MCSC_0()  {
+		runSparseBlockMergeTest(SparseBlock.Type.DCSR, SparseBlock.Type.MCSC, sparsity0);
+	}
+
+	@Test
+	public void testMergeDCSR_MCSC_1()  {
+		runSparseBlockMergeTest(SparseBlock.Type.DCSR, SparseBlock.Type.MCSC, sparsity1);
+	}
+
+	@Test
+	public void testMergeDCSR_MCSC_2()  {
+		runSparseBlockMergeTest(SparseBlock.Type.DCSR, SparseBlock.Type.MCSC, sparsity2);
+	}
+
+	@Test
+	public void testMergeDCSR_MCSC_3()  {
+		runSparseBlockMergeTest(SparseBlock.Type.DCSR, SparseBlock.Type.MCSC, sparsity3);
+	}
+
+	@Test
+	public void testMergeMCSC_MCSC_0()  {
+		runSparseBlockMergeTest(SparseBlock.Type.MCSC, SparseBlock.Type.MCSC, sparsity0);
+	}
+
+	@Test
+	public void testMergeMCSC_MCSC_1()  {
+		runSparseBlockMergeTest(SparseBlock.Type.MCSC, SparseBlock.Type.MCSC, sparsity1);
+	}
+
+	@Test
+	public void testMergeMCSC_MCSC_2()  {
+		runSparseBlockMergeTest(SparseBlock.Type.MCSC, SparseBlock.Type.MCSC, sparsity2);
+	}
+
+	@Test
+	public void testMergeMCSC_MCSC_3()  {
+		runSparseBlockMergeTest(SparseBlock.Type.MCSC, SparseBlock.Type.MCSC, sparsity3);
+	}
+
+	@Test
+	public void testMergeMCSC_CSR_0()  {
+		runSparseBlockMergeTest(SparseBlock.Type.MCSC, SparseBlock.Type.CSR, sparsity0);
+	}
+
+	@Test
+	public void testMergeMCSC_CSR_1()  {
+		runSparseBlockMergeTest(SparseBlock.Type.MCSC, SparseBlock.Type.CSR, sparsity1);
+	}
+
+	@Test
+	public void testMergeMCSC_CSR_2()  {
+		runSparseBlockMergeTest(SparseBlock.Type.MCSC, SparseBlock.Type.CSR, sparsity2);
+	}
+
+	@Test
+	public void testMergeMCSC_CSR_3()  {
+		runSparseBlockMergeTest(SparseBlock.Type.MCSC, SparseBlock.Type.CSR, sparsity3);
+	}
+
+	@Test
+	public void testMergeMCSC_MCSR_0()  {
+		runSparseBlockMergeTest(SparseBlock.Type.MCSC, SparseBlock.Type.MCSR, sparsity0);
+	}
+
+	@Test
+	public void testMergeMCSC_MCSR_1()  {
+		runSparseBlockMergeTest(SparseBlock.Type.MCSC, SparseBlock.Type.MCSR, sparsity1);
+	}
+
+	@Test
+	public void testMergeMCSC_MCSR_2()  {
+		runSparseBlockMergeTest(SparseBlock.Type.MCSC, SparseBlock.Type.MCSR, sparsity2);
+	}
+
+	@Test
+	public void testMergeMCSC_MCSR_3()  {
+		runSparseBlockMergeTest(SparseBlock.Type.MCSC, SparseBlock.Type.MCSR, sparsity3);
+	}
+
+	@Test
+	public void testMergeMCSC_COO_0()  {
+		runSparseBlockMergeTest(SparseBlock.Type.MCSC, SparseBlock.Type.COO, sparsity0);
+	}
+
+	@Test
+	public void testMergeMCSC_COO_1()  {
+		runSparseBlockMergeTest(SparseBlock.Type.MCSC, SparseBlock.Type.COO, sparsity1);
+	}
+
+	@Test
+	public void testMergeMCSC_COO_2()  {
+		runSparseBlockMergeTest(SparseBlock.Type.MCSC, SparseBlock.Type.COO, sparsity2);
+	}
+
+	@Test
+	public void testMergeMCSC_COO_3()  {
+		runSparseBlockMergeTest(SparseBlock.Type.MCSC, SparseBlock.Type.COO, sparsity3);
+	}
+
+
+
 	private void runSparseBlockMergeTest( SparseBlock.Type btype1, SparseBlock.Type btype2, double sparsity)
 	{
 		try
@@ -386,8 +548,8 @@ public class SparseBlockMerge extends AutomatedTestBase
 			MatrixBlock mb1 = DataConverter.convertToMatrixBlock(B1);
 			MatrixBlock mb2 = DataConverter.convertToMatrixBlock(B2);
 			long nnz = mb1.getNonZeros() + mb2.getNonZeros();
-			mb1.setSparseBlock(SparseBlockFactory.copySparseBlock(btype1, mb1.getSparseBlock(), false));
-			mb2.setSparseBlock(SparseBlockFactory.copySparseBlock(btype2, mb2.getSparseBlock(), false));
+			mb1.setSparseBlock(SparseBlockFactory.copySparseBlock(btype1, mb1.getSparseBlock(), false, cols));
+			mb2.setSparseBlock(SparseBlockFactory.copySparseBlock(btype2, mb2.getSparseBlock(), false, cols));
 			
 			//execute merge
 			mb1 = mb1.merge(mb2, false);

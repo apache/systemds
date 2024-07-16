@@ -21,13 +21,10 @@ package org.apache.sysds.test.component.sparse;
 
 import java.util.Iterator;
 
-import org.apache.sysds.runtime.data.SparseBlockDCSR;
+import org.apache.sysds.runtime.data.SparseBlockFactory;
 import org.junit.Assert;
 import org.junit.Test;
 import org.apache.sysds.runtime.data.SparseBlock;
-import org.apache.sysds.runtime.data.SparseBlockCOO;
-import org.apache.sysds.runtime.data.SparseBlockCSR;
-import org.apache.sysds.runtime.data.SparseBlockMCSR;
 import org.apache.sysds.runtime.matrix.data.IJV;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.util.DataConverter;
@@ -114,6 +111,21 @@ public class SparseBlockDelete extends AutomatedTestBase
 	public void testSparseBlockDCSR3()  {
 		runSparseBlockDeleteTest(SparseBlock.Type.DCSR, sparsity3);
 	}
+
+	@Test
+	public void testSparseBlockMCSC1()  {
+		runSparseBlockDeleteTest(SparseBlock.Type.MCSC, sparsity1);
+	}
+
+	@Test
+	public void testSparseBlockMCSC2()  {
+		runSparseBlockDeleteTest(SparseBlock.Type.MCSC, sparsity2);
+	}
+
+	@Test
+	public void testSparseBlockMCSC3()  {
+		runSparseBlockDeleteTest(SparseBlock.Type.MCSC, sparsity3);
+	}
 	
 	private void runSparseBlockDeleteTest( SparseBlock.Type btype, double sparsity)
 	{
@@ -123,15 +135,9 @@ public class SparseBlockDelete extends AutomatedTestBase
 			double[][] A = getRandomMatrix(rows, cols, -10, 10, sparsity, 456); 
 			
 			//init sparse block
-			SparseBlock sblock = null;
 			MatrixBlock mbtmp = DataConverter.convertToMatrixBlock(A);
 			SparseBlock srtmp = mbtmp.getSparseBlock();			
-			switch( btype ) {
-				case MCSR: sblock = new SparseBlockMCSR(srtmp); break;
-				case CSR: sblock = new SparseBlockCSR(srtmp); break;
-				case COO: sblock = new SparseBlockCOO(srtmp); break;
-				case DCSR: sblock = new SparseBlockDCSR(srtmp); break;
-			}
+			SparseBlock sblock = SparseBlockFactory.copySparseBlock(btype, srtmp, true, cols);
 			
 			//delete range per row via set
 			for( int i=0; i<rows; i++ )

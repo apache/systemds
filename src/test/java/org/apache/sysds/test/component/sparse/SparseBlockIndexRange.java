@@ -22,13 +22,9 @@ package org.apache.sysds.test.component.sparse;
 import java.util.Arrays;
 import java.util.Iterator;
 
-import org.apache.sysds.runtime.data.SparseBlockDCSR;
+import org.apache.sysds.runtime.data.*;
 import org.junit.Assert;
 import org.junit.Test;
-import org.apache.sysds.runtime.data.SparseBlock;
-import org.apache.sysds.runtime.data.SparseBlockCOO;
-import org.apache.sysds.runtime.data.SparseBlockCSR;
-import org.apache.sysds.runtime.data.SparseBlockMCSR;
 import org.apache.sysds.runtime.matrix.data.IJV;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.util.DataConverter;
@@ -180,6 +176,36 @@ public class SparseBlockIndexRange extends AutomatedTestBase
 	public void testSparseBlockDCSR3Insert()  {
 		runSparseBlockIndexRangeTest(SparseBlock.Type.DCSR, sparsity3, UpdateType.INSERT);
 	}
+
+	@Test
+	public void testSparseBlockMCSC1Delete()  {
+		runSparseBlockIndexRangeTest(SparseBlock.Type.MCSC, sparsity1, UpdateType.DELETE);
+	}
+
+	@Test
+	public void testSparseBlockMCSC2Delete()  {
+		runSparseBlockIndexRangeTest(SparseBlock.Type.MCSC, sparsity2, UpdateType.DELETE);
+	}
+
+	@Test
+	public void testSparseBlockMCSC3Delete()  {
+		runSparseBlockIndexRangeTest(SparseBlock.Type.MCSC, sparsity3, UpdateType.DELETE);
+	}
+
+	@Test
+	public void testSparseBlockMCSC1Insert()  {
+		runSparseBlockIndexRangeTest(SparseBlock.Type.MCSC, sparsity1, UpdateType.INSERT);
+	}
+
+	@Test
+	public void testSparseBlockMCSC2Insert()  {
+		runSparseBlockIndexRangeTest(SparseBlock.Type.MCSC, sparsity2, UpdateType.INSERT);
+	}
+
+	@Test
+	public void testSparseBlockMCSC3Insert()  {
+		runSparseBlockIndexRangeTest(SparseBlock.Type.MCSC, sparsity3, UpdateType.INSERT);
+	}
 	
 	private void runSparseBlockIndexRangeTest( SparseBlock.Type btype, double sparsity, UpdateType utype)
 	{
@@ -197,6 +223,7 @@ public class SparseBlockIndexRange extends AutomatedTestBase
 				case CSR: sblock = new SparseBlockCSR(srtmp); break;
 				case COO: sblock = new SparseBlockCOO(srtmp); break;
 				case DCSR: sblock = new SparseBlockDCSR(srtmp); break;
+				case MCSC: sblock = new SparseBlockMCSC(srtmp, cols); break;
 			}
 			
 			//delete range per row via set
@@ -248,4 +275,5 @@ public class SparseBlockIndexRange extends AutomatedTestBase
 			throw new RuntimeException(ex);
 		}
 	}
+
 }

@@ -19,13 +19,9 @@
 
 package org.apache.sysds.test.component.sparse;
 
-import org.apache.sysds.runtime.data.SparseBlockDCSR;
+import org.apache.sysds.runtime.data.*;
 import org.junit.Assert;
 import org.junit.Test;
-import org.apache.sysds.runtime.data.SparseBlock;
-import org.apache.sysds.runtime.data.SparseBlockCOO;
-import org.apache.sysds.runtime.data.SparseBlockCSR;
-import org.apache.sysds.runtime.data.SparseBlockMCSR;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.util.DataConverter;
 import org.apache.sysds.test.AutomatedTestBase;
@@ -109,6 +105,21 @@ public class SparseBlockScan extends AutomatedTestBase
 	public void testSparseBlockDCSR3Full()  {
 		runSparseBlockScanTest(SparseBlock.Type.DCSR, sparsity3);
 	}
+
+	@Test
+	public void testSparseBlockMCSC1Full()  {
+		runSparseBlockScanTest(SparseBlock.Type.MCSC, sparsity1);
+	}
+
+	@Test
+	public void testSparseBlockMCSC2Full()  {
+		runSparseBlockScanTest(SparseBlock.Type.MCSC, sparsity2);
+	}
+
+	@Test
+	public void testSparseBlockMCSC3Full()  {
+		runSparseBlockScanTest(SparseBlock.Type.MCSC, sparsity3);
+	}
 	
 	private void runSparseBlockScanTest( SparseBlock.Type btype, double sparsity)
 	{
@@ -126,34 +137,37 @@ public class SparseBlockScan extends AutomatedTestBase
 				case CSR: sblock = new SparseBlockCSR(srtmp); break;
 				case COO: sblock = new SparseBlockCOO(srtmp); break;
 				case DCSR: sblock = new SparseBlockDCSR(srtmp); break;
+				case MCSC: sblock = new SparseBlockMCSC(srtmp); break;
 			}
 			
 			//check for correct number of non-zeros
 			int[] rnnz = new int[rows]; int nnz = 0;
-			for( int i=0; i<rows; i++ ) {
-				for( int j=0; j<cols; j++ )
-					rnnz[i] += (A[i][j]!=0) ? 1 : 0;
+			for(int i = 0; i < rows; i++) {
+				for(int j = 0; j < cols; j++)
+					rnnz[i] += (A[i][j] != 0) ? 1 : 0;
 				nnz += rnnz[i];
 			}
-			if( nnz != sblock.size() )
-				Assert.fail("Wrong number of non-zeros: "+sblock.size()+", expected: "+nnz);
-		
+
+			if(nnz != sblock.size())
+				Assert.fail("Wrong number of non-zeros: " + sblock.size() + ", expected: " + nnz);
+
 			//check correct isEmpty return
-			for( int i=0; i<rows; i++ )
-				if( sblock.isEmpty(i) != (rnnz[i]==0) )
-					Assert.fail("Wrong isEmpty(row) result for row nnz: "+rnnz[i]);
-		
-			//check correct values	
+			for(int i = 0; i < rows; i++)
+				if(sblock.isEmpty(i) != (rnnz[i] == 0))
+					Assert.fail("Wrong isEmpty(row) result for row nnz: " + rnnz[i]);
+
+			//check correct values
 			int count = 0;
-			for( int i=0; i<rows; i++) {
+			for(int i = 0; i < rows; i++) {
 				int alen = sblock.size(i);
 				int apos = sblock.pos(i);
 				int[] aix = sblock.indexes(i);
 				double[] avals = sblock.values(i);
-				for( int j=0; j<alen; j++ ) {
-					if( avals[apos+j] != A[i][aix[apos+j]] )
-						Assert.fail("Wrong value returned by scan: "+avals[apos+j]+", expected: "+A[i][apos+aix[j]]);	
-					count++;		
+				for(int j = 0; j < alen; j++) {
+					if(avals[apos + j] != A[i][aix[apos + j]])
+						Assert.fail(
+							"Wrong value returned by scan: " + avals[apos + j] + ", expected: " + A[i][apos + aix[j]]);
+					count++;
 				}
 			}
 			if( count != nnz )

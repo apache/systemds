@@ -27,49 +27,49 @@
 #
 # INPUT:
 # ---------------------------------------------------------------------------------------
-# newX     Feature matrix in recoded/binned representation
-# oldX     All-comprising feature matrix of previous runs in recoded/binned representation
-# e        Error vector of trained model
-# k        Number of subsets required
-# maxL     maximum level L (conjunctions of L predicates), 0 unlimited
-# minSup   minimum support (min number of rows per slice)
-# alpha    weight [0,1]: 0 only size, 1 only error
-# tpEval   flag for task-parallel slice evaluation,
-#          otherwise data-parallel
-# tpBlksz  block size for task-parallel execution (num slices)
-# selFeat  flag for removing one-hot-encoded features that don`t satisfy
-#          the initial minimum-support constraint and/or have zero error
-# verbose  flag for verbose debug output
-# prevL    previous lattice (for incremental updates)
-# prevRL   previous statistics whole lattice (for incremental updates)
+# addedX       Feature matrix odded tuples in recoded/binned representation
+# oldX         All-comprising feature matrix of previous runs (except for current run) in recoded/binned representation
+# oldE         Error vector of trained model for old tuples
+# newE         Error vector of trained model for added tuples 
+# k            Number of subsets required
+# maxL         maximum level L (conjunctions of L predicates), 0 unlimited
+# minSup       minimum support (min number of rows per slice)
+# alpha        weight [0,1]: 0 only size, 1 only error
+# tpEval       flag for task-parallel slice evaluation,
+#              otherwise data-parallel
+# tpBlksz      block size for task-parallel execution (num slices)
+# selFeat      flag for removing one-hot-encoded features that don`t satisfy
+#              the initial minimum-support constraint and/or have zero error
+# verbose      flag for verbose debug output
+# prevLattice  previous lattice (for incremental updates)
+# prevRL       previous statistics whole lattice (for incremental updates)
+# prevTK       previous top-k slices (for incremental updates)
+# prevTKC      previous top-k scores (for incremental updates)
 # ---------------------------------------------------------------------------------------
 #
 # OUTPUT:
 # -----------------------------------------------------------------------------------------
-# TK    top-k slices (k x ncol(newX) if successful)
-# TKC   score, size, error of slices (k x 3)
-# D     debug matrix, populated with enumeration stats if verbose
-# L     lattice matrix
-# RL    statistics matrix for all slices in L
-# Xout  feature matrix consisting of oldX and newX for next run
+# TK         top-k slices (k x ncol(newX) if successful)
+# TKC        score, size, error of slices (k x 3)
+# D          debug matrix, populated with enumeration stats if verbose
+# L          lattice matrix
+# RL         statistics matrix for all slices in L
+# Xout       feature matrix consisting of oldX and newX for next run
+# eOut       error vector consisting of oldE and newE for next run
 # -----------------------------------------------------------------------------------------
 
 m_incSliceLine = function(
     Matrix[Double] addedX, ## should be only the matrix of added slices 
-    Matrix[Double] oldX = matrix(0, 0, 0), 
+    Matrix[Double] oldX = matrix(0, 0, 0), ## should be the matrix of previous slices, to which addedX was added. 
     Matrix[Double] oldE = matrix(0, 0, 0),
-    ## should be the matrix of previous slices, to which addedX was added. 
-    Matrix[Double] newE, Int k = 4, 
-    Int maxL = 0, Int minSup = 32, Double alpha = 0.5, Boolean tpEval = TRUE, 
+    Matrix[Double] newE, 
+    Int k = 4, Int maxL = 0, Int minSup = 32, Double alpha = 0.5, Boolean tpEval = TRUE, 
     Int tpBlksz = 16, Boolean selFeat = FALSE, Boolean verbose = FALSE, 
-
     # list[unknown] prevLattice = list(), 
-   
     Matrix[Double] prevLattice = matrix(0, 0, 0),
     list[unknown] prevRL = list(),
     Matrix[Double] prevTK = matrix(0,0,0),
     Matrix[Double] prevTKC = matrix(0,0,0))
-    
   return(Matrix[Double] TK, Matrix[Double] TKC, Matrix[Double] D, 
     #list[unknown] L, 
     Matrix[Double] L,
@@ -250,32 +250,34 @@ createAndScoreBasicSlices = function(Matrix[Double] X2, Matrix[Double] addedX2,
   err = t(t(e) %*% X2);      # total error vector
   merr = t(colMaxs(X2 * e)); # maximum error vector
 
-  # addedX2 is oneHotEncoded with the same offsets as oldX2. Thus unchanged basic slices will have a colSum of 0. 
-  # compute vector of colSums for addedX2 to determine which slices are unchanged 
+  # prevTK2 is oneHotEncoded with the same offsets as oldX2 and newX2.
+  # produce a vector indicating which basic slices are within the previous top k
   if ( length (prevTK2) > 0 ) {
     TKCCnts = t(colSums(prevTK2));
   } else {
     TKCCnts = matrix(1, 1, n2);
   }
+  # addedX2 is oneHotEncoded with the same offsets as oldX2 and newX2. Thus unchanged basic slices will have a colSum of 0. 
+  # compute vector of colSums for addedX2 indicating which slices are unchanged (0 value)
   addedCCnts = t(colSums(addedX2)); 
-
-  # TODO: 
-
-  if( verbose ) {
-    drop = as.integer(sum(cCnts < minSup | err == 0 ));
-    print("SliceFinder: dropping "+drop+"/"+n2+" features below minSup = "+minSup+".");
-  }
 
   # working set of active slices (#attr x #slices) and top k 
   # only consider slices that have been changed (addedCCnts != 0) with cCnts >= minSup and non-zero err. 
   # thus, here we remove all basic slices that are unchanged. 
   # only add "& addedCCnts != 0" if the eAvg from the new tuples is smaller than eAvg on prev. dataset.
   
-  if( eAvgOld > eAvgNew ) {
+  if( eAvgOld > eAvgNew & eAvgNew != 0 ) {
+    if( verbose ) {
+      drop = as.integer(sum(cCnts < minSup | err == 0 | addedCCnts == 0  ));
+      print("SliceFinder: dropping "+drop+"/"+n2+" features below minSup = "+minSup+" or features that are unchanged, as eAvgOld > eAvgNew.");
+    }
     selCols = ((cCnts >= minSup & err > 0 & addedCCnts != 0) | TKCCnts != 0);
-    print("eAvgOld > eAvgNew");
-    print("selCols: "+toString(selCols));
+    
   } else {
+    if( verbose ) {
+      drop = as.integer(sum(cCnts < minSup | err == 0 ));
+      print("SliceFinder: dropping "+drop+"/"+n2+" features below minSup = "+minSup+".");
+    }
     selCols = (cCnts >= minSup & err > 0 );
     print("eAvgOld !> eAvgNew");
     print("selCols: "+toString(selCols));

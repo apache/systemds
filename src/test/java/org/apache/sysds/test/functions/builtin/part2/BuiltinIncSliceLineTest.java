@@ -561,23 +561,23 @@ public class BuiltinIncSliceLineTest extends AutomatedTestBase {
             double[][] e = TestUtils.convertHashMapToDoubleArray(readDMLMatrixFromOutputDir("e"));
 
             
-            double[][] addedX = new double[100][newX[0].length];
-            double[][] oldX = new double[newX.length - 100][newX[0].length];
+            double[][] addedX = new double[10][newX[0].length];
+            double[][] oldX = new double[newX.length - 10][newX[0].length];
 
-            for (int i = 0; i < 100; i++) {
+            for (int i = 0; i < 10; i++) {
                 addedX[i] = newX[i];
             }
 
-            for (int i = 100; i < newX.length; i++) {
-                oldX[i - 100] = newX[i];
+            for (int i = 10; i < newX.length; i++) {
+                oldX[i - 10] = newX[i];
             }
-            double[][] addedE = new double[100][e[0].length];
-            double[][] oldE = new double[e.length - 100][e[0].length];
-            for (int i = 0; i < 100; i++) {
+            double[][] addedE = new double[10][e[0].length];
+            double[][] oldE = new double[e.length - 10][e[0].length];
+            for (int i = 0; i < 10; i++) {
                 addedE[i] = e[i];
             }
-            for (int i = 100; i < e.length; i++) {
-                oldE[i - 100] = e[i];
+            for (int i = 10; i < e.length; i++) {
+                oldE[i - 10] = e[i];
             }
             
             writeInputMatrixWithMTD("addedX", addedX, false);

@@ -36,7 +36,7 @@
 # tpEval   flag for task-parallel slice evaluation,
 #          otherwise data-parallel
 # tpBlksz  block size for task-parallel execution (num slices)
-# selFeat  flag for removing one-hot-encoded features that don't satisfy
+# selFeat  flag for removing one-hot-encoded features that dont satisfy
 #          the initial minimum-support constraint and/or have zero error
 # verbose  flag for verbose debug output
 # ---------------------------------------------------------------------------------------

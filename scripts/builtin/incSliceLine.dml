@@ -97,18 +97,6 @@ m_incSliceLine = function(
   m = nrow(newX);
   n = ncol(newX);
 
-  # the following lines would only be needed if the input format of newX and oldX were different (newX comprises oldX and addedX)
-  /*
-  # Check if oldX is empty
-  if (nrow(oldX) == 0) {
-    addedX = newX;
-    removedX = matrix(0, 0, n);
-  } else {
-   # Identify added and removed rows
-    addedX = setdiff(newX, oldX);
-    removedX = setdiff(oldX, newX);
-  }
-  */
   # prepare offset vectors and one-hot encoded newX
   fdom = colMaxs(newX);
   foffb = t(cumsum(t(fdom))) - fdom;
@@ -121,8 +109,13 @@ m_incSliceLine = function(
 
 
   # One-hot encoding of addedX
-  
   addedX2 = oneHotEncodeUsingOffsets(addedX, foffb, foffe);
+  
+  if( length(prevTK) > 0 ) {
+    prevTK2 = oneHotEncodeUsingOffsets(prevTK, foffb, foffe);
+  }else{
+    prevTK2 = prevTK;
+  }
   
   if(length(prevLattice) > 0) {
     prevLattice2 = oneHotEncodeUsingOffsets(prevLattice, foffb, foffe);
@@ -234,10 +227,7 @@ m_incSliceLine = function(
     [minsc] = computeLowestPrevTK (prevTK2, X2, totalE, eAvg, alpha, minsc)
   } 
 
-  # reduced dataset to relevant attributes (minSup, err>0), S reduced on-the-fly
-  ## All lines where selFeat is used are commented out because currently the tests still run into erros when selFeat is true
-  ## TODO: uncomment these lines and debug errors thrown when uncommented
-  /*
+  # reduced dataset to relevant attributes (minSup, err>0), S reduced on-the-fly  
   if( selFeat ){
     X2 = removeEmpty(target=X2, margin="cols", select=t(selCols));
     addedX2 = removeEmpty(target=addedX2, margin="cols", select=t(selCols));
@@ -245,7 +235,7 @@ m_incSliceLine = function(
       prevLattice2 = removeEmpty(target=prevLattice2, margin="cols", select=t(selCols));
     }*/
   }
-  */
+  
   
 
   # lattice enumeration w/ size/error pruning, one iteration per level
@@ -264,9 +254,6 @@ m_incSliceLine = function(
     # update lattice
     L1 = rbind(L1, S);
 
-    ## All lines where selFeat is used are commented out because currently the tests still run into erros when selFeat is true
-    ## TODO: uncomment these lines and debug errors thrown when uncommented
-    /*
     if(selFeat){
       S2 = removeEmpty(target=S, margin="cols", select=t(selCols));
     }
@@ -278,9 +265,6 @@ m_incSliceLine = function(
 
     if( nrow(S) > 0 ) {
       # extract and evaluate candidate slices
-    ## All lines where task-parallel computation is used are commented out because currently the tests still run into erros when tpEval is true
-    ## TODO: uncomment these lines and debug errors thrown when uncommented
-      /*
        if( tpEval ) { # task-parallel
         # hybrid task-parallel w/ 1 matrix-matrix for blocks of 16 matrix-vector
         R = matrix(0, nrow(S), 4)
@@ -299,7 +283,7 @@ m_incSliceLine = function(
 
         # update output statistics
         RL = append(RL,R);
-      ##}
+      }
 
       # maintain top-k after evaluation
       [TK, TKC] = maintainTopK(S, R, TK, TKC, k, minSup);
@@ -384,47 +368,11 @@ createAndScoreBasicSlices = function(Matrix[Double] X2, Matrix[Double] addedX2,
   ss = removeEmpty(target=cCnts, margin="rows", select=selCols);
   se = removeEmpty(target=err, margin="rows", select=selCols);
   sm = removeEmpty(target=merr, margin="rows", select=selCols);
-  S2 = table(seq(1,nrow(attr)), attr, nrow(attr), n2);
-  #S = rbind(S, S1);
+  S = table(seq(1,nrow(attr)), attr, nrow(attr), n2);
 
   # score 1-slices and create initial top-k
   sc = score(ss, se, eAvg, alpha, nrow(X2));
-  R2 = cbind(sc, se, sm, ss);
-
-  S = matrix(0, 0, n2);
-  R = matrix(0, 0, 4);
-
-  j1 = 1;
-  j2 = 1;
-
-  # TODO: remove lines in case they are not needed anymore
-  # the following lines have been used to combine the changed slices and stats with the unchanged slices and stats
-  # currently not needed anymore. 
-/*
-  if (nrow(S1) > 0) {
-    for(j in 1:(nrow(selCols))) {
-      if(as.scalar(selCols[j]) == 1){
-        S = rbind(S, S2[j2,]);
-        R = rbind(R, R2[j2,]);
-        j2 = j2 + 1;
-      }
-      else {
-        S = rbind(S, S1[j1,]);
-        R = rbind(R, R1[j1,]);
-        j1 = j1 + 1;
-      }
-    }
-  } else {
-    S = S2;
-    R = R2;
-  }
-  */
-
-    S = S2;
-    R = R2;
-  # R = rbind(R, R1);
-
-
+  R = cbind(sc, se, sm, ss);
 }
 
 score = function(Matrix[Double] ss, Matrix[Double] se, Double eAvg, Double alpha, Integer n)

@@ -587,10 +587,6 @@ public class BuiltinIncSliceLineTest extends AutomatedTestBase {
     // runIncSliceLineTest(10, false, ExecMode.SPARK);
     // }
 
-    private int getRandomPercentage() {
-        return (int) (Math.random() * 100);
-    }
-
     private void runIncSliceLineTest(int K, String err, boolean dp, boolean selCols, ExecMode mode) {
         ExecMode platformOld = setExecMode(mode);
         loadTestConfiguration(getTestConfiguration(TEST_NAME));

@@ -33,23 +33,18 @@ public class MultiGPUTest extends AutomatedTestBase {
 
     @Override
     public void setUp() {
-        TEST_GPU = false;
+        TEST_GPU = true;
         VERBOSE_STATS = true;
         addTestConfiguration(SINGLE_GPU_TEST,
                 new TestConfiguration(TEST_CLASS_DIR, TEST_NAME, new String[]{"R"}));
         addTestConfiguration(MULTI_GPUS_TEST,
                 new TestConfiguration(TEST_CLASS_DIR, TEST_NAME, new String[]{"R"}));
         TestConfiguration singleConfig = availableTestConfigurations.get(SINGLE_GPU_TEST);
-        singleConfig.addVariable("sysds.gpu.availableGPUs", 0);
+        singleConfig.addVariable("sysds.gpu.availableGPUs", 1);
         TestConfiguration multiConfig = availableTestConfigurations.get(MULTI_GPUS_TEST);
         multiConfig.addVariable("sysds.gpu.availableGPUs", -1);
     }
 
-    @Test
-    public void CPUTest() {
-        TEST_GPU = false;
-        runMultiGPUsTest(true);
-    }
     @Test
     public void SingleGPUTest() {
         runMultiGPUsTest(false);

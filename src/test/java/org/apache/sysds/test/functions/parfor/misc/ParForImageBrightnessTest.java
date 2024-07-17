@@ -21,6 +21,7 @@ package org.apache.sysds.test.functions.parfor.misc;
 
 import org.junit.Test;
 import org.apache.sysds.common.Types;
+import org.apache.sysds.common.Types.ExecMode;
 import org.apache.sysds.runtime.matrix.data.MatrixValue;
 import org.apache.sysds.test.AutomatedTestBase;
 import org.apache.sysds.test.TestConfiguration;

@@ -159,7 +159,7 @@ m_incSliceLine = function(
     
     # score of relative error and relative size
     sc = score(ss, se, eAvg, alpha, nrow(X2));
-    minsc = as.double(toString(sc[1,1]));
+    minsc = as.scalar(sc[1,1]);
   }
 
   # reduced dataset to relevant attributes (minSup, err>0), S reduced on-the-fly  
@@ -223,12 +223,12 @@ m_incSliceLine = function(
       [TK, TKC] = maintainTopK(S, R, TK, TKC, k, minSup);
 
       if(verbose) {
-        [maxsc, minsc] = analyzeTopK(TKC);
+        [maxsc, minsc2] = analyzeTopK(TKC);
         valid = as.integer(sum(R[,2]>0 & R[,4]>=minSup));
         print(" -- valid slices after eval: "+valid+"/"+nrow(S));
-        print(" -- top-K: count="+nrow(TK)+", max="+maxsc+", min="+minsc);
+        print(" -- top-K: count="+nrow(TK)+", max="+maxsc+", min="+minsc2);
         print(" -- (time="+(time()-t1)+")")
-        D = rbind(D, t(as.matrix(list(level, nrow(S), valid, maxsc, minsc))));
+        D = rbind(D, t(as.matrix(list(level, nrow(S), valid, maxsc, minsc2))));
       }
     }
   }
@@ -452,7 +452,10 @@ getPairedCandidates = function(Matrix[Double] S, Double minsc, Matrix[Double] R,
 
     # update minsc in case it is larger than prev minsc (could be smaller, as initial minsc comes from prevTK)
     if(minsc2 > minsc){
+      print("minsc2 > minsc: " + minsc2 + " > " + minsc + " updating minsc.");
       minsc = minsc2;
+    } else {
+      print("minsc2 <= minsc: " + minsc2 + " <= " + minsc + " not updating minsc.");
     }
 
     # it is necessary to test ubScores >= minsc (instead of >) as otherwise prevTKs would be filtered out 

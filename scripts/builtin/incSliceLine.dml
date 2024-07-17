@@ -537,7 +537,10 @@ getPairedCandidates = function(Matrix[Double] S, Double minsc,
 
     # update minsc in case it is larger than prev minsc (could be smaller, as initial minsc comes from prevTK)
     if(minsc2 > minsc){
+      print("minsc2 > minsc: " + minsc2 + " > " + minsc + " updating minsc.");
       minsc = minsc2;
+    } else {
+      print("minsc2 <= minsc: " + minsc2 + " <= " + minsc + " not updating minsc.");
     }
 
     # it is necessary to test ubScores >= minsc (instead of >) as otherwise prevTKs would be filtered out

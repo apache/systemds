@@ -36,7 +36,7 @@
 # tpEval   flag for task-parallel slice evaluation,
 #          otherwise data-parallel
 # tpBlksz  block size for task-parallel execution (num slices)
-# selFeat  flag for removing one-hot-encoded features that dont satisfy
+# selFeat  flag for removing one-hot-encoded features that don't satisfy
 #          the initial minimum-support constraint and/or have zero error
 # verbose  flag for verbose debug output
 # ---------------------------------------------------------------------------------------
@@ -76,7 +76,6 @@ m_slicefinder = function(Matrix[Double] X, Matrix[Double] e, Int k = 4,
 
   # initialize top-k
   [TK, TKC] = maintainTopK(S, R, matrix(0,0,n2), matrix(0,0,4), k, minSup);
-  print("79: Slicefinder: TKC: "+toString(TKC));
 
   if( verbose ) {
     [maxsc, minsc] = analyzeTopK(TKC);
@@ -124,7 +123,7 @@ m_slicefinder = function(Matrix[Double] X, Matrix[Double] e, Int k = 4,
 
       # maintain top-k after evaluation
       [TK, TKC] = maintainTopK(S, R, TK, TKC, k, minSup);
-      print(" 127: Slicefinder: TKC: "+toString(TKC));
+
       if(verbose) {
         [maxsc, minsc] = analyzeTopK(TKC);
         valid = as.integer(sum(R[,2]>0 & R[,4]>=minSup));

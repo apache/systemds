@@ -19,12 +19,6 @@
 #
 #-------------------------------------------------------------
 
-<<<<<<< HEAD
-source("src/test/scripts/applications/nn/component/efficientNet.dml") as eff
-
-# Read training data
-data = read($1, format="csv")
-=======
 
 /*
 * The MNIST Data can be downloaded as follows:
@@ -46,7 +40,6 @@ source("nn/examples/efficientNet.dml") as eff
 
 # Read training data
 data = read("data/mnist/mnist_test.csv", format="csv")
->>>>>>> main
 N = nrow(data)
 
 # Extract images and labels
@@ -64,21 +57,6 @@ epochs = 1
 batch_size = 256
 model = eff::netTrain(model, images, 1, 28, 28, labels, epochs, batch_size, 0.025, 0.9, TRUE)
 
-<<<<<<< HEAD
-# Also Predict in Batches since otherwise we can run into Memory Issues
-# Could be unnecessary on more powerful machines :)
-iters = ceil(N * 10 / batch_size)
-
-parfor(i in 1:iters) {
-
-  beg = ((i-1) * batch_size) %% N + 1
-  end = min(N, beg + batch_size - 1)
-
-  X_batch = images[beg:end,]
-
-  pred = eff::netPredict(X_batch, model, 1, 28, 28)
-}
-=======
 
 # Also Predict in Batches since otherwise we can run into Memory Issues
 # Could be unnecessary on more powerful machines :)
@@ -97,4 +75,3 @@ parfor(i in 1:iters) {
 
 accuracy = sum(partial_accuracies) / iters
 print("Total Accuracy: " + accuracy)
->>>>>>> main

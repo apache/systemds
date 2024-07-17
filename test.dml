@@ -1,0 +1,15 @@
+X = rand(rows=1280, cols=100, min=0, max=1, pdf="uniform", sparsity=1.0, seed=42);
+bs = 64;
+n = nrow(X);
+numBatches = ceil(n / bs);
+R = matrix(0, rows=numBatches, cols=1);
+parfor (i in 1:numBatches) {
+  beg = (i-1) * bs + 1;
+  end = min(n, i * bs);
+  batch = X[beg:end,];
+  mm = batch %*% t(batch);
+  s = sum(mm);
+  R[i,1] = s;
+}
+Res = sum(R);
+print("Result: " + Res);

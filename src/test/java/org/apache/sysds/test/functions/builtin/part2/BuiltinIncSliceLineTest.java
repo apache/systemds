@@ -204,7 +204,7 @@ public class BuiltinIncSliceLineTest extends AutomatedTestBase {
 
     @Test
     public void testTop4SinglenodeTPSelFullFewAdded() {
-        runIncSliceLineTest(4, "e", false, true,2, false,  ExecMode.SINGLE_NODE);
+        runIncSliceLineTest(4, "e", false, true,4, false,  ExecMode.SINGLE_NODE);
     }
 
     @Test
@@ -214,7 +214,7 @@ public class BuiltinIncSliceLineTest extends AutomatedTestBase {
 
     @Test
     public void testTop10SinglenodeDPSelFullFewAdded() {
-        runIncSliceLineTest(10, "e", true, true, 2, false, ExecMode.SINGLE_NODE);
+        runIncSliceLineTest(10, "e", true, true, 1, false, ExecMode.SINGLE_NODE);
     }
 
     @Test
@@ -254,7 +254,7 @@ public class BuiltinIncSliceLineTest extends AutomatedTestBase {
 
     @Test
     public void testTop4SinglenodeTPFullManyAdded() {
-        runIncSliceLineTest(4, "e", false, false,50, false, ExecMode.SINGLE_NODE);
+        runIncSliceLineTest(4, "e", false, false,60, false, ExecMode.SINGLE_NODE);
     }
 
     @Test
@@ -269,12 +269,12 @@ public class BuiltinIncSliceLineTest extends AutomatedTestBase {
 
     @Test
     public void testTop10HybridTPFullManyAdded() {
-        runIncSliceLineTest(10, "e", false, false,50, false, ExecMode.HYBRID);
+        runIncSliceLineTest(10, "e", false, false,90 , false, ExecMode.HYBRID);
     }
 
     @Test
     public void testTop10SinglenodeTPFullManyAdded() {
-        runIncSliceLineTest(10, "e", false, false,50, false, ExecMode.SINGLE_NODE);
+        runIncSliceLineTest(10, "e", false, false,99 , false, ExecMode.SINGLE_NODE);
     }
 
     @Test
@@ -687,32 +687,14 @@ public class BuiltinIncSliceLineTest extends AutomatedTestBase {
                     addedE[i][0] = 0;
                     e[i][0] = 0;
                 }
-                
             } else {
                 for (int i = 0; i < numOfAddedTuples; i++) {
                     addedE[i] = e[i];
                 }
             }
-
-            
-            System.out.println("Dimensions of addedE: " + addedE.length + " x " + addedE[0].length);
-            for (int i = 0; i < addedE.length; i++) {
-                for (int j = 0; j < addedE[i].length; j++) {
-                    System.out.println(addedE[i][j]);
-                }
-            }
-
-            
             
             for (int i = numOfAddedTuples; i < e.length; i++) {
                 oldE[i - numOfAddedTuples] = e[i];
-            }
-
-            System.out.println("Dimensions of oldE: " + oldE.length + " x " + oldE[0].length);
-            for (int i = 0; i < oldE.length; i++) {
-                for (int j = 0; j < oldE[i].length; j++) {
-                    System.out.println(oldE[i][j]);
-                }
             }
 
             writeInputMatrixWithMTD("addedX", addedX, false);
@@ -736,14 +718,7 @@ public class BuiltinIncSliceLineTest extends AutomatedTestBase {
 
             // execute main test
             writeInputMatrixWithMTD("newX", newX, false);
-            writeInputMatrixWithMTD("e", e, false);
-            System.out.println("Dimensions of e: " + e.length + " x " + e[0].length);
-            for (int i = 0; i < e.length; i++) {
-                for (int j = 0; j < e[i].length; j++) {
-                    System.out.println(e[i][j]);
-                }
-            }
-            
+            writeInputMatrixWithMTD("e", e, false);            
             fullDMLScriptName = HOME + "slicefinder" + ".dml";
             programArgs = new String[] { "-args", input("newX"), input("e"), String.valueOf(K),
                     String.valueOf(!dp).toUpperCase(), String.valueOf(selCols).toUpperCase(),

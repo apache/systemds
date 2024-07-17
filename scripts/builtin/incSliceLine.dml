@@ -75,6 +75,8 @@ m_incSliceLine = function(
     Matrix[Double] L,
     list[unknown] RL, Matrix[Double] Xout, Matrix[Double] eOut)
 {
+  # TODO convert input/output of previous enumerated slices to lists
+  # for simple collection and processing
   t1 = time();
 
   # init debug matrix: levelID, enumerated S, valid S, TKmax, TKmin

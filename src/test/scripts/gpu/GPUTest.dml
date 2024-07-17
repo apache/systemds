@@ -19,34 +19,11 @@
 #
 #-------------------------------------------------------------
 
-<<<<<<< HEAD
 source("src/test/scripts/applications/nn/component/efficientNet.dml") as eff
 
 # Read training data
 data = read($1, format="csv")
-=======
 
-/*
-* The MNIST Data can be downloaded as follows:
-* mkdir -p data/mnist/
-* cd data/mnist/
-* curl -O https://pjreddie.com/media/files/mnist_train.csv
-* curl -O https://pjreddie.com/media/files/mnist_test.csv
-*/
-
-# TODO add tests in functions/builtin, applications/nn
-
-# This script trains a minified version of the EfficientNet-B0 model
-# with a single MBConv layer. This model heavily overfits on a simple
-# MNIST dataset since it was originally developed on the ImageNet dataset
-# Thus layer outputs and other factors are too large for normal MNIST.
-# Therefore we only train once on the MNIST Train ds and print out its Accuracy
-# Import required methods
-source("nn/examples/efficientNet.dml") as eff
-
-# Read training data
-data = read("data/mnist/mnist_test.csv", format="csv")
->>>>>>> main
 N = nrow(data)
 
 # Extract images and labels
@@ -63,22 +40,6 @@ model = eff::initNetwork(1, 10, -1)
 epochs = 1
 batch_size = 256
 model = eff::netTrain(model, images, 1, 28, 28, labels, epochs, batch_size, 0.025, 0.9, TRUE)
-
-<<<<<<< HEAD
-# Also Predict in Batches since otherwise we can run into Memory Issues
-# Could be unnecessary on more powerful machines :)
-iters = ceil(N * 10 / batch_size)
-
-parfor(i in 1:iters) {
-
-  beg = ((i-1) * batch_size) %% N + 1
-  end = min(N, beg + batch_size - 1)
-
-  X_batch = images[beg:end,]
-
-  pred = eff::netPredict(X_batch, model, 1, 28, 28)
-}
-=======
 
 # Also Predict in Batches since otherwise we can run into Memory Issues
 # Could be unnecessary on more powerful machines :)
@@ -97,4 +58,4 @@ parfor(i in 1:iters) {
 
 accuracy = sum(partial_accuracies) / iters
 print("Total Accuracy: " + accuracy)
->>>>>>> main
+write(accuracy, $2)

@@ -38,8 +38,6 @@ public class ParForListFrameResultVarsTest extends AutomatedTestBase {
 	
 	@Override
 	public void setUp() {
-		TEST_GPU = true;
-		VERBOSE_STATS = true;
 		addTestConfiguration(TEST_NAME1, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME1, new String[]{"R"}));
 		addTestConfiguration(TEST_NAME2, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME2, new String[]{"R"}));
 	}

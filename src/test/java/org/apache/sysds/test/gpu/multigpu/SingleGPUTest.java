@@ -21,12 +21,12 @@ package org.apache.sysds.test.gpu.multigpu;
 
 import org.junit.Test;
 
-public class MultiGPUTest extends GPUTest {
+public class SingleGPUTest extends GPUTest {
 
     @Override
     @Test
     public void gpuTest() {
-        runMultiGPUsTest(true);
+        runMultiGPUsTest(false);
     }
 
 }

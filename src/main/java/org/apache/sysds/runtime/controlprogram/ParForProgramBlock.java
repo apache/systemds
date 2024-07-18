@@ -738,6 +738,10 @@ public class ParForProgramBlock extends ForProgramBlock {
 	private void executeLocalParFor( ExecutionContext ec, IntObject from, IntObject to, IntObject incr )
 		throws InterruptedException
 	{
+		if (DMLScript.USE_ACCELERATOR) {
+			_numThreads = Math.min(_numThreads, ec.getNumGPUContexts());
+		}
+
 		LOG.trace("Local Par For (multi-threaded) with degree of parallelism : " + _numThreads);
 		/* Step 1) init parallel workers, task queue and threads
 		 *         start threads (from now on waiting for tasks)
@@ -755,10 +759,6 @@ public class ParForProgramBlock extends ForProgramBlock {
 		
 		//restrict recompilation to thread local memory
 		setMemoryBudget();
-
-		if (DMLScript.USE_ACCELERATOR) {
-			_numThreads = Math.min(_numThreads, ec.getNumGPUContexts());
-		}
 		
 		final LocalTaskQueue<Task> queue = new LocalTaskQueue<>();
 		final Thread[] threads         = new Thread[_numThreads];

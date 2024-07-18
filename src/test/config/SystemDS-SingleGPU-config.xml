@@ -1,4 +1,4 @@
-/*
+<!--
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -15,18 +15,15 @@
  * KIND, either express or implied.  See the License for the
  * specific language governing permissions and limitations
  * under the License.
- */
+-->
 
-package org.apache.sysds.test.gpu.multigpu;
-
-import org.junit.Test;
-
-public class MultiGPUTest extends GPUTest {
-
-    @Override
-    @Test
-    public void gpuTest() {
-        runMultiGPUsTest(true);
-    }
-
-}
+<root>
+   <!-- The number of theads for the spark instance artificially selected-->
+   <sysds.local.spark.number.threads>2</sysds.local.spark.number.threads>
+   <!-- The timeout of the federated tests to initialize the federated matrixes -->
+   <sysds.federated.initialization.timeout>2</sysds.federated.initialization.timeout>
+   <!-- The timeout of each instruction sent to federated workers -->
+   <sysds.federated.timeout>128</sysds.federated.timeout>
+   <!-- sets the GPUs to use per process, -1 for all GPUs, a specific GPU number (5), a range (eg: 0-2) or a comma separated list (eg: 0,2,4)-->
+   <sysds.gpu.availableGPUs>0</sysds.gpu.availableGPUs>
+</root>

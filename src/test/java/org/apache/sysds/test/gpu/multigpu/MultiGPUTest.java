@@ -40,7 +40,7 @@ public class MultiGPUTest extends AutomatedTestBase {
         addTestConfiguration(MULTI_GPUS_TEST,
                 new TestConfiguration(TEST_CLASS_DIR, TEST_NAME, new String[]{"R"}));
         TestConfiguration singleConfig = availableTestConfigurations.get(SINGLE_GPU_TEST);
-        singleConfig.addVariable("sysds.gpu.availableGPUs", 1);
+        singleConfig.addVariable("sysds.gpu.availableGPUs", 0);
         TestConfiguration multiConfig = availableTestConfigurations.get(MULTI_GPUS_TEST);
         multiConfig.addVariable("sysds.gpu.availableGPUs", -1);
     }

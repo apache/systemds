@@ -812,6 +812,12 @@ public class ParForProgramBlock extends ForProgramBlock {
 			LineageCacheConfig.setReuseLineageTraces(false); //disable lineage trace reuse
 			for( Thread thread : threads )
 				thread.join();
+
+			if (DMLScript.USE_ACCELERATOR) {
+				for(LocalParWorker worker : workers) {
+					LOG.trace("The worker of GPU " + worker.getExecutionContext().getGPUContext(0).toString() + " has executed " + worker.getExecutedTasks() + " tasks.");
+				}
+			}
 			
 			if( _monitor ) 
 				StatisticMonitor.putPFStat(_ID, Stat.PARFOR_WAIT_EXEC_T, time.stop());

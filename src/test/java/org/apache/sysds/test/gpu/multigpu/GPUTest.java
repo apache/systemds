@@ -82,6 +82,10 @@ public abstract class GPUTest extends AutomatedTestBase {
                 } else {
                     assert extractedNumThreads == 1 : "Test failed: _numThreads is not equal to 1";
                 }
+            } else if (log.contains("has executed")) {
+                int extractedNumTasks = extractNumTasks(log);
+                assert extractedNumTasks > 1 : "Test failed: _numTasks is not greater than 1";
+
             } else if (logs.indexOf(log) == logs.size() - 1) {
                 throw new IllegalArgumentException("No log message containing 'degree of parallelism' found");
             }
@@ -115,7 +119,17 @@ public abstract class GPUTest extends AutomatedTestBase {
         throw new IllegalArgumentException("No _numThreads value found in log message");
     }
 
-    static class InMemoryAppender extends AppenderSkeleton {
+    protected static int extractNumTasks(String logMessage) {
+        String regex = "has executed (\\d+) tasks";
+        Pattern pattern = Pattern.compile(regex);
+        Matcher matcher = pattern.matcher(logMessage);
+        if (matcher.find()) {
+            return Integer.parseInt(matcher.group(1));
+        }
+        throw new IllegalArgumentException("No _numTasks value found in log message");
+    }
+
+    protected static class InMemoryAppender extends AppenderSkeleton {
 
         protected final List<String> logMessages = new ArrayList<>();
 

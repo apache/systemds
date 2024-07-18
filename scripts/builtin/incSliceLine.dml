@@ -107,9 +107,15 @@ m_incSliceLine = function(
   cix = matrix(newX + foffb, m*n, 1);
   X2 = table(rix, cix, 1, m, as.scalar(foffe[,n]), FALSE); #one-hot encoded
 
+  # One-hot encoding of addedX and oldX
+  if(nrow(oldX) > 0){
+    oldX2 = X2[1:nrow(oldX),];
+    addedX2 = X2[(nrow(oldX)+1):nrow(X2),];
+  } else {
+    oldX2 = matrix(0,0,ncol(X2));
+    addedX2 = X2;
+  }
 
-  # One-hot encoding of addedX
-  addedX2 = oneHotEncodeUsingOffsets(addedX, foffb, foffe);
   
   if( length(prevTK) > 0 ) {
     prevTK2 = oneHotEncodeUsingOffsets(prevTK, foffb, foffe);
@@ -227,7 +233,7 @@ m_incSliceLine = function(
     [minsc] = computeLowestPrevTK (prevTK2, X2, totalE, eAvg, alpha, minsc)
   } 
 
-  # reduced dataset to relevant attributes (minSup, err>0), S reduced on-the-fly  
+  # reduced dataset to relevant attributes (minSup, err>0), S reduced on-the-fly
   if( selFeat ){
     X2 = removeEmpty(target=X2, margin="cols", select=t(selCols));
     addedX2 = removeEmpty(target=addedX2, margin="cols", select=t(selCols));
@@ -235,8 +241,6 @@ m_incSliceLine = function(
       prevLattice2 = removeEmpty(target=prevLattice2, margin="cols", select=t(selCols));
     }*/
   }
-  
-  
 
   # lattice enumeration w/ size/error pruning, one iteration per level
   # termination condition (max #feature levels)
@@ -537,10 +541,7 @@ getPairedCandidates = function(Matrix[Double] S, Double minsc,
 
     # update minsc in case it is larger than prev minsc (could be smaller, as initial minsc comes from prevTK)
     if(minsc2 > minsc){
-      print("minsc2 > minsc: " + minsc2 + " > " + minsc + " updating minsc.");
       minsc = minsc2;
-    } else {
-      print("minsc2 <= minsc: " + minsc2 + " <= " + minsc + " not updating minsc.");
     }
 
     # it is necessary to test ubScores >= minsc (instead of >) as otherwise prevTKs would be filtered out
@@ -728,20 +729,20 @@ rowEquals = function(Matrix[Double] row1, Matrix[Double] row2) return(Boolean eq
   equal = sum(row1 != row2) == 0;
 }
 
-# function to find a row in the previous statistics 
+# function to find a row in the previous statistics
 findRowInRL = function(list[unknown] prevRL, Integer index) return (Matrix[Double] rowInRL) {
   i = 1;
   prevSum = 0;
   sum = 0;
-  
+
   while(i <= length(prevRL) & sum < index) {
     prevSum = sum;
     sum = sum + nrow(as.matrix(prevRL[i]));
     i = i + 1;
   }
-  
+
   i = i - 1;
-  
+
   MatInRL = as.matrix(prevRL[i]);
   rowInRL = MatInRL[index - prevSum,];
 }
@@ -753,14 +754,14 @@ oneHotEncodeUsingOffsets = function(Matrix[Double] A, Matrix[Double] foffb, Matr
   m = nrow(A);
   n = ncol(A);
   numFeatures = ncol(foffb);
-  
+
   maxDomainSize = as.scalar(foffe[1, ncol(foffe)]);
   A_encoded = matrix(0, m, maxDomainSize);
-  
+
   for (j in 1:numFeatures) {
     beg = as.scalar(foffb[1, j]) + 1;
     end = as.scalar(foffe[1, j]);
-    
+
     for (i in 1:m) {
       value = as.scalar(A[i, j]);
       if (value > 0) {
@@ -771,22 +772,22 @@ oneHotEncodeUsingOffsets = function(Matrix[Double] A, Matrix[Double] foffb, Matr
 }
 
 # function to store all rows from a matrix that are selected and all remaining ones
-storeSelectedAndRemainingRows = function(Matrix[Double] A, list[unknown] selectedIndices) 
-  return (Matrix[Double] B, Matrix[Double] C) 
+storeSelectedAndRemainingRows = function(Matrix[Double] A, list[unknown] selectedIndices)
+  return (Matrix[Double] B, Matrix[Double] C)
 {
   m = nrow(A);
   n = ncol(A);
-  
+
   selectionMatrix = matrix(0, m, 1);
   for (i in 1:length(selectedIndices)) {
     selectionMatrix[as.scalar(selectedIndices[i]), 1] = 1;
   }
-  
+
   B = A * selectionMatrix;
-  
+
   selectionMatrixComplement = 1 - selectionMatrix;
   C = A * selectionMatrixComplement;
-  
+
   B = removeEmpty(target=B, margin="rows");
   C = removeEmpty(target=C, margin="rows");
 }
@@ -795,7 +796,7 @@ combineSliceSizes = function(Matrix[Double] A, Matrix[Double] B, list[unknown] i
   return (Matrix[Double] C)
 {
   C = matrix(0, 0, ncol(A));
-  
+
   aCounter = 1;
   bCounter = 1;
 
@@ -810,4 +811,29 @@ combineSliceSizes = function(Matrix[Double] A, Matrix[Double] B, list[unknown] i
       aCounter = aCounter + 1;
     }
   }
+}
+
+# function returns indicator that is 0 where the slice is unchanged and below minSup, and 1 otherwise
+unchangedAndBelowMinSupIndicator = function(Matrix[Double] oldX, Matrix[Double] addedX, Matrix[Double] prevLattice, list[unknown] prevRL, 
+  Matrix[Double] S, Integer level, Integer minSup, list[unknown] levelIndices)
+  return (Matrix[Double] IUnchangedAndBelowMinSup)
+  
+  {
+
+  ## TODO: function is wrong currently. Unchanged slices are not found like this. 
+  ## Change it to: check prevLattice and see if addedSlices are in there. If yes then its changed.
+  ## 
+  prevLatAtLevel = prevLattice[as.scalar(levelIndices[level]) : as.scalar(levelIndices[level+1]) - 1,];
+
+  Imat = (S %*% t(prevLatAtLevel) == level);
+  statsL = as.matrix(prevRL[level])
+  if(ncol(statsL == 4)){
+    ssPrev = statsL[,4];
+  }
+  ssUnchanged = matrix(0, nrow(S), 1);
+  for (i in 1:ncol(Imat)){
+    ssUnchanged = ssUnchanged + (Imat[,i] * as.scalar(ssPrev[i]));
+  }
+
+  IUnchangedAndBelowMinSup = (ssUnchanged >= minSup | ssUnchanged == 0);
 }

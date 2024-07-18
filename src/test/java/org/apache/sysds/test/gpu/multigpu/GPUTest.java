@@ -32,6 +32,9 @@ import org.apache.sysds.runtime.controlprogram.ParForProgramBlock;
 import org.apache.sysds.test.AutomatedTestBase;
 import org.apache.sysds.test.TestConfiguration;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+
 public abstract class GPUTest extends AutomatedTestBase {
     protected static final String TEST_DIR = "gpu/";
     protected static final String TEST_CLASS_DIR = TEST_DIR + MultiGPUTest.class.getSimpleName() + "/";
@@ -74,21 +77,16 @@ public abstract class GPUTest extends AutomatedTestBase {
         runTest(true, false, null, -1);
 
         List<String> logs = appender.getLogMessages();
+        int numRealThread = 0;
         for (String log : logs) {
-            if (log.contains("degree of parallelism")) {
-                int extractedNumThreads = extractNumThreads(log);
-                if (multiGPUs) {
-                    assert extractedNumThreads > 1 : "Test failed: _numThreads is not greater than 1";
-                } else {
-                    assert extractedNumThreads == 1 : "Test failed: _numThreads is not equal to 1";
-                }
-            } else if (log.contains("has executed")) {
-                int extractedNumTasks = extractNumTasks(log);
-                assert extractedNumTasks > 1 : "Test failed: _numTasks is not greater than 1";
-
-            } else if (logs.indexOf(log) == logs.size() - 1) {
-                throw new IllegalArgumentException("No log message containing 'degree of parallelism' found");
+            if (log.contains("has executed") && extractNumTasks(log) > 0) {
+                numRealThread ++;
             }
+        }
+        if (multiGPUs) {
+            assertTrue(numRealThread > 1);
+        } else {
+            assertEquals(1, numRealThread);
         }
 
         appender.clearLogMessages();
@@ -107,16 +105,6 @@ public abstract class GPUTest extends AutomatedTestBase {
         logger.addAppender(inMemoryAppender);
 
         return inMemoryAppender;
-    }
-
-    protected static int extractNumThreads(String logMessage) {
-        String regex = "Local Par For \\(multi-threaded\\) with degree of parallelism : (\\d+)";
-        Pattern pattern = Pattern.compile(regex);
-        Matcher matcher = pattern.matcher(logMessage);
-        if (matcher.find()) {
-            return Integer.parseInt(matcher.group(1));
-        }
-        throw new IllegalArgumentException("No _numThreads value found in log message");
     }
 
     protected static int extractNumTasks(String logMessage) {

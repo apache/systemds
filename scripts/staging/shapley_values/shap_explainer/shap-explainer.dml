@@ -84,6 +84,7 @@ return (Matrix[Double] row_phis, Double expected){
 
   #sample from X_bg
   shapUtils::u_vprint("-> Sampling from X_bg", verbose )
+  # could use new samples for each permutation by sampling integration_samples*n_permutations
   X_bg_samples = shapUtils::sample_with_potential_replace(X_bg=X_bg, samples=integration_samples, seed=seed )
   row_phis     = matrix(0, rows=nrow(x_multirow), cols=total_features)
   expected_m   = matrix(0, rows=nrow(x_multirow), cols=1)
@@ -103,7 +104,8 @@ return (Matrix[Double] row_phis, Double expected){
   }
 
   #replicate background and mask it, since it also can stay the same for every row
-  masked_bg_for_permutations = prepare_masked_X_bg(masks_for_permutations, X_bg_samples)
+  # could use new samples for each permutation by sampling integration_samples*n_permutations and telling this function about it
+  masked_bg_for_permutations = prepare_masked_X_bg(masks_for_permutations, X_bg_samples, 0)
   shapUtils::u_vprint("-> Computing phis in parallel.", verbose )
 
   #enable spark execution for parfor if desired
@@ -279,11 +281,34 @@ prepare_full_mask = function(Matrix[Double] mask, Integer n_integration_samples)
   x_mask_full = shapUtils::repeatRows(mask,n_integration_samples)
 }
 
-prepare_masked_X_bg = function(Matrix[Double] x_mask_full, Matrix[Double] X_bg_samples)
+# Prepares the masked background by replicating the samples and masking them using the full mask.
+#
+# INPUT:
+# ---------------------------------------------------------------------------------------
+# x_mask_full             Boolean mask replicated orw-wise.
+# X_bg_samples            Samples from background. Either the same n samples for all permutaions or
+#                         n*p samples, so each permutation has its own samples.
+# n_perms_in_samples      Number of sample sets to identify block which need to be replicated in X_bg_samples.
+# ---------------------------------------------------------------------------------------
+#
+# OUTPUT:
+# -----------------------------------------------------------------------------
+# x_mask_full             A replicated mask.
+# -----------------------------------------------------------------------------
+
+prepare_masked_X_bg = function(Matrix[Double] x_mask_full, Matrix[Double] X_bg_samples, Integer n_perms_in_samples)
 return (Matrix[Double] masked_X_bg){
   #Repeat background once for every row in original mask.
-  #Since x_mask_full was already replicated row-wise by the number of rows in X_bg_samples, we devide by it.
-  masked_X_bg = shapUtils::repeatMatrix(X_bg_samples, nrow(x_mask_full)/nrow(X_bg_samples))
+  #If the same samples are used for each permutation, simply repeat the entire samples accordingly
+  if (n_perms_in_samples <= 1){
+    #Since x_mask_full was already replicated row-wise by the number of rows in X_bg_samples, we devide by it.
+    masked_X_bg = shapUtils::repeatMatrix(X_bg_samples, nrow(x_mask_full)/nrow(X_bg_samples))
+  }else{
+    # if X_bg_samples has independent samples for each perm, it holds n_integration_samples*n_perms rows.
+    block_size = nrow(X_bg_samples)/n_perms_in_samples
+    masked_X_bg = shapUtils::repeatMatrixBlocks(X_bg_samples, block_size,  nrow(x_mask_full)/block_size/n_perms_in_samples)
+  }
+
   masked_X_bg = masked_X_bg * !x_mask_full
 }
 

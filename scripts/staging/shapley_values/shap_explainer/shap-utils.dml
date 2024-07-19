@@ -263,6 +263,18 @@ return(Matrix[Double] M){
   M = matrix(M, rows=n_rows*n_times, cols=n_cols)
 }
 
+repeatMatrixBlocks = function(Matrix[Double] M, Integer rows_per_block, Integer n_times)
+return(Matrix[Double] M){
+  n_rows=nrow(M)
+  n_cols=ncol(M)
+  #reshape to row vector
+  M = matrix(M, rows=n_rows/rows_per_block, cols=n_cols*rows_per_block)
+  #repeat block rows
+  M = repeatRows(M, n_times)
+  #reshape to get matrix
+  M = matrix(M, rows=n_rows*n_times, cols=n_cols)
+}
+
 #utility function to print with shap-explainer-tag
 u_vprint = function(String message, Boolean verbose){
   if(verbose){

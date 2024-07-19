@@ -21,7 +21,7 @@
 
 #get the transformation matrix (3x3) as an input
 transformationMatrix = read($transMat)
-print(toString(transformationMatrix))
+#print(toString(transformationMatrix))
 
 #get a matrix with the original image dimensions and the target dimensions (2x2)
 #-----original height----original width
@@ -33,5 +33,5 @@ print(toString(dimensionMatrix))
 #the image for matrix multiplication
 zMat = img_transform_matrix(transformationMatrix, dimensionMatrix)
 
-print(toString(transformationMatrix))
+print(toString(zMat))
 write(zMat, $out_file)

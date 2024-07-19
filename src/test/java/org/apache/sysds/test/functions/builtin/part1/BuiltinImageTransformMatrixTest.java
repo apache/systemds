@@ -26,7 +26,7 @@ public class BuiltinImageTransformMatrixTest extends AutomatedTestBase {
 
     @Parameterized.Parameters
     public static Collection<Object[]> data() {
-        return Arrays.asList(new Object[][] {{new double[][] {{1,0,0},{0,1,0},{0,0,1}}, new double[][] {{512, 512},{512,512}}}});
+        return Arrays.asList(new Object[][] {{new double[][] {{2,0,0},{0,1,0},{0,0,1}}, new double[][] {{10, 10},{15,15}}}});
     }
 
     @Override

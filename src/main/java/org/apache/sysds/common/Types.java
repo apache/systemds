@@ -472,7 +472,7 @@ public class Types
 				case FRAME_ROW_REPLICATE: return "freplicate";
 				case VALUE_SWAP: return "valueSwap";
 				case APPLY_SCHEMA: return "applySchema";
-				case IMG_TRANSFORM_MATRIX: return "imgTransformMatrix";
+				case IMG_TRANSFORM_MATRIX: return "img_transform_matrix";
 				default:           return name().toLowerCase();
 			}
 		}

@@ -23,10 +23,8 @@ import org.junit.Test;
 
 public class MultiGPUTest extends GPUTest {
 
-    @Override
     @Test
     public void gpuTest() {
-        runMultiGPUsTest(true);
+        runMultiGPUsTest(true, 1);
     }
-
 }

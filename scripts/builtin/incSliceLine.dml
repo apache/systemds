@@ -112,7 +112,6 @@ m_incSliceLine = function(
     oldX2 = matrix(0,0,ncol(X2));
     addedX2 = X2;
   }
-
   
   if( length(prevTK) > 0 ) {
     prevTK2 = oneHotEncodeUsingOffsets(prevTK, foffb, foffe);
@@ -138,7 +137,9 @@ m_incSliceLine = function(
   unchangedS = list();
   unchangedR = list();
   if(nrow(oldX) > 0 ){
-    for( level in 1:length(prevRL)) {
+    # only computing unchanged slices for levels 2 and above, 
+    # as for level 1 it is done more efficiently in createAndScoreBasicSlices
+    for( level in 2:length(prevRL)) {
       prevStatsAtLevel = as.matrix(prevRL[level]);
       prevLatAtLevel = prevLattice2[as.scalar(levelIndices[level]) : as.scalar(levelIndices[level+1]) - 1,];
       # Imat has a 1 where a slice in addedX2 belongs to a slice in prevLatAtLevel
@@ -269,16 +270,6 @@ m_incSliceLine = function(
   Xout = newX;
 
   L = decodeOneHot(L1, foffb, foffe);
-
-  # different approach for slice ids
-  /*
-  L = list();
-  L2 = decodeOneHot(L1, foffb, foffe);
-  for (i in 1:nrow(L2)) {
-    sliceID = generateSliceID(L2[i,]);
-    L = append(L, sliceID);
-  }
-  */
 
   if( verbose ) {
     print("SliceFinder: terminated at level "+level+":\n"
@@ -432,13 +423,17 @@ getPairedCandidates = function(Matrix[Double] S, Double minsc,
     P = (P1 %*% S + P2 %*% S) != 0;
     
     # prune unchanged slices with slice size < minSup
-    if (length(unchangedS) >= level){
-      # unchangedMat is matrix with 1 if slice is same as slice in unchangedS
-      unchangedMat = (P %*% t(as.matrix(unchangedS[level]))) == level;
-      levStats = as.matrix(unchangedR[level]);
+    if (length(unchangedS) +1 >= level){
+      # unchangedMat is matrix with 1 if slice is same as slice in unchangedS (thus slice is not changed in addedX)
+      # unchangedS[1] corresponds to level 2 (as level 1 is not incorporated in unchangedS)
+      unchangedMat = (P %*% t(as.matrix(unchangedS[level-1]))) == level;
+      levStats = as.matrix(unchangedR[level-1]);
       levSs = levStats[, 4];
       unchangedAndBelowMinSupI = matrix(0, nrow(P), 1);
       for( i in 1:ncol(unchangedMat)){
+        # by multiplying the columns of the unchanged mat with the sizes 
+        # from the previous lattice we get vectors indicating the sizes 
+        # of each unchanged slice (and 0 if it was changed)
         unchangedSizes = (unchangedMat[, i] * levSs[i])
         unchangedAndBelowMinSup = unchangedSizes < minSup & unchangedSizes > 0;
         unchangedAndBelowMinSupI = unchangedAndBelowMinSupI | unchangedAndBelowMinSup;
@@ -448,7 +443,7 @@ getPairedCandidates = function(Matrix[Double] S, Double minsc,
       P1 = removeEmpty(target=P1, margin="rows", select=unchangedAndBelowMinSupI == 0);
       P2 = removeEmpty(target=P2, margin="rows", select=unchangedAndBelowMinSupI == 0);
     } 
-    
+
     se = min(P1 %*% R[,2], P2 %*% R[,2])
     sm = min(P1 %*% R[,3], P2 %*% R[,3])
     ss = min(P1 %*% R[,4], P2 %*% R[,4])
@@ -558,154 +553,6 @@ decodeOneHot = function(Matrix[Double] M, Matrix[Double] foffb, Matrix[Double] f
   M = R;
 }
 
-# Helper function to calculate slice size
-calculateSliceSize = function(Matrix[Double] slice, Matrix[Double] X2)
-  return(Double sliceSize)
-{
-  sliceIndicator = (X2 %*% t(slice)) == sum(slice);
-  sliceSize = sum(t(sliceIndicator));
-}
-
-oneHotEncode = function(Matrix[Double] X)
-  return(Matrix[Double] X2, Matrix[Double] foffb, Matrix[Double] foffe)
-{
-  X3 = X;
-  X = X +1;
-  X2 = matrix(0, 0, 0);
-  m = nrow(X)
-  n = ncol(X)
-  fdom = colMaxs(X)
-  foffb = t(cumsum(t(fdom))) - fdom
-  foffe = t(cumsum(t(fdom)))
-  rix = matrix(seq(1, m) %*% matrix(1, 1, n), m * n, 1)
-  cix = matrix(X + foffb, m * n, 1)
-  X2 = table(rix, cix, 1, m, as.scalar(foffe[, n]), FALSE)
-  # Calculate selCols to identify columns corresponding to foffb + 1
-  selCols = matrix(1, 1, ncol(X2))
-  for (j in 1:ncol(foffb)) {
-    beg = as.scalar(foffb[1, j]) + 1;
-    selCols[1, beg] = 0;
-  }
-
-  fdom = colMaxs(X3)
-  foffb = t(cumsum(t(fdom))) - fdom
-  foffe = t(cumsum(t(fdom)))
-
-  # Use removeEmpty to remove columns in X2 corresponding to foffb + 1
-  X2 = removeEmpty(target=X2, margin="cols", select=t(selCols));
-}
-
-# TODO: remove if unused
-# function to align two one hot encoded matrices to the same dimensions based on their offsets.
-alignOneHotEncodedMatrices = function(Matrix[Double] X1, Matrix[Double] X2, Matrix[Double] foffb1, Matrix[Double] foffe1, Matrix[Double] foffb2, Matrix[Double] foffe2)
-  return(Matrix[Double] X1_aligned, Matrix[Double] X2_aligned, Matrix[Double] foffb1, Matrix[Double] foffe1)
-{
-
-  numFeatures = ncol(foffb1);
-
-  X1_aligned = X1;
-  X2_aligned = X2;
-
-
-  for (j in 1:numFeatures) {
-    domainSize1 = as.scalar(foffe1[1, j]) - as.scalar(foffb1[1, j]);
-    domainSize2 = as.scalar(foffe2[1, j]) - as.scalar(foffb2[1, j]);
-
-    maxDomainSize = max(domainSize1, domainSize2);
-
-    colsToAdd1 = maxDomainSize - domainSize1;
-    colsToAdd2 = maxDomainSize - domainSize2;
-
-
-
-    if (colsToAdd1 > 0 ) {
-      if (j < numFeatures) {
-
-        X1_aligned = cbind(X1_aligned[, 1:as.scalar(foffe1[1, j])], matrix(0, nrow(X1), colsToAdd1), X1_aligned[, (as.scalar(foffe1[1, j])+1):ncol(X1_aligned)]);
-      } else {
-        X1_aligned = cbind(X1_aligned, matrix(0, nrow(X1), colsToAdd1));
-    }
-    }
-    if (colsToAdd2 > 0) {
-      if( j < numFeatures){
-
-        X2_aligned = cbind(X2_aligned[, 1:as.scalar(foffe2[1, j])], matrix(0, nrow(X2), colsToAdd2), X2_aligned[, (as.scalar(foffe2[1, j])+1):ncol(X2_aligned)]);
-
-      } else {
-        X2_aligned = cbind(X2_aligned, matrix(0, nrow(X2), colsToAdd2));
-
-      }
-    }
-
-    if (colsToAdd1 > 0) {
-      foffe1[1, j] = foffe1[1, j] + colsToAdd1;
-    }
-    if (colsToAdd2 > 0) {
-      foffe2[1, j] = foffe2[1, j] + colsToAdd2;
-    }
-
-    if (j < numFeatures) {
-      foffb1[1, (j+1):numFeatures] = foffb1[1, (j+1):numFeatures] + colsToAdd1;
-      foffe1[1, (j+1):numFeatures] = foffe1[1, (j+1):numFeatures] + colsToAdd1;
-      foffb2[1, (j+1):numFeatures] = foffb2[1, (j+1):numFeatures] + colsToAdd2;
-      foffe2[1, (j+1):numFeatures] = foffe2[1, (j+1):numFeatures] + colsToAdd2;
-    }
-  }
-
-}
-
-
-
-generateSliceID = function(Matrix[Double] slice) return (string id) {
-
-  id = "";
-  for (i in 1:ncol(slice)) {
-    id = id + toString(as.integer(as.scalar(slice[1, i])));
-  }
-
-}
-
-matchingIndices = function(Matrix[Double] S, Matrix[Double] prevLattice) return (list[unknown] indexS, list[unknown] indexPrevLattice) {
-
-  indexPrevLattice = list()
-  indexS = list()
-
-  # Loop through each row of prevLattice to check if it exists in S
-  for (j in 1:nrow(prevLattice)) {
-      rowprevLattice = prevLattice[j,]
-      for (i in 1:nrow(S)) {
-          rowS = S[i,]
-          equal = rowEquals(rowS, rowprevLattice)
-          if (equal == TRUE) {
-              indexPrevLattice = append(indexPrevLattice, j)
-              indexS = append(indexS, i)
-          }
-      }
-  }
-}
-
-rowEquals = function(Matrix[Double] row1, Matrix[Double] row2) return(Boolean equal) {
-  equal = sum(row1 != row2) == 0;
-}
-
-# function to find a row in the previous statistics
-findRowInRL = function(list[unknown] prevRL, Integer index) return (Matrix[Double] rowInRL) {
-  i = 1;
-  prevSum = 0;
-  sum = 0;
-
-  while(i <= length(prevRL) & sum < index) {
-    prevSum = sum;
-    sum = sum + nrow(as.matrix(prevRL[i]));
-    i = i + 1;
-  }
-
-  i = i - 1;
-
-  MatInRL = as.matrix(prevRL[i]);
-  rowInRL = MatInRL[index - prevSum,];
-}
-
 # function to oneHotEncode but with predefined feature offsets, to have the same encoding for different datasets
 oneHotEncodeUsingOffsets = function(Matrix[Double] A, Matrix[Double] foffb, Matrix[Double] foffe)
   return(Matrix[Double] A_encoded)
@@ -728,71 +575,4 @@ oneHotEncodeUsingOffsets = function(Matrix[Double] A, Matrix[Double] foffb, Matr
       }
     }
   }
-}
-
-# function to store all rows from a matrix that are selected and all remaining ones
-storeSelectedAndRemainingRows = function(Matrix[Double] A, list[unknown] selectedIndices)
-  return (Matrix[Double] B, Matrix[Double] C)
-{
-  m = nrow(A);
-  n = ncol(A);
-
-  selectionMatrix = matrix(0, m, 1);
-  for (i in 1:length(selectedIndices)) {
-    selectionMatrix[as.scalar(selectedIndices[i]), 1] = 1;
-  }
-
-  B = A * selectionMatrix;
-
-  selectionMatrixComplement = 1 - selectionMatrix;
-  C = A * selectionMatrixComplement;
-
-  B = removeEmpty(target=B, margin="rows");
-  C = removeEmpty(target=C, margin="rows");
-}
-
-combineSliceSizes = function(Matrix[Double] A, Matrix[Double] B, list[unknown] indices)
-  return (Matrix[Double] C)
-{
-  C = matrix(0, 0, ncol(A));
-
-  aCounter = 1;
-  bCounter = 1;
-
-  for (i in 1:(nrow(A)+ nrow(B))) {
-    if (sum(as.matrix(indices) == i) > 0) {
-
-      C = rbind(C, B[bCounter,]);
-      bCounter = bCounter + 1;
-    } else {
-
-      C = rbind(C, A[aCounter,]);
-      aCounter = aCounter + 1;
-    }
-  }
-}
-
-# function returns indicator that is 0 where the slice is unchanged and below minSup, and 1 otherwise
-unchangedAndBelowMinSupIndicator = function(Matrix[Double] oldX, Matrix[Double] addedX, Matrix[Double] prevLattice, list[unknown] prevRL, 
-  Matrix[Double] S, Integer level, Integer minSup, list[unknown] levelIndices)
-  return (Matrix[Double] IUnchangedAndBelowMinSup)
-  
-  {
-
-  ## TODO: function is wrong currently. Unchanged slices are not found like this. 
-  ## Change it to: check prevLattice and see if addedSlices are in there. If yes then its changed.
-  ## 
-  prevLatAtLevel = prevLattice[as.scalar(levelIndices[level]) : as.scalar(levelIndices[level+1]) - 1,];
-
-  Imat = (S %*% t(prevLatAtLevel) == level);
-  statsL = as.matrix(prevRL[level])
-  if(ncol(statsL == 4)){
-    ssPrev = statsL[,4];
-  }
-  ssUnchanged = matrix(0, nrow(S), 1);
-  for (i in 1:ncol(Imat)){
-    ssUnchanged = ssUnchanged + (Imat[,i] * as.scalar(ssPrev[i]));
-  }
-
-  IUnchangedAndBelowMinSup = (ssUnchanged >= minSup | ssUnchanged == 0);
 }

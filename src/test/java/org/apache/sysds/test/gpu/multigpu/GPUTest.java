@@ -59,7 +59,7 @@ public abstract class GPUTest extends AutomatedTestBase {
 
     /**
      * Run the test with multiple GPUs
-     * 
+     *
      * @param multiGPUs whether to run the test with multiple GPUs
      */
     protected void runMultiGPUsTest(boolean multiGPUs) {
@@ -90,7 +90,6 @@ public abstract class GPUTest extends AutomatedTestBase {
         }
 
         appender.clearLogMessages();
-
     }
 
     protected static InMemoryAppender configureLog4j() {
@@ -146,5 +145,4 @@ public abstract class GPUTest extends AutomatedTestBase {
             logMessages.clear();
         }
     }
-
 }

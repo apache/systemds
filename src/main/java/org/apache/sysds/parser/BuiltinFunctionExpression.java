@@ -1325,7 +1325,16 @@ public class BuiltinFunctionExpression extends DataIdentifier {
 			output.setBlocksize(0);
 			output.setValueType(ValueType.BOOLEAN);
 			break;
-		
+		//implement the calculation of the transformation matrix for affine transformation of images
+		case IMG_TRANSFORM_MATRIX:
+			checkNumParameters(2);
+			checkMatrixParam(getFirstExpr());
+			checkMatrixParam(getSecondExpr());
+			output.setDataType(DataType.MATRIX);
+			output.setValueType(ValueType.FP64);
+			output.setDimensions(-1,-1);
+			output.setBlocksize(0);
+			break;
 		// Contingency tables
 		case TABLE:
 			

@@ -168,7 +168,7 @@ public enum Builtins {
 	IMG_CROP_LINEARIZED("img_crop_linearized", true),
 	IMG_TRANSFORM("img_transform", true),
 	IMG_TRANSFORM_LINEARIZED("img_transform_linearized", true),
-	IMG_TRANSFORM_MATRIX("img_transform_matrix", true),
+	IMG_TRANSFORM_MATRIX("img_transform_matrix", false),
 	IMG_TRANSLATE_MATRIX("img_translate_matrix", false), //TODO: remove unused builtin
 	IMG_TRANSLATE("img_translate", true),
 	IMG_TRANSLATE_LINEARIZED("img_translate_linearized", true),

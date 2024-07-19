@@ -139,19 +139,7 @@ m_incSliceLine = function(
   unchangedS = list();
   unchangedR = list();
   if(nrow(oldX) > 0 ){
-    # only computing unchanged slices for levels 2 and above, 
-    # as for level 1 it is done more efficiently in createAndScoreBasicSlices
-    for( level in 2:length(prevRL)) {
-      prevStatsAtLevel = as.matrix(prevRL[level]);
-      prevLatAtLevel = prevLattice2[as.scalar(levelIndices[level]) : as.scalar(levelIndices[level+1]) - 1,];
-      # Imat has a 1 where a slice in addedX2 belongs to a slice in prevLatAtLevel
-      Imat = (addedX2 %*% t(prevLatAtLevel) == level);
-      unchangedSlicesI = colSums(Imat) == 0;
-      unchangedSlices = removeEmpty(target=prevLatAtLevel, margin="rows", select=unchangedSlicesI);
-      unchangedStats = removeEmpty(target=prevStatsAtLevel, margin="rows", select=unchangedSlicesI);
-      unchangedS = append(unchangedS, unchangedSlices);
-      unchangedR = append(unchangedR, unchangedStats);
-    }
+    [unchangedS, unchangedR] = determineUnchangedSlices( prevRL, prevLattice2, addedX2, levelIndices, unchangedS, unchangedR);
   }
   
   # initialize statistics and basic slices
@@ -182,24 +170,7 @@ m_incSliceLine = function(
   # compute score for lowest scoring prevTK slice to set high min score early on to prune slices based on scores
   minsc = 0.0;
   if( nrow(prevTK2) > 0 ) {
-    for(i in 1: nrow(prevTK2)){
-      # extract and evaluate candidate slices
-      curSlice = prevTK2[i,];
-      l = rowSums(curSlice[1,]);
-
-      # compute slice stats of curSlice within whole feature matrix X2.
-      I = (X2 %*% t(curSlice)) == l;    # slice indicator
-      ss = t(colSums(I));     # absolute slice size (nnz)
-      se = t(t(totalE) %*% I);     # absolute slice error
-      sm = t(colMaxs(I * totalE)); # maximum tuple error in slice
-
-      # score slice and if applicable set min score for pruning
-      sc = score(ss, se, eAvg, alpha, nrow(X2));
-      minsc2 = as.scalar(sc[1,1]);
-      if(minsc2 < minsc){
-        minsc = minsc2;
-      }
-    }
+    [minsc] = computeLowestPrevTK (prevTK2, X2, totalE, eAvg, alpha, minsc)
   } 
 
   # reduced dataset to relevant attributes (minSup, err>0), S reduced on-the-fly
@@ -621,4 +592,45 @@ storeParams = function(Integer k, Integer maxL, Integer minSup, Double alpha, Bo
     tpBlksz = as.scalar(params[6]);
     selFeat = as.boolean(as.scalar(params[7]));
   }
+}
+
+determineUnchangedSlices = function(list[unknown] prevRL, Matrix[Double] prevLattice2, Matrix[Double] addedX2, list[unknown] levelIndices, list[unknown] unchangedS, list[unknown] unchangedR)
+  return(list[unknown] unchangedS, list[unknown] unchangedR)
+{
+  # only computing unchanged slices for levels 2 and above, 
+    # as for level 1 it is done more efficiently in createAndScoreBasicSlices
+    for( level in 2:length(prevRL)) {
+      prevStatsAtLevel = as.matrix(prevRL[level]);
+      prevLatAtLevel = prevLattice2[as.scalar(levelIndices[level]) : as.scalar(levelIndices[level+1]) - 1,];
+      # Imat has a 1 where a slice in addedX2 belongs to a slice in prevLatAtLevel
+      Imat = (addedX2 %*% t(prevLatAtLevel) == level);
+      unchangedSlicesI = colSums(Imat) == 0;
+      unchangedSlices = removeEmpty(target=prevLatAtLevel, margin="rows", select=unchangedSlicesI);
+      unchangedStats = removeEmpty(target=prevStatsAtLevel, margin="rows", select=unchangedSlicesI);
+      unchangedS = append(unchangedS, unchangedSlices);
+      unchangedR = append(unchangedR, unchangedStats);
+    }
+}
+
+computeLowestPrevTK = function(Matrix[Double] prevTK2, Matrix[Double] X2,Matrix[Double] totalE, Double eAvg, Double alpha, Double minsc)
+  return(Double minsc)
+{
+  for(i in 1: nrow(prevTK2)){
+      # extract and evaluate candidate slices
+      curSlice = prevTK2[i,];
+      l = rowSums(curSlice[1,]);
+
+      # compute slice stats of curSlice within whole feature matrix X2.
+      I = (X2 %*% t(curSlice)) == l;    # slice indicator
+      ss = t(colSums(I));     # absolute slice size (nnz)
+      se = t(t(totalE) %*% I);     # absolute slice error
+      sm = t(colMaxs(I * totalE)); # maximum tuple error in slice
+
+      # score slice and if applicable set min score for pruning
+      sc = score(ss, se, eAvg, alpha, nrow(X2));
+      minsc2 = as.scalar(sc[1,1]);
+      if(minsc2 < minsc){
+        minsc = minsc2;
+      }
+    }
 }

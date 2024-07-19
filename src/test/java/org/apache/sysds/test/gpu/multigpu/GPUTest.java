@@ -55,19 +55,17 @@ public abstract class GPUTest extends AutomatedTestBase {
                 new TestConfiguration(TEST_CLASS_DIR, MULTI_GPUS_TEST, new String[] { "R" }));
     }
 
-    public abstract void gpuTest();
-
     /**
      * Run the test with multiple GPUs
-     * 
+     *
      * @param multiGPUs whether to run the test with multiple GPUs
      */
-    protected void runMultiGPUsTest(boolean multiGPUs) {
+    protected void runMultiGPUsTest(boolean multiGPUs, int numTestImages) {
         getAndLoadTestConfiguration(multiGPUs ? MULTI_GPUS_TEST : SINGLE_GPU_TEST);
 
         String HOME = SCRIPT_DIR + TEST_DIR;
         fullDMLScriptName = HOME + TEST_NAME + ".dml";
-        programArgs = new String[] { "-args", DATA_SET, output("R"), "-config",
+        programArgs = new String[] { "-args", DATA_SET, output("R"), Integer.toString(numTestImages), "-config",
                 multiGPUs ? MULTI_TEST_CONFIG : SINGLE_TEST_CONFIG };
         fullRScriptName = HOME + TEST_NAME + ".R";
 
@@ -90,7 +88,6 @@ public abstract class GPUTest extends AutomatedTestBase {
         }
 
         appender.clearLogMessages();
-
     }
 
     protected static InMemoryAppender configureLog4j() {
@@ -146,5 +143,4 @@ public abstract class GPUTest extends AutomatedTestBase {
             logMessages.clear();
         }
     }
-
 }

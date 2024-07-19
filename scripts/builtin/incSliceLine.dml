@@ -27,9 +27,9 @@
 #
 # INPUT:
 # ---------------------------------------------------------------------------------------
-# addedX       Feature matrix odded tuples in recoded/binned representation
+# addedX       Feature matrix of added tuples in recoded/binned representation
 # oldX         All-comprising feature matrix of previous runs (except for current run) in recoded/binned representation
-# oldE         Error vector of trained model for old tuples
+# oldE         All-comprising error vector of trained model for old tuples
 # newE         Error vector of trained model for added tuples
 # k            Number of subsets required
 # maxL         maximum level L (conjunctions of L predicates), 0 unlimited
@@ -59,20 +59,12 @@
 # -----------------------------------------------------------------------------------------
 
 m_incSliceLine = function(
-    Matrix[Double] addedX, ## should be only the matrix of added slices
-    Matrix[Double] oldX = matrix(0, 0, 0), ## should be the matrix of previous slices, to which addedX was added.
-    Matrix[Double] oldE = matrix(0, 0, 0),
-    Matrix[Double] newE,
-    Int k = 4, Int maxL = 0, Int minSup = 32, Double alpha = 0.5, Boolean tpEval = TRUE,
+    Matrix[Double] addedX, Matrix[Double] oldX = matrix(0, 0, 0), Matrix[Double] oldE = matrix(0, 0, 0),
+    Matrix[Double] newE, Int k = 4, Int maxL = 0, Int minSup = 32, Double alpha = 0.5, Boolean tpEval = TRUE,
     Int tpBlksz = 16, Boolean selFeat = FALSE, Boolean verbose = FALSE, list[unknown] params = list(),
-    # list[unknown] prevLattice = list(),
-    Matrix[Double] prevLattice = matrix(0, 0, 0),
-    list[unknown] prevRL = list(),
-    Matrix[Double] prevTK = matrix(0,0,0),
+    Matrix[Double] prevLattice = matrix(0, 0, 0), list[unknown] prevRL = list(), Matrix[Double] prevTK = matrix(0,0,0),
     Matrix[Double] prevTKC = matrix(0,0,0))
-  return(Matrix[Double] TK, Matrix[Double] TKC, Matrix[Double] D,
-    #list[unknown] L,
-    Matrix[Double] L,
+  return(Matrix[Double] TK, Matrix[Double] TKC, Matrix[Double] D, Matrix[Double] L,
     list[unknown] RL, Matrix[Double] Xout, Matrix[Double] eOut, list[unknown] params)
 {
   # TODO convert input/output of previous enumerated slices to lists
@@ -101,6 +93,7 @@ m_incSliceLine = function(
   # prepare output error vector for next run
   eOut = totalE;
 
+  # compute number of tuples m and number of features n
   m = nrow(newX);
   n = ncol(newX);
 

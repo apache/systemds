@@ -64,7 +64,7 @@ m_incSliceLine = function(
     Matrix[Double] oldE = matrix(0, 0, 0),
     Matrix[Double] newE,
     Int k = 4, Int maxL = 0, Int minSup = 32, Double alpha = 0.5, Boolean tpEval = TRUE,
-    Int tpBlksz = 16, Boolean selFeat = FALSE, Boolean verbose = FALSE,
+    Int tpBlksz = 16, Boolean selFeat = FALSE, Boolean verbose = FALSE, list[unknown] params = list(),
     # list[unknown] prevLattice = list(),
     Matrix[Double] prevLattice = matrix(0, 0, 0),
     list[unknown] prevRL = list(),
@@ -73,11 +73,17 @@ m_incSliceLine = function(
   return(Matrix[Double] TK, Matrix[Double] TKC, Matrix[Double] D,
     #list[unknown] L,
     Matrix[Double] L,
-    list[unknown] RL, Matrix[Double] Xout, Matrix[Double] eOut)
+    list[unknown] RL, Matrix[Double] Xout, Matrix[Double] eOut, list[unknown] params)
 {
   # TODO convert input/output of previous enumerated slices to lists
   # for simple collection and processing
+  
+  if(nrow(prevLattice) > 0 & length(params) == 0){
+      [TK, TKC, D, L, RL, Xout, eOut, params] = throwNoParamsError();
+  } else {
   t1 = time();
+  # store params for next run
+  [params, k, maxL, minSup, alpha, tpEval, tpBlksz, selFeat] = storeParams(k, maxL, minSup, alpha, tpEval, tpBlksz, selFeat, params);
 
   # init debug matrix: levelID, enumerated S, valid S, TKmax, TKmin
   D = matrix(0, 0, 5);
@@ -290,6 +296,7 @@ m_incSliceLine = function(
     + "Statistics: \n "+ toString(RL));
 */
   print("Time taken: "+(time()-t1));
+}
 }
 
 createAndScoreBasicSlices = function(Matrix[Double] X2, Matrix[Double] addedX2,
@@ -584,5 +591,41 @@ oneHotEncodeUsingOffsets = function(Matrix[Double] A, Matrix[Double] foffb, Matr
         A_encoded[i, beg + value - 1] = 1;
       }
     }
+  }
+}
+
+# throws an error if no params are provided for incremental updates. 
+# in case only individual parameters are entered they will be overwritten to ensure consistency
+throwNoParamsError = function() 
+  return(Matrix[Double] TK, Matrix[Double] TKC, Matrix[Double] D, Matrix[Double] L,
+    list[unknown] RL, Matrix[Double] Xout, Matrix[Double] eOut, list[unknown] params) {
+  print("incSliceLine: Error: prevLattice provided but no params for incremental update. 
+        Output params list from previous run is needed as input to ensure same paramters are used for incremental update.
+        Individual params inputs will be overwritten to ensure consistency.");
+  TK = matrix(0,0,0);
+  TKC = matrix(0,0,0);
+  D = matrix(0,0,0);
+  L = matrix(0,0,0);
+  RL = list();
+  Xout = matrix(0,0,0);
+  eOut = matrix(0,0,0);
+  params = list();
+}
+
+# store parameters for next run and overwrite params if provided
+storeParams = function(Integer k, Integer maxL, Integer minSup, Double alpha, Boolean tpEval, Integer tpBlksz, Boolean selFeat, list[unknown] params)
+  return(list[unknown] params, Integer k, Integer maxL, Integer minSup, Double alpha, Boolean tpEval, Integer tpBlksz, Boolean selFeat)
+{
+  if(length(params) == 0) {
+    params = list(as.double(k), as.double(maxL), as.double(minSup), 
+      alpha, as.double(tpEval), as.double(tpBlksz), as.double(selFeat)) ;
+  } else {
+    k = as.scalar(params[1]);
+    maxL = as.scalar(params[2]);
+    minSup = as.scalar(params[3]);
+    alpha = as.scalar(params[4]);
+    tpEval = as.boolean(as.scalar(params[5]));
+    tpBlksz = as.scalar(params[6]);
+    selFeat = as.boolean(as.scalar(params[7]));
   }
 }

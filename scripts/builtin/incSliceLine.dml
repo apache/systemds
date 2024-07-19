@@ -38,7 +38,7 @@
 # tpEval       flag for task-parallel slice evaluation,
 #              otherwise data-parallel
 # tpBlksz      block size for task-parallel execution (num slices)
-# selFeat      flag for removing one-hot-encoded features that don`t satisfy
+# selFeat      flag for removing one-hot-encoded features that don't satisfy
 #              the initial minimum-support constraint and/or have zero error
 # verbose      flag for verbose debug output
 # prevLattice  previous lattice (for incremental updates)
@@ -304,34 +304,38 @@ createAndScoreBasicSlices = function(Matrix[Double] X2, Matrix[Double] addedX2,
 
   # prevTK2 is oneHotEncoded with the same offsets as oldX2 and addedX2.
   # produce a vector indicating which basic slices are within the previous top k
+  TKCCnts = matrix(0, 0, 0);
   if ( length (prevTK2) > 0 ) {
     TKCCnts = t(colSums(prevTK2));
-  } else {
-    TKCCnts = matrix(1, 1, n2);
-  }
-  # addedX2 is oneHotEncoded with the same offsets as oldX2 and newX2. Thus unchanged basic slices will have a colSum of 0.
-  # compute vector of colSums for addedX2 indicating which slices are unchanged (0 value)
-  addedCCnts = t(colSums(addedX2));
+  } 
 
   # working set of active slices (#attr x #slices) and top k
   # only consider slices that have been changed (addedCCnts != 0) with cCnts >= minSup and non-zero err.
   # thus, here we remove all basic slices that are unchanged.
   # only add "& addedCCnts != 0" if the eAvg from the new tuples is smaller than eAvg on prev. dataset.
-
-  if( eAvgOld > eAvgNew & eAvgNew != 0 ) {
+  # otherwise scores of unchanged slices could shift into top k.
+  if( eAvgOld > eAvgNew & eAvgNew != 0 & nrow(TKCCnts) >0) {
+      # addedX2 is oneHotEncoded with the same offsets as oldX2 and newX2. Thus unchanged basic slices will have a colSum of 0.
+    # compute vector of colSums for addedX2 indicating which slices are unchanged (0 value)
+    addedCCnts = t(colSums(addedX2));
+    addedOrTK = (addedCCnts > 0) | (TKCCnts > 0);
     if( verbose ) {
-      drop = as.integer(sum(cCnts < minSup | err == 0 | addedCCnts == 0  ));
-      print("incSliceLine: dropping "+drop+"/"+n2+" features below minSup = "+minSup+" or features that are unchanged, as eAvgOld > eAvgNew.");
+      drop = as.integer(sum(cCnts < minSup | err == 0 | addedOrTK == 0));
+      drop2 = as.integer(sum(cCnts < minSup | err == 0 ));
+      print("incSliceLine: dropping "+drop+"/"+n2+" features. " +drop2+ " were below minSup = "+minSup+" 
+        and "+ (drop - drop2) + " were unchanged and not in the prevTK while eAvgOld > eAvgNew. ");
     }
-    selCols = ((cCnts >= minSup & err > 0 & addedCCnts != 0) | TKCCnts != 0);
+    selCols = (cCnts >= minSup & err > 0 & addedOrTK != 0);
 
-  } else {
+  } else { 
     if( verbose ) {
       drop = as.integer(sum(cCnts < minSup | err == 0 ));
       print("incSliceLine: dropping "+drop+"/"+n2+" features below minSup = "+minSup+".");
     }
     selCols = (cCnts >= minSup & err > 0 );
   }
+
+
 
   attr = removeEmpty(target=seq(1,n2), margin="rows", select=selCols);
   ss = removeEmpty(target=cCnts, margin="rows", select=selCols);

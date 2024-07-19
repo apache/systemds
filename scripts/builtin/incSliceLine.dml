@@ -101,9 +101,7 @@ m_incSliceLine = function(
   fdom = colMaxs(newX);
   foffb = t(cumsum(t(fdom))) - fdom;
   foffe = t(cumsum(t(fdom)));
-
   rix = matrix(seq(1,m)%*%matrix(1,1,n), m*n, 1)
-
   cix = matrix(newX + foffb, m*n, 1);
   X2 = table(rix, cix, 1, m, as.scalar(foffe[,n]), FALSE); #one-hot encoded
 

@@ -44,30 +44,13 @@ model = eff::netTrain(model, images, 1, 28, 28, labels, epochs, batch_size, 0.02
 # Read num_test_images from arguments
 num_test_images = as.integer($3)
 
-# Generate random data for predicting
-test_images = rand(rows=num_test_images, cols=28*28, min=0, max=1, sparsity=1.0, pdf="uniform", seed=42)
-test_labels = rand(rows=num_test_images, cols=1, min=0, max=9, sparsity=1.0, pdf="uniform", seed=42)
-test_labels = round(test_labels)
-
-# One-hot encode the test labels
-test_labels = table(seq(1, num_test_images), test_labels+1, num_test_images, 10)
-
 # Also Predict in Batches since otherwise we can run into Memory Issues
 # Could be unnecessary on more powerful machines :)
-batch_size = 1024  # Adjust the batch size to a larger value
 iters = ceil(num_test_images / batch_size)
-partial_accuracies = matrix(0, rows=iters, cols=1)
 
 parfor(i in 1:iters) {
-  beg = ((i-1) * batch_size) %% num_test_images + 1
-  end = min(num_test_images, beg + batch_size - 1)
-  X_batch = test_images[beg:end,]
-  y_batch = test_labels[beg:end,]
+  # Generate random data for predicting
+  X_batch = rand(rows=batch_size, cols=28*28, min=0, max=1, sparsity=1.0, pdf="uniform", seed=42)
 
   pred = eff::netPredict(X_batch, model, 1, 28, 28)
-  partial_accuracies[i,1] = mean(rowIndexMax(pred) == rowIndexMax(y_batch))
 }
-
-accuracy = sum(partial_accuracies) / iters
-print("Total Accuracy: " + accuracy)
-write(accuracy, $2)

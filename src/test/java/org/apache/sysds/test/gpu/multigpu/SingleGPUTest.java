@@ -33,28 +33,33 @@ public class SingleGPUTest extends GPUTest {
     private static List<Double> executionTimes = new ArrayList<>();
 
     @Test
-    public void test01_gpuTest_set() {
+    public void test01_gpuTest_10k() {
         runMultiGPUsTest(false, 10000);
     }
 
     @Test
-    public void test02_gpuTest_100k() {
+    public void test01_gpuTest_20k() {
+        runMultiGPUsTest(false, 20000);
+    }
+
+    @Test
+    public void test01_gpuTest_50k() {
+        runMultiGPUsTest(false, 50000);
+    }
+
+    @Test
+    public void test01_gpuTest_100k() {
         runMultiGPUsTest(false, 100000);
     }
 
     @Test
-    public void test03_gpuTest_200k() {
+    public void test01_gpuTest_200k() {
         runMultiGPUsTest(false, 200000);
     }
 
     @Test
-    public void test04_gpuTest_300k() {
-        runMultiGPUsTest(false, 300000);
-    }
-
-    @Test
-    public void test05_gpuTest_400k() {
-        runMultiGPUsTest(false, 400000);
+    public void test01_gpuTest_500k() {
+        runMultiGPUsTest(false, 500000);
     }
 
     @Override

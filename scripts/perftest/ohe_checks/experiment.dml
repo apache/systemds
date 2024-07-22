@@ -1,0 +1,27 @@
+## This script generates a random matrix, transforms some columns to be One-Hot-Encoded, and then compresses
+
+# Set default values
+default_rows = 1000
+default_cols = 10
+default_dummy = "[1]"
+default_repeats = 1
+default_num_distinct = 10
+
+#nvargs
+rows = ifdef($rows, default_rows)
+cols = ifdef($cols, default_cols)
+dummy = ifdef($dummy, default_dummy)
+repeats = ifdef($repeats, default_repeats)
+num_distinct = ifdef($distinct, default_num_distinct)
+
+# Generate random matrix and apply transformations
+x = rand(rows=rows, cols=cols, min=0, max=num_distinct)
+x = floor(x)
+Fall = as.frame(x)
+jspec = "{ids: true, dummycode: " + dummy + "}";
+for(i in 1:repeats){
+	[T,M] = transformencode(target=Fall, spec=jspec)
+       # T[100,2]=1
+	xc = compress(T)
+}
+print(toString(xc))

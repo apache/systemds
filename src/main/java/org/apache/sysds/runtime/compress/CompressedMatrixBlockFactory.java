@@ -285,6 +285,7 @@ public class CompressedMatrixBlockFactory {
 
 		_stats.denseSize = MatrixBlock.estimateSizeInMemory(mb.getNumRows(), mb.getNumColumns(), 1.0);
 		_stats.sparseSize = MatrixBlock.estimateSizeSparseInMemory(mb.getNumRows(), mb.getNumColumns(), mb.getSparsity());
+		_stats.sparsity = mb.getSparsity();
 		_stats.originalSize = mb.getInMemorySize();
 		_stats.originalCost = costEstimator.getCost(mb);
 
@@ -522,6 +523,7 @@ public class CompressedMatrixBlockFactory {
 						LOG.debug("--col groups sizes   " + _stats.getGroupsSizesString());
 						LOG.debug("--input was compressed " + (mb instanceof CompressedMatrixBlock));
 						LOG.debug(String.format("--dense size:        %16d", _stats.denseSize));
+						LOG.debug(String.format("--sparsity:          %4.3f", _stats.sparsity));
 						LOG.debug(String.format("--sparse size:       %16d", _stats.sparseSize));
 						LOG.debug(String.format("--original size:     %16d", _stats.originalSize));
 						LOG.debug(String.format("--compressed size:   %16d", _stats.compressedSize));

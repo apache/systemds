@@ -64,6 +64,9 @@ public class SingleGPUTest extends GPUTest {
 
     @Override
     protected void runMultiGPUsTest(boolean multiGPUs, int numTestImages) {
+        // Train the model first
+        super.runTrainingScript(multiGPUs, numTestImages);
+
         long startTime = System.nanoTime();
         super.runMultiGPUsTest(multiGPUs, numTestImages);
         long endTime = System.nanoTime();

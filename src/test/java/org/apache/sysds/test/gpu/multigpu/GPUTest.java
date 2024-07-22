@@ -40,7 +40,8 @@ public abstract class GPUTest extends AutomatedTestBase {
     protected static final String TEST_CLASS_DIR = TEST_DIR + MultiGPUTest.class.getSimpleName() + "/";
     protected static final String SINGLE_GPU_TEST = "SingleGPUTest";
     protected static final String MULTI_GPUS_TEST = "MultiGPUsTest";
-    protected static final String TEST_NAME = "GPUTest";
+    protected static final String TEST_NAME = "InferenceScript";
+    protected static final String TRAIN_SCRIPT = "TrainScript";
     protected static final String DATA_SET = DATASET_DIR + "MNIST/mnist_test.csv";
     protected static final String SINGLE_TEST_CONFIG = CONFIG_DIR + "SystemDS-SingleGPU-config.xml";
     protected static final String MULTI_TEST_CONFIG = CONFIG_DIR + "SystemDS-config.xml";
@@ -88,6 +89,24 @@ public abstract class GPUTest extends AutomatedTestBase {
         }
 
         appender.clearLogMessages();
+    }
+
+    /**
+     * Run the training script
+     */
+    protected void runTrainingScript(boolean multiGPUs, int numTestImages) {
+        getAndLoadTestConfiguration(multiGPUs ? MULTI_GPUS_TEST : SINGLE_GPU_TEST);
+
+        String HOME = SCRIPT_DIR + TEST_DIR;
+        fullDMLScriptName = HOME + TRAIN_SCRIPT + ".dml";
+        programArgs = new String[] { "-args", DATA_SET, output("R"), Integer.toString(numTestImages), "-config",
+                multiGPUs ? MULTI_TEST_CONFIG : SINGLE_TEST_CONFIG };
+        fullRScriptName = HOME + TEST_NAME + ".R";
+
+        rCmd = null;
+        InMemoryAppender appender = configureLog4j();
+
+        runTest(true, false, null, -1);
     }
 
     protected static InMemoryAppender configureLog4j() {

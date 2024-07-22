@@ -33,6 +33,7 @@ public class LSTMTest extends AutomatedTestBase {
 	String TEST_NAME1 = "LSTMForwardTest";
 	String TEST_NAME2 = "LSTMBackwardTest";
 	String TEST_NAME3 = "BILSTMForwardTest";
+	String TEST_NAME4 = "BILSTMBackwardTest";
 	private final static String TEST_DIR = "functions/tensor/";
 
 	@Override
@@ -41,6 +42,7 @@ public class LSTMTest extends AutomatedTestBase {
 		addTestConfiguration(TEST_NAME1, new TestConfiguration(TEST_DIR, TEST_NAME1));
 		addTestConfiguration(TEST_NAME2, new TestConfiguration(TEST_DIR, TEST_NAME2));
 		addTestConfiguration(TEST_NAME3, new TestConfiguration(TEST_DIR, TEST_NAME3));
+		addTestConfiguration(TEST_NAME4, new TestConfiguration(TEST_DIR, TEST_NAME4));
 	}
 
 	@Test
@@ -70,6 +72,25 @@ public class LSTMTest extends AutomatedTestBase {
 		runLSTMTest(3, 5, 2,2, 0, 0, 1e-5, TEST_NAME3,false);
 	}
 
+	@Test
+	public void testBILSTMBackwardLocalSingleSample1(){
+		runLSTMTest(10, 5, 2,6, 0, 1, 1e-5, TEST_NAME4,false);
+	}
+
+	@Test
+	public void testBILSTMFBackwardLocalSingleSample2(){
+		runLSTMTest(1, 5, 6,4, 0, 1, 1e-5, TEST_NAME4,false);
+	}
+
+	@Test
+	public void testBILSTMBackwardLocalSingleSample3(){
+		runLSTMTest(6, 5, 6,4, 0, 1, 1e-5, TEST_NAME4,false);
+	}
+
+	@Test
+	public void testBILSTMBackwardLocalSingleSample4(){
+		runLSTMTest(5, 5, 6,4, 0, 1, 1e-5, TEST_NAME4,false);
+	}
 
 	@Test
 	public void testLSTMForwardLocalSingleSample2(){
@@ -159,10 +180,17 @@ public class LSTMTest extends AutomatedTestBase {
 			//run script
 			//"-explain", "runtime",
 			boolean bilstm = Objects.equals(testname, TEST_NAME3);
+			boolean bilstm_backwards = Objects.equals(testname, TEST_NAME4);
 			if(bilstm)
 				programArgs = new String[]{"-stats","-args", String.valueOf(batch_size), String.valueOf(seq_length),
 						String.valueOf(num_features), String.valueOf(hidden_size), String.valueOf(debug), String.valueOf(seq),
 						"src/test/resources/expected/BILSTM_OUT",output("1A")};
+			else if(bilstm_backwards)
+				programArgs = new String[]{"-stats","-args", String.valueOf(batch_size), String.valueOf(seq_length),
+						String.valueOf(num_features), String.valueOf(hidden_size), String.valueOf(debug), String.valueOf(seq),
+						"src/test/resources/expected/BILSTM_back_dW",
+						"src/test/resources/expected/BILSTM_back_dc",
+						"src/test/resources/expected/BILSTM_back_dX", output("1A")};
 			else{
 				programArgs = new String[]{"-stats","-args", String.valueOf(batch_size), String.valueOf(seq_length),
 						String.valueOf(num_features), String.valueOf(hidden_size), String.valueOf(debug), String.valueOf(seq),
@@ -183,8 +211,13 @@ public class LSTMTest extends AutomatedTestBase {
 			if(bilstm){
 				Double max_error = (Double) readDMLScalarFromOutputDir("1A").values().toArray()[0];
 				assert max_error < precision;
-			}
-			else{
+			} else if (bilstm_backwards) {
+				HashMap<MatrixValue.CellIndex, Double> errors = readDMLMatrixFromOutputDir("1A");
+				double[][] errors_ = TestUtils.convertHashMapToDoubleArray(errors);
+				assert errors_[0][0] < precision;
+				assert errors_[0][1] < precision;
+				assert errors_[0][2] < precision;
+			} else{
 				extracted(precision,"1");
 				extracted(precision,"2");
 				extracted(precision,"3");

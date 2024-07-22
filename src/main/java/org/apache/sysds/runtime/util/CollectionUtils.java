@@ -122,7 +122,7 @@ public class CollectionUtils {
 				//if the item is in the seen set, return true
 				if (probe.contains(item))
 					return true;
-			probe.addAll(inputs[i]);
+			probe.addAll(nonEmpty[i]);
 		}
 		return false;
 	}

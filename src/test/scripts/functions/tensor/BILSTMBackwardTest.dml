@@ -43,15 +43,22 @@ out0 = rbind(out0, out0)
 c0 = rbind(c0, c0)
 
 [out, c, cache_out, cache_c, cache_ifog] = bilstm::forward(lstmIn, W, W, b, b,seq_length,num_features,seq,out0, c0)
+print(toString(out))
 
-dout = matrix(1, rows=batch_size, cols=hidden_size*2)
-if(seq){
-    dout = matrix(1, rows=batch_size, cols=hidden_size*seq_length*2)
-}
+dc = matrix(0,rows=batch_size*2,cols=hidden_size)
 if(batch_size == 5){
   dout = matrix(input_range[,1:batch_size*hidden_size*seq_length*2], rows=batch_size, cols=hidden_size*seq_length*2)
+} else if(batch_size == 4) {
+  dout = matrix(0, rows=batch_size, cols=hidden_size*2)
+  dc = matrix(input_range[,1:batch_size*hidden_size*2], rows=batch_size*2, cols=hidden_size)
+} else if(batch_size == 3) {
+
+} else {
+  dout = matrix(1, rows=batch_size, cols=hidden_size*2)
+  if(seq){
+      dout = matrix(1, rows=batch_size, cols=hidden_size*seq_length*2)
+  }
 }
-dc = matrix(0,rows=batch_size*2,cols=hidden_size) #rand(rows=batch_size, cols=hidden_size, min=-1, max=1, pdf="uniform")
 
 [dx, dw, db, dw_reverse, db_reverse, dout0, dc0] = bilstm::backward(dout, dc, lstmIn, W, W, b, b, seq_length,num_features, seq, out0, c0, cache_out, cache_c, cache_ifog)
 #print(toString(dx))

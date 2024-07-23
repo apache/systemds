@@ -50,48 +50,6 @@ public class LSTMTest extends AutomatedTestBase {
 		runLSTMTest(1, 32, 1,1, TEST_NAME1);
 	}
 
-	// The BILSTM output is compared to output of pytorch's BI-LSTM Layer implementation with FP64.
-	// Expected results are saved at: "src/test/resources/expected/BILSTM_OUT_{batch_size}_{seq_length}_{num_features}_{hidden_size}.csv"
-	@Test
-	public void testBILSTMForwardLocalSingleSample1(){
-		runLSTMTest(3, 5, 2,2, 0, 1, 1e-5, TEST_NAME3,false);
-	}
-
-	@Test
-	public void testBILSTMForwardLocalSingleSample2(){
-		runLSTMTest(6, 5, 6,4, 0, 1, 1e-5, TEST_NAME3,false);
-	}
-
-	@Test
-	public void testBILSTMForwardLocalSingleSample3(){
-		runLSTMTest(10, 5, 2,6, 0, 1, 1e-5, TEST_NAME3,false);
-	}
-
-	@Test
-	public void testBILSTMForwardLocalSingleSample4(){
-		runLSTMTest(3, 5, 2,2, 0, 0, 1e-5, TEST_NAME3,false);
-	}
-
-	@Test
-	public void testBILSTMBackwardLocalSingleSample1(){
-		runLSTMTest(10, 5, 2,6, 0, 1, 1e-5, TEST_NAME4,false);
-	}
-
-	@Test
-	public void testBILSTMFBackwardLocalSingleSample2(){
-		runLSTMTest(1, 5, 6,4, 0, 1, 1e-5, TEST_NAME4,false);
-	}
-
-	@Test
-	public void testBILSTMBackwardLocalSingleSample3(){
-		runLSTMTest(6, 5, 6,4, 0, 1, 1e-5, TEST_NAME4,false);
-	}
-
-	@Test
-	public void testBILSTMBackwardLocalSingleSample4(){
-		runLSTMTest(5, 5, 6,4, 0, 1, 1e-5, TEST_NAME4,false);
-	}
-
 	@Test
 	public void testLSTMForwardLocalSingleSample2(){
 		runLSTMTest(1, 1, 64,1, TEST_NAME1);
@@ -159,6 +117,60 @@ public class LSTMTest extends AutomatedTestBase {
 	public void testLSTMBackwardLocalLarge(){
 		runLSTMTest(128, 128, 128,64, 0, 0, 1e-5, TEST_NAME2, true);
 	}
+
+	// The BILSTM output is compared to output of pytorch's BI-LSTM Layer implementation with FP64.
+	// Expected results are saved at: "src/test/resources/expected/BILSTM_OUT_{batch_size}_{seq_length}_{num_features}_{hidden_size}.csv"
+	@Test
+	public void testBILSTMForwardLocal1(){
+		runLSTMTest(3, 5, 2,2, 0, 1, 1e-5, TEST_NAME3,false);
+	}
+
+	@Test
+	public void testBILSTMForwardLocal2(){
+		runLSTMTest(6, 5, 6,4, 0, 1, 1e-5, TEST_NAME3,false);
+	}
+
+	@Test
+	public void testBILSTMForwardLocal3(){
+		runLSTMTest(10, 5, 2,6, 0, 1, 1e-5, TEST_NAME3,false);
+	}
+
+	@Test
+	public void testBILSTMForwardLocal4(){
+		runLSTMTest(3, 5, 2,2, 0, 0, 1e-5, TEST_NAME3,false);
+	}
+
+	@Test
+	public void testBILSTMForwardLocal5(){
+		runLSTMTest(2, 5, 2,2, 0, 1, 1e-5, TEST_NAME3,false);
+	}
+
+
+	@Test
+	public void testBILSTMBackwardLocal1(){
+		runLSTMTest(10, 5, 2,6, 0, 1, 1e-5, TEST_NAME4,false);
+	}
+
+	@Test
+	public void testBILSTMFBackwardLocal2(){
+		runLSTMTest(1, 5, 6,4, 0, 1, 1e-5, TEST_NAME4,false);
+	}
+
+	@Test
+	public void testBILSTMBackwardLocal3(){
+		runLSTMTest(6, 5, 6,4, 0, 1, 1e-5, TEST_NAME4,false);
+	}
+
+	@Test
+	public void testBILSTMBackwardLocal4(){
+		runLSTMTest(5, 5, 6,4, 0, 1, 1e-5, TEST_NAME4,false);
+	}
+
+	@Test
+	public void testBILSTMBackwardLocal5(){
+		runLSTMTest(4, 5, 6,4, 0, 1, 1e-5, TEST_NAME4,false);
+	}
+
 
 	private void runLSTMTest(double batch_size, double seq_length, double num_features, double hidden_size, String testname){
 		runLSTMTest(batch_size, seq_length, num_features, hidden_size,0, testname);

@@ -81,8 +81,8 @@ forward = function(matrix[double] X, matrix[double] W, matrix[double] W_reverse,
   N = nrow(X)
 
   out0_forward = out0[1 : N,]
-  out0_reverse = out0[1 : N,]
-  c0_forward = c0[N + 1 : 2*N,]
+  out0_reverse = out0[N + 1 : 2*N,]
+  c0_forward = c0[1 : N,]
   c0_reverse = c0[N + 1 : 2*N,]
 
   # normal lstm pass
@@ -191,7 +191,7 @@ backward = function(matrix[double] dout, matrix[double] dc,
   cache_c_forward = cache_c[1:T,]
   cache_ifog_forward = cache_ifog[1:T,]
   out0_forward = out0[1 : nrow(out0) /2, ]
-  c0_forward = c0[1 : nrow(c0) /2, ]
+  c0_forward = c0[1 : N, ]
 
   [dx, dW, db, dout0, dc0] = lstm_backward(X, W, b, out0_forward, c0_forward, seq, dout_forward, dc_forward, cache_out_forward, cache_c_forward, cache_ifog_forward)
   #[dx, dW, db, dout0, dc0] = lstm::backward(dout_forward, dc_forward, X, W,b,T,D,seq,out0_forward, c0_forward,cache_out_forward, cache_c_forward, cache_ifog_forward)

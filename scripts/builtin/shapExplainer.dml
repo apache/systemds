@@ -62,7 +62,7 @@ return (Matrix[Double] row_phis, Double expected){
     " parallel cals.", verbose )
 
   #start with all features
-  features=shapUtils::u_range(1, ncol(x_instances))
+  features=u_range(1, ncol(x_instances))
 
   #handle partitions
   if(sum(partitions) != -1){
@@ -565,7 +565,7 @@ return (Matrix[Double] X_sample){
 
   # in case we need more than in the background data, use it multiple times with replacement
   if(samples >= number_of_bg_samples)  {
-    printShapMessage("WARN: More samples ("+toString(samples)+") are requested than available in the background dataset ("+toString(number_of_bg_samples)+"). Using replacement", 1)
+    u_printShapMessage("WARN: More samples ("+toString(samples)+") are requested than available in the background dataset ("+toString(number_of_bg_samples)+"). Using replacement", 1)
 
     # get number of full sets of background by integer division
     num_of_full_X_bg = samples %/% number_of_bg_samples

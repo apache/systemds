@@ -124,6 +124,30 @@ m_raJoin = function (Matrix[Double] A, Integer colA, Matrix[Double] B,
       Y = matrix(0, rows=0, cols=1)
     }
   }
+  else if( method == "hash" ) {
+    # Ensure histograms are aligned by creating a common set of keys
+    commonKeys = max(max(A[,colA]), max(B[,colB]));
+
+    # Build histograms for the left and right key columns
+    leftHist = table(A[,colA], 1, commonKeys, 1)
+    rightHist = table(B[,colB], 1, commonKeys, 1)
+    hist = leftHist * rightHist;
+
+    # Check for one-to-many
+    if( max(leftHist)>1 )
+      stop("Hash join implementation only supports one-to-many joins: "+toString(leftHist));
+
+    # Compute selection matrices P1 (one-side) with row duplication
+    keyPos1 = rowIndexMax(table(A[,colA], seq(1,nrow(A)), commonKeys, nrow(A)))
+    keyPos1 = removeEmpty(target=keyPos1, margin="rows", select=hist);
+    hist = removeEmpty(target=hist, margin="rows");
+    I1 = t(cumsum(rev(t(table(seq(1,nrow(hist)),hist))))) * keyPos1
+    I1 = removeEmpty(target=matrix(I1, nrow(I1)*ncol(I1),1), margin="rows"); # keys
+    P1 = table(seq(1,nrow(I1)), I1);
+
+    # Select left rows and concatenate right rows
+    Y = cbind(P1 %*% A, B);
+  }
 }
 
 # Function to perform parallel binary search

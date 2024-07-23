@@ -41,10 +41,78 @@ public class BuiltinRaJoinTest extends AutomatedTestBase
 		addTestConfiguration(TEST_NAME,new TestConfiguration(TEST_CLASS_DIR, TEST_NAME,new String[]{"result"}));
 	}
 
-	// TODO test all join methods
+	@Test
+	public void testRaJoinTest1() {
+		testRaJoinTest("nested-loop");
+	}
 	
 	@Test
-	public void testRaJoinTest() {
+	public void testRaJoinTest2() {
+		testRaJoinTest("sort-merge");
+	}
+	
+	@Test
+	public void testRaJoinTestwithDifferentColumn1() {
+		testRaJoinTestwithDifferentColumn("nested-loop");
+	}
+	
+	@Test
+	public void testRaJoinTestwithDifferentColumn2() {
+		testRaJoinTestwithDifferentColumn("sort-merge");
+	}
+	
+	@Test
+	public void testRaJoinTestwithDifferentColumn21() {
+		testRaJoinTestwithDifferentColumn2("nested-loop");
+	}
+	
+	@Test
+	public void testRaJoinTestwithDifferentColumn22() {
+		testRaJoinTestwithDifferentColumn2("sort-merge");
+	}
+	
+	@Test
+	public void testRaJoinTestwithNoMatchingRows1() {
+		testRaJoinTestwithNoMatchingRows("nested-loop");
+	}
+	
+	@Test
+	public void testRaJoinTestwithNoMatchingRows2() {
+		testRaJoinTestwithNoMatchingRows("sort-merge");
+	}
+	
+	@Test
+	public void testRaJoinTestwithAllMatchingRows1() {
+		testRaJoinTestwithAllMatchingRows("nested-loop");
+	}
+	
+	@Test
+	public void testRaJoinTestwithAllMatchingRows2() {
+		testRaJoinTestwithAllMatchingRows("sort-merge");
+	}
+	
+	@Test
+	public void testRaJoinTestwithAllMatchingRows3() {
+		testRaJoinTestwithAllMatchingRows("hash");
+	}
+	
+	@Test
+	public void testRaJoinTestwithOneToMany1() {
+		testRaJoinTestwithOneToMany("nested-loop");
+	}
+	
+	@Test
+	public void testRaJoinTestwithOneToMany2() {
+		testRaJoinTestwithOneToMany("sort-merge");
+	}
+	
+	@Test
+	public void testRaJoinTestwithOneToMany3() {
+		testRaJoinTestwithOneToMany("hash");
+	}
+	
+	
+	private void testRaJoinTest(String method) {
 		//generate actual dataset and variables
 		double[][] A = {
 				{1, 2, 3},
@@ -72,11 +140,10 @@ public class BuiltinRaJoinTest extends AutomatedTestBase
 				{4, 3, 5, 4, 7, 8},
 				{4, 3, 5, 4, 5, 10},
 		};
-		runRaJoinTest(A, colA, B, colB, Y);
+		runRaJoinTest(A, colA, B, colB, Y, method);
 	}
 
-	@Test
-	public void testRaJoinTestwithDifferentColumn() {
+	private void testRaJoinTestwithDifferentColumn(String method) {
 		// Generate actual dataset and variables
 		double[][] A = {
 				{1, 5, 3},
@@ -100,11 +167,10 @@ public class BuiltinRaJoinTest extends AutomatedTestBase
 				{2, 6, 8, 3, 7, 6},
 				{3, 7, 6, 2, 8, 7}
 		};
-		runRaJoinTest(A, colA, B, colB, Y);
+		runRaJoinTest(A, colA, B, colB, Y, method);
 	}
 
-	@Test
-	public void testRaJoinTestwithDifferentColumn2() {
+	private void testRaJoinTestwithDifferentColumn2(String method) {
 		// Generate actual dataset and variables
 		double[][] A = {
 				{1, 2, 3, 4, 5},
@@ -127,11 +193,10 @@ public class BuiltinRaJoinTest extends AutomatedTestBase
 				{6, 7, 8, 9, 10, 1, 10, 200},
 				{21, 22, 23, 24, 25, 50, 25, 500}
 		};
-		runRaJoinTest(A, colA, B, colB, Y);
+		runRaJoinTest(A, colA, B, colB, Y, method);
 	}
 
-	@Test
-	public void testRaJoinTestwithNoMatchingRows() {
+	private void testRaJoinTestwithNoMatchingRows(String method) {
 		// Generate actual dataset and variables
 		double[][] A = {
 				{1, 2, 3},
@@ -148,11 +213,10 @@ public class BuiltinRaJoinTest extends AutomatedTestBase
 
 		// Expected output matrix (no matching rows)
 		double[][] Y = {};
-		runRaJoinTest(A, colA, B, colB, Y);
+		runRaJoinTest(A, colA, B, colB, Y, method);
 	}
 
-	@Test
-	public void testRaJoinTestwithAllMatchingRows() {
+	private void testRaJoinTestwithAllMatchingRows(String method) {
 		// Generate actual dataset and variables
 		double[][] A = {
 				{1, 2, 3},
@@ -173,10 +237,39 @@ public class BuiltinRaJoinTest extends AutomatedTestBase
 				{2, 3, 4, 2, 3, 7},
 				{3, 4, 5, 3, 4, 8}
 		};
-		runRaJoinTest(A, colA, B, colB, Y);
+		runRaJoinTest(A, colA, B, colB, Y, method);
+	}
+	
+	private void testRaJoinTestwithOneToMany(String method) {
+		// Generate actual dataset and variables
+		double[][] A = {
+				{2, 2, 2},
+				{3, 3, 3},
+				{4, 4, 4}
+		};
+		double[][] B = {
+				{2, 1, 1},
+				{2, 2, 2},
+				{3, 1, 1},
+				{3, 2, 2},
+				{3, 3, 3},
+				{4, 1, 1}
+		};
+		int colA = 1;
+		int colB = 1;
+
+		double[][] Y = {
+				{2, 2, 2, 2, 1, 1},
+				{2, 2, 2, 2, 2, 2},
+				{3, 3, 3, 3, 1, 1},
+				{3, 3, 3, 3, 2, 2},
+				{3, 3, 3, 3, 3, 3},
+				{4, 4, 4, 4, 1, 1}
+		};
+		runRaJoinTest(A, colA, B, colB, Y, method);
 	}
 
-	private void runRaJoinTest(double [][] A, int colA, double [][] B, int colB, double [][] Y)
+	private void runRaJoinTest(double [][] A, int colA, double [][] B, int colB, double [][] Y, String method)
 	{
 		ExecMode platformOld = setExecMode(ExecMode.SINGLE_NODE);
 		
@@ -187,7 +280,8 @@ public class BuiltinRaJoinTest extends AutomatedTestBase
 
 			fullDMLScriptName = HOME + TEST_NAME + ".dml";
 			programArgs = new String[]{"-stats", "-args",
-				input("A"), String.valueOf(colA), input("B"), String.valueOf(colB), output("result") };
+				input("A"), String.valueOf(colA), input("B"),
+				String.valueOf(colB), method, output("result") };
 			System.out.println(Arrays.deepToString(A));
 			System.out.println(colA);
 			//fullRScriptName = HOME + TEST_NAME + ".R";

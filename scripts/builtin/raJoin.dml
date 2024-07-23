@@ -28,7 +28,7 @@
 # colA      Integer indicating the column index of matrix A to execute inner join command
 # B         Matrix of right left data [shape: N x M]
 # colA      Integer indicating the column index of matrix B to execute inner join command
-# method    Join implementation method (nested-loop, sort-merge)
+# method    Join implementation method (nested-loop, sort-merge, hash)
 # ------------------------------------------------------------------------------
 #
 # OUTPUT:
@@ -37,93 +37,88 @@
 # ------------------------------------------------------------------------------
 
 m_raJoin = function (Matrix[Double] A, Integer colA, Matrix[Double] B,
-  Integer colB, String method="sort-merge")
+  Integer colB, String method)
   return (Matrix[Double] Y)
 {
-  # Sort the input Matrix with specific column in order to ensure same output order
-  A = order(target = A, by = colA, decreasing=FALSE, index.return=FALSE)
-  B = order(target = B, by = colB, decreasing=FALSE, index.return=FALSE)
+    # Sort the input Matrix with specific column in order to ensure same output order
+    A = order(target = A, by = colA, decreasing=FALSE, index.return=FALSE)
+    B = order(target = B, by = colB, decreasing=FALSE, index.return=FALSE)
 
-  if (method == "nested-loop") {
-    # matrix of result data
-    Y = matrix(0, rows=0, cols=ncol(A) + ncol(B) )
+    if (method == "nested-loop") {
+        # matrix of result data
+        Y = matrix(0, rows=0, cols=ncol(A) + ncol(B) )
 
-    for (i in 1:nrow(A)) {
-      for (j in 1:nrow(B)) {
-        if (as.scalar(A[i, colA] == B[j, colB])) {
-          # Combine the matching row from A and B to match
-          match = cbind(A[i,], B[j,])
-          # merge the match row into result Y
-          Y = rbind(Y, match)
+        for (i in 1:nrow(A)) {
+          for (j in 1:nrow(B)) {
+            if (as.scalar(A[i, colA] == B[j, colB])) {
+              # Combine the matching row from A and B to match
+              match = cbind(A[i,], B[j,])
+              # merge the match row into result Y
+              Y = rbind(Y, match)
+            }
+          }
         }
-      }
     }
-  }
-  else if (method == "sort-merge") {
-    # get join key columns
-    left = A[, colA]
-    right = B[, colB]
+    else if (method == "sort-merge") {
+        # get join key columns
+        left = A[, colA]
+        right = B[, colB]
 
-    # Sort join keys
-    leftIdx = order(target = left, decreasing=FALSE)
-    rightIdx = order(target = right, decreasing=FALSE)
+        # Sort join keys
+        leftIdx = seq(1, nrow(A))
+        rightIdx = seq(1, nrow(B))
 
-    # Ensure histograms are aligned by creating a common set of keys
-    commonKeys = max(max(left), max(right));
+        # Ensure histograms are aligned by creating a common set of keys
+        commonKeys = max(max(left), max(right));
 
-    # Build histograms for the left and right key columns
-    leftHist = table(left, 1, commonKeys, 1)
-    rightHist = table(right, 1, commonKeys, 1)
+        # Build histograms for the left and right key columns
+        leftHist = table(left, 1, commonKeys, 1)
+        rightHist = table(right, 1, commonKeys, 1)
 
-    # Compute the number of rows for each pair of matching keys
-    histMul = leftHist * rightHist
+        # Compute the number of rows for each pair of matching keys
+        histMul = leftHist * rightHist
 
-    # Compute the prefx sums of histograms
-    cumLeftHist = cumsum(leftHist)
-    cumRightHist = cumsum(rightHist)
-    cumHistMul = cumsum(histMul)
+        # Compute the prefx sums of histograms
+        cumLeftHist = cumsum(leftHist)
+        cumRightHist = cumsum(rightHist)
+        cumHistMul = cumsum(histMul)
 
-    # Initialize the output size and output offsets
-    outSize = cumHistMul[nrow(cumHistMul), 1]
-    if(as.scalar(outSize > 0)) {
-      offset = seq(1, as.scalar(outSize), 1)
+        # Initialize the output size and output offsets
+        outSize = cumHistMul[nrow(cumHistMul), 1]
+        if(as.scalar(outSize > 0)) {
+            offset = seq(1, as.scalar(outSize), 1)
 
-      # Find the bucket of matching keys to which each output belongs
-      outBucket = parallelBinarySearch(offset, cumHistMul)
+            # Find the bucket of matching keys to which each output belongs
+            outBucket = parallelBinarySearch(offset, cumHistMul)
 
-      # Determine the number of rows in outBucket
-      num_rows = nrow(outBucket)
+            # Determine the number of rows in outBucket
+            num_rows = nrow(outBucket)
 
-      # Initialize a matrix to store the result
-      updatedoffset = matrix(0, rows=num_rows, cols=1)
-      leftOutIdx = matrix(0, rows=num_rows, cols=1)
-      rightOutIdx = matrix(0, rows=num_rows, cols=1)
+            # Compute the element-wise subtraction and store in result
+            # TODO performance - try avoid iterating over rows
+            # create a mask to apply the outBucket value as an index of following matrix
+            seqMatrix = matrix(1, rows=nrow(outBucket), cols=1) %*% t(seq(1, nrow(cumHistMul)))
+            mask = (outBucket == seqMatrix)
 
-      # Compute the element-wise subtraction and store in result
-      # TODO performance - try avoid iterating over rows
-      for(i in 1:num_rows) {
-        updatedoffset[i, 1] = offset[i, 1] - (cumHistMul[as.scalar(outBucket[i, 1]), 1] - histMul[as.scalar(outBucket[i, 1]), 1]) -1
-        leftOutIdx[i, 1] = as.scalar(cumLeftHist[as.scalar(outBucket[i, 1]), 1] - leftHist[as.scalar(outBucket[i, 1]), 1] + floor(updatedoffset[i, 1] / rightHist[as.scalar(outBucket[i, 1]), 1])) +1
-        rightOutIdx[i, 1] = as.scalar(cumRightHist[as.scalar(outBucket[i, 1]), 1] - rightHist[as.scalar(outBucket[i, 1]), 1] + (updatedoffset[i, 1] %% rightHist[as.scalar(outBucket[i, 1]), 1])) +1
-      }
+            updatedoffset = offset - (mask %*% (cumHistMul - histMul)) - 1
+            leftOutIdx = mask %*% (cumLeftHist - leftHist) + (floor(updatedoffset / mask %*% rightHist)) + 1
+            rightOutIdx = mask %*% (cumRightHist - rightHist) + (updatedoffset %% (mask %*% rightHist)) + 1
 
-      nrows = length(offset)
-      ncolsA = ncol(A)
-      ncolsB = ncol(B)
-      Y = matrix(0, rows=nrows, cols=ncolsA + ncolsB)
+            nrows = length(offset)
+            ncolsA = ncol(A)
+            ncolsB = ncol(B)
+            Y = matrix(0, rows=nrows, cols=ncolsA + ncolsB)
 
-      # Populate the output matrix Y
-      for (i in 1:nrows) {
-        Y[i, 1:ncolsA] = A[as.scalar(leftOutIdx[i, 1]), ]
-        Y[i, (ncolsA + 1):(ncolsA + ncolsB)] = B[as.scalar(rightOutIdx[i, 1]), ]
-      }
+            # Populate the output matrix Y
+            for (i in 1:nrows) {
+                Y[i, 1:ncolsA] = A[as.scalar(leftOutIdx[i, 1]), ]
+                Y[i, (ncolsA + 1):(ncolsA + ncolsB)] = B[as.scalar(rightOutIdx[i, 1]), ]
+            }
+        }
+        else{
+            Y = matrix(0, rows=0, cols=1)
+        }
     }
-    # TODO hash-based method which constructs permutation tables to replicate
-    # tuples of lhs and rhs and simply concatenates these tuples via cbind
-    else{
-      Y = matrix(0, rows=0, cols=1)
-    }
-  }
   else if( method == "hash" ) {
     # Ensure histograms are aligned by creating a common set of keys
     commonKeys = max(max(A[,colA]), max(B[,colB]));
@@ -152,24 +147,25 @@ m_raJoin = function (Matrix[Double] A, Integer colA, Matrix[Double] B,
 
 # Function to perform parallel binary search
 parallelBinarySearch = function (Matrix[double] offset, Matrix[double] cumHistMul)
-    return (Matrix[double] matched_result)
+return (Matrix[double] matched_result)
 {
-  n = nrow(cumHistMul)
-  result = matrix(0, rows=nrow(offset), cols=1)
-  for (i in 1:nrow(offset)) {
-    low = 1
-    high = n
-    while (low <= high) {
-      mid = as.integer((low + high) / 2)
-      if ( as.scalar(offset[i] <= cumHistMul[mid]) ) {
-        result[i] = mid
-        high = mid - 1
-      } else {
-        low = mid + 1
-      }
+    n = nrow(cumHistMul)
+    result = matrix(0, rows=nrow(offset), cols=1)
+    for (i in 1:nrow(offset)) {
+        low = 1
+        high = n
+        while (low <= high) {
+            mid = as.integer((low + high) / 2)
+            if ( as.scalar(offset[i] <= cumHistMul[mid]) ) {
+                result[i] = mid
+                high = mid - 1
+                }
+            else {
+                low = mid + 1
+            }
+        }
     }
-  }
 
-  matched_result = result
+    matched_result = result
 }
 

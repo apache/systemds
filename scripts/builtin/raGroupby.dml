@@ -26,7 +26,7 @@
 # ------------------------------------------------------------------------------
 # X         Matrix of input data [shape: N x M]
 # col       Integer indicating the column index to execute grupby command
-# method    Groupby implemention method (nested-loop)
+# method    Groupby implemention method (nested-loop, permutation-matrix)
 # ------------------------------------------------------------------------------
 #
 # OUTPUT:
@@ -34,50 +34,106 @@
 # Y         Matrix of selected data [shape N' x M] with N' <= N
 # ------------------------------------------------------------------------------
 
-m_raGroupby = function (Matrix[Double] X, Integer col, String method="nested-loop")
+m_raGroupby = function (Matrix[Double] X, Integer col, String method)
   return (Matrix[Double] Y)
 {
-  # Extract and sort unique values from the specified column (1-based index)
-  uniqueValues = unique(X[, col])
-  order_uniqueValues = order(target = uniqueValues, by = 1);
+    if (method == "nested-loop") {
+      # Extract and sort unique values from the specified column (1-based index)
+      uniqueValues = unique(X[, col])
+      order_uniqueValues = order(target = uniqueValues, by = 1);
 
-  # Calcute the number of groups
-  numGroups = nrow(uniqueValues)
+      # Calcute the number of groups
+      numGroups = nrow(uniqueValues)
 
-  # Determine the maximum number of rows in any group
-  maxRowsInGroup = max(table(X[,col],1));
+      # Determine the maximum number of rows in any group
+      maxRowsInGroup = max(table(X[,col],1));
 
-  # Define a zero matrix to put the group data into
-  Y=matrix(0,numGroups,maxRowsInGroup*(ncol(X)-1)+1)
+      # Define a zero matrix to put the group data into
+      Y=matrix(0,numGroups,maxRowsInGroup*(ncol(X)-1)+1)
 
-  # Put the ordered uniqueValues into first column of Y as group_id
-  Y[,1] = order_uniqueValues
+      # Put the ordered uniqueValues into first column of Y as group_id
+      #Y[,1] = order_uniqueValues
+      Y[,1] = uniqueValues
 
-  # Loop for each group
-  for(i in 1:numGroups){
-    index = 0
+      # Loop for each group
+      for(i in 1:numGroups){
+        index = 0
 
-    # Iterate each row in matrix X to deal with group data
-    for ( j in 1:nrow(X) ) {
-      if ( as.scalar( X[j,col] == order_uniqueValues[i,1] )) {
-        # Define the formula of the start and end column position
-        startCol = index*(ncol(X)-1) +2
-        endCol = startCol + (ncol(X)-2)
+        # Iterate each row in matrix X to deal with group data
+        for ( j in 1:nrow(X) ) {
+          if ( as.scalar( X[j,col] == uniqueValues[i,1] )) {
+          #if ( as.scalar( X[j,col] == order_uniqueValues[i,1] )) {
+            # Define the formula of the start and end column position
+            startCol = index*(ncol(X)-1) +2
+            endCol = startCol + (ncol(X)-2)
 
-        if (col == 1) {
-          # Case when the selected column is the first column
-          Y[i,startCol:endCol]=X[j,2:ncol(X)]
-        }  else if (col == ncol(X)) {
-          # Case when the selected column is the last column
-          Y[i,startCol:endCol]=X[j,1:(ncol(X)-1)]
-        } else {
-          # General case
-          newRow = cbind(X[j, 1:(col-1)], X[j, (col+1):ncol(X)])
-          Y[i,startCol:endCol]=newRow
+            if (col == 1) {
+              # Case when the selected column is the first column
+              Y[i,startCol:endCol]=X[j,2:ncol(X)]
+            }  else if (col == ncol(X)) {
+              # Case when the selected column is the last column
+              Y[i,startCol:endCol]=X[j,1:(ncol(X)-1)]
+            } else {
+              # General case
+              newRow = cbind(X[j, 1:(col-1)], X[j, (col+1):ncol(X)])
+              Y[i,startCol:endCol]=newRow
+            }
+            index = index +1
+          }
         }
-        index = index +1
       }
     }
-  }
+    else if (method == "permutation-matrix") {
+        # Extract the grouping column and create unique groups
+        key = X[,col]
+        key_unique = unique(X[, col])
+        numGroups = nrow(key_unique)
+
+        # Matrix for comparison
+        key_compare = key_unique %*% matrix(1, rows=1, cols=nrow(X))
+        key_matrix = matrix(1, rows=nrow(key_unique), cols=1) %*% t(key)
+
+        # Find group index
+        groupIndex = rowIndexMax(t(key_compare == key_matrix))
+
+        # Determine the maximum number of rows in any group
+        maxRowsInGroup = max(table(X[,col],1))
+        totalCells = (maxRowsInGroup) * (ncol(X)-1) +1
+
+        # Create permutation matrix P copy relevant tuples with a single matrix multiplication
+        P = matrix(0, rows=nrow(X), cols=numGroups * maxRowsInGroup)
+        # Create offsets to store the first column of each group
+        offsets = matrix(seq(0, (numGroups-1)*maxRowsInGroup, maxRowsInGroup), rows=numGroups, cols=1)
+
+        # Create row and column index for the permutation matrix
+        rowIndex = seq(1, nrow(X))
+        indexWithInGroups = cumsum(t(table(groupIndex, seq(1, nrow(X)), numGroups, nrow(X))))
+        print(indexWithInGroups)
+        selectedMatrix = table(seq(1, nrow(indexWithInGroups)), groupIndex)
+        print(selectedMatrix)
+        colIndex = groupIndex * maxRowsInGroup - maxRowsInGroup + rowSums(indexWithInGroups * selectedMatrix)
+
+        # Set values in P
+        P = table(seq(1, nrow(X)), colIndex)
+
+        # Perform matrix multiplication
+        Y_temp = t(P) %*% X
+
+        # Remove the selected column from Y_temp
+        if (col == 1) {
+            Y_temp_reduce = Y_temp[, col+1:ncol(Y_temp)]
+        }
+        else if (col == ncol(X)) {
+            Y_temp_reduce = Y_temp[, 1:col-1]
+        }
+        else {
+            Y_temp_reduce =  cbind(Y_temp[, 1:col-1],Y_temp[, col+1:ncol(Y_temp)])
+        }
+
+        # Set value of final output
+        Y = matrix(0, rows=numGroups, cols=totalCells)
+        Y[,1] = key_unique
+        Y[,2:ncol(Y)] = matrix(Y_temp_reduce, rows=numGroups, cols=totalCells-1)
+    }
 }
 

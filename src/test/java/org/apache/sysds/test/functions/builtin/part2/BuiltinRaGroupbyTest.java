@@ -75,9 +75,9 @@ public class BuiltinRaGroupbyTest extends AutomatedTestBase
 		// Expected output matrix
 		double[][] Y = {
 				{2, 1, 3, 0, 0},
+				{8, 4, 9, 0, 0},
 				{3, 1, 6, 0, 0},
-				{7, 4, 8, 4, 8},
-				{8, 4, 9, 0, 0}
+				{7, 4, 8, 4, 8}
 		};
 
 		runRaGroupbyTest(X, select_col, Y);
@@ -98,9 +98,9 @@ public class BuiltinRaGroupbyTest extends AutomatedTestBase
 		double[][] Y = {
 				{1, 1, 1},
 				{2, 2, 2},
-				{3, 3, 1},
 				{4, 4, 2},
-				{5, 5, 1}
+				{5, 5, 1},
+				{3, 3, 1}
 		};
 
 		runRaGroupbyTest(X, select_col, Y);
@@ -135,10 +135,15 @@ public class BuiltinRaGroupbyTest extends AutomatedTestBase
 			String HOME = SCRIPT_DIR + TEST_DIR;
 
 			fullDMLScriptName = HOME + TEST_NAME + ".dml";
+
+			//test single groupby methods
+			//programArgs = new String[]{"-stats", "-args",
+			//	input("X"), String.valueOf(col), output("result") };
+
+			//test all groupby methods
 			programArgs = new String[]{"-stats", "-args",
-				input("X"), String.valueOf(col), output("result") };
-			System.out.println(Arrays.deepToString(X));
-			System.out.println(col);
+					input("X"), String.valueOf(col), "nested-loop", "permutation-matrix", output("result1"), output("result2") };
+
 			//fullRScriptName = HOME + TEST_NAME + ".R";
 			//rCmd = "Rscript" + " " + fullRScriptName + " "
 			//	+ inputDir() + " " + col + " "  + expectedDir();
@@ -152,10 +157,12 @@ public class BuiltinRaGroupbyTest extends AutomatedTestBase
 			//runRScript(true);
 
 			//compare matrices
-			HashMap<CellIndex, Double> dmlfile = readDMLMatrixFromOutputDir("result");
+			HashMap<CellIndex, Double> dmlfile1 = readDMLMatrixFromOutputDir("result1");
+			HashMap<CellIndex, Double> dmlfile2 = readDMLMatrixFromOutputDir("result2");
 			HashMap<CellIndex, Double> expectedOutput = TestUtils.convert2DDoubleArrayToHashMap(Y);
 			//HashMap<CellIndex, Double> rfile  = readRMatrixFromExpectedDir("result");
-			TestUtils.compareMatrices(dmlfile, expectedOutput, eps, "Stat-DML", "Expected");
+			TestUtils.compareMatrices(dmlfile1, expectedOutput, eps, "Stat-DML", "Expected");
+			TestUtils.compareMatrices(dmlfile2, expectedOutput, eps, "Stat-DML", "Expected");
 		}
 		finally {
 			rtplatform = platformOld;

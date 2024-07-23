@@ -24,6 +24,6 @@ colA = as.integer($2)
 B = read($3)
 colB = as.integer($4)
 
-result = raJoin(A, colA, B, colB, "sort-merge");
-write(result, $5);
+result = raJoin(A, colA, B, colB, $5);
+write(result, $6);
 

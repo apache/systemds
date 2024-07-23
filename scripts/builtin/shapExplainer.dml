@@ -51,11 +51,11 @@
 # S              Matrix holding the shapley values along the cols, one row per instance.
 # expected       Double holding the average prediction of all instances.
 # -----------------------------------------------------------------------------
-m_shapExplainer = function(String model_function, list[unknown] model_args, Matrix[Double] x_instances,
+s_shapExplainer = function(String model_function, list[unknown] model_args, Matrix[Double] x_instances,
   Matrix[Double] X_bg, Integer n_permutations = 10, Integer n_samples = 100, Integer remove_non_var=0,
   Matrix[Double] partitions=as.matrix(-1), Integer seed = -1, Integer verbose = 0)
 return (Matrix[Double] row_phis, Double expected){
-  u_printShapMessage("--> Parallel Permutation Explainer for "+nrow(x_instances)+" rows.", verbose)
+  u_printShapMessage("Parallel Permutation Explainer for "+nrow(x_instances)+" rows.", verbose)
   u_printShapMessage("Number of Features: "+ncol(x_instances), verbose )
   total_preds=ncol(x_instances)*2*n_permutations*n_samples*nrow(x_instances)
   u_printShapMessage("Number of predictions: "+toString(total_preds)+" in "+nrow(x_instances)+
@@ -82,14 +82,14 @@ return (Matrix[Double] row_phis, Double expected){
   n_partition_features = total_features - perm_length
 
   #sample from X_bg
-  u_printShapMessage("-> Sampling from X_bg", verbose )
+  u_printShapMessage("Sampling from X_bg", verbose )
   # could use new samples for each permutation by sampling n_samples*n_permutations
   X_bg_samples = u_sample_with_potential_replace(X_bg=X_bg, samples=n_samples, seed=seed )
   row_phis     = matrix(0, rows=nrow(x_instances), cols=total_features)
   expected_m   = matrix(0, rows=nrow(x_instances), cols=1)
 
   #prepare masks for all permutations, since it stays the same for every row
-  u_printShapMessage("-> Preparing reusable intermediate masks.", verbose )
+  u_printShapMessage("Preparing reusable intermediate masks.", verbose )
   permutations = matrix(0, rows=n_permutations, cols=perm_length)
   masks_for_permutations = matrix(0, rows=perm_length*2*n_permutations*n_samples, cols=total_features)
 
@@ -105,7 +105,7 @@ return (Matrix[Double] row_phis, Double expected){
   #replicate background and mask it, since it also can stay the same for every row
   # could use new samples for each permutation by sampling n_samples*n_permutations and telling this function about it
   masked_bg_for_permutations = prepare_masked_X_bg(masks_for_permutations, X_bg_samples, 0)
-  u_printShapMessage("-> Computing phis in parallel.", verbose )
+  u_printShapMessage("Computing phis in parallel.", verbose )
 
   #enable spark execution for parfor if desired
   #TODO allow spark mode via parameter?

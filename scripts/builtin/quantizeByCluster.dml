@@ -17,9 +17,14 @@
 # specific language governing permissions and limitations
 # under the License.
 #
-#-------------------------------------------------------------
+#----------------------------------------------------------------------------------------
 
-# Builtin function that implements product quantization
+# The quantizeByCluster-function implements product quantization. Initially, it
+# divides the original vector space into M subspaces. The resulting lower dimensional
+# subvectors are then quantized. If the column count is not divisible by the number of
+# subspaces M, the data is padded with zeros. Optimal space decomposition can be
+# computed, when the data follows a Gaussian distribution. The function uses kmeans for
+# quantizing and svd to compute the space decomposition.
 #
 # INPUT:
 # ---------------------------------------------------------------------------------------
@@ -33,6 +38,10 @@
 # separate                      Cluster subspaces separately. If value is set to true,
 #                               kmeans is run M times, once for each subspace. Otherwise
 #                               kmeans is run only once.
+# space_decomp                  Decompose the vector space by multiplying the input
+#                               matrix X with an orthogonal matrix R. Assumes the data
+#                               follows a parametric Gaussian distribution.
+#                               Time complexity in O(nrow(X)^2 * min(nrow(X), ncol(X))).
 # seed                          The seed used for initial sampling. If set to -1 random
 #                               seeds are selected.
 # ---------------------------------------------------------------------------------------
@@ -45,13 +54,45 @@
 # codes     The mapping of vectors to centroids. Each vector of the input matrix X is mapped
 #           onto a vector of codes. The entries in the codes matrix are the indices of
 #           the vectors in the codebook. The codes matrix has the dimensions [nrow(X) x M].
+# R         The orthogonal matrix R which is applied to the input matrix X before performing
+#           the product quantization. Only relevant when space_decomp = TRUE.
 # ------------------------------------------------------------------------------------------
 
 m_quantizeByCluster = function(Matrix[Double]X, Integer M = 4, Integer k = 10, Integer runs = 10,
-    Integer max_iter = 1000, Double eps = 1e-6, Integer avg_sample_size_per_centroid = 50, Boolean separate=TRUE, Integer seed = -1)
-  return(Matrix[Double] codebook, Matrix[Double] codes)
+    Integer max_iter = 1000, Double eps = 1e-6, Integer avg_sample_size_per_centroid = 50, Boolean separate=TRUE, Boolean space_decomp=FALSE, Integer seed = -1)
+  return(Matrix[Double] codebook, Matrix[Double] codes, Matrix[Double] R)
 {
+  #Pad the data with zeros if the number of columns of the input matrix X is not divisible by M
+  if(ncol(X) %% M != 0) {
+    zeros = matrix(0, rows=nrow(X), cols=((ncol(X) %/% M) +1) * M - ncol(X))
+    X = cbind(X, zeros)
+  }
   subvector_size = ncol(X) / M
+  #Transform the vector space by an orthogonal matrix R.
+  #R is computed by reordering the principal directions of the input matrix X such that the variance of each subspace is balanced.
+  if(space_decomp) {
+    #Perform PCA using SVD
+    X2 = X - colMeans(X)
+    [U, S, V] = svd(X2)
+    eigen_v = diag(S)^2 / (nrow(X)-1)
+    #Balance the variance of the subspaces following a greedy approach.
+    R = matrix(0, rows=nrow(V), cols=ncol(V))
+    subspace_variance = matrix(1, rows=M, cols=1)
+    subspace_idx = seq(0,M-1) * subvector_size + 1
+    for(i in 1:nrow(R)) {
+      #free_buckets[j] == 0 iff subspace j is full
+      free_buckets = subspace_idx - seq(1,M) * subvector_size < 1
+      b = as.scalar(rowIndexMin(t(subspace_variance) %*% (diag(1 / free_buckets))))
+      subspace_variance[b] = subspace_variance[b] * eigen_v[i]
+      R[,as.scalar(subspace_idx[b])] = V[,i]
+      subspace_idx[b] = subspace_idx[b] + 1
+    }
+    #Apply space decomposition
+    X = X %*% t(R)
+  }
+  else {
+    R = matrix(0, rows=1, cols=1)
+  }
   #Kmeans is run just once for all subspaces together. Subvectors are mapped to vectors of the codebook of size k*M.
   #The ith entry of a code vector has a value in [1, k*M].
   if(!separate) {
@@ -62,14 +103,20 @@ m_quantizeByCluster = function(Matrix[Double]X, Integer M = 4, Integer k = 10, I
   #Kmeans is run for every subspace separately. Subvectors are mapped to a subset of k vectors of the codebook.
   #The ith entry of a code vector has a value in ((i-1)*k, i*k].
   else {
-    l = k
-    codebook = matrix(1, rows=l*M, cols=subvector_size)
+    codebook = matrix(1, rows=k*M, cols=subvector_size)
     codes = matrix(1, rows=nrow(X), cols=M)
-    parfor(i in 1:M, check=0) {
-       [tmp_cbook, tmp_c] = kmeans(X[,(i-1)*subvector_size+1:i*subvector_size], l, runs, max_iter, eps, FALSE, avg_sample_size_per_centroid, seed)
-       codebook[(i-1)*l+1:i*l,] = tmp_cbook
-       offset = matrix((i-1)*l, rows=nrow(codes), cols=1)
-       codes[,i] = tmp_c + offset
+    for(i in 1:M, check=0) {
+      [tmp_cbook, tmp_c] = kmeans(X[,(i-1)*subvector_size+1:i*subvector_size], k, runs, max_iter, eps, FALSE, avg_sample_size_per_centroid, seed)
+      #If no output is produced, use a single centroid
+      if(as.scalar(tmp_c[1,1]) < 1) {
+        tmp_cbook = matrix(0, rows=k, cols=subvector_size)
+        tmp_cbook[1,] =  colSums(X[,(i-1)*subvector_size+1:i*subvector_size]) / nrow(X)
+        tmp_c = matrix(1, rows=nrow(X), cols=1)
+      }
+      codebook[(i-1)*k+1:i*k,] = tmp_cbook
+      offset = matrix((i-1)*k, rows=nrow(codes), cols=1)
+      codes[,i] = tmp_c + offset
     }
   }
 }
+

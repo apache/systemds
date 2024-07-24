@@ -21,7 +21,6 @@ Fall = as.frame(x)
 jspec = "{ids: true, dummycode: " + dummy + "}";
 for(i in 1:repeats){
 	[T,M] = transformencode(target=Fall, spec=jspec)
-       # T[100,2]=1
 	xc = compress(T)
 }
 print(toString(xc))

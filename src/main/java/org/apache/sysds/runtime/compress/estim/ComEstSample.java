@@ -173,7 +173,6 @@ public class ComEstSample extends AComEst {
 		// Bound the estimate with the maxDistinct.
 		if(sampleFacts.numRows>sampleFacts.numOffs)
 			est += 1;
-		// LOG.error(sampleFacts.numOffs + " - " + sampled, null);
 		return Math.max(Math.min(est, Math.min(maxDistinct, numOffs)), 1);
 	}
 

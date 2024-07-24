@@ -85,7 +85,6 @@ public interface CoCoderFactory {
 			// filter groups
 			List<CompressedSizeInfoColGroup> currentCandidates = new ArrayList<>();
 			List<List<CompressedSizeInfoColGroup>> oheGroups = new ArrayList<>();
-			long startOheCheckTime = System.nanoTime();
 			boolean isSample = est.getClass().getSimpleName().equals("ComEstSample");
 			if(est.getNnzCols() == null)
 				LOG.debug("NNZ is null");
@@ -120,9 +119,6 @@ public interface CoCoderFactory {
 					}
 				}
 			}
-			long endOheCheckTime = System.nanoTime(); // End time for OHE checks
-			long durationOheCheckTime = endOheCheckTime - startOheCheckTime;
-			LOG.debug("OHE checks duration: " + durationOheCheckTime / 1e6 + " ms");
 
 			// If currentCandidates is not empty, add it to groups
 			if(!currentCandidates.isEmpty()) {

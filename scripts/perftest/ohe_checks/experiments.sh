@@ -3,12 +3,12 @@
 mkdir BaselineLogs
 mkdir OHELogs
 run_base() {
-    systemds experiment.dml \
+    $SYSTEMDS_ROOT/bin/systemds $SYSTEMDS_ROOT/target/SystemDS.jar experiment.dml \
     --seed 42 --debug -nvargs rows=$1 cols=$2 dummy="$3" distinct=$4 > BaselineLogs/${5}_${1}_rows_${2}_cols_${3}_encoded_base.txt 2>&1
 }
 
 run_ohe() {
-    systemds experiment.dml \
+    $SYSTEMDS_ROOT/bin/systemds $SYSTEMDS_ROOT/target/SystemDS.jar experiment.dml \
     --seed 42 --debug --config ohe.xml -nvargs rows=$1 cols=$2 dummy="$3" distinct=$4> OHELogs/${5}_${1}_rows_${2}_cols_${3}_encoded_ohe.txt 2>&1
 }
 

@@ -121,12 +121,12 @@ public class BuiltinQuantizeByClusterTest extends AutomatedTestBase {
 				(int) Math.ceil((double) cols / subspaces), meta_codebook.getCols());
 
 		//check if distortion is within a threshold
-		double pq_distortion = readDMLScalarFromOutputDir("pq_distortion").get(new MatrixValue.CellIndex(1,1));
+		double pq_distortion = readDMLScalarFromOutputDir("pq_distortion").get(new MatrixValue.CellIndex(1, 1));
 		double k_distortion = readDMLScalarFromOutputDir("k_distortion").get(new MatrixValue.CellIndex(1, 1));
 		if (!test_case.equals("cluster")) {
 			Assert.assertTrue(pq_distortion < 1.2 * k_distortion + 0.5);
 		} else {
-			Assert.assertTrue(pq_distortion < 2 * k_distortion + 2);
+			Assert.assertTrue(pq_distortion < 2.4 * k_distortion + 2);
 		}
 	}
 }

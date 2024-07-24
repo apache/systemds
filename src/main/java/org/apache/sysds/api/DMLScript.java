@@ -94,10 +94,16 @@ public class DMLScript
 	private static ExecMode   EXEC_MODE                  = DMLOptions.defaultOptions.execMode;
 	// Enable/disable to print statistics
 	public static boolean     STATISTICS                 = DMLOptions.defaultOptions.stats;
+	// Enable/disable to print statistics n-grams
+	public static boolean     STATISTICS_NGRAMS          = DMLOptions.defaultOptions.statsNGrams;
 	// Enable/disable to gather memory use stats in JMLC
 	public static boolean     JMLC_MEM_STATISTICS        = false;
 	// Set maximum heavy hitter count
 	public static int         STATISTICS_COUNT           = DMLOptions.defaultOptions.statsCount;
+	// The sizes of recorded n-gram tuples
+	public static int[]         STATISTICS_NGRAM_SIZES   = DMLOptions.defaultOptions.statsNGramSizes;
+	// Set top k displayed n-grams limit
+	public static int         STATISTICS_TOP_K_NGRAMS    = DMLOptions.defaultOptions.statsTopKNGrams;
 	// Set statistics maximum wrap length
 	public static int         STATISTICS_MAX_WRAP_LEN    = 30;
 	// Enable/disable to print federated statistics
@@ -250,6 +256,9 @@ public class DMLScript
 		{
 			STATISTICS            = dmlOptions.stats;
 			STATISTICS_COUNT      = dmlOptions.statsCount;
+			STATISTICS_NGRAMS     = dmlOptions.statsNGrams;
+			STATISTICS_NGRAM_SIZES = dmlOptions.statsNGramSizes;
+			STATISTICS_TOP_K_NGRAMS = dmlOptions.statsTopKNGrams;
 			FED_STATISTICS        = dmlOptions.fedStats;
 			FED_STATISTICS_COUNT  = dmlOptions.fedStatsCount;
 			JMLC_MEM_STATISTICS   = dmlOptions.memStats;

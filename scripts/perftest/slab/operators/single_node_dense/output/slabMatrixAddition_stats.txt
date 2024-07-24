@@ -1,0 +1,142 @@
+Number of rows: 2500000
+SystemDS Statistics:
+Total elapsed time:		6.055 sec.
+Total compilation time:		0.598 sec.
+Total execution time:		5.456 sec.
+Cache hits (Mem/Li/WB/FS/HDFS):	210/0/0/0/0.
+Cache writes (Li/WB/FS/HDFS):	2/5/0/0.
+Cache times (ACQr/m, RLS, EXP):	0.001/0.001/0.003/0.000 sec.
+HOP DAGs recompiled (PRED, SB):	0/0.
+HOP DAGs recompile time:	0.000 sec.
+Total JIT compile time:		5.483 sec.
+Total JVM GC count:		10.
+Total JVM GC time:		0.052 sec.
+Heavy hitter instructions:
+  #  Instruction        Time(s)  Count
+  1  +                    3.138      5
+  2  rand                 2.289    102
+  3  printRandElements    0.023      5
+  4  createvar            0.011    157
+  5  rmvar                0.004    362
+  6  print                0.003     50
+  7  rightIndex           0.003     50
+  8  castdts              0.002    150
+  9  castvti              0.001    100
+ 10  assignvar            0.000     13
+
+
+
+
+
+
+Number of rows: 5000000
+SystemDS Statistics:
+Total elapsed time:		10.853 sec.
+Total compilation time:		0.548 sec.
+Total execution time:		10.305 sec.
+Cache hits (Mem/Li/WB/FS/HDFS):	210/0/0/0/0.
+Cache writes (Li/WB/FS/HDFS):	2/5/0/0.
+Cache times (ACQr/m, RLS, EXP):	0.001/0.001/0.003/0.000 sec.
+HOP DAGs recompiled (PRED, SB):	0/0.
+HOP DAGs recompile time:	0.000 sec.
+Total JIT compile time:		8.763 sec.
+Total JVM GC count:		10.
+Total JVM GC time:		0.068 sec.
+Heavy hitter instructions:
+  #  Instruction        Time(s)  Count
+  1  +                    5.611      5
+  2  rand                 4.656    102
+  3  printRandElements    0.033      5
+  4  print                0.011     50
+  5  createvar            0.011    157
+  6  rmvar                0.004    362
+  7  rightIndex           0.003     50
+  8  castdts              0.002    150
+  9  castvti              0.001    100
+ 10  assignvar            0.000     13
+
+
+
+
+
+
+Number of rows: 10000000
+SystemDS Statistics:
+Total elapsed time:		52.619 sec.
+Total compilation time:		0.652 sec.
+Total execution time:		51.967 sec.
+Cache hits (Mem/Li/WB/FS/HDFS):	210/0/0/0/0.
+Cache writes (Li/WB/FS/HDFS):	2/0/5/0.
+Cache times (ACQr/m, RLS, EXP):	0.001/0.001/34.227/0.000 sec.
+HOP DAGs recompiled (PRED, SB):	0/0.
+HOP DAGs recompile time:	0.000 sec.
+Total JIT compile time:		13.425 sec.
+Total JVM GC count:		10.
+Total JVM GC time:		0.08 sec.
+Heavy hitter instructions:
+  #  Instruction        Time(s)  Count
+  1  +                   43.302      5
+  2  rand                 8.637    102
+  3  printRandElements    0.020      5
+  4  createvar            0.011    157
+  5  rmvar                0.003    362
+  6  rightIndex           0.002     50
+  7  print                0.002     50
+  8  castdts              0.001    150
+  9  castvti              0.000    100
+ 10  assignvar            0.000     13
+
+
+
+
+
+
+Number of rows: 20000000
+SystemDS Statistics:
+Total elapsed time:		15.350 sec.
+Total compilation time:		0.627 sec.
+Total execution time:		14.723 sec.
+Cache hits (Mem/Li/WB/FS/HDFS):	2/0/0/0/0.
+Cache writes (Li/WB/FS/HDFS):	2/0/0/0.
+Cache times (ACQr/m, RLS, EXP):	0.000/0.000/0.000/0.000 sec.
+HOP DAGs recompiled (PRED, SB):	0/0.
+HOP DAGs recompile time:	0.000 sec.
+Total JIT compile time:		2.19 sec.
+Total JVM GC count:		9.
+Total JVM GC time:		0.133 sec.
+Heavy hitter instructions:
+ #  Instruction  Time(s)  Count
+ 1  rand          14.551      2
+ 2  createvar      0.009      3
+ 3  rmvar          0.000      1
+ 4  cpvar          0.000      2
+ 5  assignvar      0.000      3
+
+Exception in thread "main" java.lang.OutOfMemoryError: Java heap space
+	at org.apache.sysds.runtime.data.DenseBlockFP64.resetNoFill(DenseBlockFP64.java:79)
+	at org.apache.sysds.runtime.data.DenseBlockFP64.<init>(DenseBlockFP64.java:37)
+	at org.apache.sysds.runtime.data.DenseBlockFactory.createDenseBlock(DenseBlockFactory.java:119)
+	at org.apache.sysds.runtime.data.DenseBlockFactory.createDenseBlock(DenseBlockFactory.java:62)
+	at org.apache.sysds.runtime.data.DenseBlockFactory.createDenseBlock(DenseBlockFactory.java:45)
+	at org.apache.sysds.runtime.data.DenseBlockFactory.createDenseBlock(DenseBlockFactory.java:37)
+	at org.apache.sysds.runtime.matrix.data.MatrixBlock.allocateDenseBlock(MatrixBlock.java:446)
+	at org.apache.sysds.runtime.matrix.data.MatrixBlock.allocateDenseBlock(MatrixBlock.java:434)
+	at org.apache.sysds.runtime.matrix.data.MatrixBlock.allocateDenseBlock(MatrixBlock.java:410)
+	at org.apache.sysds.runtime.matrix.data.MatrixBlock.allocateBlock(MatrixBlock.java:429)
+	at org.apache.sysds.runtime.matrix.data.LibMatrixBincell.bincellOp(LibMatrixBincell.java:268)
+	at org.apache.sysds.runtime.matrix.data.MatrixBlock.binaryOperations(MatrixBlock.java:3094)
+	at org.apache.sysds.runtime.instructions.cp.BinaryMatrixMatrixCPInstruction.processInstruction(BinaryMatrixMatrixCPInstruction.java:91)
+	at org.apache.sysds.runtime.controlprogram.ProgramBlock.executeSingleInstruction(ProgramBlock.java:254)
+	at org.apache.sysds.runtime.controlprogram.ProgramBlock.executeInstructions(ProgramBlock.java:203)
+	at org.apache.sysds.runtime.controlprogram.BasicProgramBlock.execute(BasicProgramBlock.java:127)
+	at org.apache.sysds.runtime.controlprogram.ForProgramBlock.execute(ForProgramBlock.java:143)
+	at org.apache.sysds.runtime.controlprogram.Program.execute(Program.java:158)
+	at org.apache.sysds.api.ScriptExecutorUtils.executeRuntimeProgram(ScriptExecutorUtils.java:89)
+	at org.apache.sysds.api.DMLScript.execute(DMLScript.java:479)
+	at org.apache.sysds.api.DMLScript.executeScript(DMLScript.java:315)
+	at org.apache.sysds.api.DMLScript.main(DMLScript.java:202)
+
+
+
+
+

@@ -1,0 +1,116 @@
+Number of rows: 2500000
+SystemDS Statistics:
+Total elapsed time:		2.230 sec.
+Total compilation time:		0.516 sec.
+Total execution time:		1.714 sec.
+Cache hits (Mem/Li/WB/FS/HDFS):	5/0/0/0/0.
+Cache writes (Li/WB/FS/HDFS):	1/0/0/0.
+Cache times (ACQr/m, RLS, EXP):	0.000/0.000/0.000/0.000 sec.
+HOP DAGs recompiled (PRED, SB):	0/0.
+HOP DAGs recompile time:	0.000 sec.
+Total JIT compile time:		3.797 sec.
+Total JVM GC count:		4.
+Total JVM GC time:		0.015 sec.
+Heavy hitter instructions:
+ #  Instruction  Time(s)  Count
+ 1  rand           1.159      1
+ 2  uasqk+         0.542      5
+ 3  createvar      0.008      1
+ 4  rmvar          0.001     11
+ 5  print          0.001      5
+ 6  sqrt           0.001      5
+ 7  mvvar          0.000      1
+ 8  assignvar      0.000      3
+
+
+
+
+
+
+Number of rows: 5000000
+SystemDS Statistics:
+Total elapsed time:		3.710 sec.
+Total compilation time:		0.481 sec.
+Total execution time:		3.229 sec.
+Cache hits (Mem/Li/WB/FS/HDFS):	5/0/0/0/0.
+Cache writes (Li/WB/FS/HDFS):	1/0/0/0.
+Cache times (ACQr/m, RLS, EXP):	0.000/0.000/0.000/0.000 sec.
+HOP DAGs recompiled (PRED, SB):	0/0.
+HOP DAGs recompile time:	0.000 sec.
+Total JIT compile time:		7.812 sec.
+Total JVM GC count:		4.
+Total JVM GC time:		0.017 sec.
+Heavy hitter instructions:
+ #  Instruction  Time(s)  Count
+ 1  rand           2.367      1
+ 2  uasqk+         0.847      5
+ 3  createvar      0.009      1
+ 4  rmvar          0.001     11
+ 5  print          0.001      5
+ 6  sqrt           0.001      5
+ 7  mvvar          0.000      1
+ 8  assignvar      0.000      3
+
+
+
+
+
+
+Number of rows: 10000000
+SystemDS Statistics:
+Total elapsed time:		6.169 sec.
+Total compilation time:		0.533 sec.
+Total execution time:		5.637 sec.
+Cache hits (Mem/Li/WB/FS/HDFS):	5/0/0/0/0.
+Cache writes (Li/WB/FS/HDFS):	1/0/0/0.
+Cache times (ACQr/m, RLS, EXP):	0.000/0.000/0.000/0.000 sec.
+HOP DAGs recompiled (PRED, SB):	0/0.
+HOP DAGs recompile time:	0.000 sec.
+Total JIT compile time:		7.752 sec.
+Total JVM GC count:		4.
+Total JVM GC time:		0.017 sec.
+Heavy hitter instructions:
+ #  Instruction  Time(s)  Count
+ 1  rand           4.224      1
+ 2  uasqk+         1.399      5
+ 3  createvar      0.008      1
+ 4  rmvar          0.001     11
+ 5  sqrt           0.001      5
+ 6  print          0.001      5
+ 7  mvvar          0.000      1
+ 8  assignvar      0.000      3
+
+
+
+
+
+
+Number of rows: 20000000
+SystemDS Statistics:
+Total elapsed time:		10.135 sec.
+Total compilation time:		0.479 sec.
+Total execution time:		9.656 sec.
+Cache hits (Mem/Li/WB/FS/HDFS):	5/0/0/0/0.
+Cache writes (Li/WB/FS/HDFS):	1/0/0/0.
+Cache times (ACQr/m, RLS, EXP):	0.000/0.000/0.000/0.000 sec.
+HOP DAGs recompiled (PRED, SB):	0/0.
+HOP DAGs recompile time:	0.000 sec.
+Total JIT compile time:		6.477 sec.
+Total JVM GC count:		4.
+Total JVM GC time:		0.019 sec.
+Heavy hitter instructions:
+ #  Instruction  Time(s)  Count
+ 1  rand           6.996      1
+ 2  uasqk+         2.643      5
+ 3  createvar      0.010      1
+ 4  rmvar          0.002     11
+ 5  sqrt           0.001      5
+ 6  print          0.001      5
+ 7  mvvar          0.000      1
+ 8  assignvar      0.000      3
+
+
+
+
+
+

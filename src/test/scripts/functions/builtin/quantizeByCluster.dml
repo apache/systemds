@@ -82,13 +82,20 @@ else {
 [k_codebook, k_codes] = kmeans(vectors, $k * $subspaces, $runs, $max_iter, $eps, FALSE, $vectors_per_cluster, 2)
 
 #construct vectors from codes
+k_result = construct_vectors(k_codes, k_codebook)
 pq_result = construct_vectors(codes, codebook)
 if(space_decomp) {
   pq_result = pq_result %*% R
+  #check if R is an orthogonal matrix
+  is_orthogonal = sum((t(R) %*% R - diag(matrix(1, nrow(R), 1)))^2)
 }
-k_result = construct_vectors(k_codes, k_codebook)
+else {
+  is_orthogonal = 0
+}
 
-is_orthogonal = sum((t(R) %*% R - diag(matrix(1, nrow(R), 1)))^2)
+if($cols %% $subspaces != 0) {
+  pq_result = pq_result[,1:$cols]
+}
 
 #calculate distortion
 pq_distortion = as.scalar(colSums(rowSums((vectors - pq_result)^2)) / rows)

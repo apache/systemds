@@ -73,6 +73,8 @@ public class BuiltinQuantizeByClusterTest extends AutomatedTestBase {
 			{"uniform", 1024, 64, 12, 8, 12, 40, false}, {"uniform", 1024, 64, 12, 4, 12, 40, false}, {"uniform", 1024, 64, 12, 2, 12, 40, false},
 			{"normal",  1024, 64, 12, 8, 12, 40, true},  {"normal",  1024, 64, 12, 4, 12, 40, true},  {"normal",  1024, 64, 12, 2, 12, 40, true},
 			{"normal",  1024, 64, 12, 8, 12, 40, false}, {"normal",  1024, 64, 12, 4, 12, 40, false}, {"normal",  1024, 64, 12, 2, 12, 40, false},
+			{"normal",  1024, 53, 12, 8, 12, 40, true},  {"normal",  1024, 61, 12, 4, 12, 40, true},  {"normal",  1024, 83, 12, 2, 12, 40, true},
+			{"normal",  1024, 53, 12, 8, 12, 40, false},  {"normal",  1024, 61, 12, 4, 12, 40, false},  {"normal",  1024, 83, 12, 2, 12, 40, false},
 		});
 	}
 
@@ -116,7 +118,7 @@ public class BuiltinQuantizeByClusterTest extends AutomatedTestBase {
 			meta_codes.getRows() == (long) clusters * vectors_per_cluster 
 			&& meta_codes.getCols() == subspaces);
 		Assert.assertEquals("Centroid dimensions should be equal to expected dimensions",
-			cols / subspaces, meta_codebook.getCols());
+				(int) Math.ceil((double) cols / subspaces), meta_codebook.getCols());
 
 		//check if distortion is within a threshold
 		double pq_distortion = readDMLScalarFromOutputDir("pq_distortion").get(new MatrixValue.CellIndex(1,1));

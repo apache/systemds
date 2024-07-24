@@ -24,7 +24,7 @@
 # subvectors are then quantized. If the column count is not divisible by the number of
 # subspaces M, the data is padded with zeros. Optimal space decomposition can be
 # computed, when the data follows a Gaussian distribution. The function uses kmeans for
-# quantizing and svd for computing the space decomposition.
+# quantizing and svd to compute the space decomposition.
 #
 # INPUT:
 # ---------------------------------------------------------------------------------------
@@ -54,7 +54,7 @@
 # codes     The mapping of vectors to centroids. Each vector of the input matrix X is mapped
 #           onto a vector of codes. The entries in the codes matrix are the indices of
 #           the vectors in the codebook. The codes matrix has the dimensions [nrow(X) x M].
-# R         The orthogonal matrix R which was applied to the input matrix X before performing
+# R         The orthogonal matrix R which is applied to the input matrix X before performing
 #           the product quantization. Only relevant when space_decomp = TRUE.
 # ------------------------------------------------------------------------------------------
 
@@ -62,7 +62,7 @@ m_quantizeByCluster = function(Matrix[Double]X, Integer M = 4, Integer k = 10, I
     Integer max_iter = 1000, Double eps = 1e-6, Integer avg_sample_size_per_centroid = 50, Boolean separate=TRUE, Boolean space_decomp=FALSE, Integer seed = -1)
   return(Matrix[Double] codebook, Matrix[Double] codes, Matrix[Double] R)
 {
-  #Pad the data with zeros if the number of columns of the input matrix X are not divisible by M
+  #Pad the data with zeros if the number of columns of the input matrix X is not divisible by M
   if(ncol(X) %% M != 0) {
     zeros = matrix(0, rows=nrow(X), cols=((ncol(X) %/% M) +1) * M - ncol(X))
     X = cbind(X, zeros)
@@ -80,8 +80,9 @@ m_quantizeByCluster = function(Matrix[Double]X, Integer M = 4, Integer k = 10, I
     subspace_variance = matrix(1, rows=M, cols=1)
     subspace_idx = seq(0,M-1) * subvector_size + 1
     for(i in 1:nrow(R)) {
-      empty_buckets = subspace_idx - seq(1,M) * subvector_size < 1
-      b = as.scalar(rowIndexMin(t(subspace_variance) %*% (diag(1 / empty_buckets))))
+      #free_buckets[j] == 0 iff subspace j is full
+      free_buckets = subspace_idx - seq(1,M) * subvector_size < 1
+      b = as.scalar(rowIndexMin(t(subspace_variance) %*% (diag(1 / free_buckets))))
       subspace_variance[b] = subspace_variance[b] * eigen_v[i]
       R[,as.scalar(subspace_idx[b])] = V[,i]
       subspace_idx[b] = subspace_idx[b] + 1
@@ -104,7 +105,7 @@ m_quantizeByCluster = function(Matrix[Double]X, Integer M = 4, Integer k = 10, I
   else {
     codebook = matrix(1, rows=k*M, cols=subvector_size)
     codes = matrix(1, rows=nrow(X), cols=M)
-    parfor(i in 1:M, check=0) {
+    for(i in 1:M, check=0) {
        [tmp_cbook, tmp_c] = kmeans(X[,(i-1)*subvector_size+1:i*subvector_size], k, runs, max_iter, eps, FALSE, avg_sample_size_per_centroid, seed)
        #If no output is produced, use a single centroid
        if(as.scalar(tmp_c[1,1]) < 1) {

@@ -43,7 +43,6 @@ out0 = rbind(out0, out0)
 c0 = rbind(c0, c0)
 
 [out, c, cache_out, cache_c, cache_ifog] = bilstm::forward(lstmIn, W, W, b, b,seq_length,num_features,seq,out0, c0)
-print(toString(out))
 
 dc = matrix(0,rows=batch_size*2,cols=hidden_size)
 if(batch_size == 5){
@@ -75,20 +74,17 @@ expected = read($7 + "_" + $1 +"_" + $2 +"_" + $3 +"_" + $4 + ".csv", format="cs
 tmp = rbind(dw, dw_reverse, db, db_reverse)
 error = expected - tmp
 error = max(abs(error))
-print(error)
 errors[1,1] = error
 
 expected2 = read($8 + "_" + $1 +"_" + $2 +"_" + $3 +"_" + $4 + ".csv", format="csv");
 tmp = rbind(dout0, dc0)
 error = expected2 - tmp
 error = max(abs(error))
-print(error)
 errors[1,2] = error
 
 expected3 = read($9 + "_" + $1 +"_" + $2 +"_" + $3 +"_" + $4 + ".csv", format="csv");
 error = expected3 - dx
 error = max(abs(error))
-print(error)
 errors[1,3] = error
 
 write(errors, $10, format="text");

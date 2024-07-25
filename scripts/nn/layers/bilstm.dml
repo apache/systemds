@@ -143,7 +143,9 @@ backward = function(matrix[double] dout, matrix[double] dc,
    *      was not used downstream, then `dc` would be an empty matrix.
    *  - X: Inputs, of shape (N, T*D).
    *  - W: Weights, of shape (D+M, 4M).
+   *  - W_reverse: Weights, of shape (D+M, 4M).
    *  - b: Biases, of shape (1, 4M).
+   *  - b_reverse: Biases, of shape (1, 4M).
    *  - T: Length of example sequences (number of timesteps).
    *  - D: Dimensionality of the input features.
    *  - seq: Whether `dout` is for all timesteps,
@@ -163,9 +165,9 @@ backward = function(matrix[double] dout, matrix[double] dc,
    * Outputs:
    *  - dX: Gradient wrt `X`, of shape (N, T*D).
    *  - dW: Gradient wrt `W`, of shape (D+M, 4M).
-   *  - dW_reverse: Gradient wrt `W`, of shape (D+M, 4M).
+   *  - dW_reverse: Gradient wrt `W_reverse`, of shape (D+M, 4M).
    *  - db: Gradient wrt `b`, of shape (1, 4M).
-   *  - db_reverse: Gradient wrt `b`, of shape (1, 4M).
+   *  - db_reverse: Gradient wrt `b_reverse`, of shape (1, 4M).
    *  - dout0: Gradient wrt `out0`, of shape (N*2, M).
    *  - dc0: Gradient wrt `c0`, of shape (N*2, M).
    */

@@ -56,5 +56,5 @@ if(seq == FALSE){
 }
 error = expected - out2
 error = max(abs(error))
-print(error)
+#print(error)
 write(error, $8, format="text");

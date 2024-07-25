@@ -40,85 +40,85 @@ m_raJoin = function (Matrix[Double] A, Integer colA, Matrix[Double] B,
   Integer colB, String method)
   return (Matrix[Double] Y)
 {
-    # Sort the input Matrix with specific column in order to ensure same output order
-    A = order(target = A, by = colA, decreasing=FALSE, index.return=FALSE)
-    B = order(target = B, by = colB, decreasing=FALSE, index.return=FALSE)
+  # Sort the input Matrix with specific column in order to ensure same output order
+  A = order(target = A, by = colA, decreasing=FALSE, index.return=FALSE)
+  B = order(target = B, by = colB, decreasing=FALSE, index.return=FALSE)
 
-    if (method == "nested-loop") {
-        # matrix of result data
-        Y = matrix(0, rows=0, cols=ncol(A) + ncol(B) )
+  if (method == "nested-loop") {
+    # matrix of result data
+    Y = matrix(0, rows=0, cols=ncol(A) + ncol(B) )
 
-        for (i in 1:nrow(A)) {
-          for (j in 1:nrow(B)) {
-            if (as.scalar(A[i, colA] == B[j, colB])) {
-              # Combine the matching row from A and B to match
-              match = cbind(A[i,], B[j,])
-              # merge the match row into result Y
-              Y = rbind(Y, match)
-            }
-          }
+    for (i in 1:nrow(A)) {
+      for (j in 1:nrow(B)) {
+        if (as.scalar(A[i, colA] == B[j, colB])) {
+          # Combine the matching row from A and B to match
+          match = cbind(A[i,], B[j,])
+          # merge the match row into result Y
+          Y = rbind(Y, match)
         }
+      }
     }
-    else if (method == "sort-merge") {
-        # get join key columns
-        left = A[, colA]
-        right = B[, colB]
+  }
+  else if (method == "sort-merge") {
+    # get join key columns
+    left = A[, colA]
+    right = B[, colB]
 
-        # Sort join keys
-        leftIdx = seq(1, nrow(A))
-        rightIdx = seq(1, nrow(B))
+    # Sort join keys
+    leftIdx = seq(1, nrow(A))
+    rightIdx = seq(1, nrow(B))
 
-        # Ensure histograms are aligned by creating a common set of keys
-        commonKeys = max(max(left), max(right));
+    # Ensure histograms are aligned by creating a common set of keys
+    commonKeys = max(max(left), max(right));
 
-        # Build histograms for the left and right key columns
-        leftHist = table(left, 1, commonKeys, 1)
-        rightHist = table(right, 1, commonKeys, 1)
+    # Build histograms for the left and right key columns
+    leftHist = table(left, 1, commonKeys, 1)
+    rightHist = table(right, 1, commonKeys, 1)
 
-        # Compute the number of rows for each pair of matching keys
-        histMul = leftHist * rightHist
+    # Compute the number of rows for each pair of matching keys
+    histMul = leftHist * rightHist
 
-        # Compute the prefx sums of histograms
-        cumLeftHist = cumsum(leftHist)
-        cumRightHist = cumsum(rightHist)
-        cumHistMul = cumsum(histMul)
+    # Compute the prefx sums of histograms
+    cumLeftHist = cumsum(leftHist)
+    cumRightHist = cumsum(rightHist)
+    cumHistMul = cumsum(histMul)
 
-        # Initialize the output size and output offsets
-        outSize = cumHistMul[nrow(cumHistMul), 1]
-        if(as.scalar(outSize > 0)) {
-            offset = seq(1, as.scalar(outSize), 1)
+    # Initialize the output size and output offsets
+    outSize = cumHistMul[nrow(cumHistMul), 1]
+    if(as.scalar(outSize > 0)) {
+      offset = seq(1, as.scalar(outSize), 1)
 
-            # Find the bucket of matching keys to which each output belongs
-            outBucket = parallelBinarySearch(offset, cumHistMul)
+      # Find the bucket of matching keys to which each output belongs
+      outBucket = parallelBinarySearch(offset, cumHistMul)
 
-            # Determine the number of rows in outBucket
-            num_rows = nrow(outBucket)
+      # Determine the number of rows in outBucket
+      num_rows = nrow(outBucket)
 
-            # Compute the element-wise subtraction and store in result
-            # TODO performance - try avoid iterating over rows
-            # create a mask to apply the outBucket value as an index of following matrix
-            seqMatrix = matrix(1, rows=nrow(outBucket), cols=1) %*% t(seq(1, nrow(cumHistMul)))
-            mask = (outBucket == seqMatrix)
+      # Compute the element-wise subtraction and store in result
+      # TODO performance - try avoid iterating over rows
+      # create a mask to apply the outBucket value as an index of following matrix
+      seqMatrix = matrix(1, rows=nrow(outBucket), cols=1) %*% t(seq(1, nrow(cumHistMul)))
+      mask = (outBucket == seqMatrix)
 
-            updatedoffset = offset - (mask %*% (cumHistMul - histMul)) - 1
-            leftOutIdx = mask %*% (cumLeftHist - leftHist) + (floor(updatedoffset / mask %*% rightHist)) + 1
-            rightOutIdx = mask %*% (cumRightHist - rightHist) + (updatedoffset %% (mask %*% rightHist)) + 1
+      updatedoffset = offset - (mask %*% (cumHistMul - histMul)) - 1
+      leftOutIdx = mask %*% (cumLeftHist - leftHist) + (floor(updatedoffset / mask %*% rightHist)) + 1
+      rightOutIdx = mask %*% (cumRightHist - rightHist) + (updatedoffset %% (mask %*% rightHist)) + 1
 
-            nrows = length(offset)
-            ncolsA = ncol(A)
-            ncolsB = ncol(B)
-            Y = matrix(0, rows=nrows, cols=ncolsA + ncolsB)
+      nrows = length(offset)
+      ncolsA = ncol(A)
+      ncolsB = ncol(B)
+      Y = matrix(0, rows=nrows, cols=ncolsA + ncolsB)
 
-            # Populate the output matrix Y
-            for (i in 1:nrows) {
-                Y[i, 1:ncolsA] = A[as.scalar(leftOutIdx[i, 1]), ]
-                Y[i, (ncolsA + 1):(ncolsA + ncolsB)] = B[as.scalar(rightOutIdx[i, 1]), ]
-            }
-        }
-        else{
-            Y = matrix(0, rows=0, cols=1)
-        }
+      # Populate the output matrix Y
+      for (i in 1:nrows) {
+        Y[i, 1:ncolsA] = A[as.scalar(leftOutIdx[i, 1]), ]
+        Y[i, (ncolsA + 1):(ncolsA + ncolsB)] = B[as.scalar(rightOutIdx[i, 1]), ]
+      }
     }
+    else{
+      Y = matrix(0, rows=0, cols=1)
+    }
+  }
   else if( method == "hash" ) {
     # Ensure histograms are aligned by creating a common set of keys
     commonKeys = max(max(A[,colA]), max(B[,colB]));
@@ -149,23 +149,23 @@ m_raJoin = function (Matrix[Double] A, Integer colA, Matrix[Double] B,
 parallelBinarySearch = function (Matrix[double] offset, Matrix[double] cumHistMul)
 return (Matrix[double] matched_result)
 {
-    n = nrow(cumHistMul)
-    result = matrix(0, rows=nrow(offset), cols=1)
-    for (i in 1:nrow(offset)) {
-        low = 1
-        high = n
-        while (low <= high) {
-            mid = as.integer((low + high) / 2)
-            if ( as.scalar(offset[i] <= cumHistMul[mid]) ) {
-                result[i] = mid
-                high = mid - 1
-                }
-            else {
-                low = mid + 1
-            }
-        }
+  n = nrow(cumHistMul)
+  result = matrix(0, rows=nrow(offset), cols=1)
+  for (i in 1:nrow(offset)) {
+    low = 1
+    high = n
+    while (low <= high) {
+      mid = as.integer((low + high) / 2)
+      if ( as.scalar(offset[i] <= cumHistMul[mid]) ) {
+        result[i] = mid
+        high = mid - 1
+      }
+      else {
+        low = mid + 1
+      }
     }
+  }
 
-    matched_result = result
+  matched_result = result
 }
 

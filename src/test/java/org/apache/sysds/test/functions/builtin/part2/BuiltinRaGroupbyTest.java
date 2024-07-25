@@ -42,7 +42,46 @@ public class BuiltinRaGroupbyTest extends AutomatedTestBase
 	}
 
 	@Test
-	public void testRaGroupbyTest() {
+	public void testRaGroupbyTest1() {
+		testRaGroupbyTest("nested-loop");
+	}
+
+	@Test
+	public void testRaGroupbyTest2() {
+		testRaGroupbyTest("permutation-matrix");
+	}
+
+	@Test
+	public void testRaGroupbyTestwithDifferentColumn1() {
+		testRaGroupbyTestwithDifferentColumn("nested-loop");
+	}
+
+	@Test
+	public void testRaGroupbyTestwithDifferentColumn2() {
+		testRaGroupbyTestwithDifferentColumn("permutation-matrix");
+	}
+
+	@Test
+	public void testRaGroupbyTestwithNoGroup1() {
+		testRaGroupbyTestwithNoGroup("nested-loop");
+	}
+
+	@Test
+	public void testRaGroupbyTestwithNoGroup2() {
+		testRaGroupbyTestwithNoGroup("permutation-matrix");
+	}
+
+	@Test
+	public void testRaGroupbyTestwithOneGroup1() {
+		testRaGroupbyTestwithOneGroup("nested-loop");
+	}
+
+	@Test
+	public void testRaGroupbyTestwithOneGroup2() {
+		testRaGroupbyTestwithOneGroup("permutation-matrix");
+	}
+
+	public void testRaGroupbyTest(String method) {
 		//generate actual dataset and variables
 		double[][] X = {
 				{1, 2, 3},
@@ -58,11 +97,10 @@ public class BuiltinRaGroupbyTest extends AutomatedTestBase
 				{4, 7, 8, 7, 8, 8, 9}
 		};
 
-		runRaGroupbyTest(X, select_col, Y);
+		runRaGroupbyTest(X, select_col, Y, method);
 	}
 
-	@Test
-	public void testRaGroupbyTestwithDifferentColumn() {
+	public void testRaGroupbyTestwithDifferentColumn(String method) {
 		//generate actual dataset and variables
 		double[][] X = {
 				{1, 2, 3},
@@ -80,11 +118,10 @@ public class BuiltinRaGroupbyTest extends AutomatedTestBase
 				{7, 4, 8, 4, 8}
 		};
 
-		runRaGroupbyTest(X, select_col, Y);
+		runRaGroupbyTest(X, select_col, Y, method);
 	}
 
-	@Test
-	public void testRaGroupbyTestwithNoGroup() {
+	public void testRaGroupbyTestwithNoGroup(String method) {
 		// Test case with different values in select_col
 		double[][] X = {
 				{1, 1, 1},
@@ -103,11 +140,10 @@ public class BuiltinRaGroupbyTest extends AutomatedTestBase
 				{3, 3, 1}
 		};
 
-		runRaGroupbyTest(X, select_col, Y);
+		runRaGroupbyTest(X, select_col, Y, method);
 	}
 
-	@Test
-	public void testRaGroupbyTestwithOneGroup() {
+	public void testRaGroupbyTestwithOneGroup(String method) {
 		//generate actual dataset and variables
 		double[][] X = {
 				{1, 2, 3, 8, 2},
@@ -122,10 +158,10 @@ public class BuiltinRaGroupbyTest extends AutomatedTestBase
 				{8, 1, 2, 3, 2, 4, 7, 8, 3, 1, 3, 6, 4, 4, 7, 8, 5, 4, 8, 9, 6},
 		};
 
-		runRaGroupbyTest(X, select_col, Y);
+		runRaGroupbyTest(X, select_col, Y, method);
 	}
 
-	private void runRaGroupbyTest(double [][] X, int col, double [][] Y)
+	private void runRaGroupbyTest(double [][] X, int col, double [][] Y, String method)
 	{
 		ExecMode platformOld = setExecMode(ExecMode.SINGLE_NODE);
 		
@@ -136,20 +172,15 @@ public class BuiltinRaGroupbyTest extends AutomatedTestBase
 
 			fullDMLScriptName = HOME + TEST_NAME + ".dml";
 
-			//test single groupby methods
-			//programArgs = new String[]{"-stats", "-args",
-			//	input("X"), String.valueOf(col), output("result") };
-
-			//test all groupby methods
+			//test groupby methods
 			programArgs = new String[]{"-stats", "-args",
-					input("X"), String.valueOf(col), "nested-loop", "permutation-matrix", output("result1"), output("result2") };
+				input("X"), String.valueOf(col), method, output("result") };
 
 			//fullRScriptName = HOME + TEST_NAME + ".R";
 			//rCmd = "Rscript" + " " + fullRScriptName + " "
 			//	+ inputDir() + " " + col + " "  + expectedDir();
 
 			writeInputMatrixWithMTD("X", X, true);
-			System.out.println(Arrays.deepToString(X));
 			//writeExpectedMatrix("result", Y);
 
 			// run dmlScript and RScript
@@ -157,12 +188,10 @@ public class BuiltinRaGroupbyTest extends AutomatedTestBase
 			//runRScript(true);
 
 			//compare matrices
-			HashMap<CellIndex, Double> dmlfile1 = readDMLMatrixFromOutputDir("result1");
-			HashMap<CellIndex, Double> dmlfile2 = readDMLMatrixFromOutputDir("result2");
+			HashMap<CellIndex, Double> dmlfile = readDMLMatrixFromOutputDir("result");
 			HashMap<CellIndex, Double> expectedOutput = TestUtils.convert2DDoubleArrayToHashMap(Y);
 			//HashMap<CellIndex, Double> rfile  = readRMatrixFromExpectedDir("result");
-			TestUtils.compareMatrices(dmlfile1, expectedOutput, eps, "Stat-DML", "Expected");
-			TestUtils.compareMatrices(dmlfile2, expectedOutput, eps, "Stat-DML", "Expected");
+			TestUtils.compareMatrices(dmlfile, expectedOutput, eps, "Stat-DML", "Expected");
 		}
 		finally {
 			rtplatform = platformOld;

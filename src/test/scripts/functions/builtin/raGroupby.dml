@@ -22,10 +22,6 @@
 X = read($1)
 col = as.integer($2)
 
-result1 = raGroupby(X, col, $3);
-result2 = raGroupby(X, col, $4);
-write(result1, $5);
-write(result2, $6);
-print(toString(result1))
-print(toString(result2))
+result = raGroupby(X, col, $3);
+write(result, $4);
 

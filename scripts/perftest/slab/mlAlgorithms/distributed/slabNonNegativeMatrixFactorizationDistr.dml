@@ -19,20 +19,37 @@
 #
 #-------------------------------------------------------------
 
-source("../slabUtils.dml") as utils
+source("../../slabUtils.dml") as utils
 
 dataPath = $1
-M = read(dataPath, format="csv")
-K = sum(M)
-print(K)
+X = read(dataPath, format="csv")
+rvect = rand(rows=1, cols=1)
+y = rvect > 0.80
+p = sum( X )
+q = sum( y )
+print(p)
+print(q)
+
 
 for(ix in 1:5){
-    [U,D,V] = svd( M )
-    if(K > 0){
-        print(as.scalar(U[1,1]))
-        print(as.scalar(D[1,1]))
-        print(as.scalar(V[1,1]))
-    }
+    tmp = gnmf(X, 10, 10)
+    print(tmp)
 }
 
+gnmf = function(matrix[double] X, Integer r, Integer iterations)
+    return (integer iteration) {
 
+    W = rand(rows = nrow(X), cols = r, pdf = 'uniform')
+    H = rand(rows = r, cols = ncol(X), pdf = 'uniform')
+
+    for (i in 1:3) {
+        W = W * ((X %*% t(H)) / (W %*% (H %*% t(H))))
+        H = H * ((t(W) %*% X) / ((t(W) %*% W) %*% H))
+    }
+    if ((as.scalar(W[1,1]) > 0) & (as.scalar(H[1,1]) > 0)) {
+        print(as.scalar(H[1,1]))
+        print(as.scalar(W[1,1]))
+    }
+
+    iteration = 0
+}

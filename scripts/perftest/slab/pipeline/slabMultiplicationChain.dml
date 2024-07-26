@@ -36,4 +36,3 @@ for(ix in 1:5) {
     }
 }
 
-# nrows: 1000,10000,100000,1000000, execute with spark

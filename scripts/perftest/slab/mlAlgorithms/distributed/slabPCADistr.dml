@@ -19,20 +19,39 @@
 #
 #-------------------------------------------------------------
 
-source("../slabUtils.dml") as utils
+source("../../slabUtils.dml") as utils
 
 dataPath = $1
-M = read(dataPath, format="csv")
-K = sum(M)
-print(K)
+X = read(dataPath, format="csv")
+rvect = rand(rows=nrow(X), cols=1, pdf='uniform')
+y = rvect > 0.80
+p = sum( X )
+q = sum( y )
+print(p)
+print(q)
 
 for(ix in 1:5){
-    [U,D,V] = svd( M )
-    if(K > 0){
-        print(as.scalar(U[1,1]))
-        print(as.scalar(D[1,1]))
-        print(as.scalar(V[1,1]))
-    }
+    tmp = pca(X, 5)
+    utils::printRandElements(tmp, 10)
 }
 
+pca = function(matrix[double] X, Integer k)
+    return (matrix[double] PRJ) {
+    N = nrow(X)
+    K = ncol(X)
+    XS = X - colMeans(X)
+    S = (1/(N-1)) * (t(XS) %*% XS)
+    [eigvals, eigvects] = eigen(S)
 
+    # Thanks to the Sysml implementation for this helpful bit
+    # of code to sort the eigenvectors
+    eigssorted = order(target=eigvals, by=1,
+                       decreasing=TRUE,
+                       index.return=TRUE)
+    diagmat = table(seq(1, K), eigssorted)
+    eigvals = diagmat %*% eigvals
+    eigvects = eigvects %*% diagmat
+    eigvects = eigvects[, 1:k]
+
+    PRJ = XS %*% eigvects
+}

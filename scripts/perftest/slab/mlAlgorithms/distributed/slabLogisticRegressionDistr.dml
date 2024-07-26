@@ -19,20 +19,38 @@
 #
 #-------------------------------------------------------------
 
-source("../slabUtils.dml") as utils
+source("../../slabUtils.dml") as utils
 
 dataPath = $1
-M = read(dataPath, format="csv")
-K = sum(M)
-print(K)
+X = read(dataPath, format="csv")
+rvect = rand(rows=nrow(X), cols=1, pdf='uniform')
+y = rvect > 0.80
+p = sum( X )
+q = sum( y )
+print(p)
+print(q)
 
 for(ix in 1:5){
-    [U,D,V] = svd( M )
-    if(K > 0){
-        print(as.scalar(U[1,1]))
-        print(as.scalar(D[1,1]))
-        print(as.scalar(V[1,1]))
-    }
+    tmp = logit(X, y, 10)
+    utils::printRandElements(tmp, 10)
 }
 
+logit = function(matrix[double] X,
+                 matrix[double] y,
+                 Integer iterations)
+    return (matrix[double] w) {
 
+    N = nrow(X)
+    w = matrix(0, rows=ncol(X), cols=1)
+    iteration = 0
+    stepSize = 10
+
+    while (iteration < iterations) {
+        xb = X %*% w
+        delta = 1/(1+exp(-xb)) - y
+        stepSize = stepSize / 2
+        w = w - ((stepSize * t(X) %*% delta)/N)
+
+        iteration = iteration + 1
+    }
+}

@@ -170,6 +170,8 @@ public class LibCommonsMath
 				return computeIFFT_LINEARIZED(in1, in2, threads);
 			case "rcm":
 				return computeRCM(in1, in2);
+			case "img_transform_matrix":
+				return LibMatrixIMGTransform.transformationMatrix(in1, in2, threads);
 			default:
 				return null;
 		}

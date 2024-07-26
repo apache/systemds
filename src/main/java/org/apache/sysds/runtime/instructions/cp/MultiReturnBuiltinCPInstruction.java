@@ -20,6 +20,7 @@
 package org.apache.sysds.runtime.instructions.cp;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 import org.apache.commons.lang3.NotImplementedException;
@@ -138,8 +139,8 @@ public class MultiReturnBuiltinCPInstruction extends ComputationCPInstruction {
 
 			return new MultiReturnBuiltinCPInstruction(null, null, outputs, opcode, str, threads);
 
-//		} else if (opcode.equalsIgnoreCase("img_transform_matrix")) {
-//
+		} else if (opcode.equalsIgnoreCase("img_transform_matrix")) {
+			throw new NotImplementedException("Has yet to be done. Check number of inputs" + Arrays.toString(parts));
 		} else if ( opcode.equalsIgnoreCase("stft") ) {
 			// one input and two outputs
 			CPOperand in1 = new CPOperand(parts[1]);

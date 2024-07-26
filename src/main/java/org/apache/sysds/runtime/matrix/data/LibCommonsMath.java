@@ -28,6 +28,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
 
+import org.apache.commons.lang3.NotImplementedException;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.commons.math3.exception.MaxCountExceededException;
@@ -171,6 +172,7 @@ public class LibCommonsMath
 			case "rcm":
 				return computeRCM(in1, in2);
 			case "img_transform_matrix":
+				//throw new NotImplementedException("Hope we get here");
 				return LibMatrixIMGTransform.transformationMatrix(in1, in2, threads);
 			default:
 				return null;

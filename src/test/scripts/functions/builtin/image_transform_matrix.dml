@@ -24,24 +24,24 @@ transformationMatrix = read($transMat)
 #print(toString(transformationMatrix))
 
 # get a matrix with the original image dimensions and the target dimensions (2x2)
-# -----original height----original width
-# -----target height------target width
+# -----original width----original heigh
+# -----target width------target height
 dimensionMatrix = read($dimMat)
 
 # print(toString(dimensionMatrix))
 
-orig_w = as.scalar(dimensionMatrix[1,2])
-orig_h = as.scalar(dimensionMatrix[1,1])
-out_w = as.scalar(dimensionMatrix[2,2])
-out_h = as.scalar(dimensionMatrix[2,1])
+orig_w = as.scalar(dimensionMatrix[1,1])
+orig_h = as.scalar(dimensionMatrix[1,2])
+out_w = as.scalar(dimensionMatrix[2,1])
+out_h = as.scalar(dimensionMatrix[2,2])
 # print("orig_w: " + orig_w + "; orig_h: " + orig_h + "; out_w: " + out_w + "; out_h: " + out_h)
 input = matrix(transformationMatrix, rows=3, cols=3)
 
 builtin = TRUE
 if(builtin){
-    [zMat, isFillable] = img_transform_matrix(input, orig_w, orig_h, out_w, out_h)
+    [zMat, isFillable] = img_transform_matrix(input, dimensionMatrix)
 }else{
-    [zMat, isFillable] = img_transform_test(input, orig_w, orig_h, out_w, out_h)
+    [zMat, isFillable] = img_transform_test(input, dimensionMatrix)
 }
 
 # function for calculating the matrix which will be matrix multiplied with
@@ -49,5 +49,5 @@ if(builtin){
 
 
 print(toString(zMat))
-print(isFillable)
+print(toString(isFillable))
 # write(zMat, $out_file)

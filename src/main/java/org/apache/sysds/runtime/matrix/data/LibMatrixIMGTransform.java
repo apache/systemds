@@ -9,6 +9,10 @@ public class LibMatrixIMGTransform {
     protected static final Log LOG = LogFactory.getLog(LibMatrixFourier.class.getName());
 
     public static MatrixBlock[] transformationMatrix(MatrixBlock transMat, MatrixBlock dimMat, int threads) {
-        throw new NotImplementedException();
+        //throw new NotImplementedException("If the code reaches here, we good boys");
+        MatrixBlock filledBlock = new MatrixBlock(21.3);
+        System.out.println(transMat.get(0,0));
+        //MatrixBlock transMatrix = new MatrixBlockDataOutput();
+        return new MatrixBlock[] {transMat, filledBlock};
     }
 }

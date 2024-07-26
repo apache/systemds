@@ -1,33 +1,38 @@
-m_img_transform_test = function(Matrix[Double] transMat, Integer orig_w, Integer orig_h, Integer out_w, Integer out_h)
-            return (Matrix[Double] zMat, Boolean isFillable){
+m_img_transform_test = function(Matrix[Double] transMat, Matrix[Double] dimensionMatrix)
+            return (Matrix[Double] zMat, Matrix[Double] isFillable){
             #zMat = transMat
             #isFillable = FALSE
             T_inv = inv(transMat)
 
-                     ## coordinates of output pixel-centers linearized in row-major order
-                     coords = matrix(1, rows=3, cols=out_w*out_h)
-                     coords[1,] = t((seq(0, out_w*out_h-1) %% out_w) + 0.5)
-                     coords[2,] = t((seq(0, out_w*out_h-1) %/% out_w) + 0.5)
+            orig_w = as.scalar(dimensionMatrix[1,1])
+            orig_h = as.scalar(dimensionMatrix[1,2])
+            out_w = as.scalar(dimensionMatrix[2,1])
+            out_h = as.scalar(dimensionMatrix[2,2])
 
-                     # compute sampling pixel indices
-                     coords = floor(T_inv %*% coords) + 1
+            ## coordinates of output pixel-centers linearized in row-major order
+            coords = matrix(1, rows=3, cols=out_w*out_h)
+            coords[1,] = t((seq(0, out_w*out_h-1) %% out_w) + 0.5)
+            coords[2,] = t((seq(0, out_w*out_h-1) %/% out_w) + 0.5)
 
-                     inx = t(coords[1,])
-                     iny = t(coords[2,])
+            # compute sampling pixel indices
+            coords = floor(T_inv %*% coords) + 1
 
-                     # any out-of-range pixels, if present, correspond to an extra pixel with fill_value at the end of the input
-                     index_vector = (orig_w *(iny-1) + inx) * ((0<inx) & (inx<=orig_w) & (0<iny) & (iny<=orig_h))
-                     index_vector = t(index_vector)
-                     xs = ((index_vector == 0)*(orig_w*orig_h +1)) + index_vector
+            inx = t(coords[1,])
+            iny = t(coords[2,])
 
-                     #if(min(index_vector) == 0){
-                     #  ys=cbind(img_in, matrix(fill_value,nrow(img_in), 1))
-                     #}else{
-                     #  ys = img_in
-                     #}
+            # any out-of-range pixels, if present, correspond to an extra pixel with fill_value at the end of the input
+            index_vector = (orig_w *(iny-1) + inx) * ((0<inx) & (inx<=orig_w) & (0<iny) & (iny<=orig_h))
+            index_vector = t(index_vector)
+            xs = ((index_vector == 0)*(orig_w*orig_h +1)) + index_vector
 
-                     ind= matrix(seq(1,ncol(xs),1),1,ncol(xs))
-                     z = table(xs, ind)
-                     zMat = z
-                     isFillable = min(index_vector) == 0
+            #if(min(index_vector) == 0){
+            #  ys=cbind(img_in, matrix(fill_value,nrow(img_in), 1))
+            #}else{
+            #  ys = img_in
+            #}
+
+            ind= matrix(seq(1,ncol(xs),1),1,ncol(xs))
+            z = table(xs, ind)
+            zMat = z
+            isFillable = as.matrix(min(index_vector) == 0)
 }

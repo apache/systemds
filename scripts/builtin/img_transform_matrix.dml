@@ -40,7 +40,7 @@
 # ---------------------------------------------------------------------------------------
 
  m_img_transform_matrix = function(Matrix[Double] transMat, Integer orig_w, Integer orig_h, Integer out_w, Integer out_h)
-            return (Matrix[Double] zMat, Boolean isFillable){
+            return (Matrix[Double] zMat, Matrix[Double] isFillable){
          #orig_w = as.scalar(dimMat[1,2])
          #orig_h = as.scalar(dimMat[1,1])
 
@@ -73,5 +73,5 @@
          ind= matrix(seq(1,ncol(xs),1),1,ncol(xs))
          z = table(xs, ind)
          zMat = transMat
-         isFillable = min(index_vector) == 0
+         isFillable = as.double(min(index_vector) == 0)
  }

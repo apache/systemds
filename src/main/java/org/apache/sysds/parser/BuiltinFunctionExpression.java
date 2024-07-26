@@ -679,18 +679,14 @@ public class BuiltinFunctionExpression extends DataIdentifier {
 				Expression expressionOne_IMG = getFirstExpr();
 				//original width
 				Expression expressionTwo_IMG = getSecondExpr();
-				//original height
-				Expression expressionThree_IMG = getThirdExpr();
-				//output width
-				Expression expressionFour_IMG = getFourthExpr();
-				//output height
-				Expression expressionFive_IMG = getFifthExpr();
+				checkMatrixFrameParam(expressionOne_IMG);
+				checkMatrixFrameParam(expressionTwo_IMG);
 
-
-				if(expressionOne_IMG == null) {
-					raiseValidateError("The first argument to " + _opcode + " cannot be null.", false,
-							LanguageErrorCodes.INVALID_PARAMETERS);
-				}
+                if ((expressionOne_IMG.getOutput().getDim1() != expressionOne_IMG.getOutput().getDim2()) && expressionOne_IMG.getOutput().getDim1() != 3) {
+                    raiseValidateError("The first argument to " + _opcode + " must be a square 3x3 matrix.", false, LanguageErrorCodes.INVALID_PARAMETERS);
+                } else if ((expressionTwo_IMG.getOutput().getDim1() != expressionTwo_IMG.getOutput().getDim2()) && expressionOne_IMG.getOutput().getDim1() != 2) {
+                    raiseValidateError("The second argument to " + _opcode + " must be a square 2x2 matrix.", false, LanguageErrorCodes.INVALID_PARAMETERS);
+                }
 //			else if(expressionOne.getOutput() == null || expressionOne.getOutput().getDim1() == 0 ||
 //					expressionOne.getOutput().getDim2() == 0) {
 //				raiseValidateError("The first argument to " + _opcode + " cannot be an empty matrix.", false,
@@ -735,8 +731,8 @@ public class BuiltinFunctionExpression extends DataIdentifier {
 				//img_transfrom_matrix_Out1.setDimensions(getThirdExpr().getOutput()._dim1, getFourthExpr().getOutput()._dim1); //TODO: get dimensions right, extract from second input matrix
 				//out1.setBlocksize(getFirstExpr().getOutput().getBlocksize());
 
-				img_transfrom_matrix_Out2.setDataType(DataType.SCALAR);
-				img_transfrom_matrix_Out2.setValueType(ValueType.BOOLEAN);
+				img_transfrom_matrix_Out2.setDataType(DataType.MATRIX);
+				img_transfrom_matrix_Out2.setValueType(ValueType.FP32);
 				//img_transfrom_matrix_Out2.setDimensions(1,1);
 
 				break;

@@ -140,7 +140,18 @@ public class MultiReturnBuiltinCPInstruction extends ComputationCPInstruction {
 			return new MultiReturnBuiltinCPInstruction(null, null, outputs, opcode, str, threads);
 
 		} else if (opcode.equalsIgnoreCase("img_transform_matrix")) {
-			throw new NotImplementedException("Has yet to be done. Check number of inputs" + Arrays.toString(parts));
+			// 5 inputs and two outputs
+			CPOperand in1 = new CPOperand(parts[1]); //transformation matrix
+			CPOperand in2 = new CPOperand(parts[2]); //original width
+			CPOperand in3 = new CPOperand(parts[3]); //original height
+			CPOperand in4 = new CPOperand(parts[4]); //output width
+			CPOperand in5 = new CPOperand(parts[5]); //output height
+
+			outputs.add(new CPOperand(parts[6], ValueType.FP64, DataType.MATRIX));
+			outputs.add(new CPOperand(parts[7], ValueType.BOOLEAN, DataType.SCALAR));
+			throw new NotImplementedException("Has yet to be done. Check number of inputs" + Arrays.toString(parts) + "; Number of parts: " + parts.length);
+
+
 		} else if ( opcode.equalsIgnoreCase("stft") ) {
 			// one input and two outputs
 			CPOperand in1 = new CPOperand(parts[1]);

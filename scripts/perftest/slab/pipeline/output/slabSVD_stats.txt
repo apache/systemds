@@ -1,0 +1,72 @@
+Shape: tall
+SystemDS Statistics:
+Total elapsed time:		3.723 sec.
+Total compilation time:		0.831 sec.
+Total execution time:		2.892 sec.
+Number of compiled Spark inst:	7.
+Number of executed Spark inst:	4.
+Cache hits (Mem/Li/WB/FS/HDFS):	20/0/0/0/0.
+Cache writes (Li/WB/FS/HDFS):	0/11/0/0.
+Cache times (ACQr/m, RLS, EXP):	0.089/0.001/0.002/0.000 sec.
+HOP DAGs recompiled (PRED, SB):	0/7.
+HOP DAGs recompile time:	0.016 sec.
+Spark ctx create time (lazy):	1.490 sec.
+Spark trans counts (par,bc,col):0/0/1.
+Spark trans times (par,bc,col):	0.000/0.000/0.087 secs.
+Total JIT compile time:		11.52 sec.
+Total JVM GC count:		3.
+Total JVM GC time:		0.084 sec.
+Heavy hitter instructions:
+  #  Instruction  Time(s)  Count
+  1  sp_csvrblk     1.416      1
+  2  svd            0.915      5
+  3  sp_uak+        0.484      1
+  4  createvar      0.019     20
+  5  rmvar          0.013     14
+  6  print          0.010     16
+  7  sp_chkpoint    0.007      2
+  8  >              0.006      5
+  9  assignvar      0.001      3
+ 10  castdts        0.000      1
+
+
+
+
+
+
+Shape: wide
+SystemDS Statistics:
+Total elapsed time:		3.516 sec.
+Total compilation time:		0.821 sec.
+Total execution time:		2.695 sec.
+Number of compiled Spark inst:	7.
+Number of executed Spark inst:	4.
+Cache hits (Mem/Li/WB/FS/HDFS):	20/0/0/0/0.
+Cache writes (Li/WB/FS/HDFS):	0/11/0/0.
+Cache times (ACQr/m, RLS, EXP):	0.090/0.001/0.002/0.000 sec.
+HOP DAGs recompiled (PRED, SB):	0/7.
+HOP DAGs recompile time:	0.014 sec.
+Spark ctx create time (lazy):	1.473 sec.
+Spark trans counts (par,bc,col):0/0/1.
+Spark trans times (par,bc,col):	0.000/0.000/0.089 secs.
+Total JIT compile time:		10.934 sec.
+Total JVM GC count:		3.
+Total JVM GC time:		0.089 sec.
+Heavy hitter instructions:
+  #  Instruction  Time(s)  Count
+  1  sp_csvrblk     1.440      1
+  2  svd            0.761      5
+  3  sp_uak+        0.429      1
+  4  createvar      0.018     20
+  5  rmvar          0.014     14
+  6  sp_chkpoint    0.007      2
+  7  >              0.004      5
+  8  print          0.001     16
+  9  assignvar      0.001      3
+ 10  castdts        0.000      1
+
+
+
+
+
+

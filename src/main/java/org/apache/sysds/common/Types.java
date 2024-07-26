@@ -427,8 +427,8 @@ public class Types
 		//fused ML-specific operators for performance
 		MINUS_NZ(false), //sparse-safe minus: X-(mean*ppred(X,0,!=))
 		LOG_NZ(false), //sparse-safe log; ppred(X,0,"!=")*log(X,0.5)
-		MINUS1_MULT(false), //1-X*Y
-		IMG_TRANSFORM_MATRIX(false);
+		MINUS1_MULT(false); //1-X*Y
+		//IMG_TRANSFORM_MATRIX(false);
 		
 		private final boolean _validOuter;
 		
@@ -472,7 +472,7 @@ public class Types
 				case FRAME_ROW_REPLICATE: return "freplicate";
 				case VALUE_SWAP: return "valueSwap";
 				case APPLY_SCHEMA: return "applySchema";
-				case IMG_TRANSFORM_MATRIX: return "img_transform_matrix";
+				//case IMG_TRANSFORM_MATRIX: return "img_transform_matrix";
 				default:           return name().toLowerCase();
 			}
 		}
@@ -509,7 +509,7 @@ public class Types
 				case "freplicate": return FRAME_ROW_REPLICATE;
 				case "valueSwap":   return VALUE_SWAP;
 				case "applySchema": return APPLY_SCHEMA;
-				case "img_transform_matrix": return IMG_TRANSFORM_MATRIX;
+				//case "img_transform_matrix": return IMG_TRANSFORM_MATRIX;
 				default:            return valueOf(opcode.toUpperCase());
 			}
 		}

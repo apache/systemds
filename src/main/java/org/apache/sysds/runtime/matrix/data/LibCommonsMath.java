@@ -91,6 +91,7 @@ public class LibCommonsMath
 			case "fft_linearized":
 			case "ifft":
 			case "ifft_linearized":
+			case "img_transform_matrix":
 			case "lu":
 			case "qr":
 			case "rcm":

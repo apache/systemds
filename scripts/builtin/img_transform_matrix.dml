@@ -35,17 +35,20 @@
 # ---------------------------------------------------------------------------------------
 # zMat          transformation matrix to be multiplied with for the linearized image
 #               transformation function (arbitrary naming)
+# isFillable    returns a boolean which indicates if cells need to be filled (with fillvalue),
+                in this case the image is extended, otherwise the original image is used
 # ---------------------------------------------------------------------------------------
 
- m_img_transform_matrix = function(Matrix[Double] transMat, Matrix[Double] dimMat) return (Matrix[Double] zMat) {
-         orig_w = as.scalar(dimMat[1,2])
-         orig_h = as.scalar(dimMat[1,1])
+ m_img_transform_matrix = function(Matrix[Double] transMat, Integer orig_w, Integer orig_h, Integer out_w, Integer out_h)
+            return (Matrix[Double] zMat, Boolean isFillable){
+         #orig_w = as.scalar(dimMat[1,2])
+         #orig_h = as.scalar(dimMat[1,1])
 
-         out_w = as.scalar(dimMat[2,2])
-         out_h = as.scalar(dimMat[2,1])
+         #out_w = as.scalar(dimMat[2,2])
+         #out_h = as.scalar(dimMat[2,1])
          T_inv = inv(transMat)
 
-         # coordinates of output pixel-centers linearized in row-major order
+         ## coordinates of output pixel-centers linearized in row-major order
          coords = matrix(1, rows=3, cols=out_w*out_h)
          coords[1,] = t((seq(0, out_w*out_h-1) %% out_w) + 0.5)
          coords[2,] = t((seq(0, out_w*out_h-1) %/% out_w) + 0.5)
@@ -69,5 +72,6 @@
 
          ind= matrix(seq(1,ncol(xs),1),1,ncol(xs))
          z = table(xs, ind)
-     zMat = z
+         zMat = transMat
+         isFillable = min(index_vector) == 0
  }

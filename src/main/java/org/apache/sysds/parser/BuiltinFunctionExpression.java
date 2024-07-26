@@ -24,6 +24,7 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 
+import javassist.expr.Expr;
 import org.antlr.v4.runtime.ParserRuleContext;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.NotImplementedException;
@@ -672,6 +673,73 @@ public class BuiltinFunctionExpression extends DataIdentifier {
 
 			break;
 		}
+		//implement the calculation of the transformation matrix for affine transformation of images
+			case IMG_TRANSFORM_MATRIX:
+				//transformation matrix
+				Expression expressionOne_IMG = getFirstExpr();
+				//original width
+				Expression expressionTwo_IMG = getSecondExpr();
+				//original height
+				Expression expressionThree_IMG = getThirdExpr();
+				//output width
+				Expression expressionFour_IMG = getFourthExpr();
+				//output height
+				Expression expressionFive_IMG = getFifthExpr();
+
+
+				if(expressionOne_IMG == null) {
+					raiseValidateError("The first argument to " + _opcode + " cannot be null.", false,
+							LanguageErrorCodes.INVALID_PARAMETERS);
+				}
+//			else if(expressionOne.getOutput() == null || expressionOne.getOutput().getDim1() == 0 ||
+//					expressionOne.getOutput().getDim2() == 0) {
+//				raiseValidateError("The first argument to " + _opcode + " cannot be an empty matrix.", false,
+//						LanguageErrorCodes.INVALID_PARAMETERS);
+//			}
+//			else if(expressionTwo != null) {
+//				if(expressionTwo.getOutput() == null || expressionTwo.getOutput().getDim1() == 0 ||
+//						expressionTwo.getOutput().getDim2() == 0) {
+//					raiseValidateError("The second argument to " + _opcode
+//									+ " cannot be an empty matrix. Provide either only a real matrix or a filled real and imaginary one.",
+//							false, LanguageErrorCodes.INVALID_PARAMETERS);
+//				}
+//			}
+
+//			checkNumParameters(expressionTwo != null ? 2 : 1);
+//			checkMatrixParam(expressionOne);
+//			if(expressionTwo != null && expressionOne != null) {
+//				checkMatrixParam(expressionTwo);
+//				if(expressionOne.getOutput().getDim1() != expressionTwo.getOutput().getDim1() ||
+//						expressionOne.getOutput().getDim2() != expressionTwo.getOutput().getDim2())
+//					raiseValidateError("The real and imaginary part of the provided matrix are of different dimensions.",
+//							false);
+//				else if(!isPowerOfTwo(expressionTwo.getOutput().getDim2())) {
+//					raiseValidateError(
+//							"This IFFT_LINEARIZED implementation is only defined for matrices with columns that are powers of 2.",
+//							false, LanguageErrorCodes.INVALID_PARAMETERS);
+//				}
+//			}
+//			else if(expressionOne != null) {
+//				if(!isPowerOfTwo(expressionOne.getOutput().getDim2())) {
+//					raiseValidateError(
+//							"This IFFT_LINEARIZED implementation is only defined for matrices with columns that are powers of 2.",
+//							false, LanguageErrorCodes.INVALID_PARAMETERS);
+//				}
+//			}
+
+				DataIdentifier img_transfrom_matrix_Out1 = (DataIdentifier) getOutputs()[0];
+				DataIdentifier img_transfrom_matrix_Out2 = (DataIdentifier) getOutputs()[1];
+
+				img_transfrom_matrix_Out1.setDataType(DataType.MATRIX);
+				img_transfrom_matrix_Out1.setValueType(ValueType.FP64);
+				//img_transfrom_matrix_Out1.setDimensions(getThirdExpr().getOutput()._dim1, getFourthExpr().getOutput()._dim1); //TODO: get dimensions right, extract from second input matrix
+				//out1.setBlocksize(getFirstExpr().getOutput().getBlocksize());
+
+				img_transfrom_matrix_Out2.setDataType(DataType.SCALAR);
+				img_transfrom_matrix_Out2.setValueType(ValueType.BOOLEAN);
+				//img_transfrom_matrix_Out2.setDimensions(1,1);
+
+				break;
 		case REMOVE: {
 			checkNumParameters(2);
 			checkListParam(getFirstExpr());
@@ -1324,16 +1392,6 @@ public class BuiltinFunctionExpression extends DataIdentifier {
 			output.setDimensions(0, 0);
 			output.setBlocksize(0);
 			output.setValueType(ValueType.BOOLEAN);
-			break;
-		//implement the calculation of the transformation matrix for affine transformation of images
-		case IMG_TRANSFORM_MATRIX:
-			checkNumParameters(2);
-			checkMatrixParam(getFirstExpr());
-			checkMatrixParam(getSecondExpr());
-			output.setDataType(DataType.MATRIX);
-			output.setValueType(ValueType.FP64);
-			output.setDimensions(-1,-1);
-			output.setBlocksize(0);
 			break;
 		// Contingency tables
 		case TABLE:

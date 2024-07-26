@@ -138,8 +138,9 @@ public class MultiReturnBuiltinCPInstruction extends ComputationCPInstruction {
 
 			return new MultiReturnBuiltinCPInstruction(null, null, outputs, opcode, str, threads);
 
-		}
-		else if ( opcode.equalsIgnoreCase("stft") ) {
+//		} else if (opcode.equalsIgnoreCase("img_transform_matrix")) {
+//
+		} else if ( opcode.equalsIgnoreCase("stft") ) {
 			// one input and two outputs
 			CPOperand in1 = new CPOperand(parts[1]);
 			outputs.add ( new CPOperand(parts[2], ValueType.FP64, DataType.MATRIX) );

@@ -23,15 +23,31 @@
 transformationMatrix = read($transMat)
 #print(toString(transformationMatrix))
 
-#get a matrix with the original image dimensions and the target dimensions (2x2)
-#-----original height----original width
-#-----target height------target width
+# get a matrix with the original image dimensions and the target dimensions (2x2)
+# -----original height----original width
+# -----target height------target width
 dimensionMatrix = read($dimMat)
-print(toString(dimensionMatrix))
 
-#function for calculating the matrix which will be matrix multiplied with
-#the image for matrix multiplication
-zMat = img_transform_matrix(transformationMatrix, dimensionMatrix)
+# print(toString(dimensionMatrix))
+
+orig_w = as.scalar(dimensionMatrix[1,2])
+orig_h = as.scalar(dimensionMatrix[1,1])
+out_w = as.scalar(dimensionMatrix[2,2])
+out_h = as.scalar(dimensionMatrix[2,1])
+# print("orig_w: " + orig_w + "; orig_h: " + orig_h + "; out_w: " + out_w + "; out_h: " + out_h)
+input = matrix(transformationMatrix, rows=3, cols=3)
+
+builtin = TRUE
+if(builtin){
+    [zMat, isFillable] = img_transform_matrix(input, orig_w, orig_h, out_w, out_h)
+}else{
+    [zMat, isFillable] = img_transform_test(input, orig_w, orig_h, out_w, out_h)
+}
+
+# function for calculating the matrix which will be matrix multiplied with
+# the image for matrix multiplication
+
 
 print(toString(zMat))
-write(zMat, $out_file)
+print(isFillable)
+# write(zMat, $out_file)

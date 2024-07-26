@@ -47,6 +47,8 @@ offset = max / 10
 
 subvector_size = $cols / $subspaces
 rows = $clusters * $vectors_per_cluster
+space_decomp = as.logical($space_decomp)
+sep = as.logical($sep)
 
 # Generate points by concatenating sub_points around sub_clusters
 if($test_case == "sub_cluster") {
@@ -75,16 +77,29 @@ else {
   vectors = rand(rows = rows, cols = $cols, min=min, max=max, pdf=$test_case, seed=2)
 }
 
-[codebook, codes] = quantizeByCluster(vectors, $subspaces, $k, $runs, $max_iter, $eps, $vectors_per_cluster, $sep, 2)
+#Perform quantization
+[codebook, codes, R] = quantizeByCluster(vectors, $subspaces, $k, $runs, $max_iter, $eps, $vectors_per_cluster, sep, space_decomp, 2)
 [k_codebook, k_codes] = kmeans(vectors, $k * $subspaces, $runs, $max_iter, $eps, FALSE, $vectors_per_cluster, 2)
 
 #construct vectors from codes
-pq_result = construct_vectors(codes, codebook)
 k_result = construct_vectors(k_codes, k_codebook)
+pq_result = construct_vectors(codes, codebook)
+if(space_decomp) {
+  pq_result = pq_result %*% R
+  #check if R is an orthogonal matrix
+  is_orthogonal = sum((t(R) %*% R - diag(matrix(1, nrow(R), 1)))^2)
+}
+else {
+  is_orthogonal = 0
+}
+
+if($cols %% $subspaces != 0) {
+  pq_result = pq_result[,1:$cols]
+}
 
 #calculate distortion
-pq_distortion = colSums(rowSums((vectors - pq_result)^2)) / rows
-k_distortion = colSums(rowSums((vectors - k_result)^2)) / rows
+pq_distortion = as.scalar(colSums(rowSums((vectors - pq_result)^2)) / rows)
+k_distortion = as.scalar(colSums(rowSums((vectors - k_result)^2)) / rows)
 
 print("Product quantization distortion: " + toString(pq_distortion))
 print("Kmeans distortion: " + toString(k_distortion))
@@ -93,4 +108,5 @@ write(codes, $codes)
 write(codebook, $codebook)
 write(pq_distortion, $pq_distortion)
 write(k_distortion, $k_distortion)
+write(is_orthogonal, $is_orthogonal)
 

@@ -158,10 +158,7 @@ public class SparseBlockCOO extends SparseBlock
 		return (long) Math.min(size, Long.MAX_VALUE);
 	}
 
-	/**
-	 * Computes the exact size in memory of the materialized block
-	 * @return the exact size in memory
-	 */
+	@Override
 	public long getExactSizeInMemory() {
 		//32B overhead per array, int/int/double arr in nnz
 		double size = 16 + 8;   //object + 2 int fields

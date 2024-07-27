@@ -211,11 +211,7 @@ public class SparseBlockMCSC extends SparseBlock {
 		return (long) Math.min(size, Long.MAX_VALUE);
 	}
 
-	/**
-	 * Computes the exact size in memory of the materialized block
-	 *
-	 * @return the exact size in memory
-	 */
+	@Override
 	public long getExactSizeInMemory() {
 		double size = 16; //object
 		size += MemoryEstimates.objectArrayCost(_columns.length); //references

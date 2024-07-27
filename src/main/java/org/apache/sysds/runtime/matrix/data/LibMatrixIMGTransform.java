@@ -1,9 +1,7 @@
 package org.apache.sysds.runtime.matrix.data;
 
-import org.apache.commons.lang3.NotImplementedException;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.apache.sysds.api.mlcontext.Matrix;
 import org.apache.sysds.runtime.functionobjects.Builtin;
 import org.apache.sysds.runtime.functionobjects.SwapIndex;
 import org.apache.sysds.runtime.instructions.InstructionUtils;
@@ -119,6 +117,7 @@ public class LibMatrixIMGTransform {
         second_term = helper_one.binaryOperations(op_and, helper_two); //(0<inx) & (inx<=orig_w)
         second_term.binaryOperationsInPlace(op_and, helper_three); //(0<inx) & (inx<=orig_w) & (0<iny)
         second_term.binaryOperationsInPlace(op_and, helper_four); // (0<inx) & (inx<=orig_w) & (0<iny) & (iny<=orig_h)
+
         //System.out.println(second_term);
 
 
@@ -133,14 +132,34 @@ public class LibMatrixIMGTransform {
         System.out.println(index_vector);
 
         // xs = ((index_vector == 0)*(orig_w*orig_h +1)) + index_vector
+        BinaryOperator op_equal = InstructionUtils.parseExtendedBinaryOperator("==");
+        helper_one = index_vector.binaryOperations(op_equal, new MatrixBlock(1,1, 0.0)); //(index_vector == 0)
+        helper_one = helper_one.binaryOperations(op_mult, new MatrixBlock(1,1, (double) (orig_w*orig_h+1))); //((index_vector == 0)*(orig_w*orig_h +1))
+        //System.out.println(helper_one);
 
+        MatrixBlock xs;
+        xs = helper_one.binaryOperations(op_plus, index_vector); //xs = ((index_vector == 0)*(orig_w*orig_h +1)) + index_vector
+        System.out.println(xs);
 
-        //System.out.println(Arrays.toString(coords1));
-        //System.out.println(Arrays.toString(coords2));
-        MatrixBlock filledBlock = new MatrixBlock(21.3);
-        //System.out.println("Input dimensions: w:" + orig_w + "; h" + orig_h);
-        //System.out.println("Output dimensions: w:" + out_w + "; h" + out_h);
-        //MatrixBlock transMatrix = new MatrixBlockDataOutput();
-        return new MatrixBlock[] {transMat, filledBlock};
+        //#if(min(index_vector) == 0){
+        //#  ys=cbind(img_in, matrix(fill_value,nrow(img_in), 1))
+        //#}else{
+        //#  ys = img_in
+        //#}
+        //get output for the condition above so that the fillvalue can be added outside the transformation Matrix method
+        MatrixBlock fillBlock;
+        if (index_vector.min() == 0){
+            fillBlock = new MatrixBlock(1, 1, 1.0);
+        }else{
+            fillBlock = new MatrixBlock(1, 1, 0.0);
+        }
+        System.out.println(fillBlock);
+
+        /**ind= matrix(seq(1,ncol(xs),1),1,ncol(xs))
+        * z = table(xs, ind)
+        * zMat = transMat
+        */
+        //
+        return new MatrixBlock[] {index_vector, fillBlock};
     }
 }

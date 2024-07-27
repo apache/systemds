@@ -764,10 +764,10 @@ public class CompressedMatrixBlock extends MatrixBlock {
 	}
 
 	@Override
-	public MatrixBlock zeroOutOperations(MatrixValue result, IndexRange range, boolean complementary) {
+	public MatrixBlock zeroOutOperations(MatrixValue result, IndexRange range) {
 		printDecompressWarning("zeroOutOperations");
 		MatrixBlock tmp = getUncompressed();
-		return tmp.zeroOutOperations(result, range, complementary);
+		return tmp.zeroOutOperations(result, range);
 	}
 
 	@Override
@@ -1210,11 +1210,6 @@ public class CompressedMatrixBlock extends MatrixBlock {
 	@Override
 	public boolean isThreadSafe() {
 		return false;
-	}
-
-	@Override
-	public void checkNaN() {
-		throw new NotImplementedException();
 	}
 
 	@Override

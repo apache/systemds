@@ -147,7 +147,7 @@ public abstract class MatrixValue implements WritableComparable
 	
 	public abstract void incrementalAggregate(AggregateOperator aggOp, MatrixValue newWithCorrection);
 
-	public abstract MatrixValue zeroOutOperations(MatrixValue result, IndexRange range, boolean complementary);
+	public abstract MatrixValue zeroOutOperations(MatrixValue result, IndexRange range);
 	
 	/**
 	 * Slice out up to 4 matrixBlocks that are separated by the row and col Cuts.

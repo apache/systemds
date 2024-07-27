@@ -1,0 +1,233 @@
+#-------------------------------------------------------------
+#
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+#
+#-------------------------------------------------------------
+
+# uncomment to use the lstm dml script instead of the built-in operator
+# source("nn/layers/lstm.dml") as lstm
+
+/*
+ * Bidirectional-LSTM layer.
+ */
+
+forward = function(matrix[double] X, matrix[double] W, matrix[double] W_reverse, matrix[double] b,
+            matrix[double] b_reverse, int T, int D, boolean seq, matrix[double] out0, matrix[double] c0)
+    return (matrix[double] out, matrix[double] c,
+            matrix[double] cache_out, matrix[double] cache_c, matrix[double] cache_ifog) {
+  /*
+   * Computes the forward pass for an BI-LSTM layer.
+   * The input data has N sequences of T examples, each with D features.
+   *
+   * The BI-LSTM Layer processes the input tokens once in the normal order and once in the reverse order.
+   * The Layer uses different LSTM Cells for both passes. Therefore it contains 2*M neurons. The output of
+   * both passes is concatenated for each time step, which results in output of twice of the size of a standard
+   * LSTM Layer.
+   * The API is similiar to pytorch BI-LSTM, with the only difference that the input bias and hidden bias is combined
+   * to a single bias. The weights and biases for both directions are given separately (similiar to pytorch's API).
+   * It is possible to return only the output of the last cell (similiar to the normal LSTM layer). In that case the
+   * final output of both directions is concatenated.
+   *
+   * Reference:
+   *  - Framewise phoneme classification with bidirectional LSTM networks; A. Graves, J. Schmidhuber; 2005
+   *    - https://ieeexplore.ieee.org/document/1556215
+   *  - Pytorch's LSTM / BILSTM
+   *    - https://pytorch.org/docs/stable/generated/torch.nn.LSTM.html
+   *
+   * Inputs:
+   *  - X: Inputs, of shape (N, T*D).
+   *  - W: Weights, of shape (D+M, 4M).
+   *  - W_reverse: Weights, of shape (D+M, 4M).
+   *  - b: Biases, of shape (1, 4M).
+   *  - b_reverse: Biases, of shape (1, 4M).
+   *  - T: Length of example sequences (number of timesteps).
+   *  - D: Dimensionality of the input features (number of features).
+   *  - seq: Whether to return `out` at all timesteps,
+   *      or just for the final timestep.
+   *  - out0: Outputs from previous timestep for both passes, of shape (N*2, M).
+   *      Note: This is *optional* and could just be an empty matrix.
+   *  - c0: Initial cell state for both passes, of shape (N*2, M).
+   *      Note: This is *optional* and could just be an empty matrix.
+   *
+   * Outputs:
+   *  - out: If `return_sequences` is True, outputs for all timesteps,
+   *      of shape (N, T*(M*2)).  Else, outputs for the final timestep, of
+   *      shape (N, M*2).
+   *  - c: Cell state for final timestep, of shape (N*2, M).
+   *  - cache_out: Cache of outputs, of shape (T*2, N*M).
+   *      Note: This is used for performance during training.
+   *  - cache_c: Cache of cell state, of shape (T*2, N*M).
+   *      Note: This is used for performance during training.
+   *  - cache_ifog: Cache of intermediate values, of shape (T*2, N*4M).
+   *      Note: This is used for performance during training.
+   */
+
+  M = ncol(out0)
+  N = nrow(X)
+
+  out0_forward = out0[1 : N,]
+  out0_reverse = out0[N + 1 : 2*N,]
+  c0_forward = c0[1 : N,]
+  c0_reverse = c0[N + 1 : 2*N,]
+
+  # normal lstm pass
+  [out, c, cache_out, cache_c, cache_ifog] = lstm(X, W, b, out0_forward, c0_forward, seq)
+  #[out, c, cache_out, cache_c, cache_ifog] = lstm::forward(X, W, b, T,D, seq, out0_forward, c0_forward)
+
+  # approach 1: reorder token by reversing X and weights of X
+  X_reverse = t(rev(t(X)))                  # reverse the elements inside a row
+  W_reverse[1:D,] = rev(W_reverse[1:D,])    # have to reverse the input weights as well
+
+  # approach 2 (slower): reorder tokens by slicing
+  # X_reverse = matrix(0, rows=nrow(X), cols=ncol(X))
+  # for (i in 1:T){X_reverse[,(T - i)*D+1:(T - i + 1)*D] = X[,(i-1)*D+1:i*D]}
+
+  [out_reverse, c_reverse, cache_out_reverse, cache_c_reverse, cache_ifog_reverse] = lstm(X_reverse, W_reverse, b_reverse, out0_reverse, c0_reverse, seq)
+  #[out_reverse, c_reverse, cache_out_reverse, cache_c_reverse, cache_ifog_reverse] = lstm::forward(X_reverse, W_reverse, b_reverse, T,D, seq, out0_reverse, c0_reverse)
+
+  # reorder the output of reverse lstm cell
+  if(seq){
+    out_reversed = matrix(0, nrow(out_reverse), ncol(out_reverse))
+    for (i in 1:T){out_reversed[,(T - i)*M+1:(T - i + 1)*M] = out_reverse[,(i-1)*M+1:i*M]}
+  } else {
+    out_reversed = out_reverse
+  }
+
+  cache_out = rbind(cache_out, cache_out_reverse)
+  cache_c = rbind(cache_c, cache_c_reverse)
+  cache_ifog = rbind(cache_ifog, cache_ifog_reverse)
+
+  c = rbind(c, c_reverse)
+
+  if(seq == FALSE){T=1}
+  out = matrix(out, rows = N*T, cols=M)
+  out_reversed = matrix(out_reversed, rows = N*T, cols=M)
+  out = cbind(out, out_reversed)
+  out = matrix(out, rows = N, cols = T*2*M)
+}
+
+backward = function(matrix[double] dout, matrix[double] dc,
+                    matrix[double] X, matrix[double] W, matrix[double] W_reverse, matrix[double] b,
+                    matrix[double] b_reverse, int T, int D, boolean seq, matrix[double] out0, matrix[double] c0,
+                    matrix[double] cache_out, matrix[double] cache_c, matrix[double] cache_ifog)
+    return (matrix[double] dX, matrix[double] dW, matrix[double] db, matrix[double] dW_reverse,
+            matrix[double] db_reverse, matrix[double] dout0, matrix[double] dc0) {
+  /*
+   * Computes the backward pass for an BI-LSTM layer with M neurons.
+   *
+   * Inputs:
+   *  - dout: Gradient wrt `out`.  If `seq` is `True`,
+   *      contains gradients on outputs for all timesteps, of
+   *      shape (N, T*(2*M)). Else, contains the gradient on the output
+   *      for the final timestep, of shape (N, 2*M).
+   *  - dc: Gradient wrt `c` (from later in time), of shape (N*2, M).
+   *      This would come from later in time if the cell state was used
+   *      downstream as the initial cell state for another LSTM layer.
+   *      Typically, this would be used when a sequence was cut at
+   *      timestep `T` and then continued in the next batch.  If `c`
+   *      was not used downstream, then `dc` would be an empty matrix.
+   *  - X: Inputs, of shape (N, T*D).
+   *  - W: Weights, of shape (D+M, 4M).
+   *  - W_reverse: Weights, of shape (D+M, 4M).
+   *  - b: Biases, of shape (1, 4M).
+   *  - b_reverse: Biases, of shape (1, 4M).
+   *  - T: Length of example sequences (number of timesteps).
+   *  - D: Dimensionality of the input features.
+   *  - seq: Whether `dout` is for all timesteps,
+   *      or just for the final timestep.  This is based on whether
+   *      `return_sequences` was true in the forward pass.
+   *  - out0: Outputs from previous timestep, of shape (N*2, M).
+   *      Note: This is *optional* and could just be an empty matrix.
+   *  - c0: Initial cell state, of shape (N*2, M).
+   *      Note: This is *optional* and could just be an empty matrix.
+   *  - cache_out: Cache of outputs, of shape (T*2, N*M).
+   *      Note: This is used for performance during training.
+   *  - cache_c: Cache of cell state, of shape (T*2, N*M).
+   *      Note: This is used for performance during training.
+   *  - cache_ifog: Cache of intermediate values, of shape (T*2, N*4*M).
+   *      Note: This is used for performance during training.
+   *
+   * Outputs:
+   *  - dX: Gradient wrt `X`, of shape (N, T*D).
+   *  - dW: Gradient wrt `W`, of shape (D+M, 4M).
+   *  - dW_reverse: Gradient wrt `W_reverse`, of shape (D+M, 4M).
+   *  - db: Gradient wrt `b`, of shape (1, 4M).
+   *  - db_reverse: Gradient wrt `b_reverse`, of shape (1, 4M).
+   *  - dout0: Gradient wrt `out0`, of shape (N*2, M).
+   *  - dc0: Gradient wrt `c0`, of shape (N*2, M).
+   */
+  M = ncol(out0)
+  N = nrow(X)
+
+  if(seq){dout = matrix(dout, rows=N*T, cols=2*M)}
+  dout_forward = dout[,1:M]
+  dout_reverse = dout[,M + 1 : 2*M]
+  if(seq){
+    dout_forward = matrix(dout_forward, rows=N, cols=T*M)
+    dout_reverse = matrix(dout_reverse, rows=N, cols=T*M)
+    dout_reversed = matrix(0, nrow(dout_reverse), ncol(dout_reverse))
+    for (i in 1:T){
+      dout_reversed[,(T - i)*M+1:(T - i + 1)*M] = dout_reverse[,(i-1)*M+1:i*M]
+    }
+  }
+  else{
+    dout_reversed = dout_reverse
+  }
+  dc_forward = dc[1:N,]
+  cache_out_forward = cache_out[1:T,]
+  cache_c_forward = cache_c[1:T,]
+  cache_ifog_forward = cache_ifog[1:T,]
+  out0_forward = out0[1 : nrow(out0) /2, ]
+  c0_forward = c0[1 : N, ]
+
+  [dx, dW, db, dout0, dc0] = lstm_backward(X, W, b, out0_forward, c0_forward, seq, dout_forward, dc_forward, cache_out_forward, cache_c_forward, cache_ifog_forward)
+  #[dx, dW, db, dout0, dc0] = lstm::backward(dout_forward, dc_forward, X, W,b,T,D,seq,out0_forward, c0_forward,cache_out_forward, cache_c_forward, cache_ifog_forward)
+
+  # for approach1:
+  X_reverse = t(rev(t(X)))                  # reverse the elements inside a row
+  W_reverse[1:D,] = rev(W_reverse[1:D,])    # have to reverse the input weights as well
+
+  # for approach2 (also slower for backward pass):
+  #X_reverse = X # matrix(0, rows=nrow(X), cols=ncol(X))
+  #for (i in 1:T){X_reverse[,(T - i)*D+1:(T - i + 1)*D] = X[,(i-1)*D+1:i*D]}
+
+  dc_reverse = dc[N+1 : 2*N,]
+  cache_out_reverse = cache_out[T+1 : 2*T,]
+  cache_c_reverse = cache_c[T+1 : 2*T,]
+  cache_ifog_reverse = cache_ifog[T+1 : 2*T,]
+  c0_reverse = c0[N + 1 : 2*N,]
+  out0_reverse = out0[N + 1 : 2*N,]
+
+  [dx_reverse, dW_reverse, db_reverse, dout0_reverse, dc0_reverse] = lstm_backward(X_reverse, W_reverse, b_reverse, out0_reverse, c0_reverse, seq, dout_reversed, dc_reverse, cache_out_reverse, cache_c_reverse, cache_ifog_reverse)
+  #[dx_reverse, dW_reverse, db_reverse, dout0_reverse, dc0_reverse] = lstm::backward(dout_reversed, dc_reverse, X_reverse, W_reverse,b_reverse,T,D,seq,out0_reverse, c0_reverse,cache_out_reverse, cache_c_reverse, cache_ifog_reverse)
+
+
+
+  # for approach1:
+  dx_reverse = t(rev(t(dx_reverse)))
+  dW_reverse[1:D,] = rev(dW_reverse[1:D,])
+
+  # for approach2:
+  #dx_reverse2 = matrix(0, rows=nrow(dx_reverse), cols=ncol(dx_reverse))
+  #for (i in 1:T){dx_reverse2[,(T - i)*D+1:(T - i + 1)*D] = dx_reverse[,(i-1)*D+1:i*D]}
+  #dx_reverse = dx_reverse2
+
+  dX = dx + dx_reverse
+  dout0 = rbind(dout0, dout0_reverse)
+  dc0 = rbind(dc0, dc0_reverse) #matrix(1, rows=1, cols=1)
+}

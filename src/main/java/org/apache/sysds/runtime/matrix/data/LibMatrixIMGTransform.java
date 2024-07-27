@@ -3,12 +3,14 @@ package org.apache.sysds.runtime.matrix.data;
 import org.apache.commons.lang3.NotImplementedException;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.sysds.api.mlcontext.Matrix;
 import org.apache.sysds.runtime.functionobjects.Builtin;
-import org.apache.sysds.runtime.functionobjects.Multiply;
+import org.apache.sysds.runtime.functionobjects.SwapIndex;
+import org.apache.sysds.runtime.instructions.InstructionUtils;
+import org.apache.sysds.runtime.matrix.operators.AggregateBinaryOperator;
 import org.apache.sysds.runtime.matrix.operators.BinaryOperator;
+import org.apache.sysds.runtime.matrix.operators.ReorgOperator;
 import org.apache.sysds.runtime.matrix.operators.UnaryOperator;
-
-import java.util.Arrays;
 
 public class LibMatrixIMGTransform {
 
@@ -73,10 +75,66 @@ public class LibMatrixIMGTransform {
 
         MatrixBlock coords_mul;
 
-        op_mult = new BinaryOperator(Multiply.getMultiplyFnObject(), t_Inv, coords);
+        assert t_Inv != null;
+        AggregateBinaryOperator op_mul_agg = InstructionUtils.getMatMultOperator(threads);
+        UnaryOperator op_floor = new UnaryOperator(Builtin.getBuiltinFnObject(Builtin.BuiltinCode.FLOOR));
+        BinaryOperator op_plus = InstructionUtils.parseExtendedBinaryOperator("+");
+        coords_mul = t_Inv.aggregateBinaryOperations(t_Inv, coords, op_mul_agg);
+        coords_mul = coords_mul.unaryOperations(op_floor);
+        coords_mul = coords_mul.binaryOperationsInPlace(op_plus, new MatrixBlock(coords_mul.rlen, coords_mul.clen, 1.0));
+
+        ReorgOperator op_t = new ReorgOperator(SwapIndex.getSwapIndexFnObject(), threads);
+        // inx = t(coords[1,])
+        MatrixBlock inx;
+        inx = coords_mul.slice(0,0);
+        inx = inx.reorgOperations(op_t, new MatrixBlock(), 0,0,inx.getNumColumns());
+        // iny = t(coords[2,])
+        MatrixBlock iny;
+        iny = coords_mul.slice(1,1);
+        iny = iny.reorgOperations(op_t, new MatrixBlock(), 0,0,iny.getNumColumns());
+        //System.out.println(iny);
+        // # any out-of-range pixels, if present, correspond to an extra pixel with fill_value at the end of the input
+        // index_vector = (orig_w *(iny-1) + inx) * ((0<inx) & (inx<=orig_w) & (0<iny) & (iny<=orig_h))
+        BinaryOperator op_minus = InstructionUtils.parseExtendedBinaryOperator("-");
+        BinaryOperator op_mult = InstructionUtils.parseExtendedBinaryOperator("*");
+        /*
+         Nx1 matrix of the second term of the above equation for multiplying later on with the first part
+         ((0<inx) & (inx<=orig_w) & (0<iny) & (iny<=orig_h))
+         */
+        //System.out.println(inx);
+        BinaryOperator op_greater = InstructionUtils.parseExtendedBinaryOperator(">");
+        //BinaryOperator op_less = InstructionUtils.parseExtendedBinaryOperator("<");
+        BinaryOperator op_less_equal = InstructionUtils.parseExtendedBinaryOperator("<=");
+        //BinaryOperator op_greater_equal = InstructionUtils.parseExtendedBinaryOperator(">=");
+        BinaryOperator op_and = InstructionUtils.parseExtendedBinaryOperator("&&");
+        MatrixBlock helper_one; //(0<inx)
+        helper_one = inx.binaryOperations(op_greater, new MatrixBlock(1,1,0.0));
+        MatrixBlock helper_two; //(inx<=orig_w)
+        helper_two = inx.binaryOperations(op_less_equal, new MatrixBlock(1,1,(double) orig_w));
+        MatrixBlock helper_three; //(0<iny)
+        helper_three = iny.binaryOperations(op_greater, new MatrixBlock(1,1, 0.0));
+        MatrixBlock helper_four;
+        helper_four = iny.binaryOperations(op_less_equal, new MatrixBlock(1,1, (double) orig_h));
+        MatrixBlock second_term;
+        second_term = helper_one.binaryOperations(op_and, helper_two); //(0<inx) & (inx<=orig_w)
+        second_term.binaryOperationsInPlace(op_and, helper_three); //(0<inx) & (inx<=orig_w) & (0<iny)
+        second_term.binaryOperationsInPlace(op_and, helper_four); // (0<inx) & (inx<=orig_w) & (0<iny) & (iny<=orig_h)
+        //System.out.println(second_term);
 
 
-        //System.out.println(coords);
+        // Nx1 matrix as the first part of the equation for the index vector (orig_w *(iny-1) + inx)
+        MatrixBlock index_vector;
+        index_vector = iny.binaryOperations(op_minus, new MatrixBlock(1, 1, 1.0)); //(iny-1)
+        index_vector.binaryOperationsInPlace(op_mult, new MatrixBlock(1, 1, (double) orig_w)); //orig_w *(iny-1)
+        index_vector.binaryOperationsInPlace(op_plus, inx); // (orig_w *(iny-1) + inx)
+        index_vector.binaryOperationsInPlace(op_mult, second_term); //(orig_w *(iny-1) + inx) * ((0<inx) & (inx<=orig_w) & (0<iny) & (iny<=orig_h))
+        index_vector = index_vector.reorgOperations(op_t, new MatrixBlock(), 0,0,index_vector.getNumRows());
+        //System.out.println(inx);
+        System.out.println(index_vector);
+
+        // xs = ((index_vector == 0)*(orig_w*orig_h +1)) + index_vector
+
+
         //System.out.println(Arrays.toString(coords1));
         //System.out.println(Arrays.toString(coords2));
         MatrixBlock filledBlock = new MatrixBlock(21.3);

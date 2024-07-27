@@ -107,8 +107,7 @@ public class LibMatrixReorg {
 	// public interface    //
 	/////////////////////////
 
-	public static boolean isSupportedReorgOperator( ReorgOperator op )
-	{
+	public static boolean isSupportedReorgOperator( ReorgOperator op ) {
 		return (getReorgType(op) != ReorgType.INVALID);
 	}
 

@@ -213,7 +213,7 @@ public class CM_N_COVCell extends MatrixValue
 	}
 
 	@Override
-	public MatrixValue zeroOutOperations(MatrixValue result, IndexRange range, boolean complementary) {
+	public MatrixValue zeroOutOperations(MatrixValue result, IndexRange range) {
 		throw new DMLRuntimeException("operation not supported for CM_N_COVCell");
 	}
 

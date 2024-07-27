@@ -26,7 +26,6 @@ import org.apache.sysds.test.TestConfiguration;
 import org.apache.sysds.test.TestUtils;
 import org.junit.Test;
 
-import java.util.Arrays;
 import java.util.HashMap;
 
 public class BuiltinRaGroupbyTest extends AutomatedTestBase

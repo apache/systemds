@@ -158,7 +158,7 @@ public class MatrixIndexingSPInstruction extends IndexingSPInstruction {
 			}
 			else { //general case
 				// zero-out lhs
-				in1 = in1.mapToPair(new ZeroOutLHS(false, ixrange, mcLeft));
+				in1 = in1.mapToPair(new ZeroOutLHS(ixrange, mcLeft));
 				
 				// slice rhs, shift and merge with lhs
 				in2 = sec.getBinaryMatrixBlockRDDHandleForVariable( input2.getName() )
@@ -341,12 +341,10 @@ public class MatrixIndexingSPInstruction extends IndexingSPInstruction {
 	{
 		private static final long serialVersionUID = -3581795160948484261L;
 		
-		private boolean _complement = false;
 		private IndexRange _ixrange = null;
 		private int _blen = -1;
 		
-		public ZeroOutLHS(boolean complement, IndexRange range, DataCharacteristics mcLeft) {
-			_complement = complement;
+		public ZeroOutLHS(IndexRange range, DataCharacteristics mcLeft) {
 			_ixrange = range;
 			_blen = mcLeft.getBlocksize();
 			_blen = mcLeft.getBlocksize();
@@ -365,7 +363,7 @@ public class MatrixIndexingSPInstruction extends IndexingSPInstruction {
 				throw new Exception("Error while getting range for zero-out");
 			}
 			
-			MatrixBlock zeroBlk = kv._2.zeroOutOperations(new MatrixBlock(), range, _complement);
+			MatrixBlock zeroBlk = kv._2.zeroOutOperations(new MatrixBlock(), range);
 			return new Tuple2<>(kv._1, zeroBlk);
 		}
 	}

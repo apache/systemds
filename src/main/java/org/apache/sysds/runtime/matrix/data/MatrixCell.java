@@ -249,7 +249,7 @@ public class MatrixCell extends MatrixValue implements Serializable
 	}
 
 	@Override
-	public MatrixValue zeroOutOperations(MatrixValue result, IndexRange range, boolean complementary) {
+	public MatrixValue zeroOutOperations(MatrixValue result, IndexRange range) {
 		if(range.rowStart!=0 || range.rowEnd!=0 || range.colStart!=0 || range.colEnd!=0)
 			throw new DMLRuntimeException("wrong range: "+range+" for matrixCell");
 		MatrixCell c3=checkType(result);

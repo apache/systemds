@@ -22,7 +22,6 @@
 X = read($1)
 col = as.integer($2)
 
-result = raGroupby(X, col, "nested-loop");
-write(result, $3);
-print(toString(result))
+result = raGroupby(X, col, $3);
+write(result, $4);
 

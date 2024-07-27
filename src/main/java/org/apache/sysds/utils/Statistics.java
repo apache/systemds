@@ -401,6 +401,7 @@ public class Statistics
 		tmp.count.increment();
 	}
 
+	@SuppressWarnings("unchecked")
 	public static void maintainNGrams(String instName, long timeNanos) {
 		NGramBuilder<String, NGramStats>[] tmp = _instStatsNGram.computeIfAbsent(Thread.currentThread().getName(), k -> {
 			NGramBuilder<String, NGramStats>[] threadEntry = new NGramBuilder[DMLScript.STATISTICS_NGRAM_SIZES.length];
@@ -414,6 +415,7 @@ public class Statistics
 			tmp[i].append(instName, new NGramStats(1, timeNanos, 0));
 	}
 
+	@SuppressWarnings("unchecked")
 	public static NGramBuilder<String, NGramStats>[] mergeNGrams() {
 		NGramBuilder<String, NGramStats>[] builders = new NGramBuilder[DMLScript.STATISTICS_NGRAM_SIZES.length];
 
@@ -545,7 +547,7 @@ public class Statistics
 
 			//long timeNs = tmp[len - 1 - i].getValue().time.longValue();
 			double timeS = topNGrams[i].getCumStats().cumTimeNanos / 1000000000d;
-			double timeVar = topNGrams[i].getCumStats().getTimeVariance();
+			//double timeVar = topNGrams[i].getCumStats().getTimeVariance();
 			String timeSString = sFormat.format(timeS);
 			String timeVarString = getNGramStdDevs(topNGrams[i].getStats(), topNGrams[i].getOffset(), 3, false);//sFormat.format(timeVar);
 

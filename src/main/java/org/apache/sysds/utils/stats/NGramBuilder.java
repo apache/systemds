@@ -115,6 +115,7 @@ public class NGramBuilder<T, U> {
 			return this;
 		}
 
+		@SuppressWarnings("unused")
 		private NGramEntry<T, U> add(NGramEntry<T, U> entry) {
 			return add(entry.occurrences);
 		}

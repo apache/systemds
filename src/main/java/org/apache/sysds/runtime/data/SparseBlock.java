@@ -274,6 +274,12 @@ public abstract class SparseBlock implements Serializable, Block
 
 	public abstract boolean checkValidity(int rlen, int clen, long nnz, boolean strict);
 
+	/**
+	 * Computes the exact size in memory of the materialized block
+	 * @return the exact size in memory
+	 */
+	public abstract long getExactSizeInMemory();
+	
 	////////////////////////
 	//obtain indexes/values/positions
 	

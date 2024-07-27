@@ -21,10 +21,7 @@ package org.apache.sysds.performance.matrix;
 
 import org.apache.sysds.runtime.data.DenseBlockFP64;
 import org.apache.sysds.runtime.data.SparseBlock;
-import org.apache.sysds.runtime.data.SparseBlockCOO;
-import org.apache.sysds.runtime.data.SparseBlockCSR;
-import org.apache.sysds.runtime.data.SparseBlockDCSR;
-import org.apache.sysds.runtime.data.SparseBlockMCSR;
+import org.apache.sysds.runtime.data.SparseBlockFactory;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.util.DataConverter;
 import org.apache.sysds.test.TestUtils;
@@ -183,37 +180,18 @@ public class MatrixStorage {
 	}
 
 	private long evaluateMemoryConsumption(SparseBlock.Type btype, double sparsity, int rl, int cl) {
-		try
-		{
-			if (btype == null)
-				return Math.min(Long.MAX_VALUE, (long) DenseBlockFP64.estimateMemory(rl, cl));
+		if (btype == null)
+			return Math.min(Long.MAX_VALUE, (long) DenseBlockFP64.estimateMemory(rl, cl));
 
-			double[][] A = TestUtils.generateTestMatrix(rl, cl, -10, 10, sparsity, 7654321);
+		double[][] A = TestUtils.generateTestMatrix(rl, cl, -10, 10, sparsity, 7654321);
 
-			MatrixBlock mbtmp = DataConverter.convertToMatrixBlock(A);
+		MatrixBlock mbtmp = DataConverter.convertToMatrixBlock(A);
 
-			if (!mbtmp.isInSparseFormat())
-				mbtmp.denseToSparse(true);
+		if (!mbtmp.isInSparseFormat())
+			mbtmp.denseToSparse(true);
 
-			SparseBlock srtmp = mbtmp.getSparseBlock();
-			switch (btype) {
-				case MCSR:
-					SparseBlockMCSR mcsr = new SparseBlockMCSR(srtmp);
-					return mcsr.getExactSizeInMemory();
-				case CSR:
-					SparseBlockCSR csr = new SparseBlockCSR(srtmp);
-					return csr.getExactSizeInMemory();
-				case COO:
-					SparseBlockCOO coo = new SparseBlockCOO(srtmp);
-					return coo.getExactSizeInMemory();
-				case DCSR:
-					SparseBlockDCSR dcsr = new SparseBlockDCSR(srtmp);
-					return dcsr.getExactSizeInMemory();
-			}
-		} catch(Exception ex) {
-			ex.printStackTrace();
-			throw new RuntimeException(ex);
-		}
-		throw new IllegalArgumentException();
+		SparseBlock srtmp = mbtmp.getSparseBlock();
+		SparseBlock sb = SparseBlockFactory.copySparseBlock(btype, srtmp, true);
+		return sb.getExactSizeInMemory();
 	}
 }

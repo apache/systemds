@@ -49,5 +49,6 @@ if(builtin){
 
 
 print(toString(zMat))
-print(toString(isFillable))
-# write(zMat, $out_file)
+print(nrow(zMat))
+print(ncol(zMat))
+write(zMat, $out_file)

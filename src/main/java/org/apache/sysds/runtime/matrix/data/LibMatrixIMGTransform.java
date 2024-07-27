@@ -2,13 +2,14 @@ package org.apache.sysds.runtime.matrix.data;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.sysds.common.Types;
+import org.apache.sysds.lops.Ctable;
 import org.apache.sysds.runtime.functionobjects.Builtin;
+import org.apache.sysds.runtime.functionobjects.CTable;
 import org.apache.sysds.runtime.functionobjects.SwapIndex;
 import org.apache.sysds.runtime.instructions.InstructionUtils;
-import org.apache.sysds.runtime.matrix.operators.AggregateBinaryOperator;
-import org.apache.sysds.runtime.matrix.operators.BinaryOperator;
-import org.apache.sysds.runtime.matrix.operators.ReorgOperator;
-import org.apache.sysds.runtime.matrix.operators.UnaryOperator;
+import org.apache.sysds.runtime.matrix.operators.*;
+import org.apache.sysds.runtime.util.DataConverter;
 
 public class LibMatrixIMGTransform {
 
@@ -129,7 +130,7 @@ public class LibMatrixIMGTransform {
         index_vector.binaryOperationsInPlace(op_mult, second_term); //(orig_w *(iny-1) + inx) * ((0<inx) & (inx<=orig_w) & (0<iny) & (iny<=orig_h))
         index_vector = index_vector.reorgOperations(op_t, new MatrixBlock(), 0,0,index_vector.getNumRows());
         //System.out.println(inx);
-        System.out.println(index_vector);
+        //System.out.println(index_vector);
 
         // xs = ((index_vector == 0)*(orig_w*orig_h +1)) + index_vector
         BinaryOperator op_equal = InstructionUtils.parseExtendedBinaryOperator("==");
@@ -153,13 +154,36 @@ public class LibMatrixIMGTransform {
         }else{
             fillBlock = new MatrixBlock(1, 1, 0.0);
         }
-        System.out.println(fillBlock);
+        //System.out.println(fillBlock);
 
         /**ind= matrix(seq(1,ncol(xs),1),1,ncol(xs))
         * z = table(xs, ind)
         * zMat = transMat
         */
-        //
-        return new MatrixBlock[] {index_vector, fillBlock};
+        //ind= matrix(seq(1,ncol(xs),1),1,ncol(xs))
+        double [] inds = new double[xs.getNumColumns()];
+        for(int i=0; i<xs.getNumColumns(); i++) {
+            inds[i] = i+1;
+        }
+        MatrixBlock ind = new MatrixBlock(1, xs.getNumColumns(), inds);
+        //ind = ind.reorgOperations(op_t, new MatrixBlock(), 0,0,ind.getNumColumns());
+        System.out.println(ind);
+        //z = table(xs, ind)
+        Ctable.OperationTypes op_c = Ctable.findCtableOperationByInputDataTypes(Types.DataType.MATRIX, Types.DataType.MATRIX, Types.DataType.SCALAR);
+        MatrixBlock zMat = new MatrixBlock();
+        //zMat = xs.ctableSeqOperations(ind, 1.0, zMat);
+        //xs.ctableOperations(null,xs, ind,new CTableMap(),helper_four);
+        MatrixBlock block = new MatrixBlock();
+        CTableMap map = new CTableMap();
+        //TernaryOperator op_ctable = new TernaryOperator();
+        zMat.ctableOperations(null, xs, ind, map, block);
+        MatrixBlock newBlock = map.toMatrixBlock(101,225);
+        //InstructionUtils.parseAggregateTernaryOperator("ctable", threads);
+        System.out.println(newBlock);
+        System.out.println(block);
+        CTable ctab = CTable.getCTableFnObject();
+        ctab.execute(xs, ind, new MatrixBlock(1,1,1.0) ,map, threads);
+        System.out.println(DataConverter.convertToMatrixBlock(map));
+        return new MatrixBlock[] {zMat, fillBlock};
     }
 }

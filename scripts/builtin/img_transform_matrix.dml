@@ -73,5 +73,5 @@
          ind= matrix(seq(1,ncol(xs),1),1,ncol(xs))
          z = table(xs, ind)
          zMat = transMat
-         isFillable = as.double(min(index_vector) == 0)
+         isFillable = as.logical(as.double(min(index_vector) == 0))
  }

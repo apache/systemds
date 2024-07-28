@@ -19,6 +19,7 @@
 
 package org.apache.sysds.test.functions.builtin.part1;
 
+import org.apache.spark.sql.catalyst.expressions.CheckOverflowInTableInsert;
 import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -78,7 +79,7 @@ public class BuiltinImageTransformLinearizedTest extends AutomatedTestBase {
 
     @Parameterized.Parameters
     public static Collection<Object[]> data() {
-        return Arrays.asList(new Object[][] {{1,512, 512, 512, 512, 1,0,0,0,1,0,1, 512, 512}});
+        return Arrays.asList(new Object[][] {{1, 512, 512, 512, 512, 1,0,0,0,1,0,1, 512, 512}});
     }
 
     @Override
@@ -88,9 +89,13 @@ public class BuiltinImageTransformLinearizedTest extends AutomatedTestBase {
     }
 
     @Test
-    @Ignore
     public void testImageTransformLinearized() {
         runImageTransformLinearizedTest(false, ExecType.CP);
+    }
+
+    @Test
+    public void testImageTransformLinearizedEmpty() {
+        runImageTransformLinearizedTestEmpty(false, ExecType.CP);
     }
 
     @Test
@@ -98,6 +103,8 @@ public class BuiltinImageTransformLinearizedTest extends AutomatedTestBase {
     public void testImageTransformLinearizedSP() {
         runImageTransformLinearizedTest(true, ExecType.SPARK);
     }
+
+
 
     private void runImageTransformLinearizedTest(boolean sparse, ExecType instType) {
         ExecMode platformOld = setExecMode(instType);
@@ -128,6 +135,37 @@ public class BuiltinImageTransformLinearizedTest extends AutomatedTestBase {
 
         }
         finally {
+            rtplatform = platformOld;
+        }
+    }
+    private void runImageTransformLinearizedTestEmpty(boolean sparse, ExecType instType) {
+        ExecMode platformOld = setExecMode(instType);
+        disableOutAndExpectedDeletion();
+
+        try {
+            loadTestConfiguration(getTestConfiguration(TEST_NAME_LINEARIZED));
+
+            double sparsity = sparse ? spSparse : spDense;
+            String HOME = SCRIPT_DIR + TEST_DIR;
+
+            fullDMLScriptName = HOME + TEST_NAME_LINEARIZED + ".dml";
+            programArgs = new String[]{"-nvargs", "in_file=" + input("A"), "width=", "height=",
+                    "out_w=", "out_h=", "a=", "b=", "c=", "d=", "e=", "f=",
+                    "fill_value=", "s_cols=", "s_rows=",
+                    "out_file=" + output("B_x")};
+
+            double[][] A = getRandomMatrix(rows, height * width, 0, 255, sparsity, 7);
+            writeInputMatrixWithMTD("A", A, true);
+
+            runTest(true, false, null, -1);
+
+            //HashMap<MatrixValue.CellIndex, Double> dmlfileLinearizedX = readDMLMatrixFromOutputDir("B_x");
+
+            //HashMap<MatrixValue.CellIndex, Double> dmlfileX = readDMLMatrixFromOutputDir("B_x_reshape");
+
+            //TestUtils.compareMatrices(dmlfileLinearizedX, dmlfileX, eps, "Stat-DML-LinearizedX", "Stat-DML-X");
+
+        } finally {
             rtplatform = platformOld;
         }
     }

@@ -85,7 +85,8 @@ m_img_transform_linearized = function(Matrix[Double] img_in, Integer out_w, Inte
     ind= matrix(seq(1,ncol(xs),1),1,ncol(xs))
     z = table(xs, ind) 
     output = ys%*%z
-
+    print(nrow(img_in))
+    print(ncol(img_in))
     img_out = matrix(output, rows=nrow(img_in), cols=out_w*out_h)
   }
 }

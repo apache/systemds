@@ -38,6 +38,7 @@ public class BuiltinImageTransformMatrixTest extends AutomatedTestBase {
     private final static String TEST_DIR = "functions/builtin/";
     private final static String TEST_CLASS_DIR = TEST_DIR + BuiltinImageTransformMatrixTest.class.getSimpleName() + "/";
 
+
     @Parameterized.Parameter(0)
     public double[][] transMat;
     @Parameterized.Parameter(1)
@@ -60,11 +61,14 @@ public class BuiltinImageTransformMatrixTest extends AutomatedTestBase {
     private static final double [][] t8 = new double[][] {{2,0,0},{0,1,0},{0,0,1}};
     private static final double [][] d8 = new double[][] {{3840, 2160},{1980, 1080}};
     private static final double [][] t9 = new double[][] {{2,0,0},{0,1,0},{0,0,1}};
-    private static final double [][] d9 = new double[][] {{6000, 4000},{6000, 4000}};
+    private static final double [][] d9 = new double[][] {{5000, 3000},{5000, 3000}};
+    private static final double [][] t10 = new double[][] {{2,0,0},{0,1,0},{0,0,1}};
+    private static final double [][] d10 = new double[][] {{1, 3000},{1, 3000}};
 
     @Parameterized.Parameters
     public static Collection<Object[]> data() {
-        return Arrays.asList(new Object[][] {{t1, d1},{t2, d2},{t3, d3},{t4, d4},{t5, d5},{t6, d6},{t7, d7},{t8, d8},{t9, d9}});
+        return Arrays.asList(new Object[][] {{t1, d1},{t2, d2},{t3, d3},{t4, d4},{t5, d5},
+                {t6, d6},{t7, d7},{t8, d8},{t9, d9},{t10, d10}});
     }
 
     @Override

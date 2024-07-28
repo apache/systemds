@@ -30,11 +30,11 @@ dimensionMatrix = read($dimMat)
 
 # print(toString(dimensionMatrix))
 
-orig_w = as.scalar(dimensionMatrix[1,1])
-orig_h = as.scalar(dimensionMatrix[1,2])
-out_w = as.scalar(dimensionMatrix[2,1])
-out_h = as.scalar(dimensionMatrix[2,2])
-# print("orig_w: " + orig_w + "; orig_h: " + orig_h + "; out_w: " + out_w + "; out_h: " + out_h)
+#orig_w = as.scalar(dimensionMatrix[1,1])
+#orig_h = as.scalar(dimensionMatrix[1,2])
+#out_w = as.scalar(dimensionMatrix[2,1])
+#out_h = as.scalar(dimensionMatrix[2,2])
+#print("orig_w: " + orig_w + "; orig_h: " + orig_h + "; out_w: " + out_w + "; out_h: " + out_h)
 input = matrix(transformationMatrix, rows=3, cols=3)
 
 builtin = TRUE
@@ -46,9 +46,10 @@ if(builtin){
 
 # function for calculating the matrix which will be matrix multiplied with
 # the image for matrix multiplication
+isFillable = as.logical(as.scalar(isFillable))
 
-
-print(toString(zMat))
+#print(toString(zMat))
 print(nrow(zMat))
 print(ncol(zMat))
+print("IsFillable: " + toString(isFillable))
 write(zMat, $out_file)

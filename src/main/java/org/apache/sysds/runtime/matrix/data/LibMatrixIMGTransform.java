@@ -2,8 +2,6 @@ package org.apache.sysds.runtime.matrix.data;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.apache.sysds.common.Types;
-import org.apache.sysds.lops.Ctable;
 import org.apache.sysds.runtime.functionobjects.Builtin;
 import org.apache.sysds.runtime.functionobjects.CTable;
 import org.apache.sysds.runtime.functionobjects.SwapIndex;
@@ -140,7 +138,7 @@ public class LibMatrixIMGTransform {
 
         MatrixBlock xs;
         xs = helper_one.binaryOperations(op_plus, index_vector); //xs = ((index_vector == 0)*(orig_w*orig_h +1)) + index_vector
-        System.out.println(xs);
+        //System.out.println(xs);
 
         //#if(min(index_vector) == 0){
         //#  ys=cbind(img_in, matrix(fill_value,nrow(img_in), 1))
@@ -167,23 +165,46 @@ public class LibMatrixIMGTransform {
         }
         MatrixBlock ind = new MatrixBlock(1, xs.getNumColumns(), inds);
         //ind = ind.reorgOperations(op_t, new MatrixBlock(), 0,0,ind.getNumColumns());
-        System.out.println(ind);
+        //xs = xs.reorgOperations(op_t, new MatrixBlock(), 0,0,xs.getNumColumns());
+        //System.out.println(ind);
         //z = table(xs, ind)
-        Ctable.OperationTypes op_c = Ctable.findCtableOperationByInputDataTypes(Types.DataType.MATRIX, Types.DataType.MATRIX, Types.DataType.SCALAR);
-        MatrixBlock zMat = new MatrixBlock();
+        //Ctable.OperationTypes op_c = Ctable.findCtableOperationByInputDataTypes(Types.DataType.MATRIX, Types.DataType.MATRIX, Types.DataType.SCALAR);
+        //MatrixBlock zMat = new MatrixBlock();
         //zMat = xs.ctableSeqOperations(ind, 1.0, zMat);
         //xs.ctableOperations(null,xs, ind,new CTableMap(),helper_four);
-        MatrixBlock block = new MatrixBlock();
-        CTableMap map = new CTableMap();
+        //MatrixBlock block = new MatrixBlock((int) xs.max(), (int) ind.max(), false);
+        //CTableMap map = new CTableMap();
         //TernaryOperator op_ctable = new TernaryOperator();
-        zMat.ctableOperations(null, xs, ind, map, block);
-        MatrixBlock newBlock = map.toMatrixBlock(101,225);
+
+        //MatrixBlock newBlock = map.toMatrixBlock(101,225);
         //InstructionUtils.parseAggregateTernaryOperator("ctable", threads);
-        System.out.println(newBlock);
-        System.out.println(block);
+        //System.out.println(newBlock);
+        //System.out.println(block);
         CTable ctab = CTable.getCTableFnObject();
-        ctab.execute(xs, ind, new MatrixBlock(1,1,1.0) ,map, threads);
-        System.out.println(DataConverter.convertToMatrixBlock(map));
-        return new MatrixBlock[] {zMat, fillBlock};
+        //SimpleOperator op_ctab = new SimpleOperator(ctab);
+        //MatrixBlock zzz = new MatrixBlock();
+        //zzz.ctableOperations(op_ctab,xs, ind,new CTableMap(),block);
+        //zMat.ctableOperations(op_ctab, xs, ind, null, zzz);
+        //ctab.execute(ind, xs, new MatrixBlock(1,1,1.0) ,map, threads);
+        //System.out.println(DataConverter.convertToMatrixBlock(map));
+        //System.out.println(map.toMatrixBlock((int) xs.max(), (int) ind.max()));
+        //System.out.println(zMat);
+        //System.out.println(zzz);
+
+        CTableMap m1 = new CTableMap();
+        MatrixBlock lol = new MatrixBlock();
+        for( int i=0; i<xs.getNumColumns(); i++){
+                double v1 = xs.get(0,i);
+                //System.out.println(xs.getNumColumns());
+                double v2 = ind.get(0, i);
+                double w = 1.0;
+                //ctab.execute(v1, v2, w, true, lol);
+                ctab.execute(v1,v2,w,false, m1);
+        }
+        lol.recomputeNonZeros();
+        lol = DataConverter.convertToMatrixBlock(m1);
+        //lol.sparseToDense(threads);
+        //System.out.println(lol);
+        return new MatrixBlock[] {lol, fillBlock};
     }
 }

@@ -28,7 +28,7 @@
 # colA      Integer indicating the column index of matrix A to execute inner join command
 # B         Matrix of right left data [shape: N x M]
 # colA      Integer indicating the column index of matrix B to execute inner join command
-# method    Join implementation method (nested-loop, sort-merge, hash)
+# method    Join implementation method (nested-loop, sort-merge, hash, hash2)
 # ------------------------------------------------------------------------------
 #
 # OUTPUT:
@@ -142,6 +142,79 @@ m_raJoin = function (Matrix[Double] A, Integer colA, Matrix[Double] B,
 
     # Select left rows and concatenate right rows
     Y = cbind(P1 %*% A, B);
+  }
+  else if ( method == "hash2" ) {
+    # Get join key columns
+    left = A[,colA]
+    right = B [,colB]
+
+    # Compute indexes and hash values
+    leftIdx = seq(1, nrow(A))
+    rightIdx = seq(1, nrow(B))
+    m = max(max(left),max(right)) + 1; # Assuming a large hash table size
+    leftHash = left %% m
+    rightHash = right %% m
+
+    # Build histogram of hash values for left join keys
+    hashBincount = table( leftHash, 1, max(leftHash), 1 )
+
+    #Initialize output indexes
+    leftOutIdx = matrix(0,0,1)
+    rightOutIdx = matrix(0,0,1)
+
+    # Check for one-to-many
+    if( max(hashBincount) > 1 )
+      stop("Hash join implementation only supports one-to-many joins: "+toString(hashBincount))
+
+    # Build and probe hash table
+    # Initialize hash table
+    hashTable=matrix(0,m,1)
+
+    # Create a select or matrix and use matrix multiplication to place values
+    hashTable = t(table(seq(1,nrow(leftIdx)), leftHash, nrow(leftIdx), nrow(hashTable))) %*% leftIdx
+
+    # Update lefHash to skip scattered values for future iterations by setting their hashes to m
+    leftIdxSct = removeEmpty(target=seq(1,nrow(hashTable)), margin="rows", select=(hashTable>=1))
+    selectedMatrix = table(seq(1, nrow(leftIdxSct)), leftIdxSct, nrow(leftIdxSct), nrow(hashTable))
+    leftHash = t(selectedMatrix) %*% matrix(m, rows=nrow(leftIdxSct), cols=1, byrow=TRUE)
+
+    #Probe hash table and get the left and right indexes
+    validLeftIdx = matrix(0,0,1)
+    validRightIdx = matrix(0,0,1)
+
+    lefCandIdx = table(seq(1, nrow(rightHash)), rightHash, nrow(rightHash), nrow(hashTable)) %*% hashTable
+    validKeyMask = (lefCandIdx>0)
+
+    # Check if non matching
+    if( as.scalar(colSums(validKeyMask)) > 0 ){
+      validLeftIdx = removeEmpty(target=lefCandIdx, margin="rows", select=validKeyMask)
+      validRightIdx = removeEmpty(target=rightIdx, margin="rows", select=validKeyMask)
+
+      # Find matching join keys
+      selectedValidLeftIdx = table(seq(1,nrow(validLeftIdx)), validLeftIdx, nrow(validLeftIdx), nrow(left)) %*% left
+      selectedValidRightIdx = table(seq(1,nrow(validRightIdx)), validRightIdx, nrow(validRightIdx), cols=nrow(right)) %*% right
+
+      matchMask = ( selectedValidLeftIdx == selectedValidRightIdx )
+      if ( as.scalar(colSums(matchMask[,1])) > 0) {
+        leftMatchIdx = removeEmpty(target=validLeftIdx, margin="rows", select=matchMask)
+        rightMatchIdx = removeEmpty(target=validRightIdx, margin="rows", select=matchMask)
+
+        #Append indexes to global results
+        leftOutIdx = rbind(leftOutIdx, removeEmpty(target=leftMatchIdx, margin="rows"))
+        rightOutIdx = rbind(rightOutIdx, removeEmpty(target=rightMatchIdx, margin="rows"))
+      }
+    }
+
+    # Create output
+    if ( nrow(leftOutIdx) == 0 | nrow(rightOutIdx) == 0 ) {
+      Y = matrix(0, rows=0, cols=1)
+    }
+    else {
+      Y = matrix(0, rows=nrow(leftOutIdx), cols=ncol(A)+ncol(B))
+      for( j in 1:nrow(leftOutIdx) ) {
+        Y[j, ] = cbind( A[as.scalar(leftOutIdx[j]), ], B[as.scalar(rightOutIdx[j]), ] )
+      }
+    }
   }
 }
 

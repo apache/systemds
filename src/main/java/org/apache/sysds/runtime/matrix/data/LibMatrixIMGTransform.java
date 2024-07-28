@@ -69,6 +69,8 @@ public class LibMatrixIMGTransform {
      * @param transMat affine 3x3 matrix for image transformations
      * @param dimMat 2x2 matrix with original and output image dimensions
      * @param threads number of threads for use in different methods
+     *
+     * @return array of two matrix blocks, 1st is the transformation matrix, 2nd a 1x1 matrix with 1 or 0
      */
     public static MatrixBlock[] transformationMatrix(MatrixBlock transMat, MatrixBlock dimMat, int threads) {
         int orig_w = (int) dimMat.get(0,0);

@@ -293,9 +293,6 @@ public class FunctionOp extends MultiThreadedHop
 			else if ( getFunctionName().equalsIgnoreCase("ifft_linearized") ) {
 				// 2 matrices of size same as the input
 				return 2 * OptimizerUtils.estimateSizeExactSparsity(getInput().get(0).getDim1(), getInput().get(0).getDim2(), 1.0);
-//			} else if (getFunctionName().equalsIgnoreCase("img_transform_matrix")) {
-//
-//				return OptimizerUtils.estimateSizeExactSparsity(getInput().get(4)., getInput().get(5).getDim2(), 1.0);
 			} else if ( getFunctionName().equalsIgnoreCase("stft") ) {
 				// 2 matrices of size same as the input
 				return 2*OptimizerUtils.estimateSizeExactSparsity(getInput().get(0).getDim1(), getInput().get(0).getDim2(), 1.0);

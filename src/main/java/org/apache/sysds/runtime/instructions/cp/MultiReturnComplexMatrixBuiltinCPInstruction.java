@@ -144,7 +144,7 @@ public class MultiReturnComplexMatrixBuiltinCPInstruction extends ComputationCPI
 			CPOperand in2 = new CPOperand(parts[2]); //dimension matrix [[orig_w, orig_h],[out_w, out_h]]
 
 			outputs.add(new CPOperand(parts[3], ValueType.FP64, DataType.MATRIX));
-			outputs.add(new CPOperand(parts[4], ValueType.BOOLEAN, DataType.SCALAR));
+			outputs.add(new CPOperand(parts[4], ValueType.FP64, DataType.MATRIX));
 			int threads = Integer.parseInt(parts[5]);
 			//throw new NotImplementedException("Has yet to be done. Check number of inputs" + Arrays.toString(parts) + "; Number of parts: " + parts.length);
 			return new MultiReturnComplexMatrixBuiltinCPInstruction(null, in1, in2, outputs, opcode, str, threads);

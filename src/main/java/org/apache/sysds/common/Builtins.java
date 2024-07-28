@@ -170,7 +170,6 @@ public enum Builtins {
 	IMG_TRANSFORM_LINEARIZED("img_transform_linearized", true),
 	IMG_TRANSFORM_MATRIX("img_transform_matrix", false, ReturnType.MULTI_RETURN),
 	IMG_TRANSFORM_TEST("img_transform_test", true),
-	//IMG_TRANSFORM_MATRIX("img_transform_matrix", true), //TODO: remove unused builtin
 	IMG_TRANSLATE("img_translate", true),
 	IMG_TRANSLATE_LINEARIZED("img_translate_linearized", true),
 	IMG_ROTATE("img_rotate", true),

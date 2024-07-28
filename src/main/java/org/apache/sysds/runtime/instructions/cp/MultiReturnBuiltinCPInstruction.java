@@ -20,7 +20,6 @@
 package org.apache.sysds.runtime.instructions.cp;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 
 import org.apache.commons.lang3.NotImplementedException;

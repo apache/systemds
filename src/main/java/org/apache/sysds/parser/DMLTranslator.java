@@ -2491,15 +2491,6 @@ public class DMLTranslator
 				new NaryOp(target.getName(), target.getDataType(), target.getValueType(), appendOpN,
 					processAllExpressions(source.getAllExpr(), hops));
 			break;
-		//case IMG_TRANSFORM_MATRIX:
-		//	currBuiltinOp = new BinaryOp(target.getName(), target.getDataType(), target.getValueType(), OpOp2.IMG_TRANSFORM_MATRIX , expr, expr2);
-//			switch (source.getOpCode()){
-//				default:
-//					throw new ParseException(source.printErrorLocation() +
-//							"processBuiltinFunctionExpression():: Could not find Operation type for builtin function: "
-//							+ source.getOpCode());
-//			}
-		//	break;
 		case TABLE:
 
 			// Always a TertiaryOp is created for table().

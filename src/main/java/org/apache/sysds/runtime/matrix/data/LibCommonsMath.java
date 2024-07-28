@@ -23,6 +23,7 @@ import static org.apache.sysds.runtime.matrix.data.LibMatrixFourier.fft;
 import static org.apache.sysds.runtime.matrix.data.LibMatrixFourier.fft_linearized;
 import static org.apache.sysds.runtime.matrix.data.LibMatrixFourier.ifft;
 import static org.apache.sysds.runtime.matrix.data.LibMatrixFourier.ifft_linearized;
+import static org.apache.sysds.runtime.matrix.data.LibMatrixIMGTransform.transformationMatrix;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -173,7 +174,7 @@ public class LibCommonsMath
 				return computeRCM(in1, in2);
 			case "img_transform_matrix":
 				//throw new NotImplementedException("Hope we get here");
-				return LibMatrixIMGTransform.transformationMatrix(in1, in2, threads);
+				return transformationMatrix(in1, in2, threads);
 			default:
 				return null;
 		}

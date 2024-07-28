@@ -115,42 +115,55 @@ def pandas_to_frame_block(sds, pd_df: pd.DataFrame):
             schema.append(data_type_mapping[dtype])
         else:
             schema.append(jvm.org.apache.sysds.common.Types.ValueType.STRING)
-
     try:
         jc_ValueType = jvm.org.apache.sysds.common.Types.ValueType
         jc_String = jvm.java.lang.String
         jc_FrameBlock = jvm.org.apache.sysds.runtime.frame.data.FrameBlock
         j_valueTypeArray = java_gate.new_array(jc_ValueType, len(schema))
         j_colNameArray = java_gate.new_array(jc_String, len(col_names))
+        
+        if rows > 4:
+            for i in range(len(schema)):
+                j_valueTypeArray[i] = schema[i]
+            for i in range(len(col_names)):
+                j_colNameArray[i] = str(col_names[i])
 
-        for i in range(len(schema)):
-            j_valueTypeArray[i] = schema[i]
-        for i in range(len(col_names)):
-            j_colNameArray[i] = str(col_names[i])
+            fb = jc_FrameBlock(j_valueTypeArray, j_colNameArray, rows)
 
-        fb = jc_FrameBlock(j_valueTypeArray, j_colNameArray, rows)
+            # convert and set data for each column
+            for j, col_name in enumerate(col_names):
+                col_type = schema[j]
+                if col_type == jvm.org.apache.sysds.common.Types.ValueType.STRING:
+                    byte_data = bytearray()
+                    for value in pd_df[col_name].astype(str):
+                        encoded_value = value.encode('utf-8')
+                        byte_data.extend(struct.pack('>I', len(encoded_value)))
+                        byte_data.extend(encoded_value)
+                else:
+                    col_data = pd_df[col_name].fillna("").to_numpy()
+                    byte_data = bytearray(col_data.tobytes())
 
-        # convert and set data for each column
-        for j, col_name in enumerate(col_names):
-            col_type = schema[j]
-            if col_type == jvm.org.apache.sysds.common.Types.ValueType.STRING:
-                byte_data = bytearray()
-                for value in pd_df[col_name].astype(str):
-                    encoded_value = value.encode('utf-8')
-                    byte_data.extend(struct.pack('>I', len(encoded_value)))
-                    byte_data.extend(encoded_value)
-            else:
-                col_data = pd_df[col_name].fillna("").to_numpy()
-                byte_data = bytearray(col_data.tobytes())
-
-            converted_array = jvm.org.apache.sysds.runtime.util.Py4jConverterUtils.convert(byte_data, rows, col_type)
-            fb.setColumn(j, converted_array)
-
-        return fb
+                converted_array = jvm.org.apache.sysds.runtime.util.Py4jConverterUtils.convert(byte_data, rows, col_type)
+                fb.setColumn(j, converted_array)
+            return fb
+        else:
+            j_dataArray = java_gate.new_array(jc_String, rows, cols)
+            for i in range(len(schema)):
+                j_valueTypeArray[i] = schema[i]
+            for i in range(len(col_names)):
+                j_colNameArray[i] = str(col_names[i])
+            j = 0
+            for j, col_name in enumerate(col_names):
+                col_data = pd_df[col_name].fillna("").to_numpy(dtype=str)
+                for i in range(col_data.shape[0]):
+                    if col_data[i]:
+                        j_dataArray[i][j] = col_data[i]
+            fb = jc_FrameBlock(j_valueTypeArray, j_colNameArray, j_dataArray)
+            return fb
 
     except Exception as e:
         sds.exception_and_close(e)
-        raise e
+
 
 def frame_block_to_pandas(sds, fb: JavaObject):
     """Converts a FrameBlock object in the JVM to a pandas dataframe.

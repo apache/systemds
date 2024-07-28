@@ -20,11 +20,24 @@
 #-------------------------------------------------------------
 
 addedX = read($1);
-e = read($2);
+oldX = read($2);
+totalX = rbind(oldX, addedX);
+oldE = read($3);
+addedE = read($4);
+totalE = rbind(oldE, addedE);
 
 # call slice finding
-[TS,TR] = incSliceLine(addedX=addedX, newE=e, k=$3,
-  alpha=0.95, minSup=4, tpEval=$4, selFeat=$5, verbose=$6);
+[TK, TKC, D, L, RL, Xout, eOut, params] = incSliceLine(addedX=oldX, newE=oldE, k=$5,
+  alpha=0.95, minSup=4, tpEval=$6, selFeat=$7, verbose=$8);
 
-write(TR, $7)
+[TK1, TKC1, D1, L1, RL1, Xout1, eOut1, params] = incSliceLine(addedX=addedX, oldX = oldX, oldE = oldE, newE=addedE, prevLattice = L, prevRL = RL, prevTK = TK, prevTKC = TKC, k=$5,
+  alpha=0.95, minSup=4, tpEval=$6, selFeat=$7, verbose=$8, params=params);
+
+[TK2, TKC2, D2, L2, RL2, Xout2, eOut2, params] = incSliceLine(addedX=totalX, newE=totalE, k=$5,
+  alpha=0.95, minSup=4, tpEval=$6, selFeat=$7, verbose=$8);
+
+
+
+write(TKC1, $9)
+write(TKC2, $10)
 

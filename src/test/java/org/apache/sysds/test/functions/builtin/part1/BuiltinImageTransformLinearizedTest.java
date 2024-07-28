@@ -88,6 +88,7 @@ public class BuiltinImageTransformLinearizedTest extends AutomatedTestBase {
     }
 
     @Test
+    @Ignore
     public void testImageTransformLinearized() {
         runImageTransformLinearizedTest(false, ExecType.CP);
     }

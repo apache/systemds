@@ -59,6 +59,7 @@ m_raJoin = function (Matrix[Double] A, Integer colA, Matrix[Double] B,
       }
     }
   }
+  # The sort-merge method is from original paper: Qery Processing on Tensor Computation Runtime, section 5-2
   else if (method == "sort-merge") {
     # get join key columns
     left = A[, colA]
@@ -143,6 +144,7 @@ m_raJoin = function (Matrix[Double] A, Integer colA, Matrix[Double] B,
     # Select left rows and concatenate right rows
     Y = cbind(P1 %*% A, B);
   }
+  # The hash2 method is from the original paper: Qery Processing on Tensor Computation Runtime, section 5-3
   else if ( method == "hash2" ) {
     # Get join key columns
     left = A[,colA]
@@ -152,6 +154,7 @@ m_raJoin = function (Matrix[Double] A, Integer colA, Matrix[Double] B,
     leftIdx = seq(1, nrow(A))
     rightIdx = seq(1, nrow(B))
     m = max(max(left),max(right)) + 1; # Assuming a large hash table size
+    #m = 100
     leftHash = left %% m
     rightHash = right %% m
 

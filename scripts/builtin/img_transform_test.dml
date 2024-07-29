@@ -41,34 +41,12 @@ m_img_transform_test = function(Matrix[Double] transMat, Matrix[Double] dimensio
             inx = t(coords[1,])
             iny = t(coords[2,])
 
-
             # any out-of-range pixels, if present, correspond to an extra pixel with fill_value at the end of the input
             index_vector = (orig_w *(iny-1) + inx) * ((0<inx) & (inx<=orig_w) & (0<iny) & (iny<=orig_h))
             index_vector = t(index_vector)
-            xs_one = ((index_vector == 0)*(orig_w*orig_h +1))
-            #print(length(index_vector))
-            #print(toString(xs_one))
-            #print(length(xs_one))
             xs = ((index_vector == 0)*(orig_w*orig_h +1)) + index_vector
-            #print("index_vector")
-            #print(length(index_vector))
-            #print(toString(index_vector))
-            #print(toString(index_vector[1,180:225]))
-            #print("xs")
-            #print(length(xs))
-            #print(toString(xs))
-            #print(toString(xs[1,180:225]))
-
-            #if(min(index_vector) == 0){
-            #  ys=cbind(img_in, matrix(fill_value,nrow(img_in), 1))
-            #}else{
-            #  ys = img_in
-            #}
 
             ind= matrix(seq(1,ncol(xs),1),1,ncol(xs))
-            #print(toString(xs))
-            #print(toString(ind))
-            z = table(xs, ind)
-            zMat = z
+            zMat = table(xs, ind)
             isFillable = as.matrix(min(index_vector) == 0)
 }

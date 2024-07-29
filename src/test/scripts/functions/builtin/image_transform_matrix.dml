@@ -24,7 +24,7 @@ transformationMatrix = read($transMat)
 #print(toString(transformationMatrix))
 
 # get a matrix with the original image dimensions and the target dimensions (2x2)
-# -----original width----original heigh
+# -----original width----original height
 # -----target width------target height
 dimensionMatrix = read($dimMat)
 

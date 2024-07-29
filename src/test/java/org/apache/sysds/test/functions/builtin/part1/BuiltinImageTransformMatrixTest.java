@@ -19,6 +19,7 @@
 
 package org.apache.sysds.test.functions.builtin.part1;
 
+import org.apache.commons.lang3.NotImplementedException;
 import org.apache.sysds.test.AutomatedTestBase;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -27,8 +28,7 @@ import org.apache.sysds.common.Types.ExecMode;
 import org.apache.sysds.common.Types.ExecType;
 import org.apache.sysds.test.TestConfiguration;
 
-import java.util.Arrays;
-import java.util.Collection;
+import java.util.*;
 
 @RunWith(Parameterized.class)
 @net.jcip.annotations.NotThreadSafe
@@ -38,43 +38,45 @@ public class BuiltinImageTransformMatrixTest extends AutomatedTestBase {
     private final static String TEST_DIR = "functions/builtin/";
     private final static String TEST_CLASS_DIR = TEST_DIR + BuiltinImageTransformMatrixTest.class.getSimpleName() + "/";
 
-    private enum TestType{
-        TEST_WORKS,
-        TEST_FAILS,
-        COMPARE_TO_SCRIPT,
-        PERFORMANCE
-    }
-
     @Parameterized.Parameter(0)
     public double[][] transMat;
     @Parameterized.Parameter(1)
     public double[][] dimMat;
+    @Parameterized.Parameter(2)
+    public boolean fails;
 
-    private static final double [][] t1 = new double[][] {{2,0,0},{0,1,0},{0,0,1}};
-    private static final double [][] d1 = new double[][] {{10, 10},{15,15}};
-    private static final double [][] t2 = new double[][] {{4,0,0},{0,2,0},{0,0,1}};
-    private static final double [][] d2 = new double[][] {{10, 10},{15,15}};
-    private static final double [][] t3 = new double[][] {{2,0,0},{0,1,0},{0,0,1}};
-    private static final double [][] d3 = new double[][] {{100, 100},{150,150}};
-    private static final double [][] t4 = new double[][] {{4,0,0},{0,2,0},{0,0,1}};
-    private static final double [][] d4 = new double[][] {{100, 100},{150,150}};
-    private static final double [][] t5 = new double[][] {{-5,0,0},{0,-1,0},{0,0,1}};
-    private static final double [][] d5 = new double[][] {{100, 100},{150,150}};
-    private static final double [][] t6 = new double[][] {{2,0,0},{0,1,0},{0,0,1}};
-    private static final double [][] d6 = new double[][] {{1920, 1080},{1980, 1080}};
-    private static final double [][] t7 = new double[][] {{2,0,0},{0,1,0},{0,0,1}};
-    private static final double [][] d7 = new double[][] {{1920, 1080},{3840, 2160}};
-    private static final double [][] t8 = new double[][] {{2,0,0},{0,1,0},{0,0,1}};
-    private static final double [][] d8 = new double[][] {{3840, 2160},{1980, 1080}};
-    private static final double [][] t9 = new double[][] {{2,0,0},{0,1,0},{0,0,1}};
-    private static final double [][] d9 = new double[][] {{5000, 3000},{5000, 3000}};
-    private static final double [][] t10 = new double[][] {{2,0,0},{0,1,0},{0,0,1}};
-    private static final double [][] d10 = new double[][] {{10, 3000},{1, 3000}};
+    private final static double [][] t1 = new double[][] {{2,0,0},{0,1,0},{0,0,1}}; //initial test for warmup
+    private final static double [][] d1 = new double[][] {{10, 10},{15,15}};
+    private final static double [][] t2 = new double[][] {{2,0,0},{0,1,0},{0,0,1}};
+    private final static double [][] d2 = new double[][] {{100, 100},{100,100}}; //test1: 100x100
+    private final static double [][] t3 = new double[][] {{2,0,0},{0,1,0},{0,0,1}};
+    private final static double [][] d3 = new double[][] {{640, 480},{640,480}}; //test2: 640x480
+    private final static double [][] t4 = new double[][] {{4,0,0},{0,1,0},{0,0,1}};
+    private final static double [][] d4 = new double[][] {{1280, 720},{1280, 720}};//test3: 1280x720
+    private final static double [][] t5 = new double[][] {{2,0,0},{0,1,0},{0,0,1}};
+    private final static double [][] d5 = new double[][] {{1920, 1080},{1920, 1080}};//test4 1920x1080
+    private final static double [][] t6 = new double[][] {{2,0,0},{0,1,0},{0,0,1}};
+    private final static double [][] d6 = new double[][] {{2560, 1440},{2560, 1440}};//test5 2560x1440
+    private final static double [][] t7 = new double[][] {{2,0,0},{0,1,0},{0,0,1}};
+    private final static double [][] d7 = new double[][] {{3840, 2160},{3840, 2160}}; //test6 3840x2160
+    private final static double [][] t8 = new double[][] {{2,0,0},{0,1,0},{0,0,1}};
+    private final static double [][] d8 = new double[][] {{3840, 2160},{1980, 1080}};
+    private final static double [][] t9 = new double[][] {{2,0,0},{0,1,0},{0,0,1}};
+    private final static double [][] d9 = new double[][] {{20.10, 200},{200, 200}};
+    private final static double [][] t10 = new double[][] {{0,0,0},{0,0,0},{0,0,0}};
+    private final static double [][] d10 = new double[][] {{20.10, 200},{200, 200}};
+    private final static double [][] t11 = new double[][] {{0,0,0},{0,1,0},{0,0,0}};
+    private final static double [][] d11 = new double[][] {{20.10, 200},{200, 200}};
+    private final static double [][] t12 = new double[][] {{2,0,0},{0,1,0},{0,0,1}};
+    private final static double [][] d12 = new double[][] {{0, 0},{0, 0}};
+    private final static double [][] t13 = new double[][] {{2,0,0},{0,1,0},{0,0,1}};
+    private final static double [][] d13 = new double[][] {{0.10, 200},{200, 200}};
 
     @Parameterized.Parameters
     public static Collection<Object[]> data() {
-        return Arrays.asList(new Object[][] {{t1, d1},{t2, d2},{t3, d3},{t4, d4},{t5, d5},
-                {t6, d6},{t7, d7},{t8, d8},{t9, d9},{t10, d10}});
+        return Arrays.asList(new Object[][] {{t1, d1, false},{t2, d2, false},{t3, d3, false},{t4, d4, false},
+                {t5, d5,false},{t6, d6, false},{t7, d7,false},{t8, d8,false},
+                {t9, d9,true},{t10,d10,true},{t11, d11,true},{t12, d12,true},{t13, d13,true}});
     }
 
     @Override
@@ -87,7 +89,6 @@ public class BuiltinImageTransformMatrixTest extends AutomatedTestBase {
     public void testImageTransformMatrix() {
         runImageTransformMatrixTest(ExecType.CP);
     }
-
 
     private void runImageTransformMatrixTest(ExecType instType) {
         ExecMode platformOld = setExecMode(instType);
@@ -104,16 +105,8 @@ public class BuiltinImageTransformMatrixTest extends AutomatedTestBase {
             fullDMLScriptName = HOME + TEST_NAME_LINEARIZED + ".dml";
             programArgs = new String[]{"-nvargs", "transMat=" + input("transMat"), "dimMat=" + input("dimMat"), "out_file=" + output("B_x"), "--debug"};
 
-            //double[][] A = getRandomMatrix(rows, height*width, 0, 255, sparsity, 7);
 
-
-            runTest(true, false, null, -1);
-
-            //HashMap<MatrixValue.CellIndex, Double> dmlfileLinearizedX = readDMLMatrixFromOutputDir("B_x");
-
-            //HashMap<MatrixValue.CellIndex, Double> dmlfileX = readDMLMatrixFromOutputDir("B_x_reshape");
-
-            //TestUtils.compareMatrices(dmlfileLinearizedX, dmlfileX, eps, "Stat-DML-LinearizedX", "Stat-DML-X");
+            runTest(true, fails, null, -1);
 
         } catch (Exception e) {
             e.printStackTrace();

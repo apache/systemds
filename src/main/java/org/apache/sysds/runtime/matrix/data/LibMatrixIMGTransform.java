@@ -30,9 +30,12 @@ import org.apache.sysds.runtime.util.DataConverter;
 
 import static org.apache.commons.math3.util.FastMath.floor;
 
+/**Separate class for generating the transformation matrix based on an affine transformation matrix and a matrix
+ * containing the dimensions of the input and the target dimensions of the output
+ */
 public class LibMatrixIMGTransform {
 
-    protected static final Log LOG = LogFactory.getLog(LibMatrixFourier.class.getName());
+    protected static final Log LOG = LogFactory.getLog(LibMatrixIMGTransform.class.getName());
 
 
 //     * affine transformation matrix for calculated for a picture of original size and target dimensions
@@ -103,7 +106,6 @@ public class LibMatrixIMGTransform {
         //# compute sampling pixel indices
         // coords = floor(T_inv %*% coords) + 1; coords in this instance coords_mul
         MatrixBlock coords_mul;
-
         assert t_Inv != null;
         AggregateBinaryOperator op_mul_agg = InstructionUtils.getMatMultOperator(threads);
         UnaryOperator op_floor = new UnaryOperator(Builtin.getBuiltinFnObject(Builtin.BuiltinCode.FLOOR));
@@ -111,7 +113,6 @@ public class LibMatrixIMGTransform {
         coords_mul = t_Inv.aggregateBinaryOperations(t_Inv, coords, op_mul_agg); //(T_inv %*% coords)
         coords_mul = coords_mul.unaryOperations(op_floor); //floor(T_inv %*% coords)
         coords_mul = coords_mul.binaryOperationsInPlace(op_plus, new MatrixBlock(coords_mul.rlen, coords_mul.clen, 1.0)); //coords = floor(T_inv %*% coords) + 1
-
         ReorgOperator op_t = new ReorgOperator(SwapIndex.getSwapIndexFnObject(), threads);
         // inx = t(coords[1,])
         MatrixBlock inx;
@@ -121,7 +122,7 @@ public class LibMatrixIMGTransform {
         MatrixBlock iny;
         iny = coords_mul.slice(1,1);
         iny = iny.reorgOperations(op_t, new MatrixBlock(), 0,0,iny.getNumColumns());
-        //System.out.println(iny);
+
         // # any out-of-range pixels, if present, correspond to an extra pixel with fill_value at the end of the input
         // index_vector = (orig_w *(iny-1) + inx) * ((0<inx) & (inx<=orig_w) & (0<iny) & (iny<=orig_h))
         BinaryOperator op_minus = InstructionUtils.parseExtendedBinaryOperator("-");
@@ -130,11 +131,8 @@ public class LibMatrixIMGTransform {
          Nx1 matrix of the second term of the above equation for multiplying later on with the first part
          ((0<inx) & (inx<=orig_w) & (0<iny) & (iny<=orig_h))
          */
-        //System.out.println(inx);
         BinaryOperator op_greater = InstructionUtils.parseExtendedBinaryOperator(">");
-        //BinaryOperator op_less = InstructionUtils.parseExtendedBinaryOperator("<");
         BinaryOperator op_less_equal = InstructionUtils.parseExtendedBinaryOperator("<=");
-        //BinaryOperator op_greater_equal = InstructionUtils.parseExtendedBinaryOperator(">=");
         BinaryOperator op_and = InstructionUtils.parseExtendedBinaryOperator("&&");
         MatrixBlock helper_one; //(0<inx)
         helper_one = inx.binaryOperations(op_greater, new MatrixBlock(1,1,0.0));
@@ -149,9 +147,6 @@ public class LibMatrixIMGTransform {
         second_term.binaryOperationsInPlace(op_and, helper_three); //(0<inx) & (inx<=orig_w) & (0<iny)
         second_term.binaryOperationsInPlace(op_and, helper_four); // (0<inx) & (inx<=orig_w) & (0<iny) & (iny<=orig_h)
 
-        //System.out.println(second_term);
-
-
         // Nx1 matrix as the first part of the equation for the index vector (orig_w *(iny-1) + inx)
         MatrixBlock index_vector;
         index_vector = iny.binaryOperations(op_minus, new MatrixBlock(1, 1, 1.0)); //(iny-1)
@@ -159,18 +154,13 @@ public class LibMatrixIMGTransform {
         index_vector.binaryOperationsInPlace(op_plus, inx); // (orig_w *(iny-1) + inx)
         index_vector.binaryOperationsInPlace(op_mult, second_term); //(orig_w *(iny-1) + inx) * ((0<inx) & (inx<=orig_w) & (0<iny) & (iny<=orig_h))
         index_vector = index_vector.reorgOperations(op_t, new MatrixBlock(), 0,0,index_vector.getNumRows());
-        //System.out.println(inx);
-        //System.out.println(index_vector);
 
         // xs = ((index_vector == 0)*(orig_w*orig_h +1)) + index_vector
         BinaryOperator op_equal = InstructionUtils.parseExtendedBinaryOperator("==");
         helper_one = index_vector.binaryOperations(op_equal, new MatrixBlock(1,1, 0.0)); //(index_vector == 0)
         helper_one = helper_one.binaryOperations(op_mult, new MatrixBlock(1,1, (double) (orig_w*orig_h+1))); //((index_vector == 0)*(orig_w*orig_h +1))
-        //System.out.println(helper_one);
-
         MatrixBlock xs;
         xs = helper_one.binaryOperations(op_plus, index_vector); //xs = ((index_vector == 0)*(orig_w*orig_h +1)) + index_vector
-        //System.out.println(xs);
 
         //#if(min(index_vector) == 0){
         //#  ys=cbind(img_in, matrix(fill_value,nrow(img_in), 1))
@@ -195,32 +185,6 @@ public class LibMatrixIMGTransform {
             inds[i] = i+1;
         }
         MatrixBlock ind = new MatrixBlock(1, xs.getNumColumns(), inds); //ind= matrix(seq(1,ncol(xs),1),1,ncol(xs))
-        //ind = ind.reorgOperations(op_t, new MatrixBlock(), 0,0,ind.getNumColumns());
-        //xs = xs.reorgOperations(op_t, new MatrixBlock(), 0,0,xs.getNumColumns());
-        //System.out.println(ind);
-        //z = table(xs, ind)
-        //Ctable.OperationTypes op_c = Ctable.findCtableOperationByInputDataTypes(Types.DataType.MATRIX, Types.DataType.MATRIX, Types.DataType.SCALAR);
-        //MatrixBlock zMat = new MatrixBlock();
-        //zMat = xs.ctableSeqOperations(ind, 1.0, zMat);
-        //xs.ctableOperations(null,xs, ind,new CTableMap(),helper_four);
-        //MatrixBlock block = new MatrixBlock((int) xs.max(), (int) ind.max(), false);
-        //CTableMap map = new CTableMap();
-        //TernaryOperator op_ctable = new TernaryOperator();
-
-        //MatrixBlock newBlock = map.toMatrixBlock(101,225);
-        //InstructionUtils.parseAggregateTernaryOperator("ctable", threads);
-        //System.out.println(newBlock);
-        //System.out.println(block);
-
-        //SimpleOperator op_ctab = new SimpleOperator(ctab);
-        //MatrixBlock zzz = new MatrixBlock();
-        //zzz.ctableOperations(op_ctab,xs, ind,new CTableMap(),block);
-        //zMat.ctableOperations(op_ctab, xs, ind, null, zzz);
-        //ctab.execute(ind, xs, new MatrixBlock(1,1,1.0) ,map, threads);
-        //System.out.println(DataConverter.convertToMatrixBlock(map));
-        //System.out.println(map.toMatrixBlock((int) xs.max(), (int) ind.max()));
-        //System.out.println(zMat);
-        //System.out.println(zzz);
 
         // get a ctable object to be able to generate a contingeny table (ctable)
         // this does not seem to be possible in another way, e.g. by using operators like above
@@ -247,25 +211,6 @@ public class LibMatrixIMGTransform {
         return new MatrixBlock[] {zMat, fillBlock};
     }
 
-//    private static boolean isValidInput(MatrixBlock transMat, MatrixBlock dimMat){
-//        boolean isValid = false;
-//        boolean isValidAffine = true; //isValidAffineMatrix(transMat);
-//        boolean isValidDimension = isValidDimensionMatrix(dimMat);
-//        if(isValidAffine && isValidDimension){
-//            isValid = true;
-//        //}else if(!isValidAffine && isValidDimension){
-//        //    throw new RuntimeException("Wrong values! The last row of the 3x3 affine matrix is not [0,0,1]");
-//        } else if (isValidAffine & !isValidDimension) {
-//            throw new RuntimeException("Wrong values! Image dimensions cannot be zero or negative!");
-//        }else{
-//
-//        }
-//        return isValid;
-//    }
-//    private static boolean isValidAffineMatrix(MatrixBlock transMat){
-//        boolean isValid = false;
-//        return isValid;
-//    }
     /** Validates the values of the dimension matrix for the affine transformation algorithm
      * Values can only be positive natural numbers (i.e. 1,2,3..) as matrices are constructed
      * based on the dimensions

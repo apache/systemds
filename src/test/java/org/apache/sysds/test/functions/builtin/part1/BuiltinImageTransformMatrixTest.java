@@ -38,6 +38,12 @@ public class BuiltinImageTransformMatrixTest extends AutomatedTestBase {
     private final static String TEST_DIR = "functions/builtin/";
     private final static String TEST_CLASS_DIR = TEST_DIR + BuiltinImageTransformMatrixTest.class.getSimpleName() + "/";
 
+    private enum TestType{
+        TEST_WORKS,
+        TEST_FAILS,
+        COMPARE_TO_SCRIPT,
+        PERFORMANCE
+    }
 
     @Parameterized.Parameter(0)
     public double[][] transMat;
@@ -63,7 +69,7 @@ public class BuiltinImageTransformMatrixTest extends AutomatedTestBase {
     private static final double [][] t9 = new double[][] {{2,0,0},{0,1,0},{0,0,1}};
     private static final double [][] d9 = new double[][] {{5000, 3000},{5000, 3000}};
     private static final double [][] t10 = new double[][] {{2,0,0},{0,1,0},{0,0,1}};
-    private static final double [][] d10 = new double[][] {{1, 3000},{1, 3000}};
+    private static final double [][] d10 = new double[][] {{10, 3000},{1, 3000}};
 
     @Parameterized.Parameters
     public static Collection<Object[]> data() {
@@ -81,6 +87,7 @@ public class BuiltinImageTransformMatrixTest extends AutomatedTestBase {
     public void testImageTransformMatrix() {
         runImageTransformMatrixTest(ExecType.CP);
     }
+
 
     private void runImageTransformMatrixTest(ExecType instType) {
         ExecMode platformOld = setExecMode(instType);

@@ -34,10 +34,10 @@ fill_value = ifdef($fill_value, 0)
 s_cols = ifdef($s_cols, 512)
 s_rows = ifdef($s_rows, 512)
 
-#inputMat = matrix(input, rows=height, cols=width)
+inputMat = matrix(input, rows=1, cols=width*height)
 print(nrow(input))
 print(ncol(input))
-transformed = img_transform_linearized(input, out_w, out_h, a, b, c, d, e, f, fill_value, s_cols, s_rows)
+transformed = img_transform_linearized(inputMat, out_w, out_h, a, b, c, d, e, f, fill_value, s_cols, s_rows)
 print(nrow(transformed))
 print(ncol(transformed))
 

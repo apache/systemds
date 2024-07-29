@@ -28,6 +28,8 @@ import org.apache.sysds.runtime.instructions.InstructionUtils;
 import org.apache.sysds.runtime.matrix.operators.*;
 import org.apache.sysds.runtime.util.DataConverter;
 
+import static org.apache.commons.math3.util.FastMath.floor;
+
 public class LibMatrixIMGTransform {
 
     protected static final Log LOG = LogFactory.getLog(LibMatrixFourier.class.getName());
@@ -73,6 +75,9 @@ public class LibMatrixIMGTransform {
      * @return array of two matrix blocks, 1st is the transformation matrix, 2nd a 1x1 matrix with 1 or 0
      */
     public static MatrixBlock[] transformationMatrix(MatrixBlock transMat, MatrixBlock dimMat, int threads) {
+        //check the correctness of the input dimension matrix
+        isValidDimensionMatrix(dimMat);
+
         int orig_w = (int) dimMat.get(0,0);
         int orig_h = (int) dimMat.get(0,1);
         int out_w = (int) dimMat.get(1,0);
@@ -90,7 +95,7 @@ public class LibMatrixIMGTransform {
         double [] coords3 = new double[out_w*out_h];
         for(int i=0; i<out_w*out_h; i++) {
             coords1[i] = (i % out_w) + 0.5;
-            coords2[i] = Math.floor((double) i / out_w) + 0.5;
+            coords2[i] = floor((double) i / out_w) + 0.5;
             coords3[i] = 1.0;
         }
         coords.init(new double[][] {coords1, coords2, coords3}, 3, out_w*out_h);
@@ -240,5 +245,43 @@ public class LibMatrixIMGTransform {
         // if it is true (the double value is 1.0) then: ys = cbind(img_in, matrix(fill_value,nrow(img_in), 1))
         // if it is false (the double value is 0.0) then ys = img_in
         return new MatrixBlock[] {zMat, fillBlock};
+    }
+
+//    private static boolean isValidInput(MatrixBlock transMat, MatrixBlock dimMat){
+//        boolean isValid = false;
+//        boolean isValidAffine = true; //isValidAffineMatrix(transMat);
+//        boolean isValidDimension = isValidDimensionMatrix(dimMat);
+//        if(isValidAffine && isValidDimension){
+//            isValid = true;
+//        //}else if(!isValidAffine && isValidDimension){
+//        //    throw new RuntimeException("Wrong values! The last row of the 3x3 affine matrix is not [0,0,1]");
+//        } else if (isValidAffine & !isValidDimension) {
+//            throw new RuntimeException("Wrong values! Image dimensions cannot be zero or negative!");
+//        }else{
+//
+//        }
+//        return isValid;
+//    }
+//    private static boolean isValidAffineMatrix(MatrixBlock transMat){
+//        boolean isValid = false;
+//        return isValid;
+//    }
+    /** Validates the values of the dimension matrix for the affine transformation algorithm
+     * Values can only be positive natural numbers (i.e. 1,2,3..) as matrices are constructed
+     * based on the dimensions
+     * @param dimMat 2x2 matrix with original and output image dimensions
+     */
+    private static void isValidDimensionMatrix(MatrixBlock dimMat){
+        //check if the values of the dimension matrix are equal or above one, otherwise it is not a valid image
+        if(dimMat.get(0,0)>=1 && dimMat.get(0,1)>=1 && dimMat.get(1,0)>=1 && dimMat.get(1,1)>=1){
+            //check if the double values of the dimension matrix are actually positive natural numbers
+            //i.e. that they can be cast to int without loss of information for matrix generation
+            if(!(dimMat.get(0,0)== floor(dimMat.get(0,0))) || !(dimMat.get(0,1) == floor(dimMat.get(0,1)))
+            || !(dimMat.get(1,0)== floor(dimMat.get(1,0))) || !(dimMat.get(1,1) == floor(dimMat.get(1,1)))){
+                throw new RuntimeException("Image dimensions are not positive natural numbers! Check input and output image dimensions!");
+            }
+        }else{
+            throw new RuntimeException("Wrong values! Image dimensions cannot be zero or negative! Check input and output image dimensions!");
+        }
     }
 }

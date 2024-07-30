@@ -18,11 +18,8 @@
 # under the License.
 #
 # -------------------------------------------------------------
-from systemds.scuro.modality.aligned_modality import AlignedModality
-from systemds.scuro.modality.audio_modality import AudioModality
-from systemds.scuro.modality.video_modality import VideoModality
-from systemds.scuro.modality.test_modality import TextModality
-from systemds.scuro.modality.modality import Modality
+from systemds.scuro.models import Model
+from systemds.scuro.discrete_model import DiscreteModel
 
 
-__all__ = ["AlignedModality", "AudioModality", "VideoModality", "TextModality", "Modality"]
+__all__ = ["Model", "DiscreteModel"]

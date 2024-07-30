@@ -19,21 +19,17 @@
 
 package org.apache.sysds.test.functions.builtin.part1;
 
-import org.apache.spark.sql.catalyst.expressions.CheckOverflowInTableInsert;
 import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 import org.apache.sysds.common.Types.ExecMode;
 import org.apache.sysds.common.Types.ExecType;
-import org.apache.sysds.runtime.matrix.data.MatrixValue;
 import org.apache.sysds.test.AutomatedTestBase;
 import org.apache.sysds.test.TestConfiguration;
-import org.apache.sysds.test.TestUtils;
 
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.HashMap;
 
 @RunWith(Parameterized.class)
 @net.jcip.annotations.NotThreadSafe
@@ -104,8 +100,6 @@ public class BuiltinImageTransformLinearizedTest extends AutomatedTestBase {
         runImageTransformLinearizedTest(true, ExecType.SPARK);
     }
 
-
-
     private void runImageTransformLinearizedTest(boolean sparse, ExecType instType) {
         ExecMode platformOld = setExecMode(instType);
         disableOutAndExpectedDeletion();
@@ -118,7 +112,6 @@ public class BuiltinImageTransformLinearizedTest extends AutomatedTestBase {
 
             fullDMLScriptName = HOME + TEST_NAME_LINEARIZED + ".dml";
             programArgs = new String[] {"-nvargs",
-                    //"in_file=/home/mark-p4/data/pic1.csv",
                     "in_file=" + input("A"),
                     "width=" + width*height, "height=" + rows,
                     "out_w=" + out_w, "out_h=" + out_h, "a=" + a, "b=" + b, "c=" + c, "d=" + d, "e=" + e, "f=" + f,
@@ -129,12 +122,6 @@ public class BuiltinImageTransformLinearizedTest extends AutomatedTestBase {
             writeInputMatrixWithMTD("A", A, true);
 
             runTest(true, false, null, -1);
-
-            //HashMap<MatrixValue.CellIndex, Double> dmlfileLinearizedX = readDMLMatrixFromOutputDir("B_x");
-
-            //HashMap<MatrixValue.CellIndex, Double> dmlfileX = readDMLMatrixFromOutputDir("B_x_reshape");
-
-            //TestUtils.compareMatrices(dmlfileLinearizedX, dmlfileX, eps, "Stat-DML-LinearizedX", "Stat-DML-X");
 
         }
         finally {
@@ -162,12 +149,6 @@ public class BuiltinImageTransformLinearizedTest extends AutomatedTestBase {
             writeInputMatrixWithMTD("A", A, true);
 
             runTest(true, false, null, -1);
-
-            //HashMap<MatrixValue.CellIndex, Double> dmlfileLinearizedX = readDMLMatrixFromOutputDir("B_x");
-
-            //HashMap<MatrixValue.CellIndex, Double> dmlfileX = readDMLMatrixFromOutputDir("B_x_reshape");
-
-            //TestUtils.compareMatrices(dmlfileLinearizedX, dmlfileX, eps, "Stat-DML-LinearizedX", "Stat-DML-X");
 
         } finally {
             rtplatform = platformOld;

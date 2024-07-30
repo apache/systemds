@@ -22,6 +22,7 @@
 # The Linearized Image Transform function applies an affine transformation to linearized images.
 # Optionally resizes the image (without scaling).
 # Uses nearest neighbor sampling.
+# Is implemented as a builtin function as img_transform_matrix in image_transform_linearized.
 #
 # INPUT:
 # -------------------------------------------------------------------------------------------
@@ -76,28 +77,14 @@ m_img_transform_linearized = function(Matrix[Double] img_in, Integer out_w, Inte
     index_vector = t(index_vector)
     xs = ((index_vector == 0)*(orig_w*orig_h +1)) + index_vector
 
-    # print("IMG_IN nrow: " + nrow(img_in) "; ncol: " + ncol(img_in))
-    # print("Nrow xs: " + nrow(xs) + "; Ncol xs: " + ncol(xs))
-
     ind= matrix(seq(1,ncol(xs),1),1,ncol(xs))
-    # print("Nrow ind: " + nrow(ind) + "; Ncol ind: " + ncol(ind))
     z = table(xs, ind)
-    # print("Nrow z: " + nrow(z) + "; Ncol z: " + ncol(z))
-    # print("Min of index_vector: " + min(index_vector))
     if(min(index_vector) == 0){
-      # print("Nrow Img: " + nrow(img_in) + "; Ncol Img: " + ncol(img_in))
       ys=cbind(img_in, matrix(fill_value,nrow(img_in), 1))
-      # print("CBind Nrow ys: " + nrow(ys) + "; Ncol ys: " + ncol(ys))
     }else{
-
       ys = img_in
-      # print("No CBind Nrow ys: " + nrow(ys) + "; Ncol ys: " + ncol(ys))
     }
-
-
-
     output = ys%*%z
-
     img_out = matrix(output, rows=nrow(img_in), cols=out_w*out_h)
   }
 }

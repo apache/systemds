@@ -183,7 +183,7 @@ public class FunctionOp extends MultiThreadedHop
 		if ( getFunctionType() != FunctionType.MULTIRETURN_BUILTIN )
 			throw new RuntimeException("Invalid call of computeOutputMemEstimate in FunctionOp.");
 		else {
-			if (getFunctionName().equalsIgnoreCase("qr")) {
+			if ( getFunctionName().equalsIgnoreCase("qr") ) {
 				// upper-triangular and lower-triangular matrices
 				long outputH = OptimizerUtils.estimateSizeExactSparsity(getOutputs().get(0).getDim1(), getOutputs().get(0).getDim2(), 0.5);
 				long outputR = OptimizerUtils.estimateSizeExactSparsity(getOutputs().get(1).getDim1(), getOutputs().get(1).getDim2(), 0.5);

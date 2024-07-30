@@ -173,7 +173,6 @@ public class LibCommonsMath
 			case "rcm":
 				return computeRCM(in1, in2);
 			case "img_transform_matrix":
-				//throw new NotImplementedException("Hope we get here");
 				return transformationMatrix(in1, in2, threads);
 			default:
 				return null;

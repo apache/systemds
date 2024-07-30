@@ -18,6 +18,29 @@
 # under the License.
 #
 #-------------------------------------------------------------
+# INPUT:
+# -input:   linearized picture with pixel_width*pixel_height columns
+#           and number of pictures as rows (one image per row)
+# -width:   pixel_width*pixel_height of the original images
+# -height:  number ob images
+# -out_w:   width of the output images
+# -out_h:   height of  the output images
+# -a:       entry at [0,0] of the affine matrix
+# -b:       entry at [0,1] of the affine matrix
+# -c:       entry at [0,2] of the affine matrix
+# -d:       entry at [1,0] of the affine matrix
+# -e:       entry at [1,1] of the affine matrix
+# -f:       entry at [1,2] of the affine matrix
+# -fill_value   colorvalue for empty spaces
+#               after transformation
+# -s_cols:  original number of pixel width
+#           before linearization
+# -s_rows:  original number of pixel height
+#           before linearization
+#-------------------------------------------------------------
+# OUTPUT:
+# -img_out: transformed image
+#-------------------------------------------------------------
 
 input = read($in_file)
 width = ifdef($width, 512)
@@ -34,13 +57,12 @@ fill_value = ifdef($fill_value, 0)
 s_cols = ifdef($s_cols, 512)
 s_rows = ifdef($s_rows, 512)
 
+#method using dml scripts
 if(FALSE){
     input = matrix(input, rows=height, cols=width)
-    print("Nrow input matrix: " + nrow(input) + "; Ncol input matrix: " + ncol(input))
     transformed = img_transform_linearized(input, out_w, out_h, a, b, c, d, e, f, fill_value, s_cols, s_rows)
-    #transformed = img_transform_linearized(input, out_w, out_h, a, b, c, d, e, f, fill_value, s_cols, s_rows)
-    #print("Nrow transformed matrix: " + nrow(transformed) + "; Ncol transformed matrix: " + ncol(transformed))
     write(transformed, $out_file)
+#method using builtin function
 }else{
     affineMat = matrix(0,rows=3, cols=3)
     affineMat[1,1] = a
@@ -58,18 +80,13 @@ if(FALSE){
 
     [zMat, isFillable] = img_transform_matrix(affineMat, dimMat)
 
-    print("zMat dimensions, nrow: " + nrow(zMat) + "; ncol: " + ncol(zMat))
-
     if(as.logical(as.scalar(isFillable))){
         ys=cbind(input, matrix(fill_value,nrow(input), 1))
-        print("Cbind ys nrow: " + nrow(ys) + "; ncol: " + ncol(ys))
     }else{
         ys = input
-        print("No Cbind ys nrow: " + nrow(ys) + "; ncol: " + ncol(ys))
     }
-    output = ys%*%zMat
 
+    output = ys%*%zMat
     img_out = matrix(output, rows=nrow(input), cols=out_w*out_h)
     write(img_out, $out_file)
-
 }

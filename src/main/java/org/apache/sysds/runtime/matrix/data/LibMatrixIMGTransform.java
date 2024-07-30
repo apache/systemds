@@ -25,7 +25,10 @@ import org.apache.sysds.runtime.functionobjects.Builtin;
 import org.apache.sysds.runtime.functionobjects.CTable;
 import org.apache.sysds.runtime.functionobjects.SwapIndex;
 import org.apache.sysds.runtime.instructions.InstructionUtils;
-import org.apache.sysds.runtime.matrix.operators.*;
+import org.apache.sysds.runtime.matrix.operators.AggregateBinaryOperator;
+import org.apache.sysds.runtime.matrix.operators.BinaryOperator;
+import org.apache.sysds.runtime.matrix.operators.ReorgOperator;
+import org.apache.sysds.runtime.matrix.operators.UnaryOperator;
 import org.apache.sysds.runtime.util.DataConverter;
 
 import static org.apache.commons.math3.util.FastMath.floor;
@@ -37,37 +40,6 @@ public class LibMatrixIMGTransform {
 
     protected static final Log LOG = LogFactory.getLog(LibMatrixIMGTransform.class.getName());
 
-
-//     * affine transformation matrix for calculated for a picture of original size and target dimensions
-//     * see: https://en.wikipedia.org/wiki/Affine_transformation
-//     *
-//     * #orig_w = as.scalar(dimMat[1,2])
-//     * #orig_h = as.scalar(dimMat[1,1])
-//     * #out_w = as.scalar(dimMat[2,2])
-//     * #out_h = as.scalar(dimMat[2,1])
-//     * T_inv = inv(transMat)
-//     *
-//     * ## coordinates of output pixel-centers linearized in row-major order
-//     * coords = matrix(1, rows=3, cols=out_w*out_h)
-//     * coords[1,] = t((seq(0, out_w*out_h-1) %% out_w) + 0.5)
-//     * coords[2,] = t((seq(0, out_w*out_h-1) %/% out_w) + 0.5)
-//     * # compute sampling pixel indices
-//     * coords = floor(T_inv %*% coords) + 1
-//     * inx = t(coords[1,])
-//     * iny = t(coords[2,])
-//     * # any out-of-range pixels, if present, correspond to an extra pixel with fill_value at the end of the input
-//     * index_vector = (orig_w *(iny-1) + inx) * ((0<inx) & (inx<=orig_w) & (0<iny) & (iny<=orig_h))
-//     * index_vector = t(index_vector)
-//     * xs = ((index_vector == 0)*(orig_w*orig_h +1)) + index_vector
-//     * #if(min(index_vector) == 0){
-//     * #  ys=cbind(img_in, matrix(fill_value,nrow(img_in), 1))
-//     * #}else{
-//     * #  ys = img_in
-//     * #}
-//     * ind= matrix(seq(1,ncol(xs),1),1,ncol(xs))
-//     * z = table(xs, ind)
-//     * zMat = transMat
-//     * isFillable = as.double(min(index_vector) == 0)
     /** This method produces a transformation matrix for affine transformation (see Wikipedia: "Affine transformation").
      * It takes a transformation 3x3 matrix (last row is always 0,0,1 for images), called affine matrix, and a dimension matrix, where the
      * original image dimensions (width x height) are stored alongside the output image dimensions (width x height)
@@ -110,9 +82,12 @@ public class LibMatrixIMGTransform {
         AggregateBinaryOperator op_mul_agg = InstructionUtils.getMatMultOperator(threads);
         UnaryOperator op_floor = new UnaryOperator(Builtin.getBuiltinFnObject(Builtin.BuiltinCode.FLOOR));
         BinaryOperator op_plus = InstructionUtils.parseExtendedBinaryOperator("+");
-        coords_mul = t_Inv.aggregateBinaryOperations(t_Inv, coords, op_mul_agg); //(T_inv %*% coords)
-        coords_mul = coords_mul.unaryOperations(op_floor); //floor(T_inv %*% coords)
-        coords_mul = coords_mul.binaryOperationsInPlace(op_plus, new MatrixBlock(coords_mul.rlen, coords_mul.clen, 1.0)); //coords = floor(T_inv %*% coords) + 1
+        //(T_inv %*% coords)
+        coords_mul = t_Inv.aggregateBinaryOperations(t_Inv, coords, op_mul_agg);
+        //floor(T_inv %*% coords)
+        coords_mul = coords_mul.unaryOperations(op_floor);
+        //coords = floor(T_inv %*% coords) + 1
+        coords_mul = coords_mul.binaryOperationsInPlace(op_plus, new MatrixBlock(coords_mul.rlen, coords_mul.clen, 1.0));
         ReorgOperator op_t = new ReorgOperator(SwapIndex.getSwapIndexFnObject(), threads);
         // inx = t(coords[1,])
         MatrixBlock inx;
@@ -143,24 +118,34 @@ public class LibMatrixIMGTransform {
         MatrixBlock helper_four;
         helper_four = iny.binaryOperations(op_less_equal, new MatrixBlock(1,1, (double) orig_h));
         MatrixBlock second_term;
-        second_term = helper_one.binaryOperations(op_and, helper_two); //(0<inx) & (inx<=orig_w)
-        second_term.binaryOperationsInPlace(op_and, helper_three); //(0<inx) & (inx<=orig_w) & (0<iny)
-        second_term.binaryOperationsInPlace(op_and, helper_four); // (0<inx) & (inx<=orig_w) & (0<iny) & (iny<=orig_h)
+        //(0<inx) & (inx<=orig_w)
+        second_term = helper_one.binaryOperations(op_and, helper_two);
+        //(0<inx) & (inx<=orig_w) & (0<iny)
+        second_term.binaryOperationsInPlace(op_and, helper_three);
+        // (0<inx) & (inx<=orig_w) & (0<iny) & (iny<=orig_h)
+        second_term.binaryOperationsInPlace(op_and, helper_four);
 
         // Nx1 matrix as the first part of the equation for the index vector (orig_w *(iny-1) + inx)
         MatrixBlock index_vector;
-        index_vector = iny.binaryOperations(op_minus, new MatrixBlock(1, 1, 1.0)); //(iny-1)
-        index_vector.binaryOperationsInPlace(op_mult, new MatrixBlock(1, 1, (double) orig_w)); //orig_w *(iny-1)
-        index_vector.binaryOperationsInPlace(op_plus, inx); // (orig_w *(iny-1) + inx)
-        index_vector.binaryOperationsInPlace(op_mult, second_term); //(orig_w *(iny-1) + inx) * ((0<inx) & (inx<=orig_w) & (0<iny) & (iny<=orig_h))
+        //(iny-1)
+        index_vector = iny.binaryOperations(op_minus, new MatrixBlock(1, 1, 1.0));
+        //orig_w *(iny-1)
+        index_vector.binaryOperationsInPlace(op_mult, new MatrixBlock(1, 1, (double) orig_w));
+        // (orig_w *(iny-1) + inx)
+        index_vector.binaryOperationsInPlace(op_plus, inx);
+        //(orig_w *(iny-1) + inx) * ((0<inx) & (inx<=orig_w) & (0<iny) & (iny<=orig_h))
+        index_vector.binaryOperationsInPlace(op_mult, second_term);
         index_vector = index_vector.reorgOperations(op_t, new MatrixBlock(), 0,0,index_vector.getNumRows());
 
         // xs = ((index_vector == 0)*(orig_w*orig_h +1)) + index_vector
         BinaryOperator op_equal = InstructionUtils.parseExtendedBinaryOperator("==");
-        helper_one = index_vector.binaryOperations(op_equal, new MatrixBlock(1,1, 0.0)); //(index_vector == 0)
-        helper_one = helper_one.binaryOperations(op_mult, new MatrixBlock(1,1, (double) (orig_w*orig_h+1))); //((index_vector == 0)*(orig_w*orig_h +1))
+        //(index_vector == 0)
+        helper_one = index_vector.binaryOperations(op_equal, new MatrixBlock(1,1, 0.0));
+        //((index_vector == 0)*(orig_w*orig_h +1))
+        helper_one = helper_one.binaryOperations(op_mult, new MatrixBlock(1,1, (double) (orig_w*orig_h+1)));
         MatrixBlock xs;
-        xs = helper_one.binaryOperations(op_plus, index_vector); //xs = ((index_vector == 0)*(orig_w*orig_h +1)) + index_vector
+        //xs = ((index_vector == 0)*(orig_w*orig_h +1)) + index_vector
+        xs = helper_one.binaryOperations(op_plus, index_vector);
 
         //#if(min(index_vector) == 0){
         //#  ys=cbind(img_in, matrix(fill_value,nrow(img_in), 1))
@@ -184,7 +169,8 @@ public class LibMatrixIMGTransform {
         for(int i=0; i<xs.getNumColumns(); i++) {
             inds[i] = i+1;
         }
-        MatrixBlock ind = new MatrixBlock(1, xs.getNumColumns(), inds); //ind= matrix(seq(1,ncol(xs),1),1,ncol(xs))
+        //ind= matrix(seq(1,ncol(xs),1),1,ncol(xs))
+        MatrixBlock ind = new MatrixBlock(1, xs.getNumColumns(), inds);
 
         // get a ctable object to be able to generate a contingeny table (ctable)
         // this does not seem to be possible in another way, e.g. by using operators like above

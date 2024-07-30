@@ -250,6 +250,18 @@ public class ConfigurationManager{
 		return compress.isEnabled();
 	}
 
+	// flag to enable encode cache
+	/*public static boolean isEncodeCacheEnabled(){
+
+		return getDMLConfig().getBooleanValue(DMLConfig.ENCODECACHE_ENABLED);
+	}*/
+
+	// flag for encode cache memory limit (fraction of heap size)
+	/*public static double getEncodeCacheMemoryFraction(){
+
+		return getDMLConfig().getDoubleValue(DMLConfig.ENCODECACHE_MEMORY_FRACTION);
+	}*/
+
 	public static CompressConfig getCompressConfig(){
 		return CompressConfig.valueOf(getDMLConfig().getTextValue(DMLConfig.COMPRESSED_LINALG).toUpperCase());
 	}

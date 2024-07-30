@@ -29,8 +29,11 @@ import java.util.Random;
 import java.util.concurrent.Callable;
 
 import static org.apache.sysds.runtime.util.UtilFunctions.getEndIndex;
+import static org.apache.sysds.runtime.transform.encode.EncodeBuildCache.getEncodeBuildCache;
+import static org.apache.sysds.runtime.transform.encode.EncoderType.Bin;
 import org.apache.commons.lang3.tuple.MutableTriple;
 import org.apache.sysds.api.DMLScript;
+import org.apache.sysds.conf.ConfigurationManager;
 import org.apache.sysds.lops.Lop;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.controlprogram.caching.CacheBlock;
@@ -112,23 +115,52 @@ public class ColumnEncoderBin extends ColumnEncoder {
 			throw new RuntimeException(method + " is invalid");
 	}
 
-	@Override
-	public void build(CacheBlock<?> in) {
-		long t0 = DMLScript.STATISTICS ? System.nanoTime() : 0;
-		if(!isApplicable())
-			return;
-		else if(_binMethod == BinMethod.EQUI_WIDTH) {
+	private void computeBinsMinMax(CacheBlock<?> in) {
+		if(_binMethod == BinMethod.EQUI_WIDTH) {
 			double[] pairMinMax = getMinMaxOfCol(in, _colID, 0, -1);
 			computeBins(pairMinMax[0], pairMinMax[1]);
 		}
 		else if(_binMethod == BinMethod.EQUI_HEIGHT) {
 			double[] sortedCol = prepareDataForEqualHeightBins(in, _colID, 0, -1);
 			computeEqualHeightBins(sortedCol, false);
+
 		}
 		else if(_binMethod == BinMethod.EQUI_HEIGHT_APPROX){
 			double[] vals = sampleDoubleColumn(in, _colID, SAMPLE_FRACTION, MINIMUM_SAMPLE_SIZE);
 			Arrays.sort(vals);
 			computeEqualHeightBins(vals, false);
+		}
+	}
+
+	@Override
+	public void build(CacheBlock<?> in) {
+		long t0 = DMLScript.STATISTICS ? System.nanoTime() : 0;
+
+		if(!isApplicable())
+			return;
+
+		if (EncodeCacheConfig.isCacheEnabled()) {
+			// Check cache if build result is already there
+			EncodeCacheKey key = new EncodeCacheKey(_colID, Bin, _binMethod);
+			EncodeBuildCache cache = getEncodeBuildCache();
+			EncodeCacheEntry cached_result = cache.get(key);
+
+			if (cached_result != null) {
+				// Found the computed bin values in the cache
+				BinBoundaries binMinsMaxs = (BinBoundaries) cached_result.getValue();
+				_binMins = binMinsMaxs.get_binMins();
+				_binMaxs = binMinsMaxs.get_binMaxs();
+				LOG.debug(String.format("using existing bin boundaries. Object at: %s \n", cached_result));
+			} else {
+				LOG.debug(String.format("No entry found for key: %s, creating new bin boundaries\n", key));
+				computeBinsMinMax(in);
+				BinBoundaries binMinMax = BinBoundaries.create(_binMins, _binMaxs);
+				EncodeCacheEntry<BinBoundaries> entry = new EncodeCacheEntry<>(key, binMinMax);
+				cache.put(key, entry);
+				LOG.debug(String.format("cache entry: %s\n", cache.get(key)));
+			}
+		} else { // Cache is not enabled, so always compute the bin boundaries
+			computeBinsMinMax(in);
 		}
 
 		if(DMLScript.STATISTICS)
@@ -178,7 +210,7 @@ public class ColumnEncoderBin extends ColumnEncoder {
 		else{
 			for (int i=startInd; i<endInd; i++) {
 				double inVal = in.getDoubleNaN(i, _colID - 1);
-				codes[i-startInd] = getCodeIndex(inVal);;
+				codes[i-startInd] = getCodeIndex(inVal);
 			}
 		}
 		return codes;

@@ -160,7 +160,7 @@ public class ComEstSample extends AComEst {
 		// the frequencies of non empty entries.
 		final int[] freq = sampleFacts.frequencies;
 		if(freq == null || freq.length == 0)
-			return numOffs; // very aggressive number of distinct
+			return numOffs+1; // very aggressive number of distinct
 		// sampled size is smaller than actual if there was empty rows.
 		// and the more we can reduce this value the more accurate the estimation will become.
 		final int sampledSize = sampleFacts.numOffs;
@@ -171,6 +171,8 @@ public class ComEstSample extends AComEst {
 		if(nCol > 4) // Increase estimate if we get into many columns cocoding to be safe
 			est += ((double) est) * ((double) nCol) / 10;
 		// Bound the estimate with the maxDistinct.
+		if(sampleFacts.numRows>sampleFacts.numOffs)
+			est += 1;
 		return Math.max(Math.min(est, Math.min(maxDistinct, numOffs)), 1);
 	}
 

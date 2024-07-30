@@ -40,6 +40,7 @@ import org.apache.sysds.runtime.compress.colgroup.AColGroup.CompressionType;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.Dictionary;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.DictionaryFactory;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.IDictionary;
+import org.apache.sysds.runtime.compress.colgroup.dictionary.IdentityDictionary;
 import org.apache.sysds.runtime.compress.colgroup.functional.LinearRegression;
 import org.apache.sysds.runtime.compress.colgroup.indexes.ColIndexFactory;
 import org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex;
@@ -226,12 +227,12 @@ public class ColGroupFactory {
 		if(estC < actC * 0.75) {
 			String warning = "The estimate cost is significantly off : " + est;
 			LOG.debug(
-				String.format("time[ms]: %10.2f %25s est %10.0f -- act %10.0f distinct:%5d cols:%s wanted:%s\n\t\t%s", time,
-					retType, estC, actC, act.getNumValues(), cols, wanted, warning));
+				String.format("time[ms]: %10.2f %25s est %10.0f -- act %10.0f distinct:%5d cols:%s wanted:%s\n\t\t%s",
+					time, retType, estC, actC, act.getNumValues(), cols, wanted, warning));
 		}
 		else {
-			LOG.debug(String.format("time[ms]: %10.2f %25s est %10.0f -- act %10.0f distinct:%5d cols:%s wanted:%s", time,
-				retType, estC, actC, act.getNumValues(), cols, wanted));
+			LOG.debug(String.format("time[ms]: %10.2f %25s est %10.0f -- act %10.0f distinct:%5d cols:%s wanted:%s",
+				time, retType, estC, actC, act.getNumValues(), cols, wanted));
 		}
 
 	}
@@ -282,6 +283,11 @@ public class ColGroupFactory {
 			return compressSDCSingleColDirectBlock(colIndexes, cg.getNumVals());
 		}
 
+		else if(ct == CompressionType.OHE) {
+			boolean isSample = ce.getClass().getSimpleName().equals("ComEstSample");
+			return compressOHE(colIndexes, cg, isSample);
+		}
+
 		final ABitmap ubm = BitmapEncoder.extractBitmap(colIndexes, in, cg.getNumVals(), cs);
 		if(ubm == null) // no values ... therefore empty
 			return new ColGroupEmpty(colIndexes);
@@ -310,6 +316,69 @@ public class ColGroupFactory {
 			default:
 				throw new DMLCompressionException("Not implemented compression of " + ct + " in factory.");
 		}
+	}
+
+	private AColGroup compressOHE(IColIndex colIndexes, CompressedSizeInfoColGroup cg, boolean isSample)
+		throws Exception {
+		// Ensure numVals is valid
+		int numVals = cg.getNumVals();
+		if(numVals <= 0) {
+			throw new DMLCompressionException("Number of values must be greater than 0 for one-hot encoding");
+		}
+
+		AMapToData data;
+
+		if(cs.transposed) {
+			// Handle transposed matrix
+			data = MapToFactory.create(cs.transposed ? in.getNumColumns() : in.getNumRows(), numVals + 1);
+			SparseBlock sb = in.getSparseBlock();
+			data.fill(numVals + 1);
+			for(int c = 0; c < colIndexes.size(); c++) {
+				int cidx = colIndexes.get(c);
+				if(sb.isEmpty(cidx)) {
+					return directCompressDDC(colIndexes, cg);
+				}
+				final int apos = sb.pos(cidx);
+				final int alen = sb.size(cidx) + apos;
+				final int[] aix = sb.indexes(cidx);
+				final double[] aval = sb.values(cidx);
+				for(int k = apos; k < alen; k++) {
+					if((aval[k] != 1) || data.getIndex(aix[k]) != (numVals + 1))
+						return directCompressDDC(colIndexes, cg);
+
+					else
+						data.set(aix[k], c);
+
+				}
+
+			}
+			data.setUnique(numVals);
+		}
+		else {
+			// Handle non-transposed matrix
+			data = MapToFactory.create(cs.transposed ? in.getNumColumns() : in.getNumRows(), numVals);
+			for(int r = 0; r < in.getNumRows(); r++) {
+				boolean foundOne = false;
+				for(int c = 0; c < colIndexes.size(); c++) {
+					if(in.get(r, colIndexes.get(c)) == 1) {
+						if(foundOne) {
+							// If another '1' is found in the same row, fall back to directCompressDDC
+							LOG.info("Rigorous check showed that it's not OHE");
+							return directCompressDDC(colIndexes, cg);
+						}
+						data.set(r, c);
+						foundOne = true;
+					}
+				}
+				if(isSample && !foundOne) {
+					// If it's a sample and no '1' is found in the row, fall back to directCompressDDC
+					LOG.info("Rigorous check showed that it's not OHE");
+					return directCompressDDC(colIndexes, cg);
+				}
+			}
+		}
+
+		return ColGroupDDC.create(colIndexes, new IdentityDictionary(numVals), data, null);
 	}
 
 	private AColGroup compressSDCSingleColDirectBlock(IColIndex colIndexes, int nVal) {
@@ -482,7 +551,7 @@ public class ColGroupFactory {
 
 		final DblArrayCountHashMap map = new DblArrayCountHashMap(Math.max(cg.getNumVals(), 64));
 		boolean extra;
-		if(nRow < CompressionSettings.PAR_DDC_THRESHOLD || k < csi.getNumberColGroups() || pool == null )
+		if(nRow < CompressionSettings.PAR_DDC_THRESHOLD || k < csi.getNumberColGroups() || pool == null)
 			extra = readToMapDDC(colIndexes, map, d, 0, nRow, fill);
 		else
 			extra = parallelReadToMapDDC(colIndexes, map, d, nRow, fill, k);

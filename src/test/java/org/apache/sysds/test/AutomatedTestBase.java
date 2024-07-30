@@ -75,6 +75,7 @@ import org.apache.sysds.runtime.io.FileFormatProperties;
 import org.apache.sysds.runtime.io.FileFormatPropertiesCSV;
 import org.apache.sysds.runtime.io.FrameReader;
 import org.apache.sysds.runtime.io.FrameReaderFactory;
+import org.apache.sysds.runtime.io.MatrixWriterFactory;
 import org.apache.sysds.runtime.io.ReaderWriterFederated;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.matrix.data.MatrixValue;
@@ -589,6 +590,28 @@ public abstract class AutomatedTestBase {
 		}
 
 		return matrix;
+	}
+
+
+	protected void writeBinaryWithMTD(String name, MatrixBlock matrix) {
+		MatrixCharacteristics mc = new MatrixCharacteristics(matrix.getNumRows(), matrix.getNumColumns(),
+			OptimizerUtils.DEFAULT_BLOCKSIZE, matrix.getNonZeros());
+		writeBinaryWithMTD(name, matrix, mc);
+	}
+
+	protected void writeBinaryWithMTD(String name, MatrixBlock matrix, MatrixCharacteristics mc) {
+			
+		try {
+			MatrixWriterFactory.createMatrixWriter(FileFormat.BINARY)//
+				.writeMatrixToHDFS(matrix, baseDirectory + INPUT_DIR + name, matrix.getNumRows(), 
+				matrix.getNumColumns(), mc.getBlocksize(), mc.getNonZeros());
+			String completeMTDPath = baseDirectory + INPUT_DIR + name + ".mtd";
+			HDFSTool.writeMetaDataFile(completeMTDPath, ValueType.FP64, mc, FileFormat.BINARY);
+		}
+		catch(IOException e) {
+			e.printStackTrace();
+			throw new RuntimeException(e);
+		}
 	}
 
 	protected void writeInputFederatedWithMTD(String name, MatrixObject fm){
@@ -1356,15 +1379,25 @@ public abstract class AutomatedTestBase {
 	protected ByteArrayOutputStream runTest(boolean newWay, boolean exceptionExpected, Class<?> expectedException,
 		String errMessage, int maxSparkInst) {
 		try{
-			final List<ByteArrayOutputStream> out =  new ArrayList<>();
+			final List<ByteArrayOutputStream> out = new ArrayList<>();
 			Thread t = new Thread(
-				() -> out.add(runTestWithTimeout(newWay,exceptionExpected,expectedException,errMessage, maxSparkInst)),
+				() -> out.add(runTestWithTimeout(newWay, exceptionExpected, expectedException, errMessage, maxSparkInst)),
 				"TestRunner_main");
+			Thread.UncaughtExceptionHandler h = new Thread.UncaughtExceptionHandler() {
+				@Override
+				public void uncaughtException(Thread th, Throwable ex) {
+					fail("Thread Failed test with message: " +ex.getMessage());
+				}
+			};
+			t.setUncaughtExceptionHandler(h);
 			t.start();
-			
+
 			t.join(TEST_TIMEOUT * 1000);
 			if(t.isAlive())
 				throw new TimeoutException("Test failed to finish in time");
+			if(out.size() <= 0) // hack in case the test failed return empty string.
+				fail("test failed");
+
 			return out.get(0);
 		}
 		catch(TimeoutException e){
@@ -1463,8 +1496,6 @@ public abstract class AutomatedTestBase {
 				errorMessage.append("\nStandard Out:");
 				if(outputBuffering)
 					errorMessage.append("\n" + buff);
-				// errorMessage.append("\nStackTrace:");
-				// errorMessage.append(getStackTraceString(e, 0));
 				LOG.error(errorMessage);
 				e.printStackTrace();
 				fail(base);

@@ -272,7 +272,6 @@ public class CompressedLoggingTests {
 			TestUtils.compareMatrices(mb, m2, 0.0);
 			final List<LoggingEvent> log = LoggingUtils.reinsert(appender);
 			for(LoggingEvent l : log) {
-				// LOG.error(l.getMessage());
 				if(l.getMessage().toString().contains("--colGroups type"))
 					return;
 			}
@@ -300,7 +299,6 @@ public class CompressedLoggingTests {
 			TestUtils.compareMatrices(mb, m2, 0.0);
 			final List<LoggingEvent> log = LoggingUtils.reinsert(appender);
 			for(LoggingEvent l : log) {
-				// LOG.error(l.getMessage());
 				if(l.getMessage().toString().contains("--colGroups type"))
 					return;
 			}
@@ -328,7 +326,6 @@ public class CompressedLoggingTests {
 			TestUtils.compareMatrices(mb, m2, 0.0);
 			final List<LoggingEvent> log = LoggingUtils.reinsert(appender);
 			for(LoggingEvent l : log) {
-				// LOG.error(l.getMessage());
 				if(l.getMessage().toString().contains("Empty input to compress"))
 					return;
 			}
@@ -385,11 +382,10 @@ public class CompressedLoggingTests {
 			CompressionSettingsBuilder sb = new CompressionSettingsBuilder();
 			sb.setMaxSampleSize(ss);
 			sb.setMinimumSampleSize(ss);
-			MatrixBlock cmb = CompressedMatrixBlockFactory.compress(mb, sb).getLeft();
+			CompressedMatrixBlockFactory.compress(mb, sb).getLeft();
 			final List<LoggingEvent> log = LoggingUtils.reinsert(appender);
-			LOG.error(cmb);
+			
 			for(LoggingEvent l : log) {
-				// LOG.error(l.getMessage());
 				if(l.getMessage().toString().contains("Abort block compression"))
 					return;
 			}
@@ -414,7 +410,6 @@ public class CompressedLoggingTests {
 			new CompressionSettingsBuilder().create();
 			final List<LoggingEvent> log = LoggingUtils.reinsert(appender);
 			for(LoggingEvent l : log) {
-				// LOG.error(l.getMessage());
 				if(l.getMessage().toString().contains("CompressionSettings"))
 					return;
 			}

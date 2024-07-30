@@ -83,7 +83,7 @@ public class BuiltinFFNeuralNetworkTest extends AutomatedTestBase {
 
 		fullDMLScriptName = getScript();
 
-		LOG.error(runTest(null));
+		LOG.debug(runTest(null));
 
 		double[][] from_DML = TestUtils.convertHashMapToDoubleArray(readDMLScalarFromOutputDir(out_path));
 		double accuracy = from_DML[0][0];

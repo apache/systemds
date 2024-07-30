@@ -304,7 +304,7 @@ public abstract class AbstractCompressedUnaryTests extends CompressedTestBase {
 							printedWarningForProduct.set(true);
 							LOG.warn("Product not equal because of double rounding upwards");
 						}
-						return;	
+						return;
 					}
 					if(Math.abs(ret2.get(0, 0)) <= 1E-16) {
 						if(!printedWarningForProduct.get()) {
@@ -312,7 +312,7 @@ public abstract class AbstractCompressedUnaryTests extends CompressedTestBase {
 							LOG.warn("Product not equal because of  double rounding downwards");
 						}
 
-						return; // Product is wierd around zero.
+						return; // Product is weird around zero.
 					}
 					TestUtils.compareMatricesPercentageDistance(ret1, ret2, 0.95, 0.98, css);
 				}

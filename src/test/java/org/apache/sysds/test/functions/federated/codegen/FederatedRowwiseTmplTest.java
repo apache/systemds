@@ -176,8 +176,6 @@ public class FederatedRowwiseTmplTest extends AutomatedTestBase {
 		HashMap<CellIndex, Double> refResults = readDMLMatrixFromExpectedDir(OUTPUT_NAME);
 		HashMap<CellIndex, Double> fedResults = readDMLMatrixFromOutputDir(OUTPUT_NAME);
 
-		// LOG.error(refResults);
-		// LOG.error(fedResults);
 		TestUtils.compareMatrices(fedResults, refResults, TOLERANCE, "Fed", "Ref");
 
 		TestUtils.shutdownThreads(thread1, thread2);

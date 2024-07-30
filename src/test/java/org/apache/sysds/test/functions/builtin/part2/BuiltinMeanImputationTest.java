@@ -81,7 +81,7 @@ public class BuiltinMeanImputationTest extends AutomatedTestBase {
 			rCmd = "Rscript" + " " + fullRScriptName + " " + DATASET_DIR+"Salaries.csv" + " " + expectedDir();
 
 
-			LOG.error(runTest(null));
+			LOG.debug(runTest(null));
 			runRScript(true);
 
 			//compare matrices

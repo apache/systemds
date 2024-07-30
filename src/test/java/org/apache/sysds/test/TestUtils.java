@@ -80,12 +80,15 @@ import org.apache.sysds.runtime.functionobjects.Builtin.BuiltinCode;
 import org.apache.sysds.runtime.io.FrameWriter;
 import org.apache.sysds.runtime.io.FrameWriterFactory;
 import org.apache.sysds.runtime.io.IOUtilFunctions;
+import org.apache.sysds.runtime.io.MatrixReaderFactory;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.matrix.data.MatrixCell;
 import org.apache.sysds.runtime.matrix.data.MatrixIndexes;
 import org.apache.sysds.runtime.matrix.data.MatrixValue.CellIndex;
 import org.apache.sysds.runtime.matrix.operators.UnaryOperator;
+import org.apache.sysds.runtime.meta.DataCharacteristics;
 import org.apache.sysds.runtime.meta.MatrixCharacteristics;
+import org.apache.sysds.runtime.meta.MetaDataAll;
 import org.apache.sysds.runtime.util.DataConverter;
 import org.apache.sysds.runtime.util.UtilFunctions;
 import org.junit.Assert;
@@ -528,6 +531,24 @@ public class TestUtils {
 		return expectedValues;
 	}
 
+	public static MatrixBlock readBinary(String path){
+		try{
+
+			MetaDataAll mba = new MetaDataAll(path + ".mtd", false, true);
+			if(!mba.mtdExists())
+				throw new IOException("File does not exist");
+			DataCharacteristics ds = mba.getDataCharacteristics();
+			FileFormat f = FileFormat.valueOf(mba.getFormatTypeString().toUpperCase());
+			return MatrixReaderFactory.createMatrixReader(f)
+				.readMatrixFromHDFS(path, ds.getRows(),ds.getCols(),ds.getBlocksize(),ds.getNonZeros());
+			
+		}
+		catch(Exception e){
+			throw new RuntimeException(e);
+		}
+	}
+
+
 	/**
 	 * Reads values from a matrix file in OS's FS in R format
 	 *
@@ -851,12 +872,37 @@ public class TestUtils {
 		final int cols = expected.getNumColumns();
 		if(checkMeta)
 			checkMetadata(expected, actual);
+		if(expected.getNumRows() == 0){
+			if (expected.getColumns() != null)
+				fail();
+			if (actual.getColumns() != null) 
+				fail();
+		}
+		else{
+			for(int j = 0; j < cols; j++) {
+				Array<?> ec = expected.getColumn(j);
+				Array<?> ac = actual.getColumn(j);
+				if(ec.containsNull()) {
+					if(!ac.containsNull()) {
+						fail("Expected both columns to be containing null if one null:\n\nExpected containing null:\n"
+							+ ec.toString().substring(0, 1000) + "\n\nActual:\n" + ac.toString().substring(0, 1000));
+					}
+				}
+				else if(ac.containsNull()) {
+					fail("Expected both columns to be containing null if one null:\n\nExpected:\n"
+						+ ec.toString().substring(0, 1000) + "\n\nActual containing null:\n" + ac.toString().substring(0, 1000));
+				}
+			}
+		}
 
 		for(int i = 0; i < rows; i++) {
 			for(int j = 0; j < cols; j++) {
 				final Object a = expected.get(i, j);
 				final Object b = actual.get(i, j);
-				if(!(a == null && b == null)) {
+				if(a == null){
+					assertTrue(a == b);
+				}
+				else if(!(a == null && b == null)) {
 					try{
 						final String as = a.toString();
 						final String bs = b.toString();
@@ -1107,8 +1153,10 @@ public class TestUtils {
 		int countErrors = 0;
 		long sumDistance = 0;
 		for(int i = 0; i < rows && countErrors < 20; i++){
-			if( sbe.isEmpty(i) !=  sba.isEmpty(i))
-				fail(message +"\nBoth matrices are not equally empty on row : " + i);
+			if( sbe.isEmpty(i) !=  sba.isEmpty(i)){
+
+				fail(message +"\nBoth matrices are not equally empty on row : " + i + " :\n" + sbe.get(i) + " vs " + sba.get(i));
+			}
 			
 			if(sbe.isEmpty(i))
 				continue;
@@ -3281,11 +3329,15 @@ public class TestUtils {
 	}
 
 	public static MatrixBlock round(MatrixBlock data) {
-		return data.unaryOperations(new UnaryOperator(Builtin.getBuiltinFnObject(BuiltinCode.ROUND),2, true), null);
+		return data.unaryOperations(new UnaryOperator(Builtin.getBuiltinFnObject(BuiltinCode.ROUND), 2, true), null);
 	}
 
-	public static MatrixBlock ceil(MatrixBlock data){
-		return data.unaryOperations(new UnaryOperator(Builtin.getBuiltinFnObject(BuiltinCode.CEIL),2, true), null);
+	public static MatrixBlock ceil(MatrixBlock data) {
+		return data.unaryOperations(new UnaryOperator(Builtin.getBuiltinFnObject(BuiltinCode.CEIL), 2, true), null);
+	}
+
+	public static MatrixBlock floor(MatrixBlock data) {
+		return data.unaryOperations(new UnaryOperator(Builtin.getBuiltinFnObject(BuiltinCode.FLOOR), 2, true), null);
 	}
 
 	public static double[][] floor(double[][] data) {
@@ -3299,6 +3351,12 @@ public class TestUtils {
 		for(int i=0; i<data.length; i++)
 			for(int j=0; j<data[i].length; j++)
 				data[i][j]=Math.ceil(data[i][j]);
+		return data;
+	}
+
+	public static double[] ceil(double[] data) {
+		for(int i = 0; i < data.length; i++)
+			data[i] = Math.ceil(data[i]);
 		return data;
 	}
 

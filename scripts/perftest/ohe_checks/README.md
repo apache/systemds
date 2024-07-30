@@ -21,7 +21,8 @@ limitations under the License.
 
 To run all tests for One Hot Encoding Checks:
  * install systemds,
- * make sure that the paths for SYSTEMDS_ROOT, JAVA_HOME, HADOOP_HOME, LOG4JPROP are correctly set
+ * make sure that the paths for SYSTEMDS_ROOT, JAVA_HOME, HADOOP_HOME are correctly set
+ * set the path for LOG4JPROP to `$SYSTEMDS_ROOT/scripts/perftest/ohe_checks/log4j-compression.properties`
  * run experiments.sh
 
 Alternatively, to run the experiment.dml script directly with OHE checks enabled, use this command: 
@@ -118,34 +119,3 @@ The `compressOHE` function is designed to compress columns that are one-hot enco
 4. **Return Value**:
    - If the data meets the OHE criteria, returns a `ColGroupDDC` created with the column indexes, an `IdentityDictionary`, and the data.
    - If the data does not meet the OHE criteria, returns the result of `directCompressDDC`.
-
-## Add method in `ColGroupSizes`
-Added method ``estimateInMemorySizeOHE(int nrColumns, boolean contiguousColumns, int nrRows)``
-
-## Add method in `AComEst`
-Added a getter method `getNnzCols`
-
-## Edit `distinctCountScale` method in `ComEstSample`
-```java 
-if(freq == null || freq.length == 0)
-    return numOffs+1;
-```
-And added condition:
-```java
-if(sampleFacts.numRows>sampleFacts.numOffs)
-    est += 1;
-```
-<span style="color:red">Warning: This Change will cause some tests to fail</span>.
-
-
-## Edit constructor in `CompressedSizeInfoColGroup`
-Added a case in switch statement for OHE
-
-## Added attribute in `CompressionStatistics`
-Added Sparsity of input matrix attribute ``public double sparsity;`` to add logging in ``CompressedMatrixBlockFactory``
-## Fix Bug in `extractFacts` method in `SparseEncoding`
-Number of distinct values returned was wrong. 
-Fix: In the return statements, changed map.getUnique() to getUnique()
-
-## Fix Bug in `outputMatrixPostProcessing` method in `MultiColumnEncoder`
-Instead of just recomputing nonzeroes in the else block, added `output.examSparsity(k);`

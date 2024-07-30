@@ -19,16 +19,18 @@
 
 package org.apache.sysds.runtime.frame.data.compress;
 
+import org.apache.sysds.conf.ConfigurationManager;
+import org.apache.sysds.conf.DMLConfig;
 import org.apache.sysds.runtime.compress.workload.WTreeRoot;
 
 public class FrameCompressionSettingsBuilder {
 
-	private float sampleRatio;
+	private double sampleRatio;
 	private int k;
 	private WTreeRoot wt;
 
 	public FrameCompressionSettingsBuilder() {
-		this.sampleRatio = 0.1f;
+		this.sampleRatio = ConfigurationManager.getDMLConfig().getDoubleValue(DMLConfig.COMPRESSED_SAMPLING_RATIO);
 		this.k = 1;
 		this.wt = null;
 	}
@@ -43,7 +45,7 @@ public class FrameCompressionSettingsBuilder {
 		return this;
 	}
 
-	public FrameCompressionSettingsBuilder sampleRatio(float sampleRatio) {
+	public FrameCompressionSettingsBuilder sampleRatio(double sampleRatio) {
 		this.sampleRatio = sampleRatio;
 		return this;
 	}

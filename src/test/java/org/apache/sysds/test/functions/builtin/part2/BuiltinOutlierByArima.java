@@ -22,21 +22,20 @@ package org.apache.sysds.test.functions.builtin.part2;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
-import org.junit.Test;
+import java.util.Random;
+
 import org.apache.sysds.common.Types;
 import org.apache.sysds.common.Types.ExecType;
-import org.junit.runner.RunWith;
-import org.junit.runners.Parameterized;
-import org.junit.runners.Parameterized.Parameters;
-
 import org.apache.sysds.runtime.matrix.data.MatrixValue.CellIndex;
 import org.apache.sysds.runtime.meta.MatrixCharacteristics;
 import org.apache.sysds.test.AutomatedTestBase;
 import org.apache.sysds.test.TestConfiguration;
 import org.apache.sysds.test.TestUtils;
 import org.apache.sysds.test.functions.builtin.part1.BuiltinArimaTest;
-
-import java.util.concurrent.ThreadLocalRandom;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized;
+import org.junit.runners.Parameterized.Parameters;
 
 @RunWith(value = Parameterized.class)
 @net.jcip.annotations.NotThreadSafe
@@ -83,18 +82,19 @@ public class BuiltinOutlierByArima extends AutomatedTestBase {
 			fullDMLScriptName = HOME + TEST_NAME + ".dml";
 			fullRScriptName = HOME + TEST_NAME + ".R";
 
-			programArgs = new String[]{
+			programArgs = new String[]{"-seed", "1342",
 				"-nvargs", "X=" + input("col.mtx"), "p=" + p, "repairMethod=" + 1,
 				"outputfilename=" + output("result"),};
 			rCmd = getRCmd(input("bad.mtx"), expected("result"));
 
 			int timeSeriesLength = 3000;
 			int num_outliers = 10;
-			double[][] timeSeries = getRandomMatrix(timeSeriesLength, 1, 1, 3, 1, System.currentTimeMillis());
+			double[][] timeSeries = getRandomMatrix(timeSeriesLength, 1, 1, 3, 1, 322);
 			double[][] comparisonSeries = deepCopy(timeSeries);
+			Random ra = new Random(132);
 			for(int i=0; i<num_outliers; i++) {
-				int r = ThreadLocalRandom.current().nextInt(0, timeSeries.length);
-				double badValue = ThreadLocalRandom.current().nextDouble(10, 50);
+				int r = ra.nextInt( timeSeries.length);
+				double badValue = ra.nextDouble() * 40.0 + 10.0;
 				timeSeries[r][0] = badValue;
 				if (repairMethod == 1)
 					comparisonSeries[r][0] = 0.0;

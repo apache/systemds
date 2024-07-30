@@ -162,8 +162,8 @@ public class FrameFromMatrixBlockTest {
 		verifyEquivalence(mb, fb);
 	}
 
-	@Test
-	public void timeChange() {
+	// @Test
+	// public void timeChange() {
 		// MatrixBlock mb = TestUtils.generateTestMatrixBlock(64000, 2000, 1, 1, 0.5, 2340);
 
 		// for(int i = 0; i < 10; i++) {
@@ -189,7 +189,7 @@ public class FrameFromMatrixBlockTest {
 		// FrameFromMatrixBlock.convertToFrameBlock(mb, ValueType.FP64, 16);
 		// LOG.error(time.stop());
 		// }
-	}
+	// }
 
 	private void verifyEquivalence(MatrixBlock mb, FrameBlock fb, ValueType vt) {
 		int nRow = mb.getNumRows();

@@ -17,20 +17,24 @@
  * under the License.
  */
 
-package org.apache.sysds.runtime.frame.data.compress;
+package org.apache.sysds.runtime.frame.data.columns;
 
-import org.apache.sysds.runtime.compress.workload.WTreeRoot;
+public interface IHashArray {
 
-public class FrameCompressionSettings {
+	/**
+	 * Get the underlying hash as a long
+	 * 
+	 * @param index The index to access
+	 * @return The long value
+	 */
+	public long getLong(int index);
 
-	public final double sampleRatio;
-	public final int k;
-	public final WTreeRoot wt;
-
-	protected FrameCompressionSettings(double sampleRatio, int k, WTreeRoot wt) {
-		this.sampleRatio = sampleRatio;
-		this.k = k;
-		this.wt = wt;
-	}
+	/**
+	 * Get the underlying hash as a int
+	 * 
+	 * @param index The index to access
+	 * @return The int value
+	 */
+	public int getInt(int index);
 
 }

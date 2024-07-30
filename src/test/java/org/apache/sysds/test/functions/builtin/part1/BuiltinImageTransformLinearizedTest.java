@@ -79,7 +79,7 @@ public class BuiltinImageTransformLinearizedTest extends AutomatedTestBase {
 
     @Parameterized.Parameters
     public static Collection<Object[]> data() {
-        return Arrays.asList(new Object[][] {{4, 512, 512, 512, 512, 2,0,0,0,1,0,0, 512, 512}});
+        return Arrays.asList(new Object[][] {{4, 512, 512, 512, 512, 2,1,0,0,1,0,0, 512, 512}});
     }
 
     @Override

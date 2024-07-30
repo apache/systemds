@@ -25,6 +25,7 @@ import java.io.ObjectOutput;
 import java.util.List;
 
 import org.apache.sysds.api.DMLScript;
+import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.controlprogram.caching.CacheBlock;
 import org.apache.sysds.runtime.frame.data.FrameBlock;
 import org.apache.sysds.runtime.frame.data.columns.Array;
@@ -67,7 +68,7 @@ public class ColumnEncoderFeatureHash extends ColumnEncoder {
 	@Override
 	protected double getCode(CacheBlock<?> in, int row) {
 		if(in instanceof FrameBlock){
-			Array<?> a = ((FrameBlock)in).getColumn(_colID -1);
+			Array<?> a = ((FrameBlock)in).getColumn(_colID - 1);
 			return getCode(a, row);
 		}
 		else{ // default
@@ -80,16 +81,24 @@ public class ColumnEncoderFeatureHash extends ColumnEncoder {
 	}
 
 	protected double getCode(Array<?> a, int row){
-		return Math.abs(a.hashDouble(row) % _K + 1);
+		return Math.abs(a.hashDouble(row)) % _K + 1;
+	}
+
+	protected static double getCode(Array<?> a, int k , int row){
+		return Math.abs(a.hashDouble(row)) % k ;
 	}
 
 	protected double[] getCodeCol(CacheBlock<?> in, int startInd, int endInd, double[] tmp) {
 		final int endLength = endInd - startInd;
 		final double[] codes = tmp != null && tmp.length == endLength ? tmp : new double[endLength];
-		if( in instanceof FrameBlock) {
+		if(in instanceof FrameBlock) {
 			Array<?> a = ((FrameBlock) in).getColumn(_colID-1);
-			for(int i = startInd; i < endInd; i++) 
-				codes[i - startInd] = getCode(a, i);
+			for(int i = startInd; i < endInd; i++){
+				double code =  getCode(a, i);
+				if(code <= 0)
+					throw new DMLRuntimeException("Bad Code");
+				codes[i - startInd] = code;
+			}
 		}
 		else {// default
 			for(int i = startInd; i < endInd; i++)

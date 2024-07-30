@@ -880,7 +880,10 @@ public class DataConverter {
 		if (Double.isNaN(value) || Double.isInfinite(value)){
 			return Double.toString(value);
 		} else {
-			return df.format(value);
+			if(value == (long) value)
+				return Long.toString(((long)(value)));
+			else 
+				return df.format(value);
 		}
 	}
 
@@ -1124,27 +1127,27 @@ public class DataConverter {
 			colLength = colsToPrint < clen ? colsToPrint : clen;
 
 		//print frame header
-		sb.append("# FRAME: ");
-		sb.append("nrow = " + fb.getNumRows() + ", ");
-		sb.append("ncol = " + fb.getNumColumns() + lineseparator);
+		// sb.append("# FRAME: ");
+		// sb.append("nrow = " + fb.getNumRows() + ", ");
+		// sb.append("ncol = " + fb.getNumColumns() + lineseparator);
 
 		//print column names
-		sb.append("#"); sb.append(separator);
-		for( int j=0; j<colLength; j++ ) {
-			sb.append(fb.getColumnNames()[j]);
-			if( j != colLength-1 )
-				sb.append(separator);
-		}
-		sb.append(lineseparator);
+		// sb.append("#"); sb.append(separator);
+		// for( int j=0; j<colLength; j++ ) {
+		// 	sb.append(fb.getColumnNames()[j]);
+		// 	if( j != colLength-1 )
+		// 		sb.append(separator);
+		// }
+		// sb.append(lineseparator);
 
-		//print schema
-		sb.append("#"); sb.append(separator);
-		for( int j=0; j<colLength; j++ ) {
-			sb.append(fb.getSchema()[j]);
-			if( j != colLength-1 )
-				sb.append(separator);
-		}
-		sb.append(lineseparator);
+		// //print schema
+		// sb.append("#"); sb.append(separator);
+		// for( int j=0; j<colLength; j++ ) {
+		// 	sb.append(fb.getSchema()[j]);
+		// 	if( j != colLength-1 )
+		// 		sb.append(separator);
+		// }
+		// sb.append(lineseparator);
 
 		//print data
 		DecimalFormat df = new DecimalFormat();

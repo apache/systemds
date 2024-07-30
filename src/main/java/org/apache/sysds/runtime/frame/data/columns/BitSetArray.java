@@ -91,12 +91,22 @@ public class BitSetArray extends ABooleanArray {
 		return (_data[wIdx] & (1L << index)) != 0;
 	}
 
+
 	@Override
 	public void set(int index, Boolean value) {
 		set(index, value != null && value);
 	}
 
 	public synchronized void set(int index, boolean value) {
+		int wIdx = index >> 6; // same as divide by 64 bit faster
+		if(value)
+			_data[wIdx] |= (1L << index);
+		else
+			_data[wIdx] &= ~(1L << index);
+	}
+
+	@Override
+	public void unsafeSet(int index, boolean value){
 		int wIdx = index >> 6; // same as divide by 64 bit faster
 		if(value)
 			_data[wIdx] |= (1L << index);
@@ -137,7 +147,7 @@ public class BitSetArray extends ABooleanArray {
 
 	@Override
 	public void set(int rl, int ru, Array<Boolean> value, int rlSrc) {
-		if(useVectorizedKernel && value instanceof BitSetArray && (ru - rl >= 64)){
+		if(useVectorizedKernel && value instanceof BitSetArray && (ru - rl >= 64)) {
 			try {
 				// try system array copy.
 				// but if it does not work, default to get.
@@ -149,7 +159,7 @@ public class BitSetArray extends ABooleanArray {
 			}
 		}
 		else // default
-			super.set(rl,ru,value, rlSrc);
+			super.set(rl, ru, value, rlSrc);
 	}
 
 	private void setVectorized(int rl, int ru, BitSetArray value, int rlSrc) {
@@ -163,7 +173,7 @@ public class BitSetArray extends ABooleanArray {
 		setVectorizedLongs(rl, ru, _data, ov);
 	}
 
-	public static void setVectorizedLongs(int rl, int ru, long[] ret,  long[] ov) {
+	public static void setVectorizedLongs(int rl, int ru, long[] ret, long[] ov) {
 
 		final long remainder = rl % 64L;
 		if(remainder == 0)
@@ -326,12 +336,12 @@ public class BitSetArray extends ABooleanArray {
 		return new BitSetArray(ret);
 	}
 
-	private BitSetArray sliceVectorized(int rl, int ru){
+	private BitSetArray sliceVectorized(int rl, int ru) {
 
 		return new BitSetArray(sliceVectorized(_data, rl, ru), ru - rl);
 	}
 
-	public static long[] sliceVectorized(long[] _data,int rl, int ru) {
+	public static long[] sliceVectorized(long[] _data, int rl, int ru) {
 
 		final long[] ret = new long[(ru - rl) / 64 + 1];
 
@@ -423,70 +433,89 @@ public class BitSetArray extends ABooleanArray {
 	}
 
 	@Override
-	protected Array<Boolean> changeTypeBoolean() {
-		boolean[] ret = new boolean[size()];
-		for(int i = 0; i < size(); i++)
+	protected Array<Boolean> changeTypeBitSet(Array<Boolean> ret, int l, int u) {
+		for(int i = l; i < u; i++)
+			ret.set(i, get(i));
+		return ret;
+	}
+
+	@Override
+	protected Array<Boolean> changeTypeBoolean(Array<Boolean> retA, int l, int u) {
+		boolean[] ret = (boolean[]) retA.get();
+		for(int i = l; i < u; i++)
 			// if ever relevant use next set bit instead.
 			// to increase speed, but it should not be the case in general
 			ret[i] = get(i);
-
-		return new BooleanArray(ret);
+		return retA;
 	}
 
 	@Override
-	protected Array<Double> changeTypeDouble() {
-		double[] ret = new double[size()];
-		for(int i = 0; i < size(); i++)
+	protected Array<Double> changeTypeDouble(Array<Double> retA, int l, int u) {
+		double[] ret = (double[]) retA.get();
+		for(int i = l; i < u; i++)
 			ret[i] = get(i) ? 1.0 : 0.0;
-		return new DoubleArray(ret);
+		return retA;
+
 	}
 
 	@Override
-	protected Array<Float> changeTypeFloat() {
-		float[] ret = new float[size()];
-		for(int i = 0; i < size(); i++)
+	protected Array<Float> changeTypeFloat(Array<Float> retA, int l, int u) {
+		float[] ret = (float[]) retA.get();
+		for(int i = l; i < u; i++)
 			ret[i] = get(i) ? 1.0f : 0.0f;
-		return new FloatArray(ret);
+		return retA;
+
 	}
 
 	@Override
-	protected Array<Integer> changeTypeInteger() {
-		int[] ret = new int[size()];
-		for(int i = 0; i < size(); i++)
+	protected Array<Integer> changeTypeInteger(Array<Integer> retA, int l, int u) {
+		int[] ret = (int[]) retA.get();
+		for(int i = l; i < u; i++)
 			ret[i] = get(i) ? 1 : 0;
-		return new IntegerArray(ret);
+		return retA;
+
 	}
 
 	@Override
-	protected Array<Long> changeTypeLong() {
-		long[] ret = new long[size()];
-		for(int i = 0; i < size(); i++)
+	protected Array<Long> changeTypeLong(Array<Long> retA, int l, int u) {
+		long[] ret = (long[]) retA.get();
+		for(int i = l; i < u; i++)
 			ret[i] = get(i) ? 1L : 0L;
 		return new LongArray(ret);
 	}
 
 	@Override
-	protected Array<Object> changeTypeHash64(){
-		long[] ret = new long[size()];
-		for(int i = 0; i < size(); i++)
+	protected Array<Object> changeTypeHash64(Array<Object> retA, int l, int u) {
+		long[] ret = ((HashLongArray) retA).getLongs();
+		for(int i = l; i < u; i++)
 			ret[i] = get(i) ? 1L : 0L;
-		return new HashLongArray(ret);
+		return retA;
 	}
 
 	@Override
-	protected Array<String> changeTypeString() {
-		String[] ret = new String[size()];
-		for(int i = 0; i < size(); i++)
+	protected Array<Object> changeTypeHash32(Array<Object> retA, int l, int u) {
+		int[] ret = ((HashIntegerArray) retA).getInts();
+		for(int i = l; i < u; i++)
+			ret[i] = get(i) ? 1 : 0;
+		return retA;
+	}
+
+	@Override
+	protected Array<String> changeTypeString(Array<String> retA, int l, int u) {
+		String[] ret = (String[]) retA.get();
+		for(int i = l; i < u; i++)
 			ret[i] = get(i).toString();
-		return new StringArray(ret);
+		return retA;
+
 	}
 
 	@Override
-	public Array<Character> changeTypeCharacter() {
-		char[] ret = new char[size()];
-		for(int i = 0; i < size(); i++)
+	public Array<Character> changeTypeCharacter(Array<Character> retA, int l, int u) {
+		char[] ret = (char[]) retA.get();
+		for(int i = l; i < u; i++)
 			ret[i] = (char) (get(i) ? 1 : 0);
-		return new CharArray(ret);
+		return retA;
+
 	}
 
 	@Override
@@ -521,10 +550,10 @@ public class BitSetArray extends ABooleanArray {
 	@Override
 	public boolean isAllTrue() {
 		if(allTrue != -1)
-			return allTrue ==1;
-		
+			return allTrue == 1;
+
 		for(int i = 0; i < _data.length; i++)
-			if(_data[i] != -1L){
+			if(_data[i] != -1L) {
 				allTrue = 0;
 				return false;
 			}
@@ -583,12 +612,11 @@ public class BitSetArray extends ABooleanArray {
 		return null;
 	}
 
-
 	@Override
-	public boolean equals(Array<Boolean> other){
+	public boolean equals(Array<Boolean> other) {
 		if(other instanceof BitSetArray)
-			return Arrays.equals(_data, ((BitSetArray)other)._data);
-		else 
+			return Arrays.equals(_data, ((BitSetArray) other)._data);
+		else
 			return false;
 	}
 

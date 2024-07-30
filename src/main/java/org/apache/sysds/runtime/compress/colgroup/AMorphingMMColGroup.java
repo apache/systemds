@@ -19,13 +19,17 @@
 
 package org.apache.sysds.runtime.compress.colgroup;
 
+import java.util.Arrays;
+
 import org.apache.sysds.runtime.compress.DMLCompressionException;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.IDictionary;
+import org.apache.sysds.runtime.compress.colgroup.indexes.ColIndexFactory;
 import org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex;
 import org.apache.sysds.runtime.compress.lib.CLALibLeftMultBy;
 import org.apache.sysds.runtime.compress.lib.CLALibTSMM;
 import org.apache.sysds.runtime.data.DenseBlock;
 import org.apache.sysds.runtime.data.SparseBlock;
+import org.apache.sysds.runtime.data.SparseBlockMCSR;
 import org.apache.sysds.runtime.data.SparseRow;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 
@@ -68,6 +72,64 @@ public abstract class AMorphingMMColGroup extends AColGroupValue {
 		decompressToDenseBlockCommonVector(db, rl, ru, offR, offC, cv);
 	}
 
+	@Override
+	protected void decompressToDenseBlockTransposedSparseDictionary(DenseBlock db, int rl, int ru, SparseBlock sb) {
+		LOG.warn("Should never call decompress on morphing group instead extract common values and combine all commons");
+		double[] cv = new double[db.getDim(0)];
+		AColGroup b = extractCommon(cv);
+		b.decompressToDenseBlockTransposed(db, rl, ru);
+		decompressToDenseBlockTransposedCommonVector(db, rl, ru, cv);
+	}
+
+	@Override
+	protected void decompressToDenseBlockTransposedDenseDictionary(DenseBlock db, int rl, int ru, double[] dict) {
+		LOG.warn("Should never call decompress on morphing group instead extract common values and combine all commons");
+		double[] cv = new double[db.getDim(0)];
+		AColGroup b = extractCommon(cv);
+		b.decompressToDenseBlockTransposed(db, rl, ru);
+		decompressToDenseBlockTransposedCommonVector(db, rl, ru, cv);
+	}
+
+	@Override
+	public void decompressToSparseBlockTransposed(SparseBlockMCSR db, int nColOut) {
+		LOG.warn("Should never call decompress on morphing group instead extract common values and combine all commons");
+		double[] cv = new double[db.getRows().length];
+		AColGroup b = extractCommon(cv);
+		final int thisNCol = this._colIndexes.size();
+		AColGroup tmpB = b.copyAndSet(ColIndexFactory.create(this._colIndexes.size()));
+		final int blockSize = 1000;
+		double[] tmp = new double[thisNCol * blockSize];
+		for(int i = 0; i < nColOut; i += blockSize) {
+			final int start = i;
+			final int end = Math.min(nColOut, i + blockSize);
+			MatrixBlock tmpBlock = new MatrixBlock(end - start, thisNCol, tmp);
+			DenseBlock tmpDB = tmpBlock.getDenseBlock();
+			if(i != 0) {
+				// reset the tmp block
+				Arrays.fill(tmp, 0, (end - start) * thisNCol, 0.0);
+			}
+			tmpB.decompressToDenseBlock(tmpDB, start, end, -start, 0);
+
+			// copy into the output block while adding tmp
+			for(int k = 0; k < thisNCol; k++) {// row in output
+				final int outOff = _colIndexes.get(k);
+				for(int j = i; j < end; j++) { // col in output
+					db.append(outOff, j, tmp[(j - start) * thisNCol + k] + cv[outOff]);
+				}
+			}
+		}
+	}
+
+	@Override
+	protected void decompressToSparseBlockTransposedSparseDictionary(SparseBlockMCSR db, SparseBlock sb, int nColOut) {
+		decompressToSparseBlockTransposed(db, nColOut);
+	}
+
+	@Override
+	protected void decompressToSparseBlockTransposedDenseDictionary(SparseBlockMCSR db, double[] dict, int nColOut) {
+		decompressToSparseBlockTransposed(db, nColOut);
+	}
+
 	private final void decompressToDenseBlockCommonVector(DenseBlock db, int rl, int ru, int offR, int offC,
 		double[] common) {
 		for(int i = rl, offT = rl + offR; i < ru; i++, offT++) {
@@ -77,6 +139,30 @@ public abstract class AMorphingMMColGroup extends AColGroupValue {
 				c[off + _colIndexes.get(j)] += common[j];
 		}
 	}
+
+	private final void decompressToDenseBlockTransposedCommonVector(DenseBlock db, int rl, int ru, double[] common) {
+		for(int j = 0; j < _colIndexes.size(); j++) {
+			final int rowOut = _colIndexes.get(j);
+			final double[] c = db.values(rowOut);
+			final int off = db.pos(rowOut);
+			double v = common[rowOut];
+			for(int i = rl; i < ru; i++) {
+				c[off + i] += v;
+			}
+		}
+	}
+
+	// private final void decompressToSparseBlockTransposedCommonVector(SparseBlock db, int nColOut, double[] common) {
+	// 	for(int j = 0; j < _colIndexes.size(); j++) {
+	// 		final int rowOut = _colIndexes.get(j);
+	// 		double v = common[rowOut];
+	// 		if(v != 0) {
+	// 			for(int i = 0; i < nColOut; i++) {
+	// 				db.add(rowOut, i, v);
+	// 			}
+	// 		}
+	// 	}
+	// }
 
 	@Override
 	protected final void decompressToSparseBlockSparseDictionary(SparseBlock ret, int rl, int ru, int offR, int offC,
@@ -113,7 +199,7 @@ public abstract class AMorphingMMColGroup extends AColGroupValue {
 
 	@Override
 	public final void leftMultByMatrixNoPreAgg(MatrixBlock matrix, MatrixBlock result, int rl, int ru, int cl, int cu) {
-		LOG.warn("Should never call leftMultByMatrixNoPreAgg on morphing group");
+		LOG.warn("Should never call leftMultByMatrixNoPreAgg on morphing group but if you do it should be correct results");
 		double[] cv = new double[result.getNumColumns()];
 		AColGroup b = extractCommon(cv);
 		b.leftMultByMatrixNoPreAgg(matrix, result, rl, ru, cl, cu);

@@ -127,7 +127,7 @@ public class MapToZero extends AMapToData {
 	}
 
 	@Override
-	public void copyInt(int[] d) {
+	public void copyInt(int[] d, int start, int end) {
 		// do nothing
 	}
 

@@ -87,7 +87,7 @@ public class BuiltinDifferenceStatistics extends AutomatedTestBase {
 			writeInputMatrixWithMTD("A", A, false);
 			MatrixBlock C = TestUtils.generateTestMatrixBlock(1, 5, 1 - error, 1 + error, 1.0, 1342);
 			MatrixBlock B = new MatrixBlock(100, 5, false);
-			LibMatrixBincell.bincellOp(A, C, B, new BinaryOperator(Multiply.getMultiplyFnObject()));
+			LibMatrixBincell.bincellOp(A, C, B, new BinaryOperator(Multiply.getMultiplyFnObject()), 1);
 			writeInputMatrixWithMTD("B", B, true);
 			String log = runTest(null).toString();
 			// LOG.error(log);

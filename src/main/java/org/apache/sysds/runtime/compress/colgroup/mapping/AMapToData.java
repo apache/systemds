@@ -22,7 +22,11 @@ package org.apache.sysds.runtime.compress.colgroup.mapping;
 import java.io.DataOutput;
 import java.io.IOException;
 import java.io.Serializable;
+import java.util.ArrayList;
 import java.util.BitSet;
+import java.util.List;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Future;
 
 import org.apache.commons.lang3.NotImplementedException;
 import org.apache.commons.logging.Log;
@@ -813,7 +817,11 @@ public abstract class AMapToData implements Serializable {
 		copyInt(d.getData());
 	}
 
-	public abstract void copyInt(int[] d);
+	public void copyInt(int[] d) {
+		copyInt(d, 0, d.length);
+	}
+
+	public abstract void copyInt(int[] d, int start, int end);
 
 	public abstract void copyBit(BitSet d);
 
@@ -948,6 +956,65 @@ public abstract class AMapToData implements Serializable {
 			c[rc] += values[getIndex(rc)];
 		for(int rc = rl + h; rc < ru; rc += 8)
 			decompressToRangeNoOffBy8(c, rc, values);
+	}
+
+	/**
+	 * Split this mapping into x smaller mappings according to round robin.
+	 * 
+	 * @param multiplier The number of smaller mappings to construct
+	 * @return The list of smaller mappings
+	 */
+	public AMapToData[] splitReshapeDDC(final int multiplier) {
+
+		final int s = size();
+		final AMapToData[] ret = new AMapToData[multiplier];
+		final int eachSize = s / multiplier;
+		for(int i = 0; i < multiplier; i++)
+			ret[i] = MapToFactory.create(eachSize, getUnique());
+
+		// for(int i = 0; i < s; i += multiplier)
+		// splitReshapeDDCRow(ret, multiplier, i);
+
+		final int blkz = Math.max(eachSize / 8, 2048) * multiplier;
+		for(int i = 0; i < s; i += blkz)
+			splitReshapeDDCBlock(ret, multiplier, i, Math.min(i + blkz, s));
+
+		return ret;
+	}
+
+	public AMapToData[] splitReshapeDDCPushDown(final int multiplier, final ExecutorService pool) throws Exception {
+
+		final int s = size();
+		final AMapToData[] ret = new AMapToData[multiplier];
+		final int eachSize = s / multiplier;
+		for(int i = 0; i < multiplier; i++)
+			ret[i] = MapToFactory.create(eachSize, getUnique());
+
+		final int blkz = Math.max(eachSize / 8, 2048) * multiplier;
+		List<Future<?>> tasks = new ArrayList<>();
+		for(int i = 0; i < s; i += blkz) {
+			final int start = i;
+			final int end = Math.min(i + blkz, s);
+			tasks.add(pool.submit(() -> splitReshapeDDCBlock(ret, multiplier, start, end)));
+		}
+
+		for(Future<?> t : tasks)
+			t.get();
+
+		return ret;
+	}
+
+	private void splitReshapeDDCBlock(final AMapToData[] ret, final int multiplier, final int start, final int end) {
+
+		for(int i = start; i < end; i += multiplier)
+			splitReshapeDDCRow(ret, multiplier, i);
+	}
+
+	private void splitReshapeDDCRow(final AMapToData[] ret, final int multiplier, final int i) {
+		final int off = i / multiplier;
+		final int end = i + multiplier;
+		for(int j = i; j < end; j++)
+			ret[j % multiplier].set(off, getIndex(j));
 	}
 
 	@Override

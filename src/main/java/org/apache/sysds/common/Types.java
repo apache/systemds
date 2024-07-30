@@ -58,7 +58,7 @@ public class Types
 			return this == FRAME;
 		}
 		public boolean isMatrixOrFrame() {
-			return isMatrix() | isFrame();
+			return isMatrix() || isFrame();
 		}
 		public boolean isScalar() {
 			return this == SCALAR;
@@ -77,7 +77,7 @@ public class Types
 	public enum ValueType {
 		UINT4, UINT8, // Used for parsing in UINT values from numpy.
 		FP32, FP64, INT32, INT64, BOOLEAN, STRING, UNKNOWN,
-		HASH64, // Indicate that the value is a hash of 64 bit.
+		HASH64, HASH32, // Indicate that the value is a hash of 64 bit.
 		CHARACTER;
 		
 		public boolean isNumeric() {
@@ -112,19 +112,20 @@ public class Types
 				throw new DMLRuntimeException("Unknown null value type");
 			final String lValue = value.toUpperCase();
 			switch(lValue) {
-				case "FP32":     return FP32;
+				case "FP32":      return FP32;
 				case "FP64":
-				case "DOUBLE":   return FP64;
-				case "UINT4":	  return UINT4;
-				case "UINT8":    return UINT8;
-				case "INT32":    return INT32;
+				case "DOUBLE":    return FP64;
+				case "UINT4":     return UINT4;
+				case "UINT8":     return UINT8;
+				case "INT32":     return INT32;
 				case "INT64":
-				case "INT":      return INT64;
-				case "BOOLEAN":  return BOOLEAN;
-				case "STRING":   return STRING;
+				case "INT":       return INT64;
+				case "BOOLEAN":   return BOOLEAN;
+				case "STRING":    return STRING;
 				case "CHARACTER": return CHARACTER;
-				case "UNKNOWN":  return UNKNOWN;
-				case "HASH64": return HASH64;
+				case "UNKNOWN":   return UNKNOWN;
+				case "HASH64":    return HASH64;
+				case "HASH32":    return HASH32;
 				default:
 					throw new DMLRuntimeException("Unknown value type: "+value);
 			}
@@ -141,19 +142,27 @@ public class Types
 		 * @param b Second ValueType
 		 * @return The common highest type to represent both
 		 */
-		public static ValueType getHighestCommonType(ValueType a, ValueType b){
+		public static ValueType getHighestCommonType(ValueType a, ValueType b) {
 			if(a == b)
 				return a;
 			else if(b == UNKNOWN)
 				throw new DMLRuntimeException(
 					"Invalid or not implemented support for comparing valueType of: " + a + " and " + b);
-			
-			switch(a){
+
+			switch(a) {
 				case CHARACTER:
 					return STRING;
+				case HASH32:
+					switch(b) {
+						case HASH64:
+						case STRING:
+							return b;
+						default:
+							return a;
+					}
 				case HASH64:
-					switch(b){
-						case STRING: 
+					switch(b) {
+						case STRING:
 							return b;
 						default:
 							return a;
@@ -161,7 +170,7 @@ public class Types
 				case STRING:
 					return a;
 				case FP64:
-					switch(b){
+					switch(b) {
 						case CHARACTER:
 						case STRING:
 							return b;
@@ -169,47 +178,47 @@ public class Types
 							return a;
 					}
 				case FP32:
-				switch(b){
-					case CHARACTER:
-					case STRING:
-					case FP64:
-						return b;
-					default:
-						return a;
-				}
+					switch(b) {
+						case CHARACTER:
+						case STRING:
+						case FP64:
+							return b;
+						default:
+							return a;
+					}
 				case INT64:
-				switch(b){
-					case CHARACTER:
-					case STRING:
-					case FP64:
-					case FP32:
-						return b;
-					default:
-						return a;
-				}
+					switch(b) {
+						case CHARACTER:
+						case STRING:
+						case FP64:
+						case FP32:
+							return b;
+						default:
+							return a;
+					}
 				case INT32:
-				switch(b){
-					case CHARACTER:
-					case STRING:
-					case FP64:
-					case FP32:
-					case INT64:
-						return b;
-					default:
-						return a;
-				}
+					switch(b) {
+						case CHARACTER:
+						case STRING:
+						case FP64:
+						case FP32:
+						case INT64:
+							return b;
+						default:
+							return a;
+					}
 				case UINT8:
-				switch(b){
-					case CHARACTER:
-					case STRING:
-					case FP64:
-					case FP32:
-					case INT64:
-					case INT32:
-						return b;
-					default:
-						return a;
-				}
+					switch(b) {
+						case CHARACTER:
+						case STRING:
+						case FP64:
+						case FP32:
+						case INT64:
+						case INT32:
+							return b;
+						default:
+							return a;
+					}
 				case BOOLEAN:
 					return b; // always higher type in b;
 				case UNKNOWN:

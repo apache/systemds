@@ -57,12 +57,9 @@ public class CustomColGroupTest {
 		AColGroup e = new ColGroupEmpty(i);
 		AColGroup s = ColGroupSDCSingleZeros.create(i, 10, new PlaceHolderDict(1),
 			OffsetFactory.createOffset(new int[] {5, 10}), null);
-
 		AColGroup r = AColGroup.appendN(new AColGroup[] {e, s, e, e, s, s, e}, 20, 7 * 20);
-		LOG.error(r);
 		assertTrue(r instanceof ColGroupSDCSingleZeros);
 		assertEquals(r.getColIndices(), i);
 		assertEquals(((ColGroupSDCSingleZeros) r).getNumRows(), 7 * 20);
-
 	}
 }

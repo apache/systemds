@@ -128,7 +128,7 @@ public class CompressionCPInstruction extends ComputationCPInstruction {
 
 		// Get and clear workload tree entry for this compression instruction.
 		final WTreeRoot root = (_singletonLookupID != 0) ? (WTreeRoot) m.get(_singletonLookupID) : null;
-		m.removeKey(_singletonLookupID);
+		// m.removeKey(_singletonLookupID);
 
 		if(ec.isFrameObject(input1.getName()))
 			processFrameBlockCompression(ec, ec.getFrameInput(input1.getName()), _numThreads, root);
@@ -144,6 +144,7 @@ public class CompressionCPInstruction extends ComputationCPInstruction {
 		if(LOG.isTraceEnabled())
 			LOG.trace(compResult.getRight());
 		MatrixBlock out = compResult.getLeft();
+		LOG.info("Compression output class: " + out.getClass().getSimpleName());
 		// Set output and release input
 		ec.releaseMatrixInput(input1.getName());
 		ec.setMatrixOutput(output.getName(), out);

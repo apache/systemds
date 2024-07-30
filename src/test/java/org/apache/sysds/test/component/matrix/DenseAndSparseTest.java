@@ -97,7 +97,6 @@ public class DenseAndSparseTest {
 	private static MatrixBlock forcedDense(int row, int col, double min, double max, double spar, int seed) {
 		MatrixBlock x = TestUtils.generateTestMatrixBlock(row, col, min, max, spar, seed);
 		x.sparseToDense();
-		LOG.error(x);
 		return x;
 	}
 

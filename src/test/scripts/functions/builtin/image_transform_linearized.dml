@@ -34,47 +34,47 @@ fill_value = ifdef($fill_value, 0)
 s_cols = ifdef($s_cols, 512)
 s_rows = ifdef($s_rows, 512)
 
-inputMat = matrix(input, rows=1, cols=width*height)
-print(nrow(input))
-print(ncol(input))
-transformed = img_transform_linearized(inputMat, out_w, out_h, a, b, c, d, e, f, fill_value, s_cols, s_rows)
-print(nrow(transformed))
-print(ncol(transformed))
+#inputMat = matrix(input, rows=1, cols=width*height)
+print("Nrow input matrix: " + nrow(input) + "; Ncol input matrix: " + ncol(input))
+#transformed = img_transform_linearized(input, out_w, out_h, a, b, c, d, e, f, fill_value, s_cols, s_rows)
+#print("Nrow transformed matrix: " + nrow(transformed) + "; Ncol transformed matrix: " + ncol(transformed))
 
-#affineMat = matrix(0,rows=3, cols=3)
-#affineMat[1,1] = a
-#affineMat[1,2] = b
-#affineMat[1,3] = c
-#affineMat[2,1] = d
-#affineMat[2,2] = e
-#affineMat[2,3] = f
-#affineMat[3,3] = 1
-#dimMat = matrix(0,rows=2, cols=2)
-#dimMat[1,1] = width
-#dimMat[1,2] = height
-#dimMat[2,1] = out_w
-#dimMat[2,2] = out_h
+affineMat = matrix(0,rows=3, cols=3)
+affineMat[1,1] = a
+affineMat[1,2] = b
+affineMat[1,3] = c
+affineMat[2,1] = d
+affineMat[2,2] = e
+affineMat[2,3] = f
+affineMat[3,3] = 1
+dimMat = matrix(0,rows=2, cols=2)
+dimMat[1,1] = width
+dimMat[1,2] = height
+dimMat[2,1] = out_w
+dimMat[2,2] = out_h
 
-#[zMat, isFillable] = img_transform_test(affineMat, dimMat)
+[zMat, isFillable] = img_transform_test(affineMat, dimMat)
 
-#print(nrow(zMat))
-#print(ncol(zMat))
-#print(toString(isFillable))
+print("zMat dimensions, nrow: " + nrow(zMat) + "; ncol: " + ncol(zMat))
+print(toString(isFillable))
 
-#if(min(as.logical(as.scalar(isFillable))){
-#      ys=cbind(input, matrix(fill_value,nrow(input), 1))
-#    }else{
-#      ys = input
-#    }
+if(as.logical(as.scalar(isFillable))){
+      ys=cbind(input, matrix(fill_value,nrow(input), 1))
+      print("Cbind ys nrow: " + nrow(ys) + "; ncol: " + ncol(ys))
+    }else{
+      ys = input
+      print("No Cbind ys nrow: " + nrow(ys) + "; ncol: " + ncol(ys))
+    }
 
-    #ind= matrix(seq(1,ncol(xs),1),1,ncol(xs))
-    #z = table(xs, ind)
-#output = ys%*%zMat
+#ind= matrix(seq(1,ncol(xs),1),1,ncol(xs))
+#z = table(xs, ind)
+output = ys%*%zMat
 
-#img_out = matrix(output, rows=nrow(input), cols=out_w*out_h)
+img_out = matrix(output, rows=nrow(input), cols=out_w*out_h)
 
 
 #print(toString(affineMat))
 #print(toString(dimMat))
 #print(toString(transformed))
-write(transformed, $out_file)
+#write(transformed, $out_file)
+write(img_out, $out_file)

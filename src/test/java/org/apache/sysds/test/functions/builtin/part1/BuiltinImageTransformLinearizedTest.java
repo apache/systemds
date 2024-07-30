@@ -79,7 +79,7 @@ public class BuiltinImageTransformLinearizedTest extends AutomatedTestBase {
 
     @Parameterized.Parameters
     public static Collection<Object[]> data() {
-        return Arrays.asList(new Object[][] {{1, 512, 512, 512, 512, 2,0,0,0,1,0,1, 512, 512}});
+        return Arrays.asList(new Object[][] {{4, 512, 512, 512, 512, 2,0,0,0,1,0,0, 512, 512}});
     }
 
     @Override
@@ -118,9 +118,9 @@ public class BuiltinImageTransformLinearizedTest extends AutomatedTestBase {
 
             fullDMLScriptName = HOME + TEST_NAME_LINEARIZED + ".dml";
             programArgs = new String[] {"-nvargs",
-                    "in_file=/home/mark-p4/data/pic1.csv",
-                    //"in_file=" + input("A"),
-                    "width=" + width, "height=" + height,
+                    //"in_file=/home/mark-p4/data/pic1.csv",
+                    "in_file=" + input("A"),
+                    "width=" + width*height, "height=" + rows,
                     "out_w=" + out_w, "out_h=" + out_h, "a=" + a, "b=" + b, "c=" + c, "d=" + d, "e=" + e, "f=" + f,
                     "fill_value=" + fill_value, "s_cols=" + s_cols, "s_rows=" + s_rows,
                     "out_file=" + output("B_x")};
@@ -157,7 +157,8 @@ public class BuiltinImageTransformLinearizedTest extends AutomatedTestBase {
                     "fill_value=", "s_cols=", "s_rows=",
                     "out_file=" + output("B_x")};
 
-            double[][] A = getRandomMatrix(rows, height * width, 0, 255, sparsity, 7);
+            int dims = width * height;
+            double[][] A = getRandomMatrix(rows, dims, 0, 255, sparsity, 7);
             writeInputMatrixWithMTD("A", A, true);
 
             runTest(true, false, null, -1);

@@ -19,8 +19,9 @@
 
 package org.apache.sysds.test.functions.builtin.part1;
 
-import org.apache.commons.lang3.NotImplementedException;
+import org.apache.sysds.runtime.matrix.data.MatrixValue;
 import org.apache.sysds.test.AutomatedTestBase;
+import org.apache.sysds.test.TestUtils;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
@@ -72,6 +73,9 @@ public class BuiltinImageTransformMatrixTest extends AutomatedTestBase {
     private final static double [][] t13 = new double[][] {{2,0,0},{0,1,0},{0,0,1}};
     private final static double [][] d13 = new double[][] {{0.10, 200},{200, 200}};
 
+    public double internal = 1.0;
+    public boolean compareResults = false;
+
     @Parameterized.Parameters
     public static Collection<Object[]> data() {
         return Arrays.asList(new Object[][] {{t1, d1, false},{t2, d2, false},{t3, d3, false},{t4, d4, false},
@@ -85,8 +89,25 @@ public class BuiltinImageTransformMatrixTest extends AutomatedTestBase {
                 new TestConfiguration(TEST_CLASS_DIR, TEST_NAME_LINEARIZED, new String[] {"B_x"}));
     }
 
+    //test for using the internal implementation only
     @Test
     public void testImageTransformMatrix() {
+        runImageTransformMatrixTest(ExecType.CP);
+    }
+
+    //test for using the script implementation only
+    @Test
+    public void testImageTransformMatrixScript() {
+        internal = 0;
+        runImageTransformMatrixTest(ExecType.CP);
+    }
+
+    //test for comparing the script and internal implementations for correctness
+    //presumably due to caching it should not be used for benchmarks
+    @Test
+    public void testImageTransformMatrixCompare() {
+        internal = 1;
+        compareResults = true;
         runImageTransformMatrixTest(ExecType.CP);
     }
 
@@ -101,17 +122,27 @@ public class BuiltinImageTransformMatrixTest extends AutomatedTestBase {
 
             writeInputMatrixWithMTD("transMat", transMat, true);
             writeInputMatrixWithMTD("dimMat", dimMat, true);
+            writeInputMatrixWithMTD("internal", new double[][] {{internal}}, true);
 
             fullDMLScriptName = HOME + TEST_NAME_LINEARIZED + ".dml";
-            programArgs = new String[]{"-nvargs", "transMat=" + input("transMat"), "dimMat=" + input("dimMat"), "out_file=" + output("B_x"), "--debug"};
-
-
+            programArgs = new String[]{"-nvargs", "transMat=" + input("transMat"), "dimMat=" + input("dimMat"), "out_file=" + output("B_internal"),"internal=" + input("internal"), "--debug"};
             runTest(true, fails, null, -1);
+            if (compareResults && !fails) {
+                internal = 0;
+                writeInputMatrixWithMTD("internal", new double[][] {{internal}}, true);
+                programArgs = new String[]{"-nvargs", "transMat=" + input("transMat"), "dimMat=" + input("dimMat"), "out_file=" + output("B_script"),"internal=" + input("internal"), "--debug"};
+                runTest(true, fails, null, -1);
+
+                HashMap<MatrixValue.CellIndex, Double> internalfile = readDMLMatrixFromOutputDir("B_internal");
+                HashMap<MatrixValue.CellIndex, Double> scriptfile = readDMLMatrixFromOutputDir("B_script");
+                TestUtils.compareMatrices(internalfile, scriptfile, 1e-10, "Stat-DML", "Stat-R");
+            }
 
         } catch (Exception e) {
             e.printStackTrace();
         } finally {
             rtplatform = platformOld;
+            internal = 1.0;
         }
     }
 

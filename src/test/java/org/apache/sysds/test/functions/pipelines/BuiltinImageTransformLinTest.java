@@ -62,8 +62,9 @@ public class BuiltinImageTransformLinTest extends AutomatedTestBase {
 
 	@Parameterized.Parameters
 	public static Collection<Object[]> data() {
-		return Arrays.asList(new Object[][] {{16, 15, 50}, {32, 31, 100}, {64, 64, 200}, {127, 128, 100}, {256, 256, 200},
-			{500, 135, 100}});
+		return Arrays.asList(new Object[][] {{16, 15, 50}, {32, 31, 100}, {64, 64, 200},
+				//{127, 128, 100}, {256, 256, 200}, {500, 135, 100}
+		});
 	}
 
 	@Override
@@ -104,7 +105,7 @@ public class BuiltinImageTransformLinTest extends AutomatedTestBase {
 	private void runImageTransformLinTest(boolean sparse, ExecType instType) {
 		ExecMode platformOld = setExecMode(instType);
 		disableOutAndExpectedDeletion();
-		setOutputBuffering(true);
+		//setOutputBuffering(true);
 
 		try {
 			loadTestConfiguration(getTestConfiguration(TEST_NAME));

@@ -38,9 +38,12 @@ dimensionMatrix = read($dimMat)
 input = matrix(transformationMatrix, rows=3, cols=3)
 
 builtin = TRUE
+builtin = as.logical(as.scalar(read($internal)))
 if(builtin){
+    print("internal")
     [zMat, isFillable] = img_transform_matrix(input, dimensionMatrix)
 }else{
+    print("script")
     [zMat, isFillable] = img_transform_test(input, dimensionMatrix)
 }
 

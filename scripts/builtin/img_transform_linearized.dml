@@ -75,18 +75,29 @@ m_img_transform_linearized = function(Matrix[Double] img_in, Integer out_w, Inte
     index_vector = (orig_w *(iny-1) + inx) * ((0<inx) & (inx<=orig_w) & (0<iny) & (iny<=orig_h)) 
     index_vector = t(index_vector)
     xs = ((index_vector == 0)*(orig_w*orig_h +1)) + index_vector
-    
-    if(min(index_vector) == 0){
-      ys=cbind(img_in, matrix(fill_value,nrow(img_in), 1))
-    }else{
-      ys = img_in
-    }
+    print("Nrow xs: " + nrow(xs) + "; Ncol xs: " + ncol(xs))
 
     ind= matrix(seq(1,ncol(xs),1),1,ncol(xs))
-    z = table(xs, ind) 
+    print("Nrow ind: " + nrow(ind) + "; Ncol ind: " + ncol(ind))
+    z = table(xs, ind)
+    print("Nrow z: " + nrow(z) + "; Ncol z: " + ncol(z))
+    print("Min of index_vector: " + min(index_vector))
+    if(min(index_vector) == 0){
+      print("Nrow Img: " + nrow(img_in) + "; Ncol Img: " + ncol(img_in))
+      ys=cbind(img_in, matrix(fill_value,nrow(img_in), 1))
+      print("CBind Nrow ys: " + nrow(ys) + "; Ncol ys: " + ncol(ys))
+    }else{
+
+      ys = img_in
+      print("No CBind Nrow ys: " + nrow(ys) + "; Ncol ys: " + ncol(ys))
+    }
+
+    #print("Hello")
+
+
+
     output = ys%*%z
-    print(nrow(img_in))
-    print(ncol(img_in))
+
     img_out = matrix(output, rows=nrow(img_in), cols=out_w*out_h)
   }
 }

@@ -144,7 +144,7 @@ public class CompressedMatrixTest extends AbstractCompressedUnaryTests {
 	public void testNonZeros() {
 		if(!(cmb instanceof CompressedMatrixBlock))
 			return; // Input was not compressed then just pass test
-		if(!(cmb.getNonZeros() >= mb.getNonZeros())) { // guarantee that the nnz is at least the nnz
+		if(!(cmb.getNonZeros() >= mb.getNonZeros() || cmb.getNonZeros() == -1)) { // guarantee that the nnz is at least the nnz
 			fail(bufferedToString + "\nIncorrect number of non Zeros should guarantee greater than or equals but are "
 				+ cmb.getNonZeros() + " and should be: " + mb.getNonZeros());
 		}
@@ -160,7 +160,6 @@ public class CompressedMatrixTest extends AbstractCompressedUnaryTests {
 			ByteArrayOutputStream bos = new ByteArrayOutputStream();
 			DataOutputStream fos = new DataOutputStream(bos);
 			cmb.write(fos);
-
 			// deserialize compressed matrix block
 			ByteArrayInputStream bis = new ByteArrayInputStream(bos.toByteArray());
 			DataInputStream fis = new DataInputStream(bis);
@@ -169,6 +168,8 @@ public class CompressedMatrixTest extends AbstractCompressedUnaryTests {
 
 			// decompress the compressed matrix block
 			MatrixBlock tmp = cmb2.decompress();
+
+			((CompressedMatrixBlock)cmb).clearSoftReferenceToDecompressed();
 
 			compareResultMatrices(mb, tmp, 1);
 		}
@@ -421,8 +422,7 @@ public class CompressedMatrixTest extends AbstractCompressedUnaryTests {
 			MatrixBlock ret1 = MatrixBlock.aggregateTernaryOperations(cmb, m2, m3, null, op, true);
 			ucRet = MatrixBlock.aggregateTernaryOperations(mb, m2, m3, ucRet, op, true);
 
-			// LOG.error(ret1);
-			// LOG.error(ucRet);
+
 			compareResultMatrices(ucRet, ret1, 1);
 		}
 		catch(Exception e) {

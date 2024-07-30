@@ -85,7 +85,6 @@ public abstract class ACostTest {
 				sb.append(String.format("\nActualCostIndividual:  %15.0f", actualCostIndividual));
 				sb.append(String.format("\nEstimateCoCodeCost:    %15.0f", estimatedCostCoCode));
 				sb.append(String.format("\nActualCoCodeCost:      %15.0f", actualCostCoCode));
-
 				LOG.error(sb);
 			}
 

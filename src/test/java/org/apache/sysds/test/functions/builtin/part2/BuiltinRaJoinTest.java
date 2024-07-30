@@ -282,23 +282,15 @@ public class BuiltinRaJoinTest extends AutomatedTestBase
 			programArgs = new String[]{"-stats", "-args",
 				input("A"), String.valueOf(colA), input("B"),
 				String.valueOf(colB), method, output("result") };
-			System.out.println(Arrays.deepToString(A));
-			System.out.println(colA);
-			//fullRScriptName = HOME + TEST_NAME + ".R";
-			//rCmd = "Rscript" + " " + fullRScriptName + " "
-			//	+ inputDir() + " " + col + " "  + expectedDir();
-
 			writeInputMatrixWithMTD("A", A, true);
 			writeInputMatrixWithMTD("B", B, true);
 
-			// run dmlScript and RScript
-			runTest(true, false, null, -1);
-			//runRScript(true);
+			// run dmlScript 
+			runTest(null);
 
 			//compare matrices
 			HashMap<CellIndex, Double> dmlfile = readDMLMatrixFromOutputDir("result");
 			HashMap<CellIndex, Double> expectedOutput = TestUtils.convert2DDoubleArrayToHashMap(Y);
-			//HashMap<CellIndex, Double> rfile  = readRMatrixFromExpectedDir("result");
 			TestUtils.compareMatrices(dmlfile, expectedOutput, eps, "Stat-DML", "Expected");
 		}
 		finally {

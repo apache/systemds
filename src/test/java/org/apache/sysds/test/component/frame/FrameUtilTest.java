@@ -29,6 +29,7 @@ import org.apache.spark.SparkConf;
 import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.spark.api.java.JavaSparkContext;
 import org.apache.sysds.common.Types.ValueType;
+import org.apache.sysds.runtime.controlprogram.context.SparkExecutionContext;
 import org.apache.sysds.runtime.frame.data.FrameBlock;
 import org.apache.sysds.runtime.frame.data.lib.FrameUtil;
 import org.apache.sysds.runtime.instructions.spark.utils.FrameRDDAggregateUtils;
@@ -110,6 +111,7 @@ public class FrameUtilTest {
 
 	@Test
 	public void testIsTypeMinimumString_1() {
+		// interestingly hash is valid for this string...
 		assertEquals(ValueType.STRING, FrameUtil.isType("FALSEE", ValueType.UNKNOWN));
 	}
 
@@ -160,12 +162,12 @@ public class FrameUtilTest {
 
 	@Test
 	public void testEHash() {
-		assertEquals(ValueType.HASH64, FrameUtil.isType("e1232142"));
+		assertEquals(ValueType.HASH32, FrameUtil.isType("e1232142"));
 	}
 
 	@Test
 	public void testEHash2() {
-		assertEquals(ValueType.HASH64, FrameUtil.isType("e6138002"));
+		assertEquals(ValueType.HASH32, FrameUtil.isType("e6138002"));
 	}
 
 	@Test
@@ -175,7 +177,7 @@ public class FrameUtilTest {
 
 	@Test
 	public void testEHash4() {
-		assertEquals(ValueType.HASH64, FrameUtil.isType("3268002e"));
+		assertEquals(ValueType.HASH32, FrameUtil.isType("3268002e"));
 	}
 
 	@Test
@@ -287,6 +289,7 @@ public class FrameUtilTest {
 		FrameBlock f2 = new FrameBlock(schema, 500);
 		FrameBlock f3 = new FrameBlock(schema, 250);
 
+		SparkExecutionContext.handleIllegalReflectiveAccessSpark();
 		SparkConf sparkConf = new SparkConf().setAppName("DirectPairRDDExample").setMaster("local");
 		JavaSparkContext sc = new JavaSparkContext(sparkConf);
 

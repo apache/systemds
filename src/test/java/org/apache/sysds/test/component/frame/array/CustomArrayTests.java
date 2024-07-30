@@ -19,10 +19,14 @@
 
 package org.apache.sysds.test.component.frame.array;
 
+import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.spy;
 
 import java.lang.ref.SoftReference;
 import java.util.Arrays;
@@ -37,6 +41,7 @@ import org.apache.sysds.common.Types.ValueType;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.compress.colgroup.mapping.MapToFactory;
 import org.apache.sysds.runtime.frame.data.FrameBlock;
+import org.apache.sysds.runtime.frame.data.columns.ABooleanArray;
 import org.apache.sysds.runtime.frame.data.columns.Array;
 import org.apache.sysds.runtime.frame.data.columns.ArrayFactory;
 import org.apache.sysds.runtime.frame.data.columns.BitSetArray;
@@ -45,12 +50,15 @@ import org.apache.sysds.runtime.frame.data.columns.CharArray;
 import org.apache.sysds.runtime.frame.data.columns.DDCArray;
 import org.apache.sysds.runtime.frame.data.columns.DoubleArray;
 import org.apache.sysds.runtime.frame.data.columns.FloatArray;
+import org.apache.sysds.runtime.frame.data.columns.HashIntegerArray;
 import org.apache.sysds.runtime.frame.data.columns.HashLongArray;
+import org.apache.sysds.runtime.frame.data.columns.IHashArray;
 import org.apache.sysds.runtime.frame.data.columns.IntegerArray;
 import org.apache.sysds.runtime.frame.data.columns.LongArray;
 import org.apache.sysds.runtime.frame.data.columns.OptionalArray;
 import org.apache.sysds.runtime.frame.data.columns.StringArray;
 import org.apache.sysds.runtime.matrix.data.Pair;
+import org.apache.sysds.test.component.frame.compress.FrameCompressTestUtils;
 import org.junit.Test;
 
 import scala.util.Random;
@@ -721,13 +729,13 @@ public class CustomArrayTests {
 		assertEquals(a.get(0), Character.valueOf((char) 1));
 	}
 
-	@Test(expected = DMLRuntimeException.class)
+	@Test(expected = NumberFormatException.class)
 	public void charSet_invalid() {
 		CharArray a = ArrayFactory.create(new char[2]);
 		a.set(0, "1.01");
 	}
 
-	@Test(expected = DMLRuntimeException.class)
+	@Test(expected = NumberFormatException.class)
 	public void charSet_invalid_2() {
 		CharArray a = ArrayFactory.create(new char[2]);
 		a.set(0, "aa");
@@ -1410,6 +1418,17 @@ public class CustomArrayTests {
 	}
 
 	@Test
+	public void parseHash_failCase_62770d79() {
+		assertEquals("62770d79", Integer.toHexString(HashIntegerArray.parseHashInt("62770d79")));
+		assertEquals("62770d79", Integer.toHexString(HashIntegerArray.parseHashInt("62770d79")));
+	}
+
+	@Test
+	public void parseHash_failCase_62770d7962770d79() {
+		assertEquals("62770d7962770d79", Long.toHexString(HashLongArray.parseHashLong("62770d7962770d79")));
+	}
+
+	@Test
 	public void compressWithNull() {
 		Array<Double> a = ArrayFactory
 			.create(new Double[] {0.02, null, null, 0.03, null, null, null, null, null, null, null, null});
@@ -1422,9 +1441,352 @@ public class CustomArrayTests {
 	public void compressHashColumn() {
 		Array<String> a = ArrayFactory
 			.create(new String[] {"aaaaaaaa", null, null, "ffffffff", null, null, null, null, null, null, null, null});
-		Array<Object> b = (Array<Object>)a.changeTypeWithNulls(ValueType.HASH64);
+		Array<Object> b = (Array<Object>) a.changeTypeWithNulls(ValueType.HASH64);
 		Array<Object> c = DDCArray.compressToDDC(b);
 		FrameArrayTests.compare(b, c);
 	}
 
+	@Test
+	@SuppressWarnings("unchecked")
+	public void setNullFromString() {
+		ABooleanArray b = (ABooleanArray) ArrayFactory.allocate(ValueType.BOOLEAN, 1000);
+		Array<String> s = (Array<String>) ArrayFactory.allocate(ValueType.STRING, 1000);
+
+		((Array<?>) s).set(100, "Hi");
+		((Array<?>) s).set(160, "With");
+
+		b.setNullsFromString(0, 101, s);
+
+		for(int i = 0; i < 99; i++) {
+			assertFalse(b.get(i));
+		}
+		assertTrue(b.get(100));
+		for(int i = 101; i < 1000; i++) {
+			assertFalse(b.get(i));
+		}
+	}
+
+	@Test
+	@SuppressWarnings("unchecked")
+	public void setNullFromString2() {
+		ABooleanArray b = (ABooleanArray) ArrayFactory.allocate(ValueType.BOOLEAN, 1000);
+		Array<String> s = (Array<String>) ArrayFactory.allocate(ValueType.STRING, 1000, "hi");
+
+		((Array<?>) s).set(100, "Hi");
+		((Array<?>) s).set(160, "With");
+
+		b.setNullsFromString(0, 101, s);
+
+		for(int i = 0; i < 101; i++) {
+			assertTrue(b.get(i));
+		}
+		for(int i = 101; i < 1000; i++) {
+			assertFalse(b.get(i));
+		}
+	}
+
+	@Test
+	@SuppressWarnings("unchecked")
+	public void setNullFromString3() {
+		ABooleanArray b = (ABooleanArray) ArrayFactory.allocate(ValueType.BOOLEAN, 1000);
+		Array<String> s = (Array<String>) ArrayFactory.allocate(ValueType.STRING, 1000, "hi");
+
+		((Array<?>) s).set(100, "Hi");
+		((Array<?>) s).set(160, "With");
+
+		b.setNullsFromString(0, 350, s);
+
+		for(int i = 0; i < 350; i++) {
+			assertTrue(b.get(i));
+		}
+		for(int i = 350; i < 1000; i++) {
+			assertFalse(b.get(i));
+		}
+	}
+
+	@Test
+	@SuppressWarnings("unchecked")
+	public void setNullFromString4() {
+		ABooleanArray b = (ABooleanArray) ArrayFactory.allocate(ValueType.BOOLEAN, 1000);
+		Array<String> s = (Array<String>) ArrayFactory.allocate(ValueType.STRING, 1000, "hi");
+
+		((Array<?>) s).set(100, "Hi");
+		((Array<?>) s).set(160, "With");
+
+		b.setNullsFromString(10, 350, s);
+
+		for(int i = 0; i < 10; i++) {
+			assertFalse(b.get(i));
+		}
+		for(int i = 10; i < 350; i++) {
+			assertTrue(b.get(i));
+		}
+		for(int i = 350; i < 1000; i++) {
+			assertFalse(b.get(i));
+		}
+	}
+
+	@Test
+	@SuppressWarnings("unchecked")
+	public void setNullFromString5() {
+		ABooleanArray b = (ABooleanArray) ArrayFactory.allocate(ValueType.BOOLEAN, 1000);
+		Array<String> s = (Array<String>) ArrayFactory.allocate(ValueType.STRING, 1000, "hi");
+
+		((Array<?>) s).set(100, (String) null);
+		((Array<?>) s).set(160, (String) null);
+
+		b.setNullsFromString(10, 350, s);
+
+		for(int i = 0; i < 10; i++) {
+			assertFalse(b.get(i));
+		}
+		for(int i = 10; i < 350; i++) {
+			if(i == 100 || i == 160)
+				assertFalse(b.get(i));
+			else
+				assertTrue(b.get(i));
+		}
+		for(int i = 350; i < 1000; i++) {
+			assertFalse(b.get(i));
+		}
+	}
+
+	@Test
+	@SuppressWarnings("unchecked")
+	public void setNullFromString7() {
+		ABooleanArray b = new BooleanArray(new boolean[1000]);
+
+		Array<String> s = (Array<String>) ArrayFactory.allocate(ValueType.STRING, 1000, "hi");
+
+		((Array<?>) s).set(100, (String) null);
+		((Array<?>) s).set(160, (String) null);
+
+		b.setNullsFromString(10, 350, s);
+
+		for(int i = 0; i < 10; i++) {
+			assertFalse(b.get(i));
+		}
+		for(int i = 10; i < 350; i++) {
+			if(i == 100 || i == 160)
+				assertFalse(b.get(i));
+			else
+				assertTrue(b.get(i));
+		}
+		for(int i = 350; i < 1000; i++) {
+			assertFalse(b.get(i));
+		}
+	}
+
+	@Test
+	@SuppressWarnings("unchecked")
+	public void setNullFromString6() {
+		ABooleanArray b = (ABooleanArray) ArrayFactory.allocate(ValueType.BOOLEAN, 1000);
+		Array<String> s = (Array<String>) ArrayFactory.allocate(ValueType.STRING, 1000, "hi");
+
+		((Array<?>) s).set(100, (String) null);
+		((Array<?>) s).set(160, (String) null);
+
+		b.setNullsFromString(64, 128, s);
+
+		for(int i = 0; i < 64; i++) {
+			assertFalse(b.get(i));
+		}
+		for(int i = 64; i < 128; i++) {
+			if(i == 100 || i == 160)
+				assertFalse(b.get(i));
+			else
+				assertTrue(b.get(i));
+		}
+		for(int i = 128; i < 1000; i++) {
+			assertFalse(b.get(i));
+		}
+	}
+
+	@Test
+	public void testMinMax() {
+		Array<?> a = ArrayFactory.create(new double[] {1, 2, 3, 4, 5, 6});
+
+		double[] mm = a.minMax();
+
+		assertEquals(mm[0], 1, 0.0);
+		assertEquals(mm[1], 6, 0.0);
+
+		mm = a.minMax(1, 4);
+		assertEquals(mm[0], 2, 0.0);
+		assertEquals(mm[1], 4, 0.0);
+
+	}
+
+	@Test
+	public void testMinMaxInt() {
+		Array<?> a = ArrayFactory.create(new int[] {1, 2, 3, 4, 5, 6});
+
+		double[] mm = a.minMax();
+
+		assertEquals(mm[0], 1, 0.0);
+		assertEquals(mm[1], 6, 0.0);
+
+		mm = a.minMax(1, 4);
+		assertEquals(mm[0], 2, 0.0);
+		assertEquals(mm[1], 4, 0.0);
+
+	}
+
+	@Test
+	public void createRecodeMap() {
+		Array<Integer> a = ArrayFactory.create(new int[] {1, 1, 1, 1, 3, 3, 1, 2});
+		Map<Integer, Long> m = a.getRecodeMap();
+		assertTrue(3 == m.size());
+		assertTrue(1L == m.get(1));
+		assertTrue(2L == m.get(3));
+		assertTrue(3L == m.get(2));
+		assertNull(m.get(4));
+	}
+
+	@Test
+	public void createRecodeMapWithNull() {
+		Array<Integer> a = ArrayFactory.create(new Integer[] {1, 1, 1, null, 3, 3, 1, 2});
+		Map<Integer, Long> m = a.getRecodeMap();
+		assertTrue(3 == m.size());
+		assertTrue(1L == m.get(1));
+		assertTrue(2L == m.get(3));
+		assertTrue(3L == m.get(2));
+		assertNull(m.get(4));
+	}
+
+	@Test
+	public void createRecodeMapBoolean() {
+		Array<Boolean> a = ArrayFactory.create(new boolean[] {true, true, false, false, true});
+		Map<Boolean, Long> m = a.getRecodeMap();
+		assertTrue(2 == m.size());
+		assertTrue(1 == m.get(true));
+		assertTrue(2 == m.get(false));
+	}
+
+	@Test
+	public void createRecodeMapBoolean2() {
+		Array<Boolean> a = ArrayFactory.create(new boolean[] {false, true, false, false, true});
+		Map<Boolean, Long> m = a.getRecodeMap();
+		assertTrue(2 == m.size());
+		assertTrue(2 == m.get(true));
+		assertTrue(1 == m.get(false));
+	}
+
+	@Test
+	public void createRecodeMapBoolean3() {
+		Array<Boolean> a = ArrayFactory.create(new boolean[] {true, true});
+		Map<Boolean, Long> m = a.getRecodeMap();
+		assertTrue(1 == m.size());
+		assertTrue(1 == m.get(true));
+		assertTrue(null == m.get(false));
+	}
+
+	@Test
+	public void createRecodeMapBooleanWithNull() {
+		Array<Boolean> a = ArrayFactory.create(new Boolean[] {true, null, true});
+		Map<Boolean, Long> m = a.getRecodeMap();
+		assertTrue(1 == m.size());
+		assertTrue(1 == m.get(true));
+		assertTrue(null == m.get(false));
+	}
+
+	@Test
+	public void createRecodeMapCached() {
+		Array<Integer> a = ArrayFactory.create(new int[] {1, 1, 1, 1, 3, 3, 1, 2});
+		Map<Integer, Long> m = a.getRecodeMap();
+		Map<Integer, Long> m2 = a.getRecodeMap();
+		assertEquals(m, m2);
+	}
+
+	@Test
+	public void extractDouble() {
+		Array<Integer> a = ArrayFactory.create(new int[] {1, 2, 3, 4, 5, 6, 7, 8, 9});
+		double[] r = a.extractDouble(new double[3], 1, 4);
+		assertArrayEquals(new double[] {2, 3, 4}, r, 0.0);
+	}
+
+	@Test
+	public void setRange() {
+		Array<Integer> a = ArrayFactory.create(new int[] {1, 2, 3, 4, 5, 6, 7, 8, 9});
+		Array<Integer> b = ArrayFactory.create(new int[] {9, 9, 9, 9});
+
+		// inclusive 6
+		a.set(3, 6, b);
+		assertTrue(1 == a.get(0));
+		assertTrue(2 == a.get(1));
+		assertTrue(3 == a.get(2));
+		assertTrue(9 == a.get(3));
+		assertTrue(9 == a.get(4));
+		assertTrue(9 == a.get(5));
+		assertTrue(9 == a.get(6));
+		assertTrue(8 == a.get(7));
+		assertTrue(9 == a.get(8));
+	}
+
+	@Test
+	public void getIntHashArray() {
+		IHashArray a = new HashIntegerArray(new String[] {"00000000"});
+		assertEquals(0, a.getInt(0));
+	}
+
+	@Test
+	public void getLongHashArray() {
+		IHashArray a = new HashIntegerArray(new String[] {"00000000"});
+		assertEquals(0, a.getLong(0));
+	}
+
+	@Test
+	public void getLongHashLongArray() {
+		IHashArray a = new HashLongArray(new String[] {"00000000"});
+		assertEquals(0, a.getLong(0));
+	}
+
+	@Test
+	public void getIntHashLongArray() {
+		IHashArray a = new HashLongArray(new String[] {"00000000"});
+		assertEquals(0, a.getInt(0));
+	}
+
+	@Test(expected = Exception.class)
+	public void setObjectHashInteger() {
+		new HashIntegerArray(new String[] {"00000000"}).set(0, new Object());
+	}
+
+	@Test(expected = Exception.class)
+	public void setObjectHashLong() {
+		new HashLongArray(new String[] {"00000000"}).set(0, new Object());
+	}
+
+	@Test(expected = Exception.class)
+	public void setDDCArrayWithDDCArray() {
+		Array<?> c = FrameCompressTestUtils.generateArray(100, 32, 5, ValueType.INT32);
+		Array<?> s = spy(c);
+		doThrow(new RuntimeException()).when(s).size();
+		DDCArray.compressToDDC(s);
+	}
+
+	@Test
+	public void DDC_nullDict() {
+
+		Array<?> c = FrameCompressTestUtils.generateArray(100, 32, 5, ValueType.INT32);
+		DDCArray<?> d = (DDCArray<?>) DDCArray.compressToDDC(c);
+		Array<?> dict = d.getDict();
+
+		assertEquals(5, dict.size());
+
+		DDCArray<?> d2 = d.nullDict();
+		assertNull( d2.getDict());
+
+		DDCArray<?> d3 = d2.setDict(dict);
+		assertEquals(dict, d3.getDict());
+
+		/// however different objects!
+
+		assertFalse(d3 == d2);
+		assertFalse(d == d2);
+
+		assertEquals(d3.getMap(), d.getMap());
+		assertEquals(d3.getMap(), d2.getMap());
+
+	}
 }

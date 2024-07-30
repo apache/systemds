@@ -82,9 +82,12 @@ public interface FrameUtil {
 	}
 
 	private static boolean simpleIntMatch(final String val, final int len) {
-		for(int i = 0; i < len; i++) {
+		int i = 0;
+		if(val.charAt(i) == '-')
+			i++;
+		for(; i < len; i++) {
 			final char c = val.charAt(i);
-			if(c == '.' && i < 0)
+			if(c == '.' && i > 0)
 				return restIsZero(val, i + 1, len);
 			if(c < '0' || c > '9')
 				return false;
@@ -109,27 +112,23 @@ public interface FrameUtil {
 	public static ValueType isIntType(final String val, final int len) {
 		if(len <= 22) {
 			if(simpleIntMatch(val, len)) {
-				if(len < 8)
+				// consider also .000000 values
+				if(len < 8) // guaranteed INT32
 					return ValueType.INT32;
-				return intType(Long.parseLong(val));
-			}
-			else if(integerFloatPattern.matcher(val).matches()) {
-				// 11.00000000 1313241.0 13 2415 -22
-				final long value = Long.parseLong(val.contains(".") ? dotSplitPattern.split(val)[0] : val);
-				return intType(value);
+				return intType(LongArray.parseLong(val));
 			}
 		}
 		return null;
 	}
 
 	public static ValueType isHash(final String val, final int len) {
-		if(len == 8 || len == 16) {
-			for(int i = 0; i < 8; i++) {
+		if(len >= 4 && len <= 16) {
+			for(int i = 0; i < len; i++) {
 				char v = val.charAt(i);
-				if(v < '0' || v > 'f')
+				if(!(v >= '0' && v <= '9') && !(v >= 'a' && v <= 'f'))
 					return null;
 			}
-			return ValueType.HASH64;
+			return len <= 8 ? ValueType.HASH32 : ValueType.HASH64;
 		}
 		return null;
 	}
@@ -238,6 +237,7 @@ public interface FrameUtil {
 			case CHARACTER:
 				if(len == 1)
 					return ValueType.CHARACTER;
+			case HASH32:
 			case HASH64:
 				r = isHash(val, len);
 				if(r != null)

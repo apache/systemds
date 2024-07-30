@@ -1,0 +1,380 @@
+Sparsity: dense, Shape: tall
+SystemDS Statistics:
+Total elapsed time:		9.966 sec.
+Total compilation time:		1.267 sec.
+Total execution time:		8.699 sec.
+Number of compiled Spark inst:	22.
+Number of executed Spark inst:	205.
+Cache hits (Mem/Li/WB/FS/HDFS):	76/0/0/0/0.
+Cache writes (Li/WB/FS/HDFS):	0/16/0/0.
+Cache times (ACQr/m, RLS, EXP):	3.660/0.001/0.005/0.000 sec.
+HOP DAGs recompiled (PRED, SB):	0/73.
+HOP DAGs recompile time:	0.608 sec.
+Functions recompiled:		5.
+Functions recompile time:	0.019 sec.
+Spark ctx create time (lazy):	1.171 sec.
+Spark trans counts (par,bc,col):15/10/111.
+Spark trans times (par,bc,col):	0.008/0.048/3.650 secs.
+Total JIT compile time:		31.338 sec.
+Total JVM GC count:		5.
+Total JVM GC time:		0.132 sec.
+Heavy hitter instructions:
+  #  Instruction        Time(s)  Count
+  1  printRandElements    4.258      5
+  2  castdts              2.481    151
+  3  pca                  2.461      5
+  4  sp_rightIndex        1.472     55
+  5  sp_csvrblk           1.327      1
+  6  sp_ctableexpand      1.228      5
+  7  eigen                0.534      5
+  8  sp_tsmm              0.211      5
+  9  sp_chkpoint          0.210      7
+ 10  sp_rand              0.193    101
+
+
+
+
+
+
+Sparsity: dense, Shape: wide
+SystemDS Statistics:
+Total elapsed time:		9.778 sec.
+Total compilation time:		1.254 sec.
+Total execution time:		8.524 sec.
+Number of compiled Spark inst:	22.
+Number of executed Spark inst:	205.
+Cache hits (Mem/Li/WB/FS/HDFS):	76/0/0/0/0.
+Cache writes (Li/WB/FS/HDFS):	0/16/0/0.
+Cache times (ACQr/m, RLS, EXP):	3.471/0.001/0.006/0.000 sec.
+HOP DAGs recompiled (PRED, SB):	0/73.
+HOP DAGs recompile time:	0.591 sec.
+Functions recompiled:		5.
+Functions recompile time:	0.018 sec.
+Spark ctx create time (lazy):	1.129 sec.
+Spark trans counts (par,bc,col):15/10/111.
+Spark trans times (par,bc,col):	0.008/0.044/3.462 secs.
+Total JIT compile time:		31.297 sec.
+Total JVM GC count:		5.
+Total JVM GC time:		0.119 sec.
+Heavy hitter instructions:
+  #  Instruction        Time(s)  Count
+  1  printRandElements    4.106      5
+  2  pca                  2.440      5
+  3  castdts              2.371    151
+  4  sp_rightIndex        1.485     55
+  5  sp_csvrblk           1.358      1
+  6  sp_ctableexpand      1.217      5
+  7  eigen                0.489      5
+  8  sp_tsmm              0.225      5
+  9  sp_chkpoint          0.198      7
+ 10  sp_rand              0.190    101
+
+
+
+
+
+
+Sparsity: 0.0001, Shape: tall
+SystemDS Statistics:
+Total elapsed time:		7.686 sec.
+Total compilation time:		1.388 sec.
+Total execution time:		6.297 sec.
+Number of compiled Spark inst:	22.
+Number of executed Spark inst:	105.
+Cache hits (Mem/Li/WB/FS/HDFS):	26/0/0/0/0.
+Cache writes (Li/WB/FS/HDFS):	0/0/0/0.
+Cache times (ACQr/m, RLS, EXP):	2.523/0.001/0.002/0.000 sec.
+HOP DAGs recompiled (PRED, SB):	0/73.
+HOP DAGs recompile time:	0.527 sec.
+Functions recompiled:		5.
+Functions recompile time:	0.022 sec.
+Spark ctx create time (lazy):	1.193 sec.
+Spark trans counts (par,bc,col):15/10/61.
+Spark trans times (par,bc,col):	0.010/0.051/2.517 secs.
+Total JIT compile time:		29.754 sec.
+Total JVM GC count:		4.
+Total JVM GC time:		0.11 sec.
+Heavy hitter instructions:
+  #  Instruction        Time(s)  Count
+  1  pca                  2.474      5
+  2  printRandElements    1.760      5
+  3  sp_csvrblk           1.456      1
+  4  sp_ctableexpand      1.347      5
+  5  castdts              1.322     51
+  6  eigen                0.413      5
+  7  sp_rightIndex        0.253      5
+  8  sp_chkpoint          0.226      7
+  9  sp_tsmm              0.199      5
+ 10  sp_uak+              0.120      1
+
+
+
+
+
+
+Sparsity: 0.0001, Shape: wide
+SystemDS Statistics:
+Total elapsed time:		7.618 sec.
+Total compilation time:		1.238 sec.
+Total execution time:		6.380 sec.
+Number of compiled Spark inst:	22.
+Number of executed Spark inst:	105.
+Cache hits (Mem/Li/WB/FS/HDFS):	26/0/0/0/0.
+Cache writes (Li/WB/FS/HDFS):	0/0/0/0.
+Cache times (ACQr/m, RLS, EXP):	2.617/0.001/0.002/0.000 sec.
+HOP DAGs recompiled (PRED, SB):	0/73.
+HOP DAGs recompile time:	0.544 sec.
+Functions recompiled:		5.
+Functions recompile time:	0.021 sec.
+Spark ctx create time (lazy):	1.042 sec.
+Spark trans counts (par,bc,col):15/10/61.
+Spark trans times (par,bc,col):	0.010/0.047/2.611 secs.
+Total JIT compile time:		29.962 sec.
+Total JVM GC count:		4.
+Total JVM GC time:		0.117 sec.
+Heavy hitter instructions:
+  #  Instruction        Time(s)  Count
+  1  pca                  2.541      5
+  2  printRandElements    1.821      5
+  3  sp_csvrblk           1.400      1
+  4  castdts              1.382     51
+  5  sp_ctableexpand      1.379      5
+  6  eigen                0.430      5
+  7  sp_rightIndex        0.258      5
+  8  sp_chkpoint          0.225      7
+  9  sp_tsmm              0.205      5
+ 10  sp_uak+              0.122      1
+
+
+
+
+
+
+Sparsity: 0.001, Shape: tall
+SystemDS Statistics:
+Total elapsed time:		9.845 sec.
+Total compilation time:		1.215 sec.
+Total execution time:		8.630 sec.
+Number of compiled Spark inst:	22.
+Number of executed Spark inst:	205.
+Cache hits (Mem/Li/WB/FS/HDFS):	76/0/0/0/0.
+Cache writes (Li/WB/FS/HDFS):	0/5/0/0.
+Cache times (ACQr/m, RLS, EXP):	3.510/0.002/0.005/0.000 sec.
+HOP DAGs recompiled (PRED, SB):	0/73.
+HOP DAGs recompile time:	0.569 sec.
+Functions recompiled:		5.
+Functions recompile time:	0.018 sec.
+Spark ctx create time (lazy):	1.094 sec.
+Spark trans counts (par,bc,col):15/10/111.
+Spark trans times (par,bc,col):	0.009/0.061/3.500 secs.
+Total JIT compile time:		30.026 sec.
+Total JVM GC count:		5.
+Total JVM GC time:		0.135 sec.
+Heavy hitter instructions:
+  #  Instruction        Time(s)  Count
+  1  printRandElements    4.224      5
+  2  castdts              2.414    151
+  3  pca                  2.351      5
+  4  sp_rightIndex        1.566     55
+  5  sp_csvrblk           1.448      1
+  6  sp_ctableexpand      1.188      5
+  7  eigen                0.414      5
+  8  sp_chkpoint          0.202      7
+  9  sp_rand              0.200    101
+ 10  sp_tsmm              0.190      5
+
+
+
+
+
+
+Sparsity: 0.001, Shape: wide
+SystemDS Statistics:
+Total elapsed time:		9.926 sec.
+Total compilation time:		1.270 sec.
+Total execution time:		8.656 sec.
+Number of compiled Spark inst:	22.
+Number of executed Spark inst:	205.
+Cache hits (Mem/Li/WB/FS/HDFS):	76/0/0/0/0.
+Cache writes (Li/WB/FS/HDFS):	0/0/0/0.
+Cache times (ACQr/m, RLS, EXP):	3.565/0.001/0.004/0.000 sec.
+HOP DAGs recompiled (PRED, SB):	0/73.
+HOP DAGs recompile time:	0.581 sec.
+Functions recompiled:		5.
+Functions recompile time:	0.018 sec.
+Spark ctx create time (lazy):	1.191 sec.
+Spark trans counts (par,bc,col):15/10/111.
+Spark trans times (par,bc,col):	0.009/0.059/3.555 secs.
+Total JIT compile time:		31.956 sec.
+Total JVM GC count:		5.
+Total JVM GC time:		0.135 sec.
+Heavy hitter instructions:
+  #  Instruction        Time(s)  Count
+  1  printRandElements    4.211      5
+  2  castdts              2.461    151
+  3  pca                  2.413      5
+  4  sp_rightIndex        1.483     55
+  5  sp_csvrblk           1.425      1
+  6  sp_ctableexpand      1.229      5
+  7  eigen                0.415      5
+  8  sp_chkpoint          0.200      7
+  9  sp_rand              0.194    101
+ 10  sp_tsmm              0.189      5
+
+
+
+
+
+
+Sparsity: 0.01, Shape: tall
+SystemDS Statistics:
+Total elapsed time:		10.206 sec.
+Total compilation time:		1.420 sec.
+Total execution time:		8.786 sec.
+Number of compiled Spark inst:	22.
+Number of executed Spark inst:	205.
+Cache hits (Mem/Li/WB/FS/HDFS):	76/0/0/0/0.
+Cache writes (Li/WB/FS/HDFS):	0/15/0/0.
+Cache times (ACQr/m, RLS, EXP):	3.782/0.001/0.005/0.000 sec.
+HOP DAGs recompiled (PRED, SB):	0/73.
+HOP DAGs recompile time:	0.532 sec.
+Functions recompiled:		5.
+Functions recompile time:	0.019 sec.
+Spark ctx create time (lazy):	1.102 sec.
+Spark trans counts (par,bc,col):15/10/111.
+Spark trans times (par,bc,col):	0.009/0.050/3.772 secs.
+Total JIT compile time:		32.705 sec.
+Total JVM GC count:		5.
+Total JVM GC time:		0.131 sec.
+Heavy hitter instructions:
+  #  Instruction        Time(s)  Count
+  1  printRandElements    4.416      5
+  2  castdts              2.609    151
+  3  pca                  2.519      5
+  4  sp_rightIndex        1.520     55
+  5  sp_ctableexpand      1.306      5
+  6  sp_csvrblk           1.273      1
+  7  eigen                0.487      5
+  8  sp_tsmm              0.210      5
+  9  sp_chkpoint          0.204      7
+ 10  sp_rand              0.200    101
+
+
+
+
+
+
+Sparsity: 0.01, Shape: wide
+SystemDS Statistics:
+Total elapsed time:		9.933 sec.
+Total compilation time:		1.215 sec.
+Total execution time:		8.719 sec.
+Number of compiled Spark inst:	22.
+Number of executed Spark inst:	205.
+Cache hits (Mem/Li/WB/FS/HDFS):	76/0/0/0/0.
+Cache writes (Li/WB/FS/HDFS):	0/15/0/0.
+Cache times (ACQr/m, RLS, EXP):	3.543/0.002/0.006/0.000 sec.
+HOP DAGs recompiled (PRED, SB):	0/73.
+HOP DAGs recompile time:	0.517 sec.
+Functions recompiled:		5.
+Functions recompile time:	0.019 sec.
+Spark ctx create time (lazy):	1.172 sec.
+Spark trans counts (par,bc,col):15/10/111.
+Spark trans times (par,bc,col):	0.009/0.050/3.533 secs.
+Total JIT compile time:		31.14 sec.
+Total JVM GC count:		5.
+Total JVM GC time:		0.111 sec.
+Heavy hitter instructions:
+  #  Instruction        Time(s)  Count
+  1  printRandElements    4.165      5
+  2  pca                  2.561      5
+  3  castdts              2.411    151
+  4  sp_rightIndex        1.492     55
+  5  sp_csvrblk           1.444      1
+  6  sp_ctableexpand      1.277      5
+  7  eigen                0.523      5
+  8  sp_tsmm              0.225      5
+  9  sp_chkpoint          0.211      7
+ 10  sp_rand              0.196    101
+
+
+
+
+
+
+Sparsity: 0.1, Shape: tall
+SystemDS Statistics:
+Total elapsed time:		9.641 sec.
+Total compilation time:		1.290 sec.
+Total execution time:		8.351 sec.
+Number of compiled Spark inst:	22.
+Number of executed Spark inst:	205.
+Cache hits (Mem/Li/WB/FS/HDFS):	76/0/0/0/0.
+Cache writes (Li/WB/FS/HDFS):	0/15/0/0.
+Cache times (ACQr/m, RLS, EXP):	3.387/0.001/0.005/0.000 sec.
+HOP DAGs recompiled (PRED, SB):	0/73.
+HOP DAGs recompile time:	0.546 sec.
+Functions recompiled:		5.
+Functions recompile time:	0.017 sec.
+Spark ctx create time (lazy):	1.166 sec.
+Spark trans counts (par,bc,col):15/10/111.
+Spark trans times (par,bc,col):	0.009/0.045/3.377 secs.
+Total JIT compile time:		31.333 sec.
+Total JVM GC count:		5.
+Total JVM GC time:		0.129 sec.
+Heavy hitter instructions:
+  #  Instruction        Time(s)  Count
+  1  printRandElements    4.066      5
+  2  pca                  2.364      5
+  3  castdts              2.325    151
+  4  sp_rightIndex        1.416     55
+  5  sp_csvrblk           1.325      1
+  6  sp_ctableexpand      1.209      5
+  7  eigen                0.466      5
+  8  sp_chkpoint          0.231      7
+  9  sp_tsmm              0.219      5
+ 10  sp_rand              0.198    101
+
+
+
+
+
+
+Sparsity: 0.1, Shape: wide
+SystemDS Statistics:
+Total elapsed time:		10.262 sec.
+Total compilation time:		1.304 sec.
+Total execution time:		8.958 sec.
+Number of compiled Spark inst:	22.
+Number of executed Spark inst:	205.
+Cache hits (Mem/Li/WB/FS/HDFS):	76/0/0/0/0.
+Cache writes (Li/WB/FS/HDFS):	0/15/0/0.
+Cache times (ACQr/m, RLS, EXP):	3.654/0.002/0.006/0.000 sec.
+HOP DAGs recompiled (PRED, SB):	0/73.
+HOP DAGs recompile time:	0.545 sec.
+Functions recompiled:		5.
+Functions recompile time:	0.018 sec.
+Spark ctx create time (lazy):	1.103 sec.
+Spark trans counts (par,bc,col):15/10/111.
+Spark trans times (par,bc,col):	0.009/0.049/3.644 secs.
+Total JIT compile time:		33.859 sec.
+Total JVM GC count:		5.
+Total JVM GC time:		0.131 sec.
+Heavy hitter instructions:
+  #  Instruction        Time(s)  Count
+  1  printRandElements    4.395      5
+  2  pca                  2.568      5
+  3  castdts              2.560    151
+  4  sp_rightIndex        1.542     55
+  5  sp_csvrblk           1.417      1
+  6  sp_ctableexpand      1.258      5
+  7  eigen                0.557      5
+  8  sp_tsmm              0.228      5
+  9  sp_chkpoint          0.228      7
+ 10  sp_rand              0.199    101
+
+
+
+
+
+

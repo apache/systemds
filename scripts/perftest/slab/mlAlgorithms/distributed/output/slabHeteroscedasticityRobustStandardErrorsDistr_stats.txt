@@ -1,0 +1,476 @@
+Sparsity: dense, Shape: tall
+SystemDS Statistics:
+Total elapsed time:		10.730 sec.
+Total compilation time:		1.205 sec.
+Total execution time:		9.525 sec.
+Number of compiled Spark inst:	32.
+Number of executed Spark inst:	227.
+Cache hits (Mem/Li/WB/FS/HDFS):	80/0/0/0/0.
+Cache writes (Li/WB/FS/HDFS):	0/32/0/0.
+Cache times (ACQr/m, RLS, EXP):	3.740/0.002/0.007/0.000 sec.
+HOP DAGs recompiled (PRED, SB):	0/68.
+HOP DAGs recompile time:	0.544 sec.
+Functions recompiled:		5.
+Functions recompile time:	0.017 sec.
+Spark ctx create time (lazy):	0.956 sec.
+Spark trans counts (par,bc,col):21/33/129.
+Spark trans times (par,bc,col):	0.010/1.195/3.729 secs.
+Total JIT compile time:		40.341 sec.
+Total JVM GC count:		8.
+Total JVM GC time:		0.154 sec.
+Heavy hitter instructions:
+  #  Instruction        Time(s)  Count
+  1  printRandElements    4.895      5
+  2  castdts              2.270    151
+  3  robust_se            2.103      5
+  4  sp_rightIndex        2.040     50
+  5  sp_csvrblk           1.350      1
+  6  sp_mapmm             1.064     27
+  7  svd                  0.709      5
+  8  sp_chkpoint          0.410      8
+  9  sp_tsmm              0.239      6
+ 10  sp_rand              0.196    101
+
+
+
+
+
+
+Sparsity: dense, Shape: wide
+SystemDS Statistics:
+Total elapsed time:		11.167 sec.
+Total compilation time:		1.297 sec.
+Total execution time:		9.869 sec.
+Number of compiled Spark inst:	32.
+Number of executed Spark inst:	227.
+Cache hits (Mem/Li/WB/FS/HDFS):	80/0/0/0/0.
+Cache writes (Li/WB/FS/HDFS):	0/32/0/0.
+Cache times (ACQr/m, RLS, EXP):	3.732/0.002/0.007/0.000 sec.
+HOP DAGs recompiled (PRED, SB):	0/68.
+HOP DAGs recompile time:	0.576 sec.
+Functions recompiled:		5.
+Functions recompile time:	0.020 sec.
+Spark ctx create time (lazy):	1.218 sec.
+Spark trans counts (par,bc,col):21/33/129.
+Spark trans times (par,bc,col):	0.010/1.150/3.721 secs.
+Total JIT compile time:		40.558 sec.
+Total JVM GC count:		8.
+Total JVM GC time:		0.165 sec.
+Heavy hitter instructions:
+  #  Instruction        Time(s)  Count
+  1  printRandElements    5.012      5
+  2  castdts              2.279    151
+  3  robust_se            2.164      5
+  4  sp_rightIndex        2.112     50
+  5  sp_csvrblk           1.489      1
+  6  sp_mapmm             1.002     27
+  7  svd                  0.826      5
+  8  sp_chkpoint          0.408      8
+  9  sp_tsmm              0.258      6
+ 10  sp_rand              0.209    101
+
+
+
+
+
+
+Sparsity: 0.0001, Shape: tall
+SystemDS Statistics:
+Total elapsed time:		3.584 sec.
+Total compilation time:		1.267 sec.
+Total execution time:		2.317 sec.
+Number of compiled Spark inst:	32.
+Number of executed Spark inst:	8.
+Cache hits (Mem/Li/WB/FS/HDFS):	2/0/0/0/0.
+Cache writes (Li/WB/FS/HDFS):	0/0/0/0.
+Cache times (ACQr/m, RLS, EXP):	0.450/0.000/0.000/0.000 sec.
+HOP DAGs recompiled (PRED, SB):	0/2.
+HOP DAGs recompile time:	0.363 sec.
+Spark ctx create time (lazy):	1.198 sec.
+Spark trans counts (par,bc,col):0/1/3.
+Spark trans times (par,bc,col):	0.000/0.068/0.449 secs.
+Total JIT compile time:		10.562 sec.
+Total JVM GC count:		3.
+Total JVM GC time:		0.083 sec.
+Heavy hitter instructions:
+  #  Instruction  Time(s)  Count
+  1  sp_csvrblk     1.460      1
+  2  sp_uak+        0.127      1
+  3  sp_tsmm        0.092      1
+  4  sp_mapmm       0.090      1
+  5  sp_rand        0.023      1
+  6  sp_>           0.013      1
+  7  createvar      0.012     10
+  8  rlit           0.012      1
+  9  sp_chkpoint    0.007      1
+ 10  sp_r'          0.005      1
+
+[31m
+An Error Occurred : 
+      DMLRuntimeException -- org.apache.sysds.runtime.DMLRuntimeException: ERROR: Runtime error in program block generated from statement block between lines 0 and 34 -- Error evaluating instruction: CP°solve°_mVar52·MATRIX·FP64°_mVar54·MATRIX·FP64°_mVar55·MATRIX·FP64°36
+      DMLRuntimeException -- ERROR: Runtime error in program block generated from statement block between lines 0 and 34 -- Error evaluating instruction: CP°solve°_mVar52·MATRIX·FP64°_mVar54·MATRIX·FP64°_mVar55·MATRIX·FP64°36
+  SingularMatrixException -- matrix is singular
+[0m
+
+
+
+
+
+Sparsity: 0.0001, Shape: wide
+SystemDS Statistics:
+Total elapsed time:		3.603 sec.
+Total compilation time:		1.331 sec.
+Total execution time:		2.272 sec.
+Number of compiled Spark inst:	32.
+Number of executed Spark inst:	8.
+Cache hits (Mem/Li/WB/FS/HDFS):	2/0/0/0/0.
+Cache writes (Li/WB/FS/HDFS):	0/0/0/0.
+Cache times (ACQr/m, RLS, EXP):	0.499/0.000/0.000/0.000 sec.
+HOP DAGs recompiled (PRED, SB):	0/2.
+HOP DAGs recompile time:	0.410 sec.
+Spark ctx create time (lazy):	1.133 sec.
+Spark trans counts (par,bc,col):0/1/3.
+Spark trans times (par,bc,col):	0.000/0.065/0.498 secs.
+Total JIT compile time:		10.57 sec.
+Total JVM GC count:		3.
+Total JVM GC time:		0.082 sec.
+Heavy hitter instructions:
+  #  Instruction  Time(s)  Count
+  1  sp_csvrblk     1.404      1
+  2  sp_uak+        0.117      1
+  3  sp_mapmm       0.088      1
+  4  sp_tsmm        0.086      1
+  5  createvar      0.018     10
+  6  sp_rand        0.018      1
+  7  sp_>           0.011      1
+  8  rlit           0.009      1
+  9  sp_chkpoint    0.007      1
+ 10  sp_r'          0.003      1
+
+[31m
+An Error Occurred : 
+      DMLRuntimeException -- org.apache.sysds.runtime.DMLRuntimeException: ERROR: Runtime error in program block generated from statement block between lines 0 and 34 -- Error evaluating instruction: CP°solve°_mVar52·MATRIX·FP64°_mVar54·MATRIX·FP64°_mVar55·MATRIX·FP64°36
+      DMLRuntimeException -- ERROR: Runtime error in program block generated from statement block between lines 0 and 34 -- Error evaluating instruction: CP°solve°_mVar52·MATRIX·FP64°_mVar54·MATRIX·FP64°_mVar55·MATRIX·FP64°36
+  SingularMatrixException -- matrix is singular
+[0m
+
+
+
+
+
+Sparsity: 0.001, Shape: tall
+SystemDS Statistics:
+Total elapsed time:		3.335 sec.
+Total compilation time:		1.255 sec.
+Total execution time:		2.080 sec.
+Number of compiled Spark inst:	32.
+Number of executed Spark inst:	5.
+Cache hits (Mem/Li/WB/FS/HDFS):	1/0/0/0/0.
+Cache writes (Li/WB/FS/HDFS):	0/0/0/0.
+Cache times (ACQr/m, RLS, EXP):	0.369/0.000/0.000/0.000 sec.
+HOP DAGs recompiled (PRED, SB):	0/2.
+HOP DAGs recompile time:	0.397 sec.
+Spark ctx create time (lazy):	1.063 sec.
+Spark trans counts (par,bc,col):0/0/1.
+Spark trans times (par,bc,col):	0.000/0.000/0.368 secs.
+Total JIT compile time:		11.229 sec.
+Total JVM GC count:		3.
+Total JVM GC time:		0.076 sec.
+Heavy hitter instructions:
+  #  Instruction  Time(s)  Count
+  1  sp_csvrblk     1.374      1
+  2  sp_uak+        0.119      1
+  3  sp_rand        0.020      1
+  4  createvar      0.014      7
+  5  sp_>           0.012      1
+  6  rlit           0.011      1
+  7  sp_chkpoint    0.007      1
+  8  rmvar          0.000      3
+  9  castdts        0.000      1
+ 10  mvvar          0.000      1
+
+[31m
+An Error Occurred : 
+      DMLRuntimeException -- org.apache.sysds.runtime.DMLRuntimeException: ERROR: Runtime error in program block generated from statement block between lines 0 and 34 -- Error evaluating instruction: SPARK°tsmm°X·MATRIX·FP64°_mVar52·MATRIX·FP64°LEFT
+      DMLRuntimeException -- ERROR: Runtime error in program block generated from statement block between lines 0 and 34 -- Error evaluating instruction: SPARK°tsmm°X·MATRIX·FP64°_mVar52·MATRIX·FP64°LEFT
+           SparkException -- Job aborted due to stage failure: Task 0 in stage 7.0 failed 1 times, most recent failure: Lost task 0.0 in stage 7.0 (TID 8) (192.168.2.175 executor driver): java.lang.ArrayIndexOutOfBoundsException: Index 100 out of bounds for length 100
+	at org.apache.sysds.runtime.data.SparseBlockMCSR.isAllocated(SparseBlockMCSR.java:223)
+	at org.apache.sysds.runtime.data.SparseBlockMCSR.allocate(SparseBlockMCSR.java:177)
+	at org.apache.sysds.runtime.matrix.data.LibMatrixMult.matrixMultTransposeSelfUltraSparse(LibMatrixMult.java:2405)
+	at org.apache.sysds.runtime.matrix.data.LibMatrixMult.matrixMultTransposeSelf(LibMatrixMult.java:2311)
+	at org.apache.sysds.runtime.matrix.data.LibMatrixMult.matrixMultTransposeSelf(LibMatrixMult.java:463)
+	at org.apache.sysds.runtime.matrix.data.LibMatrixMult.matrixMultTransposeSelf(LibMatrixMult.java:444)
+	at org.apache.sysds.runtime.matrix.data.MatrixBlock.transposeSelfMatrixMultOperations(MatrixBlock.java:4093)
+	at org.apache.sysds.runtime.matrix.data.MatrixBlock.transposeSelfMatrixMultOperations(MatrixBlock.java:4064)
+	at org.apache.sysds.runtime.instructions.spark.TsmmSPInstruction$RDDTSMMFunction.call(TsmmSPInstruction.java:111)
+	at org.apache.sysds.runtime.instructions.spark.TsmmSPInstruction$RDDTSMMFunction.call(TsmmSPInstruction.java:96)
+	at org.apache.spark.api.java.JavaPairRDD$.$anonfun$toScalaFunction$1(JavaPairRDD.scala:1070)
+	at scala.collection.Iterator$$anon$10.next(Iterator.scala:461)
+	at scala.collection.Iterator.foreach(Iterator.scala:943)
+	at scala.collection.Iterator.foreach$(Iterator.scala:943)
+	at scala.collection.AbstractIterator.foreach(Iterator.scala:1431)
+	at scala.collection.TraversableOnce.foldLeft(TraversableOnce.scala:199)
+	at scala.collection.TraversableOnce.foldLeft$(TraversableOnce.scala:192)
+	at scala.collection.AbstractIterator.foldLeft(Iterator.scala:1431)
+	at scala.collection.TraversableOnce.fold(TraversableOnce.scala:258)
+	at scala.collection.TraversableOnce.fold$(TraversableOnce.scala:258)
+	at scala.collection.AbstractIterator.fold(Iterator.scala:1431)
+	at org.apache.spark.rdd.RDD.$anonfun$fold$2(RDD.scala:1197)
+	at org.apache.spark.SparkContext.$anonfun$runJob$6(SparkContext.scala:2492)
+	at org.apache.spark.scheduler.ResultTask.runTask(ResultTask.scala:93)
+	at org.apache.spark.TaskContext.runTaskWithListeners(TaskContext.scala:161)
+	at org.apache.spark.scheduler.Task.run(Task.scala:141)
+	at org.apache.spark.executor.Executor$TaskRunner.$anonfun$run$4(Executor.scala:620)
+	at org.apache.spark.util.SparkErrorUtils.tryWithSafeFinally(SparkErrorUtils.scala:64)
+	at org.apache.spark.util.SparkErrorUtils.tryWithSafeFinally$(SparkErrorUtils.scala:61)
+	at org.apache.spark.util.Utils$.tryWithSafeFinally(Utils.scala:94)
+	at org.apache.spark.executor.Executor$TaskRunner.run(Executor.scala:623)
+	at java.base/java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1128)
+	at java.base/java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:628)
+	at java.base/java.lang.Thread.run(Thread.java:829)
+
+Driver stacktrace:
+ArrayIndexOutOfBoundsException -- Index 100 out of bounds for length 100
+[0m
+
+
+
+
+
+Sparsity: 0.001, Shape: wide
+SystemDS Statistics:
+Total elapsed time:		3.364 sec.
+Total compilation time:		1.306 sec.
+Total execution time:		2.058 sec.
+Number of compiled Spark inst:	32.
+Number of executed Spark inst:	5.
+Cache hits (Mem/Li/WB/FS/HDFS):	1/0/0/0/0.
+Cache writes (Li/WB/FS/HDFS):	0/0/0/0.
+Cache times (ACQr/m, RLS, EXP):	0.360/0.000/0.000/0.000 sec.
+HOP DAGs recompiled (PRED, SB):	0/2.
+HOP DAGs recompile time:	0.391 sec.
+Spark ctx create time (lazy):	1.190 sec.
+Spark trans counts (par,bc,col):0/0/1.
+Spark trans times (par,bc,col):	0.000/0.000/0.359 secs.
+Total JIT compile time:		11.122 sec.
+Total JVM GC count:		3.
+Total JVM GC time:		0.087 sec.
+Heavy hitter instructions:
+  #  Instruction  Time(s)  Count
+  1  sp_csvrblk     1.341      1
+  2  sp_uak+        0.123      1
+  3  createvar      0.019      7
+  4  sp_rand        0.017      1
+  5  sp_>           0.012      1
+  6  rlit           0.012      1
+  7  sp_chkpoint    0.007      1
+  8  rmvar          0.000      3
+  9  castdts        0.000      1
+ 10  mvvar          0.000      1
+
+[31m
+An Error Occurred : 
+      DMLRuntimeException -- org.apache.sysds.runtime.DMLRuntimeException: ERROR: Runtime error in program block generated from statement block between lines 0 and 34 -- Error evaluating instruction: SPARK°tsmm°X·MATRIX·FP64°_mVar52·MATRIX·FP64°LEFT
+      DMLRuntimeException -- ERROR: Runtime error in program block generated from statement block between lines 0 and 34 -- Error evaluating instruction: SPARK°tsmm°X·MATRIX·FP64°_mVar52·MATRIX·FP64°LEFT
+           SparkException -- Job aborted due to stage failure: Task 0 in stage 7.0 failed 1 times, most recent failure: Lost task 0.0 in stage 7.0 (TID 8) (192.168.2.175 executor driver): java.lang.ArrayIndexOutOfBoundsException: Index -1 out of bounds for length 16
+	at org.apache.sysds.runtime.matrix.data.LibMatrixMult.matrixMultTransposeSelfUltraSparse(LibMatrixMult.java:2418)
+	at org.apache.sysds.runtime.matrix.data.LibMatrixMult.matrixMultTransposeSelf(LibMatrixMult.java:2311)
+	at org.apache.sysds.runtime.matrix.data.LibMatrixMult.matrixMultTransposeSelf(LibMatrixMult.java:463)
+	at org.apache.sysds.runtime.matrix.data.LibMatrixMult.matrixMultTransposeSelf(LibMatrixMult.java:444)
+	at org.apache.sysds.runtime.matrix.data.MatrixBlock.transposeSelfMatrixMultOperations(MatrixBlock.java:4093)
+	at org.apache.sysds.runtime.matrix.data.MatrixBlock.transposeSelfMatrixMultOperations(MatrixBlock.java:4064)
+	at org.apache.sysds.runtime.instructions.spark.TsmmSPInstruction$RDDTSMMFunction.call(TsmmSPInstruction.java:111)
+	at org.apache.sysds.runtime.instructions.spark.TsmmSPInstruction$RDDTSMMFunction.call(TsmmSPInstruction.java:96)
+	at org.apache.spark.api.java.JavaPairRDD$.$anonfun$toScalaFunction$1(JavaPairRDD.scala:1070)
+	at scala.collection.Iterator$$anon$10.next(Iterator.scala:461)
+	at scala.collection.Iterator.foreach(Iterator.scala:943)
+	at scala.collection.Iterator.foreach$(Iterator.scala:943)
+	at scala.collection.AbstractIterator.foreach(Iterator.scala:1431)
+	at scala.collection.TraversableOnce.foldLeft(TraversableOnce.scala:199)
+	at scala.collection.TraversableOnce.foldLeft$(TraversableOnce.scala:192)
+	at scala.collection.AbstractIterator.foldLeft(Iterator.scala:1431)
+	at scala.collection.TraversableOnce.fold(TraversableOnce.scala:258)
+	at scala.collection.TraversableOnce.fold$(TraversableOnce.scala:258)
+	at scala.collection.AbstractIterator.fold(Iterator.scala:1431)
+	at org.apache.spark.rdd.RDD.$anonfun$fold$2(RDD.scala:1197)
+	at org.apache.spark.SparkContext.$anonfun$runJob$6(SparkContext.scala:2492)
+	at org.apache.spark.scheduler.ResultTask.runTask(ResultTask.scala:93)
+	at org.apache.spark.TaskContext.runTaskWithListeners(TaskContext.scala:161)
+	at org.apache.spark.scheduler.Task.run(Task.scala:141)
+	at org.apache.spark.executor.Executor$TaskRunner.$anonfun$run$4(Executor.scala:620)
+	at org.apache.spark.util.SparkErrorUtils.tryWithSafeFinally(SparkErrorUtils.scala:64)
+	at org.apache.spark.util.SparkErrorUtils.tryWithSafeFinally$(SparkErrorUtils.scala:61)
+	at org.apache.spark.util.Utils$.tryWithSafeFinally(Utils.scala:94)
+	at org.apache.spark.executor.Executor$TaskRunner.run(Executor.scala:623)
+	at java.base/java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1128)
+	at java.base/java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:628)
+	at java.base/java.lang.Thread.run(Thread.java:829)
+
+Driver stacktrace:
+ArrayIndexOutOfBoundsException -- Index -1 out of bounds for length 16
+[0m
+
+
+
+
+
+Sparsity: 0.01, Shape: tall
+SystemDS Statistics:
+Total elapsed time:		3.583 sec.
+Total compilation time:		1.301 sec.
+Total execution time:		2.282 sec.
+Number of compiled Spark inst:	32.
+Number of executed Spark inst:	8.
+Cache hits (Mem/Li/WB/FS/HDFS):	2/0/0/0/0.
+Cache writes (Li/WB/FS/HDFS):	0/0/0/0.
+Cache times (ACQr/m, RLS, EXP):	0.447/0.000/0.000/0.000 sec.
+HOP DAGs recompiled (PRED, SB):	0/2.
+HOP DAGs recompile time:	0.358 sec.
+Spark ctx create time (lazy):	1.166 sec.
+Spark trans counts (par,bc,col):0/1/3.
+Spark trans times (par,bc,col):	0.000/0.067/0.445 secs.
+Total JIT compile time:		11.541 sec.
+Total JVM GC count:		3.
+Total JVM GC time:		0.073 sec.
+Heavy hitter instructions:
+  #  Instruction  Time(s)  Count
+  1  sp_csvrblk     1.408      1
+  2  sp_uak+        0.147      1
+  3  sp_tsmm        0.096      1
+  4  sp_mapmm       0.089      1
+  5  sp_rand        0.026      1
+  6  sp_>           0.017      1
+  7  createvar      0.013     10
+  8  rlit           0.012      1
+  9  sp_chkpoint    0.005      1
+ 10  sp_r'          0.005      1
+
+[31m
+An Error Occurred : 
+      DMLRuntimeException -- org.apache.sysds.runtime.DMLRuntimeException: ERROR: Runtime error in program block generated from statement block between lines 0 and 34 -- Error evaluating instruction: CP°solve°_mVar52·MATRIX·FP64°_mVar54·MATRIX·FP64°_mVar55·MATRIX·FP64°36
+      DMLRuntimeException -- ERROR: Runtime error in program block generated from statement block between lines 0 and 34 -- Error evaluating instruction: CP°solve°_mVar52·MATRIX·FP64°_mVar54·MATRIX·FP64°_mVar55·MATRIX·FP64°36
+  SingularMatrixException -- matrix is singular
+[0m
+
+
+
+
+
+Sparsity: 0.01, Shape: wide
+SystemDS Statistics:
+Total elapsed time:		3.592 sec.
+Total compilation time:		1.301 sec.
+Total execution time:		2.292 sec.
+Number of compiled Spark inst:	32.
+Number of executed Spark inst:	8.
+Cache hits (Mem/Li/WB/FS/HDFS):	2/0/0/0/0.
+Cache writes (Li/WB/FS/HDFS):	0/0/0/0.
+Cache times (ACQr/m, RLS, EXP):	0.465/0.000/0.000/0.000 sec.
+HOP DAGs recompiled (PRED, SB):	0/2.
+HOP DAGs recompile time:	0.372 sec.
+Spark ctx create time (lazy):	1.139 sec.
+Spark trans counts (par,bc,col):0/1/3.
+Spark trans times (par,bc,col):	0.000/0.069/0.463 secs.
+Total JIT compile time:		12.347 sec.
+Total JVM GC count:		3.
+Total JVM GC time:		0.074 sec.
+Heavy hitter instructions:
+  #  Instruction  Time(s)  Count
+  1  sp_csvrblk     1.447      1
+  2  sp_uak+        0.119      1
+  3  sp_tsmm        0.095      1
+  4  sp_mapmm       0.091      1
+  5  sp_rand        0.017      1
+  6  createvar      0.013     10
+  7  sp_>           0.011      1
+  8  sp_chkpoint    0.009      1
+  9  rlit           0.008      1
+ 10  sp_r'          0.004      1
+
+[31m
+An Error Occurred : 
+      DMLRuntimeException -- org.apache.sysds.runtime.DMLRuntimeException: ERROR: Runtime error in program block generated from statement block between lines 0 and 34 -- Error evaluating instruction: CP°solve°_mVar52·MATRIX·FP64°_mVar54·MATRIX·FP64°_mVar55·MATRIX·FP64°36
+      DMLRuntimeException -- ERROR: Runtime error in program block generated from statement block between lines 0 and 34 -- Error evaluating instruction: CP°solve°_mVar52·MATRIX·FP64°_mVar54·MATRIX·FP64°_mVar55·MATRIX·FP64°36
+  SingularMatrixException -- matrix is singular
+[0m
+
+
+
+
+
+Sparsity: 0.1, Shape: tall
+SystemDS Statistics:
+Total elapsed time:		11.080 sec.
+Total compilation time:		1.358 sec.
+Total execution time:		9.722 sec.
+Number of compiled Spark inst:	32.
+Number of executed Spark inst:	227.
+Cache hits (Mem/Li/WB/FS/HDFS):	80/0/0/0/0.
+Cache writes (Li/WB/FS/HDFS):	0/31/0/0.
+Cache times (ACQr/m, RLS, EXP):	3.864/0.001/0.008/0.000 sec.
+HOP DAGs recompiled (PRED, SB):	0/68.
+HOP DAGs recompile time:	0.575 sec.
+Functions recompiled:		5.
+Functions recompile time:	0.017 sec.
+Spark ctx create time (lazy):	1.116 sec.
+Spark trans counts (par,bc,col):21/33/129.
+Spark trans times (par,bc,col):	0.010/1.200/3.853 secs.
+Total JIT compile time:		40.28 sec.
+Total JVM GC count:		8.
+Total JVM GC time:		0.181 sec.
+Heavy hitter instructions:
+  #  Instruction        Time(s)  Count
+  1  printRandElements    5.093      5
+  2  castdts              2.367    151
+  3  sp_rightIndex        2.128     50
+  4  robust_se            1.984      5
+  5  sp_csvrblk           1.402      1
+  6  sp_mapmm             1.048     27
+  7  svd                  0.589      5
+  8  sp_chkpoint          0.417      8
+  9  sp_tsmm              0.250      6
+ 10  sp_map*              0.214      5
+
+
+
+
+
+
+Sparsity: 0.1, Shape: wide
+SystemDS Statistics:
+Total elapsed time:		11.244 sec.
+Total compilation time:		1.410 sec.
+Total execution time:		9.834 sec.
+Number of compiled Spark inst:	32.
+Number of executed Spark inst:	227.
+Cache hits (Mem/Li/WB/FS/HDFS):	80/0/0/0/0.
+Cache writes (Li/WB/FS/HDFS):	0/31/0/0.
+Cache times (ACQr/m, RLS, EXP):	3.915/0.002/0.008/0.000 sec.
+HOP DAGs recompiled (PRED, SB):	0/68.
+HOP DAGs recompile time:	0.594 sec.
+Functions recompiled:		5.
+Functions recompile time:	0.019 sec.
+Spark ctx create time (lazy):	1.225 sec.
+Spark trans counts (par,bc,col):21/33/129.
+Spark trans times (par,bc,col):	0.010/1.246/3.904 secs.
+Total JIT compile time:		41.153 sec.
+Total JVM GC count:		8.
+Total JVM GC time:		0.179 sec.
+Heavy hitter instructions:
+  #  Instruction        Time(s)  Count
+  1  printRandElements    5.219      5
+  2  castdts              2.361    151
+  3  sp_rightIndex        2.229     50
+  4  robust_se            1.879      5
+  5  sp_csvrblk           1.464      1
+  6  sp_mapmm             1.089     27
+  7  sp_chkpoint          0.436      8
+  8  svd                  0.425      5
+  9  sp_tsmm              0.259      6
+ 10  sp_map*              0.217      5
+
+
+
+
+
+

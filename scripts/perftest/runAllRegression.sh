@@ -55,7 +55,7 @@ do
 
    # -------------------------------------------------------------------------------------------------------------------
    # TODO return an additional output to preserve the internal scaling from training (for the built-in functions lmCG and lmDS).
-   # The original scripts algorithms/LinearRegCG.dml and algorithms/LinearRegDS.dml do have that additional output column, but the respective built-in functions do not.
+   # The original scripts algorithms/slabLinearRegCG.dml and algorithms/LinearRegDS.dml do have that additional output column, but the respective built-in functions do not.
    # -------------------------------------------------------------------------------------------------------------------
 
    for f in "runLinearRegDS"

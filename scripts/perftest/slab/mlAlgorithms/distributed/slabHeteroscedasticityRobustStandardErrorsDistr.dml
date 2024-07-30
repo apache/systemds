@@ -1,0 +1,56 @@
+#-------------------------------------------------------------
+#
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+#
+#-------------------------------------------------------------
+
+source("../../slabUtils.dml") as utils
+
+dataPath = $1
+X = read(dataPath, format="csv")
+rvect = rand(rows=nrow(X), cols=1, pdf='uniform')
+y = rvect > 0.80
+p = sum( X )
+q = sum( y )
+print(p)
+print(q)
+b = reg(X,y)
+y_hat = X %*% b
+r2 = (y - y_hat)^2
+
+for(ix in 1:5) {
+    tmp = robust_se(X, r2)
+    utils::printRandElements(tmp, 10)
+}
+
+reg = function(matrix[double] X, matrix[double] y)
+    return (matrix[double] b) {
+    b = solve(t(X) %*% X, t(X) %*% y)
+}
+
+
+robust_se = function(matrix[double] X,
+                     matrix[double] r2)
+    return (matrix[double] se) {
+    # NOTE: SVD is cheap since XTX is small!
+    [U, H, V] = svd(t(X) %*% X)
+    h = diag(H)
+    XTX_INV = U %*% diag(h^-1) %*% t(V)
+    S = diag(r2)
+    se = XTX_INV %*% (t(X) %*% S %*% X) %*% XTX_INV
+}

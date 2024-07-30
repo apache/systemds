@@ -1,0 +1,224 @@
+Number of rows: 2500000
+SystemDS Statistics:
+Total elapsed time:		12.672 sec.
+Total compilation time:		0.594 sec.
+Total execution time:		12.077 sec.
+Cache hits (Mem/Li/WB/FS/HDFS):	2/0/0/0/0.
+Cache writes (Li/WB/FS/HDFS):	2/0/0/0.
+Cache times (ACQr/m, RLS, EXP):	0.000/0.000/0.000/0.000 sec.
+HOP DAGs recompiled (PRED, SB):	0/0.
+HOP DAGs recompile time:	0.000 sec.
+Total JIT compile time:		4.482 sec.
+Total JVM GC count:		9.
+Total JVM GC time:		0.15 sec.
+Heavy hitter instructions:
+ #  Instruction  Time(s)  Count
+ 1  rand           2.297      2
+ 2  createvar      0.008      3
+ 3  rmvar          0.000      1
+ 4  cpvar          0.000      2
+ 5  assignvar      0.000      3
+
+Exception in thread "main" java.lang.OutOfMemoryError: Java heap space
+	at org.apache.sysds.runtime.data.DenseBlockLFP64.allocateBlock(DenseBlockLFP64.java:45)
+	at org.apache.sysds.runtime.data.DenseBlockLDRB.lambda$reset$1(DenseBlockLDRB.java:84)
+	at org.apache.sysds.runtime.data.DenseBlockLDRB$$Lambda$114/0x00007fd026239968.accept(Unknown Source)
+	at java.base/java.util.stream.Streams$RangeIntSpliterator.forEachRemaining(Streams.java:104)
+	at java.base/java.util.stream.IntPipeline$Head.forEach(IntPipeline.java:593)
+	at org.apache.sysds.runtime.data.DenseBlockLDRB.reset(DenseBlockLDRB.java:82)
+	at org.apache.sysds.runtime.data.DenseBlockLFP64.<init>(DenseBlockLFP64.java:35)
+	at org.apache.sysds.runtime.data.DenseBlockFactory.createDenseBlock(DenseBlockFactory.java:130)
+	at org.apache.sysds.runtime.data.DenseBlockFactory.createDenseBlock(DenseBlockFactory.java:62)
+	at org.apache.sysds.runtime.data.DenseBlockFactory.createDenseBlock(DenseBlockFactory.java:45)
+	at org.apache.sysds.runtime.data.DenseBlockFactory.createDenseBlock(DenseBlockFactory.java:37)
+	at org.apache.sysds.runtime.matrix.data.MatrixBlock.allocateDenseBlock(MatrixBlock.java:446)
+	at org.apache.sysds.runtime.matrix.data.MatrixBlock.allocateDenseBlock(MatrixBlock.java:434)
+	at org.apache.sysds.runtime.matrix.data.MatrixBlock.allocateDenseBlock(MatrixBlock.java:410)
+	at org.apache.sysds.runtime.matrix.data.MatrixBlock.allocateBlock(MatrixBlock.java:429)
+	at org.apache.sysds.runtime.matrix.data.LibMatrixMult.matrixMult(LibMatrixMult.java:223)
+	at org.apache.sysds.runtime.matrix.data.LibMatrixMult.matrixMult(LibMatrixMult.java:162)
+	at org.apache.sysds.runtime.matrix.data.MatrixBlock.aggregateBinaryOperations(MatrixBlock.java:5048)
+	at org.apache.sysds.runtime.instructions.cp.AggregateBinaryCPInstruction.processNormal(AggregateBinaryCPInstruction.java:93)
+	at org.apache.sysds.runtime.instructions.cp.AggregateBinaryCPInstruction.processInstruction(AggregateBinaryCPInstruction.java:86)
+	at org.apache.sysds.runtime.controlprogram.ProgramBlock.executeSingleInstruction(ProgramBlock.java:254)
+	at org.apache.sysds.runtime.controlprogram.ProgramBlock.executeInstructions(ProgramBlock.java:203)
+	at org.apache.sysds.runtime.controlprogram.BasicProgramBlock.execute(BasicProgramBlock.java:127)
+	at org.apache.sysds.runtime.controlprogram.ForProgramBlock.execute(ForProgramBlock.java:143)
+	at org.apache.sysds.runtime.controlprogram.Program.execute(Program.java:158)
+	at org.apache.sysds.api.ScriptExecutorUtils.executeRuntimeProgram(ScriptExecutorUtils.java:89)
+	at org.apache.sysds.api.DMLScript.execute(DMLScript.java:479)
+	at org.apache.sysds.api.DMLScript.executeScript(DMLScript.java:315)
+	at org.apache.sysds.api.DMLScript.main(DMLScript.java:202)
+
+
+
+
+
+Number of rows: 5000000
+SystemDS Statistics:
+Total elapsed time:		10.868 sec.
+Total compilation time:		0.573 sec.
+Total execution time:		10.295 sec.
+Cache hits (Mem/Li/WB/FS/HDFS):	2/0/0/0/0.
+Cache writes (Li/WB/FS/HDFS):	2/0/0/0.
+Cache times (ACQr/m, RLS, EXP):	0.000/0.000/0.000/0.000 sec.
+HOP DAGs recompiled (PRED, SB):	0/0.
+HOP DAGs recompile time:	0.000 sec.
+Total JIT compile time:		13.733 sec.
+Total JVM GC count:		9.
+Total JVM GC time:		0.149 sec.
+Heavy hitter instructions:
+ #  Instruction  Time(s)  Count
+ 1  rand           4.621      2
+ 2  createvar      0.009      3
+ 3  rmvar          0.000      1
+ 4  cpvar          0.000      2
+ 5  assignvar      0.000      3
+
+Exception in thread "main" java.lang.OutOfMemoryError: Java heap space
+	at org.apache.sysds.runtime.data.DenseBlockLFP64.allocateBlock(DenseBlockLFP64.java:45)
+	at org.apache.sysds.runtime.data.DenseBlockLDRB.lambda$reset$1(DenseBlockLDRB.java:84)
+	at org.apache.sysds.runtime.data.DenseBlockLDRB$$Lambda$114/0x00007f9bb50af568.accept(Unknown Source)
+	at java.base/java.util.stream.Streams$RangeIntSpliterator.forEachRemaining(Streams.java:104)
+	at java.base/java.util.stream.IntPipeline$Head.forEach(IntPipeline.java:593)
+	at org.apache.sysds.runtime.data.DenseBlockLDRB.reset(DenseBlockLDRB.java:82)
+	at org.apache.sysds.runtime.data.DenseBlockLFP64.<init>(DenseBlockLFP64.java:35)
+	at org.apache.sysds.runtime.data.DenseBlockFactory.createDenseBlock(DenseBlockFactory.java:130)
+	at org.apache.sysds.runtime.data.DenseBlockFactory.createDenseBlock(DenseBlockFactory.java:62)
+	at org.apache.sysds.runtime.data.DenseBlockFactory.createDenseBlock(DenseBlockFactory.java:45)
+	at org.apache.sysds.runtime.data.DenseBlockFactory.createDenseBlock(DenseBlockFactory.java:37)
+	at org.apache.sysds.runtime.matrix.data.MatrixBlock.allocateDenseBlock(MatrixBlock.java:446)
+	at org.apache.sysds.runtime.matrix.data.MatrixBlock.allocateDenseBlock(MatrixBlock.java:434)
+	at org.apache.sysds.runtime.matrix.data.MatrixBlock.allocateDenseBlock(MatrixBlock.java:410)
+	at org.apache.sysds.runtime.matrix.data.MatrixBlock.allocateBlock(MatrixBlock.java:429)
+	at org.apache.sysds.runtime.matrix.data.LibMatrixMult.matrixMult(LibMatrixMult.java:223)
+	at org.apache.sysds.runtime.matrix.data.LibMatrixMult.matrixMult(LibMatrixMult.java:162)
+	at org.apache.sysds.runtime.matrix.data.MatrixBlock.aggregateBinaryOperations(MatrixBlock.java:5048)
+	at org.apache.sysds.runtime.instructions.cp.AggregateBinaryCPInstruction.processNormal(AggregateBinaryCPInstruction.java:93)
+	at org.apache.sysds.runtime.instructions.cp.AggregateBinaryCPInstruction.processInstruction(AggregateBinaryCPInstruction.java:86)
+	at org.apache.sysds.runtime.controlprogram.ProgramBlock.executeSingleInstruction(ProgramBlock.java:254)
+	at org.apache.sysds.runtime.controlprogram.ProgramBlock.executeInstructions(ProgramBlock.java:203)
+	at org.apache.sysds.runtime.controlprogram.BasicProgramBlock.execute(BasicProgramBlock.java:127)
+	at org.apache.sysds.runtime.controlprogram.ForProgramBlock.execute(ForProgramBlock.java:143)
+	at org.apache.sysds.runtime.controlprogram.Program.execute(Program.java:158)
+	at org.apache.sysds.api.ScriptExecutorUtils.executeRuntimeProgram(ScriptExecutorUtils.java:89)
+	at org.apache.sysds.api.DMLScript.execute(DMLScript.java:479)
+	at org.apache.sysds.api.DMLScript.executeScript(DMLScript.java:315)
+	at org.apache.sysds.api.DMLScript.main(DMLScript.java:202)
+
+
+
+
+
+Number of rows: 10000000
+SystemDS Statistics:
+Total elapsed time:		13.430 sec.
+Total compilation time:		0.573 sec.
+Total execution time:		12.856 sec.
+Cache hits (Mem/Li/WB/FS/HDFS):	2/0/0/0/0.
+Cache writes (Li/WB/FS/HDFS):	2/0/0/0.
+Cache times (ACQr/m, RLS, EXP):	0.000/0.000/0.000/0.000 sec.
+HOP DAGs recompiled (PRED, SB):	0/0.
+HOP DAGs recompile time:	0.000 sec.
+Total JIT compile time:		12.567 sec.
+Total JVM GC count:		9.
+Total JVM GC time:		0.15 sec.
+Heavy hitter instructions:
+ #  Instruction  Time(s)  Count
+ 1  rand           8.415      2
+ 2  createvar      0.014      3
+ 3  rmvar          0.000      1
+ 4  cpvar          0.000      2
+ 5  assignvar      0.000      3
+
+Exception in thread "main" java.lang.OutOfMemoryError: Java heap space
+	at org.apache.sysds.runtime.data.DenseBlockLFP64.allocateBlock(DenseBlockLFP64.java:45)
+	at org.apache.sysds.runtime.data.DenseBlockLDRB.lambda$reset$1(DenseBlockLDRB.java:84)
+	at org.apache.sysds.runtime.data.DenseBlockLDRB$$Lambda$114/0x00007f12b71ff968.accept(Unknown Source)
+	at java.base/java.util.stream.Streams$RangeIntSpliterator.forEachRemaining(Streams.java:104)
+	at java.base/java.util.stream.IntPipeline$Head.forEach(IntPipeline.java:593)
+	at org.apache.sysds.runtime.data.DenseBlockLDRB.reset(DenseBlockLDRB.java:82)
+	at org.apache.sysds.runtime.data.DenseBlockLFP64.<init>(DenseBlockLFP64.java:35)
+	at org.apache.sysds.runtime.data.DenseBlockFactory.createDenseBlock(DenseBlockFactory.java:130)
+	at org.apache.sysds.runtime.data.DenseBlockFactory.createDenseBlock(DenseBlockFactory.java:62)
+	at org.apache.sysds.runtime.data.DenseBlockFactory.createDenseBlock(DenseBlockFactory.java:45)
+	at org.apache.sysds.runtime.data.DenseBlockFactory.createDenseBlock(DenseBlockFactory.java:37)
+	at org.apache.sysds.runtime.matrix.data.MatrixBlock.allocateDenseBlock(MatrixBlock.java:446)
+	at org.apache.sysds.runtime.matrix.data.MatrixBlock.allocateDenseBlock(MatrixBlock.java:434)
+	at org.apache.sysds.runtime.matrix.data.MatrixBlock.allocateDenseBlock(MatrixBlock.java:410)
+	at org.apache.sysds.runtime.matrix.data.MatrixBlock.allocateBlock(MatrixBlock.java:429)
+	at org.apache.sysds.runtime.matrix.data.LibMatrixMult.matrixMult(LibMatrixMult.java:223)
+	at org.apache.sysds.runtime.matrix.data.LibMatrixMult.matrixMult(LibMatrixMult.java:162)
+	at org.apache.sysds.runtime.matrix.data.MatrixBlock.aggregateBinaryOperations(MatrixBlock.java:5048)
+	at org.apache.sysds.runtime.instructions.cp.AggregateBinaryCPInstruction.processNormal(AggregateBinaryCPInstruction.java:93)
+	at org.apache.sysds.runtime.instructions.cp.AggregateBinaryCPInstruction.processInstruction(AggregateBinaryCPInstruction.java:86)
+	at org.apache.sysds.runtime.controlprogram.ProgramBlock.executeSingleInstruction(ProgramBlock.java:254)
+	at org.apache.sysds.runtime.controlprogram.ProgramBlock.executeInstructions(ProgramBlock.java:203)
+	at org.apache.sysds.runtime.controlprogram.BasicProgramBlock.execute(BasicProgramBlock.java:127)
+	at org.apache.sysds.runtime.controlprogram.ForProgramBlock.execute(ForProgramBlock.java:143)
+	at org.apache.sysds.runtime.controlprogram.Program.execute(Program.java:158)
+	at org.apache.sysds.api.ScriptExecutorUtils.executeRuntimeProgram(ScriptExecutorUtils.java:89)
+	at org.apache.sysds.api.DMLScript.execute(DMLScript.java:479)
+	at org.apache.sysds.api.DMLScript.executeScript(DMLScript.java:315)
+	at org.apache.sysds.api.DMLScript.main(DMLScript.java:202)
+
+
+
+
+
+Number of rows: 20000000
+SystemDS Statistics:
+Total elapsed time:		15.345 sec.
+Total compilation time:		0.528 sec.
+Total execution time:		14.816 sec.
+Cache hits (Mem/Li/WB/FS/HDFS):	2/0/0/0/0.
+Cache writes (Li/WB/FS/HDFS):	2/0/0/0.
+Cache times (ACQr/m, RLS, EXP):	0.000/0.000/0.000/0.000 sec.
+HOP DAGs recompiled (PRED, SB):	0/0.
+HOP DAGs recompile time:	0.000 sec.
+Total JIT compile time:		12.294 sec.
+Total JVM GC count:		9.
+Total JVM GC time:		0.131 sec.
+Heavy hitter instructions:
+ #  Instruction  Time(s)  Count
+ 1  rand          14.627      2
+ 2  createvar      0.016      3
+ 3  rmvar          0.000      1
+ 4  cpvar          0.000      2
+ 5  assignvar      0.000      3
+
+Exception in thread "main" java.lang.OutOfMemoryError: Java heap space
+	at org.apache.sysds.runtime.data.DenseBlockLFP64.allocateBlock(DenseBlockLFP64.java:45)
+	at org.apache.sysds.runtime.data.DenseBlockLDRB.lambda$reset$1(DenseBlockLDRB.java:84)
+	at org.apache.sysds.runtime.data.DenseBlockLDRB$$Lambda$114/0x00007fd0724ef568.accept(Unknown Source)
+	at java.base/java.util.stream.Streams$RangeIntSpliterator.forEachRemaining(Streams.java:104)
+	at java.base/java.util.stream.IntPipeline$Head.forEach(IntPipeline.java:593)
+	at org.apache.sysds.runtime.data.DenseBlockLDRB.reset(DenseBlockLDRB.java:82)
+	at org.apache.sysds.runtime.data.DenseBlockLFP64.<init>(DenseBlockLFP64.java:35)
+	at org.apache.sysds.runtime.data.DenseBlockFactory.createDenseBlock(DenseBlockFactory.java:130)
+	at org.apache.sysds.runtime.data.DenseBlockFactory.createDenseBlock(DenseBlockFactory.java:62)
+	at org.apache.sysds.runtime.data.DenseBlockFactory.createDenseBlock(DenseBlockFactory.java:45)
+	at org.apache.sysds.runtime.data.DenseBlockFactory.createDenseBlock(DenseBlockFactory.java:37)
+	at org.apache.sysds.runtime.matrix.data.MatrixBlock.allocateDenseBlock(MatrixBlock.java:446)
+	at org.apache.sysds.runtime.matrix.data.MatrixBlock.allocateDenseBlock(MatrixBlock.java:434)
+	at org.apache.sysds.runtime.matrix.data.MatrixBlock.allocateDenseBlock(MatrixBlock.java:410)
+	at org.apache.sysds.runtime.matrix.data.MatrixBlock.allocateBlock(MatrixBlock.java:429)
+	at org.apache.sysds.runtime.matrix.data.LibMatrixMult.matrixMult(LibMatrixMult.java:223)
+	at org.apache.sysds.runtime.matrix.data.LibMatrixMult.matrixMult(LibMatrixMult.java:162)
+	at org.apache.sysds.runtime.matrix.data.MatrixBlock.aggregateBinaryOperations(MatrixBlock.java:5048)
+	at org.apache.sysds.runtime.instructions.cp.AggregateBinaryCPInstruction.processNormal(AggregateBinaryCPInstruction.java:93)
+	at org.apache.sysds.runtime.instructions.cp.AggregateBinaryCPInstruction.processInstruction(AggregateBinaryCPInstruction.java:86)
+	at org.apache.sysds.runtime.controlprogram.ProgramBlock.executeSingleInstruction(ProgramBlock.java:254)
+	at org.apache.sysds.runtime.controlprogram.ProgramBlock.executeInstructions(ProgramBlock.java:203)
+	at org.apache.sysds.runtime.controlprogram.BasicProgramBlock.execute(BasicProgramBlock.java:127)
+	at org.apache.sysds.runtime.controlprogram.ForProgramBlock.execute(ForProgramBlock.java:143)
+	at org.apache.sysds.runtime.controlprogram.Program.execute(Program.java:158)
+	at org.apache.sysds.api.ScriptExecutorUtils.executeRuntimeProgram(ScriptExecutorUtils.java:89)
+	at org.apache.sysds.api.DMLScript.execute(DMLScript.java:479)
+	at org.apache.sysds.api.DMLScript.executeScript(DMLScript.java:315)
+	at org.apache.sysds.api.DMLScript.main(DMLScript.java:202)
+
+
+
+
+

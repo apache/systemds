@@ -1,0 +1,124 @@
+Number of rows: 1000
+SystemDS Statistics:
+Total elapsed time:		0.790 sec.
+Total compilation time:		0.528 sec.
+Total execution time:		0.262 sec.
+Cache hits (Mem/Li/WB/FS/HDFS):	238/0/0/0/0.
+Cache writes (Li/WB/FS/HDFS):	1/5/0/0.
+Cache times (ACQr/m, RLS, EXP):	0.001/0.001/0.004/0.000 sec.
+HOP DAGs recompiled (PRED, SB):	0/0.
+HOP DAGs recompile time:	0.000 sec.
+Total JIT compile time:		2.669 sec.
+Total JVM GC count:		0.
+Total JVM GC time:		0.0 sec.
+Heavy hitter instructions:
+  #  Instruction        Time(s)  Count
+  1  solve                0.074      5
+  2  tsmm                 0.064      5
+  3  rand                 0.039    102
+  4  printRandElements    0.033      5
+  5  uak+                 0.026      2
+  6  createvar            0.017    178
+  7  ba+*                 0.008      5
+  8  >                    0.007      1
+  9  rmvar                0.006    380
+ 10  print                0.005     52
+
+
+
+
+
+
+Number of rows: 10000
+SystemDS Statistics:
+Total elapsed time:		1.088 sec.
+Total compilation time:		0.505 sec.
+Total execution time:		0.583 sec.
+Cache hits (Mem/Li/WB/FS/HDFS):	238/0/0/0/0.
+Cache writes (Li/WB/FS/HDFS):	2/6/0/0.
+Cache times (ACQr/m, RLS, EXP):	0.001/0.001/0.004/0.000 sec.
+HOP DAGs recompiled (PRED, SB):	0/0.
+HOP DAGs recompile time:	0.000 sec.
+Total JIT compile time:		2.85 sec.
+Total JVM GC count:		0.
+Total JVM GC time:		0.0 sec.
+Heavy hitter instructions:
+  #  Instruction        Time(s)  Count
+  1  tsmm                 0.203      5
+  2  rand                 0.156    102
+  3  uak+                 0.096      2
+  4  solve                0.062      5
+  5  printRandElements    0.031      5
+  6  >                    0.017      1
+  7  createvar            0.013    178
+  8  ba+*                 0.010      5
+  9  rmvar                0.006    380
+ 10  print                0.005     52
+
+
+
+
+
+
+Number of rows: 100000
+SystemDS Statistics:
+Total elapsed time:		1.560 sec.
+Total compilation time:		0.571 sec.
+Total execution time:		0.989 sec.
+Cache hits (Mem/Li/WB/FS/HDFS):	238/0/0/0/0.
+Cache writes (Li/WB/FS/HDFS):	2/11/0/0.
+Cache times (ACQr/m, RLS, EXP):	0.001/0.001/0.005/0.000 sec.
+HOP DAGs recompiled (PRED, SB):	0/0.
+HOP DAGs recompile time:	0.000 sec.
+Total JIT compile time:		2.763 sec.
+Total JVM GC count:		0.
+Total JVM GC time:		0.0 sec.
+Heavy hitter instructions:
+  #  Instruction        Time(s)  Count
+  1  tsmm                 0.418      5
+  2  rand                 0.215    102
+  3  uak+                 0.202      2
+  4  solve                0.061      5
+  5  >                    0.033      1
+  6  printRandElements    0.027      5
+  7  ba+*                 0.017      5
+  8  createvar            0.012    178
+  9  r'                   0.009     10
+ 10  rmvar                0.006    380
+
+
+
+
+
+
+Number of rows: 1000000
+SystemDS Statistics:
+Total elapsed time:		4.208 sec.
+Total compilation time:		0.519 sec.
+Total execution time:		3.689 sec.
+Cache hits (Mem/Li/WB/FS/HDFS):	238/0/0/0/0.
+Cache writes (Li/WB/FS/HDFS):	2/11/0/0.
+Cache times (ACQr/m, RLS, EXP):	0.001/0.002/0.005/0.000 sec.
+HOP DAGs recompiled (PRED, SB):	0/0.
+HOP DAGs recompile time:	0.000 sec.
+Total JIT compile time:		2.916 sec.
+Total JVM GC count:		0.
+Total JVM GC time:		0.0 sec.
+Heavy hitter instructions:
+  #  Instruction        Time(s)  Count
+  1  tsmm                 2.440      5
+  2  rand                 0.584    102
+  3  uak+                 0.312      2
+  4  >                    0.113      1
+  5  ba+*                 0.098      5
+  6  solve                0.058      5
+  7  r'                   0.037     10
+  8  printRandElements    0.029      5
+  9  createvar            0.023    178
+ 10  rmvar                0.005    380
+
+
+
+
+
+

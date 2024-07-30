@@ -23,16 +23,13 @@ import java.lang.ref.SoftReference;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
-import java.util.Map.Entry;
 
-import org.apache.commons.lang3.NotImplementedException;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.io.Writable;
 import org.apache.sysds.common.Types.ValueType;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.compress.colgroup.mapping.AMapToData;
-import org.apache.sysds.runtime.compress.colgroup.mapping.MapToFactory;
 import org.apache.sysds.runtime.compress.estim.sample.SampleEstimatorFactory;
 import org.apache.sysds.runtime.frame.data.columns.ArrayFactory.FrameArrayType;
 import org.apache.sysds.runtime.frame.data.compress.ArrayCompressionStatistics;
@@ -62,9 +59,9 @@ public abstract class Array<T> implements Writable {
 	}
 
 	/**
-	 * Get the current cached element.
+	 * Get the current cached recode map.
 	 * 
-	 * @return The cached object
+	 * @return The cached recode map
 	 */
 	public final SoftReference<Map<T, Long>> getCache() {
 		return _rcdMapCache;
@@ -124,49 +121,6 @@ public abstract class Array<T> implements Writable {
 	}
 
 	/**
-	 * Get the dictionary of the contained values, including null.
-	 * 
-	 * @return a dictionary containing all unique values.
-	 */
-	protected Map<T, Integer> getDictionary() {
-		final Map<T, Integer> dict = new HashMap<>();
-		Integer id = 0;
-		final int s = size();
-		for(int i = 0; i < s; i++) {
-			final T val = get(i);
-			final Integer v = dict.get(val);
-			if(v == null)
-				dict.put(val, id++);
-		}
-
-		return dict;
-	}
-
-	/**
-	 * Get the dictionary of contained values, including null with threshold.
-	 * 
-	 * If the number of distinct values are found to be above the threshold value, then abort constructing the
-	 * dictionary.
-	 * 
-	 * @return a dictionary containing all unique values or null if threshold of distinct is exceeded.
-	 */
-	protected Map<T, Integer> tryGetDictionary(int threshold) {
-		final Map<T, Integer> dict = new HashMap<>();
-		Integer id = 0;
-		final int s = size();
-		for(int i = 0; i < s && id < threshold; i++) {
-			final T val = get(i);
-			final Integer v = dict.get(val);
-			if(v == null)
-				dict.put(val, id++);
-		}
-		if(id >= threshold)
-			return null;
-		else
-			return dict;
-	}
-
-	/**
 	 * Get the number of elements in the array, this does not necessarily reflect the current allocated size.
 	 * 
 	 * @return the current number of elements
@@ -185,6 +139,17 @@ public abstract class Array<T> implements Writable {
 	 * @return The value returned as an object
 	 */
 	public abstract T get(int index);
+
+	/**
+	 * Get the internal value at a given index. For instance HashIntegerArray would return the underlying long not a
+	 * string.
+	 * 
+	 * @param index the index to get
+	 * @return The value to get
+	 */
+	public T getInternal(int index) {
+		return get(index);
+	}
 
 	/**
 	 * Get the underlying array out of the column Group,
@@ -261,10 +226,12 @@ public abstract class Array<T> implements Writable {
 	 * @param ru    row upper (inclusive)
 	 * @param value value array to take values from (same type)
 	 */
-	public void set(int rl, int ru, Array<T> value) {
-		for(int i = rl; i <= ru; i++)
-			set(i, value.get(i));
-	}
+	public abstract void set(int rl, int ru, Array<T> value);
+
+	// {
+	// for(int i = rl; i <= ru; i++)
+	// set(i, value.get(i));
+	// }
 
 	/**
 	 * Set range to given arrays value with an offset into other array
@@ -444,53 +411,47 @@ public abstract class Array<T> implements Writable {
 
 	public abstract boolean possiblyContainsNaN();
 
-	public Array<?> safeChangeType(ValueType t, boolean containsNull){
-		try{
-			return changeType(t, containsNull);
-		}
-		catch(Exception e){
-			Pair<ValueType, Boolean> ct = analyzeValueType(); // full analysis
-			return changeType(ct.getKey(), ct.getValue());
-		}
-	}
-
+	/**
+	 * Change type taking into consideration if the target type must be able to contain Null.
+	 * 
+	 * @param t            The target type
+	 * @param containsNull If the target should be able to contain null
+	 * @return The changed type array.
+	 */
 	public Array<?> changeType(ValueType t, boolean containsNull) {
 		return containsNull ? changeTypeWithNulls(t) : changeType(t);
 	}
 
 	public Array<?> changeTypeWithNulls(ValueType t) {
-
+		if(t == getValueType())
+			return this;
 		final ABooleanArray nulls = getNulls();
-		if(nulls == null)
+
+		if(nulls == null || t == ValueType.STRING) // String can contain null.
 			return changeType(t);
+		return changeTypeWithNulls(ArrayFactory.allocateOptional(t, size()));
+	}
 
-		switch(t) {
-			case BOOLEAN:
-				if(size() > ArrayFactory.bitSetSwitchPoint)
-					return new OptionalArray<>(changeTypeBitSet(), nulls);
-				else
-					return new OptionalArray<>(changeTypeBoolean(), nulls);
-			case FP32:
-				return new OptionalArray<>(changeTypeFloat(), nulls);
-			case FP64:
-				return new OptionalArray<>(changeTypeDouble(), nulls);
-			case UINT4:
-			case UINT8:
-				throw new NotImplementedException();
-			case HASH64:
-				return new OptionalArray<>(changeTypeHash64(), nulls);
-			case INT32:
-				return new OptionalArray<>(changeTypeInteger(), nulls);
-			case INT64:
-				return new OptionalArray<>(changeTypeLong(), nulls);
-			case CHARACTER:
-				return new OptionalArray<>(changeTypeCharacter(), nulls);
-			case STRING:
-			case UNKNOWN:
-			default:
-				return changeTypeString(); // String can contain null
-		}
+	public final Array<?> changeTypeWithNulls(Array<?> ret) {
+		return changeTypeWithNulls(ret, 0, ret.size());
+	}
 
+	public final Array<?> changeTypeWithNulls(Array<?> ret, int l, int u) {
+		if(ret instanceof OptionalArray)
+			return changeTypeWithNulls((OptionalArray<?>) ret, l, u);
+		else
+			return changeType(ret, l, u);
+	}
+
+	@SuppressWarnings("unchecked")
+	private OptionalArray<?> changeTypeWithNulls(OptionalArray<?> ret, int l, int u) {
+		if(this.getValueType() == ValueType.STRING)
+			ret._n.setNullsFromString(l, u, (Array<String>) this);
+		else
+			ret._n.set(l, u - 1, getNulls());
+
+		changeType(ret._a, l, u);
+		return ret;
 	}
 
 	/**
@@ -499,98 +460,162 @@ public abstract class Array<T> implements Writable {
 	 * @param t The type to change to
 	 * @return A new column array.
 	 */
-	public final Array<?> changeType(ValueType t) {
-		switch(t) {
+	public Array<?> changeType(ValueType t) {
+		if(t == getValueType())
+			return this;
+		else
+			return changeType(ArrayFactory.allocate(t, size()));
+	}
+
+	/**
+	 * Change type by moving this arrays value into the given ret array.
+	 * 
+	 * @param ret The Array to put this arrays values into
+	 * @return The ret array given
+	 */
+	public final Array<?> changeType(Array<?> ret) {
+		return changeType(ret, 0, ret.size());
+	}
+
+	/**
+	 * Put the changed value types into the given ret array inside the range specified.
+	 * 
+	 * @param ret The Array to put this arrays values into
+	 * @param rl  inclusive lower bound
+	 * @param ru  exclusive upper bound
+	 * @return The ret array given.
+	 */
+	@SuppressWarnings("unchecked")
+	public final Array<?> changeType(Array<?> ret, int rl, int ru) {
+		switch(ret.getValueType()) {
 			case BOOLEAN:
-				if(size() > ArrayFactory.bitSetSwitchPoint)
-					return changeTypeBitSet();
+				if(ret instanceof BitSetArray || //
+					(ret instanceof OptionalArray && ((OptionalArray<?>) ret)._a instanceof BitSetArray))
+					return changeTypeBitSet((Array<Boolean>) ret, rl, ru);
 				else
-					return changeTypeBoolean();
+					return changeTypeBoolean((Array<Boolean>) ret, rl, ru);
 			case FP32:
-				return changeTypeFloat();
+				return changeTypeFloat((Array<Float>) ret, rl, ru);
 			case FP64:
-				return changeTypeDouble();
+				return changeTypeDouble((Array<Double>) ret, rl, ru);
 			case UINT4:
 			case UINT8:
-				throw new NotImplementedException();
-			case HASH64:
-				return changeTypeHash64();
 			case INT32:
-				return changeTypeInteger();
+				return changeTypeInteger((Array<Integer>) ret, rl, ru);
+			case HASH32:
+				return changeTypeHash32((Array<Object>) ret, rl, ru);
+			case HASH64:
+				return changeTypeHash64((Array<Object>) ret, rl, ru);
 			case INT64:
-				return changeTypeLong();
-			case STRING:
-				return changeTypeString();
+				return changeTypeLong((Array<Long>) ret, rl, ru);
 			case CHARACTER:
-				return changeTypeCharacter();
+				return changeTypeCharacter((Array<Character>) ret, rl, ru);
 			case UNKNOWN:
+			case STRING:
 			default:
-				return changeTypeString();
+				return changeTypeString((Array<String>) ret, rl, ru);
 		}
 	}
 
 	/**
 	 * Change type to a bitSet, of underlying longs to store the individual values
 	 * 
-	 * @return A Boolean type of array
+	 * @param ret The array to insert the result into
+	 * @param l   lower index to convert from (inclusive)
+	 * @param u   upper index to convert to (exclusive)
+	 * @return A Boolean type of array that is pointing the ret argument
 	 */
-	protected abstract Array<Boolean> changeTypeBitSet();
+	protected abstract Array<Boolean> changeTypeBitSet(Array<Boolean> ret, int l, int u);
 
 	/**
-	 * Change type to a boolean array
+	 * Change type to a boolean array, of underlying longs to store the individual values
 	 * 
-	 * @returnA Boolean type of array
+	 * @param ret The array to insert the result into
+	 * @param l   lower index to convert from (inclusive)
+	 * @param u   upper index to convert to (exclusive)
+	 * @return A Boolean type of array that is pointing the ret argument
 	 */
-	protected abstract Array<Boolean> changeTypeBoolean();
+	protected abstract Array<Boolean> changeTypeBoolean(Array<Boolean> ret, int l, int u);
 
 	/**
-	 * Change type to a Double array type
+	 * Change type to a Double array, of underlying longs to store the individual values
 	 * 
-	 * @return Double type of array
+	 * @param ret The array to insert the result into
+	 * @param l   lower index to convert from (inclusive)
+	 * @param u   upper index to convert to (exclusive)
+	 * @return A Double type of array that is pointing the ret argument
 	 */
-	protected abstract Array<Double> changeTypeDouble();
+	protected abstract Array<Double> changeTypeDouble(Array<Double> ret, int l, int u);
 
 	/**
-	 * Change type to a Float array type
+	 * Change type to a Float array, of underlying longs to store the individual values
 	 * 
-	 * @return Float type of array
+	 * @param ret The array to insert the result into
+	 * @param l   lower index to convert from (inclusive)
+	 * @param u   upper index to convert to (exclusive)
+	 * @return A Float type of array that is pointing the ret argument
 	 */
-	protected abstract Array<Float> changeTypeFloat();
+	protected abstract Array<Float> changeTypeFloat(Array<Float> ret, int l, int u);
 
 	/**
-	 * Change type to a Integer array type
+	 * Change type to a Integer array, of underlying longs to store the individual values
 	 * 
-	 * @return Integer type of array
+	 * @param ret The array to insert the result into
+	 * @param l   lower index to convert from (inclusive)
+	 * @param u   upper index to convert to (exclusive)
+	 * @return A Integer type of array that is pointing the ret argument
 	 */
-	protected abstract Array<Integer> changeTypeInteger();
+	protected abstract Array<Integer> changeTypeInteger(Array<Integer> ret, int l, int u);
 
 	/**
-	 * Change type to a Long array type
+	 * Change type to a Long array, of underlying longs to store the individual values
 	 * 
-	 * @return Long type of array
+	 * @param ret The array to insert the result into
+	 * @param l   lower index to convert from (inclusive)
+	 * @param u   upper index to convert to (exclusive)
+	 * @return A Long type of array that is pointing the ret argument
 	 */
-	protected abstract Array<Long> changeTypeLong();
+	protected abstract Array<Long> changeTypeLong(Array<Long> ret, int l, int u);
 
 	/**
-	 * Change type to a Hash46 array type
+	 * Change type to a Hash64 array, of underlying longs to store the individual values
 	 * 
-	 * @return A Hash64 array
+	 * @param ret The array to insert the result into
+	 * @param l   lower index to convert from (inclusive)
+	 * @param u   upper index to convert to (exclusive)
+	 * @return A Hash64 type of array that is pointing the ret argument
 	 */
-	protected abstract Array<Object> changeTypeHash64();
+	protected abstract Array<Object> changeTypeHash64(Array<Object> ret, int l, int u);
 
 	/**
-	 * Change type to a String array type
+	 * Change type to a Hash32 array, of underlying longs to store the individual values
 	 * 
-	 * @return String type of array
+	 * @param ret The array to insert the result into
+	 * @param l   lower index to convert from (inclusive)
+	 * @param u   upper index to convert to (exclusive)
+	 * @return A Hash64 type of array that is pointing the ret argument
 	 */
-	protected abstract Array<String> changeTypeString();
+	protected abstract Array<Object> changeTypeHash32(Array<Object> ret, int l, int u);
 
 	/**
-	 * Change type to a Character array type
+	 * Change type to a String array, of underlying longs to store the individual values
 	 * 
-	 * @return Character type of array
+	 * @param ret The array to insert the result into
+	 * @param l   lower index to convert from (inclusive)
+	 * @param u   upper index to convert to (exclusive)
+	 * @return A String type of array that is pointing the ret argument
 	 */
-	protected abstract Array<Character> changeTypeCharacter();
+	protected abstract Array<String> changeTypeString(Array<String> ret, int l, int u);
+
+	/**
+	 * Change type to a Character array, of underlying longs to store the individual values
+	 * 
+	 * @param ret The array to insert the result into
+	 * @param l   lower index to convert from (inclusive)
+	 * @param u   upper index to convert to (exclusive)
+	 * @return A Character type of array that is pointing the ret argument
+	 */
+	protected abstract Array<Character> changeTypeCharacter(Array<Character> ret, int l, int u);
 
 	/**
 	 * Get the minimum and maximum length of the contained values as string type.
@@ -707,49 +732,38 @@ public abstract class Array<T> implements Writable {
 
 	}
 
+	/**
+	 * Extract the sub array into the ret array as doubles.
+	 * 
+	 * The ret array is filled from - rl, meaning that the ret array should be of length ru - rl.
+	 * 
+	 * @param ret The array to return
+	 * @param rl  The row to start at
+	 * @param ru  The row to end at (not inclusive.)
+	 * @return The ret array given as argument
+	 */
 	public double[] extractDouble(double[] ret, int rl, int ru) {
 		for(int i = rl; i < ru; i++)
 			ret[i - rl] = getAsDouble(i);
 		return ret;
 	}
 
+	/**
+	 * Equals operation on arrays.
+	 * 
+	 * @param other The other array to compare to.
+	 * @return True if the arrays are equivalent.
+	 */
 	public abstract boolean equals(Array<T> other);
 
-	public ArrayCompressionStatistics statistics(int nSamples) {
+	protected int estMemSizePerElement(ValueType vt, long memSize) {
 
-		Map<T, Integer> d = new HashMap<>();
-		for(int i = 0; i < nSamples; i++) {
-			// super inefficient, but startup
-			T key = get(i);
-			if(d.containsKey(key))
-				d.put(key, d.get(key) + 1);
-			else
-				d.put(key, 1);
-		}
-		Pair<ValueType, Boolean> vt = analyzeValueType(nSamples);
-		if(vt.getKey() == ValueType.UNKNOWN)
-			vt = analyzeValueType();
-
-		if(vt.getKey() == ValueType.UNKNOWN)
-			vt = new Pair<>(ValueType.STRING, false);
-
-		final int[] freq = new int[d.size()];
-		int id = 0;
-		for(Entry<T, Integer> e : d.entrySet())
-			freq[id++] = e.getValue();
-
-		int estDistinct = SampleEstimatorFactory.distinctCount(freq, size(), nSamples);
-
-		// memory size is different depending on valuetype.
-		long memSize = vt.getKey() != getValueType() ? //
-			ArrayFactory.getInMemorySize(vt.getKey(), size(), containsNull()) : //
-			getInMemorySize(); // uncompressed size
-
-		int memSizePerElement;
-		switch(vt.getKey()) {
+		final int memSizePerElement;
+		switch(vt) {
 			case UINT4:
 			case UINT8:
 			case INT32:
+			case HASH32:
 			case FP32:
 				memSizePerElement = 4;
 				break;
@@ -763,30 +777,95 @@ public abstract class Array<T> implements Writable {
 				break;
 			case BOOLEAN:
 				memSizePerElement = 1;
+				break;
 			case UNKNOWN:
 			case STRING:
 			default:
 				memSizePerElement = (int) (memSize / size());
 		}
+		return memSizePerElement;
+	}
+
+	/**
+	 * Get the compression statistics of this array allocation.
+	 * 
+	 * @param nSamples The number of sample elements suggested (not forced) to be used.
+	 * @return The compression statistics of this array.
+	 */
+	public ArrayCompressionStatistics statistics(int nSamples) {
+
+		Pair<ValueType, Boolean> vt = analyzeValueType(nSamples);
+		if(vt.getKey() == ValueType.UNKNOWN)
+			vt = analyzeValueType(); // full analysis if unknown
+		if(vt.getKey() == ValueType.UNKNOWN)
+			vt = new Pair<>(ValueType.STRING, false); // if still unknown String.
+
+		// memory size is different depending on valuetype.
+		final long memSize = vt.getKey() != getValueType() ? //
+			ArrayFactory.getInMemorySize(vt.getKey(), size(), containsNull()) : //
+			getInMemorySize(); // uncompressed size
+
+		final int memSizePerElement = estMemSizePerElement(vt.getKey(), memSize);
+		final int estDistinct = estimateDistinct(nSamples);
 
 		long ddcSize = DDCArray.estimateInMemorySize(memSizePerElement, estDistinct, size());
 
+		final boolean sampledAllRows = nSamples == size();
 		if(ddcSize < memSize)
 			return new ArrayCompressionStatistics(memSizePerElement, //
-				estDistinct, true, vt.getKey(), vt.getValue(), FrameArrayType.DDC, getInMemorySize(), ddcSize);
-		else if(vt.getKey() != getValueType() )
+				estDistinct, true, vt.getKey(), vt.getValue(), FrameArrayType.DDC, getInMemorySize(), ddcSize,
+				sampledAllRows);
+		else if(vt.getKey() != getValueType())
 			return new ArrayCompressionStatistics(memSizePerElement, //
-				estDistinct, true, vt.getKey(), vt.getValue(), null, getInMemorySize(), memSize);
-		return null;
+				estDistinct, false, vt.getKey(), vt.getValue(), null, getInMemorySize(), memSize, sampledAllRows);
+		else // do not compress based on dictionary size.
+			return new ArrayCompressionStatistics(memSizePerElement, //
+				estDistinct, false, vt.getKey(), vt.getValue(), null, getInMemorySize(), memSize, sampledAllRows);
 	}
 
-	public AMapToData createMapping(Map<T, Integer> d) {
-		final int s = size();
-		final AMapToData m = MapToFactory.create(s, d.size());
+	protected int estimateDistinct(int nSamples) {
 
-		for(int i = 0; i < s; i++)
-			m.set(i, d.get(get(i)));
-		return m;
+		final HashMap<T, Integer> d = new HashMap<>(Math.min(nSamples / 10, 1024));
+		// final ACountHashMap<T> d = new CountHashMap<T>(nSamples / 10);
+		int nSamplesTaken = 0;
+		for(; nSamplesTaken < nSamples && !earlyAbortEstimateDistinct(d.size(), nSamplesTaken, nSamples);
+			nSamplesTaken++) {
+			// d.get(d);
+			T key = get(nSamplesTaken);
+			if(d.containsKey(key))
+				d.put(key, d.get(key) + 1);
+			else
+				d.put(key, 1);
+		}
+
+		if(earlyAbortEstimateDistinct(d.size(), nSamplesTaken, nSamples)) {
+			LOG.warn("Early abort stats and compress : " + nSamplesTaken + " " + nSamples);
+			return size();
+		}
+
+		final int[] freq = new int[d.size()];
+		int id = 0;
+		for(Integer e : d.values())
+			freq[id++] = e;
+
+		return SampleEstimatorFactory.distinctCount(freq, size(), nSamplesTaken);
+	}
+
+	protected boolean earlyAbortEstimateDistinct(int distinctFound, int samplesTaken, int maxSamples) {
+		return samplesTaken * 100 >= maxSamples * 10 // More than 10 % sampled.
+			&& distinctFound * 100 >= samplesTaken * 60; // More than 60 % distinct
+	}
+
+	protected int setAndAddToDict(Map<T, Integer> rcd, AMapToData m, int i, Integer id) {
+		final T val = getInternal(i);
+		final Integer v = rcd.get(val);
+		if(v == null) {
+			m.set(i, id);
+			rcd.put(val, id++);
+		}
+		else
+			m.set(i, v);
+		return id;
 	}
 
 	public class ArrayIterator implements Iterator<T> {
@@ -805,5 +884,38 @@ public abstract class Array<T> implements Writable {
 		public T next() {
 			return get(++index);
 		}
+	}
+
+	/**
+	 * Get the minimum and maximum double value of this array.
+	 * 
+	 * Note that we ignore NaN Values.
+	 * 
+	 * @return The min and max in index 0 and 1 of the array.
+	 */
+	public double[] minMax() {
+		return minMax(0, size());
+	}
+
+	/**
+	 * Get the minimum and maximum double value of a specific sub part of this array.
+	 * 
+	 * Note that we ignore NaN Values.
+	 * 
+	 * @param l The lower index to search from
+	 * @param u The upper index to end at (not inclusive)
+	 * @return The min and max in index 0 and 1 of the array in the range.
+	 */
+	public double[] minMax(int l, int u) {
+		double min = Double.POSITIVE_INFINITY;
+		double max = Double.NEGATIVE_INFINITY;
+		for(int i = l; i < u; i++) {
+			final double inVal = getAsDouble(i);
+			if(!Double.isNaN(inVal)) {
+				min = Math.min(min, inVal);
+				max = Math.max(max, inVal);
+			}
+		}
+		return new double[] {min, max};
 	}
 }

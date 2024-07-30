@@ -30,6 +30,7 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.common.Types.ValueType;
 import org.apache.sysds.runtime.DMLRuntimeException;
+import org.apache.sysds.runtime.compress.estim.ComEstFactory;
 import org.apache.sysds.runtime.frame.data.FrameBlock;
 import org.apache.sysds.runtime.frame.data.columns.Array;
 import org.apache.sysds.runtime.matrix.data.Pair;
@@ -39,7 +40,8 @@ import org.apache.sysds.runtime.util.UtilFunctions;
 public final class FrameLibDetectSchema {
 	protected static final Log LOG = LogFactory.getLog(FrameLibDetectSchema.class.getName());
 	/** Default minium sample size */
-	private static final int DEFAULT_MIN_CELLS = 100000;
+	private static final int DEFAULT_MIN_CELLS = 10000;
+	private static final int DEFAULT_MAX_CELLS = 1000000;
 
 	/** Frame block to sample from */
 	private final FrameBlock in;
@@ -52,7 +54,8 @@ public final class FrameLibDetectSchema {
 		this.in = in;
 		this.k = k;
 		final int inRows = in.getNumRows();
-		this.sampleSize = Math.min(inRows, Math.max((int) (inRows * sampleFraction), DEFAULT_MIN_CELLS));
+		this.sampleSize = Math.min(Math.max((int) (inRows * sampleFraction), DEFAULT_MIN_CELLS),
+			ComEstFactory.getSampleSize(0.65, inRows, in.getNumColumns(), 1.0, DEFAULT_MIN_CELLS, DEFAULT_MAX_CELLS));
 	}
 
 	public static FrameBlock detectSchema(FrameBlock in, int k) {

@@ -36,6 +36,10 @@ import org.apache.sysds.utils.MemoryEstimates;
 public class BooleanArray extends ABooleanArray {
 	protected boolean[] _data;
 
+	private BooleanArray(int nRow){
+		this(new boolean[nRow]);
+	}
+
 	public BooleanArray(boolean[] data) {
 		super(data.length);
 		_data = data;
@@ -79,7 +83,7 @@ public class BooleanArray extends ABooleanArray {
 
 	@Override
 	public void set(int rl, int ru, Array<Boolean> value, int rlSrc) {
-		if(value instanceof BooleanArray){
+		if(value instanceof BooleanArray) {
 			try {
 				// try system array copy.
 				// but if it does not work, default to get.
@@ -162,6 +166,12 @@ public class BooleanArray extends ABooleanArray {
 			_data[i] = in.readBoolean();
 	}
 
+	protected static BooleanArray read(DataInput in, int nRow) throws IOException {
+		final BooleanArray arr = new BooleanArray(nRow);
+		arr.readFields(in);
+		return arr;
+	}
+
 	@Override
 	public ABooleanArray clone() {
 		return new BooleanArray(Arrays.copyOf(_data, _size));
@@ -224,69 +234,82 @@ public class BooleanArray extends ABooleanArray {
 	}
 
 	@Override
-	protected ABooleanArray changeTypeBitSet() {
-		return new BitSetArray(_data);
+	protected Array<Boolean> changeTypeBitSet(Array<Boolean> ret, int l, int u) {
+		for(int i = l; i < u; i++)
+			ret.set(i, get(i));
+		return ret;
 	}
 
 	@Override
-	protected ABooleanArray changeTypeBoolean() {
-		return this;
+	protected Array<Boolean> changeTypeBoolean(Array<Boolean> retA, int l, int u) {
+		boolean[] ret = (boolean[]) retA.get();
+		for(int i = l; i < u; i++)
+			ret[i] = _data[i];
+		return retA;
 	}
 
 	@Override
-	protected Array<Double> changeTypeDouble() {
-		double[] ret = new double[size()];
-		for(int i = 0; i < size(); i++)
+	protected Array<Double> changeTypeDouble(Array<Double> retA, int l, int u) {
+		double[] ret = (double[]) retA.get();
+		for(int i = l; i < u; i++)
 			ret[i] = _data[i] ? 1.0 : 0.0;
-		return new DoubleArray(ret);
+		return retA;
 	}
 
 	@Override
-	protected Array<Float> changeTypeFloat() {
-		float[] ret = new float[size()];
-		for(int i = 0; i < size(); i++)
+	protected Array<Float> changeTypeFloat(Array<Float> retA, int l, int u) {
+		float[] ret = (float[]) retA.get();
+		for(int i = l; i < u; i++)
 			ret[i] = _data[i] ? 1.0f : 0.0f;
-		return new FloatArray(ret);
+		return retA;
 	}
 
 	@Override
-	protected Array<Integer> changeTypeInteger() {
-		int[] ret = new int[size()];
-		for(int i = 0; i < size(); i++)
+	protected Array<Integer> changeTypeInteger(Array<Integer> retA, int l, int u) {
+		int[] ret = (int[]) retA.get();
+		for(int i = l; i < u; i++)
 			ret[i] = _data[i] ? 1 : 0;
-		return new IntegerArray(ret);
+		return retA;
 	}
 
 	@Override
-	protected Array<Long> changeTypeLong() {
-		long[] ret = new long[size()];
-		for(int i = 0; i < size(); i++)
+	protected Array<Long> changeTypeLong(Array<Long> retA, int l, int u) {
+		long[] ret = (long[]) retA.get();
+		for(int i = l; i < u; i++)
 			ret[i] = _data[i] ? 1L : 0L;
-		return new LongArray(ret);
+		return retA;
 	}
 
 	@Override
-	protected Array<Object> changeTypeHash64(){
-		long[] ret = new long[size()];
-		for(int i = 0; i < size(); i++)
-			ret[i] = _data[i]  ? 1L : 0L;
-		return new HashLongArray(ret);
+	protected Array<Object> changeTypeHash64(Array<Object> retA, int l, int u) {
+		long[] ret = ((HashLongArray) retA).getLongs();
+		for(int i = l; i < u; i++)
+			ret[i] = _data[i] ? 1L : 0L;
+		return retA;
 	}
 
 	@Override
-	protected Array<String> changeTypeString() {
-		String[] ret = new String[size()];
-		for(int i = 0; i < size(); i++)
+	protected Array<Object> changeTypeHash32(Array<Object> retA, int l, int u) {
+		int[] ret = ((HashIntegerArray) retA).getInts();
+		for(int i = l; i < u; i++)
+			ret[i] = _data[i] ? 1 : 0;
+		return retA;
+	}
+
+	@Override
+	protected Array<String> changeTypeString(Array<String> retA, int l, int u) {
+		String[] ret = (String[]) retA.get();
+		for(int i = l; i < u; i++)
 			ret[i] = get(i).toString();
-		return new StringArray(ret);
+		return retA;
 	}
 
 	@Override
-	public Array<Character> changeTypeCharacter() {
-		char[] ret = new char[size()];
-		for(int i = 0; i < size(); i++)
+	public Array<Character> changeTypeCharacter(Array<Character> retA, int l, int u) {
+		char[] ret = (char[]) retA.get();
+		for(int i = l; i < u; i++)
 			ret[i] = (char) (_data[i] ? 1 : 0);
-		return new CharArray(ret);
+		return retA;
 	}
 
 	@Override
@@ -361,9 +384,15 @@ public class BooleanArray extends ABooleanArray {
 	}
 
 	@Override
+	public void setNullsFromString(int rl, int ru, Array<String> value) {
+		for(int i = rl; i < ru; i++)
+			set(i, value.get(i) != null);
+	}
+
+	@Override
 	public ArrayCompressionStatistics statistics(int nSamples) {
-		// Unlikely to compress so lets just say... no
-		return null;
+		return new ArrayCompressionStatistics(1, //
+			2, true, ValueType.BOOLEAN, false, FrameArrayType.DDC, getInMemorySize(), getInMemorySize() * 2, true);
 	}
 
 	@Override

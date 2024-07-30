@@ -17,20 +17,27 @@
  * under the License.
  */
 
-package org.apache.sysds.runtime.frame.data.compress;
+package org.apache.sysds.test.component.frame.compress;
 
-import org.apache.sysds.runtime.compress.workload.WTreeRoot;
+import static org.junit.Assert.assertEquals;
 
-public class FrameCompressionSettings {
+import org.apache.sysds.runtime.frame.data.compress.FrameCompressionSettingsBuilder;
+import org.junit.Test;
 
-	public final double sampleRatio;
-	public final int k;
-	public final WTreeRoot wt;
-
-	protected FrameCompressionSettings(double sampleRatio, int k, WTreeRoot wt) {
-		this.sampleRatio = sampleRatio;
-		this.k = k;
-		this.wt = wt;
+public class FrameSettingsBuilder {
+	@Test
+	public void builderTest1() {
+		var a = new FrameCompressionSettingsBuilder();
+		a.sampleRatio(0.2);
+		var s = a.create();
+		assertEquals(0.2, s.sampleRatio, 0.0);
 	}
 
+	@Test
+	public void builderTest2() {
+		var a = new FrameCompressionSettingsBuilder();
+		a.threads(13);
+		var s = a.create();
+		assertEquals(13, s.k);
+	}
 }

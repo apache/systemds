@@ -17,20 +17,32 @@
  * under the License.
  */
 
-package org.apache.sysds.runtime.frame.data.compress;
+package org.apache.sysds.runtime.frame.data.columns;
 
-import org.apache.sysds.runtime.compress.workload.WTreeRoot;
+import java.io.DataInput;
+import java.io.DataOutput;
+import java.io.IOException;
 
-public class FrameCompressionSettings {
+import org.apache.hadoop.io.Writable;
 
-	public final double sampleRatio;
-	public final int k;
-	public final WTreeRoot wt;
+public class ArrayWrapper implements Writable {
 
-	protected FrameCompressionSettings(double sampleRatio, int k, WTreeRoot wt) {
-		this.sampleRatio = sampleRatio;
-		this.k = k;
-		this.wt = wt;
+	public Array<?> _a; 
+
+	public ArrayWrapper(Array<?> a){
+		_a = a;
 	}
 
+	@Override
+	public void write(DataOutput out) throws IOException {
+		out.writeInt(_a.size());
+		_a.write(out);
+	}
+
+	@Override
+	public void readFields(DataInput in) throws IOException {
+		int s = in.readInt();
+		_a = ArrayFactory.read(in, s);
+	}
+	
 }

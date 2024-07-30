@@ -304,7 +304,7 @@ public class FrameTest {
 	@Test
 	public void testApplySchema() {
 		final FrameBlock schema = FrameLibDetectSchema.detectSchema(f, 1);
-		final FrameBlock fs = FrameLibApplySchema.applySchema(f, schema, 1);
+		final FrameBlock fs = FrameLibApplySchema.applySchema(f.copyShallow(), schema, 1);
 		TestUtils.compareFrames(f, fs, true);
 	}
 

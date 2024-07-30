@@ -18,27 +18,37 @@
 # under the License.
 #
 # -------------------------------------------------------------
+
 from typing import List
 
+import numpy as np
+
 from modality.modality import Modality
+from keras.api.preprocessing.sequence import pad_sequences
+
 from representations.fusion import Fusion
 
 
-class AlignedModality(Modality):
-    def __init__(self, representation: Fusion, modalities: List[Modality]):
+class Averaging(Fusion):
+    def __init__(self):
         """
-        Defines the modality that is created during the fusion process
-        :param representation: The representation for the aligned modality
-        :param modalities: List of modalities to be combined
+        Combines modalities using averaging
         """
-        name = ''
-        for modality in modalities:
-            name += modality.name
-        super().__init__(representation, modality_name=name)
-        self.modalities = modalities
+        super().__init__('Averaging')
     
-    def combine(self):
-        """
-        Initiates the call to fuse the given modalities depending on the Fusion type
-        """
-        self.data = self.representation.fuse(self.modalities) # noqa
+    def fuse(self, modalities: List[Modality]):
+        max_emb_size = self.get_max_embedding_size(modalities)
+
+        padded_modalities = []
+        for modality in modalities:
+            d = pad_sequences(modality.data, maxlen=max_emb_size, dtype='float32', padding='post')
+            padded_modalities.append(d)
+          
+        data = padded_modalities[0]
+        for i in range(1, len(modalities)):
+            data += padded_modalities[i]
+        
+        data = self.scale_data(data, modalities[0].train_indices)
+        data /= len(modalities)
+        
+        return np.array(data)

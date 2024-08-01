@@ -122,6 +122,7 @@ def pandas_to_frame_block(sds, pd_df: pd.DataFrame):
         j_valueTypeArray = java_gate.new_array(jc_ValueType, len(schema))
         j_colNameArray = java_gate.new_array(jc_String, len(col_names))
         
+        # execution speed increases with optimized code when the number of rows exceeds 4
         if rows > 4:
             for i in range(len(schema)):
                 j_valueTypeArray[i] = schema[i]

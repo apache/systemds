@@ -613,6 +613,19 @@ determineUnchangedSlices = function(list[unknown] prevRL, Matrix[Double] prevLat
     }
 }
 
+determineUnchangedSlices2 = function(Matrix[Double] prevStatsAtLevel, Matrix[Double] prevLatAtLevel, Matrix[Double] addedX2, list[unknown] unchangedS, list[unknown] unchangedR, Integer level)
+  return(list[unknown] unchangedS, list[unknown] unchangedR)
+{
+  # only computing unchanged slices for levels 2 and above, 
+    # Imat has a 1 where a slice in addedX2 belongs to a slice in prevLatAtLevel
+    Imat = (addedX2 %*% t(prevLatAtLevel) == level);
+    unchangedSlicesI = colSums(Imat) == 0;
+    unchangedSlices = removeEmpty(target=prevLatAtLevel, margin="rows", select=unchangedSlicesI);
+    unchangedStats = removeEmpty(target=prevStatsAtLevel, margin="rows", select=unchangedSlicesI);
+    unchangedS = append(unchangedS, unchangedSlices);
+    unchangedR = append(unchangedR, unchangedStats);
+}
+
 computeLowestPrevTK = function(Matrix[Double] prevTK2, Matrix[Double] X2,Matrix[Double] totalE, Double eAvg, Double alpha, Double minsc)
   return(Double minsc)
 {
@@ -634,4 +647,47 @@ computeLowestPrevTK = function(Matrix[Double] prevTK2, Matrix[Double] X2,Matrix[
         minsc = minsc2;
       }
     }
+}
+
+# Function to convert a binary matrix to a double matrix
+# matrix rows are interpreted as binary numbers and converted to integers
+# only a subset of columns is considered for each integer (x columns at a time)
+# integer matrix will have ceil(numCols / x) columns to account for the maximum size of double values 
+# (x needs to be set to 52 for double precision)
+binaryMatrixToIntegerMatrix = function(Matrix[Double] binaryMatrix, Integer x)
+  return (Matrix[Double] integerMatrix)
+{
+  numRows = nrow(binaryMatrix);
+  numCols = ncol(binaryMatrix);
+  numIntCols = ceil(numCols / x);
+  integerMatrix = matrix(0, numRows, numIntCols);
+  powersOfTwo = matrix(2^(seq(x-1,0,-1)), rows=1, cols=x);
+  for (j in 1:numIntCols) {
+    startCol = (j-1)*x + 1;
+    endCol = min(j*x, numCols);
+    binaryChunk = binaryMatrix[, startCol:endCol];
+    intRepresentation = rowSums(outer(binaryChunk, powersOfTwo[1, (ncol(powersOfTwo)-(endCol-startCol)):(ncol(powersOfTwo))], "*"));
+    integerMatrix[, j] = intRepresentation;
+  }
+}
+
+# Function to convert an integer matrix back to a binary matrix
+# x is the number of columns in each chunk of the binary matrix
+# numCols is the total number of columns in the binary matrix
+integerMatrixToBinaryMatrix = function(Matrix[Double] integerMatrix, Integer x, Integer numCols)
+  return (Matrix[Double] binaryMatrix)
+{
+  numRows = nrow(integerMatrix);
+  binaryMatrix = matrix(0, numRows, numCols);
+  powersOfTwo = matrix(2^(seq(x-1,0,-1)), rows=1, cols=x);
+
+  for (i in 1:numRows) {
+    for (j in 1:ncol(integerMatrix)) {
+      intRepresentation = integerMatrix[i, j];
+      startCol = (j-1)*x + 1;
+      endCol = min(j*x, numCols);
+      binaryChunk = intRepresentation %/% powersOfTwo[1, (ncol(powersOfTwo)-(endCol-startCol)):(ncol(powersOfTwo))] %% 2;
+      binaryMatrix[i, startCol:endCol] = binaryChunk;
+    }
+  }
 }

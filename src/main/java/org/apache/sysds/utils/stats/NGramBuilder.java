@@ -211,6 +211,11 @@ public class NGramBuilder<T, U> {
 				.collect(Collectors.toList());
 	}
 
+	public synchronized void clearCurrentRecording() {
+		currentIndex = 0;
+		currentSize = 0;
+	}
+
 	private synchronized void registerElement(String id, U stat) {
 		nGrams.compute(id, (key, entry) ->  {
 			if (entry == null) {

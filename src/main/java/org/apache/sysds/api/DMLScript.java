@@ -104,6 +104,8 @@ public class DMLScript
 	public static int[]         STATISTICS_NGRAM_SIZES   = DMLOptions.defaultOptions.statsNGramSizes;
 	// Set top k displayed n-grams limit
 	public static int         STATISTICS_TOP_K_NGRAMS    = DMLOptions.defaultOptions.statsTopKNGrams;
+	// Set if N-Grams use lineage for data-dependent tracking
+	public static boolean     STATISTICS_NGRAMS_USE_LINEAGE = DMLOptions.defaultOptions.statsNGramsUseLineage;
 	// Set statistics maximum wrap length
 	public static int         STATISTICS_MAX_WRAP_LEN    = 30;
 	// Enable/disable to print federated statistics

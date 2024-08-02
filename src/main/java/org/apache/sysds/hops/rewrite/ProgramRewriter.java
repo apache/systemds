@@ -123,6 +123,10 @@ public class ProgramRewriter{
 				_dagRuleSet.add( new RewriteMatrixMultChainOptimization()         ); //dependency: cse
 				_dagRuleSet.add( new RewriteElementwiseMultChainOptimization()    ); //dependency: cse
 			}
+			if(OptimizerUtils.ALLOW_ADVANCED_MMCHAIN_REWRITES){
+				_dagRuleSet.add( new RewriteMatrixMultChainOptimizationTranspose()      ); //dependency: cse
+				_dagRuleSet.add( new RewriteMatrixMultChainOptimizationSparse()         ); //dependency: cse
+			}
 			if( OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION ) {
 				_dagRuleSet.add( new RewriteAlgebraicSimplificationDynamic()      ); //dependencies: cse
 				_dagRuleSet.add( new RewriteAlgebraicSimplificationStatic()       ); //dependencies: cse

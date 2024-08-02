@@ -431,10 +431,24 @@ public class Statistics
 			}
 			return threadEntry;
 		});
-		addLineagePaths(li, new ArrayList<>(), tmp);
+		addLineagePaths(li, new ArrayList<>(), new ArrayList<>(), tmp);
 	}
 
-	private static void addLineagePaths(LineageItem li, ArrayList<LineageItem> currentPath, NGramBuilder<String, NGramStats>[] builders) {
+	private static int countLineageLinesOfSize(LineageItem li, int size) {
+		if (li.getInputs() == null)
+			return 0;
+
+		if (size == 1)
+			return li.getInputs().length;
+
+		int lines = 0;
+		for (LineageItem in : li.getInputs())
+			lines += countLineageLinesOfSize(in, size-1);
+
+		return lines;
+	}
+
+	private static void addLineagePaths(LineageItem li, ArrayList<LineageItem> currentPath, ArrayList<Integer> indexes, NGramBuilder<String, NGramStats>[] builders) {
 		if (li.getType() == LineageItem.LineageItemType.Literal)
 			return; // Skip literals as they are no real instruction
 
@@ -452,14 +466,18 @@ public class Statistics
 
 		if (matchingBuilder != null) {
 			clearNGramRecording();
-			for (int i = currentPath.size()-1; i >= 0; i--) {
-				matchingBuilder.append(LineageItemUtils.explainLineageAsInstruction(currentPath.get(i)), new NGramStats(1, currentPath.get(i).getExecNanos(), 0));
+			matchingBuilder.append(LineageItemUtils.explainLineageAsInstruction(currentPath.get(currentPath.size()-1)) + (indexes.size() > 0 ? ("[" + indexes.get(currentPath.size()-2) + "]") : ""), new NGramStats(1, currentPath.get(currentPath.size()-1).getExecNanos(), 0));
+			for (int i = currentPath.size()-2; i >= 0; i--) {
+				matchingBuilder.append(LineageItemUtils.explainLineageAsInstruction(currentPath.get(i)) + (i > 0 ? ("[" + indexes.get(i-1) + "]") : ""), new NGramStats(1, currentPath.get(i).getExecNanos()/(countLineageLinesOfSize(currentPath.get(i), currentPath.size()-1-i)), 0));
 			}
 		}
 
 		if (currentPath.size() < maxSize && li.getInputs() != null) {
+			int idx = 0;
 			for (LineageItem input : li.getInputs()) {
-				addLineagePaths(input, currentPath, builders);
+				indexes.add(idx++);
+				addLineagePaths(input, currentPath, indexes, builders);
+				indexes.remove(indexes.size()-1);
 			}
 		}
 

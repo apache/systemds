@@ -36,6 +36,9 @@ public class LineageItem {
 	private final long _id;
 	private final String _opcode;
 	private final String _data;
+	private String _datatype;
+	private String _valuetype;
+	private long _execNanos;
 	private LineageItem[] _inputs;
 	private long _height = 0; //distance leaf to node
 	private int _hash = 0;
@@ -202,6 +205,30 @@ public class LineageItem {
 			return LineageItemType.Instruction;
 		else
 			throw new DMLRuntimeException("An inner node could not be a literal!");
+	}
+
+	public void setDataType(String dataType) {
+		_datatype = dataType;
+	}
+
+	public String getDataType() {
+		return _datatype == null ? "" : _datatype;
+	}
+
+	public void setValueType(String valueType) {
+		_valuetype = valueType;
+	}
+
+	public String getValueType() {
+		return _valuetype == null ? "" : _valuetype;
+	}
+
+	public void setExecNanos(long nanos) {
+		_execNanos = nanos;
+	}
+
+	public long getExecNanos() {
+		return _execNanos;
 	}
 	
 	@Override

@@ -62,11 +62,12 @@
 m_incSliceLine = function(
     Matrix[Double] addedX, Matrix[Double] oldX = matrix(0, 0, 0), Matrix[Double] oldE = matrix(0, 0, 0),
     Matrix[Double] newE, Int k = 4, Int maxL = 0, Int minSup = 32, Double alpha = 0.5, Boolean tpEval = TRUE,
-    Int tpBlksz = 16, Boolean selFeat = FALSE, Boolean verbose = FALSE, list[unknown] params = list(),
+    Int tpBlksz = 16, Boolean selFeat = FALSE, Boolean verbose = FALSE, list[unknown] params = list(), 
+    Matrix[Double] prevFoffb = matrix(0,0,0), Matrix[Double] prevFoffe = matrix(0,0,0), Integer nColPrevOneHotX = 0,
     Matrix[Double] prevLattice = matrix(0, 0, 0), list[unknown] prevRL = list(), Matrix[Double] prevTK = matrix(0,0,0),
     Matrix[Double] prevTKC = matrix(0,0,0))
   return(Matrix[Double] TK, Matrix[Double] TKC, Matrix[Double] D, Matrix[Double] L,
-    list[unknown] RL, Matrix[Double] Xout, Matrix[Double] eOut, list[unknown] params)
+    list[unknown] RL, Matrix[Double] Xout, Matrix[Double] eOut, Matrix[Double] foffb, Matrix[Double] foffe, Integer nColOneHotX, list[unknown] params)
 {
   # TODO convert input/output of previous enumerated slices to lists
   # for simple collection and processing
@@ -105,6 +106,8 @@ m_incSliceLine = function(
   rix = matrix(seq(1,m)%*%matrix(1,1,n), m*n, 1)
   cix = matrix(newX + foffb, m*n, 1);
   X2 = table(rix, cix, 1, m, as.scalar(foffe[,n]), FALSE); #one-hot encoded
+
+  nColOneHotX = ncol(X2);
 
   # One-hot encoding of addedX and oldX
   if(nrow(oldX) > 0){
@@ -179,11 +182,38 @@ m_incSliceLine = function(
   }else{
     prevTK2 = prevTK;
   }
+  
+  prevLattice2 = prevLattice;
+
+  if( nrow(prevLattice) > 0 ) { 
+    prevLatticeBin = integerMatrixToBinaryMatrix(prevLattice, 52, nColPrevOneHotX);
+    
+    if(nrow(prevFoffb) == 0 | nrow(prevFoffe) == 0){
+      print("prevFoffb and prevFoffe are not set, but are necessary.");
+    }
+    if(nrow(prevFoffb) == nrow(foffb) & nrow(prevFoffe) == nrow(foffe)){
+      if (!((sum(prevFoffb == foffb) == (ncol(foffb) * nrow(foffb))) & 
+        (sum(prevFoffe == foffe) == (ncol(foffe) * nrow(foffe))) )){
+
+        prevLatticeDec = decodeOneHot(prevLatticeBin, prevFoffb, prevFoffe);
+        prevLattice2 = oneHotEncodeUsingOffsets(prevLatticeDec, foffb, foffe);
+      } else {
+        prevLattice2 = prevLatticeBin;
+      } 
+    } else {
+        prevLatticeDec = decodeOneHot(prevLatticeBin, prevFoffb, prevFoffe);
+        prevLattice2 = oneHotEncodeUsingOffsets(prevLatticeDec, foffb, foffe);
+    }
+    
+    
+  }
+  /*
   if(length(prevLattice) > 0) {
     prevLattice2 = oneHotEncodeUsingOffsets(prevLattice, foffb, foffe);
   }else{
     prevLattice2 = prevLattice;
   }
+  */
 
   # compute first indices for each level for prevLattice
   levelIndices = list();
@@ -212,9 +242,10 @@ m_incSliceLine = function(
   print("IncSliceLine: Time taken for basic slices: "+(time()-t2));
 
   # initialize Lattice and Statistics
-  L1 = matrix(0,0,ncol(X2));
   RL = list();
-  L1 = rbind(L1, S);
+  #L1 = matrix(0,0,ncol(X2));
+  #L1 = rbind(L1, S);
+  L = binaryMatrixToIntegerMatrix(S, 52)
   RL = append(RL,R);
 
   # initialize top-k
@@ -255,7 +286,10 @@ m_incSliceLine = function(
     S2 = S;
 
     # update lattice
-    L1 = rbind(L1, S);
+    #L1 = rbind(L1, S);
+
+    Lrep = binaryMatrixToIntegerMatrix(S, 52);
+    L = rbind(L, Lrep);
 
     if(selFeat){
       S2 = removeEmpty(target=S, margin="cols", select=t(selCols));
@@ -307,8 +341,6 @@ m_incSliceLine = function(
 
   # prepare output feature matrix for next run
   Xout = newX;
-
-  L = decodeOneHot(L1, foffb, foffe);
 
   if( verbose ) {
     print("incSliceLine: terminated at level "+level+":\n"
@@ -715,17 +747,21 @@ computeLowestPrevTK = function(Matrix[Double] prevTK2, Matrix[Double] X2,Matrix[
 binaryMatrixToIntegerMatrix = function(Matrix[Double] binaryMatrix, Integer x)
   return (Matrix[Double] integerMatrix)
 {
+
+  
   numRows = nrow(binaryMatrix);
   numCols = ncol(binaryMatrix);
   numIntCols = ceil(numCols / x);
   integerMatrix = matrix(0, numRows, numIntCols);
-  powersOfTwo = matrix(2^(seq(x-1,0,-1)), rows=1, cols=x);
-  for (j in 1:numIntCols) {
-    startCol = (j-1)*x + 1;
-    endCol = min(j*x, numCols);
-    binaryChunk = binaryMatrix[, startCol:endCol];
-    intRepresentation = rowSums(outer(binaryChunk, powersOfTwo[1, (ncol(powersOfTwo)-(endCol-startCol)):(ncol(powersOfTwo))], "*"));
-    integerMatrix[, j] = intRepresentation;
+  if(nrow(binaryMatrix) != 0){
+    powersOfTwo = matrix(2^(seq(x-1,0,-1)), rows=1, cols=x);
+    for (j in 1:numIntCols) {
+      startCol = (j-1)*x + 1;
+      endCol = min(j*x, numCols);
+      binaryChunk = binaryMatrix[, startCol:endCol];
+      intRepresentation = rowSums(outer(binaryChunk, powersOfTwo[1, (ncol(powersOfTwo)-(endCol-startCol)):(ncol(powersOfTwo))], "*"));
+      integerMatrix[, j] = intRepresentation;
+    }
   }
 }
 
@@ -748,4 +784,10 @@ integerMatrixToBinaryMatrix = function(Matrix[Double] integerMatrix, Integer x, 
       binaryMatrix[i, startCol:endCol] = binaryChunk;
     }
   }
+}
+
+isEqual = function(Matrix[Double] a, Matrix[Double] b)
+return (Boolean res)
+ {
+    res = sum(a == b) == (ncol(b) * nrow(b))
 }

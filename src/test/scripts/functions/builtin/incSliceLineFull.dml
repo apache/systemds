@@ -27,13 +27,13 @@ addedE = read($4);
 totalE = rbind(oldE, addedE);
 
 # call slice finding
-[TK, TKC, D, L, RL, Xout, eOut, params] = incSliceLine(addedX=oldX, newE=oldE, k=$5,
+[TK, TKC, D, L, RL, Xout, eOut, foffb, foffe, nColOneHotX, params] = incSliceLine(addedX=oldX, newE=oldE, k=$5,
   alpha=0.95, minSup=4, tpEval=$6, selFeat=$7, verbose=$8);
 
-[TK1, TKC1, D1, L1, RL1, Xout1, eOut1, params] = incSliceLine(addedX=addedX, oldX = oldX, oldE = oldE, newE=addedE, prevLattice = L, prevRL = RL, prevTK = TK, prevTKC = TKC, k=$5,
-  alpha=0.95, minSup=4, tpEval=$6, selFeat=$7, verbose=$8, params=params);
+[TK1, TKC1, D1, L1, RL1, Xout1, eOut1, foffb2, foffe2, nColOneHotX2, params] = incSliceLine(addedX=addedX, oldX = oldX, oldE = oldE, newE=addedE, prevLattice = L, prevRL = RL, prevTK = TK, prevTKC = TKC, k=$5,
+  alpha=0.95, minSup=4, tpEval=$6, selFeat=$7, verbose=$8, params=params, prevFoffb = foffb, prevFoffe = foffe, nColPrevOneHotX = nColOneHotX);
 
-[TK2, TKC2, D2, L2, RL2, Xout2, eOut2, params] = incSliceLine(addedX=totalX, newE=totalE, k=$5,
+[TK2, TKC2, D2, L2, RL2, Xout2, eOut2, foffb3, foffe3, nColOneHotX3, params] = incSliceLine(addedX=totalX, newE=totalE, k=$5,
   alpha=0.95, minSup=4, tpEval=$6, selFeat=$7, verbose=$8);
 
 

@@ -1,0 +1,88 @@
+workload:
+  delimiter: ','  # default delimiter
+  usecases:
+    1:
+      tables:
+        - "customer"
+        - "order"
+        - "lineitem"
+        - "order_returns"
+      raw_data_files:
+        - "customer.csv"
+        - "order.csv"
+        - "lineitem.csv"
+        - "order_returns.csv"
+      label_column: 'c_cluster_id'
+    2:
+      tables:
+        - "CONVERSATION_AUDIO"
+      raw_data_files:
+        - "CONVERSATION_AUDIO.csv"
+      raw_data_folder: "CONVERSATION_AUDIO"
+      label_column: 'transcript'
+      delimiter: '|'
+    3:
+      tables:
+        - "order"
+        - "lineitem"
+        - "product"
+        - "store_dept"
+        - "order_weekly_sales"
+      raw_data_files:
+        - "store_dept.csv"
+        - "order.csv"
+        - "lineitem.csv"
+        - "product.csv"
+      label_column: 'weekly_sales'
+    4:
+      tables:
+        - "Review"
+      raw_data_files:
+        - "Review.psv"
+      label_column: "spam"
+      delimiter: "|"
+    5:
+      tables:
+        - "marketplace"
+      raw_data_files:
+        - "marketplace.csv"
+      label_column: 'price'
+      delimiter: '|'
+    6:
+      tables:
+        - "failures"
+      raw_data_files:
+        - "failures.csv"
+      label_column: "failure"
+    7:
+      tables:
+        - "ProductRating"
+      raw_data_files:
+        - "ProductRating.csv"
+      label_column: 'rating'
+    8:
+      tables:
+        - "order"
+        - "lineitem"
+        - "product"
+      raw_data_files:
+        - "order.csv"
+        - "lineitem.csv"
+        - "product.csv"
+      label_column: "trip_type"
+    9:
+      tables:
+        - "CUSTOMER_IMAGES"
+        - "CUSTOMER_IMAGES_META"
+      raw_data_files:
+        - "CUSTOMER_IMAGES_META.csv"
+      raw_data_folder: "CUSTOMER_IMAGES"
+      label_column: 'identity'
+    10:
+      tables:
+        - "financial_transactions"
+        - "financial_account"
+      raw_data_files:
+        - "financial_transactions.csv"
+        - "financial_account.csv"
+      label_column: "isFraud"

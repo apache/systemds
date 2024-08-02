@@ -1,0 +1,52 @@
+workload:
+  usecases:
+    1:
+      quality_metric: ""
+      quality_metric_kvargs: {}
+      quality_metric_threshold: -1
+      quality_metric_larger_is_better: True
+    2:
+      quality_metric: "word_error_rate"
+      quality_metric_kvargs: {}
+      quality_metric_threshold: 0.5
+      quality_metric_larger_is_better: False
+    3:
+      quality_metric: "mean_squared_log_error"
+      quality_metric_kvargs: {}
+      quality_metric_threshold: 5.4
+      quality_metric_larger_is_better: False
+    4:
+      quality_metric: "f1_score"
+      quality_metric_kvargs: {}
+      quality_metric_threshold: 0.65
+      quality_metric_larger_is_better: True
+    5:
+      quality_metric: "mean_squared_log_error"
+      quality_metric_kvargs: {}
+      quality_metric_threshold: 0.5
+      quality_metric_larger_is_better: False
+    6:
+      quality_metric: "matthews_corrcoef"
+      quality_metric_kvargs: {}
+      quality_metric_threshold: 0.19
+      quality_metric_larger_is_better: True
+    7:
+      quality_metric: "median_absolute_error"
+      quality_metric_kvargs: {}
+      quality_metric_threshold: 1.8
+      quality_metric_larger_is_better: False
+    8:
+      quality_metric: "accuracy_score"
+      quality_metric_kvargs: {}
+      quality_metric_threshold: 0.65
+      quality_metric_larger_is_better: True
+    9:
+      quality_metric: "accuracy_score"
+      quality_metric_kvargs: {}
+      quality_metric_threshold: 0.9
+      quality_metric_larger_is_better: True
+    10:
+      quality_metric: "accuracy_score"
+      quality_metric_kvargs: {}
+      quality_metric_threshold: 0.7
+      quality_metric_larger_is_better: True

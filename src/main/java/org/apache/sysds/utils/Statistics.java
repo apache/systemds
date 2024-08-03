@@ -434,6 +434,12 @@ public class Statistics
 		addLineagePaths(li, new ArrayList<>(), new ArrayList<>(), tmp);
 	}
 
+	/**
+	 * Count the number of paths from the current lineage item with a minimum size
+	 * @param li the root item
+	 * @param size the minimum size of the path
+	 * @return
+	 */
 	private static int countLineageLinesOfSize(LineageItem li, int size) {
 		if (li.getInputs() == null)
 			return 0;
@@ -448,6 +454,15 @@ public class Statistics
 		return lines;
 	}
 
+	/**
+	 * Adds the corresponding sequences of instructions to the n-grams.
+	 * <p></p>
+	 * Example: 2-grams from (a*b + a/c) will add [(*,+), (/,+)]
+	 * @param li
+	 * @param currentPath
+	 * @param indexes
+	 * @param builders
+	 */
 	private static void addLineagePaths(LineageItem li, ArrayList<LineageItem> currentPath, ArrayList<Integer> indexes, NGramBuilder<String, NGramStats>[] builders) {
 		if (li.getType() == LineageItem.LineageItemType.Literal)
 			return; // Skip literals as they are no real instruction
@@ -465,10 +480,14 @@ public class Statistics
 		}
 
 		if (matchingBuilder != null) {
+			// If we have an n-gram builder with n = currentPath.size(), then we want to insert the entry
+			// As we cannot incrementally add the instructions (we have a DAG rather than a sequence of instructions)
+			// we need to clear the current n-grams
 			clearNGramRecording();
+			// We then record a new n-gram with all the LineageItems of the current lineage path
 			matchingBuilder.append(LineageItemUtils.explainLineageAsInstruction(currentPath.get(currentPath.size()-1)) + (indexes.size() > 0 ? ("[" + indexes.get(currentPath.size()-2) + "]") : ""), new NGramStats(1, currentPath.get(currentPath.size()-1).getExecNanos(), 0));
 			for (int i = currentPath.size()-2; i >= 0; i--) {
-				matchingBuilder.append(LineageItemUtils.explainLineageAsInstruction(currentPath.get(i)) + (i > 0 ? ("[" + indexes.get(i-1) + "]") : ""), new NGramStats(1, currentPath.get(i).getExecNanos()/(countLineageLinesOfSize(currentPath.get(i), currentPath.size()-1-i)), 0));
+				matchingBuilder.append(LineageItemUtils.explainLineageAsInstruction(currentPath.get(i)) + (i > 0 ? ("[" + indexes.get(i-1) + "]") : ""), new NGramStats(1, currentPath.get(i).getExecNanos(), 0));
 			}
 		}
 

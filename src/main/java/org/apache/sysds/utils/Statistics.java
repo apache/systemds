@@ -526,10 +526,10 @@ public class Statistics
 			clearNGramRecording();
 			// We then record a new n-gram with all the LineageItems of the current lineage path
 			Entry<LineageItem, LineageNGramExtension> currentEntry = currentPath.get(currentPath.size()-1);
-			matchingBuilder.append(LineageItemUtils.explainLineageAsInstruction(currentEntry.getKey(), currentEntry.getValue()) + (indexes.size() > 0 ? ("[" + indexes.get(currentPath.size()-2) + "]") : ""), new NGramStats(1, currentEntry.getValue().getExecNanos(), 0));
+			matchingBuilder.append(LineageItemUtils.explainLineageAsInstruction(currentEntry.getKey(), currentEntry.getValue()) + (indexes.size() > 0 ? ("[" + indexes.get(currentPath.size()-2) + "]") : ""), new NGramStats(1, currentEntry.getValue() != null ? currentEntry.getValue().getExecNanos() : 0, 0));
 			for (int i = currentPath.size()-2; i >= 0; i--) {
 				currentEntry = currentPath.get(i);
-				matchingBuilder.append(LineageItemUtils.explainLineageAsInstruction(currentEntry.getKey(), currentEntry.getValue()) + (i > 0 ? ("[" + indexes.get(i-1) + "]") : ""), new NGramStats(1, currentEntry.getValue().getExecNanos(), 0));
+				matchingBuilder.append(LineageItemUtils.explainLineageAsInstruction(currentEntry.getKey(), currentEntry.getValue()) + (i > 0 ? ("[" + indexes.get(i-1) + "]") : ""), new NGramStats(1, currentEntry.getValue() != null ? currentEntry.getValue().getExecNanos() : 0, 0));
 			}
 		}
 

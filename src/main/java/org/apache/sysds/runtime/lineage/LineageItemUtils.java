@@ -133,7 +133,7 @@ public class LineageItemUtils {
 				return splt[1] + "·" + splt[2];
 			return "·";
 		}
-		return ext.getDataType() + "·" + ext.getValueType();
+		return ext != null ? ext.getDataType() + "·" + ext.getValueType() : "··";
 	}
 
 	public static String explainLineageWithTypes(LineageItem li, Statistics.LineageNGramExtension ext) {
@@ -143,7 +143,7 @@ public class LineageItemUtils {
 				return "L·" + splt[1] + "·" + splt[2];
 			return "L··";
 		}
-		return li.getOpcode() + "·" + ext.getDataType() + "·" + ext.getValueType();
+		return li.getOpcode() + "·" + (ext != null ? ext.getDataType() + "·" + ext.getValueType() : "·");
 	}
 
 	public static String explainLineageAsInstruction(LineageItem li, Statistics.LineageNGramExtension ext) {

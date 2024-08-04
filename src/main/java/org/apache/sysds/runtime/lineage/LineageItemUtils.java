@@ -63,6 +63,7 @@ import org.apache.sysds.runtime.instructions.cp.VariableCPInstruction;
 import org.apache.sysds.runtime.instructions.fed.ReorgFEDInstruction.DiagMatrix;
 import org.apache.sysds.runtime.instructions.fed.ReorgFEDInstruction.Rdiag;
 import org.apache.sysds.runtime.util.HDFSTool;
+import org.apache.sysds.utils.Statistics;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -125,28 +126,28 @@ public class LineageItemUtils {
 		return FUNCTION_DEBUGGING;
 	}
 
-	public static String explainLineageType(LineageItem li) {
+	public static String explainLineageType(LineageItem li, Statistics.LineageNGramExtension ext) {
 		if (li.getType() == LineageItemType.Literal) {
 			String[] splt = li.getData().split("·");
 			if (splt.length >= 3)
 				return splt[1] + "·" + splt[2];
 			return "·";
 		}
-		return li.getDataType() + "·" + li.getValueType();
+		return ext.getDataType() + "·" + ext.getValueType();
 	}
 
-	public static String explainLineageWithTypes(LineageItem li) {
+	public static String explainLineageWithTypes(LineageItem li, Statistics.LineageNGramExtension ext) {
 		if (li.getType() == LineageItemType.Literal) {
 			String[] splt = li.getData().split("·");
 			if (splt.length >= 3)
 				return "L·" + splt[1] + "·" + splt[2];
 			return "L··";
 		}
-		return li.getOpcode() + "·" + li.getDataType() + "·" + li.getValueType();
+		return li.getOpcode() + "·" + ext.getDataType() + "·" + ext.getValueType();
 	}
 
-	public static String explainLineageAsInstruction(LineageItem li) {
-		StringBuilder sb = new StringBuilder(explainLineageWithTypes(li));
+	public static String explainLineageAsInstruction(LineageItem li, Statistics.LineageNGramExtension ext) {
+		StringBuilder sb = new StringBuilder(explainLineageWithTypes(li, ext));
 		sb.append("(");
 		if (li.getInputs() != null) {
 			int ctr = 0;
@@ -154,9 +155,9 @@ public class LineageItemUtils {
 				if (ctr++ != 0)
 					sb.append(" ° ");
 				if (liIn.getType() == LineageItemType.Literal)
-					sb.append("L_" + explainLineageType(liIn));
+					sb.append("L_" + explainLineageType(liIn, Statistics.getExtendedLineage(li)));
 				else
-					sb.append(explainLineageType(liIn));
+					sb.append(explainLineageType(liIn, Statistics.getExtendedLineage(li)));
 			}
 		}
 		sb.append(")");

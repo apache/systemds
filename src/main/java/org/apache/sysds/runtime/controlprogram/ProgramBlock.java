@@ -267,18 +267,21 @@ public abstract class ProgramBlock implements ParseInfo {
 				}
 
 				if (DMLScript.STATISTICS_NGRAMS) {
+					final long nanoTime = System.nanoTime() - t0;
 					if (DMLScript.STATISTICS_NGRAMS_USE_LINEAGE) {
 						Statistics.getCurrentLineageItem().ifPresent(li -> {
 							Data data = ec.getVariable(li.getKey());
+							Statistics.LineageNGramExtension ext = new Statistics.LineageNGramExtension();
 							if (data != null) {
-								li.getValue().setDataType(data.getDataType().toString());
-								li.getValue().setValueType(data.getValueType().toString());
+								ext.setDataType(data.getDataType().toString());
+								ext.setValueType(data.getValueType().toString());
 							}
-							li.getValue().setExecNanos(System.nanoTime() - t0);
+							ext.setExecNanos(nanoTime);
+							Statistics.extendLineageItem(li.getValue(), ext);
 							Statistics.maintainNGramsFromLineage(li.getValue());
 						});
 					} else
-						Statistics.maintainNGrams(tmp.getExtendedOpcode(), System.nanoTime() - t0);
+						Statistics.maintainNGrams(tmp.getExtendedOpcode(), nanoTime);
 				}
 			}
 

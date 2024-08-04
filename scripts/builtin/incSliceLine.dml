@@ -186,28 +186,18 @@ m_incSliceLine = function(
   
   # conversion of prevLattice from int matrix to bin matrix 
   prevLattice2 = prevLattice;
+  sameSizeOffsets = TRUE;
+  sameOffsets = TRUE;
+
+
   if( nrow(prevLattice) > 0 ) { 
-    # convert prevLattice to binary matrix with offsets from previous run
-    prevLatticeBin = integerMatrixToBinaryMatrix(prevLattice, 52, nColPrevOneHotX);
-    
     if(nrow(prevFoffb) == 0 | nrow(prevFoffe) == 0){
       print("prevFoffb and prevFoffe are not set, but are necessary.");
-    }
-    if(nrow(prevFoffb) == nrow(foffb) & nrow(prevFoffe) == nrow(foffe)){
-      # if the previous offsets are not the same as the current offsets, the lattice has to be decoded and encoded again
-      if (!((sum(prevFoffb == foffb) == (ncol(foffb) * nrow(foffb))) & 
-        (sum(prevFoffe == foffe) == (ncol(foffe) * nrow(foffe))) )){
-
-        prevLatticeDec = decodeOneHot(prevLatticeBin, prevFoffb, prevFoffe);
-        prevLattice2 = oneHotEncodeUsingOffsets(prevLatticeDec, foffb, foffe);
-      } else {
-        # otherwise the previous lattice can be used as it is
-        prevLattice2 = prevLatticeBin;
-      } 
     } else {
-      # if the previous offsets are not the same as the current offsets, the lattice has to be decoded and encoded again
-        prevLatticeDec = decodeOneHot(prevLatticeBin, prevFoffb, prevFoffe);
-        prevLattice2 = oneHotEncodeUsingOffsets(prevLatticeDec, foffb, foffe);
+      sameSizeOffsets = (nrow(prevFoffb) == nrow(foffb) & nrow(prevFoffe) == nrow(foffe))
+      sameOffsets = (!((sum(prevFoffb == foffb) == (ncol(foffb) * nrow(foffb))) & (sum(prevFoffe == foffe) == (ncol(foffe) * nrow(foffe))) ));
+
+      prevLattice2 = preparePrevLattice(prevLattice, nColPrevOneHotX, prevFoffb, prevFoffe, foffb, foffe, sameSizeOffsets, sameOffsets);
     }
   }
 
@@ -777,4 +767,31 @@ pruneUnchangedSlices = function(Matrix[Double] S, Matrix[Double] S2, Matrix[Doub
       }
     }
   }
+}
+
+# this function first converts the prevLattice to binary matrix with offsets from previous run
+# then it checks if the previous offsets are the same as the current offsets
+# if they are the same, the previous lattice can be used as it is
+# if they are not the same, the lattice has to be decoded and encoded again with the current offsets
+preparePrevLattice = function(Matrix[Double] prevLattice, Integer nColPrevOneHotX, Matrix[Double] prevFoffb, Matrix[Double] prevFoffe, Matrix[Double] foffb, Matrix[Double] foffe, Boolean sameSizeOffsets, Boolean sameOffsets)
+  return(Matrix[Double] prevLattice2)
+{
+  # convert prevLattice to binary matrix with offsets from previous run
+    prevLatticeBin = integerMatrixToBinaryMatrix(prevLattice, 52, nColPrevOneHotX);
+    
+    if(sameSizeOffsets){
+      # if the previous offsets are not the same as the current offsets, the lattice has to be decoded and encoded again
+      if (sameOffsets){
+
+        prevLatticeDec = decodeOneHot(prevLatticeBin, prevFoffb, prevFoffe);
+        prevLattice2 = oneHotEncodeUsingOffsets(prevLatticeDec, foffb, foffe);
+      } else {
+        # otherwise the previous lattice can be used as it is
+        prevLattice2 = prevLatticeBin;
+      } 
+    } else {
+      # if the previous offsets are not the same as the current offsets, the lattice has to be decoded and encoded again
+        prevLatticeDec = decodeOneHot(prevLatticeBin, prevFoffb, prevFoffe);
+        prevLattice2 = oneHotEncodeUsingOffsets(prevLatticeDec, foffb, foffe);
+    }
 }

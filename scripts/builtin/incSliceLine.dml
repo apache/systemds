@@ -64,17 +64,19 @@ m_incSliceLine = function(
     Matrix[Double] newE, Int k = 4, Int maxL = 0, Int minSup = 32, Double alpha = 0.5, Boolean tpEval = TRUE,
     Int tpBlksz = 16, Boolean selFeat = FALSE, Boolean verbose = FALSE, list[unknown] params = list(), 
     Matrix[Double] prevFoffb = matrix(0,0,0), Matrix[Double] prevFoffe = matrix(0,0,0), Integer nColPrevOneHotX = 0,
-    Matrix[Double] prevLattice = matrix(0, 0, 0), list[unknown] prevRL = list(), Matrix[Double] prevTK = matrix(0,0,0),
+    list[unknown] prevLattice = list(), list[unknown] prevRL = list(), Matrix[Double] prevTK = matrix(0,0,0),
     Matrix[Double] prevTKC = matrix(0,0,0))
-  return(Matrix[Double] TK, Matrix[Double] TKC, Matrix[Double] D, Matrix[Double] L,
-    list[unknown] RL, Matrix[Double] Xout, Matrix[Double] eOut, Matrix[Double] foffb, Matrix[Double] foffe, Integer nColOneHotX, list[unknown] params)
+  return(Matrix[Double] TK, Matrix[Double] TKC, Matrix[Double] D,
+    list[unknown] RL, Matrix[Double] Xout, Matrix[Double] eOut, Matrix[Double] foffb, Matrix[Double] foffe, Integer nColOneHotX, list[unknown] params, list[unknown] L)
 {
   # TODO convert input/output of previous enumerated slices to lists
   # for simple collection and processing
-  
-  if(nrow(prevLattice) > 0 & length(params) == 0){
-      [TK, TKC, D, L, RL, Xout, eOut, params] = throwNoParamsError();
+  if(length(prevLattice) > 0 & (length(prevRL) == 0 | length(params) == 0 | nrow(prevFoffb) == 0 | nrow(prevFoffe) == 0 | 
+      nColPrevOneHotX == 0 | nrow(oldX) == 0 | nrow(oldE) == 0))
+  {
+      [TK, TKC, D, L, RL, Xout, eOut, foffb, foffe, nColOneHotX, params] = throwNoParamsError();
   } else {
+
   t1 = time();
   # store params for next run
   [params, k, maxL, minSup, alpha, tpEval, tpBlksz, selFeat] = storeParams(k, maxL, minSup, alpha, tpEval, tpBlksz, selFeat, params);
@@ -109,6 +111,10 @@ m_incSliceLine = function(
 
   # store ncol of one hot encoded matrix for next run (needed for conversion of int matrix to bin matrix)
   nColOneHotX = ncol(X2);
+  
+  #inititalize booleans
+  sameSizeOffsets = TRUE;
+  sameOffsets = TRUE;
 
   # combining of addedX and oldX
   if(nrow(oldX) > 0){
@@ -184,32 +190,6 @@ m_incSliceLine = function(
     prevTK2 = prevTK;
   }
   
-  # conversion of prevLattice from int matrix to bin matrix 
-  prevLattice2 = prevLattice;
-  sameSizeOffsets = TRUE;
-  sameOffsets = TRUE;
-
-
-  if( nrow(prevLattice) > 0 ) { 
-    if(nrow(prevFoffb) == 0 | nrow(prevFoffe) == 0){
-      print("prevFoffb and prevFoffe are not set, but are necessary.");
-    } else {
-      sameSizeOffsets = (nrow(prevFoffb) == nrow(foffb) & nrow(prevFoffe) == nrow(foffe))
-      sameOffsets = (!((sum(prevFoffb == foffb) == (ncol(foffb) * nrow(foffb))) & (sum(prevFoffe == foffe) == (ncol(foffe) * nrow(foffe))) ));
-
-      prevLattice2 = preparePrevLattice(prevLattice, nColPrevOneHotX, prevFoffb, prevFoffe, foffb, foffe, sameSizeOffsets, sameOffsets);
-    }
-  }
-
-  # compute first indices for each level for prevLattice
-  levelIndices = list();
-  levelIndices = append(levelIndices, 1);
-  if(length(prevRL) > 1) {
-    for( i in 1: length(prevRL)) {
-      levelIndices = append(levelIndices, as.scalar(levelIndices[i]) + nrow(as.matrix(prevRL[i])));
-    }
-  }
-  
   # initialize statistics and basic slices
   n2 = ncol(X2);     # one-hot encoded features
   eAvgOld = sum(oldE) / nrow(oldX); # average error
@@ -222,9 +202,11 @@ m_incSliceLine = function(
 
   # initialize Lattice and Statistics
   RL = list();
+  L = list();
   #L1 = matrix(0,0,ncol(X2));
   #L1 = rbind(L1, S);
-  L = binaryMatrixToIntegerMatrix(S, 52)
+  L1 = binaryMatrixToIntegerMatrix(S, 52)
+  L = append(L, L1);
   RL = append(RL,R);
 
   # initialize top-k
@@ -246,9 +228,6 @@ m_incSliceLine = function(
   if( selFeat ){
     X2 = removeEmpty(target=X2, margin="cols", select=t(selCols));
     addedX2 = removeEmpty(target=addedX2, margin="cols", select=t(selCols));
-    if(nrow(prevLattice2)>0) {
-      prevLattice2 = removeEmpty(target=prevLattice2, margin="cols", select=t(selCols));
-    }
   }
 
   # lattice enumeration w/ size/error pruning, one iteration per level
@@ -264,12 +243,23 @@ m_incSliceLine = function(
     [S, minsc] = getPairedCandidates(S, minsc, R, TKC, level, eAvg, minSup, alpha, n2, foffb, foffe);
     S2 = S;
 
-    # update lattice
-    #L1 = rbind(L1, S);
     Lrep = binaryMatrixToIntegerMatrix(S, 52);
-    L = rbind(L, Lrep);
+    L = append(L, Lrep);
+
+    prevLattice2 = matrix(0,0,0);
+    if( length(prevLattice) >= level ) { 
+      latAtLevel = as.matrix(prevLattice[level]);
+      if(nrow(latAtLevel) > 0){
+        sameSizeOffsets = (nrow(prevFoffb) == nrow(foffb) & nrow(prevFoffe) == nrow(foffe))
+        sameOffsets = (!((sum(prevFoffb == foffb) == (ncol(foffb) * nrow(foffb))) & (sum(prevFoffe == foffe) == (ncol(foffe) * nrow(foffe))) ));
+        prevLattice2 = preparePrevLattice(latAtLevel, nColPrevOneHotX, prevFoffb, prevFoffe, foffb, foffe, sameSizeOffsets, sameOffsets);
+      }
+    }
 
     if(selFeat){
+      if(length(prevLattice2)>0) {
+        prevLattice2 = removeEmpty(target=prevLattice2, margin="cols", select=t(selCols));
+      }
       S2 = removeEmpty(target=S, margin="cols", select=t(selCols));
     }
 
@@ -279,7 +269,7 @@ m_incSliceLine = function(
     
     # prune unchanged slices with slice size < minSup
     if(level <= length(prevRL)){
-      [S, S2] = pruneUnchangedSlices(S, S2,  prevLattice2, prevRL, addedX2, minSup, verbose, level, levelIndices);
+      [S, S2] = pruneUnchangedSlices(S, S2,  prevLattice2, prevRL, addedX2, minSup, verbose, level);
     }
 
     if(verbose) {
@@ -295,9 +285,8 @@ m_incSliceLine = function(
           beg = (i-1)*tpBlksz + 1;
           end = min(i*tpBlksz, nrow(R));
           R[beg:end,] = evalSlice(X2, totalE, eAvg, t(S2[beg:end,]), level, alpha);
-
         }
-
+        
         # update output statistics
         RL = append(RL,R);
        }
@@ -615,18 +604,21 @@ oneHotEncodeUsingOffsets = function(Matrix[Double] A, Matrix[Double] foffb, Matr
 # throws an error if no params are provided for incremental updates. 
 # in case only individual parameters are entered they will be overwritten to ensure consistency
 throwNoParamsError = function() 
-  return(Matrix[Double] TK, Matrix[Double] TKC, Matrix[Double] D, Matrix[Double] L,
-    list[unknown] RL, Matrix[Double] Xout, Matrix[Double] eOut, list[unknown] params) {
-  print("incSliceLine: Error: prevLattice provided but no params for incremental update. 
-        Output params list from previous run is needed as input to ensure same paramters are used for incremental update.
-        Individual params inputs will be overwritten to ensure consistency.");
+  return(Matrix[Double] TK, Matrix[Double] TKC, Matrix[Double] D, list[unknown] L,
+    list[unknown] RL, Matrix[Double] Xout, Matrix[Double] eOut, Matrix[Double] foffb, Matrix[Double] foffe, Integer nColOneHotX,list[unknown] params) {
+  print("incSliceLine: wrong or no parameters provided for incremental update. Please provide all parameters.");
+  print(" -- necessary parameters: params, prevLattice, prevRL, prevFoffb, prevFoffe, nColPrevOneHotX, prevTK, prevTKC, oldX, oldE. ");
+  print(" -- see documentation for more details.");
   TK = matrix(0,0,0);
   TKC = matrix(0,0,0);
   D = matrix(0,0,0);
-  L = matrix(0,0,0);
+  L = list();
   RL = list();
   Xout = matrix(0,0,0);
   eOut = matrix(0,0,0);
+  foffb = matrix(0,0,0);
+  foffe = matrix(0,0,0);
+  nColOneHotX = 0;
   params = list();
 }
 
@@ -735,13 +727,13 @@ return (Boolean res)
     res = sum(a == b) == (ncol(b) * nrow(b))
 }
 
-pruneUnchangedSlices = function(Matrix[Double] S, Matrix[Double] S2, Matrix[Double] prevLattice2, list[unknown] prevRL, Matrix[Double] addedX2, Int minSup, Boolean verbose, Integer level, list[unknown] levelIndices)
+pruneUnchangedSlices = function(Matrix[Double] S, Matrix[Double] S2, Matrix[Double] prevLattice2, list[unknown] prevRL, Matrix[Double] addedX2, Int minSup, Boolean verbose, Integer level)
   return(Matrix[Double] S, Matrix[Double] S2)
 {
   unchangedS = matrix(0,0,ncol(prevLattice2));
   unchangedR = matrix(0,0,4);
   prevStatsAtLevel =  as.matrix(prevRL[level])
-  prevLatAtLevel = prevLattice2[as.scalar(levelIndices[level]) : as.scalar(levelIndices[level+1]) - 1,]
+  prevLatAtLevel = prevLattice2;
   [unchangedS, unchangedR] = determineUnchangedSlices( prevStatsAtLevel, prevLatAtLevel, addedX2, level);
 
   if (nrow(unchangedS) > 0) {

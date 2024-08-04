@@ -373,7 +373,7 @@ createAndScoreBasicSlices = function(Matrix[Double] X2, Matrix[Double] addedX2,
   # only add "& addedCCnts != 0" if the eAvg from the new tuples is smaller than eAvg on prev. dataset.
   # otherwise scores of unchanged slices could shift into top k.
   if( eAvgOld > eAvgNew & eAvgNew != 0 & nrow(TKCCnts) >0) {
-      # addedX2 is oneHotEncoded with the same offsets as oldX2 and newX2. Thus unchanged basic slices will have a colSum of 0.
+    # addedX2 is oneHotEncoded with the same offsets as oldX2 and newX2. Thus unchanged basic slices will have a colSum of 0.
     # compute vector of colSums for addedX2 indicating which slices are unchanged (0 value)
     addedCCnts = t(colSums(addedX2));
     addedOrTK = (addedCCnts > 0) | (TKCCnts > 0);

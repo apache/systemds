@@ -124,6 +124,8 @@ m_slicefinder = function(Matrix[Double] X, Matrix[Double] e, Int k = 4,
       # maintain top-k after evaluation
       [TK, TKC] = maintainTopK(S, R, TK, TKC, k, minSup);
 
+      print("TKC: "+toString(TKC));
+
       if(verbose) {
         [maxsc, minsc] = analyzeTopK(TKC);
         valid = as.integer(sum(R[,2]>0 & R[,4]>=minSup));

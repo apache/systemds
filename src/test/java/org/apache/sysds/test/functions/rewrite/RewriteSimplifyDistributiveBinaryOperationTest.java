@@ -123,5 +123,6 @@ public class RewriteSimplifyDistributiveBinaryOperationTest extends AutomatedTes
 		finally {
 			OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION = oldFlag1;
 		}
+
 	}
 }

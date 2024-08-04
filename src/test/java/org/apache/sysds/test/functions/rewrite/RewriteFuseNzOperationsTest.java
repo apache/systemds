@@ -30,12 +30,12 @@ import org.junit.Test;
 import java.util.HashMap;
 
 public class RewriteFuseNzOperationsTest extends AutomatedTestBase {
-	private static final String TEST_NAME = "RewriteFuseNzOperation"; //pattern: X - (s * ppred(X,0,!=)) -> X -nz s
+	private static final String TEST_NAME = "RewriteFuseNzOperation";
 	private static final String TEST_DIR = "functions/rewrite/";
 	private static final String TEST_CLASS_DIR = TEST_DIR + RewriteFuseNzOperationsTest.class.getSimpleName() + "/";
 
-	private static final int rows = 5;
-	private static final int cols = 5;
+	private static final int rows = 300;
+	private static final int cols = 300;
 	private static final double eps = Math.pow(10, -10);
 
 	@Override
@@ -50,7 +50,7 @@ public class RewriteFuseNzOperationsTest extends AutomatedTestBase {
 	}
 
 	@Test
-	public void testFuseMinusNzBinaryOperationRewrite() {
+	public void testFuseMinusNzBinaryOperationRewrite() {	//pattern: X - (s * (X != 0)) -> X -nz s
 		testRewriteFuseNzOperationsTest(1, true);
 	}
 
@@ -60,7 +60,7 @@ public class RewriteFuseNzOperationsTest extends AutomatedTestBase {
 	}
 
 	@Test
-	public void testFuseLogNzUnaryOperationRewrite() {
+	public void testFuseLogNzUnaryOperationRewrite() {		//pattern: (X != 0) * log(X) -> log_nz(X)
 		testRewriteFuseNzOperationsTest(2, true);
 	}
 
@@ -70,7 +70,7 @@ public class RewriteFuseNzOperationsTest extends AutomatedTestBase {
 	}
 
 	@Test
-	public void testFuseLogNzBinaryOperationRewrite() {
+	public void testFuseLogNzBinaryOperationRewrite() {		//pattern: (X != 0) * log(X,0.5) -> log_nz(X,0.5)
 		testRewriteFuseNzOperationsTest(3, true);
 	}
 

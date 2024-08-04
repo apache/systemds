@@ -24,15 +24,16 @@ import org.apache.sysds.runtime.matrix.data.MatrixValue;
 import org.apache.sysds.test.AutomatedTestBase;
 import org.apache.sysds.test.TestConfiguration;
 import org.apache.sysds.test.TestUtils;
-import org.junit.Assert;
 import org.junit.Test;
 
 import java.util.HashMap;
 
-public class RewriteFuseNzOperationsTest extends AutomatedTestBase {
-	private static final String TEST_NAME = "RewriteFuseNzOperation";
+public class RewriteSimplifyDistributiveBinaryOperationTest extends AutomatedTestBase {
+
+	private static final String TEST_NAME = "RewriteSimplifyDistributiveBinaryOperation";
 	private static final String TEST_DIR = "functions/rewrite/";
-	private static final String TEST_CLASS_DIR = TEST_DIR + RewriteFuseNzOperationsTest.class.getSimpleName() + "/";
+	private static final String TEST_CLASS_DIR =
+		TEST_DIR + RewriteSimplifyDistributiveBinaryOperationTest.class.getSimpleName() + "/";
 
 	private static final int rows = 300;
 	private static final int cols = 300;
@@ -45,45 +46,54 @@ public class RewriteFuseNzOperationsTest extends AutomatedTestBase {
 	}
 
 	@Test
-	public void testFuseMinusNzBinaryOperationNoRewrite() {
-		testRewriteFuseNzOperation(1, false);
+	public void testDistrBinaryOpMinusMultNoRewrite() {
+		testSimplifyDistributiveBinaryOperation(1, false);
 	}
 
 	@Test
-	public void testFuseMinusNzBinaryOperationRewrite() {	//pattern: X - (s * (X != 0)) -> X -nz s
-		testRewriteFuseNzOperation(1, true);
+	public void testDistrBinaryOpMinusMultRewrite() {
+		testSimplifyDistributiveBinaryOperation(1, true);    //pattern: (X-Y*X) -> (1-Y)*X
 	}
 
 	@Test
-	public void testFuseLogNzUnaryOperationNoRewrite() {
-		testRewriteFuseNzOperation(2, false);
+	public void testDistrBinaryOpMultMinusNoRewrite() {
+		testSimplifyDistributiveBinaryOperation(2, false);
 	}
 
 	@Test
-	public void testFuseLogNzUnaryOperationRewrite() {		//pattern: (X != 0) * log(X) -> log_nz(X)
-		testRewriteFuseNzOperation(2, true);
+	public void testDistrBinaryOpMultMinusRewrite() {
+		testSimplifyDistributiveBinaryOperation(2, true);    //pattern: (Y*X-X) -> (Y-1)*X
 	}
 
 	@Test
-	public void testFuseLogNzBinaryOperationNoRewrite() {
-		testRewriteFuseNzOperation(3, false);
+	public void testDistrBinaryOpAddMultNoRewrite() {
+		testSimplifyDistributiveBinaryOperation(3, false);
 	}
 
 	@Test
-	public void testFuseLogNzBinaryOperationRewrite() {		//pattern: (X != 0) * log(X,0.5) -> log_nz(X,0.5)
-		testRewriteFuseNzOperation(3, true);
+	public void testDistrBinaryOpAddMultRewrite() {
+		testSimplifyDistributiveBinaryOperation(3, true);    //pattern: (X+Y*X) -> (1+Y)*X
 	}
 
-	private void testRewriteFuseNzOperation(int ID, boolean rewrites) {
+	@Test
+	public void testDistrBinaryOpMultAddNoRewrite() {
+		testSimplifyDistributiveBinaryOperation(4, false);
+	}
+
+	@Test
+	public void testDistrBinaryOpMultAddRewrite() {
+		testSimplifyDistributiveBinaryOperation(4, true);    //pattern: (Y*X+X) -> (Y+1)*X
+	}
+
+	private void testSimplifyDistributiveBinaryOperation(int ID, boolean rewrites) {
 		boolean oldFlag1 = OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION;
-		boolean oldFlag2 = OptimizerUtils.ALLOW_OPERATOR_FUSION;
 		try {
 			TestConfiguration config = getTestConfiguration(TEST_NAME);
 			loadTestConfiguration(config);
 
 			String HOME = SCRIPT_DIR + TEST_DIR;
 			fullDMLScriptName = HOME + TEST_NAME + ".dml";
-			programArgs = new String[] {"-stats", "-args", input("X"), String.valueOf(ID), output("R")};
+			programArgs = new String[] {"-stats", "-args", input("X"), input("Y"), String.valueOf(ID), output("R")};
 			fullRScriptName = HOME + TEST_NAME + ".R";
 			rCmd = getRCmd(inputDir(), String.valueOf(ID), expectedDir());
 
@@ -92,7 +102,9 @@ public class RewriteFuseNzOperationsTest extends AutomatedTestBase {
 
 			//create dense matrix so that rewrites are possible
 			double[][] X = getRandomMatrix(rows, cols, -1, 1, 0.60d, 3);
+			double[][] Y = getRandomMatrix(rows, cols, -1, 1, 0.60d, 5);
 			writeInputMatrixWithMTD("X", X, true);
+			writeInputMatrixWithMTD("Y", Y, true);
 
 			runTest(true, false, null, -1);
 			runRScript(true);
@@ -102,16 +114,14 @@ public class RewriteFuseNzOperationsTest extends AutomatedTestBase {
 			HashMap<MatrixValue.CellIndex, Double> rfile = readRMatrixFromExpectedDir("R");
 			TestUtils.compareMatrices(dmlfile, rfile, eps, "Stat-DML", "Stat-R");
 
-			if(rewrites)
-				Assert.assertTrue(heavyHittersContainsSubString("nz"));
-			else
-				Assert.assertFalse(heavyHittersContainsSubString("nz"));
+			/**
+			 * We dont add any further assertions because the heavy hitters are identical for both rewritten
+			 * and non-rewritten tests. However, we manually checked that the rewrites are indeed applied.
+			 */
 
 		}
 		finally {
 			OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION = oldFlag1;
-			OptimizerUtils.ALLOW_OPERATOR_FUSION = oldFlag2;
 		}
-
 	}
 }

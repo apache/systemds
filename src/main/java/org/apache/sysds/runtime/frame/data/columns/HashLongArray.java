@@ -349,8 +349,8 @@ public class HashLongArray extends Array<Object> implements IHashArray {
 		fill(parseHashLong(value));
 	}
 
-	public void fill(Long value) {
-		Arrays.fill(_data, value != null ? value : 0L);
+	private void fill(long value) {
+		Arrays.fill(_data, value);
 	}
 
 	@Override
@@ -365,6 +365,8 @@ public class HashLongArray extends Array<Object> implements IHashArray {
 			return parseHashLong((String) s);
 		else if(s instanceof Long)
 			return (Long) s;
+		else if(s instanceof Integer)
+			return (Integer) s;
 		else
 			throw new NotImplementedException("not supported" + s);
 	}

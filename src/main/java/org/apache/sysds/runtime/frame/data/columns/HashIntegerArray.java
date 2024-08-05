@@ -135,10 +135,10 @@ public class HashIntegerArray extends Array<Object> implements IHashArray {
 		}
 		else {
 			ValueType vt = value.getValueType();
-			for(int i = rl; i <= ru; i++){
+			for(int i = rl; i <= ru; i++) {
 				Object v = value.get(i);
 				if(v != null)
-					_data[i] = UtilFunctions.objectToInteger(vt,v);
+					_data[i] = UtilFunctions.objectToInteger(vt, v);
 			}
 		}
 	}
@@ -349,8 +349,8 @@ public class HashIntegerArray extends Array<Object> implements IHashArray {
 		fill(parseHashInt(value));
 	}
 
-	public void fill(Integer value) {
-		Arrays.fill(_data, value != null ? value : 0);
+	private void fill(int value) {
+		Arrays.fill(_data, value);
 	}
 
 	@Override
@@ -364,7 +364,7 @@ public class HashIntegerArray extends Array<Object> implements IHashArray {
 		else if(s instanceof String)
 			return parseHashInt((String) s);
 		else if(s instanceof Long)
-			return (Integer) s;
+			return ((Long) s).intValue();
 		else
 			throw new NotImplementedException("not supported" + s);
 	}

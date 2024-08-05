@@ -25,6 +25,7 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
+import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.spy;
 
@@ -44,6 +45,7 @@ import org.apache.sysds.runtime.frame.data.FrameBlock;
 import org.apache.sysds.runtime.frame.data.columns.ABooleanArray;
 import org.apache.sysds.runtime.frame.data.columns.Array;
 import org.apache.sysds.runtime.frame.data.columns.ArrayFactory;
+import org.apache.sysds.runtime.frame.data.columns.ArrayFactory.FrameArrayType;
 import org.apache.sysds.runtime.frame.data.columns.BitSetArray;
 import org.apache.sysds.runtime.frame.data.columns.BooleanArray;
 import org.apache.sysds.runtime.frame.data.columns.CharArray;
@@ -1775,18 +1777,111 @@ public class CustomArrayTests {
 		assertEquals(5, dict.size());
 
 		DDCArray<?> d2 = d.nullDict();
-		assertNull( d2.getDict());
+		assertNull(d2.getDict());
 
 		DDCArray<?> d3 = d2.setDict(dict);
 		assertEquals(dict, d3.getDict());
 
 		/// however different objects!
-
 		assertFalse(d3 == d2);
 		assertFalse(d == d2);
 
 		assertEquals(d3.getMap(), d.getMap());
 		assertEquals(d3.getMap(), d2.getMap());
 
+	}
+
+	@Test(expected = Exception.class)
+	public void parseHashLong1() {
+		HashLongArray.parseHashLong(new Object());
+	}
+
+	@Test(expected = Exception.class)
+	public void parseHashInt1() {
+		HashIntegerArray.parseHashInt(new Object());
+	}
+
+	@Test
+	public void parseHashIntLong() {
+		assertEquals(1, HashIntegerArray.parseHashInt(Long.valueOf(1)));
+	}
+
+	@Test
+	public void parseHashLongParseInt() {
+		assertEquals(1, HashLongArray.parseHashLong(Integer.valueOf(1)));
+	}
+
+	@Test
+	public void parseHashLongParseLong() {
+		assertEquals(1, HashLongArray.parseHashLong(Long.valueOf(1)));
+	}
+
+	@Test
+	public void setSubRange() {
+		Array<Boolean> b = ArrayFactory.create(new boolean[] {true, true, false, false, false});
+		Array<Boolean> s = ArrayFactory.create(new boolean[] {true, true});
+		Array<Boolean> bs = spy(s);
+		doThrow(new RuntimeException()).when(bs).get();
+		b.set(2, 3, bs, 0);
+		Array<Boolean> expected = ArrayFactory.create(new boolean[] {true, true, true, true, false});
+		FrameArrayTests.compare(expected, b);
+	}
+
+	@Test
+	@SuppressWarnings("unchecked")
+	public void setSubRangeBitSet() {
+		// two equivalent inputs
+		Array<Boolean> b = (Array<Boolean>) FrameArrayTests.create(FrameArrayType.BITSET, 550, 231);
+		Array<Boolean> exp = (Array<Boolean>) FrameArrayTests.create(FrameArrayType.BITSET, 550, 231); 
+
+		Array<Boolean> s = (Array<Boolean>) FrameArrayTests.create(FrameArrayType.BITSET, 300, 33);
+
+		// make one fail
+		Array<Boolean> bs = spy(s);
+		doThrow(new RuntimeException()).when(bs).slice(anyInt(), anyInt());
+
+		// call same method
+		b.set(250, 550, bs, 0);
+		exp.set(250, 550, s, 0);
+		
+		LOG.error("\n" + exp + "\n" + b);
+		FrameArrayTests.compare(exp, b);
+	}
+
+	@Test
+	@SuppressWarnings("unchecked")
+	public void testContainsNullOptional() {
+		Array<Integer> a = (Array<Integer>) ArrayFactory.allocateOptional(ValueType.INT32, 4);
+
+		assertTrue(a.containsNull());
+		a.set(0, 10);
+		assertTrue(a.containsNull());
+		a.set(1, 10);
+		assertTrue(a.containsNull());
+		a.set(2, 10);
+		assertTrue(a.containsNull());
+		a.set(3, 10);
+		assertFalse(a.containsNull());
+
+		a.set(1, (String) null);
+		assertTrue(a.containsNull());
+	}
+
+	@Test
+	@SuppressWarnings("unchecked")
+	public void testOptionalEquals() {
+		Array<Integer> a = (Array<Integer>) ArrayFactory.allocateOptional(ValueType.INT32, 4);
+		Array<Integer> b = (Array<Integer>) ArrayFactory.allocateOptional(ValueType.INT32, 4);
+		assertTrue(a.equals(b));
+		a.set(0, 1);
+		assertFalse(a.equals(b));
+		b.set(0, 1);
+		assertTrue(a.equals(b));
+		b.set(1, 32);
+		assertFalse(a.equals(b));
+		a.set(1, 33);
+		assertFalse(a.equals(b));
+		b.set(1, 33);
+		assertTrue(a.equals(b));
 	}
 }

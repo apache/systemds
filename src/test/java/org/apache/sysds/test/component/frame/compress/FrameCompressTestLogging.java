@@ -57,10 +57,7 @@ public class FrameCompressTestLogging {
 	@Test
 	public void testUnCompressible() {
 		FrameBlock f = generateIncompressibleBlock(200, 3, 2321);
-		LOG.error(f);
-
 		testLogging(f);
-
 	}
 
 	public void testLogging(FrameBlock a) {

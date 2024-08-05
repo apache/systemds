@@ -47,15 +47,15 @@ public class DataAugmentation
 	 * @return A new frameblock with corrupted elements
 	 * 
 	 */
-	public static FrameBlock dataCorruption(FrameBlock input, double pTypo, double pMiss, double pDrop, double pOut, double pSwap) {
+	public static FrameBlock dataCorruption(FrameBlock input, double pTypo, double pMiss, double pDrop, double pOut, double pSwap, int seed) {
 		List<Integer> numerics = new ArrayList<>();
 		List<Integer> strings = new ArrayList<>();
 		List<Integer> swappable = new ArrayList<>();
 
 		FrameBlock res = preprocessing(input, numerics, strings, swappable);
-		res = typos(res, strings, pTypo);
-		res = miss(res, pMiss, pDrop);
-		res = outlier(res, numerics, pOut, 0.5, 3);
+		res = typos(res, strings, pTypo, seed);
+		res = miss(res, pMiss, pDrop, seed + 1);
+		res = outlier(res, numerics, pOut, 0.5, 3, seed + 2);
 		
 		return res;
 	}
@@ -97,10 +97,11 @@ public class DataAugmentation
 	 * @param frame Original frame block
 	 * @param strings List with the columns of string type that can be changed, generated during preprocessing or manually selected
 	 * @param pTypo Probability of adding a typo to a row
+	 * @param seed The seed for the random behavior
 	 * @return A new frameblock with typos
 	 * 
 	 */
-	public static FrameBlock typos(FrameBlock frame, List<Integer> strings, double pTypo) 
+	public static FrameBlock typos(FrameBlock frame, List<Integer> strings, double pTypo, int seed) 
 	{
 		if(!frame.getColumnName(frame.getNumColumns()-1).equals("errorLabels")) {
 			throw new IllegalArgumentException("The FrameBlock passed has not been preprocessed.");
@@ -108,7 +109,7 @@ public class DataAugmentation
 		if(strings.isEmpty()) 
 			return frame;
 		
-		Random rand = new Random();
+		Random rand = new Random(seed);
 		for(int r=0;r<frame.getNumRows();r++) {
 			int c = strings.get(rand.nextInt(strings.size()));
 			String s = (String) frame.get(r, c);
@@ -134,14 +135,15 @@ public class DataAugmentation
 	 * @param frame Original frame block
 	 * @param pMiss Probability of adding missing values to a row
 	 * @param pDrop Probability of dropping a value
+	 * @param seed The seed for randomness
 	 * @return A new frameblock with missing values
 	 * 
 	 */
-	public static FrameBlock miss(FrameBlock frame, double pMiss, double pDrop) {
+	public static FrameBlock miss(FrameBlock frame, double pMiss, double pDrop, int seed) {
 		if(!frame.getColumnName(frame.getNumColumns()-1).equals("errorLabels")) {
 			throw new IllegalArgumentException("The FrameBlock passed has not been preprocessed.");
 		}
-		Random rand = new Random();
+		Random rand = new Random(seed);
 		for(int r=0;r<frame.getNumRows();r++) {
 			if(rand.nextDouble()<=pMiss) {
 				int dropped = 0;
@@ -172,10 +174,11 @@ public class DataAugmentation
 	 * @param pOut Probability of introducing an outlier in a row
 	 * @param pPos Probability of using positive deviation
 	 * @param times Times the standard deviation is added
+	 * @param seed The seed for randomness
 	 * @return A new frameblock with outliers
 	 * 
 	 */
-	public static FrameBlock outlier(FrameBlock frame, List<Integer> numerics, double pOut, double pPos, int times) {
+	public static FrameBlock outlier(FrameBlock frame, List<Integer> numerics, double pOut, double pPos, int times, int seed) {
 		
 		if(!frame.getColumnName(frame.getNumColumns()-1).equals("errorLabels")) {
 			throw new IllegalArgumentException("The FrameBlock passed has not been preprocessed.");

@@ -75,7 +75,7 @@ public class DataCorruptionTest
 	
 	@Test
 	public void testTypos() {
-		Xp = DataAugmentation.typos(Xp, stringpos, 0.2);
+		Xp = DataAugmentation.typos(Xp, stringpos, 0.2, 32);
 		
 		double numch = 0.;
 		for(int i=0;i<Xp.getNumRows();i++) {
@@ -98,7 +98,7 @@ public class DataCorruptionTest
 	
 	@Test
 	public void testMiss() {
-		Xp = DataAugmentation.miss(Xp, 0.2, 0.7);
+		Xp = DataAugmentation.miss(Xp, 0.2, 0.7, 152);
 		
 		double numch = 0.;
 		for(int i=0;i<Xp.getNumRows();i++) {
@@ -122,7 +122,7 @@ public class DataCorruptionTest
 	
 	@Test
 	public void testOutliers() {
-		Xp = DataAugmentation.outlier(Xp, numerics, 0.2, 0.5, 3);
+		Xp = DataAugmentation.outlier(Xp, numerics, 0.2, 0.5, 3, 2321);
 		
 		double numch = 0.;
 		for(int i=0;i<Xp.getNumRows();i++) {

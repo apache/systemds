@@ -83,7 +83,7 @@ m_incSliceLine = function(
 
   t1 = time();
   # store params for next run
-  [params, k, maxL, minSup, alpha, tpEval, tpBlksz, selFeat] = storeParams(k, maxL, minSup, alpha, tpEval, tpBlksz, selFeat, params);
+  [params, k, maxL, minSup, alpha, tpEval, tpBlksz, selFeat, encodeLat] = storeParams(k, maxL, minSup, alpha, tpEval, tpBlksz, selFeat, encodeLat, params);
 
   # init debug matrix: levelID, enumerated S, valid S, TKmax, TKmin
   D = matrix(0, 0, 5);
@@ -634,12 +634,12 @@ throwNoParamsError = function()
 }
 
 # store parameters for next run and overwrite params if provided
-storeParams = function(Integer k, Integer maxL, Integer minSup, Double alpha, Boolean tpEval, Integer tpBlksz, Boolean selFeat, list[unknown] params)
-  return(list[unknown] params, Integer k, Integer maxL, Integer minSup, Double alpha, Boolean tpEval, Integer tpBlksz, Boolean selFeat)
+storeParams = function(Integer k, Integer maxL, Integer minSup, Double alpha, Boolean tpEval, Integer tpBlksz, Boolean selFeat, Boolean encodeLat, list[unknown] params)
+  return(list[unknown] params, Integer k, Integer maxL, Integer minSup, Double alpha, Boolean tpEval, Integer tpBlksz, Boolean selFeat, Boolean encodeLat)
 {
   if(length(params) == 0) {
     params = list(as.double(k), as.double(maxL), as.double(minSup), 
-      alpha, as.double(tpEval), as.double(tpBlksz), as.double(selFeat)) ;
+      alpha, as.double(tpEval), as.double(tpBlksz), as.double(selFeat), as.double(encodeLat));
   } else {
     k = as.scalar(params[1]);
     maxL = as.scalar(params[2]);
@@ -648,6 +648,7 @@ storeParams = function(Integer k, Integer maxL, Integer minSup, Double alpha, Bo
     tpEval = as.boolean(as.scalar(params[5]));
     tpBlksz = as.scalar(params[6]);
     selFeat = as.boolean(as.scalar(params[7]));
+    encodeLat = as.boolean(as.scalar(params[8]));
   }
 }
 

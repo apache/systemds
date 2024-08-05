@@ -88,8 +88,6 @@ m_incSliceLine = function(
   # init debug matrix: levelID, enumerated S, valid S, TKmax, TKmin
   D = matrix(0, 0, 5);
 
-  nOld = nrow(oldX);
-
   # combine old and added feature matrices and error vectors
   if(nrow(oldX) == 0) {
     oldX = matrix(0,0,ncol(addedX));
@@ -243,10 +241,6 @@ m_incSliceLine = function(
   # termination condition (max #feature levels)
   maxL = ifelse(maxL<=0, n, maxL)
   level = 1;
-  sum1 = alpha * eAvg * eAvgOld * (m - nOld);
-  sum3 = eAvg * eAvgOld * (nOld - m);
-  parProd2 = alpha * (eAvgOld - eAvg);
-  parProd4 = eAvg * eAvgOld;
   t3 = time();
   while( nrow(S) > 0 & sum(S) > 0 & level < n & level < maxL ) {
     level = level + 1;
@@ -284,25 +278,9 @@ m_incSliceLine = function(
         print("\nincSliceLine: level "+level+":")
     }
     
-    # print("nrow S2: "+nrow(S2));
     # prune unchanged slices with slice size < minSup
-    unchangedR = matrix(0,0,4);
-    unchangedS = matrix(0,0,ncol(S));
     if(level <= length(prevStats)){
-      [unchangedS, unchangedS2, changedS, changedS2, unchangedR] = pruneUnchangedSlices(S, S2,  prevLattice2, prevStats, addedX2, minSup, verbose, level);
-      
-      if(nrow(unchangedS) > 0 & nrow(unchangedR) > 0){
-        unchangedR = evalUnchangedSlice(unchangedR, sum1, parProd2, sum3, parProd4);
-      }
-      
-      #print("unchangedR: "+toString(unchangedR));
-      #print("testR: "+toString(testR));
-      
-      S = changedS;
-      #S = rbind(S, unchangedS);
-      S2 = changedS2;
-      #S2 = rbind(S2, unchangedS2);
-
+      [S, S2] = pruneUnchangedSlices(S, S2,  prevLattice2, prevStats, addedX2, minSup, verbose, level);
     }
 
     if(verbose) {
@@ -321,19 +299,14 @@ m_incSliceLine = function(
         }
 
         # update output statistics
-
-        R = rbind(R, unchangedR);
         Stats = append(Stats,R);
        }
        else { # data-parallel
         R = evalSlice(X2, totalE, eAvg, t(S2), level, alpha);
 
         # update output statistics
-        R = rbind(R, unchangedR);
         Stats = append(Stats,R);
       }
-
-      S = rbind(S, unchangedS);
 
       # maintain top-k after evaluation
       [TK, TKC] = maintainTopK(S, R, TK, TKC, k, minSup);
@@ -767,21 +740,17 @@ return (Boolean res)
 }
 
 pruneUnchangedSlices = function(Matrix[Double] S, Matrix[Double] S2, Matrix[Double] prevLattice2, list[unknown] prevStats, Matrix[Double] addedX2, Int minSup, Boolean verbose, Integer level)
-  return(Matrix[Double] unchangedS, Matrix[Double] unchangedS2, Matrix[Double] changedS, Matrix[Double] changedS2, Matrix[Double] unchangedR)
+  return(Matrix[Double] S, Matrix[Double] S2)
 {
-  unchangedPrevS2 = matrix(0,0,ncol(prevLattice2));
+  unchangedS = matrix(0,0,ncol(prevLattice2));
   unchangedR = matrix(0,0,4);
   prevStatsAtLevel =  as.matrix(prevStats[level])
   prevLatAtLevel = prevLattice2;
-  [unchangedPrevS2, unchangedR] = determineUnchangedSlices( prevStatsAtLevel, prevLatAtLevel, addedX2, level);
+  [unchangedS, unchangedR] = determineUnchangedSlices( prevStatsAtLevel, prevLatAtLevel, addedX2, level);
 
-  if (nrow(unchangedPrevS2) > 0) {
-    # unchangedMat is matrix with 1 if slice is same as slice in unchangedPrevS2 (thus slice is not changed in addedX)
-    unchangedS = matrix(0,0,ncol(S));
-    unchangedS2 = matrix(0,0,ncol(S2));
-    changedS = S;
-    changedS2 = S2;
-    unchangedMat = (S2 %*% t(unchangedPrevS2)) == level;
+  if (nrow(unchangedS) > 0) {
+    # unchangedMat is matrix with 1 if slice is same as slice in unchangedS (thus slice is not changed in addedX)
+    unchangedMat = (S2 %*% t(unchangedS)) == level;
     levStats = unchangedR;
     levSs = levStats[, 4];
     unchangedAndBelowMinSupI = matrix(0, nrow(S2), 1);
@@ -800,10 +769,6 @@ pruneUnchangedSlices = function(Matrix[Double] S, Matrix[Double] S2, Matrix[Doub
       if(verbose) {
         print(" -- Pruning " + sum(unchangedAndBelowMinSupI) +" slices that are unchanged and below min sup.");
       }
-      [unchangedS, unchangedS2, changedS, changedS2, unchangedR] = determineCurrentChangedAndUnchangedSlices(unchangedPrevS2, S2, S, unchangedR, level);
-    }
-    if(nrow(unchangedS) == 0){
-      unchangedR = matrix(0,0,4);
     }
   }
 }
@@ -837,48 +802,4 @@ preparePrevLattice = function(Matrix[Double] prevLattice, Integer nColPrevOneHot
         prevLatticeDec = decodeOneHot(prevLatticeBin, prevFoffb, prevFoffe);
         prevLattice2 = oneHotEncodeUsingOffsets(prevLatticeDec, foffb, foffe);
     }
-}
-
-determineCurrentChangedAndUnchangedSlices = function(Matrix[Double] unchangedPrevS2, Matrix[Double] S2, Matrix[Double] S, Matrix[Double] unchangedR, Integer level)
-  return(Matrix[Double] unchangedS, Matrix[Double] unchangedS2, Matrix[Double] changedS, Matrix[Double] changedS2, Matrix[Double] unchangedR)
-{
-
-
-  
-
-  # TODO: main problem seems to be that unchangedR is not reflecting the correct slices and the scoring function is not numerically stable
-   
-   
-   
-    # Imat has a 0 where a slice in unchanged does not belongs to a slice in S, there is changed
-    Imat = (unchangedPrevS2 %*% t(S2) == level);
-    changedSlicesI = colSums(Imat) == 0;
-    changedPrevSlicesI = rowSums(Imat) == 0;
-    changedS2 = removeEmpty(target=S2, margin="rows", select=changedSlicesI);
-    unchangedS2 = removeEmpty(target=S2, margin="rows", select=changedSlicesI == 0);
-    changedS = removeEmpty(target=S, margin="rows", select=changedSlicesI);
-    unchangedS = removeEmpty(target=S, margin="rows", select=changedSlicesI == 0);
-    if(nrow(unchangedR) == length(changedPrevSlicesI)){
-      unchangedR = removeEmpty(target=unchangedR, margin="rows", select=changedPrevSlicesI == 0);
-    }
-}
-
-evalUnchangedSlice = function(Matrix[Double] unchangedR, Double sum1, Double parProd2, Double sum3, Double parProd4)
-  return(Matrix[Double] R)
-{ 
-  R = matrix(0,0,4);
-  if(ncol(unchangedR) == 4){
-    prevSc = unchangedR[, 1];
-    prevSe = unchangedR[, 2];
-    prevSm = unchangedR[, 3];
-    prevSs = unchangedR[, 4];
-  
-  
-    sum2 = prevSe * parProd2;
-    sum4 = prevSs * parProd4;
-    frac = (sum1 + sum2 + sum3) / sum4;
-    sc = prevSc + frac;
-    R = cbind(sc, prevSe, prevSm, prevSs);
-  }
-
 }

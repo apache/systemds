@@ -88,10 +88,8 @@ m_incSliceLine = function(
   # init debug matrix: levelID, enumerated S, valid S, TKmax, TKmin
   D = matrix(0, 0, 5);
 
-  nOld = nrow(oldX);
-
   # combine old and added feature matrices and error vectors
-  if(nOld == 0) {
+  if(nrow(oldX) == 0) {
     oldX = matrix(0,0,ncol(addedX));
     }
   if(nrow(oldE) == 0) {
@@ -123,9 +121,9 @@ m_incSliceLine = function(
   sameOffsets = TRUE;
 
   # combining of addedX and oldX
-  if(nOld > 0){
-    oldX2 = X2[1:nOld,];
-    addedX2 = X2[(nOld+1):nrow(X2),];
+  if(nrow(oldX) > 0){
+    oldX2 = X2[1:nrow(oldX),];
+    addedX2 = X2[(nrow(oldX)+1):nrow(X2),];
   } else {
     oldX2 = matrix(0,0,ncol(X2));
     addedX2 = X2;
@@ -198,7 +196,7 @@ m_incSliceLine = function(
   
   # initialize statistics and basic slices
   n2 = ncol(X2);     # one-hot encoded features
-  eAvgOld = sum(oldE) / nOld; # average error
+  eAvgOld = sum(oldE) / nrow(oldX); # average error
   eAvgNew = sum(newE) / nrow(newX);
   eAvg = sum(totalE) / m; # average error
 
@@ -243,10 +241,6 @@ m_incSliceLine = function(
   # termination condition (max #feature levels)
   maxL = ifelse(maxL<=0, n, maxL)
   level = 1;
-  parProd1 = eAvg * alpha;
-  parProd2 = eAvgOld * alpha 
-  parProd7 = eAvgOld * eAvg
-  sum1 = parProd7 * ((alpha + 1) * (m + nOld));
   t3 = time();
   while( nrow(S) > 0 & sum(S) > 0 & level < n & level < maxL ) {
     level = level + 1;
@@ -285,25 +279,13 @@ m_incSliceLine = function(
     }
     
     # prune unchanged slices with slice size < minSup
-    unchangedS = matrix(0,0,ncol(prevLattice2));
-    unchangedR = matrix(0,0,4);
-    changedS = S2;
     if(level <= length(prevStats)){
-      [S, S2, unchangedS, unchangedR] = pruneUnchangedSlices(S, S2,  prevLattice2, prevStats, addedX2, minSup, verbose, level);
-      
-      if(nrow(unchangedS) > 0){
-        [S2, S] = determineChangedSlices(unchangedS, S2, S, level);
-        unchangedR = evalUnchangedSlice(unchangedR, parProd1, parProd2, parProd7, sum1);
-      }
+      [S, S2] = pruneUnchangedSlices(S, S2,  prevLattice2, prevStats, addedX2, minSup, verbose, level);
     }
-  
+
     if(verbose) {
       print(" -- generated paired slice candidates: "+nrS+" -> "+nrow(S));
     }
-
-    ## TODO: compute the stats for changed slices as usual with evalSlice, 
-    #      compute the stats for unchanged slices by using the more efficient method
-    
 
     if( nrow(S) > 0 ) {
       # extract and evaluate candidate slices
@@ -317,14 +299,12 @@ m_incSliceLine = function(
         }
 
         # update output statistics
-        R = rbind(R, unchangedR);
         Stats = append(Stats,R);
        }
        else { # data-parallel
         R = evalSlice(X2, totalE, eAvg, t(S2), level, alpha);
 
         # update output statistics
-        R = rbind(R, unchangedR);
         Stats = append(Stats,R);
       }
 
@@ -593,22 +573,6 @@ evalSlice = function(Matrix[Double] X, Matrix[Double] e, Double eAvg,
   R = cbind(sc, se, sm, ss);
 }
 
-evalUnchangedSlice = function(Matrix[Double] unchangedR, Double parProd1, Double parProd2, Double parProd7, Double sum1)
-  return(Matrix[Double] R)
-{
-  prevSc = unchangedR[, 1];
-  prevSe = unchangedR[, 2];
-  prevSm = unchangedR[, 3];
-  prevSs = unchangedR[, 4];
-  
-  prod1 = parProd1 * prevSe
-  prod2 = parProd2 * prevSe
-  prod7 = parProd7 * prevSs
-  frac = (sum1 + prod1 + prod2) / prod7
-  sc = prevSc + frac
-  R = cbind(sc, prevSe, prevSm, prevSs);
-}
-
 decodeOneHot = function(Matrix[Double] M, Matrix[Double] foffb, Matrix[Double] foffe)
   return(Matrix[Double] M)
 {
@@ -691,23 +655,12 @@ storeParams = function(Integer k, Integer maxL, Integer minSup, Double alpha, Bo
 determineUnchangedSlices = function(Matrix[Double] prevStatsAtLevel, Matrix[Double] prevLatAtLevel, Matrix[Double] addedX2, Integer level)
   return(Matrix[Double] unchangedS, Matrix[Double] unchangedR)
 {
+  # only computing unchanged slices for levels 2 and above, 
     # Imat has a 1 where a slice in addedX2 belongs to a slice in prevLatAtLevel
     Imat = (addedX2 %*% t(prevLatAtLevel) == level);
     unchangedSlicesI = colSums(Imat) == 0;
     unchangedS = removeEmpty(target=prevLatAtLevel, margin="rows", select=unchangedSlicesI);
     unchangedR = removeEmpty(target=prevStatsAtLevel, margin="rows", select=unchangedSlicesI);
-}
-
-determineChangedSlices = function(Matrix[Double] unchangedS, Matrix[Double] S2, Matrix[Double] S, Integer level)
-  return(Matrix[Double] changedS, Matrix[Double] S)
-{
-    # Imat has a 0 where a slice in unchanged does not belongs to a slice in S, there is changed
-    Imat = (unchangedS %*% t(S) == level);
-    changedSlicesI = colSums(Imat) == 0;
-    changedS = removeEmpty(target=S2, margin="rows", select=changedSlicesI);
-    S = removeEmpty(target=S, margin="rows", select=changedSlicesI);
-    S2 = removeEmpty(target=S, margin="rows", select=changedSlicesI == 0);
-    S = rbind(S, S2);
 }
 
 computeLowestPrevTK = function(Matrix[Double] prevTK2, Matrix[Double] X2,Matrix[Double] totalE, Double eAvg, Double alpha, Double minsc)
@@ -787,16 +740,13 @@ return (Boolean res)
 }
 
 pruneUnchangedSlices = function(Matrix[Double] S, Matrix[Double] S2, Matrix[Double] prevLattice2, list[unknown] prevStats, Matrix[Double] addedX2, Int minSup, Boolean verbose, Integer level)
-  return(Matrix[Double] S, Matrix[Double] S2, Matrix[Double] unchangedS, Matrix[Double] unchangedR)
+  return(Matrix[Double] S, Matrix[Double] S2)
 {
   unchangedS = matrix(0,0,ncol(prevLattice2));
   unchangedR = matrix(0,0,4);
   prevStatsAtLevel =  as.matrix(prevStats[level])
   prevLatAtLevel = prevLattice2;
-  print("prevStatsAtLevel: "+nrow(prevStatsAtLevel));
   [unchangedS, unchangedR] = determineUnchangedSlices( prevStatsAtLevel, prevLatAtLevel, addedX2, level);
-
-  print("unchangedS after determining: "+nrow(unchangedS));
 
   if (nrow(unchangedS) > 0) {
     # unchangedMat is matrix with 1 if slice is same as slice in unchangedS (thus slice is not changed in addedX)
@@ -804,7 +754,6 @@ pruneUnchangedSlices = function(Matrix[Double] S, Matrix[Double] S2, Matrix[Doub
     levStats = unchangedR;
     levSs = levStats[, 4];
     unchangedAndBelowMinSupI = matrix(0, nrow(S2), 1);
-    pruneUnchangedSI = matrix(1, nrow(unchangedS), 1);
     for( i in 1:ncol(unchangedMat)){
       # by multiplying the columns of the unchanged mat with the sizes 
       # from the previous lattice we get vectors indicating the sizes 
@@ -812,21 +761,9 @@ pruneUnchangedSlices = function(Matrix[Double] S, Matrix[Double] S2, Matrix[Doub
       unchangedSizes = (unchangedMat[, i] * levSs[i])
       unchangedAndBelowMinSup = unchangedSizes < minSup & unchangedSizes > 0;
       unchangedAndBelowMinSupI = unchangedAndBelowMinSupI | unchangedAndBelowMinSup;
-      if(sum(unchangedAndBelowMinSup) > 0 | sum(unchangedSizes) == 0){
-        pruneUnchangedSI[i] = 0;
-      }
-    } 
-    if(sum(pruneUnchangedSI) > 0){
-      unchangedS = removeEmpty(target=unchangedS, margin="rows", select=pruneUnchangedSI);
-      unchangedR = removeEmpty(target=unchangedR, margin="rows", select=pruneUnchangedSI);
-
-      print("UnchangedS after pruning: "+nrow(unchangedS));
-    }
+    }      
 
     if(sum(unchangedAndBelowMinSupI) > 0){
-      print("S2 before pruning: "+nrow(S2));
-      print("S before pruning: "+nrow(S));
-
       S2 = removeEmpty(target=S2, margin="rows", select=unchangedAndBelowMinSupI == 0);
       S = removeEmpty(target=S, margin="rows", select=unchangedAndBelowMinSupI == 0);
       if(verbose) {

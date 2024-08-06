@@ -62,6 +62,10 @@
 # Stats            statistics matrix for all slices in L
 # Xout             feature matrix consisting of oldX and totalX for next run
 # eOut             error vector consisting of oldE and addedE for next run
+# foffb            feature offsets for next run
+# foffe            feature offsets for next run
+# nColOneHotX      number of columns of one-hot encoded feature matrix for next run
+# params           list of parameters for next run
 # -----------------------------------------------------------------------------------------
 
 m_incSliceLine = function(

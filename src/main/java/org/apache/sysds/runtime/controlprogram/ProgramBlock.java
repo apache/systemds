@@ -50,6 +50,8 @@ import org.apache.sysds.runtime.instructions.cp.StringObject;
 import org.apache.sysds.runtime.instructions.spark.utils.SparkUtils;
 import org.apache.sysds.runtime.lineage.LineageCache;
 import org.apache.sysds.runtime.lineage.LineageCacheConfig.ReuseCacheType;
+import org.apache.sysds.runtime.lineage.LineageItem;
+import org.apache.sysds.runtime.lineage.LineageItemUtils;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.meta.MetaData;
 import org.apache.sysds.runtime.meta.MetaDataFormat;
@@ -265,7 +267,21 @@ public abstract class ProgramBlock implements ParseInfo {
 				}
 
 				if (DMLScript.STATISTICS_NGRAMS) {
-					Statistics.maintainNGrams(tmp.getExtendedOpcode(), System.nanoTime() - t0);
+					final long nanoTime = System.nanoTime() - t0;
+					if (DMLScript.STATISTICS_NGRAMS_USE_LINEAGE) {
+						Statistics.getCurrentLineageItem().ifPresent(li -> {
+							Data data = ec.getVariable(li.getKey());
+							Statistics.LineageNGramExtension ext = new Statistics.LineageNGramExtension();
+							if (data != null) {
+								ext.setDataType(data.getDataType().toString());
+								ext.setValueType(data.getValueType().toString());
+							}
+							ext.setExecNanos(nanoTime);
+							Statistics.extendLineageItem(li.getValue(), ext);
+							Statistics.maintainNGramsFromLineage(li.getValue());
+						});
+					} else
+						Statistics.maintainNGrams(tmp.getExtendedOpcode(), nanoTime);
 				}
 			}
 

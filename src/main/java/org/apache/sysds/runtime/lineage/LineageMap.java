@@ -32,7 +32,10 @@ import org.apache.sysds.runtime.instructions.cp.VariableCPInstruction;
 import org.apache.sysds.runtime.instructions.spark.WriteSPInstruction;
 import org.apache.sysds.runtime.lineage.LineageItem.LineageItemType;
 import org.apache.sysds.utils.Explain;
+import org.apache.sysds.utils.Statistics;
+import scala.Tuple2;
 
+import java.util.AbstractMap;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -146,6 +149,9 @@ public class LineageMap {
 	}
 	
 	private void trace(Instruction inst, ExecutionContext ec, Pair<String, LineageItem> li) {
+		if (li != null && li.getValue() != null && DMLScript.STATISTICS_NGRAMS && DMLScript.STATISTICS_NGRAMS_USE_LINEAGE)
+			Statistics.prepareNGramInst(li);
+
 		if (inst instanceof VariableCPInstruction) {
 			VariableCPInstruction vcp_inst = ((VariableCPInstruction) inst);
 			

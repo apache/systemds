@@ -63,6 +63,7 @@ import org.apache.sysds.runtime.instructions.cp.VariableCPInstruction;
 import org.apache.sysds.runtime.instructions.fed.ReorgFEDInstruction.DiagMatrix;
 import org.apache.sysds.runtime.instructions.fed.ReorgFEDInstruction.Rdiag;
 import org.apache.sysds.runtime.util.HDFSTool;
+import org.apache.sysds.utils.Statistics;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -123,6 +124,44 @@ public class LineageItemUtils {
 
 	public static boolean isFunctionDebugging () {
 		return FUNCTION_DEBUGGING;
+	}
+
+	public static String explainLineageType(LineageItem li, Statistics.LineageNGramExtension ext) {
+		if (li.getType() == LineageItemType.Literal) {
+			String[] splt = li.getData().split("·");
+			if (splt.length >= 3)
+				return splt[1] + "·" + splt[2];
+			return "·";
+		}
+		return ext != null ? ext.getDataType() + "·" + ext.getValueType() : "··";
+	}
+
+	public static String explainLineageWithTypes(LineageItem li, Statistics.LineageNGramExtension ext) {
+		if (li.getType() == LineageItemType.Literal) {
+			String[] splt = li.getData().split("·");
+			if (splt.length >= 3)
+				return "L·" + splt[1] + "·" + splt[2];
+			return "L··";
+		}
+		return li.getOpcode() + "·" + (ext != null ? ext.getDataType() + "·" + ext.getValueType() : "·");
+	}
+
+	public static String explainLineageAsInstruction(LineageItem li, Statistics.LineageNGramExtension ext) {
+		StringBuilder sb = new StringBuilder(explainLineageWithTypes(li, ext));
+		sb.append("(");
+		if (li.getInputs() != null) {
+			int ctr = 0;
+			for (LineageItem liIn : li.getInputs()) {
+				if (ctr++ != 0)
+					sb.append(" ° ");
+				if (liIn.getType() == LineageItemType.Literal)
+					sb.append("L_" + explainLineageType(liIn, Statistics.getExtendedLineage(li)));
+				else
+					sb.append(explainLineageType(liIn, Statistics.getExtendedLineage(li)));
+			}
+		}
+		sb.append(")");
+		return sb.toString();
 	}
 	
 	public static String explainSingleLineageItem(LineageItem li) {

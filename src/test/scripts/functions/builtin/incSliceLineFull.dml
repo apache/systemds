@@ -31,7 +31,7 @@ totalE = rbind(oldE, addedE);
   alpha=0.95, minSup=4, tpEval=$6, selFeat=$7, verbose=$8, encodeLat = FALSE);
 
 [TK1, TKC1, D1, L1, Stats1, Xout1, eOut1, foffb2, foffe2, nColOneHotX2, params] = incSliceLine(addedX=addedX, oldX = oldX, oldE = oldE, addedE=addedE, prevLattice = L, prevStats = Stats, prevTK = TK, prevTKC = TKC, k=$5,
-  alpha=0.95, minSup=4, tpEval=$6, selFeat=$7, verbose=$8, params=params, prevFoffb = foffb, prevFoffe = foffe, nColPrevOneHotX = nColOneHotX, encodeLat = FALSE);
+  alpha=0.95, minSup=4, tpEval=$6, selFeat=$7, verbose=$8, params=params, prevFoffb = foffb, prevFoffe = foffe, prevNColOneHotX = nColOneHotX, encodeLat = FALSE);
 
 [TK2, TKC2, D2, L2, Stats2, Xout2, eOut2, foffb3, foffe3, nColOneHotX3, params] = incSliceLine(addedX=totalX, addedE=totalE, k=$5,
   alpha=0.95, minSup=4, tpEval=$6, selFeat=$7, verbose=$8, encodeLat = FALSE);

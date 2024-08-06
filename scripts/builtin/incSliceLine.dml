@@ -45,7 +45,7 @@
 # params           list of parameters to ensure consistent parameters through all runs (for incremental updates)
 # prevFoffb        previous feature offsets (for incremental updates)
 # prevFoffe        previous feature offsets (for incremental updates)
-# nColPrevOneHotX  number of columns of one-hot encoded matrix of previous run (for incremental updates)
+# prevNColOneHotX  number of columns of one-hot encoded matrix of previous run (for incremental updates)
 # prevLattice      previous lattice (for incremental updates)
 # prevStats        previous statistics whole lattice (for incremental updates)
 # prevTK           previous top-k slices (for incremental updates)
@@ -72,7 +72,7 @@ m_incSliceLine = function(
     Matrix[Double] addedX, Matrix[Double] oldX = matrix(0, 0, 0), Matrix[Double] oldE = matrix(0, 0, 0),
     Matrix[Double] addedE, Int k = 4, Int maxL = 0, Int minSup = 32, Double alpha = 0.5, Boolean tpEval = TRUE,
     Int tpBlksz = 16, Boolean selFeat = FALSE, Boolean verbose = FALSE, list[unknown] params = list(), 
-    Matrix[Double] prevFoffb = matrix(0,0,0), Matrix[Double] prevFoffe = matrix(0,0,0), Integer nColPrevOneHotX = 0,
+    Matrix[Double] prevFoffb = matrix(0,0,0), Matrix[Double] prevFoffe = matrix(0,0,0), Integer prevNColOneHotX = 0,
     list[unknown] prevLattice = list(), list[unknown] prevStats = list(), Matrix[Double] prevTK = matrix(0,0,0),
     Matrix[Double] prevTKC = matrix(0,0,0), Boolean encodeLat = TRUE)
   return(Matrix[Double] TK, Matrix[Double] TKC, Matrix[Double] D, list[unknown] L, 
@@ -80,7 +80,7 @@ m_incSliceLine = function(
 {
   # for simple collection and processing
   if(length(prevLattice) > 0 & (length(prevStats) == 0 | length(params) == 0 | nrow(prevFoffb) == 0 | nrow(prevFoffe) == 0 | 
-      nColPrevOneHotX == 0 | nrow(oldX) == 0 | nrow(oldE) == 0))
+      prevNColOneHotX == 0 | nrow(oldX) == 0 | nrow(oldE) == 0))
   {
       [TK, TKC, D, L, Stats, Xout, eOut, foffb, foffe, nColOneHotX, params] = throwNoParamsError();
   } else {
@@ -268,7 +268,7 @@ m_incSliceLine = function(
       if(nrow(latAtLevel) > 0){
         sameSizeOffsets = (nrow(prevFoffb) == nrow(foffb) & nrow(prevFoffe) == nrow(foffe))
         sameOffsets = (!((sum(prevFoffb == foffb) == (ncol(foffb) * nrow(foffb))) & (sum(prevFoffe == foffe) == (ncol(foffe) * nrow(foffe))) ));
-        prevLattice2 = preparePrevLattice(latAtLevel, nColPrevOneHotX, prevFoffb, prevFoffe, foffb, foffe, sameSizeOffsets, sameOffsets, encodeLat);
+        prevLattice2 = preparePrevLattice(latAtLevel, prevNColOneHotX, prevFoffb, prevFoffe, foffb, foffe, sameSizeOffsets, sameOffsets, encodeLat);
       }
     }
 
@@ -634,7 +634,7 @@ throwNoParamsError = function()
   return(Matrix[Double] TK, Matrix[Double] TKC, Matrix[Double] D, list[unknown] L,
     list[unknown] Stats, Matrix[Double] Xout, Matrix[Double] eOut, Matrix[Double] foffb, Matrix[Double] foffe, Integer nColOneHotX,list[unknown] params) {
   print("incSliceLine: wrong or no parameters provided for incremental update. Please provide all parameters.");
-  print(" -- necessary parameters: params, prevLattice, prevStats, prevFoffb, prevFoffe, nColPrevOneHotX, prevTK, prevTKC, oldX, oldE. ");
+  print(" -- necessary parameters: params, prevLattice, prevStats, prevFoffb, prevFoffe, prevNColOneHotX, prevTK, prevTKC, oldX, oldE. ");
   print(" -- see documentation for more details.");
   TK = matrix(0,0,0);
   TKC = matrix(0,0,0);
@@ -797,12 +797,12 @@ pruneUnchangedSlices = function(Matrix[Double] S, Matrix[Double] S2, Matrix[Doub
 # then it checks if the previous offsets are the same as the current offsets
 # if they are the same, the previous lattice can be used as it is
 # if they are not the same, the lattice has to be decoded and encoded again with the current offsets
-preparePrevLattice = function(Matrix[Double] prevLattice, Integer nColPrevOneHotX, Matrix[Double] prevFoffb, Matrix[Double] prevFoffe, Matrix[Double] foffb, Matrix[Double] foffe, Boolean sameSizeOffsets, Boolean sameOffsets, Boolean encodeLat)
+preparePrevLattice = function(Matrix[Double] prevLattice, Integer prevNColOneHotX, Matrix[Double] prevFoffb, Matrix[Double] prevFoffe, Matrix[Double] foffb, Matrix[Double] foffe, Boolean sameSizeOffsets, Boolean sameOffsets, Boolean encodeLat)
   return(Matrix[Double] prevLattice2)
 {
   # convert prevLattice to binary matrix with offsets from previous run
     if(encodeLat){
-      prevLatticeBin = integerMatrixToBinaryMatrix(prevLattice, 52, nColPrevOneHotX);
+      prevLatticeBin = integerMatrixToBinaryMatrix(prevLattice, 52, prevNColOneHotX);
     } else {
       prevLatticeBin = prevLattice;
     }

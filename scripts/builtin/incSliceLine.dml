@@ -246,6 +246,13 @@ m_incSliceLine = function(
   # termination condition (max #feature levels)
   maxL = ifelse(maxL<=0, n, maxL)
   level = 1;
+  if(nrow(prevFoffb) > 0){
+    sameSizeOffsets = (nrow(prevFoffb) == nrow(foffb) & nrow(prevFoffe) == nrow(foffe))
+    sameOffsets = (!((sum(prevFoffb == foffb) == (ncol(foffb) * nrow(foffb))) & (sum(prevFoffe == foffe) == (ncol(foffe) * nrow(foffe))) ));
+  }
+   
+  timeInitialComputation = time() - t1;
+  timePruningUnchangedSlices = 0.0;
   while( nrow(S) > 0 & sum(S) > 0 & level < n & level < maxL ) {
     level = level + 1;
 
@@ -263,12 +270,11 @@ m_incSliceLine = function(
     }
     L = append(L, Lrep);
 
+    # ensure prevLattice has same dimensions and is decoded
     prevLattice2 = matrix(0,0,0);
     if( length(prevLattice) >= level ) { 
       latAtLevel = as.matrix(prevLattice[level]);
       if(nrow(latAtLevel) > 0){
-        sameSizeOffsets = (nrow(prevFoffb) == nrow(foffb) & nrow(prevFoffe) == nrow(foffe))
-        sameOffsets = (!((sum(prevFoffb == foffb) == (ncol(foffb) * nrow(foffb))) & (sum(prevFoffe == foffe) == (ncol(foffe) * nrow(foffe))) ));
         tEnc = time();
         prevLattice2 = preparePrevLattice(latAtLevel, prevNColOneHotX, prevFoffb, prevFoffe, foffb, foffe, sameSizeOffsets, sameOffsets, encodeLat);
         tEncoding = tEncoding + (time() - tEnc);
@@ -288,7 +294,9 @@ m_incSliceLine = function(
     
     # prune unchanged slices with slice size < minSup
     if(level <= length(prevStats)){
+      tPruningUnchangedSlices = time();
       [S, S2] = pruneUnchangedSlices(S, S2,  prevLattice2, prevStats, addedX2, minSup, verbose, level);
+      timePruningUnchangedSlices = timePruningUnchangedSlices + (time() - tPruningUnchangedSlices);
     }
 
     if(verbose) {
@@ -329,8 +337,9 @@ m_incSliceLine = function(
       }
     }
   }
-
+  print("TIME INITIAL COMP.: "+timeInitialComputation);
   print("TIME FOR ENCODING: "+tEncoding);
+  print("TIME FOR PRUNING UNCHANGED SLICES: "+timePruningUnchangedSlices);
 
   TK = decodeOneHot(TK, foffb, foffe);
 

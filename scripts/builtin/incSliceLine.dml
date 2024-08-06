@@ -215,14 +215,17 @@ m_incSliceLine = function(
   # initialize Lattice and Statistics
   Stats = list();
   L = list();
+  tEncoding = 0.0;
   if( encodeLat ) {
+    tEnc = time();
     L1 = binaryMatrixToIntegerMatrix(S, 52); 
+    tEncoding = tEncoding + (time() - tEnc);
   }else {
     L1 = S;
   }
   
   L = append(L, L1);
-  Stats = append(Stats,R);
+  Stats = append(Stats,R[, 4]);
 
   # initialize top-k
   [TK, TKC] = maintainTopK(S, R, matrix(0,0,n2), matrix(0,0,4), k, minSup);
@@ -252,7 +255,9 @@ m_incSliceLine = function(
     S2 = S;
 
     if ( encodeLat ) {
+      tEnc = time();
       Lrep = binaryMatrixToIntegerMatrix(S, 52);
+      tEncoding = tEncoding + (time() - tEnc);
     } else {
       Lrep = S;
     }
@@ -264,7 +269,9 @@ m_incSliceLine = function(
       if(nrow(latAtLevel) > 0){
         sameSizeOffsets = (nrow(prevFoffb) == nrow(foffb) & nrow(prevFoffe) == nrow(foffe))
         sameOffsets = (!((sum(prevFoffb == foffb) == (ncol(foffb) * nrow(foffb))) & (sum(prevFoffe == foffe) == (ncol(foffe) * nrow(foffe))) ));
+        tEnc = time();
         prevLattice2 = preparePrevLattice(latAtLevel, prevNColOneHotX, prevFoffb, prevFoffe, foffb, foffe, sameSizeOffsets, sameOffsets, encodeLat);
+        tEncoding = tEncoding + (time() - tEnc);
       }
     }
 
@@ -300,13 +307,13 @@ m_incSliceLine = function(
         }
 
         # update output statistics
-        Stats = append(Stats,R);
+        Stats = append(Stats,R[, 4]);
        }
        else { # data-parallel
         R = evalSlice(X2, totalE, eAvg, t(S2), level, alpha);
 
         # update output statistics
-        Stats = append(Stats,R);
+        Stats = append(Stats,R[, 4]);
       }
 
       # maintain top-k after evaluation
@@ -323,6 +330,8 @@ m_incSliceLine = function(
     }
   }
 
+  print("TIME FOR ENCODING: "+tEncoding);
+
   TK = decodeOneHot(TK, foffb, foffe);
 
   # prepare output feature matrix for next run
@@ -337,6 +346,7 @@ m_incSliceLine = function(
     + "Statistics: \n "+ toString(Stats));
 */
   print("Time taken: "+(time()-t1));
+  print("Time taken without encoding: "+(time()-t1-tEncoding));
 }
 }
 
@@ -765,7 +775,7 @@ pruneUnchangedSlices = function(Matrix[Double] S, Matrix[Double] S2, Matrix[Doub
     # unchangedMat is matrix with 1 if slice is same as slice in unchangedS (thus slice is not changed in addedX)
     unchangedMat = (S2 %*% t(unchangedS)) == level;
     levStats = unchangedR;
-    levSs = levStats[, 4];
+    levSs = levStats[, 1];
     unchangedAndBelowMinSupI = matrix(0, nrow(S2), 1);
     if(nrow(unchangedMat) > 0 & ncol(unchangedMat) > 0 & nrow(levSs) > 0){
       for( i in 1:ncol(unchangedMat)){

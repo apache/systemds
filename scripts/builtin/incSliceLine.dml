@@ -208,12 +208,9 @@ m_incSliceLine = function(
   minsc = -Inf;
   if( nrow(prevTK2) > 0 ) {
     [minsc] = computeLowestPrevTK (prevTK2, X2, totalE, eAvg, alpha, minsc)
-    print("minsc: "+minsc);
   } 
 
-  t2 = time();
   [S, R, selCols] = createAndScoreBasicSlices(X2, addedX2, prevTK2, totalE, eAvg, eAvgOld, eAvgNew, minSup, alpha, minsc, verbose);
-  print("IncSliceLine: Time taken for basic slices: "+(time()-t2));
 
   # initialize Lattice and Statistics
   Stats = list();
@@ -246,7 +243,6 @@ m_incSliceLine = function(
   # termination condition (max #feature levels)
   maxL = ifelse(maxL<=0, n, maxL)
   level = 1;
-  t3 = time();
   while( nrow(S) > 0 & sum(S) > 0 & level < n & level < maxL ) {
     level = level + 1;
 
@@ -326,7 +322,6 @@ m_incSliceLine = function(
       }
     }
   }
-  print("IncSliceLine: Time taken for lattice enumeration: "+(time()-t3));
 
   TK = decodeOneHot(TK, foffb, foffe);
 

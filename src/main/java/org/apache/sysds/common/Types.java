@@ -117,7 +117,7 @@ public interface Types {
 		FP32, FP64, INT32, INT64, BOOLEAN, STRING, UNKNOWN,
 		HASH64, HASH32, // Indicate that the value is a hash.
 		CHARACTER;
-		
+
 		/**
 		 * Get if the ValueType is a numeric value.
 		 * 
@@ -237,6 +237,27 @@ public interface Types {
 		}
 
 		/**
+		 * Get the highest common type, where if one inout is UNKNOWN return the other.
+		 * <p>
+		 * 
+		 * For instance:<p>
+		 * Character and String returns String<p>
+		 * INT32 and String returns String<p>
+		 * INT32 and FP32 returns FP32<p>
+		 * INT32 and INT64 returns INT64<p>
+		 *
+		 * @param a First value type to analyze
+		 * @param b Second Value type to analyze
+		 * @return The highest common value
+		 */
+		public static ValueType getHighestCommonTypeSafe(ValueType a, ValueType b) {
+			if(a == b)
+				return a;
+			else
+				return getHighestCommonTypeSwitch(a, b);
+		}
+
+		/**
 		 * Get the highest common type that both ValueTypes can be contained in.
 		 * <p>
 		 * 
@@ -249,19 +270,31 @@ public interface Types {
 		 * @param a First ValueType
 		 * @param b Second ValueType
 		 * @return The common highest type to represent both
+		 * @throws DMLRuntimeException If any input is UNKNOWN.
 		 */
 		public static ValueType getHighestCommonType(ValueType a, ValueType b) {
-			if(a == b) // if same ... return one.
+			if(a == b)
 				return a;
-			else if(b == UNKNOWN){ // If other is Unknown
-				final String err = "Invalid or not implemented support for comparing valueType of: %s and %s";
-				throw new DMLRuntimeException(String.format(err, a, b));
-			}
+			else if(a == UNKNOWN || b == UNKNOWN)
+				throw new DMLRuntimeException(
+					String.format("Invalid or not implemented support for comparing valueType of: %s and %s", a, b));
+			else
+				return getHighestCommonTypeSwitch(a, b);
+		}
+
+		private static ValueType getHighestCommonTypeSwitch(ValueType a, ValueType b){
 			switch(a) {
 				case CHARACTER:
-					return STRING;
+					switch(b){
+						case UNKNOWN:
+							return a;
+						default:
+							return STRING;
+					}
 				case HASH32:
 					switch(b) {
+						case UNKNOWN:
+							return a;
 						case CHARACTER:
 							return STRING;
 						case HASH64:
@@ -272,6 +305,8 @@ public interface Types {
 					}
 				case HASH64:
 					switch(b) {
+						case UNKNOWN:
+							return a;
 						case CHARACTER:
 							return STRING;
 						case STRING:
@@ -280,9 +315,16 @@ public interface Types {
 							return a;
 					}
 				case STRING:
-					return a;
+					switch(b){
+						case UNKNOWN:
+							return a;
+						default:
+							return STRING;
+					}
 				case FP64:
 					switch(b) {
+						case UNKNOWN:
+							return a;
 						case CHARACTER:
 							return STRING;
 						case STRING:
@@ -297,6 +339,7 @@ public interface Types {
 						case STRING:
 						case FP64:
 							return b;
+						case UNKNOWN:
 						default:
 							return a;
 					}
@@ -308,6 +351,7 @@ public interface Types {
 						case FP64:
 						case FP32:
 							return b;
+						case UNKNOWN:
 						default:
 							return a;
 					}
@@ -320,6 +364,7 @@ public interface Types {
 						case FP32:
 						case INT64:
 							return b;
+						case UNKNOWN:
 						default:
 							return a;
 					}
@@ -334,6 +379,7 @@ public interface Types {
 						case INT32:
 						case UINT8:
 							return b;
+						case UNKNOWN:
 						default:
 							return a;
 					}
@@ -347,17 +393,22 @@ public interface Types {
 						case INT64:
 						case INT32:
 							return b;
+						case UNKNOWN:
 						default:
 							return a;
 					}
 				case BOOLEAN:
-					if(b == CHARACTER)
-						return STRING;
-					return b; // always higher type in b;
+					switch(b){
+						case UNKNOWN:
+							return a;
+						case CHARACTER:
+							return STRING;
+						default:
+							return b;// always higher type in b;
+					}
 				case UNKNOWN:
 				default:
-					final String err = "Invalid or not implemented support for comparing valueType of: %s and %s";
-					throw new DMLRuntimeException(String.format(err, a, b));
+					return b;
 			}
 		}
 	}

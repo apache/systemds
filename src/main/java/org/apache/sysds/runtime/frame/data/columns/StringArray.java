@@ -213,65 +213,6 @@ public class StringArray extends Array<String> {
 		return ValueType.STRING;
 	}
 
-	private static final ValueType getHighest(ValueType state, ValueType c) {
-		switch(state) {
-			case FP64:
-				switch(c) {
-					case HASH32:
-					case HASH64:
-						return c;
-					default:
-				}
-			case FP32:
-				switch(c) {
-					case FP64:
-					case HASH32:
-					case HASH64:
-						return c;
-					default:
-				}
-				break;
-			case INT64:
-				switch(c) {
-					case FP64:
-					case FP32:
-					case HASH32:
-					case HASH64:
-						return c;
-					default:
-				}
-				break;
-			case INT32:
-				switch(c) {
-					case FP64:
-					case FP32:
-					case INT64:
-					case HASH32:
-					case HASH64:
-						return c;
-					default:
-				}
-				break;
-			case BOOLEAN:
-				switch(c) {
-					case FP64:
-					case FP32:
-					case INT64:
-					case INT32:
-					case CHARACTER:
-					case HASH32:
-					case HASH64:
-						return c;
-					default:
-				}
-				break;
-			case UNKNOWN:
-				return c;
-			default:
-		}
-		return state;
-	}
-
 	@Override
 	public Pair<ValueType, Boolean> analyzeValueType(int maxCells) {
 		ValueType state = ValueType.UNKNOWN;
@@ -283,7 +224,7 @@ public class StringArray extends Array<String> {
 			else if(c == ValueType.UNKNOWN)
 				nulls = true;
 			else
-				state = getHighest(state, c);
+				state = ValueType.getHighestCommonTypeSafe(state, c);
 		}
 		return new Pair<>(state, nulls);
 	}

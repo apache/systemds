@@ -277,16 +277,18 @@ public class CustomArrayTests {
 
 	@Test
 	public void analyzeValueTypeCharacter() {
+		// unfortunately We do not distinguish for single character integers
 		StringArray a = ArrayFactory.create(new String[] {"1", "g", "1", "3"});
 		ValueType t = a.analyzeValueType().getKey();
-		assertEquals(ValueType.CHARACTER, t);
+		assertEquals(ValueType.STRING, t);
 	}
 
 	@Test
 	public void analyzeValueTypeCharacterWithNull() {
+		// unfortunately We do not distinguish for single character integers
 		StringArray a = ArrayFactory.create(new String[] {"1", "g", null, "3"});
 		ValueType t = a.analyzeValueType().getKey();
-		assertEquals(ValueType.CHARACTER, t);
+		assertEquals(ValueType.STRING, t);
 	}
 
 	@Test

@@ -379,38 +379,44 @@ public class TypeTest {
 	}
 
 	@Test
-	public void isNumericUINT8(){
+	public void isNumericUINT8() {
 		assertTrue(ValueType.UINT8.isNumeric());
 	}
 
 	@Test
-	public void isNumericUINT4(){
+	public void isNumericUINT4() {
 		assertTrue(ValueType.UINT4.isNumeric());
 	}
 
 	@Test
-	public void isNumericFP32(){
+	public void isNumericFP32() {
 		assertTrue(ValueType.FP32.isNumeric());
 	}
 
 	@Test
-	public void isNumericFP64(){
+	public void isNumericFP64() {
 		assertTrue(ValueType.FP64.isNumeric());
 	}
 
-
 	@Test
-	public void isNumericINT32(){
+	public void isNumericINT32() {
 		assertTrue(ValueType.INT32.isNumeric());
 	}
 
 	@Test
-	public void isNumericINT64(){
+	public void isNumericINT64() {
 		assertTrue(ValueType.INT64.isNumeric());
 	}
 
-
 	private ValueType hct(ValueType a, ValueType b) {
 		return ValueType.getHighestCommonType(a, b);
+	}
+
+	@Test
+	public void highestCommonSafe() {
+		for(ValueType t : ValueType.values()) {
+			assertEquals(t, ValueType.getHighestCommonTypeSafe(t, ValueType.UNKNOWN));
+			assertEquals(t, ValueType.getHighestCommonTypeSafe(ValueType.UNKNOWN, t));
+		}
 	}
 }

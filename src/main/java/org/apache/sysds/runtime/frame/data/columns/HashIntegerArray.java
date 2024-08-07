@@ -171,10 +171,7 @@ public class HashIntegerArray extends Array<Object> implements IHashArray {
 			final int[] ret = new int[endSize];
 			System.arraycopy(_data, 0, ret, 0, this._size);
 			System.arraycopy(((HashIntegerArray) other)._data, 0, ret, this._size, other.size());
-			if(other instanceof OptionalArray)
-				return OptionalArray.appendOther((OptionalArray<Object>) other, new HashIntegerArray(ret));
-			else
-				return new HashIntegerArray(ret);
+			return new HashIntegerArray(ret);
 		}
 		else if(other instanceof OptionalArray) {
 			OptionalArray<Object> ot = (OptionalArray<Object>) other;
@@ -182,13 +179,8 @@ public class HashIntegerArray extends Array<Object> implements IHashArray {
 				Array<Object> a = this.append(ot._a);
 				return OptionalArray.appendOther(ot, a);
 			}
-			else {
-				throw new NotImplementedException("Invalid call with not hashArray");
-			}
 		}
-		else {
-			throw new NotImplementedException(other.getClass().getSimpleName() + "  not append supported in hashColumn");
-		}
+		throw new NotImplementedException(other.getClass().getSimpleName() + " not append supported in hashColumn");
 	}
 
 	@Override
@@ -375,8 +367,10 @@ public class HashIntegerArray extends Array<Object> implements IHashArray {
 			return parseHashInt((String) s);
 		else if(s instanceof Long)
 			return ((Long) s).intValue();
+		else if(s instanceof Integer)
+			return (Integer) s;
 		else
-			throw new NotImplementedException("not supported" + s);
+			throw new NotImplementedException("not supported parsing: " + s + " of class: " + s.getClass().getSimpleName());
 	}
 
 	public static int parseHashInt(String s) {

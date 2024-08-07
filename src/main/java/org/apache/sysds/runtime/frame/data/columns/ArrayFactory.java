@@ -43,8 +43,16 @@ public interface ArrayFactory {
 		return new StringArray(col);
 	}
 
+	public static HashLongArray createHash64I(long[] col) {
+		return new HashLongArray(col);
+	}
+
 	public static HashLongArray createHash64(String[] col) {
 		return new HashLongArray(col);
+	}
+
+	public static HashIntegerArray createHash32I(int[] col) {
+		return new HashIntegerArray(col);
 	}
 
 	public static HashIntegerArray createHash32(String[] col) {
@@ -55,9 +63,18 @@ public interface ArrayFactory {
 		return new OptionalArray<>(col, ValueType.HASH64);
 	}
 
+	public static OptionalArray<Object> createHash64OptI(long[] col) {
+		return new OptionalArray<>(new HashLongArray(col), false);
+	}
+
 	public static OptionalArray<Object> createHash32Opt(String[] col) {
 		return new OptionalArray<>(col, ValueType.HASH32);
 	}
+
+	public static OptionalArray<Object> createHash32OptI(int[] col) {
+		return new OptionalArray<>(new HashIntegerArray(col), false);
+	}
+
 
 	public static HashLongArray createHash64(long[] col) {
 		return new HashLongArray(col);
@@ -282,7 +299,7 @@ public interface ArrayFactory {
 
 	/**
 	 * Set the target array in the range of rl to ru with the src array. The type returned is the common or highest
-	 * common type of array.
+	 * common type of array. The source array is assumed to be at least of ru size.
 	 * 
 	 * @param <C>    The highest common type to return.
 	 * @param target The target to put the values into

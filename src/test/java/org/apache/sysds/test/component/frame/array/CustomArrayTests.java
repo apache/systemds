@@ -1819,8 +1819,6 @@ public class CustomArrayTests {
 		DDCArray.compressToDDC(s);
 	}
 
-
-
 	@Test
 	public void DDC_nullDict() {
 
@@ -2062,5 +2060,178 @@ public class CustomArrayTests {
 		assertFalse(a.equals(b));
 		b.set(1, 33);
 		assertTrue(a.equals(b));
+	}
+
+	@Test
+	@SuppressWarnings("unchecked")
+	public void testArrayFactorySet() {
+		try {
+
+			Array<Integer> a = (Array<Integer>) FrameCompressTestUtils.generateArray(150, 1, 5, ValueType.INT32);
+			a = DDCArray.compressToDDC(a);
+
+			Array<Integer> dict = ((DDCArray<Integer>) a).getDict();
+			a = ((DDCArray<Integer>) a).nullDict();
+
+			Array<?> r = ArrayFactory.set(null, a, 50, 99, 150);
+			ArrayFactory.set(r, a, 0, 49, 150);
+			ArrayFactory.set(r, a, 50, 149, 150);
+
+			DDCArray<Integer> rd = (DDCArray<Integer>) r;
+
+			r = rd.setDict(dict);
+			a = ((DDCArray<Integer>) a).setDict(dict);
+
+			FrameArrayTests.compare(r, a);
+		}
+		catch(Exception e) {
+			e.printStackTrace();
+			fail(e.getMessage());
+		}
+
+	}
+
+	@Test(expected = Exception.class)
+	@SuppressWarnings("unchecked")
+	public void testSetInvalidDDC() {
+		Array<Integer> a = (Array<Integer>) FrameCompressTestUtils.generateArray(150, 1, 5, ValueType.INT32);
+		a = DDCArray.compressToDDC(a);
+		a.set(0, 10, ArrayFactory.create(new int[] {1, 2, 3}));
+	}
+
+	@Test(expected = Exception.class)
+	@SuppressWarnings("unchecked")
+	public void testSetInvalidHashLong() {
+		Array<Object> a = (Array<Object>) FrameArrayTests.create(FrameArrayType.HASH32, 150, 1);
+		a.setNz(0, 10, ArrayFactory.createHash64(new long[] {1, 2, 3}));
+	}
+
+	@Test(expected = Exception.class)
+	@SuppressWarnings("unchecked")
+	public void testSetInvalidHashInt() {
+		Array<Object> a = (Array<Object>) FrameArrayTests.create(FrameArrayType.HASH64, 150, 1);
+		a.setNz(0, 10, ArrayFactory.createHash32(new int[] {1, 2, 3}));
+	}
+
+	@Test
+	@SuppressWarnings("unchecked")
+	public void setTestFromOtherTypeNzLong() {
+		Array<Object> a = (Array<Object>) FrameArrayTests.create(FrameArrayType.HASH64, 150, 1);
+		a.setFromOtherTypeNz(0, 9, ArrayFactory.create(new int[] {1, 2, 3, 4, 5, 6, 7, 8, 9, 10}));
+
+		for(int i = 0; i < 10; i++) {
+			assertEquals(i + 1, (int) a.getAsDouble(i));
+		}
+
+	}
+
+	@Test
+	@SuppressWarnings("unchecked")
+	public void setTestFromOtherTypeNzInt() {
+		Array<Object> a = (Array<Object>) FrameArrayTests.create(FrameArrayType.HASH32, 150, 1);
+		a.setFromOtherTypeNz(0, 9, ArrayFactory.create(new int[] {1, 2, 3, 4, 5, 6, 7, 8, 9, 10}));
+
+		for(int i = 0; i < 10; i++) {
+			assertEquals(i + 1, (int) a.getAsDouble(i));
+		}
+
+	}
+
+	@Test
+	@SuppressWarnings("unchecked")
+	public void setTestFromOtherTypeNzLongOpt() {
+		Array<Object> a = (Array<Object>) FrameArrayTests.createOptional(FrameArrayType.HASH64, 150, 1);
+		a.setFromOtherTypeNz(0, 9, ArrayFactory.create(new Integer[] {1, 2, 3, 4, null, 6, 7, 8, 9, 10}));
+		for(int i = 0; i < 10; i++) {
+			if(i == 4)
+				assertNull(a.get(i));
+			else
+				assertEquals(i + 1, (int) a.getAsDouble(i));
+		}
+	}
+
+	@Test
+	@SuppressWarnings("unchecked")
+	public void setTestFromOtherTypeNzIntOpt() {
+		try {
+			Array<Object> a = (Array<Object>) FrameArrayTests.createOptional(FrameArrayType.HASH32, 20, 1);
+			a.setFromOtherTypeNz(0, 9, ArrayFactory.create(new Integer[] {1, 2, 3, 4, null, 6, 7, 8, 9, 10}));
+			for(int i = 0; i < 10; i++) {
+				if(i == 4) {
+					assertNull(a.get(i));
+					assertEquals(0.0, a.getAsDouble(i), 0.0);
+				}
+				else
+					assertEquals(i + 1, (int) a.getAsDouble(i));
+			}
+		}
+		catch(Exception e) {
+			e.printStackTrace();
+			fail(e.getMessage());
+		}
+	}
+
+	@Test
+	@SuppressWarnings("unchecked")
+	public void setTestFromOtherTypeNzHash32I() {
+		try {
+
+			Array<Object> a = (Array<Object>) FrameArrayTests.createOptional(FrameArrayType.HASH32, 20, 1);
+			a.setFromOtherTypeNz(0, 9, ArrayFactory.createHash32I(new int[] {1, 2, 3, 4, 5, 6, 7, 8, 9, 10}));
+			for(int i = 0; i < 10; i++) {
+
+				assertEquals(i + 1, (int) a.getAsDouble(i));
+			}
+		}
+
+		catch(Exception e) {
+			e.printStackTrace();
+			fail(e.getMessage());
+		}
+	}
+
+	@Test
+	@SuppressWarnings("unchecked")
+	public void setTestFromOtherTypeNzHash64I() {
+		try {
+			Array<Object> a = (Array<Object>) FrameArrayTests.createOptional(FrameArrayType.HASH64, 20, 1);
+			a.setFromOtherTypeNz(0, 9, ArrayFactory.createHash64I(new long[] {1, 2, 3, 4, 5, 6, 7, 8, 9, 10}));
+			for(int i = 0; i < 10; i++) {
+				assertEquals(i + 1, (int) a.getAsDouble(i));
+			}
+		}
+		catch(Exception e) {
+			e.printStackTrace();
+			fail(e.getMessage());
+		}
+	}
+
+	@Test(expected = Exception.class)
+	@SuppressWarnings("unchecked")
+	public void appendInvalidHashLong() {
+		Array<Object> a = (Array<Object>) FrameArrayTests.create(FrameArrayType.HASH64, 20, 1);
+		a.append(ArrayFactory.createHash32I(new int[] {1, 2, 3, 4, 5, 6, 7, 8, 9, 10}));
+	}
+
+	@Test(expected = Exception.class)
+	@SuppressWarnings("unchecked")
+	public void appendInvalidHashInteger() {
+		Array<Object> a = (Array<Object>) FrameArrayTests.create(FrameArrayType.HASH32, 20, 1);
+		a.append(ArrayFactory.createHash64I(new long[] {1, 2, 3, 4, 5, 6, 7, 8, 9, 10}));
+	}
+
+
+	@Test(expected = Exception.class)
+	@SuppressWarnings("unchecked")
+	public void appendInvalidHashLongOpt() {
+		Array<Object> a = (Array<Object>) FrameArrayTests.create(FrameArrayType.HASH64, 20, 1);
+		a.append(ArrayFactory.createHash32OptI(new int[] {1, 2, 3, 4, 5, 6, 7, 8, 9, 10}));
+	}
+
+	@Test(expected = Exception.class)
+	@SuppressWarnings("unchecked")
+	public void appendInvalidHashIntegerOpt() {
+		Array<Object> a = (Array<Object>) FrameArrayTests.create(FrameArrayType.HASH32, 20, 1);
+		a.append(ArrayFactory.createHash64OptI(new long[] {1, 2, 3, 4, 5, 6, 7, 8, 9, 10}));
 	}
 }

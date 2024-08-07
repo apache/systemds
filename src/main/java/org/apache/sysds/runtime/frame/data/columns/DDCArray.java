@@ -245,17 +245,22 @@ public class DDCArray<T> extends ACompressedArray<T> {
 		return dict.analyzeValueType(maxCells);
 	}
 
-	// @Override
-	// protected void set(int rl, int ru, DDCArray<T> value) {
-	// if((dict != null && value.dict != null) && (value.dict.size() != dict.size() //
-	// || (FrameBlock.debug && !value.dict.equals(dict))))
-	// throw new DMLCompressionException("Invalid setting of DDC Array, of incompatible instance.");
-
-	// final AMapToData tm = value.map;
-	// for(int i = rl; i <= ru; i++) {
-	// map.set(i, tm.getIndex(i - rl));
-	// }
-	// }
+	@Override
+	public void set(int rl, int ru, Array<T> value) {
+		if(value instanceof DDCArray){
+			DDCArray<T> dc = (DDCArray<T>) value;
+			if((dict != null && dc.dict != null) && (dc.dict.size() != dict.size() //
+				|| (FrameBlock.debug && !dc.dict.equals(dict))))
+				throw new DMLCompressionException("Invalid setting of DDC Array, of incompatible instance.");
+	
+			final AMapToData tm = dc.map;
+			for(int i = rl; i <= ru; i++) {
+				map.set(i, tm.getIndex(i));
+			}
+		}
+		else 
+			super.set(rl,ru,value);
+	}
 
 	@Override
 	public FrameArrayType getFrameArrayType() {
@@ -366,9 +371,9 @@ public class DDCArray<T> extends ACompressedArray<T> {
 	public double[] minMax(int l, int u) {
 		if(u <= dict.size())
 			return dict.minMax(l, u);
-		else if (l > dict.size()) 
-			return new double[]{Integer.MIN_VALUE, Integer.MAX_VALUE};
-		else 
+		else if(l > dict.size())
+			return new double[] {Integer.MIN_VALUE, Integer.MAX_VALUE};
+		else
 			return dict.minMax(l, dict.size());
 	}
 

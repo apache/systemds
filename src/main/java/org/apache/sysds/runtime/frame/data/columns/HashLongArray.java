@@ -171,25 +171,16 @@ public class HashLongArray extends Array<Object> implements IHashArray {
 			final long[] ret = new long[endSize];
 			System.arraycopy(_data, 0, ret, 0, this._size);
 			System.arraycopy(((HashLongArray) other)._data, 0, ret, this._size, other.size());
-			if(other instanceof OptionalArray)
-				return OptionalArray.appendOther((OptionalArray<Object>) other, new HashLongArray(ret));
-			else
-				return new HashLongArray(ret);
+			return new HashLongArray(ret);
 		}
 		else if(other instanceof OptionalArray) {
-
 			OptionalArray<Object> ot = (OptionalArray<Object>) other;
 			if(ot._a instanceof HashLongArray) {
 				Array<Object> a = this.append(ot._a);
 				return OptionalArray.appendOther(ot, a);
 			}
-			else {
-				throw new NotImplementedException("Invalid call with not hashArray");
-			}
 		}
-		else {
-			throw new NotImplementedException(other.getClass().getSimpleName() + "  not append supported in hashColumn");
-		}
+		throw new NotImplementedException(other.getClass().getSimpleName() + " not append supported in hashColumn");
 	}
 
 	@Override

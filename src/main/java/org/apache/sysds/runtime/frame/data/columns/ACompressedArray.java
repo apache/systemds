@@ -59,14 +59,10 @@ public abstract class ACompressedArray<T> extends Array<T> {
 		throw new DMLCompressionException("Invalid to set value in CompressedArray");
 	}
 
-	// /**
-	//  * Set the range given.
-	//  * 
-	//  * @param rl    row lower
-	//  * @param ru    row upper (inclusive)
-	//  * @param value The array to take from
-	//  */
-	// protected abstract void set(int rl, int ru, DDCArray<T> value);
+	@Override
+	public void set(int rl, int ru, Array<T> value) {
+		throw new DMLCompressionException("Invalid to set value in CompressedArray");
+	}
 
 	@Override
 	public void set(int rl, int ru, Array<T> value, int rlSrc) {

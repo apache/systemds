@@ -19,7 +19,7 @@
 #
 #-------------------------------------------------------------
 
-# This builtin function implements SliceLine, a linear-algebra-based
+# This builtin function implements incSliceLine, a linear-algebra-based
 # ML model debugging technique for finding the top-k data slices where
 # a trained models performs significantly worse than on the overall
 # dataset. IncSliceLine is designed for scenarios in which training data is updated incrementally. 
@@ -45,8 +45,8 @@
 # params           list of parameters to ensure consistent parameters through all runs (for incremental updates)
 # prevFoffb        previous feature offsets (for incremental updates)
 # prevFoffe        previous feature offsets (for incremental updates)
-# prevNColOneHotX  number of columns of one-hot encoded matrix of previous run (for incremental updates)
 # prevLattice      previous lattice (for incremental updates)
+# metaPrevLattice  previous meta information for lattice encoding (for incremental updates)
 # prevStats        previous statistics whole lattice (for incremental updates)
 # prevTK           previous top-k slices (for incremental updates)
 # prevTKC          previous top-k scores (for incremental updates)
@@ -59,33 +59,43 @@
 # TKC              score, size, error of slices (k x 3)
 # D                debug matrix, populated with enumeration stats if verbose
 # L                lattice matrix
+# metaLattice      meta information for lattice encoding
 # Stats            statistics matrix for all slices in L
 # Xout             feature matrix consisting of oldX and totalX for next run
 # eOut             error vector consisting of oldE and addedE for next run
 # foffb            feature offsets for next run
 # foffe            feature offsets for next run
-# nColOneHotX      number of columns of one-hot encoded feature matrix for next run
 # params           list of parameters for next run
 # -----------------------------------------------------------------------------------------
 
 m_incSliceLine = function(
-    Matrix[Double] addedX, Matrix[Double] oldX = matrix(0, 0, 0), Matrix[Double] oldE = matrix(0, 0, 0),
-    Matrix[Double] addedE, Int k = 4, Int maxL = 0, Int minSup = 32, Double alpha = 0.5, Boolean tpEval = TRUE,
-    Int tpBlksz = 16, Boolean selFeat = FALSE, Boolean verbose = FALSE, list[unknown] params = list(), 
-    Matrix[Double] prevFoffb = matrix(0,0,0), Matrix[Double] prevFoffe = matrix(0,0,0), Integer prevNColOneHotX = 0,
-    list[unknown] prevLattice = list(), list[unknown] prevStats = list(), Matrix[Double] prevTK = matrix(0,0,0),
+    Matrix[Double] addedX, Matrix[Double] oldX = matrix(0, 0, 0), 
+    Matrix[Double] oldE = matrix(0, 0, 0), Matrix[Double] addedE, 
+    Int k = 4, Int maxL = 0, Int minSup = 32, Double alpha = 0.5,
+    Boolean tpEval = TRUE, Int tpBlksz = 16, Boolean selFeat = FALSE, 
+    Boolean verbose = FALSE, list[unknown] params = list(), 
+    Matrix[Double] prevFoffb = matrix(0,0,0), Matrix[Double] prevFoffe = matrix(0,0,0),
+    list[unknown] prevLattice = list(), list[unknown] metaPrevLattice = list(), 
+    list[unknown] prevStats = list(), Matrix[Double] prevTK = matrix(0,0,0), 
     Matrix[Double] prevTKC = matrix(0,0,0), Boolean encodeLat = TRUE)
-  return(Matrix[Double] TK, Matrix[Double] TKC, Matrix[Double] D, list[unknown] L, 
-    list[unknown] Stats, Matrix[Double] Xout, Matrix[Double] eOut, Matrix[Double] foffb, Matrix[Double] foffe, Integer nColOneHotX, list[unknown] params)
+  return(
+    Matrix[Double] TK, Matrix[Double] TKC, Matrix[Double] D, 
+    list[unknown] L, list[unknown] metaLattice,
+    list[unknown] Stats, Matrix[Double] Xout, Matrix[Double] eOut, 
+    Matrix[Double] foffb, Matrix[Double] foffe, list[unknown] params)
 {
-  # for simple collection and processing
-  if(length(prevLattice) > 0 & (length(prevStats) == 0 | length(params) == 0 | nrow(prevFoffb) == 0 | nrow(prevFoffe) == 0 | 
-      prevNColOneHotX == 0 | nrow(oldX) == 0 | nrow(oldE) == 0))
+  # for incremental updates a params list storing previous parameters is required 
+  # to ensure consistent parameters over all runs
+  # the params list is automatically generated from the first run's params and only needs to be passed on. 
+  if(length(prevLattice) > 0 & 
+    ((length(prevStats) == 0 | length(params) == 0 | nrow(prevFoffb) == 0 | nrow(prevFoffe) == 0 | 
+      nrow(oldX) == 0 | nrow(oldE) == 0) | (encodeLat & length(metaPrevLattice) == 0)))
   {
-      [TK, TKC, D, L, Stats, Xout, eOut, foffb, foffe, nColOneHotX, params] = throwNoParamsError();
+    [TK, TKC, D, L, Stats, Xout, eOut, foffb, foffe, metaLattice, params] = throwNoParamsError();
   } else {
 
   t1 = time();
+
   # store params for next run
   [params, k, maxL, minSup, alpha, tpEval, tpBlksz, selFeat, encodeLat] = storeParams(k, maxL, minSup, alpha, tpEval, tpBlksz, selFeat, encodeLat, params);
 
@@ -116,13 +126,12 @@ m_incSliceLine = function(
   rix = matrix(seq(1,m)%*%matrix(1,1,n), m*n, 1)
   cix = matrix(totalX + foffb, m*n, 1);
   X2 = table(rix, cix, 1, m, as.scalar(foffe[,n]), FALSE); #one-hot encoded
-
-  # store ncol of one hot encoded matrix for next run (needed for conversion of int matrix to bin matrix)
-  nColOneHotX = ncol(X2);
   
   #inititalize booleans
-  sameSizeOffsets = TRUE;
-  sameOffsets = TRUE;
+  differentOffsets = TRUE;
+  if(nrow(prevFoffb) > 0){
+    differentOffsets = (!((sum(prevFoffb == foffb) == (ncol(foffb) * nrow(foffb))) & (sum(prevFoffe == foffe) == (ncol(foffe) * nrow(foffe))) ));
+  }
 
   # combining of addedX and oldX
   if(nrow(oldX) > 0){
@@ -210,20 +219,19 @@ m_incSliceLine = function(
     [minsc] = computeLowestPrevTK (prevTK2, X2, totalE, eAvg, alpha, minsc)
   } 
 
+  # create and score basic slices (conjunctions of 1 feature)
   [S, R, selCols] = createAndScoreBasicSlices(X2, addedX2, prevTK2, totalE, eAvg, eAvgOld, eAvgNew, minSup, alpha, minsc, verbose);
 
-  # initialize Lattice and Statistics
+  # initialize lattice and statistics for incremental updates
   Stats = list();
   L = list();
-  tEncoding = 0.0;
+  metaLattice = list();
   if( encodeLat ) {
-    tEnc = time();
-    L1 = binaryMatrixToIntegerMatrix(S, 52); 
-    tEncoding = tEncoding + (time() - tEnc);
+    [L1, M] = transformSlicesToIDs(S, foffb, foffe);
+    metaLattice = append(metaLattice, M);
   }else {
     L1 = S;
   }
-  
   L = append(L, L1);
   Stats = append(Stats,R[, 4]);
 
@@ -236,7 +244,7 @@ m_incSliceLine = function(
     D = rbind(D, t(as.matrix(list(1, n2, nrow(S), maxsc2, minsc2))));
   }
 
-  # reduced dataset to relevant attributes (minSup, err>0), S reduced on-the-fly
+  # reduce dataset to relevant attributes (minSup, err>0), S reduced on-the-fly
   if( selFeat ){
     X2 = removeEmpty(target=X2, margin="cols", select=t(selCols));
     addedX2 = removeEmpty(target=addedX2, margin="cols", select=t(selCols));
@@ -246,13 +254,6 @@ m_incSliceLine = function(
   # termination condition (max #feature levels)
   maxL = ifelse(maxL<=0, n, maxL)
   level = 1;
-  if(nrow(prevFoffb) > 0){
-    sameSizeOffsets = (nrow(prevFoffb) == nrow(foffb) & nrow(prevFoffe) == nrow(foffe))
-    sameOffsets = (!((sum(prevFoffb == foffb) == (ncol(foffb) * nrow(foffb))) & (sum(prevFoffe == foffe) == (ncol(foffe) * nrow(foffe))) ));
-  }
-   
-  timeInitialComputation = time() - t1;
-  timePruningUnchangedSlices = 0.0;
   while( nrow(S) > 0 & sum(S) > 0 & level < n & level < maxL ) {
     level = level + 1;
 
@@ -261,25 +262,18 @@ m_incSliceLine = function(
     [S, minsc] = getPairedCandidates(S, minsc, R, TKC, level, eAvg, minSup, alpha, n2, foffb, foffe);
     S2 = S;
 
+    # prepare and store output lattice for next run
     if ( encodeLat ) {
-      tEnc = time();
-      Lrep = binaryMatrixToIntegerMatrix(S, 52);
-      tEncoding = tEncoding + (time() - tEnc);
+      [Lrep, M] = transformSlicesToIDs(S, foffb, foffe);
+      metaLattice = append(metaLattice, M);
     } else {
       Lrep = S;
     }
     L = append(L, Lrep);
 
-    # ensure prevLattice has same dimensions and is decoded
-    prevLattice2 = matrix(0,0,0);
-    if( length(prevLattice) >= level ) { 
-      latAtLevel = as.matrix(prevLattice[level]);
-      if(nrow(latAtLevel) > 0){
-        tEnc = time();
-        prevLattice2 = preparePrevLattice(latAtLevel, prevNColOneHotX, prevFoffb, prevFoffe, foffb, foffe, sameSizeOffsets, sameOffsets, encodeLat);
-        tEncoding = tEncoding + (time() - tEnc);
-      }
-    }
+    # load one hot encoded previous lattice for the current level
+    prevLattice2 = preparePrevLattice(prevLattice, metaPrevLattice, prevFoffb, 
+      prevFoffe, foffb, foffe, level, encodeLat, differentOffsets)
 
     if(selFeat){
       if(length(prevLattice2)>0) {
@@ -294,9 +288,7 @@ m_incSliceLine = function(
     
     # prune unchanged slices with slice size < minSup
     if(level <= length(prevStats)){
-      tPruningUnchangedSlices = time();
       [S, S2] = pruneUnchangedSlices(S, S2,  prevLattice2, prevStats, addedX2, minSup, verbose, level);
-      timePruningUnchangedSlices = timePruningUnchangedSlices + (time() - tPruningUnchangedSlices);
     }
 
     if(verbose) {
@@ -337,9 +329,6 @@ m_incSliceLine = function(
       }
     }
   }
-  print("TIME INITIAL COMP.: "+timeInitialComputation);
-  print("TIME FOR ENCODING: "+tEncoding);
-  print("TIME FOR PRUNING UNCHANGED SLICES: "+timePruningUnchangedSlices);
 
   TK = decodeOneHot(TK, foffb, foffe);
 
@@ -354,8 +343,6 @@ m_incSliceLine = function(
   print("Lattice: \n "+ toString(L) +":\n"
     + "Statistics: \n "+ toString(Stats));
 */
-  print("Time taken: "+(time()-t1));
-  print("Time taken without encoding: "+(time()-t1-tEncoding));
 }
 }
 
@@ -414,8 +401,9 @@ createAndScoreBasicSlices = function(Matrix[Double] X2, Matrix[Double] addedX2,
   sc = score(ss, se, eAvg, alpha, nrow(X2));
   R = cbind(sc, se, sm, ss);
 
-  # score pruning 
+  # score pruning of basic slices based on smallest score of all slices in prevTK
   if(minsc > -Inf) {
+    # compute upper bound scores for all basic slices
     ubSc = scoreUB(ss, se, sm, eAvg, minSup, alpha, nrow(X2));
     fScores = (ubSc >= minsc);
     S = removeEmpty(target=S, margin="rows", select=fScores);
@@ -424,6 +412,7 @@ createAndScoreBasicSlices = function(Matrix[Double] X2, Matrix[Double] addedX2,
       print("incSliceLine: initial pruning based on minsc: "+sum(fScores)+"/"+nrow(sc)+" slices remain.");
     }
   }
+
 }
 
 score = function(Matrix[Double] ss, Matrix[Double] se, Double eAvg, Double alpha, Integer n)
@@ -530,23 +519,8 @@ getPairedCandidates = function(Matrix[Double] S, Double minsc,
     sm = removeEmpty(target=sm, margin="rows", select=I);
 
     # prepare IDs for deduplication and pruning
-    ID = matrix(0, nrow(P), 1);
-    dom = foffe-foffb+1;
-    for( j in 1:ncol(dom) ) {
-      beg = as.scalar(foffb[1,j])+1;
-      end = as.scalar(foffe[1,j]);
-      I = rowIndexMax(P[,beg:end]) * rowMaxs(P[,beg:end]);
-      prod = 1;
-      if(j<ncol(dom)) {
-        prod = prod(dom[1,(j+1):ncol(dom)])
-      }
-      ID = ID + I * prod;
-    }
-
-    # ID transformation to avoid exceeding INT_MAX and
-    # and to void creating huge sparse intermediates
-    [ID, M] = transformencode(target=as.frame(ID), spec="{ids:true,recode:[1]}")
-
+    [ID, M] = transformSlicesToIDs(P, foffb, foffe);
+  
     # size pruning, with rowMin-rowMax transform
     # to avoid densification (ignored zeros)
     map = table(ID, seq(1,nrow(P)), max(ID), nrow(P))
@@ -618,7 +592,7 @@ decodeOneHot = function(Matrix[Double] M, Matrix[Double] foffb, Matrix[Double] f
   M = R;
 }
 
-# function to oneHotEncode but with predefined feature offsets, to have the same encoding for different datasets
+# function to oneHotEncode but with predefined feature offsets, to facilitate the same encoding for different datasets
 oneHotEncodeUsingOffsets = function(Matrix[Double] A, Matrix[Double] foffb, Matrix[Double] foffe)
   return(Matrix[Double] A_encoded)
 {
@@ -646,9 +620,10 @@ oneHotEncodeUsingOffsets = function(Matrix[Double] A, Matrix[Double] foffb, Matr
 # in case only individual parameters are entered they will be overwritten to ensure consistency
 throwNoParamsError = function() 
   return(Matrix[Double] TK, Matrix[Double] TKC, Matrix[Double] D, list[unknown] L,
-    list[unknown] Stats, Matrix[Double] Xout, Matrix[Double] eOut, Matrix[Double] foffb, Matrix[Double] foffe, Integer nColOneHotX,list[unknown] params) {
+    list[unknown] Stats, Matrix[Double] Xout, Matrix[Double] eOut, Matrix[Double] foffb, 
+    Matrix[Double] foffe, list[unknown] metaLattice, list[unknown] params) {
   print("incSliceLine: wrong or no parameters provided for incremental update. Please provide all parameters.");
-  print(" -- necessary parameters: params, prevLattice, prevStats, prevFoffb, prevFoffe, prevNColOneHotX, prevTK, prevTKC, oldX, oldE. ");
+  print(" -- necessary parameters: params, prevLattice, prevStats, prevFoffb, prevFoffe, prevTK, prevTKC, oldX, oldE. ");
   print(" -- see documentation for more details.");
   TK = matrix(0,0,0);
   TKC = matrix(0,0,0);
@@ -659,13 +634,15 @@ throwNoParamsError = function()
   eOut = matrix(0,0,0);
   foffb = matrix(0,0,0);
   foffe = matrix(0,0,0);
-  nColOneHotX = 0;
+  metaLattice = list();
   params = list();
 }
 
 # store parameters for next run and overwrite params if provided
-storeParams = function(Integer k, Integer maxL, Integer minSup, Double alpha, Boolean tpEval, Integer tpBlksz, Boolean selFeat, Boolean encodeLat, list[unknown] params)
-  return(list[unknown] params, Integer k, Integer maxL, Integer minSup, Double alpha, Boolean tpEval, Integer tpBlksz, Boolean selFeat, Boolean encodeLat)
+storeParams = function(Integer k, Integer maxL, Integer minSup, Double alpha, Boolean tpEval, 
+  Integer tpBlksz, Boolean selFeat, Boolean encodeLat, list[unknown] params)
+  return(list[unknown] params, Integer k, Integer maxL, Integer minSup, 
+    Double alpha, Boolean tpEval, Integer tpBlksz, Boolean selFeat, Boolean encodeLat)
 {
   if(length(params) == 0) {
     params = list(as.double(k), as.double(maxL), as.double(minSup), 
@@ -718,59 +695,6 @@ computeLowestPrevTK = function(Matrix[Double] prevTK2, Matrix[Double] X2,Matrix[
     }
 }
 
-# Function to convert a binary matrix to a double matrix
-# matrix rows are interpreted as binary numbers and converted to integers
-# only a subset of columns is considered for each integer (x columns at a time)
-# integer matrix will have ceil(numCols / x) columns to account for the maximum size of double values 
-# (x needs to be set to 52 for double precision)
-binaryMatrixToIntegerMatrix = function(Matrix[Double] binaryMatrix, Integer x)
-  return (Matrix[Double] integerMatrix)
-{
-
-  
-  numRows = nrow(binaryMatrix);
-  numCols = ncol(binaryMatrix);
-  numIntCols = ceil(numCols / x);
-  integerMatrix = matrix(0, numRows, numIntCols);
-  if(nrow(binaryMatrix) != 0){
-    powersOfTwo = matrix(2^(seq(x-1,0,-1)), rows=1, cols=x);
-    for (j in 1:numIntCols) {
-      startCol = (j-1)*x + 1;
-      endCol = min(j*x, numCols);
-      binaryChunk = binaryMatrix[, startCol:endCol];
-      intRepresentation = rowSums(outer(binaryChunk, powersOfTwo[1, (ncol(powersOfTwo)-(endCol-startCol)):(ncol(powersOfTwo))], "*"));
-      integerMatrix[, j] = intRepresentation;
-    }
-  }
-}
-
-# Function to convert an integer matrix back to a binary matrix
-# x is the number of columns in each chunk of the binary matrix
-# numCols is the total number of columns in the binary matrix
-integerMatrixToBinaryMatrix = function(Matrix[Double] integerMatrix, Integer x, Integer numCols)
-  return (Matrix[Double] binaryMatrix)
-{
-  numRows = nrow(integerMatrix);
-  binaryMatrix = matrix(0, numRows, numCols);
-  powersOfTwo = matrix(2^(seq(x-1,0,-1)), rows=1, cols=x);
-
-  for (i in 1:numRows) {
-    for (j in 1:ncol(integerMatrix)) {
-      intRepresentation = integerMatrix[i, j];
-      startCol = (j-1)*x + 1;
-      endCol = min(j*x, numCols);
-      binaryChunk = intRepresentation %/% powersOfTwo[1, (ncol(powersOfTwo)-(endCol-startCol)):(ncol(powersOfTwo))] %% 2;
-      binaryMatrix[i, startCol:endCol] = binaryChunk;
-    }
-  }
-}
-
-isEqual = function(Matrix[Double] a, Matrix[Double] b)
-return (Boolean res)
- {
-    res = sum(a == b) == (ncol(b) * nrow(b))
-}
-
 pruneUnchangedSlices = function(Matrix[Double] S, Matrix[Double] S2, Matrix[Double] prevLattice2, list[unknown] prevStats, Matrix[Double] addedX2, Int minSup, Boolean verbose, Integer level)
   return(Matrix[Double] S, Matrix[Double] S2)
 {
@@ -807,33 +731,76 @@ pruneUnchangedSlices = function(Matrix[Double] S, Matrix[Double] S2, Matrix[Doub
   }
 }
 
-# this function first converts the prevLattice to binary matrix with offsets from previous run
-# then it checks if the previous offsets are the same as the current offsets
-# if they are the same, the previous lattice can be used as it is
-# if they are not the same, the lattice has to be decoded and encoded again with the current offsets
-preparePrevLattice = function(Matrix[Double] prevLattice, Integer prevNColOneHotX, Matrix[Double] prevFoffb, Matrix[Double] prevFoffe, Matrix[Double] foffb, Matrix[Double] foffe, Boolean sameSizeOffsets, Boolean sameOffsets, Boolean encodeLat)
-  return(Matrix[Double] prevLattice2)
+transformSlicesToIDs = function(Matrix[Double] S, Matrix[Double] foffb, Matrix[Double] foffe)
+  return(Matrix[Double] ID, frame[unknown] M)
 {
-  # convert prevLattice to binary matrix with offsets from previous run
-    if(encodeLat){
-      prevLatticeBin = integerMatrixToBinaryMatrix(prevLattice, 52, prevNColOneHotX);
-    } else {
-      prevLatticeBin = prevLattice;
-    }
-    
-    if(sameSizeOffsets){
-      # if the previous offsets are not the same as the current offsets, the lattice has to be decoded and encoded again
-      if (sameOffsets){
+    if(nrow(S) > 0){
+      ID = matrix(0, nrow(S), 1);
+      dom = foffe-foffb+1;
 
-        prevLatticeDec = decodeOneHot(prevLatticeBin, prevFoffb, prevFoffe);
-        prevLattice2 = oneHotEncodeUsingOffsets(prevLatticeDec, foffb, foffe);
-      } else {
-        # otherwise the previous lattice can be used as it is
-        prevLattice2 = prevLatticeBin;
-      } 
+      for( j in 1:ncol(dom) ) {
+        beg = as.scalar(foffb[1,j])+1;
+        end = as.scalar(foffe[1,j]);
+        I = rowIndexMax(S[,beg:end]) * rowMaxs(S[,beg:end]);
+        prod = 1;
+        if(j<ncol(dom)) {
+          prod = prod(dom[1,(j+1):ncol(dom)])
+        }
+        ID = ID + I * prod;
+      }
+      # ID transformation to avoid exceeding INT_MAX and
+      # and to void creating huge sparse intermediates
+      [ID, M] = transformencode(target=as.frame(ID), spec="{ids:true,recode:[1]}")
     } else {
-      # if the previous offsets are not the same as the current offsets, the lattice has to be decoded and encoded again
-        prevLatticeDec = decodeOneHot(prevLatticeBin, prevFoffb, prevFoffe);
-        prevLattice2 = oneHotEncodeUsingOffsets(prevLatticeDec, foffb, foffe);
+      ID = matrix(0, 0, 1);
+      M = as.frame(matrix(0, 0, 0));
+    }
+}
+
+# Function to decode IDs back into slices using domain size scaling reversal
+transformIDsToSlices = function(Matrix[Double] ID, Matrix[Double] foffb, Matrix[Double] foffe, frame[unknown] M)
+  return(Matrix[Double] S)
+{   
+  if(nrow(ID) > 0){
+    ID = transformdecode(target=ID, spec="{ids:true,recode:[1]}", meta=M);
+    ID = as.matrix(ID);
+    dom = foffe-foffb+1;
+    numSlices = nrow(ID);
+    numFeatures = ncol(foffb);
+    S = matrix(0, numSlices, numFeatures);
+
+    for (i in 1:numSlices) {
+      remainingID = as.scalar(ID[i, 1]);
+      for (j in 1:numFeatures) {
+        domSize = as.scalar(dom[1, numFeatures - j +1]);
+        value = remainingID %% domSize;
+        S[i, numFeatures - j +1] = value;
+        remainingID = floor(remainingID/domSize);
+      }
+    }
+  } else {
+    S = matrix(0, 0, 0);
+  }
+}
+
+preparePrevLattice = function(list[unknown] prevLattice, list[unknown] metaPrevLattice, 
+  Matrix[Double] prevFoffb, Matrix[Double] prevFoffe, Matrix[Double] foffb, 
+  Matrix[Double] foffe, Integer level, Boolean encodeLat, Boolean differentOffsets)
+  return (Matrix[Double] prevLattice2) {
+
+  prevLattice2 = matrix(0,0,0);
+    if( length(prevLattice) >= level ) { 
+      prevLattice2 = as.matrix(prevLattice[level]);
+      if(nrow(prevLattice2) > 0){
+        if(encodeLat) {
+          metaAtLevel = as.frame(metaPrevLattice[level]);
+          prevLatticeDec = transformIDsToSlices(prevLattice2, prevFoffb, prevFoffe, metaAtLevel);
+          prevLattice2 = oneHotEncodeUsingOffsets(prevLatticeDec, foffb, foffe);
+        # in case the offsets in the previous run were different the lattice needs to be adjusted
+        } else if(differentOffsets) {
+          prevLatticeDec = decodeOneHot(prevLattice2, prevFoffb, prevFoffe);
+          prevLattice2 = oneHotEncodeUsingOffsets(prevLatticeDec, foffb, foffe);
+        }
+      }
     }
 }

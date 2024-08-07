@@ -323,8 +323,15 @@ public class StringArray extends Array<String> {
 	protected Array<Boolean> changeTypeBooleanCharacterBitSet(Array<Boolean> ret, int rl, int ru) {
 		for(int i = rl; i < ru; i++) {
 			final String s = _data[i];
-			if(s != null)
-				ret.set(i, isTrueCharacter(s.charAt(0)));
+			if(s != null) {
+				if(isTrueCharacter(s.charAt(0)))
+					ret.set(i, true);
+				else if(isFalseCharacter(s.charAt(0)))
+					ret.set(i, false);
+				else
+					throw new DMLRuntimeException("Unable to change to Boolean from String array, value: " + s);
+
+			}
 		}
 		return ret;
 	}
@@ -332,14 +339,26 @@ public class StringArray extends Array<String> {
 	protected Array<Boolean> changeTypeBooleanCharacterArray(Array<Boolean> retA, int rl, int ru) {
 		for(int i = rl; i < ru; i++) {
 			final String s = _data[i];
-			if(s != null)
-				retA.set(i, isTrueCharacter(s.charAt(0)));
+			if(s != null) {
+
+				if(isTrueCharacter(s.charAt(0)))
+					retA.set(i, true);
+				else if(isFalseCharacter(s.charAt(0)))
+					retA.set(i, false);
+				else
+					throw new DMLRuntimeException("Unable to change to Boolean from String array, value: " + s);
+			}
+
 		}
 		return retA;
 	}
 
 	private boolean isTrueCharacter(char a) {
 		return a == 'T' || a == 't';
+	}
+
+	private boolean isFalseCharacter(char a) {
+		return a == 'F' || a == 'f';
 	}
 
 	protected Array<Boolean> changeTypeBooleanNumericBitSet(Array<Boolean> ret, int rl, int ru) {
@@ -442,33 +461,35 @@ public class StringArray extends Array<String> {
 		for(int i = l; i < u; i++) {
 			final String s = _data[i];
 			if(s != null)
-				ret.set(i, Integer.parseInt(s));
+				ret.set(i, parseSignificantFloat(s));
 		}
 	}
 
-	protected int parseSignificant(String s) {
-		if(s == null)
-			return 0;
+	protected int parseSignificantFloat(String s) {
 		final int len = s.length();
-		int v = 0;
-		int c = 0;
+		int v = 0; // running sum of Significant
+		int c = 0; // current character
+		char ch = s.charAt(c);
+		final boolean isNegative = ch == '-';
+		if(isNegative || ch == '+') {
+			ch = s.charAt(++c);
+		}
 		for(; c < len; c++) {
-			char ch = s.charAt(c);
-			if(c == ',')
+			ch = s.charAt(c);
+			final int cc = ch - '0';
+			if(ch == '.')
 				break;
-			else if((ch - '0') < 10) {
-				v = 10 * v + ch - '0';
-			}
+			else if(cc < 10)
+				v = 10 * v + cc;
 			else
 				throw new NumberFormatException(s);
 		}
 		c++;
 		for(; c < len; c++) {
-			char ch = s.charAt(c);
-			if((ch - '0') > 10)
+			if(s.charAt(c) != '0')
 				throw new NumberFormatException(s);
 		}
-		return v;
+		return isNegative ? -v : v;
 	}
 
 	protected void changeTypeIntegerNormal(Array<Integer> ret, int l, int u) {
@@ -476,16 +497,34 @@ public class StringArray extends Array<String> {
 			for(int i = l; i < u; i++) {
 				final String s = _data[i];
 				if(s != null)
-					ret.set(i, Integer.parseInt(s));
+					ret.set(i, parseInt(s));
 			}
 		}
-		catch(NumberFormatException e) {
-			if(e.getMessage().contains("For input string: \"\"")) {
-				LOG.warn("inefficient safe cast");
-				changeTypeIntegerSafe(ret, l, u);
-			}
-			throw new DMLRuntimeException("Unable to change to Integer from String array", e);
+		catch(StringIndexOutOfBoundsException e) {
+			LOG.warn("inefficient safe cast because of : " + e.getMessage());
+			changeTypeIntegerSafe(ret, l, u);
 		}
+	}
+
+	protected int parseInt(String s) {
+		final int len = s.length();
+		int v = 0; // running sum of Significant
+		int c = 0;
+		char ch = s.charAt(c);
+		final boolean isNegative = ch == '-';
+		if(isNegative || ch == '+') {
+			ch = s.charAt(++c);
+		}
+		for(; c < len; c++) {
+			ch = s.charAt(c);
+			final int cc = ch - '0';
+			if(cc < 10)
+				v = 10 * v + cc;
+			else
+				throw new NumberFormatException(s);
+		}
+
+		return isNegative ? -v : v;
 	}
 
 	protected void changeTypeIntegerSafe(Array<Integer> ret, int l, int u) {

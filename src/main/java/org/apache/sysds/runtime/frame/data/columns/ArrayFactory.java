@@ -112,7 +112,10 @@ public interface ArrayFactory {
 		return new CharArray(col);
 	}
 
-	public static <T> OptionalArray<T> create(T[] col) {
+	@SuppressWarnings("unchecked")
+	public static <T> Array<T> create(T[] col) {
+		if(col instanceof String[])
+			return (Array<T>) new StringArray((String[]) col);
 		return new OptionalArray<>(col);
 	}
 

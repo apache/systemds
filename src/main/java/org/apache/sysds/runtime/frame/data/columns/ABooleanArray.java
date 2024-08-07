@@ -24,7 +24,7 @@ import java.util.Map;
 
 public abstract class ABooleanArray extends Array<Boolean> {
 
-	public ABooleanArray(int size) {
+	protected ABooleanArray(int size) {
 		super(size);
 	}
 

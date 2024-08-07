@@ -226,10 +226,12 @@ public abstract class Array<T> implements Writable {
 	 * @param ru    row upper (inclusive)
 	 * @param value value array to take values from (same type)
 	 */
-	public void set(int rl, int ru, Array<T> value) {
-		for(int i = rl; i <= ru; i++)
-			set(i, value.get(i));
-	}
+	public abstract void set(int rl, int ru, Array<T> value);
+
+	// {
+	// for(int i = rl; i <= ru; i++)
+	// set(i, value.get(i));
+	// }
 
 	/**
 	 * Set range to given arrays value with an offset into other array
@@ -409,6 +411,13 @@ public abstract class Array<T> implements Writable {
 
 	public abstract boolean possiblyContainsNaN();
 
+	/**
+	 * Change type taking into consideration if the target type must be able to contain Null.
+	 * 
+	 * @param t            The target type
+	 * @param containsNull If the target should be able to contain null
+	 * @return The changed type array.
+	 */
 	public Array<?> changeType(ValueType t, boolean containsNull) {
 		return containsNull ? changeTypeWithNulls(t) : changeType(t);
 	}
@@ -458,10 +467,24 @@ public abstract class Array<T> implements Writable {
 			return changeType(ArrayFactory.allocate(t, size()));
 	}
 
+	/**
+	 * Change type by moving this arrays value into the given ret array.
+	 * 
+	 * @param ret The Array to put this arrays values into
+	 * @return The ret array given
+	 */
 	public final Array<?> changeType(Array<?> ret) {
 		return changeType(ret, 0, ret.size());
 	}
 
+	/**
+	 * Put the changed value types into the given ret array inside the range specified.
+	 * 
+	 * @param ret The Array to put this arrays values into
+	 * @param rl  inclusive lower bound
+	 * @param ru  exclusive upper bound
+	 * @return The ret array given.
+	 */
 	@SuppressWarnings("unchecked")
 	public final Array<?> changeType(Array<?> ret, int rl, int ru) {
 		switch(ret.getValueType()) {
@@ -498,31 +521,11 @@ public abstract class Array<T> implements Writable {
 	 * Change type to a bitSet, of underlying longs to store the individual values
 	 * 
 	 * @param ret The array to insert the result into
-	 * @return A Boolean type of array that is pointing the ret argument
-	 */
-	protected final Array<Boolean> changeTypeBitSet(Array<Boolean> ret) {
-		return changeTypeBitSet(ret, 0, size());
-	}
-
-	/**
-	 * Change type to a bitSet, of underlying longs to store the individual values
-	 * 
-	 * @param ret The array to insert the result into
 	 * @param l   lower index to convert from (inclusive)
 	 * @param u   upper index to convert to (exclusive)
 	 * @return A Boolean type of array that is pointing the ret argument
 	 */
 	protected abstract Array<Boolean> changeTypeBitSet(Array<Boolean> ret, int l, int u);
-
-	/**
-	 * Change type to a boolean array, of underlying longs to store the individual values
-	 * 
-	 * @param ret The array to insert the result into
-	 * @return A Boolean type of array that is pointing the ret argument
-	 */
-	protected Array<Boolean> changeTypeBoolean(Array<Boolean> ret) {
-		return changeTypeBoolean(ret, 0, size());
-	}
 
 	/**
 	 * Change type to a boolean array, of underlying longs to store the individual values
@@ -538,31 +541,11 @@ public abstract class Array<T> implements Writable {
 	 * Change type to a Double array, of underlying longs to store the individual values
 	 * 
 	 * @param ret The array to insert the result into
-	 * @return A Double type of array that is pointing the ret argument
-	 */
-	protected Array<Double> changeTypeDouble(Array<Double> ret) {
-		return changeTypeDouble(ret, 0, size());
-	}
-
-	/**
-	 * Change type to a Double array, of underlying longs to store the individual values
-	 * 
-	 * @param ret The array to insert the result into
 	 * @param l   lower index to convert from (inclusive)
 	 * @param u   upper index to convert to (exclusive)
 	 * @return A Double type of array that is pointing the ret argument
 	 */
 	protected abstract Array<Double> changeTypeDouble(Array<Double> ret, int l, int u);
-
-	/**
-	 * Change type to a Float array, of underlying longs to store the individual values
-	 * 
-	 * @param ret The array to insert the result into
-	 * @return A Float type of array that is pointing the ret argument
-	 */
-	protected Array<Float> changeTypeFloat(Array<Float> ret) {
-		return changeTypeFloat(ret, 0, size());
-	}
 
 	/**
 	 * Change type to a Float array, of underlying longs to store the individual values
@@ -578,31 +561,11 @@ public abstract class Array<T> implements Writable {
 	 * Change type to a Integer array, of underlying longs to store the individual values
 	 * 
 	 * @param ret The array to insert the result into
-	 * @return A Integer type of array that is pointing the ret argument
-	 */
-	protected Array<Integer> changeTypeInteger(Array<Integer> ret) {
-		return changeTypeInteger(ret, 0, size());
-	}
-
-	/**
-	 * Change type to a Integer array, of underlying longs to store the individual values
-	 * 
-	 * @param ret The array to insert the result into
 	 * @param l   lower index to convert from (inclusive)
 	 * @param u   upper index to convert to (exclusive)
 	 * @return A Integer type of array that is pointing the ret argument
 	 */
 	protected abstract Array<Integer> changeTypeInteger(Array<Integer> ret, int l, int u);
-
-	/**
-	 * Change type to a Long array, of underlying longs to store the individual values
-	 * 
-	 * @param ret The array to insert the result into
-	 * @return A Long type of array that is pointing the ret argument
-	 */
-	protected Array<Long> changeTypeLong(Array<Long> ret) {
-		return changeTypeLong(ret, 0, size());
-	}
 
 	/**
 	 * Change type to a Long array, of underlying longs to store the individual values
@@ -618,31 +581,11 @@ public abstract class Array<T> implements Writable {
 	 * Change type to a Hash64 array, of underlying longs to store the individual values
 	 * 
 	 * @param ret The array to insert the result into
-	 * @return A Hash64 type of array that is pointing the ret argument
-	 */
-	protected Array<Object> changeTypeHash64(Array<Object> ret) {
-		return changeTypeHash64(ret, 0, size());
-	}
-
-	/**
-	 * Change type to a Hash64 array, of underlying longs to store the individual values
-	 * 
-	 * @param ret The array to insert the result into
 	 * @param l   lower index to convert from (inclusive)
 	 * @param u   upper index to convert to (exclusive)
 	 * @return A Hash64 type of array that is pointing the ret argument
 	 */
 	protected abstract Array<Object> changeTypeHash64(Array<Object> ret, int l, int u);
-
-	/**
-	 * Change type to a Hash32 array, of underlying longs to store the individual values
-	 * 
-	 * @param ret The array to insert the result into
-	 * @return A Hash64 type of array that is pointing the ret argument
-	 */
-	protected Array<Object> changeTypeHash32(Array<Object> ret) {
-		return changeTypeHash32(ret, 0, size());
-	}
 
 	/**
 	 * Change type to a Hash32 array, of underlying longs to store the individual values
@@ -658,31 +601,11 @@ public abstract class Array<T> implements Writable {
 	 * Change type to a String array, of underlying longs to store the individual values
 	 * 
 	 * @param ret The array to insert the result into
-	 * @return A String type of array that is pointing the ret argument
-	 */
-	protected Array<String> changeTypeString(Array<String> ret) {
-		return changeTypeString(ret, 0, size());
-	}
-
-	/**
-	 * Change type to a String array, of underlying longs to store the individual values
-	 * 
-	 * @param ret The array to insert the result into
 	 * @param l   lower index to convert from (inclusive)
 	 * @param u   upper index to convert to (exclusive)
 	 * @return A String type of array that is pointing the ret argument
 	 */
 	protected abstract Array<String> changeTypeString(Array<String> ret, int l, int u);
-
-	/**
-	 * Change type to a Character array, of underlying longs to store the individual values
-	 * 
-	 * @param ret The array to insert the result into
-	 * @return A Character type of array that is pointing the ret argument
-	 */
-	protected Array<Character> changeTypeCharacter(Array<Character> ret) {
-		return changeTypeCharacter(ret, 0, size());
-	}
 
 	/**
 	 * Change type to a Character array, of underlying longs to store the individual values
@@ -884,10 +807,6 @@ public abstract class Array<T> implements Writable {
 
 		final int memSizePerElement = estMemSizePerElement(vt.getKey(), memSize);
 		final int estDistinct = estimateDistinct(nSamples);
-
-		if(estDistinct <= 0)
-			throw new RuntimeException("Invalid estimate of distinct values: size: " + size() + " sample: " + nSamples
-				+ " estimate: " + estDistinct);
 
 		long ddcSize = DDCArray.estimateInMemorySize(memSizePerElement, estDistinct, size());
 

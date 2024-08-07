@@ -28,6 +28,7 @@ import static org.junit.Assert.fail;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.when;
 
 import java.lang.ref.SoftReference;
 import java.util.Arrays;
@@ -58,6 +59,7 @@ import org.apache.sysds.runtime.frame.data.columns.IHashArray;
 import org.apache.sysds.runtime.frame.data.columns.IntegerArray;
 import org.apache.sysds.runtime.frame.data.columns.LongArray;
 import org.apache.sysds.runtime.frame.data.columns.OptionalArray;
+import org.apache.sysds.runtime.frame.data.columns.RaggedArray;
 import org.apache.sysds.runtime.frame.data.columns.StringArray;
 import org.apache.sysds.runtime.matrix.data.Pair;
 import org.apache.sysds.test.component.frame.compress.FrameCompressTestUtils;
@@ -1277,6 +1279,30 @@ public class CustomArrayTests {
 		}
 	}
 
+	@Test
+	@SuppressWarnings("unchecked")
+	public void DDCCompressSerializeOnlyMap() {
+		try {
+			Array<String> a = ArrayFactory.create(FrameArrayTests.generateRandomStringNUniqueLength(100, 32, 5, 2000));
+			DDCArray<String> ddc = (DDCArray<String>) DDCArray.compressToDDC(a);
+			Array<String> dict = ddc.getDict();
+			ddc = ddc.nullDict();
+
+			DDCArray<String> ddcs = (DDCArray<String>) FrameArrayTests.serializeAndBack(ddc);
+
+			assertNull(ddcs.getDict());
+
+			ddcs = ddcs.setDict(dict);
+			FrameArrayTests.compare(a, ddcs);
+
+			assertTrue(a.getInMemorySize() > ddc.getInMemorySize());
+		}
+		catch(Exception e) {
+			e.printStackTrace();
+			fail(e.getMessage());
+		}
+	}
+
 	@Test(expected = DMLRuntimeException.class)
 	public void DDCInvalidReadFields() {
 		try {
@@ -1637,6 +1663,42 @@ public class CustomArrayTests {
 	}
 
 	@Test
+	public void testMinMaxDDC() {
+		Array<?> a = FrameArrayTests.createDDC(FrameArrayType.INT32, 100, 132, 10);
+
+		double[] e = a.minMax(11, 100);
+		assertEquals(e[0], Double.MIN_VALUE, 0.0);
+		assertEquals(e[1], Double.MAX_VALUE, 0.0);
+	}
+
+	@Test
+	public void testMinMaxDDC2() {
+		Array<?> a = FrameArrayTests.createDDC(FrameArrayType.INT32, 100, 132, 10);
+		DDCArray<?> d = (DDCArray<?>) a;
+		Array<?> dict = d.getDict();
+		double[] dictMM = dict.minMax();
+		double[] e = a.minMax(5, 100);
+
+		assertTrue(e[0] >= dictMM[0]);
+		assertTrue(e[1] <= dictMM[1]);
+
+		e = a.minMax(10, 10);
+
+		assertTrue(e[0] >= dictMM[0]);
+		assertTrue(e[1] <= dictMM[1]);
+
+		e = a.minMax(1, 5);
+
+		assertTrue(e[0] >= dictMM[0]);
+		assertTrue(e[1] <= dictMM[1]);
+
+		e = a.minMax(8, 135);
+
+		assertTrue(e[0] >= dictMM[0]);
+		assertTrue(e[1] <= dictMM[1]);
+	}
+
+	@Test
 	public void createRecodeMap() {
 		Array<Integer> a = ArrayFactory.create(new int[] {1, 1, 1, 1, 3, 3, 1, 2});
 		Map<Integer, Long> m = a.getRecodeMap();
@@ -1851,6 +1913,11 @@ public class CustomArrayTests {
 	@Test(expected = Exception.class)
 	public void parseHashInt1() {
 		HashIntegerArray.parseHashInt(new Object());
+	}
+
+	@Test
+	public void parseHashIntInteger() {
+		assertEquals(13, HashIntegerArray.parseHashInt(Integer.valueOf(13)));
 	}
 
 	@Test
@@ -2220,7 +2287,6 @@ public class CustomArrayTests {
 		a.append(ArrayFactory.createHash64I(new long[] {1, 2, 3, 4, 5, 6, 7, 8, 9, 10}));
 	}
 
-
 	@Test(expected = Exception.class)
 	@SuppressWarnings("unchecked")
 	public void appendInvalidHashLongOpt() {
@@ -2234,4 +2300,214 @@ public class CustomArrayTests {
 		Array<Object> a = (Array<Object>) FrameArrayTests.create(FrameArrayType.HASH32, 20, 1);
 		a.append(ArrayFactory.createHash64OptI(new long[] {1, 2, 3, 4, 5, 6, 7, 8, 9, 10}));
 	}
+
+	@Test
+	public void allocateOpt() {
+		Array<?> a = ArrayFactory.allocate(ValueType.INT32, 10, true);
+		for(int i = 0; i < 10; i++)
+			assertNull(a.get(i));
+	}
+
+	@Test
+	public void allocateOptNo() {
+		Array<?> a = ArrayFactory.allocate(ValueType.INT32, 10, false);
+		for(int i = 0; i < 10; i++)
+			assertEquals(0, a.get(i));
+	}
+
+	@Test
+	public void testCompressUINT4() {
+		Array<?> a = ArrayFactory.allocate(ValueType.INT32, 13, false);
+		a.set(0, 10);
+		a.set(1, 11);
+		a.set(2, 13);
+		Array<?> spy = spy(a);
+
+		when(spy.getValueType()).thenReturn(ValueType.UINT4);
+
+		assertEquals(ValueType.UINT4, spy.getValueType());
+		Array<?> b = DDCArray.compressToDDC(spy);
+		assertFalse(b instanceof DDCArray);
+	}
+
+	@Test
+	public void testCompressRaggedArray() {
+		try {
+			Array<?> a = new RaggedArray<>(new String[] {"a", "b"}, 25);
+			Array<?> b = DDCArray.compressToDDC(a);
+			assertFalse(b instanceof DDCArray);
+		}
+		catch(Exception e) {
+			e.printStackTrace();
+			fail(e.getMessage());
+		}
+	}
+
+	@Test(expected = Exception.class)
+	public void invalidNegativeSize() {
+		new BitSetArray(new long[4], -1);
+	}
+
+	@Test(expected = Exception.class)
+	@SuppressWarnings("unchecked")
+	public void setDDCArray() {
+		Array<Integer> a = (Array<Integer>) FrameArrayTests.createDDC(FrameArrayType.INT32, 100, 324, 10);
+		assertTrue(a instanceof DDCArray);
+		a.set(0, 10, ArrayFactory.create(new int[] {1, 2, 3}));
+	}
+
+	@Test(expected = Exception.class)
+	public void StringToBitSet1() {
+		String[] a = FrameArrayTests.generateRandom01String(100, 13);
+		a[10] = "hi";
+
+		ArrayFactory.create(a).changeType(ValueType.BOOLEAN);
+	}
+
+	@Test(expected = Exception.class)
+	public void StringToBitSet2() {
+		String[] a = FrameArrayTests.generateRandomTFString(100, 13);
+		a[10] = "hi";
+
+		ArrayFactory.create(a).changeType(ValueType.BOOLEAN);
+	}
+
+	@Test(expected = Exception.class)
+	public void StringToBitSet3() {
+		String[] a = FrameArrayTests.generateRandom01String(40, 13);
+		a[10] = "hi";
+
+		ArrayFactory.create(a).changeType(ValueType.BOOLEAN);
+	}
+
+	@Test(expected = Exception.class)
+	public void StringToBitSet4() {
+		String[] a = FrameArrayTests.generateRandomTFString(40, 13);
+		a[10] = "hi";
+
+		ArrayFactory.create(a).changeType(ValueType.BOOLEAN);
+	}
+
+	@Test
+	@SuppressWarnings("unchecked")
+	public void StringToBitSet5() {
+		String[] a = new String[50];
+		Array<Boolean> b = (Array<Boolean>) ArrayFactory.create(a).changeType(ValueType.BOOLEAN);
+		for(int i = 0; i < a.length; i++) {
+			assertFalse(b.get(i));
+		}
+	}
+
+	@Test
+	@SuppressWarnings("unchecked")
+	public void StringToBitSet6() {
+		String[] a = new String[70];
+		Array<Boolean> b = (Array<Boolean>) ArrayFactory.create(a).changeType(ValueType.BOOLEAN);
+		for(int i = 0; i < a.length; i++) {
+			assertFalse(b.get(i));
+		}
+	}
+
+	@Test(expected = Exception.class)
+	public void StringToBitSet7() {
+		String[] a = FrameArrayTests.generateRandom01String(70, 13);
+
+		a[10] = ";";
+		ArrayFactory.create(a).changeType(ValueType.BOOLEAN);
+	}
+
+	@Test(expected = Exception.class)
+	public void StringToBitSet8() {
+		String[] a = FrameArrayTests.generateRandom01String(40, 13);
+
+		a[10] = ";";
+		ArrayFactory.create(a).changeType(ValueType.BOOLEAN);
+	}
+
+	@Test(expected = Exception.class)
+	public void StringToInt() {
+		String[] a = FrameArrayTests.generateRandomFloatInt(40, 13);
+
+		a[10] = ";";
+		ArrayFactory.create(a).changeType(ValueType.INT32);
+	}
+
+	@Test(expected = Exception.class)
+	public void StringToInt1() {
+		String[] a = FrameArrayTests.generateRandomFloatInt(40, 13);
+
+		a[10] = ";";
+		ArrayFactory.create(a).changeType(ValueType.INT32);
+	}
+
+	@Test
+	public void StringToInt3() {
+		String[] a = FrameArrayTests.generateRandomFloatInt(40, 13);
+		Array<?> aa = ArrayFactory.create(a).changeType(ValueType.INT32);
+		for(int i = 0; i < a.length; i++) {
+			assertEquals(Double.parseDouble(a[i]), aa.getAsDouble(i), 0.0);
+		}
+	}
+
+	@Test
+	public void StringToInt4() {
+		String[] a = FrameArrayTests.generateRandomFloatInt(80, 321);
+		Array<?> aa = ArrayFactory.create(a).changeType(ValueType.INT32);
+		for(int i = 0; i < a.length; i++) {
+			assertEquals(Double.parseDouble(a[i]), aa.getAsDouble(i), 0.0);
+		}
+	}
+
+	@Test
+	public void StringToInt5() {
+		String[] a = FrameArrayTests.generateRandomInt(80, 321);
+		Array<?> aa = ArrayFactory.create(a).changeType(ValueType.INT32);
+		for(int i = 0; i < a.length; i++) {
+			assertEquals(Double.parseDouble(a[i]), aa.getAsDouble(i), 0.0);
+		}
+	}
+
+	@Test(expected = Exception.class)
+	public void StringToInt6() {
+		String[] a = FrameArrayTests.generateRandomFloatInt(80, 321);
+		a[10] = "13241.00f";
+		ArrayFactory.create(a).changeType(ValueType.INT32);
+
+	}
+
+	@Test
+	public void StringToInt7() {
+		try {
+
+			String[] a = FrameArrayTests.generateRandomInt(80, 321);
+
+			a[19] = "";
+			Array<?> aa = ArrayFactory.create(a).changeType(ValueType.INT32);
+			for(int i = 0; i < a.length; i++) {
+				if(i != 19)
+					assertEquals(Double.parseDouble(a[i]), aa.getAsDouble(i), 0.0);
+				else
+					assertEquals(0.0, aa.getAsDouble(i), 0.0);
+			}
+		}
+		catch(Exception e) {
+			e.printStackTrace();
+			fail(e.getMessage());
+		}
+	}
+
+	@Test(expected = Exception.class)
+	public void StringToInt8() {
+		String[] a = FrameArrayTests.generateRandomFloatInt(80, 321);
+		a[10] = "13241f";
+		ArrayFactory.create(a).changeType(ValueType.INT32);
+	}
+
+	@Test(expected = Exception.class)
+	public void StringToInt9() {
+		String[] a = FrameArrayTests.generateRandomFloatInt(80, 321);
+		a[10] = "13241f";
+		ArrayFactory.create(a).changeType(ValueType.INT32);
+	}
+
 }

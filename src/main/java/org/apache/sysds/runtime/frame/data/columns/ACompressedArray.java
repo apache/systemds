@@ -30,7 +30,7 @@ import org.apache.sysds.runtime.frame.data.compress.ArrayCompressionStatistics;
  */
 public abstract class ACompressedArray<T> extends Array<T> {
 
-	public ACompressedArray(int size) {
+	protected ACompressedArray(int size) {
 		super(size);
 	}
 
@@ -56,11 +56,6 @@ public abstract class ACompressedArray<T> extends Array<T> {
 
 	@Override
 	public void setFromOtherType(int rl, int ru, Array<?> value) {
-		throw new DMLCompressionException("Invalid to set value in CompressedArray");
-	}
-
-	@Override
-	public void set(int rl, int ru, Array<T> value) {
 		throw new DMLCompressionException("Invalid to set value in CompressedArray");
 	}
 

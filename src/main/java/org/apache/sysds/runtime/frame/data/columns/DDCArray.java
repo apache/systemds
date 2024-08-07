@@ -91,15 +91,19 @@ public class DDCArray<T> extends ACompressedArray<T> {
 			case STRING:
 			case UNKNOWN:
 			default:
-				long MapSize = MapToFactory.estimateInMemorySize(allRows, allRows);
-				int i = 2;
+				int i = 256; // i is number of distinct values used for encoding
+				long mapSize = MapToFactory.estimateInMemorySize(allRows, i);
+				long dictSize = ArrayFactory.getInMemorySize(t, allRows / i, false);
 
-				while(allRows / i >= 1 && inMemSize - MapSize < ArrayFactory.getInMemorySize(t, allRows / i, false)) {
+				while(allRows >= i // while encoding is better than all rows.
+				// and in memory size is worse than DDC encoding with i distinct values
+					&& inMemSize > dictSize + mapSize) {
 					i = i * 2;
+					mapSize = MapToFactory.estimateInMemorySize(allRows, i);
+					dictSize = ArrayFactory.getInMemorySize(t, i, false);
 				}
 
-				int d = Math.max(0, allRows / i);
-				return d;
+				return Math.min(allRows, i);
 
 		}
 	}
@@ -247,19 +251,22 @@ public class DDCArray<T> extends ACompressedArray<T> {
 
 	@Override
 	public void set(int rl, int ru, Array<T> value) {
-		if(value instanceof DDCArray){
+		if(value instanceof DDCArray) {
 			DDCArray<T> dc = (DDCArray<T>) value;
-			if((dict != null && dc.dict != null) && (dc.dict.size() != dict.size() //
-				|| (FrameBlock.debug && !dc.dict.equals(dict))))
+			if(((dict != null && dc.dict != null) // both dicts are not null
+				&& (dc.dict.size() != dict.size() // the size of the dicts are not equivalent
+					|| (FrameBlock.debug && !dc.dict.equals(dict)) // If debugging do full equivalence check
+				)) || map.getUnique() != dc.map.getUnique() // If the two maps are not equivalent big.
+			)
 				throw new DMLCompressionException("Invalid setting of DDC Array, of incompatible instance.");
-	
+
 			final AMapToData tm = dc.map;
 			for(int i = rl; i <= ru; i++) {
 				map.set(i, tm.getIndex(i));
 			}
 		}
-		else 
-			super.set(rl,ru,value);
+		else
+			throw new DMLCompressionException("Invalid to set value in CompressedArray");
 	}
 
 	@Override
@@ -329,14 +336,10 @@ public class DDCArray<T> extends ACompressedArray<T> {
 
 	@Override
 	public long getInMemorySize() {
-		return super.getInMemorySize() + map.getInMemorySize() + dict.getInMemorySize();
+		return super.getInMemorySize() + //
+			(dict == null ? 8 : dict.getInMemorySize()) + //
+			map.getInMemorySize();
 	}
-
-	// @Override
-	// protected Map<T, Integer> getDictionary() {
-	// // Nice shortcut!
-	// return dict.getDictionary();
-	// }
 
 	public static long estimateInMemorySize(int memSizeBitPerElement, int estDistinct, int nRow) {
 		return (long) estDistinct * memSizeBitPerElement + MapToFactory.estimateInMemorySize(nRow, estDistinct);
@@ -351,7 +354,8 @@ public class DDCArray<T> extends ACompressedArray<T> {
 	public boolean equals(Array<T> other) {
 		if(other instanceof DDCArray) {
 			DDCArray<T> ot = (DDCArray<T>) other;
-			return dict.equals(ot.dict) && map.equals(ot.map);
+			return dict.equals(ot.dict) // equivalent dictionaries
+				&& map.equals(ot.map); // equivalent maps
 		}
 		else
 			return false;
@@ -372,7 +376,7 @@ public class DDCArray<T> extends ACompressedArray<T> {
 		if(u <= dict.size())
 			return dict.minMax(l, u);
 		else if(l > dict.size())
-			return new double[] {Integer.MIN_VALUE, Integer.MAX_VALUE};
+			return new double[] {Double.MIN_VALUE, Double.MAX_VALUE};
 		else
 			return dict.minMax(l, dict.size());
 	}

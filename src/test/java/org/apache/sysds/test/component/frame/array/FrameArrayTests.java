@@ -2151,6 +2151,21 @@ public class FrameArrayTests {
 		}
 	}
 
+	@Test
+	public void extractDouble() {
+		try {
+
+			double[] ret = new double[a.size()];
+			a.extractDouble(ret, 0, a.size());
+			for(int i = 0; i < a.size(); i++) {
+				assertEquals(a.getAsDouble(i), ret[i], 0.0);
+			}
+		}
+		catch(DMLRuntimeException e) {
+			// allowed
+		}
+	}
+
 	public static void compare(Array<?> a, Array<?> b) {
 		int size = a.size();
 		String err = a.getClass().getSimpleName() + " " + a.getValueType() + " " + b.getClass().getSimpleName() + " "
@@ -2211,6 +2226,10 @@ public class FrameArrayTests {
 
 	protected static Array<?> createDDC(FrameArrayType t, int size, int seed) {
 		int nUnique = Math.max(size / 100, 2);
+		return createDDC(t, size, seed, nUnique);
+	}
+
+	protected static Array<?> createDDC(FrameArrayType t, int size, int seed, int nUnique) {
 		switch(t) {
 			case STRING:
 				return DDCArray
@@ -2674,6 +2693,23 @@ public class FrameArrayTests {
 			ret[i] = r.nextInt(2) + "";
 		return ret;
 	}
+
+	public static String[] generateRandomFloatInt(int size, int seed){
+		Random r = new Random(seed);
+		String[] ret = new String[size];
+		for(int i = 0; i < size; i++)
+			ret[i] = (r.nextBoolean() ? "" : "-") + r.nextInt(500) + ".00";
+		return ret;
+	}
+
+	public static String[] generateRandomInt(int size, int seed){
+		Random r = new Random(seed);
+		String[] ret = new String[size];
+		for(int i = 0; i < size; i++)
+			ret[i] = (r.nextBoolean() ? "" : "-") + r.nextInt(500);
+		return ret;
+	}
+	
 
 	public static String[] generateRandomNullZeroString(int size, int seed) {
 		Random r = new Random(seed);

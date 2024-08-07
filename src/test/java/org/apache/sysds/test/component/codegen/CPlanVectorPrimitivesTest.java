@@ -804,7 +804,7 @@ public class CPlanVectorPrimitivesTest extends AutomatedTestBase
 			
 			//get vector primitive via reflection
 			String meName = "vect"+StringUtils.camelize(bintype.name().split("_")[1])+"Write";
-			Method me = null;
+			final Method me ;
 			if( type1==InputType.SCALAR && type2==InputType.VECTOR_DENSE )
 				me = LibSpoofPrimitives.class.getMethod(meName, new Class[]{double.class, double[].class, int.class, int.class});
 			else if( type1==InputType.VECTOR_DENSE && type2==InputType.SCALAR )
@@ -815,7 +815,7 @@ public class CPlanVectorPrimitivesTest extends AutomatedTestBase
 				me = LibSpoofPrimitives.class.getMethod(meName, new Class[]{double[].class, double.class, int[].class, int.class, int.class, int.class});
 			else if( type1==InputType.SCALAR && type2==InputType.VECTOR_SPARSE )
 				me = LibSpoofPrimitives.class.getMethod(meName, new Class[]{double.class, double[].class, int[].class, int.class, int.class, int.class});
-			else if( type1==InputType.VECTOR_SPARSE && type2==InputType.VECTOR_DENSE )
+			else // if( type1==InputType.VECTOR_SPARSE && type2==InputType.VECTOR_DENSE )
 				me = LibSpoofPrimitives.class.getMethod(meName, new Class[]{double[].class, double[].class, int[].class, int.class, int.class, int.class, int.class});
 			
 			for( int i=0; i<m; i++ ) {

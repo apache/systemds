@@ -36,6 +36,10 @@ import org.apache.sysds.utils.MemoryEstimates;
 public class IntegerArray extends Array<Integer> {
 	private int[] _data;
 
+	private IntegerArray(int nRow) {
+		this(new int[nRow]);
+	}
+
 	public IntegerArray(int[] data) {
 		super(data.length);
 		_data = data;
@@ -144,6 +148,12 @@ public class IntegerArray extends Array<Integer> {
 		_size = _data.length;
 		for(int i = 0; i < _size; i++)
 			_data[i] = in.readInt();
+	}
+
+	protected static IntegerArray read(DataInput in, int nRow) throws IOException {
+		final IntegerArray arr = new IntegerArray(nRow);
+		arr.readFields(in);
+		return arr;
 	}
 
 	@Override

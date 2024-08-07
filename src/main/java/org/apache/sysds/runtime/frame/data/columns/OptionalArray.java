@@ -126,7 +126,7 @@ public class OptionalArray<T> extends Array<T> {
 	}
 
 	@SuppressWarnings("unchecked")
-	protected static OptionalArray<?> readOpt(DataInput in, int nRow) throws IOException {
+	protected static OptionalArray<?> read(DataInput in, int nRow) throws IOException {
 		final Array<?> a = ArrayFactory.read(in, nRow);
 		final ABooleanArray n = (ABooleanArray) ArrayFactory.read(in, nRow);
 		switch(a.getValueType()) {

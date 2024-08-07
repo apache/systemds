@@ -91,7 +91,6 @@ public class BitSetArray extends ABooleanArray {
 		return (_data[wIdx] & (1L << index)) != 0;
 	}
 
-
 	@Override
 	public void set(int index, Boolean value) {
 		set(index, value != null && value);
@@ -106,7 +105,7 @@ public class BitSetArray extends ABooleanArray {
 	}
 
 	@Override
-	public void setNullsFromString(int rl, int ru, Array<String> value){
+	public void setNullsFromString(int rl, int ru, Array<String> value) {
 
 		final boolean unsafe = ru % 64 != 0 || rl % 64 != 0;
 		// ensure that it is safe to modify the values in the ranges.
@@ -130,7 +129,7 @@ public class BitSetArray extends ABooleanArray {
 		}
 	}
 
-	private void unsafeSet(int index, boolean value){
+	private void unsafeSet(int index, boolean value) {
 		int wIdx = index >> 6; // same as divide by 64 bit faster
 		if(value)
 			_data[wIdx] |= (1L << index);
@@ -173,17 +172,17 @@ public class BitSetArray extends ABooleanArray {
 	public void set(int rl, int ru, Array<Boolean> value, int rlSrc) {
 		if(useVectorizedKernel && value instanceof BitSetArray && (ru - rl >= 64)) {
 			try {
-				// try system array copy.
+				// Try system array copy.
 				// but if it does not work, default to get.
 				setVectorized(rl, ru, (BitSetArray) value, rlSrc);
 				return;
 			}
 			catch(Exception e) {
-				// do nothing
+				// fall back to default
 			}
 		}
-		else // default
-			super.set(rl, ru, value, rlSrc);
+		// default
+		super.set(rl, ru, value, rlSrc);
 	}
 
 	private void setVectorized(int rl, int ru, BitSetArray value, int rlSrc) {
@@ -339,6 +338,12 @@ public class BitSetArray extends ABooleanArray {
 		_data = new long[in.readInt()];
 		for(int i = 0; i < _data.length; i++)
 			_data[i] = in.readLong();
+	}
+
+	protected static BitSetArray read(DataInput in, int nRow) throws IOException {
+		final BitSetArray arr = new BitSetArray(nRow);
+		arr.readFields(in);
+		return arr;
 	}
 
 	@Override

@@ -35,6 +35,10 @@ import org.apache.sysds.utils.MemoryEstimates;
 public class HashIntegerArray extends Array<Object> implements IHashArray {
 	private int[] _data;
 
+	private HashIntegerArray(int nRow) {
+		this(new int[nRow]);
+	}
+
 	public HashIntegerArray(int[] data) {
 		super(data.length);
 		_data = data;
@@ -199,6 +203,12 @@ public class HashIntegerArray extends Array<Object> implements IHashArray {
 		_size = _data.length;
 		for(int i = 0; i < _size; i++)
 			_data[i] = in.readInt();
+	}
+
+	protected static HashIntegerArray read(DataInput in, int nRow) throws IOException {
+		final HashIntegerArray arr = new HashIntegerArray(nRow);
+		arr.readFields(in);
+		return arr;
 	}
 
 	@Override

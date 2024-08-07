@@ -35,6 +35,10 @@ import org.apache.sysds.utils.MemoryEstimates;
 public class HashLongArray extends Array<Object> implements IHashArray {
 	private long[] _data;
 
+	private HashLongArray(int nRow) {
+		this(new long[nRow]);
+	}
+
 	public HashLongArray(long[] data) {
 		super(data.length);
 		_data = data;
@@ -200,6 +204,12 @@ public class HashLongArray extends Array<Object> implements IHashArray {
 		_size = _data.length;
 		for(int i = 0; i < _size; i++)
 			_data[i] = in.readLong();
+	}
+
+	protected static HashLongArray read(DataInput in, int nRow) throws IOException {
+		final HashLongArray arr = new HashLongArray(nRow);
+		arr.readFields(in);
+		return arr;
 	}
 
 	@Override

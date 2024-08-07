@@ -38,6 +38,10 @@ import org.apache.sysds.utils.MemoryEstimates;
 public class DoubleArray extends Array<Double> {
 	private double[] _data;
 
+	private DoubleArray(int nRow) {
+		this(new double[nRow]);
+	}
+
 	public DoubleArray(double[] data) {
 		super(data.length);
 		_data = data;
@@ -145,6 +149,12 @@ public class DoubleArray extends Array<Double> {
 		_size = _data.length;
 		for(int i = 0; i < _size; i++)
 			_data[i] = in.readDouble();
+	}
+
+	protected static DoubleArray read(DataInput in, int nRow) throws IOException {
+		final DoubleArray arr = new DoubleArray(nRow);
+		arr.readFields(in);
+		return arr;
 	}
 
 	@Override
@@ -284,7 +294,7 @@ public class DoubleArray extends Array<Double> {
 
 	// @Override
 	// protected Array<Double> changeTypeDouble() {
-	// 	return this;
+	// return this;
 	// }
 
 	@Override

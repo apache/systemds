@@ -40,6 +40,10 @@ import ch.randelshofer.fastdoubleparser.JavaFloatParser;
 public class FloatArray extends Array<Float> {
 	private float[] _data;
 
+	public FloatArray(int nRow) {
+		this(new float[nRow]);
+	}
+
 	public FloatArray(float[] data) {
 		super(data.length);
 		_data = data;
@@ -149,6 +153,12 @@ public class FloatArray extends Array<Float> {
 			_data[i] = in.readFloat();
 	}
 
+	protected static FloatArray read(DataInput in, int nRow) throws IOException {
+		final FloatArray arr = new FloatArray(nRow);
+		arr.readFields(in);
+		return arr;
+	}
+
 	@Override
 	public Array<Float> clone() {
 		return new FloatArray(Arrays.copyOf(_data, _size));
@@ -233,7 +243,6 @@ public class FloatArray extends Array<Float> {
 			ret[i] = _data[i];
 		return retA;
 	}
-
 
 	@Override
 	protected Array<Float> changeTypeFloat(Array<Float> retA, int l, int u) {

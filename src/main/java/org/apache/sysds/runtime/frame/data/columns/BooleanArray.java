@@ -36,6 +36,10 @@ import org.apache.sysds.utils.MemoryEstimates;
 public class BooleanArray extends ABooleanArray {
 	protected boolean[] _data;
 
+	private BooleanArray(int nRow){
+		this(new boolean[nRow]);
+	}
+
 	public BooleanArray(boolean[] data) {
 		super(data.length);
 		_data = data;
@@ -160,6 +164,12 @@ public class BooleanArray extends ABooleanArray {
 		_size = _data.length;
 		for(int i = 0; i < _size; i++)
 			_data[i] = in.readBoolean();
+	}
+
+	protected static BooleanArray read(DataInput in, int nRow) throws IOException {
+		final BooleanArray arr = new BooleanArray(nRow);
+		arr.readFields(in);
+		return arr;
 	}
 
 	@Override

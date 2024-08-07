@@ -1759,6 +1759,56 @@ public class CustomArrayTests {
 		new HashLongArray(new String[] {"00000000"}).set(0, new Object());
 	}
 
+	@Test
+	public void parseFloatnInf() {
+		assertEquals(Float.NEGATIVE_INFINITY, FloatArray.parseFloat("-Inf"), 0.0);
+	}
+
+	@Test
+	public void parseFloatInf() {
+		assertEquals(Float.POSITIVE_INFINITY, FloatArray.parseFloat("Inf"), 0.0);
+	}
+
+	@Test
+	public void parseDoubleNInf() {
+		assertEquals(Double.NEGATIVE_INFINITY, DoubleArray.parseDouble("-Inf"), 0.0);
+	}
+
+	@Test
+	public void parseDoubleInf() {
+		assertEquals(Double.POSITIVE_INFINITY, DoubleArray.parseDouble("Inf"), 0.0);
+	}
+
+	@Test(expected = Exception.class)
+	public void parseFloatInvalid() {
+		assertEquals(Float.NEGATIVE_INFINITY, FloatArray.parseFloat("-Infff"), 0.0);
+	}
+
+	@Test(expected = Exception.class)
+	public void parseFloatInvalid2() {
+		assertEquals(Float.POSITIVE_INFINITY, FloatArray.parseFloat("If"), 0.0);
+	}
+
+	@Test(expected = Exception.class)
+	public void parseFloatInvalid3() {
+		assertEquals(Float.POSITIVE_INFINITY, FloatArray.parseFloat("I2f"), 0.0);
+	}
+
+	@Test(expected = Exception.class)
+	public void parseDoubleInvalid() {
+		assertEquals(Double.NEGATIVE_INFINITY, DoubleArray.parseDouble("-If"), 0.0);
+	}
+
+	@Test(expected = Exception.class)
+	public void parseDoubleInvalid2() {
+		assertEquals(Double.POSITIVE_INFINITY, DoubleArray.parseDouble("Infdf"), 0.0);
+	}
+
+	@Test(expected = Exception.class)
+	public void parseDoubleInvalid3() {
+		assertEquals(Double.POSITIVE_INFINITY, DoubleArray.parseDouble("iff"), 0.0);
+	}
+
 	@Test(expected = Exception.class)
 	public void setDDCArrayWithDDCArray() {
 		Array<?> c = FrameCompressTestUtils.generateArray(100, 32, 5, ValueType.INT32);
@@ -1766,6 +1816,8 @@ public class CustomArrayTests {
 		doThrow(new RuntimeException()).when(s).size();
 		DDCArray.compressToDDC(s);
 	}
+
+
 
 	@Test
 	public void DDC_nullDict() {
@@ -1832,9 +1884,10 @@ public class CustomArrayTests {
 	public void setSubRangeBitSet() {
 		// two equivalent inputs
 		Array<Boolean> b = (Array<Boolean>) FrameArrayTests.create(FrameArrayType.BITSET, 550, 231);
-		Array<Boolean> exp = (Array<Boolean>) FrameArrayTests.create(FrameArrayType.BITSET, 550, 231); 
+		Array<Boolean> exp = (Array<Boolean>) FrameArrayTests.create(FrameArrayType.BITSET, 550, 231);
+		FrameArrayTests.compare(exp, b);
 
-		Array<Boolean> s = (Array<Boolean>) FrameArrayTests.create(FrameArrayType.BITSET, 300, 33);
+		Array<Boolean> s = (Array<Boolean>) FrameArrayTests.create(FrameArrayType.BITSET, 301, 33);
 
 		// make one fail
 		Array<Boolean> bs = spy(s);
@@ -1843,8 +1896,132 @@ public class CustomArrayTests {
 		// call same method
 		b.set(250, 550, bs, 0);
 		exp.set(250, 550, s, 0);
-		
-		LOG.error("\n" + exp + "\n" + b);
+
+		FrameArrayTests.compare(exp, b);
+	}
+
+	@Test
+	@SuppressWarnings("unchecked")
+	public void setSubRangeBitSet2() {
+		// two equivalent inputs
+		Array<Boolean> b = (Array<Boolean>) FrameArrayTests.create(FrameArrayType.BITSET, 140, 231);
+		Array<Boolean> exp = (Array<Boolean>) FrameArrayTests.create(FrameArrayType.BITSET, 140, 231);
+		FrameArrayTests.compare(exp, b);
+
+		Array<Boolean> s = (Array<Boolean>) FrameArrayTests.create(FrameArrayType.BITSET, 300, 33);
+
+		// make one fail
+		Array<Boolean> bs = spy(s);
+		doThrow(new RuntimeException()).when(bs).slice(anyInt(), anyInt());
+
+		// call same method
+		b.set(64, 128, bs, 0);
+		exp.set(64, 128, s, 0);
+
+		FrameArrayTests.compare(exp, b);
+	}
+
+	@Test
+	@SuppressWarnings("unchecked")
+	public void setSubRangeBitSet3() {
+		// two equivalent inputs
+		Array<Boolean> b = (Array<Boolean>) FrameArrayTests.create(FrameArrayType.BITSET, 140, 231);
+		Array<Boolean> exp = (Array<Boolean>) FrameArrayTests.create(FrameArrayType.BITSET, 140, 231);
+		FrameArrayTests.compare(exp, b);
+
+		Array<Boolean> s = (Array<Boolean>) FrameArrayTests.create(FrameArrayType.BITSET, 300, 33);
+
+		// make one fail
+		Array<Boolean> bs = spy(s);
+		doThrow(new RuntimeException()).when(bs).slice(anyInt(), anyInt());
+
+		// call same method
+		b.set(64, 100, bs, 0);
+		exp.set(64, 100, s, 0);
+
+		FrameArrayTests.compare(exp, b);
+	}
+
+	@Test
+	@SuppressWarnings("unchecked")
+	public void setSubRangeBitSet4() {
+		// two equivalent inputs
+		Array<Boolean> b = (Array<Boolean>) FrameArrayTests.create(FrameArrayType.BITSET, 140, 231);
+		Array<Boolean> exp = (Array<Boolean>) FrameArrayTests.create(FrameArrayType.BITSET, 140, 231);
+		FrameArrayTests.compare(exp, b);
+
+		Array<Boolean> s = (Array<Boolean>) FrameArrayTests.create(FrameArrayType.BITSET, 300, 33);
+
+		// make one fail
+		Array<Boolean> bs = spy(s);
+		doThrow(new RuntimeException()).when(bs).slice(anyInt(), anyInt());
+
+		// call same method
+		b.set(0, 100, bs, 0);
+		exp.set(0, 100, s, 0);
+
+		FrameArrayTests.compare(exp, b);
+	}
+
+	@Test
+	@SuppressWarnings("unchecked")
+	public void setSubRangeBitSet5() {
+		// two equivalent inputs
+		Array<Boolean> b = (Array<Boolean>) FrameArrayTests.create(FrameArrayType.BITSET, 128, 231);
+		Array<Boolean> exp = (Array<Boolean>) FrameArrayTests.create(FrameArrayType.BITSET, 128, 231);
+		FrameArrayTests.compare(exp, b);
+
+		Array<Boolean> s = (Array<Boolean>) FrameArrayTests.create(FrameArrayType.BITSET, 101, 33);
+
+		// make one fail
+		Array<Boolean> bs = spy(s);
+		doThrow(new RuntimeException()).when(bs).slice(anyInt(), anyInt());
+
+		// call same method
+		b.set(0, 100, bs, 0);
+		exp.set(0, 100, s, 0);
+
+		FrameArrayTests.compare(exp, b);
+	}
+
+	@Test
+	@SuppressWarnings("unchecked")
+	public void setSubRangeBitSet6() {
+		// two equivalent inputs
+		Array<Boolean> b = (Array<Boolean>) FrameArrayTests.create(FrameArrayType.BITSET, 80, 231);
+		Array<Boolean> exp = (Array<Boolean>) FrameArrayTests.create(FrameArrayType.BITSET, 80, 231);
+		FrameArrayTests.compare(exp, b);
+
+		Array<Boolean> s = (Array<Boolean>) FrameArrayTests.create(FrameArrayType.BITSET, 80, 33);
+
+		// make one fail
+		Array<Boolean> bs = spy(s);
+		doThrow(new RuntimeException()).when(bs).slice(anyInt(), anyInt());
+
+		// call same method
+		b.set(0, 70, bs, 0);
+		exp.set(0, 70, s, 0);
+
+		FrameArrayTests.compare(exp, b);
+	}
+
+	@Test
+	public void setSubRangeBitSet_filled_ranges() {
+		// two equivalent inputs
+		Array<Boolean> b = new BitSetArray(new boolean[80]);
+		Array<Boolean> exp = new BitSetArray(new boolean[80]);
+		FrameArrayTests.compare(exp, b);
+
+		Array<Boolean> s = new BitSetArray(new boolean[80]);
+		s.fill(true);
+
+		// make one fail
+		Array<Boolean> bs = spy(s);
+		doThrow(new RuntimeException()).when(bs).slice(anyInt(), anyInt());
+
+		// call same method
+		b.set(0, 70, bs, 0);
+		exp.set(0, 70, s, 0);
 		FrameArrayTests.compare(exp, b);
 	}
 

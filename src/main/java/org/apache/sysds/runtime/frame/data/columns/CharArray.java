@@ -36,6 +36,10 @@ public class CharArray extends Array<Character> {
 
 	private char[] _data;
 
+	private CharArray(int nRow) {
+		this(new char[nRow]);
+	}
+
 	public CharArray(char[] data) {
 		super(data.length);
 		_data = data;
@@ -59,6 +63,12 @@ public class CharArray extends Array<Character> {
 			_data[i] = in.readChar();
 	}
 
+	protected static CharArray read(DataInput in, int nRow) throws IOException {
+		final CharArray arr = new CharArray(nRow);
+		arr.readFields(in);
+		return arr;
+	}
+
 	@Override
 	public Character get(int index) {
 		return _data[index];
@@ -76,7 +86,7 @@ public class CharArray extends Array<Character> {
 
 	@Override
 	public void set(int index, double value) {
-		_data[index] = (char)(int)value;
+		_data[index] = (char) (int) value;
 	}
 
 	@Override
@@ -120,7 +130,7 @@ public class CharArray extends Array<Character> {
 		final ValueType vt = value.getValueType();
 		for(int i = rl; i <= ru; i++) {
 			Object vv = value.get(i);
-			if(vv != null){
+			if(vv != null) {
 				char v = UtilFunctions.objectToCharacter(vt, vv);
 				if(v != 0)
 					_data[i] = v;

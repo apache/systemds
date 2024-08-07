@@ -36,6 +36,11 @@ import org.apache.sysds.utils.MemoryEstimates;
 public class LongArray extends Array<Long> {
 	private long[] _data;
 
+
+	private LongArray(int nRow) {
+		this(new long[nRow]);
+	}
+
 	public LongArray(long[] data) {
 		super(data.length);
 		_data = data;
@@ -144,6 +149,13 @@ public class LongArray extends Array<Long> {
 		for(int i = 0; i < _size; i++)
 			_data[i] = in.readLong();
 	}
+
+	protected static LongArray read(DataInput in, int nRow) throws IOException {
+		final LongArray arr = new LongArray(nRow);
+		arr.readFields(in);
+		return arr;
+	}
+
 
 	@Override
 	public Array<Long> clone() {

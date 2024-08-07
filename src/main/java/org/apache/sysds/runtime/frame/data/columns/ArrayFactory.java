@@ -23,7 +23,6 @@ import java.io.DataInput;
 import java.io.IOException;
 import java.util.BitSet;
 
-import org.apache.commons.lang3.NotImplementedException;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.common.Types.ValueType;
@@ -37,8 +36,7 @@ public interface ArrayFactory {
 	public final static int bitSetSwitchPoint = 64;
 
 	public enum FrameArrayType {
-		STRING, BOOLEAN, BITSET, INT32, INT64, FP32, FP64, //
-		CHARACTER, RAGGED, OPTIONAL, DDC, HASH64, HASH32;
+		STRING, BOOLEAN, BITSET, INT32, INT64, FP32, FP64, CHARACTER, RAGGED, OPTIONAL, DDC, HASH64, HASH32;
 	}
 
 	public static StringArray create(String[] col) {
@@ -108,7 +106,7 @@ public interface ArrayFactory {
 	public static long getInMemorySize(ValueType type, int _numRows, boolean containsNull) {
 		if(containsNull) {
 			switch(type) {
-				case HASH32: 
+				case HASH32:
 					type = ValueType.INT32;
 				case HASH64:
 					type = ValueType.INT64;
@@ -168,10 +166,8 @@ public interface ArrayFactory {
 		return a;
 	}
 
-	public static Array<?> allocate(ValueType v, int nRow, boolean optional){
-		return optional ? 
-			allocateOptional(v, nRow):
-			allocate(v, nRow);
+	public static Array<?> allocate(ValueType v, int nRow, boolean optional) {
+		return optional ? allocateOptional(v, nRow) : allocate(v, nRow);
 	}
 
 	public static Array<?> allocateOptional(ValueType v, int nRow) {
@@ -220,7 +216,7 @@ public interface ArrayFactory {
 				return new CharArray(new char[nRow]);
 			case HASH64:
 				return new HashLongArray(new long[nRow]);
-			case HASH32: 
+			case HASH32:
 				return new HashIntegerArray(new int[nRow]);
 			case UNKNOWN:
 			case STRING:
@@ -231,49 +227,35 @@ public interface ArrayFactory {
 
 	public static Array<?> read(DataInput in, int nRow) throws IOException {
 		final FrameArrayType v = FrameArrayType.values()[in.readByte()];
-		Array<?> arr;
 		switch(v) {
 			case BITSET:
-				arr = new BitSetArray(nRow);
-				break;
+				return BitSetArray.read(in, nRow);
 			case BOOLEAN:
-				arr = new BooleanArray(new boolean[nRow]);
-				break;
-			case INT64:
-				arr = new LongArray(new long[nRow]);
-				break;
-			case FP64:
-				arr = new DoubleArray(new double[nRow]);
-				break;
-			case INT32:
-				arr = new IntegerArray(new int[nRow]);
-				break;
+				return BooleanArray.read(in, nRow);
 			case FP32:
-				arr = new FloatArray(new float[nRow]);
-				break;
+				return FloatArray.read(in, nRow);
+			case FP64:
+				return DoubleArray.read(in, nRow);
+			case INT32:
+				return IntegerArray.read(in, nRow);
+			case INT64:
+				return LongArray.read(in, nRow);
 			case CHARACTER:
-				arr = new CharArray(new char[nRow]);
-				break;
+				return CharArray.read(in, nRow);
 			case RAGGED:
-				return RaggedArray.readRagged(in, nRow);
+				return RaggedArray.read(in, nRow);
 			case OPTIONAL:
-				return OptionalArray.readOpt(in, nRow);
+				return OptionalArray.read(in, nRow);
 			case DDC:
 				return DDCArray.read(in);
-			case STRING:
-				arr = new StringArray(new String[nRow]);
-				break;
+			case HASH32:
+				return HashIntegerArray.read(in, nRow);
 			case HASH64:
-				arr = new HashLongArray(new long[nRow]);
-				break;
-			case HASH32: 
-				arr = new HashIntegerArray(new int[nRow]);
-				break;
+				return HashLongArray.read(in, nRow);
+			case STRING:
 			default:
-				throw new NotImplementedException(v + "");
+				return StringArray.read(in, nRow);
 		}
-		arr.readFields(in);
-		return arr;
 	}
 
 	/**
@@ -378,7 +360,7 @@ public interface ArrayFactory {
 			case HASH64:
 				return HashLongArray.parseHashLong(s);
 			case HASH32:
-			 	return HashIntegerArray.parseHashInt(s);
+				return HashIntegerArray.parseHashInt(s);
 			case STRING:
 			case UNKNOWN:
 			default:

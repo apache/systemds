@@ -44,7 +44,8 @@ public class DataAugmentation
 	 * @param pDrop Probability of dropping a value inside a row
 	 * @param pOut Probability of introducing outliers in a row
 	 * @param pSwap Probability swapping two elements in a row
-	 * @return A new frameblock with corrupted elements
+	 * @param seed The seed for the random generation of errors
+	 * @return A new FrameBlock with corrupted elements
 	 * 
 	 */
 	public static FrameBlock dataCorruption(FrameBlock input, double pTypo, double pMiss, double pDrop, double pOut, double pSwap, int seed) {

@@ -41,6 +41,10 @@ public class StringArray extends Array<String> {
 
 	private long materializedSize = -1L;
 
+	private StringArray(int nRow) {
+		this(new String[nRow]);
+	}
+
 	public StringArray(String[] data) {
 		super(data.length);
 		_data = data;
@@ -157,6 +161,12 @@ public class StringArray extends Array<String> {
 			String tmp = in.readUTF();
 			_data[i] = tmp.isEmpty() ? null : tmp;
 		}
+	}
+
+	protected static StringArray read(DataInput in, int nRow) throws IOException {
+		final StringArray arr = new StringArray(nRow);
+		arr.readFields(in);
+		return arr;
 	}
 
 	@Override

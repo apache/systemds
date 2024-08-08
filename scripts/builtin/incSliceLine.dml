@@ -31,7 +31,8 @@
 # addedX           Feature matrix of added tuples in recoded/binned representation
 # oldX             All-comprising feature matrix of previous runs (except for current run) in recoded/binned representation
 # oldE             All-comprising error vector of trained model for old tuples
-# addedE             Error vector of trained model for added tuples
+# addedE           Error vector of trained model for added tuples
+# indicesRemoved   Indices of tuples that were removed from the previous dataset (oldX)
 # k                Number of subsets required
 # maxL             maximum level L (conjunctions of L predicates), 0 unlimited
 # minSup           minimum support (min number of rows per slice)
@@ -73,6 +74,7 @@ m_incSliceLine = function(
     Matrix[Double] oldE = matrix(0, 0, 0), Matrix[Double] addedE, 
     Int k = 4, Int maxL = 0, Int minSup = 32, Double alpha = 0.5,
     Boolean tpEval = TRUE, Int tpBlksz = 16, Boolean selFeat = FALSE, 
+    Matrix[Double] indicesRemoved = matrix(0,0,0),
     Boolean verbose = FALSE, list[unknown] params = list(), 
     Matrix[Double] prevFoffb = matrix(0,0,0), Matrix[Double] prevFoffe = matrix(0,0,0),
     list[unknown] prevLattice = list(), list[unknown] metaPrevLattice = list(), 
@@ -109,6 +111,13 @@ m_incSliceLine = function(
   if(nrow(oldE) == 0) {
     oldE = matrix(0,0,ncol(addedE));
     }
+
+  removedTuples = matrix(0,0,ncol(oldX));
+  if(length(indicesRemoved) > 0 & nrow(oldX)  > 0){
+    ## remove all rows from oldX and oldE that are in indicesRemoved
+    [oldX, removedTuples] = removeRowsByIndices( oldX, indicesRemoved);
+    [oldE, removedE] = removeRowsByIndices( oldE, indicesRemoved);
+  }
   totalX = rbind(oldX, addedX);
   totalE = rbind(oldE, addedE);
 
@@ -142,64 +151,15 @@ m_incSliceLine = function(
     addedX2 = X2;
   }
 
-  
-  if( length(prevTK) > 0 ) {
-    prevTK2 = oneHotEncodeUsingOffsets(prevTK, foffb, foffe);
-  }else{
-    prevTK2 = prevTK;
-  }
-  
-  if(length(prevLattice) > 0) {
-    prevLattice2 = oneHotEncodeUsingOffsets(prevLattice, foffb, foffe);
-  }else{
-    prevLattice2 = prevLattice;
-  }
-  
-  /*
-  addedX2 = matrix(0, 0, n);
-  if (nrow(addedX) > 0) {
-    m_add = nrow(addedX);
-    fdom_add = colMaxs(addedX);
-    foffb_add = t(cumsum(t(fdom_add))) - fdom_add;
-    foffe_add = t(cumsum(t(fdom_add)))
-    rix_add = matrix(seq(1, m_add) %*% matrix(1, 1, n), m_add * n, 1)
-    cix_add = matrix(addedX + foffb_add, m_add * n, 1);
-    addedX2 = table(rix_add, cix_add, 1, m_add, as.scalar(foffe_add[,n]), FALSE); # one-hot encoded
-  } 
-
-  oneHotEncodedPrevLattice = list();
-  foffbPre = list();
-  foffePre = list();
-  print(length(prevLattice));
-
-  if(length(prevLattice) > 0) {
-    for (i in 1:length(prevLattice)) {
-      [onehmatrix, foffbNew, foffeNew] = oneHotEncode(as.matrix(prevLattice[i]));
-      oneHotEncodedPrevLattice = append(oneHotEncodedPrevLattice, onehmatrix);
-      foffbPre = append(foffbPre, foffbNew);
-      foffePre = append(foffePre, foffeNew);
-    }
+  # One-hot encoding of tuples that were removed from oldX
+  # combining of addedX and oldX in changedX2 facilitates simple determination of unchanged slices for pruning
+  if(nrow(removedTuples) > 0){
+    removedTuples2 = oneHotEncodeUsingOffsets(removedTuples, foffb, foffe);
+    changedX2 = rbind(addedX2, removedTuples2);
+  }else {
+    changedX2 = addedX2;
   }
 
-  print("oneHotEncodedPrevLattice: "+toString(oneHotEncodedPrevLattice));
-
-  # prepare offset vectors and one-hot encoded newX
-  fdom = colMaxs(newX);
-  foffb = t(cumsum(t(fdom))) - fdom;
-  foffe = t(cumsum(t(fdom)));
-  rix = matrix(seq(1,m)%*%matrix(1,1,n), m*n, 1)
-  cix = matrix(newX + foffb, m*n, 1);
-  X2 = table(rix, cix, 1, m, as.scalar(foffe[,n]), FALSE); #one-hot encoded
-
-  # One-hot encoding of addedX and oldX
-  if(nrow(oldX) > 0){
-    oldX2 = X2[1:nrow(oldX),];
-    addedX2 = X2[(nrow(oldX)+1):nrow(X2),];
-  } else {
-    oldX2 = matrix(0,0,ncol(X2));
-    addedX2 = X2;
-  }
-  
   # One-hot encoding of prevTK
   if( length(prevTK) > 0 ) {
     prevTK2 = oneHotEncodeUsingOffsets(prevTK, foffb, foffe);
@@ -220,7 +180,7 @@ m_incSliceLine = function(
   } 
 
   # create and score basic slices (conjunctions of 1 feature)
-  [S, R, selCols] = createAndScoreBasicSlices(X2, addedX2, prevTK2, totalE, eAvg, eAvgOld, eAvgNew, minSup, alpha, minsc, verbose);
+  [S, R, selCols] = createAndScoreBasicSlices(X2, changedX2, prevTK2, totalE, eAvg, eAvgOld, eAvgNew, minSup, alpha, minsc, verbose);
 
   # initialize lattice and statistics for incremental updates
   Stats = list();
@@ -247,7 +207,7 @@ m_incSliceLine = function(
   # reduce dataset to relevant attributes (minSup, err>0), S reduced on-the-fly
   if( selFeat ){
     X2 = removeEmpty(target=X2, margin="cols", select=t(selCols));
-    addedX2 = removeEmpty(target=addedX2, margin="cols", select=t(selCols));
+    changedX2 = removeEmpty(target=changedX2, margin="cols", select=t(selCols));
   }
 
   # lattice enumeration w/ size/error pruning, one iteration per level
@@ -288,7 +248,7 @@ m_incSliceLine = function(
     
     # prune unchanged slices with slice size < minSup
     if(level <= length(prevStats)){
-      [S, S2] = pruneUnchangedSlices(S, S2,  prevLattice2, prevStats, addedX2, minSup, verbose, level);
+      [S, S2] = pruneUnchangedSlices(S, S2,  prevLattice2, prevStats, changedX2, minSup, verbose, level);
     }
 
     if(verbose) {
@@ -346,7 +306,7 @@ m_incSliceLine = function(
 }
 }
 
-createAndScoreBasicSlices = function(Matrix[Double] X2, Matrix[Double] addedX2,
+createAndScoreBasicSlices = function(Matrix[Double] X2, Matrix[Double] changedX2,
     Matrix[Double] prevTK2,  Matrix[Double] e,
     Double eAvg, Double eAvgOld, Double eAvgNew, Double minSup, Double alpha, Double minsc, Boolean verbose)
   return(Matrix[Double] S, Matrix[Double] R, Matrix[Double] selCols)
@@ -356,7 +316,7 @@ createAndScoreBasicSlices = function(Matrix[Double] X2, Matrix[Double] addedX2,
   err = t(t(e) %*% X2);      # total error vector
   merr = t(colMaxs(X2 * e)); # maximum error vector
 
-  # prevTK2 is oneHotEncoded with the same offsets as oldX2 and addedX2.
+  # prevTK2 is oneHotEncoded with the same offsets as oldX2 and changedX2.
   # produce a vector indicating which basic slices are within the previous top k
   TKCCnts = matrix(0, 0, 0);
   if ( length (prevTK2) > 0 ) {
@@ -369,9 +329,9 @@ createAndScoreBasicSlices = function(Matrix[Double] X2, Matrix[Double] addedX2,
   # only add "& addedCCnts != 0" if the eAvg from the new tuples is smaller than eAvg on prev. dataset.
   # otherwise scores of unchanged slices could shift into top k.
   if( eAvgOld > eAvg & eAvgNew != 0 & nrow(TKCCnts) >0) {
-    # addedX2 is oneHotEncoded with the same offsets as oldX2 and totalX2. Thus unchanged basic slices will have a colSum of 0.
-    # compute vector of colSums for addedX2 indicating which slices are unchanged (0 value)
-    addedCCnts = t(colSums(addedX2));
+    # changedX2 is oneHotEncoded with the same offsets as oldX2 and totalX2. Thus unchanged basic slices will have a colSum of 0.
+    # compute vector of colSums for changedX2 indicating which slices are unchanged (0 value)
+    addedCCnts = t(colSums(changedX2));
     addedOrTK = (addedCCnts > 0) | (TKCCnts > 0);
     if( verbose ) {
       drop = as.integer(sum(cCnts < minSup | err == 0 | addedOrTK == 0));
@@ -659,12 +619,12 @@ storeParams = function(Integer k, Integer maxL, Integer minSup, Double alpha, Bo
   }
 }
 
-determineUnchangedSlices = function(Matrix[Double] prevStatsAtLevel, Matrix[Double] prevLatAtLevel, Matrix[Double] addedX2, Integer level)
+determineUnchangedSlices = function(Matrix[Double] prevStatsAtLevel, Matrix[Double] prevLatAtLevel, Matrix[Double] changedX2, Integer level)
   return(Matrix[Double] unchangedS, Matrix[Double] unchangedR)
 {
   # only computing unchanged slices for levels 2 and above, 
-    # Imat has a 1 where a slice in addedX2 belongs to a slice in prevLatAtLevel
-    Imat = (addedX2 %*% t(prevLatAtLevel) == level);
+    # Imat has a 1 where a slice in changedX2 belongs to a slice in prevLatAtLevel
+    Imat = (changedX2 %*% t(prevLatAtLevel) == level);
     unchangedSlicesI = colSums(Imat) == 0;
     unchangedS = removeEmpty(target=prevLatAtLevel, margin="rows", select=unchangedSlicesI);
     unchangedR = removeEmpty(target=prevStatsAtLevel, margin="rows", select=unchangedSlicesI);
@@ -695,14 +655,14 @@ computeLowestPrevTK = function(Matrix[Double] prevTK2, Matrix[Double] X2,Matrix[
     }
 }
 
-pruneUnchangedSlices = function(Matrix[Double] S, Matrix[Double] S2, Matrix[Double] prevLattice2, list[unknown] prevStats, Matrix[Double] addedX2, Int minSup, Boolean verbose, Integer level)
+pruneUnchangedSlices = function(Matrix[Double] S, Matrix[Double] S2, Matrix[Double] prevLattice2, list[unknown] prevStats, Matrix[Double] changedX2, Int minSup, Boolean verbose, Integer level)
   return(Matrix[Double] S, Matrix[Double] S2)
 {
   unchangedS = matrix(0,0,ncol(prevLattice2));
   unchangedR = matrix(0,0,4);
   prevStatsAtLevel =  as.matrix(prevStats[level])
   prevLatAtLevel = prevLattice2;
-  [unchangedS, unchangedR] = determineUnchangedSlices( prevStatsAtLevel, prevLatAtLevel, addedX2, level);
+  [unchangedS, unchangedR] = determineUnchangedSlices( prevStatsAtLevel, prevLatAtLevel, changedX2, level);
 
   if (nrow(unchangedS) > 0) {
     # unchangedMat is matrix with 1 if slice is same as slice in unchangedS (thus slice is not changed in addedX)
@@ -803,4 +763,25 @@ preparePrevLattice = function(list[unknown] prevLattice, list[unknown] metaPrevL
         }
       }
     }
+}
+
+# Function to remove rows from matrix M based on a list of indices
+removeRowsByIndices = function(Matrix[Double] M, Matrix[Double] indices)
+  return (Matrix[Double] MWithoutRemovedSlices, Matrix[Double] removedTuples)
+{ 
+  MWithoutRemovedSlices = matrix(0, 0, ncol(M));
+  removedTuples = matrix(0, 0, ncol(M));
+  index = 1;
+  for(i in 1:nrow(indices)){
+    index2 = as.scalar(indices[i]);
+    removedTuples = rbind(removedTuples, M[index2, ]);
+    if(index == index2){
+      index = index + 1;
+      i = i + 1;
+    } else {
+      MWithoutRemovedSlices = rbind(MWithoutRemovedSlices, M[index:(index2-1),]);
+      index = index2+1;
+    }
+  }
+  MWithoutRemovedSlices = rbind(MWithoutRemovedSlices, M[index:nrow(M),]);
 }

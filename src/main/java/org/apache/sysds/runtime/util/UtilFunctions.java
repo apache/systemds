@@ -579,10 +579,13 @@ public class UtilFunctions {
 			return 0;
 		switch(vt) {
 			case FP64:
+				return (char)((Double)in).intValue();
 			case FP32:
+				return (char)((Float)in).intValue();
 			case INT64:
+				return (char)((Long)in).longValue();
 			case INT32:
-				return in.toString().charAt(0);
+				return (char)((Integer)in).intValue();
 			case BOOLEAN:
 				return ((Boolean) in) ? '1' : '0';
 			case STRING:

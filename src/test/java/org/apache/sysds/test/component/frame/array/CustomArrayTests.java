@@ -1634,6 +1634,31 @@ public class CustomArrayTests {
 	}
 
 	@Test
+	@SuppressWarnings("unchecked")
+	public void setNullFromString8() {
+		ABooleanArray b = (ABooleanArray) ArrayFactory.allocate(ValueType.BOOLEAN, 1000);
+		Array<String> s = (Array<String>) ArrayFactory.allocate(ValueType.STRING, 1000, "hi");
+
+		((Array<?>) s).set(100, (String) null);
+		((Array<?>) s).set(160, (String) null);
+
+		b.setNullsFromString(65, 128, s);
+
+		for(int i = 0; i < 65; i++) {
+			assertFalse(b.get(i));
+		}
+		for(int i = 65; i < 128; i++) {
+			if(i == 100 || i == 160)
+				assertFalse(b.get(i));
+			else
+				assertTrue(b.get(i));
+		}
+		for(int i = 128; i < 1000; i++) {
+			assertFalse(b.get(i));
+		}
+	}
+
+	@Test
 	public void testMinMax() {
 		Array<?> a = ArrayFactory.create(new double[] {1, 2, 3, 4, 5, 6});
 
@@ -2195,6 +2220,22 @@ public class CustomArrayTests {
 
 	@Test
 	@SuppressWarnings("unchecked")
+	public void setTestFromOtherTypeNzCharacter() {
+		Array<Object> a = (Array<Object>) FrameArrayTests.create(FrameArrayType.CHARACTER, 150, 1);
+		double v4 = a.getAsDouble(3);
+		a.setFromOtherTypeNz(0, 9, ArrayFactory.create(new Integer[] {1, 2, 3, null, 5, 6, 7, 8, 9, 10}));
+
+		for(int i = 0; i < 10; i++) {
+			if(i == 3)
+				assertEquals(v4, a.getAsDouble(i), 0.0);
+			else
+				assertEquals(i + 1, (int) a.getAsDouble(i));
+		}
+
+	}
+
+	@Test
+	@SuppressWarnings("unchecked")
 	public void setTestFromOtherTypeNzInt() {
 		Array<Object> a = (Array<Object>) FrameArrayTests.create(FrameArrayType.HASH32, 150, 1);
 		a.setFromOtherTypeNz(0, 9, ArrayFactory.create(new int[] {1, 2, 3, 4, 5, 6, 7, 8, 9, 10}));
@@ -2208,11 +2249,14 @@ public class CustomArrayTests {
 	@Test
 	@SuppressWarnings("unchecked")
 	public void setTestFromOtherTypeNzLongOpt() {
-		Array<Object> a = (Array<Object>) FrameArrayTests.createOptional(FrameArrayType.HASH64, 150, 1);
+		Array<Object> a = (Array<Object>) FrameArrayTests.create(FrameArrayType.HASH64, 150, 1);
+		double v4 = a.getAsDouble(4);
 		a.setFromOtherTypeNz(0, 9, ArrayFactory.create(new Integer[] {1, 2, 3, 4, null, 6, 7, 8, 9, 10}));
 		for(int i = 0; i < 10; i++) {
-			if(i == 4)
-				assertNull(a.get(i));
+			if(i == 4) {
+
+				assertEquals(v4, a.getAsDouble(i), 0.0);
+			}
 			else
 				assertEquals(i + 1, (int) a.getAsDouble(i));
 		}
@@ -2222,12 +2266,14 @@ public class CustomArrayTests {
 	@SuppressWarnings("unchecked")
 	public void setTestFromOtherTypeNzIntOpt() {
 		try {
-			Array<Object> a = (Array<Object>) FrameArrayTests.createOptional(FrameArrayType.HASH32, 20, 1);
-			a.setFromOtherTypeNz(0, 9, ArrayFactory.create(new Integer[] {1, 2, 3, 4, null, 6, 7, 8, 9, 10}));
+			Array<Object> a = (Array<Object>) FrameArrayTests.create(FrameArrayType.HASH32, 20, 1);
+			double v4 = a.getAsDouble(4);
+			a.setFromOtherTypeNz(0, 9, ArrayFactory.create(new Long[] {1L, 2L, 3L, 4L, null, 6L, 7L, 8L, 9L, 10L}));
+
 			for(int i = 0; i < 10; i++) {
 				if(i == 4) {
-					assertNull(a.get(i));
-					assertEquals(0.0, a.getAsDouble(i), 0.0);
+					// assertNull(a.get(i));
+					assertEquals(v4, a.getAsDouble(i), 0.0);
 				}
 				else
 					assertEquals(i + 1, (int) a.getAsDouble(i));
@@ -2359,7 +2405,7 @@ public class CustomArrayTests {
 
 	@Test(expected = Exception.class)
 	@SuppressWarnings("unchecked")
-	public void setDDCArrayInvalidDicts(){
+	public void setDDCArrayInvalidDicts() {
 		DDCArray<Integer> a = (DDCArray<Integer>) FrameArrayTests.createDDC(FrameArrayType.INT32, 100, 324, 10);
 		DDCArray<Integer> b = (DDCArray<Integer>) FrameArrayTests.createDDC(FrameArrayType.INT32, 100, 32, 11);
 		assertTrue(a instanceof DDCArray);
@@ -2370,7 +2416,7 @@ public class CustomArrayTests {
 
 	@Test(expected = Exception.class)
 	@SuppressWarnings("unchecked")
-	public void setDDCArrayInvalidDicts2(){
+	public void setDDCArrayInvalidDicts2() {
 		DDCArray<Integer> a = (DDCArray<Integer>) FrameArrayTests.createDDC(FrameArrayType.INT32, 100, 324, 10);
 		DDCArray<Integer> b = (DDCArray<Integer>) FrameArrayTests.createDDC(FrameArrayType.INT32, 100, 22, 10);
 		assertTrue(a instanceof DDCArray);
@@ -2381,7 +2427,7 @@ public class CustomArrayTests {
 
 	@Test
 	@SuppressWarnings("unchecked")
-	public void setDDCArrayInvalidDicts3_howeverNotDebugging(){
+	public void setDDCArrayInvalidDicts3_howeverNotDebugging() {
 		DDCArray<Integer> a = (DDCArray<Integer>) FrameArrayTests.createDDC(FrameArrayType.INT32, 100, 324, 10);
 		DDCArray<Integer> b = (DDCArray<Integer>) FrameArrayTests.createDDC(FrameArrayType.INT32, 100, 22, 10);
 		assertTrue(a instanceof DDCArray);
@@ -2392,7 +2438,7 @@ public class CustomArrayTests {
 
 	@Test
 	@SuppressWarnings("unchecked")
-	public void setDDCArrayCorrectDicts3_howeverNotDebugging(){
+	public void setDDCArrayCorrectDicts3_howeverNotDebugging() {
 		DDCArray<Integer> a = (DDCArray<Integer>) FrameArrayTests.createDDC(FrameArrayType.INT32, 100, 324, 10);
 		DDCArray<Integer> b = (DDCArray<Integer>) FrameArrayTests.createDDC(FrameArrayType.INT32, 100, 22, 10);
 		assertTrue(a instanceof DDCArray);
@@ -2405,7 +2451,7 @@ public class CustomArrayTests {
 
 	@Test
 	@SuppressWarnings("unchecked")
-	public void setDDCArrayNullDictOneSide(){
+	public void setDDCArrayNullDictOneSide() {
 		DDCArray<Integer> a = (DDCArray<Integer>) FrameArrayTests.createDDC(FrameArrayType.INT32, 100, 324, 10);
 		DDCArray<Integer> b = (DDCArray<Integer>) FrameArrayTests.createDDC(FrameArrayType.INT32, 100, 22, 10);
 		assertTrue(a instanceof DDCArray);
@@ -2414,11 +2460,10 @@ public class CustomArrayTests {
 		b = b.nullDict();
 		a.set(0, 10, b);
 	}
-
 
 	@Test
 	@SuppressWarnings("unchecked")
-	public void setDDCArrayNullDictOtherSide(){
+	public void setDDCArrayNullDictOtherSide() {
 		DDCArray<Integer> a = (DDCArray<Integer>) FrameArrayTests.createDDC(FrameArrayType.INT32, 100, 324, 10);
 		DDCArray<Integer> b = (DDCArray<Integer>) FrameArrayTests.createDDC(FrameArrayType.INT32, 100, 22, 10);
 		assertTrue(a instanceof DDCArray);
@@ -2430,7 +2475,7 @@ public class CustomArrayTests {
 
 	@Test(expected = Exception.class)
 	@SuppressWarnings("unchecked")
-	public void setDDCArrayNullDictOtherSideToSmallMap(){
+	public void setDDCArrayNullDictOtherSideToSmallMap() {
 		DDCArray<Integer> a = (DDCArray<Integer>) FrameArrayTests.createDDC(FrameArrayType.INT32, 100, 324, 5);
 		DDCArray<Integer> b = (DDCArray<Integer>) FrameArrayTests.createDDC(FrameArrayType.INT32, 100, 22, 10);
 		assertTrue(a instanceof DDCArray);
@@ -2440,10 +2485,9 @@ public class CustomArrayTests {
 		a.set(0, 10, b);
 	}
 
-
 	@Test(expected = Exception.class)
 	@SuppressWarnings("unchecked")
-	public void setDDCArrayNullDictOneSideToSmallMap(){
+	public void setDDCArrayNullDictOneSideToSmallMap() {
 		DDCArray<Integer> a = (DDCArray<Integer>) FrameArrayTests.createDDC(FrameArrayType.INT32, 100, 324, 5);
 		DDCArray<Integer> b = (DDCArray<Integer>) FrameArrayTests.createDDC(FrameArrayType.INT32, 100, 22, 10);
 		assertTrue(a instanceof DDCArray);
@@ -2452,8 +2496,6 @@ public class CustomArrayTests {
 		b = b.nullDict();
 		a.set(0, 10, b);
 	}
-
-
 
 	@Test(expected = Exception.class)
 	public void StringToBitSet1() {
@@ -2641,5 +2683,11 @@ public class CustomArrayTests {
 		b = b.setMap(mapA);
 		assertTrue(a.equals(b));
 
+	}
+
+	@Test
+	public void parseEmptyHash() {
+		assertEquals(0, HashIntegerArray.parseHashInt(""));
+		assertEquals(0, HashLongArray.parseHashLong(""));
 	}
 }

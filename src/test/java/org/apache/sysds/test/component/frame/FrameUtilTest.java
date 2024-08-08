@@ -20,6 +20,7 @@
 package org.apache.sysds.test.component.frame;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 import java.util.Arrays;
@@ -387,7 +388,6 @@ public class FrameUtilTest {
 		assertTrue(null == FrameUtil.isHash("aaaaaaaa-aaaa-aa", 16));
 	}
 
-
 	@Test
 	public void isFloat() {
 		assertTrue(null != FrameUtil.isFloatType("0.0", 3));
@@ -415,7 +415,7 @@ public class FrameUtilTest {
 		assertTrue(null == FrameUtil.isFloatType("nAa", 3));
 		assertTrue(null != FrameUtil.isFloatType("-1324.231", 8));
 		assertTrue(null != FrameUtil.isFloatType("+1324.231", 8));
-		assertTrue(null != FrameUtil.isFloatType("1224.242142132331", 12));  // hack
+		assertTrue(null != FrameUtil.isFloatType("1224.242142132331", 12)); // hack
 		assertTrue(null != FrameUtil.isFloatType("10000.242142132331", 12)); // hack
 		assertTrue(null != FrameUtil.isFloatType("0.0000000000002331", 12)); // hack
 
@@ -425,20 +425,76 @@ public class FrameUtilTest {
 
 	}
 
-	@Test 
-	public void isInt(){
-		assertTrue(null != FrameUtil.isIntType("1.000000",8));
-		assertTrue(null == FrameUtil.isIntType("1.000100",8));
-		assertTrue(null != FrameUtil.isIntType("1000.000",8));
-		assertTrue(null != FrameUtil.isIntType("1000000.",8));
-		assertTrue(null == FrameUtil.isIntType(".",1));
-		assertTrue(null == FrameUtil.isIntType(",",1));
-		assertTrue(null == FrameUtil.isIntType("a",1));
-		assertTrue(null == FrameUtil.isIntType(" ",1));
+	@Test
+	public void isInt() {
+		assertTrue(null != FrameUtil.isIntType("1.000000", 8));
+		assertTrue(null == FrameUtil.isIntType("1.000100", 8));
+		assertTrue(null != FrameUtil.isIntType("1000.000", 8));
+		assertTrue(null != FrameUtil.isIntType("1000000.", 8));
+		assertTrue(null == FrameUtil.isIntType(".", 1));
+		assertTrue(null == FrameUtil.isIntType(",", 1));
+		assertTrue(null == FrameUtil.isIntType("a", 1));
+		assertTrue(null == FrameUtil.isIntType(" ", 1));
 	}
 
+	@Test
+	public void isTypeDouble() {
+		assertTrue(ValueType.BOOLEAN == FrameUtil.isType(0.0));
+		assertTrue(ValueType.BOOLEAN == FrameUtil.isType(1.0));
+		assertTrue(ValueType.INT32 == FrameUtil.isType(2.0));
+		assertTrue(ValueType.INT64 == FrameUtil.isType(20000000000.0));
+		assertTrue(ValueType.FP32 == FrameUtil.isType(2.2));
+		assertTrue(ValueType.FP64 == FrameUtil.isType(2.2231342152323232));
+	}
+
+	@Test
+	public void isTypeDoubleHighest() {
+		assertTrue(ValueType.BOOLEAN == FrameUtil.isType(0.0, ValueType.BOOLEAN));
+		assertTrue(ValueType.BOOLEAN == FrameUtil.isType(1.0, ValueType.BOOLEAN));
+		assertTrue(ValueType.INT32 == FrameUtil.isType(1.0, ValueType.INT32));
+		assertTrue(ValueType.INT64 == FrameUtil.isType(1.0, ValueType.INT64));
+		assertTrue(ValueType.FP32 == FrameUtil.isType(1.0, ValueType.FP32));
+		assertTrue(ValueType.FP64 == FrameUtil.isType(1.0, ValueType.FP64));
+		assertTrue(ValueType.INT32 == FrameUtil.isType(2.0, ValueType.INT32));
+		assertTrue(ValueType.INT64 == FrameUtil.isType(2.0, ValueType.INT64));
+		assertTrue(ValueType.INT64 == FrameUtil.isType(20000000000.0, ValueType.BOOLEAN));
+		assertTrue(ValueType.INT64 == FrameUtil.isType(20000000000.0, ValueType.INT32));
+		assertTrue(ValueType.INT64 == FrameUtil.isType(20000000000.0, ValueType.INT64));
+		assertTrue(ValueType.FP32 == FrameUtil.isType(2.2, ValueType.INT64));
+		assertTrue(ValueType.FP32 == FrameUtil.isType(2.2, ValueType.FP32));
+		assertTrue(ValueType.FP64 == FrameUtil.isType(2.2231342152323232, ValueType.FP32));
+		assertTrue(ValueType.FP64 == FrameUtil.isType(2.2231342152323232, ValueType.FP64));
+	}
+
+
 	@Test 
-	public void isTypeDouble(){
-		
+	public void isDefault(){
+		assertTrue(FrameUtil.isDefault(null, null));
+		assertTrue(FrameUtil.isDefault("false", ValueType.BOOLEAN));
+		assertTrue(FrameUtil.isDefault("f", ValueType.BOOLEAN));
+		assertTrue(FrameUtil.isDefault("0", ValueType.BOOLEAN));
+		assertTrue(FrameUtil.isDefault("" + (char)(0), ValueType.CHARACTER));
+		assertTrue(FrameUtil.isDefault("0.0" , ValueType.FP32));
+		assertTrue(FrameUtil.isDefault("0" , ValueType.FP32));
+		assertTrue(FrameUtil.isDefault("0.0" , ValueType.FP64));
+		assertTrue(FrameUtil.isDefault("0" , ValueType.FP64));
+		assertTrue(FrameUtil.isDefault("0.0" , ValueType.INT32));
+		assertTrue(FrameUtil.isDefault("0" , ValueType.INT32));
+		assertTrue(FrameUtil.isDefault("0.0" , ValueType.INT64));
+		assertTrue(FrameUtil.isDefault("0" , ValueType.INT64));
+
+
+		assertFalse(FrameUtil.isDefault("0.0" , ValueType.STRING));
+		assertFalse(FrameUtil.isDefault("0" , ValueType.STRING));
+		assertFalse(FrameUtil.isDefault("" , ValueType.STRING));
+		assertFalse(FrameUtil.isDefault("13" , ValueType.STRING));
+		assertFalse(FrameUtil.isDefault("13" , ValueType.INT32));
+		assertFalse(FrameUtil.isDefault("13" , ValueType.INT64));
+		assertFalse(FrameUtil.isDefault("13" , ValueType.FP64));
+		assertFalse(FrameUtil.isDefault("13" , ValueType.FP32));
+		assertFalse(FrameUtil.isDefault("1" , ValueType.CHARACTER));
+		assertFalse(FrameUtil.isDefault("0" , ValueType.CHARACTER));
+		assertFalse(FrameUtil.isDefault("t" , ValueType.BOOLEAN));
+		assertFalse(FrameUtil.isDefault("true" , ValueType.BOOLEAN));
 	}
 }

@@ -270,16 +270,16 @@ public interface FrameUtil {
 	public static ValueType isType(double val, ValueType min) {
 		switch(min) {
 			case BOOLEAN:
-				return isType(val);
-			case INT32:
+				if(val == 1.0d || val == 0.0d)
+					return ValueType.BOOLEAN;
+			case UINT4:
 			case UINT8:
+			case INT32:
+				if((int) val == val)
+					return ValueType.INT32;
 			case INT64:
-				if((long) (val) == val) {
-					if((int) val == val)
-						return ValueType.INT32;
-					else
-						return ValueType.INT64;
-				}
+				if((long) val == val) 
+					return ValueType.INT64;
 			case FP32:
 				if(same(val, (float) val))
 					return ValueType.FP32;

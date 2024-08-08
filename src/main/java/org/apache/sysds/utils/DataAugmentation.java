@@ -57,6 +57,7 @@ public class DataAugmentation
 		res = typos(res, strings, pTypo, seed);
 		res = miss(res, pMiss, pDrop, seed + 1);
 		res = outlier(res, numerics, pOut, 0.5, 3, seed + 2);
+		res = swap(res, swappable, pSwap, seed + 3);
 		
 		return res;
 	}
@@ -114,7 +115,7 @@ public class DataAugmentation
 		for(int r=0;r<frame.getNumRows();r++) {
 			int c = strings.get(rand.nextInt(strings.size()));
 			String s = (String) frame.get(r, c);
-			if(s.length()!=1 && rand.nextDouble()<=pTypo) {
+			if(s.length()>1 && rand.nextDouble()<=pTypo) {
 				int i = rand.nextInt(s.length());
 				if(i==s.length()-1)             s = swapchr(s, i-1, i);
 				else if(i==0)                   s = swapchr(s, i, i+1);
@@ -243,14 +244,15 @@ public class DataAugmentation
 	 * @param frame Original frame block
 	 * @param swappable List with the columns that are swappable, generated during preprocessing
 	 * @param pSwap Probability of swapping two fields in a row
+	 * @param seed seed
 	 * @return A new frameblock with swapped elements
 	 * 
 	 */
-	public static FrameBlock swap(FrameBlock frame, List<Integer> swappable, double pSwap) {
+	public static FrameBlock swap(FrameBlock frame, List<Integer> swappable, double pSwap, int seed) {
 		if(!frame.getColumnName(frame.getNumColumns()-1).equals("errorLabels")) {
 			throw new IllegalArgumentException("The FrameBlock passed has not been preprocessed.");
 		}
-		Random rand = new Random();
+		Random rand = new Random(seed);
 		for(int r=0;r<frame.getNumRows();r++) {
 			if(rand.nextDouble()<=pSwap) {
 				int i = swappable.get(rand.nextInt(swappable.size()));

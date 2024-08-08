@@ -21,17 +21,18 @@ package org.apache.sysds.test.component.frame;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 
-import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.Test;
 import org.apache.sysds.common.Types.ValueType;
 import org.apache.sysds.runtime.frame.data.FrameBlock;
 import org.apache.sysds.utils.DataAugmentation;
+import org.junit.Before;
+import org.junit.BeforeClass;
+import org.junit.Test;
 
 public class DataCorruptionTest
 {
@@ -96,6 +97,37 @@ public class DataCorruptionTest
 		assertEquals("The number of changed rows is not approx. 20%", 0.2, numch/Xp.getNumRows(), 0.05);
 	}
 	
+	@Test
+	public void testCombined() {
+		try{
+
+			Xp = DataAugmentation.dataCorruption(Xp, 0.1, 0.1, 0.1, 0.1, 0.1, 32);
+		}
+		catch(Exception e){
+			e.printStackTrace();
+			fail(e.getMessage());
+		}
+		
+		double numch = 0.;
+		for(int i=0;i<Xp.getNumRows();i++) {
+			String label = (String) Xp.get(i, Xp.getNumColumns()-1);
+			if(label.equals("typo")) {
+				numch++;
+			}
+			if(label.equals("missing")) {
+				numch++;
+			}
+			if(label.equals("outlier")) {
+				numch++;
+			}
+			if(label.equals("swap")) {
+				numch++;
+			}
+		}
+		// Test typos: number of changed rows: 
+		assertEquals("The number of changed rows is not approx. 20%", 0.28, numch/Xp.getNumRows(), 0.05);
+	}
+
 	@Test
 	public void testMiss() {
 		Xp = DataAugmentation.miss(Xp, 0.2, 0.7, 152);
@@ -175,7 +207,7 @@ public class DataCorruptionTest
 		
 		FrameBlock changed = DataAugmentation.preprocessing(ori, numerics, strings, swappable);
 		
-		changed = DataAugmentation.swap(changed, swappable, 0.2);
+		changed = DataAugmentation.swap(changed, swappable, 0.2, 132);
 		
 		double numch = 0.;
 		for(int i=0;i<changed.getNumRows();i++) {

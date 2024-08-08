@@ -41,6 +41,7 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.common.Types.ValueType;
 import org.apache.sysds.runtime.DMLRuntimeException;
+import org.apache.sysds.runtime.compress.colgroup.mapping.AMapToData;
 import org.apache.sysds.runtime.compress.colgroup.mapping.MapToFactory;
 import org.apache.sysds.runtime.frame.data.FrameBlock;
 import org.apache.sysds.runtime.frame.data.columns.ABooleanArray;
@@ -2357,6 +2358,104 @@ public class CustomArrayTests {
 	}
 
 	@Test(expected = Exception.class)
+	@SuppressWarnings("unchecked")
+	public void setDDCArrayInvalidDicts(){
+		DDCArray<Integer> a = (DDCArray<Integer>) FrameArrayTests.createDDC(FrameArrayType.INT32, 100, 324, 10);
+		DDCArray<Integer> b = (DDCArray<Integer>) FrameArrayTests.createDDC(FrameArrayType.INT32, 100, 32, 11);
+		assertTrue(a instanceof DDCArray);
+		assertTrue(b instanceof DDCArray);
+
+		a.set(0, 10, b);
+	}
+
+	@Test(expected = Exception.class)
+	@SuppressWarnings("unchecked")
+	public void setDDCArrayInvalidDicts2(){
+		DDCArray<Integer> a = (DDCArray<Integer>) FrameArrayTests.createDDC(FrameArrayType.INT32, 100, 324, 10);
+		DDCArray<Integer> b = (DDCArray<Integer>) FrameArrayTests.createDDC(FrameArrayType.INT32, 100, 22, 10);
+		assertTrue(a instanceof DDCArray);
+		assertTrue(b instanceof DDCArray);
+		FrameBlock.debug = true;
+		a.set(0, 10, b);
+	}
+
+	@Test
+	@SuppressWarnings("unchecked")
+	public void setDDCArrayInvalidDicts3_howeverNotDebugging(){
+		DDCArray<Integer> a = (DDCArray<Integer>) FrameArrayTests.createDDC(FrameArrayType.INT32, 100, 324, 10);
+		DDCArray<Integer> b = (DDCArray<Integer>) FrameArrayTests.createDDC(FrameArrayType.INT32, 100, 22, 10);
+		assertTrue(a instanceof DDCArray);
+		assertTrue(b instanceof DDCArray);
+		FrameBlock.debug = false;
+		a.set(0, 10, b);
+	}
+
+	@Test
+	@SuppressWarnings("unchecked")
+	public void setDDCArrayCorrectDicts3_howeverNotDebugging(){
+		DDCArray<Integer> a = (DDCArray<Integer>) FrameArrayTests.createDDC(FrameArrayType.INT32, 100, 324, 10);
+		DDCArray<Integer> b = (DDCArray<Integer>) FrameArrayTests.createDDC(FrameArrayType.INT32, 100, 22, 10);
+		assertTrue(a instanceof DDCArray);
+		assertTrue(b instanceof DDCArray);
+
+		b = b.setDict(a.getDict());
+		FrameBlock.debug = true;
+		a.set(0, 10, b);
+	}
+
+	@Test
+	@SuppressWarnings("unchecked")
+	public void setDDCArrayNullDictOneSide(){
+		DDCArray<Integer> a = (DDCArray<Integer>) FrameArrayTests.createDDC(FrameArrayType.INT32, 100, 324, 10);
+		DDCArray<Integer> b = (DDCArray<Integer>) FrameArrayTests.createDDC(FrameArrayType.INT32, 100, 22, 10);
+		assertTrue(a instanceof DDCArray);
+		assertTrue(b instanceof DDCArray);
+
+		b = b.nullDict();
+		a.set(0, 10, b);
+	}
+
+
+	@Test
+	@SuppressWarnings("unchecked")
+	public void setDDCArrayNullDictOtherSide(){
+		DDCArray<Integer> a = (DDCArray<Integer>) FrameArrayTests.createDDC(FrameArrayType.INT32, 100, 324, 10);
+		DDCArray<Integer> b = (DDCArray<Integer>) FrameArrayTests.createDDC(FrameArrayType.INT32, 100, 22, 10);
+		assertTrue(a instanceof DDCArray);
+		assertTrue(b instanceof DDCArray);
+
+		a = a.nullDict();
+		a.set(0, 10, b);
+	}
+
+	@Test(expected = Exception.class)
+	@SuppressWarnings("unchecked")
+	public void setDDCArrayNullDictOtherSideToSmallMap(){
+		DDCArray<Integer> a = (DDCArray<Integer>) FrameArrayTests.createDDC(FrameArrayType.INT32, 100, 324, 5);
+		DDCArray<Integer> b = (DDCArray<Integer>) FrameArrayTests.createDDC(FrameArrayType.INT32, 100, 22, 10);
+		assertTrue(a instanceof DDCArray);
+		assertTrue(b instanceof DDCArray);
+
+		a = a.nullDict();
+		a.set(0, 10, b);
+	}
+
+
+	@Test(expected = Exception.class)
+	@SuppressWarnings("unchecked")
+	public void setDDCArrayNullDictOneSideToSmallMap(){
+		DDCArray<Integer> a = (DDCArray<Integer>) FrameArrayTests.createDDC(FrameArrayType.INT32, 100, 324, 5);
+		DDCArray<Integer> b = (DDCArray<Integer>) FrameArrayTests.createDDC(FrameArrayType.INT32, 100, 22, 10);
+		assertTrue(a instanceof DDCArray);
+		assertTrue(b instanceof DDCArray);
+
+		b = b.nullDict();
+		a.set(0, 10, b);
+	}
+
+
+
+	@Test(expected = Exception.class)
 	public void StringToBitSet1() {
 		String[] a = FrameArrayTests.generateRandom01String(100, 13);
 		a[10] = "hi";
@@ -2510,4 +2609,37 @@ public class CustomArrayTests {
 		ArrayFactory.create(a).changeType(ValueType.INT32);
 	}
 
+	@Test
+	public void testDDCNotEqualsMap() {
+		DDCArray<?> a = (DDCArray<?>) FrameArrayTests.createDDC(FrameArrayType.INT32, 100, 13, 10);
+		DDCArray<?> b = (DDCArray<?>) FrameArrayTests.createDDC(FrameArrayType.INT32, 100, 321, 10);
+
+		Array<?> dictA = a.getDict();
+		Array<?> dictB = b.getDict();
+		AMapToData mapA = a.getMap();
+		AMapToData mapB = b.getMap();
+
+		assertFalse(a.equals(b));
+
+		a = a.setDict(dictB);
+		assertFalse(a.equals(b));
+
+		a = a.setDict(dictA);
+		b = b.setDict(dictA);
+		assertFalse(a.equals(b));
+		b = b.setDict(dictB);
+
+		a = a.setMap(mapB);
+		assertFalse(a.equals(b));
+
+		a = a.setMap(mapA);
+		b = b.setMap(mapA);
+		assertFalse(a.equals(b));
+		b = b.setMap(mapB);
+
+		b = b.setDict(dictA);
+		b = b.setMap(mapA);
+		assertTrue(a.equals(b));
+
+	}
 }

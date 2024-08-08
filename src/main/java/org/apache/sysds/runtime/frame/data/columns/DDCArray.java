@@ -68,6 +68,10 @@ public class DDCArray<T> extends ACompressedArray<T> {
 		return new DDCArray<>(dict, map);
 	}
 
+	public DDCArray<T> setMap(AMapToData map) {
+		return new DDCArray<>(dict, map);
+	}
+
 	public DDCArray<T> nullDict() {
 		return new DDCArray<>(null, map);
 	}
@@ -253,12 +257,17 @@ public class DDCArray<T> extends ACompressedArray<T> {
 	public void set(int rl, int ru, Array<T> value) {
 		if(value instanceof DDCArray) {
 			DDCArray<T> dc = (DDCArray<T>) value;
-			if(((dict != null && dc.dict != null) // both dicts are not null
-				&& (dc.dict.size() != dict.size() // the size of the dicts are not equivalent
-					|| (FrameBlock.debug && !dc.dict.equals(dict)) // If debugging do full equivalence check
-				)) || map.getUnique() != dc.map.getUnique() // If the two maps are not equivalent big.
+			// we allow one side to have a null dictionary while the other does not.
+			if((dict != null && dc.dict != null // If both dicts are not null
+				&& (dc.dict.size() != dict.size() // then if size of the dicts are not equivalent
+					|| (FrameBlock.debug && !dc.dict.equals(dict))) // or then if debugging do full equivalence check
+				) || map.getUnique() < dc.map.getUnique() // this map is not able to contain values of other.
 			)
-				throw new DMLCompressionException("Invalid setting of DDC Array, of incompatible instance.");
+				throw new DMLCompressionException("Invalid setting of DDC Array, of incompatible instance." + //
+					"\ndict1 is null: " + (dict == null)  + //
+					"\ndict2 is null: " + (dc.dict == null) +//
+					"\nmap1 unique: " + (map.getUnique()) + //
+					"\nmap2 unique: " + (dc.map.getUnique()) );
 
 			final AMapToData tm = dc.map;
 			for(int i = rl; i <= ru; i++) {

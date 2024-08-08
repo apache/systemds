@@ -27,4 +27,3 @@ e = read($2);
   alpha=0.95, minSup=4, tpEval=$4, selFeat=$5, verbose=$6);
 
 write(TR, $7)
-

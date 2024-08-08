@@ -62,8 +62,8 @@
 # L                lattice matrix
 # metaLattice      meta information for lattice encoding
 # Stats            statistics matrix for all slices in L
-# Xout             feature matrix consisting of oldX and totalX for next run
-# eOut             error vector consisting of oldE and addedE for next run
+# Xout             feature matrix consisting of oldX, addedX and without removedX for next run
+# eOut             error vector consisting of oldE, addedE and without removedE for next run
 # foffb            feature offsets for next run
 # foffe            feature offsets for next run
 # params           list of parameters for next run

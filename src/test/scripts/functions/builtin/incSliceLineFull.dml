@@ -33,13 +33,16 @@ if(nrow(indicesRemoved) > 0){
   }
 }
 
-# call slice finding
+# first compute the top k slices in two increments 
+  # first increment
 [TK, TKC, D, L, meta, Stats, Xout, eOut, foffb, foffe, params] = incSliceLine(addedX=oldX, addedE=oldE, k=$5,
   alpha=0.95, minSup=4, tpEval=$6, selFeat=$7, encodeLat=$8, verbose=$10);
-
+  
+  # second increment
 [TK1, TKC1, D1, L1, meta1, Stats1, Xout1, eOut1, foffb2, foffe2, params] = incSliceLine(addedX=addedX, oldX = oldX, oldE = oldE, addedE=addedE, prevLattice = L, metaPrevLattice=meta, prevStats = Stats, prevTK = TK, prevTKC = TKC, k=$5,
   alpha=0.95, minSup=4, tpEval=$6, selFeat=$7, encodeLat=$8, indicesRemoved=indicesRemoved, verbose=$10, params=params, prevFoffb = foffb, prevFoffe = foffe);
 
+# prepare totalX and totalE for running sliceline on total data 
 if(nrow(indicesRemoved) > 0){
   oldX = removeRowsByIndices(oldX, indicesRemoved);
   oldE = removeRowsByIndices(oldE, indicesRemoved);
@@ -47,14 +50,12 @@ if(nrow(indicesRemoved) > 0){
   totalE = rbind(oldE, addedE);
 }
 
+# call sliceline on total data
 [TK2, TKC2, D2, L2, meta2, Stats2, Xout2, eOut2, foffb3, foffe3, params] = incSliceLine(addedX=totalX, addedE=totalE, k=$5,
   alpha=0.95, minSup=4, tpEval=$6, selFeat=$7, encodeLat=$8, verbose=$10);
 
-
-
 write(TKC1, $11)
 write(TKC2, $12)
-
 
 # Function to remove rows from matrix M based on a list of indices
 removeRowsByIndices = function(Matrix[Double] M, Matrix[Double] indices)

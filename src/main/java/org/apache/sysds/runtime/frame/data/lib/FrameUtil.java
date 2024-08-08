@@ -149,7 +149,6 @@ public interface FrameUtil {
 				return ValueType.FP64;
 		}
 		final char first = val.charAt(0);
-		// char sec = val.charAt(1);
 
 		if(len >= 3 && (first == 'i' || first == 'I')) {
 			String val2 = val.toLowerCase();
@@ -180,7 +179,7 @@ public interface FrameUtil {
 			final char c = val.charAt(i);
 			if(c >= '0' && c <= '9')
 				continue;
-			else if(c == '.' || c == ',') {
+			else if(c == '.') { // only allowing dot not comma.
 				if(encounteredDot == true)
 					return false;
 				else

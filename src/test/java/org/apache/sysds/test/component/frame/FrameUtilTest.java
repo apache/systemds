@@ -374,4 +374,71 @@ public class FrameUtilTest {
 
 		sc.close();
 	}
+
+	@Test
+	public void isHash1() {
+		assertTrue(null == FrameUtil.isHash("aa", 2));
+		assertTrue(null == FrameUtil.isHash("aaa", 3));
+		assertTrue(ValueType.HASH32 == FrameUtil.isHash("aaaa", 4));
+		assertTrue(ValueType.HASH64 == FrameUtil.isHash("aaaaaaaaa", 9));
+		assertTrue(null == FrameUtil.isHash("aaaaaaaaaaaaaaaaa", 17));
+		assertTrue(null == FrameUtil.isHash("aaaaaaaagaaaaaaa", 16));
+		assertTrue(null == FrameUtil.isHash("aaaaaaaa aaaaaaa", 16));
+		assertTrue(null == FrameUtil.isHash("aaaaaaaa-aaaa-aa", 16));
+	}
+
+
+	@Test
+	public void isFloat() {
+		assertTrue(null != FrameUtil.isFloatType("0.0", 3));
+		assertTrue(null != FrameUtil.isFloatType("1.0", 3));
+		assertTrue(null != FrameUtil.isFloatType("0.00000", 7));
+		assertTrue(null != FrameUtil.isFloatType("Inf", 3));
+		assertTrue(null != FrameUtil.isFloatType("inf", 3));
+		assertTrue(null == FrameUtil.isFloatType("inn", 3));
+		assertTrue(null != FrameUtil.isFloatType("INF", 3));
+		assertTrue(null != FrameUtil.isFloatType("INFINITY", 8));
+		assertTrue(null != FrameUtil.isFloatType("infinity", 8));
+		assertTrue(null == FrameUtil.isFloatType("infinnty", 8));
+		assertTrue(null != FrameUtil.isFloatType("-infinity", 9));
+		assertTrue(null != FrameUtil.isFloatType("-inf", 4));
+		assertTrue(null != FrameUtil.isFloatType("-Infinity", 9));
+		assertTrue(null != FrameUtil.isFloatType("-Inf", 4));
+		assertTrue(null == FrameUtil.isFloatType("-infiuity", 9));
+		assertTrue(null == FrameUtil.isFloatType("-inn", 4));
+		assertTrue(null == FrameUtil.isFloatType("-a", 2));
+		assertTrue(null != FrameUtil.isFloatType("nan", 3));
+		assertTrue(null != FrameUtil.isFloatType("Nan", 3));
+		assertTrue(null != FrameUtil.isFloatType("NaN", 3));
+		assertTrue(null != FrameUtil.isFloatType("NAN", 3));
+		assertTrue(null == FrameUtil.isFloatType("NAa", 3));
+		assertTrue(null == FrameUtil.isFloatType("nAa", 3));
+		assertTrue(null != FrameUtil.isFloatType("-1324.231", 8));
+		assertTrue(null != FrameUtil.isFloatType("+1324.231", 8));
+		assertTrue(null != FrameUtil.isFloatType("1224.242142132331", 12));  // hack
+		assertTrue(null != FrameUtil.isFloatType("10000.242142132331", 12)); // hack
+		assertTrue(null != FrameUtil.isFloatType("0.0000000000002331", 12)); // hack
+
+		assertTrue(null == FrameUtil.isFloatType("-1324.23.1", 9));
+		assertTrue(null == FrameUtil.isFloatType("-", 1));
+		assertTrue(null != FrameUtil.isFloatType("-1324.231", 9));
+
+	}
+
+	@Test 
+	public void isInt(){
+		assertTrue(null != FrameUtil.isIntType("1.000000",8));
+		assertTrue(null == FrameUtil.isIntType("1.000100",8));
+		assertTrue(null != FrameUtil.isIntType("1000.000",8));
+		assertTrue(null != FrameUtil.isIntType("1000000.",8));
+		assertTrue(null == FrameUtil.isIntType(".",1));
+		assertTrue(null == FrameUtil.isIntType(",",1));
+		assertTrue(null == FrameUtil.isIntType("a",1));
+		assertTrue(null == FrameUtil.isIntType(" ",1));
+	}
+
+	@Test 
+	public void isTypeDouble(){
+		
+	}
 }

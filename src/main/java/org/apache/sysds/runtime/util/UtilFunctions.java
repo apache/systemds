@@ -56,7 +56,7 @@ import org.apache.sysds.runtime.matrix.data.Pair;
 import org.apache.sysds.runtime.meta.TensorCharacteristics;
 import org.apache.sysds.runtime.transform.encode.ColumnEncoderRecode;
 
-public class UtilFunctions {
+public abstract class UtilFunctions { // abstract to make it uninitializeable
 	// private static final Log LOG = LogFactory.getLog(UtilFunctions.class.getName());
 
 	//for accurate cast of double values to int and long 
@@ -587,7 +587,7 @@ public class UtilFunctions {
 			case INT32:
 				return (char)((Integer)in).intValue();
 			case BOOLEAN:
-				return ((Boolean) in) ? '1' : '0';
+				return ((Boolean) in) ? (char)1 : (char)0;
 			case STRING:
 				return !((String) in).isEmpty() ? ((String)in).charAt(0) : 0;
 			default:
@@ -860,7 +860,7 @@ public class UtilFunctions {
 		}
 	}
 	
-	public static final int computeNnz(final double[] a, final int ai, final int len) {
+	public static int computeNnz(final double[] a, final int ai, final int len) {
 		int lnnz = 0;
 		final int end = ai + len;
 		final int h = (end - ai) % 8;
@@ -872,7 +872,7 @@ public class UtilFunctions {
 		return lnnz;
 	}
 
-	private static final int computeNnzBy8(final double[] a, final int i) {
+	private static int computeNnzBy8(final double[] a, final int i) {
 		int lnnz = 0;
 		lnnz += (a[i] != 0.0) ? 1 : 0;
 		lnnz += (a[i+1] != 0.0) ? 1 : 0;
@@ -995,7 +995,7 @@ public class UtilFunctions {
 		}
 	}
 	
-	private static final Map<String, String> DATE_FORMATS = new HashMap<>() {
+	protected static final Map<String, String> DATE_FORMATS = new HashMap<>() {
 		private static final long serialVersionUID = 6826162458614520846L; {
 		put("^\\d{4}-\\d{1,2}-\\d{1,2}\\s\\d{1,2}:\\d{2}:\\d{2}$", "yyyy-MM-dd HH:mm:ss");
 		put("^\\d{1,2}-\\d{1,2}-\\d{4}\\s\\d{1,2}:\\d{2}:\\d{2}$", "dd-MM-yyyy HH:mm:ss");

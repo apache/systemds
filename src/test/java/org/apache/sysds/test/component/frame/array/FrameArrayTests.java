@@ -2694,6 +2694,14 @@ public class FrameArrayTests {
 		return ret;
 	}
 
+	public static String[] generateRandom01CommaString(int size, int seed) {
+		Random r = new Random(seed);
+		String[] ret = new String[size];
+		for(int i = 0; i < size; i++)
+			ret[i] = r.nextInt(2) + ".0";
+		return ret;
+	}
+
 	public static String[] generateRandomFloatInt(int size, int seed){
 		Random r = new Random(seed);
 		String[] ret = new String[size];
@@ -2707,6 +2715,25 @@ public class FrameArrayTests {
 		String[] ret = new String[size];
 		for(int i = 0; i < size; i++)
 			ret[i] = (r.nextBoolean() ? "" : "-") + r.nextInt(500);
+		return ret;
+	}
+	
+
+	public static String[] generateRandomFloatIntPlusMinus(int size, int seed){
+		Random r = new Random(seed);
+		String[] ret = new String[size];
+		for(int i = 0; i < size; i++)
+			ret[i] = (r.nextBoolean() ? "+" : "-") + r.nextInt(500) + ".00";
+		return ret;
+	}
+
+
+
+	public static String[] generateRandomIntPlusMinus(int size, int seed){
+		Random r = new Random(seed);
+		String[] ret = new String[size];
+		for(int i = 0; i < size; i++)
+			ret[i] = (r.nextBoolean() ? "+" : "-") + r.nextInt(500);
 		return ret;
 	}
 	

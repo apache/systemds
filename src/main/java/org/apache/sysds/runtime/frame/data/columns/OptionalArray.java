@@ -249,8 +249,9 @@ public class OptionalArray<T> extends Array<T> {
 
 	@Override
 	public void setFromOtherTypeNz(int rl, int ru, Array<?> value) {
-		if(_a instanceof HashIntegerArray || _a instanceof HashLongArray){
-			Array<?> noOpt = value instanceof OptionalArray ? ((OptionalArray<?>)value)._a : value;
+		if(_a instanceof HashIntegerArray || _a instanceof HashLongArray) {
+			Array<?> noOpt = value instanceof OptionalArray //
+				? ((OptionalArray<?>) value)._a : value;
 			_a.setFromOtherTypeNz(rl, ru, noOpt);
 			for(int i = rl; i <= ru; i++) {
 				Object v = value.get(i);
@@ -258,7 +259,7 @@ public class OptionalArray<T> extends Array<T> {
 					_n.set(i, true);
 			}
 		}
-		else{
+		else {
 			for(int i = rl; i <= ru; i++) {
 				Object v = value.get(i);
 				if(v != null)

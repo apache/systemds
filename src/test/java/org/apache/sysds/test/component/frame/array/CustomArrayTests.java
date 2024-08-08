@@ -2264,6 +2264,22 @@ public class CustomArrayTests {
 
 	@Test
 	@SuppressWarnings("unchecked")
+	public void setTestFromOtherTypeNzLongOptOpt() {
+		Array<Object> a = (Array<Object>) FrameArrayTests.createOptional(FrameArrayType.HASH64, 150, 1);
+		double v4 = a.getAsDouble(4);
+		a.setFromOtherTypeNz(0, 9, ArrayFactory.create(new Integer[] {1, 2, 3, 4, null, 6, 7, 8, 9, 10}));
+		for(int i = 0; i < 10; i++) {
+			if(i == 4) {
+
+				assertEquals(v4, a.getAsDouble(i), 0.0);
+			}
+			else
+				assertEquals(i + 1, (int) a.getAsDouble(i));
+		}
+	}
+
+	@Test
+	@SuppressWarnings("unchecked")
 	public void setTestFromOtherTypeNzIntOpt() {
 		try {
 			Array<Object> a = (Array<Object>) FrameArrayTests.create(FrameArrayType.HASH32, 20, 1);
@@ -2565,6 +2581,87 @@ public class CustomArrayTests {
 		ArrayFactory.create(a).changeType(ValueType.BOOLEAN);
 	}
 
+	@Test
+	@SuppressWarnings("unchecked")
+	public void StringToBitSet9() {
+		for(int j = 0; j < 4; j++) {
+
+			// -2 because negative seed on a random int(2) roll is always 0 and positive seed is always 1
+			String[] a = FrameArrayTests.generateRandom01CommaString(70, -2 + j);
+			a[42] = null;
+			Array<Boolean> b = (Array<Boolean>) (ArrayFactory.create(a).changeType(ValueType.BOOLEAN));
+			for(int i = 0; i < a.length; i++) {
+				if(a[i] == null)
+					assertFalse(b.get(i));
+				else if(a[i].equals("1.0"))
+					assertTrue(b.get(i));
+				else
+					assertFalse(b.get(i));
+			}
+		}
+	}
+
+	@Test
+	@SuppressWarnings("unchecked")
+	public void StringToBitSet10() {
+		for(int j = 0; j < 4; j++) {
+			// -2 because negative seed on a random int(2) roll is always 0 and positive seed is always 1
+			String[] a = FrameArrayTests.generateRandomTFString(70, -2 + j);
+			a[42] = null;
+			Array<Boolean> b = (Array<Boolean>) (ArrayFactory.create(a).changeType(ValueType.BOOLEAN));
+			for(int i = 0; i < a.length; i++) {
+				if(a[i] == null)
+					assertFalse(b.get(i));
+				else if(a[i].equals("t"))
+					assertTrue(b.get(i));
+				else
+					assertFalse(b.get(i));
+			}
+		}
+	}
+
+	@Test
+	@SuppressWarnings("unchecked")
+	public void StringToBitSet11() {
+		for(int j = 0; j < 4; j++) {
+
+			// -2 because negative seed on a random int(2) roll is always 0 and positive seed is always 1
+			String[] a = FrameArrayTests.generateRandom01String(70, -2 + j);
+			a[42] = null;
+			Array<Boolean> b = (Array<Boolean>) (ArrayFactory.create(a).changeType(ValueType.BOOLEAN));
+
+			for(int i = 0; i < a.length; i++) {
+				if(a[i] == null)
+					assertFalse(b.get(i));
+				else if(a[i].equals("1"))
+					assertTrue(b.get(i));
+				else
+					assertFalse(b.get(i));
+			}
+		}
+	}
+
+	@Test
+	@SuppressWarnings("unchecked")
+	public void StringToBitSet12() {
+		for(int j = 0; j < 4; j++) {
+
+			// -2 because negative seed on a random int(2) roll is always 0 and positive seed is always 1
+			String[] a = FrameArrayTests.generateRandomTrueFalseString(70, -2 + j);
+			a[42] = null;
+			Array<Boolean> b = (Array<Boolean>) (ArrayFactory.create(a).changeType(ValueType.BOOLEAN));
+
+			for(int i = 0; i < a.length; i++) {
+				if(a[i] == null)
+					assertFalse(b.get(i));
+				else if(a[i].equals("true"))
+					assertTrue(b.get(i));
+				else
+					assertFalse(b.get(i));
+			}
+		}
+	}
+
 	@Test(expected = Exception.class)
 	public void StringToInt() {
 		String[] a = FrameArrayTests.generateRandomFloatInt(40, 13);
@@ -2593,9 +2690,14 @@ public class CustomArrayTests {
 	@Test
 	public void StringToInt4() {
 		String[] a = FrameArrayTests.generateRandomFloatInt(80, 321);
+		a[10] = "";
 		Array<?> aa = ArrayFactory.create(a).changeType(ValueType.INT32);
+
 		for(int i = 0; i < a.length; i++) {
-			assertEquals(Double.parseDouble(a[i]), aa.getAsDouble(i), 0.0);
+			if(i == 10)
+				assertEquals(0, aa.getAsDouble(i), 0.0);
+			else
+				assertEquals(Double.parseDouble(a[i]), aa.getAsDouble(i), 0.0);
 		}
 	}
 
@@ -2652,6 +2754,47 @@ public class CustomArrayTests {
 	}
 
 	@Test
+	public void StringToInt10() {
+
+		try {
+			String[] a = FrameArrayTests.generateRandomIntPlusMinus(80, 321);
+			Array<?> aa = ArrayFactory.create(a).changeType(ValueType.INT32);
+			for(int i = 0; i < a.length; i++) {
+
+				assertEquals(Double.parseDouble(a[i]), aa.getAsDouble(i), 0.0);
+
+			}
+		}
+		catch(Exception e) {
+			e.printStackTrace();
+			fail(e.getMessage());
+		}
+
+	}
+
+	@Test
+	public void StringToInt11() {
+
+		try {
+
+			String[] a = FrameArrayTests.generateRandomFloatIntPlusMinus(80, 321);
+			a[10] = a[10].split("\\.")[0];
+			Array<?> aa = ArrayFactory.create(a).changeType(ValueType.INT32);
+
+			for(int i = 0; i < a.length; i++) {
+
+				assertEquals(Double.parseDouble(a[i]), aa.getAsDouble(i), 0.0);
+
+			}
+		}
+		catch(Exception e) {
+			e.printStackTrace();
+			fail(e.getMessage());
+		}
+
+	}
+
+	@Test
 	public void testDDCNotEqualsMap() {
 		DDCArray<?> a = (DDCArray<?>) FrameArrayTests.createDDC(FrameArrayType.INT32, 100, 13, 10);
 		DDCArray<?> b = (DDCArray<?>) FrameArrayTests.createDDC(FrameArrayType.INT32, 100, 321, 10);
@@ -2689,5 +2832,24 @@ public class CustomArrayTests {
 	public void parseEmptyHash() {
 		assertEquals(0, HashIntegerArray.parseHashInt(""));
 		assertEquals(0, HashLongArray.parseHashLong(""));
+	}
+
+
+
+	@Test 
+	public void stringArrayGetDouble(){
+		Array<String> s = ArrayFactory.create(new String[]{null, "", "0.0"});
+		for(int i = 0; i < s.size(); i++){
+			assertEquals(0.0, s.getAsDouble(i),0.0);
+		}
+	}
+	
+
+	@Test 
+	public void stringArrayGetDoubleNaN(){
+		Array<String> s = ArrayFactory.create(new String[]{null, "", "NaN"});
+		for(int i = 0; i < s.size(); i++){
+			assertTrue(Double.isNaN(s.getAsNaNDouble(i)));
+		}
 	}
 }

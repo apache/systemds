@@ -468,14 +468,16 @@ public class StringArray extends Array<String> {
 	protected int parseSignificantFloat(String s) {
 		final int len = s.length();
 		int v = 0; // running sum of Significant
+		if(len == 0)
+			return v;
 		int c = 0; // current character
 		char ch = s.charAt(c);
 		final boolean isNegative = ch == '-';
 		if(isNegative || ch == '+') {
-			ch = s.charAt(++c);
+			c++;
 		}
-		for(; c < len; c++) {
-			ch = s.charAt(c);
+		do {
+			ch = s.charAt(c++);
 			final int cc = ch - '0';
 			if(ch == '.')
 				break;
@@ -484,7 +486,8 @@ public class StringArray extends Array<String> {
 			else
 				throw new NumberFormatException(s);
 		}
-		c++;
+		while(c < len);
+
 		for(; c < len; c++) {
 			if(s.charAt(c) != '0')
 				throw new NumberFormatException(s);
@@ -493,46 +496,37 @@ public class StringArray extends Array<String> {
 	}
 
 	protected void changeTypeIntegerNormal(Array<Integer> ret, int l, int u) {
-		try {
+	
 			for(int i = l; i < u; i++) {
 				final String s = _data[i];
 				if(s != null)
 					ret.set(i, parseInt(s));
 			}
-		}
-		catch(StringIndexOutOfBoundsException e) {
-			LOG.warn("inefficient safe cast because of : " + e.getMessage());
-			changeTypeIntegerSafe(ret, l, u);
-		}
+		
 	}
 
 	protected int parseInt(String s) {
 		final int len = s.length();
 		int v = 0; // running sum of Significant
+		if(len == 0)
+			return v;
 		int c = 0;
 		char ch = s.charAt(c);
 		final boolean isNegative = ch == '-';
 		if(isNegative || ch == '+') {
-			ch = s.charAt(++c);
+			c++;
 		}
-		for(; c < len; c++) {
-			ch = s.charAt(c);
+		do {
+			ch = s.charAt(c++);
 			final int cc = ch - '0';
 			if(cc < 10)
 				v = 10 * v + cc;
 			else
 				throw new NumberFormatException(s);
 		}
+		while(c < len);
 
 		return isNegative ? -v : v;
-	}
-
-	protected void changeTypeIntegerSafe(Array<Integer> ret, int l, int u) {
-		for(int i = l; i < u; i++) {
-			final String s = _data[i];
-			if(s != null && s.length() > 0)
-				ret.set(i, Integer.parseInt(s));
-		}
 	}
 
 	@Override

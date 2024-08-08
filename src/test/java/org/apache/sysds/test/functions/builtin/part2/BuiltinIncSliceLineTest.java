@@ -149,362 +149,498 @@ public class BuiltinIncSliceLineTest extends AutomatedTestBase {
 
     @Test
     public void testTop4HybridDPFullFewAdded() {
-        runIncSliceLineTest(4, "e", true, false,2, false, true,ExecMode.HYBRID);
+        runIncSliceLineTest(4, "e", true, false,2, 1, false, false,  true,ExecMode.HYBRID);
     }
 
     @Test
     public void testTop4SinglenodeDPFullFewAdded() {
-        runIncSliceLineTest(4, "e", true, false,2, false, true,ExecMode.SINGLE_NODE);
+        runIncSliceLineTest(4, "e", true, false,2, 1, false, false,  true,ExecMode.SINGLE_NODE);
     }
 
     @Test
     public void testTop4HybridTPFullFewAdded() {
-        runIncSliceLineTest(4, "e", false, false, 2, false,false, ExecMode.HYBRID);
+        runIncSliceLineTest(4, "e", false, false, 2,1, false, false, false, ExecMode.HYBRID);
+    }
+
+    @Test
+    public void testTop4HybridDPFullFewAddedRemoved() {
+        runIncSliceLineTest(4, "e", true, false,2, 1, false, true,  true,ExecMode.HYBRID);
+    }
+
+    @Test
+    public void testTop4SinglenodeDPFullFewAddedRemoved() {
+        runIncSliceLineTest(4, "e", true, false,2, 1, false, true,  true,ExecMode.SINGLE_NODE);
+    }
+
+    @Test
+    public void testTop4HybridTPFullFewAddedRemoved() {
+        runIncSliceLineTest(4, "e", false, false, 2,1, false, true, false, ExecMode.HYBRID);
     }
 
     @Test
     public void testTop4SinglenodeTPFullFewAdded() {
-        runIncSliceLineTest(4, "e", false, false,2, false,false, ExecMode.SINGLE_NODE);
+        runIncSliceLineTest(4, "e", false, false,2, 1, false, false, false, ExecMode.SINGLE_NODE);
     }
 
     @Test
     public void testTop10HybridDPFullFewAdded() {
-        runIncSliceLineTest(10, "e", true, false,2, false,false, ExecMode.HYBRID);
+        runIncSliceLineTest(10, "e", true, false,2, 1, false, false, false, ExecMode.HYBRID);
     }
 
     @Test
     public void testTop10SinglenodeDPFullFewAdded() {
-        runIncSliceLineTest(10, "e", true, false,2, false,false, ExecMode.SINGLE_NODE);
+        runIncSliceLineTest(10, "e", true, false,2, 1, false, false, false, ExecMode.SINGLE_NODE);
     }
 
     @Test
     public void testTop10HybridTPFullFewAdded() {
-        runIncSliceLineTest(10, "e", false, false,2, false, false,ExecMode.HYBRID);
+        runIncSliceLineTest(10, "e", false, false,2, 1, false, false,  false,ExecMode.HYBRID);
     }
 
     @Test
     public void testTop10SinglenodeTPFullFewAdded() {
-        runIncSliceLineTest(10, "e", false, false,2, false,false, ExecMode.SINGLE_NODE);
+        runIncSliceLineTest(10, "e", false, false,2, 1, false, false, false, ExecMode.SINGLE_NODE);
     }
 
     @Test
     public void testTop4HybridDPSelFullFewAdded() {
-        runIncSliceLineTest(4, "e", true, true,2, false,false, ExecMode.HYBRID);
+        runIncSliceLineTest(4, "e", true, true,2, 1, false, false, false, ExecMode.HYBRID);
     }
 
     @Test
     public void testTop4SinglenodeDPSelFullFewAdded() {
-        runIncSliceLineTest(4, "e", true, true,2, false,false, ExecMode.SINGLE_NODE);
+        runIncSliceLineTest(4, "e", true, true,2, 1, false, false, false, ExecMode.SINGLE_NODE);
     }
 
     @Test
     public void testTop4HybridTPSelFullFewAdded() {
-        runIncSliceLineTest(4, "e", false, true,2, false,false, ExecMode.HYBRID);
+        runIncSliceLineTest(4, "e", false, true,2, 1, false, false, false, ExecMode.HYBRID);
+    }
+
+    @Test
+    public void testTop4HybridDPSelFullFewAddedRemoved() {
+        runIncSliceLineTest(4, "e", true, true,2, 1, false, true, false, ExecMode.HYBRID);
+    }
+
+    @Test
+    public void testTop4SinglenodeDPSelFullFewAddedRemoved() {
+        runIncSliceLineTest(4, "e", true, true,2, 1, false, true, false, ExecMode.SINGLE_NODE);
+    }
+
+    @Test
+    public void testTop4HybridTPSelFullFewAddedRemoved() {
+        runIncSliceLineTest(4, "e", false, true,2, 1, false, true, false, ExecMode.HYBRID);
     }
 
     @Test
     public void testTop4SinglenodeTPSelFullFewAdded() {
-        runIncSliceLineTest(4, "e", false, true,4, false, false, ExecMode.SINGLE_NODE);
+        runIncSliceLineTest(4, "e", false, true,4, 1, false, false, false, ExecMode.SINGLE_NODE);
     }
 
     @Test
     public void testTop10HybridDPSelFullFewAdded() {
-        runIncSliceLineTest(10, "e", true, true, 2, false,false, ExecMode.HYBRID);
+        runIncSliceLineTest(10, "e", true, true, 2, 1, false, false, false, ExecMode.HYBRID);
     }
 
     @Test
     public void testTop10SinglenodeDPSelFullFewAdded() {
-        runIncSliceLineTest(10, "e", true, true, 1, false,false, ExecMode.SINGLE_NODE);
+        runIncSliceLineTest(10, "e", true, true, 1, 1, false, false, false, ExecMode.SINGLE_NODE);
     }
 
     @Test
     public void testTop10HybridTPSelFullFewAdded() {
-        runIncSliceLineTest(10, "e", false, true, 2, false, false, ExecMode.HYBRID);
+        runIncSliceLineTest(10, "e", false, true, 2, 1, false, false,  false, ExecMode.HYBRID);
     }
 
     @Test
     public void testTop10SinglenodeTPSelFullFewAdded() {
-        runIncSliceLineTest(10, "e", false, true, 2, false,true, ExecMode.SINGLE_NODE);
+        runIncSliceLineTest(10, "e", false, true, 2, 1, false, false, true, ExecMode.SINGLE_NODE);
     }
 
     @Test
     public void testTop10HybridTPSelE2FullFewAdded() {
-        runIncSliceLineTest(10, "oe", false, true, 2, false,true, ExecMode.HYBRID);
+        runIncSliceLineTest(10, "oe", false, true, 2, 1, false, false, true, ExecMode.HYBRID);
     }
 
     @Test
     public void testTop10SinglenodeTPSelE2FullFewAdded() {
-        runIncSliceLineTest(10, "oe", false, true, 2, false,true, ExecMode.SINGLE_NODE);
+        runIncSliceLineTest(10, "oe", false, true, 2, 1, false, false, true, ExecMode.SINGLE_NODE);
+    }
+
+    @Test
+    public void testTop10SinglenodeTPSelFullFewAddedRemoved() {
+        runIncSliceLineTest(10, "e", false, true, 2, 1, false, true, true, ExecMode.SINGLE_NODE);
+    }
+
+    @Test
+    public void testTop10HybridTPSelE2FullFewAddedRemoved() {
+        runIncSliceLineTest(10, "oe", false, true, 2, 1, false, true, true, ExecMode.HYBRID);
+    }
+
+    @Test
+    public void testTop10SinglenodeTPSelE2FullFewAddedRemoved() {
+        runIncSliceLineTest(10, "oe", false, true, 2, 1, false, true, true, ExecMode.SINGLE_NODE);
     }
 
     @Test
     public void testTop4HybridDPFullManyAdded() {
-        runIncSliceLineTest(4, "e", true, false,50, false,true, ExecMode.HYBRID);
+        runIncSliceLineTest(4, "e", true, false,50, 1, false, false, true, ExecMode.HYBRID);
     }
 
     @Test
     public void testTop4SinglenodeDPFullManyAdded() {
-        runIncSliceLineTest(4, "e", true, false,50, false,true, ExecMode.SINGLE_NODE);
+        runIncSliceLineTest(4, "e", true, false,50, 1, false, false, true, ExecMode.SINGLE_NODE);
     }
 
     @Test
     public void testTop4HybridTPFullManyAdded() {
-        runIncSliceLineTest(4, "e", false, false, 50, false,true, ExecMode.HYBRID);
+        runIncSliceLineTest(4, "e", false, false, 50,1, false, false, true, ExecMode.HYBRID);
+    }
+
+    @Test
+    public void testTop4HybridDPFullManyAddedRemoved() {
+        runIncSliceLineTest(4, "e", true, false,50, 1, false, true, true, ExecMode.HYBRID);
+    }
+
+    @Test
+    public void testTop4SinglenodeDPFullManyAddedRemoved() {
+        runIncSliceLineTest(4, "e", true, false,50, 1, false, true, true, ExecMode.SINGLE_NODE);
+    }
+
+    @Test
+    public void testTop4HybridTPFullManyAddedRemoved() {
+        runIncSliceLineTest(4, "e", false, false, 50,1, false, true, true, ExecMode.HYBRID);
     }
 
     @Test
     public void testTop4SinglenodeTPFullManyAdded() {
-        runIncSliceLineTest(4, "e", false, false,60, false, true, ExecMode.SINGLE_NODE);
+        runIncSliceLineTest(4, "e", false, false,60, 1, false, false,  true, ExecMode.SINGLE_NODE);
     }
 
     @Test
     public void testTop10HybridDPFullManyAdded() {
-        runIncSliceLineTest(10, "e", true, false,50, false,false, ExecMode.HYBRID);
+        runIncSliceLineTest(10, "e", true, false,50, 1, false, false, false, ExecMode.HYBRID);
     }
 
     @Test
     public void testTop10SinglenodeDPFullManyAdded() {
-        runIncSliceLineTest(10, "e", true, false,50, false,false, ExecMode.SINGLE_NODE);
+        runIncSliceLineTest(10, "e", true, false,50, 1, false, false, false, ExecMode.SINGLE_NODE);
     }
 
     @Test
     public void testTop10HybridTPFullManyAdded() {
-        runIncSliceLineTest(10, "e", false, false,90 , false,false, ExecMode.HYBRID);
+        runIncSliceLineTest(10, "e", false, false,90 , 1, false, false, false, ExecMode.HYBRID);
     }
 
     @Test
     public void testTop10SinglenodeTPFullManyAdded() {
-        runIncSliceLineTest(10, "e", false, false,99 , false,false, ExecMode.SINGLE_NODE);
+        runIncSliceLineTest(10, "e", false, false,99 , 1, false, false, false, ExecMode.SINGLE_NODE);
     }
 
     @Test
     public void testTop4HybridDPSelFullManyAdded() {
-        runIncSliceLineTest(4, "e", true, true,50, false,false, ExecMode.HYBRID);
+        runIncSliceLineTest(4, "e", true, true,50, 1, false, false, false, ExecMode.HYBRID);
+    }
+
+    @Test
+    public void testTop10HybridTPFullManyAddedRemoved() {
+        runIncSliceLineTest(10, "e", false, false,90 , 1, false, true, false, ExecMode.HYBRID);
+    }
+
+    @Test
+    public void testTop10SinglenodeTPFullManyAddedRemoved() {
+        runIncSliceLineTest(10, "e", false, false,99 , 1, false, true, false, ExecMode.SINGLE_NODE);
+    }
+
+    @Test
+    public void testTop4HybridDPSelFullManyAddedRemoved() {
+        runIncSliceLineTest(4, "e", true, true,50, 1, false, true, false, ExecMode.HYBRID);
     }
 
     @Test
     public void testTop4SinglenodeDPSelFullManyAdded() {
-        runIncSliceLineTest(4, "e", true, true,50, false, false, ExecMode.SINGLE_NODE);
+        runIncSliceLineTest(4, "e", true, true,50, 1, false, false,  false, ExecMode.SINGLE_NODE);
     }
 
     @Test
     public void testTop4HybridTPSelFullManyAdded() {
-        runIncSliceLineTest(4, "e", false, true,50, false,true, ExecMode.HYBRID);
+        runIncSliceLineTest(4, "e", false, true,50, 1, false, false, true, ExecMode.HYBRID);
     }
 
     @Test
     public void testTop4SinglenodeTPSelFullManyAdded() {
-        runIncSliceLineTest(4, "e", false, true,50, false, true,  ExecMode.SINGLE_NODE);
+        runIncSliceLineTest(4, "e", false, true,50, 1, false, false,  true,  ExecMode.SINGLE_NODE);
     }
 
     @Test
     public void testTop10HybridDPSelFullManyAdded() {
-        runIncSliceLineTest(10, "e", true, true, 50, false,false,  ExecMode.HYBRID);
+        runIncSliceLineTest(10, "e", true, true, 50, 1, false, false, false,  ExecMode.HYBRID);
     }
 
     @Test
     public void testTop10SinglenodeDPSelFullManyAdded() {
-        runIncSliceLineTest(10, "e", true, true, 50, false,false,  ExecMode.SINGLE_NODE);
+        runIncSliceLineTest(10, "e", true, true, 50, 1, false, false, false,  ExecMode.SINGLE_NODE);
     }
 
     @Test
     public void testTop10HybridTPSelFullManyAdded() {
-        runIncSliceLineTest(10, "e", false, true, 50, false,false,  ExecMode.HYBRID);
+        runIncSliceLineTest(10, "e", false, true, 50, 1, false, false, false,  ExecMode.HYBRID);
     }
 
     @Test
     public void testTop10SinglenodeTPSelFullManyAdded() {
-        runIncSliceLineTest(10, "e", false, true, 50, false,false,  ExecMode.SINGLE_NODE);
+        runIncSliceLineTest(10, "e", false, true, 50, 1, false, false, false,  ExecMode.SINGLE_NODE);
     }
 
     @Test
     public void testTop10HybridTPSelE2FullManyAdded() {
-        runIncSliceLineTest(10, "oe", false, true, 50, false, false,  ExecMode.HYBRID);
+        runIncSliceLineTest(10, "oe", false, true, 50, 1, false, false,  false,  ExecMode.HYBRID);
+    }
+
+    @Test
+    public void testTop10HybridTPSelFullManyAddedRemoved() {
+        runIncSliceLineTest(10, "e", false, true, 50, 1, false, true, false,  ExecMode.HYBRID);
+    }
+
+    @Test
+    public void testTop10SinglenodeTPSelFullManyAddedRemoved() {
+        runIncSliceLineTest(10, "e", false, true, 50, 1, false, true, false,  ExecMode.SINGLE_NODE);
+    }
+
+    @Test
+    public void testTop10HybridTPSelE2FullManyAddedRemoved() {
+        runIncSliceLineTest(10, "oe", false, true, 50, 1, false, true,  false,  ExecMode.HYBRID);
     }
 
     @Test
     public void testTop10SinglenodeTPSelE2FullManyAdded() {
-        runIncSliceLineTest(10, "oe", false, true, 50, false,true, ExecMode.SINGLE_NODE);
+        runIncSliceLineTest(10, "oe", false, true, 50, 1, false, false, true, ExecMode.SINGLE_NODE);
     }
 
     @Test
     public void testTop4HybridDPFullFewAddedOnlyNull() {
-        runIncSliceLineTest(4, "e", true, false,2, true,true, ExecMode.HYBRID);
+        runIncSliceLineTest(4, "e", true, false,2, 1, true, false,true, ExecMode.HYBRID);
     }
 
     @Test
     public void testTop4SinglenodeDPFullFewAddedOnlyNull() {
-        runIncSliceLineTest(4, "e", true, false,2, true,true, ExecMode.SINGLE_NODE);
+        runIncSliceLineTest(4, "e", true, false,2, 1, true, false,true, ExecMode.SINGLE_NODE);
     }
 
     @Test
     public void testTop4HybridTPFullFewAddedOnlyNull() {
-        runIncSliceLineTest(4, "e", false, false, 2, true,true, ExecMode.HYBRID);
+        runIncSliceLineTest(4, "e", false, false, 2,1, true, false,true, ExecMode.HYBRID);
     }
 
     @Test
     public void testTop4SinglenodeTPFullFewAddedOnlyNull() {
-        runIncSliceLineTest(4, "e", false, false,2, true,true, ExecMode.SINGLE_NODE);
+        runIncSliceLineTest(4, "e", false, false,2, 1, true, false,true, ExecMode.SINGLE_NODE);
+    }
+
+    @Test
+    public void testTop4SinglenodeDPFullFewAddedOnlyNullRemoved() {
+        runIncSliceLineTest(4, "e", true, false,2, 1, true, true,true, ExecMode.SINGLE_NODE);
+    }
+
+    @Test
+    public void testTop4HybridTPFullFewAddedOnlyNullRemoved() {
+        runIncSliceLineTest(4, "e", false, false, 2,1, true, true,true, ExecMode.HYBRID);
+    }
+
+    @Test
+    public void testTop4SinglenodeTPFullFewAddedOnlyNullRemoved() {
+        runIncSliceLineTest(4, "e", false, false,2, 1, true, true,true, ExecMode.SINGLE_NODE);
     }
 
     @Test
     public void testTop10HybridDPFullFewAddedOnlyNull() {
-        runIncSliceLineTest(10, "e", true, false,2, true,true, ExecMode.HYBRID);
+        runIncSliceLineTest(10, "e", true, false,2, 1, true, false,true, ExecMode.HYBRID);
     }
 
     @Test
     public void testTop10SinglenodeDPFullFewAddedOnlyNull() {
-        runIncSliceLineTest(10, "e", true, false,2, true,true, ExecMode.SINGLE_NODE);
+        runIncSliceLineTest(10, "e", true, false,2, 1, true, false,true, ExecMode.SINGLE_NODE);
     }
 
     @Test
     public void testTop10HybridTPFullFewAddedOnlyNull() {
-        runIncSliceLineTest(10, "e", false, false,2, true,true, ExecMode.HYBRID);
+        runIncSliceLineTest(10, "e", false, false,2, 1, true, false,true, ExecMode.HYBRID);
     }
 
     @Test
     public void testTop10SinglenodeTPFullFewAddedOnlyNull() {
-        runIncSliceLineTest(10, "e", false, false,2, true,false, ExecMode.SINGLE_NODE);
+        runIncSliceLineTest(10, "e", false, false,2, 1, true, false,false, ExecMode.SINGLE_NODE);
     }
 
     @Test
     public void testTop4HybridDPSelFullFewAddedOnlyNull() {
-        runIncSliceLineTest(4, "e", true, true,2, true,false, ExecMode.HYBRID);
+        runIncSliceLineTest(4, "e", true, true,2, 1, true, false,false, ExecMode.HYBRID);
     }
 
     @Test
     public void testTop4SinglenodeDPSelFullFewAddedOnlyNull() {
-        runIncSliceLineTest(4, "e", true, true,2, true,false, ExecMode.SINGLE_NODE);
+        runIncSliceLineTest(4, "e", true, true,2, 1, true, false,false, ExecMode.SINGLE_NODE);
     }
 
     @Test
     public void testTop4HybridTPSelFullFewAddedOnlyNull() {
-        runIncSliceLineTest(4, "e", false, true,2, true,false, ExecMode.HYBRID);
+        runIncSliceLineTest(4, "e", false, true,2, 1, true, false,false, ExecMode.HYBRID);
     }
 
     @Test
     public void testTop4SinglenodeTPSelFullFewAddedOnlyNull() {
-        runIncSliceLineTest(4, "e", false, true,4, false,false,  ExecMode.SINGLE_NODE);
+        runIncSliceLineTest(4, "e", false, true,4, 1, true, false,false,  ExecMode.SINGLE_NODE);
     }
 
     @Test
     public void testTop10HybridDPSelFullFewAddedOnlyNull() {
-        runIncSliceLineTest(10, "e", true, true, 2, true,false, ExecMode.HYBRID);
+        runIncSliceLineTest(10, "e", true, true, 2, 1, true, false,false, ExecMode.HYBRID);
     }
 
     @Test
     public void testTop10SinglenodeDPSelFullFewAddedOnlyNull() {
-        runIncSliceLineTest(10, "e", true, true, 1, true, false, ExecMode.SINGLE_NODE);
+        runIncSliceLineTest(10, "e", true, true, 1, 1, true, false, false, ExecMode.SINGLE_NODE);
     }
 
     @Test
     public void testTop10HybridTPSelFullFewAddedOnlyNull() {
-        runIncSliceLineTest(10, "e", false, true, 2, true,false, ExecMode.HYBRID);
+        runIncSliceLineTest(10, "e", false, true, 2, 1, true, false,false, ExecMode.HYBRID);
     }
 
     @Test
     public void testTop10SinglenodeTPSelFullFewAddedOnlyNull() {
-        runIncSliceLineTest(10, "e", false, true, 2, true,false, ExecMode.SINGLE_NODE);
+        runIncSliceLineTest(10, "e", false, true, 2, 1, true, false,false, ExecMode.SINGLE_NODE);
     }
 
     @Test
     public void testTop10HybridTPSelE2FullFewAddedOnlyNull() {
-        runIncSliceLineTest(10, "oe", false, true, 2, true,false, ExecMode.HYBRID);
+        runIncSliceLineTest(10, "oe", false, true, 2, 1, true, false,false, ExecMode.HYBRID);
     }
 
     @Test
     public void testTop10SinglenodeTPSelE2FullFewAddedOnlyNull() {
-        runIncSliceLineTest(10, "oe", false, true, 2, true, false, ExecMode.SINGLE_NODE);
+        runIncSliceLineTest(10, "oe", false, true, 2, 1, true, false, false, ExecMode.SINGLE_NODE);
     }
 
     @Test
     public void testTop4HybridDPFullManyAddedOnlyNull() {
-        runIncSliceLineTest(4, "e", true, false,50, true,true, ExecMode.HYBRID);
+        runIncSliceLineTest(4, "e", true, false,50, 1, true, false,true, ExecMode.HYBRID);
     }
 
     @Test
     public void testTop4SinglenodeDPFullManyAddedOnlyNull() {
-        runIncSliceLineTest(4, "e", true, false,50, true,true, ExecMode.SINGLE_NODE);
+        runIncSliceLineTest(4, "e", true, false,50, 1, true, false,true, ExecMode.SINGLE_NODE);
     }
 
     @Test
     public void testTop4HybridTPFullManyAddedOnlyNull() {
-        runIncSliceLineTest(4, "e", false, false, 50, true,true, ExecMode.HYBRID);
+        runIncSliceLineTest(4, "e", false, false, 50, 1, true, false,true, ExecMode.HYBRID);
     }
 
     @Test
     public void testTop4SinglenodeTPFullManyAddedOnlyNull() {
-        runIncSliceLineTest(4, "e", false, false,60, true, false, ExecMode.SINGLE_NODE);
+        runIncSliceLineTest(4, "e", false, false,60, 1, true, false, false, ExecMode.SINGLE_NODE);
     }
 
     @Test
     public void testTop10HybridDPFullManyAddedOnlyNull() {
-        runIncSliceLineTest(10, "e", true, false,50, true,true, ExecMode.HYBRID);
+        runIncSliceLineTest(10, "e", true, false,50, 1, true, false,true, ExecMode.HYBRID);
     }
 
     @Test
     public void testTop10SinglenodeDPFullManyAddedOnlyNull() {
-        runIncSliceLineTest(10, "e", true, false,50, true,true, ExecMode.SINGLE_NODE);
+        runIncSliceLineTest(10, "e", true, false,50, 1, true, false,true, ExecMode.SINGLE_NODE);
     }
 
     @Test
     public void testTop10HybridTPFullManyAddedOnlyNull() {
-        runIncSliceLineTest(10, "e", false, false,90 , true,true, ExecMode.HYBRID);
+        runIncSliceLineTest(10, "e", false, false,90 , 1, true, false,true, ExecMode.HYBRID);
     }
 
     @Test
     public void testTop10SinglenodeTPFullManyAddedOnlyNull() {
-        runIncSliceLineTest(10, "e", false, false,99 , true,true, ExecMode.SINGLE_NODE);
+        runIncSliceLineTest(10, "e", false, false,99 , 1, true, false,true, ExecMode.SINGLE_NODE);
+    }
+
+    @Test
+    public void testTop10SinglenodeDPFullManyAddedOnlyNullRemoved() {
+        runIncSliceLineTest(10, "e", true, false,50, 1, true, true,true, ExecMode.SINGLE_NODE);
+    }
+
+    @Test
+    public void testTop10HybridTPFullManyAddedOnlyNullRemoved() {
+        runIncSliceLineTest(10, "e", false, false,90 , 1, true, true,true, ExecMode.HYBRID);
+    }
+
+    @Test
+    public void testTop10SinglenodeTPFullManyAddedOnlyNullRemoved() {
+        runIncSliceLineTest(10, "e", false, false,99 , 1, true, true,true, ExecMode.SINGLE_NODE);
     }
 
     @Test
     public void testTop4HybridDPSelFullManyAddedOnlyNull() {
-        runIncSliceLineTest(4, "e", true, true,50, true, true, ExecMode.HYBRID);
+        runIncSliceLineTest(4, "e", true, true,50, 1, true, false, true, ExecMode.HYBRID);
     }
 
     @Test
     public void testTop4SinglenodeDPSelFullManyAddedOnlyNull() {
-        runIncSliceLineTest(4, "e", true, true,50, true,false, ExecMode.SINGLE_NODE);
+        runIncSliceLineTest(4, "e", true, true,50, 1, true, false,false, ExecMode.SINGLE_NODE);
     }
 
     @Test
     public void testTop4HybridTPSelFullManyAddedOnlyNull() {
-        runIncSliceLineTest(4, "e", false, true,50, true,false, ExecMode.HYBRID);
+        runIncSliceLineTest(4, "e", false, true,50, 1, true, false,false, ExecMode.HYBRID);
     }
 
     @Test
     public void testTop4SinglenodeTPSelFullManyAddedOnlyNull() {
-        runIncSliceLineTest(4, "e", false, true,50, false,false,  ExecMode.SINGLE_NODE);
-    }
+        runIncSliceLineTest(4, "e", false, true,50, 1, true, false,false,  ExecMode.SINGLE_NODE);
+    } 
 
     @Test
     public void testTop10HybridDPSelFullManyAddedOnlyNull() {
-        runIncSliceLineTest(10, "e", true, true, 50, true,false, ExecMode.HYBRID);
+        runIncSliceLineTest(10, "e", true, true, 50, 1, true, false,false, ExecMode.HYBRID);
     }
 
     @Test
     public void testTop10SinglenodeDPSelFullManyAddedOnlyNull() {
-        runIncSliceLineTest(10, "e", true, true, 50, true, false, ExecMode.SINGLE_NODE);
+        runIncSliceLineTest(10, "e", true, true, 50, 1, true, false, false, ExecMode.SINGLE_NODE);
     }
 
     @Test
     public void testTop10HybridTPSelFullManyAddedOnlyNull() {
-        runIncSliceLineTest(10, "e", false, true, 50, true,true, ExecMode.HYBRID);
+        runIncSliceLineTest(10, "e", false, true, 50, 1, true, false,true, ExecMode.HYBRID);
     }
 
     @Test
     public void testTop10SinglenodeTPSelFullManyAddedOnlyNull() {
-        runIncSliceLineTest(10, "e", false, true, 50, true,true, ExecMode.SINGLE_NODE);
+        runIncSliceLineTest(10, "e", false, true, 50, 1, true, false, true, ExecMode.SINGLE_NODE);
     }
 
     @Test
     public void testTop10HybridTPSelE2FullManyAddedOnlyNull() {
-        runIncSliceLineTest(10, "oe", false, true, 50, true, true, ExecMode.HYBRID);
+        runIncSliceLineTest(10, "oe", false, true, 50, 1, true, false, true, ExecMode.HYBRID);
     }
 
     @Test
     public void testTop10SinglenodeTPSelE2FullManyAddedOnlyNull() {
-        runIncSliceLineTest(10, "oe", false, true, 50, true, true, ExecMode.SINGLE_NODE);
+        runIncSliceLineTest(10, "oe", false, true, 50, 1, true, false, true, ExecMode.SINGLE_NODE);
+    }
+
+
+    @Test
+    public void testTop10SinglenodeTPSelFullManyAddedOnlyNullRemoved() {
+        runIncSliceLineTest(10, "e", false, true, 50, 1, true, true, true, ExecMode.SINGLE_NODE);
+    }
+
+    @Test
+    public void testTop10HybridTPSelE2FullManyAddedOnlyNullRemoved() {
+        runIncSliceLineTest(10, "oe", false, true, 50, 1, true, true, true, ExecMode.HYBRID);
+    }
+
+    @Test
+    public void testTop10SinglenodeTPSelE2FullManyAddedOnlyNullRemoved() {
+        runIncSliceLineTest(10, "oe", false, true, 50, 1, true, true, true, ExecMode.SINGLE_NODE);
     }
 
     @Test
@@ -846,7 +982,7 @@ public class BuiltinIncSliceLineTest extends AutomatedTestBase {
                 
         };
 
-        runIncSliceLineTest(newX, e, 10, "e", false, true, 50, false, true, ExecMode.SINGLE_NODE);
+        runIncSliceLineTest(newX, e, 10, "e", false, true, 50, 1, false, false, true, ExecMode.SINGLE_NODE);
     }
 
     // @Test
@@ -912,12 +1048,14 @@ public class BuiltinIncSliceLineTest extends AutomatedTestBase {
         }
     }
 
-    private void runIncSliceLineTest(int K, String err, boolean dp, boolean selCols, int proportionOfTuplesAddedInPercent, boolean onlyNullEAdded, boolean encodeLat, ExecMode mode) {
-        runIncSliceLineTest(null, null, K, err, dp, selCols, proportionOfTuplesAddedInPercent, onlyNullEAdded, encodeLat, mode);
+    private void runIncSliceLineTest(int K, String err, boolean dp, boolean selCols, int proportionOfTuplesAddedInPercent, int proportionOfTuplesRemovedInPercent, boolean onlyNullEAdded, boolean removeTuples, boolean encodeLat, ExecMode mode) {
+        
+        runIncSliceLineTest(null, null, K, err, dp, selCols, proportionOfTuplesAddedInPercent, proportionOfTuplesRemovedInPercent, onlyNullEAdded, removeTuples, encodeLat, mode);
+
     }
 
 
-    private void runIncSliceLineTest(double[][] customX, double[][] customE,int K, String err, boolean dp, boolean selCols, int proportionOfTuplesAddedInPercent, boolean onlyNullEAdded, boolean encodeLat, ExecMode mode) {
+    private void runIncSliceLineTest(double[][] customX, double[][] customE,int K, String err, boolean dp, boolean selCols, int proportionOfTuplesAddedInPercent, int proportionOfTuplesRemovedInPercent, boolean onlyNullEAdded, boolean removeTuples, boolean encodeLat, ExecMode mode) {
      
         ExecMode platformOld = setExecMode(mode);
         loadTestConfiguration(getTestConfiguration(TEST_NAME2));
@@ -944,9 +1082,25 @@ public class BuiltinIncSliceLineTest extends AutomatedTestBase {
                 e = TestUtils.convertHashMapToDoubleArray(readDMLMatrixFromOutputDir("e"));
             }
             int numOfAddedTuples = (int) Math.round(newX.length * proportionOfTuplesAddedInPercent / 100.0);
-
+            int numOfRemovedTuples = (int) Math.round((newX.length - numOfAddedTuples) * proportionOfTuplesRemovedInPercent / 100.0);
+            
+            if(numOfRemovedTuples == 0){
+                numOfRemovedTuples = 1;
+            }
+            
             double[][] addedX = new double[numOfAddedTuples][newX[0].length];
             double[][] oldX = new double[newX.length - numOfAddedTuples][newX[0].length];
+            double[][] indicesRemoved = new double[numOfRemovedTuples][1];
+
+            if(removeTuples){
+                for (int i = 0; i < numOfRemovedTuples; i++) {
+                    indicesRemoved[i][0] = i +1;
+                }
+            } else {
+                for (int i = 0; i < numOfRemovedTuples; i++) {
+                    indicesRemoved[i][0] = 0;
+                }
+            }
 
             for (int i = 0; i < numOfAddedTuples; i++) {
                 addedX[i] = newX[i];
@@ -976,10 +1130,11 @@ public class BuiltinIncSliceLineTest extends AutomatedTestBase {
             writeInputMatrixWithMTD("oldX", oldX, false);
             writeInputMatrixWithMTD("oldE", oldE, false);
             writeInputMatrixWithMTD("addedE", addedE, false);
+            writeInputMatrixWithMTD("indicesRemoved", indicesRemoved, false);
 
             fullDMLScriptName = HOME + TEST_NAME2 + ".dml";
             programArgs = new String[] { "-args", input("addedX"), input("oldX"), input("oldE"), input("addedE"), String.valueOf(K),
-                    String.valueOf(!dp).toUpperCase(), String.valueOf(selCols).toUpperCase(), String.valueOf(encodeLat).toUpperCase(),
+                    String.valueOf(!dp).toUpperCase(), String.valueOf(selCols).toUpperCase(), String.valueOf(encodeLat).toUpperCase(),  input("indicesRemoved"),
                     String.valueOf(VERBOSE).toUpperCase(), output("R1"), output("R2") };
 
             runTest(true, false, null, -1);
@@ -991,7 +1146,50 @@ public class BuiltinIncSliceLineTest extends AutomatedTestBase {
 
             TestUtils.compareMatrices(ret1, ret2, 1e-2);
 
+            // if removeTuples is true, then we need to remove the tuples from the oldX and oldE
+            if(removeTuples){
+                double[][] tempOldX = new double[oldX.length - numOfRemovedTuples][oldX[0].length];
+                double[][] tempOldE = new double[oldE.length - numOfRemovedTuples][oldE[0].length];
+                int j = 0;
+                for (int i = 0; i < oldX.length; i++) {
+                    if(j < indicesRemoved.length){
+                        if(i == (int) indicesRemoved[j][0] - 1){
+                            j++;
+                        } else {
+                            tempOldX[i-j] = oldX[i];
+                            tempOldE[i-j] = oldE[i];
+                        }
+                    } else {
+                        tempOldX[i-j] = oldX[i];
+                        tempOldE[i-j] = oldE[i];
+                    }
+                }
+                oldX = tempOldX;
+                oldE = tempOldE;
+               
+            }
+
+            // combine oldX and addedX and write it into newX
+            newX = new double[oldX.length + addedX.length][oldX[0].length];
+            for (int i = 0; i < oldX.length; i++) {
+                newX[i] = oldX[i];
+            }
+            for (int i = 0; i < addedX.length; i++) {
+                newX[oldX.length + i] = addedX[i];
+            }
+
+            // combine oldE and addedE and write it into e
+            e = new double[oldE.length + addedE.length][oldE[0].length];
+            for (int i = 0; i < oldE.length; i++) {
+                e[i] = oldE[i];
+            }
+            for (int i = 0; i < addedE.length; i++) {
+                e[oldE.length + i] = addedE[i];
+            }
+
+
             
+
             if(customX != null && customE != null){
                 newX = customX;
                 e = customE;
@@ -1013,7 +1211,7 @@ public class BuiltinIncSliceLineTest extends AutomatedTestBase {
             
 
             // compare expected results
-            if (err.equals("e") && customX == null && customE == null && !onlyNullEAdded) {
+            if (err.equals("e") && customX == null && customE == null && !onlyNullEAdded && !removeTuples) {
                 double[][] ret = TestUtils.convertHashMapToDoubleArray(dmlfile1);
                 if (mode != ExecMode.SPARK) // TODO why only CP correct, but R always matches? test framework?
                     for (int i = 0; i < K; i++)
@@ -1067,14 +1265,19 @@ public class BuiltinIncSliceLineTest extends AutomatedTestBase {
         try {
             loadTestConfiguration(getTestConfiguration(TEST_NAME2));
 
+            double[][] indicesRemoved = new double[1][1];
+            indicesRemoved[0][0] = 0;
+            
+
             writeInputMatrixWithMTD("addedX", addedX, false);
             writeInputMatrixWithMTD("oldX", oldX, false);
             writeInputMatrixWithMTD("oldE", oldE, false);
             writeInputMatrixWithMTD("addedE", addedE, false);
+            writeInputMatrixWithMTD("indicesRemoved", indicesRemoved, false);
 
             fullDMLScriptName = HOME + TEST_NAME2 + ".dml";
             programArgs = new String[] { "-args", input("addedX"), input("oldX"), input("oldE"), input("addedE"), String.valueOf(K),
-                    String.valueOf(!dp).toUpperCase(), String.valueOf(selCols).toUpperCase(), String.valueOf(encodeLat).toUpperCase(),
+                    String.valueOf(!dp).toUpperCase(), String.valueOf(selCols).toUpperCase(), String.valueOf(encodeLat).toUpperCase(), input("indicesRemoved"),
                     String.valueOf(VERBOSE).toUpperCase(), output("R1"), output("R2") };
 
             runTest(true, false, null, -1);

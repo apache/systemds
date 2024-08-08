@@ -25,19 +25,52 @@ totalX = rbind(oldX, addedX);
 oldE = read($3);
 addedE = read($4);
 totalE = rbind(oldE, addedE);
+indicesRemoved = read($9);
+
+if(nrow(indicesRemoved) > 0){
+  if(as.scalar(indicesRemoved[1]) == 0){
+    indicesRemoved = matrix(0, 0, 0);
+  }
+}
 
 # call slice finding
 [TK, TKC, D, L, meta, Stats, Xout, eOut, foffb, foffe, params] = incSliceLine(addedX=oldX, addedE=oldE, k=$5,
-  alpha=0.95, minSup=4, tpEval=$6, selFeat=$7, encodeLat=$8, verbose=$9);
+  alpha=0.95, minSup=4, tpEval=$6, selFeat=$7, encodeLat=$8, verbose=$10);
 
 [TK1, TKC1, D1, L1, meta1, Stats1, Xout1, eOut1, foffb2, foffe2, params] = incSliceLine(addedX=addedX, oldX = oldX, oldE = oldE, addedE=addedE, prevLattice = L, metaPrevLattice=meta, prevStats = Stats, prevTK = TK, prevTKC = TKC, k=$5,
-  alpha=0.95, minSup=4, tpEval=$6, selFeat=$7, encodeLat=$8, verbose=$9, params=params, prevFoffb = foffb, prevFoffe = foffe);
+  alpha=0.95, minSup=4, tpEval=$6, selFeat=$7, encodeLat=$8, indicesRemoved=indicesRemoved, verbose=$10, params=params, prevFoffb = foffb, prevFoffe = foffe);
+
+if(nrow(indicesRemoved) > 0){
+  oldX = removeRowsByIndices(oldX, indicesRemoved);
+  oldE = removeRowsByIndices(oldE, indicesRemoved);
+  totalX = rbind(oldX, addedX);
+  totalE = rbind(oldE, addedE);
+}
 
 [TK2, TKC2, D2, L2, meta2, Stats2, Xout2, eOut2, foffb3, foffe3, params] = incSliceLine(addedX=totalX, addedE=totalE, k=$5,
-  alpha=0.95, minSup=4, tpEval=$6, selFeat=$7, encodeLat=$8, verbose=$9);
+  alpha=0.95, minSup=4, tpEval=$6, selFeat=$7, encodeLat=$8, verbose=$10);
 
 
 
-write(TKC1, $10)
-write(TKC2, $11)
+write(TKC1, $11)
+write(TKC2, $12)
 
+
+# Function to remove rows from matrix M based on a list of indices
+removeRowsByIndices = function(Matrix[Double] M, Matrix[Double] indices)
+  return (Matrix[Double] result)
+{ 
+  result = matrix(0, 0, ncol(M));
+  index = 1;
+  for(i in 1:nrow(indices)){
+    index2 = as.scalar(indices[i]);
+    if(index == index2){
+      index = index + 1;
+      i = i + 1;
+    } else {
+      result = rbind(result, M[index:(index2-1),]);
+      index = index2+1;
+    }
+  }
+  result = rbind(result, M[index:nrow(M),]);
+}

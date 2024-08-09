@@ -21,6 +21,7 @@ package org.apache.sysds.test.component.frame.array;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import static org.mockito.Mockito.mock;
@@ -465,12 +466,16 @@ public class FrameArrayTests {
 		try {
 			ArrayCompressionStatistics s = (a.size() < 1000) ? //
 				a.statistics(a.size()) : a.statistics(1000);
-			if(s != null) {
+			assertNotNull(s); // not ever allowed to be null!!
+			if(a.getValueType() != ValueType.BOOLEAN || a.containsNull()) 
 				assertTrue(s.toString(), s.compressedSizeEstimate <= s.originalSize);
-			}
+			else // not true if we do some other compression scheme. but in general Boolean makes it bigger.
+				assertTrue(s.toString(), s.compressedSizeEstimate >= s.originalSize);
 		}
 		catch(Exception e) {
 			e.printStackTrace();
+			// not allowed to throw an exception.
+			fail(e.getMessage());
 		}
 	}
 
@@ -2702,7 +2707,7 @@ public class FrameArrayTests {
 		return ret;
 	}
 
-	public static String[] generateRandomFloatInt(int size, int seed){
+	public static String[] generateRandomFloatInt(int size, int seed) {
 		Random r = new Random(seed);
 		String[] ret = new String[size];
 		for(int i = 0; i < size; i++)
@@ -2710,16 +2715,15 @@ public class FrameArrayTests {
 		return ret;
 	}
 
-	public static String[] generateRandomInt(int size, int seed){
+	public static String[] generateRandomInt(int size, int seed) {
 		Random r = new Random(seed);
 		String[] ret = new String[size];
 		for(int i = 0; i < size; i++)
 			ret[i] = (r.nextBoolean() ? "" : "-") + r.nextInt(500);
 		return ret;
 	}
-	
 
-	public static String[] generateRandomFloatIntPlusMinus(int size, int seed){
+	public static String[] generateRandomFloatIntPlusMinus(int size, int seed) {
 		Random r = new Random(seed);
 		String[] ret = new String[size];
 		for(int i = 0; i < size; i++)
@@ -2727,16 +2731,13 @@ public class FrameArrayTests {
 		return ret;
 	}
 
-
-
-	public static String[] generateRandomIntPlusMinus(int size, int seed){
+	public static String[] generateRandomIntPlusMinus(int size, int seed) {
 		Random r = new Random(seed);
 		String[] ret = new String[size];
 		for(int i = 0; i < size; i++)
 			ret[i] = (r.nextBoolean() ? "+" : "-") + r.nextInt(500);
 		return ret;
 	}
-	
 
 	public static String[] generateRandomNullZeroString(int size, int seed) {
 		Random r = new Random(seed);

@@ -53,17 +53,16 @@ public class ArrayCompressionStatistics {
 
 	@Override
 	public String toString() {
-		StringBuilder sb = new StringBuilder();
 		if(!sampledAllRows)
-			sb.append(String.format("Compressed Stats: size:%8d->%8d, Use:%10s, EstUnique:%6d, ValueType:%7s",
-				originalSize, compressedSizeEstimate, bestType(), nUnique, valueType));
+			return String.format(
+				"Compressed Stats: size:%8d->%8d, Use:%10s, EstUnique:%6d, ValueType:%7s, ContainsNull:%5s", originalSize,
+				compressedSizeEstimate, bestType(), nUnique, valueType, containsNull);
 		else
-			sb.append(String.format("Compressed Stats: size:%8d->%8d, Use:%10s, Unique:%6d, ValueType:%7s", originalSize,
-				compressedSizeEstimate, bestType(), nUnique, valueType));
-		return sb.toString();
+			return String.format("Compressed Stats: size:%8d->%8d, Use:%10s, Unique:%6d, ValueType:%7s, ContainsNull:%5s",
+				originalSize, compressedSizeEstimate, bestType(), nUnique, valueType, containsNull);
 	}
 
-	private String bestType(){
+	private String bestType() {
 		return bestType == null ? "None" : bestType.toString();
 	}
 }

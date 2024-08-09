@@ -44,6 +44,7 @@ public interface ComEstFactory {
 		final int nCols = cs.transposed ? data.getNumRows() : data.getNumColumns();
 		final double sparsity = data.getSparsity();
 		final int sampleSize = getSampleSize(cs, nRows, nCols, sparsity);
+
 		if(data.isEmpty())
 			return createExactEstimator(data, cs);
 		return createEstimator(data, cs, sampleSize, k, nRows);
@@ -106,15 +107,15 @@ public interface ComEstFactory {
 	 * 
 	 * The sampling is calculated based on the a power of the number of rows and a sampling fraction
 	 * 
-	 * @param samplePower       The sample power
-	 * @param nRows             The number of rows
-	 * @param nCols             The number of columns
-	 * @param sparsity          The sparsity of the input
-	 * @param minimumSampleSize The minimum sample size
-	 * @param maxSampleSize     The maximum sample size
+	 * @param samplePower   The sample power
+	 * @param nRows         The number of rows
+	 * @param nCols         The number of columns
+	 * @param sparsity      The sparsity of the input
+	 * @param minSampleSize The minimum sample size
+	 * @param maxSampleSize The maximum sample size
 	 * @return The sample size to use.
 	 */
-	private static int getSampleSize(double samplePower, int nRows, int nCols, double sparsity, int minSampleSize,
+	public static int getSampleSize(double samplePower, int nRows, int nCols, double sparsity, int minSampleSize,
 		int maxSampleSize) {
 
 		// Start sample size at the min sample size as the basis sample.
@@ -133,6 +134,9 @@ public interface ComEstFactory {
 
 		// adhere to maximum sample size.
 		sampleSize = Math.max(minSampleSize, Math.min(sampleSize, maxSampleSize));
+
+		// cap at number of rows.
+		sampleSize = Math.min(nRows, sampleSize);
 
 		return sampleSize;
 	}

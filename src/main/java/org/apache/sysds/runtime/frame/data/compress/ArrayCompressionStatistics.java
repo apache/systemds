@@ -20,8 +20,6 @@
 package org.apache.sysds.runtime.frame.data.compress;
 
 import org.apache.sysds.common.Types.ValueType;
-import org.apache.sysds.conf.ConfigurationManager;
-import org.apache.sysds.conf.DMLConfig;
 import org.apache.sysds.runtime.frame.data.columns.ArrayFactory.FrameArrayType;
 
 public class ArrayCompressionStatistics {
@@ -31,12 +29,14 @@ public class ArrayCompressionStatistics {
 	public final boolean shouldCompress;
 	public final ValueType valueType;
 	public final boolean containsNull;
+	public final boolean sampledAllRows;
 	public final FrameArrayType bestType;
 	public final int bytePerValue;
 	public final int nUnique;
 
 	public ArrayCompressionStatistics(int bytePerValue, int nUnique, boolean shouldCompress, ValueType valueType,
-		boolean containsNull, FrameArrayType bestType, long originalSize, long compressedSizeEstimate) {
+		boolean containsNull, FrameArrayType bestType, long originalSize, long compressedSizeEstimate,
+		boolean sampledAllRows) {
 		this.bytePerValue = bytePerValue;
 		this.nUnique = nUnique;
 		this.shouldCompress = shouldCompress;
@@ -45,17 +45,24 @@ public class ArrayCompressionStatistics {
 		this.bestType = bestType;
 		this.originalSize = originalSize;
 		this.compressedSizeEstimate = compressedSizeEstimate;
+		this.sampledAllRows = sampledAllRows;
+
+		if(valueType == null)
+			throw new RuntimeException("Invalid null valuetype in statistics");
 	}
 
 	@Override
 	public String toString() {
-		StringBuilder sb = new StringBuilder();
-		if(ConfigurationManager.getDMLConfig().getDoubleValue(DMLConfig.COMPRESSED_SAMPLING_RATIO) < 1)
-			sb.append(String.format("Compressed Stats: size:%8d->%8d, Use:%10s, EstUnique:%6d, ValueType:%7s",
-				originalSize, compressedSizeEstimate, bestType == null ? "None" : bestType.toString(), nUnique, valueType));
+		if(!sampledAllRows)
+			return String.format(
+				"Compressed Stats: size:%8d->%8d, Use:%10s, EstUnique:%6d, ValueType:%7s, ContainsNull:%5s", originalSize,
+				compressedSizeEstimate, bestType(), nUnique, valueType, containsNull);
 		else
-			sb.append(String.format("Compressed Stats: size:%8d->%8d, Use:%10s, Unique:%6d, ValueType:%7s", originalSize,
-				compressedSizeEstimate, bestType == null ? "None" : bestType.toString(), nUnique, valueType));
-		return sb.toString();
+			return String.format("Compressed Stats: size:%8d->%8d, Use:%10s, Unique:%6d, ValueType:%7s, ContainsNull:%5s",
+				originalSize, compressedSizeEstimate, bestType(), nUnique, valueType, containsNull);
+	}
+
+	private String bestType() {
+		return bestType == null ? "None" : bestType.toString();
 	}
 }

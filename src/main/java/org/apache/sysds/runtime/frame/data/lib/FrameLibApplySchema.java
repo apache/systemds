@@ -20,8 +20,9 @@
 package org.apache.sysds.runtime.frame.data.lib;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
-import java.util.concurrent.ExecutionException;
+import java.util.Map.Entry;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 
@@ -30,18 +31,24 @@ import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.common.Types.ValueType;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.frame.data.FrameBlock;
+import org.apache.sysds.runtime.frame.data.columns.ACompressedArray;
 import org.apache.sysds.runtime.frame.data.columns.Array;
+import org.apache.sysds.runtime.frame.data.columns.ArrayFactory;
 import org.apache.sysds.runtime.frame.data.columns.ColumnMetadata;
+import org.apache.sysds.runtime.matrix.data.Pair;
 import org.apache.sysds.runtime.util.CommonThreadPool;
 
 public class FrameLibApplySchema {
 
 	protected static final Log LOG = LogFactory.getLog(FrameLibApplySchema.class.getName());
 
+	public static int PAR_ROW_THRESHOLD = 1024;
+
 	private final FrameBlock fb;
 	private final ValueType[] schema;
 	private final boolean[] nulls;
 	private final int nCol;
+	private final int nRow;
 	private final Array<?>[] columnsIn;
 	private final Array<?>[] columnsOut;
 
@@ -61,8 +68,8 @@ public class FrameLibApplySchema {
 	 */
 	public static FrameBlock applySchema(FrameBlock fb, FrameBlock schema, int k) {
 		// apply frame schema from DML
-		ValueType[] sv = new ValueType[schema.getNumColumns()];
-		boolean[] nulls = new boolean[schema.getNumColumns()];
+		final ValueType[] sv = new ValueType[schema.getNumColumns()];
+		final boolean[] nulls = new boolean[schema.getNumColumns()];
 		for(int i = 0; i < schema.getNumColumns(); i++) {
 			final String[] v = schema.get(0, i).toString().split(FrameUtil.SCHEMA_SEPARATOR);
 			nulls[i] = v.length == 2 && v[1].equals("n");
@@ -95,6 +102,19 @@ public class FrameLibApplySchema {
 		return new FrameLibApplySchema(fb, schema, null, k).apply();
 	}
 
+	/**
+	 * Method to create a new FrameBlock where the given schema is applied, k is the parallelization degree.
+	 * 
+	 * @param fb     The input block to apply schema to
+	 * @param schema The schema to apply
+	 * @param k      The parallelization degree
+	 * @param nulls  The columns that contains null values.
+	 * @return A new FrameBlock allocated with new arrays.
+	 */
+	public static FrameBlock applySchema(FrameBlock fb, ValueType[] schema, boolean[] nulls, int k) {
+		return new FrameLibApplySchema(fb, schema, nulls, k).apply();
+	}
+
 	private FrameLibApplySchema(FrameBlock fb, ValueType[] schema, boolean[] nulls, int k) {
 		this.fb = fb;
 		this.schema = schema;
@@ -102,37 +122,52 @@ public class FrameLibApplySchema {
 		this.k = k;
 		verifySize();
 		nCol = fb.getNumColumns();
+		nRow = fb.getNumRows();
 		columnsIn = fb.getColumns();
 		columnsOut = new Array<?>[nCol];
 	}
 
 	private FrameBlock apply() {
 
-		if(k <= 1 || nCol == 1)
-			applySingleThread();
-		else
-			applyMultiThread();
+		try {
+			if(k <= 1 || nCol == 1 || containsCompressed())
+				applySingleThread();
+			else
+				applyMultiThread();
+		}
+		catch(Exception e) {
+			throw new RuntimeException("Failed schema transformation", e);
+		}
 
 		boolean same = true;
 		for(int i = 0; i < columnsIn.length && same; i++)
 			same = columnsIn[i] == columnsOut[i];
 
+		// If same then we forget about it and just return pointers to the previous FrameBlock.
 		if(same)
 			return this.fb;
 
+		// copy pointer to column names and meta data.
 		final String[] colNames = fb.getColumnNames(false);
 		final ColumnMetadata[] meta = fb.getColumnMetadata();
 
-		FrameBlock out =  new FrameBlock(schema, colNames, meta, columnsOut);
-		if(LOG.isDebugEnabled()){
-
-			long inMem = fb.getInMemorySize();
-			long outMem = out.getInMemorySize();
-			LOG.debug(String.format("Schema Apply Input Size: %16d" , inMem));
-			LOG.debug(String.format("            Output Size: %16d" , outMem));
-			LOG.debug(String.format("            Ratio      : %4.3f" , ((double) inMem  / outMem)));
+		final FrameBlock out = new FrameBlock(schema, colNames, meta, columnsOut);
+		if(LOG.isDebugEnabled()) {
+			final long inMem = fb.getInMemorySize();
+			final long outMem = out.getInMemorySize();
+			LOG.debug(String.format("Schema Apply Input Size: %16d", inMem));
+			LOG.debug(String.format("            Output Size: %16d", outMem));
+			LOG.debug(String.format("            Ratio      : %4.3f", ((double) inMem / outMem)));
 		}
 		return out;
+	}
+
+	private boolean containsCompressed() {
+		for(Array<?> col : fb.getColumns())
+			if(col instanceof ACompressedArray)
+				return true;
+
+		return false;
 	}
 
 	private void applySingleThread() {
@@ -149,22 +184,71 @@ public class FrameLibApplySchema {
 			columnsOut[i] = columnsIn[i].changeType(schema[i]);
 	}
 
-	private void applyMultiThread() {
+	/**
+	 * Try to change the value type in the range given.
+	 * 
+	 * @param j The column index
+	 * @param l The lower bound
+	 * @param u The upper bound
+	 * @return j if the call failed otherwise -1.
+	 */
+	private int tryChangeType(int j, int l, int u) throws Exception {
+		try {
+			columnsIn[j].changeTypeWithNulls(columnsOut[j], l, u);
+			return -1;
+		}
+		catch(Exception e) {
+			LOG.warn(e.getMessage());
+			return j;
+		}
+	}
+
+	private void applyMultiThread() throws Exception {
 		final ExecutorService pool = CommonThreadPool.get(k);
 		try {
-			List<Future<?>> f = new ArrayList<>(nCol ); 
-			for(int i = 0; i < nCol ; i ++){
-				final int j = i;
-				f.add(pool.submit(() -> apply(j)));
+			List<Future<Integer>> f = new ArrayList<>(nCol);
+
+			final int rowThreads = Math.max(1, (k * 2) / nCol);
+			final int block = Math.max(((nRow / rowThreads) / 64) * 64, PAR_ROW_THRESHOLD);
+			for(int i = 0; i < nCol; i++) {
+				final int j = i; // final col variable for task
+				if(schema[j] == columnsIn[i].getValueType() && !(nulls != null && nulls[j])) {
+					// no change and not changing to null support type.
+					columnsOut[i] = columnsIn[i];
+				}
+				else {
+					columnsOut[j] = ArrayFactory.allocate(schema[j], nRow, nulls != null && nulls[j]);
+					for(int r = 0; r < nRow; r += block) {
+						final int start = r;
+						final int end = Math.min(nRow, r + block);
+						f.add(pool.submit(() -> tryChangeType(j, start, end)));
+					}
+				}
 			}
-			
-			for( Future<?> e : f)
-				e.get();
+
+			// The different threads can fail therefore only start fixing
+			// once one of them fail.
+			final HashMap<Integer, Future<Array<?>>> fixes = new HashMap<>();
+
+			for(Future<Integer> e : f) {
+				final int j = e.get();
+				if(j >= 0 && !fixes.containsKey(j)) {
+					fixes.put(j, pool.submit(() -> {
+						Pair<ValueType, Boolean> sc = columnsIn[j].analyzeValueType();
+						LOG.warn("Failed to change type of column: " + j + " sample said value type: " + schema[j]
+							+ " Full analysis says: " + sc.getKey());
+						final Array<?> tmp = ArrayFactory.allocate(sc.getKey(), nRow, sc.getValue());
+						columnsIn[j].changeType(tmp);
+						return tmp;
+					}));
+				}
+			}
+
+			for(Entry<Integer, Future<Array<?>>> e : fixes.entrySet()) {
+				columnsOut[e.getKey()] = e.getValue().get();
+			}
 		}
-		catch(InterruptedException | ExecutionException e) {
-			throw new DMLRuntimeException("Failed to combine column groups", e);
-		}
-		finally{
+		finally {
 			pool.shutdown();
 		}
 	}

@@ -24,7 +24,7 @@ import java.util.Map;
 
 public abstract class ABooleanArray extends Array<Boolean> {
 
-	public ABooleanArray(int size) {
+	protected ABooleanArray(int size) {
 		super(size);
 	}
 
@@ -43,21 +43,27 @@ public abstract class ABooleanArray extends Array<Boolean> {
 	public abstract ABooleanArray select(boolean[] select, int nTrue);
 
 	@Override
-	public boolean possiblyContainsNaN(){
+	public boolean possiblyContainsNaN() {
 		return false;
 	}
 
+	/**
+	 * set boolean values in this array depending on null positions in the string array.
+	 * 
+	 * @param rl    Inclusive lower bound
+	 * @param ru    Exclusive upper bound
+	 * @param value The string array to set from.
+	 */
+	public abstract void setNullsFromString(int rl, int ru, Array<String> value);
+	
 	@Override
 	protected Map<Boolean, Long> createRecodeMap() {
 		Map<Boolean, Long> map = new HashMap<>();
 		long id = 1;
 		for(int i = 0; i < size() && id <= 2; i++) {
-			Boolean val = get(i);
-			if(val != null) {
-				Long v = map.putIfAbsent(val, id);
-				if(v == null)
-					id++;
-			}
+			Long v = map.putIfAbsent(get(i), id);
+			if(v == null)
+				id++;
 		}
 		return map;
 	}

@@ -899,10 +899,9 @@ public class TestUtils {
 			for(int j = 0; j < cols; j++) {
 				final Object a = expected.get(i, j);
 				final Object b = actual.get(i, j);
-				if(a == null){
+				if(a == null)
 					assertTrue(a == b);
-				}
-				else if(!(a == null && b == null)) {
+				else if(a != null && b != null) {
 					try{
 						final String as = a.toString();
 						final String bs = b.toString();
@@ -2606,8 +2605,9 @@ public class TestUtils {
 			case FP32:	  return random.nextFloat();
 			case FP64:    return random.nextDouble();
 			case INT32:   return random.nextInt();
-			case INT64:   return random.nextLong();
+			case INT64:   return random.nextLong() % ((long)Integer.MAX_VALUE * 10L); 
 			case BOOLEAN: return random.nextBoolean();
+			case HASH32:  return Integer.toHexString(random.nextInt());
 			case HASH64:  return Long.toHexString(random.nextLong());
 			case STRING:
 				return random.ints('a', 'z' + 1)

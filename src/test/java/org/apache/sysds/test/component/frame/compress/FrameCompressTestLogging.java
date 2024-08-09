@@ -43,13 +43,21 @@ public class FrameCompressTestLogging {
 	protected static final Log LOG = LogFactory.getLog(FrameCompressTestLogging.class.getName());
 
 	@Test
-	public void testCompressable() {
-		testLogging(generateCompressableBlock(200, 3, 3214));
+	public void testCompressible() {
+		testLogging(generateCompressibleBlock(200, 3, 3214));
 	}
 
-		@Test
-	public void testUnCompressable() {
-		testLogging(generateIncompressableBlock(200, 3, 2321));
+	@Test
+	public void testCompressibleDoubleCompress() {
+		FrameBlock a = generateCompressibleBlock(200, 3, 321);
+		FrameBlock b = FrameLibCompress.compress(a, 1);
+		testLogging(b);
+	}
+
+	@Test
+	public void testUnCompressible() {
+		FrameBlock f = generateIncompressibleBlock(200, 3, 2321);
+		testLogging(f);
 	}
 
 	public void testLogging(FrameBlock a) {
@@ -58,7 +66,6 @@ public class FrameCompressTestLogging {
 			Logger.getLogger(CompressedFrameBlockFactory.class).setLevel(Level.TRACE);
 
 			FrameBlock b = FrameLibCompress.compress(a, 1);
-
 			TestUtils.compareFrames(a, b, true);
 
 			final List<LoggingEvent> log = LoggingUtils.reinsert(appender);
@@ -79,7 +86,7 @@ public class FrameCompressTestLogging {
 
 	}
 
-	private FrameBlock generateCompressableBlock(int rows, int cols, int seed) {
+	private FrameBlock generateCompressibleBlock(int rows, int cols, int seed) {
 		Array<?>[] data = new Array<?>[cols];
 		for(int i = 0; i < cols; i++) {
 			data[i] = ArrayFactory.create(//
@@ -88,7 +95,7 @@ public class FrameCompressTestLogging {
 		return new FrameBlock(data);
 	}
 
-		private FrameBlock generateIncompressableBlock(int rows, int cols, int seed) {
+	private FrameBlock generateIncompressibleBlock(int rows, int cols, int seed) {
 		Array<?>[] data = new Array<?>[cols];
 		for(int i = 0; i < cols; i++) {
 			data[i] = ArrayFactory.create(//

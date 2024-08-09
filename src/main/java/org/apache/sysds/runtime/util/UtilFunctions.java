@@ -48,6 +48,7 @@ import org.apache.sysds.runtime.data.SparseBlock;
 import org.apache.sysds.runtime.data.TensorIndexes;
 import org.apache.sysds.runtime.frame.data.FrameBlock;
 import org.apache.sysds.runtime.frame.data.columns.CharArray;
+import org.apache.sysds.runtime.frame.data.columns.HashIntegerArray;
 import org.apache.sysds.runtime.frame.data.columns.HashLongArray;
 import org.apache.sysds.runtime.instructions.spark.data.IndexedMatrixValue;
 import org.apache.sysds.runtime.matrix.data.MatrixIndexes;
@@ -55,7 +56,7 @@ import org.apache.sysds.runtime.matrix.data.Pair;
 import org.apache.sysds.runtime.meta.TensorCharacteristics;
 import org.apache.sysds.runtime.transform.encode.ColumnEncoderRecode;
 
-public class UtilFunctions {
+public abstract class UtilFunctions { // abstract to make it uninitializeable
 	// private static final Log LOG = LogFactory.getLog(UtilFunctions.class.getName());
 
 	//for accurate cast of double values to int and long 
@@ -507,6 +508,7 @@ public class UtilFunctions {
 			case FP32:      return Float.parseFloat(in);
 			case CHARACTER: return CharArray.parseChar(in);
 			case HASH64:    return HashLongArray.parseHashLong(in);
+			case HASH32:    return HashIntegerArray.parseHashInt(in);
 			default: throw new RuntimeException("Unsupported value type: "+vt);
 		}
 	}
@@ -577,12 +579,15 @@ public class UtilFunctions {
 			return 0;
 		switch(vt) {
 			case FP64:
+				return (char)((Double)in).intValue();
 			case FP32:
+				return (char)((Float)in).intValue();
 			case INT64:
+				return (char)((Long)in).longValue();
 			case INT32:
-				return in.toString().charAt(0);
+				return (char)((Integer)in).intValue();
 			case BOOLEAN:
-				return ((Boolean) in) ? '1' : '0';
+				return ((Boolean) in) ? (char)1 : (char)0;
 			case STRING:
 				return !((String) in).isEmpty() ? ((String)in).charAt(0) : 0;
 			default:
@@ -690,7 +695,7 @@ public class UtilFunctions {
 		if( in instanceof Double && vt == ValueType.FP64
 			|| in instanceof Float && vt == ValueType.FP32
 			|| in instanceof Long && (vt == ValueType.INT64 || vt == ValueType.HASH64)
-			|| in instanceof Integer && vt == ValueType.INT32
+			|| in instanceof Integer && (vt == ValueType.INT32 || vt == ValueType.HASH32)
 			|| in instanceof Boolean && vt == ValueType.BOOLEAN
 			|| in instanceof String && vt == ValueType.STRING )
 			return in; //quick path to avoid double parsing
@@ -855,10 +860,28 @@ public class UtilFunctions {
 		}
 	}
 	
-	public static int computeNnz(double[] a, int ai, int len) {
+	public static int computeNnz(final double[] a, final int ai, final int len) {
 		int lnnz = 0;
-		for( int i=ai; i<ai+len; i++ )
-			lnnz += (a[i] != 0) ? 1 : 0;
+		final int end = ai + len;
+		final int h = (end - ai) % 8;
+
+		for(int i = ai; i < ai + h; i++)
+			lnnz += (a[i] != 0.0) ? 1 : 0;
+		for(int i = ai + h; i < end; i += 8)
+			lnnz += computeNnzBy8(a, i);
+		return lnnz;
+	}
+
+	private static int computeNnzBy8(final double[] a, final int i) {
+		int lnnz = 0;
+		lnnz += (a[i] != 0.0) ? 1 : 0;
+		lnnz += (a[i+1] != 0.0) ? 1 : 0;
+		lnnz += (a[i+2] != 0.0) ? 1 : 0;
+		lnnz += (a[i+3] != 0.0) ? 1 : 0;
+		lnnz += (a[i+4] != 0.0) ? 1 : 0;
+		lnnz += (a[i+5] != 0.0) ? 1 : 0;
+		lnnz += (a[i+6] != 0.0) ? 1 : 0;
+		lnnz += (a[i+7] != 0.0) ? 1 : 0;
 		return lnnz;
 	}
 
@@ -972,7 +995,7 @@ public class UtilFunctions {
 		}
 	}
 	
-	private static final Map<String, String> DATE_FORMATS = new HashMap<>() {
+	protected static final Map<String, String> DATE_FORMATS = new HashMap<>() {
 		private static final long serialVersionUID = 6826162458614520846L; {
 		put("^\\d{4}-\\d{1,2}-\\d{1,2}\\s\\d{1,2}:\\d{2}:\\d{2}$", "yyyy-MM-dd HH:mm:ss");
 		put("^\\d{1,2}-\\d{1,2}-\\d{4}\\s\\d{1,2}:\\d{2}:\\d{2}$", "dd-MM-yyyy HH:mm:ss");

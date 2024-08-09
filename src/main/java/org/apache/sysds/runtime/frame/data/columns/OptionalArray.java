@@ -25,11 +25,8 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 
-import org.apache.commons.lang3.NotImplementedException;
 import org.apache.sysds.common.Types.ValueType;
 import org.apache.sysds.runtime.DMLRuntimeException;
-import org.apache.sysds.runtime.compress.colgroup.mapping.AMapToData;
-import org.apache.sysds.runtime.compress.colgroup.mapping.MapToFactory;
 import org.apache.sysds.runtime.frame.data.columns.ArrayFactory.FrameArrayType;
 import org.apache.sysds.runtime.matrix.data.Pair;
 import org.apache.sysds.runtime.util.UtilFunctions;
@@ -129,7 +126,7 @@ public class OptionalArray<T> extends Array<T> {
 	}
 
 	@SuppressWarnings("unchecked")
-	protected static OptionalArray<?> readOpt(DataInput in, int nRow) throws IOException {
+	protected static OptionalArray<?> read(DataInput in, int nRow) throws IOException {
 		final Array<?> a = ArrayFactory.read(in, nRow);
 		final ABooleanArray n = (ABooleanArray) ArrayFactory.read(in, nRow);
 		switch(a.getValueType()) {
@@ -153,6 +150,11 @@ public class OptionalArray<T> extends Array<T> {
 	@Override
 	public T get(int index) {
 		return _n.get(index) ? _a.get(index) : null;
+	}
+
+	@Override
+	public T getInternal(int index) {
+		return _n.get(index) ? _a.getInternal(index) : null;
 	}
 
 	@Override
@@ -242,17 +244,27 @@ public class OptionalArray<T> extends Array<T> {
 			T v = value.get(i);
 			if(v != null)
 				set(i, v);
-
 		}
 	}
 
 	@Override
 	public void setFromOtherTypeNz(int rl, int ru, Array<?> value) {
-		for(int i = rl; i <= ru; i++) {
-			String v = UtilFunctions.objectToString(value.get(i));
-			if(v != null)
-				set(i, v);
-
+		if(_a instanceof HashIntegerArray || _a instanceof HashLongArray) {
+			Array<?> noOpt = value instanceof OptionalArray //
+				? ((OptionalArray<?>) value)._a : value;
+			_a.setFromOtherTypeNz(rl, ru, noOpt);
+			for(int i = rl; i <= ru; i++) {
+				Object v = value.get(i);
+				if(v != null)
+					_n.set(i, true);
+			}
+		}
+		else {
+			for(int i = rl; i <= ru; i++) {
+				Object v = value.get(i);
+				if(v != null)
+					set(i, UtilFunctions.objectToString(v));
+			}
 		}
 	}
 
@@ -312,6 +324,13 @@ public class OptionalArray<T> extends Array<T> {
 	}
 
 	@Override
+	public Array<?> changeType(ValueType t) {
+		if(t == ValueType.STRING) // String can contain null.
+			return changeType(ArrayFactory.allocate(t, size()));
+		return changeTypeWithNulls(t);
+	}
+
+	@Override
 	public Pair<ValueType, Boolean> analyzeValueType(int maxCells) {
 		return new Pair<>(getValueType(), true);
 	}
@@ -322,61 +341,60 @@ public class OptionalArray<T> extends Array<T> {
 	}
 
 	@Override
-	protected Array<Boolean> changeTypeBitSet() {
-		Array<Boolean> a = _a.changeTypeBitSet();
-		return new OptionalArray<>(a, _n);
+	protected Array<Boolean> changeTypeBitSet(Array<Boolean> ret, int l, int u) {
+		return _a.changeTypeBitSet(ret, l, u);
 	}
 
 	@Override
-	protected Array<Boolean> changeTypeBoolean() {
-		Array<Boolean> a = _a.changeTypeBoolean();
-		return new OptionalArray<>(a, _n);
+	protected Array<Boolean> changeTypeBoolean(Array<Boolean> retA, int l, int u) {
+		return _a.changeTypeBoolean(retA, l, u);
 	}
 
 	@Override
-	protected Array<Double> changeTypeDouble() {
-		Array<Double> a = _a.changeTypeDouble();
-		return new OptionalArray<>(a, _n);
+	protected Array<Double> changeTypeDouble(Array<Double> retA, int l, int u) {
+		return _a.changeTypeDouble(retA, l, u);
 	}
 
 	@Override
-	protected Array<Float> changeTypeFloat() {
-		Array<Float> a = _a.changeTypeFloat();
-		return new OptionalArray<>(a, _n);
+	protected Array<Float> changeTypeFloat(Array<Float> retA, int l, int u) {
+		return _a.changeTypeFloat(retA, l, u);
 	}
 
 	@Override
-	protected Array<Integer> changeTypeInteger() {
-		Array<Integer> a = _a.changeTypeInteger();
-		return new OptionalArray<>(a, _n);
+	protected Array<Integer> changeTypeInteger(Array<Integer> retA, int l, int u) {
+		return _a.changeTypeInteger(retA, l, u);
 	}
 
 	@Override
-	protected Array<Long> changeTypeLong() {
-		Array<Long> a = _a.changeTypeLong();
-		return new OptionalArray<>(a, _n);
+	protected Array<Long> changeTypeLong(Array<Long> retA, int l, int u) {
+
+		return _a.changeTypeLong(retA, l, u);
 	}
 
 	@Override
-	protected Array<Object> changeTypeHash64() {
-		Array<Object> a = _a.changeTypeHash64();
-		return new OptionalArray<>(a, _n);
+	protected Array<Object> changeTypeHash64(Array<Object> retA, int l, int u) {
+		return _a.changeTypeHash64(retA, l, u);
 	}
 
 	@Override
-	protected Array<Character> changeTypeCharacter() {
-		Array<Character> a = _a.changeTypeCharacter();
-		return new OptionalArray<>(a, _n);
+	protected Array<Object> changeTypeHash32(Array<Object> retA, int l, int u) {
+		return _a.changeTypeHash32(retA, l, u);
 	}
 
 	@Override
-	protected Array<String> changeTypeString() {
-		StringArray a = (StringArray) _a.changeTypeString();
-		String[] d = a.get();
+	protected Array<Character> changeTypeCharacter(Array<Character> retA, int l, int u) {
+		return _a.changeTypeCharacter(retA, l, u);
+	}
+
+	@Override
+	protected Array<String> changeTypeString(Array<String> retA, int l, int u) {
+		String[] d = (String[]) retA.get();
 		for(int i = 0; i < _size; i++)
-			if(!_n.get(i))
+			if(_n.get(i))
+				d[i] = _a.get(i).toString();
+			else
 				d[i] = null;
-		return a;
+		return retA;
 	}
 
 	@Override
@@ -427,34 +445,6 @@ public class OptionalArray<T> extends Array<T> {
 	}
 
 	@Override
-	public Array<?> changeTypeWithNulls(ValueType t) {
-
-		switch(t) {
-			case BOOLEAN:
-				if(size() > ArrayFactory.bitSetSwitchPoint)
-					return changeTypeBitSet();
-				else
-					return changeTypeBoolean();
-			case FP32:
-				return changeTypeFloat();
-			case FP64:
-				return changeTypeDouble();
-			case UINT8:
-				throw new NotImplementedException();
-			case INT32:
-				return changeTypeInteger();
-			case INT64:
-				return changeTypeLong();
-			case CHARACTER:
-				return changeTypeCharacter();
-			case STRING:
-			case UNKNOWN:
-			default:
-				return changeTypeString(); // String can contain null
-		}
-	}
-
-	@Override
 	public boolean containsNull() {
 		return !_n.isAllTrue();
 	}
@@ -482,89 +472,25 @@ public class OptionalArray<T> extends Array<T> {
 		return true;
 	}
 
-	@SuppressWarnings("unchecked")
 	@Override
-	public AMapToData createMapping(Map<T, Integer> d) {
-		if(_a instanceof HashLongArray) {
-			Map<Long, Integer> dl = (Map<Long, Integer>) d;
-			HashLongArray ha = (HashLongArray) _a;
-			// assuming the dictionary is correctly constructed.
-			final int s = size();
-			final AMapToData m = MapToFactory.create(s, d.size());
-
-			final int n = dl.get(null);
-			for(int i = 0; i < s; i++) {
-				if(_n.get(i)) {
-					m.set(i, dl.get(ha.getLong(i)));
-				}
-				else {
-					m.set(i, n);
-				}
-			}
-			return m;
-		}
-		else {
-			return super.createMapping(d);
-		}
-	}
-
-	@SuppressWarnings("unchecked")
-	@Override
-	protected Map<T, Integer> getDictionary() {
-		if(_a instanceof HashLongArray) {
-			final Map<Long, Integer> dict = new HashMap<>();
-			HashLongArray ha = (HashLongArray) _a;
-			Integer id = 0;
-			boolean nullFound = false;
-			for(int i = 0; i < size(); i++) {
-				if(_n.get(i)) {
-					final long l = ha.getLong(i);
-					final Integer v = dict.get(ha.getLong(i));
+	protected Map<T, Long> createRecodeMap() {
+		if(getValueType() == ValueType.BOOLEAN) {
+			// shortcut for boolean arrays, since we only
+			// need to encounter the first two false and true values.
+			Map<T, Long> map = new HashMap<>();
+			long id = 1;
+			for(int i = 0; i < size() && id <= 2; i++) {
+				T val = get(i);
+				if(val != null) {
+					Long v = map.putIfAbsent(val, id);
 					if(v == null)
-						dict.put(l, id++);
-				}
-				else if(!nullFound && !dict.keySet().contains(null)) {
-					dict.put(null, id++);
-					nullFound = true;
+						id++;
 				}
 			}
-			return (Map<T, Integer>) dict;
+			return map;
 		}
-		else {
-			return super.getDictionary();
-		}
-	}
-
-	@SuppressWarnings("unchecked")
-	@Override
-	protected Map<T, Integer> tryGetDictionary(int threshold) {
-		if(_a instanceof HashLongArray) {
-			final Map<Long, Integer> dict = new HashMap<>();
-			HashLongArray ha = (HashLongArray) _a;
-			Integer id = 0;
-			boolean nullFound = false;
-			final int s = size();
-			for(int i = 0; i < s && id < threshold; i++) {
-				if(_n.get(i)) {
-					final long l = ha.getLong(i);
-					final Integer v = dict.get(ha.getLong(i));
-					if(v == null)
-						dict.put(l, id++);
-				}
-				else if(!nullFound && !dict.keySet().contains(null)) {
-					dict.put(null, id++);
-					nullFound = true;
-				}
-			}
-			if(id >= threshold)
-				return null;
-
-			else
-				return (Map<T, Integer>) dict;
-		}
-		else {
-			return super.tryGetDictionary(threshold);
-		}
+		else
+			return super.createRecodeMap();
 	}
 
 	@Override

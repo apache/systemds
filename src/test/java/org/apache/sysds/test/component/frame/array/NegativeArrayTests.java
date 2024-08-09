@@ -26,6 +26,8 @@ import static org.mockito.Mockito.mock;
 import java.io.IOException;
 
 import org.apache.commons.lang3.NotImplementedException;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.common.Types.ValueType;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.compress.DMLCompressionException;
@@ -46,6 +48,7 @@ import org.junit.Test;
 import org.mockito.Mockito;
 
 public class NegativeArrayTests {
+	protected static final Log LOG = LogFactory.getLog(NegativeArrayTests.class.getName());
 
 	@Test
 	@SuppressWarnings("unchecked")
@@ -70,24 +73,6 @@ public class NegativeArrayTests {
 		Array<?> a = ArrayFactory.create(new int[] {1, 2, 3});
 		Array<String> s = (Array<String>) a.changeType(ValueType.UNKNOWN);
 		s.toString();
-	}
-
-	@Test(expected = NotImplementedException.class)
-	public void testChangeTypeToUInt8() {
-		Array<?> a = ArrayFactory.create(new int[] {1, 2, 3});
-		a.changeType(ValueType.UINT8);
-	}
-
-	@Test(expected = NotImplementedException.class)
-	public void testChangeTypeToUInt8WithNull_noNull() {
-		Array<?> a = ArrayFactory.create(new int[] {1, 2, 3});
-		a.changeTypeWithNulls(ValueType.UINT8);
-	}
-
-	@Test(expected = NotImplementedException.class)
-	public void testChangeTypeToUInt8WithNull() {
-		Array<?> a = ArrayFactory.create(new String[] {"1", "2", null});
-		a.changeTypeWithNulls(ValueType.UINT8);
 	}
 
 	@Test(expected = DMLRuntimeException.class)
@@ -220,7 +205,7 @@ public class NegativeArrayTests {
 	@Test(expected = DMLRuntimeException.class)
 	public void readFieldsRagged() {
 		try {
-			new RaggedArray<>(ArrayFactory.create(new Integer[]{1,2,3}),10).readFields(null);
+			new RaggedArray<>(ArrayFactory.create(new Integer[] {1, 2, 3}), 10).readFields(null);
 		}
 		catch(IOException e) {
 			fail("not correct exception");
@@ -260,11 +245,6 @@ public class NegativeArrayTests {
 	@Test(expected = NumberFormatException.class)
 	public void parseInt() {
 		IntegerArray.parseInt("notANumber");
-	}
-
-	@Test(expected = NotImplementedException.class)
-	public void optionalChangeToUInt8() {
-		new OptionalArray<>(new Double[3]).changeTypeWithNulls(ValueType.UINT8);
 	}
 
 	@Test(expected = NotImplementedException.class)
@@ -314,14 +294,14 @@ public class NegativeArrayTests {
 
 	@Test(expected = DMLRuntimeException.class)
 	public void testInvalidALength() {
-		Array<?> a = ArrayFactory.allocate( ValueType.INT32, 10);
+		Array<?> a = ArrayFactory.allocate(ValueType.INT32, 10);
 		Array<Long> b = new OptionalArray<>(new Long[] {1L, 2L, 3L, 4L});
 		ArrayFactory.set(a, b, 10, 14, 20);// one to short
 	}
 
 	@Test(expected = DMLRuntimeException.class)
 	public void testInvalidRL() {
-		Array<?> a = ArrayFactory.allocate( ValueType.INT32, 10);
+		Array<?> a = ArrayFactory.allocate(ValueType.INT32, 10);
 		Array<Long> b = new OptionalArray<>(new Long[] {1L, 2L, 3L, 4L});
 		ArrayFactory.set(a, b, -1, 15, 20);// one to short
 	}

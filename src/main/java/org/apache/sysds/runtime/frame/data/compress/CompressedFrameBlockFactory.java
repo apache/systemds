@@ -129,7 +129,7 @@ public class CompressedFrameBlockFactory {
 	}
 
 	private Array<?> collectStatsAndAllocateCorrectedType(int i) {
-		getStatistics(i);
+		stats[i] = getStatistics(i);
 		return allocateCorrectedType(i);
 	}
 
@@ -140,7 +140,7 @@ public class CompressedFrameBlockFactory {
 	private Array<?> allocateCorrectedType(int i) {
 		final ArrayCompressionStatistics s = stats[i];
 		final Array<?> a = in.getColumn(i);
-		if(s != null && s.valueType != null && s.valueType != a.getValueType())
+		if(s.valueType != a.getValueType())
 			return ArrayFactory.allocate(s.valueType, a.size(), s.containsNull);
 		else
 			return a;
@@ -163,7 +163,7 @@ public class CompressedFrameBlockFactory {
 		final Array<?> tmp = f.get();
 		final Array<?> a = in.getColumn(i);
 		final ArrayCompressionStatistics s = stats[i];
-		if(s != null && s.valueType != null && s.valueType != a.getValueType()) {
+		if(s.valueType != a.getValueType()) {
 			// Parallel row blocks of changing valuetype.
 			final int nRow = in.getNumRows();
 			final int block = Math.max(((nRow / k) / 64) * 64, 1024);
@@ -195,7 +195,7 @@ public class CompressedFrameBlockFactory {
 	private void compressCol(int i, final ArrayCompressionStatistics s) {
 		final Array<?> b = in.getColumn(i);
 		final Array<?> a;
-		if(s != null && s.valueType != null && s.valueType != b.getValueType())
+		if(s.valueType != b.getValueType())
 			a = b.changeType(s.valueType, s.containsNull); // unsafe
 		else
 			a = b;
@@ -205,7 +205,7 @@ public class CompressedFrameBlockFactory {
 
 	private Array<?> compressColFinally(int i, final Array<?> a, final ArrayCompressionStatistics s) {
 		Timing time = LOG.isDebugEnabled() ? new Timing(true) : null;
-		if(s != null && s.bestType != null && s.shouldCompress) {
+		if(s.bestType != null && s.shouldCompress) {
 			if(s.bestType == FrameArrayType.DDC)
 				compressedColumns[i] = DDCArray.compressToDDC(a);
 			else
@@ -226,7 +226,7 @@ public class CompressedFrameBlockFactory {
 			for(int i = 0; i < compressedColumns.length; i++) {
 				if(in.getColumn(i) instanceof ACompressedArray)
 					sb.append(String.format("Col: %3d, %s\n", i, "Column is already compressed"));
-				else if(stats[i] != null && stats[i].shouldCompress)
+				else if(stats[i].shouldCompress)
 					sb.append(String.format("Col: %3d, %s\n", i, stats[i]));
 				else
 					sb.append(String.format("Col: %3d, No Compress, Type: %s", //

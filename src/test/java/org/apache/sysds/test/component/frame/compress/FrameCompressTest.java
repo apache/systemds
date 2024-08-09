@@ -196,7 +196,6 @@ public class FrameCompressTest {
 			when(m.statistics(anyInt())).thenReturn(new ArrayCompressionStatistics(0, 1, true, ValueType.STRING, true,
 				FrameArrayType.STRING, 100000, 10, true));
 
-			LOG.error(m.statistics(1324));
 			as.setColumn(2, m);
 
 			FrameBlock b = FrameLibCompress.compress(as, 42);

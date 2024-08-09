@@ -756,7 +756,7 @@ public abstract class Array<T> implements Writable {
 	 */
 	public abstract boolean equals(Array<T> other);
 
-	private int estMemSizePerElement(ValueType vt, long memSize) {
+	protected int estMemSizePerElement(ValueType vt, long memSize) {
 
 		final int memSizePerElement;
 		switch(vt) {

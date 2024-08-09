@@ -100,10 +100,7 @@ public abstract class ACompressedArray<T> extends Array<T> {
 	}
 
 	@Override
-	public ArrayCompressionStatistics statistics(int nSamples) {
-		// already compressed
-		return null;
-	}
+	public abstract ArrayCompressionStatistics statistics(int nSamples);
 
 	@Override
 	public abstract Array<?> changeType(ValueType t);

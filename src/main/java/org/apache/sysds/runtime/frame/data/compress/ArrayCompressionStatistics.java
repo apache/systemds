@@ -46,6 +46,9 @@ public class ArrayCompressionStatistics {
 		this.originalSize = originalSize;
 		this.compressedSizeEstimate = compressedSizeEstimate;
 		this.sampledAllRows = sampledAllRows;
+
+		if(valueType == null)
+			throw new RuntimeException("Invalid null valuetype in statistics");
 	}
 
 	@Override
@@ -53,10 +56,14 @@ public class ArrayCompressionStatistics {
 		StringBuilder sb = new StringBuilder();
 		if(!sampledAllRows)
 			sb.append(String.format("Compressed Stats: size:%8d->%8d, Use:%10s, EstUnique:%6d, ValueType:%7s",
-				originalSize, compressedSizeEstimate, bestType == null ? "None" : bestType.toString(), nUnique, valueType));
+				originalSize, compressedSizeEstimate, bestType(), nUnique, valueType));
 		else
 			sb.append(String.format("Compressed Stats: size:%8d->%8d, Use:%10s, Unique:%6d, ValueType:%7s", originalSize,
-				compressedSizeEstimate, bestType == null ? "None" : bestType.toString(), nUnique, valueType));
+				compressedSizeEstimate, bestType(), nUnique, valueType));
 		return sb.toString();
+	}
+
+	private String bestType(){
+		return bestType == null ? "None" : bestType.toString();
 	}
 }

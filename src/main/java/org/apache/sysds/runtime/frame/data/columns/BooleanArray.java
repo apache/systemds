@@ -391,8 +391,8 @@ public class BooleanArray extends ABooleanArray {
 
 	@Override
 	public ArrayCompressionStatistics statistics(int nSamples) {
-		// Unlikely to compress so lets just say... no
-		return null;
+		return new ArrayCompressionStatistics(1, //
+			2, true, ValueType.BOOLEAN, false, FrameArrayType.DDC, getInMemorySize(), getInMemorySize() * 2, true);
 	}
 
 	@Override

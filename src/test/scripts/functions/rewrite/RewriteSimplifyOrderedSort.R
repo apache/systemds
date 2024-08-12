@@ -31,12 +31,13 @@ library("matrixStats")
 
 
 type = as.integer(args[1])
-A = matrix(rep(7, 10 * 10), nrow=10, ncol=10)
+N = 100
+A = seq(2, N+1, 1)
 
 if( type == 1 ) {
-  R = A[order(A[,1], decreasing=FALSE), ]
+  R = A[order(A, decreasing=FALSE)]
 } else if( type == 2 ) {
-  R = order(A[,1], decreasing=FALSE)
+  R = order(A, decreasing=FALSE)
 }
 
 writeMM(as(R, "CsparseMatrix"), paste(args[2], "R", sep=""))

@@ -20,23 +20,18 @@
 #-------------------------------------------------------------
 
 
-args <- commandArgs(TRUE)
 
-# Set options for numeric precision
-options(digits=22)
+type = $1
+N = 100
+A = seq(2,N+1,1)
 
-# Load required libraries
-library("Matrix")
-library("matrixStats")
-
-
-type = as.integer(args[1])
-A = matrix(rep(7, 10 * 10), nrow=10, ncol=10)
-
+# Perform the operations
 if( type == 1 ) {
-  R = A[order(A[,1], decreasing=FALSE), ]
-} else if( type == 2 ) {
-  R = order(A[,1], decreasing=FALSE)
+  R = order(target=A, index.return=FALSE)
+}
+else if( type == 2 ) {
+  R = order(target=A, index.return=TRUE)
 }
 
-writeMM(as(R, "CsparseMatrix"), paste(args[2], "R", sep=""))
+# Write the result matrix R
+write(R, $2)

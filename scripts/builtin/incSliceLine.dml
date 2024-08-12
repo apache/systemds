@@ -352,8 +352,6 @@ createAndScoreBasicSlices = function(Matrix[Double] X2, Matrix[Double] changedX2
     selCols = (cCnts >= minSup & err > 0 );
   }
 
-
-
   attr = removeEmpty(target=seq(1,n2), margin="rows", select=selCols);
   ss = removeEmpty(target=cCnts, margin="rows", select=selCols);
   se = removeEmpty(target=err, margin="rows", select=selCols);

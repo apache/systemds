@@ -1083,7 +1083,6 @@ public class BuiltinIncSliceLineTest extends AutomatedTestBase {
             }
             int numOfAddedTuples = (int) Math.round(newX.length * proportionOfTuplesAddedInPercent / 100.0);
             int numOfRemovedTuples = (int) Math.round((newX.length - numOfAddedTuples) * proportionOfTuplesRemovedInPercent / 100.0);
-            
             if(numOfRemovedTuples == 0){
                 numOfRemovedTuples = 1;
             }
@@ -1109,6 +1108,7 @@ public class BuiltinIncSliceLineTest extends AutomatedTestBase {
             for (int i = numOfAddedTuples; i < newX.length; i++) {
                 oldX[i - numOfAddedTuples] = newX[i];
             }
+
             double[][] addedE = new double[numOfAddedTuples][e[0].length];
             double[][] oldE = new double[e.length - numOfAddedTuples][e[0].length];
             if(onlyNullEAdded){

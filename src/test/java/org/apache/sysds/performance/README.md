@@ -70,9 +70,9 @@ Frame Operation timings
 java -jar -agentpath:$HOME/Programs/profiler/lib/libasyncProfiler.so=start,event=cpu,file=temp/log.html target/systemds-3.3.0-SNAPSHOT-perf.jar 15 16 10 "src/test/resources/datasets/titanic/titanic.csv" "src/test/resources/datasets/titanic/tfspec.json"
 ```
 
-
-
+Reshape Sparse
 
 ```bash
 java -cp "target/systemds-3.3.0-SNAPSHOT-perf.jar:target/lib/*" -agentpath:$HOME/Programs/profiler/lib/libasyncProfiler.so=start,event=cpu,file=temp/log.html  org.apache.sysds.performance.Main 1005
 ```
+

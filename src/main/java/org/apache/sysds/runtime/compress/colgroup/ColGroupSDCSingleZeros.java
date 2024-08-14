@@ -109,10 +109,8 @@ public class ColGroupSDCSingleZeros extends ASDCZero {
 			return;
 		else if(it.value() >= ru)
 			return;
-		// _indexes.cacheIterator(it, ru);
 		else {
 			decompressToDenseBlockDenseDictionaryWithProvidedIterator(db, rl, ru, offR, offC, values, it);
-			// _indexes.cacheIterator(it, ru);
 		}
 	}
 
@@ -238,8 +236,10 @@ public class ColGroupSDCSingleZeros extends ASDCZero {
 		if(it == null)
 			return;
 		else if(it.value() >= ru)
-			_indexes.cacheIterator(it, ru);
-		else if(ru > last) {
+			return;
+			// _indexes.cacheIterator(it, ru);
+		else 
+		if(ru > last) {
 			final int apos = sb.pos(0);
 			final int alen = sb.size(0) + apos;
 			final int[] aix = sb.indexes(0);
@@ -277,8 +277,14 @@ public class ColGroupSDCSingleZeros extends ASDCZero {
 		if(it == null)
 			return;
 		else if(it.value() >= ru)
-			_indexes.cacheIterator(it, ru);
-		else if(ru > _indexes.getOffsetToLast()) {
+			return;
+		else
+			decompressToSparseBlockDenseDictionaryWithProvidedIterator(ret, rl, ru, offR, offC, values, it);
+	}
+
+	@Override
+	public void decompressToSparseBlockDenseDictionaryWithProvidedIterator(SparseBlock ret, int rl, int ru, int offR, int offC, double[] values, final AIterator it) {
+		if(ru > _indexes.getOffsetToLast()) {
 			final int nCol = _colIndexes.size();
 			final int lastOff = _indexes.getOffsetToLast();
 			int row = offR + it.value();

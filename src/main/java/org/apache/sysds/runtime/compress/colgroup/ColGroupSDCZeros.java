@@ -184,8 +184,7 @@ public class ColGroupSDCZeros extends ASDCZero implements IMapToDataGroup {
 			final double[] c = db.values(idx);
 			final int off = db.pos(idx);
 			final int offDict = _data.getIndex(it.getDataIndex()) * nCol;
-			for(int j = 0; j < nCol; j++)
-				c[off + j] += values[offDict + j];
+			decompressSingleRow(values, nCol, c, off, offDict);
 			if(it.value() == lastOff)
 				return;
 			it.next();
@@ -301,11 +300,17 @@ public class ColGroupSDCZeros extends ASDCZero implements IMapToDataGroup {
 			final double[] c = db.values(idx);
 			final int off = db.pos(idx) + offC;
 			final int offDict = _data.getIndex(it.getDataIndex()) * nCol;
-			for(int j = 0; j < nCol; j++)
-				c[off + j] += values[offDict + j];
+			decompressSingleRow(values, nCol, c, off, offDict);
 
 			it.next();
 		}
+	}
+
+	private static void decompressSingleRow(double[] values, final int nCol, final double[] c, final int off,
+		final int offDict) {
+		final int end = nCol + off;
+		for(int j = off, k = offDict; j < end; j++, k++)
+			c[j] += values[k];
 	}
 
 	@Override
@@ -438,8 +443,16 @@ public class ColGroupSDCZeros extends ASDCZero implements IMapToDataGroup {
 		if(it == null)
 			return;
 		else if(it.value() >= ru)
-			_indexes.cacheIterator(it, ru);
-		else if(ru > _indexes.getOffsetToLast()) {
+			return;
+		else
+			decompressToSparseBlockDenseDictionaryWithProvidedIterator(ret, rl, ru, offR, offC, values, it);
+
+	}
+
+	@Override
+	public void decompressToSparseBlockDenseDictionaryWithProvidedIterator(SparseBlock ret, int rl, int ru, int offR,
+		int offC, double[] values, final AIterator it) {
+		if(ru > _indexes.getOffsetToLast()) {
 			final int lastOff = _indexes.getOffsetToLast();
 			final int nCol = _colIndexes.size();
 			while(true) {
@@ -467,7 +480,6 @@ public class ColGroupSDCZeros extends ASDCZero implements IMapToDataGroup {
 			}
 			_indexes.cacheIterator(it, ru);
 		}
-
 	}
 
 	@Override
@@ -899,7 +911,6 @@ public class ColGroupSDCZeros extends ASDCZero implements IMapToDataGroup {
 			return super.morph(ct, nRow);
 	}
 
-
 	@Override
 	public void sparseSelection(MatrixBlock selection, P[] points, MatrixBlock ret, int rl, int ru) {
 		final SparseBlock sr = ret.getSparseBlock();
@@ -942,14 +953,14 @@ public class ColGroupSDCZeros extends ASDCZero implements IMapToDataGroup {
 				of = it.next();
 			}
 			else if(points[c].o < of)
-					c++;
+				c++;
 			else
 				of = it.next();
-			}
-			// increment the c pointer until it is pointing at least to last point or is done.
-			while(c < points.length && points[c].o < last)
-				c++;
-			c = processRowDense(points, dr, nCol, c, of, _data.getIndex(it.getDataIndex()));
+		}
+		// increment the c pointer until it is pointing at least to last point or is done.
+		while(c < points.length && points[c].o < last)
+			c++;
+		c = processRowDense(points, dr, nCol, c, of, _data.getIndex(it.getDataIndex()));
 	}
 
 	private int processRowSparse(P[] points, final SparseBlock sr, final int nCol, int c, int of, final int did) {

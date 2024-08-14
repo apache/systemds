@@ -58,7 +58,7 @@ import org.apache.sysds.runtime.compress.cost.InstructionTypeCounter;
 import org.apache.sysds.runtime.compress.estim.ComEstFactory;
 import org.apache.sysds.runtime.compress.estim.CompressedSizeInfo;
 import org.apache.sysds.runtime.compress.estim.CompressedSizeInfoColGroup;
-import org.apache.sysds.runtime.compress.lib.CLALibAppend;
+import org.apache.sysds.runtime.compress.lib.CLALibCBind;
 import org.apache.sysds.runtime.functionobjects.Builtin;
 import org.apache.sysds.runtime.functionobjects.Builtin.BuiltinCode;
 import org.apache.sysds.runtime.functionobjects.Divide;
@@ -255,7 +255,7 @@ public abstract class CompressedTestBase extends TestBase {
 				case C_BIND_SELF:
 					if(cmb instanceof CompressedMatrixBlock) {
 						CompressedMatrixBlock cmbc = (CompressedMatrixBlock) cmb;
-						cmb = CLALibAppend.append(cmbc, cmbc, _k);
+						cmb = CLALibCBind.cbind(cmbc, cmbc, _k);
 						mb = mb.append(mb, new MatrixBlock());
 						cols *= 2;
 					}
@@ -306,7 +306,8 @@ public abstract class CompressedTestBase extends TestBase {
 					}
 					else if(ov == OverLapping.PLUS_ROW_VECTOR) {
 
-						MatrixBlock v = TestUtils.generateTestMatrixBlock(1, cols, -1, 1, 1.0, 4);
+						MatrixBlock v = TestUtils.generateTestMatrixBlock(1, cols, 0, 4, 1.0, 4);
+						v = TestUtils.ceil(v);
 						BinaryOperator bop = new BinaryOperator(Plus.getPlusFnObject(), _k);
 						mb = mb.binaryOperations(bop, v, null);
 						cmb = cmb.binaryOperations(bop, v, null);
@@ -503,13 +504,15 @@ public abstract class CompressedTestBase extends TestBase {
 
 	@Test
 	public void testVectorMatrixMult() {
-		MatrixBlock vector = TestUtils.generateTestMatrixBlock(1, rows, 0.9, 1.5, 1.0, 3);
+		MatrixBlock vector = TestUtils.generateTestMatrixBlock(1, rows, 0, 5, 1.0, 3);
+		vector = TestUtils.ceil(vector);
 		testLeftMatrixMatrix(vector);
 	}
 
 	@Test
 	public void testLeftMatrixMatrixMultSmall() {
-		MatrixBlock matrix = TestUtils.generateTestMatrixBlock(3, rows, 0.9, 1.5, 1.0, 3);
+		MatrixBlock matrix = TestUtils.generateTestMatrixBlock(3, rows, 0, 5, 1.0, 3);
+		matrix = TestUtils.ceil(matrix);
 		testLeftMatrixMatrix(matrix);
 	}
 
@@ -521,7 +524,8 @@ public abstract class CompressedTestBase extends TestBase {
 
 	@Test
 	public void testLeftMatrixMatrixMultSparse() {
-		MatrixBlock matrix = TestUtils.generateTestMatrixBlock(2, rows, 0.9, 1.5, .1, 3);
+		MatrixBlock matrix = TestUtils.generateTestMatrixBlock(2, rows, 0, 5, .1, 3);
+		matrix = TestUtils.ceil(matrix);
 		testLeftMatrixMatrix(matrix);
 	}
 
@@ -1049,6 +1053,98 @@ public abstract class CompressedTestBase extends TestBase {
 		catch(Exception e) {
 			e.printStackTrace();
 			throw new DMLRuntimeException("Error in Slicing", e);
+		}
+	}
+
+
+	@Test
+	public void testReshape2() {
+		testReshape(2);
+	}
+
+	@Test
+	public void testReshape3() {
+		testReshape(3);
+	}
+
+	@Test
+	public void testReshape10() {
+		testReshape(10);
+	}
+
+	/**
+	 * Test the reshape mechanic of the compressed block by reshaping the matrix by making it x times wider.
+	 * 
+	 * @param multiplier the multiplier x.
+	 */
+	public void testReshape(int multiplier) {
+		try {
+			if((double) rows / multiplier != rows / multiplier)
+				return;
+
+			final MatrixBlock ret2 = cmb.reshape(rows / multiplier, cols * multiplier, true);
+			final MatrixBlock ret1 = mb.reshape(rows / multiplier, cols * multiplier, true);
+			compareResultMatrices(ret1, ret2, 1);
+		}
+		catch(Exception e) {
+			e.printStackTrace();
+			throw new DMLRuntimeException("Error in Reshape", e);
+		}
+	}
+
+	@Test
+	public void testReshape2_divider() {
+		testReshapeDivider(2);
+	}
+
+	@Test
+	public void testReshape3_divider() {
+		testReshapeDivider(3);
+	}
+
+	@Test
+	public void testReshape10_divider() {
+		testReshapeDivider(10);
+	}
+
+	/**
+	 * Test the reshape mechanic of the compressed block by reshaping the matrix by making it x times taller.
+	 * 
+	 * @param divider the divider x.
+	 */
+	public void testReshapeDivider(int divider) {
+		try {
+			if((double) cols /divider != cols / divider)
+				return;
+
+			final MatrixBlock ret2 = cmb.reshape(rows * divider, cols / divider, true);
+			final MatrixBlock ret1 = mb.reshape(rows * divider, cols / divider, true);
+			compareResultMatrices(ret1, ret2, 1);
+		}
+		catch(Exception e) {
+			e.printStackTrace();
+			throw new DMLRuntimeException("Error in Reshape", e);
+		}
+	}
+
+
+	@Test
+	public void testReshape_opposite() {
+		testReshape(cols, rows);
+	}
+
+	public void testReshape(int newRows, int newCols) {
+		try {
+			if((double) newRows * newCols != rows * cols)
+				return;
+
+			final MatrixBlock ret2 = cmb.reshape(newRows, newCols, true);
+			final MatrixBlock ret1 = mb.reshape(newRows, newCols, true);
+			compareResultMatrices(ret1, ret2, 1);
+		}
+		catch(Exception e) {
+			e.printStackTrace();
+			throw new DMLRuntimeException("Error in Reshape", e);
 		}
 	}
 

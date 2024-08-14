@@ -609,10 +609,21 @@ public abstract class AOffset implements Serializable {
 		int lowValue, int highValue) {
 		if(low == high)
 			return new OffsetSliceInfo(low, high + 1, new OffsetSingle(lowValue - l));
-		else if(low + 1 == high)
-			return new OffsetSliceInfo(low, high + 1, new OffsetTwo(lowValue - l, highValue - l));
+		else if(low + 1 == high) {
+			if(lowValue == highValue)
+				return new OffsetSliceInfo(low, high, new OffsetSingle(lowValue - l));
+			else
+				return new OffsetSliceInfo(low, high + 1, new OffsetTwo(lowValue - l, highValue - l));
+		}
 		else
 			return ((ISliceOffset) this).slice(lowOff, highOff, lowValue - l, highValue - l, low, high);
+		// }
+		// catch(Exception e) {
+		// throw new DMLRuntimeException(
+		// this + "\nFailed constructing Slice Return with arguments: "
+		// + String.format("\n%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d", l, u, low, high, lowOff, highOff, lowValue, highValue),
+		// e);
+		// }
 	}
 
 	/**

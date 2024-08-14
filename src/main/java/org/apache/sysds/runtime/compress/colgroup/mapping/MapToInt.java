@@ -182,8 +182,8 @@ public class MapToInt extends AMapToData {
 	}
 
 	@Override
-	public void copyInt(int[] d) {
-		for(int i = 0; i < _data.length; i++)
+	public void copyInt(int[] d, int start, int end) {
+		for(int i = start; i < end; i++)
 			_data[i] = d[i];
 	}
 

@@ -49,7 +49,7 @@ public class CompressForce extends CompressBase {
 
 	@Test
 	public void testTranspose_CP() {
-		runTest(1500, 20, 1, 1, ExecType.CP, "transpose");
+		runTest(1500, 20, 2, 1, ExecType.CP, "transpose");
 	}
 
 	@Test

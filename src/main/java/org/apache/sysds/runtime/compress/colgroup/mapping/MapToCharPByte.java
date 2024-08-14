@@ -167,8 +167,8 @@ public class MapToCharPByte extends AMapToData {
 	}
 
 	@Override
-	public void copyInt(int[] d) {
-		for(int i = 0; i < d.length; i++)
+	public void copyInt(int[] d, int start, int end) {
+		for(int i = start; i < end; i++)
 			set(i, d[i]);
 	}
 

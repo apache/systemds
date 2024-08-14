@@ -93,4 +93,15 @@ public abstract class ScalarOperator extends MultiThreadedOperator
 			|| fn instanceof Builtin && ((Builtin)fn).getBuiltinCode()==BuiltinCode.LOG_NZ)
 			|| fn instanceof BitwShiftL || fn instanceof BitwShiftR;
 	}
+
+	@Override
+	public String toString(){
+		StringBuilder sb = new StringBuilder();
+		sb.append(this.getClass().getSimpleName());
+		sb.append(" ");
+		sb.append(fn);
+		sb.append(" Value: ");
+		sb.append(_constant);
+		return sb.toString();
+	}
 }

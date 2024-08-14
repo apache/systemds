@@ -19,10 +19,23 @@
 
 package org.apache.sysds.test.component.compress.mapping;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertThrows;
+import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
+import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.when;
+
+import java.util.Random;
 
 import org.apache.sysds.runtime.compress.CompressedMatrixBlock;
+import org.apache.sysds.runtime.compress.DMLCompressionException;
+import org.apache.sysds.runtime.compress.colgroup.mapping.AMapToData;
+import org.apache.sysds.runtime.compress.colgroup.mapping.MapToBit;
 import org.apache.sysds.runtime.compress.colgroup.mapping.MapToFactory;
+import org.apache.sysds.runtime.compress.colgroup.mapping.MapToFactory.MAP_TYPE;
 import org.junit.Test;
 
 public class CustomMappingTest {
@@ -48,5 +61,125 @@ public class CustomMappingTest {
 			e.printStackTrace();
 			fail(e.getMessage());
 		}
+	}
+
+	@Test
+	public void equalsTest1() {
+		int[] in = new int[] {1, 2, 3, 4};
+		AMapToData d = MapToFactory.create(in, 5);
+		AMapToData e = MapToFactory.create(in, 5);
+
+		assertTrue(d.equals(e));
+
+	}
+
+	@Test
+	public void equalsTest2() {
+		AMapToData d = MappingTestUtil.createRandomMap(100, 2, new Random(23));
+		AMapToData e = MappingTestUtil.createRandomMap(100, 2, new Random(23));
+
+		assertTrue(d.equals(e));
+
+	}
+
+	@Test
+	public void equalsTest3() {
+		AMapToData d = MappingTestUtil.createRandomMap(20, 2, new Random(23));
+		AMapToData e = MappingTestUtil.createRandomMap(20, 2, new Random(23));
+
+		assertTrue(d.equals(e));
+
+	}
+
+	@Test
+	public void equalsTest4() {
+		AMapToData d = MappingTestUtil.createRandomMap(20, 2, new Random(23));
+		AMapToData e = MappingTestUtil.createRandomMap(20, 2, new Random(22));
+
+		assertFalse(d.equals(e));
+
+	}
+
+	@Test
+	public void equalsTest5() {
+		AMapToData d = MappingTestUtil.createRandomMap(102, 2, new Random(23));
+		AMapToData e = MappingTestUtil.createRandomMap(102, 2, new Random(22));
+
+		assertFalse(d.equals(e));
+
+	}
+
+	@Test
+	public void empty() {
+		MapToBit d = (MapToBit) MapToFactory.create(100, MAP_TYPE.BIT);
+
+		assertTrue(d.isEmpty());
+
+		d.set(23, 1);
+		assertFalse(d.isEmpty());
+
+	}
+
+	@Test
+	public void verifyInvalid() {
+
+		AMapToData d = MapToFactory.create(2, 2);
+		CompressedMatrixBlock.debug = true;
+		AMapToData spy = spy(d);
+		when(spy.getIndex(anyInt())).thenReturn(32);
+		Exception e = assertThrows(DMLCompressionException.class, () -> spy.verify());
+
+		assertTrue(e.getMessage().equals("Invalid construction of Mapping data containing values above unique"));
+	}
+
+	@Test
+	public void equalsObject() {
+
+		AMapToData d = MapToFactory.create(2, 2);
+		assertFalse(d.equals(new Object()));
+	}
+
+	@Test
+	public void equalsObjectTrue() {
+
+		AMapToData d = MapToFactory.create(2, 2);
+		assertTrue(d.equals((Object) d));
+	}
+
+	@Test
+	public void equalsObjectOtherTrue() {
+
+		AMapToData d = MapToFactory.create(2, 2);
+		AMapToData e = MapToFactory.create(2, 2);
+		assertTrue(d.equals((Object) e));
+	}
+
+	@Test
+	public void equalsObjectOtherFalse() {
+		AMapToData d = MapToFactory.create(2, 2);
+		AMapToData e = MapToFactory.create(2, 2);
+		e.set(0, 1);
+		assertFalse(d.equals((Object) e));
+	}
+
+	@Test
+	public void numberRuns1() {
+
+		AMapToData d = MapToFactory.create(2, 2);
+		assertEquals(1, d.countRuns());
+	}
+
+	@Test
+	public void numberRuns2() {
+
+		AMapToData d = MapToFactory.create(new int[] {1, 1, 1, 2, 2, 2}, 2);
+		assertEquals(2, d.countRuns());
+	}
+
+	@Test
+	public void numberRuns3() {
+
+		AMapToData d = MapToFactory.create(new int[] {1, 1, 1, 2, 1, 2}, 2);
+		assertEquals(4, d.countRuns());
 	}
 }

@@ -136,8 +136,8 @@ public class MapToByte extends AMapToData {
 	}
 
 	@Override
-	public void copyInt(int[] d) {
-		for(int i = 0; i < _data.length; i++)
+	public void copyInt(int[] d, int start, int end) {
+		for(int i = start; i < end; i++)
 			_data[i] = (byte) d[i];
 	}
 
@@ -320,13 +320,13 @@ public class MapToByte extends AMapToData {
 	}
 
 	@Override
-	public void decompressToRangeOff(double[] c, int rl, int ru, int offR, double[] values) {
+	protected void decompressToRangeOff(double[] c, int rl, int ru, int offR, double[] values) {
 		for(int i = rl, offT = rl + offR; i < ru; i++, offT++)
 			c[offT] += values[getIndex(i)];
 	}
 
 	@Override
-	public void decompressToRangeNoOff(double[] c, int rl, int ru, double[] values) {
+	protected void decompressToRangeNoOff(double[] c, int rl, int ru, double[] values) {
 		// OVERWRITTEN FOR JIT COMPILE!
 		final int h = (ru - rl) % 8;
 		for(int rc = rl; rc < rl + h; rc++)

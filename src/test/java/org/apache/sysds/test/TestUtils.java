@@ -2482,6 +2482,7 @@ public class TestUtils {
 	}
 
 	public static FrameBlock generateRandomFrameBlockWithSchemaOfStrings(int rows, int cols, long seed){
+		FrameLibApplySchema.PAR_ROW_THRESHOLD = 10;
 		ValueType[] schema = generateRandomSchema(cols, seed);
 		FrameBlock f =  generateRandomFrameBlock(rows, schema, seed);
 		ValueType[] schemaString = UtilFunctions.nCopies(cols, ValueType.STRING);

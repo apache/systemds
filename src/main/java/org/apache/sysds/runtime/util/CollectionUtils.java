@@ -31,7 +31,11 @@ import java.util.Set;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+
 public class CollectionUtils {
+	final static Log LOG = LogFactory.getLog(CollectionUtils.class.getName());
 
 	@SafeVarargs
 	public static <T> List<T> asList(List<T>... inputs) {

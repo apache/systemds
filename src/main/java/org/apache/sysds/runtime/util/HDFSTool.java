@@ -525,14 +525,14 @@ public class HDFSTool
 		return mtd.toString(4); // indent with 4 spaces	
 	}
 
-	public static double[][] readMatrixFromHDFS(String dir, FileFormat fmt, long rlen, long clen, int blen)
-		throws IOException, DMLRuntimeException
-	{
-		MatrixReader reader = MatrixReaderFactory.createMatrixReader(fmt);
-		long estnnz = (rlen <= 0 || clen <= 0) ? -1 : rlen * clen;
-		MatrixBlock mb = reader.readMatrixFromHDFS(dir, rlen, clen, blen, estnnz);
-		return DataConverter.convertToDoubleMatrix(mb);
-	}
+	// public static double[][] readMatrixFromHDFS(String dir, FileFormat fmt, long rlen, long clen, int blen)
+	// 	throws IOException, DMLRuntimeException
+	// {
+	// 	MatrixReader reader = MatrixReaderFactory.createMatrixReader(fmt);
+	// 	long estnnz = (rlen <= 0 || clen <= 0) ? -1 : rlen * clen;
+	// 	MatrixBlock mb = reader.readMatrixFromHDFS(dir, rlen, clen, blen, estnnz);
+	// 	return DataConverter.convertToDoubleMatrix(mb);
+	// }
 	
 	public static double[] readColumnVectorFromHDFS(String dir, FileFormat fmt, long rlen, long clen, int blen)
 		throws IOException, DMLRuntimeException

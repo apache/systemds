@@ -78,6 +78,7 @@ public class Statistics
 		public final long n;
 		public final long cumTimeNanos;
 		public final double m2;
+		public final HashMap<String, Double> meta;
 
 		public static <T> Comparator<NGramBuilder.NGramEntry<T, NGramStats>> getComparator() {
 			return Comparator.comparingLong(entry -> entry.getCumStats().cumTimeNanos);
@@ -95,13 +96,25 @@ public class Statistics
 
 			double newM2 = stats1.m2 + stats2.m2 + delta * delta * stats1.n * stats2.n / (double)newN;
 
-			return new NGramStats(newN, cumTimeNanos, newM2);
+			HashMap<String, Double> cpy = null;
+
+			if (stats1.meta != null) {
+				cpy = new HashMap<>(stats1.meta);
+				final HashMap<String, Double> mCpy = cpy;
+				if (stats2.meta != null)
+					stats2.meta.forEach((key, value) -> mCpy.merge(key, value, Double::sum));
+			} else if (stats2.meta != null) {
+				cpy = new HashMap<>(stats2.meta);
+			}
+
+			return new NGramStats(newN, cumTimeNanos, newM2, cpy);
 		}
 
-		public NGramStats(final long n, final long cumTimeNanos, final double m2) {
+		public NGramStats(final long n, final long cumTimeNanos, final double m2, HashMap<String, Double> meta) {
 			this.n = n;
 			this.cumTimeNanos = cumTimeNanos;
 			this.m2 = m2;
+			this.meta = meta;
 		}
 
 		public double getTimeVariance() {
@@ -111,12 +124,18 @@ public class Statistics
 		public String toString() {
 			return String.format(Locale.US, "%.5f", (cumTimeNanos / 1000000000d));
 		}
+
+		public HashMap<String, Double> getMeta() {
+			return meta;
+		}
 	}
 
 	public static class LineageNGramExtension {
 		private String _datatype;
 		private String _valuetype;
 		private long _execNanos;
+
+		private HashMap<String, Double> _meta;
 
 		public void setDataType(String dataType) {
 			_datatype = dataType;
@@ -140,6 +159,18 @@ public class Statistics
 
 		public long getExecNanos() {
 			return _execNanos;
+		}
+
+		public void setMeta(String key, Double value) {
+			if (_meta == null)
+				_meta = new HashMap<>();
+			_meta.put(key, value);
+		}
+
+		public Object getMeta(String key) {
+			if (_meta == null)
+				return null;
+			return _meta.get(key);
 		}
 	}
 	
@@ -508,10 +539,10 @@ public class Statistics
 			clearNGramRecording();
 			// We then record a new n-gram with all the LineageItems of the current lineage path
 			Entry<LineageItem, LineageNGramExtension> currentEntry = currentPath.get(currentPath.size()-1);
-			matchingBuilder.append(LineageItemUtils.explainLineageAsInstruction(currentEntry.getKey(), currentEntry.getValue()) + (indexes.size() > 0 ? ("[" + indexes.get(currentPath.size()-2) + "]") : ""), new NGramStats(1, currentEntry.getValue() != null ? currentEntry.getValue().getExecNanos() : 0, 0));
+			matchingBuilder.append(LineageItemUtils.explainLineageAsInstruction(currentEntry.getKey(), currentEntry.getValue()) + (indexes.size() > 0 ? ("[" + indexes.get(currentPath.size()-2) + "]") : ""), new NGramStats(1, currentEntry.getValue() != null ? currentEntry.getValue().getExecNanos() : 0, 0, currentEntry.getValue() != null ? currentEntry.getValue()._meta : null));
 			for (int i = currentPath.size()-2; i >= 0; i--) {
 				currentEntry = currentPath.get(i);
-				matchingBuilder.append(LineageItemUtils.explainLineageAsInstruction(currentEntry.getKey(), currentEntry.getValue()) + (i > 0 ? ("[" + indexes.get(i-1) + "]") : ""), new NGramStats(1, currentEntry.getValue() != null ? currentEntry.getValue().getExecNanos() : 0, 0));
+				matchingBuilder.append(LineageItemUtils.explainLineageAsInstruction(currentEntry.getKey(), currentEntry.getValue()) + (i > 0 ? ("[" + indexes.get(i-1) + "]") : ""), new NGramStats(1, currentEntry.getValue() != null ? currentEntry.getValue().getExecNanos() : 0, 0, currentEntry.getValue() != null ? currentEntry.getValue()._meta : null));
 			}
 		}
 
@@ -538,7 +569,7 @@ public class Statistics
 		});
 
 		for (int i = 0; i < tmp.length; i++)
-			tmp[i].append(instName, new NGramStats(1, timeNanos, 0));
+			tmp[i].append(instName, new NGramStats(1, timeNanos, 0, null));
 	}
 
 	@SuppressWarnings("unchecked")
@@ -604,6 +635,8 @@ public class Statistics
 			colList.add("Col" + (j + 1) + "::Mean(Time[s])");
 		for (int j = 0; j < mbuilder.getSize(); j++)
 			colList.add("Col" + (j + 1) + "::StdDev(Time[s])/Col" + (j + 1) + "::Mean(Time[s])");
+		for (int j = 0; j < mbuilder.getSize(); j++)
+			colList.add("Col" + (j + 1) + "_Meta");
 
 		colList.add("Count");
 
@@ -619,6 +652,18 @@ public class Statistics
 					builder.append(",");
 			} else {
 				builder.append(stdDevs);
+			}
+			builder.append(",");
+			if (e.getCumStats().getMeta() != null) {
+				boolean first = true;
+				for (Entry<String, Double> metaData : e.getCumStats().getMeta().entrySet()) {
+					if (first)
+						first = false;
+					else
+						builder.append("&");
+					if (metaData.getValue() != null)
+						builder.append(metaData.getKey() + ":" + metaData.getValue());
+				}
 			}
 			return builder.toString();
 		});

@@ -275,6 +275,12 @@ public abstract class ProgramBlock implements ParseInfo {
 							if (data != null) {
 								ext.setDataType(data.getDataType().toString());
 								ext.setValueType(data.getValueType().toString());
+								if (data instanceof MatrixObject) {
+									MatrixObject m = (MatrixObject)data;
+									ext.setMeta("NumRows", (double)m.getNumRows());
+									ext.setMeta("NumCols", (double)m.getNumColumns());
+									ext.setMeta("NNZ", (double)m.getNnz());
+								}
 							}
 							ext.setExecNanos(nanoTime);
 							Statistics.extendLineageItem(li.getValue(), ext);

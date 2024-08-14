@@ -17,7 +17,7 @@
  * under the License.
  */
 
-package org.apache.sysds.test.component.matrix;
+package org.apache.sysds.test.component.matrix.libMatrixReorg;
 
 import java.util.ArrayList;
 import java.util.Collection;

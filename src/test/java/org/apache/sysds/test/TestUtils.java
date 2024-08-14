@@ -2056,25 +2056,18 @@ public class TestUtils {
 
 	/**
 	 * <p>
-	 * Generates a test matrix with the specified parameters as a two
-	 * dimensional array.
+	 * Generates a test matrix with the specified parameters as a two dimensional array.
 	 * </p>
 	 * <p>
 	 * Set seed to -1 to use the current time as seed.
 	 * </p>
 	 *
-	 * @param rows
-	 *            number of rows
-	 * @param cols
-	 *            number of columns
-	 * @param min
-	 *            minimum value
-	 * @param max
-	 *            maximum value
-	 * @param sparsity
-	 *            sparsity
-	 * @param seed
-	 *            seed
+	 * @param rows     number of rows
+	 * @param cols     number of columns
+	 * @param min      minimum value
+	 * @param max      maximum value
+	 * @param sparsity sparsity
+	 * @param seed     seed
 	 * @return random matrix
 	 */
 	public static double[][] generateTestMatrix(int rows, int cols, double min, double max, double sparsity, long seed) {

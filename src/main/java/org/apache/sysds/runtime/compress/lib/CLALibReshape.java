@@ -161,7 +161,11 @@ public class CLALibReshape {
 
 	private boolean shouldItBeCompressedOutputs() {
 		// The number of rows in the reshaped allocations is fairly large.
+<<<<<<< HEAD
 		return rlen > COMPRESSED_RESHAPE_THRESHOLD && rowwise &&
+=======
+		return rlen > COMPRESSED_RESHAPE_THRESHOLD &&
+>>>>>>> 6f381cbea2 ([DO NOT MERGE][skip ci] JAVA 17 BWARE COMMIT)
 			// the reshape is a clean multiplier of number of rows, meaning each column group cleanly reshape into x others
 			(double) rlen / rows % 1.0 == 0.0;
 	}

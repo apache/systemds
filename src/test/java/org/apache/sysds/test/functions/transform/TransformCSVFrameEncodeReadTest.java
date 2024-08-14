@@ -36,7 +36,6 @@ import org.apache.sysds.test.TestConfiguration;
 import org.apache.sysds.test.TestUtils;
 import org.junit.Test;
 
-
 public class TransformCSVFrameEncodeReadTest extends AutomatedTestBase {
 	protected static final Log LOG = LogFactory.getLog(TransformCSVFrameEncodeReadTest.class.getName());
 
@@ -137,9 +136,7 @@ public class TransformCSVFrameEncodeReadTest extends AutomatedTestBase {
 			fullDMLScriptName = HOME + TEST_NAME1 + ".dml";
 			programArgs = new String[]{"-args", 
 				DATASET_DIR + DATASET, String.valueOf(nrows), output("R") };
-			
 			String stdOut = runTest(null).toString();
-
 			//read input/output and compare
 			FrameReader reader2 = parRead ? 
 				new FrameReaderTextCSVParallel( new FileFormatPropertiesCSV() ) : 
@@ -147,6 +144,7 @@ public class TransformCSVFrameEncodeReadTest extends AutomatedTestBase {
 			FrameBlock fb2 = reader2.readFrameFromHDFS(output("R"), -1L, -1L);
 			String[] fromDisk = DataConverter.toString(fb2).split("\n");
 			String[] printed = stdOut.split("\n");
+
 			boolean equal = true;
 			String err = "";
 			for(int i = 0; i < fromDisk.length; i++){
@@ -158,7 +156,6 @@ public class TransformCSVFrameEncodeReadTest extends AutomatedTestBase {
 			}
 			if(!equal)
 				fail(err);
-			
 		}
 		catch(Exception ex) {
 			ex.printStackTrace();

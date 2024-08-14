@@ -96,6 +96,8 @@ public class CtableCPInstruction extends ComputationCPInstruction {
 		MatrixBlock matBlock1 =! _isExpand ? ec.getMatrixInput(input1): null;
 		MatrixBlock matBlock2 = null, wtBlock=null;
 		double cst1, cst2;
+		if(!input1.isScalar())
+			matBlock1 = ec.getMatrixInput(input1.getName());
 		
 		CTableMap resultMap = new CTableMap(EntryType.INT);
 		MatrixBlock resultBlock = null;
@@ -115,7 +117,6 @@ public class CtableCPInstruction extends ComputationCPInstruction {
 			if( !sparse )
 				resultBlock = new MatrixBlock((int)outputDim1, (int)outputDim2, false); 
 		}
-
 		switch(ctableOp) {
 			case CTABLE_TRANSFORM: //(VECTOR)
 				// F=ctable(A,B,W)

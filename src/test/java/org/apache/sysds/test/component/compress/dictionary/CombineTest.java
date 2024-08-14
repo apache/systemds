@@ -176,7 +176,6 @@ public class CombineTest {
 			IDictionary b = Dictionary.create(new double[] {1.4, 1.5});
 			HashMapLongInt filter = new HashMapLongInt(3);
 			filter.putIfAbsent(0, 0);
-
 			IDictionary c = DictionaryFactory.combineFullDictionaries(a, 1, b, 1, filter);
 
 			assertEquals(1, c.getNumberOfValues(2));

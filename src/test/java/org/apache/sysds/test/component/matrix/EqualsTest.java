@@ -199,12 +199,9 @@ public class EqualsTest {
 
 	@Test
 	public void unknownNNZEmptyOne() {
-
 		MatrixBlock m1 = new MatrixBlock(10, 10, 0.0);
 		MatrixBlock m2 = new MatrixBlock(10, 10, 0.0);
-
 		m1.setNonZeros(-1);
-
 		assertTrue(m1.equals(m2));
 		assertTrue(m2.equals(m1));
 	}

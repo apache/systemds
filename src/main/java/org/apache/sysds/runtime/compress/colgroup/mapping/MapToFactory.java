@@ -21,12 +21,17 @@ package org.apache.sysds.runtime.compress.colgroup.mapping;
 
 import java.io.DataInput;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Future;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.runtime.compress.DMLCompressionException;
 import org.apache.sysds.runtime.compress.bitmap.ABitmap;
 import org.apache.sysds.runtime.compress.utils.IntArrayList;
+import org.apache.sysds.runtime.util.CommonThreadPool;
 
 public interface MapToFactory {
 	static final Log LOG = LogFactory.getLog(MapToFactory.class.getName());
@@ -42,26 +47,53 @@ public interface MapToFactory {
 	}
 
 	public static AMapToData create(int size, boolean zeros, IntArrayList[] values) {
-		AMapToData _data = create(size, values.length + (zeros ? 1 : 0));
-
+		final AMapToData _data = create(size, values.length + (zeros ? 1 : 0));
 		if(zeros)
 			_data.fill(values.length);
-
 		for(int i = 0; i < values.length; i++) {
 			final IntArrayList tmpList = values[i];
 			final int sz = tmpList.size();
-			for(int k = 0; k < sz; k++) {
+			for(int k = 0; k < sz; k++)
 				_data.set(tmpList.get(k), i);
-			}
 		}
+		return _data;
+	}
+
+	/**
+	 * Create AMapToData using the dynamic size IntArrayList.
+	 * 
+	 * @param unique The number of unique values to allow inside.
+	 * @param values The values to assign to incrementing indexes.
+	 * @return A new MapToData, guaranteed to be able to contain the number of unique values.
+	 */
+	public static AMapToData create(int unique, IntArrayList values) {
+		final int size = values.size();
+		final AMapToData _data = create(size, unique);
+
+		for(int k = 0; k < size; k++)
+			_data.set(k, values.get(k));
+
 		return _data;
 	}
 
 	public static AMapToData create(int size, int[] values, int nUnique) {
 		AMapToData _data = create(size, nUnique);
-		_data.copyInt(values);
+		_data.copyInt(values, 0, size);
 		return _data;
+	}
 
+	public static AMapToData create(int size, int[] values, int nUnique, int k) {
+		AMapToData _data = create(size, nUnique);
+		ExecutorService pool = CommonThreadPool.get(k);
+		int blk = Math.max((values.length / k), 1024);
+		blk -= blk % 64; // ensure long size
+		List<Future<?>> tasks = new ArrayList<>();
+		for(int i = 0; i < values.length; i += blk){
+			int start = i;
+			int end = Math.min(i + blk, values.length);
+			tasks.add(pool.submit(() -> _data.copyInt(values, start, end)));
+		}
+		return _data;
 	}
 
 	/**

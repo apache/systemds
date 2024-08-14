@@ -172,18 +172,20 @@ public class IdentityDictionarySlice extends IdentityDictionary {
 
 	@Override
 	public void colProduct(double[] res, int[] counts, IColIndex colIndexes) {
-		for(int i = 0; i < colIndexes.size(); i++) {
-			res[colIndexes.get(i)] = 0;
-		}
+		throw new NotImplementedException();
+		// for(int i = 0; i < colIndexes.size(); i++) {
+		// 	res[colIndexes.get(i)] = 0;
+		// }
 	}
 
 	@Override
 	public double sum(int[] counts, int ncol) {
-		// number of rows, change this.
-		double s = 0.0;
-		for(int i = l; i < u; i++)
-			s += counts[i];
-		return s;
+		throw new NotImplementedException();
+		// // number of rows, change this.
+		// double s = 0.0;
+		// for(int i = l; i < u; i++)
+		// 	s += counts[i];
+		// return s;
 	}
 
 	@Override
@@ -204,6 +206,11 @@ public class IdentityDictionarySlice extends IdentityDictionary {
 	@Override
 	public long getNumberNonZeros(int[] counts, int nCol) {
 		return (long) sum(counts, nCol);
+	}
+
+	@Override
+	public int getNumberOfValues(int ncol) {
+		return nRowCol + (withEmpty ? 1 : 0);
 	}
 
 	@Override
@@ -314,6 +321,11 @@ public class IdentityDictionarySlice extends IdentityDictionary {
 		}
 
 		return false;
+	}
+
+	@Override
+	public void multiplyScalar(double v, double[] ret, int off, int dictIdx, IColIndex cols) {
+		getMBDict().multiplyScalar(v, ret, off, dictIdx, cols);
 	}
 
 }

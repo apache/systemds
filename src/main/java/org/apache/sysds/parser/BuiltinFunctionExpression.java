@@ -965,6 +965,7 @@ public class BuiltinFunctionExpression extends DataIdentifier {
 				case CHARACTER:
 				case FP64:
 				case FP32:
+				case HASH32:
 				case HASH64: //default
 					output.setValueType(ValueType.FP64);
 					break;
@@ -1963,8 +1964,8 @@ public class BuiltinFunctionExpression extends DataIdentifier {
 		case DECOMPRESS:
 			if(OptimizerUtils.ALLOW_SCRIPT_LEVEL_COMPRESS_COMMAND){
 				checkNumParameters(1);
-				checkMatrixParam(getFirstExpr());
-				output.setDataType(DataType.MATRIX);
+				checkMatrixFrameParam(getFirstExpr());
+				output.setDataType(getFirstExpr().getOutput().getDataType());
 				output.setDimensions(id.getDim1(), id.getDim2());
 				output.setBlocksize (id.getBlocksize());
 				output.setValueType(id.getValueType());

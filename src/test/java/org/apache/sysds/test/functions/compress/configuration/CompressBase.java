@@ -74,7 +74,12 @@ public abstract class CompressBase extends AutomatedTestBase {
 			DMLCompressionStatistics.reset();
 
 			Assert.assertEquals(out + "\ncompression count   wrong : ", compressionCount, compressionCountsExpected);
-			Assert.assertEquals(out + "\nDecompression count wrong : ", decompressionCountExpected, decompressCount);
+			if(decompressionCountExpected < 0){
+				assertTrue(out + "\nDecompression count wrong : " , decompressCount > 1);
+			}
+			else{
+				Assert.assertEquals(out + "\nDecompression count wrong : ", decompressionCountExpected, decompressCount);
+			}
 
 		}
 		catch(Exception e) {

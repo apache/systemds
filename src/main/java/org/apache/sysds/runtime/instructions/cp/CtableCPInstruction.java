@@ -30,6 +30,7 @@ import org.apache.sysds.runtime.instructions.InstructionUtils;
 import org.apache.sysds.runtime.lineage.LineageItem;
 import org.apache.sysds.runtime.lineage.LineageItemUtils;
 import org.apache.sysds.runtime.matrix.data.CTableMap;
+import org.apache.sysds.runtime.matrix.data.LibMatrixTable;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.util.DataConverter;
 import org.apache.sysds.runtime.util.LongLongDoubleHashMap.EntryType;
@@ -88,9 +89,11 @@ public class CtableCPInstruction extends ComputationCPInstruction {
 	
 	@Override
 	public void processInstruction(ExecutionContext ec) {
-		MatrixBlock matBlock1 = ec.getMatrixInput(input1.getName());
-		MatrixBlock matBlock2=null, wtBlock=null;
+		MatrixBlock matBlock1 = null;
+		MatrixBlock matBlock2 = null, wtBlock=null;
 		double cst1, cst2;
+		if(!input1.isScalar())
+			matBlock1 = ec.getMatrixInput(input1.getName());
 		
 		CTableMap resultMap = new CTableMap(EntryType.INT);
 		MatrixBlock resultBlock = null;
@@ -111,7 +114,8 @@ public class CtableCPInstruction extends ComputationCPInstruction {
 				resultBlock = new MatrixBlock((int)outputDim1, (int)outputDim2, false); 
 		}
 		if( _isExpand ){
-			resultBlock = new MatrixBlock( matBlock1.getNumRows(), Integer.MAX_VALUE, true );
+			if(matBlock1 != null)
+				resultBlock = new MatrixBlock( matBlock1.getNumRows(), Integer.MAX_VALUE, true );
 		}
 		
 		switch(ctableOp) {
@@ -132,7 +136,7 @@ public class CtableCPInstruction extends ComputationCPInstruction {
 				matBlock2 = ec.getMatrixInput(input2.getName());
 				cst1 = ec.getScalarInput(input3).getDoubleValue();
 				// only resultBlock.rlen known, resultBlock.clen set in operation
-				matBlock1.ctableSeqOperations(matBlock2, cst1, resultBlock);
+				resultBlock = LibMatrixTable.tableSeqOperations((int)input1.getLiteral().getLongValue(), matBlock2, cst1, resultBlock, true);
 				break;
 			case CTABLE_TRANSFORM_HISTOGRAM: //(VECTOR)
 				// F=ctable(A,1) or F = ctable(A,1,1)

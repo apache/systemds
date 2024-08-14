@@ -2531,10 +2531,10 @@ public class LibMatrixReorg {
 		final SparseBlock c = out.sparseBlock;
 		final int n = cols / clen;
 		// safe now since we fixed the parfor threading.
-		if(k > 1 || k == -1) {
+		if((k > 1 || k == -1) && ((double) rows / k) > 16) {
 			final ExecutorService pool = CommonThreadPool.get(k == -1 ? InfrastructureAnalyzer.getLocalParallelism() : k);
 			try {
-				final int blkz = Math.max((int) Math.ceil((double) rows / k), 1024);
+				final int blkz = Math.max((int) Math.ceil((double) rows / k), 16);
 				ArrayList<Future<?>> tasks = new ArrayList<>();
 				for(int i = 0; i < rows; i += blkz) {
 					final int start = i;
@@ -2563,25 +2563,31 @@ public class LibMatrixReorg {
 
 	private static void reshapeSparseToMCSR_Nto1_row(SparseBlock a, SparseBlock c, int clen, int bi, int n, int ci){
 		// allocate output row once (w/o re-allocations)
-		final int s = (int) a.size(bi, bi + n);
+		final int s = (int) a.size(bi, bi + n); // get exact size of row output
 		final int[] cix = new int[s];
 		final double[] cvals =  new double[s];
 		
 		int pos = 0;
 		// copy N input rows into output row
 		for(int i = bi, colOffset = 0; i < bi + n; i++, colOffset += clen) {
-			if(a.isEmpty(i))
-				continue;
-			final int apos = a.pos(i);
-			final int alen = a.size(i);
-			final int[] aix = a.indexes(i);
-			final double[] avals = a.values(i);
-			for(int j = apos; j < apos + alen; j++, pos++){
-				cix[pos]  = colOffset + aix[j];
-				cvals[pos] = avals[j];
-			}
+			pos = reshapeSparseToMCSR_Nto1_row_one(a,i, pos,cix, colOffset, cvals);
 		}
 		c.set(ci, new SparseRowVector(cvals, cix), false);
+	}
+
+	private static int reshapeSparseToMCSR_Nto1_row_one(SparseBlock a, int i, int pos, int[] cix, int colOffset,
+		double[] cvals) {
+		if(a.isEmpty(i))
+			return pos;
+		final int apos = a.pos(i);
+		final int alen = a.size(i);
+		final int[] aix = a.indexes(i);
+		final double[] avals = a.values(i);
+		for(int j = apos; j < apos + alen; j++, pos++) {
+			cix[pos] = colOffset + aix[j];
+			cvals[pos] = avals[j];
+		}
+		return pos;
 	}
 
 	private static void reshapeSparseToCSR(MatrixBlock in, MatrixBlock out, int rows, int cols) {
@@ -2600,7 +2606,7 @@ public class LibMatrixReorg {
 		final int[] rptr = new int[rows + 1];
 		final int[] indexes = new int[(int) a.size()];
 		final double[] values = new double[indexes.length];
-		// rptr[0] = 0; // it is known that the rptr initialize with zeros.
+		
 		int pos = 0;
 
 		for(int bi = 0, ci = 0; bi < rlen; bi += n, ci++) { // output rows

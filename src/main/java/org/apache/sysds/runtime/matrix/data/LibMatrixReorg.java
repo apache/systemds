@@ -635,46 +635,51 @@ public class LibMatrixReorg {
 	 * @return output matrix
 	 */
 	public static MatrixBlock reshape(MatrixBlock in, MatrixBlock out, int rows, int cols, boolean rowwise, int k) {
-		final int rlen = in.rlen;
-		final int clen = in.clen;
+		try{
+			final int rlen = in.rlen;
+			final int clen = in.clen;
+			
+			if(out == null)
+				out = new MatrixBlock();
+	
+			//check for same dimensions
+			if(rlen == rows && clen == cols) {
+				// copy incl dims, nnz
+				if(SHALLOW_COPY_REORG)
+					out.copyShallow(in);
+				else
+					out.copy(in);
+				return out;
+			}
+	
+			//check validity
+			if(((long) rlen) * clen != ((long) rows) * cols)
+				throw new DMLRuntimeException("Reshape matrix requires consistent numbers of input/output cells (" + rlen + ":"
+					+ clen + ", " + rows + ":" + cols + ").");
 		
-		if(out == null)
-			out = new MatrixBlock();
-
-		//check for same dimensions
-		if(rlen == rows && clen == cols) {
-			// copy incl dims, nnz
-			if(SHALLOW_COPY_REORG)
-				out.copyShallow(in);
+			//determine output representation
+			out.sparse = MatrixBlock.evalSparseFormatInMemory(rows, cols, in.nonZeros);
+			
+			//set output dimensions
+			out.rlen = rows;
+			out.clen = cols;
+			out.nonZeros = in.nonZeros;
+			
+			//core reshape (sparse or dense)
+			if(!in.sparse && !out.sparse)
+				reshapeDense(in, out, rows, cols, rowwise);
+			else if(in.sparse && out.sparse)
+				reshapeSparse(in, out, rows, cols, rowwise, k);
+			else if(in.sparse)
+				reshapeSparseToDense(in, out, rows, cols, rowwise);
 			else
-				out.copy(in);
+				reshapeDenseToSparse(in, out, rows, cols, rowwise);
+			
 			return out;
 		}
-
-		//check validity
-		if(((long) rlen) * clen != ((long) rows) * cols)
-			throw new DMLRuntimeException("Reshape matrix requires consistent numbers of input/output cells (" + rlen + ":"
-				+ clen + ", " + rows + ":" + cols + ").");
-	
-		//determine output representation
-		out.sparse = MatrixBlock.evalSparseFormatInMemory(rows, cols, in.nonZeros);
-		
-		//set output dimensions
-		out.rlen = rows;
-		out.clen = cols;
-		out.nonZeros = in.nonZeros;
-		
-		//core reshape (sparse or dense)
-		if(!in.sparse && !out.sparse)
-			reshapeDense(in, out, rows, cols, rowwise);
-		else if(in.sparse && out.sparse)
-			reshapeSparse(in, out, rows, cols, rowwise, k);
-		else if(in.sparse)
-			reshapeSparseToDense(in, out, rows, cols, rowwise);
-		else
-			reshapeDenseToSparse(in, out, rows, cols, rowwise);
-		
-		return out;
+		catch(Exception e) {
+			throw new RuntimeException("Failed to reshape Matrix", e);
+		}
 	}
 
 
@@ -2392,8 +2397,8 @@ public class LibMatrixReorg {
 		}
 	}
 
-	private static void reshapeSparse( MatrixBlock in, MatrixBlock out, int rows, int cols, boolean rowwise, int k )
-	{
+	private static void reshapeSparse(MatrixBlock in, MatrixBlock out, int rows, int cols, boolean rowwise, int k)
+		throws Exception {
 		int rlen = in.rlen;
 		int clen = in.clen;
 		
@@ -2430,7 +2435,7 @@ public class LibMatrixReorg {
 				}
 			}
 			else if( cols%clen==0 // SPECIAL CSR N:1 MATRIX->MATRIX
-				&& SHALLOW_COPY_REORG && SPARSE_OUTPUTS_IN_CSR && in.nonZeros < Integer.MAX_VALUE) { // int nnz
+				&& SHALLOW_COPY_REORG && SPARSE_OUTPUTS_IN_CSR && in.getNonZeros() < Integer.MAX_VALUE) { // int nnz
 				reshapeSparseToCSR(in, out, rows, cols);
 			}
 			else
@@ -2480,7 +2485,7 @@ public class LibMatrixReorg {
 		}
 	}
 
-	private static void reshapeSparseToMCSR(MatrixBlock in, MatrixBlock out, int rows, int cols, int k) {
+	private static void reshapeSparseToMCSR(MatrixBlock in, MatrixBlock out, int rows, int cols, int k) throws Exception{
 		int rlen = in.rlen;
 		int clen = in.clen;
 
@@ -2517,7 +2522,7 @@ public class LibMatrixReorg {
 		}
 	}
 
-	private static void reshapeSparseToMCSR_Nto1(MatrixBlock in, MatrixBlock out, int rows, int cols, int k) {
+	private static void reshapeSparseToMCSR_Nto1(MatrixBlock in, MatrixBlock out, int rows, int cols, int k) throws Exception{
 		// SPECIAL N:1 MATRIX->MATRIX
 		final int rlen = in.rlen;
 		final int clen = in.clen;
@@ -2542,9 +2547,6 @@ public class LibMatrixReorg {
 				}
 				for(Future<?> f : tasks)
 					f.get();
-			}
-			catch(Exception e) {
-				throw new DMLRuntimeException(e);
 			}
 			finally {
 				pool.shutdown();

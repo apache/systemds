@@ -53,8 +53,10 @@ public class ReshapeTest {
 		ArrayList<Object[]> tests = new ArrayList<>();
 		tests.add(new Object[] {1, true});
 		tests.add(new Object[] {10, true});
+		tests.add(new Object[] {-1, true});
 		tests.add(new Object[] {1, false});
 		tests.add(new Object[] {10, false});
+		tests.add(new Object[] {-1, false});
 
 		return tests;
 	}

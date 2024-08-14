@@ -2531,8 +2531,8 @@ public class LibMatrixReorg {
 		final SparseBlock c = out.sparseBlock;
 		final int n = cols / clen;
 		// safe now since we fixed the parfor threading.
-		if(k > 1) {
-			final ExecutorService pool = CommonThreadPool.get(k);
+		if(k > 1 || k == -1) {
+			final ExecutorService pool = CommonThreadPool.get(k == -1 ? InfrastructureAnalyzer.getLocalParallelism() : k);
 			try {
 				final int blkz = Math.max((int) Math.ceil((double) rows / k), 1024);
 				ArrayList<Future<?>> tasks = new ArrayList<>();

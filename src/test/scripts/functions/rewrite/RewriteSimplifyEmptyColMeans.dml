@@ -27,15 +27,10 @@ type = $2
 
 # Perform the operations
 if( type == 1 ) {
-    R = (1-X)*X
+    R = colMeans(X-colMeans(X))
 }
-else if( type == 2 ) {
-    R = X*(1-X)
+else if( type == 2) {
+    R = colMeans((X-colMeans(X))/colSds(X))
 }
-else if( type == 3 ) {
-    R = (1/(1+exp(-X)))
-}
-
-
 # Write the result matrix R
 write(R, $3)

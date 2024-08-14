@@ -37,12 +37,22 @@ type = as.integer(args[2])
 
 # Perform the operations
 if( type == 1 ) {
-    R = (1-X)*X
-} else if( type == 2 ) {
-    R = X*(1-X)
-} else if( type == 3 ) {
-    R = 1/(1+exp(-X))
+    #R = colMeans(X - colMeans(X))
+    col_means <- matrix(colMeans(X), nrow = 1)
+    # Subtract the row vector from each row of X
+    centered_X <- sweep(X, 2, col_means, FUN = "-")
+    # Calculate the column means of the centered matrix
+    R <- colMeans(centered_X)
+} else if ( type == 2) {
+    # Compute column means and standard deviations
+    col_means <- matrix(colMeans(X), nrow = 1)
+    col_sds <- matrix(colSds(X), nrow = 1)
+    # Center the matrix by subtracting column means
+    centered_X <- sweep(X, 2, col_means, FUN = "-")
+    # Scale the centered matrix by dividing by column standard deviations
+    scaled_X <- sweep(centered_X, 2, col_sds, FUN = "/")
+    # Compute the column means of the scaled matrix
+    R <- colMeans(scaled_X)
 }
-
 
 writeMM(as(R, "CsparseMatrix"), paste(args[3], "R", sep=""))

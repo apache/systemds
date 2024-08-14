@@ -25,13 +25,10 @@ import java.io.ObjectOutput;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Future;
 
 import org.apache.sysds.common.Types.ValueType;
 import org.apache.sysds.runtime.frame.data.FrameBlock;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
-import org.apache.sysds.runtime.util.CommonThreadPool;
 
 /**
  * Simple composite decoder that applies a list of decoders
@@ -50,7 +47,7 @@ public class DecoderComposite extends Decoder
 		_decoders = decoders;
 	}
 
-	public DecoderComposite() { super(null, null); }
+	// public DecoderComposite() { super(null, null); }
 
 	@Override
 	public FrameBlock decode(MatrixBlock in, FrameBlock out) {
@@ -59,33 +56,6 @@ public class DecoderComposite extends Decoder
 		return out;
 	}
 	
-
-	@Override
-	public FrameBlock decode(final MatrixBlock in, final FrameBlock out, final int k) {
-		final ExecutorService pool = CommonThreadPool.get(k);
-		out.ensureAllocatedColumns(in.getNumRows());
-		try {
-			final List<Future<?>> tasks = new ArrayList<>();
-			int blz = Math.max(in.getNumRows() / k, 1000);
-			for(Decoder decoder : _decoders){
-				for(int i = 0; i < in.getNumRows(); i += blz){
-					final int start = i;
-					final int end = Math.min(in.getNumRows(), i + blz);
-					tasks.add(pool.submit(() -> decoder.decode(in, out, start, end)));
-				}
-			}
-			for(Future<?> f : tasks)
-				f.get();
-			return out;
-		}
-		catch(Exception e) {
-			throw new RuntimeException(e);
-		}
-		finally {
-			pool.shutdown();
-		}
-	}
-
 	@Override
 	public void decode(MatrixBlock in, FrameBlock out, int rl, int ru){
 		for( Decoder decoder : _decoders )

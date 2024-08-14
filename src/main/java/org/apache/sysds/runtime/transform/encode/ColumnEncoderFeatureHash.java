@@ -146,7 +146,9 @@ public class ColumnEncoderFeatureHash extends ColumnEncoder {
 			return meta;
 
 		meta.ensureAllocatedColumns(1);
-		meta.set(0, _colID - 1, String.valueOf(_K));
+		// set metadata of hash columns to magical hash value + k
+		meta.set(0, _colID - 1, String.format("¿%d" , _K));
+		
 		return meta;
 	}
 
@@ -154,7 +156,7 @@ public class ColumnEncoderFeatureHash extends ColumnEncoder {
 	public void initMetaData(FrameBlock meta) {
 		if(meta == null || meta.getNumRows() <= 0)
 			return;
-		_K = UtilFunctions.parseToLong(meta.get(0, _colID - 1).toString());
+		_K = UtilFunctions.parseToLong(meta.getString(0, _colID - 1).substring(1));
 	}
 
 	@Override

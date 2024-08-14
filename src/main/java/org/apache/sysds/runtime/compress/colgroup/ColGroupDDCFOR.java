@@ -40,6 +40,7 @@ import org.apache.sysds.runtime.compress.estim.CompressedSizeInfoColGroup;
 import org.apache.sysds.runtime.compress.estim.EstimationFactors;
 import org.apache.sysds.runtime.compress.estim.encoding.EncodingFactory;
 import org.apache.sysds.runtime.compress.estim.encoding.IEncode;
+import org.apache.sysds.runtime.compress.utils.IntArrayList;
 import org.apache.sysds.runtime.compress.utils.Util;
 import org.apache.sysds.runtime.data.DenseBlock;
 import org.apache.sysds.runtime.data.SparseBlock;
@@ -544,6 +545,40 @@ public class ColGroupDDCFOR extends AMorphingMMColGroup implements IFrameOfRefer
 	@Override
 	protected boolean allowShallowIdentityRightMult() {
 		return false;
+	}
+
+	@Override
+	public AColGroup sort() {
+		// TODO restore support for run length encoding.
+
+		int[] counts = getCounts();
+		// get the sort index
+		int[] r = _dict.sort();
+
+		AMapToData m = MapToFactory.create(_data.size(), counts.length);
+		int off = 0;
+		for(int i = 0; i < counts.length; i++) {
+			for(int j = 0; j < counts[r[i]]; j++) {
+				m.set(off++, r[i]);
+			}
+		}
+
+		return ColGroupDDCFOR.create(_colIndexes, _dict, m, counts, _reference);
+
+	}
+
+	@Override
+	public AColGroup removeEmptyRows(boolean[] selectV, int rOut) {
+		return ColGroupDDCFOR.create(_colIndexes, _dict, _data.removeEmpty(selectV, rOut), null, _reference);
+	}
+
+	@Override
+	protected AColGroup removeEmptyColsSubset(IColIndex newColumnIDs, IntArrayList selectedColumns) {
+		double[] ref = new double[selectedColumns.size()];
+		for(int i = 0; i < selectedColumns.size(); i++) {
+			ref[i] = _reference[selectedColumns.get(i)];
+		}
+		return ColGroupDDCFOR.create(newColumnIDs, _dict.sliceColumns(selectedColumns, getNumCols()), _data, null, ref);
 	}
 
 	@Override

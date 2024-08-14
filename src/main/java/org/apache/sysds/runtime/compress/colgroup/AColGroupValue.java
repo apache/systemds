@@ -59,8 +59,6 @@ public abstract class AColGroupValue extends ADictBasedColGroup {
 	 * produce an overhead in cases where the count is calculated, but the overhead will be limited to number of distinct
 	 * tuples in the dictionary.
 	 * 
-	 * The returned counts always contains the number of zero tuples as well if there are some contained, even if they
-	 * are not materialized.
 	 *
 	 * @return The count of each value in the MatrixBlock.
 	 */
@@ -211,6 +209,7 @@ public abstract class AColGroupValue extends ADictBasedColGroup {
 	public void clear() {
 		counts = null;
 	}
+
 
 	@Override
 	public String toString() {

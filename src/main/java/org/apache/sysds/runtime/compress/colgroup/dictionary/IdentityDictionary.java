@@ -27,6 +27,7 @@ import java.util.Arrays;
 import org.apache.commons.lang3.NotImplementedException;
 import org.apache.sysds.runtime.compress.DMLCompressionException;
 import org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex;
+import org.apache.sysds.runtime.compress.utils.IntArrayList;
 import org.apache.sysds.runtime.data.SparseBlock;
 import org.apache.sysds.runtime.data.SparseBlockFactory;
 import org.apache.sysds.runtime.data.SparseBlockMCSR;
@@ -540,9 +541,13 @@ public class IdentityDictionary extends AIdentityDictionary {
 		return "IdentityMatrix of size: " + nRowCol + " with empty: " + withEmpty;
 	}
 
+	@Override 
+	public IDictionary sliceColumns(IntArrayList selectedColumns, int nCol){
+		return getMBDict().sliceColumns(selectedColumns, nCol);
+	}
+
 	@Override
 	public String toString() {
 		return "IdentityMatrix of size: " + nRowCol + " with empty: " + withEmpty;
 	}
-
 }

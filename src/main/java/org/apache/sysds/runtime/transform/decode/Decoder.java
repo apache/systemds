@@ -23,6 +23,10 @@ import java.io.Externalizable;
 import java.io.IOException;
 import java.io.ObjectInput;
 import java.io.ObjectOutput;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Future;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -30,6 +34,7 @@ import org.apache.sysds.common.Types.ValueType;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.frame.data.FrameBlock;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
+import org.apache.sysds.runtime.util.CommonThreadPool;
 
 /**
  * Base class for all transform decoders providing both a row and block
@@ -77,8 +82,31 @@ public abstract class Decoder implements Externalizable{
 	 * @param k   Parallelization degree
 	 * @return returns the given output frame block for convenience
 	 */
-	public FrameBlock decode(MatrixBlock in, FrameBlock out, int k) {
-		return decode(in, out);
+	public FrameBlock decode(final MatrixBlock in, final FrameBlock out, final int k) {
+		if(k <= 1)
+			return decode(in, out);
+		final ExecutorService pool = CommonThreadPool.get(k);
+		out.ensureAllocatedColumns(in.getNumRows());
+		try {
+			final List<Future<?>> tasks = new ArrayList<>();
+			int blz = Math.max((in.getNumRows() + k) / k, 1000);
+			
+			for(int i = 0; i < in.getNumRows(); i += blz){
+				final int start = i;
+				final int end = Math.min(in.getNumRows(), i + blz);
+				tasks.add(pool.submit(() -> decode(in, out, start, end)));
+			}
+			
+			for(Future<?> f : tasks)
+				f.get();
+			return out;
+		}
+		catch(Exception e) {
+			throw new RuntimeException(e);
+		}
+		finally {
+			pool.shutdown();
+		}
 	}
 
 	/**

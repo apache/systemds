@@ -41,6 +41,7 @@ import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.compress.CompressedMatrixBlock;
 import org.apache.sysds.runtime.compress.DMLCompressionException;
 import org.apache.sysds.runtime.controlprogram.caching.MatrixObject.UpdateType;
+import org.apache.sysds.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
 import org.apache.sysds.runtime.data.DenseBlock;
 import org.apache.sysds.runtime.data.DenseBlockFactory;
 import org.apache.sysds.runtime.data.SparseBlock;
@@ -282,16 +283,23 @@ public class LibMatrixReorg {
 
 			for(int i = 0; i < k & i * blklen < len; i++)
 				tasks.add(new TransposeTask(in, out, row, i * blklen, Math.min((i + 1) * blklen, len), cnt, allowReturnBlock));
-			List<MatrixBlock> blocks =  allowReturnBlock ? new ArrayList<>(): null;
-				// List<Future<Object>> taskret = pool.invokeAll(tasks);
-			for(Future<MatrixBlock> task : pool.invokeAll(tasks)){
-				MatrixBlock m = task.get();
-				if(allowReturnBlock && m != null)
-					blocks.add(m);
-			}
+			
+			if(allowReturnBlock) {
+				List<MatrixBlock> blocks = new ArrayList<>();
+				for(Future<MatrixBlock> task : pool.invokeAll(tasks)) {
+					MatrixBlock m = task.get();
+					if(allowReturnBlock && m != null)
+						blocks.add(m);
+				}
 
-			if(allowReturnBlock)
-				combine(blocks, out, row, k);
+				if(allowReturnBlock)
+					combine(blocks, out, row, k);
+			}
+			else {
+				for(Future<MatrixBlock> task : pool.invokeAll(tasks)) {
+					task.get();
+				}
+			}
 		}
 		catch(Exception ex) {
 			throw new DMLRuntimeException(ex);
@@ -548,13 +556,22 @@ public class LibMatrixReorg {
 		if( !ixret ) {
 			out.allocateBlock();
 			//copy input data in sorted order into result
-			ExecutorService pool = CommonThreadPool.get(k);
-			ArrayList<CopyTask> tasks = new ArrayList<>();
-			ArrayList<Integer> blklen = UtilFunctions
+			if(k > 1){
+
+				ExecutorService pool = CommonThreadPool.get(k);
+				ArrayList<CopyTask> tasks = new ArrayList<>();
+				ArrayList<Integer> blklen = UtilFunctions
+					.getBalancedBlockSizesDefault(rlen, k, false);
+				for( int i=0, lb=0; i<blklen.size(); lb+=blklen.get(i), i++ )
+					tasks.add( new CopyTask(in, out, vix, lb, lb+blklen.get(i)));
+				CommonThreadPool.invokeAndShutdown(pool, tasks);
+			}
+			else{
+				ArrayList<Integer> blklen = UtilFunctions
 				.getBalancedBlockSizesDefault(rlen, k, false);
-			for( int i=0, lb=0; i<blklen.size(); lb+=blklen.get(i), i++ )
-				tasks.add( new CopyTask(in, out, vix, lb, lb+blklen.get(i)));
-			CommonThreadPool.invokeAndShutdown(pool, tasks);
+				for( int i=0, lb=0; i<blklen.size(); lb+=blklen.get(i), i++ )
+					new CopyTask(in, out, vix, lb, lb+blklen.get(i)).call();
+			}
 		}
 		else {
 			//copy sorted index vector into result
@@ -568,57 +585,101 @@ public class LibMatrixReorg {
 	}
 	
 	/**
-	 * CP reshape operation (single input, single output matrix) 
+	 * CP reshape operation (single input, single output matrix)
 	 * 
-	 * NOTE: In contrast to R, the rowwise parameter specifies both
-	 * the read and write order, with row-wise being the default, while
-	 * R uses always a column-wise read, rowwise specifying the write
-	 * order and column-wise being the default. 
+	 * NOTE: In contrast to R, the rowwise parameter specifies both the read and write order, with row-wise being the
+	 * default, while R uses always a column-wise read, rowwise specifying the write order and column-wise being the
+	 * default.
 	 * 
-	 * @param in input matrix
-	 * @param out output matrix
-	 * @param rows number of rows
-	 * @param cols number of columns
+	 * @param in      input matrix
+	 * @param rows    number of rows
+	 * @param cols    number of columns
 	 * @param rowwise if true, reshape by row
 	 * @return output matrix
 	 */
-	public static MatrixBlock reshape( MatrixBlock in, MatrixBlock out, int rows, int cols, boolean rowwise ) {
-		int rlen = in.rlen;
-		int clen = in.clen;
+	public static MatrixBlock reshape(MatrixBlock in, int rows, int cols, boolean rowwise) {
+		return reshape(in, null, rows,cols, rowwise, 1);
+	}
+
+	/**
+	 * CP reshape operation (single input, single output matrix)
+	 * 
+	 * NOTE: In contrast to R, the rowwise parameter specifies both the read and write order, with row-wise being the
+	 * default, while R uses always a column-wise read, rowwise specifying the write order and column-wise being the
+	 * default.
+	 * 
+	 * @param in      input matrix
+	 * @param out     output matrix
+	 * @param rows    number of rows
+	 * @param cols    number of columns
+	 * @param rowwise if true, reshape by row
+	 * @return output matrix
+	 */
+	public static MatrixBlock reshape(MatrixBlock in, MatrixBlock out, int rows, int cols, boolean rowwise) {
+		return reshape(in, out, rows,cols, rowwise, 1);
+	}
+
+	/**
+	 * CP reshape operation (single input, single output matrix)
+	 * 
+	 * NOTE: In contrast to R, the rowwise parameter specifies both the read and write order, with row-wise being the
+	 * default, while R uses always a column-wise read, rowwise specifying the write order and column-wise being the
+	 * default.
+	 * 
+	 * @param in      input matrix
+	 * @param out     output matrix
+	 * @param rows    number of rows
+	 * @param cols    number of columns
+	 * @param rowwise if true, reshape by row
+	 * @param k       The parallelization degree
+	 * @return output matrix
+	 */
+	public static MatrixBlock reshape(MatrixBlock in, MatrixBlock out, int rows, int cols, boolean rowwise, int k) {
+		try{
+			final int rlen = in.rlen;
+			final int clen = in.clen;
+			
+			if(out == null)
+				out = new MatrixBlock();
+	
+			//check for same dimensions
+			if(rlen == rows && clen == cols) {
+				// copy incl dims, nnz
+				if(SHALLOW_COPY_REORG)
+					out.copyShallow(in);
+				else
+					out.copy(in);
+				return out;
+			}
+	
+			//check validity
+			if(((long) rlen) * clen != ((long) rows) * cols)
+				throw new DMLRuntimeException("Reshape matrix requires consistent numbers of input/output cells (" + rlen + ":"
+					+ clen + ", " + rows + ":" + cols + ").");
 		
-		//check validity
-		if( ((long)rlen)*clen != ((long)rows)*cols )
-			throw new DMLRuntimeException("Reshape matrix requires consistent numbers of input/output cells ("+rlen+":"+clen+", "+rows+":"+cols+").");
-		
-		//check for same dimensions
-		if( rlen==rows && clen == cols ) {
-			//copy incl dims, nnz
-			if( SHALLOW_COPY_REORG )
-				out.copyShallow(in);
+			//determine output representation
+			out.sparse = MatrixBlock.evalSparseFormatInMemory(rows, cols, in.nonZeros);
+			
+			//set output dimensions
+			out.rlen = rows;
+			out.clen = cols;
+			out.nonZeros = in.nonZeros;
+			
+			//core reshape (sparse or dense)
+			if(!in.sparse && !out.sparse)
+				reshapeDense(in, out, rows, cols, rowwise);
+			else if(in.sparse && out.sparse)
+				reshapeSparse(in, out, rows, cols, rowwise, k);
+			else if(in.sparse)
+				reshapeSparseToDense(in, out, rows, cols, rowwise);
 			else
-				out.copy(in);
+				reshapeDenseToSparse(in, out, rows, cols, rowwise);
+			
 			return out;
 		}
-	
-		//determine output representation
-		out.sparse = MatrixBlock.evalSparseFormatInMemory(rows, cols, in.nonZeros);
-		
-		//set output dimensions
-		out.rlen = rows;
-		out.clen = cols;
-		out.nonZeros = in.nonZeros;
-		
-		//core reshape (sparse or dense)
-		if(!in.sparse && !out.sparse)
-			reshapeDense(in, out, rows, cols, rowwise);
-		else if(in.sparse && out.sparse)
-			reshapeSparse(in, out, rows, cols, rowwise);
-		else if(in.sparse)
-			reshapeSparseToDense(in, out, rows, cols, rowwise);
-		else
-			reshapeDenseToSparse(in, out, rows, cols, rowwise);
-		
-		return out;
+		catch(Exception e) {
+			throw new RuntimeException("Failed to reshape Matrix", e);
+		}
 	}
 
 
@@ -2277,7 +2338,7 @@ public class LibMatrixReorg {
 		//reshape empty block
 		if( in.denseBlock == null )
 			return;
-		
+
 		//shallow dense by-row reshape (w/o result allocation)
 		if( SHALLOW_COPY_REORG && rowwise && in.denseBlock.numBlocks()==1 ) {
 			//since the physical representation of dense matrices is always the same,
@@ -2336,8 +2397,8 @@ public class LibMatrixReorg {
 		}
 	}
 
-	private static void reshapeSparse( MatrixBlock in, MatrixBlock out, int rows, int cols, boolean rowwise )
-	{
+	private static void reshapeSparse(MatrixBlock in, MatrixBlock out, int rows, int cols, boolean rowwise, int k)
+		throws Exception {
 		int rlen = in.rlen;
 		int clen = in.clen;
 		
@@ -2373,89 +2434,12 @@ public class LibMatrixReorg {
 						c.append(0, cix+aix[j], avals[j]);
 				}
 			}
-			else if( cols%clen==0 //SPECIAL CSR N:1 MATRIX->MATRIX
-				&& SHALLOW_COPY_REORG && SPARSE_OUTPUTS_IN_CSR
-				&& in.nonZeros < Integer.MAX_VALUE ) { //int nnz
-				int n = cols/clen, pos = 0;
-				int[] rptr = new int[rows+1];
-				int[] indexes = new int[(int)a.size()];
-				double[] values = null;
-				rptr[0] = 0;
-				
-				if(a instanceof SparseBlockCSR) {
-					int[] aix = ((SparseBlockCSR)a).indexes();
-					for(int bi=0, ci=0; bi<rlen; bi+=n, ci++) {
-						for( int i=bi, cix=0; i<bi+n; i++, cix+=clen ) {
-							if(a.isEmpty(i)) continue;
-							int apos = a.pos(i);
-							int alen = a.size(i);
-							for( int j=apos; j<apos+alen; j++ )
-								indexes[pos++] = cix+aix[j];
-						}
-						rptr[ci+1] = pos;
-					}
-					//shallow copy of CSR values
-					values = ((SparseBlockCSR)a).values();
-				}
-				else {
-					values = new double[indexes.length];
-					for(int bi=0, ci=0; bi<rlen; bi+=n, ci++) { //output rows
-						for( int i=bi, cix=0; i<bi+n; i++, cix+=clen ) { // N input rows
-							if(a.isEmpty(i)) continue;
-							int apos = a.pos(i);
-							int alen = a.size(i);
-							int[] aix = a.indexes(i);
-							System.arraycopy(a.values(i), apos, values, pos, alen);
-							for( int j=apos; j<apos+alen; j++ )
-								indexes[pos++] = cix+aix[j];
-						}
-						rptr[ci+1] = pos;
-					}
-				}
-				
-				//create CSR block from constructed or shallow-copy arrays
-				out.sparseBlock = new SparseBlockCSR(rptr, indexes, values, pos);
+			else if( cols%clen==0 // SPECIAL CSR N:1 MATRIX->MATRIX
+				&& SHALLOW_COPY_REORG && SPARSE_OUTPUTS_IN_CSR && in.getNonZeros() < Integer.MAX_VALUE) { // int nnz
+				reshapeSparseToCSR(in, out, rows, cols);
 			}
-			else if( cols%clen==0 ) { //SPECIAL N:1 MATRIX->MATRIX
-				int n = cols/clen;
-				for(int bi=0, ci=0; bi<rlen; bi+=n, ci++) {
-					//allocate output row once (w/o re-allocations)
-					long lnnz = a.size(bi, bi+n);
-					c.allocate(ci, (int)lnnz);
-					//copy N input rows into output row
-					for( int i=bi, cix=0; i<bi+n; i++, cix+=clen ) {
-						if(a.isEmpty(i)) continue;
-						int apos = a.pos(i);
-						int alen = a.size(i);
-						int[] aix = a.indexes(i);
-						double[] avals = a.values(i);
-						for( int j=apos; j<apos+alen; j++ )
-							c.append(ci, cix+aix[j], avals[j]);
-					}
-				}
-			}
-			else //GENERAL CASE: MATRIX->MATRIX
-			{
-				//note: cache-friendly on a but not c; append-only
-				//long cix because total cells in sparse can be larger than int
-				long cix = 0;
-				for( int i=0; i<rlen; i++ ) {
-					if( !a.isEmpty(i) ){
-						int apos = a.pos(i);
-						int alen = a.size(i);
-						int[] aix = a.indexes(i);
-						double[] avals = a.values(i);
-						for( int j=apos; j<apos+alen; j++ ) {
-							int ci = (int)((cix+aix[j])/cols);
-							int cj = (int)((cix+aix[j])%cols);
-							c.allocate(ci, estnnz, cols);
-							c.append(ci, cj, avals[j]);
-						}
-					}
-					
-					cix += clen;
-				}
-			}
+			else
+				reshapeSparseToMCSR(in, out, rows, cols, k);
 		}	
 		else //colwise
 		{
@@ -2499,6 +2483,179 @@ public class LibMatrixReorg {
 				out.sortSparseRows();
 			}
 		}
+	}
+
+	private static void reshapeSparseToMCSR(MatrixBlock in, MatrixBlock out, int rows, int cols, int k) throws Exception{
+		int rlen = in.rlen;
+		int clen = in.clen;
+
+		// allocate block
+		out.allocateSparseRowsBlock(false);
+		int estnnz = (int) (in.nonZeros / rows);
+
+		// sparse reshape
+		SparseBlock a = in.sparseBlock;
+		SparseBlock c = out.sparseBlock;
+		if(cols % clen == 0)
+			reshapeSparseToMCSR_Nto1(in, out, rows, cols, k);
+		else // GENERAL CASE: MATRIX->MATRIX
+		{
+			// note: cache-friendly on a but not c; append-only
+			// long cix because total cells in sparse can be larger than int
+			long cix = 0;
+			for(int i = 0; i < rlen; i++) {
+				if(!a.isEmpty(i)) {
+					int apos = a.pos(i);
+					int alen = a.size(i);
+					int[] aix = a.indexes(i);
+					double[] avals = a.values(i);
+					for(int j = apos; j < apos + alen; j++) {
+						int ci = (int) ((cix + aix[j]) / cols);
+						int cj = (int) ((cix + aix[j]) % cols);
+						c.allocate(ci, estnnz, cols);
+						c.append(ci, cj, avals[j]);
+					}
+				}
+
+				cix += clen;
+			}
+		}
+	}
+
+	private static void reshapeSparseToMCSR_Nto1(MatrixBlock in, MatrixBlock out, int rows, int cols, int k) throws Exception{
+		// SPECIAL N:1 MATRIX->MATRIX
+		final int rlen = in.rlen;
+		final int clen = in.clen;
+
+		final SparseBlock a = in.sparseBlock;
+		final SparseBlock c = out.sparseBlock;
+		final int n = cols / clen;
+		// safe now since we fixed the parfor threading.
+		if((k > 1 || k == -1) && ((double) rows / k) > 16) {
+			final ExecutorService pool = CommonThreadPool.get(k == -1 ? InfrastructureAnalyzer.getLocalParallelism() : k);
+			try {
+				final int blkz = Math.max((int) Math.ceil((double) rows / k), 16);
+				ArrayList<Future<?>> tasks = new ArrayList<>();
+				for(int i = 0; i < rows; i += blkz) {
+					final int start = i;
+					final int end = Math.min(i + blkz, rows);
+					tasks.add(pool.submit(() -> {
+						for(int bi = start * n, ci = start; ci < end; bi += n, ci++) {
+							reshapeSparseToMCSR_Nto1_row(a, c, clen, bi, n, ci);
+						}
+					}));
+				}
+				for(Future<?> f : tasks)
+					f.get();
+			}
+			finally {
+				pool.shutdown();
+			}
+		}
+		else {
+			for(int bi = 0, ci = 0; bi < rlen; bi += n, ci++) {
+				reshapeSparseToMCSR_Nto1_row(a, c, clen, bi, n, ci);
+			}
+		}
+
+		out.setNonZeros(in.nonZeros);
+	}
+
+	private static void reshapeSparseToMCSR_Nto1_row(SparseBlock a, SparseBlock c, int clen, int bi, int n, int ci){
+		// allocate output row once (w/o re-allocations)
+		final int s = (int) a.size(bi, bi + n); // get exact size of row output
+		final int[] cix = new int[s];
+		final double[] cvals =  new double[s];
+		
+		int pos = 0;
+		// copy N input rows into output row
+		for(int i = bi, colOffset = 0; i < bi + n; i++, colOffset += clen) {
+			pos = reshapeSparseToMCSR_Nto1_row_one(a,i, pos,cix, colOffset, cvals);
+		}
+		c.set(ci, new SparseRowVector(cvals, cix), false);
+	}
+
+	private static int reshapeSparseToMCSR_Nto1_row_one(SparseBlock a, int i, int pos, int[] cix, int colOffset,
+		double[] cvals) {
+		if(a.isEmpty(i))
+			return pos;
+		final int apos = a.pos(i);
+		final int alen = a.size(i);
+		final int[] aix = a.indexes(i);
+		final double[] avals = a.values(i);
+		for(int j = apos; j < apos + alen; j++, pos++) {
+			cix[pos] = colOffset + aix[j];
+			cvals[pos] = avals[j];
+		}
+		return pos;
+	}
+
+	private static void reshapeSparseToCSR(MatrixBlock in, MatrixBlock out, int rows, int cols) {
+		if(in.sparseBlock instanceof SparseBlockCSR) 
+			reshapeSparseToCSRFromCSR(in, out, rows, cols);
+		else 
+			reshapeSparseToCSRFromMCSR(in, out, rows, cols);
+	}
+
+	private static void reshapeSparseToCSRFromMCSR(MatrixBlock in, MatrixBlock out, int rows, int cols) {
+		final SparseBlock a = in.sparseBlock;
+		final int rlen = in.rlen;
+		final int clen = in.clen;
+
+		final int n = cols / clen;
+		final int[] rptr = new int[rows + 1];
+		final int[] indexes = new int[(int) a.size()];
+		final double[] values = new double[indexes.length];
+		
+		int pos = 0;
+
+		for(int bi = 0, ci = 0; bi < rlen; bi += n, ci++) { // output rows
+			for(int i = bi, cix = 0; i < bi + n; i++, cix += clen) { // N input rows
+				if(a.isEmpty(i))
+					continue;
+				final int apos = a.pos(i);
+				final int alen = a.size(i);
+				final int[] aix = a.indexes(i);
+				System.arraycopy(a.values(i), apos, values, pos, alen);
+				for(int j = apos; j < apos + alen; j++)
+					indexes[pos++] = cix + aix[j];
+			}
+			rptr[ci + 1] = pos;
+		}
+
+		// create CSR block from constructed or shallow-copy arrays
+		out.sparseBlock = new SparseBlockCSR(rptr, indexes, values, pos);
+	}
+
+
+	private static void reshapeSparseToCSRFromCSR(MatrixBlock in, MatrixBlock out, int rows, int cols) {		
+		final SparseBlock a = in.sparseBlock;
+		int rlen = in.rlen;
+		int clen = in.clen;
+
+		int n = cols / clen, pos = 0;
+		int[] rptr = new int[rows + 1];
+		int[] indexes = new int[(int) a.size()];
+		double[] values = null;
+		rptr[0] = 0;
+
+		int[] aix = ((SparseBlockCSR) a).indexes();
+		for(int bi = 0, ci = 0; bi < rlen; bi += n, ci++) {
+			for(int i = bi, cix = 0; i < bi + n; i++, cix += clen) {
+				if(a.isEmpty(i))
+					continue;
+				int apos = a.pos(i);
+				int alen = a.size(i);
+				for(int j = apos; j < apos + alen; j++)
+					indexes[pos++] = cix + aix[j];
+			}
+			rptr[ci + 1] = pos;
+		}
+		// shallow copy of CSR values
+		values = ((SparseBlockCSR) a).values();
+
+		// create CSR block from constructed or shallow-copy arrays
+		out.sparseBlock = new SparseBlockCSR(rptr, indexes, values, pos);
 	}
 
 	private static void reshapeDenseToSparse( MatrixBlock in, MatrixBlock out, int rows, int cols, boolean rowwise )

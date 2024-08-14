@@ -100,7 +100,7 @@ public class ReshapeCPInstruction extends UnaryCPInstruction {
 
 			//execute operations
 			MatrixBlock out = new MatrixBlock();
-			LibMatrixReorg.reshape(in, out, rows, cols, byRow.getBooleanValue());
+			LibMatrixReorg.reshape(in, out, rows, cols, byRow.getBooleanValue(), -1);
 
 			//set output and release inputs
 			ec.releaseMatrixInput(input1.getName());

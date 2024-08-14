@@ -880,7 +880,10 @@ public class DataConverter {
 		if (Double.isNaN(value) || Double.isInfinite(value)){
 			return Double.toString(value);
 		} else {
-			return df.format(value);
+			if(value == (long) value)
+				return Long.toString(((long)(value)));
+			else 
+				return df.format(value);
 		}
 	}
 
@@ -1128,7 +1131,7 @@ public class DataConverter {
 		sb.append("nrow = " + fb.getNumRows() + ", ");
 		sb.append("ncol = " + fb.getNumColumns() + lineseparator);
 
-		//print column names
+		// print column names
 		sb.append("#"); sb.append(separator);
 		for( int j=0; j<colLength; j++ ) {
 			sb.append(fb.getColumnNames()[j]);

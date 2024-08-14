@@ -56,11 +56,11 @@ public class DictLibMatrixMult {
 	/**
 	 * Matrix multiply with scaling (left side transposed)
 	 * 
-	 * @param left         Left side dictionary
-	 * @param right        Right side dictionary
+	 * @param left         Left side dictionary that is not physically transposed but should be treated if it is.
+	 * @param right        Right side dictionary that is not transposed and should be used as is.
 	 * @param leftRows     Left side row offsets
 	 * @param rightColumns Right side column offsets
-	 * @param result       The result matrix
+	 * @param result       The result matrix, normal allocation.
 	 * @param counts       The scaling factors
 	 */
 	public static void MMDictsWithScaling(IDictionary left, IDictionary right, IColIndex leftRows,
@@ -221,7 +221,6 @@ public class DictLibMatrixMult {
 		final int commonDim = Math.min(left.length / leftSide, right.length / rightSide);
 		final int resCols = result.getNumColumns();
 		final double[] resV = result.getDenseBlockValues();
-
 		for(int k = 0; k < commonDim; k++) {
 			final int offL = k * leftSide;
 			final int offR = k * rightSide;
@@ -305,8 +304,8 @@ public class DictLibMatrixMult {
 		}
 	}
 
-	protected static void MMDictsScalingDenseSparse(double[] left, SparseBlock right, IColIndex rowsLeft, IColIndex colsRight,
-		MatrixBlock result, int[] scaling) {
+	protected static void MMDictsScalingDenseSparse(double[] left, SparseBlock right, IColIndex rowsLeft,
+		IColIndex colsRight, MatrixBlock result, int[] scaling) {
 		final double[] resV = result.getDenseBlockValues();
 		final int leftSize = rowsLeft.size();
 		final int commonDim = Math.min(left.length / leftSize, right.numRows());
@@ -538,19 +537,27 @@ public class DictLibMatrixMult {
 
 	protected static void MMToUpperTriangleDenseDenseAllUpperTriangle(double[] left, double[] right, IColIndex rowsLeft,
 		IColIndex colsRight, MatrixBlock result) {
-		final int commonDim = Math.min(left.length / rowsLeft.size(), right.length / colsRight.size());
+		final int lSize = rowsLeft.size();
+		final int rSize = colsRight.size();
+		final int commonDim = Math.min(left.length / lSize, right.length / rSize);
 		final int resCols = result.getNumColumns();
 		final double[] resV = result.getDenseBlockValues();
+		for(int i = 0; i < lSize; i++) {
+			MMToUpperTriangleDenseDenseAllUpperTriangleRow(left, right, rowsLeft.get(i), colsRight, commonDim, lSize,
+				rSize, i, resV, resCols);
+		}
+	}
+
+	protected static void MMToUpperTriangleDenseDenseAllUpperTriangleRow(final double[] left, final double[] right,
+		final int rowOut, final IColIndex colsRight, final int commonDim, final int lSize, final int rSize, final int i,
+		final double[] resV, final int resCols) {
 		for(int k = 0; k < commonDim; k++) {
-			final int offL = k * rowsLeft.size();
-			final int offR = k * colsRight.size();
-			for(int i = 0; i < rowsLeft.size(); i++) {
-				final int rowOut = rowsLeft.get(i);
-				final double vl = left[offL + i];
-				if(vl != 0) {
-					for(int j = 0; j < colsRight.size(); j++)
-						resV[colsRight.get(j) * resCols + rowOut] += vl * right[offR + j];
-				}
+			final int offL = k * lSize;
+			final double vl = left[offL + i];
+			if(vl != 0) {
+				final int offR = k * rSize;
+				for(int j = 0; j < rSize; j++)
+					resV[colsRight.get(j) * resCols + rowOut] += vl * right[offR + j];
 			}
 		}
 	}

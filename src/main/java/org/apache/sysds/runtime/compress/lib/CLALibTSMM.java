@@ -52,8 +52,15 @@ public final class CLALibTSMM {
 	 * @param k   The parallelization degree allowed
 	 */
 	public static void leftMultByTransposeSelf(CompressedMatrixBlock cmb, MatrixBlock ret, int k) {
+
 		final List<AColGroup> groups = cmb.getColGroups();
+
 		final int numColumns = cmb.getNumColumns();
+		if(groups.size() >= numColumns) {
+			MatrixBlock m = cmb.getUncompressed("TSMM to many columngroups", k);
+			LibMatrixMult.matrixMultTransposeSelf(m, ret, true, k);
+			return;
+		}
 		final int numRows = cmb.getNumRows();
 		final boolean shouldFilter = CLALibUtils.shouldPreFilter(groups);
 		final boolean overlapping = cmb.isOverlapping();
@@ -63,8 +70,10 @@ public final class CLALibTSMM {
 			tsmmColGroups(filteredGroups, ret, numRows, overlapping, k);
 			addCorrectionLayer(filteredGroups, ret, numRows, numColumns, constV);
 		}
-		else
+		else {
+
 			tsmmColGroups(groups, ret, numRows, overlapping, k);
+		}
 
 		ret.setNonZeros(LibMatrixMult.copyUpperToLowerTriangle(ret));
 		ret.examSparsity();
@@ -108,7 +117,7 @@ public final class CLALibTSMM {
 	}
 
 	private static void tsmmColGroupsMultiThread(List<AColGroup> groups, MatrixBlock ret, int nRows, int k) {
-		final ExecutorService pool = CommonThreadPool.get(k);		
+		final ExecutorService pool = CommonThreadPool.get(k);
 		try {
 			final ArrayList<Callable<MatrixBlock>> tasks = new ArrayList<>((groups.size() * (1 + groups.size())) / 2);
 			for(int i = 0; i < groups.size(); i++) {
@@ -123,7 +132,7 @@ public final class CLALibTSMM {
 		catch(InterruptedException | ExecutionException e) {
 			throw new DMLRuntimeException(e);
 		}
-		finally{
+		finally {
 			pool.shutdown();
 		}
 	}

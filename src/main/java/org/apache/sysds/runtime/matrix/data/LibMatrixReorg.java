@@ -283,16 +283,23 @@ public class LibMatrixReorg {
 
 			for(int i = 0; i < k & i * blklen < len; i++)
 				tasks.add(new TransposeTask(in, out, row, i * blklen, Math.min((i + 1) * blklen, len), cnt, allowReturnBlock));
-			List<MatrixBlock> blocks =  allowReturnBlock ? new ArrayList<>(): null;
-				// List<Future<Object>> taskret = pool.invokeAll(tasks);
-			for(Future<MatrixBlock> task : pool.invokeAll(tasks)){
-				MatrixBlock m = task.get();
-				if(allowReturnBlock && m != null)
-					blocks.add(m);
-			}
+			
+			if(allowReturnBlock) {
+				List<MatrixBlock> blocks = new ArrayList<>();
+				for(Future<MatrixBlock> task : pool.invokeAll(tasks)) {
+					MatrixBlock m = task.get();
+					if(allowReturnBlock && m != null)
+						blocks.add(m);
+				}
 
-			if(allowReturnBlock)
-				combine(blocks, out, row, k);
+				if(allowReturnBlock)
+					combine(blocks, out, row, k);
+			}
+			else {
+				for(Future<MatrixBlock> task : pool.invokeAll(tasks)) {
+					task.get();
+				}
+			}
 		}
 		catch(Exception ex) {
 			throw new DMLRuntimeException(ex);
@@ -578,37 +585,76 @@ public class LibMatrixReorg {
 	}
 	
 	/**
-	 * CP reshape operation (single input, single output matrix) 
+	 * CP reshape operation (single input, single output matrix)
 	 * 
-	 * NOTE: In contrast to R, the rowwise parameter specifies both
-	 * the read and write order, with row-wise being the default, while
-	 * R uses always a column-wise read, rowwise specifying the write
-	 * order and column-wise being the default. 
+	 * NOTE: In contrast to R, the rowwise parameter specifies both the read and write order, with row-wise being the
+	 * default, while R uses always a column-wise read, rowwise specifying the write order and column-wise being the
+	 * default.
 	 * 
-	 * @param in input matrix
-	 * @param out output matrix
-	 * @param rows number of rows
-	 * @param cols number of columns
+	 * @param in      input matrix
+	 * @param rows    number of rows
+	 * @param cols    number of columns
+	 * @param rowwise if true, reshape by row
+	 * @return output matrix
+	 */
+	public static MatrixBlock reshape(MatrixBlock in, int rows, int cols, boolean rowwise) {
+		return reshape(in, null, rows,cols, rowwise, 1);
+	}
+
+	/**
+	 * CP reshape operation (single input, single output matrix)
+	 * 
+	 * NOTE: In contrast to R, the rowwise parameter specifies both the read and write order, with row-wise being the
+	 * default, while R uses always a column-wise read, rowwise specifying the write order and column-wise being the
+	 * default.
+	 * 
+	 * @param in      input matrix
+	 * @param out     output matrix
+	 * @param rows    number of rows
+	 * @param cols    number of columns
 	 * @param rowwise if true, reshape by row
 	 * @return output matrix
 	 */
 	public static MatrixBlock reshape(MatrixBlock in, MatrixBlock out, int rows, int cols, boolean rowwise) {
-		int rlen = in.rlen;
-		int clen = in.clen;
+		return reshape(in, out, rows,cols, rowwise, 1);
+	}
+
+	/**
+	 * CP reshape operation (single input, single output matrix)
+	 * 
+	 * NOTE: In contrast to R, the rowwise parameter specifies both the read and write order, with row-wise being the
+	 * default, while R uses always a column-wise read, rowwise specifying the write order and column-wise being the
+	 * default.
+	 * 
+	 * @param in      input matrix
+	 * @param out     output matrix
+	 * @param rows    number of rows
+	 * @param cols    number of columns
+	 * @param rowwise if true, reshape by row
+	 * @param k       The parallelization degree
+	 * @return output matrix
+	 */
+	public static MatrixBlock reshape(MatrixBlock in, MatrixBlock out, int rows, int cols, boolean rowwise, int k) {
+		final int rlen = in.rlen;
+		final int clen = in.clen;
 		
-		//check validity
-		if( ((long)rlen)*clen != ((long)rows)*cols )
-			throw new DMLRuntimeException("Reshape matrix requires consistent numbers of input/output cells ("+rlen+":"+clen+", "+rows+":"+cols+").");
-		
+		if(out == null)
+			out = new MatrixBlock();
+
 		//check for same dimensions
-		if( rlen==rows && clen == cols ) {
-			//copy incl dims, nnz
-			if( SHALLOW_COPY_REORG )
+		if(rlen == rows && clen == cols) {
+			// copy incl dims, nnz
+			if(SHALLOW_COPY_REORG)
 				out.copyShallow(in);
 			else
 				out.copy(in);
 			return out;
 		}
+
+		//check validity
+		if(((long) rlen) * clen != ((long) rows) * cols)
+			throw new DMLRuntimeException("Reshape matrix requires consistent numbers of input/output cells (" + rlen + ":"
+				+ clen + ", " + rows + ":" + cols + ").");
 	
 		//determine output representation
 		out.sparse = MatrixBlock.evalSparseFormatInMemory(rows, cols, in.nonZeros);
@@ -622,7 +668,7 @@ public class LibMatrixReorg {
 		if(!in.sparse && !out.sparse)
 			reshapeDense(in, out, rows, cols, rowwise);
 		else if(in.sparse && out.sparse)
-			reshapeSparse(in, out, rows, cols, rowwise);
+			reshapeSparse(in, out, rows, cols, rowwise, k);
 		else if(in.sparse)
 			reshapeSparseToDense(in, out, rows, cols, rowwise);
 		else
@@ -2346,7 +2392,7 @@ public class LibMatrixReorg {
 		}
 	}
 
-	private static void reshapeSparse( MatrixBlock in, MatrixBlock out, int rows, int cols, boolean rowwise )
+	private static void reshapeSparse( MatrixBlock in, MatrixBlock out, int rows, int cols, boolean rowwise, int k )
 	{
 		int rlen = in.rlen;
 		int clen = in.clen;
@@ -2388,7 +2434,7 @@ public class LibMatrixReorg {
 				reshapeSparseToCSR(in, out, rows, cols);
 			}
 			else
-				reshapeSparseToMCSR(in, out, rows, cols);
+				reshapeSparseToMCSR(in, out, rows, cols, k);
 		}	
 		else //colwise
 		{
@@ -2434,7 +2480,7 @@ public class LibMatrixReorg {
 		}
 	}
 
-	private static void reshapeSparseToMCSR(MatrixBlock in, MatrixBlock out, int rows, int cols) {
+	private static void reshapeSparseToMCSR(MatrixBlock in, MatrixBlock out, int rows, int cols, int k) {
 		int rlen = in.rlen;
 		int clen = in.clen;
 
@@ -2446,7 +2492,7 @@ public class LibMatrixReorg {
 		SparseBlock a = in.sparseBlock;
 		SparseBlock c = out.sparseBlock;
 		if(cols % clen == 0)
-			reshapeSparseToMCSR_Nto1(in, out, rows, cols);
+			reshapeSparseToMCSR_Nto1(in, out, rows, cols, k);
 		else // GENERAL CASE: MATRIX->MATRIX
 		{
 			// note: cache-friendly on a but not c; append-only
@@ -2471,7 +2517,7 @@ public class LibMatrixReorg {
 		}
 	}
 
-	private static void reshapeSparseToMCSR_Nto1(MatrixBlock in, MatrixBlock out, int rows, int cols) {
+	private static void reshapeSparseToMCSR_Nto1(MatrixBlock in, MatrixBlock out, int rows, int cols, int k) {
 		// SPECIAL N:1 MATRIX->MATRIX
 		final int rlen = in.rlen;
 		final int clen = in.clen;
@@ -2480,7 +2526,6 @@ public class LibMatrixReorg {
 		final SparseBlock c = out.sparseBlock;
 		final int n = cols / clen;
 		// safe now since we fixed the parfor threading.
-		final int k = InfrastructureAnalyzer.getLocalParallelism();
 		if(k > 1) {
 			final ExecutorService pool = CommonThreadPool.get(k);
 			try {

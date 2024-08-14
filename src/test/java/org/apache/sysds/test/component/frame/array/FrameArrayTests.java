@@ -2146,7 +2146,7 @@ public class FrameArrayTests {
 	@Test
 	public void createRecodeMap() {
 		if(a.size() < 500) {
-			Map<?, Long> m = a.getRecodeMap();
+			Map<?, Integer> m = a.getRecodeMap();
 			for(int i = 0; i < a.size(); i++) {
 				Object v = a.get(i);
 				if(v != null) {
@@ -2567,6 +2567,7 @@ public class FrameArrayTests {
 
 		return ret;
 	}
+
 
 	public static Character[] generateRandomCharacterNUniqueLengthOpt(int size, int seed, int nUnique) {
 		Character[] rands = generateRandomCharacterOpt(nUnique, seed);

@@ -104,6 +104,8 @@ public class MultiReturnParameterizedBuiltinCPInstruction extends ComputationCPI
 		ec.releaseFrameInput(input1.getName());
 		ec.setMatrixOutput(getOutput(0).getName(), data);
 		ec.setFrameOutput(getOutput(1).getName(), meta);
+		// debug the size of the output metadata.
+		LOG.error("Memory size of metadata: " + meta.getInMemorySize());
 	}
 
 	@Override

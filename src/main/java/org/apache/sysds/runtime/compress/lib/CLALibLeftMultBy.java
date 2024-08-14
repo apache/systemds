@@ -219,7 +219,6 @@ public final class CLALibLeftMultBy {
 			if(containsLeft) // if left -- multiply left with right sum
 				for(Future<?> f : outerProductParallelTasks(cL, CLALibUtils.getColSum(fRight, cr, sd), ret, pool))
 					f.get();
-
 			if(containsRight)// if right -- multiply right with left sum
 				for(Future<?> f : outerProductParallelTasks(CLALibUtils.getColSum(fLeft, rl, sd), cR, ret, pool))
 					f.get();

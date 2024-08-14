@@ -85,6 +85,8 @@ public class FederatedWorker {
 		else
 			_fan = null;
 
+		log.debug("Running federated worker " + (_fan == null ? "": " with AWARE"));
+
 		_port = (port == -1) ? DMLConfig.DEFAULT_FEDERATED_PORT : port;
 		_debug = debug;
 

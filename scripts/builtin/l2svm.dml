@@ -88,7 +88,8 @@ m_l2svm = function(Matrix[Double] X, Matrix[Double] Y, Boolean intercept = FALSE
   w = matrix(0, rows=ncol(X), cols=1)
   Xw = matrix(0, rows=nrow(X), cols=1)
 
-  g_old = t(X) %*% Y
+  ## rewrite t(X) %*% Y
+  g_old = t(t(Y) %*% X)
   s = g_old
 
   iter = 0
@@ -121,7 +122,9 @@ m_l2svm = function(Matrix[Double] X, Matrix[Double] Y, Boolean intercept = FALSE
     sv = (out > 0)
     out = sv * out
     obj = 0.5 * sum(out * out) + reg/2 * sum(w * w)
-    g_new = t(X) %*% (out * Y) - reg * w
+    ## rewrite t(X) %*% (out * Y) - reg * w
+    g_new = t(t(out*Y) %*% X) - reg * w
+    # g_new = t(X) %*% (out * Y) - reg * w
 
     if(verbose) {
       colstr = ifelse(columnId!=-1, "-- MSVM class="+columnId+": ", "")

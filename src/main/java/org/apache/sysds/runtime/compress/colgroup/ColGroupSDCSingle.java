@@ -23,8 +23,11 @@ import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
 import java.util.Arrays;
+import java.util.List;
 
+import org.apache.commons.lang3.NotImplementedException;
 import org.apache.sysds.runtime.DMLRuntimeException;
+import org.apache.sysds.runtime.compress.CompressedMatrixBlock;
 import org.apache.sysds.runtime.compress.DMLCompressionException;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.Dictionary;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.DictionaryFactory;
@@ -40,9 +43,11 @@ import org.apache.sysds.runtime.compress.colgroup.offset.OffsetFactory;
 import org.apache.sysds.runtime.compress.cost.ComputationCostEstimator;
 import org.apache.sysds.runtime.compress.estim.encoding.EncodingFactory;
 import org.apache.sysds.runtime.compress.estim.encoding.IEncode;
+import org.apache.sysds.runtime.compress.utils.IntArrayList;
 import org.apache.sysds.runtime.compress.utils.Util;
 import org.apache.sysds.runtime.functionobjects.Builtin;
 import org.apache.sysds.runtime.instructions.cp.CM_COV_Object;
+import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.matrix.operators.BinaryOperator;
 import org.apache.sysds.runtime.matrix.operators.CMOperator;
 import org.apache.sysds.runtime.matrix.operators.ScalarOperator;
@@ -67,6 +72,9 @@ public class ColGroupSDCSingle extends ASDC {
 		super(colIndices, numRows, dict == null ? Dictionary.createNoCheck(new double[colIndices.size()]) : dict, offsets,
 			cachedCounts);
 		_defaultTuple = defaultTuple;
+		if(CompressedMatrixBlock.debug) {
+			_indexes.verify(_indexes.getSize());
+		}
 	}
 
 	public static AColGroup create(IColIndex colIndexes, int numRows, IDictionary dict, double[] defaultTuple,
@@ -617,6 +625,79 @@ public class ColGroupSDCSingle extends ASDC {
 	protected AColGroup fixColIndexes(IColIndex newColIndex, int[] reordering) {
 		return ColGroupSDCSingle.create(newColIndex, getNumRows(), _dict.reorder(reordering),
 			ColGroupUtils.reorderDefault(_defaultTuple, reordering), _indexes, getCachedCounts());
+	}
+
+	@Override
+	public void sparseSelection(MatrixBlock selection, MatrixBlock ret, int rl, int ru) {
+		throw new NotImplementedException();
+	}
+
+	@Override
+	public AColGroupCompressed combineWithSameIndex(int nRow, int nCol, AColGroup right) {
+		ColGroupSDCSingle rightSDC = ((ColGroupSDCSingle) right);
+		IDictionary b = rightSDC.getDictionary();
+		IDictionary combined = DictionaryFactory.cBindDictionaries(_dict, b, this.getNumCols(), right.getNumCols());
+		IColIndex combinedColIndex = _colIndexes.combine(right.getColIndices().shift(nCol));
+		double[] combinedDefaultTuple = new double[_defaultTuple.length + rightSDC._defaultTuple.length];
+		System.arraycopy(_defaultTuple, 0, combinedDefaultTuple, 0, _defaultTuple.length);
+		System.arraycopy(rightSDC._defaultTuple, 0, combinedDefaultTuple, _defaultTuple.length,
+			rightSDC._defaultTuple.length);
+
+		return new ColGroupSDCSingle(combinedColIndex, this.getNumRows(), combined, combinedDefaultTuple, _indexes,
+			getCachedCounts());
+	}
+
+	@Override
+	public AColGroupCompressed combineWithSameIndex(int nRow, int nCol, List<AColGroup> right) {
+		final IDictionary combined = combineDictionaries(nCol, right);
+		final IColIndex combinedColIndex = combineColIndexes(nCol, right);
+		final double[] combinedDefaultTuple = IContainDefaultTuple.combineDefaultTuples(_defaultTuple, right);
+
+		// return new ColGroupDDC(combinedColIndex, combined, _data, getCachedCounts());
+		return new ColGroupSDCSingle(combinedColIndex, this.getNumRows(), combined, combinedDefaultTuple, _indexes,
+			getCachedCounts());
+	}
+
+
+	@Override
+	public AColGroup[] splitReshape(int multiplier, int nRow, int nColOrg) {
+		IntArrayList[] splitOffs = new IntArrayList[multiplier];
+		for(int i = 0; i < multiplier; i++)
+			splitOffs[i] = new IntArrayList();
+
+		AIterator it = _indexes.getIterator();
+		final int last = _indexes.getOffsetToLast();
+
+		while(it.value() != last) {
+			final int v = it.value(); // offset
+
+			final int outV = v / multiplier;
+			final int outM = v % multiplier;
+
+			splitOffs[outM].appendValue(outV);
+
+			it.next();
+		}
+
+		// last value
+		final int v = it.value();
+		final int outV = v / multiplier;
+		final int outM = v % multiplier;
+		splitOffs[outM].appendValue(outV);
+
+		// iterate through all rows.
+
+		AOffset[] offs = new AOffset[multiplier];
+		for(int i = 0; i < multiplier; i++)
+			offs[i] = OffsetFactory.createOffset(splitOffs[i]);
+
+		// assign columns
+		AColGroup[] res = new AColGroup[multiplier];
+		for(int i = 0; i < multiplier; i++) {
+			final IColIndex ci = i == 0 ? _colIndexes : _colIndexes.shift(i * nColOrg);
+			res[i] = create(ci, _numRows / multiplier, _dict, _defaultTuple, offs[i], null);
+		}
+		return res;
 	}
 
 	@Override

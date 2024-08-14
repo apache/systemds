@@ -39,7 +39,6 @@ public class CoCodeHybrid extends AColumnCoCoder {
 	protected CompressedSizeInfo coCodeColumns(CompressedSizeInfo colInfos, int k) {
 		final int startSize = colInfos.getInfo().size();
 		final int pqColumnThreashold = Math.max(128, (_sest.getNumColumns() / startSize) * 100);
-
 		if(startSize == 1)
 			return colInfos; // nothing to join when there only is one column
 		else if(startSize <= 16) {// Greedy all compare all if small number of columns

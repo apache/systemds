@@ -372,7 +372,6 @@ public interface DoubleParser {
 		// 1) Both s and p can be represented exactly as 64-bit floating-point values
 		// 2) Because s and p can be represented exactly as floating-point values,
 		// then s * p and s / p will produce correctly rounded values.
-
 		if(power < 0) {
 			d = d / DOUBLE_POWERS_OF_TEN[-power];
 		}

@@ -19,6 +19,10 @@
 
 package org.apache.sysds.runtime.compress.colgroup;
 
+import java.util.Arrays;
+
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex;
 import org.apache.sysds.runtime.compress.utils.DoubleCountHashMap;
 import org.apache.sysds.runtime.data.SparseBlock;
@@ -29,6 +33,7 @@ import org.apache.sysds.runtime.matrix.operators.BinaryOperator;
 import org.apache.sysds.runtime.matrix.operators.UnaryOperator;
 
 public interface ColGroupUtils {
+	public static final Log LOG = LogFactory.getLog(ColGroupUtils.class.getName());
 
 	/**
 	 * Calculate the result of performing the binary operation on an empty row to the left
@@ -305,11 +310,62 @@ public interface ColGroupUtils {
 		}
 	}
 
-	public static double[] reorderDefault(double[] vals, int[] reordering){
+	public static double[] reorderDefault(double[] vals, int[] reordering) {
 		double[] ret = new double[vals.length];
 		for(int i = 0; i < vals.length; i++)
 			ret[i] = vals[reordering[i]];
-		return ret; 
+		return ret;
+	}
+
+	/**
+	 * Get a list of points locations from the SparseBlock.
+	 * 
+	 * This is used to find 1 indexes in a sparse selection matrix.
+	 * 
+	 * We assume the input only have one non zero per row, and that non zero is a 1.
+	 * 
+	 * @param sb Sparse block to extract points from
+	 * @param rl row to start from
+	 * @param ru row to end at
+	 * @return The coordinates that contain values.
+	 */
+	public static P[] getSortedSelection(SparseBlock sb, int rl, int ru) {
+
+		int c = 0;
+		// count loop
+		for(int i = rl; i < ru; i++) {
+			if(!sb.isEmpty(i))
+				c++;
+		}
+
+		P[] points = new P[c];
+		c = 0; // count from start again
+		for(int i = rl; i < ru; i++) {
+			if(sb.isEmpty(i))
+				continue;
+			final int sPos = sb.pos(i);
+			points[c++] = new P(i, sb.indexes(i)[sPos]);
+		}
+
+		Arrays.sort(points, (a, b) -> {
+			return a.o < b.o ? -1 : 1;
+		});
+		return points;
+	}
+
+	public static class P {
+		public final int r;
+		public final int o;
+
+		private P(int r, int o) {
+			this.r = r;
+			this.o = o;
+		}
+
+		@Override
+		public String toString() {
+			return "P(" + r + "," + o + ")";
+		}
 	}
 
 }

@@ -40,6 +40,7 @@ import org.apache.sysds.runtime.compress.colgroup.mapping.MapToZero;
 import org.apache.sysds.runtime.compress.colgroup.offset.AIterator;
 import org.apache.sysds.runtime.compress.colgroup.offset.AOffset;
 import org.apache.sysds.runtime.compress.colgroup.offset.AOffset.OffsetSliceInfo;
+import org.apache.sysds.runtime.compress.colgroup.offset.AOffset.RemoveEmptyOffsetsTmp;
 import org.apache.sysds.runtime.compress.colgroup.offset.OffsetEmpty;
 import org.apache.sysds.runtime.compress.colgroup.offset.OffsetFactory;
 import org.apache.sysds.runtime.compress.cost.ComputationCostEstimator;
@@ -469,10 +470,10 @@ public class ColGroupSDCSingle extends ASDC {
 		IDictionary d = _dict.rexpandCols(max, ignore, cast, _colIndexes.size());
 		final int def = (int) _defaultTuple[0];
 		if(d == null) {
-			if(def <= 0){
+			if(def <= 0) {
 				if(max > 0)
 					return ColGroupEmpty.create(max);
-				else 
+				else
 					return null;
 			}
 			else if(def > max && max > 0)
@@ -716,6 +717,66 @@ public class ColGroupSDCSingle extends ASDC {
 			res[i] = create(ci, _numRows / multiplier, _dict, _defaultTuple, offs[i], null);
 		}
 		return res;
+	}
+
+	@Override
+	public AColGroup sort() {
+		if(getNumCols() > 1)
+			throw new NotImplementedException();
+		// TODO restore support for run length encoding.
+
+		final int[] counts = getCounts();
+		// get the sort index
+		final int[] r = _dict.sort();
+
+		// find default value position.
+		// todo use binary search for minor improvements.
+		final double def = _defaultTuple[0];
+		int defIdx = counts.length;
+		int nondefault = 0;
+		for(int i = 0; i < r.length; i++) {
+			if(defIdx == counts.length && _dict.getValue(r[i], 0, 1) >= def) {
+				defIdx = i;
+			}
+			nondefault += counts[i];
+		}
+
+		int defaultLength = _numRows - nondefault;
+		int[] offsets = new int[nondefault];
+
+		int off = 0;
+		for(int i = 0; i < counts.length; i++) {
+			if(i < defIdx) {
+				for(int j = 0; j < counts[r[i]]; j++) {
+					offsets[off] = off;
+				}
+			}
+			else {// if( i >= defIdx){
+				for(int j = 0; j < counts[r[i]]; j++) {
+					offsets[off] = off + defaultLength;
+				}
+			}
+		}
+
+		AOffset o = OffsetFactory.createOffset(offsets);
+		return ColGroupSDCSingle.create(_colIndexes, _numRows, _dict, _defaultTuple, o, counts);
+	}
+
+	@Override
+	public AColGroup removeEmptyRows(boolean[] selectV, int rOut) {
+		// TODO optimize by not constructing boolean array.
+		final RemoveEmptyOffsetsTmp offsetTmp = _indexes.removeEmptyRows(selectV, rOut);
+		return ColGroupSDCSingle.create(_colIndexes, rOut, _dict, _defaultTuple, offsetTmp.retOffset, null);
+	}
+
+	@Override
+	protected AColGroup removeEmptyColsSubset(IColIndex newColumnIDs, IntArrayList selectedColumns) {
+		double[] ref = new double[selectedColumns.size()];
+		for(int i = 0; i < selectedColumns.size(); i++) {
+			ref[i] = _defaultTuple[selectedColumns.get(i)];
+		}
+		return ColGroupSDCSingle.create(newColumnIDs, _numRows, _dict.sliceColumns(selectedColumns, getNumCols()), ref,
+			_indexes, null);
 	}
 
 	@Override

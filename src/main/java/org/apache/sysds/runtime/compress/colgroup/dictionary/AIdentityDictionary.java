@@ -19,6 +19,7 @@
 
 package org.apache.sysds.runtime.compress.colgroup.dictionary;
 
+import org.apache.commons.lang3.NotImplementedException;
 import org.apache.sysds.runtime.compress.DMLCompressionException;
 
 public abstract class AIdentityDictionary extends ACachingMBDictionary {
@@ -73,5 +74,10 @@ public abstract class AIdentityDictionary extends ACachingMBDictionary {
 		for(int i = 0; i < defaultTuple.length; i++)
 			ret[ret.length - 1] *= defaultTuple[i];
 		return ret;
+	}
+
+	@Override 
+	public int[] sort(){
+		throw new NotImplementedException();
 	}
 }

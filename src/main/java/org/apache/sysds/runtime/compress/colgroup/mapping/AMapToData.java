@@ -30,6 +30,7 @@ import java.util.concurrent.Future;
 import org.apache.commons.lang3.NotImplementedException;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.compress.CompressedMatrixBlock;
 import org.apache.sysds.runtime.compress.DMLCompressionException;
 import org.apache.sysds.runtime.compress.colgroup.IMapToDataGroup;
@@ -39,6 +40,7 @@ import org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex;
 import org.apache.sysds.runtime.compress.colgroup.mapping.MapToFactory.MAP_TYPE;
 import org.apache.sysds.runtime.compress.colgroup.offset.AOffset;
 import org.apache.sysds.runtime.compress.colgroup.offset.AOffsetIterator;
+import org.apache.sysds.runtime.compress.utils.IntArrayList;
 import org.apache.sysds.runtime.data.DenseBlock;
 import org.apache.sysds.runtime.data.SparseBlock;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
@@ -1040,5 +1042,41 @@ public abstract class AMapToData implements Serializable {
 		sb.append(getIndex(sz - 1));
 		sb.append("]");
 		return sb.toString();
+	}
+
+	public AMapToData removeEmpty(final boolean[] selectV, final int rOut) {
+		try{
+
+			final AMapToData ret = MapToFactory.create(rOut, getUnique());
+			final int s = size();
+			int t = 0;
+			for(int i = 0; i < s; i++)
+				if(selectV[i] == true)
+					ret.set(t++, getIndex(i));
+			
+			return ret;
+		}
+		catch(ArrayIndexOutOfBoundsException e){
+
+			int trueCount = 0;
+			for(boolean a : selectV){
+				if(a) trueCount ++;
+			}
+			throw new DMLRuntimeException("actual number of true values " + trueCount + " vs argument " + rOut,e);
+		}
+	}
+
+	/**
+	 * Use the offsets of the select vector to choose which values to keep.
+	 * 
+	 * @param select The row indexes to keep
+	 * @return A New MapToData
+	 */
+	public AMapToData removeEmpty(IntArrayList select) {
+		final int s = select.size();
+		final AMapToData ret = MapToFactory.create(s, getUnique());
+		for(int i = 0; i < s; i++)
+			ret.set(i, getIndex(select.get(i)));
+		return ret;
 	}
 }

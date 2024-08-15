@@ -280,7 +280,7 @@ public abstract class ProgramBlock implements ParseInfo {
 								ext.setValueType(data.getValueType().toString());
 								if (data instanceof CacheableData) {
 									DataCharacteristics dc = ((CacheableData)data).getDataCharacteristics();
-									ext.setMeta("NDims:", (double)dc.getNumDims());
+									ext.setMeta("NDims", (double)dc.getNumDims());
 									ext.setMeta("NumRows", (double)dc.getRows());
 									ext.setMeta("NumCols", (double)dc.getCols());
 									ext.setMeta("NonZeros", (double)dc.getNonZeros());

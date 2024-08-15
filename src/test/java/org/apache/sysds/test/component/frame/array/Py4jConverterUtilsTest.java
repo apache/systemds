@@ -27,7 +27,7 @@ import java.nio.ByteOrder;
 import java.nio.charset.StandardCharsets;
 
 import org.apache.sysds.common.Types;
-
+import org.apache.sysds.common.Types.ValueType;
 import org.apache.sysds.runtime.util.Py4jConverterUtils;
 import org.apache.sysds.runtime.frame.data.columns.Array;
 import org.junit.Test;
@@ -62,6 +62,75 @@ public class Py4jConverterUtilsTest {
 		assertEquals(2, result.get(1));
 		assertEquals(3, result.get(2));
 		assertEquals(4, result.get(3));
+	}
+
+	@Test
+	public void testConvertINT64() {
+		int numElements = 4;
+		ByteBuffer buffer = ByteBuffer.allocate(Long.BYTES * numElements);
+		buffer.order(ByteOrder.nativeOrder());
+		for(int i = 1; i <= numElements; i++) {
+			buffer.putLong((long) i);
+		}
+		Array<?> result = Py4jConverterUtils.convert(buffer.array(), numElements, Types.ValueType.INT64);
+		assertNotNull(result);
+		assertEquals(4, result.size());
+		assertEquals(1L, result.get(0));
+		assertEquals(2L, result.get(1));
+		assertEquals(3L, result.get(2));
+		assertEquals(4L, result.get(3));
+	}
+
+
+	@Test
+	public void testConvertHASH32() {
+		int numElements = 4;
+		ByteBuffer buffer = ByteBuffer.allocate(Integer.BYTES * numElements);
+		buffer.order(ByteOrder.nativeOrder());
+		for(int i = 1; i <= numElements; i++) {
+			buffer.putInt(i);
+		}
+		Array<?> result = Py4jConverterUtils.convert(buffer.array(), numElements, Types.ValueType.HASH32);
+		assertNotNull(result);
+		assertEquals(4, result.size());
+		assertEquals("1", result.get(0));
+		assertEquals("2", result.get(1));
+		assertEquals("3", result.get(2));
+		assertEquals("4", result.get(3));
+	}
+
+	@Test
+	public void testConvertHASH64() {
+		int numElements = 4;
+		ByteBuffer buffer = ByteBuffer.allocate(Long.BYTES * numElements);
+		buffer.order(ByteOrder.nativeOrder());
+		for(int i = 1; i <= numElements; i++) {
+			buffer.putLong((long) i);
+		}
+		Array<?> result = Py4jConverterUtils.convert(buffer.array(), numElements, Types.ValueType.HASH64);
+		assertNotNull(result);
+		assertEquals(4, result.size());
+		assertEquals("1", result.get(0));
+		assertEquals("2", result.get(1));
+		assertEquals("3", result.get(2));
+		assertEquals("4", result.get(3));
+	}
+
+	@Test
+	public void testConvertFP32() {
+		int numElements = 4;
+		ByteBuffer buffer = ByteBuffer.allocate(Float.BYTES * numElements);
+		buffer.order(ByteOrder.nativeOrder());
+		for(float i = 1.1f; i <= numElements + 1; i += 1.0) {
+			buffer.putFloat(i);
+		}
+		Array<?> result = Py4jConverterUtils.convert(buffer.array(), numElements, Types.ValueType.FP32);
+		assertNotNull(result);
+		assertEquals(4, result.size());
+		assertEquals(1.1f, result.get(0));
+		assertEquals(2.1f, result.get(1));
+		assertEquals(3.1f, result.get(2));
+		assertEquals(4.1f, result.get(3));
 	}
 
 	@Test
@@ -111,5 +180,37 @@ public class Py4jConverterUtilsTest {
 		assertEquals(2, result.size());
 		assertEquals("hello", result.get(0));
 		assertEquals("world", result.get(1));
+	}
+
+	@Test
+	public void testConvertChar() {
+		char[] c = {'h', 'e', 'l', 'l', 'o', ' ', 'w', 'o', 'r', 'l', 'd'};
+		ByteBuffer buffer = ByteBuffer.allocate(Character.BYTES * c.length);
+		buffer.order(ByteOrder.LITTLE_ENDIAN);
+		for(char s : c) {
+			buffer.putChar(s);
+		}
+		Array<?> result = Py4jConverterUtils.convert(buffer.array(), c.length, Types.ValueType.CHARACTER);
+		assertNotNull(result);
+		assertEquals(c.length, result.size());
+
+		for(int i = 0; i < c.length; i++) {
+			assertEquals(c[i], result.get(i));
+		}
+	}
+
+	@Test(expected = Exception.class)
+	public void nullData() {
+		Py4jConverterUtils.convert(null, 14, ValueType.BOOLEAN);
+	}
+
+	@Test(expected = Exception.class)
+	public void nullValueType() {
+		Py4jConverterUtils.convert(new byte[] {1, 2, 3}, 14, null);
+	}
+
+	@Test(expected = Exception.class)
+	public void unknownValueType() {
+		Py4jConverterUtils.convert(new byte[] {1, 2, 3}, 14, ValueType.UNKNOWN);
 	}
 }

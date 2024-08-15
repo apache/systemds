@@ -130,11 +130,6 @@ public class Py4jConverterUtils {
 
 		// Process the data based on the value type
 		switch(valueType) {
-			case UINT4:
-				for(int i = 0; i < numElements; i++) {
-					array.set(i, (int) (buffer.get() & 0xFF));
-				}
-				break;
 			case UINT8:
 				for(int i = 0; i < numElements; i++) {
 					array.set(i, (int) (buffer.get() & 0xFF));
@@ -177,7 +172,12 @@ public class Py4jConverterUtils {
 				break;
 			case CHARACTER:
 				for(int i = 0; i < numElements; i++) {
-					array.set(i, (char) buffer.get());
+					array.set(i, buffer.getChar());
+				}
+				break;
+			case HASH32:
+				for(int i = 0; i < numElements; i++) {
+					array.set(i, buffer.getInt());
 				}
 				break;
 			case HASH64:

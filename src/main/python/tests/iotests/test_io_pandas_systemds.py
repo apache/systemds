@@ -26,6 +26,7 @@ import unittest
 import pandas as pd
 from systemds.context import SystemDSContext
 
+
 class TestPandasFromToSystemds(unittest.TestCase):
 
     sds: SystemDSContext = None
@@ -34,8 +35,8 @@ class TestPandasFromToSystemds(unittest.TestCase):
     n_rows = 5
     df = pd.DataFrame(
         {
-            'C1': [f"col1_string_{i}" for i in range(n_rows)],
-            'C2': [i for i in range(n_rows)],
+            "C1": [f"col1_string_{i}" for i in range(n_rows)],
+            "C2": [i for i in range(n_rows)],
         }
     )
 
@@ -45,26 +46,22 @@ class TestPandasFromToSystemds(unittest.TestCase):
         if not os.path.exists(cls.temp_dir):
             os.makedirs(cls.temp_dir)
 
-
     @classmethod
     def tearDownClass(cls):
         cls.sds.close()
         shutil.rmtree(cls.temp_dir, ignore_errors=True)
 
-
     def test_into_systemds(self):
         # Transfer into SystemDS and write to CSV
         frame = self.sds.from_pandas(self.df)
-        frame.write(self.temp_dir + "into_systemds.csv", format="csv", header=True).compute(verbose=True)
+        frame.write(
+            self.temp_dir + "into_systemds.csv", format="csv", header=True
+        ).compute(verbose=True)
 
         # Read the CSV file using pandas
         result_df = pd.read_csv(self.temp_dir + "into_systemds.csv")
 
         # Verify the data
-        print("result_df:")
-        print(result_df)
-        print("self.df:")
-        print(self.df)   
         self.assertTrue(isinstance(result_df, pd.DataFrame))
         self.assertTrue(self.df.equals(result_df))
 
@@ -73,17 +70,17 @@ class TestPandasFromToSystemds(unittest.TestCase):
         self.df.to_csv(self.temp_dir + "out_of_systemds.csv", header=False, index=False)
 
         # Read the CSV file into SystemDS and then compute back to pandas
-        frame = self.sds.read(self.temp_dir + "out_of_systemds.csv", data_type="frame", format="csv")
+        frame = self.sds.read(
+            self.temp_dir + "out_of_systemds.csv", data_type="frame", format="csv"
+        )
         result_df = frame.replace("xyz", "yzx").compute()
 
         # Verify the data
-        print("result_df:")
-        result_df['C2'] = result_df['C2'].astype(int)
-        print(result_df)
-        print("self.df:")
-        print(self.df)   
+        result_df["C2"] = result_df["C2"].astype(int)
+
         self.assertTrue(isinstance(result_df, pd.DataFrame))
         self.assertTrue(self.df.equals(result_df))
+
 
 if __name__ == "__main__":
     unittest.main(exit=False)

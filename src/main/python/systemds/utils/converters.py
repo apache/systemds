@@ -32,7 +32,7 @@ def numpy_to_matrix_block(sds, np_arr: np.array):
     :param sds: The current systemds context.
     :param np_arr: the numpy array to convert to matrixblock.
     """
-    assert (np_arr.ndim <= 2), "np_arr invalid, because it has more than 2 dimensions"
+    assert np_arr.ndim <= 2, "np_arr invalid, because it has more than 2 dimensions"
     rows = np_arr.shape[0]
     cols = np_arr.shape[1] if np_arr.ndim == 2 else 1
 
@@ -121,7 +121,7 @@ def pandas_to_frame_block(sds, pd_df: pd.DataFrame):
         jc_FrameBlock = jvm.org.apache.sysds.runtime.frame.data.FrameBlock
         j_valueTypeArray = java_gate.new_array(jc_ValueType, len(schema))
         j_colNameArray = java_gate.new_array(jc_String, len(col_names))
-        
+
         # execution speed increases with optimized code when the number of rows exceeds 4
         if rows > 4:
             for i in range(len(schema)):
@@ -137,14 +137,18 @@ def pandas_to_frame_block(sds, pd_df: pd.DataFrame):
                 if col_type == jvm.org.apache.sysds.common.Types.ValueType.STRING:
                     byte_data = bytearray()
                     for value in pd_df[col_name].astype(str):
-                        encoded_value = value.encode('utf-8')
-                        byte_data.extend(struct.pack('>I', len(encoded_value)))
+                        encoded_value = value.encode("utf-8")
+                        byte_data.extend(struct.pack(">I", len(encoded_value)))
                         byte_data.extend(encoded_value)
                 else:
                     col_data = pd_df[col_name].fillna("").to_numpy()
                     byte_data = bytearray(col_data.tobytes())
 
-                converted_array = jvm.org.apache.sysds.runtime.util.Py4jConverterUtils.convert(byte_data, rows, col_type)
+                converted_array = (
+                    jvm.org.apache.sysds.runtime.util.Py4jConverterUtils.convert(
+                        byte_data, rows, col_type
+                    )
+                )
                 fb.setColumn(j, converted_array)
             return fb
         else:
@@ -178,7 +182,7 @@ def frame_block_to_pandas(sds, fb: JavaObject):
     df = pd.DataFrame()
 
     for c_index in range(num_cols):
-        col_array = fb.getColumn(c_index);
+        col_array = fb.getColumn(c_index)
 
         d_type = col_array.getValueType().toString()
         if d_type == "STRING":
@@ -206,10 +210,11 @@ def frame_block_to_pandas(sds, fb: JavaObject):
             ret = np.frombuffer(byteArray, dtype=np.dtype("?"))
         elif d_type == "CHARACTER":
             byteArray = fb.getColumn(c_index).getAsByteArray()
-            ret = np.frombuffer(byteArray , dtype=np.char)
+            ret = np.frombuffer(byteArray, dtype=np.char)
         else:
             raise NotImplementedError(
-                f'Not Implemented {d_type} for systemds to pandas parsing')
+                f"Not Implemented {d_type} for systemds to pandas parsing"
+            )
         df[fb.getColumnName(c_index)] = ret
 
     return df

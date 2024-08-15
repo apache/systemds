@@ -1,4 +1,4 @@
-package org.apache.sysds.test.resource;
+package org.apache.sysds.test.component.resource;
 
 import org.apache.sysds.resource.enumeration.AnEnumerator;
 import org.apache.sysds.resource.enumeration.EnumerationUtils;
@@ -26,7 +26,9 @@ public class EnumeratorTests {
         gridBasedEnumerator.processing();
         EnumerationUtils.SolutionPoint solution = gridBasedEnumerator.postprocessing();
 
+        // expected m5.xlarge since it is the cheaper
         Assert.assertEquals("m5.xlarge", solution.driverInstance.getInstanceName());
+        // expected no executor nodes since tested for a 'zero' program
         Assert.assertEquals(0, solution.numberExecutors);
     }
 
@@ -48,7 +50,9 @@ public class EnumeratorTests {
         gridBasedEnumerator.processing();
         EnumerationUtils.SolutionPoint solution = gridBasedEnumerator.postprocessing();
 
+        // expected c5.xlarge since is the instance with at least memory
         Assert.assertEquals("c5.xlarge", solution.driverInstance.getInstanceName());
+        // expected no executor nodes since tested for a 'zero' program
         Assert.assertEquals(0, solution.numberExecutors);
     }
 

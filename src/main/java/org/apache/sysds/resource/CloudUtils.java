@@ -13,17 +13,26 @@ public abstract class CloudUtils {
     }
     public enum InstanceType {
         // AWS EC2 instance
+        M5, M5A, M6I, M6A, M6G, M7I, M7A, M7G, // general purpose - vCores:mem~=1:4
         C5, C5A, C6I, C6A, C6G, C7I, C7A, C7G, // compute optimized - vCores:mem~=1:2
-        R5, R5A, R6I, R6A, R6G, R7I, R7A, R7G // memory optimized - vCores:mem~=1:8
+        R5, R5A, R6I, R6A, R6G, R7I, R7A, R7G; // memory optimized - vCores:mem~=1:8
         // Potentially VM instance types for different Cloud providers
+
+        public static InstanceType customValueOf(String name) {
+            return InstanceType.valueOf(name.toUpperCase());
+        }
     }
 
     public enum InstanceSize {
-        _XLARGE, _2XLARGE, _4XLARGE, _8XLARGE, _12XLARGE, _16XLARGE, _24XLARGE, _32XLARGE, _48XLARGE
+        _XLARGE, _2XLARGE, _4XLARGE, _8XLARGE, _12XLARGE, _16XLARGE, _24XLARGE, _32XLARGE, _48XLARGE;
         // Potentially VM instance sizes for different Cloud providers
+
+        public static InstanceSize customValueOf(String name) {
+            return InstanceSize.valueOf("_"+name.toUpperCase());
+        }
     }
 
-    public static final double MINIMAL_EXECUTION_TIME = 60;
+    public static final double MINIMAL_EXECUTION_TIME = 120; // seconds; NOTE: set always equal or higher than DEFAULT_CLUSTER_LAUNCH_TIME
 
     public static final double DEFAULT_CLUSTER_LAUNCH_TIME = 120; // seconds; NOTE: set always to at least 60 seconds
 

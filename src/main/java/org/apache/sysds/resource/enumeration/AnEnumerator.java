@@ -216,9 +216,9 @@ public abstract class AnEnumerator {
             // estimate execution time of the current program
             // TODO: pass further relevant cluster configurations to cost estimator after extending it
             //  like for example: FLOPS, I/O and networking speed
-            timeCost = CostEstimator.estimateExecutionTime(program);
+            timeCost = CostEstimator.estimateExecutionTime(program) + CloudUtils.DEFAULT_CLUSTER_LAUNCH_TIME;
         } catch (CostEstimationException e) {
-            timeCost = Double.MAX_VALUE;
+            throw new RuntimeException(e.getMessage());
         }
         // calculate monetary cost
         double monetaryCost = utils.calculateClusterPrice(point, timeCost);
@@ -269,8 +269,8 @@ public abstract class AnEnumerator {
         private double maxPrice = -1d;
         private int minExecutors = DEFAULT_MIN_EXECUTORS;
         private int maxExecutors = DEFAULT_MAX_EXECUTORS;
-        private Set<CloudUtils.InstanceType> instanceTypesRange;
-        private Set<CloudUtils.InstanceSize> instanceSizeRange;
+        private Set<CloudUtils.InstanceType> instanceTypesRange = null;
+        private Set<CloudUtils.InstanceSize> instanceSizeRange = null;
 
         // GridBased specific ------------------------------------------------------------------------------------------
         private int stepSizeExecutors = 1;
@@ -378,6 +378,14 @@ public abstract class AnEnumerator {
                 throw new IllegalArgumentException("Providing runtime program is required");
             }
 
+            if (instanceTypesRange == null) {
+                instanceTypesRange = EnumSet.allOf(CloudUtils.InstanceType.class);
+            }
+
+            if (instanceSizeRange == null) {
+                instanceSizeRange = EnumSet.allOf(CloudUtils.InstanceSize.class);
+            }
+
             switch (optStrategy) {
                 case MinTime:
                     if (this.maxPrice < 0) {
@@ -411,7 +419,7 @@ public abstract class AnEnumerator {
         protected static Set<CloudUtils.InstanceType> typeRangeFromStrings(String[] types) {
             Set<CloudUtils.InstanceType> result = EnumSet.noneOf(CloudUtils.InstanceType.class);
             for (String typeAsString: types) {
-                CloudUtils.InstanceType type = CloudUtils.InstanceType.valueOf(typeAsString); // can throw IllegalArgumentException
+                CloudUtils.InstanceType type = CloudUtils.InstanceType.customValueOf(typeAsString); // can throw IllegalArgumentException
                 result.add(type);
             }
             return result;
@@ -420,7 +428,7 @@ public abstract class AnEnumerator {
         protected static Set<CloudUtils.InstanceSize> sizeRangeFromStrings(String[] sizes) {
             Set<CloudUtils.InstanceSize> result = EnumSet.noneOf(CloudUtils.InstanceSize.class);
             for (String sizeAsString: sizes) {
-                CloudUtils.InstanceSize size = CloudUtils.InstanceSize.valueOf(sizeAsString); // can throw IllegalArgumentException
+                CloudUtils.InstanceSize size = CloudUtils.InstanceSize.customValueOf(sizeAsString); // can throw IllegalArgumentException
                 result.add(size);
             }
             return result;

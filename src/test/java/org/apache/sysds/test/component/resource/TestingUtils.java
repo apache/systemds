@@ -1,4 +1,4 @@
-package org.apache.sysds.test.resource;
+package org.apache.sysds.test.component.resource;
 
 import org.apache.sysds.resource.CloudInstance;
 import org.junit.Assert;

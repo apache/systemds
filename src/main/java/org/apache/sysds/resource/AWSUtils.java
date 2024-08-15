@@ -13,14 +13,14 @@ public class AWSUtils extends CloudUtils {
     public InstanceType getInstanceType(String instanceName) {
         String typeAsString = instanceName.split("\\.")[0];
         // throws exception if string value is not valid
-        return InstanceType.valueOf(typeAsString);
+        return InstanceType.customValueOf(typeAsString);
     }
 
     @Override
     public InstanceSize getInstanceSize(String instanceName) {
         String sizeAsString = instanceName.split("\\.")[1];
         // throws exception if string value is not valid
-        return InstanceSize.valueOf(sizeAsString);
+        return InstanceSize.customValueOf(sizeAsString);
     }
 
     @Override

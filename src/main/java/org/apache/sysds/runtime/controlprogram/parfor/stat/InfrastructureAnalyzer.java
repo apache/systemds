@@ -92,16 +92,6 @@ public class InfrastructureAnalyzer
 	}
 
 	/**
-	 * Sets the number of cluster nodes WITHOUT analyzing the hadoop cluster.
-	 * It is used ONLY for resource optimization to avoid cluster analysis.
-	 *
-	 * @param _remotePar
-	 */
-	public static void setRemoteParallelNodes(int remoteParallelNodes) {
-		_remotePar = remoteParallelNodes;
-	}
-
-	/**
 	 * Gets the number of remote parallel map slots.
 	 * 
 	 * @return number of remote parallel map tasks

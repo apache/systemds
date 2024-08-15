@@ -72,6 +72,11 @@ public class InterestBasedEnumerator extends AnEnumerator {
             for (long dMemory: driverMemoryPoints) {
                 driverSpace.put(dMemory, searchSpace.get(dMemory));
             }
+            // in case no big enough memory estimates exist set the instances with minimal memory
+            if (driverSpace.isEmpty()) {
+                long minMemory = availableNodesMemory.get(0);
+                driverSpace.put(minMemory, searchSpace.get(minMemory));
+            }
         } else {
             driverSpace.putAll(searchSpace);
         }
@@ -85,6 +90,11 @@ public class InterestBasedEnumerator extends AnEnumerator {
             List<Long> executorMemoryPoints = getMemoryPoints(memoryEstimatesBroadcast, availableNodesMemory);
             for (long eMemory: executorMemoryPoints) {
                 executorSpace.put(eMemory, searchSpace.get(eMemory));
+            }
+            // in case no big enough memory estimates exist set the instances with minimal memory
+            if (executorSpace.isEmpty()) {
+                long minMemory = availableNodesMemory.get(0);
+                executorSpace.put(minMemory, searchSpace.get(minMemory));
             }
         } else {
             executorSpace.putAll(searchSpace);
@@ -105,7 +115,7 @@ public class InterestBasedEnumerator extends AnEnumerator {
         int min = minExecutors;
         int max = Math.min(maxExecutors, (MAX_LEVEL_PARALLELISM / executorCores));
         
-        if (checkSingleNodeExecution && min == 0) {
+        if (checkSingleNodeExecution && min == 0 && !memoryEstimatesCP.isEmpty()) {
             long maxEstimate = memoryEstimatesCP.get(memoryEstimatesCP.size()-1);
             if (maxEstimate > driverMemory) {
                 min = 1;

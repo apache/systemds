@@ -961,7 +961,7 @@ public class CostEstimator
 	private void putInMemory(VarStats input) throws CostEstimationException {
 		long sizeEstimate = OptimizerUtils.estimateSize(input._mc);
 		if (sizeEstimate + usedMememory > localMemory)
-			throw new CostEstimationException("Insufficient local memory for ");
+			throw new CostEstimationException("Insufficient local memory");
 		usedMememory += sizeEstimate;
 		input._memory = sizeEstimate;
 	}

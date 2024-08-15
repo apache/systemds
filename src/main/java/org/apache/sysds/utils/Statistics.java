@@ -62,6 +62,7 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.DoubleAdder;
 import java.util.concurrent.atomic.LongAdder;
+import java.util.function.Consumer;
 
 /**
  * This class captures all statistics.
@@ -624,7 +625,7 @@ public class Statistics
 		return sb.toString();
 	}
 
-	public static String nGramToCSV(final NGramBuilder<String, NGramStats> mbuilder) {
+	public static void toCSVStream(final NGramBuilder<String, NGramStats> mbuilder, final Consumer<String> lineConsumer) {
 		ArrayList<String> colList = new ArrayList<>();
 		colList.add("N-Gram");
 		colList.add("Time[s]");
@@ -640,7 +641,7 @@ public class Statistics
 
 		colList.add("Count");
 
-		return NGramBuilder.toCSV(colList.toArray(new String[colList.size()]), mbuilder.getTopK(100000, Statistics.NGramStats.getComparator(), true), e -> {
+		NGramBuilder.toCSVStream(colList.toArray(new String[colList.size()]), mbuilder.getTopK(100000, Statistics.NGramStats.getComparator(), true), e -> {
 			StringBuilder builder = new StringBuilder();
 			builder.append(e.getIdentifier().replace("(", "").replace(")", "").replace(", ", ","));
 			builder.append(",");
@@ -662,11 +663,17 @@ public class Statistics
 					else
 						builder.append("&");
 					if (metaData.getValue() != null)
-						builder.append(metaData.getKey() + ":" + metaData.getValue());
+						builder.append(metaData.getKey()).append(":").append(metaData.getValue());
 				}
 			}
 			return builder.toString();
-		});
+		}, lineConsumer);
+	}
+
+	public static String nGramToCSV(final NGramBuilder<String, NGramStats> mbuilder) {
+		final StringBuilder b = new StringBuilder();
+		toCSVStream(mbuilder, b::append);
+		return b.toString();
 	}
 
 	public static String getCommonNGrams(NGramBuilder<String, NGramStats> builder, int num) {

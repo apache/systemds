@@ -177,7 +177,12 @@ public class Py4jConverterUtils {
 				break;
 			case CHARACTER:
 				for(int i = 0; i < numElements; i++) {
-					array.set(i, (char) buffer.get());
+					array.set(i, buffer.getChar());
+				}
+				break;
+			case HASH32:
+				for(int i = 0; i < numElements; i++) {
+					array.set(i, buffer.getInt());
 				}
 				break;
 			case HASH64:

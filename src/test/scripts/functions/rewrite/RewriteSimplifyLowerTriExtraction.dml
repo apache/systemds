@@ -24,7 +24,7 @@
 X = read($1)
 
 # Perform the operation
-R = sum(diag(X))
+R = X * cumsum(diag(matrix(1,rows=nrow(X),cols=1)))
 
 # Write the result R
 write(R, $2)

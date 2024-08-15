@@ -654,16 +654,22 @@ public class Statistics
 			} else {
 				builder.append(stdDevs);
 			}
-			builder.append(",");
-			if (e.getCumStats().getMeta() != null) {
-				boolean first = true;
-				for (Entry<String, Double> metaData : e.getCumStats().getMeta().entrySet()) {
-					if (first)
-						first = false;
-					else
-						builder.append("&");
-					if (metaData.getValue() != null)
-						builder.append(metaData.getKey()).append(":").append(metaData.getValue());
+			//builder.append(",");
+			boolean first = true;
+			NGramStats[] stats = e.getStats();
+			for (int i = 0; i < stats.length; i++) {
+				if (i != 0)
+					builder.append(",");
+				NGramStats stat = stats[i];
+				if (stat.getMeta() != null) {
+					for (Entry<String, Double> metaData : stat.getMeta().entrySet()) {
+						if (first)
+							first = false;
+						else
+							builder.append("&");
+						if (metaData.getValue() != null)
+							builder.append(metaData.getKey()).append(":").append(metaData.getValue());
+					}
 				}
 			}
 			return builder.toString();

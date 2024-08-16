@@ -19,7 +19,6 @@
 
 package org.apache.sysds.runtime.meta;
 
-import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.matrix.operators.AggregateBinaryOperator;
 import org.apache.sysds.runtime.matrix.operators.AggregateUnaryOperator;
 import org.apache.sysds.runtime.matrix.operators.ReorgOperator;
@@ -32,45 +31,25 @@ public abstract class DataCharacteristics implements Serializable {
 	protected int _blocksize;                 // squared block size
 	protected boolean _noEmptyBlocks = false; // does not materialize empty blocks
 	
-	public DataCharacteristics set(long nr, long nc, int blen) {
-		throw new DMLRuntimeException("DataCharacteristics.set(long, long, int): should never get called in the base class");
-	}
+	public abstract DataCharacteristics set(long nr, long nc, int blen);
 
-	public DataCharacteristics set(long nr, long nc, int blen, long nnz) {
-		throw new DMLRuntimeException("DataCharacteristics.set(long, long, int, long): should never get called in the base class");
-	}
+	public abstract DataCharacteristics set(long nr, long nc, int blen, long nnz);
 
-	public DataCharacteristics set(long[] dims, int blocksize) {
-		throw new DMLRuntimeException("DataCharacteristics.set(long[], int): should never get called in the base class");
-	}
+	public abstract DataCharacteristics set(long[] dims, int blocksize);
 
-	public DataCharacteristics set(long[] dims, int blocksize, long nnz) {
-		throw new DMLRuntimeException("DataCharacteristics.set(long[], int, long): should never get called in the base class");
-	}
+	public abstract DataCharacteristics set(long[] dims, int blocksize, long nnz);
 
-	public DataCharacteristics set(DataCharacteristics that) {
-		throw new DMLRuntimeException("DataCharacteristics.set(DataCharacteristics): should never get called in the base class");
-	}
+	public abstract DataCharacteristics set(DataCharacteristics that);
 
-	public long getRows() {
-		throw new DMLRuntimeException("DataCharacteristics.getRows(): should never get called in the base class");
-	}
+	public abstract long getRows();
 
-	public DataCharacteristics setRows(long rlen) {
-		throw new DMLRuntimeException("DataCharacteristics.setRows(long): should never get called in the base class");
-	}
+	public abstract DataCharacteristics setRows(long rlen);
 
-	public long getCols() {
-		throw new DMLRuntimeException("DataCharacteristics.getCols(): should never get called in the base class");
-	}
+	public abstract long getCols();
 
-	public DataCharacteristics setCols(long clen) {
-		throw new DMLRuntimeException("DataCharacteristics.setCols(long): should never get called in the base class");
-	}
+	public abstract DataCharacteristics setCols(long clen);
 
-	public long getLength() {
-		throw new DMLRuntimeException("DataCharacteristics.getLength(): should never get called in the base class");
-	}
+	public abstract long getLength();
 
 	public int getBlocksize() {
 		return _blocksize;
@@ -92,100 +71,56 @@ public abstract class DataCharacteristics implements Serializable {
 	}
 
 	public long getNumBlocks() {
-		throw new DMLRuntimeException("DataCharacteristics.getNumBlocks(int): should never get called in the base class");
+		return getNumRowBlocks() * getNumColBlocks();
 	}
 
-	public long getNumRowBlocks() {
-		throw new DMLRuntimeException("DataCharacteristics.getNumRowBlocks(): should never get called in the base class");
-	}
+	public abstract long getNumRowBlocks();
 
-	public long getNumColBlocks() {
-		throw new DMLRuntimeException("DataCharacteristics.getNumColBlocks(): should never get called in the base class");
-	}
+	public abstract long getNumColBlocks();
 
-	public DataCharacteristics setDimension(long nr, long nc) {
-		throw new DMLRuntimeException("DataCharacteristics.setDimension(long, long): should never get called in the base class");
-	}
+	public abstract DataCharacteristics setDimension(long nr, long nc);
 
-	public int getNumDims() {
-		throw new DMLRuntimeException("DataCharacteristics.getNumDims(): should never get called in the base class");
-	}
+	public abstract int getNumDims();
 
-	public long getDim(int i) {
-		throw new DMLRuntimeException("DataCharacteristics.getDim(int): should never get called in the base class");
-	}
+	public abstract long getDim(int i);
 
 	public long[] getDims() {
 		return getLongDims();
 	}
 
-	public long[] getLongDims() {
-		throw new DMLRuntimeException("DataCharacteristics.getLongDims(): should never get called in the base class");
-	}
+	public abstract long[] getLongDims();
 
-	public int[] getIntDims() {
-		throw new DMLRuntimeException("DataCharacteristics.getIntDims(): should never get called in the base class");
-	}
+	public abstract int[] getIntDims();
 
-	public DataCharacteristics setDim(int i, long dim) {
-		throw new DMLRuntimeException("DataCharacteristics.setDim(int, long): should never get called in the base class");
-	}
+	public abstract DataCharacteristics setDim(int i, long dim);
 
-	public DataCharacteristics setDims(long[] dims) {
-		throw new DMLRuntimeException("DataCharacteristics.setDims(long[]): should never get called in the base class");
-	}
+	public abstract DataCharacteristics setDims(long[] dims);
 
-	public long getNumBlocks(int i) {
-		throw new DMLRuntimeException("DataCharacteristics.getNumBlocks(i): should never get called in the base class");
-	}
+	public abstract long getNumBlocks(int i);
 
-	public DataCharacteristics setNonZeros(long nnz) {
-		throw new DMLRuntimeException("DataCharacteristics.setNonZeros(long): should never get called in the base class");
-	}
+	public abstract DataCharacteristics setNonZeros(long nnz);
 
-	public long getNonZeros() {
-		throw new DMLRuntimeException("DataCharacteristics.getNonZeros(): should never get called in the base class");
-	}
+	public abstract long getNonZeros();
 
-	public DataCharacteristics setNonZerosBound(long nnz) {
-		throw new DMLRuntimeException("DataCharacteristics.setNonZerosBound(long): should never get called in the base class");
-	}
+	public abstract DataCharacteristics setNonZerosBound(long nnz);
 
-	public long getNonZerosBound() {
-		throw new DMLRuntimeException("DataCharacteristics.getNonZerosBound(): should never get called in the base class");
-	}
+	public abstract long getNonZerosBound();
 
-	public double getSparsity() {
-		throw new DMLRuntimeException("DataCharacteristics.getSparsity(): should never get called in the base class");
-	}
+	public abstract double getSparsity();
 
-	public boolean dimsKnown() {
-		throw new DMLRuntimeException("DataCharacteristics.dimsKnown(): should never get called in the base class");
-	}
+	public abstract boolean dimsKnown();
 
-	public boolean dimsKnown(boolean includeNnz) {
-		throw new DMLRuntimeException("DataCharacteristics.dimsKnown(boolean): should never get called in the base class");
-	}
+	public abstract boolean dimsKnown(boolean includeNnz);
 
-	public boolean rowsKnown() {
-		throw new DMLRuntimeException("DataCharacteristics.rowsKnown(): should never get called in the base class");
-	}
+	public abstract boolean rowsKnown();
 
-	public boolean colsKnown() {
-		throw new DMLRuntimeException("DataCharacteristics.colsKnown(): should never get called in the base class");
-	}
+	public abstract boolean colsKnown();
 
-	public boolean nnzKnown() {
-		throw new DMLRuntimeException("DataCharacteristics.nnzKnown(): should never get called in the base class");
-	}
+	public abstract boolean nnzKnown();
 
-	public boolean isUltraSparse() {
-		throw new DMLRuntimeException("DataCharacteristics.isUltraSparse(): should never get called in the base class");
-	}
+	public abstract boolean isUltraSparse();
 
-	public boolean mightHaveEmptyBlocks() {
-		throw new DMLRuntimeException("DataCharacteristics.mightHaveEmptyBlocks(): should never get called in the base class");
-	}
+	public abstract boolean mightHaveEmptyBlocks();
 
 	public static void reorg(DataCharacteristics dim, ReorgOperator op, DataCharacteristics dimOut) {
 		op.fn.computeDimension(dim, dimOut);

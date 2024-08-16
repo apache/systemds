@@ -19,10 +19,8 @@
 
 package org.apache.sysds.runtime.controlprogram.caching;
 
-import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.util.LocalFileUtils;
 
-import java.io.IOException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -48,14 +46,8 @@ public class CacheMaintenanceService
 		//sync or async file delete
 		if( CacheableData.CACHING_ASYNC_SERIALIZE )
 			_pool.submit(new CacheMaintenanceService.DataSerializerTask(bbuff, cb));
-		else {
-			try {
-				bbuff.serializeBlock(cb);
-			}
-			catch(IOException ex) {
-				throw new DMLRuntimeException(ex);
-			}
-		}
+		else
+			bbuff.serializeBlock(cb);
 	}
 
 	public void close() {
@@ -94,12 +86,7 @@ public class CacheMaintenanceService
 
 		@Override
 		public void run() {
-			try {
-				_bbuff.serializeBlock(_cb);
-			}
-			catch(IOException ex) {
-				throw new DMLRuntimeException(ex);
-			}
+			_bbuff.serializeBlock(_cb);
 		}
 	}
 }

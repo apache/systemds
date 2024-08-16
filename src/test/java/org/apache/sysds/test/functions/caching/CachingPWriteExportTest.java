@@ -19,7 +19,6 @@
 
 package org.apache.sysds.test.functions.caching;
 
-import org.junit.Assert;
 import org.junit.Test;
 import org.apache.sysds.common.Types.FileFormat;
 import org.apache.sysds.hops.Hop;
@@ -28,10 +27,10 @@ import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.util.DataConverter;
 import org.apache.sysds.test.AutomatedTestBase;
 import org.apache.sysds.test.TestConfiguration;
+import org.apache.sysds.test.TestUtils;
 
 public class CachingPWriteExportTest extends AutomatedTestBase 
 {
-	
 	private final static String TEST_NAME = "export";
 	private final static String TEST_DIR = "functions/caching/";
 	private final static String TEST_CLASS_DIR = TEST_DIR + CachingPWriteExportTest.class.getSimpleName() + "/";
@@ -94,16 +93,12 @@ public class CachingPWriteExportTest extends AutomatedTestBase
 				ii, rows, cols, OptimizerUtils.DEFAULT_BLOCKSIZE, nnz);
 			Vp = DataConverter.convertToDoubleMatrix(mb);
 		}
-		catch(Exception ex)
-		{
+		catch(Exception ex) {
 			ex.printStackTrace();
 			throw new RuntimeException(ex);
 		}
 		
 		//compare
-		for( int i=0; i<rows; i++ )
-			for( int j=0; j<cols; j++ )
-				if( V[i][j]!=Vp[i][j] )
-					Assert.fail("Wrong value i="+i+", j="+j+", value1="+V[i][j]+", value2="+Vp[i][j]);
+		TestUtils.compareMatrices(V, Vp, 1e-14);
 	}
 }

@@ -113,11 +113,6 @@ public class MatrixCharacteristics extends DataCharacteristics
 	}
 
 	@Override
-	public long getNumBlocks() {
-		return getNumRowBlocks() * getNumColBlocks();
-	}
-
-	@Override
 	public long getNumRowBlocks() {
 		//number of row blocks w/ awareness of zero rows
 		return Math.max((long) Math.ceil((double)getRows() / getBlocksize()), 1);
@@ -273,5 +268,30 @@ public class MatrixCharacteristics extends DataCharacteristics
 		sb.append(_blocksize);
 		sb.append(")]");
 		return sb.toString();
+	}
+
+	@Override
+	public DataCharacteristics set(long[] dims, int blocksize) {
+		throw new UnsupportedOperationException();
+	}
+
+	@Override
+	public DataCharacteristics set(long[] dims, int blocksize, long nnz) {
+		throw new UnsupportedOperationException();
+	}
+
+	@Override
+	public DataCharacteristics setDim(int i, long dim) {
+		throw new UnsupportedOperationException();
+	}
+
+	@Override
+	public DataCharacteristics setDims(long[] dims) {
+		throw new UnsupportedOperationException();
+	}
+
+	@Override
+	public long getNumBlocks(int i) {
+		throw new UnsupportedOperationException();
 	}
 }

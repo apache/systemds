@@ -22,6 +22,9 @@ package org.apache.sysds.test.functions.caching;
 import org.junit.Assert;
 import org.junit.Test;
 import org.apache.sysds.runtime.controlprogram.caching.CacheStatistics;
+import org.apache.sysds.runtime.controlprogram.caching.CacheableData;
+import org.apache.sysds.runtime.controlprogram.caching.LazyWriteBuffer;
+import org.apache.sysds.runtime.controlprogram.caching.LazyWriteBuffer.RPolicy;
 import org.apache.sysds.test.AutomatedTestBase;
 import org.apache.sysds.test.TestConfiguration;
 
@@ -38,15 +41,27 @@ public class BufferpoolLeakTest extends AutomatedTestBase
 	}
 	
 	@Test
-	public void testLeak1() {
-		runTestBufferpoolLeak(10000, 15);
+	public void testLeak1_FIFO() {
+		runTestBufferpoolLeak(10000, 15, RPolicy.FIFO, false);
 	}
 	
-	private void runTestBufferpoolLeak(int rows, int cols) {
+	@Test
+	public void testLeak1_LRU() {
+		runTestBufferpoolLeak(10000, 15, RPolicy.LRU, false);
+	}
+	
+	@Test
+	public void testLeak1_FIFO_Async() {
+		runTestBufferpoolLeak(10000, 15, RPolicy.FIFO, true);
+	}
+	
+	private void runTestBufferpoolLeak(int rows, int cols, RPolicy policy, boolean asyncSerialize) {
 		TestConfiguration config = getTestConfiguration(TEST_NAME);
 		config.addVariable("rows", rows);
 		config.addVariable("cols", cols);
 		loadTestConfiguration(config);
+		CacheableData.CACHING_BUFFER_POLICY = policy;
+		CacheableData.CACHING_ASYNC_SERIALIZE = asyncSerialize;
 		
 		String HOME = SCRIPT_DIR + TEST_DIR;
 		fullDMLScriptName = HOME + TEST_NAME + ".dml";
@@ -55,6 +70,7 @@ public class BufferpoolLeakTest extends AutomatedTestBase
 		
 		//run test and check no evictions
 		runTest(true, false, null, -1);
+		LazyWriteBuffer.printStatus("tests");
 		Assert.assertEquals(0, CacheStatistics.getFSWrites());
 	}
 }

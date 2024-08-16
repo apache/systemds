@@ -32,8 +32,7 @@ public class PageCache
 		_pool = new HashMap<>();
 	}
 
-	public static void clear()
-	{
+	public static void clear() {
 		_pool = null;
 	}
 
@@ -48,7 +47,7 @@ public class PageCache
 			list = new LinkedList<>();
 			_pool.put(data.length, list);
 		}
-		list.addLast(new SoftReference<>(data));	
+		list.addLast(new SoftReference<>(data));
 	}
 
 	public static byte[] getPage( int size )

@@ -593,6 +593,7 @@ public interface Types {
 				case "castdts": return CAST_AS_SCALAR;
 				case "castdtm": return CAST_AS_MATRIX;
 				case "castdtf": return CAST_AS_FRAME;
+				case "castdtl": return CAST_AS_LIST;
 				case "castvtd": return CAST_AS_DOUBLE;
 				case "castvti": return CAST_AS_INT;
 				case "castvtb": return CAST_AS_BOOLEAN;
@@ -731,7 +732,7 @@ public interface Types {
 				case "cm": return MOMENT;
 				case "+*": return PLUS_MULT;
 				case "-*": return MINUS_MULT;
-				case "map": return MAP;
+				case "_map": return MAP;
 				default:   return valueOf(opcode.toUpperCase());
 			}
 		}

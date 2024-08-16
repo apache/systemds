@@ -171,6 +171,8 @@ public class ElementwiseBitwLogicalTest extends AutomatedTestBase{
 			DMLScript.USE_LOCAL_SPARK_CONFIG = true;
 
 		try {
+
+			setOutputBuffering(true);
 			String TEST_NAME = testname;
 			getAndLoadTestConfiguration(TEST_NAME);
 

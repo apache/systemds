@@ -121,13 +121,14 @@ public class UltraSparseMRMatrixMultiplicationTest extends AutomatedTestBase
 			
 		try
 		{
+			setOutputBuffering(true);
 			String TEST_NAME = (rowwise) ? TEST_NAME1 : TEST_NAME2;
 			getAndLoadTestConfiguration(TEST_NAME);
 			
 			/* This is for running the junit test the new way, i.e., construct the arguments directly */
 			String HOME = SCRIPT_DIR + TEST_DIR;
 			fullDMLScriptName = HOME + TEST_NAME + ".dml";
-			programArgs = new String[]{"-explain","-args", input("A"),
+			programArgs = new String[]{"-args", input("A"),
 				Integer.toString(rows), Integer.toString(cols), input("B"), output("C") };
 			
 			fullRScriptName = HOME + TEST_NAME + ".R";

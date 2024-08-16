@@ -226,6 +226,8 @@ public class DiagMatrixMultiplicationTest extends AutomatedTestBase
 		
 		try
 		{
+
+			setOutputBuffering(true);
 			TestConfiguration config = getTestConfiguration(TEST_NAME);
 			
 			OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION = simplify;

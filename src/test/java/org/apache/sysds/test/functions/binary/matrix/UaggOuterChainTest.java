@@ -703,6 +703,7 @@ public class UaggOuterChainTest extends AutomatedTestBase
 
 		try
 		{
+			setOutputBuffering(true);
 			String TEST_NAME = testname;
 			TestConfiguration config = getTestConfiguration(TEST_NAME);
 			
@@ -774,7 +775,7 @@ public class UaggOuterChainTest extends AutomatedTestBase
 			
 			String HOME = SCRIPT_DIR + TEST_DIR;
 			fullDMLScriptName = HOME + TEST_NAME + suffix + strSumTypeSuffix + ".dml";
-			programArgs = new String[]{"-stats", "-explain","-args", 
+			programArgs = new String[]{"-stats", "-args", 
 				input("A"), input("B"), output("C")};
 			
 			fullRScriptName = HOME + TEST_NAME + suffix + strSumTypeSuffix +".R";

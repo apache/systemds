@@ -30,7 +30,6 @@ import org.apache.sysds.runtime.functionobjects.BitwShiftR;
 import org.apache.sysds.runtime.functionobjects.BitwXor;
 import org.apache.sysds.runtime.functionobjects.Builtin;
 import org.apache.sysds.runtime.functionobjects.Builtin.BuiltinCode;
-import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.functionobjects.Divide;
 import org.apache.sysds.runtime.functionobjects.Equals;
 import org.apache.sysds.runtime.functionobjects.GreaterThan;
@@ -49,8 +48,10 @@ import org.apache.sysds.runtime.functionobjects.Or;
 import org.apache.sysds.runtime.functionobjects.Plus;
 import org.apache.sysds.runtime.functionobjects.PlusMultiply;
 import org.apache.sysds.runtime.functionobjects.Power;
+import org.apache.sysds.runtime.functionobjects.Power2;
 import org.apache.sysds.runtime.functionobjects.ValueFunction;
 import org.apache.sysds.runtime.functionobjects.Xor;
+import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 
 /**
  * BinaryOperator class for operations that have two inputs.
@@ -77,7 +78,8 @@ public class BinaryOperator extends MultiThreadedOperator {
 		super(p instanceof Plus || p instanceof Multiply || p instanceof Minus || p instanceof PlusMultiply ||
 			p instanceof MinusMultiply || p instanceof And || p instanceof Or || p instanceof Xor ||
 			p instanceof BitwAnd || p instanceof BitwOr || p instanceof BitwXor || p instanceof BitwShiftL ||
-			p instanceof BitwShiftR);
+			p instanceof BitwShiftR || p instanceof Power2 || 
+			(p instanceof Builtin && ((Builtin)p).isBinarySparseSafe()));
 		fn = p;
 		commutative = p instanceof Plus || p instanceof Multiply || p instanceof And || p instanceof Or ||
 			p instanceof Xor || p instanceof Minus1Multiply;
@@ -293,6 +295,11 @@ public class BinaryOperator extends MultiThreadedOperator {
 
 	@Override
 	public String toString() {
-		return "BinaryOperator("+fn.getClass().getSimpleName()+")";
+		if(fn instanceof Builtin) {
+			return "BinaryOperator(" + fn + "," + _numThreads + ")";
+		}
+		else {
+			return "BinaryOperator(" + fn.getClass().getSimpleName() + "," + _numThreads + ")";
+		}
 	}
 }

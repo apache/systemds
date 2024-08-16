@@ -53,6 +53,8 @@ public class ScalarDivisionTest extends AutomatedTestBase
 				new String[] { "vector_left", "vector_right", "matrix_left", "matrix_right" }));
 		
 		// negative tests
+
+		setOutputBuffering(true);
 	}
 	
 	@Test

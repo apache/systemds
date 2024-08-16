@@ -591,13 +591,15 @@ public class MatrixBlock extends MatrixValue implements CacheBlock<MatrixBlock>,
 	public final DataCharacteristics getDataCharacteristics() {
 		return new MatrixCharacteristics(rlen, clen, -1, nonZeros);
 	}
-	
-	public final boolean isVector() {
-		return (rlen == 1 || clen == 1);
-	}
-	
+
+	/**
+	 * Get the total number of cells in this MatrixBlock This variable can be misused (intentionally) for
+	 * parallelization.
+	 * 
+	 * @return The number of cells in this matrix.
+	 */
 	public final long getLength() {
-		return (long)rlen * clen;
+		return (long) rlen * clen;
 	}
 	
 	@Override
@@ -1354,7 +1356,7 @@ public class MatrixBlock extends MatrixValue implements CacheBlock<MatrixBlock>,
 	////////
 	// basic block handling functions
 	
-	private final void denseToSparse() {
+	public final void denseToSparse() {
 		denseToSparse(true, 1);
 	}
 	
@@ -1446,6 +1448,15 @@ public class MatrixBlock extends MatrixValue implements CacheBlock<MatrixBlock>,
 		return nonZeros;
 	}
 	
+	/**
+	 * Recomputes the number of non-zero values of a specified 
+	 * range of the matrix block. NOTE: This call does not materialize
+	 * the compute result in any form.
+	 * 
+	 * @param rl 	row lower index, 0-based, inclusive
+	 * @param ru 	row upper index, 0-based, inclusive
+	 * @return the number of non-zero values
+	 */
 	public long recomputeNonZeros(int rl, int ru) {
 		return recomputeNonZeros(rl, ru, 0, clen-1);
 	}
@@ -1570,10 +1581,9 @@ public class MatrixBlock extends MatrixValue implements CacheBlock<MatrixBlock>,
 		clen = that.clen;
 		nonZeros = that.nonZeros;
 		sparse = that.sparse;
-		if( !sparse )
-			denseBlock = that.denseBlock;
-		else
-			sparseBlock = that.sparseBlock;
+		estimatedNNzsPerRow = that.estimatedNNzsPerRow;
+		denseBlock = that.denseBlock;
+		sparseBlock = that.sparseBlock;
 		return this;
 	}
 	
@@ -2864,53 +2874,6 @@ public class MatrixBlock extends MatrixValue implements CacheBlock<MatrixBlock>,
 		return size;
 	}
 
-	private static SparsityEstimate estimateSparsityOnBinary(MatrixBlock m1, MatrixBlock m2, BinaryOperator op)
-	{
-		SparsityEstimate est = new SparsityEstimate();
-		
-		//estimate dense output for all sparse-unsafe operations, except DIV (because it commonly behaves like
-		//sparse-safe but is not due to 0/0->NaN, this is consistent with the current hop sparsity estimate)
-		//see also, special sparse-safe case for DIV in LibMatrixBincell 
-		if( !op.sparseSafe && !(op.fn instanceof Divide && m2.getSparsity()==1.0) ) {
-			est.sparse = false;
-			return est;
-		}
-		
-		BinaryAccessType atype = LibMatrixBincell.getBinaryAccessType(m1, m2);
-		boolean outer = (atype == BinaryAccessType.OUTER_VECTOR_VECTOR);
-		long m = m1.getNumRows();
-		long n = outer ? m2.getNumColumns() : m1.getNumColumns();
-		long nz1 = m1.getNonZeros();
-		long nz2 = m2.getNonZeros();
-		
-		//account for matrix vector and vector/vector
-		long estnnz = 0;
-		if( atype == BinaryAccessType.OUTER_VECTOR_VECTOR )
-		{
-			estnnz = OptimizerUtils.getOuterNonZeros(
-				m, n, nz1, nz2, op.getBinaryOperatorOpOp2());
-		}
-		else //DEFAULT CASE
-		{
-			if( atype == BinaryAccessType.MATRIX_COL_VECTOR )
-				nz2 = nz2 * n;
-			else if( atype == BinaryAccessType.MATRIX_ROW_VECTOR )
-				nz2 = nz2 * m;
-			
-			//compute output sparsity consistent w/ the hop compiler
-			double sp1 = OptimizerUtils.getSparsity(m, n, nz1);
-			double sp2 = OptimizerUtils.getSparsity(m, n, nz2);
-			double spout = OptimizerUtils.getBinaryOpSparsity(
-				sp1, sp2, op.getBinaryOperatorOpOp2(), true);
-			estnnz = UtilFunctions.toLong(spout * m * n);
-		}
-		
-		est.sparse = evalSparseFormatInMemory(m, n, estnnz);
-		est.estimatedNonZeros = estnnz;
-		
-		return est;
-	}
-	
 	private boolean estimateSparsityOnSlice(int selectRlen, int selectClen, int finalRlen, int finalClen) {
 		long ennz = (long)((double)nonZeros/rlen/clen*selectRlen*selectClen);
 		return evalSparseFormatInMemory(finalRlen, finalClen, ennz); 
@@ -2998,26 +2961,7 @@ public class MatrixBlock extends MatrixValue implements CacheBlock<MatrixBlock>,
 
 	@Override
 	public MatrixBlock scalarOperations(ScalarOperator op, MatrixValue result) {
-		MatrixBlock ret = checkType(result);
-		
-		// estimate the sparsity structure of result matrix
-		boolean sp = this.sparse; // by default, we guess result.sparsity=input.sparsity
-		if (!op.sparseSafe)
-			sp = false; // if the operation is not sparse safe, then result will be in dense format
-		
-		//allocate the output matrix block
-		if( ret==null )
-			ret = new MatrixBlock(rlen, clen, sp, this.nonZeros);
-		else
-			ret.reset(rlen, clen, sp, this.nonZeros);
-		
-		//core scalar operations
-		if( op.getNumThreads() > 1 )
-			LibMatrixBincell.bincellOp(this, ret, op, op.getNumThreads());
-		else
-			LibMatrixBincell.bincellOp(this, ret, op);
-		
-		return ret;
+		return LibMatrixBincell.bincellOpScalar(this, checkType(result), op, op.getNumThreads());
 	}
 
 	public final MatrixBlock unaryOperations(UnaryOperator op){
@@ -3072,47 +3016,16 @@ public class MatrixBlock extends MatrixValue implements CacheBlock<MatrixBlock>,
 	public MatrixBlock binaryOperations(BinaryOperator op, MatrixValue thatValue, MatrixValue result) {
 		MatrixBlock that = checkType(thatValue);
 		MatrixBlock ret = checkType(result);
-		LibMatrixBincell.isValidDimensionsBinary(this, that);
 		if(thatValue instanceof CompressedMatrixBlock)
 			return ((CompressedMatrixBlock) thatValue).binaryOperationsLeft(op, this, result);
 
-		//compute output dimensions
-		boolean outer = (LibMatrixBincell.getBinaryAccessType(this, that)
-				== BinaryAccessType.OUTER_VECTOR_VECTOR); 
-		int rows = rlen;
-		int cols = outer ? that.clen : clen;
-		
-		//estimate output sparsity
-		SparsityEstimate resultSparse = estimateSparsityOnBinary(this, that, op);
-		if( ret == null )
-			ret = new MatrixBlock(rows, cols, resultSparse.sparse, resultSparse.estimatedNonZeros);
-		else
-			ret.reset(rows, cols, resultSparse.sparse, resultSparse.estimatedNonZeros);
-		
-		//core binary cell operation
-		if( op.getNumThreads() > 1 )
-			LibMatrixBincell.bincellOp( this, that, ret, op, op.getNumThreads() );
-		else
-			LibMatrixBincell.bincellOp( this, that, ret, op );
-		
-		return ret;
+		return LibMatrixBincell.bincellOp(this, that, ret, op, op.getNumThreads());
 	}
 
 	@Override
 	public MatrixBlock binaryOperationsInPlace(BinaryOperator op, MatrixValue thatValue) {
-		MatrixBlock that=checkType(thatValue);
-		LibMatrixBincell.isValidDimensionsBinary(this, that);
-	
-		//estimate output sparsity
-		SparsityEstimate resultSparse = estimateSparsityOnBinary(this, that, op);
-		if(resultSparse.sparse && !this.sparse)
-			denseToSparse();
-		else if(!resultSparse.sparse && this.sparse)
-			sparseToDense();
-		
-		//core binary cell operation
-		LibMatrixBincell.bincellOpInPlace(this, that, op);
-		return this;
+		MatrixBlock that = checkType(thatValue);
+		return LibMatrixBincell.bincellOpInPlace(this, that, op);
 	}
 	
 	public MatrixBlock ternaryOperations(TernaryOperator op, MatrixBlock m2, MatrixBlock m3, MatrixBlock ret) {
@@ -3179,17 +3092,14 @@ public class MatrixBlock extends MatrixValue implements CacheBlock<MatrixBlock>,
 				m3 = ((CompressedMatrixBlock) m3)
 					.getUncompressed("Ternary Operator arg3 " + op.fn.getClass().getSimpleName(), op.getNumThreads());
 
-			ret.reset(m, n, sparseOutput);
 
 			if (s2 != s3 && (op.fn instanceof PlusMultiply || op.fn instanceof MinusMultiply) ) {
 				//SPECIAL CASE for sparse-dense combinations of common +* and -*
 				BinaryOperator bop = ((ValueFunctionWithConstant)op.fn).setOp2Constant(s2 ? d2 : d3);
-				if( op.getNumThreads() > 1 )
-					LibMatrixBincell.bincellOp(this, s2 ? m3 : m2, ret, bop, op.getNumThreads());
-				else
-					LibMatrixBincell.bincellOp(this, s2 ? m3 : m2, ret, bop);
+				ret = LibMatrixBincell.bincellOp(this, s2 ? m3 : m2, ret, bop, op.getNumThreads());
 			}
 			else {
+				ret.reset(m, n, sparseOutput);
 				//DEFAULT CASE
 				LibMatrixTercell.tercellOp(this, m2, m3, ret, op);
 				
@@ -5693,6 +5603,22 @@ public class MatrixBlock extends MatrixValue implements CacheBlock<MatrixBlock>,
 		LibMatrixDatagen.generateSample( out, range, size, replace, seed );
 		return out;
 	}
+
+	public MatrixBlock fill(double v){
+		if(v == 0){
+			denseBlock = null;
+			sparseBlock = null;
+			reset();
+			setNonZeros(0);
+		}
+		else{
+			if(sparseBlock != null)
+				sparseBlock = null;
+			sparse = false;
+			reset(rlen, clen, v);
+		}
+		return this;
+	}
 	
 	////////
 	// Misc methods
@@ -5812,18 +5738,4 @@ public class MatrixBlock extends MatrixValue implements CacheBlock<MatrixBlock>,
 		return String.valueOf(v);
 	}
 
-	///////////////////////////
-	// Helper classes
-
-	public static class SparsityEstimate
-	{
-		public long estimatedNonZeros=0;
-		public boolean sparse=false;
-		public SparsityEstimate(boolean sps, long nnzs)
-		{
-			sparse=sps;
-			estimatedNonZeros=nnzs;
-		}
-		public SparsityEstimate(){}
-	}
 }

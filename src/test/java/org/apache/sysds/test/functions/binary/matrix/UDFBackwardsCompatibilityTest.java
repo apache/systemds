@@ -93,11 +93,12 @@ public class UDFBackwardsCompatibilityTest extends AutomatedTestBase
 		String TEST_NAME = testname;
 		
 		try {
+			setOutputBuffering(true);
 			getAndLoadTestConfiguration(TEST_NAME);
 			
 			String HOME = SCRIPT_DIR + TEST_DIR;
 			fullDMLScriptName = HOME + TEST_NAME + ".dml";
-			programArgs = new String[]{"-stats", "-explain","-args",
+			programArgs = new String[]{"-stats","-args",
 				input("A"), input("B"), String.valueOf(vectorize).toUpperCase(), output("C")};
 			
 			//generate actual dataset

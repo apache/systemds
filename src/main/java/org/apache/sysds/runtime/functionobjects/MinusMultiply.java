@@ -34,7 +34,7 @@ public class MinusMultiply extends TernaryValueFunction implements ValueFunction
 		_cnt = 1;
 	}
 	
-	private MinusMultiply(double cnt) {
+	public MinusMultiply(double cnt) {
 		_cnt = cnt;
 	}
 	

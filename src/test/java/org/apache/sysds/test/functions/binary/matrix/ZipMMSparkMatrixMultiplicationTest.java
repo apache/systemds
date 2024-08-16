@@ -138,6 +138,8 @@ public class ZipMMSparkMatrixMultiplicationTest extends AutomatedTestBase
 		
 		try
 		{
+
+			setOutputBuffering(true);
 			getAndLoadTestConfiguration(TEST_NAME);
 			
 			/* This is for running the junit test the new way, i.e., construct the arguments directly */

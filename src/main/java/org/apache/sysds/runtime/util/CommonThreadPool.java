@@ -315,6 +315,8 @@ public class CommonThreadPool implements ExecutorService {
 			return true;
 		else if(name.contains("PARFOR"))
 			return true;
+		else if(name.contains("test"))
+			return true;
 		else
 			return false;
 	}

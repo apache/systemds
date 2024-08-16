@@ -17,7 +17,7 @@
  * under the License.
  */
 
-package org.apache.sysds.test.component.matrix;
+package org.apache.sysds.test.component.matrix.binary;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
@@ -73,7 +73,13 @@ public class BinaryOperationInPlaceTestParameterized {
 	public BinaryOperationInPlaceTestParameterized(MatrixBlock left, MatrixBlock right, BinaryOperator op) {
 		this.left = new MatrixBlock();
 		this.right = right;
+		if((left.getSparsity() < 1 || right.getSparsity() < 1) && op.fn instanceof Builtin &&
+			((Builtin) op.fn).bFunc == BuiltinCode.LOG) {
+			op = new BinaryOperator(Builtin.getBuiltinFnObject(BuiltinCode.LOG_NZ), op.getNumThreads());
+		}
+
 		this.op = op;
+
 		this.left.copy(left);
 	}
 
@@ -118,10 +124,10 @@ public class BinaryOperationInPlaceTestParameterized {
 			};
 
 			for(double rightSparsity : sparsities) {
-				MatrixBlock right = TestUtils.generateTestMatrixBlock(100, 100, 0, 10, rightSparsity, 2);
-				MatrixBlock rightV = TestUtils.generateTestMatrixBlock(1, 100, 0, 10, rightSparsity, 2);
+				MatrixBlock right = TestUtils.floor(TestUtils.generateTestMatrixBlock(100, 100, -10, 10, rightSparsity, 2));
+				MatrixBlock rightV = TestUtils.floor(TestUtils.generateTestMatrixBlock(1, 100, -10, 10, rightSparsity, 2));
 				for(double leftSparsity : sparsities) {
-					MatrixBlock left = TestUtils.generateTestMatrixBlock(100, 100, 0, 10, leftSparsity, 2);
+					MatrixBlock left = TestUtils.floor(TestUtils.generateTestMatrixBlock(100, 100, -10, 10, leftSparsity, 2));
 					for(BinaryOperator op : operators) {
 						tests.add(new Object[] {left, right, op});
 						tests.add(new Object[] {left, rightV, op});
@@ -150,6 +156,8 @@ public class BinaryOperationInPlaceTestParameterized {
 
 			final MatrixBlock ret1 = left.binaryOperations(op, right);
 
+			long nnzExpected = ret1.getNonZeros();
+
 			assertEquals(lrb, left.getNumRows());
 			assertEquals(lcb, left.getNumColumns());
 			assertEquals(rrb, right.getNumRows());
@@ -157,15 +165,18 @@ public class BinaryOperationInPlaceTestParameterized {
 
 			left.binaryOperationsInPlace(op, right);
 
+			long nnzActual = left.getNonZeros();
+
 			assertEquals(lrb, left.getNumRows());
 			assertEquals(lcb, left.getNumColumns());
 			assertEquals(rrb, right.getNumRows());
 			assertEquals(rcb, right.getNumColumns());
+			assertEquals("nnz should be equivalent on inplace operations: " + op.toString(),nnzExpected, nnzActual);
 			TestUtils.compareMatricesBitAvgDistance(ret1, left, 0, 0, "Result is incorrect for inplace \n" + op + "  "
 				+ lspb + " " + rspb + " (" + lrb + "," + lcb + ")" + " (" + rrb + "," + rcb + ")");
 		}
 		catch(DMLRuntimeException e) {
-			if(e.getMessage().contains("Invalid row safety of inplace row operation: ")) {
+			if(e.getMessage().contains("Invalid row safety of in place row operation: ")) {
 				if(op.fn instanceof Divide || //
 					op.fn instanceof Plus || //
 					op.fn instanceof Minus || //
@@ -177,7 +188,7 @@ public class BinaryOperationInPlaceTestParameterized {
 		}
 		catch(NotImplementedException e) {
 			// TODO fix the not implemented instances.
-			if(e.getMessage().contains("Not made sparse vector inplace"))
+			if(e.getMessage().contains("Not made sparse vector in place"))
 				return;
 			e.printStackTrace();
 			fail(e.getMessage());

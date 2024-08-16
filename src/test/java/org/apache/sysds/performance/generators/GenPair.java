@@ -17,36 +17,39 @@
  * under the License.
  */
 
-package org.apache.sysds.runtime.functionobjects;
+package org.apache.sysds.performance.generators;
 
-public class And extends ValueFunction 
-{
-	private static final long serialVersionUID = 6523146102263905602L;
-		
-	private static And singleObj = null;
+import org.apache.sysds.runtime.matrix.data.Pair;
 
-	private And() {
-		// nothing to do here
-	}
-	
-	public static And getAndFnObject() {
-		if ( singleObj == null )
-			singleObj = new And();
-		return singleObj;
+public class GenPair<T> implements IGenerate<Pair<T, T>> {
+
+	private IGenerate<T> g1;
+	private IGenerate<T> g2;
+
+	public GenPair(IGenerate<T> g1, IGenerate<T> g2) {
+		this.g1 = g1;
+		this.g2 = g2;
 	}
 
 	@Override
-	public boolean execute(boolean in1, boolean in2) {
-		return in1 && in2;
+	public boolean isEmpty() {
+		return g1.isEmpty() || g2.isEmpty();
 	}
 
 	@Override
-	public double execute(double in1, double in2) {
-		return in1 == 0.0 || in2 == 0.0 ? 0 : 1;
+	public int defaultWaitTime() {
+		return g1.defaultWaitTime() + g2.defaultWaitTime();
 	}
 
 	@Override
-	public boolean isBinary(){
-		return true;
+	public Pair<T, T> take() {
+		return new Pair<>(g1.take(), g2.take());
 	}
+
+	@Override
+	public void generate(int N) throws InterruptedException {
+		g1.generate(N);
+		g2.generate(N);
+	}
+
 }

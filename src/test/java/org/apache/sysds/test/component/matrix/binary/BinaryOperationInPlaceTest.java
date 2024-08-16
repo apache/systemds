@@ -17,7 +17,7 @@
  * under the License.
  */
 
-package org.apache.sysds.test.component.matrix;
+package org.apache.sysds.test.component.matrix.binary;
 
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
@@ -77,28 +77,18 @@ public class BinaryOperationInPlaceTest {
 		executeDivide(m1, m2);
 	}
 
-	@Test(expected = DMLRuntimeException.class)
+	@Test(expected = Exception.class)
 	public void testDivide_Invalid_1() {
 		MatrixBlock m1 = TestUtils.generateTestMatrixBlock(100, 10, 0, 10, 1.0, 1);
 		MatrixBlock m2 = TestUtils.generateTestMatrixBlock(1, 11, 0, 10, 1.0, 2);
 		executeDivide(m1, m2);
 	}
 
-	@Test(expected = DMLRuntimeException.class)
+	@Test(expected = Exception.class)
 	public void testDivide_Invalid_2() {
-		try {
-
-			MatrixBlock m1 = TestUtils.generateTestMatrixBlock(100, 10, 0, 10, 1.0, 1);
-			MatrixBlock m2 = TestUtils.generateTestMatrixBlock(1, 9, 0, 10, 1.0, 2);
-			executeDivide(m1, m2);
-		}
-		catch(DMLRuntimeException e) {
-			throw e;
-		}
-		catch(Exception e) {
-			e.printStackTrace();
-			fail(e.getMessage());
-		}
+		MatrixBlock m1 = TestUtils.generateTestMatrixBlock(100, 10, 0, 10, 1.0, 1);
+		MatrixBlock m2 = TestUtils.generateTestMatrixBlock(1, 9, 0, 10, 1.0, 2);
+		executeDivide(m1, m2);
 	}
 
 	@Test

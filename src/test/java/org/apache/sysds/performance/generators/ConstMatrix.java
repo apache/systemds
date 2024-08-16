@@ -40,6 +40,11 @@ public class ConstMatrix implements Const<MatrixBlock> {
 			.get(0, 0);
 	}
 
+	public ConstMatrix(MatrixBlock mb, int nVal) {
+		this.mb = mb;
+		this.nVal = nVal;
+	}
+
 	public ConstMatrix(int r, int c, int nVal, double s) {
 		this.mb = TestUtils.ceil(TestUtils.generateTestMatrixBlock(r, c, 0, nVal, s, 42));
 		this.nVal = nVal;
@@ -59,12 +64,12 @@ public class ConstMatrix implements Const<MatrixBlock> {
 	public final boolean isEmpty() {
 		return false;
 	}
-	
+
 	@Override
 	public final int defaultWaitTime() {
 		return 0;
 	}
-	
+
 	@Override
 	public String toString() {
 		StringBuilder sb = new StringBuilder();

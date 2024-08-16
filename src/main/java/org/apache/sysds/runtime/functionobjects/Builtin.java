@@ -254,7 +254,9 @@ public class Builtin extends ValueFunction
 			case LOG://faster in Math
 				return (Math.log(in1)/Math.log(in2)); 
 			case LOG_NZ: //faster in Math
-				return (in1==0) ? 0 : (Math.log(in1)/Math.log(in2));
+				// if in2 == 0 then Math.log is -infinity and division by -infinity returns -0.
+				// therefore to allow sparse linear algebra, we replace it with standard 0.
+				return (in1 == 0.0 || in2 == 0.0) ? 0.0 : (Math.log(in1) / Math.log(in2));
 			default:
 				throw new DMLRuntimeException("Builtin.execute(): Unknown operation: " + bFunc);
 		}
@@ -277,8 +279,9 @@ public class Builtin extends ValueFunction
 				return Math.log(in1)/Math.log(in2);
 			case LOG_NZ:
 				//faster in Math
-				return (in1==0) ? 0 : Math.log(in1)/Math.log(in2);
-	
+				// if in2 == 0 then Math.log is -infinity and division by -infinity returns -0.
+				// therefore to allow sparse linear algebra, we replace it with standard 0.
+				return (in1 == 0L || in2 == 0L) ? 0L : Math.log(in1) / Math.log(in2);
 			default:
 				throw new DMLRuntimeException("Builtin.execute(): Unknown operation: " + bFunc);
 		}
@@ -299,6 +302,15 @@ public class Builtin extends ValueFunction
 			throw new DMLScriptException(in1);
 		default:
 			throw new DMLRuntimeException("Builtin.execute(): Unknown operation: " + bFunc);
+		}
+	}
+
+	public boolean isBinarySparseSafe(){
+		switch(bFunc){
+			case LOG_NZ:
+				return true;
+			default:
+				return false;
 		}
 	}
 

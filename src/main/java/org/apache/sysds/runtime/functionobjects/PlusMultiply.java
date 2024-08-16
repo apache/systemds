@@ -34,7 +34,7 @@ public class PlusMultiply extends TernaryValueFunction implements ValueFunctionW
 		_cnt = 1;
 	}
 	
-	private PlusMultiply(double cnt) {
+	public PlusMultiply(double cnt) {
 		_cnt = cnt;
 	}
 

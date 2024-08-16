@@ -34,8 +34,6 @@ import org.apache.sysds.test.TestUtils;
 
 /**
  * This tests elementwise xor operations
- *
- *
  */
 public class ElementwiseLogicalTest extends AutomatedTestBase{
 
@@ -49,6 +47,7 @@ public class ElementwiseLogicalTest extends AutomatedTestBase{
 
 	private final static int rows = 2100;
 	private final static int cols = 70;
+
 	private final static double sparsity1 = 0.1;//sparse
 	private final static double sparsity2 = 0.9;//dense
 	private final static double eps = 1e-10;
@@ -154,6 +153,8 @@ public class ElementwiseLogicalTest extends AutomatedTestBase{
 			DMLScript.USE_LOCAL_SPARK_CONFIG = true;
 	
 		try {
+
+			setOutputBuffering(true);
 			String TEST_NAME = testname;
 			getAndLoadTestConfiguration(TEST_NAME);
 			

@@ -117,6 +117,7 @@ public class MatrixMulPerformance {
 		System.out.println("avgNanos" + (btype2 == null ? "Dense" : btype2.name()) + " =  " + printAsPythonList(avgNanosPerSparsity));
 	}
 
+	@SuppressWarnings("null")
 	private long runSparsityEstimateTest(SparseBlock.Type btype1, SparseBlock.Type btype2, float sparsity) {
 		double[][] A = TestUtils.generateTestMatrix(_rl, _cl, -10, 10, sparsity, 7654321);
 		double[][] B = TestUtils.generateTestMatrix(_rl, _cl, -10, 10, sparsity, 7654322);

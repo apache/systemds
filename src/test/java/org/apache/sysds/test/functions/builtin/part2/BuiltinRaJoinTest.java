@@ -60,6 +60,10 @@ public class BuiltinRaJoinTest extends AutomatedTestBase
 	public void testRaJoinTestwithDifferentColumn2() {
 		testRaJoinTestwithDifferentColumn("sort-merge");
 	}
+	@Test
+	public void testRaJoinTestwithDifferentColumn3() {
+		testRaJoinTestwithDifferentColumn("hash2");
+	}
 	
 	@Test
 	public void testRaJoinTestwithDifferentColumn21() {
@@ -70,6 +74,10 @@ public class BuiltinRaJoinTest extends AutomatedTestBase
 	public void testRaJoinTestwithDifferentColumn22() {
 		testRaJoinTestwithDifferentColumn2("sort-merge");
 	}
+	@Test
+	public void testRaJoinTestwithDifferentColumn23() {
+		testRaJoinTestwithDifferentColumn2("hash2");
+	}
 	
 	@Test
 	public void testRaJoinTestwithNoMatchingRows1() {
@@ -79,6 +87,11 @@ public class BuiltinRaJoinTest extends AutomatedTestBase
 	@Test
 	public void testRaJoinTestwithNoMatchingRows2() {
 		testRaJoinTestwithNoMatchingRows("sort-merge");
+	}
+
+	@Test
+	public void testRaJoinTestwithNoMatchingRows3() {
+		testRaJoinTestwithNoMatchingRows("hash2");
 	}
 	
 	@Test
@@ -95,6 +108,11 @@ public class BuiltinRaJoinTest extends AutomatedTestBase
 	public void testRaJoinTestwithAllMatchingRows3() {
 		testRaJoinTestwithAllMatchingRows("hash");
 	}
+
+	@Test
+	public void testRaJoinTestwithAllMatchingRows4() {
+		testRaJoinTestwithAllMatchingRows("hash2");
+	}
 	
 	@Test
 	public void testRaJoinTestwithOneToMany1() {
@@ -109,6 +127,11 @@ public class BuiltinRaJoinTest extends AutomatedTestBase
 	@Test
 	public void testRaJoinTestwithOneToMany3() {
 		testRaJoinTestwithOneToMany("hash");
+	}
+
+	@Test
+	public void testRaJoinTestwithOneToMany4() {
+		testRaJoinTestwithOneToMany("hash2");
 	}
 	
 	

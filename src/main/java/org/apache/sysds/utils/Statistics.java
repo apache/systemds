@@ -658,8 +658,7 @@ public class Statistics
 			boolean first = true;
 			NGramStats[] stats = e.getStats();
 			for (int i = 0; i < stats.length; i++) {
-				if (i != 0)
-					builder.append(",");
+				builder.append(",");
 				NGramStats stat = stats[i];
 				if (stat.getMeta() != null) {
 					for (Entry<String, Double> metaData : stat.getMeta().entrySet()) {

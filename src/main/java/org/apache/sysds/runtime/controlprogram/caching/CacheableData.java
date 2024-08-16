@@ -83,11 +83,11 @@ public abstract class CacheableData<T extends CacheBlock<?>> extends Data
 	// global constant configuration parameters
 	public static final long CACHING_THRESHOLD = (long)Math.max(4*1024, //obj not s.t. caching
 		1e-5 * InfrastructureAnalyzer.getLocalMaxMemory());       //if below threshold [in bytes]
-	public static final RPolicy CACHING_BUFFER_POLICY = RPolicy.FIFO;
+	public static RPolicy CACHING_BUFFER_POLICY = RPolicy.FIFO;
 	public static final String  CACHING_COUNTER_GROUP_NAME = "SystemDS Caching Counters";
 	public static final String  CACHING_EVICTION_FILEEXTENSION = ".dat";
 	public static final boolean CACHING_ASYNC_FILECLEANUP = true;
-	public static final boolean CACHING_ASYNC_SERIALIZE = false;
+	public static boolean CACHING_ASYNC_SERIALIZE = false;
 	
 	//NOTE CACHING_ASYNC_SERIALIZE:
 	// The serialization of matrices and frames (ultra-sparse matrices or 

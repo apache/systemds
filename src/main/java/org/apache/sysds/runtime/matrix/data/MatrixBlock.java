@@ -5526,6 +5526,10 @@ public class MatrixBlock extends MatrixValue implements CacheBlock<MatrixBlock>,
 
 	// (rand, sequence)
 	
+	public static MatrixBlock randOperations(int rows, int cols, double sparsity) {
+		return randOperations(rows, cols, sparsity, 0, 1, "uniform", -1);
+	}
+	
 	/**
 	 * Function to generate the random matrix with specified dimensions (block sizes are not specified).
 	 *  

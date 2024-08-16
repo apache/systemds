@@ -190,4 +190,90 @@ public class TensorCharacteristics extends DataCharacteristics
 		return UtilFunctions.intHashCode(UtilFunctions.intHashCode(
 			Arrays.hashCode(_dims), _blocksize), Long.hashCode(_nnz));
 	}
+
+	@Override
+	public DataCharacteristics set(long nr, long nc, int blen) {
+		_dims = new long[] {nr, nc};
+		_blocksize = blen;
+		return this;
+	}
+
+	@Override
+	public DataCharacteristics set(long nr, long nc, int blen, long nnz) {
+		set(nr, nc, blen);
+		_nnz = nnz;
+		return this;
+	}
+
+	@Override
+	public DataCharacteristics setRows(long rlen) {
+		_dims[0] = rlen;
+		return this;
+	}
+
+	@Override
+	public DataCharacteristics setCols(long clen) {
+		_dims[1] = clen;
+		return this;
+	}
+
+	@Override
+	public long getNumRowBlocks() {
+		// TODO Auto-generated method stub
+		return 0;
+	}
+
+	@Override
+	public long getNumColBlocks() {
+		// TODO Auto-generated method stub
+		return 0;
+	}
+
+	@Override
+	public DataCharacteristics setDimension(long nr, long nc) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public DataCharacteristics setNonZerosBound(long nnz) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public long getNonZerosBound() {
+		// TODO Auto-generated method stub
+		return 0;
+	}
+
+	@Override
+	public double getSparsity() {
+		// TODO Auto-generated method stub
+		return 0;
+	}
+
+	@Override
+	public boolean rowsKnown() {
+		// TODO Auto-generated method stub
+		return false;
+	}
+
+	@Override
+	public boolean colsKnown() {
+		// TODO Auto-generated method stub
+		return false;
+	}
+
+	@Override
+	public boolean isUltraSparse() {
+		// TODO Auto-generated method stub
+		return false;
+	}
+
+	@Override
+	public boolean mightHaveEmptyBlocks() {
+		// TODO Auto-generated method stub
+		return false;
+	}
 }

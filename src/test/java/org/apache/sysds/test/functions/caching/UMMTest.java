@@ -91,6 +91,8 @@ public class UMMTest extends AutomatedTestBase {
 			// Compare FS write counts (#unified FS writes always smaller than #static FS writes)
 			Assert.assertTrue("Violated buffer pool eviction counts: "+FSwrites_unified+" <= "+FSwrites_static,
 				FSwrites_unified <= FSwrites_static);
+			
+			UnifiedMemoryManager.printStatus("tests");
 		}
 		finally {
 			Recompiler.reinitRecompiler();

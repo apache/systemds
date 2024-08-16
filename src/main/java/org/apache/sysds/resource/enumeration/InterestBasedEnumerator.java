@@ -9,12 +9,14 @@ import org.apache.sysds.resource.enumeration.EnumerationUtils.InstanceSearchSpac
 import java.util.*;
 import java.util.stream.Collectors;
 
-public class InterestBasedEnumerator extends AnEnumerator {
+public class InterestBasedEnumerator extends Enumerator {
     public final static long MINIMUM_RELEVANT_MEM_ESTIMATE = 2L * 1024 * 1024 * 1024; // 2GB
     // different instance families can have slightly different memory characteristics (e.g. EC2 Graviton (arm) instances)
+    // and using memory delta allows not ignoring such instances
+    // TODO: enable usage of memory delta when FLOPS and bandwidth characteristics added to cost estimator
+    public final static boolean USE_MEMORY_DELTA = false;
     public final static double MEMORY_DELTA_FRACTION = 0.05; // 5%
-    public final static double DATA_MEMORY_FACTOR = 0.3; // minimum memory fraction for storage
-    public final static double BROADCAST_MEMORY_FACTOR = 0.7; // fraction of the minimum memory fraction for storage
+    public final static double BROADCAST_MEMORY_FACTOR = 0.21; // fraction of the minimum memory fraction for storage
     // marks if memory estimates should be used at deciding
     // for the search space of the instance for the driver nodes
     private final boolean fitDriverMemory;
@@ -29,125 +31,118 @@ public class InterestBasedEnumerator extends AnEnumerator {
     // considered as interesting point at deciding the
     // number of executors - checkpoint storage level
     private final boolean fitCheckpointMemory;
-    // marks if the number of executors should
-    // be increased exponentially
-    // (single node execution mode is not excluded)
-    // -1 marks no exp. increasing
-    int expBaseExecutors;
-
-    private List<Long> memoryEstimatesCP;
-    private List<Long> memoryEstimatesOutput;
+    // largest full memory estimate (scaled)
+    private long largestMemoryEstimateCP;
+    // ordered set ot output memory estimates (scaled)
+    private TreeSet<Long> memoryEstimatesSpark;
     public InterestBasedEnumerator(
             Builder builder,
             boolean fitDriverMemory,
             boolean fitBroadcastMemory,
             boolean checkSingleNodeExecution,
-            boolean fitCheckpointMemory,
-            int expBaseExecutors
+            boolean fitCheckpointMemory
     ) {
         super(builder);
         this.fitDriverMemory = fitDriverMemory;
         this.fitBroadcastMemory = fitBroadcastMemory;
         this.checkSingleNodeExecution = checkSingleNodeExecution;
         this.fitCheckpointMemory = fitCheckpointMemory;
-        this.expBaseExecutors = expBaseExecutors;
     }
 
     @Override
     public void preprocessing() {
-        List<Long> availableNodesMemory = null;
-        InstanceSearchSpace searchSpace = new InstanceSearchSpace();
-        searchSpace.initSpace(instances);
-
-        if (fitDriverMemory || checkSingleNodeExecution) {
-            memoryEstimatesCP = getMemoryEstimates(program, false);
-        }
-        if (fitBroadcastMemory || fitCheckpointMemory) {
-            memoryEstimatesOutput = getMemoryEstimates(program, true);
-        }
+        InstanceSearchSpace fullSearchSpace = new InstanceSearchSpace();
+        fullSearchSpace.initSpace(instances);
 
         if (fitDriverMemory) {
-            availableNodesMemory = new ArrayList<>(searchSpace.keySet());
-            List<Long> driverMemoryPoints = getMemoryPoints(memoryEstimatesCP, availableNodesMemory);
-            for (long dMemory: driverMemoryPoints) {
-                driverSpace.put(dMemory, searchSpace.get(dMemory));
+            // get full memory estimates and scale according ot the driver memory factor
+            TreeSet<Long> memoryEstimatesForDriver = getMemoryEstimates(program, false, OptimizerUtils.MEM_UTIL_FACTOR);
+            setInstanceSpace(fullSearchSpace, driverSpace, memoryEstimatesForDriver);
+            if (checkSingleNodeExecution) {
+                largestMemoryEstimateCP = !memoryEstimatesForDriver.isEmpty()? memoryEstimatesForDriver.last() : -1;
             }
-            // in case no big enough memory estimates exist set the instances with minimal memory
-            if (driverSpace.isEmpty()) {
-                long minMemory = availableNodesMemory.get(0);
-                driverSpace.put(minMemory, searchSpace.get(minMemory));
-            }
-        } else {
-            driverSpace.putAll(searchSpace);
         }
 
         if (fitBroadcastMemory) {
-            if (availableNodesMemory == null)
-                availableNodesMemory = new ArrayList<>(searchSpace.keySet());
-            List<Long> memoryEstimatesBroadcast = memoryEstimatesOutput.stream()
-                    .map(mem -> Math.round(mem * BROADCAST_MEMORY_FACTOR))
-                    .collect(Collectors.toList());
-            List<Long> executorMemoryPoints = getMemoryPoints(memoryEstimatesBroadcast, availableNodesMemory);
-            for (long eMemory: executorMemoryPoints) {
-                executorSpace.put(eMemory, searchSpace.get(eMemory));
+            // get output memory estimates and scaled according the broadcast memory factor
+            // for executors' memory search space and driver memory factor for driver's memory search space
+            TreeSet<Long> memoryEstimatesOutputSpark = getMemoryEstimates(program, true, BROADCAST_MEMORY_FACTOR);
+            // avoid calling getMemoryEstimates with different factor but rescale: output should fit twice in the CP memory
+            TreeSet<Long> memoryEstimatesOutputCP = memoryEstimatesOutputSpark.stream()
+                    .map(mem -> 2 * (long) (mem * BROADCAST_MEMORY_FACTOR / OptimizerUtils.MEM_UTIL_FACTOR))
+                    .collect(Collectors.toCollection(TreeSet::new));
+            setInstanceSpace(fullSearchSpace, driverSpace, memoryEstimatesOutputCP);
+            setInstanceSpace(fullSearchSpace, executorSpace, memoryEstimatesOutputSpark);
+            if (checkSingleNodeExecution) {
+                largestMemoryEstimateCP = !memoryEstimatesOutputCP.isEmpty()? memoryEstimatesOutputCP.last() : -1;
             }
-            // in case no big enough memory estimates exist set the instances with minimal memory
-            if (executorSpace.isEmpty()) {
-                long minMemory = availableNodesMemory.get(0);
-                executorSpace.put(minMemory, searchSpace.get(minMemory));
+            if (fitCheckpointMemory) {
+                memoryEstimatesSpark = memoryEstimatesOutputSpark;
             }
         } else {
-            executorSpace.putAll(searchSpace);
+            executorSpace.putAll(fullSearchSpace);
+            if (fitCheckpointMemory) {
+                memoryEstimatesSpark = getMemoryEstimates(program, true, BROADCAST_MEMORY_FACTOR);
+            }
+        }
+
+        if (!fitDriverMemory && !fitBroadcastMemory) {
+            driverSpace.putAll(fullSearchSpace);
+            if (checkSingleNodeExecution) {
+                TreeSet<Long> memoryEstimatesForDriver = getMemoryEstimates(program, false, OptimizerUtils.MEM_UTIL_FACTOR);
+                largestMemoryEstimateCP = !memoryEstimatesForDriver.isEmpty()? memoryEstimatesForDriver.last() : -1;
+            }
         }
     }
 
     @Override
-    public List<Integer> estimateRangeExecutors(long driverMemory, long executorMemory, int executorCores) {
+    public boolean evaluateSingleNodeExecution(long driverMemory) {
+        // Checking if single node execution should be excluded is optional.
+        if (checkSingleNodeExecution && minExecutors == 0 && largestMemoryEstimateCP > 0) {
+            return largestMemoryEstimateCP <= driverMemory;
+        }
+        return minExecutors == 0;
+    }
+
+    @Override
+    public ArrayList<Integer> estimateRangeExecutors(long executorMemory, int executorCores) {
         // consider the maximum level of parallelism and
         // based on the initiated flags decides on the following methods
         // for enumeration of the number of executors:
         // 1. Such a number that leads to combined distributed memory
         //    close to the output size of the HOPs
-        // 2. Exponentially increasing number of executors based on
-        //    a given exponent base - with additional option for 0 executors
         // 3. Enumerating all options with the established range
-        // Checking if single node execution should be excluded is optional.
-        int min = minExecutors;
+        int min = Math.max(1, minExecutors);
         int max = Math.min(maxExecutors, (MAX_LEVEL_PARALLELISM / executorCores));
-        
-        if (checkSingleNodeExecution && min == 0 && !memoryEstimatesCP.isEmpty()) {
-            long maxEstimate = memoryEstimatesCP.get(memoryEstimatesCP.size()-1);
-            if (maxEstimate > driverMemory) {
-                min = 1;
-            }
-        }
-        ArrayList<Integer> result = new ArrayList<>();
+
+        ArrayList<Integer> result;
         if (fitCheckpointMemory) {
-            double ratio = (double) driverMemory / memoryEstimatesOutput.get(0);
-            int lastNumExecutors = (int) Math.floor(1/ratio);
-            result.add(Math.max(min, lastNumExecutors));
-            for (long estimate: memoryEstimatesOutput) {
-                ratio = (double) driverMemory / estimate;
-                int numExecutors = (int) Math.ceil(1/ratio);
-                if (numExecutors <= max) {
-                    if (lastNumExecutors < numExecutors) {
-                        result.add(numExecutors);
-                        lastNumExecutors = numExecutors;
-                    }
+            result = new ArrayList<>(memoryEstimatesSpark.size() + 1);
+            int previousNumber = -1;
+            for (long estimate: memoryEstimatesSpark) {
+                // the ratio is just an intermediate for the new enumerated number of executors
+                double ratio = (double) estimate / executorMemory;
+                int currentNumber = (int) Math.max(1, Math.floor(ratio));
+                if (currentNumber < min || currentNumber == previousNumber) {
+
+                    continue;
+                }
+                if (currentNumber <= max) {
+                    result.add(currentNumber);
+                    previousNumber = currentNumber;
                 } else {
                     break;
                 }
             }
-        } else if (expBaseExecutors > 1) {
-            if (min == 0) {
-                result.add(0);
-            }
-            int exponent = 0;
-            int numExecutors;
-            while ((numExecutors = (int) Math.pow(expBaseExecutors, exponent)) <= max) {
-                result.add(numExecutors);
+            // add a number that allow also the largest checkpoint to be done in memory
+            if (previousNumber < 0) {
+                // always append at least one value to allow evaluating Spark execution
+                result.add(min);
+            } else if (previousNumber < max) {
+                result.add(previousNumber + 1);
             }
         } else { // enumerate all options within the min-max range
+            result = new ArrayList<>((max - min) + 1);
             for (int n = min; n <= max; n++) {
                 result.add(n);
             }
@@ -156,64 +151,99 @@ public class InterestBasedEnumerator extends AnEnumerator {
     }
 
     // Static helper methods -------------------------------------------------------------------------------------------
+    private static void setInstanceSpace(InstanceSearchSpace inputSpace, InstanceSearchSpace outputSpace, TreeSet<Long> memoryEstimates) {
+        TreeSet<Long> memoryPoints = getMemoryPoints(memoryEstimates, inputSpace.keySet());
+        for (long memory: memoryPoints) {
+            outputSpace.put(memory, inputSpace.get(memory));
+        }
+        // in case no large enough memory estimates exist set the instances with minimal memory
+        if (outputSpace.isEmpty()) {
+            long minMemory = inputSpace.firstKey();
+            outputSpace.put(minMemory, inputSpace.get(minMemory));
+        }
+    }
 
-    private static List<Long> getMemoryPoints(List<Long> estimates, List<Long> availableMemory) {
-        ArrayList<Long> result = new ArrayList<>();
-
+    /**
+     * @param availableMemory should be always a sorted set;
+     * this is always the case for the result of {@code keySet()} called on {@code TreeMap}
+     */
+    private static TreeSet<Long> getMemoryPoints(TreeSet<Long> estimates, Set<Long> availableMemory) {
+        // use tree set to avoid adding duplicates and ensure ascending order
+        TreeSet<Long> result = new TreeSet<>();
+        // assumed ascending order
         List<Long> relevantPoints = new ArrayList<>(availableMemory);
-        Collections.sort(relevantPoints);
-        long lastAdded = -1;
         for (long estimate: estimates) {
             if (availableMemory.isEmpty()) {
                 break;
             }
-            long memoryDelta = Math.round(estimate*MEMORY_DELTA_FRACTION);
-            // divide list on bigger and smaller by partitioning - partitioning preserve the order
+            // divide list on larger and smaller by partitioning - partitioning preserve the order
             Map<Boolean, List<Long>> divided = relevantPoints.stream()
                     .collect(Collectors.partitioningBy(n -> n < estimate));
+            // get the points smaller than the current memory estimate
             List<Long> smallerPoints = divided.get(true);
-            // get points smaller than the current memory estimate
-            long biggestOfTheSmaller = smallerPoints.get(smallerPoints.size() - 1);
-            for (long point : smallerPoints) {
-                if (point >= (biggestOfTheSmaller - memoryDelta) && point > lastAdded) {
-                    result.add(point);
-                    lastAdded = point;
-                }
-            }
-            // reduce the list of relevant points - equal or bigger than the estimate
+            long largestOfTheSmaller = smallerPoints.isEmpty() ? -1 : smallerPoints.get(smallerPoints.size() - 1);
+            // reduce the list of relevant points - equal or larger than the estimate
             relevantPoints = divided.get(false);
-            // get points bigger than the current memory estimate
-            long smallestOfTheBigger = relevantPoints.get(0);
-            for (long point : relevantPoints) {
-                if (point <= (smallestOfTheBigger + memoryDelta) && point > lastAdded) {
-                    result.add(point);
-                    lastAdded = point;
-                } else {
-                    break;
+            // get points greater or equal than the current memory estimate
+            long smallestOfTheLarger = relevantPoints.isEmpty()? -1 : relevantPoints.get(0);
+
+            if (USE_MEMORY_DELTA) {
+                // Delta memory of 5% of the node's memory allows not ignoring
+                // memory points with potentially equivalent values but not exactly the same values.
+                // This is the case for example in AWS for instances of the same type but with
+                // different additional capabilities: m5.xlarge (16GB) vs m5n.xlarge (15.25GB).
+                // Get points smaller than the current memory estimate within the memory delta
+                long memoryDelta = Math.round(estimate * MEMORY_DELTA_FRACTION);
+                for (long point : smallerPoints) {
+                    if (point >= (largestOfTheSmaller - memoryDelta)) {
+                        result.add(point);
+                    }
+                }
+                for (long point : relevantPoints) {
+                    if (point <= (smallestOfTheLarger + memoryDelta)) {
+                        result.add(point);
+                    } else {
+                        break;
+                    }
+                }
+            } else {
+                if (largestOfTheSmaller > 0) {
+                    result.add(largestOfTheSmaller);
+                }
+                if (smallestOfTheLarger > 0) {
+                    result.add(smallestOfTheLarger);
                 }
             }
         }
         return result;
     }
 
-    private static List<Long> getMemoryEstimates(Program currentProgram, boolean outputOnly) {
-        HashSet<Long> estimates = new HashSet<>();
+    /**
+     * Extracts the memory estimates which original size is larger than {@code MINIMUM_RELEVANT_MEM_ESTIMATE}
+     *
+     * @param currentProgram program for extracting the memory estimates from
+     * @param outputOnly {@code true} - output estimate only;
+     *                   {@code false} - sum of input, intermediate and output estimates
+     * @param memoryFactor factor for reverse scaling the estimates to avoid
+     *                     scaling the search space parameters representing the nodes' memory budget
+     * @return memory estimates in ascending order ensured by the {@code TreeSet} data structure
+     */
+    public static TreeSet<Long> getMemoryEstimates(Program currentProgram, boolean outputOnly, double memoryFactor) {
+        TreeSet<Long> estimates = new TreeSet<>();
         getMemoryEstimates(currentProgram.getProgramBlocks(), estimates, outputOnly);
-        double currentFactor = outputOnly? DATA_MEMORY_FACTOR : OptimizerUtils.MEM_UTIL_FACTOR;
         return estimates.stream()
                 .filter(mem -> mem > MINIMUM_RELEVANT_MEM_ESTIMATE)
-                .map(mem -> (long) (mem / currentFactor))
-                .sorted()
-                .collect(Collectors.toList());
+                .map(mem -> (long) (mem / memoryFactor))
+                .collect(Collectors.toCollection(TreeSet::new));
     }
 
-    private static void getMemoryEstimates(ArrayList<ProgramBlock> pbs, HashSet<Long> mem, boolean outputOnly) {
+    private static void getMemoryEstimates(ArrayList<ProgramBlock> pbs, TreeSet<Long> mem, boolean outputOnly) {
         for( ProgramBlock pb : pbs ) {
             getMemoryEstimates(pb, mem, outputOnly);
         }
     }
 
-    private static void getMemoryEstimates(ProgramBlock pb, HashSet<Long> mem, boolean outputOnly) {
+    private static void getMemoryEstimates(ProgramBlock pb, TreeSet<Long> mem, boolean outputOnly) {
         if (pb instanceof FunctionProgramBlock)
         {
             FunctionProgramBlock fpb = (FunctionProgramBlock)pb;
@@ -246,7 +276,7 @@ public class InterestBasedEnumerator extends AnEnumerator {
         }
     }
 
-    private static void getMemoryEstimates(Hop hop, HashSet<Long> mem, boolean outputOnly)
+    private static void getMemoryEstimates(Hop hop, TreeSet<Long> mem, boolean outputOnly)
     {
         if( hop.isVisited() )
             return;

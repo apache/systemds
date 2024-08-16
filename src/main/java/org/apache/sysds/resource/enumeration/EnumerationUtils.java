@@ -32,7 +32,7 @@ public class EnumerationUtils {
      * of the instance characteristics - memory and number of cores.
      */
     public static class InstanceSearchSpace extends TreeMap<Long, TreeMap<Integer, LinkedList<CloudInstance>>> {
-        void initSpace(HashMap<String, CloudInstance> instances) {
+        public void initSpace(HashMap<String, CloudInstance> instances) {
             for (CloudInstance instance: instances.values()) {
                 long currentMemory = instance.getMemory();
 
@@ -54,6 +54,12 @@ public class EnumerationUtils {
         public CloudInstance driverInstance;
         public CloudInstance executorInstance;
         public int numberExecutors;
+
+        public ConfigurationPoint(CloudInstance driverInstance) {
+            this.driverInstance = driverInstance;
+            this.executorInstance = null;
+            this.numberExecutors = 0;
+        }
 
         public ConfigurationPoint(CloudInstance driverInstance, CloudInstance executorInstance, int numberExecutors) {
             this.driverInstance = driverInstance;

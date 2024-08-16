@@ -14,7 +14,7 @@ import org.apache.sysds.resource.enumeration.EnumerationUtils.SolutionPoint;
 import java.io.IOException;
 import java.util.*;
 
-public abstract class AnEnumerator {
+public abstract class Enumerator {
 
     public enum EnumerationStrategy {
         GridBased, // considering all combination within a given range of configuration
@@ -63,7 +63,7 @@ public abstract class AnEnumerator {
 
     // Initialization functionality ------------------------------------------------------------------------------------
 
-    public AnEnumerator(Builder builder) {
+    public Enumerator(Builder builder) {
         if (builder.provider.equals(CloudUtils.CloudProvider.AWS)) {
             utils = new AWSUtils();
         } // as of now no other provider is supported
@@ -76,6 +76,55 @@ public abstract class AnEnumerator {
         this.maxExecutors = builder.maxExecutors;
         this.instanceTypesRange = builder.instanceTypesRange;
         this.instanceSizeRange = builder.instanceSizeRange;
+    }
+
+    /**
+     * Meant to be used for testing purposes
+     */
+    public HashMap<String, CloudInstance> getInstances() {
+           return instances;
+    }
+
+    /**
+     * Meant to be used for testing purposes
+     */
+    public InstanceSearchSpace getDriverSpace() {
+        return driverSpace;
+    }
+
+    /**
+     * Meant to be used for testing purposes
+     */
+    public void setDriverSpace(InstanceSearchSpace inputSpace) {
+        driverSpace.putAll(inputSpace);
+    }
+
+    /**
+     * Meant to be used for testing purposes
+     */
+    public InstanceSearchSpace getExecutorSpace() {
+        return executorSpace;
+    }
+
+    /**
+     * Meant to be used for testing purposes
+     */
+    public void setExecutorSpace(InstanceSearchSpace inputSpace) {
+        executorSpace.putAll(inputSpace);
+    }
+
+    /**
+     * Meant to be used for testing purposes
+     */
+    public ArrayList<SolutionPoint> getSolutionPool() {
+        return solutionPool;
+    }
+
+    /**
+     * Meant to be used for testing purposes
+     */
+    public void setSolutionPool(ArrayList<SolutionPoint> solutionPool) {
+        this.solutionPool = solutionPool;
     }
 
     /**
@@ -139,11 +188,24 @@ public abstract class AnEnumerator {
         for (Map.Entry<Long, TreeMap<Integer, LinkedList<CloudInstance>>> dMemoryEntry: driverSpace.entrySet()) {
             // loop over the search space to enumerate the driver configurations
             for (Map.Entry<Integer, LinkedList<CloudInstance>> dCoresEntry: dMemoryEntry.getValue().entrySet()) {
+                // single node execution mode
+                if (evaluateSingleNodeExecution(dMemoryEntry.getKey())) {
+                    program = ResourceCompiler.doFullRecompilation(
+                            program,
+                            dMemoryEntry.getKey(),
+                            dCoresEntry.getKey()
+                    );
+                    for (CloudInstance dInstance: dCoresEntry.getValue()) {
+                        configurationPoint = new ConfigurationPoint(dInstance);
+                        updateOptimalSolution(optSolutionPoint, configurationPoint);
+                    }
+                }
                 // enumeration for distributed execution
                 for (Map.Entry<Long, TreeMap<Integer, LinkedList<CloudInstance>>> eMemoryEntry: executorSpace.entrySet()) {
                     // loop over the search space to enumerate the executor configurations
                     for (Map.Entry<Integer, LinkedList<CloudInstance>> eCoresEntry: eMemoryEntry.getValue().entrySet()) {
-                        List<Integer> numberExecutorsSet = estimateRangeExecutors(dMemoryEntry.getKey(), eMemoryEntry.getKey(), eCoresEntry.getKey());
+                        List<Integer> numberExecutorsSet = estimateRangeExecutors(eMemoryEntry.getKey(), eCoresEntry.getKey());
+                        // Spark execution mode
                         for (int numberExecutors: numberExecutorsSet) {
                             // TODO: avoid full recompilation when the driver memory is not changed
                             program = ResourceCompiler.doFullRecompilation(
@@ -178,29 +240,41 @@ public abstract class AnEnumerator {
         if (solutionPool.isEmpty()) {
             throw new RuntimeException("Calling postprocessing() should follow calling processing()");
         }
-        SolutionPoint result = solutionPool.get(0);
-        double bestCostRatio = Double.MAX_VALUE;
+        SolutionPoint optSolution = solutionPool.get(0);
+        double bestCost = Double.MAX_VALUE;
         for (SolutionPoint solution: solutionPool) {
-            double costRatio = solution.monetaryCost / solution.timeCost;
-            if (costRatio < bestCostRatio) {
-                result = solution;
+            double combinedCost = solution.monetaryCost * solution.timeCost;
+            if (combinedCost < bestCost) {
+                optSolution = solution;
+                bestCost = combinedCost;
+            } else if (combinedCost == bestCost) {
+                // the ascending order of the searching spaces for driver and executor
+                // instances ensures that in case of equally good optimal solutions
+                // the first one has at least resource characteristics.
+                // This, however, is not valid for the number of executors
+                if (solution.numberExecutors < optSolution.numberExecutors) {
+                    optSolution = solution;
+                    bestCost = combinedCost;
+                }
             }
         }
-        return result;
+        return optSolution;
     }
 
     // Helper methods --------------------------------------------------------------------------------------------------
+
+    public abstract boolean evaluateSingleNodeExecution(long driverMemory);
 
     /**
      * Estimates the minimum and maximum number of
      * executors based on given VM instance characteristics
      * and on the enumeration strategy
-     * @param driverMemory memory of currently considered driver instance
+     *
      * @param executorMemory memory of currently considered executor instance
-     * @param executorCores CPU of cores of currently considered executor instance
+     * @param executorCores  CPU of cores of currently considered executor instance
      * @return - [min, max]
      */
-    public abstract List<Integer> estimateRangeExecutors(long driverMemory, long executorMemory, int executorCores);
+    public abstract ArrayList<Integer> estimateRangeExecutors(long executorMemory, int executorCores);
 
     /**
      * Estimates the time cost for the current program based on the
@@ -235,7 +309,7 @@ public abstract class AnEnumerator {
      * @param currentOptimal solution point with the lowest cost
      * @param newPoint new cluster configuration for estimation
      */
-    public void updateOptimalSolution(SolutionPoint currentOptimal, ConfigurationPoint newPoint) {
+    private void updateOptimalSolution(SolutionPoint currentOptimal, ConfigurationPoint newPoint) {
         // TODO: clarify if setting max time and max price simultaneously makes really sense
         SolutionPoint newPotentialSolution;
         boolean replaceCurrentOptimal = false;
@@ -261,7 +335,7 @@ public abstract class AnEnumerator {
     // Class builder ---------------------------------------------------------------------------------------------------
 
     public static class Builder {
-        private CloudUtils.CloudProvider provider = CloudUtils.CloudProvider.AWS; // currently default and only choice
+        private final CloudUtils.CloudProvider provider = CloudUtils.CloudProvider.AWS; // currently default and only choice
         private Program program;
         private EnumerationStrategy enumStrategy = null;
         private OptimizationStrategy optStrategy = null;
@@ -274,22 +348,13 @@ public abstract class AnEnumerator {
 
         // GridBased specific ------------------------------------------------------------------------------------------
         private int stepSizeExecutors = 1;
+        private int expBaseExecutors = -1; // flag for exp. increasing number of executors if -1
         // InterestBased specific --------------------------------------------------------------------------------------
         private boolean fitDriverMemory = true;
         private boolean fitBroadcastMemory = true;
-        private boolean checkSingleNodeExecution = true;
+        private boolean checkSingleNodeExecution = false;
         private boolean fitCheckpointMemory = false;
-        private int expBaseExecutors = -1; // flag for exp. increasing number of executors if -1
         public Builder() {}
-
-        public Builder withCloudProvider(CloudUtils.CloudProvider provider) {
-            // NOTE: this function is currently obsolete but it is kept for cleaner class structure
-            if (provider != CloudUtils.CloudProvider.AWS) {
-                throw new IllegalArgumentException("Currently only AWS is supported.");
-            }
-            this.provider = provider;
-            return this;
-        }
 
         public Builder withRuntimeProgram(Program program) {
             this.program = program;
@@ -373,7 +438,7 @@ public abstract class AnEnumerator {
             return this;
         }
 
-        public AnEnumerator build() {
+        public Enumerator build() {
             if (this.program == null) {
                 throw new IllegalArgumentException("Providing runtime program is required");
             }
@@ -405,12 +470,12 @@ public abstract class AnEnumerator {
 
             switch (enumStrategy) {
                 case GridBased:
-                    return new GridBasedEnumerator(this, stepSizeExecutors);
+                    return new GridBasedEnumerator(this, stepSizeExecutors, expBaseExecutors);
                 case InterestBased:
                     if (fitCheckpointMemory && expBaseExecutors != -1) {
                         throw new IllegalArgumentException("Number of executors cannot be fitted on the checkpoint estimates and increased exponentially simultaneously.");
                     }
-                    return new InterestBasedEnumerator(this, fitDriverMemory, fitBroadcastMemory, checkSingleNodeExecution, fitCheckpointMemory, expBaseExecutors);
+                    return new InterestBasedEnumerator(this, fitDriverMemory, fitBroadcastMemory, checkSingleNodeExecution, fitCheckpointMemory);
                 default:
                     throw new IllegalArgumentException("Setting an enumeration strategy is required.");
             }

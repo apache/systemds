@@ -221,7 +221,12 @@ public class RecompilationTest extends AutomatedTestBase {
     private void runTest(Program precompiledProgram, Program expectedProgram, long driverMemory, int numberExecutors, long executorMemory, String expectedOpcode, boolean expectedSparkExecType) {
         String expectedProgramExplained = Explain.explain(expectedProgram);
 
-        Program recompiledProgram = ResourceCompiler.doFullRecompilation(precompiledProgram, driverMemory, driverThreads, numberExecutors, executorMemory, executorThreads);
+        Program recompiledProgram;
+        if (numberExecutors == 0) {
+            recompiledProgram = ResourceCompiler.doFullRecompilation(precompiledProgram, driverMemory, driverThreads);
+        } else {
+            recompiledProgram = ResourceCompiler.doFullRecompilation(precompiledProgram, driverMemory, driverThreads, numberExecutors, executorMemory, executorThreads);
+        }
         String actualProgramExplained = Explain.explain(recompiledProgram);
 
         if (DEBUG_MODE) System.out.println(actualProgramExplained);

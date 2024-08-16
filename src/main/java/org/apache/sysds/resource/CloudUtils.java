@@ -36,6 +36,9 @@ public abstract class CloudUtils {
 
     public static final double DEFAULT_CLUSTER_LAUNCH_TIME = 120; // seconds; NOTE: set always to at least 60 seconds
 
+    public static long GBtoBytes(double gb) {
+        return (long) (gb * 1024 * 1024 * 1024);
+    }
     public abstract boolean validateInstanceName(String instanceName);
     public abstract InstanceType getInstanceType(String instanceName);
     public abstract InstanceSize getInstanceSize(String instanceName);

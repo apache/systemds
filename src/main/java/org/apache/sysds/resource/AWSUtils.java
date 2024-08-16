@@ -3,10 +3,18 @@ package org.apache.sysds.resource;
 import org.apache.sysds.resource.enumeration.EnumerationUtils;
 
 public class AWSUtils extends CloudUtils {
-    public static final String EC2_REGEX = "^([a-z]+)([0-9])(a|g|i?)([bdnez]*)\\.([a-z0-9]*)$";
+    public static final String EC2_REGEX = "^([a-z]+)([0-9])(a|g|i?)([bdnez]*)\\.([a-z0-9]+)$";
     @Override
-    public boolean validateInstanceName(String instanceName) {
-        return instanceName.matches(EC2_REGEX);
+    public boolean validateInstanceName(String input) {
+        String instanceName = input.toLowerCase();
+        if (!instanceName.toLowerCase().matches(EC2_REGEX)) return false;
+        try {
+            getInstanceType(instanceName);
+            getInstanceSize(instanceName);
+        } catch (IllegalArgumentException e) {
+            return false;
+        }
+        return true;
     }
 
     @Override
@@ -25,8 +33,8 @@ public class AWSUtils extends CloudUtils {
 
     @Override
     public double calculateClusterPrice(EnumerationUtils.ConfigurationPoint config, double time) {
-        double pricePerSeconds = getClusterCostPerHour(config);
-        return (DEFAULT_CLUSTER_LAUNCH_TIME + time) * pricePerSeconds;
+        double pricePerSeconds = getClusterCostPerHour(config) / 3600;
+        return time * pricePerSeconds;
     }
 
     private double getClusterCostPerHour(EnumerationUtils.ConfigurationPoint config) {

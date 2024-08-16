@@ -70,7 +70,6 @@ public class ResourceCompiler {
     }
 
     private static ArrayList<Instruction> recompile(StatementBlock sb, ArrayList<Hop> hops) {
-        // TODO: consider adding code generation for operator fusion
         // construct new lops
         ArrayList<Lop> lops = new ArrayList<>(hops.size());
         Hop.resetVisitStatus(hops);
@@ -86,21 +85,41 @@ public class ResourceCompiler {
             l.addToDag(dag);
         }
 
-        ArrayList<Instruction> newInst = dag
-                .getJobs(sb, ConfigurationManager.getDMLConfig());
-
-        return newInst;
+        return dag.getJobs(sb, ConfigurationManager.getDMLConfig());
     }
 
+    /**
+     * Recompiling a given program for resource optimization for single node execution
+     * @param program program to be recompiled
+     * @param driverMemory target driver memory
+     * @param driverCores target driver threads/cores
+     * @return the recompiled program as a new {@code Program} instance
+     */
+    public static Program doFullRecompilation(Program program, long driverMemory, int driverCores) {
+        setDriverConfigurations(driverMemory, driverCores);
+        setSingleNodeExecution();
+        return doFullRecompilation(program);
+    }
+
+    /**
+     * Recompiling a given program for resource optimization for Spark execution
+     * @param program program to be recompiled
+     * @param driverMemory target driver memory
+     * @param driverCores target driver threads/cores
+     * @param numberExecutors target number of executor nodes
+     * @param executorMemory target executor memory
+     * @param executorCores target executor threads/cores
+     * @return the recompiled program as a new {@code Program} instance
+     */
     public static Program doFullRecompilation(Program program, long driverMemory, int driverCores, int numberExecutors, long executorMemory, int executorCores) {
+        setDriverConfigurations(driverMemory, driverCores);
+        setExecutorConfigurations(numberExecutors, executorMemory, executorCores);
+        return doFullRecompilation(program);
+    }
+
+    private static Program doFullRecompilation(Program program) {
         Dag.resetUniqueMembers();
         Program newProgram = new Program();
-        setDriverConfigurations(driverMemory, driverCores);
-        if (numberExecutors > 0) {
-            setExecutorConfigurations(numberExecutors, executorMemory, executorCores);
-        } else {
-            setSingleNodeExecution();
-        }
         ArrayList<ProgramBlock> B = Stream.concat(
                         program.getProgramBlocks().stream(),
                         program.getFunctionProgramBlocks().values().stream())
@@ -109,13 +128,13 @@ public class ResourceCompiler {
         return newProgram;
     }
 
-    public static void doRecompilation(ArrayList<ProgramBlock> origin, Program target) {
+    private static void doRecompilation(ArrayList<ProgramBlock> origin, Program target) {
         for (ProgramBlock originBlock : origin) {
             doRecompilation(originBlock, target);
         }
     }
 
-    public static void doRecompilation(ProgramBlock originBlock, Program target) {
+    private static void doRecompilation(ProgramBlock originBlock, Program target) {
         if (originBlock instanceof FunctionProgramBlock)
         {
             FunctionProgramBlock fpb = (FunctionProgramBlock)originBlock;

@@ -18,27 +18,35 @@
 # under the License.
 #
 # -------------------------------------------------------------
+
 from typing import List
 
+import numpy as np
+
 from modality.modality import Modality
+from keras.api.preprocessing.sequence import pad_sequences
+
 from representations.fusion import Fusion
 
 
-class AlignedModality(Modality):
-    def __init__(self, representation: Fusion, modalities: List[Modality]):
+class Concatenation(Fusion):
+    def __init__(self, padding=True):
         """
-        Defines the modality that is created during the fusion process
-        :param representation: The representation for the aligned modality
-        :param modalities: List of modalities to be combined
+        Combines modalities using concatenation
         """
-        name = ''
+        super().__init__('Concatenation')
+        self.padding = padding
+
+    def fuse(self, modalities: List[Modality]):
+        max_emb_size = self.get_max_embedding_size(modalities)
+        
+        size = len(modalities[0].data)
+        data = np.zeros((size, 0))
+        
         for modality in modalities:
-            name += modality.name
-        super().__init__(representation, modality_name=name)
-        self.modalities = modalities
-    
-    def combine(self):
-        """
-        Initiates the call to fuse the given modalities depending on the Fusion type
-        """
-        self.data = self.representation.fuse(self.modalities) # noqa
+            if self.padding:
+                data = np.concatenate(pad_sequences(modality.data, maxlen=max_emb_size, dtype='float32', padding='post'), axis=1)
+            else:
+                data = np.concatenate([data, modality.data], axis=1)
+      
+        return self.scale_data(data, modalities[0].train_indices)

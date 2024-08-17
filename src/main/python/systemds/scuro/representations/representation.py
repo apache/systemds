@@ -18,11 +18,7 @@
 # under the License.
 #
 # -------------------------------------------------------------
-from systemds.scuro.modality.aligned_modality import AlignedModality
-from systemds.scuro.modality.audio_modality import AudioModality
-from systemds.scuro.modality.video_modality import VideoModality
-from systemds.scuro.modality.test_modality import TextModality
-from systemds.scuro.modality.modality import Modality
 
-
-__all__ = ["AlignedModality", "AudioModality", "VideoModality", "TextModality", "Modality"]
+class Representation:
+    def __init__(self, name):
+        self.name = name

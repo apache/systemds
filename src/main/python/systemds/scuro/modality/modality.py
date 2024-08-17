@@ -19,22 +19,34 @@
 #
 # -------------------------------------------------------------
 
-from modality.representation import Representation
+from representations.representation import Representation
 
 
 class Modality:
     
-    def __init__(self, representation: Representation, start_index: int = 0):
+    def __init__(self, representation: Representation, start_index: int = 0, modality_name='', train_indices=None):
         """
-        Defines the modality that is to be aligned
+        Parent class of the different Modalities
         :param representation: Specifies how the data should be represented for a specific modality
         :param start_index: Defines the first index used for the alignment
+        :param modality_name: Name of the modality
+        :param train_indices: List of indices used for train-test split
         """
         self.representation = representation
         self.start_index = start_index
+        self.name = modality_name
+        self.data = None
+        self.train_indices = train_indices
     
     def read_chunk(self):
         """
         Extracts a data chunk of the modality according to the window size specified in params
         """
         raise NotImplementedError
+    
+    def read_all(self, indices):
+        """
+        Implemented for every unique modality to read all samples from a specified format
+        :param indices: List of indices to be read
+        """
+        pass

@@ -18,22 +18,44 @@
 # under the License.
 #
 # -------------------------------------------------------------
-from aligner.alignment import Alignment
-from aligner.alignment_strategy import ChunkedCrossCorrelation
-from modality.representation import PixelRepresentation
+import collections
+import json
+from datetime import datetime
+
+from representations.average import Averaging
+from modality.aligned_modality import AlignedModality
+from modality.text_modality import TextModality
 from modality.video_modality import VideoModality
-from aligner.similarity_measures import CosineSimilarity
+from modality.audio_modality import AudioModality
+from representations.unimodal import Pickle, JSON, HDF5, NPY
+from models.discrete_model import DiscreteModel
 
-# Setup modalities
-file_path_a = ''
-file_path_b = ''
-representation_a = PixelRepresentation()  # Concrete Representation
-representation_b = PixelRepresentation()  # Concrete Representation
-modality_a = VideoModality(file_path_a, representation_a)
-modality_b = VideoModality(file_path_b, representation_b)
 
-# Align modalities
-alignment_strategy = ChunkedCrossCorrelation()  # Concrete Alignment Strategy
-similarity_measure = CosineSimilarity()
-aligner = Alignment(modality_a, modality_b, alignment_strategy, similarity_measure)
-aligned_modality = aligner.align_modalities()
+labels = []
+train_indices = []
+
+video_path = ''
+audio_path = ''
+text_path = ''
+
+# Load modalities (audio, video, text)
+video = VideoModality(video_path, HDF5(), train_indices)
+audio = AudioModality(audio_path, Pickle(), train_indices)
+text = TextModality(text_path, NPY(), train_indices)
+
+video.read_all()
+audio.read_all()
+text.read_all()
+
+combined_modality = AlignedModality(Averaging(), [text, video, audio])
+combined_modality.combine()
+
+# create train-val split
+train_X, train_y = None, None
+val_X, val_y = None, None
+
+model = DiscreteModel()
+model.fit(train_X, train_y)
+model.test(val_X, val_y)
+
+

@@ -106,7 +106,10 @@ public class OptimizationWrapper
 		
 		double timeVal = time.stop();
 		LOG.debug("ParFOR Opt: Finished optimization for PARFOR("+pb.getID()+") in "+timeVal+"ms.");
-		//System.out.println("ParFOR Opt: Finished optimization for PARFOR("+pb.getID()+") in "+timeVal+"ms.");
+		if( DMLScript.STATISTICS ) {
+			ParForStatistics.incrementOptimCount();
+			ParForStatistics.incrementOptimTime((long)timeVal);
+		}
 		if( monitor )
 			StatisticMonitor.putPFStat( pb.getID() , Stat.OPT_T, timeVal);
 	}
@@ -116,15 +119,8 @@ public class OptimizationWrapper
 			.setLevel( optLogLevel );
 	}
 
-	@SuppressWarnings("unused")
 	private static void optimize( POptMode otype, int ck, double cm, ParForStatementBlock sb, ParForProgramBlock pb, ExecutionContext ec, boolean monitor, int numRuns ) 
 	{
-		Timing time = new Timing(true);
-		
-		//maintain statistics
-		if( DMLScript.STATISTICS )
-			ParForStatistics.incrementOptimCount();
-		
 		//create specified optimizer
 		Optimizer opt = createOptimizer( otype );
 		CostModelType cmtype = opt.getCostModelType();
@@ -212,7 +208,8 @@ public class OptimizationWrapper
 		//create opt tree (before optimization)
 		try {
 			tree = OptTreeConverter.createOptTree(ck, cm, opt.getPlanInputType(), sb, pb, ec); 
-			LOG.debug("ParFOR Opt: Input plan (before optimization):\n" + tree.explain(false));
+			if(LOG.isDebugEnabled())
+				LOG.debug("ParFOR Opt: Input plan (before optimization):\n" + tree.explain(false));
 		}
 		catch(Exception ex) {
 			throw new DMLRuntimeException("Unable to create opt tree.", ex);
@@ -224,13 +221,9 @@ public class OptimizationWrapper
 		
 		//core optimize
 		opt.optimize(sb, pb, tree, est, numRuns, ec);
-		LOG.debug("ParFOR Opt: Optimized plan (after optimization): \n" + tree.explain(false));
+		if(LOG.isDebugEnabled())
+			LOG.debug("ParFOR Opt: Optimized plan (after optimization): \n" + tree.explain(false));
 
-		long ltime = (long) time.stop();
-		LOG.trace("ParFOR Opt: Optimized plan in "+ltime+"ms.");
-		if( DMLScript.STATISTICS )
-			ParForStatistics.incrementOptimTime(ltime);
-		
 		//monitor stats
 		if( monitor ) {
 			StatisticMonitor.putPFStat( pb.getID() , Stat.OPT_OPTIMIZER, otype.ordinal());

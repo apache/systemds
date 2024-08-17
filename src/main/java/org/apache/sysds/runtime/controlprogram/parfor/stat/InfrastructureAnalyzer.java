@@ -180,7 +180,9 @@ public class InfrastructureAnalyzer
 	 */
 	public static int getCkMaxMR() {
 		if( OptimizerUtils.isSparkExecutionMode() )
-			return SparkExecutionContext.getDefaultParallelism(true);
+			return SparkExecutionContext.isLocalMaster() ?
+				InfrastructureAnalyzer.getLocalParallelism() :
+				SparkExecutionContext.getDefaultParallelism(true);
 		else
 			return getRemoteParallelMapTasks();
 	}

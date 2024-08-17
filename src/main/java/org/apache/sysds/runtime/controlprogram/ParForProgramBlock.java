@@ -75,12 +75,7 @@ import org.apache.sysds.runtime.controlprogram.parfor.ResultMergeLocalMemory;
 import org.apache.sysds.runtime.controlprogram.parfor.ResultMergeRemoteSpark;
 import org.apache.sysds.runtime.controlprogram.parfor.Task;
 import org.apache.sysds.runtime.controlprogram.parfor.TaskPartitioner;
-import org.apache.sysds.runtime.controlprogram.parfor.TaskPartitionerFactoring;
-import org.apache.sysds.runtime.controlprogram.parfor.TaskPartitionerFactoringCmax;
-import org.apache.sysds.runtime.controlprogram.parfor.TaskPartitionerFactoringCmin;
-import org.apache.sysds.runtime.controlprogram.parfor.TaskPartitionerFixedsize;
-import org.apache.sysds.runtime.controlprogram.parfor.TaskPartitionerNaive;
-import org.apache.sysds.runtime.controlprogram.parfor.TaskPartitionerStatic;
+import org.apache.sysds.runtime.controlprogram.parfor.TaskPartitionerFactory;
 import org.apache.sysds.runtime.controlprogram.parfor.opt.OptTreeConverter;
 import org.apache.sysds.runtime.controlprogram.parfor.opt.OptimizationWrapper;
 import org.apache.sysds.runtime.controlprogram.parfor.opt.OptimizerRuleBased;
@@ -1279,43 +1274,9 @@ public class ParForProgramBlock extends ForProgramBlock {
 	 * @param incr ?
 	 * @return task partitioner
 	 */
-	private TaskPartitioner createTaskPartitioner( IntObject from, IntObject to, IntObject incr ) 
-	{
-		TaskPartitioner tp;
-		
-		switch( _taskPartitioner ) {
-			case FIXED:
-				tp = new TaskPartitionerFixedsize(
-					_taskSize, _iterPredVar, from, to, incr);
-				break;
-			case NAIVE:
-				tp = new TaskPartitionerNaive(
-					_taskSize, _iterPredVar, from, to, incr);
-				break;
-			case STATIC:
-				tp = new TaskPartitionerStatic(
-					_taskSize, _numThreads, _iterPredVar, from, to, incr);
-				break;
-			case FACTORING:
-				tp = new TaskPartitionerFactoring(
-					_taskSize,_numThreads, _iterPredVar, from, to, incr);
-				break;
-			case FACTORING_CMIN:
-				//for constrained factoring the tasksize is used as the minimum constraint
-				tp = new TaskPartitionerFactoringCmin(_taskSize,_numThreads, 
-					_taskSize, _iterPredVar, from, to, incr);
-				break;
-
-			case FACTORING_CMAX:
-				//for constrained factoring the tasksize is used as the minimum constraint
-				tp = new TaskPartitionerFactoringCmax(_taskSize,_numThreads, 
-					_taskSize, _iterPredVar, from, to, incr);
-				break;	
-			default:
-				throw new DMLRuntimeException("Undefined task partitioner: '"+_taskPartitioner+"'.");
-		}
-		
-		return tp;
+	private TaskPartitioner createTaskPartitioner( IntObject from, IntObject to, IntObject incr ) {
+		return TaskPartitionerFactory.createTaskPartitioner(
+			_taskPartitioner, from, to, incr, _taskSize, _numThreads, _iterPredVar);
 	}
 	
 	/**

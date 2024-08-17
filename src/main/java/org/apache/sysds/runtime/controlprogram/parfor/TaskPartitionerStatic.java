@@ -29,12 +29,12 @@ import org.apache.sysds.runtime.instructions.cp.IntObject;
  */
 public class TaskPartitionerStatic extends TaskPartitionerFixedsize
 {
-	
-	public TaskPartitionerStatic( long taskSize, int numThreads, String iterVarName, IntObject fromVal, IntObject toVal, IntObject incrVal ) 
+	public TaskPartitionerStatic( long taskSize, int numThreads,
+		String iterVarName, IntObject fromVal, IntObject toVal, IntObject incrVal ) 
 	{
 		super(taskSize, iterVarName, fromVal, toVal, incrVal);
 	
 		_taskSize = _numIter / numThreads;
 		_firstnPlus1 = (int)_numIter % numThreads;
-	}	
+	}
 }

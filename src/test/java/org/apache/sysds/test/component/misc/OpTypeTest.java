@@ -19,10 +19,6 @@
 
 package org.apache.sysds.test.component.misc;
 
-import java.io.IOException;
-import java.net.URL;
-import java.util.Enumeration;
-
 import org.apache.sysds.common.Types.OpOp1;
 import org.apache.sysds.common.Types.OpOp2;
 import org.apache.sysds.common.Types.OpOp3;

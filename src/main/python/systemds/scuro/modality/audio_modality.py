@@ -24,14 +24,14 @@ from modality.modality import Modality
 from representations.unimodal import UnimodalRepresentation
 
 
-class VideoModality(Modality):
+class AudioModality(Modality):
     def __init__(self, file_path: str, representation: UnimodalRepresentation, train_indices=None, start_index: int = 0):
         """
-        Creates a video modality
-        :param file_path: path to file where the video embeddings (for now) are stored
+        Creates an audio modality
+        :param file_path: path to file where the audio embeddings are stored
         :param representation: Unimodal representation that indicates how to extract the data from the file
         """
-        super().__init__(representation, start_index, 'Video', train_indices)
+        super().__init__(representation, start_index, 'Audio', train_indices)
         self.file_path = file_path
     
     def file_sanity_check(self):
@@ -49,5 +49,5 @@ class VideoModality(Modality):
     def read_chunk(self):
         pass
     
-    def read_all(self, indices):
+    def read_all(self, indices=None):
         self.data = self.representation.parse_all(self.file_path, indices=indices) # noqa

@@ -44,19 +44,12 @@ public class VarStats
 	Object[] _fileInfo = null;
 
 	public VarStats(DataCharacteristics dc) {
-		this(dc, -1);
-	}
-
-	public VarStats(DataCharacteristics dc, long sizeEstimate) {
-		if (dc == null) {
-			_mc = null;
-		}
-		else if (dc instanceof MatrixCharacteristics) {
+		if (dc instanceof MatrixCharacteristics) {
 			_mc = (MatrixCharacteristics) dc;
 		} else {
 			throw new RuntimeException("VarStats: expecting MatrixCharacteristics or null");
 		}
-		_memory = sizeEstimate;
+		_memory = -1;
 	}
 
 	public long getM() {

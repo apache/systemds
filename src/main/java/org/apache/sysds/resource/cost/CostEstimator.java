@@ -183,12 +183,12 @@ public class CostEstimator
 		return ret;
 	}
 
-	private double getTimeEstimateInst(ProgramBlock pb, Instruction inst) throws CostEstimationException {
+	public double getTimeEstimateInst(ProgramBlock pb, Instruction inst) throws CostEstimationException {
 		double ret;
 		if (inst instanceof CPInstruction) {
 			maintainCPInstVariableStatistics((CPInstruction)inst);
 
-			ret = getTimeEstimateCPInst(pb, (CPInstruction)inst);
+			ret = getTimeEstimateCPInst((CPInstruction)inst);
 
 			if( inst instanceof FunctionCallCPInstruction ) //functions
 			{
@@ -218,7 +218,7 @@ public class CostEstimator
 	 * 	adding cost is not relevant.
 	 * @param inst
 	 */
-	private void maintainCPInstVariableStatistics(CPInstruction inst) throws CostEstimationException {
+	private void maintainCPInstVariableStatistics(CPInstruction inst) {
 		if( inst instanceof VariableCPInstruction )
 		{
 			String opcode = inst.getOpcode();
@@ -258,7 +258,6 @@ public class CostEstimator
 				DataGenCPInstruction dinst = (DataGenCPInstruction) inst;
 				VarStats stat = _stats.get(dinst.getOutput().getName());
 				stat._mc.setNonZeros((long) (stat.getCells()*dinst.getSparsity()));
-				putInMemory(stat);
 			}
 		}
 		else if( inst instanceof FunctionCallCPInstruction )
@@ -276,12 +275,11 @@ public class CostEstimator
 	 * <li>T_r - instruction read (to mem.) time</li>
 	 * <li>T_c - instruction compute time</li>
 	 *
-	 * @param pb ?
-	 * @param inst ?
+	 * @param inst
 	 * @return
 	 * @throws CostEstimationException
 	 */
-	private double getTimeEstimateCPInst(ProgramBlock pb, CPInstruction inst) throws CostEstimationException {
+		public double getTimeEstimateCPInst(CPInstruction inst) throws CostEstimationException {
 		double ret = 0;
 		if (inst instanceof VariableCPInstruction) {
 			String opcode = inst.getOpcode();
@@ -309,20 +307,6 @@ public class CostEstimator
 
 			return ret;
 		}
-		else if (inst instanceof DataGenCPInstruction) {
-			DataGenCPInstruction randInst = (DataGenCPInstruction) inst;
-			if( randInst.getOpcode().equals("rand") ) {
-				long rlen = randInst.getRows();
-				long clen = randInst.getCols();
-				//int blen = randInst.getBlocksize();
-				long nnz = (long) (randInst.getSparsity() * rlen * clen);
-				return nnz; //TODO
-			}
-			else {
-				//e.g., seq
-				return 1;
-			}
-		}
 		else if (inst instanceof UnaryCPInstruction) {
 			// --- Operations associated with networking cost only ---
 			// TODO: is somehow computational cost relevant for these operations
@@ -338,6 +322,7 @@ public class CostEstimator
 			if (inst.getOpcode().equals("print")) {
 				return 0;
 			}
+
 			UnaryCPInstruction unaryInst = (UnaryCPInstruction) inst;
 			if (unaryInst.input1.isTensor())
 				throw new DMLRuntimeException("Tensor is not supported for cost estimation");
@@ -354,8 +339,8 @@ public class CostEstimator
 		}
 		else if (inst instanceof BinaryCPInstruction) {
 			BinaryCPInstruction binInst = (BinaryCPInstruction) inst;
-			if (binInst.input1.isFrame() || binInst.input2.isFrame())
-				throw new DMLRuntimeException("Frame is not supported for cost estimation");
+			if (binInst.input1.isTensor() || binInst.input2.isTensor())
+				throw new DMLRuntimeException("Tensor is not supported for cost estimation");
 			VarStats input1 = _stats.get(binInst.input1.getName());
 			VarStats input2 = _stats.get(binInst.input2.getName());
 			VarStats output = _stats.get(binInst.output.getName());
@@ -504,15 +489,6 @@ public class CostEstimator
 			ret += IOCostUtils.getMemWriteTime(output);
 			return ret;
 		}
-		else if( inst instanceof FunctionCallCPInstruction )
-		{
-			FunctionCallCPInstruction finst = (FunctionCallCPInstruction)inst;
-			//TODO recursive function calls and 
-			Program prog = pb.getProgram();
-			FunctionProgramBlock fpb = prog.getFunctionProgramBlock(
-				finst.getNamespace(), finst.getFunctionName());
-			return getTimeEstimatePB(fpb);
-		}
 		else if (inst instanceof MultiReturnParameterizedBuiltinCPInstruction) {
 			throw new DMLRuntimeException("MultiReturnParametrized built-in instructions are not supported.");
 		}
@@ -522,8 +498,7 @@ public class CostEstimator
 		else if (inst instanceof SqlCPInstruction) {
 			throw new DMLRuntimeException("SQL instructions are not supported.");
 		}
-		System.out.println("Unsupported instruction: " + inst.getOpcode());
-		return 1;
+		throw new DMLRuntimeException("Unsupported instruction: " + inst.getOpcode());
 	}
 	private double getNFLOP_CPVariableInst(VariableCPInstruction inst, VarStats input) throws CostEstimationException {
 		switch (inst.getOpcode()) {
@@ -615,7 +590,7 @@ public class CostEstimator
 				} else if (opcode.equals("ua+") || opcode.equals("uar+") || opcode.equals("uac+")) {
 					return k*input.getCellsWithSparsity();
 				} else { // NOTE: assumes all other cases were already handled properly
-					return (input!=null)?k*input.getCells() : 1;
+					return k*input.getCells();
 				}
 			}
 		} else if(inst instanceof UnaryScalarCPInstruction) {
@@ -796,8 +771,7 @@ public class CostEstimator
 			}
 
 		} else {
-			System.out.println("Estimation for operation "+opcode+" is not supported yet.");
-			return 1;
+			throw new DMLRuntimeException("Estimation for operation "+opcode+" is not supported yet.");
 		}
 	}
 
@@ -975,7 +949,7 @@ public class CostEstimator
 		}
 		// loading from a file
 		if (input._fileInfo == null || input._fileInfo.length != 2) {
-			return 1;
+			throw new DMLRuntimeException("Time estimation is not possible without file info.");
 		}
 		else if (!input._fileInfo[0].equals(HDFS_SOURCE_IDENTIFIER) && !input._fileInfo[0].equals(S3_SOURCE_IDENTIFIER)) {
 			throw new DMLRuntimeException("Time estimation is not possible for data source: "+ input._fileInfo[0]);
@@ -985,8 +959,6 @@ public class CostEstimator
 	}
 
 	private void putInMemory(VarStats input) throws CostEstimationException {
-		if(input == null)
-			return;
 		long sizeEstimate = OptimizerUtils.estimateSize(input._mc);
 		if (sizeEstimate + usedMememory > localMemory)
 			throw new CostEstimationException("Insufficient local memory");

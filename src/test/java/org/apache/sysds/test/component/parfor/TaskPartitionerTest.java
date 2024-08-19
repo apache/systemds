@@ -27,11 +27,17 @@ import org.apache.sysds.runtime.controlprogram.parfor.TaskPartitionerFactory;
 import org.apache.sysds.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
 import org.apache.sysds.runtime.instructions.cp.IntObject;
 import org.apache.sysds.runtime.util.CommonThreadPool;
+import org.apache.sysds.test.AutomatedTestBase;
 import org.junit.Assert;
 import org.junit.Test;
 
-public class TaskPartitionerTest {
+public class TaskPartitionerTest extends AutomatedTestBase{
 
+	@Override
+	public void setUp() {
+		
+	}
+	
 	@Test
 	public void testNaive() {
 		testTaskPartitioner(2*LocalTaskQueue.MAX_SIZE, PTaskPartitioner.NAIVE);

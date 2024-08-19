@@ -3686,6 +3686,10 @@ public class MatrixBlock extends MatrixValue implements CacheBlock<MatrixBlock>,
 	public final MatrixBlock append(MatrixBlock that) {
 		return append(that, null, true); // default cbind
 	}
+	
+	public final MatrixBlock rbind(MatrixBlock that) {
+		return append(that, null, false);
+	}
 
 	/**
 	 * Append that matrix to this matrix, while allocating a new matrix. 

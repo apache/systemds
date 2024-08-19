@@ -1310,8 +1310,8 @@ public class ParForProgramBlock extends ForProgramBlock {
 		return dp;
 	}
 
-	private ResultMerge<?> createResultMerge( PResultMerge prm,
-		CacheableData<?> out, CacheableData<?>[] in, String fname, boolean accum, ExecutionContext ec ) 
+	public static ResultMerge<?> createResultMerge( PResultMerge prm,
+		CacheableData<?> out, CacheableData<?>[] in, String fname, boolean accum, int numThreads, ExecutionContext ec ) 
 	{
 		ResultMerge<?> rm;
 		
@@ -1333,7 +1333,7 @@ public class ParForProgramBlock extends ForProgramBlock {
 					rm = new ResultMergeLocalAutomatic( (MatrixObject)out, (MatrixObject[])in, fname, accum );
 					break;
 				case REMOTE_SPARK:
-					int numMap = Math.max(_numThreads,
+					int numMap = Math.max(numThreads,
 						SparkExecutionContext.getDefaultParallelism(true));
 					int numRed = numMap; //equal map/reduce
 					rm = new ResultMergeRemoteSpark( (MatrixObject)out,
@@ -1460,7 +1460,8 @@ public class ParForProgramBlock extends ForProgramBlock {
 					CacheableData<?>[] in = (dat instanceof MatrixObject) ?
 						tmp.toArray(MatrixObject[]::new) : tmp.toArray(FrameObject[]::new);
 					String fname = constructResultMergeFileName();
-					ResultMerge<?> rm = createResultMerge(_resultMerge, out, in, fname, var._isAccum, ec);
+					ResultMerge<?> rm = createResultMerge(_resultMerge,
+						out, in, fname, var._isAccum, _numThreads, ec);
 					CacheableData<?> outNew = USE_PARALLEL_RESULT_MERGE ?
 						rm.executeParallelMerge(_numThreads) :
 						rm.executeSerialMerge();
@@ -1678,7 +1679,8 @@ public class ParForProgramBlock extends ForProgramBlock {
 					
 					String fname = constructResultMergeFileName();
 				
-					ResultMerge<?> rm = createResultMerge(_resultMerge, out, in, fname, var._isAccum, _ec);
+					ResultMerge<?> rm = createResultMerge(_resultMerge,
+						out, in, fname, var._isAccum, _numThreads, _ec);
 					CacheableData<?> outNew;
 					if( USE_PARALLEL_RESULT_MERGE )
 						outNew = rm.executeParallelMerge( _numThreads );

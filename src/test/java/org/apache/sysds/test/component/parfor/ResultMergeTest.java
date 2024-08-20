@@ -33,7 +33,6 @@ import org.apache.sysds.runtime.meta.MetaDataFormat;
 import org.apache.sysds.test.AutomatedTestBase;
 import org.apache.sysds.test.TestConfiguration;
 import org.apache.sysds.test.TestUtils;
-import org.junit.Ignore;
 import org.junit.Test;
 
 public class ResultMergeTest extends AutomatedTestBase{
@@ -52,7 +51,6 @@ public class ResultMergeTest extends AutomatedTestBase{
 	}
 	
 	@Test
-	@Ignore //FIXME
 	public void testLocalFile() {
 		testResultMergeAll(PResultMerge.LOCAL_FILE);
 	}
@@ -66,6 +64,11 @@ public class ResultMergeTest extends AutomatedTestBase{
 		testResultMerge(false, false, false, mtype);
 		testResultMerge(false, true, false, mtype);
 		testResultMerge(true, false, false, mtype);
+		testResultMerge(false, false, true, mtype);
+		if( mtype != PResultMerge.LOCAL_FILE ) //FIXME
+			testResultMerge(false, true, true, mtype);
+		testResultMerge(true, false, true, mtype);
+		
 		//testResultMerge(true, true, false, mtype); invalid
 	}
 	
@@ -75,19 +78,21 @@ public class ResultMergeTest extends AutomatedTestBase{
 		//create input and output objects
 		MatrixBlock A = MatrixBlock.randOperations(1200, 1100, 0.1);
 		CacheableData<?> Cobj = compare ?
-			toMatrixObject(A, output("C")) :
+			toMatrixObject(new MatrixBlock(1200,1100,1d), output("C")) :
 			toMatrixObject(new MatrixBlock(1200,1100,true), output("C"));
-		MatrixBlock empty = new MatrixBlock(400,1100,true);
+		MatrixBlock rest = compare ? 
+			new MatrixBlock(400,1100,1d) :  //constant (also dense)
+			new MatrixBlock(400,1100,true); //empty (also sparse)
 		MatrixObject[] Bobj = new MatrixObject[3];
-		Bobj[0] = toMatrixObject(A.slice(0,399).rbind(empty).rbind(empty), output("B0"));
-		Bobj[1] = toMatrixObject(empty.rbind(A.slice(400,799)).rbind(empty), output("B1"));
-		Bobj[2] = toMatrixObject(empty.rbind(empty).rbind(A.slice(800,1199)), output("B1"));
-		
+		Bobj[0] = toMatrixObject(A.slice(0,399).rbind(rest).rbind(rest), output("B0"));
+		Bobj[1] = toMatrixObject(rest.rbind(A.slice(400,799)).rbind(rest), output("B1"));
+		Bobj[2] = toMatrixObject(rest.rbind(rest).rbind(A.slice(800,1199)), output("B2"));
+	
 		//create result merge
 		ExecutionContext ec = ExecutionContextFactory.createContext();
 		int numThreads = 3;
 		ResultMerge<?> rm = ParForProgramBlock.createResultMerge(
-			mtype, Cobj, Bobj, output("C"), accum, numThreads, ec);
+			mtype, Cobj, Bobj, output("R"), accum, numThreads, ec);
 			
 		//execute results merge
 		if( par )

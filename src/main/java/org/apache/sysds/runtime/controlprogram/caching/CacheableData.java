@@ -846,7 +846,8 @@ public abstract class CacheableData<T extends CacheBlock<?>> extends Data
 		if ( !isAvailableToRead() )
 			throw new DMLRuntimeException("MatrixObject not available to read.");
 
-		LOG.trace("Exporting " + this.getDebugName() + " to " + fName + " in format " + outputFormat);
+		if( LOG.isTraceEnabled() )
+			LOG.trace("Exporting " + this.getDebugName() + " to " + fName + " in format " + outputFormat);
 		
 		if( DMLScript.USE_ACCELERATOR && _gpuObjects != null ) {
 			boolean copiedFromGPU = false;
@@ -962,7 +963,8 @@ public abstract class CacheableData<T extends CacheBlock<?>> extends Data
 		else 
 		{
 			//CASE 4: data already in hdfs (do nothing, no need for export)
-			LOG.trace(this.getDebugName() + ": Skip export to hdfs since data already exists.");
+			if( LOG.isTraceEnabled() )
+				LOG.trace(this.getDebugName() + ": Skip export to hdfs since data already exists.");
 		}
 		
 		_hdfsFileExists = true;

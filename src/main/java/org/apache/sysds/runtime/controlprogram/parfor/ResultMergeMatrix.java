@@ -90,7 +90,6 @@ public abstract class ResultMergeMatrix extends ResultMerge<MatrixObject> {
 		// NaNs, since NaN != NaN, otherwise we would potentially overwrite results
 		// * For the case of accumulation, we add out += (new-old) to ensure correct results
 		// because all inputs have the old values replicated
-
 		final int rows = in.getNumRows();
 		final int cols = in.getNumColumns();
 		if(in.isEmptyBlock(false)) {

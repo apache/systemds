@@ -23,16 +23,31 @@ import json
 from datetime import datetime
 
 from representations.average import Averaging
+from representations.concatenation import Concatenation
 from modality.aligned_modality import AlignedModality
 from modality.text_modality import TextModality
 from modality.video_modality import VideoModality
 from modality.audio_modality import AudioModality
 from representations.unimodal import Pickle, JSON, HDF5, NPY
 from models.discrete_model import DiscreteModel
+from aligner.task import Task
+from aligner.dr_search import DRSearch
+
+
+class CustomTask(Task):
+    def __init__(self, model, labels, train_indices, val_indices):
+        super().__init__('CustomTask', model, labels, train_indices, val_indices)
+
+    def run(self, data):
+        X_train, y_train, X_test, y_test = self.get_train_test_split(data)
+        self.model.fit(X_train, y_train, X_test, y_test)
+        score = self.model.test(X_test, y_test)
+        return score
 
 
 labels = []
 train_indices = []
+val_indices = []
 
 video_path = ''
 audio_path = ''
@@ -47,15 +62,12 @@ video.read_all()
 audio.read_all()
 text.read_all()
 
-combined_modality = AlignedModality(Averaging(), [text, video, audio])
-combined_modality.combine()
-
-# create train-val split
-train_X, train_y = None, None
-val_X, val_y = None, None
+modalities = [text, audio, video]
 
 model = DiscreteModel()
-model.fit(train_X, train_y)
-model.test(val_X, val_y)
+custom_task = CustomTask(model, labels, train_indices, val_indices)
+representations = [Concatenation(), Averaging()]
 
-
+dr_search = DRSearch(modalities, custom_task, representations)
+best_representation, best_score, best_modalities = dr_search.fit()
+aligned_representation = dr_search.transform(modalities)

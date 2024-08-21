@@ -49,5 +49,5 @@ class VideoModality(Modality):
     def read_chunk(self):
         pass
     
-    def read_all(self, indices):
+    def read_all(self, indices=None):
         self.data = self.representation.parse_all(self.file_path, indices=indices) # noqa

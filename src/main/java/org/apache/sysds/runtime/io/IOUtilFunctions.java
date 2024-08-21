@@ -593,6 +593,7 @@ public class IOUtilFunctions {
 		return size;
 	}
 
+	@SuppressWarnings("deprecation")
 	public static InputStream toInputStream(String input) {
 		if( input == null ) 
 			return null;

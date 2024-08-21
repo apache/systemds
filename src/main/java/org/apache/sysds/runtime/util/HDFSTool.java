@@ -119,12 +119,15 @@ public class HDFSTool
 		
 		try {
 			Path path = new Path(fname);
-			return IOUtilFunctions
-				.getFileSystem(path).getFileStatus(path).isDirectory();
+			return isDirectory(IOUtilFunctions.getFileSystem(path), path);
 		}
 		catch(Exception ex) {
 			throw new DMLRuntimeException("Failed to check if file is directory", ex);
 		}
+	}
+	
+	public static boolean isDirectory(FileSystem fs, Path path) throws IOException {
+		return fs.getFileStatus(path).isDirectory();
 	}
 	
 	public static FileStatus[] getDirectoryListing(String fname) {

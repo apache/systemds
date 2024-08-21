@@ -35,7 +35,12 @@ import org.mockito.Mockito;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Set;
+import java.util.TreeSet;
 
 import static org.apache.sysds.resource.CloudUtils.GBtoBytes;
 import static org.junit.Assert.*;
@@ -193,8 +198,6 @@ public class EnumeratorTests {
 	@Test
 	public void estimateRangeExecutorsGridBasedStepSizeTest() {
 		Enumerator gridBasedEnumerator;
-		ArrayList<Integer> expectedResult;
-		ArrayList<Integer> actualResult;
 
 		// num. executors range starting from zero and step size = 2
 		gridBasedEnumerator = getGridBasedEnumeratorPrebuild()
@@ -202,8 +205,8 @@ public class EnumeratorTests {
 				.withStepSizeExecutor(2)
 				.build();
 		// test the general case when the max level of parallelism is not reached (0 is never part of the result)
-		expectedResult = new ArrayList<>(List.of(2, 4, 6, 8, 10));
-		actualResult = gridBasedEnumerator.estimateRangeExecutors(-1, 4);
+		List<Integer> expectedResult = new ArrayList<>(List.of(2, 4, 6, 8, 10));
+		List<Integer> actualResult = gridBasedEnumerator.estimateRangeExecutors(-1, 4);
 		Assert.assertEquals(expectedResult, actualResult);
 		// test the case when the max level of parallelism (1000) is reached (0 is never part of the result)
 		expectedResult = new ArrayList<>(List.of(2, 4));
@@ -312,9 +315,6 @@ public class EnumeratorTests {
 
 	@Test
 	public void estimateRangeExecutorsInterestBasedCheckpointMemoryTest() {
-		ArrayList<Integer> expectedResult;
-		ArrayList<Integer>actualResult;
-
 		// fitting the memory estimates for checkpointing
 		Enumerator interestBasedEnumerator = getInterestBasedEnumeratorPrebuild()
 				.withNumberExecutorsRange(0, 5)
@@ -340,8 +340,8 @@ public class EnumeratorTests {
 		}
 
 		// test the general case when the max level of parallelism is not reached (0 is never part of the result)
-		expectedResult = new ArrayList<>(List.of(1, 2, 3));
-		actualResult = interestBasedEnumerator.estimateRangeExecutors(GBtoBytes(16), 4);
+		List<Integer> expectedResult = new ArrayList<>(List.of(1, 2, 3));
+		List<Integer> actualResult = interestBasedEnumerator.estimateRangeExecutors(GBtoBytes(16), 4);
 		Assert.assertEquals(expectedResult, actualResult);
 		// test the case when the max level of parallelism (1000) is reached (0 is never part of the result)
 		expectedResult = new ArrayList<>(List.of(1, 2));
@@ -377,7 +377,7 @@ public class EnumeratorTests {
 		ArrayList<SolutionPoint> actualSolutionPoolIB = gridBasedEnumerator.getSolutionPool();
 
 
-		ArrayList<CloudInstance> expectedInstances = new ArrayList<>(Arrays.asList(
+		List<CloudInstance> expectedInstances = new ArrayList<>(Arrays.asList(
 				instances.get("c5.xlarge"),
 				instances.get("m5.xlarge")
 		));

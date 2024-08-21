@@ -74,6 +74,7 @@ public abstract class CloudUtils {
 	/**
 	 * Performs read of csv file filled with VM instance characteristics.
 	 * Each record in the csv should carry the following information (including header):
+	 * <ul>
 	 * <li>API_Name - naming for VM instance used by the provider</li>
 	 * <li>Memory - floating number for the instance memory in GBs</li>
 	 * <li>vCPUs - number of physical threads</li>
@@ -82,6 +83,7 @@ public abstract class CloudUtils {
 	 * <li>diskSpeed - memory bandwidth in MB/s</li>
 	 * <li>networkSpeed - memory bandwidth in MB/s</li>
 	 * <li>Price - price for instance per hour</li>
+	 * </ul>
 	 * @param instanceTablePath csv file
 	 * @return map with filtered instances
 	 * @throws IOException in case problem at reading the csv file

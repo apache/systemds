@@ -161,7 +161,8 @@ public class CostEstimator
 			ForProgramBlock tmp = (ForProgramBlock)pb;
 			for( ProgramBlock pb2 : tmp.getChildBlocks() )
 				ret += getTimeEstimatePB(pb2);
-
+			// NOTE: currently ParFor blocks are handled as regular for block
+			//  what could lead to very inaccurate estimation in case of complex ParFor blocks
 			ret *= OptimizerUtils.getNumIterations(tmp, DEFAULT_NUMITER);
 		}
 		else if ( pb instanceof FunctionProgramBlock ) {
@@ -960,7 +961,7 @@ public class CostEstimator
 	private void putInMemory(VarStats input) throws CostEstimationException {
 		long sizeEstimate = OptimizerUtils.estimateSize(input._mc);
 		if (sizeEstimate + usedMememory > localMemory)
-			throw new CostEstimationException("Insufficient local memory for ");
+			throw new CostEstimationException("Insufficient local memory");
 		usedMememory += sizeEstimate;
 		input._memory = sizeEstimate;
 	}

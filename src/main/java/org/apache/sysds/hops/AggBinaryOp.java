@@ -1229,7 +1229,7 @@ public class AggBinaryOp extends MultiThreadedHop {
 		double m2_size = m2_rows * m2_cols;
 		double result_size = m1_rows * m2_cols;
 
-		int numReducersRMM = OptimizerUtils.getNumReducers(true);
+		int numReducersRMM = OptimizerUtils.getNumTasks();
 		
 		// Estimate the cost of RMM
 		// RMM phase 1
@@ -1256,7 +1256,7 @@ public class AggBinaryOp extends MultiThreadedHop {
 		double m2_size = m2_rows * m2_cols;
 		double result_size = m1_rows * m2_cols;
 
-		int numReducersCPMM = OptimizerUtils.getNumReducers(false);
+		int numReducersCPMM = OptimizerUtils.getNumTasks();
 		
 		// Estimate the cost of CPMM
 		// CPMM phase 1

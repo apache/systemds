@@ -159,22 +159,10 @@ public class SparkExecutionContext extends ExecutionContext
 		return _spctx;
 	}
 
-	public static void initVirtualSparkContext(SparkConf sparkConf) {
-		if (_spctx != null) {
-			for (Tuple2<String, String> pair : sparkConf.getAll()) {
-				_spctx.sc().getConf().set(pair._1, pair._2);
-			}
-		} else {
-			handleIllegalReflectiveAccessSpark();
-			try {
-				_spctx = new JavaSparkContext(sparkConf);
-				// assumes NON-legacy spark version
-				_sconf = new SparkClusterConfig();
-			} catch (Exception e) {
-				throw new RuntimeException(e);
-			}
+	public static void initLocalSparkContext(SparkConf sparkConf) {
+		if (_sconf == null) {
+			_sconf = new SparkClusterConfig();
 		}
-
 		_sconf.analyzeSparkConfiguation(sparkConf);
 	}
 
@@ -1858,7 +1846,7 @@ public class SparkExecutionContext extends ExecutionContext
 		private static final double BROADCAST_DATA_FRACTION_LEGACY = 0.35;
 
 		//forward private config from Spark's UnifiedMemoryManager.scala (>1.6)
-		private static final long RESERVED_SYSTEM_MEMORY_BYTES = 300 * 1024 * 1024;
+		public static final long RESERVED_SYSTEM_MEMORY_BYTES = 300 * 1024 * 1024;
 
 		//meta configurations
 		private boolean _legacyVersion = false; //spark version <1.6
@@ -1985,7 +1973,7 @@ public class SparkExecutionContext extends ExecutionContext
 				_confOnly &= true;
 			}
 			else if( DMLScript.USE_LOCAL_SPARK_CONFIG ) {
-				//avoid unnecessary spark context creation in local mode (e.g., tests)
+				//avoid unnecessary spark context creation in local mode (e.g., tests, resource opt.)
 				_numExecutors = 1;
 				_defaultPar = 2;
 				_confOnly &= true;

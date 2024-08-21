@@ -56,7 +56,7 @@ public class InfrastructureAnalyzer
 	private static int  _remoteParReduce = -1;
 	private static boolean _localJT      = false;
 	private static long _blocksize       = -1;
-	
+
 	//static initialization, called for each JVM (on each node)
 	static {
 		//analyze local node properties
@@ -136,7 +136,11 @@ public class InfrastructureAnalyzer
 	public static void setLocalMaxMemory( long localMem ) {
 		_localJVMMaxMem = localMem;
 	}
-	
+
+	public static void setLocalPar(int localPar) {
+		_localPar = localPar;
+	}
+
 	public static double getLocalMaxMemoryFraction() {
 		//since parfor modifies _localJVMMaxMem, some internal primitives
 		//need access to the current fraction of total local memory

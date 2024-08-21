@@ -658,20 +658,13 @@ public class OptimizerUtils
 	}
 	
 	/**
-	 * Returns the number of reducers that potentially run in parallel.
+	 * Returns the number of tasks that potentially run in parallel.
 	 * This is either just the configured value (SystemDS config) or
-	 * the minimum of configured value and available reduce slots. 
-	 * 
-	 * @param configOnly true if configured value
-	 * @return number of reducers
+	 * the minimum of configured value and available task slots.
+	 *
+	 * @return number of tasks
 	 */
-	public static int getNumReducers( boolean configOnly ) {
-		if( isSparkExecutionMode() )
-			return SparkExecutionContext.getDefaultParallelism(false);
-		return InfrastructureAnalyzer.getLocalParallelism();
-	}
-
-	public static int getNumMappers() {
+	public static int getNumTasks() {
 		if( isSparkExecutionMode() )
 			return SparkExecutionContext.getDefaultParallelism(false);
 		return InfrastructureAnalyzer.getLocalParallelism();

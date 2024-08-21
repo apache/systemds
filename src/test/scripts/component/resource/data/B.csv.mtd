@@ -1,0 +1,10 @@
+{
+    "data_type": "matrix",
+    "value_type": "double",
+    "rows": 10000,
+    "cols": 1000,
+    "nnz": 10000000,
+    "format": "csv",
+    "header": false,
+    "sep": ","
+}

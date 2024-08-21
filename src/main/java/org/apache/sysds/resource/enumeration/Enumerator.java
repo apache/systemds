@@ -100,13 +100,15 @@ public abstract class Enumerator {
 
 	/**
 	 * Meant to be used for testing purposes
+	 * @return ?
 	 */
 	public HashMap<String, CloudInstance> getInstances() {
-		   return instances;
+		return instances;
 	}
 
 	/**
 	 * Meant to be used for testing purposes
+	 * @return ?
 	 */
 	public InstanceSearchSpace getDriverSpace() {
 		return driverSpace;
@@ -114,6 +116,7 @@ public abstract class Enumerator {
 
 	/**
 	 * Meant to be used for testing purposes
+	 * @param inputSpace ?
 	 */
 	public void setDriverSpace(InstanceSearchSpace inputSpace) {
 		driverSpace.putAll(inputSpace);
@@ -121,6 +124,7 @@ public abstract class Enumerator {
 
 	/**
 	 * Meant to be used for testing purposes
+	 * @return ?
 	 */
 	public InstanceSearchSpace getExecutorSpace() {
 		return executorSpace;
@@ -128,6 +132,7 @@ public abstract class Enumerator {
 
 	/**
 	 * Meant to be used for testing purposes
+	 * @param inputSpace ?
 	 */
 	public void setExecutorSpace(InstanceSearchSpace inputSpace) {
 		executorSpace.putAll(inputSpace);
@@ -135,6 +140,7 @@ public abstract class Enumerator {
 
 	/**
 	 * Meant to be used for testing purposes
+	 * @return ?
 	 */
 	public ArrayList<SolutionPoint> getSolutionPool() {
 		return solutionPool;
@@ -142,6 +148,7 @@ public abstract class Enumerator {
 
 	/**
 	 * Meant to be used for testing purposes
+	 * @param solutionPool ?
 	 */
 	public void setSolutionPool(ArrayList<SolutionPoint> solutionPool) {
 		this.solutionPool = solutionPool;
@@ -254,7 +261,7 @@ public abstract class Enumerator {
 	 * Deciding in the overall best solution out
 	 * of the filled pool of potential solutions
 	 * after processing.
-	 * @return - single optimal cluster configuration
+	 * @return single optimal cluster configuration
 	 */
 	public SolutionPoint postprocessing() {
 		if (solutionPool.isEmpty()) {

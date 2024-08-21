@@ -40,12 +40,12 @@ public class EnumerationUtils {
 	 * since the memory - cores combinations is often not unique.
 	 * The {@code CloudInstance} objects are unique over the whole
 	 * set of lists within this lowest level of the search space.
-	 * <br></br>
+	 * <br>
 	 * This representation allows compact storing of VM instance
 	 * characteristics relevant for program compilation while
 	 * still keeping a reference to the object carrying the
 	 * whole instance information, relevant for cost estimation.
-	 * <br></br>
+	 * <br>
 	 * {@code TreeMap} data structures are used as building blocks for
 	 * the complex search space structure to ensure ascending order
 	 * of the instance characteristics - memory and number of cores.

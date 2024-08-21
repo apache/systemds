@@ -31,4 +31,4 @@ coverage:
         if_not_found: success
     changes: no
   precision: 2
-  range: "75...100"
+  range: "50...75"

@@ -217,7 +217,8 @@ public class ReaderTextCellParallel extends ReaderTextCell
 						buff.addCell(cell.getI(), cell.getJ(), cell.getV());
 						if( _mmProps != null && _mmProps.isSymmetric() && !cell.onDiag() )
 							buff.addCell(cell.getJ(), cell.getI(), cell.getV());
-						if( buff.size()>=CellBuffer.CAPACITY ) 
+						//flush if needed (<=n-1 to allow symmetric mm, where 2 values are added)
+						if( buff.size()>=CellBuffer.CAPACITY-1 ) 
 							synchronized( _dest ){ //sparse requires lock
 								lnnz += buff.size();
 								buff.flushCellBufferToSparseBlock(sblock);

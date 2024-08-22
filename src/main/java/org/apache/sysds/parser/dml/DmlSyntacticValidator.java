@@ -622,6 +622,10 @@ public class DmlSyntacticValidator implements DmlListener {
 			//load and add builtin DML-bodied functions
 			String filePath = Builtins.getFilePath(functionName);
 			DMLProgram tmpProg = parseAndAddImportedFunctions(namespace, filePath, ctx);
+			if(tmpProg == null){
+				//a parse error occured, which was logged in the error listener and will be shown in the error message
+				return;
+			}
 			FunctionDictionary<FunctionStatementBlock> prog = tmpProg.getBuiltinFunctionDictionary();
 			if( prog != null ) { //robustness for existing functions
 				//add builtin functions

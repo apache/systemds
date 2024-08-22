@@ -75,7 +75,7 @@ predict_TT = function (Matrix[Double] M, Matrix[Double] X)
     TL = P %*% t(N_L); # get node left paths
     TR = P %*% t(N_R); # get node right paths
     # pick left or right path for each record separately
-    Ti_new = ifelse(Tv <= Tt, TL, TR);
+    Ti_new = ifelse(Tv <= Tt, TL, TR);  #TODO switch to <
     noChange = (sum(Ti != Ti_new) == 0);
     i = i + 1;
     Ti = Ti_new;
@@ -92,7 +92,7 @@ predict_GEMM = function (Matrix[Double] M, Matrix[Double] X)
   [A, B, C, D, E] = createGEMMNodeTensors(M, ncol(X));
 
   # scoring pipline, evaluating all nodes in parallel
-  Y = rowIndexMax(((((X %*% A) < B) %*% C) == D) %*% E);
+  Y = rowIndexMax(((((X %*% A) <= B) %*% C) == D) %*% E);  #TODO switch to <
 }
 
 createTTNodeTensors = function( Matrix[Double] M )
@@ -125,22 +125,64 @@ createGEMMNodeTensors = function( Matrix[Double] M, Int m )
   return (Matrix[Double] A, Matrix[Double] B, Matrix[Double] C,
   Matrix[Double] D, Matrix[Double] E)
 {
-  #TODO update for new model layout and generalize
-  stop("GEMM not fully supported yet");
-
-  nin = sum(M[2,]!=0); # num inner nodes
+  M2 = matrix(M, rows=ncol(M)/2, cols=2)
+  NID = seq(1, nrow(M2))
 
   # predicate map [#feat x #inodes] and values [1 x #inodes]
-  I1 = removeEmpty(target=M[3,], margin="cols");
-  A = table(I1, seq(1,nin), m, nin);
-  B = removeEmpty(target=M[6,], margin="cols", select=M[2,]!=0);
+  is_inner = M2[,1]!=0
+  I1 = removeEmpty(target=NID, margin="rows", select=is_inner)
+  pivot = removeEmpty(target=M2[,1], margin="rows", select=is_inner)
+  nin = nrow(I1)
+  A = table(pivot, seq(1,nin), m, nin)
+  B = t(removeEmpty(target=M2[,2], margin="rows", select=is_inner))
 
   # bucket paths [#inodes x #paths] and path sums
-  I2 = (M[2,] == 0)
-  np = ncol(M) - nin;
-  C = matrix("1 -1", rows=1, cols=2); # TODO general case
+  is_leaf = (!is_inner & M2[,2]!=0)
+  leaf_ids = t(removeEmpty(target=NID, margin="rows", select=is_leaf))
+  last_leaf = as.scalar(leaf_ids[1,ncol(leaf_ids)])
+  leaf_classes = removeEmpty(target=M2[,2], margin="rows", select=is_leaf)
+  nl = ncol(leaf_ids)
+
+  # iterate over each inner node and check for each leaf node if it is the left subtree (1), right subtree (-1) or not included (0)
+  #              | i |
+  #           /        \
+  #        |2i|       |2i+1|
+  #       /    \     /      \
+  #     |4i| |4i+1| |4i+2| |4i+3|
+  #
+  # left_subtree_of_node(i) = { x | (2^j)*i <= x < (2^j)*i + 2^(j-1), for j elem {1, 2, 3, ...}} -> j is the level of tree
+  # right_subtree_of_node(i) = { x | (2^j)*i + 2^(j-1) <= x < (2^j + 1)*i, for j elem {1, 2, 3, ...}}
+
+  C = matrix(0, nin, nl)
+  parfor(i in seq(1, nin)){
+    boundary_left = 2*as.scalar(I1[i, 1]) # initialize the left boundary with the left child of the inner node
+    out = matrix(0, 1, nl)
+    step_size = 1
+
+    # iterate each level of tree [log(max_node_id) iterations]
+    while(boundary_left < last_leaf) {
+
+      # left side
+      subset_lower_bound = leaf_ids >= boundary_left
+      boundary_right = boundary_left + step_size
+      subset_upper_bound = leaf_ids < boundary_right
+      ones = subset_lower_bound & subset_upper_bound
+      out = out + ones
+
+      # right side
+      subset_lower_bound = !subset_upper_bound #reuse by inverting
+      boundary_right = boundary_right + step_size
+      subset_upper_bound = leaf_ids < boundary_right
+      ones = subset_lower_bound & subset_upper_bound
+      out = out - ones
+
+      step_size = step_size*2 # with each level the amount of nodes in subtree level doubles
+      boundary_left = boundary_left*2 # new left boundary is the left child of the previous left boundary
+    }
+    C[i,] = out
+  }
   D = colSums(max(C, 0));
 
   # class map [#paths x #classes]
-  E = table(seq(1,ncol(C)), t(M[4,(ncol(M)-ncol(C)+1):ncol(M)]));
+  E = table(seq(1,ncol(C)),leaf_classes)
 }

@@ -60,7 +60,9 @@ public class TypeTyposTest extends AutomatedTestBase
 		fullDMLScriptName = HOME + testName + ".dml";
 		programArgs = new String[]{"-explain"};
 		
-		PrintStream old = System.err;
+		boolean oldBuff = getOutputBuffering();
+		setOutputBuffering(false);
+		PrintStream oldErr = System.err;
 		String out = null;
 		try {
 			ByteArrayOutputStream buff = new ByteArrayOutputStream();
@@ -69,7 +71,8 @@ public class TypeTyposTest extends AutomatedTestBase
 			out = buff.toString();
 		}
 		finally {
-			System.setErr(old);
+			System.setErr(oldErr);
+			setOutputBuffering(oldBuff);
 		}
 		if( testName.equals(TEST_NAME1) )
 			Assert.assertTrue(out.contains("invalid valuetype"));

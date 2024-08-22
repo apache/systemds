@@ -308,6 +308,10 @@ public abstract class AutomatedTestBase {
 	protected void setOutputBuffering(boolean value) {
 		outputBuffering = value;
 	}
+	
+	protected boolean getOutputBuffering() {
+		return outputBuffering;
+	}
 
 	/**
 	 * <p>

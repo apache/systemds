@@ -1,18 +1,20 @@
 package org.apache.sysds.test.component.resource;
 
+import org.apache.sysds.resource.ResourceCompiler;
 import org.apache.sysds.resource.cost.CostEstimationException;
 import org.apache.sysds.resource.cost.CostEstimator;
 import org.apache.sysds.resource.cost.VarStats;
+import org.apache.sysds.runtime.controlprogram.Program;
 import org.apache.sysds.runtime.instructions.Instruction;
-import org.apache.sysds.runtime.instructions.cp.CPInstruction;
-import org.apache.sysds.runtime.instructions.cp.Data;
 import org.apache.sysds.runtime.instructions.cp.VariableCPInstruction;
-import org.apache.sysds.test.component.compress.TestBase;
+import org.apache.sysds.utils.Explain;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
+import java.io.IOException;
 import java.util.HashMap;
+import java.util.Map;
 
 public class CostEstimationTest {
 
@@ -20,36 +22,39 @@ public class CostEstimationTest {
 
     @Before
     public void setup() {
-        estimator = new CostEstimator();
+        estimator = new CostEstimator(new Program());
     }
 
     @Test
-    public void createvarMatrixVariableCPInstructionTest() {
+    public void createvarMatrixVariableCPInstructionTest() throws CostEstimationException {
         String instDefinition = "CP°createvar°testVar°testOutputFile°false°MATRIX°binary°100°100°1000°10000°COPY";
         VariableCPInstruction inst = VariableCPInstruction.parseInstruction(instDefinition);
         testGetTimeEstimateInst(estimator, null, inst, 0);
         // test the proper maintainCPInstVariableStatistics functionality
+        estimator.maintainStats(inst);
         VarStats actualStats = estimator.getStats("testVar");
         Assert.assertNotNull(actualStats);
         Assert.assertEquals(10000, actualStats.getCells());
     }
 
     @Test
-    public void createvarFrameVariableCPInstructionTest() {
+    public void createvarFrameVariableCPInstructionTest() throws CostEstimationException {
         String instDefinition = "CP°createvar°testVar°testOutputFile°false°FRAME°binary°100°100°1000°10000°COPY";
         VariableCPInstruction inst = VariableCPInstruction.parseInstruction(instDefinition);
         testGetTimeEstimateInst(estimator, null, inst, 0);
         // test the proper maintainCPInstVariableStatistics functionality
+        estimator.maintainStats(inst);
         VarStats actualStats = estimator.getStats("testVar");
         Assert.assertNotNull(actualStats);
         Assert.assertEquals(10000, actualStats.getCells());
     }
 
     @Test
-    public void createvarInvalidVariableCPInstructionTest() {
+    public void createvarInvalidVariableCPInstructionTest() throws CostEstimationException {
         String instDefinition = "CP°createvar°testVar°testOutputFile°false°TENSOR°binary°100°100°1000°10000°COPY";
         VariableCPInstruction inst = VariableCPInstruction.parseInstruction(instDefinition);
         try {
+            estimator.maintainStats(inst);
             testGetTimeEstimateInst(estimator, null, inst, 0);
             Assert.fail("Tensor is not supported by the cost estimator");
         } catch (RuntimeException e) {
@@ -58,18 +63,19 @@ public class CostEstimationTest {
     }
 
     @Test
-    public void cpvarVariableCPInstructionTest() {
-        String instDefinition = "CP°createvar°testVar°testOutputFile°false°FRAME°binary°100°100°1000°10000°COPY";
-        VariableCPInstruction inst = VariableCPInstruction.parseInstruction(instDefinition);
-        testGetTimeEstimateInst(estimator, null, inst, 0);
-        // test the proper maintainCPInstVariableStatistics functionality
-        VarStats actualStats = estimator.getStats("testVar");
-        Assert.assertNotNull(actualStats);
-        Assert.assertEquals(10000, actualStats.getCells());
-    }
-
-    public void LinearRegCGCostEstimationTest() {
-
+    public void LinearRegCGCostEstimationTest() throws IOException {
+        Map<String, String> nvargs = new HashMap<>();
+        nvargs.put("$X", "tests/X.csv");
+        nvargs.put("$Y", "tests/Y.csv");
+        nvargs.put("$B", "tests/B.csv");
+        Program program = ResourceCompiler.compile("scripts/perftest/scripts/LinearRegCG.dml", nvargs);
+//        Program program = ResourceCompiler.compile("scripts/perftest/resource/all_ops.dml", nvargs);
+        System.out.println(Explain.explain(program));
+        try {
+            CostEstimator.estimateExecutionTime(program);
+        } catch (CostEstimationException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     // Helper functions
@@ -84,7 +90,7 @@ public class CostEstimationTest {
             estimator.putStats(inputStats);
         double actualCost = -1d;
         try {
-            actualCost = estimator.getTimeEstimateInst(null, targetInstruction);
+            actualCost = estimator.getTimeEstimateInst(targetInstruction);
         } catch (CostEstimationException e) {
             Assert.fail("Catching CostEstimationException is not expected behavior");
         }

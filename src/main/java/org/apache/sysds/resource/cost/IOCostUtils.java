@@ -58,10 +58,10 @@ public class IOCostUtils {
 	private static final double DEFAULT_MBS_MEM_READ_BANDWIDTH = 32000; // TODO: dynamic value later
 	private static final double DEFAULT_MBS_MEM_WRITE_BANDWIDTH = 32000; // TODO: dynamic value later
 	protected static double getMemReadTime(VarStats stats) {
-		if (stats == null) return 0; // scalars
-		if (stats._memory < 0)
-			return 1;
-		long size = stats._memory;
+		if (stats.isScalar()) return 0; // scalars
+		if (stats.allocatedMemory < 0)
+			throw new RuntimeException("VarStats should have been estimated size before getting read time");
+		long size = stats.allocatedMemory;
 		double sizeMB = (double) size / (1024 * 1024);
 
 		return sizeMB / DEFAULT_MBS_MEM_READ_BANDWIDTH;
@@ -69,9 +69,9 @@ public class IOCostUtils {
 
 	protected static double getMemWriteTime(VarStats stats) {
 		if (stats == null) return 0; // scalars
-		if (stats._memory < 0)
+		if (stats.allocatedMemory < 0)
 			throw new DMLRuntimeException("VarStats should have estimated size before getting write time");
-		long size = stats._memory;
+		long size = stats.allocatedMemory;
 		double sizeMB = (double) size / (1024 * 1024);
 
 		return sizeMB / DEFAULT_MBS_MEM_WRITE_BANDWIDTH;
@@ -127,7 +127,7 @@ public class IOCostUtils {
 		double mbytes = bytes / (1024*1024);
 		double ret;
 
-		if (source == S3_SOURCE_IDENTIFIER) {
+		if (source.equals(S3_SOURCE_IDENTIFIER)) {
 			if (format.isTextFormat()) {
 				if (sparse)
 					ret = mbytes / DEFAULT_MBS_S3WRITE_TEXT_SPARSE;
@@ -161,9 +161,9 @@ public class IOCostUtils {
 	 * Returns the estimated cost for transmitting a packet of size bytes.
 	 * This function is supposed to be used for parallelize and result data transfer.
 	 * Driver <-> Executors interaction.
-	 * @param size
-	 * @param numExecutors
-	 * @return
+	 * @param size object size for transmission in Bytes
+	 * @param numExecutors number of executors holding the distributed data
+	 * @return estimated time for transmission in seconds
 	 */
 	protected static double getSparkTransmissionCost(long size, int numExecutors) {
 		double transferTime = Math.max(((double) size / (DEFAULT_NETWORK_BANDWIDTH * numExecutors)), MIN_TRANSFER_TIME);
@@ -176,9 +176,9 @@ public class IOCostUtils {
 	 * This function assumes that all the records would be reshuffled what often not the case
 	 * but this approximation is good enough for estimating the shuffle cost with higher skewness.
 	 * Executors <-> Executors interaction.
-	 * @param size
-	 * @param numExecutors
-	 * @return
+	 * @param size object size for shuffling in Bytes
+	 * @param numExecutors number of executors holding the distributed data
+	 * @return estimated time for shuffling in seconds
 	 */
 	protected static double getShuffleCost(long size, int numExecutors) {
 		double transferTime = Math.max(((double) size / (DEFAULT_NETWORK_BANDWIDTH * numExecutors)), MIN_TRANSFER_TIME);
@@ -191,9 +191,9 @@ public class IOCostUtils {
 	 * This function takes into account the torrent-like trnasmission of the
 	 * broadcast data packages.
 	 * Executors <-> Driver <-> Executors interaction.
-	 * @param size
-	 * @param numExecutors
-	 * @return
+	 * @param size object size for broadcasting in Bytes
+	 * @param numExecutors number of executors holding the distributed data
+	 * @return estimated time for broadcasting in seconds
 	 */
 	protected static double getBroadcastCost(long size, int numExecutors) {
 		double transferTime = Math.max(((double) size / (DEFAULT_NETWORK_BANDWIDTH)), MIN_TRANSFER_TIME);

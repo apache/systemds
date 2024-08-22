@@ -46,8 +46,8 @@ public class RDDStats {
 
 	public RDDStats(VarStats cpVar) {
 		totalSize = OptimizerUtils.estimateSizeExactSparsity(cpVar.getM(), cpVar.getN(), cpVar.getS());
-		numPartitions = (int) Math.max(Math.min(totalSize / hdfsBlockSize, cpVar._mc.getNumBlocks()), 1);
-		numBlocks = cpVar._mc.getNumBlocks();
+		numPartitions = (int) Math.max(Math.min(totalSize / hdfsBlockSize, cpVar.characteristics.getNumBlocks()), 1);
+		numBlocks = cpVar.characteristics.getNumBlocks();
 		this.cpVar = cpVar;
 		rlen = cpVar.getM();
 		clen = cpVar.getN();

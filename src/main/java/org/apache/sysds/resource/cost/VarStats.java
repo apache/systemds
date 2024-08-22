@@ -24,59 +24,75 @@ import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.meta.DataCharacteristics;
 import org.apache.sysds.runtime.meta.MatrixCharacteristics;
 
-public class VarStats 
+public class VarStats
 {
-	MatrixCharacteristics _mc;
 	/**
-	 * Size in memory estimate
+	 * <li>null if scalar</li>
+	 * <li>initialized if Matrix or Frame</li>
+	 */
+	MatrixCharacteristics characteristics;
+	/**
+	 * estimated size in memory
 	 * <li>-1 if not in memory yet</li>
 	 * <li>0 if scalar</li>
+	 * <li>=>1 estimated loaded size in Bytes</li>
 	 */
-	long _memory;
+	long allocatedMemory;
 	/**
 	 * true if object modified since last saved, or
 	 * if HDFS file still doesn't exist
 	 */
-	boolean _dirty = false;
+	boolean isDirty = false;
 
-	RDDStats _rdd = null;
+	// needed for the cases of 'çpvar', 'fcall' or reblock
+	int refCount;
 
-	Object[] _fileInfo = null;
+	RDDStats rddStats = null;
+
+	Object[] fileInfo = null;
 
 	public VarStats(DataCharacteristics dc) {
-		if (dc instanceof MatrixCharacteristics) {
-			_mc = (MatrixCharacteristics) dc;
+		if (dc == null) {
+			characteristics = null; // for scalar
+			allocatedMemory = 0;
+		} else if (dc instanceof MatrixCharacteristics) {
+			characteristics = (MatrixCharacteristics) dc;
+			allocatedMemory = -1;
 		} else {
-			throw new RuntimeException("VarStats: expecting MatrixCharacteristics or null");
+			throw new RuntimeException("Unexpected error: expecting MatrixCharacteristics or null");
 		}
-		_memory = -1;
+		refCount = 1;
+	}
+
+	public boolean isScalar() {
+		return characteristics == null;
 	}
 
 	public long getM() {
-		return _mc.getRows();
+		return isScalar()? 1 : characteristics.getRows();
 	}
 
 	public long getN() {
-		return _mc.getCols();
+		return isScalar()? 1 : characteristics.getCols();
 	}
 
 	public double getS() {
-		return _mc == null? 1.0 : OptimizerUtils.getSparsity(_mc);
+		return isScalar()? 1.0 : OptimizerUtils.getSparsity(characteristics);
 	}
 
 	public long getCells() {
-		return _mc.getRows() * _mc.getCols();
+		return isScalar()? 1 : (characteristics.getRows() * characteristics.getCols());
 	}
 
-	public double getCellsWithSparsity() {
+	public long getCellsWithSparsity() {
+		if (isScalar()) return 1;
 		if (isSparse())
-			return getCells() * getS();
-		return (double) getCells();
+			return (long) (getCells() * getS());
+		return getCells();
 	}
 
 	public boolean isSparse() {
-		return MatrixBlock.evalSparseFormatInMemory(_mc);
+		return (!isScalar() && MatrixBlock.evalSparseFormatInMemory(characteristics));
 	}
 
-	// clone() needed?
 }

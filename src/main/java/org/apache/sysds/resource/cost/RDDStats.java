@@ -52,13 +52,17 @@ public class RDDStats {
 //	}
 
 	public RDDStats(VarStats sourceStats) {
+		// required cpVar initiated for not scalars
+		if (sourceStats == null || sourceStats.isScalar()) {
+			throw new RuntimeException("RDDStats cannot be initialized for scalar objects");
+		}
+		// cpVar carries all info about the general object characteristics
+		cpStats = sourceStats;
 		// RDD specific characteristics not initialized -> simulates lazy evaluation
 		distributedMemory = -1;
 		numPartitions = -1;
 		numBlocks = -1;
 		numParallelTasks = -1;
-		// cpVar carries all info about the general object characteristics
-		cpStats = sourceStats;
 	}
 
 	public void loadCharacteristics() {

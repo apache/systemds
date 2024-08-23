@@ -40,7 +40,6 @@ import org.apache.sysds.runtime.instructions.InstructionUtils;
 import org.apache.sysds.runtime.instructions.cp.*;
 import org.apache.sysds.runtime.instructions.spark.*;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
-import org.apache.sysds.runtime.matrix.operators.AggregateUnaryOperator;
 import org.apache.sysds.runtime.matrix.operators.CMOperator;
 import org.apache.sysds.runtime.meta.DataCharacteristics;
 import org.apache.sysds.runtime.meta.MatrixCharacteristics;
@@ -924,11 +923,11 @@ public class CostEstimator
 				HashMap<String, String> paramsMap = inst.getParameterMap();
 				int attr = paramsMap.get("margin").equals("rows") ? 0 : 1;
 				switch (attr) {
-					case 0: //remove rows
+					case 0: // remove rows
 						// TODO: Copied from old implementation but maybe reverse the cases?
 						return ((input.isSparse()) ? input.getM() : input.getM() * Math.ceil(1.0d / input.getS()) / 2) +
 								DEFAULT_NFLOP_CP * output.getCells();
-					case 1: //remove cols
+					case 1: // remove cols
 						return input.getN() * Math.ceil(1.0d / input.getS()) / 2 +
 								DEFAULT_NFLOP_CP * output.getCells();
 					default:

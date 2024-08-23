@@ -214,12 +214,26 @@ public class ResourceCompiler {
 		}
 	}
 
+	/**
+	 * Sets resource configurations for the node executing the control program.
+	 *
+	 * @param nodeMemory memory in Bytes
+	 * @param nodeNumCores number of CPU cores
+	 */
 	public static void setDriverConfigurations(long nodeMemory, int nodeNumCores) {
 		// TODO: think of reasonable factor for the JVM heap as prt of the node's memory
 		InfrastructureAnalyzer.setLocalMaxMemory(nodeMemory);
 		InfrastructureAnalyzer.setLocalPar(nodeNumCores);
 	}
 
+	/**
+	 * Sets resource configurations for the cluster of nodes
+	 * executing the Spark jobs.
+	 *
+	 * @param numExecutors number of nodes in cluster
+	 * @param nodeMemory memory in Bytes per node
+	 * @param nodeNumCores number of CPU cores per node
+	 */
 	public static void setExecutorConfigurations(int numExecutors, long nodeMemory, int nodeNumCores) {
 		// TODO: think of reasonable factor for the JVM heap as prt of the node's memory
 		if (numExecutors > 0) {

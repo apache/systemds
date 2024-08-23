@@ -344,24 +344,50 @@ public class CostEstimator
 			}
 		} else if (inst instanceof ReblockSPInstruction || inst instanceof CSVReblockSPInstruction) {
 			VarStats input = getStats(((UnarySPInstruction) inst).input1.getName());
-			VarStats output = getStats(((UnarySPInstruction) inst).output.getName());
+			VarStats output = getStats(((UnarySPInstruction) inst).getOutputVariableName());
 			if (input.allocatedMemory < 0 && input.fileInfo == null) {
 				throw new RuntimeException("Reblock instruction allowed only loaded variables or for such with given source file");
 			}
 			// re-assigning to null is fine as long as the allocated memory is non-negative
 			output.fileInfo = input.fileInfo;
-		}
+//			output.rddStats = new RDDStats(output); NOTE: no stats so it can be detected if used or not when loading
 
+		} else if (inst instanceof CheckpointSPInstruction) {
+			// TODO: consider how to handle chkpoint since also potentially not triggered: maybe a flag in cpStats tho be read at RDDStats init.
+			// NOTE: maybe also file info copy: decide how ti handle binary read in Spark
+			VarStats input = getStats(((CheckpointSPInstruction) inst).input1.getName());
+			_stats.put(((CheckpointSPInstruction) inst).output.getName(), input);
+			//output.setCheckpoint = true;
+		} else if (inst instanceof SPInstruction) {
+			// else if statement on purpose after reblock and checkpoint instructions
+			if (inst instanceof WriteSPInstruction) {
+				// WriteSPInstruction the only SPInstruction without output
+				return;
+			}
+			VarStats output;
+			if (inst instanceof ComputationSPInstruction) {
+				output = getStats(((ComputationSPInstruction) inst).getOutputVariableName());
+			} else if (inst instanceof BuiltinNarySPInstruction) {
+				output = getStats(((BuiltinNarySPInstruction) inst).output.getName());
+			} else if (inst instanceof MapmmChainSPInstruction) {
+				output = getStats(((MapmmChainSPInstruction) inst).output.getName());
+			} else if (inst instanceof SpoofSPInstruction) {
+				throw new RuntimeException("SpoofSPInstruction is not supported for cost estimation.");
+			} else {
+				// not other SPInstruction implementations currently but
+				// add exception avoid unclear state in case of new instructions implemented in the future
+				throw new RuntimeException(((SPInstruction) inst).getSPInstructionType() + " instruction not supported yet.");
+			}
+			output.rddStats = new RDDStats(output);
+		}
 	}
 
 	public double getTimeEstimateInst(Instruction inst) throws CostEstimationException {
 		double ret = 0;
-		boolean r = constructSparkJob(inst);
-		if (r) {
-			ret += getTimeEstimateSparkJob();
-		}
 		if (inst instanceof CPInstruction) {
 			ret = getTimeEstimateCPInst((CPInstruction)inst);
+		} else { // inst instanceof SPInstruction
+			_transformations.add((SPInstruction) inst);
 		}
 		return ret;
 	}
@@ -941,6 +967,7 @@ public class CostEstimator
 		_transformations.clear();
 		return 0;
 	}
+
 	/**
 	 * Intended to be used to get the NFLOP for SPInstructions.
 	 * 'parse' because the cost of each instruction is to be
@@ -950,64 +977,27 @@ public class CostEstimator
 	 * @return
 	 */
 	protected double getTimeEstimateSPInst(SPInstruction inst) {
+		// NOTE: all factors and logic are dummy for now
 		// declare resource-dependant metrics
 		double localCost = 0;  // [nflop] cost for computing executed in executors
 		double globalCost = 0;  // [nflop] cost for computing executed in driver
 		double IOCost = 0; // [s] cost for shuffling data and writing/reading to HDFS/S3
 		// TODO: consider the case of matrix with dims=1
 		// NOTE: consider if is needed to include the cost for final aggregation within the Spark Driver (CP)
-		if (inst instanceof AggregateTernarySPInstruction) {
-			// TODO: need to have a way to associate mVars from _stats with a
-			// 	potentially existing virtual PairRDD - MatrixObject
-			// NOTE: leave it for later once I figure out how to do it for unary instructions
-		} else if (inst instanceof AggregateUnarySPInstruction) {
-			AggregateUnarySPInstruction currentInst = (AggregateUnarySPInstruction) inst;
-			String opcode = currentInst.getOpcode();
-			AggBinaryOp.SparkAggType aggType = currentInst.getAggType();
-			AggregateUnaryOperator op = (AggregateUnaryOperator) currentInst.getOperator();
-			VarStats input = getStats(currentInst.input1.getName());
-			RDDStats inputRDD = input.rddStats;
-			RDDStats currentRDD = inputRDD;
-			VarStats outputStats = getStats(currentInst.output.getName());
-
-			int k = getComputationFactorUAOp(opcode);
-			// TODO: RRDstats extra required to keep at least the number of
-			// 	blocks that each next operator operates on: e.g. filter (and mapByKey) is reducing this number,
-			// 	probably better to create and store only intermediate RDDstats shared between instructions
-			// 	since only these are needed for retrieving only intra instructions
-			// TODO: later think of how to handle getting null for stats
-			if (inputRDD == null) {
-				throw new DMLRuntimeException("RDD stats should have been already initiated");
-			}
-			if (opcode.equals("uaktrace")) {
-				// add cost for filter op
-				localCost += currentRDD.numBlocks;
-				currentRDD = RDDStats.transformNumBlocks(currentRDD, currentRDD.rlen); // only the diagonal blocks left
-			}
-			if (aggType == AggBinaryOp.SparkAggType.SINGLE_BLOCK) {
-				if (op.sparseSafe) {
-					localCost += currentRDD.numBlocks; // filter cost
-					// TODO: decide how to reduce numBlocks
-				}
-				localCost += k*currentRDD.numValues*currentRDD.sparsity; // map cost
-				// next op is fold -> end of the current Job
-				// end of Job -> no need to assign the currentRDD to the output (output is no RDD)
-				localCost += currentRDD.numBlocks; // local folding cost
-				// TODO: shuffle cost to bring all pairs to the driver (CP)
-				// NOTE: neglect the added CP compute cost for folding the distributed aggregates
-			} else if (aggType == AggBinaryOp.SparkAggType.MULTI_BLOCK){
-				localCost += k*currentRDD.numValues*currentRDD.sparsity; // mapToPair cost
-				// NOTE: the new unique number of keys should be
-				// next op is combineByKey -> new stage
-				localCost += currentRDD.numBlocks + currentRDD.numPartitions; // local merging * merging partitions
-				if (op.aggOp.existsCorrection())
-					localCost += currentRDD.numBlocks; // mapValues cost for the correction
-			} else {  // aggType == AggBinaryOp.SparkAggType.NONE
-				localCost += k*currentRDD.numValues*currentRDD.sparsity;
-				// no reshuffling -> inst is packed with the next spark operation
-			}
-
-			return globalCost;
+		if (inst instanceof ReblockSPInstruction || inst instanceof CSVReblockSPInstruction) {
+			int complexityFactor = (inst instanceof ReblockSPInstruction) ? 1 : 2;
+			VarStats output = getStats(((UnarySPInstruction) inst).getOutputVariableName());
+			// for reblock instructions the rdd stats are initiated first here
+			output.rddStats = new RDDStats(output);
+			output.rddStats.loadCharacteristics();
+			return (double) (complexityFactor * output.getCells()) / output.rddStats.numParallelTasks;
+		} else if (inst instanceof CheckpointSPInstruction) {
+			VarStats output = getStats(((CheckpointSPInstruction) inst).getOutputVariableName());
+			// for reblock instructions the rdd stats are initiated first here
+			output.rddStats = new RDDStats(output);
+			output.rddStats.loadCharacteristics();
+			// no compute or load cost related to checkpointing
+			return 0;
 		} else if (inst instanceof RandSPInstruction) {
 			RandSPInstruction randInst = (RandSPInstruction) inst;
 			String opcode = randInst.getOpcode();
@@ -1031,7 +1021,7 @@ public class CostEstimator
 						IOCost += IOCostUtils.getReadTime(outputRDD.numBlocks, 1, 1.0, HDFS_SOURCE_IDENTIFIER, TEXT); // executors read
 						localCost += outputRDD.numBlocks; // mapToPair cost
 					}
-					localCost += complexityFactor*outputRDD.numValues; // mapToPair cost
+					localCost += complexityFactor*outputRDD.cpStats.getCells(); // mapToPair cost
 					output.rddStats = outputRDD;
 					return globalCost;
 				case DataGen.SAMPLE_OPCODE:
@@ -1045,11 +1035,17 @@ public class CostEstimator
 					// sortByKey -> new stage
 					long randBlockSize = MatrixBlock.estimateSizeDenseInMemory(outputRDD.numBlocks, 1);
 					IOCost += IOCostUtils.getShuffleCost(randBlockSize, outputRDD.numParallelTasks);
-					localCost += outputRDD.numValues;
+					localCost += outputRDD.cpStats.getCells();
 					// sortByKey -> shuffling?
 				case DataGen.FRAME_OPCODE:
 			}
 			return globalCost;
+		} else if (inst instanceof ComputationSPInstruction) {
+			VarStats input = getStats(((ComputationSPInstruction) inst).input1.getName());
+			getRDDHandleAndEstimateTime(input);
+			VarStats output = getStats(((ComputationSPInstruction) inst).output.getName());
+			output.rddStats.loadCharacteristics();
+			return (double) output.getCells() / output.rddStats.numParallelTasks;
 		}
 
 		throw new DMLRuntimeException("Unsupported instruction: " + inst.getOpcode());
@@ -1059,36 +1055,38 @@ public class CostEstimator
 	 * Intended to handle RDDStats retrievals so the I/O
 	 * can be computed correctly. This method should also
 	 * reserve the necessary memory for the RDD on the executors.
-	 * @param var
-	 * @param outputRDD
+	 * @param input input statistics
 	 * @return
 	 */
-	@SuppressWarnings("unused")
-	private double getRDDHandleAndEstimateTime(VarStats var, RDDStats outputRDD) {
+	private double getRDDHandleAndEstimateTime(VarStats input) {
 		double ret = 0;
-		if (var.rddStats == null) {
-			RDDStats newRDD = new RDDStats(var);
-			if (var.allocatedMemory >= 0) { // dirty or cached
-				if (!_parRDDs.reserve(newRDD.totalSize)) {
-					if (var.isDirty) {
-						ret += IOCostUtils.getWriteTime(var.getM(), var.getN(), var.getS(), HDFS_SOURCE_IDENTIFIER, BINARY);
+		if (input.rddStats == null) {
+			throw new RuntimeException("The urrent RDDStats should have been already initiated");
+		}
+		RDDStats inputRDD = input.rddStats;
+		if (inputRDD.distributedMemory < 0) {
+			if (input.allocatedMemory >= 0) { // dirty or cached
+				if (!_parRDDs.reserve(inputRDD.distributedMemory)) {
+					if (input.isDirty) {
+						ret += IOCostUtils.getWriteTime(input.getM(), input.getN(), input.getS(), HDFS_SOURCE_IDENTIFIER, BINARY);
 						// TODO: think when to set it to true
-						var.isDirty = false;
+						input.isDirty = false;
 					}
-					ret += IOCostUtils.getReadTime(var.getM(), var.getN(), var.getS(), HDFS_SOURCE_IDENTIFIER, BINARY) / newRDD.numParallelTasks;
+					inputRDD.loadCharacteristics(); // possibly redundant
+					ret += IOCostUtils.getReadTime(input.getM(), input.getN(), input.getS(), HDFS_SOURCE_IDENTIFIER, BINARY) / inputRDD.numParallelTasks;
 				} else {
-					ret += IOCostUtils.getSparkTransmissionCost(newRDD.totalSize, newRDD.numParallelTasks);
+					inputRDD.loadCharacteristics();    // possibly redundant
+					ret += IOCostUtils.getSparkTransmissionCost(inputRDD.distributedMemory, inputRDD.numParallelTasks);
 				}
 			} else { // on hdfs
-				if (var.fileInfo == null || var.fileInfo.length != 2)
+				if (input.fileInfo == null || input.fileInfo.length != 2)
 					throw new DMLRuntimeException("File info missing for a file to be read on Spark.");
-				ret += IOCostUtils.getReadTime(var.getM(), var.getN(), var.getS(), (String)var.fileInfo[0], (FileFormat) var.fileInfo[1]) / newRDD.numParallelTasks;
-				var.isDirty = false; // possibly redundant
+				inputRDD.loadCharacteristics(); // possibly redundant
+				ret += IOCostUtils.getReadTime(input.getM(), input.getN(), input.getS(), (String) input.fileInfo[0], (FileFormat) input.fileInfo[1]) / inputRDD.numParallelTasks;
+				input.isDirty = false; // possibly redundant
 			}
-			var.rddStats = newRDD;
 		}
 		// if RDD handle exists -> no additional cost to add
-		outputRDD = var.rddStats;
 		return ret;
 	}
 
@@ -1099,16 +1097,18 @@ public class CostEstimator
 	private double getLoadTime(VarStats input) throws CostEstimationException {
 		if (input.isScalar() || input.allocatedMemory > 0) return 0.0;
 		// loading from RDD
-		if (input.rddStats != null) {
+		if (input.rddStats != null) { // input.rddStats == null also for var output of reblock/checkpoint instructions
+			double computeAndLoadTime;
+			computeAndLoadTime = getTimeEstimateSparkJob();
 			if (OptimizerUtils.checkSparkCollectMemoryBudget(input.characteristics, usedMememory, false)) { // .collect()
 				long sizeEstimate = OptimizerUtils.estimatePartitionedSizeExactSparsity(input.characteristics);
-				putInMemory(input);
-				return IOCostUtils.getSparkTransmissionCost(sizeEstimate, input.rddStats.numParallelTasks);
+				computeAndLoadTime += IOCostUtils.getSparkTransmissionCost(sizeEstimate, input.rddStats.numParallelTasks);
 			} else { // redirect through HDFS
-				putInMemory(input);
-				return IOCostUtils.getWriteTime(input.getM(), input.getN(), input.getS(), HDFS_SOURCE_IDENTIFIER, BINARY) / input.rddStats.numParallelTasks +
+				computeAndLoadTime += IOCostUtils.getWriteTime(input.getM(), input.getN(), input.getS(), HDFS_SOURCE_IDENTIFIER, BINARY) / input.rddStats.numParallelTasks +
 						IOCostUtils.getReadTime(input.getM(), input.getN(), input.getS(), HDFS_SOURCE_IDENTIFIER, BINARY); // cost for writting to HDFS on executors and reading back on driver
 			}
+			putInMemory(input);
+			return computeAndLoadTime;
 		}
 		// loading from a file
 		if (input.fileInfo == null || input.fileInfo.length != 2) {
@@ -1156,4 +1156,111 @@ public class CostEstimator
 				return 1;
 		}
 	}
+
+	// NOTE: use for ideas only
+//	protected double getTimeEstimateSPInst(SPInstruction inst) {
+//		// declare resource-dependant metrics
+//		double localCost = 0;  // [nflop] cost for computing executed in executors
+//		double globalCost = 0;  // [nflop] cost for computing executed in driver
+//		double IOCost = 0; // [s] cost for shuffling data and writing/reading to HDFS/S3
+//		// TODO: consider the case of matrix with dims=1
+//		// NOTE: consider if is needed to include the cost for final aggregation within the Spark Driver (CP)
+//		if (inst instanceof AggregateTernarySPInstruction) {
+//			// TODO: need to have a way to associate mVars from _stats with a
+//			// 	potentially existing virtual PairRDD - MatrixObject
+//			// NOTE: leave it for later once I figure out how to do it for unary instructions
+//		} else if (inst instanceof AggregateUnarySPInstruction) {
+//			AggregateUnarySPInstruction currentInst = (AggregateUnarySPInstruction) inst;
+//			String opcode = currentInst.getOpcode();
+//			AggBinaryOp.SparkAggType aggType = currentInst.getAggType();
+//			AggregateUnaryOperator op = (AggregateUnaryOperator) currentInst.getOperator();
+//			VarStats input = getStats(currentInst.input1.getName());
+//			RDDStats inputRDD = input.rddStats;
+//			RDDStats currentRDD = inputRDD;
+//			VarStats outputStats = getStats(currentInst.output.getName());
+//
+//			int k = getComputationFactorUAOp(opcode);
+//			// TODO: RRDstats extra required to keep at least the number of
+//			// 	blocks that each next operator operates on: e.g. filter (and mapByKey) is reducing this number,
+//			// 	probably better to create and store only intermediate RDDstats shared between instructions
+//			// 	since only these are needed for retrieving only intra instructions
+//			// TODO: later think of how to handle getting null for stats
+//			if (inputRDD == null) {
+//				throw new DMLRuntimeException("RDD stats should have been already initiated");
+//			}
+//			if (opcode.equals("uaktrace")) {
+//				// add cost for filter op
+//				localCost += currentRDD.numBlocks;
+//				currentRDD = RDDStats.transformNumBlocks(currentRDD, currentRDD.rlen); // only the diagonal blocks left
+//			}
+//			if (aggType == AggBinaryOp.SparkAggType.SINGLE_BLOCK) {
+//				if (op.sparseSafe) {
+//					localCost += currentRDD.numBlocks; // filter cost
+//					// TODO: decide how to reduce numBlocks
+//				}
+//				localCost += k*currentRDD.numValues*currentRDD.sparsity; // map cost
+//				// next op is fold -> end of the current Job
+//				// end of Job -> no need to assign the currentRDD to the output (output is no RDD)
+//				localCost += currentRDD.numBlocks; // local folding cost
+//				// TODO: shuffle cost to bring all pairs to the driver (CP)
+//				// NOTE: neglect the added CP compute cost for folding the distributed aggregates
+//			} else if (aggType == AggBinaryOp.SparkAggType.MULTI_BLOCK){
+//				localCost += k*currentRDD.numValues*currentRDD.sparsity; // mapToPair cost
+//				// NOTE: the new unique number of keys should be
+//				// next op is combineByKey -> new stage
+//				localCost += currentRDD.numBlocks + currentRDD.numPartitions; // local merging * merging partitions
+//				if (op.aggOp.existsCorrection())
+//					localCost += currentRDD.numBlocks; // mapValues cost for the correction
+//			} else {  // aggType == AggBinaryOp.SparkAggType.NONE
+//				localCost += k*currentRDD.numValues*currentRDD.sparsity;
+//				// no reshuffling -> inst is packed with the next spark operation
+//			}
+//
+//			return globalCost;
+//		} else if (inst instanceof RandSPInstruction) {
+//			RandSPInstruction randInst = (RandSPInstruction) inst;
+//			String opcode = randInst.getOpcode();
+//			VarStats output = getStats(randInst.output.getName());
+//			// update sparsity here
+//			output.characteristics.setNonZeros((long) (output.getCells()*randInst.getSparsity()));
+//			RDDStats outputRDD = new RDDStats(output);
+//
+//			int complexityFactor = 1;
+//			switch (opcode.toLowerCase()) {
+//				case DataGen.RAND_OPCODE:
+//					complexityFactor = 32; // higher complexity for random number generation
+//				case DataGen.SEQ_OPCODE:
+//					// first op. from the new stage: parallelize/read from scratch file
+//					globalCost += complexityFactor*outputRDD.numBlocks; // cp random number generation
+//					if (outputRDD.numBlocks < RandSPInstruction.INMEMORY_NUMBLOCKS_THRESHOLD) {
+//						long parBlockSize = MatrixBlock.estimateSizeDenseInMemory(outputRDD.numBlocks, 1);
+//						IOCost += IOCostUtils.getSparkTransmissionCost(parBlockSize, outputRDD.numParallelTasks);
+//					} else {
+//						IOCost += IOCostUtils.getWriteTime(outputRDD.numBlocks, 1, 1.0, HDFS_SOURCE_IDENTIFIER, TEXT); // driver writes down
+//						IOCost += IOCostUtils.getReadTime(outputRDD.numBlocks, 1, 1.0, HDFS_SOURCE_IDENTIFIER, TEXT); // executors read
+//						localCost += outputRDD.numBlocks; // mapToPair cost
+//					}
+//					localCost += complexityFactor*outputRDD.numValues; // mapToPair cost
+//					output.rddStats = outputRDD;
+//					return globalCost;
+//				case DataGen.SAMPLE_OPCODE:
+//					// first op. from the new stage: parallelize
+//					complexityFactor = 32; // TODO: set realistic factor
+//					globalCost += complexityFactor*outputRDD.numPartitions; // cp random number generation
+//					long parBlockSize = MatrixBlock.estimateSizeDenseInMemory(outputRDD.numPartitions, 1);
+//					IOCost += IOCostUtils.getSparkTransmissionCost(parBlockSize, outputRDD.numParallelTasks);
+//					localCost += outputRDD.numBlocks; // flatMap cost
+//					localCost += complexityFactor*outputRDD.numBlocks; // mapToPairCost cost
+//					// sortByKey -> new stage
+//					long randBlockSize = MatrixBlock.estimateSizeDenseInMemory(outputRDD.numBlocks, 1);
+//					IOCost += IOCostUtils.getShuffleCost(randBlockSize, outputRDD.numParallelTasks);
+//					localCost += outputRDD.numValues;
+//					// sortByKey -> shuffling?
+//				case DataGen.FRAME_OPCODE:
+//			}
+//			return globalCost;
+//		}
+//
+//		throw new DMLRuntimeException("Unsupported instruction: " + inst.getOpcode());
+//	}
 }

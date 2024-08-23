@@ -19,58 +19,70 @@
 
 package org.apache.sysds.resource.cost;
 
-import org.apache.sysds.conf.ConfigurationManager;
 import org.apache.sysds.hops.OptimizerUtils;
-import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.controlprogram.context.SparkExecutionContext;
-import org.apache.sysds.utils.stats.InfrastructureAnalyzer;
 
 public class RDDStats {
+	private static final long hdfsBlockSize = 134217728; // 128MB
 	@SuppressWarnings("unused")
-	private static int blockSize; // TODO: think of more efficient way (does not changes, init once)
-	public long totalSize;
-	private static long hdfsBlockSize;
-	public long numPartitions;
-	public long numBlocks;
-	public long numValues;
-	public long rlen;
-	public long clen;
-	public double sparsity;
-	public VarStats cpVar;
-	public int numParallelTasks;
+	private static final int blockSize = 1000; // TODO: think of more efficient way (does not changes, init once)
 
-	public static void setDefaults() {
-		blockSize = ConfigurationManager.getBlocksize();
-		hdfsBlockSize = InfrastructureAnalyzer.getHDFSBlockSize();
+	VarStats cpStats;
+	long distributedMemory;
+	long numBlocks;
+	long numPartitions;
+	int numParallelTasks;
+	// TODO: add boolean isCheckpointed and logic for it
+
+//	public static void setDefaults() {
+//		blockSize = ConfigurationManager.getBlocksize();
+//		hdfsBlockSize = InfrastructureAnalyzer.getHDFSBlockSize();
+//	}
+
+//	public RDDStats(VarStats cpVar) {
+//		totalSize = OptimizerUtils.estimateSizeExactSparsity(cpVar.getM(), cpVar.getN(), cpVar.getS());
+//		numPartitions = (int) Math.max(Math.min(totalSize / hdfsBlockSize, cpVar.characteristics.getNumBlocks()), 1);
+//		numBlocks = cpVar.characteristics.getNumBlocks();
+//		this.cpVar = cpVar;
+//		rlen = cpVar.getM();
+//		clen = cpVar.getN();
+//		numValues = rlen*clen;
+//		sparsity = cpVar.getS();
+//		numParallelTasks = (int) Math.min(numPartitions, SparkExecutionContext.getDefaultParallelism(false));
+//	}
+
+	public RDDStats(VarStats sourceStats) {
+		// RDD specific characteristics not initialized -> simulates lazy evaluation
+		distributedMemory = -1;
+		numPartitions = -1;
+		numBlocks = -1;
+		numParallelTasks = -1;
+		// cpVar carries all info about the general object characteristics
+		cpStats = sourceStats;
 	}
 
-	public RDDStats(VarStats cpVar) {
-		totalSize = OptimizerUtils.estimateSizeExactSparsity(cpVar.getM(), cpVar.getN(), cpVar.getS());
-		numPartitions = (int) Math.max(Math.min(totalSize / hdfsBlockSize, cpVar.characteristics.getNumBlocks()), 1);
-		numBlocks = cpVar.characteristics.getNumBlocks();
-		this.cpVar = cpVar;
-		rlen = cpVar.getM();
-		clen = cpVar.getN();
-		numValues = rlen*clen;
-		sparsity = cpVar.getS();
+	public void loadCharacteristics() {
+		distributedMemory = OptimizerUtils.estimateSizeExactSparsity(cpStats.getM(), cpStats.getN(), cpStats.getS());
+		numBlocks = cpStats.characteristics.getNumBlocks();
+		numPartitions = (int) Math.max(Math.min(distributedMemory / hdfsBlockSize, numBlocks), 1);
 		numParallelTasks = (int) Math.min(numPartitions, SparkExecutionContext.getDefaultParallelism(false));
 	}
 
-	public static RDDStats transformNumPartitions(RDDStats oldRDD, long newNumPartitions) {
-		if (oldRDD.cpVar == null) {
-			throw new DMLRuntimeException("Cannot transform RDDStats without VarStats");
-		}
-		RDDStats newRDD = new RDDStats(oldRDD.cpVar);
-		newRDD.numPartitions = newNumPartitions;
-		return newRDD;
-	}
-
-	public static RDDStats transformNumBlocks(RDDStats oldRDD, long newNumBlocks) {
-		if (oldRDD.cpVar == null) {
-			throw new DMLRuntimeException("Cannot transform RDDStats without VarStats");
-		}
-		RDDStats newRDD = new RDDStats(oldRDD.cpVar);
-		newRDD.numBlocks = newNumBlocks;
-		return newRDD;
-	}
+//	public static RDDStats transformNumPartitions(RDDStats oldRDD, long newNumPartitions) {
+//		if (oldRDD.cpVar == null) {
+//			throw new DMLRuntimeException("Cannot transform RDDStats without VarStats");
+//		}
+//		RDDStats newRDD = new RDDStats(oldRDD.cpVar);
+//		newRDD.numPartitions = newNumPartitions;
+//		return newRDD;
+//	}
+//
+//	public static RDDStats transformNumBlocks(RDDStats oldRDD, long newNumBlocks) {
+//		if (oldRDD.cpVar == null) {
+//			throw new DMLRuntimeException("Cannot transform RDDStats without VarStats");
+//		}
+//		RDDStats newRDD = new RDDStats(oldRDD.cpVar);
+//		newRDD.numBlocks = newNumBlocks;
+//		return newRDD;
+//	}
 }

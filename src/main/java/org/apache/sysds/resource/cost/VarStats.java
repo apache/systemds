@@ -43,13 +43,11 @@ public class VarStats
 	 * if HDFS file still doesn't exist
 	 */
 	boolean isDirty = false;
-
 	// needed for the cases of 'çpvar', 'fcall' or reblock
 	int refCount;
-
-	RDDStats rddStats = null;
-
 	Object[] fileInfo = null;
+	RDDStats rddStats = null;
+	boolean setCheckpoint;
 
 	public VarStats(DataCharacteristics dc) {
 		if (dc == null) {
@@ -62,6 +60,7 @@ public class VarStats
 			throw new RuntimeException("Unexpected error: expecting MatrixCharacteristics or null");
 		}
 		refCount = 1;
+		setCheckpoint = false;
 	}
 
 	public boolean isScalar() {

@@ -16,6 +16,8 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 
+import static org.apache.sysds.resource.CloudUtils.GBtoBytes;
+
 public class CostEstimationTest {
 
     private CostEstimator estimator;
@@ -68,6 +70,8 @@ public class CostEstimationTest {
         nvargs.put("$X", "tests/X.csv");
         nvargs.put("$Y", "tests/Y.csv");
         nvargs.put("$B", "tests/B.csv");
+        ResourceCompiler.setDriverConfigurations(GBtoBytes(1), 4);
+        ResourceCompiler.setExecutorConfigurations(2, GBtoBytes(4), 2);
         Program program = ResourceCompiler.compile("scripts/perftest/scripts/LinearRegCG.dml", nvargs);
 //        Program program = ResourceCompiler.compile("scripts/perftest/resource/all_ops.dml", nvargs);
         System.out.println(Explain.explain(program));

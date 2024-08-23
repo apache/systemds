@@ -19,6 +19,8 @@
 
 package org.apache.sysds.test.component.misc;
 
+import org.apache.sysds.common.Types.AggOp;
+import org.apache.sysds.common.Types.FileFormat;
 import org.apache.sysds.common.Types.OpOp1;
 import org.apache.sysds.common.Types.OpOp2;
 import org.apache.sysds.common.Types.OpOp3;
@@ -86,6 +88,16 @@ public class OpTypeTest {
 	}
 	
 	@Test
+	public void testAggOp() {
+		AggOp[] ops = AggOp.values();
+		for(int i=0; i<ops.length; i++) {
+			Assert.assertEquals(i, ops[i].ordinal());
+			Assert.assertEquals(AggOp.valueOf(ops[i].name()), ops[i]);
+			Assert.assertEquals(AggOp.valueOfByOpcode(ops[i].toString()), ops[i]);
+		}
+	}
+	
+	@Test
 	public void testReOrgOp() {
 		ReOrgOp[] ops = ReOrgOp.values();
 		for(int i=0; i<ops.length; i++) {
@@ -128,6 +140,26 @@ public class OpTypeTest {
 		for(int i=0; i<ops.length; i++) {
 			Assert.assertEquals(i, ops[i].ordinal());
 			Assert.assertEquals(OpOpData.valueOf(ops[i].name()), ops[i]);
+			if( ops[i].isRead() || ops[i].isWrite() )
+				Assert.assertNotEquals(ops[i].isRead(), ops[i].isWrite());
+			if( ops[i].isTransient() || ops[i].isPersistent() )
+				Assert.assertNotEquals(ops[i].isTransient(), ops[i].isPersistent());
+			Assert.assertNotEquals(ops[i].name(), ops[i].toString());
 		}
+	}
+	
+	@Test
+	public void testFileFormats() {
+		FileFormat[] fmt = FileFormat.values();
+		for(int i=0; i<fmt.length; i++) {
+			Assert.assertEquals(i, fmt[i].ordinal());
+			Assert.assertEquals(fmt[i].isTextFormat(), FileFormat.isTextFormat(fmt[i].name()));
+			Assert.assertEquals(fmt[i].isDelimitedFormat(), FileFormat.isDelimitedFormat(fmt[i].name()));
+			if( fmt[i]==FileFormat.MM || fmt[i]==FileFormat.TEXT )
+				Assert.assertTrue(fmt[i].isIJV());
+		}
+		Assert.assertFalse(FileFormat.isTextFormat("f1"));
+		Assert.assertFalse(FileFormat.isDelimitedFormat("f2"));
+		try {FileFormat.safeValueOf("f3"); Assert.fail();}catch(Exception ex) {}
 	}
 }

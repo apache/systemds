@@ -278,7 +278,7 @@ public class CNodeCell extends CNodeTpl
 	public int compile(GeneratorAPI api, String src) {
 		if(api == GeneratorAPI.CUDA)
 			return compile_nvrtc(SpoofCompiler.native_contexts.get(api), _genVar, src, _type.getValue(), 
-				_aggOp != null ? _aggOp.getValue() : 0, _sparseSafe);
+				_aggOp != null ? _aggOp.ordinal() : 0, _sparseSafe);
 		return -1;
 	}
 	

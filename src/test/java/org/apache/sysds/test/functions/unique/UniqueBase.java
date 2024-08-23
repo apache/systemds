@@ -45,7 +45,7 @@ public abstract class UniqueBase extends AutomatedTestBase {
 			loadTestConfiguration(getTestConfiguration(getTestName()));
 			String HOME = SCRIPT_DIR + getTestDir();
 			fullDMLScriptName = HOME + getTestName() + ".dml";
-			programArgs = new String[]{ "-args", input("I"), output("A")};
+			programArgs = new String[]{"-args", input("I"), output("A")};
 
 			writeInputMatrixWithMTD("I", inputMatrix, true);
 

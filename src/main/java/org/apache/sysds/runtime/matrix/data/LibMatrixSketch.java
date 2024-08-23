@@ -19,11 +19,9 @@
 
 package org.apache.sysds.runtime.matrix.data;
 
-import org.apache.commons.lang3.NotImplementedException;
 import org.apache.sysds.common.Types;
 
 import java.util.HashSet;
-import java.util.Iterator;
 
 public class LibMatrixSketch {
 
@@ -35,31 +33,71 @@ public class LibMatrixSketch {
 		int clen = blkIn.getNumColumns();
 
 		MatrixBlock blkOut = null;
+		// TODO optimize for dense/sparse/compressed (once multi-column support added)
+		
 		switch (dir) {
-			case RowCol:
-				if( clen != 1 )
-					throw new NotImplementedException("Unique only support single-column vectors yet");
-				// TODO optimize for dense/sparse/compressed (once multi-column support added)
-				
+			case RowCol: {
 				// obtain set of unique items (dense input vector)
 				HashSet<Double> hashSet = new HashSet<>();
 				for( int i=0; i<rlen; i++ ) {
-					hashSet.add(blkIn.get(i, 0));
+					for( int j=0; j<clen; j++ )
+						hashSet.add(blkIn.get(i, j));
 				}
 				
 				// allocate output block and place values
 				int rlen2 = hashSet.size();
 				blkOut = new MatrixBlock(rlen2, 1, false).allocateBlock();
-				Iterator<Double> iter = hashSet.iterator();
-				for( int i=0; i<rlen2; i++ ) {
-					blkOut.set(i, 0, iter.next());
+				int pos = 0;
+				for( Double val : hashSet )
+					blkOut.set(pos++, 0, val);
+				break;
+			}
+			case Row: {
+				//2-pass algorithm to avoid unnecessarily large mem requirements
+				HashSet<Double> hashSet = new HashSet<>();
+				int clen2 = 0;
+				for( int i=0; i<rlen; i++ ) {
+					hashSet.clear();
+					for( int j=0; j<clen; j++ )
+						hashSet.add(blkIn.get(i, j));
+					clen2 = Math.max(clen2, hashSet.size());
+				}
+				
+				//actual 
+				blkOut = new MatrixBlock(rlen, clen2, false).allocateBlock();
+				for( int i=0; i<rlen; i++ ) {
+					hashSet.clear();
+					for( int j=0; j<clen; j++ )
+						hashSet.add(blkIn.get(i, j));
+					int pos = 0;
+					for( Double val : hashSet )
+						blkOut.set(i, pos++, val);
 				}
 				break;
-
-			case Row:
-			case Col:
-				throw new NotImplementedException("Unique Row/Col has not been implemented yet");
-
+			}
+			case Col: {
+				//2-pass algorithm to avoid unnecessarily large mem requirements
+				HashSet<Double> hashSet = new HashSet<>();
+				int rlen2 = 0;
+				for( int j=0; j<clen; j++ ) {
+					hashSet.clear();
+					for( int i=0; i<rlen; i++ )
+						hashSet.add(blkIn.get(i, j));
+					rlen2 = Math.max(rlen2, hashSet.size());
+				}
+				
+				//actual 
+				blkOut = new MatrixBlock(rlen2, clen, false).allocateBlock();
+				for( int j=0; j<clen; j++ ) {
+					hashSet.clear();
+					for( int i=0; i<rlen; i++ )
+						hashSet.add(blkIn.get(i, j));
+					int pos = 0;
+					for( Double val : hashSet )
+						blkOut.set(pos++, j, val);
+				}
+				break;
+			}
 			default:
 				throw new IllegalArgumentException("Unrecognized direction: " + dir);
 		}

@@ -20,7 +20,6 @@
 package org.apache.sysds.common;
 
 import java.util.Arrays;
-import java.util.HashMap;
 
 import org.apache.sysds.runtime.DMLRuntimeException;
 
@@ -490,15 +489,17 @@ public interface Types {
 	 * The AggOp contain identifying integer values that need to match with their native counterparts for instance for spoof CUDA ops.
 	 */
 	public enum AggOp {
-		SUM(0), SUM_SQ(1), MIN(2), MAX(3),
-		PROD(4), SUM_PROD(5),
-		TRACE(6), MEAN(7), VAR(8),
-		MAXINDEX(9), MININDEX(10),
-		COUNT_DISTINCT(11), ROW_COUNT_DISTINCT(12), COL_COUNT_DISTINCT(13),
-		COUNT_DISTINCT_APPROX(14), 
-		COUNT_DISTINCT_APPROX_ROW(15), 
-		COUNT_DISTINCT_APPROX_COL(16),
-		UNIQUE(17);
+		SUM, SUM_SQ, MIN, MAX,
+		PROD, SUM_PROD,
+		TRACE, MEAN, VAR,
+		MAXINDEX, MININDEX,
+		COUNT_DISTINCT, 
+		ROW_COUNT_DISTINCT, //TODO should be direction
+		COL_COUNT_DISTINCT,
+		COUNT_DISTINCT_APPROX, 
+		COUNT_DISTINCT_APPROX_ROW, //TODO should be direction
+		COUNT_DISTINCT_APPROX_COL,
+		UNIQUE;
 
 		@Override
 		public String toString() {
@@ -510,25 +511,13 @@ public interface Types {
 			}
 		}
 		
-		private final int value;
-		private final static HashMap<Integer, AggOp> map = new HashMap<>();
-		
-		AggOp(int value) {
-			this.value = value;
-		}
-		
-		static {
-			for (AggOp aggOp : AggOp.values()) {
-				map.put(aggOp.value, aggOp);
+		public static AggOp valueOfByOpcode(String opcode) {
+			switch(opcode) {
+				case "+":    return SUM;
+				case "sq+":  return SUM_SQ;
+				case "*":    return PROD;
+				default:     return valueOf(opcode.toUpperCase());
 			}
-		}
-		
-		public static AggOp valueOf(int aggOp) {
-			return map.get(aggOp);
-		}
-		
-		public int getValue() {
-			return value;
 		}
 	}
 	

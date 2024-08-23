@@ -74,6 +74,7 @@ public class CostEstimationTest {
         ResourceCompiler.setExecutorConfigurations(2, GBtoBytes(4), 2);
         Program program = ResourceCompiler.compile("scripts/perftest/scripts/LinearRegCG.dml", nvargs);
 //        Program program = ResourceCompiler.compile("scripts/perftest/resource/all_ops.dml", nvargs);
+        System.out.println(Explain.explain(program.getDMLProg()));
         System.out.println(Explain.explain(program));
         try {
             CostEstimator.estimateExecutionTime(program);

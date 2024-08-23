@@ -86,7 +86,7 @@ public class BuiltinDecisionTreeTest extends AutomatedTestBase {
 			TestUtils.compareMatrices(expected_M, actual_M, eps, "Expected-DML", "Actual-DML");
 		}
 		finally {
-			rtplatform = platformOld;
+			resetExecMode(platformOld);
 		}
 	}
 }

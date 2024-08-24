@@ -24,6 +24,7 @@ import java.util.Iterator;
 
 import org.apache.sysds.api.DMLScript;
 import org.apache.sysds.hops.Hop;
+import org.apache.sysds.hops.recompile.Recompiler;
 import org.apache.sysds.parser.ForStatementBlock;
 import org.apache.sysds.common.Types.ValueType;
 import org.apache.sysds.runtime.DMLRuntimeException;
@@ -117,6 +118,11 @@ public class ForProgramBlock extends ProgramBlock
 		{
 			// prepare update in-place variables
 			UpdateType[] flags = prepareUpdateInPlaceVariables(ec, _tid);
+			
+			//dynamically recompile entire loop body (according to loop inputs)
+			if( getStatementBlock() != null )
+				Recompiler.recompileFunctionOnceIfNeeded(
+					getStatementBlock().isRecompileOnce(), _childBlocks, _tid, ec);
 			
 			// compute and store the number of distinct paths
 			if (DMLScript.LINEAGE_DEDUP)

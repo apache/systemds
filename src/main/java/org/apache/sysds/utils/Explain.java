@@ -450,8 +450,10 @@ public class Explain
 		if (sb instanceof WhileStatementBlock) {
 			WhileStatementBlock wsb = (WhileStatementBlock) sb;
 			builder.append(offset);
-			if( !wsb.getUpdateInPlaceVars().isEmpty() )
-				builder.append("WHILE (lines "+wsb.getBeginLine()+"-"+wsb.getEndLine()+") [in-place="+wsb.getUpdateInPlaceVars().toString()+"]\n");
+			if( !wsb.getUpdateInPlaceVars().isEmpty() || wsb.isRecompileOnce() ) {
+				builder.append("WHILE (lines "+wsb.getBeginLine()+"-"+wsb.getEndLine()+") ");
+				builder.append("[in-place="+wsb.getUpdateInPlaceVars().toString()+", recompile="+wsb.isRecompileOnce()+"]\n");
+			}
 			else
 				builder.append("WHILE (lines "+wsb.getBeginLine()+"-"+wsb.getEndLine()+")\n");
 			builder.append(explainHop(wsb.getPredicateHops(), level+1));
@@ -488,8 +490,10 @@ public class Explain
 					builder.append("PARFOR (lines "+fsb.getBeginLine()+"-"+fsb.getEndLine()+")\n");
 			}
 			else {
-				if( !fsb.getUpdateInPlaceVars().isEmpty() )
-					builder.append("FOR (lines "+fsb.getBeginLine()+"-"+fsb.getEndLine()+") [in-place="+fsb.getUpdateInPlaceVars().toString()+"]\n");
+				if( !fsb.getUpdateInPlaceVars().isEmpty() || fsb.isRecompileOnce() ) {
+					builder.append("FOR (lines "+fsb.getBeginLine()+"-"+fsb.getEndLine()+") ");
+					builder.append("[in-place="+fsb.getUpdateInPlaceVars().toString()+", recompile="+fsb.isRecompileOnce()+"]\n");
+				}
 				else
 					builder.append("FOR (lines "+fsb.getBeginLine()+"-"+fsb.getEndLine()+")\n");
 			}
@@ -730,8 +734,10 @@ public class Explain
 			WhileProgramBlock wpb = (WhileProgramBlock) pb;
 			StatementBlock wsb = pb.getStatementBlock();
 			sb.append(offset);
-			if( wsb != null && !wsb.getUpdateInPlaceVars().isEmpty() )
-				sb.append("WHILE (lines "+wpb.getBeginLine()+"-"+wpb.getEndLine()+") [in-place="+wsb.getUpdateInPlaceVars().toString()+"]\n");
+			if( wsb != null && (!wsb.getUpdateInPlaceVars().isEmpty() || wsb.isRecompileOnce()) ) {
+				sb.append("WHILE (lines "+wpb.getBeginLine()+"-"+wpb.getEndLine()+") ");
+				sb.append("[in-place="+wsb.getUpdateInPlaceVars().toString()+", recompile="+wsb.isRecompileOnce()+"]\n");
+			}
 			else
 				sb.append("WHILE (lines "+wpb.getBeginLine()+"-"+wpb.getEndLine()+")\n");
 			sb.append(explainInstructions(wpb.getPredicate(), level+1));
@@ -763,8 +769,10 @@ public class Explain
 			if( pb instanceof ParForProgramBlock )
 				sb.append("PARFOR (lines "+fpb.getBeginLine()+"-"+fpb.getEndLine()+")\n");
 			else {
-				if( fsb != null && !fsb.getUpdateInPlaceVars().isEmpty() )
-					sb.append("FOR (lines "+fpb.getBeginLine()+"-"+fpb.getEndLine()+") [in-place="+fsb.getUpdateInPlaceVars().toString()+"]\n");
+				if( fsb != null && (!fsb.getUpdateInPlaceVars().isEmpty() || fsb.isRecompileOnce()) ) {
+					sb.append("FOR (lines "+fpb.getBeginLine()+"-"+fpb.getEndLine()+") ");
+					sb.append("[in-place="+fsb.getUpdateInPlaceVars().toString()+", recompile="+fsb.isRecompileOnce()+"]\n");
+				}
 				else
 					sb.append("FOR (lines "+fpb.getBeginLine()+"-"+fpb.getEndLine()+")\n");
 			}

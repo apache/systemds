@@ -41,9 +41,7 @@ import org.apache.sysds.parser.WhileStatementBlock;
  * are recompiled on function entry with the size information
  * of the function inputs which is often sufficient to decide
  * upon execution types; in case there are still unknowns, the
- * traditional recompilation per atomic block still applies.   
- * 
- * TODO call after lops construction
+ * traditional recompilation per atomic block still applies.
  */
 public class IPAPassFlagFunctionsRecompileOnce extends IPAPass
 {
@@ -63,6 +61,7 @@ public class IPAPassFlagFunctionsRecompileOnce extends IPAPass
 			// is applied to both 'optimized' and 'unoptimized' functions because this
 			// pass is safe wrt correctness, and crucial for performance of mini-batch
 			// algorithms in parameter servers that internally call 'unoptimized' functions
+			boolean ret = false;
 			for( Entry<String,FunctionDictionary<FunctionStatementBlock>> e : prog.getNamespaces().entrySet() ) 
 				for( boolean opt : new boolean[]{true, false} ) { //optimized/unoptimized
 					Map<String, FunctionStatementBlock> map = e.getValue().getFunctions(opt);
@@ -72,17 +71,18 @@ public class IPAPassFlagFunctionsRecompileOnce extends IPAPass
 						if( !fgraph.isRecursiveFunction(e.getKey(), ef.getKey()) &&
 							rFlagFunctionForRecompileOnce( fsblock, false ) ) {
 							fsblock.setRecompileOnce( true );
+							ret = true;
 							if( LOG.isDebugEnabled() )
 								LOG.debug("IPA: FUNC flagged for recompile-once: " +
 									DMLProgram.constructFunctionKey(e.getKey(), ef.getKey()));
 						}
 					}
 				}
+			return ret;
 		}
 		catch( LanguageException ex ) {
 			throw new HopsException(ex);
 		}
-		return false;
 	}
 	
 	/**

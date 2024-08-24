@@ -24,21 +24,15 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import org.apache.sysds.api.DMLScript;
-import org.apache.sysds.common.Types.ExecMode;
 import org.apache.sysds.common.Types.FunctionBlock;
 import org.apache.sysds.common.Types.ValueType;
-import org.apache.sysds.conf.ConfigurationManager;
 import org.apache.sysds.hops.recompile.Recompiler;
-import org.apache.sysds.hops.recompile.Recompiler.ResetType;
 import org.apache.sysds.parser.DataIdentifier;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.DMLScriptException;
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysds.runtime.instructions.cp.Data;
 import org.apache.sysds.runtime.util.ProgramConverter;
-import org.apache.sysds.utils.Statistics;
-
 
 public class FunctionProgramBlock extends ProgramBlock implements FunctionBlock
 {
@@ -106,33 +100,7 @@ public class FunctionProgramBlock extends ProgramBlock implements FunctionBlock
 	public void execute(ExecutionContext ec) 
 	{
 		//dynamically recompile entire function body (according to function inputs)
-		try {
-			if( ConfigurationManager.isDynamicRecompilation() 
-				&& isRecompileOnce() 
-				&& ParForProgramBlock.RESET_RECOMPILATION_FLAGs )
-			{
-				long t0 = DMLScript.STATISTICS ? System.nanoTime() : 0;
-				
-				//note: it is important to reset the recompilation flags here
-				// (1) it is safe to reset recompilation flags because a 'recompile_once'
-				//     function will be recompiled for every execution.
-				// (2) without reset, there would be no benefit in recompiling the entire function
-				LocalVariableMap tmp = (LocalVariableMap) ec.getVariables().clone();
-				boolean codegen = ConfigurationManager.isCodegenEnabled();
-				boolean singlenode = DMLScript.getGlobalExecMode() == ExecMode.SINGLE_NODE;
-				ResetType reset = (codegen || singlenode) ? ResetType.RESET_KNOWN_DIMS : ResetType.RESET;
-				Recompiler.recompileProgramBlockHierarchy(_childBlocks, tmp, _tid, false, reset);
-
-				if( DMLScript.STATISTICS ){
-					long t1 = System.nanoTime();
-					Statistics.incrementFunRecompileTime(t1-t0);
-					Statistics.incrementFunRecompiles();
-				}
-			}
-		}
-		catch(Exception ex) {
-			throw new DMLRuntimeException("Error recompiling function body.", ex);
-		}
+		Recompiler.recompileFunctionOnceIfNeeded(isRecompileOnce(), _childBlocks, _tid, ec);
 		
 		// for each program block
 		try {

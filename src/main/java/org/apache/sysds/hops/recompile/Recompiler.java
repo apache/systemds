@@ -37,6 +37,7 @@ import org.apache.hadoop.fs.Path;
 import org.apache.sysds.api.DMLScript;
 import org.apache.sysds.api.jmlc.JMLCUtils;
 import org.apache.sysds.common.Types.DataType;
+import org.apache.sysds.common.Types.ExecMode;
 import org.apache.sysds.common.Types.ExecType;
 import org.apache.sysds.common.Types.FileFormat;
 import org.apache.sysds.common.Types.OpOp1;
@@ -110,6 +111,7 @@ import org.apache.sysds.runtime.util.HDFSTool;
 import org.apache.sysds.runtime.util.ProgramConverter;
 import org.apache.sysds.runtime.util.UtilFunctions;
 import org.apache.sysds.utils.Explain;
+import org.apache.sysds.utils.Statistics;
 import org.apache.sysds.utils.Explain.ExplainType;
 
 /**
@@ -1549,6 +1551,38 @@ public class Recompiler {
 		if( hop instanceof MultiThreadedHop )
 			((MultiThreadedHop)hop).setMaxNumThreads(k);
 		hop.setVisited();
+	}
+	
+	public static void recompileFunctionOnceIfNeeded(boolean recompileOnce,
+		ArrayList<ProgramBlock> childBlocks, long tid, ExecutionContext ec)
+	{
+		try {
+			if( ConfigurationManager.isDynamicRecompilation() 
+				&& recompileOnce 
+				&& ParForProgramBlock.RESET_RECOMPILATION_FLAGs )
+			{
+				long t0 = DMLScript.STATISTICS ? System.nanoTime() : 0;
+				
+				//note: it is important to reset the recompilation flags here
+				// (1) it is safe to reset recompilation flags because a 'recompile_once'
+				//     function will be recompiled for every execution.
+				// (2) without reset, there would be no benefit in recompiling the entire function
+				LocalVariableMap tmp = (LocalVariableMap) ec.getVariables().clone();
+				boolean codegen = ConfigurationManager.isCodegenEnabled();
+				boolean singlenode = DMLScript.getGlobalExecMode() == ExecMode.SINGLE_NODE;
+				ResetType reset = (codegen || singlenode) ? ResetType.RESET_KNOWN_DIMS : ResetType.RESET;
+				Recompiler.recompileProgramBlockHierarchy(childBlocks, tmp, tid, false, reset);
+
+				if( DMLScript.STATISTICS ){
+					long t1 = System.nanoTime();
+					Statistics.incrementFunRecompileTime(t1-t0);
+					Statistics.incrementFunRecompiles();
+				}
+			}
+		}
+		catch(Exception ex) {
+			throw new DMLRuntimeException("Error recompiling function body.", ex);
+		}
 	}
 
 	/**

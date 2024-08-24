@@ -672,6 +672,7 @@ public class ProgramConverter
 				ret.setUpdatedVariables( sb.variablesUpdated() );
 				ret.setReadVariables( sb.variablesRead() );
 				ret.setUpdateInPlaceVars( sb.getUpdateInPlaceVars() );
+				ret.setRecompileOnce( sb.isRecompileOnce() );
 				
 				//shallow copy child statements
 				ret.setStatements( sb.getStatements() );
@@ -714,6 +715,7 @@ public class ProgramConverter
 				ret.setUpdatedVariables( sb.variablesUpdated() );
 				ret.setReadVariables( sb.variablesRead() );
 				ret.setUpdateInPlaceVars( sb.getUpdateInPlaceVars() );
+				ret.setRecompileOnce( sb.isRecompileOnce() );
 				
 				//shallow copy child statements
 				ret.setStatements( sb.getStatements() );

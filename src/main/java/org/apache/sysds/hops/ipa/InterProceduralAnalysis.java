@@ -84,6 +84,7 @@ public class InterProceduralAnalysis {
 	protected static final boolean ALLOW_MULTIPLE_FUNCTION_CALLS  = true; //propagate consistent statistics from multiple calls 
 	protected static final boolean REMOVE_UNUSED_FUNCTIONS        = true; //remove unused functions (inlined or never called)
 	protected static final boolean FLAG_FUNCTION_RECOMPILE_ONCE   = true; //flag functions which require recompilation inside a loop for full function recompile
+	protected static final boolean FLAG_LOOP_RECOMPILE_ONCE       = true; //flag top-level loops in main program which require recompilation for recompile once
 	protected static final boolean REMOVE_UNNECESSARY_CHECKPOINTS = true; //remove unnecessary checkpoints (unconditionally overwritten intermediates) 
 	protected static final boolean REMOVE_CONSTANT_BINARY_OPS     = true; //remove constant binary operations (e.g., X*ones, where ones=matrix(1,...)) 
 	protected static final boolean PROPAGATE_SCALAR_VARS_INTO_FUN = true; //propagate scalar variables into functions that are called once
@@ -127,6 +128,7 @@ public class InterProceduralAnalysis {
 		_passes = new ArrayList<>();
 		_passes.add(new IPAPassRemoveUnusedFunctions());
 		_passes.add(new IPAPassFlagFunctionsRecompileOnce());
+		_passes.add(new IPAPassFlagLoopsRecompileOnce());
 		_passes.add(new IPAPassRemoveUnnecessaryCheckpoints());
 		_passes.add(new IPAPassRemoveConstantBinaryOps());
 		_passes.add(new IPAPassPropagateReplaceLiterals());

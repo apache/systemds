@@ -60,6 +60,7 @@ public class StatementBlock extends LiveVariableAnalysis implements ParseInfo
 	HashMap<String,ConstIdentifier> _constVarsIn;
 	HashMap<String,ConstIdentifier> _constVarsOut;
 
+	private boolean _recompileOnce = false;
 	private ArrayList<String> _updateInPlaceVars = null;
 	private boolean _requiresRecompile = false;
 	private boolean _splitDag = false;
@@ -1381,6 +1382,14 @@ public class StatementBlock extends LiveVariableAnalysis implements ParseInfo
 	
 	public boolean isNondeterministic() {
 		return _nondeterministic;
+	}
+	
+	public void setRecompileOnce( boolean flag ) {
+		_recompileOnce = flag;
+	}
+	
+	public boolean isRecompileOnce() {
+		return _recompileOnce;
 	}
 
 	public void setCheckpointPosition(Lop input, List<Lop> outputs) {

@@ -44,12 +44,12 @@ import org.apache.sysds.hops.DataGenOp;
 import org.apache.sysds.parser.LanguageException.LanguageErrorCodes;
 import org.apache.sysds.parser.dml.CustomErrorListener;
 import org.apache.sysds.runtime.DMLRuntimeException;
-import org.apache.sysds.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
 import org.apache.sysds.runtime.io.FileFormatPropertiesMM;
 import org.apache.sysds.runtime.io.IOUtilFunctions;
 import org.apache.sysds.runtime.meta.MetaDataAll;
 import org.apache.sysds.runtime.util.HDFSTool;
 import org.apache.sysds.runtime.util.UtilFunctions;
+import org.apache.sysds.utils.stats.InfrastructureAnalyzer;
 
 public class DataExpression extends DataIdentifier
 {

@@ -47,10 +47,11 @@ import org.apache.sysds.runtime.controlprogram.federated.compression.Compression
 import org.apache.sysds.runtime.controlprogram.federated.compression.CompressionEncoderEndStatisticsHandler;
 import org.apache.sysds.runtime.controlprogram.federated.compression.CompressionEncoderStartStatisticsHandler;
 import org.apache.sysds.runtime.controlprogram.paramserv.NetworkTrafficCounter;
-import org.apache.sysds.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
 import org.apache.sysds.runtime.lineage.LineageCache;
 import org.apache.sysds.runtime.lineage.LineageCacheConfig;
 import org.apache.sysds.runtime.lineage.LineageCacheConfig.ReuseCacheType;
+import org.apache.sysds.utils.stats.InfrastructureAnalyzer;
+import org.apache.sysds.utils.stats.Timing;
 import org.apache.sysds.runtime.lineage.LineageItem;
 
 import io.netty.bootstrap.ServerBootstrap;
@@ -62,7 +63,6 @@ import io.netty.handler.codec.serialization.ObjectEncoder;
 import io.netty.handler.ssl.SslContext;
 import io.netty.handler.ssl.SslContextBuilder;
 import io.netty.handler.ssl.util.SelfSignedCertificate;
-import org.apache.sysds.runtime.controlprogram.parfor.stat.Timing;
 import io.netty.handler.codec.serialization.ObjectDecoder;
 import io.netty.handler.codec.serialization.ClassResolvers;
 

@@ -88,11 +88,11 @@ import org.apache.sysds.runtime.controlprogram.paramserv.dp.FederatedDataPartiti
 import org.apache.sysds.runtime.controlprogram.paramserv.dp.LocalDataPartitioner;
 import org.apache.sysds.runtime.controlprogram.paramserv.homomorphicEncryption.PublicKey;
 import org.apache.sysds.runtime.controlprogram.paramserv.rpc.PSRpcFactory;
-import org.apache.sysds.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
-import org.apache.sysds.runtime.controlprogram.parfor.stat.Timing;
 import org.apache.sysds.runtime.matrix.operators.Operator;
 import org.apache.sysds.runtime.util.ProgramConverter;
+import org.apache.sysds.utils.stats.InfrastructureAnalyzer;
 import org.apache.sysds.utils.stats.ParamServStatistics;
+import org.apache.sysds.utils.stats.Timing;
 
 public class ParamservBuiltinCPInstruction extends ParameterizedBuiltinCPInstruction {
 	private static final Log LOG = LogFactory.getLog(ParamservBuiltinCPInstruction.class.getName());

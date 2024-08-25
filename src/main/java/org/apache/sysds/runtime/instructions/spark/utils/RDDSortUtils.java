@@ -28,7 +28,6 @@ import org.apache.spark.api.java.function.PairFunction;
 import org.apache.spark.broadcast.Broadcast;
 import org.apache.sysds.runtime.controlprogram.caching.MatrixObject.UpdateType;
 import org.apache.sysds.runtime.controlprogram.context.SparkExecutionContext;
-import org.apache.sysds.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
 import org.apache.sysds.runtime.functionobjects.SortIndex;
 import org.apache.sysds.runtime.instructions.spark.data.PartitionedBlock;
 import org.apache.sysds.runtime.instructions.spark.data.RowMatrixBlock;
@@ -40,6 +39,8 @@ import org.apache.sysds.runtime.meta.MatrixCharacteristics;
 import org.apache.sysds.runtime.util.DataConverter;
 import org.apache.sysds.runtime.util.SortUtils;
 import org.apache.sysds.runtime.util.UtilFunctions;
+import org.apache.sysds.utils.stats.InfrastructureAnalyzer;
+
 import scala.Tuple2;
 
 import java.io.Serializable;

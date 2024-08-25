@@ -19,9 +19,9 @@
 
 package org.apache.sysds.performance.simple;
 
-import org.apache.sysds.runtime.controlprogram.parfor.stat.Timing;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.test.TestUtils;
+import org.apache.sysds.utils.stats.Timing;
 
 public class NNZ {
 	public static void main(String[] args) {

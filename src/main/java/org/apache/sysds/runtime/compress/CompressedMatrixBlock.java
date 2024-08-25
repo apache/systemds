@@ -61,7 +61,6 @@ import org.apache.sysds.runtime.compress.lib.CLALibTernaryOp;
 import org.apache.sysds.runtime.compress.lib.CLALibUnary;
 import org.apache.sysds.runtime.compress.lib.CLALibUtils;
 import org.apache.sysds.runtime.controlprogram.caching.MatrixObject.UpdateType;
-import org.apache.sysds.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
 import org.apache.sysds.runtime.data.DenseBlock;
 import org.apache.sysds.runtime.data.SparseBlock;
 import org.apache.sysds.runtime.data.SparseRow;
@@ -91,6 +90,7 @@ import org.apache.sysds.runtime.matrix.operators.TernaryOperator;
 import org.apache.sysds.runtime.matrix.operators.UnaryOperator;
 import org.apache.sysds.runtime.util.IndexRange;
 import org.apache.sysds.utils.DMLCompressionStatistics;
+import org.apache.sysds.utils.stats.InfrastructureAnalyzer;
 
 public class CompressedMatrixBlock extends MatrixBlock {
 	private static final Log LOG = LogFactory.getLog(CompressedMatrixBlock.class.getName());

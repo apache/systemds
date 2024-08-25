@@ -50,10 +50,10 @@ import org.apache.sysds.runtime.controlprogram.ParForProgramBlock.POptMode;
 import org.apache.sysds.runtime.controlprogram.ParForProgramBlock.PResultMerge;
 import org.apache.sysds.runtime.controlprogram.ParForProgramBlock.PTaskPartitioner;
 import org.apache.sysds.runtime.controlprogram.ParForProgramBlock.PartitionFormat;
-import org.apache.sysds.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
-import org.apache.sysds.runtime.controlprogram.parfor.stat.Timing;
 import org.apache.sysds.runtime.controlprogram.parfor.util.IDSequence;
 import org.apache.sysds.runtime.util.UtilFunctions;
+import org.apache.sysds.utils.stats.InfrastructureAnalyzer;
+import org.apache.sysds.utils.stats.Timing;
 
 /**
  * This ParForStatementBlock is essentially identical to a ForStatementBlock, except an extended validate

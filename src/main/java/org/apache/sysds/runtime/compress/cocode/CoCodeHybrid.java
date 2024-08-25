@@ -24,7 +24,7 @@ import org.apache.sysds.runtime.compress.cost.ACostEstimate;
 import org.apache.sysds.runtime.compress.cost.ComputationCostEstimator;
 import org.apache.sysds.runtime.compress.estim.AComEst;
 import org.apache.sysds.runtime.compress.estim.CompressedSizeInfo;
-import org.apache.sysds.runtime.controlprogram.parfor.stat.Timing;
+import org.apache.sysds.utils.stats.Timing;
 
 /**
  * This cocode strategy starts combines the use of CoCodePriorityQue and CoCodeGreedy.

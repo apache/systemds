@@ -21,7 +21,6 @@ package org.apache.sysds.runtime.controlprogram.parfor.opt;
 
 import org.apache.sysds.hops.Hop;
 import org.apache.sysds.runtime.controlprogram.ProgramBlock;
-import org.apache.sysds.runtime.controlprogram.parfor.opt.Optimizer.PlanInputType;
 
 /**
  * Represents a complete plan of a top-level parfor. This includes the internal
@@ -31,37 +30,28 @@ import org.apache.sysds.runtime.controlprogram.parfor.opt.Optimizer.PlanInputTyp
  */
 public class OptTree 
 {
-	private final OptTreePlanMappingAbstract _hlMap;
-	private final OptTreePlanMappingRuntime  _rtMap;
+	private final OptTreePlanMapping _hlMap;
 
 	//global contraints 
 	private int     _ck;  //max constraint degree of parallelism
 	private double  _cm;  //max constraint memory consumption
 	
 	//actual tree
-	private PlanInputType _type = null;
 	private OptNode       _root = null;
 	
 	public OptTree( int ck, double cm, OptNode node ) {
-		this( ck, cm, PlanInputType.RUNTIME_PLAN, node, null, null);
+		this( ck, cm, node, null);
 	}
 	
-	public OptTree( int ck, double cm, PlanInputType type, OptNode node,
-		OptTreePlanMappingAbstract hlMap, OptTreePlanMappingRuntime rtMap) {
+	public OptTree( int ck, double cm, OptNode node, OptTreePlanMapping hlMap) {
 		_ck = ck;
 		_cm = cm;
-		_type = type;
 		_root = node;
 		_hlMap = hlMap;
-		_rtMap = rtMap;
 	}
 	
-	public OptTreePlanMappingAbstract getAbstractPlanMapping() {
+	public OptTreePlanMapping getPlanMapping() {
 		return _hlMap;
-	}
-	
-	public OptTreePlanMappingRuntime getRuntimePlanMapping() {
-		return _rtMap;
 	}
 	
 	public Hop getMappedHop( long id ) {
@@ -84,14 +74,6 @@ public class OptTree
 		return _cm;
 	}
 	
-	public PlanInputType getPlanInputType() {
-		return _type;
-	}
-	
-	public void setPlanInputType( PlanInputType type ) {
-		_type = type;
-	}
-	
 	public OptNode getRoot() {
 		return _root;
 	}
@@ -107,14 +89,11 @@ public class OptTree
 	 * @param withDetails if true, include explain details
 	 * @return string explanation
 	 */
-	public String explain( boolean withDetails )
-	{
+	public String explain( boolean withDetails ) {
 		StringBuilder sb = new StringBuilder();
 		sb.append("\n");
 		sb.append("----------------------------\n");
-		sb.append(" EXPLAIN OPT TREE (type=");
-		sb.append(_type);
-		sb.append(", size=");
+		sb.append(" EXPLAIN OPT TREE (type=HOPS, size=");
 		sb.append(_root.size());
 		sb.append(")\n");
 		sb.append("----------------------------\n");

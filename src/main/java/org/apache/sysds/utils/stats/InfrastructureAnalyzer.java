@@ -17,7 +17,7 @@
  * under the License.
  */
 
-package org.apache.sysds.runtime.controlprogram.parfor.stat;
+package org.apache.sysds.utils.stats;
 
 import java.io.IOException;
 import java.util.StringTokenizer;

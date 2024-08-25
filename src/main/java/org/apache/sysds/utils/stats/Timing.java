@@ -17,7 +17,7 @@
  * under the License.
  */
 
-package org.apache.sysds.runtime.controlprogram.parfor.stat;
+package org.apache.sysds.utils.stats;
 
 /**
  * Helper class to time the execution of elements

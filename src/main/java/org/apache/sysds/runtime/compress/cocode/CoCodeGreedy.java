@@ -32,8 +32,8 @@ import org.apache.sysds.runtime.compress.cost.ACostEstimate;
 import org.apache.sysds.runtime.compress.estim.AComEst;
 import org.apache.sysds.runtime.compress.estim.CompressedSizeInfo;
 import org.apache.sysds.runtime.compress.estim.CompressedSizeInfoColGroup;
-import org.apache.sysds.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
 import org.apache.sysds.runtime.util.CommonThreadPool;
+import org.apache.sysds.utils.stats.InfrastructureAnalyzer;
 
 public class CoCodeGreedy extends AColumnCoCoder {
 

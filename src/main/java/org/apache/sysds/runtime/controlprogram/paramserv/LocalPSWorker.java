@@ -32,10 +32,10 @@ import org.apache.sysds.parser.Statement;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
-import org.apache.sysds.runtime.controlprogram.parfor.stat.Timing;
 import org.apache.sysds.runtime.instructions.cp.ListObject;
 import org.apache.sysds.runtime.util.CommonThreadPool;
 import org.apache.sysds.utils.stats.ParamServStatistics;
+import org.apache.sysds.utils.stats.Timing;
 
 public class LocalPSWorker extends PSWorker implements Callable<Void> {
 

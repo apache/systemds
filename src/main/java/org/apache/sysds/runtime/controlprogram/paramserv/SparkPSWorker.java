@@ -30,9 +30,9 @@ import org.apache.sysds.parser.Statement;
 import org.apache.sysds.runtime.codegen.CodegenUtils;
 import org.apache.sysds.runtime.controlprogram.paramserv.rpc.PSRpcFactory;
 import org.apache.sysds.runtime.controlprogram.parfor.RemoteParForUtils;
-import org.apache.sysds.runtime.controlprogram.parfor.stat.Timing;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.util.ProgramConverter;
+import org.apache.sysds.utils.stats.Timing;
 
 import scala.Tuple2;
 

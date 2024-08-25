@@ -59,11 +59,11 @@ import org.apache.sysds.hops.cost.ComputeCost;
 import org.apache.sysds.hops.rewrite.HopRewriteUtils;
 import org.apache.sysds.runtime.codegen.LibSpoofPrimitives;
 import org.apache.sysds.runtime.controlprogram.caching.LazyWriteBuffer;
-import org.apache.sysds.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
 import org.apache.sysds.runtime.controlprogram.parfor.util.IDSequence;
 import org.apache.sysds.runtime.util.CollectionUtils;
 import org.apache.sysds.runtime.util.UtilFunctions;
 import org.apache.sysds.utils.stats.CodegenStatistics;
+import org.apache.sysds.utils.stats.InfrastructureAnalyzer;
 
 /**
  * This cost-based plan selection algorithm chooses fused operators

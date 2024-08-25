@@ -30,9 +30,6 @@ import org.apache.sysds.runtime.controlprogram.LocalVariableMap;
 import org.apache.sysds.runtime.controlprogram.ProgramBlock;
 import org.apache.sysds.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
-import org.apache.sysds.runtime.controlprogram.parfor.stat.Stat;
-import org.apache.sysds.runtime.controlprogram.parfor.stat.StatisticMonitor;
-import org.apache.sysds.runtime.controlprogram.parfor.stat.Timing;
 import org.apache.sysds.runtime.instructions.cp.CPOperand;
 import org.apache.sysds.runtime.instructions.cp.Data;
 import org.apache.sysds.runtime.instructions.cp.IntObject;
@@ -50,37 +47,32 @@ public abstract class ParWorker
 	protected long                      _workerID    = -1;
 	protected ArrayList<ProgramBlock>   _childBlocks = null;
 
-	public ExecutionContext getExecutionContext() {
-		return _ec;
-	}
-
 	protected ExecutionContext          _ec          = null;
 	protected ArrayList<ResultVar>      _resultVars  = null;
-
-	protected boolean                   _monitor     = false;
-	
 	protected long                      _numTasks    = -1;
 	protected long                      _numIters    = -1;
-	
+
 	public ParWorker() {
 		//implicit constructor (required if parameters not known on object creation, 
 		//e.g., RemoteParWorkerMapper)
 	}
 	
-	public ParWorker( long ID, ParForBody body, boolean monitor ) {
+	public ParWorker( long ID, ParForBody body ) {
 		_workerID    = ID;
 		if( body != null ) {
 			_childBlocks = body.getChildBlocks();
 			_ec = body.getEc();
 			_resultVars = body.getResultVariables();
 		}
-		_monitor = monitor;
 		_numTasks = 0;
 		_numIters = 0;
 	}
 
-	public LocalVariableMap getVariables()
-	{
+	public ExecutionContext getExecutionContext() {
+		return _ec;
+	}
+	
+	public LocalVariableMap getVariables() {
 		return _ec.getVariables();
 	}
 	
@@ -90,8 +82,7 @@ public abstract class ParWorker
 	 * 
 	 * @return number of executed tasks
 	 */
-	public long getExecutedTasks()
-	{
+	public long getExecutedTasks() {
 		return _numTasks;
 	}
 	
@@ -127,21 +118,9 @@ public abstract class ParWorker
 	}	
 
 	private void executeSetTask( Task task ) {
-		//monitoring start
-		Timing time1 = null, time2 = null;
-		if( _monitor ) {
-			time1 = new Timing(true); 
-			time2 = new Timing(true); 
-		}
-		
-		//core execution
-
 		//foreach iteration in task, execute iteration body
 		String lVarName = task.getVarName();
-		for( IntObject indexVal : task.getIterations() )
-		{
-			//System.out.println(" EXECUTE ITERATION: "+indexVal.getName()+"="+indexVal.getIntValue());
-			
+		for( IntObject indexVal : task.getIterations() ) {
 			//set index values
 			_ec.setVariable(lVarName, indexVal);
 			if (DMLScript.LINEAGE) {
@@ -154,37 +133,19 @@ public abstract class ParWorker
 				pb.execute(_ec);
 					
 			_numIters++;
-			
-			if( _monitor )
-				StatisticMonitor.putPWStat(_workerID, Stat.PARWRK_ITER_T, time1.stop());
 		}
 
 		_numTasks++;
-		
-		//monitoring end
-		if( _monitor ) {
-			StatisticMonitor.putPWStat(_workerID, Stat.PARWRK_TASKSIZE, task.size());
-			StatisticMonitor.putPWStat(_workerID, Stat.PARWRK_TASK_T, time2.stop());
-		}
 	}
 
 	private void executeRangeTask( Task task ) {
-		//monitoring start
-		Timing time1 = null, time2 = null;
-		if( _monitor ) {
-			time1 = new Timing(true);
-			time2 = new Timing(true);
-		}
-		
-		//core execution
 		List<IntObject> tmp = task.getIterations();
 		String lVarName = task.getVarName();
 		long lFrom      = tmp.get(0).getLongValue();
 		long lTo        = tmp.get(1).getLongValue();
 		long lIncr      = tmp.get(2).getLongValue();
 		
-		for( long i=lFrom; i<=lTo; i+=lIncr )
-		{
+		for( long i=lFrom; i<=lTo; i+=lIncr ) {
 			//set index values
 			IntObject indexVal = new IntObject(i);
 			_ec.setVariable(lVarName, indexVal);
@@ -198,17 +159,8 @@ public abstract class ParWorker
 				pb.execute(_ec);
 			
 			_numIters++;
-			
-			if( _monitor )
-				StatisticMonitor.putPWStat(_workerID, Stat.PARWRK_ITER_T, time1.stop());
 		}
 
 		_numTasks++;
-		
-		//monitoring end
-		if( _monitor ) {
-			StatisticMonitor.putPWStat(_workerID, Stat.PARWRK_TASKSIZE, task.size());
-			StatisticMonitor.putPWStat(_workerID, Stat.PARWRK_TASK_T, time2.stop());
-		}
 	}
 }

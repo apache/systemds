@@ -22,32 +22,38 @@ package org.apache.sysds.runtime.controlprogram.parfor.opt;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.apache.sysds.hops.Hop;
+import org.apache.sysds.parser.DMLProgram;
+import org.apache.sysds.parser.StatementBlock;
+import org.apache.sysds.runtime.controlprogram.Program;
+import org.apache.sysds.runtime.controlprogram.ProgramBlock;
 import org.apache.sysds.runtime.controlprogram.parfor.util.IDSequence;
 
-/**
- * Helper class for mapping nodes of the internal plan representation to statement blocks and 
- * hops / function call statements of a given DML program.
- *
- */
-public class OptTreePlanMapping 
+public class OptTreePlanMapping
 {
-	
 	protected IDSequence _idSeq;
 	protected Map<Long, OptNode> _id_optnode;
-	    
-	public OptTreePlanMapping()
-	{
+	
+	private DMLProgram _prog;
+	private Program _rtprog;
+	private Map<Long, Object> _id_hlprog;
+	private Map<Long, Object> _id_rtprog;
+	
+	public OptTreePlanMapping( ) {
 		_idSeq = new IDSequence();
 		_id_optnode = new HashMap<>();
+		
+		_prog = null;
+		_rtprog = null;
+		_id_hlprog = new HashMap<>();
+		_id_rtprog = new HashMap<>();
 	}
-
-	public OptNode getOptNode( long id )
-	{
+	
+	public OptNode getOptNode( long id ) {
 		return _id_optnode.get(id);
 	}
 
-	public long getMappedParentID( long id )
-	{
+	public long getMappedParentID( long id ) {
 		for( OptNode p : _id_optnode.values() )
 			if( p.getChilds() != null )
 				for( OptNode c2 : p.getChilds() )
@@ -55,10 +61,63 @@ public class OptTreePlanMapping
 						return p.getID();
 		return -1;
 	}
-
-	public void clear()
-	{
-		_id_optnode.clear();
+	
+	public void putRootProgram( DMLProgram prog, Program rtprog ) {
+		_prog = prog;
+		_rtprog = rtprog;
 	}
 	
+	public long putHopMapping( Hop hops, OptNode n ) {
+		long id = _idSeq.getNextID();
+		_id_hlprog.put(id, hops);
+		_id_rtprog.put(id, null);
+		_id_optnode.put(id, n);	
+		n.setID(id);
+		return id;
+	}
+	
+	public long putProgMapping( StatementBlock sb, ProgramBlock pb, OptNode n ) {
+		long id = _idSeq.getNextID();
+		_id_hlprog.put(id, sb);
+		_id_rtprog.put(id, pb);
+		_id_optnode.put(id, n);
+		n.setID(id);
+		return id;
+	}
+	
+	public Object[] getRootProgram() {
+		Object[] ret = new Object[2];
+		ret[0] = _prog;
+		ret[1] = _rtprog;
+		return ret;
+	}
+	
+	public Hop getMappedHop( long id ) {
+		return (Hop)_id_hlprog.get( id );
+	}
+	
+	public Object[] getMappedProg( long id ) {
+		Object[] ret = new Object[2];
+		ret[0] = _id_hlprog.get(id);
+		ret[1] = _id_rtprog.get(id);
+		return ret;
+	}
+	
+	public ProgramBlock getMappedProgramBlock(long id) {
+		return (ProgramBlock) _id_rtprog.get(id);
+	}
+	
+	public void replaceMapping( ProgramBlock pb, OptNode n ) {
+		long id = n.getID();
+		_id_rtprog.put(id, pb);
+		_id_optnode.put(id, n);
+	}
+	
+	public void clear() {
+		_id_optnode.clear();
+		_prog = null;
+		_rtprog = null;
+		_id_hlprog.clear();
+		_id_rtprog.clear();
+	}
 }

@@ -33,8 +33,8 @@ import org.apache.sysds.lops.rewrite.LopRewriter;
 import org.apache.sysds.parser.*;
 import org.apache.sysds.runtime.controlprogram.*;
 import org.apache.sysds.runtime.controlprogram.context.SparkExecutionContext;
-import org.apache.sysds.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
 import org.apache.sysds.runtime.instructions.Instruction;
+import org.apache.sysds.utils.stats.InfrastructureAnalyzer;
 
 import java.io.IOException;
 import java.util.ArrayList;

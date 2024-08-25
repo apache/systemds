@@ -20,11 +20,11 @@
 package org.apache.sysds.performance.generators;
 
 import org.apache.sysds.performance.PerfUtil;
-import org.apache.sysds.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
 import org.apache.sysds.runtime.frame.data.FrameBlock;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.transform.encode.EncoderFactory;
 import org.apache.sysds.runtime.transform.encode.MultiColumnEncoder;
+import org.apache.sysds.utils.stats.InfrastructureAnalyzer;
 
 public class FrameTransformFile extends ConstMatrix {
 

@@ -30,8 +30,8 @@ import org.apache.sysds.api.DMLScript;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.controlprogram.paramserv.rpc.PSRpcCall;
 import org.apache.sysds.runtime.controlprogram.paramserv.rpc.PSRpcResponse;
-import org.apache.sysds.runtime.controlprogram.parfor.stat.Timing;
 import org.apache.sysds.runtime.instructions.cp.ListObject;
+import org.apache.sysds.utils.stats.Timing;
 
 public class SparkPSProxy extends ParamServer {
 

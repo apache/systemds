@@ -35,10 +35,10 @@ import org.apache.sysds.runtime.controlprogram.context.ExecutionContextFactory;
 public class CostEstimatorRuntime extends CostEstimator
 {	
 	private final CostEstimatorHops _costMem;
-	private final OptTreePlanMappingAbstract _map;
+	private final OptTreePlanMapping _map;
 	private final ExecutionContext _ec;
 	
-	public CostEstimatorRuntime(OptTreePlanMappingAbstract map, LocalVariableMap vars ) {
+	public CostEstimatorRuntime(OptTreePlanMapping map, LocalVariableMap vars ) {
 		_costMem = new CostEstimatorHops(map);
 		_map = map;
 		

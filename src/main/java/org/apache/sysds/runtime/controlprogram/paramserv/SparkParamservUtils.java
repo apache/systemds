@@ -30,10 +30,10 @@ import org.apache.sysds.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysds.runtime.controlprogram.context.SparkExecutionContext;
 import org.apache.sysds.runtime.controlprogram.paramserv.dp.DataPartitionerSparkAggregator;
 import org.apache.sysds.runtime.controlprogram.paramserv.dp.DataPartitionerSparkMapper;
-import org.apache.sysds.runtime.controlprogram.parfor.stat.Timing;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.matrix.data.MatrixIndexes;
 import org.apache.sysds.utils.stats.ParamServStatistics;
+import org.apache.sysds.utils.stats.Timing;
 
 import scala.Tuple2;
 

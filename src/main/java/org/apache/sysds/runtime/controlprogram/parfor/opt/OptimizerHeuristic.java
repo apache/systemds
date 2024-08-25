@@ -30,7 +30,6 @@ import org.apache.sysds.runtime.controlprogram.parfor.opt.CostEstimator.TestMeas
  * Heuristic ParFor Optimizer: This optimizer extends the rule-based
  * optimizer by a time-based cost estimate for execution type decisions.
  * 
- *  
  */
 public class OptimizerHeuristic extends OptimizerRuleBased {
 	private static final Log LOG = LogFactory.getLog(OptimizerHeuristic.class.getName());
@@ -52,24 +51,17 @@ public class OptimizerHeuristic extends OptimizerRuleBased {
 	
 	/**
 	 * Used as one condition in rewriteSetExecutionStategy in order to decide if
-	 * MR execution makes sense if all the other constraints are given. 
+	 * Spark execution makes sense if all the other constraints are given. 
 	 */
 	@Override
-	protected boolean isLargeProblem(OptNode pn, double M)
-	{
-		boolean ret = false;
-		
-		try 
-		{
+	protected boolean isLargeProblem(OptNode pn, double M) {
+		try  {
 			double T = _cost.getEstimate(TestMeasure.EXEC_TIME, pn);
-			ret = (T >= EXEC_TIME_THRESHOLD) && (M > PROB_SIZE_THRESHOLD_MB );
+			return (T >= EXEC_TIME_THRESHOLD) && (M > PROB_SIZE_THRESHOLD_MB );
 		} 
-		catch (DMLRuntimeException e) 
-		{
+		catch (DMLRuntimeException e)  {
 			LOG.error("Failed to estimate execution time.", e);
 		}
-		
-		return ret;
+		return false;
 	}
-
 }

@@ -59,7 +59,6 @@ import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysds.runtime.controlprogram.parfor.opt.OptNode.ExecType;
 import org.apache.sysds.runtime.controlprogram.parfor.opt.OptNode.NodeType;
 import org.apache.sysds.runtime.controlprogram.parfor.opt.OptNode.ParamType;
-import org.apache.sysds.runtime.controlprogram.parfor.opt.Optimizer.PlanInputType;
 import org.apache.sysds.runtime.instructions.Instruction;
 import org.apache.sysds.runtime.instructions.cp.EvalNaryCPInstruction;
 import org.apache.sysds.runtime.instructions.cp.FunctionCallCPInstruction;
@@ -78,29 +77,20 @@ public class OptTreeConverter
 	//internal configuration flags
 	public static boolean INCLUDE_FUNCTIONS = true;
 
-	public static OptTree createOptTree( int ck, double cm, PlanInputType type, ParForStatementBlock pfsb, ParForProgramBlock pfpb, ExecutionContext ec )  {
-		switch( type ) {
-			case ABSTRACT_PLAN: {
-				OptTreePlanMappingAbstract hlMap = new OptTreePlanMappingAbstract();
-				hlMap.putRootProgram(pfsb.getDMLProg(), pfpb.getProgram());
-				Set<String> memo = new HashSet<>();
-				OptNode root = rCreateAbstractOptNode(pfsb, pfpb, ec.getVariables(), true, hlMap, memo);
-				root.checkAndCleanupRecursiveFunc(new HashSet<String>()); //create consistency between recursive info
-				root.checkAndCleanupLeafNodes(); //prune unnecessary nodes
-				return new OptTree(ck, cm, type, root, hlMap, null);
-			}
-			case RUNTIME_PLAN: {
-				OptTreePlanMappingRuntime rtMap = new OptTreePlanMappingRuntime();
-				OptNode root = rCreateOptNode( pfpb, ec.getVariables(), true, rtMap, true );
-				return new OptTree(ck, cm, type, root, null, rtMap);
-			}
-			default:
-				throw new DMLRuntimeException("Optimizer plan input type "+type+" not supported.");
-		}
+	public static OptTree createOptTree( int ck, double cm, 
+		ParForStatementBlock pfsb, ParForProgramBlock pfpb, ExecutionContext ec )
+	{
+		OptTreePlanMapping hlMap = new OptTreePlanMapping();
+		hlMap.putRootProgram(pfsb.getDMLProg(), pfpb.getProgram());
+		Set<String> memo = new HashSet<>();
+		OptNode root = rCreateAbstractOptNode(pfsb, pfpb, ec.getVariables(), true, hlMap, memo);
+		root.checkAndCleanupRecursiveFunc(new HashSet<String>()); //create consistency between recursive info
+		root.checkAndCleanupLeafNodes(); //prune unnecessary nodes
+		return new OptTree(ck, cm, root, hlMap);
 	}
 
 	public static OptTree createAbstractOptTree( int ck, double cm, ParForStatementBlock pfsb,
-		ParForProgramBlock pfpb, OptTreePlanMappingAbstract hlMap, Set<String> memo, ExecutionContext ec ) 
+		ParForProgramBlock pfpb, OptTreePlanMapping hlMap, Set<String> memo, ExecutionContext ec ) 
 	{
 		OptTree tree = null;
 		OptNode root = null;
@@ -116,141 +106,8 @@ public class OptTreeConverter
 		return tree;
 	}
 
-	public static OptNode rCreateOptNode( ProgramBlock pb, LocalVariableMap vars, boolean topLevel, OptTreePlanMappingRuntime rtMap, boolean storeObjs ) 
-	{
-		OptNode node = null;
-		
-		if( pb instanceof IfProgramBlock ) {
-			IfProgramBlock ipb = (IfProgramBlock) pb;
-			node = new OptNode( NodeType.IF );
-			if(storeObjs)
-				rtMap.putMapping(ipb, node);
-			node.setExecType(ExecType.CP);
-			//process if condition
-			OptNode ifn = new OptNode(NodeType.GENERIC);
-			node.addChilds( createOptNodes( ipb.getPredicate(), vars, rtMap, storeObjs ) );
-			node.addChild( ifn );
-			for( ProgramBlock lpb : ipb.getChildBlocksIfBody() )
-				ifn.addChild( rCreateOptNode(lpb, vars, topLevel, rtMap, storeObjs) );
-			//process else condition
-			if( ipb.getChildBlocksElseBody() != null && ipb.getChildBlocksElseBody().size()>0 ) {
-				OptNode efn = new OptNode(NodeType.GENERIC);
-				node.addChild( efn );
-				for( ProgramBlock lpb : ipb.getChildBlocksElseBody() )
-					efn.addChild( rCreateOptNode(lpb, vars, topLevel, rtMap, storeObjs) );
-			}
-		}
-		else if( pb instanceof WhileProgramBlock ) {
-			WhileProgramBlock wpb = (WhileProgramBlock) pb;
-			node = new OptNode( NodeType.WHILE );
-			if(storeObjs)
-				rtMap.putMapping(wpb, node);
-			node.setExecType(ExecType.CP);
-			//process predicate instruction
-			node.addChilds( createOptNodes( wpb.getPredicate(), vars, rtMap, storeObjs ) );
-			//process body
-			for( ProgramBlock lpb : wpb.getChildBlocks() )
-				node.addChild( rCreateOptNode(lpb, vars, topLevel, rtMap, storeObjs) );
-		}
-		else if( pb instanceof ForProgramBlock && !(pb instanceof ParForProgramBlock) ) {
-			ForProgramBlock fpb = (ForProgramBlock) pb;
-			node = new OptNode( NodeType.FOR );
-			if(storeObjs)
-				rtMap.putMapping(fpb, node);
-			node.setExecType(ExecType.CP);
-			
-			//determine number of iterations
-			long N = OptimizerUtils.getNumIterations(fpb, vars, CostEstimator.FACTOR_NUM_ITERATIONS);
-			node.addParam(ParamType.NUM_ITERATIONS, String.valueOf(N));
-			
-			node.addChilds( createOptNodes( fpb.getFromInstructions(), vars, rtMap, storeObjs ) );
-			node.addChilds( createOptNodes( fpb.getToInstructions(), vars, rtMap, storeObjs ) );
-			node.addChilds( createOptNodes( fpb.getIncrementInstructions(), vars, rtMap, storeObjs ) );
-			
-			//process body
-			for( ProgramBlock lpb : fpb.getChildBlocks() )
-				node.addChild( rCreateOptNode(lpb, vars, topLevel, rtMap, storeObjs) );
-		}
-		else if( pb instanceof ParForProgramBlock ) {
-			ParForProgramBlock fpb = (ParForProgramBlock) pb;
-			node = new OptNode( NodeType.PARFOR );
-			if(storeObjs)
-				rtMap.putMapping(fpb, node);
-			node.setK( fpb.getDegreeOfParallelism() );
-			long N = fpb.getNumIterations();
-			node.addParam(ParamType.NUM_ITERATIONS, (N!=-1) ? 
-				String.valueOf(N) : String.valueOf(CostEstimator.FACTOR_NUM_ITERATIONS));
-			
-			switch(fpb.getExecMode()) {
-				case LOCAL:
-					node.setExecType(ExecType.CP);
-					break;
-				case REMOTE_SPARK:
-				case REMOTE_SPARK_DP:
-					node.setExecType(ExecType.SPARK);
-					break;
-				default:
-					node.setExecType(null);
-			}
-			
-			if( !topLevel ) {
-				node.addChilds( createOptNodes( fpb.getFromInstructions(), vars, rtMap, storeObjs ) );
-				node.addChilds( createOptNodes( fpb.getToInstructions(), vars, rtMap, storeObjs ) );
-				node.addChilds( createOptNodes( fpb.getIncrementInstructions(), vars, rtMap, storeObjs ) );
-			}
-			
-			//process body
-			for( ProgramBlock lpb : fpb.getChildBlocks() )
-				node.addChild( rCreateOptNode(lpb, vars, false, rtMap, storeObjs) );
-			
-			//parameters, add required parameters
-		}
-		else if ( pb instanceof BasicProgramBlock ) {
-			BasicProgramBlock bpb = (BasicProgramBlock) pb;
-			node = new OptNode(NodeType.GENERIC);
-			if(storeObjs)
-				rtMap.putMapping(pb, node);
-			node.addChilds( createOptNodes(bpb.getInstructions(), vars, rtMap, storeObjs) );
-			node.setExecType(ExecType.CP);
-		}
-			
-		return node;
-	}
-
-	public static ArrayList<OptNode> createOptNodes (ArrayList<Instruction> instset, LocalVariableMap vars, OptTreePlanMappingRuntime rtMap, boolean storeObjs) {
-		ArrayList<OptNode> tmp = new ArrayList<>(instset.size());
-		for( Instruction inst : instset )
-			tmp.add( createOptNode(inst, vars, rtMap, storeObjs) );
-		return tmp;
-	}
-
-	public static OptNode createOptNode( Instruction inst, LocalVariableMap vars, OptTreePlanMappingRuntime rtMap, boolean storeObjs ) {
-		OptNode node = new OptNode(NodeType.INST);
-		String instStr = inst.toString();
-		String opstr = instStr.split(Instruction.OPERAND_DELIM)[1];
-		if(storeObjs)
-			rtMap.putMapping(inst, node);
-		node.addParam(ParamType.OPSTRING,opstr);
-		
-		//exec type
-		switch( inst.getType() )
-		{
-			case CONTROL_PROGRAM:
-				node.setExecType(ExecType.CP);
-				//exec operations
-				//CPInstruction cpinst = (CPInstruction) inst;
-				//node.addParam(ParamType.OPTYPE,cpinst.getCPInstructionType().toString());
-				break;
-			default:
-				// In initial prototype, parfor is not supported for spark, so this exception will be thrown
-				throw new DMLRuntimeException("Unsupported instruction type.");
-		}
-		
-		return node;
-	}
-
 	public static OptNode rCreateAbstractOptNode( StatementBlock sb, ProgramBlock pb,
-		LocalVariableMap vars, boolean topLevel, OptTreePlanMappingAbstract hlMap, Set<String> memo ) 
+		LocalVariableMap vars, boolean topLevel, OptTreePlanMapping hlMap, Set<String> memo ) 
 	{
 		OptNode node = null;
 		
@@ -428,7 +285,7 @@ public class OptTreeConverter
 		return node;
 	}
 
-	public static ArrayList<OptNode> createAbstractOptNodes(ArrayList<Hop> hops, LocalVariableMap vars, OptTreePlanMappingAbstract hlMap, Set<String> memo ) {
+	public static ArrayList<OptNode> createAbstractOptNodes(ArrayList<Hop> hops, LocalVariableMap vars, OptTreePlanMapping hlMap, Set<String> memo ) {
 		ArrayList<OptNode> ret = new ArrayList<>(); 
 		
 		//reset all hops
@@ -442,7 +299,7 @@ public class OptTreeConverter
 		return ret;
 	}
 
-	public static List<OptNode> rCreateAbstractOptNodes(Hop hop, LocalVariableMap vars, OptTreePlanMappingAbstract hlMap, Set<String> memo) {
+	public static List<OptNode> rCreateAbstractOptNodes(Hop hop, LocalVariableMap vars, OptTreePlanMapping hlMap, Set<String> memo) {
 		List<OptNode> ret = new ArrayList<>(); 
 		List<Hop> in = hop.getInput();
 	
@@ -599,7 +456,7 @@ public class OptTreeConverter
 					|| inst instanceof EvalNaryCPInstruction);
 	}
 
-	public static void replaceProgramBlock(OptNode parent, OptNode n, ProgramBlock pbOld, ProgramBlock pbNew, OptTreePlanMappingAbstract hlMap) {
+	public static void replaceProgramBlock(OptNode parent, OptNode n, ProgramBlock pbOld, ProgramBlock pbNew, OptTreePlanMapping hlMap) {
 		ProgramBlock pbParent = null;
 		if( parent.getNodeType()==NodeType.FUNCCALL ) {
 			FunctionOp fop = (FunctionOp) hlMap.getMappedHop(parent.getID());
@@ -630,34 +487,6 @@ public class OptTreeConverter
 		
 		//update repository
 		hlMap.replaceMapping(pbNew, n);
-	}
-	
-	public static void replaceProgramBlock(OptNode parent, OptNode n, ProgramBlock pbOld, ProgramBlock pbNew, OptTreePlanMappingRuntime rtMap) {
-		ProgramBlock pbParent = null;
-		pbParent = (ProgramBlock) rtMap.getMappedObject( parent.getID() );
-		
-		if( pbParent instanceof IfProgramBlock ) {
-			IfProgramBlock ipb = (IfProgramBlock) pbParent;
-			replaceProgramBlock( ipb.getChildBlocksIfBody(), pbOld, pbNew );
-			replaceProgramBlock( ipb.getChildBlocksElseBody(), pbOld, pbNew );
-		}
-		else if( pbParent instanceof WhileProgramBlock ) {
-			WhileProgramBlock wpb = (WhileProgramBlock) pbParent;
-			replaceProgramBlock( wpb.getChildBlocks(), pbOld, pbNew );
-		}
-		else if( pbParent instanceof ForProgramBlock || pbParent instanceof ParForProgramBlock ) {
-			ForProgramBlock fpb = (ForProgramBlock) pbParent;
-			replaceProgramBlock( fpb.getChildBlocks(), pbOld, pbNew );
-		}
-		else if( pbParent instanceof FunctionProgramBlock ) {
-			FunctionProgramBlock fpb = (FunctionProgramBlock) pbParent;
-			replaceProgramBlock( fpb.getChildBlocks(), pbOld, pbNew );
-		}
-		else
-			throw new DMLRuntimeException("Optimizer doesn't support "+pbParent.getClass().getName());
-		
-		//update repository
-		rtMap.replaceMapping(pbNew, n);
 	}
 
 	public static void replaceProgramBlock(List<ProgramBlock> pbs, ProgramBlock pbOld, ProgramBlock pbNew) {

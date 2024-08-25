@@ -19,10 +19,10 @@
 
 package org.apache.sysds.test.functions.lineage;
 
-import org.apache.sysds.runtime.controlprogram.parfor.stat.Timing;
 import org.apache.sysds.runtime.lineage.Lineage;
 import org.apache.sysds.test.TestConfiguration;
 import org.apache.sysds.test.TestUtils;
+import org.apache.sysds.utils.stats.Timing;
 import org.junit.Assert;
 import org.junit.Test;
 

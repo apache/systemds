@@ -76,7 +76,6 @@ import org.apache.sysds.runtime.controlprogram.parfor.opt.CostEstimator.TestMeas
 import org.apache.sysds.runtime.controlprogram.parfor.opt.OptNode.ExecType;
 import org.apache.sysds.runtime.controlprogram.parfor.opt.OptNode.NodeType;
 import org.apache.sysds.runtime.controlprogram.parfor.opt.OptNode.ParamType;
-import org.apache.sysds.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
 import org.apache.sysds.runtime.data.SparseRowVector;
 import org.apache.sysds.runtime.instructions.Instruction;
 import org.apache.sysds.runtime.instructions.cp.Data;
@@ -89,6 +88,7 @@ import org.apache.sysds.runtime.meta.DataCharacteristics;
 import org.apache.sysds.runtime.meta.MetaDataFormat;
 import org.apache.sysds.runtime.util.ProgramConverter;
 import org.apache.sysds.utils.NativeHelper;
+import org.apache.sysds.utils.stats.InfrastructureAnalyzer;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -174,11 +174,6 @@ public class OptimizerRuleBased extends Optimizer {
 	@Override
 	public CostModelType getCostModelType() {
 		return CostModelType.STATIC_MEM_METRIC;
-	}
-
-	@Override
-	public PlanInputType getPlanInputType() {
-		return PlanInputType.ABSTRACT_PLAN;
 	}
 
 	@Override
@@ -725,8 +720,8 @@ public class OptimizerRuleBased extends Optimizer {
 		n.setExecType(ExecType.CP);
 		
 		//recompile parent pb
-		long pid = _plan.getAbstractPlanMapping().getMappedParentID(n.getID());
-		OptNode nParent = _plan.getAbstractPlanMapping().getOptNode(pid);
+		long pid = _plan.getPlanMapping().getMappedParentID(n.getID());
+		OptNode nParent = _plan.getPlanMapping().getOptNode(pid);
 		Object[] o = _plan.getMappedProg(pid);
 		StatementBlock sb = (StatementBlock) o[0];
 		BasicProgramBlock pb = (BasicProgramBlock) o[1];
@@ -2370,11 +2365,11 @@ public class OptimizerRuleBased extends Optimizer {
 				//recreate sub opttree
 				String fnameNewKey = fnamespace + Program.KEY_DELIM + fnameNew;
 				OptNode nNew = new OptNode(NodeType.FUNCCALL);
-				_plan.getAbstractPlanMapping().putHopMapping(fop, nNew);
+				_plan.getPlanMapping().putHopMapping(fop, nNew);
 				nNew.setExecType(ExecType.CP);
 				nNew.addParam(ParamType.OPSTRING, fnameNewKey);
-				long parentID = _plan.getAbstractPlanMapping().getMappedParentID(n.getID());
-				_plan.getAbstractPlanMapping().getOptNode(parentID).exchangeChild(n, nNew);
+				long parentID = _plan.getPlanMapping().getMappedParentID(n.getID());
+				_plan.getPlanMapping().getOptNode(parentID).exchangeChild(n, nNew);
 				HashSet<String> memo = new HashSet<>();
 				memo.add(fnameKey); //required if functionop not shared (because not replaced yet)
 				memo.add(fnameNewKey); //requied if functionop shared (indirectly replaced)
@@ -2382,7 +2377,7 @@ public class OptimizerRuleBased extends Optimizer {
 					ProgramBlock lpb = copyfpb.getChildBlocks().get(i);
 					StatementBlock lsb = lpb.getStatementBlock();
 					nNew.addChild( OptTreeConverter
-						.rCreateAbstractOptNode(lsb, lpb, vars, false, _plan.getAbstractPlanMapping(), memo) );
+						.rCreateAbstractOptNode(lsb, lpb, vars, false, _plan.getPlanMapping(), memo) );
 				}
 				
 				//compute delta for recPB set (use for removing parfor)
@@ -2455,7 +2450,7 @@ public class OptimizerRuleBased extends Optimizer {
 				n.addParam(ParamType.OPSTRING, DMLProgram.constructFunctionKey(fnamespace,newName));
 				
 				//set instruction function name
-				long parentID = _plan.getAbstractPlanMapping().getMappedParentID(n.getID());
+				long parentID = _plan.getPlanMapping().getMappedParentID(n.getID());
 				BasicProgramBlock pb = (BasicProgramBlock) _plan.getMappedProg(parentID)[1];
 				
 				ArrayList<Instruction> instArr = pb.getInstructions();
@@ -2502,7 +2497,7 @@ public class OptimizerRuleBased extends Optimizer {
 						ForProgramBlock fpb = ProgramConverter.createShallowCopyForProgramBlock(pfpb, prog);
 
 						//replace parfor with for, and update objectmapping
-						OptTreeConverter.replaceProgramBlock(n, sub, pfpb, fpb, _plan.getAbstractPlanMapping());
+						OptTreeConverter.replaceProgramBlock(n, sub, pfpb, fpb, _plan.getPlanMapping());
 						//update link to statement block
 						fpb.setStatementBlock(pfsb);
 							
@@ -2551,7 +2546,7 @@ public class OptimizerRuleBased extends Optimizer {
 					ForProgramBlock fpb = ProgramConverter.createShallowCopyForProgramBlock(pfpb, prog);
 					
 					//replace parfor with for, and update objectmapping
-					OptTreeConverter.replaceProgramBlock(n, sub, pfpb, fpb, _plan.getAbstractPlanMapping());
+					OptTreeConverter.replaceProgramBlock(n, sub, pfpb, fpb, _plan.getPlanMapping());
 					//update link to statement block
 					fpb.setStatementBlock(pfsb);
 					

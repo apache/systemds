@@ -24,10 +24,10 @@ import org.apache.sysds.runtime.controlprogram.parfor.LocalTaskQueue;
 import org.apache.sysds.runtime.controlprogram.parfor.Task;
 import org.apache.sysds.runtime.controlprogram.parfor.TaskPartitioner;
 import org.apache.sysds.runtime.controlprogram.parfor.TaskPartitionerFactory;
-import org.apache.sysds.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
 import org.apache.sysds.runtime.instructions.cp.IntObject;
 import org.apache.sysds.runtime.util.CommonThreadPool;
 import org.apache.sysds.test.AutomatedTestBase;
+import org.apache.sysds.utils.stats.InfrastructureAnalyzer;
 import org.junit.Assert;
 import org.junit.Test;
 

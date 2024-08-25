@@ -39,18 +39,12 @@ public abstract class Optimizer
 	protected long _numTotalPlans     = -1;
 	protected long _numEvaluatedPlans = -1;
 	
-	public enum PlanInputType {
-		ABSTRACT_PLAN,
-		RUNTIME_PLAN
-	}
-	
 	public enum CostModelType {
 		STATIC_MEM_METRIC,
 		RUNTIME_METRICS
 	}
 	
-	protected Optimizer()
-	{
+	protected Optimizer() {
 		_numTotalPlans     = 0;
 		_numEvaluatedPlans = 0;
 	}
@@ -67,8 +61,6 @@ public abstract class Optimizer
 	 * @return true if plan changed, false otherwise
 	 */
 	public abstract boolean optimize(ParForStatementBlock sb, ParForProgramBlock pb, OptTree plan, CostEstimator est, int numRuns, ExecutionContext ec);
-	
-	public abstract PlanInputType getPlanInputType();
 
 	public abstract CostModelType getCostModelType();
 

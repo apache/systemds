@@ -21,8 +21,6 @@ package org.apache.sysds.utils.stats;
 
 import java.util.concurrent.atomic.LongAdder;
 
-import org.apache.sysds.runtime.controlprogram.parfor.stat.Timing;
-
 public class ParamServStatistics {
 	// Paramserv function stats (time is in milli sec)
 	private static final Timing executionTimer = new Timing(false);

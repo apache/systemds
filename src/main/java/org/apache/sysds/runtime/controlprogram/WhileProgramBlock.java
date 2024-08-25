@@ -20,9 +20,12 @@
 package org.apache.sysds.runtime.controlprogram;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 
 import org.apache.sysds.hops.Hop;
 import org.apache.sysds.hops.recompile.Recompiler;
+import org.apache.sysds.hops.recompile.Recompiler.ResetType;
+import org.apache.sysds.parser.StatementBlock;
 import org.apache.sysds.parser.WhileStatementBlock;
 import org.apache.sysds.api.DMLScript;
 import org.apache.sysds.common.Types.ValueType;
@@ -101,9 +104,11 @@ public class WhileProgramBlock extends ProgramBlock
 			UpdateType[] flags = prepareUpdateInPlaceVariables(ec, _tid);
 			
 			//dynamically recompile entire loop body (according to loop inputs)
-			if( getStatementBlock() != null )
+			//pass loop not just child blocks for correct size propagation
+			StatementBlock sb = getStatementBlock();
+			if( sb != null )
 				Recompiler.recompileFunctionOnceIfNeeded(
-					getStatementBlock().isRecompileOnce(), _childBlocks, _tid, ec);
+					sb.isRecompileOnce(), Arrays.asList(this), _tid, true, ResetType.RESET_KNOWN_DIMS, ec);
 			
 			// compute and store the number of distinct paths
 			if (DMLScript.LINEAGE_DEDUP)

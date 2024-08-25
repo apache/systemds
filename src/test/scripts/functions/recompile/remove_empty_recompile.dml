@@ -20,8 +20,8 @@
 #-------------------------------------------------------------
 
 
-execFun = function(Matrix[Double] X, Integer type) 
-  return (Matrix[Double] R) 
+execFun = function(Matrix[Double] X, Integer type)
+  return (Matrix[Double] R)
 {
    R = X;
 
@@ -32,7 +32,7 @@ execFun = function(Matrix[Double] X, Integer type)
       R = round(X);
    }
    if( type==2 ){
-      R = t(X); 
+      R = t(X);
    }
    if( type==3 ){
       R = X*(X-1);
@@ -49,7 +49,7 @@ execFun = function(Matrix[Double] X, Integer type)
    if( type==7 ){
       R = X-(X+2);
    }
-   if( type==8 ){    
+   if( type==8 ){
       R = (X+2)-X;
    }
    if( type==9 ){
@@ -59,7 +59,7 @@ execFun = function(Matrix[Double] X, Integer type)
       R = (X-1)%*%X;
    }
    if( type==11 ){
-      R = X[1:(nrow(X)-1), 1:(ncol(X)-1)];
+      R = X[1:19, 1:19];
    }
    if( type==12 ){
       X[1,] = X[2,];

@@ -371,18 +371,19 @@ public class BinaryOp extends MultiThreadedHop {
 		Lop append = null;
 		if( dt1==DataType.MATRIX || dt1==DataType.FRAME )
 		{
-			long rlen = cbind ? getInput().get(0).getDim1() : (getInput().get(0).dimsKnown() && getInput().get(1).dimsKnown()) ?
-				getInput().get(0).getDim1()+getInput().get(1).getDim1() : -1;
-			long clen = cbind ? ((getInput().get(0).dimsKnown() && getInput().get(1).dimsKnown()) ?
-				getInput().get(0).getDim2()+getInput().get(1).getDim2() : -1) : getInput().get(0).getDim2();
-		
+			long rlen = cbind ? getInput(0).getDim1() : (getInput(0).dimsKnown() && getInput(1).dimsKnown()) ?
+				getInput(0).getDim1()+getInput(1).getDim1() : -1;
+			long clen = cbind ? ((getInput(0).dimsKnown() && getInput().get(1).dimsKnown()) ?
+				getInput(0).getDim2()+getInput(1).getDim2() : -1) : getInput(0).getDim2();
+			
 			if(et == ExecType.SPARK) {
-				append = constructSPAppendLop(getInput().get(0), getInput().get(1), getDataType(), getValueType(), cbind, this);
+				append = constructSPAppendLop(getInput(0), getInput(1), getDataType(), getValueType(), cbind, this);
 				append.getOutputParameters().setDimensions(rlen, clen, getBlocksize(), getNnz());
 			}
 			else { //CP
-				Lop offset = createOffsetLop( getInput().get(0), cbind ); //offset 1st input
-				append = new Append(getInput().get(0).constructLops(), getInput().get(1).constructLops(), offset, getDataType(), getValueType(), cbind, et);
+				Lop offset = createOffsetLop( getInput(0), cbind ); //offset 1st input
+				append = new Append(getInput(0).constructLops(), getInput(1).constructLops(),
+					offset, getDataType(), getValueType(), cbind, et);
 				append.getOutputParameters().setDimensions(rlen, clen, getBlocksize(), getNnz());
 			}
 		}

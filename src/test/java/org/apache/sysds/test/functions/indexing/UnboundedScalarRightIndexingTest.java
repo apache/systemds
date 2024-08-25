@@ -49,7 +49,6 @@ public class UnboundedScalarRightIndexingTest extends AutomatedTestBase
 		runRightIndexingTest(ExecType.SPARK, 7);
 	}
 	
-	
 	@Test
 	public void testRightIndexingCPZero() {
 		runRightIndexingTest(ExecType.CP, 0);

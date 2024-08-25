@@ -49,6 +49,10 @@ import org.apache.sysds.runtime.lineage.LineageCacheConfig;
 public class ProgramRewriter{
 	private static final boolean CHECK = false;
 	
+	static {
+		//Logger.getLogger("org.apache.sysds.hops.rewrite").setLevel(Level.DEBUG);
+	}
+	
 	private ArrayList<HopRewriteRule> _dagRuleSet = null;
 	private ArrayList<StatementBlockRewriteRule> _sbRuleSet = null;
 

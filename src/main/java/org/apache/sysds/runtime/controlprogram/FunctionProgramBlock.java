@@ -24,9 +24,13 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import org.apache.sysds.api.DMLScript;
+import org.apache.sysds.common.Types.ExecMode;
 import org.apache.sysds.common.Types.FunctionBlock;
 import org.apache.sysds.common.Types.ValueType;
+import org.apache.sysds.conf.ConfigurationManager;
 import org.apache.sysds.hops.recompile.Recompiler;
+import org.apache.sysds.hops.recompile.Recompiler.ResetType;
 import org.apache.sysds.parser.DataIdentifier;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.DMLScriptException;
@@ -100,7 +104,11 @@ public class FunctionProgramBlock extends ProgramBlock implements FunctionBlock
 	public void execute(ExecutionContext ec) 
 	{
 		//dynamically recompile entire function body (according to function inputs)
-		Recompiler.recompileFunctionOnceIfNeeded(isRecompileOnce(), _childBlocks, _tid, ec);
+		boolean codegen = ConfigurationManager.isCodegenEnabled();
+		boolean singlenode = DMLScript.getGlobalExecMode() == ExecMode.SINGLE_NODE;
+		ResetType reset = (codegen || singlenode) ? ResetType.RESET_KNOWN_DIMS : ResetType.RESET;
+		Recompiler.recompileFunctionOnceIfNeeded(
+			isRecompileOnce(), _childBlocks, _tid, false, reset, ec);
 		
 		// for each program block
 		try {

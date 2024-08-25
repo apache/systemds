@@ -146,7 +146,7 @@ public class RewriteAlgebraicSimplificationDynamic extends HopRewriteRule
 				rule_AlgebraicSimplification(hi, descendFirst); //see below
 			
 			//apply actual simplification rewrites (of childs incl checks)
-			hi = removeEmptyRightIndexing(hop, hi, i);        //e.g., X[,1] -> matrix(0,ru-rl+1,cu-cl+1), if nnz(X)==0 
+			hi = removeEmptyRightIndexing(hop, hi, i);        //e.g., X[,1] -> matrix(0,ru-rl+1,cu-cl+1), if nnz(X)==0 and known indices
 			hi = removeUnnecessaryRightIndexing(hop, hi, i);  //e.g., X[,1] -> X, if output == input size 
 			hi = removeEmptyLeftIndexing(hop, hi, i);         //e.g., X[,1]=Y -> matrix(0,nrow(X),ncol(X)), if nnz(X)==0 and nnz(Y)==0 
 			hi = removeUnnecessaryLeftIndexing(hop, hi, i);   //e.g., X[,1]=Y -> Y, if output == input dims 
@@ -214,10 +214,13 @@ public class RewriteAlgebraicSimplificationDynamic extends HopRewriteRule
 	private static Hop removeEmptyRightIndexing(Hop parent, Hop hi, int pos) 
 	{
 		if( hi instanceof IndexingOp && hi.getDataType()==DataType.MATRIX  ) //indexing op
-		{	
-			Hop input = hi.getInput().get(0);
-			if( input.getNnz()==0 && //nnz input known and empty
-			    HopRewriteUtils.isDimsKnown(hi)) //output dims known
+		{
+			Hop input = hi.getInput(0);
+			if( input.getNnz()==0 //nnz input known and empty
+				&& HopRewriteUtils.isDimsKnown(hi) //output dims known
+				//we also check for known indices to ensure correct error handling of out-of-bounds indexing
+				&& hi.getInput(1) instanceof LiteralOp && hi.getInput(2) instanceof LiteralOp
+				&& hi.getInput(3) instanceof LiteralOp && hi.getInput(4) instanceof LiteralOp)
 			{
 				//remove unnecessary right indexing
 				Hop hnew = HopRewriteUtils.createDataGenOpByVal( new LiteralOp(hi.getDim1()),
@@ -2498,7 +2501,7 @@ public class RewriteAlgebraicSimplificationDynamic extends HopRewriteRule
 					HopRewriteUtils.replaceChildReference(parent, hi, hnew, pos);
 					hi = hnew;
 					
-					LOG.debug("Applied simplifyEmptyBinaryOperation");
+					LOG.debug("Applied simplifyEmptyBinaryOperation (line "+hi.getBeginLine()+").");
 				}
 			}
 		}

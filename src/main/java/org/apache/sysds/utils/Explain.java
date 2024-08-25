@@ -26,6 +26,7 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.List;
 import java.util.Map.Entry;
+import java.util.Set;
 import java.util.Stack;
 
 import org.apache.commons.lang3.mutable.MutableInt;
@@ -297,16 +298,16 @@ public class Explain
 
 		return sb.toString();
 	}
-
+	
 	public static String explain( ProgramBlock pb ) {
 		return explainProgramBlock(pb, 0);
 	}
 
-	public static String explain( ArrayList<Instruction> inst ) {
+	public static String explain( List<Instruction> inst ) {
 		return explainInstructions(inst, 0);
 	}
 
-	public static String explain( ArrayList<Instruction> inst, int level ) {
+	public static String explain( List<Instruction> inst, int level ) {
 		return explainInstructions(inst, level);
 	}
 
@@ -318,11 +319,11 @@ public class Explain
 		return explainStatementBlock(sb, 0);
 	}
 
-	public static String explainHops( ArrayList<Hop> hops ) {
+	public static String explainHops( List<Hop> hops ) {
 		return explainHops(hops, 0);
 	}
 
-	public static String explainHops( ArrayList<Hop> hops, int level ) {
+	public static String explainHops( List<Hop> hops, int level ) {
 		StringBuilder sb = new StringBuilder();
 		Hop.resetVisitStatus(hops);
 		for( Hop hop : hops )
@@ -720,6 +721,14 @@ public class Explain
 	//////////////
 	// internal explain RUNTIME
 
+
+	public static String explainProgramBlocks( List<ProgramBlock> pbs ) {
+		StringBuilder sb = new StringBuilder();
+		for(ProgramBlock pb : pbs)
+			sb.append(explain(pb));
+		return sb.toString();
+	}
+	
 	private static String explainProgramBlock( ProgramBlock pb, int level )
 	{
 		StringBuilder sb = new StringBuilder();
@@ -797,7 +806,7 @@ public class Explain
 		return sb.toString();
 	}
 
-	private static String explainInstructions( ArrayList<Instruction> instSet, int level ) {
+	private static String explainInstructions( List<Instruction> instSet, int level ) {
 		StringBuilder sb = new StringBuilder();
 		String offsetInst = createOffset(level);
 		for( Instruction inst : instSet ) {
@@ -921,7 +930,7 @@ public class Explain
 	 *            if true, count Spark instructions and Spark reblock
 	 *            instructions
 	 */
-	private static void countCompiledInstructions( ArrayList<Instruction> instSet, ExplainCounts counts, boolean CP, boolean SP )
+	private static void countCompiledInstructions( List<Instruction> instSet, ExplainCounts counts, boolean CP, boolean SP )
 	{
 		for( Instruction inst : instSet )
 		{
@@ -938,7 +947,7 @@ public class Explain
 		}
 	}
 
-	public static String explainFunctionCallGraph(FunctionCallGraph fgraph, HashSet<String> fstack, String fkey, int level)
+	public static String explainFunctionCallGraph(FunctionCallGraph fgraph, Set<String> fstack, String fkey, int level)
 	{
 		StringBuilder builder = new StringBuilder();
 		String offset = createOffset(level);

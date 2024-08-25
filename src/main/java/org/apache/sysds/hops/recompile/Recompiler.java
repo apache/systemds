@@ -37,7 +37,6 @@ import org.apache.hadoop.fs.Path;
 import org.apache.sysds.api.DMLScript;
 import org.apache.sysds.api.jmlc.JMLCUtils;
 import org.apache.sysds.common.Types.DataType;
-import org.apache.sysds.common.Types.ExecMode;
 import org.apache.sysds.common.Types.ExecType;
 import org.apache.sysds.common.Types.FileFormat;
 import org.apache.sysds.common.Types.OpOp1;
@@ -459,7 +458,7 @@ public class Recompiler {
 			System.out.println("EXPLAIN RECOMPILE \nPRED (line "+hops.getBeginLine()+"):\n" + Explain.explain(inst,1));
 	}
 
-	public static void recompileProgramBlockHierarchy( ArrayList<ProgramBlock> pbs, LocalVariableMap vars, long tid, boolean inplace, ResetType resetRecompile ) {
+	public static void recompileProgramBlockHierarchy( List<ProgramBlock> pbs, LocalVariableMap vars, long tid, boolean inplace, ResetType resetRecompile ) {
 		//function recompilation via two-phase approach due to challenges 
 		//of unclear reconciliation of arbitrary complex control flow
 		
@@ -788,7 +787,7 @@ public class Recompiler {
 					}
 					//handle sparsity change
 					if( mcOld.getNonZeros() != mc.getNonZeros() ) {
-						lnnz=-1; //unknown		
+						lnnz=-1; //unknown
 						requiresRecompile = true;
 					}
 					
@@ -832,7 +831,7 @@ public class Recompiler {
 					}
 					//handle sparsity change
 					if( dcOld.getNonZeros() != dc.getNonZeros() ) {
-						lnnz = -1;		
+						lnnz = -1;
 						requiresRecompile = true;
 					}
 					
@@ -894,7 +893,7 @@ public class Recompiler {
 						}
 						//handle sparsity change
 						if( mcOld.getNonZeros() != mc.getNonZeros() ) {
-							lnnz = -1; //unknown		
+							lnnz = -1; //unknown
 						}
 						
 						MatrixObject moNew = createOutputMatrix(ldim1, ldim2, lnnz);
@@ -1554,7 +1553,7 @@ public class Recompiler {
 	}
 	
 	public static void recompileFunctionOnceIfNeeded(boolean recompileOnce,
-		ArrayList<ProgramBlock> childBlocks, long tid, ExecutionContext ec)
+		List<ProgramBlock> childBlocks, long tid, boolean inplace, ResetType reset, ExecutionContext ec)
 	{
 		try {
 			if( ConfigurationManager.isDynamicRecompilation() 
@@ -1568,10 +1567,7 @@ public class Recompiler {
 				//     function will be recompiled for every execution.
 				// (2) without reset, there would be no benefit in recompiling the entire function
 				LocalVariableMap tmp = (LocalVariableMap) ec.getVariables().clone();
-				boolean codegen = ConfigurationManager.isCodegenEnabled();
-				boolean singlenode = DMLScript.getGlobalExecMode() == ExecMode.SINGLE_NODE;
-				ResetType reset = (codegen || singlenode) ? ResetType.RESET_KNOWN_DIMS : ResetType.RESET;
-				Recompiler.recompileProgramBlockHierarchy(childBlocks, tmp, tid, false, reset);
+				Recompiler.recompileProgramBlockHierarchy(childBlocks, tmp, tid, inplace, reset);
 
 				if( DMLScript.STATISTICS ){
 					long t1 = System.nanoTime();

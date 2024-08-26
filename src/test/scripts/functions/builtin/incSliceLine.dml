@@ -23,8 +23,7 @@ addedX = read($1);
 e = read($2);
 
 # call slice finding
-[TS,TR] = incSliceLine(addedX=addedX, newE=e, k=$3,
+[TS,TR] = incSliceLine(addedX=addedX, addedE=e, k=$3,
   alpha=0.95, minSup=4, tpEval=$4, selFeat=$5, verbose=$6);
 
 write(TR, $7)
-

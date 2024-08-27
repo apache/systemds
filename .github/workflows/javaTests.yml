@@ -54,7 +54,7 @@ jobs:
           "**.test.usertest.**",
           "**.component.c**.**",
           "**.component.e**.**,**.component.f**.**,**.component.m**.**",
-          "**.component.p**.**,**.component.r**.**,**.component.s**.**,**.component.t**.**",
+          "**.component.p**.**,**.component.r**.**,**.component.s**.**,**.component.t**.**,**.component.u**.**",
           "**.functions.a**.**,**.functions.binary.matrix.**,**.functions.binary.scalar.**,**.functions.binary.tensor.**",
           "**.functions.blocks.**,**.functions.data.rand.**,",
           "**.functions.countDistinct.**,**.functions.countDistinctApprox.**",

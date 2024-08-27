@@ -127,7 +127,7 @@ public class LineageTraceExecTest extends LineageBase {
 		
 		//get lineage and generate program
 		String Rtrace = readDMLLineageFromHDFS("R");
-		Data ret = LineageRecomputeUtils.parseNComputeLineageTrace(Rtrace, null);
+		Data ret = LineageRecomputeUtils.parseNComputeLineageTrace(Rtrace);
 		
 		if( testname.equals(TEST_NAME2) || testname.equals(TEST_NAME5)) {
 			double val1 = readDMLScalarFromOutputDir("R").get(new CellIndex(1,1));

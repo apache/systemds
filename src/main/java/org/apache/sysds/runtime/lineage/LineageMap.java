@@ -245,10 +245,9 @@ public class LineageMap {
 		LineageItem li = get(input1);
 		String fName = ec.getScalarInput(input2.getName(), Types.ValueType.STRING, input2.isLiteral()).getStringValue();
 		
-		if (DMLScript.LINEAGE_DEDUP) {
-			// gracefully serialize the dedup maps without decompressing
-			LineageItemUtils.writeTraceToHDFS(LineageDedupUtils.mergeExplainDedupBlocks(ec), fName + ".lineage.dedup");
-		}
-		LineageItemUtils.writeTraceToHDFS(Explain.explain(li), fName + ".lineage");
+		// Combine the global trace and dedup patches in a single file.
+		String out = !DMLScript.LINEAGE_DEDUP ? Explain.explain(li) :
+			Explain.explain(li) + "\n" + LineageDedupUtils.mergeExplainDedupBlocks(ec);
+		LineageItemUtils.writeTraceToHDFS(out, fName + ".lineage");
 	}
 }

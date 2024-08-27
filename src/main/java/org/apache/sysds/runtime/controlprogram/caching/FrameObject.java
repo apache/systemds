@@ -308,7 +308,7 @@ public class FrameObject extends CacheableData<FrameBlock>
 	@Override
 	protected FrameBlock reconstructByLineage(LineageItem li) throws IOException {
 		return ((FrameObject) LineageRecomputeUtils
-			.parseNComputeLineageTrace(li.getData(), null))
+			.parseNComputeLineageTrace(li.getData()))
 			.acquireReadAndRelease();
 	}
 }

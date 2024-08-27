@@ -160,7 +160,7 @@ public class LineageTraceParforTest extends LineageBase {
 			
 			//get lineage and generate program
 			String Rtrace = readDMLLineageFromHDFS("R");
-			Data ret = LineageRecomputeUtils.parseNComputeLineageTrace(Rtrace, null);
+			Data ret = LineageRecomputeUtils.parseNComputeLineageTrace(Rtrace);
 
 			HashMap<CellIndex, Double> dmlfile = readDMLMatrixFromOutputDir("R");
 			MatrixBlock tmp = ((MatrixObject) ret).acquireReadAndRelease();

@@ -81,17 +81,18 @@ import org.apache.sysds.utils.Statistics;
 public class LineageRecomputeUtils {
 	private static final String LVARPREFIX = "lvar";
 	public static final String LPLACEHOLDER = "IN#";
-	private static final boolean DEBUG = false;
+	private static final boolean DEBUG = true;
 	public static Map<String, DedupLoopItem> loopPatchMap = new HashMap<>();
 
-	public static Data parseNComputeLineageTrace(String mainTrace, String dedupPatches) {
-		if (DEBUG) {
+	public static Data parseNComputeLineageTrace(String mainTrace) {
+		if (DEBUG)
 			System.out.println(mainTrace);
-			System.out.println(dedupPatches);
-		}
-		LineageItem root = LineageParser.parseLineageTrace(mainTrace);
-		if (dedupPatches != null)
-			LineageParser.parseLineageTraceDedup(dedupPatches);
+
+		// Separate the global trace and the dedup patches
+		String[] patches = LineageParser.separateMainAndDedupPatches(mainTrace);
+		LineageItem root = LineageParser.parseLineageTrace(patches[0]); //global trace
+		if (patches.length > 1)
+			LineageParser.parseLineageTraceDedup(patches[1]);
 
 		// Disable GPU execution. TODO: Support GPU
 		boolean GPUenabled = false;

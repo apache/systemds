@@ -100,7 +100,7 @@ public class LineageCodegenTest extends LineageBase {
 			
 			//get lineage and generate program
 			String Rtrace = readDMLLineageFromHDFS("R");
-			Data ret = LineageRecomputeUtils.parseNComputeLineageTrace(Rtrace, null);
+			Data ret = LineageRecomputeUtils.parseNComputeLineageTrace(Rtrace);
 			HashMap<CellIndex, Double> dmlfile = readDMLMatrixFromOutputDir("R");
 			MatrixBlock tmp = ((MatrixObject)ret).acquireReadAndRelease();
 			TestUtils.compareMatrices(dmlfile, tmp, 1e-6);

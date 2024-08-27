@@ -202,7 +202,7 @@ public class TensorObject extends CacheableData<TensorBlock> {
 	@Override
 	protected TensorBlock reconstructByLineage(LineageItem li) throws IOException {
 		return ((TensorObject) LineageRecomputeUtils
-			.parseNComputeLineageTrace(li.getData(), null))
+			.parseNComputeLineageTrace(li.getData()))
 			.acquireReadAndRelease();
 	}
 }

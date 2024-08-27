@@ -83,7 +83,7 @@ public class LineageTraceGPUTest extends AutomatedTestBase{
 		String Rtrace = readDMLLineageFromHDFS("R");
 		AutomatedTestBase.TEST_GPU = false;
 		//NOTE: the generated program is CP-only.
-		Data ret = LineageRecomputeUtils.parseNComputeLineageTrace(Rtrace, null);
+		Data ret = LineageRecomputeUtils.parseNComputeLineageTrace(Rtrace);
 		
 		HashMap<CellIndex, Double> dmlfile = readDMLMatrixFromOutputDir("R");
 		MatrixBlock tmp = ((MatrixObject)ret).acquireReadAndRelease();

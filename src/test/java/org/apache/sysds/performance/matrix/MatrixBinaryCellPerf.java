@@ -78,16 +78,16 @@ public class MatrixBinaryCellPerf extends APerfTest<Object, Pair<MatrixBlock, Ma
 		System.out.println("Sparse Sparse 0.1");
 		new MatrixBinaryCellPerf(N, gen, k).run();
 
-		// gen = new GenPair<>(new ConstMatrix(a_d, -1), new ConstMatrix(b_s, -1));
-		// System.out.println("Dense Sparse 0.1");
-		// new MatrixBinaryCellPerf(N, gen, k).run();
+		gen = new GenPair<>(new ConstMatrix(a_d, -1), new ConstMatrix(b_s, -1));
+		System.out.println("Dense Sparse 0.1");
+		new MatrixBinaryCellPerf(N, gen, k).run();
 
-		// gen = new GenPair<>(new ConstMatrix(a_s, -1), new ConstMatrix(b_d, -1));
-		// System.out.println("Sparse Dense 0.1");
-		// new MatrixBinaryCellPerf(N, gen, k).run();
+		gen = new GenPair<>(new ConstMatrix(a_s, -1), new ConstMatrix(b_d, -1));
+		System.out.println("Sparse Dense 0.1");
+		new MatrixBinaryCellPerf(N, gen, k).run();
 
-		// gen = new GenPair<>(new ConstMatrix(a_d, -1), new ConstMatrix(b_d, -1));
-		// System.out.println("Dense Dense");
-		// new MatrixBinaryCellPerf(N, gen, k).run();
+		gen = new GenPair<>(new ConstMatrix(a_d, -1), new ConstMatrix(b_d, -1));
+		System.out.println("Dense Dense");
+		new MatrixBinaryCellPerf(N, gen, k).run();
 	}
 }

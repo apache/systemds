@@ -45,7 +45,7 @@ public interface SettingsChecker {
 
 	public static void checkMemorySetting() {
 		long JRE_Mem_Byte = Runtime.getRuntime().maxMemory();
-		long Sys_Mem_Byte = maxMemMachine() * 1024;
+		long Sys_Mem_Byte = maxMemMachine();
 		// Default 500MB
 		final long DefaultJava_500MB = 1024L * 1024 * 500;
 		// 10 GB
@@ -65,7 +65,7 @@ public interface SettingsChecker {
 	public static long maxMemMachine() {
 		String sys = System.getProperty("os.name");
 		if("Linux".equals(sys)) {
-			return maxMemMachineLinux();
+			return maxMemMachineLinux() * 1024;
 		}
 		else if(sys.contains("Mac OS")) {
 			return maxMemMachineOSX();
@@ -79,6 +79,7 @@ public interface SettingsChecker {
 	}
 
 	private static long maxMemMachineLinux() {
+		//in kilo bytes
 		try(BufferedReader reader = new BufferedReader(new FileReader("/proc/meminfo"));) {
 			String currentLine = reader.readLine();
 			while(!currentLine.contains("MemTotal:"))
@@ -93,7 +94,7 @@ public interface SettingsChecker {
 
 	private static long maxMemMachineOSX() {
 		try {
-			String command = "sysctl hw.memsize";
+			String command = "sysctl hw.memsize"; //in bytes
 			Runtime rt = Runtime.getRuntime();
 			Process pr = rt.exec(command);
 			String memStr = new String(pr.getInputStream().readAllBytes(), StandardCharsets.UTF_8);
@@ -106,7 +107,7 @@ public interface SettingsChecker {
 	
 	private static long maxMemMachineWin() {
 		try {
-			String command = "wmic memorychip get capacity";
+			String command = "wmic memorychip get capacity"; //in bytes
 			Runtime rt = Runtime.getRuntime();
 			Process pr = rt.exec(command);
 			String[] memStr = new String(pr.getInputStream().readAllBytes(), StandardCharsets.UTF_8).split("\n");

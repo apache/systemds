@@ -98,8 +98,8 @@ public class LibMatrixAgg {
 
 	//internal configuration parameters
 	private static final boolean NAN_AWARENESS = false;
-	private static final long PAR_NUMCELL_THRESHOLD1 = 1024*1024; //Min 1M elements
-	private static final long PAR_NUMCELL_THRESHOLD2 = 1024;   //Min 16K elements
+	private static final long PAR_NUMCELL_THRESHOLD1 = 1024*256; //Min 256K elements
+	private static final long PAR_NUMCELL_THRESHOLD2 = 1024*4;   //Min 4K elements
 	private static final long PAR_INTERMEDIATE_SIZE_THRESHOLD = 2*1024*1024; //Max 2MB
 	
 	////////////////////////////////
@@ -682,13 +682,13 @@ public class LibMatrixAgg {
 		boolean sharedTP = (InfrastructureAnalyzer.getLocalParallelism() == k);
 		return k > 1 && out.isThreadSafe() && in.rlen > (sharedTP ? k/8 : k/2)
 			&& (uaop.indexFn instanceof ReduceCol || out.clen*8*k < PAR_INTERMEDIATE_SIZE_THRESHOLD) //size
-			&& in.nonZeros > (sharedTP ? k*PAR_NUMCELL_THRESHOLD2 : PAR_NUMCELL_THRESHOLD1);
+			&& in.nonZeros > (sharedTP ? PAR_NUMCELL_THRESHOLD2 : PAR_NUMCELL_THRESHOLD1);
 	}
 	
 	public static boolean satisfiesMultiThreadingConstraints(MatrixBlock in, int k) {
 		boolean sharedTP = (InfrastructureAnalyzer.getLocalParallelism() == k);
 		return k > 1 && in.rlen > (sharedTP ? k/8 : k/2)
-			&& in.nonZeros > (sharedTP ? k*PAR_NUMCELL_THRESHOLD2 : PAR_NUMCELL_THRESHOLD1);
+			&& in.nonZeros > (sharedTP ? PAR_NUMCELL_THRESHOLD2 : PAR_NUMCELL_THRESHOLD1);
 	}
 	
 	/**

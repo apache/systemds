@@ -1207,6 +1207,11 @@ public class HopRewriteUtils {
 	public static boolean isParameterizedBuiltinOp(Hop hop, ParamBuiltinOp type) {
 		return hop instanceof ParameterizedBuiltinOp && ((ParameterizedBuiltinOp) hop).getOp().equals(type);
 	}
+
+	public static boolean isParameterizedBuiltinOp(Hop hop, ParamBuiltinOp... types) {
+		return hop instanceof ParameterizedBuiltinOp && 
+			ArrayUtils.contains(types, ((ParameterizedBuiltinOp) hop).getOp());
+	}
 	
 	public static boolean isRemoveEmpty(Hop hop, boolean rows) {
 		return isParameterizedBuiltinOp(hop, ParamBuiltinOp.RMEMPTY)
@@ -1379,6 +1384,7 @@ public class HopRewriteUtils {
 		
 		return ret;
 	}
+
 
 	public static Hop getBasic1NSequenceMax(Hop hop) {
 		if( isDataGenOp(hop, OpOpDG.SEQ) ) {

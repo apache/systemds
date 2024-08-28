@@ -124,12 +124,21 @@ public class OffsetTests {
 		}
 		tests.add(new Object[] {new int[] {Character.MAX_VALUE, Character.MAX_VALUE * 2}, OFF_TYPE.CHAR});
 		tests.add(new Object[] {new int[] {0, Character.MAX_VALUE, Character.MAX_VALUE * 2}, OFF_TYPE.CHAR});
-		tests.add(new Object[] {new int[] {1, Character.MAX_VALUE * 2 + 3, Character.MAX_VALUE * 4 + 4,
-			Character.MAX_VALUE * 16 + 4}, OFF_TYPE.CHAR});
+		tests.add(new Object[] {
+			new int[] {1, Character.MAX_VALUE * 2 + 3, Character.MAX_VALUE * 4 + 4, Character.MAX_VALUE * 16 + 4},
+			OFF_TYPE.CHAR});
 		return tests;
 	}
 
-	private static int[] gen(int i, int j, int seed) {
+	/**
+	 * Generate a valid offset
+	 * 
+	 * @param i    Number of offsets
+	 * @param j    distance to sample from between each
+	 * @param seed The seed
+	 * @return a valid offset
+	 */
+	public static int[] gen(int i, int j, int seed) {
 		int[] a = new int[i];
 		Random r = new Random(seed);
 		int o = r.nextInt(j);
@@ -269,13 +278,11 @@ public class OffsetTests {
 				switch(type) {
 					case BYTE:
 					case UBYTE:
-						final int correctionByte = OffsetFactory.correctionByte(data[data.length - 1] - data[0],
-							data.length);
+						final int correctionByte = OffsetFactory.correctionByte(data[data.length - 1] - data[0], data.length);
 						estimatedSize = OffsetByte.estimateInMemorySize(data.length + correctionByte);
 						break;
 					case CHAR:
-						final int correctionChar = OffsetFactory.correctionChar(data[data.length - 1] - data[0],
-							data.length);
+						final int correctionChar = OffsetFactory.correctionChar(data[data.length - 1] - data[0], data.length);
 						estimatedSize = OffsetChar.estimateInMemorySize(data.length + correctionChar);
 						break;
 					default:
@@ -569,7 +576,7 @@ public class OffsetTests {
 	}
 
 	@Test
-	public void verify(){
+	public void verify() {
 		o.verify(o.getSize());
 	}
 
@@ -600,7 +607,7 @@ public class OffsetTests {
 		slice(l, u, false);
 	}
 
-	private void slice(int l, int u, boolean str){
+	private void slice(int l, int u, boolean str) {
 		try {
 
 			OffsetSliceInfo a = o.slice(l, u);
@@ -699,8 +706,7 @@ public class OffsetTests {
 	public void compareAppend_ot() {
 		if(data.length > 0) {
 			final int ll = data[data.length - 1] + 1000;
-			final AOffset r1 = o.appendN(new AOffsetsGroup[] {new Con(o), new Con(OffsetFactory.createOffset(data))},
-				ll);
+			final AOffset r1 = o.appendN(new AOffsetsGroup[] {new Con(o), new Con(OffsetFactory.createOffset(data))}, ll);
 			final AOffset r2 = o.append(o, ll);
 			compare(r1, r2);
 		}
@@ -776,10 +782,28 @@ public class OffsetTests {
 	}
 
 	@Test
-	public void getLength(){
+	public void getLength() {
 		assertTrue(o.getLength() + 1 >= data.length);
 	}
 
+	@Test(expected = Exception.class)
+	public void invalidReverse() {
+		int last = o.getOffsetToLast();
+		o.reverse(last - 1);
+	}
+
+	@Test
+	public void constructSkipList() {
+		try {
+
+			o.constructSkipList();
+			o.constructSkipList();
+		}
+		catch(Exception e) {
+			e.printStackTrace();
+			fail(e.getMessage());
+		}
+	}
 
 	private void compareMoved(AOffset o, int[] v, int m) {
 		AIterator i = o.getIterator();
@@ -793,7 +817,7 @@ public class OffsetTests {
 					+ " but was :" + o.toString());
 			for(int j = 1; j < v.length; j++) {
 				i.next();
-				if(v[j] + m  != i.value())
+				if(v[j] + m != i.value())
 					fail("incorrect result using : " + o.getClass().getSimpleName() + " expected: " + Arrays.toString(v)
 						+ " but was :" + o.toString());
 			}

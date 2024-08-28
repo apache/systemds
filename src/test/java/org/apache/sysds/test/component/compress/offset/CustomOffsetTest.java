@@ -20,9 +20,12 @@
 package org.apache.sysds.test.component.compress.offset;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.sysds.runtime.compress.CompressedMatrixBlock;
+import org.apache.sysds.runtime.compress.colgroup.offset.AIterator;
 import org.apache.sysds.runtime.compress.colgroup.offset.AOffset;
 import org.apache.sysds.runtime.compress.colgroup.offset.AOffset.OffsetSliceInfo;
 import org.apache.sysds.runtime.compress.colgroup.offset.OffsetFactory;
@@ -61,5 +64,32 @@ public class CustomOffsetTest {
 		AOffset off = OffsetFactory.createOffset(in);
 		off.slice(112000, 128000); // check for no crash
 
+	}
+
+	@Test
+	public void printSlice() {
+		AOffset off = OffsetFactory.createOffset(OffsetTests.gen(100, 10, 123452));
+		off.slice(10, 20).toString();
+	}
+
+	@Test
+	public void printSkipList() {
+		AOffset off = OffsetFactory.createOffset(OffsetTests.gen(1004, 10, 123452));
+		CompressedMatrixBlock.debug = true;
+		off.constructSkipList();
+		String s = off.toString();
+		assertTrue(s.contains("SkipList"));
+	}
+
+	@Test
+	public void printCache() {
+		AOffset off = OffsetFactory.createOffset(OffsetTests.gen(1004, 10, 123452));
+		CompressedMatrixBlock.debug = true;
+
+		AIterator it = off.getIterator(3000);
+
+		off.cacheIterator(it, 3000);
+		String s = off.toString();
+		assertTrue(s.contains("CacheRow"));
 	}
 }

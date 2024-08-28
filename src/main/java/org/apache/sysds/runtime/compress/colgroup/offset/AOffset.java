@@ -28,6 +28,7 @@ import org.apache.commons.lang3.NotImplementedException;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.runtime.DMLRuntimeException;
+import org.apache.sysds.runtime.compress.CompressedMatrixBlock;
 import org.apache.sysds.runtime.compress.DMLCompressionException;
 import org.apache.sysds.runtime.compress.colgroup.AOffsetsGroup;
 import org.apache.sysds.runtime.compress.colgroup.mapping.AMapToData;
@@ -40,23 +41,26 @@ import org.apache.sysds.runtime.data.SparseBlock;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 
 /**
- * Offset list encoder interface.
- * 
+ * Offset list encoder abstract class.
+ * <p>
  * It is assumed that the input is in sorted order, all values are positive and there are no duplicates.
- * 
+ * </p>
+ * <p>
  * The no duplicate is important since 0 values are exploited to encode an offset of max representable value + 1. This
  * gives the ability to encode data, where the offsets are greater than the available highest value that can be
  * represented size.
+ * </p>
  */
 public abstract class AOffset implements Serializable {
 	private static final long serialVersionUID = 6910025321078561338L;
 
 	protected static final Log LOG = LogFactory.getLog(AOffset.class.getName());
 
-	protected static final OffsetSliceInfo emptySlice = new OffsetSliceInfo(-1, -1, new OffsetEmpty());
+	/** Cached final empty slice to return in cases of empty slice returns to avoid object allocation */
+	protected static final OffsetSliceInfo EMPTY_SLICE = new OffsetSliceInfo(-1, -1, new OffsetEmpty());
 
 	/** The skip list stride size, aka how many indexes skipped for each index. */
-	protected static final int skipStride = 1000;
+	protected static final int SKIP_STRIDE = 1000;
 
 	/** SoftReference of the skip list to be dematerialized on memory pressure */
 	private volatile SoftReference<OffsetCacheV2[]> skipList = null;
@@ -95,10 +99,18 @@ public abstract class AOffset implements Serializable {
 			return getIterator();
 		else if(row > getOffsetToLast())
 			return null;
-		final OffsetCache c = getLength() < skipStride ? null : cacheRow == null ? null : cacheRow.get();
+
+		final OffsetCache c;
+		if(getLength() < SKIP_STRIDE)
+			c = null;
+		else if(cacheRow == null)
+			c = null;
+		else
+			c = cacheRow.get();
+
 		if(c != null && c.row == row)
 			return c.it.clone();
-		else if(getLength() < skipStride)
+		else if(getLength() < SKIP_STRIDE)
 			return getIteratorSmallOffset(row);
 		else
 			return getIteratorLargeOffset(row);
@@ -115,7 +127,7 @@ public abstract class AOffset implements Serializable {
 			return getIterator();
 		else if(row > getOffsetToLast())
 			return null;
-		else if(getLength() < skipStride)
+		else if(getLength() < SKIP_STRIDE)
 			return getIteratorSmallOffset(row);
 		else
 			return getIteratorLargeOffset(row);
@@ -148,16 +160,16 @@ public abstract class AOffset implements Serializable {
 
 		// not actual accurate but applicable.
 		final int last = getOffsetToLast();
-		final int skipSize = last / skipStride + 1;
-		if(skipSize == 0)
-			return;
+		final int skipSize = last / SKIP_STRIDE + 1;
+		if(skipSize == 1)
+			return; // do not construct the skip if the size is less than SKIP_STRIDE
 
 		final OffsetCacheV2[] skipListTmp = new OffsetCacheV2[skipSize];
 		final AIterator it = getIterator();
 
 		int skipListIdx = 0;
-		while(it.value() < last && skipListIdx < skipListTmp.length) {
-			int next = skipListIdx * skipStride + skipStride;
+		while(it.value() < last) { // guaranteed not to go over skipListTmpLength
+			int next = skipListIdx * SKIP_STRIDE + SKIP_STRIDE;
 			while(it.value() < next && it.value() < last)
 				it.next();
 			skipListTmp[skipListIdx++] = new OffsetCacheV2(it.value(), it.getDataIndex(), it.getOffsetsIndex());
@@ -167,27 +179,13 @@ public abstract class AOffset implements Serializable {
 	}
 
 	/**
-	 * Get an iterator that is pointing only at offsets from specific offset
-	 * 
-	 * @param row The row requested.
-	 * @return AOffsetIterator that iterate through index only offset values.
-	 */
-	public AOffsetIterator getOffsetIterator(int row) {
-		AOffsetIterator it = getOffsetIterator();
-		final int last = Math.min(row, getOffsetToLast());
-		while(it.value() < last)
-			it.next();
-		return it;
-	}
-
-	/**
 	 * Cache a iterator in use, note that there is no check for if the iterator is correctly positioned at the given row
 	 * 
 	 * @param it  The Iterator to cache
 	 * @param row The row index to cache the iterator as.
 	 */
 	public void cacheIterator(AIterator it, int row) {
-		if(it == null || getLength() < skipStride)
+		if(it == null || getLength() < SKIP_STRIDE)
 			return;
 
 		if(cacheRow == null) {
@@ -556,17 +554,13 @@ public abstract class AOffset implements Serializable {
 		final AIterator it = getIteratorSkipCache(l);
 
 		if(it == null || it.value() >= u)
-			return emptySlice;
+			return EMPTY_SLICE;
 
 		if(u >= last) // If including the last do not iterate.
 			return constructSliceReturn(l, u, it.getDataIndex(), s - 1, it.getOffsetsIndex(), getLength(), it.value(),
 				last);
 		else // Have to iterate through until we find last.
 			return genericSlice(l, u, it);
-		// }
-		// catch(Exception e ){
-		// throw new CompressionException(getIteratorSkipCache(l) + "", e);
-		// }
 	}
 
 	protected OffsetSliceInfo genericSlice(int l, int u, AIterator it) {
@@ -580,43 +574,26 @@ public abstract class AOffset implements Serializable {
 		int highValue = lowValue;
 		while(it.value() < u) {
 			// TODO add previous command that would allow us to simplify this loop.
-			// if(it.value() < u){
+
 			highValue = it.value();
 			high = it.getDataIndex();
 			highOff = it.getOffsetsIndex();
-			// }
+
 			it.next();
 		}
-		// try{
 
 		return constructSliceReturn(l, u, low, high, lowOff, highOff, lowValue, highValue);
-		// }
-		// catch(Exception e){
-		// throw new DMLCompressionException(it.value() + "",e);
-		// }
+
 	}
 
 	protected final OffsetSliceInfo constructSliceReturn(int l, int u, int low, int high, int lowOff, int highOff,
 		int lowValue, int highValue) {
-		// try {
-		// TODO there is something going on here that does not make sense .... fix the logic.
 		if(low == high)
 			return new OffsetSliceInfo(low, high + 1, new OffsetSingle(lowValue - l));
-		else if(low + 1 == high) {
-			if(lowValue == highValue)
-				return new OffsetSliceInfo(low, high, new OffsetSingle(lowValue - l));
-			else
-				return new OffsetSliceInfo(low, high + 1, new OffsetTwo(lowValue - l, highValue - l));
-		}
+		else if(low + 1 == high)
+			return new OffsetSliceInfo(low, high + 1, new OffsetTwo(lowValue - l, highValue - l));
 		else
 			return ((ISliceOffset) this).slice(lowOff, highOff, lowValue - l, highValue - l, low, high);
-		// }
-		// catch(Exception e) {
-		// throw new DMLRuntimeException(
-		// this + "\nFailed constructing Slice Return with arguments: "
-		// + String.format("\n%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d", l, u, low, high, lowOff, highOff, lowValue, highValue),
-		// e);
-		// }
 	}
 
 	/**
@@ -676,25 +653,25 @@ public abstract class AOffset implements Serializable {
 			ss += s;
 		}
 
-		try {
-			return OffsetFactory.createOffset(r);
-		}
-		catch(Exception e) {
-			throw new DMLCompressionException("failed to combine" + Arrays.toString(g) + " with S sizes: " + s);
-		}
+		return OffsetFactory.createOffset(r);
 	}
 
+	/**
+	 * Verify that the contained AOffset is a certain size, and not bigger when iterating though it.
+	 * 
+	 * @param size The max correct size.
+	 */
 	public void verify(int size) {
 		AIterator it = getIterator();
 		if(it != null) {
 			final int last = getOffsetToLast();
-			while(it.value() < last) {
-				it.next();
-				if(it.getDataIndex() > size)
-					throw new DMLCompressionException("Invalid index");
-			}
 			if(it.getDataIndex() > size)
 				throw new DMLCompressionException("Invalid index");
+			while(it.value() < last) {
+				it.next();
+				if(it.getDataIndex() > size) // the last index is to high
+					throw new DMLCompressionException("Invalid index");
+			}
 		}
 		else {
 			if(size != 0)
@@ -704,11 +681,10 @@ public abstract class AOffset implements Serializable {
 
 	@Override
 	public String toString() {
-		StringBuilder sb = new StringBuilder();
+		final StringBuilder sb = new StringBuilder();
 		sb.append(this.getClass().getSimpleName());
 		final AIterator it = getIterator();
 		if(it != null) {
-			int i = it.offset;
 			final int last = getOffsetToLast();
 			sb.append("[");
 			sb.append(it.offset);
@@ -716,30 +692,32 @@ public abstract class AOffset implements Serializable {
 				it.next();
 				sb.append(", ");
 				sb.append(it.offset);
-				if(it.offset - i <= 0)
-					throw new DMLCompressionException("Invalid offset");
-				else
-					i = it.offset;
 			}
 			sb.append("]");
+		}
+		if(CompressedMatrixBlock.debug) {
+			if(cacheRow != null && cacheRow.get() != null) {
+				sb.append("\nOffset CacheRow: ");
+				sb.append(cacheRow.get().toString());
+			}
 
-			if(it.offset != last)
-				throw new DMLCompressionException(
-					"Invalid iteration of offset when making string, the last offset is not equal to a iteration: "
-						+ getOffsetToLast() + " String: " + sb.toString());
+			if(skipList != null && skipList.get() != null) {
+				sb.append("\nSkipList:");
+				sb.append(Arrays.toString(skipList.get()));
+			}
+
 		}
 		return sb.toString();
 	}
 
-	public static AOffset reverse(int numRows, AOffset offsets) {
-		if(numRows < offsets.getOffsetToLast()) {
-			throw new DMLRuntimeException(
-				"Invalid number of rows for reverse: last: " + offsets.getOffsetToLast() + " numRows: " + numRows);
+	public AOffset reverse(int numRows) {
+		final int last = getOffsetToLast();
+		if(numRows < last) {
+			throw new DMLRuntimeException("Invalid number of rows for reverse: last: " + last + " numRows: " + numRows);
 		}
 
-		int[] newOff = new int[numRows - offsets.getSize()];
-		final AOffsetIterator it = offsets.getOffsetIterator();
-		final int last = offsets.getOffsetToLast();
+		int[] newOff = new int[numRows - getSize()];
+		final AOffsetIterator it = getOffsetIterator();
 		int i = 0;
 		int j = 0;
 
@@ -755,11 +733,7 @@ public abstract class AOffset implements Serializable {
 		while(i < numRows)
 			newOff[j++] = i++;
 
-		if(j != newOff.length)
-			throw new DMLRuntimeException(
-				"Not assigned all offsets ... something must be wrong:\n" + offsets + "\n" + Arrays.toString(newOff));
 		return OffsetFactory.createOffset(newOff);
-
 	}
 
 	public static final class OffsetSliceInfo {
@@ -795,6 +769,11 @@ public abstract class AOffset implements Serializable {
 			this.it = it;
 			this.row = row;
 		}
+
+		@Override
+		public String toString() {
+			return "r " + row + " i" + it + "\n";
+		}
 	}
 
 	protected static class OffsetCacheV2 {
@@ -810,7 +789,7 @@ public abstract class AOffset implements Serializable {
 
 		@Override
 		public String toString() {
-			return "r" + row + " d" + dataIndex + " o" + offIndex;
+			return "r" + row + " d " + dataIndex + " o " + offIndex + "\n";
 		}
 	}
 }

@@ -93,7 +93,7 @@ public class OffsetSingle extends AOffset {
 		if(l <= off && u > off)
 			return new OffsetSliceInfo(0, 1, new OffsetSingle(off - l));
 		else
-			return emptySlice;
+			return EMPTY_SLICE;
 	}
 
 	@Override

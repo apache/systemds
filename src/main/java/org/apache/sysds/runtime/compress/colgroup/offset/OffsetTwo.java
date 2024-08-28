@@ -36,7 +36,7 @@ public class OffsetTwo extends AOffset {
 		this.first = first;
 		this.last = last;
 		if(last <= first)
-			throw new DMLCompressionException("Invalid offsets last should be greater than first");
+			throw new DMLCompressionException("Invalid offsets last should be greater than first: " + first + "->" + last);
 	}
 
 	@Override
@@ -98,7 +98,7 @@ public class OffsetTwo extends AOffset {
 	public OffsetSliceInfo slice(int l, int u) {
 		if(l <= first) {
 			if(u < first)
-				return new OffsetSliceInfo(-1, -1, new OffsetEmpty());
+				return emptySlice;
 			else if(u > last)
 				return new OffsetSliceInfo(0, 2, moveIndex(l));
 			else
@@ -107,7 +107,7 @@ public class OffsetTwo extends AOffset {
 		else if(l <= last && u > last)
 			return new OffsetSliceInfo(1, 2, new OffsetSingle(last - l));
 		else
-			return new OffsetSliceInfo(-1, -1, new OffsetEmpty());
+			return emptySlice;
 	}
 
 	@Override

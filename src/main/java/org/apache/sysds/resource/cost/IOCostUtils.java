@@ -60,7 +60,7 @@ public class IOCostUtils {
 	protected static double getMemReadTime(VarStats stats) {
 		if (stats == null) return 0; // scalars
 		if (stats._memory < 0)
-			throw new DMLRuntimeException("VarStats should have estimated size before getting read time");
+			return 1;
 		long size = stats._memory;
 		double sizeMB = (double) size / (1024 * 1024);
 

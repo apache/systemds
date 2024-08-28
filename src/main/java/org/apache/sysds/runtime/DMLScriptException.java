@@ -19,26 +19,20 @@
 
 package org.apache.sysds.runtime;
 
-
 /**
- * This exception should be thrown to flag DML Script errors.
+ * This exception should be thrown to flag DML Script errors, this exception is reserved for the stop instruction and
+ * script related errors that an end-user should be able to address
+ * 
  */
-public class DMLScriptException extends DMLRuntimeException 
-{
-	
-	private static final long serialVersionUID = 1L;
+public class DMLScriptException extends DMLRuntimeException {
+	private static final long serialVersionUID = 2L;
 
-	//prevent string concatenation of classname w/ stop message
-	private DMLScriptException(Exception e) {
-		super(e);
-	}
-
-	private DMLScriptException(String string, Exception ex){
-		super(string,ex);
-	}
-	
 	/**
-	 * This is the only valid constructor for DMLScriptException.
+	 * Construct a DML script exception, this exception is reserved for the stop instruction and script related errors
+	 * that an end-user should be able to address
+	 *
+	 * The DMLScrip exception is intended not to be able to throw other exceptions on. Therefore, there is only one
+	 * constructor.
 	 * 
 	 * @param msg message
 	 */

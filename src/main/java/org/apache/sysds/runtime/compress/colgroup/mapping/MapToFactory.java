@@ -57,11 +57,16 @@ public interface MapToFactory {
 		return _data;
 	}
 
+	public static AMapToData create(int[] values, int nUnique) {
+		AMapToData _data = create(values.length, nUnique);
+		_data.copyInt(values);
+		return _data;
+	}
+
 	public static AMapToData create(int size, int[] values, int nUnique) {
 		AMapToData _data = create(size, nUnique);
 		_data.copyInt(values);
 		return _data;
-
 	}
 
 	/**
@@ -88,6 +93,12 @@ public interface MapToFactory {
 			return new MapToInt(numTuples, size);
 	}
 
+	public static AMapToData create(int[] data, MAP_TYPE t){
+		AMapToData m = create(data.length, t);
+		m.copyInt(data);
+		return m;
+	}
+
 	public static AMapToData create(int size, MAP_TYPE t) {
 		switch(t) {
 			case ZERO:
@@ -103,9 +114,9 @@ public interface MapToFactory {
 			case CHAR_BYTE:
 				return new MapToCharPByte(size);
 			case INT:
-				return new MapToInt(size);
 			default:
-				throw new DMLCompressionException("Unsupported type " + t);
+				return new MapToInt(size);
+			// 	throw new DMLCompressionException("Unsupported type " + t);
 		}
 	}
 

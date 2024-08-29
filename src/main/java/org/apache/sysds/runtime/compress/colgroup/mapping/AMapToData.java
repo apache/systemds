@@ -333,7 +333,7 @@ public abstract class AMapToData implements Serializable {
 	 * @param cu      The column in m to end at (not inclusive)
 	 * @param indexes The Offset Indexes to iterate through
 	 */
-	public final void preAggregateDense(MatrixBlock m, double[] preAV, int rl, int ru, int cl, int cu, AOffset indexes) {
+	public final void preAggregateDense(DenseBlock m, double[] preAV, int rl, int ru, int cl, int cu, AOffset indexes) {
 		indexes.preAggregateDenseMap(m, preAV, rl, ru, cl, cu, getUnique(), this);
 	}
 

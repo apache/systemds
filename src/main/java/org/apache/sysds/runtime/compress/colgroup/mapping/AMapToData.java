@@ -840,8 +840,7 @@ public abstract class AMapToData implements Serializable {
 	 * Note that it returns the input if the input is the smallest representation that fits, otherwise it will return
 	 * something that is smaller.
 	 * 
-	 * @param d         The Input mat to potentially reduce the size of.
-	 * @param numTuples The number of tuples that should be supported in the resulting map
+	 * @param unique The number of tuples that should be supported in the resulting map
 	 * @return The returned hopefully reduced map.
 	 */
 	public abstract AMapToData resize(int unique);

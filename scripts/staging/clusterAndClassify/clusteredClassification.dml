@@ -1,0 +1,99 @@
+#-------------------------------------------------------------
+#
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+#
+#-------------------------------------------------------------
+
+
+F = read("./data/Adult.csv", data_type="frame", format="csv", header=FALSE);
+jspec2= "{ ids:true, recode:[15], dummycode:[2,4,6,7,8,9,10,14]}"
+
+/*
+F = read("./data/Covtype.csv", data_type="frame", format="csv", header=FALSE);
+jspec2= "{ ids:true, recode:[11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,"
++"31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50,51,52,53,54], bin:["
++"{id:1, method:equi-width, numbins:10},"
++"{id:2, method:equi-width, numbins:10},"
++"{id:3, method:equi-width, numbins:10},"
++"{id:4, method:equi-width, numbins:10},"
++"{id:5, method:equi-width, numbins:10},"
++"{id:6, method:equi-width, numbins:10},"
++"{id:7, method:equi-width, numbins:10},"
++"{id:8, method:equi-width, numbins:10},"
++"{id:9, method:equi-width, numbins:10},"
++"{id:10, method:equi-width, numbins:10}]}"
+*/
+
+[X,M] = transformencode(target=F, spec=jspec2);
+y = X[,ncol(X)];
+X = X[,2:(ncol(X)-1)]
+X = scale(X=X)
+
+[Xtrain,Xtest,ytrain,ytest] = split(X=X,Y=y,f=0.7,cont=FALSE,seed=7)
+
+# learn baseline model
+B = multiLogReg(X=Xtrain, Y=ytrain, maxii=50, icpt=2, reg=0.001, verbose=FALSE);
+[M,yhat,acc] = multiLogRegPredict(X=Xtrain, B=B, Y=ytrain, verbose=TRUE);
+[M,yhat,acc] = multiLogRegPredict(X=Xtest, B=B, Y=ytest, verbose=TRUE);
+
+print("Clustered Classification:")
+for(k in 2:16) {
+  print("-- w/ "+k+" clusters")
+
+  # clustering
+  [C,Yk] = kmeans(X=Xtrain, k=k);
+
+  # train a model per cluster and get train accuracy
+  models = list();
+  acctrain = 0;
+  count = 0;
+  for(i in 1:k) {
+    I = (Yk == k);
+    Xi = removeEmpty(target=Xtrain, margin="rows", select=I);
+    yi = removeEmpty(target=ytrain, margin="rows", select=I);
+    if( sum(I) > 15 & (max(yi)-min(yi)) > 0 ) {
+      Bi = multiLogReg(X=Xi, Y=yi, maxii=50, icpt=2, reg=0.001, verbose=FALSE);
+      [Mi,yhati,acci] = multiLogRegPredict(X=Xi, B=Bi, Y=yi, verbose=FALSE);
+      acctrain += acci; count = count+1;
+      models = append(models, Bi);
+    }
+    else {
+      models = append(models, as.matrix(0));
+    }
+  }
+  if(count>=1)
+    print("---- train accuracy: "+(acctrain/count))
+
+  # computer test accuracy
+  acctest = 0;
+  count = 0;
+  Yk = kmeansPredict(X=Xtest, C=C)
+  for(i in 1:k) {
+    Bi = as.matrix(models[i])
+    if(nrow(Bi)>1) {
+      I = (Yk == k);
+      Xi = removeEmpty(target=Xtest, margin="rows", select=I);
+      yi = removeEmpty(target=ytest, margin="rows", select=I);
+      [Mi,yhati,acci] = multiLogRegPredict(X=Xi, B=Bi, Y=yi, verbose=FALSE);
+      acctest += acci; count = count+1;
+    }
+  }
+  if(count >= 1)
+    print("---- test accuracy: "+(acctest/count))
+}
+

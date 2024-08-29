@@ -24,44 +24,43 @@ import java.io.IOException;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.apache.sysds.runtime.compress.DMLCompressionException;
-import org.apache.sysds.runtime.compress.bitmap.ABitmap;
-import org.apache.sysds.runtime.compress.utils.IntArrayList;
 
+/** Interface for the factory design pattern for construction all AMapToData. */
 public interface MapToFactory {
 	static final Log LOG = LogFactory.getLog(MapToFactory.class.getName());
 
+	/** The different supported types of mappings. */
 	public enum MAP_TYPE {
 		ZERO, BIT, UBYTE, BYTE, CHAR, CHAR_BYTE, INT;
 	}
 
-	public static AMapToData create(int size, ABitmap ubm) {
-		if(ubm == null)
-			return null;
-		return create(size, ubm.containsZero(), ubm.getOffsetList());
-	}
-
-	public static AMapToData create(int size, boolean zeros, IntArrayList[] values) {
-		AMapToData _data = create(size, values.length + (zeros ? 1 : 0));
-
-		if(zeros)
-			_data.fill(values.length);
-
-		for(int i = 0; i < values.length; i++) {
-			final IntArrayList tmpList = values[i];
-			final int sz = tmpList.size();
-			for(int k = 0; k < sz; k++) {
-				_data.set(tmpList.get(k), i);
-			}
-		}
+	/**
+	 * Construct a mapping with the given values contained. The size is the length of the int array given.
+	 * 
+	 * @param values  The values contained.
+	 * @param nUnique The number of unique expected to be contained (is not verified.)
+	 * @return An appropriate AMapToData
+	 */
+	public static AMapToData create(int[] values, int nUnique) {
+		AMapToData _data = create(values.length, nUnique);
+		_data.copyInt(values);
 		return _data;
 	}
 
+	/**
+	 * Construct a mapping with the given values contained.
+	 * 
+	 * Only copies the values from the array given until size.
+	 * 
+	 * @param size    The number of elements to take from the values array.
+	 * @param values  The values contained.
+	 * @param nUnique The number of unique expected to be contained (is not verified.)
+	 * @return An appropriate AMapToData
+	 */
 	public static AMapToData create(int size, int[] values, int nUnique) {
 		AMapToData _data = create(size, nUnique);
 		_data.copyInt(values);
 		return _data;
-
 	}
 
 	/**
@@ -88,7 +87,14 @@ public interface MapToFactory {
 			return new MapToInt(numTuples, size);
 	}
 
-	public static AMapToData create(int size, MAP_TYPE t) {
+	/**
+	 * Allocate a specific type of map. Note that once in use it is recommended to set the number of unique values.
+	 * 
+	 * @param size The size to allocate
+	 * @param t    The mapping type.
+	 * @return An AMapToData allocation
+	 */
+	public static AMapToData create(final int size, final MAP_TYPE t) {
 		switch(t) {
 			case ZERO:
 				return new MapToZero(size);
@@ -103,24 +109,9 @@ public interface MapToFactory {
 			case CHAR_BYTE:
 				return new MapToCharPByte(size);
 			case INT:
-				return new MapToInt(size);
 			default:
-				throw new DMLCompressionException("Unsupported type " + t);
+				return new MapToInt(size);
 		}
-	}
-
-	/**
-	 * Reshape the map, to a smaller instance if applicable.
-	 * 
-	 * Note that it returns the input if the input is the smallest representation that fits, otherwise it will return
-	 * something that is smaller.
-	 * 
-	 * @param d         The Input mat to potentially reduce the size of.
-	 * @param numTuples The number of tuples that should be in the resulting map
-	 * @return The returned hopefully reduced map.
-	 */
-	public static AMapToData resize(AMapToData d, int numTuples) {
-		return d.resize(numTuples);
 	}
 
 	/**
@@ -154,15 +145,20 @@ public interface MapToFactory {
 				ret = new MapToCharPByte(numTuples, size);
 				break;
 			case INT:
-				ret = new MapToInt(numTuples, size);
-				break;
 			default:
-				throw new DMLCompressionException("Unsupported type of map " + t);
+				ret = new MapToInt(numTuples, size);
 		}
 		ret.copy(d);
 		return ret;
 	}
 
+	/**
+	 * Estimate the size in memory of a MapToFactory.
+	 * 
+	 * @param size      The size of the mapping
+	 * @param numTuples The number of unique values to be supported by the mapping
+	 * @return The size in number of bytes.
+	 */
 	public static long estimateInMemorySize(int size, int numTuples) {
 		if(numTuples <= 1)
 			return MapToZero.getInMemorySize(size);
@@ -178,6 +174,13 @@ public interface MapToFactory {
 			return MapToInt.getInMemorySize(size);
 	}
 
+	/**
+	 * General interface to read in an AMapToData.
+	 * 
+	 * @param in The data input to read from
+	 * @return The parsed AMapToData
+	 * @throws IOException If there is complications or errors in reading.
+	 */
 	public static AMapToData readIn(DataInput in) throws IOException {
 		MAP_TYPE t = MAP_TYPE.values()[in.readByte()];
 		switch(t) {
@@ -194,9 +197,8 @@ public interface MapToFactory {
 			case CHAR_BYTE:
 				return MapToCharPByte.readFields(in);
 			case INT:
-				return MapToInt.readFields(in);
 			default:
-				throw new DMLCompressionException("unsupported type " + t);
+				return MapToInt.readFields(in);
 		}
 	}
 }

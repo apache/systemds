@@ -39,12 +39,13 @@ public class CoCodeHybrid extends AColumnCoCoder {
 	protected CompressedSizeInfo coCodeColumns(CompressedSizeInfo colInfos, int k) {
 		final int startSize = colInfos.getInfo().size();
 		final int pqColumnThreashold = Math.max(128, (_sest.getNumColumns() / startSize) * 100);
-		LOG.error(pqColumnThreashold);
 
 		if(startSize == 1)
 			return colInfos; // nothing to join when there only is one column
 		else if(startSize <= 16) {// Greedy all compare all if small number of columns
-			LOG.debug("Hybrid chose to do greedy CoCode because of few columns");
+			
+			if(LOG.isDebugEnabled())
+				LOG.debug("Hybrid chose to do greedy CoCode because of few columns");
 			CoCodeGreedy gd = new CoCodeGreedy(_sest, _cest, _cs);
 			return colInfos.setInfo(gd.combine(colInfos.getInfo(), k));
 		}
@@ -53,7 +54,8 @@ public class CoCodeHybrid extends AColumnCoCoder {
 
 			return colInfos.setInfo(pq.join(colInfos.getInfo(), 1, k));
 		}
-		LOG.debug("Using Hybrid CoCode Strategy: ");
+		if(LOG.isDebugEnabled())
+			LOG.debug("Using Hybrid CoCode Strategy: ");
 
 		final int PriorityQueGoal = startSize / 5;
 		if(PriorityQueGoal > 30) { // hybrid if there is a large number of columns to begin with
@@ -62,16 +64,19 @@ public class CoCodeHybrid extends AColumnCoCoder {
 			colInfos.setInfo(pq.join(colInfos.getInfo(), PriorityQueGoal, k));
 			final int pqSize = colInfos.getInfo().size();
 
-			LOG.debug("Que based time: " + time.stop());
+			if(LOG.isDebugEnabled())
+				LOG.debug("Que based time: " + time.stop());
 			if(pqSize < PriorityQueGoal || (pqSize < startSize && _cest instanceof ComputationCostEstimator)) {
 				CoCodeGreedy gd = new CoCodeGreedy(_sest, _cest, _cs);
 				colInfos.setInfo(gd.combine(colInfos.getInfo(), k));
-				LOG.debug("Greedy time:     " + time.stop());
+				if(LOG.isDebugEnabled())
+					LOG.debug("Greedy time:     " + time.stop());
 			}
 			return colInfos;
 		}
 		else {
-			LOG.debug("Using only Greedy based since Nr Column groups: " + startSize + " is not large enough");
+			if(LOG.isDebugEnabled())
+				LOG.debug("Using only Greedy based since Nr Column groups: " + startSize + " is not large enough");
 			CoCodeGreedy gd = new CoCodeGreedy(_sest, _cest, _cs);
 			colInfos.setInfo(gd.combine(colInfos.getInfo(), k));
 			return colInfos;

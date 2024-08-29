@@ -143,8 +143,10 @@ public abstract class AOffset implements Serializable {
 		if(skipList == null || skipList.get() == null)
 			constructSkipList();
 		final OffsetCacheV2[] skip = skipList.get();
+
+		// guaranteed not to go over limit of skip list.
 		int idx = 0;
-		while(idx < skip.length && skip[idx] != null && skip[idx].row <= row)
+		while(skip[idx].row <= row)
 			idx++;
 
 		final AIterator it = idx == 0 ? getIterator() : getIteratorFromSkipList(skip[idx - 1]);
@@ -175,6 +177,11 @@ public abstract class AOffset implements Serializable {
 		}
 
 		skipList = new SoftReference<>(skipListTmp);
+	}
+
+	public synchronized void clearSkipList() {
+		if(skipList != null)
+			skipList.clear();
 	}
 
 	/**
@@ -467,8 +474,8 @@ public abstract class AOffset implements Serializable {
 			preAV[data.getIndex(it.getDataIndex())] += avals[apos];
 	}
 
-	private final void preAggSparseMapMultipleRows(final SparseBlock sb, final double[] preAV, final int rl, final int ru,
-		final int nVal, final AMapToData data, AIterator it) {
+	private final void preAggSparseMapMultipleRows(final SparseBlock sb, final double[] preAV, final int rl,
+		final int ru, final int nVal, final AMapToData data, AIterator it) {
 		int i = it.value();
 		final int last = getOffsetToLast();
 		final int[] aOffs = new int[ru - rl];

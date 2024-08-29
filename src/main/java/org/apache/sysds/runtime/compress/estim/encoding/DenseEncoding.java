@@ -118,7 +118,7 @@ public class DenseEncoding extends AEncode {
 			else
 				ret.set(r, mv);
 		}
-		return new ImmutablePair<>(new DenseEncoding(MapToFactory.resize(ret, m.size())), m);
+		return new ImmutablePair<>(new DenseEncoding(ret.resize(m.size())), m);
 	}
 
 	private final DenseEncoding combineSparseMapToData(final AMapToData ret, final int maxUnique, final int nVl) {
@@ -133,7 +133,7 @@ public class DenseEncoding extends AEncode {
 			ret.set(r, mv - 1);
 		}
 		// Potential iteration 3 of resize
-		return new DenseEncoding(MapToFactory.resize(ret, newUID - 1));
+		return new DenseEncoding(ret.resize(newUID - 1));
 	}
 
 	protected DenseEncoding combineDense(final DenseEncoding other) {
@@ -198,7 +198,7 @@ public class DenseEncoding extends AEncode {
 
 		for(int r = 0; r < size; r++)
 			addValHashMap(lm.getIndex(r) + rm.getIndex(r) * nVL, r, m, ret);
-		return new DenseEncoding(MapToFactory.resize(ret, m.size()));
+		return new DenseEncoding(ret.resize(m.size()));
 	}
 
 	protected final DenseEncoding combineDenseWithMapToData(final AMapToData lm, final AMapToData rm, final int size,
@@ -206,7 +206,7 @@ public class DenseEncoding extends AEncode {
 		int newUID = 1;
 		for(int r = 0; r < size; r++)
 			newUID = addValMapToData(lm.getIndex(r) + rm.getIndex(r) * nVL, r, m, newUID, ret);
-		return new DenseEncoding(MapToFactory.resize(ret, newUID - 1));
+		return new DenseEncoding(ret.resize(newUID - 1));
 	}
 
 	protected static int addValMapToData(final int nv, final int r, final AMapToData map, int newId,

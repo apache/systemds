@@ -265,7 +265,7 @@ public class MappingPreAggregateTests {
 				try {
 					final int size = m.size();
 					double[] pre = new double[m.getUnique()];
-					m.preAggregateDense(mb, pre, 0, 1, 0, size, o);
+					m.preAggregateDense(mb.getDenseBlock(), pre, 0, 1, 0, size, o);
 					compareRes(preRef, pre, 0);
 				}
 				catch(Exception e) {

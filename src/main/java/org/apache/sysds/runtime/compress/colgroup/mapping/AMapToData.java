@@ -95,15 +95,6 @@ public abstract class AMapToData implements Serializable {
 	 */
 	public abstract int getIndex(int n);
 
-	/**
-	 * Shortcut method to support Long objects, not really efficient but for the purpose of reusing code.
-	 * 
-	 * @param n The index to set.
-	 * @param v The value to set.
-	 */
-	public void set(int n, Long v) {
-		set(n, (int) (long) v);
-	}
 
 	/**
 	 * Shortcut method to support Integer objects, not really efficient but for the purpose of reusing code.
@@ -333,7 +324,7 @@ public abstract class AMapToData implements Serializable {
 	 * @param cu      The column in m to end at (not inclusive)
 	 * @param indexes The Offset Indexes to iterate through
 	 */
-	public final void preAggregateDense(MatrixBlock m, double[] preAV, int rl, int ru, int cl, int cu, AOffset indexes) {
+	public final void preAggregateDense(DenseBlock m, double[] preAV, int rl, int ru, int cl, int cu, AOffset indexes) {
 		indexes.preAggregateDenseMap(m, preAV, rl, ru, cl, cu, getUnique(), this);
 	}
 
@@ -347,7 +338,7 @@ public abstract class AMapToData implements Serializable {
 	 * @param indexes The Offset Indexes to iterate through
 	 */
 	public final void preAggregateSparse(SparseBlock sb, double[] preAV, int rl, int ru, AOffset indexes) {
-		indexes.preAggregateSparseMap(sb, preAV, rl, ru, getUnique(), this);
+		indexes.preAggSparseMap(sb, preAV, rl, ru, getUnique(), this);
 	}
 
 	/**
@@ -813,11 +804,18 @@ public abstract class AMapToData implements Serializable {
 		copyInt(d.getData());
 	}
 
+	/**
+	 * Copy the values of the given array into this.
+	 * 
+	 * Note that this operation stops at the length of this AMapToData
+	 * 
+	 * Therefore the given d length can not be longer than this size.
+	 * 
+	 * @param d The array to copy
+	 */
 	public abstract void copyInt(int[] d);
 
 	public abstract void copyBit(BitSet d);
-
-	// public abstract void copyBitLong(long[] d);
 
 	public int getMax() {
 		int m = -1;
@@ -835,6 +833,16 @@ public abstract class AMapToData implements Serializable {
 	 */
 	public abstract int getMaxPossible();
 
+	/**
+	 * Reallocate the map, to a smaller instance if applicable. Note it does not change the length of the array, just the
+	 * datatype.
+	 * 
+	 * Note that it returns the input if the input is the smallest representation that fits, otherwise it will return
+	 * something that is smaller.
+	 * 
+	 * @param unique The number of tuples that should be supported in the resulting map
+	 * @return The returned hopefully reduced map.
+	 */
 	public abstract AMapToData resize(int unique);
 
 	/**

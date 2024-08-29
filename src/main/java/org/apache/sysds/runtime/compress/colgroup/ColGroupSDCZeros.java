@@ -485,7 +485,7 @@ public class ColGroupSDCZeros extends ASDCZero implements IMapToDataGroup {
 
 	@Override
 	public void preAggregateDense(MatrixBlock m, double[] preAgg, int rl, int ru, int cl, int cu) {
-		_data.preAggregateDense(m, preAgg, rl, ru, cl, cu, _indexes);
+		_data.preAggregateDense(m.getDenseBlock(), preAgg, rl, ru, cl, cu, _indexes);
 	}
 
 	@Override

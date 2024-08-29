@@ -873,7 +873,7 @@ public class CustomArrayTests {
 		try {
 			Array<Long> a = null;
 			Array<Long> b = new DDCArray<>(new LongArray(new long[] {1, 2, 3, 4}), //
-				MapToFactory.create(10, new int[] {0, 0, 0, 0, 1, 1, 1, 2, 2, 3, 3}, 4));
+				MapToFactory.create(new int[] {0, 0, 0, 0, 1, 1, 1, 2, 2, 3, 3}, 4));
 			Array<Long> c = ArrayFactory.set(a, b, 10, 19, 20);
 			assertEquals((long) c.get(0), 0L);
 			assertEquals((long) c.get(10), 1L);
@@ -889,7 +889,7 @@ public class CustomArrayTests {
 		try {
 			Array<Long> a = null;
 			Array<Long> b = new DDCArray<>(new OptionalArray<>(new Long[] {1L, 2L, 3L, 4L}), //
-				MapToFactory.create(10, new int[] {0, 0, 0, 0, 1, 1, 1, 2, 2, 3, 3}, 4));
+				MapToFactory.create(new int[] {0, 0, 0, 0, 1, 1, 1, 2, 2, 3, 3}, 4));
 			Array<Long> c = ArrayFactory.set(a, b, 10, 19, 20);
 			assertEquals(c.get(0), null);
 			assertEquals((long) c.get(10), 1L);

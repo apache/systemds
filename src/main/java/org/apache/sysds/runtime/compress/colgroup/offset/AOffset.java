@@ -28,41 +28,44 @@ import org.apache.commons.lang3.NotImplementedException;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.runtime.DMLRuntimeException;
+import org.apache.sysds.runtime.compress.CompressedMatrixBlock;
 import org.apache.sysds.runtime.compress.DMLCompressionException;
 import org.apache.sysds.runtime.compress.colgroup.AOffsetsGroup;
 import org.apache.sysds.runtime.compress.colgroup.mapping.AMapToData;
+import org.apache.sysds.runtime.compress.colgroup.mapping.MapToByte;
+import org.apache.sysds.runtime.compress.colgroup.mapping.MapToChar;
+import org.apache.sysds.runtime.compress.colgroup.mapping.MapToUByte;
 import org.apache.sysds.runtime.compress.utils.IntArrayList;
 import org.apache.sysds.runtime.data.DenseBlock;
 import org.apache.sysds.runtime.data.SparseBlock;
-import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 
 /**
- * Offset list encoder interface.
- * 
+ * Offset list encoder abstract class.
+ * <p>
  * It is assumed that the input is in sorted order, all values are positive and there are no duplicates.
- * 
+ * </p>
+ * <p>
  * The no duplicate is important since 0 values are exploited to encode an offset of max representable value + 1. This
  * gives the ability to encode data, where the offsets are greater than the available highest value that can be
  * represented size.
+ * </p>
  */
 public abstract class AOffset implements Serializable {
 	private static final long serialVersionUID = 6910025321078561338L;
 
 	protected static final Log LOG = LogFactory.getLog(AOffset.class.getName());
 
+	/** Cached final empty slice to return in cases of empty slice returns to avoid object allocation */
+	protected static final OffsetSliceInfo EMPTY_SLICE = new OffsetSliceInfo(-1, -1, new OffsetEmpty());
+
 	/** The skip list stride size, aka how many indexes skipped for each index. */
-	protected static final int skipStride = 1000;
+	protected static final int SKIP_STRIDE = 1000;
 
 	/** SoftReference of the skip list to be dematerialized on memory pressure */
 	private volatile SoftReference<OffsetCacheV2[]> skipList = null;
 
 	/** Thread local cache for a single recently used Iterator, this is used for cache blocking */
-	private volatile ThreadLocal<OffsetCache> cacheRow = new ThreadLocal<>() {
-		@Override
-		protected OffsetCache initialValue() {
-			return null;
-		}
-	};
+	private volatile ThreadLocal<OffsetCache> cacheRow = null;
 
 	/**
 	 * Get an iterator of the offsets while also maintaining the data index pointer.
@@ -95,21 +98,35 @@ public abstract class AOffset implements Serializable {
 			return getIterator();
 		else if(row > getOffsetToLast())
 			return null;
-		final OffsetCache c = getLength() < skipStride ? null : cacheRow.get();
+
+		final OffsetCache c;
+		if(getLength() < SKIP_STRIDE)
+			c = null;
+		else if(cacheRow == null)
+			c = null;
+		else
+			c = cacheRow.get();
+
 		if(c != null && c.row == row)
 			return c.it.clone();
-		else if(getLength() < skipStride)
+		else if(getLength() < SKIP_STRIDE)
 			return getIteratorSmallOffset(row);
 		else
 			return getIteratorLargeOffset(row);
 	}
 
-	private AIterator getIteratorSkipCache(int row){
+	/**
+	 * Get an iterator that is pointing to a specific offset, this method skips looking at our cache of iterators.
+	 * 
+	 * @param row The row to look at
+	 * @return The iterator associated with the row.
+	 */
+	private AIterator getIteratorSkipCache(int row) {
 		if(row <= getOffsetToFirst())
 			return getIterator();
 		else if(row > getOffsetToLast())
 			return null;
-		else if(getLength() < skipStride)
+		else if(getLength() < SKIP_STRIDE)
 			return getIteratorSmallOffset(row);
 		else
 			return getIteratorLargeOffset(row);
@@ -126,8 +143,12 @@ public abstract class AOffset implements Serializable {
 		if(skipList == null || skipList.get() == null)
 			constructSkipList();
 		final OffsetCacheV2[] skip = skipList.get();
+
+		// guaranteed not to go over limit of skip list.
 		int idx = 0;
-		while(idx < skip.length && skip[idx] != null && skip[idx].row <= row)
+		while(idx < skip.length //
+			&& skip[idx] != null //
+			&& skip[idx].row <= row)
 			idx++;
 
 		final AIterator it = idx == 0 ? getIterator() : getIteratorFromSkipList(skip[idx - 1]);
@@ -142,16 +163,16 @@ public abstract class AOffset implements Serializable {
 
 		// not actual accurate but applicable.
 		final int last = getOffsetToLast();
-		final int skipSize = last / skipStride + 1;
-		if(skipSize == 0)
-			return;
+		final int skipSize = last / SKIP_STRIDE + 1;
+		if(skipSize == 1)
+			return; // do not construct the skip if the size is less than SKIP_STRIDE
 
 		final OffsetCacheV2[] skipListTmp = new OffsetCacheV2[skipSize];
 		final AIterator it = getIterator();
 
 		int skipListIdx = 0;
-		while(it.value() < last && skipListIdx < skipListTmp.length) {
-			int next = skipListIdx * skipStride + skipStride;
+		while(it.value() < last) { // guaranteed not to go over skipListTmpLength
+			int next = skipListIdx * SKIP_STRIDE + SKIP_STRIDE;
 			while(it.value() < next && it.value() < last)
 				it.next();
 			skipListTmp[skipListIdx++] = new OffsetCacheV2(it.value(), it.getDataIndex(), it.getOffsetsIndex());
@@ -160,18 +181,9 @@ public abstract class AOffset implements Serializable {
 		skipList = new SoftReference<>(skipListTmp);
 	}
 
-	/**
-	 * Get an iterator that is pointing only at offsets from specific offset
-	 * 
-	 * @param row The row requested.
-	 * @return AOffsetIterator that iterate through index only offset values.
-	 */
-	public AOffsetIterator getOffsetIterator(int row) {
-		AOffsetIterator it = getOffsetIterator();
-		final int last = Math.min(row, getOffsetToLast());
-		while(it.value() < last)
-			it.next();
-		return it;
+	public synchronized void clearSkipList() {
+		if(skipList != null)
+			skipList.clear();
 	}
 
 	/**
@@ -181,9 +193,20 @@ public abstract class AOffset implements Serializable {
 	 * @param row The row index to cache the iterator as.
 	 */
 	public void cacheIterator(AIterator it, int row) {
-		if(it == null || getLength() < skipStride)
+		if(it == null || getLength() < SKIP_STRIDE)
 			return;
-		cacheRow.set(new OffsetCache(it, row));
+
+		if(cacheRow == null) {
+			cacheRow = new ThreadLocal<>() {
+				@Override
+				protected OffsetCache initialValue() {
+					return new OffsetCache(it, row);
+				}
+			};
+		}
+		else {
+			cacheRow.set(new OffsetCache(it, row));
+		}
 	}
 
 	/**
@@ -232,7 +255,20 @@ public abstract class AOffset implements Serializable {
 	 */
 	public abstract int getSize();
 
-	public final void preAggregateDenseMap(MatrixBlock m, double[] preAV, int rl, int ru, int cl, int cu, int nVal,
+	/**
+	 * Pre aggregate the specified row and block range from a dense MatrixBlock to prepare for compressed multiplication.
+	 * 
+	 * @param db    The DenseBlock to extract values from.
+	 * @param preAV The pre aggregate row linearized double array to put the values into.
+	 * @param rl    The row lower to start from (this is referring to the left matrix of the multiplication)
+	 * @param ru    The row upper to end at (not inclusive) (this is referring to the left matrix of the multiplication)
+	 * @param cl    The column lower to start at (this is referring to the right matrix of the multiplication)
+	 * @param cu    The column upper to end at (not inclusive) (this is referring to the right matrix of the
+	 *              multiplication)
+	 * @param nVal  The number of distinct values in the PreAV indicating number of columns in the Pre aggregate
+	 * @param data  The mapping to column positions in the preAV
+	 */
+	public final void preAggregateDenseMap(DenseBlock db, double[] preAV, int rl, int ru, int cl, int cu, int nVal,
 		AMapToData data) {
 		// multi row iterator.
 		final AIterator it = getIterator(cl);
@@ -241,42 +277,87 @@ public abstract class AOffset implements Serializable {
 		else if(it.offset > cu)
 			cacheIterator(it, cu); // cache this iterator.
 		else if(rl == ru - 1) {
-			final DenseBlock db = m.getDenseBlock();
 			final double[] mV = db.values(rl);
 			final int off = db.pos(rl);
 			// guaranteed contiguous.
-			preAggregateDenseMapRow(mV, off, preAV, cu, nVal, data, it);
+			preAggDenseMapSingleRow(mV, off, preAV, cu, nVal, data, it);
 		}
 		else {
-			final DenseBlock db = m.getDenseBlock();
-			preAggregateDenseMapRows(db, preAV, rl, ru, cl, cu, nVal, data, it);
+			preAggDenseMapMultiRows(db, preAV, rl, ru, cl, cu, nVal, data, it);
 		}
 	}
 
-	protected final void preAggregateDenseMapRow(double[] mV, int off, double[] preAV, int cu, int nVal, AMapToData data,
+	private final void preAggDenseMapSingleRow(double[] mV, int off, double[] preAV, int cu, int nVal, AMapToData data,
 		AIterator it) {
 		final int last = getOffsetToLast();
 		if(cu <= last)
-			preAggregateDenseMapRowBellowEnd(mV, off, preAV, cu, nVal, data, it);
+			preAggDenseMapRowBellowEnd(mV, off, preAV, cu, data, it);
 		else
-			preAggregateDenseMapRowEnd(mV, off, preAV, last, nVal, data, it);
+			preAggDenseMapSingleRowEnd(mV, off, preAV, last, data, it);
 	}
 
-	protected final void preAggregateDenseMapRowBellowEnd(final double[] mV, final int off, final double[] preAV, int cu,
-		final int nVal, final AMapToData data, final AIterator it) {
+	private final void preAggDenseMapRowBellowEnd(final double[] mV, final int off, final double[] preAV, int cu,
+		final AMapToData data, final AIterator it) {
+		// Increment and prepare iterator.
 		it.offset += off;
 		cu += off;
-		while(it.offset < cu) {
-			preAV[data.getIndex(it.getDataIndex())] += mV[it.offset];
-			it.next();
-		}
+		preAggDenseMapRowBE(mV, preAV, cu, data, it);
+		// Decrement iterator for next call.
 		it.offset -= off;
 		cu -= off;
 		cacheIterator(it, cu);
 	}
 
-	protected final void preAggregateDenseMapRowEnd(final double[] mV, final int off, final double[] preAV,
-		final int last, final int nVal, final AMapToData data, final AIterator it) {
+	private final void preAggDenseMapRowBE(final double[] mV, final double[] preAV, final int cu, final AMapToData data,
+		final AIterator it) {
+		if(data instanceof MapToUByte)
+			preAggDenseMapRowBE_UByte(mV, preAV, cu, (MapToUByte) data, it);
+		else if(data instanceof MapToByte)
+			preAggDenseMapRowBE_Byte(mV, preAV, cu, (MapToByte) data, it);
+		else if(data instanceof MapToChar)
+			preAggDenseMapRowBE_Char(mV, preAV, cu, (MapToChar) data, it);
+		else
+			preAggDenseMapRowBE_Generic(mV, preAV, cu, data, it);
+	}
+
+	private final void preAggDenseMapRowBE_UByte(final double[] mV, final double[] preAV, final int cu,
+		final MapToUByte data, final AIterator it) {
+		// for JIT Compilation
+		while(it.offset < cu) {
+			preAV[data.getIndex(it.getDataIndex())] += mV[it.offset];
+			it.next();
+		}
+	}
+
+	private final void preAggDenseMapRowBE_Byte(final double[] mV, final double[] preAV, final int cu,
+		final MapToByte data, final AIterator it) {
+		// for JIT Compilation
+		while(it.offset < cu) {
+			preAV[data.getIndex(it.getDataIndex())] += mV[it.offset];
+			it.next();
+		}
+	}
+
+	private final void preAggDenseMapRowBE_Char(final double[] mV, final double[] preAV, final int cu,
+		final MapToChar data, final AIterator it) {
+		// for JIT Compilation
+		while(it.offset < cu) {
+			preAV[data.getIndex(it.getDataIndex())] += mV[it.offset];
+			it.next();
+		}
+	}
+
+	private final void preAggDenseMapRowBE_Generic(final double[] mV, final double[] preAV, final int cu,
+		final AMapToData data, final AIterator it) {
+		// for JIT Compilation
+		while(it.offset < cu) {
+			preAV[data.getIndex(it.getDataIndex())] += mV[it.offset];
+			it.next();
+		}
+	}
+
+	private final void preAggDenseMapSingleRowEnd(final double[] mV, final int off, final double[] preAV, final int last,
+		final AMapToData data, final AIterator it) {
 
 		while(it.offset < last) {
 			final int dx = it.getDataIndex();
@@ -286,17 +367,17 @@ public abstract class AOffset implements Serializable {
 		preAV[data.getIndex(it.getDataIndex())] += mV[off + last];
 	}
 
-	protected final void preAggregateDenseMapRows(DenseBlock db, double[] preAV, int rl, int ru, int cl, int cu,
-		int nVal, AMapToData data, AIterator it) {
+	private final void preAggDenseMapMultiRows(DenseBlock db, double[] preAV, int rl, int ru, int cl, int cu, int nVal,
+		AMapToData data, AIterator it) {
 		if(!db.isContiguous())
 			throw new NotImplementedException("Not implemented support for preAggregate non contiguous dense matrix");
 		else if(cu <= getOffsetToLast())
-			preAggregateDenseMapRowsBelowEnd(db, preAV, rl, ru, cl, cu, nVal, data, it);
+			preAggDenseMapMultiRowsBelowEnd(db, preAV, rl, ru, cl, cu, nVal, data, it);
 		else
-			preAggregateDenseMapRowsEnd(db, preAV, rl, ru, cl, cu, nVal, data, it);
+			preAggDenseMapMultiRowsEnd(db, preAV, rl, ru, cl, cu, nVal, data, it);
 	}
 
-	private void preAggregateDenseMapRowsBelowEnd(DenseBlock db, double[] preAV, int rl, int ru, int cl, int cu,
+	private final void preAggDenseMapMultiRowsBelowEnd(DenseBlock db, double[] preAV, int rl, int ru, int cl, int cu,
 		int nVal, AMapToData data, AIterator it) {
 		final double[] vals = db.values(rl);
 		final int nCol = db.getCumODims(0);
@@ -311,8 +392,8 @@ public abstract class AOffset implements Serializable {
 		cacheIterator(it, cu);
 	}
 
-	private void preAggregateDenseMapRowsEnd(DenseBlock db, double[] preAV, int rl, int ru, int cl, int cu, int nVal,
-		AMapToData data, AIterator it) {
+	private final void preAggDenseMapMultiRowsEnd(DenseBlock db, double[] preAV, int rl, int ru, int cl, int cu,
+		int nVal, AMapToData data, AIterator it) {
 		final double[] vals = db.values(rl);
 		final int nCol = db.getCumODims(0);
 		final int last = getOffsetToLast();
@@ -331,15 +412,15 @@ public abstract class AOffset implements Serializable {
 		}
 	}
 
-	public final void preAggregateSparseMap(SparseBlock sb, double[] preAV, int rl, int ru, int nVal, AMapToData data) {
+	public final void preAggSparseMap(SparseBlock sb, double[] preAV, int rl, int ru, int nVal, AMapToData data) {
 		final AIterator it = getIterator();
 		if(rl == ru - 1)
-			preAggregateSparseMapRow(sb, preAV, rl, nVal, data, it);
+			preAggSparseMapSingleRow(sb, preAV, rl, nVal, data, it);
 		else
-			preAggregateSparseMapRows(sb, preAV, rl, ru, nVal, data, it);
+			preAggSparseMapMultipleRows(sb, preAV, rl, ru, nVal, data, it);
 	}
 
-	private void preAggregateSparseMapRow(SparseBlock sb, double[] preAV, int r, int nVal, AMapToData data,
+	private final void preAggSparseMapSingleRow(SparseBlock sb, double[] preAV, int r, int nVal, AMapToData data,
 		AIterator it) {
 		if(sb.isEmpty(r))
 			return;
@@ -347,13 +428,13 @@ public abstract class AOffset implements Serializable {
 		final int[] aix = sb.indexes(r);
 		final int last = getOffsetToLast();
 		if(aix[alen - 1] < last)
-			preAggregateSparseMapRowBellowEnd(sb, preAV, r, nVal, data, it);
+			preAggSparseMapRowBellowEnd(sb, preAV, r, nVal, data, it);
 		else
-			preAggregateSparseMapRowEnd(sb, preAV, r, nVal, data, it);
+			preAggSparseMapRowEnd(sb, preAV, r, nVal, data, it);
 	}
 
-	private final void preAggregateSparseMapRowBellowEnd(SparseBlock sb, double[] preAV, int r, int nVal,
-		AMapToData data, AIterator it) {
+	private final void preAggSparseMapRowBellowEnd(SparseBlock sb, double[] preAV, int r, int nVal, AMapToData data,
+		AIterator it) {
 		int apos = sb.pos(r);
 		final int alen = sb.size(r) + apos;
 		final int[] aix = sb.indexes(r);
@@ -371,7 +452,7 @@ public abstract class AOffset implements Serializable {
 		}
 	}
 
-	private final void preAggregateSparseMapRowEnd(SparseBlock sb, double[] preAV, int r, int nVal, AMapToData data,
+	private final void preAggSparseMapRowEnd(SparseBlock sb, double[] preAV, int r, int nVal, AMapToData data,
 		AIterator it) {
 		int apos = sb.pos(r);
 		final int alen = sb.size(r) + apos;
@@ -395,8 +476,8 @@ public abstract class AOffset implements Serializable {
 			preAV[data.getIndex(it.getDataIndex())] += avals[apos];
 	}
 
-	private void preAggregateSparseMapRows(SparseBlock sb, double[] preAV, int rl, int ru, int nVal, AMapToData data,
-		AIterator it) {
+	private final void preAggSparseMapMultipleRows(final SparseBlock sb, final double[] preAV, final int rl,
+		final int ru, final int nVal, final AMapToData data, AIterator it) {
 		int i = it.value();
 		final int last = getOffsetToLast();
 		final int[] aOffs = new int[ru - rl];
@@ -404,36 +485,29 @@ public abstract class AOffset implements Serializable {
 			aOffs[r - rl] = sb.pos(r);
 
 		while(i < last) { // while we are not done iterating
-			for(int r = rl; r < ru; r++) {
-				if(sb.isEmpty(r))
-					continue;
-				final int off = r - rl;
-				int apos = aOffs[off]; // current offset
-				final int alen = sb.size(r) + sb.pos(r);
-				final int[] aix = sb.indexes(r);
-				while(apos < alen && aix[apos] < i)// increment all pointers to offset
-					apos++;
-
-				if(apos < alen && aix[apos] == i)
-					preAV[off * nVal + data.getIndex(it.getDataIndex())] += sb.values(r)[apos];
-				aOffs[off] = apos;
-			}
+			preAggSparseMapRow(sb, preAV, rl, ru, nVal, data.getIndex(it.getDataIndex()), i, aOffs);
 			i = it.next();
 		}
 
-		// process final element
+		preAggSparseMapRow(sb, preAV, rl, ru, nVal, data.getIndex(it.getDataIndex()), last, aOffs);
+	}
+
+	private final void preAggSparseMapRow(final SparseBlock sb, final double[] preAV, final int rl, final int ru,
+		final int nVal, final int dataIndex, final int i, final int[] aOffs) {
+
 		for(int r = rl; r < ru; r++) {
 			if(sb.isEmpty(r))
 				continue;
 			final int off = r - rl;
-			int apos = aOffs[off];
+			int apos = aOffs[off]; // current offset
 			final int alen = sb.size(r) + sb.pos(r);
 			final int[] aix = sb.indexes(r);
-			while(apos < alen && aix[apos] < last)
+			final double[] avals = sb.values(r);
+			while(apos < alen && aix[apos] < i)// increment all pointers to offset
 				apos++;
 
-			if(apos < alen && aix[apos] == last)
-				preAV[off * nVal + data.getIndex(it.getDataIndex())] += sb.values(r)[apos];
+			if(apos < alen && aix[apos] == i)
+				preAV[off * nVal + dataIndex] += avals[apos];
 			aOffs[off] = apos;
 		}
 	}
@@ -477,38 +551,62 @@ public abstract class AOffset implements Serializable {
 	 */
 	public abstract int getLength();
 
+	/**
+	 * Slice the offsets based on the specified range
+	 * 
+	 * @param l inclusive lower bound
+	 * @param u exclusive upper bound
+	 * @return The slice info containing the new slice.
+	 */
 	public OffsetSliceInfo slice(int l, int u) {
-		AIterator it = getIteratorSkipCache(l);
-		if(it == null || it.value() >= u)
-			return new OffsetSliceInfo(-1, -1, new OffsetEmpty());
-		else if(l <= getOffsetToFirst() && u > getOffsetToLast()) {
+		final int first = getOffsetToFirst();
+		final int last = getOffsetToLast();
+		final int s = getSize();
+
+		if(l <= first && u > last) {
 			if(l == 0)
-				return new OffsetSliceInfo(0, getSize(), this);
+				return new OffsetSliceInfo(0, s, this);
 			else
-				return new OffsetSliceInfo(0, getSize(), moveIndex(l));
+				return new OffsetSliceInfo(0, s, moveIndex(l));
 		}
+
+		final AIterator it = getIteratorSkipCache(l);
+
+		if(it == null || it.value() >= u)
+			return EMPTY_SLICE;
+
+		if(u >= last) // If including the last do not iterate.
+			return constructSliceReturn(l, u, it.getDataIndex(), s - 1, it.getOffsetsIndex(), getLength(), it.value(),
+				last);
+		else // Have to iterate through until we find last.
+			return genericSlice(l, u, it);
+	}
+
+	private OffsetSliceInfo genericSlice(int l, int u, AIterator it) {
+		// point at current one should be guaranteed inside the range.
 		final int low = it.getDataIndex();
 		final int lowOff = it.getOffsetsIndex();
 		final int lowValue = it.value();
-
+		// set c
 		int high = low;
 		int highOff = lowOff;
 		int highValue = lowValue;
-		if(u >= getOffsetToLast()) { // If including the last do not iterate.
-			high = getSize() - 1;
-			highOff = getLength();
-			highValue = getOffsetToLast();
+		while(it.value() < u) {
+			// TODO add previous command that would allow us to simplify this loop.
+
+			highValue = it.value();
+			high = it.getDataIndex();
+			highOff = it.getOffsetsIndex();
+
+			it.next();
 		}
-		else { // Have to iterate through until we find last.
-			while(it.value() < u) {
-				// TODO add previous command that would allow us to simplify this loop.
-				high = it.getDataIndex();
-				highOff = it.getOffsetsIndex();
-				highValue = it.value();
-				it.next();
-			}
-		}
-		
+
+		return constructSliceReturn(l, u, low, high, lowOff, highOff, lowValue, highValue);
+
+	}
+
+	private final OffsetSliceInfo constructSliceReturn(int l, int u, int low, int high, int lowOff, int highOff,
+		int lowValue, int highValue) {
 		if(low == high)
 			return new OffsetSliceInfo(low, high + 1, new OffsetSingle(lowValue - l));
 		else if(low + 1 == high)
@@ -574,21 +672,38 @@ public abstract class AOffset implements Serializable {
 			ss += s;
 		}
 
-		try {
-			return OffsetFactory.createOffset(r);
+		return OffsetFactory.createOffset(r);
+	}
+
+	/**
+	 * Verify that the contained AOffset is a certain size, and not bigger when iterating though it.
+	 * 
+	 * @param size The max correct size.
+	 */
+	public void verify(int size) {
+		AIterator it = getIterator();
+		if(it != null) {
+			final int last = getOffsetToLast();
+			if(it.getDataIndex() > size)
+				throw new DMLCompressionException("Invalid index");
+			while(it.value() < last) {
+				it.next();
+				if(it.getDataIndex() > size) // the last index is to high
+					throw new DMLCompressionException("Invalid index");
+			}
 		}
-		catch(Exception e) {
-			throw new DMLCompressionException("failed to combine" + Arrays.toString(g) + " with S sizes: " + s);
+		else {
+			if(size != 0)
+				throw new DMLCompressionException("Invalid index");
 		}
 	}
 
 	@Override
 	public String toString() {
-		StringBuilder sb = new StringBuilder();
+		final StringBuilder sb = new StringBuilder();
 		sb.append(this.getClass().getSimpleName());
 		final AIterator it = getIterator();
 		if(it != null) {
-			int i = it.offset;
 			final int last = getOffsetToLast();
 			sb.append("[");
 			sb.append(it.offset);
@@ -596,30 +711,40 @@ public abstract class AOffset implements Serializable {
 				it.next();
 				sb.append(", ");
 				sb.append(it.offset);
-				if(it.offset - i <= 0)
-					throw new DMLCompressionException("Invalid offset");
-				else
-					i = it.offset;
 			}
 			sb.append("]");
+		}
+		if(CompressedMatrixBlock.debug) {
+			if(cacheRow != null && cacheRow.get() != null) {
+				sb.append("\nOffset CacheRow: ");
+				sb.append(cacheRow.get().toString());
+			}
 
-			if(it.offset != last)
-				throw new DMLCompressionException(
-					"Invalid iteration of offset when making string, the last offset is not equal to a iteration: "
-						+ getOffsetToLast() + " String: " + sb.toString());
+			if(skipList != null && skipList.get() != null) {
+				sb.append("\nSkipList:");
+				sb.append(Arrays.toString(skipList.get()));
+			}
+
 		}
 		return sb.toString();
 	}
 
-	public static AOffset reverse(int numRows, AOffset offsets) {
-		if(numRows < offsets.getOffsetToLast()) {
-			throw new DMLRuntimeException(
-				"Invalid number of rows for reverse: last: " + offsets.getOffsetToLast() + " numRows: " + numRows);
+	/**
+	 * Reverse the locations of the offsets such that the inverse offsets are returned.
+	 * 
+	 * This means that for instance if the current offsets were 1, 3 and 5 in a 5 long list, we return 0, 2 and 4.
+	 * 
+	 * @param numRows The total number of rows to be contained, This should be greater or equal to last.
+	 * @return The reverse offsets.
+	 */
+	public AOffset reverse(int numRows) {
+		final int last = getOffsetToLast();
+		if(numRows < last) {
+			throw new DMLRuntimeException("Invalid number of rows for reverse: last: " + last + " numRows: " + numRows);
 		}
 
-		int[] newOff = new int[numRows - offsets.getSize()];
-		final AOffsetIterator it = offsets.getOffsetIterator();
-		final int last = offsets.getOffsetToLast();
+		int[] newOff = new int[numRows - getSize()];
+		final AOffsetIterator it = getOffsetIterator();
 		int i = 0;
 		int j = 0;
 
@@ -635,13 +760,13 @@ public abstract class AOffset implements Serializable {
 		while(i < numRows)
 			newOff[j++] = i++;
 
-		if(j != newOff.length)
-			throw new DMLRuntimeException(
-				"Not assigned all offsets ... something must be wrong:\n" + offsets + "\n" + Arrays.toString(newOff));
 		return OffsetFactory.createOffset(newOff);
-
 	}
 
+	/**
+	 * Offset slice info containing the start and end index an offset that contains the slice, and an new AOffset
+	 * containing only the sliced elements
+	 */
 	public static final class OffsetSliceInfo {
 		public final int lIndex;
 		public final int uIndex;
@@ -667,22 +792,27 @@ public abstract class AOffset implements Serializable {
 
 	}
 
-	protected static class OffsetCache {
-		protected final AIterator it;
-		protected final int row;
+	private static class OffsetCache {
+		private final AIterator it;
+		private final int row;
 
-		protected OffsetCache(AIterator it, int row) {
+		private OffsetCache(AIterator it, int row) {
 			this.it = it;
 			this.row = row;
 		}
+
+		@Override
+		public String toString() {
+			return "r " + row + " i" + it + "\n";
+		}
 	}
 
-	protected static class OffsetCacheV2 {
-		protected final int row;
-		protected final int offIndex;
-		protected final int dataIndex;
+	private static class OffsetCacheV2 {
+		private final int row;
+		private final int offIndex;
+		private final int dataIndex;
 
-		protected OffsetCacheV2(int row, int dataIndex, int offIndex) {
+		private OffsetCacheV2(int row, int dataIndex, int offIndex) {
 			this.row = row;
 			this.dataIndex = dataIndex;
 			this.offIndex = offIndex;
@@ -690,7 +820,7 @@ public abstract class AOffset implements Serializable {
 
 		@Override
 		public String toString() {
-			return "r" + row + " d" + dataIndex + " o" + offIndex;
+			return "r" + row + " d " + dataIndex + " o " + offIndex + "\n";
 		}
 	}
 }

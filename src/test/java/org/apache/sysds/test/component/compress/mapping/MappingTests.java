@@ -213,7 +213,7 @@ public class MappingTests {
 	@Test
 	public void resizeToSameSize() {
 		// if we resize to same size return the same object!
-		AMapToData m_same = MapToFactory.resize(m, m.getUnique());
+		AMapToData m_same = m.resize( m.getUnique());
 		assertEquals("Resize did not return the correct same objects", m_same, m);
 	}
 

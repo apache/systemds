@@ -56,8 +56,8 @@ public class EncodeSampleCustom {
 		int[] d2 = readData("src/test/resources/component/compress/sample/s2.dat");
 		int m1 = Arrays.stream(d1).max().getAsInt() + 1;
 		int m2 = Arrays.stream(d2).max().getAsInt() + 1;
-		AMapToData dm1 = MapToFactory.create(d1.length, d1, m1);
-		AMapToData dm2 = MapToFactory.create(d2.length, d2, m2);
+		AMapToData dm1 = MapToFactory.create(d1, m1);
+		AMapToData dm2 = MapToFactory.create(d2, m2);
 
 		DenseEncoding de1 = new DenseEncoding(dm1);
 		DenseEncoding de2 = new DenseEncoding(dm2);

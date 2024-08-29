@@ -23,6 +23,8 @@ import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
 
+import org.apache.sysds.runtime.compress.DMLCompressionException;
+
 public class OffsetEmpty extends AOffset {
 
 	private static final long serialVersionUID = -471610497392221790L;
@@ -55,14 +57,19 @@ public class OffsetEmpty extends AOffset {
 		return new OffsetEmpty();
 	}
 
+	@Override 
+	public AIterator getIterator(int row) {
+		return null;
+	}
+
 	@Override
 	public int getOffsetToFirst() {
-		return Integer.MAX_VALUE;
+		throw new DMLCompressionException("Invalid call");
 	}
 
 	@Override
 	public int getOffsetToLast() {
-		return Integer.MAX_VALUE;
+		throw new DMLCompressionException("Invalid call");
 	}
 
 	@Override
@@ -86,7 +93,7 @@ public class OffsetEmpty extends AOffset {
 
 	@Override
 	public OffsetSliceInfo slice(int l, int u) {
-		return new OffsetSliceInfo(-1, -1, this);
+		return EMPTY_SLICE;
 	}
 
 	@Override
@@ -97,5 +104,10 @@ public class OffsetEmpty extends AOffset {
 	@Override
 	public int getLength() {
 		return 0;
+	}
+
+	@Override 
+	public synchronized void constructSkipList() {
+		// do nothing.
 	}
 }

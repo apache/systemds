@@ -25,18 +25,17 @@ import java.io.IOException;
 import java.util.Arrays;
 
 import org.apache.sysds.runtime.DMLRuntimeException;
-import org.apache.sysds.runtime.compress.colgroup.dictionary.IDictionary;
-import org.apache.sysds.runtime.compress.colgroup.dictionary.PlaceHolderDict;
 import org.apache.sysds.runtime.compress.DMLCompressionException;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.Dictionary;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.DictionaryFactory;
+import org.apache.sysds.runtime.compress.colgroup.dictionary.IDictionary;
+import org.apache.sysds.runtime.compress.colgroup.dictionary.PlaceHolderDict;
 import org.apache.sysds.runtime.compress.colgroup.indexes.ColIndexFactory;
 import org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex;
 import org.apache.sysds.runtime.compress.colgroup.mapping.MapToZero;
 import org.apache.sysds.runtime.compress.colgroup.offset.AIterator;
 import org.apache.sysds.runtime.compress.colgroup.offset.AOffset;
 import org.apache.sysds.runtime.compress.colgroup.offset.AOffset.OffsetSliceInfo;
-import org.apache.sysds.runtime.compress.colgroup.offset.AOffsetIterator;
 import org.apache.sysds.runtime.compress.colgroup.offset.OffsetFactory;
 import org.apache.sysds.runtime.compress.cost.ComputationCostEstimator;
 import org.apache.sysds.runtime.compress.estim.encoding.EncodingFactory;
@@ -76,7 +75,7 @@ public class ColGroupSDCSingle extends ASDC {
 		if(dict == null && allZero)
 			return new ColGroupEmpty(colIndexes);
 		else if(dict == null && offsets.getSize() * 2 > numRows + 2) {
-			AOffset rev = AOffset.reverse(numRows, offsets);
+			AOffset rev = offsets.reverse(numRows);
 			return ColGroupSDCSingleZeros.create(colIndexes, numRows, Dictionary.create(defaultTuple), rev, cachedCounts);
 		}
 		else if(dict == null)
@@ -84,7 +83,7 @@ public class ColGroupSDCSingle extends ASDC {
 		else if(allZero)
 			return ColGroupSDCSingleZeros.create(colIndexes, numRows, dict, offsets, cachedCounts);
 		else if(offsets.getSize() * 2 > numRows + 2 && !(dict instanceof PlaceHolderDict)) {
-			AOffset rev = AOffset.reverse(numRows, offsets);
+			AOffset rev = offsets.reverse(numRows);
 			return new ColGroupSDCSingle(colIndexes, numRows, Dictionary.create(defaultTuple), dict.getValues(), rev,
 				null);
 		}
@@ -110,7 +109,7 @@ public class ColGroupSDCSingle extends ASDC {
 
 	@Override
 	public double getIdx(int r, int colIdx) {
-		final AOffsetIterator it = _indexes.getOffsetIterator(r);
+		final AIterator it = _indexes.getIterator(r);
 		if(it == null || it.value() != r)
 			return _defaultTuple[colIdx];
 		else

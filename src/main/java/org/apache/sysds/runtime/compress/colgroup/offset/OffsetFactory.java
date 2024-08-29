@@ -25,6 +25,7 @@ import java.util.Arrays;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.sysds.runtime.compress.CompressedMatrixBlock;
 import org.apache.sysds.runtime.compress.DMLCompressionException;
 import org.apache.sysds.runtime.compress.utils.IntArrayList;
 
@@ -125,11 +126,16 @@ public final class OffsetFactory {
 
 			final long byteSize = OffsetByte.estimateInMemorySize(endLength + correctionByte);
 			final long charSize = OffsetChar.estimateInMemorySize(endLength + correctionChar);
-
+			final AOffset ret;
 			if(byteSize < charSize)
-				return createByte(indexes, apos, alen);
+				ret = createByte(indexes, apos, alen);
 			else
-				return createChar(indexes, apos, alen);
+				ret = createChar(indexes, apos, alen);
+			
+			if(CompressedMatrixBlock.debug)
+				ret.verify(alen - apos);
+
+			return ret;
 		}
 		catch(Exception e) {
 			if(indexes == null)
@@ -245,7 +251,7 @@ public final class OffsetFactory {
 				final int nv = indexes[i];
 				final int offsetSize = nv - ov;
 				if(offsetSize <= 0)
-					throw new DMLCompressionException("invalid offset construction with negative sequences");
+					throw new DMLCompressionException("invalid offset construction with negative sequences Byte");
 				final byte mod = (byte) (offsetSize % mp1);
 				offsets[p++] = mod;
 				ov = nv;
@@ -304,7 +310,7 @@ public final class OffsetFactory {
 				final int nv = indexes[i];
 				final int offsetSize = (nv - ov);
 				if(offsetSize <= 0)
-					throw new DMLCompressionException("invalid offset construction with negative sequences");
+					throw new DMLCompressionException("invalid offset construction with negative sequences Char");
 				final int mod = offsetSize % mp1;
 				offsets[p++] = (char) (mod);
 				ov = nv;

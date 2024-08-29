@@ -76,7 +76,7 @@ public class ColGroupSDCSingleZeros extends ASDCZero {
 		if(dict == null)
 			return new ColGroupEmpty(colIndices);
 		else if(offsets.getSize() * 2 > numRows + 2 && !(dict instanceof PlaceHolderDict)) {
-			AOffset rev = AOffset.reverse(numRows, offsets);
+			AOffset rev = offsets.reverse(numRows);
 			IDictionary empty = MatrixBlockDictionary.create(new MatrixBlock(1, colIndices.size(), true));
 			return ColGroupSDCSingle.create(colIndices, numRows, empty, dict.getValues(), rev, null);
 		}

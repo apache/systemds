@@ -775,7 +775,7 @@ public abstract class DenseBlock implements Serializable, Block
 	}
 
 	public void fill(double value){
-		reset(_odims, value);
+		reset(_rlen, _odims, value);
 	}
 
 	@Override

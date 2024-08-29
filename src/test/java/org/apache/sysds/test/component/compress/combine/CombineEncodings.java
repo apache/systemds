@@ -37,52 +37,52 @@ public class CombineEncodings {
 
 	@Test
 	public void combineCustom() {
-		IEncode ae = new DenseEncoding(MapToFactory.create(10, new int[] {0, 1, 2, 3, 4, 5, 6, 7, 8, 9}, 10));
-		IEncode be = new DenseEncoding(MapToFactory.create(10, new int[] {0, 1, 2, 3, 4, 5, 6, 7, 8, 9}, 10));
+		IEncode ae = new DenseEncoding(MapToFactory.create(new int[] {0, 1, 2, 3, 4, 5, 6, 7, 8, 9}, 10));
+		IEncode be = new DenseEncoding(MapToFactory.create(new int[] {0, 1, 2, 3, 4, 5, 6, 7, 8, 9}, 10));
 		Pair<IEncode, Map<Integer, Integer>> cec = ae.combineWithMap(be);
 		IEncode ce = cec.getLeft();
 		Map<Integer, Integer> cem = cec.getRight();
 		assertTrue(cem.size() == 10);
 		assertTrue(cem.size() == ce.getUnique());
-		assertTrue(ce.equals(new DenseEncoding(MapToFactory.create(10, new int[] {0, 1, 2, 3, 4, 5, 6, 7, 8, 9}, 10))));
+		assertTrue(ce.equals(new DenseEncoding(MapToFactory.create(new int[] {0, 1, 2, 3, 4, 5, 6, 7, 8, 9}, 10))));
 
 	}
 
 	@Test
 	public void combineCustom2() {
-		IEncode ae = new DenseEncoding(MapToFactory.create(10, new int[] {0, 1, 2, 3, 4, 5, 6, 7, 8, 8}, 10));
-		IEncode be = new DenseEncoding(MapToFactory.create(10, new int[] {0, 1, 2, 3, 4, 5, 6, 7, 8, 9}, 10));
+		IEncode ae = new DenseEncoding(MapToFactory.create(new int[] {0, 1, 2, 3, 4, 5, 6, 7, 8, 8}, 10));
+		IEncode be = new DenseEncoding(MapToFactory.create(new int[] {0, 1, 2, 3, 4, 5, 6, 7, 8, 9}, 10));
 		Pair<IEncode, Map<Integer, Integer>> cec = ae.combineWithMap(be);
 		IEncode ce = cec.getLeft();
 		Map<Integer, Integer> cem = cec.getRight();
 		assertTrue(cem.size() == 10);
 		assertTrue(cem.size() == ce.getUnique());
-		assertTrue(ce.equals(new DenseEncoding(MapToFactory.create(10, new int[] {0, 1, 2, 3, 4, 5, 6, 7, 8, 9}, 10))));
+		assertTrue(ce.equals(new DenseEncoding(MapToFactory.create(new int[] {0, 1, 2, 3, 4, 5, 6, 7, 8, 9}, 10))));
 
 	}
 
 	@Test
 	public void combineCustom3() {
-		IEncode ae = new DenseEncoding(MapToFactory.create(10, new int[] {0, 1, 2, 3, 4, 5, 6, 7, 7, 8}, 10));
-		IEncode be = new DenseEncoding(MapToFactory.create(10, new int[] {0, 1, 2, 3, 4, 5, 6, 7, 7, 9}, 10));
+		IEncode ae = new DenseEncoding(MapToFactory.create(new int[] {0, 1, 2, 3, 4, 5, 6, 7, 7, 8}, 10));
+		IEncode be = new DenseEncoding(MapToFactory.create(new int[] {0, 1, 2, 3, 4, 5, 6, 7, 7, 9}, 10));
 		Pair<IEncode, Map<Integer, Integer>> cec = ae.combineWithMap(be);
 		IEncode ce = cec.getLeft();
 		Map<Integer, Integer> cem = cec.getRight();
 		assertTrue(cem.size() == 9);
 		assertTrue(cem.size() == ce.getUnique());
-		assertTrue(ce.equals(new DenseEncoding(MapToFactory.create(10, new int[] {0, 1, 2, 3, 4, 5, 6, 7, 7, 8}, 9))));
+		assertTrue(ce.equals(new DenseEncoding(MapToFactory.create(new int[] {0, 1, 2, 3, 4, 5, 6, 7, 7, 8}, 9))));
 
 	}
 
 	@Test
 	public void combineCustom4() {
-		IEncode ae = new DenseEncoding(MapToFactory.create(10, new int[] {0, 1, 2, 3, 4, 5, 6, 7, 7, 0}, 10));
-		IEncode be = new DenseEncoding(MapToFactory.create(10, new int[] {0, 1, 2, 3, 4, 5, 6, 7, 7, 0}, 10));
+		IEncode ae = new DenseEncoding(MapToFactory.create(new int[] {0, 1, 2, 3, 4, 5, 6, 7, 7, 0}, 10));
+		IEncode be = new DenseEncoding(MapToFactory.create(new int[] {0, 1, 2, 3, 4, 5, 6, 7, 7, 0}, 10));
 		Pair<IEncode, Map<Integer, Integer>> cec = ae.combineWithMap(be);
 		IEncode ce = cec.getLeft();
 		Map<Integer, Integer> cem = cec.getRight();
 		assertTrue(cem.size() == 8);
 		assertTrue(cem.size() == ce.getUnique());
-		assertTrue(ce.equals(new DenseEncoding(MapToFactory.create(10, new int[] {0, 1, 2, 3, 4, 5, 6, 7, 7, 0}, 8))));
+		assertTrue(ce.equals(new DenseEncoding(MapToFactory.create(new int[] {0, 1, 2, 3, 4, 5, 6, 7, 7, 0}, 8))));
 	}
 }

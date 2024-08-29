@@ -813,11 +813,18 @@ public abstract class AMapToData implements Serializable {
 		copyInt(d.getData());
 	}
 
+	/**
+	 * Copy the values of the given array into this.
+	 * 
+	 * Note that this operation stops at the length of this AMapToData
+	 * 
+	 * Therefore the given d length can not be longer than this size.
+	 * 
+	 * @param d The array to copy
+	 */
 	public abstract void copyInt(int[] d);
 
 	public abstract void copyBit(BitSet d);
-
-	// public abstract void copyBitLong(long[] d);
 
 	public int getMax() {
 		int m = -1;
@@ -835,6 +842,17 @@ public abstract class AMapToData implements Serializable {
 	 */
 	public abstract int getMaxPossible();
 
+	/**
+	 * Reallocate the map, to a smaller instance if applicable. Note it does not change the length of the array, just the
+	 * datatype.
+	 * 
+	 * Note that it returns the input if the input is the smallest representation that fits, otherwise it will return
+	 * something that is smaller.
+	 * 
+	 * @param d         The Input mat to potentially reduce the size of.
+	 * @param numTuples The number of tuples that should be supported in the resulting map
+	 * @return The returned hopefully reduced map.
+	 */
 	public abstract AMapToData resize(int unique);
 
 	/**

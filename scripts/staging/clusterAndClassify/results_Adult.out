@@ -1,0 +1,47 @@
+Accuracy (%): 85.07940686145477
+Accuracy (%): 85.04146616156444
+Clustered Classification:
+-- w/ 2 clusters
+---- train accuracy: 74.02917828792106
+---- test accuracy: 73.34669338677354
+-- w/ 3 clusters
+---- train accuracy: 92.63965475905059
+---- test accuracy: 93.21813452248234
+-- w/ 4 clusters
+---- train accuracy: 95.09137769447048
+---- test accuracy: 94.98767460969597
+-- w/ 5 clusters
+---- train accuracy: 92.85159285159286
+---- test accuracy: 90.01814882032669
+-- w/ 6 clusters
+---- train accuracy: 81.9494584837545
+---- test accuracy: 71.77419354838709
+-- w/ 7 clusters
+---- train accuracy: 96.00537092984223
+---- test accuracy: 96.18350038550501
+-- w/ 8 clusters
+---- train accuracy: 100.0
+---- test accuracy: 28.571428571428562
+-- w/ 9 clusters
+---- train accuracy: 98.0735551663748
+---- test accuracy: 95.79439252336451
+-- w/ 10 clusters
+-- w/ 11 clusters
+---- train accuracy: 100.0
+---- test accuracy: 94.73684210526314
+-- w/ 12 clusters
+---- train accuracy: 85.55555555555556
+---- test accuracy: 74.11764705882354
+-- w/ 13 clusters
+---- train accuracy: 100.0
+---- test accuracy: 62.5
+-- w/ 14 clusters
+---- train accuracy: 95.90227010388614
+---- test accuracy: 95.93353738522083
+-- w/ 15 clusters
+---- train accuracy: 71.98719732813802
+---- test accuracy: 71.81996086105677
+-- w/ 16 clusters
+---- train accuracy: 96.97986577181207
+---- test accuracy: 91.40625
+

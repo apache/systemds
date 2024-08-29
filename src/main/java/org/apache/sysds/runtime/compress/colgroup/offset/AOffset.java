@@ -146,7 +146,9 @@ public abstract class AOffset implements Serializable {
 
 		// guaranteed not to go over limit of skip list.
 		int idx = 0;
-		while(skip[idx].row <= row)
+		while(idx < skip.length //
+			&& skip[idx] != null //
+			&& skip[idx].row <= row)
 			idx++;
 
 		final AIterator it = idx == 0 ? getIterator() : getIteratorFromSkipList(skip[idx - 1]);

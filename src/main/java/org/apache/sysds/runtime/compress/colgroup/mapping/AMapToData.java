@@ -347,7 +347,7 @@ public abstract class AMapToData implements Serializable {
 	 * @param indexes The Offset Indexes to iterate through
 	 */
 	public final void preAggregateSparse(SparseBlock sb, double[] preAV, int rl, int ru, AOffset indexes) {
-		indexes.preAggregateSparseMap(sb, preAV, rl, ru, getUnique(), this);
+		indexes.preAggSparseMap(sb, preAV, rl, ru, getUnique(), this);
 	}
 
 	/**

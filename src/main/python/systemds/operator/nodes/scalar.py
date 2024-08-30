@@ -156,6 +156,20 @@ class Scalar(OperationNode):
         """
         return Scalar(self.sds_context, 'abs', [self])
 
+    def floor(self) -> 'Scalar':
+        """Return the floor of the input, element-wise.
+
+        :return: `Scalar` representing operation
+        """
+        return Scalar(self.sds_context, 'floor', [self])
+
+    def ceil(self) -> 'Scalar':
+        """Return the ceiling of the input, element-wise.
+
+        :return: `Scalar` representing operation
+        """
+        return Scalar(self.sds_context, 'ceil', [self])
+
     def sin(self) -> 'Scalar':
         """Calculate sin.
 

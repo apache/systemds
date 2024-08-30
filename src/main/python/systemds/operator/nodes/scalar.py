@@ -156,6 +156,13 @@ class Scalar(OperationNode):
         """
         return Scalar(self.sds_context, 'abs', [self])
 
+    def sqrt(self) -> 'Scalar':
+        """Calculate square root.
+
+        :return: `Scalar` representing operation
+        """
+        return Scalar(self.sds_context, 'sqrt', [self])
+
     def sin(self) -> 'Scalar':
         """Calculate sin.
 

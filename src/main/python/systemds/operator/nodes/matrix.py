@@ -266,6 +266,13 @@ class Matrix(OperationNode):
         """
         return Matrix(self.sds_context, 'abs', [self])
 
+    def sqrt(self) -> 'Matrix':
+        """Calculate square root.
+
+        :return: `Matrix` representing operation
+        """
+        return Matrix(self.sds_context, 'sqrt', [self])
+
     def sin(self) -> 'Matrix':
         """Calculate sin.
 

@@ -163,6 +163,13 @@ class Scalar(OperationNode):
         """
         return Scalar(self.sds_context, 'sin', [self])
 
+    def exp(self) -> 'Scalar':
+        """Calculate exponential.
+
+        :return: `Scalar` representing operation
+        """
+        return Scalar(self.sds_context, 'exp', [self])
+
     def cos(self) -> 'Scalar':
         """Calculate cos.
 

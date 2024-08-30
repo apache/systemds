@@ -266,6 +266,13 @@ class Matrix(OperationNode):
         """
         return Matrix(self.sds_context, 'abs', [self])
 
+    def exp(self) -> 'Matrix':
+        """Calculate exponential.
+
+        :return: `Matrix` representing operation
+        """
+        return Matrix(self.sds_context, 'exp', [self])
+
     def sin(self) -> 'Matrix':
         """Calculate sin.
 

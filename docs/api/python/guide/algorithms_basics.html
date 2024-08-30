@@ -120,7 +120,7 @@ since it is commonly known and explored.</p>
 <h2>Step 1: Get Dataset<a class="headerlink" href="#step-1-get-dataset" title="Link to this heading"></a></h2>
 <p>SystemDS provides builtin for downloading and setup of the MNIST dataset.
 To setup this simply use</p>
-<div class="code python highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">systemds.context</span> <span class="kn">import</span> <span class="n">SystemDSContext</span>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">systemds.context</span> <span class="kn">import</span> <span class="n">SystemDSContext</span>
 <span class="kn">from</span> <span class="nn">systemds.examples.tutorials.mnist</span> <span class="kn">import</span> <span class="n">DataManager</span>
 <span class="kn">from</span> <span class="nn">systemds.operator.algorithm</span> <span class="kn">import</span> <span class="n">multiLogReg</span><span class="p">,</span> <span class="n">multiLogRegPredict</span>
 
@@ -160,7 +160,7 @@ unfortunately the algorithm require the labels to be distinct integers from 1 an
 <section id="step-3-training">
 <h2>Step 3: Training<a class="headerlink" href="#step-3-training" title="Link to this heading"></a></h2>
 <p>To start with, we setup a SystemDS context and setup the data:</p>
-<div class="code python highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">Yt</span> <span class="o">=</span> <span class="n">d</span><span class="o">.</span><span class="n">get_test_labels</span><span class="p">()</span>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">Yt</span> <span class="o">=</span> <span class="n">d</span><span class="o">.</span><span class="n">get_test_labels</span><span class="p">()</span>
 
 <span class="k">with</span> <span class="n">SystemDSContext</span><span class="p">()</span> <span class="k">as</span> <span class="n">sds</span><span class="p">:</span>
     <span class="c1"># Train Data</span>
@@ -224,17 +224,20 @@ and have nothing more to learn from the data as it is now.</p>
 <p>To improve further we have to increase the training data, here for example we increase it
 from our sample of 1k to the full training dataset of 60k, in this example the maxi is set to reduce the number of iterations the algorithm takes,
 to again reduce training time</p>
-<pre class="code python literal-block"><code><span class="name">Yt</span> <span class="operator">=</span> <span class="name">d</span><span class="operator">.</span><span class="name">get_test_labels</span><span class="punctuation">()</span><span class="whitespace">
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">Yt</span> <span class="o">=</span> <span class="n">d</span><span class="o">.</span><span class="n">get_test_labels</span><span class="p">()</span>
 
-</span><span class="keyword">with</span> <span class="name">SystemDSContext</span><span class="punctuation">()</span> <span class="keyword">as</span> <span class="name">sds</span><span class="punctuation">:</span><span class="whitespace">
-</span>    <span class="comment single"># Train Data</span><span class="whitespace">
-</span>    <span class="name">X_ds</span> <span class="operator">=</span> <span class="name">sds</span><span class="operator">.</span><span class="name">from_numpy</span><span class="punctuation">(</span><span class="name">X</span><span class="punctuation">)</span><span class="whitespace">
-</span>    <span class="name">Y_ds</span> <span class="operator">=</span> <span class="name">sds</span><span class="operator">.</span><span class="name">from_numpy</span><span class="punctuation">(</span><span class="name">Y</span><span class="punctuation">)</span> <span class="operator">+</span> <span class="literal number float">1.0</span><span class="whitespace">
-</span>    <span class="name">bias</span> <span class="operator">=</span> <span class="name">multiLogReg</span><span class="punctuation">(</span><span class="name">X_ds</span><span class="punctuation">,</span> <span class="name">Y_ds</span><span class="punctuation">,</span> <span class="name">maxi</span><span class="operator">=</span><span class="literal number integer">30</span><span class="punctuation">,</span> <span class="name">verbose</span><span class="operator">=</span><span class="keyword constant">False</span><span class="punctuation">)</span><span class="whitespace">
-</span>    <span class="comment single"># Test data</span><span class="whitespace">
-</span>    <span class="name">Xt_ds</span> <span class="operator">=</span> <span class="name">sds</span><span class="operator">.</span><span class="name">from_numpy</span><span class="punctuation">(</span><span class="name">Xt</span><span class="punctuation">)</span><span class="whitespace">
-</span>    <span class="name">Yt_ds</span> <span class="operator">=</span> <span class="name">sds</span><span class="operator">.</span><span class="name">from_numpy</span><span class="punctuation">(</span><span class="name">Yt</span><span class="punctuation">)</span> <span class="operator">+</span> <span class="literal number float">1.0</span><span class="whitespace">
-</span>    <span class="punctuation">[</span><span class="name">m</span><span class="punctuation">,</span> <span class="name">y_pred</span><span class="punctuation">,</span> <span class="name">acc</span><span class="punctuation">]</span> <span class="operator">=</span> <span class="name">multiLogRegPredict</span><span class="punctuation">(</span><span class="name">Xt_ds</span><span class="punctuation">,</span> <span class="name">bias</span><span class="punctuation">,</span> <span class="name">Y</span><span class="operator">=</span><span class="name">Yt_ds</span><span class="punctuation">,</span> <span class="name">verbose</span><span class="operator">=</span><span class="keyword constant">False</span><span class="punctuation">)</span><span class="operator">.</span><span class="name">compute</span><span class="punctuation">()</span></code></pre>
+<span class="k">with</span> <span class="n">SystemDSContext</span><span class="p">()</span> <span class="k">as</span> <span class="n">sds</span><span class="p">:</span>
+    <span class="c1"># Train Data</span>
+    <span class="n">X_ds</span> <span class="o">=</span> <span class="n">sds</span><span class="o">.</span><span class="n">from_numpy</span><span class="p">(</span><span class="n">X</span><span class="p">)</span>
+    <span class="n">Y_ds</span> <span class="o">=</span> <span class="n">sds</span><span class="o">.</span><span class="n">from_numpy</span><span class="p">(</span><span class="n">Y</span><span class="p">)</span> <span class="o">+</span> <span class="mf">1.0</span>
+    <span class="n">bias</span> <span class="o">=</span> <span class="n">multiLogReg</span><span class="p">(</span><span class="n">X_ds</span><span class="p">,</span> <span class="n">Y_ds</span><span class="p">,</span> <span class="n">maxi</span><span class="o">=</span><span class="mi">30</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+    <span class="c1"># Test data</span>
+    <span class="n">Xt_ds</span> <span class="o">=</span> <span class="n">sds</span><span class="o">.</span><span class="n">from_numpy</span><span class="p">(</span><span class="n">Xt</span><span class="p">)</span>
+    <span class="n">Yt_ds</span> <span class="o">=</span> <span class="n">sds</span><span class="o">.</span><span class="n">from_numpy</span><span class="p">(</span><span class="n">Yt</span><span class="p">)</span> <span class="o">+</span> <span class="mf">1.0</span>
+    <span class="p">[</span><span class="n">m</span><span class="p">,</span> <span class="n">y_pred</span><span class="p">,</span> <span class="n">acc</span><span class="p">]</span> <span class="o">=</span> <span class="n">multiLogRegPredict</span><span class="p">(</span><span class="n">Xt_ds</span><span class="p">,</span> <span class="n">bias</span><span class="p">,</span> <span class="n">Y</span><span class="o">=</span><span class="n">Yt_ds</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span><span class="o">.</span><span class="n">compute</span><span class="p">()</span>
+
+</pre></div>
+</div>
 <p>With this change the accuracy achieved changes from the previous value to 92%.
 But this is a basic implementation that can be replaced by a variety of algorithms and techniques.</p>
 </section>
@@ -243,7 +246,7 @@ But this is a basic implementation that can be replaced by a variety of algorith
 <p>The full script, some steps are combined to reduce the overall script.
 One noteworthy change is the + 1 is done on the matrix ready for SystemDS,
 this makes SystemDS responsible for adding the 1 to each value.</p>
-<div class="code python highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">logging</span>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">logging</span>
 
 <span class="kn">from</span> <span class="nn">systemds.context</span> <span class="kn">import</span> <span class="n">SystemDSContext</span>
 <span class="kn">from</span> <span class="nn">systemds.examples.tutorials.mnist</span> <span class="kn">import</span> <span class="n">DataManager</span>

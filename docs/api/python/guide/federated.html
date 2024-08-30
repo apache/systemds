@@ -130,7 +130,7 @@ In this example we simply use Numpy to create a <code class="docutils literal no
 <p>Currently we also require a metadata file for the federated worker.
 This should be located next to the <code class="docutils literal notranslate"><span class="pre">test.csv</span></code> file called <code class="docutils literal notranslate"><span class="pre">test.csv.mtd</span></code>.
 To make both the data and metadata simply execute the following</p>
-<div class="code python highlight-default notranslate"><div class="highlight"><pre><span></span><span class="c1"># Python</span>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="c1"># Python</span>
 <span class="kn">import</span> <span class="nn">os</span>
 
 <span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
@@ -145,7 +145,7 @@ To make both the data and metadata simply execute the following</p>
 </div>
 <p>After creating our data the federated worker becomes able to execute federated instructions.
 The aggregated sum using federated instructions in python SystemDS is done as follows</p>
-<div class="code python highlight-default notranslate"><div class="highlight"><pre><span></span><span class="c1"># Python</span>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="c1"># Python</span>
 <span class="kn">import</span> <span class="nn">logging</span>
 
 <span class="kn">from</span> <span class="nn">systemds.context</span> <span class="kn">import</span> <span class="n">SystemDSContext</span>
@@ -180,7 +180,7 @@ Start with 3 different terminals, and run one federated environment in each.</p>
 </pre></div>
 </div>
 <p>Once all three workers are up and running we can leverage all three in the following example</p>
-<div class="code python highlight-default notranslate"><div class="highlight"><pre><span></span><span class="c1"># Python</span>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="c1"># Python</span>
 <span class="kn">import</span> <span class="nn">logging</span>
 
 <span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>

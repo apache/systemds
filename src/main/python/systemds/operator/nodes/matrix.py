@@ -266,6 +266,14 @@ class Matrix(OperationNode):
         """
         return Matrix(self.sds_context, 'abs', [self])
 
+    def sign(self) -> 'Matrix':
+        """Returns a matrix representing the signs of the input matrix elements,
+        where 1 represents positive, 0 represents zero, and -1 represents negative.
+
+        :return: `Matrix` representing operation
+        """
+        return Matrix(self.sds_context, 'sign', [self])
+
     def sin(self) -> 'Matrix':
         """Calculate sin.
 

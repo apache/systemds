@@ -163,6 +163,14 @@ class Scalar(OperationNode):
         """
         return Scalar(self.sds_context, 'sin', [self])
 
+    def sign(self) -> 'Scalar':
+        """Returns a the signs of the input,
+        where 1 represents positive, 0 represents zero, and -1 represents negative.
+
+        :return: `Scalar` representing operation
+        """
+        return Scalar(self.sds_context, 'sign', [self])
+
     def cos(self) -> 'Scalar':
         """Calculate cos.
 

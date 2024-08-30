@@ -4,7 +4,7 @@
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Matrix &mdash; SystemDS 3.2.0-dev documentation</title>
+  <title>Matrix &mdash; SystemDS 3.3.0-dev documentation</title>
       <link rel="stylesheet" type="text/css" href="../../../static/pygments.css?v=80d5e7a1" />
       <link rel="stylesheet" type="text/css" href="../../../static/css/theme.css?v=19f00094" />
 
@@ -15,8 +15,8 @@
   
         <script src="../../../static/jquery.js?v=5d32c60e"></script>
         <script src="../../../static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-        <script src="../../../static/documentation_options.js?v=596fb6d1"></script>
-        <script src="../../../static/doctools.js?v=888ff710"></script>
+        <script src="../../../static/documentation_options.js?v=492a8e1f"></script>
+        <script src="../../../static/doctools.js?v=9a2dae69"></script>
         <script src="../../../static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../../../static/js/theme.js"></script>
     <link rel="index" title="Index" href="../../../genindex.html" />
@@ -72,6 +72,7 @@
 <li class="toctree-l3"><a class="reference internal" href="#systemds.operator.Matrix.compute"><code class="docutils literal notranslate"><span class="pre">Matrix.compute()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="#systemds.operator.Matrix.cos"><code class="docutils literal notranslate"><span class="pre">Matrix.cos()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="#systemds.operator.Matrix.cosh"><code class="docutils literal notranslate"><span class="pre">Matrix.cosh()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#systemds.operator.Matrix.eigen"><code class="docutils literal notranslate"><span class="pre">Matrix.eigen()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="#systemds.operator.Matrix.max"><code class="docutils literal notranslate"><span class="pre">Matrix.max()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="#systemds.operator.Matrix.mean"><code class="docutils literal notranslate"><span class="pre">Matrix.mean()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="#systemds.operator.Matrix.min"><code class="docutils literal notranslate"><span class="pre">Matrix.min()</span></code></a></li>
@@ -84,6 +85,7 @@
 <li class="toctree-l3"><a class="reference internal" href="#systemds.operator.Matrix.sin"><code class="docutils literal notranslate"><span class="pre">Matrix.sin()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="#systemds.operator.Matrix.sinh"><code class="docutils literal notranslate"><span class="pre">Matrix.sinh()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="#systemds.operator.Matrix.sum"><code class="docutils literal notranslate"><span class="pre">Matrix.sum()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#systemds.operator.Matrix.svd"><code class="docutils literal notranslate"><span class="pre">Matrix.svd()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="#systemds.operator.Matrix.t"><code class="docutils literal notranslate"><span class="pre">Matrix.t()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="#systemds.operator.Matrix.tan"><code class="docutils literal notranslate"><span class="pre">Matrix.tan()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="#systemds.operator.Matrix.tanh"><code class="docutils literal notranslate"><span class="pre">Matrix.tanh()</span></code></a></li>
@@ -289,6 +291,23 @@ all operations are only building the DAG without actually executing (lazy evalua
 </dd></dl>
 
 <dl class="py method">
+<dt class="sig sig-object py" id="systemds.operator.Matrix.eigen">
+<span class="sig-name descname"><span class="pre">eigen</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#systemds.operator.Matrix" title="systemds.operator.nodes.matrix.Matrix"><span class="pre">Matrix</span></a></span></span><a class="headerlink" href="#systemds.operator.Matrix.eigen" title="Link to this definition"></a></dt>
+<dd><p>Computes Eigen decomposition of input matrix A. The Eigen decomposition consists of
+two matrices V and w such that A = V %*% diag(w) %*% t(V). The columns of V are the
+eigenvectors of the original matrix A. And, the eigen values are given by w.
+It is important to note that this function can operate only on small-to-medium sized
+input matrix that can fit in the main memory. For larger matrices, an out-of-memory
+exception is raised.</p>
+<p>This function returns two matrices w and V, where w is (m x 1) and V is of size (m x m).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>The MultiReturn node containing the two Matrices w and V</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
 <dt class="sig sig-object py" id="systemds.operator.Matrix.max">
 <span class="sig-name descname"><span class="pre">max</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">axis</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="../operation_node.html#systemds.operator.OperationNode" title="systemds.operator.operation_node.OperationNode"><span class="pre">OperationNode</span></a></span></span><a class="headerlink" href="#systemds.operator.Matrix.max" title="Link to this definition"></a></dt>
 <dd><p>Calculate max of matrix.</p>
@@ -436,6 +455,21 @@ all operations are only building the DAG without actually executing (lazy evalua
 </dd></dl>
 
 <dl class="py method">
+<dt class="sig sig-object py" id="systemds.operator.Matrix.svd">
+<span class="sig-name descname"><span class="pre">svd</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#systemds.operator.Matrix" title="systemds.operator.nodes.matrix.Matrix"><span class="pre">Matrix</span></a></span></span><a class="headerlink" href="#systemds.operator.Matrix.svd" title="Link to this definition"></a></dt>
+<dd><p>Singular Value Decomposition of a matrix A (of size m x m), which decomposes into three matrices 
+U, V, and S as A = U %% S %% t(V), where U is an m x m unitary matrix (i.e., orthogonal), 
+V is an n x n unitary matrix (also orthogonal), 
+and S is an m x n matrix with non-negative real numbers on the diagonal.</p>
+<p>matrices U &lt;(m x m)&gt;, S &lt;(m x n)&gt;, and V &lt;(n x n)&gt;</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>The MultiReturn node containing the three Matrices U,S, and V</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
 <dt class="sig sig-object py" id="systemds.operator.Matrix.t">
 <span class="sig-name descname"><span class="pre">t</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#systemds.operator.Matrix" title="systemds.operator.nodes.matrix.Matrix"><span class="pre">Matrix</span></a></span></span><a class="headerlink" href="#systemds.operator.Matrix.t" title="Link to this definition"></a></dt>
 <dd><p>Transposes the input</p>
@@ -519,7 +553,7 @@ all operations are only building the DAG without actually executing (lazy evalua
   <hr/>
 
   <div role="contentinfo">
-    <p>&#169; Copyright 2023, Apache SystemDS.</p>
+    <p>&#169; Copyright 2024, Apache SystemDS.</p>
   </div>
 
   Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a

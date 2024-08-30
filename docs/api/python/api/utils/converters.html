@@ -4,7 +4,7 @@
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Converters &mdash; SystemDS 3.2.0-dev documentation</title>
+  <title>Converters &mdash; SystemDS 3.3.0-dev documentation</title>
       <link rel="stylesheet" type="text/css" href="../../static/pygments.css?v=80d5e7a1" />
       <link rel="stylesheet" type="text/css" href="../../static/css/theme.css?v=19f00094" />
 
@@ -15,8 +15,8 @@
   
         <script src="../../static/jquery.js?v=5d32c60e"></script>
         <script src="../../static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-        <script src="../../static/documentation_options.js?v=596fb6d1"></script>
-        <script src="../../static/doctools.js?v=888ff710"></script>
+        <script src="../../static/documentation_options.js?v=492a8e1f"></script>
+        <script src="../../static/doctools.js?v=9a2dae69"></script>
         <script src="../../static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../../static/js/theme.js"></script>
     <link rel="index" title="Index" href="../../genindex.html" />
@@ -155,12 +155,12 @@
 <dl class="py function">
 <dt class="sig sig-object py" id="systemds.utils.converters.pandas_to_frame_block">
 <span class="sig-prename descclassname"><span class="pre">systemds.utils.converters.</span></span><span class="sig-name descname"><span class="pre">pandas_to_frame_block</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">sds</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pd_df</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">DataFrame</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#systemds.utils.converters.pandas_to_frame_block" title="Link to this definition"></a></dt>
-<dd><p>Converts a given numpy array, to internal matrix block representation.</p>
+<dd><p>Converts a given pandas DataFrame to an internal FrameBlock representation.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>sds</strong> – The current systemds context.</p></li>
-<li><p><strong>np_arr</strong> – the numpy array to convert to matrixblock.</p></li>
+<li><p><strong>sds</strong> – The current SystemDS context.</p></li>
+<li><p><strong>pd_df</strong> – The pandas DataFrame to convert to FrameBlock.</p></li>
 </ul>
 </dd>
 </dl>
@@ -179,7 +179,7 @@
   <hr/>
 
   <div role="contentinfo">
-    <p>&#169; Copyright 2023, Apache SystemDS.</p>
+    <p>&#169; Copyright 2024, Apache SystemDS.</p>
   </div>
 
   Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a

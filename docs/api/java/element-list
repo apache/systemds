@@ -22,6 +22,9 @@ org.apache.sysds.lops.compile.linearization
 org.apache.sysds.lops.rewrite
 org.apache.sysds.parser
 org.apache.sysds.parser.dml
+org.apache.sysds.resource
+org.apache.sysds.resource.cost
+org.apache.sysds.resource.enumeration
 org.apache.sysds.runtime
 org.apache.sysds.runtime.codegen
 org.apache.sysds.runtime.compress
@@ -61,7 +64,6 @@ org.apache.sysds.runtime.controlprogram.paramserv.homomorphicEncryption
 org.apache.sysds.runtime.controlprogram.paramserv.rpc
 org.apache.sysds.runtime.controlprogram.parfor
 org.apache.sysds.runtime.controlprogram.parfor.opt
-org.apache.sysds.runtime.controlprogram.parfor.stat
 org.apache.sysds.runtime.controlprogram.parfor.util
 org.apache.sysds.runtime.data
 org.apache.sysds.runtime.frame.data
@@ -93,9 +95,6 @@ org.apache.sysds.runtime.matrix.data.sketch.countdistinct
 org.apache.sysds.runtime.matrix.data.sketch.countdistinctapprox
 org.apache.sysds.runtime.matrix.operators
 org.apache.sysds.runtime.meta
-org.apache.sysds.runtime.privacy
-org.apache.sysds.runtime.privacy.finegrained
-org.apache.sysds.runtime.privacy.propagation
 org.apache.sysds.runtime.transform
 org.apache.sysds.runtime.transform.decode
 org.apache.sysds.runtime.transform.encode

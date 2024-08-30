@@ -42,6 +42,8 @@ To setup this simply use
   :code: python
   :start-line: 22
   :end-line: 30
+  :encoding: utf-8
+  :literal:
 
 Here the DataManager contains the code for downloading and setting up numpy arrays containing the data.
 
@@ -86,9 +88,11 @@ Step 3: Training
 To start with, we setup a SystemDS context and setup the data:
 
 .. include:: ../code/guide/algorithms/FullScript.py
+  :code: python
   :start-line: 31
   :end-line: 35
-  :code: python
+  :encoding: utf-8
+  :literal:
 
 to reduce the training time and verify everything works, it is usually good to reduce the amount of data,
 to train on a smaller sample to start with
@@ -169,9 +173,11 @@ from our sample of 1k to the full training dataset of 60k, in this example the m
 to again reduce training time
 
 .. include:: ../code/guide/algorithms/FullScript.py
+  :code: python
   :start-line: 31
   :end-line: 43
-  :code: python
+  :encoding: utf-8
+  :literal:
 
 With this change the accuracy achieved changes from the previous value to 92%.
 But this is a basic implementation that can be replaced by a variety of algorithms and techniques.
@@ -185,6 +191,8 @@ One noteworthy change is the + 1 is done on the matrix ready for SystemDS,
 this makes SystemDS responsible for adding the 1 to each value.
 
 .. include:: ../code/guide/algorithms/FullScript.py
-  :start-line: 20
   :code: python
+  :start-line: 20
+  :encoding: utf-8
+  :literal:
 

@@ -32,10 +32,9 @@ from systemds.utils.consts import VALID_INPUT_TYPES
 def confusionMatrix(P: Matrix,
                     Y: Matrix):
     """
-     Accepts a vector for prediction and a one-hot-encoded matrix
-     Then it computes the max value of each vector and compare them
-     After which, it calculates and returns the sum of classifications
-     and the average of each true class.
+     Computes the confusion matrix for input vectors of predictions
+     and actual labels. We return both the counts and relative frequency
+     (normalized by sum of true labels)
     
      .. code-block::
     
@@ -47,11 +46,10 @@ def confusionMatrix(P: Matrix,
     
     
     
-    :param P: vector of Predictions
-    :param Y: vector of Golden standard One Hot Encoded; the one hot
-        encoded vector of actual labels
-    :return: The Confusion Matrix Sums of classifications
-    :return: The Confusion Matrix averages of each true class
+    :param P: vector of predictions (1-based, recoded)
+    :param Y: vector of actual labels (1-based, recoded)
+    :return: the confusion matrix as absolute counts
+    :return: the confusion matrix as relative frequencies
     """
 
     params_dict = {'P': P, 'Y': Y}

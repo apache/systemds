@@ -33,15 +33,15 @@ def naiveBayesPredict(X: Matrix,
                       P: Matrix,
                       C: Matrix):
     """
-     The naiveBaysePredict-function predicts the scoring with a naive Bayes model.
+     This builtin function implements the prediction for NaiveBayes classification.
     
     
     
     :param X: Matrix of test data with N rows.
-    :param P: Class priors, One dimensional column matrix with N rows.
-    :param C: Class conditional probabilities, matrix with N rows
-    :return: A matrix containing the top-K item-ids with highest predicted ratings.
-    :return: A matrix containing predicted ratings.
+    :param P: Class prior probabilities
+    :param C: Class conditional feature distributions
+    :return: A matrix containing the top-K item-ids with highest predicted class.
+    :return: A matrix containing predicted class.
     """
 
     params_dict = {'X': X, 'P': P, 'C': C}

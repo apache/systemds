@@ -52,16 +52,16 @@ def steplm(X: Matrix,
     
     
     
-    :param X: Location (on HDFS) to read the matrix X of feature vectors
-    :param Y: Location (on HDFS) to read the 1-column matrix Y of response values
+    :param X: Matrix X of feature vectors
+    :param Y: Single-column Matrix Y of response values
     :param icpt: Intercept presence, shifting and rescaling the columns of X:
         0 = no intercept, no shifting, no rescaling;
         1 = add intercept, but neither shift nor rescale X;
         2 = add intercept, shift & rescale X columns to mean = 0, variance = 1
-    :param reg: learning rate
+    :param reg: Regularization parameter, 0 for no penalty
     :param tol: Tolerance threshold to train until achieved
-    :param maxi: maximum iterations 0 means until tolerance is reached
-    :param verbose: If the algorithm should be verbose
+    :param maxi: Maximum iterations 0 means until tolerance is reached
+    :param verbose: Indicator for verbose debug output
     :return: Matrix of regression parameters (the betas) and its size depend on icpt input value.
     :return: Matrix of selected features ordered as computed by the algorithm.
     """

@@ -30,8 +30,10 @@ Matrix Operations
 Making use of SystemDS, let us multiply an Matrix with an scalar:
 
 .. include:: ../code/getting_started/simpleExamples/multiply.py
-  :start-line: 20
   :code: python
+  :start-line: 20
+  :encoding: utf-8
+  :literal:
 
 As output we get
 
@@ -48,8 +50,10 @@ Let us do a quick element-wise matrix multiplication of numpy arrays with System
 Remember to first start up a new terminal:
 
 .. include:: ../code/getting_started/simpleExamples/multiplyMatrix.py
-  :start-line: 20
   :code: python
+  :start-line: 20
+  :encoding: utf-8
+  :literal:
 
 More complex operations
 -----------------------
@@ -58,8 +62,10 @@ SystemDS provides algorithm level functions as built-in functions to simplify de
 One example of this is l2SVM, a high level functions for Data-Scientists. Let's take a look at l2svm:
 
 .. include:: ../code/getting_started/simpleExamples/l2svm.py
-  :start-line: 20
   :code: python
+  :start-line: 20
+  :encoding: utf-8
+  :literal:
 
 The output should be similar to
 
@@ -81,8 +87,10 @@ instead of using numpy arrays that have to be transfered into systemDS.
 The above script transformed goes like this:
 
 .. include:: ../code/getting_started/simpleExamples/l2svm_internal.py
-  :start-line: 20
   :code: python
+  :start-line: 20
+  :encoding: utf-8
+  :literal:
 
 When reading in datasets for processing it is highly recommended that you read from inside systemds using 
 sds.read("file"), since this avoid the transferring of numpy arrays.

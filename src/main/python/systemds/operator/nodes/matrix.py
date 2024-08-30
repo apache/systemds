@@ -280,6 +280,20 @@ class Matrix(OperationNode):
         """
         return Matrix(self.sds_context, 'exp', [self])
 
+    def floor(self) -> 'Matrix':
+        """Return the floor of the input, element-wise.
+
+        :return: `Matrix` representing operation
+        """
+        return Matrix(self.sds_context, 'floor', [self])
+
+    def ceil(self) -> 'Matrix':
+        """Return the ceiling of the input, element-wise.
+
+        :return: `Matrix` representing operation
+        """
+        return Matrix(self.sds_context, 'ceil', [self])
+
     def sin(self) -> 'Matrix':
         """Calculate sin.
 

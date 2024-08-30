@@ -177,6 +177,13 @@ class Scalar(OperationNode):
         """
         return Scalar(self.sds_context, 'ceil', [self])
 
+    def log(self) -> 'Scalar':
+        """Calculate logarithm.
+
+        :return: `Scalar` representing operation
+        """
+        return Scalar(self.sds_context, 'log', [self])
+
     def sin(self) -> 'Scalar':
         """Calculate sin.
 

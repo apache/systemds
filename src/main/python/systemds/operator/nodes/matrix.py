@@ -294,6 +294,13 @@ class Matrix(OperationNode):
         """
         return Matrix(self.sds_context, 'ceil', [self])
 
+    def log(self) -> 'Matrix':
+        """Calculate logarithm.
+
+        :return: `Matrix` representing operation
+        """
+        return Matrix(self.sds_context, 'log', [self])
+
     def sin(self) -> 'Matrix':
         """Calculate sin.
 

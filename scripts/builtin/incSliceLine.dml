@@ -98,7 +98,8 @@ m_incSliceLine = function(
     [TK, TKC, D, L, Stats, Xout, eOut, foffb, foffe, metaLattice, params] = throwNoParamsError();
   } else {
 
-  t1 = time();
+  disableIncScorePruning = FALSE;
+  disableIncSizePruning = FALSE;
 
   if(pruningStrat == 1){
     disableIncScorePruning = TRUE;
@@ -110,6 +111,8 @@ m_incSliceLine = function(
     disableIncScorePruning = TRUE;
     disableIncSizePruning = TRUE;
   }
+
+  t1 = time();
 
   # store params for next run
   [params, k, maxL, minSup, alpha, tpEval, tpBlksz, selFeat, encodeLat] = storeParams(k, maxL, minSup, alpha, tpEval, tpBlksz, selFeat, encodeLat, params);

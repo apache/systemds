@@ -17,26 +17,32 @@
  * under the License.
  */
 
-package org.apache.sysds.runtime.compress.readers;
+package org.apache.sysds.test.component.compress.functional;
 
+import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.when;
+
+import org.apache.sysds.runtime.compress.colgroup.functional.LinearRegression;
+import org.apache.sysds.runtime.compress.colgroup.indexes.ColIndexFactory;
 import org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex;
-import org.apache.sysds.runtime.compress.utils.DblArray;
-import org.apache.sysds.runtime.data.DenseBlock;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
+import org.junit.Test;
 
-public class ReaderColumnSelectionDenseMultiBlock extends ReaderColumnSelection {
-	private DenseBlock _data;
+public class LinearRegNegativeTest {
 
-	protected ReaderColumnSelectionDenseMultiBlock(MatrixBlock data, IColIndex colIndices, int rl, int ru) {
-		super(colIndices, rl, Math.min(ru, data.getNumRows()) - 1);
-		_data = data.getDenseBlock();
+	@Test(expected = Exception.class)
+	public void invalidRows() {
+		LinearRegression.regressMatrixBlock(new MatrixBlock(-1, -1, 132), null, false);
 	}
 
-	protected DblArray getNextRow() {
-		_rl++;
-		for(int i = 0; i < _colIndexes.size(); i++)
-			reusableArr[i] = _data.get(_rl, _colIndexes.get(i));
+	@Test(expected = Exception.class)
+	public void invalidCols() {
 
-		return reusableReturn;
+		IColIndex spy = spy(ColIndexFactory.create(10));
+		when(spy.size()).thenReturn(-1);
+		
+		LinearRegression.regressMatrixBlock(new MatrixBlock(10, 10, 132), spy, false);
 	}
+
+
 }

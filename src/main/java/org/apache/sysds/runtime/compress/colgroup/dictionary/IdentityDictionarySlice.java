@@ -27,15 +27,20 @@ import java.util.Arrays;
 
 import org.apache.commons.lang3.NotImplementedException;
 import org.apache.sysds.runtime.DMLRuntimeException;
+import org.apache.sysds.runtime.compress.DMLCompressionException;
 import org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex;
+import org.apache.sysds.runtime.data.SparseBlock;
 import org.apache.sysds.runtime.functionobjects.Builtin;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
+import org.apache.sysds.runtime.matrix.operators.BinaryOperator;
 
 public class IdentityDictionarySlice extends IdentityDictionary {
 
 	private static final long serialVersionUID = 2535887782150955098L;
 
+	/** Lower index for the slice */
 	private final int l;
+	/** Upper index for the slice (not inclusive) */
 	private final int u;
 
 	/**
@@ -59,9 +64,9 @@ public class IdentityDictionarySlice extends IdentityDictionary {
 	public double[] getValues() {
 		LOG.warn("Should not call getValues on Identity Dictionary");
 		int nCol = u - l;
-		double[] ret = new double[nCol * nRowCol];
+		double[] ret = new double[nCol * (nRowCol + (withEmpty ? 1 : 0))];
 		for(int i = l; i < u; i++) {
-			ret[(i * nCol) + i] = 1;
+			ret[(i * nCol) + (i - l)] = 1;
 		}
 		return ret;
 	}
@@ -193,7 +198,14 @@ public class IdentityDictionarySlice extends IdentityDictionary {
 
 	@Override
 	public IDictionary sliceOutColumnRange(int idxStart, int idxEnd, int previousNumberOfColumns) {
-		throw new NotImplementedException("Slice of identity slice ??? this is getting a bit ridiculous");
+		return getMBDict().sliceOutColumnRange(idxStart, idxEnd, previousNumberOfColumns);
+	}
+
+	@Override
+	public int getNumberOfValues(int ncol) {
+		if(ncol != u - l)
+			throw new DMLCompressionException("Invalid call to get Number of values assuming wrong number of columns");
+		return nRowCol + (withEmpty ? 1 : 0);
 	}
 
 	@Override
@@ -244,17 +256,24 @@ public class IdentityDictionarySlice extends IdentityDictionary {
 	public void write(DataOutput out) throws IOException {
 		out.writeByte(DictionaryFactory.Type.IDENTITY_SLICE.ordinal());
 		out.writeInt(nRowCol);
+		out.writeBoolean(withEmpty);
 		out.writeInt(l);
 		out.writeInt(u);
 	}
 
-	public static IdentityDictionary read(DataInput in) throws IOException {
-		return new IdentityDictionary(in.readInt());
+	public static IdentityDictionarySlice read(DataInput in) throws IOException {
+
+		int nRowCol = in.readInt();
+		boolean empty = in.readBoolean();
+		int l = in.readInt();
+		int u = in.readInt();
+
+		return new IdentityDictionarySlice(nRowCol, empty, l, u);
 	}
 
 	@Override
 	public long getExactSizeOnDisk() {
-		return 1 + 4 * 3;
+		return 1 + 4 * 3 + 1;
 	}
 
 	@Override
@@ -275,7 +294,12 @@ public class IdentityDictionarySlice extends IdentityDictionary {
 
 	@Override
 	public double getSparsity() {
-		return 1d / nRowCol;
+		return (double) (u - l) / ((u -l) * (nRowCol + (withEmpty ? 1 : 0)));
+	}
+
+	@Override
+	public IDictionary binOpRight(BinaryOperator op, double[] v, IColIndex colIndexes) {
+		return getMBDict().binOpRight(op, v);
 	}
 
 	@Override
@@ -287,12 +311,13 @@ public class IdentityDictionarySlice extends IdentityDictionary {
 	@Override
 	public void addToEntryVectorized(double[] v, int f1, int f2, int f3, int f4, int f5, int f6, int f7, int f8, int t1,
 		int t2, int t3, int t4, int t5, int t6, int t7, int t8, int nCol) {
-		throw new NotImplementedException();
+		getMBDict().addToEntryVectorized(v, f1, f2, f3, f4, f5, f6, f7, f8, t1, t2, t3, t4, t5, t6, t7, t8, nCol);
 	}
 
 	@Override
 	public void addToEntry(final double[] v, final int fr, final int to, final int nCol, int rep) {
-		throw new NotImplementedException();
+		if(fr >= l && fr < u) 
+			v[to * nCol + fr - l] += rep;
 	}
 
 	@Override
@@ -303,17 +328,23 @@ public class IdentityDictionarySlice extends IdentityDictionary {
 		}
 		else if(o instanceof IdentityDictionary)
 			return false;
-		MatrixBlock mb = getMBDict().getMatrixBlock();
-		if(o instanceof MatrixBlockDictionary)
-			return mb.equals(((MatrixBlockDictionary) o).getMatrixBlock());
-		else if(o instanceof Dictionary) {
-			if(mb.isInSparseFormat())
-				return mb.getSparseBlock().equals(((Dictionary) o)._values, nRowCol);
-			final double[] dv = mb.getDenseBlockValues();
-			return Arrays.equals(dv, ((Dictionary) o)._values);
+		else
+			return getMBDict().equals(o);
+	}
+
+	@Override
+	public MatrixBlockDictionary getMBDict() {
+		final int nCol = u - l;
+		MatrixBlock mb = new MatrixBlock(nRowCol + (withEmpty ? 1 : 0), nCol, true);
+		mb.allocateSparseRowsBlock();
+
+		SparseBlock sb = mb.getSparseBlock();
+		for(int i = l; i < u; i++) {
+			sb.append(i, i - l, 1);
 		}
 
-		return false;
+		mb.setNonZeros(nCol);
+		return new MatrixBlockDictionary(mb);
 	}
 
 }

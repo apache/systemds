@@ -305,7 +305,7 @@ public class DictLibMatrixMult {
 		}
 	}
 
-		protected static void MMDictsScalingDenseSparse(double[] left, SparseBlock right, IColIndex rowsLeft, IColIndex colsRight,
+	protected static void MMDictsScalingDenseSparse(double[] left, SparseBlock right, IColIndex rowsLeft, IColIndex colsRight,
 		MatrixBlock result, int[] scaling) {
 		final double[] resV = result.getDenseBlockValues();
 		final int leftSize = rowsLeft.size();

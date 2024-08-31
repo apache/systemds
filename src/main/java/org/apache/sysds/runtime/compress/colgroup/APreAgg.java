@@ -85,14 +85,14 @@ public abstract class APreAgg extends AColGroupValue {
 	 * @return A aggregate dictionary
 	 */
 	public final IDictionary preAggregateThatIndexStructure(APreAgg that) {
-		final long outputLength = (long)that._colIndexes.size() * this.getNumValues();
+		final long outputLength = (long) that._colIndexes.size() * this.getNumValues();
 		if(outputLength > Integer.MAX_VALUE)
 			throw new NotImplementedException("Not supported pre aggregate of above integer length");
 		if(outputLength <= 0) // if the pre aggregate output is empty or nothing, return null
 			return null;
-		
+
 		// create empty Dictionary that we slowly fill, hence the dictionary is empty and no check
-		final Dictionary ret = Dictionary.createNoCheck(new double[(int)outputLength]);
+		final Dictionary ret = Dictionary.createNoCheck(new double[(int) outputLength]);
 
 		if(that instanceof ColGroupDDC)
 			preAggregateThatDDCStructure((ColGroupDDC) that, ret);
@@ -119,7 +119,7 @@ public abstract class APreAgg extends AColGroupValue {
 	 */
 	public final void preAggregate(MatrixBlock m, double[] preAgg, int rl, int ru) {
 		if(m.isInSparseFormat())
-			preAggregateSparse(m.getSparseBlock(), preAgg, rl, ru);
+			preAggregateSparse(m.getSparseBlock(), preAgg, rl, ru, 0, m.getNumColumns());
 		else
 			preAggregateDense(m, preAgg, rl, ru, 0, m.getNumColumns());
 	}
@@ -136,7 +136,7 @@ public abstract class APreAgg extends AColGroupValue {
 	 */
 	public abstract void preAggregateDense(MatrixBlock m, double[] preAgg, int rl, int ru, int cl, int cu);
 
-	public abstract void preAggregateSparse(SparseBlock sb, double[] preAgg, int rl, int ru);
+	public abstract void preAggregateSparse(SparseBlock sb, double[] preAgg, int rl, int ru, int cl, int cu);
 
 	protected abstract void preAggregateThatDDCStructure(ColGroupDDC that, Dictionary ret);
 
@@ -160,11 +160,13 @@ public abstract class APreAgg extends AColGroupValue {
 			final boolean left = shouldPreAggregateLeft(lg);
 			if(!loggedWarningForDirect && shouldDirectMultiply(lg, leftIdx.size(), rightIdx.size(), left)) {
 				loggedWarningForDirect = true;
-				LOG.warn("Not implemented direct tsmm colgroup: " + lg.getClass().getSimpleName()  + " %*% " + this.getClass().getSimpleName() );
+				LOG.warn("Not implemented direct tsmm colgroup: " + lg.getClass().getSimpleName() + " %*% "
+					+ this.getClass().getSimpleName());
 			}
 
 			if(left) {
 				final IDictionary lpa = this.preAggregateThatIndexStructure(lg);
+				
 				if(lpa != null)
 					DictLibMatrixMult.TSMMToUpperTriangle(lpa, _dict, leftIdx, rightIdx, result);
 			}
@@ -311,17 +313,20 @@ public abstract class APreAgg extends AColGroupValue {
 		// Shallow copy the preAgg to allow sparse PreAgg multiplication but do not remove the original dense allocation
 		// since the dense allocation is reused.
 		final MatrixBlock preAggCopy = new MatrixBlock();
-		preAggCopy.copy(preAgg);
+		preAggCopy.copyShallow(preAgg);
 		final MatrixBlock tmpResCopy = new MatrixBlock();
-		tmpResCopy.copy(tmpRes);
+		tmpResCopy.copyShallow(tmpRes);
 		// Get dictionary matrixBlock
 		final MatrixBlock dict = getDictionary().getMBDict(_colIndexes.size()).getMatrixBlock();
 		if(dict != null) {
 			// Multiply
-			LibMatrixMult.matrixMult(preAggCopy, dict, tmpResCopy, k);
-			ColGroupUtils.addMatrixToResult(tmpResCopy, ret, _colIndexes, rl, ru);
+			LibMatrixMult.matrixMult(preAggCopy, dict, tmpRes, k);
+			ColGroupUtils.addMatrixToResult(tmpRes, ret, _colIndexes, rl, ru);
 		}
 	}
 
 	protected abstract int numRowsToMultiply();
+
+	public abstract void leftMMIdentityPreAggregateDense(MatrixBlock that, MatrixBlock ret, int rl, int ru, int cl,
+		int cu);
 }

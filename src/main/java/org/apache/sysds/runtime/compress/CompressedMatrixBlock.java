@@ -1245,6 +1245,11 @@ public class CompressedMatrixBlock extends MatrixBlock {
 		throw new DMLCompressionException("Invalid to allocate block on a compressed MatrixBlock");
 	}
 
+	@Override 
+	public MatrixBlock transpose(int k) {
+		return getUncompressed().transpose(k);
+	}
+
 	@Override
 	public String toString() {
 		StringBuilder sb = new StringBuilder();

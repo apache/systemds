@@ -230,6 +230,7 @@ public class MatrixBlock extends MatrixValue implements CacheBlock<MatrixBlock>,
 		clen = cl;
 		sparse = false;
 		denseBlock = dBlock;
+		nonZeros = -1;
 	}
 
 	public MatrixBlock(int rl, int cl, double[] vals){
@@ -5528,6 +5529,25 @@ public class MatrixBlock extends MatrixValue implements CacheBlock<MatrixBlock>,
 			out.randOperationsInPlace(rgen, bigrand, -1);
 		
 		return out;
+	}
+
+	/**
+	 * Transpose this MatrixBlock
+	 * 
+	 * @return The transpose MatrixBlock
+	 */
+	public final MatrixBlock transpose() {
+		return transpose(1);
+	}
+
+	/**
+	 * Transpose this MatrixBlock leveraging parallelzation degree k
+	 * 
+	 * @param k Parallelization degree allowed
+	 * @return The transpose MatrixBlock
+	 */
+	public MatrixBlock transpose(int k) {
+		return LibMatrixReorg.transpose(this, k);
 	}
 	
 	/**

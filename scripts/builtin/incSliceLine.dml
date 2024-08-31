@@ -221,6 +221,7 @@ m_incSliceLine = function(
   # reduce dataset to relevant attributes (minSup, err>0), S reduced on-the-fly
   if( selFeat ){
     X2 = removeEmpty(target=X2, margin="cols", select=t(selCols));
+    changedX2 = removeEmpty(target=changedX2, margin="cols", select=t(selCols));
   }
 
   # lattice enumeration w/ size/error pruning, one iteration per level
@@ -230,16 +231,9 @@ m_incSliceLine = function(
   while( nrow(S) > 0 & sum(S) > 0 & level < n & level < maxL ) {
     level = level + 1;
 
-    # load one hot encoded previous lattice for the current level
-    prevLattice2 = matrix(0,0,0);
-    if(!disableIncSizePruning){
-      prevLattice2 = preparePrevLattice(prevLattice, metaPrevLattice, prevFoffb, 
-        prevFoffe, foffb, foffe, level, encodeLat, differentOffsets)
-    }
-
     # enumerate candidate join pairs, incl size/error pruning
     nrS = nrow(S);
-    [S, minsc] = getPairedCandidates(S, minsc, R, TKC, level, eAvg, minSup, alpha, n2, foffb, foffe, prevLattice2, prevStats, changedX2, verbose, disableIncSizePruning)
+    [S, minsc] = getPairedCandidates(S, minsc, R, TKC, level, eAvg, minSup, alpha, n2, foffb, foffe);
     S2 = S;
 
     # prepare and store output lattice for next run
@@ -251,13 +245,28 @@ m_incSliceLine = function(
     }
     L = append(L, Lrep);
 
+    # load one hot encoded previous lattice for the current level
+    prevLattice2 = matrix(0,0,0);
+    if(!disableIncSizePruning){
+      prevLattice2 = preparePrevLattice(prevLattice, metaPrevLattice, prevFoffb, 
+        prevFoffe, foffb, foffe, level, encodeLat, differentOffsets)
+    }
+
 
     if(selFeat){
+      if(length(prevLattice2)>0 & !disableIncSizePruning){ 
+        prevLattice2 = removeEmpty(target=prevLattice2, margin="cols", select=t(selCols));
+      }
       S2 = removeEmpty(target=S, margin="cols", select=t(selCols));
     }
 
     if(verbose) {
         print("\nincSliceLine: level "+level+":")
+    }
+    
+    # prune unchanged slices with slice size < minSup
+    if(level <= length(prevStats) & !disableIncSizePruning){
+      [S, S2] = pruneUnchangedSlices(S, S2,  prevLattice2, prevStats, changedX2, minSup, verbose, level);
     }
 
     if(verbose) {
@@ -441,7 +450,7 @@ analyzeTopK = function(Matrix[Double] TKC) return(Double maxsc, Double minsc) {
 getPairedCandidates = function(Matrix[Double] S, Double minsc,
     Matrix[Double] R, Matrix[Double] TKC, Integer level,
     Double eAvg, Integer minSup, Double alpha, Integer n2,
-    Matrix[Double] foffb, Matrix[Double] foffe, Matrix[Double] prevLattice2, list[unknown] prevStats, Matrix[Double] changedX2, Boolean verbose, Boolean disableIncSizePruning)
+    Matrix[Double] foffb, Matrix[Double] foffe)
   return(Matrix[Double] P, Double minsc)
 {
   # prune invalid slices (possible without affecting overall
@@ -471,21 +480,6 @@ getPairedCandidates = function(Matrix[Double] S, Double minsc,
     se = min(P1 %*% R[,2], P2 %*% R[,2])
     sm = min(P1 %*% R[,3], P2 %*% R[,3])
     ss = min(P1 %*% R[,4], P2 %*% R[,4])
-
-    # prune unchanged slices with slice size < minSup
-    if(level <= length(prevStats) & !disableIncSizePruning){
-      I = pruneUnchangedSlices(P,  prevLattice2, prevStats, changedX2, minSup, verbose, level);
-      if(sum(I) > 0){
-        P = removeEmpty(target=P, margin="rows", select=I == 0);
-        P12 = removeEmpty(target=P12, margin="rows", select=I == 0);
-        ss = removeEmpty(target=ss, margin="rows", select=I == 0);
-        se = removeEmpty(target=se, margin="rows", select=I == 0);
-        sm = removeEmpty(target=sm, margin="rows", select=I == 0);
-        if(verbose) {
-          print(" -- Pruning " + sum(I) +" slices that are unchanged and below min sup.");
-        }
-      }
-    }
 
     # prune invalid self joins (>1 bit per feature)
     I = matrix(1, nrow(P), 1);
@@ -664,8 +658,8 @@ computeLowestPrevTK = function(Matrix[Double] prevTK2, Matrix[Double] X2,
   minsc = min(sc);
 }
 
-pruneUnchangedSlices = function(Matrix[Double] S2, Matrix[Double] prevLattice2, list[unknown] prevStats, Matrix[Double] changedX2, Int minSup, Boolean verbose, Integer level)
-  return(Matrix[Double] unchangedAndBelowMinSupI)
+pruneUnchangedSlices = function(Matrix[Double] S, Matrix[Double] S2, Matrix[Double] prevLattice2, list[unknown] prevStats, Matrix[Double] changedX2, Int minSup, Boolean verbose, Integer level)
+  return(Matrix[Double] S, Matrix[Double] S2)
 {
   unchangedS = matrix(0,0,ncol(prevLattice2));
   unchangedR = matrix(0,0,4);
@@ -687,7 +681,13 @@ pruneUnchangedSlices = function(Matrix[Double] S2, Matrix[Double] prevLattice2, 
       unchangedAndBelowMinSup = rowSums(unchangedSizes < minSup & unchangedSizes > 0) != 0;
     }
 
-
+    if(sum(unchangedAndBelowMinSupI) > 0){
+      S2 = removeEmpty(target=S2, margin="rows", select=unchangedAndBelowMinSupI == 0);
+      S = removeEmpty(target=S, margin="rows", select=unchangedAndBelowMinSupI == 0);
+      if(verbose) {
+        print(" -- Pruning " + sum(unchangedAndBelowMinSupI) +" slices that are unchanged and below min sup.");
+      }
+    }
   }
 }
 

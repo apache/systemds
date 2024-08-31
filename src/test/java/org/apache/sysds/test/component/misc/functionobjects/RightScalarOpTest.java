@@ -17,31 +17,31 @@
  * under the License.
  */
 
-package org.apache.sysds.runtime.functionobjects;
+package org.apache.sysds.test.component.misc.functionobjects;
 
-public class IfElse extends TernaryValueFunction
-{
-	private static final long serialVersionUID = -8660124936856173978L;
-	
-	private static IfElse singleObj = null;
+import static org.junit.Assert.assertEquals;
 
-	private IfElse() {
-		// nothing to do here
+import org.apache.sysds.runtime.functionobjects.Plus;
+import org.apache.sysds.runtime.matrix.operators.RightScalarOperator;
+import org.junit.Test;
+
+public class RightScalarOpTest {
+
+	@Test
+	public void testToString() {
+		RightScalarOperator op = new RightScalarOperator(Plus.getPlusFnObject(), 2);
+		assertEquals("Right(Plus, 2.0, 1)", op.toString());
 	}
 
-	public static IfElse getFnObject() {
-		if ( singleObj == null )
-			singleObj = new IfElse();
-		return singleObj;
-	}
-	
-	@Override
-	public double execute(double in1, double in2, double in3) {
-		return (in1 != 0) ? in2 : in3;
+	@Test
+	public void testToString2() {
+		RightScalarOperator op = new RightScalarOperator(Plus.getPlusFnObject(), 2, 2);
+		assertEquals("Right(Plus, 2.0, 2)", op.toString());
 	}
 
-	@Override
-	public ValueFunction setOp2Constant(double cnt) {
-		throw new UnsupportedOperationException("Invalid call to set op2 on ternary ifElse");
+	@Test
+	public void testToString3() {
+		RightScalarOperator op = new RightScalarOperator(Plus.getPlusFnObject(), 2341.2, 2);
+		assertEquals("Right(Plus, 2341.2, 2)", op.toString());
 	}
 }

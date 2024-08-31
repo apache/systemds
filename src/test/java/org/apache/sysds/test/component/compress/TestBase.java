@@ -61,6 +61,8 @@ public class TestBase {
 		CompressionSettingsBuilder compressionSettings, MatrixTypology MatrixTypology, OverLapping ov,
 		Collection<CompressionType> ct) {
 
+		Thread.currentThread().setName("main_test_" + Thread.currentThread().getId());
+
 		CompressedMatrixBlock.debug = true;
 
 		this.sparsity = TestConstants.getSparsityValue(sparType);

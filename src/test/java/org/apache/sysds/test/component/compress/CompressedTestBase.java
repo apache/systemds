@@ -26,7 +26,6 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.EnumSet;
 import java.util.List;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.apache.commons.lang3.NotImplementedException;
@@ -952,14 +951,14 @@ public abstract class CompressedTestBase extends TestBase {
 		}
 		catch(NotImplementedException e) {
 			if(!printedErrorForNotImplementedTestBinaryVMPlus.get()) {
-				LOG.error("Failed Binary VM Plus: " + e.getMessage());
+				LOG.error("Failed Left " + e.getMessage());
 				printedErrorForNotImplementedTestBinaryVMPlus.set(true);
 			}
 		}
 		catch(Exception e) {
-			if(e.getCause() instanceof ExecutionException && e.getCause().getCause() instanceof NotImplementedException) {
+			if(e.getCause() instanceof NotImplementedException) {
 				if(!printedErrorForNotImplementedTestBinaryVMPlus.get()) {
-					LOG.error("Failed Binary VM Plus: " + e.getMessage());
+					LOG.error("Failed Left " + e.getMessage());
 					printedErrorForNotImplementedTestBinaryVMPlus.set(true);
 				}
 			}

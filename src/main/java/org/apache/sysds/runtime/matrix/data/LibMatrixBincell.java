@@ -163,13 +163,6 @@ public class LibMatrixBincell {
 		else
 			ret.reset(m1.getNumRows(), m1.getNumColumns(), sp, m1.nonZeros);
 
-		//check internal assumptions 
-		if(   (op.sparseSafe && m1.isInSparseFormat()!=ret.isInSparseFormat())
-			||(!op.sparseSafe && ret.isInSparseFormat()) ) {
-			throw new DMLRuntimeException("Wrong output representation for safe=" + op.sparseSafe + ": "
-				+ m1.isInSparseFormat() + ", " + ret.isInSparseFormat());
-		}
-
 		if((op.fn instanceof Multiply && op.getConstant() == 0.0))
 			return ret; // no op
 		
@@ -188,12 +181,13 @@ public class LibMatrixBincell {
 		return ret;
 	}
 
-	public static MatrixBlock bincellOp(MatrixBlock m1, MatrixBlock m2, MatrixBlock ret, BinaryOperator op, int k) {
+	public static MatrixBlock bincellOp(MatrixBlock m1, MatrixBlock m2, MatrixBlock ret, BinaryOperator op) {
 		try{
+
 			// Timing time = new Timing(true);
 			isValidDimensionsBinary(m1, m2);
 			op = replaceOpWithSparseSafeIfApplicable(m1, m2, op);
-
+			
 			//compute output dimensions
 			final BinaryAccessType atype = getBinaryAccessType(m1, m2);
 			boolean outer = (atype == BinaryAccessType.OUTER_VECTOR_VECTOR); 
@@ -215,6 +209,7 @@ public class LibMatrixBincell {
 				return ret;
 			
 			ret.allocateBlock();
+			int k = op.getNumThreads();
 
 			// fallback to sequential computation for specialized operations
 			if(k <= 1 || m1.isEmpty() || m2.isEmpty()
@@ -337,7 +332,7 @@ public class LibMatrixBincell {
 			MatrixBlock right = new MatrixBlock(nRows, nCols, true);
 			right.copyShallow(m1ret);
 			m1ret.cleanupBlock(true, true);
-			bincellOp(m2, right, m1ret, op, 1);
+			bincellOp(m2, right, m1ret, op);
 			return m1ret;
 		}
 
@@ -406,16 +401,20 @@ public class LibMatrixBincell {
 		if(rlen1 == rlen2) {
 			if(clen1 == clen2)
 				return BinaryAccessType.MATRIX_MATRIX;
-			else if(clen1 < clen2)
+			else if(clen1 < clen2 && clen1 == 1)
 				return BinaryAccessType.COL_VECTOR_MATRIX;
-			else
+			else if(clen2 == 1)
 				return BinaryAccessType.MATRIX_COL_VECTOR;
+			else 
+				return BinaryAccessType.INVALID;
 		}
 		else if(clen1 == clen2) {
-			if(rlen1 < rlen2)
+			if(rlen1 < rlen2 && rlen1 == 1)
 				return BinaryAccessType.ROW_VECTOR_MATRIX;
-			else
+			else if(rlen2 == 1)
 				return BinaryAccessType.MATRIX_ROW_VECTOR;
+			else 
+				return BinaryAccessType.INVALID;
 		}
 		else if(clen1 == 1 && rlen2 == 1)
 			return BinaryAccessType.OUTER_VECTOR_VECTOR;
@@ -445,28 +444,7 @@ public class LibMatrixBincell {
 		}
 	}
 
-	public static void isValidDimensionsBinaryExtended(MatrixBlock m1, MatrixBlock m2) {
-		final int rlen1 = m1.rlen;
-		final int clen1 = m1.clen;
-		final int rlen2 = m2.rlen;
-		final int clen2 = m2.clen;
-
-		// Added extra 2 options
-		// 2a) VM operations with V either being a left-hand-side column or row vector.
-		boolean isValid = ((rlen1 == rlen2 && clen1 == clen2) // MM
-			|| (rlen1 == rlen2 && clen1 > 1 && clen2 == 1) // MVc
-			|| (rlen1 == rlen2 && clen1 == 1 && clen2 > 1) // VMc
-			|| (clen1 == clen2 && rlen1 > 1 && rlen2 == 1) // MVr
-			|| (clen1 == clen2 && rlen1 == 1 && rlen2 > 1) // VMr
-			|| (clen1 == 1 && rlen2 == 1)); // VV
-
-		if(!isValid) {
-			throw new RuntimeException("Block sizes are not matched for binary " + "cell operations: " + rlen1 + "x"
-				+ clen1 + " vs " + rlen2 + "x" + clen2);
-		}
-	}
-
-	private static BinaryOperator replaceOpWithSparseSafeIfApplicable(MatrixBlock m1, MatrixBlock m2, BinaryOperator op) {
+	public static BinaryOperator replaceOpWithSparseSafeIfApplicable(MatrixBlock m1, MatrixBlock m2, BinaryOperator op) {
 		if((m1.getSparsity() < 1 || m2.getSparsity() < 1) && op.fn instanceof Builtin &&
 			((Builtin) op.fn).bFunc == BuiltinCode.LOG) {
 			op = new BinaryOperator(Builtin.getBuiltinFnObject(BuiltinCode.LOG_NZ), op.getNumThreads());
@@ -750,7 +728,7 @@ public class LibMatrixBincell {
 		BinaryAccessType atype, int rl, int ru) {
 		if( !m1.sparse && !m2.sparse && !ret.sparse ) //DENSE all
 			return safeBinaryMVDense(m1, m2, ret, op, rl, ru);
-		else if( m1.sparse && !m2.sparse && !ret.sparse
+		else if( m1.sparse && !m2.sparse && !m2.isEmpty() && !ret.sparse
 			&& atype == BinaryAccessType.MATRIX_ROW_VECTOR)
 			safeBinaryMVSparseDenseRow(m1, m2, ret, op);
 		else if( m1.sparse ) //SPARSE m1

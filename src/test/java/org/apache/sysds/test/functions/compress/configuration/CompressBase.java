@@ -54,7 +54,7 @@ public abstract class CompressBase extends AutomatedTestBase {
 	public void compressTest(int rows, int cols, double sparsity, ExecType instType, int min, int max, double delta,
 		int decompressionCountExpected, int compressionCountsExpected, String name) {
 
-		OptimizerUtils.ALLOW_SCRIPT_LEVEL_COMPRESS_COMMAND =true;
+		OptimizerUtils.ALLOW_SCRIPT_LEVEL_COMPRESS_COMMAND = true;
 		Types.ExecMode platformOld = setExecMode(instType);
 		try {
 
@@ -74,7 +74,8 @@ public abstract class CompressBase extends AutomatedTestBase {
 			DMLCompressionStatistics.reset();
 
 			Assert.assertEquals(out + "\ncompression count   wrong : ", compressionCount, compressionCountsExpected);
-			Assert.assertEquals(out + "\nDecompression count wrong : ", decompressionCountExpected, decompressCount);
+			Assert.assertTrue(out + "\nDecompression count wrong : ",
+				decompressionCountExpected >= 0 ? decompressionCountExpected == decompressCount : decompressCount > 1);
 
 		}
 		catch(Exception e) {

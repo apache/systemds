@@ -19,7 +19,6 @@
 
 package org.apache.sysds.runtime.functionobjects;
 
-import org.apache.sysds.runtime.matrix.operators.BinaryOperator;
 
 public abstract class TernaryValueFunction extends ValueFunction
 {
@@ -27,7 +26,6 @@ public abstract class TernaryValueFunction extends ValueFunction
 	
 	public abstract double execute ( double in1, double in2, double in3 );
 	
-	public interface ValueFunctionWithConstant {
-		public BinaryOperator setOp2Constant(double cnt);
-	}
+	public abstract ValueFunction setOp2Constant(double cnt);
+	
 }

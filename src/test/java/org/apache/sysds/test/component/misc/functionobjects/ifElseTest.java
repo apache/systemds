@@ -17,31 +17,14 @@
  * under the License.
  */
 
-package org.apache.sysds.runtime.functionobjects;
+package org.apache.sysds.test.component.misc.functionobjects;
 
-public class IfElse extends TernaryValueFunction
-{
-	private static final long serialVersionUID = -8660124936856173978L;
-	
-	private static IfElse singleObj = null;
+import org.apache.sysds.runtime.functionobjects.IfElse;
+import org.junit.Test;
 
-	private IfElse() {
-		// nothing to do here
-	}
-
-	public static IfElse getFnObject() {
-		if ( singleObj == null )
-			singleObj = new IfElse();
-		return singleObj;
-	}
-	
-	@Override
-	public double execute(double in1, double in2, double in3) {
-		return (in1 != 0) ? in2 : in3;
-	}
-
-	@Override
-	public ValueFunction setOp2Constant(double cnt) {
-		throw new UnsupportedOperationException("Invalid call to set op2 on ternary ifElse");
+public class ifElseTest {
+	@Test(expected = Exception.class)
+	public void invalidToSetOp2Constant() {
+		IfElse.getFnObject().setOp2Constant(23);
 	}
 }

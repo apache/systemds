@@ -68,4 +68,9 @@ public class RightScalarOperator extends ScalarOperator
 	public double executeScalar(double in) {
 		return fn.execute(in, _constant);
 	}
+
+	@Override
+	public String toString() {
+		return "Right(" + fn + ", " + getConstant() + ", " + getNumThreads() + ")";
+	}
 }

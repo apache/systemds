@@ -36,6 +36,12 @@ public class TernaryOperator extends MultiThreadedOperator {
 		fn = p;
 		_numThreads = numThreads;
 	}
+
+
+	public BinaryOperator setOp2Constant(double cnt){
+
+		return new BinaryOperator(fn.setOp2Constant(cnt), getNumThreads());
+	}
 	
 	@Override
 	public String toString() {

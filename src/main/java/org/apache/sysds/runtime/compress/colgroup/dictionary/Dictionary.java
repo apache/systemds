@@ -254,6 +254,7 @@ public class Dictionary extends ADictionary {
 		final int lenV = colIndexes.size();
 		for(int i = 0; i < len; i++)
 			retVals[i] = fn.execute(_values[i], v[colIndexes.get(i % lenV)]);
+
 		return create(retVals);
 	}
 

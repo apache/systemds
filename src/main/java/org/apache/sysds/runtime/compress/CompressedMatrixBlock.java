@@ -479,14 +479,12 @@ public class CompressedMatrixBlock extends MatrixBlock {
 	@Override
 	public MatrixBlock binaryOperations(BinaryOperator op, MatrixValue thatValue, MatrixValue result) {
 		MatrixBlock that = thatValue == null ? null : (MatrixBlock) thatValue;
-		MatrixBlock ret = result == null ? null : (MatrixBlock) result;
-		return CLALibBinaryCellOp.binaryOperationsRight(op, this, that, ret);
+		return CLALibBinaryCellOp.binaryOperationsRight(op, this, that);
 	}
 
 	public MatrixBlock binaryOperationsLeft(BinaryOperator op, MatrixValue thatValue, MatrixValue result) {
 		MatrixBlock that = thatValue == null ? null : (MatrixBlock) thatValue;
-		MatrixBlock ret = result == null ? null : (MatrixBlock) result;
-		return CLALibBinaryCellOp.binaryOperationsLeft(op, this, that, ret);
+		return CLALibBinaryCellOp.binaryOperationsLeft(op, this, that);
 	}
 
 	@Override
@@ -885,7 +883,7 @@ public class CompressedMatrixBlock extends MatrixBlock {
 
 	@Override
 	public MatrixBlock ternaryOperations(TernaryOperator op, MatrixBlock m2, MatrixBlock m3, MatrixBlock ret) {
-		return CLALibTernaryOp.ternaryOperations(this, op, m2, m3, ret);
+		return CLALibTernaryOp.ternaryOperations(op, this, m2, m3);
 	}
 
 	@Override

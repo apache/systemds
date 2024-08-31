@@ -1090,6 +1090,9 @@ public class TestUtils {
 				return; // equally empty
 		}
 		else if(expectedMatrix.isEmpty()) {
+			expectedMatrix.recomputeNonZeros();
+			if(!expectedMatrix.isEmpty())
+				fail("expected matrix did not have correct non zero count");
 			if(expectedMatrix.getNumRows() < 10)
 				fail(message + "\nThe expected output is empty while the actual matrix is not\n" + expectedMatrix + "\n\n"
 					+ "actual:" + actualMatrix);
@@ -1097,6 +1100,9 @@ public class TestUtils {
 				+ expectedMatrix.getNonZeros() + " actual: " + actualMatrix.getNonZeros());
 		}
 		else if(actualMatrix.isEmpty()) {
+			actualMatrix.recomputeNonZeros();
+			if(!actualMatrix.isEmpty())
+				fail("actual did not have correct non zero count");
 			if(expectedMatrix.getNumRows() < 10)
 				fail(message + "\nThe actual output is empty while the expected matrix is not\nexpected:" + expectedMatrix
 					+ "\n\n" + "actual:" + actualMatrix);

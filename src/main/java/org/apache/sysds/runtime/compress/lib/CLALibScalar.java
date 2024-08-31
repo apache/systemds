@@ -62,7 +62,6 @@ public final class CLALibScalar {
 			MatrixBlock m1d = m1.decompress(sop.getNumThreads());
 			return m1d.scalarOperations(sop, result);
 		}
-
 		CompressedMatrixBlock ret = setupRet(m1, result);
 
 		List<AColGroup> colGroups = m1.getColGroups();
@@ -126,6 +125,8 @@ public final class CLALibScalar {
 				if(constV != null)
 					for(int i = 0; i < colIdx.size(); i++)
 						constV[colIdx.get(i)] += gv[i];
+				else // TODO : cleanup to also colapse groups in this case.
+					newColGroups.add(grp);
 			}
 			else
 				newColGroups.add(grp);
@@ -137,7 +138,7 @@ public final class CLALibScalar {
 
 	private static List<AColGroup> copyGroupsAndMultMinus(CompressedMatrixBlock m1, ScalarOperator sop, ColGroupConst c,
 		CompressedMatrixBlock ret) {
-		final double[] constV = c.getValues();
+		final double[] constV = c != null ? c.getValues() : null;
 		final List<AColGroup> newColGroups = new ArrayList<>();
 		for(AColGroup grp : m1.getColGroups()) {
 			if(grp instanceof ColGroupEmpty)
@@ -146,12 +147,17 @@ public final class CLALibScalar {
 				final ColGroupConst g = (ColGroupConst) grp;
 				final double[] gv = g.getValues();
 				final IColIndex colIdx = grp.getColIndices();
-				for(int i = 0; i < colIdx.size(); i++)
-					constV[colIdx.get(i)] -= gv[i];
+				if(constV != null)
+					for(int i = 0; i < colIdx.size(); i++)
+						constV[colIdx.get(i)] -= gv[i];
+				else // TODO : cleanup to also colapse groups in this case.
+					newColGroups.add(grp);
 			}
 			else
 				newColGroups.add(grp.scalarOperation(new RightScalarOperator(Multiply.getMultiplyFnObject(), -1)));
 		}
+		if(c != null)
+			newColGroups.add(c);
 		newColGroups.add(c);
 		return newColGroups;
 	}
@@ -179,7 +185,7 @@ public final class CLALibScalar {
 		catch(InterruptedException | ExecutionException e) {
 			throw new DMLRuntimeException(e);
 		}
-		finally{
+		finally {
 			pool.shutdown();
 		}
 	}

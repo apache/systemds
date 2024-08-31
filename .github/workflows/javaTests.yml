@@ -52,7 +52,7 @@ jobs:
         tests: [
           "org.apache.sysds.test.applications.**",
           "**.test.usertest.**",
-          "**.component.c**.**",
+          "**.component.c**.** -Dtest-threadCount=1 -Dtest-forkCount=1",
           "**.component.e**.**,**.component.f**.**,**.component.m**.**",
           "**.component.p**.**,**.component.r**.**,**.component.s**.**,**.component.t**.**,**.component.u**.**",
           "**.functions.a**.**,**.functions.binary.matrix.**,**.functions.binary.scalar.**,**.functions.binary.tensor.**",

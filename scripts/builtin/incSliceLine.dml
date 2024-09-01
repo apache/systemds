@@ -77,8 +77,8 @@ m_incSliceLine = function(
     Matrix[Double] indicesRemoved = matrix(0,0,0),
     Boolean verbose = FALSE, list[unknown] params = list(),
     Matrix[Double] prevFoffb = matrix(0,0,0), Matrix[Double] prevFoffe = matrix(0,0,0),
-    list[unknown] prevLattice = list(), list[unknown] metaPrevLattice = list(), 
-    list[unknown] prevStats = list(), Matrix[Double] prevTK = matrix(0,0,0), 
+    list[unknown] prevLattice = list(), list[unknown] metaPrevLattice = list(),
+    list[unknown] prevStats = list(), Matrix[Double] prevTK = matrix(0,0,0),
     Matrix[Double] prevTKC = matrix(0,0,0), Boolean encodeLat = TRUE,
     Int pruningStrat = 0
     )
@@ -254,7 +254,6 @@ m_incSliceLine = function(
       prevLattice2 = preparePrevLattice(prevLattice, metaPrevLattice, prevFoffb, 
         prevFoffe, foffb, foffe, level, encodeLat, differentOffsets)
     }
-
 
     if(selFeat){
       if(length(prevLattice2)>0 & !disableIncSizePruning){ 
@@ -684,11 +683,11 @@ pruneUnchangedSlices = function(Matrix[Double] S, Matrix[Double] S2, Matrix[Doub
       unchangedAndBelowMinSup = rowSums(unchangedSizes < minSup & unchangedSizes > 0) != 0;
     }
 
-    if(sum(unchangedAndBelowMinSupI) > 0){
-      S2 = removeEmpty(target=S2, margin="rows", select=unchangedAndBelowMinSupI == 0);
-      S = removeEmpty(target=S, margin="rows", select=unchangedAndBelowMinSupI == 0);
+    if(sum(unchangedAndBelowMinSup) > 0){
+      S2 = removeEmpty(target=S2, margin="rows", select=unchangedAndBelowMinSup == 0);
+      S = removeEmpty(target=S, margin="rows", select=unchangedAndBelowMinSup == 0);
       if(verbose) {
-        print(" -- Pruning " + sum(unchangedAndBelowMinSupI) +" slices that are unchanged and below min sup.");
+        print(" -- Pruning " + sum(unchangedAndBelowMinSup) +" slices that are unchanged and below min sup.");
       }
     }
   }
@@ -779,4 +778,3 @@ removeRowsByIndices = function(Matrix[Double] M, Matrix[Double] indices)
   remain = P2 %*% M;
   while(FALSE){} #prevent inlining (TODO rewrite issue)
 }
-

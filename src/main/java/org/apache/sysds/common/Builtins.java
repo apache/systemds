@@ -306,7 +306,8 @@ public enum Builtins {
 	SIGN("sign", false),
 	SIN("sin", false),
 	SINH("sinh", false),
-	SLICEFINDER("slicefinder", true), //TODO rename
+	SLICEFINDER("slicefinder", true), //TODO remove
+	SLICELINE("sliceLine", true),
 	SLICELINE_DEBUG("sliceLineDebug", true),
 	SKEWNESS("skewness", true),
 	SMAPE("smape", true),

@@ -244,6 +244,21 @@ class Matrix(OperationNode):
         raise ValueError(
             f"Axis has to be either 0, 1 or None, for column, row or complete {self.operation}")
 
+    def countDistinctApprox(self, axis: int = None) -> 'OperationNode':
+        """Calculate the approximate number of distinct values of matrix.
+
+        :param axis: can be 0 or 1 to do either row or column aggregation
+        :return: `Matrix` representing operation
+        """
+        if axis == 0:
+            return Matrix(self.sds_context, 'colCountDistinctApprox', [self])
+        elif axis == 1:
+            return Matrix(self.sds_context, 'rowCountDistinctApprox', [self])
+        elif axis is None:
+            return Scalar(self.sds_context, 'countDistinctApprox', [self])
+        raise ValueError(
+            f"Axis has to be either 0, 1 or None, for column, row or complete {self.operation}")
+
     def var(self, axis: int = None) -> 'OperationNode':
         """Calculate variance of matrix.
 

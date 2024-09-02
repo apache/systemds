@@ -387,7 +387,13 @@ class Matrix(OperationNode):
         :return: the OperationNode representing this operation
         """
         return Matrix(self.sds_context, 'cholesky', [self])
-    
+
+    def diag(self) -> 'Matrix':
+        """ Create diagonal matrix from (n x 1) matrix, or take diagonal from square matrix
+
+        :return: the OperationNode representing this operation
+        """
+        return Matrix(self.sds_context, 'diag', [self])
 
     def svd(self) -> 'Matrix':
         """

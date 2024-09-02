@@ -23,6 +23,16 @@ from systemds.scuro.representations.average import Average
 from systemds.scuro.representations.concatenation import Concatenation
 from systemds.scuro.representations.fusion import Fusion
 from systemds.scuro.representations.unimodal import UnimodalRepresentation, HDF5, NPY, Pickle, JSON
+from systemds.scuro.representations.lstm import LSTM
 
 
-__all__ = ["Representation", "Average", "Concatenation", "Fusion", "UnimodalRepresentation", "HDF5", "NPY", "Pickle", "JSON"]
+__all__ = ["Representation",
+           "Average",
+           "Concatenation",
+           "Fusion",
+           "UnimodalRepresentation",
+           "HDF5",
+           "NPY",
+           "Pickle",
+           "JSON",
+           "LSTM"]

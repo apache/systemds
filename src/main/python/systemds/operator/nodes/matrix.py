@@ -549,6 +549,29 @@ class Matrix(OperationNode):
         """
         return Scalar(self.sds_context, 'toString', [self], kwargs, output_type=OutputType.STRING)
 
+    def isNA(self) -> 'Matrix':
+        """ Computes a boolean indicator matrix of the same shape as the input, indicating where NA (not available)
+        values are located. Currently, NA is only capturing NaN values.
+
+        :return: the OperationNode representing this operation
+        """
+        return Matrix(self.sds_context, 'isNA', [self])
+
+    def isNaN(self) -> 'Matrix':
+        """ Computes a boolean indicator matrix of the same shape as the input, indicating where NaN (not a number)
+        values are located.
+
+        :return: the OperationNode representing this operation
+        """
+        return Matrix(self.sds_context, 'isNaN', [self])
+
+    def isInf(self) -> 'Matrix':
+        """ Computes a boolean indicator matrix of the same shape as the input, indicating where Inf (positive or
+        negative infinity) values are located.
+        :return: the OperationNode representing this operation
+        """
+        return Matrix(self.sds_context, 'isInf', [self])
+
     def rev(self) -> 'Matrix':
         """ Reverses the rows
 

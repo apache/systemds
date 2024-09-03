@@ -671,5 +671,43 @@ class Matrix(OperationNode):
             },
         )
 
+    def cumsum(self) -> "Matrix":
+        """Column prefix-sum. (For row-prefix sum, use X.t().cumsum().t())
+
+        :return: The Matrix representing the result of this operation
+        """
+        return Matrix(self.sds_context, "cumsum", [self])
+
+    def cumprod(self) -> "Matrix":
+        """Column prefix-product. (For row-prefix prod, use X.t().cumprod().t())
+
+        :return: The Matrix representing the result of this operation
+        """
+        return Matrix(self.sds_context, "cumprod", [self])
+
+    def cumsumprod(self) -> "Matrix":
+        """Column prefix-sumprod of an 2-column matrix:
+        Y = X.comsumprod(),
+        where Y[i,1] = X[i,1] + X[i,2]*Y[i-1,1] for i in [1,2, .., nrow(X)]
+        The aggregator is initialized with 0 (Y[0,1] = 0)
+
+        :return: The Matrix representing the result of this operation
+        """
+        return Matrix(self.sds_context, "cumsumprod", [self])
+
+    def cummin(self) -> "Matrix":
+        """Column prefix-min. (For row-prefix min, use X.t().cummin().t())
+
+        :return: The Matrix representing the result of this operation
+        """
+        return Matrix(self.sds_context, "cummin", [self])
+
+    def cummax(self) -> "Matrix":
+        """Column prefix-max. (For row-prefix max, use X.t().cummax().t())
+
+        :return: The Matrix representing the result of this operation
+        """
+        return Matrix(self.sds_context, "cummax", [self])
+
     def __str__(self):
         return "MatrixNode"

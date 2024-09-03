@@ -19,6 +19,8 @@
 
 package org.apache.sysds.utils.stats;
 
+import org.apache.commons.lang3.function.TriFunction;
+
 import java.lang.reflect.Array;
 import java.util.Arrays;
 import java.util.Comparator;
@@ -26,6 +28,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.BiFunction;
+import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -51,6 +54,30 @@ public class NGramBuilder<T, U> {
 		}
 
 		return builder.toString();
+	}
+
+	public static <T, U> void toCSVStream(String[] columnNames, List<NGramEntry<T, U>> entries, Function<NGramEntry<T, U>, String> statsMapper, Consumer<String> lineConsumer) {
+		StringBuilder builder = new StringBuilder(String.join(",", columnNames));
+		builder.append("\n");
+		lineConsumer.accept(builder.toString());
+		builder.setLength(0);
+
+		for (NGramEntry<T, U> entry : entries) {
+			builder.append(entry.getIdentifier().replace(",", ";"));
+			builder.append(",");
+			builder.append(entry.getCumStats());
+			builder.append(",");
+
+			if (statsMapper != null) {
+				builder.append(statsMapper.apply(entry));
+				builder.append(",");
+			}
+
+			builder.append(entry.getOccurrences());
+			builder.append("\n");
+			lineConsumer.accept(builder.toString());
+			builder.setLength(0);
+		}
 	}
 
 	public static class NGramEntry<T, U> {
@@ -207,6 +234,11 @@ public class NGramBuilder<T, U> {
 				.map(Map.Entry::getValue)
 				.limit(k)
 				.collect(Collectors.toList());
+	}
+
+	public synchronized void clearCurrentRecording() {
+		currentIndex = 0;
+		currentSize = 0;
 	}
 
 	private synchronized void registerElement(String id, U stat) {

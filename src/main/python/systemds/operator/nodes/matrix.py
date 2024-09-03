@@ -259,6 +259,13 @@ class Matrix(OperationNode):
         raise ValueError(
             f"Axis has to be either 0, 1 or None, for column, row or complete {self.operation}")
 
+    def trace(self) -> 'Scalar':
+        """Calculate trace.
+
+        :return: `Matrix` representing operation
+        """
+        return Scalar(self.sds_context, 'trace', [self])
+
     def abs(self) -> 'Matrix':
         """Calculate absolute.
 

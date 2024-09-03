@@ -42,6 +42,7 @@ import org.apache.sysds.runtime.compress.colgroup.offset.AIterator;
 import org.apache.sysds.runtime.data.DenseBlock;
 import org.apache.sysds.runtime.functionobjects.Builtin;
 import org.apache.sysds.runtime.functionobjects.Builtin.BuiltinCode;
+import org.apache.sysds.runtime.functionobjects.Divide;
 import org.apache.sysds.runtime.functionobjects.IndexFunction;
 import org.apache.sysds.runtime.functionobjects.KahanFunction;
 import org.apache.sysds.runtime.functionobjects.KahanPlus;
@@ -61,6 +62,8 @@ import org.apache.sysds.runtime.matrix.data.MatrixValue.CellIndex;
 import org.apache.sysds.runtime.matrix.operators.AggregateOperator;
 import org.apache.sysds.runtime.matrix.operators.AggregateUnaryOperator;
 import org.apache.sysds.runtime.matrix.operators.BinaryOperator;
+import org.apache.sysds.runtime.matrix.operators.RightScalarOperator;
+import org.apache.sysds.runtime.matrix.operators.ScalarOperator;
 import org.apache.sysds.runtime.util.CommonThreadPool;
 import org.apache.sysds.utils.DMLCompressionStatistics;
 import org.apache.sysds.utils.stats.Timing;
@@ -101,7 +104,9 @@ public class CLALibCompAgg {
 
 	private static boolean isRowSum(AggregateUnaryOperator op, boolean inCP) {
 		return op.indexFn instanceof ReduceCol && inCP && //
-			(op.aggOp.increOp.fn instanceof KahanPlus || op.aggOp.increOp.fn instanceof Plus);
+			(op.aggOp.increOp.fn instanceof KahanPlus //
+				|| op.aggOp.increOp.fn instanceof Plus //
+				|| op.aggOp.increOp.fn instanceof Mean);
 	}
 
 	private static MatrixBlock compressedAggregateUnary(CompressedMatrixBlock inputMatrix, MatrixBlock result,
@@ -160,8 +165,11 @@ public class CLALibCompAgg {
 			final int nRow = inputMatrix.getNumRows();
 			if(retGroups.isEmpty())
 				return new MatrixBlock(nRow, 1, true);
-
-			return new CompressedMatrixBlock(nRow, 1, nRow, retGroups.size() > 1, retGroups);
+			CompressedMatrixBlock ret = new CompressedMatrixBlock(nRow, 1, nRow, retGroups.size() > 1, retGroups);
+			if(op.aggOp.increOp.fn instanceof Mean)
+				return ret.scalarOperations(
+					new RightScalarOperator(Divide.getDivideFnObject(), inputMatrix.getNumColumns()), null);
+			return ret;
 		}
 		finally {
 			pool.shutdown();
@@ -671,7 +679,7 @@ public class CLALibCompAgg {
 				if(tmpR.isEmpty())
 					// do nothing because the ret is already filled with zeros.
 					continue;
-				
+
 				tmpR.dropLastRowsOrColumns(_op.aggOp.correction);
 				final double[] retValues = _ret.getDenseBlockValues();
 				final double[] tmpRValues = tmpR.getDenseBlockValues();

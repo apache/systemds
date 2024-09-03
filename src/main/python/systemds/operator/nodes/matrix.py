@@ -296,6 +296,23 @@ class Matrix(OperationNode):
         """
         return Scalar(self.sds_context, 'trace', [self])
 
+    def unique(self, axis: int = None) -> 'Matrix':
+        """Returns the unique values for the complete matrix, for each row or for each column.
+
+        :param axis: can be 0 or 1 to do either row or column uniques
+        :return: `Matrix` representing operation
+        """
+        if axis == 0:
+            named_input_nodes = {"dir": '"c"'}
+            return Matrix(self.sds_context, 'unique', [self], named_input_nodes=named_input_nodes)
+        elif axis == 1:
+            named_input_nodes = {"dir": '"r"'}
+            return Matrix(self.sds_context, 'unique', [self], named_input_nodes=named_input_nodes)
+        elif axis is None:
+            return Matrix(self.sds_context, 'unique', [self])
+        raise ValueError(
+            f"Axis has to be either 0, 1 or None, for column, row or complete {self.operation}")
+
     def abs(self) -> 'Matrix':
         """Calculate absolute.
 

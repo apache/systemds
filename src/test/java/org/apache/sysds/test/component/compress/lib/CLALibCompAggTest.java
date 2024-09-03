@@ -204,6 +204,15 @@ public class CLALibCompAggTest {
 	}
 
 	@Test
+	public void rowmean() {
+		AggregateUnaryOperator op = InstructionUtils.parseBasicAggregateUnaryOperator("uarmean", 10);
+		MatrixBlock cRet = cmb.aggregateUnaryOperations(op);
+		MatrixBlock uRet = mb.aggregateUnaryOperations(op);
+		TestUtils.compareMatricesPercentageDistance(uRet, cRet, 0, 0, "rowmean");
+	}
+
+
+	@Test
 	public void rowMin() {
 		AggregateUnaryOperator op = InstructionUtils.parseBasicAggregateUnaryOperator("uarmin", 10);
 		MatrixBlock cRet = cmb.aggregateUnaryOperations(op);

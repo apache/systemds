@@ -43,6 +43,7 @@ import org.apache.sysds.runtime.data.DenseBlock;
 import org.apache.sysds.runtime.functionobjects.Builtin;
 import org.apache.sysds.runtime.functionobjects.Builtin.BuiltinCode;
 import org.apache.sysds.runtime.functionobjects.IndexFunction;
+import org.apache.sysds.runtime.functionobjects.KahanFunction;
 import org.apache.sysds.runtime.functionobjects.KahanPlus;
 import org.apache.sysds.runtime.functionobjects.KahanPlusSq;
 import org.apache.sysds.runtime.functionobjects.Mean;
@@ -419,7 +420,7 @@ public class CLALibCompAgg {
 		if(op.indexFn instanceof ReduceAll)
 			reduceAllFutures(futures, ret, op);
 		else if(op.indexFn instanceof ReduceRow && overlapping) {
-			final boolean isPlus = op.aggOp.increOp.fn instanceof Mean;
+			final boolean isPlus = op.aggOp.increOp.fn instanceof Mean || op.aggOp.increOp.fn instanceof KahanFunction;
 			final BinaryOperator bop = isPlus ? new BinaryOperator(Plus.getPlusFnObject()) : op.aggOp.increOp;
 			for(Future<MatrixBlock> rtask : futures)
 				LibMatrixBincell.bincellOpInPlace(ret, rtask.get(), bop);

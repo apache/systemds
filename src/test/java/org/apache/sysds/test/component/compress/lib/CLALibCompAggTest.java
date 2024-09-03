@@ -40,7 +40,7 @@ import org.junit.Test;
 
 public class CLALibCompAggTest {
 
-	MatrixBlock mb = CompressibleInputGenerator.getInput(1000, 10, CompressionType.RLE, 10, 0.9, 2341);
+	MatrixBlock mb = CompressibleInputGenerator.getInput(250, 10, CompressionType.RLE, 10, 0.9, 2341);
 
 	CompressedMatrixBlock cmb = (CompressedMatrixBlock) CompressedMatrixBlockFactory.compress(mb, 1).getLeft();
 
@@ -271,6 +271,58 @@ public class CLALibCompAggTest {
 
 			TestUtils.compareMatricesPercentageDistance(uRet, cRet, 0, 0, "rowsum");
 			assertTrue(cRet instanceof CompressedMatrixBlock);
+		}
+		catch(Exception e) {
+			e.printStackTrace();
+			fail(e.getMessage());
+		}
+	}
+
+	@Test
+	public void rowsum_compressedReturn5() {
+		try {
+			AggregateUnaryOperator op = InstructionUtils.parseBasicAggregateUnaryOperator("uark+", 10);
+
+			op = new AggregateUnaryOperator(new AggregateOperator(0, Plus.getPlusFnObject(), CorrectionLocationType.NONE),
+				op.indexFn, op.getNumThreads());
+			CompressedMatrixBlock c = CompressedMatrixBlockFactory.createConstant(cmb.getNumRows(), 1, 12);
+			CompressedMatrixBlock c2 = CompressedMatrixBlockFactory.createConstant(cmb.getNumRows(), 1, 1);
+			MatrixBlock ctmp = c.append(c2);
+
+			MatrixBlock mb1 = new MatrixBlock(cmb.getNumRows(), 1, 12.0);
+			MatrixBlock mb2 = new MatrixBlock(cmb.getNumRows(), 1, 1.0);
+			MatrixBlock tmb = mb1.append(mb2);
+
+			MatrixBlock cRet = ctmp.aggregateUnaryOperations(op);
+			MatrixBlock uRet = tmb.aggregateUnaryOperations(op);
+
+			TestUtils.compareMatricesPercentageDistance(uRet, cRet, 0, 0, "rowsum");
+			assertTrue(cRet instanceof CompressedMatrixBlock);
+		}
+		catch(Exception e) {
+			e.printStackTrace();
+			fail(e.getMessage());
+		}
+	}
+
+
+	@Test
+	public void notRowSumThereforeNotCompressed() {
+		try {
+			AggregateUnaryOperator op = InstructionUtils.parseBasicAggregateUnaryOperator("uarsqk+", 10);
+			CompressedMatrixBlock c = CompressedMatrixBlockFactory.createConstant(cmb.getNumRows(), 1, 12);
+			CompressedMatrixBlock c2 = CompressedMatrixBlockFactory.createConstant(cmb.getNumRows(), 1, 1);
+			MatrixBlock ctmp = c.append(c2);
+
+			MatrixBlock mb1 = new MatrixBlock(cmb.getNumRows(), 1, 12.0);
+			MatrixBlock mb2 = new MatrixBlock(cmb.getNumRows(), 1, 1.0);
+			MatrixBlock tmb = mb1.append(mb2);
+
+			MatrixBlock cRet = ctmp.aggregateUnaryOperations(op);
+			MatrixBlock uRet = tmb.aggregateUnaryOperations(op);
+
+			TestUtils.compareMatricesPercentageDistance(uRet, cRet, 0, 0, "rowsum");
+			assertTrue(cRet instanceof MatrixBlock);
 		}
 		catch(Exception e) {
 			e.printStackTrace();

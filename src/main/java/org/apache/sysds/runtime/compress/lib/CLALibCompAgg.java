@@ -44,7 +44,6 @@ import org.apache.sysds.runtime.data.DenseBlock;
 import org.apache.sysds.runtime.functionobjects.Builtin;
 import org.apache.sysds.runtime.functionobjects.Builtin.BuiltinCode;
 import org.apache.sysds.runtime.functionobjects.IndexFunction;
-import org.apache.sysds.runtime.functionobjects.KahanFunction;
 import org.apache.sysds.runtime.functionobjects.KahanPlus;
 import org.apache.sysds.runtime.functionobjects.KahanPlusSq;
 import org.apache.sysds.runtime.functionobjects.Mean;
@@ -418,10 +417,10 @@ public class CLALibCompAgg {
 
 	private static void reduceFutures(List<Future<MatrixBlock>> futures, MatrixBlock ret, AggregateUnaryOperator op,
 		boolean overlapping) throws Exception {
-		if(isReduceAll(ret, op.indexFn))
+		if(op.indexFn instanceof ReduceAll)
 			reduceAllFutures(futures, ret, op);
 		else if(op.indexFn instanceof ReduceRow && overlapping) {
-			final boolean isPlus = op.aggOp.increOp.fn instanceof KahanFunction || op.aggOp.increOp.fn instanceof Mean;
+			final boolean isPlus = op.aggOp.increOp.fn instanceof Mean;
 			final BinaryOperator bop = isPlus ? new BinaryOperator(Plus.getPlusFnObject()) : op.aggOp.increOp;
 			for(Future<MatrixBlock> rtask : futures)
 				LibMatrixBincell.bincellOpInPlace(ret, rtask.get(), bop);
@@ -431,20 +430,14 @@ public class CLALibCompAgg {
 				rtask.get();
 	}
 
-	private static boolean isReduceAll(MatrixBlock ret, IndexFunction idxFn) {
-		return idxFn instanceof ReduceAll || (ret.getNumColumns() == 1 && ret.getNumRows() == 1);
-	}
-
 	private static void reduceAllFutures(List<Future<MatrixBlock>> futures, MatrixBlock ret, AggregateUnaryOperator op)
 		throws InterruptedException, ExecutionException {
-
 		if(op.aggOp.increOp.fn instanceof Builtin)
 			aggregateResults(ret, futures, op);
 		else if(op.aggOp.increOp.fn instanceof Multiply)
 			productResults(ret, futures);
 		else
 			sumResults(ret, futures);
-
 	}
 
 	private static List<Future<MatrixBlock>> generateUnaryAggregateOverlappingFutures(CompressedMatrixBlock m1,

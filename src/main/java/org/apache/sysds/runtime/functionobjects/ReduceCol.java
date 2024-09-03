@@ -24,6 +24,7 @@ import org.apache.sysds.runtime.matrix.data.MatrixValue.CellIndex;
 import org.apache.sysds.runtime.meta.DataCharacteristics;
 
 
+/** Reduce the columns into fewer columns, normally 1 */
 public class ReduceCol extends IndexFunction
 {
 	

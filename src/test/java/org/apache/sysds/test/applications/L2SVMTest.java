@@ -67,7 +67,16 @@ public class L2SVMTest extends AutomatedTestBase
 	}
 	
 	@Test
-	public void testL2SVM()
+	public void testL2SVM1() {
+		testL2SVM(true);
+	}
+
+	@Test
+	public void testL2SVM2() {
+		testL2SVM(false);
+	}
+
+	private void testL2SVM(boolean ngrams)
 	{
 		System.out.println("------------ BEGIN " + TEST_NAME 
 			+ " TEST WITH {" + numRecords + ", " + numFeatures
@@ -83,9 +92,11 @@ public class L2SVMTest extends AutomatedTestBase
 
 		List<String> proArgs = new ArrayList<>();
 		proArgs.add("-stats");
-		proArgs.add("-ngrams");
-		proArgs.add("3,2");
-		proArgs.add("10");
+		if (ngrams) {
+			proArgs.add("-ngrams");
+			proArgs.add("3,2");
+			proArgs.add("10");
+		}
 		proArgs.add("-nvargs");
 		proArgs.add("X=" + input("X"));
 		proArgs.add("Y=" + input("Y"));

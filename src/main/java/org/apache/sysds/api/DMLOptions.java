@@ -57,6 +57,7 @@ public class DMLOptions {
 	public int                  statsCount    = 10;               // Default statistics count
 	public int[]                statsNGramSizes = { 3 };          // Default n-gram tuple sizes
 	public int                  statsTopKNGrams = 10;             // How many of the most heavy hitting n-grams are displayed
+	public boolean              statsNGramsUseLineage = true;     // If N-Grams use lineage for data-dependent tracking
 	public boolean              fedStats      = false;            // Whether to record and print the federated statistics
 	public int                  fedStatsCount = 10;               // Default federated statistics count
 	public boolean              memStats      = false;            // max memory statistics
@@ -219,7 +220,7 @@ public class DMLOptions {
 		dmlOptions.statsNGrams = line.hasOption("ngrams");
 		if (dmlOptions.statsNGrams){
 			String[] nGramArgs = line.getOptionValues("ngrams");
-			if (nGramArgs.length == 2) {
+			if (nGramArgs.length >= 2) {
 				try {
 					String[] nGramSizeSplit = nGramArgs[0].split(",");
 					dmlOptions.statsNGramSizes = new int[nGramSizeSplit.length];
@@ -229,9 +230,17 @@ public class DMLOptions {
 					}
 
 					dmlOptions.statsTopKNGrams = Integer.parseInt(nGramArgs[1]);
+
+					if (nGramArgs.length == 3) {
+						dmlOptions.statsNGramsUseLineage = Boolean.parseBoolean(nGramArgs[2]);
+					}
 				} catch (NumberFormatException e) {
 					throw new org.apache.commons.cli.ParseException("Invalid argument specified for -ngrams option, must be a valid integer");
 				}
+			}
+
+			if (dmlOptions.statsNGramsUseLineage) {
+				dmlOptions.lineage = true;
 			}
 		}
 

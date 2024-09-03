@@ -26,13 +26,19 @@ import org.apache.sysds.conf.ConfigurationManager;
 import org.apache.sysds.hops.OptimizerUtils;
 import org.apache.sysds.hops.fedplanner.FederatedCompilationTimer;
 import org.apache.sysds.runtime.controlprogram.caching.CacheStatistics;
+import org.apache.sysds.runtime.controlprogram.caching.CacheableData;
+import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysds.runtime.controlprogram.federated.FederatedStatistics;
 import org.apache.sysds.runtime.instructions.Instruction;
 import org.apache.sysds.runtime.instructions.InstructionUtils;
+import org.apache.sysds.runtime.instructions.cp.Data;
 import org.apache.sysds.runtime.instructions.cp.FunctionCallCPInstruction;
 import org.apache.sysds.runtime.instructions.spark.SPInstruction;
 import org.apache.sysds.runtime.lineage.LineageCacheConfig.ReuseCacheType;
+import org.apache.sysds.runtime.meta.DataCharacteristics;
 import org.apache.sysds.runtime.lineage.LineageCacheStatistics;
+import org.apache.sysds.runtime.lineage.LineageItem;
+import org.apache.sysds.runtime.lineage.LineageItemUtils;
 import org.apache.sysds.utils.stats.CodegenStatistics;
 import org.apache.sysds.utils.stats.NGramBuilder;
 import org.apache.sysds.utils.stats.NativeStatistics;
@@ -46,6 +52,7 @@ import java.lang.management.CompilationMXBean;
 import java.lang.management.GarbageCollectorMXBean;
 import java.lang.management.ManagementFactory;
 import java.text.DecimalFormat;
+import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
@@ -54,10 +61,12 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.DoubleAdder;
 import java.util.concurrent.atomic.LongAdder;
+import java.util.function.Consumer;
 
 /**
  * This class captures all statistics.
@@ -74,6 +83,7 @@ public class Statistics
 		public final long n;
 		public final long cumTimeNanos;
 		public final double m2;
+		public final HashMap<String, Double> meta;
 
 		public static <T> Comparator<NGramBuilder.NGramEntry<T, NGramStats>> getComparator() {
 			return Comparator.comparingLong(entry -> entry.getCumStats().cumTimeNanos);
@@ -91,13 +101,25 @@ public class Statistics
 
 			double newM2 = stats1.m2 + stats2.m2 + delta * delta * stats1.n * stats2.n / (double)newN;
 
-			return new NGramStats(newN, cumTimeNanos, newM2);
+			HashMap<String, Double> cpy = null;
+
+			if (stats1.meta != null) {
+				cpy = new HashMap<>(stats1.meta);
+				final HashMap<String, Double> mCpy = cpy;
+				if (stats2.meta != null)
+					stats2.meta.forEach((key, value) -> mCpy.merge(key, value, Double::sum));
+			} else if (stats2.meta != null) {
+				cpy = new HashMap<>(stats2.meta);
+			}
+
+			return new NGramStats(newN, cumTimeNanos, newM2, cpy);
 		}
 
-		public NGramStats(final long n, final long cumTimeNanos, final double m2) {
+		public NGramStats(final long n, final long cumTimeNanos, final double m2, HashMap<String, Double> meta) {
 			this.n = n;
 			this.cumTimeNanos = cumTimeNanos;
 			this.m2 = m2;
+			this.meta = meta;
 		}
 
 		public double getTimeVariance() {
@@ -106,6 +128,54 @@ public class Statistics
 
 		public String toString() {
 			return String.format(Locale.US, "%.5f", (cumTimeNanos / 1000000000d));
+		}
+
+		public HashMap<String, Double> getMeta() {
+			return meta;
+		}
+	}
+
+	public static class LineageNGramExtension {
+		private String _datatype;
+		private String _valuetype;
+		private long _execNanos;
+
+		private HashMap<String, Double> _meta;
+
+		public void setDataType(String dataType) {
+			_datatype = dataType;
+		}
+
+		public String getDataType() {
+			return _datatype == null ? "" : _datatype;
+		}
+
+		public void setValueType(String valueType) {
+			_valuetype = valueType;
+		}
+
+		public String getValueType() {
+			return _valuetype == null ? "" : _valuetype;
+		}
+
+		public void setExecNanos(long nanos) {
+			_execNanos = nanos;
+		}
+
+		public long getExecNanos() {
+			return _execNanos;
+		}
+
+		public void setMeta(String key, Double value) {
+			if (_meta == null)
+				_meta = new HashMap<>();
+			_meta.put(key, value);
+		}
+
+		public Object getMeta(String key) {
+			if (_meta == null)
+				return null;
+			return _meta.get(key);
 		}
 	}
 	
@@ -117,6 +187,8 @@ public class Statistics
 	//heavy hitter counts and times 
 	private static final ConcurrentHashMap<String,InstStats> _instStats = new ConcurrentHashMap<>();
 	private static final ConcurrentHashMap<String, NGramBuilder<String, NGramStats>[]> _instStatsNGram = new ConcurrentHashMap<>();
+	private static final ConcurrentHashMap<Long, Entry<String, LineageItem>> _instStatsLineageTracker = new ConcurrentHashMap<>();
+	private static final ConcurrentHashMap<LineageItem, LineageNGramExtension> _lineageExtensions = new ConcurrentHashMap<>();
 
 	// number of compiled/executed SP instructions
 	private static final LongAdder numExecutedSPInst = new LongAdder();
@@ -299,6 +371,8 @@ public class Statistics
 		FederatedStatistics.reset();
 
 		_instStatsNGram.clear();
+		_instStatsLineageTracker.clear();
+		_instStats.clear();
 	}
 
 	public static void resetJITCompileTime(){
@@ -401,6 +475,120 @@ public class Statistics
 		tmp.count.increment();
 	}
 
+	public static void prepareNGramInst(Entry<String, LineageItem> li) {
+		if (li == null)
+			_instStatsLineageTracker.remove(Thread.currentThread().getId());
+		else
+			_instStatsLineageTracker.put(Thread.currentThread().getId(), li);
+	}
+
+	public static Optional<Entry<String, LineageItem>> getCurrentLineageItem() {
+		Entry<String, LineageItem> item = _instStatsLineageTracker.get(Thread.currentThread().getId());
+		return item == null ? Optional.empty() : Optional.of(item);
+	}
+
+	public static synchronized void clearNGramRecording() {
+		NGramBuilder<String, NGramStats>[] bl = _instStatsNGram.get(Thread.currentThread().getName());
+		for (NGramBuilder<String, NGramStats> b : bl)
+			b.clearCurrentRecording();
+	}
+
+	public static synchronized void extendLineageItem(LineageItem li, LineageNGramExtension ext) {
+		_lineageExtensions.put(li, ext);
+	}
+
+	public static synchronized LineageNGramExtension getExtendedLineage(LineageItem li) {
+		return _lineageExtensions.get(li);
+	}
+	
+	public static synchronized void maintainNGramsFromLineage(Instruction tmp, ExecutionContext ec, long t0) {
+		final long nanoTime = System.nanoTime() - t0;
+		if (DMLScript.STATISTICS_NGRAMS_USE_LINEAGE) {
+			Statistics.getCurrentLineageItem().ifPresent(li -> {
+				Data data = ec.getVariable(li.getKey());
+				Statistics.LineageNGramExtension ext = new Statistics.LineageNGramExtension();
+				if (data != null) {
+					ext.setDataType(data.getDataType().toString());
+					ext.setValueType(data.getValueType().toString());
+					if (data instanceof CacheableData) {
+						DataCharacteristics dc = ((CacheableData<?>)data).getDataCharacteristics();
+						ext.setMeta("NDims", (double)dc.getNumDims());
+						ext.setMeta("NumRows", (double)dc.getRows());
+						ext.setMeta("NumCols", (double)dc.getCols());
+						ext.setMeta("NonZeros", (double)dc.getNonZeros());
+					}
+				}
+				ext.setExecNanos(nanoTime);
+				Statistics.extendLineageItem(li.getValue(), ext);
+				Statistics.maintainNGramsFromLineage(li.getValue());
+			});
+		} else
+			Statistics.maintainNGrams(tmp.getExtendedOpcode(), nanoTime);
+	}
+
+	@SuppressWarnings("unchecked")
+	public static synchronized void maintainNGramsFromLineage(LineageItem li) {
+		NGramBuilder<String, NGramStats>[] tmp = _instStatsNGram.computeIfAbsent(Thread.currentThread().getName(), k -> {
+			NGramBuilder<String, NGramStats>[] threadEntry = new NGramBuilder[DMLScript.STATISTICS_NGRAM_SIZES.length];
+			for (int i = 0; i < threadEntry.length; i++) {
+				threadEntry[i] = new NGramBuilder<String, NGramStats>(String.class, NGramStats.class, DMLScript.STATISTICS_NGRAM_SIZES[i], s -> s, NGramStats::merge);
+			}
+			return threadEntry;
+		});
+		addLineagePaths(li, new ArrayList<>(), new ArrayList<>(), tmp);
+	}
+
+	/**
+	 * Adds the corresponding sequences of instructions to the n-grams.
+	 * <p></p>
+	 * Example: 2-grams from (a*b + a/c) will add [(*,+), (/,+)]
+	 * @param li
+	 * @param currentPath
+	 * @param indexes
+	 * @param builders
+	 */
+	private static void addLineagePaths(LineageItem li, ArrayList<Entry<LineageItem, LineageNGramExtension>> currentPath, ArrayList<Integer> indexes, NGramBuilder<String, NGramStats>[] builders) {
+		if (li.getType() == LineageItem.LineageItemType.Literal)
+			return; // Skip literals as they are no real instruction
+
+		currentPath.add(new AbstractMap.SimpleEntry<>(li, getExtendedLineage(li)));
+
+		int maxSize = 0;
+		NGramBuilder<String, NGramStats> matchingBuilder = null;
+
+		for (NGramBuilder<String, NGramStats> builder : builders) {
+			if (builder.getSize() == currentPath.size())
+				matchingBuilder = builder;
+			if (builder.getSize() > maxSize)
+				maxSize = builder.getSize();
+		}
+
+		if (matchingBuilder != null) {
+			// If we have an n-gram builder with n = currentPath.size(), then we want to insert the entry
+			// As we cannot incrementally add the instructions (we have a DAG rather than a sequence of instructions)
+			// we need to clear the current n-grams
+			clearNGramRecording();
+			// We then record a new n-gram with all the LineageItems of the current lineage path
+			Entry<LineageItem, LineageNGramExtension> currentEntry = currentPath.get(currentPath.size()-1);
+			matchingBuilder.append(LineageItemUtils.explainLineageAsInstruction(currentEntry.getKey(), currentEntry.getValue()) + (indexes.size() > 0 ? ("[" + indexes.get(currentPath.size()-2) + "]") : ""), new NGramStats(1, currentEntry.getValue() != null ? currentEntry.getValue().getExecNanos() : 0, 0, currentEntry.getValue() != null ? currentEntry.getValue()._meta : null));
+			for (int i = currentPath.size()-2; i >= 0; i--) {
+				currentEntry = currentPath.get(i);
+				matchingBuilder.append(LineageItemUtils.explainLineageAsInstruction(currentEntry.getKey(), currentEntry.getValue()) + (i > 0 ? ("[" + indexes.get(i-1) + "]") : ""), new NGramStats(1, currentEntry.getValue() != null ? currentEntry.getValue().getExecNanos() : 0, 0, currentEntry.getValue() != null ? currentEntry.getValue()._meta : null));
+			}
+		}
+
+		if (currentPath.size() < maxSize && li.getInputs() != null) {
+			int idx = 0;
+			for (LineageItem input : li.getInputs()) {
+				indexes.add(idx++);
+				addLineagePaths(input, currentPath, indexes, builders);
+				indexes.remove(indexes.size()-1);
+			}
+		}
+
+		currentPath.remove(currentPath.size()-1);
+	}
+
 	@SuppressWarnings("unchecked")
 	public static void maintainNGrams(String instName, long timeNanos) {
 		NGramBuilder<String, NGramStats>[] tmp = _instStatsNGram.computeIfAbsent(Thread.currentThread().getName(), k -> {
@@ -412,7 +600,7 @@ public class Statistics
 		});
 
 		for (int i = 0; i < tmp.length; i++)
-			tmp[i].append(instName, new NGramStats(1, timeNanos, 0));
+			tmp[i].append(instName, new NGramStats(1, timeNanos, 0, null));
 	}
 
 	@SuppressWarnings("unchecked")
@@ -467,7 +655,7 @@ public class Statistics
 		return sb.toString();
 	}
 
-	public static String nGramToCSV(final NGramBuilder<String, NGramStats> mbuilder) {
+	public static void toCSVStream(final NGramBuilder<String, NGramStats> mbuilder, final Consumer<String> lineConsumer) {
 		ArrayList<String> colList = new ArrayList<>();
 		colList.add("N-Gram");
 		colList.add("Time[s]");
@@ -478,10 +666,12 @@ public class Statistics
 			colList.add("Col" + (j + 1) + "::Mean(Time[s])");
 		for (int j = 0; j < mbuilder.getSize(); j++)
 			colList.add("Col" + (j + 1) + "::StdDev(Time[s])/Col" + (j + 1) + "::Mean(Time[s])");
+		for (int j = 0; j < mbuilder.getSize(); j++)
+			colList.add("Col" + (j + 1) + "_Meta");
 
 		colList.add("Count");
 
-		return NGramBuilder.toCSV(colList.toArray(new String[colList.size()]), mbuilder.getTopK(100000, Statistics.NGramStats.getComparator(), true), e -> {
+		NGramBuilder.toCSVStream(colList.toArray(new String[colList.size()]), mbuilder.getTopK(100000, Statistics.NGramStats.getComparator(), true), e -> {
 			StringBuilder builder = new StringBuilder();
 			builder.append(e.getIdentifier().replace("(", "").replace(")", "").replace(", ", ","));
 			builder.append(",");
@@ -494,8 +684,31 @@ public class Statistics
 			} else {
 				builder.append(stdDevs);
 			}
+			//builder.append(",");
+			boolean first = true;
+			NGramStats[] stats = e.getStats();
+			for (int i = 0; i < stats.length; i++) {
+				builder.append(",");
+				NGramStats stat = stats[i];
+				if (stat.getMeta() != null) {
+					for (Entry<String, Double> metaData : stat.getMeta().entrySet()) {
+						if (first)
+							first = false;
+						else
+							builder.append("&");
+						if (metaData.getValue() != null)
+							builder.append(metaData.getKey()).append(":").append(metaData.getValue());
+					}
+				}
+			}
 			return builder.toString();
-		});
+		}, lineConsumer);
+	}
+
+	public static String nGramToCSV(final NGramBuilder<String, NGramStats> mbuilder) {
+		final StringBuilder b = new StringBuilder();
+		toCSVStream(mbuilder, b::append);
+		return b.toString();
 	}
 
 	public static String getCommonNGrams(NGramBuilder<String, NGramStats> builder, int num) {

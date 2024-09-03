@@ -21,7 +21,6 @@ package org.apache.sysds.performance.matrix;
 
 import org.apache.sysds.performance.compression.APerfTest;
 import org.apache.sysds.performance.generators.ConstMatrix;
-import org.apache.sysds.performance.generators.GenPair;
 import org.apache.sysds.performance.generators.IGenerate;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.test.TestUtils;
@@ -39,8 +38,8 @@ public class MatrixAggregate extends APerfTest<Object, MatrixBlock> {
 	public void run() throws Exception {
 		MatrixBlock mb = gen.take();
 
-		String info = String.format("rows: %5d cols: %5d sp: %5.3f par: %2d", mb.getNumRows(), mb.getNumColumns(),
-			mb.getSparsity(), k);
+		String info = String.format("rows: %5d cols: %5d sp: %5.3f par: %2d",
+			mb.getNumRows(), mb.getNumColumns(), mb.getSparsity(), k);
 		warmup(() -> sum(), 100);
 		execute(() -> sum(), info + " sum");
 	}

@@ -703,4 +703,9 @@ public class ColGroupLinearFunctional extends AColGroupCompressed {
 		throw new NotImplementedException();
 	}
 
+	@Override 
+	public AColGroup reduceCols(){
+		throw new NotImplementedException();
+	}
+
 }

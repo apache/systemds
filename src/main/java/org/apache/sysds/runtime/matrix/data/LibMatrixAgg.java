@@ -226,6 +226,12 @@ public class LibMatrixAgg {
 	}
 
 	public static void aggregateUnaryMatrix(MatrixBlock in, MatrixBlock out, AggregateUnaryOperator uaop) {
+		aggregateUnaryMatrix(in, out, uaop, true);
+	}
+
+
+	public static void aggregateUnaryMatrix(MatrixBlock in, MatrixBlock out, AggregateUnaryOperator uaop,
+		boolean allowReformatToSparse) {
 
 		AggType aggtype = getAggType(uaop);
 		final int m = in.rlen;
@@ -250,8 +256,9 @@ public class LibMatrixAgg {
 			aggregateUnaryMatrixSparse(in, out, aggtype, uaop.aggOp.increOp.fn, uaop.indexFn, 0, m);
 		
 		//cleanup output and change representation (if necessary)
-		out.recomputeNonZeros();
-		out.examSparsity();
+		out.recomputeNonZeros(uaop.getNumThreads());
+		if(allowReformatToSparse)
+			out.examSparsity();
 	}
 
 	public static void aggregateUnaryMatrix(MatrixBlock in, MatrixBlock out, AggregateUnaryOperator uaop, int k) {
@@ -703,7 +710,7 @@ public class LibMatrixAgg {
 	public static void recomputeIndexes( MatrixBlock out, AggregateUnaryOperator op, int blen, MatrixIndexes ix )
 	{
 		AggType type = getAggType(op);
-		if( (type == AggType.MAX_INDEX || type == AggType.MIN_INDEX) && ix.getColumnIndex()!=1 ) //MAXINDEX or MININDEX
+		if( (type == AggType.MAX_INDEX || type == AggType.MIN_INDEX) && ix != null && ix.getColumnIndex()!=1 ) //MAXINDEX or MININDEX
 		{
 			int m = out.rlen;
 			double[] c = out.getDenseBlockValues();

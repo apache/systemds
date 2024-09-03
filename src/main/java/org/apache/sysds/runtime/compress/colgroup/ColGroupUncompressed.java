@@ -532,7 +532,7 @@ public class ColGroupUncompressed extends AColGroup {
 		// tsmm but only upper triangle.
 		LibMatrixMult.matrixMultTransposeSelf(_data, tmp, true, false);
 
-		if(tmp.isInSparseFormat()){
+		if(tmp.isInSparseFormat()) {
 			final int numColumns = ret.getNumColumns();
 			final double[] result = ret.getDenseBlockValues();
 			final SparseBlock sb = tmp.getSparseBlock();
@@ -546,10 +546,10 @@ public class ColGroupUncompressed extends AColGroup {
 				double[] aval = sb.values(row);
 				for(int j = apos; j < alen; j++)
 					result[offRet + _colIndexes.get(aix[j])] += aval[j];
-				
+
 			}
 		}
-		else{
+		else {
 			// copy that upper triangle part to ret
 			final int numColumns = ret.getNumColumns();
 			final double[] result = ret.getDenseBlockValues();
@@ -629,8 +629,8 @@ public class ColGroupUncompressed extends AColGroup {
 	private void leftMultByAColGroupUncompressed(ColGroupUncompressed lhs, MatrixBlock result) {
 		final MatrixBlock tmpRet = new MatrixBlock(lhs.getNumCols(), _colIndexes.size(), 0);
 		final int k = InfrastructureAnalyzer.getLocalParallelism();
-		
-		if(lhs._data.getNumColumns() != 1){
+
+		if(lhs._data.getNumColumns() != 1) {
 			LOG.warn("Inefficient Left Matrix Multiplication with transpose of left hand side : t(l) %*% r");
 		}
 		// multiply to temp
@@ -905,6 +905,15 @@ public class ColGroupUncompressed extends AColGroup {
 			for(int c = 0; c < _data.getNumColumns(); c++)
 				ret.set(r, c, _data.get(r, reordering[c]));
 		return create(newColIndex, ret, false);
+	}
+
+	@Override
+	public AColGroup reduceCols() {
+		MatrixBlock mb = _data.rowSum();
+		if(mb.isEmpty())
+			return null;
+		else
+			return new ColGroupUncompressed(mb, ColIndexFactory.createI(0));
 	}
 
 	@Override

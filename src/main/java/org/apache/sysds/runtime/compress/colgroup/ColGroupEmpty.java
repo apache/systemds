@@ -403,4 +403,9 @@ public class ColGroupEmpty extends AColGroupCompressed
 		return MapToFactory.create(0, 0);
 	}
 
+	@Override 
+	public AColGroup reduceCols(){
+		return null;
+	}
+
 }

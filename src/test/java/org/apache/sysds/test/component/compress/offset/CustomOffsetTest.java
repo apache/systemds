@@ -34,6 +34,10 @@ import org.junit.Test;
 public class CustomOffsetTest {
 	protected static final Log LOG = LogFactory.getLog(CustomOffsetTest.class.getName());
 
+	static{
+		CompressedMatrixBlock.debug = true;
+	}
+
 	@Test
 	public void sliceE() {
 		AOffset a = OffsetFactory.createOffset(new int[] {441, 1299, 14612, 16110, 18033, 18643, 18768, 25798, 32315});

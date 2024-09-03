@@ -24,6 +24,7 @@ import static org.junit.Assert.fail;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.when;
 
+import org.apache.sysds.runtime.compress.CompressedMatrixBlock;
 import org.apache.sysds.runtime.compress.colgroup.mapping.AMapToData;
 import org.apache.sysds.runtime.compress.colgroup.mapping.MapToFactory;
 import org.apache.sysds.runtime.compress.colgroup.mapping.MapToFactory.MAP_TYPE;
@@ -34,6 +35,9 @@ import org.apache.sysds.runtime.data.DenseBlockFactory;
 import org.junit.Test;
 
 public class OffsetPreAggTests {
+	static{
+		CompressedMatrixBlock.debug = true;
+	}
 
 	static DenseBlock db = DenseBlockFactory.createDenseBlock(2, 5);
 	static{

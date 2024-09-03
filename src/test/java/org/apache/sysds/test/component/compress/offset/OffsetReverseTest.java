@@ -21,11 +21,15 @@ package org.apache.sysds.test.component.compress.offset;
 
 import static org.junit.Assert.assertEquals;
 
+import org.apache.sysds.runtime.compress.CompressedMatrixBlock;
 import org.apache.sysds.runtime.compress.colgroup.offset.AOffset;
 import org.apache.sysds.runtime.compress.colgroup.offset.OffsetFactory;
 import org.junit.Test;
 
 public class OffsetReverseTest {
+	static{
+		CompressedMatrixBlock.debug = true;
+	}
 
 	@Test
 	public void reverse1() {

@@ -41,6 +41,9 @@ import scala.util.Random;
 
 @RunWith(value = Parameterized.class)
 public class LargeOffsetTest {
+	static{
+		CompressedMatrixBlock.debug = true;
+	}
 
 	protected static final Log LOG = LogFactory.getLog(LargeOffsetTest.class.getName());
 

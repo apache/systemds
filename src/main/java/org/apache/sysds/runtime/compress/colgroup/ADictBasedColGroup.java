@@ -315,4 +315,14 @@ public abstract class ADictBasedColGroup extends AColGroupCompressed implements 
 
 	protected abstract AColGroup copyAndSet(IColIndex colIndexes, IDictionary newDictionary);
 
+
+	@Override
+	public AColGroup reduceCols(){
+		IColIndex outCols = ColIndexFactory.createI(0);
+		IDictionary newDict = Dictionary.create(_dict.sumAllRowsToDouble(getNumCols()));
+		if(newDict == null)
+			return null;
+		return copyAndSet(outCols, newDict);
+	}
+
 }

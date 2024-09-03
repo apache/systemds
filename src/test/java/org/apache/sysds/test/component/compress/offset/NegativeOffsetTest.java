@@ -27,12 +27,16 @@ import java.io.ByteArrayOutputStream;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 
+import org.apache.sysds.runtime.compress.CompressedMatrixBlock;
 import org.apache.sysds.runtime.compress.colgroup.offset.AOffset;
 import org.apache.sysds.runtime.compress.colgroup.offset.OffsetFactory;
 import org.apache.sysds.runtime.compress.colgroup.offset.OffsetFactory.OFF_TYPE_SPECIALIZATIONS;
 import org.junit.Test;
 
 public class NegativeOffsetTest {
+	static{
+		CompressedMatrixBlock.debug = true;
+	}
 
 	@Test(expected = Exception.class)
 	public void incorrectConstruct() throws Exception{

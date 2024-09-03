@@ -606,8 +606,8 @@ public abstract class AColGroup implements Serializable {
 	public abstract boolean isEmpty();
 
 	/**
-	 * Append the other column group to this column group. This method tries to combine them to return a new column
-	 * group containing both. In some cases it is possible in reasonable time, in others it is not.
+	 * Append the other column group to this column group. This method tries to combine them to return a new column group
+	 * containing both. In some cases it is possible in reasonable time, in others it is not.
 	 * 
 	 * The result is first this column group followed by the other column group in higher row values.
 	 * 
@@ -715,6 +715,18 @@ public abstract class AColGroup implements Serializable {
 	}
 
 	protected abstract AColGroup fixColIndexes(IColIndex newColIndex, int[] reordering);
+
+	/**
+	 * Perform row sum on the internal dictionaries, and return the same index structure.
+	 * 
+	 * This method returns null on empty column groups.
+	 * 
+	 * Note this method does not guarantee correct behavior if the given group is AMorphingGroup, instead it should be
+	 * morphed to a valid columngroup via extractCommon first.
+	 * 
+	 * @return The reduced colgroup.
+	 */
+	public abstract AColGroup reduceCols();
 
 	@Override
 	public String toString() {

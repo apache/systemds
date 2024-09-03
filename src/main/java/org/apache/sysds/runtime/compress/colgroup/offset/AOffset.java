@@ -719,12 +719,10 @@ public abstract class AOffset implements Serializable {
 				sb.append("\nOffset CacheRow: ");
 				sb.append(cacheRow.get().toString());
 			}
-
 			if(skipList != null && skipList.get() != null) {
 				sb.append("\nSkipList:");
 				sb.append(Arrays.toString(skipList.get()));
 			}
-
 		}
 		return sb.toString();
 	}

@@ -24,6 +24,9 @@ import org.apache.sysds.runtime.matrix.data.MatrixValue.CellIndex;
 import org.apache.sysds.runtime.meta.DataCharacteristics;
 
 
+/**
+ * Reduce all rows into a single row.
+ */
 public class ReduceRow extends IndexFunction
 {
 

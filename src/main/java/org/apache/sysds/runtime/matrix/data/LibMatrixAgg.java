@@ -703,7 +703,7 @@ public class LibMatrixAgg {
 	public static void recomputeIndexes( MatrixBlock out, AggregateUnaryOperator op, int blen, MatrixIndexes ix )
 	{
 		AggType type = getAggType(op);
-		if( (type == AggType.MAX_INDEX || type == AggType.MIN_INDEX) && ix.getColumnIndex()!=1 ) //MAXINDEX or MININDEX
+		if( (type == AggType.MAX_INDEX || type == AggType.MIN_INDEX) && ix != null && ix.getColumnIndex()!=1 ) //MAXINDEX or MININDEX
 		{
 			int m = out.rlen;
 			double[] c = out.getDenseBlockValues();

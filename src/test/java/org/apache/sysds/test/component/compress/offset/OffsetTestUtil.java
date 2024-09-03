@@ -20,11 +20,15 @@
 package org.apache.sysds.test.component.compress.offset;
 
 import org.apache.commons.lang3.NotImplementedException;
+import org.apache.sysds.runtime.compress.CompressedMatrixBlock;
 import org.apache.sysds.runtime.compress.colgroup.offset.AOffset;
 import org.apache.sysds.runtime.compress.colgroup.offset.OffsetFactory;
 import org.apache.sysds.runtime.compress.colgroup.offset.OffsetFactory.OFF_TYPE;
 
 public class OffsetTestUtil {
+	static {
+		CompressedMatrixBlock.debug = true;
+	}
 
 	public static AOffset getOffset(int[] data, OFF_TYPE type) {
 		switch(type) {

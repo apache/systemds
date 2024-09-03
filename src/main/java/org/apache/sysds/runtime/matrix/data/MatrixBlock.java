@@ -4542,6 +4542,10 @@ public class MatrixBlock extends MatrixValue implements CacheBlock<MatrixBlock>,
 		return (MatrixBlock)result;
 	}
 
+	public final MatrixBlock aggregateUnaryOperations(AggregateUnaryOperator op)  {
+		return this.aggregateUnaryOperations(op, null, 1000, null, true);
+	}
+
 	@Override
 	public MatrixBlock aggregateUnaryOperations(AggregateUnaryOperator op, MatrixValue result,
 			int blen, MatrixIndexes indexesIn, boolean inCP)  {

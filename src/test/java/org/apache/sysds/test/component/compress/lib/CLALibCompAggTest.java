@@ -211,6 +211,35 @@ public class CLALibCompAggTest {
 		TestUtils.compareMatricesPercentageDistance(uRet, cRet, 0, 0, "rowmean");
 	}
 
+	@Test
+	public void rowmeanDecompressing() {
+		AggregateUnaryOperator op = InstructionUtils.parseBasicAggregateUnaryOperator("uarmean", 10);
+		CompressedMatrixBlock spy = spy(cmb);
+		when(spy.isOverlapping()).thenReturn(true);
+		when(spy.getCachedDecompressed()).thenReturn(null);
+		MatrixBlock cRet = spy.aggregateUnaryOperations(op);
+		MatrixBlock uRet = mb.aggregateUnaryOperations(op);
+		TestUtils.compareMatricesPercentageDistance(uRet, cRet, 0, 0, "rowmean");
+	}
+
+	@Test
+	public void rowSquareSumDecompressing() {
+		try{
+
+			AggregateUnaryOperator op = InstructionUtils.parseBasicAggregateUnaryOperator("uarsqk+", 10);
+			CompressedMatrixBlock spy = spy(cmb);
+			when(spy.isOverlapping()).thenReturn(true);
+			when(spy.getCachedDecompressed()).thenReturn(null);
+			MatrixBlock cRet = spy.aggregateUnaryOperations(op);
+			MatrixBlock uRet = mb.aggregateUnaryOperations(op);
+			TestUtils.compareMatricesPercentageDistance(uRet, cRet, 0, 0, "rowmean");
+		}
+		catch(Exception e){
+			e.printStackTrace();
+			fail(e.getMessage());
+		}
+	}
+
 
 	@Test
 	public void rowMin() {

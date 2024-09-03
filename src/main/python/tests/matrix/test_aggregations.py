@@ -120,6 +120,32 @@ class TestMatrixAggFn(unittest.TestCase):
         self.assertTrue(np.allclose(
             self.sds.from_numpy(m2).trace().compute(), m2.trace()))
 
+    def test_countDistinctApprox1(self):
+        distinct = 100
+        m = np.round(np.random.random((1000, 1000))*(distinct - 1))
+        # allow and error of 1%
+        self.assertTrue(np.allclose(
+            self.sds.from_numpy(m).countDistinctApprox().compute(), len(np.unique(m)), 1))
+
+    def test_countDistinctApprox2(self):
+        distinct = 1000
+        m = np.round(np.random.random((10000, 100))*(distinct - 1))
+        # allow and error of 1%
+        self.assertTrue(np.allclose(
+            self.sds.from_numpy(m).countDistinctApprox(0).compute(), [len(np.unique(col))*100 for col in m.T], 10))
+
+    def test_countDistinctApprox3(self):
+        distinct = 1000
+        m = np.round(np.random.random((100, 10000))*(distinct - 1))
+        # allow and error of 1%
+        self.assertTrue(np.allclose(
+            self.sds.from_numpy(m).countDistinctApprox(1).compute(), np.array([[len(np.unique(col))] for col in m]), 10))
+
+    def test_countDistinctApprox4(self):
+        m = np.round(np.random.random((2, 2)))
+        with self.assertRaises(ValueError):
+            self.sds.from_numpy(m).countDistinctApprox(2)
+
 
     def test_countDistinct1(self):
         self.assertTrue(np.allclose(

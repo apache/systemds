@@ -259,6 +259,13 @@ class Matrix(OperationNode):
         raise ValueError(
             f"Axis has to be either 0, 1 or None, for column, row or complete {self.operation}")
 
+    def sd(self) -> 'Scalar':
+        """Calculate standard deviation of matrix.
+
+        :return: `Matrix` representing operation
+        """
+        return Scalar(self.sds_context, 'sd', [self])
+
     def abs(self) -> 'Matrix':
         """Calculate absolute.
 

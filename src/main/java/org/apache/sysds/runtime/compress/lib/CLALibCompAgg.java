@@ -20,7 +20,6 @@
 package org.apache.sysds.runtime.compress.lib;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
@@ -145,7 +144,7 @@ public class CLALibCompAgg {
 			}
 			else
 				filteredGroups = groups;
-				
+
 			for(AColGroup g : filteredGroups)
 				tasks.add(pool.submit(() -> g.reduceCols()));
 
@@ -658,6 +657,7 @@ public class CLALibCompAgg {
 		}
 
 		private void reduceCol(MatrixBlock tmp, AIterator[] its, boolean isBinaryOp) {
+			// allocate dense rmpR with correction in case needed.
 			final MatrixBlock tmpR = LibMatrixAgg.prepareAggregateUnaryOutput(tmp, _op, null, 1000);
 			for(int r = _rl; r < _ru; r += _blklen) {
 				final int rbu = Math.min(r + _blklen, _ru);
@@ -665,29 +665,19 @@ public class CLALibCompAgg {
 					tmp.reset(rbu - r, tmp.getNumColumns(), false);
 				decompressToTemp(tmp.getDenseBlock(), r, rbu, its);
 				tmp.setNonZeros(rbu - r);
-				tmpR.reset();
-				LibMatrixAgg.aggregateUnaryMatrix(tmp, tmpR, _op);
+				LibMatrixAgg.aggregateUnaryMatrix(tmp, tmpR, _op, false);
 
+				if(tmpR.isEmpty())
+					// do nothing because the ret is already filled with zeros.
+					continue;
+				
 				tmpR.dropLastRowsOrColumns(_op.aggOp.correction);
-				if(tmpR.isEmpty()) {
-					if(isBinaryOp) {
-						final double[] retValues = _ret.getDenseBlockValues();
-						final int s = r * _ret.getNumColumns();
-						final int e = rbu * _ret.getNumColumns();
-						Arrays.fill(retValues, s, e, 0);
-					}
-				}
-				else if(tmpR.isInSparseFormat()) {
-					throw new NotImplementedException(
-						"Not supported Sparse yet and it should be extremely unlikely/not happen. because we work with a single column here");
-				}
-				else {
-					final double[] retValues = _ret.getDenseBlockValues();
-					final double[] tmpRValues = tmpR.getDenseBlockValues();
-					final int currentIndex = r * _ret.getNumColumns();
-					final int length = rbu - r;
-					System.arraycopy(tmpRValues, 0, retValues, currentIndex, length);
-				}
+				final double[] retValues = _ret.getDenseBlockValues();
+				final double[] tmpRValues = tmpR.getDenseBlockValues();
+				final int currentIndex = r * _ret.getNumColumns();
+				final int length = rbu - r;
+				System.arraycopy(tmpRValues, 0, retValues, currentIndex, length);
+
 			}
 		}
 	}

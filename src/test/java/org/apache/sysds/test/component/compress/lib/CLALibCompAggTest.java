@@ -204,6 +204,30 @@ public class CLALibCompAggTest {
 	}
 
 	@Test
+	public void rowMin() {
+		AggregateUnaryOperator op = InstructionUtils.parseBasicAggregateUnaryOperator("uarmin", 10);
+		MatrixBlock cRet = cmb.aggregateUnaryOperations(op);
+		MatrixBlock uRet = mb.aggregateUnaryOperations(op);
+		TestUtils.compareMatricesPercentageDistance(uRet, cRet, 0, 0, "rowmin");
+	}
+
+	@Test
+	public void rowMinSparseLotsOfZero() {
+		AggregateUnaryOperator op = InstructionUtils.parseBasicAggregateUnaryOperator("uarmin", 10);
+
+		MatrixBlock mb = TestUtils.generateTestMatrixBlock(1000, 1000, 1, 1, 0.01, 2341);
+
+		CompressedMatrixBlock cmb = (CompressedMatrixBlock) CompressedMatrixBlockFactory.compress(mb, 1).getLeft();
+		cmb.setOverlapping(true);
+		cmb.clearSoftReferenceToDecompressed();
+		MatrixBlock cRet = cmb.aggregateUnaryOperations(op);
+		MatrixBlock uRet = mb.aggregateUnaryOperations(op);
+		TestUtils.compareMatricesPercentageDistance(uRet, cRet, 0, 0, "rowmin");
+	}
+
+
+
+	@Test
 	public void rowsum_compressedReturn2() {
 		try {
 

@@ -226,6 +226,12 @@ public class LibMatrixAgg {
 	}
 
 	public static void aggregateUnaryMatrix(MatrixBlock in, MatrixBlock out, AggregateUnaryOperator uaop) {
+		aggregateUnaryMatrix(in, out, uaop, true);
+	}
+
+
+	public static void aggregateUnaryMatrix(MatrixBlock in, MatrixBlock out, AggregateUnaryOperator uaop,
+		boolean allowReformatToSparse) {
 
 		AggType aggtype = getAggType(uaop);
 		final int m = in.rlen;
@@ -250,8 +256,9 @@ public class LibMatrixAgg {
 			aggregateUnaryMatrixSparse(in, out, aggtype, uaop.aggOp.increOp.fn, uaop.indexFn, 0, m);
 		
 		//cleanup output and change representation (if necessary)
-		out.recomputeNonZeros();
-		out.examSparsity();
+		out.recomputeNonZeros(uaop.getNumThreads());
+		if(allowReformatToSparse)
+			out.examSparsity();
 	}
 
 	public static void aggregateUnaryMatrix(MatrixBlock in, MatrixBlock out, AggregateUnaryOperator uaop, int k) {

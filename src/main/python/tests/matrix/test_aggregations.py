@@ -30,10 +30,10 @@ m1 = np.array(np.random.randint(100, size=dim * dim) + 1.01, dtype=np.double)
 m1.shape = (dim, dim)
 m2 = np.array(np.random.randint(5, size=dim * dim) + 1, dtype=np.double)
 m2.shape = (dim, dim)
-
+m3 = np.array(np.random.randint(10, size=dim * dim * 10) + 1, dtype=np.double)
+m3.shape = (dim * 10, dim)
 
 class TestMatrixAggFn(unittest.TestCase):
-
     sds: SystemDSContext = None
 
     @classmethod
@@ -70,7 +70,7 @@ class TestMatrixAggFn(unittest.TestCase):
 
     def test_full(self):
         self.assertTrue(np.allclose(
-            self.sds.full( (2, 3), 10.1).compute(), np.full((2, 3), 10.1)))
+            self.sds.full((2, 3), 10.1).compute(), np.full((2, 3), 10.1)))
 
     def test_seq(self):
         self.assertTrue(np.allclose(
@@ -119,6 +119,47 @@ class TestMatrixAggFn(unittest.TestCase):
     def test_trace2(self):
         self.assertTrue(np.allclose(
             self.sds.from_numpy(m2).trace().compute(), m2.trace()))
+
+
+    def test_countDistinct1(self):
+        self.assertTrue(np.allclose(
+            self.sds.from_numpy(m1).countDistinct().compute(), len(np.unique(m1))))
+
+    def test_countDistinct2(self):
+        self.assertTrue(np.allclose(
+            self.sds.from_numpy(m2).countDistinct().compute(), len(np.unique(m2))))
+
+    def test_countDistinct3(self):
+        self.assertTrue(np.allclose(
+            self.sds.from_numpy(m3).countDistinct().compute(), len(np.unique(m3))))
+
+    def test_countDistinct4(self):
+        self.assertTrue(np.allclose(
+            self.sds.from_numpy(m1).countDistinct(0).compute(), [len(np.unique(col)) for col in m1.T]))
+
+    def test_countDistinct5(self):
+        self.assertTrue(np.allclose(
+            self.sds.from_numpy(m2).countDistinct(0).compute(), [len(np.unique(col)) for col in m2.T]))
+
+    def test_countDistinct6(self):
+        self.assertTrue(np.allclose(
+            self.sds.from_numpy(m3).countDistinct(0).compute(), [len(np.unique(col)) for col in m3.T]))
+
+    def test_countDistinct7(self):
+        self.assertTrue(np.allclose(
+            self.sds.from_numpy(m1).countDistinct(1).compute(), np.array([[len(np.unique(col))] for col in m1])))
+
+    def test_countDistinct8(self):
+        self.assertTrue(np.allclose(
+            self.sds.from_numpy(m2).countDistinct(1).compute(), np.array([[len(np.unique(col))] for col in m2])))
+
+    def test_countDistinct9(self):
+        self.assertTrue(np.allclose(
+            self.sds.from_numpy(m3).countDistinct(1).compute(), np.array([[len(np.unique(col))] for col in m3])))
+
+    def test_countDistinct10(self):
+        with self.assertRaises(ValueError):
+            self.sds.from_numpy(m3).countDistinct(2)
 
 
 if __name__ == "__main__":

@@ -61,6 +61,32 @@ class TestMatrixAggFn(unittest.TestCase):
             )
         )
 
+    def test_sum4(self):
+        with self.assertRaises(ValueError):
+            self.sds.from_numpy(m1).sum(2)
+
+    def test_prod1(self):
+        self.assertTrue(
+            np.allclose(self.sds.from_numpy(m1).prod().compute(), np.prod(m1))
+        )
+
+    def test_prod2(self):
+        self.assertTrue(
+            np.allclose(self.sds.from_numpy(m1).prod(0).compute(), np.prod(m1, 0))
+        )
+
+    def test_prod3(self):
+        self.assertTrue(
+            np.allclose(
+                self.sds.from_numpy(m1).prod(axis=1).compute(),
+                np.prod(m1, 1).reshape(dim, 1),
+            )
+        )
+
+    def test_prod4(self):
+        with self.assertRaises(ValueError):
+            self.sds.from_numpy(m1).prod(2)
+
     def test_mean1(self):
         self.assertTrue(
             np.allclose(self.sds.from_numpy(m1).mean().compute(), m1.mean())
@@ -78,6 +104,10 @@ class TestMatrixAggFn(unittest.TestCase):
                 m1.mean(axis=1).reshape(dim, 1),
             )
         )
+
+    def test_mean4(self):
+        with self.assertRaises(ValueError):
+            self.sds.from_numpy(m1).mean(2)
 
     def test_full(self):
         self.assertTrue(
@@ -109,6 +139,10 @@ class TestMatrixAggFn(unittest.TestCase):
             )
         )
 
+    def test_var4(self):
+        with self.assertRaises(ValueError):
+            self.sds.from_numpy(m1).var(2)
+
     def test_min1(self):
         self.assertTrue(np.allclose(self.sds.from_numpy(m1).min().compute(), m1.min()))
 
@@ -125,6 +159,10 @@ class TestMatrixAggFn(unittest.TestCase):
             )
         )
 
+    def test_min4(self):
+        with self.assertRaises(ValueError):
+            self.sds.from_numpy(m1).min(2)
+
     def test_max1(self):
         self.assertTrue(np.allclose(self.sds.from_numpy(m1).max().compute(), m1.max()))
 
@@ -140,6 +178,10 @@ class TestMatrixAggFn(unittest.TestCase):
                 m1.max(axis=1).reshape(dim, 1),
             )
         )
+
+    def test_max4(self):
+        with self.assertRaises(ValueError):
+            self.sds.from_numpy(m1).max(2)
 
     def test_trace1(self):
         self.assertTrue(

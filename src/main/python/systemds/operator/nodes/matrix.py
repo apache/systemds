@@ -238,6 +238,22 @@ class Matrix(OperationNode):
             f"Axis has to be either 0, 1 or None, for column, row or complete {self.operation}"
         )
 
+    def prod(self, axis: int = None) -> "OperationNode":
+        """Calculate product of cells in matrix.
+
+        :param axis: can be 0 or 1 to do either row or column sums
+        :return: `Matrix` representing operation
+        """
+        if axis == 0:
+            return Matrix(self.sds_context, "colProds", [self])
+        elif axis == 1:
+            return Matrix(self.sds_context, "rowProds", [self])
+        elif axis is None:
+            return Scalar(self.sds_context, "prod", [self])
+        raise ValueError(
+            f"Axis has to be either 0, 1 or None, for column, row or complete {self.operation}"
+        )
+
     def mean(self, axis: int = None) -> "OperationNode":
         """Calculate mean of matrix.
 

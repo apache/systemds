@@ -36,7 +36,7 @@ def incSliceLine(addedX: Matrix,
      This builtin function implements incSliceLine, a linear-algebra-based
      ML model debugging technique for finding the top-k data slices where
      a trained models performs significantly worse than on the overall
-     dataset. IncSliceLine is designed for scenarios in which training data is updated incrementally. 
+     dataset. IncSliceLine is designed for scenarios in which training data is updated incrementally.
      For a detailed description of the SliceLine algorithm and experimental results, see:
      Svetlana Sagadeeva, Matthias Boehm: SliceLine: Fast, Linear-Algebra-based Slice Finding for ML Model Debugging.(SIGMOD 2021)
     

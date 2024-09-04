@@ -166,6 +166,7 @@ from .builtin.sherlockPredict import sherlockPredict
 from .builtin.shortestPath import shortestPath 
 from .builtin.sigmoid import sigmoid 
 from .builtin.skewness import skewness 
+from .builtin.sliceLine import sliceLine 
 from .builtin.sliceLineDebug import sliceLineDebug 
 from .builtin.slicefinder import slicefinder 
 from .builtin.smape import smape 
@@ -338,6 +339,7 @@ __all__ = ['WoE',
  'shortestPath',
  'sigmoid',
  'skewness',
+ 'sliceLine',
  'sliceLineDebug',
  'slicefinder',
  'smape',

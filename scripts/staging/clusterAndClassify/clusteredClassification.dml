@@ -54,7 +54,7 @@ B = multiLogReg(X=Xtrain, Y=ytrain, maxii=50, icpt=2, reg=0.001, verbose=FALSE);
 print("Clustered Classification:")
 for(k in 2:16) {
   print("-- w/ "+k+" clusters")
-
+  
   # clustering
   [C,Yk] = kmeans(X=Xtrain, k=k);
 
@@ -63,13 +63,13 @@ for(k in 2:16) {
   acctrain = 0;
   count = 0;
   for(i in 1:k) {
-    I = (Yk == k);
+    I = (Yk == i);
     Xi = removeEmpty(target=Xtrain, margin="rows", select=I);
     yi = removeEmpty(target=ytrain, margin="rows", select=I);
     if( sum(I) > 15 & (max(yi)-min(yi)) > 0 ) {
       Bi = multiLogReg(X=Xi, Y=yi, maxii=50, icpt=2, reg=0.001, verbose=FALSE);
       [Mi,yhati,acci] = multiLogRegPredict(X=Xi, B=Bi, Y=yi, verbose=FALSE);
-      acctrain += acci; count = count+1;
+      acctrain += acci*nrow(Xi); count = count+nrow(Xi);
       models = append(models, Bi);
     }
     else {
@@ -77,7 +77,7 @@ for(k in 2:16) {
     }
   }
   if(count>=1)
-    print("---- train accuracy: "+(acctrain/count))
+    print("---- train accuracy: "+(acctrain/count)+" "+count)
 
   # computer test accuracy
   acctest = 0;
@@ -86,12 +86,12 @@ for(k in 2:16) {
   for(i in 1:k) {
     Bi = as.matrix(models[i])
     if(nrow(Bi)>1) {
-      I = (Yk == k);
+      I = (Yk == i);
       Xi = removeEmpty(target=Xtest, margin="rows", select=I);
       yi = removeEmpty(target=ytest, margin="rows", select=I);
       [Mi,yhati,acci] = multiLogRegPredict(X=Xi, B=Bi, Y=yi, verbose=FALSE);
-      acctest += acci; count = count+1;
-    }
+      acctest += acci*nrow(Xi); count = count+nrow(Xi);
+    } 
   }
   if(count >= 1)
     print("---- test accuracy: "+(acctest/count))

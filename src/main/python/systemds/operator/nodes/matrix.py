@@ -687,5 +687,12 @@ class Matrix(OperationNode):
             },
         )
 
+    def inv(self) -> "Matrix":
+        """ Computes the inverse of a squared matrix.
+
+        :return: The Matrix representing the result of this operation
+        """
+        return Matrix(self.sds_context, "inv", [self])
+
     def __str__(self):
         return "MatrixNode"

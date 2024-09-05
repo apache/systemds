@@ -732,5 +732,43 @@ class Matrix(OperationNode):
         """
         return Matrix(self.sds_context, "cummax", [self])
 
+    def qr(self) -> "MultiReturn":
+        """Computes QR decomposition of a matrix A using Householder reflectors. The QR decomposition of A consists
+        of two matrices Q and R such that A = Q%*%R where Q is an orthogonal matrix (i.e., Q%*%t(Q) = t(Q)%*%Q = I,
+        identity matrix) and R is an upper triangular matrix. For efficiency purposes, this function returns the matrix
+        of Householder reflector vectors H instead of Q (which is a large m x m potentially dense matrix). The Q
+        matrix can be explicitly computed from H, if needed. In most applications of QR, one is interested in
+        calculating Q %*% B or t(Q) %*% B – and, both can be computed directly using H instead of explicitly
+        constructing the large Q matrix.
+
+        :return: The MultiReturn node containing the two Matrices h and r
+        """
+        h = Matrix(self.sds_context, "")
+        r = Matrix(self.sds_context, "")
+        output_nodes = [h, r]
+
+        op = MultiReturn(
+            self.sds_context, "qr", output_nodes, unnamed_input_nodes=[self]
+        )
+        return op
+
+    def lu(self) -> "MultiReturn":
+        """Computes Pivoted LU decomposition a square matrix A. The LU decomposition consists
+        of three matrices P, L, and U such that P %*% A = L %*% U, where P is a permutation matrix that is used to
+        rearrange the rows in A before the decomposition can be computed. L is a lower-triangular matrix whereas U is
+        an upper-triangular matrix.
+
+        :return: The MultiReturn node containing the three Matrices p, l and u
+        """
+        p = Matrix(self.sds_context, "")
+        l = Matrix(self.sds_context, "")
+        u = Matrix(self.sds_context, "")
+        output_nodes = [p, l, u]
+
+        op = MultiReturn(
+            self.sds_context, "lu", output_nodes, unnamed_input_nodes=[self]
+        )
+        return op
+
     def __str__(self):
         return "MatrixNode"

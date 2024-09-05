@@ -28,7 +28,7 @@ from dml_parser import FunctionParser
 from typing import List, Tuple
 
 
-manually_added_algorithm_builtins = ["cov"]
+manually_added_algorithm_builtins = ["cov", "solve"]
 
 
 class PythonAPIFileGenerator(object):

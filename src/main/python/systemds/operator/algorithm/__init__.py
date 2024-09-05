@@ -37,6 +37,7 @@ from .builtin.bivar import bivar
 from .builtin.components import components 
 from .builtin.confusionMatrix import confusionMatrix 
 from .builtin.cor import cor 
+from .builtin.cov import cov 
 from .builtin.cox import cox 
 from .builtin.cspline import cspline 
 from .builtin.csplineCG import csplineCG 
@@ -210,6 +211,7 @@ __all__ = ['WoE',
  'components',
  'confusionMatrix',
  'cor',
+ 'cov',
  'cox',
  'cspline',
  'csplineCG',

@@ -1266,6 +1266,16 @@ public class BuiltinFunctionExpression extends DataIdentifier {
 			output.setBlocksize (id.getBlocksize());
 			output.setValueType(id.getValueType());
 			break;
+
+		case ROLL:
+			checkNumParameters(2);
+			checkMatrixParam(getFirstExpr());
+			checkScalarParam(getSecondExpr());
+			output.setDataType(DataType.MATRIX);
+			output.setDimensions(id.getDim1(), id.getDim2());
+			output.setBlocksize (id.getBlocksize());
+			output.setValueType(id.getValueType());
+			break;
 			
 		case DIAG:
 			checkNumParameters(1);

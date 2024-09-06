@@ -27,6 +27,7 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.IOException;
+import java.io.RandomAccessFile;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
@@ -577,6 +578,9 @@ public class TestUtils {
 				throw new RuntimeException("unknown matrix type while reading R matrix: " + line);
 
 			line = reader.readLine(); // header line with dimension and nnz information
+
+			if (line.startsWith("%"))	// skip blank comment(%) line in mtx file written by python
+				line = reader.readLine();
 
 			while ((line = reader.readLine()) != null) {
 				StringTokenizer st = new StringTokenizer(line, " ");
@@ -2673,13 +2677,9 @@ public class TestUtils {
 	 * Writes a matrix to a file using the text format.
 	 * </p>
 	 *
-	 * @param file
-	 *            file name
-	 * @param matrix
-	 *            matrix
+	 * @param file     file name
+	 * @param matrix   matrix
 	 * @param isR
-	 *            when true, writes a R matrix to disk
-	 *
 	 */
 	public static void writeTestMatrix(String file, double[][] matrix, boolean isR)
 	{
@@ -2696,13 +2696,16 @@ public class TestUtils {
 				out = new DataOutputStream(new FileOutputStream(file));
 			}
 
+			int non_zero_cnt = 0;
+
 			try( BufferedWriter pw = new BufferedWriter(new OutputStreamWriter(out))) {
 
-				//write header
+				//write dummy header
 				if( isR ) {
-					/** add R header */
+					/** add space for R header */
 					pw.append("%%MatrixMarket matrix coordinate real general\n");
-					pw.append("" + matrix.length + " " + matrix[0].length + " " + matrix.length*matrix[0].length+"\n");
+					pw.append("" + matrix.length + " " + matrix[0].length + " "
+							+ " ".repeat((String.valueOf(matrix.length*matrix[0].length)).length())+"\n");
 				}
 
 				//writer actual matrix
@@ -2712,6 +2715,8 @@ public class TestUtils {
 					for (int j = 0; j < matrix[i].length; j++) {
 						if ( matrix[i][j] == 0 )
 							continue;
+
+						non_zero_cnt++;
 						sb.append(i + 1);
 						sb.append(' ');
 						sb.append(j + 1);
@@ -2727,6 +2732,18 @@ public class TestUtils {
 				//writer dummy entry if empty
 				if( emptyOutput )
 					pw.append("1 1 " + matrix[0][0]);
+
+				pw.flush();
+			}
+
+			//write real header
+			if( isR ) {
+				try (RandomAccessFile raf = new RandomAccessFile(file, "rws")) {
+					raf.seek(0);
+
+					raf.write("%%MatrixMarket matrix coordinate real general\n".getBytes());
+					raf.write(("" + matrix.length + " " + matrix[0].length + " " + non_zero_cnt).getBytes());
+				}
 			}
 		}
 		catch (IOException e)
@@ -3009,6 +3026,30 @@ public class TestUtils {
 		catch (IOException e) {
 			e.printStackTrace();
 			fail("unable to print R script: " + e.getMessage());
+		}
+		System.out.println("**************************************************\n\n");
+	}
+
+	/**
+	 * <p>
+	 * Prints out an Python script.
+	 * </p>
+	 *
+	 * @param dmlScriptFile
+	 *            filename of RL script
+	 */
+	public static void printPythonScript(String dmlScriptFile) {
+		System.out.println("Running script: " + dmlScriptFile + "\n");
+		System.out.println("******************* Python script *******************");
+		try( BufferedReader in = new BufferedReader(new InputStreamReader(new FileInputStream(dmlScriptFile)))) {
+			String content;
+			while ((content = in.readLine()) != null) {
+				System.out.println(content);
+			}
+		}
+		catch (IOException e) {
+			e.printStackTrace();
+			fail("unable to print python script: " + e.getMessage());
 		}
 		System.out.println("**************************************************\n\n");
 	}

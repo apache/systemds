@@ -90,6 +90,9 @@ public class ReorgOp extends MultiThreadedHop
 			case REV:
 				HopsException.check(sz == 1, this, "should have arity 1 for op %s but has arity %d", _op, sz);
 				break;
+			case ROLL:
+				HopsException.check(sz == 2, this, "should have arity 2 for op %s but has arity %d", _op, sz);
+				break;
 			case RESHAPE:
 			case SORT:
 				HopsException.check(sz == 5, this, "should have arity 5 for op %s but has arity %d", _op, sz);
@@ -125,6 +128,7 @@ public class ReorgOp extends MultiThreadedHop
 			}
 			case DIAG:
 			case REV:
+			case ROLL:
 			case SORT:
 				return false;
 			default:
@@ -170,6 +174,19 @@ public class ReorgOp extends MultiThreadedHop
 				Transform transform1 = new Transform(
 					getInput().get(0).constructLops(),
 					_op, getDataType(), getValueType(), et);
+				setOutputDimensions(transform1);
+				setLineNumbers(transform1);
+				setLops(transform1);
+				break;
+			}
+			case ROLL:{
+				Lop[] linputs = new Lop[2]; //input, shift
+				for (int i = 0; i < 2; i++)
+					linputs[i] = getInput().get(i).constructLops();
+
+				Transform transform1 = new Transform(
+						linputs, _op, getDataType(), getValueType(), et, 1);
+
 				setOutputDimensions(transform1);
 				setLineNumbers(transform1);
 				setLops(transform1);
@@ -279,7 +296,8 @@ public class ReorgOp extends MultiThreadedHop
 					ret = new MatrixCharacteristics(dc.getCols(), dc.getRows(), -1, dc.getNonZeros());
 				break;
 			}
-			case REV: {
+			case REV:
+			case ROLL: {
 				// dims and nnz are exactly the same as in input
 				if( dc.dimsKnown() )
 					ret = new MatrixCharacteristics(dc.getRows(), dc.getCols(), -1, dc.getNonZeros());
@@ -397,6 +415,7 @@ public class ReorgOp extends MultiThreadedHop
 				break;
 			}
 			case REV:
+			case ROLL:
 			{
 				// dims and nnz are exactly the same as in input
 				setDim1(input1.getDim1());

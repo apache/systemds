@@ -111,7 +111,11 @@ public class Transform extends Lop
 			case REV:
 				// Transpose a matrix
 				return "rev";
-			
+
+			case ROLL:
+				// Transpose a matrix
+				return "roll";
+
 			case DIAG:
 				// Transform a vector into a diagonal matrix
 				return "rdiag";
@@ -136,6 +140,12 @@ public class Transform extends Lop
 	public String getInstructions(String input1, String output) {
 		//opcodes: r', rev, rdiag
 		return getInstructions(input1, 1, output);
+	}
+
+	@Override
+	public String getInstructions(String input1, String input2, String output) {
+		//opcodes: roll
+		return getInstructions(input1, 2, output);
 	}
 
 	@Override

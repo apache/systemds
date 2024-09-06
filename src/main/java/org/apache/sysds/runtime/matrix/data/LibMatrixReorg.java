@@ -50,6 +50,7 @@ import org.apache.sysds.runtime.data.SparseRow;
 import org.apache.sysds.runtime.data.SparseRowVector;
 import org.apache.sysds.runtime.functionobjects.DiagIndex;
 import org.apache.sysds.runtime.functionobjects.RevIndex;
+import org.apache.sysds.runtime.functionobjects.RollIndex;
 import org.apache.sysds.runtime.functionobjects.SortIndex;
 import org.apache.sysds.runtime.functionobjects.SwapIndex;
 import org.apache.sysds.runtime.instructions.spark.data.IndexedMatrixValue;
@@ -94,6 +95,7 @@ public class LibMatrixReorg {
 	private enum ReorgType {
 		TRANSPOSE,
 		REV,
+		ROLL,
 		DIAG,
 		RESHAPE,
 		SORT,
@@ -123,6 +125,9 @@ public class LibMatrixReorg {
 					return transpose(in, out);
 			case REV:
 				return rev(in, out);
+			case ROLL:
+				RollIndex rix = (RollIndex) op.fn;
+				return roll(in, out, rix.getShift());
 			case DIAG:
 				return diag(in, out);
 			case SORT:
@@ -142,6 +147,7 @@ public class LibMatrixReorg {
 			case TRANSPOSE:
 				return transposeInPlace(in, op.getNumThreads());
 			case REV:
+			case ROLL:
 			case SORT:
 				throw new DMLRuntimeException("Not implemented inplace: " + op.fn.getClass().getSimpleName());
 			default:
@@ -418,6 +424,25 @@ public class LibMatrixReorg {
 				out.add(new IndexedMatrixValue(outix2, outblk2));
 			}
 		}
+	}
+
+	public static MatrixBlock roll( MatrixBlock in,  MatrixBlock out, int shift ) {
+		//sparse-safe operation
+		if( in.isEmptyBlock(false) )
+			return out;
+
+		//special case: row vector
+		if( in.rlen == 1 ) {
+			out.copy(in);
+			return out;
+		}
+
+		if( in.sparse )
+			rollSparse( in, out, shift );
+		else
+			rollDense( in, out, shift );
+
+		return out;
 	}
 
 	public static MatrixBlock diag( MatrixBlock in, MatrixBlock out ) {
@@ -957,7 +982,10 @@ public class LibMatrixReorg {
 		
 		else if( op.fn instanceof RevIndex ) //rev
 			return ReorgType.REV;
-		
+
+		else if( op.fn instanceof RollIndex ) //roll
+			return ReorgType.ROLL;
+
 		else if( op.fn instanceof DiagIndex ) //diag
 			return ReorgType.DIAG;
 		
@@ -2243,7 +2271,70 @@ public class LibMatrixReorg {
 			if( !a.isEmpty(i) )
 				c.set(m-1-i, a.get(i), true);
 	}
-	
+
+	private static void rollDense(MatrixBlock in, MatrixBlock out, int shift) {
+		final int m = in.rlen;
+		final int n = in.clen;
+
+		//set basic meta data and allocate output
+		out.sparse = false;
+		out.nonZeros = in.nonZeros;
+		out.allocateDenseBlock(false);
+
+		//copy all rows into target positions
+		if( n == 1 ) { //column vector
+			double[] a = in.getDenseBlockValues();
+			double[] c = out.getDenseBlockValues();
+
+			// roll matrix with axis=none
+			shift %= (m != 0 ? m : 1);
+
+			System.arraycopy(a, 0, c, shift, m - shift);
+			System.arraycopy(a, m - shift, c, 0, shift);
+		} else { //general matrix case
+			DenseBlock a = in.getDenseBlock();
+			DenseBlock c = out.getDenseBlock();
+
+			// roll matrix with axis=0
+			shift %= (m != 0 ? m : 1);
+
+			for( int i=0; i< m-shift; i++ ) {
+				System.arraycopy(a.values(i), a.pos(i), c.values(i + shift), c.pos(i + shift), n);
+			}
+
+			for( int i=m-shift; i<m; i++ ) {
+				System.arraycopy(a.values(i), a.pos(i), c.values(i + shift -m), c.pos(i + shift -m), n);
+			}
+		}
+	}
+
+	private static void rollSparse(MatrixBlock in, MatrixBlock out, int shift) {
+		final int m = in.rlen;
+
+		//set basic meta data and allocate output
+		out.sparse = true;
+		out.nonZeros = in.nonZeros;
+		out.allocateSparseRowsBlock(false);
+
+		//copy all rows into target positions
+		SparseBlock a = in.getSparseBlock();
+		SparseBlock c = out.getSparseBlock();
+
+		// roll matrix with axis=0
+		shift %= (m != 0 ? m : 1);
+
+		for( int i=0; i<m-shift; i++ ) {
+			if( !a.isEmpty(i) )
+				c.set(i + shift, a.get(i), true);
+		}
+
+		for( int i=m-shift; i<m; i++ ) {
+			if( !a.isEmpty(i) )
+				c.set(i + shift -m, a.get(i), true);
+		}
+	}
+
+
 	/**
 	 * Generic implementation diagV2M
 	 * (in most-likely DENSE, out most likely SPARSE)

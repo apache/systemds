@@ -86,6 +86,7 @@ import org.apache.sysds.runtime.functionobjects.ReduceAll;
 import org.apache.sysds.runtime.functionobjects.ReduceCol;
 import org.apache.sysds.runtime.functionobjects.ReduceRow;
 import org.apache.sysds.runtime.functionobjects.RevIndex;
+import org.apache.sysds.runtime.functionobjects.RollIndex;
 import org.apache.sysds.runtime.functionobjects.SortIndex;
 import org.apache.sysds.runtime.functionobjects.SwapIndex;
 import org.apache.sysds.runtime.functionobjects.TernaryValueFunction.ValueFunctionWithConstant;
@@ -3557,7 +3558,8 @@ public class MatrixBlock extends MatrixValue implements CacheBlock<MatrixBlock>,
 	public MatrixBlock reorgOperations(ReorgOperator op, MatrixValue ret, int startRow, int startColumn, int length)
 	{
 		if ( !( op.fn instanceof SwapIndex || op.fn instanceof DiagIndex 
-			|| op.fn instanceof SortIndex || op.fn instanceof RevIndex ) )
+			|| op.fn instanceof SortIndex || op.fn instanceof RevIndex
+			|| op.fn instanceof RollIndex) )
 			throw new DMLRuntimeException("the current reorgOperations cannot support: "+op.fn.getClass()+".");
 		
 		MatrixBlock result = checkType(ret);

@@ -173,6 +173,7 @@ from .builtin.slicefinder import slicefinder
 from .builtin.smape import smape 
 from .builtin.smote import smote 
 from .builtin.softmax import softmax 
+from .builtin.solve import solve 
 from .builtin.split import split 
 from .builtin.splitBalanced import splitBalanced 
 from .builtin.stableMarriage import stableMarriage 
@@ -347,6 +348,7 @@ __all__ = ['WoE',
  'smape',
  'smote',
  'softmax',
+ 'solve',
  'split',
  'splitBalanced',
  'stableMarriage',

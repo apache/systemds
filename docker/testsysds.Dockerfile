@@ -83,6 +83,7 @@ RUN apt-get install -y --no-install-recommends \
 	apt-get clean && \
 	python3 -m pip install --upgrade pip && \
 	pip3 install numpy scipy && \
+    echo "Python3 installed"
 
 # SEAL
 RUN wget -qO- https://github.com/microsoft/SEAL/archive/refs/tags/v3.7.0.tar.gz | tar xzf - \

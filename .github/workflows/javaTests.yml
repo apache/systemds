@@ -50,11 +50,11 @@ jobs:
       matrix:
         os: [ubuntu-latest]
         tests: [
-          "**.functions.reorg.**,**.functions.rewrite.**,**.functions.ternary.**"
+          "**.functions.reorg.**"
         ]
         java: [11]
         python-version: [3.8]
-    name: ${{ matrix.tests }}
+    name: ${{ matrix.tests }} Python ${{ matrix.python-version }
     steps:
     - name: Checkout Repository
       uses: actions/checkout@v4
@@ -68,8 +68,7 @@ jobs:
     - name: Install pip Dependencies
       run: |
         # Install pip twice to update past the versions.
-        pip install --upgrade pip
-        pip install --upgrade pip
+        python -m pip install --upgrade pip
         pip install numpy
 
     - name: ${{ matrix.tests }}

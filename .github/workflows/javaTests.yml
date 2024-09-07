@@ -59,19 +59,6 @@ jobs:
     - name: Checkout Repository
       uses: actions/checkout@v4
 
-    - name: Setup Python ${{ matrix.python-version }}
-      uses: actions/setup-python@v5
-      with:
-        python-version: ${{ matrix.python-version }}
-        architecture: 'x64'
-
-    - name: Install pip Dependencies
-      run: |
-        # Install pip twice to update past the versions.
-        pip install --upgrade pip
-        pip install --upgrade pip
-        pip install numpy
-
     - name: ${{ matrix.tests }}
       uses: ./.github/action/
       id: test

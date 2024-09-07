@@ -78,6 +78,12 @@ RUN apt-get install -y --no-install-recommends \
 	&& rm -rf installDependencies.R \
 	&& rm -rf /var/lib/apt/lists/*
 
+RUN apt-get install -y --no-install-recommends \
+	python3 python3-pip && \
+	apt-get clean && \
+	python3 -m pip install --upgrade pip && \
+	pip3 install numpy scipy && \
+
 # SEAL
 RUN wget -qO- https://github.com/microsoft/SEAL/archive/refs/tags/v3.7.0.tar.gz | tar xzf - \
     && cd SEAL-3.7.0 \

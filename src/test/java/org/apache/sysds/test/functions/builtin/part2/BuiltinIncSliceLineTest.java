@@ -1059,15 +1059,11 @@ public class BuiltinIncSliceLineTest extends AutomatedTestBase {
 	}
 
 	private void runIncSliceLineTest(int K, String err, boolean dp, boolean selCols, int proportionOfTuplesAddedInPercent, int proportionOfTuplesRemovedInPercent, boolean onlyNullEAdded, boolean removeTuples, boolean encodeLat, ExecMode mode) {
-		
 		runIncSliceLineTest(null, null, K, err, dp, selCols, proportionOfTuplesAddedInPercent, proportionOfTuplesRemovedInPercent, onlyNullEAdded, removeTuples, encodeLat, mode, false, false);
-
 	}
 
 	private void runIncSliceLineTest(int K, String err, boolean dp, boolean selCols, int proportionOfTuplesAddedInPercent, int proportionOfTuplesRemovedInPercent, boolean onlyNullEAdded, boolean removeTuples, boolean encodeLat, ExecMode mode, boolean disableScore, boolean disableSize) {
-		
 		runIncSliceLineTest(null, null, K, err, dp, selCols, proportionOfTuplesAddedInPercent, proportionOfTuplesRemovedInPercent, onlyNullEAdded, removeTuples, encodeLat, mode, disableScore, disableSize);
-
 	}
 
 

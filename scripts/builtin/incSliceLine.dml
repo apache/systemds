@@ -80,8 +80,7 @@ m_incSliceLine = function(
     list[unknown] prevLattice = list(), list[unknown] metaPrevLattice = list(),
     list[unknown] prevStats = list(), Matrix[Double] prevTK = matrix(0,0,0),
     Matrix[Double] prevTKC = matrix(0,0,0), Boolean encodeLat = TRUE,
-    Int pruningStrat = 0
-    )
+    Int pruningStrat = 0)
   return(
     Matrix[Double] TK, Matrix[Double] TKC, Matrix[Double] D,
     list[unknown] L, list[unknown] metaLattice,
@@ -95,22 +94,11 @@ m_incSliceLine = function(
     ((length(prevStats) == 0 | length(params) == 0 | nrow(prevFoffb) == 0 | nrow(prevFoffe) == 0 |
       nrow(oldX) == 0 | nrow(oldE) == 0) | (encodeLat & length(metaPrevLattice) == 0)))
   {
-    [TK, TKC, D, L, Stats, Xout, eOut, foffb, foffe, metaLattice, params] = throwNoParamsError();
-  } else {
+    throwNoParamsError();
+  }
 
-  disableIncScorePruning = FALSE;
-  disableIncSizePruning = FALSE;
-
-  if(pruningStrat == 1){
-    disableIncScorePruning = TRUE;
-  }
-  if(pruningStrat == 2){
-    disableIncSizePruning = TRUE;
-  }
-  if(pruningStrat == 3){
-    disableIncScorePruning = TRUE;
-    disableIncSizePruning = TRUE;
-  }
+  disableIncScorePruning = (pruningStrat == 1 | pruningStrat == 3);
+  disableIncSizePruning = (pruningStrat >= 2);
 
   t1 = time();
 
@@ -127,6 +115,7 @@ m_incSliceLine = function(
   }
 
   removedTuples = matrix(0,0,ncol(oldX));
+  removedE = matrix(0,0,1);
   if(length(indicesRemoved) > 0 & nrow(oldX)  > 0){
     ## remove all rows from oldX and oldE that are in indicesRemoved
     [oldX, removedTuples] = removeRowsByIndices( oldX, indicesRemoved);
@@ -160,13 +149,7 @@ m_incSliceLine = function(
   }
 
   # combining of addedX and oldX
-  if(nrow(oldX) > 0){
-    oldX2 = X2[1:nrow(oldX),];
-    addedX2 = X2[(nrow(oldX)+1):nrow(X2),];
-  } else {
-    oldX2 = matrix(0,0,ncol(X2));
-    addedX2 = X2;
-  }
+  addedX2 = X2[(nrow(oldX)+1):nrow(X2),];
 
   # One-hot encoding of tuples that were removed from oldX
   # combining of addedX and oldX in changedX2 facilitates simple determination of unchanged slices for pruning
@@ -176,28 +159,26 @@ m_incSliceLine = function(
   }else {
     changedX2 = addedX2;
   }
-
-  # One-hot encoding of prevTK
-  if( length(prevTK) > 0 ) {
-    prevTK2 = oneHotEncodeUsingOffsets(prevTK, foffb, foffe);
-  }else{
-    prevTK2 = prevTK;
-  }
+  changedE = rbind(addedE, removedE);
 
   # initialize statistics and basic slices
   n2 = ncol(X2);     # one-hot encoded features
-  eAvgOld = sum(oldE) / nrow(oldX); # average error
+  eAvgOld = sum(oldE) / max(1, nrow(oldX)); # average error
   eAvgNew = sum(addedE) / nrow(addedX);
   eAvg = sum(totalE) / m; # average error
 
-  # compute score for lowest scoring prevTK slice to set high min score early on to prune slices based on scores
-  minsc = -Inf;
-  if( nrow(prevTK2) > 0 & !disableIncScorePruning) {
-    [minsc] = computeLowestPrevTK (prevTK2, X2, totalE, eAvg, alpha, minsc)
+  # prepare previous top-K set (one hot encoding, score computation)
+  prevTK2 = matrix(0, 0, ncol(X2));
+  prevTKC2 = matrix(0, 0, 4);
+  minsc = -Inf
+  if( nrow(prevTK) > 0 ) {
+    prevTK2 = oneHotEncodeUsingOffsets(prevTK, foffb, foffe);
+    [minsc, prevTKC2] = computeLowestPrevTK(prevTK2, X2, totalE, eAvg, alpha)
   }
 
   # create and score basic slices (conjunctions of 1 feature)
-  [S, R, selCols] = createAndScoreBasicSlices(X2, changedX2, prevTK2, totalE, eAvg, eAvgOld, eAvgNew, minSup, alpha, minsc, verbose, disableIncScorePruning);
+  [S, R, selCols] = createAndScoreBasicSlices(X2, changedX2, prevTK2, totalE, changedE,
+     eAvg, eAvgOld, eAvgNew, minSup, alpha, minsc, verbose, disableIncScorePruning);
 
   # initialize lattice and statistics for incremental updates
   Stats = list();
@@ -213,7 +194,7 @@ m_incSliceLine = function(
   Stats = append(Stats,R[, 4]);
 
   # initialize top-k
-  [TK, TKC] = maintainTopK(S, R, matrix(0,0,n2), matrix(0,0,4), k, minSup);
+  [TK, TKC] = maintainTopK(S, R, prevTK2, prevTKC2, k, minSup, foffb, foffe);
 
   if( verbose ) {
     [maxsc2, minsc2] = analyzeTopK(TKC);
@@ -236,7 +217,7 @@ m_incSliceLine = function(
 
     # enumerate candidate join pairs, incl size/error pruning
     nrS = nrow(S);
-    [S, minsc] = getPairedCandidates(S, minsc, R, TKC, level, eAvg, minSup, alpha, n2, foffb, foffe);
+    S = getPairedCandidates(S, R, TKC, level, eAvg, minSup, alpha, n2, foffb, foffe);
     S2 = S;
 
     # prepare and store output lattice for next run
@@ -251,12 +232,12 @@ m_incSliceLine = function(
     # load one hot encoded previous lattice for the current level
     prevLattice2 = matrix(0,0,0);
     if(!disableIncSizePruning){
-      prevLattice2 = preparePrevLattice(prevLattice, metaPrevLattice, prevFoffb, 
+      prevLattice2 = preparePrevLattice(prevLattice, metaPrevLattice, prevFoffb,
         prevFoffe, foffb, foffe, level, encodeLat, differentOffsets)
     }
 
     if(selFeat){
-      if(length(prevLattice2)>0 & !disableIncSizePruning){ 
+      if(length(prevLattice2)>0 & !disableIncSizePruning){
         prevLattice2 = removeEmpty(target=prevLattice2, margin="cols", select=t(selCols));
       }
       S2 = removeEmpty(target=S, margin="cols", select=t(selCols));
@@ -265,7 +246,7 @@ m_incSliceLine = function(
     if(verbose) {
         print("\nincSliceLine: level "+level+":")
     }
-    
+
     # prune unchanged slices with slice size < minSup
     if(level <= length(prevStats) & !disableIncSizePruning){
       [S, S2] = pruneUnchangedSlices(S, S2,  prevLattice2, prevStats, changedX2, minSup, verbose, level);
@@ -277,7 +258,7 @@ m_incSliceLine = function(
 
     if( nrow(S) > 0 ) {
       # extract and evaluate candidate slices
-       if( tpEval ) { # task-parallel
+      if( tpEval ) { # task-parallel
         # hybrid task-parallel w/ 1 matrix-matrix for blocks of 16 matrix-vector
         R = matrix(0, nrow(S), 4)
         parfor( i in 1:ceil(nrow(S)/tpBlksz), check=0 ) {
@@ -285,19 +266,16 @@ m_incSliceLine = function(
           end = min(i*tpBlksz, nrow(R));
           R[beg:end,] = evalSlice(X2, totalE, eAvg, t(S2[beg:end,]), level, alpha);
         }
-
-        # update output statistics
-        Stats = append(Stats,R[, 4]);
-       }
-       else { # data-parallel
+      }
+      else { # data-parallel
         R = evalSlice(X2, totalE, eAvg, t(S2), level, alpha);
-
-        # update output statistics
-        Stats = append(Stats,R[, 4]);
       }
 
+      # update output statistics
+      Stats = append(Stats,R[, 4]);
+
       # maintain top-k after evaluation
-      [TK, TKC] = maintainTopK(S, R, TK, TKC, k, minSup);
+      [TK, TKC] = maintainTopK(S, R, TK, TKC, k, minSup, foffb, foffe);
 
       if(verbose) {
         [maxsc, minsc2] = analyzeTopK(TKC);
@@ -319,78 +297,67 @@ m_incSliceLine = function(
     print("incSliceLine: terminated at level "+level+":\n"
       + toString(TK) + "\n" + toString(TKC));
   }
-/*
-  print("Lattice: \n "+ toString(L) +":\n"
-    + "Statistics: \n "+ toString(Stats));
-*/
-}
 }
 
-createAndScoreBasicSlices = function(Matrix[Double] X2, Matrix[Double] changedX2,
-    Matrix[Double] prevTK2,  Matrix[Double] e,
+createAndScoreBasicSlices = function(Matrix[Double] X2, Matrix[Double] X2p,
+    Matrix[Double] prevTK2, Matrix[Double] e, Matrix[Double] ep,
     Double eAvg, Double eAvgOld, Double eAvgNew, Double minSup, Double alpha, Double minsc, Boolean verbose, Boolean disableIncScorePruning)
   return(Matrix[Double] S, Matrix[Double] R, Matrix[Double] selCols)
 {
   n2 = ncol(X2);
-  cCnts = t(colSums(X2));    # column counts
-  err = t(t(e) %*% X2);      # total error vector
-  merr = t(colMaxs(X2 * e)); # maximum error vector
+  cCnts = t(colSums(X2));       # column counts
+  ncCnts = t(colSums(X2p));     # column counts of modifications
+  tkCnts = t(colSums(prevTK2)); # column counts previous top-K
+  err = t(t(e) %*% X2);         # total error vector
+  merr = t(colMaxs(X2 * e));    # maximum error vector
 
-  # prevTK2 is oneHotEncoded with the same offsets as oldX2 and changedX2.
-  # produce a vector indicating which basic slices are within the previous top k
-  TKCCnts = matrix(0, 0, 0);
-  if ( length (prevTK2) > 0 ) {
-    TKCCnts = t(colSums(prevTK2));
+  # a) min-support pruning
+  selCols = (cCnts >= minSup & err > 0);
+  if( verbose ) {
+    drop = n2 - as.integer(sum(selCols));
+    print("incSliceLine: dropping "+drop+"/"+n2+" features below minSup = "+minSup+".");
+  }
+
+  # b) unchanged pruning
+  # (valid pruning iff average error was larger before,
+  # and tuples with changed errors are marked as new tuples)
+  selCols2 = selCols & (ncCnts > 0 | tkCnts > 0 | eAvgOld <= eAvg | eAvgNew != 0)
+  if( verbose ) {
+    n = as.integer(sum(selCols));
+    drop = as.integer(sum(selCols) - sum(selCols2));
+    print("incSliceLine: dropping "+drop+"/"+n+" unaffected features.");
   }
 
   # working set of active slices (#attr x #slices) and top k
-  # only consider slices that have been changed (addedCCnts != 0) with cCnts >= minSup and non-zero err.
-  # thus, here we remove all basic slices that are unchanged.
-  # only add "& addedCCnts != 0" if the eAvg from the new tuples is smaller than eAvg on prev. dataset.
-  # otherwise scores of unchanged slices could shift into top k.
-  if( eAvgOld > eAvg & eAvgNew != 0 & nrow(TKCCnts) >0) {
-    # changedX2 is oneHotEncoded with the same offsets as oldX2 and totalX2. Thus unchanged basic slices will have a colSum of 0.
-    # compute vector of colSums for changedX2 indicating which slices are unchanged (0 value)
-    addedCCnts = t(colSums(changedX2));
-    addedOrTK = (addedCCnts > 0) | (TKCCnts > 0);
-    if( verbose ) {
-      drop = as.integer(sum(cCnts < minSup | err == 0 | addedOrTK == 0));
-      drop2 = as.integer(sum(cCnts < minSup | err == 0 ));
-      print("incSliceLine: dropping "+drop+"/"+n2+" features. " +drop2+ " were below minSup = "+minSup+" 
-        and "+ (drop - drop2) + " were unchanged and not in the prevTK while eAvgOld > eAvg. ");
-    }
-    selCols = (cCnts >= minSup & err > 0 & addedOrTK != 0);
-
-  } else { 
-    if( verbose ) {
-      drop = as.integer(sum(cCnts < minSup | err == 0 ));
-      print("incSliceLine: dropping "+drop+"/"+n2+" features below minSup = "+minSup+".");
-    }
-    selCols = (cCnts >= minSup & err > 0 );
-  }
-
-  attr = removeEmpty(target=seq(1,n2), margin="rows", select=selCols);
-  ss = removeEmpty(target=cCnts, margin="rows", select=selCols);
-  se = removeEmpty(target=err, margin="rows", select=selCols);
-  sm = removeEmpty(target=merr, margin="rows", select=selCols);
+  attr = removeEmpty(target=seq(1,n2), margin="rows", select=selCols2);
+  ss = removeEmpty(target=cCnts, margin="rows", select=selCols2);
+  se = removeEmpty(target=err, margin="rows", select=selCols2);
+  sm = removeEmpty(target=merr, margin="rows", select=selCols2);
+  tkCnts = removeEmpty(target=merr, margin="rows", select=selCols2);
   S = table(seq(1,nrow(attr)), attr, nrow(attr), n2);
 
   # score 1-slices and create initial top-k
   sc = score(ss, se, eAvg, alpha, nrow(X2));
   R = cbind(sc, se, sm, ss);
 
-  # score pruning of basic slices based on smallest score of all slices in prevTK
+  # c) score pruning
+  # compute upper bound scores for all remaining slices
   if(minsc > -Inf & !disableIncScorePruning) {
-    # compute upper bound scores for all basic slices
     ubSc = scoreUB(ss, se, sm, eAvg, minSup, alpha, nrow(X2));
-    fScores = (ubSc >= minsc);
-    S = removeEmpty(target=S, margin="rows", select=fScores);
-    R = removeEmpty(target=R, margin="rows", select=fScores);
-    if(verbose){
-      print("incSliceLine: initial pruning based on minsc: "+sum(fScores)+"/"+nrow(sc)+" slices remain.");
+    selCols3 = (ubSc > minsc);
+    S = removeEmpty(target=S, margin="rows", select=selCols3);
+    R = removeEmpty(target=R, margin="rows", select=selCols3);
+    if( verbose ) {
+      n = as.integer(sum(selCols2));
+      drop = as.integer(sum(selCols2) - sum(selCols3));
+      print("incSliceLine: dropping "+drop+"/"+n+" features below minSore = "+minsc+".");
     }
+    cix = removeEmpty(target=attr, margin="rows", select=selCols3);
+    selCols = table(cix, 1, n2, 1);
   }
-
+  else {
+    selCols = selCols2;
+  }
 }
 
 score = function(Matrix[Double] ss, Matrix[Double] se, Double eAvg, Double alpha, Integer n)
@@ -417,7 +384,8 @@ scoreUB = function(Matrix[Double] ss, Matrix[Double] se, Matrix[Double] sm,
 
 
 maintainTopK = function(Matrix[Double] S, Matrix[Double] R,
-    Matrix[Double] TK, Matrix[Double] TKC, Integer k, Integer minSup)
+    Matrix[Double] TK, Matrix[Double] TKC, Integer k,
+    Integer minSup, Matrix[Double] foffb, Matrix[Double] foffe)
   return(Matrix[Double] TK, Matrix[Double] TKC)
 {
   # prune invalid minSup and scores
@@ -431,12 +399,22 @@ maintainTopK = function(Matrix[Double] S, Matrix[Double] R,
     slices = rbind(TK, S);
     scores = rbind(TKC, R);
 
-    # extract top-k
-    IX = order(target=scores, by=1, decreasing=TRUE, index.return=TRUE);
-    IX = IX[1:min(k,nrow(IX)),];
+    # extract top-k w/ deduplication due to previous TK
+    # (sort by score and ID for robustness)
+    [IDs, M] = transformSlicesToIDs(slices, foffb, foffe);
+    oby = matrix("1 5", rows=1, cols=2);
+    IX = order(target=cbind(scores,IDs), by=oby, decreasing=TRUE, index.return=TRUE);
+    IX = IX[1:min(2*k,nrow(IX)),];
     P = table(seq(1,nrow(IX)), IX, nrow(IX), nrow(slices));
     TK = P %*% slices;
     TKC = P %*% scores;
+    if( nrow(TK) >= 2 ) {
+      I2 = rbind(rowSums(TK[1:(nrow(TK)-1),]==TK[2:nrow(TK),])!=ncol(TK), as.matrix(1))
+      TK = removeEmpty(target=TK, margin="rows", select=I2);
+      TKC = removeEmpty(target=TKC, margin="rows", select=I2);
+      TK = TK[1:min(k,nrow(TK)),];
+      TKC = TKC[1:min(k,nrow(TKC)),];
+    }
   }
 }
 
@@ -449,11 +427,11 @@ analyzeTopK = function(Matrix[Double] TKC) return(Double maxsc, Double minsc) {
   }
 }
 
-getPairedCandidates = function(Matrix[Double] S, Double minsc,
+getPairedCandidates = function(Matrix[Double] S,
     Matrix[Double] R, Matrix[Double] TKC, Integer level,
     Double eAvg, Integer minSup, Double alpha, Integer n2,
     Matrix[Double] foffb, Matrix[Double] foffe)
-  return(Matrix[Double] P, Double minsc)
+  return(Matrix[Double] P)
 {
   # prune invalid slices (possible without affecting overall
   # pruning effectiveness due to handling of missing parents)
@@ -512,15 +490,10 @@ getPairedCandidates = function(Matrix[Double] S, Double minsc,
     ubMError = 1/rowMaxs(map * (1/t(sm)));
     ubMError = replace(target=ubMError, pattern=Inf, replacement=0);
     ubScores = scoreUB(ubSizes, ubError, ubMError, eAvg, minSup, alpha, n2);
-    [maxsc, minsc2] = analyzeTopK(TKC);
+    [maxsc, minsc] = analyzeTopK(TKC);
 
-    # update minsc in case it is larger than prev minsc (could be smaller, as initial minsc comes from prevTK)
-    if(minsc2 > minsc){
-      minsc = minsc2;
-    }
-
-    # it is necessary to test ubScores >= minsc (instead of >) as otherwise prevTKs would be filtered out
-    fScores = (ubScores >= minsc & ubScores > 0)
+    # score pruning
+    fScores = (ubScores > minsc & ubScores > 0)
 
     # missing parents pruning
     numParents = rowSums((map %*% P12) != 0)
@@ -594,9 +567,9 @@ throwNoParamsError = function()
   return(Matrix[Double] TK, Matrix[Double] TKC, Matrix[Double] D, list[unknown] L,
     list[unknown] Stats, Matrix[Double] Xout, Matrix[Double] eOut, Matrix[Double] foffb,
     Matrix[Double] foffe, list[unknown] metaLattice, list[unknown] params) {
-  print("incSliceLine: wrong or no parameters provided for incremental update. Please provide all parameters.");
-  print(" -- necessary parameters: params, prevLattice, prevStats, prevFoffb, prevFoffe, prevTK, prevTKC, oldX, oldE. ");
-  print(" -- see documentation for more details.");
+  stop("incSliceLine: wrong or no parameters provided for incremental update. Please provide all parameters.\n"
+      + " -- necessary parameters: params, prevLattice, prevStats, prevFoffb, prevFoffe, prevTK, prevTKC, oldX, oldE. \n"
+      + " -- see documentation for more details.");
   TK = matrix(0,0,0);
   TKC = matrix(0,0,0);
   D = matrix(0,0,0);
@@ -643,8 +616,8 @@ determineUnchangedSlices = function(Matrix[Double] prevStatsAtLevel, Matrix[Doub
 }
 
 computeLowestPrevTK = function(Matrix[Double] prevTK2, Matrix[Double] X2,
-  Matrix[Double] totalE, Double eAvg, Double alpha, Double minsc)
-  return(Double minsc)
+  Matrix[Double] totalE, Double eAvg, Double alpha)
+  return(Double minsc, Matrix[Double] R)
 {
   # extract and evaluate candidate slices
   l = t(rowSums(prevTK2));
@@ -657,7 +630,11 @@ computeLowestPrevTK = function(Matrix[Double] prevTK2, Matrix[Double] X2,
 
   # score slice and if applicable set min score for pruning
   sc = score(ss, se, eAvg, alpha, nrow(X2));
+  sc = replace(target=sc, pattern=-Inf, replacement=0)
+  R = cbind(sc, se, sm, ss);
   minsc = min(sc);
+
+  while(FALSE){} #prevent inlining (TODO rewrite issue)
 }
 
 pruneUnchangedSlices = function(Matrix[Double] S, Matrix[Double] S2, Matrix[Double] prevLattice2, list[unknown] prevStats, Matrix[Double] changedX2, Int minSup, Boolean verbose, Integer level)

@@ -79,7 +79,9 @@ m_incSliceLine = function(
     Matrix[Double] prevFoffb = matrix(0,0,0), Matrix[Double] prevFoffe = matrix(0,0,0),
     list[unknown] prevLattice = list(), list[unknown] metaPrevLattice = list(),
     list[unknown] prevStats = list(), Matrix[Double] prevTK = matrix(0,0,0),
-    Matrix[Double] prevTKC = matrix(0,0,0), Boolean encodeLat = TRUE)
+    Matrix[Double] prevTKC = matrix(0,0,0), Boolean encodeLat = TRUE,
+    Int pruningStrat = 0
+    )
   return(
     Matrix[Double] TK, Matrix[Double] TKC, Matrix[Double] D,
     list[unknown] L, list[unknown] metaLattice,
@@ -95,6 +97,20 @@ m_incSliceLine = function(
   {
     [TK, TKC, D, L, Stats, Xout, eOut, foffb, foffe, metaLattice, params] = throwNoParamsError();
   } else {
+
+  disableIncScorePruning = FALSE;
+  disableIncSizePruning = FALSE;
+
+  if(pruningStrat == 1){
+    disableIncScorePruning = TRUE;
+  }
+  if(pruningStrat == 2){
+    disableIncSizePruning = TRUE;
+  }
+  if(pruningStrat == 3){
+    disableIncScorePruning = TRUE;
+    disableIncSizePruning = TRUE;
+  }
 
   t1 = time();
 
@@ -176,12 +192,12 @@ m_incSliceLine = function(
 
   # compute score for lowest scoring prevTK slice to set high min score early on to prune slices based on scores
   minsc = -Inf;
-  if( nrow(prevTK2) > 0 ) {
+  if( nrow(prevTK2) > 0 & !disableIncScorePruning) {
     [minsc] = computeLowestPrevTK (prevTK2, X2, totalE, eAvg, alpha, minsc)
   }
 
   # create and score basic slices (conjunctions of 1 feature)
-  [S, R, selCols] = createAndScoreBasicSlices(X2, changedX2, prevTK2, totalE, eAvg, eAvgOld, eAvgNew, minSup, alpha, minsc, verbose);
+  [S, R, selCols] = createAndScoreBasicSlices(X2, changedX2, prevTK2, totalE, eAvg, eAvgOld, eAvgNew, minSup, alpha, minsc, verbose, disableIncScorePruning);
 
   # initialize lattice and statistics for incremental updates
   Stats = list();
@@ -233,11 +249,14 @@ m_incSliceLine = function(
     L = append(L, Lrep);
 
     # load one hot encoded previous lattice for the current level
-    prevLattice2 = preparePrevLattice(prevLattice, metaPrevLattice, prevFoffb,
-      prevFoffe, foffb, foffe, level, encodeLat, differentOffsets)
+    prevLattice2 = matrix(0,0,0);
+    if(!disableIncSizePruning){
+      prevLattice2 = preparePrevLattice(prevLattice, metaPrevLattice, prevFoffb, 
+        prevFoffe, foffb, foffe, level, encodeLat, differentOffsets)
+    }
 
     if(selFeat){
-      if(length(prevLattice2)>0) {
+      if(length(prevLattice2)>0 & !disableIncSizePruning){ 
         prevLattice2 = removeEmpty(target=prevLattice2, margin="cols", select=t(selCols));
       }
       S2 = removeEmpty(target=S, margin="cols", select=t(selCols));
@@ -246,9 +265,9 @@ m_incSliceLine = function(
     if(verbose) {
         print("\nincSliceLine: level "+level+":")
     }
-
+    
     # prune unchanged slices with slice size < minSup
-    if(level <= length(prevStats)){
+    if(level <= length(prevStats) & !disableIncSizePruning){
       [S, S2] = pruneUnchangedSlices(S, S2,  prevLattice2, prevStats, changedX2, minSup, verbose, level);
     }
 
@@ -309,7 +328,7 @@ m_incSliceLine = function(
 
 createAndScoreBasicSlices = function(Matrix[Double] X2, Matrix[Double] changedX2,
     Matrix[Double] prevTK2,  Matrix[Double] e,
-    Double eAvg, Double eAvgOld, Double eAvgNew, Double minSup, Double alpha, Double minsc, Boolean verbose)
+    Double eAvg, Double eAvgOld, Double eAvgNew, Double minSup, Double alpha, Double minsc, Boolean verbose, Boolean disableIncScorePruning)
   return(Matrix[Double] S, Matrix[Double] R, Matrix[Double] selCols)
 {
   n2 = ncol(X2);
@@ -361,7 +380,7 @@ createAndScoreBasicSlices = function(Matrix[Double] X2, Matrix[Double] changedX2
   R = cbind(sc, se, sm, ss);
 
   # score pruning of basic slices based on smallest score of all slices in prevTK
-  if(minsc > -Inf) {
+  if(minsc > -Inf & !disableIncScorePruning) {
     # compute upper bound scores for all basic slices
     ubSc = scoreUB(ss, se, sm, eAvg, minSup, alpha, nrow(X2));
     fScores = (ubSc >= minsc);
@@ -759,4 +778,3 @@ removeRowsByIndices = function(Matrix[Double] M, Matrix[Double] indices)
   remain = P2 %*% M;
   while(FALSE){} #prevent inlining (TODO rewrite issue)
 }
-

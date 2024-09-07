@@ -321,7 +321,7 @@ createAndScoreBasicSlices = function(Matrix[Double] X2, Matrix[Double] X2p,
   # b) unchanged pruning
   # (valid pruning iff average error was larger before,
   # and tuples with changed errors are marked as new tuples)
-  selCols2 = selCols & (ncCnts > 0 | tkCnts > 0 | eAvgOld <= eAvg | eAvgNew != 0)
+  selCols2 = selCols & (ncCnts > 0 | tkCnts > 0 | eAvgOld <= eAvg | eAvgNew == 0 | sum(tkCnts)==0)
   if( verbose ) {
     n = as.integer(sum(selCols));
     drop = as.integer(sum(selCols) - sum(selCols2));

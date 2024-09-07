@@ -20,18 +20,26 @@
 package org.apache.sysds.resource.cost;
 
 import org.apache.sysds.hops.OptimizerUtils;
-import org.apache.sysds.runtime.controlprogram.context.SparkExecutionContext;
 
 public class RDDStats {
-	private static final long hdfsBlockSize = 134217728; // 128MB
-	@SuppressWarnings("unused")
-	private static final int blockSize = 1000; // TODO: think of more efficient way (does not changes, init once)
+	enum CheckpointStatus {
+		NO_CHECKPOINT,
+		MEMORY_AND_DISK,
+		MEMORY_AND_DISK_SER
+	}
 
-	VarStats cpStats;
-	long distributedMemory;
+	public static final long hdfsBlockSize = 134217728; // 128MB
+	public static final int blockSize = 1000;
+	long n;
+	long m;
+	double sparsity;
+	long distributedSize;
 	long numBlocks;
-	long numPartitions;
-	int numParallelTasks;
+	int numPartitions;
+	boolean hashPartitioned;
+	boolean checkpoint;
+	double cost;
+	boolean isCollected;
 	// TODO: add boolean isCheckpointed and logic for it
 
 //	public static void setDefaults() {
@@ -57,22 +65,77 @@ public class RDDStats {
 			throw new RuntimeException("RDDStats cannot be initialized for scalar objects");
 		}
 		// cpVar carries all info about the general object characteristics
-		cpStats = sourceStats;
+		n = sourceStats.getN();
+		m = sourceStats.getM();
+		sparsity = sourceStats.getSparsity();
+		numBlocks = sourceStats.characteristics.getNumBlocks();
+		checkpoint = false;
 		// RDD specific characteristics not initialized -> simulates lazy evaluation
-		distributedMemory = -1;
+		distributedSize = -1;
 		numPartitions = -1;
-		numBlocks = -1;
-		numParallelTasks = -1;
+		hashPartitioned = false;
+		cost = 0;
+		isCollected = false;
 	}
 
-	public void loadCharacteristics() {
-		distributedMemory = OptimizerUtils.estimateSizeExactSparsity(cpStats.getM(), cpStats.getN(), cpStats.getS());
-		numBlocks = cpStats.characteristics.getNumBlocks();
-		numPartitions = (int) Math.max(Math.min(distributedMemory / hdfsBlockSize, numBlocks), 1);
-		numParallelTasks = (int) Math.min(numPartitions, SparkExecutionContext.getDefaultParallelism(false));
+	public RDDStats(long nRows, long nCols, long nnz, long size, int partitions) {
+		n = nCols;
+		m = nRows;
+		sparsity = OptimizerUtils.getSparsity(m, n, nnz);
+		numBlocks = Math.max(((m + blockSize - 1) / blockSize), 1) *
+				Math.max(((n + blockSize - 1) / blockSize), 1);
+		checkpoint = false;
+		// RDD specific characteristics not initialized -> simulates lazy evaluation
+		distributedSize = size;
+		if (partitions < 0) {
+			numPartitions = getNumPartitions(hdfsBlockSize);
+		} else {
+			numPartitions = partitions;
+		}
+		cost = -1;
+		isCollected = false;
 	}
 
-//	public static RDDStats transformNumPartitions(RDDStats oldRDD, long newNumPartitions) {
+	/**
+	 * Loads the RDD characteristics for binary data only
+	 */
+	public long loadCharacteristics() {
+		distributedSize = OptimizerUtils.estimatePartitionedSizeExactSparsity(m, n, blockSize, sparsity);
+		numPartitions = getNumPartitions(hdfsBlockSize);
+		return distributedSize;
+	}
+
+	/**
+	 * Loads the RDD characteristics for non-binary data by passing the data size
+	 * @param size RDD size in memory
+	 */
+	public void loadCharacteristics(long size) {
+		distributedSize = size;
+		numPartitions = getNumPartitions(hdfsBlockSize);
+	}
+
+	/**
+	 * Loads the RDD characteristics for the case the number of partitions is not defined by teh HDFS block size
+	 * @param targetPartitions enforced numbed or partitions
+	 */
+	public void loadCharacteristics(int targetPartitions) {
+		distributedSize = OptimizerUtils.estimatePartitionedSizeExactSparsity(m, n, blockSize, sparsity);
+		numPartitions = targetPartitions;
+	}
+
+	private int getNumPartitions(long hdfsBlockSize) {
+		return (int) Math.max((distributedSize + hdfsBlockSize - 1) / hdfsBlockSize, 1);
+	}
+
+	/**
+	 * Meant to be used at testing
+	 * @return estimated time (seconds) for generation of the current RDD
+	 */
+	public double getCost() {
+		return cost;
+	}
+
+	//	public static RDDStats transformNumPartitions(RDDStats oldRDD, long newNumPartitions) {
 //		if (oldRDD.cpVar == null) {
 //			throw new DMLRuntimeException("Cannot transform RDDStats without VarStats");
 //		}

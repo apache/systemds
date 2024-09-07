@@ -26,6 +26,8 @@ import org.apache.sysds.runtime.meta.MatrixCharacteristics;
 
 public class VarStats
 {
+	// helps for debugging + carries value for scalar literals
+	String varName;
 	/**
 	 * <li>null if scalar</li>
 	 * <li>initialized if Matrix or Frame</li>
@@ -38,18 +40,20 @@ public class VarStats
 	 * <li>=>1 estimated loaded size in Bytes</li>
 	 */
 	long allocatedMemory;
-	/**
-	 * true if object modified since last saved, or
-	 * if HDFS file still doesn't exist
-	 */
-	boolean isDirty = false;
-	// needed for the cases of 'çpvar', 'fcall' or reblock
+	// refCount/selfRefCount cases of variables copying (operations 'çpvar' or 'fcall')
+	// increase/decrease only one of them at a time (selfRefCount is not a refCount)
 	int refCount;
+	int selfRefCount;
+	/**
+	 * Always contains 2 elements:
+	 * first elements: {@code String} with the source type (hdfs, s3 or local)
+	 * second element: {@code Types.FileFormat} value
+	 */
 	Object[] fileInfo = null;
 	RDDStats rddStats = null;
-	boolean setCheckpoint;
 
-	public VarStats(DataCharacteristics dc) {
+	public VarStats(String name, DataCharacteristics dc) {
+		varName = name;
 		if (dc == null) {
 			characteristics = null; // for scalar
 			allocatedMemory = 0;
@@ -60,7 +64,7 @@ public class VarStats
 			throw new RuntimeException("Unexpected error: expecting MatrixCharacteristics or null");
 		}
 		refCount = 1;
-		setCheckpoint = false;
+		selfRefCount = 1;
 	}
 
 	public boolean isScalar() {
@@ -75,23 +79,39 @@ public class VarStats
 		return isScalar()? 1 : characteristics.getCols();
 	}
 
-	public double getS() {
+	public long getNNZ() { return characteristics.getNonZeros(); }
+
+	public double getSparsity() {
 		return isScalar()? 1.0 : OptimizerUtils.getSparsity(characteristics);
 	}
 
 	public long getCells() {
-		return isScalar()? 1 : (characteristics.getRows() * characteristics.getCols());
+		return isScalar()? 1 : !characteristics.dimsKnown()? -1 :
+				(characteristics.getRows() * characteristics.getCols());
 	}
 
 	public long getCellsWithSparsity() {
 		if (isScalar()) return 1;
-		if (isSparse())
-			return (long) (getCells() * getS());
-		return getCells();
+		return (long) (getCells() * getSparsity());
 	}
 
 	public boolean isSparse() {
 		return (!isScalar() && MatrixBlock.evalSparseFormatInMemory(characteristics));
 	}
 
+	/**
+	 * Meant to be used at testing
+	 * @return corresponding RDD statistics
+	 */
+	public RDDStats getRddStats() {
+		return rddStats;
+	}
+
+	/**
+	 * Meant to be used at testing
+	 * @param rddStats corresponding RDD statistics
+	 */
+	public void setRddStats(RDDStats rddStats) {
+		this.rddStats = rddStats;
+	}
 }

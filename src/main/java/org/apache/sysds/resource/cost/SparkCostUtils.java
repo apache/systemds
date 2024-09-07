@@ -1,89 +1,100 @@
 package org.apache.sysds.resource.cost;
 
 import org.apache.commons.lang3.NotImplementedException;
-import org.apache.commons.lang3.function.TriFunction;
-import org.apache.spark.api.java.function.Function3;
-import org.apache.spark.sql.sources.In;
+import org.apache.spark.rdd.RDD;
 import org.apache.sysds.lops.*;
-import org.apache.sysds.runtime.instructions.spark.SPInstruction;
-import org.apache.sysds.runtime.instructions.spark.UnarySPInstruction;
-import org.apache.sysds.runtime.meta.MatrixCharacteristics;
-import scala.Function2;
+import org.apache.sysds.runtime.DMLRuntimeException;
+import org.apache.sysds.runtime.controlprogram.context.SparkExecutionContext;
 
-import java.util.HashMap;
-import java.util.function.BiFunction;
-import java.util.function.Function;
+import static org.apache.sysds.resource.cost.IOCostUtils.*;
 
 public class SparkCostUtils {
 
-    public static double getReblockInstNFLOP(String opcode, long colsOut, long rowsOut, double sparsity) {
-        if (opcode.startsWith("libsvm")) { // case "libsvmrblk"
-            return colsOut * rowsOut * sparsity;
+    /** Getting the cost for transforming the text data into double value */
+    public static double getReblockInstTime(String opcode, RDDStats output, IOMetrics metrics) {
+        long nflop;
+        if (opcode.startsWith("libsvm")) {
+            nflop = (long) (output.m * output.n * output.sparsity);
+        } else { // starts with "rblk" or "csvrblk"
+            nflop = output.m * output.n;
         }
-        // case "rblk" and case "csvrblk"
-        return colsOut * rowsOut;
+        double computeTime = getScaledNFLOP(nflop, output) / metrics.cpuFLOPS;
+        // TODO: scan time for the input is more accurate?
+        double scanTime = getMemReadTime(output, metrics);
+        double memWriteTime = getMemWriteTime(output, metrics);
+        return Math.max(computeTime, scanTime) + memWriteTime;
     }
 
-    public static double getUnaryInstNFLOP(String opcode, long colsOut, long rowsOut) {
-        double costs;
+    public static double getUnaryInstTime(String opcode, RDDStats output, IOMetrics metrics) {
+        long nflop;
+        boolean scale = true;
         switch (opcode) {
             case "abs": case "round": case "ceil": case "floor": case "sign":
             case "!": case "isna": case "isnan": case "isinf":
-                costs = 1; break;
+                nflop = 1; break;
             case "sprop": case "sqrt":
-                costs = 2; break;
+                nflop = 2; break;
             case "sin": case "exp":
-                costs = 18; break;
-            case "plogp":
-                costs = 32; break; // TODO: refine (now the log() cost)
+                nflop = 18; break;
             case "sigmoid":
-                costs = 21; break;
+                nflop = 21; break;
             case "cos":
-                costs = 22; break;
+                nflop = 22; break;
             case "tan":
-                costs = 42; break;
+                nflop = 42; break;
             case "asin": case "sinh":
-                costs = 93; break;
+                nflop = 93; break;
             case "acos": case "cosh":
-                costs = 103; break;
+                nflop = 103; break;
             case "atan": case "tanh":
-                costs = 40; break;
+                nflop = 40; break;
+            // frames only
             case "detectSchema":
-                return rowsOut;
+                nflop = output.m;
+                scale = false;
+                break;
             case "colnames":
-                return colsOut;
+                nflop = output.n;
+                scale = false;
+                break;
             default:
                 throw new RuntimeException("No complexity factor for op. code: " + opcode);
         }
-        return costs * colsOut * rowsOut;
+        // scale
+        if (scale) nflop *= output.m * output.n;
+
+        double computeTime = getScaledNFLOP(nflop, output) / metrics.cpuFLOPS;
+        double scanTime = getMemReadTime(output, metrics);
+        double memWriteTime = getMemWriteTime(output, metrics);
+        return Math.max(computeTime, scanTime) + memWriteTime;
     }
 
-    public static double getAggUnaryInstNFLOP(String opcode, long colsIn, long rowsIn, double sparsityIn,
-                                           long colsOut, long rowsOut) {
+    public static double getAggUnaryInstTime(String opcode, RDDStats input, RDDStats output, IOMetrics metrics) {
         // use input sparsity since this is the one of the matrix for aggregation
-        long cellsOut = colsOut * rowsOut;
-        double costs;
+        // TODO: think of AggregateUnaryOperator.sparseSafe when accounting for the sparsity
+        long nflop;
+        long cellsOut = output.m * output.n;
         switch (opcode) {
             // Unary aggregate operators
             case "uak+":
             case "uark+":
             case "uack+":
-                costs = 4 * cellsOut;
+                nflop = 4 * cellsOut;
                 break;
             case "uasqk+":
             case "uarsqk+":
             case "uacsqk+":
-                costs = 5 * cellsOut;
+                nflop = 5 * cellsOut;
                 break;
             case "uamean":
             case "uarmean":
             case "uacmean":
-                costs = 7 * cellsOut;
+                nflop = 7 * cellsOut;
                 break;
             case "uavar":
             case "uarvar":
             case "uacvar":
-                costs = 14 * cellsOut;
+                nflop = 14 * cellsOut;
                 break;
             case "uamax":
             case "uarmax":
@@ -93,74 +104,82 @@ public class SparkCostUtils {
             case "uarmin":
             case "uarimin":
             case "uacmin":
-                costs = cellsOut;
+                nflop = cellsOut;
                 break;
             case "ua+":
             case "uar+":
             case "uac+":
-                costs = 1 * cellsOut * sparsityIn;
+                nflop = (long) (1 * cellsOut * input.sparsity);
                 break;
             case "ua*":
             case "uar*":
             case "uac*":
-                costs = 2 * cellsOut * sparsityIn; // TODO: refine
+                nflop = (long) (2 * cellsOut * input.sparsity); // TODO: refine
                 break;
+            // Aggregation over the diagonal of a square matrix
             case "uatrace":
             case "uaktrace":
-                costs = 2 * cellsOut;
+                nflop = input.m;
                 break;
             // Aggregate Unary Sketch operators
             case "uacd":
-                costs = 1 * cellsOut * sparsityIn; // TODO: refine
+                nflop = (long) (cellsOut * input.sparsity);
                 break;
             case "uacdap":
             case "uacdapr":
             case "uacdapc":
-                costs = 0.5  * cellsOut * sparsityIn; // TODO: refine
+                nflop = (long) (0.5  * cellsOut * input.sparsity); // do not iterate through all the cells
                 break;
             case "uacdr":
             case "uacdc":
-                throw new NotImplementedException(opcode+ " opcode is not implemented yet");
+                throw new DMLRuntimeException(opcode+ " opcode is not implemented yet");
             default:
                 throw new RuntimeException("No complexity factor for op. code: " + opcode);
         }
 
-        if (opcode.startsWith("uar")) {
-            costs *= rowsIn;
-        } else if (opcode.startsWith("uac")) {
-            costs *= colsIn;
-        } else {
-            costs *= colsIn * rowsIn;
+        if (!(opcode.equals("uatrace") || opcode.equals("uaktrace"))) {
+            // scale
+            if (opcode.startsWith("uar")) {
+                nflop *= input.m;
+            } else if (opcode.startsWith("uac")) {
+                nflop *= input.n;
+            } else {
+                nflop *= input.m * input.n;
+            }
         }
-        return costs;
+        double computeTime = getScaledNFLOP(nflop, input) / metrics.cpuFLOPS;
+        double scanTime = getMemReadTime(input, metrics);
+        double memWriteTime = getMemWriteTime(output, metrics);
+        return Math.max(scanTime, computeTime) + memWriteTime;
     }
 
-    public static double getBinaryInstNFLOP(String opcode, long colsOut, long rowsOut, double sparsityOut) {
+    public static double getBinaryInstTime(String opcode, RDDStats input1, RDDStats input2, RDDStats output, IOMetrics metrics) {
         // binary, builtin binary, builtin log and log_nz (unary or binary), // todo: and binagg too (cbin, rbin ...)?
         // for the NFLOP calculation if the function is executed as map is not relevant
         if (opcode.startsWith("map")) {
             opcode = opcode.substring(3);
         }
-        double costs;
+        double factor;
         switch (opcode) {
             case "+": case "-":
-                costs = sparsityOut; // sparse safe
+                factor = output.sparsity; // sparse safe
+                break;
             case "*": case "^2": case "*2": case "max": case "min":
             case "==": case "!=": case "<": case ">": case "<=": case ">=":
             case "&&": case "||": case "xor": case "bitwAnd": case "bitwOr": case "bitwXor": case "bitwShiftL": case "bitwShiftR":
-                costs = 1; break;
+                factor = 1; break;
             case "%/%":
-                costs = 6; break;
+                factor = 6; break;
             case "%%":
-                costs = 8; break;
+                factor = 8; break;
             case "/":
-                costs = 22; break;
+                factor = 22; break;
             case "log": case "log_nz":
-                costs = 32; break;
+                factor = 32; break;
             case "^":
-                costs = 16; break;
+                factor = 16; break;
             case "1-*":
-                costs = 2; break;
+                factor = 2; break;
             case "dropInvalidType":
             case "freplicate":
             case "dropInvalidLength": // original "mapdropInvalidLength"
@@ -172,12 +191,18 @@ public class SparkCostUtils {
             default:
                 throw new RuntimeException("No complexity factor for op. code: " + opcode);
         }
-        return costs * colsOut * rowsOut;
+        long nflop = (long) (factor * output.m * output.n);
+        double computeTime = getScaledNFLOP(nflop, output) / metrics.cpuFLOPS;
+        // handle scanning time for any type inputs
+        double scanTime = ((input1 != null)? getMemReadTime(input1, metrics) : 0)
+                + ((input2 != null)? getMemReadTime(input2, metrics) : 0);
+        double memWriteTime = getMemWriteTime(output, metrics);
+        return Math.max(computeTime, scanTime) + memWriteTime;
     }
 
     public static double getAggBinaryInstNFLOP(String opcode, long colsIn1, long rowsIn1, double sparsityIn1,
                                              long colsIn2, long rowsIn2, double sparsityIn2,
-                                             long colsOut, long rowsOut, double sparsityOut) {
+                                             long rowsOut, long colsOut, double sparsityOut) {
         switch (opcode) {
             // Matrix multiplication operators
             case "cpmm":
@@ -203,7 +228,7 @@ public class SparkCostUtils {
         throw new RuntimeException("No complexity factor for op. code: " + opcode);
     }
 
-    public static double getReorgInstNFLOP(String opcode, long colsIn, long rowsIn, double sparsityIn) {
+    public static double getReorgInstNFLOP(String opcode, long rowsIn, long colsIn, double sparsityIn) {
         // includes MatrixReshape instruction "rshape"
         double costs;
         switch (opcode) {
@@ -219,7 +244,7 @@ public class SparkCostUtils {
         return costs * colsIn * rowsIn;
     }
 
-    public static double getBuiltinNaryInstNFLOP(String opcode, int numIns, long colsOut, long rowsOut, double sparsityOut) {
+    public static double getBuiltinNaryInstNFLOP(String opcode, int numIns, long rowsOut, long colsOut, double sparsityOut) {
         // NOTE: very dummy implementation
         double costs;
         switch (opcode) {
@@ -231,29 +256,39 @@ public class SparkCostUtils {
         throw new RuntimeException("No complexity factor for op. code: " + opcode);
     }
 
-    public static double getComplexityDataGen(String opcode, long colsOut, long rowsOut) {
-        double costs;
+    public static double getRandInstTime(String opcode, RDDStats output, int randType, IOMetrics metrics) {
+        long nflop;
         switch (opcode) {
             case DataGen.RAND_OPCODE:
-                // TODO: extend for constants and only fill
-                costs = 32; break;
-            case DataGen.SEQ_OPCODE:
-                costs = 1; break;
-            case DataGen.SAMPLE_OPCODE:
-                costs = 16; break; // NOTE: dummy
             case DataGen.FRAME_OPCODE:
-                costs = 2; break; // NOTE: dummy
+                if (randType == 0) {
+                    return 0; // empty matrix
+                } else if (randType == 1) {
+                    nflop = 8; // allocate, array fill
+                } else if (randType == 2) {
+                    nflop = 32; // full rand
+                } else {
+                    throw new RuntimeException("Unknown type of random instruction");
+                }
+                break;
+            case DataGen.SEQ_OPCODE:
+                nflop = 1; break;
+            case DataGen.SAMPLE_OPCODE:
+                nflop = 16; break; // NOTE: dummy
             default:
                 throw new RuntimeException("No complexity factor for op. code: " + opcode);
         }
-        return costs * colsOut * rowsOut;
+        nflop *= output.m * output.n;
+        double computeTime = getScaledNFLOP(nflop, output) / metrics.cpuFLOPS;
+        double memWriteTime = getMemWriteTime(output, metrics);
+        return computeTime + memWriteTime;
     }
 
-    public static double getCastInstNFLOP(long colsOut, long rowsOut) {
+    public static double getCastInstNFLOP(long rowsOut, long colsOut) {
         return (double) colsOut * rowsOut;
     }
 
-    public static double getIndexingInstNFLOP(String opcode, long colsOut, long rowsOut, double sparsityOut) {
+    public static double getIndexingInstNFLOP(String opcode, long rowsOut, long colsOut, double sparsityOut) {
         // NOTE: dummy
 //        case RightIndex.OPCODE:
 //        case LeftIndex.OPCODE:
@@ -261,7 +296,7 @@ public class SparkCostUtils {
         return colsOut * rowsOut * sparsityOut;
     }
 
-    public static double getCumAggInstNFLOP(String opcode, long colsOut, long rowsOut, double sparsityOut) {
+    public static double getCumAggInstNFLOP(String opcode, long rowsOut, long colsOut, double sparsityOut) {
         double costs;
         switch (opcode) {
             case "ucumack+":
@@ -275,6 +310,11 @@ public class SparkCostUtils {
                 throw new RuntimeException("No complexity factor for op. code: " + opcode);
         }
         return costs * colsOut * rowsOut * sparsityOut;
+    }
+
+    public static double getScaledNFLOP(long nflop, RDDStats stats) {
+        double numWaves = Math.ceil((double) stats.numPartitions / SparkExecutionContext.getDefaultParallelism(false));
+        return (numWaves * nflop) / stats.numPartitions;
     }
 
 
@@ -405,48 +445,4 @@ public class SparkCostUtils {
 //        default:
 //            throw RuntimeException("No complexity factor for op. code: " + opcode);
 //    }
-
-    public static final HashMap<String, Object[]> SPARK_COST_MAP;
-    
-
-    static {
-        SPARK_COST_MAP = new HashMap<>();
-        // ----- Reblock/CSVReblock/LIBSVMReblock -----
-        Function<RDDStats, Double> reblockComputeCost = (input) -> (double) input.cpStats.getCellsWithSparsity();
-    }
-
-    @SuppressWarnings("unchecked")
-    public static double callFunc(String instruction, int funcIndex, RDDStats... args) {
-        switch (args.length) {
-            case 1:
-                return ((Function<RDDStats, Double>) SPARK_COST_MAP.get(instruction)[funcIndex]).apply(args[0]);
-            case 2:
-                return ((BiFunction<RDDStats, RDDStats, Double>) SPARK_COST_MAP.get(instruction)[funcIndex]).apply(args[0], args[1]);
-            case 3:
-                return ((TriFunction<RDDStats, RDDStats, RDDStats, Double>) SPARK_COST_MAP.get(instruction)[funcIndex]).apply(args[0], args[1], args[2]);
-            default:
-                throw new IllegalStateException("SPARK_COST_MAP does not contain functions with " + args.length + " arguments.");
-        }
-    }
-
-    public static void main(String[] args) throws Exception {
-        // test the utilities at dev process
-
-        Function<RDDStats, Double> unaryExample = (input) -> (double) input.cpStats.getCells() / input.numParallelTasks;
-        BiFunction<RDDStats, RDDStats, Double> add = (input1, input2) -> (double) (input1.cpStats.getCells() * input1.cpStats.getCells()) / input1.numParallelTasks;
-        TriFunction<RDDStats, RDDStats, RDDStats, Double> dummy = (input1, input2, output) -> (double) output.cpStats.getCells();
-        SPARK_COST_MAP.put("example", new Object[]{unaryExample, add, dummy});
-
-        MatrixCharacteristics mc = new MatrixCharacteristics(1000, 1000, 1000, 1000000);
-        VarStats varStats = new VarStats(mc);
-        RDDStats rddStats = new RDDStats(varStats);
-
-        double result1 = callFunc("example", 0, rddStats);
-        double result2 = callFunc("example", 1, rddStats, rddStats);
-        double result3 = callFunc("example", 2, rddStats, rddStats, rddStats);
-
-        System.out.println(result1);
-        System.out.println(result2);
-        System.out.println(result3);
-    }
 }

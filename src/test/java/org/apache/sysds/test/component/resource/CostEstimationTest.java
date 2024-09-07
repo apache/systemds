@@ -1,30 +1,44 @@
 package org.apache.sysds.test.component.resource;
 
+import org.apache.sysds.hops.OptimizerUtils;
+import org.apache.sysds.resource.CloudInstance;
 import org.apache.sysds.resource.ResourceCompiler;
 import org.apache.sysds.resource.cost.CostEstimationException;
 import org.apache.sysds.resource.cost.CostEstimator;
+import org.apache.sysds.resource.cost.RDDStats;
 import org.apache.sysds.resource.cost.VarStats;
 import org.apache.sysds.runtime.controlprogram.Program;
+import org.apache.sysds.runtime.controlprogram.context.SparkExecutionContext;
 import org.apache.sysds.runtime.instructions.Instruction;
 import org.apache.sysds.runtime.instructions.cp.VariableCPInstruction;
+import org.apache.sysds.runtime.instructions.spark.BinarySPInstruction;
+import org.apache.sysds.runtime.instructions.spark.RandSPInstruction;
+import org.apache.sysds.runtime.meta.MatrixCharacteristics;
 import org.apache.sysds.utils.Explain;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
+import scala.xml.parsing.MarkupHandler;
 
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 
 import static org.apache.sysds.resource.CloudUtils.GBtoBytes;
+import static org.apache.sysds.resource.cost.SparkCostUtils.getScaledNFLOP;
+import static org.apache.sysds.test.component.resource.TestingUtils.getSimpleCloudInstanceMap;
+import static org.junit.Assert.assertTrue;
 
 public class CostEstimationTest {
+    private static final HashMap<String, CloudInstance> instanceMap = getSimpleCloudInstanceMap();
 
     private CostEstimator estimator;
 
     @Before
     public void setup() {
-        estimator = new CostEstimator(new Program());
+        ResourceCompiler.setDriverConfigurations(GBtoBytes(8), 4);
+        ResourceCompiler.setExecutorConfigurations(4, GBtoBytes(8), 4);
+        estimator = new CostEstimator(new Program(), instanceMap.get("m5.xlarge"), instanceMap.get("m5.xlarge"));
     }
 
     @Test
@@ -53,7 +67,7 @@ public class CostEstimationTest {
 
     @Test
     public void createvarInvalidVariableCPInstructionTest() throws CostEstimationException {
-        String instDefinition = "CP°createvar°testVar°testOutputFile°false°TENSOR°binary°100°100°1000°10000°COPY";
+        String instDefinition = "CP°createvar°testVar°testOutputFile°false°TENSOR°binary°100°100°1000°10000°copy";
         VariableCPInstruction inst = VariableCPInstruction.parseInstruction(instDefinition);
         try {
             estimator.maintainStats(inst);
@@ -65,25 +79,69 @@ public class CostEstimationTest {
     }
 
     @Test
-    public void LinearRegCGCostEstimationTest() throws IOException {
+    public void randSPInstructionTest() throws CostEstimationException {
+        HashMap<String, VarStats> dummyStats = new HashMap<>();
+        dummyStats.put("matrixVar", generateStatsWithRdd("matrixVar", 1000000, 1000000, -1));
+        dummyStats.put("outputVar", generateStats("outputVar", 1000000, 1000000, -1));
+        estimator.putStats(dummyStats);
+        String instDefinition = "SPARK°+°scalarVar·SCALAR·FP64·false°matrixVar·MATRIX·FP64°outputVar·MATRIX·FP64";
+        BinarySPInstruction inst = BinarySPInstruction.parseInstruction(instDefinition);
+        estimator.maintainStats(inst);
+        estimator.parseSPInst(inst);
+        double time = estimator.getStats("outputVar").getRddStats().getCost();
+        System.out.println("Rand time="+time);
+    }
+
+    @Test
+    public void plusBinaryMatrixMatrixSpInstructionTest() throws CostEstimationException {
+        String instDefinition1 = "CP°createvar°matrixVar°testOutputFile°false°MATRIX°binary°1000000°1000000°1000°-1°copy";
+        VariableCPInstruction inst1 = VariableCPInstruction.parseInstruction(instDefinition1);
+        estimator.maintainStats(inst1);
+        String instDefinition2 = "CP°createvar°outputVar°testOutputFile°false°MATRIX°binary°1000000°1000000°1000°-1°copy";
+        VariableCPInstruction inst2 = VariableCPInstruction.parseInstruction(instDefinition2);
+        estimator.maintainStats(inst2);
+        String instDefinition3 = "SPARK°rand°1000000·SCALAR·INT64·true°1000000·SCALAR·INT64·true°1000°1°1°1.0°-1°null°uniform°1.0°matrixVar·MATRIX·FP64";
+        RandSPInstruction inst3 = RandSPInstruction.parseInstruction(instDefinition3);
+        estimator.maintainStats(inst3);
+        estimator.parseSPInst(inst3);
+        double time1 = estimator.getStats("matrixVar").getRddStats().getCost();
+        String instDefinition4 = "SPARK°+°scalarVar·SCALAR·FP64·false°matrixVar·MATRIX·FP64°outputVar·MATRIX·FP64";
+        BinarySPInstruction inst4 = BinarySPInstruction.parseInstruction(instDefinition4);
+        estimator.maintainStats(inst4);
+        estimator.parseSPInst(inst4);
+        double time2 = estimator.getStats("outputVar").getRddStats().getCost();
+        System.out.println("Rand time="+time1+"; sum time="+time2);
+    }
+
+    @Test
+    public void dummyTest() throws IOException {
         Map<String, String> nvargs = new HashMap<>();
-        nvargs.put("$X", "tests/X.csv");
-        nvargs.put("$Y", "tests/Y.csv");
-        nvargs.put("$B", "tests/B.csv");
         ResourceCompiler.setDriverConfigurations(GBtoBytes(1), 4);
         ResourceCompiler.setExecutorConfigurations(2, GBtoBytes(4), 2);
-        Program program = ResourceCompiler.compile("scripts/perftest/scripts/LinearRegCG.dml", nvargs);
+        Program program = ResourceCompiler.compile("scripts/perftest/scripts/test.dml", nvargs);
 //        Program program = ResourceCompiler.compile("scripts/perftest/resource/all_ops.dml", nvargs);
-        System.out.println(Explain.explain(program.getDMLProg()));
+//        System.out.println(Explain.explain(program.getDMLProg()));
         System.out.println(Explain.explain(program));
         try {
-            CostEstimator.estimateExecutionTime(program);
+            CostEstimator.estimateExecutionTime(program, instanceMap.get("m5.xlarge"), instanceMap.get("m5.xlarge"));
         } catch (CostEstimationException e) {
             throw new RuntimeException(e);
         }
     }
 
-    // Helper functions
+    private VarStats generateStats(String name, long m, long n, long nnz) {
+        MatrixCharacteristics mc = new MatrixCharacteristics(m, n, nnz);
+        return new VarStats(name, mc);
+    }
+
+    private VarStats generateStatsWithRdd(String name, long m, long n, long nnz) {
+        MatrixCharacteristics mc = new MatrixCharacteristics(m, n, nnz);
+        VarStats stats = new VarStats(name, mc);
+        RDDStats rddStats = new RDDStats(stats);
+        rddStats.loadCharacteristics();
+        stats.setRddStats(rddStats);
+        return stats;
+    }
 
     private static void testGetTimeEstimateInst(
             CostEstimator estimator,
@@ -101,4 +159,5 @@ public class CostEstimationTest {
         }
         Assert.assertEquals(expectedCost, actualCost, 0.0);
     }
+
 }

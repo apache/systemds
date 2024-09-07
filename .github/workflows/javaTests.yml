@@ -92,6 +92,13 @@ jobs:
     - name: Checkout Repository
       uses: actions/checkout@v4
 
+    - name: Install pip Dependencies
+      run: |
+        # Install pip twice to update past the versions.
+        pip install --upgrade pip
+        pip install --upgrade pip
+        pip install numpy
+
     - name: ${{ matrix.tests }}
       uses: ./.github/action/
       id: test

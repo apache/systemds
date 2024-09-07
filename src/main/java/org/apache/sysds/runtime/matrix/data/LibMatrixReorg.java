@@ -2324,16 +2324,37 @@ public class LibMatrixReorg {
 		shift %= (m != 0 ? m : 1);
 
 		for( int i=0; i<m-shift; i++ ) {
-			if( !a.isEmpty(i) )
-				c.set(i + shift, a.get(i), true);
+			if( a.isEmpty(i) ){
+				// skip empty rows
+				continue;
+			}
+
+			final int alen = a.size(i);
+			final int[] aix = a.indexes(i);
+			final double[] avals = a.values(i);
+
+			// copy only non-zero elements
+			for(int k = 0; k < alen; k++) {
+				c.set(i + shift, aix[k], avals[k]);
+			}
 		}
 
 		for( int i=m-shift; i<m; i++ ) {
-			if( !a.isEmpty(i) )
-				c.set(i + shift -m, a.get(i), true);
+			if( a.isEmpty(i) ){
+				// skip empty rows
+				continue;
+			}
+
+			final int alen = a.size(i);
+			final int[] aix = a.indexes(i);
+			final double[] avals = a.values(i);
+
+			// copy only non-zero elements
+			for(int k = 0; k < alen; k++) {
+				c.set(i + shift -m, aix[k], avals[k]);
+			}
 		}
 	}
-
 
 	/**
 	 * Generic implementation diagV2M

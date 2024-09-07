@@ -74,12 +74,6 @@ public class FullRollTest extends AutomatedTestBase
 		runRollTest(TEST_NAME2, true, true, ExecType.CP);
 	}
 
-	/**
-	 *
-	 * @param sparseM1
-	 * @param sparseM2
-	 * @param instType
-	 */
 	private void runRollTest(String testname, boolean matrix, boolean sparse, ExecType instType)
 	{
 		//rtplatform for MR

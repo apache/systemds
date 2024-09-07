@@ -113,7 +113,6 @@ public class Transform extends Lop
 				return "rev";
 
 			case ROLL:
-				// Transpose a matrix
 				return "roll";
 
 			case DIAG:

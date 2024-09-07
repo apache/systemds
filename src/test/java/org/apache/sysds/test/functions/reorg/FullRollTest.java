@@ -100,7 +100,7 @@ public class FullRollTest extends AutomatedTestBase
 			programArgs = new String[]{"-stats","-explain","-args", input("A"), output("B") };
 
 			fullPythonScriptName = HOME + TEST_NAME + ".py";
-			pythonCmd = new String[] { "python3", fullPythonScriptName, inputDir(), expectedDir() };
+			pythonCmd = new String[] { "python", fullPythonScriptName, inputDir(), expectedDir() };
 
 			//generate actual dataset
 			double[][] A = getRandomMatrix(rows1, cols, -1, 1, sparsity, 7);

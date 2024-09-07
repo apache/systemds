@@ -1508,6 +1508,11 @@ public abstract class CacheableData<T extends CacheBlock<?>> extends Data
 
 	@Override
 	public String toString() {
+		return toString(false);
+	}
+	
+	@Override
+	public String toString(boolean metaOnly) {
 		StringBuilder str = new StringBuilder();
 		str.append(getClass().getSimpleName());
 		str.append(": file:");
@@ -1533,7 +1538,7 @@ public abstract class CacheableData<T extends CacheBlock<?>> extends Data
 		if(isCompressed())
 			str.append( ", Compressed " + _compressedSize );
 
-		if(_data != null)
+		if(!metaOnly && _data != null)
 			str.append(";\nData:" + _data);
 		return str.toString();
 	}

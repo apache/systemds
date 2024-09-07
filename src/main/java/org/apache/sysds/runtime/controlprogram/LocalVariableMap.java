@@ -202,7 +202,7 @@ public class LocalVariableMap implements Cloneable
 			sb.append("  ");
 			sb.append(pair.getKey());
 			sb.append(" = ");
-			sb.append(pair.getValue());
+			sb.append(pair.getValue().toString(true));
 			sb.append(eol);
 		}
 		return sb.toString();

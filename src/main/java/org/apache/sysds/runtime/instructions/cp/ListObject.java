@@ -335,6 +335,11 @@ public class ListObject extends Data implements Externalizable {
 	
 	@Override
 	public String toString() {
+		return toString(false);
+	}
+	
+	@Override
+	public String toString(boolean metaOnly) {
 		StringBuilder sb = new StringBuilder("List (");
 		for (int i = 0; i < _data.size(); i++) {
 			if (i > 0)
@@ -343,7 +348,10 @@ public class ListObject extends Data implements Externalizable {
 				sb.append(_names.get(i));
 				sb.append("=");
 			}
-			sb.append(_data.get(i).toString());
+			if(metaOnly)
+				sb.append(_data.get(i).getClass().getSimpleName());
+			else
+				sb.append(_data.get(i).toString());
 		}
 		sb.append(")");
 		return sb.toString();

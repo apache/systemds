@@ -77,12 +77,12 @@ public class IfStatementBlock extends StatementBlock
 		
 		/////////////////////////////////////////////////////////////////////////////////
 		//  check data type and value type are same for updated variables in both 
-		//	if statement and else statement
+		//  if statement and else statement
 		//  (reject conditional data type change)
 		/////////////////////////////////////////////////////////////////////////////////
 		for (String updatedVar : this._updated.getVariableNames()){
 			DataIdentifier origVersion  = idsOrigCopy.getVariable(updatedVar);
-			DataIdentifier ifVersion 	= idsIfCopy.getVariable(updatedVar);
+			DataIdentifier ifVersion    = idsIfCopy.getVariable(updatedVar);
 			DataIdentifier elseVersion  = idsElseCopy.getVariable(updatedVar);
 			
 			//data type handling: reject conditional data type change
@@ -90,7 +90,7 @@ public class IfStatementBlock extends StatementBlock
 			{
 				if (!ifVersion.getOutput().getDataType().equals(elseVersion.getOutput().getDataType())){
 					raiseValidateError("IfStatementBlock has unsupported conditional data type change of variable '"+updatedVar+"' in if/else branch.", conditional);
-				}	
+				}
 			}
 			else if( origVersion !=null ) //only if branch exists
 			{
@@ -99,7 +99,7 @@ public class IfStatementBlock extends StatementBlock
 				}
 			}
 			
-			//value type handling		
+			//value type handling
 			if (ifVersion != null && elseVersion != null && !ifVersion.getOutput().getValueType().equals(elseVersion.getOutput().getValueType())){
 				LOG.warn(elseVersion.printWarningLocation() + "Variable " + elseVersion.getName() + " defined with different value type in if and else clause.");
 			}

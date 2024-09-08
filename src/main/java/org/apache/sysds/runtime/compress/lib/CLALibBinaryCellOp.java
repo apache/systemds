@@ -37,6 +37,7 @@ import org.apache.sysds.runtime.compress.colgroup.AColGroup;
 import org.apache.sysds.runtime.compress.colgroup.AColGroup.CompressionType;
 import org.apache.sysds.runtime.compress.colgroup.ASDCZero;
 import org.apache.sysds.runtime.compress.colgroup.ColGroupConst;
+import org.apache.sysds.runtime.compress.colgroup.ColGroupEmpty;
 import org.apache.sysds.runtime.compress.colgroup.offset.AIterator;
 import org.apache.sysds.runtime.data.DenseBlock;
 import org.apache.sysds.runtime.data.DenseBlockFP64;
@@ -45,6 +46,7 @@ import org.apache.sysds.runtime.functionobjects.Divide;
 import org.apache.sysds.runtime.functionobjects.Minus;
 import org.apache.sysds.runtime.functionobjects.Multiply;
 import org.apache.sysds.runtime.functionobjects.Plus;
+import org.apache.sysds.runtime.functionobjects.Power;
 import org.apache.sysds.runtime.functionobjects.ValueComparisonFunction;
 import org.apache.sysds.runtime.functionobjects.ValueFunction;
 import org.apache.sysds.runtime.matrix.data.LibMatrixBincell;
@@ -173,18 +175,31 @@ public final class CLALibBinaryCellOp {
 		CompressedMatrixBlock cRet = new CompressedMatrixBlock(m1.getNumRows(), m1.getNumColumns());
 		if(isValidForOverlappingBinaryCellOperations(m1, op))
 			return binaryMVPlusStack(m1, m2, cRet, op, left);
-		else if(!m1.isOverlapping() || isSupportedOverlappingBinCell(op.fn))
+		else if(isSupportedOverlappingBinCell(m1, m2, op.fn))
 			return binaryMVRow(m1, m2, cRet, op, left);
-		else // TODO add decompress into and apply for row operations.
+		else// TODO add decompress into and apply for row operations.
 			return CompressedMatrixBlock.getUncompressed(m1, "BinaryOp: " + op.fn).binaryOperations(op, m2);
 	}
 
-	private static boolean isSupportedOverlappingBinCell(ValueFunction fn) {
-		return fn instanceof Multiply //
+	private static boolean isSupportedOverlappingBinCell(CompressedMatrixBlock m1, MatrixBlock m2, ValueFunction fn) {
+		return (!m1.isOverlapping() // should not be overlapping
+			&& !(fn instanceof Power && m1.getSparsity() < 1.0 && containsNegative(m2))) // and no zeros on power.
+		// or the operation is
+			|| fn instanceof Multiply //
 			|| fn instanceof Divide//
+
 		;
 		// || fn instanceof MinusMultiply //
 		// || fn instanceof PlusMultiply;
+	}
+
+	private static boolean containsNegative(MatrixBlock rm) {
+		final int clen = rm.getNumColumns();
+		for(int i = 0; i < clen; i++) {
+			if(rm.get(0, i) < 0)
+				return true;
+		}
+		return false;
 	}
 
 	private static boolean isValidForOverlappingBinaryCellOperations(CompressedMatrixBlock m1, BinaryOperator op) {
@@ -288,6 +303,8 @@ public final class CLALibBinaryCellOp {
 		else
 			stackModifiedGroup(op, left, newColGroups, smallestIndex, m2.getDenseBlockValues());
 
+		if(newColGroups.size() == 0)
+			return new MatrixBlock(ret.getNumRows(), ret.getNumColumns(), 0.0);
 		ret.allocateColGroupList(newColGroups);
 		ret.setOverlapping(true);
 		ret.setNonZeros(-1); // set unknown non zeros.
@@ -303,7 +320,7 @@ public final class CLALibBinaryCellOp {
 			g = g.binaryRowOpLeft(op, row, op.isRowSafeLeft(row));
 		else
 			g = g.binaryRowOpRight(op, row, op.isRowSafeRight(row));
-		if(g != null)
+		if(!(g instanceof ColGroupEmpty))
 			newColGroups.set(smallestIndex, g); // overwrite the modified group.
 		else
 			newColGroups.remove(smallestIndex); // remove the element from the groups.
@@ -701,7 +718,7 @@ public final class CLALibBinaryCellOp {
 				int off = rv.pos(r);
 				if(m2sb.isEmpty(r)) {
 					for(int c = off; c < cols + off; c++)
-						retV[c] = _op.fn.execute(retV[c], 0);
+						retV[c] = _op.fn.execute(0, retV[c]);
 				}
 				else {
 					final int apos = m2sb.pos(r);

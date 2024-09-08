@@ -62,6 +62,20 @@ public class CLALibBinaryCellOpCustomTest {
 	}
 
 	@Test
+	public void notRowVectorEmptyReturn() {
+		BinaryOperator op = new BinaryOperator(Minus.getMinusFnObject(), 2);
+		CompressedMatrixBlock c = CompressedMatrixBlockFactory.createConstant(10, 10, 2.5);
+		MatrixBlock c2 = new MatrixBlock(10, 1, 2.5);
+		CompressedMatrixBlock spy = spy(c);
+		when(spy.isOverlapping()).thenReturn(true);
+		MatrixBlock cRet = CLALibBinaryCellOp.binaryOperationsRight(op, spy, c2);
+
+		TestUtils.compareMatricesBitAvgDistance(new MatrixBlock(10, 10, true), cRet, 0, 0, op.toString());
+		MatrixBlock cRet2 = CLALibBinaryCellOp.binaryOperationsLeft(op, spy, c2);
+		TestUtils.compareMatricesBitAvgDistance(new MatrixBlock(10, 10, true), cRet2, 0, 0, op.toString());
+	}
+
+	@Test
 	public void OVV() {
 		BinaryOperator op = new BinaryOperator(Minus.getMinusFnObject(), 2);
 		CompressedMatrixBlock c = CompressedMatrixBlockFactory.createConstant(10, 1, 2.5);

@@ -79,7 +79,8 @@ public class CLALibBinaryCellOpTest {
 	public final static ValueFunction[] vf = {//
 		(Plus.getPlusFnObject()), //
 		(Minus.getMinusFnObject()), //
-		Divide.getDivideFnObject(), (Or.getOrFnObject()), //
+		Divide.getDivideFnObject(), //
+		(Or.getOrFnObject()), //
 		(LessThan.getLessThanFnObject()), //
 		(LessThanEquals.getLessThanEqualsFnObject()), //
 		(GreaterThan.getGreaterThanFnObject()), //
@@ -103,7 +104,7 @@ public class CLALibBinaryCellOpTest {
 		(new PlusMultiply(0)), //
 		(new MinusMultiply(32)), //
 		Minus1Multiply.getMinus1MultiplyFnObject(),
-		// Builtin
+		// // Builtin
 		(Builtin.getBuiltinFnObject(BuiltinCode.MIN)), //
 		(Builtin.getBuiltinFnObject(BuiltinCode.MAX)), //
 		(Builtin.getBuiltinFnObject(BuiltinCode.LOG)), //
@@ -144,26 +145,29 @@ public class CLALibBinaryCellOpTest {
 	@Parameters(name = "{0}_{1}")
 	public static Collection<Object[]> data() {
 		List<Object[]> tests = new ArrayList<>();
+		MatrixBlock mb;
+		CompressedMatrixBlock cmb;
 
 		try {
-			MatrixBlock mb = TestUtils.generateTestMatrixBlock(200, 50, -10, 10, 1.0, 32);
+			mb = TestUtils.generateTestMatrixBlock(200, 50, -10, 10, 1.0, 32);
 			mb = TestUtils.round(mb);
-			CompressedMatrixBlock cmb = (CompressedMatrixBlock) CompressedMatrixBlockFactory.compress(mb, 1).getLeft();
-
+			cmb = (CompressedMatrixBlock) CompressedMatrixBlockFactory.compress(mb, 1).getLeft();
 			genTests(tests, mb, cmb, "Normal");
 
 			MatrixBlock mb2 = new MatrixBlock(10, 10, 132.0);
 			CompressedMatrixBlock cmb2 = CompressedMatrixBlockFactory.createConstant(10, 10, 132.0);
-
 			genTests(tests, mb2, cmb2, "Const");
 
 			List<AColGroup> gs = new ArrayList<>();
 			gs.add(ColGroupConst.create(ColIndexFactory.create(10), 100.0));
 			gs.add(ColGroupConst.create(ColIndexFactory.create(10), 32.0));
-
 			CompressedMatrixBlock cmb3 = new CompressedMatrixBlock(10, 10, 100, true, gs);
 			genTests(tests, mb2, cmb3, "OverlappingConst");
 
+			mb = TestUtils.generateTestMatrixBlock(200, 16, -10, 10, 0.04, 32);
+			mb = TestUtils.round(mb);
+			cmb = (CompressedMatrixBlock) CompressedMatrixBlockFactory.compress(mb, 1).getLeft();
+			genTests(tests, mb, cmb, "sparse");
 		}
 		catch(Exception e) {
 			e.printStackTrace();
@@ -358,6 +362,9 @@ public class CLALibBinaryCellOpTest {
 		try {
 
 			exec(op, mb, cmb, mrv2);
+			if(op.fn instanceof Power) // make sure that we cover the dense positive case of power
+				exec(op, mb, cmb, TestUtils.floor(TestUtils.generateTestMatrixBlock(1, mb.getNumColumns(), 1, 10, 1.0, 13)));
+
 		}
 		catch(Exception e) {
 			e.printStackTrace();
@@ -517,7 +524,10 @@ public class CLALibBinaryCellOpTest {
 	}
 
 	private static void compare(BinaryOperator op, MatrixBlock cRet, MatrixBlock uRet) {
-		TestUtils.compareMatricesBitAvgDistance(uRet, cRet, 0, 0, op.toString());
+		if(cRet.containsValue(Double.NaN)) // CLA is not consistent on NaN vs Infinite handling because Nan + Inf = Nan
+			TestUtils.compareMatrices(uRet, cRet, 0.0, "", true);
+		else
+			TestUtils.compareMatricesBitAvgDistance(uRet, cRet, 0, 0, op.toString());
 	}
 
 }

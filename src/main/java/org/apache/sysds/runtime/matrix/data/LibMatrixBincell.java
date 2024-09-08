@@ -728,7 +728,7 @@ public class LibMatrixBincell {
 		BinaryAccessType atype, int rl, int ru) {
 		if( !m1.sparse && !m2.sparse && !ret.sparse ) //DENSE all
 			return safeBinaryMVDense(m1, m2, ret, op, rl, ru);
-		else if( m1.sparse && !m2.sparse && !ret.sparse
+		else if( m1.sparse && !m2.sparse && !m2.isEmpty() && !ret.sparse
 			&& atype == BinaryAccessType.MATRIX_ROW_VECTOR)
 			safeBinaryMVSparseDenseRow(m1, m2, ret, op);
 		else if( m1.sparse ) //SPARSE m1

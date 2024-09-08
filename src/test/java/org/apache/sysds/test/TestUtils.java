@@ -814,6 +814,11 @@ public class TestUtils {
 
 	public static void compareMatrices(double[][] expectedMatrix, double[][] actualMatrix, int rows, int cols,
 			double epsilon, String message) {
+		compareMatrices(expectedMatrix, actualMatrix, rows, cols, epsilon, message, true);
+	}
+
+	public static void compareMatrices(double[][] expectedMatrix, double[][] actualMatrix, int rows, int cols,
+			double epsilon, String message, boolean IgnoreNaN) {
 		if(expectedMatrix.length != rows && expectedMatrix[0].length != cols)
 			fail("Invalid number of rows and cols in expected");
 		if(actualMatrix.length != rows && actualMatrix[0].length != cols)
@@ -822,7 +827,7 @@ public class TestUtils {
 		int countErrors = 0;
 		for (int i = 0; i < rows && countErrors < 10; i++) {
 			for (int j = 0; j < cols && countErrors < 10; j++) {
-				if (!compareCellValue(expectedMatrix[i][j], actualMatrix[i][j], epsilon, true)) {
+				if (!compareCellValue(expectedMatrix[i][j], actualMatrix[i][j], epsilon, IgnoreNaN)) {
 					message += ("\n Expected: " +expectedMatrix[i][j] +" vs actual: "+actualMatrix[i][j]+" at "+i+" "+j);
 					countErrors++;
 				}
@@ -1559,6 +1564,10 @@ public class TestUtils {
 		compareMatrices(m1, m2, tolerance, null);
 	}
 
+
+
+
+
 	/**
 	 * compare and error out on differences above tolerance
 	 * 
@@ -1574,6 +1583,15 @@ public class TestUtils {
 		double[][] ret1 = DataConverter.convertToDoubleMatrix(m1);
 		double[][] ret2 = DataConverter.convertToDoubleMatrix(m2);
 		compareMatrices(ret1, ret2, m2.getNumRows(), m2.getNumColumns(), tolerance, message);
+	}
+
+	public static void compareMatrices(MatrixBlock m1, MatrixBlock m2, double tolerance, String message, boolean ignoreNaN){
+		if(m1.getNumRows() != m2.getNumRows() || m1.getNumColumns() != m2.getNumColumns())
+		fail("Matrices are different sizes " + m1.getNumRows() + "," + m1.getNumColumns() + " vs " + m2.getNumRows()
+			+ "," + m2.getNumColumns());
+	double[][] ret1 = DataConverter.convertToDoubleMatrix(m1);
+	double[][] ret2 = DataConverter.convertToDoubleMatrix(m2);
+	compareMatrices(ret1, ret2, m2.getNumRows(), m2.getNumColumns(), tolerance, message, ignoreNaN);
 	}
 
 	public static void compareMatrices(MatrixBlock m1, double[][] m2, double tolerance, String message) {

@@ -85,4 +85,16 @@ public class CLALibBinaryCellOpCustomTest {
 		TestUtils.compareMatricesBitAvgDistance(new MatrixBlock(10, 10, 2.5 - 324.0), cRet, 0, 0, op.toString());
 	}
 
+	@Test
+	public void overwriteToCompressedOnSecondCompressed() {
+		BinaryOperator op = new BinaryOperator(Minus.getMinusFnObject(), 2);
+		CompressedMatrixBlock c = CompressedMatrixBlockFactory.createConstant(10, 10, 2.5);
+		MatrixBlock c2 = new MatrixBlock(10, 10, 324.0);
+		CompressedMatrixBlock spy = spy(c);
+		when(spy.isOverlapping()).thenReturn(true);
+		MatrixBlock cRet = c2.binaryOperations(op, spy);
+
+		TestUtils.compareMatricesBitAvgDistance(new MatrixBlock(10, 10, 324.0 - 2.5), cRet, 0, 0, op.toString());
+	}
+
 }

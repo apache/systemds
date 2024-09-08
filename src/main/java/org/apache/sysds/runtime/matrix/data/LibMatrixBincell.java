@@ -163,13 +163,6 @@ public class LibMatrixBincell {
 		else
 			ret.reset(m1.getNumRows(), m1.getNumColumns(), sp, m1.nonZeros);
 
-		//check internal assumptions 
-		if(   (op.sparseSafe && m1.isInSparseFormat()!=ret.isInSparseFormat())
-			||(!op.sparseSafe && ret.isInSparseFormat()) ) {
-			throw new DMLRuntimeException("Wrong output representation for safe=" + op.sparseSafe + ": "
-				+ m1.isInSparseFormat() + ", " + ret.isInSparseFormat());
-		}
-
 		if((op.fn instanceof Multiply && op.getConstant() == 0.0))
 			return ret; // no op
 		

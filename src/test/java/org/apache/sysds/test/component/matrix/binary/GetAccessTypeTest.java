@@ -75,11 +75,76 @@ public class GetAccessTypeTest {
 		}
 	}
 
+	@Test
+	public void getBinaryAccessTypeExtended() {
+		BinaryAccessType MM = BinaryAccessType.MATRIX_MATRIX;
+		for(int i = 1; i < 100; i++) {
+			assertEquals(MM, gatE(m(i, i), m(i, i)));
+		}
+	}
+
+	@Test
+	public void getMcVExtended() {
+		BinaryAccessType MM = BinaryAccessType.MATRIX_COL_VECTOR;
+		for(int i = 2; i < 100; i++) {
+			assertEquals(MM, gatE(m(i, i), m(i, 1)));
+			assertEquals(String.format("%d,%d - %d,%d", i, i + 1, i, 1), MM, gatE(m(i, i + 1), m(i, 1)));
+		}
+
+		MM = BinaryAccessType.COL_VECTOR_MATRIX;
+		for(int i = 2; i < 100; i++) {
+			assertEquals(MM, gatE(m(i, 1), m(i, i + 2)));
+		}
+
+	}
+
+	@Test
+	public void getMrVExtended() {
+		BinaryAccessType MM = BinaryAccessType.MATRIX_ROW_VECTOR;
+		for(int i = 2; i < 100; i++) {
+			assertEquals(MM, gatE(m(i, i), m(1, i)));
+		}
+
+		MM = BinaryAccessType.ROW_VECTOR_MATRIX;
+		for(int i = 2; i < 100; i++) {
+			assertEquals(MM, gatE(m(1, i), m(i, i)));
+		}
+	}
+
+	@Test
+	public void getVoVExtended() {
+		BinaryAccessType MM = BinaryAccessType.OUTER_VECTOR_VECTOR;
+		for(int i = 2; i < 100; i++) {
+			assertEquals(MM, gatE(m(i, 1), m(1, i)));
+		}
+	}
+
+	@Test
+	public void getInvalidExtended() {
+		BinaryAccessType MM = BinaryAccessType.INVALID;
+		for(int i = 2; i < 100; i++) {
+			assertEquals(MM, gatE(m(2, i + 1), m(1, i + 2)));
+			assertEquals(MM, gatE(m(2, i + 1), m(2, i + 2)));
+			assertEquals(MM, gatE(m(i, i + 1), m(i, i + 2)));
+			assertEquals(MM, gatE(m(i + 1, i), m(i + 2, i)));
+			assertEquals(MM, gatE(m(i, i + 1), m(i, i + 2)));
+			assertEquals(MM, gatE(m(i, i), m(1, i + 2)));
+			assertEquals(MM, gatE(m(i, 2), m(1, i + 2)));
+			assertEquals(MM, gatE(m(i+1, 1), m(2, i + 2)));
+			assertEquals(MM, gatE(m(i+1, 2), m(1, i + 2)));
+
+		}
+	}
+
 	private MatrixBlock m(int r, int c) {
 		return new MatrixBlock(r, c, true);
 	}
 
 	private BinaryAccessType gat(MatrixBlock a, MatrixBlock b) {
 		return LibMatrixBincell.getBinaryAccessType(a, b);
+	}
+
+	private BinaryAccessType gatE(MatrixBlock a, MatrixBlock b) {
+		return LibMatrixBincell.getBinaryAccessTypeExtended(a, b);
 	}
 }

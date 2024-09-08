@@ -352,7 +352,7 @@ public final class CLALibBinaryCellOp {
 			else
 				g = g.binaryRowOpRight(op, row, op.isRowSafeRight(row));
 		}
-		if(g != null)
+		if(!(g instanceof ColGroupEmpty))
 			newColGroups.add(g); // add the const group.
 	}
 

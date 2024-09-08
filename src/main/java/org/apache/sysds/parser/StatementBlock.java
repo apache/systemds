@@ -1099,6 +1099,10 @@ public class StatementBlock extends LiveVariableAnalysis implements ParseInfo
 				ids.addVariable(targetList.get(j).getName(), (DataIdentifier)outputs[j]);
 			}
 		}
+		
+		// remove updated constant vars (for correctness)
+		for(DataIdentifier target : targetList)
+			currConstVars.remove(target.getName());
 	}
 	
 	public void setStatementFormatType(OutputStatement s, boolean conditionalValidate)

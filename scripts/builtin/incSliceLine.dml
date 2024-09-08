@@ -172,8 +172,7 @@ m_incSliceLine = function(
   minsc = -Inf
   if( nrow(prevTK) > 0 ) {
     prevTK2 = oneHotEncodeUsingOffsets(prevTK, foffb, foffe);
-    [minsc2, prevTKC2] = computeLowestPrevTK(prevTK2, X2, totalE, eAvg, alpha)
-    minsc = minsc2; #FIXME otherwise -Inf incorrectly propagated
+    [minsc, prevTKC2] = computeLowestPrevTK(prevTK2, X2, totalE, eAvg, alpha)
   }
 
   # create and score basic slices (conjunctions of 1 feature)

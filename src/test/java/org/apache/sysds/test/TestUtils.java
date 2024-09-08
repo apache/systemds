@@ -822,7 +822,7 @@ public class TestUtils {
 		int countErrors = 0;
 		for (int i = 0; i < rows && countErrors < 10; i++) {
 			for (int j = 0; j < cols && countErrors < 10; j++) {
-				if (!compareCellValue(expectedMatrix[i][j], actualMatrix[i][j], epsilon, true)) {
+				if (!compareCellValue(expectedMatrix[i][j], actualMatrix[i][j], epsilon, false)) {
 					message += ("\n Expected: " +expectedMatrix[i][j] +" vs actual: "+actualMatrix[i][j]+" at "+i+" "+j);
 					countErrors++;
 				}

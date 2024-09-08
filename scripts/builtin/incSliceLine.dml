@@ -153,11 +153,10 @@ m_incSliceLine = function(
 
   # One-hot encoding of tuples that were removed from oldX
   # combining of addedX and oldX in changedX2 facilitates simple determination of unchanged slices for pruning
+  changedX2 = addedX2;
   if(nrow(removedTuples) > 0){
     removedTuples2 = oneHotEncodeUsingOffsets(removedTuples, foffb, foffe);
     changedX2 = rbind(addedX2, removedTuples2);
-  }else {
-    changedX2 = addedX2;
   }
   changedE = rbind(addedE, removedE);
 
@@ -173,25 +172,25 @@ m_incSliceLine = function(
   minsc = -Inf
   if( nrow(prevTK) > 0 ) {
     prevTK2 = oneHotEncodeUsingOffsets(prevTK, foffb, foffe);
-    [minsc, prevTKC2] = computeLowestPrevTK(prevTK2, X2, totalE, eAvg, alpha)
+    [minsc2, prevTKC2] = computeLowestPrevTK(prevTK2, X2, totalE, eAvg, alpha)
+    minsc = minsc2; #FIXME otherwise -Inf incorrectly propagated
   }
 
   # create and score basic slices (conjunctions of 1 feature)
+  maxsc = getMaxScoreAllFeatures(nrow(X2), ncol(X2), prevLattice, metaPrevLattice,
+     prevStats, encodeLat, differentOffsets, alpha, eAvg, prevFoffb, prevFoffe, foffb, foffe);
   [S, R, selCols] = createAndScoreBasicSlices(X2, changedX2, prevTK2, totalE, changedE,
-     eAvg, eAvgOld, eAvgNew, minSup, alpha, minsc, verbose, disableIncScorePruning);
+     eAvg, eAvgOld, eAvgNew, minSup, alpha, minsc, maxsc, verbose, disableIncScorePruning);
 
   # initialize lattice and statistics for incremental updates
-  Stats = list();
-  L = list();
+  L1 = S;
   metaLattice = list();
   if( encodeLat ) {
     [L1, M] = transformSlicesToIDs(S, foffb, foffe);
     metaLattice = append(metaLattice, M);
-  }else {
-    L1 = S;
   }
-  L = append(L, L1);
-  Stats = append(Stats,R[, 4]);
+  L = list(L1);
+  Stats = list(R);
 
   # initialize top-k
   [TK, TKC] = maintainTopK(S, R, prevTK2, prevTKC2, k, minSup, foffb, foffe);
@@ -221,11 +220,10 @@ m_incSliceLine = function(
     S2 = S;
 
     # prepare and store output lattice for next run
+    Lrep = S
     if ( encodeLat ) {
       [Lrep, M] = transformSlicesToIDs(S, foffb, foffe);
       metaLattice = append(metaLattice, M);
-    } else {
-      Lrep = S;
     }
     L = append(L, Lrep);
 
@@ -244,16 +242,17 @@ m_incSliceLine = function(
     }
 
     if(verbose) {
-        print("\nincSliceLine: level "+level+":")
+      print("\nincSliceLine: level "+level+":")
+      print(" -- generated paired slice candidates: "+nrS+" -> "+nrow(S));
     }
 
     # prune unchanged slices with slice size < minSup
     if(level <= length(prevStats) & !disableIncSizePruning){
+      npairs = nrow(S);
       [S, S2] = pruneUnchangedSlices(S, S2,  prevLattice2, prevStats, changedX2, minSup, verbose, level);
-    }
-
-    if(verbose) {
-      print(" -- generated paired slice candidates: "+nrS+" -> "+nrow(S));
+      if(verbose) {
+        print(" -- dropping "+(npairs-nrow(S))+"/"+npairs+" unaffected paired slice candidates ");
+      }
     }
 
     if( nrow(S) > 0 ) {
@@ -272,18 +271,18 @@ m_incSliceLine = function(
       }
 
       # update output statistics
-      Stats = append(Stats,R[, 4]);
+      Stats = append(Stats, R);
 
       # maintain top-k after evaluation
       [TK, TKC] = maintainTopK(S, R, TK, TKC, k, minSup, foffb, foffe);
 
       if(verbose) {
-        [maxsc, minsc2] = analyzeTopK(TKC);
+        [maxsc2, minsc2] = analyzeTopK(TKC);
         valid = as.integer(sum(R[,2]>0 & R[,4]>=minSup));
         print(" -- valid slices after eval: "+valid+"/"+nrow(S));
-        print(" -- top-K: count="+nrow(TK)+", max="+maxsc+", min="+minsc2);
+        print(" -- top-K: count="+nrow(TK)+", max="+maxsc2+", min="+minsc2);
         print(" -- (time="+(time()-t1)+")")
-        D = rbind(D, t(as.matrix(list(level, nrow(S), valid, maxsc, minsc2))));
+        D = rbind(D, t(as.matrix(list(level, nrow(S), valid, maxsc2, minsc2))));
       }
     }
   }
@@ -301,7 +300,8 @@ m_incSliceLine = function(
 
 createAndScoreBasicSlices = function(Matrix[Double] X2, Matrix[Double] X2p,
     Matrix[Double] prevTK2, Matrix[Double] e, Matrix[Double] ep,
-    Double eAvg, Double eAvgOld, Double eAvgNew, Double minSup, Double alpha, Double minsc, Boolean verbose, Boolean disableIncScorePruning)
+    Double eAvg, Double eAvgOld, Double eAvgNew, Double minSup, Double alpha,
+    Double minsc, Matrix[Double] maxsc, Boolean verbose, Boolean disableIncScorePruning)
   return(Matrix[Double] S, Matrix[Double] R, Matrix[Double] selCols)
 {
   n2 = ncol(X2);
@@ -319,9 +319,9 @@ createAndScoreBasicSlices = function(Matrix[Double] X2, Matrix[Double] X2p,
   }
 
   # b) unchanged pruning
-  # (valid pruning iff average error was larger before,
-  # and tuples with changed errors are marked as new tuples)
-  selCols2 = selCols & (ncCnts > 0 | tkCnts > 0 | eAvgOld <= eAvg | eAvgNew == 0 | sum(tkCnts)==0)
+  # (valid to prune feature if its previous max score was negative or below minsc)
+  selCols2 = selCols & (ncCnts > 0 | maxsc > max(0, minsc));
+
   if( verbose ) {
     n = as.integer(sum(selCols));
     drop = as.integer(sum(selCols) - sum(selCols2));
@@ -344,7 +344,7 @@ createAndScoreBasicSlices = function(Matrix[Double] X2, Matrix[Double] X2p,
   # compute upper bound scores for all remaining slices
   if(minsc > -Inf & !disableIncScorePruning) {
     ubSc = scoreUB(ss, se, sm, eAvg, minSup, alpha, nrow(X2));
-    selCols3 = (ubSc > minsc);
+    selCols3 = (ubSc > max(0, minsc));
     S = removeEmpty(target=S, margin="rows", select=selCols3);
     R = removeEmpty(target=R, margin="rows", select=selCols3);
     if( verbose ) {
@@ -550,15 +550,20 @@ oneHotEncodeUsingOffsets = function(Matrix[Double] A, Matrix[Double] foffb, Matr
 {
   m = nrow(A);
   n = ncol(A);
-  rix = matrix(seq(1,m)%*%matrix(1,1,n), m*n, 1)
-  cix = matrix((A!=0)*(A + foffb), m*n, 1);
-  if( sum(cix!=0) < m*n ) {
-    ix = cix != 0;
-    rix = removeEmpty(target=rix, margin="rows", select=ix);
-    cix = removeEmpty(target=cix, margin="rows", select=ix);
+  if( m > 0 ) {
+    rix = matrix(seq(1,m)%*%matrix(1,1,n), m*n, 1)
+    cix = matrix((A!=0)*(A + foffb), m*n, 1);
+    if( sum(cix!=0) < m*n ) {
+      ix = cix != 0;
+      rix = removeEmpty(target=rix, margin="rows", select=ix);
+      cix = removeEmpty(target=cix, margin="rows", select=ix);
+    }
+    # actual one-hot encoding
+    A2 = table(rix, cix, 1, m, as.scalar(foffe[,n]), FALSE);
   }
-  # actual one-hot encoding
-  A2 = table(rix, cix, 1, m, as.scalar(foffe[,n]), FALSE);
+  else {
+    A2 = matrix(0, 0, as.scalar(foffe[,n]));
+  }
 }
 
 # throws an error if no params are provided for incremental updates.
@@ -646,26 +651,15 @@ pruneUnchangedSlices = function(Matrix[Double] S, Matrix[Double] S2, Matrix[Doub
   prevLatAtLevel = prevLattice2;
   [unchangedS, unchangedR] = determineUnchangedSlices( prevStatsAtLevel, prevLatAtLevel, changedX2, level);
 
-  if (nrow(unchangedS) > 0) {
-    # unchangedMat is matrix with 1 if slice is same as slice in unchangedS (thus slice is not changed in addedX)
+  if(nrow(S2) > 0 & nrow(unchangedS) > 0) {
+    # unchangedMat is matrix with 1 if slice is same as slice in unchangedS
+    # (thus slice is not changed in addedX)
     unchangedMat = (S2 %*% t(unchangedS)) == level;
-    levStats = unchangedR;
-    levSs = levStats[, 1];
-    unchangedAndBelowMinSup = matrix(0, nrow(S2), 1);
-    if(nrow(unchangedMat) > 0 & ncol(unchangedMat) > 0 & nrow(levSs) > 0){
-      # by multiplying the columns of the unchanged mat with the sizes
-      # from the previous lattice we get vectors indicating the sizes
-      # of each unchanged slice (and 0 if it was changed)
-      unchangedSizes = unchangedMat * t(levSs)
-      unchangedAndBelowMinSup = rowSums(unchangedSizes < minSup & unchangedSizes > 0) != 0;
-    }
-
-    if(sum(unchangedAndBelowMinSup) > 0){
-      S2 = removeEmpty(target=S2, margin="rows", select=unchangedAndBelowMinSup == 0);
-      S = removeEmpty(target=S, margin="rows", select=unchangedAndBelowMinSup == 0);
-      if(verbose) {
-        print(" -- Pruning " + sum(unchangedAndBelowMinSup) +" slices that are unchanged and below min sup.");
-      }
+    ss = rowMaxs(unchangedMat * t(unchangedR[,4]));
+    selCols = !(rowSums(unchangedMat) > 0 & ss < minSup);
+    if(sum(selCols) < nrow(S) ){
+      S2 = removeEmpty(target=S2, margin="rows", select=selCols);
+      S = removeEmpty(target=S, margin="rows", select=selCols);
     }
   }
 }
@@ -677,7 +671,7 @@ transformSlicesToIDs = function(Matrix[Double] S, Matrix[Double] foffb, Matrix[D
       ID = matrix(0, nrow(S), 1);
       dom = foffe-foffb+1;
 
-      for( j in 1:ncol(dom) ) {
+      parfor( j in 1:ncol(dom) ) {
         beg = as.scalar(foffb[1,j])+1;
         end = as.scalar(foffe[1,j]);
         I = rowIndexMax(S[,beg:end]) * rowMaxs(S[,beg:end]);
@@ -685,7 +679,7 @@ transformSlicesToIDs = function(Matrix[Double] S, Matrix[Double] foffb, Matrix[D
         if(j<ncol(dom)) {
           prod = prod(dom[1,(j+1):ncol(dom)])
         }
-        ID = ID + I * prod;
+        ID += I * prod;
       }
       # ID transformation to avoid exceeding INT_MAX and
       # and to void creating huge sparse intermediates
@@ -719,6 +713,43 @@ transformIDsToSlices = function(Matrix[Double] ID, Matrix[Double] foffb, Matrix[
     }
   } else {
     S = matrix(0, 0, 0);
+  }
+}
+
+# get the maximum reached scores from a previous run for every involved feature
+# (this method is robust for different encodings, and fewer statistics R if S
+# was not evaluated as well as Infinity, and rescales according to |X| and eAvg)
+getMaxScoreAllFeatures = function(Int numRows, Int numFeatures, List[Unknown] prevLattice,
+  List[Unknown] metaPrevLattice, List[Unknown] prevStats, Boolean encodeLat,
+  Boolean differentOffsets, Double alpha, Double eAvg,
+  Matrix[Double] prevFoffb, Matrix[Double] prevFoffe, Matrix[Double] foffb, Matrix[Double] foffe)
+  return(Matrix[Double] maxsc)
+{
+  maxsc = matrix(-Inf, numFeatures, 1);
+  if( length(prevLattice) > 0 ) {
+    for(level in 1:length(prevLattice)) {
+      S = as.matrix(prevLattice[level]);
+      if( encodeLat ) {
+        metaAtLevel = as.frame(metaPrevLattice[level]);
+        prevLatticeDec = transformIDsToSlices(S, prevFoffb, prevFoffe, metaAtLevel);
+        if( nrow(S) > 0 )
+          S = oneHotEncodeUsingOffsets(prevLatticeDec, foffb, foffe);
+        else
+          S = matrix(0, 1, numFeatures);
+      }
+      else if(differentOffsets) {
+        prevLatticeDec = decodeOneHot(S, prevFoffb, prevFoffe);
+        S = oneHotEncodeUsingOffsets(prevLatticeDec, foffb, foffe);
+      }
+      if( length(prevStats) >= level ) {
+        R = as.matrix(prevStats[level]);
+        # rescaling of scores according to new size of X and eAvg
+        sc = score(R[,4], R[,2], eAvg, alpha, numRows);
+        # robustness for S * sc creating NaNs because 0 * -Inf = NaN
+        sc = replace(target=sc, pattern=-Inf, replacement=0);
+        maxsc = max(maxsc, t(colMaxs(S*sc)));
+      }
+    }
   }
 }
 

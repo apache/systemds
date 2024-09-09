@@ -2324,35 +2324,26 @@ public class LibMatrixReorg {
 		shift %= (m != 0 ? m : 1);
 
 		for (int i = 0; i < m - shift; i++) {
-			if (a.isEmpty(i)) {
-				// skip empty rows
-				continue;
-			}
+			if (a.isEmpty(i)) continue;    // skip empty rows
 
-			final int alen = a.size(i);
-			final int[] aix = a.indexes(i);
-			final double[] avals = a.values(i);
-
-			// copy only non-zero elements
-			for (int k = 0; k < alen; k++) {
-				c.set(i + shift, aix[k], avals[k]);
-			}
+			rollSparseRow(a, c, i, i + shift - m, shift);
 		}
 
 		for (int i = m - shift; i < m; i++) {
-			if (a.isEmpty(i)) {
-				// skip empty rows
-				continue;
-			}
+			if (a.isEmpty(i)) continue;    // skip empty rows
 
-			final int alen = a.size(i);
-			final int[] aix = a.indexes(i);
-			final double[] avals = a.values(i);
+			rollSparseRow(a, c, i, i + shift - m, shift);
+		}
+	}
 
-			// copy only non-zero elements
-			for (int k = 0; k < alen; k++) {
-				c.set(i + shift - m, aix[k], avals[k]);
-			}
+	private static void rollSparseRow(SparseBlock a, SparseBlock c, int oriIdx, int shiftIdx, int shift) {
+		final int alen = a.size(oriIdx);
+		final int[] aix = a.indexes(oriIdx);
+		final double[] avals = a.values(oriIdx);
+
+		// copy only non-zero elements
+		for (int k = 0; k < alen; k++) {
+			c.set(shiftIdx, aix[k], avals[k]);
 		}
 	}
 

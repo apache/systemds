@@ -2326,17 +2326,17 @@ public class LibMatrixReorg {
 		for (int i = 0; i < m - shift; i++) {
 			if (a.isEmpty(i)) continue;    // skip empty rows
 
-			rollSparseRow(a, c, i, i + shift - m, shift);
+			rollSparseRow(a, c, i, i + shift);
 		}
 
 		for (int i = m - shift; i < m; i++) {
 			if (a.isEmpty(i)) continue;    // skip empty rows
 
-			rollSparseRow(a, c, i, i + shift - m, shift);
+			rollSparseRow(a, c, i, i + shift - m);
 		}
 	}
 
-	private static void rollSparseRow(SparseBlock a, SparseBlock c, int oriIdx, int shiftIdx, int shift) {
+	private static void rollSparseRow(SparseBlock a, SparseBlock c, int oriIdx, int shiftIdx) {
 		final int alen = a.size(oriIdx);
 		final int[] aix = a.indexes(oriIdx);
 		final double[] avals = a.values(oriIdx);

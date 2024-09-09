@@ -1283,7 +1283,7 @@ public abstract class AutomatedTestBase {
 		String errorString;
 		try {
 			long t0 = System.nanoTime();
-			if(LOG.isInfoEnabled()) {
+			if (LOG.isInfoEnabled()) {
 				LOG.info("starting Python script");
 				LOG.debug("Python cmd: " + pythonCmd);
 			}
@@ -1300,40 +1300,37 @@ public abstract class AutomatedTestBase {
 			//
 			child.waitFor();
 			try {
-				if(child.exitValue() != 0) {
-					throw new Exception(
-							"ERROR: Python has ended irregularly\n" + buildOutputStringPython(outputPython, errorString) + "\nscript file: " + executionFile);
+				if (child.exitValue() != 0) {
+					throw new Exception("ERROR: Python has ended irregularly\n" +
+							buildOutputStringPython(outputPython, errorString) + "\nscript file: " + executionFile);
 				}
-			}
-			catch(IllegalThreadStateException ie) {
+			} catch (IllegalThreadStateException ie) {
 				// In UNIX JVM does not seem to be able to close threads
 				// correctly. However, give it a try, since Python processed the
 				// script, therefore we can terminate the process.
 				child.destroy();
 			}
 
-			if(!outputBuffering) {
+			if (!outputBuffering) {
 				System.out.println(buildOutputStringPython(outputPython, errorString));
 			}
 
 			long t1 = System.nanoTime();
 
 			LOG.info("Python is finished (in " + ((double) t1 - t0) / 1000000000 + " sec)");
-		}
-		catch(Exception e) {
-			if(e.getMessage().contains("ERROR: Python has ended irregularly")) {
+		} catch (Exception e) {
+			if (e.getMessage().contains("ERROR: Python has ended irregularly")) {
 				StringBuilder errorMessage = new StringBuilder();
 				errorMessage.append(e.getMessage());
 				fail(errorMessage.toString());
-			}
-			else {
+			} else {
 				e.printStackTrace();
 				StringBuilder errorMessage = new StringBuilder();
 				errorMessage.append("failed to run script " + executionFile);
 				errorMessage.append("\nexception: " + e.toString());
 				errorMessage.append("\nmessage: " + e.getMessage());
 				errorMessage.append("\nstack trace:");
-				for(StackTraceElement ste : e.getStackTrace()) {
+				for (StackTraceElement ste : e.getStackTrace()) {
 					errorMessage.append("\n>" + ste);
 				}
 				fail(errorMessage.toString());

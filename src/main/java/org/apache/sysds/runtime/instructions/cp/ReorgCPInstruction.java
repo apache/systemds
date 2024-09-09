@@ -43,17 +43,12 @@ public class ReorgCPInstruction extends UnaryCPInstruction {
 
 	/**
 	 * for opcodes r' and rdiag
-	 * 
-	 * @param op
-	 *            operator
-	 * @param in
-	 *            cp input operand
-	 * @param out
-	 *            cp output operand
-	 * @param opcode
-	 *            the opcode
-	 * @param istr
-	 *            ?
+	 *
+	 * @param op     operator
+	 * @param in     cp input operand
+	 * @param out    cp output operand
+	 * @param opcode the opcode
+	 * @param istr   ?
 	 */
 	private ReorgCPInstruction(Operator op, CPOperand in, CPOperand out, String opcode, String istr) {
 		this(op, in, out, null, null, null, opcode, istr);
@@ -61,26 +56,18 @@ public class ReorgCPInstruction extends UnaryCPInstruction {
 
 	/**
 	 * for opcode rsort
-	 * 
-	 * @param op
-	 *            operator
-	 * @param in
-	 *            cp input operand
-	 * @param col
-	 *            ?
-	 * @param desc
-	 *            ?
-	 * @param ixret
-	 *            ?
-	 * @param out
-	 *            cp output operand
-	 * @param opcode
-	 *            the opcode
-	 * @param istr
-	 *            ?
+	 *
+	 * @param op     operator
+	 * @param in     cp input operand
+	 * @param col    ?
+	 * @param desc   ?
+	 * @param ixret  ?
+	 * @param out    cp output operand
+	 * @param opcode the opcode
+	 * @param istr   ?
 	 */
 	private ReorgCPInstruction(Operator op, CPOperand in, CPOperand out, CPOperand col, CPOperand desc, CPOperand ixret,
-			String opcode, String istr) {
+							   String opcode, String istr) {
 		super(CPType.Reorg, op, in, out, opcode, istr);
 		_col = col;
 		_desc = desc;
@@ -91,18 +78,12 @@ public class ReorgCPInstruction extends UnaryCPInstruction {
 	/**
 	 * for opcode roll
 	 *
-	 * @param op
-	 *            operator
-	 * @param in
-	 *            cp input operand
-	 * @param shift
-	 *            ?
-	 * @param out
-	 *            cp output operand
-	 * @param opcode
-	 *            the opcode
-	 * @param istr
-	 *            ?
+	 * @param op     operator
+	 * @param in     cp input operand
+	 * @param shift  ?
+	 * @param out    cp output operand
+	 * @param opcode the opcode
+	 * @param istr   ?
 	 */
 	private ReorgCPInstruction(Operator op, CPOperand in, CPOperand out, CPOperand shift, String opcode, String istr) {
 		super(CPType.Reorg, op, in, out, opcode, istr);
@@ -130,13 +111,12 @@ public class ReorgCPInstruction extends UnaryCPInstruction {
 			parseUnaryInstruction(str, in, out); //max 2 operands
 			return new ReorgCPInstruction(new ReorgOperator(RevIndex.getRevIndexFnObject()), in, out, opcode, str);
 		}
-		else if ( opcode.equalsIgnoreCase("roll") ) {
+		else if (opcode.equalsIgnoreCase("roll")) {
 			InstructionUtils.checkNumFields(str, 3);
 			in.split(parts[1]);
 			out.split(parts[3]);
 			CPOperand shift = new CPOperand(parts[2]);
-			return new ReorgCPInstruction(new ReorgOperator(new RollIndex(0)),
-					in, out, shift, opcode, str);
+			return new ReorgCPInstruction(new ReorgOperator(new RollIndex(0)), in, out, shift, opcode, str);
 		}
 		else if ( opcode.equalsIgnoreCase("rdiag") ) {
 			parseUnaryInstruction(str, in, out); //max 2 operands

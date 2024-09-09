@@ -18,6 +18,7 @@
  */
 
 package org.apache.sysds.runtime.functionobjects;
+
 import org.apache.commons.lang3.NotImplementedException;
 import org.apache.sysds.runtime.matrix.data.MatrixIndexes;
 import org.apache.sysds.runtime.matrix.data.MatrixValue.CellIndex;
@@ -26,40 +27,39 @@ import org.apache.sysds.runtime.meta.DataCharacteristics;
 /**
  * This index function is NOT used for actual sorting but just as a reference
  * in ReorgOperator in order to identify sort operations.
- *
  */
-public class RollIndex extends IndexFunction
-{
-	private static final long serialVersionUID = -8446389232078905200L;
+public class RollIndex extends IndexFunction {
+    private static final long serialVersionUID = -8446389232078905200L;
 
-	private final int _shift;
+    private final int _shift;
 
-	public RollIndex(int shift) {
-		_shift = shift;
-	}
+    public RollIndex(int shift) {
+        _shift = shift;
+    }
 
-	public int getShift() {
-		return _shift;
-	}
+    public int getShift() {
+        return _shift;
+    }
 
-	@Override
-	public boolean computeDimension(int row, int col, CellIndex retDim)  {
-		retDim.set(row, col);
-		return false;
-	}
+    @Override
+    public boolean computeDimension(int row, int col, CellIndex retDim) {
+        retDim.set(row, col);
+        return false;
+    }
 
-	@Override
-	public boolean computeDimension(DataCharacteristics in, DataCharacteristics out) {
-		out.set(in.getRows(), in.getCols(), in.getBlocksize(), in.getNonZeros());
-		return false;
-	}
+    @Override
+    public boolean computeDimension(DataCharacteristics in, DataCharacteristics out) {
+        out.set(in.getRows(), in.getCols(), in.getBlocksize(), in.getNonZeros());
+        return false;
+    }
 
-	@Override
-	public void execute(MatrixIndexes in, MatrixIndexes out) {throw new NotImplementedException();
-	}
+    @Override
+    public void execute(MatrixIndexes in, MatrixIndexes out) {
+        throw new NotImplementedException();
+    }
 
-	@Override
-	public void execute(CellIndex in, CellIndex out) {
-		throw new NotImplementedException();
-	}
+    @Override
+    public void execute(CellIndex in, CellIndex out) {
+        throw new NotImplementedException();
+    }
 }

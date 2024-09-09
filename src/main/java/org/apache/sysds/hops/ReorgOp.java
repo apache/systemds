@@ -179,13 +179,12 @@ public class ReorgOp extends MultiThreadedHop
 				setLops(transform1);
 				break;
 			}
-			case ROLL:{
+			case ROLL: {
 				Lop[] linputs = new Lop[2]; //input, shift
 				for (int i = 0; i < 2; i++)
 					linputs[i] = getInput().get(i).constructLops();
 
-				Transform transform1 = new Transform(
-						linputs, _op, getDataType(), getValueType(), et, 1);
+				Transform transform1 = new Transform(linputs, _op, getDataType(), getValueType(), et, 1);
 
 				setOutputDimensions(transform1);
 				setLineNumbers(transform1);
@@ -299,7 +298,7 @@ public class ReorgOp extends MultiThreadedHop
 			case REV:
 			case ROLL: {
 				// dims and nnz are exactly the same as in input
-				if( dc.dimsKnown() )
+				if (dc.dimsKnown())
 					ret = new MatrixCharacteristics(dc.getRows(), dc.getCols(), -1, dc.getNonZeros());
 				break;
 			}

@@ -579,7 +579,7 @@ public class TestUtils {
 
 			line = reader.readLine(); // header line with dimension and nnz information
 
-			if (line.startsWith("%"))	// skip blank comment(%) line in mtx file written by python
+			if (line.startsWith("%"))    // skip blank comment(%) line in mtx file written by python
 				line = reader.readLine();
 
 			while ((line = reader.readLine()) != null) {
@@ -2701,11 +2701,11 @@ public class TestUtils {
 			try( BufferedWriter pw = new BufferedWriter(new OutputStreamWriter(out))) {
 
 				//write dummy header
-				if( isR ) {
+				if (isR) {
 					/** add space for R header */
 					pw.append("%%MatrixMarket matrix coordinate real general\n");
 					pw.append("" + matrix.length + " " + matrix[0].length + " "
-							+ " ".repeat((String.valueOf(matrix.length*matrix[0].length)).length())+"\n");
+							+ " ".repeat((String.valueOf(matrix.length * matrix[0].length)).length()) + "\n");
 				}
 
 				//writer actual matrix
@@ -2737,7 +2737,7 @@ public class TestUtils {
 			}
 
 			//write real header
-			if( isR ) {
+			if (isR) {
 				try (RandomAccessFile raf = new RandomAccessFile(file, "rws")) {
 					raf.seek(0);
 
@@ -3035,19 +3035,17 @@ public class TestUtils {
 	 * Prints out an Python script.
 	 * </p>
 	 *
-	 * @param dmlScriptFile
-	 *            filename of RL script
+	 * @param dmlScriptFile filename of RL script
 	 */
 	public static void printPythonScript(String dmlScriptFile) {
 		System.out.println("Running script: " + dmlScriptFile + "\n");
 		System.out.println("******************* Python script *******************");
-		try( BufferedReader in = new BufferedReader(new InputStreamReader(new FileInputStream(dmlScriptFile)))) {
+		try (BufferedReader in = new BufferedReader(new InputStreamReader(new FileInputStream(dmlScriptFile)))) {
 			String content;
 			while ((content = in.readLine()) != null) {
 				System.out.println(content);
 			}
-		}
-		catch (IOException e) {
+		} catch (IOException e) {
 			e.printStackTrace();
 			fail("unable to print python script: " + e.getMessage());
 		}

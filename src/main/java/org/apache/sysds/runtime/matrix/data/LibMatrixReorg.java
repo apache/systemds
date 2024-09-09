@@ -426,21 +426,21 @@ public class LibMatrixReorg {
 		}
 	}
 
-	public static MatrixBlock roll( MatrixBlock in,  MatrixBlock out, int shift ) {
+	public static MatrixBlock roll(MatrixBlock in, MatrixBlock out, int shift) {
 		//sparse-safe operation
-		if( in.isEmptyBlock(false) )
+		if (in.isEmptyBlock(false))
 			return out;
 
 		//special case: row vector
-		if( in.rlen == 1 ) {
+		if (in.rlen == 1) {
 			out.copy(in);
 			return out;
 		}
 
-		if( in.sparse )
-			rollSparse( in, out, shift );
+		if (in.sparse)
+			rollSparse(in, out, shift);
 		else
-			rollDense( in, out, shift );
+			rollDense(in, out, shift);
 
 		return out;
 	}
@@ -2282,7 +2282,7 @@ public class LibMatrixReorg {
 		out.allocateDenseBlock(false);
 
 		//copy all rows into target positions
-		if( n == 1 ) { //column vector
+		if (n == 1) { //column vector
 			double[] a = in.getDenseBlockValues();
 			double[] c = out.getDenseBlockValues();
 
@@ -2298,12 +2298,12 @@ public class LibMatrixReorg {
 			// roll matrix with axis=0
 			shift %= (m != 0 ? m : 1);
 
-			for( int i=0; i< m-shift; i++ ) {
+			for (int i = 0; i < m - shift; i++) {
 				System.arraycopy(a.values(i), a.pos(i), c.values(i + shift), c.pos(i + shift), n);
 			}
 
-			for( int i=m-shift; i<m; i++ ) {
-				System.arraycopy(a.values(i), a.pos(i), c.values(i + shift -m), c.pos(i + shift -m), n);
+			for (int i = m - shift; i < m; i++) {
+				System.arraycopy(a.values(i), a.pos(i), c.values(i + shift - m), c.pos(i + shift - m), n);
 			}
 		}
 	}
@@ -2323,8 +2323,8 @@ public class LibMatrixReorg {
 		// roll matrix with axis=0
 		shift %= (m != 0 ? m : 1);
 
-		for( int i=0; i<m-shift; i++ ) {
-			if( a.isEmpty(i) ){
+		for (int i = 0; i < m - shift; i++) {
+			if (a.isEmpty(i)) {
 				// skip empty rows
 				continue;
 			}
@@ -2334,13 +2334,13 @@ public class LibMatrixReorg {
 			final double[] avals = a.values(i);
 
 			// copy only non-zero elements
-			for(int k = 0; k < alen; k++) {
+			for (int k = 0; k < alen; k++) {
 				c.set(i + shift, aix[k], avals[k]);
 			}
 		}
 
-		for( int i=m-shift; i<m; i++ ) {
-			if( a.isEmpty(i) ){
+		for (int i = m - shift; i < m; i++) {
+			if (a.isEmpty(i)) {
 				// skip empty rows
 				continue;
 			}
@@ -2350,8 +2350,8 @@ public class LibMatrixReorg {
 			final double[] avals = a.values(i);
 
 			// copy only non-zero elements
-			for(int k = 0; k < alen; k++) {
-				c.set(i + shift -m, aix[k], avals[k]);
+			for (int k = 0; k < alen; k++) {
+				c.set(i + shift - m, aix[k], avals[k]);
 			}
 		}
 	}

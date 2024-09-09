@@ -2486,7 +2486,7 @@ public class DMLTranslator
 			inputs.add(expr);
 			inputs.add(expr2);
 			currBuiltinOp = new ReorgOp(target.getName(), DataType.MATRIX,
-				target.getValueType(), ReOrgOp.valueOf(source.getOpCode().name()), inputs);
+					target.getValueType(), ReOrgOp.valueOf(source.getOpCode().name()), inputs);
 			break;
 
 		case CBIND:

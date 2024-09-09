@@ -34,98 +34,97 @@ import org.junit.Test;
 import java.util.HashMap;
 
 
-public class FullRollTest extends AutomatedTestBase
-{
-	private final static String TEST_NAME1 = "Roll1";
-	private final static String TEST_NAME2 = "Roll2";
+public class FullRollTest extends AutomatedTestBase {
+    private final static String TEST_NAME1 = "Roll1";
+    private final static String TEST_NAME2 = "Roll2";
 
-	private final static String TEST_DIR = "functions/reorg/";
-	private static final String TEST_CLASS_DIR = TEST_DIR + FullRollTest.class.getSimpleName() + "/";
+    private final static String TEST_DIR = "functions/reorg/";
+    private static final String TEST_CLASS_DIR = TEST_DIR + FullRollTest.class.getSimpleName() + "/";
 
-	private final static int rows1 = 2017;
-	private final static int cols1 = 1001;
-	private final static double sparsity1 = 0.7;
-	private final static double sparsity2 = 0.1;
+    private final static int rows1 = 2017;
+    private final static int cols1 = 1001;
+    private final static double sparsity1 = 0.7;
+    private final static double sparsity2 = 0.1;
 
-	@Override
-	public void setUp() {
-		TestUtils.clearAssertionInformation();
-		addTestConfiguration(TEST_NAME1, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME1, new String[]{"B"}));
-		addTestConfiguration(TEST_NAME2, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME2, new String[]{"B"}));
-	}
+    @Override
+    public void setUp() {
+        TestUtils.clearAssertionInformation();
+        addTestConfiguration(TEST_NAME1, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME1, new String[]{"B"}));
+        addTestConfiguration(TEST_NAME2, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME2, new String[]{"B"}));
+    }
 
-	@Test
-	public void testRollVectorDenseCP() {
-		runRollTest(TEST_NAME1, false, false, ExecType.CP);
-	}
+    @Test
+    public void testRollVectorDenseCP() {
+        runRollTest(TEST_NAME1, false, false, ExecType.CP);
+    }
 
-	@Test
-	public void testRollVectorSparseCP() {
-		runRollTest(TEST_NAME2, false, true, ExecType.CP);
-	}
+    @Test
+    public void testRollVectorSparseCP() {
+        runRollTest(TEST_NAME2, false, true, ExecType.CP);
+    }
 
-	@Test
-	public void testRollMatrixDenseCP() {
-		runRollTest(TEST_NAME2, true, false, ExecType.CP);
-	}
+    @Test
+    public void testRollMatrixDenseCP() {
+        runRollTest(TEST_NAME2, true, false, ExecType.CP);
+    }
 
-	@Test
-	public void testRollMatrixSparseCP() {
-		runRollTest(TEST_NAME2, true, true, ExecType.CP);
-	}
+    @Test
+    public void testRollMatrixSparseCP() {
+        runRollTest(TEST_NAME2, true, true, ExecType.CP);
+    }
 
-	private void runRollTest(String testname, boolean matrix, boolean sparse, ExecType instType)
-	{
-		//rtplatform for MR
-		ExecMode platformOld = rtplatform;
-		switch( instType ){
-			case SPARK: rtplatform = ExecMode.SPARK; break;
-			default: rtplatform = ExecMode.HYBRID; break;
-		}
-		boolean sparkConfigOld = DMLScript.USE_LOCAL_SPARK_CONFIG;
-		if( rtplatform == ExecMode.SPARK )
-			DMLScript.USE_LOCAL_SPARK_CONFIG = true;
+    private void runRollTest(String testname, boolean matrix, boolean sparse, ExecType instType) {
+        //rtplatform for MR
+        ExecMode platformOld = rtplatform;
+        switch (instType) {
+            case SPARK:
+                rtplatform = ExecMode.SPARK;
+                break;
+            default:
+                rtplatform = ExecMode.HYBRID;
+                break;
+        }
+        boolean sparkConfigOld = DMLScript.USE_LOCAL_SPARK_CONFIG;
+        if (rtplatform == ExecMode.SPARK) DMLScript.USE_LOCAL_SPARK_CONFIG = true;
 
-		String TEST_NAME = testname;
+        String TEST_NAME = testname;
 
-		try
-		{
-			int cols = matrix ? cols1 : 1;
-			double sparsity = sparse ? sparsity2 : sparsity1;
-			getAndLoadTestConfiguration(TEST_NAME);
+        try {
+            int cols = matrix ? cols1 : 1;
+            double sparsity = sparse ? sparsity2 : sparsity1;
+            getAndLoadTestConfiguration(TEST_NAME);
 
-			/* This is for running the junit test the new way, i.e., construct the arguments directly */
-			String HOME = SCRIPT_DIR + TEST_DIR;
-			fullDMLScriptName = HOME + TEST_NAME + ".dml";
-			programArgs = new String[]{"-stats","-explain","-args", input("A"), output("B") };
+            /* This is for running the junit test the new way, i.e., construct the arguments directly */
+            String HOME = SCRIPT_DIR + TEST_DIR;
+            fullDMLScriptName = HOME + TEST_NAME + ".dml";
+            programArgs = new String[]{"-stats", "-explain", "-args", input("A"), output("B")};
 
-			fullPythonScriptName = HOME + TEST_NAME + ".py";
-			pythonCmd = new String[] { "python3", fullPythonScriptName, inputDir(), expectedDir() };
+            fullPythonScriptName = HOME + TEST_NAME + ".py";
+            pythonCmd = new String[]{"python3", fullPythonScriptName, inputDir(), expectedDir()};
 
-			//generate actual dataset
-			double[][] A = getRandomMatrix(rows1, cols, -1, 1, sparsity, 7);
-			writeInputMatrixWithMTD("A", A, true);
+            //generate actual dataset
+            double[][] A = getRandomMatrix(rows1, cols, -1, 1, sparsity, 7);
+            writeInputMatrixWithMTD("A", A, true);
 
-			runTest(true, false, null, -1);
-			runPythonScript();
+            runTest(true, false, null, -1);
+            runPythonScript();
 
-			//compare matrices
-			HashMap<CellIndex, Double> dmlfile = readDMLMatrixFromOutputDir("B");
-			HashMap<CellIndex, Double> pythonfile  = readRMatrixFromExpectedDir("B.mtx");
+            //compare matrices
+            HashMap<CellIndex, Double> dmlfile = readDMLMatrixFromOutputDir("B");
+            HashMap<CellIndex, Double> pythonfile = readRMatrixFromExpectedDir("B.mtx");
 
-			TestUtils.compareMatrices(dmlfile, pythonfile, 0, "Stat-DML", "Stat-R");
+            TestUtils.compareMatrices(dmlfile, pythonfile, 0, "Stat-DML", "Stat-R");
 
-			//check generated opcode
-			if( instType == ExecType.CP )
-				Assert.assertTrue("Missing opcode: roll", Statistics.getCPHeavyHitterOpCodes().contains("roll"));
-			else if ( instType == ExecType.SPARK )
-				Assert.assertTrue("Missing opcode: "+Instruction.SP_INST_PREFIX+"roll", Statistics.getCPHeavyHitterOpCodes().contains(Instruction.SP_INST_PREFIX+"roll"));
-		}
-		finally
-		{
-			//reset flags
-			rtplatform = platformOld;
-			DMLScript.USE_LOCAL_SPARK_CONFIG = sparkConfigOld;
-		}
-	}
+            //check generated opcode
+            if (instType == ExecType.CP)
+                Assert.assertTrue("Missing opcode: roll", Statistics.getCPHeavyHitterOpCodes().contains("roll"));
+            else if (instType == ExecType.SPARK)
+                Assert.assertTrue("Missing opcode: " + Instruction.SP_INST_PREFIX +
+						"roll", Statistics.getCPHeavyHitterOpCodes().contains(Instruction.SP_INST_PREFIX + "roll"));
+        } finally {
+            //reset flags
+            rtplatform = platformOld;
+            DMLScript.USE_LOCAL_SPARK_CONFIG = sparkConfigOld;
+        }
+    }
 }

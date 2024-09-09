@@ -1273,10 +1273,10 @@ public class BuiltinFunctionExpression extends DataIdentifier {
 			checkScalarParam(getSecondExpr());
 			output.setDataType(DataType.MATRIX);
 			output.setDimensions(id.getDim1(), id.getDim2());
-			output.setBlocksize (id.getBlocksize());
+			output.setBlocksize(id.getBlocksize());
 			output.setValueType(id.getValueType());
 			break;
-			
+
 		case DIAG:
 			checkNumParameters(1);
 			checkMatrixParam(getFirstExpr());

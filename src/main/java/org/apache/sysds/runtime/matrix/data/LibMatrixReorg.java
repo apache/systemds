@@ -3119,7 +3119,9 @@ public class LibMatrixReorg {
 		if( in.isEmptyBlock(false) )
 			return ret;
 		
-		if( SHALLOW_COPY_REORG && m == rlen2 ) {
+		if( SHALLOW_COPY_REORG && m == rlen2 && select == null ) {
+			// the condition m==rlen2 is not enough with non-empty 1-row input but empty 
+			// 1-row select vector because if emptyReturn should output a single empty row
 			ret.sparse = in.sparse;
 			if( ret.sparse )
 				ret.sparseBlock = in.sparseBlock;
@@ -3130,10 +3132,8 @@ public class LibMatrixReorg {
 		{
 			//note: output dense or sparse
 			for( int i=0, cix=0; i<m; i++ )
-				if( flags[i] ) {
-					ret.appendRow(cix++, in.sparseBlock.get(i),
-						!SHALLOW_COPY_REORG);
-				}
+				if( flags[i] )
+					ret.appendRow(cix++, in.sparseBlock.get(i), !SHALLOW_COPY_REORG);
 		}
 		else if( !in.sparse && !ret.sparse )  //DENSE <- DENSE
 		{

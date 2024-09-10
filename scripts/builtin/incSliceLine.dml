@@ -94,7 +94,9 @@ m_incSliceLine = function(
     ((length(prevStats) == 0 | length(params) == 0 | nrow(prevFoffb) == 0 | nrow(prevFoffe) == 0 |
       nrow(oldX) == 0 | nrow(oldE) == 0) | (encodeLat & length(metaPrevLattice) == 0)))
   {
-    throwNoParamsError();
+      stop("incSliceLine: wrong or no parameters provided for incremental update. Please provide all parameters.\n"
+      + " -- necessary parameters: params, prevLattice, prevStats, prevFoffb, prevFoffe, prevTK, prevTKC, oldX, oldE. \n"
+      + " -- see documentation for more details.");
   }
 
   disableIncScorePruning = (pruningStrat == 1 | pruningStrat == 3);
@@ -113,11 +115,10 @@ m_incSliceLine = function(
     oldX = matrix(0,0,ncol(addedX));
     oldE = matrix(0,0,ncol(addedE));
   }
-
+  ## remove all rows from oldX and oldE that are in indicesRemoved
   removedTuples = matrix(0,0,ncol(oldX));
   removedE = matrix(0,0,1);
   if(length(indicesRemoved) > 0 & nrow(oldX)  > 0){
-    ## remove all rows from oldX and oldE that are in indicesRemoved
     [oldX, removedTuples] = removeRowsByIndices( oldX, indicesRemoved);
     [oldE, removedE] = removeRowsByIndices( oldE, indicesRemoved);
     if(verbose){
@@ -145,7 +146,8 @@ m_incSliceLine = function(
   #inititalize booleans
   differentOffsets = TRUE;
   if(nrow(prevFoffb) > 0){
-    differentOffsets = (!((sum(prevFoffb == foffb) == (ncol(foffb) * nrow(foffb))) & (sum(prevFoffe == foffe) == (ncol(foffe) * nrow(foffe))) ));
+    differentOffsets = (!((sum(prevFoffb == foffb) == (ncol(foffb) * nrow(foffb)))
+                     & (sum(prevFoffe == foffe) == (ncol(foffe) * nrow(foffe))) ));
   }
 
   # combining of addedX and oldX
@@ -565,28 +567,6 @@ oneHotEncodeUsingOffsets = function(Matrix[Double] A, Matrix[Double] foffb, Matr
   }
 }
 
-# throws an error if no params are provided for incremental updates.
-# in case only individual parameters are entered they will be overwritten to ensure consistency
-throwNoParamsError = function()
-  return(Matrix[Double] TK, Matrix[Double] TKC, Matrix[Double] D, list[unknown] L,
-    list[unknown] Stats, Matrix[Double] Xout, Matrix[Double] eOut, Matrix[Double] foffb,
-    Matrix[Double] foffe, list[unknown] metaLattice, list[unknown] params) {
-  stop("incSliceLine: wrong or no parameters provided for incremental update. Please provide all parameters.\n"
-      + " -- necessary parameters: params, prevLattice, prevStats, prevFoffb, prevFoffe, prevTK, prevTKC, oldX, oldE. \n"
-      + " -- see documentation for more details.");
-  TK = matrix(0,0,0);
-  TKC = matrix(0,0,0);
-  D = matrix(0,0,0);
-  L = list();
-  Stats = list();
-  Xout = matrix(0,0,0);
-  eOut = matrix(0,0,0);
-  foffb = matrix(0,0,0);
-  foffe = matrix(0,0,0);
-  metaLattice = list();
-  params = list();
-}
-
 # store parameters for next run and overwrite params if provided
 storeParams = function(Integer k, Integer maxL, Integer minSup, Double alpha, Boolean tpEval,
   Integer tpBlksz, Boolean selFeat, Boolean encodeLat, list[unknown] params)
@@ -608,17 +588,6 @@ storeParams = function(Integer k, Integer maxL, Integer minSup, Double alpha, Bo
   }
 }
 
-determineUnchangedSlices = function(Matrix[Double] prevStatsAtLevel, Matrix[Double] prevLatAtLevel, Matrix[Double] changedX2, Integer level)
-  return(Matrix[Double] unchangedS, Matrix[Double] unchangedR)
-{
-  # only computing unchanged slices for levels 2 and above,
-  # Imat has a 1 where a slice in changedX2 belongs to a slice in prevLatAtLevel
-  Imat = (changedX2 %*% t(prevLatAtLevel) == level);
-  unchangedSlicesI = colSums(Imat) == 0;
-  unchangedS = removeEmpty(target=prevLatAtLevel, margin="rows", select=unchangedSlicesI);
-  unchangedR = removeEmpty(target=prevStatsAtLevel, margin="rows", select=unchangedSlicesI);
-}
-
 computeLowestPrevTK = function(Matrix[Double] prevTK2, Matrix[Double] X2,
   Matrix[Double] totalE, Double eAvg, Double alpha)
   return(Double minsc, Matrix[Double] R)
@@ -637,26 +606,25 @@ computeLowestPrevTK = function(Matrix[Double] prevTK2, Matrix[Double] X2,
   sc = replace(target=sc, pattern=-Inf, replacement=0)
   R = cbind(sc, se, sm, ss);
   minsc = min(sc);
-
-  while(FALSE){} #prevent inlining (TODO rewrite issue)
 }
 
 pruneUnchangedSlices = function(Matrix[Double] S, Matrix[Double] S2, Matrix[Double] prevLattice2, list[unknown] prevStats, Matrix[Double] changedX2, Int minSup, Boolean verbose, Integer level)
   return(Matrix[Double] S, Matrix[Double] S2)
 {
-  unchangedS = matrix(0,0,ncol(prevLattice2));
-  unchangedR = matrix(0,0,4);
-  prevStatsAtLevel =  as.matrix(prevStats[level])
-  prevLatAtLevel = prevLattice2;
-  [unchangedS, unchangedR] = determineUnchangedSlices( prevStatsAtLevel, prevLatAtLevel, changedX2, level);
+  unchangedS = prevLattice2;
+  unchangedR =  as.matrix(prevStats[level])
 
+  # a) determine unchagned slices
+  # only computing unchanged slices for levels 2 and above,
+  # Imat has a 1 where a slice in changedX2 belongs to a slice in prevLatAtLevel
   if(nrow(S2) > 0 & nrow(unchangedS) > 0) {
-    # unchangedMat is matrix with 1 if slice is same as slice in unchangedS
-    # (thus slice is not changed in addedX)
-    unchangedMat = (S2 %*% t(unchangedS)) == level;
-    ss = rowMaxs(unchangedMat * t(unchangedR[,4]));
-    selCols = !(rowSums(unchangedMat) > 0 & ss < minSup);
-    if(sum(selCols) < nrow(S) ){
+    # b) select unchanged slices that can be pruned
+    I = t(colSums((changedX2 %*% t(unchangedS)) == level) == 0) # change pushdown
+        & unchangedR[,4] < minSup; # minSup pushdown
+    unchangedS2 = removeEmpty(target=unchangedS, margin="rows", select=I);
+    # c) select only rows that cannot be pruned
+    selCols = !rowSums((S2 %*% t(unchangedS2)) == level);
+    if(nrow(unchangedS) > 0 & sum(selCols) < nrow(S) ){
       S2 = removeEmpty(target=S2, margin="rows", select=selCols);
       S = removeEmpty(target=S, margin="rows", select=selCols);
     }
@@ -783,5 +751,5 @@ removeRowsByIndices = function(Matrix[Double] M, Matrix[Double] indices)
   CIX = removeEmpty(target=(table(indices,1,nrow(M),1)==0)*seq(1,nrow(M)), margin="rows")
   P2 = table(seq(1, nrow(CIX)), CIX, nrow(CIX), nrow(M))
   remain = P2 %*% M;
-  while(FALSE){} #prevent inlining (TODO rewrite issue)
 }
+

@@ -3889,7 +3889,7 @@ public class LibMatrixMult
 		}
 	}
 
-	private static void vectMultiply( double[] a, double[] c, int ai, int ci, final int len )
+	public static void vectMultiply(double[] a, double[] c, int ai, int ci, final int len)
 	{
 		final int bn = len%8;
 		

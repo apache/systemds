@@ -739,10 +739,10 @@ public interface Types {
 	
 	/** Operations that require a variable number of operands*/
 	public enum OpOpN {
-		PRINTF, CBIND, RBIND, MIN, MAX, PLUS, EVAL, LIST;
+		PRINTF, CBIND, RBIND, MIN, MAX, PLUS, MULT, EVAL, LIST;
 		
 		public boolean isCellOp() {
-			return this == MIN || this == MAX || this == PLUS;
+			return this == MIN || this == MAX || this == PLUS || this == MULT;
 		}
 	}
 	

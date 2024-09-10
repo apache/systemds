@@ -299,6 +299,7 @@ public class SPInstructionParser extends InstructionParser
 		String2SPInstructionType.put( "nmin",  SPType.BuiltinNary);
 		String2SPInstructionType.put( "nmax",  SPType.BuiltinNary);
 		String2SPInstructionType.put( "n+",  SPType.BuiltinNary);
+		String2SPInstructionType.put( "n*",  SPType.BuiltinNary);
 
 		String2SPInstructionType.put( DataGen.RAND_OPCODE  , SPType.Rand);
 		String2SPInstructionType.put( DataGen.SEQ_OPCODE   , SPType.Rand);

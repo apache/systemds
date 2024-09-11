@@ -26,6 +26,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.FileReader;
+import java.io.RandomAccessFile;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
@@ -577,6 +578,9 @@ public class TestUtils {
 				throw new RuntimeException("unknown matrix type while reading R matrix: " + line);
 
 			line = reader.readLine(); // header line with dimension and nnz information
+
+			if (line.startsWith("%"))	// skip blank comment(%) line in mtx file
+				line = reader.readLine();
 
 			while ((line = reader.readLine()) != null) {
 				StringTokenizer st = new StringTokenizer(line, " ");
@@ -2720,13 +2724,16 @@ public class TestUtils {
 				out = new DataOutputStream(new FileOutputStream(file));
 			}
 
+			int non_zero_cnt = 0;
+
 			try( BufferedWriter pw = new BufferedWriter(new OutputStreamWriter(out))) {
 
-				//write header
+				//write dummy header
 				if( isR ) {
-					/** add R header */
+					/** add space for R header */
 					pw.append("%%MatrixMarket matrix coordinate real general\n");
-					pw.append("" + matrix.length + " " + matrix[0].length + " " + matrix.length*matrix[0].length+"\n");
+					pw.append("" + matrix.length + " " + matrix[0].length + " " +
+							" ".repeat((String.valueOf(matrix.length * matrix[0].length)).length()) + "\n");
 				}
 
 				//writer actual matrix
@@ -2745,12 +2752,24 @@ public class TestUtils {
 						pw.append(sb.toString());
 						sb.setLength(0);
 						emptyOutput = false;
+
+						non_zero_cnt++;
 					}
 				}
 
 				//writer dummy entry if empty
 				if( emptyOutput )
 					pw.append("1 1 " + matrix[0][0]);
+			}
+
+			//write real header
+			if (isR) {
+				try (RandomAccessFile raf = new RandomAccessFile(file, "rws")) {
+					raf.seek(0);
+
+					raf.write("%%MatrixMarket matrix coordinate real general\n".getBytes());
+					raf.write(("" + matrix.length + " " + matrix[0].length + " " + non_zero_cnt).getBytes());
+				}
 			}
 		}
 		catch (IOException e)

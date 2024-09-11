@@ -20,18 +20,18 @@
 # -------------------------------------------------------------
 
 import unittest
-import random
-
 import numpy as np
+import random
+from scipy import sparse
 from systemds.context import SystemDSContext
 
 np.random.seed(7)
-
 shape = (random.randrange(1, 25), random.randrange(1, 25))
-m_empty = np.asarray([[]])
+
 m = np.random.rand(shape[0], shape[1])
 my = np.random.rand(shape[0], 1)
-
+m_empty = np.asarray([[]])
+m_sparse = sparse.random(shape[0], shape[1], density=0.1, format="csr").toarray()
 
 class TestRoll(unittest.TestCase):
     sds: SystemDSContext = None
@@ -56,6 +56,9 @@ class TestRoll(unittest.TestCase):
         r = self.sds.from_numpy(m).roll(1).compute()
         self.assertTrue(np.allclose(r, np.roll(m, axis=0, shift=1)))
 
+    def test_sparse_matrix(self):
+        r = self.sds.from_numpy(m_sparse).roll(1).compute()
+        self.assertTrue(np.allclose(r, np.roll(m_sparse, axis=0, shift=1)))
 
 if __name__ == "__main__":
     unittest.main(exit=False)

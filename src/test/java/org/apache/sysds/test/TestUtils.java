@@ -579,6 +579,9 @@ public class TestUtils {
 
 			line = reader.readLine(); // header line with dimension and nnz information
 
+			if (line.startsWith("%"))	// skip blank comment(%) line in mtx file
+				line = reader.readLine();
+
 			while ((line = reader.readLine()) != null) {
 				StringTokenizer st = new StringTokenizer(line, " ");
 				int i = Integer.parseInt(st.nextToken());

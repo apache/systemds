@@ -197,7 +197,6 @@ public abstract class AutomatedTestBase {
 	protected String fullDMLScriptName; // utilize for both DML and PyDML, should probably be renamed.
 	// protected String fullPYDMLScriptName;
 	protected String fullRScriptName;
-	protected String fullPythonScriptName;
 
 	protected static String baseDirectory;
 	protected static String sourceDirectory;
@@ -210,14 +209,12 @@ public abstract class AutomatedTestBase {
 	// protected String[] dmlArgs; /* program-independent arguments to SystemDS (e.g., debug, execution mode) */
 	protected String[] programArgs; /* program-specific arguments, which are passed to SystemDS via -args option */
 	protected String rCmd; /* Rscript foo.R arg1, arg2 ... */
-	protected String[] pythonCmd;
 
 	protected String selectedTest;
 	protected String[] outputDirectories;
 	protected String[] comparisonFiles;
 	protected ArrayList<String> inputDirectories;
 	protected ArrayList<String> inputRFiles;
-	protected ArrayList<String> inputPythonFiles;
 	protected ArrayList<String> expectedFiles;
 
 	private File curLocalTempDir = null;
@@ -300,7 +297,6 @@ public abstract class AutomatedTestBase {
 		testVariables = new HashMap<>();
 		inputDirectories = new ArrayList<>();
 		inputRFiles = new ArrayList<>();
-		inputPythonFiles = new ArrayList<>();
 		expectedFiles = new ArrayList<>();
 		outputDirectories = new String[0];
 		setOutAndExpectedDeletionDisabled(false);
@@ -1267,93 +1263,14 @@ public abstract class AutomatedTestBase {
 		}
 	}
 
-	/**
-	 * Runs an Python script
-	 */
-	protected void runPythonScript() {
-		String executionFile = sourceDirectory + selectedTest + ".py";
-
-		// *** HACK ALERT *** HACK ALERT *** HACK ALERT ***
-		// Some of the R scripts will fail if the "expected" directory doesn't exist.
-		// Make sure the directory exists.
-		File expectedDir = new File(baseDirectory, "expected" + "/" + cacheDir);
-		expectedDir.mkdirs();
-
-		String outputPython;
-		String errorString;
-		try {
-			long t0 = System.nanoTime();
-			if (LOG.isInfoEnabled()) {
-				LOG.info("starting Python script");
-				LOG.debug("Python cmd: " + pythonCmd);
-			}
-
-			Process child = Runtime.getRuntime().exec(pythonCmd);
-
-			outputPython = IOUtils.toString(child.getInputStream(), Charset.defaultCharset());
-			errorString = IOUtils.toString(child.getErrorStream(), Charset.defaultCharset());
-
-			//
-			// To give any stream enough time to print all data, otherwise there
-			// are situations where the test case fails, even before everything
-			// has been printed
-			//
-			child.waitFor();
-			try {
-				if (child.exitValue() != 0) {
-					throw new Exception("ERROR: Python has ended irregularly\n" +
-							buildOutputStringPython(outputPython, errorString) + "\nscript file: " + executionFile);
-				}
-			} catch (IllegalThreadStateException ie) {
-				// In UNIX JVM does not seem to be able to close threads
-				// correctly. However, give it a try, since Python processed the
-				// script, therefore we can terminate the process.
-				child.destroy();
-			}
-
-			if (!outputBuffering) {
-				System.out.println(buildOutputStringPython(outputPython, errorString));
-			}
-
-			long t1 = System.nanoTime();
-
-			LOG.info("Python is finished (in " + ((double) t1 - t0) / 1000000000 + " sec)");
-		} catch (Exception e) {
-			if (e.getMessage().contains("ERROR: Python has ended irregularly")) {
-				StringBuilder errorMessage = new StringBuilder();
-				errorMessage.append(e.getMessage());
-				fail(errorMessage.toString());
-			} else {
-				e.printStackTrace();
-				StringBuilder errorMessage = new StringBuilder();
-				errorMessage.append("failed to run script " + executionFile);
-				errorMessage.append("\nexception: " + e.toString());
-				errorMessage.append("\nmessage: " + e.getMessage());
-				errorMessage.append("\nstack trace:");
-				for (StackTraceElement ste : e.getStackTrace()) {
-					errorMessage.append("\n>" + ste);
-				}
-				fail(errorMessage.toString());
-			}
-		}
-	}
-
-	private static String buildOutputString(String standardOut, String standardError, String language){
+	private static String buildOutputStringR(String standardOut, String standardError){
 		StringBuilder sb = new StringBuilder();
-		sb.append(language + " Standard output :\n");
+		sb.append("R Standard output :\n");
 		sb.append(standardOut);
-		sb.append("\n" + language +" Standard Error  :\n");
+		sb.append("\nR Standard Error  :\n");
 		sb.append(standardError);
 		sb.append("\n");
 		return sb.toString();
-	}
-
-	private static String buildOutputStringR(String standardOut, String standardError){
-		return buildOutputString(standardOut, standardError, "R");
-	}
-
-	private static String buildOutputStringPython(String standardOut, String standardError){
-		return buildOutputString(standardOut, standardError, "Python");
 	}
 
 	/**

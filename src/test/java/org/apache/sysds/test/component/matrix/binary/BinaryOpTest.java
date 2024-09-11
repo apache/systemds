@@ -41,6 +41,7 @@ import org.apache.sysds.runtime.functionobjects.BitwShiftR;
 import org.apache.sysds.runtime.functionobjects.BitwXor;
 import org.apache.sysds.runtime.functionobjects.Builtin;
 import org.apache.sysds.runtime.functionobjects.Builtin.BuiltinCode;
+import org.apache.sysds.runtime.functionobjects.Divide;
 import org.apache.sysds.runtime.functionobjects.Equals;
 import org.apache.sysds.runtime.functionobjects.GreaterThan;
 import org.apache.sysds.runtime.functionobjects.GreaterThanEquals;
@@ -104,6 +105,7 @@ public class BinaryOpTest {
 				(GreaterThanEquals.getGreaterThanEqualsFnObject()), //
 				(Multiply.getMultiplyFnObject()), //
 				(Modulus.getFnObject()), //
+				Divide.getDivideFnObject(), //
 				(IntegerDivide.getFnObject()), //
 				(Equals.getEqualsFnObject()), //
 				(NotEquals.getNotEqualsFnObject()), //
@@ -137,20 +139,20 @@ public class BinaryOpTest {
 					final MatrixBlock b_cv = TestUtils.floor(TestUtils.generateTestMatrixBlock(s, 1, 0, 10, rs, 5));
 					for(double ls : sparsities) {
 						final MatrixBlock a = TestUtils.floor(TestUtils.generateTestMatrixBlock(s, s, 0, 10, ls, 2));
-						final MatrixBlock a_dense;
-						if(ls < 0.4 && a.isInSparseFormat()) {
-							a_dense = new MatrixBlock();
-							// a_dense.copy(a, false);
-						}
-						else
-							a_dense = null;
+						// final MatrixBlock a_dense;
+						// if(ls < 0.4 && a.isInSparseFormat()) {
+						// 	a_dense = new MatrixBlock();
+						// 	// a_dense.copy(a, false);
+						// }
+						// else
+						// 	a_dense = null;
 						final MatrixBlock a_cv = TestUtils.floor(TestUtils.generateTestMatrixBlock(s, 1, 0, 10, ls, 2));
 						for(ValueFunction v : vf) {
 							tests.add(new Object[] {a, b, 1, name("%s-st-MM-%4.4f-%4.4f-%d", s, ls, rs, v), v});
 							tests.add(new Object[] {a, b, 16, name("%s-mt-MM-%4.4f-%4.4f-%d", s, ls, rs, v), v});
 							// if(a_dense != null) {
-							// 	tests.add(new Object[] {a_dense, b, 1, name("%s-st-MM-%4.4f-%4.4f-%d", s, ls, rs, v), v});
-							// 	tests.add(new Object[] {a_dense, b, 16, name("%s-mt-MM-%4.4f-%4.4f-%d", s, ls, rs, v), v});
+							// tests.add(new Object[] {a_dense, b, 1, name("%s-st-MM-%4.4f-%4.4f-%d", s, ls, rs, v), v});
+							// tests.add(new Object[] {a_dense, b, 16, name("%s-mt-MM-%4.4f-%4.4f-%d", s, ls, rs, v), v});
 							// }
 							tests.add(new Object[] {a, b_rv, 1, name("%s-st-MrV-%4.4f-%4.4f-%d", s, ls, rs, v), v});
 							tests.add(new Object[] {a, b_rv, 16, name("%s-mt-MrV-%4.4f-%4.4f-%d", s, ls, rs, v), v});
@@ -266,7 +268,8 @@ public class BinaryOpTest {
 		nnz += v != 0.0 ? 1 : 0;
 		double v2 = emptyR ? 0.0 : rdb.get(i, j);
 		if(!Util.eq(v, v2)) {
-			fail(String.format("%d,%d cell not equal: expected %4.2f vs got %4.2f : inputs %2.2f and %2.1f op:%s", i, j, v, v2, in1, in2, op.toString()));
+			fail(String.format("%d,%d cell not equal: expected %4.2f vs got %4.2f : inputs %2.2f and %2.1f op:%s", i, j, v,
+				v2, in1, in2, op.toString()));
 		}
 		return nnz;
 	}

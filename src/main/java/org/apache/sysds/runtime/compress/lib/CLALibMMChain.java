@@ -136,7 +136,7 @@ public final class CLALibMMChain {
 	private static MatrixBlock binaryMultW(MatrixBlock tmp, MatrixBlock w, int k) {
 		final BinaryOperator bop = new BinaryOperator(Multiply.getMultiplyFnObject(), k);
 		if(tmp instanceof CompressedMatrixBlock)
-			tmp = CLALibBinaryCellOp.binaryOperationsRight(bop, (CompressedMatrixBlock) tmp, w, null);
+			tmp = CLALibBinaryCellOp.binaryOperationsRight(bop, (CompressedMatrixBlock) tmp, w);
 		else
 			LibMatrixBincell.bincellOpInPlace(tmp, w, bop);
 		return tmp;

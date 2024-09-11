@@ -49,7 +49,7 @@ public class ParCompressedMatrixTest extends AbstractCompressedUnaryTests {
 		CompressionSettingsBuilder compressionSettings, MatrixTypology matrixTypology, OverLapping ov,
 		Collection<CompressionType> ct, CostEstimatorBuilder csb) {
 		super(sparType, valType, valRange, compressionSettings, matrixTypology, ov,
-			InfrastructureAnalyzer.getLocalParallelism(), ct, csb);
+			InfrastructureAnalyzer.getLocalParallelism(), ct, csb);	
 	}
 
 	@Override

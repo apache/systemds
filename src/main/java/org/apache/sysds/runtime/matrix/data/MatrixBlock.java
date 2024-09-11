@@ -56,6 +56,7 @@ import org.apache.sysds.runtime.compress.CompressedMatrixBlock;
 import org.apache.sysds.runtime.compress.DMLCompressionException;
 import org.apache.sysds.runtime.compress.lib.CLALibAggTernaryOp;
 import org.apache.sysds.runtime.compress.lib.CLALibMerge;
+import org.apache.sysds.runtime.compress.lib.CLALibTernaryOp;
 import org.apache.sysds.runtime.controlprogram.caching.CacheBlock;
 import org.apache.sysds.runtime.controlprogram.caching.MatrixObject.UpdateType;
 import org.apache.sysds.runtime.data.DenseBlock;
@@ -88,7 +89,6 @@ import org.apache.sysds.runtime.functionobjects.ReduceRow;
 import org.apache.sysds.runtime.functionobjects.RevIndex;
 import org.apache.sysds.runtime.functionobjects.SortIndex;
 import org.apache.sysds.runtime.functionobjects.SwapIndex;
-import org.apache.sysds.runtime.functionobjects.TernaryValueFunction.ValueFunctionWithConstant;
 import org.apache.sysds.runtime.instructions.InstructionUtils;
 import org.apache.sysds.runtime.instructions.cp.CM_COV_Object;
 import org.apache.sysds.runtime.instructions.cp.KahanObject;
@@ -3017,7 +3017,7 @@ public class MatrixBlock extends MatrixValue implements CacheBlock<MatrixBlock>,
 		if(thatValue instanceof CompressedMatrixBlock)
 			return ((CompressedMatrixBlock) thatValue).binaryOperationsLeft(op, this, result);
 
-		return LibMatrixBincell.bincellOp(this, that, ret, op, op.getNumThreads());
+		return LibMatrixBincell.bincellOp(this, that, ret, op);
 	}
 
 	@Override
@@ -3026,11 +3026,19 @@ public class MatrixBlock extends MatrixValue implements CacheBlock<MatrixBlock>,
 		return LibMatrixBincell.bincellOpInPlace(this, that, op);
 	}
 	
+
+	public final MatrixBlock ternaryOperations(TernaryOperator op, MatrixBlock m2, MatrixBlock m3) {
+		return ternaryOperations(op, m2, m3, null);
+	}
+
 	public MatrixBlock ternaryOperations(TernaryOperator op, MatrixBlock m2, MatrixBlock m3, MatrixBlock ret) {
+		if(m2 instanceof CompressedMatrixBlock || m3 instanceof CompressedMatrixBlock)
+			return CLALibTernaryOp.ternaryOperations(op, this, m2, m3);
 		
 		if(ret == null)
 			ret = new MatrixBlock();
-
+	
+		
 		//prepare inputs
 		final int r1 = getNumRows();
 		final int r2 = m2.getNumRows();
@@ -3083,27 +3091,27 @@ public class MatrixBlock extends MatrixValue implements CacheBlock<MatrixBlock>,
 			final boolean sparseOutput = evalSparseFormatInMemory(m, n, (s1 ? m * n * (d1 != 0 ? 1 : 0) : getNonZeros()) +
 				Math.min(s2 ? m * n : m2.getNonZeros(), s3 ? m * n : m3.getNonZeros()));
 
-			if(m2 instanceof CompressedMatrixBlock)
-				m2 = ((CompressedMatrixBlock) m2)
-					.getUncompressed("Ternary Operator arg2 " + op.fn.getClass().getSimpleName(), op.getNumThreads());
-			if(m3 instanceof CompressedMatrixBlock)
-				m3 = ((CompressedMatrixBlock) m3)
-					.getUncompressed("Ternary Operator arg3 " + op.fn.getClass().getSimpleName(), op.getNumThreads());
-
-
-			if (s2 != s3 && (op.fn instanceof PlusMultiply || op.fn instanceof MinusMultiply) ) {
+			if(s1 && s2 && s3) {
+				double v = op.fn.execute(d1, d2, d3);
+				return new MatrixBlock(m, n, v);
+			}
+			else if((s2 && s3) || (s1 && s2) || (s1 && s3)) {
+				LOG.debug("Ternary operator could be converted to scalar because of constant sides");
+			}
+			else if (s2 != s3 && (op.fn instanceof PlusMultiply || op.fn instanceof MinusMultiply) ) {
 				//SPECIAL CASE for sparse-dense combinations of common +* and -*
-				BinaryOperator bop = ((ValueFunctionWithConstant)op.fn).setOp2Constant(s2 ? d2 : d3);
-				ret = LibMatrixBincell.bincellOp(this, s2 ? m3 : m2, ret, bop, op.getNumThreads());
+				BinaryOperator bop = op.setOp2Constant(s2 ? d2 : d3);
+				ret = LibMatrixBincell.bincellOp(this, s2 ? m3 : m2, ret, bop);
+				return ret;
 			}
-			else {
-				ret.reset(m, n, sparseOutput);
-				//DEFAULT CASE
-				LibMatrixTercell.tercellOp(this, m2, m3, ret, op);
+			
+			ret.reset(m, n, sparseOutput);
+			//DEFAULT CASE
+			LibMatrixTercell.tercellOp(this, m2, m3, ret, op);
 				
-				//ensure correct output representation
-				ret.examSparsity();
-			}
+			//ensure correct output representation
+			ret.examSparsity();
+			
 		}
 		
 		return ret;

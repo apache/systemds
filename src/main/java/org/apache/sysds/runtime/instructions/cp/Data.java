@@ -66,4 +66,8 @@ public abstract class Data implements Serializable
 	public void updateDataCharacteristics(DataCharacteristics mc) {
 		throw new DMLRuntimeException("This method in the base class should never be invoked.");
 	}
+	
+	public String toString(boolean metaOnly) {
+		return toString();
+	}
 }

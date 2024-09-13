@@ -24,9 +24,8 @@ import org.apache.sysds.hops.OptimizerUtils;
 import org.apache.sysds.resource.CloudInstance;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.controlprogram.context.SparkExecutionContext;
+import org.apache.sysds.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
-
-import static org.apache.sysds.resource.cost.RDDStats.CheckpointStatus.MEMORY_AND_DISK_SER;
 
 public class IOCostUtils {
 	// NOTE: this class does NOT include methods for estimating IO time
@@ -41,7 +40,7 @@ public class IOCostUtils {
 //	private static final double WRITE_DISK_FACTOR = 0.5;
 	private static final double SERIALIZATION_FACTOR = 0.5;
 	private static final double DESERIALIZATION_FACTOR = 0.8;
-	public static final long DEFAULT_FLOPS = 2L * 1024 * 1024 * 1024; // 2 GFLOPS
+	public static final long DEFAULT_FLOPS = 2L * 1024 * 1024 * 1024; // 2 gFLOPS
 
 	public static class IOMetrics {
 		// FLOPS value not directly related to I/O metrics,
@@ -169,6 +168,7 @@ public class IOCostUtils {
 	protected static final String S3_SOURCE_IDENTIFIER = "s3";
 	protected static final String HDFS_SOURCE_IDENTIFIER = "hdfs";
 
+
 	public static double getMemReadTime(VarStats stats, IOMetrics metrics) {
 		if (stats.isScalar()) return 0; // scalars
 		if (stats.allocatedMemory < 0)
@@ -181,18 +181,16 @@ public class IOCostUtils {
 		// no scalars expected
 		if (stats.distributedSize < 0)
 			throw new RuntimeException("RDDStats.distributedMemory should carry the estimated size before getting read time");
+		double numWaves = Math.ceil((double) stats.numPartitions / SparkExecutionContext.getDefaultParallelism(false));
 		double sizeMB = (double) stats.distributedSize / (1024 * 1024);
-		double time = 0;
-		time += sizeMB / metrics.memReadBandwidth;
-		return time;
+		return (numWaves * sizeMB) / (stats.numPartitions * metrics.memReadBandwidth);
 	}
 
 	public static double getMemWriteTime(VarStats stats, IOMetrics metrics) {
 		if (stats == null) return 0; // scalars
 		if (stats.allocatedMemory < 0)
 			throw new DMLRuntimeException("VarStats.allocatedMemory should carry the estimated size before getting write time");
-		long size = stats.allocatedMemory;
-		double sizeMB = (double) size / (1024 * 1024);
+		double sizeMB = (double) stats.allocatedMemory / (1024 * 1024);
 
 		return sizeMB / metrics.memWriteBandwidth;
 	}
@@ -201,10 +199,9 @@ public class IOCostUtils {
 		// no scalars expected
 		if (stats.distributedSize < 0)
 			throw new RuntimeException("RDDStats.distributedMemory should carry the estimated size before getting write time");
+		double numWaves = Math.ceil((double) stats.numPartitions / SparkExecutionContext.getDefaultParallelism(false));
 		double sizeMB = (double) stats.distributedSize / (1024 * 1024);
-		double time = 0;
-		time += sizeMB / metrics.memWriteBandwidth;
-		return time;
+		return (numWaves * sizeMB) / (stats.numPartitions * metrics.memWriteBandwidth);
 	}
 
 	/**
@@ -213,17 +210,10 @@ public class IOCostUtils {
 	 * @param metrics I/O metrics for the driver node
 	 * @return estimated time in seconds
 	 */
-	public static double getDiskReadTime(VarStats stats, IOMetrics metrics) {
+	public static double getFileSystemReadTime(VarStats stats, IOMetrics metrics) {
 		String sourceType = (String) stats.fileInfo[0];
 		Types.FileFormat format = (Types.FileFormat) stats.fileInfo[1];
-		double sizeMB;
-		if (format == Types.FileFormat.BINARY) {
-			sizeMB = (double) MatrixBlock.estimateSizeOnDisk(stats.getM(), stats.getM(), stats.getNNZ()) / (1024*1024);
-		} else if (format.isTextFormat()) {
-			sizeMB = (double) OptimizerUtils.estimateSizeTextOutput(stats.getM(), stats.getM(), stats.getNNZ(), format)  / (1024*1024);
-		} else { // compressed
-			throw new RuntimeException("Format " + format.toString() + " is not supported for estimation yet.");
-		}
+		double sizeMB = getFileSizeInMB(stats);
 		boolean isSparse = MatrixBlock.evalSparseFormatOnDisk(stats.getM(), stats.getN(), stats.getNNZ());
 		return getDiskReadTime(sizeMB, isSparse, sourceType, format, metrics);
 	}
@@ -245,18 +235,12 @@ public class IOCostUtils {
 	public static double getHadoopReadTime(VarStats stats, IOMetrics metrics) {
 		String sourceType = (String) stats.fileInfo[0];
 		Types.FileFormat format = (Types.FileFormat) stats.fileInfo[1];
-		long size;
-		if (format == Types.FileFormat.BINARY) {
-			size = MatrixBlock.estimateSizeOnDisk(stats.getM(), stats.getM(), stats.getNNZ());
-		} else if (format.isTextFormat()) {
-			size = OptimizerUtils.estimateSizeTextOutput(stats.getM(), stats.getM(), stats.getNNZ(), format);
-		} else { // compressed
-			throw new RuntimeException("Format " + format + " is not supported for estimation yet.");
-		}
+		long size =  getPartitionedFileSize(stats);
 		// since getDiskReadTime() computes the write time utilizing the whole executor resources
 		// use the fact that <partition size> / <bandwidth per slot> = <partition size> * <slots per executor> / <bandwidth per executor>
-		double numPartitions = Math.ceil((double) size / RDDStats.hdfsBlockSize);
-		double sizePerExecutorMB = (double) (metrics.cpuCores * RDDStats.hdfsBlockSize) / (1024*1024);
+		long hdfsBlockSize = InfrastructureAnalyzer.getHDFSBlockSize();
+		double numPartitions = Math.ceil((double) size / hdfsBlockSize);
+		double sizePerExecutorMB = (double) (metrics.cpuCores * hdfsBlockSize) / (1024*1024);
 		boolean isSparse = MatrixBlock.evalSparseFormatOnDisk(stats.getM(), stats.getN(), stats.getNNZ());
 		double timePerCore = getDiskReadTime(sizePerExecutorMB, isSparse, sourceType, format, metrics); // same as time per executor
 		// number of execution waves (maximum task to execute per core)
@@ -305,14 +289,7 @@ public class IOCostUtils {
 	public static double getDiskWriteTime(VarStats stats, IOMetrics metrics) {
 		String sourceType = (String) stats.fileInfo[0];
 		Types.FileFormat format = (Types.FileFormat) stats.fileInfo[1];
-		double sizeMB;
-		if (format == Types.FileFormat.BINARY) {
-			sizeMB = (double) MatrixBlock.estimateSizeOnDisk(stats.getM(), stats.getM(), stats.getNNZ()) / (1024*1024);
-		} else if (format.isTextFormat()) {
-			sizeMB = (double) OptimizerUtils.estimateSizeTextOutput(stats.getM(), stats.getM(), stats.getNNZ(), format)  / (1024*1024);
-		} else { // compressed
-			throw new RuntimeException("Format " + format + " is not supported for estimation yet.");
-		}
+		double sizeMB = getFileSizeInMB(stats);
 		boolean isSparse = MatrixBlock.evalSparseFormatOnDisk(stats.getM(), stats.getN(), stats.getNNZ());
 		return getDiskWriteTime(sizeMB, isSparse, sourceType, format, metrics);
 	}
@@ -332,14 +309,7 @@ public class IOCostUtils {
 		}
 		String sourceType = (String) stats.fileInfo[0];
 		Types.FileFormat format = (Types.FileFormat) stats.fileInfo[1];
-		long size;
-		if (format == Types.FileFormat.BINARY) {
-			size = MatrixBlock.estimateSizeOnDisk(stats.getM(), stats.getM(), stats.getNNZ());
-		} else if (format.isTextFormat()) {
-			size = OptimizerUtils.estimateSizeTextOutput(stats.getM(), stats.getM(), stats.getNNZ(), format);
-		} else { // compressed
-			throw new RuntimeException("Format " + format + " is not supported for estimation yet.");
-		}
+		long size = getPartitionedFileSize(stats);
 		// time = <num. waves> * <partition size> / <bandwidth per slot>
 		// here it cannot be assumed that the partition size is equal to the HDFS block size
 		double sizePerPartitionMB = (double) size / stats.rddStats.numPartitions / (1024*1024);
@@ -386,7 +356,7 @@ public class IOCostUtils {
 		return time;
 	}
 
-	public static double getParallelizeTime(RDDStats output, IOMetrics driverMetrics, IOMetrics executorMetrics) {
+	public static double getSparkParallelizeTime(RDDStats output, IOMetrics driverMetrics, IOMetrics executorMetrics) {
 		// TODO: ensure the object related to stats is read in memory already ot add logic to account for its read time
 		// it is assumed that the RDD object is already created/read
 		// general idea: time = <serialization time> + <transfer time>;
@@ -448,6 +418,22 @@ public class IOCostUtils {
 	}
 
 	/**
+	 * Estimates the time for reading distributed RDD input at the beginning of a Stage
+	 * when a wide-transformation is partition preserving: only local disk reads
+	 *
+	 * @param input RDD statistics for the object to be shuffled (read) at the begging of a Stage.
+	 * @param metrics I/O metrics for the executor nodes
+	 * @return estimated time in seconds
+	 */
+	public static double getSparkShuffleReadStaticTime(RDDStats input, IOMetrics metrics) {
+		double sizeMB = (double) input.distributedSize / (1024 * 1024);
+		int currentParallelism = Math.min(input.numPartitions, SparkExecutionContext.getDefaultParallelism(false));
+		double readBandwidthPerSlot = metrics.memReadBandwidth / metrics.cpuCores;
+		// read time
+		return sizeMB / (currentParallelism * readBandwidthPerSlot);
+	}
+
+	/**
 	 * Estimates the time for writing the RDD output to the local system at the end of a ShuffleMapStage;
 	 * time = disk write time (overlaps and dominates the serialization time)
 	 * The whole data set is being written to shuffle files even if 1 executor is utilized;
@@ -465,6 +451,25 @@ public class IOCostUtils {
 	}
 
 	/**
+	 * Combines the shuffle write and read time since these are being typically
+	 * added in one place to the general data transmission for instruction estimation.
+	 *
+	 * @param output RDD statistics for the output each ShuffleMapStage
+	 * @param metrics I/O metrics for the executor nodes
+	 * @param withDistribution flag if the data is indeed reshuffled (default case),
+	 *                         false in case of co-partitioned wide-transformation
+	 * @return estimated time in seconds
+	 */
+	public static double getSparkShuffleTime(RDDStats output, IOMetrics metrics, boolean withDistribution) {
+		double totalTime = getSparkShuffleWriteTime(output, metrics);
+		if (withDistribution)
+			totalTime += getSparkShuffleReadTime(output, metrics);
+		else
+			totalTime += getSparkShuffleReadStaticTime(output, metrics);
+		return totalTime;
+	}
+
+	/**
 	 * Estimates the time for broadcasting an object;
 	 * This function takes into account the torrent-like mechanism
 	 * for broadcast distribution across all executors;
@@ -474,7 +479,7 @@ public class IOCostUtils {
 	 * @param executorMetrics I/O metrics for the executor nodes
 	 * @return estimated time in seconds
 	 */
-	protected static double getBroadcastTime(VarStats stats, IOMetrics driverMetrics, IOMetrics executorMetrics) {
+	protected static double getSparkBroadcastTime(VarStats stats, IOMetrics driverMetrics, IOMetrics executorMetrics) {
 		// TODO: ensure the object related to stats is read in memory already ot add logic to account for its read time
 		// it is assumed that the Cp broadcast object is already created/read
 		// general idea: time = <serialization time> + <transfer time>;
@@ -495,5 +500,35 @@ public class IOCostUtils {
 			return fileParts[0].toLowerCase();
 		}
 		return HDFS_SOURCE_IDENTIFIER;
+	}
+
+	//////////////////////////////////////////////////////////////////////////////////////////////
+	// Helpers 																				    //
+	//////////////////////////////////////////////////////////////////////////////////////////////
+
+	private static double getFileSizeInMB(VarStats fileStats) {
+		Types.FileFormat format = (Types.FileFormat) fileStats.fileInfo[1];
+		double sizeMB;
+		if (format == Types.FileFormat.BINARY) {
+			sizeMB = (double) MatrixBlock.estimateSizeOnDisk(fileStats.getM(), fileStats.getM(), fileStats.getNNZ()) / (1024*1024);
+		} else if (format.isTextFormat()) {
+			sizeMB = (double) OptimizerUtils.estimateSizeTextOutput(fileStats.getM(), fileStats.getM(), fileStats.getNNZ(), format)  / (1024*1024);
+		} else { // compressed
+			throw new RuntimeException("Format " + format + " is not supported for estimation yet.");
+		}
+		return sizeMB;
+	}
+
+	private static long getPartitionedFileSize(VarStats fileStats) {
+		Types.FileFormat format = (Types.FileFormat) fileStats.fileInfo[1];
+		long size;
+		if (format == Types.FileFormat.BINARY) {
+			size = MatrixBlock.estimateSizeOnDisk(fileStats.getM(), fileStats.getM(), fileStats.getNNZ());
+		} else if (format.isTextFormat()) {
+			size = OptimizerUtils.estimateSizeTextOutput(fileStats.getM(), fileStats.getM(), fileStats.getNNZ(), format);
+		} else { // compressed
+			throw new RuntimeException("Format " + format + " is not supported for estimation yet.");
+		}
+		return size;
 	}
 }

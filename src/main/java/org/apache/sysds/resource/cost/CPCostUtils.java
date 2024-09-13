@@ -1,27 +1,39 @@
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+ */
+
 package org.apache.sysds.resource.cost;
 
-import com.google.errorprone.annotations.Var;
 import org.apache.sysds.common.Types;
 import org.apache.sysds.hops.OptimizerUtils;
 import org.apache.sysds.lops.*;
 import org.apache.sysds.runtime.DMLRuntimeException;
-import org.apache.sysds.runtime.instructions.InstructionUtils;
 import org.apache.sysds.runtime.instructions.cp.*;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.matrix.operators.CMOperator;
-
-import java.util.HashMap;
-import java.util.Objects;
 
 import static org.apache.sysds.resource.cost.IOCostUtils.IOMetrics;
 import static org.apache.sysds.runtime.instructions.cp.CPInstruction.CPType;
 public class CPCostUtils {
     private static final long DEFAULT_NFLOP_NOOP = 10;
-    private static final double DEFAULT_NFLOP_UNKNOWN = 1;
     private static final long DEFAULT_NFLOP_CP = 1;
     private static final long DEFAULT_NFLOP_TEXT_IO = 350;
     private static final long DEFAULT_INFERRED_DIM = 1000000;
-    private static final double DEFAULT_NOOP_TIME = 1E-5; // TODO: refine
 
 
     public static double getVariableInstTime(VariableCPInstruction inst, VarStats input, VarStats output, IOMetrics metrics) {
@@ -51,7 +63,7 @@ public class CPCostUtils {
         long nflop;
         String opcode = inst.getOpcode();
         if( inst instanceof DataGenCPInstruction) {
-            if (opcode.equals(DataGen.RAND_OPCODE)) {
+            if (opcode.equals("rand") || opcode.equals("frame")) {
                 DataGenCPInstruction rinst = (DataGenCPInstruction) inst;
                 if( rinst.getMinValue() == 0.0 && rinst.getMaxValue() == 0.0 )
                     nflop = 0; // empty matrix
@@ -68,7 +80,7 @@ public class CPCostUtils {
             } else if (opcode.equals(DataGen.SEQ_OPCODE)) {
                 nflop = DEFAULT_NFLOP_CP * output.getCells();
             } else {
-                // DataGen.SAMPLE_OPCODE, DataGen.TIME_OPCODE, DataGen.FRAME_OPCODE
+                // DataGen.SAMPLE_OPCODE, DataGen.TIME_OPCODE,
                 throw new RuntimeException("Undefined behaviour for instruction with opcode: " + inst.getOpcode());
             }
         }
@@ -84,13 +96,16 @@ public class CPCostUtils {
         if (inst instanceof UaggOuterChainCPInstruction || inst instanceof DnnCPInstruction) {
             throw new RuntimeException("Time estimation for CP instruction of class " + inst.getClass().getName() + "not supported yet");
         }
+        // CPType = Unary/Builtin
         CPType instructionType = inst.getCPInstructionType();
         String opcode = inst.getOpcode();
 
         boolean includeWeights = false;
         if (inst instanceof MMTSJCPInstruction) {
             MMTSJ.MMTSJType type = ((MMTSJCPInstruction) inst).getMMTSJType();
-            opcode += type.isLeft()? "_left" : "_right";
+            opcode += type.isLeft() ? "_left" : "_right";
+        } else if (inst instanceof ReorgCPInstruction && opcode.equals("rsort")) {
+            if (inst.input2 != null) includeWeights = true;
         } else if (inst instanceof QuantileSortCPInstruction) {
             if (inst.input2 != null) {
                 opcode += "_wts";
@@ -105,11 +120,12 @@ public class CPCostUtils {
         }
         long nflop = getInstNFLOP(instructionType, opcode, output, input);
         if (includeWeights)
-            return getCPUTime(nflop, metrics, output, input);
+            return getCPUTime(nflop, metrics, output, input, weights);
         return getCPUTime(nflop, metrics, output, input);
     }
 
     public static double getBinaryInstTime(BinaryCPInstruction inst, VarStats input1, VarStats input2, VarStats weights, VarStats output, IOMetrics metrics) {
+        // CPType = Binary/Builtin
         CPType instructionType = inst.getCPInstructionType();
         String opcode = inst.getOpcode();
 
@@ -491,9 +507,9 @@ public class CPCostUtils {
                 }
                 // scale
                 if (opcode.startsWith("uar")) {
-                    costs *= inputs[0].getM();
-                } else if (opcode.startsWith("uac")) {
                     costs *= inputs[0].getN();
+                } else if (opcode.startsWith("uac")) {
+                    costs *= inputs[0].getM();
                 } else {
                     costs *= inputs[0].getCells();
                 }
@@ -501,9 +517,11 @@ public class CPCostUtils {
             case MMTSJ:
                 if (inputs.length < 1)
                     throw new RuntimeException("Not all required arguments for MMTSJ operations are passed initialized");
+                // reduce by factor of 4: matrix multiplication better than average FLOP count
+                // + multiply only upper triangular
                 if (opcode.equals("tsmm_left")) {
                     costs = inputs[0].getN() * (inputs[0].getSparsity() / 2);
-                } else { // tsmm_right
+                } else { // tsmm/tsmm_right
                     costs = inputs[0].getM() * (inputs[0].getSparsity() / 2);
                 }
                 return (long) (costs * inputs[0].getCellsWithSparsity());
@@ -512,7 +530,7 @@ public class CPCostUtils {
                 if (output == null)
                     throw new RuntimeException("Not all required arguments for Reorg/Reshape operations are passed initialized");
                 if (opcode.equals("rsort"))
-                    return output.getCellsWithSparsity() * output.getCellsWithSparsity();
+                    return (long) (output.getCellsWithSparsity() * (Math.log(output.getM()) / Math.log(2))); // merge sort columns (n*m*log2(m))
                 return output.getCellsWithSparsity();
             case MatrixIndexing:
                 if (output == null)
@@ -529,12 +547,11 @@ public class CPCostUtils {
                     throw new RuntimeException("Not all required arguments for QSort operations are passed initialized");
                 // mergesort since comparator used
                 m = inputs[0].getM();
-                double sortCosts = 0;
                 if (opcode.equals("qsort"))
-                    sortCosts = m + m;
+                    costs = m + m;
                 else // == "qsort_wts" (with weights)
-                    sortCosts = m * inputs[0].getSparsity();
-                return (long) (sortCosts + m * (int) (Math.log(m) / Math.log(2)) + m);
+                    costs = m * inputs[0].getSparsity();
+                return (long) (costs + m * (int) (Math.log(m) / Math.log(2)) + m);
             case CentralMoment:
                 if (inputs.length < 1)
                     throw new RuntimeException("Not all required arguments for CentralMoment operations are passed initialized");
@@ -566,11 +583,11 @@ public class CPCostUtils {
                         // at the point of implementation no further supported operations
                         throw new DMLRuntimeException("CentralMoment operation with type (<opcode>_<type>) '" + opcode + "' is not supported by SystemDS");
                 }
-                return (long) costs * output.getCellsWithSparsity();
+                return (long) costs * inputs[0].getCellsWithSparsity();
             case UaggOuterChain:
             case Dnn:
                 throw new RuntimeException("CP operation type'" + instructionType + "' is not supported yet");
-                // types corresponding to BinaryCPInstruction
+            // types corresponding to BinaryCPInstruction
             case Binary:
                 if (opcode.equals("+") || opcode.equals("-")) {
                     if (inputs.length < 2)
@@ -639,11 +656,12 @@ public class CPCostUtils {
             case AggregateBinary:
                 if (output == null || inputs.length < 2)
                     throw new RuntimeException("Not all required arguments for AggregateBinary operations are passed initialized");
-                if (!opcode.startsWith("ba+*"))
-                    throw new DMLRuntimeException("AggregateBinary operation with opcode '" + opcode + "' is not supported by SystemDS");
+                // costs represents the cost for matrix transpose
                 if (opcode.contains("_tl")) costs = inputs[0].getCellsWithSparsity();
                 if (opcode.contains("_tr")) costs = inputs[1].getCellsWithSparsity();
-                return (long) (2 * inputs[0].getN() * inputs[0].getSparsity()) * output.getCells() + (long) costs;
+                // else ba+* (or any of cpmm/rmm/mapmm from the Spark instructions)
+                // reduce by factor of 2: matrix multiplication better than average FLOP count: 2*m*n*p=m*n*p
+                return (long) (inputs[0].getN() * inputs[0].getSparsity()) * output.getCells() + (long) costs;
             case Append:
                 if (inputs.length < 2)
                     throw new RuntimeException("Not all required arguments for Append operation is passed initialized");

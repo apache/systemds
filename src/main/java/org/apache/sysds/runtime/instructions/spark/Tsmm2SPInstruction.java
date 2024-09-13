@@ -116,7 +116,11 @@ public class Tsmm2SPInstruction extends UnarySPInstruction {
 		}
 	}
 
-	private static class RDDTSMM2Function implements PairFlatMapFunction<Tuple2<MatrixIndexes, MatrixBlock>, MatrixIndexes, MatrixBlock> 
+	public MMTSJType getMMTSJType() {
+		return _type;
+	}
+
+	private static class RDDTSMM2Function implements PairFlatMapFunction<Tuple2<MatrixIndexes, MatrixBlock>, MatrixIndexes, MatrixBlock>
 	{
 		private static final long serialVersionUID = 2935770425858019666L;
 		

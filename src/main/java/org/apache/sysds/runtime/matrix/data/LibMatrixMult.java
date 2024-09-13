@@ -4332,7 +4332,7 @@ public class LibMatrixMult
 		//parallelize over rows in rhs matrix if number of rows in lhs/output is very small
 		double jvmMem = InfrastructureAnalyzer.getLocalMaxMemory();
 		return (m1.rlen==1 && !(m1.isUltraSparse()||m2.isUltraSparse()))
-			|| (m1.rlen<=16 && m2.rlen > m1.rlen 
+			|| (m1.rlen<=16 && m2.rlen > m1.rlen && (!m1.sparse | m2.clen > 1)
 			   && ( !m1.isUltraSparse() && !(m1.sparse & m2.sparse) ) //dense-dense / sparse-dense / dense-sparse
 			   && (long)k * 8 * m1.rlen * m2.clen < Math.max(MEM_OVERHEAD_THRESHOLD,0.01*jvmMem) );
 	}

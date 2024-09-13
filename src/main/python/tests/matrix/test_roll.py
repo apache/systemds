@@ -32,6 +32,7 @@ m = np.random.rand(shape[0], shape[1])
 my = np.random.rand(shape[0], 1)
 m_empty = np.asarray([[]])
 m_sparse = sparse.random(shape[0], shape[1], density=0.1, format="csr").toarray()
+m_sparse = np.around(m_sparse, decimals=22)
 
 class TestRoll(unittest.TestCase):
     sds: SystemDSContext = None

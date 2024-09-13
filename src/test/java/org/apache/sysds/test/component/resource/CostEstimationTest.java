@@ -1,6 +1,5 @@
 package org.apache.sysds.test.component.resource;
 
-import org.apache.sysds.hops.OptimizerUtils;
 import org.apache.sysds.resource.CloudInstance;
 import org.apache.sysds.resource.ResourceCompiler;
 import org.apache.sysds.resource.cost.CostEstimationException;
@@ -8,7 +7,6 @@ import org.apache.sysds.resource.cost.CostEstimator;
 import org.apache.sysds.resource.cost.RDDStats;
 import org.apache.sysds.resource.cost.VarStats;
 import org.apache.sysds.runtime.controlprogram.Program;
-import org.apache.sysds.runtime.controlprogram.context.SparkExecutionContext;
 import org.apache.sysds.runtime.instructions.Instruction;
 import org.apache.sysds.runtime.instructions.cp.VariableCPInstruction;
 import org.apache.sysds.runtime.instructions.spark.BinarySPInstruction;
@@ -18,16 +16,13 @@ import org.apache.sysds.utils.Explain;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
-import scala.xml.parsing.MarkupHandler;
 
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 
 import static org.apache.sysds.resource.CloudUtils.GBtoBytes;
-import static org.apache.sysds.resource.cost.SparkCostUtils.getScaledNFLOP;
 import static org.apache.sysds.test.component.resource.TestingUtils.getSimpleCloudInstanceMap;
-import static org.junit.Assert.assertTrue;
 
 public class CostEstimationTest {
     private static final HashMap<String, CloudInstance> instanceMap = getSimpleCloudInstanceMap();
@@ -42,7 +37,7 @@ public class CostEstimationTest {
     }
 
     @Test
-    public void createvarMatrixVariableCPInstructionTest() throws CostEstimationException {
+    public void createvarMatrixVariableCPInstructionTest() {
         String instDefinition = "CP°createvar°testVar°testOutputFile°false°MATRIX°binary°100°100°1000°10000°COPY";
         VariableCPInstruction inst = VariableCPInstruction.parseInstruction(instDefinition);
         testGetTimeEstimateInst(estimator, null, inst, 0);
@@ -54,7 +49,7 @@ public class CostEstimationTest {
     }
 
     @Test
-    public void createvarFrameVariableCPInstructionTest() throws CostEstimationException {
+    public void createvarFrameVariableCPInstructionTest() {
         String instDefinition = "CP°createvar°testVar°testOutputFile°false°FRAME°binary°100°100°1000°10000°COPY";
         VariableCPInstruction inst = VariableCPInstruction.parseInstruction(instDefinition);
         testGetTimeEstimateInst(estimator, null, inst, 0);
@@ -66,7 +61,7 @@ public class CostEstimationTest {
     }
 
     @Test
-    public void createvarInvalidVariableCPInstructionTest() throws CostEstimationException {
+    public void createvarInvalidVariableCPInstructionTest() {
         String instDefinition = "CP°createvar°testVar°testOutputFile°false°TENSOR°binary°100°100°1000°10000°copy";
         VariableCPInstruction inst = VariableCPInstruction.parseInstruction(instDefinition);
         try {
@@ -119,8 +114,7 @@ public class CostEstimationTest {
         ResourceCompiler.setDriverConfigurations(GBtoBytes(1), 4);
         ResourceCompiler.setExecutorConfigurations(2, GBtoBytes(4), 2);
         Program program = ResourceCompiler.compile("scripts/perftest/scripts/test.dml", nvargs);
-//        Program program = ResourceCompiler.compile("scripts/perftest/resource/all_ops.dml", nvargs);
-//        System.out.println(Explain.explain(program.getDMLProg()));
+
         System.out.println(Explain.explain(program));
         try {
             CostEstimator.estimateExecutionTime(program, instanceMap.get("m5.xlarge"), instanceMap.get("m5.xlarge"));
@@ -138,7 +132,6 @@ public class CostEstimationTest {
         MatrixCharacteristics mc = new MatrixCharacteristics(m, n, nnz);
         VarStats stats = new VarStats(name, mc);
         RDDStats rddStats = new RDDStats(stats);
-        rddStats.loadCharacteristics();
         stats.setRddStats(rddStats);
         return stats;
     }

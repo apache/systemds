@@ -220,14 +220,6 @@ m_incSliceLine = function(
     S = getPairedCandidatesInc(S, R, TKC, level, eAvg, minSup, alpha, n2, foffb, foffe);
     S2 = S;
 
-    # prepare and store output lattice for next run
-    Lrep = S
-    if ( encodeLat ) {
-      [Lrep, M] = transformSlicesToIDs(S, foffb, foffe);
-      metaLattice = append(metaLattice, M);
-    }
-    L = append(L, Lrep);
-
     # load one hot encoded previous lattice for the current level
     prevLattice2 = matrix(0,0,0);
     if(!disableIncSizePruning){
@@ -255,6 +247,14 @@ m_incSliceLine = function(
         print(" -- dropping "+(npairs-nrow(S))+"/"+npairs+" unaffected paired slice candidates ");
       }
     }
+
+    # prepare and store output lattice for next run
+    Lrep = S
+    if ( encodeLat ) {
+      [Lrep, M] = transformSlicesToIDs(S, foffb, foffe);
+      metaLattice = append(metaLattice, M);
+    }
+    L = append(L, Lrep);
 
     if( nrow(S) > 0 ) {
       # extract and evaluate candidate slices
@@ -559,11 +559,15 @@ oneHotEncodeUsingOffsets = function(Matrix[Double] A, Matrix[Double] foffb, Matr
       rix = removeEmpty(target=rix, margin="rows", select=ix);
       cix = removeEmpty(target=cix, margin="rows", select=ix);
     }
-    # actual one-hot encoding
-    A2 = table(rix, cix, 1, m, as.scalar(foffe[,n]), FALSE);
-  }
-  else {
-    A2 = matrix(0, 0, as.scalar(foffe[,n]));
+
+    if (sum(rix) == 0 | sum(cix) == 0) {
+      A2 = matrix(0, 0, as.scalar(foffe[, n]));
+    } else {
+      # actual one-hot encoding
+      A2 = table(rix, cix, 1, m, as.scalar(foffe[, n]), FALSE);
+    }
+  } else {
+    A2 = matrix(0, 0, as.scalar(foffe[, n]));
   }
 }
 

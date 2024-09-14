@@ -2337,12 +2337,13 @@ public class LibMatrixReorg {
 	}
 
 	private static void rollSparseRow(SparseBlock a, SparseBlock c, int oriIdx, int shiftIdx) {
-		final int alen = a.size(oriIdx);
+		final int apos = a.pos(oriIdx);
+		final int alen = a.size(oriIdx) + apos;
 		final int[] aix = a.indexes(oriIdx);
 		final double[] avals = a.values(oriIdx);
 
 		// copy only non-zero elements
-		for (int k = 0; k < alen; k++) {
+		for (int k = apos; k < alen; k++) {
 			c.set(shiftIdx, aix[k], avals[k]);
 		}
 	}

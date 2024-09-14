@@ -116,11 +116,11 @@ m_incSliceLine = function(
     oldE = matrix(0,0,ncol(addedE));
   }
   ## remove all rows from oldX and oldE that are in indicesRemoved
-  removedTuples = matrix(0,0,ncol(oldX));
+  removedX = matrix(0,0,ncol(oldX));
   removedE = matrix(0,0,1);
   if(length(indicesRemoved) > 0 & nrow(oldX)  > 0){
-    [oldX, removedTuples] = removeRowsByIndices( oldX, indicesRemoved);
-    [oldE, removedE] = removeRowsByIndices( oldE, indicesRemoved);
+    [oldX, removedX] = removeRowsByIndices(oldX, indicesRemoved);
+    [oldE, removedE] = removeRowsByIndices(oldE, indicesRemoved);
     if(verbose){
       print("incSliceLine: removed "+nrow(indicesRemoved)+" tuples.");
     }
@@ -156,9 +156,12 @@ m_incSliceLine = function(
   # One-hot encoding of tuples that were removed from oldX
   # combining of addedX and oldX in changedX2 facilitates simple determination of unchanged slices for pruning
   changedX2 = addedX2;
-  if(nrow(removedTuples) > 0){
-    removedTuples2 = oneHotEncodeUsingOffsets(removedTuples, foffb, foffe);
-    changedX2 = rbind(addedX2, removedTuples2);
+  removedX2 = removedX;
+  if(nrow(removedX) > 0){
+    removedX2 = oneHotEncodeUsingOffsets(removedX, foffb, foffe);
+    changedX2 = rbind(addedX2, removedX2);
+  } else {
+    removedX2 = matrix(0, 0, ncol(addedX2));
   }
   changedE = rbind(addedE, removedE);
 
@@ -180,8 +183,11 @@ m_incSliceLine = function(
   # create and score basic slices (conjunctions of 1 feature)
   maxsc = getMaxScoreAllFeatures(nrow(X2), ncol(X2), prevLattice, metaPrevLattice,
      prevStats, encodeLat, differentOffsets, alpha, eAvg, prevFoffb, prevFoffe, foffb, foffe);
+  maxscub = getMaxChangedScoreAllFeatures(nrow(X2), ncol(X2),
+     addedX2, removedX2, addedE, removedE, prevLattice, metaPrevLattice, prevStats,
+     encodeLat, differentOffsets, alpha, eAvg, minSup, prevFoffb, prevFoffe, foffb, foffe);
   [S, R, selCols] = createAndScoreBasicSlicesInc(X2, changedX2, prevTK2, totalE, changedE,
-     eAvg, eAvgOld, eAvgNew, minSup, alpha, minsc, maxsc, verbose, disableIncScorePruning);
+     eAvg, eAvgOld, eAvgNew, minSup, alpha, minsc, maxsc, maxscub, verbose, disableIncScorePruning);
 
   # initialize lattice and statistics for incremental updates
   L1 = S;
@@ -302,7 +308,8 @@ m_incSliceLine = function(
 createAndScoreBasicSlicesInc = function(Matrix[Double] X2, Matrix[Double] X2p,
     Matrix[Double] prevTK2, Matrix[Double] e, Matrix[Double] ep,
     Double eAvg, Double eAvgOld, Double eAvgNew, Double minSup, Double alpha,
-    Double minsc, Matrix[Double] maxsc, Boolean verbose, Boolean disableIncScorePruning)
+    Double minsc, Matrix[Double] maxsc, Matrix[Double] maxscub, Boolean verbose,
+    Boolean disableIncScorePruning)
   return(Matrix[Double] S, Matrix[Double] R, Matrix[Double] selCols)
 {
   n2 = ncol(X2);
@@ -329,6 +336,15 @@ createAndScoreBasicSlicesInc = function(Matrix[Double] X2, Matrix[Double] X2p,
     print("incSliceLine: dropping "+drop+"/"+n+" unaffected features.");
   }
 
+  # c) max score changed pruning
+  n = as.integer(sum(selCols2));
+  selCols2 = selCols2 & (maxscub >= max(0, minsc) | maxscub==-Inf);
+
+  if( verbose ) {
+    drop = as.integer(n - sum(selCols2));
+    print("incSliceLine: dropping "+drop+"/"+n+" insufficiently affected features.");
+  }
+
   # working set of active slices (#attr x #slices) and top k
   attr = removeEmpty(target=seq(1,n2), margin="rows", select=selCols2);
   ss = removeEmpty(target=cCnts, margin="rows", select=selCols2);
@@ -341,7 +357,7 @@ createAndScoreBasicSlicesInc = function(Matrix[Double] X2, Matrix[Double] X2p,
   sc = scoreInc(ss, se, eAvg, alpha, nrow(X2));
   R = cbind(sc, se, sm, ss);
 
-  # c) score pruning
+  # d) score pruning
   # compute upper bound scores for all remaining slices
   if(minsc > -Inf & !disableIncScorePruning) {
     ubSc = scoreUBInc(ss, se, sm, eAvg, minSup, alpha, nrow(X2));
@@ -521,7 +537,6 @@ evalSliceInc = function(Matrix[Double] X, Matrix[Double] e, Double eAvg,
   I = (X %*% tS) == l;    # slice indicator
   ss = t(colSums(I));     # absolute slice size (nnz)
   se = t(t(e) %*% I);     # absolute slice error
-
   sm = t(colMaxs(I * e)); # maximum tuple error in slice
 
   # score of relative error and relative size
@@ -621,7 +636,7 @@ pruneUnchangedSlices = function(Matrix[Double] S, Matrix[Double] S2, Matrix[Doub
   # a) determine unchagned slices
   # only computing unchanged slices for levels 2 and above,
   # Imat has a 1 where a slice in changedX2 belongs to a slice in prevLatAtLevel
-  if(nrow(S2) > 0 & nrow(unchangedS) > 0) {
+  if(nrow(S2) > 0 & sum(S2) > 0 & nrow(unchangedS) > 0) {
     # b) select unchanged slices that can be pruned
     I = t(colSums((changedX2 %*% t(unchangedS)) == level) == 0) # change pushdown
         & unchangedR[,4] < minSup; # minSup pushdown
@@ -724,6 +739,60 @@ getMaxScoreAllFeatures = function(Int numRows, Int numFeatures, List[Unknown] pr
   }
 }
 
+getMaxChangedScoreAllFeatures = function(Int numRows, Int numFeatures, Matrix[Double] addedX2,
+  Matrix[Double] removedX2, Matrix[Double] addedE, Matrix[Double] removedE,
+  List[Unknown] prevLattice, List[Unknown] metaPrevLattice, List[Unknown] prevStats,
+  Boolean encodeLat, Boolean differentOffsets, Double alpha, Double eAvg, Double minSup,
+  Matrix[Double] prevFoffb, Matrix[Double] prevFoffe, Matrix[Double] foffb, Matrix[Double] foffe)
+  return(Matrix[Double] maxscub)
+{
+  maxscub = matrix(-Inf, numFeatures, 1);
+  if( length(prevLattice) > 0 & nrow(addedX2) < 0.05*numRows ) {
+    # compute upper bounds per feature for added subset
+    ss = t(colSums(addedX2));
+    se = t(t(addedE) %*% addedX2);
+    sm = t(colMaxs(addedX2 * addedE))
+    maxscub = scoreUBInc(ss, se, sm, eAvg, minSup, alpha, numRows);
+
+    # compute high-probability upper-bound scores per feature
+    for(level in 1:length(prevLattice)) {
+      if( length(prevStats) >= level ) {
+        S = as.matrix(prevLattice[level]);
+        if( encodeLat ) {
+          metaAtLevel = as.frame(metaPrevLattice[level]);
+          prevLatticeDec = transformIDsToSlices(S, prevFoffb, prevFoffe, metaAtLevel);
+          if( nrow(S) > 0 )
+            S = oneHotEncodeUsingOffsets(prevLatticeDec, foffb, foffe);
+          else
+            S = matrix(0, 1, numFeatures);
+        }
+        else if(differentOffsets) {
+          prevLatticeDec = decodeOneHot(S, prevFoffb, prevFoffe);
+          S = oneHotEncodeUsingOffsets(prevLatticeDec, foffb, foffe);
+        }
+        R = as.matrix(prevStats[level]); #(sc,se,sm,ss)
+        # compute exact deltas/slice scores, and update max scores per feature despite the
+        # exact deltas we need to consider upper bounds because new slices, previously not
+        # considered, might appear (only high probability, for hard guarantees we would
+        # need to consider previously pruned slices too)
+        dssp = rowSums((S%*%t(addedX2))==level);               # size delta plus
+        dssm = rowSums((S%*%t(removedX2))==level);             # size delta minus
+        dsep = rowSums((S%*%t(addedX2)==level)*t(addedE));     # error delta plus
+        dsem = rowSums((S%*%t(removedX2)==level)*t(removedE)); # error delta minus
+        # compute interesting extreme points
+        sc1 = scoreInc(R[,4] - dssm,        R[,2] + dsep,        eAvg, alpha, numRows);
+        sc2 = scoreInc(R[,4],               R[,2] + dsep,        eAvg, alpha, numRows);
+        sc3 = scoreInc(R[,4] + dssp,        R[,2] + dsep,        eAvg, alpha, numRows);
+        sc4 = scoreInc(R[,4] + dssp - dssm, R[,2] + dsep - dsem, eAvg, alpha, numRows);
+        sc = max(sc1, sc2, sc3, sc4);
+        # robustness for S * sc creating NaNs because 0 * -Inf = NaN
+        sc = replace(target=sc, pattern=-Inf, replacement=0);
+        maxscub = max(maxscub, t(colMaxs(S*sc)));
+      }
+    }
+  }
+}
+
 preparePrevLattice = function(list[unknown] prevLattice, list[unknown] metaPrevLattice,
   Matrix[Double] prevFoffb, Matrix[Double] prevFoffe, Matrix[Double] foffb,
   Matrix[Double] foffe, Integer level, Boolean encodeLat, Boolean differentOffsets)
@@ -756,4 +825,3 @@ removeRowsByIndices = function(Matrix[Double] M, Matrix[Double] indices)
   P2 = table(seq(1, nrow(CIX)), CIX, nrow(CIX), nrow(M))
   remain = P2 %*% M;
 }
-

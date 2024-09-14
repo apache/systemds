@@ -321,7 +321,10 @@ createAndScoreBasicSlices = function(Matrix[Double] X2, Matrix[Double] X2p,
 
   # b) unchanged pruning
   # (valid to prune feature if its previous max score was negative or below minsc)
-  selCols2 = selCols & (ncCnts > 0 | maxsc > max(0, minsc));
+  selCols2 = selCols;
+  if( !disableIncScorePruning ) {
+    selCols2 = selCols & (ncCnts > 0 | maxsc > max(0, minsc));
+  } 
 
   if( verbose ) {
     n = as.integer(sum(selCols));
@@ -354,7 +357,11 @@ createAndScoreBasicSlices = function(Matrix[Double] X2, Matrix[Double] X2p,
       print("incSliceLine: dropping "+drop+"/"+n+" features below minSore = "+minsc+".");
     }
     cix = removeEmpty(target=attr, margin="rows", select=selCols3);
-    selCols = table(cix, 1, n2, 1);
+    if(sum(cix) != 0) {
+      selCols = table(cix, 1, n2, 1);
+    }else {
+      selCols = matrix(0, n2, 1);
+    }
   }
   else {
     selCols = selCols2;

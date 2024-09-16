@@ -24,20 +24,18 @@ import org.apache.sysds.hops.OptimizerUtils;
 import org.apache.sysds.resource.CloudInstance;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.controlprogram.context.SparkExecutionContext;
-import org.apache.sysds.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
+import org.apache.sysds.utils.stats.InfrastructureAnalyzer;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 
 public class IOCostUtils {
-	// NOTE: this class does NOT include methods for estimating IO time
-	//  for operation ot the local file system since they are not relevant at the moment
 
 	private static final double READ_DENSE_FACTOR = 0.5;
 	private static final double WRITE_DENSE_FACTOR = 0.3;
 	private static final double SPARSE_FACTOR = 0.5;
 	private static final double TEXT_FACTOR = 0.3;
 	// NOTE: skip using such factors for now
-//	private static final double WRITE_MEMORY_FACTOR = 0.9;
-//	private static final double WRITE_DISK_FACTOR = 0.5;
+	//	private static final double WRITE_MEMORY_FACTOR = 0.9;
+	//	private static final double WRITE_DISK_FACTOR = 0.5;
 	private static final double SERIALIZATION_FACTOR = 0.5;
 	private static final double DESERIALIZATION_FACTOR = 0.8;
 	public static final long DEFAULT_FLOPS = 2L * 1024 * 1024 * 1024; // 2 gFLOPS
@@ -118,11 +116,7 @@ public class IOCostUtils {
 		public static final double DEFAULT_MBS_S3_READ_TEXT_SPARSE = 25;
 		public static final double DEFAULT_MBS_HDFS_READ_TEXT_DENSE = 75;
 		public static final double DEFAULT_MBS_HDFS_READ_TEXT_SPARSE = 50;
-//		public static final double DEFAULT_MBS_S3_READ_BINARY_DENSE = 200;
-//		public static final double DEFAULT_MBS_S3_READ_BINARY_SPARSE = 100;
-		//IO Write
-//		public static final double DEFAULT_MBS_S3_WRITE_BINARY_DENSE = 150;
-//		public static final double DEFAULT_MBS_S3_WRITE_BINARY_SPARSE = 75;
+		// IO Write
 		public static final double DEFAULT_MBS_HDFS_WRITE_BINARY_DENSE = 120;
 		public static final double DEFAULT_MBS_HDFS_WRITE_BINARY_SPARSE = 60;
 		public static final double DEFAULT_MBS_S3_WRITE_TEXT_DENSE = 30;
@@ -169,6 +163,13 @@ public class IOCostUtils {
 	protected static final String HDFS_SOURCE_IDENTIFIER = "hdfs";
 
 
+	/**
+	 * Estimate time to scan object in memory in CP.
+	 *
+	 * @param stats object statistics
+	 * @param metrics CP node's metrics
+	 * @return estimated time in seconds
+	 */
 	public static double getMemReadTime(VarStats stats, IOMetrics metrics) {
 		if (stats.isScalar()) return 0; // scalars
 		if (stats.allocatedMemory < 0)
@@ -177,15 +178,39 @@ public class IOCostUtils {
 		return sizeMB / metrics.memReadBandwidth;
 	}
 
+	/**
+	 * Estimate time to scan distributed data sets in memory on Spark.
+	 * It integrates a mechanism to account for scanning
+	 * spilled-over data sets on the local disk.
+	 *
+	 * @param stats object statistics
+	 * @param metrics CP node's metrics
+	 * @return estimated time in seconds
+	 */
 	public static double getMemReadTime(RDDStats stats, IOMetrics metrics) {
 		// no scalars expected
-		if (stats.distributedSize < 0)
+		double size = (double) stats.distributedSize;
+		if (size < 0)
 			throw new RuntimeException("RDDStats.distributedMemory should carry the estimated size before getting read time");
+		// define if/what a fraction is spilled over to disk
+		double minExecutionMemory = SparkExecutionContext.getDataMemoryBudget(true, false); // execution mem = storage mem
+		double spillOverFraction = minExecutionMemory >= size? 0 : (size - minExecutionMemory) / size;
+		// for simplification define an average read bandwidth combination form memory and disk bandwidths
+		double mixedBandwidthPerCore = (spillOverFraction * metrics.localDiskReadBandwidth +
+				(1-spillOverFraction) * metrics.memReadBandwidth) / metrics.cpuCores;
 		double numWaves = Math.ceil((double) stats.numPartitions / SparkExecutionContext.getDefaultParallelism(false));
-		double sizeMB = (double) stats.distributedSize / (1024 * 1024);
-		return (numWaves * sizeMB) / (stats.numPartitions * metrics.memReadBandwidth);
+		double sizeMB = size / (1024 * 1024);
+		double partitionSizeMB = sizeMB / stats.numPartitions;
+		return numWaves * (partitionSizeMB / mixedBandwidthPerCore);
 	}
 
+	/**
+	 * Estimate time to write object to memory in CP.
+	 *
+	 * @param stats object statistics
+	 * @param metrics CP node's metrics
+	 * @return estimated time in seconds
+	 */
 	public static double getMemWriteTime(VarStats stats, IOMetrics metrics) {
 		if (stats == null) return 0; // scalars
 		if (stats.allocatedMemory < 0)
@@ -195,6 +220,14 @@ public class IOCostUtils {
 		return sizeMB / metrics.memWriteBandwidth;
 	}
 
+	/**
+	 * Estimate time to write distributed data set on memory in CP.
+	 * It does NOT integrate mechanism to account for spill-overs.
+	 *
+	 * @param stats object statistics
+	 * @param metrics CP node's metrics
+	 * @return estimated time in seconds
+	 */
 	public static double getMemWriteTime(RDDStats stats, IOMetrics metrics) {
 		// no scalars expected
 		if (stats.distributedSize < 0)
@@ -215,7 +248,7 @@ public class IOCostUtils {
 		Types.FileFormat format = (Types.FileFormat) stats.fileInfo[1];
 		double sizeMB = getFileSizeInMB(stats);
 		boolean isSparse = MatrixBlock.evalSparseFormatOnDisk(stats.getM(), stats.getN(), stats.getNNZ());
-		return getDiskReadTime(sizeMB, isSparse, sourceType, format, metrics);
+		return getStorageReadTime(sizeMB, isSparse, sourceType, format, metrics);
 	}
 
 	/**
@@ -242,13 +275,13 @@ public class IOCostUtils {
 		double numPartitions = Math.ceil((double) size / hdfsBlockSize);
 		double sizePerExecutorMB = (double) (metrics.cpuCores * hdfsBlockSize) / (1024*1024);
 		boolean isSparse = MatrixBlock.evalSparseFormatOnDisk(stats.getM(), stats.getN(), stats.getNNZ());
-		double timePerCore = getDiskReadTime(sizePerExecutorMB, isSparse, sourceType, format, metrics); // same as time per executor
+		double timePerCore = getStorageReadTime(sizePerExecutorMB, isSparse, sourceType, format, metrics); // same as time per executor
 		// number of execution waves (maximum task to execute per core)
 		double numWaves = Math.ceil(numPartitions / (SparkExecutionContext.getNumExecutors() * metrics.cpuCores));
 		return numWaves * timePerCore;
 	}
 
-	private static double getDiskReadTime(double sizeMB, boolean isSparse, String source, Types.FileFormat format, IOMetrics metrics)
+	private static double getStorageReadTime(double sizeMB, boolean isSparse, String source, Types.FileFormat format, IOMetrics metrics)
 	{
 		double time;
 		// TODO: consider if the text or binary should be default if format == null
@@ -286,12 +319,12 @@ public class IOCostUtils {
 	 * @param metrics I/O metrics for the driver node
 	 * @return estimated time in seconds
 	 */
-	public static double getDiskWriteTime(VarStats stats, IOMetrics metrics) {
+	public static double getFileSystemWriteTime(VarStats stats, IOMetrics metrics) {
 		String sourceType = (String) stats.fileInfo[0];
 		Types.FileFormat format = (Types.FileFormat) stats.fileInfo[1];
 		double sizeMB = getFileSizeInMB(stats);
 		boolean isSparse = MatrixBlock.evalSparseFormatOnDisk(stats.getM(), stats.getN(), stats.getNNZ());
-		return getDiskWriteTime(sizeMB, isSparse, sourceType, format, metrics);
+		return getStorageWriteTime(sizeMB, isSparse, sourceType, format, metrics);
 	}
 
 	/**
@@ -317,14 +350,14 @@ public class IOCostUtils {
 		// use the fact that <partition size> / <bandwidth per slot> = <partition size> * <slots per executor> / <bandwidth per executor>
 		double sizePerExecutor = sizePerPartitionMB * metrics.cpuCores;
 		boolean isSparse = MatrixBlock.evalSparseFormatOnDisk(stats.getM(), stats.getN(), stats.getNNZ());
-		double timePerCore = getDiskWriteTime(sizePerExecutor, isSparse, sourceType, format, metrics); // same as time per executor
+		double timePerCore = getStorageWriteTime(sizePerExecutor, isSparse, sourceType, format, metrics); // same as time per executor
 		// number of execution waves (maximum task to execute per core)
 		double numWaves = Math.ceil((double) stats.rddStats.numPartitions /
 				(SparkExecutionContext.getNumExecutors() * metrics.cpuCores));
 		return numWaves * timePerCore;
 	}
 
-	protected static double getDiskWriteTime(double sizeMB, boolean isSparse, String source, Types.FileFormat format, IOMetrics metrics) {
+	protected static double getStorageWriteTime(double sizeMB, boolean isSparse, String source, Types.FileFormat format, IOMetrics metrics) {
 		if (format == null || !(source.equals(HDFS_SOURCE_IDENTIFIER) || source.equals(S3_SOURCE_IDENTIFIER))) {
 			throw new RuntimeException("Estimation not possible without source identifier and file format");
 		}
@@ -356,6 +389,14 @@ public class IOCostUtils {
 		return time;
 	}
 
+	/**
+	 * Estimates the time ro parallelize a local object to Spark.
+	 *
+	 * @param output RDD statistics for the object to be collected/transferred.
+	 * @param driverMetrics I/O metrics for the receiver - driver node
+	 * @param executorMetrics I/O metrics for the executor nodes
+	 * @return estimated time in seconds
+	 */
 	public static double getSparkParallelizeTime(RDDStats output, IOMetrics driverMetrics, IOMetrics executorMetrics) {
 		// TODO: ensure the object related to stats is read in memory already ot add logic to account for its read time
 		// it is assumed that the RDD object is already created/read
@@ -407,14 +448,14 @@ public class IOCostUtils {
 		// edge case: 1 executor only would not trigger any data
 		if (SparkExecutionContext.getNumExecutors() < 2) {
 			// even without shuffling the data needs to be read from the intermediate shuffle files
-			double diskBandwidthPerSlot = metrics.localDiskWriteBandwidth / metrics.cpuCores;
+			double diskBandwidthPerCore = metrics.localDiskWriteBandwidth / metrics.cpuCores;
 			// disk read time
-			return sizeMB / diskBandwidthPerSlot;
+			return sizeMB / diskBandwidthPerCore;
 		}
 		int currentParallelism = Math.min(input.numPartitions, SparkExecutionContext.getDefaultParallelism(false));
-		double networkBandwidthPerSlot = metrics.networkingBandwidth / metrics.cpuCores;
+		double networkBandwidthPerCore = metrics.networkingBandwidth / metrics.cpuCores;
 		// transfer time
-		return sizeMB / (currentParallelism * networkBandwidthPerSlot);
+		return sizeMB / (currentParallelism * networkBandwidthPerCore);
 	}
 
 	/**
@@ -428,9 +469,9 @@ public class IOCostUtils {
 	public static double getSparkShuffleReadStaticTime(RDDStats input, IOMetrics metrics) {
 		double sizeMB = (double) input.distributedSize / (1024 * 1024);
 		int currentParallelism = Math.min(input.numPartitions, SparkExecutionContext.getDefaultParallelism(false));
-		double readBandwidthPerSlot = metrics.memReadBandwidth / metrics.cpuCores;
+		double readBandwidthPerCore = metrics.memReadBandwidth / metrics.cpuCores;
 		// read time
-		return sizeMB / (currentParallelism * readBandwidthPerSlot);
+		return sizeMB / (currentParallelism * readBandwidthPerCore);
 	}
 
 	/**
@@ -445,9 +486,9 @@ public class IOCostUtils {
 	public static double getSparkShuffleWriteTime(RDDStats output, IOMetrics metrics) {
 		double sizeMB = (double) output.distributedSize / (1024 * 1024);
 		int currentParallelism = Math.min(output.numPartitions, SparkExecutionContext.getDefaultParallelism(false));
-		double bandwidthPerSlot = metrics.localDiskWriteBandwidth / metrics.cpuCores;
+		double bandwidthPerCore = metrics.localDiskWriteBandwidth / metrics.cpuCores;
 		// disk write time
-		return sizeMB / (currentParallelism * bandwidthPerSlot);
+		return sizeMB / (currentParallelism * bandwidthPerCore);
 	}
 
 	/**
@@ -494,6 +535,12 @@ public class IOCostUtils {
 		return serializationTime + transferTime;
 	}
 
+	/**
+	 * Extracts the data source for a given file name: e.g. "hdfs" or "s3"
+	 *
+	 * @param fileName filename to parse
+	 * @return data source type
+	 */
 	public static String getDataSource(String fileName) {
 		String[] fileParts = fileName.split("://");
 		if (fileParts.length > 1) {

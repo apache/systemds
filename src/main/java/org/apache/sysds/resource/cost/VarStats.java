@@ -79,7 +79,9 @@ public class VarStats
 		return isScalar()? 1 : characteristics.getCols();
 	}
 
-	public long getNNZ() { return characteristics.getNonZeros(); }
+	public long getNNZ() {
+		return isScalar()? 1 : characteristics.getNonZerosBound();
+	}
 
 	public double getSparsity() {
 		return isScalar()? 1.0 : OptimizerUtils.getSparsity(characteristics);
@@ -87,7 +89,7 @@ public class VarStats
 
 	public long getCells() {
 		return isScalar()? 1 : !characteristics.dimsKnown()? -1 :
-				(characteristics.getRows() * characteristics.getCols());
+				characteristics.getLength();
 	}
 
 	public long getCellsWithSparsity() {
@@ -97,6 +99,14 @@ public class VarStats
 
 	public boolean isSparse() {
 		return (!isScalar() && MatrixBlock.evalSparseFormatInMemory(characteristics));
+	}
+
+	/**
+	 * Meant to be used at testing
+	 * @param memory size to allocate
+	 */
+	public void setAllocatedMemory(long memory) {
+		allocatedMemory = memory;
 	}
 
 	/**

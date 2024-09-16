@@ -42,19 +42,14 @@ public class RDDStats {
 	 */
 	public RDDStats(VarStats sourceStats) {
 		// required cpVar initiated for not scalars
-		if (sourceStats == null || sourceStats.isScalar()) {
-			throw new RuntimeException("RDDStats cannot be initialized for scalar objects");
+		if (sourceStats == null) {
+			throw new RuntimeException("RDDStats cannot be initialized without valid input variable statistics");
 		}
 		checkpoint = false;
 		isCollected = false;
 		hashPartitioned = false;
 		// RDD specific characteristics not initialized -> simulates lazy evaluation
-		distributedSize = OptimizerUtils.estimatePartitionedSizeExactSparsity(
-				sourceStats.getM(),
-				sourceStats.getN(),
-				ConfigurationManager.getBlocksize(),
-				sourceStats.getSparsity()
-		);
+		distributedSize = estimateDistributedSize(sourceStats);
 		numPartitions = getNumPartitions();
 		cost = 0;
 	}
@@ -83,8 +78,13 @@ public class RDDStats {
 	}
 
 	private int getNumPartitions() {
-		long hdfsBlockSize = InfrastructureAnalyzer.getHDFSBlockSize();
-		return (int) Math.max((distributedSize + hdfsBlockSize - 1) / hdfsBlockSize, 1);
+		if (distributedSize < 0) {
+			throw new RuntimeException("Estimating number of partitions requires valid distributed RDD size");
+		} else if (distributedSize > 0) {
+			long hdfsBlockSize = InfrastructureAnalyzer.getHDFSBlockSize();
+			return (int) Math.max((distributedSize + hdfsBlockSize - 1) / hdfsBlockSize, 1);
+		}
+		return -1; // for scalars
 	}
 
 	/**
@@ -93,5 +93,26 @@ public class RDDStats {
 	 */
 	public double getCost() {
 		return cost;
+	}
+
+	/**
+	 * Meant to be used at testing
+	 * @return flag if the current RDD is collected
+	 */
+	public boolean isCollected() {
+		return isCollected;
+	}
+
+	private static long estimateDistributedSize(VarStats sourceStats) {
+		if (sourceStats.isScalar())
+			return 0; // 0 so it is non-negative
+		if (sourceStats.getCells() < 0)
+			throw new RuntimeException("Estimated size for RDD object is negative");
+		return OptimizerUtils.estimatePartitionedSizeExactSparsity(
+				sourceStats.getM(),
+				sourceStats.getN(),
+				ConfigurationManager.getBlocksize(),
+				sourceStats.getSparsity()
+		);
 	}
 }

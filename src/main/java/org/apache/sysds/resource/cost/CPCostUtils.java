@@ -29,12 +29,12 @@ import org.apache.sysds.runtime.matrix.operators.CMOperator;
 
 import static org.apache.sysds.resource.cost.IOCostUtils.IOMetrics;
 import static org.apache.sysds.runtime.instructions.cp.CPInstruction.CPType;
+
 public class CPCostUtils {
     private static final long DEFAULT_NFLOP_NOOP = 10;
     private static final long DEFAULT_NFLOP_CP = 1;
     private static final long DEFAULT_NFLOP_TEXT_IO = 350;
     private static final long DEFAULT_INFERRED_DIM = 1000000;
-
 
     public static double getVariableInstTime(VariableCPInstruction inst, VarStats input, VarStats output, IOMetrics metrics) {
         long nflop;
@@ -197,17 +197,32 @@ public class CPCostUtils {
 
     // HELPERS
     public static void assignOutputMemoryStats(CPInstruction inst, VarStats output, VarStats...inputs) {
-        if (output.getCells() < 0) {
-            inferStats(inst, output, inputs);
+        CPType instType = inst.getCPInstructionType();
+        String opcode = inst.getOpcode();
+
+        if (inst instanceof MultiReturnBuiltinCPInstruction) {
+            boolean inferred = false;
+            for (VarStats current : inputs) {
+                if (!inferred && current.getCells() < 0) {
+                    inferStats(instType, opcode, output, inputs);
+                    inferred = true;
+                }
+                if (current.getCells() < 0) {
+                    throw new RuntimeException("Operation of type MultiReturnBuiltin with opcode '" + opcode + "' has incomplete formula for inferring dimensions");
+                }
+                current.allocatedMemory = OptimizerUtils.estimateSizeExactSparsity(current.characteristics);
+            }
+            return;
+        } else if (output.getCells() < 0) {
+            inferStats(instType, opcode, output, inputs);
         }
         output.allocatedMemory = output.isScalar()? 1 : OptimizerUtils.estimateSizeExactSparsity(output.characteristics);
     }
 
-    private static void inferStats(CPInstruction inst, VarStats output, VarStats...inputs) {
-        CPType instructionType = inst.getCPInstructionType();
-        String opcode = inst.getOpcode();
-        switch (instructionType) {
+    public static void inferStats(CPType instType, String opcode, VarStats output, VarStats...inputs) {
+        switch (instType) {
             case Unary:
+            case Builtin:
                 copyMissingDim(output, inputs[0]);
                 break;
             case AggregateUnary:
@@ -221,22 +236,22 @@ public class CPCostUtils {
                 break;
             case MatrixIndexing:
                 if (opcode.equals("rightIndex")) {
-                    long rowLower = (inputs[1].varName.matches("\\d+") ? Long.parseLong(inputs[1].varName) : -1);
-                    long rowUpper = (inputs[2].varName.matches("\\d+") ? Long.parseLong(inputs[2].varName) : -1);
-                    long colLower = (inputs[3].varName.matches("\\d+") ? Long.parseLong(inputs[3].varName) : -1);
-                    long colUpper = (inputs[4].varName.matches("\\d+") ? Long.parseLong(inputs[4].varName) : -1);
+                    long rowLower = (inputs[2].varName.matches("\\d+") ? Long.parseLong(inputs[2].varName) : -1);
+                    long rowUpper = (inputs[3].varName.matches("\\d+") ? Long.parseLong(inputs[3].varName) : -1);
+                    long colLower = (inputs[4].varName.matches("\\d+") ? Long.parseLong(inputs[4].varName) : -1);
+                    long colUpper = (inputs[5].varName.matches("\\d+") ? Long.parseLong(inputs[5].varName) : -1);
 
                     long rowRange;
                     {
                         if (rowLower > 0 && rowUpper > 0) rowRange = rowUpper - rowLower + 1;
-                        else if (inputs[1].varName.equals(inputs[2].varName)) rowRange = 1;
+                        else if (inputs[2].varName.equals(inputs[3].varName)) rowRange = 1;
                         else
                             rowRange = inputs[0].getM() > 0 ? inputs[0].getM() : DEFAULT_INFERRED_DIM;
                     }
                     long colRange;
                     {
                         if (colLower > 0 && colUpper > 0) colRange = colUpper - colLower + 1;
-                        else if (inputs[3].varName.equals(inputs[4].varName)) colRange = 1;
+                        else if (inputs[4].varName.equals(inputs[5].varName)) colRange = 1;
                         else
                             colRange = inputs[0].getM() > 0 ? inputs[0].getN()  : DEFAULT_INFERRED_DIM;
                     }
@@ -246,7 +261,6 @@ public class CPCostUtils {
                 }
                 break;
             case Reorg:
-            case Reshape:
                 switch (opcode) {
                     case "r'":
                         copyMissingDim(output, inputs[0].getN(), inputs[0].getM());
@@ -255,13 +269,18 @@ public class CPCostUtils {
                         copyMissingDim(output, inputs[0]);
                         break;
                     case "rdiag":
-                        if (inputs[0].getN() == 1) { // diagV2M
+                        if (inputs[0].getN() == 1) // diagV2M
                             copyMissingDim(output, inputs[0].getM(), inputs[0].getM());
-                        } else { // diagM2V
+                        else // diagM2V
                             copyMissingDim(output, inputs[0].getM(), 1);
-                        }
                         break;
-                    // "rsort" and "rshape" not implemented yet
+                    case "rsort":
+                        boolean ixRet = Boolean.parseBoolean(inputs[1].varName);
+                        if (ixRet)
+                            copyMissingDim(output, inputs[0].getM(), 1);
+                        else
+                            copyMissingDim(output, inputs[0]);
+                        break;
                 }
                 break;
             case Binary:
@@ -270,19 +289,26 @@ public class CPCostUtils {
                 copyMissingDim(output, origin);
                 break;
             case AggregateBinary:
-                AggregateBinaryCPInstruction abinst = (AggregateBinaryCPInstruction) inst;
-                if (abinst.transposeLeft && abinst.transposeRight)
+                boolean transposeLeft = false;
+                boolean transposeRight = false;
+                if (inputs.length == 4) {
+                    transposeLeft = inputs[2] != null && Boolean.parseBoolean(inputs[2].varName);
+                    transposeRight = inputs[3] != null && Boolean.parseBoolean(inputs[3].varName);
+                }
+                if (transposeLeft && transposeRight)
                     copyMissingDim(output, inputs[0].getM(), inputs[1].getM());
-                else if (abinst.transposeLeft)
+                else if (transposeLeft)
                     copyMissingDim(output, inputs[0].getM(), inputs[1].getN());
-                else if (abinst.transposeRight)
+                else if (transposeRight)
                     copyMissingDim(output, inputs[0].getN(), inputs[1].getN());
                 else
                     copyMissingDim(output, inputs[0].getN(), inputs[1].getM());
                 break;
             case ParameterizedBuiltin:
-                if (opcode.equals("rmempty")) {
+                if (opcode.equals("rmempty") || opcode.equals("replace")) {
                     copyMissingDim(output, inputs[0]);
+                } else if (opcode.equals("uppertri") || opcode.equals("lowertri")) {
+                    copyMissingDim(output, inputs[0].getM(), inputs[0].getM());
                 }
                 break;
             case Rand:
@@ -293,11 +319,47 @@ public class CPCostUtils {
                     copyMissingDim(output, nrows, ncols);
                 }
                 break;
+            case Ctable:
+                long m = (inputs[2].varName.matches("\\d+") ? Long.parseLong(inputs[2].varName) : -1);
+                long n = (inputs[3].varName.matches("\\d+") ? Long.parseLong(inputs[3].varName) : -1);
+                if (inputs[1].isScalar()) {// Histogram
+                    if (m < 0) m = inputs[0].getM();
+                    if (n < 0) n = 1;
+                    copyMissingDim(output, m, n);
+                } else { // transform (including "ctableexpand")
+                    if (m < 0) m = inputs[0].getM();
+                    if (n < 0) n = inputs[1].getCells();  // NOTE: very generous assumption, it could be revised;
+                    copyMissingDim(output, m, n);
+                }
+                break;
+            case MultiReturnBuiltin:
+                // special case: output and inputs stats arguments are swapped: always single input with multiple outputs
+                VarStats FirstStats = inputs[0];
+                VarStats SecondStats = inputs[1];
+                switch (opcode) {
+                    case "qr":
+                        copyMissingDim(FirstStats, output.getM(), output.getM()); // Q
+                        copyMissingDim(SecondStats, output.getM(), output.getN()); // R
+                        break;
+                    case "lu":
+                        copyMissingDim(FirstStats, output.getN(), output.getN()); // L
+                        copyMissingDim(SecondStats, output.getN(), output.getN()); // U
+                        break;
+                    case "eigen":
+                        copyMissingDim(FirstStats, output.getN(), 1); // values
+                        copyMissingDim(SecondStats, output.getN(), output.getN()); // vectors
+                        break;
+                    // not all opcodes supported yet
+                }
+                break;
             default:
-                throw new RuntimeException("Operation of type "+instructionType+" with opcode '"+opcode+"' has no formula for inferring dimensions");
+                throw new RuntimeException("Operation of type "+instType+" with opcode '"+opcode+"' has no formula for inferring dimensions");
         }
         if (output.getCells() < 0) {
-            throw new RuntimeException("Operation of type "+instructionType+" with opcode '"+opcode+"' has incomplete formula for inferring dimensions");
+            throw new RuntimeException("Operation of type "+instType+" with opcode '"+opcode+"' has incomplete formula for inferring dimensions");
+        }
+        if (output.getNNZ() < 0) {
+            output.characteristics.setNonZeros(output.getCells());
         }
     }
 
@@ -507,9 +569,9 @@ public class CPCostUtils {
                 }
                 // scale
                 if (opcode.startsWith("uar")) {
-                    costs *= inputs[0].getN();
-                } else if (opcode.startsWith("uac")) {
                     costs *= inputs[0].getM();
+                } else if (opcode.startsWith("uac")) {
+                    costs *= inputs[0].getN();
                 } else {
                     costs *= inputs[0].getCells();
                 }
@@ -659,7 +721,7 @@ public class CPCostUtils {
                 // costs represents the cost for matrix transpose
                 if (opcode.contains("_tl")) costs = inputs[0].getCellsWithSparsity();
                 if (opcode.contains("_tr")) costs = inputs[1].getCellsWithSparsity();
-                // else ba+* (or any of cpmm/rmm/mapmm from the Spark instructions)
+                // else ba+*/pmm (or any of cpmm/rmm/mapmm from the Spark instructions)
                 // reduce by factor of 2: matrix multiplication better than average FLOP count: 2*m*n*p=m*n*p
                 return (long) (inputs[0].getN() * inputs[0].getSparsity()) * output.getCells() + (long) costs;
             case Append:
@@ -739,15 +801,17 @@ public class CPCostUtils {
                 if (output == null)
                     throw new RuntimeException("Not all required arguments for Ctable operation is passed initialized");
                 if (opcode.startsWith("ctable")) {
-                    // potential issues for "ctableexpand"due to unknown output column size
+                    // potential high inaccuracy due to unknown output column size
+                    // and inferring bound on number of elements what could lead to high underestimation
                     return 3 * output.getCellsWithSparsity();
                 }
                 throw new DMLRuntimeException("Ctable operation with opcode '" + opcode + "' is not supported by SystemDS");
             case PMMJ:
-                if (output == null)
+                // currently this would never be reached since the pmm instruction uses AggregateBinary op. type
+                if (output == null || inputs.length < 1)
                     throw new RuntimeException("Not all required arguments for PMMJ operation is passed initialized");
                 if (opcode.equals("pmm")) {
-                    return output.getCells();
+                    return (long) (inputs[0].getN() * inputs[0].getSparsity()) * output.getCells();
                 }
                 throw new DMLRuntimeException("PMMJ operation with opcode '" + opcode + "' is not supported by SystemDS");
             case ParameterizedBuiltin:

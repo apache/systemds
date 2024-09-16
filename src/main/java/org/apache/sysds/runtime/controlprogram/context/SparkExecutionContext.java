@@ -56,6 +56,7 @@ import org.apache.sysds.common.Types.DataType;
 import org.apache.sysds.common.Types.ExecMode;
 import org.apache.sysds.common.Types.FileFormat;
 import org.apache.sysds.common.Types.ValueType;
+import org.apache.sysds.conf.CompilerConfig;
 import org.apache.sysds.conf.ConfigurationManager;
 import org.apache.sysds.conf.DMLConfig;
 import org.apache.sysds.hops.OptimizerUtils;
@@ -1993,6 +1994,11 @@ public class SparkExecutionContext extends ExecutionContext
 				_numExecutors = 1;
 				_defaultPar = 2;
 				_confOnly &= true;
+			}
+			else if (ConfigurationManager.getCompilerConfigFlag(CompilerConfig.ConfigType.RESOURCE_OPTIMIZATION)) {
+				_numExecutors = numExecutors;
+				_defaultPar = numExecutors * numCoresPerExec;
+				_confOnly = true;
 			}
 			else {
 				//get default parallelism (total number of executors and cores)

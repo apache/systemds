@@ -56,10 +56,11 @@ public class RecompilationTest extends AutomatedTestBase {
 
 	@Test
 	public void testSetDriverConfigurations() {
-		long expectedMemory = 1024*1024*1024; // 1GB
+		long nodeMemory = 1024*1024*1024; // 1GB
+		long expectedMemory = (long) (0.9 * nodeMemory);
 		int expectedThreads = 4;
 
-		ResourceCompiler.setDriverConfigurations(expectedMemory, expectedThreads);
+		ResourceCompiler.setDriverConfigurations(nodeMemory, expectedThreads);
 
 		Assert.assertEquals(expectedMemory, InfrastructureAnalyzer.getLocalMaxMemory());
 		Assert.assertEquals(expectedThreads, InfrastructureAnalyzer.getLocalParallelism());

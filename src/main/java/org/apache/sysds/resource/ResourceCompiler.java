@@ -221,8 +221,8 @@ public class ResourceCompiler {
 	 * @param nodeNumCores number of CPU cores
 	 */
 	public static void setDriverConfigurations(long nodeMemory, int nodeNumCores) {
-		// TODO: think of reasonable factor for the JVM heap as prt of the node's memory
-		InfrastructureAnalyzer.setLocalMaxMemory(nodeMemory);
+		// use 90% of the node's memory for the JVM heap -> rest needed for the OS
+		InfrastructureAnalyzer.setLocalMaxMemory((long) (0.9 * nodeMemory));
 		InfrastructureAnalyzer.setLocalPar(nodeNumCores);
 	}
 

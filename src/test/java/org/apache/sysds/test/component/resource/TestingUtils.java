@@ -60,10 +60,10 @@ public class TestingUtils {
 
 		List<String> csvLines = Arrays.asList(
 				"API_Name,Memory,vCPUs,gFlops,ramSpeed,diskSpeed,networkSpeed,Price",
-				"m5.xlarge,16.0,4,0.5,0,143.75,160,1.5",
-				"m5.2xlarge,32.0,8,1.0,0,0,0,1.9",
-				"c5.xlarge,8.0,4,0.5,0,0,0,1.7",
-				"c5.2xlarge,16.0,8,1.0,0,0,0,2.1"
+				"m5.xlarge,16.0,4,0.34375,21328.0,143.75,160.0,0.23",
+				"m5.2xlarge,32.0,8,0.6875,21328.0,287.50,320.0,0.46",
+				"c5.xlarge,8.0,4,0.46875,21328.0,143.75,160.0,0.194",
+				"c5.2xlarge,16.0,8,0.9375,21328.0,287.50,320.0,0.388"
 		);
 		Files.write(tmpFile.toPath(), csvLines);
 		return tmpFile;

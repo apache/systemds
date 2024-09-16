@@ -38,7 +38,6 @@ import static org.apache.sysds.resource.cost.IOCostUtils.*;
 
 public class SparkCostUtils {
 
-    /** Getting the cost for transforming the text data into double value */
     public static double getReblockInstTime(String opcode, VarStats input, VarStats output, IOMetrics executorMetrics) {
         // Reblock triggers a new stage
         // old stage: read text file + shuffle the intermediate text rdd
@@ -356,13 +355,13 @@ public class SparkCostUtils {
 
     public static double getMatMulInstTime(BinarySPInstruction inst, VarStats input1, VarStats input2, VarStats output, IOMetrics driverMetrics, IOMetrics executorMetrics) {
         double dataTransmissionTime;
-        long joinedSize = input1.rddStats.distributedSize + input2.rddStats.distributedSize;
-        RDDStats joinedRDD = new RDDStats(joinedSize, -1);
         int numPartitionsForMapping;
         if (inst instanceof CpmmSPInstruction) {
             CpmmSPInstruction cpmminst = (CpmmSPInstruction) inst;
             AggBinaryOp.SparkAggType aggType = cpmminst.getAggType();
             // estimate for in1.join(in2)
+            long joinedSize = input1.rddStats.distributedSize + input2.rddStats.distributedSize;
+            RDDStats joinedRDD = new RDDStats(joinedSize, -1);
             dataTransmissionTime = getSparkShuffleTime(joinedRDD, executorMetrics, true);
             if (aggType == AggBinaryOp.SparkAggType.SINGLE_BLOCK) {
                 dataTransmissionTime += getSparkCollectTime(output.rddStats, driverMetrics, executorMetrics);
@@ -374,6 +373,8 @@ public class SparkCostUtils {
             numPartitionsForMapping = joinedRDD.numPartitions;
         } else if (inst instanceof RmmSPInstruction) {
             // estimate for in1.join(in2)
+            long joinedSize = input1.rddStats.distributedSize + input2.rddStats.distributedSize;
+            RDDStats joinedRDD = new RDDStats(joinedSize, -1);
             dataTransmissionTime = getSparkShuffleTime(joinedRDD, executorMetrics, true);
             // estimate for out.combineByKey() per partition
             dataTransmissionTime += getSparkShuffleTime(output.rddStats, executorMetrics, false);
@@ -434,6 +435,69 @@ public class SparkCostUtils {
         return dataTransmissionTime + mapTime;
     }
 
+    public static double getCtableInstTime(CtableSPInstruction tableInst, VarStats input1, VarStats input2, VarStats input3, VarStats output, IOMetrics executorMetrics) {
+        String opcode = tableInst.getOpcode();
+        double shuffleTime;
+        if (opcode.equals("ctableexpand") || !input2.isScalar() && input3.isScalar()) { // CTABLE_EXPAND_SCALAR_WEIGHT/CTABLE_TRANSFORM_SCALAR_WEIGHT
+            // in1.join(in2)
+            shuffleTime = getSparkShuffleTime(input2.rddStats, executorMetrics, true);
+        } else if (input2.isScalar() && input3.isScalar()) { // CTABLE_TRANSFORM_HISTOGRAM
+            // no joins
+            shuffleTime = 0;
+        } else if (input2.isScalar() && !input3.isScalar()) { // CTABLE_TRANSFORM_WEIGHTED_HISTOGRAM
+            // in1.join(in3)
+            shuffleTime = getSparkShuffleTime(input3.rddStats, executorMetrics, true);
+        } else { // CTABLE_TRANSFORM
+            // in1.join(in2).join(in3)
+            shuffleTime = getSparkShuffleTime(input2.rddStats, executorMetrics, true);
+            shuffleTime += getSparkShuffleTime(input3.rddStats, executorMetrics, true);
+        }
+        // combineByKey()
+        shuffleTime += getSparkShuffleTime(output.rddStats, executorMetrics, true);
+        output.rddStats.hashPartitioned = true;
+
+        long nflop = getInstNFLOP(SPType.Ctable, opcode, output, input1, input2, input3);
+        double mapTime = getCPUTime(nflop, output.rddStats.numPartitions, executorMetrics,
+                output.rddStats, input1.rddStats, input2.rddStats, input3.rddStats);
+
+        return shuffleTime + mapTime;
+    }
+
+    public static double getParameterizedBuiltinInstTime(ParameterizedBuiltinSPInstruction paramInst, VarStats input1, VarStats input2, VarStats output, IOMetrics driverMetrics, IOMetrics executorMetrics) {
+        String opcode = paramInst.getOpcode();
+        double dataTransmissionTime;
+        switch (opcode) {
+            case "rmempty":
+                if (input2.rddStats == null) // broadcast
+                    dataTransmissionTime = getSparkBroadcastTime(input2, driverMetrics, executorMetrics);
+                else // join
+                    dataTransmissionTime = getSparkShuffleTime(input1.rddStats, executorMetrics, true);
+                dataTransmissionTime += getSparkShuffleTime(output.rddStats, executorMetrics, true);
+                break;
+            case "contains":
+                if (input2.isScalar()) {
+                    dataTransmissionTime = 0;
+                } else {
+                    dataTransmissionTime = getSparkBroadcastTime(input2, driverMetrics, executorMetrics);
+                    // ignore reduceByKey() cost
+                }
+                output.rddStats.isCollected = true;
+                break;
+            case "replace":
+            case "lowertri":
+            case "uppertri":
+                dataTransmissionTime = 0;
+                break;
+            default:
+                throw new RuntimeException("Spark operation ParameterizedBuiltin with opcode " + opcode + " is not supported yet");
+        }
+
+        long nflop = getInstNFLOP(paramInst.getSPInstructionType(), opcode, output, input1);
+        double mapTime = getCPUTime(nflop, input1.rddStats.numPartitions, executorMetrics, output.rddStats, input1.rddStats);
+
+        return dataTransmissionTime + mapTime;
+    }
+
     /**
      * Computes an estimate for the time needed by the CPU to execute (including memory access)
      * an instruction by providing number of floating operations.
@@ -451,6 +515,7 @@ public class SparkCostUtils {
         double memScanTime = 0;
         for (RDDStats input: inputs) {
             if (input == null) continue;
+            // compensates for spill-overs to account for non-compute bound operations
             memScanTime += getMemReadTime(input, executorMetrics);
         }
         double numWaves = Math.ceil((double) numPartitions / SparkExecutionContext.getDefaultParallelism(false));
@@ -458,6 +523,59 @@ public class SparkCostUtils {
         double cpuComputationTime = scaledNFLOP / executorMetrics.cpuFLOPS;
         double memWriteTime = output != null? getMemWriteTime(output, executorMetrics) : 0;
         return Math.max(memScanTime, cpuComputationTime) + memWriteTime;
+    }
+
+    public static void assignOutputRDDStats(SPInstruction inst, VarStats output, VarStats...inputs) {
+        if (!output.isScalar()) {
+            SPType instType = inst.getSPInstructionType();
+            String opcode = inst.getOpcode();
+            if (output.getCells() < 0) {
+                inferStats(instType, opcode, output, inputs);
+            }
+        }
+        output.rddStats = new RDDStats(output);
+    }
+
+    private static void inferStats(SPType instType, String opcode, VarStats output, VarStats...inputs) {
+        switch (instType) {
+            case Unary:
+            case Builtin:
+                CPCostUtils.inferStats(CPType.Unary, opcode, output, inputs);
+                break;
+            case AggregateUnary:
+            case AggregateUnarySketch:
+                CPCostUtils.inferStats(CPType.AggregateUnary, opcode, output, inputs);
+            case MatrixIndexing:
+                CPCostUtils.inferStats(CPType.MatrixIndexing, opcode, output, inputs);
+                break;
+            case Reorg:
+                CPCostUtils.inferStats(CPType.Reorg, opcode, output, inputs);
+                break;
+            case Binary:
+                CPCostUtils.inferStats(CPType.Binary, opcode, output, inputs);
+                break;
+            case CPMM:
+            case RMM:
+            case MAPMM:
+            case PMM:
+            case ZIPMM:
+                CPCostUtils.inferStats(CPType.AggregateBinary, opcode, output, inputs);
+                break;
+            case ParameterizedBuiltin:
+                CPCostUtils.inferStats(CPType.ParameterizedBuiltin, opcode, output, inputs);
+                break;
+            case Rand:
+                CPCostUtils.inferStats(CPType.Rand, opcode, output, inputs);
+                break;
+            case Ctable:
+                CPCostUtils.inferStats(CPType.Ctable, opcode, output, inputs);
+                break;
+            default:
+                throw new RuntimeException("Operation of type "+instType+" with opcode '"+opcode+"' has no formula for inferring dimensions");
+        }
+        if (output.getCells() < 0) {
+            throw new RuntimeException("Operation of type "+instType+" with opcode '"+opcode+"' has incomplete formula for inferring dimensions");
+        }
     }
 
     private static long getInstNFLOP(
@@ -552,6 +670,10 @@ public class SparkCostUtils {
                 return CPCostUtils.getInstNFLOP(CPType.Append, opcode, output, inputs);
             case BuiltinNary:
                 return CPCostUtils.getInstNFLOP(CPType.BuiltinNary, opcode, output, inputs);
+            case Ctable:
+                return CPCostUtils.getInstNFLOP(CPType.Ctable, opcode, output, inputs);
+            case ParameterizedBuiltin:
+                return CPCostUtils.getInstNFLOP(CPType.ParameterizedBuiltin, opcode, output, inputs);
             default:
                 // all existing cases should have been handled above
                 throw new DMLRuntimeException("Spark operation type'" + instructionType + "' is not supported by SystemDS");

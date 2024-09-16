@@ -234,7 +234,8 @@ public class IOCostUtils {
 			throw new RuntimeException("RDDStats.distributedMemory should carry the estimated size before getting write time");
 		double numWaves = Math.ceil((double) stats.numPartitions / SparkExecutionContext.getDefaultParallelism(false));
 		double sizeMB = (double) stats.distributedSize / (1024 * 1024);
-		return (numWaves * sizeMB) / (stats.numPartitions * metrics.memWriteBandwidth);
+		double partitionSizeMB = sizeMB / stats.numPartitions;
+		return numWaves * partitionSizeMB / (metrics.memWriteBandwidth / metrics.cpuCores);
 	}
 
 	/**

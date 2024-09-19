@@ -212,6 +212,7 @@ public class RewriteSimplifyWeightedUnaryMMTest extends AutomatedTestBase {
 			rCmd = getRCmd(inputDir(), String.valueOf(ID), expectedDir());
 
 			OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION = rewrites;
+			OptimizerUtils.ALLOW_OPERATOR_FUSION = rewrites;
 
 			//create matrices
 			double[][] U = getRandomMatrix(rows, cols, -1, 1, 0.80d, 3);

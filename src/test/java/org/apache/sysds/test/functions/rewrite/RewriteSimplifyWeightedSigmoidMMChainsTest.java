@@ -86,7 +86,7 @@ public class RewriteSimplifyWeightedSigmoidMMChainsTest extends AutomatedTestBas
 	}
 
 	/**
-	 * The following tests try to cover the special cases when the transposition is forgotten. In that case, the
+	 * The following tests try to cover the special cases when the transposition is missing. In that case, the
 	 * corresponding rewrite should catch this mistake and manually replace 'X' with 't(X)'.
 	 */
 

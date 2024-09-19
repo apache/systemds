@@ -52,6 +52,7 @@
 # prevTK           previous top-k slices (for incremental updates)
 # prevTKC          previous top-k scores (for incremental updates)
 # encodeLat        flag for encoding output lattice for less memory consumption
+# pruningStrat     pruning strategy: 0 all pruning, 1 only score pruning, 2 only size pruning, 3 only max score pruning, 4 no pruning
 # ---------------------------------------------------------------------------------------
 #
 # OUTPUT:
@@ -99,8 +100,9 @@ m_incSliceLine = function(
       + " -- see documentation for more details.");
   }
 
-  disableIncScorePruning = (pruningStrat == 1 | pruningStrat == 3);
-  disableIncSizePruning = (pruningStrat >= 2);
+  disableIncScorePruning = ( pruningStrat >= 2);
+  disableIncSizePruning = (pruningStrat == 1 | pruningStrat >= 3);
+  disableIncMaxScorePruning = (pruningStrat <= 2 | pruningStrat == 4);
 
   t1 = time();
 
@@ -181,7 +183,7 @@ m_incSliceLine = function(
   maxsc = getMaxScoreAllFeatures(nrow(X2), ncol(X2), prevLattice, metaPrevLattice,
      prevStats, encodeLat, differentOffsets, alpha, eAvg, prevFoffb, prevFoffe, foffb, foffe);
   [S, R, selCols] = createAndScoreBasicSlices(X2, changedX2, prevTK2, totalE, changedE,
-     eAvg, eAvgOld, eAvgNew, minSup, alpha, minsc, maxsc, verbose, disableIncScorePruning);
+     eAvg, eAvgOld, eAvgNew, minSup, alpha, minsc, maxsc, verbose, disableIncScorePruning, disableIncMaxScorePruning);
 
   # initialize lattice and statistics for incremental updates
   L1 = S;
@@ -302,7 +304,7 @@ m_incSliceLine = function(
 createAndScoreBasicSlices = function(Matrix[Double] X2, Matrix[Double] X2p,
     Matrix[Double] prevTK2, Matrix[Double] e, Matrix[Double] ep,
     Double eAvg, Double eAvgOld, Double eAvgNew, Double minSup, Double alpha,
-    Double minsc, Matrix[Double] maxsc, Boolean verbose, Boolean disableIncScorePruning)
+    Double minsc, Matrix[Double] maxsc, Boolean verbose, Boolean disableIncScorePruning, Boolean disableIncMaxScorePruning)
   return(Matrix[Double] S, Matrix[Double] R, Matrix[Double] selCols)
 {
   n2 = ncol(X2);
@@ -322,7 +324,7 @@ createAndScoreBasicSlices = function(Matrix[Double] X2, Matrix[Double] X2p,
   # b) unchanged pruning
   # (valid to prune feature if its previous max score was negative or below minsc)
   selCols2 = selCols;
-  if( !disableIncScorePruning ) {
+  if( !disableIncMaxScorePruning ) {
     selCols2 = selCols & (ncCnts > 0 | maxsc > max(0, minsc));
   } 
 

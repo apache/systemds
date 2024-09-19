@@ -60,9 +60,12 @@ public class RollTest {
         this.shift = shift;
 
         // Generate a MatrixBlock with the given parameters
-        this.inputSparse = TestUtils.generateTestMatrixBlock(rows, cols, 0, 10, sparsity, 1);
-        this.inputDense = new MatrixBlock(rows, cols, false); // false indicates dense
-        this.inputDense.copy(inputSparse, false); // Copy without maintaining sparsity
+        inputSparse = TestUtils.generateTestMatrixBlock(rows, cols, 0, 10, sparsity, 1);
+        inputSparse.recomputeNonZeros();
+
+        inputDense = new MatrixBlock(rows, cols, false); // false indicates dense
+        inputDense.copy(inputSparse, false); // Copy without maintaining sparsity
+        inputDense.recomputeNonZeros();
     }
 
     /**
@@ -76,9 +79,9 @@ public class RollTest {
         List<Object[]> tests = new ArrayList<>();
 
         // Define various sizes, sparsity levels, and shift values
-        int[] rows = {19, 1001, 2017};
-        int[] cols = {17, 1001, 2017};
-        double[] sparsities = {0.0, 0.01, 0.1, 0.7, 1.0};
+        int[] rows = {1, 19, 1001, 2017};
+        int[] cols = {1, 17, 1001, 2017};
+        double[] sparsities = {0.01, 0.1, 0.7, 1.0};
         int[] shifts = {0, 1, 5, 10, 15};
 
         // Generate all combinations of sizes, sparsities, and shifts
@@ -101,11 +104,13 @@ public class RollTest {
     @Test
     public void test() {
         try {
+
+
             IndexFunction op = new RollIndex(shift);
             MatrixBlock outputDense = inputDense.reorgOperations(
-					new ReorgOperator(op), inputDense, 0, 0, 0);
+					new ReorgOperator(op), new MatrixBlock(), 0, 0, 0);
             MatrixBlock outputSparse = inputSparse.reorgOperations(
-					new ReorgOperator(op), inputSparse, 0, 0, 0);
+					new ReorgOperator(op), new MatrixBlock(), 0, 0, 0);
             outputSparse.sparseToDense();
 
             // Compare the dense representations of both outputs

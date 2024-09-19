@@ -104,8 +104,6 @@ public class RollTest {
     @Test
     public void test() {
         try {
-
-
             IndexFunction op = new RollIndex(shift);
             MatrixBlock outputDense = inputDense.reorgOperations(
 					new ReorgOperator(op), new MatrixBlock(), 0, 0, 0);

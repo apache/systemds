@@ -102,7 +102,7 @@ m_incSliceLine = function(
 
   disableIncScorePruning = ( pruningStrat >= 2);
   disableIncSizePruning = (pruningStrat == 1 | pruningStrat >= 3);
-  disableIncMaxScorePruning = (pruningStrat <= 2 | pruningStrat == 4);
+  disableIncMaxScorePruning = (pruningStrat == 1 | pruningStrat == 2 | pruningStrat == 4);
 
   t1 = time();
 

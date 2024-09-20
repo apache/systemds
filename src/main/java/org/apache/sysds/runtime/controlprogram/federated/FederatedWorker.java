@@ -189,19 +189,26 @@ public class FederatedWorker {
 	private ChannelInitializer<SocketChannel> createChannel(boolean ssl) {
 		try {
 			// TODO add ability to use real ssl files, not self signed certificates.
-			final SelfSignedCertificate cert = new SelfSignedCertificate();
-			final SslContext cont2 = SslContextBuilder.forServer(cert.certificate(), cert.privateKey()).build();
+			final SelfSignedCertificate cert;
+			final SslContext cont2;
+			final boolean sslEnabled = ConfigurationManager.getDMLConfig().getBooleanValue(DMLConfig.USE_SSL_FEDERATED_COMMUNICATION) || ssl;
+
+			if(ssl) {
+				cert = new SelfSignedCertificate();
+				cont2 = SslContextBuilder.forServer(cert.certificate(), cert.privateKey()).build();
+			}
+			else {
+				cert = null;
+				cont2 = null;
+			}
 
 			return new ChannelInitializer<>() {
 				@Override
 				public void initChannel(SocketChannel ch) {
 					final ChannelPipeline cp = ch.pipeline();
-					if(ConfigurationManager.getDMLConfig()
-						.getBooleanValue(DMLConfig.USE_SSL_FEDERATED_COMMUNICATION)) {
+					if(sslEnabled)
 						cp.addLast(cont2.newHandler(ch.alloc()));
-					}
-					if(ssl)
-						cp.addLast(cont2.newHandler(ch.alloc()));
+					
 					final Optional<ImmutablePair<ChannelInboundHandlerAdapter, ChannelOutboundHandlerAdapter>> compressionStrategy = FederationUtils.compressionStrategy();
 					cp.addLast("NetworkTrafficCounter", new NetworkTrafficCounter(FederatedStatistics::logWorkerTraffic));
 					cp.addLast("CompressionDecodingStartStatistics", new CompressionDecoderStartStatisticsHandler());

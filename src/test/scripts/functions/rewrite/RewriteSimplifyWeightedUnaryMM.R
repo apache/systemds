@@ -41,7 +41,7 @@ if(type == 1){
 } else if(type == 2){
     R = W * abs(U%*%t(V))
 } else if(type == 3){
-    R = W * log(U%*%t(V))
+    R = W * sin(U%*%t(V))
 } else if(type == 4){
     R = (W*(U%*%t(V)))*2
 } else if(type == 5){

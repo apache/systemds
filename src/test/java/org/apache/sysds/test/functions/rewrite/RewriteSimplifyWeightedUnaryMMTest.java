@@ -73,13 +73,13 @@ public class RewriteSimplifyWeightedUnaryMMTest extends AutomatedTestBase {
 	}
 
 	@Test
-	public void testWeightedUnaryMMLogNoRewrite(){
+	public void testWeightedUnaryMMSinNoRewrite(){
 		testRewriteSimplifyWeightedUnaryMM(3, false);
 	}
 
 	@Test
-	public void testWeightedUnaryMMLogRewrite(){
-		testRewriteSimplifyWeightedUnaryMM(3, true);	//pattern: W * log(U%*%t(V))
+	public void testWeightedUnaryMMSinRewrite(){
+		testRewriteSimplifyWeightedUnaryMM(3, true);	//pattern: W * sin(U%*%t(V))
 	}
 
 	/**
@@ -215,9 +215,9 @@ public class RewriteSimplifyWeightedUnaryMMTest extends AutomatedTestBase {
 			OptimizerUtils.ALLOW_OPERATOR_FUSION = rewrites;
 
 			//create matrices
-			double[][] U = getRandomMatrix(rows, cols, 1, 5, 0.80d, 3);
-			double[][] V = getRandomMatrix(rows, cols, 1, 5, 0.70d, 4);
-			double[][] W = getRandomMatrix(rows, cols, 1, 5, 0.60d, 5);
+			double[][] U = getRandomMatrix(rows, cols, -1, 1, 0.80d, 3);
+			double[][] V = getRandomMatrix(rows, cols, -1, 1, 0.70d, 4);
+			double[][] W = getRandomMatrix(rows, cols, -1, 1, 0.60d, 5);
 			writeInputMatrixWithMTD("U", U, true);
 			writeInputMatrixWithMTD("V", V, true);
 			writeInputMatrixWithMTD("W", W, true);
@@ -230,10 +230,10 @@ public class RewriteSimplifyWeightedUnaryMMTest extends AutomatedTestBase {
 			HashMap<MatrixValue.CellIndex, Double> rfile = readRMatrixFromExpectedDir("R");
 			TestUtils.compareMatrices(dmlfile, rfile, eps, "Stat-DML", "Stat-R");
 
-			/*if(rewrites)
+			if(rewrites)
 				Assert.assertTrue(heavyHittersContainsString("wumm"));
 			else
-				Assert.assertFalse(heavyHittersContainsString("wumm"));*/
+				Assert.assertFalse(heavyHittersContainsString("wumm"));
 
 		}
 		finally {

@@ -133,7 +133,7 @@ public class ElementwiseAdditionTest extends AutomatedTestBase
 		config.addVariable("cols2", cols2);
 		
 		loadTestConfiguration(config);
-		
+		//this.programArgs
 		runTest(true,LanguageException.class);
 	}
 	

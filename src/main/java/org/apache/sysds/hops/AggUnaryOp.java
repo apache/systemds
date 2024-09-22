@@ -20,6 +20,7 @@
 package org.apache.sysds.hops;
 
 import org.apache.sysds.api.DMLScript;
+import org.apache.sysds.common.Types;
 import org.apache.sysds.common.Types.AggOp;
 import org.apache.sysds.common.Types.DataType;
 import org.apache.sysds.common.Types.Direction;
@@ -30,6 +31,7 @@ import org.apache.sysds.hops.AggBinaryOp.SparkAggType;
 import org.apache.sysds.hops.rewrite.HopRewriteUtils;
 import org.apache.sysds.lops.Lop;
 import org.apache.sysds.common.Types.ExecType;
+import org.apache.sysds.lops.Nary;
 import org.apache.sysds.lops.PartialAggregate;
 import org.apache.sysds.lops.TernaryAggregate;
 import org.apache.sysds.lops.UAggOuterChain;
@@ -37,6 +39,8 @@ import org.apache.sysds.lops.UnaryCP;
 import org.apache.sysds.runtime.controlprogram.context.SparkExecutionContext;
 import org.apache.sysds.runtime.meta.DataCharacteristics;
 import org.apache.sysds.runtime.meta.MatrixCharacteristics;
+
+import java.util.List;
 
 // Aggregate unary (cell) operation: Sum (aij), col_sum, row_sum
 
@@ -475,6 +479,17 @@ public class AggUnaryOp extends MultiThreadedHop
 					}
 				}
 			}
+			if (input1.getParent().size() == 1
+					&& input1 instanceof NaryOp) { //sum single consumer
+				NaryOp nop = (NaryOp) input1;
+				if(nop.getOp() == Types.OpOpN.MULT){
+					List<Hop> inputsN = nop.getInput();
+					if(inputsN.size() == 3){
+						ret = HopRewriteUtils.isEqualSize(inputsN.get(0), inputsN.get(1)) &&
+								HopRewriteUtils.isEqualSize(inputsN.get(1), inputsN.get(2));
+					}
+				}
+			}
 		}
 		return ret;
 	}
@@ -554,83 +569,91 @@ public class AggUnaryOp extends MultiThreadedHop
 
 	private Lop constructLopsTernaryAggregateRewrite(ExecType et) 
 	{
-		BinaryOp input1 = (BinaryOp)getInput().get(0);
-		Hop input11 = input1.getInput().get(0);
-		Hop input12 = input1.getInput().get(1);
-		
 		Lop in1 = null, in2 = null, in3 = null;
-		boolean handled = false;
+		Hop input = getInput().get(0);
+		if(input instanceof BinaryOp) {
+			BinaryOp input1 = (BinaryOp) input;
+			Hop input11 = input1.getInput().get(0);
+			Hop input12 = input1.getInput().get(1);
 
-		if (input1.getOp() == OpOp2.POW) {
-			assert(HopRewriteUtils.isLiteralOfValue(input12, 3)) : "this case can only occur with a power of 3";
-			in1 = input11.constructLops();
-			in2 = in1;
-			in3 = in1;
-			handled = true;
-		}
-		else if (HopRewriteUtils.isBinary(input11, OpOp2.MULT, OpOp2.POW) ) {
-			BinaryOp b11 = (BinaryOp)input11;
-			switch( b11.getOp() ) {
-			case MULT: // A*B*C case
-				in1 = input11.getInput().get(0).constructLops();
-				in2 = input11.getInput().get(1).constructLops();
-				in3 = input12.constructLops();
-				handled = true;
-				break;
-			case POW: // A*A*B case
-				Hop b112 = b11.getInput().get(1);
-				if ( !(input12 instanceof BinaryOp && ((BinaryOp)input12).getOp()==OpOp2.MULT)
-						&& HopRewriteUtils.isLiteralOfValue(b112, 2) ) {
-					in1 = b11.getInput().get(0).constructLops();
-					in2 = in1;
-					in3 = input12.constructLops();
-					handled = true;
-				}
-				break;
-			default: break;
-			}
-		}
-		else if( HopRewriteUtils.isBinary(input12, OpOp2.MULT, OpOp2.POW) ) {
-			BinaryOp b12 = (BinaryOp)input12;
-			switch (b12.getOp()) {
-			case MULT: // A*B*C case
+			boolean handled = false;
+
+			if (input1.getOp() == OpOp2.POW) {
+				assert (HopRewriteUtils.isLiteralOfValue(input12, 3)) : "this case can only occur with a power of 3";
 				in1 = input11.constructLops();
-				in2 = input12.getInput().get(0).constructLops();
-				in3 = input12.getInput().get(1).constructLops();
+				in2 = in1;
+				in3 = in1;
 				handled = true;
-				break;
-			case POW: // A*B*B case
-				Hop b112 = b12.getInput().get(1);
-				if ( HopRewriteUtils.isLiteralOfValue(b112, 2) ) {
-					in1 = b12.getInput().get(0).constructLops();
-					in2 = in1;
-					in3 = input11.constructLops();
-					handled = true;
+			} else if (HopRewriteUtils.isBinary(input11, OpOp2.MULT, OpOp2.POW)) {
+				BinaryOp b11 = (BinaryOp) input11;
+				switch (b11.getOp()) {
+					case MULT: // A*B*C case
+						in1 = input11.getInput().get(0).constructLops();
+						in2 = input11.getInput().get(1).constructLops();
+						in3 = input12.constructLops();
+						handled = true;
+						break;
+					case POW: // A*A*B case
+						Hop b112 = b11.getInput().get(1);
+						if (!(input12 instanceof BinaryOp && ((BinaryOp) input12).getOp() == OpOp2.MULT)
+								&& HopRewriteUtils.isLiteralOfValue(b112, 2)) {
+							in1 = b11.getInput().get(0).constructLops();
+							in2 = in1;
+							in3 = input12.constructLops();
+							handled = true;
+						}
+						break;
+					default:
+						break;
 				}
-				break;
-			default: break;
+			} else if (HopRewriteUtils.isBinary(input12, OpOp2.MULT, OpOp2.POW)) {
+				BinaryOp b12 = (BinaryOp) input12;
+				switch (b12.getOp()) {
+					case MULT: // A*B*C case
+						in1 = input11.constructLops();
+						in2 = input12.getInput().get(0).constructLops();
+						in3 = input12.getInput().get(1).constructLops();
+						handled = true;
+						break;
+					case POW: // A*B*B case
+						Hop b112 = b12.getInput().get(1);
+						if (HopRewriteUtils.isLiteralOfValue(b112, 2)) {
+							in1 = b12.getInput().get(0).constructLops();
+							in2 = in1;
+							in3 = input11.constructLops();
+							handled = true;
+						}
+						break;
+					default:
+						break;
+				}
 			}
+
+			if (!handled) {
+				in1 = input11.constructLops();
+				in2 = input12.constructLops();
+				in3 = new LiteralOp(1).constructLops();
+			}
+		} else {
+			NaryOp input1 = (NaryOp) input;
+			in1 = input1.getInput().get(0).constructLops();
+			in2 = input1.getInput().get(1).constructLops();
+			in3 = input1.getInput().get(2).constructLops();
 		}
 
-		if (!handled) {
-			in1 = input11.constructLops();
-			in2 = input12.constructLops();
-			in3 = new LiteralOp(1).constructLops();
-		}
-
-		//create new ternary aggregate operator 
-		int k = OptimizerUtils.getConstrainedNumThreads( _maxNumThreads );
+		//create new ternary aggregate operator
+		int k = OptimizerUtils.getConstrainedNumThreads(_maxNumThreads);
 		// The execution type of a unary aggregate instruction should depend on the execution type of inputs to avoid OOM
 		// Since we only support matrix-vector and not vector-matrix, checking the execution type of input1 should suffice.
-		ExecType et_input = input1.optFindExecType();
+		ExecType et_input = input.optFindExecType();
 		// Because ternary aggregate are not supported on GPU
-		et_input = et_input == ExecType.GPU ? ExecType.CP :  et_input;
+		et_input = et_input == ExecType.GPU ? ExecType.CP : et_input;
 		// If forced ExecType is FED, it means that the federated planner updated the ExecType and
 		// execution may fail if ExecType is not FED
 		et_input = (getForcedExecType() == ExecType.FED) ? ExecType.FED : et_input;
-		
-		return new TernaryAggregate(in1, in2, in3, AggOp.SUM, 
-			OpOp2.MULT, _direction, getDataType(), ValueType.FP64, et_input, k);
+
+		return new TernaryAggregate(in1, in2, in3, AggOp.SUM,
+				OpOp2.MULT, _direction, getDataType(), ValueType.FP64, et_input, k);
 	}
 	
 	@Override

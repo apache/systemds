@@ -3844,6 +3844,24 @@ public class LibMatrixMult
 			c[ ci+6 ] *= aval; c[ ci+7 ] *= aval;
 		}
 	}
+	
+	public static void vectMultiplyInPlace(final double[] a, double[] c, int[] cix, final int ai, final int ci, final int len) {
+		final int bn = len%8;
+		//rest, not aligned to 8-blocks
+		for( int j = ci; j < ci+bn; j++ )
+			c[ j ] *= a[ ai+cix[j] ];
+		//unrolled 8-block (for better instruction-level parallelism)
+		for( int j = ci+bn; j < ci+len; j+=8 ) {
+			c[ j+0 ] *= a[ ai+cix[j+0] ];
+			c[ j+1 ] *= a[ ai+cix[j+1] ];
+			c[ j+2 ] *= a[ ai+cix[j+2] ];
+			c[ j+3 ] *= a[ ai+cix[j+3] ];
+			c[ j+4 ] *= a[ ai+cix[j+4] ];
+			c[ j+5 ] *= a[ ai+cix[j+5] ];
+			c[ j+6 ] *= a[ ai+cix[j+6] ];
+			c[ j+7 ] *= a[ ai+cix[j+7] ];
+		}
+	}
 
 	//note: public for use by codegen for consistency
 	public static void vectMultiplyWrite( double[] a, double[] b, double[] c, int ai, int bi, int ci, final int len )
@@ -3889,7 +3907,7 @@ public class LibMatrixMult
 		}
 	}
 
-	private static void vectMultiply( double[] a, double[] c, int ai, int ci, final int len )
+	public static void vectMultiply(double[] a, double[] c, int ai, int ci, final int len)
 	{
 		final int bn = len%8;
 		

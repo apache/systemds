@@ -390,7 +390,8 @@ public class LineageRecomputeUtils {
 							break;
 						}
 						case BuiltinNary: {
-							String opcode = item.getOpcode().equals("n+") ? "plus" : item.getOpcode();
+							String opcode = item.getOpcode().equals("n+") ? "plus" :
+									item.getOpcode().equals("n*") ? "mult" : item.getOpcode();
 							operands.put(item.getId(), HopRewriteUtils.createNary(
 								OpOpN.valueOf(opcode.toUpperCase()), createNaryInputs(item, operands)));
 							break;

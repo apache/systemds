@@ -19,8 +19,9 @@
 #
 #-------------------------------------------------------------
 
-X = rand(rows=10000, cols=10);
-Y = X %*% rand(rows=10, cols=1);
-w = multiLogReg(X=X, Y=Y, icpt=2, tol=1e-8, reg=0.01, maxi=20);
+X = rand(rows=100000, cols=1000);
+rank = 10;
+
+[w, h] = pnmf(X=X, rnk=rank, verbose=FALSE);
 print(sum(w));
 

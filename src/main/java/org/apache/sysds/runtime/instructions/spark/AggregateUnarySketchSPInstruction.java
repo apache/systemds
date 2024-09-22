@@ -173,6 +173,10 @@ public class AggregateUnarySketchSPInstruction extends UnarySPInstruction {
 		throw new NotImplementedException("Aggregate sketch instruction for tensors has not been implemented yet.");
 	}
 
+	public AggBinaryOp.SparkAggType getAggType() {
+		return aggtype;
+	}
+
 	private static class AggregateUnarySketchCreateFunction
 		implements Function<Tuple2<MatrixIndexes, MatrixBlock>, CorrMatrixBlock> {
 		private static final long serialVersionUID = 7295176181965491548L;

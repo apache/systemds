@@ -317,7 +317,8 @@ public abstract class Enumerator {
 			// estimate execution time of the current program
 			// TODO: pass further relevant cluster configurations to cost estimator after extending it
 			//  like for example: FLOPS, I/O and networking speed
-			timeCost = CostEstimator.estimateExecutionTime(program) + CloudUtils.DEFAULT_CLUSTER_LAUNCH_TIME;
+			timeCost = CostEstimator.estimateExecutionTime(program, point.driverInstance, point.executorInstance)
+					+ CloudUtils.DEFAULT_CLUSTER_LAUNCH_TIME;
 		} catch (CostEstimationException e) {
 			throw new RuntimeException(e.getMessage());
 		}

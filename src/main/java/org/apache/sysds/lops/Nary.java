@@ -117,6 +117,8 @@ public class Nary extends Lop {
 				return "n"+operationType.name().toLowerCase();
 			case PLUS:
 				return "n+";
+			case MULT:
+				return "n*";
 			default:
 				throw new UnsupportedOperationException(
 					"Nary operation type (" + operationType + ") is not defined.");

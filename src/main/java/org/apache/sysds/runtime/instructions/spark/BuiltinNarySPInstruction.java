@@ -34,6 +34,7 @@ import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysds.runtime.controlprogram.context.SparkExecutionContext;
 import org.apache.sysds.runtime.frame.data.FrameBlock;
 import org.apache.sysds.runtime.functionobjects.Builtin;
+import org.apache.sysds.runtime.functionobjects.Multiply;
 import org.apache.sysds.runtime.functionobjects.Plus;
 import org.apache.sysds.runtime.instructions.InstructionUtils;
 import org.apache.sysds.runtime.instructions.cp.CPOperand;
@@ -163,7 +164,7 @@ public class BuiltinNarySPInstruction extends SPInstruction implements LineageTr
 				return;
 			}
 		}
-		else if( ArrayUtils.contains(new String[]{"nmin","nmax","n+"}, getOpcode()) ) {
+		else if( ArrayUtils.contains(new String[]{"nmin","nmax","n+","n*"}, getOpcode()) ) {
 			//compute output characteristics
 			dcout = computeMinMaxOutputDataCharacteristics(sec, inputs);
 			
@@ -179,7 +180,7 @@ public class BuiltinNarySPInstruction extends SPInstruction implements LineageTr
 			}
 			
 			//compute nary min/max (partitioning-preserving)
-			out = in.mapValues(new MinMaxAddFunction(getOpcode(), scalars));
+			out = in.mapValues(new MinMaxAddMultFunction(getOpcode(), scalars));
 		}
 		
 		//set output RDD and add lineage
@@ -278,17 +279,17 @@ public class BuiltinNarySPInstruction extends SPInstruction implements LineageTr
 		}
 	}
 	
-	private static class MinMaxAddFunction implements Function<MatrixBlock[], MatrixBlock> {
+	private static class MinMaxAddMultFunction implements Function<MatrixBlock[], MatrixBlock> {
 		private static final long serialVersionUID = -4227447915387484397L;
 		
 		private final SimpleOperator _op;
 		private final ScalarObject[] _scalars;
-		
-		public MinMaxAddFunction(String opcode, List<ScalarObject> scalars) {
+
+		public MinMaxAddMultFunction(String opcode, List<ScalarObject> scalars) {
 			_scalars = scalars.toArray(new ScalarObject[0]);
-			_op = new SimpleOperator(opcode.equals("n+") ?
-				Plus.getPlusFnObject() :
-				Builtin.getBuiltinFnObject(opcode.substring(1)));
+			_op = new SimpleOperator(opcode.equals("n+") ? Plus.getPlusFnObject() :
+					opcode.equals("n*") ? Multiply.getMultiplyFnObject() :
+							Builtin.getBuiltinFnObject(opcode.substring(1)));
 		}
 		
 		@Override

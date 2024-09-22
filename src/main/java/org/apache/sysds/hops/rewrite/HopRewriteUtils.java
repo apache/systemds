@@ -745,8 +745,15 @@ public class HopRewriteUtils {
 	
 	public static NaryOp createNary(OpOpN op, Hop... inputs) {
 		Hop mainInput = inputs[0];
-		NaryOp nop = new NaryOp(mainInput.getName(), mainInput.getDataType(),
-			mainInput.getValueType(), op, inputs);
+		// safe for unordered inputs of Scalars and Matrices
+		// e.g.: S*M*S = M
+		// safe for Scalar with different value type
+		// e.g.: Scalar(Int) * Scalar(FP64) = Scalar(FP64)
+		boolean containsMatrix = Arrays.stream(inputs).anyMatch(Hop::isMatrix);
+		boolean containsFP64 = Arrays.stream(inputs).anyMatch(h -> h.getValueType() == ValueType.FP64);
+		DataType dtOut = containsMatrix ? DataType.MATRIX : mainInput.getDataType();
+		ValueType vtOut = containsFP64? ValueType.FP64 : mainInput.getValueType();
+		NaryOp nop = new NaryOp(mainInput.getName(), dtOut, vtOut, op, inputs);
 		nop.setBlocksize(mainInput.getBlocksize());
 		copyLineNumbers(mainInput, nop);
 		nop.refreshSizeInformation();

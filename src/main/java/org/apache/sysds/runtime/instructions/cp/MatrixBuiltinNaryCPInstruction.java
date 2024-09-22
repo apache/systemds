@@ -62,7 +62,7 @@ public class MatrixBuiltinNaryCPInstruction extends BuiltinNaryCPInstruction imp
 					outBlock = ((FrameBlock)outBlock).append(frames.get(i), cbind);
 			}
 		}
-		else if( ArrayUtils.contains(new String[]{"nmin", "nmax", "n+"}, getOpcode()) ) {
+		else if( ArrayUtils.contains(new String[]{"nmin", "nmax", "n+", "n*"}, getOpcode()) ) {
 			outBlock = MatrixBlock.naryOperations(_optr, matrices.toArray(new MatrixBlock[0]),
 				scalars.toArray(new ScalarObject[0]), new MatrixBlock());
 		}

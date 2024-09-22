@@ -200,7 +200,8 @@ public class NaryOp extends Hop {
 					HopRewriteUtils.getSumValidInputNnz(dc, true));
 				case MIN:
 				case MAX:
-				case PLUS: return new MatrixCharacteristics(
+				case PLUS:
+				case MULT: return new MatrixCharacteristics(
 						HopRewriteUtils.getMaxInputDim(this, true),
 						HopRewriteUtils.getMaxInputDim(this, false), -1, -1);
 				case LIST:
@@ -230,6 +231,7 @@ public class NaryOp extends Hop {
 			case MIN:
 			case MAX:
 			case PLUS:
+			case MULT:
 				setDim1(getDataType().isScalar() ? 0 : HopRewriteUtils.getMaxInputDim(this, true));
 				setDim2(getDataType().isScalar() ? 0 : HopRewriteUtils.getMaxInputDim(this, false));
 				break;

@@ -24,6 +24,8 @@ import org.apache.sysds.runtime.matrix.data.MatrixValue;
 import org.apache.sysds.test.AutomatedTestBase;
 import org.apache.sysds.test.TestConfiguration;
 import org.apache.sysds.test.TestUtils;
+import org.apache.sysds.utils.Statistics;
+import org.junit.Assert;
 import org.junit.Test;
 
 import java.util.HashMap;
@@ -100,7 +102,7 @@ public class RewriteSimplifyDistributiveBinaryOperationTest extends AutomatedTes
 			OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION = rewrites;
 			OptimizerUtils.ALLOW_OPERATOR_FUSION = rewrites;
 
-			//create dense matrix so that rewrites are possible
+			//create matrices
 			double[][] X = getRandomMatrix(rows, cols, -1, 1, 0.60d, 3);
 			double[][] Y = getRandomMatrix(rows, cols, -1, 1, 0.60d, 5);
 			writeInputMatrixWithMTD("X", X, true);
@@ -115,9 +117,14 @@ public class RewriteSimplifyDistributiveBinaryOperationTest extends AutomatedTes
 			TestUtils.compareMatrices(dmlfile, rfile, eps, "Stat-DML", "Stat-R");
 
 			/**
-			 * We dont add any further assertions because the heavy hitters are identical for both rewritten
-			 * and non-rewritten tests. However, we manually checked that the rewrites are indeed applied.
+			 * We add '*1' to the statemements in the dml file to ensure a difference in the
+			 * heavy hitter count for the rewritten statements.
 			 */
+
+			if(rewrites)
+				Assert.assertTrue(Statistics.getCPHeavyHitterCount("*") == 1);
+			else
+				Assert.assertTrue(Statistics.getCPHeavyHitterCount("*") == 2);
 
 		}
 		finally {

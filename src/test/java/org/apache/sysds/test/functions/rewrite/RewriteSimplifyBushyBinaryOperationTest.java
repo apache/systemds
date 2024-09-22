@@ -24,6 +24,7 @@ import org.apache.sysds.runtime.matrix.data.MatrixValue;
 import org.apache.sysds.test.AutomatedTestBase;
 import org.apache.sysds.test.TestConfiguration;
 import org.apache.sysds.test.TestUtils;
+import org.junit.Assert;
 import org.junit.Test;
 
 import java.util.HashMap;
@@ -83,7 +84,7 @@ public class RewriteSimplifyBushyBinaryOperationTest extends AutomatedTestBase {
 			//OptimizerUtils.ALLOW_OPERATOR_FUSION = rewrites;
 			//OptimizerUtils.ALLOW_SUM_PRODUCT_REWRITES = rewrites;
 
-			//create dense matrix so that rewrites are possible
+			//create matrices
 			double[][] X = getRandomMatrix(rows, cols, -1, 1, 0.60d, 3);
 			double[][] Y = getRandomMatrix(rows, cols, -1, 1, 0.60d, 5);
 			double[][] Z = getRandomMatrix(rows, cols, -1, 1, 0.60d, 6);
@@ -102,10 +103,14 @@ public class RewriteSimplifyBushyBinaryOperationTest extends AutomatedTestBase {
 			TestUtils.compareMatrices(dmlfile, rfile, eps, "Stat-DML", "Stat-R");
 
 			/**
-			 * We dont add any further assertions because the heavy hitters are identical for both rewritten
-			 * and non-rewritten tests. However, we manually checked that the rewrites are indeed applied.
-			 * Need to revisit this issue later.
+			 * The rewrite in RewriteAlgebraicSimplificationStatic is not entered. Hence, we fail
+			 * the assertions for this rewrite so that we can revisit this issue later.
 			 */
+
+			if(rewrites)
+				Assert.assertTrue(1==2);
+			else
+				Assert.assertTrue(1==1);
 
 		}
 		finally {

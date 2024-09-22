@@ -51,10 +51,15 @@ public class MatrixMultiplyKernelTest {
 		testMatrixMultiply(MIN_PAR, 16, 1, 1, 1);
 	}
 	
-//	@Test //FIXME
-//	public void testDenseDenseMatrixLargeVector() {
-//		testMatrixMultiply(16, MIN_PAR, 1, 1, 1);
-//	}
+	@Test //parallelization over rows in lhs
+	public void testDenseDenseMatrixLargeVector() {
+		testMatrixMultiply(4000, 3000, 1, 1, 1);
+	}
+	
+	@Test //parallelization over rows in rhs
+	public void testDenseDenseMatrixLargeVectorPm2() {
+		testMatrixMultiply(16, MIN_PAR, 1, 1, 1);
+	}
 	
 	@Test
 	public void testDenseDenseVectorMatrix() {
@@ -90,10 +95,10 @@ public class MatrixMultiplyKernelTest {
 	
 	// sparse-dense kernels
 	
-//	@Test FIXME
-//	public void testSparseDenseDotProduct() {
-//		testMatrixMultiply(1, MIN_PAR, 1, 0.1, 1);
-//	}
+	@Test
+	public void testSparseDenseDotProduct() {
+		testMatrixMultiply(1, MIN_PAR, 1, 0.1, 1);
+	}
 	
 	@Test
 	public void testSparseDenseMatrixSmallVector() {

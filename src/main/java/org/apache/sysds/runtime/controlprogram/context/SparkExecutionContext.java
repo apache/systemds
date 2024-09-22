@@ -56,10 +56,12 @@ import org.apache.sysds.common.Types.DataType;
 import org.apache.sysds.common.Types.ExecMode;
 import org.apache.sysds.common.Types.FileFormat;
 import org.apache.sysds.common.Types.ValueType;
+import org.apache.sysds.conf.CompilerConfig;
 import org.apache.sysds.conf.ConfigurationManager;
 import org.apache.sysds.conf.DMLConfig;
 import org.apache.sysds.hops.OptimizerUtils;
 import org.apache.sysds.lops.Checkpoint;
+import org.apache.sysds.resource.CloudUtils;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.compress.CompressedMatrixBlock;
 import org.apache.sysds.runtime.compress.io.ReaderSparkCompressed;
@@ -160,10 +162,8 @@ public class SparkExecutionContext extends ExecutionContext
 	}
 
 	public static void initLocalSparkContext(SparkConf sparkConf) {
-		if (_sconf == null) {
-			_sconf = new SparkClusterConfig();
-		}
-		_sconf.analyzeSparkConfiguation(sparkConf);
+		// allows re-initialization
+		_sconf = new SparkClusterConfig(sparkConf);
 	}
 
 	public synchronized static JavaSparkContext getSparkContextStatic() {
@@ -1884,6 +1884,23 @@ public class SparkExecutionContext extends ExecutionContext
 				LOG.debug( this.toString() );
 		}
 
+		// Meant to be used only resource optimization
+		public SparkClusterConfig(SparkConf sconf)
+		{
+			_confOnly = true;
+
+			//parse version and config
+			String sparkVersion = CloudUtils.SPARK_VERSION;
+			_legacyVersion = (UtilFunctions.compareVersion(sparkVersion, "1.6.0") < 0
+					|| sconf.getBoolean("spark.memory.useLegacyMode", false) );
+
+			//obtain basic spark configurations
+			if( _legacyVersion )
+				analyzeSparkConfiguationLegacy(sconf);
+			else
+				analyzeSparkConfiguation(sconf);
+		}
+
 		public long getBroadcastMemoryBudget() {
 			return (long) (_memExecutor * _memBroadcastFrac);
 		}
@@ -1977,6 +1994,11 @@ public class SparkExecutionContext extends ExecutionContext
 				_numExecutors = 1;
 				_defaultPar = 2;
 				_confOnly &= true;
+			}
+			else if (ConfigurationManager.getCompilerConfigFlag(CompilerConfig.ConfigType.RESOURCE_OPTIMIZATION)) {
+				_numExecutors = numExecutors;
+				_defaultPar = numExecutors * numCoresPerExec;
+				_confOnly = true;
 			}
 			else {
 				//get default parallelism (total number of executors and cores)

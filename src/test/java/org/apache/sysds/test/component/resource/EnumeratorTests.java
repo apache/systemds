@@ -378,11 +378,10 @@ public class EnumeratorTests {
 
 
 		List<CloudInstance> expectedInstances = new ArrayList<>(Arrays.asList(
-				instances.get("c5.xlarge"),
-				instances.get("m5.xlarge")
+				instances.get("c5.xlarge")
 		));
 		// expected solution pool with 0 executors (number executors = 0, executors and executorInstance being null)
-		// each solution having one of the available instances as driver node
+		// with a single solution -> the cheapest instance for the driver
 		Assert.assertEquals(expectedInstances.size(), actualSolutionPoolGB.size());
 		Assert.assertEquals(expectedInstances.size(), actualSolutionPoolIB.size());
 		for (int i = 0; i < expectedInstances.size(); i++) {
@@ -428,8 +427,8 @@ public class EnumeratorTests {
 		gridBasedEnumerator.processing();
 		SolutionPoint solution = gridBasedEnumerator.postprocessing();
 
-		// expected m5.xlarge since it is the cheaper
-		Assert.assertEquals("m5.xlarge", solution.driverInstance.getInstanceName());
+		// expected c5.xlarge since it is the cheaper
+		Assert.assertEquals("c5.xlarge", solution.driverInstance.getInstanceName());
 		// expected no executor nodes since tested for a 'zero' program
 		Assert.assertEquals(0, solution.numberExecutors);
 	}
@@ -466,8 +465,8 @@ public class EnumeratorTests {
 		gridBasedEnumerator.processing();
 		SolutionPoint solution = gridBasedEnumerator.postprocessing();
 
-		// expected m5.xlarge since it is the cheaper
-		Assert.assertEquals("m5.xlarge", solution.driverInstance.getInstanceName());
+		// expected c5.xlarge since it is the cheaper
+		Assert.assertEquals("c5.xlarge", solution.driverInstance.getInstanceName());
 		// expected no executor nodes since tested for a 'zero' program
 		Assert.assertEquals(0, solution.numberExecutors);
 	}

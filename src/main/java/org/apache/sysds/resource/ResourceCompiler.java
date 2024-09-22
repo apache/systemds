@@ -55,11 +55,11 @@ public class ResourceCompiler {
 	public static final long DEFAULT_DRIVER_MEMORY = 512*1024*1024; // 0.5GB
 	public static final int DEFAULT_DRIVER_THREADS = 1; // 0.5GB
 	public static final long DEFAULT_EXECUTOR_MEMORY = 512*1024*1024; // 0.5GB
-	public static final int DEFAULT_EXECUTOR_THREADS = 1; // 0.5GB
-	public static final int DEFAULT_NUMBER_EXECUTORS = 1; // 0.5GB
+	public static final int DEFAULT_EXECUTOR_THREADS = 2; // avoids creating spark context
+	public static final int DEFAULT_NUMBER_EXECUTORS = 2; // avoids creating spark context
 	static {
 		// TODO: consider moving to the executable of the resource optimizer once implemented
-		USE_LOCAL_SPARK_CONFIG = true;
+		// USE_LOCAL_SPARK_CONFIG = true; -> needs to be false to trigger evaluating the default parallelism
 		ConfigurationManager.getCompilerConfig().set(CompilerConfig.ConfigType.ALLOW_DYN_RECOMPILATION, false);
 		ConfigurationManager.getCompilerConfig().set(CompilerConfig.ConfigType.RESOURCE_OPTIMIZATION, true);
 	}
@@ -214,12 +214,26 @@ public class ResourceCompiler {
 		}
 	}
 
+	/**
+	 * Sets resource configurations for the node executing the control program.
+	 *
+	 * @param nodeMemory memory in Bytes
+	 * @param nodeNumCores number of CPU cores
+	 */
 	public static void setDriverConfigurations(long nodeMemory, int nodeNumCores) {
-		// TODO: think of reasonable factor for the JVM heap as prt of the node's memory
-		InfrastructureAnalyzer.setLocalMaxMemory(nodeMemory);
+		// use 90% of the node's memory for the JVM heap -> rest needed for the OS
+		InfrastructureAnalyzer.setLocalMaxMemory((long) (0.9 * nodeMemory));
 		InfrastructureAnalyzer.setLocalPar(nodeNumCores);
 	}
 
+	/**
+	 * Sets resource configurations for the cluster of nodes
+	 * executing the Spark jobs.
+	 *
+	 * @param numExecutors number of nodes in cluster
+	 * @param nodeMemory memory in Bytes per node
+	 * @param nodeNumCores number of CPU cores per node
+	 */
 	public static void setExecutorConfigurations(int numExecutors, long nodeMemory, int nodeNumCores) {
 		// TODO: think of reasonable factor for the JVM heap as prt of the node's memory
 		if (numExecutors > 0) {
@@ -235,6 +249,7 @@ public class ResourceCompiler {
 			sparkConf.set("spark.executor.memory", (nodeMemory/(1024*1024))+"m");
 			sparkConf.set("spark.executor.instances", Integer.toString(numExecutors));
 			sparkConf.set("spark.executor.cores", Integer.toString(nodeNumCores));
+			// not setting "spark.default.parallelism" on purpose -> allows re-initialization
 			// ------------------ Dynamic Configurations -------------------
 			SparkExecutionContext.initLocalSparkContext(sparkConf);
 		} else {

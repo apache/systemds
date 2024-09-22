@@ -21,56 +21,98 @@ package org.apache.sysds.resource.cost;
 
 import org.apache.sysds.conf.ConfigurationManager;
 import org.apache.sysds.hops.OptimizerUtils;
-import org.apache.sysds.runtime.DMLRuntimeException;
-import org.apache.sysds.runtime.controlprogram.context.SparkExecutionContext;
 import org.apache.sysds.utils.stats.InfrastructureAnalyzer;
 
+
 public class RDDStats {
-	@SuppressWarnings("unused")
-	private static int blockSize; // TODO: think of more efficient way (does not changes, init once)
-	public long totalSize;
-	private static long hdfsBlockSize;
-	public long numPartitions;
-	public long numBlocks;
-	public long numValues;
-	public long rlen;
-	public long clen;
-	public double sparsity;
-	public VarStats cpVar;
-	public int numParallelTasks;
+	long distributedSize;
+	int numPartitions;
+	boolean hashPartitioned;
+	boolean checkpoint;
+	double cost;
+	boolean isCollected;
 
-	public static void setDefaults() {
-		blockSize = ConfigurationManager.getBlocksize();
-		hdfsBlockSize = InfrastructureAnalyzer.getHDFSBlockSize();
-	}
-
-	public RDDStats(VarStats cpVar) {
-		totalSize = OptimizerUtils.estimateSizeExactSparsity(cpVar.getM(), cpVar.getN(), cpVar.getS());
-		numPartitions = (int) Math.max(Math.min(totalSize / hdfsBlockSize, cpVar._mc.getNumBlocks()), 1);
-		numBlocks = cpVar._mc.getNumBlocks();
-		this.cpVar = cpVar;
-		rlen = cpVar.getM();
-		clen = cpVar.getN();
-		numValues = rlen*clen;
-		sparsity = cpVar.getS();
-		numParallelTasks = (int) Math.min(numPartitions, SparkExecutionContext.getDefaultParallelism(false));
-	}
-
-	public static RDDStats transformNumPartitions(RDDStats oldRDD, long newNumPartitions) {
-		if (oldRDD.cpVar == null) {
-			throw new DMLRuntimeException("Cannot transform RDDStats without VarStats");
+	/**
+	 * Initiates RDD statistics object bound
+	 * to an existing {@code VarStats} object.
+	 * Uses HDFS block size to adjust automatically the
+	 * number of partitions for the current RDD.
+	 *
+	 * @param sourceStats bound variables statistics
+	 */
+	public RDDStats(VarStats sourceStats) {
+		// required cpVar initiated for not scalars
+		if (sourceStats == null) {
+			throw new RuntimeException("RDDStats cannot be initialized without valid input variable statistics");
 		}
-		RDDStats newRDD = new RDDStats(oldRDD.cpVar);
-		newRDD.numPartitions = newNumPartitions;
-		return newRDD;
+		checkpoint = false;
+		isCollected = false;
+		hashPartitioned = false;
+		// RDD specific characteristics not initialized -> simulates lazy evaluation
+		distributedSize = estimateDistributedSize(sourceStats);
+		numPartitions = getNumPartitions();
+		cost = 0;
 	}
 
-	public static RDDStats transformNumBlocks(RDDStats oldRDD, long newNumBlocks) {
-		if (oldRDD.cpVar == null) {
-			throw new DMLRuntimeException("Cannot transform RDDStats without VarStats");
+	/**
+	 * Initiates RDD statistics object for
+	 * intermediate variables (not bound to {@code VarStats}).
+	 * Intended to be used for intermediate shuffle estimations.
+	 *
+	 * @param size distributed size of the object
+	 * @param partitions target number of partitions;
+	 *                      -1 for fitting to HDFS block size
+	 */
+	public RDDStats(long size, int partitions) {
+		checkpoint = false;
+		isCollected = false;
+		hashPartitioned = false;
+		// RDD specific characteristics not initialized -> simulates lazy evaluation
+		distributedSize = size;
+		if (partitions < 0) {
+			numPartitions = getNumPartitions();
+		} else {
+			numPartitions = partitions;
 		}
-		RDDStats newRDD = new RDDStats(oldRDD.cpVar);
-		newRDD.numBlocks = newNumBlocks;
-		return newRDD;
+		cost = -1;
+	}
+
+	private int getNumPartitions() {
+		if (distributedSize < 0) {
+			throw new RuntimeException("Estimating number of partitions requires valid distributed RDD size");
+		} else if (distributedSize > 0) {
+			long hdfsBlockSize = InfrastructureAnalyzer.getHDFSBlockSize();
+			return (int) Math.max((distributedSize + hdfsBlockSize - 1) / hdfsBlockSize, 1);
+		}
+		return -1; // for scalars
+	}
+
+	/**
+	 * Meant to be used at testing
+	 * @return estimated time (seconds) for generation of the current RDD
+	 */
+	public double getCost() {
+		return cost;
+	}
+
+	/**
+	 * Meant to be used at testing
+	 * @return flag if the current RDD is collected
+	 */
+	public boolean isCollected() {
+		return isCollected;
+	}
+
+	private static long estimateDistributedSize(VarStats sourceStats) {
+		if (sourceStats.isScalar())
+			return 0; // 0 so it is non-negative
+		if (sourceStats.getCells() < 0)
+			throw new RuntimeException("Estimated size for RDD object is negative");
+		return OptimizerUtils.estimatePartitionedSizeExactSparsity(
+				sourceStats.getM(),
+				sourceStats.getN(),
+				ConfigurationManager.getBlocksize(),
+				sourceStats.getSparsity()
+		);
 	}
 }

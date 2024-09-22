@@ -47,10 +47,10 @@ public class TestingUtils {
 	public static HashMap<String, CloudInstance> getSimpleCloudInstanceMap() {
 		HashMap<String, CloudInstance> instanceMap =  new HashMap<>();
 		// fill the map wsearchStrategyh enough cloud instances to allow testing all search space dimension searchStrategyerations
-		instanceMap.put("m5.xlarge", new CloudInstance("m5.xlarge", GBtoBytes(16), 4, 0.5, 0.0, 143.75, 160, 1.5));
-		instanceMap.put("m5.2xlarge", new CloudInstance("m5.2xlarge", GBtoBytes(32), 8, 1.0, 0.0, 0.0, 0.0, 1.9));
-		instanceMap.put("c5.xlarge", new CloudInstance("c5.xlarge", GBtoBytes(8), 4, 0.5, 0.0, 0.0, 0.0, 1.7));
-		instanceMap.put("c5.2xlarge", new CloudInstance("c5.2xlarge", GBtoBytes(16), 8, 1.0, 0.0, 0.0, 0.0, 2.1));
+		instanceMap.put("m5.xlarge", new CloudInstance("m5.xlarge", GBtoBytes(16), 4, 0.34375, 21328.0, 143.75, 160.0, 0.23));
+		instanceMap.put("m5.2xlarge", new CloudInstance("m5.2xlarge", GBtoBytes(32), 8, 0.6875, 21328.0, 287.50, 320.0, 0.46));
+		instanceMap.put("c5.xlarge", new CloudInstance("c5.xlarge", GBtoBytes(8), 4, 0.46875, 21328.0, 143.75, 160.0, 0.194));
+		instanceMap.put("c5.2xlarge", new CloudInstance("c5.2xlarge", GBtoBytes(16), 8, 0.9375, 21328.0, 287.50, 320.0, 0.388));
 
 		return instanceMap;
 	}
@@ -60,10 +60,10 @@ public class TestingUtils {
 
 		List<String> csvLines = Arrays.asList(
 				"API_Name,Memory,vCPUs,gFlops,ramSpeed,diskSpeed,networkSpeed,Price",
-				"m5.xlarge,16.0,4,0.5,0,143.75,160,1.5",
-				"m5.2xlarge,32.0,8,1.0,0,0,0,1.9",
-				"c5.xlarge,8.0,4,0.5,0,0,0,1.7",
-				"c5.2xlarge,16.0,8,1.0,0,0,0,2.1"
+				"m5.xlarge,16.0,4,0.34375,21328.0,143.75,160.0,0.23",
+				"m5.2xlarge,32.0,8,0.6875,21328.0,287.50,320.0,0.46",
+				"c5.xlarge,8.0,4,0.46875,21328.0,143.75,160.0,0.194",
+				"c5.2xlarge,16.0,8,0.9375,21328.0,287.50,320.0,0.388"
 		);
 		Files.write(tmpFile.toPath(), csvLines);
 		return tmpFile;

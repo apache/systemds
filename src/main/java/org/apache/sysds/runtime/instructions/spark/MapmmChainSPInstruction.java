@@ -44,25 +44,25 @@ import scala.Tuple2;
 
 public class MapmmChainSPInstruction extends SPInstruction implements LineageTraceable {
 	private ChainType _chainType = null;
-	private CPOperand _input1 = null;
-	private CPOperand _input2 = null;
-	private CPOperand _input3 = null;
-	private CPOperand _output = null;
+	public CPOperand input1 = null;
+	public CPOperand input2 = null;
+	public CPOperand input3 = null;
+	public CPOperand output = null;
 
 	private MapmmChainSPInstruction(Operator op, CPOperand in1, CPOperand in2, CPOperand out, ChainType type, String opcode, String istr) {
 		super(SPType.MAPMMCHAIN, op, opcode, istr);
-		_input1 = in1;
-		_input2 = in2;
-		_output = out;
+		input1 = in1;
+		input2 = in2;
+		output = out;
 		_chainType = type;
 	}
 
 	private MapmmChainSPInstruction(Operator op, CPOperand in1, CPOperand in2, CPOperand in3, CPOperand out, ChainType type, String opcode, String istr) {
 		super(SPType.MAPMMCHAIN, op, opcode, istr);
-		_input1 = in1;
-		_input2 = in2;
-		_input3 = in3;
-		_output = out;
+		input1 = in1;
+		input2 = in2;
+		input3 = in3;
+		output = out;
 		_chainType = type;
 	}
 
@@ -102,8 +102,8 @@ public class MapmmChainSPInstruction extends SPInstruction implements LineageTra
 		SparkExecutionContext sec = (SparkExecutionContext)ec;
 		
 		//get rdd and broadcast inputs
-		JavaPairRDD<MatrixIndexes,MatrixBlock> inX = sec.getBinaryMatrixBlockRDDHandleForVariable( _input1.getName() );
-		PartitionedBroadcast<MatrixBlock> inV = sec.getBroadcastForVariable( _input2.getName() );
+		JavaPairRDD<MatrixIndexes,MatrixBlock> inX = sec.getBinaryMatrixBlockRDDHandleForVariable( input1.getName() );
+		PartitionedBroadcast<MatrixBlock> inV = sec.getBroadcastForVariable( input2.getName() );
 		
 		//execute mapmmchain (guaranteed to have single output block)
 		MatrixBlock out = null;
@@ -112,21 +112,21 @@ public class MapmmChainSPInstruction extends SPInstruction implements LineageTra
 			out = RDDAggregateUtils.sumStable(tmp);
 		}
 		else { // ChainType.XtwXv / ChainType.XtXvy
-			PartitionedBroadcast<MatrixBlock> inW = sec.getBroadcastForVariable( _input3.getName() );
+			PartitionedBroadcast<MatrixBlock> inW = sec.getBroadcastForVariable( input3.getName() );
 			JavaRDD<MatrixBlock> tmp = inX.map(new RDDMapMMChainFunction2(inV, inW, _chainType));
 			out = RDDAggregateUtils.sumStable(tmp);
 		}
 		
 		//put output block into symbol table (no lineage because single block)
 		//this also includes implicit maintenance of matrix characteristics
-		sec.setMatrixOutput(_output.getName(), out);
+		sec.setMatrixOutput(output.getName(), out);
 	}
 
 	@Override
 	public Pair<String, LineageItem> getLineageItem(ExecutionContext ec) {
 		CPOperand chainT = new CPOperand(_chainType.name(), Types.ValueType.INT64, Types.DataType.SCALAR, true);
-		return Pair.of(_output.getName(), new LineageItem(getOpcode(),
-			LineageItemUtils.getLineage(ec, _input1, _input2, _input3, chainT)));
+		return Pair.of(output.getName(), new LineageItem(getOpcode(),
+			LineageItemUtils.getLineage(ec, input1, input2, input3, chainT)));
 	}
 
 	/**

@@ -19,17 +19,14 @@
 
 package org.apache.sysds.resource.cost;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
-import org.apache.sysds.common.Types;
-import org.apache.sysds.hops.AggBinaryOp;
+import org.apache.sysds.common.Types.DataType;
+import org.apache.sysds.common.Types.FileFormat;
 import org.apache.sysds.hops.OptimizerUtils;
-import org.apache.sysds.lops.DataGen;
 import org.apache.sysds.lops.LeftIndex;
-import org.apache.sysds.lops.Lop;
-import org.apache.sysds.lops.MMTSJ;
-import org.apache.sysds.lops.RightIndex;
+import org.apache.sysds.lops.MapMult;
 import org.apache.sysds.parser.DMLProgram;
+import org.apache.sysds.parser.DataIdentifier;
+import org.apache.sysds.resource.CloudInstance;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.controlprogram.*;
 import org.apache.sysds.runtime.controlprogram.context.SparkExecutionContext;
@@ -37,101 +34,101 @@ import org.apache.sysds.runtime.instructions.Instruction;
 import org.apache.sysds.runtime.instructions.InstructionUtils;
 import org.apache.sysds.runtime.instructions.cp.*;
 import org.apache.sysds.runtime.instructions.spark.*;
-import org.apache.sysds.runtime.matrix.data.MatrixBlock;
-import org.apache.sysds.runtime.matrix.operators.AggregateUnaryOperator;
-import org.apache.sysds.runtime.matrix.operators.CMOperator;
 import org.apache.sysds.runtime.meta.DataCharacteristics;
-import org.apache.sysds.runtime.meta.MatrixCharacteristics;
 import org.apache.sysds.runtime.meta.MetaDataFormat;
 
-import static org.apache.sysds.common.Types.FileFormat.BINARY;
-import static org.apache.sysds.common.Types.FileFormat.TEXT;
 import static org.apache.sysds.lops.Data.PREAD_PREFIX;
-import static org.apache.sysds.resource.cost.IOCostUtils.HDFS_SOURCE_IDENTIFIER;
-import static org.apache.sysds.resource.cost.IOCostUtils.S3_SOURCE_IDENTIFIER;
+import static org.apache.sysds.lops.DataGen.*;
+import static org.apache.sysds.resource.cost.IOCostUtils.*;
+import static org.apache.sysds.resource.cost.SparkCostUtils.getRandInstTime;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.HashSet;
+import java.util.*;
 
 /**
  * Class for estimating the execution time of a program.
  * For estimating the time for new set of resources,
  * a new instance of CostEstimator should be created.
- * TODO: consider reusing of some parts of the computation
- *   for small changes in the resources
  */
 public class CostEstimator
 {
-	protected static final Log LOG = LogFactory.getLog(CostEstimator.class.getName());
-	
-	private static final int DEFAULT_NUMITER = 15;
-
-	//time-conversion
-	private static final long DEFAULT_FLOPS = 2L * 1024 * 1024 * 1024; //2GFLOPS
-	//private static final long UNKNOWN_TIME = -1;
-
-	//floating point operations
-	private static final double DEFAULT_NFLOP_NOOP = 10;
-	private static final double DEFAULT_NFLOP_UNKNOWN = 1;
-	private static final double DEFAULT_NFLOP_CP = 1;
-	private static final double DEFAULT_NFLOP_TEXT_IO = 350;
-
-	protected static long CP_FLOPS = DEFAULT_FLOPS;
-	protected static long SP_FLOPS = DEFAULT_FLOPS;
-	protected static final VarStats _unknownStats = new VarStats(new MatrixCharacteristics(-1,-1,-1,-1));
-
+	private static final long MIN_MEMORY_TO_TRACK = 1024 * 1024; // 1MB
+	private static final int DEFAULT_NUM_ITER = 15;
 	// Non-static members
-	private SparkExecutionContext.MemoryManagerParRDDs _parRDDs;
-	@SuppressWarnings("unused")
-	private double[] cpCost; // (compute cost, I/O cost) for CP instructions
-	@SuppressWarnings("unused")
-	private double[] spCost; // (compute cost, I/O cost) for Spark instructions
-
+	private final Program _program;
+	private final IOCostUtils.IOMetrics driverMetrics;
+	private final IOCostUtils.IOMetrics executorMetrics;
 	// declare here the hashmaps
-	protected HashMap<String, VarStats> _stats;
-	// protected HashMap<String, RDDStats> _sparkStats;
-	// protected HashMap<Integer, LinkedList<String>> _transformations;
-	protected HashSet<String> _functions;
-	private final long localMemory;
-	private long usedMememory;
+	private final HashMap<String, VarStats> _stats;
+	private final HashSet<String> _functions;
+	private final long localMemoryLimit; // refers to the drivers JVM memory
+	private long freeLocalMemory;
 
 	/**
 	 * Entry point for estimating the execution time of a program.
 	 * @param program compiled runtime program
+	 * @param driverNode ?
+	 * @param executorNode ?
 	 * @return estimated time for execution of the program
 	 * given the resources set in {@link SparkExecutionContext}
 	 * @throws CostEstimationException in case of errors
 	 */
-	public static double estimateExecutionTime(Program program) throws CostEstimationException {
-		CostEstimator estimator = new CostEstimator();
-		double costs = estimator.getTimeEstimate(program);
-		return costs;
+	public static double estimateExecutionTime(Program program, CloudInstance driverNode, CloudInstance executorNode) throws CostEstimationException {
+		CostEstimator estimator = new CostEstimator(program, driverNode, executorNode);
+		return estimator.getTimeEstimate();
 	}
-	private CostEstimator() {
+	public CostEstimator(Program program, CloudInstance driverNode, CloudInstance executorNode) {
+		_program = program;
+		driverMetrics = new IOCostUtils.IOMetrics(driverNode);
+		executorMetrics = executorNode != null? new IOCostUtils.IOMetrics(executorNode) : null;
 		// initialize here the hashmaps
 		_stats = new HashMap<>();
-		//_transformations = new HashMap<>();
 		_functions = new HashSet<>();
-		localMemory = (long) OptimizerUtils.getLocalMemBudget();
-		this._parRDDs = new SparkExecutionContext.MemoryManagerParRDDs(0.1);
-		usedMememory = 0;
-		cpCost = new double[]{0.0, 0.0};
-		spCost = new double[]{0.0, 0.0};
+		localMemoryLimit = (long) OptimizerUtils.getLocalMemBudget();
+		freeLocalMemory = localMemoryLimit;
 	}
 
-	public static void setCP_FLOPS(long gFlops) {
-		CP_FLOPS = gFlops;
-	}
-	public static void setSP_FLOPS(long gFlops) {
-		SP_FLOPS = gFlops;
+	/**
+	 * Meant to be used for testing purposes
+	 * @param inputStats ?
+	 */
+	public void putStats(HashMap<String, VarStats> inputStats) {
+		_stats.putAll(inputStats);
 	}
 
-	public double getTimeEstimate(Program rtprog) throws CostEstimationException {
+	/**
+	 * Intended to be called only when it is certain that the corresponding
+	 * variable is not a scalar and its statistics are in {@code _stats} already.
+	 * @param statsName the corresponding operand name
+	 * @return {@code VarStats object} if the given key is present
+	 * in the map saving the current variable statistics.
+	 * @throws RuntimeException if the corresponding variable is not in {@code _stats}
+	 */
+	public VarStats getStats(String statsName) {
+		VarStats result = _stats.get(statsName);
+		if (result == null) {
+			throw new RuntimeException(statsName+" key not imported yet");
+		}
+		return result;
+	}
+
+	/**
+	 * Intended to be called when the corresponding variable could be scalar.
+	 * @param statsName the corresponding operand name
+	 * @return {@code VarStats object} in any case
+	 */
+	public VarStats getStatsWithDefaultScalar(String statsName) {
+		VarStats result = _stats.get(statsName);
+		if (result == null) {
+			result = new VarStats(statsName, null);
+		}
+		return result;
+	}
+
+	public double getTimeEstimate() throws CostEstimationException {
 		double costs = 0;
 
 		//get cost estimate
-		for( ProgramBlock pb : rtprog.getProgramBlocks() )
+		for( ProgramBlock pb : _program.getProgramBlocks() )
 			costs += getTimeEstimatePB(pb);
 
 		return costs;
@@ -144,7 +141,7 @@ public class CostEstimator
 			WhileProgramBlock tmp = (WhileProgramBlock)pb;
 			for (ProgramBlock pb2 : tmp.getChildBlocks())
 				ret += getTimeEstimatePB(pb2);
-			ret *= DEFAULT_NUMITER;
+			ret *= DEFAULT_NUM_ITER;
 		}
 		else if (pb instanceof IfProgramBlock) {
 			IfProgramBlock tmp = (IfProgramBlock)pb; {
@@ -163,7 +160,7 @@ public class CostEstimator
 				ret += getTimeEstimatePB(pb2);
 			// NOTE: currently ParFor blocks are handled as regular for block
 			//  what could lead to very inaccurate estimation in case of complex ParFor blocks
-			ret *= OptimizerUtils.getNumIterations(tmp, DEFAULT_NUMITER);
+			ret *= OptimizerUtils.getNumIterations(tmp, DEFAULT_NUM_ITER);
 		}
 		else if ( pb instanceof FunctionProgramBlock ) {
 			FunctionProgramBlock tmp = (FunctionProgramBlock) pb;
@@ -177,846 +174,851 @@ public class CostEstimator
 
 			for( Instruction inst : tmp )
 			{
-				ret += getTimeEstimateInst(pb, inst);
-			}
-		}
-		return ret;
-	}
-
-	private double getTimeEstimateInst(ProgramBlock pb, Instruction inst) throws CostEstimationException {
-		double ret;
-		if (inst instanceof CPInstruction) {
-			maintainCPInstVariableStatistics((CPInstruction)inst);
-
-			ret = getTimeEstimateCPInst(pb, (CPInstruction)inst);
-
-			if( inst instanceof FunctionCallCPInstruction ) //functions
-			{
-				FunctionCallCPInstruction finst = (FunctionCallCPInstruction)inst;
-				String fkey = DMLProgram.constructFunctionKey(finst.getNamespace(), finst.getFunctionName());
-				//awareness of recursive functions, missing program
-				if( !_functions.contains(fkey) && pb.getProgram()!=null )
+				if( inst instanceof FunctionCallCPInstruction ) //functions
 				{
-					_functions.add(fkey);
-					Program prog = pb.getProgram();
-					FunctionProgramBlock fpb = prog.getFunctionProgramBlock(
-							finst.getNamespace(), finst.getFunctionName());
-					ret += getTimeEstimatePB(fpb);
-					_functions.remove(fkey);
+					FunctionCallCPInstruction finst = (FunctionCallCPInstruction)inst;
+					String fkey = DMLProgram.constructFunctionKey(finst.getNamespace(), finst.getFunctionName());
+					//awareness of recursive functions, missing program
+					if( !_functions.contains(fkey) && pb.getProgram()!=null )
+					{
+						_functions.add(fkey);
+						maintainFCallInputStats(finst);
+						FunctionProgramBlock fpb = _program.getFunctionProgramBlock(fkey, true);
+						ret = getTimeEstimatePB(fpb);
+						maintainFCallOutputStats(finst, fpb);
+						_functions.remove(fkey);
+					}
+				} else {
+					maintainStats(inst);
+					ret += getTimeEstimateInst(inst);
 				}
 			}
-		} else { // inst instanceof SPInstruction
-			ret = 0; //dummy
 		}
 		return ret;
 	}
 
 	/**
-	 * Keep the variable statistics updated and compute I/O cost.
-	 * NOTE: At program execution reading the files is done once
-	 * 	the matrix is needed but cost estimation the place for
-	 * 	adding cost is not relevant.
-	 * @param inst
+	 * Creates copies of the {@code VarStats} for the function argument.
+	 * Meant to be called before estimating the execution time of
+	 * the function program block of the corresponding function call instruction,
+	 * otherwise the relevant statistics would not be available for the estimation.
+	 * @param finst ?
 	 */
-	private void maintainCPInstVariableStatistics(CPInstruction inst) throws CostEstimationException {
-		if( inst instanceof VariableCPInstruction )
+	public void maintainFCallInputStats(FunctionCallCPInstruction finst) {
+		CPOperand[] inputs = finst.getInputs();
+		for (int i = 0; i < inputs.length; i++) {
+			DataType dt = inputs[i].getDataType();
+			if (dt == DataType.TENSOR) {
+				throw new DMLRuntimeException("Tensor is not supported for cost estimation");
+			} else if (dt == DataType.MATRIX || dt == DataType.FRAME || dt == DataType.LIST) {
+				String argName = finst.getFunArgNames().get(i);
+				VarStats argStats = getStats(inputs[i].getName());
+				if (inputs[i].getName().equals(argName)) {
+					if (argStats != _stats.get(argName))
+						throw  new RuntimeException("Overriding referenced variable within a function call is not a handled case");
+					// reference duplication in different domain
+					argStats.selfRefCount++;
+				} else {
+					// passing the reference to another variable
+					argStats.refCount++;
+					_stats.put(finst.getFunArgNames().get(i), argStats);
+				}
+			}
+			// ignore scalars
+		}
+	}
+
+	/**
+	 * Creates copies of the {@code VarStats} for the function output parameters.
+	 * Meant to be called after estimating the execution time of
+	 * the function program block of the corresponding function call instruction,
+	 * otherwise the relevant statistics would not have been created yet.
+	 * @param finst ?
+	 * @param fpb ?
+	 */
+	public void maintainFCallOutputStats(FunctionCallCPInstruction finst, FunctionProgramBlock fpb) {
+		List<DataIdentifier> params = fpb.getOutputParams();
+		List<String> boundNames = finst.getBoundOutputParamNames();
+		for(int i = 0; i < boundNames.size(); i++) {
+			// iterate through boundNames since it is possible to get the first output only
+			DataType dt = params.get(i).getDataType();
+			if (dt == DataType.TENSOR) {
+				throw new DMLRuntimeException("Tensor is not supported for cost estimation");
+			}
+			else if (dt == DataType.MATRIX || dt == DataType.FRAME || dt == DataType.LIST) {
+				VarStats boundStats = getStats(params.get(i).getName());
+				boundStats.refCount++;
+				_stats.put(boundNames.get(i), boundStats);
+			}
+			// ignore scalars
+		}
+	}
+
+	/**
+	 * Keep the basic-block variable statistics updated and compute I/O cost.
+	 * NOTE: At program execution reading the files is done once
+	 *  the matrix is needed but cost estimation the place for
+	 *  adding cost is not relevant.
+	 * @param inst ?
+	 */
+	public void maintainStats(Instruction inst) {
+		// CP Instructions changing the map for statistics
+		if(inst instanceof VariableCPInstruction)
 		{
 			String opcode = inst.getOpcode();
 			VariableCPInstruction vinst = (VariableCPInstruction) inst;
+			if (vinst.getInput1().getDataType() == DataType.TENSOR) {
+				throw new DMLRuntimeException("Tensor is not supported for cost estimation");
+			}
 			String varName = vinst.getInput1().getName();
-			if( opcode.equals("createvar") ) {
-				DataCharacteristics dataCharacteristics = vinst.getMetaData().getDataCharacteristics();
-				VarStats varStats = new VarStats(dataCharacteristics);
-				varStats._dirty = true;
-				if (vinst.getInput1().getName().startsWith(PREAD_PREFIX)) {
-					// NOTE: add I/O here although at execution the reading is done when the input is needed
-					String fileName = vinst.getInput2().getName();
+			switch (opcode) {
+				case "createvar":
+					DataCharacteristics dataCharacteristics = vinst.getMetaData().getDataCharacteristics();
+					VarStats varStats = new VarStats(varName, dataCharacteristics);
+					if (vinst.getInput1().getName().startsWith(PREAD_PREFIX)) {
+						// NOTE: add I/O here although at execution the reading is done when the input is needed
+						String fileName = vinst.getInput2().getName();
+						String dataSource = IOCostUtils.getDataSource(fileName);
+						varStats.fileInfo = new Object[]{dataSource, ((MetaDataFormat) vinst.getMetaData()).getFileFormat()};
+					}
+					_stats.put(varName, varStats);
+					break;
+				case "cpvar":
+					VarStats outputStats = getStats(varName);
+					_stats.put(vinst.getInput2().getName(), outputStats);
+					outputStats.refCount++;
+					break;
+				case "mvvar":
+					VarStats statsToMove = _stats.remove(varName);
+					String newName = vinst.getInput2().getName();
+					if (statsToMove != null) statsToMove.varName = newName;
+					_stats.put(newName, statsToMove);
+					break;
+				case "rmvar":
+					for (CPOperand inputOperand: vinst.getInputs()) {
+						VarStats inputVar = _stats.remove(inputOperand.getName());
+						if (inputVar == null) continue; // inputVar == null for scalars
+						// actually remove from memory only if not referenced more than once
+						if (--inputVar.selfRefCount > 0) {
+							_stats.put(inputOperand.getName(), inputVar);
+						} else if (--inputVar.refCount < 1) {
+							removeFromMemory(inputVar);
+						}
+					}
+					break;
+				case "castdts":
+					VarStats scalarStats = new VarStats(vinst.getOutputVariableName(), null);
+					_stats.put(vinst.getOutputVariableName(), scalarStats);
+					break;
+				case "write":
+					String fileName = vinst.getInput2().isLiteral()? vinst.getInput2().getLiteral().getStringValue() : "hdfs_file";
 					String dataSource = IOCostUtils.getDataSource(fileName);
-					varStats._fileInfo = new Object[]{dataSource, ((MetaDataFormat) vinst.getMetaData()).getFileFormat()};
-				}
-				_stats.put(varName, varStats);
-			}
-			else if ( opcode.equals("cpvar") ) {
-				VarStats copiedStats = _stats.get(varName);
-				_stats.put(vinst.getInput2().getName(), copiedStats);
-			}
-			else if ( opcode.equals("mvvar") ) {
-				VarStats statsToMove = _stats.get(varName);
-				_stats.remove(vinst.getInput1().getName());
-				_stats.put(vinst.getInput2().getName(), statsToMove);
-			}
-			else if( opcode.equals("rmvar") ) {
-				VarStats input =_stats.remove(varName);
-				removeFromMemory(input);
+					String formatString = vinst.getInput3().getLiteral().getStringValue();
+					_stats.get(varName).fileInfo = new Object[] {dataSource, FileFormat.safeValueOf(formatString)};
+					break;
 			}
 		}
-		else if( inst instanceof DataGenCPInstruction ){
+		else if (inst instanceof DataGenCPInstruction){
 			// variable already created at "createvar"
 			// now update the sparsity and set size estimate
 			String opcode = inst.getOpcode();
 			if (opcode.equals("rand")) {
 				DataGenCPInstruction dinst = (DataGenCPInstruction) inst;
-				VarStats stat = _stats.get(dinst.getOutput().getName());
-				stat._mc.setNonZeros((long) (stat.getCells()*dinst.getSparsity()));
-				putInMemory(stat);
+				VarStats stat = getStats(dinst.getOutput().getName());
+				stat.characteristics.setNonZeros((long) (stat.getCells()*dinst.getSparsity()));
 			}
+		} else if (inst instanceof AggregateUnaryCPInstruction) {
+			// specific case to aid future dimensions inferring
+			String opcode = inst.getOpcode();
+			if (!(opcode.equals("nrow") || opcode.equals("ncol") || opcode.equals("length"))) {
+				return;
+			}
+			AggregateUnaryCPInstruction auinst = (AggregateUnaryCPInstruction) inst;
+			VarStats inputStats = getStats(auinst.input1.getName());
+			String outputName = auinst.getOutputVariableName();
+			VarStats outputStats;
+			if (opcode.equals("nrow")) {
+				if (inputStats.getM() < 0) return;
+				outputStats = new VarStats(String.valueOf(inputStats.getM()), null);
+			} else if (opcode.equals("ncol")) {
+				if (inputStats.getN() < 0) return;
+				outputStats = new VarStats(String.valueOf(inputStats.getN()), null);
+			} else { // if (opcode.equals("length"))
+				if (inputStats.getCells() < 0) return;
+				outputStats = new VarStats(String.valueOf(inputStats.getCells()), null);
+			}
+			_stats.put(outputName, outputStats);
 		}
-		else if( inst instanceof FunctionCallCPInstruction )
-		{
-			FunctionCallCPInstruction finst = (FunctionCallCPInstruction) inst;
-			for( String varname : finst.getBoundOutputParamNames() )
-				_stats.put(varname, _unknownStats);
+	}
+
+	public double getTimeEstimateInst(Instruction inst) throws CostEstimationException {
+		double timeEstimate;
+		if (inst instanceof CPInstruction) {
+			timeEstimate = getTimeEstimateCPInst((CPInstruction)inst);
+		} else { // inst instanceof SPInstruction
+			timeEstimate = parseSPInst((SPInstruction) inst);
 		}
+		return timeEstimate;
 	}
 
 	/**
 	 * Estimates the execution time of a single CP instruction
 	 * following the formula <i>C(p) = T_w + max(T_r, T_c)</i> with:
+	 * <ul>
 	 * <li>T_w - instruction write (to mem.) time</li>
 	 * <li>T_r - instruction read (to mem.) time</li>
 	 * <li>T_c - instruction compute time</li>
+	 * </ul>
 	 *
-	 * @param pb ?
-	 * @param inst ?
-	 * @return
-	 * @throws CostEstimationException
+	 * @param inst instruction for estimation
+	 * @return estimated time in seconds
+	 * @throws CostEstimationException ?
 	 */
-	private double getTimeEstimateCPInst(ProgramBlock pb, CPInstruction inst) throws CostEstimationException {
-		double ret = 0;
+	public double getTimeEstimateCPInst(CPInstruction inst) throws CostEstimationException {
+		double time = 0;
+		VarStats output = null;
 		if (inst instanceof VariableCPInstruction) {
 			String opcode = inst.getOpcode();
-			VariableCPInstruction varInst = (VariableCPInstruction) inst;
-			VarStats input = _stats.get(varInst.getInput1().getName());
+			VariableCPInstruction vinst = (VariableCPInstruction) inst;
+			VarStats input = null;
 			if (opcode.startsWith("cast")) {
-				ret += getLoadTime(input); // disk I/O estimate
-				double scanTime = IOCostUtils.getMemReadTime(input); // memory read cost
-				double computeTime = getNFLOP_CPVariableInst(varInst, input) / CP_FLOPS;
-				ret += Math.max(scanTime, computeTime);
-				CPOperand outputOperand = varInst.getOutput();
-				VarStats output = _stats.get(outputOperand.getName());
-				putInMemory(output);
-				ret += IOCostUtils.getMemWriteTime(input); // memory write cost
+ 				input = getStatsWithDefaultScalar(vinst.getInput1().getName());
+				output = getStatsWithDefaultScalar(vinst.getOutput().getName());
+				CPCostUtils.assignOutputMemoryStats(inst, output, input);
 			}
 			else if (opcode.equals("write")) {
-				ret += getLoadTime(input); // disk I/O estimate
-				String fileName = inst.getFilename();
-				String dataSource = IOCostUtils.getDataSource(fileName);
-				String formatString = varInst.getInput3().getLiteral().getStringValue();
-				ret += getNFLOP_CPVariableInst(varInst, input) / CP_FLOPS; // compute time cost
-				ret += IOCostUtils.getWriteTime(input.getM(), input.getN(), input.getS(),
-						dataSource, Types.FileFormat.safeValueOf(formatString)); // I/O estimate
+				input = getStatsWithDefaultScalar(vinst.getInput1().getName());
+				time += IOCostUtils.getFileSystemWriteTime(input, driverMetrics); // I/O estimate
 			}
-
-			return ret;
-		}
-		else if (inst instanceof DataGenCPInstruction) {
-			DataGenCPInstruction randInst = (DataGenCPInstruction) inst;
-			if( randInst.getOpcode().equals("rand") ) {
-				long rlen = randInst.getRows();
-				long clen = randInst.getCols();
-				//int blen = randInst.getBlocksize();
-				long nnz = (long) (randInst.getSparsity() * rlen * clen);
-				return nnz; //TODO
-			}
-			else {
-				//e.g., seq
-				return 1;
-			}
+			time += input == null? 0 : loadCPVarStatsAndEstimateTime(input);
+			time += CPCostUtils.getVariableInstTime(vinst, input, output, driverMetrics);
 		}
 		else if (inst instanceof UnaryCPInstruction) {
-			// --- Operations associated with networking cost only ---
-			// TODO: is somehow computational cost relevant for these operations
-			if (inst instanceof PrefetchCPInstruction) {
-				throw new DMLRuntimeException("TODO");
-			} else if (inst instanceof BroadcastCPInstruction) {
-				throw new DMLRuntimeException("TODO");
-			} else if (inst instanceof EvictCPInstruction) {
-				throw new DMLRuntimeException("Costing an instruction for GPU cache eviction is not supported.");
-			}
+			UnaryCPInstruction uinst = (UnaryCPInstruction) inst;
+			output = getStatsWithDefaultScalar(uinst.getOutput().getName());
+			if (inst instanceof DataGenCPInstruction || inst instanceof StringInitCPInstruction) {
+				String[] s = InstructionUtils.getInstructionParts(uinst.getInstructionString());
+				VarStats rows = getStatsWithDefaultScalar(s[1]);
+				VarStats cols = getStatsWithDefaultScalar(s[2]);
+				CPCostUtils.assignOutputMemoryStats(inst, output, rows, cols);
+				time += CPCostUtils.getDataGenCPInstTime(uinst, output, driverMetrics);
+			} else {
+				// UnaryCPInstruction input can be any type of object
+				VarStats input = getStatsWithDefaultScalar(uinst.input1.getName());
+				// a few of the unary instructions take second optional argument of type matrix
+				VarStats weights = (uinst.input2 == null || uinst.input2.isScalar()) ? null : getStats(uinst.input2.getName());
 
-			// opcodes that does not require estimation
-			if (inst.getOpcode().equals("print")) {
-				return 0;
-			}
-			UnaryCPInstruction unaryInst = (UnaryCPInstruction) inst;
-			if (unaryInst.input1.isTensor())
-				throw new DMLRuntimeException("Tensor is not supported for cost estimation");
-			VarStats input = _stats.get(unaryInst.input1.getName());
-			VarStats output = _stats.get(unaryInst.getOutput().getName());
+				if (inst instanceof IndexingCPInstruction) {
+					// weights = second input for leftIndex operations
+					IndexingCPInstruction idxInst = (IndexingCPInstruction) inst;
+					VarStats rowLower = getStatsWithDefaultScalar(idxInst.getRowLower().getName());
+					VarStats rowUpper = getStatsWithDefaultScalar(idxInst.getRowUpper().getName());
+					VarStats colLower = getStatsWithDefaultScalar(idxInst.getColLower().getName());
+					VarStats colUpper = getStatsWithDefaultScalar(idxInst.getColUpper().getName());
+					CPCostUtils.assignOutputMemoryStats(inst, output, input, weights, rowLower, rowUpper, colLower, colUpper);
+				} else if (inst instanceof ReorgCPInstruction && inst.getOpcode().equals("rsort")) {
+					ReorgCPInstruction reorgInst = (ReorgCPInstruction) inst;
+					VarStats ixRet = getStatsWithDefaultScalar(reorgInst.getIxRet().getName());
+					CPCostUtils.assignOutputMemoryStats(inst, output, input, ixRet);
+				} else {
+					CPCostUtils.assignOutputMemoryStats(inst, output, input);
+				}
 
-			ret += getLoadTime(input);
-			double scanTime = IOCostUtils.getMemReadTime(input);
-			double computeTime = getNFLOP_CPUnaryInst(unaryInst, input, output) / CP_FLOPS;
-			ret += Math.max(scanTime, computeTime);
-			putInMemory(output);
-			ret += IOCostUtils.getMemWriteTime(output);
-			return ret;
+				time += loadCPVarStatsAndEstimateTime(input);
+				time += weights == null ? 0 : loadCPVarStatsAndEstimateTime(weights);
+				time += CPCostUtils.getUnaryInstTime(uinst, input, weights, output, driverMetrics);
+			}
 		}
 		else if (inst instanceof BinaryCPInstruction) {
-			BinaryCPInstruction binInst = (BinaryCPInstruction) inst;
-			if (binInst.input1.isFrame() || binInst.input2.isFrame())
-				throw new DMLRuntimeException("Frame is not supported for cost estimation");
-			VarStats input1 = _stats.get(binInst.input1.getName());
-			VarStats input2 = _stats.get(binInst.input2.getName());
-			VarStats output = _stats.get(binInst.output.getName());
-
-			ret += getLoadTime(input1);
-			ret += getLoadTime(input2);
-			double scanTime = IOCostUtils.getMemReadTime(input1) + IOCostUtils.getMemReadTime(input2);
-			double computeTime = getNFLOP_CPBinaryInst(binInst, input1, input2, output) / CP_FLOPS;
-			ret += Math.max(scanTime, computeTime);
-			putInMemory(output);
-			ret += IOCostUtils.getMemWriteTime(output);
-			return ret;
-		}
-		else if (inst instanceof AggregateTernaryCPInstruction) {
-			AggregateTernaryCPInstruction aggInst = (AggregateTernaryCPInstruction) inst;
-			VarStats input = _stats.get(aggInst.input1.getName());
-			VarStats output = _stats.get(aggInst.getOutput().getName());
-
-			ret += getLoadTime(input);
-			double scanTime = IOCostUtils.getMemReadTime(input);
-			double computeTime = (double) (6 * input.getCells()) / CP_FLOPS;
-			ret += Math.max(scanTime, computeTime);
-			putInMemory(output);
-			ret += IOCostUtils.getMemWriteTime(output);
-			return ret;
-		}
-		else if (inst instanceof TernaryFrameScalarCPInstruction) {
-			// TODO: put some real implementation:
-			//  the idea is to take some worse case scenario since different mapping functionalities are possible
-			// NOTE: maybe unite with AggregateTernaryCPInstruction since its similar but with factor of 6
-			TernaryFrameScalarCPInstruction tInst = (TernaryFrameScalarCPInstruction) inst;
-			VarStats input = _stats.get(tInst.input1.getName());
-			VarStats output = _stats.get(tInst.getOutput().getName());
-
-			ret += getLoadTime(input);
-			double scanTime = IOCostUtils.getMemReadTime(input);
-			double computeTime = (double) (4*input.getCells()) / CP_FLOPS; // 4 - dummy factor
-			ret += Math.max(scanTime, computeTime);
-			putInMemory(output);
-			ret += IOCostUtils.getMemWriteTime(output);
-			return ret;
-		}
-		else if (inst instanceof QuaternaryCPInstruction) {
-			// TODO: put logical compute estimate (maybe putting a complexity factor)
-			QuaternaryCPInstruction gInst = (QuaternaryCPInstruction) inst;
-			VarStats input1 = _stats.get(gInst.input1.getName());
-			VarStats input2 = _stats.get(gInst.input2.getName());
-			VarStats input3 = _stats.get(gInst.input3.getName());
-			VarStats input4 = _stats.get(gInst.getInput4().getName());
-			VarStats output = _stats.get(gInst.getOutput().getName());
-
-			ret += getLoadTime(input1) + getLoadTime(input2) + getLoadTime(input3) + getLoadTime(input4);
-			double scanTime = IOCostUtils.getMemReadTime(input1)
-					+ IOCostUtils.getMemReadTime(input2)
-					+ IOCostUtils.getMemReadTime(input3)
-					+ IOCostUtils.getMemReadTime(input4);
-			double computeTime = (double) (input1.getCells() * input2.getCells() + input3.getCells() + input4.getCells())
-					/ CP_FLOPS;
-			ret += Math.max(scanTime, computeTime);
-			putInMemory(output);
-			ret += IOCostUtils.getMemWriteTime(output);
-			return ret;
-		}
-		else if (inst instanceof ScalarBuiltinNaryCPInstruction) {
-			return 1d / CP_FLOPS;
-		}
-		else if (inst instanceof MatrixBuiltinNaryCPInstruction) {
-			MatrixBuiltinNaryCPInstruction mInst = (MatrixBuiltinNaryCPInstruction) inst;
-			VarStats output = _stats.get(mInst.getOutput().getName());
-			int numMatrices = 0;
-			double scanTime = 0d;
-			for (CPOperand operand : mInst.getInputs()) {
-				if (operand.isMatrix()) {
-					VarStats input = _stats.get(operand.getName());
-					ret += getLoadTime(input);
-					scanTime += IOCostUtils.getMemReadTime(input);
-					numMatrices += 1;
-				}
-
+			BinaryCPInstruction binst = (BinaryCPInstruction) inst;
+			VarStats input1 = getStatsWithDefaultScalar(binst.input1.getName());
+			VarStats input2 = getStatsWithDefaultScalar(binst.input2.getName());
+			VarStats weights = binst.input3 == null? null : getStatsWithDefaultScalar(binst.input3.getName());
+			output = getStatsWithDefaultScalar(binst.output.getName());
+			if (inst instanceof AggregateBinaryCPInstruction) {
+				AggregateBinaryCPInstruction aggBinInst = (AggregateBinaryCPInstruction) inst;
+				VarStats transposeLeft = new VarStats(String.valueOf(aggBinInst.transposeLeft), null);
+				VarStats transposeRight = new VarStats(String.valueOf(aggBinInst.transposeRight), null);
+				CPCostUtils.assignOutputMemoryStats(inst, output, input1, input2, transposeLeft, transposeRight);
+			} else {
+				CPCostUtils.assignOutputMemoryStats(inst, output, input1, input2);
 			}
-			double computeTime = getNFLOP_CPMatrixBuiltinNaryInst(mInst, numMatrices, output) / CP_FLOPS;
-			ret += Math.max(scanTime, computeTime);
-			putInMemory(output);
-			ret += IOCostUtils.getMemWriteTime(output);
-			return ret;
-		}
-		else if (inst instanceof EvalNaryCPInstruction) {
-			throw new RuntimeException("To be implemented later");
-		}
-		else if (inst instanceof MultiReturnBuiltinCPInstruction) {
-			MultiReturnBuiltinCPInstruction mrbInst = (MultiReturnBuiltinCPInstruction) inst;
-			VarStats input = _stats.get(mrbInst.input1.getName());
 
-			ret += getLoadTime(input);
-			double scanTime = IOCostUtils.getMemReadTime(input);
-			double computeTime = getNFLOP_CPMultiReturnBuiltinInst(mrbInst, input) / CP_FLOPS;
-			ret += Math.max(scanTime, computeTime);
-			for (CPOperand operand : mrbInst.getOutputs()) {
-				VarStats output = _stats.get(operand.getName());
-				putInMemory(output);
-				ret += IOCostUtils.getMemWriteTime(output);
-			}
-			return ret;
-		}
-		else if (inst instanceof CtableCPInstruction) {
-			CtableCPInstruction ctInst = (CtableCPInstruction) inst;
-			VarStats input1 = _stats.get(ctInst.input1.getName());
-			VarStats input2 = _stats.get(ctInst.input2.getName());
-			VarStats input3 = _stats.get(ctInst.input3.getName());
-			//VarStats output = _stats.get(ctInst.getOutput().getName());
-
-			ret += getLoadTime(input1) + getLoadTime(input2) + getLoadTime(input3);
-			double scanTime = IOCostUtils.getMemReadTime(input1)
-					+ IOCostUtils.getMemReadTime(input2)
-					+ IOCostUtils.getMemReadTime(input3);
-			double computeTime = (double) input1.getCellsWithSparsity() / CP_FLOPS;
-			ret += Math.max(scanTime, computeTime);
-			// TODO: figure out what dimensions to assign to the output matrix stats 'output'
-			throw new DMLRuntimeException("Operation "+inst.getOpcode()+" is not supported yet due to a unpredictable output");
-		}
-		else if (inst instanceof PMMJCPInstruction) {
-			PMMJCPInstruction pmmInst = (PMMJCPInstruction) inst;
-			VarStats input1 = _stats.get(pmmInst.input1.getName());
-			VarStats input2 = _stats.get(pmmInst.input2.getName());
-			VarStats output = _stats.get(pmmInst.getOutput().getName());
-
-			ret += getLoadTime(input1) + getLoadTime(input2);
-			double scanTime = IOCostUtils.getMemReadTime(input1) + IOCostUtils.getMemReadTime(input2);
-			double computeTime = input1.getCells() * input2.getCellsWithSparsity() / CP_FLOPS;
-			ret += Math.max(scanTime, computeTime);
-			putInMemory(output);
-			ret += IOCostUtils.getMemWriteTime(output);
-			return ret;
+			time += loadCPVarStatsAndEstimateTime(input1);
+			time += loadCPVarStatsAndEstimateTime(input2);
+			time += weights == null? 0 : loadCPVarStatsAndEstimateTime(weights);
+			time += CPCostUtils.getBinaryInstTime(binst, input1, input2, weights, output, driverMetrics);
 		}
 		else if (inst instanceof ParameterizedBuiltinCPInstruction) {
-			ParameterizedBuiltinCPInstruction paramInst = (ParameterizedBuiltinCPInstruction) inst;
-			String[] parts = InstructionUtils.getInstructionParts(inst.toString());
-			VarStats input = _stats.get( parts[1].substring(7).replaceAll(Lop.VARIABLE_NAME_PLACEHOLDER, "") );
-			VarStats output = _stats.get( parts[parts.length-1] );
+			if (inst instanceof ParamservBuiltinCPInstruction) {
+				throw new RuntimeException("ParamservBuiltinCPInstruction is not supported for estimation");
+			}
+			ParameterizedBuiltinCPInstruction pinst = (ParameterizedBuiltinCPInstruction) inst;
 
-			ret += getLoadTime(input);
-			double scanTime = IOCostUtils.getMemReadTime(input);
-			double computeTime = getNFLOP_CPParameterizedBuiltinInst(paramInst, input, output) / CP_FLOPS;
-			ret += Math.max(scanTime, computeTime);
+			VarStats input1 = getParameterizedBuiltinParamStats("target", pinst.getParameterMap(), true); // required
+			VarStats input2 = null; // optional
+			switch (inst.getOpcode()) {
+				case "rmempty":
+					input2 = getParameterizedBuiltinParamStats("select", pinst.getParameterMap(), false);
+					break;
+				case "contains":
+					input2 = getParameterizedBuiltinParamStats("pattern", pinst.getParameterMap(), false);
+					break;
+				case "groupedagg":
+					input2 = getParameterizedBuiltinParamStats("groups", pinst.getParameterMap(), false);
+					break;
+			}
+			output = getStatsWithDefaultScalar(pinst.getOutputVariableName());
+			CPCostUtils.assignOutputMemoryStats(inst, output, input1, input2);
+
+			time += input1 != null? loadCPVarStatsAndEstimateTime(input1) : 0;
+			time += input2 != null? loadCPVarStatsAndEstimateTime(input2) : 0;
+			time += CPCostUtils.getParameterizedBuiltinInstTime(pinst, input1, output, driverMetrics);
+		} else if (inst instanceof MultiReturnBuiltinCPInstruction) {
+			MultiReturnBuiltinCPInstruction mrbinst = (MultiReturnBuiltinCPInstruction) inst;
+			VarStats input = getStats(mrbinst.input1.getName());
+			VarStats[] outputs = new VarStats[mrbinst.getOutputs().size()];
+			int i = 0;
+			for (CPOperand operand : mrbinst.getOutputs()) {
+				if (!operand.isMatrix()) {
+					throw new DMLRuntimeException("MultiReturnBuiltinCPInstruction expects only matrix output objects");
+				}
+				VarStats current = getStats(operand.getName());
+				outputs[i] = current;
+				i++;
+			}
+			// input and outputs switched on purpose: exclusive behaviour for this instruction
+			CPCostUtils.assignOutputMemoryStats(inst, input, outputs);
+			for (VarStats current : outputs) putInMemory(current);
+
+			time += loadCPVarStatsAndEstimateTime(input);
+			time += CPCostUtils.getMultiReturnBuiltinInstTime(mrbinst, input, outputs, driverMetrics);
+			// the only place to return directly here (output put in memory already)
+			return time;
+		}
+		else if (inst instanceof ComputationCPInstruction) {
+			if (inst instanceof MultiReturnParameterizedBuiltinCPInstruction || inst instanceof CompressionCPInstruction || inst instanceof DeCompressionCPInstruction) {
+				throw new RuntimeException(inst.getClass().getName() + " is not supported for estimation");
+			}
+			ComputationCPInstruction cinst = (ComputationCPInstruction) inst;
+			VarStats input1 = getStatsWithDefaultScalar(cinst.input1.getName()); // 1 input: AggregateTernaryCPInstruction
+			// in general only the first input operand is guaranteed initialized
+			// assume they can be also scalars (often operands are some literal or scalar arguments not related to the cost estimation)
+			VarStats input2 = cinst.input2 == null? null : getStatsWithDefaultScalar(cinst.input2.getName()); // 2 inputs: PMMJCPInstruction
+			VarStats input3 = cinst.input3 == null? null : getStatsWithDefaultScalar(cinst.input3.getName()); // 3 inputs: TernaryCPInstruction, CtableCPInstruction
+			VarStats input4 = cinst.input4 == null? null : getStatsWithDefaultScalar(cinst.input4.getName()); // 4 inputs (possibly): QuaternaryCPInstruction
+			output = getStatsWithDefaultScalar(cinst.getOutput().getName());
+			if (inst instanceof CtableCPInstruction) {
+				CtableCPInstruction tableInst = (CtableCPInstruction) inst;
+				VarStats outDim1 = getCTableDim(tableInst.getOutDim1());
+				VarStats outDim2 = getCTableDim(tableInst.getOutDim2());
+				CPCostUtils.assignOutputMemoryStats(inst, output, input1, input2, outDim1, outDim2);
+			} else {
+				CPCostUtils.assignOutputMemoryStats(inst, output, input1, input2, input3, input4);
+			}
+
+			time += loadCPVarStatsAndEstimateTime(input1);
+			time += input2 == null? 0 : loadCPVarStatsAndEstimateTime(input2);
+			time += input3 == null? 0 : loadCPVarStatsAndEstimateTime(input3);
+			time += input4 == null? 0 : loadCPVarStatsAndEstimateTime(input4);
+			time += CPCostUtils.getComputationInstTime(cinst, input1, input2, input3, input4, output, driverMetrics);
+		}
+		else if (inst instanceof BuiltinNaryCPInstruction) {
+			BuiltinNaryCPInstruction bninst = (BuiltinNaryCPInstruction) inst;
+			output = getStatsWithDefaultScalar(bninst.getOutput().getName());
+			// putInMemory(output);
+			if (bninst instanceof ScalarBuiltinNaryCPInstruction) {
+				return CPCostUtils.getBuiltinNaryInstTime(bninst, null, output, driverMetrics);
+			}
+			VarStats[] inputs = new VarStats[bninst.getInputs().length];
+			int i = 0;
+			for (CPOperand operand : bninst.getInputs()) {
+				if (operand.isMatrix()) {
+					VarStats input = getStatsWithDefaultScalar(operand.getName());
+					time += loadCPVarStatsAndEstimateTime(input);
+					inputs[i] = input;
+					i++;
+				}
+			}
+			// trim the arrays to its actual size
+			inputs = Arrays.copyOf(inputs, i + 1);
+			CPCostUtils.assignOutputMemoryStats(inst, output, inputs);
+			time += CPCostUtils.getBuiltinNaryInstTime(bninst, inputs, output, driverMetrics);
+		}
+		else { // SqlCPInstruction
+			throw new RuntimeException(inst.getClass().getName() + " is not supported for estimation");
+		}
+
+		if (output != null)
 			putInMemory(output);
-			ret += IOCostUtils.getMemWriteTime(output);
+		return time;
+	}
+
+	/**
+	 * Parse a Spark instruction, and it stores the corresponding
+	 * cost for computing the output variable in the RDD statistics'
+	 * object related to that variable.
+	 * This method is responsible for initializing the corresponding
+	 * {@code RDDStats} object for each output variable, including for
+	 * outputs that are explicitly brought back to CP (Spark action within the instruction).
+	 * It returns the time estimate only for those instructions that bring the
+	 * output explicitly to CP. For the rest, the estimated time (cost) is
+	 * stored as part of the corresponding RDD statistics, emulating the
+	 * lazy evaluation execution of Spark.
+	 *
+	 * @param inst Spark instruction for parsing
+	 * @return if explicit action, estimated time in seconds, else always 0
+	 * @throws CostEstimationException ?
+	 */
+	public double parseSPInst(SPInstruction inst) throws CostEstimationException {
+		/* Logic for the parallelization factors:
+		 * the given executor metrics relate to peak performance per node,
+		 * utilizing all the resources available, but the Spark operations
+		 * are executed by several tasks per node so the execution/read time
+		 * per operation is the potential execution time that ca be achieved by
+		 * using the full node resources divided by the with the number of
+		 * nodes running tasks for reading but then divided to the actual number of
+		 * tasks to account that if on a node not all the cores are reading
+		 * then not the full resources are utilized.
+		 */
+		VarStats output;
+		if (inst instanceof ReblockSPInstruction || inst instanceof CSVReblockSPInstruction || inst instanceof LIBSVMReblockSPInstruction) {
+			UnarySPInstruction uinst = (UnarySPInstruction) inst;
+			VarStats input = getStats((uinst).input1.getName());
+			output = getStats((uinst).getOutputVariableName());
+			SparkCostUtils.assignOutputRDDStats(inst, output, input);
+
+			output.fileInfo = input.fileInfo;
+			// the resulting binary rdd is being hash-partitioned after the reblock
+			output.rddStats.hashPartitioned = true;
+			output.rddStats.cost =  SparkCostUtils.getReblockInstTime(inst.getOpcode(), input, output, executorMetrics);
+		} else if (inst instanceof CheckpointSPInstruction) {
+			CheckpointSPInstruction cinst = (CheckpointSPInstruction) inst;
+			VarStats input = getStats(cinst.input1.getName());
+			double loadTime = loadRDDStatsAndEstimateTime(input);
+
+			output = getStats(cinst.getOutputVariableName());
+			SparkCostUtils.assignOutputRDDStats(inst, output, input);
+			output.rddStats.checkpoint = true;
+			// assume the rdd object is only marked as checkpoint;
+			// adding spilling or serializing cost is skipped
+			output.rddStats.cost = loadTime;
+		} else if (inst instanceof RandSPInstruction) {
+			// Rand instruction takes no RDD input;
+			RandSPInstruction rinst = (RandSPInstruction) inst;
+			String opcode = rinst.getOpcode();
+			int randType = -1; // default for non-random object generation operations
+			if (opcode.equals(RAND_OPCODE) || opcode.equals(FRAME_OPCODE)) {
+				if (rinst.getMinValue() == 0d && rinst.getMaxValue() == 0d) { // empty matrix
+					randType = 0;
+				} else if (rinst.getSparsity() == 1.0 && rinst.getMinValue() == rinst.getMaxValue()) { // allocate, array fill
+					randType = 1;
+				} else { // full rand
+ 					randType = 2;
+				}
+			}
+			output = getStats(rinst.output.getName());
+			SparkCostUtils.assignOutputRDDStats(inst, output);
+
+			output.rddStats.cost = getRandInstTime(opcode, randType, output, executorMetrics);
+		} else if (inst instanceof AggregateUnarySPInstruction || inst instanceof AggregateUnarySketchSPInstruction) {
+			UnarySPInstruction auinst = (UnarySPInstruction) inst;
+			VarStats input = getStats((auinst).input1.getName());
+			double loadTime = loadRDDStatsAndEstimateTime(input);
+
+			output = getStats((auinst).getOutputVariableName());
+			SparkCostUtils.assignOutputRDDStats(inst, output, input);
+
+			output.rddStats.cost = loadTime + SparkCostUtils.getAggUnaryInstTime(auinst, input, output, executorMetrics);
+		} else if (inst instanceof IndexingSPInstruction) {
+			IndexingSPInstruction ixdinst = (IndexingSPInstruction) inst;
+			boolean isLeftCacheType = (inst instanceof MatrixIndexingSPInstruction &&
+					((MatrixIndexingSPInstruction) ixdinst).getLixType() == LeftIndex.LixCacheType.LEFT);
+			VarStats input1; // always assigned
+			VarStats input2 = null; // assigned only if case of indexing
+			double loadTime = 0;
+			if (ixdinst.getOpcode().toLowerCase().contains("left")) {
+				if (isLeftCacheType) {
+					input1 = getStats(ixdinst.input2.getName());
+					input2 = getStats(ixdinst.input1.getName());
+				} else {
+					input1 = getStats(ixdinst.input1.getName());
+					input2 = getStats(ixdinst.input2.getName());
+				}
+
+				if (ixdinst.getOpcode().equals(LeftIndex.OPCODE)) {
+					loadTime += loadRDDStatsAndEstimateTime(input2);
+				} else { // mapLeftIndex
+					loadTime += loadCPVarStatsAndEstimateTime(input2);
+				}
+			} else {
+				input1 = getStats(ixdinst.input1.getName());
+			}
+			loadTime += loadRDDStatsAndEstimateTime(input1);
+
+			VarStats rowLower = getStatsWithDefaultScalar(ixdinst.getRowLower().getName());
+			VarStats rowUpper = getStatsWithDefaultScalar(ixdinst.getRowUpper().getName());
+			VarStats colLower = getStatsWithDefaultScalar(ixdinst.getColLower().getName());
+			VarStats colUpper = getStatsWithDefaultScalar(ixdinst.getColUpper().getName());
+			output = getStats(ixdinst.getOutputVariableName());
+			SparkCostUtils.assignOutputRDDStats(inst, output, input1, input2, rowLower, rowUpper, colLower, colUpper);
+
+			output.rddStats.cost = loadTime +
+					SparkCostUtils.getIndexingInstTime(ixdinst, input1, input2, output, driverMetrics, executorMetrics);
+		} else if (inst instanceof UnarySPInstruction) { // general unary handling body; put always after all the rest blocks for unary
+			UnarySPInstruction uinst = (UnarySPInstruction) inst;
+			VarStats input = getStats((uinst).input1.getName());
+			double loadTime = loadRDDStatsAndEstimateTime(input);
+			output = getStats((uinst).getOutputVariableName());
+
+			if (uinst instanceof UnaryMatrixSPInstruction || inst instanceof UnaryFrameSPInstruction) {
+				SparkCostUtils.assignOutputRDDStats(inst, output, input);
+				output.rddStats.cost = loadTime + SparkCostUtils.getUnaryInstTime(uinst.getOpcode(), input, output, executorMetrics);
+			} else if (uinst instanceof ReorgSPInstruction || inst instanceof MatrixReshapeSPInstruction) {
+				if (uinst instanceof ReorgSPInstruction && uinst.getOpcode().equals("rsort")) {
+					ReorgSPInstruction reorgInst = (ReorgSPInstruction) inst;
+					VarStats ixRet = getStatsWithDefaultScalar(reorgInst.getIxRet().getName());
+					SparkCostUtils.assignOutputRDDStats(inst, output, input, ixRet);
+				} else {
+					SparkCostUtils.assignOutputRDDStats(inst, output, input);
+				}
+				output.rddStats.cost = loadTime + SparkCostUtils.getReorgInstTime(uinst, input, output, executorMetrics);
+			} else if (uinst instanceof TsmmSPInstruction || inst instanceof Tsmm2SPInstruction) {
+				SparkCostUtils.assignOutputRDDStats(inst, output, input);
+				output.rddStats.cost = loadTime + SparkCostUtils.getTSMMInstTime(uinst, input, output, driverMetrics, executorMetrics);
+			} else if (uinst instanceof CentralMomentSPInstruction) {
+				VarStats weights = null;
+				if (uinst.input3 != null) {
+					weights = getStats(uinst.input2.getName());
+					loadTime += loadRDDStatsAndEstimateTime(weights);
+				}
+				SparkCostUtils.assignOutputRDDStats(inst, output, input, weights);
+				output.rddStats.cost = loadTime +
+						SparkCostUtils.getCentralMomentInstTime((CentralMomentSPInstruction) uinst, input, weights, output, executorMetrics);
+			} else if (inst instanceof CastSPInstruction) {
+				SparkCostUtils.assignOutputRDDStats(inst, output, input);
+				output.rddStats.cost = loadTime + SparkCostUtils.getCastInstTime((CastSPInstruction) inst, input, output, executorMetrics);
+			} else if (inst instanceof QuantileSortSPInstruction) {
+				VarStats weights = null;
+				if (uinst.input2 != null) {
+					weights = getStats(uinst.input2.getName());
+					loadTime += loadRDDStatsAndEstimateTime(weights);
+				}
+				SparkCostUtils.assignOutputRDDStats(inst, output, input, weights);
+				output.rddStats.cost = loadTime +
+						SparkCostUtils.getQSortInstTime((QuantileSortSPInstruction) uinst, input, weights, output, executorMetrics);
+			} else {
+				throw new RuntimeException("Unsupported Unary Spark instruction of type " + inst.getClass().getName());
+			}
+		} else if (inst instanceof BinaryFrameFrameSPInstruction || inst instanceof BinaryFrameMatrixSPInstruction || inst instanceof BinaryMatrixMatrixSPInstruction || inst instanceof BinaryMatrixScalarSPInstruction) {
+			BinarySPInstruction binst = (BinarySPInstruction) inst;
+			VarStats input1 = getStatsWithDefaultScalar((binst).input1.getName());
+			VarStats input2 = getStatsWithDefaultScalar((binst).input2.getName());
+			// handle input rdd loading
+			double loadTime = loadRDDStatsAndEstimateTime(input1);
+			if (inst instanceof  BinaryMatrixBVectorSPInstruction) {
+				loadTime += loadCPVarStatsAndEstimateTime(input2);
+			} else {
+				loadTime += loadRDDStatsAndEstimateTime(input2);
+			}
+
+			output = getStats((binst).getOutputVariableName());
+			SparkCostUtils.assignOutputRDDStats(inst, output, input1, input2);
+
+			output.rddStats.cost = loadTime +
+					SparkCostUtils.getBinaryInstTime(inst, input1, input2, output, driverMetrics, executorMetrics);
+		} else if (inst instanceof AppendSPInstruction) {
+			AppendSPInstruction ainst = (AppendSPInstruction) inst;
+			VarStats input1 = getStats(ainst.input1.getName());
+			double loadTime = loadRDDStatsAndEstimateTime(input1);
+			VarStats input2 = getStats(ainst.input2.getName());
+			if (ainst instanceof AppendMSPInstruction) {
+				loadTime += loadCPVarStatsAndEstimateTime(input2);
+			} else {
+				loadTime += loadRDDStatsAndEstimateTime(input2);
+			}
+			output = getStats(ainst.getOutputVariableName());
+			SparkCostUtils.assignOutputRDDStats(inst, output, input1, input2);
+
+			output.rddStats.cost = loadTime + SparkCostUtils.getAppendInstTime(ainst, input1, input2, output, driverMetrics, executorMetrics);
+		} else if (inst instanceof AggregateBinarySPInstruction || inst instanceof PmmSPInstruction || inst instanceof PMapmmSPInstruction || inst instanceof ZipmmSPInstruction) {
+			BinarySPInstruction binst = (BinarySPInstruction) inst;
+			VarStats input1, input2;
+			double loadTime = 0;
+			if (binst instanceof MapmmSPInstruction || binst instanceof PmmSPInstruction) {
+				MapMult.CacheType cacheType = binst instanceof MapmmSPInstruction?
+						((MapmmSPInstruction) binst).getCacheType() :
+						((PmmSPInstruction) binst).getCacheType();
+				if (cacheType.isRight()) {
+					input1 = getStats(binst.input1.getName());
+					input2 = getStats(binst.input2.getName());
+				} else {
+					input1 = getStats(binst.input2.getName());
+					input2 = getStats(binst.input1.getName());
+				}
+				loadTime += loadRDDStatsAndEstimateTime(input1);
+				loadTime += loadCPVarStatsAndEstimateTime(input2);
+			} else {
+				input1 = getStats(binst.input1.getName());
+				input2 = getStats(binst.input2.getName());
+				loadTime += loadRDDStatsAndEstimateTime(input1);
+				loadTime += loadRDDStatsAndEstimateTime(input2);
+			}
+			output = getStats(binst.getOutputVariableName());
+			SparkCostUtils.assignOutputRDDStats(inst, output, input1, input2);
+
+			output.rddStats.cost = loadTime +
+					SparkCostUtils.getMatMulInstTime(binst, input1, input2, output, driverMetrics, executorMetrics);
+		} else if (inst instanceof MapmmChainSPInstruction) {
+			MapmmChainSPInstruction mmchaininst = (MapmmChainSPInstruction) inst;
+			VarStats input1 = getStats(mmchaininst.input1.getName());
+			VarStats input2 = getStats(mmchaininst.input1.getName());
+			VarStats input3 = null;
+			double loadTime = loadRDDStatsAndEstimateTime(input1) + loadCPVarStatsAndEstimateTime(input2);
+			if (mmchaininst.input3 != null) {
+				input3 = getStats(mmchaininst.input3.getName());
+				loadTime += loadCPVarStatsAndEstimateTime(input3);
+			}
+			output = getStats(mmchaininst.output.getName());
+			SparkCostUtils.assignOutputRDDStats(inst, output, input1, input2, input3);
+
+			output.rddStats.cost = loadTime +
+					SparkCostUtils.getMatMulChainInstTime(mmchaininst, input1, input2, input3, output, driverMetrics, executorMetrics);
+		} else if (inst instanceof CtableSPInstruction) {
+			CtableSPInstruction tableInst = (CtableSPInstruction) inst;
+			VarStats input1 = getStats(tableInst.input1.getName());
+			VarStats input2 = getStatsWithDefaultScalar(tableInst.input2.getName());
+			VarStats input3 = getStatsWithDefaultScalar(tableInst.input3.getName());
+			double loadTime = loadRDDStatsAndEstimateTime(input1) +
+					loadRDDStatsAndEstimateTime(input2) + loadRDDStatsAndEstimateTime(input3);
+
+			output = getStats(tableInst.getOutputVariableName());
+			VarStats outDim1 = getCTableDim(tableInst.getOutDim1());
+			VarStats outDim2 = getCTableDim(tableInst.getOutDim2());
+			// third input not relevant for assignment (dimensions inferring)
+			SparkCostUtils.assignOutputRDDStats(inst, output, input1, input2, outDim1, outDim2);
+
+			output.rddStats.cost = loadTime +
+					SparkCostUtils.getCtableInstTime(tableInst, input1, input2, input3, output, executorMetrics);
+		} else if (inst instanceof ParameterizedBuiltinSPInstruction) {
+			ParameterizedBuiltinSPInstruction paramInst = (ParameterizedBuiltinSPInstruction) inst;
+
+			VarStats input1 = getParameterizedBuiltinParamStats("target", paramInst.getParameterMap(), true); // required
+			double loadTime = input1 != null? loadRDDStatsAndEstimateTime(input1) : 0;
+			VarStats input2 = null; // optional
+			switch (inst.getOpcode()) {
+				case "rmempty":
+					input2 = getParameterizedBuiltinParamStats("offset", paramInst.getParameterMap(), false);
+					if (Boolean.parseBoolean(paramInst.getParameterMap().get("bRmEmptyBC"))) {
+						loadTime += input2 != null? loadCPVarStatsAndEstimateTime(input2) : 0; // broadcast
+					} else {
+						loadTime += input2 != null? loadRDDStatsAndEstimateTime(input2) : 0;
+					}
+					break;
+				case "contains":
+					input2 = getParameterizedBuiltinParamStats("pattern", paramInst.getParameterMap(), false);
+					break;
+				case "groupedagg":
+					input2 = getParameterizedBuiltinParamStats("groups", paramInst.getParameterMap(), false);
+					// here is needed also a third parameter in some cases
+					break;
+			}
+
+			output = getStatsWithDefaultScalar(paramInst.getOutputVariableName());
+			SparkCostUtils.assignOutputRDDStats(inst, output, input1);
+
+			output.rddStats.cost = loadTime + SparkCostUtils.getParameterizedBuiltinInstTime(paramInst, input1, input2, output,
+					driverMetrics, executorMetrics);
+		} else if (inst instanceof WriteSPInstruction) {
+			WriteSPInstruction wInst = (WriteSPInstruction) inst;
+			VarStats input = getStats(wInst.input1.getName());
+			double loadTime = loadRDDStatsAndEstimateTime(input);
+			// extract and assign all needed parameters for writing a file
+			String fileName = wInst.getInput2().isLiteral()? wInst.getInput2().getLiteral().getStringValue() : "hdfs_file";
+			String dataSource = IOCostUtils.getDataSource(fileName); // "hadfs_file" -> "hdfs"
+			String formatString = wInst.getInput3().isLiteral()? wInst.getInput3().getLiteral().getStringValue() : "text";
+			input.fileInfo = new Object[] {dataSource, FileFormat.safeValueOf(formatString)};
+			// return time estimate here since no corresponding RDD statistics exist
+			return loadTime + IOCostUtils.getHadoopWriteTime(input, executorMetrics); // I/O estimate
+		}
+//		else if (inst instanceof CumulativeOffsetSPInstruction) {
+//
+//		} else if (inst instanceof CovarianceSPInstruction) {
+//
+//		} else if (inst instanceof QuantilePickSPInstruction) {
+//
+//		} else if (inst instanceof TernarySPInstruction) {
+//
+//		} else if (inst instanceof AggregateTernarySPInstruction) {
+//
+//		} else if (inst instanceof QuaternarySPInstruction) {
+//
+//		}
+		else {
+			throw new RuntimeException("Unsupported instruction: " + inst.getOpcode());
+		}
+		// output.rdd should be always initialized at this point
+		if (output.rddStats.isCollected) {
+			if (!output.isScalar()) {
+				output.allocatedMemory = OptimizerUtils.estimateSizeExactSparsity(output.characteristics);
+				putInMemory(output);
+			}
+			double ret = output.rddStats.cost;
+			output.rddStats = null;
 			return ret;
 		}
-		else if( inst instanceof FunctionCallCPInstruction )
-		{
-			FunctionCallCPInstruction finst = (FunctionCallCPInstruction)inst;
-			//TODO recursive function calls and 
-			Program prog = pb.getProgram();
-			FunctionProgramBlock fpb = prog.getFunctionProgramBlock(
-				finst.getNamespace(), finst.getFunctionName());
-			return getTimeEstimatePB(fpb);
-		}
-		else if (inst instanceof MultiReturnParameterizedBuiltinCPInstruction) {
-			throw new DMLRuntimeException("MultiReturnParametrized built-in instructions are not supported.");
-		}
-		else if (inst instanceof CompressionCPInstruction || inst instanceof DeCompressionCPInstruction) {
-			throw new DMLRuntimeException("(De)Compression instructions are not supported yet.");
-		}
-		else if (inst instanceof SqlCPInstruction) {
-			throw new DMLRuntimeException("SQL instructions are not supported.");
-		}
-		System.out.println("Unsupported instruction: " + inst.getOpcode());
-		return 1;
-	}
-	private double getNFLOP_CPVariableInst(VariableCPInstruction inst, VarStats input) throws CostEstimationException {
-		switch (inst.getOpcode()) {
-			case "write":
-				String fmtStr = inst.getInput3().getLiteral().getStringValue();
-				Types.FileFormat fmt = Types.FileFormat.safeValueOf(fmtStr);
-				double xwrite = fmt.isTextFormat() ? DEFAULT_NFLOP_TEXT_IO : DEFAULT_NFLOP_CP;
-				return input.getCellsWithSparsity() * xwrite;
-			case "cast_as_matrix":
-			case "cast_as_frame":
-				return input.getCells();
-			default:
-				return DEFAULT_NFLOP_CP;
-		}
+		return 0;
 	}
 
-	private double getNFLOP_CPUnaryInst(UnaryCPInstruction inst, VarStats input, VarStats output) throws CostEstimationException {
-		String opcode = inst.getOpcode();
-		// --- Operations for data generation ---
-		if( inst instanceof DataGenCPInstruction ) {
-			if (opcode.equals(DataGen.RAND_OPCODE)) {
-				DataGenCPInstruction rinst = (DataGenCPInstruction) inst;
-				if( rinst.getMinValue() == 0.0 && rinst.getMaxValue() == 0.0 )
-					return DEFAULT_NFLOP_CP; // empty matrix
-				else if( rinst.getSparsity() == 1.0 && rinst.getMinValue() == rinst.getMaxValue() )
-					return 8.0 * output.getCells();
-				else { // full rand
-					if (rinst.getSparsity() == 1.0)
-						return 32.0 * output.getCells() + 8.0 * output.getCells();//DENSE gen (incl allocate)
-					if (rinst.getSparsity() < MatrixBlock.SPARSITY_TURN_POINT)
-						return 3.0 * output.getCellsWithSparsity() + 24.0 * output.getCellsWithSparsity();  //SPARSE gen (incl allocate)
-					return 2.0 * output.getCells() + 8.0 * output.getCells();  //DENSE gen (incl allocate)
-				}
-			} else if (opcode.equals(DataGen.SEQ_OPCODE)) {
-				return DEFAULT_NFLOP_CP * output.getCells();
-			} else {
-				throw new RuntimeException("To be implemented later");
-			}
+	public double getTimeEstimateSparkJob(VarStats varToCollect) {
+		if (varToCollect.rddStats == null) {
+			throw new RuntimeException("Missing RDD statistics for estimating execution time for Spark Job");
 		}
-		else if( inst instanceof StringInitCPInstruction ) {
-			return DEFAULT_NFLOP_CP * output.getCells();
-		}
-		// --- General unary ---
-//		if (input == null)
-//			input = _scalarStats; // TODO: consider if needed: if yes -> stats garbage collections?
-
-		if (inst instanceof MMTSJCPInstruction) {
-			MMTSJ.MMTSJType type = ((MMTSJCPInstruction) inst).getMMTSJType();
-			if (type.isLeft()) {
-				if (input.isSparse()) {
-					return input.getM() * input.getN() * input.getS() * input.getN() * input.getS() / 2;
-				} else {
-					return input.getM() * input.getN() * input.getS() * input.getN() / 2;
-				}
-			} else {
-				throw new RuntimeException("To be implemented later");
-			}
-		} else if (inst instanceof AggregateUnaryCPInstruction) {
-			AggregateUnaryCPInstruction uainst = (AggregateUnaryCPInstruction) inst;
-			AggregateUnaryCPInstruction.AUType autype = uainst.getAUType();
-			if (autype != AggregateUnaryCPInstruction.AUType.DEFAULT) {
-				switch (autype) {
-					case NROW:
-					case NCOL:
-					case LENGTH:
-						return DEFAULT_NFLOP_NOOP;
-					case COUNT_DISTINCT:
-					case COUNT_DISTINCT_APPROX:
-						// TODO: get real cost
-						return input.getCells();
-					case UNIQUE:
-						// TODO: get real cost
-						return input.getCells();
-					case LINEAGE:
-						// TODO: get real cost
-						return DEFAULT_NFLOP_NOOP;
-					case EXISTS:
-						// TODO: get real cost
-						return 1;
-					default:
-						// NOTE: not reachable - only for consistency
-						return 0;
-				}
-			} else {
-				int k = getComputationFactorUAOp(opcode);
-				if (opcode.equals("cm")) {
-					// TODO: extract attribute first and implement the logic then (CentralMomentCPInstruction)
-					throw new RuntimeException("Not implemented yet.");
-				} else if (opcode.equals("ua+") || opcode.equals("uar+") || opcode.equals("uac+")) {
-					return k*input.getCellsWithSparsity();
-				} else { // NOTE: assumes all other cases were already handled properly
-					return (input!=null)?k*input.getCells() : 1;
-				}
-			}
-		} else if(inst instanceof UnaryScalarCPInstruction) {
-			// TODO: consider if 1 is always reasonable
-			return 1;
-		} else if(inst instanceof UnaryFrameCPInstruction) {
-			switch (opcode) {
-				case "typeOf":
-					return 1;
-				case "detectSchema":
-					// TODO: think of a real static cost
-					return 1;
-				case "colnames":
-					// TODO: is the number of the column reasonable result?
-					return input.getN();
-			}
-		}else if (inst instanceof UnaryMatrixCPInstruction){
-			if (opcode.equals("print"))
-				return 1;
-			else if (opcode.equals("inverse")) {
-				// TODO: implement
-				return 0;
-			} else if (opcode.equals("cholesky")) {
-				// TODO: implement
-				return 0;
-			}
-			// NOTE: What is xbu?
-			double xbu = 1; //default for all ops
-			if( opcode.equals("plogp") ) xbu = 2;
-			else if( opcode.equals("round") ) xbu = 4;
-			switch (opcode) { //opcodes: exp, abs, sin, cos, tan, sign, sqrt, plogp, print, round, sprop, sigmoid
-				case "sin": case "tan": case "round": case "abs":
-				case "sqrt": case "sprop": case "sigmoid": case "sign":
-					return xbu * input.getCellsWithSparsity();
-				default:
-					// TODO: does that apply to all valid unary matrix operators
-					return xbu * input.getCells();
-			}
-		} else if (inst instanceof ReorgCPInstruction || inst instanceof ReshapeCPInstruction) {
-			return input.getCellsWithSparsity();
-		} else if (inst instanceof IndexingCPInstruction) {
-			// NOTE: I doubt that this is formula for the cost is correct
-			if (opcode.equals(RightIndex.OPCODE)) {
-				// TODO: check correctness since I changed the initial formula to not use input 2
-				return DEFAULT_NFLOP_CP * input.getCellsWithSparsity();
-			} else if (opcode.equals(LeftIndex.OPCODE)) {
-				VarStats indexMatrixStats = _stats.get(inst.input2.getName());
-				return DEFAULT_NFLOP_CP * input.getCellsWithSparsity()
-						+ 2 * DEFAULT_NFLOP_CP * indexMatrixStats.getCellsWithSparsity();
-			}
-		} else if (inst instanceof MMChainCPInstruction) {
-			// NOTE: reduction by factor 2 because matrix mult better than average flop count
-			//  (mmchain essentially two matrix-vector muliplications)
-			return (2+2) * input.getCellsWithSparsity() / 2;
-		} else if (inst instanceof UaggOuterChainCPInstruction) {
-			// TODO: implement - previous implementation is missing
-			throw new RuntimeException("Not implemented yet.");
-		} else if (inst instanceof QuantileSortCPInstruction) {
-			// NOTE: mergesort since comparator used
-			long m = input.getM();
-			double sortCosts = 0;
-			if(inst.input2 == null)
-				sortCosts = DEFAULT_NFLOP_CP * m + m;
-			else //w/ weights
-				sortCosts = DEFAULT_NFLOP_CP * (input.isSparse() ? m * input.getS() : m);
-
-			return sortCosts + m*(int)(Math.log(m)/Math.log(2)) + // mergesort
-					DEFAULT_NFLOP_CP * m;
-		} else if (inst instanceof DnnCPInstruction) {
-			// TODO: implement the cost function for this
-			throw new RuntimeException("Not implemented yet.");
-		}
-		// NOTE: the upper cases should consider all possible scenarios for unary instructions
-		throw new DMLRuntimeException("Attempt for costing unsupported unary instruction.");
-	}
-
-	private double getNFLOP_CPBinaryInst(BinaryCPInstruction inst, VarStats input1, VarStats input2, VarStats output) throws CostEstimationException {
-		if (inst instanceof AppendCPInstruction) {
-			return DEFAULT_NFLOP_CP*input1.getCellsWithSparsity()*input2.getCellsWithSparsity();
-		} else if (inst instanceof AggregateBinaryCPInstruction) { // ba+*
-			// TODO: formula correct?
-			// NOTE: reduction by factor 2 because matrix mult better than average flop count (2*x/2 = x)
-			if (!input1.isSparse() && !input2.isSparse())
-				return input1.getCells() * (input2.getN()>1? input1.getS() : 1.0) * input2.getN();
-			else if (input1.isSparse() && !input2.isSparse())
-				return input1.getCells() * input1.getS() * input2.getN();
-			return  input1.getCells() * input1.getS() * input2.getN() * input2.getS();
-		} else if (inst instanceof CovarianceCPInstruction) { // cov
-			// NOTE: output always scalar, input 3 used as weights block if(allExists)
-			//  same runtime for 2 and 3 inputs
-			return 23 * input1.getM(); //(11+3*k+)
-		} else if (inst instanceof QuantilePickCPInstruction) {
-			// TODO: implement - previous implementation is missing
-			throw new RuntimeException("Not implemented yet.");
+		double computeTime = varToCollect.rddStats.cost;
+		double collectTime;
+		if (OptimizerUtils.checkSparkCollectMemoryBudget(varToCollect.characteristics, freeLocalMemory, false)) {
+			// use Spark collect()
+			collectTime = IOCostUtils.getSparkCollectTime(varToCollect.rddStats, driverMetrics, executorMetrics);
 		} else {
-			// TODO: Make sure no other cases of BinaryCPInstruction exist than the mentioned below
-			// NOTE: the case for BinaryScalarScalarCPInstruction,
-			//  					BinaryMatrixScalarCPInstruction,
-			//  					BinaryMatrixMatrixCPInstruction,
-			//  					BinaryFrameMatrixCPInstruction,
-			//  					BinaryFrameFrameCPInstruction,
-			String opcode = inst.getOpcode();
-			if( opcode.equals("+") || opcode.equals("-") //sparse safe
-					&& (input1.isSparse() || input2.isSparse()))
-				return input1.getCellsWithSparsity() + input2.getCellsWithSparsity();
-			else if( opcode.equals("solve") ) //see also MultiReturnBuiltin
-				return input1.getCells() * input1.getN(); //for 1kx1k ~ 1GFLOP -> 0.5s
-			else
-				return output.getCells();
+			// redirect through HDFS (writing to HDFS on executors and reading back on driver)
+			varToCollect.fileInfo = new Object[] {HDFS_SOURCE_IDENTIFIER, FileFormat.BINARY};
+			collectTime = IOCostUtils.getHadoopWriteTime(varToCollect, executorMetrics) +
+					IOCostUtils.getFileSystemReadTime(varToCollect, driverMetrics);
 		}
-	}
-
-	private double getNFLOP_CPMatrixBuiltinNaryInst(MatrixBuiltinNaryCPInstruction inst, int numMatrices, VarStats output) throws CostEstimationException {
-		String opcode = inst.getOpcode();
-		switch (opcode) {
-			case "nmin": case "nmax": case "n+": // for max, min plus num of cells for each matrix
-				return numMatrices * output.getCells();
-			case "rbind": case "cbind":
-				return output.getCells();
-			default:
-				throw new DMLRuntimeException("Unknown opcode: "+opcode);
-		}
-	}
-
-	private double getNFLOP_CPMultiReturnBuiltinInst(MultiReturnBuiltinCPInstruction inst, VarStats input) throws CostEstimationException {
-		String opcode = inst.getOpcode();
-		// NOTE: they all have cubic complexity, the scaling factor refers to commons.math
-		double xf = 2; //default e.g, qr
-		switch (opcode) {
-			case "eigen":
-				xf = 32;
-				break;
-			case "lu":
-				xf = 16;
-				break;
-			case "svd":
-				xf = 32; // TODO - assuming worst case for now
-				break;
-		}
-		return xf * input.getCells() * input.getN(); //for 1kx1k ~ 2GFLOP -> 1s
-	}
-
-	private double getNFLOP_CPParameterizedBuiltinInst(ParameterizedBuiltinCPInstruction inst, VarStats input, VarStats output) throws CostEstimationException {
-		String opcode = inst.getOpcode();
-		if(opcode.equals("cdf") || opcode.equals("invcdf"))
-			return DEFAULT_NFLOP_UNKNOWN; //scalar call to commons.math
-		else if( opcode.equals("groupedagg") ){
-			HashMap<String,String> paramsMap = inst.getParameterMap();
-			String fn = paramsMap.get("fn");
-			String order = paramsMap.get("order");
-			CMOperator.AggregateOperationTypes type = CMOperator.getAggOpType(fn, order);
-			int attr = type.ordinal();
-			double xga = 1;
-			switch(attr) {
-				case 0: xga=4; break; //sum, see uk+
-				case 1: xga=1; break; //count, see cm
-				case 2: xga=8; break; //mean
-				case 3: xga=16; break; //cm2
-				case 4: xga=31; break; //cm3
-				case 5: xga=51; break; //cm4
-				case 6: xga=16; break; //variance
-			}
-			return 2 * input.getM() + xga * input.getM(); //scan for min/max, groupedagg
-		}
-		else if(opcode.equals("rmempty")){
-			HashMap<String,String> paramsMap = inst.getParameterMap();
-			int attr = paramsMap.get("margin").equals("rows")?0:1;
-			switch(attr){
-				case 0: //remove rows
-					// TODO: Copied from old implementation but maybe reverse the cases?
-					return ((input.isSparse()) ? input.getM() : input.getM() * Math.ceil(1.0d/input.getS())/2) +
-							DEFAULT_NFLOP_CP * output.getCells();
-				case 1: //remove cols
-					return input.getN() * Math.ceil(1.0d/input.getS())/2 +
-							DEFAULT_NFLOP_CP * output.getCells();
-				default:
-					throw new DMLRuntimeException("Invalid margin type for opcode "+opcode+".");
-			}
-
+		if (varToCollect.rddStats.checkpoint) {
+			varToCollect.rddStats.cost = 0;
 		} else {
-			System.out.println("Estimation for operation "+opcode+" is not supported yet.");
-			return 1;
+			varToCollect.rddStats = null;
 		}
+
+		if (computeTime < 0 || collectTime < 0) {
+			// detection for functionality bugs
+			throw new RuntimeException("Unexpected negative value at estimating Spark Job execution time");
+		}
+		return computeTime + computeTime;
 	}
+
+	//////////////////////////////////////////////////////////////////////////////////////////////
+	// Helpers for handling stats and estimating time related to their corresponding variables  //
+	//////////////////////////////////////////////////////////////////////////////////////////////
 
 	/**
-	 * Intended to be used to get the NFLOP for SPInstructions.
-	 * 'parse' because the cost of each instruction is to be
-	 * collected and the cost is to be computed at the end based on
-	 * all Spark instructions
-	 * @param inst
-	 * @return
+	 * This method emulates the SystemDS mechanism of loading objects into
+	 * the CP memory from a file or an existing RDD object.
+	 *
+	 * @param input variable for loading in CP memory
+	 * @return estimated time in seconds for loading into memory
 	 */
-	@SuppressWarnings("unused")
-	protected double parseSPInst(SPInstruction inst) {
-		// declare resource-dependant metrics
-		double localCost = 0;  // [nflop] cost for computing executed in executors
-		double globalCost = 0;  // [nflop] cost for computing executed in driver
-		double IOCost = 0; // [s] cost for shuffling data and writing/reading to HDFS/S3
-		// TODO: consider the case of matrix with dims=1
-		// NOTE: consider if is needed to include the cost for final aggregation within the Spark Driver (CP)
-		if (inst instanceof AggregateTernarySPInstruction) {
-			// TODO: need to have a way to associate mVars from _stats with a
-			// 	potentially existing virtual PairRDD - MatrixObject
-			// NOTE: leave it for later once I figure out how to do it for unary instructions
-		} else if (inst instanceof AggregateUnarySPInstruction) {
-			AggregateUnarySPInstruction currentInst = (AggregateUnarySPInstruction) inst;
-			if (currentInst.input1.isTensor())
-				throw new DMLRuntimeException("CostEstimator does not support tensor input.");
-			String opcode = currentInst.getOpcode();
-			AggBinaryOp.SparkAggType aggType = currentInst.getAggType();
-			AggregateUnaryOperator op = (AggregateUnaryOperator) currentInst.getOperator();
-			VarStats input = _stats.get(currentInst.input1.getName());
-			RDDStats inputRDD = input._rdd;
-			RDDStats currentRDD = inputRDD;
-			VarStats outputStats = _stats.get(currentInst.output.getName());
+	private double loadCPVarStatsAndEstimateTime(VarStats input) throws CostEstimationException {
+		if (input.isScalar() || input.allocatedMemory > 0) return 0.0;
 
-			int k = getComputationFactorUAOp(opcode);
-			// TODO: RRDstats extra required to keep at least the number of
-			// 	blocks that each next operator operates on: e.g. filter (and mapByKey) is reducing this number,
-			// 	probably better to create and store only intermediate RDDstats shared between instructions
-			// 	since only these are needed for retrieving only intra instructions
-			// TODO: later think of how to handle getting null for stats
-			if (inputRDD == null) {
-				throw new DMLRuntimeException("RDD stats should have been already initiated");
+		double loadTime;
+		// input.fileInfo != null output of reblock inst. -> execution not triggered
+		// input.rddStats.checkpoint for output of checkpoint inst. -> execution not triggered
+		if (input.rddStats != null && (input.fileInfo == null || !input.rddStats.checkpoint)) {
+			// loading from RDD
+			loadTime = getTimeEstimateSparkJob(input);
+		} else {
+			// loading from a file
+			if (input.fileInfo == null || input.fileInfo.length != 2) {
+				throw new DMLRuntimeException("Time estimation is not possible without file info.");
+			} else if (!input.fileInfo[0].equals(HDFS_SOURCE_IDENTIFIER) && !input.fileInfo[0].equals(S3_SOURCE_IDENTIFIER)) {
+				throw new DMLRuntimeException("Time estimation is not possible for data source: " + input.fileInfo[0]);
 			}
-			if (opcode.equals("uaktrace")) {
-				// add cost for filter op
-				localCost += currentRDD.numBlocks;
-				currentRDD = RDDStats.transformNumBlocks(currentRDD, currentRDD.rlen); // only the diagonal blocks left
-			}
-			if (aggType == AggBinaryOp.SparkAggType.SINGLE_BLOCK) {
-				if (op.sparseSafe) {
-					localCost += currentRDD.numBlocks; // filter cost
-					// TODO: decide how to reduce numBlocks
-				}
-				localCost += k*currentRDD.numValues*currentRDD.sparsity; // map cost
-				// next op is fold -> end of the current Job
-				// end of Job -> no need to assign the currentRDD to the output (output is no RDD)
-				localCost += currentRDD.numBlocks; // local folding cost
-				// TODO: shuffle cost to bring all pairs to the driver (CP)
-				// NOTE: neglect the added CP compute cost for folding the distributed aggregates
-			} else if (aggType == AggBinaryOp.SparkAggType.MULTI_BLOCK){
-				localCost += k*currentRDD.numValues*currentRDD.sparsity; // mapToPair cost
-				// NOTE: the new unique number of keys should be
-				// next op is combineByKey -> new stage
-				localCost += currentRDD.numBlocks + currentRDD.numPartitions; // local merging * merging partitions
-				if (op.aggOp.existsCorrection())
-					localCost += currentRDD.numBlocks; // mapValues cost for the correction
-			} else {  // aggType == AggBinaryOp.SparkAggType.NONE
-				localCost += k*currentRDD.numValues*currentRDD.sparsity;
-				// no reshuffling -> inst is packed with the next spark operation
-			}
-
-			return globalCost;
-		} else if (inst instanceof RandSPInstruction) {
-			RandSPInstruction randInst = (RandSPInstruction) inst;
-			String opcode = randInst.getOpcode();
-			VarStats output = _stats.get(randInst.output.getName());
-			// NOTE: update sparsity here
-			output._mc.setNonZeros((long) (output.getCells()*randInst.getSparsity()));
-			RDDStats outputRDD = new RDDStats(output);
-
-			int complexityFactor = 1;
-			switch (opcode.toLowerCase()) {
-				case DataGen.RAND_OPCODE:
-					complexityFactor = 32; // higher complexity for random number generation
-				case DataGen.SEQ_OPCODE:
-					// first op. from the new stage: parallelize/read from scratch file
-					globalCost += complexityFactor*outputRDD.numBlocks; // cp random number generation
-					if (outputRDD.numBlocks < RandSPInstruction.INMEMORY_NUMBLOCKS_THRESHOLD) {
-						long parBlockSize = MatrixBlock.estimateSizeDenseInMemory(outputRDD.numBlocks, 1);
-						IOCost += IOCostUtils.getSparkTransmissionCost(parBlockSize, outputRDD.numParallelTasks);
-					} else {
-						IOCost += IOCostUtils.getWriteTime(outputRDD.numBlocks, 1, 1.0, HDFS_SOURCE_IDENTIFIER, TEXT); // driver writes down
-						IOCost += IOCostUtils.getReadTime(outputRDD.numBlocks, 1, 1.0, HDFS_SOURCE_IDENTIFIER, TEXT); // executors read
-						localCost += outputRDD.numBlocks; // mapToPair cost
-					}
-					localCost += complexityFactor*outputRDD.numValues; // mapToPair cost
-					output._rdd = outputRDD;
-					return globalCost;
-				case DataGen.SAMPLE_OPCODE:
-					// first op. from the new stage: parallelize
-					complexityFactor = 32; // TODO: set realistic factor
-					globalCost += complexityFactor*outputRDD.numPartitions; // cp random number generation
-					long parBlockSize = MatrixBlock.estimateSizeDenseInMemory(outputRDD.numPartitions, 1);
-					IOCost += IOCostUtils.getSparkTransmissionCost(parBlockSize, outputRDD.numParallelTasks);
-					localCost += outputRDD.numBlocks; // flatMap cost
-					localCost += complexityFactor*outputRDD.numBlocks; // mapToPairCost cost
-					// sortByKey -> new stage
-					long randBlockSize = MatrixBlock.estimateSizeDenseInMemory(outputRDD.numBlocks, 1);
-					IOCost += IOCostUtils.getShuffleCost(randBlockSize, outputRDD.numParallelTasks);
-					localCost += outputRDD.numValues;
-					// sortByKey -> shuffling?
-				case DataGen.FRAME_OPCODE:
-			}
-			return globalCost;
+			loadTime = IOCostUtils.getFileSystemReadTime(input, driverMetrics);
 		}
-
-		throw new DMLRuntimeException("Unsupported instruction: " + inst.getOpcode());
-	}
-
-	/**
-	 * Intended to handle RDDStats retrievals so the I/O
-	 * can be computed correctly. This method should also
-	 * reserve the necessary memory for the RDD on the executors.
-	 * @param var
-	 * @param outputRDD
-	 * @return
-	 */
-	@SuppressWarnings("unused")
-	private double getRDDHandleAndEstimateTime(VarStats var, RDDStats outputRDD) {
-		double ret = 0;
-		if (var._rdd == null) {
-			RDDStats newRDD = new RDDStats(var);
-			if (var._memory >= 0) { // dirty or cached
-				if (!_parRDDs.reserve(newRDD.totalSize)) {
-					if (var._dirty) {
-						ret += IOCostUtils.getWriteTime(var.getM(), var.getN(), var.getS(), HDFS_SOURCE_IDENTIFIER, BINARY);
-						// TODO: think when to set it to true
-						var._dirty = false;
-					}
-					ret += IOCostUtils.getReadTime(var.getM(), var.getN(), var.getS(), HDFS_SOURCE_IDENTIFIER, BINARY) / newRDD.numParallelTasks;
-				} else {
-					ret += IOCostUtils.getSparkTransmissionCost(newRDD.totalSize, newRDD.numParallelTasks);
-				}
-			} else { // on hdfs
-				if (var._fileInfo == null || var._fileInfo.length != 2)
-					throw new DMLRuntimeException("File info missing for a file to be read on Spark.");
-				ret += IOCostUtils.getReadTime(var.getM(), var.getN(), var.getS(), (String)var._fileInfo[0], (Types.FileFormat) var._fileInfo[1]) / newRDD.numParallelTasks;
-				var._dirty = false; // possibly redundant
-			}
-			var._rdd = newRDD;
-		}
-		// if RDD handle exists -> no additional cost to add
-		outputRDD = var._rdd;
-		return ret;
-	}
-
-	/////////////////////
-	// I/O Costs       //
-	/////////////////////
-
-	private double getLoadTime(VarStats input) throws CostEstimationException {
-		if (input == null || input._memory > 0) return 0.0; // input == null marks scalars
-		// loading from RDD
-		if (input._rdd != null) {
-			if (OptimizerUtils.checkSparkCollectMemoryBudget(input._mc, usedMememory, false)) { // .collect()
-				long sizeEstimate = OptimizerUtils.estimatePartitionedSizeExactSparsity(input._mc);
-				putInMemory(input);
-				return IOCostUtils.getSparkTransmissionCost(sizeEstimate, input._rdd.numParallelTasks);
-			} else { // redirect through HDFS
-				putInMemory(input);
-				return IOCostUtils.getWriteTime(input.getM(), input.getN(), input.getS(), HDFS_SOURCE_IDENTIFIER, null) / input._rdd.numParallelTasks +
-						IOCostUtils.getReadTime(input.getM(), input.getN(), input.getS(), HDFS_SOURCE_IDENTIFIER, null); // cost for writting to HDFS on executors and reading back on driver
-			}
-		}
-		// loading from a file
-		if (input._fileInfo == null || input._fileInfo.length != 2) {
-			return 1;
-		}
-		else if (!input._fileInfo[0].equals(HDFS_SOURCE_IDENTIFIER) && !input._fileInfo[0].equals(S3_SOURCE_IDENTIFIER)) {
-			throw new DMLRuntimeException("Time estimation is not possible for data source: "+ input._fileInfo[0]);
-		}
+		input.allocatedMemory = OptimizerUtils.estimateSizeExactSparsity(input.characteristics);
 		putInMemory(input);
-		return IOCostUtils.getReadTime(input.getM(), input.getN(), input.getS(), (String) input._fileInfo[0], (Types.FileFormat) input._fileInfo[1]);
+		return loadTime;
 	}
 
-	private void putInMemory(VarStats input) throws CostEstimationException {
-		if(input == null)
-			return;
-		long sizeEstimate = OptimizerUtils.estimateSize(input._mc);
-		if (sizeEstimate + usedMememory > localMemory)
+	private void putInMemory(VarStats output) throws CostEstimationException {
+		if (output.isScalar() || output.allocatedMemory <= MIN_MEMORY_TO_TRACK) return;
+		if (freeLocalMemory - output.allocatedMemory < 0)
 			throw new CostEstimationException("Insufficient local memory");
-		usedMememory += sizeEstimate;
-		input._memory = sizeEstimate;
+		freeLocalMemory -= output.allocatedMemory;
 	}
 
 	private void removeFromMemory(VarStats input) {
-		if (input == null) return; // for scalars
-		usedMememory -= input._memory;
-		input._memory = -1;
-	}
-	/////////////////////
-	// HELPERS         //
-	/////////////////////
-
-	private static int getComputationFactorUAOp(String opcode) {
-		switch (opcode) {
-			case "uatrace": case "uaktrace":
-				return 2;
-			case "uak+": case "uark+": case "uack+":
-				return 4; // 1*k+
-			case "uasqk+": case "uarsqk+": case "uacsqk+":
-				return 5; // +1 for multiplication to square term
-			case "uamean": case "uarmean": case "uacmean":
-				return 7; // 1*k+
-			case "uavar": case "uarvar": case "uacvar":
-				return 14;
-			default:
-				return 1;
+		if (input == null) return; // scalars or variables never put in memory
+		if (!input.isScalar() && input.allocatedMemory > MIN_MEMORY_TO_TRACK) {
+			freeLocalMemory += input.allocatedMemory;
+			if (freeLocalMemory > localMemoryLimit) {
+				// detection of functionality bugs
+				throw new RuntimeException("Unexpectedly large amount of freed CP memory");
+			}
 		}
+		if (input.rddStats != null) {
+			input.rddStats = null;
+		}
+		input.allocatedMemory = -1;
+	}
+
+	/**
+	 * This method serves a main rule at the mechanism for
+	 * estimation the execution time of Spark instructions:
+	 * it estimates the time for distributing existing CP variable
+	 * or sets the estimated time as time needed for computing the
+	 * input variable on Spark.
+	 * @param input input statistics
+	 * @return time (seconds) for loading the corresponding variable
+	 */
+	private double loadRDDStatsAndEstimateTime(VarStats input) {
+		if (input.isScalar()) return 0.0;
+
+		double ret;
+		if (input.rddStats == null) { // rdd is to be distributed by the CP
+			input.rddStats = new RDDStats(input);
+			RDDStats inputRDD = input.rddStats;
+			if (input.allocatedMemory >= 0) { // generated object locally
+				if (inputRDD.distributedSize < freeLocalMemory && inputRDD.distributedSize < (0.1 * localMemoryLimit)) {
+					// in this case transfer the data object over HDF (first set the fileInfo of the input)
+					input.fileInfo = new Object[] {HDFS_SOURCE_IDENTIFIER, FileFormat.BINARY};
+					ret = IOCostUtils.getFileSystemWriteTime(input, driverMetrics);
+					ret += IOCostUtils.getHadoopReadTime(input, executorMetrics);
+				} else {
+					ret = IOCostUtils.getSparkParallelizeTime(inputRDD, driverMetrics, executorMetrics);
+				}
+			} else { // on hdfs
+				if (input.fileInfo == null || input.fileInfo.length != 2)
+					throw new RuntimeException("File info missing for a file to be read on Spark.");
+				ret = IOCostUtils.getHadoopReadTime(input, executorMetrics);
+			}
+		} else if (input.rddStats.distributedSize > 0) {
+			// if input RDD size is initiated -> cost should be calculated
+			// transfer the cost to the output rdd for lineage proper handling
+			ret = input.rddStats.cost;
+			if (input.rddStats.checkpoint) {
+				// cost of checkpoint var transferred only once
+				input.rddStats.cost = 0;
+			}
+		} else {
+			throw new RuntimeException("Initialized RDD stats without initialized data characteristics is undefined behaviour");
+		}
+		return ret;
+	}
+
+	//////////////////////////////////////////////////////////////////////////////////////////////
+	// Generic non-static helpers/utility methods                                               //
+	//////////////////////////////////////////////////////////////////////////////////////////////
+
+	private VarStats getCTableDim(CPOperand dimOperand) {
+		VarStats dimStats;
+		if (dimOperand.isLiteral()) {
+			dimStats = new VarStats(dimOperand.getLiteral().toString(), null);
+		} else {
+			dimStats = getStatsWithDefaultScalar(dimOperand.getName());
+		}
+		return dimStats;
+	}
+
+	private VarStats getParameterizedBuiltinParamStats(String key, HashMap<String, String> params, boolean required) {
+		String varName = params.get(key);
+		if (required && varName == null) {
+			throw new RuntimeException("ParameterizedBuiltin operation is missing required parameter object for key " + key);
+		} else if (varName == null) {
+			return null;
+		}
+		return getStatsWithDefaultScalar(varName);
 	}
 }

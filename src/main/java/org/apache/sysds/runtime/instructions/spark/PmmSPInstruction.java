@@ -98,6 +98,8 @@ public class PmmSPInstruction extends BinarySPInstruction {
 		updateBinaryMMOutputDataCharacteristics(sec, false);
 	}
 
+	public CacheType getCacheType() { return _type; }
+
 	private static class RDDPMMFunction implements PairFlatMapFunction<Tuple2<MatrixIndexes, MatrixBlock>, MatrixIndexes, MatrixBlock> 
 	{
 		private static final long serialVersionUID = -1696560050436469140L;

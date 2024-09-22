@@ -108,9 +108,8 @@ public class ReorgSPInstruction extends UnarySPInstruction {
 			CPOperand desc = new CPOperand(parts[3]);
 			CPOperand ixret = new CPOperand(parts[4]);
 			boolean bSortIndInMem = false;
-			
-			if(parts.length > 5)
-				bSortIndInMem = Boolean.parseBoolean(parts[6]);
+
+			bSortIndInMem = Boolean.parseBoolean(parts[6]);
 			
 			return new ReorgSPInstruction(new ReorgOperator(new SortIndex(1,false,false)),
 				in, col, desc, ixret, out, opcode, bSortIndInMem, str);
@@ -249,7 +248,11 @@ public class ReorgSPInstruction extends UnarySPInstruction {
 		}
 	}
 
-	private static class RDDDiagV2MFunction implements PairFlatMapFunction<Tuple2<MatrixIndexes, MatrixBlock>, MatrixIndexes, MatrixBlock> 
+	public CPOperand getIxRet() {
+		return _ixret;
+	}
+
+	private static class RDDDiagV2MFunction implements PairFlatMapFunction<Tuple2<MatrixIndexes, MatrixBlock>, MatrixIndexes, MatrixBlock>
 	{
 		private static final long serialVersionUID = 31065772250744103L;
 		

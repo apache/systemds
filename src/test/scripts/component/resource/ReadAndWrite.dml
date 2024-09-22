@@ -19,7 +19,6 @@
 #
 #-------------------------------------------------------------
 
-X = rand(rows=10000, cols=10);
-C = kmeans(X=X, k=4, runs=10, eps=1e-8, max_iter=20);
-print(sum(C));
-
+A = read($fileA);
+write(A, $fileA_Csv, format="csv");
+write(A, $fileA_Text, format="text");

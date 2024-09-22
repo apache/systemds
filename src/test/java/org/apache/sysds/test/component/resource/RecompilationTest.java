@@ -56,10 +56,11 @@ public class RecompilationTest extends AutomatedTestBase {
 
 	@Test
 	public void testSetDriverConfigurations() {
-		long expectedMemory = 1024*1024*1024; // 1GB
+		long nodeMemory = 1024*1024*1024; // 1GB
+		long expectedMemory = (long) (0.9 * nodeMemory);
 		int expectedThreads = 4;
 
-		ResourceCompiler.setDriverConfigurations(expectedMemory, expectedThreads);
+		ResourceCompiler.setDriverConfigurations(nodeMemory, expectedThreads);
 
 		Assert.assertEquals(expectedMemory, InfrastructureAnalyzer.getLocalMaxMemory());
 		Assert.assertEquals(expectedThreads, InfrastructureAnalyzer.getLocalParallelism());
@@ -170,9 +171,9 @@ public class RecompilationTest extends AutomatedTestBase {
 		runTest(precompiledProgram, expectedProgram, 8L*1024*1024*1024, 0, -1, "ba+*", false);
 
 		ResourceCompiler.setDriverConfigurations(16L*1024*1024*1024, driverThreads);
-		ResourceCompiler.setExecutorConfigurations(2, 1024*1024*1024, executorThreads);
+		ResourceCompiler.setExecutorConfigurations(4, 1024*1024*1024, executorThreads);
 		expectedProgram = ResourceCompiler.compile(HOME+"mm_test.dml", nvargs);
-		runTest(precompiledProgram, expectedProgram, 16L*1024*1024*1024, 2, 1024*1024*1024, "ba+*", false);
+		runTest(precompiledProgram, expectedProgram, 16L*1024*1024*1024, 4, 1024*1024*1024, "ba+*", false);
 
 		ResourceCompiler.setDriverConfigurations(4L*1024*1024*1024, driverThreads);
 		ResourceCompiler.setExecutorConfigurations(2, 4L*1024*1024*1024, executorThreads);

@@ -197,6 +197,8 @@ public class MapmmSPInstruction extends AggregateBinarySPInstruction {
 		return _aggtype;
 	}
 
+	public CacheType getCacheType() { return _type; }
+
 	private static boolean preservesPartitioning(DataCharacteristics mcIn, CacheType type )
 	{
 		if( type == CacheType.LEFT )

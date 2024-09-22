@@ -1,0 +1,13 @@
+
+X = read($X);
+Y = read($Y);
+Z = read($Z);
+
+A = X%*%Y;
+B = A + Z;
+C = B[1:1000,1:1000];
+
+print(nrow(A));
+print(nrow(B));
+print(nrow(C));
+

@@ -279,7 +279,7 @@ public class LibMatrixMult
 		boolean pm2r = !ultraSparse && !sparse && checkParMatrixMultRightInputRows(m1, m2, k);
 		boolean pm2c = !ultraSparse && checkParMatrixMultRightInputCols(m1, m2, k, pm2r);
 		int num = pm2r ? m2.rlen : pm2c ? m2.clen : m1.rlen;
-
+		
 		// core multi-threaded matrix mult computation
 		// (currently: always parallelization over number of rows)
 		final ExecutorService pool = CommonThreadPool.get(k);
@@ -1052,7 +1052,7 @@ public class LibMatrixMult
 			matrixMultDenseDenseMVShortRHS(a, b, c, cd, rl, ru);
 		}
 		else if( n==1 ) {               //MATRIX-VECTOR (tall rhs)
-			matrixMultDenseDenseMVTallRHS(a, b, c, cd, rl, ru);
+			matrixMultDenseDenseMVTallRHS(a, b, c, pm2, cd, rl, ru);
 		}
 		else if( pm2 && m==1 ) {        //VECTOR-MATRIX
 			matrixMultDenseDenseVM(a, b, c, n, cd, rl, ru);
@@ -1075,15 +1075,20 @@ public class LibMatrixMult
 			cvals[i] = dotProduct(a.values(i), bvals, a.pos(i), 0, cd);
 	}
 	
-	private static void matrixMultDenseDenseMVTallRHS(DenseBlock a, DenseBlock b, DenseBlock c, int cd, int rl, int ru) {
+	private static void matrixMultDenseDenseMVTallRHS(DenseBlock a, DenseBlock b, DenseBlock c, boolean pm2, int cd, int rl, int ru) {
 		final int blocksizeI = 32;
 		final int blocksizeK = 2*1024; //16KB vector blocks (L1)
 		double[] bvals = b.valuesAt(0);
 		double[] cvals = c.valuesAt(0);
-		for( int bi=rl; bi<ru; bi+=blocksizeI ) {
-			int bimin = Math.min(bi+blocksizeI, ru);
-			for( int bk=0; bk<cd; bk+=blocksizeK ) {
-				int bkmin = Math.min(bk+blocksizeK, cd);
+		// setup bounds according to parallelization strategy
+		// (default: rows in lhs, pm2: rows in rhs)
+		int cl = pm2 ? rl : 0, cu = pm2 ? ru : cd;
+		int rl2 = pm2 ? 0 : rl, ru2 = pm2 ? a.numRows() : ru;
+		// matrix-vector multication with cache blocking of vector
+		for( int bi=rl2; bi<ru2; bi+=blocksizeI ) {
+			int bimin = Math.min(bi+blocksizeI, ru2);
+			for( int bk=cl; bk<cu; bk+=blocksizeK ) {
+				int bkmin = Math.min(bk+blocksizeK, cu);
 				for( int i=bi; i<bimin; i++) 
 					cvals[i] += dotProduct(a.values(i), bvals, a.pos(i,bk), bk, bkmin-bk);
 			}
@@ -4349,7 +4354,7 @@ public class LibMatrixMult
 	private static boolean checkParMatrixMultRightInputRows( MatrixBlock m1, MatrixBlock m2, int k ) {
 		//parallelize over rows in rhs matrix if number of rows in lhs/output is very small
 		double jvmMem = InfrastructureAnalyzer.getLocalMaxMemory();
-		return (m1.rlen==1 && !(m1.isUltraSparse()||m2.isUltraSparse()))
+		return (m1.rlen==1 && !(m1.sparse && m2.clen==1) && !(m1.isUltraSparse()||m2.isUltraSparse()))
 			|| (m1.rlen<=16 && m2.rlen > m1.rlen && (!m1.sparse | m2.clen > 1)
 			   && ( !m1.isUltraSparse() && !(m1.sparse & m2.sparse) ) //dense-dense / sparse-dense / dense-sparse
 			   && (long)k * 8 * m1.rlen * m2.clen < Math.max(MEM_OVERHEAD_THRESHOLD,0.01*jvmMem) );

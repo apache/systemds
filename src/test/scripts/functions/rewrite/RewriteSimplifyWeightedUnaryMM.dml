@@ -24,7 +24,7 @@ U = read($1)
 V = read($2)
 W = read($3)
 type = $4
-c = 4
+c = 4.0
 
 # Perform operations
 if(type == 1){
@@ -65,6 +65,45 @@ else if(type == 12){
 }
 else if(type == 13){
     R = W * ((U%*%t(V)) / c)
+}
+else if(type == 14){
+    R = W * exp(U%*%V)
+}
+else if(type == 15){
+    R = W * abs(U%*%V)
+}
+else if(type == 16){
+    R = W * sin(U%*%V)
+}
+else if(type == 17){
+    R = (W*(U%*%V))*2
+}
+else if(type == 18){
+    R = 2*(W*(U%*%V))
+}
+else if(type == 19){
+    R = W * (c + U%*%V)
+}
+else if(type == 20){
+    R = W * (c - U%*%V)
+}
+else if(type == 21){
+    R = W * (c * (U%*%V))
+}
+else if(type == 22){
+    R = W * (c / (U%*%V))
+}
+else if(type == 23){
+    R = W * (U%*%V + c)
+}
+else if(type == 24){
+    R = W * (U%*%V - c)
+}
+else if(type == 25){
+    R = W * ((U%*%V) * c)
+}
+else if(type == 26){
+    R = W * ((U%*%V) / c)
 }
 
 # Write the result matrix R

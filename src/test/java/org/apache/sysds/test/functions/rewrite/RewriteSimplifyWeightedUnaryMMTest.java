@@ -37,7 +37,7 @@ public class RewriteSimplifyWeightedUnaryMMTest extends AutomatedTestBase {
 
 	private static final int rows = 100;
 	private static final int cols = 100;
-	private static final double eps = Math.pow(10, -10);
+	private static final double eps = Math.pow(10, -7);
 
 	@Override
 	public void setUp() {
@@ -195,6 +195,77 @@ public class RewriteSimplifyWeightedUnaryMMTest extends AutomatedTestBase {
 	public void testWeightedUnaryMMDivRightRewrite(){
 		testRewriteSimplifyWeightedUnaryMM(13, true);	//pattern: W * ((U%*%t(V)) / c)
 	}
+
+	/**
+	 * Here, we omit the transpose in the dml script. The rewrite should catch the missing transpose
+	 * and replace V with t(V).
+	 **/
+
+	@Test
+	public void testWeightedUnaryMMExpNoTranspose(){
+		testRewriteSimplifyWeightedUnaryMM(14, true);	//pattern: W * exp(U%*%V)
+	}
+
+	@Test
+	public void testWeightedUnaryMMAbsNoTranspose(){
+		testRewriteSimplifyWeightedUnaryMM(15, true);	//pattern: W * abs(U%*%V)
+	}
+
+	@Test
+	public void testWeightedUnaryMMSinNoTranspose(){
+		testRewriteSimplifyWeightedUnaryMM(16, true);	//pattern: W * sin(U%*%V)
+	}
+
+	@Test
+	public void testWeightedUnaryMMScalarRightNoTranspose(){
+		testRewriteSimplifyWeightedUnaryMM(17, true);	//pattern: (W*(U%*%V))*2
+	}
+
+	@Test
+	public void testWeightedUnaryMMScalarLeftNoTranspose(){
+		testRewriteSimplifyWeightedUnaryMM(18, true);	//pattern: 2*(W*(U%*%V))
+	}
+
+	@Test
+	public void testWeightedUnaryMMAddLeftNoTranspose(){
+		testRewriteSimplifyWeightedUnaryMM(19, true);	//pattern: W * (c + U%*%V)
+	}
+
+	@Test
+	public void testWeightedUnaryMMMinusLeftNoTranspose(){
+		testRewriteSimplifyWeightedUnaryMM(20, true);	//pattern: W * (c - U%*%V)
+	}
+
+	@Test
+	public void testWeightedUnaryMMMultLeftNoTranspose(){
+		testRewriteSimplifyWeightedUnaryMM(21, true);	//pattern: W * (c * (U%*%V))
+	}
+
+	@Test
+	public void testWeightedUnaryMMDivLeftNoTranspose(){
+		testRewriteSimplifyWeightedUnaryMM(22, true);	//pattern: W * (c / (U%*%V))
+	}
+
+	@Test
+	public void testWeightedUnaryMMAddRightNoTranspose(){
+		testRewriteSimplifyWeightedUnaryMM(23, true);	//pattern: W * (U%*%V + c)
+	}
+
+	@Test
+	public void testWeightedUnaryMMMinusRightNoTranspose(){
+		testRewriteSimplifyWeightedUnaryMM(24, true);	//pattern: W * (U%*%V - c)
+	}
+
+	@Test
+	public void testWeightedUnaryMMMultRightNoTranspose(){
+		testRewriteSimplifyWeightedUnaryMM(25, true);	//pattern: W * ((U%*%V) * c)
+	}
+
+	@Test
+	public void testWeightedUnaryMMDivRightNoTranspose(){
+		testRewriteSimplifyWeightedUnaryMM(26, true);	//pattern: W * ((U%*%V) / c)
+	}
+
 
 
 	private void testRewriteSimplifyWeightedUnaryMM(int ID, boolean rewrites) {

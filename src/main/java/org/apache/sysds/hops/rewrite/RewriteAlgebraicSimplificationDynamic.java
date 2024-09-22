@@ -1632,8 +1632,8 @@ public class RewriteAlgebraicSimplificationDynamic extends HopRewriteRule
 				if( !HopRewriteUtils.isTransposeOperation(tX) ) { 
 					tX = HopRewriteUtils.createTranspose(tX);
 				}
-				//else
-				tX = tX.getInput().get(0);
+				else
+					tX = tX.getInput().get(0);
 				
 				hnew = new QuaternaryOp(hi.getName(), DataType.MATRIX, ValueType.FP64, 
 						  OpOp4.WSIGMOID, W, Y, tX, false, false);
@@ -1661,8 +1661,8 @@ public class RewriteAlgebraicSimplificationDynamic extends HopRewriteRule
 				if( !HopRewriteUtils.isTransposeOperation(tX) ) { 
 					tX = HopRewriteUtils.createTranspose(tX);
 				}
-				//else
-				tX = tX.getInput().get(0);
+				else
+					tX = tX.getInput().get(0);
 				
 				hnew = new QuaternaryOp(hi.getName(), DataType.MATRIX, ValueType.FP64, 
 						  OpOp4.WSIGMOID, W, Y, tX, false, true);
@@ -1687,8 +1687,8 @@ public class RewriteAlgebraicSimplificationDynamic extends HopRewriteRule
 				if( !HopRewriteUtils.isTransposeOperation(tX) ) { 
 					tX = HopRewriteUtils.createTranspose(tX);
 				}
-				//else
-				tX = tX.getInput().get(0);
+				else
+					tX = tX.getInput().get(0);
 				
 				hnew = new QuaternaryOp(hi.getName(), DataType.MATRIX, ValueType.FP64, 
 						  OpOp4.WSIGMOID, W, Y, tX, true, false);
@@ -1719,8 +1719,8 @@ public class RewriteAlgebraicSimplificationDynamic extends HopRewriteRule
 					if( !HopRewriteUtils.isTransposeOperation(tX) ) { 
 						tX = HopRewriteUtils.createTranspose(tX);
 					}
-					//else
-					tX = tX.getInput().get(0);
+					else
+						tX = tX.getInput().get(0);
 					
 					hnew = new QuaternaryOp(hi.getName(), DataType.MATRIX, ValueType.FP64, 
 							  OpOp4.WSIGMOID, W, Y, tX, true, true);
@@ -2154,7 +2154,7 @@ public class RewriteAlgebraicSimplificationDynamic extends HopRewriteRule
 			
 			if( !HopRewriteUtils.isTransposeOperation(V) )
 				V = HopRewriteUtils.createTranspose(V);
-			else 
+			else
 				V = V.getInput().get(0);
 				
 			hnew = new QuaternaryOp(hi.getName(), DataType.MATRIX, ValueType.FP64, 
@@ -2248,7 +2248,7 @@ public class RewriteAlgebraicSimplificationDynamic extends HopRewriteRule
 				
 				if( !HopRewriteUtils.isTransposeOperation(V) )
 					V = HopRewriteUtils.createTranspose(V);
-				else 
+				else
 					V = V.getInput().get(0);
 					
 				hnew = new QuaternaryOp(hi.getName(), DataType.MATRIX, ValueType.FP64, 

@@ -58,7 +58,9 @@ public final class CLALibLeftMultBy {
 	/**
 	 * Left multiplication with a CompressedMatrixBlock on the right following the equation:
 	 * 
+	 * <p>
 	 * ret = t(left) %*% right
+	 * </p>
 	 * 
 	 * @param right A CompressedMatrixBlock on the right side of the multiplication.
 	 * @param left  A not transposed MatrixBlock.
@@ -82,7 +84,9 @@ public final class CLALibLeftMultBy {
 	/**
 	 * Left multiplication with two CompressedMatrixBlock following the equation:
 	 * 
+	 * <p>
 	 * ret = t(left) %*% right
+	 * </p>
 	 * 
 	 * @param right A CompressedMatrixBlock on the right side of the multiplication.
 	 * @param left  A not transposed CompressedMatrixBlock, but logically inside the function it is considered
@@ -261,7 +265,7 @@ public final class CLALibLeftMultBy {
 		// Force dense output
 		ret.setNonZeros((long) ret.getNumRows() * ret.getNumColumns());
 		ret.allocateDenseBlock();
-	
+
 		for(int j = 0; j < fLeft.size(); j++)
 			for(int i = 0; i < fRight.size(); i++)
 				fRight.get(i).leftMultByAColGroup(fLeft.get(j), ret, sd);

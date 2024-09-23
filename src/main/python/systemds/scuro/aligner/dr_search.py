@@ -19,19 +19,24 @@
 #
 # -------------------------------------------------------------
 import itertools
+import random
 from typing import List
 
-from aligner.task import Task
-from modality.aligned_modality import AlignedModality
-from modality.modality import Modality
-from representations.representation import Representation
+from systemds.scuro.aligner.task import Task
+from systemds.scuro.modality.aligned_modality import AlignedModality
+from systemds.scuro.modality.modality import Modality
+from systemds.scuro.representations.representation import Representation
+
+import warnings
+
+warnings.filterwarnings('ignore')
 
 
 def get_modalities_by_name(modalities, name):
     for modality in modalities:
         if modality.name == name:
             return modality
-    
+
     raise 'Modality ' + name + 'not in modalities'
 
 
@@ -51,9 +56,9 @@ class DRSearch:
         self.best_modalities = None
         self.best_representation = None
         self.best_score = -1
-        
+
     def set_best_params(self, modality_name: str, representation: Representation,
-                        score: float, modality_names: List[str]):
+                        scores: List[float], modality_names: List[str]):
         """
         Updates the best parameters for given modalities, representation, and score
         :param modality_name: The name of the aligned modality
@@ -62,43 +67,66 @@ class DRSearch:
         :param modality_names: List of modality names used in this setting
         :return:
         """
-        
+
         # check if modality name is already in dictionary
         if modality_name not in self.scores.keys():
             # if not add it to dictionary
             self.scores[modality_name] = {}
-        
+
         # set score for representation
-        self.scores[modality_name][representation] = score
-        
+        self.scores[modality_name][representation] = scores
+
         # compare current score with best score
-        if score > self.best_score:
-            self.best_score = score
+        if scores[1] > self.best_score:
+            self.best_score = scores[1]
             self.best_representation = representation
             self.best_modalities = modality_names
-    
-    def fit(self):
+
+    def reset_best_params(self):
+        self.best_score = -1
+        self.best_modalities = None
+        self.best_representation = None
+        self.scores = {}
+
+    def fit_random(self, seed=-1):
+        """
+        This method randomly selects a modality or combination of modalities and representation
+        """
+        if seed != -1:
+            random.seed(seed)
+
+        modalities = []
+        for M in range(1, len(self.modalities) + 1):
+            for combination in itertools.combinations(self.modalities, M):
+                modalities.append(combination)
+
+        modality_combination = random.choice(modalities)
+        representation = random.choice(self.representations)
+
+        modality = AlignedModality(representation, list(modality_combination))  # noqa
+        modality.combine()
+
+        scores = self.task.run(modality.data)
+        self.set_best_params(modality.name, representation, scores, modality.get_modality_names())
+
+        return self.best_representation, self.best_score, self.best_modalities
+
+    def fit_enumerate_all(self):
         """
         This method finds the best representation out of a given List of uni-modal modalities and
         representations
         :return: The best parameters found in the search procedure
         """
-        
+
         for M in range(1, len(self.modalities) + 1):
             for combination in itertools.combinations(self.modalities, M):
-                if len(combination) == 1:
-                    modality = combination[0]
-                    score = self.task.run(modality.representation.scale_data(modality.data, self.task.train_indices))
-                    self.set_best_params(modality.name, modality.representation.name, score, [modality.name])
-                    self.scores[modality] = score
-                else:
-                    for representation in self.representations:
-                        modality = AlignedModality(representation, list(combination)) # noqa
-                        modality.combine(self.task.train_indices)
-                            
-                        score = self.task.run(modality.data)
-                        self.set_best_params(modality.name, representation, score, modality.get_modality_names())
-                            
+                for representation in self.representations:
+                    modality = AlignedModality(representation, list(combination))  # noqa
+                    modality.combine()
+
+                    scores = self.task.run(modality.data)
+                    self.set_best_params(modality.name, representation, scores, modality.get_modality_names())
+
         return self.best_representation, self.best_score, self.best_modalities
 
     def transform(self, modalities: List[Modality]):
@@ -108,17 +136,16 @@ class DRSearch:
         :param modalities: List of uni-modal modalities
         :return: aligned data
         """
-        
+
         if self.best_score == -1:
             raise 'Please fit representations first!'
-        
+
         used_modalities = []
-        
+
         for modality_name in self.best_modalities:
             used_modalities.append(get_modalities_by_name(modalities, modality_name))
-        
+
         modality = AlignedModality(self.best_representation, used_modalities)  # noqa
         modality.combine(self.task.train_indices)
-        
+
         return modality.data
-    

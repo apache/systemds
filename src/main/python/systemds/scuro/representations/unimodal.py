@@ -18,13 +18,7 @@
 # under the License.
 #
 # -------------------------------------------------------------
-import json
-import pickle
-
-import h5py
-import numpy as np
-
-from representations.representation import Representation
+from systemds.scuro.representations.representation import Representation
 
 
 class UnimodalRepresentation(Representation):
@@ -42,61 +36,3 @@ class UnimodalRepresentation(Representation):
 class PixelRepresentation(UnimodalRepresentation):
     def __init__(self):
         super().__init__('Pixel')
-
-
-class ResNet(UnimodalRepresentation):
-    def __init__(self):
-        super().__init__('ResNet')
-
-
-class Pickle(UnimodalRepresentation):
-    def __init__(self):
-        super().__init__('Pickle')
-    
-    def parse_all(self, filepath, indices):
-        with open(filepath, "rb") as file:
-            data = pickle.load(file, encoding='latin1')
-        
-        if indices is not None:
-            for n, idx in enumerate(indices):
-                result = np.empty((len(data), np.mean(data[idx][()], axis=1).shape[0]))
-                break
-            for n, idx in enumerate(indices):
-                result[n] = np.mean(data[idx], axis=1)
-            return result
-        else:
-            return np.array([np.mean(data[index], axis=1) for index in data])
-
-
-class JSON(UnimodalRepresentation):
-    def __init__(self):
-        super().__init__('JSON')
-    
-    def parse_all(self, filepath, indices):
-        with open(filepath) as file:
-            return json.load(file)
-
-
-class NPY(UnimodalRepresentation):
-    def __init__(self):
-        super().__init__('NPY')
-    
-    def parse_all(self, filepath, indices):
-        data = np.load(filepath)
-        
-        if indices is not None:
-            return np.array([data[n, 0] for n, index in enumerate(indices)])
-        else:
-            return np.array([data[index, 0] for index in data])
-
-
-class HDF5(UnimodalRepresentation):
-    def __init__(self):
-        super().__init__('HDF5')
-    
-    def parse_all(self, filepath, indices=None):
-        data = h5py.File(filepath)
-        if indices is not None:
-            return np.array([np.mean(data[index][()], axis=0) for index in indices])
-        else:
-            return np.array([np.mean(data[index][()], axis=0) for index in data])

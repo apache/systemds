@@ -19,7 +19,7 @@
 #
 # -------------------------------------------------------------
 
-from representations.representation import Representation
+from systemds.scuro.representations.representation import Representation
 
 
 class Modality:

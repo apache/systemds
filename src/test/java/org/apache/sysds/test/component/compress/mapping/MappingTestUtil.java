@@ -78,7 +78,7 @@ public class MappingTestUtil {
 		}
 	}
 
-	protected static AMapToData createRandomMap(int len, int nUnique, Random r) {
+	public static AMapToData createRandomMap(int len, int nUnique, Random r) {
 		AMapToData m = MapToFactory.create(len, nUnique);
 		for(int i = 0; i < len; i++)
 			m.set(i, r.nextInt(nUnique));

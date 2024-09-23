@@ -103,6 +103,8 @@ public class ColGroupFactoryTest {
 
 	private static void addDenseMultiBlock(ArrayList<Object[]> tests, int nRows, int nCols, int min, int max,
 		double sparsity, int seed) {
+		if(nCols <= 1)
+			nCols += 1;
 		MatrixBlock mb = TestUtils.generateTestMatrixBlock(nRows, nCols, min, max, sparsity, seed);
 		mb = TestUtils.ceil(mb);
 
@@ -113,7 +115,7 @@ public class ColGroupFactoryTest {
 		mbt = new MatrixBlock(mbt.getNumRows(), mbt.getNumColumns(),
 			new DenseBlockFP64Mock(new int[] {mbt.getNumRows(), mbt.getNumColumns()}, mbt.getDenseBlockValues()));
 
-		add(tests, nCols + 3, mb, mbt);
+		add(tests, nCols , mb, mbt);
 	}
 
 	private static void addWithEmpty(ArrayList<Object[]> tests, int nRows, int nCols, int min, int max, double sparsity,

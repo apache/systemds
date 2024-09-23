@@ -151,6 +151,33 @@ public class MatrixMultiplyKernelTest {
 		testMatrixMultiply(MIN_PAR_SQRT, MIN_PAR_SQRT, MIN_PAR_SQRT, 0.1, 0.1);
 	}
 	
+	//ultra-sparse vs all
+	
+	@Test
+	public void testUltraSparseDense() {
+		testMatrixMultiply(MIN_PAR_SQRT, MIN_PAR_SQRT, MIN_PAR_SQRT, 1e-5, 0.95);
+	}
+	
+	@Test
+	public void testUltraSparseSparse() {
+		testMatrixMultiply(MIN_PAR_SQRT, MIN_PAR_SQRT, MIN_PAR_SQRT, 1e-5, 0.1);
+	}
+	
+	@Test
+	public void testUltraSparseUltraSparse() {
+		testMatrixMultiply(MIN_PAR_SQRT, MIN_PAR_SQRT, MIN_PAR_SQRT, 1e-5, 1e-5);
+	}
+	
+	@Test
+	public void testSparseUltraSparse() {
+		testMatrixMultiply(MIN_PAR_SQRT, MIN_PAR_SQRT, MIN_PAR_SQRT, 0.1, 1e-5);
+	}
+	
+	@Test
+	public void testDenseUltraSparse() {
+		testMatrixMultiply(MIN_PAR_SQRT, MIN_PAR_SQRT, MIN_PAR_SQRT, 0.95, 1e-5);
+	}
+	
 	private void testMatrixMultiply(int n, int m, int l, double sp1, double sp2) {
 		MatrixBlock mb1 = MatrixBlock.randOperations(n, m, sp1, 0, 0.1, "uniform", 3);
 		MatrixBlock mb2 = MatrixBlock.randOperations(m, l, sp2, 0, 0.1, "uniform", 7);

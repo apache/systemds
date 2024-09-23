@@ -98,7 +98,7 @@ public class LibMatrixAgg {
 
 	//internal configuration parameters
 	private static final boolean NAN_AWARENESS = false;
-	private static final long PAR_NUMCELL_THRESHOLD1 = 1024*256; //Min 256K elements
+	public static final long PAR_NUMCELL_THRESHOLD1 = 1024*256; //Min 256K elements
 	private static final long PAR_NUMCELL_THRESHOLD2 = 1024*4;   //Min 4K elements
 	private static final long PAR_INTERMEDIATE_SIZE_THRESHOLD = 2*1024*1024; //Max 2MB
 	
@@ -207,7 +207,7 @@ public class LibMatrixAgg {
 
 	}
 
-	public static MatrixBlock aggregateUnaryMatrix(AggregateUnaryOperator op,MatrixBlock in, MatrixValue result,
+	public static MatrixBlock aggregateUnaryMatrix(AggregateUnaryOperator op, MatrixBlock in, MatrixValue result,
 	int blen, MatrixIndexes indexesIn, boolean inCP){
 
 		MatrixBlock ret = LibMatrixAgg.prepareAggregateUnaryOutput(in, op, result, blen);

@@ -687,7 +687,7 @@ public class ColGroupDDC extends APreAgg implements IMapToDataGroup {
 				for(int rc = cl; rc < cu; rc++, pos++) {
 					final int idx = _data.getIndex(rc);
 					if(idx != nVal)
-						values2[_colIndexes.get(_data.getIndex(rc))] += values[pos];
+						values2[_colIndexes.get(idx)] += values[pos];
 				}
 			}
 			else {

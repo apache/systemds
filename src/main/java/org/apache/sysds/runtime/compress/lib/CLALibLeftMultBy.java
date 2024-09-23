@@ -261,6 +261,7 @@ public final class CLALibLeftMultBy {
 		// Force dense output
 		ret.setNonZeros((long) ret.getNumRows() * ret.getNumColumns());
 		ret.allocateDenseBlock();
+	
 		for(int j = 0; j < fLeft.size(); j++)
 			for(int i = 0; i < fRight.size(); i++)
 				fRight.get(i).leftMultByAColGroup(fLeft.get(j), ret, sd);
@@ -314,8 +315,6 @@ public final class CLALibLeftMultBy {
 			else
 				rowSums = that.rowSum(k).getDenseBlockValues();
 
-			// final double multTime = t.stop();
-
 			// add the correction layer for the subtracted common values.
 			if(rowSums != null) {
 				if(ret.isEmpty())
@@ -324,11 +323,6 @@ public final class CLALibLeftMultBy {
 					ret.sparseToDense();
 				outerProduct(rowSums, constV, ret, k);
 			}
-
-			// final double outerProd = t.stop();
-			// if(LOG.isDebugEnabled()) {
-			// LOG.debug(String.format("LLM: filter: %10f Mult: %10f outer: %10f", filterGroupsTime, multTime, outerProd));
-			// }
 		}
 		else {
 			CLALibUtils.splitPreAgg(colGroups, noPreAggGroups, preAggGroups);

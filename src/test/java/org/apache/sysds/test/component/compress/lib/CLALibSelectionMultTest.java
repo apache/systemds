@@ -154,6 +154,22 @@ public class CLALibSelectionMultTest {
 			mb = CompressedMatrixBlock.getUncompressed(cmb);
 			genTests(tests, mb, cmb, "Identity");
 
+			d = MappingTestUtil.createRandomMap(100, 10, new Random(23));
+			idg = ColGroupDDC.create(ColIndexFactory.createI(0,1,2,3,4,6,7,8,9,10), id, d, null);
+			cmb = new CompressedMatrixBlock(100, 11);
+			cmb.allocateColGroup(idg);
+			mb = CompressedMatrixBlock.getUncompressed(cmb);
+			genTests(tests, mb, cmb, "Identity2");
+
+			id = new IdentityDictionary(10, true);
+
+			d = MappingTestUtil.createRandomMap(100, 11, new Random(33));
+			idg = ColGroupDDC.create(ColIndexFactory.createI(0,1,2,3,4,6,7,8,9,10), id, d, null);
+			cmb = new CompressedMatrixBlock(100, 11);
+			cmb.allocateColGroup(idg);
+			mb = CompressedMatrixBlock.getUncompressed(cmb);
+			genTests(tests, mb, cmb, "Identity_empty");
+
 			AColGroup empty = new ColGroupEmpty(ColIndexFactory.create(10));
 			cmb = new CompressedMatrixBlock(100, 10);
 			cmb.allocateColGroup(empty);

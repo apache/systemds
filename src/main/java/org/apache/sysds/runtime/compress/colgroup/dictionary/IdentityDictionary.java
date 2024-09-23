@@ -651,11 +651,13 @@ public class IdentityDictionary extends ADictionary {
 	@Override
 	public void MMDictDense(double[] left, IColIndex rowsLeft, IColIndex colsRight, MatrixBlock result) {
 		// similar to fused transpose left into right locations.
+	
 		final int leftSide = rowsLeft.size();
+		final int colsOut = result.getNumColumns();
 		final int commonDim = Math.min(left.length / leftSide, nRowCol);
 		final double[] resV = result.getDenseBlockValues();
 		for(int i = 0; i < leftSide; i++) { // rows in left side
-			final int offOut = rowsLeft.get(i) * commonDim;
+			final int offOut = rowsLeft.get(i) * colsOut;
 			final int leftOff = i;
 			for(int j = 0; j < commonDim; j++) { // cols in left side skipping empty from identity
 				resV[offOut + colsRight.get(j)] += left[leftOff + j * leftSide];

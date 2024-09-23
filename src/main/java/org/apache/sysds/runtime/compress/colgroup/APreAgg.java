@@ -224,7 +224,7 @@ public abstract class APreAgg extends AColGroupValue {
 				DictLibMatrixMult.MMDicts(lDict, lhsPA, leftIdx, rightIdx, result);
 		}
 		else {// right preAgg
-			final IDictionary rhsPA = preAggregateThatIndexStructure(lhs);
+			final IDictionary rhsPA = this.preAggregateThatIndexStructure(lhs);
 			if(rhsPA != null)
 				DictLibMatrixMult.MMDicts(rhsPA, rDict, leftIdx, rightIdx, result);
 		}

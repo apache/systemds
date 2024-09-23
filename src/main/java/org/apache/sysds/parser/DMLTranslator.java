@@ -2481,6 +2481,14 @@ public class DMLTranslator
 				target.getValueType(), ReOrgOp.valueOf(source.getOpCode().name()), expr);
 			break;
 
+		case ROLL:
+			ArrayList<Hop> inputs = new ArrayList<>();
+			inputs.add(expr);
+			inputs.add(expr2);
+			currBuiltinOp = new ReorgOp(target.getName(), DataType.MATRIX,
+					target.getValueType(), ReOrgOp.valueOf(source.getOpCode().name()), inputs);
+			break;
+
 		case CBIND:
 		case RBIND:
 			OpOp2 appendOp2 = (source.getOpCode()==Builtins.CBIND) ? OpOp2.CBIND : OpOp2.RBIND;

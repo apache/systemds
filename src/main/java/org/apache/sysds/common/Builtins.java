@@ -282,6 +282,7 @@ public enum Builtins {
 	RCM("rowClassMeet", "rcm", false, false, ReturnType.MULTI_RETURN),
 	REMOVE("remove", false, ReturnType.MULTI_RETURN),
 	REV("rev", false),
+	ROLL("roll", false),
 	ROUND("round", false),
 	ROW_COUNT_DISTINCT("rowCountDistinct",false),
 	ROWINDEXMAX("rowIndexMax", false),

@@ -271,6 +271,7 @@ public class CPInstructionParser extends InstructionParser {
 		// Reorg Instruction Opcodes (repositioning of existing values)
 		String2CPInstructionType.put( "r'"          , CPType.Reorg);
 		String2CPInstructionType.put( "rev"         , CPType.Reorg);
+		String2CPInstructionType.put( "roll"         , CPType.Reorg);
 		String2CPInstructionType.put( "rdiag"       , CPType.Reorg);
 		String2CPInstructionType.put( "rshape"      , CPType.Reshape);
 		String2CPInstructionType.put( "rsort"       , CPType.Reorg);

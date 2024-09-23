@@ -63,7 +63,7 @@ public class LineageCacheConfig
 
 	// Relatively expensive instructions. Most include shuffles.
 	private static final String[] PERSIST_OPCODES1 = new String[] {
-		"cpmm", "rmm", "pmm", "zipmm", "rev", "rshape", "rsort", "-", "*", "+",
+		"cpmm", "rmm", "pmm", "zipmm", "rev", "roll", "rshape", "rsort", "-", "*", "+",
 		"/", "%%", "%/%", "1-*", "^", "^2", "*2", "==", "!=", "<", ">",
 		"<=", ">=", "&&", "||", "xor", "max", "min", "rmempty", "rappend",
 		"gappend", "galignedappend", "rbind", "cbind", "nmin", "nmax",

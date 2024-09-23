@@ -23,7 +23,7 @@ from typing import List
 
 
 from systemds.scuro.modality.modality import Modality
-from keras_preprocessing.sequence import pad_sequences
+from keras.api.preprocessing.sequence import pad_sequences
 
 from systemds.scuro.representations.fusion import Fusion
 

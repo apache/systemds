@@ -24,8 +24,10 @@ import java.io.DataOutput;
 import java.io.IOException;
 import java.util.Arrays;
 
+import org.apache.commons.lang3.NotImplementedException;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.compress.DMLCompressionException;
+import org.apache.sysds.runtime.compress.colgroup.ColGroupUtils.P;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.Dictionary;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.DictionaryFactory;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.IDictionary;
@@ -43,6 +45,7 @@ import org.apache.sysds.runtime.compress.cost.ComputationCostEstimator;
 import org.apache.sysds.runtime.compress.estim.encoding.EncodingFactory;
 import org.apache.sysds.runtime.compress.estim.encoding.IEncode;
 import org.apache.sysds.runtime.compress.utils.Util;
+import org.apache.sysds.runtime.data.SparseBlock;
 import org.apache.sysds.runtime.functionobjects.Builtin;
 import org.apache.sysds.runtime.instructions.cp.CM_COV_Object;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
@@ -459,7 +462,7 @@ public class ColGroupSDC extends ASDC implements IMapToDataGroup {
 		IDictionary replaced = _dict.replace(pattern, replace, _colIndexes.size());
 		double[] newDefaultTuple = new double[_defaultTuple.length];
 		for(int i = 0; i < _defaultTuple.length; i++)
-			newDefaultTuple[i] = Util.eq(_defaultTuple[i],pattern) ? replace : _defaultTuple[i];
+			newDefaultTuple[i] = Util.eq(_defaultTuple[i], pattern) ? replace : _defaultTuple[i];
 
 		return create(_colIndexes, _numRows, replaced, newDefaultTuple, _indexes, _data, getCachedCounts());
 	}
@@ -660,6 +663,65 @@ public class ColGroupSDC extends ASDC implements IMapToDataGroup {
 	@Override
 	public int getNumberOffsets() {
 		return _data.size();
+	}
+
+	@Override
+	protected void sparseSelection(MatrixBlock selection, P[] points, MatrixBlock ret, int rl, int ru) {
+		final SparseBlock sr = ret.getSparseBlock();
+		final int nCol = _colIndexes.size();
+		final AIterator it = _indexes.getIterator();
+		final int last = _indexes.getOffsetToLast();
+
+		int c = 0;
+
+		int of = it.value();
+		while(of < last && c < points.length) {
+			// final int of = it.value();
+			if(points[c].o < of) {
+				putDefault(points[c].r, sr, nCol);
+				c++;
+			}
+			else {
+				while(c < points.length && points[c].o == of) {
+					_dict.put(sr, _data.getIndex(it.getDataIndex()), points[c].r, nCol, _colIndexes);
+					c++;
+				}
+				of = it.next();
+			}
+			// c++;
+		}
+
+		for(; c < points.length && points[c].o < last; c++) {
+			putDefault(points[c].r, sr, nCol);
+		}
+
+		while(of == last && c < points.length && points[c].o == of) {
+			_dict.put(sr, _data.getIndex(it.getDataIndex()), points[c].r, nCol, _colIndexes);
+			c++;
+		}
+
+		// set default in tail.
+		for(; c < points.length; c++) {
+			putDefault(points[c].r, sr, nCol);
+		}
+
+	}
+
+	private void putDefault(final int r, final SparseBlock sr, final int nCol) {
+		if(sr.isAllocated(r))
+			for(int i = 0; i < nCol; i++)
+				sr.add(r, _colIndexes.get(i), _defaultTuple[i]);
+		else {
+			sr.allocate(r, _colIndexes.size());
+			for(int i = 0; i < nCol; i++)
+				sr.append(r, _colIndexes.get(i), _defaultTuple[i]);
+		}
+
+	}
+
+	@Override
+	protected void denseSelection(MatrixBlock selection, P[] points, MatrixBlock ret, int rl, int ru) {
+		throw new NotImplementedException();
 	}
 
 	@Override

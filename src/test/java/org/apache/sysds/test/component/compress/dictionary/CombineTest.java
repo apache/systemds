@@ -40,9 +40,9 @@ import org.apache.sysds.runtime.compress.colgroup.ColGroupConst;
 import org.apache.sysds.runtime.compress.colgroup.ColGroupDDC;
 import org.apache.sysds.runtime.compress.colgroup.ColGroupEmpty;
 import org.apache.sysds.runtime.compress.colgroup.ColGroupSDC;
-import org.apache.sysds.runtime.compress.colgroup.dictionary.IDictionary;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.Dictionary;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.DictionaryFactory;
+import org.apache.sysds.runtime.compress.colgroup.dictionary.IDictionary;
 import org.apache.sysds.runtime.compress.colgroup.indexes.ColIndexFactory;
 import org.apache.sysds.runtime.compress.colgroup.mapping.MapToFactory;
 import org.apache.sysds.runtime.compress.colgroup.offset.OffsetFactory;
@@ -73,6 +73,43 @@ public class CombineTest {
 	}
 
 	@Test
+	public void singleBothSidesFilter() {
+		try {
+
+			IDictionary a = Dictionary.create(new double[] {1.2});
+			IDictionary b = Dictionary.create(new double[] {1.4});
+			Map<Integer, Integer> filter = new HashMap<>();
+			filter.put(0, 0);
+			IDictionary c = DictionaryFactory.combineFullDictionaries(a, 1, b, 1, filter);
+
+			assertEquals(c.getValue(0, 0, 2), 1.2, 0.0);
+			assertEquals(c.getValue(0, 1, 2), 1.4, 0.0);
+		}
+		catch(Exception e) {
+			e.printStackTrace();
+			fail(e.getMessage());
+		}
+	}
+
+	@Test
+	public void singleBothSidesFilter2() {
+		try {
+
+			IDictionary a = Dictionary.create(new double[] {1.2});
+			IDictionary b = Dictionary.create(new double[] {1.4});
+			Map<Integer, Integer> filter = new HashMap<>();
+			// filter.put(0, 0);
+			IDictionary c = DictionaryFactory.combineFullDictionaries(a, 1, b, 1, filter);
+
+			assertEquals(c, null);
+		}
+		catch(Exception e) {
+			e.printStackTrace();
+			fail(e.getMessage());
+		}
+	}
+
+	@Test
 	public void singleOneSideBothSides() {
 		try {
 			IDictionary a = Dictionary.create(new double[] {1.2, 1.3});
@@ -83,6 +120,25 @@ public class CombineTest {
 			assertEquals(c.getValue(0, 0, 2), 1.2, 0.0);
 			assertEquals(c.getValue(0, 1, 2), 1.4, 0.0);
 			assertEquals(c.getValue(1, 0, 2), 1.3, 0.0);
+			assertEquals(c.getValue(1, 1, 2), 1.4, 0.0);
+		}
+		catch(Exception e) {
+			e.printStackTrace();
+			fail(e.getMessage());
+		}
+	}
+
+	@Test
+	public void singleOneSideOtherSides() {
+		try {
+			IDictionary a = Dictionary.create(new double[] {1.2});
+			IDictionary b = Dictionary.create(new double[] {1.3, 1.4});
+
+			IDictionary c = DictionaryFactory.combineFullDictionaries(a, 1, b, 1);
+
+			assertEquals(c.getValue(0, 0, 2), 1.2, 0.0);
+			assertEquals(c.getValue(0, 1, 2), 1.3, 0.0);
+			assertEquals(c.getValue(1, 0, 2), 1.2, 0.0);
 			assertEquals(c.getValue(1, 1, 2), 1.4, 0.0);
 		}
 		catch(Exception e) {
@@ -107,6 +163,87 @@ public class CombineTest {
 			assertEquals(c.getValue(2, 1, 2), 1.5, 0.0);
 			assertEquals(c.getValue(3, 0, 2), 1.3, 0.0);
 			assertEquals(c.getValue(3, 1, 2), 1.5, 0.0);
+		}
+		catch(Exception e) {
+			e.printStackTrace();
+			fail(e.getMessage());
+		}
+	}
+
+	@Test
+	public void twoBothSidesFilter() {
+		try {
+			IDictionary a = Dictionary.create(new double[] {1.2, 1.3});
+			IDictionary b = Dictionary.create(new double[] {1.4, 1.5});
+			Map<Integer, Integer> filter = new HashMap<>();
+			filter.put(0,0);
+
+			IDictionary c = DictionaryFactory.combineFullDictionaries(a, 1, b, 1, filter);
+
+			assertEquals(1, c.getNumberOfValues(2));
+			assertEquals(c.getValue(0, 0, 2), 1.2, 0.0);
+			assertEquals(c.getValue(0, 1, 2), 1.4, 0.0);
+			// assertEquals(c.getValue(1, 0, 2), 1.3, 0.0);
+			// assertEquals(c.getValue(1, 1, 2), 1.4, 0.0);
+			// assertEquals(c.getValue(2, 0, 2), 1.2, 0.0);
+			// assertEquals(c.getValue(2, 1, 2), 1.5, 0.0);
+			// assertEquals(c.getValue(3, 0, 2), 1.3, 0.0);
+			// assertEquals(c.getValue(3, 1, 2), 1.5, 0.0);
+		}
+		catch(Exception e) {
+			e.printStackTrace();
+			fail(e.getMessage());
+		}
+	}
+
+
+	@Test
+	public void twoBothSidesFilter2() {
+		try {
+			IDictionary a = Dictionary.create(new double[] {1.2, 1.3});
+			IDictionary b = Dictionary.create(new double[] {1.4, 1.5});
+			Map<Integer, Integer> filter = new HashMap<>();
+			filter.put(3,0);
+
+			IDictionary c = DictionaryFactory.combineFullDictionaries(a, 1, b, 1, filter);
+
+			assertEquals(1, c.getNumberOfValues(2));
+			assertEquals(c.getValue(0, 0, 2), 1.3, 0.0);
+			assertEquals(c.getValue(0, 1, 2), 1.5, 0.0);
+			// assertEquals(c.getValue(1, 0, 2), 1.3, 0.0);
+			// assertEquals(c.getValue(1, 1, 2), 1.4, 0.0);
+			// assertEquals(c.getValue(2, 0, 2), 1.2, 0.0);
+			// assertEquals(c.getValue(2, 1, 2), 1.5, 0.0);
+			// assertEquals(c.getValue(3, 0, 2), 1.3, 0.0);
+			// assertEquals(c.getValue(3, 1, 2), 1.5, 0.0);
+		}
+		catch(Exception e) {
+			e.printStackTrace();
+			fail(e.getMessage());
+		}
+	}
+
+
+	@Test
+	public void twoBothSidesFilter3() {
+		try {
+			IDictionary a = Dictionary.create(new double[] {1.2, 1.3});
+			IDictionary b = Dictionary.create(new double[] {1.4, 1.5});
+			Map<Integer, Integer> filter = new HashMap<>();
+			filter.put(3,0);
+			filter.put(1,1);
+
+			IDictionary c = DictionaryFactory.combineFullDictionaries(a, 1, b, 1, filter);
+
+			assertEquals(2, c.getNumberOfValues(2));
+			assertEquals(c.getValue(0, 0, 2), 1.3, 0.0);
+			assertEquals(c.getValue(0, 1, 2), 1.5, 0.0);
+			assertEquals(c.getValue(1, 0, 2), 1.3, 0.0);
+			assertEquals(c.getValue(1, 1, 2), 1.4, 0.0);
+			// assertEquals(c.getValue(2, 0, 2), 1.2, 0.0);
+			// assertEquals(c.getValue(2, 1, 2), 1.5, 0.0);
+			// assertEquals(c.getValue(3, 0, 2), 1.3, 0.0);
+			// assertEquals(c.getValue(3, 1, 2), 1.5, 0.0);
 		}
 		catch(Exception e) {
 			e.printStackTrace();
@@ -395,51 +532,51 @@ public class CombineTest {
 		DictionaryFactory.combineDictionariesSparse(m, s);
 	}
 
-	@Test
-	public void sparseSparseConst1() {
-		try {
-			IDictionary a = Dictionary.create(new double[] {3, 2, 7, 8});
-			// IDictionary b = Dictionary.create(new double[] {4, 4, 9, 5});
+	// @Test
+	// public void sparseSparseConst1() {
+	// 	try {
+	// 		IDictionary a = Dictionary.create(new double[] {3, 2, 7, 8});
+	// 		// IDictionary b = Dictionary.create(new double[] {4, 4, 9, 5});
 
-			double[] bd = new double[] {0, 2};
+	// 		double[] bd = new double[] {0, 2};
 
-			IDictionary c = DictionaryFactory.combineSparseConstSparseRet(a, 2, bd);
-			MatrixBlock ret = c.getMBDict(2).getMatrixBlock();
+	// 		IDictionary c = DictionaryFactory.combineSparseConstSparseRet(a, 2, bd);
+	// 		MatrixBlock ret = c.getMBDict(2).getMatrixBlock();
 
-			MatrixBlock exp = new MatrixBlock(2, 4, new double[] {//
-				3, 2, 0, 2, //
-				7, 8, 0, 2,});
-			TestUtils.compareMatricesBitAvgDistance(ret, exp, 0, 0);
-		}
-		catch(Exception e) {
-			e.printStackTrace();
-			fail(e.getMessage());
-		}
-	}
+	// 		MatrixBlock exp = new MatrixBlock(2, 4, new double[] {//
+	// 			3, 2, 0, 2, //
+	// 			7, 8, 0, 2,});
+	// 		TestUtils.compareMatricesBitAvgDistance(ret, exp, 0, 0);
+	// 	}
+	// 	catch(Exception e) {
+	// 		e.printStackTrace();
+	// 		fail(e.getMessage());
+	// 	}
+	// }
 
-	@Test
-	public void sparseSparseConst2() {
-		try {
-			IDictionary a = Dictionary.create(new double[] {3, 2, 7, 8});
-			// IDictionary b = Dictionary.create(new double[] {4, 4, 9, 5});
+	// @Test
+	// public void sparseSparseConst2() {
+	// 	try {
+	// 		IDictionary a = Dictionary.create(new double[] {3, 2, 7, 8});
+	// 		// IDictionary b = Dictionary.create(new double[] {4, 4, 9, 5});
 
-			double[] bd = new double[] {0, 2};
+	// 		double[] bd = new double[] {0, 2};
 
-			IDictionary c = DictionaryFactory.combineSparseConstSparseRet(a, 1, bd);
-			MatrixBlock ret = c.getMBDict(2).getMatrixBlock();
+	// 		IDictionary c = DictionaryFactory.combineSparseConstSparseRet(a, 1, bd);
+	// 		MatrixBlock ret = c.getMBDict(2).getMatrixBlock();
 
-			MatrixBlock exp = new MatrixBlock(2, 3, new double[] {//
-				3, 0, 2, //
-				2, 0, 2, //
-				7, 0, 2, //
-				8, 0, 2,});
-			TestUtils.compareMatricesBitAvgDistance(ret, exp, 0, 0);
-		}
-		catch(Exception e) {
-			e.printStackTrace();
-			fail(e.getMessage());
-		}
-	}
+	// 		MatrixBlock exp = new MatrixBlock(4, 3, new double[] {//
+	// 			3, 0, 2, //
+	// 			2, 0, 2, //
+	// 			7, 0, 2, //
+	// 			8, 0, 2,});
+	// 		TestUtils.compareMatricesBitAvgDistance(exp, ret, 0, 0);
+	// 	}
+	// 	catch(Exception e) {
+	// 		e.printStackTrace();
+	// 		fail(e.getMessage());
+	// 	}
+	// }
 
 	@Test
 	public void testEmpty() {

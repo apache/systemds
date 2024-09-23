@@ -101,7 +101,7 @@ public class Dictionary extends ADictionary {
 		return getInMemorySize(size());
 	}
 
-	protected static long getInMemorySize(int valuesCount) {
+	public static long getInMemorySize(int valuesCount) {
 		// object + values array
 		return 16 + (long) MemoryEstimates.doubleArrayCost(valuesCount);
 	}
@@ -1130,6 +1130,9 @@ public class Dictionary extends ADictionary {
 				return mb.getSparseBlock().equals(_values, mb.getNumColumns());
 			final double[] dv = mb.getDenseBlockValues();
 			return Arrays.equals(_values, dv);
+		}
+		else if(o instanceof IdentityDictionary) {
+			return o.equals(this);
 		}
 		return false;
 	}

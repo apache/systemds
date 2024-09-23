@@ -24,6 +24,11 @@ import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -33,6 +38,7 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.runtime.compress.DMLCompressionException;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.Dictionary;
+import org.apache.sysds.runtime.compress.colgroup.dictionary.DictionaryFactory;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.IDictionary;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.IdentityDictionary;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.MatrixBlockDictionary;
@@ -95,6 +101,14 @@ public class DictionaryTests {
 					0, 0, 1, 0, //
 					0, 0, 0, 1,//
 				}), 4, 4});
+
+			tests.add(new Object[] {new IdentityDictionary(4).sliceOutColumnRange(1, 4, 4), //
+				Dictionary.create(new double[] {//
+					0, 0, 0, //
+					1, 0, 0, //
+					0, 1, 0, //
+					0, 0, 1,//
+				}), 4, 3});
 			tests.add(new Object[] {new IdentityDictionary(4, true), //
 				Dictionary.create(new double[] {//
 					1, 0, 0, 0, //
@@ -103,6 +117,15 @@ public class DictionaryTests {
 					0, 0, 0, 1, //
 					0, 0, 0, 0}),
 				5, 4});
+
+			tests.add(new Object[] {new IdentityDictionary(4, true).sliceOutColumnRange(1, 4, 4), //
+				Dictionary.create(new double[] {//
+					0, 0, 0, //
+					1, 0, 0, //
+					0, 1, 0, //
+					0, 0, 1, //
+					0, 0, 0}),
+				5, 3});
 
 			create(tests, 30, 300, 0.2);
 		}
@@ -439,7 +462,13 @@ public class DictionaryTests {
 
 	@Test
 	public void equalsEl() {
-		assertEquals(a, b);
+		try {
+			assertEquals(a, b);
+		}
+		catch(Exception e) {
+			e.printStackTrace();
+			fail(e.getMessage());
+		}
 	}
 
 	@Test
@@ -609,11 +638,16 @@ public class DictionaryTests {
 
 	private static void compare(IDictionary a, IDictionary b, int nRow, int nCol) {
 		try {
-
-			String errorM = a.getClass().getSimpleName() + " " + b.getClass().getSimpleName();
-			for(int i = 0; i < nRow; i++)
-				for(int j = 0; j < nCol; j++)
-					assertEquals(errorM, a.getValue(i, j, nCol), b.getValue(i, j, nCol), 0.0001);
+			if(a == null && b == null)
+				return;
+			else if(a == null || b == null)
+				fail("both outputs should be null if one is: \n" + a + " \n " + b);
+			else {
+				String errorM = a.getClass().getSimpleName() + " " + b.getClass().getSimpleName();
+				for(int i = 0; i < nRow; i++)
+					for(int j = 0; j < nCol; j++)
+						assertEquals(errorM, a.getValue(i, j, nCol), b.getValue(i, j, nCol), 0.0001);
+			}
 		}
 		catch(Exception e) {
 			e.printStackTrace();
@@ -676,5 +710,55 @@ public class DictionaryTests {
 			for(int i = 0; i < nCol; i++)
 				reference[i] = r.nextDouble() * diff - min;
 		return reference;
+	}
+
+	@Test
+	public void testSerialization() {
+		try {
+			// Serialize out
+			ByteArrayOutputStream bos = new ByteArrayOutputStream();
+			DataOutputStream fos = new DataOutputStream(bos);
+			a.write(fos);
+
+			// Serialize in
+			ByteArrayInputStream bis = new ByteArrayInputStream(bos.toByteArray());
+			DataInputStream fis = new DataInputStream(bis);
+
+			IDictionary n = DictionaryFactory.read(fis);
+
+			compare(a, n, nRow, nCol);
+		}
+		catch(IOException e) {
+			throw new RuntimeException("Error in io", e);
+		}
+		catch(Exception e) {
+			e.printStackTrace();
+			throw e;
+		}
+	}
+
+	@Test
+	public void testSerializationB() {
+		try {
+			// Serialize out
+			ByteArrayOutputStream bos = new ByteArrayOutputStream();
+			DataOutputStream fos = new DataOutputStream(bos);
+			b.write(fos);
+
+			// Serialize in
+			ByteArrayInputStream bis = new ByteArrayInputStream(bos.toByteArray());
+			DataInputStream fis = new DataInputStream(bis);
+
+			IDictionary n = DictionaryFactory.read(fis);
+
+			compare(b, n, nRow, nCol);
+		}
+		catch(IOException e) {
+			throw new RuntimeException("Error in io", e);
+		}
+		catch(Exception e) {
+			e.printStackTrace();
+			throw e;
+		}
 	}
 }

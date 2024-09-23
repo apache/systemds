@@ -524,5 +524,9 @@ public class PlaceHolderDict implements IDictionary, Serializable {
 		int[] scaling) {
 		throw new RuntimeException(errMessage);
 	}
-
+	
+	@Override
+	public void put(SparseBlock sb, int idx, int rowOut, int nCol, IColIndex columns) {
+		throw new RuntimeException(errMessage);
+	}
 }

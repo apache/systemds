@@ -37,14 +37,16 @@ import org.apache.sysds.runtime.compress.colgroup.ColGroupFactory;
 import org.apache.sysds.runtime.compress.colgroup.ColGroupRLE;
 import org.apache.sysds.runtime.compress.colgroup.ColGroupSDCSingleZeros;
 import org.apache.sysds.runtime.compress.colgroup.ColGroupSDCZeros;
-import org.apache.sysds.runtime.compress.colgroup.dictionary.IDictionary;
+import org.apache.sysds.runtime.compress.colgroup.ColGroupUtils.P;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.Dictionary;
+import org.apache.sysds.runtime.compress.colgroup.dictionary.IDictionary;
 import org.apache.sysds.runtime.compress.colgroup.indexes.ColIndexFactory;
 import org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex;
 import org.apache.sysds.runtime.compress.colgroup.scheme.ICLAScheme;
 import org.apache.sysds.runtime.compress.cost.ComputationCostEstimator;
 import org.apache.sysds.runtime.compress.estim.CompressedSizeInfo;
 import org.apache.sysds.runtime.compress.estim.CompressedSizeInfoColGroup;
+import org.apache.sysds.runtime.compress.lib.CLALibLeftMultBy;
 import org.apache.sysds.runtime.data.DenseBlock;
 import org.apache.sysds.runtime.data.SparseBlock;
 import org.apache.sysds.runtime.functionobjects.Builtin;
@@ -140,6 +142,11 @@ public class ColGroupNegativeTests {
 		}
 	}
 
+	@Test(expected = Exception.class)
+	public void invalidEmptyRowSum() {
+		CLALibLeftMultBy.rowSum(new MatrixBlock(10, 10, true), 0, 10, 0, 10);
+	}
+
 	private class FakeIndexing extends IndexFunction {
 		private static final long serialVersionUID = -4099420257856761251L;
 
@@ -198,7 +205,7 @@ public class ColGroupNegativeTests {
 		}
 
 		@Override
-		public void preAggregateSparse(SparseBlock sb, double[] preAgg, int rl, int ru) {
+		public void preAggregateSparse(SparseBlock sb, double[] preAgg, int rl, int ru, int cl, int cu) {
 
 		}
 
@@ -392,6 +399,24 @@ public class ColGroupNegativeTests {
 		protected AColGroup fixColIndexes(IColIndex newColIndex, int[] reordering) {
 			// TODO Auto-generated method stub
 			throw new UnsupportedOperationException("Unimplemented method 'fixColIndexes'");
+		}
+
+		@Override
+		public void leftMMIdentityPreAggregateDense(MatrixBlock that, MatrixBlock ret, int rl, int ru, int cl, int cu) {
+			// TODO Auto-generated method stub
+			throw new UnsupportedOperationException("Unimplemented method 'leftMMIdentityPreAggregateDense'");
+		}
+
+		@Override
+		public void sparseSelection(MatrixBlock selection, P[] points, MatrixBlock ret, int rl, int ru) {
+			// TODO Auto-generated method stub
+			throw new UnsupportedOperationException("Unimplemented method 'sparseSelection'");
+		}
+
+		@Override
+		protected void denseSelection(MatrixBlock selection, P[] points, MatrixBlock ret, int rl, int ru) {
+			// TODO Auto-generated method stub
+			throw new UnsupportedOperationException("Unimplemented method 'denseSelection'");
 		}
 	}
 
@@ -642,6 +667,18 @@ public class ColGroupNegativeTests {
 		protected AColGroup fixColIndexes(IColIndex newColIndex, int[] reordering) {
 			// TODO Auto-generated method stub
 			throw new UnsupportedOperationException("Unimplemented method 'fixColIndexes'");
+		}
+
+		@Override
+		public void sparseSelection(MatrixBlock selection, P[] points, MatrixBlock ret, int rl, int ru) {
+			// TODO Auto-generated method stub
+			throw new UnsupportedOperationException("Unimplemented method 'sparseSelection'");
+		}
+
+		@Override
+		protected void denseSelection(MatrixBlock selection, P[] points, MatrixBlock ret, int rl, int ru) {
+			// TODO Auto-generated method stub
+			throw new UnsupportedOperationException("Unimplemented method 'denseSelection'");
 		}
 	}
 }

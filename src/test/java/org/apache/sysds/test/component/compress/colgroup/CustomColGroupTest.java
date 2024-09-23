@@ -22,14 +22,18 @@ package org.apache.sysds.test.component.compress.colgroup;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
+import org.apache.commons.lang3.NotImplementedException;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.runtime.compress.colgroup.AColGroup;
+import org.apache.sysds.runtime.compress.colgroup.ColGroupDDC;
 import org.apache.sysds.runtime.compress.colgroup.ColGroupEmpty;
 import org.apache.sysds.runtime.compress.colgroup.ColGroupSDCSingleZeros;
+import org.apache.sysds.runtime.compress.colgroup.dictionary.Dictionary;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.PlaceHolderDict;
 import org.apache.sysds.runtime.compress.colgroup.indexes.ColIndexFactory;
 import org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex;
+import org.apache.sysds.runtime.compress.colgroup.mapping.MapToFactory;
 import org.apache.sysds.runtime.compress.colgroup.offset.OffsetFactory;
 import org.junit.Test;
 
@@ -63,6 +67,17 @@ public class CustomColGroupTest {
 		assertTrue(r instanceof ColGroupSDCSingleZeros);
 		assertEquals(r.getColIndices(), i);
 		assertEquals(((ColGroupSDCSingleZeros) r).getNumRows(), 7 * 20);
+
+	}
+
+	@Test(expected = NotImplementedException.class)
+	public void preAggSparseError() {
+
+		AColGroup g = ColGroupDDC.create(ColIndexFactory.create(3),
+			Dictionary.create(new double[] {1, 2, 3, 4, 5, 6, 7, 8, 9}),
+			MapToFactory.create(new int[] {0, 0, 0, 1, 1, 1, 2, 2, 2}, 3), null);
+
+		((ColGroupDDC)g).preAggregateSparse(null, null, 0, 3, 1, 2);
 
 	}
 }

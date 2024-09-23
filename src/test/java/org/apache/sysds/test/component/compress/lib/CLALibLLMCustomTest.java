@@ -17,26 +17,14 @@
  * under the License.
  */
 
-package org.apache.sysds.runtime.compress.readers;
+package org.apache.sysds.test.component.compress.lib;
 
-import org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex;
-import org.apache.sysds.runtime.compress.utils.DblArray;
-import org.apache.sysds.runtime.data.DenseBlock;
-import org.apache.sysds.runtime.matrix.data.MatrixBlock;
+import org.apache.sysds.runtime.compress.lib.CLALibLeftMultBy;
+import org.junit.Test;
 
-public class ReaderColumnSelectionDenseMultiBlock extends ReaderColumnSelection {
-	private DenseBlock _data;
-
-	protected ReaderColumnSelectionDenseMultiBlock(MatrixBlock data, IColIndex colIndices, int rl, int ru) {
-		super(colIndices, rl, Math.min(ru, data.getNumRows()) - 1);
-		_data = data.getDenseBlock();
-	}
-
-	protected DblArray getNextRow() {
-		_rl++;
-		for(int i = 0; i < _colIndexes.size(); i++)
-			reusableArr[i] = _data.get(_rl, _colIndexes.get(i));
-
-		return reusableReturn;
+public class CLALibLLMCustomTest {
+	@Test(expected = Exception.class)
+	public void failCase() {
+		CLALibLeftMultBy.leftMultByMatrixTransposed(null, null, null, 0);
 	}
 }

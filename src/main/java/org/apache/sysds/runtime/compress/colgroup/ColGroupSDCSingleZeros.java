@@ -27,6 +27,7 @@ import java.util.Arrays;
 import org.apache.commons.lang3.NotImplementedException;
 import org.apache.sysds.runtime.compress.CompressedMatrixBlock;
 import org.apache.sysds.runtime.compress.DMLCompressionException;
+import org.apache.sysds.runtime.compress.colgroup.ColGroupUtils.P;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.Dictionary;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.DictionaryFactory;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.IDictionary;
@@ -394,7 +395,15 @@ public class ColGroupSDCSingleZeros extends ASDCZero {
 	}
 
 	@Override
-	public void preAggregateSparse(SparseBlock sb, double[] preAgg, int rl, int ru) {
+	public void leftMMIdentityPreAggregateDense(MatrixBlock that, MatrixBlock ret, int rl, int ru, int cl, int cu) {
+		throw new NotImplementedException();
+	}
+
+	@Override
+	public void preAggregateSparse(SparseBlock sb, double[] preAgg, int rl, int ru, int cl, int cu) {
+		if(cl != 0 || cu < _indexes.getOffsetToLast()) {
+			throw new NotImplementedException();
+		}
 		final AOffsetIterator it = _indexes.getOffsetIterator();
 		if(rl == ru - 1)
 			preAggregateSparseSingleRow(sb, preAgg, rl, _indexes.getOffsetToLast(), it);
@@ -826,8 +835,8 @@ public class ColGroupSDCSingleZeros extends ASDCZero {
 		OffsetSliceInfo off = _indexes.slice(rl, ru);
 		if(off.lIndex == -1)
 			return null;
-		if(CompressedMatrixBlock.debug){
-			if(off.offsetSlice.getOffsetToFirst() < 0 || off.offsetSlice.getOffsetToLast() > ru-rl)
+		if(CompressedMatrixBlock.debug) {
+			if(off.offsetSlice.getOffsetToFirst() < 0 || off.offsetSlice.getOffsetToLast() > ru - rl)
 				throw new DMLCompressionException("Failed to slice : " + rl + "  " + ru + " in: " + this);
 		}
 		return create(_colIndexes, ru - rl, _dict, off.offsetSlice, null);
@@ -853,12 +862,12 @@ public class ColGroupSDCSingleZeros extends ASDCZero {
 				return null;
 			}
 
-			if(!(gs instanceof AOffsetsGroup )) {
+			if(!(gs instanceof AOffsetsGroup)) {
 				LOG.warn("Not SDCFOR but " + gs.getClass().getSimpleName());
 				return null;
 			}
 
-			if( gs instanceof ColGroupSDCSingleZeros){
+			if(gs instanceof ColGroupSDCSingleZeros) {
 				final ColGroupSDCSingleZeros gc = (ColGroupSDCSingleZeros) gs;
 				if(!gc._dict.equals(_dict)) {
 					LOG.warn("Not same Dictionaries therefore not appending \n" + _dict + "\n\n" + gc._dict);
@@ -883,6 +892,16 @@ public class ColGroupSDCSingleZeros extends ASDCZero {
 	@Override
 	public int getNumberOffsets() {
 		return getCounts()[0];
+	}
+
+	@Override
+	protected void sparseSelection(MatrixBlock selection, P[] points, MatrixBlock ret, int rl, int ru) {
+		throw new NotImplementedException();
+	}
+
+	@Override
+	protected void denseSelection(MatrixBlock selection, P[] points, MatrixBlock ret, int rl, int ru) {
+		throw new NotImplementedException();
 	}
 
 	@Override

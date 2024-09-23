@@ -169,6 +169,11 @@ public final class CLALibDecompress {
 				LOG.warn("Decompressing into dense but reallocating after to sparse: overlapping - " + overlapping
 					+ ", filter - " + shouldFilter);
 		}
+		else{
+			MatrixBlock tmp = new MatrixBlock();
+			tmp.copy( ret);
+			ret = tmp;
+		}
 
 		final int blklen = Math.max(nRows / k, 512);
 

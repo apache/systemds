@@ -340,6 +340,7 @@ public abstract class SchemeTestBase {
 	@Test
 	public void testUpdateEmptyT() {
 		MatrixBlock in = new MatrixBlock(src.getNumColumns(), 5, 0.0);
+		// 5 rows to encode transposed
 		try {
 			sh.encodeT(in);
 		}
@@ -353,10 +354,13 @@ public abstract class SchemeTestBase {
 		shc = shc.updateT(in);
 
 		AColGroup out = shc.encodeT(in); // should be possible now.
-		MatrixBlock d = new MatrixBlock(in.getNumRows(), src.getNumColumns(), false);
+
+		// now we learned how to encode. lets decompress the encoded.
+
+		MatrixBlock d = new MatrixBlock( in.getNumColumns(), in.getNumRows(), false);
 		d.allocateBlock();
-		out.decompressToDenseBlock(d.getDenseBlock(), 0, in.getNumRows());
-		MatrixBlock inSlice = in.slice(0, src.getNumColumns() - 1, 0, in.getNumColumns() - 1);
+		out.decompressToDenseBlock(d.getDenseBlock(), 0, in.getNumColumns());
+		MatrixBlock inSlice = in.slice(0, in.getNumRows() - 1, 0, in.getNumColumns() - 1);
 		d.recomputeNonZeros();
 		TestUtils.compareMatricesBitAvgDistance(inSlice, LibMatrixReorg.transpose(d), 0, 0);
 	}
@@ -395,7 +399,7 @@ public abstract class SchemeTestBase {
 	@Test
 	public void testUpdateEmptyMyColsT() {
 		MatrixBlock in = new MatrixBlock(src.getNumColumns(), 5, 0.0);
-		in = in.append(new MatrixBlock(1, 5, 1.0), false);
+		in = in.append(new MatrixBlock(src.getNumColumns(), 1, 1.0), true);
 		try {
 			sh.encodeT(in);
 		}
@@ -409,10 +413,17 @@ public abstract class SchemeTestBase {
 		shc = shc.updateT(in);
 
 		AColGroup out = shc.encodeT(in); // should be possible now.
-		MatrixBlock d = new MatrixBlock(in.getNumRows(), src.getNumColumns(), false);
+		// MatrixBlock d = new MatrixBlock(in.getNumRows(), src.getNumColumns(), false);
+		// d.allocateBlock();
+		// out.decompressToDenseBlock(d.getDenseBlock(), 0, in.getNumRows());
+		// MatrixBlock inSlice = in.slice(0, src.getNumColumns() - 1, 0, in.getNumColumns() - 1);
+		// d.recomputeNonZeros();
+		// TestUtils.compareMatricesBitAvgDistance(inSlice, LibMatrixReorg.transpose(d), 0, 0);
+
+		MatrixBlock d = new MatrixBlock( in.getNumColumns(), in.getNumRows(), false);
 		d.allocateBlock();
-		out.decompressToDenseBlock(d.getDenseBlock(), 0, in.getNumRows());
-		MatrixBlock inSlice = in.slice(0, src.getNumColumns() - 1, 0, in.getNumColumns() - 1);
+		out.decompressToDenseBlock(d.getDenseBlock(), 0, in.getNumColumns());
+		MatrixBlock inSlice = in.slice(0, in.getNumRows() - 1, 0, in.getNumColumns() - 1);
 		d.recomputeNonZeros();
 		TestUtils.compareMatricesBitAvgDistance(inSlice, LibMatrixReorg.transpose(d), 0, 0);
 	}

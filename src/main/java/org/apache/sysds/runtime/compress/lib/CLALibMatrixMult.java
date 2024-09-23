@@ -35,7 +35,7 @@ public final class CLALibMatrixMult {
 		// private constructor
 	}
 
-	public static MatrixBlock matrixMult(MatrixBlock m1, MatrixBlock m2, MatrixBlock ret, int k) {
+	public static MatrixBlock matrixMultiply(MatrixBlock m1, MatrixBlock m2, MatrixBlock ret, int k) {
 		return matrixMultiply(m1, m2, ret, k, false, false);
 	}
 
@@ -117,7 +117,7 @@ public final class CLALibMatrixMult {
 			// either compressed matrix.
 		}
 		else {
-			ret = CLALibMatrixMult.matrixMult(m2, m1, ret, k);
+			ret = CLALibMatrixMult.matrixMultiply(m2, m1, ret, k);
 			ReorgOperator r_op = new ReorgOperator(SwapIndex.getSwapIndexFnObject(), k);
 			return ret.reorgOperations(r_op, new MatrixBlock(), 0, 0, 0);
 		}

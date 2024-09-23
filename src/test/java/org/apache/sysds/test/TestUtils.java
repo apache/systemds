@@ -1087,6 +1087,15 @@ public class TestUtils {
 
 	public static void compareMatricesBitAvgDistance(MatrixBlock expectedMatrix, MatrixBlock actualMatrix,
 		long maxUnitsOfLeastPrecision, long maxAvgDistance, String message) {
+
+		final int rows = expectedMatrix.getNumRows();
+		final int cols = expectedMatrix.getNumColumns();
+
+		if(rows != actualMatrix.getNumRows())
+			fail(message + "\nnot same number of rows: " + rows + " vs " + actualMatrix.getNumRows());
+		if(cols != actualMatrix.getNumColumns())
+			fail(message + "\nnot same number of cols: " + cols + " vs " + actualMatrix.getNumColumns());
+
 		if(expectedMatrix instanceof CompressedMatrixBlock)
 			expectedMatrix = ((CompressedMatrixBlock) expectedMatrix).decompress();
 		if(actualMatrix instanceof CompressedMatrixBlock)
@@ -1123,13 +1132,11 @@ public class TestUtils {
 				maxUnitsOfLeastPrecision, maxAvgDistance, message, actualMatrix.getNumColumns());
 			return;
 		}
-		final int rows = expectedMatrix.getNumRows();
-		final int cols = actualMatrix.getNumColumns();
 		int countErrors = 0;
 		long sumDistance = 0;
 
-		for(int i = 0; i < rows && countErrors < 20; i++) {
-			for(int j = 0; j < cols && countErrors < 20; j++) {
+		for(int i = 0; i < rows && countErrors < 5; i++) {
+			for(int j = 0; j < cols && countErrors < 5; j++) {
 				final double v1 = expectedMatrix.get(i, j);
 				final double v2 = actualMatrix.get(i, j);
 				if(v1 == 0 && v2 == 0)

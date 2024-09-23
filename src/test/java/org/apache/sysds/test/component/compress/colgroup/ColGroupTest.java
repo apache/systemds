@@ -20,6 +20,7 @@
 package org.apache.sysds.test.component.compress.colgroup;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
@@ -33,6 +34,7 @@ import org.apache.commons.lang3.NotImplementedException;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.runtime.DMLRuntimeException;
+import org.apache.sysds.runtime.compress.CompressedMatrixBlock;
 import org.apache.sysds.runtime.compress.CompressionSettings;
 import org.apache.sysds.runtime.compress.CompressionSettingsBuilder;
 import org.apache.sysds.runtime.compress.DMLCompressionException;
@@ -46,6 +48,8 @@ import org.apache.sysds.runtime.compress.colgroup.ColGroupFactory;
 import org.apache.sysds.runtime.compress.colgroup.ColGroupRLE;
 import org.apache.sysds.runtime.compress.colgroup.ColGroupSDCSingleZeros;
 import org.apache.sysds.runtime.compress.colgroup.ColGroupUncompressed;
+import org.apache.sysds.runtime.compress.colgroup.ColGroupUtils;
+import org.apache.sysds.runtime.compress.colgroup.ColGroupUtils.P;
 import org.apache.sysds.runtime.compress.colgroup.indexes.ColIndexFactory;
 import org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex;
 import org.apache.sysds.runtime.compress.colgroup.scheme.ICLAScheme;
@@ -74,6 +78,7 @@ import org.apache.sysds.runtime.matrix.operators.RightScalarOperator;
 import org.apache.sysds.runtime.matrix.operators.ScalarOperator;
 import org.apache.sysds.runtime.matrix.operators.UnaryOperator;
 import org.apache.sysds.test.TestUtils;
+import org.apache.sysds.test.component.compress.lib.CLALibSelectionMultTest;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
@@ -1118,7 +1123,7 @@ public class ColGroupTest extends ColGroupBase {
 
 	@Test
 	public void tsmm() {
-		try{
+		try {
 
 			final MatrixBlock bt = new MatrixBlock(maxCol, maxCol, false);
 			final MatrixBlock ot = new MatrixBlock(maxCol, maxCol, false);
@@ -1128,7 +1133,7 @@ public class ColGroupTest extends ColGroupBase {
 			other.tsmm(ot, nRow);
 			compare(ot, bt);
 		}
-		catch(Exception e){
+		catch(Exception e) {
 			e.printStackTrace();
 			fail(e.getMessage());
 		}
@@ -1292,6 +1297,77 @@ public class ColGroupTest extends ColGroupBase {
 			e.printStackTrace();
 			fail(e.getMessage());
 		}
+	}
+
+	@Test
+	public void sparseSelection() {
+		MatrixBlock mb = CLALibSelectionMultTest.createSelectionMatrix(nRow, 5, false);
+		mb = CompressedMatrixBlock.getUncompressed(mb);
+		MatrixBlock ret = new MatrixBlock(5, maxCol, true);
+		ret.allocateSparseRowsBlock();
+		ret.setNonZeros(-1);
+		selection(mb, ret);
+	}
+
+	@Test
+	public void denseSelection() {
+		MatrixBlock mb = CLALibSelectionMultTest.createSelectionMatrix(nRow, 5, false);
+		mb = CompressedMatrixBlock.getUncompressed(mb);
+		MatrixBlock ret = new MatrixBlock(5, maxCol, false);
+		ret.allocateDenseBlock();
+		ret.setNonZeros(-1);
+		assertFalse(ret.isInSparseFormat());
+		selection(mb, ret);
+	}
+
+
+	@Test
+	public void sparseSelectionEmptyRows() {
+		MatrixBlock mb = CLALibSelectionMultTest.createSelectionMatrix(nRow, 50, true);
+		mb = CompressedMatrixBlock.getUncompressed(mb);
+		MatrixBlock ret = new MatrixBlock(50, maxCol, true);
+		ret.allocateSparseRowsBlock();
+		ret.setNonZeros(-1);
+		selection(mb, ret);
+	}
+
+	@Test
+	public void denseSelectionEmptyRows() {
+		MatrixBlock mb = CLALibSelectionMultTest.createSelectionMatrix(nRow, 50, true);
+		mb = CompressedMatrixBlock.getUncompressed(mb);
+		MatrixBlock ret = new MatrixBlock(50, maxCol, false);
+		ret.allocateDenseBlock();
+		ret.setNonZeros(-1);
+		assertFalse(ret.isInSparseFormat());
+		selection(mb, ret);
+	}
+
+	public void selection(MatrixBlock selection, MatrixBlock ret) {
+		P[] points = ColGroupUtils.getSortedSelection(selection.getSparseBlock(), 0, selection.getNumRows());
+		MatrixBlock ret1 = new MatrixBlock(ret.getNumRows(), ret.getNumColumns(), ret.isInSparseFormat());
+		ret1.allocateBlock();
+
+
+		MatrixBlock ret2 = new MatrixBlock(ret.getNumRows(), ret.getNumColumns(), ret.isInSparseFormat());
+		ret2.allocateBlock();
+
+		try {
+
+			base.selectionMultiply(selection, points, ret1, 0, selection.getNumRows());
+			other.selectionMultiply(selection, points, ret2,  0, selection.getNumRows());
+
+			TestUtils.compareMatricesBitAvgDistance(ret1, ret2, 0, 0, base.getClass().getSimpleName() + " vs " + other.getClass().getSimpleName());
+		
+			
+		}
+		catch(NotImplementedException e) {
+			// okay
+		}
+		catch(Exception e){
+			e.printStackTrace();
+			fail(e.getMessage());
+		}
+
 	}
 
 	@Test
@@ -1465,8 +1541,7 @@ public class ColGroupTest extends ColGroupBase {
 		preAggLeftMultDense(new MatrixBlock(2, nRow, 2.0), 1, 2, nRow - 10, nRow - 3);
 	}
 
-	@Test(expected = NotImplementedException.class)
-	// @Test
+	@Test
 	public void preAggLeftMultDenseNonContiguous() {
 		try {
 
@@ -1476,14 +1551,12 @@ public class ColGroupTest extends ColGroupBase {
 			preAggLeftMultDense(new MatrixBlock(1, nRow, mock), 0, 1, 3, nRow - 3);
 		}
 		catch(NotImplementedException e) {
-			throw e;
+			// valid
 		}
 		catch(Exception e) {
 			e.printStackTrace();
 			fail(e.getMessage());
 		}
-		throw new NotImplementedException("Throw since we passed the test");
-		// if we get here throw the exception
 	}
 
 	private static class DenseBlockFP64Mock extends DenseBlockFP64 {
@@ -1505,51 +1578,43 @@ public class ColGroupTest extends ColGroupBase {
 	}
 
 	public void preAggLeftMultDense(MatrixBlock mb, int rl, int ru, int cl, int cu) {
-		MatrixBlock retB = null;
-		MatrixBlock retO = null;
-
 		final double[] rowSum = CLALibLeftMultBy.rowSum(mb, rl, ru, cl, cu);
 
-		if(base instanceof AMorphingMMColGroup) {
-			double[] cb = new double[maxCol];
-			AColGroup b = ((AMorphingMMColGroup) base).extractCommon(cb);
-			retB = mmPreAggDense((APreAgg) b, mb, cb, rowSum, rl, ru, cl, cu);
-		}
-		else if(base instanceof APreAgg)
-			retB = mmPreAggDense((APreAgg) base, mb, null, rowSum, rl, ru, cl, cu);
-		else if(base instanceof ColGroupConst) {
-			double[] cb = new double[maxCol];
-			((ColGroupConst) base).addToCommon(cb);
-			retO = mmRowSum(cb, rowSum, rl, ru, cl, cu);
-		}
+		final MatrixBlock retB = morphingLLM(base, mb, rl, ru, cl, cu, rowSum);
+		final MatrixBlock retO = morphingLLM(other, mb, rl, ru, cl, cu, rowSum);
 
-		if(other instanceof AMorphingMMColGroup) {
-			double[] cb = new double[maxCol];
-			AColGroup b = ((AMorphingMMColGroup) other).extractCommon(cb);
-			retO = mmPreAggDense((APreAgg) b, mb, cb, rowSum, rl, ru, cl, cu);
-		}
-		else if(other instanceof APreAgg)
-			retO = mmPreAggDense((APreAgg) other, mb, null, rowSum, rl, ru, cl, cu);
-		else if(other instanceof ColGroupConst) {
-			double[] cb = new double[maxCol];
-			((ColGroupConst) other).addToCommon(cb);
-			retO = mmRowSum(cb, rowSum, rl, ru, cl, cu);
-		}
-
-		if(retB == null) {
-			retB = new MatrixBlock(ru, maxCol, false);
-			retB.allocateDenseBlock();
-			base.leftMultByMatrixNoPreAgg(mb, retB, rl, ru, cl, cu);
-		}
-
-		if(retO == null) {
-			retO = new MatrixBlock(ru, maxCol, false);
-			retO.allocateDenseBlock();
-			other.leftMultByMatrixNoPreAgg(mb, retO, rl, ru, cl, cu);
-		}
+		retB.recomputeNonZeros();
+		retO.recomputeNonZeros();
 
 		compare(retB, retO);
 
+	}
+
+	private MatrixBlock lmmNoAgg(AColGroup g, MatrixBlock mb, int rl, int ru, int cl, int cu) {
+		MatrixBlock tmpB = new MatrixBlock(ru, maxCol, false);
+		tmpB.allocateDenseBlock();
+		g.leftMultByMatrixNoPreAgg(mb, tmpB, rl, ru, cl, cu);
+		return tmpB;
+	}
+
+	private MatrixBlock morphingLLM(AColGroup g, MatrixBlock mb, int rl, int ru, int cl, int cu, final double[] rowSum) {
+		final MatrixBlock retB;
+		if(g instanceof AMorphingMMColGroup) {
+			double[] cb = new double[maxCol];
+			AColGroup b = ((AMorphingMMColGroup) g).extractCommon(cb);
+			retB = mmPreAggDense((APreAgg) b, mb, cb, rowSum, rl, ru, cl, cu);
+		}
+		else if(g instanceof APreAgg)
+			retB = mmPreAggDense((APreAgg) g, mb, null, rowSum, rl, ru, cl, cu);
+		else if(g instanceof ColGroupConst) {
+			double[] cb = new double[maxCol];
+			((ColGroupConst) g).addToCommon(cb);
+			retB = mmRowSum(cb, rowSum, rl, ru, cl, cu);
+		}
+		else
+			retB = lmmNoAgg(g, mb, rl, ru, cl, cu);
+
+		return retB;
 	}
 
 	private MatrixBlock mmPreAggDense(APreAgg g, MatrixBlock mb, double[] cv, double[] rowSum, int rl, int ru, int cl,
@@ -2289,7 +2354,7 @@ public class ColGroupTest extends ColGroupBase {
 		try {
 
 			AColGroup g2 = g.append(g);
-			AColGroup g2n = AColGroup.appendN(new AColGroup[] {g, g}, nRow,  nRow*2);
+			AColGroup g2n = AColGroup.appendN(new AColGroup[] {g, g}, nRow, nRow * 2);
 			if(g2 != null && g2n != null) {
 				double s2 = g2.getSum(nRow * 2);
 				double s = g.getSum(nRow) * 2;
@@ -2300,7 +2365,7 @@ public class ColGroupTest extends ColGroupBase {
 				UA_ROW(InstructionUtils.parseBasicAggregateUnaryOperator("uar+", 1), 0, nRow * 2, g2, g2n, nRow * 2);
 			}
 		}
-		catch(NotImplementedException e){
+		catch(NotImplementedException e) {
 			// okay
 		}
 		catch(Exception e) {

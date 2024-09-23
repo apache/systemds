@@ -2166,6 +2166,9 @@ public class MatrixBlockDictionary extends ADictionary {
 			final double[] dv = _data.getDenseBlockValues();
 			return Arrays.equals(dv, ((Dictionary) o)._values);
 		}
+		else if(o instanceof IdentityDictionary) {
+			return o.equals(this);
+		}
 
 		return false;
 	}

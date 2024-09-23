@@ -953,12 +953,7 @@ public interface IDictionary {
 	 */
 	public IDictionary cbind(IDictionary that, int nCol);
 
-	/**
-	 * Indicate if this object is equal to another this takes into part sematic equivalence
-	 * 
-	 * @param o The other object
-	 * @return If they are equal
-	 */
+	@Override
 	public boolean equals(Object o);
 
 	/**
@@ -984,5 +979,16 @@ public interface IDictionary {
 	 * @return A new Dictionary that is reordered.s
 	 */
 	public IDictionary reorder(int[] reorder);
+
+	/**
+	 * Put the row specified into the sparse block, via append calls.
+	 * 
+	 * @param sb      The sparse block to put into
+	 * @param idx     The dictionary index to put in.
+	 * @param rowOut  The row in the sparse block to put it into
+	 * @param nCol    The number of columns in the dictionary
+	 * @param columns The columns to output into.
+	 */
+	public void put(SparseBlock sb, int idx, int rowOut, int nCol, IColIndex columns);
 
 }

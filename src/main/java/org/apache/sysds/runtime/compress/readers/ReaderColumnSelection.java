@@ -30,27 +30,24 @@ import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 public abstract class ReaderColumnSelection {
 	protected static final Log LOG = LogFactory.getLog(ReaderColumnSelection.class.getName());
 
+	/** The column indexes to read from the matrix */
 	protected final IColIndex _colIndexes;
+	/** Pointer to the wrapping reusable return DblArray */
 	protected final DblArray reusableReturn;
+	/** A reusable array that is stored inside the DblArray */
 	protected final double[] reusableArr;
 	/** The row index to stop the reading at */
 	protected final int _ru;
 
-	/** rl is used as a pointer to current row */
+	/** rl is used as a pointer to current row, that increment on calls to nextRow */
 	protected int _rl;
 
 	protected ReaderColumnSelection(IColIndex colIndexes, int rl, int ru) {
 		_colIndexes = colIndexes;
 		_rl = rl;
 		_ru = ru;
-		if(colIndexes != null) {
-			reusableArr = new double[colIndexes.size()];
-			reusableReturn = new DblArray(reusableArr);
-		}
-		else {
-			reusableArr = null;
-			reusableReturn = null;
-		}
+		reusableArr = new double[colIndexes.size()];
+		reusableReturn = new DblArray(reusableArr);
 	}
 
 	/**
@@ -68,24 +65,59 @@ public abstract class ReaderColumnSelection {
 		return ret;
 	}
 
+	/**
+	 * Get the next row as a DblArray, returns null if no more rows. This method is used internally and not supposed to
+	 * be called from the outside, instead use nextRow.
+	 * 
+	 * @return The next row.
+	 */
 	protected abstract DblArray getNextRow();
 
+	/**
+	 * Get the current row index that the reader is at.
+	 * 
+	 * @return The row index
+	 */
 	public int getCurrentRowIndex() {
 		return _rl;
 	}
 
+	/**
+	 * Create an reader of the matrix block that is able to iterate though all the rows and return as dense double
+	 * arrays.
+	 * 
+	 * Note the reader reuse the return, therefore if needed for something please copy the returned rows.
+	 * 
+	 * @param rawBlock   The block to iterate though
+	 * @param colIndices The column indexes to extract and insert into the double array
+	 * @param transposed If the raw block should be treated as transposed
+	 * @return A reader of the columns specified
+	 */
 	public static ReaderColumnSelection createReader(MatrixBlock rawBlock, IColIndex colIndices, boolean transposed) {
 		final int rl = 0;
 		final int ru = transposed ? rawBlock.getNumColumns() : rawBlock.getNumRows();
 		return createReader(rawBlock, colIndices, transposed, rl, ru);
 	}
 
+	/**
+	 * Create an reader of the matrix block that is able to iterate though all the rows and return as dense double
+	 * arrays.
+	 * 
+	 * Note the reader reuse the return, therefore if needed for something please copy the returned rows.
+	 * 
+	 * @param rawBlock   The block to iterate though
+	 * @param colIndices The column indexes to extract and insert into the double array
+	 * @param transposed If the raw block should be treated as transposed
+	 * @param rl         The row to start at
+	 * @param ru         The row to end at (not inclusive)
+	 * @return A reader of the columns specified
+	 */
 	public static ReaderColumnSelection createReader(MatrixBlock rawBlock, IColIndex colIndices, boolean transposed,
 		int rl, int ru) {
-		checkInput(rawBlock, colIndices, rl, ru);
+		checkInput(rawBlock, colIndices, rl, ru, transposed);
 		rl = rl - 1;
 		if(rawBlock.isEmpty()) {
-			LOG.warn("It is likely an error occurred when reading an empty block. But we do support it!");
+			LOG.warn("It is likely an error occurred when reading an empty block, but we do support it!");
 			return new ReaderColumnSelectionEmpty(rawBlock, colIndices, rl, ru, transposed);
 		}
 
@@ -104,11 +136,18 @@ public abstract class ReaderColumnSelection {
 		return new ReaderColumnSelectionDenseSingleBlock(rawBlock, colIndices, rl, ru);
 	}
 
-	private static void checkInput(final MatrixBlock rawBlock, final IColIndex colIndices, final int rl, final int ru) {
+	private static void checkInput(final MatrixBlock rawBlock, final IColIndex colIndices, final int rl, final int ru,
+		final boolean transposed) {
 		if(colIndices.size() <= 1)
 			throw new DMLCompressionException(
 				"Column selection reader should not be done on single column groups: " + colIndices);
 		else if(rl >= ru)
 			throw new DMLCompressionException("Invalid inverse range for reader " + rl + " to " + ru);
+
+		final int finalColIndex = colIndices.get(colIndices.size() - 1);
+		final int finalBlockCol = transposed ? rawBlock.getNumRows() : rawBlock.getNumColumns();
+		if(finalColIndex > finalBlockCol)
+			throw new DMLCompressionException("Invalid columns to extract outside the given block: index: " + finalColIndex
+				+ " is larger than : " + finalBlockCol);
 	}
 }

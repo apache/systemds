@@ -24,11 +24,13 @@ import java.io.DataOutput;
 import java.io.IOException;
 import java.util.Arrays;
 
+import org.apache.commons.lang3.NotImplementedException;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.compress.DMLCompressionException;
-import org.apache.sysds.runtime.compress.colgroup.dictionary.IDictionary;
+import org.apache.sysds.runtime.compress.colgroup.ColGroupUtils.P;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.Dictionary;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.DictionaryFactory;
+import org.apache.sysds.runtime.compress.colgroup.dictionary.IDictionary;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.MatrixBlockDictionary;
 import org.apache.sysds.runtime.compress.colgroup.indexes.ColIndexFactory;
 import org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex;
@@ -489,7 +491,15 @@ public class ColGroupSDCZeros extends ASDCZero implements IMapToDataGroup {
 	}
 
 	@Override
-	public void preAggregateSparse(SparseBlock sb, double[] preAgg, int rl, int ru) {
+	public void leftMMIdentityPreAggregateDense(MatrixBlock that, MatrixBlock ret, int rl, int ru, int cl, int cu) {
+		throw new NotImplementedException();
+	}
+
+	@Override
+	public void preAggregateSparse(SparseBlock sb, double[] preAgg, int rl, int ru, int cl, int cu) {
+		if(cl != 0 || cu < _indexes.getOffsetToLast()) {
+			throw new NotImplementedException();
+		}
 		_data.preAggregateSparse(sb, preAgg, rl, ru, _indexes);
 	}
 
@@ -767,7 +777,7 @@ public class ColGroupSDCZeros extends ASDCZero implements IMapToDataGroup {
 
 	@Override
 	public AColGroup appendNInternal(AColGroup[] g, int blen, int rlen) {
-		
+
 		for(int i = 1; i < g.length; i++) {
 			final AColGroup gs = g[i];
 			if(!_colIndexes.equals(gs._colIndexes)) {
@@ -775,12 +785,12 @@ public class ColGroupSDCZeros extends ASDCZero implements IMapToDataGroup {
 				return null;
 			}
 
-			if(!(gs instanceof AOffsetsGroup )) {
+			if(!(gs instanceof AOffsetsGroup)) {
 				LOG.warn("Not valid OffsetGroup but " + gs.getClass().getSimpleName());
 				return null;
 			}
 
-			if( gs instanceof ColGroupSDCZeros){
+			if(gs instanceof ColGroupSDCZeros) {
 				final ColGroupSDCZeros gc = (ColGroupSDCZeros) gs;
 				if(!gc._dict.equals(_dict)) {
 					LOG.warn("Not same Dictionaries therefore not appending \n" + _dict + "\n\n" + gc._dict);
@@ -813,6 +823,46 @@ public class ColGroupSDCZeros extends ASDCZero implements IMapToDataGroup {
 	protected AColGroup fixColIndexes(IColIndex newColIndex, int[] reordering) {
 		return ColGroupSDCZeros.create(newColIndex, getNumRows(), _dict.reorder(reordering), _indexes, _data,
 			getCachedCounts());
+	}
+
+	@Override
+	public void sparseSelection(MatrixBlock selection, P[] points, MatrixBlock ret, int rl, int ru) {
+		final SparseBlock sr = ret.getSparseBlock();
+		final int nCol = _colIndexes.size();
+		final AIterator it = _indexes.getIterator();
+		final int last = _indexes.getOffsetToLast();
+		int c = 0;
+		int of = it.value();
+
+		while(of < last && c < points.length) {
+			if(points[c].o == of) {
+				c = processRow(points, sr, nCol, c, of, _data.getIndex(it.getDataIndex()));
+				of = it.next();
+			}
+			else if(points[c].o < of)
+				c++;
+			else
+				of = it.next();
+		}
+		// increment the c pointer until it is pointing at least to last point or is done.
+		while(c < points.length && points[c].o < last)
+			c++;
+
+		c = processRow(points, sr, nCol, c, of, _data.getIndex(it.getDataIndex()));
+
+	}
+
+	@Override
+	protected void denseSelection(MatrixBlock selection, P[] points, MatrixBlock ret, int rl, int ru) {
+		throw new NotImplementedException();
+	}
+
+	private int processRow(P[] points, final SparseBlock sr, final int nCol, int c, int of, final int did) {
+		while(c < points.length && points[c].o == of) {
+			_dict.put(sr, did, points[c].r, nCol, _colIndexes);
+			c++;
+		}
+		return c;
 	}
 
 	public String toString() {

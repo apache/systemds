@@ -126,5 +126,4 @@ public class LinearRegressionTests {
 			assertEquals(expectedException.getMessage(), e.getMessage());
 		}
 	}
-
 }

@@ -26,7 +26,6 @@ import java.util.Map;
 import org.apache.commons.lang3.NotImplementedException;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.apache.sysds.runtime.compress.DMLCompressionException;
 import org.apache.sysds.runtime.compress.bitmap.ABitmap;
 import org.apache.sysds.runtime.compress.bitmap.Bitmap;
 import org.apache.sysds.runtime.compress.bitmap.MultiColBitmap;
@@ -52,18 +51,21 @@ public interface DictionaryFactory {
 	}
 
 	public static IDictionary read(DataInput in) throws IOException {
-		Type type = Type.values()[in.readByte()];
+		final Type type = Type.values()[in.readByte()];
 		switch(type) {
 			case FP64_DICT:
 				return Dictionary.read(in);
-			case MATRIX_BLOCK_DICT:
-				return MatrixBlockDictionary.read(in);
 			case INT8_DICT:
 				return QDictionary.read(in);
 			case PLACE_HOLDER:
 				return PlaceHolderDict.read(in);
+			case IDENTITY:
+				return IdentityDictionary.read(in);
+			case IDENTITY_SLICE:
+				return IdentityDictionarySlice.read(in);
+			case MATRIX_BLOCK_DICT:
 			default:
-				throw new DMLCompressionException("Unsupported type of dictionary : " + type);
+				return MatrixBlockDictionary.read(in);
 		}
 
 	}
@@ -78,52 +80,45 @@ public interface DictionaryFactory {
 	}
 
 	public static IDictionary create(DblArrayCountHashMap map, int nCols, boolean addZeroTuple, double sparsity) {
-		try {
-			final ACount<DblArray>[] vals = map.extractValues();
-			final int nVals = vals.length;
-			final int nTuplesOut = nVals + (addZeroTuple ? 1 : 0);
-			if(sparsity < 0.4) {
-				final MatrixBlock retB = new MatrixBlock(nTuplesOut, nCols, true);
-				retB.allocateSparseRowsBlock();
-				final SparseBlock sb = retB.getSparseBlock();
-				for(int i = 0; i < nVals; i++) {
-					final ACount<DblArray> dac = vals[i];
-					final double[] dv = dac.key().getData();
-					for(int k = 0; k < dv.length; k++)
-						sb.append(dac.id, k, dv[k]);
-				}
-				retB.recomputeNonZeros();
-				retB.examSparsity(true);
-				return MatrixBlockDictionary.create(retB);
-			}
-			else {
 
-				final double[] resValues = new double[(nTuplesOut) * nCols];
-				for(int i = 0; i < nVals; i++) {
-					final ACount<DblArray> dac = vals[i];
-					System.arraycopy(dac.key().getData(), 0, resValues, dac.id * nCols, nCols);
-				}
-				return Dictionary.create(resValues);
+		final ACount<DblArray>[] vals = map.extractValues();
+		final int nVals = vals.length;
+		final int nTuplesOut = nVals + (addZeroTuple ? 1 : 0);
+		if(sparsity < 0.4) {
+			final MatrixBlock retB = new MatrixBlock(nTuplesOut, nCols, true);
+			retB.allocateSparseRowsBlock();
+			final SparseBlock sb = retB.getSparseBlock();
+			for(int i = 0; i < nVals; i++) {
+				final ACount<DblArray> dac = vals[i];
+				final double[] dv = dac.key().getData();
+				for(int k = 0; k < dv.length; k++)
+					sb.append(dac.id, k, dv[k]);
 			}
+			retB.recomputeNonZeros();
+			retB.examSparsity(true);
+			return MatrixBlockDictionary.create(retB);
 		}
-		catch(Exception e) {
-			throw new RuntimeException("Failed to create dictionary: " + map + " " + nCols, e);
+		else {
+
+			final double[] resValues = new double[(nTuplesOut) * nCols];
+			for(int i = 0; i < nVals; i++) {
+				final ACount<DblArray> dac = vals[i];
+				System.arraycopy(dac.key().getData(), 0, resValues, dac.id * nCols, nCols);
+			}
+			return Dictionary.create(resValues);
 		}
+
 	}
 
 	public static IDictionary create(ABitmap ubm) {
 		return create(ubm, 1.0);
 	}
 
-	public static IDictionary create(ABitmap ubm, double sparsity, boolean withZeroTuple) {
-		return (withZeroTuple) ? createWithAppendedZeroTuple(ubm, sparsity) : create(ubm, sparsity);
-	}
-
 	public static IDictionary create(ABitmap ubm, double sparsity) {
 		final int nCol = ubm.getNumColumns();
 		if(ubm instanceof Bitmap)
 			return Dictionary.create(((Bitmap) ubm).getValues());
-		else if(sparsity < 0.4 && nCol > 4 && ubm instanceof MultiColBitmap) {
+		else if(sparsity < 0.4 && nCol > 4) { // && ubm instanceof MultiColBitmap
 			final MultiColBitmap mcbm = (MultiColBitmap) ubm;
 
 			final MatrixBlock m = new MatrixBlock(ubm.getNumValues(), nCol, true);
@@ -140,7 +135,7 @@ public interface DictionaryFactory {
 			m.examSparsity(true);
 			return MatrixBlockDictionary.create(m);
 		}
-		else if(ubm instanceof MultiColBitmap) {
+		else {// if(ubm instanceof MultiColBitmap) {
 			MultiColBitmap mcbm = (MultiColBitmap) ubm;
 			final int nVals = ubm.getNumValues();
 			double[] resValues = new double[nVals * nCol];
@@ -149,8 +144,6 @@ public interface DictionaryFactory {
 
 			return Dictionary.create(resValues);
 		}
-		throw new NotImplementedException(
-			"Not implemented creation of bitmap type : " + ubm.getClass().getSimpleName());
 	}
 
 	public static IDictionary create(ABitmap ubm, int defaultIndex, double[] defaultTuple, double sparsity,
@@ -185,7 +178,7 @@ public interface DictionaryFactory {
 				defaultTuple[0] = bmv[defaultIndex];
 				System.arraycopy(bmv, defaultIndex + 1, dict, defaultIndex, bmv.length - defaultIndex - 1);
 			}
-			else if(ubm instanceof MultiColBitmap) {
+			else { // if(ubm instanceof MultiColBitmap) {
 				final MultiColBitmap mcbm = (MultiColBitmap) ubm;
 				for(int i = 0; i < defaultIndex; i++)
 					System.arraycopy(mcbm.getValues(i), 0, dict, i * nCol, nCol);
@@ -193,47 +186,45 @@ public interface DictionaryFactory {
 				for(int i = defaultIndex; i < ubm.getNumValues() - 1; i++)
 					System.arraycopy(mcbm.getValues(i + 1), 0, dict, i * nCol, nCol);
 			}
-			else
-				throw new NotImplementedException("not supported ABitmap of type:" + ubm.getClass().getSimpleName());
 
 			return Dictionary.create(dict);
 		}
 	}
 
-	public static IDictionary createWithAppendedZeroTuple(ABitmap ubm, double sparsity) {
-		final int nVals = ubm.getNumValues();
-		final int nRows = nVals + 1;
-		final int nCols = ubm.getNumColumns();
+	// public static IDictionary createWithAppendedZeroTuple(ABitmap ubm, double sparsity) {
+	// final int nVals = ubm.getNumValues();
+	// final int nRows = nVals + 1;
+	// final int nCols = ubm.getNumColumns();
 
-		if(ubm instanceof Bitmap) {
-			final double[] resValues = new double[nRows];
-			final double[] from = ((Bitmap) ubm).getValues();
-			System.arraycopy(from, 0, resValues, 0, from.length);
-			return Dictionary.create(resValues);
-		}
+	// if(ubm instanceof Bitmap) {
+	// final double[] resValues = new double[nRows];
+	// final double[] from = ((Bitmap) ubm).getValues();
+	// System.arraycopy(from, 0, resValues, 0, from.length);
+	// return Dictionary.create(resValues);
+	// }
 
-		final MultiColBitmap mcbm = (MultiColBitmap) ubm;
-		if(sparsity < 0.4 && nCols > 4) {
-			final MatrixBlock m = new MatrixBlock(nRows, nCols, true);
-			m.allocateSparseRowsBlock();
-			final SparseBlock sb = m.getSparseBlock();
+	// final MultiColBitmap mcbm = (MultiColBitmap) ubm;
+	// if(sparsity < 0.4 && nCols > 4) {
+	// final MatrixBlock m = new MatrixBlock(nRows, nCols, true);
+	// m.allocateSparseRowsBlock();
+	// final SparseBlock sb = m.getSparseBlock();
 
-			for(int i = 0; i < nVals; i++) {
-				final double[] tuple = mcbm.getValues(i);
-				for(int col = 0; col < nCols; col++)
-					sb.append(i, col, tuple[col]);
-			}
-			m.recomputeNonZeros();
-			m.examSparsity(true);
-			return MatrixBlockDictionary.create(m);
-		}
+	// for(int i = 0; i < nVals; i++) {
+	// final double[] tuple = mcbm.getValues(i);
+	// for(int col = 0; col < nCols; col++)
+	// sb.append(i, col, tuple[col]);
+	// }
+	// m.recomputeNonZeros();
+	// m.examSparsity(true);
+	// return MatrixBlockDictionary.create(m);
+	// }
 
-		final double[] resValues = new double[nRows * nCols];
-		for(int i = 0; i < nVals; i++)
-			System.arraycopy(mcbm.getValues(i), 0, resValues, i * nCols, nCols);
+	// final double[] resValues = new double[nRows * nCols];
+	// for(int i = 0; i < nVals; i++)
+	// System.arraycopy(mcbm.getValues(i), 0, resValues, i * nCols, nCols);
 
-		return Dictionary.create(resValues);
-	}
+	// return Dictionary.create(resValues);
+	// }
 
 	public static IDictionary create(DoubleCountHashMap map) {
 		final double[] resValues = map.getDictionary();
@@ -348,8 +339,8 @@ public interface DictionaryFactory {
 	 * @param nca    Number of columns left dictionary
 	 * @param b      Right side dictionary
 	 * @param ncb    Number of columns right dictionary
-	 * @param filter The mapping filter to not include all possible combinations in the output, this filter is allowed
-	 *               to be null, that means the output is defaulting back to a full combine
+	 * @param filter The mapping filter to not include all possible combinations in the output, this filter is allowed to
+	 *               be null, that means the output is defaulting back to a full combine
 	 * @return A combined dictionary
 	 */
 	public static IDictionary combineFullDictionaries(IDictionary a, int nca, IDictionary b, int ncb,
@@ -357,46 +348,59 @@ public interface DictionaryFactory {
 		final int ra = a.getNumberOfValues(nca);
 		final int rb = b.getNumberOfValues(ncb);
 
-		MatrixBlock ma = a.getMBDict(nca).getMatrixBlock();
-		MatrixBlock mb = b.getMBDict(ncb).getMatrixBlock();
+		final MatrixBlock ma = a.getMBDict(nca).getMatrixBlock();
+		final MatrixBlock mb = b.getMBDict(ncb).getMatrixBlock();
 
-		if(ra == 1 && rb == 1)
-			return new MatrixBlockDictionary(ma.append(mb));
+		if(ra == 1 && rb == 1) {
+
+			if(filter == null || filter.containsKey(0))
+				return new MatrixBlockDictionary(ma.append(mb));
+			else
+				return null;
+		}
 
 		MatrixBlock out = new MatrixBlock(filter != null ? filter.size() : ra * rb, nca + ncb, false);
 
 		out.allocateBlock();
 
-		if(filter != null) {
-			for(int r : filter.keySet()) {
-				int o = filter.get(r);
-				int ia = r % ra;
-				int ib = r / ra;
-				for(int c = 0; c < nca; c++)
-					out.set(o, c, ma.get(ia, c));
+		if(filter != null)
+			combineFullWithFilter(nca, ncb, filter, ra, ma, mb, out);
+		else
+			combineFullWithoutFilter(nca, ncb, ra, ma, mb, out);
 
-				for(int c = 0; c < ncb; c++)
-					out.set(o, c + nca, mb.get(ib, c));
-
-			}
-		}
-		else {
-
-			for(int r = 0; r < out.getNumRows(); r++) {
-				int ia = r % ra;
-				int ib = r / ra;
-				for(int c = 0; c < nca; c++)
-					out.set(r, c, ma.get(ia, c));
-
-				for(int c = 0; c < ncb; c++)
-					out.set(r, c + nca, mb.get(ib, c));
-
-			}
-		}
 		return new MatrixBlockDictionary(out);
 	}
 
-	public static IDictionary combineSDCRight(IDictionary a, int nca, IDictionary b, double[] tub) {
+	private static void combineFullWithoutFilter(int nca, int ncb, final int ra, MatrixBlock ma, MatrixBlock mb,
+		MatrixBlock out) {
+		for(int r = 0; r < out.getNumRows(); r++) {
+			int ia = r % ra;
+			int ib = r / ra;
+			for(int c = 0; c < nca; c++)
+				out.set(r, c, ma.get(ia, c));
+
+			for(int c = 0; c < ncb; c++)
+				out.set(r, c + nca, mb.get(ib, c));
+
+		}
+	}
+
+	private static void combineFullWithFilter(int nca, int ncb, Map<Integer, Integer> filter, final int ra,
+		MatrixBlock ma, MatrixBlock mb, MatrixBlock out) {
+		for(int r : filter.keySet()) {
+			int o = filter.get(r);
+			int ia = r % ra;
+			int ib = r / ra;
+			for(int c = 0; c < nca; c++)
+				out.set(o, c, ma.get(ia, c));
+
+			for(int c = 0; c < ncb; c++)
+				out.set(o, c + nca, mb.get(ib, c));
+
+		}
+	}
+
+	private static IDictionary combineSDCRight(IDictionary a, int nca, IDictionary b, double[] tub) {
 
 		final int ncb = tub.length;
 		final int ra = a.getNumberOfValues(nca);
@@ -583,7 +587,7 @@ public interface DictionaryFactory {
 
 	}
 
-	public static IDictionary combineSparseConstSparseRet(IDictionary a, int nca, double[] tub) {
+	private static IDictionary combineSparseConstSparseRet(IDictionary a, int nca, double[] tub) {
 		final int ncb = tub.length;
 		final int ra = a.getNumberOfValues(nca);
 
@@ -632,7 +636,7 @@ public interface DictionaryFactory {
 
 	}
 
-	public static IDictionary combineConstSparseSparseRet(double[] tua, IDictionary b, int ncb) {
+	private static IDictionary combineConstSparseSparseRet(double[] tua, IDictionary b, int ncb) {
 		final int nca = tua.length;
 		final int rb = b.getNumberOfValues(ncb);
 

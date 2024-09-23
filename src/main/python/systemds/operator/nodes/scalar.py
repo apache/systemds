@@ -156,12 +156,55 @@ class Scalar(OperationNode):
         """
         return Scalar(self.sds_context, 'abs', [self])
 
+    def sqrt(self) -> 'Scalar':
+        """Calculate square root.
+
+        :return: `Scalar` representing operation
+        """
+        return Scalar(self.sds_context, 'sqrt', [self])
+
+    def floor(self) -> 'Scalar':
+        """Return the floor of the input, element-wise.
+
+        :return: `Scalar` representing operation
+        """
+        return Scalar(self.sds_context, 'floor', [self])
+
+    def ceil(self) -> 'Scalar':
+        """Return the ceiling of the input, element-wise.
+
+        :return: `Scalar` representing operation
+        """
+        return Scalar(self.sds_context, 'ceil', [self])
+
+    def log(self) -> 'Scalar':
+        """Calculate logarithm.
+
+        :return: `Scalar` representing operation
+        """
+        return Scalar(self.sds_context, 'log', [self])
+
     def sin(self) -> 'Scalar':
         """Calculate sin.
 
         :return: `Scalar` representing operation
         """
         return Scalar(self.sds_context, 'sin', [self])
+
+    def exp(self) -> 'Scalar':
+        """Calculate exponential.
+
+        :return: `Scalar` representing operation
+        """
+        return Scalar(self.sds_context, "exp", [self])
+
+    def sign(self) -> "Scalar":
+        """Returns a the signs of the input,
+        where 1 represents positive, 0 represents zero, and -1 represents negative.
+
+        :return: `Scalar` representing operation
+        """
+        return Scalar(self.sds_context, "sign", [self])
 
     def cos(self) -> 'Scalar':
         """Calculate cos.
@@ -224,6 +267,29 @@ class Scalar(OperationNode):
         :return: `Scalar` containing the string.
         """
         return Scalar(self.sds_context, 'toString', [self], named_input_nodes=kwargs, output_type=OutputType.STRING)
+
+    def isNA(self) -> 'Scalar':
+        """ Computes a boolean indicator matrix of the same shape as the input, indicating where NA (not available)
+        values are located. Currently, NA is only capturing NaN values.
+
+        :return: the OperationNode representing this operation
+        """
+        return Scalar(self.sds_context, 'isNA', [self])
+
+    def isNaN(self) -> 'Scalar':
+        """ Computes a boolean indicator matrix of the same shape as the input, indicating where NaN (not a number)
+        values are located.
+
+        :return: the OperationNode representing this operation
+        """
+        return Scalar(self.sds_context, 'isNaN', [self])
+
+    def isInf(self) -> 'Scalar':
+        """ Computes a boolean indicator matrix of the same shape as the input, indicating where Inf (positive or
+        negative infinity) values are located.
+        :return: the OperationNode representing this operation
+        """
+        return Scalar(self.sds_context, 'isInf', [self])
 
     def __str__(self):
         return "ScalarNode"

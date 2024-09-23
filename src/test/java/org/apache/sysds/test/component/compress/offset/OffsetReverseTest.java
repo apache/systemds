@@ -21,37 +21,41 @@ package org.apache.sysds.test.component.compress.offset;
 
 import static org.junit.Assert.assertEquals;
 
+import org.apache.sysds.runtime.compress.CompressedMatrixBlock;
 import org.apache.sysds.runtime.compress.colgroup.offset.AOffset;
 import org.apache.sysds.runtime.compress.colgroup.offset.OffsetFactory;
 import org.junit.Test;
 
 public class OffsetReverseTest {
+	static{
+		CompressedMatrixBlock.debug = true;
+	}
 
 	@Test
 	public void reverse1() {
 		AOffset off = OffsetFactory.createOffset(new int[] {1, 10, 13, 14});
-		AOffset rev = AOffset.reverse(16, off);
+		AOffset rev = off.reverse(16);
 		OffsetTests.compare(rev, new int[] {0, 2, 3, 4, 5, 6, 7, 8, 9, 11, 12, 15});
 	}
 
 	@Test
 	public void reverse2() {
 		AOffset off = OffsetFactory.createOffset(new int[] {1, 10});
-		AOffset rev = AOffset.reverse(16, off);
+		AOffset rev = off.reverse(16);
 		OffsetTests.compare(rev, new int[] {0, 2, 3, 4, 5, 6, 7, 8, 9, 11, 12, 13, 14, 15});
 	}
 
 	@Test
 	public void reverse3() {
 		AOffset off = OffsetFactory.createOffset(new int[] {1});
-		AOffset rev = AOffset.reverse(16, off);
+		AOffset rev = off.reverse(16);
 		OffsetTests.compare(rev, new int[] {0, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15});
 	}
 
 	@Test
 	public void reverse4() {
 		AOffset off = OffsetFactory.createOffset(new int[] {1, 10, 13, 14, 15});
-		AOffset rev = AOffset.reverse(16, off);
+		AOffset rev = off.reverse(16);
 		OffsetTests.compare(rev, new int[] {0, 2, 3, 4, 5, 6, 7, 8, 9, 11, 12});
 	}
 
@@ -59,7 +63,7 @@ public class OffsetReverseTest {
 	public void reverse4_withCreateMethod() {
 		int[] exp = new int[] {0, 2, 3, 4, 5, 6, 7, 8, 9, 11, 12};
 		AOffset off = OffsetFactory.createOffset(create(exp, 16));
-		AOffset rev = AOffset.reverse(16, off);
+		AOffset rev = off.reverse(16);
 		OffsetTests.compare(rev, exp);
 	}
 
@@ -67,7 +71,7 @@ public class OffsetReverseTest {
 	public void reverse1_withCreateMethod() {
 		int[] exp = new int[] {0, 2, 3, 4, 5, 6, 7, 8, 9, 11, 12, 15};
 		AOffset off = OffsetFactory.createOffset(create(exp, 16));
-		AOffset rev = AOffset.reverse(16, off);
+		AOffset rev = off.reverse(16);
 		OffsetTests.compare(rev, exp);
 	}
 
@@ -119,7 +123,7 @@ public class OffsetReverseTest {
 					875, 877, 879, 880, 882, 883, 887, 889, 891, 892, 894, 896, 897, 898, 899, 901, 902, 903, 905, 906, 908,
 					911, 912, 913, 917, 919, 920, 922, 926, 927, 931, 933, 935, 936, 938, 940, 941, 943, 944, 945, 946, 948,
 					950, 953, 957, 959, 961, 967, 968, 974, 979, 980, 982, 983, 984, 986, 989, 990, 991, 993, 995, 996, 997});
-		AOffset rev = AOffset.reverse(1000, off);
+		AOffset rev = off.reverse(1000);
 		// System.out.println(off);
 		// System.out.println(rev);
 		assertEquals(0, rev.getOffsetIterator().value());
@@ -127,7 +131,7 @@ public class OffsetReverseTest {
 
 	private void test(int[] missing, int max) {
 		AOffset off = OffsetFactory.createOffset(create(missing, max));
-		AOffset rev = AOffset.reverse(max, off);
+		AOffset rev = off.reverse(max);
 		OffsetTests.compare(rev, missing);
 	}
 

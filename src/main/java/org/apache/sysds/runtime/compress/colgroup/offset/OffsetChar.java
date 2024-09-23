@@ -26,7 +26,7 @@ import java.util.Arrays;
 import org.apache.sysds.runtime.compress.CompressedMatrixBlock;
 import org.apache.sysds.utils.MemoryEstimates;
 
-public class OffsetChar extends AOffset implements ISliceOffset{
+public class OffsetChar extends AOffset implements ISliceOffset {
 
 	private static final long serialVersionUID = -1192266421395964882L;
 	protected static final int maxV = Character.MAX_VALUE;
@@ -41,7 +41,7 @@ public class OffsetChar extends AOffset implements ISliceOffset{
 		this.offsetToFirst = offsetToFirst;
 		this.offsetToLast = offsetToLast;
 		this.noZero = noZero;
-		if(CompressedMatrixBlock.debug){
+		if(CompressedMatrixBlock.debug) {
 			this.toString();
 		}
 	}
@@ -131,8 +131,8 @@ public class OffsetChar extends AOffset implements ISliceOffset{
 
 		OffsetFactory.getNoZero(offsets);
 		return new OffsetChar(offsets, offsetToFirst, offsetToLast, OffsetFactory.getNoZero(offsets));
-	}	
-	
+	}
+
 	@Override
 	public OffsetSliceInfo slice(int lowOff, int highOff, int lowValue, int highValue, int low, int high) {
 		char[] newOffsets = Arrays.copyOfRange(offsets, lowOff, highOff);

@@ -23,7 +23,7 @@ import java.util.Arrays;
 
 import org.apache.sysds.api.DMLScript;
 import org.apache.sysds.performance.generators.IGenerate;
-import org.apache.sysds.runtime.controlprogram.parfor.stat.Timing;
+import org.apache.sysds.utils.stats.Timing;
 
 /**
  * Util methods for the Performance suite

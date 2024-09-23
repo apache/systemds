@@ -34,23 +34,6 @@ import java.util.concurrent.atomic.LongAdder;
  */
 public class CacheStatistics 
 {
-	//enum used for MR counters
-	public enum Stat {
-		CACHE_HITS_MEM,
-		CACHE_HITS_FSBUFF,
-		CACHE_HITS_FS,
-		CACHE_HITS_HDFS,
-		CACHE_HITS_LIN,
-		CACHE_WRITES_FSBUFF,
-		CACHE_WRITES_FS,
-		CACHE_WRITES_HDFS,
-		CACHE_WRITES_LIN,
-		CACHE_TIME_ACQR, //acquire read
-		CACHE_TIME_ACQM, //acquire read
-		CACHE_TIME_RLS, //release
-		CACHE_TIME_EXP, //export 
-	}
-	
 	//hit statistics (for acquire read)
 	private static final LongAdder _numHitsMem      = new LongAdder();
 	private static final LongAdder _numHitsFSBuff   = new LongAdder();

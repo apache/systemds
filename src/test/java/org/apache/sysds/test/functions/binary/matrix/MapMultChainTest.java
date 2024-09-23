@@ -213,6 +213,8 @@ public class MapMultChainTest extends AutomatedTestBase {
 		
 		try
 		{
+
+			setOutputBuffering(true);
 			String TEST_NAME = testname;
 			TestConfiguration config = getTestConfiguration(TEST_NAME);
 			String TEST_CACHE_DIR = (TEST_CACHE_ENABLED)? TEST_NAME + "_" + sparse + "/" : "";

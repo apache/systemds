@@ -53,6 +53,7 @@ import org.apache.sysds.runtime.functionobjects.Minus;
 import org.apache.sysds.runtime.functionobjects.Plus;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.matrix.operators.BinaryOperator;
+import org.apache.sysds.runtime.matrix.operators.RightScalarOperator;
 import org.apache.sysds.runtime.matrix.operators.ScalarOperator;
 import org.apache.sysds.runtime.matrix.operators.UnaryOperator;
 
@@ -478,7 +479,11 @@ public class ColGroupDDC extends APreAgg implements IMapToDataGroup {
 			final double[] reference = ColGroupUtils.binaryDefRowRight(op, v, _colIndexes);
 			return ColGroupDDCFOR.create(_colIndexes, _dict, _data, getCachedCounts(), reference);
 		}
-		final IDictionary ret = _dict.binOpRight(op, v, _colIndexes);
+		final IDictionary ret;
+		if(_colIndexes.size() == 1)
+			ret = _dict.applyScalarOp(new RightScalarOperator(op.fn, v[_colIndexes.get(0)]));
+		else
+			ret = _dict.binOpRight(op, v, _colIndexes);
 		return create(_colIndexes, ret, _data, getCachedCounts());
 	}
 

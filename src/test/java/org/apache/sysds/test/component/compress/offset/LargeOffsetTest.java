@@ -20,6 +20,8 @@
 package org.apache.sysds.test.component.compress.offset;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -39,6 +41,9 @@ import scala.util.Random;
 
 @RunWith(value = Parameterized.class)
 public class LargeOffsetTest {
+	static{
+		CompressedMatrixBlock.debug = true;
+	}
 
 	protected static final Log LOG = LogFactory.getLog(LargeOffsetTest.class.getName());
 
@@ -57,6 +62,8 @@ public class LargeOffsetTest {
 				tests.add(new Object[] {gen(3030, 10, i), t});
 				tests.add(new Object[] {gen(3030, 300, i), t});
 				tests.add(new Object[] {gen(10000, 501, i), t});
+				tests.add(new Object[] {gen(1000, 3000, i), t});
+				tests.add(new Object[] {gen(1000, 10000, i), t});
 			}
 		}
 		return tests;
@@ -67,6 +74,7 @@ public class LargeOffsetTest {
 		this.data = data;
 		this.type = type;
 		this.o = OffsetTestUtil.getOffset(data, type);
+		o.clearSkipList();
 	}
 
 	@Test
@@ -117,6 +125,56 @@ public class LargeOffsetTest {
 			e.printStackTrace();
 			throw e;
 		}
+	}
+
+	@Test
+	public void slice() {
+		try {
+			if(data.length > 50) {
+
+				AOffset sl = o.slice(data[4], data[data.length - 30]).offsetSlice;
+
+				AIterator it = sl.getIterator();
+				assertEquals(0, it.value());
+				for(int i = 4; i < data.length - 30; i++) {
+					if(it.getDataIndex() != i - 4) {
+						fail("not equivalent index reached: expected: " + (i - 4) + " got: " + it.getDataIndex());
+					}
+					if(data[i] - data[4] != it.value()) {
+						fail("not equivalent index expected: " + (data[i] - data[4]) + " but got " + it.value() + " at index "
+							+ it.getDataIndex() + " correct index is: " + (i - 4));
+					}
+					if(i == data.length - 31) { // stop here.
+						break;
+					}
+					it.next();
+				}
+			}
+		}
+		catch(Exception e) {
+			e.printStackTrace();
+			fail(e.getMessage());
+		}
+	}
+
+	@Test
+	public void getSkipList() {
+		o.constructSkipList();
+		o.clearSkipList();
+		o.constructSkipList();
+	}
+
+	@Test
+	public void getIteratorClearSkipList() {
+		o.constructSkipList();
+		o.clearSkipList();
+		AIterator it = o.getIterator(data[10]);
+		assertEquals(data[10], it.value());
+		AIterator it2 = o.getIterator(data[10]);
+		assertTrue(it.equals(it2));
+
+		AIterator it3 = o.getIterator(data[data.length-2]);
+		assertEquals(data[data.length-2], it3.value());
 	}
 
 	private static void compare(AIterator it, int[] data, int off) {

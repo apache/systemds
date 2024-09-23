@@ -4,7 +4,7 @@
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Python end-to-end tutorial &mdash; SystemDS 3.2.0-dev documentation</title>
+  <title>Python end-to-end tutorial &mdash; SystemDS 3.3.0-dev documentation</title>
       <link rel="stylesheet" type="text/css" href="../static/pygments.css?v=80d5e7a1" />
       <link rel="stylesheet" type="text/css" href="../static/css/theme.css?v=19f00094" />
 
@@ -15,8 +15,8 @@
   
         <script src="../static/jquery.js?v=5d32c60e"></script>
         <script src="../static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-        <script src="../static/documentation_options.js?v=596fb6d1"></script>
-        <script src="../static/doctools.js?v=888ff710"></script>
+        <script src="../static/documentation_options.js?v=492a8e1f"></script>
+        <script src="../static/doctools.js?v=9a2dae69"></script>
         <script src="../static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../static/js/theme.js"></script>
     <link rel="index" title="Index" href="../genindex.html" />
@@ -142,7 +142,7 @@ to assess how well our model can predict if the income is above or below $50K/yr
 <p>First, we get our training and testing data from the built-in DataManager. Since the multiLogReg function requires the
 labels (Y) to be &gt; 0, we add 1 to all labels. This ensures that the smallest label is &gt;= 1. Additionally we will only take
 a fraction of the training and test set into account to speed up the execution.</p>
-<div class="code python highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">systemds.context</span> <span class="kn">import</span> <span class="n">SystemDSContext</span>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">systemds.context</span> <span class="kn">import</span> <span class="n">SystemDSContext</span>
 <span class="kn">from</span> <span class="nn">systemds.examples.tutorials.adult</span> <span class="kn">import</span> <span class="n">DataManager</span>
 <span class="kn">from</span> <span class="nn">systemds.operator.algorithm</span> <span class="kn">import</span> <span class="n">multiLogReg</span>
 <span class="kn">from</span> <span class="nn">systemds.operator.algorithm</span> <span class="kn">import</span> <span class="n">multiLogRegPredict</span>
@@ -164,10 +164,10 @@ a fraction of the training and test set into account to speed up the execution.<
 
     <span class="c1"># Transform frames to matrices.</span>
     <span class="n">X</span><span class="p">,</span> <span class="n">M1</span> <span class="o">=</span> <span class="n">X_frame</span><span class="o">.</span><span class="n">transform_encode</span><span class="p">(</span><span class="n">spec</span><span class="o">=</span><span class="n">jspec_data</span><span class="p">)</span>
-    <span class="n">Xt</span> <span class="o">=</span> <span class="n">Xt_frame</span><span class="o">.</span><span class="n">transform_apply</span><span class="p">(</span><span class="n">spec</span><span class="o">=</span><span class="n">jspec_data</span><span class="p">,</span> <span class="n">meta</span><span class="o">=</span><span class="n">M1</span><span class="p">)</span>
+    <span class="n">Xt</span> <span class="o">=</span> <span class="n">Xt_frame</span><span class="o">.</span><span class="n">transform_apply</span><span class="p">(</span><span class="n">spec</span><span class="o">=</span><span class="n">jspec_data</span><span class="p">,</span> <span class="n">meta</span><span class="o">=</span><span class="n">M1</span><span class="p">)</span>  
     <span class="n">Y</span><span class="p">,</span> <span class="n">M2</span> <span class="o">=</span> <span class="n">Y_frame</span><span class="o">.</span><span class="n">transform_encode</span><span class="p">(</span><span class="n">spec</span><span class="o">=</span><span class="n">jspec_labels</span><span class="p">)</span>
-    <span class="n">Yt</span> <span class="o">=</span> <span class="n">Yt_frame</span><span class="o">.</span><span class="n">transform_apply</span><span class="p">(</span><span class="n">spec</span><span class="o">=</span><span class="n">jspec_labels</span><span class="p">,</span> <span class="n">meta</span><span class="o">=</span><span class="n">M2</span><span class="p">)</span>
-
+    <span class="n">Yt</span> <span class="o">=</span> <span class="n">Yt_frame</span><span class="o">.</span><span class="n">transform_apply</span><span class="p">(</span><span class="n">spec</span><span class="o">=</span><span class="n">jspec_labels</span><span class="p">,</span> <span class="n">meta</span><span class="o">=</span><span class="n">M2</span><span class="p">)</span>  
+    
     <span class="c1"># Subsample to make training faster</span>
     <span class="n">X</span> <span class="o">=</span> <span class="n">X</span><span class="p">[</span><span class="mi">0</span><span class="p">:</span><span class="n">train_count</span><span class="p">]</span>
     <span class="n">Y</span> <span class="o">=</span> <span class="n">Y</span><span class="p">[</span><span class="mi">0</span><span class="p">:</span><span class="n">train_count</span><span class="p">]</span>
@@ -182,13 +182,13 @@ for the best performance and no data transfer from pandas to SystemDS it is reco
 <h3>Step 2: Training<a class="headerlink" href="#step-2-training" title="Link to this heading"></a></h3>
 <p>Now that we prepared the data, we can use the multiLogReg function. First, we will train the model on our
 training data. Afterward, we can make predictions on the test data and assess the performance of the model.</p>
-<div class="code python highlight-default notranslate"><div class="highlight"><pre><span></span>    <span class="n">betas</span> <span class="o">=</span> <span class="n">multiLogReg</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">Y</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>    <span class="n">betas</span> <span class="o">=</span> <span class="n">multiLogReg</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">Y</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
 </pre></div>
 </div>
 <p>Note that nothing has been calculated yet. In SystemDS the calculation is executed once compute() is called.
 E.g. betas_res = betas.compute().</p>
 <p>We can now use the trained model to make predictions on the test data.</p>
-<div class="code python highlight-default notranslate"><div class="highlight"><pre><span></span>    <span class="p">[</span><span class="n">_</span><span class="p">,</span> <span class="n">y_pred</span><span class="p">,</span> <span class="n">acc</span><span class="p">]</span> <span class="o">=</span> <span class="n">multiLogRegPredict</span><span class="p">(</span><span class="n">Xt</span><span class="p">,</span> <span class="n">betas</span><span class="p">,</span> <span class="n">Y</span><span class="o">=</span><span class="n">Yt</span><span class="p">)</span>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>    <span class="p">[</span><span class="n">_</span><span class="p">,</span> <span class="n">y_pred</span><span class="p">,</span> <span class="n">acc</span><span class="p">]</span> <span class="o">=</span> <span class="n">multiLogRegPredict</span><span class="p">(</span><span class="n">Xt</span><span class="p">,</span> <span class="n">betas</span><span class="p">,</span> <span class="n">Y</span><span class="o">=</span><span class="n">Yt</span><span class="p">)</span>
 </pre></div>
 </div>
 <dl class="simple">
@@ -206,14 +206,14 @@ E.g. betas_res = betas.compute().</p>
 which classes the model has difficulties separating.
 The confusionMatrix function takes the predicted labels and the true labels. It then returns the confusion matrix
 for the predictions and the confusion matrix averages of each true class.</p>
-<div class="code python highlight-default notranslate"><div class="highlight"><pre><span></span>    <span class="n">confusion_matrix_abs</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">confusionMatrix</span><span class="p">(</span><span class="n">y_pred</span><span class="p">,</span> <span class="n">Yt</span><span class="p">)</span><span class="o">.</span><span class="n">compute</span><span class="p">()</span>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>    <span class="n">confusion_matrix_abs</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">confusionMatrix</span><span class="p">(</span><span class="n">y_pred</span><span class="p">,</span> <span class="n">Yt</span><span class="p">)</span><span class="o">.</span><span class="n">compute</span><span class="p">()</span>
 </pre></div>
 </div>
 </section>
 <section id="full-script">
 <h3>Full Script<a class="headerlink" href="#full-script" title="Link to this heading"></a></h3>
 <p>In the full script, some steps are combined to reduce the overall script.</p>
-<div class="code python highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">systemds.context</span> <span class="kn">import</span> <span class="n">SystemDSContext</span>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">systemds.context</span> <span class="kn">import</span> <span class="n">SystemDSContext</span>
 <span class="kn">from</span> <span class="nn">systemds.examples.tutorials.adult</span> <span class="kn">import</span> <span class="n">DataManager</span>
 <span class="kn">from</span> <span class="nn">systemds.operator.algorithm</span> <span class="kn">import</span> <span class="n">multiLogReg</span>
 <span class="kn">from</span> <span class="nn">systemds.operator.algorithm</span> <span class="kn">import</span> <span class="n">multiLogRegPredict</span>
@@ -235,17 +235,17 @@ for the predictions and the confusion matrix averages of each true class.</p>
 
     <span class="c1"># Transform frames to matrices.</span>
     <span class="n">X</span><span class="p">,</span> <span class="n">M1</span> <span class="o">=</span> <span class="n">X_frame</span><span class="o">.</span><span class="n">transform_encode</span><span class="p">(</span><span class="n">spec</span><span class="o">=</span><span class="n">jspec_data</span><span class="p">)</span>
-    <span class="n">Xt</span> <span class="o">=</span> <span class="n">Xt_frame</span><span class="o">.</span><span class="n">transform_apply</span><span class="p">(</span><span class="n">spec</span><span class="o">=</span><span class="n">jspec_data</span><span class="p">,</span> <span class="n">meta</span><span class="o">=</span><span class="n">M1</span><span class="p">)</span>
+    <span class="n">Xt</span> <span class="o">=</span> <span class="n">Xt_frame</span><span class="o">.</span><span class="n">transform_apply</span><span class="p">(</span><span class="n">spec</span><span class="o">=</span><span class="n">jspec_data</span><span class="p">,</span> <span class="n">meta</span><span class="o">=</span><span class="n">M1</span><span class="p">)</span>  
     <span class="n">Y</span><span class="p">,</span> <span class="n">M2</span> <span class="o">=</span> <span class="n">Y_frame</span><span class="o">.</span><span class="n">transform_encode</span><span class="p">(</span><span class="n">spec</span><span class="o">=</span><span class="n">jspec_labels</span><span class="p">)</span>
-    <span class="n">Yt</span> <span class="o">=</span> <span class="n">Yt_frame</span><span class="o">.</span><span class="n">transform_apply</span><span class="p">(</span><span class="n">spec</span><span class="o">=</span><span class="n">jspec_labels</span><span class="p">,</span> <span class="n">meta</span><span class="o">=</span><span class="n">M2</span><span class="p">)</span>
-
+    <span class="n">Yt</span> <span class="o">=</span> <span class="n">Yt_frame</span><span class="o">.</span><span class="n">transform_apply</span><span class="p">(</span><span class="n">spec</span><span class="o">=</span><span class="n">jspec_labels</span><span class="p">,</span> <span class="n">meta</span><span class="o">=</span><span class="n">M2</span><span class="p">)</span>  
+    
     <span class="c1"># Subsample to make training faster</span>
     <span class="n">X</span> <span class="o">=</span> <span class="n">X</span><span class="p">[</span><span class="mi">0</span><span class="p">:</span><span class="n">train_count</span><span class="p">]</span>
     <span class="n">Y</span> <span class="o">=</span> <span class="n">Y</span><span class="p">[</span><span class="mi">0</span><span class="p">:</span><span class="n">train_count</span><span class="p">]</span>
     <span class="n">Xt</span> <span class="o">=</span> <span class="n">Xt</span><span class="p">[</span><span class="mi">0</span><span class="p">:</span><span class="n">test_count</span><span class="p">]</span>
     <span class="n">Yt</span> <span class="o">=</span> <span class="n">Yt</span><span class="p">[</span><span class="mi">0</span><span class="p">:</span><span class="n">test_count</span><span class="p">]</span>
 
-    <span class="c1"># Train model</span>
+    <span class="c1"># Train model    </span>
     <span class="n">betas</span> <span class="o">=</span> <span class="n">multiLogReg</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">Y</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
 
     <span class="c1"># Apply model</span>
@@ -269,7 +269,7 @@ For this we will introduce another dml file, which can be used to train a basic 
 <h3>Step 1: Obtain data<a class="headerlink" href="#step-1-obtain-data" title="Link to this heading"></a></h3>
 <p>For the whole data setup please refer to level 1, Step 1, as these steps are almost identical,
 but instead of preparing the test data, we only prepare the training data.</p>
-<div class="code python highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">systemds.context</span> <span class="kn">import</span> <span class="n">SystemDSContext</span>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">systemds.context</span> <span class="kn">import</span> <span class="n">SystemDSContext</span>
 <span class="kn">from</span> <span class="nn">systemds.examples.tutorials.adult</span> <span class="kn">import</span> <span class="n">DataManager</span>
 <span class="kn">from</span> <span class="nn">systemds.operator.algorithm</span> <span class="kn">import</span> <span class="n">multiLogReg</span>
 <span class="kn">from</span> <span class="nn">systemds.operator.algorithm</span> <span class="kn">import</span> <span class="n">multiLogRegPredict</span>
@@ -306,7 +306,7 @@ First, we need to source the dml file for neural networks.
 This file includes all the necessary functions for training, evaluating, and storing the model.
 The returned object of the source call is further used for calling the functions.
 The file can be found here:</p>
-<div class="code python highlight-default notranslate"><div class="highlight"><pre><span></span>    <span class="c1"># Load custom neural network</span>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>    <span class="c1"># Load custom neural network</span>
     <span class="n">neural_net_src_path</span> <span class="o">=</span> <span class="s2">&quot;tests/examples/tutorials/neural_net_source.dml&quot;</span>
     <span class="n">FFN_package</span> <span class="o">=</span> <span class="n">sds</span><span class="o">.</span><span class="n">source</span><span class="p">(</span><span class="n">neural_net_src_path</span><span class="p">,</span> <span class="s2">&quot;fnn&quot;</span><span class="p">)</span>
 </pre></div>
@@ -319,7 +319,7 @@ The first two arguments are the training features and the target values we want 
 Then we need to set the hyperparameters of the model.
 We choose to train for 1 epoch with a batch size of 16 and a learning rate of 0.01, which are common parameters for neural networks.
 The seed argument ensures that running the code again yields the same results.</p>
-<div class="code python highlight-default notranslate"><div class="highlight"><pre><span></span>    <span class="n">epochs</span> <span class="o">=</span> <span class="mi">1</span>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>    <span class="n">epochs</span> <span class="o">=</span> <span class="mi">1</span>
     <span class="n">batch_size</span> <span class="o">=</span> <span class="mi">16</span>
     <span class="n">learning_rate</span> <span class="o">=</span> <span class="mf">0.01</span>
     <span class="n">seed</span> <span class="o">=</span> <span class="mi">42</span>
@@ -335,7 +335,7 @@ We only need to specify the name of our model and the file path.
 This call stores the weights and biases of our model.
 Similarly the transformation metadata to transform input data to the model,
 is saved.</p>
-<div class="code python highlight-default notranslate"><div class="highlight"><pre><span></span>    <span class="c1"># Write metadata and trained network to disk.</span>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>    <span class="c1"># Write metadata and trained network to disk.</span>
     <span class="n">sds</span><span class="o">.</span><span class="n">combine</span><span class="p">(</span>
         <span class="n">network</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s1">&#39;tests/examples/docs_test/end_to_end/network&#39;</span><span class="p">),</span>
         <span class="n">M1</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s1">&#39;tests/examples/docs_test/end_to_end/encode_X&#39;</span><span class="p">),</span>
@@ -348,7 +348,7 @@ is saved.</p>
 <h3>Step 5: Predict on Unseen data<a class="headerlink" href="#step-5-predict-on-unseen-data" title="Link to this heading"></a></h3>
 <p>Once the model is saved along with metadata, it is simple to apply it all to
 unseen data:</p>
-<div class="code python highlight-default notranslate"><div class="highlight"><pre><span></span>    <span class="c1"># Read metadata and trained network and do prediction.</span>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>    <span class="c1"># Read metadata and trained network and do prediction.</span>
     <span class="n">M1_r</span> <span class="o">=</span> <span class="n">sds</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="s1">&#39;tests/examples/docs_test/end_to_end/encode_X&#39;</span><span class="p">)</span>
     <span class="n">M2_r</span> <span class="o">=</span> <span class="n">sds</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="s1">&#39;tests/examples/docs_test/end_to_end/encode_Y&#39;</span><span class="p">)</span>
     <span class="n">network_r</span> <span class="o">=</span> <span class="n">sds</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="s1">&#39;tests/examples/docs_test/end_to_end/network&#39;</span><span class="p">)</span>
@@ -365,7 +365,7 @@ unseen data:</p>
 <section id="full-script-nn">
 <h3>Full Script NN<a class="headerlink" href="#full-script-nn" title="Link to this heading"></a></h3>
 <p>The complete script now can be seen here:</p>
-<div class="code python highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">systemds.context</span> <span class="kn">import</span> <span class="n">SystemDSContext</span>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">systemds.context</span> <span class="kn">import</span> <span class="n">SystemDSContext</span>
 <span class="kn">from</span> <span class="nn">systemds.examples.tutorials.adult</span> <span class="kn">import</span> <span class="n">DataManager</span>
 <span class="kn">from</span> <span class="nn">systemds.operator.algorithm</span> <span class="kn">import</span> <span class="n">multiLogReg</span>
 <span class="kn">from</span> <span class="nn">systemds.operator.algorithm</span> <span class="kn">import</span> <span class="n">multiLogRegPredict</span>
@@ -403,7 +403,7 @@ unseen data:</p>
     <span class="n">seed</span> <span class="o">=</span> <span class="mi">42</span>
 
     <span class="n">network</span> <span class="o">=</span> <span class="n">FFN_package</span><span class="o">.</span><span class="n">train</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">Y</span><span class="p">,</span> <span class="n">epochs</span><span class="p">,</span> <span class="n">batch_size</span><span class="p">,</span> <span class="n">learning_rate</span><span class="p">,</span> <span class="n">seed</span><span class="p">)</span>
-
+    
     <span class="c1"># Write metadata and trained network to disk.</span>
     <span class="n">sds</span><span class="o">.</span><span class="n">combine</span><span class="p">(</span>
         <span class="n">network</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s1">&#39;tests/examples/docs_test/end_to_end/network&#39;</span><span class="p">),</span>
@@ -442,7 +442,7 @@ unseen data:</p>
   <hr/>
 
   <div role="contentinfo">
-    <p>&#169; Copyright 2023, Apache SystemDS.</p>
+    <p>&#169; Copyright 2024, Apache SystemDS.</p>
   </div>
 
   Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a

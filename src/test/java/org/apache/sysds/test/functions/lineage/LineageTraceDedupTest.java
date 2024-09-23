@@ -152,8 +152,7 @@ public class LineageTraceDedupTest extends LineageBase
 
 			//deserialize, generate program and execute
 			String Rtrace = readDMLLineageFromHDFS("R");
-			String RDedupPatches = readDMLLineageDedupFromHDFS("R");
-			Data ret = LineageRecomputeUtils.parseNComputeLineageTrace(Rtrace, RDedupPatches);
+			Data ret = LineageRecomputeUtils.parseNComputeLineageTrace(Rtrace);
 			
 			//match the original and recomputed results
 			HashMap<CellIndex, Double> orig = readDMLMatrixFromOutputDir("R");

@@ -18,22 +18,56 @@
 # under the License.
 #
 # -------------------------------------------------------------
-from aligner.alignment import Alignment
-from aligner.alignment_strategy import ChunkedCrossCorrelation
-from modality.representation import PixelRepresentation
+import collections
+import json
+from datetime import datetime
+
+from representations.average import Averaging
+from representations.concatenation import Concatenation
+from modality.aligned_modality import AlignedModality
+from modality.text_modality import TextModality
 from modality.video_modality import VideoModality
-from aligner.similarity_measures import CosineSimilarity
+from modality.audio_modality import AudioModality
+from representations.unimodal import Pickle, JSON, HDF5, NPY
+from models.discrete_model import DiscreteModel
+from aligner.task import Task
+from aligner.dr_search import DRSearch
 
-# Setup modalities
-file_path_a = ''
-file_path_b = ''
-representation_a = PixelRepresentation()  # Concrete Representation
-representation_b = PixelRepresentation()  # Concrete Representation
-modality_a = VideoModality(file_path_a, representation_a)
-modality_b = VideoModality(file_path_b, representation_b)
 
-# Align modalities
-alignment_strategy = ChunkedCrossCorrelation()  # Concrete Alignment Strategy
-similarity_measure = CosineSimilarity()
-aligner = Alignment(modality_a, modality_b, alignment_strategy, similarity_measure)
-aligned_modality = aligner.align_modalities()
+class CustomTask(Task):
+    def __init__(self, model, labels, train_indices, val_indices):
+        super().__init__('CustomTask', model, labels, train_indices, val_indices)
+
+    def run(self, data):
+        X_train, y_train, X_test, y_test = self.get_train_test_split(data)
+        self.model.fit(X_train, y_train, X_test, y_test)
+        score = self.model.test(X_test, y_test)
+        return score
+
+
+labels = []
+train_indices = []
+val_indices = []
+
+video_path = ''
+audio_path = ''
+text_path = ''
+
+# Load modalities (audio, video, text)
+video = VideoModality(video_path, HDF5(), train_indices)
+audio = AudioModality(audio_path, Pickle(), train_indices)
+text = TextModality(text_path, NPY(), train_indices)
+
+video.read_all()
+audio.read_all()
+text.read_all()
+
+modalities = [text, audio, video]
+
+model = DiscreteModel()
+custom_task = CustomTask(model, labels, train_indices, val_indices)
+representations = [Concatenation(), Averaging()]
+
+dr_search = DRSearch(modalities, custom_task, representations)
+best_representation, best_score, best_modalities = dr_search.fit()
+aligned_representation = dr_search.transform(modalities)

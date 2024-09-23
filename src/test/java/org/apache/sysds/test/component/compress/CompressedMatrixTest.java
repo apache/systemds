@@ -144,7 +144,8 @@ public class CompressedMatrixTest extends AbstractCompressedUnaryTests {
 	public void testNonZeros() {
 		if(!(cmb instanceof CompressedMatrixBlock))
 			return; // Input was not compressed then just pass test
-		if(!(cmb.getNonZeros() >= mb.getNonZeros() || cmb.getNonZeros() == -1)) { // guarantee that the nnz is at least the nnz
+		if(!(cmb.getNonZeros() >= mb.getNonZeros() || cmb.getNonZeros() == -1)) { // guarantee that the nnz is at least
+																											// the nnz
 			fail(bufferedToString + "\nIncorrect number of non Zeros should guarantee greater than or equals but are "
 				+ cmb.getNonZeros() + " and should be: " + mb.getNonZeros());
 		}
@@ -169,7 +170,7 @@ public class CompressedMatrixTest extends AbstractCompressedUnaryTests {
 			// decompress the compressed matrix block
 			MatrixBlock tmp = cmb2.decompress();
 
-			((CompressedMatrixBlock)cmb).clearSoftReferenceToDecompressed();
+			((CompressedMatrixBlock) cmb).clearSoftReferenceToDecompressed();
 
 			compareResultMatrices(mb, tmp, 1);
 		}
@@ -422,7 +423,6 @@ public class CompressedMatrixTest extends AbstractCompressedUnaryTests {
 			MatrixBlock ret1 = MatrixBlock.aggregateTernaryOperations(cmb, m2, m3, null, op, true);
 			ucRet = MatrixBlock.aggregateTernaryOperations(mb, m2, m3, ucRet, op, true);
 
-
 			compareResultMatrices(ucRet, ret1, 1);
 		}
 		catch(Exception e) {
@@ -522,7 +522,7 @@ public class CompressedMatrixTest extends AbstractCompressedUnaryTests {
 
 	@Test
 	public void testBinaryEmptyMatrixMinusMultiplyOp() {
-		BinaryOperator op = MinusMultiply.getFnObject().setOp2Constant(42);
+		BinaryOperator op = new BinaryOperator(new MinusMultiply(42), _k);
 		op.setNumThreads(_k);
 		testBinaryEmptyMatrixOp(op);
 	}
@@ -705,7 +705,6 @@ public class CompressedMatrixTest extends AbstractCompressedUnaryTests {
 	public void toRDDAndBack1000() {
 		toRDDAndBack(1000);
 	}
-
 
 	public void toRDDAndBack(int blen) {
 		try {

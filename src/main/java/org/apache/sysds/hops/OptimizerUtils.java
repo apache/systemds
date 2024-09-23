@@ -51,7 +51,6 @@ import org.apache.sysds.runtime.controlprogram.LocalVariableMap;
 import org.apache.sysds.runtime.controlprogram.caching.LazyWriteBuffer;
 import org.apache.sysds.runtime.controlprogram.caching.UnifiedMemoryManager;
 import org.apache.sysds.runtime.controlprogram.context.SparkExecutionContext;
-import org.apache.sysds.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
 import org.apache.sysds.runtime.data.SparseBlock;
 import org.apache.sysds.runtime.data.SparseBlock.Type;
 import org.apache.sysds.runtime.functionobjects.IntegerDivide;
@@ -64,6 +63,7 @@ import org.apache.sysds.runtime.meta.DataCharacteristics;
 import org.apache.sysds.runtime.meta.MatrixCharacteristics;
 import org.apache.sysds.runtime.util.IndexRange;
 import org.apache.sysds.runtime.util.UtilFunctions;
+import org.apache.sysds.utils.stats.InfrastructureAnalyzer;
 
 public class OptimizerUtils 
 {
@@ -664,20 +664,13 @@ public class OptimizerUtils
 	}
 	
 	/**
-	 * Returns the number of reducers that potentially run in parallel.
+	 * Returns the number of tasks that potentially run in parallel.
 	 * This is either just the configured value (SystemDS config) or
-	 * the minimum of configured value and available reduce slots. 
-	 * 
-	 * @param configOnly true if configured value
-	 * @return number of reducers
+	 * the minimum of configured value and available task slots.
+	 *
+	 * @return number of tasks
 	 */
-	public static int getNumReducers( boolean configOnly ) {
-		if( isSparkExecutionMode() )
-			return SparkExecutionContext.getDefaultParallelism(false);
-		return InfrastructureAnalyzer.getLocalParallelism();
-	}
-
-	public static int getNumMappers() {
+	public static int getNumTasks() {
 		if( isSparkExecutionMode() )
 			return SparkExecutionContext.getDefaultParallelism(false);
 		return InfrastructureAnalyzer.getLocalParallelism();

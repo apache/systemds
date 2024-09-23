@@ -40,6 +40,7 @@ import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.frame.data.FrameBlock;
 import org.apache.sysds.runtime.matrix.data.Pair;
 import org.apache.sysds.runtime.transform.TfUtils;
+import org.apache.sysds.runtime.util.HDFSTool;
 import org.apache.sysds.runtime.util.InputStreamInputFormat;
 
 /**
@@ -57,7 +58,6 @@ public class FrameReaderTextCSV extends FrameReader {
 	@Override
 	public final FrameBlock readFrameFromHDFS(String fname, ValueType[] schema, String[] names, long rlen, long clen)
 		throws IOException, DMLRuntimeException {
-		LOG.debug("readFrameFromHDFS csv");
 		// prepare file access
 		JobConf job = new JobConf(ConfigurationManager.getCachedJobConf());
 		Path path = new Path(fname);
@@ -87,7 +87,8 @@ public class FrameReaderTextCSV extends FrameReader {
 
 	@Override
 	public FrameBlock readFrameFromInputStream(InputStream is, ValueType[] schema, String[] names, long rlen, long clen)
-		throws IOException, DMLRuntimeException {
+		throws IOException, DMLRuntimeException
+	{
 		// allocate output frame block
 		ValueType[] lschema = createOutputSchema(schema, clen);
 		String[] lnames = createOutputNames(names, clen);
@@ -102,12 +103,13 @@ public class FrameReaderTextCSV extends FrameReader {
 	}
 
 	protected void readCSVFrameFromHDFS(Path path, JobConf job, FileSystem fs, FrameBlock dest, ValueType[] schema,
-		String[] names, long rlen, long clen) throws IOException {
-		LOG.debug("readCSVFrameFromHDFS csv");
+		String[] names, long rlen, long clen) throws IOException
+	{
 		TextInputFormat informat = new TextInputFormat();
 		informat.configure(job);
 		InputSplit[] splits = informat.getSplits(job, 1);
-		splits = IOUtilFunctions.sortInputSplits(splits);
+		if(HDFSTool.isDirectory(fs, path))
+			splits = IOUtilFunctions.sortInputSplits(splits);
 		for(int i = 0, rpos = 0; i < splits.length; i++)
 			rpos = readCSVFrameFromInputSplit(splits[i], informat, job, dest, schema, names, rlen, clen, rpos, i == 0);
 	}
@@ -223,7 +225,6 @@ public class FrameReaderTextCSV extends FrameReader {
 		return emptyValuesFound;
 	}
 
-
 	protected Pair<Integer, Integer> computeCSVSize(Path path, JobConf job, FileSystem fs) throws IOException {
 		TextInputFormat informat = new TextInputFormat();
 		informat.configure(job);
@@ -237,50 +238,36 @@ public class FrameReaderTextCSV extends FrameReader {
 		int nrow = 0;
 		for(int i = 0; i < splits.length; i++) {
 			boolean header = i == 0 && _props.hasHeader();
-			nrow += countLinesInReader(splits[i], informat, job, ncol, header);
+			nrow += countLinesInSplit(splits[i], informat, job, header);
 		}
 
 		return new Pair<>(nrow, ncol);
 	}
 
-
-	protected static int countLinesInReader(InputSplit split, TextInputFormat inFormat, JobConf job, long ncol,
-		boolean header) throws IOException {
+	protected static long countLinesInSplit(InputSplit split, TextInputFormat inFormat, JobConf job, boolean header)
+		throws IOException
+	{
 		RecordReader<LongWritable, Text> reader = inFormat.getRecordReader(split, job, Reporter.NULL);
-		try {
-			return countLinesInReader(reader, ncol, header);
-		}
-		finally {
-			IOUtilFunctions.closeSilently(reader);
-		}
-	}
-
-	protected static int countLinesInReader(RecordReader<LongWritable, Text> reader, long ncol, boolean header)
-		throws IOException {
-		final LongWritable key = new LongWritable();
-		final Text value = new Text();
-
 		int nrow = 0;
 		try {
+			LongWritable key = new LongWritable();
+			Text value = new Text();
 			// ignore header of first split
 			if(header)
 				reader.next(key, value);
 			while(reader.next(key, value)) {
-				// note the metadata can be located at any row when spark.
-				nrow += containsMetaTag(value) ? 0 : 1;
+				// note the metadata can be located at any row when spark
+				// (but only at beginning of individual part files)
+				String sval = IOUtilFunctions.trim(value.toString());
+				boolean containsMTD = nrow<3 &&
+					(sval.startsWith(TfUtils.TXMTD_MVPREFIX)
+					|| sval.startsWith(TfUtils.TXMTD_NDPREFIX));
+				nrow += containsMTD ? 0 : 1;
 			}
-			return nrow;
 		}
 		finally {
 			IOUtilFunctions.closeSilently(reader);
 		}
-	}
-
-	private final static boolean containsMetaTag(Text val) {
-		if(val.charAt(0) == '#')
-			return val.find(TfUtils.TXMTD_MVPREFIX) > -1//
-				|| val.find(TfUtils.TXMTD_NDPREFIX) > -1;
-		else 
-			return false;
+		return nrow;
 	}
 }

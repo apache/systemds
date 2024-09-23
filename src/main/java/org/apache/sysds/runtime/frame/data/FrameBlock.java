@@ -846,8 +846,9 @@ public class FrameBlock implements CacheBlock<FrameBlock>, Externalizable {
 
 		// meta data array (overhead and entries)
 		size += MemoryEstimates.objectArrayCost(clen);
-		for(ColumnMetadata mtd : _colmeta)
-			size += mtd == null ? 8 : mtd.getInMemorySize();
+		if( _colmeta != null )
+			for(ColumnMetadata mtd : _colmeta)
+				size += mtd == null ? 8 : mtd.getInMemorySize();
 
 		// data array
 		size += MemoryEstimates.objectArrayCost(clen);

@@ -33,8 +33,8 @@ import org.apache.sysds.runtime.instructions.cp.IntObject;
  */
 public abstract class TaskPartitioner 
 {	
-	protected long           _taskSize     = -1;	
-	protected String  		 _iterVarName  = null;
+	protected long           _taskSize     = -1;
+	protected String         _iterVarName  = null;
 	protected IntObject      _fromVal      = null;
 	protected IntObject      _toVal        = null;
 	protected IntObject      _incrVal      = null;

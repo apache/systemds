@@ -26,9 +26,9 @@ import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.runtime.compress.colgroup.AColGroup.CompressionType;
 import org.apache.sysds.runtime.compress.plan.CompressionPlanFactory;
 import org.apache.sysds.runtime.compress.plan.IPlanEncode;
-import org.apache.sysds.runtime.controlprogram.parfor.stat.Timing;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.test.TestUtils;
+import org.apache.sysds.utils.stats.Timing;
 
 public class EncodePerformanceTest {
 	protected static final Log LOG = LogFactory.getLog(EncodePerformanceTest.class.getName());

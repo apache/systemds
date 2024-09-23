@@ -60,11 +60,11 @@ import org.apache.sysds.runtime.compress.utils.DblArrayCountHashMap;
 import org.apache.sysds.runtime.compress.utils.DoubleCountHashMap;
 import org.apache.sysds.runtime.compress.utils.IntArrayList;
 import org.apache.sysds.runtime.compress.utils.Util;
-import org.apache.sysds.runtime.controlprogram.parfor.stat.Timing;
 import org.apache.sysds.runtime.data.DenseBlock;
 import org.apache.sysds.runtime.data.SparseBlock;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.util.CommonThreadPool;
+import org.apache.sysds.utils.stats.Timing;
 
 /**
  * Factory class for constructing ColGroups.
@@ -471,7 +471,7 @@ public class ColGroupFactory {
 			return new ColGroupEmpty(colIndexes);
 		IDictionary dict = DictionaryFactory.create(map);
 		final int nUnique = map.size();
-		final AMapToData resData = MapToFactory.resize(d, nUnique);
+		final AMapToData resData = d.resize( nUnique);
 		return ColGroupDDC.create(colIndexes, dict, resData, null);
 	}
 
@@ -498,7 +498,7 @@ public class ColGroupFactory {
 		if(extra)
 			d.replace(fill, map.size());
 		final int nUnique = map.size() + (extra ? 1 : 0);
-		final AMapToData resData = MapToFactory.resize(d, nUnique);
+		final AMapToData resData = d.resize(nUnique);
 		return ColGroupDDC.create(colIndexes, dict, resData, null);
 	}
 
@@ -659,7 +659,7 @@ public class ColGroupFactory {
 		AInsertionSorter s = InsertionSorterFactory.create(rlen, offsets, cs.sdcSortType);
 		AOffset indexes = OffsetFactory.createOffset(s.getIndexes());
 		AMapToData data = s.getData();
-		data = MapToFactory.resize(data, dict.getNumberOfValues(colIndexes.size()));
+		data = data.resize(dict.getNumberOfValues(colIndexes.size()));
 		return ColGroupSDCZeros.create(colIndexes, rlen, dict, indexes, data, null);
 	}
 
@@ -671,7 +671,7 @@ public class ColGroupFactory {
 			cs.sdcSortType);
 		AOffset indexes = OffsetFactory.createOffset(s.getIndexes());
 		AMapToData _data = s.getData();
-		_data = MapToFactory.resize(_data, dict.getNumberOfValues(colIndexes.size()));
+		_data = _data.resize( dict.getNumberOfValues(colIndexes.size()));
 		return ColGroupSDC.create(colIndexes, rlen, dict, defaultTuple, indexes, _data, null);
 	}
 
@@ -775,7 +775,7 @@ public class ColGroupFactory {
 		}
 
 		IDictionary dict = DictionaryFactory.create(map, cols.size(), false, tupleSparsity);
-		data = MapToFactory.resize(data, map.size());
+		data = data.resize(map.size());
 
 		AOffset offs = OffsetFactory.createOffset(offsetsInt);
 		return ColGroupSDCZeros.create(cols, in.getNumColumns(), dict, offs, data, null);

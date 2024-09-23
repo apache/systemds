@@ -32,6 +32,7 @@ import org.apache.sysds.runtime.instructions.cp.VariableCPInstruction;
 import org.apache.sysds.runtime.instructions.spark.WriteSPInstruction;
 import org.apache.sysds.runtime.lineage.LineageItem.LineageItemType;
 import org.apache.sysds.utils.Explain;
+import org.apache.sysds.utils.Statistics;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -146,6 +147,9 @@ public class LineageMap {
 	}
 	
 	private void trace(Instruction inst, ExecutionContext ec, Pair<String, LineageItem> li) {
+		if (li != null && li.getValue() != null && DMLScript.STATISTICS_NGRAMS && DMLScript.STATISTICS_NGRAMS_USE_LINEAGE)
+			Statistics.prepareNGramInst(li);
+
 		if (inst instanceof VariableCPInstruction) {
 			VariableCPInstruction vcp_inst = ((VariableCPInstruction) inst);
 			
@@ -245,10 +249,9 @@ public class LineageMap {
 		LineageItem li = get(input1);
 		String fName = ec.getScalarInput(input2.getName(), Types.ValueType.STRING, input2.isLiteral()).getStringValue();
 		
-		if (DMLScript.LINEAGE_DEDUP) {
-			// gracefully serialize the dedup maps without decompressing
-			LineageItemUtils.writeTraceToHDFS(LineageDedupUtils.mergeExplainDedupBlocks(ec), fName + ".lineage.dedup");
-		}
-		LineageItemUtils.writeTraceToHDFS(Explain.explain(li), fName + ".lineage");
+		// Combine the global trace and dedup patches in a single file.
+		String out = !DMLScript.LINEAGE_DEDUP ? Explain.explain(li) :
+			Explain.explain(li) + "\n" + LineageDedupUtils.mergeExplainDedupBlocks(ec);
+		LineageItemUtils.writeTraceToHDFS(out, fName + ".lineage");
 	}
 }

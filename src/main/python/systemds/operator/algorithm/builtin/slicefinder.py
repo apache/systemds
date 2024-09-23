@@ -35,9 +35,10 @@ def slicefinder(X: Matrix,
     """
      This builtin function implements SliceLine, a linear-algebra-based
      ML model debugging technique for finding the top-k data slices where
-     a trained models performs significantly worse than on the overall 
+     a trained models performs significantly worse than on the overall
      dataset. For a detailed description and experimental results, see:
-     Svetlana Sagadeeva, Matthias Boehm: SliceLine: Fast, Linear-Algebra-based Slice Finding for ML Model Debugging.(SIGMOD 2021)
+     Svetlana Sagadeeva, Matthias Boehm: SliceLine: Fast, Linear-Algebra-based
+     Slice Finding for ML Model Debugging.(SIGMOD 2021)
     
     
     
@@ -54,7 +55,7 @@ def slicefinder(X: Matrix,
         the initial minimum-support constraint and/or have zero error
     :param verbose: flag for verbose debug output
     :return: top-k slices (k x ncol(X) if successful)
-    :return: score, size, error of slices (k x 3)
+    :return: score, total/max error, size of slices (k x 4)
     :return: debug matrix, populated with enumeration stats if verbose
     """
 

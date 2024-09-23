@@ -20,7 +20,6 @@
 package org.apache.sysds.runtime.controlprogram.parfor.opt;
 
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.Set;
 
 import org.apache.commons.logging.Log;
@@ -49,12 +48,10 @@ import org.apache.sysds.runtime.controlprogram.ParForProgramBlock;
 import org.apache.sysds.runtime.controlprogram.ParForProgramBlock.POptMode;
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysds.runtime.controlprogram.parfor.opt.Optimizer.CostModelType;
-import org.apache.sysds.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
-import org.apache.sysds.runtime.controlprogram.parfor.stat.Stat;
-import org.apache.sysds.runtime.controlprogram.parfor.stat.StatisticMonitor;
-import org.apache.sysds.runtime.controlprogram.parfor.stat.Timing;
 import org.apache.sysds.runtime.util.UtilFunctions;
+import org.apache.sysds.utils.stats.InfrastructureAnalyzer;
 import org.apache.sysds.utils.stats.ParForStatistics;
+import org.apache.sysds.utils.stats.Timing;
 
 
 /**
@@ -75,7 +72,6 @@ public class OptimizationWrapper
 	
 	//internal parameters
 	public static final double PAR_FACTOR_INFRASTRUCTURE = 1.0;
-	private static final boolean CHECK_PLAN_CORRECTNESS = false;
 
 
 	/**
@@ -88,10 +84,9 @@ public class OptimizationWrapper
 	 * @param sb parfor statement block
 	 * @param pb parfor program block
 	 * @param ec execution context
-	 * @param monitor ?
 	 * @param numRuns number of optimizations performed so far
 	 */
-	public static void optimize( POptMode type, ParForStatementBlock sb, ParForProgramBlock pb, ExecutionContext ec, boolean monitor, int numRuns ) 
+	public static void optimize( POptMode type, ParForStatementBlock sb, ParForProgramBlock pb, ExecutionContext ec, int numRuns ) 
 	{
 		Timing time = new Timing(true);
 		
@@ -104,13 +99,14 @@ public class OptimizationWrapper
 		double cm = InfrastructureAnalyzer.getCmMax() * OptimizerUtils.MEM_UTIL_FACTOR; 
 		
 		//execute optimizer
-		optimize( type, ck, cm, sb, pb, ec, monitor, numRuns );
+		optimize( type, ck, cm, sb, pb, ec, numRuns );
 		
 		double timeVal = time.stop();
 		LOG.debug("ParFOR Opt: Finished optimization for PARFOR("+pb.getID()+") in "+timeVal+"ms.");
-		//System.out.println("ParFOR Opt: Finished optimization for PARFOR("+pb.getID()+") in "+timeVal+"ms.");
-		if( monitor )
-			StatisticMonitor.putPFStat( pb.getID() , Stat.OPT_T, timeVal);
+		if( DMLScript.STATISTICS ) {
+			ParForStatistics.incrementOptimCount();
+			ParForStatistics.incrementOptimTime((long)timeVal);
+		}
 	}
 
 	public static void setLogLevel( Level optLogLevel ) {
@@ -118,19 +114,13 @@ public class OptimizationWrapper
 			.setLevel( optLogLevel );
 	}
 
-	@SuppressWarnings("unused")
-	private static void optimize( POptMode otype, int ck, double cm, ParForStatementBlock sb, ParForProgramBlock pb, ExecutionContext ec, boolean monitor, int numRuns ) 
+	private static void optimize( POptMode otype, int ck, double cm,
+		ParForStatementBlock sb, ParForProgramBlock pb, ExecutionContext ec, int numRuns ) 
 	{
-		Timing time = new Timing(true);
-		
-		//maintain statistics
-		if( DMLScript.STATISTICS )
-			ParForStatistics.incrementOptimCount();
-		
 		//create specified optimizer
 		Optimizer opt = createOptimizer( otype );
 		CostModelType cmtype = opt.getCostModelType();
-		LOG.trace("ParFOR Opt: Created optimizer ("+otype+","+opt.getPlanInputType()+","+opt.getCostModelType());
+		LOG.trace("ParFOR Opt: Created optimizer ("+otype+","+opt.getCostModelType());
 		
 		OptTree tree = null;
 		
@@ -142,7 +132,7 @@ public class OptimizationWrapper
 			//debug output before recompilation
 			if( LOG.isDebugEnabled() ) {
 				try {
-					tree = OptTreeConverter.createOptTree(ck, cm, opt.getPlanInputType(), sb, pb, ec); 
+					tree = OptTreeConverter.createOptTree(ck, cm, sb, pb, ec); 
 					LOG.debug("ParFOR Opt: Input plan (before recompilation):\n" + tree.explain(false));
 				}
 				catch(Exception ex)
@@ -213,8 +203,9 @@ public class OptimizationWrapper
 		
 		//create opt tree (before optimization)
 		try {
-			tree = OptTreeConverter.createOptTree(ck, cm, opt.getPlanInputType(), sb, pb, ec); 
-			LOG.debug("ParFOR Opt: Input plan (before optimization):\n" + tree.explain(false));
+			tree = OptTreeConverter.createOptTree(ck, cm, sb, pb, ec); 
+			if(LOG.isDebugEnabled())
+				LOG.debug("ParFOR Opt: Input plan (before optimization):\n" + tree.explain(false));
 		}
 		catch(Exception ex) {
 			throw new DMLRuntimeException("Unable to create opt tree.", ex);
@@ -226,30 +217,8 @@ public class OptimizationWrapper
 		
 		//core optimize
 		opt.optimize(sb, pb, tree, est, numRuns, ec);
-		LOG.debug("ParFOR Opt: Optimized plan (after optimization): \n" + tree.explain(false));
-		
-		//assert plan correctness
-		if( CHECK_PLAN_CORRECTNESS && LOG.isDebugEnabled() ) {
-			try{
-				OptTreePlanChecker.checkProgramCorrectness(pb, sb, new HashSet<String>());
-				LOG.debug("ParFOR Opt: Checked plan and program correctness.");
-			}
-			catch(Exception ex) {
-				throw new DMLRuntimeException("Failed to check program correctness.", ex);
-			}
-		}
-
-		long ltime = (long) time.stop();
-		LOG.trace("ParFOR Opt: Optimized plan in "+ltime+"ms.");
-		if( DMLScript.STATISTICS )
-			ParForStatistics.incrementOptimTime(ltime);
-		
-		//monitor stats
-		if( monitor ) {
-			StatisticMonitor.putPFStat( pb.getID() , Stat.OPT_OPTIMIZER, otype.ordinal());
-			StatisticMonitor.putPFStat( pb.getID() , Stat.OPT_NUMTPLANS, opt.getNumTotalPlans());
-			StatisticMonitor.putPFStat( pb.getID() , Stat.OPT_NUMEPLANS, opt.getNumEvaluatedPlans());
-		}
+		if(LOG.isDebugEnabled())
+			LOG.debug("ParFOR Opt: Optimized plan (after optimization): \n" + tree.explain(false));
 	}
 
 	private static Optimizer createOptimizer( POptMode otype ) {
@@ -265,12 +234,9 @@ public class OptimizationWrapper
 	private static CostEstimator createCostEstimator( CostModelType cmtype, OptTree tree, LocalVariableMap vars )  {
 		switch( cmtype ) {
 			case STATIC_MEM_METRIC:
-				return new CostEstimatorHops(
-					tree.getAbstractPlanMapping() );
+				return new CostEstimatorHops(tree.getPlanMapping());
 			case RUNTIME_METRICS:
-				return new CostEstimatorRuntime(
-					tree.getAbstractPlanMapping(),
-					(LocalVariableMap)vars.clone() );
+				return new CostEstimatorRuntime(tree.getPlanMapping(), (LocalVariableMap)vars.clone());
 			default:
 				throw new DMLRuntimeException("Undefined cost model type: '"+cmtype+"'.");
 		}

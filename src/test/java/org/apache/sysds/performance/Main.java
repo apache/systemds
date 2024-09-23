@@ -30,9 +30,11 @@ import org.apache.sysds.performance.generators.FrameTransformFile;
 import org.apache.sysds.performance.generators.GenMatrices;
 import org.apache.sysds.performance.generators.IGenerate;
 import org.apache.sysds.performance.generators.MatrixFile;
+import org.apache.sysds.performance.matrix.MatrixBinaryCellPerf;
 import org.apache.sysds.performance.matrix.MatrixMulPerformance;
 import org.apache.sysds.performance.matrix.MatrixReplacePerf;
 import org.apache.sysds.performance.matrix.MatrixStorage;
+import org.apache.sysds.performance.matrix.ReshapePerf;
 import org.apache.sysds.performance.matrix.SparseAppend;
 import org.apache.sysds.runtime.data.SparseBlock;
 import org.apache.sysds.runtime.frame.data.FrameBlock;
@@ -122,6 +124,12 @@ public class Main {
 				break;
 			case 1004:
 				run1004(args);
+				break;
+			case 1005:
+				ReshapePerf.main(args);
+				break;
+			case 1006: 
+				MatrixBinaryCellPerf.main(args);
 				break;
 			default:
 				break;

@@ -33,16 +33,16 @@ def naiveBayes(D: Matrix,
                C: Matrix,
                **kwargs: Dict[str, VALID_INPUT_TYPES]):
     """
-     The naiveBayes-function computes the class conditional probabilities and class priors.
+     This builtin function implements a NaiveBayes classification.
     
     
     
-    :param D: One dimensional column matrix with N rows.
-    :param C: One dimensional column matrix with N rows.
-    :param laplace: Any Double value.
-    :param verbose: Boolean value.
-    :return: Class priors, One dimensional column matrix with N rows.
-    :return: Class conditional probabilities, One dimensional column matrix with N rows.
+    :param D: Input feature matrix of shape N x M
+    :param C: Class label vector (positive integers) of shape N x 1.
+    :param laplace: Laplace smoothing correction (prevent zero probabilities)
+    :param verbose: Flag for verbose debug output
+    :return: Class prior probabilities
+    :return: Class conditional feature distributions
     """
 
     params_dict = {'D': D, 'C': C}

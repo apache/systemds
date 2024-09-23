@@ -69,7 +69,6 @@ import org.apache.sysds.runtime.controlprogram.federated.FederatedData;
 import org.apache.sysds.runtime.controlprogram.federated.FederatedWorker;
 import org.apache.sysds.runtime.controlprogram.federated.monitoring.FederatedMonitoringServer;
 import org.apache.sysds.runtime.controlprogram.federated.monitoring.models.CoordinatorModel;
-import org.apache.sysds.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
 import org.apache.sysds.runtime.controlprogram.parfor.util.IDHandler;
 import org.apache.sysds.runtime.instructions.gpu.context.GPUContextPool;
 import org.apache.sysds.runtime.io.IOUtilFunctions;
@@ -82,6 +81,7 @@ import org.apache.sysds.runtime.util.LocalFileUtils;
 import org.apache.sysds.utils.Explain;
 import org.apache.sysds.utils.Explain.ExplainCounts;
 import org.apache.sysds.utils.Explain.ExplainType;
+import org.apache.sysds.utils.stats.InfrastructureAnalyzer;
 import org.apache.sysds.utils.NativeHelper;
 import org.apache.sysds.utils.SettingsChecker;
 import org.apache.sysds.utils.Statistics;
@@ -104,6 +104,8 @@ public class DMLScript
 	public static int[]         STATISTICS_NGRAM_SIZES   = DMLOptions.defaultOptions.statsNGramSizes;
 	// Set top k displayed n-grams limit
 	public static int         STATISTICS_TOP_K_NGRAMS    = DMLOptions.defaultOptions.statsTopKNGrams;
+	// Set if N-Grams use lineage for data-dependent tracking
+	public static boolean     STATISTICS_NGRAMS_USE_LINEAGE = DMLOptions.defaultOptions.statsNGramsUseLineage;
 	// Set statistics maximum wrap length
 	public static int         STATISTICS_MAX_WRAP_LEN    = 30;
 	// Enable/disable to print federated statistics
@@ -156,7 +158,7 @@ public class DMLScript
 	// flag that indicates whether or not to suppress any prints to stdout
 	public static boolean _suppressPrint2Stdout = false;
 	//set default local spark configuration - used for local testing
-	public static boolean USE_LOCAL_SPARK_CONFIG = false; 
+	public static boolean USE_LOCAL_SPARK_CONFIG = false;
 	public static boolean _activeAM = false;
 	/**
 	 * If true, allow DMLProgram to be generated while not halting due to validation errors/warnings

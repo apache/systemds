@@ -56,10 +56,12 @@ import org.apache.sysds.common.Types.DataType;
 import org.apache.sysds.common.Types.ExecMode;
 import org.apache.sysds.common.Types.FileFormat;
 import org.apache.sysds.common.Types.ValueType;
+import org.apache.sysds.conf.CompilerConfig;
 import org.apache.sysds.conf.ConfigurationManager;
 import org.apache.sysds.conf.DMLConfig;
 import org.apache.sysds.hops.OptimizerUtils;
 import org.apache.sysds.lops.Checkpoint;
+import org.apache.sysds.resource.CloudUtils;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.compress.CompressedMatrixBlock;
 import org.apache.sysds.runtime.compress.io.ReaderSparkCompressed;
@@ -69,7 +71,6 @@ import org.apache.sysds.runtime.controlprogram.caching.CacheableData;
 import org.apache.sysds.runtime.controlprogram.caching.FrameObject;
 import org.apache.sysds.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysds.runtime.controlprogram.caching.TensorObject;
-import org.apache.sysds.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
 import org.apache.sysds.runtime.data.SparseBlock;
 import org.apache.sysds.runtime.data.TensorBlock;
 import org.apache.sysds.runtime.data.TensorIndexes;
@@ -101,6 +102,7 @@ import org.apache.sysds.runtime.util.HDFSTool;
 import org.apache.sysds.runtime.util.UtilFunctions;
 import org.apache.sysds.utils.MLContextProxy;
 import org.apache.sysds.utils.Statistics;
+import org.apache.sysds.utils.stats.InfrastructureAnalyzer;
 import org.apache.sysds.utils.stats.SparkStatistics;
 
 import scala.Tuple2;
@@ -159,23 +161,9 @@ public class SparkExecutionContext extends ExecutionContext
 		return _spctx;
 	}
 
-	public static void initVirtualSparkContext(SparkConf sparkConf) {
-		if (_spctx != null) {
-			for (Tuple2<String, String> pair : sparkConf.getAll()) {
-				_spctx.sc().getConf().set(pair._1, pair._2);
-			}
-		} else {
-			handleIllegalReflectiveAccessSpark();
-			try {
-				_spctx = new JavaSparkContext(sparkConf);
-				// assumes NON-legacy spark version
-				_sconf = new SparkClusterConfig();
-			} catch (Exception e) {
-				throw new RuntimeException(e);
-			}
-		}
-
-		_sconf.analyzeSparkConfiguation(sparkConf);
+	public static void initLocalSparkContext(SparkConf sparkConf) {
+		// allows re-initialization
+		_sconf = new SparkClusterConfig(sparkConf);
 	}
 
 	public synchronized static JavaSparkContext getSparkContextStatic() {
@@ -1858,7 +1846,7 @@ public class SparkExecutionContext extends ExecutionContext
 		private static final double BROADCAST_DATA_FRACTION_LEGACY = 0.35;
 
 		//forward private config from Spark's UnifiedMemoryManager.scala (>1.6)
-		private static final long RESERVED_SYSTEM_MEMORY_BYTES = 300 * 1024 * 1024;
+		public static final long RESERVED_SYSTEM_MEMORY_BYTES = 300 * 1024 * 1024;
 
 		//meta configurations
 		private boolean _legacyVersion = false; //spark version <1.6
@@ -1894,6 +1882,23 @@ public class SparkExecutionContext extends ExecutionContext
 			//log debug of created spark cluster config
 			if( LOG.isDebugEnabled() )
 				LOG.debug( this.toString() );
+		}
+
+		// Meant to be used only resource optimization
+		public SparkClusterConfig(SparkConf sconf)
+		{
+			_confOnly = true;
+
+			//parse version and config
+			String sparkVersion = CloudUtils.SPARK_VERSION;
+			_legacyVersion = (UtilFunctions.compareVersion(sparkVersion, "1.6.0") < 0
+					|| sconf.getBoolean("spark.memory.useLegacyMode", false) );
+
+			//obtain basic spark configurations
+			if( _legacyVersion )
+				analyzeSparkConfiguationLegacy(sconf);
+			else
+				analyzeSparkConfiguation(sconf);
 		}
 
 		public long getBroadcastMemoryBudget() {
@@ -1985,10 +1990,15 @@ public class SparkExecutionContext extends ExecutionContext
 				_confOnly &= true;
 			}
 			else if( DMLScript.USE_LOCAL_SPARK_CONFIG ) {
-				//avoid unnecessary spark context creation in local mode (e.g., tests)
+				//avoid unnecessary spark context creation in local mode (e.g., tests, resource opt.)
 				_numExecutors = 1;
 				_defaultPar = 2;
 				_confOnly &= true;
+			}
+			else if (ConfigurationManager.getCompilerConfigFlag(CompilerConfig.ConfigType.RESOURCE_OPTIMIZATION)) {
+				_numExecutors = numExecutors;
+				_defaultPar = numExecutors * numCoresPerExec;
+				_confOnly = true;
 			}
 			else {
 				//get default parallelism (total number of executors and cores)

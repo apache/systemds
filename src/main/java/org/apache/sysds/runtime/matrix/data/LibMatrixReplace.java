@@ -19,9 +19,9 @@
 
 package org.apache.sysds.runtime.matrix.data;
 
-import org.apache.sysds.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
 import org.apache.sysds.runtime.data.DenseBlock;
 import org.apache.sysds.runtime.data.SparseBlock;
+import org.apache.sysds.utils.stats.InfrastructureAnalyzer;
 
 public class LibMatrixReplace {
 

@@ -29,12 +29,12 @@ import org.apache.sysds.runtime.instructions.cp.IntObject;
  */
 public class TaskPartitionerNaive extends TaskPartitionerFixedsize
 {
-	
-	public TaskPartitionerNaive( long taskSize, String iterVarName, IntObject fromVal, IntObject toVal, IntObject incrVal ) 
+	public TaskPartitionerNaive( long taskSize, String iterVarName,
+		IntObject fromVal, IntObject toVal, IntObject incrVal ) 
 	{
 		super(taskSize, iterVarName, fromVal, toVal, incrVal);
 	
 		//compute the new task size
 		_taskSize = 1;
-	}	
+	}
 }

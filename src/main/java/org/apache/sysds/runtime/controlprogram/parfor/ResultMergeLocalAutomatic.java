@@ -23,8 +23,8 @@ package org.apache.sysds.runtime.controlprogram.parfor;
 import org.apache.sysds.hops.OptimizerUtils;
 import org.apache.sysds.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysds.runtime.controlprogram.parfor.opt.OptimizerRuleBased;
-import org.apache.sysds.runtime.controlprogram.parfor.stat.Timing;
 import org.apache.sysds.runtime.meta.DataCharacteristics;
+import org.apache.sysds.utils.stats.Timing;
 
 public class ResultMergeLocalAutomatic extends ResultMergeMatrix
 {

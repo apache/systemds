@@ -24,66 +24,104 @@ import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.meta.DataCharacteristics;
 import org.apache.sysds.runtime.meta.MatrixCharacteristics;
 
-public class VarStats 
+public class VarStats
 {
-	MatrixCharacteristics _mc;
+	// helps for debugging + carries value for scalar literals
+	String varName;
 	/**
-	 * Size in memory estimate
+	 * <li>null if scalar</li>
+	 * <li>initialized if Matrix or Frame</li>
+	 */
+	MatrixCharacteristics characteristics;
+	/**
+	 * estimated size in memory
 	 * <li>-1 if not in memory yet</li>
 	 * <li>0 if scalar</li>
+	 * <li>=>1 estimated loaded size in Bytes</li>
 	 */
-	long _memory;
+	long allocatedMemory;
+	// refCount/selfRefCount cases of variables copying (operations 'çpvar' or 'fcall')
+	// increase/decrease only one of them at a time (selfRefCount is not a refCount)
+	int refCount;
+	int selfRefCount;
 	/**
-	 * true if object modified since last saved, or
-	 * if HDFS file still doesn't exist
+	 * Always contains 2 elements:
+	 * first elements: {@code String} with the source type (hdfs, s3 or local)
+	 * second element: {@code Types.FileFormat} value
 	 */
-	boolean _dirty = false;
+	Object[] fileInfo = null;
+	RDDStats rddStats = null;
 
-	RDDStats _rdd = null;
-
-	Object[] _fileInfo = null;
-
-	public VarStats(DataCharacteristics dc) {
-		this(dc, -1);
+	public VarStats(String name, DataCharacteristics dc) {
+		varName = name;
+		if (dc == null) {
+			characteristics = null; // for scalar
+			allocatedMemory = 0;
+		} else if (dc instanceof MatrixCharacteristics) {
+			characteristics = (MatrixCharacteristics) dc;
+			allocatedMemory = -1;
+		} else {
+			throw new RuntimeException("Unexpected error: expecting MatrixCharacteristics or null");
+		}
+		refCount = 1;
+		selfRefCount = 1;
 	}
 
-	public VarStats(DataCharacteristics dc, long sizeEstimate) {
-		if (dc == null) {
-			_mc = null;
-		}
-		else if (dc instanceof MatrixCharacteristics) {
-			_mc = (MatrixCharacteristics) dc;
-		} else {
-			throw new RuntimeException("VarStats: expecting MatrixCharacteristics or null");
-		}
-		_memory = sizeEstimate;
+	public boolean isScalar() {
+		return characteristics == null;
 	}
 
 	public long getM() {
-		return _mc.getRows();
+		return isScalar()? 1 : characteristics.getRows();
 	}
 
 	public long getN() {
-		return _mc.getCols();
+		return isScalar()? 1 : characteristics.getCols();
 	}
 
-	public double getS() {
-		return _mc == null? 1.0 : OptimizerUtils.getSparsity(_mc);
+	public long getNNZ() {
+		return isScalar()? 1 : characteristics.getNonZerosBound();
+	}
+
+	public double getSparsity() {
+		return isScalar()? 1.0 : OptimizerUtils.getSparsity(characteristics);
 	}
 
 	public long getCells() {
-		return _mc.getRows() * _mc.getCols();
+		return isScalar()? 1 : !characteristics.dimsKnown()? -1 :
+				characteristics.getLength();
 	}
 
-	public double getCellsWithSparsity() {
-		if (isSparse())
-			return getCells() * getS();
-		return (double) getCells();
+	public long getCellsWithSparsity() {
+		if (isScalar()) return 1;
+		return (long) (getCells() * getSparsity());
 	}
 
 	public boolean isSparse() {
-		return MatrixBlock.evalSparseFormatInMemory(_mc);
+		return (!isScalar() && MatrixBlock.evalSparseFormatInMemory(characteristics));
 	}
 
-	// clone() needed?
+	/**
+	 * Meant to be used at testing
+	 * @param memory size to allocate
+	 */
+	public void setAllocatedMemory(long memory) {
+		allocatedMemory = memory;
+	}
+
+	/**
+	 * Meant to be used at testing
+	 * @return corresponding RDD statistics
+	 */
+	public RDDStats getRddStats() {
+		return rddStats;
+	}
+
+	/**
+	 * Meant to be used at testing
+	 * @param rddStats corresponding RDD statistics
+	 */
+	public void setRddStats(RDDStats rddStats) {
+		this.rddStats = rddStats;
+	}
 }

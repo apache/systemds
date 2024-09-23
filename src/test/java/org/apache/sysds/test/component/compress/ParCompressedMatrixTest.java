@@ -26,7 +26,6 @@ import org.apache.sysds.runtime.compress.CompressionSettingsBuilder;
 import org.apache.sysds.runtime.compress.DMLCompressionException;
 import org.apache.sysds.runtime.compress.colgroup.AColGroup.CompressionType;
 import org.apache.sysds.runtime.compress.cost.CostEstimatorBuilder;
-import org.apache.sysds.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
 import org.apache.sysds.runtime.instructions.InstructionUtils;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.matrix.operators.AggregateBinaryOperator;
@@ -38,6 +37,7 @@ import org.apache.sysds.test.component.compress.TestConstants.OverLapping;
 import org.apache.sysds.test.component.compress.TestConstants.SparsityType;
 import org.apache.sysds.test.component.compress.TestConstants.ValueRange;
 import org.apache.sysds.test.component.compress.TestConstants.ValueType;
+import org.apache.sysds.utils.stats.InfrastructureAnalyzer;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
@@ -49,7 +49,7 @@ public class ParCompressedMatrixTest extends AbstractCompressedUnaryTests {
 		CompressionSettingsBuilder compressionSettings, MatrixTypology matrixTypology, OverLapping ov,
 		Collection<CompressionType> ct, CostEstimatorBuilder csb) {
 		super(sparType, valType, valRange, compressionSettings, matrixTypology, ov,
-			InfrastructureAnalyzer.getLocalParallelism(), ct, csb);
+			InfrastructureAnalyzer.getLocalParallelism(), ct, csb);	
 	}
 
 	@Override

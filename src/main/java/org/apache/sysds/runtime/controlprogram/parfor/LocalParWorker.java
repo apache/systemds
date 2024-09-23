@@ -27,9 +27,6 @@ import org.apache.sysds.conf.ConfigurationManager;
 import org.apache.sysds.hops.OptimizerUtils;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.controlprogram.context.SparkExecutionContext;
-import org.apache.sysds.runtime.controlprogram.parfor.stat.Stat;
-import org.apache.sysds.runtime.controlprogram.parfor.stat.StatisticMonitor;
-import org.apache.sysds.runtime.controlprogram.parfor.stat.Timing;
 
 /**
  * Instances of this class can be used to execute tasks in parallel. Within each ParWorker 
@@ -47,8 +44,8 @@ public class LocalParWorker extends ParWorker implements Runnable
 	protected final int _max_retry;
 	protected Collection<String> _fnNames = null;
 	
-	public LocalParWorker( long ID, LocalTaskQueue<Task> q, ParForBody body, CompilerConfig cconf, int max_retry, boolean monitor ) {
-		super(ID, body, monitor);
+	public LocalParWorker( long ID, LocalTaskQueue<Task> q, ParForBody body, CompilerConfig cconf, int max_retry ) {
+		super(ID, body);
 		_taskQueue = q;
 		_cconf = cconf;
 		_stopped   = false;
@@ -66,9 +63,6 @@ public class LocalParWorker extends ParWorker implements Runnable
 	@Override
 	public void run() 
 	{
-		// monitoring start
-		Timing time1 = ( _monitor ? new Timing(true) : null ); 
-		
 		//setup fair scheduler pool for worker thread, but avoid unnecessary
 		//spark context creation (if data cached already created)
 		int pool = -1;
@@ -142,12 +136,6 @@ public class LocalParWorker extends ParWorker implements Runnable
 				SparkExecutionContext sec = (SparkExecutionContext)_ec;
 				sec.cleanupThreadLocalSchedulerPool(pool);
 			}
-		}
-		
-		if( _monitor ) {
-			StatisticMonitor.putPWStat(_workerID, Stat.PARWRK_NUMTASKS, _numTasks);
-			StatisticMonitor.putPWStat(_workerID, Stat.PARWRK_NUMITERS, _numIters);
-			StatisticMonitor.putPWStat(_workerID, Stat.PARWRK_EXEC_T, time1.stop());
 		}
 	}
 }

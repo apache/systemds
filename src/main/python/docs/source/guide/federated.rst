@@ -54,15 +54,19 @@ This should be located next to the ``test.csv`` file called ``test.csv.mtd``.
 To make both the data and metadata simply execute the following
 
 .. include:: ../code/guide/federated/federatedTutorial_part1.py
-  :start-line: 20
   :code: python
+  :start-line: 20
+  :encoding: utf-8
+  :literal:
 
 After creating our data the federated worker becomes able to execute federated instructions.
 The aggregated sum using federated instructions in python SystemDS is done as follows
 
 .. include:: ../code/guide/federated/federatedTutorial_part2.py
-  :start-line: 20
   :code: python
+  :start-line: 20
+  :encoding: utf-8
+  :literal:
 
 Multiple Federated Environments 
 -------------------------------
@@ -82,8 +86,10 @@ Start with 3 different terminals, and run one federated environment in each.
 Once all three workers are up and running we can leverage all three in the following example
 
 .. include:: ../code/guide/federated/federatedTutorial_part3.py
-  :start-line: 20
   :code: python
+  :start-line: 20
+  :encoding: utf-8
+  :literal:
 
 The print should look like
 

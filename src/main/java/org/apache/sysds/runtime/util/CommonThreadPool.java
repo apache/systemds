@@ -35,7 +35,7 @@ import java.util.concurrent.TimeoutException;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.runtime.DMLRuntimeException;
-import org.apache.sysds.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
+import org.apache.sysds.utils.stats.InfrastructureAnalyzer;
 
 /**
  * This common thread pool provides an abstraction to obtain a shared thread pool.
@@ -314,6 +314,8 @@ public class CommonThreadPool implements ExecutorService {
 		if(name.equals("main"))
 			return true;
 		else if(name.contains("PARFOR"))
+			return true;
+		else if(name.contains("test"))
 			return true;
 		else
 			return false;

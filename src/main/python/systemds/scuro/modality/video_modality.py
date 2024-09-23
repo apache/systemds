@@ -21,12 +21,17 @@
 import os
 
 from modality.modality import Modality
-from modality.representation import Representation
+from representations.unimodal import UnimodalRepresentation
 
 
 class VideoModality(Modality):
-    def __init__(self, file_path: str, representation: Representation, start_index: int = 0):
-        super().__init__(representation, start_index)
+    def __init__(self, file_path: str, representation: UnimodalRepresentation, train_indices=None, start_index: int = 0):
+        """
+        Creates a video modality
+        :param file_path: path to file where the video embeddings (for now) are stored
+        :param representation: Unimodal representation that indicates how to extract the data from the file
+        """
+        super().__init__(representation, start_index, 'Video', train_indices)
         self.file_path = file_path
     
     def file_sanity_check(self):
@@ -42,8 +47,7 @@ class VideoModality(Modality):
             raise ("File {0} is empty".format(self.file_path))
     
     def read_chunk(self):
-        # Read chunk (self.params.window_size)
-        # self.representation.apply_representation()
-        # additional preprocessing?
-        # return numpy array
         pass
+    
+    def read_all(self, indices=None):
+        self.data = self.representation.parse_all(self.file_path, indices=indices) # noqa

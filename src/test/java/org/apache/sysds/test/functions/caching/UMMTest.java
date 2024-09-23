@@ -28,12 +28,12 @@ package org.apache.sysds.test.functions.caching;
 	import org.apache.sysds.hops.recompile.Recompiler;
 	import org.apache.sysds.runtime.controlprogram.caching.CacheStatistics;
 	import org.apache.sysds.runtime.controlprogram.caching.UnifiedMemoryManager;
-	import org.apache.sysds.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
-	import org.apache.sysds.runtime.matrix.data.MatrixValue;
+import org.apache.sysds.runtime.matrix.data.MatrixValue;
 	import org.apache.sysds.test.AutomatedTestBase;
 	import org.apache.sysds.test.TestConfiguration;
 	import org.apache.sysds.test.TestUtils;
-	import org.junit.Assert;
+import org.apache.sysds.utils.stats.InfrastructureAnalyzer;
+import org.junit.Assert;
 	import org.junit.Test;
 
 public class UMMTest extends AutomatedTestBase {
@@ -91,6 +91,8 @@ public class UMMTest extends AutomatedTestBase {
 			// Compare FS write counts (#unified FS writes always smaller than #static FS writes)
 			Assert.assertTrue("Violated buffer pool eviction counts: "+FSwrites_unified+" <= "+FSwrites_static,
 				FSwrites_unified <= FSwrites_static);
+			
+			UnifiedMemoryManager.printStatus("tests");
 		}
 		finally {
 			Recompiler.reinitRecompiler();

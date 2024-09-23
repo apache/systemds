@@ -73,7 +73,7 @@ public class MappingTestsResize {
 
 	@Test
 	public void resize() {
-		MappingTests.compare(MapToFactory.resize(m, getMaxSmaller(type)), m);
+		MappingTests.compare(m.resize(getMaxSmaller(type)), m);
 	}
 
 	private int getMaxSmaller(MAP_TYPE type) {

@@ -18,16 +18,27 @@
 # under the License.
 #
 # -------------------------------------------------------------
+from typing import List
+
 from modality.modality import Modality
-from modality.representation import Representation
+from representations.fusion import Fusion
 
 
 class AlignedModality(Modality):
-    def __init__(self, representation: Representation):
+    def __init__(self, representation: Fusion, modalities: List[Modality]):
         """
-        Defines the modality that is created during the alignment process
+        Defines the modality that is created during the fusion process
         :param representation: The representation for the aligned modality
-                              (made up of the #columns from the modalities that are being aligned)
+        :param modalities: List of modalities to be combined
         """
-        super().__init__(representation)
+        name = ''
+        for modality in modalities:
+            name += modality.name
+        super().__init__(representation, modality_name=name)
+        self.modalities = modalities
     
+    def combine(self):
+        """
+        Initiates the call to fuse the given modalities depending on the Fusion type
+        """
+        self.data = self.representation.fuse(self.modalities) # noqa

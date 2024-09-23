@@ -21,9 +21,9 @@ package org.apache.sysds.performance.simple;
 
 import java.util.Random;
 
-import org.apache.sysds.runtime.controlprogram.parfor.stat.Timing;
 import org.apache.sysds.runtime.frame.data.columns.Array;
 import org.apache.sysds.runtime.frame.data.columns.ArrayFactory;
+import org.apache.sysds.utils.stats.Timing;
 
 public class DetectTypeArray {
 

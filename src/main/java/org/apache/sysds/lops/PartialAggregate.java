@@ -352,12 +352,6 @@ public class PartialAggregate extends Lop
 				}
 			}
 
-			case ROW_COUNT_DISTINCT:
-				return "uacdr";
-
-			case COL_COUNT_DISTINCT:
-				return "uacdc";
-
 			case COUNT_DISTINCT_APPROX: {
 				switch (dir) {
 					case RowCol: return "uacdap";
@@ -368,12 +362,6 @@ public class PartialAggregate extends Lop
 								+ "Unknown aggregate direction: " + dir);
 				}
 			}
-
-			case COUNT_DISTINCT_APPROX_ROW:
-				return "uacdapr";
-
-			case COUNT_DISTINCT_APPROX_COL:
-				return "uacdapc";
 
 			case UNIQUE: {
 				switch (dir) {

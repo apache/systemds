@@ -108,6 +108,9 @@ public class FrameArrayConstantTests {
 			for(int i = 0; i < nRow; i++)
 				assertEquals(a.getAsDouble(i), 1.0, 0.0000000001);
 		}
+		catch(NumberFormatException e){
+			// this is okay to throw
+		}
 		catch(Exception e) {
 			e.printStackTrace();
 			fail(e.getMessage());

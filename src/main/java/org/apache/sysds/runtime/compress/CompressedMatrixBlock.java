@@ -61,7 +61,6 @@ import org.apache.sysds.runtime.compress.lib.CLALibTernaryOp;
 import org.apache.sysds.runtime.compress.lib.CLALibUnary;
 import org.apache.sysds.runtime.compress.lib.CLALibUtils;
 import org.apache.sysds.runtime.controlprogram.caching.MatrixObject.UpdateType;
-import org.apache.sysds.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
 import org.apache.sysds.runtime.data.DenseBlock;
 import org.apache.sysds.runtime.data.SparseBlock;
 import org.apache.sysds.runtime.data.SparseRow;
@@ -91,6 +90,7 @@ import org.apache.sysds.runtime.matrix.operators.TernaryOperator;
 import org.apache.sysds.runtime.matrix.operators.UnaryOperator;
 import org.apache.sysds.runtime.util.IndexRange;
 import org.apache.sysds.utils.DMLCompressionStatistics;
+import org.apache.sysds.utils.stats.InfrastructureAnalyzer;
 
 public class CompressedMatrixBlock extends MatrixBlock {
 	private static final Log LOG = LogFactory.getLog(CompressedMatrixBlock.class.getName());
@@ -479,14 +479,12 @@ public class CompressedMatrixBlock extends MatrixBlock {
 	@Override
 	public MatrixBlock binaryOperations(BinaryOperator op, MatrixValue thatValue, MatrixValue result) {
 		MatrixBlock that = thatValue == null ? null : (MatrixBlock) thatValue;
-		MatrixBlock ret = result == null ? null : (MatrixBlock) result;
-		return CLALibBinaryCellOp.binaryOperationsRight(op, this, that, ret);
+		return CLALibBinaryCellOp.binaryOperationsRight(op, this, that);
 	}
 
 	public MatrixBlock binaryOperationsLeft(BinaryOperator op, MatrixValue thatValue, MatrixValue result) {
 		MatrixBlock that = thatValue == null ? null : (MatrixBlock) thatValue;
-		MatrixBlock ret = result == null ? null : (MatrixBlock) result;
-		return CLALibBinaryCellOp.binaryOperationsLeft(op, this, that, ret);
+		return CLALibBinaryCellOp.binaryOperationsLeft(op, this, that);
 	}
 
 	@Override
@@ -885,7 +883,7 @@ public class CompressedMatrixBlock extends MatrixBlock {
 
 	@Override
 	public MatrixBlock ternaryOperations(TernaryOperator op, MatrixBlock m2, MatrixBlock m3, MatrixBlock ret) {
-		return CLALibTernaryOp.ternaryOperations(this, op, m2, m3, ret);
+		return CLALibTernaryOp.ternaryOperations(op, this, m2, m3);
 	}
 
 	@Override

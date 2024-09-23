@@ -24,12 +24,12 @@ import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
-import org.apache.sysds.runtime.controlprogram.parfor.stat.Timing;
 import org.apache.sysds.runtime.instructions.cp.CPOperand;
 import org.apache.sysds.runtime.matrix.data.LibMatrixCUDA;
 import org.apache.sysds.runtime.matrix.data.LibMatrixCuDNN;
 import org.apache.sysds.runtime.matrix.operators.Operator;
 import org.apache.sysds.utils.GPUStatistics;
+import org.apache.sysds.utils.stats.Timing;
 
 public class MatrixBuiltinGPUInstruction extends BuiltinUnaryGPUInstruction {
 	private static final Log LOG = LogFactory.getLog(MatrixBuiltinGPUInstruction.class.getName());

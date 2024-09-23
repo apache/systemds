@@ -56,6 +56,8 @@ a fraction of the training and test set into account to speed up the execution.
   :code: python
   :start-line: 20
   :end-line: 51
+  :encoding: utf-8
+  :literal:
 
 Here the DataManager contains the code for downloading and setting up either Pandas DataFrames or internal SystemDS Frames,
 for the best performance and no data transfer from pandas to SystemDS it is recommended to read directly from disk into SystemDS.
@@ -70,6 +72,8 @@ training data. Afterward, we can make predictions on the test data and assess th
   :code: python
   :start-line: 53
   :end-line: 54
+  :encoding: utf-8
+  :literal:
 
 Note that nothing has been calculated yet. In SystemDS the calculation is executed once compute() is called.
 E.g. betas_res = betas.compute().
@@ -80,6 +84,8 @@ We can now use the trained model to make predictions on the test data.
   :code: python
   :start-line: 56
   :end-line: 57
+  :encoding: utf-8
+  :literal:
 
 The multiLogRegPredict function has three return values:
     - m, a matrix with the mean probability of correctly classifying each label. We do not use it further in this example.
@@ -98,6 +104,8 @@ for the predictions and the confusion matrix averages of each true class.
   :code: python
   :start-line: 59
   :end-line: 60
+  :encoding: utf-8
+  :literal:
 
 Full Script
 ~~~~~~~~~~~
@@ -108,6 +116,8 @@ In the full script, some steps are combined to reduce the overall script.
   :code: python
   :start-line: 20
   :end-line: 65
+  :encoding: utf-8
+  :literal:
 
 Level 2
 -------
@@ -125,6 +135,8 @@ but instead of preparing the test data, we only prepare the training data.
   :code: python
   :start-line: 20
   :end-line: 47
+  :encoding: utf-8
+  :literal:
 
 Step 2: Load the algorithm
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -139,6 +151,8 @@ The file can be found here:
   :code: python
   :start-line: 48
   :end-line: 51
+  :encoding: utf-8
+  :literal:
 
 
 Step 3: Training the neural network
@@ -154,6 +168,8 @@ The seed argument ensures that running the code again yields the same results.
   :code: python
   :start-line: 52
   :end-line: 58
+  :encoding: utf-8
+  :literal:
 
 
 Step 4: Saving the model
@@ -169,6 +185,8 @@ is saved.
   :code: python
   :start-line: 59
   :end-line: 65
+  :encoding: utf-8
+  :literal:
 
 Step 5: Predict on Unseen data
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -180,6 +198,8 @@ unseen data:
   :code: python
   :start-line: 66
   :end-line: 77
+  :encoding: utf-8
+  :literal:
 
 
 Full Script NN
@@ -192,3 +212,6 @@ The complete script now can be seen here:
   :code: python
   :start-line: 20
   :end-line: 80
+  :encoding: utf-8
+  :literal:
+

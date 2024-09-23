@@ -73,7 +73,6 @@ import org.apache.sysds.runtime.controlprogram.context.ExecutionContextFactory;
 import org.apache.sysds.runtime.controlprogram.paramserv.SparkPSBody;
 import org.apache.sysds.runtime.controlprogram.parfor.ParForBody;
 import org.apache.sysds.runtime.controlprogram.parfor.opt.OptTreeConverter;
-import org.apache.sysds.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
 import org.apache.sysds.runtime.instructions.CPInstructionParser;
 import org.apache.sysds.runtime.instructions.Instruction;
 import org.apache.sysds.runtime.instructions.InstructionParser;
@@ -97,6 +96,7 @@ import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.meta.DataCharacteristics;
 import org.apache.sysds.runtime.meta.MatrixCharacteristics;
 import org.apache.sysds.runtime.meta.MetaDataFormat;
+import org.apache.sysds.utils.stats.InfrastructureAnalyzer;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -341,7 +341,6 @@ public class ProgramConverter
 		tmpPB.setThreadID(pid);
 		
 		tmpPB.disableOptimization(); //already done in top-level parfor
-		tmpPB.disableMonitorReport(); //already done in top-level parfor
 		
 		tmpPB.setFromInstructions( createDeepCopyInstructionSet(pfpb.getFromInstructions(), pid, IDPrefix, prog, fnStack, fnCreated, plain, true) );
 		tmpPB.setToInstructions( createDeepCopyInstructionSet(pfpb.getToInstructions(), pid, IDPrefix, prog, fnStack, fnCreated, plain, true) );
@@ -672,6 +671,7 @@ public class ProgramConverter
 				ret.setUpdatedVariables( sb.variablesUpdated() );
 				ret.setReadVariables( sb.variablesRead() );
 				ret.setUpdateInPlaceVars( sb.getUpdateInPlaceVars() );
+				ret.setRecompileOnce( sb.isRecompileOnce() );
 				
 				//shallow copy child statements
 				ret.setStatements( sb.getStatements() );
@@ -714,6 +714,7 @@ public class ProgramConverter
 				ret.setUpdatedVariables( sb.variablesUpdated() );
 				ret.setReadVariables( sb.variablesRead() );
 				ret.setUpdateInPlaceVars( sb.getUpdateInPlaceVars() );
+				ret.setRecompileOnce( sb.isRecompileOnce() );
 				
 				//shallow copy child statements
 				ret.setStatements( sb.getStatements() );

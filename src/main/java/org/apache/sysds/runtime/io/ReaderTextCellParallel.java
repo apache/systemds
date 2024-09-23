@@ -41,6 +41,7 @@ import org.apache.sysds.common.Types.FileFormat;
 import org.apache.sysds.hops.OptimizerUtils;
 import org.apache.sysds.runtime.data.DenseBlock;
 import org.apache.sysds.runtime.data.SparseBlock;
+import org.apache.sysds.runtime.data.SparseBlockMCSR;
 import org.apache.sysds.runtime.matrix.data.IJV;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.util.CommonThreadPool;
@@ -131,7 +132,6 @@ public class ReaderTextCellParallel extends ReaderTextCell
 			dest.setNonZeros( lnnz );
 			if( dest.isInSparseFormat() ) 
 				sortSparseRowsParallel(dest, rlen, _numThreads, pool);
-			
 		} 
 		catch (Exception e) {
 			throw new IOException("Threadpool issue, while parallel read.", e);
@@ -217,17 +217,12 @@ public class ReaderTextCellParallel extends ReaderTextCell
 						buff.addCell(cell.getI(), cell.getJ(), cell.getV());
 						if( _mmProps != null && _mmProps.isSymmetric() && !cell.onDiag() )
 							buff.addCell(cell.getJ(), cell.getI(), cell.getV());
-						if( buff.size()>=CellBuffer.CAPACITY ) 
-							synchronized( _dest ){ //sparse requires lock
-								lnnz += buff.size();
-								buff.flushCellBufferToSparseBlock(sblock);
-							}
+						//flush if needed (<=n-1 to allow symmetric mm, where 2 values are added)
+						if( buff.size()>=CellBuffer.CAPACITY-1 )
+							lnnz += flushBufferToSparseBlock(buff, sblock);
 					}
 					//final buffer flush 
-					synchronized( _dest ){ //sparse requires lock
-						lnnz += buff.size();
-						buff.flushCellBufferToSparseBlock(sblock);
-					}
+					lnnz += flushBufferToSparseBlock(buff, sblock);
 				} 
 				else { //DENSE<-value
 					DenseBlock a = _dest.getDenseBlock();
@@ -250,6 +245,15 @@ public class ReaderTextCellParallel extends ReaderTextCell
 			}
 			
 			return lnnz;
+		}
+		
+		private static long flushBufferToSparseBlock(CellBuffer buff, SparseBlock dest) {
+			int ret = buff.size();
+			if( dest instanceof SparseBlockMCSR ) //row synchronization
+				buff.flushCellBufferToSparseBlockMCSR((SparseBlockMCSR)dest);
+			else //full block synchronization
+				buff.flushCellBufferToSparseBlock(dest);
+			return ret;
 		}
 	}
 	
@@ -345,8 +349,19 @@ public class ReaderTextCellParallel extends ReaderTextCell
 		}
 		
 		public void flushCellBufferToSparseBlock( SparseBlock dest ) {
-			for( int i=0; i<=_pos; i++ )
-				dest.append(_rlen[i], _clen[i], _vals!=null ? _vals[i] : 1);
+			synchronized (dest) {
+				for( int i=0; i<=_pos; i++ )
+					dest.append(_rlen[i], _clen[i], _vals!=null ? _vals[i] : 1);
+			}
+			reset();
+		}
+		
+		public void flushCellBufferToSparseBlockMCSR( SparseBlockMCSR dest ) {
+			for( int i=0; i<=_pos; i++ ) {
+				synchronized(dest.get(_rlen[i])) {
+					dest.append(_rlen[i], _clen[i], _vals!=null ? _vals[i] : 1);
+				}
+			}
 			reset();
 		}
 		

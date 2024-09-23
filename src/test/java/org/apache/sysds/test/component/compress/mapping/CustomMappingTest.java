@@ -37,7 +37,7 @@ public class CustomMappingTest {
 		try {
 
 			CompressedMatrixBlock.debug = true;
-			MapToFactory.create(data.length, data, 2);
+			MapToFactory.create(data, 2);
 			MapToFactory.create(127, data, 2);
 		}
 		catch(RuntimeException e) {

@@ -25,6 +25,7 @@ import java.io.DataInputStream;
 import java.io.DataOutput;
 import java.io.IOException;
 
+import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.data.DenseBlockLDRB;
 import org.apache.sysds.runtime.frame.data.FrameBlock;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
@@ -51,8 +52,7 @@ public class ByteBuffer
 	}
 
 	public void serializeBlock( CacheBlock<?> cb ) 
-		throws IOException
-	{	
+	{
 		_shallow = cb.isShallowSerialize(true);
 		_matrix = (cb instanceof MatrixBlock);
 		
@@ -77,7 +77,7 @@ public class ByteBuffer
 			}
 		}
 		catch(Exception ex) {
-			throw new IOException("Failed to serialize cache block.", ex);
+			throw new DMLRuntimeException("Failed to serialize cache block.", ex);
 		}
 		
 		_serialized = true;

@@ -78,6 +78,10 @@ public class MatrixIndexingSPInstruction extends IndexingSPInstruction {
 		_type = type;
 	}
 
+	public LixCacheType getLixType() {
+		return _type;
+	}
+
 	@Override
 	public void processInstruction(ExecutionContext ec) {
 		SparkExecutionContext sec = (SparkExecutionContext)ec;

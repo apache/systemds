@@ -89,7 +89,10 @@ public final class CLALibUtils {
 	 */
 	protected static boolean shouldPreFilter(List<AColGroup> groups) {
 		for(AColGroup g : groups)
-			if(g instanceof AMorphingMMColGroup || g instanceof ColGroupConst || g instanceof ColGroupEmpty || g.isEmpty())
+			if(g instanceof AMorphingMMColGroup //
+				|| g instanceof ColGroupConst //
+				|| g instanceof ColGroupEmpty //
+				|| g.isEmpty())
 				return true;
 		return false;
 	}
@@ -148,7 +151,7 @@ public final class CLALibUtils {
 			if(g instanceof ColGroupEmpty || g.isEmpty())
 				continue;
 			else if(g instanceof IFrameOfReferenceGroup)
-				filteredGroups.add(((IFrameOfReferenceGroup)g).extractCommon(constV));
+				filteredGroups.add(((IFrameOfReferenceGroup) g).extractCommon(constV));
 			else if(g instanceof AMorphingMMColGroup)
 				filteredGroups.add(((AMorphingMMColGroup) g).extractCommon(constV));
 			else if(g instanceof ColGroupConst)

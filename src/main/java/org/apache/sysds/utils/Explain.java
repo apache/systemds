@@ -26,6 +26,7 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.List;
 import java.util.Map.Entry;
+import java.util.Set;
 import java.util.Stack;
 
 import org.apache.commons.lang3.mutable.MutableInt;
@@ -57,7 +58,6 @@ import org.apache.sysds.runtime.controlprogram.Program;
 import org.apache.sysds.runtime.controlprogram.ProgramBlock;
 import org.apache.sysds.runtime.controlprogram.WhileProgramBlock;
 import org.apache.sysds.runtime.controlprogram.context.SparkExecutionContext;
-import org.apache.sysds.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
 import org.apache.sysds.runtime.instructions.Instruction;
 import org.apache.sysds.runtime.instructions.cp.CPInstruction;
 import org.apache.sysds.runtime.instructions.fed.FEDInstruction;
@@ -68,6 +68,7 @@ import org.apache.sysds.runtime.instructions.spark.ReblockSPInstruction;
 import org.apache.sysds.runtime.instructions.spark.SPInstruction;
 import org.apache.sysds.runtime.lineage.LineageItem;
 import org.apache.sysds.runtime.lineage.LineageItemUtils;
+import org.apache.sysds.utils.stats.InfrastructureAnalyzer;
 import org.apache.sysds.runtime.instructions.fed.FEDInstruction.FederatedOutput;
 
 public class Explain
@@ -297,16 +298,16 @@ public class Explain
 
 		return sb.toString();
 	}
-
+	
 	public static String explain( ProgramBlock pb ) {
 		return explainProgramBlock(pb, 0);
 	}
 
-	public static String explain( ArrayList<Instruction> inst ) {
+	public static String explain( List<Instruction> inst ) {
 		return explainInstructions(inst, 0);
 	}
 
-	public static String explain( ArrayList<Instruction> inst, int level ) {
+	public static String explain( List<Instruction> inst, int level ) {
 		return explainInstructions(inst, level);
 	}
 
@@ -318,11 +319,11 @@ public class Explain
 		return explainStatementBlock(sb, 0);
 	}
 
-	public static String explainHops( ArrayList<Hop> hops ) {
+	public static String explainHops( List<Hop> hops ) {
 		return explainHops(hops, 0);
 	}
 
-	public static String explainHops( ArrayList<Hop> hops, int level ) {
+	public static String explainHops( List<Hop> hops, int level ) {
 		StringBuilder sb = new StringBuilder();
 		Hop.resetVisitStatus(hops);
 		for( Hop hop : hops )
@@ -450,8 +451,10 @@ public class Explain
 		if (sb instanceof WhileStatementBlock) {
 			WhileStatementBlock wsb = (WhileStatementBlock) sb;
 			builder.append(offset);
-			if( !wsb.getUpdateInPlaceVars().isEmpty() )
-				builder.append("WHILE (lines "+wsb.getBeginLine()+"-"+wsb.getEndLine()+") [in-place="+wsb.getUpdateInPlaceVars().toString()+"]\n");
+			if( !wsb.getUpdateInPlaceVars().isEmpty() || wsb.isRecompileOnce() ) {
+				builder.append("WHILE (lines "+wsb.getBeginLine()+"-"+wsb.getEndLine()+") ");
+				builder.append("[in-place="+wsb.getUpdateInPlaceVars().toString()+", recompile="+wsb.isRecompileOnce()+"]\n");
+			}
 			else
 				builder.append("WHILE (lines "+wsb.getBeginLine()+"-"+wsb.getEndLine()+")\n");
 			builder.append(explainHop(wsb.getPredicateHops(), level+1));
@@ -488,8 +491,10 @@ public class Explain
 					builder.append("PARFOR (lines "+fsb.getBeginLine()+"-"+fsb.getEndLine()+")\n");
 			}
 			else {
-				if( !fsb.getUpdateInPlaceVars().isEmpty() )
-					builder.append("FOR (lines "+fsb.getBeginLine()+"-"+fsb.getEndLine()+") [in-place="+fsb.getUpdateInPlaceVars().toString()+"]\n");
+				if( !fsb.getUpdateInPlaceVars().isEmpty() || fsb.isRecompileOnce() ) {
+					builder.append("FOR (lines "+fsb.getBeginLine()+"-"+fsb.getEndLine()+") ");
+					builder.append("[in-place="+fsb.getUpdateInPlaceVars().toString()+", recompile="+fsb.isRecompileOnce()+"]\n");
+				}
 				else
 					builder.append("FOR (lines "+fsb.getBeginLine()+"-"+fsb.getEndLine()+")\n");
 			}
@@ -716,6 +721,14 @@ public class Explain
 	//////////////
 	// internal explain RUNTIME
 
+
+	public static String explainProgramBlocks( List<ProgramBlock> pbs ) {
+		StringBuilder sb = new StringBuilder();
+		for(ProgramBlock pb : pbs)
+			sb.append(explain(pb));
+		return sb.toString();
+	}
+	
 	private static String explainProgramBlock( ProgramBlock pb, int level )
 	{
 		StringBuilder sb = new StringBuilder();
@@ -730,8 +743,10 @@ public class Explain
 			WhileProgramBlock wpb = (WhileProgramBlock) pb;
 			StatementBlock wsb = pb.getStatementBlock();
 			sb.append(offset);
-			if( wsb != null && !wsb.getUpdateInPlaceVars().isEmpty() )
-				sb.append("WHILE (lines "+wpb.getBeginLine()+"-"+wpb.getEndLine()+") [in-place="+wsb.getUpdateInPlaceVars().toString()+"]\n");
+			if( wsb != null && (!wsb.getUpdateInPlaceVars().isEmpty() || wsb.isRecompileOnce()) ) {
+				sb.append("WHILE (lines "+wpb.getBeginLine()+"-"+wpb.getEndLine()+") ");
+				sb.append("[in-place="+wsb.getUpdateInPlaceVars().toString()+", recompile="+wsb.isRecompileOnce()+"]\n");
+			}
 			else
 				sb.append("WHILE (lines "+wpb.getBeginLine()+"-"+wpb.getEndLine()+")\n");
 			sb.append(explainInstructions(wpb.getPredicate(), level+1));
@@ -763,8 +778,10 @@ public class Explain
 			if( pb instanceof ParForProgramBlock )
 				sb.append("PARFOR (lines "+fpb.getBeginLine()+"-"+fpb.getEndLine()+")\n");
 			else {
-				if( fsb != null && !fsb.getUpdateInPlaceVars().isEmpty() )
-					sb.append("FOR (lines "+fpb.getBeginLine()+"-"+fpb.getEndLine()+") [in-place="+fsb.getUpdateInPlaceVars().toString()+"]\n");
+				if( fsb != null && (!fsb.getUpdateInPlaceVars().isEmpty() || fsb.isRecompileOnce()) ) {
+					sb.append("FOR (lines "+fpb.getBeginLine()+"-"+fpb.getEndLine()+") ");
+					sb.append("[in-place="+fsb.getUpdateInPlaceVars().toString()+", recompile="+fsb.isRecompileOnce()+"]\n");
+				}
 				else
 					sb.append("FOR (lines "+fpb.getBeginLine()+"-"+fpb.getEndLine()+")\n");
 			}
@@ -789,7 +806,7 @@ public class Explain
 		return sb.toString();
 	}
 
-	private static String explainInstructions( ArrayList<Instruction> instSet, int level ) {
+	private static String explainInstructions( List<Instruction> instSet, int level ) {
 		StringBuilder sb = new StringBuilder();
 		String offsetInst = createOffset(level);
 		for( Instruction inst : instSet ) {
@@ -913,7 +930,7 @@ public class Explain
 	 *            if true, count Spark instructions and Spark reblock
 	 *            instructions
 	 */
-	private static void countCompiledInstructions( ArrayList<Instruction> instSet, ExplainCounts counts, boolean CP, boolean SP )
+	private static void countCompiledInstructions( List<Instruction> instSet, ExplainCounts counts, boolean CP, boolean SP )
 	{
 		for( Instruction inst : instSet )
 		{
@@ -930,7 +947,7 @@ public class Explain
 		}
 	}
 
-	public static String explainFunctionCallGraph(FunctionCallGraph fgraph, HashSet<String> fstack, String fkey, int level)
+	public static String explainFunctionCallGraph(FunctionCallGraph fgraph, Set<String> fstack, String fkey, int level)
 	{
 		StringBuilder builder = new StringBuilder();
 		String offset = createOffset(level);

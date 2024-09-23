@@ -245,9 +245,15 @@ public class LibCommonsMath
 		}
 		
 		Array2DRowRealMatrix matrixInput = DataConverter.convertToArray2DRowRealMatrix(in);
-		
+
 		// Perform LUP decomposition
 		LUDecomposition ludecompose = new LUDecomposition(matrixInput);
+
+		// check for singular matrix otherwise ludecompose.getP() will return null
+		if(ludecompose.getDeterminant() == 0){
+			throw new DMLRuntimeException("LU Decomposition can only be done on a non-singular matrix.");
+		}
+
 		RealMatrix P = ludecompose.getP();
 		RealMatrix L = ludecompose.getL();
 		RealMatrix U = ludecompose.getU();

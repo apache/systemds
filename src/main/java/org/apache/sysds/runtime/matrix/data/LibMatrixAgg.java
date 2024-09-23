@@ -36,7 +36,6 @@ import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.codegen.SpoofOperator.SideInput;
 import org.apache.sysds.runtime.codegen.SpoofOperator.SideInputSparseCell;
 import org.apache.sysds.runtime.controlprogram.caching.MatrixObject.UpdateType;
-import org.apache.sysds.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
 import org.apache.sysds.runtime.data.DenseBlock;
 import org.apache.sysds.runtime.data.DenseBlockFP64DEDUP;
 import org.apache.sysds.runtime.data.DenseBlockFactory;
@@ -72,6 +71,7 @@ import org.apache.sysds.runtime.matrix.operators.UnaryOperator;
 import org.apache.sysds.runtime.util.CommonThreadPool;
 import org.apache.sysds.runtime.util.DataConverter;
 import org.apache.sysds.runtime.util.UtilFunctions;
+import org.apache.sysds.utils.stats.InfrastructureAnalyzer;
 
 
 /**
@@ -98,8 +98,8 @@ public class LibMatrixAgg {
 
 	//internal configuration parameters
 	private static final boolean NAN_AWARENESS = false;
-	private static final long PAR_NUMCELL_THRESHOLD1 = 1024*1024; //Min 1M elements
-	private static final long PAR_NUMCELL_THRESHOLD2 = 1024;   //Min 16K elements
+	private static final long PAR_NUMCELL_THRESHOLD1 = 1024*256; //Min 256K elements
+	private static final long PAR_NUMCELL_THRESHOLD2 = 1024*4;   //Min 4K elements
 	private static final long PAR_INTERMEDIATE_SIZE_THRESHOLD = 2*1024*1024; //Max 2MB
 	
 	////////////////////////////////
@@ -226,6 +226,12 @@ public class LibMatrixAgg {
 	}
 
 	public static void aggregateUnaryMatrix(MatrixBlock in, MatrixBlock out, AggregateUnaryOperator uaop) {
+		aggregateUnaryMatrix(in, out, uaop, true);
+	}
+
+
+	public static void aggregateUnaryMatrix(MatrixBlock in, MatrixBlock out, AggregateUnaryOperator uaop,
+		boolean allowReformatToSparse) {
 
 		AggType aggtype = getAggType(uaop);
 		final int m = in.rlen;
@@ -250,8 +256,9 @@ public class LibMatrixAgg {
 			aggregateUnaryMatrixSparse(in, out, aggtype, uaop.aggOp.increOp.fn, uaop.indexFn, 0, m);
 		
 		//cleanup output and change representation (if necessary)
-		out.recomputeNonZeros();
-		out.examSparsity();
+		out.recomputeNonZeros(uaop.getNumThreads());
+		if(allowReformatToSparse)
+			out.examSparsity();
 	}
 
 	public static void aggregateUnaryMatrix(MatrixBlock in, MatrixBlock out, AggregateUnaryOperator uaop, int k) {
@@ -682,13 +689,13 @@ public class LibMatrixAgg {
 		boolean sharedTP = (InfrastructureAnalyzer.getLocalParallelism() == k);
 		return k > 1 && out.isThreadSafe() && in.rlen > (sharedTP ? k/8 : k/2)
 			&& (uaop.indexFn instanceof ReduceCol || out.clen*8*k < PAR_INTERMEDIATE_SIZE_THRESHOLD) //size
-			&& in.nonZeros > (sharedTP ? k*PAR_NUMCELL_THRESHOLD2 : PAR_NUMCELL_THRESHOLD1);
+			&& in.nonZeros > (sharedTP ? PAR_NUMCELL_THRESHOLD2 : PAR_NUMCELL_THRESHOLD1);
 	}
 	
 	public static boolean satisfiesMultiThreadingConstraints(MatrixBlock in, int k) {
 		boolean sharedTP = (InfrastructureAnalyzer.getLocalParallelism() == k);
 		return k > 1 && in.rlen > (sharedTP ? k/8 : k/2)
-			&& in.nonZeros > (sharedTP ? k*PAR_NUMCELL_THRESHOLD2 : PAR_NUMCELL_THRESHOLD1);
+			&& in.nonZeros > (sharedTP ? PAR_NUMCELL_THRESHOLD2 : PAR_NUMCELL_THRESHOLD1);
 	}
 	
 	/**
@@ -703,7 +710,7 @@ public class LibMatrixAgg {
 	public static void recomputeIndexes( MatrixBlock out, AggregateUnaryOperator op, int blen, MatrixIndexes ix )
 	{
 		AggType type = getAggType(op);
-		if( (type == AggType.MAX_INDEX || type == AggType.MIN_INDEX) && ix.getColumnIndex()!=1 ) //MAXINDEX or MININDEX
+		if( (type == AggType.MAX_INDEX || type == AggType.MIN_INDEX) && ix != null && ix.getColumnIndex()!=1 ) //MAXINDEX or MININDEX
 		{
 			int m = out.rlen;
 			double[] c = out.getDenseBlockValues();

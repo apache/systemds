@@ -52,9 +52,9 @@ jobs:
         tests: [
           "org.apache.sysds.test.applications.**",
           "**.test.usertest.**",
-          "**.component.c**.**",
+          "**.component.c**.** -Dtest-threadCount=1 -Dtest-forkCount=1",
           "**.component.e**.**,**.component.f**.**,**.component.m**.**",
-          "**.component.p**.**,**.component.s**.**,**.component.t**.**",
+          "**.component.p**.**,**.component.r**.**,**.component.s**.**,**.component.t**.**,**.component.u**.**",
           "**.functions.a**.**,**.functions.binary.matrix.**,**.functions.binary.scalar.**,**.functions.binary.tensor.**",
           "**.functions.blocks.**,**.functions.data.rand.**,",
           "**.functions.countDistinct.**,**.functions.countDistinctApprox.**",
@@ -83,7 +83,7 @@ jobs:
           "**.functions.homomorphicEncryption.**",
           "**.functions.unary.scalar.**,**.functions.updateinplace.**,**.functions.vect.**",
           "**.functions.reorg.**,**.functions.rewrite.**,**.functions.ternary.**",
-          "**.functions.transform.**",
+          "**.functions.transform.**","**.functions.unique.**",
           "**.functions.unary.matrix.**,**.functions.linearization.**,**.functions.jmlc.**"
         ]
         java: [11]

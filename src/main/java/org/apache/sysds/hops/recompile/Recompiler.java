@@ -110,6 +110,7 @@ import org.apache.sysds.runtime.util.HDFSTool;
 import org.apache.sysds.runtime.util.ProgramConverter;
 import org.apache.sysds.runtime.util.UtilFunctions;
 import org.apache.sysds.utils.Explain;
+import org.apache.sysds.utils.Statistics;
 import org.apache.sysds.utils.Explain.ExplainType;
 
 /**
@@ -457,7 +458,7 @@ public class Recompiler {
 			System.out.println("EXPLAIN RECOMPILE \nPRED (line "+hops.getBeginLine()+"):\n" + Explain.explain(inst,1));
 	}
 
-	public static void recompileProgramBlockHierarchy( ArrayList<ProgramBlock> pbs, LocalVariableMap vars, long tid, boolean inplace, ResetType resetRecompile ) {
+	public static void recompileProgramBlockHierarchy( List<ProgramBlock> pbs, LocalVariableMap vars, long tid, boolean inplace, ResetType resetRecompile ) {
 		//function recompilation via two-phase approach due to challenges 
 		//of unclear reconciliation of arbitrary complex control flow
 		
@@ -786,7 +787,7 @@ public class Recompiler {
 					}
 					//handle sparsity change
 					if( mcOld.getNonZeros() != mc.getNonZeros() ) {
-						lnnz=-1; //unknown		
+						lnnz=-1; //unknown
 						requiresRecompile = true;
 					}
 					
@@ -830,7 +831,7 @@ public class Recompiler {
 					}
 					//handle sparsity change
 					if( dcOld.getNonZeros() != dc.getNonZeros() ) {
-						lnnz = -1;		
+						lnnz = -1;
 						requiresRecompile = true;
 					}
 					
@@ -892,7 +893,7 @@ public class Recompiler {
 						}
 						//handle sparsity change
 						if( mcOld.getNonZeros() != mc.getNonZeros() ) {
-							lnnz = -1; //unknown		
+							lnnz = -1; //unknown
 						}
 						
 						MatrixObject moNew = createOutputMatrix(ldim1, ldim2, lnnz);
@@ -1549,6 +1550,35 @@ public class Recompiler {
 		if( hop instanceof MultiThreadedHop )
 			((MultiThreadedHop)hop).setMaxNumThreads(k);
 		hop.setVisited();
+	}
+	
+	public static void recompileFunctionOnceIfNeeded(boolean recompileOnce,
+		List<ProgramBlock> childBlocks, long tid, boolean inplace, ResetType reset, ExecutionContext ec)
+	{
+		try {
+			if( ConfigurationManager.isDynamicRecompilation() 
+				&& recompileOnce 
+				&& ParForProgramBlock.RESET_RECOMPILATION_FLAGs )
+			{
+				long t0 = DMLScript.STATISTICS ? System.nanoTime() : 0;
+				
+				//note: it is important to reset the recompilation flags here
+				// (1) it is safe to reset recompilation flags because a 'recompile_once'
+				//     function will be recompiled for every execution.
+				// (2) without reset, there would be no benefit in recompiling the entire function
+				LocalVariableMap tmp = (LocalVariableMap) ec.getVariables().clone();
+				Recompiler.recompileProgramBlockHierarchy(childBlocks, tmp, tid, inplace, reset);
+
+				if( DMLScript.STATISTICS ){
+					long t1 = System.nanoTime();
+					Statistics.incrementFunRecompileTime(t1-t0);
+					Statistics.incrementFunRecompiles();
+				}
+			}
+		}
+		catch(Exception ex) {
+			throw new DMLRuntimeException("Error recompiling function body.", ex);
+		}
 	}
 
 	/**

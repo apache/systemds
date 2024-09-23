@@ -4,7 +4,7 @@
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Federated Environment &mdash; SystemDS 3.2.0-dev documentation</title>
+  <title>Federated Environment &mdash; SystemDS 3.3.0-dev documentation</title>
       <link rel="stylesheet" type="text/css" href="../static/pygments.css?v=80d5e7a1" />
       <link rel="stylesheet" type="text/css" href="../static/css/theme.css?v=19f00094" />
 
@@ -15,8 +15,8 @@
   
         <script src="../static/jquery.js?v=5d32c60e"></script>
         <script src="../static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-        <script src="../static/documentation_options.js?v=596fb6d1"></script>
-        <script src="../static/doctools.js?v=888ff710"></script>
+        <script src="../static/documentation_options.js?v=492a8e1f"></script>
+        <script src="../static/doctools.js?v=9a2dae69"></script>
         <script src="../static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../static/js/theme.js"></script>
     <link rel="index" title="Index" href="../genindex.html" />
@@ -130,7 +130,7 @@ In this example we simply use Numpy to create a <code class="docutils literal no
 <p>Currently we also require a metadata file for the federated worker.
 This should be located next to the <code class="docutils literal notranslate"><span class="pre">test.csv</span></code> file called <code class="docutils literal notranslate"><span class="pre">test.csv.mtd</span></code>.
 To make both the data and metadata simply execute the following</p>
-<div class="code python highlight-default notranslate"><div class="highlight"><pre><span></span><span class="c1"># Python</span>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="c1"># Python</span>
 <span class="kn">import</span> <span class="nn">os</span>
 
 <span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
@@ -145,7 +145,7 @@ To make both the data and metadata simply execute the following</p>
 </div>
 <p>After creating our data the federated worker becomes able to execute federated instructions.
 The aggregated sum using federated instructions in python SystemDS is done as follows</p>
-<div class="code python highlight-default notranslate"><div class="highlight"><pre><span></span><span class="c1"># Python</span>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="c1"># Python</span>
 <span class="kn">import</span> <span class="nn">logging</span>
 
 <span class="kn">from</span> <span class="nn">systemds.context</span> <span class="kn">import</span> <span class="n">SystemDSContext</span>
@@ -180,7 +180,7 @@ Start with 3 different terminals, and run one federated environment in each.</p>
 </pre></div>
 </div>
 <p>Once all three workers are up and running we can leverage all three in the following example</p>
-<div class="code python highlight-default notranslate"><div class="highlight"><pre><span></span><span class="c1"># Python</span>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="c1"># Python</span>
 <span class="kn">import</span> <span class="nn">logging</span>
 
 <span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
@@ -260,7 +260,7 @@ has changed, i.e., when DHCP renews its IP address.</p>
   <hr/>
 
   <div role="contentinfo">
-    <p>&#169; Copyright 2023, Apache SystemDS.</p>
+    <p>&#169; Copyright 2024, Apache SystemDS.</p>
   </div>
 
   Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a

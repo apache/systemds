@@ -352,7 +352,6 @@ public class VariableCPInstruction extends CPInstruction implements LineageTrace
 				throw new DMLRuntimeException("Invalid number of operands in write instruction: " + str);
 		}
 		else if(voc == VariableOperationCode.CastAsFrameVariable){
-			// LOG.error(parts);
 			InstructionUtils.checkNumFields(parts, 3, 4, 5);
 		}
 		else {
@@ -759,7 +758,7 @@ public class VariableCPInstruction extends CPInstruction implements LineageTrace
 	}
 
 	private void setCacheableDataFields(CacheableData<?> obj){
-		//clone meta data because it is updated on copy-on-write, otherwise there
+		//clone metadata because it is updated on copy-on-write, otherwise there
 		//is potential for hidden side effects between variables.
 		obj.setMetaData((MetaData)metadata.clone());
 		obj.enableCleanup(!getInput1().getName()
@@ -866,8 +865,8 @@ public class VariableCPInstruction extends CPInstruction implements LineageTrace
 			case MATRIX: {
 				MatrixBlock mBlock = ec.getMatrixInput(getInput1().getName());
 				if( mBlock.getNumRows()!=1 || mBlock.getNumColumns()!=1 )
-					throw new DMLRuntimeException("Dimension mismatch - unable to cast matrix '"+getInput1().getName()+"' of dimension ("+mBlock.getNumRows()+" x "+mBlock.getNumColumns()+") to scalar. " + mBlock);
-				double value = mBlock.get(0,0);
+					throw new DMLRuntimeException("Dimension mismatch - unable to cast matrix '"+getInput1().getName()+"' of dimension ("+mBlock.getNumRows()+" x "+mBlock.getNumColumns()+") to scalar. ");
+				double value = mBlock.get(0, 0);
 				ec.releaseMatrixInput(getInput1().getName());
 				ec.setScalarOutput(output.getName(), new DoubleObject(value));
 				break;
@@ -991,10 +990,8 @@ public class VariableCPInstruction extends CPInstruction implements LineageTrace
 			ListObject colNames = (ListObject)ec.getVariable(getInput2().getName());
 			String[] names = new String[out.getNumColumns()];
 			List<Data> dat = colNames.getData();
-			LOG.error(dat);
-			for(int i = 0; i < out.getNumColumns();i++){
+			for(int i = 0; i < out.getNumColumns();i++)
 				names[i] = ((StringObject)dat.get(i)).getStringValue();
-			}
 			out.setColumnNames(names);
 		}
 	}
@@ -1339,7 +1336,7 @@ public class VariableCPInstruction extends CPInstruction implements LineageTrace
 
 			// Find a start position of file name string.
 			int iPos = StringUtils.ordinalIndexOf(instString, Lop.OPERAND_DELIMITOR, CREATEVAR_FILE_NAME_VAR_POS);
-			// Find a end position of file name string.
+			// Find an end position of file name string.
 			int iPos2 = StringUtils.indexOf(instString, Lop.OPERAND_DELIMITOR, iPos+1);
 
 			StringBuilder sb = new StringBuilder();

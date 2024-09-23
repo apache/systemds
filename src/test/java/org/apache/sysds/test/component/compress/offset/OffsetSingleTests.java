@@ -19,7 +19,6 @@
 
 package org.apache.sysds.test.component.compress.offset;
 
-import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
@@ -134,10 +133,13 @@ public class OffsetSingleTests {
 		OffsetTestUtil.getOffset(new int[] {1, 2, 3, 2}, OFF_TYPE.BYTE);
 	}
 
-	@Test
+	@Test(expected = DMLCompressionException.class)
+	public void emptyOffsetToFirst() {
+		OffsetFactory.createOffset(new int[0]).getOffsetToFirst();
+	}
+
+	@Test(expected = DMLCompressionException.class)
 	public void emptyOffsetToLast() {
-		int a = OffsetFactory.createOffset(new int[0]).getOffsetToFirst();
-		int b = OffsetFactory.createOffset(new int[0]).getOffsetToLast();
-		assertEquals(a, b);
+		OffsetFactory.createOffset(new int[0]).getOffsetToLast();
 	}
 }

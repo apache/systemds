@@ -26,6 +26,7 @@ import org.apache.sysds.lops.Lop;
 import org.apache.sysds.parser.DataIdentifier;
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysds.runtime.matrix.operators.Operator;
+import org.apache.sysds.utils.Statistics;
 
 public abstract class Instruction 
 {
@@ -214,6 +215,8 @@ public abstract class Instruction
 	 * @return instruction
 	 */
 	public Instruction preprocessInstruction(ExecutionContext ec) {
+		if (DMLScript.STATISTICS_NGRAMS && DMLScript.STATISTICS_NGRAMS_USE_LINEAGE)
+			Statistics.prepareNGramInst(null); // Reset the current LineageItem for this thread
 		// Lineage tracing
 		if (DMLScript.LINEAGE)
 			ec.traceLineage(this);

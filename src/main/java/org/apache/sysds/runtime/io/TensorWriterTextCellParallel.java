@@ -31,10 +31,10 @@ import org.apache.hadoop.fs.Path;
 import org.apache.sysds.common.Types.FileFormat;
 import org.apache.sysds.conf.DMLConfig;
 import org.apache.sysds.hops.OptimizerUtils;
-import org.apache.sysds.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
 import org.apache.sysds.runtime.data.TensorBlock;
 import org.apache.sysds.runtime.util.CommonThreadPool;
 import org.apache.sysds.runtime.util.HDFSTool;
+import org.apache.sysds.utils.stats.InfrastructureAnalyzer;
 
 public class TensorWriterTextCellParallel extends TensorWriterTextCell {
 	@Override

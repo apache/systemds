@@ -19,10 +19,7 @@
 
 package org.apache.sysds.runtime.functionobjects;
 
-import org.apache.sysds.runtime.functionobjects.TernaryValueFunction.ValueFunctionWithConstant;
-import org.apache.sysds.runtime.matrix.operators.BinaryOperator;
-
-public class MinusMultiply extends TernaryValueFunction implements ValueFunctionWithConstant
+public class MinusMultiply extends TernaryValueFunction
 {
 	private static final long serialVersionUID = 2801982061205871665L;
 	
@@ -34,7 +31,7 @@ public class MinusMultiply extends TernaryValueFunction implements ValueFunction
 		_cnt = 1;
 	}
 	
-	private MinusMultiply(double cnt) {
+	public MinusMultiply(double cnt) {
 		_cnt = cnt;
 	}
 	
@@ -54,8 +51,8 @@ public class MinusMultiply extends TernaryValueFunction implements ValueFunction
 	}
 	
 	@Override
-	public BinaryOperator setOp2Constant(double cnt) {
-		return new BinaryOperator(new MinusMultiply(cnt));
+	public ValueFunction setOp2Constant(double cnt) {
+		return new MinusMultiply(cnt);
 	}
 	
 	@Override

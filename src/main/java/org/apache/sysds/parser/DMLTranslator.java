@@ -2066,12 +2066,12 @@ public class DMLTranslator
 
 			case COUNT_DISTINCT_APPROX_ROW:
 				currBuiltinOp = new AggUnaryOp(target.getName(), DataType.MATRIX, target.getValueType(),
-						AggOp.valueOf(source.getOpCode().name()), Direction.Row, paramHops.get("data"));
+						AggOp.COUNT_DISTINCT_APPROX, Direction.Row, paramHops.get("data"));
 				break;
 
 			case COUNT_DISTINCT_APPROX_COL:
 				currBuiltinOp = new AggUnaryOp(target.getName(), DataType.MATRIX, target.getValueType(),
-						AggOp.valueOf(source.getOpCode().name()), Direction.Col, paramHops.get("data"));
+						AggOp.COUNT_DISTINCT_APPROX, Direction.Col, paramHops.get("data"));
 				break;
 
 			case UNIQUE:
@@ -2795,13 +2795,13 @@ public class DMLTranslator
 		}
 
 		case ROW_COUNT_DISTINCT:
-			currBuiltinOp = new AggUnaryOp(target.getName(), DataType.MATRIX, target.getValueType(),
-					AggOp.valueOf(source.getOpCode().name()), Direction.Row, expr);
+			currBuiltinOp = new AggUnaryOp(target.getName(),
+				DataType.MATRIX, target.getValueType(), AggOp.COUNT_DISTINCT, Direction.Row, expr);
 			break;
 
 		case COL_COUNT_DISTINCT:
-			currBuiltinOp = new AggUnaryOp(target.getName(), DataType.MATRIX, target.getValueType(),
-					AggOp.valueOf(source.getOpCode().name()), Direction.Col, expr);
+			currBuiltinOp = new AggUnaryOp(target.getName(),
+				DataType.MATRIX, target.getValueType(), AggOp.COUNT_DISTINCT, Direction.Col, expr);
 			break;
 
 		default:

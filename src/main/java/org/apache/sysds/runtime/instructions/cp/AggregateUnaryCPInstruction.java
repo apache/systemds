@@ -185,7 +185,7 @@ public class AggregateUnaryCPInstruction extends UnaryCPInstruction {
 				
 				LineageItem li = ec.getLineageItem(input1);
 				String out = !DMLScript.LINEAGE_DEDUP ? Explain.explain(li) :
-					Explain.explain(li) + LineageDedupUtils.mergeExplainDedupBlocks(ec);
+					Explain.explain(li) + "\n" + LineageDedupUtils.mergeExplainDedupBlocks(ec);
 				ec.setScalarOutput(outputName, new StringObject(out));
 				break;
 			}

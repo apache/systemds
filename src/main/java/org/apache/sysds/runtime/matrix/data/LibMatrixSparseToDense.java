@@ -42,18 +42,27 @@ public abstract class LibMatrixSparseToDense {
 
 	/**
 	 * Convert the given matrix block to a Dense allocation.
+	 * <p>
+	 * There is two exceptions:
+	 * </p>
+	 * <ul>
+	 * <li>Empty input blocks are not modified.</li>
+	 * <li>Calls where the input block is already dense is ignored.</li>
+	 * </ul>
 	 * 
 	 * @param r The matrix block to modify, to dense.
-	 * @param k allowed.
+	 * @param k The parallelization degree.
 	 */
 	public static void sparseToDense(MatrixBlock r, int k) {
 		// set target representation, early abort on empty blocks
 		final SparseBlock a = r.sparseBlock;
 		final int m = r.rlen;
-		r.sparse = false;
-		if(a == null)
+		if(a == null){
+			// if the block is empty do nothing.
 			return;
-
+		}
+		r.sparse = false;
+		
 		// allocate dense target block, but keep nnz (no need to maintain)
 		if(!r.allocateDenseBlock(false))
 			r.denseBlock.reset();

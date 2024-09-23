@@ -32,7 +32,6 @@ import org.apache.sysds.common.Types.ValueType;
 
 public class FunctionStatementBlock extends StatementBlock implements FunctionBlock
 {
-	private boolean _recompileOnce = false;
 	private boolean _nondeterministic = false;
 	
 	/**
@@ -237,14 +236,6 @@ public class FunctionStatementBlock extends StatementBlock implements FunctionBl
 		liveInReturn.addVariables(_liveIn);
 		
 		return liveInReturn;
-	}
-	
-	public void setRecompileOnce( boolean flag ) {
-		_recompileOnce = flag;
-	}
-	
-	public boolean isRecompileOnce() {
-		return _recompileOnce;
 	}
 	
 	public void setNondeterministic(boolean flag) {

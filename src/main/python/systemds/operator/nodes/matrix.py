@@ -664,6 +664,13 @@ class Matrix(OperationNode):
         """
         return Matrix(self.sds_context, "rev", [self])
 
+    def roll(self, shift: int) -> "Matrix":
+        """Reverses the rows
+
+        :return: the OperationNode representing this operation
+        """
+        return Matrix(self.sds_context, "roll", [self, shift])
+
     def round(self) -> "Matrix":
         """round all values to nearest natural number
 

@@ -749,7 +749,7 @@ public interface Types {
 	/** Operations that perform internal reorganization of an allocation */
 	public enum ReOrgOp {
 		DIAG, //DIAG_V2M and DIAG_M2V could not be distinguished if sizes unknown
-		RESHAPE, REV, SORT, TRANS;
+		RESHAPE, REV, ROLL, SORT, TRANS;
 		
 		@Override
 		public String toString() {

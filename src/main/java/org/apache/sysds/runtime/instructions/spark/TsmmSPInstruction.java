@@ -93,6 +93,11 @@ public class TsmmSPInstruction extends UnarySPInstruction {
 		}
 	}
 
+	public MMTSJType getMMTSJType()
+	{
+		return _type;
+	}
+
 	private static class RDDTSMMFunction implements Function<Tuple2<MatrixIndexes,MatrixBlock>, MatrixBlock> 
 	{
 		private static final long serialVersionUID = 2935770425858019666L;

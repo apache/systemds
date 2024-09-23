@@ -19,7 +19,18 @@
 #
 #-------------------------------------------------------------
 
-X = rand(rows=10000, cols=10);
-C = kmeans(X=X, k=4, runs=10, eps=1e-8, max_iter=20);
-print(sum(C));
+M = 100;
+A = diag(matrix(1, M, 1));
+B = matrix(seq(1,M*M), M, M);
+D = matrix(0, M, 1)
+D[4,1] = 1
+D[1,1] = 1
+D[M,1] = 1
+D = diag(D)
+while(FALSE){}
 
+R = A * B * D
+
+while(FALSE){}
+s = as.matrix(sum(R));
+write(s,$1);

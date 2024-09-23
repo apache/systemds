@@ -758,7 +758,7 @@ public class VariableCPInstruction extends CPInstruction implements LineageTrace
 	}
 
 	private void setCacheableDataFields(CacheableData<?> obj){
-		//clone meta data because it is updated on copy-on-write, otherwise there
+		//clone metadata because it is updated on copy-on-write, otherwise there
 		//is potential for hidden side effects between variables.
 		obj.setMetaData((MetaData)metadata.clone());
 		obj.enableCleanup(!getInput1().getName()
@@ -1336,7 +1336,7 @@ public class VariableCPInstruction extends CPInstruction implements LineageTrace
 
 			// Find a start position of file name string.
 			int iPos = StringUtils.ordinalIndexOf(instString, Lop.OPERAND_DELIMITOR, CREATEVAR_FILE_NAME_VAR_POS);
-			// Find a end position of file name string.
+			// Find an end position of file name string.
 			int iPos2 = StringUtils.indexOf(instString, Lop.OPERAND_DELIMITOR, iPos+1);
 
 			StringBuilder sb = new StringBuilder();

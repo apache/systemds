@@ -68,7 +68,7 @@ public class CLALibCompAggLoggingTest {
 			fail(e.getMessage());
 		}
 		finally {
-			Logger.getLogger(CompressedMatrixBlockFactory.class).setLevel(Level.WARN);
+			Logger.getLogger(CLALibCompAgg.class).setLevel(Level.WARN);
 			LoggingUtils.reinsert(appender);
 		}
 	}
@@ -99,7 +99,7 @@ public class CLALibCompAggLoggingTest {
 			fail(e.getMessage());
 		}
 		finally {
-			Logger.getLogger(CompressedMatrixBlockFactory.class).setLevel(Level.WARN);
+			Logger.getLogger(CLALibCompAgg.class).setLevel(Level.WARN);
 			LoggingUtils.reinsert(appender);
 		}
 	}

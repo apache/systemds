@@ -306,7 +306,7 @@ class Matrix(OperationNode):
         """Calculate the number of distinct values of matrix.
 
         :param axis: can be 0 or 1 to do either row or column aggregation
-        :return: `Matrix` representing operation
+        :return: `OperationNode` representing operation
         """
         if axis == 0:
             return Matrix(self.sds_context, "colCountDistinct", [self])
@@ -321,7 +321,7 @@ class Matrix(OperationNode):
     def countDistinctApprox(self, axis: int = None) -> "OperationNode":
         """Calculate the approximate number of distinct values of matrix.
         :param axis: can be 0 or 1 to do either row or column aggregation
-        :return: `Matrix` representing operation
+        :return: `OperationNode` representing operation
         """
         if axis == 0:
             return Matrix(self.sds_context, "colCountDistinctApprox", [self])
@@ -337,7 +337,7 @@ class Matrix(OperationNode):
         """Calculate variance of matrix.
 
         :param axis: can be 0 or 1 to do either row or column vars
-        :return: `Matrix` representing operation
+        :return: `OperationNode` representing operation
         """
         if axis == 0:
             return Matrix(self.sds_context, "colVars", [self])
@@ -352,7 +352,7 @@ class Matrix(OperationNode):
     def trace(self) -> "Scalar":
         """Calculate trace.
 
-        :return: `Matrix` representing operation
+        :return: `Scalar` representing operation
         """
         return Scalar(self.sds_context, "trace", [self])
 
@@ -381,7 +381,7 @@ class Matrix(OperationNode):
     def sd(self) -> "Scalar":
         """Calculate standard deviation of matrix.
 
-        :return: `Matrix` representing operation
+        :return: `Scalar` representing operation
         """
         return Scalar(self.sds_context, "sd", [self])
 
@@ -776,6 +776,39 @@ class Matrix(OperationNode):
             self.sds_context, "lu", output_nodes, unnamed_input_nodes=[self]
         )
         return op
+
+    def median(self, weights: "Matrix" = None) -> "Scalar":
+        """Calculate median of a column matrix.
+
+        :return: `Scalar` representing operation
+        """
+        if weights is None:
+            return Scalar(self.sds_context, "median", [self])
+        else:
+            return Scalar(self.sds_context, "median", [self, weights])
+
+    def quantile(self, p, weights: "Matrix" = None) -> "OperationNode":
+        """Returns a column matrix with list of all quantiles requested in P.
+
+        :param p: float for a single quantile or column matrix of requested quantiles
+        :param weights: (optional) weights matrix of the same shape as self
+        :return: `Matrix` or 'Scalar' representing operation
+        """
+        if weights is None:
+            input_nodes = [self, p]
+        else:
+            input_nodes = [self, weights, p]
+
+        if isinstance(p, Matrix):
+            return Matrix(self.sds_context, "quantile", input_nodes)
+        elif isinstance(p, float):
+            if 0.0 <= p <= 1.0:
+                input_nodes[-1] = self.sds_context.scalar(input_nodes[-1])
+            else:
+                raise ValueError("Quantile has to be between 0 and 1")
+            return Scalar(self.sds_context, "quantile", input_nodes)
+        else:
+            raise ValueError("P has to be a Scalar or Matrix")
 
     def __str__(self):
         return "MatrixNode"

@@ -19,8 +19,20 @@
 #
 #-------------------------------------------------------------
 
-X = rand(rows=10000, cols=10);
-Y = X %*% rand(rows=10, cols=1);
-w = multiLogReg(X=X, Y=Y, icpt=2, tol=1e-8, reg=0.01, maxi=20);
-print(sum(w));
+
+foo = function(matrix[double] A) return (Double minsc, matrix[double] B) {
+  while(FALSE) {} # prevent inlining
+  minsc = min(A);
+  B = A + 7;
+}
+
+X = seq(1,7);
+minsc = -Inf;
+if( avg(X) <= 5 ) {
+  [minsc, X] = foo(X)
+}
+
+# bug: minsc was incorrectly propagated as -Inf, leading to -Inf instead of 2
+R = as.matrix(minsc + 1);
+write(R, $1);
 

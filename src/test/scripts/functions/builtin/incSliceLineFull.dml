@@ -26,6 +26,19 @@ oldE = read($3);
 addedE = read($4);
 totalE = rbind(oldE, addedE);
 indicesRemoved = read($9);
+disableIncScorePruning = $13;
+disableIncSizePruning = $14;
+
+if(disableIncScorePruning & disableIncSizePruning){
+  pruningStrat = 3; 
+} else if (disableIncSizePruning){
+  pruningStrat = 2;
+} else if (disableIncScorePruning){
+  pruningStrat = 1;
+} else {
+  pruningStrat = 0;
+}
+
 
 if(nrow(indicesRemoved) > 0){
   if(as.scalar(indicesRemoved[1]) == 0){
@@ -40,7 +53,7 @@ if(nrow(indicesRemoved) > 0){
   
   # second increment
 [TK1, TKC1, D1, L1, meta1, Stats1, Xout1, eOut1, foffb2, foffe2, params] = incSliceLine(addedX=addedX, oldX = oldX, oldE = oldE, addedE=addedE, prevLattice = L, metaPrevLattice=meta, prevStats = Stats, prevTK = TK, prevTKC = TKC, k=$5,
-  alpha=0.95, minSup=4, tpEval=$6, selFeat=$7, encodeLat=$8, indicesRemoved=indicesRemoved, verbose=$10, params=params, prevFoffb = foffb, prevFoffe = foffe);
+  alpha=0.95, minSup=4, tpEval=$6, selFeat=$7, encodeLat=$8, indicesRemoved=indicesRemoved, verbose=$10, params=params, prevFoffb = foffb, prevFoffe = foffe, pruningStrat = pruningStrat);
 
 # prepare totalX and totalE for running sliceline on total data 
 if(nrow(indicesRemoved) > 0){

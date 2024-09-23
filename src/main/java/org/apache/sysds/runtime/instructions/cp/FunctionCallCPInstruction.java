@@ -298,6 +298,10 @@ public class FunctionCallCPInstruction extends CPInstruction {
 		return _boundOutputNames;
 	}
 
+	public List<String> getFunArgNames() {
+		return _funArgNames;
+	}
+
 	public String updateInstStringFunctionName(String pattern, String replace)
 	{
 		//split current instruction

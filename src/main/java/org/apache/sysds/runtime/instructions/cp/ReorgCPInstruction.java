@@ -168,4 +168,8 @@ public class ReorgCPInstruction extends UnaryCPInstruction {
 		if( r_op.fn instanceof DiagIndex && soresBlock.getNumColumns()>1 ) //diagV2M
 			ec.getMatrixObject(output.getName()).setDiag(true);
 	}
+
+	public CPOperand getIxRet() {
+		return _ixret;
+	}
 }

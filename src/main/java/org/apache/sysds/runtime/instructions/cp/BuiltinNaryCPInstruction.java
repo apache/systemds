@@ -22,6 +22,7 @@ package org.apache.sysds.runtime.instructions.cp;
 import org.apache.sysds.common.Types.OpOpN;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.functionobjects.Builtin;
+import org.apache.sysds.runtime.functionobjects.Multiply;
 import org.apache.sysds.runtime.functionobjects.Plus;
 import org.apache.sysds.runtime.functionobjects.ValueFunction;
 import org.apache.sysds.runtime.instructions.InstructionUtils;
@@ -84,6 +85,10 @@ public abstract class BuiltinNaryCPInstruction extends CPInstruction
 		else if( opcode.equals("n+") ) {
 			return new MatrixBuiltinNaryCPInstruction(
 				new SimpleOperator(Plus.getPlusFnObject()), opcode, str, outputOperand, inputOperands);
+		}
+		else if( opcode.equals("n*") ) {
+			return new MatrixBuiltinNaryCPInstruction(
+					new SimpleOperator(Multiply.getMultiplyFnObject()), opcode, str, outputOperand, inputOperands);
 		}
 		else if (OpOpN.EVAL.name().equalsIgnoreCase(opcode)) {
 			return new EvalNaryCPInstruction(null, opcode, str, outputOperand, inputOperands);

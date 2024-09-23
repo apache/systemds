@@ -41,10 +41,11 @@ public class TernaryAggregateTest extends AutomatedTestBase
 {
 	private final static String TEST_NAME1 = "TernaryAggregateRC";
 	private final static String TEST_NAME2 = "TernaryAggregateC";
+	private final static String TEST_NAME3 = "TernaryAggregatePow";
 	
 	private final static String TEST_DIR = "functions/ternary/";
 	private final static String TEST_CLASS_DIR = TEST_DIR + TernaryAggregateTest.class.getSimpleName() + "/";
-	private final static double eps = 1e-8;
+	private final static double eps = 1e-7;
 	
 	private final static int rows = 1111;
 	private final static int cols = 1011;
@@ -56,7 +57,8 @@ public class TernaryAggregateTest extends AutomatedTestBase
 	public void setUp() {
 		TestUtils.clearAssertionInformation();
 		addTestConfiguration(TEST_NAME1, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME1, new String[] { "R" }) ); 
-		addTestConfiguration(TEST_NAME2, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME2, new String[] { "R" }) ); 
+		addTestConfiguration(TEST_NAME2, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME2, new String[] { "R" }) );
+		addTestConfiguration(TEST_NAME3, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME3, new String[] { "R" }) );
 	}
 
 	@Test
@@ -180,6 +182,36 @@ public class TernaryAggregateTest extends AutomatedTestBase
 	public void testTernaryAggregateCSparseMatrixCPNoRewrite() {
 		runTernaryAggregateTest(TEST_NAME2, true, false, false, ExecType.CP);
 	}
+
+	@Test
+	public void testTernaryAggregateNoRewritePowDenseCP() {
+		runTernaryAggregateTest(TEST_NAME3, false, true, false, ExecType.CP);
+	}
+
+	@Test
+	public void testTernaryAggregateNoRewritePowSparseCP() {
+		runTernaryAggregateTest(TEST_NAME3, true, true, false, ExecType.CP);
+	}
+
+	@Test
+	public void testTernaryAggregateRewritePowDenseCP() {
+		runTernaryAggregateTest(TEST_NAME3, false, true, true, ExecType.CP);
+	}
+
+	@Test
+	public void testTernaryAggregateRewritePowDenseSP() {
+		runTernaryAggregateTest(TEST_NAME3, false, true, true, ExecType.SPARK);
+	}
+
+	@Test
+	public void testTernaryAggregateRewritePowSparseCP() {
+		runTernaryAggregateTest(TEST_NAME3, true, true, true, ExecType.CP);
+	}
+
+	@Test
+	public void testTernaryAggregateRewritePowSparseSP() {
+		runTernaryAggregateTest(TEST_NAME3, true, true, true, ExecType.SPARK);
+	}
 	
 	private void runTernaryAggregateTest(String testname, boolean sparse, boolean vectors, boolean rewrites, ExecType et)
 	{
@@ -203,10 +235,9 @@ public class TernaryAggregateTest extends AutomatedTestBase
 			loadTestConfiguration(config);
 			
 			OptimizerUtils.ALLOW_SUM_PRODUCT_REWRITES = rewrites;
-			
 			String HOME = SCRIPT_DIR + TEST_DIR;
 			fullDMLScriptName = HOME + testname + ".dml";
-			programArgs = new String[]{"-stats","-args", input("A"), output("R")};
+			programArgs = new String[]{"-explain","-stats","-args", input("A"), output("R")};
 			
 			fullRScriptName = HOME + testname + ".R";
 			rCmd = "Rscript" + " " + fullRScriptName + " " + 

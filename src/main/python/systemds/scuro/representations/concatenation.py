@@ -24,7 +24,7 @@ from typing import List
 import numpy as np
 
 from systemds.scuro.modality.modality import Modality
-from keras.api.preprocessing.sequence import pad_sequences
+from keras.preprocessing.sequence import pad_sequences
 
 from systemds.scuro.representations.fusion import Fusion
 

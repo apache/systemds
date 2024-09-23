@@ -35,7 +35,7 @@ public class FrameCustomTest {
 		double maxp1 = Integer.MAX_VALUE + 1.0;
 		MatrixBlock mb = TestUtils.generateTestMatrixBlock(100, 100, maxp1, maxp1, 1.0, 23);
 		FrameBlock f = DataConverter.convertToFrameBlock(mb);
-		assertTrue(f.getSchema()[0] == ValueType.FP64);
+		assertTrue(f.getSchema()[0] == ValueType.INT64);
 	}
 
 	@Test
@@ -47,10 +47,10 @@ public class FrameCustomTest {
 	}
 
 	@Test
-	public void castErrorValue() {
+	public void castIntegerValue() {
 		MatrixBlock mb = new MatrixBlock(10, 10, Double.parseDouble("2.572306572E9"));
 		FrameBlock f = DataConverter.convertToFrameBlock(mb);
-		assertTrue(f.getSchema()[0] == ValueType.FP64);
+		assertTrue(f.getSchema()[0] == ValueType.INT64);
 	}
 
 	@Test

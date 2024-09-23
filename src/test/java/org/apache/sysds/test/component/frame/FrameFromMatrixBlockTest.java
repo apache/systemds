@@ -19,12 +19,16 @@
 package org.apache.sysds.test.component.frame;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
+import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.when;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.common.Types.ValueType;
+import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.data.DenseBlockFP64;
 import org.apache.sysds.runtime.frame.data.FrameBlock;
 import org.apache.sysds.runtime.frame.data.lib.FrameFromMatrixBlock;
@@ -161,6 +165,17 @@ public class FrameFromMatrixBlockTest {
 		FrameBlock fb = FrameFromMatrixBlock.convertToFrameBlock(mb, 1);
 		verifyEquivalence(mb, fb);
 	}
+
+	@Test
+	public void error(){
+		MatrixBlock mb = TestUtils.ceil(TestUtils.generateTestMatrixBlock(1000, 1, 0, 199, 0.01, 213));
+		MatrixBlock spy = spy(mb);
+		when(spy.isEmpty()).thenThrow(new DMLRuntimeException("Intended Error"));
+		Exception e = assertThrows(DMLRuntimeException.class, () -> FrameFromMatrixBlock.convertToFrameBlock(spy, new ValueType[]{ValueType.FP64}, 1));
+		assertTrue(e.getMessage().contains("failed to convert to matrix block"));
+	}
+
+
 
 	// @Test
 	// public void timeChange() {

@@ -86,19 +86,13 @@ public class FrameFromMatrixBlock {
 		final int nRow = mb.getNumRows();
 		// default boolean if possible.
 		final ValueType[] schema = UtilFunctions.nCopies(nCol, ValueType.BOOLEAN);
-		for(int c = 0; c < nCol; c++){
-			for(int r = 0; r < nRow; r++){
-				switch(schema[c]){
-					case INT64:
-						// keep the type as FP64 if long is detected
-						schema[c] = ValueType.FP64; 
+		for(int c = 0; c < nCol; c++) {
+			for(int r = 0; r < nRow; r++) {
+				switch(schema[c]) {
 					case FP64:
-						break;
+						break; // early termination of column default to highest
 					default:
-						final double v =  mb.get(r, c);
-						if(v > Integer.MAX_VALUE)
-							schema[c] = ValueType.FP64; // handle Integer overflow.
-						schema[c] = FrameUtil.isType(v, schema[c]);
+						schema[c] = FrameUtil.isType(mb.get(r, c), schema[c]);
 				}
 			}
 		}
@@ -114,15 +108,13 @@ public class FrameFromMatrixBlock {
 				convertToFrameBlockSparse();
 			else
 				convertToFrameBlockDense();
-			if(frame.getNumRows() != mb.getNumRows())
-				throw new DMLRuntimeException("Invalid result");
 
 			return frame;
 		}
-		catch(InterruptedException | ExecutionException e) {
-			throw new DMLRuntimeException("failed to convert to matrix block");
+		catch(Exception e) {
+			throw new DMLRuntimeException("failed to convert to matrix block", e);
 		}
-		finally{
+		finally {
 			if(pool != null)
 				pool.shutdown();
 		}

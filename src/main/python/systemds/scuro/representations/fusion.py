@@ -20,8 +20,6 @@
 # -------------------------------------------------------------
 from typing import List
 
-from sklearn.preprocessing import StandardScaler
-
 from systemds.scuro.modality.modality import Modality
 from systemds.scuro.representations.representation import Representation
 

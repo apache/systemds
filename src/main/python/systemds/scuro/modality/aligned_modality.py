@@ -20,8 +20,8 @@
 # -------------------------------------------------------------
 from typing import List
 
-from modality.modality import Modality
-from representations.fusion import Fusion
+from systemds.scuro.modality.modality import Modality
+from systemds.scuro.representations.fusion import Fusion
 
 
 class AlignedModality(Modality):
@@ -36,9 +36,16 @@ class AlignedModality(Modality):
             name += modality.name
         super().__init__(representation, modality_name=name)
         self.modalities = modalities
-    
+
     def combine(self):
         """
         Initiates the call to fuse the given modalities depending on the Fusion type
         """
         self.data = self.representation.fuse(self.modalities) # noqa
+
+    def get_modality_names(self):
+        names = []
+        for modality in self.modalities:
+            names.append(modality.name)
+
+        return names

@@ -84,11 +84,7 @@ public class CompressForce extends CompressBase {
 
 	@Test
 	public void testSequence_SP() {
-<<<<<<< HEAD
 		runTest(1500, 1, -1, 1, ExecType.SPARK, "plus_mm_ewbm_sum");
-=======
-		runTest(1500, 1, 2, 1, ExecType.SPARK, "plus_mm_ewbm_sum");
->>>>>>> cb91b16977 ([DO NOT MERGE] JAVA 17 BWARE COMMIT)
 	}
 
 	@Test
@@ -108,11 +104,7 @@ public class CompressForce extends CompressBase {
 
 	@Test
 	public void test_ElementWiseBinaryMultiplyOp_right_SP() {
-<<<<<<< HEAD
 		runTest(1500, 1, -1, 1, ExecType.SPARK, "ewbm_right");
-=======
-		runTest(1500, 1, 2, 1, ExecType.SPARK, "ewbm_right");
->>>>>>> cb91b16977 ([DO NOT MERGE] JAVA 17 BWARE COMMIT)
 	}
 
 	@Test

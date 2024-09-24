@@ -26,7 +26,6 @@ from typing import Dict, Iterable, List, Sequence, Tuple, Union
 import numpy as np
 from py4j.java_gateway import JavaObject
 from systemds.operator import OperationNode
-from systemds.script_building.dag import OutputType
 from systemds.utils.consts import VALID_INPUT_TYPES
 from systemds.utils.converters import (frame_block_to_pandas,
                                        matrix_block_to_numpy)
@@ -44,7 +43,7 @@ class MultiReturn(OperationNode):
         self._outputs = output_nodes
 
         super().__init__(sds_context, operation, unnamed_input_nodes,
-                         named_input_nodes, OutputType.MULTI_RETURN, False)
+                         named_input_nodes, False, is_datatype_none=False)
 
     def __getitem__(self, key):
         return self._outputs[key]
@@ -68,18 +67,18 @@ class MultiReturn(OperationNode):
         result_var = []
         jvmV = self.sds_context.java_gateway.jvm
         for idx, v in enumerate(self._script.out_var_name):
-            out_type = self._outputs[idx].output_type
-            if out_type == OutputType.MATRIX:
+            output = self._outputs[idx]
+            if str(output) == "MatrixNode":
                 result_var.append(
                     matrix_block_to_numpy(jvmV, result_variables.getMatrixBlock(v)))
-            elif out_type == OutputType.FRAME:
+            elif str(output) == "FrameNode":
                 result_var.append(
                     frame_block_to_pandas(jvmV, result_variables.getFrameBlock(v)))
-            elif out_type == OutputType.DOUBLE:
+            elif str(output) == "ScalarNode":
                 result_var.append(result_variables.getDouble(v))
             else:
                 raise NotImplementedError(
-                    "Not Implemented Support of type" + out_type)
+                    "Not Implemented Support of type" + str(output))
         return result_var
 
     def __iter__(self):

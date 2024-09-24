@@ -25,7 +25,7 @@ from typing import (TYPE_CHECKING, Dict, Iterable, Optional, Sequence, Tuple,
 
 import numpy as np
 from py4j.java_gateway import JavaObject, JVMView
-from systemds.script_building.dag import DAGNode, OutputType
+from systemds.script_building.dag import DAGNode
 from systemds.script_building.script import DMLScript
 from systemds.utils.consts import (BINARY_OPERATIONS, VALID_ARITHMETIC_TYPES,
                                    VALID_INPUT_TYPES)
@@ -45,14 +45,16 @@ class OperationNode(DAGNode):
     _output_types: Optional[Iterable[VALID_INPUT_TYPES]]
     _source_node: Optional["DAGNode"]
     _brackets: bool
+    _datatype_is_unknown: bool
 
     def __init__(self, sds_context: 'SystemDSContext', operation: str,
                  unnamed_input_nodes: Union[str,
                                             Iterable[VALID_INPUT_TYPES]] = None,
                  named_input_nodes: Dict[str, VALID_INPUT_TYPES] = None,
-                 output_type: OutputType = OutputType.MATRIX,
                  is_python_local_data: bool = False,
-                 brackets: bool = False):
+                 brackets: bool = False,
+                 is_datatype_unknown: bool = False,
+                 is_datatype_none: bool = True):
         """
         Create general `OperationNode`
 
@@ -60,12 +62,8 @@ class OperationNode(DAGNode):
         :param operation: The name of the DML function to execute
         :param unnamed_input_nodes: inputs identified by their position, not name
         :param named_input_nodes: inputs with their respective parameter name
-        :param output_type: type of the output in DML (double, matrix etc.)
         :param is_python_local_data: if the data is local in python e.g. Numpy arrays
-        :param number_of_outputs: If set to other value than 1 then it is expected
             that this operation node returns multiple values. If set remember to set the output_types value as well.
-        :param output_types: The types of output in a multi output scenario.
-            Default is None, and means every multi output is a matrix.
         """
         self.sds_context = sds_context
         if unnamed_input_nodes is None:
@@ -75,7 +73,6 @@ class OperationNode(DAGNode):
         self.operation = operation
         self._unnamed_input_nodes = unnamed_input_nodes
         self._named_input_nodes = named_input_nodes
-        self._output_type = output_type
         self._is_python_local_data = is_python_local_data
         self._result_var = None
         self._lineage_trace = None
@@ -84,6 +81,8 @@ class OperationNode(DAGNode):
         self._already_added = False
         self._brackets = brackets
         self.dml_name = ""
+        self._datatype_is_unknown = is_datatype_unknown
+        self._datatype_is_none = is_datatype_none
 
     def compute(self, verbose: bool = False, lineage: bool = False) -> \
             Union[float, np.array, Tuple[Union[float, np.array], str]]:
@@ -119,11 +118,10 @@ class OperationNode(DAGNode):
             return self._result_var
 
     def _parse_output_result_variables(self, result_variables):
-        if self._output_type == None or self._output_type == OutputType.NONE:
+        if self._datatype_is_none:
             return None
         else:
-            raise NotImplementedError(
-                "This method should be overwritten by subclasses")
+            raise NotImplementedError("This method should be overwritten by subclasses")
 
     def get_lineage_trace(self) -> str:
         """Get the lineage trace for this node.
@@ -153,7 +151,7 @@ class OperationNode(DAGNode):
         inputs_comma_sep = create_params_string(
             unnamed_input_vars, named_input_vars)
 
-        if self.output_type == OutputType.NONE:
+        if self._datatype_is_none:
             return f'{self.operation}({inputs_comma_sep});'
         else:
             return f'{var_name}={self.operation}({inputs_comma_sep});'
@@ -174,11 +172,11 @@ class OperationNode(DAGNode):
         unnamed_inputs = [self, f'"{destination}"']
         named_parameters = {"format": f'"{format}"'}
         named_parameters.update(kwargs)
-        return OperationNode(self.sds_context, 'write', unnamed_inputs, named_parameters, output_type=OutputType.NONE)
+        return OperationNode(self.sds_context, 'write', unnamed_inputs, named_parameters)
 
     def print(self, **kwargs: Dict[str, VALID_INPUT_TYPES]) -> 'OperationNode':
         """ Prints the given Operation Node.
         There is no return on calling.
         To get the returned string look at the stdout of SystemDSContext.
         """
-        return OperationNode(self.sds_context, 'print', [self], kwargs, output_type=OutputType.NONE)
+        return OperationNode(self.sds_context, 'print', [self], kwargs)

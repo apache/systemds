@@ -26,7 +26,6 @@ from systemds.operator.operation_node import OperationNode
 from systemds.operator.nodes.matrix import Matrix
 from systemds.operator.nodes.scalar import Scalar
 from systemds.operator.nodes.frame import Frame
-from systemds.script_building.dag import OutputType
 
 
 class ListAccess(OperationNode):
@@ -37,7 +36,7 @@ class ListAccess(OperationNode):
 
         inputs = [list_source]
         super().__init__(sds_context, None, unnamed_input_nodes=inputs,
-                         output_type=OutputType.UNKNOWN, is_python_local_data=False)
+                         is_datatype_unknown=True, is_datatype_none=False, is_python_local_data=False)
 
     def code_line(self, var_name: str, unnamed_input_vars: Sequence[str],
                   named_input_vars: Dict[str, str]) -> str:

@@ -25,7 +25,6 @@
 from typing import Dict, Iterable
 
 from systemds.operator import OperationNode, Matrix, Frame, List, MultiReturn, Scalar
-from systemds.script_building.dag import OutputType
 from systemds.utils.consts import VALID_INPUT_TYPES
 
 
@@ -66,6 +65,8 @@ def incSliceLine(addedX: Matrix,
     :param prevTK: previous top-k slices (for incremental updates)
     :param prevTKC: previous top-k scores (for incremental updates)
     :param encodeLat: flag for encoding output lattice for less memory consumption
+    :param pruningStrat: flag for disabling certain pruning strategies
+        (0 all, 1 all exact (score and size), 2 no score, 3 no size, 4 none)
     :return: top-k slices (k x ncol(totalX) if successful)
     :return: score, size, error of slices (k x 3)
     :return: debug matrix, populated with enumeration stats if verbose

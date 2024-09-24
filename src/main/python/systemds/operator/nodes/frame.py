@@ -32,7 +32,6 @@ from systemds.operator.operation_node import OperationNode
 from systemds.operator.nodes.multi_return import MultiReturn
 from systemds.operator.nodes.scalar import Scalar
 from systemds.operator.nodes.matrix import Matrix
-from systemds.script_building.dag import DAGNode, OutputType
 from systemds.utils.consts import VALID_INPUT_TYPES
 from systemds.utils.converters import (frame_block_to_pandas,
                                        pandas_to_frame_block)
@@ -60,7 +59,7 @@ class Frame(OperationNode):
             self._pd_dataframe = None
 
         super().__init__(sds_context, operation, unnamed_input_nodes,
-                         named_input_nodes, OutputType.FRAME, is_python_local_data, brackets)
+                         named_input_nodes, is_python_local_data, brackets, is_datatype_none=False)
 
     def pass_python_data_to_prepared_script(self, sds, var_name: str, prepared_script: JavaObject) -> None:
         assert (
@@ -142,7 +141,7 @@ class Frame(OperationNode):
         """ Converts the input to a string representation.
         :return: `Scalar` containing the string.
         """
-        return Scalar(self.sds_context, 'toString', [self], kwargs, output_type=OutputType.STRING)
+        return Scalar(self.sds_context, 'toString', [self], kwargs)
 
     def __str__(self):
         return "FrameNode"

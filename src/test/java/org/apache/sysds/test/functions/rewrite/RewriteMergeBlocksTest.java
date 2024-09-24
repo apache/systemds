@@ -78,8 +78,7 @@ public class RewriteMergeBlocksTest extends AutomatedTestBase
 		testRewriteMerge(TEST_NAME5, true);
 	}
 	
-	private void testRewriteMerge(String testname, boolean expectedMerge)
-	{	
+	private void testRewriteMerge(String testname, boolean expectedMerge) {
 		TestConfiguration config = getTestConfiguration(testname);
 		loadTestConfiguration(config);
 		
@@ -99,5 +98,5 @@ public class RewriteMergeBlocksTest extends AutomatedTestBase
 		TestUtils.compareMatrices(dmlfile, rfile, eps, "Stat-DML", "Stat-R");
 		Assert.assertTrue(expectedMerge == 
 			heavyHittersContainsSubString("mmchain"));
-	}	
+	}
 }

@@ -195,6 +195,12 @@ public class OptimizerUtils
 	 * all sum-product related rewrites.
 	 */
 	public static boolean ALLOW_SUM_PRODUCT_REWRITES = true;
+
+	/**
+	 * Enables additional mmchain optimizations. in the future, this might be merged with
+	 * ALLOW_SUM_PRODUCT_REWRITES.
+	 */
+	public static boolean ALLOW_ADVANCED_MMCHAIN_REWRITES = false;
 	
 	/**
 	 * Enables a specific hop dag rewrite that splits hop dags after csv persistent reads with 

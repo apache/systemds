@@ -194,14 +194,15 @@ m_incSliceLine = function(
      eAvg, eAvgOld, eAvgNew, minSup, alpha, minsc, maxsc, maxscub, verbose, enableIncScorePruning, enableIncMaxScorePruning);
 
   # initialize lattice and statistics for incremental updates
-  L1 = S;
+  L1 = rbind(S, SPr);
   metaLattice = list();
   if( encodeLat ) {
-    [L1, M] = transformSlicesToIDs(S, foffb, foffe);
+    [L1, M] = transformSlicesToIDs(L1, foffb, foffe);
     metaLattice = append(metaLattice, M);
   }
   L = list(L1);
-  Stats = list(R);
+  Stats1 = rbind(R, RPr);
+  Stats = list(Stats1);
 
   # initialize top-k
   [TK, TKC] = maintainTopKInc(S, R, prevTK2, prevTKC2, k, minSup, foffb, foffe);
@@ -363,14 +364,37 @@ createAndScoreBasicSlicesInc = function(Matrix[Double] X2, Matrix[Double] X2p,
   # score 1-slices and create initial top-k
   sc = scoreInc(ss, se, eAvg, alpha, nrow(X2));
   R = cbind(sc, se, sm, ss);
+  SPr = matrix(0,0, n2);
+  RPr = matrix(0,0, 4);
+
+  # store all pruned slices for incremental updates
+  if(sum(!selCols2) != 0){
+    attrPr = removeEmpty(target=seq(1,n2), margin="rows", select=!selCols2);
+    ssPr = removeEmpty(target=cCnts, margin="rows", select=!selCols2);
+    sePr = removeEmpty(target=err, margin="rows", select=!selCols2);
+    smPr = removeEmpty(target=merr, margin="rows", select=!selCols2);
+    SPr = table(seq(1,nrow(attrPr)), attrPr, nrow(attrPr), n2);
+    scPr = score(ssPr, sePr, eAvg, alpha, nrow(X2));  
+    RPr = cbind(scPr, sePr, smPr, ssPr);
+  }
 
   # d) score pruning
   # compute upper bound scores for all remaining slices
   if(minsc > -Inf & enableIncScorePruning) {
     ubSc = scoreUBInc(ss, se, sm, eAvg, minSup, alpha, nrow(X2));
     selCols3 = (ubSc > max(0, minsc));
+
+    # store all pruned slices for incremental updates
+    if(sum(!selCols3) != 0){
+      Rremoved = removeEmpty(target=R, margin="rows", select=!selCols3);
+      Sremoved = removeEmpty(target=S, margin="rows", select=!selCols3);
+      RPr = rbind(RPr, Rremoved);
+      SPr = rbind(SPr, Sremoved);
+    }
+
     S = removeEmpty(target=S, margin="rows", select=selCols3);
     R = removeEmpty(target=R, margin="rows", select=selCols3);
+
     if( verbose ) {
       n = as.integer(sum(selCols2));
       drop = as.integer(sum(selCols2) - sum(selCols3));

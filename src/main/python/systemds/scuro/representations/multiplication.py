@@ -24,7 +24,7 @@ from typing import List
 import numpy as np
 
 from systemds.scuro.modality.modality import Modality
-from keras.preprocessing.sequence import pad_sequences
+from systemds.scuro.representations.utils import pad_sequences
 
 from systemds.scuro.representations.fusion import Fusion
 
@@ -39,10 +39,10 @@ class Multiplication(Fusion):
     def fuse(self, modalities: List[Modality], train_indices=None):
         max_emb_size = self.get_max_embedding_size(modalities)
         
-        data = pad_sequences(modalities[0].data, maxlen=max_emb_size, dtype='float32', padding='post')
+        data = pad_sequences(modalities[0].data, maxlen=max_emb_size, dtype='float32')
         
         for m in range(1, len(modalities)):
             # scaled = self.scale_data(modalities[m].data, train_indices)
-            data = np.multiply(data, pad_sequences(modalities[m].data, maxlen=max_emb_size, dtype='float32', padding='post'))
+            data = np.multiply(data, pad_sequences(modalities[m].data, maxlen=max_emb_size, dtype='float32'))
         
         return data

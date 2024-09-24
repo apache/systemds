@@ -24,7 +24,7 @@ import pickle
 
 import librosa
 import numpy as np
-from keras.src.utils import pad_sequences
+from systemds.scuro.representations.utils import pad_sequences
 
 from systemds.scuro.representations.unimodal import UnimodalRepresentation
 
@@ -51,7 +51,7 @@ class MelSpectrogram(UnimodalRepresentation):
         
         r = []
         for elem in result:
-            d = pad_sequences(elem, maxlen=max_length, dtype='float32', padding='post')
+            d = pad_sequences(elem, maxlen=max_length, dtype='float32')
             r.append(d)
         
         np_array_r = np.array(r) if not self.avg else np.mean(np.array(r), axis=1)

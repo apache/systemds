@@ -30,7 +30,6 @@ from typing import TYPE_CHECKING, Dict, Iterable, Sequence
 # since source dynamically adds code and the import is needed.
 from systemds.operator import (List, ListAccess, Matrix, MultiReturn,
                                OperationNode, Scalar)
-from systemds.script_building.dag import OutputType
 
 
 class Func(object):
@@ -54,10 +53,7 @@ class Func(object):
         output_object = self.parse_outputs()
 
         definition = f'def {self._name}(self{argument_string}):'
-        if self._outputs is None:
-            output = f'out = {output_object}(self.sds_context, {operation}, named_input_nodes=named_arguments, output_type=OutputType.NONE)'
-        else:
-            output = f'out = {output_object}(self.sds_context, {operation}, named_input_nodes=named_arguments)'
+        output = f'out = {output_object}(self.sds_context, {operation}, named_input_nodes=named_arguments)'
 
         lines = [definition,
                  named_intput_nodes, output,
@@ -135,7 +131,7 @@ class Source(OperationNode):
 
     def __init__(self, sds_context, path: str, name: str):
         super().__init__(sds_context,
-                         f'"{path}"', output_type=OutputType.IMPORT)
+                         f'"{path}"')
         self.__name = name
         functions = self.__parse_functions_from_script(path)
 

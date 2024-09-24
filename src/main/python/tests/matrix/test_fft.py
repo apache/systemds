@@ -38,7 +38,7 @@ class TestFFT(unittest.TestCase):
                                  [13, 14, 15, 16]])
 
         sds_input = self.sds.from_numpy(input_matrix)
-        fft_result = self.sds.fft(sds_input).compute()
+        fft_result = sds_input.fft().compute()
 
         real_part, imag_part = fft_result
 
@@ -56,7 +56,7 @@ class TestFFT(unittest.TestCase):
 
             sds_input = self.sds.from_numpy(input_matrix)
 
-            fft_result = self.sds.fft(sds_input).compute()
+            fft_result = sds_input.fft().compute()
 
             real_part, imag_part = fft_result
 
@@ -74,7 +74,7 @@ class TestFFT(unittest.TestCase):
 
             sds_input = self.sds.from_numpy(input_matrix)
 
-            fft_result = self.sds.fft(sds_input).compute()
+            fft_result = sds_input.fft().compute()
 
             real_part, imag_part = fft_result
 
@@ -91,7 +91,7 @@ class TestFFT(unittest.TestCase):
         sds_input = self.sds.from_numpy(input_matrix)
 
         with self.assertRaisesRegex(RuntimeError, "This FFT implementation is only defined for matrices with dimensions that are powers of 2."):
-            _ = self.sds.fft(sds_input).compute()
+            _ = sds_input.fft().compute()
 
     def test_ifft_basic(self):
         real_input_matrix = np.array([[1, 2, 3, 4],
@@ -107,7 +107,7 @@ class TestFFT(unittest.TestCase):
         sds_real_input = self.sds.from_numpy(real_input_matrix)
         sds_imag_input = self.sds.from_numpy(imag_input_matrix)
 
-        ifft_result = self.sds.ifft(sds_real_input, sds_imag_input).compute()
+        ifft_result = sds_real_input.ifft(sds_imag_input).compute()
 
         real_part, imag_part = ifft_result
 
@@ -133,7 +133,7 @@ class TestFFT(unittest.TestCase):
         sds_real_input = self.sds.from_numpy(real_input_matrix)
         sds_imag_input = self.sds.from_numpy(imag_input_matrix)
 
-        ifft_result = self.sds.ifft(sds_real_input, sds_imag_input).compute()
+        ifft_result = sds_real_input.ifft(sds_imag_input).compute()
 
         real_part, imag_part = ifft_result
 
@@ -157,7 +157,7 @@ class TestFFT(unittest.TestCase):
         sds_imag_input = self.sds.from_numpy(imag_input_matrix)
 
         with self.assertRaisesRegex(RuntimeError, "The second argument to IFFT cannot be an empty matrix. Provide either only a real matrix or a filled real and imaginary one."):
-            self.sds.ifft(sds_real_input, sds_imag_input).compute()
+            sds_real_input.ifft(sds_imag_input).compute()
 
     def test_ifft_empty_2dmatrix_imag(self):
         real_input_matrix = np.array([[1, 2, 3, 4],
@@ -171,7 +171,7 @@ class TestFFT(unittest.TestCase):
         sds_imag_input = self.sds.from_numpy(imag_input_matrix)
 
         with self.assertRaisesRegex(RuntimeError, "The second argument to IFFT cannot be an empty matrix. Provide either only a real matrix or a filled real and imaginary one."):
-            self.sds.ifft(sds_real_input, sds_imag_input).compute()
+            sds_real_input.ifft(sds_imag_input).compute()
 
     def test_ifft_random_1d(self):
         np.random.seed(123) 
@@ -185,7 +185,7 @@ class TestFFT(unittest.TestCase):
             sds_real_input = self.sds.from_numpy(np.real(np_fft_result).reshape(1, -1))
             sds_imag_input = self.sds.from_numpy(np.imag(np_fft_result).reshape(1, -1))
 
-            ifft_result = self.sds.ifft(sds_real_input, sds_imag_input).compute()
+            ifft_result = sds_real_input.ifft(sds_imag_input).compute()
 
             real_part_result, imag_part_result = ifft_result
 
@@ -205,7 +205,7 @@ class TestFFT(unittest.TestCase):
 
         sds_real_input = self.sds.from_numpy(real)
 
-        ifft_result = self.sds.ifft(sds_real_input).compute()
+        ifft_result = sds_real_input.ifft().compute()
 
         real_part_result, imag_part_result = ifft_result
 
@@ -226,7 +226,7 @@ class TestFFT(unittest.TestCase):
 
             sds_input = self.sds.from_numpy(input_matrix)
 
-            ifft_result = self.sds.ifft(sds_input).compute()
+            ifft_result = sds_input.ifft().compute()
 
             real_part, imag_part = ifft_result
 
@@ -248,7 +248,7 @@ class TestFFT(unittest.TestCase):
             sds_real_input = self.sds.from_numpy(np.real(fft_result))
             sds_imag_input = self.sds.from_numpy(np.imag(fft_result))
 
-            ifft_result = self.sds.ifft(sds_real_input, sds_imag_input).compute()
+            ifft_result = sds_real_input.ifft(sds_imag_input).compute()
 
             real_part, imag_part = ifft_result
 
@@ -264,19 +264,19 @@ class TestFFT(unittest.TestCase):
         sds_input = self.sds.from_numpy(input_matrix)
 
         with self.assertRaisesRegex(RuntimeError, "The first argument to FFT cannot be an empty matrix."):
-            _ = self.sds.fft(sds_input).compute()
+            _ = sds_input.fft().compute()
 
     def test_ifft_empty_matrix(self):
         input_matrix = np.array([])
         sds_input = self.sds.from_numpy(input_matrix)
 
         with self.assertRaisesRegex(RuntimeError, "The first argument to IFFT cannot be an empty matrix."):
-            _ = self.sds.ifft(sds_input).compute()
+            _ = sds_input.ifft().compute()
 
     def test_fft_single_element(self):
         input_matrix = np.array([[5]])
         sds_input = self.sds.from_numpy(input_matrix)
-        fft_result = self.sds.fft(sds_input).compute()
+        fft_result = sds_input.fft().compute()
 
         real_part, imag_part = fft_result
         np.testing.assert_array_almost_equal(real_part, [[5]], decimal=5)
@@ -285,7 +285,7 @@ class TestFFT(unittest.TestCase):
     def test_ifft_single_element(self):
         input_matrix = np.array([[5]])
         sds_input = self.sds.from_numpy(input_matrix)
-        ifft_result = self.sds.ifft(sds_input).compute()
+        ifft_result = sds_input.ifft().compute()
 
         real_part, imag_part = ifft_result
         np.testing.assert_array_almost_equal(real_part, [[5]], decimal=5)
@@ -294,7 +294,7 @@ class TestFFT(unittest.TestCase):
     def test_fft_zeros_matrix(self):
         input_matrix = np.zeros((4, 4))
         sds_input = self.sds.from_numpy(input_matrix)
-        fft_result = self.sds.fft(sds_input).compute()
+        fft_result = sds_input.fft().compute()
 
         real_part, imag_part = fft_result
         np.testing.assert_array_almost_equal(real_part, np.zeros((4, 4)), decimal=5)
@@ -303,7 +303,7 @@ class TestFFT(unittest.TestCase):
     def test_ifft_zeros_matrix(self):
         input_matrix = np.zeros((4, 4))
         sds_input = self.sds.from_numpy(input_matrix)
-        ifft_result = self.sds.ifft(sds_input).compute()
+        ifft_result = sds_input.ifft().compute()
 
         real_part, imag_part = ifft_result
         np.testing.assert_array_almost_equal(real_part, np.zeros((4, 4)), decimal=5)
@@ -317,7 +317,7 @@ class TestFFT(unittest.TestCase):
         sds_imag_input = self.sds.from_numpy(imag_part)
 
         with self.assertRaisesRegex(RuntimeError, "The real and imaginary part of the provided matrix are of different dimensions."):
-            self.sds.ifft(sds_real_input, sds_imag_input).compute()
+            sds_real_input.ifft(sds_imag_input).compute()
 
     def test_ifft_non_power_of_two_matrix(self):
         real_part = np.random.rand(3, 5) 
@@ -327,7 +327,7 @@ class TestFFT(unittest.TestCase):
         sds_imag_input = self.sds.from_numpy(imag_part)
 
         with self.assertRaisesRegex(RuntimeError, "This IFFT implementation is only defined for matrices with dimensions that are powers of 2."):
-            _ = self.sds.ifft(sds_real_input, sds_imag_input).compute()
+            _ = sds_real_input.ifft(sds_imag_input).compute()
 
 if __name__ == '__main__':
     unittest.main()

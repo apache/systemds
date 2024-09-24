@@ -27,7 +27,6 @@ import numpy as np
 from py4j.java_gateway import JavaObject
 from systemds.operator.operation_node import OperationNode
 from systemds.operator.nodes.list_access import ListAccess
-from systemds.script_building.dag import OutputType
 from systemds.utils.consts import VALID_INPUT_TYPES
 from systemds.utils.converters import numpy_to_matrix_block
 from systemds.utils.helpers import create_params_string
@@ -59,7 +58,7 @@ class List(OperationNode):
             self._outputs = {}
 
         super().__init__(sds_context, func, unnamed_input_nodes,
-                         named_input_nodes, OutputType.LIST, False)
+                         named_input_nodes, False, is_datatype_none=False)
 
     def __getitem__(self, key):
         if key in self._outputs:
@@ -74,11 +73,6 @@ class List(OperationNode):
         if self._is_numpy():
             prepared_script.setMatrix(var_name, numpy_to_matrix_block(
                 sds, self._np_array), True)  # True for reuse
-
-    def code_line(self, var_name: str, unnamed_input_vars: Sequence[str],
-                  named_input_vars: Dict[str, str]) -> str:
-        code_line = super().code_line(var_name, unnamed_input_vars, named_input_vars)
-        return code_line
 
     def compute(self, verbose: bool = False, lineage: bool = False) -> np.array:
         return super().compute(verbose, lineage)

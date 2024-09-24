@@ -22,11 +22,9 @@
 
 __all__ = ["Combine"]
 
-from typing import Dict, Iterable, List, Sequence
+from typing import Dict, Iterable, Sequence
 
 from systemds.operator import OperationNode
-from systemds.script_building.dag import OutputType
-from systemds.utils.consts import VALID_INPUT_TYPES
 
 
 class Combine(OperationNode):
@@ -34,12 +32,12 @@ class Combine(OperationNode):
     def __init__(self, sds_context, func='',
                  unnamed_input_nodes: Iterable[OperationNode] = None):
         for a in unnamed_input_nodes:
-            if(a.output_type != OutputType.NONE):
+            if not a._datatype_is_none:
                 raise ValueError(
                     "Cannot combine elements that have outputs, all elements must be instances of print or write")
 
         self._outputs = {}
-        super().__init__(sds_context, func, unnamed_input_nodes, None, OutputType.NONE, False)
+        super().__init__(sds_context, func, unnamed_input_nodes, None, False)
 
     def code_line(self, var_name: str, unnamed_input_vars: Sequence[str],
                   named_input_vars: Dict[str, str]) -> str:

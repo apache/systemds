@@ -113,7 +113,8 @@ jobs:
           opencv-python \
           torch \
           librosa \
-          h5py
+          h5py \
+          black
 
     - name: Build Python Package
       run: |
@@ -145,3 +146,11 @@ jobs:
         export PATH=$SYSTEMDS_ROOT/bin:$PATH
         cd src/main/python
         ./tests/federated/runFedTest.sh
+
+    - name: Check formatting according to Black (src/main/python/systemds)
+      run: |
+        black --check --exclude operator/algorithm src/main/python/systemds
+
+    - name: Check formatting according to Black (src/main/python/tests)
+      run: |
+        black --check src/main/python/tests

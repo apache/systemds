@@ -25,7 +25,8 @@ from typing import (TYPE_CHECKING, Any, Collection, Dict, KeysView, List,
 from py4j.protocol import Py4JNetworkError
 from py4j.java_collections import JavaArray
 from py4j.java_gateway import JavaGateway, JavaObject
-from systemds.script_building.dag import DAGNode, OutputType
+
+from systemds.script_building.dag import DAGNode
 from systemds.utils.consts import VALID_INPUT_TYPES
 
 if TYPE_CHECKING:
@@ -164,8 +165,8 @@ class DMLScript:
         :param dag_root: the topmost operation of our DAG, result of operation will be output
         """
         baseOutVarString = self._dfs_dag_nodes(dag_root)
-        if dag_root.output_type != OutputType.NONE:
-            if dag_root.output_type == OutputType.MULTI_RETURN:
+        if not dag_root._datatype_is_none:
+            if str(dag_root) == "MultiReturnNode":
                 self.out_var_name = []
                 for idx, output_node in enumerate(dag_root._outputs):
                     self.add_code(

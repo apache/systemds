@@ -28,7 +28,6 @@ from py4j.java_gateway import JavaObject
 from systemds.operator.operation_node import OperationNode
 from systemds.operator.nodes.multi_return import MultiReturn
 from systemds.operator.nodes.scalar import Scalar
-from systemds.script_building.dag import OutputType
 from systemds.utils.consts import (
     BINARY_OPERATIONS,
     VALID_ARITHMETIC_TYPES,
@@ -67,9 +66,9 @@ class Matrix(OperationNode):
             operation,
             unnamed_input_nodes,
             named_input_nodes,
-            OutputType.MATRIX,
             is_python_local_data,
             brackets,
+            is_datatype_none=False
         )
 
     def pass_python_data_to_prepared_script(
@@ -504,7 +503,7 @@ class Matrix(OperationNode):
             unnamed_inputs.append(weights)
         unnamed_inputs.append(moment)
         return Matrix(
-            self.sds_context, "moment", unnamed_inputs, output_type=OutputType.DOUBLE
+            self.sds_context, "moment", unnamed_inputs
         )
 
     def cholesky(self, safe: bool = False) -> "Matrix":
@@ -631,7 +630,7 @@ class Matrix(OperationNode):
         :return: `Scalar` containing the string.
         """
         return Scalar(
-            self.sds_context, "toString", [self], kwargs, output_type=OutputType.STRING
+            self.sds_context, "toString", [self], kwargs
         )
 
     def isNA(self) -> "Matrix":
@@ -809,6 +808,37 @@ class Matrix(OperationNode):
             return Scalar(self.sds_context, "quantile", input_nodes)
         else:
             raise ValueError("P has to be a Scalar or Matrix")
+
+    def fft(self) -> 'MultiReturn':
+        """
+        Performs the Fast Fourier Transform (FFT) on the matrix.
+        :return: A MultiReturn object representing the real and imaginary parts of the FFT output.
+        """
+
+        real_output = Matrix(self.sds_context, '')
+        imag_output = Matrix(self.sds_context, '')
+
+        fft_node = MultiReturn(self.sds_context, 'fft', [real_output, imag_output], [self])
+
+        return fft_node
+
+    def ifft(self, imag_input: 'Matrix' = None) -> 'MultiReturn':
+        """
+        Performs the Inverse Fast Fourier Transform (IFFT) on a complex matrix.
+
+        :param imag_input: The imaginary part of the input matrix (optional).
+        :return: A MultiReturn object representing the real and imaginary parts of the IFFT output.
+        """
+
+        real_output = Matrix(self.sds_context, '')
+        imag_output = Matrix(self.sds_context, '')
+
+        if imag_input is None:
+            ifft_node = MultiReturn(self.sds_context, 'ifft', [real_output, imag_output], [self])
+        else:
+            ifft_node = MultiReturn(self.sds_context, 'ifft', [real_output, imag_output], [self, imag_input])
+
+        return ifft_node
 
     def __str__(self):
         return "MatrixNode"

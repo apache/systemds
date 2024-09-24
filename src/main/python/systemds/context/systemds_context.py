@@ -39,9 +39,9 @@ import pandas as pd
 from py4j.java_gateway import GatewayParameters, JavaGateway, Py4JNetworkError
 from systemds.operator import (Frame, List, Matrix, OperationNode, Scalar,
                                Source, Combine,  MultiReturn)
-from systemds.script_building import DMLScript, OutputType
+from systemds.script_building import DMLScript
 from systemds.utils.consts import VALID_INPUT_TYPES
-from systemds.utils.helpers import get_module_dir
+from systemds.utils.helpers import get_module_dir, valuetype_from_str
 
 
 class SystemDSContext(object):
@@ -425,41 +425,6 @@ class SystemDSContext(object):
         named_input_nodes = {'rows': shape[0], 'cols': shape[1]}
         return Matrix(self, 'matrix', unnamed_input_nodes, named_input_nodes)
 
-
-    def fft(self, real_input: 'Matrix') -> 'MultiReturn':
-        """
-        Performs the Fast Fourier Transform (FFT) on the matrix.
-        :param real_input: The real part of the input matrix.
-        :return: A MultiReturn object representing the real and imaginary parts of the FFT output.
-        """
-
-        real_output = OperationNode(self, '', output_type=OutputType.MATRIX, is_python_local_data=False)
-        imag_output = OperationNode(self, '', output_type=OutputType.MATRIX, is_python_local_data=False)
-
-        fft_node = MultiReturn(self, 'fft', [real_output, imag_output], [real_input])
-
-        return fft_node
-
-
-    def ifft(self, real_input: 'Matrix', imag_input: 'Matrix' = None) -> 'MultiReturn':
-        """
-        Performs the Inverse Fast Fourier Transform (IFFT) on a complex matrix.
-        
-        :param real_input: The real part of the input matrix.
-        :param imag_input: The imaginary part of the input matrix (optional).
-        :return: A MultiReturn object representing the real and imaginary parts of the IFFT output.
-        """
-
-        real_output = OperationNode(self, '', output_type=OutputType.MATRIX, is_python_local_data=False)
-        imag_output = OperationNode(self, '', output_type=OutputType.MATRIX, is_python_local_data=False)
-
-        if imag_input is not None:
-            ifft_node = MultiReturn(self, 'ifft', [real_output, imag_output], [real_input, imag_input])
-        else:
-            ifft_node = MultiReturn(self, 'ifft', [real_output, imag_output], [real_input])
-
-        return ifft_node
-
     def seq(self, start: Union[float, int], stop: Union[float, int] = None,
             step: Union[float, int] = 1) -> 'Matrix':
         """Create a single column vector with values from `start` to `stop` and an increment of `step`.
@@ -558,10 +523,10 @@ class SystemDSContext(object):
             return Frame(self, "read", [f'"{path}"'], named_input_nodes=kwargs)
         elif data_type == "scalar":
             kwargs["data_type"] = f'"{data_type}"'
-            output_type = OutputType.from_str(kwargs.get("value_type", None))
-            if output_type:
-                kwargs["value_type"] = f'"{output_type.name}"'
-                return Scalar(self, "read", [f'"{path}"'], named_input_nodes=kwargs, output_type=output_type)
+            value_type = valuetype_from_str(kwargs.get("value_type", None))
+            if value_type:
+                kwargs["value_type"] = f'"{value_type}"'
+                return Scalar(self, "read", [f'"{path}"'], named_input_nodes=kwargs)
             else:
                 raise ValueError(
                     "Invalid arguments for reading scalar, value_type must be specified")
@@ -584,7 +549,7 @@ class SystemDSContext(object):
 
         # output type assign simply assigns the given variable to the value
         # therefore the output type is assign.
-        return Scalar(self, v, assign=True, output_type=OutputType.from_str(v))
+        return Scalar(self, v, assign=True)
 
     def from_numpy(self, mat: np.array,
                    *args: Sequence[VALID_INPUT_TYPES],

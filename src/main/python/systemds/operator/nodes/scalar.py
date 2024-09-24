@@ -28,7 +28,6 @@ from typing import (TYPE_CHECKING, Dict, Iterable, Optional, Sequence, Tuple,
 import numpy as np
 from py4j.java_gateway import JavaObject, JVMView
 from systemds.operator.operation_node import OperationNode
-from systemds.script_building.dag import OutputType
 from systemds.utils.consts import (BINARY_OPERATIONS, VALID_ARITHMETIC_TYPES,
                                    VALID_INPUT_TYPES)
 from systemds.utils.converters import numpy_to_matrix_block
@@ -40,11 +39,10 @@ class Scalar(OperationNode):
     def __init__(self, sds_context, operation: str,
                  unnamed_input_nodes: Iterable[VALID_INPUT_TYPES] = None,
                  named_input_nodes: Dict[str, VALID_INPUT_TYPES] = None,
-                 output_type: OutputType = OutputType.DOUBLE,
                  assign: bool = False) -> 'Scalar':
         self.__assign = assign
         super().__init__(sds_context, operation, unnamed_input_nodes=unnamed_input_nodes,
-                         named_input_nodes=named_input_nodes, output_type=output_type)
+                         named_input_nodes=named_input_nodes, is_datatype_none=False)
 
     def pass_python_data_to_prepared_script(self, sds, var_name: str, prepared_script: JavaObject) -> None:
         raise RuntimeError(
@@ -61,13 +59,19 @@ class Scalar(OperationNode):
         return super().compute(verbose, lineage)
 
     def _parse_output_result_variables(self, result_variables):
-        if self.output_type == OutputType.DOUBLE:
-            return result_variables.getDouble(self._script.out_var_name[0])
-        elif self.output_type == OutputType.STRING:
-            return result_variables.getString(self._script.out_var_name[0])
+        scalar_object = result_variables.getScalarObject(self._script.out_var_name[0])
+        value_type = scalar_object.getValueType().toString()
+        if value_type in ["FP64", "FP32"]:
+            return scalar_object.getDoubleValue()
+        elif value_type == "STRING":
+            return scalar_object.getStringValue()
+        elif value_type in ["INT64", "INT32"]:
+            return scalar_object.getLongValue()
+        elif value_type == "BOOLEAN":
+            return scalar_object.getBooleanValue()
         else:
-            raise NotImplemented(
-                "Not currently support scalar type: " + self.output_type)
+            raise NotImplementedError(
+                    "Not currently support scalar type: " + value_type)
 
     def __add__(self, other: VALID_ARITHMETIC_TYPES) -> 'Scalar':
         return Scalar(self.sds_context, '+', [self, other])
@@ -141,13 +145,13 @@ class Scalar(OperationNode):
         return Scalar(self.sds_context, '%*%', [self, other])
 
     def sum(self) -> 'Scalar':
-        return Scalar(self.sds_context, 'sum', [self], output_type=OutputType.DOUBLE)
+        return Scalar(self.sds_context, 'sum', [self])
 
     def mean(self) -> 'Scalar':
-        return Scalar(self.sds_context, 'mean', [self], output_type=OutputType.DOUBLE)
+        return Scalar(self.sds_context, 'mean', [self])
 
     def var(self, axis: int = None) -> 'Scalar':
-        return Scalar(self.sds_context, 'var', [self], output_type=OutputType.DOUBLE)
+        return Scalar(self.sds_context, 'var', [self])
 
     def abs(self) -> 'Scalar':
         """Calculate absolute.
@@ -266,7 +270,7 @@ class Scalar(OperationNode):
         """ Converts the input to a string representation.
         :return: `Scalar` containing the string.
         """
-        return Scalar(self.sds_context, 'toString', [self], named_input_nodes=kwargs, output_type=OutputType.STRING)
+        return Scalar(self.sds_context, 'toString', [self], named_input_nodes=kwargs)
 
     def isNA(self) -> 'Scalar':
         """ Computes a boolean indicator matrix of the same shape as the input, indicating where NA (not available)
@@ -290,6 +294,7 @@ class Scalar(OperationNode):
         :return: the OperationNode representing this operation
         """
         return Scalar(self.sds_context, 'isInf', [self])
+
 
     def __str__(self):
         return "ScalarNode"

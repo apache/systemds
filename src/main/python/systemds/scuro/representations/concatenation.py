@@ -24,7 +24,7 @@ from typing import List
 import numpy as np
 
 from systemds.scuro.modality.modality import Modality
-from keras.api.preprocessing.sequence import pad_sequences
+from systemds.scuro.representations.utils import pad_sequences
 
 from systemds.scuro.representations.fusion import Fusion
 
@@ -51,7 +51,7 @@ class Concatenation(Fusion):
 
         for modality in modalities:
             if self.padding:
-                data = np.concatenate([data, pad_sequences(modality.data, maxlen=max_emb_size, dtype='float32', padding='post')], axis=-1)
+                data = np.concatenate([data, pad_sequences(modality.data, maxlen=max_emb_size, dtype='float32')], axis=-1)
             else:
                 data = np.concatenate([data, modality.data], axis=-1)
 

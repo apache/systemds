@@ -18,8 +18,3 @@
 # under the License.
 #
 # -------------------------------------------------------------
-from systemds.scuro.models import Model
-from systemds.scuro.discrete_model import DiscreteModel
-
-
-__all__ = ["Model", "DiscreteModel"]

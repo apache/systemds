@@ -20,8 +20,8 @@
 # -------------------------------------------------------------
 import os
 
-from modality.modality import Modality
-from representations.unimodal import UnimodalRepresentation
+from systemds.scuro.modality.modality import Modality
+from systemds.scuro.representations.unimodal import UnimodalRepresentation
 
 
 class TextModality(Modality):

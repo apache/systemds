@@ -24,30 +24,25 @@ from typing import List
 import numpy as np
 
 from systemds.scuro.modality.modality import Modality
-from keras.api.preprocessing.sequence import pad_sequences
+from keras.preprocessing.sequence import pad_sequences
 
 from systemds.scuro.representations.fusion import Fusion
 
 
-class Average(Fusion):
+class Multiplication(Fusion):
     def __init__(self):
         """
-        Combines modalities using averaging
+        Combines modalities using elementwise multiply
         """
-        super().__init__('Average')
+        super().__init__('Multiplication')
     
-    def fuse(self, modalities: List[Modality]):
+    def fuse(self, modalities: List[Modality], train_indices=None):
         max_emb_size = self.get_max_embedding_size(modalities)
-
-        padded_modalities = []
-        for modality in modalities:
-            d = pad_sequences(modality.data, maxlen=max_emb_size, dtype='float32', padding='post')
-            padded_modalities.append(d)
-
-        data = padded_modalities[0]
-        for i in range(1, len(modalities)):
-            data += padded_modalities[i]
-
-        data /= len(modalities)
-
-        return np.array(data)
+        
+        data = pad_sequences(modalities[0].data, maxlen=max_emb_size, dtype='float32', padding='post')
+        
+        for m in range(1, len(modalities)):
+            # scaled = self.scale_data(modalities[m].data, train_indices)
+            data = np.multiply(data, pad_sequences(modalities[m].data, maxlen=max_emb_size, dtype='float32', padding='post'))
+        
+        return data

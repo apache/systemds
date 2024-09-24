@@ -22,16 +22,16 @@ import collections
 import json
 from datetime import datetime
 
-from representations.average import Averaging
-from representations.concatenation import Concatenation
-from modality.aligned_modality import AlignedModality
-from modality.text_modality import TextModality
-from modality.video_modality import VideoModality
-from modality.audio_modality import AudioModality
-from representations.unimodal import Pickle, JSON, HDF5, NPY
-from models.discrete_model import DiscreteModel
-from aligner.task import Task
-from aligner.dr_search import DRSearch
+from systemds.scuro.representations.average import Average
+from systemds.scuro.representations.concatenation import Concatenation
+from systemds.scuro.modality.aligned_modality import AlignedModality
+from systemds.scuro.modality.text_modality import TextModality
+from systemds.scuro.modality.video_modality import VideoModality
+from systemds.scuro.modality.audio_modality import AudioModality
+from systemds.scuro.representations.unimodal import Pickle, JSON, HDF5, NPY
+from systemds.scuro.models.discrete_model import DiscreteModel
+from systemds.scuro.aligner.task import Task
+from systemds.scuro.aligner.dr_search import DRSearch
 
 
 class CustomTask(Task):
@@ -66,8 +66,8 @@ modalities = [text, audio, video]
 
 model = DiscreteModel()
 custom_task = CustomTask(model, labels, train_indices, val_indices)
-representations = [Concatenation(), Averaging()]
+representations = [Concatenation(), Average()]
 
 dr_search = DRSearch(modalities, custom_task, representations)
-best_representation, best_score, best_modalities = dr_search.fit()
+best_representation, best_score, best_modalities = dr_search.fit_random()
 aligned_representation = dr_search.transform(modalities)

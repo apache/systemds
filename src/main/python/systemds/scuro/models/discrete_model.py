@@ -18,7 +18,7 @@
 # under the License.
 #
 # -------------------------------------------------------------
-from models.model import Model
+from systemds.scuro.models.model import Model
 
 
 class DiscreteModel(Model):

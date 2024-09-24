@@ -314,7 +314,7 @@ public class CLALibCompAgg {
 	}
 
 	private static void aggregateInParallel(CompressedMatrixBlock m1, MatrixBlock ret, AggregateUnaryOperator op,
-		int k) {
+		int k) throws Exception  {
 		final ExecutorService pool = CommonThreadPool.get(k);
 		try {
 			final ArrayList<UnaryAggregateTask> tasks = new ArrayList<>();

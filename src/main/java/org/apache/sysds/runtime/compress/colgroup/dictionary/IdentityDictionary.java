@@ -350,10 +350,6 @@ public class IdentityDictionary extends ADictionary {
 	public void colSum(double[] c, int[] counts, IColIndex colIndexes) {
 		for(int i = 0; i < colIndexes.size(); i++)
 			c[colIndexes.get(i)] += counts[i];
-<<<<<<< HEAD
-=======
-
->>>>>>> cb91b16977 ([DO NOT MERGE] JAVA 17 BWARE COMMIT)
 	}
 
 	@Override
@@ -434,18 +430,8 @@ public class IdentityDictionary extends ADictionary {
 	}
 
 	@Override
-<<<<<<< HEAD
 	public final void addToEntry(final double[] v, final int fr, final int to, final int nCol) {
 		addToEntry(v, fr, to, nCol, 1);
-=======
-
-	public void addToEntry(final double[] v, final int fr, final int to, final int nCol) {
-		// getMBDict().addToEntry(v, fr, to, nCol);
-		if(!withEmpty)
-			v[to * nCol + fr] += 1;
-		else if(fr < nRowCol)
-			v[to * nCol + fr] += 1;
->>>>>>> cb91b16977 ([DO NOT MERGE] JAVA 17 BWARE COMMIT)
 	}
 
 	@Override
@@ -675,13 +661,8 @@ public class IdentityDictionary extends ADictionary {
 		final int colsOut = result.getNumColumns();
 		final int commonDim = Math.min(left.length / leftSide, nRowCol);
 		final double[] resV = result.getDenseBlockValues();
-<<<<<<< HEAD
 		for(int i = 0; i < leftSide; i++) { // rows in left side
 			final int offOut = rowsLeft.get(i) * colsOut;
-=======
-		for(int i = 0; i < leftSide; i++) {// rows in left side
-			final int offOut = rowsLeft.get(i) * resCols;
->>>>>>> cb91b16977 ([DO NOT MERGE] JAVA 17 BWARE COMMIT)
 			final int leftOff = i;
 			for(int j = 0; j < commonDim; j++) { // cols in left side skipping empty from identity
 				resV[offOut + colsRight.get(j)] += left[leftOff + j * leftSide];
@@ -752,15 +733,10 @@ public class IdentityDictionary extends ADictionary {
 
 	@Override
 	public boolean equals(IDictionary o) {
-<<<<<<< HEAD
 		if(o instanceof IdentityDictionary && //
 			((IdentityDictionary) o).nRowCol == nRowCol && //
 			((IdentityDictionary) o).withEmpty == withEmpty)
 			return true;
-=======
-		if(o instanceof IdentityDictionary)
-			return ((IdentityDictionary) o).nRowCol == nRowCol && ((IdentityDictionary) o).withEmpty == withEmpty;
->>>>>>> cb91b16977 ([DO NOT MERGE] JAVA 17 BWARE COMMIT)
 		return getMBDict().equals(o);
 	}
 

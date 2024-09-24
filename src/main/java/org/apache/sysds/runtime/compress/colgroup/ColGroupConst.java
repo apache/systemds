@@ -24,6 +24,7 @@ import java.io.IOException;
 
 import org.apache.commons.lang3.NotImplementedException;
 import org.apache.sysds.runtime.compress.DMLCompressionException;
+import org.apache.sysds.runtime.compress.colgroup.ColGroupUtils.P;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.Dictionary;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.DictionaryFactory;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.IDictionary;
@@ -645,6 +646,16 @@ public class ColGroupConst extends ADictBasedColGroup implements IContainDefault
 	@Override
 	public AMapToData getMapToData() {
 		return MapToFactory.create(0, 0);
+	}
+
+	@Override
+	protected void sparseSelection(MatrixBlock selection, P[] points, MatrixBlock ret, int rl, int ru) {
+		throw new NotImplementedException();
+	}
+
+	@Override
+	protected void denseSelection(MatrixBlock selection, P[] points, MatrixBlock ret, int rl, int ru) {
+		throw new NotImplementedException();
 	}
 
 }

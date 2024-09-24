@@ -173,6 +173,34 @@ public class FrameTest {
 		f.append(b, true);
 	}
 
+	@Test(expected = DMLRuntimeException.class)
+	public void cBindEmptyCols() {
+		// must have same number of rows.
+		FrameBlock b = new FrameBlock();
+		b.append(f, false);
+	}
+
+	@Test(expected = DMLRuntimeException.class)
+	public void cBindEmptyAfterCols() {
+		// must have same number of rows.
+		FrameBlock b = new FrameBlock();
+		f.append(b, false);
+	}
+
+	@Test
+	public void cBindEmptyR() {
+		// must have same number of rows.
+		FrameBlock b = new FrameBlock(new ValueType[0], f.getNumRows() );
+		b.append(f, true);
+	}
+
+	@Test
+	public void cBindEmptyAfterR() {
+		// must have same number of rows.
+		FrameBlock b = new FrameBlock(new ValueType[0], f.getNumRows() );
+		f.append(b, true);
+	}
+
 	@Test
 	public void cBindStringColAfter() {
 		// must have same number of rows.

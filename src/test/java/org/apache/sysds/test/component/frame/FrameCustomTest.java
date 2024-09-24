@@ -19,10 +19,16 @@
 
 package org.apache.sysds.test.component.frame;
 
+import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
+import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.when;
 
 import org.apache.sysds.common.Types.ValueType;
+import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.frame.data.FrameBlock;
+import org.apache.sysds.runtime.frame.data.lib.FrameLibDetectSchema;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.util.DataConverter;
 import org.apache.sysds.test.TestUtils;
@@ -59,6 +65,18 @@ public class FrameCustomTest {
 		MatrixBlock mb = TestUtils.generateTestMatrixBlock(100, 100, maxp1, maxp1, 1.0, 23);
 		FrameBlock f = DataConverter.convertToFrameBlock(mb);
 		assertTrue(f.getSchema()[0] == ValueType.FP64);
+	}
+
+
+	@Test 
+	public void detectSchemaError(){
+		FrameBlock f = TestUtils.generateRandomFrameBlock(10, 10, 23);
+		FrameBlock spy = spy(f);
+		when(spy.getColumn(anyInt())).thenThrow(new RuntimeException());
+
+		Exception e = assertThrows(DMLRuntimeException.class, () -> FrameLibDetectSchema.detectSchema(spy, 3));
+
+		assertTrue(e.getMessage().contains("Failed to detect schema"));
 	}
 
 }

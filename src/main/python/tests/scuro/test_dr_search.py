@@ -18,7 +18,6 @@
 # under the License.
 #
 # -------------------------------------------------------------
-import unittest
 import os
 import shutil
 import unittest
@@ -59,42 +58,13 @@ class TestSVM(Model):
         self.clf = self.clf.fit(X, np.array(y))
         y_pred = self.clf.predict(X)
         
-        return classification_report(y, y_pred, output_dict=True, digits=3)['accuracy']
+        return classification_report(y, y_pred, output_dict=True, digits=3, zero_division=1)['accuracy']
     
     def test(self, test_X: np.ndarray,
              test_y: np.ndarray):
         y_pred = self.clf.predict(np.array(test_X))  # noqa
         
-        return classification_report(np.array(test_y), y_pred, output_dict=True, digits=3)['accuracy']
-
-
-class TestTask(Task):
-    def __init__(self, model, labels, train_indizes, val_indizes):
-        super().__init__('Test', model, labels, train_indizes, val_indizes)
-        self.kfold = 5
-        self.counter = 0
-    
-    def run(self, data):
-        self.counter += 1
-        skf = KFold(n_splits=self.kfold, shuffle=True, random_state=11)
-        train_scores = []
-        test_scores = []
-        fold = 0
-        X, y, X_test, y_test = self.get_train_test_split(data)
-        
-        for train, test in skf.split(X, y):
-            train_X = np.array(X)[train]
-            train_y = np.array(y)[train]
-            
-            train_score = self.model.fit(train_X, train_y, X_test, y_test)
-            train_scores.append(train_score)
-            
-            test_score = self.model.test(X_test, y_test)
-            test_scores.append(test_score)
-            
-            fold += 1
-        
-        return [np.mean(train_scores), np.mean(test_scores)]
+        return classification_report(np.array(test_y), y_pred, output_dict=True, digits=3, zero_division=1)['accuracy']
 
 
 def scale_data(data, train_indizes):
@@ -118,7 +88,7 @@ class TestDataLoaders(unittest.TestCase):
     
     @classmethod
     def setUpClass(cls):
-        cls.test_file_path = 'test_data'
+        cls.test_file_path = 'test_data_dr_search'
         
         if os.path.isdir(cls.test_file_path):
             shutil.rmtree(cls.test_file_path)
@@ -155,7 +125,7 @@ class TestDataLoaders(unittest.TestCase):
         shutil.rmtree(cls.test_file_path)
     
     def test_enumerate_all(self):
-        task = TestTask(TestSVM(), self.data_generator.labels, self.train_indizes, self.val_indizes)
+        task = Task('TestTask', TestSVM(), self.data_generator.labels, self.train_indizes, self.val_indizes)
         dr_search = DRSearch(self.mods, task, self.representations)
         best_representation, best_score, best_modalities = dr_search.fit_enumerate_all()
         
@@ -164,7 +134,7 @@ class TestDataLoaders(unittest.TestCase):
                 assert (scores[1] <= best_score)
     
     def test_enumerate_all_vs_random(self):
-        task = TestTask(TestSVM(), self.data_generator.labels, self.train_indizes, self.val_indizes)
+        task = Task('TestTask', TestSVM(), self.data_generator.labels, self.train_indizes, self.val_indizes)
         dr_search = DRSearch(self.mods, task, self.representations)
         best_representation_enum, best_score_enum, best_modalities_enum = dr_search.fit_enumerate_all()
         

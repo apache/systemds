@@ -28,7 +28,7 @@ from systemds.scuro.modality.video_modality import VideoModality
 from systemds.scuro.representations.bert import Bert
 from systemds.scuro.representations.mel_spectrogram import MelSpectrogram
 from systemds.scuro.representations.resnet import ResNet
-from systemds.scuro.representations.utils import HDF5, NPY, Pickle
+from systemds.scuro.representations.representation_dataloader import HDF5, NPY, Pickle
 from tests.scuro.data_generator import TestDataGenerator
 
 

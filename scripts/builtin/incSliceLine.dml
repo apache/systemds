@@ -105,6 +105,7 @@ m_incSliceLine = function(
   enableIncSizePruning = ((pruningStrat == 0) | (pruningStrat == 2));
   enableIncMaxScorePruning = ((pruningStrat == 0) | (pruningStrat == 3));
   enableIncApproxPruning = ((pruningStrat == 0) | (pruningStrat == 4));
+  enableIncApproxPruning = TRUE;
 
   t1 = time();
 
@@ -190,8 +191,8 @@ m_incSliceLine = function(
   maxscub = getMaxChangedScoreAllFeatures(nrow(X2), ncol(X2), addedX2, removedX2,
      addedE, removedE, prevLattice, metaPrevLattice, prevStats, encodeLat, differentOffsets,
      alpha, eAvg, minSup, prevFoffb, prevFoffe, foffb, foffe, enableIncApproxPruning);
-  [S, R, selCols] = createAndScoreBasicSlicesInc(X2, changedX2, prevTK2, totalE, changedE,
-     eAvg, eAvgOld, eAvgNew, minSup, alpha, minsc, maxsc, maxscub, verbose, enableIncScorePruning, enableIncMaxScorePruning);
+  [S, R, SPr, RPr, selCols] = createAndScoreBasicSlicesInc(X2, changedX2, prevTK2, totalE, changedE,
+     eAvg, eAvgOld, eAvgNew, minSup, alpha, minsc, maxsc, maxscub, verbose, enableIncScorePruning, enableIncMaxScorePruning, enableIncApproxPruning);
 
   # initialize lattice and statistics for incremental updates
   L1 = rbind(S, SPr);
@@ -318,8 +319,8 @@ createAndScoreBasicSlicesInc = function(Matrix[Double] X2, Matrix[Double] X2p,
     Matrix[Double] prevTK2, Matrix[Double] e, Matrix[Double] ep,
     Double eAvg, Double eAvgOld, Double eAvgNew, Double minSup, Double alpha,
     Double minsc, Matrix[Double] maxsc, Matrix[Double] maxscub, Boolean verbose,
-    Boolean enableIncScorePruning, Boolean enableIncMaxScorePruning)
-  return(Matrix[Double] S, Matrix[Double] R, Matrix[Double] selCols)
+    Boolean enableIncScorePruning, Boolean enableIncMaxScorePruning, Boolean enableIncApproxPruning)
+  return(Matrix[Double] S, Matrix[Double] R, Matrix[Double] SPr, Matrix[Double] RPr, Matrix[Double] selCols)
 {
   n2 = ncol(X2);
   cCnts = t(colSums(X2));       # column counts
@@ -350,8 +351,10 @@ createAndScoreBasicSlicesInc = function(Matrix[Double] X2, Matrix[Double] X2p,
 
   # c) max score changed pruning
   n = as.integer(sum(selCols2));
-  selCols2 = selCols2 & (maxscub >= max(0, minsc) | maxscub==-Inf);
-
+  if( enableIncApproxPruning ) {
+    selCols2 = selCols2 & (maxscub >= max(0, minsc) | maxscub==-Inf);
+  }
+  
   if( verbose ) {
     drop = as.integer(n - sum(selCols2));
     print("incSliceLine: dropping "+drop+"/"+n+" insufficiently affected features.");
@@ -686,8 +689,11 @@ pruneUnchangedSlices = function(Matrix[Double] S, Matrix[Double] S2, Matrix[Doub
     I = t(colSums((changedX2 %*% t(unchangedS)) == level) == 0) # change pushdown
         & unchangedR[,4] < minSup; # minSup pushdown
     unchangedS2 = removeEmpty(target=unchangedS, margin="rows", select=I);
-    SPr = removeEmpty(target=prevLattice, margin="rows", select=I);
-    RPr = removeEmpty(target=unchangedR, margin="rows", select=I);
+    if(sum(I) > 0){
+      SPr = removeEmpty(target=prevLattice, margin="rows", select=I);
+      RPr = removeEmpty(target=unchangedR, margin="rows", select=I);
+    }
+    
     # c) select only rows that cannot be pruned
     selCols = !rowSums((S2 %*% t(unchangedS2)) == level);
 
@@ -764,6 +770,7 @@ getMaxScoreAllFeatures = function(Int numRows, Int numFeatures, List[Unknown] pr
   if( length(prevLattice) > 0 ) {
     for(level in 1:length(prevLattice)) {
       S = as.matrix(prevLattice[level]);
+      print("nrow(S): " + nrow(S));
       if( encodeLat ) {
         metaAtLevel = as.frame(metaPrevLattice[level]);
         prevLatticeDec = transformIDsToSlices(S, prevFoffb, prevFoffe, metaAtLevel);

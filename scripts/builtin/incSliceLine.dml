@@ -52,7 +52,8 @@
 # prevTK           previous top-k slices (for incremental updates)
 # prevTKC          previous top-k scores (for incremental updates)
 # encodeLat        flag for encoding output lattice for less memory consumption
-# pruningStrat     pruning strategy: 0 all pruning, 1 only score pruning, 2 only size pruning, 3 only max score pruning, 4 no pruning
+# pruningStrat     pruning strategy: 0 all pruning, 1 only score pruning, 2 only size pruning, 
+#                                     3 only max score pruning, 4 only approx pruning, 5 no pruning 
 # ---------------------------------------------------------------------------------------
 #
 # OUTPUT:

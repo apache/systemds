@@ -22,7 +22,7 @@ import org.apache.sysds.runtime.compress.workload.WTreeRoot;
 import org.apache.sysds.runtime.frame.data.FrameBlock;
 import org.apache.sysds.runtime.frame.data.compress.CompressedFrameBlockFactory;
 
-public class FrameLibCompress {
+public interface FrameLibCompress {
 
 	public static FrameBlock compress(FrameBlock in, int k) {
 		return compress(in, k, null);

@@ -85,13 +85,15 @@ public class IdentityDictionary extends ADictionary {
 
 	@Override
 	public double[] getValues() {
+		if(nRowCol < 3) {
+			// lets live with it if we call it on 3 columns.
+			double[] ret = new double[nRowCol * nRowCol + (withEmpty ? nRowCol : 0)];
+			for(int i = 0; i < nRowCol; i++) {
+				ret[(i * nRowCol) + i] = 1;
+			}
+			return ret;
+		}
 		throw new DMLCompressionException("Invalid to materialize identity Matrix Please Implement alternative");
-		// LOG.warn("Should not call getValues on Identity Dictionary");
-		// double[] ret = new double[nRowCol * nRowCol];
-		// for(int i = 0; i < nRowCol; i++) {
-		// ret[(i * nRowCol) + i] = 1;
-		// }
-		// return ret;
 	}
 
 	@Override
@@ -102,6 +104,10 @@ public class IdentityDictionary extends ADictionary {
 			return 0;
 		final int col = i % nCol;
 		return row == col ? 1 : 0;
+	}
+
+	public boolean withEmpty() {
+		return withEmpty;
 	}
 
 	@Override
@@ -218,21 +224,13 @@ public class IdentityDictionary extends ADictionary {
 		boolean same = false;
 		if(op.fn instanceof Plus || op.fn instanceof Minus) {
 			same = true;
-			for(int i = 0; i < colIndexes.size(); i++) {
-				if(v[colIndexes.get(i)] != 0.0) {
-					same = false;
-					break;
-				}
-			}
+			for(int i = 0; i < colIndexes.size() && same; i++)
+				same = v[colIndexes.get(i)] == 0.0;
 		}
 		if(op.fn instanceof Divide) {
 			same = true;
-			for(int i = 0; i < colIndexes.size(); i++) {
-				if(v[colIndexes.get(i)] != 1.0) {
-					same = false;
-					break;
-				}
-			}
+			for(int i = 0; i < colIndexes.size() && same; i++)
+				same = v[colIndexes.get(i)] == 1.0;
 		}
 		if(same)
 			return this;
@@ -341,11 +339,8 @@ public class IdentityDictionary extends ADictionary {
 
 	@Override
 	public void colSum(double[] c, int[] counts, IColIndex colIndexes) {
-		for(int i = 0; i < colIndexes.size(); i++) {
-			// very nice...
-			final int idx = colIndexes.get(i);
-			c[idx] = counts[i];
-		}
+		for(int i = 0; i < colIndexes.size(); i++)
+			c[colIndexes.get(i)] += counts[i];
 	}
 
 	@Override
@@ -421,19 +416,16 @@ public class IdentityDictionary extends ADictionary {
 	}
 
 	@Override
-	public void addToEntry(final double[] v, final int fr, final int to, final int nCol) {
-		getMBDict().addToEntry(v, fr, to, nCol);
+	public final void addToEntry(final double[] v, final int fr, final int to, final int nCol) {
+		addToEntry(v, fr, to, nCol, 1);
 	}
 
 	@Override
 	public void addToEntry(final double[] v, final int fr, final int to, final int nCol, int rep) {
-		if(withEmpty) {
-			if(fr < nRowCol)
-				v[to * nCol + fr] += rep;
-		}
-		else {
+		if(!withEmpty)
 			v[to * nCol + fr] += rep;
-		}
+		else if(fr < nRowCol)
+			v[to * nCol + fr] += rep;
 	}
 
 	@Override
@@ -499,6 +491,7 @@ public class IdentityDictionary extends ADictionary {
 	}
 
 	private MatrixBlockDictionary createMBDict() {
+
 		if(withEmpty) {
 			final SparseBlock sb = SparseBlockFactory.createIdentityMatrixWithEmptyRow(nRowCol);
 			final MatrixBlock identity = new MatrixBlock(nRowCol + 1, nRowCol, nRowCol, sb);
@@ -657,17 +650,17 @@ public class IdentityDictionary extends ADictionary {
 
 	@Override
 	public void MMDictDense(double[] left, IColIndex rowsLeft, IColIndex colsRight, MatrixBlock result) {
-		// getMBDict().MMDictDense(left, rowsLeft, colsRight, result);
-		// should replace with add to right to output cells.
+		// similar to fused transpose left into right locations.
+	
 		final int leftSide = rowsLeft.size();
-		final int resCols = result.getNumColumns();
+		final int colsOut = result.getNumColumns();
 		final int commonDim = Math.min(left.length / leftSide, nRowCol);
 		final double[] resV = result.getDenseBlockValues();
-		for(int i = 0; i < leftSide; i++) {// rows in left side
-			final int offOut = rowsLeft.get(i) * resCols;
-			final int leftOff = i * leftSide;
+		for(int i = 0; i < leftSide; i++) { // rows in left side
+			final int offOut = rowsLeft.get(i) * colsOut;
+			final int leftOff = i;
 			for(int j = 0; j < commonDim; j++) { // cols in left side skipping empty from identity
-				resV[offOut + colsRight.get(j)] += left[leftOff + j];
+				resV[offOut + colsRight.get(j)] += left[leftOff + j * leftSide];
 			}
 		}
 	}
@@ -736,20 +729,11 @@ public class IdentityDictionary extends ADictionary {
 
 	@Override
 	public boolean equals(IDictionary o) {
-		if(o instanceof IdentityDictionary)
-			return ((IdentityDictionary) o).nRowCol == nRowCol;
-
-		MatrixBlock mb = getMBDict().getMatrixBlock();
-		if(o instanceof MatrixBlockDictionary)
-			return mb.equals(((MatrixBlockDictionary) o).getMatrixBlock());
-		else if(o instanceof Dictionary) {
-			if(mb.isInSparseFormat())
-				return mb.getSparseBlock().equals(((Dictionary) o)._values, nRowCol);
-			final double[] dv = mb.getDenseBlockValues();
-			return Arrays.equals(dv, ((Dictionary) o)._values);
-		}
-
-		return false;
+		if(o instanceof IdentityDictionary && //
+			((IdentityDictionary) o).nRowCol == nRowCol && //
+			((IdentityDictionary) o).withEmpty == withEmpty)
+			return true;
+		return getMBDict().equals(o);
 	}
 
 	@Override

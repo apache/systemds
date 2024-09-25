@@ -25,16 +25,13 @@ from systemds.context import SystemDSContext
 from tests.nn.neural_network import NeuralNetwork
 from systemds.script_building.script import DMLScript
 
-# Seed for the input matrix
-np.random.seed(42)
-
-
 class TestNeuralNetwork(unittest.TestCase):
     sds: SystemDSContext = None
 
     @classmethod
     def setUpClass(cls):
         cls.sds = SystemDSContext()
+        np.random.seed(42)
         cls.X = np.random.rand(6, 1)
         cls.exp_out = np.array([
             -0.37768756, -0.47785831, -0.95870362,

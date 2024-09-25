@@ -24,7 +24,7 @@ from typing import List
 import numpy as np
 
 from systemds.scuro.modality.modality import Modality
-from keras.api.preprocessing.sequence import pad_sequences
+from systemds.scuro.representations.utils import pad_sequences
 
 from systemds.scuro.representations.fusion import Fusion
 
@@ -41,7 +41,7 @@ class Average(Fusion):
 
         padded_modalities = []
         for modality in modalities:
-            d = pad_sequences(modality.data, maxlen=max_emb_size, dtype='float32', padding='post')
+            d = pad_sequences(modality.data, maxlen=max_emb_size, dtype='float32')
             padded_modalities.append(d)
 
         data = padded_modalities[0]

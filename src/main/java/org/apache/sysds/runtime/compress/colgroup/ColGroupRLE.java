@@ -28,6 +28,7 @@ import java.util.List;
 import org.apache.commons.lang3.NotImplementedException;
 import org.apache.sysds.runtime.compress.bitmap.ABitmap;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.IDictionary;
+import org.apache.sysds.runtime.compress.colgroup.ColGroupUtils.P;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.Dictionary;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.DictionaryFactory;
 import org.apache.sysds.runtime.compress.colgroup.indexes.ColIndexFactory;
@@ -795,7 +796,15 @@ public class ColGroupRLE extends AColGroupOffset {
 	}
 
 	@Override
-	public void preAggregateSparse(SparseBlock sb, double[] preAgg, int rl, int ru) {
+	public void leftMMIdentityPreAggregateDense(MatrixBlock that, MatrixBlock ret, int rl, int ru, int cl, int cu) {
+		throw new NotImplementedException();
+	}
+
+	@Override
+	public void preAggregateSparse(SparseBlock sb, double[] preAgg, int rl, int ru, int cl, int cu) {
+		if(cl != 0 || cu != _numRows) {
+			throw new NotImplementedException();
+		}
 		final int nv = getNumValues();
 
 		for(int r = rl; r < ru; r++) { // for each row
@@ -1145,5 +1154,15 @@ public class ColGroupRLE extends AColGroupOffset {
 			ret[i] = buf.get(i);
 
 		return ret;
+	}
+
+	@Override
+	protected void sparseSelection(MatrixBlock selection, P[] points, MatrixBlock ret, int rl, int ru) {
+		throw new NotImplementedException();
+	}
+
+	@Override
+	protected void denseSelection(MatrixBlock selection, P[] points, MatrixBlock ret, int rl, int ru) {
+		throw new NotImplementedException();
 	}
 }

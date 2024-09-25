@@ -100,9 +100,20 @@ jobs:
         pip install --upgrade pip 
         pip install --upgrade pip
         pip install wheel
-        pip install numpy py4j scipy scikit-learn requests pandas unittest-parallel \
-        keras==3.5.0 torch opencv-python h5py transformers librosa tensorflow==2.17.0 opencv-python torchvision \
-        opt-einsum
+        pip install \
+          numpy \
+          py4j \
+          scipy \
+          scikit-learn \
+          requests \
+          pandas \
+          unittest-parallel \
+          torchvision \
+          transformers \
+          opencv-python \
+          torch \
+          librosa \
+          h5py
 
     - name: Build Python Package
       run: |

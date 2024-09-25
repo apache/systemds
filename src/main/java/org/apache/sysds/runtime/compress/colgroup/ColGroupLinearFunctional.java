@@ -26,6 +26,7 @@ import java.util.Arrays;
 
 import org.apache.commons.lang3.NotImplementedException;
 import org.apache.sysds.runtime.compress.DMLCompressionException;
+import org.apache.sysds.runtime.compress.colgroup.ColGroupUtils.P;
 import org.apache.sysds.runtime.compress.colgroup.indexes.ColIndexFactory;
 import org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex;
 import org.apache.sysds.runtime.compress.colgroup.scheme.ICLAScheme;
@@ -703,8 +704,18 @@ public class ColGroupLinearFunctional extends AColGroupCompressed {
 		throw new NotImplementedException();
 	}
 
-	@Override 
-	public AColGroup reduceCols(){
+	@Override
+	public AColGroup reduceCols() {
+		throw new NotImplementedException();
+	}
+
+	@Override
+	public void sparseSelection(MatrixBlock selection, P[] points, MatrixBlock ret, int rl, int ru) {
+		throw new NotImplementedException();
+	}
+
+	@Override
+	protected void denseSelection(MatrixBlock selection, P[] points, MatrixBlock ret, int rl, int ru) {
 		throw new NotImplementedException();
 	}
 

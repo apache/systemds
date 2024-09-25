@@ -90,7 +90,7 @@ public final class CLALibMMChain {
 		if(x.isEmpty())
 			return returnEmpty(x, out);
 
-		// Morph the columns to effecient types for the operation.
+		// Morph the columns to efficient types for the operation.
 		x = filterColGroups(x);
 
 		// Allow overlapping intermediate if the intermediate is guaranteed not to be overlapping.

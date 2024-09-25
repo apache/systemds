@@ -166,6 +166,7 @@ public class SPInstructionParser extends InstructionParser
 		// Reorg Instruction Opcodes (repositioning of existing values)
 		String2SPInstructionType.put( "r'",       SPType.Reorg);
 		String2SPInstructionType.put( "rev",      SPType.Reorg);
+		String2SPInstructionType.put( "roll",      SPType.Reorg);
 		String2SPInstructionType.put( "rdiag",    SPType.Reorg);
 		String2SPInstructionType.put( "rshape",   SPType.MatrixReshape);
 		String2SPInstructionType.put( "rsort",    SPType.Reorg);
@@ -299,6 +300,7 @@ public class SPInstructionParser extends InstructionParser
 		String2SPInstructionType.put( "nmin",  SPType.BuiltinNary);
 		String2SPInstructionType.put( "nmax",  SPType.BuiltinNary);
 		String2SPInstructionType.put( "n+",  SPType.BuiltinNary);
+		String2SPInstructionType.put( "n*",  SPType.BuiltinNary);
 
 		String2SPInstructionType.put( DataGen.RAND_OPCODE  , SPType.Rand);
 		String2SPInstructionType.put( DataGen.SEQ_OPCODE   , SPType.Rand);

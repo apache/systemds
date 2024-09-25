@@ -19,8 +19,6 @@
 
 package org.apache.sysds.utils.stats;
 
-import org.apache.commons.lang3.function.TriFunction;
-
 import java.lang.reflect.Array;
 import java.util.Arrays;
 import java.util.Comparator;

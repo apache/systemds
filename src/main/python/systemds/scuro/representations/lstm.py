@@ -25,8 +25,8 @@ from typing import List
 
 import numpy as np
 
-from modality.modality import Modality
-from representations.fusion import Fusion
+from systemds.scuro.modality.modality import Modality
+from systemds.scuro.representations.fusion import Fusion
 
 
 class LSTM(Fusion):

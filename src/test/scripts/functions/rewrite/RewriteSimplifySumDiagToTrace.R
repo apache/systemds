@@ -19,8 +19,21 @@
 #
 #-------------------------------------------------------------
 
-X = rand(rows=10000, cols=10);
-Y = X %*% rand(rows=10, cols=1);
-w = multiLogReg(X=X, Y=Y, icpt=2, tol=1e-8, reg=0.01, maxi=20);
-print(sum(w));
+# Read command line arguments
+args <- commandArgs(TRUE)
 
+# Set options for numeric precision
+options(digits=22)
+
+# Load required libraries
+library("Matrix")
+library("matrixStats")
+
+# Read matrix X from Matrix Market format files
+X = as.matrix(readMM(paste(args[1], "X.mtx", sep="")))
+
+# Perform the matrix operation
+R = sum(diag(X))
+
+# Write the result R
+write(R, paste(args[2], "R" ,sep=""))

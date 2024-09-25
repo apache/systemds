@@ -1635,7 +1635,7 @@ public class RewriteAlgebraicSimplificationDynamic extends HopRewriteRule
 				if( !HopRewriteUtils.isTransposeOperation(tX) ) { 
 					tX = HopRewriteUtils.createTranspose(tX);
 				}
-				else 
+				else
 					tX = tX.getInput().get(0);
 				
 				hnew = new QuaternaryOp(hi.getName(), DataType.MATRIX, ValueType.FP64, 
@@ -1664,7 +1664,7 @@ public class RewriteAlgebraicSimplificationDynamic extends HopRewriteRule
 				if( !HopRewriteUtils.isTransposeOperation(tX) ) { 
 					tX = HopRewriteUtils.createTranspose(tX);
 				}
-				else 
+				else
 					tX = tX.getInput().get(0);
 				
 				hnew = new QuaternaryOp(hi.getName(), DataType.MATRIX, ValueType.FP64, 
@@ -1690,7 +1690,7 @@ public class RewriteAlgebraicSimplificationDynamic extends HopRewriteRule
 				if( !HopRewriteUtils.isTransposeOperation(tX) ) { 
 					tX = HopRewriteUtils.createTranspose(tX);
 				}
-				else 
+				else
 					tX = tX.getInput().get(0);
 				
 				hnew = new QuaternaryOp(hi.getName(), DataType.MATRIX, ValueType.FP64, 
@@ -1722,7 +1722,7 @@ public class RewriteAlgebraicSimplificationDynamic extends HopRewriteRule
 					if( !HopRewriteUtils.isTransposeOperation(tX) ) { 
 						tX = HopRewriteUtils.createTranspose(tX);
 					}
-					else 
+					else
 						tX = tX.getInput().get(0);
 					
 					hnew = new QuaternaryOp(hi.getName(), DataType.MATRIX, ValueType.FP64, 
@@ -2157,7 +2157,7 @@ public class RewriteAlgebraicSimplificationDynamic extends HopRewriteRule
 			
 			if( !HopRewriteUtils.isTransposeOperation(V) )
 				V = HopRewriteUtils.createTranspose(V);
-			else 
+			else
 				V = V.getInput().get(0);
 				
 			hnew = new QuaternaryOp(hi.getName(), DataType.MATRIX, ValueType.FP64, 
@@ -2251,7 +2251,7 @@ public class RewriteAlgebraicSimplificationDynamic extends HopRewriteRule
 				
 				if( !HopRewriteUtils.isTransposeOperation(V) )
 					V = HopRewriteUtils.createTranspose(V);
-				else 
+				else
 					V = V.getInput().get(0);
 					
 				hnew = new QuaternaryOp(hi.getName(), DataType.MATRIX, ValueType.FP64, 
@@ -2801,8 +2801,8 @@ public class RewriteAlgebraicSimplificationDynamic extends HopRewriteRule
 	
 	private static Hop foldMultipleMinMaxOperations(Hop hi) 
 	{
-		if( (HopRewriteUtils.isBinary(hi, OpOp2.MIN, OpOp2.MAX, OpOp2.PLUS) 
-			|| HopRewriteUtils.isNary(hi, OpOpN.MIN, OpOpN.MAX, OpOpN.PLUS))
+		if( (HopRewriteUtils.isBinary(hi, OpOp2.MIN, OpOp2.MAX, OpOp2.PLUS, OpOp2.MULT)
+			|| HopRewriteUtils.isNary(hi, OpOpN.MIN, OpOpN.MAX, OpOpN.PLUS, OpOpN.MULT))
 			&& hi.getValueType() != ValueType.STRING //exclude string concat
 			&& HopRewriteUtils.isNotMatrixVectorBinaryOperation(hi))
 		{
@@ -2839,7 +2839,7 @@ public class RewriteAlgebraicSimplificationDynamic extends HopRewriteRule
 					for( Hop p : parents )
 						HopRewriteUtils.replaceChildReference(p, hi, hnew);
 					hi = hnew;
-					LOG.debug("Applied foldMultipleMinMaxPlusOperations (line "+hi.getBeginLine()+").");
+					LOG.debug("Applied foldMultipleMinMaxPlusMultOperations (line "+hi.getBeginLine()+").");
 				}
 				else {
 					converged = true;

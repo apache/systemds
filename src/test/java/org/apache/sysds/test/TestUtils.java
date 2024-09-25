@@ -26,6 +26,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.FileReader;
+import java.io.RandomAccessFile;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
@@ -578,6 +579,9 @@ public class TestUtils {
 
 			line = reader.readLine(); // header line with dimension and nnz information
 
+			if (line.startsWith("%"))	// skip blank comment(%) line in mtx file
+				line = reader.readLine();
+
 			while ((line = reader.readLine()) != null) {
 				StringTokenizer st = new StringTokenizer(line, " ");
 				int i = Integer.parseInt(st.nextToken());
@@ -1083,6 +1087,15 @@ public class TestUtils {
 
 	public static void compareMatricesBitAvgDistance(MatrixBlock expectedMatrix, MatrixBlock actualMatrix,
 		long maxUnitsOfLeastPrecision, long maxAvgDistance, String message) {
+
+		final int rows = expectedMatrix.getNumRows();
+		final int cols = expectedMatrix.getNumColumns();
+
+		if(rows != actualMatrix.getNumRows())
+			fail(message + "\nnot same number of rows: " + rows + " vs " + actualMatrix.getNumRows());
+		if(cols != actualMatrix.getNumColumns())
+			fail(message + "\nnot same number of cols: " + cols + " vs " + actualMatrix.getNumColumns());
+
 		if(expectedMatrix instanceof CompressedMatrixBlock)
 			expectedMatrix = ((CompressedMatrixBlock) expectedMatrix).decompress();
 		if(actualMatrix instanceof CompressedMatrixBlock)
@@ -1119,13 +1132,11 @@ public class TestUtils {
 				maxUnitsOfLeastPrecision, maxAvgDistance, message, actualMatrix.getNumColumns());
 			return;
 		}
-		final int rows = expectedMatrix.getNumRows();
-		final int cols = actualMatrix.getNumColumns();
 		int countErrors = 0;
 		long sumDistance = 0;
 
-		for(int i = 0; i < rows && countErrors < 20; i++) {
-			for(int j = 0; j < cols && countErrors < 20; j++) {
+		for(int i = 0; i < rows && countErrors < 5; i++) {
+			for(int j = 0; j < cols && countErrors < 5; j++) {
 				final double v1 = expectedMatrix.get(i, j);
 				final double v2 = actualMatrix.get(i, j);
 				if(v1 == 0 && v2 == 0)
@@ -2720,13 +2731,16 @@ public class TestUtils {
 				out = new DataOutputStream(new FileOutputStream(file));
 			}
 
+			int non_zero_cnt = 0;
+
 			try( BufferedWriter pw = new BufferedWriter(new OutputStreamWriter(out))) {
 
-				//write header
+				//write dummy header
 				if( isR ) {
-					/** add R header */
+					/** add space for R header */
 					pw.append("%%MatrixMarket matrix coordinate real general\n");
-					pw.append("" + matrix.length + " " + matrix[0].length + " " + matrix.length*matrix[0].length+"\n");
+					pw.append("" + matrix.length + " " + matrix[0].length + " " +
+							" ".repeat((String.valueOf(matrix.length * matrix[0].length)).length()) + "\n");
 				}
 
 				//writer actual matrix
@@ -2745,12 +2759,24 @@ public class TestUtils {
 						pw.append(sb.toString());
 						sb.setLength(0);
 						emptyOutput = false;
+
+						non_zero_cnt++;
 					}
 				}
 
 				//writer dummy entry if empty
 				if( emptyOutput )
 					pw.append("1 1 " + matrix[0][0]);
+			}
+
+			//write real header
+			if (isR) {
+				try (RandomAccessFile raf = new RandomAccessFile(file, "rws")) {
+					raf.seek(0);
+
+					raf.write("%%MatrixMarket matrix coordinate real general\n".getBytes());
+					raf.write(("" + matrix.length + " " + matrix[0].length + " " + non_zero_cnt).getBytes());
+				}
 			}
 		}
 		catch (IOException e)

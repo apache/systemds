@@ -51,8 +51,8 @@ public abstract class CloudUtils {
 		}
 	}
 
+	public static final String SPARK_VERSION = "3.3.0";
 	public static final double MINIMAL_EXECUTION_TIME = 120; // seconds; NOTE: set always equal or higher than DEFAULT_CLUSTER_LAUNCH_TIME
-
 	public static final double DEFAULT_CLUSTER_LAUNCH_TIME = 120; // seconds; NOTE: set always to at least 60 seconds
 
 	public static long GBtoBytes(double gb) {

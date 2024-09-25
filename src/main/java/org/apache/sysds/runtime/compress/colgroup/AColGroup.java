@@ -27,6 +27,7 @@ import java.util.Collection;
 import org.apache.commons.lang3.NotImplementedException;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.sysds.runtime.compress.colgroup.ColGroupUtils.P;
 import org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex;
 import org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex.SliceResult;
 import org.apache.sysds.runtime.compress.colgroup.scheme.ICLAScheme;
@@ -727,6 +728,44 @@ public abstract class AColGroup implements Serializable {
 	 * @return The reduced colgroup.
 	 */
 	public abstract AColGroup reduceCols();
+
+	/**
+	 * Selection (left matrix multiply)
+	 * 
+	 * @param selection A sparse matrix with "max" a single one in each row all other values are zero.
+	 * @param points    The coordinates in the selection matrix to extract.
+	 * @param ret       The MatrixBlock to decompress the selected rows into
+	 * @param rl        The row to start at in the selection matrix
+	 * @param ru        the row to end at in the selection matrix (not inclusive)
+	 */
+	public final void selectionMultiply(MatrixBlock selection, P[] points, MatrixBlock ret, int rl, int ru) {
+		if(ret.isInSparseFormat())
+			sparseSelection(selection, points, ret, rl, ru);
+		else
+			denseSelection(selection, points, ret, rl, ru);
+	}
+
+	/**
+	 * Sparse selection (left matrix multiply)
+	 * 
+	 * @param selection A sparse matrix with "max" a single one in each row all other values are zero.
+	 * @param points    The coordinates in the selection matrix to extract.
+	 * @param ret       The Sparse MatrixBlock to decompress the selected rows into
+	 * @param rl        The row to start at in the selection matrix
+	 * @param ru        the row to end at in the selection matrix (not inclusive)
+	 */
+	protected abstract void sparseSelection(MatrixBlock selection, P[] points, MatrixBlock ret, int rl, int ru);
+
+	/**
+	 * Dense selection (left matrix multiply)
+	 * 
+	 * @param selection A sparse matrix with "max" a single one in each row all other values are zero.
+	 * @param points    The coordinates in the selection matrix to extract.
+	 * @param ret       The Dense MatrixBlock to decompress the selected rows into
+	 * @param rl        The row to start at in the selection matrix
+	 * @param ru        the row to end at in the selection matrix (not inclusive)
+	 */
+	protected abstract void denseSelection(MatrixBlock selection, P[] points, MatrixBlock ret, int rl, int ru);
 
 	@Override
 	public String toString() {

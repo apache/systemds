@@ -23,10 +23,10 @@ from typing import List
 
 import numpy as np
 
-from modality.modality import Modality
-from keras.api.preprocessing.sequence import pad_sequences
+from systemds.scuro.modality.modality import Modality
+from systemds.scuro.representations.utils import pad_sequences
 
-from representations.fusion import Fusion
+from systemds.scuro.representations.fusion import Fusion
 
 
 class Concatenation(Fusion):
@@ -38,15 +38,21 @@ class Concatenation(Fusion):
         self.padding = padding
 
     def fuse(self, modalities: List[Modality]):
+        if len(modalities) == 1:
+            return np.array(modalities[0].data)
+
         max_emb_size = self.get_max_embedding_size(modalities)
-        
         size = len(modalities[0].data)
-        data = np.zeros((size, 0))
-        
+
+        if modalities[0].data.ndim > 2:
+            data = np.zeros((size, max_emb_size, 0))
+        else:
+            data = np.zeros((size, 0))
+
         for modality in modalities:
             if self.padding:
-                data = np.concatenate(pad_sequences(modality.data, maxlen=max_emb_size, dtype='float32', padding='post'), axis=1)
+                data = np.concatenate([data, pad_sequences(modality.data, maxlen=max_emb_size, dtype='float32')], axis=-1)
             else:
-                data = np.concatenate([data, modality.data], axis=1)
-      
-        return self.scale_data(data, modalities[0].train_indices)
+                data = np.concatenate([data, modality.data], axis=-1)
+
+        return np.array(data)

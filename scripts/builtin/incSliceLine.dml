@@ -106,7 +106,6 @@ m_incSliceLine = function(
   enableIncMaxScorePruning = ((pruningStrat == 0) | (pruningStrat == 3));
   enableIncApproxPruning = ((pruningStrat == 0) | (pruningStrat == 4));
 
-
   t1 = time();
 
   # store params for next run

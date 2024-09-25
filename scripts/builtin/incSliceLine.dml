@@ -238,6 +238,7 @@ m_incSliceLine = function(
         prevFoffe, foffb, foffe, level, encodeLat, differentOffsets)
     }
 
+    prevLattice1 = prevLattice2;
     if(selFeat){
       if(length(prevLattice2)>0 & enableIncSizePruning){
         prevLattice2 = removeEmpty(target=prevLattice2, margin="cols", select=t(selCols));
@@ -251,18 +252,20 @@ m_incSliceLine = function(
     }
 
     # prune unchanged slices with slice size < minSup
+    SPr = matrix(0,0, ncol(S));
+    RPr = matrix(0,0, 4);
     if(level <= length(prevStats) & enableIncSizePruning){
       npairs = nrow(S);
-      [S, S2] = pruneUnchangedSlices(S, S2,  prevLattice2, prevStats, changedX2, minSup, verbose, level);
+      [S, S2, SPr, RPr] = pruneUnchangedSlices(S, S2, prevLattice1,  prevLattice2, prevStats, changedX2, minSup, verbose, level);
       if(verbose) {
         print(" -- dropping "+(npairs-nrow(S))+"/"+npairs+" unaffected paired slice candidates ");
       }
     }
 
     # prepare and store output lattice for next run
-    Lrep = S
+    Lrep = rbind(S,SPr);
     if ( encodeLat ) {
-      [Lrep, M] = transformSlicesToIDs(S, foffb, foffe);
+      [Lrep, M] = transformSlicesToIDs(Lrep, foffb, foffe);
       metaLattice = append(metaLattice, M);
     }
     L = append(L, Lrep);
@@ -283,7 +286,8 @@ m_incSliceLine = function(
       }
 
       # update output statistics
-      Stats = append(Stats, R);
+      Rrep = rbind(R, RPr);
+      Stats = append(Stats, Rrep);
 
       # maintain top-k after evaluation
       [TK, TKC] = maintainTopKInc(S, R, TK, TKC, k, minSup, foffb, foffe);
@@ -374,7 +378,10 @@ createAndScoreBasicSlicesInc = function(Matrix[Double] X2, Matrix[Double] X2p,
     sePr = removeEmpty(target=err, margin="rows", select=!selCols2);
     smPr = removeEmpty(target=merr, margin="rows", select=!selCols2);
     SPr = table(seq(1,nrow(attrPr)), attrPr, nrow(attrPr), n2);
-    scPr = score(ssPr, sePr, eAvg, alpha, nrow(X2));  
+    # scores are currently not used for pruning 
+    # in case of future use, set scores to Inf so a slice that was not scored 
+    # in this run can be identified and does not get pruned based on score in the next run
+    scPr = matrix(Inf, nrow(SPr), 1);
     RPr = cbind(scPr, sePr, smPr, ssPr);
   }
 
@@ -662,9 +669,12 @@ computeLowestPrevTK = function(Matrix[Double] prevTK2, Matrix[Double] X2,
   minsc = min(sc);
 }
 
-pruneUnchangedSlices = function(Matrix[Double] S, Matrix[Double] S2, Matrix[Double] prevLattice2, list[unknown] prevStats, Matrix[Double] changedX2, Int minSup, Boolean verbose, Integer level)
-  return(Matrix[Double] S, Matrix[Double] S2)
+pruneUnchangedSlices = function(Matrix[Double] S, Matrix[Double] S2, Matrix[Double] prevLattice, Matrix[Double] prevLattice2, list[unknown] prevStats, Matrix[Double] changedX2, Int minSup, Boolean verbose, Integer level)
+  return(Matrix[Double] S, Matrix[Double] S2, Matrix[Double] SPr, Matrix[Double] RPr)
 {
+  SPr = matrix(0,0, ncol(S));
+  RPr = matrix(0,0, 4);
+
   unchangedS = prevLattice2;
   unchangedR =  as.matrix(prevStats[level])
 
@@ -676,11 +686,15 @@ pruneUnchangedSlices = function(Matrix[Double] S, Matrix[Double] S2, Matrix[Doub
     I = t(colSums((changedX2 %*% t(unchangedS)) == level) == 0) # change pushdown
         & unchangedR[,4] < minSup; # minSup pushdown
     unchangedS2 = removeEmpty(target=unchangedS, margin="rows", select=I);
+    SPr = removeEmpty(target=prevLattice, margin="rows", select=I);
+    RPr = removeEmpty(target=unchangedR, margin="rows", select=I);
     # c) select only rows that cannot be pruned
     selCols = !rowSums((S2 %*% t(unchangedS2)) == level);
+
     if(nrow(unchangedS) > 0 & sum(selCols) < nrow(S) ){
       S2 = removeEmpty(target=S2, margin="rows", select=selCols);
       S = removeEmpty(target=S, margin="rows", select=selCols);
+
     }
   }
 }

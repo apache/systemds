@@ -48,10 +48,21 @@ if(nrow(indicesRemoved) > 0){
 
 # first compute the top k slices in two increments 
   # first increment
-[TK, TKC, D, L, meta, Stats, Xout, eOut, foffb, foffe, params] = incSliceLine(addedX=oldX, addedE=oldE, k=$5,
+[TK, TKC, D, L, meta, Stats, Xout, eOut, foffb, foffe, params] = incSliceLine(addedX=oldX[1:nrow(oldX) -10], addedE=oldE[1:nrow(oldE) -10], k=$5,
   alpha=0.95, minSup=4, tpEval=$6, selFeat=$7, encodeLat=$8, verbose=$10);
-  
-  # second increment
+
+print("nrow(L[1]): " + nrow(as.matrix(L[1])));
+print("nrow(L[2]): " + nrow(as.matrix(L[2])));
+
+[TK, TKC, D, L, meta, Stats, Xout, eOut, foffb, foffe, params] = incSliceLine(addedX=oldX[nrow(oldX) -9: nrow(oldX)], oldX = oldX[1:nrow(oldX) -10], oldE = oldE[1:nrow(oldE) -10], addedE=oldE[nrow(oldE) -9: nrow(oldE)], prevLattice = L, metaPrevLattice=meta, prevStats = Stats, prevTK = TK, prevTKC = TKC, k=$5,
+  alpha=0.95, minSup=4, tpEval=$6, selFeat=$7, encodeLat=$8, indicesRemoved=indicesRemoved, verbose=$10, params=params, prevFoffb = foffb, prevFoffe = foffe, pruningStrat = pruningStrat);
+
+print("nrow(L[1]): " + nrow(as.matrix(L[1])));
+print("nrow(L[2]): " + nrow(as.matrix(L[2])));
+print("nrow(Stats[1]): " + nrow(as.matrix(Stats[1])));
+print("nrow(Stats[2]): " + nrow(as.matrix(Stats[2])));
+
+  # third increment
 [TK1, TKC1, D1, L1, meta1, Stats1, Xout1, eOut1, foffb2, foffe2, params] = incSliceLine(addedX=addedX, oldX = oldX, oldE = oldE, addedE=addedE, prevLattice = L, metaPrevLattice=meta, prevStats = Stats, prevTK = TK, prevTKC = TKC, k=$5,
   alpha=0.95, minSup=4, tpEval=$6, selFeat=$7, encodeLat=$8, indicesRemoved=indicesRemoved, verbose=$10, params=params, prevFoffb = foffb, prevFoffe = foffe, pruningStrat = pruningStrat);
 

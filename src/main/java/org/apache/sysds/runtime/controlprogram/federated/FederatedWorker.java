@@ -66,6 +66,7 @@ import io.netty.handler.ssl.util.SelfSignedCertificate;
 import io.netty.handler.codec.serialization.ObjectDecoder;
 import io.netty.handler.codec.serialization.ClassResolvers;
 
+@SuppressWarnings("deprecation")
 public class FederatedWorker {
 	protected static Logger log = Logger.getLogger(FederatedWorker.class);
 

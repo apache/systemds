@@ -75,6 +75,7 @@ import org.apache.sysds.runtime.matrix.operators.SimpleOperator;
 import io.netty.handler.codec.serialization.ClassResolvers;
 import io.netty.handler.codec.serialization.ObjectDecoder;
 
+@SuppressWarnings("deprecation")
 public class FederationUtils {
 	protected static Logger log = Logger.getLogger(FederationUtils.class);
 	private static final IDSequence _idSeq = new IDSequence();

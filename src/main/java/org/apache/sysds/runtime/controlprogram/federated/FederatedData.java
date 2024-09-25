@@ -59,6 +59,7 @@ import io.netty.handler.codec.serialization.ObjectEncoder;
 import io.netty.handler.timeout.ReadTimeoutHandler;
 import io.netty.util.concurrent.Promise;
 
+@SuppressWarnings("deprecation")
 public class FederatedData {
 	private static final Log LOG = LogFactory.getLog(FederatedData.class.getName());
 	private static final Set<InetSocketAddress> _allFedSites = new HashSet<>();

@@ -108,7 +108,7 @@ public interface SampleEstimatorFactory {
 		}
 	}
 
-	private static int[] getInvertedFrequencyHistogram(int[] frequencies) {
+	public static int[] getInvertedFrequencyHistogram(int[] frequencies) {
 		try{
 
 			final int numVals = frequencies.length;

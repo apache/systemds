@@ -274,13 +274,16 @@ public class SparseBlockCSR extends SparseBlock
 	 */
 	public static long estimateSizeInMemory(long nrows, long ncols, double sparsity) {
 		double lnnz = Math.max(INIT_CAPACITY, Math.ceil(sparsity*nrows*ncols));
-		
-		//32B overhead per array, int arr in nrows, int/double arr in nnz 
+		return estimateSizeInMemory(nrows, (long) lnnz);
+	}
+
+	public static long estimateSizeInMemory(long nrows, long nnz) {
+		//32B overhead per array, int arr in nrows, int/double arr in nnz
 		double size = 16 + 4 + 4;                            //object + int field + padding
 		size += MemoryEstimates.intArrayCost(nrows+1);       //ptr array (row pointers)
-		size += MemoryEstimates.intArrayCost((long) lnnz);   //indexes array (column indexes)
-		size += MemoryEstimates.doubleArrayCost((long) lnnz);//values array (non-zero values)
-		
+		size += MemoryEstimates.intArrayCost(nnz);   //indexes array (column indexes)
+		size += MemoryEstimates.doubleArrayCost(nnz);//values array (non-zero values)
+
 		//robustness for long overflows
 		return (long) Math.min(size, Long.MAX_VALUE);
 	}

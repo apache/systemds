@@ -321,7 +321,7 @@ public class ColumnEncoderBin extends ColumnEncoder {
 
 	@Override
 	public Callable<Object> getPartialBuildTask(CacheBlock<?> in, int startRow, int blockSize,
-			HashMap<Integer, Object> ret) {
+			HashMap<Integer, Object> ret, int p) {
 		return new BinPartialBuildTask(in, _colID, startRow, blockSize, _binMethod, ret);
 	}
 

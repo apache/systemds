@@ -120,34 +120,35 @@ public class ColumnEncoderDummycode extends ColumnEncoder {
 		ArrayList<Integer> sparseRowsWZeros = null;
 		int index = _colID - 1;
 		for(int r = rowStart; r < getEndIndex(in.getNumRows(), rowStart, blk); r++) {
+			int indexWithOffset = sparseRowPointerOffset != null ? sparseRowPointerOffset[r] - 1 + index : index;
 			if(mcsr) {
-				double val = out.getSparseBlock().get(r).values()[index];
+				double val = out.getSparseBlock().get(r).values()[indexWithOffset];
 				if(Double.isNaN(val)) {
 					if(sparseRowsWZeros == null)
 						sparseRowsWZeros = new ArrayList<>();
 					sparseRowsWZeros.add(r);
-					out.getSparseBlock().get(r).values()[index] = 0;
+					out.getSparseBlock().get(r).values()[indexWithOffset] = 0;
 					continue;
 				}
 				int nCol = outputCol + (int) val - 1;
-				out.getSparseBlock().get(r).indexes()[index] = nCol;
-				out.getSparseBlock().get(r).values()[index] = 1;
+				out.getSparseBlock().get(r).indexes()[indexWithOffset] = nCol;
+				out.getSparseBlock().get(r).values()[indexWithOffset] = 1;
 			}
 			else { // csr
 				SparseBlockCSR csrblock = (SparseBlockCSR) out.getSparseBlock();
 				int rptr[] = csrblock.rowPointers();
-				double val = csrblock.values()[rptr[r] + index];
+				double val = csrblock.values()[rptr[r] + indexWithOffset];
 				if(Double.isNaN(val)) {
 					if(sparseRowsWZeros == null)
 						sparseRowsWZeros = new ArrayList<>();
 					sparseRowsWZeros.add(r);
-					csrblock.values()[rptr[r] + index] = 0; // test
+					csrblock.values()[rptr[r] + indexWithOffset] = 0; // test
 					continue;
 				}
 				// Manually fill the column-indexes and values array
 				int nCol = outputCol + (int) val - 1;
-				csrblock.indexes()[rptr[r] + index] = nCol;
-				csrblock.values()[rptr[r] + index] = 1;
+				csrblock.indexes()[rptr[r] + indexWithOffset] = nCol;
+				csrblock.values()[rptr[r] + indexWithOffset] = 1;
 			}
 		}
 		if(sparseRowsWZeros != null) {
@@ -302,12 +303,6 @@ public class ColumnEncoderDummycode extends ColumnEncoder {
 	}
 
 	private static class DummycodeSparseApplyTask extends ColumnApplyTask<ColumnEncoderDummycode> {
-
-		protected DummycodeSparseApplyTask(ColumnEncoderDummycode encoder, MatrixBlock input, 
-				MatrixBlock out, int outputCol) {
-			super(encoder, input, out, outputCol);
-		}
-
 		protected DummycodeSparseApplyTask(ColumnEncoderDummycode encoder, MatrixBlock input,
 				MatrixBlock out, int outputCol, int startRow, int blk) {
 			super(encoder, input, out, outputCol, startRow, blk);

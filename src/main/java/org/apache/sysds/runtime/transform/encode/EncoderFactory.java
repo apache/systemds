@@ -19,10 +19,6 @@
 
 package org.apache.sysds.runtime.transform.encode;
 
-import static org.apache.sysds.runtime.util.CollectionUtils.except;
-import static org.apache.sysds.runtime.util.CollectionUtils.intersect;
-import static org.apache.sysds.runtime.util.CollectionUtils.unionDistinct;
-
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -45,6 +41,11 @@ import org.apache.sysds.runtime.util.UtilFunctions;
 import org.apache.sysds.utils.stats.TransformStatistics;
 import org.apache.wink.json4j.JSONArray;
 import org.apache.wink.json4j.JSONObject;
+
+import static org.apache.sysds.runtime.util.CollectionUtils.except;
+import static org.apache.sysds.runtime.util.CollectionUtils.intersect;
+import static org.apache.sysds.runtime.util.CollectionUtils.unionDistinct;
+import static org.apache.sysds.runtime.util.CollectionUtils.naryUnionDistinct;
 
 public interface EncoderFactory {
 	final static Log LOG = LogFactory.getLog(EncoderFactory.class.getName());
@@ -117,22 +118,17 @@ public interface EncoderFactory {
 			List<Integer> binIDs = TfMetaUtils.parseBinningColIDs(jSpec, colnames, minCol, maxCol);
 			List<Integer> weIDs = Arrays.asList(ArrayUtils
 					.toObject(TfMetaUtils.parseJsonIDList(jSpec, colnames, TfMethod.WORD_EMBEDDING.toString(), minCol, maxCol)));
-
-			//check if user passed an embeddings matrix
-			if(!weIDs.isEmpty() && embeddings == null)
-				throw new DMLRuntimeException("Missing argument Embeddings Matrix for transform [" + TfMethod.WORD_EMBEDDING + "]");
+			List<Integer> bowIDs = Arrays.asList(ArrayUtils
+					.toObject(TfMetaUtils.parseJsonIDList(jSpec, colnames, TfMethod.BAG_OF_WORDS.toString(), minCol, maxCol)));
 
 			// NOTE: any dummycode column requires recode as preparation, unless the dummycode
 			// column follows binning or feature hashing
 			rcIDs = unionDistinct(rcIDs, except(except(dcIDs, binIDs), haIDs));
-			// NOTE: Word Embeddings requires recode as preparation
-			//rcIDs = unionDistinct(rcIDs, weIDs);
 			// Error out if the first level encoders have overlaps
-			if (intersect(rcIDs, binIDs, haIDs, weIDs))
-				throw new DMLRuntimeException("More than one encoders (recode, binning, hashing, word_embedding) on one column is not allowed");
+			if (intersect(rcIDs, binIDs, haIDs, weIDs, bowIDs))
+				throw new DMLRuntimeException("More than one encoders (recode, binning, hashing, word_embedding, bag_of_words) on one column is not allowed");
 
-			List<Integer> ptIDs = except(except(except(UtilFunctions.getSeqList(1, clen, 1), unionDistinct(rcIDs, haIDs)),
-				binIDs), weIDs);
+			List<Integer> ptIDs = except(UtilFunctions.getSeqList(1, clen, 1), naryUnionDistinct(rcIDs, haIDs, binIDs, weIDs, bowIDs));
 			List<Integer> oIDs = Arrays.asList(ArrayUtils
 				.toObject(TfMetaUtils.parseJsonIDList(jSpec, colnames, TfMethod.OMIT.toString(), minCol, maxCol)));
 			List<Integer> mvIDs = Arrays.asList(ArrayUtils.toObject(
@@ -153,6 +149,9 @@ public interface EncoderFactory {
 			if(!weIDs.isEmpty())
 				for(Integer id : weIDs)
 					addEncoderToMap(new ColumnEncoderWordEmbedding(id), colEncoders);
+			if(!bowIDs.isEmpty())
+				for(Integer id : bowIDs)
+					addEncoderToMap(new ColumnEncoderBagOfWords(id), colEncoders);
 			if(!binIDs.isEmpty())
 				for(Object o : (JSONArray) jSpec.get(TfMethod.BIN.toString())) {
 					JSONObject colspec = (JSONObject) o;

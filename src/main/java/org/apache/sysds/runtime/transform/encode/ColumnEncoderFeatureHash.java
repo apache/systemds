@@ -170,7 +170,6 @@ public class ColumnEncoderFeatureHash extends ColumnEncoder {
 	}
 
 	public static class FeatureHashSparseApplyTask extends ColumnApplyTask<ColumnEncoderFeatureHash>{
-
 		public FeatureHashSparseApplyTask(ColumnEncoderFeatureHash encoder, CacheBlock<?> input,
 				MatrixBlock out, int outputCol, int startRow, int blk) {
 			super(encoder, input, out, outputCol, startRow, blk);

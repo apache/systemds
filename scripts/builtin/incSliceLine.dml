@@ -264,12 +264,12 @@ m_incSliceLine = function(
     }
 
     # prepare and store output lattice for next run
-    Lrep = rbind(S,SPr);
+    L1 = rbind(S,SPr);
     if ( encodeLat ) {
-      [Lrep, M] = transformSlicesToIDs(Lrep, foffb, foffe);
+      [L1, M] = transformSlicesToIDs(L1, foffb, foffe);
       metaLattice = append(metaLattice, M);
     }
-    L = append(L, Lrep);
+    L = append(L, L1);
 
     if( nrow(S) > 0 ) {
       # extract and evaluate candidate slices

@@ -28,7 +28,6 @@ from systemds.scuro.representations.utils import pad_sequences
 
 from representations.fusion import Fusion
 
-
 class RowMax(Fusion):
     def __init__(self, split=1):
         """

@@ -57,8 +57,8 @@ class TestLm(unittest.TestCase):
         eps = 1e-03
 
         self.assertTrue(
-            np.allclose(sds_model_weights, model, eps),
-            "All elements are not close")
+            np.allclose(sds_model_weights, model, eps), "All elements are not close"
+        )
 
 
 if __name__ == "__main__":

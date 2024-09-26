@@ -28,7 +28,7 @@ import unittest
 import numpy as np
 from systemds.context import SystemDSContext
 
-os.environ['SYSDS_QUIET'] = "1"
+os.environ["SYSDS_QUIET"] = "1"
 
 dim = 3
 
@@ -39,8 +39,14 @@ m_r2 = np.row_stack((m, m))
 m_r3 = np.row_stack((m, m_r2))
 
 tempdir = "./tests/federated/tmp/test_federated_matrixmult/"
-mtd = {"format": "csv", "header": False, "rows": dim,
-       "cols": dim, "data_type": "matrix", "value_type": "double"}
+mtd = {
+    "format": "csv",
+    "header": False,
+    "rows": dim,
+    "cols": dim,
+    "data_type": "matrix",
+    "value_type": "double",
+}
 
 # Create the testing directory if it does not exist.
 if not os.path.exists(tempdir):
@@ -56,11 +62,11 @@ fed1 = "localhost:8001/" + tempdir + "m.csv"
 fed2 = "localhost:8002/" + tempdir + "m.csv"
 fed3 = "localhost:8003/" + tempdir + "m.csv"
 
-fed1_file = tempdir+"m1.fed"
-fed_c2_file = tempdir+"m_c2.fed"
-fed_c3_file = tempdir+"m_c3.fed"
-fed_r2_file = tempdir+"m_r2.fed"
-fed_r3_file = tempdir+"m_r3.fed"
+fed1_file = tempdir + "m1.fed"
+fed_c2_file = tempdir + "m_c2.fed"
+fed_c3_file = tempdir + "m_c3.fed"
+fed_r2_file = tempdir + "m_r2.fed"
+fed_r3_file = tempdir + "m_r3.fed"
 
 
 class TestFederatedAggFn(unittest.TestCase):
@@ -70,22 +76,31 @@ class TestFederatedAggFn(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         cls.sds = SystemDSContext()
-        cls.sds.federated([fed1], [([0, 0], [dim, dim])]
-                          ).write(fed1_file, format="federated").compute()
-        cls.sds.federated([fed1, fed2], [
-            ([0, 0], [dim, dim]),
-            ([0, dim], [dim, dim*2])]).write(fed_c2_file, format="federated").compute()
-        cls.sds.federated([fed1, fed2, fed3],  [
-            ([0, 0], [dim, dim]),
-            ([0, dim], [dim, dim*2]),
-            ([0, dim*2], [dim, dim*3])]).write(fed_c3_file, format="federated").compute()
-        cls.sds.federated([fed1, fed2], [
-            ([0, 0], [dim, dim]),
-            ([dim, 0], [dim*2, dim])]).write(fed_r2_file, format="federated").compute()
-        cls.sds.federated([fed1, fed2, fed3],  [
-            ([0, 0], [dim, dim]),
-            ([dim, 0], [dim*2, dim]),
-            ([dim*2, 0], [dim*3, dim])]).write(fed_r3_file, format="federated").compute()
+        cls.sds.federated([fed1], [([0, 0], [dim, dim])]).write(
+            fed1_file, format="federated"
+        ).compute()
+        cls.sds.federated(
+            [fed1, fed2], [([0, 0], [dim, dim]), ([0, dim], [dim, dim * 2])]
+        ).write(fed_c2_file, format="federated").compute()
+        cls.sds.federated(
+            [fed1, fed2, fed3],
+            [
+                ([0, 0], [dim, dim]),
+                ([0, dim], [dim, dim * 2]),
+                ([0, dim * 2], [dim, dim * 3]),
+            ],
+        ).write(fed_c3_file, format="federated").compute()
+        cls.sds.federated(
+            [fed1, fed2], [([0, 0], [dim, dim]), ([dim, 0], [dim * 2, dim])]
+        ).write(fed_r2_file, format="federated").compute()
+        cls.sds.federated(
+            [fed1, fed2, fed3],
+            [
+                ([0, 0], [dim, dim]),
+                ([dim, 0], [dim * 2, dim]),
+                ([dim * 2, 0], [dim * 3, dim]),
+            ],
+        ).write(fed_r3_file, format="federated").compute()
 
     @classmethod
     def tearDownClass(cls):
@@ -106,15 +121,13 @@ class TestFederatedAggFn(unittest.TestCase):
 
     def test_single_fed_left_plus_one_row(self):
         f_m = self.sds.read(fed1_file)
-        m_row_plus1 = np.reshape(
-            np.arange(1, dim*(dim+1) + 1, 1), (dim+1, dim))
+        m_row_plus1 = np.reshape(np.arange(1, dim * (dim + 1) + 1, 1), (dim + 1, dim))
         m_s = self.sds.from_numpy(m_row_plus1)
         self.exec_test(m_row_plus1, m, m_s, f_m)
 
     def test_single_fed_left_minus_one_row(self):
         f_m = self.sds.read(fed1_file)
-        m_row_minus1 = np.reshape(
-            np.arange(1, dim*(dim-1) + 1, 1), (dim-1, dim))
+        m_row_minus1 = np.reshape(np.arange(1, dim * (dim - 1) + 1, 1), (dim - 1, dim))
         m_s = self.sds.from_numpy(m_row_minus1)
         self.exec_test(m_row_minus1, m, m_s, f_m)
 
@@ -131,15 +144,13 @@ class TestFederatedAggFn(unittest.TestCase):
 
     def test_single_fed_right_plus_one_row(self):
         f_m = self.sds.read(fed1_file)
-        m_col_plus1 = np.reshape(
-            np.arange(1, dim*(dim+1) + 1, 1), (dim, dim+1))
+        m_col_plus1 = np.reshape(np.arange(1, dim * (dim + 1) + 1, 1), (dim, dim + 1))
         m_s = self.sds.from_numpy(m_col_plus1)
         self.exec_test(m, m_col_plus1, f_m, m_s)
 
     def test_single_fed_right_minus_one_row(self):
         f_m = self.sds.read(fed1_file)
-        m_col_minus1 = np.reshape(
-            np.arange(1, dim*(dim-1) + 1, 1), (dim, dim-1))
+        m_col_minus1 = np.reshape(np.arange(1, dim * (dim - 1) + 1, 1), (dim, dim - 1))
         m_s = self.sds.from_numpy(m_col_minus1)
         self.exec_test(m, m_col_minus1, f_m, m_s)
 
@@ -155,25 +166,25 @@ class TestFederatedAggFn(unittest.TestCase):
 
     def test_two_fed_standard(self):
         f_m2 = self.sds.read(fed_c2_file)
-        m = np.reshape(np.arange(1, dim*(dim + dim) + 1, 1), (dim*2, dim))
+        m = np.reshape(np.arange(1, dim * (dim + dim) + 1, 1), (dim * 2, dim))
         m_s = self.sds.from_numpy(m)
         self.exec_test(m, m_c2, m_s, f_m2)
 
     def test_two_fed_left_minus_one_row(self):
         f_m2 = self.sds.read(fed_c2_file)
-        m = np.reshape(np.arange(1, dim*(dim + dim-1)+1, 1), (dim*2 - 1, dim))
+        m = np.reshape(np.arange(1, dim * (dim + dim - 1) + 1, 1), (dim * 2 - 1, dim))
         m_s = self.sds.from_numpy(m)
         self.exec_test(m, m_c2, m_s, f_m2)
 
     def test_two_fed_left_plus_one_row(self):
         f_m2 = self.sds.read(fed_c2_file)
-        m = np.reshape(np.arange(1, dim*(dim + dim+1)+1, 1), (dim*2 + 1, dim))
+        m = np.reshape(np.arange(1, dim * (dim + dim + 1) + 1, 1), (dim * 2 + 1, dim))
         m_s = self.sds.from_numpy(m)
         self.exec_test(m, m_c2, m_s, f_m2)
 
     def test_two_fed_left_vector_row(self):
         f_m2 = self.sds.read(fed_c2_file)
-        m = np.arange(1, dim+1, 1)
+        m = np.arange(1, dim + 1, 1)
         m_s = self.sds.from_numpy(m).t()
         self.exec_test(m, m_c2, m_s, f_m2)
 
@@ -184,21 +195,19 @@ class TestFederatedAggFn(unittest.TestCase):
 
     def test_two_fed_right_col_minus_1(self):
         f_m2 = self.sds.read(fed_c2_file)
-        m = np.reshape(np.arange(1, (dim-1)*(dim + dim)+1, 1),
-                       (dim * 2, dim-1))
+        m = np.reshape(np.arange(1, (dim - 1) * (dim + dim) + 1, 1), (dim * 2, dim - 1))
         m_s = self.sds.from_numpy(m)
         self.exec_test(m_c2, m, f_m2, m_s)
 
     def test_two_fed_right_col_plus_1(self):
         f_m2 = self.sds.read(fed_c2_file)
-        m = np.reshape(np.arange(1, (dim+1)*(dim + dim)+1, 1),
-                       (dim * 2, dim+1))
+        m = np.reshape(np.arange(1, (dim + 1) * (dim + dim) + 1, 1), (dim * 2, dim + 1))
         m_s = self.sds.from_numpy(m)
         self.exec_test(m_c2, m, f_m2, m_s)
 
     def test_two_fed_right_vector(self):
         f_m2 = self.sds.read(fed_c2_file)
-        m = np.reshape(np.arange(1, (dim + dim)+1, 1), (dim * 2, 1))
+        m = np.reshape(np.arange(1, (dim + dim) + 1, 1), (dim * 2, 1))
         m_s = self.sds.from_numpy(m)
         self.exec_test(m_c2, m, f_m2, m_s)
 
@@ -208,25 +217,25 @@ class TestFederatedAggFn(unittest.TestCase):
 
     def test_three_fed_standard(self):
         f_m3 = self.sds.read(fed_c3_file)
-        m = np.reshape(np.arange(1, dim*(dim * 3) + 1, 1), (dim*3, dim))
+        m = np.reshape(np.arange(1, dim * (dim * 3) + 1, 1), (dim * 3, dim))
         m_s = self.sds.from_numpy(m)
         self.exec_test(m, m_c3, m_s, f_m3)
 
     def test_three_fed_left_minus_one_row(self):
         f_m3 = self.sds.read(fed_c3_file)
-        m = np.reshape(np.arange(1, dim*(dim * 3-1)+1, 1), (dim*3 - 1, dim))
+        m = np.reshape(np.arange(1, dim * (dim * 3 - 1) + 1, 1), (dim * 3 - 1, dim))
         m_s = self.sds.from_numpy(m)
         self.exec_test(m, m_c3, m_s, f_m3)
 
     def test_three_fed_left_plus_one_row(self):
         f_m3 = self.sds.read(fed_c3_file)
-        m = np.reshape(np.arange(1, dim*(dim *3+1)+1, 1), (dim*3 + 1, dim))
+        m = np.reshape(np.arange(1, dim * (dim * 3 + 1) + 1, 1), (dim * 3 + 1, dim))
         m_s = self.sds.from_numpy(m)
         self.exec_test(m, m_c3, m_s, f_m3)
 
     def test_three_fed_left_vector_row(self):
         f_m3 = self.sds.read(fed_c3_file)
-        m = np.arange(1, dim+1, 1)
+        m = np.arange(1, dim + 1, 1)
         m_s = self.sds.from_numpy(m).t()
         self.exec_test(m, m_c3, m_s, f_m3)
 
@@ -237,19 +246,19 @@ class TestFederatedAggFn(unittest.TestCase):
 
     def test_three_fed_right_col_minus_1(self):
         f_m3 = self.sds.read(fed_c3_file)
-        m = np.reshape(np.arange(1, (dim-1)*(dim*3)+1, 1), (dim * 3, dim-1))
+        m = np.reshape(np.arange(1, (dim - 1) * (dim * 3) + 1, 1), (dim * 3, dim - 1))
         m_s = self.sds.from_numpy(m)
         self.exec_test(m_c3, m, f_m3, m_s)
 
     def test_three_fed_right_col_plus_1(self):
         f_m3 = self.sds.read(fed_c3_file)
-        m = np.reshape(np.arange(1, (dim+1)*(dim *3)+1, 1), (dim * 3, dim+1))
+        m = np.reshape(np.arange(1, (dim + 1) * (dim * 3) + 1, 1), (dim * 3, dim + 1))
         m_s = self.sds.from_numpy(m)
         self.exec_test(m_c3, m, f_m3, m_s)
 
     def test_three_fed_right_vector(self):
         f_m3 = self.sds.read(fed_c3_file)
-        m = np.reshape(np.arange(1, (dim *3)+1, 1), (dim * 3, 1))
+        m = np.reshape(np.arange(1, (dim * 3) + 1, 1), (dim * 3, 1))
         m_s = self.sds.from_numpy(m)
         self.exec_test(m_c3, m, f_m3, m_s)
 
@@ -267,15 +276,15 @@ class TestFederatedAggFn(unittest.TestCase):
         s_m = self.sds.from_numpy(m_c3)
         self.exec_test(m_c3, m_r3, s_m, fed)
 
-
-
-
     def test_previously_failing(self):
         # local matrix to multiply with
-        loc = np.array([
-            [1, 2, 3, 4, 5, 6, 7, 8, 9],
-            [1, 2, 3, 4, 5, 6, 7, 8, 9],
-            [1, 2, 3, 4, 5, 6, 7, 8, 9]])
+        loc = np.array(
+            [
+                [1, 2, 3, 4, 5, 6, 7, 8, 9],
+                [1, 2, 3, 4, 5, 6, 7, 8, 9],
+                [1, 2, 3, 4, 5, 6, 7, 8, 9],
+            ]
+        )
         # Multiply local and federated
         ret_loc = loc @ m_r3
 
@@ -284,8 +293,7 @@ class TestFederatedAggFn(unittest.TestCase):
             fed = self.sds.read(fed_r3_file)
             ret_fed = (loc_systemds @ fed).compute()
             if not np.allclose(ret_fed, ret_loc):
-                self.fail(
-                    "not equal outputs of federated matrix multiplications")
+                self.fail("not equal outputs of federated matrix multiplications")
 
     def exec_test(self, left, right, f_left, f_right):
         fed = f_left @ f_right

@@ -23,6 +23,7 @@ import unittest
 import numpy as np
 from systemds.context import SystemDSContext
 
+
 class TestSVD(unittest.TestCase):
     def setUp(self):
         self.sds = SystemDSContext()
@@ -32,18 +33,17 @@ class TestSVD(unittest.TestCase):
 
     def test_svd_basic(self):
 
-        input_matrix = np.array([[1, 2, 3, 4],
-                                 [5, 6, 7, 8],
-                                 [9, 10, 11, 12],
-                                 [13, 14, 15, 16]])
+        input_matrix = np.array(
+            [[1, 2, 3, 4], [5, 6, 7, 8], [9, 10, 11, 12], [13, 14, 15, 16]]
+        )
 
         sds_input = self.sds.from_numpy(input_matrix)
         svd_result = sds_input.svd().compute()
 
-        U,S,V = svd_result
+        U, S, V = svd_result
         # TODO add a proper verification
         # Currently this implementation rely on internal testing only.
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()

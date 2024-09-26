@@ -68,7 +68,6 @@ class TestTransformEncode(unittest.TestCase):
         for col_name in JSPEC["recode"]:
             self.assertTrue(M[col_name].nunique() == pd_F1[col_name].nunique())
 
-
     def test_encode_recode_and_use_matrix(self):
         with open(self.JSPEC_PATH) as jspec_file:
             JSPEC = json.load(jspec_file)
@@ -83,7 +82,8 @@ class TestTransformEncode(unittest.TestCase):
         X, M = F1.transform_encode(spec=jspec)
         xm = X.sum() + 1
         res = xm.compute()
-        self.assertTrue(isinstance(res,float))
+        self.assertTrue(isinstance(res, float))
+
 
 if __name__ == "__main__":
     unittest.main(exit=False)

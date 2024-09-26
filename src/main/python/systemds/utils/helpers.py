@@ -27,7 +27,9 @@ from typing import Dict, Iterable
 from systemds.utils.consts import MODULE_NAME
 
 
-def create_params_string(unnamed_parameters: Iterable[str], named_parameters: Dict[str, str]) -> str:
+def create_params_string(
+    unnamed_parameters: Iterable[str], named_parameters: Dict[str, str]
+) -> str:
     """
     Creates a string for providing parameters in dml. Basically converts both named and unnamed parameter
     to a format which can be used in a dml function call.
@@ -36,8 +38,8 @@ def create_params_string(unnamed_parameters: Iterable[str], named_parameters: Di
     :param named_parameters: a dictionary of parameter names and variable names
     :return: the string to represent all parameters
     """
-    named_input_strs = (f'{k}={v}' for (k, v) in named_parameters.items())
-    return ','.join(chain(unnamed_parameters, named_input_strs))
+    named_input_strs = (f"{k}={v}" for (k, v) in named_parameters.items())
+    return ",".join(chain(unnamed_parameters, named_input_strs))
 
 
 def get_module_dir() -> os.PathLike:
@@ -54,17 +56,17 @@ def get_slice_string(i):
     if isinstance(i, list):
         raise ValueError("Not Supported list query")
     if isinstance(i, tuple):
-        return f'{get_slice_string(i[0])},{get_slice_string(i[1])}'
+        return f"{get_slice_string(i[0])},{get_slice_string(i[1])}"
     elif isinstance(i, slice):
         if i.step:
             raise ValueError("Invalid to slice with step in systemds")
         elif i.start == None and i.stop == None:
-            return ''
+            return ""
         elif i.start == None or i.stop == None:
             raise NotImplementedError("Not Implemented slice with dynamic end")
         else:
             # + 1 since R and systemDS is 1 indexed.
-            return f'{i.start + 1}:{i.stop}'
+            return f"{i.start + 1}:{i.stop}"
     else:
         # + 1 since R and systemDS is 1 indexed.
         sliceIns = i + 1
@@ -72,12 +74,14 @@ def get_slice_string(i):
 
 
 def check_is_empty_slice(i):
-    return isinstance(i, slice) and i.start == None and i.stop == None and i.step == None
+    return (
+        isinstance(i, slice) and i.start == None and i.stop == None and i.step == None
+    )
 
 
 def check_no_less_than_zero(i: list):
     for x in i:
-        if (x < 0):
+        if x < 0:
             raise ValueError("Negative index not supported in systemds")
 
 
@@ -97,13 +101,13 @@ def get_path_to_script_layers() -> str:
 
 def valuetype_from_str(val) -> str:
     val = val.lower()
-    if val in ['double', 'float']:
+    if val in ["double", "float"]:
         return "double"
-    elif val in ['string', 'str']:
+    elif val in ["string", "str"]:
         return "string"
-    elif val in ['boolean', 'bool']:
+    elif val in ["boolean", "bool"]:
         return "boolean"
-    elif val in ['integer', 'int']:
+    elif val in ["integer", "int"]:
         return "integer"
     else:
         return None

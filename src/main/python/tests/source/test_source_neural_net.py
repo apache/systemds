@@ -45,9 +45,12 @@ class TestSource_NeuralNet(unittest.TestCase):
     def test_test_method(self):
         # Verify that we can call a function.
         m = np.full((1, 2), 1)
-        res = self.sds.source(self.src_path, "test")\
-            .test_function(self.sds.full((1, 2), 1))[1]\
-            .as_matrix().compute()
+        res = (
+            self.sds.source(self.src_path, "test")
+            .test_function(self.sds.full((1, 2), 1))[1]
+            .as_matrix()
+            .compute()
+        )
         self.assertTrue(np.allclose(m, res))
 
 

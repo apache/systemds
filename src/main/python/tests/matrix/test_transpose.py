@@ -32,6 +32,7 @@ m = np.random.rand(shape[0], shape[1])
 mx = np.random.rand(1, shape[1])
 my = np.random.rand(shape[0], 1)
 
+
 class TestTranspose(unittest.TestCase):
 
     sds: SystemDSContext = None
@@ -45,19 +46,19 @@ class TestTranspose(unittest.TestCase):
         cls.sds.close()
 
     def test_basic(self):
-        trans = self.sds.from_numpy( m).t().compute()
+        trans = self.sds.from_numpy(m).t().compute()
         self.assertTrue(np.allclose(trans, np.transpose(m)))
 
     def test_empty(self):
-        trans = self.sds.from_numpy( np.asarray([])).t().compute()
+        trans = self.sds.from_numpy(np.asarray([])).t().compute()
         self.assertTrue(np.allclose(trans, np.asarray([])))
 
     def test_row(self):
-        trans = self.sds.from_numpy( mx).t().compute()
+        trans = self.sds.from_numpy(mx).t().compute()
         self.assertTrue(np.allclose(trans, np.transpose(mx)))
 
     def test_col(self):
-        trans = self.sds.from_numpy( my).t().compute()
+        trans = self.sds.from_numpy(my).t().compute()
         self.assertTrue(np.allclose(trans, np.transpose(my)))
 
 

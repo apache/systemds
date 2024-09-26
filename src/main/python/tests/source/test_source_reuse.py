@@ -33,8 +33,7 @@ class TestSourceReuse(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         cls.sds = SystemDSContext()
-        cls.source_reuse = cls.sds.source("./tests/source/source_01.dml",
-                              "test")
+        cls.source_reuse = cls.sds.source("./tests/source/source_01.dml", "test")
 
     @classmethod
     def tearDownClass(cls):
@@ -47,8 +46,7 @@ class TestSourceReuse(unittest.TestCase):
         self.call()
 
     def test_03_same_function(self):
-        s = self.sds.source("./tests/source/source_01.dml",
-                              "test")
+        s = self.sds.source("./tests/source/source_01.dml", "test")
         c = s.test_01().compute()
         d = s.test_01().compute()
         self.assertTrue(np.allclose(c, d))
@@ -59,10 +57,11 @@ class TestSourceReuse(unittest.TestCase):
         self.assertEqual(1, self.imports(c.script_str))
         self.assertTrue(np.allclose(np.array([[1]]), res))
 
+    def imports(self, script: str) -> int:
+        return script.split("\n").count(
+            'source("./tests/source/source_01.dml") as test'
+        )
 
-
-    def imports(self, script:str) -> int:
-        return script.split("\n").count('source("./tests/source/source_01.dml") as test')
 
 if __name__ == "__main__":
     unittest.main(exit=False)

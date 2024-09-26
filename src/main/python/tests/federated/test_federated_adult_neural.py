@@ -36,18 +36,17 @@ def create_schema(dataset):
     schema = []
     for dtype in dataset.dtypes:
         if pd.api.types.is_integer_dtype(dtype):
-            schema.append('int64')
+            schema.append("int64")
         elif pd.api.types.is_float_dtype(dtype):
-            schema.append('fp64')
+            schema.append("fp64")
         elif pd.api.types.is_bool_dtype(dtype):
-            schema.append('bool')
+            schema.append("bool")
         else:
-            schema.append('string')
-    return ','.join(schema)
+            schema.append("string")
+    return ",".join(schema)
 
 
-def create_row_federated_dataset(name, dataset, num_parts=2,
-                                 federated_workers=None):
+def create_row_federated_dataset(name, dataset, num_parts=2, federated_workers=None):
     if federated_workers is None:
         federated_workers = ["localhost:8001", "localhost:8002"]
     tempdir = "./tests/federated/tmp/test_federated_adult_neural/"
@@ -61,30 +60,48 @@ def create_row_federated_dataset(name, dataset, num_parts=2,
 
     fed_file_content = []
     rows_processed = 0
-    for worker_id, address, rows in zip(range(num_parts), itertools.cycle(federated_workers), rs):
+    for worker_id, address, rows in zip(
+        range(num_parts), itertools.cycle(federated_workers), rs
+    ):
         dataset_part_path = path.join(tempdir, f"{name}{worker_id}.csv")
-        mtd = {"format": "csv", "header": True, "rows": rows, "cols": c,
-               "data_type": "frame", "schema": schema}
+        mtd = {
+            "format": "csv",
+            "header": True,
+            "rows": rows,
+            "cols": c,
+            "data_type": "frame",
+            "schema": schema,
+        }
 
-        dataset_part = dataset[rows_processed:rows_processed + rows]
+        dataset_part = dataset[rows_processed : rows_processed + rows]
         dataset_part.to_csv(dataset_part_path, index=False)
         with io.open(f"{dataset_part_path}.mtd", "w", encoding="utf-8") as f:
             json.dump(mtd, f, ensure_ascii=False)
 
-        fed_file_content.append({
-            "address": address,
-            "dataType": "FRAME",
-            "filepath": dataset_part_path,
-            "begin": [rows_processed, 0],
-            "end": [rows_processed + rows, c],
-        })
+        fed_file_content.append(
+            {
+                "address": address,
+                "dataType": "FRAME",
+                "filepath": dataset_part_path,
+                "begin": [rows_processed, 0],
+                "end": [rows_processed + rows, c],
+            }
+        )
         rows_processed += rows
 
     with open(federated_file, "w", encoding="utf-8") as f:
         json.dump(fed_file_content, f)
-    with open(federated_file + '.mtd', "w", encoding="utf-8") as f:
-        json.dump({"format": "federated", "rows": dataset.shape[0], "cols": c,
-                   "data_type": "frame", "schema": schema}, f)
+    with open(federated_file + ".mtd", "w", encoding="utf-8") as f:
+        json.dump(
+            {
+                "format": "federated",
+                "rows": dataset.shape[0],
+                "cols": c,
+                "data_type": "frame",
+                "schema": schema,
+            },
+            f,
+        )
 
     return federated_file
 
@@ -114,14 +131,18 @@ class TestFederatedAdultNeural(unittest.TestCase):
     def setUpClass(cls):
         cls.sds = SystemDSContext()
         cls.d = DataManager()
-        cls.data_path_train = create_row_federated_dataset("train_data",
-                                                           cls.d.get_train_data_pandas()[0:cls.train_count])
-        cls.labels_path_train = create_row_federated_dataset("train_labels",
-                                                             cls.d.get_train_labels_pandas()[0:cls.train_count])
-        cls.data_path_test = create_row_federated_dataset("test_data",
-                                                          cls.d.get_test_data_pandas()[0:cls.test_count])
-        cls.labels_path_test = create_row_federated_dataset("test_labels",
-                                                            cls.d.get_test_labels_pandas()[0:cls.test_count])
+        cls.data_path_train = create_row_federated_dataset(
+            "train_data", cls.d.get_train_data_pandas()[0 : cls.train_count]
+        )
+        cls.labels_path_train = create_row_federated_dataset(
+            "train_labels", cls.d.get_train_labels_pandas()[0 : cls.train_count]
+        )
+        cls.data_path_test = create_row_federated_dataset(
+            "test_data", cls.d.get_test_data_pandas()[0 : cls.test_count]
+        )
+        cls.labels_path_test = create_row_federated_dataset(
+            "test_labels", cls.d.get_test_labels_pandas()[0 : cls.test_count]
+        )
         shutil.rmtree(cls.network_dir, ignore_errors=True)
 
     @classmethod
@@ -180,8 +201,7 @@ class TestFederatedAdultNeural(unittest.TestCase):
     def train_neural_net_and_predict(self):
         [train_x, test_x, train_y, test_y] = self.prepare()
         FFN_package = self.sds.source(self.neural_net_src_path, "fnn")
-        network = FFN_package.train_paramserv(
-            train_x, train_y, 1, 16, 0.01, 2, 1)
+        network = FFN_package.train_paramserv(train_x, train_y, 1, 16, 0.01, 2, 1)
         probs = FFN_package.predict(test_x, network)
         accuracy = FFN_package.eval(probs, test_y).compute()
         # accuracy is returned in percent

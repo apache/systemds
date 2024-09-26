@@ -32,6 +32,7 @@ m = np.random.rand(shape[0], shape[1])
 mx = np.random.rand(1, shape[1])
 my = np.random.rand(shape[0], 1)
 
+
 class TestReverse(unittest.TestCase):
 
     sds: SystemDSContext = None
@@ -57,7 +58,9 @@ class TestReverse(unittest.TestCase):
         self.assertTrue(np.allclose(self.sds.from_numpy(mx).rev().compute(), mx))
 
     def test_y_axis(self):
-        self.assertTrue(np.allclose(self.sds.from_numpy(my).rev().compute(), np.flip(my, 0)))
+        self.assertTrue(
+            np.allclose(self.sds.from_numpy(my).rev().compute(), np.flip(my, 0))
+        )
 
 
 if __name__ == "__main__":

@@ -41,7 +41,7 @@ class TestGMM(unittest.TestCase):
         a = self.sds.rand(500, 10, -100, 100, pdf="normal", seed=10)
         features = a  # training data all not outliers
 
-        notOutliers = self.sds.rand(10, 10, -1, 1,  seed=10)  # inside a
+        notOutliers = self.sds.rand(10, 10, -1, 1, seed=10)  # inside a
         outliers = self.sds.rand(10, 10, 1150, 1200, seed=10)  # outliers
 
         test = outliers.rbind(notOutliers)  # testing data half outliers
@@ -49,10 +49,12 @@ class TestGMM(unittest.TestCase):
         n_gaussian = 4
 
         [_, _, _, _, mu, precision_cholesky, weight] = gmm(
-            features, n_components=n_gaussian, seed=10)
+            features, n_components=n_gaussian, seed=10
+        )
 
         [_, pp] = gmmPredict(
-            test, weight, mu, precision_cholesky, model=self.sds.scalar("VVV"))
+            test, weight, mu, precision_cholesky, model=self.sds.scalar("VVV")
+        )
 
         outliers = pp.max(axis=1) < 0.99
         ret = outliers.compute()

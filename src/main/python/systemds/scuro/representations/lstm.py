@@ -34,7 +34,7 @@ class LSTM(Fusion):
         """
         Combines modalities using an LSTM
         """
-        super().__init__('LSTM')
+        super().__init__("LSTM")
         self.depth = depth
         self.width = width
         self.dropout_rate = dropout_rate

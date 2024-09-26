@@ -26,8 +26,13 @@ from aligner.similarity_measures import Measure
 
 
 class Alignment:
-    def __init__(self, modality_a: Modality, modality_b: Modality, strategy: AlignmentStrategy,
-                 similarity_measure: Measure):
+    def __init__(
+        self,
+        modality_a: Modality,
+        modality_b: Modality,
+        strategy: AlignmentStrategy,
+        similarity_measure: Measure,
+    ):
         """
         Defines the core of the library where the alignment of two modalities is performed
         :param modality_a: first modality
@@ -39,7 +44,6 @@ class Alignment:
         self.modality_b = modality_b
         self.strategy = strategy
         self.similarity_measure = similarity_measure
-    
+
     def align_modalities(self) -> Modality:
         return AlignedModality(Representation())
-    

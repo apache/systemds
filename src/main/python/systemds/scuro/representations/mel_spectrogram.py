@@ -31,10 +31,10 @@ from systemds.scuro.representations.unimodal import UnimodalRepresentation
 
 class MelSpectrogram(UnimodalRepresentation):
     def __init__(self, avg=True, output_file=None):
-        super().__init__('MelSpectrogram')
+        super().__init__("MelSpectrogram")
         self.avg = avg
         self.output_file = output_file
-    
+
     def parse_all(self, file_path, indices, get_sequences=False):
         result = []
         max_length = 0
@@ -48,19 +48,19 @@ class MelSpectrogram(UnimodalRepresentation):
                     if S_dB.shape[-1] > max_length:
                         max_length = S_dB.shape[-1]
                     result.append(S_dB)
-        
+
         r = []
         for elem in result:
-            d = pad_sequences(elem, maxlen=max_length, dtype='float32')
+            d = pad_sequences(elem, maxlen=max_length, dtype="float32")
             r.append(d)
-        
+
         np_array_r = np.array(r) if not self.avg else np.mean(np.array(r), axis=1)
-        
+
         if self.output_file is not None:
             data = {}
             for i in range(0, np_array_r.shape[0]):
                 data[indices[i]] = np_array_r[i]
-            with open(self.output_file, 'wb') as file:
+            with open(self.output_file, "wb") as file:
                 pickle.dump(data, file)
-        
+
         return np_array_r

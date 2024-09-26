@@ -25,6 +25,7 @@ from systemds.context import SystemDSContext
 from tests.nn.neural_network import NeuralNetwork
 from systemds.script_building.script import DMLScript
 
+
 class TestNeuralNetwork(unittest.TestCase):
     sds: SystemDSContext = None
 
@@ -33,12 +34,22 @@ class TestNeuralNetwork(unittest.TestCase):
         cls.sds = SystemDSContext()
         np.random.seed(42)
         cls.X = np.random.rand(6, 1)
-        cls.exp_out = np.array([
-            -0.37768756, -0.47785831, -0.95870362,
-            -1.21297214, -0.73814523, -0.933917,
-            -0.60368929, -0.76380049, -0.15732974,
-            -0.19905692, -0.15730542, -0.19902615
-        ])
+        cls.exp_out = np.array(
+            [
+                -0.37768756,
+                -0.47785831,
+                -0.95870362,
+                -1.21297214,
+                -0.73814523,
+                -0.933917,
+                -0.60368929,
+                -0.76380049,
+                -0.15732974,
+                -0.19905692,
+                -0.15730542,
+                -0.19902615,
+            ]
+        )
 
     @classmethod
     def tearDownClass(cls):
@@ -55,7 +66,7 @@ class TestNeuralNetwork(unittest.TestCase):
 
         # test forward pass through the network using dynamic calls
         dynamic_out = nn.forward_dynamic_pass(Xm).compute().flatten()
-        self.assertTrue(np.allclose(dynamic_out,self.exp_out))
+        self.assertTrue(np.allclose(dynamic_out, self.exp_out))
 
     def test_multiple_sourcing(self):
         sds = SystemDSContext()
@@ -67,7 +78,9 @@ class TestNeuralNetwork(unittest.TestCase):
         scripts = DMLScript(sds)
         scripts.build_code(network_out)
 
-        self.assertEqual(1, self.count_sourcing(scripts.dml_script, layer_name="affine"))
+        self.assertEqual(
+            1, self.count_sourcing(scripts.dml_script, layer_name="affine")
+        )
         self.assertEqual(1, self.count_sourcing(scripts.dml_script, layer_name="relu"))
         sds.close()
 
@@ -81,11 +94,14 @@ class TestNeuralNetwork(unittest.TestCase):
         :param layer_name: example: "affine", "relu"
         :return:
         """
-        return len([
-            line for line in script.split("\n")
-            if all([line.startswith("source"), line.endswith(layer_name)])
-        ])
+        return len(
+            [
+                line
+                for line in script.split("\n")
+                if all([line.startswith("source"), line.endswith(layer_name)])
+            ]
+        )
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()

@@ -65,18 +65,20 @@ class Test_DMLScript(unittest.TestCase):
         train_count = 5000
         test_count = 2000
         # Train data
-        X = self.sds.from_numpy( self.d.get_train_data().reshape(
-            (60000, 28*28))[:train_count])
-        Y = self.sds.from_numpy( self.d.get_train_labels()[:train_count])
+        X = self.sds.from_numpy(
+            self.d.get_train_data().reshape((60000, 28 * 28))[:train_count]
+        )
+        Y = self.sds.from_numpy(self.d.get_train_labels()[:train_count])
         Y = Y + 1.0
 
         # Test data
-        Xt = self.sds.from_numpy( self.d.get_test_data().reshape(
-            (10000, 28*28))[:test_count])
-        Yt = self.sds.from_numpy( self.d.get_test_labels()[:test_count])
+        Xt = self.sds.from_numpy(
+            self.d.get_test_data().reshape((10000, 28 * 28))[:test_count]
+        )
+        Yt = self.sds.from_numpy(self.d.get_test_labels()[:test_count])
         Yt = Yt + 1.0
 
-        bias = multiLogReg(X, Y, verbose = False)
+        bias = multiLogReg(X, Y, verbose=False)
         [_, _, acc] = multiLogRegPredict(Xt, bias, Y=Yt, verbose=False).compute()
 
         self.assertGreater(acc, 80)
@@ -84,10 +86,11 @@ class Test_DMLScript(unittest.TestCase):
     def test_multi_log_reg_with_read(self):
         train_count = 100
         test_count = 100
-        X = self.sds.from_numpy( self.d.get_train_data().reshape(
-            (60000, 28*28))[:train_count])
+        X = self.sds.from_numpy(
+            self.d.get_train_data().reshape((60000, 28 * 28))[:train_count]
+        )
         X.write(self.base_path + "train_data").compute()
-        Y = self.sds.from_numpy( self.d.get_train_labels()[:train_count]) + 1
+        Y = self.sds.from_numpy(self.d.get_train_labels()[:train_count]) + 1
         Y.write(self.base_path + "train_labels").compute()
 
         Xr = self.sds.read(self.base_path + "train_data")
@@ -95,13 +98,14 @@ class Test_DMLScript(unittest.TestCase):
 
         bias = multiLogReg(Xr, Yr, verbose=False)
         # Test data
-        Xt = self.sds.from_numpy( self.d.get_test_data().reshape(
-            (10000, 28*28))[:test_count])
-        Yt = self.sds.from_numpy( self.d.get_test_labels()[:test_count])
+        Xt = self.sds.from_numpy(
+            self.d.get_test_data().reshape((10000, 28 * 28))[:test_count]
+        )
+        Yt = self.sds.from_numpy(self.d.get_test_labels()[:test_count])
         Yt = Yt + 1.0
 
         [_, _, acc] = multiLogRegPredict(Xt, bias, Y=Yt).compute(verbose=False)
-        
+
         self.assertGreater(acc, 70)
 
 

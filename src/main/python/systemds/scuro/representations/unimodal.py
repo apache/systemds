@@ -28,11 +28,11 @@ class UnimodalRepresentation(Representation):
         :param name: name of the representation
         """
         super().__init__(name)
-    
+
     def parse_all(self, file_path, indices):
-        raise f'Not implemented for {self.name}'
+        raise f"Not implemented for {self.name}"
 
 
 class PixelRepresentation(UnimodalRepresentation):
     def __init__(self):
-        super().__init__('Pixel')
+        super().__init__("Pixel")

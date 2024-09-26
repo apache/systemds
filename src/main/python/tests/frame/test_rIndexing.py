@@ -30,7 +30,7 @@ class Test_rIndexing(unittest.TestCase):
 
     sds: SystemDSContext = None
 
-    #shape (4, 3)
+    # shape (4, 3)
     df = pd.DataFrame(np.arange(0, 100).reshape(10, 10))
 
     @classmethod

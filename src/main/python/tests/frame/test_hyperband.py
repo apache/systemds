@@ -67,7 +67,7 @@ class TestHyperband(unittest.TestCase):
             y_val=y_val,
             params=params,
             paramRanges=paramRanges,
-            verbose=False
+            verbose=False,
         ).compute()
         self.assertTrue(isinstance(best_weights_mat, np.ndarray))
         self.assertTrue(best_weights_mat.shape[0] == self.X_train.shape[1])
@@ -77,7 +77,8 @@ class TestHyperband(unittest.TestCase):
         self.assertTrue(opt_hyper_params_df.shape[1] == 1)
         for i, hyper_param in enumerate(opt_hyper_params_df.values.flatten().tolist()):
             self.assertTrue(
-                self.min_max_params[i][0] <= hyper_param <= self.min_max_params[i][1])
+                self.min_max_params[i][0] <= hyper_param <= self.min_max_params[i][1]
+            )
 
 
 if __name__ == "__main__":

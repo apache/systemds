@@ -34,14 +34,14 @@ class Average(Fusion):
         """
         Combines modalities using averaging
         """
-        super().__init__('Average')
-    
+        super().__init__("Average")
+
     def fuse(self, modalities: List[Modality]):
         max_emb_size = self.get_max_embedding_size(modalities)
 
         padded_modalities = []
         for modality in modalities:
-            d = pad_sequences(modality.data, maxlen=max_emb_size, dtype='float32')
+            d = pad_sequences(modality.data, maxlen=max_emb_size, dtype="float32")
             padded_modalities.append(d)
 
         data = padded_modalities[0]

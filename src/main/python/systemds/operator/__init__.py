@@ -30,5 +30,15 @@ from systemds.operator.nodes.list import List
 from systemds.operator.nodes.source import Source
 from systemds.operator import algorithm
 
-__all__ = ["OperationNode", "algorithm", "Scalar", "List",
-           "ListAccess", "Matrix", "Frame", "Source", "MultiReturn", "Combine"]
+__all__ = [
+    "OperationNode",
+    "algorithm",
+    "Scalar",
+    "List",
+    "ListAccess",
+    "Matrix",
+    "Frame",
+    "Source",
+    "MultiReturn",
+    "Combine",
+]

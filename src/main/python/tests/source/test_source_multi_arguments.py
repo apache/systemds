@@ -39,16 +39,15 @@ class TestSource_MultiArguments(unittest.TestCase):
         cls.sds.close()
 
     def test_01(self):
-        s = self.sds.source(self.src_path,"test")
+        s = self.sds.source(self.src_path, "test")
 
-        m1 = self.sds.rand(12,1)
-        m2 = self.sds.rand(1,2)
-        m3 = self.sds.rand(23,3)
-        c = s.blaaa_is_a_BAAD_function_name_but_it_works(m1,m2,m3)
+        m1 = self.sds.rand(12, 1)
+        m2 = self.sds.rand(1, 2)
+        m3 = self.sds.rand(23, 3)
+        c = s.blaaa_is_a_BAAD_function_name_but_it_works(m1, m2, m3)
 
         res = c.compute()
         self.assertEqual(1, self.imports(c.script_str))
-
 
     # def test_02(self):
     #     s = self.sds.source(self.src_path,"test")
@@ -60,8 +59,9 @@ class TestSource_MultiArguments(unittest.TestCase):
     #     self.assertEqual(1, self.imports(c.script_str))
     #     self.assertTrue("V3" not in c.script_str, "Only 2 variables should be allocated.")
 
-    def imports(self, script:str) -> int:
+    def imports(self, script: str) -> int:
         return script.split("\n").count(f'source("{self.src_path}") as test')
+
 
 if __name__ == "__main__":
     unittest.main(exit=False)

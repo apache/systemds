@@ -26,15 +26,13 @@ class DiscreteModel(Model):
         """
         Placeholder for a discrete model implementation
         """
-        super().__init__('DiscreteModel')
-        
+        super().__init__("DiscreteModel")
+
     def fit(self, X_train, y_train):
         self.clf = None
         train_accuracy = 0
         return train_accuracy
-    
+
     def test(self, X_test, y_test):
         test_accuracy = 0
         return test_accuracy
-        
-        

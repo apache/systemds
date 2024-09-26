@@ -25,11 +25,12 @@ import unittest
 
 from systemds.context import SystemDSContext
 
-os.environ['SYSDS_QUIET'] = "1"
+os.environ["SYSDS_QUIET"] = "1"
 
 test_dir = os.path.join("tests", "lineage")
 temp_dir = os.path.join(test_dir, "temp")
-trace_test_1 = os.path.join(test_dir,"trace1.dml")
+trace_test_1 = os.path.join(test_dir, "trace1.dml")
+
 
 class TestLineageTrace(unittest.TestCase):
 
@@ -46,28 +47,30 @@ class TestLineageTrace(unittest.TestCase):
     def tearDown(self):
         shutil.rmtree(temp_dir, ignore_errors=True)
 
-    @unittest.skipIf("SYSTEMDS_ROOT" not in os.environ, "The test is skipped if SYSTEMDS_ROOT is not set, this is required for this tests since it use the bin/systemds file to execute a reference")
+    @unittest.skipIf(
+        "SYSTEMDS_ROOT" not in os.environ,
+        "The test is skipped if SYSTEMDS_ROOT is not set, this is required for this tests since it use the bin/systemds file to execute a reference",
+    )
     def test_compare_trace1(self):  # test getLineageTrace() on an intermediate
         m = self.sds.full((10, 10), 1)
         m_res = m + m
 
-        python_trace = [x.strip().split("°")
-                        for x in m_res.get_lineage_trace().split("\n")]
+        python_trace = [
+            x.strip().split("°") for x in m_res.get_lineage_trace().split("\n")
+        ]
 
-      
         sysds_trace = self.create_execute_and_trace_dml(trace_test_1)
 
         # It is not guarantied, that the two lists 100% align to be the same.
         # Therefore for now, we only compare if the command is the same, in same order.
         python_trace_commands = [x[:1] for x in python_trace]
         dml_script_commands = [x[:1] for x in sysds_trace]
-        if(len(python_trace_commands) == 0):
+        if len(python_trace_commands) == 0:
             self.fail("Error in pythonscript execution")
-        if(len(dml_script_commands) == 0):
+        if len(dml_script_commands) == 0:
             self.fail("Error in DML script execution")
-        
-        self.assertEqual(python_trace_commands[0], dml_script_commands[0])
 
+        self.assertEqual(python_trace_commands[0], dml_script_commands[0])
 
     def create_execute_and_trace_dml(self, script: str):
         if not os.path.exists(temp_dir):
@@ -75,8 +78,7 @@ class TestLineageTrace(unittest.TestCase):
 
         # Call SYSDS!
         result_file_name = temp_dir + "/tmp_res.txt"
-        command = "systemds " + script + \
-            " > " + result_file_name + " 2> /dev/null"
+        command = "systemds " + script + " > " + result_file_name + " 2> /dev/null"
         status = os.system(command)
         if status < 0:
             self.fail("systemds call failed.")

@@ -36,7 +36,7 @@ from systemds.scuro.aligner.dr_search import DRSearch
 
 class CustomTask(Task):
     def __init__(self, model, labels, train_indices, val_indices):
-        super().__init__('CustomTask', model, labels, train_indices, val_indices)
+        super().__init__("CustomTask", model, labels, train_indices, val_indices)
 
     def run(self, data):
         X_train, y_train, X_test, y_test = self.get_train_test_split(data)
@@ -49,9 +49,9 @@ labels = []
 train_indices = []
 val_indices = []
 
-video_path = ''
-audio_path = ''
-text_path = ''
+video_path = ""
+audio_path = ""
+text_path = ""
 
 # Load modalities (audio, video, text)
 video = VideoModality(video_path, HDF5(), train_indices)

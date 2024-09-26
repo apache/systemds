@@ -46,12 +46,16 @@ class TestMultiLogReg(unittest.TestCase):
         [X, labels, Y] = self.gen_data()
 
         # Call algorithm
-        bias = multiLogReg(self.sds.from_numpy(
-            X), self.sds.from_numpy(Y), verbose=False).compute()
+        bias = multiLogReg(
+            self.sds.from_numpy(X), self.sds.from_numpy(Y), verbose=False
+        ).compute()
 
         # Calculate result.
-        res = np.reshape(np.dot(X, bias[:len(X[0])]) + bias[len(X[0])], (250))
-        def f2(x): return (x < 0) + 1
+        res = np.reshape(np.dot(X, bias[: len(X[0])]) + bias[len(X[0])], (250))
+
+        def f2(x):
+            return (x < 0) + 1
+
         accuracy = np.sum(labels == f2(res)) / 250 * 100
 
         self.assertTrue(accuracy > 98)
@@ -63,11 +67,16 @@ class TestMultiLogReg(unittest.TestCase):
         """
         [X, labels, Y] = self.gen_data()
         # Call algorithm
-        bias = multiLogReg(self.sds.from_numpy(
-            X), self.sds.from_numpy(Y), verbose=False).compute()
+        bias = multiLogReg(
+            self.sds.from_numpy(X), self.sds.from_numpy(Y), verbose=False
+        ).compute()
 
-        [m, y_pred, acc] = multiLogRegPredict(self.sds.from_numpy(
-            X), self.sds.from_numpy(bias), Y=self.sds.from_numpy(Y), verbose=False).compute()
+        [m, y_pred, acc] = multiLogRegPredict(
+            self.sds.from_numpy(X),
+            self.sds.from_numpy(bias),
+            Y=self.sds.from_numpy(Y),
+            verbose=False,
+        ).compute()
 
         self.assertTrue(acc > 98)
 
@@ -75,9 +84,12 @@ class TestMultiLogReg(unittest.TestCase):
         np.random.seed(13241)
         # Generate data
         mu, sigma = 1, 0.1
-        X = np.reshape(np.random.normal(mu, sigma,  500), (2, 250))
+        X = np.reshape(np.random.normal(mu, sigma, 500), (2, 250))
+
         # All over 1 is true
-        def f(x): return (x[0] > 1) + 1
+        def f(x):
+            return (x[0] > 1) + 1
+
         labels = f(X)
         # Y labels as double
         Y = np.array(labels, dtype=np.double)

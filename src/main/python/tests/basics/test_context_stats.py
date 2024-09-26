@@ -40,7 +40,7 @@ class TestContextCreation(unittest.TestCase):
         cls.sds.close()
 
     def getM(self):
-        m1 = np.array(np.random.randint(10, size=5*5), dtype=np.int64)
+        m1 = np.array(np.random.randint(10, size=5 * 5), dtype=np.int64)
         m1.shape = (5, 5)
         return m1
 
@@ -57,9 +57,10 @@ class TestContextCreation(unittest.TestCase):
 
         stats = self.sds.get_stats()
         self.sds.clear_stats()
-        instructions = "\n".join(stats.split(
-            "Heavy hitter instructions:")[1].split("\n")[2:])
-        assert("+" in instructions and "*" in instructions and "/" in instructions)
+        instructions = "\n".join(
+            stats.split("Heavy hitter instructions:")[1].split("\n")[2:]
+        )
+        assert "+" in instructions and "*" in instructions and "/" in instructions
 
 
 if __name__ == "__main__":

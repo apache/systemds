@@ -31,18 +31,20 @@ class Affine(Layer):
         """
         sds_context: The systemdsContext to construct the layer inside of
         d: The number of features that are input to the affine layer
-        m: The number of neurons that are contained in the layer, 
+        m: The number of neurons that are contained in the layer,
             and the number of features output
         """
-        super().__init__(sds_context, 'affine.dml')
+        super().__init__(sds_context, "affine.dml")
         self._X = None
 
         # init weight and bias
-        self.weight = Matrix(sds_context, '')
-        self.bias = Matrix(sds_context, '')
-        params_dict = {'D': d, 'M': m, 'seed': seed}
+        self.weight = Matrix(sds_context, "")
+        self.bias = Matrix(sds_context, "")
+        params_dict = {"D": d, "M": m, "seed": seed}
         out = [self.weight, self.bias]
-        op = MultiReturn(sds_context, "affine::init", output_nodes=out, named_input_nodes=params_dict)
+        op = MultiReturn(
+            sds_context, "affine::init", output_nodes=out, named_input_nodes=params_dict
+        )
         self.weight._unnamed_input_nodes = [op]
         self.bias._unnamed_input_nodes = [op]
         op._source_node = self._source
@@ -59,7 +61,7 @@ class Affine(Layer):
         return Affine._source.forward(X, W, b)
 
     @staticmethod
-    def backward(dout:Matrix, X: Matrix, W: Matrix, b: Matrix):
+    def backward(dout: Matrix, X: Matrix, W: Matrix, b: Matrix):
         """
         dout: The gradient of the output, passed from the upstream
         X: The input matrix of this layer
@@ -69,12 +71,14 @@ class Affine(Layer):
         """
         sds = X.sds_context
         Affine._create_source(sds, "affine.dml")
-        params_dict = {'dout': dout, 'X': X, 'W': W, 'b': b}
-        dX = Matrix(sds, '')
-        dW = Matrix(sds, '')
-        db = Matrix(sds, '')
+        params_dict = {"dout": dout, "X": X, "W": W, "b": b}
+        dX = Matrix(sds, "")
+        dW = Matrix(sds, "")
+        db = Matrix(sds, "")
         out = [dX, dW, db]
-        op = MultiReturn(sds, "affine::backward", output_nodes=out, named_input_nodes=params_dict)
+        op = MultiReturn(
+            sds, "affine::backward", output_nodes=out, named_input_nodes=params_dict
+        )
         dX._unnamed_input_nodes = [op]
         dW._unnamed_input_nodes = [op]
         db._unnamed_input_nodes = [op]

@@ -19,26 +19,26 @@
 #
 # -------------------------------------------------------------
 
+
 class Model:
     def __init__(self, name: str):
         """
         Parent class for models used to perform a given task
         :param name: Name of the model
-        
+
         The classifier (clf) should be set in the fit method of each child class
         """
         self.name = name
         self.clf = None
-    
+
     def fit(self, X_train, y_train, X_val=None, y_val=None):
         """
         Fits a model to the training data
         """
-        raise f'Fit method not implemented for {self.name}'
-    
+        raise f"Fit method not implemented for {self.name}"
+
     def test(self, X_test, y_test):
         """
         Tests the classifier on a test or validation set
         """
-        raise f'Test method not implemented for {self.name}'
-    
+        raise f"Test method not implemented for {self.name}"

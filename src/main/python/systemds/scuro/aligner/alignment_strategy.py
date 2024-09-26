@@ -24,17 +24,17 @@ from aligner.similarity_measures import Measure
 class AlignmentStrategy:
     def __init__(self):
         pass
-    
+
     def align_chunk(self, chunk_a, chunk_b, similarity_measure: Measure):
-        raise 'Not implemented error'
+        raise "Not implemented error"
 
 
 class ChunkedCrossCorrelation(AlignmentStrategy):
     def __init__(self):
         super().__init__()
-    
-    def align_chunk(self, chunk_a, chunk_b, similarity_measure: Measure):
-        raise 'Not implemented error'
 
-    
+    def align_chunk(self, chunk_a, chunk_b, similarity_measure: Measure):
+        raise "Not implemented error"
+
+
 # TODO: Add additional alignment methods

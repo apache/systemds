@@ -29,6 +29,7 @@ from systemds.operator.algorithm import split
 # Seed the randomness.
 np.random.seed(7)
 
+
 class TestOrder(unittest.TestCase):
 
     sds: SystemDSContext = None
@@ -50,9 +51,11 @@ class TestOrder(unittest.TestCase):
 
     def test_split(self):
         X = self.make_matrix()
-        Y = self.make_matrix(cols = 2)
+        Y = self.make_matrix(cols=2)
 
-        [p1,p2,p3,p4] = split(self.sds.from_numpy(X), self.sds.from_numpy(Y)).compute()
+        [p1, p2, p3, p4] = split(
+            self.sds.from_numpy(X), self.sds.from_numpy(Y)
+        ).compute()
         exp1 = X[:2]
         exp2 = X[2:]
         exp3 = Y[:2]
@@ -64,10 +67,12 @@ class TestOrder(unittest.TestCase):
 
     def test_split_2(self):
         rows = 10
-        X = self.make_matrix(rows = rows)
-        Y = self.make_matrix(rows = rows, cols = 2)
+        X = self.make_matrix(rows=rows)
+        Y = self.make_matrix(rows=rows, cols=2)
 
-        [p1,p2,p3,p4] = split(self.sds.from_numpy(X), self.sds.from_numpy(Y)).compute()
+        [p1, p2, p3, p4] = split(
+            self.sds.from_numpy(X), self.sds.from_numpy(Y)
+        ).compute()
         exp1 = X[:7]
         exp2 = X[7:]
         exp3 = Y[:7]
@@ -79,10 +84,12 @@ class TestOrder(unittest.TestCase):
 
     def test_split_3(self):
         rows = 100
-        X = self.make_matrix(rows = rows)
-        Y = self.make_matrix(rows = rows, cols = 2)
+        X = self.make_matrix(rows=rows)
+        Y = self.make_matrix(rows=rows, cols=2)
 
-        [p1,p2,p3,p4] = split(self.sds.from_numpy(X), self.sds.from_numpy(Y)).compute()
+        [p1, p2, p3, p4] = split(
+            self.sds.from_numpy(X), self.sds.from_numpy(Y)
+        ).compute()
         exp1 = X[:70]
         exp2 = X[70:]
         exp3 = Y[:70]
@@ -92,13 +99,14 @@ class TestOrder(unittest.TestCase):
         self.assertTrue(np.allclose(p3, exp3))
         self.assertTrue(np.allclose(p4, exp4))
 
-
     def test_split_4(self):
         rows = 100
-        X = self.make_matrix(rows = rows)
-        Y = self.make_matrix(rows = rows, cols = 2)
+        X = self.make_matrix(rows=rows)
+        Y = self.make_matrix(rows=rows, cols=2)
 
-        [p1,p2,p3,p4] = split(self.sds.from_numpy(X), self.sds.from_numpy(Y), f=0.2).compute()
+        [p1, p2, p3, p4] = split(
+            self.sds.from_numpy(X), self.sds.from_numpy(Y), f=0.2
+        ).compute()
         exp1 = X[:20]
         exp2 = X[20:]
         exp3 = Y[:20]
@@ -108,9 +116,8 @@ class TestOrder(unittest.TestCase):
         self.assertTrue(np.allclose(p3, exp3))
         self.assertTrue(np.allclose(p4, exp4))
 
-
-    def make_matrix(self, rows = 4, cols = 4):
-        return np.random.rand(rows,cols)
+    def make_matrix(self, rows=4, cols=4):
+        return np.random.rand(rows, cols)
 
 
 if __name__ == "__main__":

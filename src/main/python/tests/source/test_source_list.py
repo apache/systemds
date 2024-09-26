@@ -43,7 +43,7 @@ class TestSource_01(unittest.TestCase):
         arr = self.sds.array(self.sds.full((10, 10), 4))
         c = self.sds.source(self.source_path, "test").func(arr)
         res = c.sum().compute()
-        self.assertTrue(res == 10*10*4)
+        self.assertTrue(res == 10 * 10 * 4)
 
     def test_input_multireturn(self):
         m = self.sds.full((10, 10), 2)
@@ -61,6 +61,7 @@ class TestSource_01(unittest.TestCase):
     #     [b, c] = self.sds.source(self.source_path, "test", True).func2(arr)
     #     res = c.sum().compute()
     #     self.assertTrue(res == 10*10*4)
+
 
 if __name__ == "__main__":
     unittest.main(exit=False)

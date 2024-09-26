@@ -30,17 +30,27 @@ from systemds.operator.nodes.frame import Frame
 
 class ListAccess(OperationNode):
 
-    def __init__(self, sds_context: 'SystemDSContext', list_source: 'List', key):
+    def __init__(self, sds_context: "SystemDSContext", list_source: "List", key):
         self._key = key
         self._list_source = list_source
 
         inputs = [list_source]
-        super().__init__(sds_context, None, unnamed_input_nodes=inputs,
-                         is_datatype_unknown=True, is_datatype_none=False, is_python_local_data=False)
+        super().__init__(
+            sds_context,
+            None,
+            unnamed_input_nodes=inputs,
+            is_datatype_unknown=True,
+            is_datatype_none=False,
+            is_python_local_data=False,
+        )
 
-    def code_line(self, var_name: str, unnamed_input_vars: Sequence[str],
-                  named_input_vars: Dict[str, str]) -> str:
-        return f'{var_name}={self._list_source._dml_name}[{self._key}];'
+    def code_line(
+        self,
+        var_name: str,
+        unnamed_input_vars: Sequence[str],
+        named_input_vars: Dict[str, str],
+    ) -> str:
+        return f"{var_name}={self._list_source._dml_name}[{self._key}];"
 
     def as_matrix(self) -> Matrix:
         ent = self._list_source[self._key]

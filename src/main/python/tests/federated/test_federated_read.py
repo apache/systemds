@@ -29,15 +29,21 @@ import unittest
 import numpy as np
 from systemds.context import SystemDSContext
 
-os.environ['SYSDS_QUIET'] = "1"
+os.environ["SYSDS_QUIET"] = "1"
 
 dim = 3
 
 m = np.reshape(np.arange(1, dim * dim + 1, 1), (dim, dim))
 
 tempdir = "./tests/federated/tmp/test_federated_matrixmult/"
-mtd = {"format": "csv", "header": False, "rows": dim,
-       "cols": dim, "data_type": "matrix", "value_type": "double"}
+mtd = {
+    "format": "csv",
+    "header": False,
+    "rows": dim,
+    "cols": dim,
+    "data_type": "matrix",
+    "value_type": "double",
+}
 
 # Create the testing directory if it does not exist.
 if not os.path.exists(tempdir):
@@ -53,9 +59,9 @@ fed1 = "localhost:8001/" + tempdir + "m.csv"
 fed2 = "localhost:8002/" + tempdir + "m.csv"
 fed3 = "localhost:8003/" + tempdir + "m.csv"
 
-fed1_file = tempdir+"m1.fed"
-fed2_file = tempdir+"m2.fed"
-fed3_file = tempdir+"m3.fed"
+fed1_file = tempdir + "m1.fed"
+fed2_file = tempdir + "m2.fed"
+fed3_file = tempdir + "m3.fed"
 
 
 class TestFederatedAggFn(unittest.TestCase):
@@ -65,15 +71,20 @@ class TestFederatedAggFn(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         cls.sds = SystemDSContext()
-        cls.sds.federated([fed1], [
-            ([0, 0], [dim, dim])]).write(fed1_file, format="federated").compute()
-        cls.sds.federated([fed1, fed2], [
-            ([0, 0], [dim, dim]),
-            ([0, dim], [dim, dim*2])]).write(fed2_file, format="federated").compute()
-        cls.sds.federated([fed1, fed2, fed3],  [
-            ([0, 0], [dim, dim]),
-            ([0, dim], [dim, dim*2]),
-            ([0, dim*2], [dim, dim*3])]).write(fed3_file, format="federated").compute()
+        cls.sds.federated([fed1], [([0, 0], [dim, dim])]).write(
+            fed1_file, format="federated"
+        ).compute()
+        cls.sds.federated(
+            [fed1, fed2], [([0, 0], [dim, dim]), ([0, dim], [dim, dim * 2])]
+        ).write(fed2_file, format="federated").compute()
+        cls.sds.federated(
+            [fed1, fed2, fed3],
+            [
+                ([0, 0], [dim, dim]),
+                ([0, dim], [dim, dim * 2]),
+                ([0, dim * 2], [dim, dim * 3]),
+            ],
+        ).write(fed3_file, format="federated").compute()
 
     @classmethod
     def tearDownClass(cls):
@@ -89,13 +100,13 @@ class TestFederatedAggFn(unittest.TestCase):
 
     def test_verify_same_input_if_reading_fed2(self):
         f_m = self.sds.read(fed2_file).compute()
-        m2 = np.column_stack((m,m))
+        m2 = np.column_stack((m, m))
         self.assertTrue(np.allclose(f_m, m2))
 
     def test_verify_same_input_if_reading_fed3(self):
         f_m = self.sds.read(fed3_file).compute()
-        m2 = np.column_stack((m,m))
-        m3 = np.column_stack((m,m2))
+        m2 = np.column_stack((m, m))
+        m3 = np.column_stack((m, m2))
         self.assertTrue(np.allclose(f_m, m3))
 
 

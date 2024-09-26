@@ -31,7 +31,7 @@ shape = (random.randrange(1, 25), random.randrange(1, 25))
 m = np.random.rand(shape[0], shape[1])
 mx = np.random.rand(1, shape[1])
 my = np.random.rand(shape[0], 1)
-by = random.randrange(1, np.size(m, 1)+1)
+by = random.randrange(1, np.size(m, 1) + 1)
 
 
 class TestOrderBase(unittest.TestCase):
@@ -50,20 +50,29 @@ class TestOrderBase(unittest.TestCase):
 class TestOrderValid(TestOrderBase):
 
     def test_basic(self):
-        o = self.sds.from_numpy(m).order(
-            by=by, decreasing=False, index_return=False).compute()
-        s = m[np.argsort(m[:, by-1])]
+        o = (
+            self.sds.from_numpy(m)
+            .order(by=by, decreasing=False, index_return=False)
+            .compute()
+        )
+        s = m[np.argsort(m[:, by - 1])]
         self.assertTrue(np.allclose(o, s))
 
     def test_index(self):
-        o = self.sds.from_numpy(m).order(
-            by=by, decreasing=False, index_return=True).compute()
+        o = (
+            self.sds.from_numpy(m)
+            .order(by=by, decreasing=False, index_return=True)
+            .compute()
+        )
         s = np.argsort(m[:, by - 1]) + 1
         self.assertTrue(np.allclose(np.transpose(o), s))
 
     def test_decreasing(self):
-        o = self.sds.from_numpy(m).order(
-            by=by, decreasing=True, index_return=True).compute()
+        o = (
+            self.sds.from_numpy(m)
+            .order(by=by, decreasing=True, index_return=True)
+            .compute()
+        )
         s = np.argsort(-m[:, by - 1]) + 1
         self.assertTrue(np.allclose(np.transpose(o), s))
 

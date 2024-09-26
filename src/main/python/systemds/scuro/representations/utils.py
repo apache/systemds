@@ -31,11 +31,11 @@ from systemds.scuro.representations.unimodal import UnimodalRepresentation
 
 class NPY(UnimodalRepresentation):
     def __init__(self):
-        super().__init__('NPY')
-    
+        super().__init__("NPY")
+
     def parse_all(self, filepath, indices, get_sequences=False):
         data = np.load(filepath, allow_pickle=True)
-        
+
         if indices is not None:
             return np.array([data[index] for index in indices])
         else:
@@ -44,32 +44,32 @@ class NPY(UnimodalRepresentation):
 
 class Pickle(UnimodalRepresentation):
     def __init__(self):
-        super().__init__('Pickle')
-    
+        super().__init__("Pickle")
+
     def parse_all(self, file_path, indices, get_sequences=False):
-        with open(file_path, 'rb') as f:
+        with open(file_path, "rb") as f:
             data = pickle.load(f)
-        
+
         embeddings = []
         for n, idx in enumerate(indices):
             embeddings.append(data[idx])
-        
+
         return np.array(embeddings)
 
 
 class HDF5(UnimodalRepresentation):
     def __init__(self):
-        super().__init__('HDF5')
-    
+        super().__init__("HDF5")
+
     def parse_all(self, filepath, indices=None, get_sequences=False):
         data = h5py.File(filepath)
-        
+
         if get_sequences:
             max_emb = 0
             for index in indices:
                 if max_emb < len(data[index][()]):
                     max_emb = len(data[index][()])
-            
+
             emb = []
             if indices is not None:
                 for index in indices:
@@ -77,7 +77,7 @@ class HDF5(UnimodalRepresentation):
                     for i in range(len(emb_i), max_emb):
                         emb_i.append([0 for x in range(0, len(emb_i[0]))])
                     emb.append(emb_i)
-                
+
                 return np.array(emb)
         else:
             if indices is not None:
@@ -88,14 +88,14 @@ class HDF5(UnimodalRepresentation):
 
 class JSON(UnimodalRepresentation):
     def __init__(self):
-        super().__init__('JSON')
-    
+        super().__init__("JSON")
+
     def parse_all(self, filepath, indices):
         with open(filepath) as file:
             return json.load(file)
 
 
-def pad_sequences(sequences, maxlen=None, dtype='float32', value=0):
+def pad_sequences(sequences, maxlen=None, dtype="float32", value=0):
     if maxlen is None:
         maxlen = max([len(seq) for seq in sequences])
 
@@ -103,6 +103,6 @@ def pad_sequences(sequences, maxlen=None, dtype='float32', value=0):
 
     for i, seq in enumerate(sequences):
         data = seq[:maxlen]
-        result[i, :len(data)] = data
+        result[i, : len(data)] = data
 
     return result

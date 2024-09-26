@@ -41,13 +41,13 @@ class TestListOperations(unittest.TestCase):
         shutil.rmtree(cls.temp_dir)
 
     def test_write_followed_by_read(self):
-        ''' Test write and read of lists variables in python.
+        """Test write and read of lists variables in python.
         Since we do not support serializing a list (from java to python) yet we
         read and compute each list element when reading again
-        '''
-        m1 = np.array([[1., 2., 3.]])
+        """
+        m1 = np.array([[1.0, 2.0, 3.0]])
         m1p = self.sds.from_numpy(m1)
-        m2 = np.array([[4., 5., 6.]])
+        m2 = np.array([[4.0, 5.0, 6.0]])
         m2p = self.sds.from_numpy(m2)
         list_obj = self.sds.array(m1p, m2p)
 

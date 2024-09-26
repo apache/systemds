@@ -34,7 +34,7 @@ class Concatenation(Fusion):
         """
         Combines modalities using concatenation
         """
-        super().__init__('Concatenation')
+        super().__init__("Concatenation")
         self.padding = padding
 
     def fuse(self, modalities: List[Modality]):
@@ -51,7 +51,15 @@ class Concatenation(Fusion):
 
         for modality in modalities:
             if self.padding:
-                data = np.concatenate([data, pad_sequences(modality.data, maxlen=max_emb_size, dtype='float32')], axis=-1)
+                data = np.concatenate(
+                    [
+                        data,
+                        pad_sequences(
+                            modality.data, maxlen=max_emb_size, dtype="float32"
+                        ),
+                    ],
+                    axis=-1,
+                )
             else:
                 data = np.concatenate([data, modality.data], axis=-1)
 

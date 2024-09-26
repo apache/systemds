@@ -27,8 +27,7 @@ from systemds.script_building import DMLScript
 
 
 class Test_DMLScript(unittest.TestCase):
-    """Test class for testing behavior of the fundamental DMLScript class
-    """
+    """Test class for testing behavior of the fundamental DMLScript class"""
 
     sds: SystemDSContext = None
 
@@ -59,14 +58,14 @@ class Test_DMLScript(unittest.TestCase):
         script.execute()
         sleep(0.5)
         stdout = self.sds.get_stdout(100)
-        self.assertListEqual(['Hello', 'World', '!'], stdout)
+        self.assertListEqual(["Hello", "World", "!"], stdout)
 
     def test_multiple_executions_1(self):
         scr_a = DMLScript(self.sds)
-        scr_a.add_code('x = 4')
-        scr_a.add_code('print(x)')
-        scr_a.add_code('y = x + 1')
-        scr_a.add_code('print(y)')
+        scr_a.add_code("x = 4")
+        scr_a.add_code("print(x)")
+        scr_a.add_code("y = x + 1")
+        scr_a.add_code("print(y)")
         scr_a.execute()
         sleep(0.5)
         stdout = self.sds.get_stdout(100)

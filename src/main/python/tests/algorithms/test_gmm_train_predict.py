@@ -28,7 +28,7 @@ from systemds.operator.algorithm import gmm, gmmPredict
 
 class TestGMM(unittest.TestCase):
 
-    model_dir: str =  "tests/algorithms/readwrite/"
+    model_dir: str = "tests/algorithms/readwrite/"
     model_path: str = model_dir + "model"
 
     @classmethod
@@ -47,7 +47,8 @@ class TestGMM(unittest.TestCase):
             n_gaussian = 4
 
             [_, _, _, _, mu, precision_cholesky, weight] = gmm(
-                features, n_components=n_gaussian, seed=10)
+                features, n_components=n_gaussian, seed=10
+            )
 
             model = sds_train.list(mu, precision_cholesky, weight)
             model.write(self.model_path).compute()
@@ -58,15 +59,14 @@ class TestGMM(unittest.TestCase):
             mu = model[1].as_matrix()
             precision_cholesky = model[2].as_matrix()
             weight = model[3].as_matrix()
-            notOutliers = sds_predict.rand(
-                10, 10, -1, 1,  seed=10)  # inside a
-            outliers = sds_predict.rand(
-                10, 10, 1150, 1200, seed=10)  # outliers
+            notOutliers = sds_predict.rand(10, 10, -1, 1, seed=10)  # inside a
+            outliers = sds_predict.rand(10, 10, 1150, 1200, seed=10)  # outliers
 
             test = outliers.rbind(notOutliers)  # testing data half outliers
 
             [_, pp] = gmmPredict(
-                test, weight, mu, precision_cholesky, model=sds_predict.scalar("VVV"))
+                test, weight, mu, precision_cholesky, model=sds_predict.scalar("VVV")
+            )
 
             outliers = pp.max(axis=1) < 0.99
             ret = outliers.compute()

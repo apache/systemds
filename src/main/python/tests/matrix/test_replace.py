@@ -50,8 +50,12 @@ class TestReplaceMatrix(unittest.TestCase):
         pass
 
     def test_replace_01(self):
-        m = self.sds.rand(min=0, max=2, rows=shape[0], cols=shape[1], seed=14)\
-            .round().replace(1, 2).compute()
+        m = (
+            self.sds.rand(min=0, max=2, rows=shape[0], cols=shape[1], seed=14)
+            .round()
+            .replace(1, 2)
+            .compute()
+        )
         self.assertTrue(1 not in m)
         self.assertTrue(2 in m)
         self.assertTrue(0 in m)

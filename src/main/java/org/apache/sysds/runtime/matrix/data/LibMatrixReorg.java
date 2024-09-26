@@ -2369,20 +2369,18 @@ public class LibMatrixReorg {
 		SparseBlock a = in.getSparseBlock();
 		SparseBlock c = out.getSparseBlock();
 
-		while (copyLen > 0) {
-			if (a.isEmpty(inIdx)) continue;    // skip empty rows
+		for (int i = 0; i < copyLen; i++) {
+			if (!a.isEmpty(inIdx)){
+				final int apos = a.pos(inIdx);
+				final int alen = a.size(inIdx) + apos;
+				final int[] aix = a.indexes(inIdx);
+				final double[] avals = a.values(inIdx);
 
-			final int apos = a.pos(inIdx);
-			final int alen = a.size(inIdx) + apos;
-			final int[] aix = a.indexes(inIdx);
-			final double[] avals = a.values(inIdx);
-
-			// copy only non-zero elements
-			for (int k = apos; k < alen; k++) {
-				c.set(outIdx, aix[k], avals[k]);
+				// copy only non-zero elements
+				for (int k = apos; k < alen; k++)
+					c.set(outIdx, aix[k], avals[k]);
 			}
-
-			inIdx++; outIdx++; copyLen--;
+			inIdx++; outIdx++;
 		}
 	}
 

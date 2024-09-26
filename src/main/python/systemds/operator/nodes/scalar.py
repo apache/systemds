@@ -32,7 +32,13 @@ from systemds.utils.consts import (
     VALID_ARITHMETIC_TYPES,
     VALID_INPUT_TYPES,
 )
-from systemds.utils.converters import numpy_to_matrix_block
+
+
+def to_scalar(self):
+    return Scalar(self.sds_context, "as.scalar", [self])
+
+
+OperationNode.to_scalar = to_scalar
 
 
 class Scalar(OperationNode):
@@ -67,6 +73,8 @@ class Scalar(OperationNode):
         named_input_vars: Dict[str, str],
     ) -> str:
         if self.__assign:
+            if type(self.operation) is bool:
+                self.operation = "TRUE" if self.operation else "FALSE"
             return f"{var_name}={self.operation};"
         else:
             return super().code_line(var_name, unnamed_input_vars, named_input_vars)
@@ -288,6 +296,20 @@ class Scalar(OperationNode):
         :return: `Scalar` containing the string.
         """
         return Scalar(self.sds_context, "toString", [self], named_input_nodes=kwargs)
+
+    def to_int(self) -> "Scalar":
+        return Scalar(
+            self.sds_context,
+            "as.integer",
+            [self],
+        )
+
+    def to_boolean(self) -> "Scalar":
+        return Scalar(
+            self.sds_context,
+            "as.logical",
+            [self],
+        )
 
     def isNA(self) -> "Scalar":
         """Computes a boolean indicator matrix of the same shape as the input, indicating where NA (not available)

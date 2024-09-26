@@ -41,6 +41,13 @@ from systemds.utils.helpers import (
 )
 
 
+def to_matrix(self):
+    return Matrix(self.sds_context, "as.matrix", [self])
+
+
+OperationNode.to_matrix = to_matrix
+
+
 class Matrix(OperationNode):
     _np_array: np.array
 
@@ -841,6 +848,90 @@ class Matrix(OperationNode):
             )
 
         return ifft_node
+
+    def triu(self, include_diagonal=True, return_values=True) -> "Matrix":
+        """Selects the upper triangular part of a matrix, configurable to include the diagonal and return values or ones
+
+        :param include_diagonal: boolean, default True
+        :param return_values: boolean, default True, if set to False returns ones
+        :return: `Matrix`
+        """
+        named_input_nodes = {
+            "target": self,
+            "diag": self.sds_context.scalar(include_diagonal),
+            "values": self.sds_context.scalar(return_values),
+        }
+        return Matrix(
+            self.sds_context, "upper.tri", named_input_nodes=named_input_nodes
+        )
+
+    def tril(self, include_diagonal=True, return_values=True) -> "Matrix":
+        """Selects the lower triangular part of a matrix, configurable to include the diagonal and return values or ones
+
+        :param include_diagonal: boolean, default True
+        :param return_values: boolean, default True, if set to False returns ones
+        :return: `Matrix`
+        """
+        named_input_nodes = {
+            "target": self,
+            "diag": self.sds_context.scalar(include_diagonal),
+            "values": self.sds_context.scalar(return_values),
+        }
+        return Matrix(
+            self.sds_context, "lower.tri", named_input_nodes=named_input_nodes
+        )
+
+    def argmin(self, axis: int = None) -> "OperationNode":
+        """Return the index of the minimum if axis is None or a column vector for row-wise / column-wise minima
+        computation.
+
+        :param axis: can be 0 or 1 to do either row or column sums
+        :return: `Matrix` representing operation for row / columns or 'Scalar' representing operation for complete
+        """
+        if axis == 0:
+            return Matrix(self.sds_context, "rowIndexMin", [self.t()])
+        elif axis == 1:
+            return Matrix(self.sds_context, "rowIndexMin", [self])
+        elif axis is None:
+            return Matrix(
+                self.sds_context,
+                "rowIndexMin",
+                [self.reshape(1, self.nCol() * self.nRow())],
+            ).to_scalar()
+        else:
+            raise ValueError(
+                f"Axis has to be either 0, 1 or None, for column, row or complete {self.operation}"
+            )
+
+    def argmax(self, axis: int = None) -> "OperationNode":
+        """Return the index of the maximum if axis is None or a column vector for row-wise / column-wise maxima
+        computation.
+
+        :param axis: can be 0 or 1 to do either row or column sums
+        :return: `Matrix` representing operation for row / columns or 'Scalar' representing operation for complete
+        """
+        if axis == 0:
+            return Matrix(self.sds_context, "rowIndexMax", [self.t()])
+        elif axis == 1:
+            return Matrix(self.sds_context, "rowIndexMax", [self])
+        elif axis is None:
+            return Matrix(
+                self.sds_context,
+                "rowIndexMax",
+                [self.reshape(1, self.nCol() * self.nRow())],
+            ).to_scalar()
+        else:
+            raise ValueError(
+                f"Axis has to be either 0, 1 or None, for column, row or complete {self.operation}"
+            )
+
+    def reshape(self, rows, cols=1):
+        """Gives a new shape to a matrix without changing its data.
+
+        :param rows: number of rows
+        :param cols: number of columns, defaults to 1
+        :return: `Matrix` representing operation"""
+        return Matrix(self.sds_context, "matrix", [self, rows, cols])
 
     def __str__(self):
         return "MatrixNode"

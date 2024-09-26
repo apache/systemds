@@ -44,8 +44,14 @@ if TYPE_CHECKING:
     from systemds.context import SystemDSContext
 
 
-class Frame(OperationNode):
+def to_frame(self):
+    return Frame(self.sds_context, "as.frame", [self])
 
+
+OperationNode.to_frame = to_frame
+
+
+class Frame(OperationNode):
     _pd_dataframe: pd.DataFrame
 
     def __init__(

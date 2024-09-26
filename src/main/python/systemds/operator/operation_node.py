@@ -202,3 +202,12 @@ class OperationNode(DAGNode):
         To get the returned string look at the stdout of SystemDSContext.
         """
         return OperationNode(self.sds_context, "print", [self], kwargs)
+
+    def to_frame(self):
+        raise NotImplementedError("should have been overwritten in frame.py")
+
+    def to_matrix(self):
+        raise NotImplementedError("should have been overwritten in matrix.py")
+
+    def to_scalar(self):
+        raise NotImplementedError("should have been overwritten in scalar.py")

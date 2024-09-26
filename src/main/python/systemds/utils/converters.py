@@ -104,7 +104,7 @@ def pandas_to_frame_block(sds, pd_df: pd.DataFrame):
         np.dtype(np.int32): jvm.org.apache.sysds.common.Types.ValueType.INT32,
         np.dtype(np.float32): jvm.org.apache.sysds.common.Types.ValueType.FP32,
         np.dtype(np.uint8): jvm.org.apache.sysds.common.Types.ValueType.UINT8,
-        np.dtype(np.character): jvm.org.apache.sysds.common.Types.ValueType.CHARACTER,
+        np.dtype(np.str_): jvm.org.apache.sysds.common.Types.ValueType.CHARACTER,
     }
     schema = []
     col_names = []

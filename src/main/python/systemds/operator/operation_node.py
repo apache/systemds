@@ -20,15 +20,17 @@
 # -------------------------------------------------------------
 
 from multiprocessing import Process
-from typing import (TYPE_CHECKING, Dict, Iterable, Optional, Sequence, Tuple,
-                    Union)
+from typing import TYPE_CHECKING, Dict, Iterable, Optional, Sequence, Tuple, Union
 
 import numpy as np
 from py4j.java_gateway import JavaObject, JVMView
 from systemds.script_building.dag import DAGNode
 from systemds.script_building.script import DMLScript
-from systemds.utils.consts import (BINARY_OPERATIONS, VALID_ARITHMETIC_TYPES,
-                                   VALID_INPUT_TYPES)
+from systemds.utils.consts import (
+    BINARY_OPERATIONS,
+    VALID_ARITHMETIC_TYPES,
+    VALID_INPUT_TYPES,
+)
 from systemds.utils.helpers import create_params_string
 
 if TYPE_CHECKING:
@@ -47,14 +49,17 @@ class OperationNode(DAGNode):
     _brackets: bool
     _datatype_is_unknown: bool
 
-    def __init__(self, sds_context: 'SystemDSContext', operation: str,
-                 unnamed_input_nodes: Union[str,
-                                            Iterable[VALID_INPUT_TYPES]] = None,
-                 named_input_nodes: Dict[str, VALID_INPUT_TYPES] = None,
-                 is_python_local_data: bool = False,
-                 brackets: bool = False,
-                 is_datatype_unknown: bool = False,
-                 is_datatype_none: bool = True):
+    def __init__(
+        self,
+        sds_context: "SystemDSContext",
+        operation: str,
+        unnamed_input_nodes: Union[str, Iterable[VALID_INPUT_TYPES]] = None,
+        named_input_nodes: Dict[str, VALID_INPUT_TYPES] = None,
+        is_python_local_data: bool = False,
+        brackets: bool = False,
+        is_datatype_unknown: bool = False,
+        is_datatype_none: bool = True,
+    ):
         """
         Create general `OperationNode`
 
@@ -84,8 +89,9 @@ class OperationNode(DAGNode):
         self._datatype_is_unknown = is_datatype_unknown
         self._datatype_is_none = is_datatype_none
 
-    def compute(self, verbose: bool = False, lineage: bool = False) -> \
-            Union[float, np.array, Tuple[Union[float, np.array], str]]:
+    def compute(
+        self, verbose: bool = False, lineage: bool = False
+    ) -> Union[float, np.array, Tuple[Union[float, np.array], str]]:
 
         if self._result_var is None or self._lineage_trace is None:
             self._script = DMLScript(self.sds_context)
@@ -95,15 +101,16 @@ class OperationNode(DAGNode):
                 print(self._script.dml_script)
 
             if lineage:
-                result_variables, self._lineage_trace = self._script.execute_with_lineage()
+                result_variables, self._lineage_trace = (
+                    self._script.execute_with_lineage()
+                )
             else:
                 result_variables = self._script.execute()
 
             self.sds_context._execution_completed(self._script)
 
             if result_variables is not None:
-                self._result_var = self._parse_output_result_variables(
-                    result_variables)
+                self._result_var = self._parse_output_result_variables(result_variables)
 
         if verbose:
             for x in self.sds_context.get_stdout():
@@ -135,34 +142,47 @@ class OperationNode(DAGNode):
 
         return self._lineage_trace
 
-    def code_line(self, var_name: str, unnamed_input_vars: Sequence[str],
-                  named_input_vars: Dict[str, str]) -> str:
+    def code_line(
+        self,
+        var_name: str,
+        unnamed_input_vars: Sequence[str],
+        named_input_vars: Dict[str, str],
+    ) -> str:
 
         if self._brackets:
             return f'{var_name}={unnamed_input_vars[0]}[{",".join(unnamed_input_vars[1:])}]'
 
         if self.operation in BINARY_OPERATIONS:
-            assert len(
-                named_input_vars) == 0, 'Named parameters can not be used with binary operations'
-            assert len(
-                unnamed_input_vars) == 2, 'Binary Operations need exactly two input variables'
-            return f'{var_name}={unnamed_input_vars[0]}{self.operation}{unnamed_input_vars[1]}'
+            assert (
+                len(named_input_vars) == 0
+            ), "Named parameters can not be used with binary operations"
+            assert (
+                len(unnamed_input_vars) == 2
+            ), "Binary Operations need exactly two input variables"
+            return f"{var_name}={unnamed_input_vars[0]}{self.operation}{unnamed_input_vars[1]}"
 
-        inputs_comma_sep = create_params_string(
-            unnamed_input_vars, named_input_vars)
+        inputs_comma_sep = create_params_string(unnamed_input_vars, named_input_vars)
 
         if self._datatype_is_none:
-            return f'{self.operation}({inputs_comma_sep});'
+            return f"{self.operation}({inputs_comma_sep});"
         else:
-            return f'{var_name}={self.operation}({inputs_comma_sep});'
+            return f"{var_name}={self.operation}({inputs_comma_sep});"
 
-    def pass_python_data_to_prepared_script(self, jvm: JVMView, var_name: str, prepared_script: JavaObject) -> None:
+    def pass_python_data_to_prepared_script(
+        self, jvm: JVMView, var_name: str, prepared_script: JavaObject
+    ) -> None:
         raise NotImplementedError(
-            'Operation node has no python local data. Missing implementation in derived class?')
+            "Operation node has no python local data. Missing implementation in derived class?"
+        )
 
-    def write(self, destination: str, format: str = "binary", **kwargs: Dict[str, VALID_INPUT_TYPES]) -> 'OperationNode':
-        """ Write input to disk. 
-        The written format is easily read by SystemDSContext.read(). 
+    def write(
+        self,
+        destination: str,
+        format: str = "binary",
+        **kwargs: Dict[str, VALID_INPUT_TYPES],
+    ) -> "OperationNode":
+        """Write input to disk.
+        The written format is easily read by SystemDSContext.read().
         There is no return on write.
 
         :param destination: The location which the file is stored. Defaulting to HDFS paths if available.
@@ -172,11 +192,13 @@ class OperationNode(DAGNode):
         unnamed_inputs = [self, f'"{destination}"']
         named_parameters = {"format": f'"{format}"'}
         named_parameters.update(kwargs)
-        return OperationNode(self.sds_context, 'write', unnamed_inputs, named_parameters)
+        return OperationNode(
+            self.sds_context, "write", unnamed_inputs, named_parameters
+        )
 
-    def print(self, **kwargs: Dict[str, VALID_INPUT_TYPES]) -> 'OperationNode':
-        """ Prints the given Operation Node.
+    def print(self, **kwargs: Dict[str, VALID_INPUT_TYPES]) -> "OperationNode":
+        """Prints the given Operation Node.
         There is no return on calling.
         To get the returned string look at the stdout of SystemDSContext.
         """
-        return OperationNode(self.sds_context, 'print', [self], kwargs)
+        return OperationNode(self.sds_context, "print", [self], kwargs)

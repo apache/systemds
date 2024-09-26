@@ -44,20 +44,21 @@ class TestWrite(unittest.TestCase):
 
     def test_write_01(self):
         original = np.ones([10, 10])
-        X = self.sds.from_numpy( original)
+        X = self.sds.from_numpy(original)
         X.write(self.temp_dir + "01").compute()
-        
+
         NX = self.sds.read(self.temp_dir + "01")
         res = NX.compute()
         self.assertTrue(np.allclose(original, res))
 
     def test_write_02(self):
-        original = np.array([[1,2,3,4,5]])
-        X = self.sds.from_numpy( original)
+        original = np.array([[1, 2, 3, 4, 5]])
+        X = self.sds.from_numpy(original)
         X.write(self.temp_dir + "02").compute()
         NX = self.sds.read(self.temp_dir + "02")
         res = NX.compute()
         self.assertTrue(np.allclose(original, res))
+
 
 if __name__ == "__main__":
     unittest.main(exit=False)

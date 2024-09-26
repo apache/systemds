@@ -41,7 +41,7 @@ class Fusion(Representation):
         :param modalities: List of modalities used in the fusion
         :return: fused data
         """
-        raise f'Not implemented for Fusion: {self.name}'
+        raise f"Not implemented for Fusion: {self.name}"
 
     def get_max_embedding_size(self, modalities: List[Modality]):
         """
@@ -53,7 +53,7 @@ class Fusion(Representation):
         for idx in range(1, len(modalities)):
             curr_shape = modalities[idx].data.shape
             if len(modalities[idx - 1].data) != curr_shape[0]:
-                raise f'Modality sizes don\'t match!'
+                raise f"Modality sizes don't match!"
             elif curr_shape[1] > max_size:
                 max_size = curr_shape[1]
 

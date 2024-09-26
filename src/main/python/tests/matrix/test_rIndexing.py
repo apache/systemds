@@ -61,42 +61,42 @@ class Test_rIndexing(unittest.TestCase):
     def test_4(self):
         npA = np.arange(0, 100).reshape(10, 10)
         m1 = self.sds.from_numpy(npA)
-        npres = npA[:,4]
-        res = m1[:,4].compute().flatten()
+        npres = npA[:, 4]
+        res = m1[:, 4].compute().flatten()
         self.assertTrue(np.allclose(res, npres))
 
     def test_5(self):
         npA = np.arange(0, 100).reshape(10, 10)
         m1 = self.sds.from_numpy(npA)
-        npres = npA[:,4:6]
-        res = m1[:,4:6].compute()
+        npres = npA[:, 4:6]
+        res = m1[:, 4:6].compute()
         self.assertTrue(np.allclose(res, npres))
 
     def test_6(self):
         npA = np.arange(0, 100).reshape(10, 10)
         m1 = self.sds.from_numpy(npA)
-        npres = npA[1:2,4:6]
-        res = m1[1:2,4:6].compute()
+        npres = npA[1:2, 4:6]
+        res = m1[1:2, 4:6].compute()
         self.assertTrue(np.allclose(res, npres))
 
     def test_7(self):
         npA = np.arange(0, 100).reshape(10, 10)
         m1 = self.sds.from_numpy(npA)
-        npres = npA[1,4:6]
-        res = m1[1,4:6].compute()
+        npres = npA[1, 4:6]
+        res = m1[1, 4:6].compute()
         self.assertTrue(np.allclose(res, npres))
 
     def test_8(self):
         npA = np.arange(0, 100).reshape(10, 10)
         m1 = self.sds.from_numpy(npA)
         with self.assertRaises(NotImplementedError) as context:
-            res = m1[1:,4:6].compute()
+            res = m1[1:, 4:6].compute()
 
     def test_9(self):
         npA = np.arange(0, 100).reshape(10, 10)
         m1 = self.sds.from_numpy(npA)
         with self.assertRaises(NotImplementedError) as context:
-            res = m1[:3,4:6].compute()
+            res = m1[:3, 4:6].compute()
 
 
 if __name__ == "__main__":

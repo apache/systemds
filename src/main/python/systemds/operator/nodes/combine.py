@@ -29,19 +29,25 @@ from systemds.operator import OperationNode
 
 class Combine(OperationNode):
 
-    def __init__(self, sds_context, func='',
-                 unnamed_input_nodes: Iterable[OperationNode] = None):
+    def __init__(
+        self, sds_context, func="", unnamed_input_nodes: Iterable[OperationNode] = None
+    ):
         for a in unnamed_input_nodes:
             if not a._datatype_is_none:
                 raise ValueError(
-                    "Cannot combine elements that have outputs, all elements must be instances of print or write")
+                    "Cannot combine elements that have outputs, all elements must be instances of print or write"
+                )
 
         self._outputs = {}
         super().__init__(sds_context, func, unnamed_input_nodes, None, False)
 
-    def code_line(self, var_name: str, unnamed_input_vars: Sequence[str],
-                  named_input_vars: Dict[str, str]) -> str:
-        return ''
+    def code_line(
+        self,
+        var_name: str,
+        unnamed_input_vars: Sequence[str],
+        named_input_vars: Dict[str, str],
+    ) -> str:
+        return ""
 
     def compute(self, verbose: bool = False, lineage: bool = False):
         return super().compute(verbose, lineage)

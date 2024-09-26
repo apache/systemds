@@ -28,8 +28,14 @@ from typing import TYPE_CHECKING, Dict, Iterable, Sequence
 
 # Import more node types than used,
 # since source dynamically adds code and the import is needed.
-from systemds.operator import (List, ListAccess, Matrix, MultiReturn,
-                               OperationNode, Scalar)
+from systemds.operator import (
+    List,
+    ListAccess,
+    Matrix,
+    MultiReturn,
+    OperationNode,
+    Scalar,
+)
 
 
 class Func(object):
@@ -49,15 +55,19 @@ class Func(object):
 
         operation = f'"{source_name}::{self._name}"'
         argument_string, named_arguments = self.parse_inputs()
-        named_intput_nodes = f'named_arguments = {{{named_arguments}}}'
+        named_intput_nodes = f"named_arguments = {{{named_arguments}}}"
         output_object = self.parse_outputs()
 
-        definition = f'def {self._name}(self{argument_string}):'
-        output = f'out = {output_object}(self.sds_context, {operation}, named_input_nodes=named_arguments)'
+        definition = f"def {self._name}(self{argument_string}):"
+        output = f"out = {output_object}(self.sds_context, {operation}, named_input_nodes=named_arguments)"
 
-        lines = [definition,
-                 named_intput_nodes, output,
-                 "out._source_node = self",  "return out"]
+        lines = [
+            definition,
+            named_intput_nodes,
+            output,
+            "out._source_node = self",
+            "return out",
+        ]
 
         full_function = "\n\t".join(lines)
 
@@ -66,7 +76,7 @@ class Func(object):
         # Use Exec to build the function from the string
         exec(full_function)
         # Use eval to return the function build as a function variable.
-        return eval(f'{self._name}')
+        return eval(f"{self._name}")
 
     def parse_inputs(self):
         argument_string = ""
@@ -75,10 +85,10 @@ class Func(object):
             if s != "":
                 v, t = self.parse_type_and_name(s)
                 if len(v) == 1:
-                    argument_string += f', {v[0]}:{t}'
+                    argument_string += f", {v[0]}:{t}"
                     named_arguments += f'"{v[0]}":{v[0]}, '
                 else:
-                    argument_string += f', {v[0]}:{t} = {v[1]}'
+                    argument_string += f", {v[0]}:{t} = {v[1]}"
                     named_arguments += f'"{v[0]}":{v[0]}, '
         return (argument_string, named_arguments)
 
@@ -93,28 +103,29 @@ class Func(object):
 
     def parse_type_and_name(self, var: str):
         var_l = var.lower()
-        if var_l[0] == 'm' and var_l[7] == 'd':  # "matrix[double]"
-            return (self.split_to_value_and_def(var[14:]), 'Matrix')
-        elif var_l[0] == 'd':  # double
-            return (self.split_to_value_and_def(var[6:]), 'Scalar')
-        elif var_l[0] == 'i':  # integer
+        if var_l[0] == "m" and var_l[7] == "d":  # "matrix[double]"
+            return (self.split_to_value_and_def(var[14:]), "Matrix")
+        elif var_l[0] == "d":  # double
+            return (self.split_to_value_and_def(var[6:]), "Scalar")
+        elif var_l[0] == "i":  # integer
             if "integer" in var_l:
-                return (self.split_to_value_and_def(var[7:]), 'Scalar')
+                return (self.split_to_value_and_def(var[7:]), "Scalar")
             else:  # int
-                return (self.split_to_value_and_def(var[3:]), 'Scalar')
-        elif var_l[0] == 'b':  # boolean
-            return (self.split_to_value_and_def(var[7:], True), 'Scalar')
-        elif var_l[0] == 'l':  # list[unknown]
-            return (self.split_to_value_and_def(var[13:]), 'List')
-        elif var_l[0] == 's':  # string
-            return (self.split_to_value_and_def(var[6:]), 'Scalar')
+                return (self.split_to_value_and_def(var[3:]), "Scalar")
+        elif var_l[0] == "b":  # boolean
+            return (self.split_to_value_and_def(var[7:], True), "Scalar")
+        elif var_l[0] == "l":  # list[unknown]
+            return (self.split_to_value_and_def(var[13:]), "List")
+        elif var_l[0] == "s":  # string
+            return (self.split_to_value_and_def(var[6:]), "Scalar")
         else:
             raise NotImplementedError(
-                "Not Implemented type parsing for function def: " + var)
+                "Not Implemented type parsing for function def: " + var
+            )
 
     def split_to_value_and_def(self, var: str, b: bool = False):
         split = var.split("=")
-        if(len(split) == 1):
+        if len(split) == 1:
             return split
         elif b:
             if split[1] == "TRUE":
@@ -130,8 +141,7 @@ class Source(OperationNode):
     __name: str
 
     def __init__(self, sds_context, path: str, name: str):
-        super().__init__(sds_context,
-                         f'"{path}"')
+        super().__init__(sds_context, f'"{path}"')
         self.__name = name
         functions = self.__parse_functions_from_script(path)
 
@@ -139,7 +149,6 @@ class Source(OperationNode):
         for id, f in enumerate(functions):
             func = f.get_func(sds_context, name)
             setattr(self, f._name, MethodType(func, self))
-
 
     def __parse_functions_from_script(self, path: str) -> Iterable[Func]:
         lines = self.__parse_lines_with_filter(path)
@@ -164,7 +173,7 @@ class Source(OperationNode):
             insideComment = False
             for l in file.readlines():
                 ls = l.strip()
-                if len(ls) == 0 or ls[0] == '#':
+                if len(ls) == 0 or ls[0] == "#":
                     continue
                 elif insideComment:
                     if ls.endswith("*/"):
@@ -175,19 +184,19 @@ class Source(OperationNode):
                     continue
                 elif insideBracket > 0:
                     for c in ls:
-                        if c == '{':
+                        if c == "{":
                             insideBracket += 1
-                        elif c == '}':
+                        elif c == "}":
                             insideBracket -= 1
                 else:
                     if "source(" in ls:
                         continue
-                    elif '{' in ls:
-                        en = ''.join(ls.split('{')[0].split())
+                    elif "{" in ls:
+                        en = "".join(ls.split("{")[0].split())
                         lines.append(en)
                         insideBracket += 1
                     else:
-                        en = ''.join(ls.split())
+                        en = "".join(ls.split())
                         lines.append(en)
 
         filtered_lines = []
@@ -199,12 +208,17 @@ class Source(OperationNode):
 
         return filtered_lines
 
-    def code_line(self, var_name: str, unnamed_input_vars: Sequence[str], named_input_vars: Dict[str, str]) -> str:
-        if platform.system() == 'Windows':
-            source_path = self.operation.replace("\\","\\\\")
+    def code_line(
+        self,
+        var_name: str,
+        unnamed_input_vars: Sequence[str],
+        named_input_vars: Dict[str, str],
+    ) -> str:
+        if platform.system() == "Windows":
+            source_path = self.operation.replace("\\", "\\\\")
         else:
             source_path = self.operation
-        line = f'source({source_path}) as { self.__name}'
+        line = f"source({source_path}) as { self.__name}"
         return line
 
     def compute(self, verbose: bool = False, lineage: bool = False):

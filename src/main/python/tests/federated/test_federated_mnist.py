@@ -31,8 +31,7 @@ from systemds.examples.tutorials.mnist import DataManager
 from systemds.operator.algorithm import kmeans, multiLogReg, multiLogRegPredict
 
 
-def create_row_federated_dataset(name, dataset, num_parts=2,
-                                 federated_workers=None):
+def create_row_federated_dataset(name, dataset, num_parts=2, federated_workers=None):
     if federated_workers is None:
         federated_workers = ["localhost:8001", "localhost:8002"]
     tempdir = "./tests/federated/tmp/test_federated_mnist/"
@@ -45,30 +44,47 @@ def create_row_federated_dataset(name, dataset, num_parts=2,
 
     fed_file_content = []
     rows_processed = 0
-    for worker_id, address, rows in zip(range(num_parts), itertools.cycle(federated_workers), rs):
+    for worker_id, address, rows in zip(
+        range(num_parts), itertools.cycle(federated_workers), rs
+    ):
         dataset_part_path = path.join(tempdir, f"{name}{worker_id}.csv")
-        mtd = {"format": "csv", "rows": rows, "cols": c,
-               "data_type": "matrix", "value_type": "double"}
+        mtd = {
+            "format": "csv",
+            "rows": rows,
+            "cols": c,
+            "data_type": "matrix",
+            "value_type": "double",
+        }
 
-        dataset_part = dataset[rows_processed:rows_processed + rows]
+        dataset_part = dataset[rows_processed : rows_processed + rows]
         pd.DataFrame(dataset_part).to_csv(dataset_part_path, index=False, header=False)
         with io.open(f"{dataset_part_path}.mtd", "w", encoding="utf-8") as f:
             json.dump(mtd, f, ensure_ascii=False)
 
-        fed_file_content.append({
-            "address": address,
-            "dataType": "MATRIX",
-            "filepath": dataset_part_path,
-            "begin": [rows_processed, 0],
-            "end": [rows_processed + rows, c],
-        })
+        fed_file_content.append(
+            {
+                "address": address,
+                "dataType": "MATRIX",
+                "filepath": dataset_part_path,
+                "begin": [rows_processed, 0],
+                "end": [rows_processed + rows, c],
+            }
+        )
         rows_processed += rows
 
     with open(federated_file, "w", encoding="utf-8") as f:
         json.dump(fed_file_content, f)
-    with open(federated_file + '.mtd', "w", encoding="utf-8") as f:
-        json.dump({"format": "federated", "rows": dataset.shape[0], "cols": c,
-                   "data_type": "matrix", "value_type": "double"}, f)
+    with open(federated_file + ".mtd", "w", encoding="utf-8") as f:
+        json.dump(
+            {
+                "format": "federated",
+                "rows": dataset.shape[0],
+                "cols": c,
+                "data_type": "matrix",
+                "value_type": "double",
+            },
+            f,
+        )
 
     return federated_file
 
@@ -114,7 +130,14 @@ class TestFederatedMnist(unittest.TestCase):
         with self.sds.capture_stats_context():
             [_, _, acc] = multiLogRegPredict(Xt, bias, Y=Yt).compute()
         stats = self.sds.take_stats()
-        for fed_instr in ["fed_contains", "fed_*", "fed_-", "fed_uark+", "fed_r'", "fed_rightIndex"]:
+        for fed_instr in [
+            "fed_contains",
+            "fed_*",
+            "fed_-",
+            "fed_uark+",
+            "fed_r'",
+            "fed_rightIndex",
+        ]:
             self.assertIn(fed_instr, stats)
         self.assertGreater(acc, 80)
 

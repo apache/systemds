@@ -29,7 +29,7 @@ from systemds.scuro.representations.representation import Representation
 
 import warnings
 
-warnings.filterwarnings('ignore')
+warnings.filterwarnings("ignore")
 
 
 def get_modalities_by_name(modalities, name):
@@ -37,11 +37,16 @@ def get_modalities_by_name(modalities, name):
         if modality.name == name:
             return modality
 
-    raise 'Modality ' + name + 'not in modalities'
+    raise "Modality " + name + "not in modalities"
 
 
 class DRSearch:
-    def __init__(self, modalities: List[Modality], task: Task, representations: List[Representation]):
+    def __init__(
+        self,
+        modalities: List[Modality],
+        task: Task,
+        representations: List[Representation],
+    ):
         """
         The DRSearch primitive finds the best uni- or multimodal data representation for the given modalities for
         a specific task
@@ -57,8 +62,13 @@ class DRSearch:
         self.best_representation = None
         self.best_score = -1
 
-    def set_best_params(self, modality_name: str, representation: Representation,
-                        scores: List[float], modality_names: List[str]):
+    def set_best_params(
+        self,
+        modality_name: str,
+        representation: Representation,
+        scores: List[float],
+        modality_names: List[str],
+    ):
         """
         Updates the best parameters for given modalities, representation, and score
         :param modality_name: The name of the aligned modality
@@ -107,7 +117,9 @@ class DRSearch:
         modality.combine()
 
         scores = self.task.run(modality.data)
-        self.set_best_params(modality.name, representation, scores, modality.get_modality_names())
+        self.set_best_params(
+            modality.name, representation, scores, modality.get_modality_names()
+        )
 
         return self.best_representation, self.best_score, self.best_modalities
 
@@ -121,11 +133,18 @@ class DRSearch:
         for M in range(1, len(self.modalities) + 1):
             for combination in itertools.combinations(self.modalities, M):
                 for representation in self.representations:
-                    modality = AlignedModality(representation, list(combination))  # noqa
+                    modality = AlignedModality(
+                        representation, list(combination)
+                    )  # noqa
                     modality.combine()
 
                     scores = self.task.run(modality.data)
-                    self.set_best_params(modality.name, representation, scores, modality.get_modality_names())
+                    self.set_best_params(
+                        modality.name,
+                        representation,
+                        scores,
+                        modality.get_modality_names(),
+                    )
 
         return self.best_representation, self.best_score, self.best_modalities
 
@@ -138,7 +157,7 @@ class DRSearch:
         """
 
         if self.best_score == -1:
-            raise 'Please fit representations first!'
+            raise "Please fit representations first!"
 
         used_modalities = []
 

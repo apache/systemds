@@ -34,15 +34,18 @@ class Multiplication(Fusion):
         """
         Combines modalities using elementwise multiply
         """
-        super().__init__('Multiplication')
-    
+        super().__init__("Multiplication")
+
     def fuse(self, modalities: List[Modality], train_indices=None):
         max_emb_size = self.get_max_embedding_size(modalities)
-        
-        data = pad_sequences(modalities[0].data, maxlen=max_emb_size, dtype='float32')
-        
+
+        data = pad_sequences(modalities[0].data, maxlen=max_emb_size, dtype="float32")
+
         for m in range(1, len(modalities)):
             # scaled = self.scale_data(modalities[m].data, train_indices)
-            data = np.multiply(data, pad_sequences(modalities[m].data, maxlen=max_emb_size, dtype='float32'))
-        
+            data = np.multiply(
+                data,
+                pad_sequences(modalities[m].data, maxlen=max_emb_size, dtype="float32"),
+            )
+
         return data

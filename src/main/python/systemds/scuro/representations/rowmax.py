@@ -35,7 +35,7 @@ class RowMax(Fusion):
         Combines modalities by computing the outer product of a modality combination and
         taking the row max
         """
-        super().__init__('RowMax')
+        super().__init__("RowMax")
         self.split = split
 
     def fuse(self, modalities: List[Modality], train_indices):
@@ -47,7 +47,7 @@ class RowMax(Fusion):
         padded_modalities = []
         for modality in modalities:
             scaled = self.scale_data(modality.data, train_indices)
-            d = pad_sequences(scaled, maxlen=max_emb_size, dtype='float32')
+            d = pad_sequences(scaled, maxlen=max_emb_size, dtype="float32")
             padded_modalities.append(d)
 
         split_rows = int(len(modalities[0].data) / self.split)
@@ -58,8 +58,14 @@ class RowMax(Fusion):
             combined = None
             for i in range(0, self.split):
                 start = split_rows * i
-                end = split_rows * (i + 1) if i < (self.split - 1) else len(modalities[0].data)
-                m = np.einsum('bi,bo->bio', combination[0][start:end], combination[1][start:end])
+                end = (
+                    split_rows * (i + 1)
+                    if i < (self.split - 1)
+                    else len(modalities[0].data)
+                )
+                m = np.einsum(
+                    "bi,bo->bio", combination[0][start:end], combination[1][start:end]
+                )
                 m = m.max(axis=2)
                 if combined is None:
                     combined = m

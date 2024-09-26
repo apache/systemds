@@ -31,23 +31,35 @@ from systemds.operator.nn.affine import Affine
 dim = 6
 n = 5
 m = 6
-X = np.array([[9., 2., 5., 5., 9., 6.],
-              [0., 8., 8., 0., 5., 7.],
-              [2., 2., 6., 3., 4., 3.],
-              [3., 5., 2., 6., 6., 0.],
-              [3., 8., 5., 2., 5., 2.]])
+X = np.array(
+    [
+        [9.0, 2.0, 5.0, 5.0, 9.0, 6.0],
+        [0.0, 8.0, 8.0, 0.0, 5.0, 7.0],
+        [2.0, 2.0, 6.0, 3.0, 4.0, 3.0],
+        [3.0, 5.0, 2.0, 6.0, 6.0, 0.0],
+        [3.0, 8.0, 5.0, 2.0, 5.0, 2.0],
+    ]
+)
 
-W = np.array([[8., 3., 7., 2., 0., 1.],
-              [6., 5., 1., 2., 6., 1.],
-              [2., 4., 7., 7., 6., 4.],
-              [3., 8., 9., 3., 5., 6.],
-              [3., 8., 0., 5., 7., 9.],
-              [7., 9., 7., 4., 5., 7.]])
-dout = np.array([[9., 5., 4., 0., 4., 1.],
-                 [1., 2., 2., 3., 3., 9.],
-                 [7., 4., 0., 8., 7., 0.],
-                 [8., 7., 0., 6., 0., 9.],
-                 [1., 6., 5., 8., 8., 9.]])
+W = np.array(
+    [
+        [8.0, 3.0, 7.0, 2.0, 0.0, 1.0],
+        [6.0, 5.0, 1.0, 2.0, 6.0, 1.0],
+        [2.0, 4.0, 7.0, 7.0, 6.0, 4.0],
+        [3.0, 8.0, 9.0, 3.0, 5.0, 6.0],
+        [3.0, 8.0, 0.0, 5.0, 7.0, 9.0],
+        [7.0, 9.0, 7.0, 4.0, 5.0, 7.0],
+    ]
+)
+dout = np.array(
+    [
+        [9.0, 5.0, 4.0, 0.0, 4.0, 1.0],
+        [1.0, 2.0, 2.0, 3.0, 3.0, 9.0],
+        [7.0, 4.0, 0.0, 8.0, 7.0, 0.0],
+        [8.0, 7.0, 0.0, 6.0, 0.0, 9.0],
+        [1.0, 6.0, 5.0, 8.0, 8.0, 9.0],
+    ]
+)
 
 
 class TestAffine(unittest.TestCase):
@@ -116,14 +128,16 @@ class TestAffine(unittest.TestCase):
         scripts = DMLScript(sds)
         scripts.build_code(X2)
 
-        self.assertEqual(1, self.count_sourcing(scripts.dml_script, layer_name="affine"))
+        self.assertEqual(
+            1, self.count_sourcing(scripts.dml_script, layer_name="affine")
+        )
         sds.close()
 
     def test_multiple_context(self):
         # This test evaluate if multiple conflicting contexts work.
-        # It is not the 'optimal' nor the intended use 
+        # It is not the 'optimal' nor the intended use
         # If it fails in the future, feel free to delete it.
-        
+
         # two context
         sds1 = SystemDSContext()
         sds2 = SystemDSContext()
@@ -157,11 +171,14 @@ class TestAffine(unittest.TestCase):
         :param layer_name: example: "affine", "relu"
         :return:
         """
-        return len([
-            line for line in script.split("\n")
-            if all([line.startswith("source"), line.endswith(layer_name)])
-        ])
+        return len(
+            [
+                line
+                for line in script.split("\n")
+                if all([line.startswith("source"), line.endswith(layer_name)])
+            ]
+        )
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()

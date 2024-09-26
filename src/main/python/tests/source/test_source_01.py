@@ -38,25 +38,22 @@ class TestSource_01(unittest.TestCase):
         cls.sds.close()
 
     def test_01_single_call(self):
-        c = self.sds.source("./tests/source/source_01.dml",
-                              "test").test_01()
+        c = self.sds.source("./tests/source/source_01.dml", "test").test_01()
         res = c.compute()
         self.assertEqual(1, self.imports(c.script_str))
         self.assertTrue(np.allclose(np.array([[1]]), res))
 
     def test_01_multi_call_01(self):
-        s = self.sds.source("./tests/source/source_01.dml",
-                              "test")
+        s = self.sds.source("./tests/source/source_01.dml", "test")
         a = s.test_01()
         b = s.test_01()
-        c = a + b 
+        c = a + b
         res = c.compute()
         self.assertEqual(1, self.imports(c.script_str))
         self.assertTrue(np.allclose(np.array([[2]]), res))
 
     def test_01_multi_call_02(self):
-        s = self.sds.source("./tests/source/source_01.dml",
-                              "test")
+        s = self.sds.source("./tests/source/source_01.dml", "test")
         a = s.test_01()
         b = s.test_01()
         c = a + b + a
@@ -65,27 +62,27 @@ class TestSource_01(unittest.TestCase):
         self.assertTrue(np.allclose(np.array([[3]]), res))
 
     def test_01_invalid_function(self):
-        s = self.sds.source("./tests/source/source_01.dml",
-                              "test")
+        s = self.sds.source("./tests/source/source_01.dml", "test")
         with self.assertRaises(AttributeError) as context:
             a = s.test_01_NOT_A_REAL_FUNCTION()
 
     def test_01_invalid_arguments(self):
-        s = self.sds.source("./tests/source/source_01.dml",
-                              "test")
-        m = self.sds.full((1,1),2)
+        s = self.sds.source("./tests/source/source_01.dml", "test")
+        m = self.sds.full((1, 1), 2)
         with self.assertRaises(TypeError) as context:
             a = s.test_01(m)
 
     def test_01_sum(self):
-        c = self.sds.source("./tests/source/source_01.dml",
-                              "test").test_01().sum()
+        c = self.sds.source("./tests/source/source_01.dml", "test").test_01().sum()
         res = c.compute()
         self.assertEqual(1, self.imports(c.script_str))
         self.assertTrue(np.allclose(np.array([[1]]), res))
 
-    def imports(self, script:str) -> int:
-        return script.split("\n").count('source("./tests/source/source_01.dml") as test')
+    def imports(self, script: str) -> int:
+        return script.split("\n").count(
+            'source("./tests/source/source_01.dml") as test'
+        )
+
 
 if __name__ == "__main__":
     unittest.main(exit=False)

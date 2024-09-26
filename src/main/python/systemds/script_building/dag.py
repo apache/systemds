@@ -34,10 +34,11 @@ if TYPE_CHECKING:
 
 class DAGNode(ABC):
     """A Node in the directed-acyclic-graph (DAG) defining all operations."""
-    sds_context: 'SystemDSContext'
-    _unnamed_input_nodes: Sequence[Union['DAGNode', str, int, float, bool]]
-    _named_input_nodes: Dict[str, Union['DAGNode', str, int, float, bool]]
-    _named_output_nodes: Dict[str, Union['DAGNode', str, int, float, bool]]
+
+    sds_context: "SystemDSContext"
+    _unnamed_input_nodes: Sequence[Union["DAGNode", str, int, float, bool]]
+    _named_input_nodes: Dict[str, Union["DAGNode", str, int, float, bool]]
+    _named_output_nodes: Dict[str, Union["DAGNode", str, int, float, bool]]
     _source_node: Optional["DAGNode"]
     _script: Optional["DMLScript"]
     _is_python_local_data: bool
@@ -61,7 +62,12 @@ class DAGNode(ABC):
         #  therefore we could cache the result.
         raise NotImplementedError
 
-    def code_line(self, var_name: str, unnamed_input_vars: Sequence[str], named_input_vars: Dict[str, str]) -> str:
+    def code_line(
+        self,
+        var_name: str,
+        unnamed_input_vars: Sequence[str],
+        named_input_vars: Dict[str, str],
+    ) -> str:
         """Generates the DML code line equal to the intended action of this node.
 
         :param var_name: Name of DML-variable this nodes result should be saved in
@@ -71,7 +77,9 @@ class DAGNode(ABC):
         """
         raise NotImplementedError
 
-    def pass_python_data_to_prepared_script(self, jvm: JVMView, var_name: str, prepared_script: JavaObject) -> None:
+    def pass_python_data_to_prepared_script(
+        self, jvm: JVMView, var_name: str, prepared_script: JavaObject
+    ) -> None:
         """Passes data from python to the prepared script object.
 
         :param jvm: the java virtual machine object

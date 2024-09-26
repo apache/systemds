@@ -22,36 +22,52 @@
 __all__ = ["Scalar"]
 
 import os
-from typing import (TYPE_CHECKING, Dict, Iterable, Optional, Sequence, Tuple,
-                    Union)
+from typing import TYPE_CHECKING, Dict, Iterable, Optional, Sequence, Tuple, Union
 
 import numpy as np
 from py4j.java_gateway import JavaObject, JVMView
 from systemds.operator.operation_node import OperationNode
-from systemds.utils.consts import (BINARY_OPERATIONS, VALID_ARITHMETIC_TYPES,
-                                   VALID_INPUT_TYPES)
+from systemds.utils.consts import (
+    BINARY_OPERATIONS,
+    VALID_ARITHMETIC_TYPES,
+    VALID_INPUT_TYPES,
+)
 from systemds.utils.converters import numpy_to_matrix_block
 
 
 class Scalar(OperationNode):
     __assign: bool
 
-    def __init__(self, sds_context, operation: str,
-                 unnamed_input_nodes: Iterable[VALID_INPUT_TYPES] = None,
-                 named_input_nodes: Dict[str, VALID_INPUT_TYPES] = None,
-                 assign: bool = False) -> 'Scalar':
+    def __init__(
+        self,
+        sds_context,
+        operation: str,
+        unnamed_input_nodes: Iterable[VALID_INPUT_TYPES] = None,
+        named_input_nodes: Dict[str, VALID_INPUT_TYPES] = None,
+        assign: bool = False,
+    ) -> "Scalar":
         self.__assign = assign
-        super().__init__(sds_context, operation, unnamed_input_nodes=unnamed_input_nodes,
-                         named_input_nodes=named_input_nodes, is_datatype_none=False)
+        super().__init__(
+            sds_context,
+            operation,
+            unnamed_input_nodes=unnamed_input_nodes,
+            named_input_nodes=named_input_nodes,
+            is_datatype_none=False,
+        )
 
-    def pass_python_data_to_prepared_script(self, sds, var_name: str, prepared_script: JavaObject) -> None:
-        raise RuntimeError(
-            'Scalar Operation Nodes, should not have python data input')
+    def pass_python_data_to_prepared_script(
+        self, sds, var_name: str, prepared_script: JavaObject
+    ) -> None:
+        raise RuntimeError("Scalar Operation Nodes, should not have python data input")
 
-    def code_line(self, var_name: str, unnamed_input_vars: Sequence[str],
-                  named_input_vars: Dict[str, str]) -> str:
+    def code_line(
+        self,
+        var_name: str,
+        unnamed_input_vars: Sequence[str],
+        named_input_vars: Dict[str, str],
+    ) -> str:
         if self.__assign:
-            return f'{var_name}={self.operation};'
+            return f"{var_name}={self.operation};"
         else:
             return super().code_line(var_name, unnamed_input_vars, named_input_vars)
 
@@ -71,131 +87,132 @@ class Scalar(OperationNode):
             return scalar_object.getBooleanValue()
         else:
             raise NotImplementedError(
-                    "Not currently support scalar type: " + value_type)
+                "Not currently support scalar type: " + value_type
+            )
 
-    def __add__(self, other: VALID_ARITHMETIC_TYPES) -> 'Scalar':
-        return Scalar(self.sds_context, '+', [self, other])
-
-    # Left hand side
-    def __radd__(self, other: VALID_ARITHMETIC_TYPES) -> 'Scalar':
-        return Scalar(self.sds_context, '+', [other, self])
-
-    def __sub__(self, other: VALID_ARITHMETIC_TYPES) -> 'Scalar':
-        return Scalar(self.sds_context, '-', [self, other])
+    def __add__(self, other: VALID_ARITHMETIC_TYPES) -> "Scalar":
+        return Scalar(self.sds_context, "+", [self, other])
 
     # Left hand side
-    def __rsub__(self, other: VALID_ARITHMETIC_TYPES) -> 'Scalar':
-        return Scalar(self.sds_context, '-', [other, self])
+    def __radd__(self, other: VALID_ARITHMETIC_TYPES) -> "Scalar":
+        return Scalar(self.sds_context, "+", [other, self])
 
-    def __mul__(self, other: VALID_ARITHMETIC_TYPES) -> 'Scalar':
-        return Scalar(self.sds_context, '*', [self, other])
+    def __sub__(self, other: VALID_ARITHMETIC_TYPES) -> "Scalar":
+        return Scalar(self.sds_context, "-", [self, other])
 
-    def __rmul__(self, other: VALID_ARITHMETIC_TYPES) -> 'Scalar':
-        return Scalar(self.sds_context, '*', [other, self])
+    # Left hand side
+    def __rsub__(self, other: VALID_ARITHMETIC_TYPES) -> "Scalar":
+        return Scalar(self.sds_context, "-", [other, self])
 
-    def __truediv__(self, other: VALID_ARITHMETIC_TYPES) -> 'Scalar':
-        return Scalar(self.sds_context, '/', [self, other])
+    def __mul__(self, other: VALID_ARITHMETIC_TYPES) -> "Scalar":
+        return Scalar(self.sds_context, "*", [self, other])
 
-    def __rtruediv__(self, other: VALID_ARITHMETIC_TYPES) -> 'Scalar':
-        return Scalar(self.sds_context, '/', [other, self])
+    def __rmul__(self, other: VALID_ARITHMETIC_TYPES) -> "Scalar":
+        return Scalar(self.sds_context, "*", [other, self])
 
-    def __floordiv__(self, other: VALID_ARITHMETIC_TYPES) -> 'Scalar':
-        return Scalar(self.sds_context, '//', [self, other])
+    def __truediv__(self, other: VALID_ARITHMETIC_TYPES) -> "Scalar":
+        return Scalar(self.sds_context, "/", [self, other])
 
-    def __rfloordiv__(self, other: VALID_ARITHMETIC_TYPES) -> 'Scalar':
-        return Scalar(self.sds_context, '//', [other, self])
+    def __rtruediv__(self, other: VALID_ARITHMETIC_TYPES) -> "Scalar":
+        return Scalar(self.sds_context, "/", [other, self])
 
-    def __lt__(self, other) -> 'Scalar':
-        return Scalar(self.sds_context, '<', [self, other])
+    def __floordiv__(self, other: VALID_ARITHMETIC_TYPES) -> "Scalar":
+        return Scalar(self.sds_context, "//", [self, other])
 
-    def __rlt__(self, other) -> 'Scalar':
-        return Scalar(self.sds_context, '<', [other, self])
+    def __rfloordiv__(self, other: VALID_ARITHMETIC_TYPES) -> "Scalar":
+        return Scalar(self.sds_context, "//", [other, self])
 
-    def __le__(self, other) -> 'Scalar':
-        return Scalar(self.sds_context, '<=', [self, other])
+    def __lt__(self, other) -> "Scalar":
+        return Scalar(self.sds_context, "<", [self, other])
 
-    def __rle__(self, other) -> 'Scalar':
-        return Scalar(self.sds_context, '<=', [other, self])
+    def __rlt__(self, other) -> "Scalar":
+        return Scalar(self.sds_context, "<", [other, self])
 
-    def __gt__(self, other) -> 'Scalar':
-        return Scalar(self.sds_context, '>', [self, other])
+    def __le__(self, other) -> "Scalar":
+        return Scalar(self.sds_context, "<=", [self, other])
 
-    def __rgt__(self, other) -> 'Scalar':
-        return Scalar(self.sds_context, '>', [other, self])
+    def __rle__(self, other) -> "Scalar":
+        return Scalar(self.sds_context, "<=", [other, self])
 
-    def __ge__(self, other) -> 'Scalar':
-        return Scalar(self.sds_context, '>=', [self, other])
+    def __gt__(self, other) -> "Scalar":
+        return Scalar(self.sds_context, ">", [self, other])
 
-    def __rge__(self, other) -> 'Scalar':
-        return Scalar(self.sds_context, '>=', [other, self])
+    def __rgt__(self, other) -> "Scalar":
+        return Scalar(self.sds_context, ">", [other, self])
 
-    def __eq__(self, other) -> 'Scalar':
-        return Scalar(self.sds_context, '==', [self, other])
+    def __ge__(self, other) -> "Scalar":
+        return Scalar(self.sds_context, ">=", [self, other])
 
-    def __req__(self, other) -> 'Scalar':
-        return Scalar(self.sds_context, '==', [other, self])
+    def __rge__(self, other) -> "Scalar":
+        return Scalar(self.sds_context, ">=", [other, self])
 
-    def __ne__(self, other) -> 'Scalar':
-        return Scalar(self.sds_context, '!=', [self, other])
+    def __eq__(self, other) -> "Scalar":
+        return Scalar(self.sds_context, "==", [self, other])
 
-    def __rne__(self, other) -> 'Scalar':
-        return Scalar(self.sds_context, '!=', [other, self])
+    def __req__(self, other) -> "Scalar":
+        return Scalar(self.sds_context, "==", [other, self])
 
-    def __matmul__(self, other: 'Scalar') -> 'Scalar':
-        return Scalar(self.sds_context, '%*%', [self, other])
+    def __ne__(self, other) -> "Scalar":
+        return Scalar(self.sds_context, "!=", [self, other])
 
-    def sum(self) -> 'Scalar':
-        return Scalar(self.sds_context, 'sum', [self])
+    def __rne__(self, other) -> "Scalar":
+        return Scalar(self.sds_context, "!=", [other, self])
 
-    def mean(self) -> 'Scalar':
-        return Scalar(self.sds_context, 'mean', [self])
+    def __matmul__(self, other: "Scalar") -> "Scalar":
+        return Scalar(self.sds_context, "%*%", [self, other])
 
-    def var(self, axis: int = None) -> 'Scalar':
-        return Scalar(self.sds_context, 'var', [self])
+    def sum(self) -> "Scalar":
+        return Scalar(self.sds_context, "sum", [self])
 
-    def abs(self) -> 'Scalar':
+    def mean(self) -> "Scalar":
+        return Scalar(self.sds_context, "mean", [self])
+
+    def var(self, axis: int = None) -> "Scalar":
+        return Scalar(self.sds_context, "var", [self])
+
+    def abs(self) -> "Scalar":
         """Calculate absolute.
 
         :return: `Scalar` representing operation
         """
-        return Scalar(self.sds_context, 'abs', [self])
+        return Scalar(self.sds_context, "abs", [self])
 
-    def sqrt(self) -> 'Scalar':
+    def sqrt(self) -> "Scalar":
         """Calculate square root.
 
         :return: `Scalar` representing operation
         """
-        return Scalar(self.sds_context, 'sqrt', [self])
+        return Scalar(self.sds_context, "sqrt", [self])
 
-    def floor(self) -> 'Scalar':
+    def floor(self) -> "Scalar":
         """Return the floor of the input, element-wise.
 
         :return: `Scalar` representing operation
         """
-        return Scalar(self.sds_context, 'floor', [self])
+        return Scalar(self.sds_context, "floor", [self])
 
-    def ceil(self) -> 'Scalar':
+    def ceil(self) -> "Scalar":
         """Return the ceiling of the input, element-wise.
 
         :return: `Scalar` representing operation
         """
-        return Scalar(self.sds_context, 'ceil', [self])
+        return Scalar(self.sds_context, "ceil", [self])
 
-    def log(self) -> 'Scalar':
+    def log(self) -> "Scalar":
         """Calculate logarithm.
 
         :return: `Scalar` representing operation
         """
-        return Scalar(self.sds_context, 'log', [self])
+        return Scalar(self.sds_context, "log", [self])
 
-    def sin(self) -> 'Scalar':
+    def sin(self) -> "Scalar":
         """Calculate sin.
 
         :return: `Scalar` representing operation
         """
-        return Scalar(self.sds_context, 'sin', [self])
+        return Scalar(self.sds_context, "sin", [self])
 
-    def exp(self) -> 'Scalar':
+    def exp(self) -> "Scalar":
         """Calculate exponential.
 
         :return: `Scalar` representing operation
@@ -210,91 +227,90 @@ class Scalar(OperationNode):
         """
         return Scalar(self.sds_context, "sign", [self])
 
-    def cos(self) -> 'Scalar':
+    def cos(self) -> "Scalar":
         """Calculate cos.
 
         :return: `Scalar` representing operation
         """
-        return Scalar(self.sds_context, 'cos', [self])
+        return Scalar(self.sds_context, "cos", [self])
 
-    def tan(self) -> 'Scalar':
+    def tan(self) -> "Scalar":
         """Calculate tan.
 
         :return: `Scalar` representing operation
         """
-        return Scalar(self.sds_context, 'tan', [self])
+        return Scalar(self.sds_context, "tan", [self])
 
-    def asin(self) -> 'Scalar':
+    def asin(self) -> "Scalar":
         """Calculate arcsin.
 
         :return: `Scalar` representing operation
         """
-        return Scalar(self.sds_context, 'asin', [self])
+        return Scalar(self.sds_context, "asin", [self])
 
-    def acos(self) -> 'Scalar':
+    def acos(self) -> "Scalar":
         """Calculate arccos.
 
         :return: `Scalar` representing operation
         """
-        return Scalar(self.sds_context, 'acos', [self])
+        return Scalar(self.sds_context, "acos", [self])
 
-    def atan(self) -> 'Scalar':
+    def atan(self) -> "Scalar":
         """Calculate arctan.
 
         :return: `Scalar` representing operation
         """
-        return Scalar(self.sds_context, 'atan', [self])
+        return Scalar(self.sds_context, "atan", [self])
 
-    def sinh(self) -> 'Scalar':
+    def sinh(self) -> "Scalar":
         """Calculate sin.
 
         :return: `Scalar` representing operation
         """
-        return Scalar(self.sds_context, 'sinh', [self])
+        return Scalar(self.sds_context, "sinh", [self])
 
-    def cosh(self) -> 'Scalar':
+    def cosh(self) -> "Scalar":
         """Calculate cos.
 
         :return: `Scalar` representing operation
         """
-        return Scalar(self.sds_context, 'cosh', [self])
+        return Scalar(self.sds_context, "cosh", [self])
 
-    def tanh(self) -> 'Scalar':
+    def tanh(self) -> "Scalar":
         """Calculate tan.
 
         :return: `Scalar` representing operation
         """
-        return Scalar(self.sds_context, 'tanh', [self])
+        return Scalar(self.sds_context, "tanh", [self])
 
-    def to_string(self, **kwargs: Dict[str, VALID_INPUT_TYPES]) -> 'Scalar':
-        """ Converts the input to a string representation.
+    def to_string(self, **kwargs: Dict[str, VALID_INPUT_TYPES]) -> "Scalar":
+        """Converts the input to a string representation.
         :return: `Scalar` containing the string.
         """
-        return Scalar(self.sds_context, 'toString', [self], named_input_nodes=kwargs)
+        return Scalar(self.sds_context, "toString", [self], named_input_nodes=kwargs)
 
-    def isNA(self) -> 'Scalar':
-        """ Computes a boolean indicator matrix of the same shape as the input, indicating where NA (not available)
+    def isNA(self) -> "Scalar":
+        """Computes a boolean indicator matrix of the same shape as the input, indicating where NA (not available)
         values are located. Currently, NA is only capturing NaN values.
 
         :return: the OperationNode representing this operation
         """
-        return Scalar(self.sds_context, 'isNA', [self])
+        return Scalar(self.sds_context, "isNA", [self])
 
-    def isNaN(self) -> 'Scalar':
-        """ Computes a boolean indicator matrix of the same shape as the input, indicating where NaN (not a number)
+    def isNaN(self) -> "Scalar":
+        """Computes a boolean indicator matrix of the same shape as the input, indicating where NaN (not a number)
         values are located.
 
         :return: the OperationNode representing this operation
         """
-        return Scalar(self.sds_context, 'isNaN', [self])
+        return Scalar(self.sds_context, "isNaN", [self])
 
-    def isInf(self) -> 'Scalar':
-        """ Computes a boolean indicator matrix of the same shape as the input, indicating where Inf (positive or
+    def isInf(self) -> "Scalar":
+        """Computes a boolean indicator matrix of the same shape as the input, indicating where Inf (positive or
         negative infinity) values are located.
         :return: the OperationNode representing this operation
         """
-        return Scalar(self.sds_context, 'isInf', [self])
-
+        return Scalar(self.sds_context, "isInf", [self])
 
     def __str__(self):
         return "ScalarNode"

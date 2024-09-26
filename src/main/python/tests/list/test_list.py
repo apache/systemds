@@ -42,9 +42,9 @@ class TestListOperations(unittest.TestCase):
         """
         Tests the creation of a List object via the SystemDSContext
         """
-        m1 = np.array([1., 2., 3.])
+        m1 = np.array([1.0, 2.0, 3.0])
         m1p = self.sds.from_numpy(m1)
-        m2 = np.array([4., 5., 6.])
+        m2 = np.array([4.0, 5.0, 6.0])
         m2p = self.sds.from_numpy(m2)
         list_obj = self.sds.array(m1p, m2p)
         tmp = list_obj[0] + list_obj[1]
@@ -55,14 +55,15 @@ class TestListOperations(unittest.TestCase):
         """
         Tests the creation of a List object via the SystemDSContext and adds a value
         """
-        m1 = np.array([1., 2., 3.])
+        m1 = np.array([1.0, 2.0, 3.0])
         m1p = self.sds.from_numpy(m1)
-        m2 = np.array([4., 5., 6.])
+        m2 = np.array([4.0, 5.0, 6.0])
         m2p = self.sds.from_numpy(m2)
         list_obj = self.sds.array(m1p, m2p)
         tmp = list_obj[0] + 2
         res = tmp.compute().flatten()
         self.assertTrue(np.allclose(m1 + 2, res))
+
 
 if __name__ == "__main__":
     unittest.main(exit=False)

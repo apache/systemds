@@ -34,8 +34,6 @@ coverage:
   range: "50...75"
   ignore:
   - "src/main/java/org/apache/sysds/protobuf"
-
-
 component_management:
   default_rules:  # default rules that will be inherited by all components
     statuses:

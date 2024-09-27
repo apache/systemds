@@ -284,6 +284,104 @@ public class FrameUtilTest {
 	}
 
 	@Test
+	public void mergeSchema1() {
+		FrameBlock a = new FrameBlock(new ValueType[] {ValueType.STRING});
+		a.appendRow(new String[] {"STRING"});
+		FrameBlock b = new FrameBlock(new ValueType[] {ValueType.STRING});
+		b.appendRow(new String[] {"FP64"});
+
+		FrameBlock c = FrameUtil.mergeSchema(a, b);
+		assertTrue(c.get(0, 0).equals("STRING"));
+	}
+
+	@Test
+	public void mergeSchema2() {
+		FrameBlock a = new FrameBlock(new ValueType[] {ValueType.STRING});
+		a.appendRow(new String[] {"FP32"});
+		FrameBlock b = new FrameBlock(new ValueType[] {ValueType.STRING});
+		b.appendRow(new String[] {"FP64"});
+
+		FrameBlock c = FrameUtil.mergeSchema(a, b);
+		assertTrue(c.get(0, 0).equals("FP64"));
+	}
+
+	@Test
+	public void mergeSchema3() {
+		FrameBlock a = new FrameBlock(new ValueType[] {ValueType.STRING});
+		a.appendRow(new String[] {"INT32"});
+		FrameBlock b = new FrameBlock(new ValueType[] {ValueType.STRING});
+		b.appendRow(new String[] {"FP64"});
+
+		FrameBlock c = FrameUtil.mergeSchema(a, b);
+		assertTrue(c.get(0, 0).equals("FP64"));
+	}
+
+	@Test
+	public void mergeSchema4() {
+		FrameBlock a = new FrameBlock(new ValueType[] {ValueType.STRING});
+		a.appendRow(new String[] {"INT32"});
+		FrameBlock b = new FrameBlock(new ValueType[] {ValueType.STRING});
+		b.appendRow(new String[] {"INT64"});
+
+		FrameBlock c = FrameUtil.mergeSchema(a, b);
+		assertTrue(c.get(0, 0).equals("INT64"));
+	}
+
+	@Test
+	public void mergeSchema5() {
+		FrameBlock a = new FrameBlock(new ValueType[] {ValueType.STRING});
+		a.appendRow(new String[] {"INT32"});
+		FrameBlock b = new FrameBlock(new ValueType[] {ValueType.STRING});
+		b.appendRow(new String[] {"STRING"});
+
+		FrameBlock c = FrameUtil.mergeSchema(a, b);
+		assertTrue(c.get(0, 0).equals("STRING"));
+	}
+
+	@Test
+	public void mergeSchema6() {
+		FrameBlock a = new FrameBlock(new ValueType[] {ValueType.STRING});
+		a.appendRow(new String[] {"BOOLEAN"});
+		FrameBlock b = new FrameBlock(new ValueType[] {ValueType.STRING});
+		b.appendRow(new String[] {"INT32"});
+
+		FrameBlock c = FrameUtil.mergeSchema(a, b);
+		assertTrue(c.get(0, 0).equals("INT32"));
+	}
+
+	@Test
+	public void mergeSchema7() {
+		FrameBlock a = new FrameBlock(new ValueType[] {ValueType.STRING});
+		a.appendRow(new String[] {"BOOLEAN"});
+		FrameBlock b = new FrameBlock(new ValueType[] {ValueType.STRING});
+		b.appendRow(new String[] {"UINT8"});
+
+		FrameBlock c = FrameUtil.mergeSchema(a, b);
+		assertTrue(c.get(0, 0).equals("UINT8"));
+	}
+
+	@Test
+	public void mergeSchema8() {
+		FrameBlock a = new FrameBlock(new ValueType[] {ValueType.STRING});
+		a.appendRow(new String[] {"BOOLEAN"});
+		FrameBlock b = new FrameBlock(new ValueType[] {ValueType.STRING});
+		b.appendRow(new String[] {"BOOLEAN"});
+
+		FrameBlock c = FrameUtil.mergeSchema(a, b);
+		assertTrue(c.get(0, 0).equals("BOOLEAN"));
+	}
+
+	@Test(expected = Exception.class)
+	public void mergeSchemaInvalid() {
+		FrameBlock a = new FrameBlock(new ValueType[] {ValueType.STRING, ValueType.STRING});
+		a.appendRow(new String[] {"BOOLEAN", "BOOLEAN"});
+		FrameBlock b = new FrameBlock(new ValueType[] {ValueType.STRING});
+		b.appendRow(new String[] {"BOOLEAN"});
+
+		FrameUtil.mergeSchema(a, b);
+	}
+
+	@Test
 	public void testSparkFrameBlockALignment() {
 		ValueType[] schema = new ValueType[0];
 		FrameBlock f1 = new FrameBlock(schema, 1000);
@@ -466,35 +564,33 @@ public class FrameUtilTest {
 		assertTrue(ValueType.FP64 == FrameUtil.isType(2.2231342152323232, ValueType.FP64));
 	}
 
-
-	@Test 
-	public void isDefault(){
+	@Test
+	public void isDefault() {
 		assertTrue(FrameUtil.isDefault(null, null));
 		assertTrue(FrameUtil.isDefault("false", ValueType.BOOLEAN));
 		assertTrue(FrameUtil.isDefault("f", ValueType.BOOLEAN));
 		assertTrue(FrameUtil.isDefault("0", ValueType.BOOLEAN));
-		assertTrue(FrameUtil.isDefault("" + (char)(0), ValueType.CHARACTER));
-		assertTrue(FrameUtil.isDefault("0.0" , ValueType.FP32));
-		assertTrue(FrameUtil.isDefault("0" , ValueType.FP32));
-		assertTrue(FrameUtil.isDefault("0.0" , ValueType.FP64));
-		assertTrue(FrameUtil.isDefault("0" , ValueType.FP64));
-		assertTrue(FrameUtil.isDefault("0.0" , ValueType.INT32));
-		assertTrue(FrameUtil.isDefault("0" , ValueType.INT32));
-		assertTrue(FrameUtil.isDefault("0.0" , ValueType.INT64));
-		assertTrue(FrameUtil.isDefault("0" , ValueType.INT64));
+		assertTrue(FrameUtil.isDefault("" + (char) (0), ValueType.CHARACTER));
+		assertTrue(FrameUtil.isDefault("0.0", ValueType.FP32));
+		assertTrue(FrameUtil.isDefault("0", ValueType.FP32));
+		assertTrue(FrameUtil.isDefault("0.0", ValueType.FP64));
+		assertTrue(FrameUtil.isDefault("0", ValueType.FP64));
+		assertTrue(FrameUtil.isDefault("0.0", ValueType.INT32));
+		assertTrue(FrameUtil.isDefault("0", ValueType.INT32));
+		assertTrue(FrameUtil.isDefault("0.0", ValueType.INT64));
+		assertTrue(FrameUtil.isDefault("0", ValueType.INT64));
 
-
-		assertFalse(FrameUtil.isDefault("0.0" , ValueType.STRING));
-		assertFalse(FrameUtil.isDefault("0" , ValueType.STRING));
-		assertFalse(FrameUtil.isDefault("" , ValueType.STRING));
-		assertFalse(FrameUtil.isDefault("13" , ValueType.STRING));
-		assertFalse(FrameUtil.isDefault("13" , ValueType.INT32));
-		assertFalse(FrameUtil.isDefault("13" , ValueType.INT64));
-		assertFalse(FrameUtil.isDefault("13" , ValueType.FP64));
-		assertFalse(FrameUtil.isDefault("13" , ValueType.FP32));
-		assertFalse(FrameUtil.isDefault("1" , ValueType.CHARACTER));
-		assertFalse(FrameUtil.isDefault("0" , ValueType.CHARACTER));
-		assertFalse(FrameUtil.isDefault("t" , ValueType.BOOLEAN));
-		assertFalse(FrameUtil.isDefault("true" , ValueType.BOOLEAN));
+		assertFalse(FrameUtil.isDefault("0.0", ValueType.STRING));
+		assertFalse(FrameUtil.isDefault("0", ValueType.STRING));
+		assertFalse(FrameUtil.isDefault("", ValueType.STRING));
+		assertFalse(FrameUtil.isDefault("13", ValueType.STRING));
+		assertFalse(FrameUtil.isDefault("13", ValueType.INT32));
+		assertFalse(FrameUtil.isDefault("13", ValueType.INT64));
+		assertFalse(FrameUtil.isDefault("13", ValueType.FP64));
+		assertFalse(FrameUtil.isDefault("13", ValueType.FP32));
+		assertFalse(FrameUtil.isDefault("1", ValueType.CHARACTER));
+		assertFalse(FrameUtil.isDefault("0", ValueType.CHARACTER));
+		assertFalse(FrameUtil.isDefault("t", ValueType.BOOLEAN));
+		assertFalse(FrameUtil.isDefault("true", ValueType.BOOLEAN));
 	}
 }

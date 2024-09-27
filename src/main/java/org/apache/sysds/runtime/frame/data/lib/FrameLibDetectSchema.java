@@ -22,7 +22,6 @@ package org.apache.sysds.runtime.frame.data.lib;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.Callable;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 
@@ -67,11 +66,16 @@ public final class FrameLibDetectSchema {
 	}
 
 	private FrameBlock apply() {
-		final int cols = in.getNumColumns();
-		final FrameBlock fb = new FrameBlock(UtilFunctions.nCopies(cols, ValueType.STRING));
-		String[] schemaInfo = (k == 1) ? singleThreadApply() : parallelApply();
-		fb.appendRow(schemaInfo);
-		return fb;
+		try{
+			final int cols = in.getNumColumns();
+			final FrameBlock fb = new FrameBlock(UtilFunctions.nCopies(cols, ValueType.STRING));
+			String[] schemaInfo = (k == 1) ? singleThreadApply() : parallelApply();
+			fb.appendRow(schemaInfo);
+			return fb;
+		}
+		catch(Exception e){
+			throw new DMLRuntimeException("Failed to detect schema", e);
+		}
 	}
 
 	private String[] singleThreadApply() {
@@ -84,7 +88,7 @@ public final class FrameLibDetectSchema {
 		return schemaInfo;
 	}
 
-	private String[] parallelApply() {
+	private String[] parallelApply() throws Exception {
 		final ExecutorService pool = CommonThreadPool.get(k);
 		try {
 			final int cols = in.getNumColumns();
@@ -98,9 +102,6 @@ public final class FrameLibDetectSchema {
 				assign(schemaInfo, ret.get(i).get(), i);
 
 			return schemaInfo;
-		}
-		catch(ExecutionException | InterruptedException e) {
-			throw new DMLRuntimeException("Exception interrupted or exception thrown in detectSchema", e);
 		}
 		finally{
 			pool.shutdown();

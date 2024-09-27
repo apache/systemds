@@ -332,6 +332,7 @@ public class MatrixBlock extends MatrixValue implements CacheBlock<MatrixBlock>,
 		if(sparseBlock == null)
 			return;
 		sparseBlock.reset(estimatedNNzsPerRow, clen);
+		denseBlock = null;
 	}
 	
 	private void resetDense(double val) {
@@ -343,6 +344,7 @@ public class MatrixBlock extends MatrixValue implements CacheBlock<MatrixBlock>,
 			allocateDenseBlock(false);
 			denseBlock.set(val);
 		}
+		sparseBlock = null;
 	}
 
 	private void resetDense(double val, boolean dedup) {
@@ -354,6 +356,7 @@ public class MatrixBlock extends MatrixValue implements CacheBlock<MatrixBlock>,
 			allocateDenseBlock(false, dedup);
 			denseBlock.set(val);
 		}
+		sparseBlock = null;
 	}
 
 	/**

@@ -90,16 +90,16 @@ public class FrameTest {
 
 	@AfterClass
 	public static void cleanup() {
-		try{
+		try {
 
 			IOCompressionTestUtils.deleteDirectory(new File(nameBeginning));
 		}
-		catch(Exception e){
+		catch(Exception e) {
 			e.printStackTrace();
 			LOG.error("failed to delete", e);
 		}
 	}
-	
+
 	@Test
 	public void appendSelfRBind() {
 		FrameBlock ff = append(f, f, false);
@@ -170,6 +170,34 @@ public class FrameTest {
 	public void cBindEmptyAfter() {
 		// must have same number of rows.
 		FrameBlock b = new FrameBlock();
+		f.append(b, true);
+	}
+
+	@Test(expected = DMLRuntimeException.class)
+	public void cBindEmptyCols() {
+		// must have same number of rows.
+		FrameBlock b = new FrameBlock();
+		b.append(f, false);
+	}
+
+	@Test(expected = DMLRuntimeException.class)
+	public void cBindEmptyAfterCols() {
+		// must have same number of rows.
+		FrameBlock b = new FrameBlock();
+		f.append(b, false);
+	}
+
+	@Test
+	public void cBindEmptyR() {
+		// must have same number of rows.
+		FrameBlock b = new FrameBlock(new ValueType[0], f.getNumRows());
+		b.append(f, true);
+	}
+
+	@Test
+	public void cBindEmptyAfterR() {
+		// must have same number of rows.
+		FrameBlock b = new FrameBlock(new ValueType[0], f.getNumRows());
 		f.append(b, true);
 	}
 
@@ -304,6 +332,13 @@ public class FrameTest {
 	@Test
 	public void testApplySchema() {
 		final FrameBlock schema = FrameLibDetectSchema.detectSchema(f, 1);
+		final FrameBlock fs = FrameLibApplySchema.applySchema(f.copyShallow(), schema, 1);
+		TestUtils.compareFrames(f, fs, true);
+	}
+
+	@Test
+	public void testApplyApproxSchema() {
+		final FrameBlock schema = FrameLibDetectSchema.detectSchema(f, 0.1, 1);
 		final FrameBlock fs = FrameLibApplySchema.applySchema(f.copyShallow(), schema, 1);
 		TestUtils.compareFrames(f, fs, true);
 	}

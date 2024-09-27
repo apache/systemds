@@ -128,7 +128,7 @@ jobs:
         export SYSDS_QUIET=1
         export LOG4JPROP=$SYSTEMDS_ROOT/src/test/resources/log4j.properties
         cd src/main/python
-        unittest-parallel -t . -s tests -v --coverage-branch --coverage-xml  --coverage-omit tests
+        unittest-parallel -t . -s tests -v --coverage-branch --coverage-xml .coverage.xml  --coverage-source systemds
         # python -m unittest discover -s tests -p 'test_*.py'
         echo "Exit Status: " $?
     
@@ -136,7 +136,7 @@ jobs:
       run: |
         export LOG4JPROP=$(pwd)/src/test/resources/log4j.properties
         cd src/main/python
-        unittest-parallel -t . -s tests -v --coverage-branch --coverage-xml  --coverage-omit tests
+        unittest-parallel -t . -s tests -v --coverage-branch --coverage-xml .coverage.xml  --coverage-source systemds
         # python -m unittest discover -s tests -p 'test_*.py'
         echo "Exit Status: " $?
 
@@ -159,5 +159,6 @@ jobs:
       uses: codecov/codecov-action@v4.2.0
       if: github.repository_owner == 'apache'
       env:
+        fail_ci_if_error: false
         files: src/main/python/.coverage.xml
         CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}

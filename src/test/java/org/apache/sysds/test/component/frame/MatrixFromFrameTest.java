@@ -63,6 +63,9 @@ public class MatrixFromFrameTest {
 			tests.add(new Object[] {new ValueType[] {ValueType.FP64, ValueType.BOOLEAN}, 10, 1324L});
 			tests.add(new Object[] {new ValueType[] {ValueType.CHARACTER, ValueType.INT32}, 10, 1324L});
 			tests.add(new Object[] {new ValueType[] {ValueType.HASH64, ValueType.INT64, ValueType.BOOLEAN}, 10, 1324L});
+			ValueType t = ValueType.INT64;
+			tests.add(new Object[] {new ValueType[] {t, t, t, t, t, t, t, t, t, t}, 100, 1324L});
+
 		}
 		catch(Exception e) {
 			e.printStackTrace();

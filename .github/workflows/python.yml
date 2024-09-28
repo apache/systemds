@@ -161,4 +161,4 @@ jobs:
       env:
         fail_ci_if_error: false
         files: src/main/python/.coverage.xml
-        CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+        token: ${{ secrets.CODECOV_TOKEN }}

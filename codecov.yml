@@ -34,3 +34,39 @@ coverage:
   range: "50...75"
   ignore:
   - "src/main/java/org/apache/sysds/protobuf"
+component_management:
+  default_rules:  # default rules that will be inherited by all components
+    statuses:
+      - type: project # in this case every component that doesn't have a status defined will have a project type one
+        target: auto
+  individual_components:
+    - component_id: module_runtime  # this is an identifier that should not be changed
+      name: runtime  # this is a display name, and can be changed freely
+      paths:
+        - src/main/java/org/apache/sysds/runtime/**
+    - component_id: module_matrix # this is an identifier that should not be changed
+      name: matrix  # this is a display name, and can be changed freely
+      paths:
+        - src/main/java/org/apache/sysds/runtime/matrix/**
+    - component_id: module_frame # this is an identifier that should not be changed
+      name: frame  # this is a display name, and can be changed freely
+      paths:
+        - src/main/java/org/apache/sysds/runtime/frame/**
+    - component_id: module_compress # this is an identifier that should not be changed
+      name: compress  # this is a display name, and can be changed freely
+      paths:
+        - src/main/java/org/apache/sysds/runtime/compress/**
+    - component_id: module_compiler  # this is an identifier that should not be changed
+      name: compiler  # this is a display name, and can be changed freely
+      paths:
+        - src/main/java/org/apache/sysds/hops/**
+        - src/main/java/org/apache/sysds/lops/**
+        - src/main/java/org/apache/sysds/parser/**
+    - component_id: module_util  # this is an identifier that should not be changed
+      name: util  # this is a display name, and can be changed freely
+      paths:
+        - src/main/java/org/apache/sysds/api/**
+        - src/main/java/org/apache/sysds/common/**
+        - src/main/java/org/apache/sysds/conf/**
+        - src/main/java/org/apache/sysds/resource/**
+        - src/main/java/org/apache/sysds/utils/**

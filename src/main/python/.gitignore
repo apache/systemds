@@ -52,3 +52,8 @@ systemds/SystemDS.jar
 
 # tutorial
 systemds/examples/tutorials/*
+
+# test coverage
+.coverage
+.coverage.xml
+

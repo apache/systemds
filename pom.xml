@@ -39,7 +39,7 @@
 	</licenses>
 
 	<properties>
-		<hadoop.version>3.3.6</hadoop.version>
+		<hadoop.version>3.4.0</hadoop.version>
 		<antlr.version>4.8</antlr.version>
 		<protobuf.version>3.23.4</protobuf.version>
 		<spark.version>3.5.0</spark.version>

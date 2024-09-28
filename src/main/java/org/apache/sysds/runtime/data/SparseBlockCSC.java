@@ -29,6 +29,7 @@ public class SparseBlockCSC extends SparseBlock{
 	private int[] _indexes = null;   //row index array (size: >=nnz)
 	private double[] _values = null; //value array (size: >=nnz)
 	private int _size = 0;           //actual number of nnz
+	private int _rlen = -1;			 // number of rows
 
 	public SparseBlockCSC(int clen) {
 		this(clen, INIT_CAPACITY);
@@ -70,7 +71,34 @@ public class SparseBlockCSC extends SparseBlock{
 			_size = originalCSC._size;
 		}
 
-		//TODO: Continue from here 
+		//special case SparseBlockMCSC
+		else if( sblock instanceof SparseBlockMCSC ){
+			SparseBlockMCSC originalMCSC = (SparseBlockMCSC) sblock;
+			_ptr = new int[originalMCSC.numCols()+1];
+			_ptr[0] = 0;
+			_values = new double[(int) originalMCSC.size()];
+			_indexes = new int[(int)originalMCSC.size()];
+			int ptrPos = 1;
+			int valPos = 0;
+			SparseRow columns[] = originalMCSC.getCols();
+			for(SparseRow column : columns){
+				int rowIdx[] = column.indexes();
+				double vals[] = column.values();
+				for(int i = 0; i<column.size(); i++){
+					_indexes[valPos + i] = rowIdx[i];
+					_values[valPos + i] = vals[i];
+				}
+				_ptr[ptrPos] = _ptr[ptrPos-1] + column.size();
+				ptrPos++;
+				valPos += column.size();
+			}
+		}
+
+
+		// general case sparse block
+		else {
+
+		}
 
 	}
 	@Override
@@ -95,7 +123,7 @@ public class SparseBlockCSC extends SparseBlock{
 
 	@Override
 	public int numRows() {
-		return 0;
+		return 6;
 	}
 
 	public int numCols() {
@@ -134,12 +162,12 @@ public class SparseBlockCSC extends SparseBlock{
 
 	@Override
 	public long size() {
-		return 0;
+		return _ptr[_ptr.length-1];
 	}
 
 	@Override
 	public int size(int r) {
-		return 0;
+		return _ptr[r+1] - _ptr[r];
 	}
 
 	@Override
@@ -169,17 +197,30 @@ public class SparseBlockCSC extends SparseBlock{
 
 	@Override
 	public int[] indexes(int r) {
-		return new int[0];
+		return _indexes;
+	}
+
+	public int[] indexesCol(int c){
+		return _indexes;
 	}
 
 	@Override
 	public double[] values(int r) {
-		return new double[0];
+		return _values;
 	}
+
+	public double[] valuesCol(int c) {
+		return _values;
+	}
+
 
 	@Override
 	public int pos(int r) {
-		return 0;
+		return _ptr[r];
+	}
+
+	public int posCol(int c) {
+		return _ptr[c];
 	}
 
 	@Override

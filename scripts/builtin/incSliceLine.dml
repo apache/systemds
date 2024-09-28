@@ -52,8 +52,9 @@
 # prevTK           previous top-k slices (for incremental updates)
 # prevTKC          previous top-k scores (for incremental updates)
 # encodeLat        flag for encoding output lattice for less memory consumption
-# pruningStrat     pruning strategy: 0 all pruning, 1 only score pruning, 2 only size pruning,
-#                                     3 only max score pruning, 4 only approx pruning, 5 no pruning
+# pruningStrat     pruning strategy: 0 all pruning, 1 all exact pruning,
+#                  2 only score pruning, 3 only max score pruning,
+#                  4 only size pruning, 5 no pruning
 # ---------------------------------------------------------------------------------------
 #
 # OUTPUT:
@@ -82,7 +83,7 @@ m_incSliceLine = function(
     list[unknown] prevLattice = list(), list[unknown] metaPrevLattice = list(),
     list[unknown] prevStats = list(), Matrix[Double] prevTK = matrix(0,0,0),
     Matrix[Double] prevTKC = matrix(0,0,0), Boolean encodeLat = TRUE,
-    Int pruningStrat = 0)
+    Int pruningStrat = 1)
   return(
     Matrix[Double] TK, Matrix[Double] TKC, Matrix[Double] D,
     list[unknown] L, list[unknown] metaLattice,
@@ -101,11 +102,10 @@ m_incSliceLine = function(
       + " -- see documentation for more details.");
   }
 
-  enableIncScorePruning = ( pruningStrat <= 1);
-  enableIncSizePruning = ((pruningStrat == 0) | (pruningStrat == 2));
-  enableIncMaxScorePruning = ((pruningStrat == 0) | (pruningStrat == 3));
-  enableIncApproxPruning = ((pruningStrat == 0) | (pruningStrat == 4));
-  enableIncApproxPruning = FALSE;
+  enableIncScorePruning = (pruningStrat <= 2);
+  enableIncSizePruning = (pruningStrat <= 1 | pruningStrat == 4);
+  enableIncMaxScorePruning = (pruningStrat <= 1 | pruningStrat == 3);
+  enableIncApproxPruning = (pruningStrat == 0);
 
   t1 = time();
 

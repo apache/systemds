@@ -30,13 +30,13 @@ disableIncScorePruning = $13;
 disableIncSizePruning = $14;
 
 if(disableIncScorePruning & disableIncSizePruning){
-  pruningStrat = 3;
+  pruningStrat = 5;
 } else if (disableIncSizePruning){
   pruningStrat = 2;
 } else if (disableIncScorePruning){
-  pruningStrat = 1;
+  pruningStrat = 4;
 } else {
-  pruningStrat = 0;
+  pruningStrat = 1;
 }
 
 

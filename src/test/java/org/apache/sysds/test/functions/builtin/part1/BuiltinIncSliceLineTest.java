@@ -17,7 +17,7 @@
  * under the License.
  */
 
-package org.apache.sysds.test.functions.builtin.part2;
+package org.apache.sysds.test.functions.builtin.part1;
 
 import org.junit.Assert;
 import org.junit.Test;

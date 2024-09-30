@@ -180,7 +180,7 @@ m_incSliceLine = function(
   prevTK2 = matrix(0, 0, ncol(X2));
   prevTKC2 = matrix(0, 0, 4);
   minsc = -Inf
-  if( nrow(prevTK) > 0 ) {
+  if( nrow(prevTK) > 0 & enableIncScorePruning ) {
     prevTK2 = oneHotEncodeUsingOffsets(prevTK, foffb, foffe);
     [minsc, prevTKC2] = computeLowestPrevTK(prevTK2, X2, totalE, eAvg, alpha)
   }

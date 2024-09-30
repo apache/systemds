@@ -86,6 +86,7 @@ public class FEDInstructionParser extends InstructionParser
 		String2FEDInstructionType.put( "r'"     , FEDType.Reorg );
 		String2FEDInstructionType.put( "rdiag"  , FEDType.Reorg );
 		String2FEDInstructionType.put( "rev"    , FEDType.Reorg );
+		String2FEDInstructionType.put( "roll"    , FEDType.Reorg );
 		//String2FEDInstructionType.put( "rshape" , FEDType.Reorg ); Not supported by ReorgFEDInstruction parser!
 		//String2FEDInstructionType.put( "rsort"  , FEDType.Reorg ); Not supported by ReorgFEDInstruction parser!
 

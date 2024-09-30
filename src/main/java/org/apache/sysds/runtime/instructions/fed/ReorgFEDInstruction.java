@@ -43,6 +43,7 @@ import org.apache.sysds.runtime.controlprogram.federated.FederationMap;
 import org.apache.sysds.runtime.controlprogram.federated.FederationUtils;
 import org.apache.sysds.runtime.functionobjects.DiagIndex;
 import org.apache.sysds.runtime.functionobjects.RevIndex;
+import org.apache.sysds.runtime.functionobjects.RollIndex;
 import org.apache.sysds.runtime.functionobjects.SwapIndex;
 import org.apache.sysds.runtime.instructions.InstructionUtils;
 import org.apache.sysds.runtime.instructions.cp.CPOperand;
@@ -57,6 +58,8 @@ import org.apache.sysds.runtime.matrix.operators.ReorgOperator;
 import org.apache.sysds.runtime.meta.MatrixCharacteristics;
 
 public class ReorgFEDInstruction extends UnaryFEDInstruction {
+	// roll-specific attributes
+	private CPOperand _shift = null;
 
 	public ReorgFEDInstruction(Operator op, CPOperand in1, CPOperand out, String opcode, String istr, FederatedOutput fedOut) {
 		super(FEDType.Reorg, op, in1, out, opcode, istr, fedOut);
@@ -66,14 +69,29 @@ public class ReorgFEDInstruction extends UnaryFEDInstruction {
 		super(FEDType.Reorg, op, in1, out, opcode, istr);
 	}
 
+	private ReorgFEDInstruction(Operator op, CPOperand in, CPOperand shift, CPOperand out,  String opcode, String istr) {
+		super(FEDType.Reorg, op, in, shift, out, opcode, istr);
+		_shift = shift;
+	}
+
 	public static ReorgFEDInstruction parseInstruction(ReorgCPInstruction rinst) {
-		return new ReorgFEDInstruction(rinst.getOperator(), rinst.input1, rinst.output, rinst.getOpcode(),
-			rinst.getInstructionString(), FederatedOutput.NONE);
+		if (rinst.input2 != null) {
+			return new ReorgFEDInstruction(rinst.getOperator(), rinst.input1, rinst.input2, rinst.output, rinst.getOpcode(),
+					rinst.getInstructionString());
+		} else{
+			return new ReorgFEDInstruction(rinst.getOperator(), rinst.input1, rinst.output, rinst.getOpcode(),
+					rinst.getInstructionString(), FederatedOutput.NONE);
+		}
 	}
 
 	public static ReorgFEDInstruction parseInstruction(ReorgSPInstruction rinst) {
-		return new ReorgFEDInstruction(rinst.getOperator(), rinst.input1, rinst.output, rinst.getOpcode(),
-			rinst.getInstructionString(), FederatedOutput.NONE);
+		if (rinst.input2 != null) {
+			return new ReorgFEDInstruction(rinst.getOperator(), rinst.input1, rinst.input2, rinst.output, rinst.getOpcode(),
+					rinst.getInstructionString());
+		} else{
+			return new ReorgFEDInstruction(rinst.getOperator(), rinst.input1, rinst.output, rinst.getOpcode(),
+					rinst.getInstructionString(), FederatedOutput.NONE);
+		}
 	}
 
 	public static ReorgFEDInstruction parseInstruction(String str) {
@@ -104,6 +122,14 @@ public class ReorgFEDInstruction extends UnaryFEDInstruction {
 			fedOut = parseFedOutFlag(str, 3);
 			return new ReorgFEDInstruction(new ReorgOperator(RevIndex.getRevIndexFnObject()), in, out, opcode, str,
 				fedOut);
+		}
+		else if (opcode.equalsIgnoreCase("roll")) {
+			InstructionUtils.checkNumFields(str, 3);
+			in.split(parts[1]);
+			out.split(parts[3]);
+			CPOperand shift = new CPOperand(parts[2]);
+			return new ReorgFEDInstruction(new ReorgOperator(new RollIndex(0)),
+					in, out, shift, opcode, str);
 		}
 		else {
 			throw new DMLRuntimeException("ReorgFEDInstruction: unsupported opcode: " + opcode);
@@ -167,6 +193,41 @@ public class ReorgFEDInstruction extends UnaryFEDInstruction {
 				.setBlocksize(mo1.getBlocksize()).setNonZeros(nnz);
 			out.setFedMapping(mo1.getFedMapping().copyWithNewID(fr1.getID()));
 
+			optionalForceLocal(out);
+		}
+			else if (instOpcode.equalsIgnoreCase("roll")) {
+			long inID = mo1.getFedMapping().getID();
+			long outID = FederationUtils.getNextFedDataID();
+
+			long rlen = mo1.getNumRows();
+			long shift = ec.getScalarInput(_shift).getLongValue();
+			shift %= (rlen != 0 ? rlen : 1); // roll matrix with axis=none
+
+			FederationMap outFedMap = mo1.getFedMapping().copyWithNewID(outID);
+			long length = outFedMap.rollFedMap(shift, rlen);
+
+			FederatedRequest fr = new FederatedRequest(FederatedRequest.RequestType.PUT_VAR, outID,
+					new MatrixCharacteristics(-1, -1), mo1.getDataType());
+
+			FederatedRequest frCopy = new FederatedRequest(FederatedRequest.RequestType.EXEC_UDF, -1,
+					new ReorgFEDInstruction.SplitRow(mo1.getFedMapping().getID(), outID, 0, false));
+
+			FederatedRequest frEnd = new FederatedRequest(FederatedRequest.RequestType.EXEC_UDF, -1,
+					new ReorgFEDInstruction.SplitRow(mo1.getFedMapping().getID(), outID, length, true));
+
+			FederatedRequest frStart = new FederatedRequest(FederatedRequest.RequestType.EXEC_UDF, -1,
+					new ReorgFEDInstruction.SplitRow(inID, outID, length, false));
+
+			Future<FederatedResponse>[] ffr = outFedMap.executeRoll(getTID(), true, fr, frEnd, frStart, frCopy);
+
+			//derive output federated mapping
+			MatrixObject out = ec.getMatrixObject(output);
+			long nnz = (mo1.getNnz() != -1) ? mo1.getNnz() : FederationUtils.sumNonZeros(ffr);
+			out.getDataCharacteristics()
+					.setDimension(mo1.getNumRows(), mo1.getNumColumns())
+					.setBlocksize(mo1.getBlocksize())
+					.setNonZeros(nnz);
+			out.setFedMapping(outFedMap);
 			optionalForceLocal(out);
 		}
 		else if (instOpcode.equals("rdiag")) {
@@ -305,6 +366,52 @@ public class ReorgFEDInstruction extends UnaryFEDInstruction {
 			}
 		});
 		return new RdiagResult(diagFedMap, dcs);
+	}
+
+	public static class SplitRow extends FederatedUDF {
+		private static final long serialVersionUID = -3466926635958851402L;
+		private final long _outputID;
+		private final int _sliceRow;
+		private final boolean _isRight;
+
+		private SplitRow(long input, long outputID, long sliceRow, boolean isRight) {
+			super(new long[] {input});
+			_outputID = outputID;
+			_sliceRow = (int) sliceRow;
+			_isRight = isRight;
+		}
+
+		@Override
+		public FederatedResponse execute(ExecutionContext ec, Data... data) {
+			MatrixBlock oriBlock = ((MatrixObject) data[0]).acquireReadAndRelease();
+			MatrixBlock resBlock;
+
+			if (_sliceRow == 0){
+				ec.setMatrixOutput(String.valueOf(_outputID), oriBlock);
+				return new FederatedResponse(FederatedResponse.ResponseType.SUCCESS, new int[]{oriBlock.getNumRows(), oriBlock.getNumColumns()});
+			}
+
+			if (_isRight){
+				resBlock = oriBlock.slice(0, _sliceRow-1, 0, oriBlock.getNumColumns()-1, new MatrixBlock());
+				ec.setMatrixOutput(String.valueOf(_outputID), resBlock);
+			} else {
+				resBlock = oriBlock.slice(_sliceRow, oriBlock.getNumRows()-1, 0, oriBlock.getNumColumns()-1, new MatrixBlock());
+				ec.setMatrixOutput(String.valueOf(_outputID), resBlock);
+			}
+
+			return new FederatedResponse(FederatedResponse.ResponseType.SUCCESS, new int[]{resBlock.getNumRows(), resBlock.getNumColumns()});
+		}
+
+		@Override
+		public List<Long> getOutputIds() {
+			return new ArrayList<>(Arrays.asList(_outputID));
+		}
+
+		@Override
+		public Pair<String, LineageItem> getLineageItem(ExecutionContext ec) {
+			return Pair.of(String.valueOf(_outputID),
+					new LineageItem());
+		}
 	}
 
 	public static class Rdiag extends FederatedUDF {

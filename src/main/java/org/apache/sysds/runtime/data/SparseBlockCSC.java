@@ -30,6 +30,7 @@ public class SparseBlockCSC extends SparseBlock{
 	private double[] _values = null; //value array (size: >=nnz)
 	private int _size = 0;           //actual number of nnz
 	private int _rlen = -1;			 // number of rows
+	private int _clenInferred = -1;
 
 	public SparseBlockCSC(int clen) {
 		this(clen, INIT_CAPACITY);
@@ -56,11 +57,24 @@ public class SparseBlockCSC extends SparseBlock{
 		_size = nnz;
 	}
 
-	public SparseBlockCSC(SparseBlock sblock){
+	public SparseBlockCSC(SparseBlock sblock, int clen) {
+		_clenInferred = clen;
+		_rlen = sblock.numRows();
+		_size = (int) sblock.size();
+		initialize(sblock);
+	}
 
-		long size = sblock.size();
-		if( size > Integer.MAX_VALUE )
-			throw new RuntimeException("SparseBlockCSC supports nnz<=Integer.MAX_VALUE but got "+size);
+	public SparseBlockCSC(SparseBlock sblock) {
+		inferNumCol(sblock);
+		_rlen = sblock.numRows();
+		_size = (int) sblock.size();
+		initialize(sblock);
+	}
+
+	private void initialize(SparseBlock sblock){
+
+		if( _size > Integer.MAX_VALUE )
+			throw new RuntimeException("SparseBlockCSC supports nnz<=Integer.MAX_VALUE but got "+_size);
 
 		//special case SparseBlockCSC
 		if( sblock instanceof SparseBlockCSC ) {
@@ -68,7 +82,6 @@ public class SparseBlockCSC extends SparseBlock{
 			_ptr = Arrays.copyOf(originalCSC._ptr, originalCSC.numCols()+1);
 			_indexes = Arrays.copyOf(originalCSC._indexes, originalCSC._size);
 			_values = Arrays.copyOf(originalCSC._values, originalCSC._size);
-			_size = originalCSC._size;
 		}
 
 		//special case SparseBlockMCSC
@@ -94,13 +107,146 @@ public class SparseBlockCSC extends SparseBlock{
 			}
 		}
 
-
-		// general case sparse block
+		// general case sparse block (CSR, MCSR, DCSR)
 		else {
+			int rlen = _rlen;
+			int clen = _clenInferred;
+			int nnz = _size; // total number of non-zero elements
 
+			// Step 1: Count non-zero elements per column
+			int[] colCounts = new int[clen];
+			for (int i = 0; i < rlen; i++) {
+				if (!sblock.isEmpty(i)) {
+					int alen = sblock.size(i);
+					int apos = sblock.pos(i);
+					int[] aix = sblock.indexes(i);
+					for (int k = apos; k < apos + alen; k++) {
+						int col = aix[k];
+						colCounts[col]++;
+					}
+				}
+			}
+
+			// Step 2: Compute CSC pointer array (_ptr)
+			_ptr = new int[clen + 1];
+			_ptr[0] = 0;
+			for (int j = 0; j < clen; j++) {
+				_ptr[j + 1] = _ptr[j] + colCounts[j];
+			}
+
+			// Step 3: Initialize arrays for indexes and values
+			_size = nnz;
+			_indexes = new int[nnz];
+			_values = new double[nnz];
+
+			// Step 4: Initialize position trackers for each column
+			int[] colPositions = new int[clen];
+			System.arraycopy(_ptr, 0, colPositions, 0, clen);
+
+			// Step 5: Fill CSC indexes (_indexes) and values (_values) arrays
+			for (int i = 0; i < rlen; i++) {
+				if (!sblock.isEmpty(i)) {
+					int alen = sblock.size(i);
+					int apos = sblock.pos(i);
+					int[] aix = sblock.indexes(i);
+					double[] avals = sblock.values(i);
+					for (int k = apos; k < apos + alen; k++) {
+						int col = aix[k];
+						int pos = colPositions[col];
+						_indexes[pos] = i;        // row index
+						_values[pos] = avals[k];  // value
+						colPositions[col]++;
+					}
+				}
+			}
 		}
+	}
+
+	public SparseBlockCSC(SparseRow[] cols, int nnz){
+
+		int clen = cols.length;
+		_clenInferred = clen;
+		_ptr = new int[clen+1]; //ix0=0
+		_indexes = new int[nnz];
+		_values = new double[nnz];
+		_size = nnz;
+
+		for( int i=0, pos=0; i<clen; i++ ) {
+			if( cols[i]!=null && !cols[i].isEmpty() ) {
+				int alen = cols[i].size();
+				int[] aix = cols[i].indexes();
+				double[] avals = cols[i].values();
+				System.arraycopy(aix, 0, _indexes, pos, alen);
+				System.arraycopy(avals, 0, _values, pos, alen);
+				pos += alen;
+			}
+			_ptr[i+1]=pos;
+		}
+	}
+
+	public SparseBlockCSC(int cols, int[] rowInd, int[] colInd, double[] values){
+		int nnz = values.length;
+		_ptr = new int[cols + 1];
+		_indexes = Arrays.copyOf(rowInd, rowInd.length);
+		_values = Arrays.copyOf(values, nnz);
+		_size = nnz;
+		_clenInferred = cols;
+
+		//single-pass construction of pointers
+		int clast = 0;
+		for(int i=0; i<nnz; i++) {
+			int c = colInd[i];
+			if( clast < c )
+				Arrays.fill(_ptr, clast+1, c+1, i);
+			clast = c;
+		}
+		Arrays.fill(_ptr, clast+1, numCols()+1, nnz);
 
 	}
+
+	public SparseBlockCSC(int cols, int nnz, int[] rowInd){
+
+		_clenInferred = cols;
+		_ptr = new int[cols+1];
+		_indexes = Arrays.copyOf(rowInd, nnz);
+		_values = new double[nnz];
+		Arrays.fill(_values, 1);
+		_size = nnz;
+
+		// fix and complete !
+
+
+	}
+
+	private void inferNumCol(SparseBlock sblock) {
+		int[] indexes = null;
+		if (sblock instanceof SparseBlockMCSR) {
+			SparseRow[] origRows = ((SparseBlockMCSR) sblock).getRows();
+			for(SparseRow row : origRows){
+				if(row != null) {
+					indexes = row.indexes();
+					int max = Arrays.stream(indexes).max().getAsInt();
+					if(max > _clenInferred)
+						_clenInferred = max;
+				}
+			}
+		}
+		else if (sblock instanceof SparseBlockMCSC){
+			_clenInferred = ((SparseBlockMCSC) sblock).getCols().length;
+		}
+		else if(sblock instanceof SparseBlockCSC) {
+			_clenInferred = ((SparseBlockCSC) sblock).numCols();
+		}
+		// SparseBlockCSR and SparseBlockDCSR
+		else {
+			indexes = sblock.indexes(0);
+			_clenInferred = Arrays.stream(indexes).max().getAsInt();
+		}
+		_clenInferred += 1;
+	}
+
+
+
 	@Override
 	public void allocate(int r) {
 

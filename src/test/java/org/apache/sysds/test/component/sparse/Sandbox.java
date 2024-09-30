@@ -16,7 +16,7 @@ public class Sandbox extends AutomatedTestBase {
 
 	@Test
 	public void myTest(){
-		tester(SparseBlock.Type.MCSC);
+		tester(SparseBlock.Type.MCSR);
 
 	}
 
@@ -25,8 +25,8 @@ public class Sandbox extends AutomatedTestBase {
 
 			double[][] A = {
 				{10, 20, 0, 0, 0, 0},
-				{0, 30, 0, 40, 0, 0},
-				{0, 0, 50, 60, 70, 0},
+				{0, 0, 0, 0, 0, 0},
+				{0, 0, 50, 0, 70, 0},
 				{0, 0, 0, 0, 0, 80},
 			};
 
@@ -43,28 +43,55 @@ public class Sandbox extends AutomatedTestBase {
 				case MCSC: sblock = new SparseBlockMCSC(srtmp, cols); break;
 			}
 
-			SparseBlockMCSC originalMCSC = (SparseBlockMCSC) sblock;
-			SparseRow[] columns = originalMCSC.getCols();
-
-			SparseBlockCSC cscBlock = new SparseBlockCSC(originalMCSC);
-			int[] idx = cscBlock.indexesCol(0);
-			double[] vals = cscBlock.valuesCol(0);
+			//SparseBlock newBlock = new SparseBlockCSC(sblock);
 
 
-			/*for(int x : idx)
-				System.out.println(x);
 
-			System.out.println("**********");
+			/*SparseRow[] columns = new SparseRow[6];
+			columns[0] = new SparseRowScalar(0, 10);
 
-			for(double x : vals)
-				System.out.println(x);*/
+			double[] vals1 = {20, 30};
+			int idx1[] = {0, 1};
+			columns[1] = new SparseRowVector(vals1, idx1);
 
-			SparseBlockCSR csrBlock = new SparseBlockCSR(cscBlock);
+			columns[2] = new SparseRowScalar(2, 50);
 
-			//System.out.println(csrBlock);
+			double[] vals3 = {40, 60};
+			int idx3[] = {1, 2};
+			columns[3] = new SparseRowVector(vals3, idx3);
+
+			columns[4] = new SparseRowScalar(2, 70);
+
+			columns[5] = new SparseRowScalar(3, 80);
+
+			SparseBlockCSC newBlock = new SparseBlockCSC(columns, 8);*/
+
+			double[] values = {10, 20, 30, 50, 40, 60, 70, 80};
+			int rowInd[] = {0, 0, 1, 2, 1, 2, 2, 3};
+			int colInd[] = {0, 1, 1, 2, 3, 3, 4, 5};
+			//SparseBlockCSC newBlock = new SparseBlockCSC(6, rowInd, colInd, values);
+			SparseBlockCSR newBlock = new SparseBlockCSR(6, 8, colInd);
+
+			System.out.println("values:");
+			double[] vals = newBlock.values(0);
+			for(double val : vals)
+				System.out.println(val);
+
+			System.out.println("**********************");
+			System.out.println("indexes");
+			int[] indexes = newBlock.indexes(0);
+			for(int idx: indexes)
+				System.out.println(idx);
+
+			System.out.println("***********************");
+			System.out.println("pointers");
+			for(int i = 0; i < 7; i++){
+				System.out.println(newBlock.pos(i));
+			}
+
+			System.out.println("***********************");
 
 
-			System.out.println(sblock);
 
 
 

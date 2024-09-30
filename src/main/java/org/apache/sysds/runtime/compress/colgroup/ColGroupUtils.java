@@ -21,6 +21,8 @@ package org.apache.sysds.runtime.compress.colgroup;
 
 import java.util.Arrays;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex;
 import org.apache.sysds.runtime.compress.utils.DoubleCountHashMap;
 import org.apache.sysds.runtime.data.SparseBlock;
@@ -31,6 +33,7 @@ import org.apache.sysds.runtime.matrix.operators.BinaryOperator;
 import org.apache.sysds.runtime.matrix.operators.UnaryOperator;
 
 public interface ColGroupUtils {
+	public static final Log LOG = LogFactory.getLog(ColGroupUtils.class.getName());
 
 	/**
 	 * Calculate the result of performing the binary operation on an empty row to the left
@@ -307,13 +310,12 @@ public interface ColGroupUtils {
 		}
 	}
 
-	public static double[] reorderDefault(double[] vals, int[] reordering){
+	public static double[] reorderDefault(double[] vals, int[] reordering) {
 		double[] ret = new double[vals.length];
 		for(int i = 0; i < vals.length; i++)
 			ret[i] = vals[reordering[i]];
-		return ret; 
+		return ret;
 	}
-
 
 	/**
 	 * Get a list of points locations from the SparseBlock.
@@ -346,7 +348,7 @@ public interface ColGroupUtils {
 		}
 
 		Arrays.sort(points, (a, b) -> {
-			return a.o < b.o ? -1 : a.o == b.o ? 0 : 1;
+			return a.o < b.o ? -1 : 1;
 		});
 		return points;
 	}

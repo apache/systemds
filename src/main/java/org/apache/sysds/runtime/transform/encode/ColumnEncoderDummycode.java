@@ -24,15 +24,14 @@ import static org.apache.sysds.runtime.util.UtilFunctions.getEndIndex;
 import java.io.IOException;
 import java.io.ObjectInput;
 import java.io.ObjectOutput;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
 import org.apache.sysds.api.DMLScript;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.controlprogram.caching.CacheBlock;
-import org.apache.sysds.runtime.data.SparseBlock;
 import org.apache.sysds.runtime.data.SparseBlockCSR;
+import org.apache.sysds.runtime.data.SparseBlockMCSR;
 import org.apache.sysds.runtime.frame.data.FrameBlock;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.util.DependencyTask;
@@ -115,17 +114,14 @@ public class ColumnEncoderDummycode extends ColumnEncoder {
 			throw new DMLRuntimeException(
 				"ColumnEncoderDummycode called with: " + in.getClass().getSimpleName() + " and not MatrixBlock");
 		}
-		boolean mcsr = MatrixBlock.DEFAULT_SPARSEBLOCK == SparseBlock.Type.MCSR;
-		mcsr = false; // force CSR for transformencode
-		ArrayList<Integer> sparseRowsWZeros = null;
+		boolean mcsr = out.getSparseBlock() instanceof SparseBlockMCSR;
+		// ArrayList<Integer> sparseRowsWZeros = null;
 		int index = _colID - 1;
 		for(int r = rowStart; r < getEndIndex(in.getNumRows(), rowStart, blk); r++) {
 			if(mcsr) {
 				double val = out.getSparseBlock().get(r).values()[index];
 				if(Double.isNaN(val)) {
-					if(sparseRowsWZeros == null)
-						sparseRowsWZeros = new ArrayList<>();
-					sparseRowsWZeros.add(r);
+					containsZeroOut = true;
 					out.getSparseBlock().get(r).values()[index] = 0;
 					continue;
 				}
@@ -138,9 +134,7 @@ public class ColumnEncoderDummycode extends ColumnEncoder {
 				int rptr[] = csrblock.rowPointers();
 				double val = csrblock.values()[rptr[r] + index];
 				if(Double.isNaN(val)) {
-					if(sparseRowsWZeros == null)
-						sparseRowsWZeros = new ArrayList<>();
-					sparseRowsWZeros.add(r);
+					containsZeroOut = true;
 					csrblock.values()[rptr[r] + index] = 0; // test
 					continue;
 				}
@@ -149,9 +143,6 @@ public class ColumnEncoderDummycode extends ColumnEncoder {
 				csrblock.indexes()[rptr[r] + index] = nCol;
 				csrblock.values()[rptr[r] + index] = 1;
 			}
-		}
-		if(sparseRowsWZeros != null) {
-			addSparseRowsWZeros(sparseRowsWZeros);
 		}
 	}
 

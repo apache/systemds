@@ -313,8 +313,8 @@ public class CLALibCompAgg {
 			(m1.getColGroups().size() > 10 || m1.getExactSizeOnDisk() > MIN_PAR_AGG_THRESHOLD);
 	}
 
-	private static void aggregateInParallel(CompressedMatrixBlock m1, MatrixBlock ret, AggregateUnaryOperator op, int k)
-		throws Exception {
+	private static void aggregateInParallel(CompressedMatrixBlock m1, MatrixBlock ret, AggregateUnaryOperator op,
+		int k) throws Exception  {
 		final ExecutorService pool = CommonThreadPool.get(k);
 		try {
 			final ArrayList<UnaryAggregateTask> tasks = new ArrayList<>();

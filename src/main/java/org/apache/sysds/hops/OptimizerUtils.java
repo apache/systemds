@@ -64,6 +64,7 @@ import org.apache.sysds.runtime.meta.MatrixCharacteristics;
 import org.apache.sysds.runtime.util.IndexRange;
 import org.apache.sysds.runtime.util.UtilFunctions;
 import org.apache.sysds.utils.stats.InfrastructureAnalyzer;
+import org.apache.sysds.utils.MemoryEstimates;
 
 public class OptimizerUtils 
 {
@@ -786,6 +787,15 @@ public class OptimizerUtils
 	{
 		double sp = getSparsity(nrows, ncols, nnz);
 		return estimateSizeExactSparsity(nrows, ncols, sp);
+	}
+
+
+	public static long estimateSizeExactFrame(long nRows, long nCols){
+		if(nRows > Integer.MAX_VALUE)
+			return Long.MAX_VALUE;
+		
+		// assuming String arrays and on average 8 characters per value.
+		return (long)MemoryEstimates.stringArrayCost((int)nRows, 8) * nCols;
 	}
 	
 	/**

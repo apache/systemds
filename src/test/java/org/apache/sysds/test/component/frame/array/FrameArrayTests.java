@@ -2568,6 +2568,7 @@ public class FrameArrayTests {
 		return ret;
 	}
 
+
 	public static Character[] generateRandomCharacterNUniqueLengthOpt(int size, int seed, int nUnique) {
 		Character[] rands = generateRandomCharacterOpt(nUnique, seed);
 

@@ -19,6 +19,10 @@
 
 package org.apache.sysds.runtime.data;
 
+import org.apache.sysds.utils.MemoryEstimates;
+
+import java.io.DataInput;
+import java.io.IOException;
 import java.util.Arrays;
 import java.util.Iterator;
 
@@ -213,37 +217,137 @@ public class SparseBlockCSC extends SparseBlock{
 		Arrays.fill(_values, 1);
 		_size = nnz;
 
-		// fix and complete !
-
-
-	}
-
-	private void inferNumCol(SparseBlock sblock) {
-		int[] indexes = null;
-		if (sblock instanceof SparseBlockMCSR) {
-			SparseRow[] origRows = ((SparseBlockMCSR) sblock).getRows();
-			for(SparseRow row : origRows){
-				if(row != null) {
-					indexes = row.indexes();
-					int max = Arrays.stream(indexes).max().getAsInt();
-					if(max > _clenInferred)
-						_clenInferred = max;
-				}
+		//single-pass construction of col pointers
+		//and copy of row indexes if necessary
+		for(int i=0, pos=0; i<cols; i++) {
+			if( rowInd[i] >= 0 ) {
+				if( cols > nnz )
+					_indexes[pos] = rowInd[i];
+				pos++;
 			}
+			_ptr[i+1] = pos;
 		}
-		else if (sblock instanceof SparseBlockMCSC){
-			_clenInferred = ((SparseBlockMCSC) sblock).getCols().length;
-		}
-		else if(sblock instanceof SparseBlockCSC) {
-			_clenInferred = ((SparseBlockCSC) sblock).numCols();
-		}
-		// SparseBlockCSR and SparseBlockDCSR
-		else {
-			indexes = sblock.indexes(0);
-			_clenInferred = Arrays.stream(indexes).max().getAsInt();
-		}
-		_clenInferred += 1;
 	}
+
+	/**
+	 * Initializes the CSC sparse block from an ordered input
+	 * stream of ultra-sparse ijv triples.
+	 *
+	 * @param nnz number of non-zeros to read
+	 * @param in data input stream of ijv triples, ordered by column and row indices
+	 * @throws IOException if deserialization error occurs
+	 */
+	public void initUltraSparse(int nnz, DataInput in)
+		throws IOException
+	{
+		// Allocate space if necessary
+		if (_values.length < nnz)
+			resize(newCapacity(nnz));
+
+		// Read ijv triples, append and update pointers
+		int clast = 0;
+		for (int i = 0; i < nnz; i++) {
+			int r = in.readInt();
+			int c = in.readInt();
+			double v = in.readDouble();
+
+			if (clast < c)
+				Arrays.fill(_ptr, clast + 1, c + 1, i);
+			clast = c;
+
+			_indexes[i] = r;   // Row indices in CSC
+			_values[i] = v;
+		}
+		Arrays.fill(_ptr, clast + 1, numCols() + 1, nnz);
+
+		// Update meta data
+		_size = nnz;
+	}
+
+	/**
+	 * Initializes the CSC sparse block from an ordered input
+	 * stream of sparse columns (colnnz, iv-pairs*).
+	 *
+	 * @param clen number of columns
+	 * @param nnz number of non-zeros to read
+	 * @param in data input stream of sparse columns, ordered by column index
+	 * @throws IOException if deserialization error occurs
+	 */
+	public void initSparse(int clen, int nnz, DataInput in)
+		throws IOException
+	{
+		// Allocate space if necessary
+		if (_values.length < nnz) {
+			resize(newCapacity(nnz));
+			System.out.println("hallo");
+		}
+		// Read sparse columns, append and update pointers
+		_ptr[0] = 0;
+		for (int c = 0, pos = 0; c < clen; c++) {
+			int lnnz = in.readInt();  // Number of non-zeros in column c
+			for (int j = 0; j < lnnz; j++, pos++) {
+				_indexes[pos] = in.readInt();   // Row index
+				_values[pos] = in.readDouble(); // Value
+			}
+			_ptr[c + 1] = pos;
+		}
+
+		// Update meta data
+		_size = nnz;
+	}
+
+	/**
+	 * Get the estimated in-memory size of the sparse block in CSC
+	 * with the given dimensions w/o accounting for overallocation.
+	 *
+	 * @param nrows number of rows
+	 * @param ncols number of columns
+	 * @param sparsity sparsity ratio
+	 * @return memory estimate
+	 */
+	public static long estimateSizeInMemory(long nrows, long ncols, double sparsity) {
+		double lnnz = Math.max(INIT_CAPACITY, Math.ceil(sparsity*nrows*ncols));
+
+		//32B overhead per array, int arr in nrows, int/double arr in nnz
+		double size = 16 + 4 + 4;                            //object + int field + padding
+		size += MemoryEstimates.intArrayCost(nrows+1);       //ptr array (row pointers)
+		size += MemoryEstimates.intArrayCost((long) lnnz);   //indexes array (column indexes)
+		size += MemoryEstimates.doubleArrayCost((long) lnnz);//values array (non-zero values)
+
+		//robustness for long overflows
+		return (long) Math.min(size, Long.MAX_VALUE);
+	}
+
+	/**
+	 * Get raw access to underlying array of column pointers
+	 * For use in GPU code
+	 * @return array of column pointers
+	 */
+	public int[] colPointers() {
+		return _ptr;
+	}
+
+	/**
+	 * Get raw access to underlying array of row indices
+	 * For use in GPU code
+	 * @return array of row indexes
+	 */
+	public int[] indexes() {
+		return indexes(0);
+	}
+
+	/**
+	 * Get raw access to underlying array of values
+	 * For use in GPU code
+	 * @return array of values
+	 */
+	public double[] values() {
+		return values(0);
+	}
+
+
+	///////////////////
+	//SparseBlock implementation
 
 
 
@@ -338,7 +442,14 @@ public class SparseBlockCSC extends SparseBlock{
 
 	@Override
 	public long getExactSizeInMemory() {
-		return 0;
+		//32B overhead per array, int arr in nrows, int/double arr in nnz
+		double size = 16 + 4 + 4;                                //object + int field + padding
+		size += MemoryEstimates.intArrayCost(_ptr.length);       //ptr array (row pointers)
+		size += MemoryEstimates.intArrayCost(_indexes.length);   //indexes array (column indexes)
+		size += MemoryEstimates.doubleArrayCost(_values.length); //values array (non-zero values)
+
+		//robustness for long overflows
+		return (long) Math.min(size, Long.MAX_VALUE);
 	}
 
 	@Override
@@ -448,6 +559,64 @@ public class SparseBlockCSC extends SparseBlock{
 	public String toString() {
 		return null;
 	}
+
+	///////////////////////////
+	// private helper methods
+
+	private void inferNumCol(SparseBlock sblock) {
+		int[] indexes = null;
+		if (sblock instanceof SparseBlockMCSR) {
+			SparseRow[] origRows = ((SparseBlockMCSR) sblock).getRows();
+			for(SparseRow row : origRows){
+				if(row != null) {
+					indexes = row.indexes();
+					int max = Arrays.stream(indexes).max().getAsInt();
+					if(max > _clenInferred)
+						_clenInferred = max;
+				}
+			}
+		}
+		else if (sblock instanceof SparseBlockMCSC){
+			_clenInferred = ((SparseBlockMCSC) sblock).getCols().length;
+		}
+		else if(sblock instanceof SparseBlockCSC) {
+			_clenInferred = ((SparseBlockCSC) sblock).numCols();
+		}
+		// SparseBlockCSR and SparseBlockDCSR
+		else {
+			indexes = sblock.indexes(0);
+			_clenInferred = Arrays.stream(indexes).max().getAsInt();
+		}
+		_clenInferred += 1;
+	}
+
+	private int newCapacity(int minsize) {
+		//compute new size until minsize reached
+		double tmpCap = Math.max(_values.length, 1);
+		while( tmpCap < minsize ) {
+			tmpCap *= (tmpCap <= 1024) ?
+				RESIZE_FACTOR1 : RESIZE_FACTOR2;
+		}
+		return (int)Math.min(tmpCap, Integer.MAX_VALUE);
+	}
+
+	private void resize() {
+		//resize by at least by 1
+		int newCap = newCapacity(_values.length+1);
+		resizeCopy(newCap);
+	}
+
+	private void resize(int minsize) {
+		int newCap = newCapacity(minsize);
+		resizeCopy(newCap);
+	}
+
+	private void resizeCopy(int capacity) {
+		//reallocate arrays and copy old values
+		_indexes = Arrays.copyOf(_indexes, capacity);
+		_values = Arrays.copyOf(_values, capacity);
+	}
+
 
 
 }

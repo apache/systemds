@@ -1,0 +1,72 @@
+#-------------------------------------------------------------
+#
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+#
+#-------------------------------------------------------------
+
+
+
+# run the script staging/learnedSampling/1_Data_Model_Prep.dml to prepare the model
+
+source("../shapley-permutation-opt.dml") as shapleyPermutation
+
+X_bg = read("../data/Adult_X.csv")
+y = read("../data/Adult_y.csv")
+B = read("../data/Adult_W.csv")
+
+# you set the total number of samples from the commandline using `-nvargs samples_per_feature=2000`
+n_permutations = ifdef($n_permutations, 10)
+integration_samples = ifdef($integration_samples, 10)
+print("Computing shapley values with "+n_permutations+" samples per feature.")
+#select instance to compute shapley values for
+x = X_bg[2,]
+
+print("Sample: \n"+toString(x))
+
+#compute shapley values
+[S, expected] = shapleyPermutation::shapley_permutations_legacy(
+  model_function="shap_multiLogRegPredict_custom",
+  model_args=list(B=B),
+  x=x,
+  X_bg=X_bg,
+  n_permutations=n_permutations,
+  integration_samples=integration_samples,
+  seed=-1,
+  verbose=1
+)
+print("Expected: "+toString(expected))
+print("Resulting phis:\n"+toString(S))
+
+#transpose it to make it fit the representation of values in the SHAP python package
+S = t(S)
+# write values to csv
+write_to_file = ifdef($write_to_file, 1)
+if( write_to_file == 1){
+  print("Writing to file")
+  write(S, "../data/Adult_shap-values_permutation_"+n_permutations+"perm_"+integration_samples+"samples.csv", format="csv")
+}
+
+
+
+
+# function to wrap multiLogRegPredict to make sure its outputs are compatible
+shap_multiLogRegPredict_custom = function(Matrix[Double] X, Matrix[Double] B)
+return( Matrix[Double] P){
+  [M,yhat,acc] = multiLogRegPredict(X=X, B=B,Y=matrix(0,0,0), verbose=FALSE)
+  P = M[,2]
+}

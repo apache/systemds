@@ -1,0 +1,90 @@
+#-------------------------------------------------------------
+#
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+#
+#-------------------------------------------------------------
+
+# adapted from
+# https://github.com/damslab/reproducibility/blob/e90f169ffa4bca37ec4cc1f231eea0cb41e910cb/sigmod2023-AWARE-p5/experiments/code/algorithms/l2svm.dml
+print("-> Reading Data")
+F = read("../data/census/census.csv", data_type="frame", format="csv", header=TRUE)
+#y = X[,2:69]
+
+# data preparation
+jspec= "{ ids:true, recode:[2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,"
++"21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,"
++"41,42,43,44,45,47,48,49,50,52,53,54,55,56,57,58,59,60,61,62,63,64,65,66,68,69], bin:["
++"{id:46, method:equi-width, numbins:10},"
++"{id:51, method:equi-width, numbins:10},"
++"{id:67, method:equi-width, numbins:10}]}"
+
+print("-> Transformencoding")
+[X,M] = transformencode(target=F, spec=jspec);
+X = X[,2:ncol(X)] #drop id
+
+# run one hot encoding using transformencodes dummycode
+dummycode="C1";
+for(i in 2:ncol(X))
+  dummycode = dummycode+",C"+i;
+jspec_dummycode= "{ ids:false, dummycode:["+dummycode+"]}"
+
+X_frame=as.frame(X)
+
+print("-> Dummycoding")
+[X2,M] = transformencode(target=X_frame, spec=jspec_dummycode);
+write(M, "../data/census/census_dummycoding_meta.csv", format="csv")
+
+# create lables via clustering
+print("-> Creating lables via kmeans")
+[C,y] = kmeans(X=X2, k=4)
+
+
+
+# LM only allows for 1 classification therefore we choose to classify label 0.
+# (if this is MNIST this would corespond to predicting when the value is 0 or not.)
+
+y_corrected = (y == min(y))
+
+
+# Scale input
+[X2, Centering, ScaleFactor] = scale(X2)
+
+# Continuous split ... aka not random.
+[xTrain, xTest, yTrain, yTest] = split(X=X2,Y=y_corrected)
+
+print("-> Saving prepared data for python model")
+py_sub_x=X2[1:30000]
+write(py_sub_x, "../data/census/census_xTrain.csv", format="csv")
+py_sub_y=y_corrected[1:30000]
+write(py_sub_y, "../data/census/census_yTrain_corrected.csv", format="csv")
+
+# Last paper: tol=0.000000001 reg=0.001 maxiter=10
+print("-> Training L2SVM")
+bias = l2svm(X=py_sub_x, Y=py_sub_y, maxIterations=90, verbose=TRUE, epsilon = 1e-17)
+write(bias, "../data/census/census_bias.csv", format="csv")
+
+print("-> Testing L2SVM")
+[y_predict_test, n] = l2svmPredict(X=xTest, W=bias, verbose=TRUE)
+print(toString(yTest[1:10]))
+print(toString(y_predict_test[1:10]))
+print(toString(n[1:10]))
+y_predict_classifications = (y_predict_test > 0.0) + 1
+
+[nn, ca_test] = confusionMatrix(y_predict_classifications, yTest + 1)
+print("Confusion: ")
+print(toString(ca_test))

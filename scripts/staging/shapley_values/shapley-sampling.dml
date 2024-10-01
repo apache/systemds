@@ -1,0 +1,171 @@
+#-------------------------------------------------------------
+#
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+#
+#-------------------------------------------------------------
+
+source("./shapley-utils.dml") as shapleyUtils
+
+# Computes shapley values by running the basic shapley sampling approach for each desired feature.
+# The resulting matrix S holds the shapley values for each feature in the row given by the index of the feature in the sample.
+#
+# INPUT:
+# ---------------------------------------------------------------------------------------
+# model_function  The function of the model to be evaluated as a String. This function has to take a matrix of samples and return a vector of predictions.
+#                 It might be usefull to wrap the model into a function the takes and returns the desired shapes and use this wrapper here.
+# model_args      Arguments in order for the model, if desired. This will be prepended by the created instances-matrix.
+# x               Single sample for which to compute the shapley values.
+# feature_indices A vector holding the indeces of the features of interest.
+# X_bg            The background dataset from which to pull the random samples to form coalitions/new instances.
+# samples         The number of samples i.e. the number of random coalitions from which the shapley value will be estimated. Defaults to 1000*number_of_features.
+# seed            A seed, in case the sampling has to be deterministic.
+# verbose         A boolean to enable logging of each step of the function.
+# ---------------------------------------------------------------------------------------
+#
+# OUTPUT:
+# -----------------------------------------------------------------------------
+# S              Matrix holding the shapley values of each desired feature in the col given by the index in feature_indices.
+# expected       Double holding the average prediction of the instances.
+# -----------------------------------------------------------------------------
+
+shapley_sampling = function (String model_function, list[unknown] model_args, Matrix[Double] x, Matrix[Double] feature_indices, Matrix[Double] X_bg, Integer samples = 0, Integer seed = -1 , Boolean verbose = 0)
+return (Matrix[Double] S, Double expected)
+{
+  assert(ncol(feature_indices) == 1)
+
+  if (samples == 0){
+    samples = 1000*ncol(x)
+  }
+
+  if (samples < 1000*ncol(x)) {
+    shapleyUtils::u_vprint("WARN: Number of samples is low, consider increasing it to reduce variance in results, if possible. A good start is 1000*number of features.", verbose)
+  }
+
+  # sample with replacement from background data once, so we don't have to do it for every sample
+  X_bg = shapleyUtils::sample_with_potential_replace(X_bg=X_bg, samples=samples, seed=seed, always_shuffle=1)
+  num_indices = nrow(feature_indices)
+  shapleyUtils::u_vprint("Constructing instances for "+num_indices+" features with "+samples+" samples each...", verbose)
+
+  #prepare matrix for samples
+  X_test = matrix(0, rows=num_indices*samples*2, cols=ncol(x))
+  parfor (i in 1:num_indices, check=0) {
+    index = as.scalar(feature_indices[i,1])
+    lower = (i-1)*(2*samples) + 1
+    upper = lower + (2*samples) - 1
+    X_test[lower:upper,] = shapley_sampling_prepare(x=x, feature_index=index, X_bg=X_bg, samples=samples, seed=seed)
+  }
+
+  # generate args for call to model
+  X_arg = append(list(X=X_test), model_args)
+
+  shapleyUtils::u_vprint("Calling model for "+nrow(X_test)+" predictions...", verbose)
+
+  # call model
+  P = eval(model_function, X_arg)
+
+  shapleyUtils::u_vprint("Got predictions, calculating expected value and shapley values...", verbose)
+
+  S = matrix(0, cols=ncol(x), rows=1)
+  for (i in 1:num_indices) {
+    f_idx = as.scalar(feature_indices[i,1])
+    lower = (i-1)*(2*samples) + 1
+    upper = lower + (2*samples) - 1
+    S[,f_idx] = shapley_sampling_compute(P[lower:upper,])
+  }
+
+  expected = avg(P)
+}
+
+# Prepeares a Matrix with sampled and masked testdata for shapley sampling values.
+# The resulting matrix needs to be evaluated using the desired preptrained model and
+# the predictions need to be fed into shapley_samplig_prepare to compute the actual shapley value.
+#
+# INPUT:
+# ---------------------------------------------------------------------------------------
+# x               Single sample for whith to compute the shapley values.
+# feature_index   The index of the feature of interest.
+# X_bg            The background dataset from which to pull the random samples to form coalitions.
+# samples         The number of samples i.e. the number of random coalitions from which the shapley value will be estimated.
+# seed            A seed, in case the sampling has to be deterministic.
+# ---------------------------------------------------------------------------------------
+#
+# OUTPUT:
+# -----------------------------------------------------------------------------
+# X_test         Data to be evaluated by the model in question.
+# -----------------------------------------------------------------------------
+
+shapley_sampling_prepare = function(Matrix[Double] x, Integer feature_index, Matrix[Double] X_bg, Integer samples = 0, Integer seed = -1 )
+return (Matrix[Double] X_test)
+{
+
+  number_of_features   = ncol(x)
+  number_of_bg_samples = nrow(X_bg)
+
+
+  if (samples == 0){
+    samples = 1000*number_of_features
+  }
+
+  # make sure to not resample, if background data is exactly the number of samples
+  if (samples==number_of_bg_samples){
+    X_sample = X_bg
+  } else {
+    X_sample = shapleyUtils::sample_with_potential_replace(X_bg=X_bg, samples=samples, seed=seed )
+  }
+
+
+  # mask to replace random features
+  # this rand call takes half of this functions compute time
+  random_replace_mask = round(rand(rows=samples, cols=number_of_features, min=0, max=1, seed=seed))
+
+  # set mask at column of feature_idx to 1 because we want to keep it
+  random_replace_mask[,feature_index] = matrix(1, rows=samples, cols=1)
+
+  X_with    = (random_replace_mask * x) + (X_sample * !random_replace_mask)
+  X_without = X_with
+  X_without[,feature_index] = X_sample[,feature_index]
+
+  #concat for call to model
+  X_test = rbind(X_with, X_without)
+}
+
+# Computes the shapley value after the samples have been prepared with shapley_samplig_prepare and fed throu a model.
+#
+# INPUT:
+# ---------------------------------------------------------------------------------------
+# P               Matrix of predictions from model.
+# ---------------------------------------------------------------------------------------
+#
+# OUTPUT:
+# -----------------------------------------------------------------------------
+# s               Shapley value
+# -----------------------------------------------------------------------------
+shapley_sampling_compute = function(Matrix[Double] P)
+return (Double phi_j_x)
+{
+  samples = nrow(P) / 2
+  # compute marginals
+  marginal_contributions = P[1:samples] - P[samples+1:2*samples]
+
+  phi_j_x = sum(marginal_contributions) / samples
+}
+
+
+
+
+

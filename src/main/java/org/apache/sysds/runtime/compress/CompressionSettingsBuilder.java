@@ -55,6 +55,7 @@ public class CompressionSettingsBuilder {
 	private double minimumCompressionRatio = 1.0;
 	private boolean isInSparkInstruction = false;
 	private SORT_TYPE sdcSortType = SORT_TYPE.MATERIALIZE;
+	private boolean oneHotDetect = false;
 
 	public CompressionSettingsBuilder() {
 
@@ -69,6 +70,7 @@ public class CompressionSettingsBuilder {
 		costType = CostType.valueOf(conf.getTextValue(DMLConfig.COMPRESSED_COST_MODEL));
 		transposeInput = conf.getTextValue(DMLConfig.COMPRESSED_TRANSPOSE);
 		seed = DMLScript.SEED;
+		oneHotDetect = conf.getBooleanValue(DMLConfig.COMPRESSED_ONEHOTDETECT);
 
 	}
 
@@ -90,6 +92,7 @@ public class CompressionSettingsBuilder {
 		this.maxColGroupCoCode = that.maxColGroupCoCode;
 		this.coCodePercentage = that.coCodePercentage;
 		this.minimumSampleSize = that.minimumSampleSize;
+		this.oneHotDetect = that.oneHotDetect;
 		return this;
 	}
 
@@ -167,6 +170,17 @@ public class CompressionSettingsBuilder {
 	 */
 	public CompressionSettingsBuilder setSeed(int seed) {
 		this.seed = seed;
+		return this;
+	}
+
+	/**
+	 * Set the flag for detecting one hot encodedness for the compression operation.
+	 * 
+	 * @param enabled The flag to enable or disable OHE checks.
+	 * @return The CompressionSettingsBuilder
+	 */
+	public CompressionSettingsBuilder setOneHotDetect(boolean enabled) {
+		this.oneHotDetect = enabled;
 		return this;
 	}
 
@@ -334,6 +348,6 @@ public class CompressionSettingsBuilder {
 		return new CompressionSettings(samplingRatio, samplePower, allowSharedDictionary, transposeInput, seed, lossy,
 			validCompressions, sortValuesByLength, columnPartitioner, maxColGroupCoCode, coCodePercentage,
 			minimumSampleSize, maxSampleSize, estimationType, costType, minimumCompressionRatio, isInSparkInstruction,
-			sdcSortType);
+			sdcSortType, oneHotDetect);
 	}
 }

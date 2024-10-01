@@ -25,6 +25,7 @@ import java.util.List;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.runtime.compress.CompressionSettings;
+import org.apache.sysds.runtime.compress.DMLCompressionException;
 import org.apache.sysds.runtime.compress.colgroup.AColGroup.CompressionType;
 import org.apache.sysds.runtime.compress.colgroup.indexes.ColIndexFactory;
 import org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex;
@@ -62,13 +63,14 @@ public interface CoCoderFactory {
 		// Use column group partitioner to create partitions of columns
 		AColumnCoCoder co = createColumnGroupPartitioner(cs.columnPartitioner, est, costEstimator, cs);
 
-		// Find out if any of the groups are empty.
-		final boolean containsEmptyConstOrIncompressable = containsEmptyConstOrIncompressable(colInfos);
+		boolean containsEmptyConstOrIncompressable = containsEmptyConstOrIncompressable(colInfos);
 
-		// if there are no empty or const columns then try cocode algorithms for all columns
-		if(!containsEmptyConstOrIncompressable)
+		// If no empty, constant, incompressible groups and not OHE, cocode all columns
+		if(!containsEmptyConstOrIncompressable && !cs.oneHotDetect) {
 			return co.coCodeColumns(colInfos, k);
+		}
 		else {
+
 			// filtered empty groups
 			final List<IColIndex> emptyCols = new ArrayList<>();
 			// filtered const groups
@@ -81,6 +83,12 @@ public interface CoCoderFactory {
 			final int nRow = colInfos.compressionInfo.get(0).getNumRows();
 
 			// filter groups
+			List<CompressedSizeInfoColGroup> currentCandidates = new ArrayList<>();
+			List<List<CompressedSizeInfoColGroup>> oheGroups = new ArrayList<>();
+			boolean isSample = est.getClass().getSimpleName().equals("ComEstSample");
+			if(est.getNnzCols() == null)
+				LOG.debug("NNZ is null");
+			int[] nnzCols = est.getNnzCols();
 			for(int i = 0; i < colInfos.compressionInfo.size(); i++) {
 				CompressedSizeInfoColGroup g = colInfos.compressionInfo.get(i);
 				if(g.isEmpty())
@@ -89,14 +97,54 @@ public interface CoCoderFactory {
 					constCols.add(g.getColumns());
 				else if(g.isIncompressable())
 					incompressable.add(g.getColumns());
-				else
+				else if(isCandidate(g)) {
+					currentCandidates.add(g);
+					String oheStatus = isHotEncoded(currentCandidates, isSample, nnzCols, nRow);
+					if(oheStatus.equals("NOT_OHE")) {
+						groups.addAll(currentCandidates);
+						currentCandidates.clear();
+					}
+					else if(oheStatus.equals("VALID_OHE")) {
+						LOG.debug("FOUND OHE");
+						oheGroups.add(new ArrayList<>(currentCandidates));
+						currentCandidates.clear();
+					}
+				}
+				else {
 					groups.add(g);
+					if(!currentCandidates.isEmpty()) {
+						for(CompressedSizeInfoColGroup gg : currentCandidates)
+							groups.add(gg);
+						currentCandidates.clear();
+					}
+				}
+			}
+
+			// If currentCandidates is not empty, add it to groups
+			if(!currentCandidates.isEmpty()) {
+				for(CompressedSizeInfoColGroup gg : currentCandidates) {
+					groups.add(gg);
+				}
+				currentCandidates.clear();
 			}
 
 			// overwrite groups.
 			colInfos.compressionInfo = groups;
 
+			for(List<CompressedSizeInfoColGroup> oheGroup : oheGroups) {
+				final List<IColIndex> oheIndexes = new ArrayList<>();
+				for(CompressedSizeInfoColGroup g : oheGroup) {
+					oheIndexes.add(g.getColumns());
+				}
+				final IColIndex idx = ColIndexFactory.combineIndexes(oheIndexes);
+				groups.add(new CompressedSizeInfoColGroup(idx, nRow, CompressionType.OHE));
+			}
+
 			// cocode remaining groups
+			if(colInfos.getInfo().size() <= 0 && incompressable.size() <= 0 && emptyCols.size() <= 0 &&
+				constCols.size() == 0 && oheGroups.size() <= 0)
+				throw new DMLCompressionException("empty cocoders 1");
+
 			if(!groups.isEmpty()) {
 				colInfos = co.coCodeColumns(colInfos, k);
 			}
@@ -118,9 +166,13 @@ public interface CoCoderFactory {
 				colInfos.compressionInfo.add(new CompressedSizeInfoColGroup(idx, nRow, CompressionType.UNCOMPRESSED));
 			}
 
+			if(colInfos.getInfo().size() <= 0)
+				throw new DMLCompressionException("empty cocoders 2");
+
 			return colInfos;
 
 		}
+
 	}
 
 	private static boolean containsEmptyConstOrIncompressable(CompressedSizeInfo colInfos) {
@@ -128,6 +180,47 @@ public interface CoCoderFactory {
 			if(g.isEmpty() || g.isConst() || g.isIncompressable())
 				return true;
 		return false;
+	}
+
+	private static boolean isCandidate(CompressedSizeInfoColGroup g) {
+		// Check if the column has exactly 2 distinct value other than 0
+		return(g.getNumVals() == 2);
+	}
+
+	private static String isHotEncoded(List<CompressedSizeInfoColGroup> colGroups, boolean isSample, int[] nnzCols,
+		int numRows) {
+		if(colGroups.isEmpty()) {
+			return "NOT_OHE";
+		}
+
+		int numCols = colGroups.size();
+		int totalNumVals = 0;
+		int totalNumOffs = 0;
+
+		for(int i = 0; i < colGroups.size(); i++) {
+			CompressedSizeInfoColGroup g = colGroups.get(i);
+			totalNumVals += g.getNumVals();
+			if(totalNumVals / 2 > numCols)
+				return "NOT_OHE";
+			// If sampling is used, get the number of non-zeroes from the nnzCols array
+			if(isSample && nnzCols != null) {
+				totalNumOffs += nnzCols[i];
+			}
+			else {
+				totalNumOffs += g.getNumOffs();
+			}
+			if(totalNumOffs > numRows) {
+				return "NOT_OHE";
+			}
+		}
+
+		// Check if the current candidates form a valid OHE group
+		if((totalNumVals / 2) == numCols && totalNumOffs == numRows) {
+			return "VALID_OHE";
+		}
+
+		// If still under the row limit, it's potentially OHE
+		return "POTENTIAL_OHE";
 	}
 
 	private static AColumnCoCoder createColumnGroupPartitioner(PartitionerType type, AComEst est,

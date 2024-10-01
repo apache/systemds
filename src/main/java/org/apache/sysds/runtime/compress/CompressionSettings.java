@@ -128,11 +128,14 @@ public class CompressionSettings {
 	/** The sorting type used in sorting/joining offsets to create SDC groups */
 	public final SORT_TYPE sdcSortType;
 
+	/** Flag to detect one hot encodedness */
+	public final boolean oneHotDetect;
+
 	protected CompressionSettings(double samplingRatio, double samplePower, boolean allowSharedDictionary,
 		String transposeInput, int seed, boolean lossy, EnumSet<CompressionType> validCompressions,
 		boolean sortValuesByLength, PartitionerType columnPartitioner, int maxColGroupCoCode, double coCodePercentage,
 		int minimumSampleSize, int maxSampleSize, EstimationType estimationType, CostType costComputationType,
-		double minimumCompressionRatio, boolean isInSparkInstruction, SORT_TYPE sdcSortType) {
+		double minimumCompressionRatio, boolean isInSparkInstruction, SORT_TYPE sdcSortType, boolean oneHotDetect) {
 		this.samplingRatio = samplingRatio;
 		this.samplePower = samplePower;
 		this.allowSharedDictionary = allowSharedDictionary;
@@ -151,6 +154,7 @@ public class CompressionSettings {
 		this.minimumCompressionRatio = minimumCompressionRatio;
 		this.isInSparkInstruction = isInSparkInstruction;
 		this.sdcSortType = sdcSortType;
+		this.oneHotDetect = oneHotDetect;
 		if(LOG.isDebugEnabled())
 			LOG.debug(this.toString());
 	}
@@ -168,6 +172,7 @@ public class CompressionSettings {
 		sb.append("\t Partitioner: " + columnPartitioner);
 		sb.append("\t Lossy: " + lossy);
 		sb.append("\t Cost Computation Type: " + costComputationType);
+		sb.append("\t One Hot Encoding Check Flag: " + oneHotDetect);
 		if(samplingRatio < 1.0)
 			sb.append("\t Estimation Type: " + estimationType);
 		return sb.toString();

@@ -25,6 +25,7 @@ import java.util.List;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.runtime.compress.CompressedMatrixBlock;
+import org.apache.sysds.runtime.compress.DMLCompressionException;
 
 /**
  * A helper reusable object for maintaining information about estimated compression
@@ -95,6 +96,9 @@ public class CompressedSizeInfo {
 		StringBuilder sb = new StringBuilder();
 		if(compressionInfo == null)
 			return "";
+		if(compressionInfo.size()<=0)
+			throw new DMLCompressionException("Size of compression info is <= 0");
+
 		sb.append("[");
 		sb.append(compressionInfo.get(0).getNumVals());
 		for(int i = 1; i < compressionInfo.size(); i++)
@@ -106,6 +110,8 @@ public class CompressedSizeInfo {
 	public String getNrColumnsString() {
 		StringBuilder sb = new StringBuilder();
 		if(compressionInfo == null)
+			return "";
+		if(compressionInfo.size()<=0)
 			return "";
 		sb.append("[");
 		sb.append(compressionInfo.get(0).getColumns().size());

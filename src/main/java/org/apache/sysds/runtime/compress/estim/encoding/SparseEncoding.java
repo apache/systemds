@@ -391,10 +391,10 @@ public class SparseEncoding extends AEncode {
 		final int[] counts = map.getCounts();
 
 		if(cs.isRLEAllowed())
-			return new EstimationFactors(map.getUnique(), map.size(), largestOffs, counts, 0, nRows, map.countRuns(off),
+			return new EstimationFactors(getUnique(), map.size(), largestOffs, counts, 0, nRows, map.countRuns(off),
 				false, true, matrixSparsity, tupleSparsity);
 		else
-			return new EstimationFactors(map.getUnique(), map.size(), largestOffs, counts, 0, nRows, false, true,
+			return new EstimationFactors(getUnique(), map.size(), largestOffs, counts, 0, nRows, false, true,
 				matrixSparsity, tupleSparsity);
 
 	}

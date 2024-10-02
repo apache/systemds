@@ -516,12 +516,12 @@ public class SparseBlockCSC extends SparseBlock{
 
 	@Override
 	public boolean isEmpty(int r) {
-		boolean checkEmpty = true;
+		boolean empty = true;
 		for(int i = 0; i<_size; i++){
 			if(_indexes[i] == r)
 				return false;
 		}
-		return checkEmpty;
+		return empty;
 	}
 
 	public boolean isEmptyCol(int c){
@@ -715,6 +715,35 @@ public class SparseBlockCSC extends SparseBlock{
 	private void decrPtr(int rl, int cnt) {
 		for( int i=rl; i<_ptr.length; i++ )
 			_ptr[i]-=cnt;
+	}
+
+	private int internPosFIndexLTE(int r, int c) {
+		int pos = posCol(c);
+		int len = sizeCol(c);
+
+		//search for existing row index in [pos,pos+len)
+		int index = Arrays.binarySearch(_indexes, pos, pos+len, r);
+		if( index >= 0  )
+			return (index < pos+len) ? index : -1;
+
+		//search lt row index (see binary search)
+		index = Math.abs( index+1 );
+		return (index-1 >= pos) ? index-1 : -1;
+	}
+
+
+	private int internPosFIndexGTE(int r, int c) {
+		int pos = posCol(c);
+		int len = sizeCol(c);
+
+		//search for existing row index
+		int index = Arrays.binarySearch(_indexes, pos, pos+len, r);
+		if( index >= 0  )
+			return (index < pos+len) ? index : -1;
+
+		//search gt row index (see binary search)
+		index = Math.abs( index+1 );
+		return (index < pos+len) ? index : -1;
 	}
 
 

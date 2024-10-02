@@ -50,10 +50,10 @@ public class Sandbox extends AutomatedTestBase {
 
 			SparseBlockCSC newBlock = new SparseBlockCSC(sblock);
 
-			newBlock.reset(1, 3, 3);
+			newBlock.reset(3, 1, 3);
 
 			//System.out.println(newBlock.size(1));
-			System.out.println(newBlock.size());
+			System.out.println(newBlock.size(1, 4));
 
 
 			System.out.println("values:");

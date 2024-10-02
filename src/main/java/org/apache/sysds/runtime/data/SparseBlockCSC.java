@@ -423,7 +423,6 @@ public class SparseBlockCSC extends SparseBlock{
 	public void reset(int r, int ennz, int maxnnz) {
 		ArrayList<Integer> cols = new ArrayList();
 		ArrayList<Integer> posIdx = new ArrayList<>();
-
 		// find columns containing marked row index and
 		// position in indexes
 		for(int i = 0; i<_ptr.length-1; i++){
@@ -434,23 +433,35 @@ public class SparseBlockCSC extends SparseBlock{
 				}
 			}
 		}
-
 		// reduce pointer array.
 		for(int c : cols){
 			decrPtr(c+1, 1);
 		}
-
 		// adapt indexes and values
 		for(int i = posIdx.size()-1; i >=0; i--){
-			//TODO: case if last column in my exmaple is deleted (80)
-			System.arraycopy(_indexes, posIdx.get(i)+1, _indexes, posIdx.get(i), _size-(posIdx.get(i)+1));
-			System.arraycopy(_values, posIdx.get(i)+1, _values, posIdx.get(i), _size-(posIdx.get(i)+1));
-			int offset = _size-i-1;
-			_indexes[i+offset] = -1;
-			_values[i+offset] = 0;
+			if(posIdx.get(i) < _size-1) {
+				System.arraycopy(_indexes, posIdx.get(i) + 1, _indexes, posIdx.get(i), _size - (posIdx.get(i) + 1));
+				System.arraycopy(_values, posIdx.get(i) + 1, _values, posIdx.get(i), _size - (posIdx.get(i) + 1));
+			}
+			//TODO: decide to use this or not
+			//int offset = _size-i-1;
+			//_indexes[i+offset] = -1;
+			//_values[i+offset] = 0;
 		}
 		_size -= posIdx.size();
+	}
 
+	public void resetCol(int c){
+		int pos = posCol(c);
+		int len = sizeCol(c);
+
+		if( len > 0 ) {
+			//overlapping array copy (shift rhs values left)
+			System.arraycopy(_indexes, pos+len, _indexes, pos, _size-(pos+len));
+			System.arraycopy(_values, pos+len, _values, pos, _size-(pos+len));
+			_size -= len;
+			decrPtr(c+1, len);
+		}
 	}
 
 	@Override
@@ -461,19 +472,41 @@ public class SparseBlockCSC extends SparseBlock{
 	@Override
 	public int size(int r) {
 		if(r < 0)
-			throw new RuntimeException("Row index has to be zero or larger");
-		
-		int countRow = 0;
-		for(int idx : _indexes){
-			if(idx == r)
-				countRow++;
+			throw new RuntimeException("Row index has to be zero or larger.");
+
+		int nnz = 0;
+		for(int i = 0; i<_size; i++){
+			if(_indexes[i] == r)
+				nnz++;
 		}
-		return countRow;
+		return nnz;
+	}
+
+	public int sizeCol(int c){
+		return _ptr[c+1] - _ptr[c];
 	}
 
 	@Override
 	public long size(int rl, int ru) {
-		return 0;
+		if(rl < 0 || ru > _rlen)
+			throw new RuntimeException("Incorrect row boundaries.");
+
+		int nnz = 0;
+		int row = -1;
+		for(int i = 0; i<_size; i++){
+			row = _indexes[i];
+			for(int j = rl; j < ru; j++){
+				if(row == j){
+					nnz++;
+					break;
+				}
+			}
+		}
+		return nnz;
+	}
+
+	public long sizeCol(int cl, int cu){
+		return _ptr[cu] - _ptr[cl];
 	}
 
 	@Override
@@ -483,7 +516,16 @@ public class SparseBlockCSC extends SparseBlock{
 
 	@Override
 	public boolean isEmpty(int r) {
-		return false;
+		boolean checkEmpty = true;
+		for(int i = 0; i<_size; i++){
+			if(_indexes[i] == r)
+				return false;
+		}
+		return checkEmpty;
+	}
+
+	public boolean isEmptyCol(int c){
+		return (_ptr[c+1] - _ptr[c] == 0);
 	}
 
 	@Override

@@ -23,6 +23,7 @@ import org.apache.sysds.utils.MemoryEstimates;
 
 import java.io.DataInput;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Iterator;
 
@@ -353,29 +354,36 @@ public class SparseBlockCSC extends SparseBlock{
 
 	@Override
 	public void allocate(int r) {
-
+		//do nothing everything preallocated
 	}
 
 	@Override
 	public void allocate(int r, int nnz) {
-
+		//do nothing everything preallocated
 	}
 
 	@Override
 	public void allocate(int r, int ennz, int maxnnz) {
-
+		//do nothing everything preallocated
 	}
 
 	@Override
 	public void compact(int r) {
-
+		//do nothing everything preallocated
 	}
 
 	@Override
 	public int numRows() {
-		return 6;
+		if(_rlen > -1)
+			return _rlen;
+		else
+			return Arrays.stream(_indexes).max().getAsInt();
 	}
 
+	/**
+	 * Get the number of columns in the CSC block
+	 * @return number of columns
+	 */
 	public int numCols() {
 		return _ptr.length - 1;
 	}
@@ -387,26 +395,61 @@ public class SparseBlockCSC extends SparseBlock{
 
 	@Override
 	public boolean isContiguous() {
-		return false;
+		return true;
 	}
 
 	@Override
 	public boolean isAllocated(int r) {
-		return false;
+		return true;
 	}
 
 	@Override
 	public void reset() {
-
+		if( _size > 0 ) {
+			Arrays.fill(_ptr, 0);
+			_size = 0;
+		}
 	}
 
 	@Override
 	public void reset(int ennz, int maxnnz) {
-
+		if( _size > 0 ) {
+			Arrays.fill(_ptr, 0);
+			_size = 0;
+		}
 	}
 
 	@Override
 	public void reset(int r, int ennz, int maxnnz) {
+		ArrayList<Integer> cols = new ArrayList();
+		ArrayList<Integer> posIdx = new ArrayList<>();
+
+		// find columns containing marked row index and
+		// position in indexes
+		for(int i = 0; i<_ptr.length-1; i++){
+			for(int j = _ptr[i]; j < _ptr[i+1]; j++){
+				if(_indexes[j] == r) {
+					cols.add(i);
+					posIdx.add(j);
+				}
+			}
+		}
+
+		// reduce pointer array.
+		for(int c : cols){
+			decrPtr(c+1, 1);
+		}
+
+		// adapt indexes and values
+		for(int i = posIdx.size()-1; i >=0; i--){
+			//TODO: case if last column in my exmaple is deleted (80)
+			System.arraycopy(_indexes, posIdx.get(i)+1, _indexes, posIdx.get(i), _size-(posIdx.get(i)+1));
+			System.arraycopy(_values, posIdx.get(i)+1, _values, posIdx.get(i), _size-(posIdx.get(i)+1));
+			int offset = _size-i-1;
+			_indexes[i+offset] = -1;
+			_values[i+offset] = 0;
+		}
+		_size -= posIdx.size();
 
 	}
 
@@ -417,7 +460,15 @@ public class SparseBlockCSC extends SparseBlock{
 
 	@Override
 	public int size(int r) {
-		return _ptr[r+1] - _ptr[r];
+		if(r < 0)
+			throw new RuntimeException("Row index has to be zero or larger");
+		
+		int countRow = 0;
+		for(int idx : _indexes){
+			if(idx == r)
+				countRow++;
+		}
+		return countRow;
 	}
 
 	@Override
@@ -479,6 +530,7 @@ public class SparseBlockCSC extends SparseBlock{
 	public int posCol(int c) {
 		return _ptr[c];
 	}
+
 
 	@Override
 	public boolean set(int r, int c, double v) {
@@ -615,6 +667,12 @@ public class SparseBlockCSC extends SparseBlock{
 		//reallocate arrays and copy old values
 		_indexes = Arrays.copyOf(_indexes, capacity);
 		_values = Arrays.copyOf(_values, capacity);
+	}
+
+
+	private void decrPtr(int rl, int cnt) {
+		for( int i=rl; i<_ptr.length; i++ )
+			_ptr[i]-=cnt;
 	}
 
 

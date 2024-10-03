@@ -66,8 +66,8 @@ class TestKMeans(unittest.TestCase):
         """
         features = self.generate_matrices_for_k_means((500, 2), seed=1304)
         [c, _] = kmeans(features, k=4).compute()
-        C = self.sds.from_numpy( c)
-        elm = self.sds.from_numpy( np.array([[1, 1], [-1, 1], [-1, -1], [1, -1]]))
+        C = self.sds.from_numpy(c)
+        elm = self.sds.from_numpy(np.array([[1, 1], [-1, 1], [-1, -1], [1, -1]]))
         res = kmeansPredict(elm, C).compute()
         corners = set()
         for x in res:
@@ -81,15 +81,14 @@ class TestKMeans(unittest.TestCase):
                 corners.add("nn")
         self.assertTrue(len(corners) == 4)
 
-
     def generate_matrices_for_k_means(self, dims, seed: int = 1234):
         np.random.seed(seed)
         mu, sigma = 0, 0.1
-        s = np.random.normal(mu, sigma,  dims[0] * dims[1])
+        s = np.random.normal(mu, sigma, dims[0] * dims[1])
         m1 = np.array(s, dtype=np.double)
         m1 = np.reshape(m1, (dims[0], dims[1]))
 
-        return self.sds.from_numpy( m1)
+        return self.sds.from_numpy(m1)
 
 
 if __name__ == "__main__":

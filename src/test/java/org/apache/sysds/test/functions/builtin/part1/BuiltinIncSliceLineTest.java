@@ -17,7 +17,7 @@
  * under the License.
  */
 
-package org.apache.sysds.test.functions.builtin.part2;
+package org.apache.sysds.test.functions.builtin.part1;
 
 import org.junit.Assert;
 import org.junit.Test;
@@ -218,6 +218,16 @@ public class BuiltinIncSliceLineTest extends AutomatedTestBase {
 	}
 
 	@Test
+	public void testTop4HybridTPSelFullFewAddedDisabledScore() {
+		runIncSliceLineTest(4, "e", false, true,2, 1, false, false, false, ExecMode.HYBRID, true, false);
+	}
+
+	@Test
+	public void testTop4HybridTPSelFullFewAddedDisabledSize() {
+		runIncSliceLineTest(4, "e", false, true,2, 1, false, false, false, ExecMode.HYBRID, false, true);
+	}
+
+	@Test
 	public void testTop4HybridDPSelFullFewAddedRemoved() {
 		runIncSliceLineTest(4, "e", true, true,2, 1, false, true, false, ExecMode.HYBRID);
 	}
@@ -334,7 +344,7 @@ public class BuiltinIncSliceLineTest extends AutomatedTestBase {
 
 	@Test
 	public void testTop10SinglenodeTPFullManyAdded() {
-		runIncSliceLineTest(10, "e", false, false,99 , 1, false, false, false, ExecMode.SINGLE_NODE);
+		runIncSliceLineTest(10, "e", false, false,90 , 1, false, false, false, ExecMode.SINGLE_NODE);
 	}
 
 	@Test
@@ -349,7 +359,7 @@ public class BuiltinIncSliceLineTest extends AutomatedTestBase {
 
 	@Test
 	public void testTop10SinglenodeTPFullManyAddedRemoved() {
-		runIncSliceLineTest(10, "e", false, false,99 , 1, false, true, false, ExecMode.SINGLE_NODE);
+		runIncSliceLineTest(10, "e", false, false,90 , 1, false, true, false, ExecMode.SINGLE_NODE);
 	}
 
 	@Test
@@ -409,7 +419,7 @@ public class BuiltinIncSliceLineTest extends AutomatedTestBase {
 
 	@Test
 	public void testTop10HybridTPSelE2FullManyAddedRemoved() {
-		runIncSliceLineTest(10, "oe", false, true, 50, 99, false, true,  false,  ExecMode.HYBRID);
+		runIncSliceLineTest(10, "oe", false, true, 50, 90, false, true,  false,  ExecMode.HYBRID);
 	}
 
 	@Test
@@ -559,7 +569,7 @@ public class BuiltinIncSliceLineTest extends AutomatedTestBase {
 
 	@Test
 	public void testTop10SinglenodeTPFullManyAddedOnlyNull() {
-		runIncSliceLineTest(10, "e", false, false,99 , 1, true, false,true, ExecMode.SINGLE_NODE);
+		runIncSliceLineTest(10, "e", false, false,90 , 1, true, false,true, ExecMode.SINGLE_NODE);
 	}
 
 	@Test
@@ -574,7 +584,7 @@ public class BuiltinIncSliceLineTest extends AutomatedTestBase {
 
 	@Test
 	public void testTop10SinglenodeTPFullManyAddedOnlyNullRemoved() {
-		runIncSliceLineTest(10, "e", false, false,99 , 1, true, true,true, ExecMode.SINGLE_NODE);
+		runIncSliceLineTest(10, "e", false, false,90 , 1, true, true,true, ExecMode.SINGLE_NODE);
 	}
 
 	@Test
@@ -982,7 +992,7 @@ public class BuiltinIncSliceLineTest extends AutomatedTestBase {
 				
 		};
 
-		runIncSliceLineTest(newX, e, 10, "e", false, true, 50, 1, false, false, true, ExecMode.SINGLE_NODE);
+		runIncSliceLineTest(newX, e, 10, "e", false, true, 10, 1, false, false, true, ExecMode.SINGLE_NODE, false, false);
 	}
 
 	// @Test
@@ -1049,17 +1059,16 @@ public class BuiltinIncSliceLineTest extends AutomatedTestBase {
 	}
 
 	private void runIncSliceLineTest(int K, String err, boolean dp, boolean selCols, int proportionOfTuplesAddedInPercent, int proportionOfTuplesRemovedInPercent, boolean onlyNullEAdded, boolean removeTuples, boolean encodeLat, ExecMode mode) {
-		
-		runIncSliceLineTest(null, null, K, err, dp, selCols, proportionOfTuplesAddedInPercent, proportionOfTuplesRemovedInPercent, onlyNullEAdded, removeTuples, encodeLat, mode);
+		runIncSliceLineTest(null, null, K, err, dp, selCols, proportionOfTuplesAddedInPercent, proportionOfTuplesRemovedInPercent, onlyNullEAdded, removeTuples, encodeLat, mode, false, false);
+	}
 
+	private void runIncSliceLineTest(int K, String err, boolean dp, boolean selCols, int proportionOfTuplesAddedInPercent, int proportionOfTuplesRemovedInPercent, boolean onlyNullEAdded, boolean removeTuples, boolean encodeLat, ExecMode mode, boolean disableScore, boolean disableSize) {
+		runIncSliceLineTest(null, null, K, err, dp, selCols, proportionOfTuplesAddedInPercent, proportionOfTuplesRemovedInPercent, onlyNullEAdded, removeTuples, encodeLat, mode, disableScore, disableSize);
 	}
 
 
-	private void runIncSliceLineTest(double[][] customX, double[][] customE,int K, String err,
-		boolean dp, boolean selCols, int proportionOfTuplesAddedInPercent,
-		int proportionOfTuplesRemovedInPercent, boolean onlyNullEAdded, boolean removeTuples,
-		boolean encodeLat, ExecMode mode)
-	{
+	private void runIncSliceLineTest(double[][] customX, double[][] customE,int K, String err, boolean dp, boolean selCols, int proportionOfTuplesAddedInPercent, int proportionOfTuplesRemovedInPercent, boolean onlyNullEAdded, boolean removeTuples, boolean encodeLat, ExecMode mode, boolean disableScore, boolean disableSize) {
+	 
 		ExecMode platformOld = setExecMode(mode);
 		loadTestConfiguration(getTestConfiguration(TEST_NAME2));
 		String HOME = SCRIPT_DIR + TEST_DIR;
@@ -1138,7 +1147,7 @@ public class BuiltinIncSliceLineTest extends AutomatedTestBase {
 			fullDMLScriptName = HOME + TEST_NAME2 + ".dml";
 			programArgs = new String[] { "-args", input("addedX"), input("oldX"), input("oldE"), input("addedE"), String.valueOf(K),
 					String.valueOf(!dp).toUpperCase(), String.valueOf(selCols).toUpperCase(), String.valueOf(encodeLat).toUpperCase(),  input("indicesRemoved"),
-					String.valueOf(VERBOSE).toUpperCase(), output("R1"), output("R2") };
+					String.valueOf(VERBOSE).toUpperCase(), output("R1"), output("R2"), String.valueOf(disableScore).toUpperCase(), String.valueOf(disableSize).toUpperCase() };
 
 			runTest(true, false, null, -1);
 
@@ -1272,6 +1281,9 @@ public class BuiltinIncSliceLineTest extends AutomatedTestBase {
 
 			double[][] indicesRemoved = new double[1][1];
 			indicesRemoved[0][0] = 0;
+
+			boolean disableScore = false;
+			boolean disableSize = false;
 			
 
 			writeInputMatrixWithMTD("addedX", addedX, false);
@@ -1283,7 +1295,7 @@ public class BuiltinIncSliceLineTest extends AutomatedTestBase {
 			fullDMLScriptName = HOME + TEST_NAME2 + ".dml";
 			programArgs = new String[] { "-args", input("addedX"), input("oldX"), input("oldE"), input("addedE"), String.valueOf(K),
 					String.valueOf(!dp).toUpperCase(), String.valueOf(selCols).toUpperCase(), String.valueOf(encodeLat).toUpperCase(), input("indicesRemoved"),
-					String.valueOf(VERBOSE).toUpperCase(), output("R1"), output("R2") };
+					String.valueOf(VERBOSE).toUpperCase(), output("R1"), output("R2"), String.valueOf(disableScore).toUpperCase(), String.valueOf(disableSize).toUpperCase() };
 
 			runTest(true, false, null, -1);
 
@@ -1295,7 +1307,8 @@ public class BuiltinIncSliceLineTest extends AutomatedTestBase {
 			TestUtils.compareMatrices(ret1, ret2, 1e-2);
 
 			Assert.assertFalse(heavyHittersContainsSubString("evalSlice"));
-		} finally {
+		}
+		finally {
 			rtplatform = platformOld;
 		}
 	}

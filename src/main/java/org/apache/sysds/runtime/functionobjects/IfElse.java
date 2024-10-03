@@ -39,4 +39,9 @@ public class IfElse extends TernaryValueFunction
 	public double execute(double in1, double in2, double in3) {
 		return (in1 != 0) ? in2 : in3;
 	}
+
+	@Override
+	public ValueFunction setOp2Constant(double cnt) {
+		throw new UnsupportedOperationException("Invalid call to set op2 on ternary ifElse");
+	}
 }

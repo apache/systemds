@@ -50,6 +50,7 @@ import org.apache.sysds.runtime.data.SparseRow;
 import org.apache.sysds.runtime.data.SparseRowVector;
 import org.apache.sysds.runtime.functionobjects.DiagIndex;
 import org.apache.sysds.runtime.functionobjects.RevIndex;
+import org.apache.sysds.runtime.functionobjects.RollIndex;
 import org.apache.sysds.runtime.functionobjects.SortIndex;
 import org.apache.sysds.runtime.functionobjects.SwapIndex;
 import org.apache.sysds.runtime.instructions.spark.data.IndexedMatrixValue;
@@ -94,6 +95,7 @@ public class LibMatrixReorg {
 	private enum ReorgType {
 		TRANSPOSE,
 		REV,
+		ROLL,
 		DIAG,
 		RESHAPE,
 		SORT,
@@ -123,6 +125,9 @@ public class LibMatrixReorg {
 					return transpose(in, out);
 			case REV:
 				return rev(in, out);
+			case ROLL:
+				RollIndex rix = (RollIndex) op.fn;
+				return roll(in, out, rix.getShift());
 			case DIAG:
 				return diag(in, out);
 			case SORT:
@@ -142,6 +147,7 @@ public class LibMatrixReorg {
 			case TRANSPOSE:
 				return transposeInPlace(in, op.getNumThreads());
 			case REV:
+			case ROLL:
 			case SORT:
 				throw new DMLRuntimeException("Not implemented inplace: " + op.fn.getClass().getSimpleName());
 			default:
@@ -417,6 +423,55 @@ public class LibMatrixReorg {
 				outblk2.leftIndexingOperations(tmp2, 0, tmp2.getNumRows()-1, 0, tmpblk.getNumColumns()-1, outblk2, UpdateType.INPLACE_PINNED);
 				out.add(new IndexedMatrixValue(outix2, outblk2));
 			}
+		}
+	}
+
+	public static MatrixBlock roll(MatrixBlock in, MatrixBlock out, int shift) {
+		//sparse-safe operation
+		if (in.isEmptyBlock(false))
+			return out;
+
+		//special case: row vector
+		if (in.rlen == 1) {
+			out.copy(in);
+			return out;
+		}
+
+		if (in.sparse)
+			rollSparse(in, out, shift);
+		else
+			rollDense(in, out, shift);
+
+		return out;
+	}
+
+	public static void roll(IndexedMatrixValue in, long rlen, int blen, int shift, ArrayList<IndexedMatrixValue> out) {
+		MatrixIndexes inMtxIdx = in.getIndexes();
+		MatrixBlock inMtxBlk = (MatrixBlock) in.getValue();
+		shift %= ((rlen != 0) ? (int) rlen : 1); // Handle row length boundaries for shift
+
+		long inRowIdx = UtilFunctions.computeCellIndex(inMtxIdx.getRowIndex(), blen, 0) - 1;
+
+		int totalCopyLen = 0;
+		while (totalCopyLen < inMtxBlk.getNumRows()) {
+			// Calculate row and block index for the current part
+			long outRowIdx = (inRowIdx + shift) % rlen;
+			long outBlkIdx = UtilFunctions.computeBlockIndex(outRowIdx + 1, blen);
+			int outBlkLen = UtilFunctions.computeBlockSize(rlen, outBlkIdx, blen);
+			int outRowIdxInBlk = (int) (outRowIdx % blen);
+
+			// Calculate copy length
+			int copyLen = Math.min((int) (outBlkLen - outRowIdxInBlk), inMtxBlk.getNumRows() - totalCopyLen);
+
+			// Create the output block and copy data
+			MatrixIndexes outMtxIdx = new MatrixIndexes(outBlkIdx, inMtxIdx.getColumnIndex());
+			MatrixBlock outMtxBlk = new MatrixBlock(outBlkLen, inMtxBlk.getNumColumns(), inMtxBlk.isInSparseFormat());
+			copyMtx(inMtxBlk, outMtxBlk, totalCopyLen, outRowIdxInBlk, copyLen, false, false);
+			out.add(new IndexedMatrixValue(outMtxIdx, outMtxBlk));
+
+			// Update counters for next iteration
+			totalCopyLen += copyLen;
+			inRowIdx += totalCopyLen;
 		}
 	}
 
@@ -957,7 +1012,10 @@ public class LibMatrixReorg {
 		
 		else if( op.fn instanceof RevIndex ) //rev
 			return ReorgType.REV;
-		
+
+		else if( op.fn instanceof RollIndex ) //roll
+			return ReorgType.ROLL;
+
 		else if( op.fn instanceof DiagIndex ) //diag
 			return ReorgType.DIAG;
 		
@@ -2243,7 +2301,89 @@ public class LibMatrixReorg {
 			if( !a.isEmpty(i) )
 				c.set(m-1-i, a.get(i), true);
 	}
-	
+
+	private static void rollDense(MatrixBlock in, MatrixBlock out, int shift) {
+		final int m = in.rlen;
+		shift %= (m != 0 ? m : 1); // roll matrix with axis=none
+
+		copyDenseMtx(in, out, 0, shift, m - shift, false, true);
+		copyDenseMtx(in, out, m - shift, 0, shift, true, true);
+	}
+
+	private static void rollSparse(MatrixBlock in, MatrixBlock out, int shift) {
+		final int m = in.rlen;
+		shift %= (m != 0 ? m : 1); // roll matrix with axis=0
+
+		copySparseMtx(in, out, 0, shift, m - shift, false, true);
+		copySparseMtx(in, out, m-shift, 0, shift, false, true);
+	}
+
+	public static void copyMtx(MatrixBlock in, MatrixBlock out, int inStart, int outStart, int copyLen,
+							   boolean isAllocated, boolean copyTotalNonZeros) {
+		if (in.isInSparseFormat()){
+			copySparseMtx(in, out, inStart, outStart, copyLen, isAllocated, copyTotalNonZeros);
+		} else {
+			copyDenseMtx(in, out, inStart, outStart, copyLen, isAllocated, copyTotalNonZeros);
+		}
+	}
+
+	public static void copyDenseMtx(MatrixBlock in, MatrixBlock out, int inIdx, int outIdx, int copyLen,
+									boolean isAllocated, boolean copyTotalNonZeros) {
+		int clen = in.clen;
+
+		// set basic meta data and allocate output
+		if (!isAllocated){
+			out.sparse = false;
+			if (copyTotalNonZeros) out.nonZeros = in.nonZeros;
+			out.allocateDenseBlock(false);
+		}
+
+		// copy all rows into target positions
+		if (clen == 1) { //column vector
+			double[] a = in.getDenseBlockValues();
+			double[] c = out.getDenseBlockValues();
+
+			System.arraycopy(a, inIdx, c, outIdx, copyLen);
+		} else {
+			DenseBlock a = in.getDenseBlock();
+			DenseBlock c = out.getDenseBlock();
+
+			while (copyLen > 0) {
+				System.arraycopy(a.values(inIdx), a.pos(inIdx),
+						c.values(outIdx), c.pos(outIdx), clen);
+
+				inIdx++; outIdx++; copyLen--;
+			}
+		}
+	}
+
+	private static void copySparseMtx(MatrixBlock in, MatrixBlock out, int inIdx, int outIdx, int copyLen,
+									  boolean isAllocated, boolean copyTotalNonZeros) {
+		//set basic meta data and allocate output
+		if (!isAllocated){
+			out.sparse = true;
+			if (copyTotalNonZeros) out.nonZeros = in.nonZeros;
+			out.allocateSparseRowsBlock(false);
+		}
+
+		SparseBlock a = in.getSparseBlock();
+		SparseBlock c = out.getSparseBlock();
+
+		for (int i = 0; i < copyLen; i++) {
+			if (!a.isEmpty(inIdx)){
+				final int apos = a.pos(inIdx);
+				final int alen = a.size(inIdx) + apos;
+				final int[] aix = a.indexes(inIdx);
+				final double[] avals = a.values(inIdx);
+
+				// copy only non-zero elements
+				for (int k = apos; k < alen; k++)
+					c.set(outIdx, aix[k], avals[k]);
+			}
+			inIdx++; outIdx++;
+		}
+	}
+
 	/**
 	 * Generic implementation diagV2M
 	 * (in most-likely DENSE, out most likely SPARSE)
@@ -3119,7 +3259,9 @@ public class LibMatrixReorg {
 		if( in.isEmptyBlock(false) )
 			return ret;
 		
-		if( SHALLOW_COPY_REORG && m == rlen2 ) {
+		if( SHALLOW_COPY_REORG && m == rlen2 && select == null ) {
+			// the condition m==rlen2 is not enough with non-empty 1-row input but empty 
+			// 1-row select vector because if emptyReturn should output a single empty row
 			ret.sparse = in.sparse;
 			if( ret.sparse )
 				ret.sparseBlock = in.sparseBlock;
@@ -3130,10 +3272,8 @@ public class LibMatrixReorg {
 		{
 			//note: output dense or sparse
 			for( int i=0, cix=0; i<m; i++ )
-				if( flags[i] ) {
-					ret.appendRow(cix++, in.sparseBlock.get(i),
-						!SHALLOW_COPY_REORG);
-				}
+				if( flags[i] )
+					ret.appendRow(cix++, in.sparseBlock.get(i), !SHALLOW_COPY_REORG);
 		}
 		else if( !in.sparse && !ret.sparse )  //DENSE <- DENSE
 		{

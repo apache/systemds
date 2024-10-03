@@ -19,7 +19,21 @@
 #
 #-------------------------------------------------------------
 
-X = rand(rows=10000, cols=10);
-C = kmeans(X=X, k=4, runs=10, eps=1e-8, max_iter=20);
-print(sum(C));
+# Read command line arguments
+args <- commandArgs(TRUE)
 
+# Set options for numeric precision
+options(digits=22)
+
+# Load required libraries
+library("Matrix")
+library("matrixStats")
+
+# Read matrix X from Matrix Market format files
+X = as.matrix(readMM(paste(args[1], "X.mtx", sep="")))
+
+# Perform the matrix operation
+R = sum(diag(X))
+
+# Write the result R
+write(R, paste(args[2], "R" ,sep=""))

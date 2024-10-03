@@ -19,12 +19,18 @@
 #
 # -------------------------------------------------------------
 
-from representations.representation import Representation
+from systemds.scuro.representations.representation import Representation
 
 
 class Modality:
-    
-    def __init__(self, representation: Representation, start_index: int = 0, modality_name='', train_indices=None):
+
+    def __init__(
+        self,
+        representation: Representation,
+        start_index: int = 0,
+        modality_name="",
+        train_indices=None,
+    ):
         """
         Parent class of the different Modalities
         :param representation: Specifies how the data should be represented for a specific modality
@@ -37,13 +43,13 @@ class Modality:
         self.name = modality_name
         self.data = None
         self.train_indices = train_indices
-    
+
     def read_chunk(self):
         """
         Extracts a data chunk of the modality according to the window size specified in params
         """
         raise NotImplementedError
-    
+
     def read_all(self, indices):
         """
         Implemented for every unique modality to read all samples from a specified format

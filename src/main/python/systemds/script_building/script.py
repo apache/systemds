@@ -19,13 +19,23 @@
 #
 # -------------------------------------------------------------
 
-from typing import (TYPE_CHECKING, Any, Collection, Dict, KeysView, List,
-                    Optional, Tuple, Union)
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Collection,
+    Dict,
+    KeysView,
+    List,
+    Optional,
+    Tuple,
+    Union,
+)
 
 from py4j.protocol import Py4JNetworkError
 from py4j.java_collections import JavaArray
 from py4j.java_gateway import JavaGateway, JavaObject
-from systemds.script_building.dag import DAGNode, OutputType
+
+from systemds.script_building.dag import DAGNode
 from systemds.utils.consts import VALID_INPUT_TYPES
 
 if TYPE_CHECKING:
@@ -37,16 +47,17 @@ class DMLScript:
     """DMLScript is the class used to describe our intended behavior in DML. This script can be then executed to
     get the results.
     """
-    sds_context: 'SystemDSContext'
+
+    sds_context: "SystemDSContext"
     dml_script: str
     inputs: Dict[str, DAGNode]
     prepared_script: Optional[Any]
     out_var_name: List[str]
     _variable_counter: int
 
-    def __init__(self, context: 'SystemDSContext') -> None:
+    def __init__(self, context: "SystemDSContext") -> None:
         self.sds_context = context
-        self.dml_script = ''
+        self.dml_script = ""
         self.inputs = {}
         self.prepared_script = None
         self.out_var_name = []
@@ -57,7 +68,7 @@ class DMLScript:
 
         :param code: the dml code line
         """
-        self.dml_script += code + '\n'
+        self.dml_script += code + "\n"
 
     def add_input_from_python(self, var_name: str, input_var: DAGNode) -> None:
         """Add an input for our preparedScript. Should only be executed for data that is python local.
@@ -87,7 +98,6 @@ class DMLScript:
             exception_str = str(e)
             trace_back_limit = None
         self.sds_context.exception_and_close(exception_str, trace_back_limit)
-        
 
     def execute_with_lineage(self) -> Tuple[JavaObject, str]:
         """If not already created, create a preparedScript from our DMLCode, pass python local data to our prepared
@@ -127,10 +137,12 @@ class DMLScript:
             self.prepared_script = connection.prepareScript(
                 self.dml_script,
                 _list_to_java_array(gateway, input_names),
-                _list_to_java_array(gateway, self.out_var_name))
-            for (name, input_node) in self.inputs.items():
+                _list_to_java_array(gateway, self.out_var_name),
+            )
+            for name, input_node in self.inputs.items():
                 input_node.pass_python_data_to_prepared_script(
-                    self.sds_context, name, self.prepared_script)
+                    self.sds_context, name, self.prepared_script
+                )
             return connection
 
     def get_lineage(self) -> str:
@@ -142,10 +154,12 @@ class DMLScript:
             self.prepared_script = connection.prepareScript(
                 self.dml_script,
                 _list_to_java_array(gateway, input_names),
-                _list_to_java_array(gateway, self.out_var_name))
-            for (name, input_node) in self.inputs.items():
+                _list_to_java_array(gateway, self.out_var_name),
+            )
+            for name, input_node in self.inputs.items():
                 input_node.pass_python_data_to_prepared_script(
-                    gateway.jvm, name, self.prepared_script)
+                    gateway.jvm, name, self.prepared_script
+                )
 
             connection.setLineage(True)
 
@@ -164,16 +178,15 @@ class DMLScript:
         :param dag_root: the topmost operation of our DAG, result of operation will be output
         """
         baseOutVarString = self._dfs_dag_nodes(dag_root)
-        if dag_root.output_type != OutputType.NONE:
-            if dag_root.output_type == OutputType.MULTI_RETURN:
+        if not dag_root._datatype_is_none:
+            if str(dag_root) == "MultiReturnNode":
                 self.out_var_name = []
                 for idx, output_node in enumerate(dag_root._outputs):
-                    self.add_code(
-                        f'write({baseOutVarString}_{idx}, \'./tmp_{idx}\');')
-                    self.out_var_name.append(f'{baseOutVarString}_{idx}')
+                    self.add_code(f"write({baseOutVarString}_{idx}, './tmp_{idx}');")
+                    self.out_var_name.append(f"{baseOutVarString}_{idx}")
             else:
                 self.out_var_name.append(baseOutVarString)
-                self.add_code(f'write({baseOutVarString}, \'./tmp\');')
+                self.add_code(f"write({baseOutVarString}, './tmp');")
 
     def clear(self, dag_root: DAGNode):
         self._dfs_clear_dag_nodes(dag_root)
@@ -187,7 +200,7 @@ class DMLScript:
         """
         if not isinstance(dag_node, DAGNode):
             if isinstance(dag_node, bool):
-                return 'TRUE' if dag_node else 'FALSE'
+                return "TRUE" if dag_node else "FALSE"
             return str(dag_node)
 
         # If the node already have a name then it is already defined
@@ -219,7 +232,8 @@ class DMLScript:
             self.add_input_from_python(dag_node.dml_name, dag_node)
 
         code_line = dag_node.code_line(
-            dag_node.dml_name, unnamed_input_vars, named_input_vars)
+            dag_node.dml_name, unnamed_input_vars, named_input_vars
+        )
 
         self.add_code(code_line)
         return dag_node.dml_name
@@ -242,17 +256,19 @@ class DMLScript:
         """
         var_id = self._variable_counter
         self._variable_counter += 1
-        return f'V{var_id}'
+        return f"V{var_id}"
 
 
 # Helper Functions
-def _list_to_java_array(gateway: JavaGateway, py_list: Union[Collection[str], KeysView[str]]) -> JavaArray:
+def _list_to_java_array(
+    gateway: JavaGateway, py_list: Union[Collection[str], KeysView[str]]
+) -> JavaArray:
     """Convert python collection to java array.
 
     :param py_list: python collection
     :return: java array
     """
     array = gateway.new_array(gateway.jvm.java.lang.String, len(py_list))
-    for (i, e) in enumerate(py_list):
+    for i, e in enumerate(py_list):
         array[i] = e
     return array

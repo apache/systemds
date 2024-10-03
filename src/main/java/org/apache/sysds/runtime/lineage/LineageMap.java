@@ -33,9 +33,7 @@ import org.apache.sysds.runtime.instructions.spark.WriteSPInstruction;
 import org.apache.sysds.runtime.lineage.LineageItem.LineageItemType;
 import org.apache.sysds.utils.Explain;
 import org.apache.sysds.utils.Statistics;
-import scala.Tuple2;
 
-import java.util.AbstractMap;
 import java.util.HashMap;
 import java.util.Map;
 

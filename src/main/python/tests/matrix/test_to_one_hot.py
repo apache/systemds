@@ -24,6 +24,7 @@ import unittest
 import numpy as np
 from systemds.context import SystemDSContext
 
+
 class TestMatrixOneHot(unittest.TestCase):
 
     sds: SystemDSContext = None
@@ -38,32 +39,32 @@ class TestMatrixOneHot(unittest.TestCase):
 
     def test_one_hot_1(self):
         m1 = np.array([1])
-        res = self.sds.from_numpy( m1).to_one_hot(3).compute()
+        res = self.sds.from_numpy(m1).to_one_hot(3).compute()
         self.assertTrue((res == [[1, 0, 0]]).all())
 
     def test_one_hot_2(self):
         m1 = np.array([2])
-        res = self.sds.from_numpy( m1).to_one_hot(3).compute()
+        res = self.sds.from_numpy(m1).to_one_hot(3).compute()
         self.assertTrue((res == [[0, 1, 0]]).all())
 
     def test_one_hot_3(self):
         m1 = np.array([2])
-        res = self.sds.from_numpy( m1).to_one_hot(2).compute()
+        res = self.sds.from_numpy(m1).to_one_hot(2).compute()
         self.assertTrue((res == [[0, 1]]).all())
 
     def test_one_hot_2_2(self):
         m1 = np.array([2, 2])
-        res = self.sds.from_numpy( m1).to_one_hot(2).compute()
+        res = self.sds.from_numpy(m1).to_one_hot(2).compute()
         self.assertTrue((res == [[0, 1], [0, 1]]).all())
 
     def test_one_hot_1_2(self):
         m1 = np.array([1, 2])
-        res = self.sds.from_numpy( m1).to_one_hot(2).compute()
+        res = self.sds.from_numpy(m1).to_one_hot(2).compute()
         self.assertTrue((res == [[1, 0], [0, 1]]).all())
 
     def test_one_hot_1_2(self):
         m1 = np.array([1, 2, 2])
-        res = self.sds.from_numpy( m1).to_one_hot(2).compute()
+        res = self.sds.from_numpy(m1).to_one_hot(2).compute()
         self.assertTrue((res == [[1, 0], [0, 1], [0, 1]]).all())
 
     # TODO make tests for runtime errors, like this one
@@ -73,29 +74,29 @@ class TestMatrixOneHot(unittest.TestCase):
     #         res = self.sds.from_numpy( m1).to_one_hot(2).compute()
 
     def test_one_hot_matrix_1(self):
-        m1 = np.array([[1],[2],[3]])
-        res = self.sds.from_numpy( m1).to_one_hot(3).compute()
-        self.assertTrue((res == [[1,0,0], [0,1,0], [0,0,1]]).all())
-    
+        m1 = np.array([[1], [2], [3]])
+        res = self.sds.from_numpy(m1).to_one_hot(3).compute()
+        self.assertTrue((res == [[1, 0, 0], [0, 1, 0], [0, 0, 1]]).all())
+
     def test_one_hot_matrix_2(self):
-        m1 = np.array([[1],[3],[3]])
-        res = self.sds.from_numpy( m1).to_one_hot(3).compute()
-        self.assertTrue((res == [[1,0,0], [0,0,1], [0,0,1]]).all())
+        m1 = np.array([[1], [3], [3]])
+        res = self.sds.from_numpy(m1).to_one_hot(3).compute()
+        self.assertTrue((res == [[1, 0, 0], [0, 0, 1], [0, 0, 1]]).all())
 
     def test_one_hot_matrix_3(self):
-        m1 = np.array([[1],[2],[1]])
-        res = self.sds.from_numpy( m1).to_one_hot(2).compute()
-        self.assertTrue((res == [[1,0], [0,1], [1,0]]).all())
+        m1 = np.array([[1], [2], [1]])
+        res = self.sds.from_numpy(m1).to_one_hot(2).compute()
+        self.assertTrue((res == [[1, 0], [0, 1], [1, 0]]).all())
 
     def test_neg_one_hot_numClasses(self):
         m1 = np.array([1])
         with self.assertRaises(ValueError) as context:
-            res = self.sds.from_numpy( m1).to_one_hot(1).compute()
+            res = self.sds.from_numpy(m1).to_one_hot(1).compute()
 
     def test_neg_one_hot_inputShape(self):
         m1 = np.array([[1]])
         with self.assertRaises(ValueError) as context:
-            res = self.sds.from_numpy( m1).to_one_hot(1).compute()
+            res = self.sds.from_numpy(m1).to_one_hot(1).compute()
 
 
 if __name__ == "__main__":

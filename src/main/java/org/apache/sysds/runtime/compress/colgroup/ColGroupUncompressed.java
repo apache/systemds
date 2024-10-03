@@ -32,6 +32,7 @@ import org.apache.sysds.runtime.compress.CompressedMatrixBlockFactory;
 import org.apache.sysds.runtime.compress.CompressionSettings;
 import org.apache.sysds.runtime.compress.CompressionSettingsBuilder;
 import org.apache.sysds.runtime.compress.DMLCompressionException;
+import org.apache.sysds.runtime.compress.colgroup.ColGroupUtils.P;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.DictLibMatrixMult;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.IDictionary;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.MatrixBlockDictionary;
@@ -532,7 +533,7 @@ public class ColGroupUncompressed extends AColGroup {
 		// tsmm but only upper triangle.
 		LibMatrixMult.matrixMultTransposeSelf(_data, tmp, true, false);
 
-		if(tmp.isInSparseFormat()){
+		if(tmp.isInSparseFormat()) {
 			final int numColumns = ret.getNumColumns();
 			final double[] result = ret.getDenseBlockValues();
 			final SparseBlock sb = tmp.getSparseBlock();
@@ -546,10 +547,10 @@ public class ColGroupUncompressed extends AColGroup {
 				double[] aval = sb.values(row);
 				for(int j = apos; j < alen; j++)
 					result[offRet + _colIndexes.get(aix[j])] += aval[j];
-				
+
 			}
 		}
-		else{
+		else {
 			// copy that upper triangle part to ret
 			final int numColumns = ret.getNumColumns();
 			final double[] result = ret.getDenseBlockValues();
@@ -629,8 +630,8 @@ public class ColGroupUncompressed extends AColGroup {
 	private void leftMultByAColGroupUncompressed(ColGroupUncompressed lhs, MatrixBlock result) {
 		final MatrixBlock tmpRet = new MatrixBlock(lhs.getNumCols(), _colIndexes.size(), 0);
 		final int k = InfrastructureAnalyzer.getLocalParallelism();
-		
-		if(lhs._data.getNumColumns() != 1){
+
+		if(lhs._data.getNumColumns() != 1) {
 			LOG.warn("Inefficient Left Matrix Multiplication with transpose of left hand side : t(l) %*% r");
 		}
 		// multiply to temp
@@ -905,6 +906,122 @@ public class ColGroupUncompressed extends AColGroup {
 			for(int c = 0; c < _data.getNumColumns(); c++)
 				ret.set(r, c, _data.get(r, reordering[c]));
 		return create(newColIndex, ret, false);
+	}
+
+	@Override
+	public void sparseSelection(MatrixBlock selection, P[] points, MatrixBlock ret, int rl, int ru) {
+		if(_data.isInSparseFormat())
+			sparseSelectionSparseColumnGroup(selection, ret, rl, ru);
+		else
+			sparseSelectionDenseColumnGroup(selection, ret, rl, ru);
+	}
+
+	@Override
+	protected void denseSelection(MatrixBlock selection, P[] points, MatrixBlock ret, int rl, int ru) {
+		if(_data.isInSparseFormat())
+			denseSelectionSparseColumnGroup(selection, ret, rl, ru);
+		else
+			denseSelectionDenseColumnGroup(selection, ret, rl, ru);
+	}
+
+	private void sparseSelectionSparseColumnGroup(MatrixBlock selection, MatrixBlock ret, int rl, int ru) {
+
+		final SparseBlock sb = selection.getSparseBlock();
+		final SparseBlock retB = ret.getSparseBlock();
+		final SparseBlock tb = _data.getSparseBlock();
+		for(int r = rl; r < ru; r++) {
+			if(sb.isEmpty(r))
+				continue;
+
+			final int sPos = sb.pos(r);
+			final int rowCompressed = sb.indexes(r)[sPos];
+			if(tb.isEmpty(rowCompressed))
+				continue;
+			final int tPos = tb.pos(rowCompressed);
+			final int tEnd = tb.size(rowCompressed) + tPos;
+			final int[] tIx = tb.indexes(rowCompressed);
+			final double[] tVal = tb.values(rowCompressed);
+			for(int j = tPos; j < tEnd; j++)
+				retB.append(r, _colIndexes.get(tIx[j]), tVal[j]);
+		}
+
+	}
+
+	private void sparseSelectionDenseColumnGroup(MatrixBlock selection, MatrixBlock ret, int rl, int ru) {
+		final SparseBlock sb = selection.getSparseBlock();
+		final SparseBlock retB = ret.getSparseBlock();
+		final DenseBlock tb = _data.getDenseBlock();
+		final int nCol = _colIndexes.size();
+		for(int r = rl; r < ru; r++) {
+			if(sb.isEmpty(r))
+				continue;
+
+			final int sPos = sb.pos(r);
+			final int rowCompressed = sb.indexes(r)[sPos];
+
+			double[] tVal = tb.values(rowCompressed);
+			int tPos = tb.pos(rowCompressed);
+			for(int j = 0; j < nCol; j++)
+				retB.append(r, _colIndexes.get(j), tVal[tPos + j]);
+		}
+	}
+
+	private void denseSelectionSparseColumnGroup(MatrixBlock selection, MatrixBlock ret, int rl, int ru) {
+
+		final SparseBlock sb = selection.getSparseBlock();
+		final DenseBlock retB = ret.getDenseBlock();
+		final SparseBlock tb = _data.getSparseBlock();
+		for(int r = rl; r < ru; r++) {
+			if(sb.isEmpty(r))
+				continue;
+
+			final int sPos = sb.pos(r);
+			final int rowCompressed = sb.indexes(r)[sPos];
+			if(tb.isEmpty(rowCompressed))
+				continue;
+			final int tPos = tb.pos(rowCompressed);
+			final int tEnd = tb.size(rowCompressed) + tPos;
+			final int[] tIx = tb.indexes(rowCompressed);
+			final double[] tVal = tb.values(rowCompressed);
+
+			final double[] rVal = retB.values(r);
+			final int pos = retB.pos(r);
+			for(int j = tPos; j < tEnd; j++)
+				rVal[pos + _colIndexes.get(tIx[j])] += tVal[j];
+		}
+
+	}
+
+	private void denseSelectionDenseColumnGroup(MatrixBlock selection, MatrixBlock ret, int rl, int ru) {
+		final SparseBlock sb = selection.getSparseBlock();
+		final DenseBlock retB = ret.getDenseBlock();
+		final DenseBlock tb = _data.getDenseBlock();
+		final int nCol = _colIndexes.size();
+		for(int r = rl; r < ru; r++) {
+			if(sb.isEmpty(r))
+				continue;
+
+			final int sPos = sb.pos(r);
+			final int rowCompressed = sb.indexes(r)[sPos];
+
+			double[] tVal = tb.values(rowCompressed);
+			int tPos = tb.pos(rowCompressed);
+
+			final double[] rVal = retB.values(r);
+			final int pos = retB.pos(r);
+
+			for(int j = 0; j < nCol; j++)
+				rVal[pos + _colIndexes.get(j)] += tVal[tPos + j];
+		}
+	}
+
+	@Override
+	public AColGroup reduceCols() {
+		MatrixBlock mb = _data.rowSum();
+		if(mb.isEmpty())
+			return null;
+		else
+			return new ColGroupUncompressed(mb, ColIndexFactory.createI(0));
 	}
 
 	@Override

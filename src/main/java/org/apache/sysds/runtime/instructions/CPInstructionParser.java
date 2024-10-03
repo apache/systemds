@@ -180,6 +180,7 @@ public class CPInstructionParser extends InstructionParser {
 		String2CPInstructionType.put( "nmax", CPType.BuiltinNary);
 		String2CPInstructionType.put( "nmin", CPType.BuiltinNary);
 		String2CPInstructionType.put( "n+"  , CPType.BuiltinNary);
+		String2CPInstructionType.put( "n*"  , CPType.BuiltinNary);
 
 		String2CPInstructionType.put( "exp"   , CPType.Unary);
 		String2CPInstructionType.put( "abs"   , CPType.Unary);
@@ -270,6 +271,7 @@ public class CPInstructionParser extends InstructionParser {
 		// Reorg Instruction Opcodes (repositioning of existing values)
 		String2CPInstructionType.put( "r'"          , CPType.Reorg);
 		String2CPInstructionType.put( "rev"         , CPType.Reorg);
+		String2CPInstructionType.put( "roll"         , CPType.Reorg);
 		String2CPInstructionType.put( "rdiag"       , CPType.Reorg);
 		String2CPInstructionType.put( "rshape"      , CPType.Reshape);
 		String2CPInstructionType.put( "rsort"       , CPType.Reorg);

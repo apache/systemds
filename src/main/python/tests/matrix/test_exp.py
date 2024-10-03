@@ -23,6 +23,7 @@ import unittest
 import numpy as np
 from systemds.context import SystemDSContext
 
+
 class TestEXP(unittest.TestCase):
     def setUp(self):
         self.sds = SystemDSContext()
@@ -32,31 +33,31 @@ class TestEXP(unittest.TestCase):
 
     def test_exp_basic(self):
 
-        input_matrix = np.array([[1, 2, 3, 4],
-                                 [5, 6, 7, 8],
-                                 [9, 10, 11, 12],
-                                 [13, 14, 15, 16]]) - 8
+        input_matrix = (
+            np.array([[1, 2, 3, 4], [5, 6, 7, 8], [9, 10, 11, 12], [13, 14, 15, 16]])
+            - 8
+        )
 
         sds_input = self.sds.from_numpy(input_matrix)
         sds_result = sds_input.exp().compute()
         np_result_np = np.exp(input_matrix)
-        assert np.allclose(sds_result, np_result_np,1e-9)
+        assert np.allclose(sds_result, np_result_np, 1e-9)
 
     def test_exp_random(self):
 
-        input_matrix = np.random.random((10,10))
+        input_matrix = np.random.random((10, 10))
         sds_input = self.sds.from_numpy(input_matrix)
         sds_result = sds_input.exp().compute()
         np_result_np = np.exp(input_matrix)
-        assert np.allclose(sds_result, np_result_np,1e-9)
+        assert np.allclose(sds_result, np_result_np, 1e-9)
 
     def test_exp_scalar(self):
         for i in np.random.random(10):
             sds_input = self.sds.scalar(i)
             sds_result = sds_input.exp().compute()
             np_result_np = np.exp(i)
-            assert np.isclose(sds_result, np_result_np,1e-9)
+            assert np.isclose(sds_result, np_result_np, 1e-9)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()

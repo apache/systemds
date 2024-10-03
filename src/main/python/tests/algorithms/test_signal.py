@@ -1,4 +1,3 @@
-
 # -------------------------------------------------------------
 #
 # Licensed to the Apache Software Foundation (ASF) under one
@@ -45,12 +44,13 @@ class TestSignal(unittest.TestCase):
         signal = self.sds.seq(0, 2, 1)
         pi = self.sds.scalar(3.141592654)
         size = signal.nRow()
-        n = self.sds.seq(0, size-1)
-        k = self.sds.seq(0, size-1)
-        M = (n @ (k.t())) * (2*pi/size)
+        n = self.sds.seq(0, size - 1)
+        k = self.sds.seq(0, size - 1)
+        M = (n @ (k.t())) * (2 * pi / size)
         Xa = M.cos() @ signal
         Xb = M.sin() @ signal
         DFT = signal.cbind(Xa).cbind(Xb).compute()
-        
+
+
 if __name__ == "__main__":
     unittest.main(exit=False)

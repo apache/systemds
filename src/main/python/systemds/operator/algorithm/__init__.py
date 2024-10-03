@@ -37,6 +37,7 @@ from .builtin.bivar import bivar
 from .builtin.components import components 
 from .builtin.confusionMatrix import confusionMatrix 
 from .builtin.cor import cor 
+from .builtin.cov import cov 
 from .builtin.cox import cox 
 from .builtin.cspline import cspline 
 from .builtin.csplineCG import csplineCG 
@@ -166,11 +167,13 @@ from .builtin.sherlockPredict import sherlockPredict
 from .builtin.shortestPath import shortestPath 
 from .builtin.sigmoid import sigmoid 
 from .builtin.skewness import skewness 
+from .builtin.sliceLine import sliceLine 
 from .builtin.sliceLineDebug import sliceLineDebug 
 from .builtin.slicefinder import slicefinder 
 from .builtin.smape import smape 
 from .builtin.smote import smote 
 from .builtin.softmax import softmax 
+from .builtin.solve import solve 
 from .builtin.split import split 
 from .builtin.splitBalanced import splitBalanced 
 from .builtin.stableMarriage import stableMarriage 
@@ -209,6 +212,7 @@ __all__ = ['WoE',
  'components',
  'confusionMatrix',
  'cor',
+ 'cov',
  'cox',
  'cspline',
  'csplineCG',
@@ -338,11 +342,13 @@ __all__ = ['WoE',
  'shortestPath',
  'sigmoid',
  'skewness',
+ 'sliceLine',
  'sliceLineDebug',
  'slicefinder',
  'smape',
  'smote',
  'softmax',
+ 'solve',
  'split',
  'splitBalanced',
  'stableMarriage',

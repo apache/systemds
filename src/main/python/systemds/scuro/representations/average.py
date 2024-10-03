@@ -23,32 +23,31 @@ from typing import List
 
 import numpy as np
 
-from modality.modality import Modality
-from keras.api.preprocessing.sequence import pad_sequences
+from systemds.scuro.modality.modality import Modality
+from systemds.scuro.representations.utils import pad_sequences
 
-from representations.fusion import Fusion
+from systemds.scuro.representations.fusion import Fusion
 
 
-class Averaging(Fusion):
+class Average(Fusion):
     def __init__(self):
         """
         Combines modalities using averaging
         """
-        super().__init__('Averaging')
-    
+        super().__init__("Average")
+
     def fuse(self, modalities: List[Modality]):
         max_emb_size = self.get_max_embedding_size(modalities)
 
         padded_modalities = []
         for modality in modalities:
-            d = pad_sequences(modality.data, maxlen=max_emb_size, dtype='float32', padding='post')
+            d = pad_sequences(modality.data, maxlen=max_emb_size, dtype="float32")
             padded_modalities.append(d)
-          
+
         data = padded_modalities[0]
         for i in range(1, len(modalities)):
             data += padded_modalities[i]
-        
-        data = self.scale_data(data, modalities[0].train_indices)
+
         data /= len(modalities)
-        
+
         return np.array(data)

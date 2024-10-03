@@ -27,6 +27,7 @@ import java.util.Collection;
 import org.apache.commons.lang3.NotImplementedException;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.sysds.runtime.compress.colgroup.ColGroupUtils.P;
 import org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex;
 import org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex.SliceResult;
 import org.apache.sysds.runtime.compress.colgroup.scheme.ICLAScheme;
@@ -606,8 +607,8 @@ public abstract class AColGroup implements Serializable {
 	public abstract boolean isEmpty();
 
 	/**
-	 * Append the other column group to this column group. This method tries to combine them to return a new column
-	 * group containing both. In some cases it is possible in reasonable time, in others it is not.
+	 * Append the other column group to this column group. This method tries to combine them to return a new column group
+	 * containing both. In some cases it is possible in reasonable time, in others it is not.
 	 * 
 	 * The result is first this column group followed by the other column group in higher row values.
 	 * 
@@ -715,6 +716,56 @@ public abstract class AColGroup implements Serializable {
 	}
 
 	protected abstract AColGroup fixColIndexes(IColIndex newColIndex, int[] reordering);
+
+	/**
+	 * Perform row sum on the internal dictionaries, and return the same index structure.
+	 * 
+	 * This method returns null on empty column groups.
+	 * 
+	 * Note this method does not guarantee correct behavior if the given group is AMorphingGroup, instead it should be
+	 * morphed to a valid columngroup via extractCommon first.
+	 * 
+	 * @return The reduced colgroup.
+	 */
+	public abstract AColGroup reduceCols();
+
+	/**
+	 * Selection (left matrix multiply)
+	 * 
+	 * @param selection A sparse matrix with "max" a single one in each row all other values are zero.
+	 * @param points    The coordinates in the selection matrix to extract.
+	 * @param ret       The MatrixBlock to decompress the selected rows into
+	 * @param rl        The row to start at in the selection matrix
+	 * @param ru        the row to end at in the selection matrix (not inclusive)
+	 */
+	public final void selectionMultiply(MatrixBlock selection, P[] points, MatrixBlock ret, int rl, int ru) {
+		if(ret.isInSparseFormat())
+			sparseSelection(selection, points, ret, rl, ru);
+		else
+			denseSelection(selection, points, ret, rl, ru);
+	}
+
+	/**
+	 * Sparse selection (left matrix multiply)
+	 * 
+	 * @param selection A sparse matrix with "max" a single one in each row all other values are zero.
+	 * @param points    The coordinates in the selection matrix to extract.
+	 * @param ret       The Sparse MatrixBlock to decompress the selected rows into
+	 * @param rl        The row to start at in the selection matrix
+	 * @param ru        the row to end at in the selection matrix (not inclusive)
+	 */
+	protected abstract void sparseSelection(MatrixBlock selection, P[] points, MatrixBlock ret, int rl, int ru);
+
+	/**
+	 * Dense selection (left matrix multiply)
+	 * 
+	 * @param selection A sparse matrix with "max" a single one in each row all other values are zero.
+	 * @param points    The coordinates in the selection matrix to extract.
+	 * @param ret       The Dense MatrixBlock to decompress the selected rows into
+	 * @param rl        The row to start at in the selection matrix
+	 * @param ru        the row to end at in the selection matrix (not inclusive)
+	 */
+	protected abstract void denseSelection(MatrixBlock selection, P[] points, MatrixBlock ret, int rl, int ru);
 
 	@Override
 	public String toString() {

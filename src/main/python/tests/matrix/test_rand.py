@@ -55,44 +55,41 @@ class TestRand(unittest.TestCase):
         self.assertTrue(m.shape == shape)
 
     def test_rand_min_max(self):
-        m = (
-            self.sds.rand(rows=shape[0], cols=shape[1],
-                          min=min_max[0], max=min_max[1])
-            .compute())
+        m = self.sds.rand(
+            rows=shape[0], cols=shape[1], min=min_max[0], max=min_max[1]
+        ).compute()
         self.assertTrue((m.min() >= min_max[0]) and (m.max() <= min_max[1]))
 
     def test_rand_sparsity(self):
-        m = self.sds.rand(rows=shape[0], cols=shape[1],
-                          sparsity=sparsity, seed=0).compute()
+        m = self.sds.rand(
+            rows=shape[0], cols=shape[1], sparsity=sparsity, seed=0
+        ).compute()
         non_zero_value_percent = np.count_nonzero(m) * 100 / np.prod(m.shape)
 
-        self.assertTrue(math.isclose(
-            non_zero_value_percent, sparsity*100, rel_tol=5))
+        self.assertTrue(math.isclose(non_zero_value_percent, sparsity * 100, rel_tol=5))
 
     def test_rand_uniform_distribution(self):
-        m = (
-            self.sds.rand(
-                rows=dist_shape[0],
-                cols=dist_shape[1],
-                pdf="uniform",
-                min=min_max[0],
-                max=min_max[1],
-                seed=0)
-            .compute())
+        m = self.sds.rand(
+            rows=dist_shape[0],
+            cols=dist_shape[1],
+            pdf="uniform",
+            min=min_max[0],
+            max=min_max[1],
+            seed=0,
+        ).compute()
 
         dist = find_best_fit_distribution(m.flatten("F"), distributions)
         self.assertTrue(dist == "uniform")
 
     def test_rand_normal_distribution(self):
-        m = (
-            self.sds.rand(
-                rows=dist_shape[0],
-                cols=dist_shape[1],
-                pdf="normal",
-                min=min_max[0],
-                max=min_max[1],
-                seed=0)
-            .compute())
+        m = self.sds.rand(
+            rows=dist_shape[0],
+            cols=dist_shape[1],
+            pdf="normal",
+            min=min_max[0],
+            max=min_max[1],
+            seed=0,
+        ).compute()
 
         dist = find_best_fit_distribution(m.flatten("F"), distributions)
         self.assertTrue(dist == "norm")

@@ -58,6 +58,10 @@ import org.junit.runners.Parameterized.Parameters;
 
 @RunWith(value = Parameterized.class)
 public class OffsetTests {
+	static{
+		CompressedMatrixBlock.debug = true;
+	}
+
 	protected static final Log LOG = LogFactory.getLog(OffsetTests.class.getName());
 
 	private static final long sizeTolerance = 100;

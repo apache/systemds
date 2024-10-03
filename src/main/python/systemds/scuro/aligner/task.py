@@ -20,11 +20,13 @@
 # -------------------------------------------------------------
 from typing import List
 
-from models.model import Model
+from systemds.scuro.models.model import Model
 
 
 class Task:
-    def __init__(self, name: str, model: Model, labels, train_indices: List, val_indices: List):
+    def __init__(
+        self, name: str, model: Model, labels, train_indices: List, val_indices: List
+    ):
         """
         Parent class for the prediction task that is performed on top of the aligned representation
         :param name: Name of the task
@@ -44,9 +46,9 @@ class Task:
         y_train = [self.labels[i] for i in self.train_indices]
         X_test = [data[i] for i in self.val_indices]
         y_test = [self.labels[i] for i in self.val_indices]
-        
+
         return X_train, y_train, X_test, y_test
-    
+
     def run(self, data):
         """
         The run method need to be implemented by every task class
@@ -55,4 +57,3 @@ class Task:
         :return: the validation accuracy
         """
         pass
-    

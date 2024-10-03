@@ -23,6 +23,7 @@ import org.apache.sysds.runtime.matrix.data.MatrixIndexes;
 import org.apache.sysds.runtime.matrix.data.MatrixValue.CellIndex;
 import org.apache.sysds.runtime.meta.DataCharacteristics;
 
+/** Reduce both columns and rows into a single cell */
 public class ReduceAll extends IndexFunction
 {
 

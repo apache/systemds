@@ -25,7 +25,6 @@
 from typing import Dict, Iterable
 
 from systemds.operator import OperationNode, Matrix, Frame, List, MultiReturn, Scalar
-from systemds.script_building.dag import OutputType
 from systemds.utils.consts import VALID_INPUT_TYPES
 
 
@@ -35,9 +34,10 @@ def slicefinder(X: Matrix,
     """
      This builtin function implements SliceLine, a linear-algebra-based
      ML model debugging technique for finding the top-k data slices where
-     a trained models performs significantly worse than on the overall 
+     a trained models performs significantly worse than on the overall
      dataset. For a detailed description and experimental results, see:
-     Svetlana Sagadeeva, Matthias Boehm: SliceLine: Fast, Linear-Algebra-based Slice Finding for ML Model Debugging.(SIGMOD 2021)
+     Svetlana Sagadeeva, Matthias Boehm: SliceLine: Fast, Linear-Algebra-based
+     Slice Finding for ML Model Debugging.(SIGMOD 2021)
     
     
     

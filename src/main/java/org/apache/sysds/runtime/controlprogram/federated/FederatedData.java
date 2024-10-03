@@ -56,13 +56,10 @@ import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioSocketChannel;
 import io.netty.handler.codec.serialization.ObjectEncoder;
-import io.netty.handler.ssl.SslContext;
-import io.netty.handler.ssl.SslContextBuilder;
-import io.netty.handler.ssl.SslHandler;
-import io.netty.handler.ssl.util.InsecureTrustManagerFactory;
 import io.netty.handler.timeout.ReadTimeoutHandler;
 import io.netty.util.concurrent.Promise;
 
+@SuppressWarnings("deprecation")
 public class FederatedData {
 	private static final Log LOG = LogFactory.getLog(FederatedData.class.getName());
 	private static final Set<InetSocketAddress> _allFedSites = new HashSet<>();
@@ -70,8 +67,7 @@ public class FederatedData {
 	/** Thread pool specific for the federated requests */
 	private static EventLoopGroup workerGroup = null;
 
-	/** A Singleton constructed SSL context, that only is assigned if ssl is enabled. */
-	private static SslContextMan sslInstance = null;
+
 
 	private final Types.DataType _dataType;
 	private final InetSocketAddress _address;
@@ -245,7 +241,7 @@ public class FederatedData {
 				cp.addLast("NetworkTrafficCounter", new NetworkTrafficCounter(FederatedStatistics::logServerTraffic));
 
 				if(ssl)
-					cp.addLast(createSSLHandler(ch, address));
+					cp.addLast(FederatedSSLUtil.createSSLHandler(ch, address));
 				if(timeout > -1)
 					cp.addLast(new ReadTimeoutHandler(timeout));
 
@@ -280,9 +276,7 @@ public class FederatedData {
 		}
 	}
 
-	private static SslHandler createSSLHandler(SocketChannel ch, InetSocketAddress address) {
-		return SslConstructor().context.newHandler(ch.alloc(), address.getAddress().getHostAddress(), address.getPort());
-	}
+
 
 	public static void resetFederatedSites() {
 		_allFedSites.clear();
@@ -320,25 +314,6 @@ public class FederatedData {
 		}
 	}
 
-	private static class SslContextMan {
-		protected final SslContext context;
-
-		private SslContextMan() {
-			try {
-				context = SslContextBuilder.forClient().trustManager(InsecureTrustManagerFactory.INSTANCE).build();
-			}
-			catch(SSLException e) {
-				throw new DMLRuntimeException("Static SSL setup failed for client side", e);
-			}
-		}
-	}
-
-	private static SslContextMan SslConstructor() {
-		if(sslInstance == null)
-			return new SslContextMan();
-		else
-			return sslInstance;
-	}
 
 	@Override
 	public String toString() {

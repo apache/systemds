@@ -24,6 +24,7 @@ import unittest
 from time import sleep
 from systemds.context import SystemDSContext
 
+
 class TestSource_NoReturn(unittest.TestCase):
 
     sds: SystemDSContext = None
@@ -38,28 +39,29 @@ class TestSource_NoReturn(unittest.TestCase):
         cls.sds.close()
 
     def test_01(self):
-        s = self.sds.source(self.src_path,"test")
+        s = self.sds.source(self.src_path, "test")
         c = s.no_return()
         c.compute()
-        sleep(1) # to allow the std buffer to fill
+        sleep(1)  # to allow the std buffer to fill
         stdout = self.sds.get_stdout()
-        self.assertEqual(4.2 + 14 * 2,float(stdout[0]))
+        self.assertEqual(4.2 + 14 * 2, float(stdout[0]))
 
     def test_02(self):
-        s = self.sds.source(self.src_path,"test")
+        s = self.sds.source(self.src_path, "test")
         c = s.no_return(4)
         c.compute()
-        sleep(1) # to allow the std buffer to fill
+        sleep(1)  # to allow the std buffer to fill
         stdout = self.sds.get_stdout()
-        self.assertEqual(4 + 14 * 2,float(stdout[0]))
+        self.assertEqual(4 + 14 * 2, float(stdout[0]))
 
     def test_03(self):
-        s = self.sds.source(self.src_path,"test")
+        s = self.sds.source(self.src_path, "test")
         c = s.no_return(a=14)
         c.compute()
-        sleep(1) # to allow the std buffer to fill
+        sleep(1)  # to allow the std buffer to fill
         stdout = self.sds.get_stdout()
-        self.assertEqual(14 + 14 * 2,float(stdout[0]))
+        self.assertEqual(14 + 14 * 2, float(stdout[0]))
+
 
 if __name__ == "__main__":
     unittest.main(exit=False)

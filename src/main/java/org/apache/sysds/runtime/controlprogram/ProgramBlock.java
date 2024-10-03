@@ -19,7 +19,6 @@
 package org.apache.sysds.runtime.controlprogram;
 
 import java.util.ArrayList;
-import java.util.stream.LongStream;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -38,7 +37,6 @@ import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.DMLScriptException;
 import org.apache.sysds.runtime.compress.CompressedMatrixBlock;
 import org.apache.sysds.runtime.controlprogram.caching.CacheableData;
-import org.apache.sysds.runtime.controlprogram.caching.FrameObject;
 import org.apache.sysds.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysds.runtime.controlprogram.caching.MatrixObject.UpdateType;
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
@@ -52,10 +50,7 @@ import org.apache.sysds.runtime.instructions.cp.StringObject;
 import org.apache.sysds.runtime.instructions.spark.utils.SparkUtils;
 import org.apache.sysds.runtime.lineage.LineageCache;
 import org.apache.sysds.runtime.lineage.LineageCacheConfig.ReuseCacheType;
-import org.apache.sysds.runtime.lineage.LineageItem;
-import org.apache.sysds.runtime.lineage.LineageItemUtils;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
-import org.apache.sysds.runtime.meta.DataCharacteristics;
 import org.apache.sysds.runtime.meta.MetaData;
 import org.apache.sysds.runtime.meta.MetaDataFormat;
 import org.apache.sysds.utils.stats.RecompileStatistics;
@@ -246,7 +241,8 @@ public abstract class ProgramBlock implements ParseInfo {
 	private void executeSingleInstruction(Instruction currInst, ExecutionContext ec) {
 		try {
 			// start time measurement for statistics
-			long t0 = (DMLScript.STATISTICS || DMLScript.STATISTICS_NGRAMS || LOG.isTraceEnabled()) ? System.nanoTime() : 0;
+			long t0 = (DMLScript.STATISTICS || DMLScript.STATISTICS_NGRAMS || LOG.isTraceEnabled())
+				? System.nanoTime() : 0;
 
 			// pre-process instruction (inst patching, listeners, lineage)
 			Instruction tmp = currInst.preprocessInstruction(ec);
@@ -269,30 +265,8 @@ public abstract class ProgramBlock implements ParseInfo {
 					Statistics.maintainCPHeavyHitters(tmp.getExtendedOpcode(), System.nanoTime() - t0);
 				}
 
-				if (DMLScript.STATISTICS_NGRAMS) {
-					final long nanoTime = System.nanoTime() - t0;
-					if (DMLScript.STATISTICS_NGRAMS_USE_LINEAGE) {
-						Statistics.getCurrentLineageItem().ifPresent(li -> {
-							Data data = ec.getVariable(li.getKey());
-							Statistics.LineageNGramExtension ext = new Statistics.LineageNGramExtension();
-							if (data != null) {
-								ext.setDataType(data.getDataType().toString());
-								ext.setValueType(data.getValueType().toString());
-								if (data instanceof CacheableData) {
-									DataCharacteristics dc = ((CacheableData)data).getDataCharacteristics();
-									ext.setMeta("NDims", (double)dc.getNumDims());
-									ext.setMeta("NumRows", (double)dc.getRows());
-									ext.setMeta("NumCols", (double)dc.getCols());
-									ext.setMeta("NonZeros", (double)dc.getNonZeros());
-								}
-							}
-							ext.setExecNanos(nanoTime);
-							Statistics.extendLineageItem(li.getValue(), ext);
-							Statistics.maintainNGramsFromLineage(li.getValue());
-						});
-					} else
-						Statistics.maintainNGrams(tmp.getExtendedOpcode(), nanoTime);
-				}
+				if (DMLScript.STATISTICS_NGRAMS)
+					Statistics.maintainNGramsFromLineage(tmp, ec, t0);
 			}
 
 			// optional trace information (instruction and runtime)

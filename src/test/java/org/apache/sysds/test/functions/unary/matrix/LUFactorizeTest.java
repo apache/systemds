@@ -71,8 +71,17 @@ public class LUFactorizeTest extends AutomatedTestBase
 	public void testLargeLUFactorizeDenseHybrid() {
 		runTestLUFactorize( rows2, ExecMode.HYBRID );
 	}
+
+	@Test
+	public void testLUFactorizeSingularDenseCP() {
+		runTestLUFactorize( 2, ExecMode.SINGLE_NODE, true);
+	}
+
+	private void runTestLUFactorize( int rows, ExecMode rt){
+		runTestLUFactorize(rows, rt, false);
+	}
 	
-	private void runTestLUFactorize( int rows, ExecMode rt)
+	private void runTestLUFactorize( int rows, ExecMode rt, boolean exceptionExpected)
 	{		
 		ExecMode rtold = rtplatform;
 		rtplatform = rt;
@@ -88,8 +97,12 @@ public class LUFactorizeTest extends AutomatedTestBase
 			String HOME = SCRIPT_DIR + TEST_DIR;
 			fullDMLScriptName = HOME + TEST_NAME1 + ".dml";
 			programArgs = new String[]{"-args", input("A"), output("D") };
-			
+
 			double[][] A = getRandomMatrix(rows, rows, 0, 1, sparsity, 10);
+			// create singular matrix
+			if(exceptionExpected)
+				A = new double[][]{{1, 0}, {1, 0}};
+
 			MatrixCharacteristics mc = new MatrixCharacteristics(rows, rows, -1, -1);
 			writeInputMatrixWithMTD("A", A, false, mc);
 			
@@ -97,10 +110,10 @@ public class LUFactorizeTest extends AutomatedTestBase
 			double[][] D  = new double[1][1];
 			D[0][0] = 0.0;
 			writeExpectedMatrix("D", D);
-			
-			boolean exceptionExpected = false;
+
 			runTest(true, exceptionExpected, null, -1);
-			compareResults(1e-8);
+			if(!exceptionExpected)
+				compareResults(1e-8);
 		}
 		finally {
 			DMLScript.USE_LOCAL_SPARK_CONFIG = sparkConfigOld;

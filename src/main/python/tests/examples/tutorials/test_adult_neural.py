@@ -38,7 +38,9 @@ class TestAdultNeural(unittest.TestCase):
     neural_net_src_path: str = "tests/examples/tutorials/neural_net_source.dml"
     preprocess_src_path: str = "tests/examples/tutorials/preprocess.dml"
     dataset_path_train: str = "../../test/resources/datasets/adult/train_data.csv"
-    dataset_path_train_mtd: str = "../../test/resources/datasets/adult/train_data.csv.mtd"
+    dataset_path_train_mtd: str = (
+        "../../test/resources/datasets/adult/train_data.csv.mtd"
+    )
     dataset_path_test: str = "../../test/resources/datasets/adult/test_data.csv"
     dataset_path_test_mtd: str = "../../test/resources/datasets/adult/test_data.csv.mtd"
     dataset_jspec: str = "../../test/resources/datasets/adult/jspec.json"
@@ -73,9 +75,9 @@ class TestAdultNeural(unittest.TestCase):
 
     def prepare_x(self):
         jspec = self.d.get_jspec(self.sds)
-        train_x_frame = self.d.get_train_data(self.sds)[0:self.train_count]
+        train_x_frame = self.d.get_train_data(self.sds)[0 : self.train_count]
         train_x, M1 = train_x_frame.transform_encode(spec=jspec)
-        test_x_frame = self.d.get_test_data(self.sds)[0:self.test_count]
+        test_x_frame = self.d.get_test_data(self.sds)[0 : self.test_count]
         test_x = test_x_frame.transform_apply(spec=jspec, meta=M1)
         # Scale and shift .... not needed because of sigmoid layer,
         # could be useful therefore tested.
@@ -86,9 +88,9 @@ class TestAdultNeural(unittest.TestCase):
     def prepare_y(self):
         jspec_dict = {"recode": ["income"]}
         jspec_labels = self.sds.scalar(f'"{jspec_dict}"')
-        train_y_frame = self.d.get_train_labels(self.sds)[0:self.train_count]
+        train_y_frame = self.d.get_train_labels(self.sds)[0 : self.train_count]
         train_y, M2 = train_y_frame.transform_encode(spec=jspec_labels)
-        test_y_frame = self.d.get_test_labels(self.sds)[0:self.test_count]
+        test_y_frame = self.d.get_test_labels(self.sds)[0 : self.test_count]
         test_y = test_y_frame.transform_apply(spec=jspec_labels, meta=M2)
         labels = 2
         train_y = train_y.to_one_hot(labels)
@@ -109,8 +111,7 @@ class TestAdultNeural(unittest.TestCase):
     def train_neural_net_and_predict(self):
         [train_x, test_x, train_y, test_y] = self.prepare()
         FFN_package = self.sds.source(self.neural_net_src_path, "fnn")
-        network = FFN_package.train_paramserv(
-            train_x, train_y, 4, 16, 0.01, 2,  1)
+        network = FFN_package.train_paramserv(train_x, train_y, 4, 16, 0.01, 2, 1)
         probs = FFN_package.predict(test_x, network)
         accuracy = FFN_package.eval(probs, test_y).compute()
         # accuracy is returned in percent

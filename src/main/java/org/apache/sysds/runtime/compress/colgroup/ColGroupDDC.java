@@ -28,12 +28,15 @@ import org.apache.commons.lang3.NotImplementedException;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.compress.CompressedMatrixBlock;
 import org.apache.sysds.runtime.compress.DMLCompressionException;
+import org.apache.sysds.runtime.compress.colgroup.ColGroupUtils.P;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.Dictionary;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.DictionaryFactory;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.IDictionary;
+import org.apache.sysds.runtime.compress.colgroup.dictionary.IdentityDictionary;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.MatrixBlockDictionary;
 import org.apache.sysds.runtime.compress.colgroup.indexes.ColIndexFactory;
 import org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex;
+import org.apache.sysds.runtime.compress.colgroup.indexes.RangeIndex;
 import org.apache.sysds.runtime.compress.colgroup.mapping.AMapToData;
 import org.apache.sysds.runtime.compress.colgroup.mapping.MapToByte;
 import org.apache.sysds.runtime.compress.colgroup.mapping.MapToChar;
@@ -53,6 +56,7 @@ import org.apache.sysds.runtime.functionobjects.Minus;
 import org.apache.sysds.runtime.functionobjects.Plus;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.matrix.operators.BinaryOperator;
+import org.apache.sysds.runtime.matrix.operators.RightScalarOperator;
 import org.apache.sysds.runtime.matrix.operators.ScalarOperator;
 import org.apache.sysds.runtime.matrix.operators.UnaryOperator;
 
@@ -397,7 +401,10 @@ public class ColGroupDDC extends APreAgg implements IMapToDataGroup {
 	}
 
 	@Override
-	public void preAggregateSparse(SparseBlock sb, double[] preAgg, int rl, int ru) {
+	public void preAggregateSparse(SparseBlock sb, double[] preAgg, int rl, int ru, int cl, int cu) {
+		if(cl != 0 || cu != _data.size()) {
+			throw new NotImplementedException();
+		}
 		_data.preAggregateSparse(sb, preAgg, rl, ru);
 	}
 
@@ -478,7 +485,11 @@ public class ColGroupDDC extends APreAgg implements IMapToDataGroup {
 			final double[] reference = ColGroupUtils.binaryDefRowRight(op, v, _colIndexes);
 			return ColGroupDDCFOR.create(_colIndexes, _dict, _data, getCachedCounts(), reference);
 		}
-		final IDictionary ret = _dict.binOpRight(op, v, _colIndexes);
+		final IDictionary ret;
+		if(_colIndexes.size() == 1)
+			ret = _dict.applyScalarOp(new RightScalarOperator(op.fn, v[_colIndexes.get(0)]));
+		else
+			ret = _dict.binOpRight(op, v, _colIndexes);
 		return create(_colIndexes, ret, _data, getCachedCounts());
 	}
 
@@ -621,6 +632,90 @@ public class ColGroupDDC extends APreAgg implements IMapToDataGroup {
 	@Override
 	protected AColGroup fixColIndexes(IColIndex newColIndex, int[] reordering) {
 		return ColGroupDDC.create(newColIndex, _dict.reorder(reordering), _data, getCachedCounts());
+	}
+
+	@Override
+	public void sparseSelection(MatrixBlock selection,P[] points,  MatrixBlock ret, int rl, int ru) {
+		// morph(CompressionType.UNCOMPRESSED, _data.size()).sparseSelection(selection, ret, rl, ru);;
+		final SparseBlock sb = selection.getSparseBlock();
+		final SparseBlock retB = ret.getSparseBlock();
+		for(int r = rl; r < ru; r++) {
+			if(sb.isEmpty(r))
+				continue;
+			final int sPos = sb.pos(r);
+			final int rowCompressed = sb.indexes(r)[sPos]; // column index with 1
+			decompressToSparseBlock(retB, rowCompressed, rowCompressed + 1, r - rowCompressed, 0);
+		}
+	}
+
+
+	@Override
+	protected void denseSelection(MatrixBlock selection, P[] points, MatrixBlock ret, int rl, int ru) {
+			// morph(CompressionType.UNCOMPRESSED, _data.size()).sparseSelection(selection, ret, rl, ru);;
+			final SparseBlock sb = selection.getSparseBlock();
+			final DenseBlock retB = ret.getDenseBlock();
+			for(int r = rl; r < ru; r++) {
+				if(sb.isEmpty(r))
+					continue;
+				final int sPos = sb.pos(r);
+				final int rowCompressed = sb.indexes(r)[sPos]; // column index with 1
+				decompressToDenseBlock(retB, rowCompressed, rowCompressed + 1, r - rowCompressed, 0);
+			}
+	}
+
+	@Override
+	public void leftMMIdentityPreAggregateDense(MatrixBlock that, MatrixBlock ret, int rl, int ru, int cl, int cu) {
+		DenseBlock db = that.getDenseBlock();
+		DenseBlock retDB = ret.getDenseBlock();
+		if(rl == ru - 1)
+			leftMMIdentityPreAggregateDenseSingleRow(db.values(rl), db.pos(rl), retDB.values(rl), retDB.pos(rl), cl, cu);
+		else
+			throw new NotImplementedException();
+	}
+
+
+	private void leftMMIdentityPreAggregateDenseSingleRow(double[] values, int pos, double[] values2, int pos2, int cl,
+		int cu) {
+		IdentityDictionary a = (IdentityDictionary) _dict;
+		if(_colIndexes instanceof RangeIndex)
+			leftMMIdentityPreAggregateDenseSingleRowRangeIndex(values, pos, values2, pos2, cl, cu);
+		else {
+
+			pos += cl; // left side matrix position offset.
+			if(a.withEmpty()) {
+				final int nVal = _dict.getNumberOfValues(_colIndexes.size()) - 1;
+				for(int rc = cl; rc < cu; rc++, pos++) {
+					final int idx = _data.getIndex(rc);
+					if(idx != nVal)
+						values2[_colIndexes.get(idx)] += values[pos];
+				}
+			}
+			else {
+				for(int rc = cl; rc < cu; rc++, pos++)
+					values2[_colIndexes.get(_data.getIndex(rc))] += values[pos];
+			}
+		}
+	}
+
+
+	private void leftMMIdentityPreAggregateDenseSingleRowRangeIndex(double[] values, int pos, double[] values2, int pos2,
+		int cl, int cu) {
+		IdentityDictionary a = (IdentityDictionary) _dict;
+
+		final int firstCol = _colIndexes.get(0);
+		pos += cl; // left side matrix position offset.
+		if(a.withEmpty()) {
+			final int nVal = _dict.getNumberOfValues(_colIndexes.size()) - 1;
+			for(int rc = cl; rc < cu; rc++, pos++) {
+				final int idx = _data.getIndex(rc);
+				if(idx != nVal)
+					values2[firstCol + idx] += values[pos];
+			}
+		}
+		else {
+			for(int rc = cl; rc < cu; rc++, pos++)
+				values2[firstCol + _data.getIndex(rc)] += values[pos];
+		}
 	}
 
 	@Override

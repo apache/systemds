@@ -26,6 +26,19 @@ oldE = read($3);
 addedE = read($4);
 totalE = rbind(oldE, addedE);
 indicesRemoved = read($9);
+disableIncScorePruning = $13;
+disableIncSizePruning = $14;
+
+if(disableIncScorePruning & disableIncSizePruning){
+  pruningStrat = 5;
+} else if (disableIncSizePruning){
+  pruningStrat = 2;
+} else if (disableIncScorePruning){
+  pruningStrat = 4;
+} else {
+  pruningStrat = 1;
+}
+
 
 if(nrow(indicesRemoved) > 0){
   if(as.scalar(indicesRemoved[1]) == 0){
@@ -33,16 +46,32 @@ if(nrow(indicesRemoved) > 0){
   }
 }
 
-# first compute the top k slices in two increments 
+# first compute the top k slices in two increments
   # first increment
-[TK, TKC, D, L, meta, Stats, Xout, eOut, foffb, foffe, params] = incSliceLine(addedX=oldX, addedE=oldE, k=$5,
+[TK, TKC, D, L, meta, Stats, Xout, eOut, foffb, foffe, params] = incSliceLine(addedX=oldX[1:nrow(oldX) -10], addedE=oldE[1:nrow(oldE) -10], k=$5,
   alpha=0.95, minSup=4, tpEval=$6, selFeat=$7, encodeLat=$8, verbose=$10);
-  
-  # second increment
-[TK1, TKC1, D1, L1, meta1, Stats1, Xout1, eOut1, foffb2, foffe2, params] = incSliceLine(addedX=addedX, oldX = oldX, oldE = oldE, addedE=addedE, prevLattice = L, metaPrevLattice=meta, prevStats = Stats, prevTK = TK, prevTKC = TKC, k=$5,
-  alpha=0.95, minSup=4, tpEval=$6, selFeat=$7, encodeLat=$8, indicesRemoved=indicesRemoved, verbose=$10, params=params, prevFoffb = foffb, prevFoffe = foffe);
+/*
+for(i in 1:nrow(Stats)){
+  print("nrow(L[" + i + "]): " + nrow(as.matrix(L[i])));
+  print("Stats[" + i + "]: " + nrow(as.matrix(Stats[i])));
+}*/
 
-# prepare totalX and totalE for running sliceline on total data 
+[TK, TKC, D, L, meta, Stats, Xout, eOut, foffb, foffe, params] = incSliceLine(addedX=oldX[nrow(oldX) -9: nrow(oldX)], oldX = oldX[1:nrow(oldX) -10], oldE = oldE[1:nrow(oldE) -10], addedE=oldE[nrow(oldE) -9: nrow(oldE)], prevLattice = L, metaPrevLattice=meta, prevStats = Stats, prevTK = TK, prevTKC = TKC, k=$5,
+  alpha=0.95, minSup=4, tpEval=$6, selFeat=$7, encodeLat=$8, indicesRemoved=indicesRemoved, verbose=$10, params=params, prevFoffb = foffb, prevFoffe = foffe, pruningStrat = pruningStrat);
+
+/*
+for(i in 1:nrow(Stats)){
+  print("nrow(L[" + i + "]): " + nrow(as.matrix(L[i])));
+  print("Stats[" + i + "]: " + nrow(as.matrix(Stats[i])));
+}*/
+
+  # second increment
+
+  # third increment
+[TK1, TKC1, D1, L1, meta1, Stats1, Xout1, eOut1, foffb2, foffe2, params] = incSliceLine(addedX=addedX, oldX = oldX, oldE = oldE, addedE=addedE, prevLattice = L, metaPrevLattice=meta, prevStats = Stats, prevTK = TK, prevTKC = TKC, k=$5,
+  alpha=0.95, minSup=4, tpEval=$6, selFeat=$7, encodeLat=$8, indicesRemoved=indicesRemoved, verbose=$10, params=params, prevFoffb = foffb, prevFoffe = foffe, pruningStrat = pruningStrat);
+
+# prepare totalX and totalE for running sliceline on total data
 if(nrow(indicesRemoved) > 0){
   oldX = removeRowsByIndices(oldX, indicesRemoved);
   oldE = removeRowsByIndices(oldE, indicesRemoved);
@@ -60,7 +89,7 @@ write(TKC2, $12)
 # Function to remove rows from matrix M based on a list of indices
 removeRowsByIndices = function(Matrix[Double] M, Matrix[Double] indices)
   return (Matrix[Double] result)
-{ 
+{
   result = matrix(0, 0, ncol(M));
   index = 1;
   for(i in 1:nrow(indices)){
@@ -75,3 +104,4 @@ removeRowsByIndices = function(Matrix[Double] M, Matrix[Double] indices)
   }
   result = rbind(result, M[index:nrow(M),]);
 }
+

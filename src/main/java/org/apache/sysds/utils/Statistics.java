@@ -26,12 +26,16 @@ import org.apache.sysds.conf.ConfigurationManager;
 import org.apache.sysds.hops.OptimizerUtils;
 import org.apache.sysds.hops.fedplanner.FederatedCompilationTimer;
 import org.apache.sysds.runtime.controlprogram.caching.CacheStatistics;
+import org.apache.sysds.runtime.controlprogram.caching.CacheableData;
+import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysds.runtime.controlprogram.federated.FederatedStatistics;
 import org.apache.sysds.runtime.instructions.Instruction;
 import org.apache.sysds.runtime.instructions.InstructionUtils;
+import org.apache.sysds.runtime.instructions.cp.Data;
 import org.apache.sysds.runtime.instructions.cp.FunctionCallCPInstruction;
 import org.apache.sysds.runtime.instructions.spark.SPInstruction;
 import org.apache.sysds.runtime.lineage.LineageCacheConfig.ReuseCacheType;
+import org.apache.sysds.runtime.meta.DataCharacteristics;
 import org.apache.sysds.runtime.lineage.LineageCacheStatistics;
 import org.apache.sysds.runtime.lineage.LineageItem;
 import org.apache.sysds.runtime.lineage.LineageItemUtils;
@@ -496,7 +500,33 @@ public class Statistics
 	public static synchronized LineageNGramExtension getExtendedLineage(LineageItem li) {
 		return _lineageExtensions.get(li);
 	}
+	
+	public static synchronized void maintainNGramsFromLineage(Instruction tmp, ExecutionContext ec, long t0) {
+		final long nanoTime = System.nanoTime() - t0;
+		if (DMLScript.STATISTICS_NGRAMS_USE_LINEAGE) {
+			Statistics.getCurrentLineageItem().ifPresent(li -> {
+				Data data = ec.getVariable(li.getKey());
+				Statistics.LineageNGramExtension ext = new Statistics.LineageNGramExtension();
+				if (data != null) {
+					ext.setDataType(data.getDataType().toString());
+					ext.setValueType(data.getValueType().toString());
+					if (data instanceof CacheableData) {
+						DataCharacteristics dc = ((CacheableData<?>)data).getDataCharacteristics();
+						ext.setMeta("NDims", (double)dc.getNumDims());
+						ext.setMeta("NumRows", (double)dc.getRows());
+						ext.setMeta("NumCols", (double)dc.getCols());
+						ext.setMeta("NonZeros", (double)dc.getNonZeros());
+					}
+				}
+				ext.setExecNanos(nanoTime);
+				Statistics.extendLineageItem(li.getValue(), ext);
+				Statistics.maintainNGramsFromLineage(li.getValue());
+			});
+		} else
+			Statistics.maintainNGrams(tmp.getExtendedOpcode(), nanoTime);
+	}
 
+	@SuppressWarnings("unchecked")
 	public static synchronized void maintainNGramsFromLineage(LineageItem li) {
 		NGramBuilder<String, NGramStats>[] tmp = _instStatsNGram.computeIfAbsent(Thread.currentThread().getName(), k -> {
 			NGramBuilder<String, NGramStats>[] threadEntry = new NGramBuilder[DMLScript.STATISTICS_NGRAM_SIZES.length];

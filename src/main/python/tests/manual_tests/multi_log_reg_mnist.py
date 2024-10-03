@@ -29,11 +29,11 @@ d = DataManager()
 
 with SystemDSContext() as sds:
     # Train Data
-    X = sds.from_numpy(d.get_train_data().reshape((60000, 28*28)))
+    X = sds.from_numpy(d.get_train_data().reshape((60000, 28 * 28)))
     Y = sds.from_numpy(d.get_train_labels()) + 1.0
     bias = multiLogReg(X, Y, tol=0.0001, verbose=False)
     # Test data
-    Xt = sds.from_numpy(d.get_test_data().reshape((10000, 28*28)))
+    Xt = sds.from_numpy(d.get_test_data().reshape((10000, 28 * 28)))
     Yt = sds.from_numpy(d.get_test_labels()) + 1.0
     [_, _, acc] = multiLogRegPredict(Xt, bias, Y=Yt).compute()
 

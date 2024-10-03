@@ -72,23 +72,26 @@ class DataManager:
         return self._parse_data(self._test_labels_loc)
 
     def _parse_data(self, loc):
-        f = gzip.open if os.path.splitext(loc)[1] == '.gz' else open
-        with f(loc, 'rb') as fd:
+        f = gzip.open if os.path.splitext(loc)[1] == ".gz" else open
+        with f(loc, "rb") as fd:
             return self._parse(fd)
 
     def _parse(self, fd):
-        DATA_TYPES = {0x08: 'B',  # unsigned byte
-                      0x09: 'b',  # signed byte
-                      0x0b: 'h',  # short (2 bytes)
-                      0x0c: 'i',  # int (4 bytes)
-                      0x0d: 'f',  # float (4 bytes)
-                      0x0e: 'd'}  # double (8 bytes)
+        DATA_TYPES = {
+            0x08: "B",  # unsigned byte
+            0x09: "b",  # signed byte
+            0x0B: "h",  # short (2 bytes)
+            0x0C: "i",  # int (4 bytes)
+            0x0D: "f",  # float (4 bytes)
+            0x0E: "d",
+        }  # double (8 bytes)
 
         header = fd.read(4)
-        zeros, data_type, num_dimensions = struct.unpack('>HBB', header)
+        zeros, data_type, num_dimensions = struct.unpack(">HBB", header)
         data_type = DATA_TYPES[data_type]
-        dimension_sizes = struct.unpack('>' + 'I' * num_dimensions,
-                                        fd.read(4 * num_dimensions))
+        dimension_sizes = struct.unpack(
+            ">" + "I" * num_dimensions, fd.read(4 * num_dimensions)
+        )
 
         data = array.array(data_type, fd.read())
         data.byteswap()  # looks like array.array reads data as little endian
@@ -103,5 +106,5 @@ class DataManager:
             folder = os.path.dirname(loc)
             if not os.path.isdir(folder):
                 os.makedirs(folder)
-            with open(loc, 'wb') as f:
+            with open(loc, "wb") as f:
                 f.write(myfile.content)

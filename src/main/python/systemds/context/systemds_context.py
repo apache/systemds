@@ -37,11 +37,19 @@ from typing import Dict, Iterable, Sequence, Tuple, Union
 import numpy as np
 import pandas as pd
 from py4j.java_gateway import GatewayParameters, JavaGateway, Py4JNetworkError
-from systemds.operator import (Frame, List, Matrix, OperationNode, Scalar,
-                               Source, Combine,  MultiReturn)
-from systemds.script_building import DMLScript, OutputType
+from systemds.operator import (
+    Frame,
+    List,
+    Matrix,
+    OperationNode,
+    Scalar,
+    Source,
+    Combine,
+    MultiReturn,
+)
+from systemds.script_building import DMLScript
 from systemds.utils.consts import VALID_INPUT_TYPES
-from systemds.utils.helpers import get_module_dir
+from systemds.utils.helpers import get_module_dir, valuetype_from_str
 
 
 class SystemDSContext(object):
@@ -59,11 +67,14 @@ class SystemDSContext(object):
     __stdout: Queue = None
     __stderr: Queue = None
 
-    def __init__(self, port: int = -1,
-                 capture_statistics: bool = False,
-                 capture_stdout: bool = False,
-                 logging_level: int = 20,
-                 py4j_logging_level: int = 50):
+    def __init__(
+        self,
+        port: int = -1,
+        capture_statistics: bool = False,
+        capture_stdout: bool = False,
+        logging_level: int = 20,
+        py4j_logging_level: int = 50,
+    ):
         """Starts a new instance of SystemDSContext, in which the connection to a JVM systemds instance is handled
         Any new instance of this SystemDS Context, would start a separate new JVM.
 
@@ -79,7 +90,7 @@ class SystemDSContext(object):
             it can be verbose if not set high.
         """
         self.__setup_logging(logging_level, py4j_logging_level)
-        self.__start(port,  capture_stdout)
+        self.__start(port, capture_stdout)
         self.capture_stats(capture_statistics)
         self._log.debug("Started JVM and SystemDS python context manager")
 
@@ -90,7 +101,7 @@ class SystemDSContext(object):
         default -1 prints all current lines in the queue.
         """
         if self.__stdout:
-            if (lines == -1 or self.__stdout.qsize() < lines):
+            if lines == -1 or self.__stdout.qsize() < lines:
                 return [self.__stdout.get() for x in range(self.__stdout.qsize())]
             else:
                 return [self.__stdout.get() for x in range(lines)]
@@ -132,18 +143,24 @@ class SystemDSContext(object):
         raise RuntimeError(message)
 
     def __try_startup(self, command: str, capture_stdout: bool) -> Popen:
-        if(capture_stdout):
+        if capture_stdout:
             process = Popen(command, stdout=PIPE, stdin=PIPE, stderr=PIPE)
 
             # Handle Std out from the subprocess.
             self.__stdout = Queue()
             self.__stderr = Queue()
 
-            self.__stdout_thread = Thread(target=self.__enqueue_output, args=(
-                process.stdout, self.__stdout), daemon=True)
+            self.__stdout_thread = Thread(
+                target=self.__enqueue_output,
+                args=(process.stdout, self.__stdout),
+                daemon=True,
+            )
 
-            self.__stderr_thread = Thread(target=self.__enqueue_output, args=(
-                process.stderr, self.__stderr), daemon=True)
+            self.__stderr_thread = Thread(
+                target=self.__enqueue_output,
+                args=(process.stderr, self.__stderr),
+                daemon=True,
+            )
 
             self.__stdout_thread.start()
             self.__stderr_thread.start()
@@ -167,30 +184,41 @@ class SystemDSContext(object):
             root = os.path.join(get_module_dir())
 
         # Find the SystemDS jar file.
-        if root != None: # root path was set
+        if root != None:  # root path was set
             self._log.debug("SYSTEMDS_ROOT was set, searching for jar file")
             lib_release = os.path.join(root, "lib")
             systemds_cp = os.path.join(root, "target", "SystemDS.jar")
-            if os.path.exists(lib_release): # It looks like it was a release path for root.
+            if os.path.exists(
+                lib_release
+            ):  # It looks like it was a release path for root.
                 classpath = os.path.join(root, "SystemDS.jar")
                 if not os.path.exists(classpath):
                     for f in os.listdir(root):
                         if "systemds" in f:
                             if os.path.exists(classpath):
-                               raise(ValueError("Invalid setup there were multiple conflicting systemds jar fines in" + root)) 
+                                raise (
+                                    ValueError(
+                                        "Invalid setup there were multiple conflicting systemds jar fines in"
+                                        + root
+                                    )
+                                )
                             else:
                                 classpath = os.path.join(root, f)
                     if not os.path.exists(classpath):
                         raise ValueError(
-                            "Invalid setup did not find SystemDS jar file in " + root)
+                            "Invalid setup did not find SystemDS jar file in " + root
+                        )
             elif os.path.exists(systemds_cp):
                 classpath = cp_separator.join([systemds_cp])
             else:
                 raise ValueError(
-                    "Invalid setup at SYSTEMDS_ROOT env variable path " + root)
-        else: # root path was not set use the pip installed SystemDS
-            self._log.warning("SYSTEMDS_ROOT was unset, defaulting to python packaged jar files")
-            systemds_cp = os.path.join(root,"SystemDS.jar")
+                    "Invalid setup at SYSTEMDS_ROOT env variable path " + root
+                )
+        else:  # root path was not set use the pip installed SystemDS
+            self._log.warning(
+                "SYSTEMDS_ROOT was unset, defaulting to python packaged jar files"
+            )
+            systemds_cp = os.path.join(root, "SystemDS.jar")
             classpath = cp_separator.join([systemds_cp])
 
         command.append(classpath)
@@ -199,20 +227,25 @@ class SystemDSContext(object):
         if os.environ.get("LOG4JPROP") == None:
             files = glob(os.path.join(root, "conf", "log4j*.properties"))
             if len(files) > 1:
-                self._log.warning(
-                    "Multiple logging files found selecting: " + files[0])
+                self._log.warning("Multiple logging files found selecting: " + files[0])
             if len(files) == 0:
-                self._log.warning("No log4j file found at: "
-                                  + os.path.join(root, "conf")
-                                  + " therefore using default settings")
+                self._log.warning(
+                    "No log4j file found at: "
+                    + os.path.join(root, "conf")
+                    + " therefore using default settings"
+                )
             else:
                 command.append("-Dlog4j.configuration=file:" + files[0])
         else:
             logging_file = os.environ.get("LOG4JPROP")
             if os.path.exists(logging_file):
-                command.append("-Dlog4j.configuration=file:" +os.environ.get("LOG4JPROP"))
+                command.append(
+                    "-Dlog4j.configuration=file:" + os.environ.get("LOG4JPROP")
+                )
             else:
-                self._log.warning("LOG4JPROP is set but path is invalid: " + str(logging_file))
+                self._log.warning(
+                    "LOG4JPROP is set but path is invalid: " + str(logging_file)
+                )
 
         # Specify the main function inside SystemDS to launch in java.
         command.append("org.apache.sysds.api.PythonDMLScript")
@@ -221,12 +254,13 @@ class SystemDSContext(object):
         # TODO: refine the choise of configuration file
         files = glob(os.path.join(root, "conf", "SystemDS*.xml"))
         if len(files) > 1:
-            self._log.warning(
-                "Multiple config files found selecting: " + files[0])
+            self._log.warning("Multiple config files found selecting: " + files[0])
         if len(files) == 0:
-            self._log.warning("No xml config file found at: "
-                              + os.path.join(root, "conf")
-                              + " therefore using default settings")
+            self._log.warning(
+                "No xml config file found at: "
+                + os.path.join(root, "conf")
+                + " therefore using default settings"
+            )
         else:
             command.append("-config")
             command.append(files[0])
@@ -239,7 +273,7 @@ class SystemDSContext(object):
         command.append("--python")
         command.append(str(actual_port))
 
-        self._log.info("Command "  + str(command))
+        self._log.info("Command " + str(command))
         self._log.info("Port used for communication: " + str(actual_port))
 
         return command, actual_port
@@ -256,8 +290,7 @@ class SystemDSContext(object):
         :param retry: The Retry number of the current startup.
         """
         if retry > 3:
-            raise Exception(
-                "Failed startup of SystemDS Context with 3 repeats")
+            raise Exception("Failed startup of SystemDS Context with 3 repeats")
 
         if port != -1 and self.__is_port_in_use(port):
             port = -1
@@ -265,7 +298,10 @@ class SystemDSContext(object):
 
         # Verify the port intended is available.
         while self.__is_port_in_use(actual_port):
-            command, actual_port, = self.__build_startup_command(actual_port)
+            (
+                command,
+                actual_port,
+            ) = self.__build_startup_command(actual_port)
 
         process = self.__try_startup(command, capture_stdout)
 
@@ -280,19 +316,25 @@ class SystemDSContext(object):
                 sleep(sleep_time)
                 try:
                     self.java_gateway = JavaGateway(
-                        gateway_parameters=gwp, java_process=process)
+                        gateway_parameters=gwp, java_process=process
+                    )
                     # Successful startup.
                     return
                 except Py4JNetworkError as pe:
                     m = str(pe)
-                    if "An error occurred while trying to connect to the Java server" in m:
+                    if (
+                        "An error occurred while trying to connect to the Java server"
+                        in m
+                    ):
                         # Here the startup failed because the java process is not ready.
                         connect_retry += 1
                     else:  # unknown new error or java process crashed
                         raise pe
                 except Exception as e:
                     raise Exception(
-                        "Exception hit when connecting to JavaGateway, perhaps the JVM terminated because of port", e)
+                        "Exception hit when connecting to JavaGateway, perhaps the JVM terminated because of port",
+                        e,
+                    )
             raise Exception("Failed to connect to process, making a new JVM")
         except Exception:
             self.__kill_Popen(process)
@@ -308,15 +350,15 @@ class SystemDSContext(object):
 
     def close(self):
         """Close the connection to the java process and do necessary cleanup."""
-        if hasattr(self, 'java_gateway'):
+        if hasattr(self, "java_gateway"):
             self.__kill_Popen(self.java_gateway.java_process)
             self.java_gateway.shutdown()
-        if hasattr(self, '__process'):
+        if hasattr(self, "__process"):
             logging.error("Has process variable")
             self.__kill_Popen(self.__process)
-        if hasattr(self, '__stdout_thread') and self.__stdout_thread.is_alive():
+        if hasattr(self, "__stdout_thread") and self.__stdout_thread.is_alive():
             self.__stdout_thread.join(0)
-        if hasattr(self, '__stderr_thread') and self.__stderr_thread.is_alive():
+        if hasattr(self, "__stderr_thread") and self.__stderr_thread.is_alive():
             self.__stderr_thread.join(0)
 
     def __kill_Popen(self, process: Popen):
@@ -347,7 +389,7 @@ class SystemDSContext(object):
         :param port: The port to analyze"""
         # https://stackoverflow.com/questions/2470971/fast-way-to-test-if-a-port-is-in-use-using-python
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-            return s.connect_ex(('localhost', port)) == 0
+            return s.connect_ex(("localhost", port)) == 0
 
     def _execution_completed(self, script: DMLScript):
         """
@@ -373,7 +415,7 @@ class SystemDSContext(object):
         Afterwards capturing will be reset to the state it was before.
 
         Example:
-        
+
         # ```Python
         # with sds.capture_stats_context():
         #     a = some_computation.compute()
@@ -409,11 +451,10 @@ class SystemDSContext(object):
         return stats
 
     def clear_stats(self):
-        """Clears the captured statistics.
-        """
+        """Clears the captured statistics."""
         self._statistics = ""
 
-    def full(self, shape: Tuple[int, int], value: Union[float, int]) -> 'Matrix':
+    def full(self, shape: Tuple[int, int], value: Union[float, int]) -> "Matrix":
         """Generates a matrix completely filled with a value
 
         :param sds_context: SystemDS context
@@ -422,46 +463,15 @@ class SystemDSContext(object):
         :return: the OperationNode representing this operation
         """
         unnamed_input_nodes = [value]
-        named_input_nodes = {'rows': shape[0], 'cols': shape[1]}
-        return Matrix(self, 'matrix', unnamed_input_nodes, named_input_nodes)
+        named_input_nodes = {"rows": shape[0], "cols": shape[1]}
+        return Matrix(self, "matrix", unnamed_input_nodes, named_input_nodes)
 
-
-    def fft(self, real_input: 'Matrix') -> 'MultiReturn':
-        """
-        Performs the Fast Fourier Transform (FFT) on the matrix.
-        :param real_input: The real part of the input matrix.
-        :return: A MultiReturn object representing the real and imaginary parts of the FFT output.
-        """
-
-        real_output = OperationNode(self, '', output_type=OutputType.MATRIX, is_python_local_data=False)
-        imag_output = OperationNode(self, '', output_type=OutputType.MATRIX, is_python_local_data=False)
-
-        fft_node = MultiReturn(self, 'fft', [real_output, imag_output], [real_input])
-
-        return fft_node
-
-
-    def ifft(self, real_input: 'Matrix', imag_input: 'Matrix' = None) -> 'MultiReturn':
-        """
-        Performs the Inverse Fast Fourier Transform (IFFT) on a complex matrix.
-        
-        :param real_input: The real part of the input matrix.
-        :param imag_input: The imaginary part of the input matrix (optional).
-        :return: A MultiReturn object representing the real and imaginary parts of the IFFT output.
-        """
-
-        real_output = OperationNode(self, '', output_type=OutputType.MATRIX, is_python_local_data=False)
-        imag_output = OperationNode(self, '', output_type=OutputType.MATRIX, is_python_local_data=False)
-
-        if imag_input is not None:
-            ifft_node = MultiReturn(self, 'ifft', [real_output, imag_output], [real_input, imag_input])
-        else:
-            ifft_node = MultiReturn(self, 'ifft', [real_output, imag_output], [real_input])
-
-        return ifft_node
-
-    def seq(self, start: Union[float, int], stop: Union[float, int] = None,
-            step: Union[float, int] = 1) -> 'Matrix':
+    def seq(
+        self,
+        start: Union[float, int],
+        stop: Union[float, int] = None,
+        step: Union[float, int] = 1,
+    ) -> "Matrix":
         """Create a single column vector with values from `start` to `stop` and an increment of `step`.
         If no stop is defined and only one parameter is given, then start will be 0 and the parameter will be interpreted as
         stop.
@@ -476,12 +486,19 @@ class SystemDSContext(object):
             stop = start
             start = 0
         unnamed_input_nodes = [start, stop, step]
-        return Matrix(self, 'seq', unnamed_input_nodes)
+        return Matrix(self, "seq", unnamed_input_nodes)
 
-    def rand(self, rows: int, cols: int,
-             min: Union[float, int] = None, max: Union[float, int] = None, pdf: str = "uniform",
-             sparsity: Union[float, int] = None, seed: Union[float, int] = None,
-             lamb: Union[float, int] = 1) -> 'Matrix':
+    def rand(
+        self,
+        rows: int,
+        cols: int,
+        min: Union[float, int] = None,
+        max: Union[float, int] = None,
+        pdf: str = "uniform",
+        sparsity: Union[float, int] = None,
+        seed: Union[float, int] = None,
+        lamb: Union[float, int] = 1,
+    ) -> "Matrix":
         """Generates a matrix filled with random values
 
         :param sds_context: SystemDS context
@@ -497,35 +514,43 @@ class SystemDSContext(object):
         """
         available_pdf = ["uniform", "normal", "poisson"]
         if rows < 0:
-            raise ValueError("In rand statement, can only assign rows a long (integer) value >= 0 "
-                             "-- attempted to assign value: {r}".format(r=rows))
+            raise ValueError(
+                "In rand statement, can only assign rows a long (integer) value >= 0 "
+                "-- attempted to assign value: {r}".format(r=rows)
+            )
         if cols < 0:
-            raise ValueError("In rand statement, can only assign cols a long (integer) value >= 0 "
-                             "-- attempted to assign value: {c}".format(c=cols))
+            raise ValueError(
+                "In rand statement, can only assign cols a long (integer) value >= 0 "
+                "-- attempted to assign value: {c}".format(c=cols)
+            )
         if pdf not in available_pdf:
-            raise ValueError("The pdf passed is invalid! given: {g}, expected: {e}".format(
-                g=pdf, e=available_pdf))
+            raise ValueError(
+                "The pdf passed is invalid! given: {g}, expected: {e}".format(
+                    g=pdf, e=available_pdf
+                )
+            )
 
-        pdf = '\"' + pdf + '\"'
-        named_input_nodes = {
-            'rows': rows, 'cols': cols, 'pdf': pdf, 'lambda': lamb}
+        pdf = '"' + pdf + '"'
+        named_input_nodes = {"rows": rows, "cols": cols, "pdf": pdf, "lambda": lamb}
         if min is not None:
-            named_input_nodes['min'] = min
+            named_input_nodes["min"] = min
         if max is not None:
-            named_input_nodes['max'] = max
+            named_input_nodes["max"] = max
         if sparsity is not None:
-            named_input_nodes['sparsity'] = sparsity
+            named_input_nodes["sparsity"] = sparsity
         if seed is not None:
-            named_input_nodes['seed'] = seed
+            named_input_nodes["seed"] = seed
 
-        return Matrix(self, 'rand', [], named_input_nodes=named_input_nodes)
+        return Matrix(self, "rand", [], named_input_nodes=named_input_nodes)
 
     def __fix_string_args(self, arg: str) -> str:
         nf = str(arg).replace('"', "").replace("'", "")
         return f'"{nf}"'
 
-    def read(self, path: os.PathLike, **kwargs: Dict[str, VALID_INPUT_TYPES]) -> OperationNode:
-        """ Read an file from disk. Supported types include:
+    def read(
+        self, path: os.PathLike, **kwargs: Dict[str, VALID_INPUT_TYPES]
+    ) -> OperationNode:
+        """Read an file from disk. Supported types include:
         CSV, Matrix Market(coordinate), Text(i,j,v), SystemDS Binary, etc.
         See: http://apache.github.io/systemds/site/dml-language-reference#readwrite-built-in-functions for more details
         :return: an Operation Node, containing the read data the operationNode read can be of types, Matrix, Frame or Scalar.
@@ -544,8 +569,15 @@ class SystemDSContext(object):
             if ".csv" in path[-4:]:
                 kwargs["format"] = '"csv"'
                 self._log.warning(
-                    "Guessing '"+path+"' is a csv file, please add a mtd file, or specify in arguments")
-                if not ("header" in kwargs) and "data_type" in kwargs and kwargs["data_type"] == "frame":
+                    "Guessing '"
+                    + path
+                    + "' is a csv file, please add a mtd file, or specify in arguments"
+                )
+                if (
+                    not ("header" in kwargs)
+                    and "data_type" in kwargs
+                    and kwargs["data_type"] == "frame"
+                ):
                     kwargs["header"] = True
 
         data_type = kwargs.get("data_type", None)
@@ -558,24 +590,26 @@ class SystemDSContext(object):
             return Frame(self, "read", [f'"{path}"'], named_input_nodes=kwargs)
         elif data_type == "scalar":
             kwargs["data_type"] = f'"{data_type}"'
-            output_type = OutputType.from_str(kwargs.get("value_type", None))
-            if output_type:
-                kwargs["value_type"] = f'"{output_type.name}"'
-                return Scalar(self, "read", [f'"{path}"'], named_input_nodes=kwargs, output_type=output_type)
+            value_type = valuetype_from_str(kwargs.get("value_type", None))
+            if value_type:
+                kwargs["value_type"] = f'"{value_type}"'
+                return Scalar(self, "read", [f'"{path}"'], named_input_nodes=kwargs)
             else:
                 raise ValueError(
-                    "Invalid arguments for reading scalar, value_type must be specified")
+                    "Invalid arguments for reading scalar, value_type must be specified"
+                )
         elif data_type == "list":
             # Reading a list have no extra arguments.
             return List(self, "read", [f'"{path}"'])
         else:
             kwargs["data_type"] = '"matrix"'
             self._log.warning(
-                "Unknown type read please add a mtd file, or specify in arguments, defaulting to matrix")
+                "Unknown type read please add a mtd file, or specify in arguments, defaulting to matrix"
+            )
             return Matrix(self, "read", [f'"{path}"'], named_input_nodes=kwargs)
 
     def scalar(self, v: Dict[str, VALID_INPUT_TYPES]) -> Scalar:
-        """ Construct an scalar value, this can contain str, float, double, integers and booleans.
+        """Construct an scalar value, this can contain str, float, double, integers and booleans.
         :return: A scalar containing the given value.
         """
         if type(v) is str:
@@ -584,11 +618,14 @@ class SystemDSContext(object):
 
         # output type assign simply assigns the given variable to the value
         # therefore the output type is assign.
-        return Scalar(self, v, assign=True, output_type=OutputType.from_str(v))
+        return Scalar(self, v, assign=True)
 
-    def from_numpy(self, mat: np.array,
-                   *args: Sequence[VALID_INPUT_TYPES],
-                   **kwargs: Dict[str, VALID_INPUT_TYPES]) -> Matrix:
+    def from_numpy(
+        self,
+        mat: np.array,
+        *args: Sequence[VALID_INPUT_TYPES],
+        **kwargs: Dict[str, VALID_INPUT_TYPES],
+    ) -> Matrix:
         """Generate DAGNode representing matrix with data given by a numpy array, which will be sent to SystemDS
         on need.
 
@@ -598,22 +635,26 @@ class SystemDSContext(object):
         :return: A Matrix
         """
 
-        unnamed_params = ['\'./tmp/{file_name}\'']
+        unnamed_params = ["'./tmp/{file_name}'"]
 
         if len(mat.shape) == 2:
-            named_params = {'rows': mat.shape[0], 'cols': mat.shape[1]}
+            named_params = {"rows": mat.shape[0], "cols": mat.shape[1]}
         elif len(mat.shape) == 1:
-            named_params = {'rows': mat.shape[0], 'cols': 1}
+            named_params = {"rows": mat.shape[0], "cols": 1}
         else:
             # TODO Support tensors.
             raise ValueError("Only two dimensional arrays supported")
 
         unnamed_params.extend(args)
         named_params.update(kwargs)
-        return Matrix(self, 'read', unnamed_params, named_params, local_data=mat)
+        return Matrix(self, "read", unnamed_params, named_params, local_data=mat)
 
-    def from_pandas(self, df: pd.DataFrame,
-                    *args: Sequence[VALID_INPUT_TYPES], **kwargs: Dict[str, VALID_INPUT_TYPES]) -> Frame:
+    def from_pandas(
+        self,
+        df: pd.DataFrame,
+        *args: Sequence[VALID_INPUT_TYPES],
+        **kwargs: Dict[str, VALID_INPUT_TYPES],
+    ) -> Frame:
         """Generate DAGNode representing frame with data given by a pandas dataframe, which will be sent to SystemDS
         on need.
 
@@ -625,9 +666,9 @@ class SystemDSContext(object):
         unnamed_params = ["'./tmp/{file_name}'"]
 
         if len(df.shape) == 2:
-            named_params = {'rows': df.shape[0], 'cols': df.shape[1]}
+            named_params = {"rows": df.shape[0], "cols": df.shape[1]}
         elif len(df.shape) == 1:
-            named_params = {'rows': df.shape[0], 'cols': 1}
+            named_params = {"rows": df.shape[0], "cols": 1}
         else:
             # TODO Support tensors.
             raise ValueError("Only two dimensional arrays supported")
@@ -640,9 +681,13 @@ class SystemDSContext(object):
         named_params.update(kwargs)
         return Frame(self, "read", unnamed_params, named_params, local_data=df)
 
-    def federated(self, addresses: Iterable[str],
-                  ranges: Iterable[Tuple[Iterable[int], Iterable[int]]], *args,
-                  **kwargs: Dict[str, VALID_INPUT_TYPES]) -> Matrix:
+    def federated(
+        self,
+        addresses: Iterable[str],
+        ranges: Iterable[Tuple[Iterable[int], Iterable[int]]],
+        *args,
+        **kwargs: Dict[str, VALID_INPUT_TYPES],
+    ) -> Matrix:
         """Create federated matrix object.
 
         :param sds_context: the SystemDS context
@@ -652,22 +697,23 @@ class SystemDSContext(object):
         :param kwargs: named params
         :return: The Matrix containing the Federated data.
         """
-        addresses_str = 'list(' + \
-            ','.join(map(lambda s: f'"{s}"', addresses)) + ')'
-        ranges_str = 'list('
+        addresses_str = "list(" + ",".join(map(lambda s: f'"{s}"', addresses)) + ")"
+        ranges_str = "list("
         for begin, end in ranges:
-            ranges_str += f'list({",".join(map(str, begin))}), list({",".join(map(str, end))}),'
+            ranges_str += (
+                f'list({",".join(map(str, begin))}), list({",".join(map(str, end))}),'
+            )
         ranges_str = ranges_str[:-1]
-        ranges_str += ')'
-        named_params = {'addresses': addresses_str, 'ranges': ranges_str}
+        ranges_str += ")"
+        named_params = {"addresses": addresses_str, "ranges": ranges_str}
         named_params.update(kwargs)
-        return Matrix(self, 'federated', args, named_params)
+        return Matrix(self, "federated", args, named_params)
 
     def source(self, path: str, name: str) -> Source:
         """Import methods from a given dml file.
 
         The importing is done through the DML command source, and adds all defined methods from
-        the script to the Source object returned in python. This gives the flexibility to call the methods 
+        the script to the Source object returned in python. This gives the flexibility to call the methods
         directly on the object returned.
 
         In systemds a method called func_01 can then be imported using
@@ -681,46 +727,48 @@ class SystemDSContext(object):
         """
         return Source(self, path, name)
 
-    def list(self, *args: Sequence[VALID_INPUT_TYPES], **kwargs: Dict[str, VALID_INPUT_TYPES]) -> List:
-        """ Create a List object containing the given nodes.
+    def list(
+        self, *args: Sequence[VALID_INPUT_TYPES], **kwargs: Dict[str, VALID_INPUT_TYPES]
+    ) -> List:
+        """Create a List object containing the given nodes.
 
         Note that only a sequence is allowed, or a dictionary, not both at the same time.
         :param args: A Sequence that will be inserted to a list
         :param kwargs: A Dictionary that will return a dictionary, (internally handled as a list)
-        :return: A List 
+        :return: A List
         """
         return List(self, unnamed_input_nodes=args, named_input_nodes=kwargs)
 
     def combine(self, *args: Sequence[VALID_INPUT_TYPES]) -> Combine:
-        """ combine nodes to call compute on multiple operations.
+        """combine nodes to call compute on multiple operations.
 
-        This is usefull for the case of having multiple writes in one script and wanting 
+        This is usefull for the case of having multiple writes in one script and wanting
         to execute all in one execution reusing intermediates.
 
         Note this combine does not allow to return anything to the user, so if used,
         please only use nodes that end with either writing or printing elements.
 
-        :param args: A sequence that will be executed with call to compute() 
+        :param args: A sequence that will be executed with call to compute()
         """
         return Combine(self, unnamed_input_nodes=args)
 
     def array(self, *args: Sequence[VALID_INPUT_TYPES]) -> List:
-        """ Create a List object containing the given nodes.
+        """Create a List object containing the given nodes.
 
         Note that only a sequence is allowed, or a dictionary, not both at the same time.
         :param args: A Sequence that will be inserted to a list
         :param kwargs: A Dictionary that will return a dictionary, (internally handled as a list)
-        :return: A List 
+        :return: A List
         """
         return List(self, unnamed_input_nodes=args)
 
-    def dict(self,  **kwargs: Dict[str, VALID_INPUT_TYPES]) -> List:
-        """ Create a List object containing the given nodes.
+    def dict(self, **kwargs: Dict[str, VALID_INPUT_TYPES]) -> List:
+        """Create a List object containing the given nodes.
 
         Note that only a sequence is allowed, or a dictionary, not both at the same time.
         :param args: A Sequence that will be inserted to a list
         :param kwargs: A Dictionary that will return a dictionary, (internally handled as a list)
-        :return: A List 
+        :return: A List
         """
         return List(self, named_input_nodes=kwargs)
 
@@ -740,7 +788,8 @@ class SystemDSContext(object):
         f_handler = logging.StreamHandler()
         f_handler.setLevel(level)
         f_format = logging.Formatter(
-            '%(asctime)s - SystemDS- %(levelname)s - %(message)s')
+            "%(asctime)s - SystemDS- %(levelname)s - %(message)s"
+        )
         f_handler.setFormatter(f_format)
         self._log.addHandler
         # avoid the logger to call loggers above.

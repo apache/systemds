@@ -739,17 +739,17 @@ public interface Types {
 	
 	/** Operations that require a variable number of operands*/
 	public enum OpOpN {
-		PRINTF, CBIND, RBIND, MIN, MAX, PLUS, EVAL, LIST;
+		PRINTF, CBIND, RBIND, MIN, MAX, PLUS, MULT, EVAL, LIST;
 		
 		public boolean isCellOp() {
-			return this == MIN || this == MAX || this == PLUS;
+			return this == MIN || this == MAX || this == PLUS || this == MULT;
 		}
 	}
 	
 	/** Operations that perform internal reorganization of an allocation */
 	public enum ReOrgOp {
 		DIAG, //DIAG_V2M and DIAG_M2V could not be distinguished if sizes unknown
-		RESHAPE, REV, SORT, TRANS;
+		RESHAPE, REV, ROLL, SORT, TRANS;
 		
 		@Override
 		public String toString() {

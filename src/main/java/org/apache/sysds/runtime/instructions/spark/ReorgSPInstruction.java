@@ -36,6 +36,7 @@ import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysds.runtime.controlprogram.context.SparkExecutionContext;
 import org.apache.sysds.runtime.functionobjects.DiagIndex;
 import org.apache.sysds.runtime.functionobjects.RevIndex;
+import org.apache.sysds.runtime.functionobjects.RollIndex;
 import org.apache.sysds.runtime.functionobjects.SortIndex;
 import org.apache.sysds.runtime.functionobjects.SwapIndex;
 import org.apache.sysds.runtime.instructions.InstructionUtils;
@@ -68,6 +69,7 @@ public class ReorgSPInstruction extends UnarySPInstruction {
 	private CPOperand _desc = null;
 	private CPOperand _ixret = null;
 	private boolean _bSortIndInMem = false;
+	private CPOperand _shift = null;
 
 	private ReorgSPInstruction(Operator op, CPOperand in, CPOperand out, String opcode, String istr) {
 		super(SPType.Reorg, op, in, out, opcode, istr);
@@ -80,6 +82,11 @@ public class ReorgSPInstruction extends UnarySPInstruction {
 		_desc = desc;
 		_ixret = ixret;
 		_bSortIndInMem = bSortIndInMem;
+	}
+
+	private ReorgSPInstruction(Operator op, CPOperand in, CPOperand out, CPOperand shift, String opcode, String istr) {
+		this(op, in, out, opcode, istr);
+		_shift = shift;
 	}
 
 	public static ReorgSPInstruction parseInstruction ( String str ) {
@@ -95,6 +102,15 @@ public class ReorgSPInstruction extends UnarySPInstruction {
 			parseUnaryInstruction(str, in, out); //max 2 operands
 			return new ReorgSPInstruction(new ReorgOperator(RevIndex.getRevIndexFnObject()), in, out, opcode, str);
 		}
+		else if (opcode.equalsIgnoreCase("roll")) {
+		String[] parts = InstructionUtils.getInstructionPartsWithValueType(str);
+		InstructionUtils.checkNumFields(str, 3);
+		in.split(parts[1]);
+		out.split(parts[3]);
+		CPOperand shift = new CPOperand(parts[2]);
+		return new ReorgSPInstruction(new ReorgOperator(new RollIndex(0)),
+				in, out, shift, opcode, str);
+}
 		else if ( opcode.equalsIgnoreCase("rdiag") ) {
 			parseUnaryInstruction(str, in, out); //max 2 operands
 			return new ReorgSPInstruction(new ReorgOperator(DiagIndex.getDiagIndexFnObject()), in, out, opcode, str);
@@ -108,9 +124,8 @@ public class ReorgSPInstruction extends UnarySPInstruction {
 			CPOperand desc = new CPOperand(parts[3]);
 			CPOperand ixret = new CPOperand(parts[4]);
 			boolean bSortIndInMem = false;
-			
-			if(parts.length > 5)
-				bSortIndInMem = Boolean.parseBoolean(parts[6]);
+
+			bSortIndInMem = Boolean.parseBoolean(parts[6]);
 			
 			return new ReorgSPInstruction(new ReorgOperator(new SortIndex(1,false,false)),
 				in, col, desc, ixret, out, opcode, bSortIndInMem, str);
@@ -141,6 +156,14 @@ public class ReorgSPInstruction extends UnarySPInstruction {
 			out = in1.flatMapToPair(new RDDRevFunction(mcIn));
 			if( mcIn.getRows() % mcIn.getBlocksize() != 0 )
 				out = RDDAggregateUtils.mergeByKey(out, false);
+		}
+		else if (opcode.equalsIgnoreCase("roll")) // ROLL
+		{
+			int shift = (int) ec.getScalarInput(_shift).getLongValue();
+
+			//execute roll reorg operation
+			out = in1.flatMapToPair(new RDDRollFunction(mcIn, shift));
+			out = RDDAggregateUtils.mergeByKey(out, false);
 		}
 		else if ( opcode.equalsIgnoreCase("rdiag") ) // DIAG
 		{	
@@ -234,7 +257,7 @@ public class ReorgSPInstruction extends UnarySPInstruction {
 				boolean ixret = sec.getScalarInput(_ixret).getBooleanValue();
 				mcOut.set(mc1.getRows(), ixret?1:mc1.getCols(), mc1.getBlocksize(), mc1.getBlocksize());
 			}
-			else { //e.g., rev
+			else { //e.g., rev, roll
 				mcOut.set(mc1);
 			}
 		}
@@ -244,12 +267,16 @@ public class ReorgSPInstruction extends UnarySPInstruction {
 			boolean sortIx = getOpcode().equalsIgnoreCase("rsort") && sec.getScalarInput(_ixret).getBooleanValue();			
 			if( sortIx )
 				mcOut.setNonZeros(mc1.getRows());
-			else //default (r', rdiag, rev, rsort data)
+			else //default (r', rdiag, rev, roll, rsort data)
 				mcOut.setNonZeros(mc1.getNonZeros());
 		}
 	}
 
-	private static class RDDDiagV2MFunction implements PairFlatMapFunction<Tuple2<MatrixIndexes, MatrixBlock>, MatrixIndexes, MatrixBlock> 
+	public CPOperand getIxRet() {
+		return _ixret;
+	}
+
+	private static class RDDDiagV2MFunction implements PairFlatMapFunction<Tuple2<MatrixIndexes, MatrixBlock>, MatrixIndexes, MatrixBlock>
 	{
 		private static final long serialVersionUID = 31065772250744103L;
 		
@@ -307,6 +334,31 @@ public class ReorgSPInstruction extends UnarySPInstruction {
 			ArrayList<IndexedMatrixValue> out = new ArrayList<>();
 			LibMatrixReorg.rev(in, _mcIn.getRows(), _mcIn.getBlocksize(), out);
 			
+			//construct output
+			return SparkUtils.fromIndexedMatrixBlock(out).iterator();
+		}
+	}
+
+	private static class RDDRollFunction implements PairFlatMapFunction<Tuple2<MatrixIndexes, MatrixBlock>, MatrixIndexes, MatrixBlock> {
+		private static final long serialVersionUID = 1183373828539843938L;
+
+		private DataCharacteristics _mcIn = null;
+		private int _shift = 0;
+
+		public RDDRollFunction(DataCharacteristics mcIn, int shift) {
+			_mcIn = mcIn;
+			_shift = shift;
+		}
+
+		@Override
+		public Iterator<Tuple2<MatrixIndexes, MatrixBlock>> call(Tuple2<MatrixIndexes, MatrixBlock> arg0) {
+			//construct input
+			IndexedMatrixValue in = SparkUtils.toIndexedMatrixBlock(arg0);
+
+			//execute roll operation
+			ArrayList<IndexedMatrixValue> out = new ArrayList<>();
+			LibMatrixReorg.roll(in, _mcIn.getRows(), _mcIn.getBlocksize(), _shift, out);
+
 			//construct output
 			return SparkUtils.fromIndexedMatrixBlock(out).iterator();
 		}

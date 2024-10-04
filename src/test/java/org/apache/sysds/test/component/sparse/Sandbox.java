@@ -10,6 +10,7 @@ import org.apache.sysds.runtime.data.SparseBlockMCSC;
 
 import java.io.*;
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 
 public class Sandbox extends AutomatedTestBase {
@@ -21,7 +22,7 @@ public class Sandbox extends AutomatedTestBase {
 
 	@Test
 	public void myTest(){
-		tester(SparseBlock.Type.MCSR);
+		tester(SparseBlock.Type.CSR);
 
 	}
 
@@ -29,8 +30,8 @@ public class Sandbox extends AutomatedTestBase {
 		try{
 
 			double[][] A = {
-				{10, 20, 0, 0, 0, 0},
-				{0, 30, 0, 40, 0, 0},
+				{10, 0, 0, 0, 0, 0},
+				{0, 0, 0, 40, 0, 0},
 				{0, 0, 50, 60, 70, 0},
 				{0, 0, 0, 0, 0, 80},
 			};
@@ -48,36 +49,38 @@ public class Sandbox extends AutomatedTestBase {
 				case MCSC: sblock = new SparseBlockMCSC(srtmp, cols); break;
 			}
 
-			SparseBlockCSC newBlock = new SparseBlockCSC(sblock);
+			SparseBlockCSC newBlock = new SparseBlockCSC(sblock, 6);
 
-			newBlock.reset(3, 1, 3);
+			//newBlock.reset(2, 3, 3);
 
-			//System.out.println(newBlock.size(1));
-			System.out.println(newBlock.size(1, 4));
+			//newBlock.set(0,1,0);
+
 
 
 			System.out.println("values:");
-			double[] vals = newBlock.values(0);
+			double[] vals = newBlock.valuesCol(0);
 			for(double val : vals)
 				System.out.println(val);
 
 			System.out.println("**********************");
 			System.out.println("indexes");
-			int[] indexes = newBlock.indexes(0);
+			int[] indexes = newBlock.indexesCol(0);
 			for(int idx: indexes)
 				System.out.println(idx);
 
 			System.out.println("***********************");
 			System.out.println("pointers");
 			for(int i = 0; i < 7; i++){
-				System.out.println(newBlock.pos(i));
+				System.out.println(newBlock.posCol(i));
 			}
 
 			System.out.println("***********************");
 
+			Iterator<Integer> iterRows = newBlock.getNonEmptyColumnsIterator(0, 4);
 
-
-
+			while(iterRows.hasNext()){
+				System.out.println(iterRows.next());
+			}
 
 
 
@@ -90,4 +93,5 @@ public class Sandbox extends AutomatedTestBase {
 			throw new RuntimeException(ex);
 		}
 	}
+
 }

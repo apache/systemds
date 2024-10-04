@@ -26,16 +26,16 @@ import org.apache.sysds.conf.ConfigurationManager;
 
 public class IDagLinearizerFactory {
 	public static Log LOG = LogFactory.getLog(IDagLinearizerFactory.class.getName());
-	
+
 	public enum DagLinearizer {
-		DEPTH_FIRST, BREADTH_FIRST, MIN_INTERMEDIATE, MAX_PARALLELIZE, AUTO, PIPELINE_DEPTH_FIRST;
+		DEPTH_FIRST, BREADTH_FIRST, MIN_INTERMEDIATE, MAX_PARALLELIZE, AUTO, PIPELINE_DEPTH_FIRST, RESOURCE_AWARE;
 	}
 
 	public static IDagLinearizer createDagLinearizer() {
 		DagLinearizer type = ConfigurationManager.getLinearizationOrder();
 		return createDagLinearizer(type);
 	}
-	
+
 	public static IDagLinearizer createDagLinearizer(DagLinearizer type) {
 		switch(type) {
 			case AUTO:
@@ -50,8 +50,10 @@ public class IDagLinearizerFactory {
 				return new LinearizerMinIntermediates();
 			case PIPELINE_DEPTH_FIRST:
 				return new LinearizerPipelineAware();
+			case RESOURCE_AWARE:
+				return new LinearizerResourceAware();
 			default:
-				LOG.warn("Invalid DAG_LINEARIZATION: "+type+", falling back to DEPTH_FIRST ordering");			
+				LOG.warn("Invalid DAG_LINEARIZATION: " + type + ", falling back to DEPTH_FIRST ordering");
 				return new LinearizerDepthFirst();
 		}
 	}

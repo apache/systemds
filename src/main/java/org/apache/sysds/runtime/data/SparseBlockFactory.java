@@ -71,6 +71,7 @@ public abstract class SparseBlockFactory{
 			case COO: return new SparseBlockCOO(sblock);
 			case DCSR: return new SparseBlockDCSR(sblock);
 			case MCSC: return new SparseBlockMCSC(sblock, clen);
+			case CSC: return new SparseBlockCSC(sblock, clen);
 			default:
 				throw new RuntimeException("Unexpected sparse block type: "+type.toString());
 		}

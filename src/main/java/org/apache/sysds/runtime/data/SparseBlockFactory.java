@@ -91,6 +91,7 @@ public abstract class SparseBlockFactory{
 		switch( type ) {
 			case MCSR: return SparseBlockMCSR.estimateSizeInMemory(nrows, ncols, sparsity);
 			case CSR: return SparseBlockCSR.estimateSizeInMemory(nrows, ncols, sparsity);
+			case CSC: return SparseBlockCSC.estimateSizeInMemory(nrows, ncols, sparsity);
 			case COO: return SparseBlockCOO.estimateSizeInMemory(nrows, ncols, sparsity);
 			case DCSR: return SparseBlockDCSR.estimateSizeInMemory(nrows, ncols, sparsity);
 			case MCSC: return SparseBlockMCSC.estimateSizeInMemory(nrows, ncols, sparsity);

@@ -54,7 +54,7 @@ public class SparseBlockCSC extends SparseBlock{
 	private int _rlen = -1;			 // number of rows
 	private int _clenInferred = -1;
 
-	//TODO: think about constructor design 
+	//TODO: think about constructor design
 	/*public SparseBlockCSC(int clen) {
 		this(clen, INIT_CAPACITY);
 	}

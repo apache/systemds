@@ -54,7 +54,8 @@ public class SparseBlockCSC extends SparseBlock{
 	private int _rlen = -1;			 // number of rows
 	private int _clenInferred = -1;
 
-	public SparseBlockCSC(int clen) {
+	//TODO: think about constructor design 
+	/*public SparseBlockCSC(int clen) {
 		this(clen, INIT_CAPACITY);
 	}
 
@@ -62,6 +63,14 @@ public class SparseBlockCSC extends SparseBlock{
 		_ptr = new int[clen+1]; //ix0=0
 		_indexes = new int[capacity];
 		_values = new double[capacity];
+		_size = 0;
+	}*/
+
+	public SparseBlockCSC(int rlen, int clen){
+		_rlen = rlen;
+		_ptr = new int[clen+1];
+		_indexes = new int[INIT_CAPACITY];
+		_values = new double[INIT_CAPACITY];
 		_size = 0;
 	}
 

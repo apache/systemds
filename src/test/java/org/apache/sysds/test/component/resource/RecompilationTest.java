@@ -21,23 +21,17 @@ package org.apache.sysds.test.component.resource;
 
 import org.apache.sysds.conf.CompilerConfig;
 import org.apache.sysds.conf.ConfigurationManager;
-import org.apache.sysds.hops.rewrite.ProgramRewriter;
-import org.apache.sysds.lops.compile.Dag;
 import org.apache.sysds.resource.ResourceCompiler;
 import org.apache.sysds.runtime.controlprogram.BasicProgramBlock;
 import org.apache.sysds.runtime.controlprogram.Program;
-import org.apache.sysds.runtime.controlprogram.ProgramBlock;
-import org.apache.sysds.runtime.controlprogram.WhileProgramBlock;
 import org.apache.sysds.runtime.controlprogram.context.SparkExecutionContext;
 import org.apache.sysds.runtime.instructions.Instruction;
 import org.apache.sysds.runtime.instructions.spark.SPInstruction;
-import org.apache.sysds.runtime.util.ProgramConverter;
 import org.apache.sysds.test.AutomatedTestBase;
 import org.apache.sysds.utils.Explain;
 import org.apache.sysds.utils.stats.InfrastructureAnalyzer;
 import org.junit.Assert;
 import org.junit.Test;
-import scala.Int;
 
 import java.io.IOException;
 import java.util.*;
@@ -292,49 +286,6 @@ public class RecompilationTest extends AutomatedTestBase {
 		String expectedProgramExplained = stripGeneralAndReplaceRandoms(Explain.explain(expected));
 		String actualProgramExplained = stripGeneralAndReplaceRandoms(Explain.explain(actual));
 		Assert.assertEquals(expectedProgramExplained, actualProgramExplained);
-	}
-
-	private String stripEmptyBlocksAndReplaceRandoms(String explainedProgram) {
-		String[] lines = explainedProgram.split("\\n");
-		StringBuilder strippedProgram = new StringBuilder();
-
-		HashMap<Integer, Integer> uniqueMap = new HashMap<>();
-		int currentUnique = 0;
-		Pattern patternUnique = Pattern.compile("(_Var|_mVar)(\\d+)");
-
-
-		String previousLine = "";
-		boolean isProgramBlockLine = false;
-		for (String line : lines) {
-			String pureLine = line.replaceFirst("^\\-*", "");
-			if (pureLine.startsWith("GENERIC") || pureLine.startsWith("IF") || pureLine.startsWith("WHILE") || pureLine.startsWith("FOR")) {
-				if (!isProgramBlockLine) {
-					strippedProgram.append(previousLine).append("\n");
-				}
-				previousLine = line;
-				isProgramBlockLine = true;
-			} else {
-				if (pureLine.startsWith("CP") || pureLine.startsWith("SPARK")) {
-					line = line.replaceFirst("\\b/temp\\d+\\b", "/tempX");
-					Matcher matcherUnique = patternUnique.matcher(line);
-					StringBuilder newLine = new StringBuilder();
-					while (matcherUnique.find()) {
-						String prefix = matcherUnique.group(1);
-						int oldUnique = Integer.parseInt(matcherUnique.group(2));
-						int newUnique = uniqueMap.getOrDefault(oldUnique, ++currentUnique);
-						uniqueMap.put(oldUnique, newUnique);
-						matcherUnique.appendReplacement(newLine, prefix+newUnique);
-					}
-					matcherUnique.appendTail(newLine);
-					line = newLine.toString();
-				}
-				strippedProgram.append(previousLine).append("\n");
-				previousLine = line;
-				isProgramBlockLine = false;
-			}
-		}
-		strippedProgram.append(previousLine);
-		return "\n" + strippedProgram.toString().trim() + "\n";
 	}
 
 	private String stripGeneralAndReplaceRandoms(String explainedProgram) {

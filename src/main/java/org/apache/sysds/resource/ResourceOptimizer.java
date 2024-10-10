@@ -7,7 +7,6 @@ import org.apache.sysds.resource.enumeration.EnumerationUtils;
 import org.apache.sysds.resource.enumeration.Enumerator;
 import org.apache.sysds.runtime.controlprogram.Program;
 
-import java.io.DataOutput;
 import java.io.IOException;
 import java.nio.file.InvalidPathException;
 import java.nio.file.Paths;
@@ -133,26 +132,6 @@ public class ResourceOptimizer {
         return options;
     }
 
-
-    private static HashMap<String, String> parseArguments(String[] args) {
-
-
-
-        HashMap<String, String> arguments = new HashMap<>();
-        for (int i = 0; i < args.length; i++) {
-            if (args[i].startsWith("-")) {
-                String key = args[i].substring(2);
-                if (i + 1 < args.length && !args[i + 1].startsWith("--")) {
-                    arguments.put(key, args[i + 1]);
-                    i++; // skip the next argument as it's a value
-                } else {
-                    arguments.put(key, "true"); // if it's a flag
-                }
-            }
-        }
-        return arguments;
-    }
-
     public static void main(String[] args) throws ParseException, IOException {
         // step 1: parse options and arguments
         Options options = createOptions();
@@ -223,7 +202,7 @@ public class ResourceOptimizer {
             throw new MissingOptionException("Given value for option 'output' is not a valid path");
         }
 
-        double[] regionalPrices = CloudUtils.loadRegionalPrices(line.getOptionValue("regionTable"), region);
+        double[] regionalPrices = CloudUtils.loadRegionalPrices(regionTablePath, region);
         HashMap<String, CloudInstance> allInstances = CloudUtils.loadInstanceInfoTable(infoTablePath, regionalPrices[0], regionalPrices[1]);
 
         // 1c: parse strategy parameters

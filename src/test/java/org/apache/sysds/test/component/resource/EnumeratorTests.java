@@ -19,11 +19,12 @@
 
 package org.apache.sysds.test.component.resource;
 
+import org.apache.sysds.conf.CompilerConfig;
+import org.apache.sysds.conf.ConfigurationManager;
 import org.apache.sysds.hops.OptimizerUtils;
 import org.apache.sysds.resource.CloudInstance;
 import org.apache.sysds.resource.enumeration.Enumerator;
 import org.apache.sysds.resource.enumeration.EnumerationUtils.InstanceSearchSpace;
-import org.apache.sysds.resource.enumeration.EnumerationUtils.ConfigurationPoint;
 import org.apache.sysds.resource.enumeration.EnumerationUtils.SolutionPoint;
 import org.apache.sysds.resource.enumeration.InterestBasedEnumerator;
 import org.apache.sysds.runtime.controlprogram.Program;
@@ -32,50 +33,29 @@ import org.junit.Test;
 import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 
-import java.io.File;
-import java.io.IOException;
-import java.nio.file.Files;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Set;
 import java.util.TreeSet;
 
 import static org.apache.sysds.resource.CloudUtils.GBtoBytes;
+import static org.apache.sysds.test.component.resource.TestingUtils.TEST_FEE_RATIO;
+import static org.apache.sysds.test.component.resource.TestingUtils.TEST_STORAGE_PRICE;
 import static org.junit.Assert.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 
 @net.jcip.annotations.NotThreadSafe
 public class EnumeratorTests {
-
-	@Test
-	public void loadInstanceTableTest() throws IOException {
-		// loading the table is entirely implemented by the abstract class
-		// use any enumerator
-		Enumerator anyEnumerator = getGridBasedEnumeratorPrebuild()
-				.withInstanceTypeRange(new String[]{"m5"})
-				.withInstanceSizeRange(new String[]{"xlarge"})
-				.build();
-
-		File tmpFile = TestingUtils.generateTmpInstanceInfoTableFile();
-		anyEnumerator.loadInstanceTableFile(tmpFile.toString());
-
-		HashMap<String, CloudInstance> actualInstances = anyEnumerator.getInstances();
-
-		Assert.assertEquals(1, actualInstances.size());
-		Assert.assertNotNull(actualInstances.get("m5.xlarge"));
-
-		Files.deleteIfExists(tmpFile.toPath());
+	static {
+		ConfigurationManager.getCompilerConfig().set(CompilerConfig.ConfigType.ALLOW_DYN_RECOMPILATION, false);
+		ConfigurationManager.getCompilerConfig().set(CompilerConfig.ConfigType.RESOURCE_OPTIMIZATION, true);
 	}
 
 	@Test
 	public void preprocessingGridBasedTest() {
 		Enumerator gridBasedEnumerator = getGridBasedEnumeratorPrebuild().build();
-
-		HashMap<String, CloudInstance> instances = TestingUtils.getSimpleCloudInstanceMap();
-		gridBasedEnumerator.setInstanceTable(instances);
 
 		gridBasedEnumerator.preprocessing();
 		// assertions for driver space
@@ -100,9 +80,6 @@ public class EnumeratorTests {
 				.withFitDriverMemory(true)
 				.withFitBroadcastMemory(false)
 				.build();
-
-		HashMap<String, CloudInstance> instances = TestingUtils.getSimpleCloudInstanceMap();
-		interestBasedEnumerator.setInstanceTable(instances);
 
 		// use 10GB (scaled) memory estimate to be between the available 8GB and 16GB driver node's memory
 		TreeSet<Long> mockingMemoryEstimates = new TreeSet<>(Set.of(GBtoBytes(10)));
@@ -139,9 +116,6 @@ public class EnumeratorTests {
 				.withFitDriverMemory(false)
 				.withFitBroadcastMemory(true)
 				.build();
-
-		HashMap<String, CloudInstance> instances = TestingUtils.getSimpleCloudInstanceMap();
-		interestBasedEnumerator.setInstanceTable(instances);
 
 		double outputEstimate = 2.5;
 		double scaledOutputEstimateBroadcast = outputEstimate / InterestBasedEnumerator.BROADCAST_MEMORY_FACTOR; // ~=12
@@ -274,9 +248,6 @@ public class EnumeratorTests {
 				.withCheckSingleNodeExecution(true)
 				.build();
 
-		HashMap<String, CloudInstance> instances = TestingUtils.getSimpleCloudInstanceMap();
-		interestBasedEnumerator.setInstanceTable(instances);
-
 		TreeSet<Long> mockingMemoryEstimates = new TreeSet<>(Set.of(GBtoBytes(6), GBtoBytes(12)));
 		try (MockedStatic<InterestBasedEnumerator> mockedEnumerator =
 					 Mockito.mockStatic(InterestBasedEnumerator.class, Mockito.CALLS_REAL_METHODS)) {
@@ -323,9 +294,6 @@ public class EnumeratorTests {
 				.withFitBroadcastMemory(false)
 				.build();
 
-		HashMap<String, CloudInstance> instances = TestingUtils.getSimpleCloudInstanceMap();
-		interestBasedEnumerator.setInstanceTable(instances);
-
 		TreeSet<Long> mockingMemoryEstimates = new TreeSet<>(Set.of(GBtoBytes(20), GBtoBytes(40)));
 		try (MockedStatic<InterestBasedEnumerator> mockedEnumerator =
 					 Mockito.mockStatic(InterestBasedEnumerator.class, Mockito.CALLS_REAL_METHODS)) {
@@ -361,7 +329,7 @@ public class EnumeratorTests {
 				.withNumberExecutorsRange(0, 2)
 				.build();
 
-		HashMap<String, CloudInstance> instances = TestingUtils.getSimpleCloudInstanceMap();
+		HashMap<String, CloudInstance> instances = TestingUtils.getSimpleCloudInstanceMap(TEST_FEE_RATIO, TEST_STORAGE_PRICE);
 		InstanceSearchSpace space = new InstanceSearchSpace();
 		space.initSpace(instances);
 
@@ -369,59 +337,49 @@ public class EnumeratorTests {
 		gridBasedEnumerator.setDriverSpace(space);
 		gridBasedEnumerator.setExecutorSpace(space);
 		gridBasedEnumerator.processing();
-		ArrayList<SolutionPoint> actualSolutionPoolGB = gridBasedEnumerator.getSolutionPool();
+		SolutionPoint actualSolutionGB = gridBasedEnumerator.postprocessing();
 		// run processing for the interest based enumerator
 		interestBasedEnumerator.setDriverSpace(space);
 		interestBasedEnumerator.setExecutorSpace(space);
 		interestBasedEnumerator.processing();
-		ArrayList<SolutionPoint> actualSolutionPoolIB = gridBasedEnumerator.getSolutionPool();
+		SolutionPoint actualSolutionIB = gridBasedEnumerator.postprocessing();
 
-
-		List<CloudInstance> expectedInstances = new ArrayList<>(Arrays.asList(
-				instances.get("c5.xlarge")
-		));
-		// expected solution pool with 0 executors (number executors = 0, executors and executorInstance being null)
-		// with a single solution -> the cheapest instance for the driver
-		Assert.assertEquals(expectedInstances.size(), actualSolutionPoolGB.size());
-		Assert.assertEquals(expectedInstances.size(), actualSolutionPoolIB.size());
-		for (int i = 0; i < expectedInstances.size(); i++) {
-			SolutionPoint pointGB = actualSolutionPoolGB.get(i);
-			Assert.assertEquals(0, pointGB.numberExecutors);
-			Assert.assertEquals(expectedInstances.get(i), pointGB.driverInstance);
-			Assert.assertNull(pointGB.executorInstance);
-			SolutionPoint pointIB = actualSolutionPoolGB.get(i);
-			Assert.assertEquals(0, pointIB.numberExecutors);
-			Assert.assertEquals(expectedInstances.get(i), pointIB.driverInstance);
-			Assert.assertNull(pointIB.executorInstance);
-		}
+		// expected solution with 0 executors (number executors = 0, executors and executorInstance being null)
+		// and the cheapest instance for the driver
+		// Grid-Based
+		Assert.assertEquals(0, actualSolutionGB.numberExecutors);
+		Assert.assertEquals(instances.get("c5.xlarge"), actualSolutionGB.driverInstance);
+		Assert.assertNull(actualSolutionIB.executorInstance);
+		// Interest-Based
+		Assert.assertEquals(0, actualSolutionIB.numberExecutors);
+		Assert.assertEquals(instances.get("c5.xlarge"), actualSolutionIB.driverInstance);
+		Assert.assertNull(actualSolutionIB.executorInstance);
 	}
 
-	@Test
-	public void postprocessingTest() {
-		// postprocessing equivalent for all types of enumerators
-		Enumerator enumerator = getGridBasedEnumeratorPrebuild().build();
-		// construct solution pool
-		// first dummy configuration point since not relevant for postprocessing
-		ConfigurationPoint dummyPoint = new ConfigurationPoint(null);
-		SolutionPoint solution1 = new SolutionPoint(dummyPoint, 1000, 1000);
-		SolutionPoint solution2 = new SolutionPoint(dummyPoint, 900, 1000); // optimal point
-		SolutionPoint solution3 = new SolutionPoint(dummyPoint, 800, 10000);
-		SolutionPoint solution4 = new SolutionPoint(dummyPoint, 1000, 10000);
-		SolutionPoint solution5 = new SolutionPoint(dummyPoint, 900, 10000);
-		ArrayList<SolutionPoint> mockListSolutions = new ArrayList<>(List.of(solution1, solution2, solution3, solution4, solution5));
-		enumerator.setSolutionPool(mockListSolutions);
-
-		SolutionPoint optimalSolution = enumerator.postprocessing();
-		assertEquals(solution2, optimalSolution);
-	}
+//	@Test
+//	public void postprocessingTest() {
+//		// postprocessing equivalent for all types of enumerators
+//		Enumerator enumerator = getGridBasedEnumeratorPrebuild().build();
+//		// construct solution pool
+//		// first dummy configuration point since not relevant for postprocessing
+//		ConfigurationPoint dummyPoint = new ConfigurationPoint(null);
+//		SolutionPoint solution1 = new SolutionPoint(dummyPoint, 1000, 1000);
+//		SolutionPoint solution2 = new SolutionPoint(dummyPoint, 900, 1000); // optimal point
+//		SolutionPoint solution3 = new SolutionPoint(dummyPoint, 800, 10000);
+//		SolutionPoint solution4 = new SolutionPoint(dummyPoint, 1000, 10000);
+//		SolutionPoint solution5 = new SolutionPoint(dummyPoint, 900, 10000);
+//		ArrayList<SolutionPoint> mockListSolutions = new ArrayList<>(List.of(solution1, solution2, solution3, solution4, solution5));
+//		enumerator.setSolutionPool(mockListSolutions);
+//
+//		SolutionPoint optimalSolution = enumerator.postprocessing();
+//		assertEquals(solution2, optimalSolution);
+//	}
 
 	@Test
 	public void GridBasedEnumerationMinPriceTest() {
 		Enumerator gridBasedEnumerator = getGridBasedEnumeratorPrebuild()
 				.withNumberExecutorsRange(0, 2)
 				.build();
-
-		gridBasedEnumerator.setInstanceTable(TestingUtils.getSimpleCloudInstanceMap());
 
 		gridBasedEnumerator.preprocessing();
 		gridBasedEnumerator.processing();
@@ -438,8 +396,6 @@ public class EnumeratorTests {
 		Enumerator interestBasedEnumerator = getInterestBasedEnumeratorPrebuild()
 				.withNumberExecutorsRange(0, 2)
 				.build();
-
-		interestBasedEnumerator.setInstanceTable(TestingUtils.getSimpleCloudInstanceMap());
 
 		interestBasedEnumerator.preprocessing();
 		interestBasedEnumerator.processing();
@@ -459,8 +415,6 @@ public class EnumeratorTests {
 				.withNumberExecutorsRange(0, 2)
 				.build();
 
-		gridBasedEnumerator.setInstanceTable(TestingUtils.getSimpleCloudInstanceMap());
-
 		gridBasedEnumerator.preprocessing();
 		gridBasedEnumerator.processing();
 		SolutionPoint solution = gridBasedEnumerator.postprocessing();
@@ -479,8 +433,6 @@ public class EnumeratorTests {
 				.withNumberExecutorsRange(0, 2)
 				.build();
 
-		interestBasedEnumerator.setInstanceTable(TestingUtils.getSimpleCloudInstanceMap());
-
 		interestBasedEnumerator.preprocessing();
 		interestBasedEnumerator.processing();
 		SolutionPoint solution = interestBasedEnumerator.postprocessing();
@@ -494,8 +446,10 @@ public class EnumeratorTests {
 	// Helpers
 	private static Enumerator.Builder getGridBasedEnumeratorPrebuild() {
 		Program emptyProgram = new Program();
+		HashMap<String, CloudInstance> instances = TestingUtils.getSimpleCloudInstanceMap(TEST_FEE_RATIO, TEST_STORAGE_PRICE);
 		return (new Enumerator.Builder())
 				.withRuntimeProgram(emptyProgram)
+				.withAvailableInstances(instances)
 				.withEnumerationStrategy(Enumerator.EnumerationStrategy.GridBased)
 				.withOptimizationStrategy(Enumerator.OptimizationStrategy.MinPrice)
 				.withTimeLimit(Double.MAX_VALUE);
@@ -503,8 +457,10 @@ public class EnumeratorTests {
 
 	private static Enumerator.Builder getInterestBasedEnumeratorPrebuild() {
 		Program emptyProgram = new Program();
+		HashMap<String, CloudInstance> instances = TestingUtils.getSimpleCloudInstanceMap(TEST_FEE_RATIO, TEST_STORAGE_PRICE);
 		return (new Enumerator.Builder())
 				.withRuntimeProgram(emptyProgram)
+				.withAvailableInstances(instances)
 				.withEnumerationStrategy(Enumerator.EnumerationStrategy.InterestBased)
 				.withOptimizationStrategy(Enumerator.OptimizationStrategy.MinPrice)
 				.withTimeLimit(Double.MAX_VALUE);

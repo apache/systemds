@@ -19,28 +19,39 @@
 
 package org.apache.sysds.test.component.resource;
 
+import org.apache.sysds.conf.CompilerConfig;
+import org.apache.sysds.conf.ConfigurationManager;
+import org.apache.sysds.hops.rewrite.ProgramRewriter;
+import org.apache.sysds.lops.compile.Dag;
 import org.apache.sysds.resource.ResourceCompiler;
 import org.apache.sysds.runtime.controlprogram.BasicProgramBlock;
 import org.apache.sysds.runtime.controlprogram.Program;
+import org.apache.sysds.runtime.controlprogram.ProgramBlock;
+import org.apache.sysds.runtime.controlprogram.WhileProgramBlock;
 import org.apache.sysds.runtime.controlprogram.context.SparkExecutionContext;
 import org.apache.sysds.runtime.instructions.Instruction;
 import org.apache.sysds.runtime.instructions.spark.SPInstruction;
+import org.apache.sysds.runtime.util.ProgramConverter;
 import org.apache.sysds.test.AutomatedTestBase;
 import org.apache.sysds.utils.Explain;
 import org.apache.sysds.utils.stats.InfrastructureAnalyzer;
 import org.junit.Assert;
 import org.junit.Test;
+import scala.Int;
 
 import java.io.IOException;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Optional;
+import java.util.*;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import static org.apache.sysds.runtime.controlprogram.context.SparkExecutionContext.SparkClusterConfig.RESERVED_SYSTEM_MEMORY_BYTES;
 
 public class RecompilationTest extends AutomatedTestBase {
-	private static final boolean DEBUG_MODE = true;
+	static {
+		ConfigurationManager.getCompilerConfig().set(CompilerConfig.ConfigType.ALLOW_DYN_RECOMPILATION, false);
+		ConfigurationManager.getCompilerConfig().set(CompilerConfig.ConfigType.RESOURCE_OPTIMIZATION, true);
+	}
+	private static final boolean DEBUG_MODE = false;
 	private static final String TEST_DIR = "component/resource/";
 	private static final String TEST_DATA_DIR = "component/resource/data/";
 	private static final String HOME = SCRIPT_DIR + TEST_DIR;
@@ -89,7 +100,7 @@ public class RecompilationTest extends AutomatedTestBase {
 		// X = A.csv: (10^5)x(10^4) = 10^9 ~ 8BG
 		// Y = B.csv: (10^4)x(10^3) = 10^7 ~ 80MB
 		// X %*% Y -> (10^5)x(10^3) = 10^8 ~ 800MB
-		runTestMM("A.csv", "B.csv", 8L*1024*1024*1024, 0, -1, "ba+*");
+		runTestMM("A.csv", "B.csv", 8L*1024*1024*1024, 0, -1, "ba+*", false);
 	}
 
 	@Test
@@ -98,7 +109,7 @@ public class RecompilationTest extends AutomatedTestBase {
 		// X = A.csv: (10^5)x(10^4) = 10^9 ~ 8BG
 		// Y = B.csv: (10^4)x(10^3) = 10^7 ~ 80MB
 		// X %*% Y -> (10^5)x(10^3) = 10^8 ~ 800MB
-		runTestMM("A.csv", "B.csv", 16L*1024*1024*1024, 2, 1024*1024*1024, "ba+*");
+		runTestMM("A.csv", "B.csv", 16L*1024*1024*1024, 2, 1024*1024*1024, "ba+*", false);
 	}
 
 	@Test
@@ -107,7 +118,7 @@ public class RecompilationTest extends AutomatedTestBase {
 		// X = A.csv: (10^5)x(10^4) = 10^9 ~ 8BG
 		// Y = B.csv: (10^4)x(10^3) = 10^7 ~ 80MB
 		// X %*% Y -> (10^5)x(10^3) = 10^8 ~ 800MB
-		runTestMM("A.csv", "B.csv", 4L*1024*1024*1024, 2, 4L*1024*1024*1024, "mapmm");
+		runTestMM("A.csv", "B.csv", 4L*1024*1024*1024, 2, 4L*1024*1024*1024, "mapmm", true);
 	}
 
 	@Test
@@ -116,7 +127,7 @@ public class RecompilationTest extends AutomatedTestBase {
 		// X = A.csv: (10^5)x(10^4) = 10^9 ~ 8BG
 		// Y = B.csv: (10^4)x(10^3) = 10^7 ~ 80MB
 		// X %*% Y -> (10^5)x(10^3) = 10^8 ~ 800MB
-		runTestMM("A.csv", "B.csv", 1024*1024*1024, 2, (long) (0.5*1024*1024*1024), "rmm");
+		runTestMM("A.csv", "B.csv", 1024*1024*1024, 2, (long) (0.5*1024*1024*1024), "rmm", true);
 	}
 
 	@Test
@@ -125,7 +136,7 @@ public class RecompilationTest extends AutomatedTestBase {
 		// X = A.csv: (10^5)x(10^4) = 10^9 ~ 8BG
 		// Y = C.csv: (10^4)x(10^4) = 10^8 ~ 800MB
 		// X %*% Y -> (10^5)x(10^4) = 10^9 ~ 8GB
-		runTestMM("A.csv", "C.csv", 8L*1024*1024*1024, 2, 4L*1024*1024*1024, "cpmm");
+		runTestMM("A.csv", "C.csv", 8L*1024*1024*1024, 2, 4L*1024*1024*1024, "cpmm", true);
 	}
 
 	// Tests for transposed self matrix multiplication (t(X)%*%X) ------------------------------------------------------
@@ -156,50 +167,50 @@ public class RecompilationTest extends AutomatedTestBase {
 
 	@Test
 	public void test_MM_RecompilationSequence() throws IOException {
-		Map<String, String> nvargs = new HashMap<>();
-		nvargs.put("$X", HOME_DATA+"A.csv");
-		nvargs.put("$Y", HOME_DATA+"B.csv");
+		runTestMM("A.csv", "B.csv", 8L*1024*1024*1024, 0, -1, "ba+*", false);
 
-		// pre-compiled program using default values to be used as source for the recompilation
-		Program precompiledProgram = generateInitialProgram(HOME+"mm_test.dml", nvargs);
-		// original compilation used for comparison
-		Program expectedProgram;
+		runTestMM("A.csv", "B.csv", 16L*1024*1024*1024, 4, 1024*1024*1024, "ba+*", false);
 
-		ResourceCompiler.setDriverConfigurations(8L*1024*1024*1024, driverThreads);
-		ResourceCompiler.setSingleNodeExecution();
-		expectedProgram = ResourceCompiler.compile(HOME+"mm_test.dml", nvargs);
-		runTest(precompiledProgram, expectedProgram, 8L*1024*1024*1024, 0, -1, "ba+*", false);
+		runTestMM("A.csv", "B.csv", 4L*1024*1024*1024, 2, 4L*1024*1024*1024, "mapmm", true);
 
-		ResourceCompiler.setDriverConfigurations(16L*1024*1024*1024, driverThreads);
-		ResourceCompiler.setExecutorConfigurations(4, 1024*1024*1024, executorThreads);
-		expectedProgram = ResourceCompiler.compile(HOME+"mm_test.dml", nvargs);
-		runTest(precompiledProgram, expectedProgram, 16L*1024*1024*1024, 4, 1024*1024*1024, "ba+*", false);
+		runTestMM("A.csv", "B.csv", 1024*1024*1024, 2, (long) (0.5*1024*1024*1024), "rmm", true);
 
-		ResourceCompiler.setDriverConfigurations(4L*1024*1024*1024, driverThreads);
-		ResourceCompiler.setExecutorConfigurations(2, 4L*1024*1024*1024, executorThreads);
-		expectedProgram = ResourceCompiler.compile(HOME+"mm_test.dml", nvargs);
-		runTest(precompiledProgram, expectedProgram, 4L*1024*1024*1024, 2, 4L*1024*1024*1024, "mapmm", true);
+		runTestMM("A.csv", "B.csv", 8L*1024*1024*1024, 0, -1, "ba+*", false);
+	}
 
-		ResourceCompiler.setDriverConfigurations(1024*1024*1024, driverThreads);
-		ResourceCompiler.setExecutorConfigurations(2, (long) (0.5*1024*1024*1024), executorThreads);
-		expectedProgram = ResourceCompiler.compile(HOME+"mm_test.dml", nvargs);
-		runTest(precompiledProgram, expectedProgram, 1024*1024*1024, 2, (long) (0.5*1024*1024*1024), "rmm", true);
+	@Test
+	public void test_L2SVM() throws IOException {
+		runTestAlgorithm("Algorithm_L2SVM.dml", 8L*1024*1024*1024, 0, -1);
+		runTestAlgorithm("Algorithm_L2SVM.dml", 8L*1024*1024*1024, 4, 4L*1024*1024*1024);
+	}
 
-		ResourceCompiler.setDriverConfigurations(8L*1024*1024*1024, driverThreads);
-		ResourceCompiler.setSingleNodeExecution();
-		expectedProgram = ResourceCompiler.compile(HOME+"mm_test.dml", nvargs);
-		runTest(precompiledProgram, expectedProgram, 8L*1024*1024*1024, 0, -1, "ba+*", false);
+	@Test
+	public void test_LinReg() throws IOException {
+		runTestAlgorithm("Algorithm_Linreg.dml", 8L*1024*1024*1024, 0, -1);
+		runTestAlgorithm("Algorithm_Linreg.dml", 8L*1024*1024*1024, 4, 4L*1024*1024*1024);
+	}
+
+	@Test
+	public void test_PCA() throws IOException {
+		runTestAlgorithm("Algorithm_PCA.dml", 8L*1024*1024*1024, 0, -1);
+		runTestAlgorithm("Algorithm_PCA.dml", 8L*1024*1024*1024, 4, 8L*1024*1024*1024);
+
+	}
+
+	@Test
+	public void test_PNMF() throws IOException {
+		runTestAlgorithm("Algorithm_PNMF.dml", 8L*1024*1024*1024, 0, -1);
+		runTestAlgorithm("Algorithm_PNMF.dml", 8L*1024*1024*1024, 4, 4L*1024*1024*1024);
 	}
 
 	// Helper functions ------------------------------------------------------------------------------------------------
 	private Program generateInitialProgram(String filePath, Map<String, String> args) throws IOException {
-		ResourceCompiler.setDriverConfigurations(ResourceCompiler.DEFAULT_DRIVER_MEMORY, ResourceCompiler.DEFAULT_DRIVER_THREADS);
+		ResourceCompiler.setDriverConfigurations(1024*1024*1024, 4);
 		ResourceCompiler.setExecutorConfigurations(ResourceCompiler.DEFAULT_NUMBER_EXECUTORS, ResourceCompiler.DEFAULT_EXECUTOR_MEMORY, ResourceCompiler.DEFAULT_EXECUTOR_THREADS);
 		return  ResourceCompiler.compile(filePath, args);
 	}
 
-	private void runTestMM(String fileX, String fileY, long driverMemory, int numberExecutors, long executorMemory, String expectedOpcode) throws IOException {
-		boolean expectedSparkExecType = !Objects.equals(expectedOpcode,"ba+*");
+	private void runTestMM(String fileX, String fileY, long driverMemory, int numberExecutors, long executorMemory, String expectedOpcode, boolean expectedSparkExecType) throws IOException {
 		Map<String, String> nvargs = new HashMap<>();
 		nvargs.put("$X", HOME_DATA+fileX);
 		nvargs.put("$Y", HOME_DATA+fileY);
@@ -216,7 +227,11 @@ public class RecompilationTest extends AutomatedTestBase {
 
 		// original compilation used for comparison
 		Program expectedProgram = ResourceCompiler.compile(HOME+"mm_test.dml", nvargs);
-		runTest(precompiledProgram, expectedProgram, driverMemory, numberExecutors, executorMemory, expectedOpcode, expectedSparkExecType);
+		Program recompiledProgram = runTest(precompiledProgram, expectedProgram, driverMemory, numberExecutors, executorMemory);
+		Optional<Instruction> mmInstruction = ((BasicProgramBlock) recompiledProgram.getProgramBlocks().get(0)).getInstructions().stream()
+				.filter(inst -> (Objects.equals(expectedSparkExecType, inst instanceof SPInstruction) && Objects.equals(inst.getOpcode(), expectedOpcode)))
+				.findFirst();
+		Assert.assertTrue(mmInstruction.isPresent());
 	}
 
 	private void runTestTSMM(String fileX, long driverMemory, int numberExecutors, long executorMemory, String expectedOpcode, boolean expectedSparkExecType) throws IOException {
@@ -234,25 +249,129 @@ public class RecompilationTest extends AutomatedTestBase {
 		}
 		// original compilation used for comparison
 		Program expectedProgram = ResourceCompiler.compile(HOME+"mm_transpose_test.dml", nvargs);
-		runTest(precompiledProgram, expectedProgram, driverMemory, numberExecutors, executorMemory, expectedOpcode, expectedSparkExecType);
+		Program recompiledProgram = runTest(precompiledProgram, expectedProgram, driverMemory, numberExecutors, executorMemory);
+		Optional<Instruction> mmInstruction = ((BasicProgramBlock) recompiledProgram.getProgramBlocks().get(0)).getInstructions().stream()
+				.filter(inst -> (Objects.equals(expectedSparkExecType, inst instanceof SPInstruction) && Objects.equals(inst.getOpcode(), expectedOpcode)))
+				.findFirst();
+		Assert.assertTrue(mmInstruction.isPresent());
 	}
 
-	private void runTest(Program precompiledProgram, Program expectedProgram, long driverMemory, int numberExecutors, long executorMemory, String expectedOpcode, boolean expectedSparkExecType) {
-		String expectedProgramExplained = Explain.explain(expectedProgram);
+	private void runTestAlgorithm(String dmlScript, long driverMemory, int numberExecutors, long executorMemory) throws IOException {
+		Map<String, String> nvargs = new HashMap<>();
 
+		// pre-compiled program using default values to be used as source for the recompilation
+		Program precompiledProgram = generateInitialProgram(HOME+dmlScript, nvargs);
+
+		ResourceCompiler.setDriverConfigurations(driverMemory, driverThreads);
+		if (numberExecutors > 0) {
+			ResourceCompiler.setExecutorConfigurations(numberExecutors, executorMemory, executorThreads);
+		} else {
+			ResourceCompiler.setSingleNodeExecution();
+		}
+		// original compilation used for comparison
+		Program expectedProgram = ResourceCompiler.compile(HOME+dmlScript, nvargs);
+		runTest(precompiledProgram, expectedProgram, driverMemory, numberExecutors, executorMemory);
+	}
+
+	private Program runTest(Program precompiledProgram, Program expectedProgram, long driverMemory, int numberExecutors, long executorMemory) {
+		if (DEBUG_MODE) System.out.println(Explain.explain(expectedProgram));
 		Program recompiledProgram;
 		if (numberExecutors == 0) {
 			recompiledProgram = ResourceCompiler.doFullRecompilation(precompiledProgram, driverMemory, driverThreads);
 		} else {
 			recompiledProgram = ResourceCompiler.doFullRecompilation(precompiledProgram, driverMemory, driverThreads, numberExecutors, executorMemory, executorThreads);
 		}
-		String actualProgramExplained = Explain.explain(recompiledProgram);
 
-		if (DEBUG_MODE) System.out.println(actualProgramExplained);
+		if (DEBUG_MODE) System.out.println(Explain.explain(recompiledProgram));
+		assertEqualPrograms(expectedProgram, recompiledProgram);
+		return recompiledProgram;
+	}
+
+	private void assertEqualPrograms(Program expected, Program actual) {
+		// strip empty blocks basic program blocks
+		String expectedProgramExplained = stripGeneralAndReplaceRandoms(Explain.explain(expected));
+		String actualProgramExplained = stripGeneralAndReplaceRandoms(Explain.explain(actual));
 		Assert.assertEquals(expectedProgramExplained, actualProgramExplained);
-		Optional<Instruction> mmInstruction = ((BasicProgramBlock) recompiledProgram.getProgramBlocks().get(0)).getInstructions().stream()
-				.filter(inst -> (Objects.equals(expectedSparkExecType, inst instanceof SPInstruction) && Objects.equals(inst.getOpcode(), expectedOpcode)))
-				.findFirst();
-		Assert.assertTrue(mmInstruction.isPresent());
+	}
+
+	private String stripEmptyBlocksAndReplaceRandoms(String explainedProgram) {
+		String[] lines = explainedProgram.split("\\n");
+		StringBuilder strippedProgram = new StringBuilder();
+
+		HashMap<Integer, Integer> uniqueMap = new HashMap<>();
+		int currentUnique = 0;
+		Pattern patternUnique = Pattern.compile("(_Var|_mVar)(\\d+)");
+
+
+		String previousLine = "";
+		boolean isProgramBlockLine = false;
+		for (String line : lines) {
+			String pureLine = line.replaceFirst("^\\-*", "");
+			if (pureLine.startsWith("GENERIC") || pureLine.startsWith("IF") || pureLine.startsWith("WHILE") || pureLine.startsWith("FOR")) {
+				if (!isProgramBlockLine) {
+					strippedProgram.append(previousLine).append("\n");
+				}
+				previousLine = line;
+				isProgramBlockLine = true;
+			} else {
+				if (pureLine.startsWith("CP") || pureLine.startsWith("SPARK")) {
+					line = line.replaceFirst("\\b/temp\\d+\\b", "/tempX");
+					Matcher matcherUnique = patternUnique.matcher(line);
+					StringBuilder newLine = new StringBuilder();
+					while (matcherUnique.find()) {
+						String prefix = matcherUnique.group(1);
+						int oldUnique = Integer.parseInt(matcherUnique.group(2));
+						int newUnique = uniqueMap.getOrDefault(oldUnique, ++currentUnique);
+						uniqueMap.put(oldUnique, newUnique);
+						matcherUnique.appendReplacement(newLine, prefix+newUnique);
+					}
+					matcherUnique.appendTail(newLine);
+					line = newLine.toString();
+				}
+				strippedProgram.append(previousLine).append("\n");
+				previousLine = line;
+				isProgramBlockLine = false;
+			}
+		}
+		strippedProgram.append(previousLine);
+		return "\n" + strippedProgram.toString().trim() + "\n";
+	}
+
+	private String stripGeneralAndReplaceRandoms(String explainedProgram) {
+		String[] lines = explainedProgram.split("\\n");
+		StringBuilder strippedBuilder = new StringBuilder();
+
+		LinkedList<String> replaceList = new LinkedList<>();
+		Pattern patternUnique = Pattern.compile("(_Var|_mVar|_sbcvar)(\\d+)");
+
+		for (String line : lines) {
+			String pureLine = line.replaceFirst("^-*", "");
+			if (pureLine.startsWith("PROGRAM") || pureLine.startsWith("GENERIC") || pureLine.startsWith("CP rmvar")) {
+				continue;
+			} else if (pureLine.startsWith("CP mvvar") || pureLine.startsWith("CP cpvar")) {
+				String[] parts = pureLine.split(" ");
+				String lastPart = parts[parts.length - 1];
+				if (!patternUnique.matcher(lastPart).matches()) {
+					replaceList.add(lastPart);
+				}
+				continue;
+			}
+			if (pureLine.startsWith("CP") || pureLine.startsWith("SPARK")) {
+				line = line.replaceFirst("\\b/temp\\d+\\b", "/tempX");
+				Matcher matcherUnique = patternUnique.matcher(line);
+				StringBuilder newLine = new StringBuilder();
+				while (matcherUnique.find()) {
+					matcherUnique.appendReplacement(newLine, "testVar");
+				}
+				matcherUnique.appendTail(newLine);
+				line = newLine.toString();
+			}
+			strippedBuilder.append(line).append("\n");
+		}
+		String strippedProgram = "\n" + strippedBuilder.toString().trim() + "\n";
+		for (String literalVar : replaceList) {
+			strippedProgram = strippedProgram.replaceAll("\\b "+literalVar+".\\b", " testVar.");
+		}
+		return strippedProgram;
 	}
 }

@@ -147,12 +147,6 @@ public class Dag<N extends Lop>
 			dt.isFrame() ? Lop.FRAME_VAR_NAME_PREFIX :
 			Lop.SCALAR_VAR_NAME_PREFIX) + var_index.getNextID();
 	}
-
-	// to be used only resource optimization
-	public static void resetUniqueMembers() {
-		job_id.reset(-1);
-		var_index.reset(-1);
-	}
 	
 	///////
 	// Dag modifications

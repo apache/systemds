@@ -41,7 +41,7 @@ import org.apache.sysds.test.AutomatedTestBase;
 import org.apache.sysds.test.TestConfiguration;
 import scala.Tuple2;
 
-import static org.apache.sysds.test.component.resource.TestingUtils.getSimpleCloudInstanceMap;
+import static org.apache.sysds.test.component.resource.TestingUtils.*;
 
 public class CostEstimatorTest extends AutomatedTestBase
 {
@@ -50,7 +50,7 @@ public class CostEstimatorTest extends AutomatedTestBase
 	private static final String HOME = SCRIPT_DIR + TEST_DIR;
 	private static final String TEST_CLASS_DIR = TEST_DIR + CostEstimatorTest.class.getSimpleName() + "/";
 	private static final int DEFAULT_NUM_EXECUTORS = 4;
-	private static final HashMap<String, CloudInstance> INSTANCE_MAP = getSimpleCloudInstanceMap();
+	private static final HashMap<String, CloudInstance> INSTANCE_MAP = getSimpleCloudInstanceMap(TEST_FEE_RATIO, TEST_STORAGE_PRICE);
 	
 	@Override
 	public void setUp() {}
@@ -59,13 +59,23 @@ public class CostEstimatorTest extends AutomatedTestBase
 	public void testL2SVMSingleNode() { runTest("Algorithm_L2SVM.dml", "m5.xlarge", null); }
 
 	@Test
-	public void testL2SVMHybrid() { runTest("Algorithm_L2SVM.dml", "m5.xlarge", "m5.xlarge"); }
+	public void testL2SVMHybrid() {
+		// m and n values force Spark operations
+		Tuple2<String, String> mVar = new Tuple2<>("$m", "100000");
+		Tuple2<String, String> nVar = new Tuple2<>("$n", "15000");
+		runTest("Algorithm_L2SVM.dml", "m5.xlarge", "m5.xlarge", mVar, nVar);
+	}
 
 	@Test
 	public void testLinregSingleNode() { runTest("Algorithm_Linreg.dml", "m5.xlarge", null); }
 
 	@Test
-	public void testLinregHybrid() { runTest("Algorithm_Linreg.dml", "m5.xlarge", "m5.xlarge"); }
+	public void testLinregHybrid() {
+		// m and n values force Spark operations
+		Tuple2<String, String> mVar = new Tuple2<>("$m", "100000");
+		Tuple2<String, String> nVar = new Tuple2<>("$n", "15000");
+		runTest("Algorithm_Linreg.dml", "m5.xlarge", "m5.xlarge", mVar, nVar);
+	}
 
 	@Test
 	public void testPCASingleNode() { runTest("Algorithm_PCA.dml", "m5.xlarge", null); }

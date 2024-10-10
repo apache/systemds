@@ -20,7 +20,6 @@
 
 package org.apache.sysds.resource.enumeration;
 
-import org.apache.sysds.resource.AWSUtils;
 import org.apache.sysds.resource.CloudInstance;
 import org.apache.sysds.resource.CloudUtils;
 import org.apache.sysds.resource.ResourceCompiler;
@@ -30,24 +29,27 @@ import org.apache.sysds.runtime.controlprogram.Program;
 import org.apache.sysds.resource.enumeration.EnumerationUtils.InstanceSearchSpace;
 import org.apache.sysds.resource.enumeration.EnumerationUtils.ConfigurationPoint;
 import org.apache.sysds.resource.enumeration.EnumerationUtils.SolutionPoint;
+import org.apache.sysds.utils.Explain;
 
-import java.io.IOException;
 import java.util.*;
+import java.util.concurrent.atomic.AtomicReference;
 
 public abstract class Enumerator {
 
 	public enum EnumerationStrategy {
-		GridBased, // considering all combination within a given range of configuration
+		GridBased, // considering all combinations within a given range of configuration
 		InterestBased, // considering only combinations of configurations with memory budge close to memory estimates
+		PruneBased // considering potentially all combinations within a given range of configuration but decides for pruning following pre-defined rules
 	}
 
 	public enum OptimizationStrategy {
-		MinTime, // always prioritize execution time minimization
-		MinPrice, // always prioritize operation price minimization
+		MinCosts, // use linearized scoring function to minimize both time and price, no constrains apply
+		MinTime, // minimize execution time constrained to a given price limit
+		MinPrice, // minimize  time constrained to a given price limit
 	}
 
 	// Static variables ------------------------------------------------------------------------------------------------
-
+	private static final double LINEAR_OBJECTIVE_RATIO = 0.5; // time/price ratio
 	public static final int DEFAULT_MIN_EXECUTORS = 0; // Single Node execution allowed
 	/**
 	 * A reasonable upper bound for the possible number of executors
@@ -67,27 +69,24 @@ public abstract class Enumerator {
 	// Instance variables ----------------------------------------------------------------------------------------------
 	HashMap<String, CloudInstance> instances = null;
 	Program program;
-	CloudUtils utils;
 	EnumerationStrategy enumStrategy;
 	OptimizationStrategy optStrategy;
 	private final double maxTime;
 	private final double maxPrice;
 	protected final int minExecutors;
 	protected final int maxExecutors;
-	protected final Set<CloudUtils.InstanceType> instanceTypesRange;
+	protected final Set<CloudUtils.InstanceFamily> instanceTypesRange;
 	protected final Set<CloudUtils.InstanceSize> instanceSizeRange;
 
 	protected final InstanceSearchSpace driverSpace = new InstanceSearchSpace();
 	protected final InstanceSearchSpace executorSpace = new InstanceSearchSpace();
-	protected ArrayList<SolutionPoint> solutionPool = new ArrayList<>();
+	protected AtomicReference<SolutionPoint> optimalSolution = new AtomicReference<>(null);
 
 	// Initialization functionality ------------------------------------------------------------------------------------
 
 	public Enumerator(Builder builder) {
-		if (builder.provider.equals(CloudUtils.CloudProvider.AWS)) {
-			utils = new AWSUtils();
-		} // as of now no other provider is supported
 		this.program = builder.program;
+		this.instances = builder.instances;
 		this.enumStrategy = builder.enumStrategy;
 		this.optStrategy = builder.optStrategy;
 		this.maxTime = builder.maxTime;
@@ -142,50 +141,8 @@ public abstract class Enumerator {
 	 * Meant to be used for testing purposes
 	 * @return ?
 	 */
-	public ArrayList<SolutionPoint> getSolutionPool() {
-		return solutionPool;
-	}
-
-	/**
-	 * Meant to be used for testing purposes
-	 * @param solutionPool ?
-	 */
-	public void setSolutionPool(ArrayList<SolutionPoint> solutionPool) {
-		this.solutionPool = solutionPool;
-	}
-
-	/**
-	 * Setting the available VM instances manually.
-	 * Meant to be used for testing purposes.
-	 * @param inputInstances initialized map of instances
-	 */
-	public void setInstanceTable(HashMap<String, CloudInstance> inputInstances) {
-		instances = new HashMap<>();
-		for (String key: inputInstances.keySet()) {
-			if (instanceTypesRange.contains(utils.getInstanceType(key))
-					&& instanceSizeRange.contains(utils.getInstanceSize(key))) {
-				instances.put(key, inputInstances.get(key));
-			}
-		}
-	}
-
-	/**
-	 * Loads the info table for the available VM instances
-	 * and filters out the instances that are not contained
-	 * in the set of allowed instance types and sizes.
-	 *
-	 * @param path csv file with instances' info
-	 * @throws IOException in case the loading part fails at reading the csv file
-	 */
-	public void loadInstanceTableFile(String path) throws IOException {
-		HashMap<String, CloudInstance> allInstances = utils.loadInstanceInfoTable(path);
-		instances = new HashMap<>();
-		for (String key: allInstances.keySet()) {
-			if (instanceTypesRange.contains(utils.getInstanceType(key))
-				&& instanceSizeRange.contains(utils.getInstanceSize(key))) {
-				instances.put(key, allInstances.get(key));
-			}
-		}
+	public SolutionPoint getOptimalSolution() {
+		return optimalSolution.get();
 	}
 
 	// Main functionality ----------------------------------------------------------------------------------------------
@@ -207,11 +164,12 @@ public abstract class Enumerator {
 	 */
 	public void processing() {
 		ConfigurationPoint configurationPoint;
-		SolutionPoint optSolutionPoint = new SolutionPoint(
+		SolutionPoint initSolutionPoint = new SolutionPoint(
 				new ConfigurationPoint(null, null, -1),
 				Double.MAX_VALUE,
 				Double.MAX_VALUE
 		);
+		optimalSolution.set(initSolutionPoint);
 		for (Map.Entry<Long, TreeMap<Integer, LinkedList<CloudInstance>>> dMemoryEntry: driverSpace.entrySet()) {
 			// loop over the search space to enumerate the driver configurations
 			for (Map.Entry<Integer, LinkedList<CloudInstance>> dCoresEntry: dMemoryEntry.getValue().entrySet()) {
@@ -224,7 +182,7 @@ public abstract class Enumerator {
 					);
 					for (CloudInstance dInstance: dCoresEntry.getValue()) {
 						configurationPoint = new ConfigurationPoint(dInstance);
-						updateOptimalSolution(optSolutionPoint, configurationPoint);
+						updateOptimalSolution(configurationPoint);
 					}
 				}
 				// enumeration for distributed execution
@@ -247,7 +205,7 @@ public abstract class Enumerator {
 							for (CloudInstance dInstance: dCoresEntry.getValue()) {
 								for (CloudInstance eInstance: eCoresEntry.getValue()) {
 									configurationPoint = new ConfigurationPoint(dInstance, eInstance, numberExecutors);
-									updateOptimalSolution(optSolutionPoint, configurationPoint);
+									updateOptimalSolution(configurationPoint);
 								}
 							}
 						}
@@ -258,34 +216,15 @@ public abstract class Enumerator {
 	}
 
 	/**
-	 * Deciding in the overall best solution out
-	 * of the filled pool of potential solutions
-	 * after processing.
-	 * @return single optimal cluster configuration
+	 * Retrieving the estimated optimal configurations after processing.
+	 *
+	 * @return optimal cluster configuration and corresponding costs
 	 */
 	public SolutionPoint postprocessing() {
-		if (solutionPool.isEmpty()) {
-			throw new RuntimeException("Calling postprocessing() should follow calling processing()");
+		if (optimalSolution.get() == null) {
+			throw new RuntimeException("No solution have met the constrains. Try adjusting the time/price constrain or switch to 'MinCosts' optimization strategy");
 		}
-		SolutionPoint optSolution = solutionPool.get(0);
-		double bestCost = Double.MAX_VALUE;
-		for (SolutionPoint solution: solutionPool) {
-			double combinedCost = solution.monetaryCost * solution.timeCost;
-			if (combinedCost < bestCost) {
-				optSolution = solution;
-				bestCost = combinedCost;
-			} else if (combinedCost == bestCost) {
-				// the ascending order of the searching spaces for driver and executor
-				// instances ensures that in case of equally good optimal solutions
-				// the first one has at least resource characteristics.
-				// This, however, is not valid for the number of executors
-				if (solution.numberExecutors < optSolution.numberExecutors) {
-					optSolution = solution;
-					bestCost = combinedCost;
-				}
-			}
-		}
-		return optSolution;
+		return optimalSolution.get();
 	}
 
 	// Helper methods --------------------------------------------------------------------------------------------------
@@ -313,17 +252,20 @@ public abstract class Enumerator {
 	private double[] getCostEstimate(ConfigurationPoint point) {
 		// get the estimated time cost
 		double timeCost;
+		double monetaryCost;
 		try {
+			System.out.println(Explain.explain(program));
 			// estimate execution time of the current program
 			// TODO: pass further relevant cluster configurations to cost estimator after extending it
 			//  like for example: FLOPS, I/O and networking speed
 			timeCost = CostEstimator.estimateExecutionTime(program, point.driverInstance, point.executorInstance)
 					+ CloudUtils.DEFAULT_CLUSTER_LAUNCH_TIME;
+			monetaryCost = CloudUtils.calculateClusterPrice(point, timeCost, CloudUtils.CloudProvider.AWS);
 		} catch (CostEstimationException e) {
-			throw new RuntimeException(e.getMessage());
+			timeCost = Double.MAX_VALUE;
+			monetaryCost = Double.MAX_VALUE;
 		}
 		// calculate monetary cost
-		double monetaryCost = utils.calculateClusterPrice(point, timeCost);
 		return new double[] {timeCost, monetaryCost}; // time cost, monetary cost
 	}
 
@@ -334,44 +276,47 @@ public abstract class Enumerator {
 	 * and the new cost estimation, it decides if the given cluster configuration
 	 * can be potential optimal solution having lower cost or such a cost
 	 * that is negligibly higher than the current lowest one.
-	 * @param currentOptimal solution point with the lowest cost
+	 *
 	 * @param newPoint new cluster configuration for estimation
 	 */
-	private void updateOptimalSolution(SolutionPoint currentOptimal, ConfigurationPoint newPoint) {
-		// TODO: clarify if setting max time and max price simultaneously makes really sense
-		SolutionPoint newPotentialSolution;
-		boolean replaceCurrentOptimal = false;
+	private void updateOptimalSolution(ConfigurationPoint newPoint) {
+		SolutionPoint currentOptimal = optimalSolution.get();
 		double[] newCost = getCostEstimate(newPoint);
-		if (optStrategy == OptimizationStrategy.MinTime) {
-			if (newCost[1] > maxPrice || newCost[0] >= currentOptimal.timeCost * (1 + COST_DELTA_FRACTION)) {
+		if (optStrategy == OptimizationStrategy.MinCosts) {
+			double optimalScore = linearScoringFunction(currentOptimal.timeCost, currentOptimal.monetaryCost);
+			double newScore = linearScoringFunction(newCost[0], newCost[1]);
+			if (newScore >= optimalScore) {
 				return;
 			}
-			if (newCost[0] < currentOptimal.timeCost) replaceCurrentOptimal = true;
+		} else if (optStrategy == OptimizationStrategy.MinTime) {
+			if (newCost[1] > maxPrice || newCost[0] >= currentOptimal.timeCost) {
+				return;
+			}
 		} else if (optStrategy == OptimizationStrategy.MinPrice) {
-			if (newCost[0] > maxTime || newCost[1] >= currentOptimal.monetaryCost * (1 + COST_DELTA_FRACTION)) {
+			if (newCost[0] > maxTime || newCost[1] >= currentOptimal.monetaryCost) {
 				return;
 			}
-			if (newCost[1] < currentOptimal.monetaryCost) replaceCurrentOptimal = true;
 		}
-		newPotentialSolution = new SolutionPoint(newPoint, newCost[0], newCost[1]);
-		solutionPool.add(newPotentialSolution);
-		if (replaceCurrentOptimal) {
-			currentOptimal.update(newPoint, newCost[0], newCost[1]);
-		}
+		SolutionPoint newSolution = new SolutionPoint(newPoint, newCost[0], newCost[1]);
+		optimalSolution.set(newSolution);
+	}
+
+	private static double linearScoringFunction(double time, double price) {
+		return LINEAR_OBJECTIVE_RATIO * time + (1 - LINEAR_OBJECTIVE_RATIO) * price;
 	}
 
 	// Class builder ---------------------------------------------------------------------------------------------------
 
 	public static class Builder {
-		private final CloudUtils.CloudProvider provider = CloudUtils.CloudProvider.AWS; // currently default and only choice
-		private Program program;
+		private Program program = null;
+		private HashMap<String, CloudInstance> instances = null;
 		private EnumerationStrategy enumStrategy = null;
 		private OptimizationStrategy optStrategy = null;
 		private double maxTime = -1d;
 		private double maxPrice = -1d;
 		private int minExecutors = DEFAULT_MIN_EXECUTORS;
 		private int maxExecutors = DEFAULT_MAX_EXECUTORS;
-		private Set<CloudUtils.InstanceType> instanceTypesRange = null;
+		private Set<CloudUtils.InstanceFamily> instanceTypesRange = null;
 		private Set<CloudUtils.InstanceSize> instanceSizeRange = null;
 
 		// GridBased specific ------------------------------------------------------------------------------------------
@@ -386,6 +331,11 @@ public abstract class Enumerator {
 
 		public Builder withRuntimeProgram(Program program) {
 			this.program = program;
+			return this;
+		}
+
+		public Builder withAvailableInstances(HashMap<String, CloudInstance> instances) {
+			this.instances = instances;
 			return this;
 		}
 
@@ -417,8 +367,8 @@ public abstract class Enumerator {
 		}
 
 		public Builder withNumberExecutorsRange(int min, int max) {
-			this.minExecutors = min;
-			this.maxExecutors = max;
+			this.minExecutors = min < 0? DEFAULT_MIN_EXECUTORS : min;
+			this.maxExecutors = max < 0? DEFAULT_MAX_EXECUTORS : max;
 			return this;
 		}
 
@@ -436,7 +386,6 @@ public abstract class Enumerator {
 			this.stepSizeExecutors = stepSize;
 			return this;
 		}
-
 
 		public Builder withFitDriverMemory(boolean fitDriverMemory) {
 			this.fitDriverMemory = fitDriverMemory;
@@ -467,19 +416,34 @@ public abstract class Enumerator {
 		}
 
 		public Enumerator build() {
-			if (this.program == null) {
+			if (program == null) {
 				throw new IllegalArgumentException("Providing runtime program is required");
 			}
 
-			if (instanceTypesRange == null) {
-				instanceTypesRange = EnumSet.allOf(CloudUtils.InstanceType.class);
+			if (instances == null) {
+				throw new IllegalArgumentException("Providing available instances is required");
 			}
 
+			if (instanceTypesRange == null) {
+				instanceTypesRange = EnumSet.allOf(CloudUtils.InstanceFamily.class);
+			}
 			if (instanceSizeRange == null) {
 				instanceSizeRange = EnumSet.allOf(CloudUtils.InstanceSize.class);
 			}
+			// filter instances that are not supported or not of the desired type/size
+			HashMap<String, CloudInstance> instancesWithinRange = new HashMap<>();
+			for (String key: instances.keySet()) {
+				if (instanceTypesRange.contains(CloudUtils.getInstanceFamily(key))
+						&& instanceSizeRange.contains(CloudUtils.getInstanceSize(key))) {
+					instancesWithinRange.put(key, instances.get(key));
+				}
+			}
+			instances = instancesWithinRange;
 
 			switch (optStrategy) {
+				case MinCosts:
+					// no constraints apply
+					break;
 				case MinTime:
 					if (this.maxPrice < 0) {
 						throw new IllegalArgumentException("Budget not specified but required " +
@@ -509,19 +473,19 @@ public abstract class Enumerator {
 			}
 		}
 
-		protected static Set<CloudUtils.InstanceType> typeRangeFromStrings(String[] types) {
-			Set<CloudUtils.InstanceType> result = EnumSet.noneOf(CloudUtils.InstanceType.class);
+		protected static Set<CloudUtils.InstanceFamily> typeRangeFromStrings(String[] types) throws IllegalArgumentException {
+			Set<CloudUtils.InstanceFamily> result = EnumSet.noneOf(CloudUtils.InstanceFamily.class);
 			for (String typeAsString: types) {
-				CloudUtils.InstanceType type = CloudUtils.InstanceType.customValueOf(typeAsString); // can throw IllegalArgumentException
+				CloudUtils.InstanceFamily type = CloudUtils.InstanceFamily.customValueOf(typeAsString);
 				result.add(type);
 			}
 			return result;
 		}
 
-		protected static Set<CloudUtils.InstanceSize> sizeRangeFromStrings(String[] sizes) {
+		protected static Set<CloudUtils.InstanceSize> sizeRangeFromStrings(String[] sizes) throws IllegalArgumentException {
 			Set<CloudUtils.InstanceSize> result = EnumSet.noneOf(CloudUtils.InstanceSize.class);
 			for (String sizeAsString: sizes) {
-				CloudUtils.InstanceSize size = CloudUtils.InstanceSize.customValueOf(sizeAsString); // can throw IllegalArgumentException
+				CloudUtils.InstanceSize size = CloudUtils.InstanceSize.customValueOf(sizeAsString);
 				result.add(size);
 			}
 			return result;

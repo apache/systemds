@@ -984,7 +984,8 @@ public class DataExpression extends DataIdentifier
 
 			// Check for file existence (before metadata parsing for meaningful error messages)
 			if( shouldReadMTD //skip check for jmlc/mlcontext
-				&& !HDFSTool.existsFileOnHDFS(inputFileName)) 
+				&& !HDFSTool.existsFileOnHDFS(inputFileName)
+				&& !ConfigurationManager.getCompilerConfigFlag(ConfigType.RESOURCE_OPTIMIZATION))
 			{
 				String fsext = InfrastructureAnalyzer.isLocalMode() ? "FS (local mode)" : "HDFS";
 				raiseValidateError("Read input file does not exist on "+fsext+": " + 

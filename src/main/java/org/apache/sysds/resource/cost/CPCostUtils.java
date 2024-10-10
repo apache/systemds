@@ -121,6 +121,9 @@ public class CPCostUtils {
         long nflop = getInstNFLOP(instructionType, opcode, output, input);
         if (includeWeights)
             return getCPUTime(nflop, metrics, output, input, weights);
+        if (!opcodeRequiresScan(opcode)) {
+            return getCPUTime(nflop, metrics, output);
+        }
         return getCPUTime(nflop, metrics, output, input);
     }
 
@@ -196,6 +199,13 @@ public class CPCostUtils {
     }
 
     // HELPERS
+    public static boolean opcodeRequiresScan(String opcode) {
+        return  !opcode.equals("ncol") &&
+                !opcode.equals("nrow") &&
+                !opcode.equals("length") &&
+                !opcode.equals("exists") &&
+                !opcode.equals("lineage");
+    }
     public static void assignOutputMemoryStats(CPInstruction inst, VarStats output, VarStats...inputs) {
         CPType instType = inst.getCPInstructionType();
         String opcode = inst.getOpcode();

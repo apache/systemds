@@ -72,18 +72,18 @@ public class IOCostUtils {
 		double deserializationBandwidth;
 
 		public IOMetrics(CloudInstance instance) {
-			this(instance.getFLOPS(), instance.getVCPUs(), instance.getMemorySpeed(), instance.getDiskSpeed(), instance.getNetworkSpeed());
+			this(instance.getFLOPS(), instance.getVCPUs(), instance.getMemoryBandwidth(), instance.getDiskReadBandwidth(), instance.getDiskWriteBandwidth(), instance.getNetworkBandwidth());
 		}
-		public IOMetrics(long flops, int cores, double memorySpeed, double diskSpeed, double networkSpeed) {
+		public IOMetrics(long flops, int cores, double memoryBandwidth, double diskReadBandwidth, double diskWriteBandwidth, double networkBandwidth) {
 			cpuFLOPS = flops;
 			cpuCores = cores;
 			// Metrics for disk I/O operations
-			localDiskReadBandwidth = diskSpeed;
-			localDiskWriteBandwidth = diskSpeed;
+			localDiskReadBandwidth = diskReadBandwidth;
+			localDiskWriteBandwidth = diskReadBandwidth;
 			// Assume that the HDFS I/O operations is done always by accessing local blocks
-			hdfsReadBinaryDenseBandwidth = diskSpeed * READ_DENSE_FACTOR;
+			hdfsReadBinaryDenseBandwidth = diskReadBandwidth * READ_DENSE_FACTOR;
 			hdfsReadBinarySparseBandwidth = hdfsReadBinaryDenseBandwidth * SPARSE_FACTOR;
-			hdfsWriteBinaryDenseBandwidth = diskSpeed * WRITE_DENSE_FACTOR;
+			hdfsWriteBinaryDenseBandwidth = diskWriteBandwidth * WRITE_DENSE_FACTOR;
 			hdfsWriteBinarySparseBandwidth = hdfsWriteBinaryDenseBandwidth * SPARSE_FACTOR;
 			hdfsReadTextDenseBandwidth = hdfsReadBinaryDenseBandwidth * TEXT_FACTOR;
 			hdfsReadTextSparseBandwidth = hdfsReadBinarySparseBandwidth * TEXT_FACTOR;
@@ -94,10 +94,10 @@ public class IOCostUtils {
 			s3WriteTextDenseBandwidth = networkingBandwidth * WRITE_DENSE_FACTOR * TEXT_FACTOR;
 			s3WriteTextSparseBandwidth = s3WriteTextDenseBandwidth * SPARSE_FACTOR;
 			// Metrics for main memory I/O operations
-			memReadBandwidth = memorySpeed;
-			memWriteBandwidth = memorySpeed;
+			memReadBandwidth = memoryBandwidth;
+			memWriteBandwidth = memoryBandwidth;
 			// Metrics for networking operations
-			networkingBandwidth = networkSpeed;
+			networkingBandwidth = networkBandwidth;
 			// Metrics for (de)serialization,
 			double currentFlopsFactor = (double) DEFAULT_FLOPS / cpuFLOPS;
 			serializationBandwidth = memReadBandwidth * SERIALIZATION_FACTOR * currentFlopsFactor;
@@ -109,7 +109,7 @@ public class IOCostUtils {
 		//IO Read
 		public static final double DEFAULT_MBS_MEMORY_BANDWIDTH = 21328.0; // e.g. DDR4-2666
 		public static final double DEFAULT_MBS_DISK_BANDWIDTH = 600; // e.g. m5.4xlarge, baseline bandwidth: 4750Mbps = 593.75 MB/s
-		public static final double DEFAULT_MBS_NETWORK_BANDWIDTH = 640; // e.g. m5.4xlarge, baseline speed bandwidth: 5Gbps = 640MB/s
+		public static final double DEFAULT_MBS_NETWORK_BANDWIDTH = 640; // e.g. m5.4xlarge, baseline bandwidth: 5Gbps = 640MB/s
 		public static final double DEFAULT_MBS_HDFS_READ_BINARY_DENSE = 150;
 		public static final double DEFAULT_MBS_HDFS_READ_BINARY_SPARSE = 75;
 		public static final double DEFAULT_MBS_S3_READ_TEXT_DENSE = 50;

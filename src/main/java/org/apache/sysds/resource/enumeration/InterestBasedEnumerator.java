@@ -49,6 +49,7 @@ public class InterestBasedEnumerator extends Enumerator {
 	// marks if the estimated output size should be
 	// considered as interesting point at deciding the
 	// number of executors - checkpoint storage level
+	// TODO: reconsider name
 	private final boolean fitCheckpointMemory;
 	// largest full memory estimate (scaled)
 	private long largestMemoryEstimateCP;

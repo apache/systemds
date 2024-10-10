@@ -87,6 +87,23 @@ public class EnumerationUtils {
 			this.executorInstance = executorInstance;
 			this.numberExecutors = numberExecutors;
 		}
+
+		@Override
+		public String toString() {
+			StringBuilder builder = new StringBuilder();
+			builder.append("Driver: ").append(driverInstance.getInstanceName());
+			builder.append("\n	mem: ").append((double) driverInstance.getMemory()/(1024*1024*1024));
+			builder.append(", v. cores: ").append(driverInstance.getVCPUs());
+			builder.append("\nExecutors: ");
+			if (numberExecutors > 0) {
+				builder.append(numberExecutors).append(" x ").append(executorInstance.getInstanceName());
+				builder.append("\n	mem: ").append((double) executorInstance.getMemory()/(1024*1024*1024));
+				builder.append(", v. cores: ").append(executorInstance.getVCPUs());
+			} else {
+				builder.append("-");
+			}
+			return builder.toString();
+		}
 	}
 
 	/**
@@ -108,6 +125,14 @@ public class EnumerationUtils {
 			this.numberExecutors = point.numberExecutors;
 			this.timeCost = timeCost;
 			this.monetaryCost = monetaryCost;
+		}
+
+		public double getTimeCost() {
+			return timeCost;
+		}
+
+		public double getMonetaryCost() {
+			return monetaryCost;
 		}
 	}
 }

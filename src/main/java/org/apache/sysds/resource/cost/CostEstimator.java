@@ -39,6 +39,7 @@ import org.apache.sysds.runtime.meta.MetaDataFormat;
 
 import static org.apache.sysds.lops.Data.PREAD_PREFIX;
 import static org.apache.sysds.lops.DataGen.*;
+import static org.apache.sysds.resource.cost.CPCostUtils.opcodeRequiresScan;
 import static org.apache.sysds.resource.cost.IOCostUtils.*;
 import static org.apache.sysds.resource.cost.SparkCostUtils.getRandInstTime;
 
@@ -274,6 +275,10 @@ public class CostEstimator
 			switch (opcode) {
 				case "createvar":
 					DataCharacteristics dataCharacteristics = vinst.getMetaData().getDataCharacteristics();
+					if (!dataCharacteristics.nnzKnown()) {
+						// assign NNZ if -1 to avoid any negative results at calculating estimated object size
+						dataCharacteristics.setNonZeros(dataCharacteristics.getLength());
+					}
 					VarStats varStats = new VarStats(varName, dataCharacteristics);
 					if (vinst.getInput1().getName().startsWith(PREAD_PREFIX)) {
 						// NOTE: add I/O here although at execution the reading is done when the input is needed
@@ -423,8 +428,9 @@ public class CostEstimator
 				} else {
 					CPCostUtils.assignOutputMemoryStats(inst, output, input);
 				}
-
-				time += loadCPVarStatsAndEstimateTime(input);
+				if (opcodeRequiresScan(inst.getOpcode())) {
+					time += loadCPVarStatsAndEstimateTime(input);
+				} // else -> // not read required
 				time += weights == null ? 0 : loadCPVarStatsAndEstimateTime(weights);
 				time += CPCostUtils.getUnaryInstTime(uinst, input, weights, output, driverMetrics);
 			}

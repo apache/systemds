@@ -35,6 +35,7 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Map;
 import java.util.Scanner;
+import java.util.function.Function;
 
 import org.apache.commons.cli.AlreadySelectedException;
 import org.apache.commons.cli.HelpFormatter;
@@ -418,6 +419,7 @@ public class DMLScript
 		setGlobalFlags(dmlconf);
 	}
 
+	public static Function<DMLProgram, Boolean> hopInterceptor = null;
 	/**
 	 * The running body of DMLScript execution. This method should be called after execution properties have been correctly set,
 	 * and customized parameters have been put into _argVals
@@ -459,6 +461,9 @@ public class DMLScript
 	
 		//Step 5: rewrite HOP DAGs (incl IPA and memory estimates)
 		dmlt.rewriteHopsDAG(prog);
+
+		if (hopInterceptor != null && !hopInterceptor.apply(prog))
+			return;
 		
 		//Step 6: construct lops (incl exec type and op selection)
 		dmlt.constructLops(prog);

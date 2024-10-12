@@ -57,6 +57,7 @@ import org.apache.sysds.common.Types.ValueType;
 import org.apache.sysds.conf.DMLConfig;
 import org.apache.sysds.hops.OptimizerUtils;
 import org.apache.sysds.hops.fedplanner.FTypes.FType;
+import org.apache.sysds.hops.rewriter.RewriterRuntimeUtils;
 import org.apache.sysds.lops.Lop;
 import org.apache.sysds.lops.compile.Dag;
 import org.apache.sysds.parser.ParseException;
@@ -105,6 +106,10 @@ import org.junit.Before;
  *
  */
 public abstract class AutomatedTestBase {
+
+	static {
+		RewriterRuntimeUtils.setupIfNecessary();
+	}
 
 	private static final Log LOG = LogFactory.getLog(AutomatedTestBase.class.getName());
 

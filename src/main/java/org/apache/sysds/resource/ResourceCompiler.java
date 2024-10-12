@@ -240,12 +240,10 @@ public class ResourceCompiler {
 	 * @param nodeNumCores number of CPU cores per node
 	 */
 	public static void setExecutorConfigurations(int numExecutors, long nodeMemory, int nodeNumCores) {
-		// TODO: think of reasonable factor for the JVM heap as prt of the node's memory
 		if (numExecutors > 0) {
 			DMLScript.setGlobalExecMode(Types.ExecMode.HYBRID);
 			SparkConf sparkConf = SparkExecutionContext.createSystemDSSparkConf();
 			// ------------------ Static Configurations -------------------
-			// TODO: think how to avoid setting them every time
 			sparkConf.set("spark.master", "local[*]");
 			sparkConf.set("spark.app.name", "SystemDS");
 			sparkConf.set("spark.memory.useLegacyMode", "false");

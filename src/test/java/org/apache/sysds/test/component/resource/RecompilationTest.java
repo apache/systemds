@@ -42,7 +42,6 @@ import static org.apache.sysds.runtime.controlprogram.context.SparkExecutionCont
 
 public class RecompilationTest extends AutomatedTestBase {
 	static {
-		ConfigurationManager.getCompilerConfig().set(CompilerConfig.ConfigType.ALLOW_DYN_RECOMPILATION, false);
 		ConfigurationManager.getCompilerConfig().set(CompilerConfig.ConfigType.RESOURCE_OPTIMIZATION, true);
 	}
 	private static final boolean DEBUG_MODE = false;
@@ -316,6 +315,8 @@ public class RecompilationTest extends AutomatedTestBase {
 				}
 				matcherUnique.appendTail(newLine);
 				line = newLine.toString();
+			} else if (pureLine.startsWith("FUNCTION")) {
+				line = pureLine.replaceFirst("recompile=true", "recompile=false");
 			}
 			strippedBuilder.append(line).append("\n");
 		}

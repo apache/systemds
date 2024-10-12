@@ -43,9 +43,7 @@ import static org.apache.sysds.resource.CloudUtils.GBtoBytes;
 import static org.apache.sysds.test.component.resource.TestingUtils.getSimpleCloudInstanceMap;
 
 public class InstructionsCostEstimatorTest {
-    private static final double testFeeRatio = 0.25;
-    private static final double testStoragePrice = 0.08;
-    private static final HashMap<String, CloudInstance> instanceMap = getSimpleCloudInstanceMap(testFeeRatio, testStoragePrice);
+    private static final HashMap<String, CloudInstance> instanceMap = getSimpleCloudInstanceMap();
 
     private CostEstimator estimator;
 

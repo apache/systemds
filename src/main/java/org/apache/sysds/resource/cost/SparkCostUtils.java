@@ -256,7 +256,7 @@ public class SparkCostUtils {
                 output.rddStats.numPartitions = input.rddStats.numPartitions;
                 output.rddStats.hashPartitioned = input.rddStats.hashPartitioned;
                 break;
-            default:  // rsort
+            default: // rsort
                 String ixretAsString = InstructionUtils.getInstructionParts(inst.getInstructionString())[4];
                 boolean ixret = ixretAsString.equalsIgnoreCase("true");
                 int shuffleFactor;
@@ -498,6 +498,27 @@ public class SparkCostUtils {
         return dataTransmissionTime + mapTime;
     }
 
+    public static double getQuaternaryInstTime(QuaternarySPInstruction quatInst, VarStats input1, VarStats input2, VarStats input3, VarStats output, IOMetrics driverMetrics, IOMetrics executorMetrics) {
+        String opcode = quatInst.getOpcode();
+        if (opcode.startsWith("red")) {
+            throw new RuntimeException("Spark Quaternary reduce-operations are not supported yet");
+        }
+        double dataTransmissionTime;
+        dataTransmissionTime = getSparkBroadcastTime(input2, driverMetrics, executorMetrics)
+                + getSparkBroadcastTime(input3, driverMetrics, executorMetrics); // for map-side ops only
+        if (opcode.equals("mapwsloss") || opcode.equals("mapwcemm")) {
+            output.rddStats.isCollected = true;
+        } else if (opcode.equals("mapwdivmm")) {
+            dataTransmissionTime += getSparkShuffleTime(output.rddStats, executorMetrics, true);
+        }
+
+        long nflop = getInstNFLOP(quatInst.getSPInstructionType(), opcode, output, input1);
+        double mapTime = getCPUTime(nflop, input1.rddStats.numPartitions, executorMetrics,
+                output.rddStats, input1.rddStats);
+
+        return dataTransmissionTime + mapTime;
+    }
+
     /**
      * Computes an estimate for the time needed by the CPU to execute (including memory access)
      * an instruction by providing number of floating operations.
@@ -674,6 +695,9 @@ public class SparkCostUtils {
                 return CPCostUtils.getInstNFLOP(CPType.Ctable, opcode, output, inputs);
             case ParameterizedBuiltin:
                 return CPCostUtils.getInstNFLOP(CPType.ParameterizedBuiltin, opcode, output, inputs);
+            case Quaternary:
+                String opcodeRoot = opcode.substring(3);
+                return CPCostUtils.getInstNFLOP(CPType.Quaternary, opcodeRoot, output, inputs);
             default:
                 // all existing cases should have been handled above
                 throw new DMLRuntimeException("Spark operation type'" + instructionType + "' is not supported by SystemDS");

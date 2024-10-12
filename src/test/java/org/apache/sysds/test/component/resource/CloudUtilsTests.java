@@ -146,10 +146,10 @@ public class CloudUtilsTests {
 	@Test
 	public void loadingInstanceInfoTest() throws IOException {
 		// test the proper loading of the table
-		File tmpFile = TestingUtils.generateTmpInstanceInfoTableFile();
+		File tmpFile = TestingUtils.generateMinimalInstanceInfoTableFile();
 
 		HashMap<String, CloudInstance> actual = CloudUtils.loadInstanceInfoTable(tmpFile.getPath(), TEST_FEE_RATIO, TEST_STORAGE_PRICE);
-		HashMap<String, CloudInstance> expected = getSimpleCloudInstanceMap(TEST_FEE_RATIO, TEST_STORAGE_PRICE);
+		HashMap<String, CloudInstance> expected = getSimpleCloudInstanceMap();
 
 		for (String instanceName: expected.keySet()) {
 			assertEqualsCloudInstances(expected.get(instanceName), actual.get(instanceName));

@@ -28,6 +28,7 @@ import java.nio.file.Files;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import static org.apache.sysds.resource.CloudUtils.GBtoBytes;
 
@@ -50,18 +51,22 @@ public class TestingUtils {
 
 	}
 
-	public static HashMap<String, CloudInstance> getSimpleCloudInstanceMap(double feeRatio, double storagePrice) {
+	public static HashMap<String, CloudInstance> getSimpleCloudInstanceMap() {
 		HashMap<String, CloudInstance> instanceMap =  new HashMap<>();
 		// fill the map wsearchStrategyh enough cloud instances to allow testing all search space dimension searchStrategyerations
-		instanceMap.put("m5.xlarge", new CloudInstance("m5.xlarge", 0.192, feeRatio*0.192, storagePrice, GBtoBytes(16), 4, 160, 9934.166667, 143.72, 143.72, 156.25,false, 2, 32));
-		instanceMap.put("m5.2xlarge", new CloudInstance("m5.2xlarge", 0.384, feeRatio*0.384, storagePrice, GBtoBytes(32), 8, 320, 19868.33333, 287.50, 287.50, 312.5, false, 4, 32));
-		instanceMap.put("c5.xlarge", new CloudInstance("c5.xlarge", 0.17, feeRatio*0.17, storagePrice, GBtoBytes(8), 4, 192, 9934.166667, 143.72, 143.72, 156.25,false, 2, 32));
-		instanceMap.put("c5.2xlarge", new CloudInstance("c5.2xlarge", 0.34, feeRatio*0.34, storagePrice, GBtoBytes(16), 8, 384, 19868.33333, 287.50, 287.50, 312.5, false, 4, 32));
+		instanceMap.put("m5.xlarge", new CloudInstance("m5.xlarge", 0.192, TEST_FEE_RATIO*0.192, TEST_STORAGE_PRICE, GBtoBytes(16), 4, 160, 9934.166667, 143.72, 143.72, 156.25,false, 2, 32));
+		instanceMap.put("m5.2xlarge", new CloudInstance("m5.2xlarge", 0.384, TEST_FEE_RATIO*0.384, TEST_STORAGE_PRICE, GBtoBytes(32), 8, 320, 19868.33333, 287.50, 287.50, 312.5, false, 4, 32));
+		instanceMap.put("m5d.xlarge", new CloudInstance("m5d.xlarge", 0.226, TEST_FEE_RATIO * 0.226, TEST_STORAGE_PRICE, GBtoBytes(16), 4, 160, 9934.166667, 230.46875, 113.28125, 156.25, true, 1, 150));
+		instanceMap.put("m5n.xlarge", new CloudInstance("m5n.xlarge", 0.238, TEST_FEE_RATIO * 0.238, TEST_STORAGE_PRICE, GBtoBytes(16), 4, 160, 9934.166667, 143.72, 143.72, 512.5, false, 2, 32));
+		instanceMap.put("c5.xlarge", new CloudInstance("c5.xlarge", 0.17, TEST_FEE_RATIO*0.17, TEST_STORAGE_PRICE, GBtoBytes(8), 4, 192, 9934.166667, 143.72, 143.72, 156.25,false, 2, 32));
+		instanceMap.put("c5d.xlarge", new CloudInstance("c5d.xlarge", 0.192, TEST_FEE_RATIO * 0.192, TEST_STORAGE_PRICE, GBtoBytes(8), 4, 192, 9934.166667, 163.84, 73.728, 156.25, true, 1, 100));
+		instanceMap.put("c5n.xlarge", new CloudInstance("c5n.xlarge", 0.216, TEST_FEE_RATIO * 0.216, TEST_STORAGE_PRICE, GBtoBytes(10.5), 4, 192, 9934.166667, 143.72, 143.72, 625, false, 2, 32));
+		instanceMap.put("c5.2xlarge", new CloudInstance("c5.2xlarge", 0.34, TEST_FEE_RATIO*0.34, TEST_STORAGE_PRICE, GBtoBytes(16), 8, 384, 19868.33333, 287.50, 287.50, 312.5, false, 4, 32));
 
 		return instanceMap;
 	}
 
-	public static File generateTmpFeeTableFile() throws IOException {
+	public static File generateMinimalFeeTableFile() throws IOException {
 		File tmpFile = File.createTempFile("fee_tmp", ".csv");
 
 		List<String> csvLines = Arrays.asList(
@@ -72,17 +77,28 @@ public class TestingUtils {
 		return tmpFile;
 	}
 
-	public static File generateTmpInstanceInfoTableFile() throws IOException {
+	public static File generateMinimalInstanceInfoTableFile() throws IOException {
 		File tmpFile = File.createTempFile("ec2_tmp", ".csv");
-
+		// the minimal info table includes instances of different families, optimization purposes, sizes, storage classes and network classes
 		List<String> csvLines = Arrays.asList(
 				"API_Name,Price,Memory,vCPUs,Cores,GFLOPS,memBandwidth,NVMe,storageVolumes,sizePerVolume,readStorageBandwidth,writeStorageBandwidth,networkBandwidth",
 				"m5.xlarge,0.1920000000,16.0,4,2,160,9934.166667,false,2,32,143.72,143.72,156.25",
+				"m5d.xlarge,0.2260000000,16.0,4,2,160,9934.166667,true,1,150,230.46875,113.28125,156.25",
+				"m5n.xlarge,0.2380000000,16,4,2,160,9934.166667,false,2,32,143.72,143.72,512.5",
 				"m5.2xlarge,0.3840000000,32.0,8,4,320,19868.33333,false,4,32,287.5,287.5,312.5",
 				"c5.xlarge,0.1700000000,8.0,4,2,192,9934.166667,false,2,32,143.72,143.72,156.25",
+				"c5d.xlarge,0.1920000000,8.0,4,2,192,9934.166667,true,1,100,163.84,73.728,156.25",
+				"c5n.xlarge,0.2160000000,10.5,4,2,192,9934.166667,false,2,32,143.72,143.72,625",
 				"c5.2xlarge,0.3400000000,16.0,8,4,384,19868.33333,false,4,32,287.5,287.5,312.5"
 		);
 		Files.write(tmpFile.toPath(), csvLines);
+		return tmpFile;
+	}
+
+	public static File generateTmlDMLScript(String...scriptLines) throws IOException {
+		File tmpFile = File.createTempFile("tmpScript", ".dml");
+		List<String> lines = Arrays.stream(scriptLines).collect(Collectors.toList());
+		Files.write(tmpFile.toPath(), lines);
 		return tmpFile;
 	}
 }

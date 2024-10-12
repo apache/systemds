@@ -16,42 +16,50 @@ import static org.apache.sysds.resource.CloudUtils.DEFAULT_CLUSTER_LAUNCH_TIME;
 
 public class ResourceOptimizer {
     static {
-        ConfigurationManager.getCompilerConfig().set(CompilerConfig.ConfigType.ALLOW_DYN_RECOMPILATION, false);
         ConfigurationManager.getCompilerConfig().set(CompilerConfig.ConfigType.RESOURCE_OPTIMIZATION, true);
     }
-
-    private static final String DEFAULT_REGIONAL_PRICE_TABLE_PATH = "./aws_regional_prices.csv";
-    private static final String DEFAULT_INSTANCE_INFO_TABLE_PATH = "./ec2_stats.csv";
-    private static final String DEFAULT_OUTPUT_PATH = "./ec2_stats.csv";
+    private static final String RESOURCE_SCRIPT_DIR = "./scripts/resource/";
+    private static final String DEFAULT_REGIONAL_PRICE_TABLE_PATH = RESOURCE_SCRIPT_DIR + "aws_regional_prices.csv";
+    private static final String DEFAULT_INSTANCE_INFO_TABLE_PATH = RESOURCE_SCRIPT_DIR + "ec2_stats.csv";
+    private static final String DEFAULT_OUTPUT_PATH = RESOURCE_SCRIPT_DIR + "output";
+    private static final String EMR_INSTANCE_GROUP_FILENAME = "emrInstanceGroups.json";
+    private static final String EMR_CONFIGURATIONS_FILENAME = "emrConfigurations.json";
+    private static final String EC2_ARGUMENTS_FILENAME = "ec2Arguments.json";
     private static final String DEFAULT_REGION = "us-east-1";
 
     @SuppressWarnings("static-access")
-    private static Options createOptions() {
+    public static Options createOptions() {
         Options options = new Options();
 
         Option fileOpt = OptionBuilder.withArgName("filename")
                 .withDescription("specifies dml/pydml file to execute; path should be local")
                 .hasArg().create("f");
         Option infoTableOpt = OptionBuilder
-                .withDescription("specifies filename of CSV table containing the meta data about all available cloud VM instance")
+                .withDescription("specifies filename of CSV table containing the meta data " +
+                        "about all available cloud VM instance")
                 .hasArg().create("infoTable");
         Option regionOpt = OptionBuilder
                 .withDescription("specifies cloud region (using the corresponding abbreviation)")
                 .hasArg().create("region");
         Option regionPriceTableOpt = OptionBuilder
-                .withDescription("specifies filename of CSV table containing the extra price metrics depending on the target cloud region")
+                .withDescription("specifies filename of CSV table containing the extra price metrics " +
+                        "depending on the target cloud region")
                 .hasArg().create("regionTable");
         Option nvargsOpt = OptionBuilder.withArgName("key=value")
-                .withDescription("parameterizes DML script with named parameters of the form <key=value>; <key> should be a valid identifier in DML/PyDML")
+                .withDescription("parameterizes DML script with named parameters of the form <key=value>; " +
+                        "<key> should be a valid identifier in DML/PyDML")
                 .hasArgs().create("nvargs");
         Option argsOpt = OptionBuilder.withArgName("argN")
-                .withDescription("specifies positional parameters; first value will replace $1 in DML program; $2 will replace 2nd and so on")
+                .withDescription("specifies positional parameters; " +
+                        "first value will replace $1 in DML program, $2 will replace 2nd and so on")
                 .hasArgs().create("args");
         Option enumOpt = OptionBuilder.withArgName("strategy")
-                .withDescription("specifies enumeration strategy; it should be one of the following: 'grid', 'interest', 'prune'; default 'grid'")
+                .withDescription("specifies enumeration strategy; " +
+                        "it should be one of the following: 'grid', 'interest', 'prune'; default 'grid'")
                 .hasArg().create("enum");
         Option optimizeForOpt = OptionBuilder.withArgName("mode")
-                .withDescription("specifies optimization strategy (scoring function); it should be one of the following: 'costs', 'time', 'price'; default 'costs'")
+                .withDescription("specifies optimization strategy (scoring function); " +
+                        "it should be one of the following: 'costs', 'time', 'price'; default 'costs'")
                 .hasArg().create("optimizeFor");
         Option maxTimeOpt = OptionBuilder
                 .withDescription("specifies constraint for maximum execution time")
@@ -60,37 +68,55 @@ public class ResourceOptimizer {
                 .withDescription("specifies constraint for maximum price")
                 .hasArg().create("maxPrice");
         Option minExecutorsOpt = OptionBuilder
-                .withDescription("specifies minimum desired executors; default 0 (single node execution allowed); a negative value lead to setting the default")
+                .withDescription("specifies minimum desired executors; " +
+                        "default 0 (single node execution allowed); " +
+                        "a negative value lead to setting the default")
                 .hasArg().create("minExecutors");
         Option maxExecutorsOpt = OptionBuilder
-                .withDescription("specifies maximum desired executors; default 200; a negative value leads to setting the default")
+                .withDescription("specifies maximum desired executors; " +
+                        "default 200; a negative value leads to setting the default")
                 .hasArg().create("maxExecutors");
-        Option instanceTypesOpt = OptionBuilder
-                .withDescription("specifies VM instance types for consideration and searching for optimal configuration; if not specified, all instances form the table with instance metadata are considered")
-                .hasArg().create("instanceTypes");
+        Option instanceFamiliesOpt = OptionBuilder
+                .withDescription("specifies VM instance types for consideration " +
+                        "at searching for optimal configuration; " +
+                        "if not specified, all instances form the table with instance metadata are considered")
+                .hasArgs().create("instanceFamilies");
         Option instanceSizesOpt = OptionBuilder
-                .withDescription("specifies VM instance sizes for consideration and searching for optimal configuration; if not specified, all instances form the table with instance metadata are considered")
-                .hasArg().create("instanceSizes");
+                .withDescription("specifies VM instance sizes for consideration " +
+                        "at searching for optimal configuration; " +
+                        "if not specified, all instances form the table with instance metadata are considered")
+                .hasArgs().create("instanceSizes");
         Option stepSizeOpt = OptionBuilder
-                .withDescription("specific to grid-based enum. strategy; specifies step size for enumerating number of executors; default 1")
+                .withDescription("specific to grid-based enum. strategy; " +
+                        "specifies step size for enumerating number of executors; default 1")
                 .hasArg().create("stepSize");
         Option expBaseOpt = OptionBuilder
-                .withDescription("specific to grid-based enum. strategy; specifies exponential base for increasing the number of executors exponentially; apply only if specified as larger than 1")
+                .withDescription("specific to grid-based enum. strategy; " +
+                        "specifies exponential base for increasing the number of executors exponentially; apply only if specified as larger than 1")
                 .hasArg().create("expBase");
-        Option fitDriverMemOpt = OptionBuilder
-                .withDescription("specific to interest-based enum. strategy; boolean ('true'/'false') to indicate if the driver memory is an interest for the enumeration; default true")
-                .hasArg().create("fitDriverMem");
-        Option fitBroadcastMemOpt = OptionBuilder
-                .withDescription("specific to interest-based enum. strategy; boolean ('true'/'false') to indicate if potential broadcasts' size is an interest for the enumeration; default true")
-                .hasArg().create("fitBroadcastMem");
-        Option checkSingleNodeOpt = OptionBuilder
-                .withDescription("specific to interest-based enum. strategy; boolean ('true'/'false') to indicate if single node execution should be considered only in case of sufficient memory budget for the driver; default false")
-                .hasArg().create("checkSingleNode");
-        Option fitCheckPointMemory = OptionBuilder
-                .withDescription("specific to interest-based enum. strategy; boolean ('true'/'false') to indicate if the size of the outputs is an interest for the enumeration; default false")
-                .hasArg().create("checkSingleNode");
+        Option interestLargestEstimateOpt = OptionBuilder
+                .withDescription("specific to interest-based enum. strategy; " +
+                        "boolean ('true'/'false') to indicate if single node execution should be considered only " +
+                        "in case of sufficient memory budget for the driver; default true")
+                .hasArg().create("useLargestEst");
+        Option interestEstimatesInCPOpt = OptionBuilder
+                .withDescription("specific to interest-based enum. strategy; " +
+                        "boolean ('true'/'false') to indicate if the CP memory is an interest for the enumeration; " +
+                        "default true")
+                .hasArg().create("useCpEstimates");
+        Option interestBroadcastVarsOpt = OptionBuilder
+                .withDescription("specific to interest-based enum. strategy; " +
+                        "boolean ('true'/'false') to indicate if potential broadcast variables' size is an interest " +
+                        "for driver and executors memory budget; default true")
+                .hasArg().create("useBroadcasts");
+        Option interestOutputCachingOpt = OptionBuilder
+                .withDescription("specific to interest-based enum. strategy; " +
+                        "boolean ('true'/'false') to indicate if the size of the outputs (potentially cached) " +
+                        "is an interest for the enumerated number of executors; default false")
+                .hasArg().create("useOutputs");
         Option outputOpt = OptionBuilder
-                .hasArg().withDescription("output folder for configurations files")
+                .hasArg().withDescription("output folder for configurations files; " +
+                        "existing configurations files will be overwritten")
                 .create("output");
         Option helpOpt = OptionBuilder
                 .withDescription("shows usage message")
@@ -108,14 +134,14 @@ public class ResourceOptimizer {
         options.addOption(maxPriceOpt);
         options.addOption(minExecutorsOpt);
         options.addOption(maxExecutorsOpt);
-        options.addOption(instanceTypesOpt);
+        options.addOption(instanceFamiliesOpt);
         options.addOption(instanceSizesOpt);
         options.addOption(stepSizeOpt);
         options.addOption(expBaseOpt);
-        options.addOption(fitDriverMemOpt);
-        options.addOption(fitBroadcastMemOpt);
-        options.addOption(checkSingleNodeOpt);
-        options.addOption(fitCheckPointMemory);
+        options.addOption(interestLargestEstimateOpt);
+        options.addOption(interestEstimatesInCPOpt);
+        options.addOption(interestBroadcastVarsOpt);
+        options.addOption(interestOutputCachingOpt);
         options.addOption(outputOpt);
         options.addOption(helpOpt);
 
@@ -132,15 +158,10 @@ public class ResourceOptimizer {
         return options;
     }
 
-    public static void main(String[] args) throws ParseException, IOException {
-        // step 1: parse options and arguments
-        Options options = createOptions();
-        CommandLineParser clParser = new PosixParser();
-        CommandLine line = clParser.parse(options, args);
-
+    public static Enumerator initEnumeratorFromArgs(CommandLine line, Options options) throws ParseException, IOException {
         if (line.hasOption("help")) {
             (new HelpFormatter()).printHelp("Main", options);
-            return;
+            return null;
         }
         // 1a: parse script arguments
         HashMap <String, String> argsMap = new HashMap<>();
@@ -188,18 +209,6 @@ public class ResourceOptimizer {
             regionTablePath = line.getOptionValue("regionTable");
         } else {
             regionTablePath = DEFAULT_REGIONAL_PRICE_TABLE_PATH;
-        }
-        String outputPath;
-        if (line.hasOption("output")) {
-            outputPath = line.getOptionValue("output");
-        } else {
-            outputPath = DEFAULT_OUTPUT_PATH;
-        }
-        // validate the given output path now to avoid errors after the whole optimization process
-        try {
-            Paths.get(line.getOptionValue("output"));
-        } catch (InvalidPathException e) {
-            throw new MissingOptionException("Given value for option 'output' is not a valid path");
         }
 
         double[] regionalPrices = CloudUtils.loadRegionalPrices(regionTablePath, region);
@@ -265,7 +274,7 @@ public class ResourceOptimizer {
         // 1d: parse search space range/limits
         int minExecutors = line.hasOption("minExecutors")? Integer.parseInt(line.getOptionValue("minExecutors")) : -1;
         int maxExecutors = line.hasOption("maxExecutors")? Integer.parseInt(line.getOptionValue("maxExecutors")) : -1;
-        String[] instanceTypes = line.hasOption("instanceTypes")? line.getOptionValues("instanceTypes") : null;
+        String[] instanceFamilies = line.hasOption("instanceFamilies")? line.getOptionValues("instanceFamilies") : null;
         String[] instanceSizes = line.hasOption("instanceSizes")? line.getOptionValues("instanceSizes") : null;
         // 1e: parse arguments specific to enumeration strategies
         int stepSize = 1;
@@ -274,35 +283,35 @@ public class ResourceOptimizer {
             if (line.hasOption("stepSize"))
                 stepSize = Integer.parseInt(line.getOptionValue("stepSize"));
             if (line.hasOption("expBase"))
-                stepSize = Integer.parseInt(line.getOptionValue("expBase"));
+                expBase = Integer.parseInt(line.getOptionValue("expBase"));
         } else {
             if (line.hasOption("stepSize"))
                 System.err.println("Warning: option -stepSize is relevant only for -enum 'grid'");
             if (line.hasOption("expBase"))
                 System.err.println("Warning: option -expBase is relevant only for -enum 'grid'");
         }
-        boolean fitDriverMem = true;
-        boolean fitBroadcastMem = true;
-        boolean checkSingleNode = false;
-        boolean fitCheckpointMem = false;
+        boolean interestLargestEstimate = true;
+        boolean interestEstimatesInCP = true;
+        boolean interestBroadcastVars = true;
+        boolean interestOutputCaching = false;
         if (strategy == Enumerator.EnumerationStrategy.InterestBased) {
-            if (line.hasOption("fitDriverMem"))
-                fitDriverMem = Boolean.parseBoolean(line.getOptionValue("fitDriverMem"));
-            if (line.hasOption("fitBroadcastMem"))
-                fitBroadcastMem = Boolean.parseBoolean(line.getOptionValue("fitBroadcastMem"));
-            if (line.hasOption("checkSingleNode"))
-                checkSingleNode = Boolean.parseBoolean(line.getOptionValue("checkSingleNode"));
-            if (line.hasOption("fitCheckpointMem"))
-                fitCheckpointMem = Boolean.parseBoolean(line.getOptionValue("fitCheckpointMem"));
+            if (line.hasOption("useLargestEst"))
+                interestLargestEstimate = Boolean.parseBoolean(line.getOptionValue("useLargestEst"));
+            if (line.hasOption("useCpEstimates"))
+                interestEstimatesInCP = Boolean.parseBoolean(line.getOptionValue("useCpEstimates"));
+            if (line.hasOption("useBroadcasts"))
+                interestBroadcastVars = Boolean.parseBoolean(line.getOptionValue("useBroadcasts"));
+            if (line.hasOption("useOutputs"))
+                interestOutputCaching = Boolean.parseBoolean(line.getOptionValue("useOutputs"));
         } else {
-            if (line.hasOption("fitDriverMem"))
-                System.err.println("Warning: option -fitDriverMem is relevant only for -enum 'interest'");
-            if (line.hasOption("fitBroadcastMem"))
-                System.err.println("Warning: option -fitBroadcastMem is relevant only for -enum 'interest'");
-            if (line.hasOption("checkSingleNode"))
-                System.err.println("Warning: option -checkSingleNode is relevant only for -enum 'interest'");
-            if (line.hasOption("fitCheckpointMem"))
-                System.err.println("Warning: option -fitCheckpointMem is relevant only for -enum 'interest'");
+            if (line.hasOption("useLargestEst"))
+                System.err.println("Warning: option -useLargestEst is relevant only for -enum 'interest'");
+            if (line.hasOption("useCpEstimates"))
+                System.err.println("Warning: option -useCpEstimates is relevant only for -enum 'interest'");
+            if (line.hasOption("useBroadcasts"))
+                System.err.println("Warning: option -useBroadcasts is relevant only for -enum 'interest'");
+            if (line.hasOption("useOutputs"))
+                System.err.println("Warning: option -useOutputs is relevant only for -enum 'interest'");
         }
 
         // step 2: compile the initial runtime program
@@ -321,10 +330,10 @@ public class ResourceOptimizer {
         builder.withNumberExecutorsRange(minExecutors, maxExecutors);
         // set range of instance types
         try {
-            if (instanceTypes != null)
-                builder.withInstanceTypeRange(instanceTypes);
+            if (instanceFamilies != null)
+                builder.withInstanceFamilyRange(instanceFamilies);
         } catch (IllegalArgumentException e) {
-            throw new ParseException("Not all provided options for -instanceTypes are supported or valid. Error thrown at:\n"+e.getMessage());
+            throw new ParseException("Not all provided options for -instanceFamilies are supported or valid. Error thrown at:\n"+e.getMessage());
         }
         // set range of instance sizes
         try {
@@ -357,13 +366,40 @@ public class ResourceOptimizer {
         }
         // set flags for interest-based enum.
         if (strategy == Enumerator.EnumerationStrategy.InterestBased) {
-            builder.withFitDriverMemory(fitDriverMem)
-                    .withFitBroadcastMemory(fitBroadcastMem)
-                    .withFitCheckpointMemory(fitCheckpointMem)
-                    .withCheckSingleNodeExecution(checkSingleNode);
+            builder.withInterestLargestEstimate(interestLargestEstimate)
+                    .withInterestEstimatesInCP(interestEstimatesInCP)
+                    .withInterestBroadcastVars(interestBroadcastVars)
+                    .withInterestOutputCaching(interestOutputCaching);
+
         }
         // build the enumerator
-        Enumerator enumerator = builder.build();
+        return builder.build();
+    }
+
+    public static void main(String[] args) throws ParseException, IOException {
+        Options options = createOptions();
+        CommandLineParser clParser = new PosixParser();
+        CommandLine line = clParser.parse(options, args);
+
+        Enumerator enumerator = initEnumeratorFromArgs(line, options);
+        if (enumerator == null) {
+            // help requested
+            return;
+        }
+
+        String outputPath;
+        if (line.hasOption("output")) {
+            outputPath = line.getOptionValue("output");
+        } else {
+            outputPath = DEFAULT_OUTPUT_PATH;
+        }
+        // validate the given output path now to avoid errors after the whole optimization process
+        try {
+            Paths.get(line.getOptionValue("output"));
+        } catch (InvalidPathException e) {
+            throw new MissingOptionException("Given value for option 'output' is not a valid path");
+        }
+
         System.out.println("Number instances to be used for enumeration: " + enumerator.getInstances().size());
         System.out.println("All options are set! Enumeration is now running...");
         // step 4: pre-processing (generating search space according to the enumeration strategy)
@@ -373,15 +409,15 @@ public class ResourceOptimizer {
         enumerator.processing();
         EnumerationUtils.SolutionPoint optConfig = enumerator.postprocessing();
         long endTime = System.currentTimeMillis();
-        System.out.println("Enumeration finished for " + ((double) (endTime-startTime))/1000 + " seconds");
+        System.out.println("...enumeration finished for " + ((double) (endTime-startTime))/1000 + " seconds\n");
         // step 6: generate configuration files according the optimal solution (if solution not empty)
         if (optConfig.getTimeCost() < Double.MAX_VALUE) {
             if (optConfig.numberExecutors == 0) {
-                String filePath = Paths.get(outputPath, "ec2Arguments.json").toString();
+                String filePath = Paths.get(outputPath, EC2_ARGUMENTS_FILENAME).toString();
                 CloudUtils.generateEC2ConfigJson(optConfig.driverInstance, filePath);
             } else {
-                String instanceGroupsPath = Paths.get(outputPath, "emrInstanceGroups.json").toString();
-                String configurationsPath = Paths.get(outputPath, "emrConfigurations.json").toString();
+                String instanceGroupsPath = Paths.get(outputPath, EMR_INSTANCE_GROUP_FILENAME).toString();
+                String configurationsPath = Paths.get(outputPath, EMR_CONFIGURATIONS_FILENAME).toString();
                 CloudUtils.generateEMRInstanceGroupsJson(
                         optConfig.driverInstance,
                         optConfig.numberExecutors,
@@ -396,10 +432,38 @@ public class ResourceOptimizer {
         }
         // step 7: provide final info to the user
         String prompt = String.format(
-                "Estimated optimal execution time: %.2fs (%.1fs static bootstrap time), price: %.2f$" +
-                        "\nCluster configuration:\n" + optConfig +
-                        "\nGenerated configuration stored in files: %s and %s",
-                optConfig.getTimeCost(), DEFAULT_CLUSTER_LAUNCH_TIME, optConfig.getMonetaryCost(), "todo1.json", "todo2.json");
+                "\nEstimated optimal execution time: %.2fs (%.1fs static bootstrap time), price: %.2f$" +
+                        "\n\nCluster configuration:\n" + optConfig +
+                        "\n\nGenerated configurations stored in folder %s\n",
+                optConfig.getTimeCost(), DEFAULT_CLUSTER_LAUNCH_TIME, optConfig.getMonetaryCost(), outputPath);
         System.out.println(prompt);
+        System.out.println("Execution suggestions:\n");
+        String executionSuggestions;
+        if (optConfig.numberExecutors == 0) {
+            executionSuggestions =String.format(
+                    "Launch the EC2 instance using the script %s.\nUse -help to check the options.\n\n" +
+                            "SystemDS rely on memory only for all computations but in debugging more or longer estimated execution time,\n" +
+                            "please adapt the root EBS volume in case no NVMe storage is attached.\n" +
+                            "Note that the storage configurations for EBS from the instance info table are relevant only for EMR cluster executions.\n" +
+                            "Increasing the EBS root volume size for larger instances is also recommended.\n" +
+                            "Adjusting the root volume configurations is done manually in the %s file.\n" +
+                            "\nMore details can be found in the README.md file."
+                    , "<SystemDS root>/script/resource/launch_ec2.sh", EC2_ARGUMENTS_FILENAME
+            );
+        } else {
+            executionSuggestions =String.format(
+                    "Launch the EMR cluster using the script %s.\nUse -help to check the options.\n\n" +
+                            "If you you decide to run in debug mode and/or the estimated execution time is significantly long,\n" +
+                            "please adjust the default EBS root volume size to account for larger log files!\n" +
+                            "Currently the Resource Optimizer does not adapt the storage configurations\n" +
+                            "and the defaults from the instance info table are used.\n" +
+                            "In case of constraining the available instances for enumeration with the provided optional arguments and large input datasets,\n" +
+                            "please adjust the EBS configurations in the %s file manually following the instructions from the README.md file!\n\n" +
+                            "Disable the automatic cluster termination if you want to access the cluster logs or the any file not exported to S3 by the DML script.\n" +
+                            "\nMore details can be found in the README.md file."
+                    , "<SystemDS root>/script/resource/launch_emr.sh", EMR_INSTANCE_GROUP_FILENAME
+            );
+        }
+        System.out.println(executionSuggestions);
     }
 }

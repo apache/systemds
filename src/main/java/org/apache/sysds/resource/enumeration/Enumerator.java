@@ -29,7 +29,6 @@ import org.apache.sysds.runtime.controlprogram.Program;
 import org.apache.sysds.resource.enumeration.EnumerationUtils.InstanceSearchSpace;
 import org.apache.sysds.resource.enumeration.EnumerationUtils.ConfigurationPoint;
 import org.apache.sysds.resource.enumeration.EnumerationUtils.SolutionPoint;
-import org.apache.sysds.utils.Explain;
 
 import java.util.*;
 import java.util.concurrent.atomic.AtomicReference;
@@ -49,7 +48,7 @@ public abstract class Enumerator {
 	}
 
 	// Static variables ------------------------------------------------------------------------------------------------
-	private static final double LINEAR_OBJECTIVE_RATIO = 0.5; // time/price ratio
+	private static final double LINEAR_OBJECTIVE_RATIO = 0.01; // time/price ratio
 	public static final int DEFAULT_MIN_EXECUTORS = 0; // Single Node execution allowed
 	/**
 	 * A reasonable upper bound for the possible number of executors
@@ -59,15 +58,18 @@ public abstract class Enumerator {
 	 */
 	public static final int DEFAULT_MAX_EXECUTORS = 200;
 
-	// limit for the ratio number of executor and number
-	// of executor per executor
-	public static final int MAX_LEVEL_PARALLELISM = 1000;
+	/**
+	 * A generally applied services quotes in AWS - 1152:
+	 * number of vCPUs running at the same time for the account in a single region.
+	 * Set 1000 to account for the vCPUs of the driver node
+	 */
+	public static final int DEFAULT_MAX_LEVEL_PARALLELISM = 1000;
 
 	/** Time/Monetary delta for considering optimal solutions as fraction */
 	public static final double COST_DELTA_FRACTION = 0.02;
 
 	// Instance variables ----------------------------------------------------------------------------------------------
-	HashMap<String, CloudInstance> instances = null;
+	HashMap<String, CloudInstance> instances;
 	Program program;
 	EnumerationStrategy enumStrategy;
 	OptimizationStrategy optStrategy;
@@ -93,56 +95,8 @@ public abstract class Enumerator {
 		this.maxPrice = builder.maxPrice;
 		this.minExecutors = builder.minExecutors;
 		this.maxExecutors = builder.maxExecutors;
-		this.instanceTypesRange = builder.instanceTypesRange;
+		this.instanceTypesRange = builder.instanceFamiliesRange;
 		this.instanceSizeRange = builder.instanceSizeRange;
-	}
-
-	/**
-	 * Meant to be used for testing purposes
-	 * @return ?
-	 */
-	public HashMap<String, CloudInstance> getInstances() {
-		return instances;
-	}
-
-	/**
-	 * Meant to be used for testing purposes
-	 * @return ?
-	 */
-	public InstanceSearchSpace getDriverSpace() {
-		return driverSpace;
-	}
-
-	/**
-	 * Meant to be used for testing purposes
-	 * @param inputSpace ?
-	 */
-	public void setDriverSpace(InstanceSearchSpace inputSpace) {
-		driverSpace.putAll(inputSpace);
-	}
-
-	/**
-	 * Meant to be used for testing purposes
-	 * @return ?
-	 */
-	public InstanceSearchSpace getExecutorSpace() {
-		return executorSpace;
-	}
-
-	/**
-	 * Meant to be used for testing purposes
-	 * @param inputSpace ?
-	 */
-	public void setExecutorSpace(InstanceSearchSpace inputSpace) {
-		executorSpace.putAll(inputSpace);
-	}
-
-	/**
-	 * Meant to be used for testing purposes
-	 * @return ?
-	 */
-	public SolutionPoint getOptimalSolution() {
-		return optimalSolution.get();
 	}
 
 	// Main functionality ----------------------------------------------------------------------------------------------
@@ -180,6 +134,7 @@ public abstract class Enumerator {
 							dMemoryEntry.getKey(),
 							dCoresEntry.getKey()
 					);
+					// no need of recompilation for single nodes with identical memory budget and #v. cores
 					for (CloudInstance dInstance: dCoresEntry.getValue()) {
 						configurationPoint = new ConfigurationPoint(dInstance);
 						updateOptimalSolution(configurationPoint);
@@ -192,7 +147,6 @@ public abstract class Enumerator {
 						List<Integer> numberExecutorsSet = estimateRangeExecutors(eMemoryEntry.getKey(), eCoresEntry.getKey());
 						// Spark execution mode
 						for (int numberExecutors: numberExecutorsSet) {
-							// TODO: avoid full recompilation when the driver memory is not changed
 							program = ResourceCompiler.doFullRecompilation(
 									program,
 									dMemoryEntry.getKey(),
@@ -201,7 +155,8 @@ public abstract class Enumerator {
 									eMemoryEntry.getKey(),
 									eCoresEntry.getKey()
 							);
-							// TODO: avoid full program cost estimation when the driver instance is not changed
+							// no need of recompilation for a cluster with identical #executors and
+							// with identical memory and #v. cores for driver and executor nodes
 							for (CloudInstance dInstance: dCoresEntry.getValue()) {
 								for (CloudInstance eInstance: eCoresEntry.getValue()) {
 									configurationPoint = new ConfigurationPoint(dInstance, eInstance, numberExecutors);
@@ -254,10 +209,7 @@ public abstract class Enumerator {
 		double timeCost;
 		double monetaryCost;
 		try {
-			System.out.println(Explain.explain(program));
 			// estimate execution time of the current program
-			// TODO: pass further relevant cluster configurations to cost estimator after extending it
-			//  like for example: FLOPS, I/O and networking speed
 			timeCost = CostEstimator.estimateExecutionTime(program, point.driverInstance, point.executorInstance)
 					+ CloudUtils.DEFAULT_CLUSTER_LAUNCH_TIME;
 			monetaryCost = CloudUtils.calculateClusterPrice(point, timeCost, CloudUtils.CloudProvider.AWS);
@@ -285,15 +237,25 @@ public abstract class Enumerator {
 		if (optStrategy == OptimizationStrategy.MinCosts) {
 			double optimalScore = linearScoringFunction(currentOptimal.timeCost, currentOptimal.monetaryCost);
 			double newScore = linearScoringFunction(newCost[0], newCost[1]);
-			if (newScore >= optimalScore) {
+			if (newScore > optimalScore) {
+				return;
+			}
+			if (newScore == optimalScore && newCost[1] > currentOptimal.monetaryCost) {
+				// prioritize cost for the edge case
 				return;
 			}
 		} else if (optStrategy == OptimizationStrategy.MinTime) {
-			if (newCost[1] > maxPrice || newCost[0] >= currentOptimal.timeCost) {
+			if (newCost[1] > maxPrice || newCost[0] > currentOptimal.timeCost) {
+				return;
+			}
+			if (newCost[0] == currentOptimal.timeCost && newCost[1] > currentOptimal.monetaryCost) {
 				return;
 			}
 		} else if (optStrategy == OptimizationStrategy.MinPrice) {
-			if (newCost[0] > maxTime || newCost[1] >= currentOptimal.monetaryCost) {
+			if (newCost[0] > maxTime || newCost[1] > currentOptimal.monetaryCost) {
+				return;
+			}
+			if (newCost[1] == currentOptimal.monetaryCost && newCost[0] > currentOptimal.timeCost) {
 				return;
 			}
 		}
@@ -316,17 +278,17 @@ public abstract class Enumerator {
 		private double maxPrice = -1d;
 		private int minExecutors = DEFAULT_MIN_EXECUTORS;
 		private int maxExecutors = DEFAULT_MAX_EXECUTORS;
-		private Set<CloudUtils.InstanceFamily> instanceTypesRange = null;
+		private Set<CloudUtils.InstanceFamily> instanceFamiliesRange = null;
 		private Set<CloudUtils.InstanceSize> instanceSizeRange = null;
 
 		// GridBased specific ------------------------------------------------------------------------------------------
 		private int stepSizeExecutors = 1;
 		private int expBaseExecutors = -1; // flag for exp. increasing number of executors if -1
 		// InterestBased specific --------------------------------------------------------------------------------------
-		private boolean fitDriverMemory = true;
-		private boolean fitBroadcastMemory = true;
-		private boolean checkSingleNodeExecution = false;
-		private boolean fitCheckpointMemory = false;
+		private boolean interestLargestEstimate = true;
+		private boolean interestEstimatesInCP = true;
+		private boolean interestBroadcastVars = true;
+		private boolean interestOutputCaching = false; // caching not fully considered by the cost estimator
 		public Builder() {}
 
 		public Builder withRuntimeProgram(Program program) {
@@ -372,8 +334,8 @@ public abstract class Enumerator {
 			return this;
 		}
 
-		public Builder withInstanceTypeRange(String[] instanceTypes) {
-			this.instanceTypesRange = typeRangeFromStrings(instanceTypes);
+		public Builder withInstanceFamilyRange(String[] instanceFamilies) {
+			this.instanceFamiliesRange = typeRangeFromStrings(instanceFamilies);
 			return this;
 		}
 
@@ -387,23 +349,23 @@ public abstract class Enumerator {
 			return this;
 		}
 
-		public Builder withFitDriverMemory(boolean fitDriverMemory) {
-			this.fitDriverMemory = fitDriverMemory;
+		public Builder withInterestLargestEstimate(boolean fitSingleNodeMemory) {
+			this.interestLargestEstimate = fitSingleNodeMemory;
 			return this;
 		}
 
-		public Builder withFitBroadcastMemory(boolean fitBroadcastMemory) {
-			this.fitBroadcastMemory = fitBroadcastMemory;
+		public Builder withInterestEstimatesInCP(boolean fitDriverMemory) {
+			this.interestEstimatesInCP = fitDriverMemory;
 			return this;
 		}
 
-		public Builder withCheckSingleNodeExecution(boolean checkSingleNodeExecution) {
-			this.checkSingleNodeExecution = checkSingleNodeExecution;
+		public Builder withInterestBroadcastVars(boolean fitExecutorMemory) {
+			this.interestBroadcastVars = fitExecutorMemory;
 			return this;
 		}
 
-		public Builder withFitCheckpointMemory(boolean fitCheckpointMemory) {
-			this.fitCheckpointMemory = fitCheckpointMemory;
+		public Builder withInterestOutputCaching(boolean fitCheckpointMemory) {
+			this.interestOutputCaching = fitCheckpointMemory;
 			return this;
 		}
 
@@ -424,8 +386,8 @@ public abstract class Enumerator {
 				throw new IllegalArgumentException("Providing available instances is required");
 			}
 
-			if (instanceTypesRange == null) {
-				instanceTypesRange = EnumSet.allOf(CloudUtils.InstanceFamily.class);
+			if (instanceFamiliesRange == null) {
+				instanceFamiliesRange = EnumSet.allOf(CloudUtils.InstanceFamily.class);
 			}
 			if (instanceSizeRange == null) {
 				instanceSizeRange = EnumSet.allOf(CloudUtils.InstanceSize.class);
@@ -433,7 +395,7 @@ public abstract class Enumerator {
 			// filter instances that are not supported or not of the desired type/size
 			HashMap<String, CloudInstance> instancesWithinRange = new HashMap<>();
 			for (String key: instances.keySet()) {
-				if (instanceTypesRange.contains(CloudUtils.getInstanceFamily(key))
+				if (instanceFamiliesRange.contains(CloudUtils.getInstanceFamily(key))
 						&& instanceSizeRange.contains(CloudUtils.getInstanceSize(key))) {
 					instancesWithinRange.put(key, instances.get(key));
 				}
@@ -464,10 +426,12 @@ public abstract class Enumerator {
 				case GridBased:
 					return new GridBasedEnumerator(this, stepSizeExecutors, expBaseExecutors);
 				case InterestBased:
-					if (fitCheckpointMemory && expBaseExecutors != -1) {
-						throw new IllegalArgumentException("Number of executors cannot be fitted on the checkpoint estimates and increased exponentially simultaneously.");
-					}
-					return new InterestBasedEnumerator(this, fitDriverMemory, fitBroadcastMemory, checkSingleNodeExecution, fitCheckpointMemory);
+					return new InterestBasedEnumerator(this,
+							interestLargestEstimate,
+							interestEstimatesInCP,
+							interestBroadcastVars,
+							interestOutputCaching
+					);
 				default:
 					throw new IllegalArgumentException("Setting an enumeration strategy is required.");
 			}
@@ -490,5 +454,75 @@ public abstract class Enumerator {
 			}
 			return result;
 		}
+	}
+
+	// Public Getters and Setter meant for testing purposes only -------------------------------------------------------
+
+	/**
+	 * Meant to be used for testing purposes
+	 * @return the available instances for enumeration
+	 */
+	public HashMap<String, CloudInstance> getInstances() {
+		return instances;
+	}
+
+	/**
+	 * Meant to be used for testing purposes
+	 * @return the object representing the driver search space
+	 */
+	public InstanceSearchSpace getDriverSpace() {
+		return driverSpace;
+	}
+
+	/**
+	 * Meant to be used for testing purposes
+	 * @param inputSpace the object representing the driver search space
+	 */
+	public void setDriverSpace(InstanceSearchSpace inputSpace) {
+		driverSpace.putAll(inputSpace);
+	}
+
+	/**
+	 * Meant to be used for testing purposes
+	 * @return the object representing the executor search space
+	 */
+	public InstanceSearchSpace getExecutorSpace() {
+		return executorSpace;
+	}
+
+	/**
+	 * Meant to be used for testing purposes
+	 * @param inputSpace the object representing the executor search space
+	 */
+	public void setExecutorSpace(InstanceSearchSpace inputSpace) {
+		executorSpace.putAll(inputSpace);
+	}
+
+	/**
+	 * Meant to be used for testing purposes
+	 * @return applied enumeration strategy
+	 */
+	public EnumerationStrategy getEnumStrategy() { return enumStrategy; }
+
+	/**
+	 * Meant to be used for testing purposes
+	 * @return applied optimization strategy
+	 */
+	public OptimizationStrategy getOptStrategy() { return optStrategy; }
+
+	/**
+	 * Meant to be used for testing purposes
+	 * @return configured max time for consideration (seconds)
+	 */
+	public double getMaxTime() {
+		return maxTime;
+	}
+
+	/**
+	 * Meant to be used for testing purposes
+	 * @return configured max price for consideration (dollars)
+	 */
+	public double getMaxPrice() {
+		return maxPrice;
 	}
 }

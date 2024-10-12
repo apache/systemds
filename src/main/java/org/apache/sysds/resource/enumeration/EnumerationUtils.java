@@ -21,9 +21,7 @@ package org.apache.sysds.resource.enumeration;
 
 import org.apache.sysds.resource.CloudInstance;
 
-import java.util.HashMap;
-import java.util.LinkedList;
-import java.util.TreeMap;
+import java.util.*;
 
 public class EnumerationUtils {
 	/**
@@ -64,6 +62,8 @@ public class EnumerationUtils {
 				LinkedList<CloudInstance> currentList = currentSubTree.get(instance.getVCPUs());
 
 				currentList.add(instance);
+				// ensure total order based on price (ascending)
+				currentList.sort(Comparator.comparingDouble(CloudInstance::getPrice));
 			}
 		}
 	}

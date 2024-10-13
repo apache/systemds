@@ -406,19 +406,17 @@ public class FederationMap {
 		return ret.toArray(new Future[0]);
 	}
 
-	public Future<FederatedResponse>[] executeRoll(long tid, boolean wait, FederatedRequest fr, FederatedRequest frEnd,
-												   FederatedRequest frStart, FederatedRequest frCopy) {
+	public Future<FederatedResponse>[] executeRoll(long tid, boolean wait, FederatedRequest frEnd,
+												   FederatedRequest frStart, long rlen) {
 		// executes step1[] - step 2 - ... step4 (only first step federated-data-specific)
-		setThreadID(tid, new FederatedRequest[]{fr, frCopy, frStart, frEnd});
+		setThreadID(tid, new FederatedRequest[]{frStart, frEnd});
 		List<Future<FederatedResponse>> ret = new ArrayList<>();
 
 		for(Pair<FederatedRange, FederatedData> e : _fedMap) {
-			if (e.getKey().getEndDims()[0] == 100) {
-				ret.add(e.getValue().executeFederatedOperation(fr, frEnd));
+			if (e.getKey().getEndDims()[0] == rlen) {
+				ret.add(e.getValue().executeFederatedOperation(frEnd));
 			} else if (e.getKey().getBeginDims()[0] == 0){
-				ret.add(e.getValue().executeFederatedOperation(fr, frStart));
-			} else{
-				ret.add(e.getValue().executeFederatedOperation(fr, frCopy));
+				ret.add(e.getValue().executeFederatedOperation(frStart));
 			}
 		}
 
@@ -434,9 +432,12 @@ public class FederationMap {
 			throw new DMLRuntimeException("Federated matrix read only supported on initialized FederatedData");
 
 		List<Pair<FederatedRange, Future<FederatedResponse>>> readResponses = new ArrayList<>();
-		FederatedRequest request = new FederatedRequest(RequestType.GET_VAR, _ID);
-		for(Pair<FederatedRange, FederatedData> e : _fedMap)
+
+		for(Pair<FederatedRange, FederatedData> e : _fedMap){
+			FederatedRequest request = new FederatedRequest(RequestType.GET_VAR, e.getValue().getVarID());
 			readResponses.add(Pair.of(e.getKey(), e.getValue().executeFederatedOperation(request)));
+		}
+
 		return readResponses;
 	}
 
@@ -715,43 +716,6 @@ public class FederationMap {
 		}
 	}
 
-	public long rollFedMap(long shift, long rlen) {
-		long length = 0;
-
-		int size = _fedMap.size();
-
-		for (int i = 0; i < size; i++) {
-			Pair<FederatedRange, FederatedData> entry = _fedMap.get(i);
-			FederatedRange fedRange = entry.getKey();
-
-			long beginRow = fedRange.getBeginDims()[0] + shift;
-			long endRow = fedRange.getEndDims()[0] + shift;
-
-			beginRow = beginRow > rlen ? beginRow - rlen : beginRow;
-			endRow = endRow > rlen ? endRow - rlen : endRow;
-
-			if (beginRow < endRow) {
-				fedRange.setBeginDim(0, beginRow);
-				fedRange.setEndDim(0, endRow);
-			} else {
-				FederatedData fedData = entry.getValue();
-
-				// End block
-				fedRange.setBeginDim(0, beginRow);
-				fedRange.setEndDim(0, rlen);
-				length = rlen - beginRow;
-
-				// Start block
-				FederatedRange startRange = new FederatedRange(fedRange);
-				startRange.setBeginDim(0, 0);
-				startRange.setEndDim(0, endRow);
-
-				_fedMap.add(Pair.of(startRange, fedData));
-			}
-		}
-
-		return length;
-	}
 
 	private static class MappingTask implements Callable<Void> {
 		private final FederatedRange _range;

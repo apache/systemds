@@ -38,148 +38,147 @@ import java.util.Collection;
 @RunWith(value = Parameterized.class)
 @net.jcip.annotations.NotThreadSafe
 public class FederatedRollTest extends AutomatedTestBase {
-	// private static final Log LOG = LogFactory.getLog(FederatedRightIndexTest.class.getName());
+    // private static final Log LOG = LogFactory.getLog(FederatedRightIndexTest.class.getName());
 
-	private final static String TEST_NAME = "FederatedRollTest";
+    private final static String TEST_NAME = "FederatedRollTest";
 
-	private final static String TEST_DIR = "functions/federated/";
-	private static final String TEST_CLASS_DIR = TEST_DIR + FederatedRollTest.class.getSimpleName() + "/";
+    private final static String TEST_DIR = "functions/federated/";
+    private static final String TEST_CLASS_DIR = TEST_DIR + FederatedRollTest.class.getSimpleName() + "/";
 
-	private final static int blocksize = 1024;
-	@Parameterized.Parameter()
-	public int rows;
-	@Parameterized.Parameter(1)
-	public int cols;
+    private final static int blocksize = 1024;
+    @Parameterized.Parameter()
+    public int rows;
+    @Parameterized.Parameter(1)
+    public int cols;
 
-	@Parameterized.Parameter(2)
-	public boolean rowPartitioned;
+    @Parameterized.Parameter(2)
+    public boolean rowPartitioned;
 
-	@Parameterized.Parameters
-	public static Collection<Object[]> data() {
-		return Arrays.asList(new Object[][] {{100, 12, true}, {100, 12, false}});
-	}
+    @Parameterized.Parameters
+    public static Collection<Object[]> data() {
+        return Arrays.asList(new Object[][]{{100, 12, true}, {100, 12, false}});
+    }
 
-	@Override
-	public void setUp() {
-		TestUtils.clearAssertionInformation();
-		addTestConfiguration(TEST_NAME, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME, new String[] {"S"}));
-	}
+    @Override
+    public void setUp() {
+        TestUtils.clearAssertionInformation();
+        addTestConfiguration(TEST_NAME, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME, new String[]{"S"}));
+    }
 
-	@Test
-	public void testRevCP() {
-		runRevTest(ExecMode.SINGLE_NODE);
-	}
+    @Test
+    public void testRollCP() {
+        runRollTest(ExecMode.SINGLE_NODE);
+    }
 
-	@Test
-	public void testRevSP() {
-		runRevTest(ExecMode.SPARK);
-	}
+    @Test
+    public void testRollSP() {
+        runRollTest(ExecMode.SPARK);
+    }
 
-	@Test
-	public void federatedCompilationRevCP() {
-		runRevTest(ExecMode.SINGLE_NODE, true);
-	}
+    @Test
+    public void federatedCompilationRollCP() {
+        runRollTest(ExecMode.SINGLE_NODE, true);
+    }
 
-	@Test
-	public void federatedCompilationRevSP() {
-		runRevTest(ExecMode.SPARK, true);
-	}
+    @Test
+    public void federatedCompilationRollSP() {
+        runRollTest(ExecMode.SPARK, true);
+    }
 
-	private void runRevTest(ExecMode execMode) {
-		runRevTest(execMode, false);
-	}
+    private void runRollTest(ExecMode execMode) {
+        runRollTest(execMode, false);
+    }
 
-	private void runRevTest(ExecMode execMode, boolean activateFedCompilation) {
-		boolean sparkConfigOld = DMLScript.USE_LOCAL_SPARK_CONFIG;
-		ExecMode platformOld = rtplatform;
+    private void runRollTest(ExecMode execMode, boolean activateFedCompilation) {
+        boolean sparkConfigOld = DMLScript.USE_LOCAL_SPARK_CONFIG;
+        ExecMode platformOld = rtplatform;
 
-		if(rtplatform == ExecMode.SPARK)
-			DMLScript.USE_LOCAL_SPARK_CONFIG = true;
+        if (rtplatform == ExecMode.SPARK)
+            DMLScript.USE_LOCAL_SPARK_CONFIG = true;
 
-		getAndLoadTestConfiguration(TEST_NAME);
-		String HOME = SCRIPT_DIR + TEST_DIR;
+        getAndLoadTestConfiguration(TEST_NAME);
+        String HOME = SCRIPT_DIR + TEST_DIR;
 
-		// write input matrices
-		int r = rows;
-		int c = cols / 4;
-		if(rowPartitioned) {
-			r = rows / 4;
-			c = cols;
-		}
+        // write input matrices
+        int r = rows;
+        int c = cols / 4;
+        if (rowPartitioned) {
+            r = rows / 4;
+            c = cols;
+        }
 
-		double[][] X1 = getRandomMatrix(r, c, 1, 5, 1, 3);
-		double[][] X2 = getRandomMatrix(r, c, 1, 5, 1, 7);
-		double[][] X3 = getRandomMatrix(r, c, 1, 5, 1, 8);
-		double[][] X4 = getRandomMatrix(r, c, 1, 5, 1, 9);
+        double[][] X1 = getRandomMatrix(r, c, 1, 5, 1, 3);
+        double[][] X2 = getRandomMatrix(r, c, 1, 5, 1, 7);
+        double[][] X3 = getRandomMatrix(r, c, 1, 5, 1, 8);
+        double[][] X4 = getRandomMatrix(r, c, 1, 5, 1, 9);
 
-		for(int k : new int[] {1, 2, 3}) {
-			Arrays.fill(X3[k], 0);
-		}
+        for (int k : new int[]{1, 2, 3}) {
+            Arrays.fill(X3[k], 0);
+        }
 
-		MatrixCharacteristics mc = new MatrixCharacteristics(r, c, blocksize, r * c);
-		writeInputMatrixWithMTD("X1", X1, false, mc);
-		writeInputMatrixWithMTD("X2", X2, false, mc);
-		writeInputMatrixWithMTD("X3", X3, false, mc);
-		writeInputMatrixWithMTD("X4", X4, false, mc);
+        MatrixCharacteristics mc = new MatrixCharacteristics(r, c, blocksize, r * c);
+        writeInputMatrixWithMTD("X1", X1, false, mc);
+        writeInputMatrixWithMTD("X2", X2, false, mc);
+        writeInputMatrixWithMTD("X3", X3, false, mc);
+        writeInputMatrixWithMTD("X4", X4, false, mc);
 
-		// empty script name because we don't execute any script, just start the worker
-		fullDMLScriptName = "";
-		int port1 = getRandomAvailablePort();
-		int port2 = getRandomAvailablePort();
-		int port3 = getRandomAvailablePort();
-		int port4 = getRandomAvailablePort();
-		Process t1 = startLocalFedWorker(port1, FED_WORKER_WAIT_S);
-		Process t2 = startLocalFedWorker(port2, FED_WORKER_WAIT_S);
-		Process t3 = startLocalFedWorker(port3, FED_WORKER_WAIT_S);
-		Process t4 = startLocalFedWorker(port4);
+        // empty script name because we don't execute any script, just start the worker
+        fullDMLScriptName = "";
+        int port1 = getRandomAvailablePort();
+        int port2 = getRandomAvailablePort();
+        int port3 = getRandomAvailablePort();
+        int port4 = getRandomAvailablePort();
+        Process t1 = startLocalFedWorker(port1, FED_WORKER_WAIT_S);
+        Process t2 = startLocalFedWorker(port2, FED_WORKER_WAIT_S);
+        Process t3 = startLocalFedWorker(port3, FED_WORKER_WAIT_S);
+        Process t4 = startLocalFedWorker(port4);
 
 
-		try {
-			if(!isAlive(t1, t2, t3, t4))
-				throw new RuntimeException("Failed starting federated worker");
-			rtplatform = execMode;
-			if(rtplatform == ExecMode.SPARK) {
-				DMLScript.USE_LOCAL_SPARK_CONFIG = true;
-			}
-			TestConfiguration config = availableTestConfigurations.get(TEST_NAME);
-			loadTestConfiguration(config);
+        try {
+            if (!isAlive(t1, t2, t3, t4))
+                throw new RuntimeException("Failed starting federated worker");
+            rtplatform = execMode;
+            if (rtplatform == ExecMode.SPARK) {
+                DMLScript.USE_LOCAL_SPARK_CONFIG = true;
+            }
+            TestConfiguration config = availableTestConfigurations.get(TEST_NAME);
+            loadTestConfiguration(config);
 
-			// Run reference dml script with normal matrix
-			fullDMLScriptName = HOME + TEST_NAME + "Reference.dml";
-			programArgs = new String[] {"-stats", "100", "-args", input("X1"), input("X2"), input("X3"), input("X4"),
-					Boolean.toString(rowPartitioned).toUpperCase(), expected("S")};
+            // Run reference dml script with normal matrix
+            fullDMLScriptName = HOME + TEST_NAME + "Reference.dml";
+            programArgs = new String[]{"-stats", "100", "-args", input("X1"), input("X2"), input("X3"), input("X4"),
+                    Boolean.toString(rowPartitioned).toUpperCase(), expected("S")};
 
-			runTest(null);
+            runTest(null);
 
-			OptimizerUtils.FEDERATED_COMPILATION = activateFedCompilation;
-			fullDMLScriptName = HOME + TEST_NAME + ".dml";
-			programArgs = new String[] {"-stats", "100", "-nvargs",
-					"in_X1=" + TestUtils.federatedAddress(port1, input("X1")),
-					"in_X2=" + TestUtils.federatedAddress(port2, input("X2")),
-					"in_X3=" + TestUtils.federatedAddress(port3, input("X3")),
-					"in_X4=" + TestUtils.federatedAddress(port4, input("X4")), "rows=" + rows, "cols=" + cols,
-					"rP=" + Boolean.toString(rowPartitioned).toUpperCase(), "out_S=" + output("S")};
+            OptimizerUtils.FEDERATED_COMPILATION = activateFedCompilation;
+            fullDMLScriptName = HOME + TEST_NAME + ".dml";
+            programArgs = new String[]{"-stats", "100", "-nvargs",
+                    "in_X1=" + TestUtils.federatedAddress(port1, input("X1")),
+                    "in_X2=" + TestUtils.federatedAddress(port2, input("X2")),
+                    "in_X3=" + TestUtils.federatedAddress(port3, input("X3")),
+                    "in_X4=" + TestUtils.federatedAddress(port4, input("X4")), "rows=" + rows, "cols=" + cols,
+                    "rP=" + Boolean.toString(rowPartitioned).toUpperCase(), "out_S=" + output("S")};
 
-			runTest(null);
+            runTest(null);
 
-			// compare via files
-			compareResults(0.01, "Stat-DML1", "Stat-DML2");
+            // compare via files
+            compareResults(0.01, "Stat-DML1", "Stat-DML2");
 
-			Assert.assertTrue(heavyHittersContainsString("fed_roll"));
+            Assert.assertTrue(heavyHittersContainsString("fed_roll"));
 
-			// check that federated input files are still existing
-			Assert.assertTrue(HDFSTool.existsFileOnHDFS(input("X1")));
-			Assert.assertTrue(HDFSTool.existsFileOnHDFS(input("X2")));
-			Assert.assertTrue(HDFSTool.existsFileOnHDFS(input("X3")));
-			Assert.assertTrue(HDFSTool.existsFileOnHDFS(input("X4")));
+            // check that federated input files are still existing
+            Assert.assertTrue(HDFSTool.existsFileOnHDFS(input("X1")));
+            Assert.assertTrue(HDFSTool.existsFileOnHDFS(input("X2")));
+            Assert.assertTrue(HDFSTool.existsFileOnHDFS(input("X3")));
+            Assert.assertTrue(HDFSTool.existsFileOnHDFS(input("X4")));
 
-		}
-		finally {
-			TestUtils.shutdownThreads(t1, t2, t3, t4);
+        } finally {
+            TestUtils.shutdownThreads(t1, t2, t3, t4);
 
-			rtplatform = platformOld;
-			DMLScript.USE_LOCAL_SPARK_CONFIG = sparkConfigOld;
-			OptimizerUtils.FEDERATED_COMPILATION = false;
-		}
-	}
+            rtplatform = platformOld;
+            DMLScript.USE_LOCAL_SPARK_CONFIG = sparkConfigOld;
+            OptimizerUtils.FEDERATED_COMPILATION = false;
+        }
+    }
 }

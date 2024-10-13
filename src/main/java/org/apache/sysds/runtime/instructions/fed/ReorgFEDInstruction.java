@@ -36,6 +36,7 @@ import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysds.runtime.controlprogram.federated.FederatedRange;
+import org.apache.sysds.runtime.controlprogram.federated.FederatedData;
 import org.apache.sysds.runtime.controlprogram.federated.FederatedRequest;
 import org.apache.sysds.runtime.controlprogram.federated.FederatedResponse;
 import org.apache.sysds.runtime.controlprogram.federated.FederatedUDF;
@@ -69,15 +70,15 @@ public class ReorgFEDInstruction extends UnaryFEDInstruction {
 		super(FEDType.Reorg, op, in1, out, opcode, istr);
 	}
 
-	private ReorgFEDInstruction(Operator op, CPOperand in, CPOperand shift, CPOperand out,  String opcode, String istr) {
-		super(FEDType.Reorg, op, in, shift, out, opcode, istr);
+	private ReorgFEDInstruction(Operator op, CPOperand in, CPOperand shift, CPOperand out,  String opcode, String istr, FederatedOutput fedOut) {
+		super(FEDType.Reorg, op, in, shift, out, opcode, istr, fedOut);
 		_shift = shift;
 	}
 
 	public static ReorgFEDInstruction parseInstruction(ReorgCPInstruction rinst) {
 		if (rinst.input2 != null) {
 			return new ReorgFEDInstruction(rinst.getOperator(), rinst.input1, rinst.input2, rinst.output, rinst.getOpcode(),
-					rinst.getInstructionString());
+					rinst.getInstructionString(), FederatedOutput.NONE);
 		} else{
 			return new ReorgFEDInstruction(rinst.getOperator(), rinst.input1, rinst.output, rinst.getOpcode(),
 					rinst.getInstructionString(), FederatedOutput.NONE);
@@ -87,7 +88,7 @@ public class ReorgFEDInstruction extends UnaryFEDInstruction {
 	public static ReorgFEDInstruction parseInstruction(ReorgSPInstruction rinst) {
 		if (rinst.input2 != null) {
 			return new ReorgFEDInstruction(rinst.getOperator(), rinst.input1, rinst.input2, rinst.output, rinst.getOpcode(),
-					rinst.getInstructionString());
+					rinst.getInstructionString(), FederatedOutput.NONE);
 		} else{
 			return new ReorgFEDInstruction(rinst.getOperator(), rinst.input1, rinst.output, rinst.getOpcode(),
 					rinst.getInstructionString(), FederatedOutput.NONE);
@@ -128,8 +129,9 @@ public class ReorgFEDInstruction extends UnaryFEDInstruction {
 			in.split(parts[1]);
 			out.split(parts[3]);
 			CPOperand shift = new CPOperand(parts[2]);
+			fedOut = parseFedOutFlag(str, 3);
 			return new ReorgFEDInstruction(new ReorgOperator(new RollIndex(0)),
-					in, out, shift, opcode, str);
+					in, out, shift, opcode, str, fedOut);
 		}
 		else {
 			throw new DMLRuntimeException("ReorgFEDInstruction: unsupported opcode: " + opcode);
@@ -194,31 +196,29 @@ public class ReorgFEDInstruction extends UnaryFEDInstruction {
 			out.setFedMapping(mo1.getFedMapping().copyWithNewID(fr1.getID()));
 
 			optionalForceLocal(out);
-		}
-			else if (instOpcode.equalsIgnoreCase("roll")) {
-			long inID = mo1.getFedMapping().getID();
-			long outID = FederationUtils.getNextFedDataID();
-
+		} else if (instOpcode.equalsIgnoreCase("roll")) {
 			long rlen = mo1.getNumRows();
 			long shift = ec.getScalarInput(_shift).getLongValue();
 			shift %= (rlen != 0 ? rlen : 1); // roll matrix with axis=none
 
-			FederationMap outFedMap = mo1.getFedMapping().copyWithNewID(outID);
-			long length = outFedMap.rollFedMap(shift, rlen);
+			long inID = mo1.getFedMapping().getID();
+			long outEndID = FederationUtils.getNextFedDataID();
+			long outStartID = FederationUtils.getNextFedDataID();
 
-			FederatedRequest fr = new FederatedRequest(FederatedRequest.RequestType.PUT_VAR, outID,
-					new MatrixCharacteristics(-1, -1), mo1.getDataType());
+			List<Pair<FederatedRange, FederatedData>> inMap = mo1.getFedMapping().getMap();
+			Pair<FederationMap, Long> rollResult = rollFedMap(inMap, inID, outEndID, outStartID, shift,
+															rlen, mo1.getFedMapping().getType());
+			long length = rollResult.getValue();
+			FederationMap outFedMap = rollResult.getKey();
 
-			FederatedRequest frCopy = new FederatedRequest(FederatedRequest.RequestType.EXEC_UDF, -1,
-					new ReorgFEDInstruction.SplitRow(mo1.getFedMapping().getID(), outID, 0, false));
-
-			FederatedRequest frEnd = new FederatedRequest(FederatedRequest.RequestType.EXEC_UDF, -1,
-					new ReorgFEDInstruction.SplitRow(mo1.getFedMapping().getID(), outID, length, true));
-
-			FederatedRequest frStart = new FederatedRequest(FederatedRequest.RequestType.EXEC_UDF, -1,
-					new ReorgFEDInstruction.SplitRow(inID, outID, length, false));
-
-			Future<FederatedResponse>[] ffr = outFedMap.executeRoll(getTID(), true, fr, frEnd, frStart, frCopy);
+			FederatedRequest frEnd = new FederatedRequest(FederatedRequest.RequestType.EXEC_UDF, outEndID,
+					new ReorgFEDInstruction.SliceMatrix(inID, outEndID, length, true));
+//			FederatedRequest frCopy = new FederatedRequest(FederatedRequest.RequestType.EXEC_UDF, outEndID,
+//					new ReorgFEDInstruction.SliceMatrix(inID, outEndID, 0, true));
+			FederatedRequest frStart = new FederatedRequest(FederatedRequest.RequestType.EXEC_UDF, outStartID,
+					new ReorgFEDInstruction.SliceMatrix(inID, outStartID, length, false));
+			Future<FederatedResponse>[] ffr = outFedMap.executeRoll(getTID(), true, frEnd, frStart, rlen);
+//			Future<FederatedResponse>[] ffr = outFedMap.executeRoll(getTID(), true, frEnd, frStart, frCopy, rlen);
 
 			//derive output federated mapping
 			MatrixObject out = ec.getMatrixObject(output);
@@ -248,6 +248,40 @@ public class ReorgFEDInstruction extends UnaryFEDInstruction {
 			rdiag.setFedMapping(diagFedMap);
 			optionalForceLocal(rdiag);
 		}
+	}
+
+
+	public Pair<FederationMap, Long> rollFedMap(List<Pair<FederatedRange, FederatedData>> oldMap, long inID,
+												long outEndID, long outStartID, long shift, long rlen, FType type) {
+		List<Pair<FederatedRange, FederatedData>> map = new ArrayList<>();
+		long length = 0;
+
+		for(Map.Entry<FederatedRange, FederatedData> e : oldMap) {
+			if(e.getKey().getSize() == 0) continue;
+			FederatedRange fedRange = new FederatedRange(e.getKey());
+			long beginRow = fedRange.getBeginDims()[0] + shift;
+			long endRow = fedRange.getEndDims()[0] + shift;
+
+			beginRow = beginRow > rlen ? beginRow - rlen : beginRow;
+			endRow = endRow > rlen ? endRow - rlen : endRow;
+
+			if (beginRow < endRow) {
+				fedRange.setBeginDim(0, beginRow);
+				fedRange.setEndDim(0, endRow);
+				map.add(Pair.of(fedRange, e.getValue().copyWithNewID(inID)));
+			} else {
+				length = rlen - beginRow;
+				fedRange.setBeginDim(0, beginRow);
+				fedRange.setEndDim(0, rlen);
+				map.add(Pair.of(fedRange, e.getValue().copyWithNewID(outEndID)));
+
+				FederatedRange startRange = new FederatedRange(fedRange);
+				startRange.setBeginDim(0, 0);
+				startRange.setEndDim(0, endRow);
+				map.add(Pair.of(startRange, e.getValue().copyWithNewID(outStartID)));
+			}
+		}
+		return Pair.of(new FederationMap(outEndID, map, type), length);
 	}
 
 	/**
@@ -368,13 +402,13 @@ public class ReorgFEDInstruction extends UnaryFEDInstruction {
 		return new RdiagResult(diagFedMap, dcs);
 	}
 
-	public static class SplitRow extends FederatedUDF {
+	public static class SliceMatrix extends FederatedUDF {
 		private static final long serialVersionUID = -3466926635958851402L;
 		private final long _outputID;
 		private final int _sliceRow;
 		private final boolean _isRight;
 
-		private SplitRow(long input, long outputID, long sliceRow, boolean isRight) {
+		private SliceMatrix(long input, long outputID, long sliceRow, boolean isRight) {
 			super(new long[] {input});
 			_outputID = outputID;
 			_sliceRow = (int) sliceRow;
@@ -386,20 +420,19 @@ public class ReorgFEDInstruction extends UnaryFEDInstruction {
 			MatrixBlock oriBlock = ((MatrixObject) data[0]).acquireReadAndRelease();
 			MatrixBlock resBlock;
 
-			if (_sliceRow == 0){
-				ec.setMatrixOutput(String.valueOf(_outputID), oriBlock);
-				return new FederatedResponse(FederatedResponse.ResponseType.SUCCESS, new int[]{oriBlock.getNumRows(), oriBlock.getNumColumns()});
+			if (_sliceRow != 0){
+				if (_isRight){
+					resBlock = oriBlock.slice(0, _sliceRow-1, 0,
+							oriBlock.getNumColumns()-1, new MatrixBlock());
+				} else{
+					resBlock = oriBlock.slice(_sliceRow, oriBlock.getNumRows()-1,
+							0, oriBlock.getNumColumns()-1, new MatrixBlock());
+				}
+			} else{
+				resBlock = oriBlock;
 			}
-
-			if (_isRight){
-				resBlock = oriBlock.slice(0, _sliceRow-1, 0, oriBlock.getNumColumns()-1, new MatrixBlock());
-				ec.setMatrixOutput(String.valueOf(_outputID), resBlock);
-			} else {
-				resBlock = oriBlock.slice(_sliceRow, oriBlock.getNumRows()-1, 0, oriBlock.getNumColumns()-1, new MatrixBlock());
-				ec.setMatrixOutput(String.valueOf(_outputID), resBlock);
-			}
-
-			return new FederatedResponse(FederatedResponse.ResponseType.SUCCESS, new int[]{resBlock.getNumRows(), resBlock.getNumColumns()});
+			ec.setMatrixOutput(String.valueOf(_outputID), resBlock);
+			return new FederatedResponse(FederatedResponse.ResponseType.SUCCESS, resBlock);
 		}
 
 		@Override

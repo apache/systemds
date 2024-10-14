@@ -66,7 +66,6 @@ public class RewriterRuntimeUtils {
 			RewriterRuntimeUtils.attachHopInterceptor(prog -> {
 				RewriterRuntimeUtils.forAllUniqueTranslatableStatements(prog, 10, stmt -> {
 					RewriterStatement cpy = stmt.nestedCopyOrInject(new HashMap<>(), el -> null);
-					System.out.println("Stmt: " + stmt);
 					stmt = converter.apply(stmt);
 
 					RewriterStatement oldEntry = db.insertOrReturn(ctx, stmt);
@@ -172,6 +171,9 @@ public class RewriterRuntimeUtils {
 
 		visited.add(currentHop);
 		RewriterStatement stmt = buildDAGRecursively(currentHop, new HashMap<>(), 0, maxDepth, ctx);
+
+		if (stmt != null)
+			stmt = ctx.metaPropagator.apply(stmt);
 
 		if (stmt != null && db.insertEntry(ctx, stmt)) {
 			RewriterStatement cpy = stmt.nestedCopyOrInject(new HashMap<>(), el -> null);

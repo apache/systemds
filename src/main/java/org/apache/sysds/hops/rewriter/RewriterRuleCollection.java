@@ -540,7 +540,7 @@ public class RewriterRuleCollection {
 				.build()
 		);
 
-		// rowSums(A) -> _m($1:_idx(1, ncol(A)), 1, sum(_m($2:_idx(1, nrow(A)), 1, [](A, $2, $1)))
+		// colSums(A) -> _m($1:_idx(1, ncol(A)), 1, sum(_m($2:_idx(1, nrow(A)), 1, [](A, $2, $1)))
 		rules.add(new RewriterRuleBuilder(ctx)
 				.setUnidirectional(true)
 				.parseGlobalVars("MATRIX:A,B")
@@ -793,14 +793,14 @@ public class RewriterRuleCollection {
 
 		RewriterUtils.buildBinaryPermutations(List.of("FLOAT"), (t1, t2) -> {
 			// TODO: This probably first requires pulling out invariants of this idxExpr
-			rules.add(new RewriterRuleBuilder(ctx, "ElementWiseInstruction(sum(_idxExpr(i, ...)), sum(_idxExpr(j, ...))) => _idxExpr(i, _idxExpr(j, sum(...))")
+			rules.add(new RewriterRuleBuilder(ctx, "*(sum(_idxExpr(i, ...)), sum(_idxExpr(j, ...))) => _idxExpr(i, _idxExpr(j, sum(*(...)))")
 					.setUnidirectional(true)
 					.parseGlobalVars("MATRIX:A,B")
 					.parseGlobalVars("INT:i,j")
 					.parseGlobalVars(t1 + ":v1")
 					.parseGlobalVars(t2 + ":v2")
-					.withParsedStatement("$1:ElementWiseSumExpandableInstruction(sum($2:_idxExpr(i, v1)), sum($3:_idxExpr(j, v2)))", hooks)
-					.toParsedStatement("sum($4:_idxExpr(i, $5:_idxExpr(j, $6:ElementWiseSumExpandableInstruction(v1, v2))))", hooks)
+					.withParsedStatement("$1:*(sum($2:_idxExpr(i, v1)), sum($3:_idxExpr(j, v2)))", hooks)
+					.toParsedStatement("sum($4:_idxExpr(i, $5:_idxExpr(j, $6:*(v1, v2))))", hooks)
 					.link(hooks.get(1).getId(), hooks.get(6).getId(), RewriterStatement::transferMeta)
 					.link(hooks.get(2).getId(), hooks.get(4).getId(), RewriterStatement::transferMeta)
 					.link(hooks.get(3).getId(), hooks.get(5).getId(), RewriterStatement::transferMeta)

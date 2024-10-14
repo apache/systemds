@@ -181,6 +181,8 @@ public class RewriterDataType extends RewriterStatement {
 			mCopy.literal = literal;
 		mCopy.consolidated = consolidated;
 		mCopy.hashCode = hashCode;
+		if (meta != null)
+			mCopy.meta = new HashMap<>(meta);
 		copiedObjects.put(this, mCopy);
 
 		return mCopy;

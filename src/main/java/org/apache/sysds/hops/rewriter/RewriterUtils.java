@@ -2,6 +2,7 @@ package org.apache.sysds.hops.rewriter;
 
 import org.apache.commons.lang3.NotImplementedException;
 import org.apache.commons.lang3.mutable.MutableBoolean;
+import org.apache.commons.lang3.mutable.MutableInt;
 import org.apache.commons.lang3.mutable.MutableObject;
 import org.apache.logging.log4j.util.TriConsumer;
 import org.apache.spark.internal.config.R;
@@ -508,10 +509,16 @@ public class RewriterUtils {
 	}
 
 	public static <T> boolean cartesianProduct(List<List<T>> list, T[] stack, Function<T[], Boolean> emitter) {
-		if (list.size() < 2)
-			throw new IllegalArgumentException(
-					"Can't have a product of fewer than two sets (got " +
-							list.size() + ")");
+		if (list.size() == 0)
+			return false;
+
+		if (list.size() == 1) {
+			list.get(0).forEach(t -> {
+				stack[0] = t;
+				emitter.apply(stack);
+			});
+			return true;
+		}
 
 		return _cartesianProduct(0, list, stack, emitter, new MutableBoolean(true));
 	}
@@ -598,6 +605,82 @@ public class RewriterUtils {
 		} else {
 			return stmt.getResultingDataType(ctx) + ":" + (stmt.isLiteral() ? "L:" + stmt.getLiteral() : "V");
 		}
+	}
+
+	/*public static void subtreeCombinations(RewriterStatement stmt) {
+		MutableInt numInts = new MutableInt(0);
+		stmt.forEachPreOrder(s -> {
+			numInts.add(s.getOperands().size());
+			return true;
+		});
+
+		int n = numInts.getValue();
+		long numCombinations = 2^n;
+		long currentBitmask = 0;
+
+		for (int i = 0; i < )
+	}*/
+
+	public static List<RewriterStatement> mergeSubtreeCombinations(RewriterStatement stmt, List<Integer> indices, List<List<RewriterStatement>> mList) {
+		List<RewriterStatement> mergedTreeCombinations = new ArrayList<>();
+		cartesianProduct(mList, new RewriterStatement[mList.size()], stack -> {
+			RewriterStatement cpy = stmt.copyNode();
+			for (int i = 0; i < stack.length; i++)
+				cpy.getOperands().set(indices.get(i), stack[i]);
+			mergedTreeCombinations.add(cpy);
+			return true;
+		});
+
+		return mergedTreeCombinations;
+	}
+
+	public static List<RewriterStatement> generateSubtrees(RewriterStatement stmt, Map<RewriterRule.IdentityRewriterStatement, List<RewriterStatement>> visited, final RuleContext ctx) {
+		if (stmt == null)
+			return Collections.emptyList();
+
+		RewriterRule.IdentityRewriterStatement is = new RewriterRule.IdentityRewriterStatement(stmt);
+		List<RewriterStatement> alreadyVisited = visited.get(is);
+
+		if (alreadyVisited != null)
+			return alreadyVisited;
+
+		if (stmt.getOperands().size() == 0)
+			return List.of(stmt);
+
+		// Scan if operand is not a DataType
+		List<Integer> indices = new ArrayList<>();
+		for (int i = 0; i < stmt.getOperands().size(); i++) {
+			if (stmt.getOperands().get(i).isInstruction())
+				indices.add(i);
+		}
+
+		List<RewriterStatement> mList = new ArrayList<>();
+
+		visited.put(is, mList);
+
+		int n = indices.size();
+		int totalSubsets = 1 << n;
+
+		List<List<RewriterStatement>> mOptions = indices.stream().map(i -> generateSubtrees(stmt.getOperands().get(i), visited, ctx)).collect(Collectors.toList());
+		List<RewriterStatement> out = new ArrayList<>();
+
+		for (int subsetMask = 0; subsetMask < totalSubsets; subsetMask++) {
+
+			List<List<RewriterStatement>> mOptionCpy = new ArrayList<>(mOptions);
+
+			for (int i = 0; i < n; i++) {
+				// Check if the i-th child is included in the current subset
+				if ((subsetMask & (1 << i)) == 0) {
+					RewriterDataType mT = new RewriterDataType().as(UUID.randomUUID().toString()).ofType(stmt.getOperands().get(i).getResultingDataType(ctx));
+					mT.consolidate(ctx);
+					mOptionCpy.set(i, List.of(mT));
+				}
+			}
+
+			out.addAll(mergeSubtreeCombinations(stmt, indices, mOptionCpy));
+		}
+
+		return out;
 	}
 
 	public static RuleContext buildDefaultContext() {

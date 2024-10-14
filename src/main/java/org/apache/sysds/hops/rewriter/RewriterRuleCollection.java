@@ -355,6 +355,138 @@ public class RewriterRuleCollection {
 		return new RewriterHeuristic(rs, true);
 	}
 
+	public static void canonicalizeAlgebraicStatements(final List<RewriterRule> rules, final RuleContext ctx) {
+		HashMap<Integer, RewriterStatement> hooks = new HashMap<>();
+
+		RewriterUtils.buildBinaryPermutations(ALL_TYPES, (t1, t2) -> {
+			rules.add(new RewriterRuleBuilder(ctx, "-(a,b) => +(a,-(b))")
+					.setUnidirectional(true)
+					.parseGlobalVars(t1 + ":a")
+					.parseGlobalVars(t2 + ":b")
+					.withParsedStatement("-(a, b)", hooks)
+					.toParsedStatement("+(a, -(b))", hooks)
+					.build()
+			);
+
+			rules.add(new RewriterRuleBuilder(ctx, "/(a,b) => *(a, inv(b))")
+					.setUnidirectional(true)
+					.parseGlobalVars(t1 + ":a")
+					.parseGlobalVars(t2 + ":b")
+					.withParsedStatement("/(a, b)", hooks)
+					.toParsedStatement("*(a, inv(b))", hooks)
+					.build()
+			);
+		});
+	}
+
+	public static void canonicalizeBooleanStatements(final List<RewriterRule> rules, final RuleContext ctx) {
+		// TODO: Constant folding, but maybe not as successive rules
+		HashMap<Integer, RewriterStatement> hooks = new HashMap<>();
+
+		RewriterUtils.buildBinaryPermutations(ALL_TYPES, (t1, t2) -> {
+			rules.add(new RewriterRuleBuilder(ctx, ">(a, b) => <(b, a)")
+					.setUnidirectional(true)
+					.parseGlobalVars(t1 + ":a")
+					.parseGlobalVars(t2 + ":b")
+					.withParsedStatement(">(a, b)", hooks)
+					.toParsedStatement("<(b, a)", hooks)
+					.build()
+			);
+
+			// These hold only for boolean expressions
+			/*rules.add(new RewriterRuleBuilder(ctx, "!(!(a)) = a")
+					.setUnidirectional(true)
+					.parseGlobalVars(t1 + ":a")
+					.parseGlobalVars(t2 + ":b")
+					.withParsedStatement("!(!(a))", hooks)
+					.toParsedStatement("a", hooks)
+					.build()
+			);*/
+
+			rules.add(new RewriterRuleBuilder(ctx, "<=(a, b) => |(<(a, b), ==(a, b))")
+					.setUnidirectional(true)
+					.parseGlobalVars(t1 + ":a")
+					.parseGlobalVars(t2 + ":b")
+					.withParsedStatement("<=(a, b)", hooks)
+					.toParsedStatement("|(<(a, b), ==(a, b))", hooks)
+					.build()
+			);
+
+			rules.add(new RewriterRuleBuilder(ctx, ">=(a, b) => |(<(b, a), ==(b, a))")
+					.setUnidirectional(true)
+					.parseGlobalVars(t1 + ":a")
+					.parseGlobalVars(t2 + ":b")
+					.withParsedStatement(">=(a, b)", hooks)
+					.toParsedStatement("|(<(b, a), ==(b, a))", hooks)
+					.build()
+			);
+
+			rules.add(new RewriterRuleBuilder(ctx, "!(&(a, b)) => |(!(a), !(b))")
+					.setUnidirectional(true)
+					.parseGlobalVars(t1 + ":a")
+					.parseGlobalVars(t2 + ":b")
+					.withParsedStatement("!(&(a, b))", hooks)
+					.toParsedStatement("|(!(a), !(b))", hooks)
+					.build()
+			);
+
+			List.of("&(a, b)", "&(b, a)").forEach(exp -> {
+				List.of("|(" + exp + ", a)", "|(a, " + exp + ")").forEach(tExpr -> {
+					rules.add(new RewriterRuleBuilder(ctx, tExpr + " => a")
+							.setUnidirectional(true)
+							.parseGlobalVars(t1 + ":a")
+							.parseGlobalVars(t2 + ":b")
+							.withParsedStatement(tExpr, hooks)
+							.toParsedStatement("a", hooks)
+							.build()
+					);
+				});
+			});
+
+			List.of("|(a, b)", "|(b, a)").forEach(exp -> {
+				List.of("&(" + exp + ", a)", "&(a, " + exp + ")").forEach(tExpr -> {
+					rules.add(new RewriterRuleBuilder(ctx, tExpr + " => a")
+							.setUnidirectional(true)
+							.parseGlobalVars(t1 + ":a")
+							.parseGlobalVars(t2 + ":b")
+							.withParsedStatement(tExpr, hooks)
+							.toParsedStatement("a", hooks)
+							.build()
+					);
+				});
+			});
+
+			rules.add(new RewriterRuleBuilder(ctx,  "|(<(b, a), <(a, b)) => b != a")
+					.setUnidirectional(true)
+					.parseGlobalVars(t1 + ":a")
+					.parseGlobalVars(t2 + ":b")
+					.withParsedStatement("|(<(b, a), <(a, b))", hooks)
+					.toParsedStatement("!=(b, a)", hooks)
+					.build()
+			);
+
+			rules.add(new RewriterRuleBuilder(ctx,  "&(<(b, a), <(a, b)) => FALSE")
+					.setUnidirectional(true)
+					.parseGlobalVars(t1 + ":a")
+					.parseGlobalVars(t2 + ":b")
+					.parseGlobalVars("LITERAL_BOOL:FALSE")
+					.withParsedStatement("&(<(b, a), <(a, b))", hooks)
+					.toParsedStatement("FALSE", hooks)
+					.build()
+			);
+
+			rules.add(new RewriterRuleBuilder(ctx,  "!(!=(a, b)) => ==(a, b)")
+					.setUnidirectional(true)
+					.parseGlobalVars(t1 + ":a")
+					.parseGlobalVars(t2 + ":b")
+					.parseGlobalVars("LITERAL_BOOL:FALSE")
+					.withParsedStatement("!(!=(a, b))", hooks)
+					.toParsedStatement("==(a, b)", hooks)
+					.build()
+			);
+		});
+	}
+
 	// E.g. expand A * B -> _m($1:_idx(), 1, nrow(A), _m($2:_idx(), 1, nrow(B), A[$1, $2] * B[$1, $2]))
 	public static void expandStreamingExpressions(final List<RewriterRule> rules, final RuleContext ctx) {
 		HashMap<Integer, RewriterStatement> hooks = new HashMap<>();

@@ -1144,6 +1144,9 @@ public abstract class AutomatedTestBase {
 	 */
 	protected void runRScript(boolean newWay) {
 
+		if (RewriterRuntimeUtils.interceptAll)
+			return;
+
 		String executionFile = sourceDirectory + selectedTest + ".R";
 		if(fullRScriptName != null)
 			executionFile = fullRScriptName;

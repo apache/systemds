@@ -4,6 +4,7 @@ import org.apache.commons.lang3.NotImplementedException;
 import org.apache.commons.lang3.mutable.MutableObject;
 
 import java.util.HashMap;
+import java.util.Optional;
 import java.util.UUID;
 import java.util.function.Function;
 
@@ -32,7 +33,7 @@ public class MetaPropagator implements Function<RewriterStatement, RewriterState
 			// Assert
 			if (el.getResultingDataType(ctx).startsWith("MATRIX")
 				&& (el.getMeta("ncol") == null || el.getMeta("nrow") == null))
-				throw new IllegalArgumentException("Some properties have not been set by the meta propagator: " + el.toString(ctx));
+				throw new IllegalArgumentException("Some properties have not been set by the meta propagator: " + el.toString(ctx) + " :: " + el.getResultingDataType(ctx));
 
 
 			// Eliminate common literals
@@ -73,12 +74,15 @@ public class MetaPropagator implements Function<RewriterStatement, RewriterState
 		Object rowAccess;
 
 		if (root.getOperands() == null || root.getOperands().isEmpty()) {
-			root.unsafePutMeta("ncol", new RewriterInstruction().withInstruction("ncol").withOps(root).as(UUID.randomUUID().toString()).consolidate(ctx));
-			root.unsafePutMeta("nrow", new RewriterInstruction().withInstruction("nrow").withOps(root).as(UUID.randomUUID().toString()).consolidate(ctx));
+			if (root.getMeta("ncol") == null)
+				root.unsafePutMeta("ncol", new RewriterInstruction().withInstruction("ncol").withOps(root).as(UUID.randomUUID().toString()).consolidate(ctx));
+			if (root.getMeta("nrow") == null)
+				root.unsafePutMeta("nrow", new RewriterInstruction().withInstruction("nrow").withOps(root).as(UUID.randomUUID().toString()).consolidate(ctx));
 			return null;
 		}
 
 		if (root.isInstruction()) {
+			Optional<RewriterStatement> firstMatrixStatement = root.getOperands().stream().filter(el -> el.getResultingDataType(ctx).startsWith("MATRIX")).findFirst();
 			switch(root.trueInstruction()) {
 				// Handle generators
 				case "rand":
@@ -93,6 +97,18 @@ public class MetaPropagator implements Function<RewriterStatement, RewriterState
 					// TODO: We assume argLists always occur if the matrix properties don't change (for now)
 					root.unsafePutMeta("nrow", root.getOperands().get(0).getMeta("nrow"));
 					root.unsafePutMeta("ncol", root.getOperands().get(0).getMeta("ncol"));
+					return null;
+				case "+":
+				case "-":
+				case "inv":
+				case "==":
+				case "!=":
+				case "&":
+				case "|":
+				case "<":
+				case ">":
+					root.unsafePutMeta("nrow", firstMatrixStatement.get().getMeta("nrow"));
+					root.unsafePutMeta("ncol", firstMatrixStatement.get().getMeta("ncol"));
 					return null;
 			}
 

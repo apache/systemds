@@ -6,6 +6,7 @@ import org.apache.sysds.hops.AggBinaryOp;
 import org.apache.sysds.hops.AggUnaryOp;
 import org.apache.sysds.hops.BinaryOp;
 import org.apache.sysds.hops.DataGenOp;
+import org.apache.sysds.hops.DataOp;
 import org.apache.sysds.hops.Hop;
 import org.apache.sysds.hops.LiteralOp;
 import org.apache.sysds.hops.OptimizerUtils;
@@ -33,7 +34,7 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 
 public class RewriterRuntimeUtils {
-	private static final boolean interceptAll = true;
+	public static final boolean interceptAll = true;
 
 
 	private static final String matrixDefs = "MATRIX:A,B,C";
@@ -42,6 +43,8 @@ public class RewriterRuntimeUtils {
 	private static final String boolDefs = "BOOL:b1,b2,b3";
 
 	private static boolean setupComplete = false;
+
+	private static long totalCPUTime = 0L;
 
 	public static void setupIfNecessary() {
 		if (setupComplete)
@@ -64,9 +67,12 @@ public class RewriterRuntimeUtils {
 			List<RewriterStatement> equivalentStatements = new ArrayList<>();
 
 			RewriterRuntimeUtils.attachHopInterceptor(prog -> {
-				RewriterRuntimeUtils.forAllUniqueTranslatableStatements(prog, 10, stmt -> {
+				long startMillis = System.currentTimeMillis();
+				RewriterRuntimeUtils.forAllUniqueTranslatableStatements(prog, 5, stmt -> {
 					RewriterStatement cpy = stmt.nestedCopyOrInject(new HashMap<>(), el -> null);
+					System.out.println("Stmt: " + stmt.toString(ctx));
 					stmt = converter.apply(stmt);
+					System.out.println("Canonical form: " + stmt.toString(ctx));
 
 					RewriterStatement oldEntry = db.insertOrReturn(ctx, stmt);
 
@@ -84,6 +90,7 @@ public class RewriterRuntimeUtils {
 						System.out.println("Found equivalent statement!");
 					}
 				}, exactExprDB, ctx);
+				totalCPUTime += System.currentTimeMillis() - startMillis;
 				return false;
 			});
 
@@ -94,6 +101,9 @@ public class RewriterRuntimeUtils {
 					System.out.println("Canonical form: " + eStmt.toString(ctx));
 					((List<RewriterStatement>)eStmt.getMeta("equivalentExpressions")).forEach(stmt -> System.out.println(stmt.toString(ctx)));
 				}
+
+				System.out.println();
+				System.out.println("Total rewriter CPU time: " + totalCPUTime + "ms");
 			}));
 		}
 	}
@@ -258,6 +268,13 @@ public class RewriterRuntimeUtils {
 			return null;
 		}
 
+		if (next instanceof DataOp) {
+			DataOp dop = (DataOp) next;
+
+			if (dop.isRead())
+				return buildLeaf(next, ctx);
+		}
+
 		System.out.println("Unknown Op: " + next);
 		System.out.println("Class: " + next.getClass().getSimpleName());
 		System.out.println("OPString: " + next.getOpString());
@@ -270,7 +287,7 @@ public class RewriterRuntimeUtils {
 			case SCALAR:
 				return buildScalarLeaf(hop, ctx);
 			case MATRIX:
-				return RewriterUtils.parse("A", ctx, matrixDefs);
+				return RewriterUtils.parse(hop.getName(), ctx, "MATRIX:" + hop.getName());
 		}
 
 		return null; // Not supported then
@@ -280,12 +297,12 @@ public class RewriterRuntimeUtils {
 		switch (hop.getValueType()) {
 			case FP64:
 			case FP32:
-				return RewriterUtils.parse("f1", ctx, floatDefs);
+				return RewriterUtils.parse(hop.getName(), ctx, "FLOAT:" + hop.getName());
 			case INT64:
 			case INT32:
-				return RewriterUtils.parse("i1", ctx, intDefs);
+				return RewriterUtils.parse(hop.getName(), ctx, "INT:" + hop.getName());
 			case BOOLEAN:
-				return RewriterUtils.parse("b1", ctx, boolDefs);
+				return RewriterUtils.parse(hop.getName(), ctx, "BOOL:" + hop.getName());
 		}
 
 		return null; // Not supported then
@@ -340,12 +357,58 @@ public class RewriterRuntimeUtils {
 	}
 
 	private static RewriterStatement buildBinaryOp(BinaryOp op, final RuleContext ctx) {
+		String t1 = resolveExactDataType(op.getInput().get(0));
+		String t2 = resolveExactDataType(op.getInput().get(1));
+
+		if (t1 == null || t2 == null)
+			return null;
+
+		t1 += ":a";
+		t2 += ":b";
+
 		switch(op.getOpString()) {
+			case "b(+)": // Addition
+				return RewriterUtils.parse("+(a, b)", ctx, t1, t2);
 			case "b(*)": // Matrix multiplication
-				return RewriterUtils.parse("*(A, B)", ctx, matrixDefs, floatDefs, intDefs, boolDefs);
+				return RewriterUtils.parse("*(a, b)", ctx, t1, t2);
+			case "b(-)":
+				return RewriterUtils.parse("-(a, b)", ctx, t1, t2);
+			case "b(/)":
+				return RewriterUtils.parse("/(a, b)", ctx, t1, t2);
+			case "b(||)":
+				return RewriterUtils.parse("|(a, b)", ctx, t1, t2);
+			case "b(!=)":
+				return RewriterUtils.parse("!=(a, b)", ctx, t1, t2);
+			case "b(==)":
+				return RewriterUtils.parse("==(a, b)", ctx, t1, t2);
+			case "b(&&)":
+				return RewriterUtils.parse("&(a, b)", ctx, t1, t2);
+			case "b(<)":
+				return RewriterUtils.parse("<(a, b)", ctx, t1, t2);
+			case "b(>)":
+				// TODO: Add heuristic to transform > to <
+				return RewriterUtils.parse(">(a, b)", ctx, t1, t2);
 		}
 
 		System.out.println("Unknown BinaryOp: " + op.getOpString());
+		return null;
+	}
+
+	private static String resolveExactDataType(Hop hop) {
+		if (hop.getDataType() == Types.DataType.MATRIX)
+			return "MATRIX";
+
+		switch (hop.getValueType()) {
+			case FP64:
+			case FP32:
+				return "FLOAT";
+			case INT64:
+			case INT32:
+				return "INT";
+			case BOOLEAN:
+				return "BOOL";
+		}
+
 		return null;
 	}
 

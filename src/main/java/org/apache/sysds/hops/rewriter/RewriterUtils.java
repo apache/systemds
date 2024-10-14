@@ -4,6 +4,7 @@ import org.apache.commons.lang3.NotImplementedException;
 import org.apache.commons.lang3.mutable.MutableBoolean;
 import org.apache.commons.lang3.mutable.MutableObject;
 import org.apache.logging.log4j.util.TriConsumer;
+import org.apache.spark.internal.config.R;
 import scala.Tuple2;
 import scala.collection.parallel.ParIterableLike;
 import scala.reflect.internal.Trees;
@@ -606,6 +607,10 @@ public class RewriterUtils {
 	}
 
 	public static Function<RewriterStatement, RewriterStatement> buildCanonicalFormConverter(final RuleContext ctx, boolean debug) {
+		ArrayList<RewriterRule> algebraicCanonicalizationRules = new ArrayList<>();
+		RewriterRuleCollection.canonicalizeAlgebraicStatements(algebraicCanonicalizationRules, ctx);
+		RewriterHeuristic algebraicCanonicalization = new RewriterHeuristic(new RewriterRuleSet(ctx, algebraicCanonicalizationRules));
+
 		ArrayList<RewriterRule> expRules = new ArrayList<>();
 		RewriterRuleCollection.expandStreamingExpressions(expRules, ctx);
 		RewriterHeuristic streamExpansion = new RewriterHeuristic(new RewriterRuleSet(ctx, expRules));
@@ -619,6 +624,7 @@ public class RewriterUtils {
 		RewriterHeuristic flattenOperations = new RewriterHeuristic(new RewriterRuleSet(ctx, flatten));
 
 		RewriterHeuristics canonicalFormCreator = new RewriterHeuristics();
+		canonicalFormCreator.add("ALGEBRAIC CANONICALIZATION", algebraicCanonicalization);
 		canonicalFormCreator.add("EXPAND STREAMING EXPRESSIONS", streamExpansion);
 		canonicalFormCreator.add("PUSHDOWN STREAM SELECTIONS", streamSelectPushdown);
 		canonicalFormCreator.add("FLATTEN OPERATIONS", flattenOperations);

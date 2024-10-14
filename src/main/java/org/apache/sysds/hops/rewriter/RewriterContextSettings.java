@@ -203,7 +203,9 @@ public class RewriterContextSettings {
 		RewriterUtils.buildBinaryAlgebraInstructions(builder, "+", List.of("INT", "FLOAT", "BOOL", "MATRIX"));
 		//RewriterUtils.buildBinaryAlgebraInstructions(builder, "-", List.of("INT", "FLOAT", "BOOL", "MATRIX"));
 		RewriterUtils.buildBinaryAlgebraInstructions(builder, "*", List.of("INT", "FLOAT", "BOOL", "MATRIX"));
-		RewriterUtils.buildBinaryAlgebraInstructions(builder, "/", List.of("INT", "FLOAT", "BOOL", "MATRIX"));
+		ALL_TYPES.forEach(t -> builder.append("-(" + t + ")::" + t + "\n"));
+		ALL_TYPES.forEach(t -> builder.append("inv(" + t + ")::" + t + "\n"));
+		//RewriterUtils.buildBinaryAlgebraInstructions(builder, "/", List.of("INT", "FLOAT", "BOOL", "MATRIX"));
 
 		builder.append("if(INT,MATRIX,MATRIX)::MATRIX\n");
 
@@ -245,6 +247,12 @@ public class RewriterContextSettings {
 
 		List.of("MATRIX", "FLOAT", "INT", "BOOL").forEach(t -> {
 			builder.append("!(" + t + ")::" + (t.equals("MATRIX") ? "MATRIX" : "BOOL") + "\n");
+		});
+
+		// Expressions that will be rewritten to an equivalent expression
+		RewriterUtils.buildBinaryPermutations(ALL_TYPES, (t1, t2) -> {
+			builder.append("-(" + t1+ "," + t2 + ")::" + RewriterUtils.defaultTypeHierarchy(t1, t2) + "\n");
+			builder.append("/(" + t1+ "," + t2 + ")::" + RewriterUtils.defaultTypeHierarchy(t1, t2) + "\n");
 		});
 
 
@@ -412,8 +420,8 @@ public class RewriterContextSettings {
 		RewriterUtils.putAsBinaryPrintable("!=", List.of("INT", "FLOAT", "MATRIX", "BOOL"), ctx.customStringRepr, RewriterUtils.binaryStringRepr(" != "));*/
 
 		RewriterUtils.putAsBinaryPrintable("*", List.of("INT", "FLOAT", "MATRIX", "BOOL"), ctx.customStringRepr, RewriterUtils.binaryStringRepr(" * "));
-		RewriterUtils.putAsBinaryPrintable("/", List.of("INT", "FLOAT", "MATRIX", "BOOL"), ctx.customStringRepr, RewriterUtils.binaryStringRepr(" / "));
-		RewriterUtils.putAsBinaryPrintable("-", List.of("INT", "FLOAT", "MATRIX", "BOOL"), ctx.customStringRepr, RewriterUtils.binaryStringRepr(" - "));
+		//RewriterUtils.putAsBinaryPrintable("/", List.of("INT", "FLOAT", "MATRIX", "BOOL"), ctx.customStringRepr, RewriterUtils.binaryStringRepr(" / "));
+		//RewriterUtils.putAsBinaryPrintable("-", List.of("INT", "FLOAT", "MATRIX", "BOOL"), ctx.customStringRepr, RewriterUtils.binaryStringRepr(" - "));
 		RewriterUtils.putAsBinaryPrintable("+", List.of("INT", "FLOAT", "MATRIX", "BOOL"), ctx.customStringRepr, RewriterUtils.binaryStringRepr(" + "));
 
 		ctx.customStringRepr.put("%*%(MATRIX,MATRIX)", RewriterUtils.binaryStringRepr(" %*% "));

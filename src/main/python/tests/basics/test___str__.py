@@ -46,20 +46,25 @@ class Test__str__(unittest.TestCase):
         self.assertTrue("ScalarNode" in str(self.sds.scalar("Hi")))
 
     def test_4(self):
-        self.assertTrue("ScalarNode" in str(
-            self.sds.full([1, 2], 3).to_string()))
+        self.assertTrue("ScalarNode" in str(self.sds.full([1, 2], 3).to_string()))
 
     def test_5(self):
-        self.assertTrue("ListNode" in str(self.sds.list(
-            self.sds.rand(1, 2, 3, 4), self.sds.scalar(4))))
+        self.assertTrue(
+            "ListNode"
+            in str(self.sds.list(self.sds.rand(1, 2, 3, 4), self.sds.scalar(4)))
+        )
 
     def test_6(self):
-        self.assertTrue("MatrixNode" in str(self.sds.list(
-            self.sds.rand(1, 2, 3, 4), self.sds.scalar(4))[0]))
+        self.assertTrue(
+            "MatrixNode"
+            in str(self.sds.list(self.sds.rand(1, 2, 3, 4), self.sds.scalar(4))[0])
+        )
 
     def test_7(self):
-        self.assertTrue("ScalarNode" in str(self.sds.list(
-            self.sds.rand(1, 2, 3, 4), self.sds.scalar(4))[1]))
+        self.assertTrue(
+            "ScalarNode"
+            in str(self.sds.list(self.sds.rand(1, 2, 3, 4), self.sds.scalar(4))[1])
+        )
 
 
 if __name__ == "__main__":

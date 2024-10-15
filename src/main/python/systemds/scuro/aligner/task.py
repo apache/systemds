@@ -25,7 +25,8 @@ import numpy as np
 from sklearn.model_selection import KFold
 
 class Task:
-    def __init__(self, name: str, model: Model, labels, train_indices: List, val_indices: List, kfold=5):
+    def __init__(self, name: str, model: Model, labels, train_indices: List, val_indices: List, kfold=5
+                 ):
         """
         Parent class for the prediction task that is performed on top of the aligned representation
         :param name: Name of the task
@@ -48,9 +49,9 @@ class Task:
         y_train = [self.labels[i] for i in self.train_indices]
         X_test = [data[i] for i in self.val_indices]
         y_test = [self.labels[i] for i in self.val_indices]
-        
+
         return X_train, y_train, X_test, y_test
-    
+
     def run(self, data):
         """
         The run method needs to be implemented by every task class
@@ -78,4 +79,3 @@ class Task:
             fold += 1
 
         return [np.mean(train_scores), np.mean(test_scores)]
-    

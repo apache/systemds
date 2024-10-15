@@ -50,10 +50,12 @@ class MultiReturnImpl(Layer):
         self.sds = sds
 
     def _instance_forward(self, X: Matrix):
-        return MultiReturn(self.sds, "test.dml", output_nodes=[X, 'some_random_return'])
+        return MultiReturn(self.sds, "test.dml", output_nodes=[X, "some_random_return"])
 
     def _instance_backward(self, dout: Matrix, X: Matrix):
-        return MultiReturn(self.sds, "test.dml", output_nodes=[dout, X, 'some_random_return'])
+        return MultiReturn(
+            self.sds, "test.dml", output_nodes=[dout, X, "some_random_return"]
+        )
 
 
 class TestSequential(unittest.TestCase):
@@ -274,7 +276,9 @@ class TestSequential(unittest.TestCase):
         """
         Test that a single return into multiple MultiReturn are handled correctly
         """
-        model = Sequential(TestLayerImpl(1), MultiReturnImpl(self.sds), MultiReturnImpl(self.sds))
+        model = Sequential(
+            TestLayerImpl(1), MultiReturnImpl(self.sds), MultiReturnImpl(self.sds)
+        )
         in_matrix = self.sds.from_numpy(np.array([[1, 2], [3, 4]]))
         out_matrix = model.forward(in_matrix).compute()
         self.assertEqual(out_matrix.tolist(), [[2, 3], [4, 5]])
@@ -285,7 +289,9 @@ class TestSequential(unittest.TestCase):
         """
         Test that multiple MultiReturn into a single return are handled correctly
         """
-        model = Sequential(MultiReturnImpl(self.sds), MultiReturnImpl(self.sds), TestLayerImpl(1))
+        model = Sequential(
+            MultiReturnImpl(self.sds), MultiReturnImpl(self.sds), TestLayerImpl(1)
+        )
         in_matrix = self.sds.from_numpy(np.array([[1, 2], [3, 4]]))
         out_matrix = model.forward(in_matrix).compute()
         self.assertEqual(out_matrix.tolist(), [[2, 3], [4, 5]])
@@ -296,7 +302,9 @@ class TestSequential(unittest.TestCase):
         """
         Test that a single return between two MultiReturn are handled correctly
         """
-        model = Sequential(MultiReturnImpl(self.sds), TestLayerImpl(1), MultiReturnImpl(self.sds))
+        model = Sequential(
+            MultiReturnImpl(self.sds), TestLayerImpl(1), MultiReturnImpl(self.sds)
+        )
         in_matrix = self.sds.from_numpy(np.array([[1, 2], [3, 4]]))
         out_matrix = model.forward(in_matrix).compute()
         self.assertEqual(out_matrix.tolist(), [[2, 3], [4, 5]])

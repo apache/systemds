@@ -31,7 +31,7 @@ class AlignedModality(Modality):
         :param representation: The representation for the aligned modality
         :param modalities: List of modalities to be combined
         """
-        name = ''
+        name = ""
         for modality in modalities:
             name += modality.name
         super().__init__(representation, modality_name=name)
@@ -41,7 +41,7 @@ class AlignedModality(Modality):
         """
         Initiates the call to fuse the given modalities depending on the Fusion type
         """
-        self.data = self.representation.fuse(self.modalities) # noqa
+        self.data = self.representation.fuse(self.modalities)  # noqa
 
     def get_modality_names(self):
         names = []

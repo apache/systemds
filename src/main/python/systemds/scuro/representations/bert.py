@@ -30,14 +30,14 @@ import os
 
 
 def read_text_file(file_path):
-    with open(file_path, 'r', encoding='utf-8') as file:
+    with open(file_path, "r", encoding="utf-8") as file:
         text = file.read()
     return text
 
 
 class Bert(UnimodalRepresentation):
     def __init__(self, avg_layers=None, output_file=None):
-        super().__init__('Bert')
+        super().__init__("Bert")
 
         self.avg_layers = avg_layers
         self.output_file = output_file
@@ -49,13 +49,13 @@ class Bert(UnimodalRepresentation):
             for filename in os.listdir(filepath):
                 f = os.path.join(filepath, filename)
                 if os.path.isfile(f):
-                    with open(f, 'r') as file:
+                    with open(f, "r") as file:
                         data.append(file.readlines()[0])
         else:
-            with open(filepath, 'r') as file:
+            with open(filepath, "r") as file:
                 data = file.readlines()
 
-        model_name = 'bert-base-uncased'
+        model_name = "bert-base-uncased"
         tokenizer = BertTokenizer.from_pretrained(model_name, clean_up_tokenization_spaces=True)
 
         if self.avg_layers is not None:
@@ -82,14 +82,18 @@ class Bert(UnimodalRepresentation):
                 outputs = model(**inputs)
 
             if self.avg_layers is not None:
-                cls_embedding = [outputs.hidden_states[i][:, 0, :] for i in range(-self.avg_layers, 0)]
+                cls_embedding = [
+                    outputs.hidden_states[i][:, 0, :]
+                    for i in range(-self.avg_layers, 0)
+                ]
                 cls_embedding = torch.mean(torch.stack(cls_embedding), dim=0)
             else:
                 cls_embedding = outputs.last_hidden_state[:, 0, :].squeeze().numpy()
             embeddings.append(cls_embedding.numpy())
+
         embeddings = np.array(embeddings)
         return embeddings.reshape((embeddings.shape[0], embeddings.shape[-1]))
 
     def save_embeddings(self, data):
-        with open(self.output_file, 'wb') as file:
+        with open(self.output_file, "wb") as file:
             pickle.dump(data, file)

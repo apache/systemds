@@ -47,7 +47,9 @@ class DataManager:
     _data_string_labels: list
 
     def __init__(self):
-        self._data_zip_url = "https://systemds.apache.org/assets/datasets/adult/data.zip"
+        self._data_zip_url = (
+            "https://systemds.apache.org/assets/datasets/adult/data.zip"
+        )
         self._data_zip_loc = "systemds/examples/tutorials/adult/data.zip"
 
         self._train_data_loc = "systemds/examples/tutorials/adult/train_data.csv"
@@ -55,23 +57,28 @@ class DataManager:
         self._jspec_loc = "systemds/examples/tutorials/adult/jspec.json"
 
     def get_preprocessed_dataset(self, sds: SystemDSContext) -> List[pd.DataFrame]:
-        return self.get_train_data(sds), \
-            self.get_train_labels(sds), \
-            self.get_test_data(sds), \
-            self.get_test_labels(sds)
+        return (
+            self.get_train_data(sds),
+            self.get_train_labels(sds),
+            self.get_test_data(sds),
+            self.get_test_labels(sds),
+        )
 
-    def get_preprocessed_dataset_pandas(self, sds: SystemDSContext) -> List[pd.DataFrame]:
-        return self.get_train_data_pandas(sds), \
-            self.get_train_labels_pandas(sds), \
-            self.get_test_data_pandas(sds), \
-            self.get_test_labels_pandas(sds)
+    def get_preprocessed_dataset_pandas(
+        self, sds: SystemDSContext
+    ) -> List[pd.DataFrame]:
+        return (
+            self.get_train_data_pandas(sds),
+            self.get_train_labels_pandas(sds),
+            self.get_test_data_pandas(sds),
+            self.get_test_labels_pandas(sds),
+        )
 
     def get_train_data_pandas(self) -> pd.DataFrame:
         self._get_data(self._train_data_loc)
-        return self._parse_data(self._train_data_loc)\
-            .drop(labels=["income"], axis=1)
+        return self._parse_data(self._train_data_loc).drop(labels=["income"], axis=1)
 
-    def get_train_data(self, sds: SystemDSContext) -> 'Frame':
+    def get_train_data(self, sds: SystemDSContext) -> "Frame":
         self._get_data(self._train_data_loc)
         return sds.read(self._train_data_loc)[:, 0:14]
 
@@ -79,16 +86,15 @@ class DataManager:
         self._get_data(self._train_data_loc)
         return self._parse_data(self._train_data_loc)[["income"]]
 
-    def get_train_labels(self, sds: SystemDSContext) -> 'Frame':
+    def get_train_labels(self, sds: SystemDSContext) -> "Frame":
         self._get_data(self._train_data_loc)
         return sds.read(self._train_data_loc)[:, 14]
 
     def get_test_data_pandas(self) -> pd.DataFrame:
         self._get_data(self._test_data_loc)
-        return self._parse_data(self._test_data_loc)\
-            .drop(labels=["income"], axis=1)
+        return self._parse_data(self._test_data_loc).drop(labels=["income"], axis=1)
 
-    def get_test_data(self, sds: SystemDSContext) -> 'Frame':
+    def get_test_data(self, sds: SystemDSContext) -> "Frame":
         self._get_data(self._test_data_loc)
         return sds.read(self._test_data_loc)[:, 0:14]
 
@@ -96,7 +102,7 @@ class DataManager:
         self._get_data(self._test_data_loc)
         return self._parse_data(self._test_data_loc)[["income"]]
 
-    def get_test_labels(self, sds: SystemDSContext) -> 'Frame':
+    def get_test_labels(self, sds: SystemDSContext) -> "Frame":
         self._get_data(self._test_data_loc)
         return sds.read(self._test_data_loc)[:, 14]
 
@@ -105,7 +111,7 @@ class DataManager:
         with open(self._jspec_loc, "r") as f:
             return f.read()
 
-    def get_jspec(self, sds: SystemDSContext) -> 'Scalar':
+    def get_jspec(self, sds: SystemDSContext) -> "Scalar":
         self._get_data(self._jspec_loc)
         return sds.read(self._jspec_loc, data_type="scalar", value_type="string")
 
@@ -119,7 +125,7 @@ class DataManager:
                 os.makedirs(folder)
             if not os.path.isfile(self._data_zip_loc):
                 myZip = requests.get(self._data_zip_url)
-                with open(self._data_zip_loc, 'wb') as f:
+                with open(self._data_zip_loc, "wb") as f:
                     f.write(myZip.content)
             with zipfile.ZipFile(self._data_zip_loc) as z:
                 z.extractall(folder)

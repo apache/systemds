@@ -22,7 +22,7 @@
 import numpy as np
 
 
-def pad_sequences(sequences, maxlen=None, dtype='float32', value=0):
+def pad_sequences(sequences, maxlen=None, dtype="float32", value=0):
     if maxlen is None:
         maxlen = max([len(seq) for seq in sequences])
 
@@ -30,6 +30,6 @@ def pad_sequences(sequences, maxlen=None, dtype='float32', value=0):
 
     for i, seq in enumerate(sequences):
         data = seq[:maxlen]
-        result[i, :len(data)] = data
+        result[i, : len(data)] = data
 
     return result

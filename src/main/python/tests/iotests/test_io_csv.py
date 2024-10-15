@@ -70,15 +70,13 @@ class TestReadCSV(unittest.TestCase):
     def test_write_read_data_frame_csv_header_active(self):
         filename = self.temp_dir + "data_frame_header_active.csv"
         self.df.to_csv(filename, index=False, header=True)
-        result_df = self.sds.read(
-            filename, data_type="frame", header=True).compute()
+        result_df = self.sds.read(filename, data_type="frame", header=True).compute()
         self.compare_frame(result_df, self.df)
 
     def test_write_read_data_frame_csv_no_header(self):
         filename = self.temp_dir + "data_frame_no_header.csv"
         self.df.to_csv(filename, index=False, header=False)
-        result_df = self.sds.read(
-            filename, data_type="frame", header=False).compute()
+        result_df = self.sds.read(filename, data_type="frame", header=False).compute()
         self.compare_frame(result_df, self.df)
 
     def test_write_read_matrix_csv_no_extra_argument(self):
@@ -96,8 +94,7 @@ class TestReadCSV(unittest.TestCase):
     def test_write_read_matrix_csv_no_extra_argument_header_csv(self):
         filename = self.temp_dir + "data_matrix_header_2.csv"
         self.df2.to_csv(filename, index=False, header=True)
-        result_df = (self.sds.read(
-            filename, format="csv", header=True)).compute()
+        result_df = (self.sds.read(filename, format="csv", header=True)).compute()
         self.assertTrue(np.allclose(self.df2.to_numpy(), result_df))
 
     def compare_frame(self, a: pd.DataFrame, b: pd.DataFrame):

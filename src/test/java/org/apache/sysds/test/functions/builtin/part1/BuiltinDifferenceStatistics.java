@@ -17,7 +17,7 @@
  * under the License.
  */
 
-package org.apache.sysds.test.functions.builtin.part2;
+package org.apache.sysds.test.functions.builtin.part1;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;

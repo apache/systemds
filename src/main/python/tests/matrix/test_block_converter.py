@@ -25,13 +25,11 @@ import unittest
 import numpy as np
 from py4j.java_gateway import JVMView
 from systemds.context import SystemDSContext
-from systemds.utils.converters import (
-    matrix_block_to_numpy, numpy_to_matrix_block)
+from systemds.utils.converters import matrix_block_to_numpy, numpy_to_matrix_block
 
 
 class Test_MatrixBlockConverter(unittest.TestCase):
-    """Test class for testing behavior of the fundamental DMLScript class
-    """
+    """Test class for testing behavior of the fundamental DMLScript class"""
 
     sds: SystemDSContext = None
 

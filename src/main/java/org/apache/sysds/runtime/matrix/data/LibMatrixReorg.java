@@ -445,6 +445,36 @@ public class LibMatrixReorg {
 		return out;
 	}
 
+	public static void roll(IndexedMatrixValue in, long rlen, int blen, int shift, ArrayList<IndexedMatrixValue> out) {
+		MatrixIndexes inMtxIdx = in.getIndexes();
+		MatrixBlock inMtxBlk = (MatrixBlock) in.getValue();
+		shift %= ((rlen != 0) ? (int) rlen : 1); // Handle row length boundaries for shift
+
+		long inRowIdx = UtilFunctions.computeCellIndex(inMtxIdx.getRowIndex(), blen, 0) - 1;
+
+		int totalCopyLen = 0;
+		while (totalCopyLen < inMtxBlk.getNumRows()) {
+			// Calculate row and block index for the current part
+			long outRowIdx = (inRowIdx + shift) % rlen;
+			long outBlkIdx = UtilFunctions.computeBlockIndex(outRowIdx + 1, blen);
+			int outBlkLen = UtilFunctions.computeBlockSize(rlen, outBlkIdx, blen);
+			int outRowIdxInBlk = (int) (outRowIdx % blen);
+
+			// Calculate copy length
+			int copyLen = Math.min((int) (outBlkLen - outRowIdxInBlk), inMtxBlk.getNumRows() - totalCopyLen);
+
+			// Create the output block and copy data
+			MatrixIndexes outMtxIdx = new MatrixIndexes(outBlkIdx, inMtxIdx.getColumnIndex());
+			MatrixBlock outMtxBlk = new MatrixBlock(outBlkLen, inMtxBlk.getNumColumns(), inMtxBlk.isInSparseFormat());
+			copyMtx(inMtxBlk, outMtxBlk, totalCopyLen, outRowIdxInBlk, copyLen, false, false);
+			out.add(new IndexedMatrixValue(outMtxIdx, outMtxBlk));
+
+			// Update counters for next iteration
+			totalCopyLen += copyLen;
+			inRowIdx += totalCopyLen;
+		}
+	}
+
 	public static MatrixBlock diag( MatrixBlock in, MatrixBlock out ) {
 		//Timing time = new Timing(true);
 		
@@ -2274,77 +2304,83 @@ public class LibMatrixReorg {
 
 	private static void rollDense(MatrixBlock in, MatrixBlock out, int shift) {
 		final int m = in.rlen;
-		final int n = in.clen;
+		shift %= (m != 0 ? m : 1); // roll matrix with axis=none
 
-		//set basic meta data and allocate output
-		out.sparse = false;
-		out.nonZeros = in.nonZeros;
-		out.allocateDenseBlock(false);
-
-		//copy all rows into target positions
-		if (n == 1) { //column vector
-			double[] a = in.getDenseBlockValues();
-			double[] c = out.getDenseBlockValues();
-
-			// roll matrix with axis=none
-			shift %= (m != 0 ? m : 1);
-
-			System.arraycopy(a, 0, c, shift, m - shift);
-			System.arraycopy(a, m - shift, c, 0, shift);
-		} else { //general matrix case
-			DenseBlock a = in.getDenseBlock();
-			DenseBlock c = out.getDenseBlock();
-
-			// roll matrix with axis=0
-			shift %= (m != 0 ? m : 1);
-
-			for (int i = 0; i < m - shift; i++) {
-				System.arraycopy(a.values(i), a.pos(i), c.values(i + shift), c.pos(i + shift), n);
-			}
-
-			for (int i = m - shift; i < m; i++) {
-				System.arraycopy(a.values(i), a.pos(i), c.values(i + shift - m), c.pos(i + shift - m), n);
-			}
-		}
+		copyDenseMtx(in, out, 0, shift, m - shift, false, true);
+		copyDenseMtx(in, out, m - shift, 0, shift, true, true);
 	}
 
 	private static void rollSparse(MatrixBlock in, MatrixBlock out, int shift) {
 		final int m = in.rlen;
+		shift %= (m != 0 ? m : 1); // roll matrix with axis=0
 
-		//set basic meta data and allocate output
-		out.sparse = true;
-		out.nonZeros = in.nonZeros;
-		out.allocateSparseRowsBlock(false);
+		copySparseMtx(in, out, 0, shift, m - shift, false, true);
+		copySparseMtx(in, out, m-shift, 0, shift, false, true);
+	}
 
-		//copy all rows into target positions
-		SparseBlock a = in.getSparseBlock();
-		SparseBlock c = out.getSparseBlock();
-
-		// roll matrix with axis=0
-		shift %= (m != 0 ? m : 1);
-
-		for (int i = 0; i < m - shift; i++) {
-			if (a.isEmpty(i)) continue;    // skip empty rows
-
-			rollSparseRow(a, c, i, i + shift);
-		}
-
-		for (int i = m - shift; i < m; i++) {
-			if (a.isEmpty(i)) continue;    // skip empty rows
-
-			rollSparseRow(a, c, i, i + shift - m);
+	public static void copyMtx(MatrixBlock in, MatrixBlock out, int inStart, int outStart, int copyLen,
+							   boolean isAllocated, boolean copyTotalNonZeros) {
+		if (in.isInSparseFormat()){
+			copySparseMtx(in, out, inStart, outStart, copyLen, isAllocated, copyTotalNonZeros);
+		} else {
+			copyDenseMtx(in, out, inStart, outStart, copyLen, isAllocated, copyTotalNonZeros);
 		}
 	}
 
-	private static void rollSparseRow(SparseBlock a, SparseBlock c, int oriIdx, int shiftIdx) {
-		final int apos = a.pos(oriIdx);
-		final int alen = a.size(oriIdx) + apos;
-		final int[] aix = a.indexes(oriIdx);
-		final double[] avals = a.values(oriIdx);
+	public static void copyDenseMtx(MatrixBlock in, MatrixBlock out, int inIdx, int outIdx, int copyLen,
+									boolean isAllocated, boolean copyTotalNonZeros) {
+		int clen = in.clen;
 
-		// copy only non-zero elements
-		for (int k = apos; k < alen; k++) {
-			c.set(shiftIdx, aix[k], avals[k]);
+		// set basic meta data and allocate output
+		if (!isAllocated){
+			out.sparse = false;
+			if (copyTotalNonZeros) out.nonZeros = in.nonZeros;
+			out.allocateDenseBlock(false);
+		}
+
+		// copy all rows into target positions
+		if (clen == 1) { //column vector
+			double[] a = in.getDenseBlockValues();
+			double[] c = out.getDenseBlockValues();
+
+			System.arraycopy(a, inIdx, c, outIdx, copyLen);
+		} else {
+			DenseBlock a = in.getDenseBlock();
+			DenseBlock c = out.getDenseBlock();
+
+			while (copyLen > 0) {
+				System.arraycopy(a.values(inIdx), a.pos(inIdx),
+						c.values(outIdx), c.pos(outIdx), clen);
+
+				inIdx++; outIdx++; copyLen--;
+			}
+		}
+	}
+
+	private static void copySparseMtx(MatrixBlock in, MatrixBlock out, int inIdx, int outIdx, int copyLen,
+									  boolean isAllocated, boolean copyTotalNonZeros) {
+		//set basic meta data and allocate output
+		if (!isAllocated){
+			out.sparse = true;
+			if (copyTotalNonZeros) out.nonZeros = in.nonZeros;
+			out.allocateSparseRowsBlock(false);
+		}
+
+		SparseBlock a = in.getSparseBlock();
+		SparseBlock c = out.getSparseBlock();
+
+		for (int i = 0; i < copyLen; i++) {
+			if (!a.isEmpty(inIdx)){
+				final int apos = a.pos(inIdx);
+				final int alen = a.size(inIdx) + apos;
+				final int[] aix = a.indexes(inIdx);
+				final double[] avals = a.values(inIdx);
+
+				// copy only non-zero elements
+				for (int k = apos; k < alen; k++)
+					c.set(outIdx, aix[k], avals[k]);
+			}
+			inIdx++; outIdx++;
 		}
 	}
 

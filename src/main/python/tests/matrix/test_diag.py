@@ -42,14 +42,13 @@ class TestDIAG(unittest.TestCase):
         assert np.allclose(sds_result, np_result, 1e-9)
 
     def test_diag_basic2(self):
-        input_matrix = np.array([[1, 2, 3, 4],
-                                 [5, 6, 7, 8],
-                                 [9, 10, 11, 12],
-                                 [13, 14, 15, 16]])
+        input_matrix = np.array(
+            [[1, 2, 3, 4], [5, 6, 7, 8], [9, 10, 11, 12], [13, 14, 15, 16]]
+        )
 
         sds_input = self.sds.from_numpy(input_matrix)
         sds_result = sds_input.diag().compute()
-        np_result = np.reshape(np.diag(input_matrix), (-1,1))
+        np_result = np.reshape(np.diag(input_matrix), (-1, 1))
         assert np.allclose(sds_result, np_result, 1e-9)
 
     def test_diag_random1(self):
@@ -63,9 +62,9 @@ class TestDIAG(unittest.TestCase):
         input_matrix = np.random.random((10, 10))
         sds_input = self.sds.from_numpy(input_matrix)
         sds_result = sds_input.diag().compute()
-        np_result = np.reshape(np.diag(input_matrix), (-1,1))
+        np_result = np.reshape(np.diag(input_matrix), (-1, 1))
         assert np.allclose(sds_result, np_result, 1e-9)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()

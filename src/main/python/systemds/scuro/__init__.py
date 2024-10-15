@@ -30,7 +30,12 @@ from systemds.scuro.representations.resnet import ResNet
 from systemds.scuro.representations.bert import Bert
 from systemds.scuro.representations.unimodal import UnimodalRepresentation
 from systemds.scuro.representations.lstm import LSTM
-from systemds.scuro.representations.representation_dataloader import NPY, Pickle, HDF5, JSON
+from systemds.scuro.representations.representation_dataloader import (
+    NPY,
+    Pickle,
+    HDF5,
+    JSON,
+)
 from systemds.scuro.models.model import Model
 from systemds.scuro.models.discrete_model import DiscreteModel
 from systemds.scuro.modality.aligned_modality import AlignedModality

@@ -36,11 +36,11 @@ class TestDataGenerator:
         self.balanced = balanced
 
         for modality in modalities:
-            mod_path = f'{self.path}/{modality.name.lower()}'
+            mod_path = f"{self.path}/{modality.name.lower()}"
             os.mkdir(mod_path)
             modality.file_path = mod_path
         self.labels = []
-        self.label_path = f'{path}/labels.npy'
+        self.label_path = f"{path}/labels.npy"
 
     def create_multimodal_data(self, num_instances, duration=2, seed=42):
         speed_fast = 0
@@ -79,13 +79,13 @@ class TestDataGenerator:
                 if isinstance(modality, TextModality):
                     self.__create_text_data(idx, speed_factor)
 
-        np.save(f'{self.path}/labels.npy', np.array(self.labels))
+        np.save(f"{self.path}/labels.npy", np.array(self.labels))
 
     def __create_video_data(self, idx, duration, fps, speed_factor):
-        path = f'{self.path}/video/{idx}.mp4'
+        path = f"{self.path}/video/{idx}.mp4"
 
         width, height = 160, 120
-        fourcc = cv2.VideoWriter_fourcc(*'mp4v')
+        fourcc = cv2.VideoWriter_fourcc(*"mp4v")
         out = cv2.VideoWriter(path, fourcc, fps, (width, height))
 
         num_frames = duration * fps
@@ -96,25 +96,32 @@ class TestDataGenerator:
 
         for i in range(num_frames):
             frame = np.ones((height, width, 3), dtype=np.uint8) * 255
-            center_y = int(height // 2 + amplitude * np.sin(speed_factor * 2 * np.pi * i / num_frames))
-            frame = cv2.circle(frame, (center_x, center_y), ball_radius, (0, 255, 0), -1)
+            center_y = int(
+                height // 2
+                + amplitude * np.sin(speed_factor * 2 * np.pi * i / num_frames)
+            )
+            frame = cv2.circle(
+                frame, (center_x, center_y), ball_radius, (0, 255, 0), -1
+            )
             out.write(frame)
 
         out.release()
 
     def __create_text_data(self, idx, speed_factor):
-        path = f'{self.path}/text/{idx}.txt'
+        path = f"{self.path}/text/{idx}.txt"
 
-        with open(path, 'w') as f:
+        with open(path, "w") as f:
             f.write(f"The ball moves at speed factor {speed_factor:.2f}.")
 
     def __create_audio_data(self, idx, duration, speed_factor):
-        path = f'{self.path}/audio/{idx}.wav'
+        path = f"{self.path}/audio/{idx}.wav"
         sample_rate = 44100
 
         t = np.linspace(0, duration, int(sample_rate * duration), endpoint=False)
         frequency_variation = random.uniform(200.0, 500.0)
-        frequency = 440.0 + frequency_variation * np.sin(speed_factor * 2 * np.pi * np.linspace(0, 1, len(t)))
+        frequency = 440.0 + frequency_variation * np.sin(
+            speed_factor * 2 * np.pi * np.linspace(0, 1, len(t))
+        )
         audio_data = 0.5 * np.sin(2 * np.pi * frequency * t)
 
         write(path, sample_rate, audio_data)

@@ -56,7 +56,9 @@ class Bert(UnimodalRepresentation):
                 data = file.readlines()
 
         model_name = "bert-base-uncased"
-        tokenizer = BertTokenizer.from_pretrained(model_name, clean_up_tokenization_spaces=True)
+        tokenizer = BertTokenizer.from_pretrained(
+            model_name, clean_up_tokenization_spaces=True
+        )
 
         if self.avg_layers is not None:
             model = BertModel.from_pretrained(model_name, output_hidden_states=True)

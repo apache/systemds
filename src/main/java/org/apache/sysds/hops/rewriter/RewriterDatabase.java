@@ -2,10 +2,11 @@ package org.apache.sysds.hops.rewriter;
 
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class RewriterDatabase {
 
-	private HashMap<RewriterStatementEntry, RewriterStatement> db = new HashMap<>();
+	private ConcurrentHashMap<RewriterStatementEntry, RewriterStatement> db = new ConcurrentHashMap<>();
 
 	public boolean containsEntry(RewriterStatement instr) {
 		return db.containsKey(instr);

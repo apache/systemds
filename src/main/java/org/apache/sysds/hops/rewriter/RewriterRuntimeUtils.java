@@ -45,6 +45,7 @@ public class RewriterRuntimeUtils {
 	private static boolean setupComplete = false;
 
 	private static long totalCPUTime = 0L;
+	private static long evaluatedExpressions = 0;
 
 	public static void setupIfNecessary() {
 		if (setupComplete)
@@ -68,26 +69,39 @@ public class RewriterRuntimeUtils {
 
 			RewriterRuntimeUtils.attachHopInterceptor(prog -> {
 				long startMillis = System.currentTimeMillis();
-				RewriterRuntimeUtils.forAllUniqueTranslatableStatements(prog, 5, stmt -> {
-					RewriterStatement cpy = stmt.nestedCopyOrInject(new HashMap<>(), el -> null);
-					System.out.println("Stmt: " + stmt.toString(ctx));
-					stmt = converter.apply(stmt);
-					System.out.println("Canonical form: " + stmt.toString(ctx));
+				RewriterRuntimeUtils.forAllUniqueTranslatableStatements(prog, 5, mstmt -> {
+					List<RewriterStatement> subtrees = RewriterUtils.generateSubtrees(mstmt, new HashMap<>(), ctx);
+					for (RewriterStatement stmt : subtrees) {
+						System.out.println(stmt.toString(ctx));
+						try {
+							stmt = ctx.metaPropagator.apply(stmt);
+							System.out.println("RawStmt: " + stmt.toString(ctx));
+							RewriterStatement cpy = stmt.nestedCopyOrInject(new HashMap<>(), el -> null);
+							if (!exactExprDB.insertEntry(ctx, cpy))
+								continue;
+							evaluatedExpressions++;
+							System.out.println("Stmt: " + stmt.toString(ctx));
+							stmt = converter.apply(stmt);
+							System.out.println("Canonical form: " + stmt.toString(ctx));
 
-					RewriterStatement oldEntry = db.insertOrReturn(ctx, stmt);
+							RewriterStatement oldEntry = db.insertOrReturn(ctx, stmt);
 
-					if (oldEntry == null) {
-						List<RewriterStatement> expr = new ArrayList<>();
-						expr.add(cpy);
-						stmt.unsafePutMeta("equivalentExpressions", expr);
-					} else {
-						List<RewriterStatement> eStmts = (List<RewriterStatement>) oldEntry.getMeta("equivalentExpressions");
-						eStmts.add(cpy);
+							if (oldEntry == null) {
+								List<RewriterStatement> expr = new ArrayList<>();
+								expr.add(cpy);
+								stmt.unsafePutMeta("equivalentExpressions", expr);
+							} else {
+								List<RewriterStatement> eStmts = (List<RewriterStatement>) oldEntry.getMeta("equivalentExpressions");
+								eStmts.add(cpy);
 
-						if (eStmts.size() == 2)
-							equivalentStatements.add(oldEntry);
+								if (eStmts.size() == 2)
+									equivalentStatements.add(oldEntry);
 
-						System.out.println("Found equivalent statement!");
+								System.out.println("Found equivalent statement!");
+							}
+						} catch (Exception e) {
+							e.printStackTrace();
+						}
 					}
 				}, exactExprDB, ctx);
 				totalCPUTime += System.currentTimeMillis() - startMillis;
@@ -99,11 +113,17 @@ public class RewriterRuntimeUtils {
 
 				for (RewriterStatement eStmt : equivalentStatements) {
 					System.out.println("Canonical form: " + eStmt.toString(ctx));
-					((List<RewriterStatement>)eStmt.getMeta("equivalentExpressions")).forEach(stmt -> System.out.println(stmt.toString(ctx)));
+					List<RewriterStatement> equivalences = (List<RewriterStatement>)eStmt.getMeta("equivalentExpressions");
+					equivalences.forEach(stmt -> System.out.println(stmt.toString(ctx) + "\t" + stmt.hashCode()));
+
+					if (equivalences.size() == 0)
+						System.out.println("All statements were actually equivalent!");
+					//System.out.println(equivalences.get(0).match(new RewriterStatement.MatcherContext(ctx, equivalences.get(0))));
 				}
 
 				System.out.println();
 				System.out.println("Total rewriter CPU time: " + totalCPUTime + "ms");
+				System.out.println("Total evaluated unique expressions: " + evaluatedExpressions);
 			}));
 		}
 	}
@@ -176,7 +196,7 @@ public class RewriterRuntimeUtils {
 	}
 
 	private static void forAllUniqueTranslatableStatements(Hop currentHop, int maxDepth, Consumer<RewriterStatement> consumer, Set<Hop> visited, RewriterDatabase db, final RuleContext ctx) {
-		if (visited.contains(currentHop))
+		if (currentHop == null || visited.contains(currentHop))
 			return;
 
 		visited.add(currentHop);
@@ -199,16 +219,18 @@ public class RewriterRuntimeUtils {
 			return buildLeaf(next, ctx);
 
 		if (cache.containsKey(next))
-			return cache.get(next);
+			return checkForCorrectTypes(cache.get(next), next, ctx);
 
 		if (next instanceof LiteralOp) {
 			RewriterStatement literal = buildLiteral((LiteralOp)next, ctx);
+			literal = checkForCorrectTypes(literal, next, ctx);
 			cache.put(next, literal);
 			return literal;
 		}
 
 		if (next instanceof AggBinaryOp) {
 			RewriterStatement stmt = buildAggBinaryOp((AggBinaryOp) next, ctx);
+			stmt = checkForCorrectTypes(stmt, next, ctx);
 
 			if (stmt == null)
 				return buildLeaf(next, ctx);
@@ -221,6 +243,7 @@ public class RewriterRuntimeUtils {
 
 		if (next instanceof AggUnaryOp) {
 			RewriterStatement stmt = buildAggUnaryOp((AggUnaryOp) next, ctx);
+			stmt = checkForCorrectTypes(stmt, next, ctx);
 
 			if (stmt == null)
 				return buildLeaf(next, ctx);
@@ -233,6 +256,7 @@ public class RewriterRuntimeUtils {
 
 		if (next instanceof BinaryOp) {
 			RewriterStatement stmt = buildBinaryOp((BinaryOp) next, ctx);
+			stmt = checkForCorrectTypes(stmt, next, ctx);
 
 			if (stmt == null)
 				return buildLeaf(next, ctx);
@@ -245,6 +269,7 @@ public class RewriterRuntimeUtils {
 
 		if (next instanceof ReorgOp) {
 			RewriterStatement stmt = buildReorgOp((ReorgOp) next, ctx);
+			stmt = checkForCorrectTypes(stmt, next, ctx);
 
 			if (stmt == null)
 				return buildLeaf(next, ctx);
@@ -258,6 +283,7 @@ public class RewriterRuntimeUtils {
 		if (next instanceof DataGenOp) {
 			List<Hop> interestingHops = new ArrayList<>();
 			RewriterStatement stmt = buildDataGenOp((DataGenOp)next, ctx, interestingHops);
+			stmt = checkForCorrectTypes(stmt, next, ctx);
 
 			if (stmt == null)
 				return buildLeaf(next, ctx);
@@ -275,9 +301,27 @@ public class RewriterRuntimeUtils {
 				return buildLeaf(next, ctx);
 		}
 
-		System.out.println("Unknown Op: " + next);
+		/*System.out.println("Unknown Op: " + next);
 		System.out.println("Class: " + next.getClass().getSimpleName());
-		System.out.println("OPString: " + next.getOpString());
+		System.out.println("OPString: " + next.getOpString());*/
+
+		return null;
+	}
+
+	private static RewriterStatement checkForCorrectTypes(RewriterStatement stmt, Hop hop, final RuleContext ctx) {
+		if (stmt == null)
+			return null;
+
+		String actualType = resolveExactDataType(hop);
+		if (actualType.equals(stmt.getResultingDataType(ctx)))
+			return stmt;
+
+		if (actualType.equals("MATRIX")) {
+			HashMap<String, RewriterStatement> oldTypes = new HashMap<>();
+			oldTypes.put("A", stmt);
+			RewriterStatement newStmt = RewriterUtils.parseExpression("as.matrix(A)", new HashMap<>(), oldTypes, ctx);
+			return newStmt;
+		}
 
 		return null;
 	}
@@ -314,7 +358,7 @@ public class RewriterRuntimeUtils {
 			RewriterStatement childStmt = buildDAGRecursively(in, cache, depth + 1, maxDepth, ctx);
 
 			if (childStmt == null) {
-				System.out.println("Could not build child: " + in);
+				//System.out.println("Could not build child: " + in);
 				return false;
 			}
 
@@ -337,7 +381,7 @@ public class RewriterRuntimeUtils {
 				return RewriterUtils.parse("%*%(A, B)", ctx, matrixDefs, floatDefs, intDefs, boolDefs);
 		}
 
-		System.out.println("Unknown AggBinaryOp: " + op.getOpString());
+		//System.out.println("Unknown AggBinaryOp: " + op.getOpString());
 		return null;
 	}
 
@@ -352,7 +396,7 @@ public class RewriterRuntimeUtils {
 				return RewriterUtils.parse("sum(A)", ctx, matrixDefs, floatDefs, intDefs, boolDefs);
 		}
 
-		System.out.println("Unknown AggUnaryOp: " + op.getOpString());
+		//System.out.println("Unknown AggUnaryOp: " + op.getOpString());
 		return null;
 	}
 
@@ -372,6 +416,7 @@ public class RewriterRuntimeUtils {
 			case "b(*)": // Matrix multiplication
 				return RewriterUtils.parse("*(a, b)", ctx, t1, t2);
 			case "b(-)":
+				System.out.println("NEG: " + RewriterUtils.parse("-(a, b)", ctx, t1, t2).toString(ctx));
 				return RewriterUtils.parse("-(a, b)", ctx, t1, t2);
 			case "b(/)":
 				return RewriterUtils.parse("/(a, b)", ctx, t1, t2);
@@ -390,7 +435,7 @@ public class RewriterRuntimeUtils {
 				return RewriterUtils.parse(">(a, b)", ctx, t1, t2);
 		}
 
-		System.out.println("Unknown BinaryOp: " + op.getOpString());
+		//System.out.println("Unknown BinaryOp: " + op.getOpString());
 		return null;
 	}
 
@@ -418,7 +463,7 @@ public class RewriterRuntimeUtils {
 				return RewriterUtils.parse("t(A)", ctx, matrixDefs, floatDefs, intDefs, boolDefs);
 		}
 
-		System.out.println("Unknown BinaryOp: " + op.getOpString());
+		//System.out.println("Unknown BinaryOp: " + op.getOpString());
 		return null;
 	}
 

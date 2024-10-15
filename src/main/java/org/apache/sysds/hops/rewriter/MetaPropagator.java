@@ -107,6 +107,8 @@ public class MetaPropagator implements Function<RewriterStatement, RewriterState
 				case "|":
 				case "<":
 				case ">":
+					if (firstMatrixStatement.isEmpty())
+						throw new IllegalArgumentException(root.toString(ctx) + " has empty args!");
 					root.unsafePutMeta("nrow", firstMatrixStatement.get().getMeta("nrow"));
 					root.unsafePutMeta("ncol", firstMatrixStatement.get().getMeta("ncol"));
 					return null;

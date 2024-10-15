@@ -183,7 +183,7 @@ public class RewriterUtils {
 
 	public static boolean parseDataTypes(String expr, HashMap<String, RewriterStatement> dataTypes, final RuleContext ctx) {
 		RuleContext.currentContext = ctx;
-		Pattern pattern = Pattern.compile("[A-Za-z]([A-Za-z0-9]|_|\\.|\\*)*");
+		Pattern pattern = Pattern.compile("([A-Za-z0-9]|_|\\.|\\*)+");
 		Matcher matcher = pattern.matcher(expr);
 
 		if (!matcher.find())
@@ -358,8 +358,14 @@ public class RewriterUtils {
 	}
 
 	public static String defaultTypeHierarchy(String t1, String t2) {
-		if (t1.equals("INT") && t2.equals("INT"))
+		if (t1.equals("BOOL") && t2.equals("BOOL"))
+			return "BOOL";
+		if (t1.equals("INT") && (t2.equals("INT") || t2.equals("BOOL")))
 			return "INT";
+
+		if (t2.equals("INT") && (t1.equals("INT") || t1.equals("BOOL")))
+			return "INT";
+
 		if (!t1.equals("MATRIX") && !t2.equals("MATRIX"))
 			return "FLOAT";
 		return "MATRIX";
@@ -621,12 +627,18 @@ public class RewriterUtils {
 		for (int i = 0; i < )
 	}*/
 
-	public static List<RewriterStatement> mergeSubtreeCombinations(RewriterStatement stmt, List<Integer> indices, List<List<RewriterStatement>> mList) {
+	public static List<RewriterStatement> mergeSubtreeCombinations(RewriterStatement stmt, List<Integer> indices, List<List<RewriterStatement>> mList, final RuleContext ctx) {
+		if (indices.isEmpty())
+			return List.of(stmt);
+
 		List<RewriterStatement> mergedTreeCombinations = new ArrayList<>();
 		cartesianProduct(mList, new RewriterStatement[mList.size()], stack -> {
 			RewriterStatement cpy = stmt.copyNode();
 			for (int i = 0; i < stack.length; i++)
 				cpy.getOperands().set(indices.get(i), stack[i]);
+			cpy.consolidate(ctx);
+			cpy.prepareForHashing();
+			cpy.recomputeHashCodes();
 			mergedTreeCombinations.add(cpy);
 			return true;
 		});
@@ -654,30 +666,33 @@ public class RewriterUtils {
 				indices.add(i);
 		}
 
+		int n = indices.size();
+		int totalSubsets = 1 << n;
+
 		List<RewriterStatement> mList = new ArrayList<>();
 
 		visited.put(is, mList);
 
-		int n = indices.size();
-		int totalSubsets = 1 << n;
+		//if (totalSubsets == 0)
+			//return List.of();
 
 		List<List<RewriterStatement>> mOptions = indices.stream().map(i -> generateSubtrees(stmt.getOperands().get(i), visited, ctx)).collect(Collectors.toList());
 		List<RewriterStatement> out = new ArrayList<>();
 
 		for (int subsetMask = 0; subsetMask < totalSubsets; subsetMask++) {
-
 			List<List<RewriterStatement>> mOptionCpy = new ArrayList<>(mOptions);
 
 			for (int i = 0; i < n; i++) {
 				// Check if the i-th child is included in the current subset
 				if ((subsetMask & (1 << i)) == 0) {
-					RewriterDataType mT = new RewriterDataType().as(UUID.randomUUID().toString()).ofType(stmt.getOperands().get(i).getResultingDataType(ctx));
+					RewriterDataType mT = new RewriterDataType().as(UUID.randomUUID().toString()).ofType(stmt.getOperands().get(indices.get(i)).getResultingDataType(ctx));
 					mT.consolidate(ctx);
 					mOptionCpy.set(i, List.of(mT));
 				}
 			}
 
-			out.addAll(mergeSubtreeCombinations(stmt, indices, mOptionCpy));
+			out.addAll(mergeSubtreeCombinations(stmt, indices, mOptionCpy, ctx));
+			System.out.println("Expr: " + mergeSubtreeCombinations(stmt, indices, mOptionCpy, ctx));
 		}
 
 		return out;
@@ -691,6 +706,7 @@ public class RewriterUtils {
 
 	public static Function<RewriterStatement, RewriterStatement> buildCanonicalFormConverter(final RuleContext ctx, boolean debug) {
 		ArrayList<RewriterRule> algebraicCanonicalizationRules = new ArrayList<>();
+		RewriterRuleCollection.canonicalizeBooleanStatements(algebraicCanonicalizationRules, ctx);
 		RewriterRuleCollection.canonicalizeAlgebraicStatements(algebraicCanonicalizationRules, ctx);
 		RewriterHeuristic algebraicCanonicalization = new RewriterHeuristic(new RewriterRuleSet(ctx, algebraicCanonicalizationRules));
 

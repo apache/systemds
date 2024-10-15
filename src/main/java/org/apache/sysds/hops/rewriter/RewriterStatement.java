@@ -123,6 +123,10 @@ public abstract class RewriterStatement implements Comparable<RewriterStatement>
 
 		private List<MatcherContext> subMatches;
 
+		public MatcherContext(final RuleContext ctx, RewriterStatement matchRoot) {
+			this(ctx, matchRoot, false, false, false, false, false, false, Collections.emptyMap());
+		}
+
 		public MatcherContext(final RuleContext ctx, RewriterStatement matchRoot, final boolean literalsCanBeVariables, final boolean ignoreLiteralValues, final boolean allowDuplicatePointers, final boolean allowPropertyScan, final boolean allowTypeHierarchy, final boolean terminateOnFirstMatch, final Map<RewriterStatement, RewriterRule.LinkObject> ruleLinks) {
 			this.ctx = ctx;
 			this.matchRoot = matchRoot;

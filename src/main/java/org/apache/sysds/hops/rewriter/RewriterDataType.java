@@ -222,11 +222,11 @@ public class RewriterDataType extends RewriterStatement {
 	@Override
 	public String toString(final RuleContext ctx) {
 		if (!isLiteral())
-			return getId();
+			return getId() + "::" + getResultingDataType(ctx);
 
 		if (getLiteral() instanceof Boolean)
 			return getLiteral().toString().toUpperCase();
 
-		return getLiteral().toString();
+		return getLiteral().toString() + "::" + getResultingDataType(ctx);
 	}
 }

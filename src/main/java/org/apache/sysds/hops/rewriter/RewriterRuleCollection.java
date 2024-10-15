@@ -376,6 +376,15 @@ public class RewriterRuleCollection {
 					.toParsedStatement("*(a, inv(b))", hooks)
 					.build()
 			);
+
+			rules.add(new RewriterRuleBuilder(ctx, "")
+					.setUnidirectional(true)
+					.parseGlobalVars(t1 + ":a")
+					.parseGlobalVars(t2 + ":b")
+					.withParsedStatement("-(+(a, b))", hooks)
+					.toParsedStatement("+(-(a), -(b))", hooks)
+					.build()
+			);
 		});
 	}
 

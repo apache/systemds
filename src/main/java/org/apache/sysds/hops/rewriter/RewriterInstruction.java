@@ -428,7 +428,7 @@ public class RewriterInstruction extends RewriterStatement {
 			builder.append(operands.get(i).toString(ctx));
 		}
 		builder.append(")");
-		return builder.toString();
+		return builder.toString() + "::" + getResultingDataType(ctx);
 	}
 
 	@Override

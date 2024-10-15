@@ -220,6 +220,7 @@ public class RewriterContextSettings {
 		// Custom implementation starts here
 		builder.append("as.matrix(INT)::MATRIX\n");
 		builder.append("as.matrix(FLOAT)::MATRIX\n");
+		builder.append("as.matrix(BOOL)::MATRIX\n");
 		builder.append("as.scalar(MATRIX)::FLOAT\n");
 
 		builder.append("max(MATRIX)::FLOAT\n");

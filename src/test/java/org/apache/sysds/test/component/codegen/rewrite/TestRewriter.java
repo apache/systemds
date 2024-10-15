@@ -116,7 +116,7 @@ public class TestRewriter {
 		RewriterRuntimeUtils.setupIfNecessary();
 		RuleContext ctx = RewriterUtils.buildDefaultContext();
 		Function<RewriterStatement, RewriterStatement> converter = RewriterUtils.buildCanonicalFormConverter(ctx, true);
-		RewriterStatement stmt = RewriterUtils.parse("sum(*(A,*(B, C)))", ctx, "MATRIX:A,B,C");
+		RewriterStatement stmt = RewriterUtils.parse("t(-(0,%*%(A,B)))", ctx, "MATRIX:A,B,C", "LITERAL_INT:0");
 		List<RewriterStatement> combs = RewriterUtils.generateSubtrees(stmt, new HashMap<>(), ctx);
 
 		System.out.println(combs.size());

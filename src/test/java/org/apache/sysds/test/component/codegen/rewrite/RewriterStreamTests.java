@@ -78,7 +78,16 @@ public class RewriterStreamTests {
 
 	@Test
 	public void testFusedPlanAggregationGeneration() {
-		RewriterStatement stmt = RewriterUtils.parse("sum(*(A, B))", ctx, "MATRIX:A,B", "LITERAL_INT:0,1");
+		RewriterStatement stmt = RewriterUtils.parse("sum(*(/(A, B), B))", ctx, "MATRIX:A,B", "LITERAL_INT:0,1");
+		stmt = converter.apply(stmt);
+		RewriterStatement fused = RewriterUtils.buildFusedPlan(stmt, ctx);
+		System.out.println("Orig: " + stmt);
+		System.out.println("Fused: " + fused);
+	}
+
+	@Test
+	public void testFusedPlanAdvancedAggregationGeneration() {
+		RewriterStatement stmt = RewriterUtils.parse("sum(*(t(A), B))", ctx, "MATRIX:A,B", "LITERAL_INT:0,1");
 		stmt = converter.apply(stmt);
 		RewriterStatement fused = RewriterUtils.buildFusedPlan(stmt, ctx);
 		System.out.println("Orig: " + stmt);

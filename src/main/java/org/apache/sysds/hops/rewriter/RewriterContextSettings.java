@@ -167,8 +167,9 @@ public class RewriterContextSettings {
 
 
 		ALL_TYPES.forEach(t -> {
-			builder.append("UnaryOperator(" + t + ")::" + t + "\n");
+			builder.append("UnaryElementWiseOperator(" + t + ")::" + t + "\n");
 			builder.append("impl -\n");
+			builder.append("impl inv\n");
 		});
 
 		//

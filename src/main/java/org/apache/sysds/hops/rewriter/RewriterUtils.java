@@ -125,6 +125,8 @@ public class RewriterUtils {
 			fuseList.add();
 		});*/
 
+		//
+
 		if (mmap.size() == 1) {
 			Map.Entry<Tuple2<RewriterRule.IdentityRewriterStatement, RewriterRule.IdentityRewriterStatement>, List<RewriterStatement>> entry = mmap.entrySet().iterator().next();
 			HashMap<String, RewriterStatement> args = new HashMap<>();

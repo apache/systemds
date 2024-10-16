@@ -978,6 +978,16 @@ public class RewriterRuleCollection {
 				.toParsedStatement("sum(v)", hooks)
 				.build()
 		);
+
+		rules.add(new RewriterRuleBuilder(ctx, "[](UnaryElementWiseOperator(A), i, j) => UnaryElementWiseOperator([](A, i, j))")
+				.setUnidirectional(true)
+				.parseGlobalVars("MATRIX:A")
+				.parseGlobalVars("INT:i,j")
+				.withParsedStatement("[]($1:UnaryElementWiseOperator(A), i, j)", hooks)
+				.toParsedStatement("$2:UnaryElementWiseOperator([](A, i, j))", hooks)
+				.link(hooks.get(1).getId(), hooks.get(2).getId(), RewriterStatement::transferMeta)
+				.build()
+		);
 	}
 
 	public static void streamifyExpressions(final List<RewriterRule> rules, final RuleContext ctx) {

@@ -293,6 +293,11 @@ public class RewriterContextSettings {
 		builder.append("_nrow()::INT\n");
 		builder.append("_ncol()::INT\n");
 
+		ALL_TYPES.forEach(t -> builder.append("_map(FLOAT...," + t + ")::" + t + "\n"));
+		ALL_TYPES.forEach(t -> builder.append("_reduce(FLOAT...," + t + ")::" + t + "\n"));
+		builder.append("_v(MATRIX)::FLOAT\n");
+		builder.append("_cur()::FLOAT\n");
+
 		/*builder.append("_map(INT,INT,FLOAT)::MATRIX\n");
 		builder.append("_matIdx(MATRIX)::IDX[MATRIX]\n");
 		builder.append("_nextRowIdx(MATRIX)::INT\n");

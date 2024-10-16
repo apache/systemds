@@ -253,6 +253,10 @@ public abstract class RewriterStatement implements Comparable<RewriterStatement>
 	public RewriterStatement nestedCopyOrInject(Map<RewriterStatement, RewriterStatement> copiedObjects, Function<RewriterStatement, RewriterStatement> injector) {
 		return nestedCopyOrInject(copiedObjects, (el, parent, pIdx) -> injector.apply(el), null, -1);
 	}
+
+	public RewriterStatement nestedCopy() {
+		return nestedCopyOrInject(new HashMap<>(), el -> null);
+	}
 	//String toStringWithLinking(int dagId, DualHashBidiMap<RewriterStatementLink, RewriterStatementLink> links);
 
 	// Returns the root of the matching sub-statement, null if there is no match

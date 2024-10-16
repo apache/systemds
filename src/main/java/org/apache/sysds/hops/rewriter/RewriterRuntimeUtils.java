@@ -34,7 +34,7 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 
 public class RewriterRuntimeUtils {
-	public static final boolean interceptAll = false;
+	public static final boolean interceptAll = true;
 	public static final boolean printUnknowns = true;
 
 

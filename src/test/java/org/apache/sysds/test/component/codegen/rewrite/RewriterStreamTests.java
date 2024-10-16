@@ -66,4 +66,22 @@ public class RewriterStreamTests {
 		System.out.println(stmt);
 		assert stmt.match(new RewriterStatement.MatcherContext(ctx, RewriterUtils.parse("+(argList(-(b), a, c, 1))", ctx, "FLOAT:a,b, c", "LITERAL_INT:0,1")));
 	}
+
+	@Test
+	public void testFusedPlanMatrixGeneration() {
+		RewriterStatement stmt = RewriterUtils.parse("+(1, +(A, B))", ctx, "MATRIX:A,B", "LITERAL_INT:0,1");
+		stmt = converter.apply(stmt);
+		RewriterStatement fused = RewriterUtils.buildFusedPlan(stmt, ctx);
+		System.out.println("Orig: " + stmt);
+		System.out.println("Fused: " + fused);
+	}
+
+	@Test
+	public void testFusedPlanAggregationGeneration() {
+		RewriterStatement stmt = RewriterUtils.parse("sum(*(A, B))", ctx, "MATRIX:A,B", "LITERAL_INT:0,1");
+		stmt = converter.apply(stmt);
+		RewriterStatement fused = RewriterUtils.buildFusedPlan(stmt, ctx);
+		System.out.println("Orig: " + stmt);
+		System.out.println("Fused: " + fused);
+	}
 }

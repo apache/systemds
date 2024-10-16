@@ -7,6 +7,7 @@ import org.apache.commons.lang3.mutable.MutableObject;
 import org.apache.logging.log4j.util.TriConsumer;
 import org.apache.spark.internal.config.R;
 import scala.Tuple2;
+import scala.Tuple3;
 import scala.collection.parallel.ParIterableLike;
 import scala.reflect.internal.Trees;
 
@@ -81,6 +82,188 @@ public class RewriterUtils {
 		};
 	}
 
+	public static RewriterStatement buildFusedPlan(RewriterStatement origStatement, final RuleContext ctx) {
+		RewriterStatement cpy = origStatement.nestedCopy();
+		MutableObject<RewriterStatement> mCpy = new MutableObject<>(cpy);
+
+		Map<Tuple2<RewriterRule.IdentityRewriterStatement, RewriterRule.IdentityRewriterStatement>, List<RewriterStatement>> mmap = eraseAccessTypes(mCpy, ctx);
+		cpy = mCpy.getValue();
+
+		// Identify common element wise accesses (e.g. A[i, j] + B[i, j] for all i, j)
+		//Map<Tuple2<RewriterRule.IdentityRewriterStatement, RewriterRule.IdentityRewriterStatement>, List<RewriterStatement>> mmap = new HashMap<>();
+
+		/*for (Tuple3<RewriterRule.IdentityRewriterStatement, RewriterRule.IdentityRewriterStatement, RewriterRule.IdentityRewriterStatement> mTuple : mSet.keySet()) {
+			List<RewriterStatement> accesses = mmap.compute(new Tuple2<>(mTuple._2(), mTuple._3()), (k, v) -> v == null ? new ArrayList<>() : v);
+			accesses.add(mTuple._1().stmt);
+		}
+
+		List<RewriterStatement> fuseList = new ArrayList<>();
+
+		MutableObject<RewriterStatement> mParent = new MutableObject<>(cpy);
+
+		cpy.forEachPreOrder((current, parent, pIdx) -> {
+			if (!current.isInstruction())
+				return true;
+
+			if (current.trueInstruction().equals("_m")) {
+				if (parent != null)
+					parent.getOperands().set(pIdx, current.getOperands().get(2));
+				else
+					mParent.setValue(current.getOperands().get(2));
+			}
+
+			return true;
+		});
+
+		mmap.forEach((k, v) -> {
+			HashMap<String, RewriterStatement> args = new HashMap<>();
+			args.put("idx1", k._1.stmt);
+			args.put("idx2", k._2.stmt);
+			args.put("valueFn", );
+			RewriterStatement vFn = cpy.
+			RewriterStatement newStmt = parse("_accessNary(idx1, idx2, valueFn)", ctx, );
+			fuseList.add();
+		});*/
+
+		if (mmap.size() == 1) {
+			Map.Entry<Tuple2<RewriterRule.IdentityRewriterStatement, RewriterRule.IdentityRewriterStatement>, List<RewriterStatement>> entry = mmap.entrySet().iterator().next();
+			HashMap<String, RewriterStatement> args = new HashMap<>();
+
+			RewriterStatement mS = null;
+
+			if (cpy.isInstruction()) {
+				if (cpy.trueInstruction().equals("_m")) {
+					args.put("stmt", cpy.getOperands().get(2));
+					args.put("first", entry.getValue().get(0));
+
+					mS = RewriterUtils.parse("_map(argList(first), stmt)", ctx, args);
+					mS.getOperands().get(0).getOperands().addAll(entry.getValue().subList(1, entry.getValue().size()));
+				} else if (cpy.trueInstruction().equals("sum")) {
+					args.put("stmt", cpy.getOperands().get(0));
+					args.put("first", entry.getValue().get(0));
+
+					System.out.println(args.get("stmt"));
+					mS = RewriterUtils.parse("_reduce(argList(first), +(_cur(), stmt))", ctx, args);
+					mS.getOperands().get(0).getOperands().addAll(entry.getValue().subList(1, entry.getValue().size()));
+				}
+			}
+
+			return mS;
+		}
+
+		return null;
+	}
+
+	public static Map<Tuple2<RewriterRule.IdentityRewriterStatement, RewriterRule.IdentityRewriterStatement>, List<RewriterStatement>> eraseAccessTypes(MutableObject<RewriterStatement> stmt, final RuleContext ctx) {
+		//Map<Tuple3<RewriterRule.IdentityRewriterStatement, RewriterRule.IdentityRewriterStatement, RewriterRule.IdentityRewriterStatement>, RewriterStatement> out = new HashMap<>();
+
+		Map<Tuple2<RewriterRule.IdentityRewriterStatement, RewriterRule.IdentityRewriterStatement>, List<RewriterStatement>> rewrites = new HashMap<>();
+
+		HashMap<Integer, RewriterStatement> hooks = new HashMap<>();
+
+		List<RewriterRule> rules = new ArrayList<>();
+
+		rules.add(new RewriterRuleBuilder(ctx)
+				.setUnidirectional(true)
+				.parseGlobalVars("MATRIX:A")
+				.parseGlobalVars("INT:i,j")
+				.parseGlobalVars("FLOAT:v")
+				.withParsedStatement("[](A, i, j)")
+				.toParsedStatement("$1:_v(A)", hooks)
+				.iff(match -> {
+					List<RewriterStatement> ops = match.getMatchRoot().getOperands();
+					return (ops.get(0).isInstruction() && ops.get(0).trueInstruction().equals("_idx"))
+							|| (ops.get(1).isInstruction() && ops.get(1).trueInstruction().equals("_idx"));
+				}, true)
+				.apply(hooks.get(1).getId(), (t, m) -> {
+					t.unsafePutMeta("data", m.getMatchRoot().getOperands().get(0));
+					t.unsafePutMeta("idx1", m.getMatchRoot().getOperands().get(1));
+					t.unsafePutMeta("idx2", m.getMatchRoot().getOperands().get(2));
+
+					RewriterRule.IdentityRewriterStatement idx1 = new RewriterRule.IdentityRewriterStatement(m.getMatchRoot().getOperands().get(1));
+					RewriterRule.IdentityRewriterStatement idx2 = new RewriterRule.IdentityRewriterStatement(m.getMatchRoot().getOperands().get(2));
+					Tuple2<RewriterRule.IdentityRewriterStatement, RewriterRule.IdentityRewriterStatement> mT = new Tuple2<>(idx1, idx2);
+
+					List<RewriterStatement> r = rewrites.get(mT);
+
+					if (r == null) {
+						r = new ArrayList<>();
+						rewrites.put(mT, r);
+					}
+
+					r.add(t);
+				}, true)
+				.build());
+
+		rules.add(new RewriterRuleBuilder(ctx)
+				.setUnidirectional(true)
+				.parseGlobalVars("MATRIX:A")
+				.parseGlobalVars("INT...:i")
+				.parseGlobalVars("FLOAT:v")
+				.withParsedStatement("_idxExpr(i, v)")
+				.toParsedStatement("$1:v", hooks)
+				.iff(match -> {
+					List<RewriterStatement> ops = match.getMatchRoot().getOperands().get(0).getOperands();
+					return ops.stream().anyMatch(op -> op.isInstruction() && op.trueInstruction().equals("_idx"));
+				}, true)
+				.build());
+
+		rules.add(new RewriterRuleBuilder(ctx)
+				.setUnidirectional(true)
+				.parseGlobalVars("MATRIX:A")
+				.parseGlobalVars("INT...:i,j")
+				.parseGlobalVars("FLOAT*:v")
+				.withParsedStatement("_idxExpr(i, v)")
+				.toParsedStatement("v", hooks)
+				.iff(match -> {
+					List<RewriterStatement> ops = match.getMatchRoot().getOperands().get(0).getOperands();
+					return ops.stream().anyMatch(op -> op.isInstruction() && op.trueInstruction().equals("_idx"));
+				}, true)
+				.build());
+
+		RewriterRuleSet rs = new RewriterRuleSet(ctx, rules);
+		RewriterHeuristic heur = new RewriterHeuristic(rs, true);
+
+		stmt.setValue(heur.apply(stmt.getValue()));
+
+		return rewrites;
+
+		/*stmt.getValue().forEachPostOrder((current, parent, pIdx) -> {
+			if (!current.isInstruction())
+				return;
+
+			if (current.trueInstruction().equals("[]")) {
+				boolean hasIndex = false;
+				if (current.getOperands().get(1).isInstruction() && current.getOperands().get(1).trueInstruction().equals("_idx"))
+					hasIndex = true;
+
+				if (current.getOperands().get(2).isInstruction() && current.getOperands().get(2).trueInstruction().equals("_idx"))
+					hasIndex = true;
+
+				if (hasIndex) {
+					current.getOperands().get(0).unsafePutMeta("idx1", current.getOperands().get(1));
+					current.getOperands().get(0).unsafePutMeta("idx2", current.getOperands().get(2));
+					out.put(new Tuple3<>(new RewriterRule.IdentityRewriterStatement(current.getOperands().get(0)),
+							new RewriterRule.IdentityRewriterStatement(current.getOperands().get(1)),
+							new RewriterRule.IdentityRewriterStatement(current.getOperands().get(2))),
+							current.getOperands().get(0));
+
+					if (parent != null)
+						parent.getOperands().set(pIdx, current.getOperands().get(0));
+					else
+						stmt.setValue(current.getOperands().get(0));
+				}
+			} else if (current.trueInstruction().equals("idxExpr")) {
+				if (parent != null)
+					parent.getOperands().set(pIdx, current.getOperands().get(1));
+				else
+					stmt.setValue(current.getOperands().get(1));
+			}
+		});
+
+		return out;*/
+	}
+
 	public static void mergeArgLists(RewriterStatement stmt, final RuleContext ctx) {
 
 		stmt.forEachPreOrder(el -> {
@@ -152,8 +335,10 @@ public class RewriterUtils {
 	}
 
 	public static RewriterStatement parse(String expr, final RuleContext ctx, String... varDefinitions) {
-		HashMap<String, RewriterStatement> dataTypes = new HashMap<>();
+		return parse(expr, ctx, new HashMap<>(), varDefinitions);
+	}
 
+	public static RewriterStatement parse(String expr, final RuleContext ctx, HashMap<String, RewriterStatement> dataTypes, String... varDefinitions) {
 		for (String def : varDefinitions)
 			parseDataTypes(def, dataTypes, ctx);
 

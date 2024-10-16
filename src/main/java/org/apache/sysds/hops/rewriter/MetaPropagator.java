@@ -2,9 +2,11 @@ package org.apache.sysds.hops.rewriter;
 
 import org.apache.commons.lang3.NotImplementedException;
 import org.apache.commons.lang3.mutable.MutableObject;
+import scala.Tuple3;
 
 import java.util.HashMap;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
 import java.util.function.Function;
 
@@ -97,6 +99,10 @@ public class MetaPropagator implements Function<RewriterStatement, RewriterState
 					// TODO: We assume argLists always occur if the matrix properties don't change (for now)
 					root.unsafePutMeta("nrow", root.getOperands().get(0).getMeta("nrow"));
 					root.unsafePutMeta("ncol", root.getOperands().get(0).getMeta("ncol"));
+					return null;
+				case "_map":
+					root.unsafePutMeta("nrow", root.getOperands().get(1).getMeta("nrow"));
+					root.unsafePutMeta("ncol", root.getOperands().get(1).getMeta("ncol"));
 					return null;
 				case "+":
 				case "-":

@@ -137,7 +137,7 @@ public class RewriterContextSettings {
 			builder.append("impl ElementWiseInstruction\n");
 		});
 
-		RewriterUtils.buildBinaryPermutations(List.of("MATRIX...", "MATRIX", "INT", "FLOAT"), (t1, t2) -> {
+		RewriterUtils.buildBinaryPermutations(List.of("MATRIX...", "MATRIX", "INT", "FLOAT", "BOOL"), (t1, t2) -> {
 			builder.append("ElementWiseInstruction(" + t1 + "," + t2 + ")::" + RewriterUtils.defaultTypeHierarchy(t1, t2) + "\n");
 			builder.append("impl ElementWiseSumExpandableInstruction\n");
 			builder.append("impl /\n");
@@ -443,7 +443,7 @@ public class RewriterContextSettings {
 			out += "[" + ops.get(1).toString(ctx2) + " : " + ops.get(2).toString(ctx2) + ", " + ops.get(3).toString(ctx2) + " : " + ops.get(4).toString(ctx2) + "]";
 			return out;
 		});
-		ctx.customStringRepr.put("argList(MATRIX)", (stmt, ctx2) -> {
+		/*ctx.customStringRepr.put("argList(MATRIX)", (stmt, ctx2) -> {
 			RewriterInstruction mInstr = (RewriterInstruction) stmt;
 			String out = mInstr.getOperands().get(0).toString(ctx2);
 
@@ -451,7 +451,7 @@ public class RewriterContextSettings {
 				out += ", " + mInstr.getOperands().get(i).toString(ctx2);
 
 			return out;
-		});
+		});*/
 		ctx.customStringRepr.put("if(INT,MATRIX,MATRIX)", (stmt, ctx2) -> {
 			RewriterInstruction mInstr = (RewriterInstruction) stmt;
 			StringBuilder sb = new StringBuilder();

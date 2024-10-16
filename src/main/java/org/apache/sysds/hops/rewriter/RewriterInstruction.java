@@ -32,6 +32,9 @@ public class RewriterInstruction extends RewriterStatement {
 
 	@Override
 	public String getResultingDataType(final RuleContext ctx) {
+		if (isArgumentList()) {
+			return getOperands().stream().map(op -> op.getResultingDataType(ctx)).reduce(RewriterUtils::defaultTypeHierarchy).get() + "...";
+		}
 		return getResult(ctx).getResultingDataType(ctx);
 	}
 
@@ -61,24 +64,24 @@ public class RewriterInstruction extends RewriterStatement {
 
 		getResult(ctx).consolidate(ctx);
 
-		/*if (isArgumentList())
-			hashCode = Objects.hash(instr, result);
-		else*/
+		if (isArgumentList())
+			hashCode = Objects.hash(rid, refCtr, instr, getResultingDataType(ctx), operands);
+		else
 			hashCode = Objects.hash(rid, refCtr, instr, result, operands);
 		consolidated = true;
 
 		return this;
 	}
 	@Override
-	public int recomputeHashCodes(boolean recursively) {
+	public int recomputeHashCodes(boolean recursively, final RuleContext ctx) {
 		if (recursively) {
-			result.recomputeHashCodes(true);
-			operands.forEach(op -> op.recomputeHashCodes(true));
+			result.recomputeHashCodes(true, ctx);
+			operands.forEach(op -> op.recomputeHashCodes(true, ctx));
 		}
 
-		/*if (isArgumentList())
-			hashCode = Objects.hash(instr, result);
-		else*/
+		if (isArgumentList())
+			hashCode = Objects.hash(rid, refCtr, instr, getResultingDataType(ctx), operands);
+		else
 			hashCode = Objects.hash(rid, refCtr, instr, result, operands);
 		return hashCode;
 	}
@@ -360,48 +363,6 @@ public class RewriterInstruction extends RewriterStatement {
 		return builder.toString();
 	}
 
-	/*public String linksToString() {
-		if (links == null)
-			return "Links: []";
-
-		StringBuilder sb = new StringBuilder();
-		sb.append("Links: \n");
-		for (Map.Entry<RewriterStatement, RewriterStatement> link : links.entrySet()) {
-			sb.append(" - " + link.getKey().toString() + " -> " + link.getValue().toStringWithLinking(links) + "\n");
-		}
-
-		sb.append("\n");
-
-		return sb.toString();
-	}*/
-
-	/*@Override
-	public String toStringWithLinking(int dagId, DualHashBidiMap<RewriterStatementLink, RewriterStatementLink> links) {
-		StringBuilder builder = new StringBuilder();
-		if (operands.size() == 2) {
-			builder.append("(");
-			RewriterStatementLink link = RewriterStatement.resolveNode(new RewriterStatementLink(operands.get(0), dagId), links);
-			builder.append(link.stmt.toStringWithLinking(link.dagID, links));
-			builder.append(" ");
-			builder.append(instr);
-			builder.append(" ");
-			link = RewriterStatement.resolveNode(new RewriterStatementLink(operands.get(1), dagId), links);
-			builder.append(link.stmt.toStringWithLinking(link.dagID, links));
-			builder.append(")");
-			return builder.toString();
-		}
-
-		builder.append(instr);
-		builder.append("(");
-		for (int i = 0; i < operands.size(); i++) {
-			if (i > 0)
-				builder.append(", ");
-			builder.append(RewriterStatement.resolveNode(operands.get(i), links).toStringWithLinking(links));
-		}
-		builder.append(")");
-		return builder.toString();
-	}*/
-
 	@Override
 	public String toString(final RuleContext ctx) {
 		Object varName = getMeta(META_VARNAME);
@@ -453,7 +414,7 @@ public class RewriterInstruction extends RewriterStatement {
 			throw new IllegalArgumentException("An instruction name can only be changed if it has the same signature (return type) [" + typedInstruction + "::" + newInstrReturnType + " <-> " + typedInstruction(ctx) + "::" + getResultingDataType(ctx) + "]");
 		String oldName = instr;
 		instr = newName.substring(0, newName.indexOf('('));
-		recomputeHashCodes(false);
+		recomputeHashCodes(false, ctx);
 		return oldName;
 	}
 

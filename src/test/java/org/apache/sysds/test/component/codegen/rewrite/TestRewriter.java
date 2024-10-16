@@ -114,7 +114,7 @@ public class TestRewriter {
 	@Test
 	public void myTest() {
 		RewriterRuntimeUtils.setupIfNecessary();
-		RuleContext ctx = RewriterUtils.buildDefaultContext();
+		/*RuleContext ctx = RewriterUtils.buildDefaultContext();
 		Function<RewriterStatement, RewriterStatement> converter = RewriterUtils.buildCanonicalFormConverter(ctx, true);
 		RewriterStatement stmt = RewriterUtils.parse("t(-(0,%*%(A,B)))", ctx, "MATRIX:A,B,C", "LITERAL_INT:0");
 		List<RewriterStatement> combs = RewriterUtils.generateSubtrees(stmt, new HashMap<>(), ctx);
@@ -124,10 +124,10 @@ public class TestRewriter {
 		for (RewriterStatement comb : combs) {
 			comb.consolidate(ctx);
 			System.out.println(comb.toString(ctx));
-		}
+		}*/
 		//converter.apply(stmt);
 		//RewriterRuntimeUtils.executeScript("X=as.matrix(1)\nprint(sum(X))");
-		//RewriterRuntimeUtils.executeScript("X=rand(rows=10,cols=5)\nY=rand(rows=5,cols=10)\nprint(sum(X%*%Y))");
+		RewriterRuntimeUtils.executeScript("X=rand(rows=1000,cols=500,sparsity=0.001)\nY=rand(rows=1000,cols=500,sparsity=0.001)\nprint(toString(X+Y))");
 		//RewriterRuntimeUtils.executeScript("X=rand(rows=10,cols=5)\nY=rand(rows=5,cols=10)\nprint(sum(colSums(X) * colSums(t(Y))))");
 	}
 

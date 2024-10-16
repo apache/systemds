@@ -85,11 +85,12 @@ public class RewriterUtils {
 
 		stmt.forEachPreOrder(el -> {
 			tryFlattenNestedArgList(ctx, el, el, -1);
+			tryFlattenNestedOperatorPatterns(ctx, el);
 			return true;
 		});
 
 		stmt.prepareForHashing();
-		stmt.recomputeHashCodes();
+		stmt.recomputeHashCodes(ctx);
 	}
 
 	private static boolean tryFlattenNestedArgList(final RuleContext ctx, RewriterStatement stmt, RewriterStatement root, int insertAt) {
@@ -121,6 +122,33 @@ public class RewriterUtils {
 		root.getOperands().addAll(insertAt+1, stmt.getOperands());
 
 		return true;
+	}
+
+	private static void tryFlattenNestedOperatorPatterns(final RuleContext ctx, RewriterStatement stmt) {
+		if (!stmt.isInstruction())
+			return;
+
+		RewriterInstruction instr = (RewriterInstruction) stmt;
+
+		if (instr.hasProperty("FusedOperator", ctx)) {
+			for (int i = 0; i < instr.getOperands().get(0).getOperands().size(); i++)
+				if (flattenNestedOperatorPatterns(ctx, instr.getOperands().get(0).getOperands().get(i), instr, i))
+					i--;
+		}
+	}
+
+	private static boolean flattenNestedOperatorPatterns(final RuleContext ctx, RewriterStatement stmt, RewriterInstruction rootInstr, int insertAt) {
+		if (stmt.isInstruction() && ((RewriterInstruction)stmt).hasProperty("FusedOperator", ctx) && stmt.trueInstruction().equals(rootInstr.trueInstruction())) {
+			RewriterStatement origArgList = rootInstr.getOperands().get(0);
+			RewriterStatement subArgList = stmt.getOperands().get(0);
+
+			origArgList.getOperands().set(insertAt, subArgList.getOperands().get(0));
+			origArgList.getOperands().addAll(insertAt+1, subArgList.getOperands().subList(1, subArgList.getOperands().size()));
+
+			return true;
+		}
+
+		return false;
 	}
 
 	public static RewriterStatement parse(String expr, final RuleContext ctx, String... varDefinitions) {
@@ -165,7 +193,12 @@ public class RewriterUtils {
 					// Then we inject the common subexpression
 					String remainder = expr.substring(matcher.end());
 					mexpr.setValue(remainder);
-					return refmap.get(n);
+					RewriterStatement var = refmap.get(n);
+
+					if (var == null)
+						throw new IllegalArgumentException("Variable '$" + n + "' does not exist!");
+
+					return var;
 					//throw new IllegalArgumentException("Expected the token ':'");
 				}
 				String remainder = expr.substring(matcher.end() + 1);
@@ -267,6 +300,7 @@ public class RewriterUtils {
 					// Then this is a function
 					if (remainder.charAt(1) == ')') {
 						RewriterInstruction mInstr = new RewriterInstruction().withInstruction(token).as(UUID.randomUUID().toString());
+						handleSpecialInstructions(mInstr);
 						mInstr.consolidate(ctx);
 						mexpr.setValue(remainder.substring(2));
 						return mInstr;
@@ -287,6 +321,7 @@ public class RewriterUtils {
 
 						mexpr.setValue(mexpr.getValue().substring(1));
 						RewriterInstruction instr = new RewriterInstruction().withInstruction(token).withOps(opList.toArray(RewriterStatement[]::new)).as(UUID.randomUUID().toString());
+						handleSpecialInstructions(instr);
 						instr.consolidate(ctx);
 						return instr;
 					}
@@ -301,6 +336,23 @@ public class RewriterUtils {
 			}
 		} else {
 			throw new IllegalArgumentException(mexpr.getValue());
+		}
+	}
+
+	private static void handleSpecialInstructions(RewriterInstruction instr) {
+		if (instr.trueInstruction().equals("_m")) {
+			UUID ownerId = UUID.randomUUID();
+			instr.unsafePutMeta("ownerId", ownerId);
+
+			if (instr.getOperands().get(0).isInstruction() && instr.getOperands().get(0).trueInstruction().equals("_idx")) {
+				instr.getOperands().get(0).unsafePutMeta("ownerId", ownerId);
+				instr.getOperands().get(0).unsafePutMeta("idxId", UUID.randomUUID());
+			}
+
+			if (instr.getOperands().get(1).isInstruction() && instr.getOperands().get(1).trueInstruction().equals("_idx")) {
+				instr.getOperands().get(1).unsafePutMeta("ownerId", ownerId);
+				instr.getOperands().get(1).unsafePutMeta("idxId", UUID.randomUUID());
+			}
 		}
 	}
 
@@ -358,6 +410,15 @@ public class RewriterUtils {
 	}
 
 	public static String defaultTypeHierarchy(String t1, String t2) {
+		boolean is1ArgList = t1.endsWith("...");
+		boolean is2ArgList = t2.endsWith("...");
+
+		if (is1ArgList)
+			t1 = t1.substring(0, t1.length() - 3);
+
+		if (is2ArgList)
+			t2 = t2.substring(0, t2.length() - 3);
+
 		if (t1.equals("BOOL") && t2.equals("BOOL"))
 			return "BOOL";
 		if (t1.equals("INT") && (t2.equals("INT") || t2.equals("BOOL")))
@@ -574,7 +635,7 @@ public class RewriterUtils {
 
 		// Trigger a recomputation of the hash codes
 		stmt.prepareForHashing();
-		stmt.recomputeHashCodes();
+		stmt.recomputeHashCodes(ctx);
 	}
 
 	private static void traversePostOrderWithDepthInfo(RewriterStatement stmt, RewriterStatement parent, TriConsumer<RewriterStatement, Integer, RewriterStatement> consumer, int currentDepth) {
@@ -609,7 +670,7 @@ public class RewriterUtils {
 		if (stmt.isInstruction()) {
 			return stmt.getResultingDataType(ctx) + ":" + stmt.trueTypedInstruction(ctx) + "[" + stmt.refCtr + "]";
 		} else {
-			return stmt.getResultingDataType(ctx) + ":" + (stmt.isLiteral() ? "L:" + stmt.getLiteral() : "V");
+			return stmt.getResultingDataType(ctx) + ":" + (stmt.isLiteral() ? "L:" + stmt.getLiteral() : "V") + ";";
 		}
 	}
 
@@ -638,7 +699,7 @@ public class RewriterUtils {
 				cpy.getOperands().set(indices.get(i), stack[i]);
 			cpy.consolidate(ctx);
 			cpy.prepareForHashing();
-			cpy.recomputeHashCodes();
+			cpy.recomputeHashCodes(ctx);
 			mergedTreeCombinations.add(cpy);
 			return true;
 		});
@@ -662,7 +723,7 @@ public class RewriterUtils {
 		// Scan if operand is not a DataType
 		List<Integer> indices = new ArrayList<>();
 		for (int i = 0; i < stmt.getOperands().size(); i++) {
-			if (stmt.getOperands().get(i).isInstruction())
+			if (stmt.getOperands().get(i).isInstruction() || stmt.isLiteral())
 				indices.add(i);
 		}
 
@@ -692,7 +753,6 @@ public class RewriterUtils {
 			}
 
 			out.addAll(mergeSubtreeCombinations(stmt, indices, mOptionCpy, ctx));
-			System.out.println("Expr: " + mergeSubtreeCombinations(stmt, indices, mOptionCpy, ctx));
 		}
 
 		return out;
@@ -726,6 +786,59 @@ public class RewriterUtils {
 		canonicalFormCreator.add("ALGEBRAIC CANONICALIZATION", algebraicCanonicalization);
 		canonicalFormCreator.add("EXPAND STREAMING EXPRESSIONS", streamExpansion);
 		canonicalFormCreator.add("PUSHDOWN STREAM SELECTIONS", streamSelectPushdown);
+		canonicalFormCreator.add("FLATTEN OPERATIONS", flattenOperations);
+
+		return stmt -> {
+			stmt = canonicalFormCreator.apply(stmt, (t, r) -> {
+				if (!debug)
+					return true;
+
+				if (r != null)
+					System.out.println("Applying rule: " + r.getName());
+				System.out.println(t);
+				return true;
+			}, debug);
+
+			RewriterUtils.mergeArgLists(stmt, ctx);
+			if (debug)
+				System.out.println("PRE1: " + stmt.toString(ctx));
+
+			RewriterUtils.topologicalSort(stmt, ctx, (el, parent) -> el.isArgumentList() && parent != null && Set.of("+", "-", "*", "_idxExpr").contains(parent.trueInstruction()));
+
+			if (debug)
+				System.out.println("FINAL1: " + stmt.toString(ctx));
+
+			return stmt;
+		};
+	}
+
+	public static Function<RewriterStatement, RewriterStatement> buildFusedOperatorCreator(final RuleContext ctx, boolean debug) {
+		ArrayList<RewriterRule> algebraicCanonicalizationRules = new ArrayList<>();
+		RewriterRuleCollection.canonicalizeBooleanStatements(algebraicCanonicalizationRules, ctx);
+		RewriterRuleCollection.canonicalizeAlgebraicStatements(algebraicCanonicalizationRules, ctx);
+		RewriterHeuristic algebraicCanonicalization = new RewriterHeuristic(new RewriterRuleSet(ctx, algebraicCanonicalizationRules));
+
+		ArrayList<RewriterRule> expRules = new ArrayList<>();
+		RewriterRuleCollection.expandStreamingExpressions(expRules, ctx);
+		RewriterHeuristic streamExpansion = new RewriterHeuristic(new RewriterRuleSet(ctx, expRules));
+
+		ArrayList<RewriterRule> pd = new ArrayList<>();
+		RewriterRuleCollection.pushdownStreamSelections(pd, ctx);
+		RewriterHeuristic streamSelectPushdown = new RewriterHeuristic(new RewriterRuleSet(ctx, pd));
+
+		ArrayList<RewriterRule> streamifyRules = new ArrayList<>();
+		RewriterRuleCollection.streamifyExpressions(streamifyRules, ctx);
+		RewriterHeuristic streamify = new RewriterHeuristic(new RewriterRuleSet(ctx, streamifyRules));
+
+		ArrayList<RewriterRule> flatten = new ArrayList<>();
+		RewriterRuleCollection.flattenOperations(flatten, ctx);
+		RewriterHeuristic flattenOperations = new RewriterHeuristic(new RewriterRuleSet(ctx, flatten));
+
+		RewriterHeuristics canonicalFormCreator = new RewriterHeuristics();
+		canonicalFormCreator.add("ALGEBRAIC CANONICALIZATION", algebraicCanonicalization);
+		canonicalFormCreator.add("EXPAND STREAMING EXPRESSIONS", streamExpansion);
+		canonicalFormCreator.add("PUSHDOWN STREAM SELECTIONS", streamSelectPushdown);
+		canonicalFormCreator.add("STREAMIFY", streamify);
 		canonicalFormCreator.add("FLATTEN OPERATIONS", flattenOperations);
 
 		return stmt -> {

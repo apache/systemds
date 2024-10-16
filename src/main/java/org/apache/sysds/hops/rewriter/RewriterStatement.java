@@ -262,7 +262,7 @@ public abstract class RewriterStatement implements Comparable<RewriterStatement>
 		return match(new MatcherContext(ctx, stmt, dependencyMap, literalsCanBeVariables, ignoreLiteralValues, links, ruleLinks, allowDuplicatePointers, allowPropertyScan, allowTypeHierarchy, new HashMap<>()));
 	}*/
 
-	public abstract int recomputeHashCodes(boolean recursively);
+	public abstract int recomputeHashCodes(boolean recursively, final RuleContext ctx);
 	public abstract long getCost();
 	public abstract RewriterStatement simplify(final RuleContext ctx);
 	public abstract RewriterStatement as(String id);
@@ -310,8 +310,8 @@ public abstract class RewriterStatement implements Comparable<RewriterStatement>
 		return Collections.emptyList();
 	}
 
-	public int recomputeHashCodes() {
-		return recomputeHashCodes(true);
+	public int recomputeHashCodes(final RuleContext ctx) {
+		return recomputeHashCodes(true, ctx);
 	}
 
 	// TODO: Rework if necessary

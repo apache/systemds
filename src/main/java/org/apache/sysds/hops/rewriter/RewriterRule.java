@@ -176,7 +176,7 @@ public class RewriterRule extends AbstractRewriterRule {
 				cpy = ctx.metaPropagator.apply(cpy);
 
 			cpy.prepareForHashing();
-			cpy.recomputeHashCodes();
+			cpy.recomputeHashCodes(ctx);
 
 			modificationHandle.setValue(new Tuple3<>(cpy, null, -1));
 
@@ -223,7 +223,7 @@ public class RewriterRule extends AbstractRewriterRule {
 			cpy2 = ctx.metaPropagator.apply(cpy2);
 
 		cpy2.prepareForHashing();
-		cpy2.recomputeHashCodes();
+		cpy2.recomputeHashCodes(ctx);
 		return cpy2;
 	}
 
@@ -246,7 +246,7 @@ public class RewriterRule extends AbstractRewriterRule {
 				cpy = ctx.metaPropagator.apply(cpy);
 
 			cpy.prepareForHashing();
-			cpy.recomputeHashCodes();
+			cpy.recomputeHashCodes(ctx);
 			return cpy;
 		}
 
@@ -267,7 +267,7 @@ public class RewriterRule extends AbstractRewriterRule {
 			rootInstruction = ctx.metaPropagator.apply(rootInstruction);
 
 		rootInstruction.prepareForHashing();
-		rootInstruction.recomputeHashCodes();
+		rootInstruction.recomputeHashCodes(ctx);
 		return rootInstruction;
 	}
 

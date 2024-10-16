@@ -138,15 +138,15 @@ public class RewriterRuleBuilder {
 		if (buildSingleDAG) {
 			getCurrentInstruction().consolidate(ctx);
 			fromRoot.prepareForHashing();
-			fromRoot.recomputeHashCodes();
+			fromRoot.recomputeHashCodes(ctx);
 			canBeModified = false;
 		} else {
 			if (getCurrentInstruction() != null)
 				getCurrentInstruction().consolidate(ctx);
 			fromRoot.prepareForHashing();
 			toRoot.prepareForHashing();
-			fromRoot.recomputeHashCodes();
-			toRoot.recomputeHashCodes();
+			fromRoot.recomputeHashCodes(ctx);
+			toRoot.recomputeHashCodes(ctx);
 			canBeModified = false;
 		}
 

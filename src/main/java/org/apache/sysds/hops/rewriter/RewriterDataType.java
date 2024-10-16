@@ -84,7 +84,7 @@ public class RewriterDataType extends RewriterStatement {
 	}
 
 	@Override
-	public int recomputeHashCodes(boolean recursively) {
+	public int recomputeHashCodes(boolean recursively, final RuleContext ctx) {
 		hashCode = Objects.hash(rid, refCtr, type);
 		return hashCode;
 	}

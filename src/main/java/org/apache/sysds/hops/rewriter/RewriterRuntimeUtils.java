@@ -34,7 +34,8 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 
 public class RewriterRuntimeUtils {
-	public static final boolean interceptAll = true;
+	public static final boolean interceptAll = false;
+	public static final boolean printUnknowns = true;
 
 
 	private static final String matrixDefs = "MATRIX:A,B,C";
@@ -72,7 +73,6 @@ public class RewriterRuntimeUtils {
 				RewriterRuntimeUtils.forAllUniqueTranslatableStatements(prog, 5, mstmt -> {
 					List<RewriterStatement> subtrees = RewriterUtils.generateSubtrees(mstmt, new HashMap<>(), ctx);
 					for (RewriterStatement stmt : subtrees) {
-						System.out.println(stmt.toString(ctx));
 						try {
 							stmt = ctx.metaPropagator.apply(stmt);
 							System.out.println("RawStmt: " + stmt.toString(ctx));
@@ -301,9 +301,11 @@ public class RewriterRuntimeUtils {
 				return buildLeaf(next, ctx);
 		}
 
-		/*System.out.println("Unknown Op: " + next);
-		System.out.println("Class: " + next.getClass().getSimpleName());
-		System.out.println("OPString: " + next.getOpString());*/
+		if (printUnknowns) {
+			System.out.println("Unknown Op: " + next);
+			System.out.println("Class: " + next.getClass().getSimpleName());
+			System.out.println("OPString: " + next.getOpString());
+		}
 
 		return null;
 	}
@@ -313,6 +315,10 @@ public class RewriterRuntimeUtils {
 			return null;
 
 		String actualType = resolveExactDataType(hop);
+
+		if (actualType == null)
+			return null;
+
 		if (actualType.equals(stmt.getResultingDataType(ctx)))
 			return stmt;
 
@@ -381,7 +387,8 @@ public class RewriterRuntimeUtils {
 				return RewriterUtils.parse("%*%(A, B)", ctx, matrixDefs, floatDefs, intDefs, boolDefs);
 		}
 
-		//System.out.println("Unknown AggBinaryOp: " + op.getOpString());
+		if (printUnknowns)
+			System.out.println("Unknown AggBinaryOp: " + op.getOpString());
 		return null;
 	}
 
@@ -396,7 +403,8 @@ public class RewriterRuntimeUtils {
 				return RewriterUtils.parse("sum(A)", ctx, matrixDefs, floatDefs, intDefs, boolDefs);
 		}
 
-		//System.out.println("Unknown AggUnaryOp: " + op.getOpString());
+		if (printUnknowns)
+			System.out.println("Unknown AggUnaryOp: " + op.getOpString());
 		return null;
 	}
 
@@ -412,11 +420,11 @@ public class RewriterRuntimeUtils {
 
 		switch(op.getOpString()) {
 			case "b(+)": // Addition
+				System.out.println("Sparsity: " + op.getSparsity());
 				return RewriterUtils.parse("+(a, b)", ctx, t1, t2);
 			case "b(*)": // Matrix multiplication
 				return RewriterUtils.parse("*(a, b)", ctx, t1, t2);
 			case "b(-)":
-				System.out.println("NEG: " + RewriterUtils.parse("-(a, b)", ctx, t1, t2).toString(ctx));
 				return RewriterUtils.parse("-(a, b)", ctx, t1, t2);
 			case "b(/)":
 				return RewriterUtils.parse("/(a, b)", ctx, t1, t2);
@@ -435,7 +443,8 @@ public class RewriterRuntimeUtils {
 				return RewriterUtils.parse(">(a, b)", ctx, t1, t2);
 		}
 
-		//System.out.println("Unknown BinaryOp: " + op.getOpString());
+		if (printUnknowns)
+			System.out.println("Unknown BinaryOp: " + op.getOpString());
 		return null;
 	}
 
@@ -454,6 +463,9 @@ public class RewriterRuntimeUtils {
 				return "BOOL";
 		}
 
+		if (printUnknowns)
+			System.out.println("Unknown type: " + hop + " -> " + hop.getDataType() + " : " + hop.getValueType());
+
 		return null;
 	}
 
@@ -468,6 +480,7 @@ public class RewriterRuntimeUtils {
 	}
 
 	private static RewriterStatement buildDataGenOp(DataGenOp op, final RuleContext ctx, List<Hop> interestingHops) {
+		System.out.println("Sparsity of " + op + ": " + op.getSparsity());
 		// TODO:
 		switch(op.getOpString()) {
 			case "dg(rand)":

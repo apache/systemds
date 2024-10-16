@@ -129,7 +129,7 @@ public class RuleContext {
 		// Resolve transitive function properties
 		boolean changed = true;
 		while (changed) {
-			changed = !instrProps.isEmpty();
+			changed = false;
 			for (Map.Entry<String, HashSet<String>> pair : instrProps.entrySet()) {
 				HashSet<String> toAdd = new HashSet<>();
 				for (String propertyFunction : pair.getValue()) {
@@ -137,13 +137,13 @@ public class RuleContext {
 						toAdd.addAll(instrProps.get(propertyFunction));
 				}
 
-				changed &= pair.getValue().addAll(toAdd);
+				changed |= pair.getValue().addAll(toAdd);
 			}
 		}
 
 		changed = true;
 		while (changed) {
-			changed = !ctx.typeHierarchy.isEmpty();
+			changed = false;
 			for (Map.Entry<String, HashSet<String>> pair : ctx.typeHierarchy.entrySet()) {
 				HashSet<String> toAdd = new HashSet<>();
 				for (String superTypes : pair.getValue()) {
@@ -151,7 +151,7 @@ public class RuleContext {
 						toAdd.addAll(instrProps.get(superTypes));
 				}
 
-				changed &= pair.getValue().addAll(toAdd);
+				changed |= pair.getValue().addAll(toAdd);
 			}
 		}
 

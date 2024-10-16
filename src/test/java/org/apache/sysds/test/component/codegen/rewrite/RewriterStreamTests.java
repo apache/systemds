@@ -12,11 +12,13 @@ public class RewriterStreamTests {
 
 	private static RuleContext ctx;
 	private static Function<RewriterStatement, RewriterStatement> converter;
+	private static Function<RewriterStatement, RewriterStatement> canonicalConverter;
 
 	@BeforeClass
 	public static void setup() {
 		ctx = RewriterUtils.buildDefaultContext();
 		converter = RewriterUtils.buildFusedOperatorCreator(ctx, true);
+		canonicalConverter = RewriterUtils.buildCanonicalFormConverter(ctx, true);
 	}
 
 	@Test
@@ -93,4 +95,48 @@ public class RewriterStreamTests {
 		System.out.println("Orig: " + stmt);
 		System.out.println("Fused: " + fused);
 	}
+
+	@Test
+	public void testReorgEquivalence() {
+		RewriterStatement stmt = RewriterUtils.parse("t(t(A))", ctx, "MATRIX:A");
+		RewriterStatement stmt2 = RewriterUtils.parse("t(t(t(t(A))))", ctx, "MATRIX:A");
+		stmt = canonicalConverter.apply(stmt);
+		stmt2 = canonicalConverter.apply(stmt2);
+		assert stmt.match(new RewriterStatement.MatcherContext(ctx, stmt2));
+	}
+
+	@Test
+	public void testTraceEquivalence() {
+		RewriterStatement stmt = RewriterUtils.parse("trace(%*%(A, B))", ctx, "MATRIX:A,B");
+		RewriterStatement stmt2 = RewriterUtils.parse("sum(*(A, t(B)))", ctx, "MATRIX:A,B");
+		stmt = canonicalConverter.apply(stmt);
+		stmt2 = canonicalConverter.apply(stmt2);
+
+		System.out.println(stmt);
+		System.out.println(stmt2);
+		assert stmt.match(new RewriterStatement.MatcherContext(ctx, stmt2));
+	}
+
+
+
+
+
+
+
+
+
+
+	
+	// TODO: Not working
+	/*@Test
+	public void testAggEquivalence() {
+		RewriterStatement stmt = RewriterUtils.parse("sum(%*%(A, B))", ctx, "MATRIX:A,B");
+		RewriterStatement stmt2 = RewriterUtils.parse("sum(*(A, t(B)))", ctx, "MATRIX:A,B");
+		stmt = canonicalConverter.apply(stmt);
+		stmt2 = canonicalConverter.apply(stmt2);
+
+		System.out.println(stmt);
+		System.out.println(stmt2);
+		assert stmt.match(new RewriterStatement.MatcherContext(ctx, stmt2));
+	}*/
 }

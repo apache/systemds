@@ -8,8 +8,7 @@ import org.apache.sysds.resource.enumeration.Enumerator;
 import org.apache.sysds.runtime.controlprogram.Program;
 
 import java.io.IOException;
-import java.nio.file.InvalidPathException;
-import java.nio.file.Paths;
+import java.nio.file.*;
 import java.util.HashMap;
 
 import static org.apache.sysds.resource.CloudUtils.DEFAULT_CLUSTER_LAUNCH_TIME;
@@ -21,10 +20,9 @@ public class ResourceOptimizer {
     private static final String RESOURCE_SCRIPT_DIR = "./scripts/resource/";
     private static final String DEFAULT_REGIONAL_PRICE_TABLE_PATH = RESOURCE_SCRIPT_DIR + "aws_regional_prices.csv";
     private static final String DEFAULT_INSTANCE_INFO_TABLE_PATH = RESOURCE_SCRIPT_DIR + "ec2_stats.csv";
-    private static final String DEFAULT_OUTPUT_PATH = RESOURCE_SCRIPT_DIR + "output";
-    private static final String EMR_INSTANCE_GROUP_FILENAME = "emrInstanceGroups.json";
-    private static final String EMR_CONFIGURATIONS_FILENAME = "emrConfigurations.json";
-    private static final String EC2_ARGUMENTS_FILENAME = "ec2Arguments.json";
+    private static final String EMR_INSTANCE_GROUP_FILENAME = "emr_instance_groups.json";
+    private static final String EMR_CONFIGURATIONS_FILENAME = "emr_configurations.json";
+    private static final String EC2_ARGUMENTS_FILENAME = "ec2_arguments.json";
     private static final String DEFAULT_REGION = "us-east-1";
 
     @SuppressWarnings("static-access")
@@ -53,11 +51,11 @@ public class ResourceOptimizer {
                 .withDescription("specifies positional parameters; " +
                         "first value will replace $1 in DML program, $2 will replace 2nd and so on")
                 .hasArgs().create("args");
-        Option enumOpt = OptionBuilder.withArgName("strategy")
+        Option enumOpt = OptionBuilder
                 .withDescription("specifies enumeration strategy; " +
                         "it should be one of the following: 'grid', 'interest', 'prune'; default 'grid'")
                 .hasArg().create("enum");
-        Option optimizeForOpt = OptionBuilder.withArgName("mode")
+        Option optimizeForOpt = OptionBuilder
                 .withDescription("specifies optimization strategy (scoring function); " +
                         "it should be one of the following: 'costs', 'time', 'price'; default 'costs'")
                 .hasArg().create("optimizeFor");
@@ -67,6 +65,10 @@ public class ResourceOptimizer {
         Option maxPriceOpt = OptionBuilder
                 .withDescription("specifies constraint for maximum price")
                 .hasArg().create("maxPrice");
+        Option quotaCPUOpt = OptionBuilder
+                .withDescription("specifies the limit of (virtual) CPU cores allowed for evaluation; " +
+                        "this corresponds to the most common VM service quota set by cloud providers")
+                .hasArg().create("quotaCPU");
         Option minExecutorsOpt = OptionBuilder
                 .withDescription("specifies minimum desired executors; " +
                         "default 0 (single node execution allowed); " +
@@ -132,6 +134,7 @@ public class ResourceOptimizer {
         options.addOption(optimizeForOpt);
         options.addOption(maxTimeOpt);
         options.addOption(maxPriceOpt);
+        options.addOption(quotaCPUOpt);
         options.addOption(minExecutorsOpt);
         options.addOption(maxExecutorsOpt);
         options.addOption(instanceFamiliesOpt);
@@ -233,26 +236,26 @@ public class ResourceOptimizer {
                     throw new ParseException("Unsupported identifier for enumeration strategy: " + line.getOptionValue("enum"));
             }
         }
-        Enumerator.OptimizationStrategy mode;
+        Enumerator.OptimizationStrategy optimizedFor;
         if (!line.hasOption("optimizeFor")) {
-            mode = Enumerator.OptimizationStrategy.MinCosts;
+            optimizedFor = Enumerator.OptimizationStrategy.MinCosts;
         } else {
             switch (line.getOptionValue("optimizeFor")) {
                 case "costs":
-                    mode = Enumerator.OptimizationStrategy.MinCosts;
+                    optimizedFor = Enumerator.OptimizationStrategy.MinCosts;
                     break;
                 case "time":
-                    mode = Enumerator.OptimizationStrategy.MinTime;
+                    optimizedFor = Enumerator.OptimizationStrategy.MinTime;
                     break;
                 case "price":
-                    mode = Enumerator.OptimizationStrategy.MinPrice;
+                    optimizedFor = Enumerator.OptimizationStrategy.MinPrice;
                     break;
                 default:
                     throw new ParseException("Unsupported identifier for optimization strategy: " + line.getOptionValue("optimizeFor"));
             }
         }
         double priceConstraint = -1;
-        if (mode == Enumerator.OptimizationStrategy.MinTime) {
+        if (optimizedFor == Enumerator.OptimizationStrategy.MinTime) {
             String parsedValue = line.getOptionValue("maxPrice");
             if (parsedValue == null) {
                 throw new ParseException("The provided option 'time' for -enum requires additionally an option for -maxPrice");
@@ -262,7 +265,7 @@ public class ResourceOptimizer {
             System.err.println("Warning: option -maxPrice is relevant only for -optimizeFor 'time'");
         }
         double timeConstraint = -1;
-        if (mode == Enumerator.OptimizationStrategy.MinPrice) {
+        if (optimizedFor == Enumerator.OptimizationStrategy.MinPrice) {
             String parsedValue = line.getOptionValue("maxTime");
             if (parsedValue == null) {
                 throw new ParseException("The provided option 'price' for -enum requires additionally an option for -maxTime");
@@ -272,6 +275,13 @@ public class ResourceOptimizer {
             System.err.println("Warning: option -maxTime is relevant only for -optimizeFor 'price'");
         }
         // 1d: parse search space range/limits
+        if (line.hasOption("quotaCPU")) {
+            int quotaForNumCores = Integer.parseInt(line.getOptionValue("quotaCPU"));
+            if (quotaForNumCores < 32) {
+                throw new ParseException("CPU quota of under 32 number of cores is not allowed");
+            }
+            Enumerator.setCpuQuota(quotaForNumCores);
+        }
         int minExecutors = line.hasOption("minExecutors")? Integer.parseInt(line.getOptionValue("minExecutors")) : -1;
         int maxExecutors = line.hasOption("maxExecutors")? Integer.parseInt(line.getOptionValue("maxExecutors")) : -1;
         String[] instanceFamilies = line.hasOption("instanceFamilies")? line.getOptionValues("instanceFamilies") : null;
@@ -322,7 +332,7 @@ public class ResourceOptimizer {
                 .withRuntimeProgram(sourceProgram)
                 .withAvailableInstances(allInstances)
                 .withEnumerationStrategy(strategy)
-                .withOptimizationStrategy(mode);
+                .withOptimizationStrategy(optimizedFor);
         // set min and max number of executors
         if (minExecutors > maxExecutors) {
             throw new ParseException("Option for -maxExecutors should be always greater or equal the option for -minExecutors");
@@ -343,15 +353,15 @@ public class ResourceOptimizer {
             throw new ParseException("Not all provided options for -instanceSizes are supported or valid. Error thrown at:\n"+e.getMessage());
         }
         // set budget if optimizing for time
-        if (mode == Enumerator.OptimizationStrategy.MinTime && priceConstraint <= 0) {
+        if (optimizedFor == Enumerator.OptimizationStrategy.MinTime && priceConstraint <= 0) {
             throw new ParseException("Missing or invalid option for -minPrice when -optimizeFor 'time'");
-        } else if (mode == Enumerator.OptimizationStrategy.MinTime && priceConstraint > 0) {
+        } else if (optimizedFor == Enumerator.OptimizationStrategy.MinTime && priceConstraint > 0) {
             builder.withBudget(priceConstraint);
         }
         // set time limit if optimizing for price
-        if (mode == Enumerator.OptimizationStrategy.MinPrice && timeConstraint <= 0) {
+        if (optimizedFor == Enumerator.OptimizationStrategy.MinPrice && timeConstraint <= 0) {
             throw new ParseException("Missing or invalid option for -minPrice when -optimizeFor 'time'");
-        } else if (mode == Enumerator.OptimizationStrategy.MinPrice && timeConstraint > 0) {
+        } else if (optimizedFor == Enumerator.OptimizationStrategy.MinPrice && timeConstraint > 0) {
             builder.withTimeLimit(timeConstraint);
         }
         // set step size for grid-based enum.
@@ -391,13 +401,18 @@ public class ResourceOptimizer {
         if (line.hasOption("output")) {
             outputPath = line.getOptionValue("output");
         } else {
-            outputPath = DEFAULT_OUTPUT_PATH;
+            outputPath = System.getProperty("user.dir");
         }
         // validate the given output path now to avoid errors after the whole optimization process
+        String outputFolder;
         try {
-            Paths.get(line.getOptionValue("output"));
-        } catch (InvalidPathException e) {
-            throw new MissingOptionException("Given value for option 'output' is not a valid path");
+            Path folderPath = Paths.get(outputPath).resolve("output");
+            Files.createDirectory(folderPath);
+            outputFolder = folderPath.toString();
+        } catch (FileAlreadyExistsException e) {
+            throw new RuntimeException("Folder 'output' already exists on the given path");
+        } catch (InvalidPathException | IOException e) {
+            throw new RuntimeException("Given value for option 'output' is not a valid path");
         }
 
         System.out.println("Number instances to be used for enumeration: " + enumerator.getInstances().size());
@@ -413,11 +428,11 @@ public class ResourceOptimizer {
         // step 6: generate configuration files according the optimal solution (if solution not empty)
         if (optConfig.getTimeCost() < Double.MAX_VALUE) {
             if (optConfig.numberExecutors == 0) {
-                String filePath = Paths.get(outputPath, EC2_ARGUMENTS_FILENAME).toString();
+                String filePath = Paths.get(outputFolder, EC2_ARGUMENTS_FILENAME).toString();
                 CloudUtils.generateEC2ConfigJson(optConfig.driverInstance, filePath);
             } else {
-                String instanceGroupsPath = Paths.get(outputPath, EMR_INSTANCE_GROUP_FILENAME).toString();
-                String configurationsPath = Paths.get(outputPath, EMR_CONFIGURATIONS_FILENAME).toString();
+                String instanceGroupsPath = Paths.get(outputFolder, EMR_INSTANCE_GROUP_FILENAME).toString();
+                String configurationsPath = Paths.get(outputFolder, EMR_CONFIGURATIONS_FILENAME).toString();
                 CloudUtils.generateEMRInstanceGroupsJson(
                         optConfig.driverInstance,
                         optConfig.numberExecutors,

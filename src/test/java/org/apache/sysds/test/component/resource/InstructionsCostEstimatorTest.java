@@ -40,7 +40,7 @@ import org.junit.Test;
 import java.util.HashMap;
 
 import static org.apache.sysds.resource.CloudUtils.GBtoBytes;
-import static org.apache.sysds.test.component.resource.TestingUtils.getSimpleCloudInstanceMap;
+import static org.apache.sysds.test.component.resource.ResourceTestUtils.getSimpleCloudInstanceMap;
 
 public class InstructionsCostEstimatorTest {
     private static final HashMap<String, CloudInstance> instanceMap = getSimpleCloudInstanceMap();

@@ -22,6 +22,9 @@ package org.apache.sysds.resource.enumeration;
 
 import org.apache.sysds.resource.CloudInstance;
 import org.apache.sysds.resource.CloudUtils;
+import org.apache.sysds.resource.CloudUtils.InstanceFamily;
+import org.apache.sysds.resource.CloudUtils.InstanceSize;
+import org.apache.sysds.resource.CloudUtils.CloudProvider;
 import org.apache.sysds.resource.ResourceCompiler;
 import org.apache.sysds.resource.cost.CostEstimationException;
 import org.apache.sysds.resource.cost.CostEstimator;
@@ -31,14 +34,19 @@ import org.apache.sysds.resource.enumeration.EnumerationUtils.ConfigurationPoint
 import org.apache.sysds.resource.enumeration.EnumerationUtils.SolutionPoint;
 
 import java.util.*;
+import java.util.Map.Entry;
 import java.util.concurrent.atomic.AtomicReference;
 
 public abstract class Enumerator {
 
 	public enum EnumerationStrategy {
-		GridBased, // considering all combinations within a given range of configuration
-		InterestBased, // considering only combinations of configurations with memory budge close to memory estimates
-		PruneBased // considering potentially all combinations within a given range of configuration but decides for pruning following pre-defined rules
+		// considering all combinations within a given range of configurations
+		GridBased,
+		// considering only combinations of configurations with memory budge close to program memory estimates
+		InterestBased,
+		// considering potentially all combinations within a given range of configurations
+		// but decides for pruning following pre-defined rules
+		PruneBased
 	}
 
 	public enum OptimizationStrategy {
@@ -57,16 +65,16 @@ public abstract class Enumerator {
 	 * have too high distribution overhead
 	 */
 	public static final int DEFAULT_MAX_EXECUTORS = 200;
-
+	/** Time/Monetary delta for considering optimal solutions as fraction */
+	public static final double COST_DELTA_FRACTION = 0.02;
 	/**
 	 * A generally applied services quotes in AWS - 1152:
 	 * number of vCPUs running at the same time for the account in a single region.
-	 * Set 1000 to account for the vCPUs of the driver node
 	 */
-	public static final int DEFAULT_MAX_LEVEL_PARALLELISM = 1000;
-
-	/** Time/Monetary delta for considering optimal solutions as fraction */
-	public static final double COST_DELTA_FRACTION = 0.02;
+	// Static configurations -------------------------------------------------------------------------------------------
+	static int CPU_QUOTA = 1152;
+	// allow changing the default quota value
+	public static void setCpuQuota(int newQuotaValue) { CPU_QUOTA = newQuotaValue; }
 
 	// Instance variables ----------------------------------------------------------------------------------------------
 	HashMap<String, CloudInstance> instances;
@@ -97,6 +105,13 @@ public abstract class Enumerator {
 		this.maxExecutors = builder.maxExecutors;
 		this.instanceTypesRange = builder.instanceFamiliesRange;
 		this.instanceSizeRange = builder.instanceSizeRange;
+		// init optimal solution here to allow errors at comparing before the first update
+		SolutionPoint initSolutionPoint = new SolutionPoint(
+				new ConfigurationPoint(null, null, -1),
+				Double.MAX_VALUE,
+				Double.MAX_VALUE
+		);
+		optimalSolution.set(initSolutionPoint);
 	}
 
 	// Main functionality ----------------------------------------------------------------------------------------------
@@ -117,50 +132,58 @@ public abstract class Enumerator {
 	 * dynamically for each parsed executor instance.
 	 */
 	public void processing() {
+		long driverMemory, executorMemory;
+		int driverCores, executorCores;
 		ConfigurationPoint configurationPoint;
-		SolutionPoint initSolutionPoint = new SolutionPoint(
-				new ConfigurationPoint(null, null, -1),
-				Double.MAX_VALUE,
-				Double.MAX_VALUE
-		);
-		optimalSolution.set(initSolutionPoint);
-		for (Map.Entry<Long, TreeMap<Integer, LinkedList<CloudInstance>>> dMemoryEntry: driverSpace.entrySet()) {
+
+		for (Entry<Long, TreeMap<Integer, LinkedList<CloudInstance>>> dMemoryEntry: driverSpace.entrySet()) {
+			driverMemory = dMemoryEntry.getKey();
 			// loop over the search space to enumerate the driver configurations
-			for (Map.Entry<Integer, LinkedList<CloudInstance>> dCoresEntry: dMemoryEntry.getValue().entrySet()) {
+			for (Entry<Integer, LinkedList<CloudInstance>> dCoresEntry: dMemoryEntry.getValue().entrySet()) {
+				driverCores = dCoresEntry.getKey();
 				// single node execution mode
-				if (evaluateSingleNodeExecution(dMemoryEntry.getKey())) {
+				if (evaluateSingleNodeExecution(driverMemory)) {
 					program = ResourceCompiler.doFullRecompilation(
 							program,
-							dMemoryEntry.getKey(),
-							dCoresEntry.getKey()
+							driverMemory,
+							driverCores
 					);
 					// no need of recompilation for single nodes with identical memory budget and #v. cores
 					for (CloudInstance dInstance: dCoresEntry.getValue()) {
+						// iterate over all driver nodes with the currently evaluated memory and #cores values
 						configurationPoint = new ConfigurationPoint(dInstance);
-						updateOptimalSolution(configurationPoint);
+						double[] newEstimates = getCostEstimate(configurationPoint);
+						updateOptimalSolution(newEstimates[0], newEstimates[1], configurationPoint);
 					}
 				}
 				// enumeration for distributed execution
-				for (Map.Entry<Long, TreeMap<Integer, LinkedList<CloudInstance>>> eMemoryEntry: executorSpace.entrySet()) {
+				for (Entry<Long, TreeMap<Integer, LinkedList<CloudInstance>>> eMemoryEntry: executorSpace.entrySet()) {
+					executorMemory = eMemoryEntry.getKey();
 					// loop over the search space to enumerate the executor configurations
-					for (Map.Entry<Integer, LinkedList<CloudInstance>> eCoresEntry: eMemoryEntry.getValue().entrySet()) {
-						List<Integer> numberExecutorsSet = estimateRangeExecutors(eMemoryEntry.getKey(), eCoresEntry.getKey());
-						// Spark execution mode
+					for (Entry<Integer, LinkedList<CloudInstance>> eCoresEntry: eMemoryEntry.getValue().entrySet()) {
+						executorCores = eCoresEntry.getKey();
+						List<Integer> numberExecutorsSet =
+								estimateRangeExecutors(driverCores, executorMemory, executorCores);
+						// for Spark execution mode
 						for (int numberExecutors: numberExecutorsSet) {
 							program = ResourceCompiler.doFullRecompilation(
 									program,
-									dMemoryEntry.getKey(),
-									dCoresEntry.getKey(),
+									driverMemory,
+									driverCores,
 									numberExecutors,
-									eMemoryEntry.getKey(),
-									eCoresEntry.getKey()
+									executorMemory,
+									executorCores
 							);
 							// no need of recompilation for a cluster with identical #executors and
 							// with identical memory and #v. cores for driver and executor nodes
 							for (CloudInstance dInstance: dCoresEntry.getValue()) {
+								// iterate over all driver nodes with the currently evaluated memory and #cores values
 								for (CloudInstance eInstance: eCoresEntry.getValue()) {
+									// iterate over all executor nodes for the evaluated cluster size
+									// with the currently evaluated memory and #cores values
 									configurationPoint = new ConfigurationPoint(dInstance, eInstance, numberExecutors);
-									updateOptimalSolution(configurationPoint);
+									double[] newEstimates = getCostEstimate(configurationPoint);
+									updateOptimalSolution(newEstimates[0], newEstimates[1], configurationPoint);
 								}
 							}
 						}
@@ -177,7 +200,8 @@ public abstract class Enumerator {
 	 */
 	public SolutionPoint postprocessing() {
 		if (optimalSolution.get() == null) {
-			throw new RuntimeException("No solution have met the constrains. Try adjusting the time/price constrain or switch to 'MinCosts' optimization strategy");
+			throw new RuntimeException("No solution have met the constrains. " +
+					"Try adjusting the time/price constrain or switch to 'MinCosts' optimization strategy");
 		}
 		return optimalSolution.get();
 	}
@@ -188,23 +212,24 @@ public abstract class Enumerator {
 
 	/**
 	 * Estimates the minimum and maximum number of
-	 * executors based on given VM instance characteristics
-	 * and on the enumeration strategy
+	 * executors based on given VM instance characteristics,
+	 * the enumeration strategy and the user-defined configurations
 	 *
-	 * @param executorMemory memory of currently considered executor instance
-	 * @param executorCores  CPU of cores of currently considered executor instance
+	 * @param driverCores CPU cores for the currently evaluated driver node
+	 * @param executorMemory memory of currently evaluated executor node
+	 * @param executorCores  CPU cores of currently evaluated executor node
 	 * @return - [min, max]
 	 */
-	public abstract ArrayList<Integer> estimateRangeExecutors(long executorMemory, int executorCores);
+	public abstract ArrayList<Integer> estimateRangeExecutors(int driverCores, long executorMemory, int executorCores);
 
 	/**
 	 * Estimates the time cost for the current program based on the
 	 * given cluster configurations and following this estimation
 	 * it calculates the corresponding monetary cost.
-	 * @param point - cluster configuration used for (re)compiling the current program
+	 * @param point cluster configuration used for (re)compiling the current program
 	 * @return - [time cost, monetary cost]
 	 */
-	private double[] getCostEstimate(ConfigurationPoint point) {
+	protected double[] getCostEstimate(ConfigurationPoint point) {
 		// get the estimated time cost
 		double timeCost;
 		double monetaryCost;
@@ -212,7 +237,7 @@ public abstract class Enumerator {
 			// estimate execution time of the current program
 			timeCost = CostEstimator.estimateExecutionTime(program, point.driverInstance, point.executorInstance)
 					+ CloudUtils.DEFAULT_CLUSTER_LAUNCH_TIME;
-			monetaryCost = CloudUtils.calculateClusterPrice(point, timeCost, CloudUtils.CloudProvider.AWS);
+			monetaryCost = CloudUtils.calculateClusterPrice(point, timeCost, CloudProvider.AWS);
 		} catch (CostEstimationException e) {
 			timeCost = Double.MAX_VALUE;
 			monetaryCost = Double.MAX_VALUE;
@@ -229,41 +254,42 @@ public abstract class Enumerator {
 	 * can be potential optimal solution having lower cost or such a cost
 	 * that is negligibly higher than the current lowest one.
 	 *
-	 * @param newPoint new cluster configuration for estimation
+	 * @param newTimeEstimate     estimated time cost for the given configurations
+	 * @param newMonetaryEstimate estimated monetary cost for the given configurations
+	 * @param newPoint            new cluster configuration for estimation
 	 */
-	private void updateOptimalSolution(ConfigurationPoint newPoint) {
+	public void updateOptimalSolution(double newTimeEstimate, double newMonetaryEstimate, ConfigurationPoint newPoint) {
 		SolutionPoint currentOptimal = optimalSolution.get();
-		double[] newCost = getCostEstimate(newPoint);
 		if (optStrategy == OptimizationStrategy.MinCosts) {
 			double optimalScore = linearScoringFunction(currentOptimal.timeCost, currentOptimal.monetaryCost);
-			double newScore = linearScoringFunction(newCost[0], newCost[1]);
+			double newScore = linearScoringFunction(newTimeEstimate, newMonetaryEstimate);
 			if (newScore > optimalScore) {
 				return;
 			}
-			if (newScore == optimalScore && newCost[1] > currentOptimal.monetaryCost) {
+			if (newScore == optimalScore && newMonetaryEstimate > currentOptimal.monetaryCost) {
 				// prioritize cost for the edge case
 				return;
 			}
 		} else if (optStrategy == OptimizationStrategy.MinTime) {
-			if (newCost[1] > maxPrice || newCost[0] > currentOptimal.timeCost) {
+			if (newMonetaryEstimate > maxPrice || newTimeEstimate > currentOptimal.timeCost) {
 				return;
 			}
-			if (newCost[0] == currentOptimal.timeCost && newCost[1] > currentOptimal.monetaryCost) {
+			if (newTimeEstimate == currentOptimal.timeCost && newMonetaryEstimate > currentOptimal.monetaryCost) {
 				return;
 			}
 		} else if (optStrategy == OptimizationStrategy.MinPrice) {
-			if (newCost[0] > maxTime || newCost[1] > currentOptimal.monetaryCost) {
+			if (newTimeEstimate > maxTime || newMonetaryEstimate > currentOptimal.monetaryCost) {
 				return;
 			}
-			if (newCost[1] == currentOptimal.monetaryCost && newCost[0] > currentOptimal.timeCost) {
+			if (newMonetaryEstimate == currentOptimal.monetaryCost && newTimeEstimate > currentOptimal.timeCost) {
 				return;
 			}
 		}
-		SolutionPoint newSolution = new SolutionPoint(newPoint, newCost[0], newCost[1]);
+		SolutionPoint newSolution = new SolutionPoint(newPoint, newTimeEstimate, newMonetaryEstimate);
 		optimalSolution.set(newSolution);
 	}
 
-	private static double linearScoringFunction(double time, double price) {
+	static double linearScoringFunction(double time, double price) {
 		return LINEAR_OBJECTIVE_RATIO * time + (1 - LINEAR_OBJECTIVE_RATIO) * price;
 	}
 
@@ -278,8 +304,8 @@ public abstract class Enumerator {
 		private double maxPrice = -1d;
 		private int minExecutors = DEFAULT_MIN_EXECUTORS;
 		private int maxExecutors = DEFAULT_MAX_EXECUTORS;
-		private Set<CloudUtils.InstanceFamily> instanceFamiliesRange = null;
-		private Set<CloudUtils.InstanceSize> instanceSizeRange = null;
+		private Set<InstanceFamily> instanceFamiliesRange = null;
+		private Set<InstanceSize> instanceSizeRange = null;
 
 		// GridBased specific ------------------------------------------------------------------------------------------
 		private int stepSizeExecutors = 1;
@@ -371,7 +397,9 @@ public abstract class Enumerator {
 
 		public Builder withExpBaseExecutors(int expBaseExecutors) {
 			if (expBaseExecutors != -1 && expBaseExecutors < 2) {
-				throw new IllegalArgumentException("Given exponent base for number of executors should be -1 or bigger than 1.");
+				throw new IllegalArgumentException(
+						"Given exponent base for number of executors should be -1 or bigger than 1."
+				);
 			}
 			this.expBaseExecutors = expBaseExecutors;
 			return this;
@@ -387,10 +415,10 @@ public abstract class Enumerator {
 			}
 
 			if (instanceFamiliesRange == null) {
-				instanceFamiliesRange = EnumSet.allOf(CloudUtils.InstanceFamily.class);
+				instanceFamiliesRange = EnumSet.allOf(InstanceFamily.class);
 			}
 			if (instanceSizeRange == null) {
-				instanceSizeRange = EnumSet.allOf(CloudUtils.InstanceSize.class);
+				instanceSizeRange = EnumSet.allOf(InstanceSize.class);
 			}
 			// filter instances that are not supported or not of the desired type/size
 			HashMap<String, CloudInstance> instancesWithinRange = new HashMap<>();
@@ -432,24 +460,26 @@ public abstract class Enumerator {
 							interestBroadcastVars,
 							interestOutputCaching
 					);
+				case PruneBased:
+					return new PruneBasedEnumerator(this);
 				default:
 					throw new IllegalArgumentException("Setting an enumeration strategy is required.");
 			}
 		}
 
-		protected static Set<CloudUtils.InstanceFamily> typeRangeFromStrings(String[] types) throws IllegalArgumentException {
-			Set<CloudUtils.InstanceFamily> result = EnumSet.noneOf(CloudUtils.InstanceFamily.class);
+		protected static Set<InstanceFamily> typeRangeFromStrings(String[] types) throws IllegalArgumentException {
+			Set<InstanceFamily> result = EnumSet.noneOf(InstanceFamily.class);
 			for (String typeAsString: types) {
-				CloudUtils.InstanceFamily type = CloudUtils.InstanceFamily.customValueOf(typeAsString);
+				InstanceFamily type = InstanceFamily.customValueOf(typeAsString);
 				result.add(type);
 			}
 			return result;
 		}
 
-		protected static Set<CloudUtils.InstanceSize> sizeRangeFromStrings(String[] sizes) throws IllegalArgumentException {
-			Set<CloudUtils.InstanceSize> result = EnumSet.noneOf(CloudUtils.InstanceSize.class);
+		protected static Set<InstanceSize> sizeRangeFromStrings(String[] sizes) throws IllegalArgumentException {
+			Set<InstanceSize> result = EnumSet.noneOf(InstanceSize.class);
 			for (String sizeAsString: sizes) {
-				CloudUtils.InstanceSize size = CloudUtils.InstanceSize.customValueOf(sizeAsString);
+				InstanceSize size = InstanceSize.customValueOf(sizeAsString);
 				result.add(size);
 			}
 			return result;
@@ -524,5 +554,13 @@ public abstract class Enumerator {
 	 */
 	public double getMaxPrice() {
 		return maxPrice;
+	}
+
+	/**
+	 * Meant to be used for testing purposes
+	 * @return current optimal solution
+	 */
+	public SolutionPoint getOptimalSolution() {
+		return optimalSolution.get();
 	}
 }

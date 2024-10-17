@@ -43,10 +43,9 @@ import org.apache.sysds.test.AutomatedTestBase;
 import org.apache.sysds.test.TestConfiguration;
 import scala.Tuple2;
 
-import static org.apache.sysds.test.component.resource.TestingUtils.*;
+import static org.apache.sysds.test.component.resource.ResourceTestUtils.*;
 
-public class CostEstimatorTest extends AutomatedTestBase
-{
+public class CostEstimatorTest extends AutomatedTestBase {
 	static {
 		ConfigurationManager.getCompilerConfig().set(CompilerConfig.ConfigType.RESOURCE_OPTIMIZATION, true);
 	}
@@ -295,7 +294,7 @@ public class CostEstimatorTest extends AutomatedTestBase
 			}
 		} catch (Exception e) {
 			e.printStackTrace();
-			throw new RuntimeException("Resource initialization for teh current test failed.");
+			throw new RuntimeException("Resource initialization for the current test failed.");
 		}
 		try
 		{
@@ -310,14 +309,14 @@ public class CostEstimatorTest extends AutomatedTestBase
 			
 			DMLConfig conf = new DMLConfig(getCurConfigFile().getPath());
 			ConfigurationManager.setLocalConfig(conf);
-			
-			StringBuilder dmlScriptString= new StringBuilder();
+
 			// assign arguments
 			HashMap<String, String> argVals = new HashMap<>();
 			for (Tuple2<String, String> arg : args)
 				argVals.put(arg._1, arg._2);
 
 			//read script
+			StringBuilder dmlScriptString= new StringBuilder();
 			try( BufferedReader in = new BufferedReader(new FileReader(HOME + scriptFilename)) ) {
 				String s1;
 				while ((s1 = in.readLine()) != null)

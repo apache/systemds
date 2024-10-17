@@ -777,7 +777,6 @@ public class CPCostUtils {
                     return 6 * inputs[0].getCellsWithSparsity();
                 throw new DMLRuntimeException("AggregateTernary operation with opcode '" + opcode + "' is not supported by SystemDS");
             case Quaternary:
-                //TODO pattern specific and all inputs required
                 if (inputs.length < 1)
                     throw new RuntimeException("Not all required arguments for Quaternary operation is passed initialized");
                 if (opcode.equals("wsloss") || opcode.equals("wdivmm") || opcode.equals("wcemm")) {

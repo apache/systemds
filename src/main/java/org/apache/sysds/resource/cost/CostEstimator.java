@@ -1028,7 +1028,7 @@ public class CostEstimator
 			// if input RDD size is initiated -> cost should be calculated
 			// transfer the cost to the output rdd for lineage proper handling
 			ret = input.rddStats.cost;
-			// NOTE: currently all variables are considered as reusable (vie lineage)
+			// NOTE: currently all variables are considered as reusable (via lineage)
 			//  or cached/persisted in memory
 			input.rddStats.cost = 0;
 		} else {

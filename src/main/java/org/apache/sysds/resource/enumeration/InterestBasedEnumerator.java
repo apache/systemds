@@ -139,15 +139,16 @@ public class InterestBasedEnumerator extends Enumerator {
 	}
 
 	@Override
-	public ArrayList<Integer> estimateRangeExecutors(long executorMemory, int executorCores) {
-		// consider the maximum level of parallelism and
+	public ArrayList<Integer> estimateRangeExecutors(int driverCores, long executorMemory, int executorCores) {
+		// consider the CPU limit/quota and
 		// based on the initiated flags decides on the following methods
 		// for enumeration of the number of executors:
 		// 1. Such a number that leads to combined distributed memory
 		//	close to the output size of large HOPs
 		// 2. Enumerating all options with the established range
 		int min = Math.max(1, minExecutors);
-		int max = Math.min(maxExecutors, (DEFAULT_MAX_LEVEL_PARALLELISM / executorCores));
+		int maxAchievableLevelOfParallelism  = CPU_QUOTA - driverCores;
+		int max = Math.min(maxExecutors, (maxAchievableLevelOfParallelism / executorCores));
 
 		ArrayList<Integer> result;
 		if (interestOutputCaching) {

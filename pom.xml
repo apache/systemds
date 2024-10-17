@@ -274,7 +274,7 @@
 								<manifest>
 									<addClasspath>true</addClasspath>
 									<classpathPrefix>lib/</classpathPrefix>
-									<mainClass>org.apache.sysds.api.ropt.Executor</mainClass>
+									<mainClass>org.apache.sysds.resource.ResourceOptimizer</mainClass>
 								</manifest>
 								<manifestEntries>
 									<Class-Path>SystemDS.jar ${project.artifactId}-${project.version}.jar</Class-Path>
@@ -407,6 +407,18 @@
 							<target name="copy and rename test JAR" unless="maven.test.skip">
 								<copy file="${project.build.directory}/${project.artifactId}-${project.version}-tests.jar" tofile="${project.build.directory}/SystemDS-tests.jar" />
 								<copy file="${project.build.directory}/${project.artifactId}-${project.version}-perf.jar" tofile="${project.build.directory}/SystemDS-perf.jar" />
+							</target>
+						</configuration>
+						<goals>
+							<goal>run</goal>
+						</goals>
+					</execution>
+					<execution>
+						<id>rename-ropt-jar</id>
+						<phase>package</phase>
+						<configuration>
+							<target name="rename test JAR">
+								<copy file="${project.build.directory}/${project.artifactId}-${project.version}-ropt.jar" tofile="${project.build.directory}/ResourceOptimizer.jar" />
 							</target>
 						</configuration>
 						<goals>

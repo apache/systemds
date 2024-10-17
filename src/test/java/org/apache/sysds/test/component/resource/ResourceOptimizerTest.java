@@ -6,6 +6,7 @@ import org.apache.sysds.resource.ResourceOptimizer;
 import org.apache.sysds.resource.enumeration.Enumerator;
 import org.apache.sysds.resource.enumeration.GridBasedEnumerator;
 import org.apache.sysds.resource.enumeration.InterestBasedEnumerator;
+import org.apache.sysds.resource.enumeration.PruneBasedEnumerator;
 import org.apache.sysds.test.AutomatedTestBase;
 import org.junit.Assert;
 import org.junit.Test;
@@ -14,11 +15,12 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.HashMap;
 
 import static org.apache.sysds.resource.ResourceOptimizer.createOptions;
 import static org.apache.sysds.resource.ResourceOptimizer.initEnumeratorFromArgs;
-import static org.apache.sysds.test.component.resource.TestingUtils.*;
+import static org.apache.sysds.test.component.resource.ResourceTestUtils.*;
 
 public class ResourceOptimizerTest extends AutomatedTestBase {
     private static final String TEST_DIR = "component/resource/";
@@ -146,10 +148,11 @@ public class ResourceOptimizerTest extends AutomatedTestBase {
                 "-stepSize", "3",
                 "-expBase", "2"
         };
-        GridBasedEnumerator actualEnumerator = (GridBasedEnumerator) assertProperEnumeratorInitialization(args);
+        Enumerator actualEnumerator = assertProperEnumeratorInitialization(args);
+        Assert.assertTrue(actualEnumerator instanceof GridBasedEnumerator);
         // assert enum. specific default
-        Assert.assertEquals(3, actualEnumerator.getStepSize());
-        Assert.assertEquals(2, actualEnumerator.getExpBase());
+        Assert.assertEquals(3, ((GridBasedEnumerator) actualEnumerator).getStepSize());
+        Assert.assertEquals(2, ((GridBasedEnumerator) actualEnumerator).getExpBase());
     }
 
     @Test
@@ -158,13 +161,24 @@ public class ResourceOptimizerTest extends AutomatedTestBase {
                 "-f", HOME+"Algorithm_L2SVM.dml",
                 "-enum", "interest",
         };
-        InterestBasedEnumerator actualEnumerator = (InterestBasedEnumerator) assertProperEnumeratorInitialization(args);
+        Enumerator actualEnumerator = assertProperEnumeratorInitialization(args);
+        Assert.assertTrue(actualEnumerator instanceof InterestBasedEnumerator);
         // assert enum. specific default
-        Assert.assertTrue(actualEnumerator.interestLargestEstimateEnabled());
-        Assert.assertTrue(actualEnumerator.interestEstimatesInCPEnabled());
-        Assert.assertTrue(actualEnumerator.interestBroadcastVars());
-        Assert.assertFalse(actualEnumerator.interestOutputCachingEnabled());
+        Assert.assertTrue(((InterestBasedEnumerator) actualEnumerator).interestLargestEstimateEnabled());
+        Assert.assertTrue(((InterestBasedEnumerator) actualEnumerator).interestEstimatesInCPEnabled());
+        Assert.assertTrue(((InterestBasedEnumerator) actualEnumerator).interestBroadcastVars());
+        Assert.assertFalse(((InterestBasedEnumerator) actualEnumerator).interestOutputCachingEnabled());
 
+    }
+
+    @Test
+    public void initPruneEnumeratorWithDefaultsTest() {
+        String[] args = {
+                "-f", HOME+"Algorithm_L2SVM.dml",
+                "-enum", "prune",
+        };
+        Enumerator actualEnumerator = assertProperEnumeratorInitialization(args);
+        Assert.assertTrue(actualEnumerator instanceof PruneBasedEnumerator);
     }
 
     @Test
@@ -207,6 +221,19 @@ public class ResourceOptimizerTest extends AutomatedTestBase {
     }
 
     @Test
+    public void initEnumeratorWithCustomCPUQuotaTest() {
+        String[] args = {
+                "-f", HOME+"Algorithm_L2SVM.dml",
+                "-quotaCPU", "256",
+        };
+        Enumerator actualEnumerator = assertProperEnumeratorInitialization(args);
+
+        ArrayList<Integer> actualRange = actualEnumerator.estimateRangeExecutors(128, -1, 16);
+        Assert.assertEquals(actualRange.size(), 8);
+        Assert.assertEquals(8, (int) actualRange.get(7));
+    }
+
+    @Test
     public void mainWithHelpArgTest() {
         // test with valid argument combination
         String[] validArgs = {
@@ -233,8 +260,8 @@ public class ResourceOptimizerTest extends AutomatedTestBase {
 
     @Test
     public void mainForL2SVM_MinimalSearchSpace_Test() throws IOException, ParseException {
-        File tmpRegionFile = TestingUtils.generateMinimalFeeTableFile();
-        File tmpInfoFile = TestingUtils.generateMinimalInstanceInfoTableFile();
+        File tmpRegionFile = ResourceTestUtils.generateMinimalFeeTableFile();
+        File tmpInfoFile = ResourceTestUtils.generateMinimalInstanceInfoTableFile();
         Path tmpOutFolder = Files.createTempDirectory("out");
 
         // TODO: fix why for "-nvargs", "m=10000000", "n=100000" time and price is lower than for "-nvargs", "m=1000000", "n=100000"
@@ -256,8 +283,8 @@ public class ResourceOptimizerTest extends AutomatedTestBase {
 
     @Test
     public void mainForL2SVM_MinimalSearchSpace_C5_XLARGE_Test() throws IOException, ParseException {
-        File tmpRegionFile = TestingUtils.generateMinimalFeeTableFile();
-        File tmpInfoFile = TestingUtils.generateMinimalInstanceInfoTableFile();
+        File tmpRegionFile = ResourceTestUtils.generateMinimalFeeTableFile();
+        File tmpInfoFile = ResourceTestUtils.generateMinimalInstanceInfoTableFile();
         Path tmpOutFolder = Files.createTempDirectory("out");
 
         // TODO: fix why for "-nvargs", "m=10000000", "n=100000" time and price is lower than for "-nvargs", "m=1000000", "n=100000"
@@ -281,8 +308,8 @@ public class ResourceOptimizerTest extends AutomatedTestBase {
 
     @Test
     public void mainForL2SVM_FullSearchSpace_Test() throws IOException, ParseException {
-        File tmpRegionFile = TestingUtils.generateMinimalFeeTableFile();
-        File tmpInfoFile = TestingUtils.generateMinimalInstanceInfoTableFile();
+        File tmpRegionFile = ResourceTestUtils.generateMinimalFeeTableFile();
+        File tmpInfoFile = ResourceTestUtils.generateMinimalInstanceInfoTableFile();
         Path tmpOutFolder = Files.createTempDirectory("out");
 
         // TODO: fix why for "-nvargs", "m=10000000", "n=100000" time and price is lower than for "-nvargs", "m=1000000", "n=100000"

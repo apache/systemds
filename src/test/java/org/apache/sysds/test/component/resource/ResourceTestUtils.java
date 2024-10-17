@@ -19,10 +19,21 @@
 
 package org.apache.sysds.test.component.resource;
 
+import org.apache.sysds.api.DMLScript;
+import org.apache.sysds.conf.ConfigurationManager;
+import org.apache.sysds.parser.DMLProgram;
+import org.apache.sysds.parser.DMLTranslator;
+import org.apache.sysds.parser.ParserFactory;
+import org.apache.sysds.parser.ParserWrapper;
 import org.apache.sysds.resource.CloudInstance;
+import org.apache.sysds.resource.enumeration.EnumerationUtils.SolutionPoint;
+import org.apache.sysds.runtime.controlprogram.Program;
 import org.junit.Assert;
+import scala.Tuple2;
 
+import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileReader;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.util.Arrays;
@@ -32,7 +43,7 @@ import java.util.stream.Collectors;
 
 import static org.apache.sysds.resource.CloudUtils.GBtoBytes;
 
-public class TestingUtils {
+public class ResourceTestUtils {
 	public static final String DEFAULT_REGIONAL_PRICE_TABLE = "./scripts/resource/aws_regional_prices.csv";
 	public static final String DEFAULT_INSTANCE_INFO_TABLE = "./scripts/resource/ec2_stats.csv";
 	public static final String TEST_REGION = "us-east-1";
@@ -48,7 +59,6 @@ public class TestingUtils {
 		Assert.assertEquals(expected.getDiskWriteBandwidth(), actual.getDiskWriteBandwidth(), 0.0);
 		Assert.assertEquals(expected.getNetworkBandwidth(), actual.getNetworkBandwidth(), 0.0);
 		Assert.assertEquals(expected.getPrice(), actual.getPrice(), 0.0);
-
 	}
 
 	public static HashMap<String, CloudInstance> getSimpleCloudInstanceMap() {
@@ -100,5 +110,52 @@ public class TestingUtils {
 		List<String> lines = Arrays.stream(scriptLines).collect(Collectors.toList());
 		Files.write(tmpFile.toPath(), lines);
 		return tmpFile;
+	}
+
+	@SafeVarargs
+	public static Program compileProgramWithNvargs(String scriptPath, Tuple2<String, String>...args) {
+		Program returnProgram;
+		try {
+			// assign arguments
+			HashMap<String, String> argVals = new HashMap<>();
+			for (Tuple2<String, String> arg : args)
+				argVals.put(arg._1, arg._2);
+
+			//read script
+			StringBuilder dmlScriptString = new StringBuilder();
+			try (BufferedReader in = new BufferedReader(new FileReader(scriptPath))) {
+				String s1;
+				while ((s1 = in.readLine()) != null)
+					dmlScriptString.append(s1).append("\n");
+			}
+
+			//simplified compilation chain
+			ParserWrapper parser = ParserFactory.createParser();
+			DMLProgram prog = parser.parse(DMLScript.DML_FILE_PATH_ANTLR_PARSER, dmlScriptString.toString(), argVals);
+			DMLTranslator dmlt = new DMLTranslator(prog);
+			dmlt.liveVariableAnalysis(prog);
+			dmlt.validateParseTree(prog);
+			dmlt.constructHops(prog);
+			dmlt.rewriteHopsDAG(prog);
+			dmlt.constructLops(prog);
+			returnProgram = dmlt.getRuntimeProgram(prog, ConfigurationManager.getDMLConfig());
+		} catch (Exception e) {
+			e.printStackTrace();
+			throw new RuntimeException("Script compilation failed");
+		}
+		return returnProgram;
+	}
+
+	public static void assertEqualSolutionPoints(SolutionPoint expected, SolutionPoint actual) {
+		System.out.printf("Expected solution (%f.1s, %f.2$) with configurations:\n " + expected.toString() + "%n",
+				expected.getTimeCost(), expected.getMonetaryCost());
+		System.out.printf("Expected solution (%f.1s, %f.2$) with configurations:\n "+actual.toString(),
+				actual.getTimeCost(), actual.getMonetaryCost());
+		Assert.assertEquals(expected.driverInstance.getInstanceName(), actual.driverInstance.getInstanceName());
+		Assert.assertEquals(expected.numberExecutors, actual.numberExecutors);
+		if (expected.numberExecutors > 0)
+			Assert.assertEquals(expected.executorInstance.getInstanceName(), actual.executorInstance.getInstanceName());
+		Assert.assertEquals(expected.getTimeCost(), actual.getTimeCost(), 0);
+		Assert.assertEquals(expected.getMonetaryCost(), actual.getMonetaryCost(), 0);
 	}
 }

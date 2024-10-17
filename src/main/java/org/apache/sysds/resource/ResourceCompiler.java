@@ -26,9 +26,6 @@ import org.apache.sysds.common.Types;
 import org.apache.sysds.conf.ConfigurationManager;
 import org.apache.sysds.hops.Hop;
 import org.apache.sysds.hops.recompile.Recompiler;
-import org.apache.sysds.lops.Lop;
-import org.apache.sysds.lops.compile.Dag;
-import org.apache.sysds.lops.rewrite.LopRewriter;
 import org.apache.sysds.parser.*;
 import org.apache.sysds.runtime.controlprogram.*;
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContextFactory;
@@ -59,8 +56,6 @@ public class ResourceCompiler {
 	public static final int DEFAULT_EXECUTOR_THREADS = 2; // avoids creating spark context
 	public static final int DEFAULT_NUMBER_EXECUTORS = 2; // avoids creating spark context
 
-	private static final LopRewriter _lopRewriter = new LopRewriter();
-
 	public static Program compile(String filePath, Map<String, String> args) throws IOException {
 		// setting the dynamic recompilation flags during resource optimization is obsolete
 		DMLOptions dmlOptions =DMLOptions.defaultOptions;
@@ -79,25 +74,6 @@ public class ResourceCompiler {
 		dmlTranslator.constructLops(dmlProgram);
 		dmlTranslator.rewriteLopDAG(dmlProgram);
 		return dmlTranslator.getRuntimeProgram(dmlProgram, ConfigurationManager.getDMLConfig());
-	}
-
-	private static ArrayList<Instruction> recompile(StatementBlock sb, ArrayList<Hop> hops) {
-		// construct new lops
-		ArrayList<Lop> lops = new ArrayList<>(hops.size());
-		Hop.resetVisitStatus(hops);
-		for( Hop hop : hops ){
-			Recompiler.rClearLops(hop);
-			lops.add(hop.constructLops());
-		}
-		// apply hop-lop rewrites to cover the case of changed lop operators
-		_lopRewriter.rewriteLopDAG(sb, lops);
-
-		Dag<Lop> dag = new Dag<>();
-		for (Lop l : lops) {
-			l.addToDag(dag);
-		}
-
-		return dag.getJobs(sb, ConfigurationManager.getDMLConfig());
 	}
 
 	/**

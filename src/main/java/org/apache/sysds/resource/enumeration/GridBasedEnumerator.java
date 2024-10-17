@@ -50,14 +50,14 @@ public class GridBasedEnumerator extends Enumerator {
 	}
 
 	@Override
-	public ArrayList<Integer> estimateRangeExecutors(long executorMemory, int executorCores) {
-		// consider the maximum level of parallelism and
+	public ArrayList<Integer> estimateRangeExecutors(int driverCores, long executorMemory, int executorCores) {
+		// consider the cpu quota (limit) for cloud instances and
 		// based on the initiated flags decides for the following methods
 		// for enumeration of the number of executors:
 		// 1. Increasing the number of executor with given step size (default 1)
-		// 2. Exponentially increasing number of executors based on
-		//	a given exponent base - with additional option for 0 executors
-		int currentMax = Math.min(maxExecutors, DEFAULT_MAX_LEVEL_PARALLELISM / executorCores);
+		// 2. Exponentially increasing number of executors based on a given exponent base
+		int maxAchievableLevelOfParallelism  = CPU_QUOTA - driverCores;
+		int currentMax = Math.min(maxExecutors, maxAchievableLevelOfParallelism / executorCores);
 		ArrayList<Integer> result;
 		if (expBaseExecutors > 1) {
 			int maxCapacity = (int) Math.floor(Math.log(currentMax) / Math.log(2));

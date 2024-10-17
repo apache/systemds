@@ -21,34 +21,83 @@ package org.apache.sysds.test.component.resource;
 
 import org.apache.sysds.conf.CompilerConfig;
 import org.apache.sysds.conf.ConfigurationManager;
+import org.apache.sysds.conf.DMLConfig;
 import org.apache.sysds.hops.OptimizerUtils;
 import org.apache.sysds.resource.CloudInstance;
+import org.apache.sysds.resource.CloudUtils;
+import org.apache.sysds.resource.enumeration.EnumerationUtils.ConfigurationPoint;
+import org.apache.sysds.resource.enumeration.EnumerationUtils.SolutionPoint;
 import org.apache.sysds.resource.enumeration.Enumerator;
 import org.apache.sysds.resource.enumeration.EnumerationUtils.InstanceSearchSpace;
-import org.apache.sysds.resource.enumeration.EnumerationUtils.SolutionPoint;
 import org.apache.sysds.resource.enumeration.InterestBasedEnumerator;
 import org.apache.sysds.runtime.controlprogram.Program;
+import org.apache.sysds.test.AutomatedTestBase;
+import org.apache.sysds.test.TestConfiguration;
 import org.junit.Assert;
+import org.junit.BeforeClass;
 import org.junit.Test;
 import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Set;
 import java.util.TreeSet;
+import java.util.stream.Collectors;
 
 import static org.apache.sysds.resource.CloudUtils.GBtoBytes;
-import static org.apache.sysds.test.component.resource.TestingUtils.assertEqualsCloudInstances;
+import static org.apache.sysds.test.component.resource.ResourceTestUtils.*;
 import static org.junit.Assert.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 
 @net.jcip.annotations.NotThreadSafe
-public class EnumeratorTests {
+public class EnumeratorTests extends AutomatedTestBase {
 	static {
 		ConfigurationManager.getCompilerConfig().set(CompilerConfig.ConfigType.RESOURCE_OPTIMIZATION, true);
+	}
+	private static final String TEST_DIR = "component/resource/";
+	private static final String HOME = SCRIPT_DIR + TEST_DIR;
+	private static final String TEST_CLASS_DIR = TEST_DIR + CostEstimatorTest.class.getSimpleName() + "/";
+	private static HashMap<String, CloudInstance> allInstances;
+
+	@BeforeClass
+	public static void setUpBeforeClass() {
+		try {
+			allInstances = CloudUtils.loadInstanceInfoTable(DEFAULT_INSTANCE_INFO_TABLE, 0.25, 0.08);
+		} catch (IOException e) {
+			throw new RuntimeException(e);
+		}
+	}
+
+	@Override
+	public void setUp() {}
+
+	@Test
+	public void builderWithInstanceRangeTest() {
+		// test the parsing of mechanism for instance family and instance size ranges
+		HashMap<String, CloudInstance> availableInstances = getSimpleCloudInstanceMap();
+
+		Enumerator defaultEnumerator = getGridBasedEnumeratorPrebuild().build();
+		Assert.assertEquals(availableInstances.size(), defaultEnumerator.getInstances().size());
+
+		Enumerator enumeratorWithInstanceRanges = getGridBasedEnumeratorPrebuild()
+				.withInstanceFamilyRange(new String[]{"m5", "c5"})
+				.withInstanceSizeRange(new String[]{"xlarge"})
+				.build();
+		List<CloudInstance> expectedInstancesList = availableInstances.values().stream()
+				.filter(instance -> instance.getInstanceName().startsWith("m5")
+						|| instance.getInstanceName().startsWith("c5"))
+				.filter(instance -> instance.getInstanceName().endsWith("xlarge"))
+				.collect(Collectors.toList());
+		HashMap<String, CloudInstance> actualInstancesMap = enumeratorWithInstanceRanges.getInstances();
+		for (CloudInstance expectedInstance : expectedInstancesList) {
+			Assert.assertTrue(
+					actualInstancesMap.containsKey(expectedInstance.getInstanceName())
+			);
+		}
 	}
 
 	@Test
@@ -156,6 +205,132 @@ public class EnumeratorTests {
 	}
 
 	@Test
+	public void updateOptimalSolutionMinCostsTest() {
+		ConfigurationPoint dummyConfig = new ConfigurationPoint(null, null, -1);
+		SolutionPoint currentSolution;
+		Program emptyProgram = new Program();
+		HashMap<String, CloudInstance> instances = ResourceTestUtils.getSimpleCloudInstanceMap();
+		Enumerator enumerator = (new Enumerator.Builder())
+				.withRuntimeProgram(emptyProgram)
+				.withAvailableInstances(instances)
+				.withEnumerationStrategy(Enumerator.EnumerationStrategy.GridBased)
+				.withOptimizationStrategy(Enumerator.OptimizationStrategy.MinCosts)
+				.build();
+
+		currentSolution = enumerator.getOptimalSolution();
+		Assert.assertEquals(Double.MAX_VALUE, currentSolution.getTimeCost(), 0);
+		Assert.assertEquals(Double.MAX_VALUE, currentSolution.getMonetaryCost(), 0);
+
+		enumerator.updateOptimalSolution(100, 100, dummyConfig);
+		currentSolution = enumerator.getOptimalSolution();
+		Assert.assertEquals(100, currentSolution.getTimeCost(), 0);
+		Assert.assertEquals(100, currentSolution.getMonetaryCost(), 0);
+
+		enumerator.updateOptimalSolution(90, 1000, dummyConfig);
+		currentSolution = enumerator.getOptimalSolution();
+		Assert.assertEquals(100, currentSolution.getTimeCost(), 0);
+		Assert.assertEquals(100, currentSolution.getMonetaryCost(), 0);
+
+		enumerator.updateOptimalSolution(200, 99, dummyConfig);
+		currentSolution = enumerator.getOptimalSolution();
+		Assert.assertEquals(100, currentSolution.getTimeCost(), 0);
+		Assert.assertEquals(100, currentSolution.getMonetaryCost(), 0);
+
+		enumerator.updateOptimalSolution(101, 99, dummyConfig);
+		currentSolution = enumerator.getOptimalSolution();
+		Assert.assertEquals(101, currentSolution.getTimeCost(), 0);
+		Assert.assertEquals(99, currentSolution.getMonetaryCost(), 0);
+
+		enumerator.updateOptimalSolution(99, 100, dummyConfig);
+		currentSolution = enumerator.getOptimalSolution();
+		Assert.assertEquals(101, currentSolution.getTimeCost(), 0);
+		Assert.assertEquals(99, currentSolution.getMonetaryCost(), 0);
+
+		enumerator.updateOptimalSolution(0.5, 100, dummyConfig);
+		currentSolution = enumerator.getOptimalSolution();
+		Assert.assertEquals(0.5, currentSolution.getTimeCost(), 0);
+		Assert.assertEquals(100, currentSolution.getMonetaryCost(), 0);
+	}
+
+	@Test
+	public void updateOptimalSolutionMinTimeTest() {
+		ConfigurationPoint dummyConfig = new ConfigurationPoint(null, null, -1);
+		SolutionPoint currentSolution;
+		Program emptyProgram = new Program();
+		HashMap<String, CloudInstance> instances = ResourceTestUtils.getSimpleCloudInstanceMap();
+		Enumerator enumerator = (new Enumerator.Builder())
+				.withRuntimeProgram(emptyProgram)
+				.withAvailableInstances(instances)
+				.withEnumerationStrategy(Enumerator.EnumerationStrategy.GridBased)
+				.withOptimizationStrategy(Enumerator.OptimizationStrategy.MinTime)
+				.withBudget(100)
+				.build();
+
+		currentSolution = enumerator.getOptimalSolution();
+		Assert.assertEquals(Double.MAX_VALUE, currentSolution.getTimeCost(), 0);
+		Assert.assertEquals(Double.MAX_VALUE, currentSolution.getMonetaryCost(), 0);
+
+		enumerator.updateOptimalSolution(100, 101, dummyConfig);
+		currentSolution = enumerator.getOptimalSolution();
+		Assert.assertEquals(Double.MAX_VALUE, currentSolution.getTimeCost(), 0);
+		Assert.assertEquals(Double.MAX_VALUE, currentSolution.getMonetaryCost(), 0);
+
+		enumerator.updateOptimalSolution(90, 100, dummyConfig);
+		currentSolution = enumerator.getOptimalSolution();
+		Assert.assertEquals(90, currentSolution.getTimeCost(), 0);
+		Assert.assertEquals(100, currentSolution.getMonetaryCost(), 0);
+
+		enumerator.updateOptimalSolution(80, 10, dummyConfig);
+		currentSolution = enumerator.getOptimalSolution();
+		Assert.assertEquals(80, currentSolution.getTimeCost(), 0);
+		Assert.assertEquals(10, currentSolution.getMonetaryCost(), 0);
+
+		enumerator.updateOptimalSolution(10, 100, dummyConfig);
+		currentSolution = enumerator.getOptimalSolution();
+		Assert.assertEquals(10, currentSolution.getTimeCost(), 0);
+		Assert.assertEquals(100, currentSolution.getMonetaryCost(), 0);
+	}
+
+	@Test
+	public void updateOptimalSolutionMinPriceTest() {
+		ConfigurationPoint dummyConfig = new ConfigurationPoint(null, null, -1);
+		SolutionPoint currentSolution;
+		Program emptyProgram = new Program();
+		HashMap<String, CloudInstance> instances = ResourceTestUtils.getSimpleCloudInstanceMap();
+		Enumerator enumerator = (new Enumerator.Builder())
+				.withRuntimeProgram(emptyProgram)
+				.withAvailableInstances(instances)
+				.withEnumerationStrategy(Enumerator.EnumerationStrategy.GridBased)
+				.withOptimizationStrategy(Enumerator.OptimizationStrategy.MinPrice)
+				.withTimeLimit(600)
+				.build();
+
+		currentSolution = enumerator.getOptimalSolution();
+		Assert.assertEquals(Double.MAX_VALUE, currentSolution.getTimeCost(), 0);
+		Assert.assertEquals(Double.MAX_VALUE, currentSolution.getMonetaryCost(), 0);
+
+		enumerator.updateOptimalSolution(601, 100, dummyConfig);
+		currentSolution = enumerator.getOptimalSolution();
+		Assert.assertEquals(Double.MAX_VALUE, currentSolution.getTimeCost(), 0);
+		Assert.assertEquals(Double.MAX_VALUE, currentSolution.getMonetaryCost(), 0);
+
+		enumerator.updateOptimalSolution(100, 90, dummyConfig);
+		currentSolution = enumerator.getOptimalSolution();
+		Assert.assertEquals(100, currentSolution.getTimeCost(), 0);
+		Assert.assertEquals(90, currentSolution.getMonetaryCost(), 0);
+
+		enumerator.updateOptimalSolution(10, 80, dummyConfig);
+		currentSolution = enumerator.getOptimalSolution();
+		Assert.assertEquals(10, currentSolution.getTimeCost(), 0);
+		Assert.assertEquals(80, currentSolution.getMonetaryCost(), 0);
+
+		enumerator.updateOptimalSolution(100, 10, dummyConfig);
+		currentSolution = enumerator.getOptimalSolution();
+		Assert.assertEquals(100, currentSolution.getTimeCost(), 0);
+		Assert.assertEquals(10, currentSolution.getMonetaryCost(), 0);
+	}
+
+	@Test
 	public void evaluateSingleNodeExecutionGridBasedTest() {
 		Enumerator gridBasedEnumerator;
 		boolean result;
@@ -188,11 +363,11 @@ public class EnumeratorTests {
 				.build();
 		// test the general case when the max level of parallelism is not reached (0 is never part of the result)
 		List<Integer> expectedResult = new ArrayList<>(List.of(2, 4, 6, 8, 10));
-		List<Integer> actualResult = gridBasedEnumerator.estimateRangeExecutors(-1, 4);
+		List<Integer> actualResult = gridBasedEnumerator.estimateRangeExecutors(1, -1, 4);
 		Assert.assertEquals(expectedResult, actualResult);
 		// test the case when the max level of parallelism (1000) is reached (0 is never part of the result)
 		expectedResult = new ArrayList<>(List.of(2, 4));
-		actualResult = gridBasedEnumerator.estimateRangeExecutors(-1, 200);
+		actualResult = gridBasedEnumerator.estimateRangeExecutors(1, -1, 200);
 		Assert.assertEquals(expectedResult, actualResult);
 
 		// num. executors range not starting from zero and without step size given
@@ -201,11 +376,11 @@ public class EnumeratorTests {
 				.build();
 		// test the general case when the max level of parallelism is not reached (0 is never part of the result)
 		expectedResult = new ArrayList<>(List.of(3, 4, 5, 6, 7, 8));
-		actualResult = gridBasedEnumerator.estimateRangeExecutors(-1, 4);
+		actualResult = gridBasedEnumerator.estimateRangeExecutors(1, -1, 4);
 		Assert.assertEquals(expectedResult, actualResult);
 		// test the case when the max level of parallelism (1000) is reached (0 is never part of the result)
 		expectedResult = new ArrayList<>(List.of(3, 4, 5));
-		actualResult = gridBasedEnumerator.estimateRangeExecutors(-1, 200);
+		actualResult = gridBasedEnumerator.estimateRangeExecutors(1, -1, 200);
 		Assert.assertEquals(expectedResult, actualResult);
 	}
 
@@ -222,11 +397,11 @@ public class EnumeratorTests {
 				.build();
 		// test the general case when the max level of parallelism is not reached (0 is never part of the result)
 		expectedResult = new ArrayList<>(List.of(1, 2, 4, 8));
-		actualResult = gridBasedEnumerator.estimateRangeExecutors(-1, 4);
+		actualResult = gridBasedEnumerator.estimateRangeExecutors(1, -1, 4);
 		Assert.assertEquals(expectedResult, actualResult);
 		// test the case when the max level of parallelism (1000) is reached (0 is never part of the result)
 		expectedResult = new ArrayList<>(List.of(1, 2, 4));
-		actualResult = gridBasedEnumerator.estimateRangeExecutors(-1, 200);
+		actualResult = gridBasedEnumerator.estimateRangeExecutors(1, -1, 200);
 		Assert.assertEquals(expectedResult, actualResult);
 
 		// num. executors range not starting from zero and with exponential base = 3
@@ -236,11 +411,11 @@ public class EnumeratorTests {
 				.build();
 		// test the general case when the max level of parallelism is not reached (0 is never part of the result)
 		expectedResult = new ArrayList<>(List.of(3,9, 27));
-		actualResult = gridBasedEnumerator.estimateRangeExecutors(-1, 4);
+		actualResult = gridBasedEnumerator.estimateRangeExecutors(1, -1, 4);
 		Assert.assertEquals(expectedResult, actualResult);
 		// test the case when the max level of parallelism (1000) is reached (0 is never part of the result)
 		expectedResult = new ArrayList<>(List.of(3,9));
-		actualResult = gridBasedEnumerator.estimateRangeExecutors(-1, 100);
+		actualResult = gridBasedEnumerator.estimateRangeExecutors(1, -1, 100);
 		Assert.assertEquals(expectedResult, actualResult);
 	}
 
@@ -286,7 +461,7 @@ public class EnumeratorTests {
 		interestBasedEnumerator.preprocessing();
 		// test the general case of limiting to only one executor for the empty program (no memory estimates)
 		expectedResult = new ArrayList<>(List.of(1));
-		actualResult = interestBasedEnumerator.estimateRangeExecutors(-1, 100);
+		actualResult = interestBasedEnumerator.estimateRangeExecutors(1, -1, 100);
 		Assert.assertEquals(expectedResult, actualResult);
 	}
 
@@ -303,11 +478,11 @@ public class EnumeratorTests {
 		interestBasedEnumerator.preprocessing();
 		// test the general case when the max level of parallelism is not reached (0 is never part of the result)
 		expectedResult = new ArrayList<>(List.of(1, 2, 3, 4, 5));
-		actualResult = interestBasedEnumerator.estimateRangeExecutors(-1, 4);
+		actualResult = interestBasedEnumerator.estimateRangeExecutors(1, -1, 4);
 		Assert.assertEquals(expectedResult, actualResult);
 		// test the case when the max level of parallelism (1000) is reached (0 is never part of the result)
 		expectedResult = new ArrayList<>(List.of(1, 2, 3));
-		actualResult = interestBasedEnumerator.estimateRangeExecutors(-1, 256);
+		actualResult = interestBasedEnumerator.estimateRangeExecutors(1, -1, 256);
 		Assert.assertEquals(expectedResult, actualResult);
 	}
 
@@ -336,11 +511,11 @@ public class EnumeratorTests {
 
 		// test the general case when the max level of parallelism is not reached (0 is never part of the result)
 		List<Integer> expectedResult = new ArrayList<>(List.of(1, 2, 3));
-		List<Integer> actualResult = interestBasedEnumerator.estimateRangeExecutors(GBtoBytes(16), 4);
+		List<Integer> actualResult = interestBasedEnumerator.estimateRangeExecutors(1, GBtoBytes(16), 4);
 		Assert.assertEquals(expectedResult, actualResult);
 		// test the case when the max level of parallelism (1000) is reached (0 is never part of the result)
 		expectedResult = new ArrayList<>(List.of(1, 2));
-		actualResult = interestBasedEnumerator.estimateRangeExecutors(GBtoBytes(16), 500);
+		actualResult = interestBasedEnumerator.estimateRangeExecutors(1, GBtoBytes(16), 500);
 		Assert.assertEquals(expectedResult, actualResult);
 	}
 
@@ -356,7 +531,7 @@ public class EnumeratorTests {
 				.withNumberExecutorsRange(0, 2)
 				.build();
 
-		HashMap<String, CloudInstance> instances = TestingUtils.getSimpleCloudInstanceMap();
+		HashMap<String, CloudInstance> instances = ResourceTestUtils.getSimpleCloudInstanceMap();
 		InstanceSearchSpace space = new InstanceSearchSpace();
 		space.initSpace(instances);
 
@@ -453,10 +628,43 @@ public class EnumeratorTests {
 		Assert.assertEquals(0, solution.numberExecutors);
 	}
 
-	// Helpers
+	@Test
+	public void PruneBasedEnumerationMinTimeTest() {
+		Enumerator pruneBasedEnumerator = getPruneBasedEnumeratorPrebuild()
+				.withNumberExecutorsRange(0, 2)
+				.build();
+
+		pruneBasedEnumerator.preprocessing();
+		pruneBasedEnumerator.processing();
+		SolutionPoint solution = pruneBasedEnumerator.postprocessing();
+
+		// expected c5.xlarge since it is the cheaper
+		Assert.assertEquals("c5.xlarge", solution.driverInstance.getInstanceName());
+		// expected no executor nodes since tested for a 'zero' program
+		Assert.assertEquals(0, solution.numberExecutors);
+	}
+
+	@Test
+	public void GridBasedEnumerationFullInstanceRangeTest() {
+		runEnumerationOnFullSetInstances(Enumerator.EnumerationStrategy.GridBased);
+	}
+
+	@Test
+	public void InterestBasedEnumerationFullInstanceRangeTest() {
+		runEnumerationOnFullSetInstances(Enumerator.EnumerationStrategy.InterestBased);
+	}
+
+	@Test
+	public void PruneBasedEnumerationFullInstanceRangeTest() {
+		runEnumerationOnFullSetInstances(Enumerator.EnumerationStrategy.PruneBased);
+	}
+
+
+	// Helpers ---------------------------------------------------------------------------------------------------------
+
 	private static Enumerator.Builder getGridBasedEnumeratorPrebuild() {
 		Program emptyProgram = new Program();
-		HashMap<String, CloudInstance> instances = TestingUtils.getSimpleCloudInstanceMap();
+		HashMap<String, CloudInstance> instances = ResourceTestUtils.getSimpleCloudInstanceMap();
 		return (new Enumerator.Builder())
 				.withRuntimeProgram(emptyProgram)
 				.withAvailableInstances(instances)
@@ -467,11 +675,22 @@ public class EnumeratorTests {
 
 	private static Enumerator.Builder getInterestBasedEnumeratorPrebuild() {
 		Program emptyProgram = new Program();
-		HashMap<String, CloudInstance> instances = TestingUtils.getSimpleCloudInstanceMap();
+		HashMap<String, CloudInstance> instances = ResourceTestUtils.getSimpleCloudInstanceMap();
 		return (new Enumerator.Builder())
 				.withRuntimeProgram(emptyProgram)
 				.withAvailableInstances(instances)
 				.withEnumerationStrategy(Enumerator.EnumerationStrategy.InterestBased)
+				.withOptimizationStrategy(Enumerator.OptimizationStrategy.MinPrice)
+				.withTimeLimit(Double.MAX_VALUE);
+	}
+
+	private static Enumerator.Builder getPruneBasedEnumeratorPrebuild() {
+		Program emptyProgram = new Program();
+		HashMap<String, CloudInstance> instances = ResourceTestUtils.getSimpleCloudInstanceMap();
+		return (new Enumerator.Builder())
+				.withRuntimeProgram(emptyProgram)
+				.withAvailableInstances(instances)
+				.withEnumerationStrategy(Enumerator.EnumerationStrategy.PruneBased)
 				.withOptimizationStrategy(Enumerator.OptimizationStrategy.MinPrice)
 				.withTimeLimit(Double.MAX_VALUE);
 	}
@@ -490,5 +709,41 @@ public class EnumeratorTests {
 		} catch (NullPointerException e) {
 			fail(expectedName+" instances not properly passed to "+searchSpace.getClass().getName());
 		}
+	}
+
+	private void runEnumerationOnFullSetInstances(Enumerator.EnumerationStrategy strategy) {
+		SolutionPoint solution;
+		try {
+			String scriptFilename = "Algorithm_L2SVM.dml";
+			int index = scriptFilename.lastIndexOf(".dml");
+			String testName = scriptFilename.substring(0, index > 0 ? index : scriptFilename.length());
+			TestConfiguration testConfig = new TestConfiguration(TEST_CLASS_DIR, testName,
+					new String[]{});
+			addTestConfiguration(testName, testConfig);
+			loadTestConfiguration(testConfig);
+
+			Program program = ResourceTestUtils.compileProgramWithNvargs(HOME + scriptFilename);
+
+			DMLConfig conf = new DMLConfig(getCurConfigFile().getPath());
+			ConfigurationManager.setLocalConfig(conf);
+			System.out.println("Enumerator of type "+strategy.toString()+" launches on full range of instances...");
+			Enumerator enumerator = (new Enumerator.Builder())
+					.withRuntimeProgram(program)
+					.withAvailableInstances(allInstances)
+					.withEnumerationStrategy(strategy)
+					.withOptimizationStrategy(Enumerator.OptimizationStrategy.MinCosts)
+					.withNumberExecutorsRange(0, 2)
+					.build();
+			// run the enumerator
+			enumerator.preprocessing();
+			enumerator.processing();
+			solution = enumerator.postprocessing();
+			System.out.println("Enumeration process finished with optimal solution:\n" + solution.toString());
+		} catch (Exception e) {
+			e.printStackTrace();
+			throw new RuntimeException("Error at testing enumeration on full instance range");
+		}
+		Assert.assertTrue(solution.getTimeCost() < Double.MAX_VALUE);
+		Assert.assertTrue(solution.getMonetaryCost() < Double.MAX_VALUE);
 	}
 }

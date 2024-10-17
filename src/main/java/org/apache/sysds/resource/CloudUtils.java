@@ -69,8 +69,10 @@ public class CloudUtils {
 
 	public static final String EC2_REGEX = "^([a-z]+)([0-9])(a|g|i?)([bdnez]*)\\.([a-z0-9]+)$";
 	public static final String SPARK_VERSION = "3.3.0";
-	public static final double MINIMAL_EXECUTION_TIME = 600; // seconds; NOTE: set always equal or higher than DEFAULT_CLUSTER_LAUNCH_TIME
-	public static final double DEFAULT_CLUSTER_LAUNCH_TIME = 600; // seconds; NOTE: set always to at least 60 seconds
+	// set always equal or higher than DEFAULT_CLUSTER_LAUNCH_TIME
+	public static final double MINIMAL_EXECUTION_TIME = 600; // seconds;
+	// set always to a positive value
+	public static final double DEFAULT_CLUSTER_LAUNCH_TIME = 600; // seconds;
 
 	/**
 	 * Flag to mark the target provider for the utilities.

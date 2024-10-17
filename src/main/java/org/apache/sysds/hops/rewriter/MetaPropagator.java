@@ -97,8 +97,8 @@ public class MetaPropagator implements Function<RewriterStatement, RewriterState
 					return null;
 				case "argList":
 					// TODO: We assume argLists always occur if the matrix properties don't change (for now)
-					root.unsafePutMeta("nrow", root.getOperands().get(0).getMeta("nrow"));
-					root.unsafePutMeta("ncol", root.getOperands().get(0).getMeta("ncol"));
+					root.unsafePutMeta("nrow", firstMatrixStatement.get().getMeta("nrow"));
+					root.unsafePutMeta("ncol", firstMatrixStatement.get().getMeta("ncol"));
 					return null;
 				case "_map":
 					root.unsafePutMeta("nrow", root.getOperands().get(1).getMeta("nrow"));
@@ -106,6 +106,7 @@ public class MetaPropagator implements Function<RewriterStatement, RewriterState
 					return null;
 				case "+":
 				case "-":
+				case "*":
 				case "inv":
 				case "==":
 				case "!=":

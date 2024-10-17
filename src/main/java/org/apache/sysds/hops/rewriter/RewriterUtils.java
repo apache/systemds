@@ -21,6 +21,7 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Random;
 import java.util.Set;
 import java.util.Stack;
@@ -800,30 +801,80 @@ public class RewriterUtils {
 
 	public static void topologicalSort(RewriterStatement stmt, final RuleContext ctx, BiFunction<RewriterStatement, RewriterStatement, Boolean> arrangable) {
 		Map<RewriterRule.IdentityRewriterStatement, Map<RewriterRule.IdentityRewriterStatement, Integer>> votes = new HashMap<>();
+		Map<RewriterRule.IdentityRewriterStatement, Set<RewriterRule.IdentityRewriterStatement>> gotRatedBy = new HashMap<>();
 		List<Set<RewriterRule.IdentityRewriterStatement>> uncertainStatements = new ArrayList<>();
+
 		// First pass (try to figure out everything)
 		traversePostOrderWithDepthInfo(stmt, null, (el, depth, parent) -> {
 			if (el.getOperands() == null)
 				return;
 
-			if (arrangable.apply(el, parent)) {
-				System.out.println("Arrangable");
-				RewriterRule.IdentityRewriterStatement id = new RewriterRule.IdentityRewriterStatement(el);
+			RewriterRule.IdentityRewriterStatement voter = new RewriterRule.IdentityRewriterStatement(el);
 
-				if (!votes.containsKey(id)) {
-					//System.out.println("Sorting: " + el);
-					List<Set<RewriterRule.IdentityRewriterStatement>> uStatements = createHierarchy(ctx, el.getOperands());
-					if (uStatements.size() > 0) {
-						uStatements.forEach(e -> System.out.println("Uncertain: " + e.stream().map(t -> t.stmt)));
-						uncertainStatements.addAll(createHierarchy(ctx, el.getOperands()));
+			if (votes.containsKey(voter))
+				return;
+
+			if (arrangable.apply(el, parent)) {
+				List<Set<RewriterRule.IdentityRewriterStatement>> uStatements = createHierarchy(ctx, el, el.getOperands(), votes, gotRatedBy);
+				if (uStatements.size() > 0) {
+					uStatements.forEach(e -> System.out.println("Uncertain: " + e.stream().map(t -> t.stmt).collect(Collectors.toList())));
+					uncertainStatements.addAll(uStatements);
+				}
+			} else {
+				Map<RewriterRule.IdentityRewriterStatement, Integer> ratings = new HashMap<>();
+				votes.put(voter, ratings);
+
+				for (int i = 0; i < el.getOperands().size(); i++) {
+					RewriterRule.IdentityRewriterStatement toRate = new RewriterRule.IdentityRewriterStatement(el.getOperands().get(i));
+
+					if (votes.containsKey(toRate))
+						continue;
+
+					ratings.put(toRate, i);
+
+					Set<RewriterRule.IdentityRewriterStatement> ratedBy = gotRatedBy.get(toRate);
+
+					if (ratedBy == null) {
+						ratedBy = new HashSet<>();
+						gotRatedBy.put(toRate, ratedBy);
 					}
+
+					ratedBy.add(voter);
 				}
 			}
 		}, 0);
 
+		while (!uncertainStatements.isEmpty()) {
+			// Now, try to resolve the conflicts deterministically using element-wise comparison
+			Map<Tuple2<RewriterRule.IdentityRewriterStatement, RewriterRule.IdentityRewriterStatement>, Optional<Boolean>> orderSet = new HashMap<>();
+
+			for (Set<RewriterRule.IdentityRewriterStatement> requiredComparisons : uncertainStatements) {
+				forEachDistinctBinaryCombination(new ArrayList<>(requiredComparisons), (s1, s2) -> {
+					Optional<Boolean> myOpt = compareStatements(s1, s2, votes, gotRatedBy);
+					if (myOpt.isPresent()) {
+						orderSet.put(new Tuple2<>(s1, s2), myOpt);
+						orderSet.put(new Tuple2<>(s2, s1), Optional.of(!myOpt.get()));
+					} else {
+						orderSet.put(new Tuple2<>(s1, s2), Optional.empty());
+					}
+				});
+			}
+		}
+
 		// Trigger a recomputation of the hash codes
 		stmt.prepareForHashing();
 		stmt.recomputeHashCodes(ctx);
+	}
+
+	private static Optional<Boolean> compareStatements(RewriterRule.IdentityRewriterStatement s1, RewriterRule.IdentityRewriterStatement s2, Map<RewriterRule.IdentityRewriterStatement, Map<RewriterRule.IdentityRewriterStatement, Integer>> votes, Map<RewriterRule.IdentityRewriterStatement, Set<RewriterRule.IdentityRewriterStatement>> gotRatedBy) {
+		// TODO: Implement
+		return Optional.empty();
+	}
+
+	private static <T> void forEachDistinctBinaryCombination(List<T> l, BiConsumer<T, T> consumer) {
+		for (int i = 0; i < l.size(); i++)
+			for (int j = l.size() - 1; j > i; j--)
+				consumer.accept(l.get(i), l.get(j));
 	}
 
 	private static void traversePostOrderWithDepthInfo(RewriterStatement stmt, RewriterStatement parent, TriConsumer<RewriterStatement, Integer, RewriterStatement> consumer, int currentDepth) {
@@ -834,31 +885,82 @@ public class RewriterUtils {
 	}
 
 	// Returns the range of uncertain elements [start, end)
-	public static List<Set<RewriterRule.IdentityRewriterStatement>> createHierarchy(final RuleContext ctx, List<RewriterStatement> level) {
+	public static List<Set<RewriterRule.IdentityRewriterStatement>> createHierarchy(final RuleContext ctx, RewriterStatement voter, List<RewriterStatement> level, Map<RewriterRule.IdentityRewriterStatement, Map<RewriterRule.IdentityRewriterStatement, Integer>> allVotes, Map<RewriterRule.IdentityRewriterStatement, Set<RewriterRule.IdentityRewriterStatement>> gotRatedBy) {
+		if (level.isEmpty())
+			return Collections.emptyList();
+
 		level.sort(Comparator.comparing(el -> toOrderString(ctx, el)));
 
 		List<Set<RewriterRule.IdentityRewriterStatement>> ranges = new ArrayList<>();
 		int currentRangeStart = 0;
+
+		RewriterRule.IdentityRewriterStatement voterIds = new RewriterRule.IdentityRewriterStatement(voter);
+		Map<RewriterRule.IdentityRewriterStatement, Integer> votes = new HashMap<>();
+
+		{
+			RewriterRule.IdentityRewriterStatement firstIds = new RewriterRule.IdentityRewriterStatement(level.get(0));
+
+			Set<RewriterRule.IdentityRewriterStatement> voters = gotRatedBy.get(firstIds);
+
+			if (voters == null) {
+				voters = new HashSet<>();
+				gotRatedBy.put(firstIds, voters);
+			}
+
+			voters.add(voterIds);
+
+			allVotes.put(firstIds, votes);
+			votes.put(firstIds, 0);
+		}
+
 		for (int i = 1; i < level.size(); i++) {
-			System.out.println(toOrderString(ctx, level.get(i)));
-			if (toOrderString(ctx, level.get(i)).equals(toOrderString(ctx, level.get(i-1)))) {
+			System.out.println(toOrderString(ctx, level.get(i-1)) + " <=> " + toOrderString(ctx, level.get(i)));
+			if (!toOrderString(ctx, level.get(i)).equals(toOrderString(ctx, level.get(i-1)))) {
 				if (i - currentRangeStart > 1) {
 					Set<RewriterRule.IdentityRewriterStatement> mSet = level.subList(currentRangeStart, i).stream().map(RewriterRule.IdentityRewriterStatement::new).collect(Collectors.toSet());
 
 					if (mSet.size() > 1)
 						ranges.add(mSet);
+
+					System.out.println("E-Set: " + mSet.stream().map(id -> id.stmt.toParsableString(ctx, false)).collect(Collectors.toList()));
+
+					currentRangeStart = i;
 				}
-				currentRangeStart = i;
 			}
+
+			RewriterRule.IdentityRewriterStatement ids = new RewriterRule.IdentityRewriterStatement(level.get(i));
+			votes.put(ids, currentRangeStart);
+
+			Set<RewriterRule.IdentityRewriterStatement> voters = gotRatedBy.get(ids);
+
+			if (voters == null) {
+				voters = new HashSet<>();
+				gotRatedBy.put(ids, voters);
+			}
+
+			voters.add(voterIds);
 		}
+
+		if (level.size() - currentRangeStart > 1) {
+			Set<RewriterRule.IdentityRewriterStatement> mSet = level
+					.subList(currentRangeStart, level.size())
+					.stream().map(RewriterRule.IdentityRewriterStatement::new)
+					.collect(Collectors.toSet());
+
+			if (mSet.size() > 1)
+				ranges.add(mSet);
+
+			System.out.println("E-Set: " + mSet.stream().map(id -> id.stmt.toParsableString(ctx, false)).collect(Collectors.toList()));
+		}
+
 		return ranges;
 	}
 
 	public static String toOrderString(final RuleContext ctx, RewriterStatement stmt) {
 		if (stmt.isInstruction()) {
-			return stmt.getResultingDataType(ctx) + ":" + stmt.trueTypedInstruction(ctx) + "[" + stmt.refCtr + "];";
+			return stmt.getResultingDataType(ctx) + ":" + stmt.trueTypedInstruction(ctx) + "[" + stmt.refCtr + "](" + stmt.getOperands().size() + ");";
 		} else {
-			return stmt.getResultingDataType(ctx) + ":" + (stmt.isLiteral() ? "L:" + stmt.getLiteral() : "V") + "[" + stmt.refCtr + "];";
+			return stmt.getResultingDataType(ctx) + ":" + (stmt.isLiteral() ? "L:" + stmt.getLiteral() : "V") + "[" + stmt.refCtr + "](0);";
 		}
 	}
 

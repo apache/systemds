@@ -46,7 +46,8 @@ public class RewriterRuntimeUtils {
 	private static boolean setupComplete = false;
 
 	private static long totalCPUTime = 0L;
-	private static long evaluatedExpressions = 0;
+	private static long evaluatedExpressions = 0L;
+	private static long failures = 0L;
 
 	public static void setupIfNecessary() {
 		if (setupComplete)
@@ -101,6 +102,7 @@ public class RewriterRuntimeUtils {
 							}
 						} catch (Exception e) {
 							e.printStackTrace();
+							failures++;
 						}
 					}
 				}, exactExprDB, ctx);
@@ -124,6 +126,7 @@ public class RewriterRuntimeUtils {
 				System.out.println();
 				System.out.println("Total rewriter CPU time: " + totalCPUTime + "ms");
 				System.out.println("Total evaluated unique expressions: " + evaluatedExpressions);
+				System.out.println("Total failures: " + failures);
 			}));
 		}
 	}

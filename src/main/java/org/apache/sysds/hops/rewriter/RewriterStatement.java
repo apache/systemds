@@ -505,6 +505,9 @@ public abstract class RewriterStatement implements Comparable<RewriterStatement>
 			return;
 
 		meta.remove(key);
+
+		if (meta.isEmpty())
+			meta = null;
 	}
 
 	public Object getMeta(String key) {

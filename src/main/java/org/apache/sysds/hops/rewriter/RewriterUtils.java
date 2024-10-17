@@ -982,18 +982,18 @@ public class RewriterUtils {
 
 				if (r != null)
 					System.out.println("Applying rule: " + r.getName());
-				System.out.println(t);
+				System.out.println(t.toParsableString(ctx, false));
 				return true;
 			}, debug);
 
 			RewriterUtils.mergeArgLists(stmt, ctx);
 			if (debug)
-				System.out.println("PRE1: " + stmt.toString(ctx));
+				System.out.println("PRE1: " + stmt.toParsableString(ctx, false));
 
 			RewriterUtils.topologicalSort(stmt, ctx, (el, parent) -> el.isArgumentList() && parent != null && Set.of("+", "-", "*", "_idxExpr").contains(parent.trueInstruction()));
 
 			if (debug)
-				System.out.println("FINAL1: " + stmt.toString(ctx));
+				System.out.println("FINAL1: " + stmt.toParsableString(ctx, false));
 
 			return stmt;
 		};
@@ -1035,20 +1035,24 @@ public class RewriterUtils {
 
 				if (r != null)
 					System.out.println("Applying rule: " + r.getName());
-				System.out.println(t);
+				System.out.println(t.toParsableString(ctx, false));
 				return true;
 			}, debug);
 
 			RewriterUtils.mergeArgLists(stmt, ctx);
 			if (debug)
-				System.out.println("PRE1: " + stmt.toString(ctx));
+				System.out.println("PRE1: " + stmt.toParsableString(ctx, false));
 
 			RewriterUtils.topologicalSort(stmt, ctx, (el, parent) -> el.isArgumentList() && parent != null && Set.of("+", "-", "*", "_idxExpr").contains(parent.trueInstruction()));
 
 			if (debug)
-				System.out.println("FINAL1: " + stmt.toString(ctx));
+				System.out.println("FINAL1: " + stmt.toParsableString(ctx, false));
 
 			return stmt;
 		};
+	}
+
+	public static void doCSE(RewriterStatement stmt, final RuleContext ctx) {
+
 	}
 }

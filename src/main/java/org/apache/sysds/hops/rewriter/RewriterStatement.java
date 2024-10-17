@@ -245,6 +245,42 @@ public abstract class RewriterStatement implements Comparable<RewriterStatement>
 	public abstract RewriterStatement copyNode();
 	// Performs a nested copy until a condition is met
 	public abstract RewriterStatement nestedCopyOrInject(Map<RewriterStatement, RewriterStatement> copiedObjects, TriFunction<RewriterStatement, RewriterStatement, Integer, RewriterStatement> injector, RewriterStatement parent, int pIdx);
+	// Returns the new maxRefId
+	abstract int toParsableString(StringBuilder builder, Map<RewriterRule.IdentityRewriterStatement, Integer> refs, int maxRefId, Map<String, Set<String>> vars, final RuleContext ctx);
+
+	public String toParsableString(final RuleContext ctx, boolean includeDefinitions) {
+		StringBuilder sb = new StringBuilder();
+		HashMap<String, Set<String>> defs = new HashMap<>();
+		toParsableString(sb, new HashMap<>(), 0, defs, ctx);
+
+		if (includeDefinitions) {
+			StringBuilder newSB = new StringBuilder();
+			defs.forEach((k, v) -> {
+				newSB.append(k);
+				newSB.append(':');
+
+				int i = 0;
+				for (String varName : v) {
+					if (i > 0)
+						newSB.append(',');
+
+					newSB.append(varName);
+					i++;
+				}
+
+				newSB.append('\n');
+			});
+
+			newSB.append(sb);
+			return newSB.toString();
+		}
+
+		return sb.toString();
+	}
+
+	public String toParsableString(final RuleContext ctx) {
+		return toParsableString(ctx, false);
+	}
 
 	public RewriterStatement nestedCopyOrInject(Map<RewriterStatement, RewriterStatement> copiedObjects, TriFunction<RewriterStatement, RewriterStatement, Integer, RewriterStatement> injector) {
 		return nestedCopyOrInject(copiedObjects, injector, null, -1);
@@ -375,7 +411,7 @@ public abstract class RewriterStatement implements Comparable<RewriterStatement>
 		/*if (isArgumentList())
 			return;*/
 		refCtr++;
-		if (getOperands() != null)
+		if (refCtr < 2 && getOperands() != null)
 			getOperands().forEach(RewriterStatement::computeRefCtrs);
 	}
 

@@ -6,6 +6,7 @@ import org.apache.commons.lang3.function.TriFunction;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -217,6 +218,32 @@ public class RewriterDataType extends RewriterStatement {
 			throw new IllegalArgumentException("A data type cannot be modified after consolidation");
 		this.literal = literal;
 		return this;
+	}
+
+	@Override
+	public int toParsableString(StringBuilder sb, Map<RewriterRule.IdentityRewriterStatement, Integer> refs, int maxRefId, Map<String, Set<String>> vars, final RuleContext ctx) {
+		String mType = type;
+		String varStr = id;
+
+		if (isLiteral()) {
+			mType = "LITERAL_" + type;
+			varStr = getLiteral().toString();
+
+			if (getLiteral() instanceof Boolean)
+				varStr = varStr.toUpperCase();
+		}
+
+		Set<String> varSet = vars.get(mType);
+
+		if (varSet == null) {
+			varSet = new HashSet<>();
+			vars.put(mType, varSet);
+		}
+
+		varSet.add(varStr);
+		sb.append(varStr);
+
+		return maxRefId;
 	}
 
 	@Override

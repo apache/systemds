@@ -106,14 +106,44 @@ public class RewriterStreamTests {
 	}
 
 	@Test
-	public void testTraceEquivalence() {
+	public void testTraceEquivalence1() {
 		RewriterStatement stmt = RewriterUtils.parse("trace(%*%(A, B))", ctx, "MATRIX:A,B");
 		RewriterStatement stmt2 = RewriterUtils.parse("sum(*(A, t(B)))", ctx, "MATRIX:A,B");
 		stmt = canonicalConverter.apply(stmt);
 		stmt2 = canonicalConverter.apply(stmt2);
 
-		System.out.println(stmt);
-		System.out.println(stmt2);
+		System.out.println("==========");
+		System.out.println(stmt.toParsableString(ctx, true));
+		System.out.println("==========");
+		System.out.println(stmt2.toParsableString(ctx, true));
+		assert stmt.match(new RewriterStatement.MatcherContext(ctx, stmt2));
+	}
+
+	@Test
+	public void testTraceEquivalence2() {
+		RewriterStatement stmt = RewriterUtils.parse("trace(%*%(A, B))", ctx, "MATRIX:A,B");
+		RewriterStatement stmt2 = RewriterUtils.parse("sum(*(A, t(B)))", ctx, "MATRIX:A,B");
+		stmt = canonicalConverter.apply(stmt);
+		stmt2 = canonicalConverter.apply(stmt2);
+
+		System.out.println("==========");
+		System.out.println(stmt.toParsableString(ctx, true));
+		System.out.println("==========");
+		System.out.println(stmt2.toParsableString(ctx, true));
+		assert stmt.match(new RewriterStatement.MatcherContext(ctx, stmt2));
+	}
+
+	@Test
+	public void testTraceEquivalence3() {
+		RewriterStatement stmt = RewriterUtils.parse("trace(*(A, B))", ctx, "MATRIX:A,B");
+		RewriterStatement stmt2 = RewriterUtils.parse("sum(*(diag(A), diag(B)))", ctx, "MATRIX:A,B");
+		stmt = canonicalConverter.apply(stmt);
+		stmt2 = canonicalConverter.apply(stmt2);
+
+		System.out.println("==========");
+		System.out.println(stmt.toParsableString(ctx, true));
+		System.out.println("==========");
+		System.out.println(stmt2.toParsableString(ctx, true));
 		assert stmt.match(new RewriterStatement.MatcherContext(ctx, stmt2));
 	}
 
@@ -126,7 +156,7 @@ public class RewriterStreamTests {
 
 
 
-	
+
 	// TODO: Not working
 	/*@Test
 	public void testAggEquivalence() {

@@ -364,6 +364,41 @@ public class RewriterInstruction extends RewriterStatement {
 	}
 
 	@Override
+	public int toParsableString(StringBuilder sb, Map<RewriterRule.IdentityRewriterStatement, Integer> refs, int maxRefId, Map<String, Set<String>> vars, final RuleContext ctx) {
+		RewriterRule.IdentityRewriterStatement id = new RewriterRule.IdentityRewriterStatement(this);
+		Integer ref = refs.get(id);
+
+		if (ref != null) {
+			sb.append('$');
+			sb.append(ref);
+			return maxRefId;
+		}
+
+		if (refCtr > 1) {
+			maxRefId++;
+			sb.append('$');
+			sb.append(maxRefId);
+			sb.append(':');
+			refs.put(id, maxRefId);
+		}
+
+		sb.append(instr);
+		sb.append('(');
+
+		for (int i = 0; i < getOperands().size(); i++) {
+			if (i > 0)
+				sb.append(',');
+
+			RewriterStatement op = getOperands().get(i);
+			maxRefId = op.toParsableString(sb, refs, maxRefId, vars, ctx);
+		}
+
+		sb.append(')');
+
+		return maxRefId;
+	}
+
+	@Override
 	public String toString(final RuleContext ctx) {
 		Object varName = getMeta(META_VARNAME);
 		if (varName != null)

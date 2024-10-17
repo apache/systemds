@@ -749,6 +749,23 @@ public class RewriterRuleCollection {
 				}, true)
 				.build()
 		);
+
+		// TODO: Handle nrow / ncol equivalence (maybe need some kind of E-Graph after all)
+		// diag(A) -> _m($1:_idx(1, nrow(A)), 1, [](A, $1, $1))
+		rules.add(new RewriterRuleBuilder(ctx)
+				.setUnidirectional(true)
+				.parseGlobalVars("MATRIX:A")
+				.parseGlobalVars("LITERAL_INT:1")
+				.withParsedStatement("diag(A)", hooks)
+				.toParsedStatement("$2:_m($1:_idx(1, nrow(A)), 1, [](A, $1, $1))", hooks)
+				.apply(hooks.get(1).getId(), stmt -> stmt.unsafePutMeta("idxId", UUID.randomUUID()), true) // Assumes it will never collide
+				.apply(hooks.get(2).getId(), stmt -> {
+					UUID id = UUID.randomUUID();
+					stmt.unsafePutMeta("ownerId", id);
+					stmt.getOperands().get(0).unsafePutMeta("ownerId", id);
+				}, true)
+				.build()
+		);
 	}
 
 	// TODO: Big issue when having multiple references to the same sub-dag
@@ -879,6 +896,14 @@ public class RewriterRuleCollection {
 
 					return matching;
 				}, true)
+				.build()
+		);
+
+		rules.add(new RewriterRuleBuilder(ctx, "_idx(a,a) => a")
+				.setUnidirectional(true)
+				.parseGlobalVars("INT:a")
+				.withParsedStatement("_idx(a,a)", hooks)
+				.toParsedStatement("a", hooks)
 				.build()
 		);
 

@@ -766,6 +766,32 @@ public class RewriterRuleCollection {
 				}, true)
 				.build()
 		);
+
+		// This must be the last rule in the heuristic as it handles any matrix that has not been written as a stream
+		// A -> _m()
+		rules.add(new RewriterRuleBuilder(ctx, "Expand arbitrary matrix expression")
+				.setUnidirectional(true)
+				.parseGlobalVars("MATRIX:A")
+				.parseGlobalVars("LITERAL_INT:1")
+				.withParsedStatement("A", hooks)
+				.toParsedStatement("$3:_m($1:_idx(1, nrow(A)), $2:_idx(1, ncol(A)), [](A, $1, $2))", hooks)
+				.iff(match -> {
+					RewriterStatement root = match.getMatchRoot();
+					RewriterStatement parent = match.getMatchParent();
+					// TODO: This check has to be extended to any meta expression
+					return !(root.isInstruction() && root.trueInstruction().equals("_m"))
+							&& (parent == null || (!parent.trueInstruction().equals("[]") && !parent.trueInstruction().equals("ncol") && !parent.trueInstruction().equals("nrow")));
+				}, true)
+				.apply(hooks.get(1).getId(), stmt -> stmt.unsafePutMeta("idxId", UUID.randomUUID()), true) // Assumes it will never collide
+				.apply(hooks.get(2).getId(), stmt -> stmt.unsafePutMeta("idxId", UUID.randomUUID()), true)
+				.apply(hooks.get(3).getId(), stmt -> {
+					UUID id = UUID.randomUUID();
+					stmt.unsafePutMeta("ownerId", id);
+					stmt.getOperands().get(0).unsafePutMeta("ownerId", id);
+					stmt.getOperands().get(1).unsafePutMeta("ownerId", id);
+				}, true)
+				.build()
+		);
 	}
 
 	// TODO: Big issue when having multiple references to the same sub-dag

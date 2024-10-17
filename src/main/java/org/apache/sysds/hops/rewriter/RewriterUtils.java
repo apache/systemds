@@ -807,6 +807,7 @@ public class RewriterUtils {
 				return;
 
 			if (arrangable.apply(el, parent)) {
+				System.out.println("Arrangable");
 				RewriterRule.IdentityRewriterStatement id = new RewriterRule.IdentityRewriterStatement(el);
 
 				if (!votes.containsKey(id)) {
@@ -839,7 +840,7 @@ public class RewriterUtils {
 		List<Set<RewriterRule.IdentityRewriterStatement>> ranges = new ArrayList<>();
 		int currentRangeStart = 0;
 		for (int i = 1; i < level.size(); i++) {
-			//System.out.println(toOrderString(ctx, level.get(i)));
+			System.out.println(toOrderString(ctx, level.get(i)));
 			if (toOrderString(ctx, level.get(i)).equals(toOrderString(ctx, level.get(i-1)))) {
 				if (i - currentRangeStart > 1) {
 					Set<RewriterRule.IdentityRewriterStatement> mSet = level.subList(currentRangeStart, i).stream().map(RewriterRule.IdentityRewriterStatement::new).collect(Collectors.toSet());
@@ -855,9 +856,9 @@ public class RewriterUtils {
 
 	public static String toOrderString(final RuleContext ctx, RewriterStatement stmt) {
 		if (stmt.isInstruction()) {
-			return stmt.getResultingDataType(ctx) + ":" + stmt.trueTypedInstruction(ctx) + "[" + stmt.refCtr + "]";
+			return stmt.getResultingDataType(ctx) + ":" + stmt.trueTypedInstruction(ctx) + "[" + stmt.refCtr + "];";
 		} else {
-			return stmt.getResultingDataType(ctx) + ":" + (stmt.isLiteral() ? "L:" + stmt.getLiteral() : "V") + ";";
+			return stmt.getResultingDataType(ctx) + ":" + (stmt.isLiteral() ? "L:" + stmt.getLiteral() : "V") + "[" + stmt.refCtr + "];";
 		}
 	}
 
@@ -1024,8 +1025,12 @@ public class RewriterUtils {
 		RewriterHeuristics canonicalFormCreator = new RewriterHeuristics();
 		canonicalFormCreator.add("ALGEBRAIC CANONICALIZATION", algebraicCanonicalization);
 		canonicalFormCreator.add("EXPAND STREAMING EXPRESSIONS", streamExpansion);
-		canonicalFormCreator.add("PUSHDOWN STREAM SELECTIONS", streamSelectPushdown);
-		canonicalFormCreator.add("STREAMIFY", streamify);
+
+		RewriterHeuristics pushDownAndStreamify = new RewriterHeuristics();
+		pushDownAndStreamify.add("PUSHDOWN STREAM SELECTIONS", streamSelectPushdown);
+		pushDownAndStreamify.add("STREAMIFY", streamify);
+		canonicalFormCreator.addRepeated("PUSHDOWN AND STREAMIFY", pushDownAndStreamify);
+
 		canonicalFormCreator.add("FLATTEN OPERATIONS", flattenOperations);
 
 		return stmt -> {

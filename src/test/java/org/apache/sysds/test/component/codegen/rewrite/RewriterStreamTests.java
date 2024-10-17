@@ -25,7 +25,7 @@ public class RewriterStreamTests {
 	public void testAdditionFloat1() {
 		RewriterStatement stmt = RewriterUtils.parse("+(+(a, b), 1)", ctx, "MATRIX:A,B,C", "FLOAT:a,b", "LITERAL_INT:0,1");
 		stmt = converter.apply(stmt);
-		System.out.println(stmt);
+		System.out.println(stmt.toParsableString(ctx, true));
 		assert stmt.match(new RewriterStatement.MatcherContext(ctx, RewriterUtils.parse("+(argList(a, b, 1))", ctx, "FLOAT:a,b", "LITERAL_INT:0,1")));
 	}
 
@@ -33,7 +33,7 @@ public class RewriterStreamTests {
 	public void testAdditionFloat2() {
 		RewriterStatement stmt = RewriterUtils.parse("+(1, +(a, b))", ctx, "FLOAT:a,b", "LITERAL_INT:0,1");
 		stmt = converter.apply(stmt);
-		System.out.println(stmt);
+		System.out.println(stmt.toParsableString(ctx, true));
 		assert stmt.match(new RewriterStatement.MatcherContext(ctx, RewriterUtils.parse("+(argList(a, b, 1))", ctx, "FLOAT:a,b", "LITERAL_INT:0,1")));
 	}
 
@@ -41,7 +41,7 @@ public class RewriterStreamTests {
 	public void testAdditionMatrix1() {
 		RewriterStatement stmt = RewriterUtils.parse("+(+(A, B), 1)", ctx, "MATRIX:A,B", "LITERAL_INT:0,1");
 		stmt = converter.apply(stmt);
-		System.out.println(stmt);
+		System.out.println(stmt.toParsableString(ctx, true));
 		assert stmt.match(new RewriterStatement.MatcherContext(ctx, RewriterUtils.parse("_m($1:_idx(1, nrow(A)), $2:_idx(1, ncol(A)), +(argList([](A, $1, $2), [](B, $1, $2), 1)))", ctx, "MATRIX:A,B", "LITERAL_INT:0,1")));
 	}
 
@@ -49,7 +49,7 @@ public class RewriterStreamTests {
 	public void testAdditionMatrix2() {
 		RewriterStatement stmt = RewriterUtils.parse("+(1, +(A, B))", ctx, "MATRIX:A,B", "LITERAL_INT:0,1");
 		stmt = converter.apply(stmt);
-		System.out.println(stmt);
+		System.out.println(stmt.toParsableString(ctx, true));
 		assert stmt.match(new RewriterStatement.MatcherContext(ctx, RewriterUtils.parse("_m($1:_idx(1, nrow(A)), $2:_idx(1, ncol(A)), +(argList([](A, $1, $2), [](B, $1, $2), 1)))", ctx, "MATRIX:A,B", "LITERAL_INT:0,1")));
 	}
 
@@ -57,7 +57,7 @@ public class RewriterStreamTests {
 	public void testSubtractionFloat1() {
 		RewriterStatement stmt = RewriterUtils.parse("+(-(a, b), 1)", ctx, "MATRIX:A,B,C", "FLOAT:a,b", "LITERAL_INT:0,1");
 		stmt = converter.apply(stmt);
-		System.out.println(stmt);
+		System.out.println(stmt.toParsableString(ctx, true));
 		assert stmt.match(new RewriterStatement.MatcherContext(ctx, RewriterUtils.parse("+(argList(-(b), a, 1))", ctx, "FLOAT:a,b", "LITERAL_INT:0,1")));
 	}
 
@@ -65,7 +65,7 @@ public class RewriterStreamTests {
 	public void testSubtractionFloat2() {
 		RewriterStatement stmt = RewriterUtils.parse("+(1, -(a, -(b, c)))", ctx, "MATRIX:A,B,C", "FLOAT:a,b,c", "LITERAL_INT:0,1");
 		stmt = converter.apply(stmt);
-		System.out.println(stmt);
+		System.out.println(stmt.toParsableString(ctx, true));
 		assert stmt.match(new RewriterStatement.MatcherContext(ctx, RewriterUtils.parse("+(argList(-(b), a, c, 1))", ctx, "FLOAT:a,b, c", "LITERAL_INT:0,1")));
 	}
 
@@ -74,8 +74,8 @@ public class RewriterStreamTests {
 		RewriterStatement stmt = RewriterUtils.parse("+(1, +(A, B))", ctx, "MATRIX:A,B", "LITERAL_INT:0,1");
 		stmt = converter.apply(stmt);
 		RewriterStatement fused = RewriterUtils.buildFusedPlan(stmt, ctx);
-		System.out.println("Orig: " + stmt);
-		System.out.println("Fused: " + fused);
+		System.out.println("Orig: " + stmt.toParsableString(ctx, true));
+		System.out.println("Fused: " + (fused == null ? null : fused.toParsableString(ctx, true)));
 	}
 
 	@Test
@@ -83,8 +83,8 @@ public class RewriterStreamTests {
 		RewriterStatement stmt = RewriterUtils.parse("sum(*(/(A, B), B))", ctx, "MATRIX:A,B", "LITERAL_INT:0,1");
 		stmt = converter.apply(stmt);
 		RewriterStatement fused = RewriterUtils.buildFusedPlan(stmt, ctx);
-		System.out.println("Orig: " + stmt);
-		System.out.println("Fused: " + fused);
+		System.out.println("Orig: " + stmt.toParsableString(ctx, true));
+		System.out.println("Fused: " + (fused == null ? null : fused.toParsableString(ctx, true)));
 	}
 
 	@Test
@@ -92,17 +92,22 @@ public class RewriterStreamTests {
 		RewriterStatement stmt = RewriterUtils.parse("sum(*(t(A), B))", ctx, "MATRIX:A,B", "LITERAL_INT:0,1");
 		stmt = converter.apply(stmt);
 		RewriterStatement fused = RewriterUtils.buildFusedPlan(stmt, ctx);
-		System.out.println("Orig: " + stmt);
-		System.out.println("Fused: " + fused);
+		System.out.println("Orig: " + stmt.toParsableString(ctx, true));
+		System.out.println("Fused: " + (fused == null ? null : fused.toParsableString(ctx, true)));
 	}
 
 	@Test
 	public void testReorgEquivalence() {
-		RewriterStatement stmt = RewriterUtils.parse("t(t(A))", ctx, "MATRIX:A");
-		RewriterStatement stmt2 = RewriterUtils.parse("t(t(t(t(A))))", ctx, "MATRIX:A");
-		stmt = canonicalConverter.apply(stmt);
+		RewriterStatement stmt1 = RewriterUtils.parse("t(t(A))", ctx, "MATRIX:A");
+		RewriterStatement stmt2 = RewriterUtils.parse("A", ctx, "MATRIX:A");
+		stmt1 = canonicalConverter.apply(stmt1);
 		stmt2 = canonicalConverter.apply(stmt2);
-		assert stmt.match(new RewriterStatement.MatcherContext(ctx, stmt2));
+
+		System.out.println("==========");
+		System.out.println(stmt1.toParsableString(ctx, true));
+		System.out.println("==========");
+		System.out.println(stmt2.toParsableString(ctx, true));
+		assert stmt1.match(new RewriterStatement.MatcherContext(ctx, stmt2));
 	}
 
 	@Test
@@ -147,26 +152,17 @@ public class RewriterStreamTests {
 		assert stmt.match(new RewriterStatement.MatcherContext(ctx, stmt2));
 	}
 
-
-
-
-
-
-
-
-
-
-
-	// TODO: Not working
-	/*@Test
+	@Test
 	public void testAggEquivalence() {
 		RewriterStatement stmt = RewriterUtils.parse("sum(%*%(A, B))", ctx, "MATRIX:A,B");
-		RewriterStatement stmt2 = RewriterUtils.parse("sum(*(A, t(B)))", ctx, "MATRIX:A,B");
+		RewriterStatement stmt2 = RewriterUtils.parse("sum(*(colSums(A), t(rowSums(B))))", ctx, "MATRIX:A,B");
 		stmt = canonicalConverter.apply(stmt);
 		stmt2 = canonicalConverter.apply(stmt2);
 
-		System.out.println(stmt);
-		System.out.println(stmt2);
+		System.out.println("==========");
+		System.out.println(stmt.toParsableString(ctx, true));
+		System.out.println("==========");
+		System.out.println(stmt2.toParsableString(ctx, true));
 		assert stmt.match(new RewriterStatement.MatcherContext(ctx, stmt2));
-	}*/
+	}
 }

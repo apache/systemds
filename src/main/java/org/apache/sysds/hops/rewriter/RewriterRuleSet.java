@@ -129,9 +129,9 @@ public class RewriterRuleSet {
 		MutableObject<Map<RewriterStatement, RewriterRule.LinkObject>> linkObjects = new MutableObject<>(new HashMap<>());
 
 		root.forEachPreOrder((el, parent, rootIdx) -> {
-			String typedInstr = el.trueTypedInstruction(ctx);
+			String typedStr = el.isInstruction() ? el.trueTypedInstruction(ctx) : el.getResultingDataType(ctx);
 			Set<String> props = el instanceof RewriterInstruction ? ((RewriterInstruction)el).getProperties(ctx) : Collections.emptySet();
-			boolean found = acceleratedMatch(el, matches, typedInstr, el.getResultingDataType(ctx), props, rootIdx, (RewriterInstruction) parent, dependencyMap, links, linkObjects, findFirst);
+			boolean found = acceleratedMatch(el, matches, typedStr, el.getResultingDataType(ctx), props, rootIdx, (RewriterInstruction) parent, dependencyMap, links, linkObjects, findFirst);
 			return !findFirst || !found;
 		});
 

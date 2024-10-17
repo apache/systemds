@@ -85,7 +85,7 @@ public class RewriterRule extends AbstractRewriterRule {
 		return linksStmt2ToStmt1;
 	}
 
-	public RewriterStatement apply(RewriterStatement.MatchingSubexpression match, RewriterInstruction rootNode, boolean forward, boolean inplace) {
+	public RewriterStatement apply(RewriterStatement.MatchingSubexpression match, RewriterStatement rootNode, boolean forward, boolean inplace) {
 		return forward ? applyForward(match, rootNode, inplace) : applyBackward(match, rootNode, inplace);
 	}
 
@@ -343,7 +343,7 @@ public class RewriterRule extends AbstractRewriterRule {
 		}
 	}
 
-	static class LinkObject {
+	public static class LinkObject {
 		List<RewriterStatement> stmt;
 		Consumer<ExplicitLink> transferFunction;
 

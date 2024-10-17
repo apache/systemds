@@ -43,14 +43,14 @@ public class RewriterHeuristic implements RewriterHeuristicTransformation {
 		if (handler != null && !handler.apply(currentStmt, null))
 			return currentStmt;
 
-		if (!(currentStmt instanceof RewriterInstruction))
-			return currentStmt;
+		//if (!(currentStmt instanceof RewriterInstruction))
+			//return currentStmt;
 
-		RewriterInstruction current = (RewriterInstruction) currentStmt;
+		//RewriterInstruction current = (RewriterInstruction) currentStmt;
 
 		RewriterRuleSet.ApplicableRule rule;
 		if (accelerated)
-			rule = ruleSet.acceleratedFindFirst(current);
+			rule = ruleSet.acceleratedFindFirst(currentStmt);
 		else
 			throw new NotImplementedException("Must use accelerated mode");//rule = ruleSet.findFirstApplicableRule(current);
 
@@ -58,7 +58,7 @@ public class RewriterHeuristic implements RewriterHeuristicTransformation {
 			foundRewrite.setValue(true);
 
 		while (rule != null) {
-			currentStmt = rule.rule.apply(rule.matches.get(0), current, rule.forward, true);
+			currentStmt = rule.rule.apply(rule.matches.get(0), currentStmt, rule.forward, true);
 
 			if (handler != null && !handler.apply(currentStmt, rule.rule))
 				break;
@@ -66,10 +66,8 @@ public class RewriterHeuristic implements RewriterHeuristicTransformation {
 			if (!(currentStmt instanceof RewriterInstruction))
 				break;
 
-			current = (RewriterInstruction)currentStmt;
-
 			if (accelerated)
-				rule = ruleSet.acceleratedFindFirst(current);
+				rule = ruleSet.acceleratedFindFirst(currentStmt);
 			else
 				throw new IllegalArgumentException("Must use accelerated mode!");//rule = ruleSet.findFirstApplicableRule(current);
 		}

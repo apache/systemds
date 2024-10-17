@@ -71,9 +71,12 @@ public class RewriterHeuristics implements RewriterHeuristicTransformation {
 		@Override
 		public RewriterStatement apply(RewriterStatement stmt, @Nullable BiFunction<RewriterStatement, RewriterRule, Boolean> func, MutableBoolean bool, boolean print) {
 			bool.setValue(true);
+
 			while (bool.getValue()) {
+				// TODO: This adds some overhead if only the first heuristic of the loop is applied
+				// TODO: Then we would know that no second run is needed
 				bool.setValue(false);
-				heuristic.apply(stmt, func, bool, print);
+				stmt = heuristic.apply(stmt, func, bool, print);
 			}
 
 			return stmt;

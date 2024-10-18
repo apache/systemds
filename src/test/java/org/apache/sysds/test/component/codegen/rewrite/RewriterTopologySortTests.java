@@ -91,4 +91,32 @@ public class RewriterTopologySortTests {
 		assert stmt.match(new RewriterStatement.MatcherContext(ctx, stmt2));
 	}
 
+	@Test
+	public void testSimpleEquivalence6() {
+		RewriterStatement stmt = RewriterUtils.parse("+(*(a, b), *(*(a, b), c))", ctx, "FLOAT:a,b,c");
+		RewriterStatement stmt2 = RewriterUtils.parse("+(*(*(a, b), c), *(a, b))", ctx, "FLOAT:a,b,c");
+		stmt = converter.apply(stmt);
+		stmt2 = converter.apply(stmt2);
+
+		System.out.println("==========");
+		System.out.println(stmt.toParsableString(ctx, true));
+		System.out.println("==========");
+		System.out.println(stmt2.toParsableString(ctx, true));
+		assert stmt.match(new RewriterStatement.MatcherContext(ctx, stmt2));
+	}
+
+	@Test
+	public void testSimpleEquivalence7() {
+		RewriterStatement stmt = RewriterUtils.parse("+(*(a, b), *(/(a, b), /(b, a)))", ctx, "FLOAT:a,b,c");
+		RewriterStatement stmt2 = RewriterUtils.parse("+(*(/(a, b), /(b, a)), *(a, b))", ctx, "FLOAT:a,b,c");
+		stmt = converter.apply(stmt);
+		stmt2 = converter.apply(stmt2);
+
+		System.out.println("==========");
+		System.out.println(stmt.toParsableString(ctx, true));
+		System.out.println("==========");
+		System.out.println(stmt2.toParsableString(ctx, true));
+		assert stmt.match(new RewriterStatement.MatcherContext(ctx, stmt2));
+	}
+
 }

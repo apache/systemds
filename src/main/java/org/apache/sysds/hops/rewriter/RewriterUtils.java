@@ -6,6 +6,7 @@ import org.apache.commons.lang3.mutable.MutableInt;
 import org.apache.commons.lang3.mutable.MutableObject;
 import org.apache.logging.log4j.util.TriConsumer;
 import org.apache.spark.internal.config.R;
+import org.apache.zookeeper.data.Id;
 import scala.Tuple2;
 import scala.Tuple3;
 import scala.collection.parallel.ParIterableLike;
@@ -800,9 +801,20 @@ public class RewriterUtils {
 	}
 
 	public static void topologicalSort(RewriterStatement stmt, final RuleContext ctx, BiFunction<RewriterStatement, RewriterStatement, Boolean> arrangable) {
-		Map<RewriterRule.IdentityRewriterStatement, Map<RewriterRule.IdentityRewriterStatement, Integer>> votes = new HashMap<>();
-		Map<RewriterRule.IdentityRewriterStatement, Set<RewriterRule.IdentityRewriterStatement>> gotRatedBy = new HashMap<>();
-		List<Set<RewriterRule.IdentityRewriterStatement>> uncertainStatements = new ArrayList<>();
+		MutableInt nameCtr = new MutableInt();
+		stmt.forEachPostOrderWithDuplicates((el, parent, pIdx) -> {
+			if (el.getOperands().isEmpty()) {
+				el.unsafePutMeta("_tempName", nameCtr.intValue());
+				nameCtr.increment();
+			} else if (parent != null && arrangable.apply(el, parent)) {
+				el.unsafePutMeta("_tempName", nameCtr.intValue());
+				nameCtr.increment();
+			}
+		});
+
+		//Map<RewriterRule.IdentityRewriterStatement, Map<RewriterRule.IdentityRewriterStatement, Integer>> votes = new HashMap<>();
+		//Map<RewriterRule.IdentityRewriterStatement, Set<RewriterRule.IdentityRewriterStatement>> gotRatedBy = new HashMap<>();
+		//List<Set<RewriterRule.IdentityRewriterStatement>> uncertainStatements = new ArrayList<>();
 
 		// First pass (try to figure out everything)
 		traversePostOrderWithDepthInfo(stmt, null, (el, depth, parent) -> {
@@ -810,12 +822,13 @@ public class RewriterUtils {
 				return;
 
 			RewriterRule.IdentityRewriterStatement voter = new RewriterRule.IdentityRewriterStatement(el);
+			createHierarchy(ctx, el, el.getOperands());
 
-			if (votes.containsKey(voter))
+			/*if (votes.containsKey(voter))
 				return;
 
 			if (arrangable.apply(el, parent)) {
-				List<Set<RewriterRule.IdentityRewriterStatement>> uStatements = createHierarchy(ctx, el, el.getOperands(), votes, gotRatedBy);
+				List<Set<RewriterRule.IdentityRewriterStatement>> uStatements = createHierarchy(ctx, el, el.getOperands());
 				if (uStatements.size() > 0) {
 					uStatements.forEach(e -> System.out.println("Uncertain: " + e.stream().map(t -> t.stmt).collect(Collectors.toList())));
 					uncertainStatements.addAll(uStatements);
@@ -841,12 +854,14 @@ public class RewriterUtils {
 
 					ratedBy.add(voter);
 				}
-			}
+			}*/
 		}, 0);
 
-		while (!uncertainStatements.isEmpty()) {
+		// TODO: Erase temp names
+
+		/*while (!uncertainStatements.isEmpty()) {
 			// Now, try to resolve the conflicts deterministically using element-wise comparison
-			Map<Tuple2<RewriterRule.IdentityRewriterStatement, RewriterRule.IdentityRewriterStatement>, Optional<Boolean>> orderSet = new HashMap<>();
+			Map<Tuple2<RewriterRule.IdentityRewriterStatement, RewriterRule.IdentityRewriterStatement>, Integer> orderSet = new HashMap<>();
 
 			for (Set<RewriterRule.IdentityRewriterStatement> requiredComparisons : uncertainStatements) {
 				forEachDistinctBinaryCombination(new ArrayList<>(requiredComparisons), (s1, s2) -> {
@@ -859,19 +874,137 @@ public class RewriterUtils {
 					}
 				});
 			}
-		}
+		}*/
 
 		// Trigger a recomputation of the hash codes
 		stmt.prepareForHashing();
 		stmt.recomputeHashCodes(ctx);
 	}
 
-	private static Optional<Boolean> compareStatements(RewriterRule.IdentityRewriterStatement s1, RewriterRule.IdentityRewriterStatement s2, Map<RewriterRule.IdentityRewriterStatement, Map<RewriterRule.IdentityRewriterStatement, Integer>> votes, Map<RewriterRule.IdentityRewriterStatement, Set<RewriterRule.IdentityRewriterStatement>> gotRatedBy) {
-		// TODO: Implement
-		return Optional.empty();
-	}
+	/*public static void setupOrderFacts(RewriterStatement root, final RuleContext ctx) {
+		root.forEachPostOrder((el, parent, pIdx) -> {
+			HashMap<RewriterRule.IdentityRewriterStatement, Integer> facts = new HashMap<>();
+			List<Set<RewriterRule.IdentityRewriterStatement>> uncertainties = new ArrayList<>();
+			List<RewriterStatement> subComparisons = new ArrayList<>();
+			List<Object> semiLists = new ArrayList<>();
+			el.unsafePutMeta("_facts", facts);
+			//el.unsafePutMeta("_uncertainties", uncertainties);
+			el.unsafePutMeta("_subComparisons", subComparisons);
+			el.unsafePutMeta("_semiList", semiLists);
 
-	private static <T> void forEachDistinctBinaryCombination(List<T> l, BiConsumer<T, T> consumer) {
+			el.getOperands().sort(Comparator.comparing(stmt -> toOrderString(ctx, stmt)));
+
+			subComparisons.add(el);
+			int range = 0;
+			for (int i = 1; i < el.getOperands().size(); i++) {
+				if (toOrderString(ctx, el.getOperands().get(i-1)).compareTo(toOrderString(ctx, el.getOperands().get(i))) != 0) {
+					if (i - range > 1)
+						// Then we have uncertain elements
+						continue;
+
+					range = i;
+					// Then we can add i - 1 to the list of certainties
+					subComparisons.addAll((List<RewriterStatement>)el.getOperands().get(i-1).getMeta("_subComparisons"));
+				}
+			}
+
+			if (range == el.getOperands().size() - 1)
+				subComparisons.addAll((List<RewriterStatement>)el.getOperands().get(range).getMeta("_subComparisons"));
+
+			// Sort to the best of our knowledge
+			el.getOperands().sort((el1, el2) -> compare(el1, el2, ctx));
+
+			// Now we figure out the uncertain elements
+			range = 0;
+			List<RewriterRule.IdentityRewriterStatement> currentUncertainties = new ArrayList<>();
+			for (int i = 1; i < el.getOperands().size(); i++) {
+				if (compare(el.getOperands().get(i-1), el.getOperands().get(i), ctx) != 0) {
+					if (i - range > 1) {
+						// Then we still have uncertain elements
+						if (i - range == 2)
+							currentUncertainties.add(new RewriterRule.IdentityRewriterStatement(el.getOperands().get(i - 1)));
+
+						currentUncertainties.add(new RewriterRule.IdentityRewriterStatement(el.getOperands().get(i)));
+						facts.put(new RewriterRule.IdentityRewriterStatement(el.getOperands().get(i)), range);
+						continue;
+					}
+
+					range = i;
+					//facts.put(new RewriterRule.IdentityRewriterStatement(el.getOperands().get(i-1)), range);
+
+					if (currentUncertainties.isEmpty()) {
+						// Then we have a fact and we can add it to the facts list
+						facts.put(new RewriterRule.IdentityRewriterStatement(el.getOperands().get(i-1)), i);
+						semiLists.add(el.getOperands().get(i-1));
+					} else {
+						uncertainties.add(currentUncertainties);
+						semiLists.add(new HashSet<>(currentUncertainties));
+						currentUncertainties = new HashSet<>();
+					}
+				}
+			}
+
+			if (currentUncertainties.isEmpty()) {
+				// Then we have a fact and we can add it to the facts list
+				facts.put(new RewriterRule.IdentityRewriterStatement(el.getOperands().get(el.getOperands().size()-1)), range);
+				semiLists.add(el.getOperands().get(el.getOperands().size()-1));
+			} else {
+				uncertainties.add(currentUncertainties);
+				semiLists.add(new HashSet<>(currentUncertainties));
+			}
+
+			//facts.put(new RewriterRule.IdentityRewriterStatement(el.getOperands().get(el.getOperands().size()-1)), range);
+		});
+	}*/
+
+	/*public static boolean factOrderingPass(RewriterStatement root) {
+		MutableBoolean changeHappened = new MutableBoolean(true);
+
+		while (changeHappened.booleanValue()) {
+			root.forEachPostOrder((current, parent, pIdx) -> {
+				// Here we try to bubble up the global order facts
+			});
+		}
+	}*/
+
+	// Returns null if there are not enough facts to determine the absolute order of elements
+	/*private static Integer compare(RewriterStatement stmt1, RewriterStatement stmt2, RewriterFactTable factTable, final RuleContext ctx) {
+		if (stmt1 == stmt2)
+			return 0;
+
+		int cmp = toOrderString(ctx, stmt1).compareTo(toOrderString(ctx, stmt2));
+
+		if (cmp != 0)
+			return cmp;
+
+		if (stmt1.getOperands().size() == 0) {
+			// Only then the fact can be in the fact table
+			Integer cmpFromTable = factTable.compare(stmt1, stmt2);
+
+			if (cmpFromTable != null)
+				return cmpFromTable;
+		}
+
+		List<Object> compareHierarchy1 = (List<Object>)stmt1.getMeta("_semiList");
+		List<Object> compareHierarchy2 = (List<Object>)stmt2.getMeta("_semiList");
+
+		for (int i = 0; i < compareHierarchy1.size(); i++) {
+			if (compareHierarchy1.get(i) instanceof RewriterStatement && compareHierarchy2.get(i) instanceof RewriterStatement) {
+				// Then the order of elements is determined
+				Integer comparison = compare((RewriterStatement) compareHierarchy1.get(i), (RewriterStatement) compareHierarchy2.get(i), factTable, ctx);
+
+				if (comparison == null)
+					return null; // Then the element cannot be compared yet
+
+				if (comparison != 0)
+					return comparison;
+			}
+		}
+
+		return 0;
+	}*/
+
+	public static <T> void forEachDistinctBinaryCombination(List<T> l, BiConsumer<T, T> consumer) {
 		for (int i = 0; i < l.size(); i++)
 			for (int j = l.size() - 1; j > i; j--)
 				consumer.accept(l.get(i), l.get(j));
@@ -885,13 +1018,14 @@ public class RewriterUtils {
 	}
 
 	// Returns the range of uncertain elements [start, end)
-	public static List<Set<RewriterRule.IdentityRewriterStatement>> createHierarchy(final RuleContext ctx, RewriterStatement voter, List<RewriterStatement> level, Map<RewriterRule.IdentityRewriterStatement, Map<RewriterRule.IdentityRewriterStatement, Integer>> allVotes, Map<RewriterRule.IdentityRewriterStatement, Set<RewriterRule.IdentityRewriterStatement>> gotRatedBy) {
+	public static void createHierarchy(final RuleContext ctx, RewriterStatement voter, List<RewriterStatement> level) {
 		if (level.isEmpty())
-			return Collections.emptyList();
+			return;
 
-		level.sort(Comparator.comparing(el -> toOrderString(ctx, el)));
+		//level.sort(Comparator.comparing(el -> toOrderString(ctx, el)));
+		level.sort((el1, el2) -> compare(el1, el2, ctx));
 
-		List<Set<RewriterRule.IdentityRewriterStatement>> ranges = new ArrayList<>();
+		/*List<Set<RewriterRule.IdentityRewriterStatement>> ranges = new ArrayList<>();
 		int currentRangeStart = 0;
 
 		RewriterRule.IdentityRewriterStatement voterIds = new RewriterRule.IdentityRewriterStatement(voter);
@@ -915,7 +1049,7 @@ public class RewriterUtils {
 
 		for (int i = 1; i < level.size(); i++) {
 			System.out.println(toOrderString(ctx, level.get(i-1)) + " <=> " + toOrderString(ctx, level.get(i)));
-			if (!toOrderString(ctx, level.get(i)).equals(toOrderString(ctx, level.get(i-1)))) {
+			if (compare(level.get(i-1), level.get(i), ctx) == 0) {
 				if (i - currentRangeStart > 1) {
 					Set<RewriterRule.IdentityRewriterStatement> mSet = level.subList(currentRangeStart, i).stream().map(RewriterRule.IdentityRewriterStatement::new).collect(Collectors.toSet());
 
@@ -953,14 +1087,99 @@ public class RewriterUtils {
 			System.out.println("E-Set: " + mSet.stream().map(id -> id.stmt.toParsableString(ctx, false)).collect(Collectors.toList()));
 		}
 
-		return ranges;
+		return ranges;*/
+	}
+
+	// Try to find new facts that enable comparisons between elements
+	/*private static boolean decisionStep(RewriterRule.IdentityRewriterStatement unknown1, RewriterRule.IdentityRewriterStatement unknown2, Map<RewriterRule.IdentityRewriterStatement, Map<RewriterRule.IdentityRewriterStatement, Integer>> votes, Map<RewriterRule.IdentityRewriterStatement, Set<RewriterRule.IdentityRewriterStatement>> gotRatedBy, Map<Tuple2<RewriterRule.IdentityRewriterStatement, RewriterRule.IdentityRewriterStatement>, Integer> globalOrders, BiFunction<RewriterStatement, RewriterStatement, Boolean> arrangable, final RuleContext ctx) {
+		Set<RewriterRule.IdentityRewriterStatement> commonRatings = gotRatedBy.getOrDefault(unknown1, Collections.emptySet());
+		Set<RewriterRule.IdentityRewriterStatement> u2Ratings = gotRatedBy.getOrDefault(unknown2, Collections.emptySet());
+
+		// Only keep parents that actually rated both of the children
+		commonRatings.retainAll(u2Ratings);
+
+		// Now, find the nodes that have actually decided this problem (if there is none, this problem is not decidable and we need to introduce facts)
+		List<Tuple2<RewriterRule.IdentityRewriterStatement, Integer>> decisions = commonRatings.stream().filter(decider -> votes.get(decider).get(unknown1) != votes.get(decider).get(unknown2)).map(decider -> new Tuple2<>(decider, Integer.compare(votes.get(decider).get(unknown1), votes.get(decider).get(unknown2)))).collect(Collectors.toList());
+
+		// Now, we try to find differences in uncertainties/orderings in the parent path
+		// Otherwise take the first one that reaches the root
+		int vote = 0;
+		RewriterRule.IdentityRewriterStatement maxElement = null;
+		int maxElementIndex = 0;
+		for (int i = 0; i < decisions.size(); i++) {
+			Tuple2<RewriterRule.IdentityRewriterStatement, Integer> currentDecision = decisions.get(i);
+
+			if (currentDecision == null)
+				continue;
+
+			if (maxElement == null) {
+				maxElement = currentDecision._1;
+				vote = currentDecision._2;
+				maxElementIndex = i;
+				continue;
+			}
+
+			if (compare(maxElement.stmt, currentDecision._1.stmt, null, null, globalOrders, arrangable, ctx) > 0) {
+				maxElementIndex = i;
+			}
+		}
+	}*/
+
+	public static int compare(RewriterStatement stmt1, RewriterStatement stmt2, /*RewriterStatement p1, RewriterStatement p2, Map<Tuple2<RewriterRule.IdentityRewriterStatement, RewriterRule.IdentityRewriterStatement>, Integer> globalOrders, BiFunction<RewriterStatement, RewriterStatement, Boolean> arrangable,*/ final RuleContext ctx) {
+		/*boolean arrangable1 = arrangable.apply(stmt1, p1);
+		boolean arrangable2 = arrangable.apply(stmt2, p2);
+
+		if (arrangable1) {
+			if (!arrangable2)
+				return 1;
+		} else {
+			if (arrangable2)
+				return -1;
+		}
+
+		RewriterRule.IdentityRewriterStatement id1 = new RewriterRule.IdentityRewriterStatement(stmt1);
+		RewriterRule.IdentityRewriterStatement id2 = new RewriterRule.IdentityRewriterStatement(stmt2);
+
+		if (!globalOrders.isEmpty()) {
+			Integer result = globalOrders.get(new Tuple2<>(id1, id2));
+
+			if (result == null)
+				result = globalOrders.get(new Tuple2<>(id2, id1));
+
+			if (result != null)
+				return result;
+		}*/
+
+		int comp = toOrderString(ctx, stmt1).compareTo(toOrderString(ctx, stmt2));
+
+		if (comp != 0 || stmt1.getOperands().isEmpty())
+			return comp;
+
+		for (int i = 0; i < stmt1.getOperands().size() && comp == 0; i++)
+			comp = compare(stmt1.getOperands().get(i), stmt2.getOperands().get(i), ctx);
+
+		if (comp == 0) {
+			Integer mName1 = (Integer)stmt1.getMeta("_tempName");
+
+			if (mName1 == null)
+				return 0;
+
+			return mName1.toString().compareTo(stmt2.getMeta("_tempName").toString());
+		}
+
+		return comp;
 	}
 
 	public static String toOrderString(final RuleContext ctx, RewriterStatement stmt) {
+		return toOrderString(ctx, stmt, false);
+	}
+
+	public static String toOrderString(final RuleContext ctx, RewriterStatement stmt, boolean extendIfPossible) {
 		if (stmt.isInstruction()) {
-			return stmt.getResultingDataType(ctx) + ":" + stmt.trueTypedInstruction(ctx) + "[" + stmt.refCtr + "](" + stmt.getOperands().size() + ");";
+			Integer mName = (Integer)stmt.getMeta("_tempName");
+			return stmt.getResultingDataType(ctx) + ":" + stmt.trueTypedInstruction(ctx) + "[" + stmt.refCtr + "](" + stmt.getOperands().size() + ")" + (mName == null ? "" : mName) + ";";
 		} else {
-			return stmt.getResultingDataType(ctx) + ":" + (stmt.isLiteral() ? "L:" + stmt.getLiteral() : "V") + "[" + stmt.refCtr + "](0);";
+			return stmt.getResultingDataType(ctx) + ":" + (stmt.isLiteral() ? "L:" + stmt.getLiteral() : "V") + "[" + stmt.refCtr + "](0)" + stmt.getMeta("_tempName") + ";";
 		}
 	}
 

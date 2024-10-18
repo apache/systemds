@@ -478,6 +478,17 @@ public abstract class RewriterStatement implements Comparable<RewriterStatement>
 		consumer.accept(this, parent, rootIdx);
 	}
 
+	public void forEachPostOrderWithDuplicates(TriConsumer<RewriterStatement, RewriterStatement, Integer> consumer) {
+		forEachPostOrderWithDuplicates(consumer, null, -1);
+	}
+
+	private void forEachPostOrderWithDuplicates(TriConsumer<RewriterStatement, RewriterStatement, Integer> consumer, RewriterStatement parent, int pIdx) {
+		for (int i = 0; i < getOperands().size(); i++)
+			getOperands().get(i).forEachPostOrderWithDuplicates(consumer, this, i);
+
+		consumer.accept(this, parent, pIdx);
+	}
+
 	@Override
 	public int compareTo(@NotNull RewriterStatement o) {
 		return Long.compare(getCost(), o.getCost());

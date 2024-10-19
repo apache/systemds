@@ -19,6 +19,7 @@
 
 package org.apache.sysds.test.component.resource;
 
+import org.apache.commons.configuration2.PropertiesConfiguration;
 import org.apache.sysds.api.DMLScript;
 import org.apache.sysds.conf.ConfigurationManager;
 import org.apache.sysds.parser.DMLProgram;
@@ -40,7 +41,6 @@ import java.nio.file.attribute.BasicFileAttributes;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.stream.Collectors;
 
 import static org.apache.sysds.resource.CloudUtils.GBtoBytes;
@@ -162,26 +162,26 @@ public class ResourceTestUtils {
 		Assert.assertEquals(expected.getMonetaryCost(), actual.getMonetaryCost(), 0);
 	}
 
-	public static Map<String, String> generateTestingEnvOptionsRequired(String outputPath) {
-		return generateEnvOptionsRequired(
+	public static PropertiesConfiguration generateTestingOptionsRequired(String outputPath) {
+		return generateOptionsRequired(
 				TEST_REGION,
 				TEST_ARTIFACTS+MINIAL_INFO_TABLE,
 				TEST_ARTIFACTS+MINIAL_REGION_TABLE,
 				outputPath);
 	}
 
-	public static Map<String, String> generateEnvOptionsRequired(
+	public static PropertiesConfiguration generateOptionsRequired(
 			String region,
 			String infoTable,
 			String regionTable,
 			String outputFolder
 	) {
-		return generateEnvOptions(region, infoTable, regionTable, outputFolder,
+		return generateOptions(region, infoTable, regionTable, outputFolder,
 				null, null, null, null, null, null, null, null,
 				null, null, null, null, null, null, null, null);
 	}
 
-	public static Map<String, String> generateEnvOptions(
+	public static PropertiesConfiguration generateOptions(
 			String region,
 			String infoTable,
 			String regionTable,
@@ -203,35 +203,35 @@ public class ResourceTestUtils {
 			String useBroadcasts,
 			String useOutputs
 	) {
-		Map<String, String> envMap = new HashMap<>();
+		PropertiesConfiguration options = new PropertiesConfiguration();
 
-		addToMapIfNotNull(envMap, "REGION", region);
-		addToMapIfNotNull(envMap, "INFO_TABLE", infoTable);
-		addToMapIfNotNull(envMap, "REGION_TABLE", regionTable);
-		addToMapIfNotNull(envMap, "OUTPUT_FOLDER", outputFolder);
-		addToMapIfNotNull(envMap, "LOCAL_INPUTS", localInputs);
-		addToMapIfNotNull(envMap, "ENUMERATION", enumeration);
-		addToMapIfNotNull(envMap, "OPTIMIZATION_FUNCTION", optimizationFunction);
-		addToMapIfNotNull(envMap, "MAX_TIME", maxTime);
-		addToMapIfNotNull(envMap, "MAX_PRICE", maxPrice);
-		addToMapIfNotNull(envMap, "CPU_QUOTA", cpuQuota);
-		addToMapIfNotNull(envMap, "MIN_EXECUTORS", minExecutors);
-		addToMapIfNotNull(envMap, "MAX_EXECUTORS", maxExecutors);
-		addToMapIfNotNull(envMap, "INSTANCE_FAMILIES", instanceFamilies);
-		addToMapIfNotNull(envMap, "INSTANCE_SIZES", instanceSizes);
-		addToMapIfNotNull(envMap, "STEP_SIZE", stepSize);
-		addToMapIfNotNull(envMap, "EXPONENTIAL_BASE", exponentialBase);
-		addToMapIfNotNull(envMap, "USE_LARGEST_ESTIMATE", useLargestEstimate);
-		addToMapIfNotNull(envMap, "USE_CP_ESTIMATES", useCpEstimates);
-		addToMapIfNotNull(envMap, "USE_BROADCASTS", useBroadcasts);
-		addToMapIfNotNull(envMap, "USE_OUTPUTS", useOutputs);
+		addToMapIfNotNull(options, "REGION", region);
+		addToMapIfNotNull(options, "INFO_TABLE", infoTable);
+		addToMapIfNotNull(options, "REGION_TABLE", regionTable);
+		addToMapIfNotNull(options, "OUTPUT_FOLDER", outputFolder);
+		addToMapIfNotNull(options, "LOCAL_INPUTS", localInputs);
+		addToMapIfNotNull(options, "ENUMERATION", enumeration);
+		addToMapIfNotNull(options, "OPTIMIZATION_FUNCTION", optimizationFunction);
+		addToMapIfNotNull(options, "MAX_TIME", maxTime);
+		addToMapIfNotNull(options, "MAX_PRICE", maxPrice);
+		addToMapIfNotNull(options, "CPU_QUOTA", cpuQuota);
+		addToMapIfNotNull(options, "MIN_EXECUTORS", minExecutors);
+		addToMapIfNotNull(options, "MAX_EXECUTORS", maxExecutors);
+		addToMapIfNotNull(options, "INSTANCE_FAMILIES", instanceFamilies);
+		addToMapIfNotNull(options, "INSTANCE_SIZES", instanceSizes);
+		addToMapIfNotNull(options, "STEP_SIZE", stepSize);
+		addToMapIfNotNull(options, "EXPONENTIAL_BASE", exponentialBase);
+		addToMapIfNotNull(options, "USE_LARGEST_ESTIMATE", useLargestEstimate);
+		addToMapIfNotNull(options, "USE_CP_ESTIMATES", useCpEstimates);
+		addToMapIfNotNull(options, "USE_BROADCASTS", useBroadcasts);
+		addToMapIfNotNull(options, "USE_OUTPUTS", useOutputs);
 
-		return envMap;
+		return options;
 	}
 
-	private static void addToMapIfNotNull(Map<String, String> map, String key, String value) {
+	private static void addToMapIfNotNull(PropertiesConfiguration options, String key, String value) {
 		if (value != null) {
-			map.put(key, value);
+			options.setProperty(key, value);
 		}
 	}
 

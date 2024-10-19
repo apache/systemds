@@ -49,7 +49,6 @@ public class CostEstimatorTest extends AutomatedTestBase {
 	static {
 		ConfigurationManager.getCompilerConfig().set(CompilerConfig.ConfigType.RESOURCE_OPTIMIZATION, true);
 	}
-	private static final boolean DEBUG_MODE = true;
 	private static final String TEST_DIR = "component/resource/";
 	private static final String HOME = SCRIPT_DIR + TEST_DIR;
 	private static final String TEST_CLASS_DIR = TEST_DIR + CostEstimatorTest.class.getSimpleName() + "/";
@@ -333,9 +332,9 @@ public class CostEstimatorTest extends AutomatedTestBase {
 			dmlt.rewriteHopsDAG(prog);
 			dmlt.constructLops(prog);
 			Program rtprog = dmlt.getRuntimeProgram(prog, ConfigurationManager.getDMLConfig());
-			if (DEBUG_MODE) System.out.println(Explain.explain(rtprog));
+			if (DEBUG) System.out.println(Explain.explain(rtprog));
 			double timeCost = CostEstimator.estimateExecutionTime(rtprog, driver, executor);
-			if (DEBUG_MODE) System.out.println("Estimated execution time: " + timeCost + " seconds.");
+			if (DEBUG) System.out.println("Estimated execution time: " + timeCost + " seconds.");
 			// check error-free cost estimation and meaningful result
 			Assert.assertTrue(timeCost > 0);
 			// return time cost for further assertions

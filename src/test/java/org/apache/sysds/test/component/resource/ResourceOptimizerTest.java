@@ -1,6 +1,7 @@
 package org.apache.sysds.test.component.resource;
 
 import org.apache.commons.cli.*;
+import org.apache.commons.configuration2.PropertiesConfiguration;
 import org.apache.sysds.resource.CloudInstance;
 import org.apache.sysds.resource.ResourceOptimizer;
 import org.apache.sysds.resource.enumeration.Enumerator;
@@ -17,7 +18,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.Map;
 
 import static org.apache.sysds.resource.ResourceOptimizer.createOptions;
 import static org.apache.sysds.resource.ResourceOptimizer.initEnumerator;
@@ -35,9 +35,9 @@ public class ResourceOptimizerTest extends AutomatedTestBase {
         String[] args = {
                 "-f", HOME+"Algorithm_L2SVM.dml",
         };
-        Map<String, String> envOptions = generateTestingEnvOptionsRequired("any");
+        PropertiesConfiguration options = generateTestingOptionsRequired("any");
 
-        Enumerator actualEnumerator = assertProperEnumeratorInitialization(args, envOptions);
+        Enumerator actualEnumerator = assertProperEnumeratorInitialization(args, options);
         Assert.assertTrue(actualEnumerator instanceof GridBasedEnumerator);
         // assert all defaults
         HashMap<String, CloudInstance> expectedInstances = getSimpleCloudInstanceMap();
@@ -61,9 +61,9 @@ public class ResourceOptimizerTest extends AutomatedTestBase {
                 "-f", dmlScript.getPath(),
                 "-args", "10", "100"
         };
-        Map<String, String> envOptions = generateTestingEnvOptionsRequired("any");
+        PropertiesConfiguration options = generateTestingOptionsRequired("any");
 
-        assertProperEnumeratorInitialization(args, envOptions);
+        assertProperEnumeratorInitialization(args, options);
 
         Files.deleteIfExists(dmlScript.toPath());
     }
@@ -76,9 +76,9 @@ public class ResourceOptimizerTest extends AutomatedTestBase {
                 "-f", dmlScript.getPath(),
                 "-nvargs", "m=10", "n=100"
         };
-        Map<String, String> envOptions = generateTestingEnvOptionsRequired("any");
+        PropertiesConfiguration options = generateTestingOptionsRequired("any");
 
-        assertProperEnumeratorInitialization(args, envOptions);
+        assertProperEnumeratorInitialization(args, options);
 
         Files.deleteIfExists(dmlScript.toPath());
     }
@@ -96,10 +96,10 @@ public class ResourceOptimizerTest extends AutomatedTestBase {
         } catch (ParseException e) {
             Assert.fail("ParseException should not have been raise here: "+e);
         }
-        Map<String, String> invalidEnvOption = generateTestingEnvOptionsRequired("any");
-        invalidEnvOption.put("OPTIMIZATION_FUNCTION", "time");
+        PropertiesConfiguration invalidOptions = generateTestingOptionsRequired("any");
+        invalidOptions.setProperty("OPTIMIZATION_FUNCTION", "time");
         try {
-            initEnumerator(line, options, invalidEnvOption);
+            initEnumerator(line, invalidOptions);
             Assert.fail("ParseException should not have been raise here for not provided -maxPrice argument");
         } catch (Exception e) {
             Assert.assertTrue(e instanceof ParseException);
@@ -109,9 +109,9 @@ public class ResourceOptimizerTest extends AutomatedTestBase {
         String[] validArgs = {
                 "-f", HOME+"Algorithm_L2SVM.dml",
         };
-        Map<String, String> validEnvOptions = generateTestingEnvOptionsRequired("any");
-        validEnvOptions.put("OPTIMIZATION_FUNCTION", "time");
-        validEnvOptions.put("MAX_PRICE", "1000");
+        PropertiesConfiguration validEnvOptions = generateTestingOptionsRequired("any");
+        validEnvOptions.setProperty("OPTIMIZATION_FUNCTION", "time");
+        validEnvOptions.setProperty("MAX_PRICE", "1000");
         Enumerator actualEnumerator = assertProperEnumeratorInitialization(validArgs, validEnvOptions);
         Assert.assertEquals(Enumerator.OptimizationStrategy.MinTime, actualEnumerator.getOptStrategy());
         Assert.assertEquals(1000, actualEnumerator.getMaxPrice(), 0.0);
@@ -130,10 +130,10 @@ public class ResourceOptimizerTest extends AutomatedTestBase {
         } catch (ParseException e) {
             Assert.fail("ParseException should not have been raise here: "+e);
         }
-        Map<String, String> invalidEnvOptions = generateTestingEnvOptionsRequired("any");
-        invalidEnvOptions.put("OPTIMIZATION_FUNCTION", "price");
+        PropertiesConfiguration invalidEnvOptions = generateTestingOptionsRequired("any");
+        invalidEnvOptions.setProperty("OPTIMIZATION_FUNCTION", "price");
         try {
-            initEnumerator(line, options, invalidEnvOptions);
+            initEnumerator(line, invalidEnvOptions);
             Assert.fail("ParseException should not have been raise here for not provided -maxTime argument");
         } catch (Exception e) {
             Assert.assertTrue(e instanceof ParseException);
@@ -143,9 +143,9 @@ public class ResourceOptimizerTest extends AutomatedTestBase {
         String[] validArgs = {
                 "-f", HOME+"Algorithm_L2SVM.dml",
         };
-        Map<String, String> validEnvOptions = generateTestingEnvOptionsRequired("any");
-        validEnvOptions.put("OPTIMIZATION_FUNCTION", "price");
-        validEnvOptions.put("MAX_TIME", "1000");
+        PropertiesConfiguration validEnvOptions = generateTestingOptionsRequired("any");
+        validEnvOptions.setProperty("OPTIMIZATION_FUNCTION", "price");
+        validEnvOptions.setProperty("MAX_TIME", "1000");
         Enumerator actualEnumerator = assertProperEnumeratorInitialization(validArgs, validEnvOptions);
         Assert.assertEquals(Enumerator.OptimizationStrategy.MinPrice, actualEnumerator.getOptStrategy());
         Assert.assertEquals(1000, actualEnumerator.getMaxTime(), 0.0);
@@ -156,12 +156,12 @@ public class ResourceOptimizerTest extends AutomatedTestBase {
         String[] args = {
                 "-f", HOME+"Algorithm_L2SVM.dml",
         };
-        Map<String, String> envOptions = generateTestingEnvOptionsRequired("any");
-        envOptions.put("ENUMERATION", "grid");
-        envOptions.put("STEP_SIZE", "3");
-        envOptions.put("EXPONENTIAL_BASE", "2");
+        PropertiesConfiguration options = generateTestingOptionsRequired("any");
+        options.setProperty("ENUMERATION", "grid");
+        options.setProperty("STEP_SIZE", "3");
+        options.setProperty("EXPONENTIAL_BASE", "2");
 
-        Enumerator actualEnumerator = assertProperEnumeratorInitialization(args, envOptions);
+        Enumerator actualEnumerator = assertProperEnumeratorInitialization(args, options);
         Assert.assertTrue(actualEnumerator instanceof GridBasedEnumerator);
         // assert enum. specific default
         Assert.assertEquals(3, ((GridBasedEnumerator) actualEnumerator).getStepSize());
@@ -173,10 +173,10 @@ public class ResourceOptimizerTest extends AutomatedTestBase {
         String[] args = {
                 "-f", HOME+"Algorithm_L2SVM.dml",
         };
-        Map<String, String> envOptions = generateTestingEnvOptionsRequired("any");
-        envOptions.put("ENUMERATION", "interest");
+        PropertiesConfiguration options = generateTestingOptionsRequired("any");
+        options.setProperty("ENUMERATION", "interest");
 
-        Enumerator actualEnumerator = assertProperEnumeratorInitialization(args, envOptions);
+        Enumerator actualEnumerator = assertProperEnumeratorInitialization(args, options);
         Assert.assertTrue(actualEnumerator instanceof InterestBasedEnumerator);
         // assert enum. specific default
         Assert.assertTrue(((InterestBasedEnumerator) actualEnumerator).interestLargestEstimateEnabled());
@@ -191,10 +191,10 @@ public class ResourceOptimizerTest extends AutomatedTestBase {
         String[] args = {
                 "-f", HOME+"Algorithm_L2SVM.dml",
         };
-        Map<String, String> envOptions = generateTestingEnvOptionsRequired("any");
-        envOptions.put("ENUMERATION", "prune");
+        PropertiesConfiguration options = generateTestingOptionsRequired("any");
+        options.setProperty("ENUMERATION", "prune");
 
-        Enumerator actualEnumerator = assertProperEnumeratorInitialization(args, envOptions);
+        Enumerator actualEnumerator = assertProperEnumeratorInitialization(args, options);
         Assert.assertTrue(actualEnumerator instanceof PruneBasedEnumerator);
     }
 
@@ -204,15 +204,15 @@ public class ResourceOptimizerTest extends AutomatedTestBase {
         String[] args = {
                 "-f", HOME+"Algorithm_L2SVM.dml",
         };
-        Map<String, String> envOptions = generateTestingEnvOptionsRequired("any");
-        envOptions.put("ENUMERATION", "interest");
-        envOptions.put("USE_LARGEST_ESTIMATE", "false");
-        envOptions.put("USE_CP_ESTIMATES", "false");
-        envOptions.put("USE_BROADCASTS", "false");
-        envOptions.put("USE_OUTPUTS", "true");
+        PropertiesConfiguration options = generateTestingOptionsRequired("any");
+        options.setProperty("ENUMERATION", "interest");
+        options.setProperty("USE_LARGEST_ESTIMATE", "false");
+        options.setProperty("USE_CP_ESTIMATES", "false");
+        options.setProperty("USE_BROADCASTS", "false");
+        options.setProperty("USE_OUTPUTS", "true");
 
         InterestBasedEnumerator actualEnumerator =
-                (InterestBasedEnumerator) assertProperEnumeratorInitialization(args, envOptions);
+                (InterestBasedEnumerator) assertProperEnumeratorInitialization(args, options);
         // assert enum. specific default
         Assert.assertFalse(actualEnumerator.interestLargestEstimateEnabled());
         Assert.assertFalse(actualEnumerator.interestEstimatesInCPEnabled());
@@ -225,11 +225,11 @@ public class ResourceOptimizerTest extends AutomatedTestBase {
         String[] args = {
                 "-f", HOME+"Algorithm_L2SVM.dml",
         };
-        Map<String, String> envOptions = generateTestingEnvOptionsRequired("any");
-        envOptions.put("INSTANCE_FAMILIES", "m5");
-        envOptions.put("INSTANCE_SIZES", "2xlarge");
+        PropertiesConfiguration options = generateTestingOptionsRequired("any");
+        options.setProperty("INSTANCE_FAMILIES", "m5");
+        options.setProperty("INSTANCE_SIZES", "2xlarge");
 
-        Enumerator actualEnumerator = assertProperEnumeratorInitialization(args, envOptions);
+        Enumerator actualEnumerator = assertProperEnumeratorInitialization(args, options);
 
         HashMap<String, CloudInstance> inputInstances = getSimpleCloudInstanceMap();
         HashMap<String, CloudInstance> expectedInstances = new HashMap<>();
@@ -247,10 +247,10 @@ public class ResourceOptimizerTest extends AutomatedTestBase {
         String[] args = {
                 "-f", HOME+"Algorithm_L2SVM.dml",
         };
-        Map<String, String> envOptions = generateTestingEnvOptionsRequired("any");
-        envOptions.put("CPU_QUOTA", "256");
+        PropertiesConfiguration options = generateTestingOptionsRequired("any");
+        options.setProperty("CPU_QUOTA", "256");
 
-        Enumerator actualEnumerator = assertProperEnumeratorInitialization(args, envOptions);
+        Enumerator actualEnumerator = assertProperEnumeratorInitialization(args, options);
 
         ArrayList<Integer> actualRange = actualEnumerator.estimateRangeExecutors(128, -1, 16);
         Assert.assertEquals(actualRange.size(), 8);
@@ -290,18 +290,18 @@ public class ResourceOptimizerTest extends AutomatedTestBase {
                 "-f", HOME+"Algorithm_L2SVM.dml",
                 "-nvargs", "m=200000", "n=10000"
         };
-        Options options = createOptions();
+        Options cliOptions = createOptions();
         CommandLineParser clParser = new PosixParser();
         CommandLine line = null;
         try {
-            line = clParser.parse(options, args);
+            line = clParser.parse(cliOptions, args);
         } catch (ParseException e) {
             Assert.fail("ParseException should not have been raise here: "+e);
         }
-        Map<String, String> envOptions = generateTestingEnvOptionsRequired(tmpOutFolder.toString());
-        envOptions.put("MAX_EXECUTORS", "10");
+        PropertiesConfiguration options = generateTestingOptionsRequired(tmpOutFolder.toString());
+        options.setProperty("MAX_EXECUTORS", "10");
 
-        ResourceOptimizer.execute(line, options, envOptions);
+        ResourceOptimizer.execute(line, options);
 
         if (!DEBUG) {
             deleteDirectoryWithFiles(tmpOutFolder);
@@ -316,20 +316,20 @@ public class ResourceOptimizerTest extends AutomatedTestBase {
                 "-f", HOME+"Algorithm_L2SVM.dml",
                 "-nvargs", "m=200000", "n=10000"
         };
-        Options options = createOptions();
+        Options cliOptions = createOptions();
         CommandLineParser clParser = new PosixParser();
         CommandLine line = null;
         try {
-            line = clParser.parse(options, args);
+            line = clParser.parse(cliOptions, args);
         } catch (ParseException e) {
             Assert.fail("ParseException should not have been raise here: "+e);
         }
-        Map<String, String> envOptions = generateTestingEnvOptionsRequired(tmpOutFolder.toString());
-        envOptions.put("MAX_EXECUTORS", "10");
-        envOptions.put("INSTANCE_FAMILIES", "c5,c5d,c5n");
-        envOptions.put("INSTANCE_SIZES", "xlarge");
+        PropertiesConfiguration options = generateTestingOptionsRequired(tmpOutFolder.toString());
+        options.setProperty("MAX_EXECUTORS", "10");
+        options.setProperty("INSTANCE_FAMILIES", "c5,c5d,c5n");
+        options.setProperty("INSTANCE_SIZES", "xlarge");
 
-        ResourceOptimizer.execute(line, options, envOptions);
+        ResourceOptimizer.execute(line, options);
 
         if (!DEBUG) {
             deleteDirectoryWithFiles(tmpOutFolder);
@@ -344,19 +344,19 @@ public class ResourceOptimizerTest extends AutomatedTestBase {
                 "-f", HOME+"Algorithm_L2SVM.dml",
                 "-nvargs", "m=10000", "n=10000"
         };
-        Options options = createOptions();
+        Options cliOptions = createOptions();
         CommandLineParser clParser = new PosixParser();
         CommandLine line = null;
         try {
-            line = clParser.parse(options, args);
+            line = clParser.parse(cliOptions, args);
         } catch (ParseException e) {
             Assert.fail("ParseException should not have been raise here: "+e);
         }
-        Map<String, String> envOptions = generateTestingEnvOptionsRequired(tmpOutFolder.toString());
-        envOptions.put("INFO_TABLE", DEFAULT_INSTANCE_INFO_TABLE);
-        envOptions.put("MAX_EXECUTORS", "2");
+        PropertiesConfiguration options = generateTestingOptionsRequired(tmpOutFolder.toString());
+        options.setProperty("INFO_TABLE", DEFAULT_INSTANCE_INFO_TABLE);
+        options.setProperty("MAX_EXECUTORS", "2");
 
-        ResourceOptimizer.execute(line, options, envOptions);
+        ResourceOptimizer.execute(line, options);
 
         if (!DEBUG) {
             deleteDirectoryWithFiles(tmpOutFolder);
@@ -374,20 +374,20 @@ public class ResourceOptimizerTest extends AutomatedTestBase {
                     "fileA_Csv=s3://data/out/A.csv",
                     "fileA_Text=s3://data/out/A.txt"
         };
-        Options options = createOptions();
+        Options cliOptions = createOptions();
         CommandLineParser clParser = new PosixParser();
         CommandLine line = null;
         try {
-            line = clParser.parse(options, args);
+            line = clParser.parse(cliOptions, args);
         } catch (ParseException e) {
             Assert.fail("ParseException should not have been raise here: "+e);
         }
-        Map<String, String> envOptions = generateTestingEnvOptionsRequired(tmpOutFolder.toString());
-        envOptions.put("MAX_EXECUTORS", "2");
+        PropertiesConfiguration options = generateTestingOptionsRequired(tmpOutFolder.toString());
+        options.setProperty("MAX_EXECUTORS", "2");
         String localInputs = "s3://data/in/A.csv=" + HOME + "data/A.csv";
-        envOptions.put("LOCAL_INPUTS", localInputs);
+        options.setProperty("LOCAL_INPUTS", localInputs);
 
-        ResourceOptimizer.execute(line, options, envOptions);
+        ResourceOptimizer.execute(line, options);
 
         if (!DEBUG) {
             deleteDirectoryWithFiles(tmpOutFolder);
@@ -396,18 +396,18 @@ public class ResourceOptimizerTest extends AutomatedTestBase {
 
     // Helpers ---------------------------------------------------------------------------------------------------------
 
-    private Enumerator assertProperEnumeratorInitialization(String[] args, Map<String, String> envOptions) {
-        Options options = createOptions();
+    private Enumerator assertProperEnumeratorInitialization(String[] args, PropertiesConfiguration options) {
+        Options cliOptions = createOptions();
         CommandLineParser clParser = new PosixParser();
         CommandLine line = null;
         try {
-            line = clParser.parse(options, args);
+            line = clParser.parse(cliOptions, args);
         } catch (ParseException e) {
             Assert.fail("ParseException should not have been raise here: "+e);
         }
         Enumerator actualEnumerator = null;
         try {
-            actualEnumerator = initEnumerator(line, options, envOptions);
+            actualEnumerator = initEnumerator(line, options);
         } catch (Exception e) {
             Assert.fail("Any exception should not have been raise here: "+e);
         }

@@ -11,9 +11,7 @@ import org.apache.sysds.runtime.controlprogram.Program;
 import org.apache.sysds.utils.Explain;
 import org.apache.commons.configuration2.io.FileHandler;
 
-import javax.validation.groups.Default;
 import java.io.IOException;
-import java.net.URI;
 import java.nio.file.*;
 import java.util.HashMap;
 import java.util.Map;
@@ -102,7 +100,7 @@ public class ResourceOptimizer {
             }
         }
 
-        // load the rest of the options from env. variables
+        // load the rest of the options variables
         String regionOpt = getOrDefault(options, "REGION", "");
         String infoTablePathOpt = getOrDefault(options, "INFO_TABLE", "");
         String regionTablePathOpt = getOrDefault(options, "REGION_TABLE", "");
@@ -437,11 +435,11 @@ public class ResourceOptimizer {
             }
         }
         // load options
-        PropertiesConfiguration configs = new PropertiesConfiguration();
-        FileHandler handler = new FileHandler(configs);
+        PropertiesConfiguration options = new PropertiesConfiguration();
+        FileHandler handler = new FileHandler(options);
         handler.load(optionsFile);
         // execute the actual main logic
-        execute(line, configs);
+        execute(line, options);
     }
 
     // Helpers ---------------------------------------------------------------------------------------------------------

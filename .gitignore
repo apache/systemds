@@ -146,3 +146,6 @@ src/test/scripts/functions/pipelines/intermediates/classification/*
 
 venv
 venv/*
+
+# resource optimization
+scripts/resource/output

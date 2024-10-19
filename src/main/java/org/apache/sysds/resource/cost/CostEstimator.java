@@ -941,9 +941,9 @@ public class CostEstimator
 		} else {
 			// loading from a file
 			if (input.fileInfo == null || input.fileInfo.length != 2) {
-				throw new DMLRuntimeException("Time estimation is not possible without file info.");
-			} else if (!input.fileInfo[0].equals(HDFS_SOURCE_IDENTIFIER) && !input.fileInfo[0].equals(S3_SOURCE_IDENTIFIER)) {
-				throw new DMLRuntimeException("Time estimation is not possible for data source: " + input.fileInfo[0]);
+				throw new RuntimeException("Time estimation is not possible without file info.");
+			} else if (isInvalidDataSource((String) input.fileInfo[0])) {
+				throw new RuntimeException("Time estimation is not possible for data source: " + input.fileInfo[0]);
 			}
 			loadTime = IOCostUtils.getFileSystemReadTime(input, driverMetrics);
 		}

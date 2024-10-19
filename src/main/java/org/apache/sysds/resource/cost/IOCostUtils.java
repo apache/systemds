@@ -359,7 +359,7 @@ public class IOCostUtils {
 	}
 
 	protected static double getStorageWriteTime(double sizeMB, boolean isSparse, String source, Types.FileFormat format, IOMetrics metrics) {
-		if (format == null || !(source.equals(HDFS_SOURCE_IDENTIFIER) || source.equals(S3_SOURCE_IDENTIFIER))) {
+		if (format == null || isInvalidDataSource(source)) {
 			throw new RuntimeException("Estimation not possible without source identifier and file format");
 		}
 		double time;
@@ -545,7 +545,10 @@ public class IOCostUtils {
 	public static String getDataSource(String fileName) {
 		String[] fileParts = fileName.split("://");
 		if (fileParts.length > 1) {
-			return fileParts[0].toLowerCase();
+			String filesystem = fileParts[0].toLowerCase();
+			if (filesystem.matches("\\b(s3|s3a)\\b"))
+				return S3_SOURCE_IDENTIFIER;
+			return filesystem;
 		}
 		return HDFS_SOURCE_IDENTIFIER;
 	}
@@ -578,5 +581,9 @@ public class IOCostUtils {
 			throw new RuntimeException("Format " + format + " is not supported for estimation yet.");
 		}
 		return size;
+	}
+
+	public static boolean isInvalidDataSource(String identifier) {
+		return !identifier.equals(HDFS_SOURCE_IDENTIFIER) && !identifier.equals(S3_SOURCE_IDENTIFIER);
 	}
 }

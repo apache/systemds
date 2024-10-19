@@ -88,9 +88,9 @@ public class EnumeratorTests extends AutomatedTestBase {
 				.withInstanceSizeRange(new String[]{"xlarge"})
 				.build();
 		List<CloudInstance> expectedInstancesList = availableInstances.values().stream()
-				.filter(instance -> instance.getInstanceName().startsWith("m5")
-						|| instance.getInstanceName().startsWith("c5"))
-				.filter(instance -> instance.getInstanceName().endsWith("xlarge"))
+				.filter(instance -> instance.getInstanceName().startsWith("m5.")
+						|| instance.getInstanceName().startsWith("c5."))
+				.filter(instance -> instance.getInstanceName().endsWith(".xlarge"))
 				.collect(Collectors.toList());
 		HashMap<String, CloudInstance> actualInstancesMap = enumeratorWithInstanceRanges.getInstances();
 		for (CloudInstance expectedInstance : expectedInstancesList) {
@@ -480,8 +480,8 @@ public class EnumeratorTests extends AutomatedTestBase {
 		expectedResult = new ArrayList<>(List.of(1, 2, 3, 4, 5));
 		actualResult = interestBasedEnumerator.estimateRangeExecutors(1, -1, 4);
 		Assert.assertEquals(expectedResult, actualResult);
-		// test the case when the max level of parallelism (1000) is reached (0 is never part of the result)
-		expectedResult = new ArrayList<>(List.of(1, 2, 3));
+		// test the case when the max level of parallelism (1152) is reached (0 is never part of the result)
+		expectedResult = new ArrayList<>(List.of(1, 2, 3, 4));
 		actualResult = interestBasedEnumerator.estimateRangeExecutors(1, -1, 256);
 		Assert.assertEquals(expectedResult, actualResult);
 	}
@@ -716,7 +716,7 @@ public class EnumeratorTests extends AutomatedTestBase {
 		try {
 			String scriptFilename = "Algorithm_L2SVM.dml";
 			int index = scriptFilename.lastIndexOf(".dml");
-			String testName = scriptFilename.substring(0, index > 0 ? index : scriptFilename.length());
+			String testName = scriptFilename.substring(0, index);
 			TestConfiguration testConfig = new TestConfiguration(TEST_CLASS_DIR, testName,
 					new String[]{});
 			addTestConfiguration(testName, testConfig);

@@ -64,6 +64,8 @@
 		<maven-shade-plugin.version>3.5.0</maven-shade-plugin.version>
 		<maven-compiler-plugin.version>3.11.0</maven-compiler-plugin.version>
 		<maven-antrun-plugin.version>3.1.0</maven-antrun-plugin.version>
+		<!-- aws-java-sdk-bundle version should align with hadoop-aws version -->
+		<aws-java-sdk-bundle.version>1.12.367</aws-java-sdk-bundle.version>
 		<!-- Set java compile level via argument, ex: 1.8 1.9 10 11-->
 		<java.level>11</java.level>
 		<java.version>{java.level}</java.version>
@@ -1347,6 +1349,18 @@
 					<artifactId>jul-to-slf4j</artifactId>
 				</exclusion>
 			</exclusions>
+		</dependency>
+
+		<dependency>
+			<groupId>org.apache.hadoop</groupId>
+			<artifactId>hadoop-aws</artifactId>
+			<version>${hadoop.version}</version>
+		</dependency>
+
+		<dependency>
+			<groupId>com.amazonaws</groupId>
+			<artifactId>aws-java-sdk-bundle</artifactId>
+			<version>${aws-java-sdk-bundle.version}</version>
 		</dependency>
 
 		<dependency>

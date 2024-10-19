@@ -36,11 +36,13 @@ import org.apache.sysds.utils.stats.InfrastructureAnalyzer;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static org.apache.sysds.api.DMLScript.*;
+import static org.apache.sysds.parser.DataExpression.IO_FILENAME;
 
 /**
  * This class does full or partial program recompilation
@@ -57,6 +59,10 @@ public class ResourceCompiler {
 	public static final int DEFAULT_NUMBER_EXECUTORS = 2; // avoids creating spark context
 
 	public static Program compile(String filePath, Map<String, String> args) throws IOException {
+		return compile(filePath, args, null);
+	}
+
+	public static Program compile(String filePath, Map<String, String> args, HashMap<String, String> replaceVars) throws IOException {
 		// setting the dynamic recompilation flags during resource optimization is obsolete
 		DMLOptions dmlOptions =DMLOptions.defaultOptions;
 		dmlOptions.argVals = args;
@@ -69,11 +75,49 @@ public class ResourceCompiler {
 		DMLTranslator dmlTranslator = new DMLTranslator(dmlProgram);
 		dmlTranslator.liveVariableAnalysis(dmlProgram);
 		dmlTranslator.validateParseTree(dmlProgram);
+		if (replaceVars != null && !replaceVars.isEmpty()) {
+			replaceFilename(dmlProgram, replaceVars);}
 		dmlTranslator.constructHops(dmlProgram);
 		dmlTranslator.rewriteHopsDAG(dmlProgram);
 		dmlTranslator.constructLops(dmlProgram);
 		dmlTranslator.rewriteLopDAG(dmlProgram);
 		return dmlTranslator.getRuntimeProgram(dmlProgram, ConfigurationManager.getDMLConfig());
+	}
+
+	public static void replaceFilename(DMLProgram dmlp, HashMap<String, String> replaceVars)
+	{
+		for (int i = 0; i < dmlp.getNumStatementBlocks(); i++) {
+			StatementBlock sb = dmlp.getStatementBlock(i);
+			for (Statement statement: sb.getStatements()) {
+				if (!(statement instanceof AssignmentStatement ||
+						statement instanceof OutputStatement)) continue;
+
+				StringIdentifier stringIdentifier;
+				if (statement instanceof AssignmentStatement) {
+					Expression assignExpression = ((AssignmentStatement) statement).getSource();
+					if (!(assignExpression instanceof StringIdentifier ||
+							assignExpression instanceof DataExpression)) continue;
+
+					if (assignExpression instanceof DataExpression) {
+						Expression filenameExpression = ((DataExpression) assignExpression).getVarParam(IO_FILENAME);
+						if (!(filenameExpression instanceof StringIdentifier)) continue;
+
+						stringIdentifier = (StringIdentifier) filenameExpression;
+					} else {
+						stringIdentifier = (StringIdentifier) assignExpression;
+					}
+				} else {
+					Expression filenameExpression = ((OutputStatement) statement).getExprParam(IO_FILENAME);
+					if (!(filenameExpression instanceof StringIdentifier)) continue;
+
+					stringIdentifier = (StringIdentifier) filenameExpression;
+				}
+
+				if (!(replaceVars.containsKey(stringIdentifier.getValue()))) continue;
+				String valToReplace = replaceVars.get(stringIdentifier.getValue());
+				stringIdentifier.setValue(valToReplace);
+			}
+		}
 	}
 
 	/**

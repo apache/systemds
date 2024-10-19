@@ -1,0 +1,6 @@
+#!/usr/bin/env bash
+
+ROPT_JAR_FILE="${SYSTEMDS_ROOT}/target/ResourceOptimizer.jar"
+
+java -jar "$ROPT_JAR_FILE" "$@"
+

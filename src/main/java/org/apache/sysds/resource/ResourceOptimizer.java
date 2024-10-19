@@ -6,24 +6,23 @@ import org.apache.sysds.conf.ConfigurationManager;
 import org.apache.sysds.resource.enumeration.EnumerationUtils;
 import org.apache.sysds.resource.enumeration.Enumerator;
 import org.apache.sysds.runtime.controlprogram.Program;
+import org.apache.sysds.utils.Explain;
 
 import java.io.IOException;
 import java.nio.file.*;
 import java.util.HashMap;
+import java.util.Map;
 
 import static org.apache.sysds.resource.CloudUtils.DEFAULT_CLUSTER_LAUNCH_TIME;
 
 public class ResourceOptimizer {
     static {
         ConfigurationManager.getCompilerConfig().set(CompilerConfig.ConfigType.RESOURCE_OPTIMIZATION, true);
+        ConfigurationManager.getCompilerConfig().set(CompilerConfig.ConfigType.REJECT_READ_WRITE_UNKNOWNS, true);
     }
-    private static final String RESOURCE_SCRIPT_DIR = "./scripts/resource/";
-    private static final String DEFAULT_REGIONAL_PRICE_TABLE_PATH = RESOURCE_SCRIPT_DIR + "aws_regional_prices.csv";
-    private static final String DEFAULT_INSTANCE_INFO_TABLE_PATH = RESOURCE_SCRIPT_DIR + "ec2_stats.csv";
     private static final String EMR_INSTANCE_GROUP_FILENAME = "emr_instance_groups.json";
     private static final String EMR_CONFIGURATIONS_FILENAME = "emr_configurations.json";
     private static final String EC2_ARGUMENTS_FILENAME = "ec2_arguments.json";
-    private static final String DEFAULT_REGION = "us-east-1";
 
     @SuppressWarnings("static-access")
     public static Options createOptions() {
@@ -32,17 +31,6 @@ public class ResourceOptimizer {
         Option fileOpt = OptionBuilder.withArgName("filename")
                 .withDescription("specifies dml/pydml file to execute; path should be local")
                 .hasArg().create("f");
-        Option infoTableOpt = OptionBuilder
-                .withDescription("specifies filename of CSV table containing the meta data " +
-                        "about all available cloud VM instance")
-                .hasArg().create("infoTable");
-        Option regionOpt = OptionBuilder
-                .withDescription("specifies cloud region (using the corresponding abbreviation)")
-                .hasArg().create("region");
-        Option regionPriceTableOpt = OptionBuilder
-                .withDescription("specifies filename of CSV table containing the extra price metrics " +
-                        "depending on the target cloud region")
-                .hasArg().create("regionTable");
         Option nvargsOpt = OptionBuilder.withArgName("key=value")
                 .withDescription("parameterizes DML script with named parameters of the form <key=value>; " +
                         "<key> should be a valid identifier in DML/PyDML")
@@ -51,101 +39,13 @@ public class ResourceOptimizer {
                 .withDescription("specifies positional parameters; " +
                         "first value will replace $1 in DML program, $2 will replace 2nd and so on")
                 .hasArgs().create("args");
-        Option enumOpt = OptionBuilder
-                .withDescription("specifies enumeration strategy; " +
-                        "it should be one of the following: 'grid', 'interest', 'prune'; default 'grid'")
-                .hasArg().create("enum");
-        Option optimizeForOpt = OptionBuilder
-                .withDescription("specifies optimization strategy (scoring function); " +
-                        "it should be one of the following: 'costs', 'time', 'price'; default 'costs'")
-                .hasArg().create("optimizeFor");
-        Option maxTimeOpt = OptionBuilder
-                .withDescription("specifies constraint for maximum execution time")
-                .hasArg().create("maxTime");
-        Option maxPriceOpt = OptionBuilder
-                .withDescription("specifies constraint for maximum price")
-                .hasArg().create("maxPrice");
-        Option quotaCPUOpt = OptionBuilder
-                .withDescription("specifies the limit of (virtual) CPU cores allowed for evaluation; " +
-                        "this corresponds to the most common VM service quota set by cloud providers")
-                .hasArg().create("quotaCPU");
-        Option minExecutorsOpt = OptionBuilder
-                .withDescription("specifies minimum desired executors; " +
-                        "default 0 (single node execution allowed); " +
-                        "a negative value lead to setting the default")
-                .hasArg().create("minExecutors");
-        Option maxExecutorsOpt = OptionBuilder
-                .withDescription("specifies maximum desired executors; " +
-                        "default 200; a negative value leads to setting the default")
-                .hasArg().create("maxExecutors");
-        Option instanceFamiliesOpt = OptionBuilder
-                .withDescription("specifies VM instance types for consideration " +
-                        "at searching for optimal configuration; " +
-                        "if not specified, all instances form the table with instance metadata are considered")
-                .hasArgs().create("instanceFamilies");
-        Option instanceSizesOpt = OptionBuilder
-                .withDescription("specifies VM instance sizes for consideration " +
-                        "at searching for optimal configuration; " +
-                        "if not specified, all instances form the table with instance metadata are considered")
-                .hasArgs().create("instanceSizes");
-        Option stepSizeOpt = OptionBuilder
-                .withDescription("specific to grid-based enum. strategy; " +
-                        "specifies step size for enumerating number of executors; default 1")
-                .hasArg().create("stepSize");
-        Option expBaseOpt = OptionBuilder
-                .withDescription("specific to grid-based enum. strategy; " +
-                        "specifies exponential base for increasing the number of executors exponentially; apply only if specified as larger than 1")
-                .hasArg().create("expBase");
-        Option interestLargestEstimateOpt = OptionBuilder
-                .withDescription("specific to interest-based enum. strategy; " +
-                        "boolean ('true'/'false') to indicate if single node execution should be considered only " +
-                        "in case of sufficient memory budget for the driver; default true")
-                .hasArg().create("useLargestEst");
-        Option interestEstimatesInCPOpt = OptionBuilder
-                .withDescription("specific to interest-based enum. strategy; " +
-                        "boolean ('true'/'false') to indicate if the CP memory is an interest for the enumeration; " +
-                        "default true")
-                .hasArg().create("useCpEstimates");
-        Option interestBroadcastVarsOpt = OptionBuilder
-                .withDescription("specific to interest-based enum. strategy; " +
-                        "boolean ('true'/'false') to indicate if potential broadcast variables' size is an interest " +
-                        "for driver and executors memory budget; default true")
-                .hasArg().create("useBroadcasts");
-        Option interestOutputCachingOpt = OptionBuilder
-                .withDescription("specific to interest-based enum. strategy; " +
-                        "boolean ('true'/'false') to indicate if the size of the outputs (potentially cached) " +
-                        "is an interest for the enumerated number of executors; default false")
-                .hasArg().create("useOutputs");
-        Option outputOpt = OptionBuilder
-                .hasArg().withDescription("output folder for configurations files; " +
-                        "existing configurations files will be overwritten")
-                .create("output");
         Option helpOpt = OptionBuilder
                 .withDescription("shows usage message")
                 .create("help");
 
         options.addOption(fileOpt);
-        options.addOption(infoTableOpt);
-        options.addOption(regionOpt);
-        options.addOption(regionPriceTableOpt);
         options.addOption(nvargsOpt);
         options.addOption(argsOpt);
-        options.addOption(enumOpt);
-        options.addOption(optimizeForOpt);
-        options.addOption(maxTimeOpt);
-        options.addOption(maxPriceOpt);
-        options.addOption(quotaCPUOpt);
-        options.addOption(minExecutorsOpt);
-        options.addOption(maxExecutorsOpt);
-        options.addOption(instanceFamiliesOpt);
-        options.addOption(instanceSizesOpt);
-        options.addOption(stepSizeOpt);
-        options.addOption(expBaseOpt);
-        options.addOption(interestLargestEstimateOpt);
-        options.addOption(interestEstimatesInCPOpt);
-        options.addOption(interestBroadcastVarsOpt);
-        options.addOption(interestOutputCachingOpt);
-        options.addOption(outputOpt);
         options.addOption(helpOpt);
 
         OptionGroup helpOrFile = new OptionGroup()
@@ -161,12 +61,13 @@ public class ResourceOptimizer {
         return options;
     }
 
-    public static Enumerator initEnumeratorFromArgs(CommandLine line, Options options) throws ParseException, IOException {
+    public static Enumerator initEnumerator(CommandLine line, Options options, Map<String, String> env) throws ParseException, IOException {
         if (line.hasOption("help")) {
             (new HelpFormatter()).printHelp("Main", options);
             return null;
         }
-        // 1a: parse script arguments
+
+        // parse script arguments
         HashMap <String, String> argsMap = new HashMap<>();
         if (line.hasOption("args")){
             String[] argValues = line.getOptionValues("args");
@@ -194,35 +95,62 @@ public class ResourceOptimizer {
             }
         }
 
-        // 1b: read the required files (according to the parsed parameters)
-        String infoTablePath;
-        if (line.hasOption("infoTable")) {
-            infoTablePath = line.getOptionValue("infoTable");
-        } else {
-            infoTablePath = DEFAULT_INSTANCE_INFO_TABLE_PATH;
+        // load the rest of the options from env. variables
+        String regionOpt = env.getOrDefault("REGION", "");
+        String infoTablePathOpt = env.getOrDefault("INFO_TABLE", "");
+        String regionTablePathOpt = env.getOrDefault("REGION_TABLE", "");
+        String localInputsOpt = env.getOrDefault("LOCAL_INPUTS", "");
+
+        String enumerationOpt = env.getOrDefault("ENUMERATION", "");
+        String optimizationOpt = env.getOrDefault("OPTIMIZATION_FUNCTION", "");
+        String maxTimeOpt = env.getOrDefault("MAX_TIME", "");
+        String maxPriceOpt = env.getOrDefault("MAX_PRICE", "");
+        String cpuQuotaOpt = env.getOrDefault("CPU_QUOTA", "");
+        String minExecutorsOpt = env.getOrDefault("MIN_EXECUTORS", "");
+        String maxExecutorsOpt = env.getOrDefault("MAX_EXECUTORS", "");
+        String instanceFamiliesOpt = env.getOrDefault("INSTANCE_FAMILIES", "");
+        String instanceSizesOpt = env.getOrDefault("INSTANCE_SIZES", "");
+        String stepSizeOpt = env.getOrDefault("STEP_SIZE", "");
+        String expBaseOpt = env.getOrDefault("EXPONENTIAL_BASE", "");
+        String useLargestEstOpt = env.getOrDefault("USE_LARGEST_ESTIMATE", "");
+        String useCpEstOpt = env.getOrDefault("USE_CP_ESTIMATES", "");
+        String useBroadcastOpt = env.getOrDefault("USE_BROADCASTS", "");
+        String useOutputsOpt = env.getOrDefault("USE_OUTPUTS", "");
+
+        // replace declared S3 files with local path
+        HashMap<String, String> localInputMap = new HashMap<>();
+        if (!localInputsOpt.isEmpty()) {
+            String[] inputParts = localInputsOpt.split(",");
+            for (String var : inputParts){
+                String[] varParts = var.split("=");
+                if (varParts.length != 2) {
+                    throw new RuntimeException("Invalid local variable pairs declaration: " + var);
+                }
+                if (!argsMap.containsValue(varParts[0])) {
+                    throw new RuntimeException("Option for local input does not match any given argument: " + varParts[0]);
+                }
+                String argName = getKeyByValue(argsMap, varParts[0]);
+                // update variables for compilation
+                argsMap.put(argName, varParts[1]);
+                // fill a map for later replacement back after first compilation
+                localInputMap.put(varParts[1], varParts[0]);
+            }
         }
-        String region;
-        if (line.hasOption("region")) {
-            region = line.getOptionValue("region");
-        } else {
-            region = DEFAULT_REGION;
-        }
-        String regionTablePath;
-        if (line.hasOption("regionTable")) {
-            regionTablePath = line.getOptionValue("regionTable");
-        } else {
-            regionTablePath = DEFAULT_REGIONAL_PRICE_TABLE_PATH;
+        // replace S3 filesystem identifier to match the available hadoop connector if needed
+        if (argsMap.values().stream().anyMatch(var -> var.startsWith("s3"))) {
+            String s3Filesystem = getAvailableHadoopS3Filesystem();
+            replaceS3Filesystem(argsMap, s3Filesystem);
         }
 
-        double[] regionalPrices = CloudUtils.loadRegionalPrices(regionTablePath, region);
-        HashMap<String, CloudInstance> allInstances = CloudUtils.loadInstanceInfoTable(infoTablePath, regionalPrices[0], regionalPrices[1]);
+        // materialize the options
+        double[] regionalPrices = CloudUtils.loadRegionalPrices(regionTablePathOpt, regionOpt);
+        HashMap<String, CloudInstance> allInstances = CloudUtils.loadInstanceInfoTable(infoTablePathOpt, regionalPrices[0], regionalPrices[1]);
 
-        // 1c: parse strategy parameters
         Enumerator.EnumerationStrategy strategy;
-        if (!line.hasOption("enum")) {
+        if (enumerationOpt.isEmpty()) {
             strategy = Enumerator.EnumerationStrategy.GridBased; // default
         } else {
-            switch (line.getOptionValue("enum")) {
+            switch (enumerationOpt) {
                 case "grid":
                     strategy = Enumerator.EnumerationStrategy.GridBased;
                     break;
@@ -236,11 +164,12 @@ public class ResourceOptimizer {
                     throw new ParseException("Unsupported identifier for enumeration strategy: " + line.getOptionValue("enum"));
             }
         }
+
         Enumerator.OptimizationStrategy optimizedFor;
-        if (!line.hasOption("optimizeFor")) {
+        if (optimizationOpt.isEmpty()) {
             optimizedFor = Enumerator.OptimizationStrategy.MinCosts;
         } else {
-            switch (line.getOptionValue("optimizeFor")) {
+            switch (optimizationOpt) {
                 case "costs":
                     optimizedFor = Enumerator.OptimizationStrategy.MinCosts;
                     break;
@@ -254,78 +183,78 @@ public class ResourceOptimizer {
                     throw new ParseException("Unsupported identifier for optimization strategy: " + line.getOptionValue("optimizeFor"));
             }
         }
+
         double priceConstraint = -1;
         if (optimizedFor == Enumerator.OptimizationStrategy.MinTime) {
-            String parsedValue = line.getOptionValue("maxPrice");
-            if (parsedValue == null) {
+            if (maxPriceOpt.isEmpty()) {
                 throw new ParseException("The provided option 'time' for -enum requires additionally an option for -maxPrice");
             }
-            priceConstraint = Double.parseDouble(parsedValue);
-        } else if (line.hasOption("maxPrice")) {
-            System.err.println("Warning: option -maxPrice is relevant only for -optimizeFor 'time'");
+            priceConstraint = Double.parseDouble(maxPriceOpt);
+        } else if (!maxPriceOpt.isEmpty()) {
+            System.err.println("Warning: option MAX_PRICE is relevant only for OPTIMIZATION_FUNCTION 'time'");
         }
         double timeConstraint = -1;
         if (optimizedFor == Enumerator.OptimizationStrategy.MinPrice) {
-            String parsedValue = line.getOptionValue("maxTime");
-            if (parsedValue == null) {
+            if (maxTimeOpt.isEmpty()) {
                 throw new ParseException("The provided option 'price' for -enum requires additionally an option for -maxTime");
             }
-            timeConstraint = Double.parseDouble(parsedValue);
-        } else if (line.hasOption("maxTime")) {
-            System.err.println("Warning: option -maxTime is relevant only for -optimizeFor 'price'");
+            timeConstraint = Double.parseDouble(maxTimeOpt);
+        } else if (!maxTimeOpt.isEmpty()) {
+            System.err.println("Warning: option MAX_TIME is relevant only for OPTIMIZATION_FUNCTION 'price'");
         }
-        // 1d: parse search space range/limits
-        if (line.hasOption("quotaCPU")) {
-            int quotaForNumCores = Integer.parseInt(line.getOptionValue("quotaCPU"));
+
+        if (!cpuQuotaOpt.isEmpty()) {
+            int quotaForNumCores = Integer.parseInt(cpuQuotaOpt);
             if (quotaForNumCores < 32) {
                 throw new ParseException("CPU quota of under 32 number of cores is not allowed");
             }
             Enumerator.setCpuQuota(quotaForNumCores);
         }
-        int minExecutors = line.hasOption("minExecutors")? Integer.parseInt(line.getOptionValue("minExecutors")) : -1;
-        int maxExecutors = line.hasOption("maxExecutors")? Integer.parseInt(line.getOptionValue("maxExecutors")) : -1;
-        String[] instanceFamilies = line.hasOption("instanceFamilies")? line.getOptionValues("instanceFamilies") : null;
-        String[] instanceSizes = line.hasOption("instanceSizes")? line.getOptionValues("instanceSizes") : null;
-        // 1e: parse arguments specific to enumeration strategies
+        int minExecutors = minExecutorsOpt.isEmpty()? -1 : Integer.parseInt(minExecutorsOpt);
+        int maxExecutors = maxExecutorsOpt.isEmpty()? -1 : Integer.parseInt(maxExecutorsOpt);
+        String[] instanceFamilies = instanceFamiliesOpt.isEmpty()? null : instanceFamiliesOpt.split(",");
+        String[] instanceSizes = instanceSizesOpt.isEmpty()? null : instanceSizesOpt.split(",");
+        // parse arguments specific to enumeration strategies
         int stepSize = 1;
         int expBase = -1;
         if (strategy == Enumerator.EnumerationStrategy.GridBased) {
-            if (line.hasOption("stepSize"))
-                stepSize = Integer.parseInt(line.getOptionValue("stepSize"));
-            if (line.hasOption("expBase"))
-                expBase = Integer.parseInt(line.getOptionValue("expBase"));
+            if (!stepSizeOpt.isEmpty())
+                stepSize = Integer.parseInt(stepSizeOpt);
+            if (!expBaseOpt.isEmpty())
+                expBase = Integer.parseInt(expBaseOpt);
         } else {
-            if (line.hasOption("stepSize"))
-                System.err.println("Warning: option -stepSize is relevant only for -enum 'grid'");
+            if (!stepSizeOpt.isEmpty())
+                System.err.println("Warning: option STEP_SIZE is relevant only for option ENUMERATION 'grid'");
             if (line.hasOption("expBase"))
-                System.err.println("Warning: option -expBase is relevant only for -enum 'grid'");
+                System.err.println("Warning: option EXPONENTIAL_BASE is relevant only for option ENUMERATION 'grid'");
         }
         boolean interestLargestEstimate = true;
         boolean interestEstimatesInCP = true;
         boolean interestBroadcastVars = true;
         boolean interestOutputCaching = false;
         if (strategy == Enumerator.EnumerationStrategy.InterestBased) {
-            if (line.hasOption("useLargestEst"))
-                interestLargestEstimate = Boolean.parseBoolean(line.getOptionValue("useLargestEst"));
-            if (line.hasOption("useCpEstimates"))
-                interestEstimatesInCP = Boolean.parseBoolean(line.getOptionValue("useCpEstimates"));
-            if (line.hasOption("useBroadcasts"))
-                interestBroadcastVars = Boolean.parseBoolean(line.getOptionValue("useBroadcasts"));
-            if (line.hasOption("useOutputs"))
-                interestOutputCaching = Boolean.parseBoolean(line.getOptionValue("useOutputs"));
+            if (!useLargestEstOpt.isEmpty())
+                interestLargestEstimate = Boolean.parseBoolean(useLargestEstOpt);
+            if (!useCpEstOpt.isEmpty())
+                interestEstimatesInCP = Boolean.parseBoolean(useCpEstOpt);
+            if (!useBroadcastOpt.isEmpty())
+                interestBroadcastVars = Boolean.parseBoolean(useBroadcastOpt);
+            if (!useOutputsOpt.isEmpty())
+                interestOutputCaching = Boolean.parseBoolean(useOutputsOpt);
         } else {
-            if (line.hasOption("useLargestEst"))
+            if (!useLargestEstOpt.isEmpty())
                 System.err.println("Warning: option -useLargestEst is relevant only for -enum 'interest'");
-            if (line.hasOption("useCpEstimates"))
+            if (!useCpEstOpt.isEmpty())
                 System.err.println("Warning: option -useCpEstimates is relevant only for -enum 'interest'");
-            if (line.hasOption("useBroadcasts"))
+            if (!useBroadcastOpt.isEmpty())
                 System.err.println("Warning: option -useBroadcasts is relevant only for -enum 'interest'");
-            if (line.hasOption("useOutputs"))
+            if (!useOutputsOpt.isEmpty())
                 System.err.println("Warning: option -useOutputs is relevant only for -enum 'interest'");
         }
 
         // step 2: compile the initial runtime program
-        Program sourceProgram = ResourceCompiler.compile(line.getOptionValue("f"), argsMap);
+        Program sourceProgram = ResourceCompiler.compile(line.getOptionValue("f"), argsMap, localInputMap);
+        System.out.println(Explain.explain(sourceProgram));
         // step 3: initialize the enumerator
         // set the mandatory setting
         Enumerator.Builder builder = new Enumerator.Builder()
@@ -386,53 +315,50 @@ public class ResourceOptimizer {
         return builder.build();
     }
 
-    public static void main(String[] args) throws ParseException, IOException {
-        Options options = createOptions();
-        CommandLineParser clParser = new PosixParser();
-        CommandLine line = clParser.parse(options, args);
+    public static void execute(CommandLine line, Options options, Map<String, String> env) throws ParseException, IOException {
+        String outputPath = env.getOrDefault("OUTPUT_FOLDER", "");
+        // validate the given output path now to avoid errors after the whole optimization process
+        Path folderPath;
+        try {
+            folderPath = Paths.get(outputPath);
+        } catch (InvalidPathException e) {
+            throw new RuntimeException("Given value for option 'OUTPUT_FOLDER' is not a valid path");
+        }
+        try {
+            Files.createDirectory(folderPath);
+        } catch (FileAlreadyExistsException e) {
+            System.err.println("Folder 'OUTPUT_FOLDER' already exists on the given path. Files will be overwritten!");
+        } catch (IOException e) {
+            throw new RuntimeException("Given value for option 'OUTPUT_FOLDER' is not a valid path: "+e);
+        }
 
-        Enumerator enumerator = initEnumeratorFromArgs(line, options);
+        // initialize the enumerator (including initial program compilation)
+        Enumerator enumerator = initEnumerator(line, options, env);
         if (enumerator == null) {
             // help requested
             return;
         }
-
-        String outputPath;
-        if (line.hasOption("output")) {
-            outputPath = line.getOptionValue("output");
-        } else {
-            outputPath = System.getProperty("user.dir");
-        }
-        // validate the given output path now to avoid errors after the whole optimization process
-        String outputFolder;
-        try {
-            Path folderPath = Paths.get(outputPath).resolve("output");
-            Files.createDirectory(folderPath);
-            outputFolder = folderPath.toString();
-        } catch (FileAlreadyExistsException e) {
-            throw new RuntimeException("Folder 'output' already exists on the given path");
-        } catch (InvalidPathException | IOException e) {
-            throw new RuntimeException("Given value for option 'output' is not a valid path");
-        }
-
         System.out.println("Number instances to be used for enumeration: " + enumerator.getInstances().size());
         System.out.println("All options are set! Enumeration is now running...");
-        // step 4: pre-processing (generating search space according to the enumeration strategy)
+
         long startTime = System.currentTimeMillis();
+        // pre-processing (generating search space according to the enumeration strategy)
         enumerator.preprocessing();
-        // step 5: processing (finding the optimal solution) + postprocessing (retrieving the solution)
+        // processing (finding the optimal solution) + postprocessing (retrieving the solution)
         enumerator.processing();
+        // processing (currently only fetching the optimal solution)
         EnumerationUtils.SolutionPoint optConfig = enumerator.postprocessing();
         long endTime = System.currentTimeMillis();
         System.out.println("...enumeration finished for " + ((double) (endTime-startTime))/1000 + " seconds\n");
-        // step 6: generate configuration files according the optimal solution (if solution not empty)
+
+        // generate configuration files according the optimal solution (if solution not empty)
         if (optConfig.getTimeCost() < Double.MAX_VALUE) {
             if (optConfig.numberExecutors == 0) {
-                String filePath = Paths.get(outputFolder, EC2_ARGUMENTS_FILENAME).toString();
+                String filePath = Paths.get(folderPath.toString(), EC2_ARGUMENTS_FILENAME).toString();
                 CloudUtils.generateEC2ConfigJson(optConfig.driverInstance, filePath);
             } else {
-                String instanceGroupsPath = Paths.get(outputFolder, EMR_INSTANCE_GROUP_FILENAME).toString();
-                String configurationsPath = Paths.get(outputFolder, EMR_CONFIGURATIONS_FILENAME).toString();
+                String instanceGroupsPath = Paths.get(folderPath.toString(), EMR_INSTANCE_GROUP_FILENAME).toString();
+                String configurationsPath = Paths.get(folderPath.toString(), EMR_CONFIGURATIONS_FILENAME).toString();
                 CloudUtils.generateEMRInstanceGroupsJson(
                         optConfig.driverInstance,
                         optConfig.numberExecutors,
@@ -480,5 +406,48 @@ public class ResourceOptimizer {
             );
         }
         System.out.println(executionSuggestions);
+    }
+
+    public static void main(String[] args) throws ParseException, IOException {
+        // load directly passed options
+        Options options = createOptions();
+        CommandLineParser clParser = new PosixParser();
+        CommandLine line = clParser.parse(options, args);
+        // load env. variables for the options
+        Map<String, String> env = System.getenv();
+        // execute the actual main logic
+        execute(line, options, env);
+    }
+
+    // Helpers ---------------------------------------------------------------------------------------------------------
+
+    private static String getKeyByValue(HashMap <String, String> hashmap, String value) {
+        for (Map.Entry<String, String> pair : hashmap.entrySet()) {
+            if (pair.getValue().equals(value)) {
+                return pair.getKey();
+            }
+        }
+        return null;
+    }
+
+    private static void replaceS3Filesystem(HashMap <String, String> argsMap, String filesystem) {
+        for (Map.Entry<String, String> pair : argsMap.entrySet()) {
+            String[] currentFileParts = pair.getValue().split(":");
+            if (currentFileParts.length != 2) continue;
+            if (!currentFileParts[0].startsWith("s3")) continue;
+            pair.setValue(String.format("%s:%s", filesystem, currentFileParts[1]));
+        }
+    }
+
+    private static String getAvailableHadoopS3Filesystem() {
+        try {
+            Class.forName("org.apache.hadoop.fs.s3a.S3AFileSystem");
+            return "s3a";
+        } catch (ClassNotFoundException ignored) {}
+        try {
+            Class.forName("org.apache.hadoop.fs.s3.S3AFileSystem");
+            return "s3";
+        } catch (ClassNotFoundException ignored) {}
+        throw new RuntimeException("No Hadoop S3 Filesystem connector installed");
     }
 }

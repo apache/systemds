@@ -68,6 +68,7 @@ public class CloudUtils {
 	}
 
 	public static final String EC2_REGEX = "^([a-z]+)([0-9])(a|g|i?)([bdnez]*)\\.([a-z0-9]+)$";
+	public static final int EBS_DEFAULT_ROOT_SIZE = 15;
 	public static final String SPARK_VERSION = "3.3.0";
 	// set always equal or higher than DEFAULT_CLUSTER_LAUNCH_TIME
 	public static final double MINIMAL_EXECUTION_TIME = 600; // seconds;
@@ -255,8 +256,11 @@ public class CloudUtils {
 	}
 
 	/**
-	 * Generates json file storing the instance type for
-	 * single node executions
+	 * Generates json file storing the instance type and relevant characteristics
+	 * for single node executions.
+	 * The resulting file is to be used only for parsing the attributes and
+	 * is not suitable for direct options input to AWS CLI.
+	 *
 	 * @param instance EC2 instance object (always set one)
 	 * @param filePath path for the json file
 	 */
@@ -265,8 +269,9 @@ public class CloudUtils {
 			JSONObject ec2Config = new JSONObject();
 
 			ec2Config.put("InstanceType", instance.getInstanceName());
-			ec2Config.put("MinCount", 1);
-			ec2Config.put("MaxCount", 1);
+			ec2Config.put("EbsOptimized", true);
+			ec2Config.put("VolumeSize", EBS_DEFAULT_ROOT_SIZE);
+			ec2Config.put("VolumeType", "gp3");
 
 			try (FileWriter file = new FileWriter(filePath)) {
 				file.write(ec2Config.write(true));

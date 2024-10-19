@@ -1,28 +1,36 @@
 package org.apache.sysds.resource;
 
 import org.apache.commons.cli.*;
+import org.apache.commons.configuration2.PropertiesConfiguration;
+import org.apache.commons.configuration2.ex.ConfigurationException;
 import org.apache.sysds.conf.CompilerConfig;
 import org.apache.sysds.conf.ConfigurationManager;
 import org.apache.sysds.resource.enumeration.EnumerationUtils;
 import org.apache.sysds.resource.enumeration.Enumerator;
 import org.apache.sysds.runtime.controlprogram.Program;
 import org.apache.sysds.utils.Explain;
+import org.apache.commons.configuration2.io.FileHandler;
 
+import javax.validation.groups.Default;
 import java.io.IOException;
+import java.net.URI;
 import java.nio.file.*;
 import java.util.HashMap;
 import java.util.Map;
 
+
 import static org.apache.sysds.resource.CloudUtils.DEFAULT_CLUSTER_LAUNCH_TIME;
 
 public class ResourceOptimizer {
+    private static final String DEFAULT_OPTIONS_FILE = "./options.env";
+
     static {
         ConfigurationManager.getCompilerConfig().set(CompilerConfig.ConfigType.RESOURCE_OPTIMIZATION, true);
         ConfigurationManager.getCompilerConfig().set(CompilerConfig.ConfigType.REJECT_READ_WRITE_UNKNOWNS, true);
     }
     private static final String EMR_INSTANCE_GROUP_FILENAME = "emr_instance_groups.json";
     private static final String EMR_CONFIGURATIONS_FILENAME = "emr_configurations.json";
-    private static final String EC2_ARGUMENTS_FILENAME = "ec2_arguments.json";
+    private static final String EC2_ARGUMENTS_FILENAME = "ec2_configurations.json";
 
     @SuppressWarnings("static-access")
     public static Options createOptions() {
@@ -31,6 +39,9 @@ public class ResourceOptimizer {
         Option fileOpt = OptionBuilder.withArgName("filename")
                 .withDescription("specifies dml/pydml file to execute; path should be local")
                 .hasArg().create("f");
+        Option optionsOpt = OptionBuilder
+                .withDescription("specifies options file for the resource optimization")
+                .hasArg().create("options");
         Option nvargsOpt = OptionBuilder.withArgName("key=value")
                 .withDescription("parameterizes DML script with named parameters of the form <key=value>; " +
                         "<key> should be a valid identifier in DML/PyDML")
@@ -44,6 +55,7 @@ public class ResourceOptimizer {
                 .create("help");
 
         options.addOption(fileOpt);
+        options.addOption(optionsOpt);
         options.addOption(nvargsOpt);
         options.addOption(argsOpt);
         options.addOption(helpOpt);
@@ -61,12 +73,7 @@ public class ResourceOptimizer {
         return options;
     }
 
-    public static Enumerator initEnumerator(CommandLine line, Options options, Map<String, String> env) throws ParseException, IOException {
-        if (line.hasOption("help")) {
-            (new HelpFormatter()).printHelp("Main", options);
-            return null;
-        }
-
+    public static Enumerator initEnumerator(CommandLine line, PropertiesConfiguration options) throws ParseException, IOException {
         // parse script arguments
         HashMap <String, String> argsMap = new HashMap<>();
         if (line.hasOption("args")){
@@ -96,26 +103,26 @@ public class ResourceOptimizer {
         }
 
         // load the rest of the options from env. variables
-        String regionOpt = env.getOrDefault("REGION", "");
-        String infoTablePathOpt = env.getOrDefault("INFO_TABLE", "");
-        String regionTablePathOpt = env.getOrDefault("REGION_TABLE", "");
-        String localInputsOpt = env.getOrDefault("LOCAL_INPUTS", "");
+        String regionOpt = getOrDefault(options, "REGION", "");
+        String infoTablePathOpt = getOrDefault(options, "INFO_TABLE", "");
+        String regionTablePathOpt = getOrDefault(options, "REGION_TABLE", "");
+        String localInputsOpt = getOrDefault(options, "LOCAL_INPUTS", "");
 
-        String enumerationOpt = env.getOrDefault("ENUMERATION", "");
-        String optimizationOpt = env.getOrDefault("OPTIMIZATION_FUNCTION", "");
-        String maxTimeOpt = env.getOrDefault("MAX_TIME", "");
-        String maxPriceOpt = env.getOrDefault("MAX_PRICE", "");
-        String cpuQuotaOpt = env.getOrDefault("CPU_QUOTA", "");
-        String minExecutorsOpt = env.getOrDefault("MIN_EXECUTORS", "");
-        String maxExecutorsOpt = env.getOrDefault("MAX_EXECUTORS", "");
-        String instanceFamiliesOpt = env.getOrDefault("INSTANCE_FAMILIES", "");
-        String instanceSizesOpt = env.getOrDefault("INSTANCE_SIZES", "");
-        String stepSizeOpt = env.getOrDefault("STEP_SIZE", "");
-        String expBaseOpt = env.getOrDefault("EXPONENTIAL_BASE", "");
-        String useLargestEstOpt = env.getOrDefault("USE_LARGEST_ESTIMATE", "");
-        String useCpEstOpt = env.getOrDefault("USE_CP_ESTIMATES", "");
-        String useBroadcastOpt = env.getOrDefault("USE_BROADCASTS", "");
-        String useOutputsOpt = env.getOrDefault("USE_OUTPUTS", "");
+        String enumerationOpt = getOrDefault(options, "ENUMERATION", "");
+        String optimizationOpt = getOrDefault(options, "OPTIMIZATION_FUNCTION", "");
+        String maxTimeOpt = getOrDefault(options, "MAX_TIME", "");
+        String maxPriceOpt = getOrDefault(options, "MAX_PRICE", "");
+        String cpuQuotaOpt = getOrDefault(options, "CPU_QUOTA", "");
+        String minExecutorsOpt = getOrDefault(options, "MIN_EXECUTORS", "");
+        String maxExecutorsOpt = getOrDefault(options, "MAX_EXECUTORS", "");
+        String instanceFamiliesOpt = getOrDefault(options, "INSTANCE_FAMILIES", "");
+        String instanceSizesOpt = getOrDefault(options, "INSTANCE_SIZES", "");
+        String stepSizeOpt = getOrDefault(options, "STEP_SIZE", "");
+        String expBaseOpt = getOrDefault(options, "EXPONENTIAL_BASE", "");
+        String useLargestEstOpt = getOrDefault(options, "USE_LARGEST_ESTIMATE", "");
+        String useCpEstOpt = getOrDefault(options, "USE_CP_ESTIMATES", "");
+        String useBroadcastOpt = getOrDefault(options, "USE_BROADCASTS", "");
+        String useOutputsOpt = getOrDefault(options, "USE_OUTPUTS", "");
 
         // replace declared S3 files with local path
         HashMap<String, String> localInputMap = new HashMap<>();
@@ -315,8 +322,8 @@ public class ResourceOptimizer {
         return builder.build();
     }
 
-    public static void execute(CommandLine line, Options options, Map<String, String> env) throws ParseException, IOException {
-        String outputPath = env.getOrDefault("OUTPUT_FOLDER", "");
+    public static void execute(CommandLine line, PropertiesConfiguration options) throws ParseException, IOException {
+        String outputPath = getOrDefault(options, "OUTPUT_FOLDER", "");
         // validate the given output path now to avoid errors after the whole optimization process
         Path folderPath;
         try {
@@ -333,7 +340,7 @@ public class ResourceOptimizer {
         }
 
         // initialize the enumerator (including initial program compilation)
-        Enumerator enumerator = initEnumerator(line, options, env);
+        Enumerator enumerator = initEnumerator(line, options);
         if (enumerator == null) {
             // help requested
             return;
@@ -365,7 +372,7 @@ public class ResourceOptimizer {
                         optConfig.executorInstance,
                         instanceGroupsPath
                 );
-                CloudUtils.generateEMRConfigurationsJson(configurationsPath);
+                CloudUtils.generateEMRConfigurationsJson(optConfig, configurationsPath);
             }
         } else {
             System.err.println("Error: The provided combination of target instances and constraints leads to empty solution.");
@@ -408,15 +415,33 @@ public class ResourceOptimizer {
         System.out.println(executionSuggestions);
     }
 
-    public static void main(String[] args) throws ParseException, IOException {
+    public static void main(String[] args) throws ParseException, IOException, ConfigurationException {
         // load directly passed options
-        Options options = createOptions();
+        Options cliOptions = createOptions();
         CommandLineParser clParser = new PosixParser();
-        CommandLine line = clParser.parse(options, args);
-        // load env. variables for the options
-        Map<String, String> env = System.getenv();
+        CommandLine line = clParser.parse(cliOptions, args);
+        if (line.hasOption("help")) {
+            (new HelpFormatter()).printHelp("Main", cliOptions);
+            return;
+        }
+        String optionsFile;
+        if (line.hasOption("options")) {
+            optionsFile = line.getOptionValue("options");
+        } else {
+            Path defaultOptions = Paths.get(DEFAULT_OPTIONS_FILE);
+            if (Files.exists(defaultOptions)) {
+                optionsFile = defaultOptions.toString();
+            } else {
+                throw new ParseException("File with options was neither provided or " +
+                        "found in the current execution directory: "+DEFAULT_OPTIONS_FILE);
+            }
+        }
+        // load options
+        PropertiesConfiguration configs = new PropertiesConfiguration();
+        FileHandler handler = new FileHandler(configs);
+        handler.load(optionsFile);
         // execute the actual main logic
-        execute(line, options, env);
+        execute(line, configs);
     }
 
     // Helpers ---------------------------------------------------------------------------------------------------------
@@ -449,5 +474,9 @@ public class ResourceOptimizer {
             return "s3";
         } catch (ClassNotFoundException ignored) {}
         throw new RuntimeException("No Hadoop S3 Filesystem connector installed");
+    }
+
+    public static String getOrDefault(PropertiesConfiguration config, String key, String defaultValue) {
+        return config.containsKey(key) ? config.getString(key) : defaultValue;
     }
 }

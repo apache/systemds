@@ -354,7 +354,7 @@ public class ResourceOptimizerTest extends AutomatedTestBase {
         }
         Map<String, String> envOptions = generateTestingEnvOptionsRequired(tmpOutFolder.toString());
         envOptions.put("INFO_TABLE", DEFAULT_INSTANCE_INFO_TABLE);
-        envOptions.put("MAX_EXECUTORS", "10");
+        envOptions.put("MAX_EXECUTORS", "2");
 
         ResourceOptimizer.execute(line, options, envOptions);
 

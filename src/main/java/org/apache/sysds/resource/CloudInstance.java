@@ -19,6 +19,8 @@
 
 package org.apache.sysds.resource;
 
+import static org.apache.sysds.resource.CloudUtils.EBS_DEFAULT_ROOT_SIZE_EMR;
+
 /**
  * This class describes the configurations of a single VM instance.
  * The idea is to use this class to represent instances of different
@@ -62,8 +64,8 @@ public class CloudInstance {
 		this.instanceName = instanceName;
 		this.instancePrice = pricePerHour / 3600; // instance price per second
 		this.extraFee = extraFee / 3600; // extra fee per second
-		this.extraStoragePrice = NVMeStorage? 0 : // no need of attaching extra
-				storagePrice * (numberStorageVolumes * sizeStorageVolumes) /
+		this.extraStoragePrice = NVMeStorage? EBS_DEFAULT_ROOT_SIZE_EMR : // no need of attaching extra
+				storagePrice * (EBS_DEFAULT_ROOT_SIZE_EMR + numberStorageVolumes * sizeStorageVolumes) /
 						(30 * 24 * 3600); // total storage price per second
 		this.memory = memory;
 		this.vCPUCores = vCPUCores;
@@ -159,10 +161,10 @@ public class CloudInstance {
 	/**
 	 * @return number of storage volumes (attached or to be configured)
 	 */
-	public int getNumberStorageVolumes() { return numberStorageVolumes; }
+	public int getNumStorageVolumes() { return numberStorageVolumes; }
 
 	/**
 	 * @return size of each storage volume (all equally sized) in GB
 	 */
-	public double getSizeStorageVolumes() { return sizeStorageVolumes; }
+	public double getSizeStoragePerVolume() { return sizeStorageVolumes; }
 }

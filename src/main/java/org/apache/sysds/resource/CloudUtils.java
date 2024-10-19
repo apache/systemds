@@ -19,15 +19,15 @@
 
 package org.apache.sysds.resource;
 
-import org.apache.sysds.resource.enumeration.EnumerationUtils;
+import org.apache.sysds.resource.enumeration.EnumerationUtils.ConfigurationPoint;
 import org.apache.wink.json4j.JSONObject;
 import org.apache.wink.json4j.JSONArray;
 
-import java.io.BufferedReader;
-import java.io.FileReader;
-import java.io.FileWriter;
-import java.io.IOException;
+import java.io.*;
+import java.rmi.RemoteException;
 import java.util.HashMap;
+
+import static org.apache.sysds.resource.ResourceCompiler.JVM_MEMORY_FACTOR;
 
 /**
  * Class providing static utilities for cloud related operations.
@@ -59,7 +59,8 @@ public class CloudUtils {
 	}
 
 	public enum InstanceSize {
-		_XLARGE, _2XLARGE, _3XLARGE, _4XLARGE, _6XLARGE, _8XLARGE, _9XLARGE, _12XLARGE, _16XLARGE, _18XLARGE, _24XLARGE, _32XLARGE, _48XLARGE;
+		_XLARGE, _2XLARGE, _3XLARGE, _4XLARGE, _6XLARGE, _8XLARGE, _9XLARGE,
+		_12XLARGE, _16XLARGE, _18XLARGE, _24XLARGE, _32XLARGE, _48XLARGE;
 		// Potentially VM instance sizes for different Cloud providers
 
 		public static InstanceSize customValueOf(String name) throws IllegalArgumentException {
@@ -68,7 +69,8 @@ public class CloudUtils {
 	}
 
 	public static final String EC2_REGEX = "^([a-z]+)([0-9])(a|g|i?)([bdnez]*)\\.([a-z0-9]+)$";
-	public static final int EBS_DEFAULT_ROOT_SIZE = 15;
+	public static final int EBS_DEFAULT_ROOT_SIZE_EMR = 15; // GB
+	public static final int EBS_DEFAULT_ROOT_SIZE_EC2 = 8; // GB
 	public static final String SPARK_VERSION = "3.3.0";
 	// set always equal or higher than DEFAULT_CLUSTER_LAUNCH_TIME
 	public static final double MINIMAL_EXECUTION_TIME = 600; // seconds;
@@ -128,13 +130,16 @@ public class CloudUtils {
 	 * @param provider cloud provider for the instances of the cluster
 	 * @return price for the given time
 	 */
-	public static double calculateClusterPrice(EnumerationUtils.ConfigurationPoint config, double time, CloudProvider provider) {
+	public static double calculateClusterPrice(ConfigurationPoint config, double time, CloudProvider provider) {
 		double pricePerSecond;
 		if (provider == CloudProvider.AWS) {
 			if (config.numberExecutors == 0) { // single instance (no cluster management -> no extra fee)
-				// price = EC2 price, no extra storage needed (only root volume, which is not accounted for)
+				// price = EC2 price + storage price (EBS) - use only the half of the price since
+				// the half of the storage will be automatically configured
+				// because in single-node mode SystemDS does not utilize HDFS
+				// (only minimal root EBS when Instance Store available)
 				CloudInstance singleNode = config.driverInstance;
-				pricePerSecond = singleNode.getPrice();
+				pricePerSecond = singleNode.getPrice() + (singleNode.getExtraStoragePrice() / 2);
 			} else {
 				// price = EC2 price + EMR fee + extra storage (EBS) price
 				CloudInstance masterNode = config.driverInstance;
@@ -162,7 +167,12 @@ public class CloudUtils {
 	 * @throws IOException in case of invalid file format
 	 */
 	public static double[] loadRegionalPrices(String feeTablePath, String region) throws IOException {
-		BufferedReader br = new BufferedReader(new FileReader(feeTablePath));
+		BufferedReader br;
+		try {
+			br = new BufferedReader(new FileReader(feeTablePath));
+		} catch (FileNotFoundException e) {
+			throw new RemoteException(feeTablePath+" file not found: "+e);
+		}
 		String parsedLine;
 		// validate the file header
 		parsedLine = br.readLine();
@@ -269,9 +279,16 @@ public class CloudUtils {
 			JSONObject ec2Config = new JSONObject();
 
 			ec2Config.put("InstanceType", instance.getInstanceName());
-			ec2Config.put("EbsOptimized", true);
-			ec2Config.put("VolumeSize", EBS_DEFAULT_ROOT_SIZE);
+			// EBS size of the root volume (only one volume in this case)
+			int ebsRootSize = EBS_DEFAULT_ROOT_SIZE_EC2;
+			if (!instance.isNVMeStorage()) // plan for only half of the EMR storage budget
+				ebsRootSize += (int) Math.ceil(instance.getNumStorageVolumes()*instance.getSizeStoragePerVolume()/2);
+			ec2Config.put("VolumeSize", ebsRootSize);
 			ec2Config.put("VolumeType", "gp3");
+			ec2Config.put("EbsOptimized", true);
+			// JVM memory budget used at resource optimization
+			int cpMemory = (int) (instance.getMemory()/ (1024*1024) * JVM_MEMORY_FACTOR);
+			ec2Config.put("JvmMaxMemory", cpMemory);
 
 			try (FileWriter file = new FileWriter(filePath)) {
 				file.write(ec2Config.write(true));
@@ -324,14 +341,15 @@ public class CloudUtils {
 	}
 
 	private static void attachEBSConfigsIfNeeded(CloudInstance instance, JSONObject instanceGroup) {
+		// in AWS CLI the root EBS volume is configured with a separate optional flag (default 15GB)
 		if (!instance.isNVMeStorage()) {
 			try {
 				JSONObject volumeSpecification = new JSONObject();
-				volumeSpecification.put("SizeInGB", instance.getSizeStorageVolumes());
+				volumeSpecification.put("SizeInGB", instance.getSizeStoragePerVolume());
 				volumeSpecification.put("VolumeType", "gp3");
 
 				JSONObject ebsBlockDeviceConfig = new JSONObject();
-				ebsBlockDeviceConfig.put("VolumesPerInstance", instance.getNumberStorageVolumes());
+				ebsBlockDeviceConfig.put("VolumesPerInstance", instance.getNumStorageVolumes());
 				ebsBlockDeviceConfig.put("VolumeSpecification", volumeSpecification);
 				JSONArray ebsBlockDeviceConfigsArray = new JSONArray();
 				ebsBlockDeviceConfigsArray.add(ebsBlockDeviceConfig);
@@ -352,14 +370,34 @@ public class CloudUtils {
 	 *
 	 * @param filePath path for the json file
 	 */
-	public static void generateEMRConfigurationsJson(String filePath) {
+	public static void generateEMRConfigurationsJson(ConfigurationPoint clusterConfig, String filePath) {
 		try {
 			JSONArray configurations = new JSONArray();
 
 			// Spark Configuration
 			JSONObject sparkConfig = new JSONObject();
 			sparkConfig.put("Classification", "spark");
-			sparkConfig.put("Properties", new JSONObject().put("maximizeResourceAllocation", "true"));
+			// do not use the automatic EMR cluster configurations
+			sparkConfig.put("Properties", new JSONObject().put("maximizeResourceAllocation", "false"));
+
+			// set custom defined cluster configurations
+			JSONObject sparkDefaultsConfig = new JSONObject();
+			sparkConfig.put("Classification", "spark-defaults");
+
+			JSONObject sparkDefaultsProperties = new JSONObject();
+			int driverMemory = (int) (clusterConfig.driverInstance.getMemory()/ (1024*1024) * JVM_MEMORY_FACTOR);
+			// driver memory NEED to be set separately at running since client mode will be used,
+			// but the configuration parameter is set here so be available to the user/launch script
+			sparkDefaultsProperties.put("spark.driver.memory", (driverMemory)+"m");
+			sparkDefaultsProperties.put("spark.driver.maxResultSize", 0);
+			int executorMemory = (int) (clusterConfig.executorInstance.getMemory()/ (1024*1024) * JVM_MEMORY_FACTOR);
+			int executorCores = clusterConfig.executorInstance.getVCPUs();
+			sparkDefaultsProperties.put("spark.executor.memory", (executorMemory/(1024*1024))+"m");
+			sparkDefaultsProperties.put("spark.executor.cores", Integer.toString(executorCores));
+			// values copied from SparkClusterConfig.analyzeSparkConfiguation
+			sparkDefaultsProperties.put("spark.storage.memoryFraction", 0.6);
+			sparkDefaultsProperties.put("spark.memory.storageFraction", 0.5);
+			sparkDefaultsConfig.put("Properties", sparkDefaultsProperties);
 
 			// Spark-env and export JAVA_HOME Configuration
 			JSONObject sparkEnvConfig = new JSONObject();
@@ -372,7 +410,9 @@ public class CloudUtils {
 			JSONArray jvmArray = new JSONArray();
 			jvmArray.add(exportConfig);
 			sparkEnvConfig.put("Configurations", jvmArray);
+
 			configurations.add(sparkConfig);
+			configurations.add(sparkDefaultsConfig);
 			configurations.add(sparkEnvConfig);
 
 			try (FileWriter file = new FileWriter(filePath)) {

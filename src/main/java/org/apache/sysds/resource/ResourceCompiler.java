@@ -57,6 +57,7 @@ public class ResourceCompiler {
 	public static final long DEFAULT_EXECUTOR_MEMORY = 512*1024*1024; // 0.5GB
 	public static final int DEFAULT_EXECUTOR_THREADS = 2; // avoids creating spark context
 	public static final int DEFAULT_NUMBER_EXECUTORS = 2; // avoids creating spark context
+	public static final double JVM_MEMORY_FACTOR = 0.9; // factor for the JVM memory budget (10% for the OS)
 
 	public static Program compile(String filePath, Map<String, String> args) throws IOException {
 		return compile(filePath, args, null);
@@ -269,7 +270,8 @@ public class ResourceCompiler {
 			sparkConf.set("spark.memory.useLegacyMode", "false");
 			// ------------------ Static Configurations -------------------
 			// ------------------ Dynamic Configurations -------------------
-			sparkConf.set("spark.executor.memory", (nodeMemory/(1024*1024))+"m");
+			int executorMemory = (int) (nodeMemory/(1024*1024) * JVM_MEMORY_FACTOR);
+			sparkConf.set("spark.executor.memory", (executorMemory)+"m");
 			sparkConf.set("spark.executor.instances", Integer.toString(numExecutors));
 			sparkConf.set("spark.executor.cores", Integer.toString(nodeNumCores));
 			// not setting "spark.default.parallelism" on purpose -> allows re-initialization

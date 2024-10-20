@@ -85,7 +85,7 @@ public class ReorgSPInstruction extends UnarySPInstruction {
 	}
 
 	private ReorgSPInstruction(Operator op, CPOperand in, CPOperand out, CPOperand shift, String opcode, String istr) {
-		this(op, in, out, opcode, istr);
+		super(SPType.Reorg, op, in, shift, null, out, opcode, istr);
 		_shift = shift;
 	}
 

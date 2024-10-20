@@ -406,14 +406,40 @@ public class FederationMap {
 		return ret.toArray(new Future[0]);
 	}
 
+	@SuppressWarnings("unchecked")
+	public Future<FederatedResponse>[] executeRoll(long tid, boolean wait,
+		FederatedRequest frEnd, FederatedRequest frStart, long rlen)
+	{
+		// executes step1[] - step 2 - ... step4 (only first step federated-data-specific)
+		setThreadID(tid, new FederatedRequest[]{frStart, frEnd});
+		List<Future<FederatedResponse>> ret = new ArrayList<>();
+
+		for(Pair<FederatedRange, FederatedData> e : _fedMap) {
+			if (e.getKey().getEndDims()[0] == rlen) {
+				ret.add(e.getValue().executeFederatedOperation(frEnd));
+			} else if (e.getKey().getBeginDims()[0] == 0){
+				ret.add(e.getValue().executeFederatedOperation(frStart));
+			}
+		}
+
+		// prepare results (future federated responses), with optional wait to ensure the
+		// order of requests without data dependencies (e.g., cleanup RPCs)
+		if(wait)
+			FederationUtils.waitFor(ret);
+		return (Future<FederatedResponse>[])ret.toArray(new Future[0]);
+	}
+
 	public List<Pair<FederatedRange, Future<FederatedResponse>>> requestFederatedData() {
 		if(!isInitialized())
 			throw new DMLRuntimeException("Federated matrix read only supported on initialized FederatedData");
 
 		List<Pair<FederatedRange, Future<FederatedResponse>>> readResponses = new ArrayList<>();
-		FederatedRequest request = new FederatedRequest(RequestType.GET_VAR, _ID);
-		for(Pair<FederatedRange, FederatedData> e : _fedMap)
+
+		for(Pair<FederatedRange, FederatedData> e : _fedMap){
+			FederatedRequest request = new FederatedRequest(RequestType.GET_VAR, e.getValue().getVarID());
 			readResponses.add(Pair.of(e.getKey(), e.getValue().executeFederatedOperation(request)));
+		}
+
 		return readResponses;
 	}
 
@@ -691,6 +717,7 @@ public class FederationMap {
 			_fedMap.add(Pair.of(fedRanges[fedRanges.length-1-i], data1));
 		}
 	}
+
 
 	private static class MappingTask implements Callable<Void> {
 		private final FederatedRange _range;

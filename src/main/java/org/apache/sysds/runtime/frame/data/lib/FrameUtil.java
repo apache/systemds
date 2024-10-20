@@ -19,8 +19,6 @@
 
 package org.apache.sysds.runtime.frame.data.lib;
 
-import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.regex.Pattern;
 
 import org.apache.commons.logging.Log;
@@ -35,8 +33,6 @@ import org.apache.sysds.runtime.frame.data.columns.DoubleArray;
 import org.apache.sysds.runtime.frame.data.columns.FloatArray;
 import org.apache.sysds.runtime.frame.data.columns.IntegerArray;
 import org.apache.sysds.runtime.frame.data.columns.LongArray;
-import org.apache.sysds.runtime.frame.data.iterators.IteratorFactory;
-import org.apache.sysds.runtime.util.UtilFunctions;
 
 public interface FrameUtil {
 	public static final Log LOG = LogFactory.getLog(FrameUtil.class.getName());

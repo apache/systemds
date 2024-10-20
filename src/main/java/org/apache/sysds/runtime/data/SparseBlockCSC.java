@@ -20,6 +20,7 @@
 package org.apache.sysds.runtime.data;
 
 import org.apache.sysds.runtime.util.SortUtils;
+import org.apache.sysds.runtime.util.UtilFunctions;
 import org.apache.sysds.utils.MemoryEstimates;
 
 import java.io.DataInput;
@@ -539,8 +540,8 @@ public class SparseBlockCSC extends SparseBlock{
 		long nnz = 0;
 		for(int i = cl; i < cu; i++)
 			if(!isEmptyCol(i)) {
-				int start = internPosFIndexGTE(rl, i);
-				int end = internPosFIndexLTE(ru - 1, i);
+				int start = internPosFIndexGTECol(rl, i);
+				int end = internPosFIndexLTECol(ru - 1, i);
 				nnz += (start != -1 && end != -1) ? (end - start + 1) : 0;
 			}
 		return nnz;
@@ -808,6 +809,45 @@ public class SparseBlockCSC extends SparseBlock{
 
 	@Override
 	public void setIndexRange(int r, int cl, int cu, double[] v, int vix, int vlen) {
+		//delete existing values in range if necessary
+		if( !isEmpty(r) )
+			deleteIndexRange(r, cl, cu);
+
+		//determine input nnz
+		int lnnz = UtilFunctions.computeNnz(v, vix, vlen);
+
+		//prepare free space (allocate and shift)
+		int lsize = _size+lnnz;
+		if( _values.length < lsize )
+			resize(lsize);
+
+		// calculate insertion points / positions to shift
+		int[] posIdx = new int[vlen];
+		int insertionPnt = 0;
+		for(int i = cl; i < cu; i++){
+			for(int j = _ptr[i]; j < _ptr[i+1]; j++){
+				if(_indexes[j] > r) {
+					posIdx[insertionPnt] = j;
+					break;
+				}
+				if(j == _ptr[i+1]-1)
+					posIdx[insertionPnt] = j+1;
+			}
+			insertionPnt++;
+		}
+
+		// shift to the right by 1 given insertion points stored in posIdx
+		for(int i = vix+vlen-1; i >= vix; i--){
+			System.arraycopy(_indexes, posIdx[i-vix], _indexes, posIdx[i-vix]+1, _size-posIdx[i-vix]);
+			System.arraycopy(_values, posIdx[i-vix], _values, posIdx[i-vix]+1, _size-posIdx[i-vix]);
+			_size++;
+			_values[posIdx[i-vix]] = v[i];
+			_indexes[posIdx[i-vix]] = r;
+		}
+
+		// Increment pointer array
+		for(int c = cl; c <cu; c++)
+			incrPtr(c+1);
 
 	}
 
@@ -818,7 +858,48 @@ public class SparseBlockCSC extends SparseBlock{
 
 	@Override
 	public void deleteIndexRange(int r, int cl, int cu) {
+		ArrayList<Integer> cols = new ArrayList();
+		ArrayList<Integer> posIdx = new ArrayList<>();
+		// find columns containing marked row index and
+		// position in indexes
+		for(int i = cl; i<cu; i++){
+			for(int j = _ptr[i]; j < _ptr[i+1]; j++){
+				if(_indexes[j] == r) {
+					cols.add(i);
+					posIdx.add(j);
+				}
+			}
+		}
+		// reduce pointer array.
+		for(int c : cols){
+			decrPtr(c+1);
+		}
+		// adapt indexes and values
+		for(int i = posIdx.size()-1; i >=0; i--){
+			if(posIdx.get(i) < _size-1) {
+				System.arraycopy(_indexes, posIdx.get(i) + 1, _indexes, posIdx.get(i), _size - (posIdx.get(i) + 1));
+				System.arraycopy(_values, posIdx.get(i) + 1, _values, posIdx.get(i), _size - (posIdx.get(i) + 1));
+			}
+		}
+		_size -= posIdx.size();
+	}
 
+	public void deleteIndexRangeCol(int c, int rl, int ru) {
+		int start = internPosFIndexGTECol(rl,c);
+		if( start < 0 ) //nothing to delete
+			return;
+
+		int len = sizeCol(c);
+		int end = internPosFIndexGTECol(ru, c);
+		if( end < 0 ) //delete all remaining
+			end = start+len;
+
+		//overlapping array copy (shift rhs values left)
+		System.arraycopy(_indexes, end, _indexes, start, _size-end);
+		System.arraycopy(_values, end, _values, start, _size-end);
+		_size -= (end-start);
+
+		decrPtr(c+1, end-start);
 	}
 
 	@Override
@@ -895,17 +976,53 @@ public class SparseBlockCSC extends SparseBlock{
 
 	@Override
 	public int posFIndexLTE(int r, int c) {
-		return 0;
+		int index = internPosFIndexLTE(r, c);
+		return (index>=0) ? index-pos(r) : index;
+	}
+
+	public int posFIndexLTECol(int r, int c) {
+		int index = internPosFIndexLTECol(r, c);
+		return (index>=0) ? index-posCol(c) : index;
 	}
 
 	@Override
 	public int posFIndexGTE(int r, int c) {
-		return 0;
+		final int pos = pos(r);
+		final int len = size(r);
+		final int end = pos + len;
+
+		// search for existing col index
+		int index = Arrays.binarySearch(indexes(r), pos, end, c);
+		if(index < 0)
+			// search gt col index (see binary search)
+			index = Math.abs(index + 1);
+
+		return (index < end) ? index - pos : -1;
+	}
+
+	public int posFIndexGTECol(int r, int c) {
+		final int pos = posCol(c);
+		final int len = sizeCol(c);
+		final int end = pos + len;
+
+		// search for existing row index
+		int index = Arrays.binarySearch(_indexes, pos, end, r);
+		if(index < 0)
+			// search gt row index (see binary search)
+			index = Math.abs(index + 1);
+
+		return (index < end) ? index - pos : -1;
 	}
 
 	@Override
 	public int posFIndexGT(int r, int c) {
-		return 0;
+		int index = internPosFIndexGT(r, c);
+		return (index>=0) ? index-pos(r) : index;
+	}
+
+	public int posFIndexGTCol(int r, int c) {
+		int index = internPosFIndexGTCol(r, c);
+		return (index>=0) ? index-posCol(c) : index;
 	}
 
 	@Override
@@ -1187,7 +1304,7 @@ public class SparseBlockCSC extends SparseBlock{
 		return csrPtr;
 	}
 
-	private int internPosFIndexLTE(int r, int c) {
+	private int internPosFIndexLTECol(int r, int c) {
 		int pos = posCol(c);
 		int len = sizeCol(c);
 
@@ -1202,7 +1319,7 @@ public class SparseBlockCSC extends SparseBlock{
 	}
 
 
-	private int internPosFIndexGTE(int r, int c) {
+	private int internPosFIndexGTECol(int r, int c) {
 		int pos = posCol(c);
 		int len = sizeCol(c);
 
@@ -1215,6 +1332,67 @@ public class SparseBlockCSC extends SparseBlock{
 		index = Math.abs( index+1 );
 		return (index < pos+len) ? index : -1;
 	}
+
+	private int internPosFIndexGTCol(int r, int c) {
+		int pos = posCol(c);
+		int len = sizeCol(c);
+
+		//search for existing row index
+		int index = Arrays.binarySearch(_indexes, pos, pos+len, r);
+		if( index >= 0  )
+			return (index+1 < pos+len) ? index+1 : -1;
+
+		//search gt row index (see binary search)
+		index = Math.abs( index+1 );
+		return (index < pos+len) ? index : -1;
+	}
+
+	private int internPosFIndexLTE(int r, int c) {
+		int pos = pos(r);
+		int len = size(r);
+
+		//search for existing col index in [pos,pos+len)
+		int index = Arrays.binarySearch(indexes(r), pos, pos+len, c);
+		if( index >= 0  )
+			return (index < pos+len) ? index : -1;
+
+		//search lt col index (see binary search)
+		index = Math.abs( index+1 );
+		return (index-1 >= pos) ? index-1 : -1;
+	}
+
+
+	private int internPosFIndexGTE(int r, int c) {
+		int pos = pos(r);
+		int len = size(r);
+
+		//search for existing col index
+		int index = Arrays.binarySearch(indexes(r), pos, pos+len, c);
+		if( index >= 0  )
+			return (index < pos+len) ? index : -1;
+
+		//search gt col index (see binary search)
+		index = Math.abs( index+1 );
+		return (index < pos+len) ? index : -1;
+	}
+
+	private int internPosFIndexGT(int r, int c) {
+		int pos = pos(r);
+		int len = size(r);
+
+		//search for existing col index
+		int index = Arrays.binarySearch(indexes(r), pos, pos+len, c);
+		if( index >= 0  )
+			return (index+1 < pos+len) ? index+1 : -1;
+
+		//search gt col index (see binary search)
+		index = Math.abs( index+1 );
+		return (index < pos+len) ? index : -1;
+	}
+
+
+
+
 
 
 

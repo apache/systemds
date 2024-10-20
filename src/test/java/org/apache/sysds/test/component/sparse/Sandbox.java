@@ -30,8 +30,8 @@ public class Sandbox extends AutomatedTestBase {
 		try{
 
 			double[][] A = {
-				{10, 0, 0, 0, 0, 0},
-				{0, 0, 0, 40, 0, 0},
+				{10, 20, 0, 0, 0, 0},
+				{0, 30, 0, 40, 0, 0},
 				{0, 0, 50, 60, 70, 0},
 				{0, 0, 0, 0, 0, 80},
 			};
@@ -51,9 +51,14 @@ public class Sandbox extends AutomatedTestBase {
 
 			SparseBlockCSC newBlock = new SparseBlockCSC(sblock, 6);
 
-			//newBlock.reset(2, 3, 3);
+			//newBlock.deleteIndexRange(2, 2, 6);
 
-			//newBlock.set(0,1,0);
+
+			double[] v = {0, 5, 6, 7};
+			newBlock.setIndexRange(3,1,4,v,1,3);
+			//System.out.println(newBlock.size());
+
+
 
 
 
@@ -76,11 +81,14 @@ public class Sandbox extends AutomatedTestBase {
 
 			System.out.println("***********************");
 
-			Iterator<Integer> iterRows = newBlock.getNonEmptyColumnsIterator(0, 4);
+			//newBlock.reset(2, 3, 8);
 
-			while(iterRows.hasNext()){
-				System.out.println(iterRows.next());
-			}
+
+
+
+
+
+
 
 
 

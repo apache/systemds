@@ -427,8 +427,12 @@ public class IOUtilFunctions {
 	}
 
 	public static String trim(String str) {
+		final int len = str.length();
+		return trim(str, len);
+	}
+
+	public static String trim(String str, final int len) {
 		try{
-			final int len = str.length();
 			if(len == 0)
 				return str;
 			// short the call to return input if not whitespace in ends.
@@ -439,7 +443,6 @@ public class IOUtilFunctions {
 		}
 		catch(NullPointerException e){
 			return null;
-			// throw new RuntimeException("The string was null", e);
 		}
 		catch(Exception e){
 			throw new RuntimeException("failed trimming: " + str + " " + str.length(), e);

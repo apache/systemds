@@ -177,60 +177,58 @@ public class FrameReaderTextCSV extends FrameReader {
 		int from = 0, to = 0, c = 0;
 		while(from < len) { // for all tokens
 			to = IOUtilFunctions.getTo(cellStr, from, delim, len, delimLen);
-			assignCellGeneric(row, destA, cellStr.substring(from, to), naValues, isFill, dfillValue, sfillValue, false,
-				c);
+			String s = cellStr.substring(from, to);
+			assignCellGeneric(row, destA, s, to - from, naValues, isFill, dfillValue, sfillValue, c);
 			c++;
 			from = to + delimLen;
 		}
 	}
 
-	private boolean assignColumns(int row, int nCol,  Array<?>[] destA, String[] parts, Set<String> naValues,
-		boolean isFill, double dfillValue, String sfillValue) {
-		if(!isFill && naValues == null)
-			return assignColumnsNoFillNoNan(row, nCol, destA, parts);
-		else 
-			return assignColumnsGeneric(row, nCol, destA, parts, naValues, isFill, dfillValue, sfillValue);
-	}
+	// private boolean assignColumns(int row, int nCol,  Array<?>[] destA, String[] parts, Set<String> naValues,
+	// 	boolean isFill, double dfillValue, String sfillValue) {
+	// 	if(!isFill && naValues == null)
+	// 		return assignColumnsNoFillNoNan(row, nCol, destA, parts);
+	// 	else 
+	// 		return assignColumnsGeneric(row, nCol, destA, parts, naValues, isFill, dfillValue, sfillValue);
+	// }
 
-	private boolean assignColumnsGeneric(int row, int nCol,  Array<?>[] destA, String[] parts, Set<String> naValues,
-		boolean isFill, double dfillValue, String sfillValue) {
-		boolean emptyValuesFound = false;
-		for(int col = 0; col < nCol; col++) {
-			emptyValuesFound = assignCellGeneric(row, destA, parts[col], naValues, isFill, dfillValue, sfillValue, emptyValuesFound, col);
-		}
-		return emptyValuesFound;
-	}
+	// private boolean assignColumnsGeneric(int row, int nCol,  Array<?>[] destA, String[] parts, Set<String> naValues,
+	// 	boolean isFill, double dfillValue, String sfillValue) {
+	// 	boolean emptyValuesFound = false;
+	// 	for(int col = 0; col < nCol; col++) {
+	// 		emptyValuesFound = assignCellGeneric(row, destA, parts[col], naValues, isFill, dfillValue, sfillValue, emptyValuesFound, col);
+	// 	}
+	// 	return emptyValuesFound;
+	// }
 
-	private boolean assignColumnsNoFillNoNan(int row, int nCol, Array<?>[] destA, String[] parts){
-		boolean emptyValuesFound = false;
-		for(int col = 0; col < nCol; col++) {
-			emptyValuesFound = assignCellNoNan(row, destA, parts[col], emptyValuesFound, col);
-		}
-		return emptyValuesFound;
-	}
+	// private boolean assignColumnsNoFillNoNan(int row, int nCol, Array<?>[] destA, String[] parts){
+	// 	boolean emptyValuesFound = false;
+	// 	for(int col = 0; col < nCol; col++) {
+	// 		emptyValuesFound = assignCellNoNan(row, destA, parts[col], emptyValuesFound, col);
+	// 	}
+	// 	return emptyValuesFound;
+	// }
 
 
-	private static boolean assignCellGeneric(int row, Array<?>[] destA, String val, Set<String> naValues, boolean isFill,
-		double dfillValue, String sfillValue, boolean emptyValuesFound, int col) {
-		String part = IOUtilFunctions.trim(val);
+	private static void assignCellGeneric(int row, Array<?>[] destA, String val, int length, Set<String> naValues, boolean isFill,
+		double dfillValue, String sfillValue,  int col) {
+		final String part = IOUtilFunctions.trim(val, length);
 		if(part == null || part.isEmpty() || (naValues != null && naValues.contains(part))) {
 			if(isFill && dfillValue != 0)
 				destA[col].set(row, sfillValue);
-			emptyValuesFound = true;
 		}
 		else
 			destA[col].set(row, part);
-		return emptyValuesFound;
 	}
 
-	private static boolean assignCellNoNan(int row, Array<?>[] destA, String val, boolean emptyValuesFound, int col) {
-		String part = IOUtilFunctions.trim(val);
-		if(part.isEmpty()) 
-			emptyValuesFound = true;
-		else
-			destA[col].set(row, part);
-		return emptyValuesFound;
-	}
+	// private static boolean assignCellNoNan(int row, Array<?>[] destA, String val, boolean emptyValuesFound, int col) {
+	// 	String part = IOUtilFunctions.trim(val);
+	// 	if(part.isEmpty()) 
+	// 		emptyValuesFound = true;
+	// 	else
+	// 		destA[col].set(row, part);
+	// 	return emptyValuesFound;
+	// }
 
 	protected Pair<Integer, Integer> computeCSVSize(Path path, JobConf job, FileSystem fs) throws IOException {
 		TextInputFormat informat = new TextInputFormat();

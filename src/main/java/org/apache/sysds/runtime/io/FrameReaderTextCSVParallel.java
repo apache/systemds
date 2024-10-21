@@ -76,13 +76,13 @@ public class FrameReaderTextCSVParallel extends FrameReaderTextCSV
 				cret.add(pool.submit(new CountRowsTask(splits[i], informat, job, _props.hasHeader() && i==0)));
 		
 			//compute row offset per split via cumsum on row counts
-			int offset = 0;
+			long offset = 0;
 			ArrayList<Future<Object>> tasks2 = new ArrayList<>();
 			for( int i=0; i<splits.length -1; i++ ){
-				tasks2.add(pool.submit(new ReadRowsTask(splits[i], informat, job, dest, offset, i==0)));
+				tasks2.add(pool.submit(new ReadRowsTask(splits[i], informat, job, dest, (int) offset, i==0)));
 				offset += cret.get(i).get();
 			}
-			tasks2.add(pool.submit(new ReadRowsTask(splits[splits.length-1], informat, job, dest, offset, splits.length==1)));
+			tasks2.add(pool.submit(new ReadRowsTask(splits[splits.length-1], informat, job, dest, (int) offset, splits.length==1)));
 
 			//read individual splits
 			for(Future<Object> a : tasks2)
@@ -149,7 +149,9 @@ public class FrameReaderTextCSVParallel extends FrameReaderTextCSV
 
 		@Override
 		public Long call() throws Exception {
-			return countLinesInSplit(_split, _informat, _job, _hasHeader);
+			long count =  countLinesInSplit(_split, _informat, _job, _hasHeader);
+			LOG.debug("lines in split: " + count);
+			return count;
 		}
 	}
 
@@ -178,6 +180,8 @@ public class FrameReaderTextCSVParallel extends FrameReaderTextCSV
 		public Object call() throws Exception {
 			readCSVFrameFromInputSplit(_split, _informat, _job, _dest, _dest.getSchema(), 
 				_dest.getColumnNames(), _dest.getNumRows(), _dest.getNumColumns(), _offset, _isFirstSplit);
+
+			LOG.debug("read csv : " + _offset);
 			return null;
 		}
 	}

@@ -86,10 +86,14 @@ public class MultiReturnParameterizedBuiltinCPInstruction extends ComputationCPI
 
 		// execute block transform encode
 		MultiColumnEncoder encoder = EncoderFactory.createEncoder(spec, colnames, fin.getNumColumns(), null);
+		final int k = OptimizerUtils.getTransformNumThreads();
 		// TODO: Assign #threads in compiler and pass via the instruction string
-		MatrixBlock data = encoder.encode(fin, OptimizerUtils.getTransformNumThreads()); // build and apply
-		FrameBlock meta = encoder.getMetaData(new FrameBlock(fin.getNumColumns(), ValueType.STRING), 
-				OptimizerUtils.getTransformNumThreads());
+		MatrixBlock data = encoder.encode(fin, k); // build and apply
+		FrameBlock meta;
+		if(!encoder.isCompressedTransformEncode(fin, false))
+			meta = encoder.getMetaData(new FrameBlock(fin.getNumColumns(), ValueType.STRING), k);
+		else // TODO allocate encoder of compressed.
+			meta = new FrameBlock(fin.getNumColumns(), ValueType.STRING);
 		meta.setColumnNames(colnames);
 
 		// release input and outputs

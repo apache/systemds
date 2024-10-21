@@ -174,16 +174,12 @@ public class FrameReaderTextCSV extends FrameReader {
 				int c = 0;
 				while(from < len) { // for all tokens
 					to = IOUtilFunctions.getTo(cellStr, from, delim, len, delimLen);
-					String cell =  cellStr.substring(from, to);
-					assignCellGeneric(row, destA, cell, naValues, isFill, dfillValue, sfillValue, false, c);
+					assignCellGeneric(row, destA, cellStr.substring(from, to), naValues, isFill, dfillValue, sfillValue,
+						false, c);
 					c++;
 					from = to + delimLen;
 				}
 
-
-				String[] parts = IOUtilFunctions.splitCSV(cellStr, delim, clen);
-				assignColumns(row, (int)clen, destA, parts, naValues, isFill, dfillValue, sfillValue);
-				IOUtilFunctions.checkAndRaiseErrorCSVNumColumns("", cellStr, parts, clen);
 			}
 			catch(Exception e){
 				throw new RuntimeException("failed to parse: " + cellStr, e);

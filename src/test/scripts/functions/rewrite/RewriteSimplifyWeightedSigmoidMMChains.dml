@@ -25,6 +25,8 @@ Y = read($2)
 W = read($3)
 type = $4
 
+if( type > 4 )
+  X = t(X);
 
 # Perform operations
 if(type == 1){

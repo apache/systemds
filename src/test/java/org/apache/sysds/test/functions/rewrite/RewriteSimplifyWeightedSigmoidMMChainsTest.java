@@ -19,7 +19,10 @@
 
 package org.apache.sysds.test.functions.rewrite;
 
+import java.util.HashMap;
+
 import org.apache.sysds.hops.OptimizerUtils;
+import org.apache.sysds.runtime.matrix.data.MatrixValue;
 import org.apache.sysds.test.AutomatedTestBase;
 import org.apache.sysds.test.TestConfiguration;
 import org.apache.sysds.test.TestUtils;
@@ -32,9 +35,8 @@ public class RewriteSimplifyWeightedSigmoidMMChainsTest extends AutomatedTestBas
 	private static final String TEST_CLASS_DIR =
 		TEST_DIR + RewriteSimplifyWeightedSigmoidMMChainsTest.class.getSimpleName() + "/";
 
-	private static final int rows = 100;
+	private static final int rows = 150;
 	private static final int cols = 100;
-	//private static final double eps = Math.pow(10, -10);
 
 	@Override
 	public void setUp() {
@@ -125,8 +127,9 @@ public class RewriteSimplifyWeightedSigmoidMMChainsTest extends AutomatedTestBas
 			OptimizerUtils.ALLOW_OPERATOR_FUSION = rewrites;
 
 			//create matrices
-			double[][] X = getRandomMatrix(rows, cols, -1, 1, 0.80d, 3);
-			double[][] Y = getRandomMatrix(rows, cols, -1, 1, 0.70d, 4);
+			int rank = 50;
+			double[][] X = getRandomMatrix(cols, rank, -1, 1, 0.80d, 3);
+			double[][] Y = getRandomMatrix(rows, rank, -1, 1, 0.70d, 4);
 			double[][] W = getRandomMatrix(rows, cols, -1, 1, 0.60d, 5);
 			writeInputMatrixWithMTD("X", X, true);
 			writeInputMatrixWithMTD("Y", Y, true);
@@ -136,10 +139,9 @@ public class RewriteSimplifyWeightedSigmoidMMChainsTest extends AutomatedTestBas
 			runRScript(true);
 
 			//compare matrices
-			// FIXME
-			// HashMap<MatrixValue.CellIndex, Double> dmlfile = readDMLMatrixFromOutputDir("R");
-			// HashMap<MatrixValue.CellIndex, Double> rfile = readRMatrixFromExpectedDir("R");
-			// compareMatrices(dmlfile, rfile, eps, "Stat-DML", "Stat-R");
+			HashMap<MatrixValue.CellIndex, Double> dmlfile = readDMLMatrixFromOutputDir("R");
+			HashMap<MatrixValue.CellIndex, Double> rfile = readRMatrixFromExpectedDir("R");
+			TestUtils.compareMatrices(dmlfile, rfile, 1e-8, "Stat-DML", "Stat-R");
 
 			if(rewrites)
 				Assert.assertTrue(heavyHittersContainsString("wsigmoid"));

@@ -674,10 +674,9 @@ public class StringArray extends Array<String> {
 	}
 
 	@Override
-	protected Map<String, Long> createRecodeMap() {
+	protected Map<String, Long> createRecodeMap(int estimate) {
 		try {
-
-			Map<String, Long> map = new HashMap<>();
+			Map<String, Long> map = new HashMap<>((int)Math.min((long)estimate *2, size()));
 			for(int i = 0; i < size(); i++) {
 				Object val = get(i);
 				if(val != null) {
@@ -688,7 +687,7 @@ public class StringArray extends Array<String> {
 			return map;
 		}
 		catch(Exception e) {
-			return super.createRecodeMap();
+			return super.createRecodeMap(estimate);
 		}
 	}
 

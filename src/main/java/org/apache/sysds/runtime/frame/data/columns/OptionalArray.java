@@ -473,7 +473,7 @@ public class OptionalArray<T> extends Array<T> {
 	}
 
 	@Override
-	protected Map<T, Long> createRecodeMap() {
+	protected Map<T, Long> createRecodeMap(int estimate) {
 		if(getValueType() == ValueType.BOOLEAN) {
 			// shortcut for boolean arrays, since we only
 			// need to encounter the first two false and true values.
@@ -490,7 +490,7 @@ public class OptionalArray<T> extends Array<T> {
 			return map;
 		}
 		else
-			return super.createRecodeMap();
+			return super.createRecodeMap(estimate);
 	}
 
 	@Override

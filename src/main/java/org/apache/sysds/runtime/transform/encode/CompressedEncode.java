@@ -174,7 +174,7 @@ public class CompressedEncode {
 		int colId = c._colID;
 		Array<?> a = in.getColumn(colId - 1);
 		boolean containsNull = a.containsNull();
-		Map<?, Long> map = a.getRecodeMap();
+		Map<?, Long> map = a.getRecodeMap(c._estNumDistincts);
 
 		List<ColumnEncoder> r = c.getEncoders();
 		r.set(0, new ColumnEncoderRecode(colId, (HashMap<Object, Long>) map));
@@ -339,7 +339,7 @@ public class CompressedEncode {
 	private AColGroup recode(ColumnEncoderComposite c) {
 		int colId = c._colID;
 		Array<?> a = in.getColumn(colId - 1);
-		Map<?, Long> map = a.getRecodeMap();
+		Map<?, Long> map = a.getRecodeMap(c._estNumDistincts);
 		boolean containsNull = a.containsNull();
 		int domain = map.size();
 
@@ -405,7 +405,7 @@ public class CompressedEncode {
 		}
 		else {
 			boolean containsNull = a.containsNull();
-			HashMap<Object, Long> map = (HashMap<Object, Long>) a.getRecodeMap();
+			HashMap<Object, Long> map = (HashMap<Object, Long>) a.getRecodeMap(c._estNumDistincts);
 			double[] vals = new double[map.size() + (containsNull ? 1 : 0)];
 			if(containsNull)
 				vals[map.size()] = Double.NaN;

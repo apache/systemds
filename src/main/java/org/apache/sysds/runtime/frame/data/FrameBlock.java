@@ -1267,7 +1267,7 @@ public class FrameBlock implements CacheBlock<FrameBlock>, Externalizable {
 	 * @return map of token and code for every element in the input column of a frame containing Recode map
 	 */
 	public Map<Object, Long> getRecodeMap(int col) {
-		return _coldata[col].getRecodeMap();
+		return _coldata[col].getRecodeMap(4);
 	}
 
 	@Override

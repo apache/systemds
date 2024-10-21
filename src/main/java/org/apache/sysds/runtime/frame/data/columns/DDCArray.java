@@ -175,8 +175,8 @@ public class DDCArray<T> extends ACompressedArray<T> {
 	}
 
 	@Override
-	protected Map<T, Long> createRecodeMap() {
-		return dict.createRecodeMap();
+	protected Map<T, Long> createRecodeMap(int estimate) {
+		return dict.createRecodeMap(estimate);
 	}
 
 	@Override

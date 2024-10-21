@@ -57,7 +57,7 @@ public abstract class ABooleanArray extends Array<Boolean> {
 	public abstract void setNullsFromString(int rl, int ru, Array<String> value);
 	
 	@Override
-	protected Map<Boolean, Long> createRecodeMap() {
+	protected Map<Boolean, Long> createRecodeMap(int estimate) {
 		Map<Boolean, Long> map = new HashMap<>();
 		long id = 1;
 		for(int i = 0; i < size() && id <= 2; i++) {

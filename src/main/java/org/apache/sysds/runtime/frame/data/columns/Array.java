@@ -84,6 +84,18 @@ public abstract class Array<T> implements Writable {
 	 * @return A recode map
 	 */
 	public synchronized final Map<T, Long> getRecodeMap() {
+		return getRecodeMap(4);
+	}
+
+	/**
+	 * Get a recode map that maps each unique value in the array, to a long ID. Null values are ignored, and not included
+	 * in the mapping. The resulting recode map in stored in a soft reference to speed up repeated calls to the same
+	 * column.
+	 * 
+	 * @param estimate the estimated number of unique.
+	 * @return A recode map
+	 */
+	public synchronized final Map<T, Long> getRecodeMap(int estimate) {
 		// probe cache for existing map
 		Map<T, Long> map;
 		SoftReference<Map<T, Long>> tmp = getCache();
@@ -92,7 +104,7 @@ public abstract class Array<T> implements Writable {
 			return map;
 
 		// construct recode map
-		map = createRecodeMap();
+		map = createRecodeMap(estimate);
 
 		// put created map into cache
 		setCache(new SoftReference<>(map));
@@ -106,8 +118,8 @@ public abstract class Array<T> implements Writable {
 	 * 
 	 * @return The recode map
 	 */
-	protected Map<T, Long> createRecodeMap() {
-		final Map<T, Long> map = new HashMap<>();
+	protected Map<T, Long> createRecodeMap(int estimate) {
+		final Map<T, Long> map = new HashMap<>((int)Math.min((long)estimate *2, size()));
 		long id = 1;
 		final int s = size();
 		for(int i = 0; i < s; i++)

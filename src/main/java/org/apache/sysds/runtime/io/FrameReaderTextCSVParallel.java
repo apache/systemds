@@ -38,6 +38,7 @@ import org.apache.sysds.runtime.frame.data.FrameBlock;
 import org.apache.sysds.runtime.matrix.data.Pair;
 import org.apache.sysds.runtime.util.CommonThreadPool;
 import org.apache.sysds.runtime.util.HDFSTool;
+import org.apache.sysds.utils.stats.InfrastructureAnalyzer;
 import org.apache.sysds.utils.stats.Timing;
 
 /**
@@ -56,7 +57,8 @@ public class FrameReaderTextCSVParallel extends FrameReaderTextCSV
 		throws IOException
 	{
 		Timing time = new Timing(true);
-		final int numThreads = OptimizerUtils.getParallelTextReadParallelism();
+		final int numThreads = InfrastructureAnalyzer.getLocalParallelism();
+		//  OptimizerUtils.getParallelTextReadParallelism();
 		
 		TextInputFormat informat = new TextInputFormat();
 		informat.configure(job);

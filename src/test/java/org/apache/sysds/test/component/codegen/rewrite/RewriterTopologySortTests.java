@@ -3,6 +3,7 @@ package org.apache.sysds.test.component.codegen.rewrite;
 import org.apache.sysds.hops.rewriter.RewriterStatement;
 import org.apache.sysds.hops.rewriter.RewriterUtils;
 import org.apache.sysds.hops.rewriter.RuleContext;
+import org.apache.sysds.hops.rewriter.TopologicalSort;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
@@ -109,6 +110,20 @@ public class RewriterTopologySortTests {
 	public void testSimpleEquivalence7() {
 		RewriterStatement stmt = RewriterUtils.parse("+(*(a, b), *(/(a, b), /(b, a)))", ctx, "FLOAT:a,b,c");
 		RewriterStatement stmt2 = RewriterUtils.parse("+(*(/(a, b), /(b, a)), *(a, b))", ctx, "FLOAT:a,b,c");
+		stmt = converter.apply(stmt);
+		stmt2 = converter.apply(stmt2);
+
+		System.out.println("==========");
+		System.out.println(stmt.toParsableString(ctx, true));
+		System.out.println("==========");
+		System.out.println(stmt2.toParsableString(ctx, true));
+		assert stmt.match(new RewriterStatement.MatcherContext(ctx, stmt2));
+	}
+
+	@Test
+	public void testSimpleEquivalence8() {
+		RewriterStatement stmt = RewriterUtils.parse("+(*(a, b), f(b, a))", ctx, "FLOAT:a,b");
+		RewriterStatement stmt2 = RewriterUtils.parse("+(*(b, a), f(b, a))", ctx, "FLOAT:a,b");
 		stmt = converter.apply(stmt);
 		stmt2 = converter.apply(stmt2);
 

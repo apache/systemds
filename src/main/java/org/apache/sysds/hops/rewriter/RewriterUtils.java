@@ -1312,7 +1312,8 @@ public class RewriterUtils {
 			if (debug)
 				System.out.println("PRE1: " + stmt.toParsableString(ctx, false));
 
-			RewriterUtils.topologicalSort(stmt, ctx, (el, parent) -> el.isArgumentList() && parent != null && Set.of("+", "-", "*", "_idxExpr").contains(parent.trueInstruction()));
+			//RewriterUtils.topologicalSort(stmt, ctx, (el, parent) -> el.isArgumentList() && parent != null && Set.of("+", "-", "*", "_idxExpr").contains(parent.trueInstruction()));
+			TopologicalSort.sort(stmt, (el, parent) -> el.isArgumentList() && parent != null && Set.of("+", "-", "*", "_idxExpr").contains(parent.trueInstruction()), ctx);
 
 			if (debug)
 				System.out.println("FINAL1: " + stmt.toParsableString(ctx, false));
@@ -1369,7 +1370,8 @@ public class RewriterUtils {
 			if (debug)
 				System.out.println("PRE1: " + stmt.toParsableString(ctx, false));
 
-			RewriterUtils.topologicalSort(stmt, ctx, (el, parent) -> el.isArgumentList() && parent != null && Set.of("+", "-", "*", "_idxExpr").contains(parent.trueInstruction()));
+			//RewriterUtils.topologicalSort(stmt, ctx, (el, parent) -> el.isArgumentList() && parent != null && Set.of("+", "-", "*", "_idxExpr").contains(parent.trueInstruction()));
+			TopologicalSort.setupOrderFacts(stmt, (el, parent) -> el.isArgumentList() && parent != null && Set.of("+", "-", "*", "_idxExpr").contains(parent.trueInstruction()), ctx);
 
 			if (debug)
 				System.out.println("FINAL1: " + stmt.toParsableString(ctx, false));

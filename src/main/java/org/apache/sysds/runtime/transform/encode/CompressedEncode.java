@@ -170,11 +170,11 @@ public class CompressedEncode {
 	}
 
 	@SuppressWarnings("unchecked")
-	private AColGroup recodeToDummy(ColumnEncoderComposite c) throws Exception {
+	private <T> AColGroup recodeToDummy(ColumnEncoderComposite c) throws Exception {
 		int colId = c._colID;
-		Array<?> a = in.getColumn(colId - 1);
+		Array<T> a = (Array<T>) in.getColumn(colId - 1);
 		boolean containsNull = a.containsNull();
-		Map<?, Long> map = a.getRecodeMap(c._estNumDistincts);
+		Map<T, Long> map = a.getRecodeMap(c._estNumDistincts);
 
 		List<ColumnEncoder> r = c.getEncoders();
 		r.set(0, new ColumnEncoderRecode(colId, (HashMap<Object, Long>) map));
@@ -336,10 +336,10 @@ public class CompressedEncode {
 	}
 
 	@SuppressWarnings("unchecked")
-	private AColGroup recode(ColumnEncoderComposite c) throws Exception {
+	private <T> AColGroup recode(ColumnEncoderComposite c) throws Exception {
 		int colId = c._colID;
-		Array<?> a = in.getColumn(colId - 1);
-		Map<?, Long> map = a.getRecodeMap(c._estNumDistincts);
+		Array<T> a = (Array<T>) in.getColumn(colId - 1);
+		Map<T, Long> map = a.getRecodeMap(c._estNumDistincts);
 		boolean containsNull = a.containsNull();
 		int domain = map.size();
 
@@ -364,11 +364,11 @@ public class CompressedEncode {
 	}
 
 	@SuppressWarnings("unchecked")
-	private AColGroup passThrough(ColumnEncoderComposite c) throws Exception {
+	private <T> AColGroup passThrough(ColumnEncoderComposite c) throws Exception {
 		
 		final IColIndex colIndexes = ColIndexFactory.create(1);
 		final int colId = c._colID;
-		final Array<?> a = in.getColumn(colId - 1);
+		final Array<T> a = (Array<T>) in.getColumn(colId - 1);
 		if(a instanceof ACompressedArray) { // already compressed great!
 			switch(a.getFrameArrayType()) {
 				case DDC:
@@ -405,7 +405,7 @@ public class CompressedEncode {
 		}
 		else {
 			boolean containsNull = a.containsNull();
-			HashMap<Object, Long> map = (HashMap<Object, Long>) a.getRecodeMap(c._estNumDistincts);
+			Map<T, Long> map = a.getRecodeMap(c._estNumDistincts);
 			double[] vals = new double[map.size() + (containsNull ? 1 : 0)];
 			if(containsNull)
 				vals[map.size()] = Double.NaN;
@@ -418,7 +418,7 @@ public class CompressedEncode {
 
 	}
 
-	private AMapToData createMappingAMapToData(Array<?> a, Map<?, Long> map, boolean containsNull) throws Exception {
+	private <T> AMapToData createMappingAMapToData(Array<T> a, Map<T, Long> map, boolean containsNull) throws Exception {
 		final int si = map.size();
 		final int nRow = in.getNumRows();
 		if(!containsNull && a instanceof DDCArray)
@@ -447,30 +447,22 @@ public class CompressedEncode {
 		return m;
 	}
 
-	private static AMapToData createMappingAMapToDataNoNull(Array<?> a, Map<?, Long> map, int si,  AMapToData m, int start, int end) {
+	private static <T> AMapToData createMappingAMapToDataNoNull(Array<T> a, Map<T, Long> map, int si,  AMapToData m, int start, int end) {
 		// TODO push down to underlying array if critical performance to allow JIT compilation.
 		for(int i = start; i < end; i++)
 			setM(a, map, m, i);
 		return m;
 	}
 
-	private static void setM(Array<?> a, Map<?, Long> map, AMapToData m, int i) {
+	private static <T> void setM(Array<T> a, Map<T, Long> map, AMapToData m, int i) {
 		m.set(i, map.get(a.get(i)).intValue() - 1);
 	}
 
-	private static AMapToData createMappingAMapToDataWithNull(Array<?> a, Map<?, Long> map, int si,  AMapToData m, int start, int end) {
+	private static <T> AMapToData  createMappingAMapToDataWithNull(Array<T> a, Map<T, Long> map, int si,  AMapToData m, int start, int end) {
 		// TODO push down to underlying array if critical performance to allow JIT compilation.
 		for(int i = start; i < end; i++) 
-			setM(a, map, si, m, i);
+			a.setM( map, si, m, i);
 		return m;
-	}
-
-	private static void setM(Array<?> a, Map<?, Long> map, int si, AMapToData m, int i) {
-		final Object v = a.get(i);
-		if(v != null)
-			m.set(i, map.get(v).intValue() - 1);
-		else
-			m.set(i, si);
 	}
 
 	private AMapToData createHashMappingAMapToData(Array<?> a, int k, boolean nulls) {

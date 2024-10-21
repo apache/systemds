@@ -931,4 +931,12 @@ public abstract class Array<T> implements Writable {
 		}
 		return new double[] {min, max};
 	}
+
+	public void setM(Map<T, Long> map, int si, AMapToData m, int i) {
+		final T v = get(i);
+		if(v != null)
+			m.set(i, map.get(v).intValue() - 1);
+		else
+			m.set(i, si);
+	}
 }

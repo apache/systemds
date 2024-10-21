@@ -62,29 +62,35 @@ public class FrameReaderTextCSVParallel extends FrameReaderTextCSV
 		if(HDFSTool.isDirectory(fs, path))
 			splits = IOUtilFunctions.sortInputSplits(splits);
 
-		ExecutorService pool = CommonThreadPool.get(numThreads);
+		final ExecutorService pool = CommonThreadPool.get(numThreads);
 		try {
 			// get number of threads pool to use the common thread pool.
 			
 			//compute num rows per split
-			ArrayList<CountRowsTask> tasks = new ArrayList<>();
+			ArrayList<Future<Long>> cret = new ArrayList<>();
 			for( int i=0; i<splits.length; i++ )
-				tasks.add(new CountRowsTask(splits[i], informat, job, _props.hasHeader() && i==0));
-			List<Future<Long>> cret = pool.invokeAll(tasks);
+				cret.add(pool.submit(new CountRowsTask(splits[i], informat, job, _props.hasHeader() && i==0)));
+		
 
 			//compute row offset per split via cumsum on row counts
-			long offset = 0;
-			List<Long> offsets = new ArrayList<>();
-			for( Future<Long> count : cret ) {
-				offsets.add(offset);
-				offset += count.get();
+			int offset = 0;
+			
+			// offsets.add(0);
+			// List<Integer> offsets = new ArrayList<>();
+			ArrayList<Future<Object>> tasks2 = new ArrayList<>();
+			for( int i=0; i<splits.length; i++ ){
+				tasks2.add(pool.submit(new ReadRowsTask(splits[i], informat, job, dest, offset, i==0)));
+				offset += cret.get(i).get();
 			}
+			// for( Future<Long> count : cret ) {
+			// 	offsets.add(offset);
+			// 	offset += count.get();
+			// }
 			
 			//read individual splits
-			ArrayList<ReadRowsTask> tasks2 = new ArrayList<>();
-			for( int i=0; i<splits.length; i++ )
-				tasks2.add( new ReadRowsTask(splits[i], informat, job, dest, offsets.get(i).intValue(), i==0));
-			CommonThreadPool.invokeAndShutdown(pool, tasks2);
+			for(Future<Object> a : tasks2)
+				a.get();
+			
 		} 
 		catch (Exception e) {
 			throw new IOException("Failed parallel read of text csv input.", e);

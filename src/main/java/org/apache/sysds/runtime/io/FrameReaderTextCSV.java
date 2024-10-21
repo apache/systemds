@@ -22,6 +22,7 @@ package org.apache.sysds.runtime.io;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Set;
+import java.util.function.Function;
 
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
@@ -122,13 +123,19 @@ public class FrameReaderTextCSV extends FrameReader {
 		if( rl > rlen) // in case this method is called wrongly
 			throw new DMLRuntimeException("Invalid offset");
 		// return (int) rlen;
-		boolean hasHeader = _props.hasHeader();
-		boolean isFill = _props.isFill();
-		double dfillValue = _props.getFillValue();
-		String sfillValue = String.valueOf(_props.getFillValue());
-		Set<String> naValues = _props.getNAStrings();
-		String delim = _props.getDelim();
-
+		final boolean hasHeader = _props.hasHeader();
+		final boolean isFill = _props.isFill();
+		final double dfillValue = _props.getFillValue();
+		final String sfillValue = String.valueOf(_props.getFillValue());
+		final Set<String> naValues = _props.getNAStrings();
+		final String delim = _props.getDelim();
+		final CellAssigner f;
+		if(naValues != null )
+			f = FrameReaderTextCSV::assignCellGeneric;
+		else 
+			f = FrameReaderTextCSV::assignCellNoNa;
+		// (int row, Array<?> dest, String val, int length, Set<String> naValues, boolean isFill,
+		// double dfillValue, String sfillValue,  int col) ->{};
 		// create record reader
 		RecordReader<LongWritable, Text> reader = informat.getRecordReader(split, job, Reporter.NULL);
 		LongWritable key = new LongWritable();
@@ -146,7 +153,7 @@ public class FrameReaderTextCSV extends FrameReader {
 			Array<?>[] destA = dest.getColumns();
 			while(reader.next(key, value)) // foreach line
 			{
-				parseLine(value.toString(), delim, destA, row, (int) clen, dfillValue, sfillValue, isFill, naValues);
+				parseLine(value.toString(), delim, destA, row, (int) clen, dfillValue, sfillValue, isFill, naValues, f);
 				row++;
 			}
 		}
@@ -160,25 +167,25 @@ public class FrameReaderTextCSV extends FrameReader {
 		return row;
 	}
 
-	private void parseLine(String cellStr, String delim, Array<?>[] destA, int row, int clen, double dfillValue,
-		String sfillValue, boolean isFill, Set<String> naValues) {
+	private static void parseLine(final String cellStr, final String delim, final Array<?>[] destA, final int row, final int clen, final double dfillValue,
+		final String sfillValue, final boolean isFill, final Set<String> naValues,final CellAssigner assigner) {
 		try {
 			final int len = cellStr.length();
 			final int delimLen = delim.length();
-			parseLineSpecialized(cellStr, delim, destA, row, dfillValue, sfillValue, isFill, naValues, len, delimLen);
+			parseLineSpecialized(cellStr, delim, destA, row, dfillValue, sfillValue, isFill, naValues, len, delimLen, assigner);
 		}
 		catch(Exception e) {
 			throw new RuntimeException("failed to parse: " + cellStr, e);
 		}
 	}
 
-	private void parseLineSpecialized(String cellStr, String delim, Array<?>[] destA, int row, double dfillValue, String sfillValue,
-		boolean isFill, Set<String> naValues, final int len, final int delimLen) {
+	private static void parseLineSpecialized(String cellStr, String delim, Array<?>[] destA, int row, double dfillValue, String sfillValue,
+		boolean isFill, Set<String> naValues, final int len, final int delimLen, final CellAssigner assigner) {
 		int from = 0, to = 0, c = 0;
 		while(from < len) { // for all tokens
 			to = IOUtilFunctions.getTo(cellStr, from, delim, len, delimLen);
 			String s = cellStr.substring(from, to);
-			assignCellGeneric(row, destA, s, to - from, naValues, isFill, dfillValue, sfillValue, c);
+			assigner.assign(row, destA[c], s, to - from, naValues, isFill, dfillValue, sfillValue, c);
 			c++;
 			from = to + delimLen;
 		}
@@ -208,17 +215,33 @@ public class FrameReaderTextCSV extends FrameReader {
 	// 	}
 	// 	return emptyValuesFound;
 	// }
+	@FunctionalInterface
+	private interface CellAssigner{
+		void assign(int row, Array<?> dest, String val, int length, Set<String> naValues, boolean isFill,
+		double dfillValue, String sfillValue,  int col);
+	}
 
 
-	private static void assignCellGeneric(int row, Array<?>[] destA, String val, int length, Set<String> naValues, boolean isFill,
+	private static void assignCellNoNa(int row, Array<?> dest, String val, int length, Set<String> naValues, boolean isFill,
+		double dfillValue, String sfillValue,  int col) {
+		final String part = IOUtilFunctions.trim(val, length);
+		if(part == null || part.isEmpty() ) {
+			if(isFill && dfillValue != 0)
+				dest.set(row, sfillValue);
+		}
+		else
+			dest.set(row, part);
+	}
+
+	private static void assignCellGeneric(int row, Array<?> dest, String val, int length, Set<String> naValues, boolean isFill,
 		double dfillValue, String sfillValue,  int col) {
 		final String part = IOUtilFunctions.trim(val, length);
 		if(part == null || part.isEmpty() || (naValues != null && naValues.contains(part))) {
 			if(isFill && dfillValue != 0)
-				destA[col].set(row, sfillValue);
+				dest.set(row, sfillValue);
 		}
 		else
-			destA[col].set(row, part);
+			dest.set(row, part);
 	}
 
 	// private static boolean assignCellNoNan(int row, Array<?>[] destA, String val, boolean emptyValuesFound, int col) {

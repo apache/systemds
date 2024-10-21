@@ -87,11 +87,11 @@ public class CompressedEncode {
 	}
 
 	public static MatrixBlock encode(MultiColumnEncoder enc, FrameBlock in, int k)
-		throws InterruptedException, ExecutionException {
+		throws Exception {
 		return new CompressedEncode(enc, in, k).apply();
 	}
 
-	private MatrixBlock apply() throws InterruptedException, ExecutionException {
+	private MatrixBlock apply() throws Exception {
 		try {
 			final List<ColumnEncoderComposite> encoders = enc.getColumnEncoders();
 			final List<AColGroup> groups = isParallel() ? multiThread(encoders) : singleThread(encoders);
@@ -112,7 +112,7 @@ public class CompressedEncode {
 	}
 
 	private List<AColGroup> singleThread(List<ColumnEncoderComposite> encoders)
-		throws InterruptedException, ExecutionException {
+		throws Exception {
 		List<AColGroup> groups = new ArrayList<>(encoders.size());
 		for(ColumnEncoderComposite c : encoders)
 			groups.add(encode(c));
@@ -120,7 +120,7 @@ public class CompressedEncode {
 	}
 
 	private List<AColGroup> multiThread(List<ColumnEncoderComposite> encoders)
-		throws InterruptedException, ExecutionException {
+		throws Exception {
 		try {
 			final List<Future<AColGroup>> tasks = new ArrayList<>(encoders.size());
 			for(ColumnEncoderComposite c : encoders)
@@ -150,7 +150,7 @@ public class CompressedEncode {
 		return cols;
 	}
 
-	private AColGroup encode(ColumnEncoderComposite c) throws InterruptedException, ExecutionException {
+	private AColGroup encode(ColumnEncoderComposite c) throws Exception {
 		if(c.isRecodeToDummy())
 			return recodeToDummy(c);
 		else if(c.isRecode())
@@ -170,7 +170,7 @@ public class CompressedEncode {
 	}
 
 	@SuppressWarnings("unchecked")
-	private AColGroup recodeToDummy(ColumnEncoderComposite c) {
+	private AColGroup recodeToDummy(ColumnEncoderComposite c) throws Exception {
 		int colId = c._colID;
 		Array<?> a = in.getColumn(colId - 1);
 		boolean containsNull = a.containsNull();
@@ -336,7 +336,7 @@ public class CompressedEncode {
 	}
 
 	@SuppressWarnings("unchecked")
-	private AColGroup recode(ColumnEncoderComposite c) {
+	private AColGroup recode(ColumnEncoderComposite c) throws Exception {
 		int colId = c._colID;
 		Array<?> a = in.getColumn(colId - 1);
 		Map<?, Long> map = a.getRecodeMap(c._estNumDistincts);
@@ -364,7 +364,7 @@ public class CompressedEncode {
 	}
 
 	@SuppressWarnings("unchecked")
-	private AColGroup passThrough(ColumnEncoderComposite c) {
+	private AColGroup passThrough(ColumnEncoderComposite c) throws Exception {
 		
 		final IColIndex colIndexes = ColIndexFactory.create(1);
 		final int colId = c._colID;
@@ -418,29 +418,45 @@ public class CompressedEncode {
 
 	}
 
-	private AMapToData createMappingAMapToData(Array<?> a, Map<?, Long> map, boolean containsNull) {
+	private AMapToData createMappingAMapToData(Array<?> a, Map<?, Long> map, boolean containsNull) throws Exception {
 		final int si = map.size();
 		final int nRow = in.getNumRows();
 		if(!containsNull && a instanceof DDCArray)
 			return ((DDCArray<?>)a).getMap();
 
 		final AMapToData m = MapToFactory.create(nRow, si + (containsNull ? 1 : 0));
-		if(containsNull)
-			return createMappingAMapToDataWithNull(a, map, si, nRow, m);
-		else
-			return createMappingAMapToDataNoNull(a, map, si, nRow, m);
+		final int blkz = Math.max(10000, (nRow + k)/k);
+
+		List<Future<?>> tasks = new ArrayList<>();
+		for(int i = 0; i < nRow; i += blkz){
+			final int start = i; 
+			final int end = Math.min(nRow, i + blkz);
+
+			tasks.add(pool.submit(() -> {
+				if(containsNull)
+					return createMappingAMapToDataWithNull(a, map, si,  m, start, end);
+				else
+					return createMappingAMapToDataNoNull(a, map, si,  m, start, end);
+
+			}));
+
+		}
+		for( Future<?> t : tasks){
+			t.get();
+		}
+		return m;
 	}
 
-	private AMapToData createMappingAMapToDataNoNull(Array<?> a, Map<?, Long> map, int si, int nRow, AMapToData m) {
+	private static AMapToData createMappingAMapToDataNoNull(Array<?> a, Map<?, Long> map, int si,  AMapToData m, int start, int end) {
 		// TODO push down to underlying array if critical performance to allow JIT compilation.
-		for(int i = 0; i < nRow; i++)
+		for(int i = start; i < end; i++)
 			m.set(i, map.get(a.get(i)).intValue() - 1);
 		return m;
 	}
 
-	private AMapToData createMappingAMapToDataWithNull(Array<?> a, Map<?, Long> map, int si, int nRow, AMapToData m) {
+	private static AMapToData createMappingAMapToDataWithNull(Array<?> a, Map<?, Long> map, int si,  AMapToData m, int start, int end) {
 		// TODO push down to underlying array if critical performance to allow JIT compilation.
-		for(int i = 0; i < nRow; i++) {
+		for(int i = start; i < end; i++) {
 			final Object v = a.get(i);
 			if(v != null)
 				m.set(i, map.get(v).intValue() - 1);

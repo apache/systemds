@@ -229,7 +229,7 @@ public class CompressedFrameBlockFactory {
 				else if(stats[i].shouldCompress)
 					sb.append(String.format("Col: %3d, %s\n", i, stats[i]));
 				else
-					sb.append(String.format("Col: %3d, No Compress, Type: %s", //
+					sb.append(String.format("Col: %3d, No Compress, Type: %s\n", //
 						i, in.getColumn(i).getClass().getSimpleName()));
 			}
 			LOG.debug(sb);

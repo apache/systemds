@@ -25,15 +25,21 @@ from systemds.scuro.representations.unimodal import UnimodalRepresentation
 
 
 class TextModality(Modality):
-    def __init__(self, file_path: str, representation: UnimodalRepresentation, train_indices=None, start_index: int = 0):
+    def __init__(
+        self,
+        file_path: str,
+        representation: UnimodalRepresentation,
+        train_indices=None,
+        start_index: int = 0,
+    ):
         """
         Creates a text modality
         :param file_path: path to file(s) where the text data is stored
         :param representation: Unimodal representation that indicates how to extract the data from the file
         """
-        super().__init__(representation, start_index, 'Text', train_indices)
+        super().__init__(representation, start_index, "Text", train_indices)
         self.file_path = file_path
-    
+
     def file_sanity_check(self):
         """
         Checks if the file can be found is not empty
@@ -42,12 +48,14 @@ class TextModality(Modality):
             file_size = os.path.getsize(self.file_path)
         except:
             raise (f"Error: File {0} not found!".format(self.file_path))
-        
+
         if file_size == 0:
             raise ("File {0} is empty".format(self.file_path))
-    
+
     def read_chunk(self):
         pass
-    
+
     def read_all(self, indices=None):
-        self.data = self.representation.parse_all(self.file_path, indices=indices) # noqa
+        self.data = self.representation.parse_all(
+            self.file_path, indices=indices
+        )  # noqa

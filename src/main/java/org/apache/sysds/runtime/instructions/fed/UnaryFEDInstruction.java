@@ -88,7 +88,8 @@ public abstract class UnaryFEDInstruction extends ComputationFEDInstruction {
 			}
 		}
 		else if(inst instanceof ReorgCPInstruction &&
-			(inst.getOpcode().equals("r'") || inst.getOpcode().equals("rdiag") || inst.getOpcode().equals("rev"))) {
+				(inst.getOpcode().equals("r'") || inst.getOpcode().equals("rdiag")
+						|| inst.getOpcode().equals("rev") || inst.getOpcode().equals("roll"))) {
 			ReorgCPInstruction rinst = (ReorgCPInstruction) inst;
 			CacheableData<?> mo = ec.getCacheableData(rinst.input1);
 
@@ -157,7 +158,8 @@ public abstract class UnaryFEDInstruction extends ComputationFEDInstruction {
 					return AggregateUnaryFEDInstruction.parseInstruction(auinstruction);
 		}
 		else if(inst instanceof ReorgSPInstruction &&
-			(inst.getOpcode().equals("r'") || inst.getOpcode().equals("rdiag") || inst.getOpcode().equals("rev"))) {
+				(inst.getOpcode().equals("r'") || inst.getOpcode().equals("rdiag")
+						|| inst.getOpcode().equals("rev") || inst.getOpcode().equals("roll"))) {
 			ReorgSPInstruction rinst = (ReorgSPInstruction) inst;
 			CacheableData<?> mo = ec.getCacheableData(rinst.input1);
 			if((mo instanceof MatrixObject || mo instanceof FrameObject) && mo.isFederated() &&

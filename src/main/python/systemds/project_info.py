@@ -1,4 +1,4 @@
-#-------------------------------------------------------------
+# -------------------------------------------------------------
 #
 # Licensed to the Apache Software Foundation (ASF) under one
 # or more contributor license agreements.  See the NOTICE file
@@ -17,10 +17,10 @@
 # specific language governing permissions and limitations
 # under the License.
 #
-#-------------------------------------------------------------
+# -------------------------------------------------------------
 
 # This file can be used to pass maven project properties to python
 # via string substitutions using the maven-resources-plugin
-__project_group_id__ = 'org.apache.systemds'
-__project_artifact_id__ = 'systemds'
-__project_version__ = '3.3.0-dev'
+__project_group_id__ = "org.apache.systemds"
+__project_artifact_id__ = "systemds"
+__project_version__ = "3.3.0-dev"

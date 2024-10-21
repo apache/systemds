@@ -31,21 +31,17 @@ class TestRCBind(unittest.TestCase):
 
     # shape (2, 3)
     df_cb_1 = pd.DataFrame(
-        {"col1": ["col1_hello", "col1_world"],
-            "col2": [0, 1], "col3": [0.0, 0.1]}
+        {"col1": ["col1_hello", "col1_world"], "col2": [0, 1], "col3": [0.0, 0.1]}
     )
     # shape (2, 2)
-    df_cb_2 = pd.DataFrame(
-        {"col4": ["col4_hello", "col4_world"], "col5": [0, 1]})
-    df_cb_3 = pd.DataFrame(
-        {"col6": ["col6_hello", "col6_world"], "col7": [0, 1]})
+    df_cb_2 = pd.DataFrame({"col4": ["col4_hello", "col4_world"], "col5": [0, 1]})
+    df_cb_3 = pd.DataFrame({"col6": ["col6_hello", "col6_world"], "col7": [0, 1]})
 
-    #shape (2, 3)
+    # shape (2, 3)
     df_rb_1 = pd.DataFrame(
-        {"col1": ["col1_hello_1", "col1_world_1"],
-            "col2": [0, 1], "col3": [0.0, 0.1]}
+        {"col1": ["col1_hello_1", "col1_world_1"], "col2": [0, 1], "col3": [0.0, 0.1]}
     )
-    #shape (4, 3)
+    # shape (4, 3)
     df_rb_2 = pd.DataFrame(
         {
             "col1": ["col1_hello_2", "col1_world_2", "col1_hello_2", "col1_world_2"],
@@ -53,7 +49,7 @@ class TestRCBind(unittest.TestCase):
             "col3": [0.2, 0.3, 0.4, 0.5],
         }
     )
-    #shape (3, 3)
+    # shape (3, 3)
     df_rb_3 = pd.DataFrame(
         {
             "col1": ["col1_hello_3", "col1_world_3", "col1_hello_3"],
@@ -85,7 +81,8 @@ class TestRCBind(unittest.TestCase):
         result_df = f1.rbind(f2).rbind(f3).compute()
         self.assertTrue(isinstance(result_df, pd.DataFrame))
         target_df = pd.concat(
-            [self.df_rb_1, self.df_rb_2, self.df_rb_3], ignore_index=True)
+            [self.df_rb_1, self.df_rb_2, self.df_rb_3], ignore_index=True
+        )
         self.assertTrue(target_df.equals(result_df))
 
     def test_r_bind_triple_twostep(self):
@@ -96,7 +93,8 @@ class TestRCBind(unittest.TestCase):
         result_df = self.sds.from_pandas(tmp_df).rbind(f3).compute()
         self.assertTrue(isinstance(result_df, pd.DataFrame))
         target_df = pd.concat(
-            [self.df_rb_1, self.df_rb_2, self.df_rb_3], ignore_index=True)
+            [self.df_rb_1, self.df_rb_2, self.df_rb_3], ignore_index=True
+        )
         self.assertTrue(target_df.equals(result_df))
 
     def test_c_bind_pair(self):
@@ -113,8 +111,7 @@ class TestRCBind(unittest.TestCase):
         f3 = self.sds.from_pandas(self.df_cb_3)
         result_df = f1.cbind(f2).cbind(f3).compute()
         self.assertTrue(isinstance(result_df, pd.DataFrame))
-        target_df = pd.concat(
-            [self.df_cb_1, self.df_cb_2, self.df_cb_3], axis=1)
+        target_df = pd.concat([self.df_cb_1, self.df_cb_2, self.df_cb_3], axis=1)
         self.assertTrue(target_df.equals(result_df))
 
     def test_c_bind_triple_twostep(self):
@@ -124,8 +121,7 @@ class TestRCBind(unittest.TestCase):
         tmp_df = f1.cbind(f2).compute()
         result_df = self.sds.from_pandas(tmp_df).cbind(f3).compute()
         self.assertTrue(isinstance(result_df, pd.DataFrame))
-        target_df = pd.concat(
-            [self.df_cb_1, self.df_cb_2, self.df_cb_3], axis=1)
+        target_df = pd.concat([self.df_cb_1, self.df_cb_2, self.df_cb_3], axis=1)
         self.assertTrue(target_df.equals(result_df))
 
 

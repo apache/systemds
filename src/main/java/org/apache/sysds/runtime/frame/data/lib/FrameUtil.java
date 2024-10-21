@@ -19,8 +19,6 @@
 
 package org.apache.sysds.runtime.frame.data.lib;
 
-import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.regex.Pattern;
 
 import org.apache.commons.logging.Log;
@@ -35,8 +33,6 @@ import org.apache.sysds.runtime.frame.data.columns.DoubleArray;
 import org.apache.sysds.runtime.frame.data.columns.FloatArray;
 import org.apache.sysds.runtime.frame.data.columns.IntegerArray;
 import org.apache.sysds.runtime.frame.data.columns.LongArray;
-import org.apache.sysds.runtime.frame.data.iterators.IteratorFactory;
-import org.apache.sysds.runtime.util.UtilFunctions;
 
 public interface FrameUtil {
 	public static final Log LOG = LogFactory.getLog(FrameUtil.class.getName());
@@ -290,33 +286,30 @@ public interface FrameUtil {
 	}
 
 	public static FrameBlock mergeSchema(FrameBlock temp1, FrameBlock temp2) {
-		String[] rowTemp1 = IteratorFactory.getStringRowIterator(temp1).next();
-		String[] rowTemp2 = IteratorFactory.getStringRowIterator(temp2).next();
+		final int nCol = temp1.getNumColumns();
 
-		if(rowTemp1.length != rowTemp2.length)
-			throw new DMLRuntimeException("Schema dimension " + "mismatch: " + rowTemp1.length + " vs " + rowTemp2.length);
+		if(nCol != temp2.getNumColumns())
+			throw new DMLRuntimeException("Schema dimension mismatch: " + nCol + " vs " + temp2.getNumColumns());
 
-		for(int i = 0; i < rowTemp1.length; i++) {
+		// hack reuse input temp1 schema, only valid if temp1 never change schema.
+		// However, this is typically valid.
+		FrameBlock mergedFrame = new FrameBlock(temp1.getSchema());
+		mergedFrame.ensureAllocatedColumns(1);
+		for(int i = 0; i < nCol; i++) {
+			String s1 = (String) temp1.get(0, i);
+			String s2 = (String) temp2.get(0, i);
 			// modify schema1 if necessary (different schema2)
-			if(!rowTemp1[i].equals(rowTemp2[i])) {
-				if(rowTemp1[i].equals("STRING") || rowTemp2[i].equals("STRING"))
-					rowTemp1[i] = "STRING";
-				else if(rowTemp1[i].equals("FP64") || rowTemp2[i].equals("FP64"))
-					rowTemp1[i] = "FP64";
-				else if(rowTemp1[i].equals("FP32") &&
-					new ArrayList<>(Arrays.asList("INT64", "INT32", "CHARACTER")).contains(rowTemp2[i]))
-					rowTemp1[i] = "FP32";
-				else if(rowTemp1[i].equals("INT64") &&
-					new ArrayList<>(Arrays.asList("INT32", "CHARACTER")).contains(rowTemp2[i]))
-					rowTemp1[i] = "INT64";
-				else if(rowTemp1[i].equals("INT32") || rowTemp2[i].equals("CHARACTER"))
-					rowTemp1[i] = "INT32";
+			if(!s1.equals(s2)) {
+				ValueType v1 = ValueType.valueOf(s1);
+				ValueType v2 = ValueType.valueOf(s2);
+				ValueType vc = ValueType.getHighestCommonTypeSafe(v1, v2);
+				mergedFrame.set(0, i,  vc.toString());
+			}
+			else{
+				mergedFrame.set(0, i, s1);
 			}
 		}
 
-		// create output block one row representing the schema as strings
-		FrameBlock mergedFrame = new FrameBlock(UtilFunctions.nCopies(temp1.getNumColumns(), ValueType.STRING));
-		mergedFrame.appendRow(rowTemp1);
 		return mergedFrame;
 	}
 

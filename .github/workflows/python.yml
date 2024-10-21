@@ -113,7 +113,8 @@ jobs:
           opencv-python \
           torch \
           librosa \
-          h5py
+          h5py \
+          black
 
     - name: Build Python Package
       run: |
@@ -127,7 +128,7 @@ jobs:
         export SYSDS_QUIET=1
         export LOG4JPROP=$SYSTEMDS_ROOT/src/test/resources/log4j.properties
         cd src/main/python
-        unittest-parallel -t . -s tests
+        unittest-parallel -t . -s tests -v
         # python -m unittest discover -s tests -p 'test_*.py'
         echo "Exit Status: " $?
     
@@ -135,7 +136,7 @@ jobs:
       run: |
         export LOG4JPROP=$(pwd)/src/test/resources/log4j.properties
         cd src/main/python
-        unittest-parallel -t . -s tests
+        unittest-parallel -t . -s tests -v
         # python -m unittest discover -s tests -p 'test_*.py'
         echo "Exit Status: " $?
 
@@ -145,3 +146,13 @@ jobs:
         export PATH=$SYSTEMDS_ROOT/bin:$PATH
         cd src/main/python
         ./tests/federated/runFedTest.sh
+
+    - name: Check formatting according to Black (src/main/python/systemds)
+      run: |
+        black --check --exclude operator/algorithm src/main/python/systemds
+
+    - name: Check formatting according to Black (src/main/python/tests)
+      run: |
+        black --check src/main/python/tests
+
+

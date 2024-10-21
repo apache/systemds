@@ -25,7 +25,6 @@ import numpy as np
 from systemds.context import SystemDSContext
 from systemds.operator import List
 from systemds.operator.algorithm import pca
-from systemds.script_building.dag import OutputType
 
 
 class TestListOperationsUnknown(unittest.TestCase):

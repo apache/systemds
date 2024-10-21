@@ -86,7 +86,7 @@ public class ReorgCPInstruction extends UnaryCPInstruction {
 	 * @param istr   ?
 	 */
 	private ReorgCPInstruction(Operator op, CPOperand in, CPOperand out, CPOperand shift, String opcode, String istr) {
-		super(CPType.Reorg, op, in, out, opcode, istr);
+		super(CPType.Reorg, op, in, shift, out, opcode, istr);
 		_col = null;
 		_desc = null;
 		_ixret = null;

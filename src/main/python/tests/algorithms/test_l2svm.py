@@ -42,23 +42,35 @@ class TestL2svm(unittest.TestCase):
         features, labels = self.generate_matrices_for_l2svm(10, seed=1304)
         model = l2svm(features, labels).compute()
         # TODO make better verification.
-        self.assertTrue(np.allclose(
-            model,
-            np.array([[-0.03277166], [-0.00820981], [0.00657115],
-                      [0.03228764], [-0.01685067], [0.00892918],
-                      [0.00945636], [0.01514383], [0.0713272],
-                      [-0.05113976]])))
+        self.assertTrue(
+            np.allclose(
+                model,
+                np.array(
+                    [
+                        [-0.03277166],
+                        [-0.00820981],
+                        [0.00657115],
+                        [0.03228764],
+                        [-0.01685067],
+                        [0.00892918],
+                        [0.00945636],
+                        [0.01514383],
+                        [0.0713272],
+                        [-0.05113976],
+                    ]
+                ),
+            )
+        )
 
     def generate_matrices_for_l2svm(self, dims: int, seed: int = 1234):
         np.random.seed(seed)
-        m1 = np.array(np.random.randint(
-            100, size=dims * dims) + 1.01, dtype=np.double)
+        m1 = np.array(np.random.randint(100, size=dims * dims) + 1.01, dtype=np.double)
         m1.shape = (dims, dims)
         m2 = np.zeros((dims, 1))
         for i in range(dims):
             if np.random.random() > 0.5:
                 m2[i][0] = 1
-        return self.sds.from_numpy( m1), self.sds.from_numpy( m2)
+        return self.sds.from_numpy(m1), self.sds.from_numpy(m2)
 
 
 if __name__ == "__main__":

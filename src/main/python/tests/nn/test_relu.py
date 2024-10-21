@@ -82,7 +82,7 @@ class TestRelu(unittest.TestCase):
         scripts = DMLScript(sds)
         scripts.build_code(X2)
 
-        self.assertEqual(1,self.count_sourcing(scripts.dml_script, layer_name="relu"))
+        self.assertEqual(1, self.count_sourcing(scripts.dml_script, layer_name="relu"))
         sds.close()
 
     def count_sourcing(self, script: str, layer_name: str):
@@ -95,11 +95,14 @@ class TestRelu(unittest.TestCase):
         :param layer_name: example: "affine", "relu"
         :return:
         """
-        return len([
-            line for line in script.split("\n")
-            if all([line.startswith("source"), line.endswith(layer_name)])
-        ])
+        return len(
+            [
+                line
+                for line in script.split("\n")
+                if all([line.startswith("source"), line.endswith(layer_name)])
+            ]
+        )
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()

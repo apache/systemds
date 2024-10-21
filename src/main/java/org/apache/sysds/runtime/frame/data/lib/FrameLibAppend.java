@@ -33,8 +33,12 @@ import org.apache.sysds.runtime.frame.data.columns.ArrayFactory;
 import org.apache.sysds.runtime.frame.data.columns.ColumnMetadata;
 
 public class FrameLibAppend {
-
 	protected static final Log LOG = LogFactory.getLog(FrameLibAppend.class.getName());
+
+	private FrameLibAppend(){
+		// private constructor.
+	}
+	
 	/**
 	 * Appends the given argument FrameBlock 'that' to this FrameBlock by creating a deep copy to prevent side effects.
 	 * For cbind, the frames are appended column-wise (same number of rows), while for rbind the frames are appended
@@ -50,7 +54,7 @@ public class FrameLibAppend {
 		return ret;
 	}
 
-	public static FrameBlock appendCbind(FrameBlock a, FrameBlock b) {
+	private static FrameBlock appendCbind(FrameBlock a, FrameBlock b) {
 		final int nRow = a.getNumRows();
 		final int nRowB = b.getNumRows();
 
@@ -73,7 +77,7 @@ public class FrameLibAppend {
 		return new FrameBlock(_schema, _colnames, _colmeta, _coldata);
 	}
 
-	public static FrameBlock appendRbind(FrameBlock a, FrameBlock b) {
+	private static FrameBlock appendRbind(FrameBlock a, FrameBlock b) {
 		final int nCol = a.getNumColumns();
 		final int nColB = b.getNumColumns();
 

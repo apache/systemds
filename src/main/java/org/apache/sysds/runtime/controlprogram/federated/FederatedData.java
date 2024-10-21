@@ -29,8 +29,6 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.Future;
 
-import javax.net.ssl.SSLException;
-
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;

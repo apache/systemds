@@ -442,7 +442,6 @@ public class IOUtilFunctions {
 	 */
 	public static String trim(final String str, final int len) {
 		try{
-		
 			// short the call to return input if not whitespace in ends.
 			if(str.charAt(0) <= ' ' || str.charAt(len -1) <= ' ')
 				return str.trim();

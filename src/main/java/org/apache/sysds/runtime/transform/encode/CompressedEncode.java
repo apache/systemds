@@ -400,7 +400,7 @@ public class CompressedEncode {
 			double[] vals = (double[]) a.changeType(ValueType.FP64).get();
 		
 			MatrixBlock col = new MatrixBlock(a.size(), 1, vals);
-			col.recomputeNonZeros(k);
+			col.recomputeNonZeros(1);
 			return ColGroupUncompressed.create(colIndexes, col, false);
 		}
 		else {

@@ -69,9 +69,10 @@ public class FrameReaderTextCSVParallel extends FrameReaderTextCSV
 				new ReadRowsTask(splits[0], informat, job, dest, 0, true).call();
 				return;
 			}
+
 			//compute num rows per split
 			ArrayList<Future<Long>> cret = new ArrayList<>();
-			for( int i=0; i<splits.length - 1; i++ )
+			for( int i=0; i<splits.length - 1; i++ ) // all but last split
 				cret.add(pool.submit(new CountRowsTask(splits[i], informat, job, _props.hasHeader() && i==0)));
 		
 			//compute row offset per split via cumsum on row counts

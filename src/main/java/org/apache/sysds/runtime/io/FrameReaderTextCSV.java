@@ -146,44 +146,42 @@ public class FrameReaderTextCSV extends FrameReader {
 			Array<?>[] destA = dest.getColumns();
 			while(reader.next(key, value)) // foreach line
 			{
-				String cellStr = IOUtilFunctions.trim(value.toString());
-				parseLine(cellStr, delim, destA, row, (int) clen, dfillValue, sfillValue, isFill, naValues);
+				parseLine(value.toString(), delim, destA, row, (int) clen, dfillValue, sfillValue, isFill, naValues);
 				row++;
 			}
-
 		}
 		catch(Exception e){
 			throw new DMLRuntimeException("Failed parsing string: \"" + value +"\"", e);
 		}
 		finally {
-			// if(pool != null)
-			// 	pool.shutdown();
 			IOUtilFunctions.closeSilently(reader);
 		}
 
 		return row;
 	}
 
-	private void parseLine(String cellStr, String delim, Array<?>[] destA , int row,
-		 int clen,  double dfillValue, String sfillValue, boolean isFill,
-		Set<String> naValues) {
-			try{
-				int from = 0, to = 0; 
-				final int len = cellStr.length();
-				final int delimLen = delim.length();
-				int c = 0;
-				while(from < len) { // for all tokens
-					to = IOUtilFunctions.getTo(cellStr, from, delim, len, delimLen);
-					assignCellGeneric(row, destA, cellStr.substring(from, to), naValues, isFill, dfillValue, sfillValue,
-						false, c);
-					c++;
-					from = to + delimLen;
-				}
+	private void parseLine(String cellStr, String delim, Array<?>[] destA, int row, int clen, double dfillValue,
+		String sfillValue, boolean isFill, Set<String> naValues) {
+		try {
+			final int len = cellStr.length();
+			final int delimLen = delim.length();
+			parseLineSpecialized(cellStr, delim, destA, row, dfillValue, sfillValue, isFill, naValues, len, delimLen);
+		}
+		catch(Exception e) {
+			throw new RuntimeException("failed to parse: " + cellStr, e);
+		}
+	}
 
-			}
-			catch(Exception e){
-				throw new RuntimeException("failed to parse: " + cellStr, e);
-			}
+	private void parseLineSpecialized(String cellStr, String delim, Array<?>[] destA, int row, double dfillValue, String sfillValue,
+		boolean isFill, Set<String> naValues, final int len, final int delimLen) {
+		int from = 0, to = 0, c = 0;
+		while(from < len) { // for all tokens
+			to = IOUtilFunctions.getTo(cellStr, from, delim, len, delimLen);
+			assignCellGeneric(row, destA, cellStr.substring(from, to), naValues, isFill, dfillValue, sfillValue, false,
+				c);
+			c++;
+			from = to + delimLen;
+		}
 	}
 
 	private boolean assignColumns(int row, int nCol,  Array<?>[] destA, String[] parts, Set<String> naValues,

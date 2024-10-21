@@ -133,17 +133,14 @@ public class FrameReaderTextCSV extends FrameReader {
 		if(naValues != null )
 			f = FrameReaderTextCSV::assignCellGeneric;
 		else if(isFill && dfillValue != 0)
+			f = FrameReaderTextCSV::assignCellFill;
+		else 
 			f = FrameReaderTextCSV::assignCellNoFill;
-		else
-			f = FrameReaderTextCSV::assignCellNoNa;
 		
-		// (int row, Array<?> dest, String val, int length, Set<String> naValues, boolean isFill,
-		// double dfillValue, String sfillValue,  int col) ->{};
-		// create record reader
-		RecordReader<LongWritable, Text> reader = informat.getRecordReader(split, job, Reporter.NULL);
-		LongWritable key = new LongWritable();
-		Text value = new Text();
-		int row = rl;
+		final RecordReader<LongWritable, Text> reader = informat.getRecordReader(split, job, Reporter.NULL);
+		final LongWritable key = new LongWritable();
+		final Text value = new Text();
+		final int row = rl;
 
 		// handle header if existing
 		if(first && hasHeader) {
@@ -224,7 +221,19 @@ public class FrameReaderTextCSV extends FrameReader {
 		double dfillValue, String sfillValue,  int col);
 	}
 
+
 	private static void assignCellNoFill(int row, Array<?> dest, String val, int length, Set<String> naValues, boolean isFill,
+		double dfillValue, String sfillValue,  int col) {
+		if(length != 0){
+			final String part = IOUtilFunctions.trim(val, length);
+			if(part.isEmpty() )
+				return;
+			dest.set(row, part);
+		}
+	}
+
+
+	private static void assignCellFill(int row, Array<?> dest, String val, int length, Set<String> naValues, boolean isFill,
 		double dfillValue, String sfillValue,  int col) {
 		if(length == 0){
 			dest.set(row, sfillValue);

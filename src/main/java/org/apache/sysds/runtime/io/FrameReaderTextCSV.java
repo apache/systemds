@@ -170,9 +170,10 @@ public class FrameReaderTextCSV extends FrameReader {
 	private static void parseLine(final String cellStr, final String delim, final Array<?>[] destA, final int row, final int clen, final double dfillValue,
 		final String sfillValue, final boolean isFill, final Set<String> naValues,final CellAssigner assigner) {
 		try {
-			final int len = cellStr.length();
+			final String trimmed = IOUtilFunctions.trim( cellStr);
+			final int len = trimmed.length();
 			final int delimLen = delim.length();
-			parseLineSpecialized(cellStr, delim, destA, row, dfillValue, sfillValue, isFill, naValues, len, delimLen, assigner);
+			parseLineSpecialized(trimmed, delim, destA, row, dfillValue, sfillValue, isFill, naValues, len, delimLen, assigner);
 		}
 		catch(Exception e) {
 			throw new RuntimeException("failed to parse: " + cellStr, e);
@@ -202,7 +203,7 @@ public class FrameReaderTextCSV extends FrameReader {
 		double dfillValue, String sfillValue) {
 		if(length != 0){
 			final String part = IOUtilFunctions.trim(val, length);
-			if(part.isEmpty() )
+			if(part.isEmpty())
 				return;
 			dest.set(row, part);
 		}
@@ -215,9 +216,8 @@ public class FrameReaderTextCSV extends FrameReader {
 			dest.set(row, sfillValue);
 		} else {
 			final String part = IOUtilFunctions.trim(val, length);
-			if(part == null || part.isEmpty() ) {
+			if(part == null || part.isEmpty())
 				dest.set(row, sfillValue);
-			}
 			else
 				dest.set(row, part);
 		}

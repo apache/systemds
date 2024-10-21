@@ -440,7 +440,7 @@ public class IOUtilFunctions {
 	 * @param len length of string
 	 * @return the trimmed string.
 	 */
-	public static String trim(String str, final int len) {
+	public static String trim(final String str, final int len) {
 		try{
 		
 			// short the call to return input if not whitespace in ends.

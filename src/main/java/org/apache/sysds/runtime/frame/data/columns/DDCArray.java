@@ -272,7 +272,7 @@ public class DDCArray<T> extends ACompressedArray<T> {
 
 			final AMapToData tm = dc.map;
 			for(int i = rl; i <= ru; i++) {
-				map.set(i, tm.getIndex(i)-rl);
+				map.set(i, tm.getIndex(i-rl));
 			}
 		}
 		else

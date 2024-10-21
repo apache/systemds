@@ -23,6 +23,8 @@ import org.apache.sysds.parser.StatementBlock;
 import org.apache.sysds.parser.WhileStatement;
 import org.apache.sysds.parser.WhileStatementBlock;
 
+import javax.annotation.Nullable;
+import javax.validation.constraints.Null;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.FileReader;
@@ -175,7 +177,7 @@ public class RewriterRuntimeUtils {
 	}
 
 	public static RewriterStatement buildDAGFromHop(Hop hop, int maxDepth, final RuleContext ctx) {
-		return buildDAGRecursively(hop, new HashMap<>(), 0, maxDepth, ctx);
+		return buildDAGRecursively(hop, null, new HashMap<>(), 0, maxDepth, ctx);
 	}
 
 	public static void forAllUniqueTranslatableStatements(DMLProgram program, int maxDepth, Consumer<RewriterStatement> stmt, RewriterDatabase db, final RuleContext ctx) {
@@ -236,7 +238,7 @@ public class RewriterRuntimeUtils {
 			return;
 
 		visited.add(currentHop);
-		RewriterStatement stmt = buildDAGRecursively(currentHop, new HashMap<>(), 0, maxDepth, ctx);
+		RewriterStatement stmt = buildDAGRecursively(currentHop, null, new HashMap<>(), 0, maxDepth, ctx);
 
 		if (stmt != null)
 			stmt = ctx.metaPropagator.apply(stmt);
@@ -250,26 +252,26 @@ public class RewriterRuntimeUtils {
 			currentHop.getInput().forEach(child -> forAllUniqueTranslatableStatements(child, maxDepth, consumer, visited, db, ctx));
 	}
 
-	private static RewriterStatement buildDAGRecursively(Hop next, Map<Hop, RewriterStatement> cache, int depth, int maxDepth, final RuleContext ctx) {
+	private static RewriterStatement buildDAGRecursively(Hop next, @Nullable String expectedType, Map<Hop, RewriterStatement> cache, int depth, int maxDepth, final RuleContext ctx) {
 		if (depth == maxDepth)
-			return buildLeaf(next, ctx);
+			return buildLeaf(next, expectedType, ctx);
 
 		if (cache.containsKey(next))
 			return checkForCorrectTypes(cache.get(next), next, ctx);
 
 		if (next instanceof LiteralOp) {
-			RewriterStatement literal = buildLiteral((LiteralOp)next, ctx);
+			RewriterStatement literal = buildLiteral((LiteralOp)next, expectedType, ctx);
 			literal = checkForCorrectTypes(literal, next, ctx);
 			cache.put(next, literal);
 			return literal;
 		}
 
 		if (next instanceof AggBinaryOp) {
-			RewriterStatement stmt = buildAggBinaryOp((AggBinaryOp) next, ctx);
+			RewriterStatement stmt = buildAggBinaryOp((AggBinaryOp) next, expectedType, ctx);
 			stmt = checkForCorrectTypes(stmt, next, ctx);
 
 			if (stmt == null)
-				return buildLeaf(next, ctx);
+				return buildLeaf(next, expectedType, ctx);
 
 			if (buildInputs(stmt, next.getInput(), cache, true, depth, maxDepth, ctx))
 				return stmt;
@@ -278,11 +280,11 @@ public class RewriterRuntimeUtils {
 		}
 
 		if (next instanceof AggUnaryOp) {
-			RewriterStatement stmt = buildAggUnaryOp((AggUnaryOp) next, ctx);
+			RewriterStatement stmt = buildAggUnaryOp((AggUnaryOp) next, expectedType, ctx);
 			stmt = checkForCorrectTypes(stmt, next, ctx);
 
 			if (stmt == null)
-				return buildLeaf(next, ctx);
+				return buildLeaf(next, expectedType, ctx);
 
 			if (buildInputs(stmt, next.getInput(), cache, true, depth, maxDepth, ctx))
 				return stmt;
@@ -291,11 +293,11 @@ public class RewriterRuntimeUtils {
 		}
 
 		if (next instanceof BinaryOp) {
-			RewriterStatement stmt = buildBinaryOp((BinaryOp) next, ctx);
+			RewriterStatement stmt = buildBinaryOp((BinaryOp) next, expectedType, ctx);
 			stmt = checkForCorrectTypes(stmt, next, ctx);
 
 			if (stmt == null)
-				return buildLeaf(next, ctx);
+				return buildLeaf(next, expectedType, ctx);
 
 			if (buildInputs(stmt, next.getInput(), cache, true, depth, maxDepth, ctx))
 				return stmt;
@@ -304,11 +306,11 @@ public class RewriterRuntimeUtils {
 		}
 
 		if (next instanceof ReorgOp) {
-			RewriterStatement stmt = buildReorgOp((ReorgOp) next, ctx);
+			RewriterStatement stmt = buildReorgOp((ReorgOp) next, expectedType, ctx);
 			stmt = checkForCorrectTypes(stmt, next, ctx);
 
 			if (stmt == null)
-				return buildLeaf(next, ctx);
+				return buildLeaf(next, expectedType, ctx);
 
 			if (buildInputs(stmt, next.getInput(), cache, true, depth, maxDepth, ctx))
 				return stmt;
@@ -318,11 +320,11 @@ public class RewriterRuntimeUtils {
 
 		if (next instanceof DataGenOp) {
 			List<Hop> interestingHops = new ArrayList<>();
-			RewriterStatement stmt = buildDataGenOp((DataGenOp)next, ctx, interestingHops);
+			RewriterStatement stmt = buildDataGenOp((DataGenOp)next, expectedType, ctx, interestingHops);
 			stmt = checkForCorrectTypes(stmt, next, ctx);
 
 			if (stmt == null)
-				return buildLeaf(next, ctx);
+				return buildLeaf(next, expectedType, ctx);
 
 			if (buildInputs(stmt, interestingHops, cache, true, depth, maxDepth, ctx))
 				return stmt;
@@ -334,7 +336,7 @@ public class RewriterRuntimeUtils {
 			DataOp dop = (DataOp) next;
 
 			if (dop.isRead())
-				return buildLeaf(next, ctx);
+				return buildLeaf(next, expectedType, ctx);
 		}
 
 		if (printUnknowns) {
@@ -368,7 +370,10 @@ public class RewriterRuntimeUtils {
 		return null;
 	}
 
-	private static RewriterStatement buildLeaf(Hop hop, final RuleContext ctx) {
+	private static RewriterStatement buildLeaf(Hop hop, @Nullable String expectedType, final RuleContext ctx) {
+		if (expectedType != null)
+			return RewriterUtils.parse(hop.getName(), ctx, expectedType + ":" + hop.getName());
+
 		switch (hop.getDataType()) {
 			case SCALAR:
 				return buildScalarLeaf(hop, ctx);
@@ -395,9 +400,13 @@ public class RewriterRuntimeUtils {
 	}
 
 	private static boolean buildInputs(RewriterStatement stmt, List<Hop> inputs, Map<Hop, RewriterStatement> cache, boolean fixedSize, int depth, int maxDepth, final RuleContext ctx) {
+		if (fixedSize && stmt.getOperands().size() != inputs.size())
+			return false;
+
 		List<RewriterStatement> children = new ArrayList<>();
+		int ctr = 0;
 		for (Hop in : inputs) {
-			RewriterStatement childStmt = buildDAGRecursively(in, cache, depth + 1, maxDepth, ctx);
+			RewriterStatement childStmt = buildDAGRecursively(in, fixedSize ? stmt.getOperands().get(ctr++).getResultingDataType(ctx) : null, cache, depth + 1, maxDepth, ctx);
 
 			if (childStmt == null) {
 				//System.out.println("Could not build child: " + in);
@@ -407,16 +416,16 @@ public class RewriterRuntimeUtils {
 			children.add(childStmt);
 		}
 
-		if (fixedSize && stmt.getOperands().size() != children.size())
-			return false;
-
 		stmt.getOperands().clear();
 		stmt.getOperands().addAll(children);
 		stmt.consolidate(ctx);
 		return true;
 	}
 
-	private static RewriterStatement buildAggBinaryOp(AggBinaryOp op, final RuleContext ctx) {
+	private static RewriterStatement buildAggBinaryOp(AggBinaryOp op, @Nullable String expectedType, final RuleContext ctx) {
+		if (expectedType != null && !expectedType.equals("MATRIX"))
+			throw new IllegalArgumentException();
+
 		// Some placeholder definitions
 		switch(op.getOpString()) {
 			case "ba(+*)": // Matrix multiplication
@@ -428,7 +437,10 @@ public class RewriterRuntimeUtils {
 		return null;
 	}
 
-	private static RewriterStatement buildAggUnaryOp(AggUnaryOp op, final RuleContext ctx) {
+	private static RewriterStatement buildAggUnaryOp(AggUnaryOp op, @Nullable String expectedType, final RuleContext ctx) {
+		if (expectedType != null && !expectedType.equals("FLOAT"))
+			throw new IllegalArgumentException();
+
 		// Some placeholder definitions
 		switch(op.getOpString()) {
 			case "ua(+C)": // Matrix multiplication
@@ -444,19 +456,26 @@ public class RewriterRuntimeUtils {
 		return null;
 	}
 
-	private static RewriterStatement buildBinaryOp(BinaryOp op, final RuleContext ctx) {
+	private static RewriterStatement buildBinaryOp(BinaryOp op, @Nullable String expectedType, final RuleContext ctx) {
 		String t1 = resolveExactDataType(op.getInput().get(0));
 		String t2 = resolveExactDataType(op.getInput().get(1));
 
 		if (t1 == null || t2 == null)
 			return null;
 
+		if (expectedType != null) {
+			t1 = RewriterUtils.convertibleType(t1, expectedType);
+			t2 = RewriterUtils.convertibleType(t2, expectedType);
+
+			if (t1 == null || t2 == null)
+				return null;
+		}
+
 		t1 += ":a";
 		t2 += ":b";
 
 		switch(op.getOpString()) {
 			case "b(+)": // Addition
-				System.out.println("Sparsity: " + op.getSparsity());
 				return RewriterUtils.parse("+(a, b)", ctx, t1, t2);
 			case "b(*)": // Matrix multiplication
 				return RewriterUtils.parse("*(a, b)", ctx, t1, t2);
@@ -505,7 +524,10 @@ public class RewriterRuntimeUtils {
 		return null;
 	}
 
-	private static RewriterStatement buildReorgOp(ReorgOp op, final RuleContext ctx) {
+	private static RewriterStatement buildReorgOp(ReorgOp op, @Nullable String expectedType, final RuleContext ctx) {
+		if (expectedType != null && !expectedType.equals("MATRIX"))
+			throw new IllegalArgumentException();
+
 		switch(op.getOpString()) {
 			case "r(r')": // Matrix multiplication
 				return RewriterUtils.parse("t(A)", ctx, matrixDefs, floatDefs, intDefs, boolDefs);
@@ -515,9 +537,10 @@ public class RewriterRuntimeUtils {
 		return null;
 	}
 
-	private static RewriterStatement buildDataGenOp(DataGenOp op, final RuleContext ctx, List<Hop> interestingHops) {
-		System.out.println("Sparsity of " + op + ": " + op.getSparsity());
-		// TODO:
+	private static RewriterStatement buildDataGenOp(DataGenOp op, @Nullable String expectedType, final RuleContext ctx, List<Hop> interestingHops) {
+		if (expectedType != null && !expectedType.equals("MATRIX"))
+			throw new IllegalArgumentException();
+
 		switch(op.getOpString()) {
 			case "dg(rand)":
 				interestingHops.add(op.getParam("rows"));
@@ -529,19 +552,55 @@ public class RewriterRuntimeUtils {
 		return null;
 	}
 
-	private static RewriterStatement buildLiteral(LiteralOp literal, final RuleContext ctx) {
+	private static RewriterStatement buildLiteral(LiteralOp literal, @Nullable String expectedType, final RuleContext ctx) {
 		if (literal.getDataType() != Types.DataType.SCALAR)
 			return null; // Then it is not supported yet
+
+		String mType;
+		Object mValue;
 
 		switch (literal.getValueType()) {
 			case FP64:
 			case FP32:
+				if (expectedType != null && !expectedType.equals("FLOAT"))
+					throw new IllegalArgumentException();
 				return new RewriterDataType().as(UUID.randomUUID().toString()).ofType("FLOAT").asLiteral(literal.getDoubleValue()).consolidate(ctx);
 			case INT32:
 			case INT64:
-				return new RewriterDataType().as(UUID.randomUUID().toString()).ofType("INT").asLiteral(literal.getLongValue()).consolidate(ctx);
+				if (expectedType != null) {
+					if (expectedType.equals("INT")) {
+						mType = expectedType;
+						mValue = literal.getLongValue();
+					} else if (expectedType.equals("FLOAT")) {
+						mType = "FLOAT";
+						mValue = (double)literal.getLongValue();
+					} else {
+						throw new IllegalArgumentException();
+					}
+				} else {
+					mType = "INT";
+					mValue = literal.getLongValue();
+				}
+				return new RewriterDataType().as(UUID.randomUUID().toString()).ofType(mType).asLiteral(mValue).consolidate(ctx);
 			case BOOLEAN:
-				return new RewriterDataType().as(UUID.randomUUID().toString()).ofType("BOOL").asLiteral(literal.getBooleanValue()).consolidate(ctx);
+				if (expectedType != null) {
+					if (expectedType.equals("FLOAT")) {
+						mType = expectedType;
+						mValue = literal.getBooleanValue() ? 1.0D : 0.0D;
+					} else if (expectedType.equals("INT")) {
+						mType = expectedType;
+						mValue = literal.getBooleanValue() ? 1L : 0L;
+					} else if (expectedType.equals("BOOL")) {
+						mType = expectedType;
+						mValue = literal.getBooleanValue();
+					} else {
+						throw new IllegalArgumentException();
+					}
+				} else {
+					mType = "BOOL";
+					mValue = literal.getBooleanValue();
+				}
+				return new RewriterDataType().as(UUID.randomUUID().toString()).ofType(mType).asLiteral(mValue).consolidate(ctx);
 			default:
 				return null; // Not supported yet
 		}

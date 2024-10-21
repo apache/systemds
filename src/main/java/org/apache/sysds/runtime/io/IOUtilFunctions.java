@@ -369,7 +369,7 @@ public class IOUtilFunctions {
 	 * @param dLen  The length of the delimiter string
 	 * @return The next index.
 	 */
-	private static int getTo(final String str, final int from, final String delim,
+	public static int getTo(final String str, final int from, final String delim,
 		final int len, final int dLen) {
 		final char cq = CSV_QUOTE_CHAR;
 		final int fromP1 = from + 1;

@@ -168,6 +168,19 @@ public class FrameReaderTextCSV extends FrameReader {
 		 int clen,  double dfillValue, String sfillValue, boolean isFill,
 		Set<String> naValues) {
 			try{
+				int from = 0, to = 0; 
+				final int len = cellStr.length();
+				final int delimLen = delim.length();
+				int c = 0;
+				while(from < len) { // for all tokens
+					to = IOUtilFunctions.getTo(cellStr, from, delim, len, delimLen);
+					String cell =  cellStr.substring(from, to);
+					assignCellGeneric(row, destA, cell, naValues, isFill, dfillValue, sfillValue, false, c);
+					c++;
+					from = to + delimLen;
+				}
+
+
 				String[] parts = IOUtilFunctions.splitCSV(cellStr, delim, clen);
 				assignColumns(row, (int)clen, destA, parts, naValues, isFill, dfillValue, sfillValue);
 				IOUtilFunctions.checkAndRaiseErrorCSVNumColumns("", cellStr, parts, clen);
@@ -189,15 +202,23 @@ public class FrameReaderTextCSV extends FrameReader {
 		boolean isFill, double dfillValue, String sfillValue) {
 		boolean emptyValuesFound = false;
 		for(int col = 0; col < nCol; col++) {
-			emptyValuesFound = assignCellGeneric(row, destA, parts, naValues, isFill, dfillValue, sfillValue, emptyValuesFound, col);
+			emptyValuesFound = assignCellGeneric(row, destA, parts[col], naValues, isFill, dfillValue, sfillValue, emptyValuesFound, col);
 		}
-
 		return emptyValuesFound;
 	}
 
-	private boolean assignCellGeneric(int row, Array<?>[] destA, String[] parts, Set<String> naValues, boolean isFill,
+	private boolean assignColumnsNoFillNoNan(int row, int nCol, Array<?>[] destA, String[] parts){
+		boolean emptyValuesFound = false;
+		for(int col = 0; col < nCol; col++) {
+			emptyValuesFound = assignCellNoNan(row, destA, parts[col], emptyValuesFound, col);
+		}
+		return emptyValuesFound;
+	}
+
+
+	private static boolean assignCellGeneric(int row, Array<?>[] destA, String val, Set<String> naValues, boolean isFill,
 		double dfillValue, String sfillValue, boolean emptyValuesFound, int col) {
-		String part = IOUtilFunctions.trim(parts[col]);
+		String part = IOUtilFunctions.trim(val);
 		if(part == null || part.isEmpty() || (naValues != null && naValues.contains(part))) {
 			if(isFill && dfillValue != 0)
 				destA[col].set(row, sfillValue);
@@ -208,17 +229,12 @@ public class FrameReaderTextCSV extends FrameReader {
 		return emptyValuesFound;
 	}
 
-	private boolean assignColumnsNoFillNoNan(int row, int nCol, Array<?>[] destA, String[] parts){
-		
-		boolean emptyValuesFound = false;
-		for(int col = 0; col < nCol; col++) {
-			String part = IOUtilFunctions.trim(parts[col]);
-			if(part.isEmpty()) 
-				emptyValuesFound = true;
-			else
-				destA[col].set(row, part);
-		}
-
+	private static boolean assignCellNoNan(int row, Array<?>[] destA, String val, boolean emptyValuesFound, int col) {
+		String part = IOUtilFunctions.trim(val);
+		if(part.isEmpty()) 
+			emptyValuesFound = true;
+		else
+			destA[col].set(row, part);
 		return emptyValuesFound;
 	}
 

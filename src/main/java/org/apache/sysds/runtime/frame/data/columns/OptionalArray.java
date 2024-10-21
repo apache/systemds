@@ -477,21 +477,27 @@ public class OptionalArray<T> extends Array<T> {
 		if(getValueType() == ValueType.BOOLEAN) {
 			// shortcut for boolean arrays, since we only
 			// need to encounter the first two false and true values.
-			Map<T, Long> map = new HashMap<>();
+			Map<T, Long> map = new HashMap<>(estimate);
 			long id = 1;
-			for(int i = 0; i < size() && id <= 2; i++) {
-				T val = get(i);
-				if(val != null) {
-					Long v = map.putIfAbsent(val, id);
-					if(v == null)
-						id++;
-				}
-			}
+			for(int i = 0; i < size() && id <= 2; i++)
+				id = addValRecodeMap(map, id, i);
+
 			return map;
 		}
 		else
 			return super.createRecodeMap(estimate);
 	}
+
+	private long addValRecodeMap(Map<T, Long> map, long id, int i) {
+		T val = get(i);
+		if(val != null) {
+			Long v = map.putIfAbsent(val, id);
+			if(v == null)
+				id++;
+		}
+		return id;
+	}
+
 
 	@Override
 	public String toString() {

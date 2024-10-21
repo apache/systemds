@@ -242,7 +242,7 @@ public abstract class Array<T> implements Writable {
 	 * 
 	 * @param rl    row lower
 	 * @param ru    row upper (inclusive)
-	 * @param value value array to take values from (same type)
+	 * @param value value array to take values from (same type) offset by rl.
 	 */
 	public abstract void set(int rl, int ru, Array<T> value);
 

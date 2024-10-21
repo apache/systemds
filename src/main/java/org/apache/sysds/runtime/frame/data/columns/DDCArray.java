@@ -272,7 +272,33 @@ public class DDCArray<T> extends ACompressedArray<T> {
 
 			final AMapToData tm = dc.map;
 			for(int i = rl; i <= ru; i++) {
-				map.set(i, tm.getIndex(i-rl));
+				map.set(i, tm.getIndex(i));
+			}
+		}
+		else
+			throw new DMLCompressionException("Invalid to set value in CompressedArray");
+	}
+
+
+	@Override
+	public void set(int rl, int ru, Array<T> value, int rlSrc) {
+		if(value instanceof DDCArray) {
+			DDCArray<T> dc = (DDCArray<T>) value;
+			// we allow one side to have a null dictionary while the other does not.
+			if((dict != null && dc.dict != null // If both dicts are not null
+				&& (dc.dict.size() != dict.size() // then if size of the dicts are not equivalent
+					|| (FrameBlock.debug && !dc.dict.equals(dict))) // or then if debugging do full equivalence check
+				) || map.getUnique() < dc.map.getUnique() // this map is not able to contain values of other.
+			)
+				throw new DMLCompressionException("Invalid setting of DDC Array, of incompatible instance." + //
+					"\ndict1 is null: " + (dict == null)  + //
+					"\ndict2 is null: " + (dc.dict == null) +//
+					"\nmap1 unique: " + (map.getUnique()) + //
+					"\nmap2 unique: " + (dc.map.getUnique()) );
+
+			final AMapToData tm = dc.map;
+			for(int i = rl; i <= ru; i++) {
+				map.set(i, tm.getIndex(i-rlSrc));
 			}
 		}
 		else

@@ -128,7 +128,7 @@ public abstract class Array<T> implements Writable {
 		return map;
 	}
 
-	private long addValRecodeMap(Map<T, Long> map, long id, int i) {
+	protected long addValRecodeMap(Map<T, Long> map, long id, int i) {
 		T val = get(i);
 		if(val != null) {
 			Long v = map.putIfAbsent(val, id);

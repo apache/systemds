@@ -23,10 +23,12 @@ import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
 import java.util.Arrays;
+import java.util.Map;
 
 import org.apache.commons.lang3.NotImplementedException;
 import org.apache.sysds.common.Types.ValueType;
 import org.apache.sysds.runtime.DMLRuntimeException;
+import org.apache.sysds.runtime.compress.colgroup.mapping.AMapToData;
 import org.apache.sysds.runtime.frame.data.columns.ArrayFactory.FrameArrayType;
 import org.apache.sysds.runtime.matrix.data.Pair;
 import org.apache.sysds.runtime.util.UtilFunctions;
@@ -430,6 +432,26 @@ public class HashLongArray extends Array<Object> implements IHashArray {
 	@Override
 	public boolean possiblyContainsNaN() {
 		return false;
+	}
+
+	@Override 
+	protected long addValRecodeMap(Map<Object, Long> map, long id, int i) {
+		Integer val = getInt(i);
+		Long v = map.putIfAbsent(val, id);
+		if(v == null)
+			id++;
+		
+		return id;
+	}
+
+	@Override 
+	public void setM(Map<Object, Long> map, AMapToData m, int i){
+		m.set(i, map.get(getLong(i)).intValue() - 1);
+	}
+
+	@Override 
+	public void setM(Map<Object, Long> map, int si, AMapToData m, int i) {
+		m.set(i, map.get(getLong(i)).intValue() - 1);
 	}
 
 	@Override

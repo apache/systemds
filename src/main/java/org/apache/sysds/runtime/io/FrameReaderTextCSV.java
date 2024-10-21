@@ -149,8 +149,8 @@ public class FrameReaderTextCSV extends FrameReader {
 		}
 
 		// Read the data
+		int row = rl;
 		try {
-			int row = rl;
 			Array<?>[] destA = dest.getColumns();
 			while(reader.next(key, value)) // foreach line
 			{

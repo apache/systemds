@@ -439,7 +439,7 @@ public class HashIntegerArray extends Array<Object> implements IHashArray {
 
 	@Override 
 	protected long addValRecodeMap(Map<Object, Long> map, long id, int i) {
-		Long val = getLong(i);
+		Integer val = Integer.valueOf(getInt(i));
 		Long v = map.putIfAbsent(val, id);
 		if(v == null)
 			id++;
@@ -448,12 +448,12 @@ public class HashIntegerArray extends Array<Object> implements IHashArray {
 
 	@Override 
 	public void setM(Map<Object, Long> map, AMapToData m, int i){
-		m.set(i, map.get(getInt(i)).intValue() - 1);
+		m.set(i, map.get(Integer.valueOf(getInt(i))).intValue() - 1);
 	}
 
 	@Override 
 	public void setM(Map<Object, Long> map, int si, AMapToData m, int i) {
-		final Integer v = getInt(i);
+		final Integer v = Integer.valueOf(getInt(i));
 		m.set(i, map.get(v).intValue() - 1);
 	}
 

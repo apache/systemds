@@ -436,7 +436,7 @@ public class HashLongArray extends Array<Object> implements IHashArray {
 
 	@Override 
 	protected long addValRecodeMap(Map<Object, Long> map, long id, int i) {
-		Integer val = getInt(i);
+		Long val = Long.valueOf(getLong(i));
 		Long v = map.putIfAbsent(val, id);
 		if(v == null)
 			id++;
@@ -446,12 +446,12 @@ public class HashLongArray extends Array<Object> implements IHashArray {
 
 	@Override 
 	public void setM(Map<Object, Long> map, AMapToData m, int i){
-		m.set(i, map.get(getLong(i)).intValue() - 1);
+		m.set(i, map.get(Long.valueOf(getLong(i))).intValue() - 1);
 	}
 
 	@Override 
 	public void setM(Map<Object, Long> map, int si, AMapToData m, int i) {
-		m.set(i, map.get(getLong(i)).intValue() - 1);
+		m.set(i, map.get(Long.valueOf(getLong(i))).intValue() - 1);
 	}
 
 	@Override

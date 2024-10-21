@@ -752,8 +752,8 @@ public class BinaryOp extends MultiThreadedHop {
 		
 		checkAndSetForcedPlatform();
 		
-		DataType dt1 = getInput().get(0).getDataType();
-		DataType dt2 = getInput().get(1).getDataType();
+		final DataType dt1 = getInput(0).getDataType();
+		final DataType dt2 = getInput(1).getDataType();
 		
 		if( _etypeForced != null ) {
 			_etype = _etypeForced;
@@ -802,18 +802,28 @@ public class BinaryOp extends MultiThreadedHop {
 			checkAndSetInvalidCPDimsAndSize();
 		}
 
-		//spark-specific decision refinement (execute unary scalar w/ spark input and
+		// spark-specific decision refinement (execute unary scalar w/ spark input and
 		// single parent also in spark because it's likely cheap and reduces intermediates)
-		if(transitive && _etype == ExecType.CP && _etypeForced != ExecType.CP && _etypeForced != ExecType.FED &&
-			getDataType().isMatrix() // output should be a matrix
-			&& (dt1.isScalar() || dt2.isScalar()) // one side should be scalar
-			&& supportsMatrixScalarOperations() // scalar operations
-			&& !(getInput().get(dt1.isScalar() ? 1 : 0) instanceof DataOp) // input is not checkpoint
-			&& getInput().get(dt1.isScalar() ? 1 : 0).getParent().size() == 1 // unary scalar is only parent
-			&& !HopRewriteUtils.isSingleBlock(getInput().get(dt1.isScalar() ? 1 : 0)) // single block triggered exec
-			&& getInput().get(dt1.isScalar() ? 1 : 0).optFindExecType() == ExecType.SPARK) {
-			// pull unary scalar operation into spark
-			_etype = ExecType.SPARK;
+		if(transitive // we allow transitive Spark operations. continue sequences of spark operations
+			&& _etype == ExecType.CP // The instruction is currently in CP
+			&& _etypeForced != ExecType.CP // not forced CP
+			&& _etypeForced != ExecType.FED // not federated
+			&& (getDataType().isMatrix() || getDataType().isFrame()) // output should be a matrix or frame
+		) {
+			final boolean v1 = getInput(0).isScalarOrVectorBellowBlockSize();
+			final boolean v2 = getInput(1).isScalarOrVectorBellowBlockSize();
+			final boolean left = v1 == true; // left side is the vector or scalar
+			final Hop sparkIn = getInput(left ? 1 : 0);
+			if((v1 ^ v2) // XOR only one side is allowed to be a vector or a scalar.
+				&& (supportsMatrixScalarOperations() || op == OpOp2.APPLY_SCHEMA)  // supported operation
+				&& sparkIn.getParent().size() == 1 // only one parent
+				&& !HopRewriteUtils.isSingleBlock(sparkIn) // single block triggered exec
+				&& sparkIn.optFindExecType() == ExecType.SPARK // input was spark op.
+				&& !(sparkIn instanceof DataOp) // input is not checkpoint
+			) {
+				// pull operation into spark
+				_etype = ExecType.SPARK;
+			}
 		}
 
 		if( OptimizerUtils.ALLOW_BINARY_UPDATE_IN_PLACE &&
@@ -843,7 +853,7 @@ public class BinaryOp extends MultiThreadedHop {
 				|| (op == OpOp2.RBIND && getDataType().isList())) {
 			_etype = ExecType.CP;
 		}
-		
+
 		//mark for recompile (forever)
 		setRequiresRecompileIfNecessary();
 		
@@ -1160,17 +1170,35 @@ public class BinaryOp extends MultiThreadedHop {
 	}
 	
 	public boolean supportsMatrixScalarOperations() {
-		return ( op==OpOp2.PLUS ||op==OpOp2.MINUS
-				||op==OpOp2.MULT ||op==OpOp2.DIV
-				||op==OpOp2.MODULUS ||op==OpOp2.INTDIV
-				||op==OpOp2.LESS ||op==OpOp2.LESSEQUAL
-				||op==OpOp2.GREATER ||op==OpOp2.GREATEREQUAL
-				||op==OpOp2.EQUAL ||op==OpOp2.NOTEQUAL
-				||op==OpOp2.MIN ||op==OpOp2.MAX
-				||op==OpOp2.LOG ||op==OpOp2.POW
-				||op==OpOp2.AND ||op==OpOp2.OR ||op==OpOp2.XOR
-				||op==OpOp2.BITWAND ||op==OpOp2.BITWOR ||op==OpOp2.BITWXOR
-				||op==OpOp2.BITWSHIFTL ||op==OpOp2.BITWSHIFTR);
+		switch(op) {
+			case PLUS:
+			case MINUS:
+			case MULT:
+			case DIV:
+			case MODULUS:
+			case INTDIV:
+			case LESS:
+			case LESSEQUAL:
+			case GREATER:
+			case GREATEREQUAL:
+			case EQUAL:
+			case NOTEQUAL:
+			case MIN:
+			case MAX:
+			case LOG:
+			case POW:
+			case AND:
+			case OR:
+			case XOR:
+			case BITWAND:
+			case BITWOR:
+			case BITWXOR:
+			case BITWSHIFTL:
+			case BITWSHIFTR:
+				return true;
+			default:
+				return false;
+		}
 	}
 	
 	public boolean isPPredOperation() {

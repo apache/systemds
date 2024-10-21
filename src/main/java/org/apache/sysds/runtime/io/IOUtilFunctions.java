@@ -72,10 +72,10 @@ import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.data.TensorBlock;
 import org.apache.sysds.runtime.data.TensorIndexes;
 import org.apache.sysds.runtime.frame.data.FrameBlock;
+import org.apache.sysds.runtime.frame.data.columns.ArrayWrapper;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.matrix.data.MatrixCell;
 import org.apache.sysds.runtime.matrix.data.MatrixIndexes;
-import org.apache.sysds.runtime.transform.TfUtils;
 import org.apache.sysds.runtime.util.LocalFileUtils;
 
 import io.airlift.compress.lzo.LzoCodec;
@@ -242,6 +242,29 @@ public class IOUtilFunctions {
 		return tokens.toArray(new String[0]);
 	}
 
+	public static String[] splitCSV(String str, String delim, int clen){
+		if(str == null || str.isEmpty())
+			return new String[] {""};
+
+		int from = 0, to = 0;
+		final int len = str.length();
+		final int delimLen = delim.length();
+
+		final String[] tokens = new String[clen];
+		int c = 0;
+		while(from < len) { // for all tokens
+			to = getTo(str, from, delim, len, delimLen);
+			tokens[c++] = str.substring(from, to);
+			from = to + delimLen;
+		}
+
+		// handle empty string at end
+		if(from == len)
+			tokens[c++] = "";
+
+		return tokens;
+	}
+
 	/**
 	 * Splits a string by a specified delimiter into all tokens, including empty
 	 * while respecting the rules for quotes and escapes defined in RFC4180,
@@ -346,7 +369,7 @@ public class IOUtilFunctions {
 	 * @param dLen  The length of the delimiter string
 	 * @return The next index.
 	 */
-	private static int getTo(final String str, final int from, final String delim,
+	public static int getTo(final String str, final int from, final String delim,
 		final int len, final int dLen) {
 		final char cq = CSV_QUOTE_CHAR;
 		final int fromP1 = from + 1;
@@ -404,17 +427,32 @@ public class IOUtilFunctions {
 	}
 
 	public static String trim(String str) {
+		final int len = str.length();
+		if(len == 0)
+			return str;
+		return trim(str, len);
+	}
+
+	/**
+	 * Caller must have a string of at least 1 character length.
+	 * 
+	 * @param str string to trim
+	 * @param len length of string
+	 * @return the trimmed string.
+	 */
+	public static String trim(final String str, final int len) {
 		try{
-			final int len = str.length();
-			if(len == 0)
-				return str;
 			// short the call to return input if not whitespace in ends.
-			else if(str.charAt(0) <= ' ' || str.charAt(len -1) <= ' ')
+			if(str.charAt(0) <= ' ' || str.charAt(len -1) <= ' ')
 				return str.trim();
 			else 
 				return str;
-		}catch(Exception e){
-			throw new RuntimeException("failed trimming: " + str + " " + str.length(),e);
+		}
+		catch(NullPointerException e){
+			return null;
+		}
+		catch(Exception e){
+			throw new RuntimeException("failed trimming: " + str + " " + str.length(), e);
 		}
 	}
 
@@ -657,10 +695,10 @@ public class IOUtilFunctions {
 			try {
 				if( reader.next(key, value) ) {
 					boolean hasValue = true;
-					if( value.toString().startsWith(TfUtils.TXMTD_MVPREFIX) )
-						hasValue = reader.next(key, value);
-					if( value.toString().startsWith(TfUtils.TXMTD_NDPREFIX) )
-						hasValue = reader.next(key, value);
+					// if( value.toString().startsWith(TfUtils.TXMTD_MVPREFIX) )
+					// 	hasValue = reader.next(key, value);
+					// if( value.toString().startsWith(TfUtils.TXMTD_NDPREFIX) )
+					// 	hasValue = reader.next(key, value);
 					String row = value.toString().trim();
 					if( hasValue && !row.isEmpty() ) {
 						ncol = IOUtilFunctions.countTokensCSV(row, delim);
@@ -897,6 +935,13 @@ public class IOUtilFunctions {
 	public static Writer getSeqWriterFrame(Path path, Configuration job, int replication) throws IOException {
 		return SequenceFile.createWriter(job, Writer.file(path), Writer.bufferSize(4096),
 			Writer.keyClass(LongWritable.class), Writer.valueClass(FrameBlock.class),
+			Writer.compression(getCompressionEncodingType(), getCompressionCodec()),
+			Writer.replication((short) (replication > 0 ? replication : 1)));
+	}
+
+	public static Writer getSeqWriterArray(Path path, Configuration job, int replication) throws IOException {
+		return SequenceFile.createWriter(job, Writer.file(path), Writer.bufferSize(4096),
+			Writer.keyClass(LongWritable.class), Writer.valueClass(ArrayWrapper.class),
 			Writer.compression(getCompressionEncodingType(), getCompressionCodec()),
 			Writer.replication((short) (replication > 0 ? replication : 1)));
 	}

@@ -39,6 +39,7 @@ import org.apache.sysds.lops.WeightedSquaredLossR;
 import org.apache.sysds.lops.WeightedUnaryMM;
 import org.apache.sysds.lops.WeightedUnaryMMR;
 import org.apache.sysds.runtime.DMLRuntimeException;
+import org.apache.sysds.runtime.instructions.cp.CPInstruction.CPType;
 import org.apache.sysds.runtime.instructions.cp.CPOperand;
 import org.apache.sysds.runtime.instructions.spark.AggregateTernarySPInstruction;
 import org.apache.sysds.runtime.instructions.spark.AggregateUnarySPInstruction;
@@ -195,6 +196,7 @@ public class SPInstructionParser extends InstructionParser
 		String2SPInstructionType.put( "freplicate", SPType.Binary);
 		String2SPInstructionType.put( "mapdropInvalidLength", SPType.Binary);
 		String2SPInstructionType.put( "valueSwap", SPType.Binary);
+		String2SPInstructionType.put( "applySchema"  , SPType.Binary);
 		String2SPInstructionType.put( "_map", SPType.Ternary); // _map refers to the operation map
 		// Relational Instruction Opcodes
 		String2SPInstructionType.put( "=="   , SPType.Binary);

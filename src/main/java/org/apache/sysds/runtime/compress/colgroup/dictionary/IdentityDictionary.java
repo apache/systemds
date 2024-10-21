@@ -30,6 +30,7 @@ import org.apache.sysds.runtime.compress.DMLCompressionException;
 import org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex;
 import org.apache.sysds.runtime.data.SparseBlock;
 import org.apache.sysds.runtime.data.SparseBlockFactory;
+import org.apache.sysds.runtime.data.SparseBlockMCSR;
 import org.apache.sysds.runtime.functionobjects.Builtin;
 import org.apache.sysds.runtime.functionobjects.Builtin.BuiltinCode;
 import org.apache.sysds.runtime.functionobjects.Divide;
@@ -288,20 +289,28 @@ public class IdentityDictionary extends ADictionary {
 
 	@Override
 	public double[] sumAllRowsToDoubleWithDefault(double[] defaultTuple) {
-		double[] ret = new double[defaultTuple.length];
+		double[] ret = new double[getNumberOfValues(defaultTuple.length) + 1];
+		for(int i = 0; i < nRowCol; i++)
+			ret[i] = 1;
+
 		for(int i = 0; i < defaultTuple.length; i++)
-			ret[i] += 1 + defaultTuple[i];
-		if(withEmpty)
-			ret[ret.length - 1] += -1;
+			ret[ret.length - 1] += defaultTuple[i];
 		return ret;
 	}
 
 	@Override
 	public double[] sumAllRowsToDoubleWithReference(double[] reference) {
-		double[] ret = new double[nRowCol];
-		Arrays.fill(ret, 1);
+		double[] ret = new double[getNumberOfValues(reference.length)];
+		double refSum = 0;
 		for(int i = 0; i < reference.length; i++)
-			ret[i] += reference[i] * nRowCol;
+			refSum += reference[i];
+		Arrays.fill(ret, 1);
+		for(int i = 0; i < ret.length; i++)
+			ret[i] += refSum;
+
+		if(withEmpty)
+			ret[ret.length - 1] += -1;
+
 		return ret;
 	}
 
@@ -411,6 +420,11 @@ public class IdentityDictionary extends ADictionary {
 	}
 
 	@Override
+	public int[] countNNZZeroColumns(int[] counts) {
+		return counts; // interesting ... but true.
+	}
+
+	@Override
 	public long getNumberNonZerosWithReference(int[] counts, double[] reference, int nRows) {
 		return getMBDict().getNumberNonZerosWithReference(counts, reference, nRows);
 	}
@@ -506,16 +520,6 @@ public class IdentityDictionary extends ADictionary {
 	}
 
 	@Override
-	public String getString(int colIndexes) {
-		return "IdentityMatrix of size: " + nRowCol;
-	}
-
-	@Override
-	public String toString() {
-		return "IdentityMatrix of size: " + nRowCol;
-	}
-
-	@Override
 	public IDictionary scaleTuples(int[] scaling, int nCol) {
 		return getMBDict().scaleTuples(scaling, nCol);
 	}
@@ -541,9 +545,9 @@ public class IdentityDictionary extends ADictionary {
 		/**
 		 * This operations is Essentially a Identity matrix multiplication with a right hand side dense matrix, but we
 		 * need to slice out the right hand side from the input.
-		 * 
+		 *
 		 * ColIndexes specify the rows to slice out of the right matrix.
-		 * 
+		 *
 		 * aggregate columns specify the columns to slice out from the right.
 		 */
 		final int cs = colIndexes.size();
@@ -630,7 +634,8 @@ public class IdentityDictionary extends ADictionary {
 
 	@Override
 	public void multiplyScalar(double v, double[] ret, int off, int dictIdx, IColIndex cols) {
-		getMBDict().multiplyScalar(v, ret, off, dictIdx, cols);
+		if(!withEmpty || dictIdx < nRowCol)
+			ret[off + cols.get(dictIdx)] += v;
 	}
 
 	@Override
@@ -668,15 +673,14 @@ public class IdentityDictionary extends ADictionary {
 	@Override
 	public void MMDictScalingDense(double[] left, IColIndex rowsLeft, IColIndex colsRight, MatrixBlock result,
 		int[] scaling) {
+		// getMBDict().MMDictScalingDense(left, rowsLeft, colsRight, result, scaling);
 		final int leftSide = rowsLeft.size();
 		final int resCols = result.getNumColumns();
-		final int commonDim = Math.min(left.length / leftSide, nRowCol);
 		final double[] resV = result.getDenseBlockValues();
-		for(int i = 0; i < leftSide; i++) {// rows in left side
+		for(int i = 0; i < leftSide; i++) { // rows in left side
 			final int offOut = rowsLeft.get(i) * resCols;
-			final int leftOff = i * leftSide;
-			for(int j = 0; j < commonDim; j++) { // cols in left side skipping empty from identity
-				resV[offOut + colsRight.get(j)] += left[leftOff + j] * scaling[j];
+			for(int j = 0; j < nRowCol; j++) { // cols in right side
+				resV[offOut + colsRight.get(j)] += left[i + j * leftSide] * scaling[j];
 			}
 		}
 	}
@@ -744,6 +748,83 @@ public class IdentityDictionary extends ADictionary {
 	@Override
 	public IDictionary reorder(int[] reorder) {
 		return getMBDict().reorder(reorder);
+	}
+
+	@Override
+	protected IDictionary rightMMPreAggSparseAllColsRight(int numVals, SparseBlock b, IColIndex thisCols,
+		int nColRight) {
+		final int thisColsSize = thisCols.size();
+		final SparseBlockMCSR ret = new SparseBlockMCSR(numVals);
+
+		for(int h = 0; h < thisColsSize; h++) {
+			final int colIdx = thisCols.get(h);
+			if(b.isEmpty(colIdx))
+				continue;
+
+			final double[] sValues = b.values(colIdx);
+			final int[] sIndexes = b.indexes(colIdx);
+
+			final int sPos = b.pos(colIdx);
+			final int sEnd = b.size(colIdx) + sPos;
+			for(int i = sPos; i < sEnd; i++) {
+				ret.add(h, sIndexes[i], sValues[i]);
+			}
+
+		}
+
+		final MatrixBlock retB = new MatrixBlock(numVals, nColRight, -1, ret);
+		retB.recomputeNonZeros();
+		return MatrixBlockDictionary.create(retB, false);
+	}
+
+	@Override
+	protected IDictionary rightMMPreAggSparseSelectedCols(int numVals, SparseBlock b, IColIndex thisCols,
+		IColIndex aggregateColumns) {
+
+		final int thisColsSize = thisCols.size();
+		final int aggColSize = aggregateColumns.size();
+		final SparseBlockMCSR ret = new SparseBlockMCSR(numVals);
+
+		for(int h = 0; h < thisColsSize; h++) {
+			final int colIdx = thisCols.get(h);
+			if(b.isEmpty(colIdx))
+				continue;
+
+			final double[] sValues = b.values(colIdx);
+			final int[] sIndexes = b.indexes(colIdx);
+
+			final int sPos = b.pos(colIdx);
+			final int sEnd = b.size(colIdx) + sPos;
+			int retIdx = 0;
+			for(int i = sPos; i < sEnd; i++) {
+				while(retIdx < aggColSize && aggregateColumns.get(retIdx) < sIndexes[i])
+					retIdx++;
+
+				if(retIdx == aggColSize)
+					break;
+				ret.add(h, retIdx, sValues[i]);
+			}
+
+		}
+
+		final MatrixBlock retB = new MatrixBlock(numVals, aggregateColumns.size(), -1, ret);
+		retB.recomputeNonZeros();
+		return MatrixBlockDictionary.create(retB, false);
+	}
+
+	@Override
+	public IDictionary append(double[] row) {
+		return getMBDict().append(row);
+	}
+
+	@Override
+	public String getString(int colIndexes) {
+		return "IdentityMatrix of size: " + nRowCol + " with empty: " + withEmpty;
+	}
+
+	@Override
+	public String toString() {
+		return "IdentityMatrix of size: " + nRowCol + " with empty: " + withEmpty;
 	}
 
 }

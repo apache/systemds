@@ -58,6 +58,7 @@ public class ColumnEncoderWordEmbedding extends ColumnEncoder {
 	public int getNrDistinctEmbeddings(){
 		return _wordEmbeddings.getNumRows();
 	}
+	
 	protected ColumnEncoderWordEmbedding(int colID) {
 		super(colID);
 	}

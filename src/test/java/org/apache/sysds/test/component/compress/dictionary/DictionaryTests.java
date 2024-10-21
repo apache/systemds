@@ -34,6 +34,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 
+import org.apache.commons.lang3.NotImplementedException;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.runtime.compress.DMLCompressionException;
@@ -42,8 +43,12 @@ import org.apache.sysds.runtime.compress.colgroup.dictionary.DictionaryFactory;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.IDictionary;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.IdentityDictionary;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.MatrixBlockDictionary;
+import org.apache.sysds.runtime.compress.colgroup.indexes.ArrayIndex;
 import org.apache.sysds.runtime.compress.colgroup.indexes.ColIndexFactory;
 import org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex;
+import org.apache.sysds.runtime.compress.colgroup.indexes.RangeIndex;
+import org.apache.sysds.runtime.data.SparseBlock;
+import org.apache.sysds.runtime.data.SparseBlockFactory;
 import org.apache.sysds.runtime.functionobjects.Builtin;
 import org.apache.sysds.runtime.functionobjects.Builtin.BuiltinCode;
 import org.apache.sysds.runtime.functionobjects.Divide;
@@ -126,6 +131,72 @@ public class DictionaryTests {
 					0, 0, 1, //
 					0, 0, 0}),
 				5, 3});
+			tests.add(new Object[] {new IdentityDictionary(4, true), //
+				Dictionary.create(new double[] {//
+					1, 0, 0, 0, //
+					0, 1, 0, 0, //
+					0, 0, 1, 0, //
+					0, 0, 0, 1, //
+					0, 0, 0, 0}).getMBDict(4),
+				5, 4});
+
+			tests.add(new Object[] {new IdentityDictionary(20, false), //
+				MatrixBlockDictionary.create(//
+					new MatrixBlock(20, 20, 20L, //
+						SparseBlockFactory.createIdentityMatrix(20)),
+					false),
+				20, 20});
+
+			tests.add(new Object[] {new IdentityDictionary(20, false), //
+				Dictionary.create(new double[] {//
+					1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, //
+					0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, //
+					0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, //
+					0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, //
+					0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, //
+					0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, //
+					0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, //
+					0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, //
+					0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, //
+					0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, //
+					0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, //
+					0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, //
+					0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, //
+					0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, //
+					0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, //
+					0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, //
+					0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, //
+					0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, //
+					0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, //
+					0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, //
+				}), //
+				20, 20});
+
+			tests.add(new Object[] {new IdentityDictionary(20, true), //
+				Dictionary.create(new double[] {//
+					1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, //
+					0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, //
+					0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, //
+					0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, //
+					0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, //
+					0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, //
+					0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, //
+					0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, //
+					0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, //
+					0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, //
+					0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, //
+					0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, //
+					0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, //
+					0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, //
+					0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, //
+					0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, //
+					0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, //
+					0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, //
+					0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, //
+					0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, //
+					0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, //
+				}), //
+				21, 20});
 
 			create(tests, 30, 300, 0.2);
 		}
@@ -167,6 +238,22 @@ public class DictionaryTests {
 	@Test
 	public void sum() {
 		int[] counts = getCounts(nRow, 1324);
+		double as = a.sum(counts, nCol);
+		double bs = b.sum(counts, nCol);
+		assertEquals(as, bs, 0.0000001);
+	}
+
+	@Test
+	public void sum2() {
+		int[] counts = getCounts(nRow, 124);
+		double as = a.sum(counts, nCol);
+		double bs = b.sum(counts, nCol);
+		assertEquals(as, bs, 0.0000001);
+	}
+
+	@Test
+	public void sum3() {
+		int[] counts = getCounts(nRow, 124444);
 		double as = a.sum(counts, nCol);
 		double bs = b.sum(counts, nCol);
 		assertEquals(as, bs, 0.0000001);
@@ -472,6 +559,11 @@ public class DictionaryTests {
 	}
 
 	@Test
+	public void equalsElOp() {
+		assertEquals(b, a);
+	}
+
+	@Test
 	public void opRightMinus() {
 		BinaryOperator op = new BinaryOperator(Minus.getMinusFnObject());
 		double[] vals = TestUtils.generateTestVector(nCol, -1, 1, 1.0, 132L);
@@ -508,9 +600,16 @@ public class DictionaryTests {
 	}
 
 	private void opRight(BinaryOperator op, double[] vals, IColIndex cols) {
-		IDictionary aa = a.binOpRight(op, vals, cols);
-		IDictionary bb = b.binOpRight(op, vals, cols);
-		compare(aa, bb, nRow, nCol);
+		try {
+
+			IDictionary aa = a.binOpRight(op, vals, cols);
+			IDictionary bb = b.binOpRight(op, vals, cols);
+			compare(aa, bb, nRow, nCol);
+		}
+		catch(Exception e) {
+			e.printStackTrace();
+			fail(e.getMessage());
+		}
 	}
 
 	private void opRight(BinaryOperator op, double[] vals) {
@@ -559,6 +658,44 @@ public class DictionaryTests {
 	}
 
 	@Test
+	public void testAddToEntryRep1() {
+		double[] ret1 = new double[nCol];
+		a.addToEntry(ret1, 0, 0, nCol, 16);
+		double[] ret2 = new double[nCol];
+		b.addToEntry(ret2, 0, 0, nCol, 16);
+		assertTrue(Arrays.equals(ret1, ret2));
+	}
+
+	@Test
+	public void testAddToEntryRep2() {
+		double[] ret1 = new double[nCol * 2];
+		a.addToEntry(ret1, 0, 1, nCol, 3214);
+		double[] ret2 = new double[nCol * 2];
+		b.addToEntry(ret2, 0, 1, nCol, 3214);
+		assertTrue(Arrays.equals(ret1, ret2));
+	}
+
+	@Test
+	public void testAddToEntryRep3() {
+		double[] ret1 = new double[nCol * 3];
+		a.addToEntry(ret1, 0, 2, nCol, 222);
+		double[] ret2 = new double[nCol * 3];
+		b.addToEntry(ret2, 0, 2, nCol, 222);
+		assertTrue(Arrays.equals(ret1, ret2));
+	}
+
+	@Test
+	public void testAddToEntryRep4() {
+		if(a.getNumberOfValues(nCol) > 2) {
+			double[] ret1 = new double[nCol * 3];
+			a.addToEntry(ret1, 2, 2, nCol, 321);
+			double[] ret2 = new double[nCol * 3];
+			b.addToEntry(ret2, 2, 2, nCol, 321);
+			assertTrue(Arrays.equals(ret1, ret2));
+		}
+	}
+
+	@Test
 	public void testAddToEntryVectorized1() {
 		try {
 			double[] ret1 = new double[nCol * 3];
@@ -566,6 +703,37 @@ public class DictionaryTests {
 			double[] ret2 = new double[nCol * 3];
 			b.addToEntryVectorized(ret2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 2, 0, 1, 2, 0, 1, nCol);
 			assertTrue(Arrays.equals(ret1, ret2));
+		}
+		catch(Exception e) {
+			e.printStackTrace();
+			fail(e.getMessage());
+		}
+	}
+
+	@Test
+	public void max() {
+		aggregate(Builtin.getBuiltinFnObject(BuiltinCode.MAX));
+	}
+
+	@Test
+	public void min() {
+		aggregate(Builtin.getBuiltinFnObject(BuiltinCode.MIN));
+	}
+
+	@Test(expected = NotImplementedException.class)
+	public void cMax() {
+		aggregate(Builtin.getBuiltinFnObject(BuiltinCode.CUMMAX));
+		throw new NotImplementedException();
+	}
+
+	private void aggregate(Builtin fn) {
+		try {
+			double aa = a.aggregate(0, fn);
+			double bb = b.aggregate(0, fn);
+			assertEquals(aa, bb, 0.0);
+		}
+		catch(NotImplementedException ee) {
+			throw ee;
 		}
 		catch(Exception e) {
 			e.printStackTrace();
@@ -636,6 +804,11 @@ public class DictionaryTests {
 			b.containsValueWithReference(value, reference));
 	}
 
+	private static void compare(IDictionary a, IDictionary b, int nCol) {
+		assertEquals(a.getNumberOfValues(nCol), b.getNumberOfValues(nCol));
+		compare(a, b, a.getNumberOfValues(nCol), nCol);
+	}
+
 	private static void compare(IDictionary a, IDictionary b, int nRow, int nCol) {
 		try {
 			if(a == null && b == null)
@@ -645,8 +818,15 @@ public class DictionaryTests {
 			else {
 				String errorM = a.getClass().getSimpleName() + " " + b.getClass().getSimpleName();
 				for(int i = 0; i < nRow; i++)
-					for(int j = 0; j < nCol; j++)
-						assertEquals(errorM, a.getValue(i, j, nCol), b.getValue(i, j, nCol), 0.0001);
+					for(int j = 0; j < nCol; j++) {
+						double aa = a.getValue(i, j, nCol);
+						double bb = b.getValue(i, j, nCol);
+						boolean eq = Math.abs(aa - bb) < 0.0001;
+						if(!eq) {
+							assertEquals(errorM + " cell:<" + i + "," + j + ">", a.getValue(i, j, nCol),
+								b.getValue(i, j, nCol), 0.0001);
+						}
+					}
 			}
 		}
 		catch(Exception e) {
@@ -673,6 +853,304 @@ public class DictionaryTests {
 			e.printStackTrace();
 			fail(e.getMessage());
 		}
+	}
+
+	@Test
+	public void rightMMPreAggSparse() {
+		final int nColsOut = 30;
+		MatrixBlock sparse = TestUtils.generateTestMatrixBlock(1000, nColsOut, -10, 10, 0.1, 100);
+		sparse = TestUtils.ceil(sparse);
+		sparse.denseToSparse(true);
+		SparseBlock sb = sparse.getSparseBlock();
+		if(sb == null)
+			throw new NotImplementedException();
+
+		IColIndex agCols = new RangeIndex(nColsOut);
+		IColIndex thisCols = new RangeIndex(0, nCol);
+
+		int nVals = a.getNumberOfValues(nCol);
+		try {
+
+			IDictionary aa = a.rightMMPreAggSparse(nVals, sb, thisCols, agCols, nColsOut);
+			IDictionary bb = b.rightMMPreAggSparse(nVals, sb, thisCols, agCols, nColsOut);
+			compare(aa, bb, nColsOut);
+		}
+		catch(Exception e) {
+			e.printStackTrace();
+			fail(e.getMessage());
+		}
+
+	}
+
+	@Test
+	public void rightMMPreAggSparse2() {
+		final int nColsOut = 1000;
+		MatrixBlock sparse = TestUtils.generateTestMatrixBlock(1000, nColsOut, -10, 10, 0.01, 100);
+		sparse = TestUtils.ceil(sparse);
+		sparse.denseToSparse(true);
+		SparseBlock sb = sparse.getSparseBlock();
+		if(sb == null)
+			throw new NotImplementedException();
+
+		IColIndex agCols = new RangeIndex(nColsOut);
+		IColIndex thisCols = new RangeIndex(0, nCol);
+
+		int nVals = a.getNumberOfValues(nCol);
+		try {
+
+			IDictionary aa = a.rightMMPreAggSparse(nVals, sb, thisCols, agCols, nColsOut);
+			IDictionary bb = b.rightMMPreAggSparse(nVals, sb, thisCols, agCols, nColsOut);
+			compare(aa, bb, nColsOut);
+		}
+		catch(Exception e) {
+			e.printStackTrace();
+			fail(e.getMessage());
+		}
+
+	}
+
+	@Test
+	public void rightMMPreAggSparseDifferentColumns() {
+		final int nColsOut = 3;
+		MatrixBlock sparse = TestUtils.generateTestMatrixBlock(1000, 50, -10, 10, 0.1, 100);
+		sparse = TestUtils.ceil(sparse);
+		sparse.denseToSparse(true);
+		SparseBlock sb = sparse.getSparseBlock();
+		if(sb == null)
+			throw new NotImplementedException();
+
+		IColIndex agCols = new ArrayIndex(new int[] {4, 10, 38});
+		IColIndex thisCols = new RangeIndex(0, nCol);
+
+		int nVals = a.getNumberOfValues(nCol);
+		try {
+
+			IDictionary aa = a.rightMMPreAggSparse(nVals, sb, thisCols, agCols, 50);
+			IDictionary bb = b.rightMMPreAggSparse(nVals, sb, thisCols, agCols, 50);
+			compare(aa, bb, nColsOut);
+		}
+		catch(Exception e) {
+			e.printStackTrace();
+			fail(e.getMessage());
+		}
+
+	}
+
+	@Test
+	public void MMDictScalingDense() {
+		double[] left = TestUtils.ceil(TestUtils.generateTestVector(a.getNumberOfValues(nCol) * 3, -10, 10, 1.0, 3214));
+		IColIndex rowsLeft = ColIndexFactory.createI(1, 2, 3);
+		IColIndex colsRight = ColIndexFactory.create(0, nCol);
+		int[] scaling = new int[a.getNumberOfValues(nCol)];
+		for(int i = 0; i < a.getNumberOfValues(nCol); i++)
+			scaling[i] = i + 1;
+
+		try {
+
+			MatrixBlock retA = new MatrixBlock(5, nCol, 0);
+			retA.allocateDenseBlock();
+			a.MMDictScalingDense(left, rowsLeft, colsRight, retA, scaling);
+
+			MatrixBlock retB = new MatrixBlock(5, nCol, 0);
+			retB.allocateDenseBlock();
+			b.MMDictScalingDense(left, rowsLeft, colsRight, retB, scaling);
+
+			TestUtils.compareMatricesBitAvgDistance(retA, retB, 10, 10);
+		}
+		catch(Exception e) {
+
+			e.printStackTrace();
+			fail(e.getMessage());
+		}
+	}
+
+	@Test
+	public void MMDictScalingDenseOffset() {
+		double[] left = TestUtils.generateTestVector(a.getNumberOfValues(nCol) * 3, -10, 10, 1.0, 3214);
+		IColIndex rowsLeft = ColIndexFactory.createI(1, 2, 3);
+		IColIndex colsRight = ColIndexFactory.create(3, nCol + 3);
+		int[] scaling = new int[a.getNumberOfValues(nCol)];
+		for(int i = 0; i < a.getNumberOfValues(nCol); i++)
+			scaling[i] = i;
+
+		try {
+
+			MatrixBlock retA = new MatrixBlock(5, nCol + 3, 0);
+			retA.allocateDenseBlock();
+			a.MMDictScalingDense(left, rowsLeft, colsRight, retA, scaling);
+
+			MatrixBlock retB = new MatrixBlock(5, nCol + 3, 0);
+			retB.allocateDenseBlock();
+			b.MMDictScalingDense(left, rowsLeft, colsRight, retB, scaling);
+
+			TestUtils.compareMatricesBitAvgDistance(retA, retB, 10, 10);
+		}
+		catch(Exception e) {
+
+			e.printStackTrace();
+			fail(e.getMessage());
+		}
+	}
+
+	@Test
+	public void MMDictDense() {
+		double[] left = TestUtils.ceil(TestUtils.generateTestVector(a.getNumberOfValues(nCol) * 3, -10, 10, 1.0, 3214));
+		IColIndex rowsLeft = ColIndexFactory.createI(1, 2, 3);
+		IColIndex colsRight = ColIndexFactory.create(0, nCol);
+
+		try {
+
+			MatrixBlock retA = new MatrixBlock(5, nCol, 0);
+			retA.allocateDenseBlock();
+			a.MMDictDense(left, rowsLeft, colsRight, retA);
+
+			MatrixBlock retB = new MatrixBlock(5, nCol, 0);
+			retB.allocateDenseBlock();
+			b.MMDictDense(left, rowsLeft, colsRight, retB);
+
+			TestUtils.compareMatricesBitAvgDistance(retA, retB, 10, 10);
+		}
+		catch(Exception e) {
+
+			e.printStackTrace();
+			fail(e.getMessage());
+		}
+	}
+
+	@Test
+	public void MMDictDenseOffset() {
+		double[] left = TestUtils.generateTestVector(a.getNumberOfValues(nCol) * 3, -10, 10, 1.0, 3214);
+		IColIndex rowsLeft = ColIndexFactory.createI(1, 2, 3);
+		IColIndex colsRight = ColIndexFactory.create(3, nCol + 3);
+
+		try {
+
+			MatrixBlock retA = new MatrixBlock(5, nCol + 3, 0);
+			retA.allocateDenseBlock();
+			a.MMDictDense(left, rowsLeft, colsRight, retA);
+
+			MatrixBlock retB = new MatrixBlock(5, nCol + 3, 0);
+			retB.allocateDenseBlock();
+			b.MMDictDense(left, rowsLeft, colsRight, retB);
+
+			TestUtils.compareMatricesBitAvgDistance(retA, retB, 10, 10);
+		}
+		catch(Exception e) {
+
+			e.printStackTrace();
+			fail(e.getMessage());
+		}
+	}
+
+	@Test
+	public void sumAllRowsToDouble() {
+		double[] aa = a.sumAllRowsToDouble(nCol);
+		double[] bb = b.sumAllRowsToDouble(nCol);
+		TestUtils.compareMatrices(aa, bb, 0.001);
+	}
+
+	@Test
+	public void sumAllRowsToDoubleWithDefault() {
+		double[] def = TestUtils.generateTestVector(nCol, 1, 10, 1.0, 3215213);
+		double[] aa = a.sumAllRowsToDoubleWithDefault(def);
+		double[] bb = b.sumAllRowsToDoubleWithDefault(def);
+		TestUtils.compareMatrices(aa, bb, 0.001);
+	}
+
+	@Test
+	public void sumAllRowsToDoubleWithReference() {
+		double[] def = TestUtils.generateTestVector(nCol, 1, 10, 1.0, 3215213);
+		double[] aa = a.sumAllRowsToDoubleWithReference(def);
+		double[] bb = b.sumAllRowsToDoubleWithReference(def);
+		TestUtils.compareMatrices(aa, bb, 0.001);
+	}
+
+	@Test
+	public void sumAllRowsToDoubleSq() {
+		double[] aa = a.sumAllRowsToDoubleSq(nCol);
+		double[] bb = b.sumAllRowsToDoubleSq(nCol);
+		TestUtils.compareMatrices(aa, bb, 0.001);
+	}
+
+	@Test
+	public void sumAllRowsToDoubleSqWithDefault() {
+		double[] def = TestUtils.generateTestVector(nCol, 1, 10, 1.0, 3215213);
+		double[] aa = a.sumAllRowsToDoubleSqWithDefault(def);
+		double[] bb = b.sumAllRowsToDoubleSqWithDefault(def);
+		TestUtils.compareMatrices(aa, bb, 0.001);
+	}
+
+	@Test
+	public void sumAllRowsToDoubleSqWithReference() {
+		double[] def = TestUtils.generateTestVector(nCol, 1, 10, 1.0, 3215213);
+		double[] aa = a.sumAllRowsToDoubleSqWithReference(def);
+		double[] bb = b.sumAllRowsToDoubleSqWithReference(def);
+		TestUtils.compareMatrices(aa, bb, 0.001);
+	}
+
+	@Test
+	public void aggColsMin() {
+		IColIndex cols = ColIndexFactory.create(2, nCol + 2);
+		Builtin m = Builtin.getBuiltinFnObject(BuiltinCode.MIN);
+
+		double[] aa = new double[nCol + 3];
+		a.aggregateCols(aa, m, cols);
+		double[] bb = new double[nCol + 3];
+		b.aggregateCols(bb, m, cols);
+
+		TestUtils.compareMatrices(aa, bb, 0.001);
+	}
+
+	@Test
+	public void aggColsMax() {
+		IColIndex cols = ColIndexFactory.create(2, nCol + 2);
+		Builtin m = Builtin.getBuiltinFnObject(BuiltinCode.MAX);
+
+		double[] aa = new double[nCol + 3];
+		a.aggregateCols(aa, m, cols);
+		double[] bb = new double[nCol + 3];
+		b.aggregateCols(bb, m, cols);
+
+		TestUtils.compareMatrices(aa, bb, 0.001);
+	}
+
+	@Test
+	public void getValue() {
+		int nCell = nCol * a.getNumberOfValues(nCol);
+		for(int i = 0; i < nCell; i++)
+			assertEquals(a.getValue(i), b.getValue(i), 0.0000);
+	}
+
+	@Test
+	public void colSum() {
+		IColIndex cols = ColIndexFactory.create(2, nCol + 2);
+		int[] counts = new int[a.getNumberOfValues(nCol)];
+		for(int i = 0; i < counts.length; i++) {
+			counts[i] = i + 1;
+		}
+
+		double[] aa = new double[nCol + 3];
+		a.colSum(aa, counts, cols);
+		double[] bb = new double[nCol + 3];
+		b.colSum(bb, counts, cols);
+
+		TestUtils.compareMatrices(aa, bb, 0.001);
+	}
+
+	@Test
+	public void colProduct() {
+		IColIndex cols = ColIndexFactory.create(2, nCol + 2);
+		int[] counts = new int[a.getNumberOfValues(nCol)];
+		for(int i = 0; i < counts.length; i++) {
+			counts[i] = i + 1;
+		}
+
+		double[] aa = new double[nCol + 3];
+		a.colProduct(aa, counts, cols);
+		double[] bb = new double[nCol + 3];
+		b.colProduct(bb, counts, cols);
+
+		TestUtils.compareMatrices(aa, bb, 0.001);
 	}
 
 	public void productWithDefault(double retV, double[] def) {

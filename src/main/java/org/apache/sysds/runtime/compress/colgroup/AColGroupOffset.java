@@ -142,4 +142,9 @@ public abstract class AColGroupOffset extends APreAgg {
 	public boolean containZerosTuples() {
 		return _zeros;
 	}
+
+	@Override
+	protected boolean allowShallowIdentityRightMult() {
+		return true;
+	}
 }

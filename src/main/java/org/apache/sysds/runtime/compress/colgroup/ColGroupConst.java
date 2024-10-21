@@ -21,6 +21,7 @@ package org.apache.sysds.runtime.compress.colgroup;
 
 import java.io.DataInput;
 import java.io.IOException;
+import java.util.List;
 
 import org.apache.commons.lang3.NotImplementedException;
 import org.apache.sysds.runtime.compress.DMLCompressionException;
@@ -46,6 +47,7 @@ import org.apache.sysds.runtime.compress.estim.encoding.IEncode;
 import org.apache.sysds.runtime.compress.lib.CLALibLeftMultBy;
 import org.apache.sysds.runtime.data.DenseBlock;
 import org.apache.sysds.runtime.data.SparseBlock;
+import org.apache.sysds.runtime.data.SparseBlockMCSR;
 import org.apache.sysds.runtime.functionobjects.Builtin;
 import org.apache.sysds.runtime.instructions.cp.CM_COV_Object;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
@@ -637,7 +639,7 @@ public class ColGroupConst extends ADictBasedColGroup implements IContainDefault
 		sb.append(_dict.getString(_colIndexes.size()));
 		return sb.toString();
 	}
-	
+
 	@Override
 	public AOffset getOffsets() {
 		return new OffsetEmpty();
@@ -649,6 +651,11 @@ public class ColGroupConst extends ADictBasedColGroup implements IContainDefault
 	}
 
 	@Override
+	public double getSparsity() {
+		return 1.0;
+	}
+	
+	@Override
 	protected void sparseSelection(MatrixBlock selection, P[] points, MatrixBlock ret, int rl, int ru) {
 		throw new NotImplementedException();
 	}
@@ -658,4 +665,94 @@ public class ColGroupConst extends ADictBasedColGroup implements IContainDefault
 		throw new NotImplementedException();
 	}
 
+	protected void decompressToDenseBlockTransposedSparseDictionary(DenseBlock db, int rl, int ru, SparseBlock sb) {
+		// guaranteed to be containing some values therefore no check for empty.
+		final int apos = sb.pos(0);
+		final int alen = sb.size(0);
+		final int[] aix = sb.indexes(0);
+		final double[] avals = sb.values(0);
+
+		for(int j = apos; j < alen; j++) {
+			final int rowOut = _colIndexes.get(aix[j]);
+			final double[] c = db.values(rowOut);
+			final int off = db.pos(rowOut); // row offset out.
+			final double v = avals[j];
+			for(int i = rl; i < ru; i++)
+				c[off + i] += v;
+		}
+	}
+
+	@Override
+	protected void decompressToDenseBlockTransposedDenseDictionary(DenseBlock db, int rl, int ru, double[] dict) {
+		for(int j = 0; j < _colIndexes.size(); j++) {
+			final int rowOut = _colIndexes.get(j);
+			final double[] c = db.values(rowOut);
+			final int off = db.pos(rowOut);
+			double v = dict[j];
+			for(int i = rl; i < ru; i++) {
+				c[off + i] += v;
+			}
+		}
+	}
+
+	@Override
+	protected void decompressToSparseBlockTransposedSparseDictionary(SparseBlockMCSR db, SparseBlock sb, int nColOut) {
+		throw new NotImplementedException();
+	}
+
+	@Override
+	protected void decompressToSparseBlockTransposedDenseDictionary(SparseBlockMCSR db, double[] dict, int nColOut) {
+		throw new NotImplementedException();
+	}
+
+	@Override
+	public AColGroup combineWithSameIndex(int nRow, int nCol, AColGroup right) {
+		if(!(right instanceof ColGroupConst))
+			return super.combineWithSameIndex(nRow, nCol, right);
+
+		final IColIndex combIndex = _colIndexes.combine(right.getColIndices().shift(nCol));
+		final IDictionary b = ((ColGroupConst) right).getDictionary();
+		final IDictionary combined = DictionaryFactory.cBindDictionaries(_dict, b, this.getNumCols(), right.getNumCols());
+		return create(combIndex, combined);
+
+	}
+
+	@Override
+	public AColGroup[] splitReshape(int multiplier, int nRow, int nColOrg) {
+		final int s = _colIndexes.size();
+		final int[] newColumns = new int[s * multiplier];
+		final double[] newConst = new double[s * multiplier];
+		final double[] vals = _dict.getValues();
+		for(int i = 0; i < multiplier; i++) {
+			for(int j = 0; j < s; j++)
+				newColumns[i * s + j] = _colIndexes.get(j) + nColOrg * i;
+			System.arraycopy(vals, 0, newConst, s * i, s);
+		}
+		return new AColGroup[] {create(ColIndexFactory.create(newColumns), newConst)};
+	}
+
+	@Override
+	public AColGroup combineWithSameIndex(int nRow, int nCol, List<AColGroup> right) {
+		for(int i = 0; i < right.size(); i++) {
+			AColGroup g = right.get(i);
+
+			if(!(g instanceof ColGroupConst) || !(g instanceof ColGroupEmpty)) {
+				return super.combineWithSameIndex(nRow, nCol, right);
+			}
+		}
+		IColIndex combinedIndex = _colIndexes;
+		int i = 0;
+		for(AColGroup g : right) {
+			i += 1;
+			combinedIndex = combinedIndex.combine(g.getColIndices().shift(nCol * i));
+		}
+		final IDictionary combined = combineDictionaries(nCol, right);
+
+		return create(combinedIndex, combined);
+	}
+	
+	@Override
+	protected boolean allowShallowIdentityRightMult() {
+		return true;
+	}
 }

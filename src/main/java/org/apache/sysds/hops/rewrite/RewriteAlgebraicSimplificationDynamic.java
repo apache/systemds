@@ -2019,35 +2019,35 @@ public class RewriteAlgebraicSimplificationDynamic extends HopRewriteRule
 			}
 		}
 		
-		//Pattern 7) (W*(U%*%t(V)))
-		if( !appliedPattern
-			&& HopRewriteUtils.isBinary(hi, LOOKUP_VALID_WDIVMM_BINARY[0]) //MULT	
-			&& HopRewriteUtils.isEqualSize(hi.getInput().get(0), hi.getInput().get(1)) //prevent mv
-			&& hi.getDim2() > 1 //not applied for vector-vector mult
-			&& hi.getInput().get(0).getDataType() == DataType.MATRIX 
-			&& hi.getInput().get(0).getDim2() > hi.getInput().get(0).getBlocksize()
-			&& HopRewriteUtils.isOuterProductLikeMM(hi.getInput().get(1))
-			&& (((AggBinaryOp) hi.getInput().get(1)).checkMapMultChain() == ChainType.NONE || hi.getInput().get(1).getInput().get(1).getDim2() > 1) //no mmchain
-			&& HopRewriteUtils.isSingleBlock(hi.getInput().get(1).getInput().get(0),true) ) //BLOCKSIZE CONSTRAINT
-		{
-			Hop W = hi.getInput().get(0); 
-			Hop U = hi.getInput().get(1).getInput().get(0);
-			Hop V = hi.getInput().get(1).getInput().get(1);
+		// //Pattern 7) (W*(U%*%t(V)))
+		// if( !appliedPattern
+		// 	&& HopRewriteUtils.isBinary(hi, LOOKUP_VALID_WDIVMM_BINARY[0]) //MULT	
+		// 	&& HopRewriteUtils.isEqualSize(hi.getInput().get(0), hi.getInput().get(1)) //prevent mv
+		// 	&& hi.getDim2() > 1 //not applied for vector-vector mult
+		// 	&& hi.getInput().get(0).getDataType() == DataType.MATRIX 
+		// 	&& hi.getInput().get(0).getDim2() > hi.getInput().get(0).getBlocksize()
+		// 	&& HopRewriteUtils.isOuterProductLikeMM(hi.getInput().get(1))
+		// 	&& (((AggBinaryOp) hi.getInput().get(1)).checkMapMultChain() == ChainType.NONE || hi.getInput().get(1).getInput().get(1).getDim2() > 1) //no mmchain
+		// 	&& HopRewriteUtils.isSingleBlock(hi.getInput().get(1).getInput().get(0),true) ) //BLOCKSIZE CONSTRAINT
+		// {
+		// 	Hop W = hi.getInput().get(0); 
+		// 	Hop U = hi.getInput().get(1).getInput().get(0);
+		// 	Hop V = hi.getInput().get(1).getInput().get(1);
 			
-			//for this basic pattern, we're more conservative and only apply wdivmm if
-			//W is sparse and U/V unknown or dense; or if U/V are dense
-			if( (HopRewriteUtils.isSparse(W) && !HopRewriteUtils.isSparse(U) && !HopRewriteUtils.isSparse(V))
-				|| (HopRewriteUtils.isDense(U) && HopRewriteUtils.isDense(V)) ) {
-				V = !HopRewriteUtils.isTransposeOperation(V) ?
-					HopRewriteUtils.createTranspose(V) : V.getInput().get(0);
-				hnew = new QuaternaryOp(hi.getName(), DataType.MATRIX, ValueType.FP64, 
-					OpOp4.WDIVMM, W, U, V, new LiteralOp(-1), 0, true, false);
-				hnew.setBlocksize(W.getBlocksize());
-				hnew.refreshSizeInformation();
-				appliedPattern = true;
-				LOG.debug("Applied simplifyWeightedDivMM7 (line "+hi.getBeginLine()+")");
-			}
-		}
+		// 	//for this basic pattern, we're more conservative and only apply wdivmm if
+		// 	//W is sparse and U/V unknown or dense; or if U/V are dense
+		// 	if( (HopRewriteUtils.isSparse(W) && !HopRewriteUtils.isSparse(U) && !HopRewriteUtils.isSparse(V))
+		// 		|| ( HopRewriteUtils.isDense(U) && HopRewriteUtils.isDense(V)) ) {
+		// 		V = !HopRewriteUtils.isTransposeOperation(V) ?
+		// 			HopRewriteUtils.createTranspose(V) : V.getInput().get(0);
+		// 		hnew = new QuaternaryOp(hi.getName(), DataType.MATRIX, ValueType.FP64, 
+		// 			OpOp4.WDIVMM, W, U, V, new LiteralOp(-1), 0, true, false);
+		// 		hnew.setBlocksize(W.getBlocksize());
+		// 		hnew.refreshSizeInformation();
+		// 		appliedPattern = true;
+		// 		LOG.debug("Applied simplifyWeightedDivMM7 (line "+hi.getBeginLine()+")");
+		// 	}
+		// }
 		
 		//relink new hop into original position
 		if( hnew != null ) {

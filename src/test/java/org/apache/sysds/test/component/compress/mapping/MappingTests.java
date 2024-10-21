@@ -20,6 +20,8 @@
 package org.apache.sysds.test.component.compress.mapping;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 import java.io.ByteArrayInputStream;
@@ -38,9 +40,11 @@ import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.runtime.compress.CompressedMatrixBlock;
 import org.apache.sysds.runtime.compress.colgroup.IMapToDataGroup;
 import org.apache.sysds.runtime.compress.colgroup.mapping.AMapToData;
+import org.apache.sysds.runtime.compress.colgroup.mapping.MapToBit;
 import org.apache.sysds.runtime.compress.colgroup.mapping.MapToCharPByte;
 import org.apache.sysds.runtime.compress.colgroup.mapping.MapToFactory;
 import org.apache.sysds.runtime.compress.colgroup.mapping.MapToFactory.MAP_TYPE;
+import org.apache.sysds.runtime.compress.colgroup.offset.OffsetFactory;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
@@ -93,7 +97,7 @@ public class MappingTests {
 		this.seed = seed;
 		this.type = type;
 		this.size = size;
-		this.max = Math.min(Math.min(MappingTestUtil.getUpperBoundValue(type), fictiveMax) + 1, size);
+		this.max = Math.min(Math.min(MappingTestUtil.getUpperBoundValue(type), fictiveMax) + 1 , size);
 		expected = new int[size];
 		m = genMap(MapToFactory.create(size, max), expected, max, fill, seed);
 	}
@@ -213,7 +217,7 @@ public class MappingTests {
 	@Test
 	public void resizeToSameSize() {
 		// if we resize to same size return the same object!
-		AMapToData m_same = m.resize( m.getUnique());
+		AMapToData m_same = m.resize(m.getUnique());
 		assertEquals("Resize did not return the correct same objects", m_same, m);
 	}
 
@@ -349,6 +353,38 @@ public class MappingTests {
 		}
 		LOG.error("Did not throw exception with: " + m);
 	}
+
+	@Test
+	public void toStringTest() {
+		String s = m.toString();
+		assertTrue(s.contains(Arrays.toString(expected)));
+	}
+
+	@Test 
+	public void isEmpty(){
+		assertFalse(m instanceof MapToBit && ((MapToBit) m).isEmpty());
+	}
+
+
+	@Test 
+	public void countRunsWith1Offsets(){
+		try{
+
+			assertEquals(m.toString(), m.countRuns(), m.countRuns(OffsetFactory.createOffset(createInt(m.size()))));
+		}
+		catch(Exception e){
+			e.printStackTrace();
+			fail(e.getMessage());
+		}
+	}
+
+	private int[] createInt(int size){
+		int[] r = new int[size];
+		for(int i = 0; i < size; i++)
+			r[i] = i;
+		return r;
+	}
+
 
 	private static class Holder implements IMapToDataGroup {
 

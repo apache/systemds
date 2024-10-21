@@ -61,13 +61,11 @@ public class CustomColGroupTest {
 		AColGroup e = new ColGroupEmpty(i);
 		AColGroup s = ColGroupSDCSingleZeros.create(i, 10, new PlaceHolderDict(1),
 			OffsetFactory.createOffset(new int[] {5, 10}), null);
-
 		AColGroup r = AColGroup.appendN(new AColGroup[] {e, s, e, e, s, s, e}, 20, 7 * 20);
 
 		assertTrue(r instanceof ColGroupSDCSingleZeros);
 		assertEquals(r.getColIndices(), i);
 		assertEquals(((ColGroupSDCSingleZeros) r).getNumRows(), 7 * 20);
-
 	}
 
 	@Test(expected = NotImplementedException.class)
@@ -77,7 +75,7 @@ public class CustomColGroupTest {
 			Dictionary.create(new double[] {1, 2, 3, 4, 5, 6, 7, 8, 9}),
 			MapToFactory.create(new int[] {0, 0, 0, 1, 1, 1, 2, 2, 2}, 3), null);
 
-		((ColGroupDDC)g).preAggregateSparse(null, null, 0, 3, 1, 2);
+		((ColGroupDDC) g).preAggregateSparse(null, null, 0, 3, 1, 2);
 
 	}
 }

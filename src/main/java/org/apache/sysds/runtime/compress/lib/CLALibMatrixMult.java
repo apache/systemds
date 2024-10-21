@@ -41,7 +41,7 @@ public final class CLALibMatrixMult {
 
 	public static MatrixBlock matrixMultiply(MatrixBlock m1, MatrixBlock m2, MatrixBlock ret,
 		int k, boolean transposeLeft, boolean transposeRight) {
-
+			
 		if(m1 instanceof CompressedMatrixBlock && m2 instanceof CompressedMatrixBlock) {
 			return doubleCompressedMatrixMultiply((CompressedMatrixBlock) m1, (CompressedMatrixBlock) m2, ret,
 				k, transposeLeft, transposeRight);

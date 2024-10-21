@@ -23,6 +23,7 @@ import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
 import java.util.Arrays;
+import java.util.List;
 
 import org.apache.commons.lang3.NotImplementedException;
 import org.apache.sysds.runtime.DMLRuntimeException;
@@ -113,6 +114,11 @@ public class ColGroupDDCFOR extends AMorphingMMColGroup implements IFrameOfRefer
 
 	public CompressionType getCompType() {
 		return CompressionType.DDCFOR;
+	}
+
+	@Override
+	public double[] getDefaultTuple() {
+		return _reference;
 	}
 
 	@Override
@@ -518,6 +524,45 @@ public class ColGroupDDCFOR extends AMorphingMMColGroup implements IFrameOfRefer
 			final int rowCompressed = sb.indexes(r)[sPos];
 			decompressToDenseBlock(retB, rowCompressed, rowCompressed + 1, r - rowCompressed, 0);
 		}
+	}
+
+	@Override
+	public AColGroup combineWithSameIndex(int nRow, int nCol, List<AColGroup> right) {
+		final IDictionary combined = combineDictionaries(nCol, right);
+		final IColIndex combinedColIndex = combineColIndexes(nCol, right);
+		final double[] combinedReference = IContainDefaultTuple.combineDefaultTuples(_reference, right);
+
+		return ColGroupDDCFOR.create(combinedColIndex, combined, _data, getCachedCounts(), combinedReference);
+	}
+
+	@Override
+	public AColGroup combineWithSameIndex(int nRow, int nCol, AColGroup right) {
+		IDictionary b = ((ColGroupDDCFOR) right).getDictionary();
+		IDictionary combined = DictionaryFactory.cBindDictionaries(_dict, b, this.getNumCols(), right.getNumCols());
+		IColIndex combinedColIndex = _colIndexes.combine(right.getColIndices().shift(nCol));
+		double[] combinedReference = new double[_reference.length + right.getNumCols()];
+		System.arraycopy(_reference, 0, combinedReference, 0, _reference.length);
+		double[] rightReference = ((ColGroupDDCFOR) right).getDefaultTuple();
+		System.arraycopy(rightReference, 0, combinedReference, _reference.length, rightReference.length);
+
+		return ColGroupDDCFOR.create(combinedColIndex, combined, _data, getCachedCounts(), combinedReference);
+	}
+
+	@Override
+	public AColGroup[] splitReshape(int multiplier, int nRow, int nColOrg) {
+		AMapToData[] maps = _data.splitReshapeDDC(multiplier);
+		AColGroup[] res = new AColGroup[multiplier];
+		for(int i = 0; i < multiplier; i++) {
+			final IColIndex ci = i == 0 ? _colIndexes : _colIndexes.shift(i * nColOrg);
+			res[i] = create(ci, _dict, maps[i], null, _reference);
+		}
+
+		return res;
+	}
+
+	@Override
+	protected boolean allowShallowIdentityRightMult() {
+		return false;
 	}
 
 	@Override

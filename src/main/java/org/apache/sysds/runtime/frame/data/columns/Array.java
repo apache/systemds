@@ -246,11 +246,6 @@ public abstract class Array<T> implements Writable {
 	 */
 	public abstract void set(int rl, int ru, Array<T> value);
 
-	// {
-	// for(int i = rl; i <= ru; i++)
-	// set(i, value.get(i));
-	// }
-
 	/**
 	 * Set range to given arrays value with an offset into other array
 	 * 

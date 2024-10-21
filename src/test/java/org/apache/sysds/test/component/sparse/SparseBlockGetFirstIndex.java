@@ -19,14 +19,9 @@
 
 package org.apache.sysds.test.component.sparse;
 
-import org.apache.sysds.runtime.data.SparseBlockDCSR;
+import org.apache.sysds.runtime.data.*;
 import org.junit.Assert;
 import org.junit.Test;
-import org.apache.sysds.runtime.data.SparseBlock;
-import org.apache.sysds.runtime.data.SparseBlockCOO;
-import org.apache.sysds.runtime.data.SparseBlockCSR;
-import org.apache.sysds.runtime.data.SparseBlockMCSR;
-import org.apache.sysds.runtime.data.SparseBlockMCSC;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.util.DataConverter;
 import org.apache.sysds.test.AutomatedTestBase;
@@ -281,6 +276,51 @@ public class SparseBlockGetFirstIndex extends AutomatedTestBase
 	public void testSparseBlockMCSC3LTE()  {
 		runSparseBlockGetFirstIndexTest(SparseBlock.Type.MCSC, sparsity3, IndexType.LTE);
 	}
+
+	@Test
+	public void testSparseBlockCSC1GT()  {
+		runSparseBlockGetFirstIndexTest(SparseBlock.Type.CSC, sparsity1, IndexType.GT);
+	}
+
+	@Test
+	public void testSparseBlockCSC2GT()  {
+		runSparseBlockGetFirstIndexTest(SparseBlock.Type.CSC, sparsity2, IndexType.GT);
+	}
+
+	@Test
+	public void testSparseBlockCSC3GT()  {
+		runSparseBlockGetFirstIndexTest(SparseBlock.Type.CSC, sparsity3, IndexType.GT);
+	}
+
+	@Test
+	public void testSparseBlockCSC1GTE()  {
+		runSparseBlockGetFirstIndexTest(SparseBlock.Type.CSC, sparsity1, IndexType.GTE);
+	}
+
+	@Test
+	public void testSparseBlockCSC2GTE()  {
+		runSparseBlockGetFirstIndexTest(SparseBlock.Type.CSC, sparsity2, IndexType.GTE);
+	}
+
+	@Test
+	public void testSparseBlockCSC3GTE()  {
+		runSparseBlockGetFirstIndexTest(SparseBlock.Type.CSC, sparsity3, IndexType.GTE);
+	}
+
+	@Test
+	public void testSparseBlockCSC1LTE()  {
+		runSparseBlockGetFirstIndexTest(SparseBlock.Type.CSC, sparsity1, IndexType.LTE);
+	}
+
+	@Test
+	public void testSparseBlockCSC2LTE()  {
+		runSparseBlockGetFirstIndexTest(SparseBlock.Type.CSC, sparsity2, IndexType.LTE);
+	}
+
+	@Test
+	public void testSparseBlockCSC3LTE()  {
+		runSparseBlockGetFirstIndexTest(SparseBlock.Type.CSC, sparsity3, IndexType.LTE);
+	}
 	
 	private void runSparseBlockGetFirstIndexTest( SparseBlock.Type btype, double sparsity, IndexType itype)
 	{
@@ -308,6 +348,9 @@ public class SparseBlockGetFirstIndex extends AutomatedTestBase
 					break;
 				case MCSC:
 					sblock = new SparseBlockMCSC(srtmp, cols);
+					break;
+				case CSC:
+					sblock = new SparseBlockCSC(srtmp, cols);
 					break;
 			}
 

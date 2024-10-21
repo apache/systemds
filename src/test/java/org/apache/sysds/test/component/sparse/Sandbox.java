@@ -54,8 +54,9 @@ public class Sandbox extends AutomatedTestBase {
 			//newBlock.deleteIndexRange(2, 2, 6);
 
 
-			double[] v = {0, 5, 6, 7};
-			newBlock.setIndexRange(3,1,4,v,1,3);
+			double[] v = {0, 1, 5, 6, 7, 8};
+			int[] vix = {0, 1, 1, 2, 3, 2};
+			newBlock.setIndexRangeCol(0,1,4, v,2,3);
 			//System.out.println(newBlock.size());
 
 

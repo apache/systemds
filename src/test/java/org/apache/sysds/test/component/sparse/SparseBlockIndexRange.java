@@ -206,6 +206,36 @@ public class SparseBlockIndexRange extends AutomatedTestBase
 	public void testSparseBlockMCSC3Insert()  {
 		runSparseBlockIndexRangeTest(SparseBlock.Type.MCSC, sparsity3, UpdateType.INSERT);
 	}
+
+	@Test
+	public void testSparseBlockCSC1Delete()  {
+		runSparseBlockIndexRangeTest(SparseBlock.Type.CSC, sparsity1, UpdateType.DELETE);
+	}
+
+	@Test
+	public void testSparseBlockCSC2Delete()  {
+		runSparseBlockIndexRangeTest(SparseBlock.Type.CSC, sparsity2, UpdateType.DELETE);
+	}
+
+	@Test
+	public void testSparseBlockCSC3Delete()  {
+		runSparseBlockIndexRangeTest(SparseBlock.Type.CSC, sparsity3, UpdateType.DELETE);
+	}
+
+	@Test
+	public void testSparseBlockCSC1Insert()  {
+		runSparseBlockIndexRangeTest(SparseBlock.Type.CSC, sparsity1, UpdateType.INSERT);
+	}
+
+	@Test
+	public void testSparseBlockCSC2Insert()  {
+		runSparseBlockIndexRangeTest(SparseBlock.Type.CSC, sparsity2, UpdateType.INSERT);
+	}
+
+	@Test
+	public void testSparseBlockCSC3Insert()  {
+		runSparseBlockIndexRangeTest(SparseBlock.Type.CSC, sparsity3, UpdateType.INSERT);
+	}
 	
 	private void runSparseBlockIndexRangeTest( SparseBlock.Type btype, double sparsity, UpdateType utype)
 	{
@@ -224,6 +254,7 @@ public class SparseBlockIndexRange extends AutomatedTestBase
 				case COO: sblock = new SparseBlockCOO(srtmp); break;
 				case DCSR: sblock = new SparseBlockDCSR(srtmp); break;
 				case MCSC: sblock = new SparseBlockMCSC(srtmp, cols); break;
+				case CSC: sblock = new SparseBlockCSC(srtmp, cols); break;
 			}
 			
 			//delete range per row via set

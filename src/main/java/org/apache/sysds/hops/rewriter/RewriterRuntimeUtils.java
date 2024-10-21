@@ -23,6 +23,11 @@ import org.apache.sysds.parser.StatementBlock;
 import org.apache.sysds.parser.WhileStatement;
 import org.apache.sysds.parser.WhileStatementBlock;
 
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
+import java.io.FileReader;
+import java.io.FileWriter;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -36,6 +41,9 @@ import java.util.function.Function;
 public class RewriterRuntimeUtils {
 	public static final boolean interceptAll = true;
 	public static final boolean printUnknowns = true;
+	public static final String dbFile = "/Users/janniklindemann/Dev/MScThesis/expressions.db";
+	public static final boolean readDB = true;
+	public static final boolean writeDB = true;
 
 
 	private static final String matrixDefs = "MATRIX:A,B,C";
@@ -67,22 +75,37 @@ public class RewriterRuntimeUtils {
 
 			RewriterDatabase db = new RewriterDatabase();
 			RewriterDatabase exactExprDB = new RewriterDatabase();
+
+			if (readDB) {
+				try(BufferedReader reader = new BufferedReader(new FileReader(dbFile))) {
+					exactExprDB.deserialize(reader, ctx);
+				} catch (IOException ex) {
+					ex.printStackTrace();
+				}
+			}
+
 			List<RewriterStatement> equivalentStatements = new ArrayList<>();
 
 			RewriterRuntimeUtils.attachHopInterceptor(prog -> {
 				long startMillis = System.currentTimeMillis();
 				RewriterRuntimeUtils.forAllUniqueTranslatableStatements(prog, 5, mstmt -> {
-					List<RewriterStatement> subtrees = RewriterUtils.generateSubtrees(mstmt, new HashMap<>(), ctx);
+					//List<RewriterStatement> subtrees = RewriterUtils.generateSubtrees(mstmt, new HashMap<>(), ctx);
+					List<RewriterStatement> subtrees = List.of(mstmt);
 					for (RewriterStatement stmt : subtrees) {
 						try {
 							stmt = ctx.metaPropagator.apply(stmt);
+							if (!exactExprDB.insertEntry(ctx, stmt))
+								continue;
 							System.out.println("RawStmt: " + stmt.toString(ctx));
 							RewriterStatement cpy = stmt.nestedCopyOrInject(new HashMap<>(), el -> null);
-							if (!exactExprDB.insertEntry(ctx, cpy))
-								continue;
+							RewriterStatement tmp = cpy;
+							cpy = stmt;
+							stmt = tmp;
 							evaluatedExpressions++;
 							System.out.println("Stmt: " + stmt.toString(ctx));
 							stmt = converter.apply(stmt);
+							System.out.println();
+							System.out.println("===================================");
 							System.out.println("Canonical form: " + stmt.toString(ctx));
 
 							RewriterStatement oldEntry = db.insertOrReturn(ctx, stmt);
@@ -114,9 +137,11 @@ public class RewriterRuntimeUtils {
 				System.out.println("===== ALL EQUIVALENCES =====");
 
 				for (RewriterStatement eStmt : equivalentStatements) {
-					System.out.println("Canonical form: " + eStmt.toString(ctx));
+					System.out.println();
+					System.out.println("===================================");
+					System.out.println("Canonical form: " + eStmt.toParsableString(ctx) + "\n");
 					List<RewriterStatement> equivalences = (List<RewriterStatement>)eStmt.getMeta("equivalentExpressions");
-					equivalences.forEach(stmt -> System.out.println(stmt.toString(ctx) + "\t" + stmt.hashCode()));
+					equivalences.forEach(stmt -> System.out.println(stmt.toParsableString(ctx) + "\t" + stmt.hashCode()));
 
 					if (equivalences.size() == 0)
 						System.out.println("All statements were actually equivalent!");
@@ -127,6 +152,14 @@ public class RewriterRuntimeUtils {
 				System.out.println("Total rewriter CPU time: " + totalCPUTime + "ms");
 				System.out.println("Total evaluated unique expressions: " + evaluatedExpressions);
 				System.out.println("Total failures: " + failures);
+
+				if (writeDB) {
+					try (BufferedWriter writer = new BufferedWriter(new FileWriter(dbFile))) {
+						exactExprDB.serialize(writer, ctx);
+					} catch (IOException e) {
+						e.printStackTrace();
+					}
+				}
 			}));
 		}
 	}

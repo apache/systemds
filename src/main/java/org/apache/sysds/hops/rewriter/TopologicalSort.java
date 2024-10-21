@@ -31,6 +31,7 @@ public class TopologicalSort {
 
 		// Now, we start introducing facts for the lowest level unordered sets
 		Set<UnorderedSet> lowestUncertainties = findLowestUncertainties(root);
+		int ctr = 0;
 
 		while (!lowestUncertainties.isEmpty()) {
 			factCtr = introduceFacts(lowestUncertainties, factCtr);
@@ -40,6 +41,10 @@ public class TopologicalSort {
 			// TODO: Propagate address priorities and thus implicit orderings up the DAG
 
 			lowestUncertainties = findLowestUncertainties(root);
+			ctr++;
+
+			if (ctr > 100)
+				throw new RuntimeException("Could not finish sorting process");
 		}
 
 		// At the end
@@ -47,7 +52,7 @@ public class TopologicalSort {
 	}
 
 	// Returns all uncertain parents ordered in post order (elements without uncertain sub-DAGs come first in the list)
-	public static List<RewriterStatement> setupOrderFacts(RewriterStatement root, BiFunction<RewriterStatement, RewriterStatement, Boolean> isArrangable, final RuleContext ctx) {
+	private static List<RewriterStatement> setupOrderFacts(RewriterStatement root, BiFunction<RewriterStatement, RewriterStatement, Boolean> isArrangable, final RuleContext ctx) {
 		List<RewriterStatement> uncertainParents = new ArrayList<>();
 
 		// Create a random global order which will be used for indistinguishable sub-DAGs

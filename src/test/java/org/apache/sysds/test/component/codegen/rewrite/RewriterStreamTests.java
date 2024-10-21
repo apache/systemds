@@ -1,6 +1,5 @@
 package org.apache.sysds.test.component.codegen.rewrite;
 
-import com.esotericsoftware.kryo.serializers.TaggedFieldSerializer;
 import org.apache.sysds.hops.rewriter.RewriterStatement;
 import org.apache.sysds.hops.rewriter.RewriterUtils;
 import org.apache.sysds.hops.rewriter.RuleContext;
@@ -43,7 +42,7 @@ public class RewriterStreamTests {
 		RewriterStatement stmt = RewriterUtils.parse("+(+(A, B), 1)", ctx, "MATRIX:A,B", "LITERAL_INT:0,1");
 		stmt = converter.apply(stmt);
 		System.out.println(stmt.toParsableString(ctx, true));
-		assert stmt.match(new RewriterStatement.MatcherContext(ctx, RewriterUtils.parse("_m($1:_idx(1, nrow(A)), $2:_idx(1, ncol(A)), +(argList([](A, $1, $2), [](B, $1, $2), 1)))", ctx, "MATRIX:A,B", "LITERAL_INT:0,1")));
+		assert stmt.match(new RewriterStatement.MatcherContext(ctx, RewriterUtils.parse("_m($1:_idx(1, nrow(A)), $2:_idx(1, ncol(A)), +(argList([](B, $1, $2), [](A, $1, $2), 1)))", ctx, "MATRIX:A,B", "LITERAL_INT:0,1")));
 	}
 
 	@Test
@@ -240,7 +239,7 @@ public class RewriterStreamTests {
 	@Test
 	public void testEClassProperties() {
 		RewriterStatement stmt = RewriterUtils.parse("*(+(A, B), nrow(A))", ctx, "MATRIX:A,B");
-		RewriterStatement stmt2 = RewriterUtils.parse("*(+(A, B), nrow(B))", ctx, "FLOAT:A,B");
+		RewriterStatement stmt2 = RewriterUtils.parse("*(+(A, B), nrow(B))", ctx, "MATRIX:A,B");
 		stmt = canonicalConverter.apply(stmt);
 		stmt2 = canonicalConverter.apply(stmt2);
 
@@ -249,5 +248,27 @@ public class RewriterStreamTests {
 		System.out.println("==========");
 		System.out.println(stmt2.toParsableString(ctx, true));
 		assert stmt.match(new RewriterStatement.MatcherContext(ctx, stmt2));
+	}
+
+	@Test
+	public void test() {
+		RewriterStatement stmt = RewriterUtils.parse("t(A)", ctx, "MATRIX:A,B");
+		RewriterStatement stmt2 = RewriterUtils.parse("A", ctx, "FLOAT:A,B");
+		stmt = canonicalConverter.apply(stmt);
+		stmt2 = canonicalConverter.apply(stmt2);
+
+		System.out.println("==========");
+		System.out.println(stmt.toParsableString(ctx, true));
+		System.out.println("==========");
+		System.out.println(stmt2.toParsableString(ctx, true));
+		assert !stmt.match(new RewriterStatement.MatcherContext(ctx, stmt2));
+	}
+
+	@Test
+	public void test2() {
+		RewriterStatement stmt = RewriterUtils.parse("+(0.0,*(2,%*%(t(X),T)))", ctx, "MATRIX:T,X", "FLOAT:0.0", "INT:2");
+		stmt = canonicalConverter.apply(stmt);
+
+		System.out.println(stmt.toParsableString(ctx));
 	}
 }

@@ -1,7 +1,12 @@
 package org.apache.sysds.hops.rewriter;
 
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
+import java.io.IOException;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class RewriterDatabase {
@@ -25,4 +30,46 @@ public class RewriterDatabase {
 	}
 
 	public int size() {return db.size(); }
+
+	public void serialize(BufferedWriter writer, final RuleContext ctx) throws IOException {
+		for (RewriterStatement entry : db.values()) {
+			writer.write("\n::STMT\n");
+			writer.write(entry.toParsableString(ctx, true));
+		}
+	}
+
+	public void deserialize(BufferedReader reader, final RuleContext ctx) throws IOException {
+		List<String> strBuffer = new ArrayList<>();
+
+		String line;
+		while ((line = reader.readLine()) != null) {
+			if (line.isBlank())
+				continue;
+
+			if (line.startsWith("::STMT")) {
+				if (strBuffer.isEmpty())
+					continue;
+				//try {
+				System.out.println("======");
+				System.out.println(String.join("\n", strBuffer));
+					RewriterStatement stmt = RewriterUtils.parse(String.join("\n", strBuffer), ctx);
+					insertEntry(ctx, stmt);
+					strBuffer.clear();
+				//} catch (Exception e) {
+					//throw new IllegalArgumentException("Error when parsing:\n" + String.join("\n", strBuffer) + "\n" + e.getMessage());
+				//}
+			} else {
+				strBuffer.add(line);
+			}
+		}
+
+		if (!strBuffer.isEmpty()) {
+			try {
+				RewriterStatement stmt = RewriterUtils.parse(String.join("\n", strBuffer), ctx);
+				insertEntry(ctx, stmt);
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+		}
+	}
 }

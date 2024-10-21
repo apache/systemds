@@ -13,6 +13,7 @@ import scala.collection.parallel.ParIterableLike;
 import scala.reflect.internal.Trees;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
@@ -338,6 +339,11 @@ public class RewriterUtils {
 		return false;
 	}
 
+	public static RewriterStatement parse(String expr, final RuleContext ctx) {
+		String[] split = expr.split("\n");
+		return parse(split[split.length-1], ctx, Arrays.copyOfRange(split, 0, split.length-1));
+	}
+
 	public static RewriterStatement parse(String expr, final RuleContext ctx, String... varDefinitions) {
 		return parse(expr, ctx, new HashMap<>(), varDefinitions);
 	}
@@ -421,7 +427,7 @@ public class RewriterUtils {
 		} else if (boolLiteral) {
 			pattern = Pattern.compile("(TRUE|FALSE)");
 		} else if (floatLiteral) {
-			pattern = Pattern.compile("(-)?[0-9]+(\\.[0-9]*)?");
+			pattern = Pattern.compile("(-)?[0-9]+(\\.[0-9]*)?(E(-|\\+)[0-9]+)?");
 		}
 
 		if (expr.charAt(matcher.end()) != ':')
@@ -541,6 +547,14 @@ public class RewriterUtils {
 			if (instr.getOperands().get(1).isInstruction() && instr.getOperands().get(1).trueInstruction().equals("_idx")) {
 				instr.getOperands().get(1).unsafePutMeta("ownerId", ownerId);
 				instr.getOperands().get(1).unsafePutMeta("idxId", UUID.randomUUID());
+			}
+		} else if (instr.trueInstruction().equals("_idxExpr")) {
+			UUID ownerId = UUID.randomUUID();
+			instr.unsafePutMeta("ownerId", ownerId);
+
+			if (instr.getOperands().get(0).isInstruction() && instr.getOperands().get(0).trueInstruction().equals("_idx")) {
+				instr.getOperands().get(0).unsafePutMeta("ownerId", ownerId);
+				instr.getOperands().get(0).unsafePutMeta("idxId", UUID.randomUUID());
 			}
 		}
 	}
@@ -800,6 +814,7 @@ public class RewriterUtils {
 		return matchFound;
 	}
 
+	// TODO: This is broken --> remove
 	public static void topologicalSort(RewriterStatement stmt, final RuleContext ctx, BiFunction<RewriterStatement, RewriterStatement, Boolean> arrangable) {
 		MutableInt nameCtr = new MutableInt();
 		stmt.forEachPostOrderWithDuplicates((el, parent, pIdx) -> {
@@ -1370,8 +1385,9 @@ public class RewriterUtils {
 			if (debug)
 				System.out.println("PRE1: " + stmt.toParsableString(ctx, false));
 
+			TopologicalSort.sort(stmt, (el, parent) -> el.isArgumentList() && parent != null && Set.of("+", "-", "*", "_idxExpr").contains(parent.trueInstruction()), ctx);
 			//RewriterUtils.topologicalSort(stmt, ctx, (el, parent) -> el.isArgumentList() && parent != null && Set.of("+", "-", "*", "_idxExpr").contains(parent.trueInstruction()));
-			TopologicalSort.setupOrderFacts(stmt, (el, parent) -> el.isArgumentList() && parent != null && Set.of("+", "-", "*", "_idxExpr").contains(parent.trueInstruction()), ctx);
+			//TopologicalSort.setupOrderFacts(stmt, (el, parent) -> el.isArgumentList() && parent != null && Set.of("+", "-", "*", "_idxExpr").contains(parent.trueInstruction()), ctx);
 
 			if (debug)
 				System.out.println("FINAL1: " + stmt.toParsableString(ctx, false));

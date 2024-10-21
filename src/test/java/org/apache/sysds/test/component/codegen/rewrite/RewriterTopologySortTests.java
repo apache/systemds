@@ -1,9 +1,9 @@
 package org.apache.sysds.test.component.codegen.rewrite;
 
+import org.apache.sysds.hops.rewriter.RewriterRuntimeUtils;
 import org.apache.sysds.hops.rewriter.RewriterStatement;
 import org.apache.sysds.hops.rewriter.RewriterUtils;
 import org.apache.sysds.hops.rewriter.RuleContext;
-import org.apache.sysds.hops.rewriter.TopologicalSort;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
@@ -132,6 +132,33 @@ public class RewriterTopologySortTests {
 		System.out.println("==========");
 		System.out.println(stmt2.toParsableString(ctx, true));
 		assert stmt.match(new RewriterStatement.MatcherContext(ctx, stmt2));
+	}
+
+	@Test
+	public void testSimpleEquivalence9() {
+		RewriterStatement stmt = RewriterUtils.parse("+(*(-(a), b), *(a, a))", ctx, "FLOAT:a,b");
+		RewriterStatement stmt2 = RewriterUtils.parse("+(*(a, -(b)), *(a, a))", ctx, "FLOAT:a,b");
+		stmt = converter.apply(stmt);
+		stmt2 = converter.apply(stmt2);
+
+		System.out.println("==========");
+		System.out.println(stmt.toParsableString(ctx, true));
+		System.out.println("==========");
+		System.out.println(stmt2.toParsableString(ctx, true));
+		assert stmt.match(new RewriterStatement.MatcherContext(ctx, stmt2));
+	}
+
+	@Test
+	public void test3() {
+		RewriterRuntimeUtils.setupIfNecessary();
+	}
+
+	@Test
+	public void test4() {
+		RewriterStatement stmt = RewriterUtils.parse("sum(*(A, A))", ctx, "MATRIX:A");
+		stmt = converter.apply(stmt);
+
+		System.out.println(stmt.toParsableString(ctx, true));
 	}
 
 }

@@ -710,28 +710,28 @@ public class MultiColumnEncoder implements Encoder {
 			return _meta;
 		if(meta == null)
 			meta = new FrameBlock(_columnEncoders.size(), ValueType.STRING);
-		this.allocateMetaData(meta);
-		if(k > 1) {
-			ExecutorService pool = CommonThreadPool.get(k);
-			try {
-				ArrayList<ColumnMetaDataTask<? extends ColumnEncoder>> tasks = new ArrayList<>();
-				for(ColumnEncoder columnEncoder : _columnEncoders)
-					tasks.add(new ColumnMetaDataTask<>(columnEncoder, meta));
-				List<Future<Object>> taskret = pool.invokeAll(tasks);
-				for(Future<Object> task : taskret)
-					task.get();
-			}
-			catch(Exception ex) {
-				throw new DMLRuntimeException(ex);
-			}
-			finally {
-				pool.shutdown();
-			}
-		}
-		else {
-			for(ColumnEncoder columnEncoder : _columnEncoders)
-				columnEncoder.getMetaData(meta);
-		}
+		// this.allocateMetaData(meta);
+		// if(k > 1) {
+		// 	ExecutorService pool = CommonThreadPool.get(k);
+		// 	try {
+		// 		ArrayList<ColumnMetaDataTask<? extends ColumnEncoder>> tasks = new ArrayList<>();
+		// 		for(ColumnEncoder columnEncoder : _columnEncoders)
+		// 			tasks.add(new ColumnMetaDataTask<>(columnEncoder, meta));
+		// 		List<Future<Object>> taskret = pool.invokeAll(tasks);
+		// 		for(Future<Object> task : taskret)
+		// 			task.get();
+		// 	}
+		// 	catch(Exception ex) {
+		// 		throw new DMLRuntimeException(ex);
+		// 	}
+		// 	finally {
+		// 		pool.shutdown();
+		// 	}
+		// }
+		// else {
+		// 	for(ColumnEncoder columnEncoder : _columnEncoders)
+		// 		columnEncoder.getMetaData(meta);
+		// }
 
 		// _columnEncoders.stream().parallel().forEach(columnEncoder ->
 		// columnEncoder.getMetaData(meta));

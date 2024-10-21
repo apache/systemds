@@ -140,7 +140,7 @@ public class FrameReaderTextCSV extends FrameReader {
 		final RecordReader<LongWritable, Text> reader = informat.getRecordReader(split, job, Reporter.NULL);
 		final LongWritable key = new LongWritable();
 		final Text value = new Text();
-		final int row = rl;
+		
 
 		// handle header if existing
 		if(first && hasHeader) {
@@ -150,6 +150,7 @@ public class FrameReaderTextCSV extends FrameReader {
 
 		// Read the data
 		try {
+			int row = rl;
 			Array<?>[] destA = dest.getColumns();
 			while(reader.next(key, value)) // foreach line
 			{
@@ -185,45 +186,21 @@ public class FrameReaderTextCSV extends FrameReader {
 		while(from < len) { // for all tokens
 			to = IOUtilFunctions.getTo(cellStr, from, delim, len, delimLen);
 			String s = cellStr.substring(from, to);
-			assigner.assign(row, destA[c], s, to - from, naValues, isFill, dfillValue, sfillValue, c);
+			assigner.assign(row, destA[c], s, to - from, naValues, isFill, dfillValue, sfillValue);
 			c++;
 			from = to + delimLen;
 		}
 	}
 
-	// private boolean assignColumns(int row, int nCol,  Array<?>[] destA, String[] parts, Set<String> naValues,
-	// 	boolean isFill, double dfillValue, String sfillValue) {
-	// 	if(!isFill && naValues == null)
-	// 		return assignColumnsNoFillNoNan(row, nCol, destA, parts);
-	// 	else 
-	// 		return assignColumnsGeneric(row, nCol, destA, parts, naValues, isFill, dfillValue, sfillValue);
-	// }
-
-	// private boolean assignColumnsGeneric(int row, int nCol,  Array<?>[] destA, String[] parts, Set<String> naValues,
-	// 	boolean isFill, double dfillValue, String sfillValue) {
-	// 	boolean emptyValuesFound = false;
-	// 	for(int col = 0; col < nCol; col++) {
-	// 		emptyValuesFound = assignCellGeneric(row, destA, parts[col], naValues, isFill, dfillValue, sfillValue, emptyValuesFound, col);
-	// 	}
-	// 	return emptyValuesFound;
-	// }
-
-	// private boolean assignColumnsNoFillNoNan(int row, int nCol, Array<?>[] destA, String[] parts){
-	// 	boolean emptyValuesFound = false;
-	// 	for(int col = 0; col < nCol; col++) {
-	// 		emptyValuesFound = assignCellNoNan(row, destA, parts[col], emptyValuesFound, col);
-	// 	}
-	// 	return emptyValuesFound;
-	// }
 	@FunctionalInterface
 	private interface CellAssigner{
 		void assign(int row, Array<?> dest, String val, int length, Set<String> naValues, boolean isFill,
-		double dfillValue, String sfillValue,  int col);
+		double dfillValue, String sfillValue);
 	}
 
 
 	private static void assignCellNoFill(int row, Array<?> dest, String val, int length, Set<String> naValues, boolean isFill,
-		double dfillValue, String sfillValue,  int col) {
+		double dfillValue, String sfillValue) {
 		if(length != 0){
 			final String part = IOUtilFunctions.trim(val, length);
 			if(part.isEmpty() )
@@ -234,7 +211,7 @@ public class FrameReaderTextCSV extends FrameReader {
 
 
 	private static void assignCellFill(int row, Array<?> dest, String val, int length, Set<String> naValues, boolean isFill,
-		double dfillValue, String sfillValue,  int col) {
+		double dfillValue, String sfillValue) {
 		if(length == 0){
 			dest.set(row, sfillValue);
 		} else {
@@ -247,25 +224,8 @@ public class FrameReaderTextCSV extends FrameReader {
 		}
 	}
 
-
-	private static void assignCellNoNa(int row, Array<?> dest, String val, int length, Set<String> naValues, boolean isFill,
-		double dfillValue, String sfillValue,  int col) {
-		if(length == 0){
-			if(isFill && dfillValue != 0)
-				dest.set(row, sfillValue);
-		} else {
-			final String part = IOUtilFunctions.trim(val, length);
-			if(part == null || part.isEmpty() ) {
-				if(isFill && dfillValue != 0)
-					dest.set(row, sfillValue);
-			}
-			else
-				dest.set(row, part);
-		}
-	}
-
 	private static void assignCellGeneric(int row, Array<?> dest, String val, int length, Set<String> naValues, boolean isFill,
-		double dfillValue, String sfillValue,  int col) {
+		double dfillValue, String sfillValue) {
 		if(length == 0) {
 			if(isFill && dfillValue != 0)
 				dest.set(row, sfillValue);
@@ -280,15 +240,6 @@ public class FrameReaderTextCSV extends FrameReader {
 				dest.set(row, part);
 		}
 	}
-
-	// private static boolean assignCellNoNan(int row, Array<?>[] destA, String val, boolean emptyValuesFound, int col) {
-	// 	String part = IOUtilFunctions.trim(val);
-	// 	if(part.isEmpty()) 
-	// 		emptyValuesFound = true;
-	// 	else
-	// 		destA[col].set(row, part);
-	// 	return emptyValuesFound;
-	// }
 
 	protected Pair<Integer, Integer> computeCSVSize(Path path, JobConf job, FileSystem fs) throws IOException {
 		TextInputFormat informat = new TextInputFormat();

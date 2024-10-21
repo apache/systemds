@@ -132,8 +132,11 @@ public class FrameReaderTextCSV extends FrameReader {
 		final CellAssigner f;
 		if(naValues != null )
 			f = FrameReaderTextCSV::assignCellGeneric;
-		else 
+		else if(isFill && dfillValue != 0)
+			f = FrameReaderTextCSV::assignCellNoFill;
+		else
 			f = FrameReaderTextCSV::assignCellNoNa;
+		
 		// (int row, Array<?> dest, String val, int length, Set<String> naValues, boolean isFill,
 		// double dfillValue, String sfillValue,  int col) ->{};
 		// create record reader
@@ -221,27 +224,52 @@ public class FrameReaderTextCSV extends FrameReader {
 		double dfillValue, String sfillValue,  int col);
 	}
 
+	private static void assignCellNoFill(int row, Array<?> dest, String val, int length, Set<String> naValues, boolean isFill,
+		double dfillValue, String sfillValue,  int col) {
+		if(length == 0){
+			dest.set(row, sfillValue);
+		} else {
+			final String part = IOUtilFunctions.trim(val, length);
+			if(part == null || part.isEmpty() ) {
+				dest.set(row, sfillValue);
+			}
+			else
+				dest.set(row, part);
+		}
+	}
+
 
 	private static void assignCellNoNa(int row, Array<?> dest, String val, int length, Set<String> naValues, boolean isFill,
 		double dfillValue, String sfillValue,  int col) {
-		final String part = IOUtilFunctions.trim(val, length);
-		if(part == null || part.isEmpty() ) {
+		if(length == 0){
 			if(isFill && dfillValue != 0)
 				dest.set(row, sfillValue);
+		} else {
+			final String part = IOUtilFunctions.trim(val, length);
+			if(part == null || part.isEmpty() ) {
+				if(isFill && dfillValue != 0)
+					dest.set(row, sfillValue);
+			}
+			else
+				dest.set(row, part);
 		}
-		else
-			dest.set(row, part);
 	}
 
 	private static void assignCellGeneric(int row, Array<?> dest, String val, int length, Set<String> naValues, boolean isFill,
 		double dfillValue, String sfillValue,  int col) {
-		final String part = IOUtilFunctions.trim(val, length);
-		if(part == null || part.isEmpty() || (naValues != null && naValues.contains(part))) {
+		if(length == 0) {
 			if(isFill && dfillValue != 0)
 				dest.set(row, sfillValue);
 		}
-		else
-			dest.set(row, part);
+		else {
+			final String part = IOUtilFunctions.trim(val, length);
+			if(part == null || part.isEmpty() || (naValues != null && naValues.contains(part))) {
+				if(isFill && dfillValue != 0)
+					dest.set(row, sfillValue);
+			}
+			else
+				dest.set(row, part);
+		}
 	}
 
 	// private static boolean assignCellNoNan(int row, Array<?>[] destA, String val, boolean emptyValuesFound, int col) {

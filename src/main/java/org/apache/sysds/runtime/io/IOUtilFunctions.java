@@ -428,15 +428,23 @@ public class IOUtilFunctions {
 
 	public static String trim(String str) {
 		final int len = str.length();
+		if(len == 0)
+			return str;
 		return trim(str, len);
 	}
 
+	/**
+	 * Caller must have a string of at least 1 character length.
+	 * 
+	 * @param str string to trim
+	 * @param len length of string
+	 * @return the trimmed string.
+	 */
 	public static String trim(String str, final int len) {
 		try{
-			if(len == 0)
-				return str;
+		
 			// short the call to return input if not whitespace in ends.
-			else if(str.charAt(0) <= ' ' || str.charAt(len -1) <= ' ')
+			if(str.charAt(0) <= ' ' || str.charAt(len -1) <= ' ')
 				return str.trim();
 			else 
 				return str;

@@ -450,12 +450,8 @@ public class CompressedEncode {
 	private static <T> AMapToData createMappingAMapToDataNoNull(Array<T> a, Map<T, Long> map, int si,  AMapToData m, int start, int end) {
 		// TODO push down to underlying array if critical performance to allow JIT compilation.
 		for(int i = start; i < end; i++)
-			setM(a, map, m, i);
+			a.setM(map, m, i);
 		return m;
-	}
-
-	private static <T> void setM(Array<T> a, Map<T, Long> map, AMapToData m, int i) {
-		m.set(i, map.get(a.get(i)).intValue() - 1);
 	}
 
 	private static <T> AMapToData  createMappingAMapToDataWithNull(Array<T> a, Map<T, Long> map, int si,  AMapToData m, int start, int end) {

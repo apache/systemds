@@ -109,7 +109,8 @@ public abstract class Array<T> implements Writable {
 	protected Map<T, Long> createRecodeMap() {
 		final Map<T, Long> map = new HashMap<>();
 		long id = 1;
-		for(int i = 0; i < size(); i++)
+		final int s = size();
+		for(int i = 0; i < s; i++)
 			id = addValRecodeMap(map, id, i);
 		
 		return map;

@@ -57,7 +57,7 @@ public class FrameReaderTextCSVParallel extends FrameReaderTextCSV
 		throws IOException
 	{
 		Timing time = new Timing(true);
-		final int numThreads = InfrastructureAnalyzer.getLocalParallelism() / 2;
+		final int numThreads = 4 ; // InfrastructureAnalyzer.getLocalParallelism() / 2;
 		//  OptimizerUtils.getParallelTextReadParallelism();
 		
 		TextInputFormat informat = new TextInputFormat();

@@ -189,16 +189,22 @@ public class FrameReaderTextCSV extends FrameReader {
 		boolean isFill, double dfillValue, String sfillValue) {
 		boolean emptyValuesFound = false;
 		for(int col = 0; col < nCol; col++) {
-			String part = IOUtilFunctions.trim(parts[col]);
-			if(part == null || part.isEmpty() || (naValues != null && naValues.contains(part))) {
-				if(isFill && dfillValue != 0)
-					destA[col].set(row, sfillValue);
-				emptyValuesFound = true;
-			}
-			else
-				destA[col].set(row, part);
+			emptyValuesFound = assignCellGeneric(row, destA, parts, naValues, isFill, dfillValue, sfillValue, emptyValuesFound, col);
 		}
 
+		return emptyValuesFound;
+	}
+
+	private boolean assignCellGeneric(int row, Array<?>[] destA, String[] parts, Set<String> naValues, boolean isFill,
+		double dfillValue, String sfillValue, boolean emptyValuesFound, int col) {
+		String part = IOUtilFunctions.trim(parts[col]);
+		if(part == null || part.isEmpty() || (naValues != null && naValues.contains(part))) {
+			if(isFill && dfillValue != 0)
+				destA[col].set(row, sfillValue);
+			emptyValuesFound = true;
+		}
+		else
+			destA[col].set(row, part);
 		return emptyValuesFound;
 	}
 

@@ -297,8 +297,8 @@ public class DDCArray<T> extends ACompressedArray<T> {
 					"\nmap2 unique: " + (dc.map.getUnique()) );
 
 			final AMapToData tm = dc.map;
-			for(int i = rl; i <= ru; i++) {
-				map.set(i, tm.getIndex(i-rlSrc));
+			for(int i = rl, off = rlSrc; i <= ru; i++, off++) {
+				map.set(i, tm.getIndex(off));
 			}
 		}
 		else

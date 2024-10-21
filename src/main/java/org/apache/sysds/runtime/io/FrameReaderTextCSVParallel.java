@@ -178,10 +178,10 @@ public class FrameReaderTextCSVParallel extends FrameReaderTextCSV
 
 		@Override
 		public Object call() throws Exception {
+			LOG.debug("read csv start : " + _offset);
 			readCSVFrameFromInputSplit(_split, _informat, _job, _dest, _dest.getSchema(), 
 				_dest.getColumnNames(), _dest.getNumRows(), _dest.getNumColumns(), _offset, _isFirstSplit);
-
-			LOG.debug("read csv : " + _offset);
+			LOG.debug("read csv end : " + _offset);
 			return null;
 		}
 	}

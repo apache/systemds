@@ -119,7 +119,7 @@ public class FrameReaderTextCSV extends FrameReader {
 		JobConf job, FrameBlock dest, ValueType[] schema, String[] names, long rlen, long clen, int rl, boolean first)
 		throws IOException {
 		
-		if( rl > rlen) // in case this method is called wrongly
+		if(rl > rlen) // in case this method is called wrongly
 			throw new DMLRuntimeException("Invalid offset");
 		// return (int) rlen;
 		final boolean hasHeader = _props.hasHeader();

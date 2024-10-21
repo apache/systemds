@@ -27,7 +27,6 @@ import java.util.Arrays;
 
 import org.apache.commons.lang3.NotImplementedException;
 import org.apache.sysds.runtime.DMLRuntimeException;
-import org.apache.sysds.runtime.compress.DMLCompressionException;
 import org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex;
 import org.apache.sysds.runtime.data.SparseBlock;
 import org.apache.sysds.runtime.functionobjects.Builtin;
@@ -201,13 +200,6 @@ public class IdentityDictionarySlice extends IdentityDictionary {
 	@Override
 	public IDictionary sliceOutColumnRange(int idxStart, int idxEnd, int previousNumberOfColumns) {
 		return getMBDict().sliceOutColumnRange(idxStart, idxEnd, previousNumberOfColumns);
-	}
-
-	@Override
-	public int getNumberOfValues(int ncol) {
-		if(ncol != u - l)
-			throw new DMLCompressionException("Invalid call to get Number of values assuming wrong number of columns");
-		return nRowCol + (withEmpty ? 1 : 0);
 	}
 
 	@Override

@@ -917,7 +917,7 @@ public abstract class AMapToData implements Serializable {
 		}
 	}
 
-	protected void lmSparseMatrixRow(SparseBlock sb, final int r, DenseBlock db, final IColIndex colIndexes,
+	public void lmSparseMatrixRow(SparseBlock sb, final int r, DenseBlock db, final IColIndex colIndexes,
 		final IDictionary dict) {
 		if(sb.isEmpty(r))
 			return;

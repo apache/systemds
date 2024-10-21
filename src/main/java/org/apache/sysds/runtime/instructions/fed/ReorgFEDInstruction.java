@@ -429,7 +429,7 @@ public class ReorgFEDInstruction extends UnaryFEDInstruction {
 				resBlock = oriBlock;
 			}
 			ec.setMatrixOutput(String.valueOf(_outputID), resBlock);
-			return new FederatedResponse(FederatedResponse.ResponseType.SUCCESS, resBlock);
+			return new FederatedResponse(FederatedResponse.ResponseType.SUCCESS);
 		}
 
 		@Override

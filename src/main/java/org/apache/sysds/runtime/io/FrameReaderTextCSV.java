@@ -22,7 +22,6 @@ package org.apache.sysds.runtime.io;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Set;
-import java.util.function.Function;
 
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;

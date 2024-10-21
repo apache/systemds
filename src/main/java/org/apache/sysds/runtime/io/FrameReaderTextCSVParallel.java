@@ -66,7 +66,7 @@ public class FrameReaderTextCSVParallel extends FrameReaderTextCSV
 		final ExecutorService pool = CommonThreadPool.get(numThreads);
 		try {
 			if(splits.length == 1){
-				new ReadRowsTask(splits[0], informat, job, dest, 0, true).call();
+				new ReadRowsTask(splits[0], informat, job, dest, 0, true, 0).call();
 				return;
 			}
 
@@ -80,10 +80,10 @@ public class FrameReaderTextCSVParallel extends FrameReaderTextCSV
 			ArrayList<Future<Object>> tasks2 = new ArrayList<>();
 			for( int i=0; i<splits.length -1; i++ ){
 				long tmp = cret.get(i).get();
-				tasks2.add(pool.submit(new ReadRowsTask(splits[i], informat, job, dest, (int) offset, i==0)));
+				tasks2.add(pool.submit(new ReadRowsTask(splits[i], informat, job, dest, (int) offset, i==0, i)));
 				offset += tmp;
 			}
-			tasks2.add(pool.submit(new ReadRowsTask(splits[splits.length-1], informat, job, dest, (int) offset, splits.length==1)));
+			tasks2.add(pool.submit(new ReadRowsTask(splits[splits.length-1], informat, job, dest, (int) offset, splits.length==1, splits.length-1)));
 
 			//read individual splits
 			for(Future<Object> a : tasks2)
@@ -168,10 +168,11 @@ public class FrameReaderTextCSVParallel extends FrameReaderTextCSV
 		private FrameBlock _dest = null;
 		private int _offset = -1;
 		private boolean _isFirstSplit = false;
+		private int _id;
 		
 		
 		public ReadRowsTask(InputSplit split, TextInputFormat informat, JobConf job, 
-			FrameBlock dest, int offset, boolean first) 
+			FrameBlock dest, int offset, boolean first, int id) 
 		{
 			_split = split;
 			_informat = informat;
@@ -179,14 +180,15 @@ public class FrameReaderTextCSVParallel extends FrameReaderTextCSV
 			_dest = dest;
 			_offset = offset;
 			_isFirstSplit = first;
+			_id = id;
 		}
 
 		@Override
 		public Object call() throws Exception {
-			LOG.debug("read csv start : " + _offset);
+			LOG.debug("read csv start : " + _id + "---" + _offset);
 			readCSVFrameFromInputSplit(_split, _informat, _job, _dest, _dest.getSchema(), 
 				_dest.getColumnNames(), _dest.getNumRows(), _dest.getNumColumns(), _offset, _isFirstSplit);
-			LOG.debug("read csv end : " + _offset);
+			LOG.debug("read csv end : " + _id + "---" + _offset);
 			return null;
 		}
 	}

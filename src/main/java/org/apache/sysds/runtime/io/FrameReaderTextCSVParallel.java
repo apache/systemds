@@ -62,14 +62,18 @@ public class FrameReaderTextCSVParallel extends FrameReaderTextCSV
 		if(HDFSTool.isDirectory(fs, path))
 			splits = IOUtilFunctions.sortInputSplits(splits);
 
-		final ExecutorService pool = CommonThreadPool.get(numThreads);
+			
+			final ExecutorService pool = CommonThreadPool.get(numThreads);
 		try {
+			if(splits.length == 1){
+				new ReadRowsTask(splits[0], informat, job, dest, 0, true).call();
+				return;
+			}
 			//compute num rows per split
 			ArrayList<Future<Long>> cret = new ArrayList<>();
 			for( int i=0; i<splits.length - 1; i++ )
 				cret.add(pool.submit(new CountRowsTask(splits[i], informat, job, _props.hasHeader() && i==0)));
 		
-
 			//compute row offset per split via cumsum on row counts
 			int offset = 0;
 			ArrayList<Future<Object>> tasks2 = new ArrayList<>();

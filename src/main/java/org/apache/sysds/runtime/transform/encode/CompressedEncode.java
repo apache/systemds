@@ -122,10 +122,10 @@ public class CompressedEncode {
 	private List<AColGroup> multiThread(List<ColumnEncoderComposite> encoders)
 		throws InterruptedException, ExecutionException {
 		try {
-			List<Future<AColGroup>> tasks = new ArrayList<>(encoders.size());
+			final List<Future<AColGroup>> tasks = new ArrayList<>(encoders.size());
 			for(ColumnEncoderComposite c : encoders)
 				tasks.add(pool.submit(() -> encode(c)));
-			List<AColGroup> groups = new ArrayList<>(encoders.size());
+			final List<AColGroup> groups = new ArrayList<>(encoders.size());
 			for(Future<AColGroup> t : tasks)
 				groups.add(t.get());
 			return groups;

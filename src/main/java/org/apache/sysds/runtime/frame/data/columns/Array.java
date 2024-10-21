@@ -107,17 +107,22 @@ public abstract class Array<T> implements Writable {
 	 * @return The recode map
 	 */
 	protected Map<T, Long> createRecodeMap() {
-		Map<T, Long> map = new HashMap<>();
+		final Map<T, Long> map = new HashMap<>();
 		long id = 1;
-		for(int i = 0; i < size(); i++) {
-			T val = get(i);
-			if(val != null) {
-				Long v = map.putIfAbsent(val, id);
-				if(v == null)
-					id++;
-			}
-		}
+		for(int i = 0; i < size(); i++)
+			id = addValRecodeMap(map, id, i);
+		
 		return map;
+	}
+
+	private long addValRecodeMap(Map<T, Long> map, long id, int i) {
+		T val = get(i);
+		if(val != null) {
+			Long v = map.putIfAbsent(val, id);
+			if(v == null)
+				id++;
+		}
+		return id;
 	}
 
 	/**

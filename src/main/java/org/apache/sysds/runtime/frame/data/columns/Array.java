@@ -23,6 +23,7 @@ import java.lang.ref.SoftReference;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
+import java.util.Objects;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -936,12 +937,19 @@ public abstract class Array<T> implements Writable {
 	public void setM(Map<T, Long> map, AMapToData m, int i){
 		m.set(i, map.get(get(i)).intValue() - 1);
 	}
-
+	
 	public void setM(Map<T, Long> map, int si, AMapToData m, int i) {
-		final T v = get(i);
-		if(v != null)
-			m.set(i, map.get(v).intValue() - 1);
-		else
-			m.set(i, si);
+		try{
+
+			final T v = get(i);
+			if(v != null)
+				m.set(i, map.get(v).intValue() - 1);
+			else
+				m.set(i, si);
+		}
+		catch(Exception e) {
+			String error = "expected: " + get(i) + " to be in map: " + map;
+			throw new RuntimeException(error, e);
+		}
 	}
 }

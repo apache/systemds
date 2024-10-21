@@ -447,17 +447,17 @@ public class CompressedEncode {
 		return m;
 	}
 
-	private static <T> AMapToData createMappingAMapToDataNoNull(Array<T> a, Map<T, Long> map, int si,  AMapToData m, int start, int end) {
-		// TODO push down to underlying array if critical performance to allow JIT compilation.
+	private static <T> AMapToData createMappingAMapToDataNoNull(Array<T> a, Map<T, Long> map, int si, AMapToData m,
+		int start, int end) {
 		for(int i = start; i < end; i++)
 			a.setM(map, m, i);
 		return m;
 	}
 
-	private static <T> AMapToData  createMappingAMapToDataWithNull(Array<T> a, Map<T, Long> map, int si,  AMapToData m, int start, int end) {
-		// TODO push down to underlying array if critical performance to allow JIT compilation.
-		for(int i = start; i < end; i++) 
-			a.setM( map, si, m, i);
+	private static <T> AMapToData createMappingAMapToDataWithNull(Array<T> a, Map<T, Long> map, int si, AMapToData m,
+		int start, int end) {
+		for(int i = start; i < end; i++)
+			a.setM(map, si, m, i);
 		return m;
 	}
 

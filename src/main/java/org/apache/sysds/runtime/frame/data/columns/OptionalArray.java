@@ -523,7 +523,6 @@ public class OptionalArray<T> extends Array<T> {
 			m.set(i, si);
 	}
 
-
 	@Override 
 	protected long addValRecodeMap(Map<T, Long> map, long id, int i) {
 		T val = get(i);

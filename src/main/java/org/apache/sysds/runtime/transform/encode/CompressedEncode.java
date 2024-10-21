@@ -80,11 +80,9 @@ public class CompressedEncode {
 	}
 
 	private boolean containsCompressed(FrameBlock in) {
-		for(Array<?> c : in.getColumns()) {
-			if(c instanceof ACompressedArray) {
+		for(Array<?> c : in.getColumns())
+			if(c instanceof ACompressedArray)
 				return true;
-			}
-		}
 		return false;
 	}
 
@@ -398,6 +396,7 @@ public class CompressedEncode {
 
 		if(a.getValueType() != ValueType.BOOLEAN // if not booleans
 			&& (stats == null || !stats.shouldCompress || stats.valueType != a.getValueType())) {
+			// stats.valueType;
 			double[] vals = (double[]) a.changeType(ValueType.FP64).get();
 		
 			MatrixBlock col = new MatrixBlock(a.size(), 1, vals);

@@ -228,11 +228,7 @@ public class CompressedFrameBlockFactory {
 				if(in.getColumn(i) instanceof ACompressedArray)
 					sb.append(String.format("Col: %3d, %s\n", i, "Column is already compressed"));
 				else
-				//  if(stats[i].shouldCompress)
 					sb.append(String.format("Col: %3d, %s\n", i, stats[i]));
-				// else
-					// sb.append(String.format("Col: %3d, No Compress, Type: %s\n", //
-						// i, in.getColumn(i).getClass().getSimpleName()));
 			}
 			LOG.debug(sb);
 		}

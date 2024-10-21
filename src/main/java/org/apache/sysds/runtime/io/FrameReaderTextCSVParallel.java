@@ -79,8 +79,9 @@ public class FrameReaderTextCSVParallel extends FrameReaderTextCSV
 			long offset = 0;
 			ArrayList<Future<Object>> tasks2 = new ArrayList<>();
 			for( int i=0; i<splits.length -1; i++ ){
+				long tmp = cret.get(i).get();
 				tasks2.add(pool.submit(new ReadRowsTask(splits[i], informat, job, dest, (int) offset, i==0)));
-				offset += cret.get(i).get();
+				offset += tmp;
 			}
 			tasks2.add(pool.submit(new ReadRowsTask(splits[splits.length-1], informat, job, dest, (int) offset, splits.length==1)));
 

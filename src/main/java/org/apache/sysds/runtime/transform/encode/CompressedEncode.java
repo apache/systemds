@@ -456,14 +456,17 @@ public class CompressedEncode {
 
 	private static AMapToData createMappingAMapToDataWithNull(Array<?> a, Map<?, Long> map, int si,  AMapToData m, int start, int end) {
 		// TODO push down to underlying array if critical performance to allow JIT compilation.
-		for(int i = start; i < end; i++) {
-			final Object v = a.get(i);
-			if(v != null)
-				m.set(i, map.get(v).intValue() - 1);
-			else
-				m.set(i, si);
-		}
+		for(int i = start; i < end; i++) 
+			setM(a, map, si, m, i);
 		return m;
+	}
+
+	private static void setM(Array<?> a, Map<?, Long> map, int si, AMapToData m, int i) {
+		final Object v = a.get(i);
+		if(v != null)
+			m.set(i, map.get(v).intValue() - 1);
+		else
+			m.set(i, si);
 	}
 
 	private AMapToData createHashMappingAMapToData(Array<?> a, int k, boolean nulls) {

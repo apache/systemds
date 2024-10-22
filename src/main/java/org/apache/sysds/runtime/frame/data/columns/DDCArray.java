@@ -26,7 +26,6 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
 
-import org.apache.commons.lang3.NotImplementedException;
 import org.apache.sysds.common.Types.ValueType;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.compress.DMLCompressionException;
@@ -436,10 +435,22 @@ public class DDCArray<T> extends ACompressedArray<T> {
 			m.set(i, map.get(((HashLongArray)dict).getLong(this.map.getIndex(i))).intValue()-1);
 		}
 		else if (dict instanceof OptionalArray){
-			throw new NotImplementedException("Not implemented Optional nested DDC....");
+			OptionalArray<T> opt = (OptionalArray<T>) dict;
+
+			if(opt._n.get(i)){
+				if(dict instanceof HashIntegerArray)
+					m.set(i, map.get(((HashIntegerArray)opt._a).getInt(this.map.getIndex(i))).intValue()-1);
+				else if (dict instanceof HashLongArray)
+					m.set(i, map.get(((HashLongArray)opt._a).getLong(this.map.getIndex(i))).intValue()-1);
+				else 
+					m.set(i, map.get(opt._a.get(this.map.getIndex(i))).intValue()-1);
+			}
+			else {
+				m.set(i, si);
+			}
 		}
 		else 
-			super.setM(map, si, m,i);
+			m.set(i, map.get(dict.get(this.map.getIndex(i))).intValue()-1);
 	}
 
 	@Override

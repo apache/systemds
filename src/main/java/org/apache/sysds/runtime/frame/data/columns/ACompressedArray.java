@@ -159,8 +159,5 @@ public abstract class ACompressedArray<T> extends Array<T> {
 		throw new NotImplementedException();
 	}
 
-	@Override
-	public void setM(Map<T, Long> map, int si, AMapToData m, int i) {
-		throw new NotImplementedException();
-	}
+	
 }

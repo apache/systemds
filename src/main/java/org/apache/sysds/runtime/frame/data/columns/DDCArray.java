@@ -443,14 +443,14 @@ public class DDCArray<T> extends ACompressedArray<T> {
 				else if (dict instanceof HashLongArray)
 					m.set(i, map.get(((HashLongArray)opt._a).getLong(this.map.getIndex(i))).intValue()-1);
 				else 
-					m.set(i, map.get(opt._a.get(this.map.getIndex(i))).intValue()-1);
+					super.setM(map, si, m, i);
 			}
 			else {
 				m.set(i, si);
 			}
 		}
 		else 
-			m.set(i, map.get(dict.get(this.map.getIndex(i))).intValue()-1);
+			super.setM(map, si, m, i);
 	}
 
 	@Override

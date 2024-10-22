@@ -104,6 +104,7 @@ public abstract class RewriterStatement implements Comparable<RewriterStatement>
 
 	public static class MatcherContext {
 		final RuleContext ctx;
+		final boolean statementsCanBeVariables;
 		final boolean literalsCanBeVariables;
 		final boolean ignoreLiteralValues;
 		final boolean allowDuplicatePointers;
@@ -122,14 +123,16 @@ public abstract class RewriterStatement implements Comparable<RewriterStatement>
 		private HashMap<RewriterRule.IdentityRewriterStatement, RewriterStatement> internalReferences;
 
 		private List<MatcherContext> subMatches;
+		private boolean debug;
 
 		public MatcherContext(final RuleContext ctx, RewriterStatement matchRoot) {
-			this(ctx, matchRoot, false, false, false, false, false, false, Collections.emptyMap());
+			this(ctx, matchRoot, false, false, false, false, false, false, false, Collections.emptyMap());
 		}
 
-		public MatcherContext(final RuleContext ctx, RewriterStatement matchRoot, final boolean literalsCanBeVariables, final boolean ignoreLiteralValues, final boolean allowDuplicatePointers, final boolean allowPropertyScan, final boolean allowTypeHierarchy, final boolean terminateOnFirstMatch, final Map<RewriterStatement, RewriterRule.LinkObject> ruleLinks) {
+		public MatcherContext(final RuleContext ctx, RewriterStatement matchRoot, final boolean statementsCanBeVariables, final boolean literalsCanBeVariables, final boolean ignoreLiteralValues, final boolean allowDuplicatePointers, final boolean allowPropertyScan, final boolean allowTypeHierarchy, final boolean terminateOnFirstMatch, final Map<RewriterStatement, RewriterRule.LinkObject> ruleLinks) {
 			this.ctx = ctx;
 			this.matchRoot = matchRoot;
+			this.statementsCanBeVariables = statementsCanBeVariables;
 			this.currentStatement = matchRoot;
 			this.literalsCanBeVariables = literalsCanBeVariables;
 			this.ignoreLiteralValues = ignoreLiteralValues;
@@ -138,14 +141,16 @@ public abstract class RewriterStatement implements Comparable<RewriterStatement>
 			this.allowTypeHierarchy = allowTypeHierarchy;
 			this.terminateOnFirstMatch = terminateOnFirstMatch;
 			this.ruleLinks = ruleLinks;
+			this.debug = false;
 		}
 
-		public MatcherContext(final RuleContext ctx, RewriterStatement matchRoot, RewriterStatement matchParent, int rootIndex, final boolean literalsCanBeVariables, final boolean ignoreLiteralValues, final boolean allowDuplicatePointers, final boolean allowPropertyScan, final boolean allowTypeHierarchy, final boolean terminateOnFirstMatch, final Map<RewriterStatement, RewriterRule.LinkObject> ruleLinks) {
+		public MatcherContext(final RuleContext ctx, RewriterStatement matchRoot, RewriterStatement matchParent, int rootIndex, final boolean statementsCanBeVariables, final boolean literalsCanBeVariables, final boolean ignoreLiteralValues, final boolean allowDuplicatePointers, final boolean allowPropertyScan, final boolean allowTypeHierarchy, final boolean terminateOnFirstMatch, final Map<RewriterStatement, RewriterRule.LinkObject> ruleLinks) {
 			this.ctx = ctx;
 			this.matchRoot = matchRoot;
 			this.matchParent = matchParent;
 			this.matchParentIndex = rootIndex;
 			this.currentStatement = matchRoot;
+			this.statementsCanBeVariables = statementsCanBeVariables;
 			this.literalsCanBeVariables = literalsCanBeVariables;
 			this.ignoreLiteralValues = ignoreLiteralValues;
 			this.allowDuplicatePointers = allowDuplicatePointers;
@@ -153,6 +158,7 @@ public abstract class RewriterStatement implements Comparable<RewriterStatement>
 			this.allowTypeHierarchy = allowTypeHierarchy;
 			this.terminateOnFirstMatch = terminateOnFirstMatch;
 			this.ruleLinks = ruleLinks;
+			this.debug = false;
 		}
 
 		public Map<RewriterStatement, RewriterStatement> getDependencyMap() {
@@ -215,7 +221,7 @@ public abstract class RewriterStatement implements Comparable<RewriterStatement>
 		}
 
 		public MatcherContext createCheckpoint() {
-			MatcherContext checkpoint = new MatcherContext(ctx, matchRoot, literalsCanBeVariables, ignoreLiteralValues, allowDuplicatePointers, allowPropertyScan, allowTypeHierarchy, terminateOnFirstMatch, ruleLinks);
+			MatcherContext checkpoint = new MatcherContext(ctx, matchRoot, statementsCanBeVariables, literalsCanBeVariables, ignoreLiteralValues, allowDuplicatePointers, allowPropertyScan, allowTypeHierarchy, terminateOnFirstMatch, ruleLinks);
 			checkpoint.matchParent = matchParent;
 			checkpoint.matchParentIndex = matchParentIndex;
 			if (dependencyMap != null)
@@ -227,6 +233,23 @@ public abstract class RewriterStatement implements Comparable<RewriterStatement>
 			if (subMatches != null)
 				checkpoint.subMatches = new ArrayList<>(subMatches);
 			return checkpoint;
+		}
+
+		public MatcherContext debug(boolean debug) {
+			this.debug = debug;
+			return this;
+		}
+
+		public boolean isDebug() {
+			return debug;
+		}
+
+		public static MatcherContext exactMatch(final RuleContext ctx, RewriterStatement stmt) {
+			return new MatcherContext(ctx, stmt);
+		}
+
+		public static MatcherContext exactMatchWithDifferentLiteralValues(final RuleContext ctx, RewriterStatement stmt) {
+			return new MatcherContext(ctx, stmt, false, false, true, false, false, false, false, Collections.emptyMap());
 		}
 	}
 

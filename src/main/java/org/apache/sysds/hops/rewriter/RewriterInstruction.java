@@ -95,6 +95,10 @@ public class RewriterInstruction extends RewriterStatement {
 	public boolean match(final MatcherContext mCtx) {
 		RewriterStatement stmt = mCtx.currentStatement;
 		RuleContext ctx = mCtx.ctx;
+
+		if (mCtx.isDebug())
+			System.out.println("Matching: " + this.toString(ctx) + " <=> " + stmt.toString(ctx));
+
 		if (stmt instanceof RewriterInstruction && getResultingDataType(ctx).equals(stmt.getResultingDataType(ctx))) {
 			RewriterInstruction inst = (RewriterInstruction)stmt;
 

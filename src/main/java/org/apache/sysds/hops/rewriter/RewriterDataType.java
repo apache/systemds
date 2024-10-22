@@ -106,6 +106,9 @@ public class RewriterDataType extends RewriterStatement {
 		RuleContext ctx = mCtx.ctx;
 		String dType = stmt.getResultingDataType(ctx);
 
+		if (!(stmt instanceof RewriterDataType) && !mCtx.statementsCanBeVariables)
+			return false;
+
 		if (!dType.equals(type)) {
 			if (!mCtx.allowTypeHierarchy)
 				return false;

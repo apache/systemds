@@ -17,6 +17,10 @@ import java.util.function.BiFunction;
 // For now, we assume that _argList() will have one unique parent
 public class TopologicalSort {
 
+	public static void sort(RewriterStatement root, final RuleContext ctx) {
+		sort(root, (el, parent) -> el.isArgumentList() && parent != null && Set.of("+", "-", "*", "_idxExpr").contains(parent.trueInstruction()), ctx);
+	}
+
 	public static void sort(RewriterStatement root, BiFunction<RewriterStatement, RewriterStatement, Boolean> isArrangable, final RuleContext ctx) {
 		List<RewriterStatement> uncertainParents = setupOrderFacts(root, isArrangable, ctx);
 

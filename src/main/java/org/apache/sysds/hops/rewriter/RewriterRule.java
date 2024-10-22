@@ -111,7 +111,7 @@ public class RewriterRule extends AbstractRewriterRule {
 	}*/
 
 	public RewriterStatement.MatchingSubexpression matchSingleStmt1(RewriterInstruction parent, int rootIndex, RewriterStatement stmt, HashMap<RewriterStatement, RewriterStatement> dependencyMap, List<ExplicitLink> links, Map<RewriterStatement, LinkObject> ruleLinks) {
-		RewriterStatement.MatcherContext mCtx = new RewriterStatement.MatcherContext(ctx, stmt, parent, rootIndex, true, false, true, true, false, true, linksStmt1ToStmt2);
+		RewriterStatement.MatcherContext mCtx = new RewriterStatement.MatcherContext(ctx, stmt, parent, rootIndex, true, true, false, true, true, false, true, linksStmt1ToStmt2);
 		mCtx.currentStatement = stmt;
 		boolean match = getStmt1().match(mCtx);
 
@@ -131,7 +131,7 @@ public class RewriterRule extends AbstractRewriterRule {
 	}*/
 
 	public RewriterStatement.MatchingSubexpression matchSingleStmt2(RewriterInstruction parent, int rootIndex, RewriterStatement stmt, HashMap<RewriterStatement, RewriterStatement> dependencyMap, List<ExplicitLink> links, Map<RewriterStatement, LinkObject> ruleLinks) {
-		RewriterStatement.MatcherContext mCtx = new RewriterStatement.MatcherContext(ctx, stmt, parent, rootIndex, true, false, true, true, false, true, linksStmt2ToStmt1);
+		RewriterStatement.MatcherContext mCtx = new RewriterStatement.MatcherContext(ctx, stmt, parent, rootIndex, true, true, false, true, true, false, true, linksStmt2ToStmt1);
 		mCtx.currentStatement = stmt;
 		boolean match = getStmt2().match(mCtx);
 

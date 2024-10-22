@@ -186,7 +186,7 @@ public class RewriterContextSettings {
 			builder.append("impl +\n");
 			//builder.append("impl -\n");
 			builder.append("impl *\n");
-			builder.append("impl %*%\n");
+			//builder.append("impl %*%\n");
 		});
 
 		List.of("MATRIX", "INT", "FLOAT", "BOOL").forEach(t -> {
@@ -194,7 +194,7 @@ public class RewriterContextSettings {
 			builder.append("impl +\n");
 			//builder.append("impl -\n");
 			builder.append("impl *\n");
-			builder.append("impl %*%\n");
+			//builder.append("impl %*%\n");
 		});
 
 		builder.append("ncol(MATRIX)::INT\n");

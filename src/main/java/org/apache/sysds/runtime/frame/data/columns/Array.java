@@ -939,7 +939,6 @@ public abstract class Array<T> implements Writable {
 	
 	public void setM(Map<T, Long> map, int si, AMapToData m, int i) {
 		try{
-
 			final T v = get(i);
 			if(v != null)
 				m.set(i, map.get(v).intValue() - 1);

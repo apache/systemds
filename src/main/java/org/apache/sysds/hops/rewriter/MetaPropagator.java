@@ -19,10 +19,11 @@ public class MetaPropagator implements Function<RewriterStatement, RewriterState
 
 	// TODO: Maybe automatically recompute hash codes?
 	public RewriterStatement apply(RewriterStatement root) {
+		RewriterAssertions assertions = (RewriterAssertions) root.getMeta("assertions");
 		MutableObject<RewriterStatement> out = new MutableObject<>(root);
 		HashMap<Object, RewriterStatement> literalMap = new HashMap<>();
 		root.forEachPostOrder((el, parent, pIdx) -> {
-			RewriterStatement toSet = propagateDims(el, parent, pIdx);
+			RewriterStatement toSet = propagateDims(el, parent, pIdx, assertions);
 
 			if (toSet != null) {
 				el = toSet;
@@ -58,16 +59,25 @@ public class MetaPropagator implements Function<RewriterStatement, RewriterState
 		return out.getValue();
 	}
 
-	private RewriterStatement propagateDims(RewriterStatement root, RewriterStatement parent, int pIdx) {
+	private RewriterStatement propagateDims(RewriterStatement root, RewriterStatement parent, int pIdx, RewriterAssertions assertions) {
 		if (!root.getResultingDataType(ctx).startsWith("MATRIX")) {
 			if (root.isInstruction()) {
 				String ti = root.trueTypedInstruction(ctx);
+				RewriterStatement ret = null;
+
 				switch (ti) {
 					case "ncol(MATRIX)":
-						return (RewriterStatement)root.getOperands().get(0).getMeta("ncol");
+						ret = (RewriterStatement)root.getOperands().get(0).getMeta("ncol");
+						break;
 					case "nrow(MATRIX)":
-						return (RewriterStatement)root.getOperands().get(0).getMeta("nrow");
+						ret = (RewriterStatement)root.getOperands().get(0).getMeta("nrow");
+						break;
 				}
+
+				if (ret == null)
+					return null;
+
+				return assertions == null ? ret : assertions.getAssertionStatement(ret);
 			}
 			return null;
 		}

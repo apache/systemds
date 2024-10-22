@@ -110,8 +110,8 @@ public class RewriterRule extends AbstractRewriterRule {
 		return getStmt1().matchSubexpr(ctx, stmt, null, -1, arr, new HashMap<>(), true, false, findFirst, null, linksStmt1ToStmt2, true, true, false, iff1to2);
 	}*/
 
-	public RewriterStatement.MatchingSubexpression matchSingleStmt1(RewriterInstruction parent, int rootIndex, RewriterStatement stmt, HashMap<RewriterStatement, RewriterStatement> dependencyMap, List<ExplicitLink> links, Map<RewriterStatement, LinkObject> ruleLinks) {
-		RewriterStatement.MatcherContext mCtx = new RewriterStatement.MatcherContext(ctx, stmt, parent, rootIndex, true, true, false, true, true, false, true, linksStmt1ToStmt2);
+	public RewriterStatement.MatchingSubexpression matchSingleStmt1(RewriterStatement exprRoot, RewriterInstruction parent, int rootIndex, RewriterStatement stmt, HashMap<RewriterStatement, RewriterStatement> dependencyMap, List<ExplicitLink> links, Map<RewriterStatement, LinkObject> ruleLinks) {
+		RewriterStatement.MatcherContext mCtx = new RewriterStatement.MatcherContext(ctx, stmt, parent, rootIndex, exprRoot, true, true, false, true, true, false, true, linksStmt1ToStmt2);
 		mCtx.currentStatement = stmt;
 		boolean match = getStmt1().match(mCtx);
 
@@ -130,8 +130,8 @@ public class RewriterRule extends AbstractRewriterRule {
 		return getStmt2().matchSubexpr(ctx, stmt, null, -1, arr, new HashMap<>(), true, false, findFirst, null, linksStmt2ToStmt1, true, true, false, iff2to1);
 	}*/
 
-	public RewriterStatement.MatchingSubexpression matchSingleStmt2(RewriterInstruction parent, int rootIndex, RewriterStatement stmt, HashMap<RewriterStatement, RewriterStatement> dependencyMap, List<ExplicitLink> links, Map<RewriterStatement, LinkObject> ruleLinks) {
-		RewriterStatement.MatcherContext mCtx = new RewriterStatement.MatcherContext(ctx, stmt, parent, rootIndex, true, true, false, true, true, false, true, linksStmt2ToStmt1);
+	public RewriterStatement.MatchingSubexpression matchSingleStmt2(RewriterStatement exprRoot, RewriterInstruction parent, int rootIndex, RewriterStatement stmt, HashMap<RewriterStatement, RewriterStatement> dependencyMap, List<ExplicitLink> links, Map<RewriterStatement, LinkObject> ruleLinks) {
+		RewriterStatement.MatcherContext mCtx = new RewriterStatement.MatcherContext(ctx, stmt, parent, rootIndex, exprRoot, true, true, false, true, true, false, true, linksStmt2ToStmt1);
 		mCtx.currentStatement = stmt;
 		boolean match = getStmt2().match(mCtx);
 
@@ -340,6 +340,11 @@ public class RewriterRule extends AbstractRewriterRule {
 		@Override
 		public boolean equals(Object obj) {
 			return (obj instanceof IdentityRewriterStatement && ((IdentityRewriterStatement)obj).stmt == stmt);
+		}
+
+		@Override
+		public String toString() {
+			return stmt.toString();
 		}
 	}
 

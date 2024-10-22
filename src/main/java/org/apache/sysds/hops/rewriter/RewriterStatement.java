@@ -62,6 +62,7 @@ public abstract class RewriterStatement implements Comparable<RewriterStatement>
 
 
 	public static class MatchingSubexpression {
+		private final RewriterStatement expressionRoot;
 		private final RewriterStatement matchRoot;
 		private final RewriterStatement matchParent;
 		private final int rootIndex;
@@ -69,7 +70,8 @@ public abstract class RewriterStatement implements Comparable<RewriterStatement>
 		private final List<RewriterRule.ExplicitLink> links;
 		public Object shared_data = null;
 
-		public MatchingSubexpression(RewriterStatement matchRoot, RewriterStatement matchParent, int rootIndex, Map<RewriterStatement, RewriterStatement> assocs, List<RewriterRule.ExplicitLink> links) {
+		public MatchingSubexpression(RewriterStatement expressionRoot, RewriterStatement matchRoot, RewriterStatement matchParent, int rootIndex, Map<RewriterStatement, RewriterStatement> assocs, List<RewriterRule.ExplicitLink> links) {
+			this.expressionRoot = expressionRoot;
 			this.matchRoot = matchRoot;
 			this.matchParent = matchParent;
 			this.assocs = assocs;
@@ -79,6 +81,10 @@ public abstract class RewriterStatement implements Comparable<RewriterStatement>
 
 		public boolean isRootInstruction() {
 			return matchParent == null || matchParent == matchRoot;
+		}
+
+		public RewriterStatement getExpressionRoot() {
+			return expressionRoot;
 		}
 
 		public RewriterStatement getMatchRoot() {
@@ -112,6 +118,7 @@ public abstract class RewriterStatement implements Comparable<RewriterStatement>
 		final boolean allowTypeHierarchy;
 		final boolean terminateOnFirstMatch;
 		final Map<RewriterStatement, RewriterRule.LinkObject> ruleLinks;
+		final RewriterStatement expressionRoot;
 		RewriterStatement matchRoot;
 		RewriterStatement matchParent;
 		int matchParentIndex;
@@ -125,13 +132,14 @@ public abstract class RewriterStatement implements Comparable<RewriterStatement>
 		private List<MatcherContext> subMatches;
 		private boolean debug;
 
-		public MatcherContext(final RuleContext ctx, RewriterStatement matchRoot) {
-			this(ctx, matchRoot, false, false, false, false, false, false, false, Collections.emptyMap());
+		public MatcherContext(final RuleContext ctx, RewriterStatement matchRoot, RewriterStatement expressionRoot) {
+			this(ctx, matchRoot, expressionRoot, false, false, false, false, false, false, false, Collections.emptyMap());
 		}
 
-		public MatcherContext(final RuleContext ctx, RewriterStatement matchRoot, final boolean statementsCanBeVariables, final boolean literalsCanBeVariables, final boolean ignoreLiteralValues, final boolean allowDuplicatePointers, final boolean allowPropertyScan, final boolean allowTypeHierarchy, final boolean terminateOnFirstMatch, final Map<RewriterStatement, RewriterRule.LinkObject> ruleLinks) {
+		public MatcherContext(final RuleContext ctx, RewriterStatement matchRoot, RewriterStatement expressionRoot, final boolean statementsCanBeVariables, final boolean literalsCanBeVariables, final boolean ignoreLiteralValues, final boolean allowDuplicatePointers, final boolean allowPropertyScan, final boolean allowTypeHierarchy, final boolean terminateOnFirstMatch, final Map<RewriterStatement, RewriterRule.LinkObject> ruleLinks) {
 			this.ctx = ctx;
 			this.matchRoot = matchRoot;
+			this.expressionRoot = expressionRoot;
 			this.statementsCanBeVariables = statementsCanBeVariables;
 			this.currentStatement = matchRoot;
 			this.literalsCanBeVariables = literalsCanBeVariables;
@@ -144,11 +152,12 @@ public abstract class RewriterStatement implements Comparable<RewriterStatement>
 			this.debug = false;
 		}
 
-		public MatcherContext(final RuleContext ctx, RewriterStatement matchRoot, RewriterStatement matchParent, int rootIndex, final boolean statementsCanBeVariables, final boolean literalsCanBeVariables, final boolean ignoreLiteralValues, final boolean allowDuplicatePointers, final boolean allowPropertyScan, final boolean allowTypeHierarchy, final boolean terminateOnFirstMatch, final Map<RewriterStatement, RewriterRule.LinkObject> ruleLinks) {
+		public MatcherContext(final RuleContext ctx, RewriterStatement matchRoot, RewriterStatement matchParent, int rootIndex, RewriterStatement expressionRoot, final boolean statementsCanBeVariables, final boolean literalsCanBeVariables, final boolean ignoreLiteralValues, final boolean allowDuplicatePointers, final boolean allowPropertyScan, final boolean allowTypeHierarchy, final boolean terminateOnFirstMatch, final Map<RewriterStatement, RewriterRule.LinkObject> ruleLinks) {
 			this.ctx = ctx;
 			this.matchRoot = matchRoot;
 			this.matchParent = matchParent;
 			this.matchParentIndex = rootIndex;
+			this.expressionRoot = expressionRoot;
 			this.currentStatement = matchRoot;
 			this.statementsCanBeVariables = statementsCanBeVariables;
 			this.literalsCanBeVariables = literalsCanBeVariables;
@@ -208,7 +217,7 @@ public abstract class RewriterStatement implements Comparable<RewriterStatement>
 		}
 
 		public MatchingSubexpression toMatch() {
-			return new MatchingSubexpression(matchRoot, matchParent, matchParentIndex, getDependencyMap(), getLinks());
+			return new MatchingSubexpression(expressionRoot, matchRoot, matchParent, matchParentIndex, getDependencyMap(), getLinks());
 		}
 
 		public void reset() {
@@ -220,7 +229,7 @@ public abstract class RewriterStatement implements Comparable<RewriterStatement>
 				internalReferences.clear();
 		}
 
-		public MatcherContext createCheckpoint() {
+		/*public MatcherContext createCheckpoint() {
 			MatcherContext checkpoint = new MatcherContext(ctx, matchRoot, statementsCanBeVariables, literalsCanBeVariables, ignoreLiteralValues, allowDuplicatePointers, allowPropertyScan, allowTypeHierarchy, terminateOnFirstMatch, ruleLinks);
 			checkpoint.matchParent = matchParent;
 			checkpoint.matchParentIndex = matchParentIndex;
@@ -233,7 +242,7 @@ public abstract class RewriterStatement implements Comparable<RewriterStatement>
 			if (subMatches != null)
 				checkpoint.subMatches = new ArrayList<>(subMatches);
 			return checkpoint;
-		}
+		}*/
 
 		public MatcherContext debug(boolean debug) {
 			this.debug = debug;
@@ -245,11 +254,11 @@ public abstract class RewriterStatement implements Comparable<RewriterStatement>
 		}
 
 		public static MatcherContext exactMatch(final RuleContext ctx, RewriterStatement stmt) {
-			return new MatcherContext(ctx, stmt);
+			return new MatcherContext(ctx, stmt, stmt);
 		}
 
 		public static MatcherContext exactMatchWithDifferentLiteralValues(final RuleContext ctx, RewriterStatement stmt) {
-			return new MatcherContext(ctx, stmt, false, false, true, false, false, false, false, Collections.emptyMap());
+			return new MatcherContext(ctx, stmt, stmt, false, false, true, false, false, false, false, Collections.emptyMap());
 		}
 	}
 

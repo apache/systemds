@@ -131,7 +131,7 @@ public class RewriterRuleSet {
 		root.forEachPreOrder((el, parent, rootIdx) -> {
 			String typedStr = el.isInstruction() ? el.trueTypedInstruction(ctx) : el.getResultingDataType(ctx);
 			Set<String> props = el instanceof RewriterInstruction ? ((RewriterInstruction)el).getProperties(ctx) : Collections.emptySet();
-			boolean found = acceleratedMatch(el, matches, typedStr, el.getResultingDataType(ctx), props, rootIdx, (RewriterInstruction) parent, dependencyMap, links, linkObjects, findFirst);
+			boolean found = acceleratedMatch(root, el, matches, typedStr, el.getResultingDataType(ctx), props, rootIdx, (RewriterInstruction) parent, dependencyMap, links, linkObjects, findFirst);
 			return !findFirst || !found;
 		});
 
@@ -152,14 +152,14 @@ public class RewriterRuleSet {
 		return new ArrayList<>(uniqueRules.values());
 	}
 
-	public boolean acceleratedMatch(RewriterStatement stmt, List<Tuple3<RewriterRule, Boolean, RewriterStatement.MatchingSubexpression>> appRules, String realTypedInstr, String realType, Set<String> properties, int rootIndex, RewriterInstruction parent, MutableObject<HashMap<RewriterStatement, RewriterStatement>> dependencyMap, MutableObject<List<RewriterRule.ExplicitLink>> links, MutableObject<Map<RewriterStatement, RewriterRule.LinkObject>> linkObjects, boolean findFirst) {
+	public boolean acceleratedMatch(RewriterStatement exprRoot, RewriterStatement stmt, List<Tuple3<RewriterRule, Boolean, RewriterStatement.MatchingSubexpression>> appRules, String realTypedInstr, String realType, Set<String> properties, int rootIndex, RewriterInstruction parent, MutableObject<HashMap<RewriterStatement, RewriterStatement>> dependencyMap, MutableObject<List<RewriterRule.ExplicitLink>> links, MutableObject<Map<RewriterStatement, RewriterRule.LinkObject>> linkObjects, boolean findFirst) {
 		List<Tuple2<RewriterRule, Boolean>> potentialMatches;
 		boolean foundMatch = false;
 
 		if (realTypedInstr != null) {
 			potentialMatches = accelerator.get(realTypedInstr);
 			if (potentialMatches != null) {
-				foundMatch |= checkPotentialMatches(stmt, potentialMatches, appRules, rootIndex, parent, dependencyMap, links, linkObjects, findFirst);
+				foundMatch |= checkPotentialMatches(stmt, potentialMatches, appRules, rootIndex, parent, dependencyMap, links, linkObjects, exprRoot, findFirst);
 
 				if (foundMatch && findFirst)
 					return true;
@@ -168,7 +168,7 @@ public class RewriterRuleSet {
 
 		potentialMatches = accelerator.get(realType);
 		if (potentialMatches != null) {
-			foundMatch |= checkPotentialMatches(stmt, potentialMatches, appRules, rootIndex, parent, dependencyMap, links, linkObjects, findFirst);
+			foundMatch |= checkPotentialMatches(stmt, potentialMatches, appRules, rootIndex, parent, dependencyMap, links, linkObjects, exprRoot, findFirst);
 
 			if (foundMatch && findFirst)
 				return true;
@@ -178,7 +178,7 @@ public class RewriterRuleSet {
 			for (String props : properties) {
 				potentialMatches = accelerator.get(props);
 				if (potentialMatches != null) {
-					foundMatch |= checkPotentialMatches(stmt, potentialMatches, appRules, rootIndex, parent, dependencyMap, links, linkObjects, findFirst);
+					foundMatch |= checkPotentialMatches(stmt, potentialMatches, appRules, rootIndex, parent, dependencyMap, links, linkObjects, exprRoot, findFirst);
 
 					if (foundMatch && findFirst)
 						return true;
@@ -189,15 +189,15 @@ public class RewriterRuleSet {
 		return foundMatch;
 	}
 
-	private boolean checkPotentialMatches(RewriterStatement stmt, List<Tuple2<RewriterRule, Boolean>> potentialMatches, List<Tuple3<RewriterRule, Boolean, RewriterStatement.MatchingSubexpression>> appRules, int rootIndex, RewriterInstruction parent, MutableObject<HashMap<RewriterStatement, RewriterStatement>> dependencyMap, MutableObject<List<RewriterRule.ExplicitLink>> links, MutableObject<Map<RewriterStatement, RewriterRule.LinkObject>> linkObjects, boolean findFirst) {
+	private boolean checkPotentialMatches(RewriterStatement stmt, List<Tuple2<RewriterRule, Boolean>> potentialMatches, List<Tuple3<RewriterRule, Boolean, RewriterStatement.MatchingSubexpression>> appRules, int rootIndex, RewriterInstruction parent, MutableObject<HashMap<RewriterStatement, RewriterStatement>> dependencyMap, MutableObject<List<RewriterRule.ExplicitLink>> links, MutableObject<Map<RewriterStatement, RewriterRule.LinkObject>> linkObjects, RewriterStatement exprRoot, boolean findFirst) {
 		boolean anyMatch = false;
 		for (Tuple2<RewriterRule, Boolean> m : potentialMatches) {
 			RewriterStatement.MatchingSubexpression match;
 
 			if (m._2()) {
-				match = m._1().matchSingleStmt1(parent, rootIndex, stmt, dependencyMap.getValue(), links.getValue(), linkObjects.getValue());
+				match = m._1().matchSingleStmt1(exprRoot, parent, rootIndex, stmt, dependencyMap.getValue(), links.getValue(), linkObjects.getValue());
 			} else {
-				match = m._1().matchSingleStmt2(parent, rootIndex, stmt, dependencyMap.getValue(), links.getValue(), linkObjects.getValue());
+				match = m._1().matchSingleStmt2(exprRoot, parent, rootIndex, stmt, dependencyMap.getValue(), links.getValue(), linkObjects.getValue());
 			}
 
 			if (match != null) {

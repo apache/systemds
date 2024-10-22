@@ -23,10 +23,16 @@ public class RewriterStatementEntry {
 		if (o.hashCode() != instr.hashCode())
 			return false;
 
-		if (o instanceof RewriterStatement)
-			return instr.match(new RewriterStatement.MatcherContext(ctx, (RewriterStatement)o, null, -1, false, false, false, false, false, false, true, new HashMap<>()));
-		if (o instanceof RewriterStatementEntry)
-			return instr.match(new RewriterStatement.MatcherContext(ctx, ((RewriterStatementEntry)o).instr, null, -1, false, false, false, false, false, false, true, new HashMap<>()));
+		if (o instanceof RewriterStatement) {
+			if (instr == o)
+				return true;
+			return instr.match(new RewriterStatement.MatcherContext(ctx, (RewriterStatement) o, null, -1, (RewriterStatement) o, false, false, false, false, false, false, true, new HashMap<>()));
+		}
+		if (o instanceof RewriterStatementEntry) {
+			if (instr == ((RewriterStatementEntry) o).instr)
+				return true;
+			return instr.match(new RewriterStatement.MatcherContext(ctx, ((RewriterStatementEntry) o).instr, null, -1, ((RewriterStatementEntry) o).instr, false, false, false, false, false, false, true, new HashMap<>()));
+		}
 		return false;
 	}
 }

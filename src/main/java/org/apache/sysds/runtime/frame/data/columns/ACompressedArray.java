@@ -19,8 +19,12 @@
 
 package org.apache.sysds.runtime.frame.data.columns;
 
+import java.util.Map;
+
+import org.apache.commons.lang3.NotImplementedException;
 import org.apache.sysds.common.Types.ValueType;
 import org.apache.sysds.runtime.compress.DMLCompressionException;
+import org.apache.sysds.runtime.compress.colgroup.mapping.AMapToData;
 import org.apache.sysds.runtime.frame.data.compress.ArrayCompressionStatistics;
 
 /**
@@ -148,5 +152,15 @@ public abstract class ACompressedArray<T> extends Array<T> {
 	@Override
 	protected Array<Object> changeTypeHash32(Array<Object> ret, int l, int u) {
 		throw new DMLCompressionException("Invalid to change sub compressed array");
+	}
+
+	@Override
+	public void setM(Map<T, Long> map, AMapToData m, int i) {
+		throw new NotImplementedException();
+	}
+
+	@Override
+	public void setM(Map<T, Long> map, int si, AMapToData m, int i) {
+		throw new NotImplementedException();
 	}
 }

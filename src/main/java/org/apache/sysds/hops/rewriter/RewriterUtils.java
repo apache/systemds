@@ -427,7 +427,7 @@ public class RewriterUtils {
 		} else if (boolLiteral) {
 			pattern = Pattern.compile("(TRUE|FALSE)");
 		} else if (floatLiteral) {
-			pattern = Pattern.compile("(-)?[0-9]+(\\.[0-9]*)?(E(-|\\+)[0-9]+)?");
+			pattern = Pattern.compile("((-)?([0-9]+(\\.[0-9]*)?(E(-)?[0-9]+)?|Infinity)|NaN)");
 		}
 
 		if (expr.charAt(matcher.end()) != ':')
@@ -1231,7 +1231,23 @@ public class RewriterUtils {
 		return mergedTreeCombinations;
 	}
 
-	public static List<RewriterStatement> generateSubtrees(RewriterStatement stmt, Map<RewriterRule.IdentityRewriterStatement, List<RewriterStatement>> visited, final RuleContext ctx) {
+	public static List<RewriterStatement> generateSubtrees(RewriterStatement stmt, final RuleContext ctx) {
+		List<RewriterStatement> l = generateSubtrees(stmt, new HashMap<>(), ctx);
+
+		if (ctx.metaPropagator != null)
+			l.forEach(subtree -> ctx.metaPropagator.apply(subtree));
+
+		return l.stream().map(subtree -> {
+			if (ctx.metaPropagator != null)
+				subtree = ctx.metaPropagator.apply(subtree);
+
+			subtree.prepareForHashing();
+			subtree.recomputeHashCodes(ctx);
+			return subtree;
+		}).collect(Collectors.toList());
+	}
+
+	private static List<RewriterStatement> generateSubtrees(RewriterStatement stmt, Map<RewriterRule.IdentityRewriterStatement, List<RewriterStatement>> visited, final RuleContext ctx) {
 		if (stmt == null)
 			return Collections.emptyList();
 

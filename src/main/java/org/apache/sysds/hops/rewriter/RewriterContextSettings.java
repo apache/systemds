@@ -236,7 +236,7 @@ public class RewriterContextSettings {
 		// Boole algebra
 
 		RewriterUtils.buildBinaryPermutations(List.of("MATRIX", "FLOAT", "INT", "BOOL"), (t1, t2) -> {
-			String ret = t1.equals("MATRIX") ^ t2.equals("MATRIX") ? "MATRIX" : "BOOL";
+			String ret = t1.equals("MATRIX") || t2.equals("MATRIX") ? "MATRIX" : "BOOL";
 			builder.append("==(" + t1 + "," + t2 + ")::" + ret + "\n");
 			builder.append("!=(" + t1 + "," + t2 + ")::" + ret + "\n");
 			builder.append("<(" + t1 + "," + t2 + ")::" + ret + "\n");

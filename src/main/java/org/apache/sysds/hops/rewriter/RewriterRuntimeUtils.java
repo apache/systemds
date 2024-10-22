@@ -257,18 +257,18 @@ public class RewriterRuntimeUtils {
 			return buildLeaf(next, expectedType, ctx);
 
 		if (cache.containsKey(next))
-			return checkForCorrectTypes(cache.get(next), next, ctx);
+			return checkForCorrectTypes(cache.get(next), expectedType, next, ctx);
 
 		if (next instanceof LiteralOp) {
 			RewriterStatement literal = buildLiteral((LiteralOp)next, expectedType, ctx);
-			literal = checkForCorrectTypes(literal, next, ctx);
+			literal = checkForCorrectTypes(literal, expectedType, next, ctx);
 			cache.put(next, literal);
 			return literal;
 		}
 
 		if (next instanceof AggBinaryOp) {
 			RewriterStatement stmt = buildAggBinaryOp((AggBinaryOp) next, expectedType, ctx);
-			stmt = checkForCorrectTypes(stmt, next, ctx);
+			stmt = checkForCorrectTypes(stmt, expectedType, next, ctx);
 
 			if (stmt == null)
 				return buildLeaf(next, expectedType, ctx);
@@ -281,7 +281,7 @@ public class RewriterRuntimeUtils {
 
 		if (next instanceof AggUnaryOp) {
 			RewriterStatement stmt = buildAggUnaryOp((AggUnaryOp) next, expectedType, ctx);
-			stmt = checkForCorrectTypes(stmt, next, ctx);
+			stmt = checkForCorrectTypes(stmt, expectedType, next, ctx);
 
 			if (stmt == null)
 				return buildLeaf(next, expectedType, ctx);
@@ -294,7 +294,7 @@ public class RewriterRuntimeUtils {
 
 		if (next instanceof BinaryOp) {
 			RewriterStatement stmt = buildBinaryOp((BinaryOp) next, expectedType, ctx);
-			stmt = checkForCorrectTypes(stmt, next, ctx);
+			stmt = checkForCorrectTypes(stmt, expectedType, next, ctx);
 
 			if (stmt == null)
 				return buildLeaf(next, expectedType, ctx);
@@ -307,7 +307,7 @@ public class RewriterRuntimeUtils {
 
 		if (next instanceof ReorgOp) {
 			RewriterStatement stmt = buildReorgOp((ReorgOp) next, expectedType, ctx);
-			stmt = checkForCorrectTypes(stmt, next, ctx);
+			stmt = checkForCorrectTypes(stmt, expectedType, next, ctx);
 
 			if (stmt == null)
 				return buildLeaf(next, expectedType, ctx);
@@ -321,7 +321,7 @@ public class RewriterRuntimeUtils {
 		if (next instanceof DataGenOp) {
 			List<Hop> interestingHops = new ArrayList<>();
 			RewriterStatement stmt = buildDataGenOp((DataGenOp)next, expectedType, ctx, interestingHops);
-			stmt = checkForCorrectTypes(stmt, next, ctx);
+			stmt = checkForCorrectTypes(stmt, expectedType, next, ctx);
 
 			if (stmt == null)
 				return buildLeaf(next, expectedType, ctx);
@@ -348,16 +348,20 @@ public class RewriterRuntimeUtils {
 		return null;
 	}
 
-	private static RewriterStatement checkForCorrectTypes(RewriterStatement stmt, Hop hop, final RuleContext ctx) {
+	// TODO: Maybe introduce other implicit conversions if types mismatch
+	private static RewriterStatement checkForCorrectTypes(RewriterStatement stmt, @Nullable String expectedType, Hop hop, final RuleContext ctx) {
 		if (stmt == null)
 			return null;
+
+		if (expectedType == null)
+			expectedType = stmt.getResultingDataType(ctx);
 
 		String actualType = resolveExactDataType(hop);
 
 		if (actualType == null)
 			return null;
 
-		if (actualType.equals(stmt.getResultingDataType(ctx)))
+		if (actualType.equals(expectedType))
 			return stmt;
 
 		if (actualType.equals("MATRIX")) {
@@ -406,14 +410,18 @@ public class RewriterRuntimeUtils {
 		List<RewriterStatement> children = new ArrayList<>();
 		int ctr = 0;
 		for (Hop in : inputs) {
-			RewriterStatement childStmt = buildDAGRecursively(in, fixedSize ? stmt.getOperands().get(ctr++).getResultingDataType(ctx) : null, cache, depth + 1, maxDepth, ctx);
+			RewriterStatement childStmt = buildDAGRecursively(in, fixedSize ? stmt.getOperands().get(ctr).getResultingDataType(ctx) : null, cache, depth + 1, maxDepth, ctx);
 
 			if (childStmt == null) {
 				//System.out.println("Could not build child: " + in);
 				return false;
 			}
 
+			if (fixedSize && !childStmt.getResultingDataType(ctx).equals(stmt.getOperands().get(ctr).getResultingDataType(ctx)))
+				throw new IllegalArgumentException("Different data type than expected: "  + stmt.toString(ctx) + "; [" + ctr + "] " + childStmt.toString(ctx) + " ::" + childStmt.getResultingDataType(ctx));
+
 			children.add(childStmt);
+			ctr++;
 		}
 
 		stmt.getOperands().clear();
@@ -438,16 +446,19 @@ public class RewriterRuntimeUtils {
 	}
 
 	private static RewriterStatement buildAggUnaryOp(AggUnaryOp op, @Nullable String expectedType, final RuleContext ctx) {
-		if (expectedType != null && !expectedType.equals("FLOAT"))
-			throw new IllegalArgumentException();
-
 		// Some placeholder definitions
 		switch(op.getOpString()) {
 			case "ua(+C)": // Matrix multiplication
+				if (expectedType != null && !expectedType.equals("FLOAT"))
+					throw new IllegalArgumentException();
 				return RewriterUtils.parse("colSums(A)", ctx, matrixDefs, floatDefs, intDefs, boolDefs);
 			case "ua(+R)":
+				if (expectedType != null && !expectedType.equals("FLOAT"))
+					throw new IllegalArgumentException();
 				return RewriterUtils.parse("rowSums(A)", ctx, matrixDefs, floatDefs, intDefs, boolDefs);
 			case "ua(+RC)":
+				if (expectedType != null && !expectedType.equals("FLOAT"))
+					throw new IllegalArgumentException();
 				return RewriterUtils.parse("sum(A)", ctx, matrixDefs, floatDefs, intDefs, boolDefs);
 		}
 

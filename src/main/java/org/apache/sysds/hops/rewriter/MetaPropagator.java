@@ -17,7 +17,7 @@ public class MetaPropagator implements Function<RewriterStatement, RewriterState
 		this.ctx = ctx;
 	}
 
-	// TODO: This must actually return the top element
+	// TODO: Maybe automatically recompute hash codes?
 	public RewriterStatement apply(RewriterStatement root) {
 		MutableObject<RewriterStatement> out = new MutableObject<>(root);
 		HashMap<Object, RewriterStatement> literalMap = new HashMap<>();

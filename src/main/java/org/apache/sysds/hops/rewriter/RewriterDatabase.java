@@ -8,6 +8,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.Consumer;
 
 public class RewriterDatabase {
 
@@ -27,6 +28,10 @@ public class RewriterDatabase {
 
 	public RewriterStatement insertOrReturn(final RuleContext ctx, RewriterStatement stmt) {
 		return db.putIfAbsent(new RewriterStatementEntry(ctx, stmt), stmt);
+	}
+
+	public void forEach(Consumer<RewriterStatement> consumer) {
+		db.values().forEach(consumer);
 	}
 
 	public int size() {return db.size(); }
@@ -49,15 +54,13 @@ public class RewriterDatabase {
 			if (line.startsWith("::STMT")) {
 				if (strBuffer.isEmpty())
 					continue;
-				//try {
-				System.out.println("======");
-				System.out.println(String.join("\n", strBuffer));
+				try {
 					RewriterStatement stmt = RewriterUtils.parse(String.join("\n", strBuffer), ctx);
 					insertEntry(ctx, stmt);
 					strBuffer.clear();
-				//} catch (Exception e) {
-					//throw new IllegalArgumentException("Error when parsing:\n" + String.join("\n", strBuffer) + "\n" + e.getMessage());
-				//}
+				} catch (Exception e) {
+					e.printStackTrace();
+				}
 			} else {
 				strBuffer.add(line);
 			}

@@ -855,6 +855,19 @@ public class CostEstimator
 
 			output.rddStats.cost = loadTime + SparkCostUtils.getParameterizedBuiltinInstTime(paramInst,
 					input1, input2, output, driverMetrics, executorMetrics);
+		} else if (inst instanceof TernarySPInstruction) {
+			TernarySPInstruction tInst = (TernarySPInstruction) inst;
+			VarStats input1 = getStatsWithDefaultScalar(tInst.input1.getName());
+			VarStats input2 = getStatsWithDefaultScalar(tInst.input2.getName());
+			VarStats input3 = getStatsWithDefaultScalar(tInst.input3.getName());
+			double loadTime = loadRDDStatsAndEstimateTime(input1) +
+					loadRDDStatsAndEstimateTime(input2) + loadRDDStatsAndEstimateTime(input3);
+
+			output = getStats(tInst.getOutputVariableName());
+			SparkCostUtils.assignOutputRDDStats(inst, output, input1, input2, input3);
+
+			output.rddStats.cost = loadTime + SparkCostUtils.getTernaryInstTime(tInst,
+					input1, input2, input3, output, executorMetrics);
 		} else if (inst instanceof QuaternarySPInstruction) {
 			// NOTE: not all quaternary instructions supported yet; only
 			//  mapwdivmm, mapsigmoid, mapwumm, mapwsloss, mapwcemm
@@ -888,8 +901,6 @@ public class CostEstimator
 //		} else if (inst instanceof CovarianceSPInstruction) {
 //
 //		} else if (inst instanceof QuantilePickSPInstruction) {
-//
-//		} else if (inst instanceof TernarySPInstruction) {
 //
 //		} else if (inst instanceof AggregateTernarySPInstruction) {
 //
@@ -995,7 +1006,6 @@ public class CostEstimator
 	private void putInMemory(VarStats output) throws CostEstimationException {
 		if (output.isScalar() || output.allocatedMemory <= MIN_MEMORY_TO_TRACK) return;
 		if (freeLocalMemory - output.allocatedMemory < 0) {
-			// System.out.println(Explain.explain(_program));
 			throw new CostEstimationException("Insufficient local memory");
 		}
 		freeLocalMemory -= output.allocatedMemory;

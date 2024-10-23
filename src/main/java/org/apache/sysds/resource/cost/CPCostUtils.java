@@ -763,8 +763,9 @@ public class CPCostUtils {
                 switch (opcode) {
                     case "+*":
                     case "-*":
-                    case "ifelse":
                         return 2 * output.getCells();
+                    case "ifelse":
+                        return output.getCells();
                     case "_map":
                         throw new RuntimeException("Specific Frame operation with opcode '" + opcode + "' is not supported yet");
                     default:

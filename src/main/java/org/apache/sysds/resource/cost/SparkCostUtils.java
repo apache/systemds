@@ -498,6 +498,48 @@ public class SparkCostUtils {
         return dataTransmissionTime + mapTime;
     }
 
+    public static double getTernaryInstTime(TernarySPInstruction tInst, VarStats input1, VarStats input2, VarStats input3, VarStats output, IOMetrics executorMetrics) {
+        RDDStats[] inputRddStats = {}; // to be used later at CPU time estimation (mem. scanning)
+        double dataTransmissionTime = 0;
+        if (!input1.isScalar() && !input2.isScalar()) {
+            inputRddStats = new RDDStats[]{input1.rddStats, input2.rddStats};
+            // input1.join(input2)
+            dataTransmissionTime += getSparkShuffleTime(input1.rddStats, executorMetrics,
+                    input1.rddStats.hashPartitioned);
+            dataTransmissionTime += getSparkShuffleTime(input2.rddStats, executorMetrics,
+                    input2.rddStats.hashPartitioned);
+        } else if (!input1.isScalar() && !input3.isScalar()) {
+            inputRddStats = new RDDStats[]{input1.rddStats, input3.rddStats};
+            // input1.join(input3)
+            dataTransmissionTime += getSparkShuffleTime(input1.rddStats, executorMetrics,
+                    input1.rddStats.hashPartitioned);
+            dataTransmissionTime += getSparkShuffleTime(input3.rddStats, executorMetrics,
+                    input3.rddStats.hashPartitioned);
+        } else if (!input2.isScalar() || !input3.isScalar()) {
+            inputRddStats = new RDDStats[]{input2.rddStats, input3.rddStats};
+            // input2.join(input3)
+            dataTransmissionTime += getSparkShuffleTime(input2.rddStats, executorMetrics,
+                    input2.rddStats.hashPartitioned);
+            dataTransmissionTime += getSparkShuffleTime(input3.rddStats, executorMetrics,
+                    input3.rddStats.hashPartitioned);
+        } else if (!input1.isScalar() && !input2.isScalar() && !input3.isScalar()) {
+            inputRddStats = new RDDStats[]{input1.rddStats, input2.rddStats, input3.rddStats};
+            // input1.join(input2).join(input3)
+            dataTransmissionTime += getSparkShuffleTime(input1.rddStats, executorMetrics,
+                    input1.rddStats.hashPartitioned);
+            dataTransmissionTime += getSparkShuffleTime(input2.rddStats, executorMetrics,
+                    input2.rddStats.hashPartitioned);
+            dataTransmissionTime += getSparkShuffleTime(input3.rddStats, executorMetrics,
+                    input3.rddStats.hashPartitioned);
+        }
+
+        long nflop = getInstNFLOP(SPType.Ternary, tInst.getOpcode(), output, input1, input2, input3);
+        double mapTime = getCPUTime(nflop, output.rddStats.numPartitions, executorMetrics,
+                output.rddStats, inputRddStats);
+
+        return dataTransmissionTime + mapTime;
+    }
+
     public static double getQuaternaryInstTime(QuaternarySPInstruction quatInst, VarStats input1, VarStats input2, VarStats input3, VarStats output, IOMetrics driverMetrics, IOMetrics executorMetrics) {
         String opcode = quatInst.getOpcode();
         if (opcode.startsWith("red")) {
@@ -695,6 +737,9 @@ public class SparkCostUtils {
                 return CPCostUtils.getInstNFLOP(CPType.Ctable, opcode, output, inputs);
             case ParameterizedBuiltin:
                 return CPCostUtils.getInstNFLOP(CPType.ParameterizedBuiltin, opcode, output, inputs);
+            case Ternary:
+                // only the output is relevant for the calculation
+                return CPCostUtils.getInstNFLOP(CPType.Ternary, opcode, output);
             case Quaternary:
                 String opcodeRoot = opcode.substring(3);
                 return CPCostUtils.getInstNFLOP(CPType.Quaternary, opcodeRoot, output, inputs);

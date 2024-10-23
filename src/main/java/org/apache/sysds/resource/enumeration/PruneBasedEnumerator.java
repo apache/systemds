@@ -70,11 +70,8 @@ public class PruneBasedEnumerator extends Enumerator {
                 driverCores = dCoresEntry.getKey();
                 // single node execution mode
                 if (evaluateSingleNodeExecution(driverMemory)) {
-                    program = ResourceCompiler.doFullRecompilation(
-                            program,
-                            driverMemory,
-                            driverCores
-                    );
+                    ResourceCompiler.setSingleNodeResourceConfigs(driverMemory, driverCores);
+                    program = ResourceCompiler.doFullRecompilation(program);
                     // no need of recompilation for single nodes with identical memory budget and #v. cores
                     for (CloudInstance dInstance: dCoresEntry.getValue()) {
                         // iterate over all driver nodes with the currently evaluated memory and #cores values
@@ -103,14 +100,14 @@ public class PruneBasedEnumerator extends Enumerator {
                         int newLocalBestNumberExecutors = -1;
                         // for Spark execution mode
                         for (int numberExecutors: numberExecutorsSet) {
-                            program = ResourceCompiler.doFullRecompilation(
-                                    program,
+                            ResourceCompiler.setSparkClusterResourceConfigs(
                                     driverMemory,
                                     driverCores,
                                     numberExecutors,
                                     executorMemory,
                                     executorCores
                             );
+                            program = ResourceCompiler.doFullRecompilation(program);
                             if (!hasSparkInstructions(program)) {
                                 // mark the current CP memory budget as dominant for the global optimal solution
                                 // -> higher CP memory could not introduce Spark operations
@@ -187,7 +184,7 @@ public class PruneBasedEnumerator extends Enumerator {
         int maxExecutorsToConsider = maxExecutorsPerInstanceMap.get(combinationHash);
         currentMax = Math.min(currentMax, maxExecutorsToConsider);
         ArrayList<Integer> result = new ArrayList<>();
-        for (int i = 1; i < currentMax; i++) {
+        for (int i = 1; i <= currentMax; i++) {
             result.add(i);
         }
         return result;

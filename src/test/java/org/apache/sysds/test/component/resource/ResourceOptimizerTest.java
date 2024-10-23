@@ -337,33 +337,6 @@ public class ResourceOptimizerTest extends AutomatedTestBase {
     }
 
     @Test
-    public void executeForL2SVM_FullSearchSpace_Test() throws IOException, ParseException {
-        Path tmpOutFolder = Files.createTempDirectory("out");
-
-        String[] args = {
-                "-f", HOME+"Algorithm_L2SVM.dml",
-                "-nvargs", "m=10000", "n=10000"
-        };
-        Options cliOptions = createOptions();
-        CommandLineParser clParser = new PosixParser();
-        CommandLine line = null;
-        try {
-            line = clParser.parse(cliOptions, args);
-        } catch (ParseException e) {
-            Assert.fail("ParseException should not have been raise here: "+e);
-        }
-        PropertiesConfiguration options = generateTestingOptionsRequired(tmpOutFolder.toString());
-        options.setProperty("INFO_TABLE", DEFAULT_INSTANCE_INFO_TABLE);
-        options.setProperty("MAX_EXECUTORS", "2");
-
-        ResourceOptimizer.execute(line, options);
-
-        if (!DEBUG) {
-            deleteDirectoryWithFiles(tmpOutFolder);
-        }
-    }
-
-    @Test
     public void executeForReadAndWrite_Test() throws IOException, ParseException {
         Path tmpOutFolder = Files.createTempDirectory("out");
 

@@ -30,6 +30,7 @@ import java.io.File;
 import java.io.IOException;
 import java.util.HashMap;
 
+import static org.apache.sysds.resource.CloudUtils.*;
 import static org.apache.sysds.test.component.resource.ResourceTestUtils.*;
 import static org.junit.Assert.*;
 
@@ -156,7 +157,7 @@ public class CloudUtilsTests {
 	}
 
 	@Test
-	public void loadDefaultInstanceInfoTableFile() throws IOException {
+	public void loadDefaultInstanceInfoTableFileTest() throws IOException {
 		// test that the provided default file is accounted as valid by the function for loading
 		HashMap<String, CloudInstance> instanceMap = CloudUtils.loadInstanceInfoTable(DEFAULT_INSTANCE_INFO_TABLE, TEST_FEE_RATIO, TEST_STORAGE_PRICE);
 		// test if all instances from 'M', 'C' or 'R' families
@@ -165,5 +166,55 @@ public class CloudUtilsTests {
 			Assert.assertTrue(instanceType.startsWith("m") || instanceType.startsWith("c") || instanceType.startsWith("r"));
 			Assert.assertTrue(instanceType.contains("xlarge"));
 		}
+	}
+
+	@Test
+	public void getEffectiveExecutorResourcesGeneralCaseTest() {
+		long inputMemory = GBtoBytes(16);
+		int inputCores = 4;
+		int inputNumExecutors = 4;
+
+		int expectedAmMemoryMB = 768; // 512 + 256
+		int expectedAmMemoryOverhead = 384; // using the absolute minimum
+		int expectedExecutorMemoryMB = (int) (((0.75 * inputMemory / (1024 * 1024))
+				- (expectedAmMemoryMB + expectedAmMemoryOverhead)) / 1.1);
+		int expectedAmCores = 1;
+		int expectedExecutorCores = inputCores - expectedAmCores;
+
+		int[] result = getEffectiveExecutorResources(inputMemory, inputCores, inputNumExecutors);
+		int resultExecutorMemoryMB = result[0];
+		int resultExecutorCores = result[1];
+		int resultNumExecutors = result[2];
+		int resultAmMemoryMB = result[3];
+		int resultAmCores = result[4];
+
+		Assert.assertEquals(resultExecutorMemoryMB, expectedExecutorMemoryMB);
+		Assert.assertEquals(resultExecutorCores, expectedExecutorCores);
+		Assert.assertEquals(resultNumExecutors, inputNumExecutors);
+		Assert.assertEquals(resultAmMemoryMB, expectedAmMemoryMB);
+		Assert.assertEquals(resultAmCores, expectedAmCores);
+	}
+
+	@Test
+	public void getEffectiveExecutorResourcesEdgeCaseTest() {
+		// edge case -> large cluster with small machines -> dedicated machine for the AM
+		long inputMemory = GBtoBytes(8);
+		int inputCores = 4;
+		int inputNumExecutors = 48;
+
+		int expectedContainerMemoryMB = (int) (((0.75 * inputMemory / (1024 * 1024))) / 1.1);
+
+		int[] result = getEffectiveExecutorResources(inputMemory, inputCores, inputNumExecutors);
+		int resultExecutorMemoryMB = result[0];
+		int resultExecutorCores = result[1];
+		int resultNumExecutors = result[2];
+		int resultAmMemoryMB = result[3];
+		int resultAmCores = result[4];
+
+		Assert.assertEquals(resultExecutorMemoryMB, expectedContainerMemoryMB);
+		Assert.assertEquals(resultExecutorCores, inputCores);
+		Assert.assertEquals(resultNumExecutors, inputNumExecutors - 1);
+		Assert.assertEquals(resultAmMemoryMB, expectedContainerMemoryMB);
+		Assert.assertEquals(resultAmCores, inputCores);
 	}
 }

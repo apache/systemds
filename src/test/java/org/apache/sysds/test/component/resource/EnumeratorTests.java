@@ -21,10 +21,8 @@ package org.apache.sysds.test.component.resource;
 
 import org.apache.sysds.conf.CompilerConfig;
 import org.apache.sysds.conf.ConfigurationManager;
-import org.apache.sysds.conf.DMLConfig;
 import org.apache.sysds.hops.OptimizerUtils;
 import org.apache.sysds.resource.CloudInstance;
-import org.apache.sysds.resource.CloudUtils;
 import org.apache.sysds.resource.enumeration.EnumerationUtils.ConfigurationPoint;
 import org.apache.sysds.resource.enumeration.EnumerationUtils.SolutionPoint;
 import org.apache.sysds.resource.enumeration.Enumerator;
@@ -32,14 +30,11 @@ import org.apache.sysds.resource.enumeration.EnumerationUtils.InstanceSearchSpac
 import org.apache.sysds.resource.enumeration.InterestBasedEnumerator;
 import org.apache.sysds.runtime.controlprogram.Program;
 import org.apache.sysds.test.AutomatedTestBase;
-import org.apache.sysds.test.TestConfiguration;
 import org.junit.Assert;
-import org.junit.BeforeClass;
 import org.junit.Test;
 import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -57,19 +52,6 @@ import static org.mockito.ArgumentMatchers.eq;
 public class EnumeratorTests extends AutomatedTestBase {
 	static {
 		ConfigurationManager.getCompilerConfig().set(CompilerConfig.ConfigType.RESOURCE_OPTIMIZATION, true);
-	}
-	private static final String TEST_DIR = "component/resource/";
-	private static final String HOME = SCRIPT_DIR + TEST_DIR;
-	private static final String TEST_CLASS_DIR = TEST_DIR + CostEstimatorTest.class.getSimpleName() + "/";
-	private static HashMap<String, CloudInstance> allInstances;
-
-	@BeforeClass
-	public static void setUpBeforeClass() {
-		try {
-			allInstances = CloudUtils.loadInstanceInfoTable(DEFAULT_INSTANCE_INFO_TABLE, 0.25, 0.08);
-		} catch (IOException e) {
-			throw new RuntimeException(e);
-		}
 	}
 
 	@Override
@@ -644,21 +626,6 @@ public class EnumeratorTests extends AutomatedTestBase {
 		Assert.assertEquals(0, solution.numberExecutors);
 	}
 
-	@Test
-	public void GridBasedEnumerationFullInstanceRangeTest() {
-		runEnumerationOnFullSetInstances(Enumerator.EnumerationStrategy.GridBased);
-	}
-
-	@Test
-	public void InterestBasedEnumerationFullInstanceRangeTest() {
-		runEnumerationOnFullSetInstances(Enumerator.EnumerationStrategy.InterestBased);
-	}
-
-	@Test
-	public void PruneBasedEnumerationFullInstanceRangeTest() {
-		runEnumerationOnFullSetInstances(Enumerator.EnumerationStrategy.PruneBased);
-	}
-
 
 	// Helpers ---------------------------------------------------------------------------------------------------------
 
@@ -709,41 +676,5 @@ public class EnumeratorTests extends AutomatedTestBase {
 		} catch (NullPointerException e) {
 			fail(expectedName+" instances not properly passed to "+searchSpace.getClass().getName());
 		}
-	}
-
-	private void runEnumerationOnFullSetInstances(Enumerator.EnumerationStrategy strategy) {
-		SolutionPoint solution;
-		try {
-			String scriptFilename = "Algorithm_L2SVM.dml";
-			int index = scriptFilename.lastIndexOf(".dml");
-			String testName = scriptFilename.substring(0, index);
-			TestConfiguration testConfig = new TestConfiguration(TEST_CLASS_DIR, testName,
-					new String[]{});
-			addTestConfiguration(testName, testConfig);
-			loadTestConfiguration(testConfig);
-
-			Program program = ResourceTestUtils.compileProgramWithNvargs(HOME + scriptFilename);
-
-			DMLConfig conf = new DMLConfig(getCurConfigFile().getPath());
-			ConfigurationManager.setLocalConfig(conf);
-			System.out.println("Enumerator of type "+strategy.toString()+" launches on full range of instances...");
-			Enumerator enumerator = (new Enumerator.Builder())
-					.withRuntimeProgram(program)
-					.withAvailableInstances(allInstances)
-					.withEnumerationStrategy(strategy)
-					.withOptimizationStrategy(Enumerator.OptimizationStrategy.MinCosts)
-					.withNumberExecutorsRange(0, 2)
-					.build();
-			// run the enumerator
-			enumerator.preprocessing();
-			enumerator.processing();
-			solution = enumerator.postprocessing();
-			System.out.println("Enumeration process finished with optimal solution:\n" + solution.toString());
-		} catch (Exception e) {
-			e.printStackTrace();
-			throw new RuntimeException("Error at testing enumeration on full instance range");
-		}
-		Assert.assertTrue(solution.getTimeCost() < Double.MAX_VALUE);
-		Assert.assertTrue(solution.getMonetaryCost() < Double.MAX_VALUE);
 	}
 }

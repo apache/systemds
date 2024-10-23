@@ -49,8 +49,7 @@ public class InstructionsCostEstimatorTest {
 
     @Before
     public void setup() {
-        ResourceCompiler.setDriverConfigurations(GBtoBytes(8), 4);
-        ResourceCompiler.setExecutorConfigurations(4, GBtoBytes(8), 4);
+        ResourceCompiler.setSparkClusterResourceConfigs(GBtoBytes(8), 4, 4, GBtoBytes(8), 4);
         estimator = new CostEstimator(new Program(), instanceMap.get("m5.xlarge"), instanceMap.get("m5.xlarge"));
     }
 

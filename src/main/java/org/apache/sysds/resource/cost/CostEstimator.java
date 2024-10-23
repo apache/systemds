@@ -53,16 +53,16 @@ import java.util.*;
 public class CostEstimator
 {
 	private static final long MIN_MEMORY_TO_TRACK = 1024 * 1024; // 1MB
-	private static final int DEFAULT_NUM_ITER = 15;
+	private static final int DEFAULT_NUM_ITER = 10;
 	// Non-static members
 	private final Program _program;
-	private final IOCostUtils.IOMetrics driverMetrics;
-	private final IOCostUtils.IOMetrics executorMetrics;
 	// declare here the hashmaps
 	private final HashMap<String, VarStats> _stats;
 	private final HashSet<String> _functions;
 	private final long localMemoryLimit; // refers to the drivers JVM memory
 	private long freeLocalMemory;
+	private final IOCostUtils.IOMetrics driverMetrics;
+	private final IOCostUtils.IOMetrics executorMetrics;
 
 	/**
 	 * Entry point for estimating the execution time of a program.
@@ -79,13 +79,33 @@ public class CostEstimator
 	}
 	public CostEstimator(Program program, CloudInstance driverNode, CloudInstance executorNode) {
 		_program = program;
-		driverMetrics = new IOCostUtils.IOMetrics(driverNode);
-		executorMetrics = executorNode != null? new IOCostUtils.IOMetrics(executorNode) : null;
 		// initialize here the hashmaps
 		_stats = new HashMap<>();
 		_functions = new HashSet<>();
 		localMemoryLimit = (long) OptimizerUtils.getLocalMemBudget();
 		freeLocalMemory = localMemoryLimit;
+		driverMetrics = new IOMetrics(driverNode);
+		if (executorNode == null) {
+			// estimation for single node execution -> no executor resources
+			executorMetrics = null;
+		} else {
+			// estimation for hybrid execution
+			// adapt the CPU related metrics needed
+			int dedicatedExecutorCores =
+					SparkExecutionContext.getDefaultParallelism(false) / SparkExecutionContext.getNumExecutors();
+			long effectiveExecutorFlops = (long) (executorNode.getFLOPS() *
+					((double) executorNode.getVCPUs() / dedicatedExecutorCores));
+			// adapting the rest of the metrics not needed since the OS and resource management tasks
+			// would not consume large portion of the memory/storage/network bandwidth in the general case
+			executorMetrics = new IOMetrics(
+					effectiveExecutorFlops,
+					dedicatedExecutorCores,
+					executorNode.getMemoryBandwidth(),
+					executorNode.getDiskReadBandwidth(),
+					executorNode.getDiskWriteBandwidth(),
+					executorNode.getNetworkBandwidth()
+			);
+		}
 	}
 
 	/**
@@ -974,8 +994,10 @@ public class CostEstimator
 
 	private void putInMemory(VarStats output) throws CostEstimationException {
 		if (output.isScalar() || output.allocatedMemory <= MIN_MEMORY_TO_TRACK) return;
-		if (freeLocalMemory - output.allocatedMemory < 0)
+		if (freeLocalMemory - output.allocatedMemory < 0) {
+			// System.out.println(Explain.explain(_program));
 			throw new CostEstimationException("Insufficient local memory");
+		}
 		freeLocalMemory -= output.allocatedMemory;
 	}
 

@@ -149,3 +149,4 @@ venv/*
 
 # resource optimization
 scripts/resource/output
+*.pem

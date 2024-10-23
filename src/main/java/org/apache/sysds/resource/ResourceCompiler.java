@@ -25,6 +25,7 @@ import org.apache.sysds.api.DMLScript;
 import org.apache.sysds.common.Types;
 import org.apache.sysds.conf.ConfigurationManager;
 import org.apache.sysds.hops.Hop;
+import org.apache.sysds.hops.OptimizerUtils;
 import org.apache.sysds.hops.recompile.Recompiler;
 import org.apache.sysds.parser.*;
 import org.apache.sysds.runtime.controlprogram.*;
@@ -43,6 +44,7 @@ import java.util.stream.Stream;
 
 import static org.apache.sysds.api.DMLScript.*;
 import static org.apache.sysds.parser.DataExpression.IO_FILENAME;
+import static org.apache.sysds.resource.CloudUtils.*;
 
 /**
  * This class does full or partial program recompilation
@@ -57,7 +59,6 @@ public class ResourceCompiler {
 	public static final long DEFAULT_EXECUTOR_MEMORY = 512*1024*1024; // 0.5GB
 	public static final int DEFAULT_EXECUTOR_THREADS = 2; // avoids creating spark context
 	public static final int DEFAULT_NUMBER_EXECUTORS = 2; // avoids creating spark context
-	public static final double JVM_MEMORY_FACTOR = 0.9; // factor for the JVM memory budget (10% for the OS)
 
 	public static Program compile(String filePath, Map<String, String> args) throws IOException {
 		return compile(filePath, args, null);
@@ -122,40 +123,24 @@ public class ResourceCompiler {
 	}
 
 	/**
-	 * Recompiling a given program for resource optimization for single node execution
+	 * Recompiling a given program for resource optimization.
+	 * This method should always be called after setting the target resources
+	 * to {@code InfrastructureAnalyzer} and {@code SparkExecutionContext}
+	 *
 	 * @param program program to be recompiled
-	 * @param driverMemory target driver memory
-	 * @param driverCores target driver threads/cores
 	 * @return the recompiled program as a new {@code Program} instance
 	 */
-	public static Program doFullRecompilation(Program program, long driverMemory, int driverCores) {
-		setDriverConfigurations(driverMemory, driverCores);
-		setSingleNodeExecution();
-		return doFullRecompilation(program);
-	}
-
-	/**
-	 * Recompiling a given program for resource optimization for Spark execution
-	 * @param program program to be recompiled
-	 * @param driverMemory target driver memory
-	 * @param driverCores target driver threads/cores
-	 * @param numberExecutors target number of executor nodes
-	 * @param executorMemory target executor memory
-	 * @param executorCores target executor threads/cores
-	 * @return the recompiled program as a new {@code Program} instance
-	 */
-	public static Program doFullRecompilation(Program program, long driverMemory, int driverCores, int numberExecutors, long executorMemory, int executorCores) {
-		setDriverConfigurations(driverMemory, driverCores);
-		setExecutorConfigurations(numberExecutors, executorMemory, executorCores);
-		return doFullRecompilation(program);
-	}
-
-	private static Program doFullRecompilation(Program program) {
+	public static Program doFullRecompilation(Program program) {
+		// adjust defaults for memory estimates of variables with unknown dimensions
+		OptimizerUtils.resetDefaultSize();
+		// init new Program object for the output
 		Program newProgram = new Program(program.getDMLProg());
+		// collect program blocks from all layers
 		ArrayList<ProgramBlock> B = Stream.concat(
 						program.getProgramBlocks().stream(),
 						program.getFunctionProgramBlocks().values().stream())
 				.collect(Collectors.toCollection(ArrayList::new));
+		// recompile for each fo the program blocks and put attach the program object
 		doRecompilation(B, newProgram);
 		return newProgram;
 	}
@@ -241,48 +226,64 @@ public class ResourceCompiler {
 	}
 
 	/**
-	 * Sets resource configurations for the node executing the control program.
+	 * Sets resource configurations for executions in single-node mode
+	 * including the hardware configurations for the node running the CP.
 	 *
-	 * @param nodeMemory memory in Bytes
-	 * @param nodeNumCores number of CPU cores
+	 * @param nodeMemory memory budget for the node running CP
+	 * @param nodeCores number of CPU cores for the node running CP
 	 */
-	public static void setDriverConfigurations(long nodeMemory, int nodeNumCores) {
+	public static void setSingleNodeResourceConfigs(long nodeMemory, int nodeCores) {
+		DMLScript.setGlobalExecMode(Types.ExecMode.SINGLE_NODE);
 		// use 90% of the node's memory for the JVM heap -> rest needed for the OS
-		InfrastructureAnalyzer.setLocalMaxMemory((long) (0.9 * nodeMemory));
-		InfrastructureAnalyzer.setLocalPar(nodeNumCores);
+		long effectiveSingleNodeMemory = (long) (nodeMemory * SINGLE_NODE_JVM_MEMORY_FACTOR);
+		// CPU core would be shared with OS -> no further limitation
+		InfrastructureAnalyzer.setLocalMaxMemory(effectiveSingleNodeMemory);
+		InfrastructureAnalyzer.setLocalPar(nodeCores);
 	}
 
 	/**
-	 * Sets resource configurations for the cluster of nodes
-	 * executing the Spark jobs.
+	 * Sets resource configurations for  executions in hybrid mode
+	 * including the hardware configurations for the node running the CP
+	 * and the worker nodes running Spark executors
 	 *
-	 * @param numExecutors number of nodes in cluster
-	 * @param nodeMemory memory in Bytes per node
-	 * @param nodeNumCores number of CPU cores per node
+	 * @param driverMemory memory budget for the node running CP
+	 * @param driverCores number of CPU cores for the node running CP
+	 * @param numExecutors   number of nodes in cluster
+	 * @param executorMemory memory budget for the nodes running executors
+	 * @param executorCores  number of CPU cores for the nodes running executors
 	 */
-	public static void setExecutorConfigurations(int numExecutors, long nodeMemory, int nodeNumCores) {
-		if (numExecutors > 0) {
-			DMLScript.setGlobalExecMode(Types.ExecMode.HYBRID);
-			SparkConf sparkConf = SparkExecutionContext.createSystemDSSparkConf();
-			// ------------------ Static Configurations -------------------
-			sparkConf.set("spark.master", "local[*]");
-			sparkConf.set("spark.app.name", "SystemDS");
-			sparkConf.set("spark.memory.useLegacyMode", "false");
-			// ------------------ Static Configurations -------------------
-			// ------------------ Dynamic Configurations -------------------
-			int executorMemory = (int) (nodeMemory/(1024*1024) * JVM_MEMORY_FACTOR);
-			sparkConf.set("spark.executor.memory", (executorMemory)+"m");
-			sparkConf.set("spark.executor.instances", Integer.toString(numExecutors));
-			sparkConf.set("spark.executor.cores", Integer.toString(nodeNumCores));
-			// not setting "spark.default.parallelism" on purpose -> allows re-initialization
-			// ------------------ Dynamic Configurations -------------------
-			SparkExecutionContext.initLocalSparkContext(sparkConf);
-		} else {
-			throw new RuntimeException("The given number of executors was 0");
+	public static void setSparkClusterResourceConfigs(long driverMemory, int driverCores, int numExecutors, long executorMemory, int executorCores) {
+		if (numExecutors <= 0) {
+			throw new RuntimeException("The given number of executors was non-positive");
 		}
-	}
+		// ------------------- CP (driver) configurations -------------------
+		// use 80% of the node's memory for the JVM heap -> rest needed for the OS and resource management
+		long effectiveDriverMemory = (long) (driverMemory * DRIVER_JVM_MEMORY_FACTOR);
+		// CPU core would be shared -> no further limitation
+		InfrastructureAnalyzer.setLocalMaxMemory(effectiveDriverMemory);
+		InfrastructureAnalyzer.setLocalPar(driverCores);
 
-	public static void setSingleNodeExecution() {
-		DMLScript.setGlobalExecMode(Types.ExecMode.SINGLE_NODE);
+		// ---------------------- Spark Configurations -----------------------
+		DMLScript.setGlobalExecMode(Types.ExecMode.HYBRID);
+		SparkConf sparkConf = SparkExecutionContext.createSystemDSSparkConf();
+
+		// ------------------ Static Spark Configurations --------------------
+		sparkConf.set("spark.master", "local[*]");
+		sparkConf.set("spark.app.name", "SystemDS");
+		sparkConf.set("spark.memory.useLegacyMode", "false");
+
+		// ------------------ Dynamic Spark Configurations -------------------
+		// calculate the effective resource that would be available for the executor containers in YARN
+		int[] effectiveValues = getEffectiveExecutorResources(executorMemory, executorCores, numExecutors);
+		int effectiveExecutorMemory = effectiveValues[0];
+		int effectiveExecutorCores = effectiveValues[1];
+		int effectiveNumExecutor = effectiveValues[2];
+		sparkConf.set("spark.executor.memory", (effectiveExecutorMemory)+"m");
+		sparkConf.set("spark.executor.instances", Integer.toString(effectiveNumExecutor));
+		sparkConf.set("spark.executor.cores", Integer.toString(effectiveExecutorCores));
+		// not setting "spark.default.parallelism" on purpose -> allows re-initialization
+
+		// ------------------- Load Spark Configurations ---------------------
+		SparkExecutionContext.initLocalSparkContext(sparkConf);
 	}
 }

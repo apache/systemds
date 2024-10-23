@@ -48,7 +48,7 @@ STEP_INFO=$(aws emr add-steps --cluster-id $CLUSTER_ID  --region $REGION --steps
         --deploy-mode,$SPARK_DEPLOY_MODE,
         --master,yarn,
         --driver-memory,$SPARK_DRIVER_MEMORY,
-        --num-executors,$SPARK_NUM_EXECUTORS,
+        --num-ex    ecutors,$SPARK_NUM_EXECUTORS,
         --conf,spark.driver.maxResultSize=0,
         $SYSTEMDS_JAR_PATH, -f, s3://$BUCKET/$dml_filename, -exec, $SYSTEMDS_EXEC_MODE,$args,-stats, -explain]")
 

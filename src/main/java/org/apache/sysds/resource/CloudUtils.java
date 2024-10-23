@@ -27,8 +27,6 @@ import java.io.*;
 import java.rmi.RemoteException;
 import java.util.HashMap;
 
-import static org.apache.sysds.resource.ResourceCompiler.JVM_MEMORY_FACTOR;
-
 /**
  * Class providing static utilities for cloud related operations.
  * Some of the utilities are dependent on the cloud provider,
@@ -67,15 +65,16 @@ public class CloudUtils {
 			return InstanceSize.valueOf("_"+name.toUpperCase());
 		}
 	}
-
+	public static final double SINGLE_NODE_JVM_MEMORY_FACTOR = 0.9; // (10% for the OS)
+	public static final double DRIVER_JVM_MEMORY_FACTOR = 0.8; // (10% for the OS, 10% for management processes)
 	public static final String EC2_REGEX = "^([a-z]+)([0-9])(a|g|i?)([bdnez]*)\\.([a-z0-9]+)$";
 	public static final int EBS_DEFAULT_ROOT_SIZE_EMR = 15; // GB
 	public static final int EBS_DEFAULT_ROOT_SIZE_EC2 = 8; // GB
 	public static final String SPARK_VERSION = "3.3.0";
 	// set always equal or higher than DEFAULT_CLUSTER_LAUNCH_TIME
-	public static final double MINIMAL_EXECUTION_TIME = 600; // seconds;
+	public static final double MINIMAL_EXECUTION_TIME = 300; // seconds;
 	// set always to a positive value
-	public static final double DEFAULT_CLUSTER_LAUNCH_TIME = 600; // seconds;
+	public static final double DEFAULT_CLUSTER_LAUNCH_TIME = 300; // seconds;
 
 	/**
 	 * Flag to mark the target provider for the utilities.
@@ -287,7 +286,7 @@ public class CloudUtils {
 			ec2Config.put("VolumeType", "gp3");
 			ec2Config.put("EbsOptimized", true);
 			// JVM memory budget used at resource optimization
-			int cpMemory = (int) (instance.getMemory()/ (1024*1024) * JVM_MEMORY_FACTOR);
+			int cpMemory = (int) (instance.getMemory()/ (1024*1024) * SINGLE_NODE_JVM_MEMORY_FACTOR);
 			ec2Config.put("JvmMaxMemory", cpMemory);
 
 			try (FileWriter file = new FileWriter(filePath)) {
@@ -345,7 +344,7 @@ public class CloudUtils {
 		if (!instance.isNVMeStorage()) {
 			try {
 				JSONObject volumeSpecification = new JSONObject();
-				volumeSpecification.put("SizeInGB", instance.getSizeStoragePerVolume());
+				volumeSpecification.put("SizeInGB", (int) instance.getSizeStoragePerVolume());
 				volumeSpecification.put("VolumeType", "gp3");
 
 				JSONObject ebsBlockDeviceConfig = new JSONObject();
@@ -382,21 +381,27 @@ public class CloudUtils {
 
 			// set custom defined cluster configurations
 			JSONObject sparkDefaultsConfig = new JSONObject();
-			sparkConfig.put("Classification", "spark-defaults");
+			sparkDefaultsConfig.put("Classification", "spark-defaults");
 
 			JSONObject sparkDefaultsProperties = new JSONObject();
-			int driverMemory = (int) (clusterConfig.driverInstance.getMemory()/ (1024*1024) * JVM_MEMORY_FACTOR);
-			// driver memory NEED to be set separately at running since client mode will be used,
-			// but the configuration parameter is set here so be available to the user/launch script
+			int driverMemory = (int) (clusterConfig.driverInstance.getMemory()/ (1024*1024) * DRIVER_JVM_MEMORY_FACTOR);
 			sparkDefaultsProperties.put("spark.driver.memory", (driverMemory)+"m");
-			sparkDefaultsProperties.put("spark.driver.maxResultSize", 0);
-			int executorMemory = (int) (clusterConfig.executorInstance.getMemory()/ (1024*1024) * JVM_MEMORY_FACTOR);
-			int executorCores = clusterConfig.executorInstance.getVCPUs();
-			sparkDefaultsProperties.put("spark.executor.memory", (executorMemory/(1024*1024))+"m");
-			sparkDefaultsProperties.put("spark.executor.cores", Integer.toString(executorCores));
+			sparkDefaultsProperties.put("spark.driver.maxResultSize", String.valueOf(0));
+			// calculate the exact resource limits for YARN containers to maximize the utilization
+			int[] executorResources = getEffectiveExecutorResources(
+					clusterConfig.executorInstance.getMemory(),
+					clusterConfig.executorInstance.getVCPUs(),
+					clusterConfig.numberExecutors
+			);
+			sparkDefaultsProperties.put("spark.executor.memory", (executorResources[0])+"m");
+			sparkDefaultsProperties.put("spark.executor.cores", Integer.toString(executorResources[1]));
+			sparkDefaultsProperties.put("spark.executor.instances", Integer.toString(executorResources[2]));
 			// values copied from SparkClusterConfig.analyzeSparkConfiguation
-			sparkDefaultsProperties.put("spark.storage.memoryFraction", 0.6);
-			sparkDefaultsProperties.put("spark.memory.storageFraction", 0.5);
+			sparkDefaultsProperties.put("spark.storage.memoryFraction", String.valueOf(0.6));
+			sparkDefaultsProperties.put("spark.memory.storageFraction", String.valueOf(0.5));
+			// set the custom AM configurations
+			sparkDefaultsProperties.put("spark.yarn.am.memory", (executorResources[3])+"m");
+			sparkDefaultsProperties.put("spark.yarn.am.cores", Integer.toString(executorResources[4]));
 			sparkDefaultsConfig.put("Properties", sparkDefaultsProperties);
 
 			// Spark-env and export JAVA_HOME Configuration
@@ -422,5 +427,72 @@ public class CloudUtils {
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
+	}
+
+	/**
+	 * Calculates the effective resource values for SPark cluster managed by YARN.
+	 * It considers the resource limits for scheduling containers by YARN
+	 * and the need to fit an Application Master (AM) container in addition to the executor ones.
+	 *
+	 * @param memory total node memory inn bytes
+	 * @param cores total node available virtual cores
+	 * @param numExecutors number of available worker nodes
+	 * @return arrays of length 5 -
+	 * 		[executor mem. in MB, executor cores, num. executors, AM mem. in MB, AM cores]
+	 */
+	public static int[] getEffectiveExecutorResources(long memory, int cores, int numExecutors) {
+		int effectiveExecutorMemoryMB, effectiveAmMemoryMB;
+		int effectiveExecutorCores, effectiveAmCores;
+		int effectiveNumExecutors;
+		// YARN reserves 25% of the total memory for other resources (OS, node management, etc.)
+		long yarnAllocationMemory = (long) (memory * 0.75);
+		// plan for resource allocation for YARN Application Master (AM) container
+		int totalExecutorCores = cores * numExecutors;
+		// Scale with the cluster size growth to allow for allocating efficient AM resource
+		int amMemoryMB = calculateAmMemoryMB(totalExecutorCores);
+		int amMemoryOverheadMB = Math.max(384, (int) (amMemoryMB * 0.1)); // Spark default config
+		long amTotalMemory = (long) (amMemoryMB + amMemoryOverheadMB) * 1024 * 1024;
+		int amCores = calculateAmCores(totalExecutorCores);
+
+		// decide if is more effective to launch AM alongside an executor or on a dedicated node
+		// plan for executor memory overhead -> 10% of the executor memory (division by 1.1, always over 384MB)
+		if (amTotalMemory * numExecutors >= yarnAllocationMemory) {
+			// the case only for a large cluster of small instances
+			// in this case dedicate a whole node for the AM
+			effectiveExecutorMemoryMB = (int) Math.floor(yarnAllocationMemory / (1.1 * 1024 * 1024));
+			effectiveExecutorCores = cores;
+			// maximize the AM resource since no resource will be left for an executor
+			effectiveAmMemoryMB = effectiveExecutorMemoryMB;
+			effectiveAmCores = cores;
+			effectiveNumExecutors = numExecutors - 1;
+		} else {
+			// in this case leave room in each worker node for executor + AM containers
+			effectiveExecutorMemoryMB = (int) Math.floor((yarnAllocationMemory - amTotalMemory) / (1.1 * 1024 * 1024));
+			effectiveExecutorCores = cores - amCores;
+			effectiveAmMemoryMB = amMemoryMB;
+			effectiveAmCores = amCores;
+			effectiveNumExecutors = numExecutors;
+		}
+
+		// always 5 return values
+		return new int[] {
+				effectiveExecutorMemoryMB,
+				effectiveExecutorCores,
+				effectiveNumExecutors,
+				effectiveAmMemoryMB,
+				effectiveAmCores
+		};
+	}
+
+	public static int calculateAmMemoryMB(int totalExecutorCores) {
+		// 512MB base emory budget + 256MB for each 16 cores extra
+		return 512 + (int) Math.floor((double) totalExecutorCores / 16) * 256;
+	}
+
+	public static int calculateAmCores(int totalExecutorCores) {
+		// at least 1 core per 64 cores in cluster
+		int scaledCores = (int) Math.ceil((totalExecutorCores) / 64.0);
+		// cap to 8 cores for large clusters (cores > 512)
+		return Math.min(8, scaledCores);
 	}
 }

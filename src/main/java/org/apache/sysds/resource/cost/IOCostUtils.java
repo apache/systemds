@@ -72,7 +72,14 @@ public class IOCostUtils {
 		double deserializationBandwidth;
 
 		public IOMetrics(CloudInstance instance) {
-			this(instance.getFLOPS(), instance.getVCPUs(), instance.getMemoryBandwidth(), instance.getDiskReadBandwidth(), instance.getDiskWriteBandwidth(), instance.getNetworkBandwidth());
+			this(
+					instance.getFLOPS(),
+					instance.getVCPUs(),
+					instance.getMemoryBandwidth(),
+					instance.getDiskReadBandwidth(),
+					instance.getDiskWriteBandwidth(),
+					instance.getNetworkBandwidth()
+			);
 		}
 		public IOMetrics(long flops, int cores, double memoryBandwidth, double diskReadBandwidth, double diskWriteBandwidth, double networkBandwidth) {
 			cpuFLOPS = flops;

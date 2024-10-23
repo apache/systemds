@@ -8,7 +8,6 @@ import org.apache.sysds.conf.ConfigurationManager;
 import org.apache.sysds.resource.enumeration.EnumerationUtils;
 import org.apache.sysds.resource.enumeration.Enumerator;
 import org.apache.sysds.runtime.controlprogram.Program;
-import org.apache.sysds.utils.Explain;
 import org.apache.commons.configuration2.io.FileHandler;
 
 import java.io.IOException;
@@ -20,7 +19,7 @@ import java.util.Map;
 import static org.apache.sysds.resource.CloudUtils.DEFAULT_CLUSTER_LAUNCH_TIME;
 
 public class ResourceOptimizer {
-    private static final String DEFAULT_OPTIONS_FILE = "./options.env";
+    private static final String DEFAULT_OPTIONS_FILE = "./options.properties";
 
     static {
         ConfigurationManager.getCompilerConfig().set(CompilerConfig.ConfigType.RESOURCE_OPTIMIZATION, true);
@@ -35,14 +34,14 @@ public class ResourceOptimizer {
         Options options = new Options();
 
         Option fileOpt = OptionBuilder.withArgName("filename")
-                .withDescription("specifies dml/pydml file to execute; path should be local")
+                .withDescription("specifies DML file to execute; path should be local")
                 .hasArg().create("f");
         Option optionsOpt = OptionBuilder
                 .withDescription("specifies options file for the resource optimization")
                 .hasArg().create("options");
         Option nvargsOpt = OptionBuilder.withArgName("key=value")
                 .withDescription("parameterizes DML script with named parameters of the form <key=value>; " +
-                        "<key> should be a valid identifier in DML/PyDML")
+                        "<key> should be a valid identifier in DML")
                 .hasArgs().create("nvargs");
         Option argsOpt = OptionBuilder.withArgName("argN")
                 .withDescription("specifies positional parameters; " +
@@ -259,7 +258,6 @@ public class ResourceOptimizer {
 
         // step 2: compile the initial runtime program
         Program sourceProgram = ResourceCompiler.compile(line.getOptionValue("f"), argsMap, localInputMap);
-        System.out.println(Explain.explain(sourceProgram));
         // step 3: initialize the enumerator
         // set the mandatory setting
         Enumerator.Builder builder = new Enumerator.Builder()
@@ -268,8 +266,8 @@ public class ResourceOptimizer {
                 .withEnumerationStrategy(strategy)
                 .withOptimizationStrategy(optimizedFor);
         // set min and max number of executors
-        if (minExecutors > maxExecutors) {
-            throw new ParseException("Option for -maxExecutors should be always greater or equal the option for -minExecutors");
+        if (maxExecutors >= 0 && minExecutors > maxExecutors) {
+            throw new ParseException("Option for MAX_EXECUTORS should be always greater or equal the option for -minExecutors");
         }
         builder.withNumberExecutorsRange(minExecutors, maxExecutors);
         // set range of instance types
@@ -277,14 +275,14 @@ public class ResourceOptimizer {
             if (instanceFamilies != null)
                 builder.withInstanceFamilyRange(instanceFamilies);
         } catch (IllegalArgumentException e) {
-            throw new ParseException("Not all provided options for -instanceFamilies are supported or valid. Error thrown at:\n"+e.getMessage());
+            throw new ParseException("Not all provided options for INSTANCE_FAMILIES are supported or valid. Error thrown at:\n"+e.getMessage());
         }
         // set range of instance sizes
         try {
             if (instanceSizes != null)
                 builder.withInstanceSizeRange(instanceSizes);
         } catch (IllegalArgumentException e) {
-            throw new ParseException("Not all provided options for -instanceSizes are supported or valid. Error thrown at:\n"+e.getMessage());
+            throw new ParseException("Not all provided options for INSTANCE_SIZES are supported or valid. Error thrown at:\n"+e.getMessage());
         }
         // set budget if optimizing for time
         if (optimizedFor == Enumerator.OptimizationStrategy.MinTime && priceConstraint <= 0) {
@@ -355,6 +353,7 @@ public class ResourceOptimizer {
         EnumerationUtils.SolutionPoint optConfig = enumerator.postprocessing();
         long endTime = System.currentTimeMillis();
         System.out.println("...enumeration finished for " + ((double) (endTime-startTime))/1000 + " seconds\n");
+        System.out.println("The resulted runtime plan for the optimal configurations is the following:");
 
         // generate configuration files according the optimal solution (if solution not empty)
         if (optConfig.getTimeCost() < Double.MAX_VALUE) {
@@ -419,7 +418,7 @@ public class ResourceOptimizer {
         CommandLineParser clParser = new PosixParser();
         CommandLine line = clParser.parse(cliOptions, args);
         if (line.hasOption("help")) {
-            (new HelpFormatter()).printHelp("Main", cliOptions);
+            (new HelpFormatter()).printHelp("SystemDS Resource Optimizer", cliOptions);
             return;
         }
         String optionsFile;

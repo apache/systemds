@@ -280,16 +280,15 @@ public class CostEstimatorTest extends AutomatedTestBase {
 		CloudInstance driver;
 		CloudInstance executor;
 		try {
-			// setting driver node is required
+			// setting CP (driver) node is required
 			driver = INSTANCE_MAP.get(driverInstance);
-			ResourceCompiler.setDriverConfigurations(driver.getMemory(), driver.getVCPUs());
-			// setting executor node is optional: no executor -> single node execution
+			// setting executor node is optional: no executors -> single node execution
 			if (executorInstance == null) {
 				executor = null;
-				ResourceCompiler.setSingleNodeExecution();
+				ResourceCompiler.setSingleNodeResourceConfigs(driver.getMemory(), driver.getVCPUs());
 			} else {
 				executor = INSTANCE_MAP.get(executorInstance);
-				ResourceCompiler.setExecutorConfigurations(DEFAULT_NUM_EXECUTORS, executor.getMemory(), executor.getVCPUs());
+				ResourceCompiler.setSparkClusterResourceConfigs(driver.getMemory(), driver.getVCPUs(), DEFAULT_NUM_EXECUTORS, executor.getMemory(), executor.getVCPUs());
 			}
 		} catch (Exception e) {
 			e.printStackTrace();

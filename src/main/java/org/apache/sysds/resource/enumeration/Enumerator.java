@@ -143,11 +143,8 @@ public abstract class Enumerator {
 				driverCores = dCoresEntry.getKey();
 				// single node execution mode
 				if (evaluateSingleNodeExecution(driverMemory)) {
-					program = ResourceCompiler.doFullRecompilation(
-							program,
-							driverMemory,
-							driverCores
-					);
+					ResourceCompiler.setSingleNodeResourceConfigs(driverMemory, driverCores);
+					program = ResourceCompiler.doFullRecompilation(program);
 					// no need of recompilation for single nodes with identical memory budget and #v. cores
 					for (CloudInstance dInstance: dCoresEntry.getValue()) {
 						// iterate over all driver nodes with the currently evaluated memory and #cores values
@@ -166,14 +163,15 @@ public abstract class Enumerator {
 								estimateRangeExecutors(driverCores, executorMemory, executorCores);
 						// for Spark execution mode
 						for (int numberExecutors: numberExecutorsSet) {
-							program = ResourceCompiler.doFullRecompilation(
-									program,
+							ResourceCompiler.setSparkClusterResourceConfigs(
 									driverMemory,
 									driverCores,
 									numberExecutors,
 									executorMemory,
 									executorCores
 							);
+							program = ResourceCompiler.doFullRecompilation(program);
+//							System.out.println(Explain.explain(program));
 							// no need of recompilation for a cluster with identical #executors and
 							// with identical memory and #v. cores for driver and executor nodes
 							for (CloudInstance dInstance: dCoresEntry.getValue()) {

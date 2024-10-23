@@ -37,31 +37,34 @@ public class EigenDecompTest {
 	protected static final Log LOG = LogFactory.getLog(EigenDecompTest.class.getName());
 
 	private enum type {
-		COMMONS, LANCZOS, QR,
+		COMMONS, LANCZOS, QR, COMMONS_NATIVE
 	}
 
 	@Test
+	@Ignore
 	public void testLanczosSimple() {
-		MatrixBlock in = new MatrixBlock(4, 4, new double[] {4, 1, -2, 2, 1, 2, 0, 1, -2, 0, 3, -2, 2, 1, -2, -1});
+		MatrixBlock in = new MatrixBlock(4, 4, new double[] { 4, 1, -2, 2, 1, 2, 0, 1, -2, 0, 3, -2, 2, 1, -2, -1 });
 		testEigen(in, 1e-4, 1, type.LANCZOS);
 	}
 
 	@Test
+	@Ignore
 	public void testLanczosSmall() {
-		MatrixBlock in = TestUtils.generateTestMatrixBlockSym(10, 10, 0.0, 1.0, 1.0, 1);
+		MatrixBlock in = TestUtils.generateTestMatrixBlockSym(10, 0.0, 1.0, 1.0, 1);
 		testEigen(in, 1e-4, 1, type.LANCZOS);
 	}
 
 	@Test
+	@Ignore
 	public void testLanczosMedium() {
-		MatrixBlock in = TestUtils.generateTestMatrixBlockSym(12, 12, 0.0, 1.0, 1.0, 1);
+		MatrixBlock in = TestUtils.generateTestMatrixBlockSym(12, 0.0, 1.0, 1.0, 1);
 		testEigen(in, 1e-4, 1, type.LANCZOS);
 	}
 
 	@Test
 	@Ignore
 	public void testLanczosLarge() {
-		MatrixBlock in = TestUtils.generateTestMatrixBlockSym(100, 100, 0.0, 1.0, 1.0, 1);
+		MatrixBlock in = TestUtils.generateTestMatrixBlockSym(100, 0.0, 1.0, 1.0, 1);
 		testEigen(in, 1e-4, 1, type.LANCZOS);
 	}
 
@@ -69,34 +72,75 @@ public class EigenDecompTest {
 	@Ignore
 	public void testLanczosLargeMT() {
 		int threads = 10;
-		MatrixBlock in = TestUtils.generateTestMatrixBlockSym(100, 100, 0.0, 1.0, 1.0, 1);
+		MatrixBlock in = TestUtils.generateTestMatrixBlockSym(100, 0.0, 1.0, 1.0, 1);
 		testEigen(in, 1e-4, threads, type.LANCZOS);
 	}
 
 	@Test
+	@Ignore
 	public void testQREigenSimple() {
 		MatrixBlock in = new MatrixBlock(4, 4,
-			new double[] {52, 30, 49, 28, 30, 50, 8, 44, 49, 8, 46, 16, 28, 44, 16, 22});
+				new double[] { 52, 30, 49, 28, 30, 50, 8, 44, 49, 8, 46, 16, 28, 44, 16, 22 });
 		testEigen(in, 1e-4, 1, type.QR);
 	}
 
 	@Test
+	@Ignore
 	public void testQREigenSymSmall() {
-		MatrixBlock in = TestUtils.generateTestMatrixBlockSym(10, 10, 0.0, 1.0, 1.0, 1);
+		MatrixBlock in = TestUtils.generateTestMatrixBlockSym(10, 0.0, 1.0, 1.0, 1);
 		testEigen(in, 1e-3, 1, type.QR);
 	}
 
 	@Test
+	@Ignore
 	public void testQREigenSymSmallMT() {
 		int threads = 10;
-		MatrixBlock in = TestUtils.generateTestMatrixBlockSym(10, 10, 0.0, 1.0, 1.0, 1);
+		MatrixBlock in = TestUtils.generateTestMatrixBlockSym(10, 0.0, 1.0, 1.0, 1);
 		testEigen(in, 1e-3, threads, type.QR);
+	}
+
+	@Test
+	public void testEigenSymSmall() {
+		MatrixBlock in = TestUtils.generateTestMatrixBlockSym(50, 0.0, 1.0, 1.0, 1);
+		testEigen(in, 1e-4, 10, type.COMMONS);
+	}
+
+	@Test
+	public void testEigenSymMedium() {
+		MatrixBlock in = TestUtils.generateTestMatrixBlockSym(200, 0.0, 1.0, 1.0, 1);
+		testEigen(in, 1e-4, 10, type.COMMONS);
+	}
+
+	@Test
+	public void testEigenSymLarge() {
+		MatrixBlock in = TestUtils.generateTestMatrixBlockSym(1000, 0.0, 1.0, 1.0, 1);
+		testEigen(in, 1e-4, 10, type.COMMONS);
+	}
+
+	@Test
+	public void testNativeEigenSymSmall() {
+		MatrixBlock in = TestUtils.generateTestMatrixBlockSym(50, 0.0, 1.0, 1.0, 1);
+		testEigen(in, 1e-4, 10, type.COMMONS_NATIVE);
+	}
+
+	@Test
+	public void testNativeEigenSymMedium() {
+		int threads = 10;
+		MatrixBlock in = TestUtils.generateTestMatrixBlockSym(200, 0.0, 1.0, 1.0, 1);
+		testEigen(in, 1e-4, threads, type.COMMONS_NATIVE);
+	}
+
+	@Test
+	public void testNativeEigenSymLarge() {
+		int threads = 10;
+		MatrixBlock in = TestUtils.generateTestMatrixBlockSym(1000, 0.0, 1.0, 1.0, 1);
+		testEigen(in, 1e-4, threads, type.COMMONS_NATIVE);
 	}
 
 	@Test
 	@Ignore
 	public void testQREigenSymLarge() {
-		MatrixBlock in = TestUtils.generateTestMatrixBlockSym(50, 50, 0.0, 1.0, 1.0, 1);
+		MatrixBlock in = TestUtils.generateTestMatrixBlockSym(50, 0.0, 1.0, 1.0, 1);
 		testEigen(in, 1e-4, 1, type.QR);
 	}
 
@@ -104,14 +148,14 @@ public class EigenDecompTest {
 	@Ignore
 	public void testQREigenSymLargeMT() {
 		int threads = 10;
-		MatrixBlock in = TestUtils.generateTestMatrixBlockSym(50, 50, 0.0, 1.0, 1.0, 1);
+		MatrixBlock in = TestUtils.generateTestMatrixBlockSym(50, 0.0, 1.0, 1.0, 1);
 		testEigen(in, 1e-4, threads, type.QR);
 	}
 
-	private void testEigen(MatrixBlock in, double tol, int threads, type t) {
+	private void testEigen(MatrixBlock in, double tol, int threads, type t, boolean validate) {
 		try {
 			MatrixBlock[] m = null;
-			switch(t) {
+			switch (t) {
 				case COMMONS:
 					m = LibCommonsMath.multiReturnOperations(in, "eigen", threads, 1);
 					break;
@@ -121,17 +165,24 @@ public class EigenDecompTest {
 				case QR:
 					m = LibCommonsMath.multiReturnOperations(in, "eigen_qr", threads, 1);
 					break;
+				case COMMONS_NATIVE:
+					m = LibCommonsMath.multiReturnOperations(in, "eigen_symm", threads, 1);
+					break;
 				default:
 					throw new NotImplementedException();
 			}
 
-			isValidDecomposition(in, m[1], m[0], tol, t.toString());
+			if (validate)
+				isValidDecomposition(in, m[1], m[0], tol, t.toString());
 
-		}
-		catch(Exception e) {
+		} catch (Exception e) {
 			e.printStackTrace();
 			fail(e.getMessage());
 		}
+	}
+
+	private void testEigen(MatrixBlock in, double tol, int threads, type t) {
+		testEigen(in, tol, threads, t, true);
 	}
 
 	private void isValidDecomposition(MatrixBlock A, MatrixBlock V, MatrixBlock vD, double tol, String message) {

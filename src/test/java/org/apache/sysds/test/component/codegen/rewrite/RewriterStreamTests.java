@@ -11,20 +11,20 @@ import java.util.function.Function;
 public class RewriterStreamTests {
 
 	private static RuleContext ctx;
-	private static Function<RewriterStatement, RewriterStatement> converter;
+	//private static Function<RewriterStatement, RewriterStatement> converter;
 	private static Function<RewriterStatement, RewriterStatement> canonicalConverter;
 
 	@BeforeClass
 	public static void setup() {
 		ctx = RewriterUtils.buildDefaultContext();
-		converter = RewriterUtils.buildFusedOperatorCreator(ctx, true);
+		//converter = RewriterUtils.buildFusedOperatorCreator(ctx, true);
 		canonicalConverter = RewriterUtils.buildCanonicalFormConverter(ctx, true);
 	}
 
 	@Test
 	public void testAdditionFloat1() {
 		RewriterStatement stmt = RewriterUtils.parse("+(+(a, b), 1)", ctx, "MATRIX:A,B,C", "FLOAT:a,b", "LITERAL_INT:0,1");
-		stmt = converter.apply(stmt);
+		stmt = canonicalConverter.apply(stmt);
 		System.out.println(stmt.toParsableString(ctx, true));
 		assert stmt.match(RewriterStatement.MatcherContext.exactMatch(ctx, RewriterUtils.parse("+(argList(a, b, 1))", ctx, "FLOAT:a,b", "LITERAL_INT:0,1")));
 	}
@@ -32,31 +32,30 @@ public class RewriterStreamTests {
 	@Test
 	public void testAdditionFloat2() {
 		RewriterStatement stmt = RewriterUtils.parse("+(1, +(a, b))", ctx, "FLOAT:a,b", "LITERAL_INT:0,1");
-		stmt = converter.apply(stmt);
+		stmt = canonicalConverter.apply(stmt);
 		System.out.println(stmt.toParsableString(ctx, true));
 		assert stmt.match(RewriterStatement.MatcherContext.exactMatch(ctx, RewriterUtils.parse("+(argList(a, b, 1))", ctx, "FLOAT:a,b", "LITERAL_INT:0,1")));
 	}
 
 	@Test
 	public void testAdditionMatrix1() {
-		RewriterStatement stmt = RewriterUtils.parse("+(+(A, B), 1)", ctx, "MATRIX:A,B", "LITERAL_INT:0,1");
-		stmt = converter.apply(stmt);
-		System.out.println(stmt.toParsableString(ctx, true));
-		assert stmt.match(RewriterStatement.MatcherContext.exactMatch(ctx, RewriterUtils.parse("_m($1:_idx(1, nrow(A)), $2:_idx(1, ncol(A)), +(argList([](B, $1, $2), [](A, $1, $2), 1)))", ctx, "MATRIX:A,B", "LITERAL_INT:0,1")));
-	}
+		RewriterStatement stmt1 = RewriterUtils.parse("+(+(A, B), 1)", ctx, "MATRIX:A,B", "LITERAL_INT:1");
+		RewriterStatement stmt2 = RewriterUtils.parse("+(+(B, 1), A)", ctx, "MATRIX:A,B", "LITERAL_INT:1");
 
-	@Test
-	public void testAdditionMatrix2() {
-		RewriterStatement stmt = RewriterUtils.parse("+(1, +(A, B))", ctx, "MATRIX:A,B", "LITERAL_INT:0,1");
-		stmt = converter.apply(stmt);
-		System.out.println(stmt.toParsableString(ctx, true));
-		assert stmt.match(RewriterStatement.MatcherContext.exactMatch(ctx, RewriterUtils.parse("_m($1:_idx(1, nrow(A)), $2:_idx(1, ncol(A)), +(argList([](B, $1, $2), [](A, $1, $2), 1)))", ctx, "MATRIX:A,B", "LITERAL_INT:0,1")));
+		stmt1 = canonicalConverter.apply(stmt1);
+		stmt2 = canonicalConverter.apply(stmt2);
+
+		System.out.println("==========");
+		System.out.println(stmt1.toParsableString(ctx, true));
+		System.out.println("==========");
+		System.out.println(stmt2.toParsableString(ctx, true));
+		assert stmt1.match(RewriterStatement.MatcherContext.exactMatch(ctx, stmt2));
 	}
 
 	@Test
 	public void testSubtractionFloat1() {
 		RewriterStatement stmt = RewriterUtils.parse("+(-(a, b), 1)", ctx, "MATRIX:A,B,C", "FLOAT:a,b", "LITERAL_INT:0,1");
-		stmt = converter.apply(stmt);
+		stmt = canonicalConverter.apply(stmt);
 		System.out.println(stmt.toParsableString(ctx, true));
 		assert stmt.match(RewriterStatement.MatcherContext.exactMatch(ctx, RewriterUtils.parse("+(argList(-(b), a, 1))", ctx, "FLOAT:a,b", "LITERAL_INT:0,1")));
 	}
@@ -64,12 +63,13 @@ public class RewriterStreamTests {
 	@Test
 	public void testSubtractionFloat2() {
 		RewriterStatement stmt = RewriterUtils.parse("+(1, -(a, -(b, c)))", ctx, "MATRIX:A,B,C", "FLOAT:a,b,c", "LITERAL_INT:0,1");
-		stmt = converter.apply(stmt);
+		stmt = canonicalConverter.apply(stmt);
 		System.out.println(stmt.toParsableString(ctx, true));
 		assert stmt.match(RewriterStatement.MatcherContext.exactMatch(ctx, RewriterUtils.parse("+(argList(-(b), a, c, 1))", ctx, "FLOAT:a,b, c", "LITERAL_INT:0,1")));
 	}
 
-	@Test
+	// Fusion will no longer be pursued
+	/*@Test
 	public void testFusedPlanMatrixGeneration() {
 		RewriterStatement stmt = RewriterUtils.parse("+(1, +(A, B))", ctx, "MATRIX:A,B", "LITERAL_INT:0,1");
 		stmt = converter.apply(stmt);
@@ -94,7 +94,7 @@ public class RewriterStreamTests {
 		RewriterStatement fused = RewriterUtils.buildFusedPlan(stmt, ctx);
 		System.out.println("Orig: " + stmt.toParsableString(ctx, true));
 		System.out.println("Fused: " + (fused == null ? null : fused.toParsableString(ctx, true)));
-	}
+	}*/
 
 	@Test
 	public void testReorgEquivalence() {

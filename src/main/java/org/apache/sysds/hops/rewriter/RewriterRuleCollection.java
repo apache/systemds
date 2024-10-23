@@ -1067,6 +1067,62 @@ public class RewriterRuleCollection {
 				.link(hooks.get(1).getId(), hooks.get(2).getId(), RewriterStatement::transferMeta)
 				.build()
 		);
+
+		for (String t : ALL_TYPES) {
+			if (t.equals("MATRIX")) {
+				rules.add(new RewriterRuleBuilder(ctx, "ElementWiseInstruction(_m(i, j, v), b) => _m(i, j, ElementWiseInstruction(v, b))")
+						.setUnidirectional(true)
+						.parseGlobalVars("FLOAT:v")
+						.parseGlobalVars(t + ":B")
+						.parseGlobalVars("INT:i,j")
+						.withParsedStatement("$1:ElementWiseInstruction($2:_m(i, j, v), B)", hooks)
+						.toParsedStatement("$3:_m(i, j, $4:ElementWiseInstruction(v, [](B, i, j)))", hooks)
+						.link(hooks.get(1).getId(), hooks.get(4).getId(), RewriterStatement::transferMeta)
+						.link(hooks.get(2).getId(), hooks.get(3).getId(), RewriterStatement::transferMeta)
+						.apply(hooks.get(3).getId(), (stmt, match) -> {
+							// Then we an infer that the two matrices have the same dimensions
+							match.getExpressionRoot().getAssertions(ctx).addEqualityAssertion(stmt.getNCol(), stmt.getChild(2, 1, 0).getNCol());
+							match.getExpressionRoot().getAssertions(ctx).addEqualityAssertion(stmt.getNRow(), stmt.getChild(2, 1, 0).getNRow());
+						}, true)
+						.build()
+				);
+
+				continue;
+			}
+			rules.add(new RewriterRuleBuilder(ctx, "ElementWiseInstruction(_m(i, j, A), b) => _m(i, j, ElementWiseInstruction(A, b))")
+					.setUnidirectional(true)
+					.parseGlobalVars("FLOAT:v")
+					.parseGlobalVars(t + ":b")
+					.parseGlobalVars("INT:i,j")
+					.withParsedStatement("$1:ElementWiseInstruction($2:_m(i, j, v), b)", hooks)
+					.toParsedStatement("$3:_m(i, j, $4:ElementWiseInstruction(v, b))", hooks)
+					.link(hooks.get(1).getId(), hooks.get(4).getId(), RewriterStatement::transferMeta)
+					.link(hooks.get(2).getId(), hooks.get(3).getId(), RewriterStatement::transferMeta)
+					.build()
+			);
+
+			rules.add(new RewriterRuleBuilder(ctx, "[](ElementWiseInstruction(A, v), i, j) => ElementWiseInstruction(v, [](A, i, j))")
+					.setUnidirectional(true)
+					.parseGlobalVars("MATRIX:A")
+					.parseGlobalVars(t + ":v")
+					.parseGlobalVars("INT:i,j")
+					.withParsedStatement("[]($1:ElementWiseInstruction(A, v), i, j)", hooks)
+					.toParsedStatement("$2:ElementWiseInstruction([](A, i, j), v)", hooks)
+					.link(hooks.get(1).getId(), hooks.get(2).getId(), RewriterStatement::transferMeta)
+					.build()
+			);
+
+			rules.add(new RewriterRuleBuilder(ctx, "[](ElementWiseInstruction(v, A), i, j) => ElementWiseInstruction(v, [](A, i, j))")
+					.setUnidirectional(true)
+					.parseGlobalVars("MATRIX:A")
+					.parseGlobalVars(t + ":v")
+					.parseGlobalVars("INT:i,j")
+					.withParsedStatement("[]($1:ElementWiseInstruction(v, A), i, j)", hooks)
+					.toParsedStatement("$2:ElementWiseInstruction(v, [](A, i, j))", hooks)
+					.link(hooks.get(1).getId(), hooks.get(2).getId(), RewriterStatement::transferMeta)
+					.build()
+			);
+		}
 	}
 
 	public static void streamifyExpressions(final List<RewriterRule> rules, final RuleContext ctx) {

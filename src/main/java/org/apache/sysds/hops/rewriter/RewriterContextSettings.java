@@ -299,6 +299,8 @@ public class RewriterContextSettings {
 		builder.append("_v(MATRIX)::FLOAT\n");
 		builder.append("_cur()::FLOAT\n");
 
+		ALL_TYPES.forEach(t -> builder.append("_EClass(" + t + "...)::" + t + "\n"));
+
 		builder.append("f(FLOAT,FLOAT)::FLOAT"); // Some testing function that is not commutative
 
 		/*builder.append("_map(INT,INT,FLOAT)::MATRIX\n");

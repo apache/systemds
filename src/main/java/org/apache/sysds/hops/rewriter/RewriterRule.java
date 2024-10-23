@@ -145,7 +145,6 @@ public class RewriterRule extends AbstractRewriterRule {
 		return null;
 	}
 
-	// TODO: Give the possibility to get a handle to the parent and root of the replaced sub-DAG
 	private RewriterStatement apply(RewriterStatement.MatchingSubexpression match, RewriterStatement rootInstruction, RewriterStatement dest, MutableObject<Tuple3<RewriterStatement, RewriterStatement, Integer>> modificationHandle, List<Tuple2<RewriterStatement, BiConsumer<RewriterStatement, RewriterStatement.MatchingSubexpression>>> applyFunction) {
 		if (match.getMatchParent() == null || match.getMatchParent() == match.getMatchRoot()) {
 			final Map<RewriterStatement, RewriterStatement> createdObjects = new HashMap<>();
@@ -179,6 +178,8 @@ public class RewriterRule extends AbstractRewriterRule {
 			cpy.recomputeHashCodes(ctx);
 
 			modificationHandle.setValue(new Tuple3<>(cpy, null, -1));
+
+			cpy.unsafePutMeta("_assertions", match.getExpressionRoot().getMeta("_assertions"));
 
 			return cpy;
 		}
@@ -224,6 +225,9 @@ public class RewriterRule extends AbstractRewriterRule {
 
 		cpy2.prepareForHashing();
 		cpy2.recomputeHashCodes(ctx);
+
+		cpy2.unsafePutMeta("_assertions", match.getExpressionRoot().getMeta("_assertions"));
+
 		return cpy2;
 	}
 
@@ -247,6 +251,9 @@ public class RewriterRule extends AbstractRewriterRule {
 
 			cpy.prepareForHashing();
 			cpy.recomputeHashCodes(ctx);
+
+			if (match.getExpressionRoot() == match.getMatchRoot())
+				cpy.unsafePutMeta("_assertions", rootInstruction.getMeta("_assertions"));
 			return cpy;
 		}
 

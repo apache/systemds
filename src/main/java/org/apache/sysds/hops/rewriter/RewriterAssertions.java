@@ -1,5 +1,6 @@
 package org.apache.sysds.hops.rewriter;
 
+import javax.annotation.Nullable;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -19,11 +20,13 @@ public class RewriterAssertions {
 
 	// TODO: What happens if the rewriter statement has already been instantiated? Updates will not occur
 	public boolean addEqualityAssertion(RewriterStatement stmt1, RewriterStatement stmt2) {
-		if (!(stmt1 instanceof RewriterInstruction) || !(stmt2 instanceof RewriterInstruction))
-			throw new UnsupportedOperationException("Asserting uninjectable objects is not yet supported");
-
-		if (stmt1 == stmt2)
+		if (stmt1 == stmt2 || (stmt1.isLiteral() && stmt2.isLiteral() && stmt1.getLiteral().equals(stmt2.getLiteral())))
 			return false;
+
+		if (!(stmt1 instanceof RewriterInstruction) || !(stmt2 instanceof RewriterInstruction))
+			throw new UnsupportedOperationException("Asserting uninjectable objects is not yet supported: " + stmt1 + "; " + stmt2);
+
+		System.out.println("Asserting: " + stmt1 + " := " + stmt2);
 
 		RewriterRule.IdentityRewriterStatement e1 = new RewriterRule.IdentityRewriterStatement(stmt1);
 		RewriterRule.IdentityRewriterStatement e2 = new RewriterRule.IdentityRewriterStatement(stmt2);
@@ -94,12 +97,37 @@ public class RewriterAssertions {
 
 		if (mstmt == null) {
 			// Then we create a new statement for it
-			mstmt = new RewriterInstruction().as(UUID.randomUUID().toString()).ofType(stmt.getResultingDataType(ctx)).withInstruction("_EClass").withOps(set.set.stream().map(id -> id.stmt).toArray(RewriterStatement[]::new));
+			RewriterStatement argList = new RewriterInstruction().as(UUID.randomUUID().toString()).withInstruction("argList").withOps(set.set.stream().map(id -> id.stmt).toArray(RewriterStatement[]::new));
+			mstmt = new RewriterInstruction().as(UUID.randomUUID().toString()).withInstruction("_EClass").withOps(argList);
 			mstmt.consolidate(ctx);
 			set.stmt = mstmt;
 		}
 
 		return mstmt;
+	}
+
+	// TODO: We have to copy the assertions to the root node if it changes
+	public RewriterStatement buildEquivalences(RewriterStatement stmt) {
+		RewriterStatement mAssert = getAssertionStatement(stmt);
+
+		mAssert.forEachPreOrder((cur, parent, pIdx) -> {
+			for (int i = 0; i < cur.getOperands().size(); i++) {
+				RewriterStatement op = cur.getOperands().get(i);
+				RewriterStatement asserted = getAssertionStatement(op);
+
+				if (asserted != op && asserted.getOperands().get(0) != cur)
+					cur.getOperands().set(i, asserted);
+			}
+
+			return true;
+		});
+
+		return mAssert;
+	}
+
+	@Override
+	public String toString() {
+		return allAssertions.toString();
 	}
 
 	private void updateInstance(RewriterStatement stmt, Set<RewriterRule.IdentityRewriterStatement> set) {
@@ -109,34 +137,17 @@ public class RewriterAssertions {
 		}
 	}
 
-	/*public void applyAssertions(RewriterStatement root) {
-		Map<RewriterRule.IdentityRewriterStatement, RewriterRule.IdentityRewriterStatement> repl = new HashMap<>();
-
-
-
-		root.forEachPostOrder((cur, parent, pIdx) -> {
-			Set<RewriterRule.IdentityRewriterStatement> set = getAssertions(cur);
-
-			if (set.isEmpty())
-				return;
-
-			// For now, we assume that all assertions are of type RewriterInstruction
-			RewriterInstruction instr = (RewriterInstruction) cur;
-			RewriterInstruction cpy = (RewriterInstruction) instr.copyNode();
-
-			// Now, we use the old object as container for my equivalence relation
-			instr.unsafeSetInstructionName("eqSet");
-			instr.getOperands().clear();
-			instr.getOperands().addAll(set.stream().map(el -> el.stmt).collect(Collectors.toList()));
-		});
-
-		root.prepareForHashing();
-		root.recomputeHashCodes(ctx);
-	}*/
-
 	private static class RewriterAssertion {
 		Set<RewriterRule.IdentityRewriterStatement> set;
 		RewriterStatement stmt;
+
+		@Override
+		public String toString() {
+			if (stmt != null)
+				return stmt.toString();
+
+			return set.toString();
+		}
 
 		static RewriterAssertion from(Set<RewriterRule.IdentityRewriterStatement> set) {
 			RewriterAssertion a = new RewriterAssertion();

@@ -50,7 +50,7 @@ public class RewriterStreamTests {
 		RewriterStatement stmt = RewriterUtils.parse("+(1, +(A, B))", ctx, "MATRIX:A,B", "LITERAL_INT:0,1");
 		stmt = converter.apply(stmt);
 		System.out.println(stmt.toParsableString(ctx, true));
-		assert stmt.match(RewriterStatement.MatcherContext.exactMatch(ctx, RewriterUtils.parse("_m($1:_idx(1, nrow(A)), $2:_idx(1, ncol(A)), +(argList([](A, $1, $2), [](B, $1, $2), 1)))", ctx, "MATRIX:A,B", "LITERAL_INT:0,1")));
+		assert stmt.match(RewriterStatement.MatcherContext.exactMatch(ctx, RewriterUtils.parse("_m($1:_idx(1, nrow(A)), $2:_idx(1, ncol(A)), +(argList([](B, $1, $2), [](A, $1, $2), 1)))", ctx, "MATRIX:A,B", "LITERAL_INT:0,1")));
 	}
 
 	@Test

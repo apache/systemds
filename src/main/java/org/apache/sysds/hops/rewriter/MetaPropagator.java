@@ -19,7 +19,7 @@ public class MetaPropagator implements Function<RewriterStatement, RewriterState
 
 	// TODO: Maybe automatically recompute hash codes?
 	public RewriterStatement apply(RewriterStatement root) {
-		RewriterAssertions assertions = (RewriterAssertions) root.getMeta("assertions");
+		RewriterAssertions assertions = root.getAssertions(ctx);
 		MutableObject<RewriterStatement> out = new MutableObject<>(root);
 		HashMap<Object, RewriterStatement> literalMap = new HashMap<>();
 		root.forEachPostOrder((el, parent, pIdx) -> {
@@ -35,7 +35,7 @@ public class MetaPropagator implements Function<RewriterStatement, RewriterState
 
 			// Assert
 			if (el.getResultingDataType(ctx).startsWith("MATRIX")
-				&& (el.getMeta("ncol") == null || el.getMeta("nrow") == null))
+				&& (el.getNCol() == null || el.getNRow() == null))
 				throw new IllegalArgumentException("Some properties have not been set by the meta propagator: " + el.toString(ctx) + " :: " + el.getResultingDataType(ctx));
 
 
@@ -77,7 +77,14 @@ public class MetaPropagator implements Function<RewriterStatement, RewriterState
 				if (ret == null)
 					return null;
 
-				return assertions == null ? ret : assertions.getAssertionStatement(ret);
+				return ret;
+
+				/*RewriterStatement asserted = assertions != null ? assertions.getAssertionStatement(ret) : null;
+
+				if (asserted == null || asserted == parent)
+					return ret;
+
+				return asserted;*/
 			}
 			return null;
 		}

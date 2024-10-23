@@ -560,6 +560,33 @@ public abstract class RewriterStatement implements Comparable<RewriterStatement>
 		return meta.get(key);
 	}
 
+	public RewriterAssertions getAssertions(final RuleContext ctx) {
+		RewriterAssertions assertions = (RewriterAssertions) getMeta("_assertions");
+		if (assertions == null) {
+			assertions = new RewriterAssertions(ctx);
+			unsafePutMeta("_assertions", assertions);
+		}
+
+		return assertions;
+	}
+
+	public RewriterStatement getNCol() {
+		return (RewriterStatement) getMeta("ncol");
+	}
+
+	public RewriterStatement getNRow() {
+		return (RewriterStatement) getMeta("nrow");
+	}
+
+	public RewriterStatement getChild(int... indices) {
+		RewriterStatement current = this;
+
+		for (int i = 0; i < indices.length; i++)
+			current = current.getOperands().get(indices[i]);
+
+		return current;
+	}
+
 	public static void transferMeta(RewriterRule.ExplicitLink link) {
 		if (link.oldStmt instanceof RewriterInstruction) {
 			for (RewriterStatement mNew : link.newStmt) {

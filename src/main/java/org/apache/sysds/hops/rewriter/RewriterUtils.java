@@ -1344,6 +1344,8 @@ public class RewriterUtils {
 				System.out.println("PRE1: " + stmt.toParsableString(ctx, false));
 
 			//RewriterUtils.topologicalSort(stmt, ctx, (el, parent) -> el.isArgumentList() && parent != null && Set.of("+", "-", "*", "_idxExpr").contains(parent.trueInstruction()));
+			stmt = stmt.getAssertions(ctx).buildEquivalences(stmt);
+			System.out.println(stmt.getAssertions(ctx));
 			TopologicalSort.sort(stmt, ctx);
 
 			if (debug)

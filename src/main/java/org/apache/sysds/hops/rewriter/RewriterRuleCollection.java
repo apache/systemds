@@ -502,6 +502,17 @@ public class RewriterRuleCollection {
 					.toParsedStatement("==(a, b)", hooks)
 					.build()
 			);
+
+			// TODO: Introduce e-class
+			/*rules.add(new RewriterRuleBuilder(ctx,  "==(a, b) => isZero(+(a, -(b)))")
+					.setUnidirectional(true)
+					.parseGlobalVars(t1 + ":a")
+					.parseGlobalVars(t2 + ":b")
+					.parseGlobalVars("LITERAL_BOOL:FALSE")
+					.withParsedStatement("!(!=(a, b))", hooks)
+					.toParsedStatement("==(a, b)", hooks)
+					.build()
+			);*/
 		});
 	}
 
@@ -547,11 +558,17 @@ public class RewriterRuleCollection {
 				.link(hooks.get(1).getId(), hooks.get(4).getId(), RewriterStatement::transferMeta)
 				.apply(hooks.get(2).getId(), stmt -> stmt.unsafePutMeta("idxId", UUID.randomUUID()), true) // Assumes it will never collide
 				.apply(hooks.get(3).getId(), stmt -> stmt.unsafePutMeta("idxId", UUID.randomUUID()), true)
-				.apply(hooks.get(7).getId(), stmt -> {
+				.apply(hooks.get(7).getId(), (stmt, match) -> {
 					UUID id = UUID.randomUUID();
 					stmt.unsafePutMeta("ownerId", id);
 					stmt.getOperands().get(0).unsafePutMeta("ownerId", id);
 					stmt.getOperands().get(1).unsafePutMeta("ownerId", id);
+
+					// Now we assert that nrow(A) = nrow(B) and ncol(A) = ncol(B)
+					RewriterStatement aRef = stmt.getChild(2, 0, 0);
+					RewriterStatement bRef = stmt.getChild(2, 1, 0);
+					match.getExpressionRoot().getAssertions(ctx).addEqualityAssertion(aRef.getNRow(), bRef.getNRow());
+					match.getExpressionRoot().getAssertions(ctx).addEqualityAssertion(aRef.getNCol(), bRef.getNCol());
 				}, true) // Assumes it will never collide
 				//.apply(hooks.get(5).getId(), stmt -> stmt.unsafePutMeta("dontExpand", true), true)
 				//.apply(hooks.get(6).getId(), stmt -> stmt.unsafePutMeta("dontExpand", true), true)

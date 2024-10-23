@@ -18,7 +18,7 @@ import java.util.function.BiFunction;
 public class TopologicalSort {
 
 	public static void sort(RewriterStatement root, final RuleContext ctx) {
-		sort(root, (el, parent) -> el.isArgumentList() && parent != null && Set.of("+", "-", "*", "_idxExpr").contains(parent.trueInstruction()), ctx);
+		sort(root, (el, parent) -> el.isArgumentList() && parent != null && Set.of("+", "-", "*", "_idxExpr", "_EClass").contains(parent.trueInstruction()), ctx);
 	}
 
 	public static void sort(RewriterStatement root, BiFunction<RewriterStatement, RewriterStatement, Boolean> isArrangable, final RuleContext ctx) {

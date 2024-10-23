@@ -531,11 +531,15 @@ public class RewriterRuleCollection {
 				.apply(hooks.get(1).getId(), stmt -> stmt.unsafePutMeta("idxId", UUID.randomUUID()), true) // Assumes it will never collide
 				.apply(hooks.get(2).getId(), stmt -> stmt.unsafePutMeta("idxId", UUID.randomUUID()), true) // Assumes it will never collide
 				.apply(hooks.get(3).getId(), stmt -> stmt.unsafePutMeta("idxId", UUID.randomUUID()), true) // Assumes it will never collide
-				.apply(hooks.get(4).getId(), stmt -> {
+				.apply(hooks.get(4).getId(), (stmt, match) -> {
 					UUID id = UUID.randomUUID();
 					stmt.unsafePutMeta("ownerId", id);
 					stmt.getOperands().get(0).unsafePutMeta("ownerId", id);
 					stmt.getOperands().get(1).unsafePutMeta("ownerId", id);
+
+					RewriterStatement aRef = stmt.getChild(0, 1, 0);
+					RewriterStatement bRef = stmt.getChild(1, 1, 0);
+					match.getExpressionRoot().getAssertions(ctx).addEqualityAssertion(aRef.getNCol(), bRef.getNRow());
 				}, true) // Assumes it will never collide
 				.apply(hooks.get(5).getId(), stmt -> {
 					UUID id = UUID.randomUUID();
@@ -599,11 +603,15 @@ public class RewriterRuleCollection {
 				.toParsedStatement("sum($3:_m($1:_idx(1, $2:nrow(A)), 1, [](A, $1, $1)))", hooks)
 				.apply(hooks.get(1).getId(), stmt -> stmt.unsafePutMeta("idxId", UUID.randomUUID()), true) // Assumes it will never collide
 				.apply(hooks.get(2).getId(), stmt -> stmt.unsafePutMeta("dontExpand", true), true)
-				.apply(hooks.get(3).getId(), stmt -> {
+				.apply(hooks.get(3).getId(), (stmt, match) -> {
 					UUID id = UUID.randomUUID();
 					stmt.unsafePutMeta("ownerId", id);
 					stmt.getOperands().get(0).unsafePutMeta("ownerId", id);
 					stmt.getOperands().get(1).unsafePutMeta("ownerId", id);
+
+					// Assert that the matrix is squared
+					RewriterStatement aRef = stmt.getChild(0, 1, 0);
+					match.getExpressionRoot().getAssertions(ctx).addEqualityAssertion(aRef.getNRow(), aRef.getNCol());
 				}, true)
 				.build()
 		);
@@ -776,10 +784,13 @@ public class RewriterRuleCollection {
 				.withParsedStatement("diag(A)", hooks)
 				.toParsedStatement("$2:_m($1:_idx(1, nrow(A)), 1, [](A, $1, $1))", hooks)
 				.apply(hooks.get(1).getId(), stmt -> stmt.unsafePutMeta("idxId", UUID.randomUUID()), true) // Assumes it will never collide
-				.apply(hooks.get(2).getId(), stmt -> {
+				.apply(hooks.get(2).getId(), (stmt, match) -> {
 					UUID id = UUID.randomUUID();
 					stmt.unsafePutMeta("ownerId", id);
 					stmt.getOperands().get(0).unsafePutMeta("ownerId", id);
+
+					RewriterStatement aRef = stmt.getChild(0, 1, 0);
+					match.getExpressionRoot().getAssertions(ctx).addEqualityAssertion(aRef.getNRow(), aRef.getNCol());
 				}, true)
 				.build()
 		);

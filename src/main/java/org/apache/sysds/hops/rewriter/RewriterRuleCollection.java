@@ -1125,6 +1125,31 @@ public class RewriterRuleCollection {
 		}
 	}
 
+	public static void buildElementWiseAlgebraicCanonicalization(final List<RewriterRule> rules, final RuleContext ctx) {
+		RewriterUtils.buildTernaryPermutations(List.of("FLOAT", "INT", "BOOL"), (t1, t2, t3) -> {
+			rules.add(new RewriterRuleBuilder(ctx, "*(+(a, b), c) => +(*(a, c), *(b, c))")
+					.setUnidirectional(true)
+					.parseGlobalVars(t1 + ":a")
+					.parseGlobalVars(t2 + ":b")
+					.parseGlobalVars(t3 + ":c")
+					.withParsedStatement("*(+(a, b), c)")
+					.toParsedStatement("+(*(a, c), *(b, c))")
+					.build()
+			);
+
+			rules.add(new RewriterRuleBuilder(ctx, "*(c, +(a, b)) => +(*(c, a), *(c, b))")
+					.setUnidirectional(true)
+					.parseGlobalVars(t1 + ":a")
+					.parseGlobalVars(t2 + ":b")
+					.parseGlobalVars(t3 + ":c")
+					.withParsedStatement("*(c, +(a, b))")
+					.toParsedStatement("+(*(c, a), *(c, b))")
+					.build()
+			);
+		});
+	}
+
+	@Deprecated
 	public static void streamifyExpressions(final List<RewriterRule> rules, final RuleContext ctx) {
 		HashMap<Integer, RewriterStatement> hooks = new HashMap<>();
 

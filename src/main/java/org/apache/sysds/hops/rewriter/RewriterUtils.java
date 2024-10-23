@@ -602,6 +602,10 @@ public class RewriterUtils {
 		}
 	}
 
+	public static void buildTernaryPermutations(List<String> args, TriConsumer<String, String, String> func) {
+		buildBinaryPermutations(args, (t1, t2) -> args.forEach(t3 -> func.accept(t1, t2, t3)));
+	}
+
 	public static void buildBinaryPermutations(List<String> args, BiConsumer<String, String> func) {
 		buildBinaryPermutations(args, args, func);
 	}
@@ -1316,6 +1320,7 @@ public class RewriterUtils {
 
 		ArrayList<RewriterRule> pd = new ArrayList<>();
 		RewriterRuleCollection.pushdownStreamSelections(pd, ctx);
+		RewriterRuleCollection.buildElementWiseAlgebraicCanonicalization(pd, ctx);
 		RewriterHeuristic streamSelectPushdown = new RewriterHeuristic(new RewriterRuleSet(ctx, pd));
 
 		ArrayList<RewriterRule> flatten = new ArrayList<>();

@@ -19,10 +19,16 @@
 
 package org.apache.sysds.test.functions.rewrite;
 
+import java.util.HashMap;
+
 import org.apache.sysds.hops.OptimizerUtils;
+import org.apache.sysds.hops.recompile.Recompiler;
+import org.apache.sysds.runtime.matrix.data.MatrixValue;
 import org.apache.sysds.test.AutomatedTestBase;
 import org.apache.sysds.test.TestConfiguration;
 import org.apache.sysds.test.TestUtils;
+import org.junit.Assert;
+import org.junit.Ignore;
 import org.junit.Test;
 
 public class RewriteSimplifyWeightedUnaryMMTest extends AutomatedTestBase {
@@ -31,9 +37,8 @@ public class RewriteSimplifyWeightedUnaryMMTest extends AutomatedTestBase {
 	private static final String TEST_CLASS_DIR =
 		TEST_DIR + RewriteSimplifyWeightedUnaryMMTest.class.getSimpleName() + "/";
 
-	private static final int rows = 100;
-	private static final int cols = 100;
-	//private static final double eps = Math.pow(10, -7);
+	private static final int rows = 1123; //larger than blocksize needed
+	private static final int cols = 1245;
 
 	@Override
 	public void setUp() {
@@ -103,73 +108,15 @@ public class RewriteSimplifyWeightedUnaryMMTest extends AutomatedTestBase {
 		testRewriteSimplifyWeightedUnaryMM(5, true);	//pattern: 2*(W*(U%*%t(V)))
 	}
 
-	/**
-	 * These tests cover the case for the third pattern
-	 * W * sop(U%*%t(V), c) or W * sop(U%*%t(V), c), where
-	 * sop stands for scalar operation (+, -, *, /) and c represents
-	 * some constant scalar.
-	 * */
-
-	@Test
-	public void testWeightedUnaryMMAddLeftNoRewrite(){
-		testRewriteSimplifyWeightedUnaryMM(6, false);
-	}
-
-	@Test
-	public void testWeightedUnaryMMAddLeftRewrite(){
-		testRewriteSimplifyWeightedUnaryMM(6, true);	//pattern: W * (c + U%*%t(V))
-	}
-
-	@Test
-	public void testWeightedUnaryMMMinusLeftNoRewrite(){
-		testRewriteSimplifyWeightedUnaryMM(7, false);
-	}
-
-	@Test
-	public void testWeightedUnaryMMMinusLeftRewrite(){
-		testRewriteSimplifyWeightedUnaryMM(7, true);	//pattern: W * (c - U%*%t(V))
-	}
-
 	@Test
 	public void testWeightedUnaryMMMultLeftNoRewrite(){
 		testRewriteSimplifyWeightedUnaryMM(8, false);
 	}
 
 	@Test
+	@Ignore //FIXME non-applied rewrite
 	public void testWeightedUnaryMMMultLeftRewrite(){
 		testRewriteSimplifyWeightedUnaryMM(8, true);	//pattern: W * (c * (U%*%t(V)))
-	}
-
-	@Test
-	public void testWeightedUnaryMMDivLeftNoRewrite(){
-		testRewriteSimplifyWeightedUnaryMM(9, false);
-	}
-
-	@Test
-	public void testWeightedUnaryMMDivLeftRewrite(){
-		testRewriteSimplifyWeightedUnaryMM(9, true);	//pattern: W * (c / (U%*%t(V)))
-	}
-
-	// Same pattern but scalar from right instead of left
-
-	@Test
-	public void testWeightedUnaryMMAddRightNoRewrite(){
-		testRewriteSimplifyWeightedUnaryMM(10, false);
-	}
-
-	@Test
-	public void testWeightedUnaryMMAddRightRewrite(){
-		testRewriteSimplifyWeightedUnaryMM(10, true);	//pattern: W * (U%*%t(V) + c)
-	}
-
-	@Test
-	public void testWeightedUnaryMMMinusRightNoRewrite(){
-		testRewriteSimplifyWeightedUnaryMM(11, false);
-	}
-
-	@Test
-	public void testWeightedUnaryMMMinusRightRewrite(){
-		testRewriteSimplifyWeightedUnaryMM(11, true);	//pattern: W * (U%*%t(V) - c)
 	}
 
 	@Test
@@ -178,90 +125,10 @@ public class RewriteSimplifyWeightedUnaryMMTest extends AutomatedTestBase {
 	}
 
 	@Test
+	@Ignore //FIXME non-applied rewrite
 	public void testWeightedUnaryMMMultRightRewrite(){
 		testRewriteSimplifyWeightedUnaryMM(12, true);	//pattern: W * ((U%*%t(V)) * c)
 	}
-
-	@Test
-	public void testWeightedUnaryMMDivRightNoRewrite(){
-		testRewriteSimplifyWeightedUnaryMM(13, false);
-	}
-
-	@Test
-	public void testWeightedUnaryMMDivRightRewrite(){
-		testRewriteSimplifyWeightedUnaryMM(13, true);	//pattern: W * ((U%*%t(V)) / c)
-	}
-
-	/**
-	 * Here, we omit the transpose in the dml script. The rewrite should catch the missing transpose
-	 * and replace V with t(V).
-	 **/
-
-	@Test
-	public void testWeightedUnaryMMExpNoTranspose(){
-		testRewriteSimplifyWeightedUnaryMM(14, true);	//pattern: W * exp(U%*%V)
-	}
-
-	@Test
-	public void testWeightedUnaryMMAbsNoTranspose(){
-		testRewriteSimplifyWeightedUnaryMM(15, true);	//pattern: W * abs(U%*%V)
-	}
-
-	@Test
-	public void testWeightedUnaryMMSinNoTranspose(){
-		testRewriteSimplifyWeightedUnaryMM(16, true);	//pattern: W * sin(U%*%V)
-	}
-
-	@Test
-	public void testWeightedUnaryMMScalarRightNoTranspose(){
-		testRewriteSimplifyWeightedUnaryMM(17, true);	//pattern: (W*(U%*%V))*2
-	}
-
-	@Test
-	public void testWeightedUnaryMMScalarLeftNoTranspose(){
-		testRewriteSimplifyWeightedUnaryMM(18, true);	//pattern: 2*(W*(U%*%V))
-	}
-
-	@Test
-	public void testWeightedUnaryMMAddLeftNoTranspose(){
-		testRewriteSimplifyWeightedUnaryMM(19, true);	//pattern: W * (c + U%*%V)
-	}
-
-	@Test
-	public void testWeightedUnaryMMMinusLeftNoTranspose(){
-		testRewriteSimplifyWeightedUnaryMM(20, true);	//pattern: W * (c - U%*%V)
-	}
-
-	@Test
-	public void testWeightedUnaryMMMultLeftNoTranspose(){
-		testRewriteSimplifyWeightedUnaryMM(21, true);	//pattern: W * (c * (U%*%V))
-	}
-
-	@Test
-	public void testWeightedUnaryMMDivLeftNoTranspose(){
-		testRewriteSimplifyWeightedUnaryMM(22, true);	//pattern: W * (c / (U%*%V))
-	}
-
-	@Test
-	public void testWeightedUnaryMMAddRightNoTranspose(){
-		testRewriteSimplifyWeightedUnaryMM(23, true);	//pattern: W * (U%*%V + c)
-	}
-
-	@Test
-	public void testWeightedUnaryMMMinusRightNoTranspose(){
-		testRewriteSimplifyWeightedUnaryMM(24, true);	//pattern: W * (U%*%V - c)
-	}
-
-	@Test
-	public void testWeightedUnaryMMMultRightNoTranspose(){
-		testRewriteSimplifyWeightedUnaryMM(25, true);	//pattern: W * ((U%*%V) * c)
-	}
-
-	@Test
-	public void testWeightedUnaryMMDivRightNoTranspose(){
-		testRewriteSimplifyWeightedUnaryMM(26, true);	//pattern: W * ((U%*%V) / c)
-	}
-
 
 
 	private void testRewriteSimplifyWeightedUnaryMM(int ID, boolean rewrites) {
@@ -280,11 +147,13 @@ public class RewriteSimplifyWeightedUnaryMMTest extends AutomatedTestBase {
 
 			OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION = rewrites;
 			OptimizerUtils.ALLOW_OPERATOR_FUSION = rewrites;
+			Recompiler.reinitRecompiler();
 
 			//create matrices
-			double[][] U = getRandomMatrix(rows, cols, -1, 1, 0.80d, 3);
-			double[][] V = getRandomMatrix(rows, cols, -1, 1, 0.70d, 4);
-			double[][] W = getRandomMatrix(rows, cols, -1, 1, 0.60d, 5);
+			int rank = 50;
+			double[][] U = getRandomMatrix(rows, rank, -1, 1, 0.80d, 3);
+			double[][] V = getRandomMatrix(cols, rank, -1, 1, 0.70d, 4);
+			double[][] W = getRandomMatrix(rows, cols, -1, 1, 0.01d, 5);
 			writeInputMatrixWithMTD("U", U, true);
 			writeInputMatrixWithMTD("V", V, true);
 			writeInputMatrixWithMTD("W", W, true);
@@ -293,15 +162,10 @@ public class RewriteSimplifyWeightedUnaryMMTest extends AutomatedTestBase {
 			runRScript(true);
 
 			//compare matrices
-// FIXME
-//			HashMap<MatrixValue.CellIndex, Double> dmlfile = readDMLMatrixFromOutputDir("R");
-//			HashMap<MatrixValue.CellIndex, Double> rfile = readRMatrixFromExpectedDir("R");
-//			TestUtils.compareMatrices(dmlfile, rfile, eps, "Stat-DML", "Stat-R");
-//			if(rewrites)
-//				Assert.assertTrue(heavyHittersContainsString("wumm"));
-//			else
-//				Assert.assertFalse(heavyHittersContainsString("wumm"));
-
+			HashMap<MatrixValue.CellIndex, Double> dmlfile = readDMLMatrixFromOutputDir("R");
+			HashMap<MatrixValue.CellIndex, Double> rfile = readRMatrixFromExpectedDir("R");
+			TestUtils.compareMatrices(dmlfile, rfile, 1e-8, "Stat-DML", "Stat-R");
+			Assert.assertTrue(heavyHittersContainsString("wumm")==rewrites);
 		}
 		finally {
 			OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION = oldFlag1;

@@ -1,6 +1,5 @@
 package org.apache.sysds.hops.rewriter;
 
-import javax.annotation.Nullable;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -121,6 +120,9 @@ public class RewriterAssertions {
 
 			return true;
 		});
+
+		mAssert.prepareForHashing();
+		mAssert.recomputeHashCodes(ctx);
 
 		return mAssert;
 	}

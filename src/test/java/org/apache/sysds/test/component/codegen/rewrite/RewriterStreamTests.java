@@ -3,6 +3,7 @@ package org.apache.sysds.test.component.codegen.rewrite;
 import org.apache.sysds.hops.rewriter.RewriterStatement;
 import org.apache.sysds.hops.rewriter.RewriterUtils;
 import org.apache.sysds.hops.rewriter.RuleContext;
+import org.apache.sysds.hops.rewriter.TopologicalSort;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
@@ -256,6 +257,8 @@ public class RewriterStreamTests {
 		RewriterStatement stmt2 = RewriterUtils.parse("%*%(t(V), U)", ctx, "MATRIX:U,V");
 		stmt1 = canonicalConverter.apply(stmt1);
 		stmt2 = canonicalConverter.apply(stmt2);
+		//TopologicalSort.sort(stmt1, ctx);
+		//TopologicalSort.sort(stmt2, ctx);
 
 		System.out.println("==========");
 		System.out.println(stmt1.toParsableString(ctx, true));

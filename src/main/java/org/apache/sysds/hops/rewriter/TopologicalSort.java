@@ -1,22 +1,21 @@
 package org.apache.sysds.hops.rewriter;
 
 import org.apache.commons.lang3.mutable.MutableInt;
-import scala.Tuple2;
 
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 import java.util.function.BiFunction;
 
 // For now, we assume that _argList() will have one unique parent
 public class TopologicalSort {
+	public static boolean DEBUG = false;
 
+	// TODO: Sort doesn't work if we have sth like _EClass(argList(nrow(U), nrow(V)), as the lowest address will be nrow, ncol and not U, V
 	public static void sort(RewriterStatement root, final RuleContext ctx) {
 		sort(root, (el, parent) -> el.isArgumentList() && parent != null && Set.of("+", "-", "*", "_idxExpr", "_EClass").contains(parent.trueInstruction()), ctx);
 	}
@@ -38,8 +37,25 @@ public class TopologicalSort {
 		int ctr = 0;
 
 		while (!lowestUncertainties.isEmpty()) {
+			if (DEBUG) {
+				System.out.println("Uncertainties after iteration " + ctr + ": " + lowestUncertainties.size());
+				System.out.println("Lowest uncertainties: " + lowestUncertainties);
+			}
+
+			// TODO: Don't introduce the facts to the lowest uncertainties but their leaves first
+			// TODO: This avoids stuff like argList(ncol(U), ncol(V))
 			factCtr = introduceFacts(lowestUncertainties, factCtr);
 			buildAddresses(root, ctx);
+
+			if (DEBUG) {
+				System.out.println("Built addresses:");
+				for (UnorderedSet u : lowestUncertainties) {
+					for (RewriterStatement s : u.contents) {
+						System.out.println("- " + s + " :: " + getAddress(s));
+					}
+				}
+			}
+
 			resolveAmbiguities(root, ctx, uncertainParents);
 			resetAddresses(uncertainParents);
 			// TODO: Propagate address priorities and thus implicit orderings up the DAG
@@ -48,7 +64,7 @@ public class TopologicalSort {
 			ctr++;
 
 			if (ctr > 100)
-				throw new RuntimeException("Could not finish sorting process");
+				throw new RuntimeException("Could not finish sorting process"); // Should never get here but just to make sure
 		}
 
 		// At the end
@@ -145,10 +161,17 @@ public class TopologicalSort {
 	}*/
 
 	private static int introduceFacts(Collection<UnorderedSet> sets, int factCtr) {
-		for (UnorderedSet set : sets)
+		for (RewriterStatement stmt : allChildren(sets)) {
+			if (stmt.getMeta("_addresses") == null)
+				stmt.unsafePutMeta("_addresses", new ArrayList<>());
+
+			if (stmt.getMeta("_fact") == null)
+				stmt.unsafePutMeta("_fact", factCtr++);
+		}
+		/*for (UnorderedSet set : sets)
 			for (RewriterStatement stmt : set.contents)
 				if (stmt.getMeta("_fact") == null)
-					stmt.unsafePutMeta("_fact", factCtr++);
+					stmt.unsafePutMeta("_fact", factCtr++);*/
 
 		return factCtr;
 	}
@@ -158,6 +181,27 @@ public class TopologicalSort {
 		Set<UnorderedSet> set = new HashSet<>();
 		recursivelyFindLowestUncertainties(root, set);
 		return set;
+	}
+
+	// All children in post order and unique
+	private static List<RewriterStatement> allChildren(Collection<UnorderedSet> unorderedSets) {
+		Set<RewriterRule.IdentityRewriterStatement> is = new HashSet<>();
+		List<RewriterStatement> children = new ArrayList<>();
+		for (UnorderedSet set : unorderedSets)
+			for (RewriterStatement s : set.contents)
+				traverse(s, is, children);
+
+		return children;
+	}
+
+	private static void traverse(RewriterStatement stmt, Set<RewriterRule.IdentityRewriterStatement> visited, List<RewriterStatement> l) {
+		if (visited.contains(new RewriterRule.IdentityRewriterStatement(stmt)))
+			return;
+
+		visited.add(new RewriterRule.IdentityRewriterStatement(stmt));
+		stmt.getOperands().forEach(el -> traverse(el, visited, l));
+
+		l.add(stmt);
 	}
 
 	private static boolean recursivelyFindLowestUncertainties(RewriterStatement current, Set<UnorderedSet> lowestUncertainties) {
@@ -242,13 +286,6 @@ public class TopologicalSort {
 		return couldResolve;
 	}
 
-	private static void comparingSort(RewriterStatement root, final RuleContext ctx) {
-		// TODO
-		root.forEachPostOrder((cur, parent, pIdx) -> {
-
-		});
-	}
-
 	private static void resetAddresses(List<RewriterStatement> uncertainParents) {
 		for (RewriterStatement uParent : uncertainParents) {
 			List<Object> knownOrder = (List<Object>) uParent.getMeta("_knownOrder");
@@ -304,6 +341,9 @@ public class TopologicalSort {
 			Collections.sort(addresses);
 			String address = String.join(";", addresses);
 			el.unsafePutMeta("_address", address);
+
+			if (DEBUG)
+				System.out.println("Address of " + el + " :: " + address);
 		}
 
 		return elementsWithAddress;
@@ -312,6 +352,11 @@ public class TopologicalSort {
 	private static void recursivelyBuildAddresses(RewriterStatement current, String currentAddress, final RuleContext ctx, List<RewriterStatement> elementsWithAddress) {
 		List<Object> knownOrder = (List<Object>)current.getMeta("_knownOrder");
 		List<String> addresses = (List<String>)current.getMeta("_addresses");
+
+		if (DEBUG) {
+			System.out.println("CUR: " + current);
+			System.out.println("KnownOrder: " + knownOrder);
+		}
 
 		if (addresses != null) {
 			if (addresses.isEmpty())

@@ -4,6 +4,7 @@ import org.apache.sysds.hops.rewriter.RewriterRuntimeUtils;
 import org.apache.sysds.hops.rewriter.RewriterStatement;
 import org.apache.sysds.hops.rewriter.RewriterUtils;
 import org.apache.sysds.hops.rewriter.RuleContext;
+import org.apache.sysds.hops.rewriter.TopologicalSort;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
@@ -159,6 +160,54 @@ public class RewriterTopologySortTests {
 		stmt = converter.apply(stmt);
 
 		System.out.println(stmt.toParsableString(ctx, true));
+	}
+
+	@Test
+	public void testComplex1() {
+		RewriterStatement stmt1 = RewriterUtils.parse("_m($1:_idx(1,ncol(V)),$2:_idx(1,ncol(U)),sum(_idxExpr($3:_idx(1,_EClass(argList(nrow(V),nrow(U)))),*(argList([](V,$3,$1),[](U,$3,$2))))))", ctx, "MATRIX:U,V", "LITERAL_INT:1");
+		RewriterStatement stmt2 = RewriterUtils.parse("_m($1:_idx(1,ncol(V)),$2:_idx(1,ncol(U)),sum(_idxExpr($3:_idx(1,_EClass(argList(nrow(U),nrow(V)))),*(argList([](U,$3,$2),[](V,$3,$1))))))", ctx, "MATRIX:U,V", "LITERAL_INT:1");
+
+		TopologicalSort.sort(stmt1, ctx);
+		TopologicalSort.sort(stmt2, ctx);
+
+		System.out.println("==========");
+		System.out.println(stmt1.toParsableString(ctx, true));
+		System.out.println("==========");
+		System.out.println(stmt2.toParsableString(ctx, true));
+
+		assert stmt1.match(RewriterStatement.MatcherContext.exactMatch(ctx, stmt2));
+	}
+
+	@Test
+	public void testComplex2() {
+		RewriterStatement stmt1 = RewriterUtils.parse("_m($1:_idx(1,ncol(V)),$2:_idx(1,ncol(U)),sum(_idxExpr($3:_idx(1,_EClass(argList(nrow(V),nrow(U)))),1.0)))", ctx, "MATRIX:U,V", "LITERAL_INT:1", "LITERAL_FLOAT:1.0");
+		RewriterStatement stmt2 = RewriterUtils.parse("_m($1:_idx(1,ncol(V)),$2:_idx(1,ncol(U)),sum(_idxExpr($3:_idx(1,_EClass(argList(nrow(U),nrow(V)))),1.0)))", ctx, "MATRIX:U,V", "LITERAL_INT:1", "LITERAL_FLOAT:1.0");
+
+		TopologicalSort.sort(stmt1, ctx);
+		TopologicalSort.sort(stmt2, ctx);
+
+		System.out.println("==========");
+		System.out.println(stmt1.toParsableString(ctx, true));
+		System.out.println("==========");
+		System.out.println(stmt2.toParsableString(ctx, true));
+
+		assert stmt1.match(RewriterStatement.MatcherContext.exactMatch(ctx, stmt2));
+	}
+
+	@Test
+	public void testComplex3() {
+		RewriterStatement stmt1 = RewriterUtils.parse("_m(ncol(V),ncol(U),as.float(_EClass(argList(nrow(V),nrow(U))))))", ctx, "MATRIX:U,V", "LITERAL_INT:1", "LITERAL_FLOAT:1.0");
+		RewriterStatement stmt2 = RewriterUtils.parse("_m(ncol(V),ncol(U),as.float(_EClass(argList(nrow(U),nrow(V))))))", ctx, "MATRIX:U,V", "LITERAL_INT:1", "LITERAL_FLOAT:1.0");
+
+		TopologicalSort.sort(stmt1, ctx);
+		TopologicalSort.sort(stmt2, ctx);
+
+		System.out.println("==========");
+		System.out.println(stmt1.toParsableString(ctx, true));
+		System.out.println("==========");
+		System.out.println(stmt2.toParsableString(ctx, true));
+
+		assert stmt1.match(RewriterStatement.MatcherContext.exactMatch(ctx, stmt2));
 	}
 
 }

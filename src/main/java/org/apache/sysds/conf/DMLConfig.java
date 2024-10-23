@@ -88,6 +88,7 @@ public class DMLConfig
 	public static final String COMPRESSED_COST_MODEL= "sysds.compressed.costmodel";
 	public static final String COMPRESSED_TRANSPOSE = "sysds.compressed.transpose";
 	public static final String COMPRESSED_TRANSFORMENCODE = "sysds.compressed.transformencode";
+	public static final String COMPRESSED_ONEHOTDETECT = "sysds.compressed.onehotdetect";
 	public static final String NATIVE_BLAS          = "sysds.native.blas";
 	public static final String NATIVE_BLAS_DIR      = "sysds.native.blas.directory";
 	public static final String DAG_LINEARIZATION    = "sysds.compile.linearization";
@@ -173,6 +174,7 @@ public class DMLConfig
 		_defaultVals.put(COMPRESSED_COST_MODEL,  "AUTO");
 		_defaultVals.put(COMPRESSED_TRANSPOSE,   "auto");
 		_defaultVals.put(COMPRESSED_TRANSFORMENCODE, "false");
+		_defaultVals.put(COMPRESSED_ONEHOTDETECT, "false");
 		_defaultVals.put(DAG_LINEARIZATION,      DagLinearizer.DEPTH_FIRST.name());
 		_defaultVals.put(CODEGEN,                "false" );
 		_defaultVals.put(CODEGEN_API,            GeneratorAPI.JAVA.name() );
@@ -458,7 +460,7 @@ public class DMLConfig
 			CP_PARALLEL_OPS, CP_PARALLEL_IO, PARALLEL_ENCODE, NATIVE_BLAS, NATIVE_BLAS_DIR,
 			COMPRESSED_LINALG, COMPRESSED_LOSSY, COMPRESSED_VALID_COMPRESSIONS, COMPRESSED_OVERLAPPING,
 			COMPRESSED_SAMPLING_RATIO, COMPRESSED_SOFT_REFERENCE_COUNT,
-			COMPRESSED_COCODE, COMPRESSED_TRANSPOSE, COMPRESSED_TRANSFORMENCODE, DAG_LINEARIZATION,
+			COMPRESSED_COCODE, COMPRESSED_TRANSPOSE, COMPRESSED_TRANSFORMENCODE, COMPRESSED_ONEHOTDETECT, DAG_LINEARIZATION,
 			CODEGEN, CODEGEN_API, CODEGEN_COMPILER, CODEGEN_OPTIMIZER, CODEGEN_PLANCACHE, CODEGEN_LITERALS,
 			STATS_MAX_WRAP_LEN, LINEAGECACHESPILL, COMPILERASSISTED_RW, BUFFERPOOL_LIMIT, MEMORY_MANAGER,
 			PRINT_GPU_MEMORY_INFO, AVAILABLE_GPUS, SYNCHRONIZE_GPU, EAGER_CUDA_FREE, GPU_RULE_BASED_PLACEMENT,

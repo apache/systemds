@@ -264,7 +264,7 @@ public abstract class Enumerator {
 			if (newScore > optimalScore) {
 				return;
 			}
-			if (newScore == optimalScore && newMonetaryEstimate > currentOptimal.monetaryCost) {
+			if (newScore == optimalScore && newMonetaryEstimate >= currentOptimal.monetaryCost) {
 				// prioritize cost for the edge case
 				return;
 			}

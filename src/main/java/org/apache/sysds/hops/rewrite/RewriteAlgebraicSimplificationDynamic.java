@@ -85,8 +85,11 @@ public class RewriteAlgebraicSimplificationDynamic extends HopRewriteRule
 	private static OpOp2[] LOOKUP_VALID_WDIVMM_BINARY = new OpOp2[]{OpOp2.MULT, OpOp2.DIV}; 
 	
 	//valid unary and binary operators for wumm
-	private static OpOp1[] LOOKUP_VALID_WUMM_UNARY = new OpOp1[]{OpOp1.ABS, OpOp1.ROUND, OpOp1.CEIL, OpOp1.FLOOR, OpOp1.EXP, OpOp1.LOG, OpOp1.SQRT,  OpOp1.SIGMOID, OpOp1.SPROP}; 
-	private static OpOp2[] LOOKUP_VALID_WUMM_BINARY = new OpOp2[]{OpOp2.MULT, OpOp2.POW}; 
+	private static OpOp1[] LOOKUP_VALID_WUMM_UNARY = new OpOp1[]{
+		OpOp1.ABS, OpOp1.ROUND, OpOp1.CEIL, OpOp1.FLOOR, OpOp1.EXP, OpOp1.LOG,
+		OpOp1.SQRT, OpOp1.SIN, OpOp1.COS, OpOp1.SIGMOID, OpOp1.SPROP}; 
+	private static OpOp2[] LOOKUP_VALID_WUMM_BINARY = new OpOp2[]{
+		OpOp2.MULT, OpOp2.POW}; 
 	
 	@Override
 	public ArrayList<Hop> rewriteHopDAGs(ArrayList<Hop> roots, ProgramRewriteStatus state) {

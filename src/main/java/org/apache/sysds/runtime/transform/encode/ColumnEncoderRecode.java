@@ -76,7 +76,7 @@ public class ColumnEncoderRecode extends ColumnEncoder {
 		return constructRecodeMapEntry(token, code, sb);
 	}
 
-	private static String constructRecodeMapEntry(Object token, Long code, StringBuilder sb) {
+	public static String constructRecodeMapEntry(Object token, Long code, StringBuilder sb) {
 		sb.setLength(0); // reset reused string builder
 		return sb.append(token).append(Lop.DATATYPE_PREFIX).append(code.longValue()).toString();
 	}
@@ -129,7 +129,7 @@ public class ColumnEncoderRecode extends ColumnEncoder {
 		return _rcdMap.getOrDefault(key, -1L);
 	}
 
-	public void computeRCDMapSizeEstimate(CacheBlock<?> in, int[] sampleIndices) {
+	public void computeMapSizeEstimate(CacheBlock<?> in, int[] sampleIndices) {
 		if (getEstMetaSize() != 0)
 			return;
 
@@ -160,7 +160,8 @@ public class ColumnEncoderRecode extends ColumnEncoder {
 		// We assume each partial map contains all distinct values and have the same size
 		long avgKeySize = totSize / distinctFreq.size();
 		long valSize = 16L; //sizeof(Long) = 8 + header
-		long estMapSize = estDistCount * (avgKeySize + valSize);
+		this._avgEntrySize = avgKeySize + valSize;
+		long estMapSize = estDistCount * _avgEntrySize;
 		setEstMetaSize(estMapSize);
 	}
 
@@ -187,7 +188,7 @@ public class ColumnEncoderRecode extends ColumnEncoder {
 
 	@Override
 	public Callable<Object> getPartialBuildTask(CacheBlock<?> in, int startRow, 
-			int blockSize, HashMap<Integer, Object> ret) {
+			int blockSize, HashMap<Integer, Object> ret, int p) {
 		return new RecodePartialBuildTask(in, _colID, startRow, blockSize, ret);
 	}
 
@@ -378,11 +379,6 @@ public class ColumnEncoderRecode extends ColumnEncoder {
 	}
 
 	private static class RecodeSparseApplyTask extends ColumnApplyTask<ColumnEncoderRecode>{
-
-		public RecodeSparseApplyTask(ColumnEncoderRecode encoder, CacheBlock<?> input, MatrixBlock out, int outputCol) {
-			super(encoder, input, out, outputCol);
-		}
-
 		protected RecodeSparseApplyTask(ColumnEncoderRecode encoder, CacheBlock<?> input, MatrixBlock out,
 										int outputCol, int startRow, int blk) {
 			super(encoder, input, out, outputCol, startRow, blk);

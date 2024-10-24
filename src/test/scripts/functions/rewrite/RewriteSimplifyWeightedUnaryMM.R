@@ -33,35 +33,22 @@ U = as.matrix(readMM(paste(args[1], "U.mtx", sep="")))
 V = as.matrix(readMM(paste(args[1], "V.mtx", sep="")))
 W = as.matrix(readMM(paste(args[1], "W.mtx", sep="")))
 type = as.integer(args[2])
-c = 4.0
 
 # Perform operations
-if(type == 1 || type == 14){
+if(type == 1){
     R = W * exp(U%*%t(V))
-} else if(type == 2 || type == 15){
+} else if(type == 2){
     R = W * abs(U%*%t(V))
-} else if(type == 3 || type == 16){
+} else if(type == 3){
     R = W * sin(U%*%t(V))
-} else if(type == 4 || type == 17){
+} else if(type == 4){
     R = (W*(U%*%t(V)))*2
-} else if(type == 5 || type == 18){
+} else if(type == 5){
     R = 2*(W*(U%*%t(V)))
-} else if(type == 6 || type == 19){
-    R = W * (c + U%*%t(V))
-} else if(type == 7 || type == 20){
-    R = W * (c - U%*%t(V))
-} else if(type == 8 || type == 21){
-    R = W * (c * (U%*%t(V)))
-} else if(type == 9 || type == 22){
-    R = W * (c / (U%*%t(V)))
-} else if(type == 10 || type == 23){
-    R = W * (U%*%t(V) + c)
-} else if(type == 11 || type == 24){
-    R = W * (U%*%t(V) - c)
-} else if(type == 12 || type == 25){
-    R = W * ((U%*%t(V)) * c)
-} else if(type == 13 || type == 26){
-    R = W * ((U%*%t(V)) / c)
+} else if(type == 8){
+    R = W * (2 * (U%*%t(V)))
+} else if(type == 12){
+    R = W * ((U%*%t(V)) * 2)
 }
 
 #Write result matrix R

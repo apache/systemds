@@ -126,7 +126,6 @@ public class MultiReturnParameterizedBuiltinFEDInstruction extends ComputationFE
 			CPOperand in2 = new CPOperand(parts[2]);
 			int pos = 3;
 			boolean metaReturn = true;
-			System.out.println(Arrays.toString(parts));
 			if( parts.length == 7 ) //no need for meta data
 				metaReturn = new CPOperand(parts[pos++]).getLiteral().getBooleanValue();
 			outputs.add(new CPOperand(parts[pos], Types.ValueType.FP64, Types.DataType.MATRIX));

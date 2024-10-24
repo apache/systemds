@@ -337,30 +337,22 @@ public class InterestBasedEnumerator extends Enumerator {
 
 	// Public Getters and Setter meant for testing purposes only -------------------------------------------------------
 
-	/**
-	 * Meant to be used for testing purposes
-	 */
+	// Meant to be used for testing purposes
 	public boolean interestEstimatesInCPEnabled() {
 		return interestEstimatesInCP;
 	}
 
-	/**
-	 * Meant to be used for testing purposes
-	 */
+	// Meant to be used for testing purposes
 	public boolean interestBroadcastVars() {
 		return interestBroadcastVars;
 	}
 
-	/**
-	 * Meant to be used for testing purposes
-	 */
+	// Meant to be used for testing purposes
 	public boolean interestLargestEstimateEnabled() {
 		return interestLargestEstimate;
 	}
 
-	/**
-	 * Meant to be used for testing purposes
-	 */
+	// Meant to be used for testing purposes
 	public boolean interestOutputCachingEnabled() {
 		return interestOutputCaching;
 	}

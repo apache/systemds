@@ -577,6 +577,12 @@ public class CostEstimator
 
 		if (output != null)
 			putInMemory(output);
+		// detection for functionality bugs
+		if (time < 0) {
+			throw new RuntimeException("Unexpected negative value at estimating CP instruction execution time");
+		} else if (time == Double.POSITIVE_INFINITY) {
+			throw new RuntimeException("Unexpected infinity value at estimating CP instruction execution time");
+		}
 		return time;
 	}
 
@@ -942,9 +948,11 @@ public class CostEstimator
 			varToCollect.rddStats = null;
 		}
 
+		// detection for functionality bugs
 		if (computeTime < 0 || collectTime < 0) {
-			// detection for functionality bugs
 			throw new RuntimeException("Unexpected negative value at estimating Spark Job execution time");
+		} else if (computeTime == Double.POSITIVE_INFINITY || collectTime == Double.POSITIVE_INFINITY) {
+			throw new RuntimeException("Unexpected infinity value at estimating Spark Job execution time");
 		}
 		return computeTime + computeTime;
 	}

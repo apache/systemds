@@ -363,12 +363,7 @@ public class ResourceOptimizer {
             } else {
                 String instanceGroupsPath = Paths.get(folderPath.toString(), EMR_INSTANCE_GROUP_FILENAME).toString();
                 String configurationsPath = Paths.get(folderPath.toString(), EMR_CONFIGURATIONS_FILENAME).toString();
-                CloudUtils.generateEMRInstanceGroupsJson(
-                        optConfig.driverInstance,
-                        optConfig.numberExecutors,
-                        optConfig.executorInstance,
-                        instanceGroupsPath
-                );
+                CloudUtils.generateEMRInstanceGroupsJson(optConfig, instanceGroupsPath);
                 CloudUtils.generateEMRConfigurationsJson(optConfig, configurationsPath);
             }
         } else {

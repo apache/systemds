@@ -195,7 +195,7 @@ public class PruneBasedEnumerator extends Enumerator {
     /**
      * Ensures unique mapping for a combination of node memory and number of
      * executor cores due to the discrete nature of the node memory given in bytes.
-     * The smallest margin for cloud instances would be around 500MB -> 500*1024^2 bytes,
+     * The smallest margin for cloud instances would be around 500MB ~ 500*1024^2 bytes,
      * what is by far larger than the maximum number of executors core physically possible.
      *
      * @param executorMemory node memory in bytes

@@ -189,28 +189,33 @@ public class CloudUtils {
 	}
 
 		/**
-	 * Performs read of csv file filled with VM instance characteristics.
-	 * Each record in the csv should carry the following information (including header):
-	 * <ul>
-	 * <li>API_Name - naming for VM instance used by the provider</li>
-	 * <li>Price - price for instance per hour</li>
-	 * <li>Memory - floating number for the instance memory in GBs</li>
-	 * <li>vCPUs - number of physical threads</li>
-	 * <li>Cores - number of physical cores (not relevant at the moment)</li>
-	 * <li>gFlops - FLOPS capability of the CPU in GFLOPS (Giga)</li>
-	 * <li>memoryBandwidth - memory bandwidth in MB/s</li>
-	 * <li>NVMe - flag if NVMe storage volume(s) are attached</li>
-	 * <li>storageVolumes - number of NVMe or EBS (to additionally configured) volumes</li>
-	 * <li>sizeVolumes - size of each NVMe or EBS (to additionally configured) volume</li>
-	 * <li>diskReadBandwidth - disk read bandwidth in MB/s</li>
-	 * <li>diskReadBandwidth - disk write bandwidth in MB/s</li>
-	 * <li>networkBandwidth - network bandwidth in MB/s</li>
-	 * </ul>
-	 * @param instanceTablePath csv file path
-	 * @return map with filtered instances
-	 * @throws IOException in case problem at reading the csv file
-	 */
-	public static HashMap<String, CloudInstance> loadInstanceInfoTable(String instanceTablePath, double feeRatio, double storagePrice) throws IOException {
+		 * Performs read of csv file filled with VM instance characteristics.
+		 * Each record in the csv should carry the following information (including header):
+		 * <ul>
+		 * <li>API_Name - naming for VM instance used by the provider</li>
+		 * <li>Price - price for instance per hour</li>
+		 * <li>Memory - floating number for the instance memory in GBs</li>
+		 * <li>vCPUs - number of physical threads</li>
+		 * <li>Cores - number of physical cores (not relevant at the moment)</li>
+		 * <li>gFlops - FLOPS capability of the CPU in GFLOPS (Giga)</li>
+		 * <li>memoryBandwidth - memory bandwidth in MB/s</li>
+		 * <li>NVMe - flag if NVMe storage volume(s) are attached</li>
+		 * <li>storageVolumes - number of NVMe or EBS (to additionally configured) volumes</li>
+		 * <li>sizeVolumes - size of each NVMe or EBS (to additionally configured) volume</li>
+		 * <li>diskReadBandwidth - disk read bandwidth in MB/s</li>
+		 * <li>diskReadBandwidth - disk write bandwidth in MB/s</li>
+		 * <li>networkBandwidth - network bandwidth in MB/s</li>
+		 * </ul>
+		 *
+		 * @param instanceTablePath csv file path
+		 * @param emrFeeRatio EMR fee as fraction of the instance price (depends on the region)
+		 * @param ebsStoragePrice EBS price per GB per month (depends on the region)
+		 * @return map with filtered instances
+		 * @throws IOException in case problem at reading the csv file
+		 */
+	public static HashMap<String, CloudInstance> loadInstanceInfoTable(
+			String instanceTablePath, double emrFeeRatio, double ebsStoragePrice) throws IOException {
+		// store as mapping the instance type name to the instance object
 		HashMap<String, CloudInstance> result = new HashMap<>();
 		int lineCount = 1;
 		// try to open the file
@@ -229,7 +234,7 @@ public class CloudUtils {
 
 			String name = values[0];
 			double price = Double.parseDouble(values[1]);
-			double extraFee = price * feeRatio;
+			double extraFee = price * emrFeeRatio;
 			long memory = GBtoBytes(Double.parseDouble(values[2]));
 			int vCPUs = Integer.parseInt(values[3]);
 			double GFlops = Double.parseDouble(values[5]);
@@ -245,7 +250,7 @@ public class CloudUtils {
 					name,
 					price,
 					extraFee,
-					storagePrice,
+					ebsStoragePrice,
 					memory,
 					vCPUs,
 					GFlops,
@@ -302,13 +307,10 @@ public class CloudUtils {
 	 * Generates json file with instance groups argument for
 	 * launching AWS EMR cluster
 	 *
-	 * @param masterInstance EC2 instance object (always set one)
-	 * @param coreInstanceCount number core instances
-	 * @param coreInstance EC2 instance object
-	 * @param filePath path for the json file
+	 * @param clusterConfig object representing EMR cluster configurations
+	 * @param filePath path for the output json file
 	 */
-	public static void generateEMRInstanceGroupsJson(CloudInstance masterInstance, int coreInstanceCount, CloudInstance coreInstance,
-												  String filePath) {
+	public static void generateEMRInstanceGroupsJson(ConfigurationPoint clusterConfig, String filePath) {
 		try {
 			JSONArray instanceGroups = new JSONArray();
 
@@ -316,18 +318,18 @@ public class CloudUtils {
 			JSONObject masterGroup = new JSONObject();
 			masterGroup.put("InstanceCount", 1);
 			masterGroup.put("InstanceGroupType", "MASTER");
-			masterGroup.put("InstanceType", masterInstance.getInstanceName());
+			masterGroup.put("InstanceType",clusterConfig.driverInstance.getInstanceName());
 			masterGroup.put("Name", "Master Instance Group");
-			attachEBSConfigsIfNeeded(masterInstance, masterGroup);
+			attachEBSConfigsIfNeeded(clusterConfig.driverInstance, masterGroup);
 			instanceGroups.add(masterGroup);
 
 			// Core instance group
 			JSONObject coreGroup = new JSONObject();
-			coreGroup.put("InstanceCount", coreInstanceCount);
+			coreGroup.put("InstanceCount", clusterConfig.numberExecutors);
 			coreGroup.put("InstanceGroupType", "CORE");
-			coreGroup.put("InstanceType", coreInstance.getInstanceName());
+			coreGroup.put("InstanceType", clusterConfig.executorInstance.getInstanceName());
 			coreGroup.put("Name", "Core Instance Group");
-			attachEBSConfigsIfNeeded(coreInstance, coreGroup);
+			attachEBSConfigsIfNeeded(clusterConfig.executorInstance, coreGroup);
 			instanceGroups.add(coreGroup);
 
 			try (FileWriter file = new FileWriter(filePath)) {
@@ -367,7 +369,8 @@ public class CloudUtils {
 	 * Generate json file with configurations attribute for
 	 * launching AWS EMR cluster with Spark
 	 *
-	 * @param filePath path for the json file
+	 * @param clusterConfig object representing EMR cluster configurations
+	 * @param filePath path for the output json file
 	 */
 	public static void generateEMRConfigurationsJson(ConfigurationPoint clusterConfig, String filePath) {
 		try {

@@ -82,8 +82,14 @@ public class IOCostUtils {
 			);
 		}
 		public IOMetrics(long flops, int cores, double memoryBandwidth, double diskReadBandwidth, double diskWriteBandwidth, double networkBandwidth) {
+			// CPU metrics
 			cpuFLOPS = flops;
 			cpuCores = cores;
+			// Metrics for main memory I/O operations
+			memReadBandwidth = memoryBandwidth;
+			memWriteBandwidth = memoryBandwidth;
+			// Metrics for networking operations
+			networkingBandwidth = networkBandwidth;
 			// Metrics for disk I/O operations
 			localDiskReadBandwidth = diskReadBandwidth;
 			localDiskWriteBandwidth = diskReadBandwidth;
@@ -100,12 +106,7 @@ public class IOCostUtils {
 			s3ReadTextSparseBandwidth = s3ReadTextDenseBandwidth * SPARSE_FACTOR;
 			s3WriteTextDenseBandwidth = networkingBandwidth * WRITE_DENSE_FACTOR * TEXT_FACTOR;
 			s3WriteTextSparseBandwidth = s3WriteTextDenseBandwidth * SPARSE_FACTOR;
-			// Metrics for main memory I/O operations
-			memReadBandwidth = memoryBandwidth;
-			memWriteBandwidth = memoryBandwidth;
-			// Metrics for networking operations
-			networkingBandwidth = networkBandwidth;
-			// Metrics for (de)serialization,
+			// Metrics for (de)serialization
 			double currentFlopsFactor = (double) DEFAULT_FLOPS / cpuFLOPS;
 			serializationBandwidth = memReadBandwidth * SERIALIZATION_FACTOR * currentFlopsFactor;
 			deserializationBandwidth = memWriteBandwidth * DESERIALIZATION_FACTOR * currentFlopsFactor;

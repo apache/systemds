@@ -4,6 +4,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -15,6 +16,92 @@ public class RewriterAssertions {
 
 	public RewriterAssertions(final RuleContext ctx) {
 		this.ctx = ctx;
+	}
+
+	public static RewriterAssertions ofExpression(RewriterStatement root, final RuleContext ctx) {
+		Map<RewriterRule.IdentityRewriterStatement, RewriterAssertion> assertionMatcher = new HashMap<>();
+		Set<RewriterAssertion> allAssertions = new HashSet<>();
+		root.forEachPostOrder((cur, parent, pIdx) -> {
+			if (cur.trueInstruction().equals("_EClass")) {
+				Set<RewriterRule.IdentityRewriterStatement> mSet = cur.getChild(0).getOperands().stream().map(RewriterRule.IdentityRewriterStatement::new).collect(Collectors.toSet());
+				RewriterAssertion newAssertion = RewriterAssertion.from(mSet);
+				newAssertion.stmt = cur;
+				allAssertions.add(newAssertion);
+			}
+		});
+
+		RewriterAssertions assertions = new RewriterAssertions(ctx);
+		assertions.allAssertions = allAssertions;
+		assertions.assertionMatcher = assertionMatcher;
+
+		root.unsafePutMeta("_assertions", assertions);
+		return assertions;
+	}
+
+	public static RewriterAssertions copy(RewriterAssertions old, Map<RewriterRule.IdentityRewriterStatement, RewriterRule.IdentityRewriterStatement> createdObjects, boolean removeOthers) {
+		RewriterAssertions newAssertions = new RewriterAssertions(old.ctx);
+
+		Map<RewriterAssertion, RewriterAssertion> mappedAssertions = new HashMap<>();
+
+		newAssertions.allAssertions = old.allAssertions.stream().map(assertion -> {
+			Set<RewriterRule.IdentityRewriterStatement> newSet;
+
+			if (removeOthers)
+				newSet = assertion.set.stream().map(createdObjects::get).filter(Objects::nonNull).collect(Collectors.toSet());
+			else
+				newSet = assertion.set.stream().map(el -> createdObjects.getOrDefault(el, el)).collect(Collectors.toSet());
+
+			if (newSet.size() < 2)
+				return null;
+
+			RewriterAssertion mapped = RewriterAssertion.from(newSet);
+			mappedAssertions.put(assertion, mapped);
+			return mapped;
+		}).filter(Objects::nonNull).collect(Collectors.toSet());
+
+		if (removeOthers) {
+			old.assertionMatcher.forEach((k, v) -> {
+				RewriterRule.IdentityRewriterStatement newK = createdObjects.get(k);
+
+				if (newK == null)
+					return;
+
+				RewriterAssertion newV = mappedAssertions.get(v);
+
+				if (newV == null)
+					return;
+
+				newAssertions.assertionMatcher.put(newK, newV);
+			});
+		} else {
+			old.assertionMatcher.forEach((k, v) -> {
+				RewriterRule.IdentityRewriterStatement newK = createdObjects.getOrDefault(k, k);
+				RewriterAssertion newV = mappedAssertions.get(v);
+
+				if (newV == null)
+					return;
+
+				newAssertions.assertionMatcher.put(newK, newV);
+			});
+		}
+
+		return newAssertions;
+	}
+
+	public void update(Map<RewriterRule.IdentityRewriterStatement, RewriterRule.IdentityRewriterStatement> createdObjects) {
+		for (RewriterAssertion assertion : allAssertions) {
+			assertion.set = assertion.set.stream().map(el -> createdObjects.getOrDefault(el, el)).collect(Collectors.toSet());
+			RewriterRule.IdentityRewriterStatement ids = new RewriterRule.IdentityRewriterStatement(assertion.stmt);
+			assertion.stmt = createdObjects.getOrDefault(ids, ids).stmt;
+		}
+
+		Map<RewriterRule.IdentityRewriterStatement, RewriterAssertion> newAssertionMatcher = new HashMap<>();
+
+		assertionMatcher.forEach((k, v) -> {
+			newAssertionMatcher.put(createdObjects.getOrDefault(k, k), v);
+		});
+
+		assertionMatcher = newAssertionMatcher;
 	}
 
 	// TODO: What happens if the rewriter statement has already been instantiated? Updates will not occur

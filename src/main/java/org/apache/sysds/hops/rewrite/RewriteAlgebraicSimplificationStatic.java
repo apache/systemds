@@ -855,8 +855,8 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 	}
 	
 	/**
-	 * (X*(Y*(Z%*%v))) -> (X*Y)*(Z%*%v)
-	 * (X+(Y+(Z%*%v))) -> (X+Y)+(Z%*%v)
+	 * t(Z)%*%(X*(Y*(Z%*%v))) -> t(Z)%*%(X*Y)*(Z%*%v)
+	 * t(Z)%*%(X+(Y+(Z%*%v))) -> t(Z)%*%((X+Y)+(Z%*%v))
 	 * 
 	 * Note: Restriction ba() at leaf and root instead of data at leaf to not reorganize too
 	 * eagerly, which would loose additional rewrite potential. This rewrite has two goals

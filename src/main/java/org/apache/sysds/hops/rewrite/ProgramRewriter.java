@@ -115,6 +115,7 @@ public class ProgramRewriter{
  				_sbRuleSet.add(  new RewriteMarkLoopVariablesUpdateInPlace()     );
  			if( LineageCacheConfig.getCompAssRW() )
  				_sbRuleSet.add(  new MarkForLineageReuse()                       );
+ 			_sbRuleSet.add(      new RewriteRemoveTransformEncodeMeta()          );
 		}
 		
 		// DYNAMIC REWRITES (which do require size information)

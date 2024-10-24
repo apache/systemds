@@ -77,10 +77,12 @@ import scala.Tuple2;
 
 public class MultiReturnParameterizedBuiltinSPInstruction extends ComputationSPInstruction {
 	protected ArrayList<CPOperand> _outputs;
+	protected final boolean _metaReturn;
 
 	private MultiReturnParameterizedBuiltinSPInstruction(Operator op, CPOperand input1, CPOperand input2,
-		ArrayList<CPOperand> outputs, String opcode, String istr) {
+		boolean metaReturn, ArrayList<CPOperand> outputs, String opcode, String istr) {
 		super(SPType.MultiReturnBuiltin, op, input1, input2, outputs.get(0), opcode, istr);
+		_metaReturn = metaReturn;
 		_outputs = outputs;
 	}
 
@@ -93,14 +95,17 @@ public class MultiReturnParameterizedBuiltinSPInstruction extends ComputationSPI
 			// one input and two outputs
 			CPOperand in1 = new CPOperand(parts[1]);
 			CPOperand in2 = new CPOperand(parts[2]);
-			outputs.add(new CPOperand(parts[3], ValueType.FP64, DataType.MATRIX));
-			outputs.add(new CPOperand(parts[4], ValueType.STRING, DataType.FRAME));
-			return new MultiReturnParameterizedBuiltinSPInstruction(null, in1, in2, outputs, opcode, str);
+			int pos = 3;
+			boolean metaReturn = true;
+			if( parts.length == 6 ) //no need for meta data
+				metaReturn = new CPOperand(parts[pos++]).getLiteral().getBooleanValue();
+			outputs.add(new CPOperand(parts[pos], ValueType.FP64, DataType.MATRIX));
+			outputs.add(new CPOperand(parts[pos+1], ValueType.STRING, DataType.FRAME));
+			return new MultiReturnParameterizedBuiltinSPInstruction(null, in1, in2, metaReturn, outputs, opcode, str);
 		}
 		else {
 			throw new DMLRuntimeException("Invalid opcode in MultiReturnBuiltin instruction: " + opcode);
 		}
-
 	}
 
 	@Override
@@ -112,8 +117,8 @@ public class MultiReturnParameterizedBuiltinSPInstruction extends ComputationSPI
 			// get input RDD and meta data
 			FrameObject fo = sec.getFrameObject(input1.getName());
 			FrameObject fometa = sec.getFrameObject(_outputs.get(1).getName());
-			JavaPairRDD<Long, FrameBlock> in = (JavaPairRDD<Long, FrameBlock>) sec.getRDDHandleForFrameObject(fo,
-				FileFormat.BINARY);
+			JavaPairRDD<Long, FrameBlock> in = (JavaPairRDD<Long, FrameBlock>) 
+				sec.getRDDHandleForFrameObject(fo, FileFormat.BINARY);
 			String spec = ec.getScalarInput(input2).getStringValue();
 			DataCharacteristics mcIn = sec.getDataCharacteristics(input1.getName());
 			DataCharacteristics mcOut = sec.getDataCharacteristics(output.getName());
@@ -163,7 +168,10 @@ public class MultiReturnParameterizedBuiltinSPInstruction extends ComputationSPI
 			// set output and maintain lineage/output characteristics
 			sec.setRDDHandleForVariable(_outputs.get(0).getName(), out);
 			sec.addLineageRDD(_outputs.get(0).getName(), input1.getName());
-			sec.setFrameOutput(_outputs.get(1).getName(), meta);
+			if( _metaReturn )
+				sec.setFrameOutput(_outputs.get(1).getName(), meta);
+			else
+				sec.setFrameOutput(_outputs.get(1).getName(), new FrameBlock());
 		}
 		catch(IOException ex) {
 			throw new RuntimeException(ex);

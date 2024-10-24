@@ -39,11 +39,13 @@ import org.apache.sysds.runtime.transform.encode.MultiColumnEncoder;
 
 public class MultiReturnParameterizedBuiltinCPInstruction extends ComputationCPInstruction {
 	protected final ArrayList<CPOperand> _outputs;
-
+	protected final boolean _metaReturn;
+	
 	private MultiReturnParameterizedBuiltinCPInstruction(Operator op, CPOperand input1, CPOperand input2,
-		ArrayList<CPOperand> outputs, String opcode, String istr) {
+		boolean metaReturn, ArrayList<CPOperand> outputs, String opcode, String istr) {
 		super(CPType.MultiReturnBuiltin, op, input1, input2, outputs.get(0), opcode, istr);
 		_outputs = outputs;
+		_metaReturn = metaReturn;
 	}
 
 	public CPOperand getOutput(int i) {
@@ -67,9 +69,14 @@ public class MultiReturnParameterizedBuiltinCPInstruction extends ComputationCPI
 			// one input and two outputs
 			CPOperand in1 = new CPOperand(parts[1]);
 			CPOperand in2 = new CPOperand(parts[2]);
-			outputs.add(new CPOperand(parts[3], ValueType.FP64, DataType.MATRIX));
-			outputs.add(new CPOperand(parts[4], ValueType.STRING, DataType.FRAME));
-			return new MultiReturnParameterizedBuiltinCPInstruction(null, in1, in2, outputs, opcode, str);
+			int pos = 3;
+			boolean metaReturn = true;
+			if( parts.length == 7 ) //no need for meta data
+				metaReturn = new CPOperand(parts[pos++]).getLiteral().getBooleanValue();
+			outputs.add(new CPOperand(parts[pos], ValueType.FP64, DataType.MATRIX));
+			outputs.add(new CPOperand(parts[pos+1], ValueType.STRING, DataType.FRAME));
+			return new MultiReturnParameterizedBuiltinCPInstruction(
+				null, in1, in2, metaReturn, outputs, opcode, str);
 		}
 		else {
 			throw new DMLRuntimeException("Invalid opcode in MultiReturnBuiltin instruction: " + opcode);
@@ -87,9 +94,10 @@ public class MultiReturnParameterizedBuiltinCPInstruction extends ComputationCPI
 		// execute block transform encode
 		MultiColumnEncoder encoder = EncoderFactory.createEncoder(spec, colnames, fin.getNumColumns(), null);
 		// TODO: Assign #threads in compiler and pass via the instruction string
+		int k = OptimizerUtils.getTransformNumThreads();
 		MatrixBlock data = encoder.encode(fin, OptimizerUtils.getTransformNumThreads()); // build and apply
-		FrameBlock meta = encoder.getMetaData(new FrameBlock(fin.getNumColumns(), ValueType.STRING), 
-				OptimizerUtils.getTransformNumThreads());
+		FrameBlock meta = !_metaReturn ? new FrameBlock() :
+			encoder.getMetaData(new FrameBlock(fin.getNumColumns(), ValueType.STRING), k);
 		meta.setColumnNames(colnames);
 
 		// release input and outputs

@@ -195,6 +195,7 @@ public class OptimizerUtils
 	 * all sum-product related rewrites.
 	 */
 	public static boolean ALLOW_SUM_PRODUCT_REWRITES = true;
+	public static boolean ALLOW_SUM_PRODUCT_REWRITES2 = true;
 
 	/**
 	 * Enables additional mmchain optimizations. in the future, this might be merged with

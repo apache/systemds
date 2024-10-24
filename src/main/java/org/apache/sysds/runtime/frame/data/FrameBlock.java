@@ -925,9 +925,10 @@ public class FrameBlock implements CacheBlock<FrameBlock>, Externalizable {
 	public boolean isShallowSerialize(boolean inclConvert) {
 		// shallow serialize if non-string schema because a frame block
 		// is always dense but strings have large array overhead per cell
-		for(int j = 0; j < _schema.length; j++)
-			if(!_coldata[j].isShallowSerialize())
-				return false;
+		if( _schema != null )
+			for(int j = 0; j < _schema.length; j++)
+				if(!_coldata[j].isShallowSerialize())
+					return false;
 		return true;
 	}
 

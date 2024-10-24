@@ -123,4 +123,8 @@ public class MultiReturnParameterizedBuiltinCPInstruction extends ComputationCPI
 		}
 		return ret; 
 	}
+
+	public boolean getMetaReturn() {
+		return _metaReturn;
+	}
 }

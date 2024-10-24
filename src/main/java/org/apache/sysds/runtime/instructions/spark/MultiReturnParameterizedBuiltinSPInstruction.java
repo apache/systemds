@@ -468,4 +468,8 @@ public class MultiReturnParameterizedBuiltinSPInstruction extends ComputationSPI
 			return ret.iterator();
 		}
 	}
+
+	public boolean getMetaReturn() {
+		return _metaReturn;
+	}
 }

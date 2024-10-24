@@ -70,10 +70,12 @@ import org.apache.sysds.runtime.util.IndexRange;
 
 public class MultiReturnParameterizedBuiltinFEDInstruction extends ComputationFEDInstruction {
 	protected final List<CPOperand> _outputs;
-
+	protected final boolean _metaReturn;
+	
 	private MultiReturnParameterizedBuiltinFEDInstruction(Operator op, CPOperand input1, CPOperand input2,
-		List<CPOperand> outputs, String opcode, String istr) {
+		List<CPOperand> outputs, boolean metaReturn, String opcode, String istr) {
 		super(FEDType.MultiReturnParameterizedBuiltin, op, input1, input2, null, opcode, istr);
+		_metaReturn = metaReturn;
 		_outputs = outputs;
 	}
 
@@ -104,13 +106,13 @@ public class MultiReturnParameterizedBuiltinFEDInstruction extends ComputationFE
 	private static MultiReturnParameterizedBuiltinFEDInstruction parseInstruction(
 		MultiReturnParameterizedBuiltinCPInstruction instr) {
 		return new MultiReturnParameterizedBuiltinFEDInstruction(instr.getOperator(), instr.input1, instr.input2,
-			instr.getOutputs(), instr.getOpcode(), instr.getInstructionString());
+			instr.getOutputs(), instr.getMetaReturn(), instr.getOpcode(), instr.getInstructionString());
 	}
 
 	private static MultiReturnParameterizedBuiltinFEDInstruction parseInstruction(
 		MultiReturnParameterizedBuiltinSPInstruction instr) {
 		return new MultiReturnParameterizedBuiltinFEDInstruction(instr.getOperator(), instr.input1, instr.input2,
-			instr.getOutputs(), instr.getOpcode(), instr.getInstructionString());
+			instr.getOutputs(), instr.getMetaReturn(), instr.getOpcode(), instr.getInstructionString());
 	}
 
 	public static MultiReturnParameterizedBuiltinFEDInstruction parseInstruction(String str) {
@@ -122,9 +124,15 @@ public class MultiReturnParameterizedBuiltinFEDInstruction extends ComputationFE
 			// one input and two outputs
 			CPOperand in1 = new CPOperand(parts[1]);
 			CPOperand in2 = new CPOperand(parts[2]);
-			outputs.add(new CPOperand(parts[3], Types.ValueType.FP64, Types.DataType.MATRIX));
-			outputs.add(new CPOperand(parts[4], Types.ValueType.STRING, Types.DataType.FRAME));
-			return new MultiReturnParameterizedBuiltinFEDInstruction(null, in1, in2, outputs, opcode, str);
+			int pos = 3;
+			boolean metaReturn = true;
+			System.out.println(Arrays.toString(parts));
+			if( parts.length == 7 ) //no need for meta data
+				metaReturn = new CPOperand(parts[pos++]).getLiteral().getBooleanValue();
+			outputs.add(new CPOperand(parts[pos], Types.ValueType.FP64, Types.DataType.MATRIX));
+			outputs.add(new CPOperand(parts[pos+1], Types.ValueType.STRING, Types.DataType.FRAME));
+			return new MultiReturnParameterizedBuiltinFEDInstruction(
+				null, in1, in2, outputs, metaReturn, opcode, str);
 		}
 		else {
 			throw new DMLRuntimeException("Invalid opcode in MultiReturnBuiltin instruction: " + opcode);
@@ -198,7 +206,7 @@ public class MultiReturnParameterizedBuiltinFEDInstruction extends ComputationFE
 		encodeFederatedFrames(fedMapping, globalEncoder, ec.getMatrixObject(getOutput(0)));
 
 		// release input and outputs
-		ec.setFrameOutput(getOutput(1).getName(), meta);
+		ec.setFrameOutput(getOutput(1).getName(), _metaReturn ? meta : new FrameBlock());
 	}
 
 	private class EncoderColnames {

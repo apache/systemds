@@ -56,7 +56,9 @@ class Bert(UnimodalRepresentation):
                 data = file.readlines()
 
         model_name = "bert-base-uncased"
-        tokenizer = BertTokenizer.from_pretrained(model_name)
+        tokenizer = BertTokenizer.from_pretrained(
+            model_name, clean_up_tokenization_spaces=True
+        )
 
         if self.avg_layers is not None:
             model = BertModel.from_pretrained(model_name, output_hidden_states=True)
@@ -89,7 +91,7 @@ class Bert(UnimodalRepresentation):
                 cls_embedding = torch.mean(torch.stack(cls_embedding), dim=0)
             else:
                 cls_embedding = outputs.last_hidden_state[:, 0, :].squeeze().numpy()
-            embeddings.append(cls_embedding)
+            embeddings.append(cls_embedding.numpy())
 
         embeddings = np.array(embeddings)
         return embeddings.reshape((embeddings.shape[0], embeddings.shape[-1]))

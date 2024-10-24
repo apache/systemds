@@ -18,18 +18,3 @@
 # under the License.
 #
 # -------------------------------------------------------------
-
-import numpy as np
-
-
-def pad_sequences(sequences, maxlen=None, dtype="float32", value=0):
-    if maxlen is None:
-        maxlen = max([len(seq) for seq in sequences])
-
-    result = np.full((len(sequences), maxlen), value, dtype=dtype)
-
-    for i, seq in enumerate(sequences):
-        data = seq[:maxlen]
-        result[i, : len(data)] = data
-
-    return result

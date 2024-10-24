@@ -28,7 +28,6 @@ import org.apache.sysds.test.AutomatedTestBase;
 import org.apache.sysds.test.TestConfiguration;
 import org.apache.sysds.test.TestUtils;
 import org.junit.Assert;
-import org.junit.Ignore;
 import org.junit.Test;
 
 public class RewriteSimplifyWeightedUnaryMMTest extends AutomatedTestBase {
@@ -60,7 +59,7 @@ public class RewriteSimplifyWeightedUnaryMMTest extends AutomatedTestBase {
 
 	@Test
 	public void testWeightedUnaryMMExpRewrite(){
-		testRewriteSimplifyWeightedUnaryMM(1, true);	//pattern: W * exp(U%*%t(V))
+		testRewriteSimplifyWeightedUnaryMM(1, true); //pattern: W * exp(U%*%t(V))
 	}
 
 	@Test
@@ -70,7 +69,7 @@ public class RewriteSimplifyWeightedUnaryMMTest extends AutomatedTestBase {
 
 	@Test
 	public void testWeightedUnaryMMAbsRewrite(){
-		testRewriteSimplifyWeightedUnaryMM(2, true);	//pattern: W * abs(U%*%t(V))
+		testRewriteSimplifyWeightedUnaryMM(2, true); //pattern: W * abs(U%*%t(V))
 	}
 
 	@Test
@@ -80,7 +79,7 @@ public class RewriteSimplifyWeightedUnaryMMTest extends AutomatedTestBase {
 
 	@Test
 	public void testWeightedUnaryMMSinRewrite(){
-		testRewriteSimplifyWeightedUnaryMM(3, true);	//pattern: W * sin(U%*%t(V))
+		testRewriteSimplifyWeightedUnaryMM(3, true); //pattern: W * sin(U%*%t(V))
 	}
 
 	/**
@@ -95,7 +94,7 @@ public class RewriteSimplifyWeightedUnaryMMTest extends AutomatedTestBase {
 
 	@Test
 	public void testWeightedUnaryMMScalarRightRewrite(){
-		testRewriteSimplifyWeightedUnaryMM(4, true);	//pattern: (W*(U%*%t(V)))*2
+		testRewriteSimplifyWeightedUnaryMM(4, true); //pattern: (W*(U%*%t(V)))*2
 	}
 
 	@Test
@@ -105,7 +104,7 @@ public class RewriteSimplifyWeightedUnaryMMTest extends AutomatedTestBase {
 
 	@Test
 	public void testWeightedUnaryMMScalarLeftRewrite(){
-		testRewriteSimplifyWeightedUnaryMM(5, true);	//pattern: 2*(W*(U%*%t(V)))
+		testRewriteSimplifyWeightedUnaryMM(5, true); //pattern: 2*(W*(U%*%t(V)))
 	}
 
 	@Test
@@ -114,9 +113,8 @@ public class RewriteSimplifyWeightedUnaryMMTest extends AutomatedTestBase {
 	}
 
 	@Test
-	@Ignore //FIXME non-applied rewrite
 	public void testWeightedUnaryMMMultLeftRewrite(){
-		testRewriteSimplifyWeightedUnaryMM(8, true);	//pattern: W * (c * (U%*%t(V)))
+		testRewriteSimplifyWeightedUnaryMM(8, true); //pattern: W * (2 * (U%*%t(V)))
 	}
 
 	@Test
@@ -125,9 +123,8 @@ public class RewriteSimplifyWeightedUnaryMMTest extends AutomatedTestBase {
 	}
 
 	@Test
-	@Ignore //FIXME non-applied rewrite
 	public void testWeightedUnaryMMMultRightRewrite(){
-		testRewriteSimplifyWeightedUnaryMM(12, true);	//pattern: W * ((U%*%t(V)) * c)
+		testRewriteSimplifyWeightedUnaryMM(12, true); //pattern: W * ((U%*%t(V)) * 2)
 	}
 
 

@@ -24,7 +24,6 @@ U = read($1)
 V = read($2)
 W = read($3)
 type = $4
-c = 4.0
 
 # Perform operations
 if(type == 1){
@@ -43,10 +42,10 @@ else if(type == 5){
   R = 2*(W*(U%*%t(V)))
 }
 else if(type == 8){
-  R = W * (c * (U%*%t(V)))
+  R = W * (2 * (U%*%t(V)))
 }
 else if(type == 12){
-  R = W * ((U%*%t(V)) * c)
+  R = W * ((U%*%t(V)) * 2)
 }
 
 # Write the result matrix R

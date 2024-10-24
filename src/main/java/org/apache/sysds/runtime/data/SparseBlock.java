@@ -50,6 +50,7 @@ public abstract class SparseBlock implements Serializable, Block
 	public enum Type {
 		COO,  // coordinate
 		CSR,  // compressed sparse rows
+		CSC,  // compressed sparse column
 		DCSR, // double compressed sparse rows
 		MCSR, // modified compressed sparse rows (update-friendly)
 		MCSC, // modified compressed sparse column

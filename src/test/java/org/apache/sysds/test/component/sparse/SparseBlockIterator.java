@@ -202,6 +202,38 @@ public class SparseBlockIterator extends AutomatedTestBase {
 		runSparseBlockIteratorTest(SparseBlock.Type.MCSC, sparsity3, true);
 	}
 
+	@Test
+	public void testSparseBlockCSC1Full() {
+		runSparseBlockIteratorTest(SparseBlock.Type.CSC, sparsity1, false);
+	}
+
+	@Test
+	public void testSparseBlockCSC2Full() {
+		runSparseBlockIteratorTest(SparseBlock.Type.CSC, sparsity2, false);
+	}
+
+	@Test
+	public void testSparseBlockCSC3Full() {
+		runSparseBlockIteratorTest(SparseBlock.Type.CSC, sparsity3, false);
+	}
+
+	@Test
+	public void testSparseBlockCSC1Partial() {
+		runSparseBlockIteratorTest(SparseBlock.Type.CSC, sparsity1, true);
+	}
+
+	@Test
+	public void testSparseBlockCSC2Partial() {
+		runSparseBlockIteratorTest(SparseBlock.Type.CSC, sparsity2, true);
+	}
+
+	@Test
+	public void testSparseBlockCSC3Partial() {
+		runSparseBlockIteratorTest(SparseBlock.Type.CSC, sparsity3, true);
+	}
+
+
+
 	private void runSparseBlockIteratorTest(SparseBlock.Type btype, double sparsity, boolean partial) {
 		try {
 			//data generation

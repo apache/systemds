@@ -40,9 +40,9 @@ type = as.integer(args[2])
 
 # Perform the operations
 if( type == 1 ) {
-    R = (X*(Y*(Z%*%v)))
+    R = t(Z)%*%(X*(Y*(Z%*%v)))
 } else if( type == 2 ) {
-    R = (X+(Y+(Z%*%v)))
+    R = t(Z)%*%(X+(Y+(Z%*%v)))
 }
 
 writeMM(as(R, "CsparseMatrix"), paste(args[3], "R", sep=""))

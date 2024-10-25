@@ -84,6 +84,41 @@ public class ResourceOptimizerTest extends AutomatedTestBase {
     }
 
     @Test
+    public void initEnumeratorCostsWeightOptimizationInvalidTest() {
+        String[] args = {
+                "-f", HOME+"Algorithm_L2SVM.dml",
+        };
+        Options options = createOptions();
+        CommandLineParser clParser = new PosixParser();
+        CommandLine line = null;
+        try {
+            line = clParser.parse(options, args);
+        } catch (ParseException e) {
+            Assert.fail("ParseException should not have been raise here: "+e);
+        }
+        PropertiesConfiguration invalidOptions = generateTestingOptionsRequired("any");
+        invalidOptions.setProperty("OPTIMIZATION_FUNCTION", "costs");
+        invalidOptions.setProperty("COSTS_WEIGHT", "10");
+        try {
+            initEnumerator(line, invalidOptions);
+            Assert.fail("ParseException should have been raise here for not provided MAX_PRICE option");
+        } catch (Exception e) {
+            Assert.assertTrue(e instanceof ParseException);
+        }
+
+
+        String[] validArgs = {
+                "-f", HOME+"Algorithm_L2SVM.dml",
+        };
+        PropertiesConfiguration validOptions = generateTestingOptionsRequired("any");
+        validOptions.setProperty("OPTIMIZATION_FUNCTION", "costs");
+        validOptions.setProperty("COSTS_WEIGHT", "0.1");
+        Enumerator actualEnumerator = assertProperEnumeratorInitialization(validArgs, validOptions);
+        Assert.assertEquals(Enumerator.OptimizationStrategy.MinCosts, actualEnumerator.getOptStrategy());
+        Assert.assertEquals(0.1, actualEnumerator.getCostsWeightFactor(), 0.0);
+    }
+
+    @Test
     public void initEnumeratorMinTimeOptimizationInvalidTest() {
         String[] args = {
                 "-f", HOME+"Algorithm_L2SVM.dml",
@@ -100,7 +135,7 @@ public class ResourceOptimizerTest extends AutomatedTestBase {
         invalidOptions.setProperty("OPTIMIZATION_FUNCTION", "time");
         try {
             initEnumerator(line, invalidOptions);
-            Assert.fail("ParseException should not have been raise here for not provided -maxPrice argument");
+            Assert.fail("ParseException should have been raise here for not provided MAX_PRICE option");
         } catch (Exception e) {
             Assert.assertTrue(e instanceof ParseException);
         }
@@ -109,10 +144,10 @@ public class ResourceOptimizerTest extends AutomatedTestBase {
         String[] validArgs = {
                 "-f", HOME+"Algorithm_L2SVM.dml",
         };
-        PropertiesConfiguration validEnvOptions = generateTestingOptionsRequired("any");
-        validEnvOptions.setProperty("OPTIMIZATION_FUNCTION", "time");
-        validEnvOptions.setProperty("MAX_PRICE", "1000");
-        Enumerator actualEnumerator = assertProperEnumeratorInitialization(validArgs, validEnvOptions);
+        PropertiesConfiguration validOptions = generateTestingOptionsRequired("any");
+        validOptions.setProperty("OPTIMIZATION_FUNCTION", "time");
+        validOptions.setProperty("MAX_PRICE", "1000");
+        Enumerator actualEnumerator = assertProperEnumeratorInitialization(validArgs, validOptions);
         Assert.assertEquals(Enumerator.OptimizationStrategy.MinTime, actualEnumerator.getOptStrategy());
         Assert.assertEquals(1000, actualEnumerator.getMaxPrice(), 0.0);
     }
@@ -130,11 +165,11 @@ public class ResourceOptimizerTest extends AutomatedTestBase {
         } catch (ParseException e) {
             Assert.fail("ParseException should not have been raise here: "+e);
         }
-        PropertiesConfiguration invalidEnvOptions = generateTestingOptionsRequired("any");
-        invalidEnvOptions.setProperty("OPTIMIZATION_FUNCTION", "price");
+        PropertiesConfiguration invalidOptions = generateTestingOptionsRequired("any");
+        invalidOptions.setProperty("OPTIMIZATION_FUNCTION", "price");
         try {
-            initEnumerator(line, invalidEnvOptions);
-            Assert.fail("ParseException should not have been raise here for not provided -maxTime argument");
+            initEnumerator(line, invalidOptions);
+            Assert.fail("ParseException should have been raise here for not provided MAX_TIME option");
         } catch (Exception e) {
             Assert.assertTrue(e instanceof ParseException);
         }
@@ -143,10 +178,10 @@ public class ResourceOptimizerTest extends AutomatedTestBase {
         String[] validArgs = {
                 "-f", HOME+"Algorithm_L2SVM.dml",
         };
-        PropertiesConfiguration validEnvOptions = generateTestingOptionsRequired("any");
-        validEnvOptions.setProperty("OPTIMIZATION_FUNCTION", "price");
-        validEnvOptions.setProperty("MAX_TIME", "1000");
-        Enumerator actualEnumerator = assertProperEnumeratorInitialization(validArgs, validEnvOptions);
+        PropertiesConfiguration validOptions = generateTestingOptionsRequired("any");
+        validOptions.setProperty("OPTIMIZATION_FUNCTION", "price");
+        validOptions.setProperty("MAX_TIME", "1000");
+        Enumerator actualEnumerator = assertProperEnumeratorInitialization(validArgs, validOptions);
         Assert.assertEquals(Enumerator.OptimizationStrategy.MinPrice, actualEnumerator.getOptStrategy());
         Assert.assertEquals(1000, actualEnumerator.getMaxTime(), 0.0);
     }

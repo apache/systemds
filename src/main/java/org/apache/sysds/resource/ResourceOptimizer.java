@@ -107,6 +107,7 @@ public class ResourceOptimizer {
 
         String enumerationOpt = getOrDefault(options, "ENUMERATION", "");
         String optimizationOpt = getOrDefault(options, "OPTIMIZATION_FUNCTION", "");
+        String costsWeightOpt = getOrDefault(options, "COSTS_WEIGHT", "");
         String maxTimeOpt = getOrDefault(options, "MAX_TIME", "");
         String maxPriceOpt = getOrDefault(options, "MAX_PRICE", "");
         String cpuQuotaOpt = getOrDefault(options, "CPU_QUOTA", "");
@@ -147,8 +148,6 @@ public class ResourceOptimizer {
         }
 
         // materialize the options
-        double[] regionalPrices = CloudUtils.loadRegionalPrices(regionTablePathOpt, regionOpt);
-        HashMap<String, CloudInstance> allInstances = CloudUtils.loadInstanceInfoTable(infoTablePathOpt, regionalPrices[0], regionalPrices[1]);
 
         Enumerator.EnumerationStrategy strategy;
         if (enumerationOpt.isEmpty()) {
@@ -188,21 +187,42 @@ public class ResourceOptimizer {
             }
         }
 
-        double priceConstraint = -1;
+        if (optimizedFor == Enumerator.OptimizationStrategy.MinCosts && !costsWeightOpt.isEmpty()) {
+            double costsWeighFactor = Double.parseDouble(costsWeightOpt);
+            if (costsWeighFactor < 0.0 || costsWeighFactor > 1.0) {
+                throw new ParseException("The provided option 'price' for -enum requires additionally an option for -maxTime");
+            }
+            Enumerator.setCostsWeightFactor(costsWeighFactor);
+        } else if (!costsWeightOpt.isEmpty()) {
+            System.err.println("Warning: option MAX_PRICE is relevant only for OPTIMIZATION_FUNCTION 'time'");
+        }
+
         if (optimizedFor == Enumerator.OptimizationStrategy.MinTime) {
             if (maxPriceOpt.isEmpty()) {
-                throw new ParseException("The provided option 'time' for -enum requires additionally an option for -maxPrice");
+                throw new ParseException("Providing the option MAX_PRICE value is required " +
+                        "when OPTIMIZATION_FUNCTION is set to 'time'");
             }
-            priceConstraint = Double.parseDouble(maxPriceOpt);
+            double priceConstraint = Double.parseDouble(maxPriceOpt);
+            if (priceConstraint <= 0) {
+                throw new ParseException("Invalid value for option MIN_PRICE " +
+                        "when option OPTIMIZATION_FUNCTION is set to  'time'");
+            }
+            Enumerator.setMinPrice(priceConstraint);
         } else if (!maxPriceOpt.isEmpty()) {
             System.err.println("Warning: option MAX_PRICE is relevant only for OPTIMIZATION_FUNCTION 'time'");
         }
-        double timeConstraint = -1;
+
         if (optimizedFor == Enumerator.OptimizationStrategy.MinPrice) {
             if (maxTimeOpt.isEmpty()) {
-                throw new ParseException("The provided option 'price' for -enum requires additionally an option for -maxTime");
+                throw new ParseException("Providing the option MAX_TIME value is required " +
+                        "when OPTIMIZATION_FUNCTION is set to 'price'");
             }
-            timeConstraint = Double.parseDouble(maxTimeOpt);
+            double timeConstraint = Double.parseDouble(maxTimeOpt);
+            if (timeConstraint <= 0) {
+                throw new ParseException("Missing or invalid value for option MIN_TIME " +
+                        "when option OPTIMIZATION_FUNCTION is set to 'price'");
+            }
+            Enumerator.setMinTime(timeConstraint);
         } else if (!maxTimeOpt.isEmpty()) {
             System.err.println("Warning: option MAX_TIME is relevant only for OPTIMIZATION_FUNCTION 'price'");
         }
@@ -214,6 +234,7 @@ public class ResourceOptimizer {
             }
             Enumerator.setCpuQuota(quotaForNumCores);
         }
+
         int minExecutors = minExecutorsOpt.isEmpty()? -1 : Integer.parseInt(minExecutorsOpt);
         int maxExecutors = maxExecutorsOpt.isEmpty()? -1 : Integer.parseInt(maxExecutorsOpt);
         String[] instanceFamilies = instanceFamiliesOpt.isEmpty()? null : instanceFamiliesOpt.split(",");
@@ -256,6 +277,9 @@ public class ResourceOptimizer {
                 System.err.println("Warning: option -useOutputs is relevant only for -enum 'interest'");
         }
 
+        double[] regionalPrices = CloudUtils.loadRegionalPrices(regionTablePathOpt, regionOpt);
+        HashMap<String, CloudInstance> allInstances = CloudUtils.loadInstanceInfoTable(infoTablePathOpt, regionalPrices[0], regionalPrices[1]);
+
         // step 2: compile the initial runtime program
         Program sourceProgram = ResourceCompiler.compile(line.getOptionValue("f"), argsMap, localInputMap);
         // step 3: initialize the enumerator
@@ -284,18 +308,7 @@ public class ResourceOptimizer {
         } catch (IllegalArgumentException e) {
             throw new ParseException("Not all provided options for INSTANCE_SIZES are supported or valid. Error thrown at:\n"+e.getMessage());
         }
-        // set budget if optimizing for time
-        if (optimizedFor == Enumerator.OptimizationStrategy.MinTime && priceConstraint <= 0) {
-            throw new ParseException("Missing or invalid option for -minPrice when -optimizeFor 'time'");
-        } else if (optimizedFor == Enumerator.OptimizationStrategy.MinTime && priceConstraint > 0) {
-            builder.withBudget(priceConstraint);
-        }
-        // set time limit if optimizing for price
-        if (optimizedFor == Enumerator.OptimizationStrategy.MinPrice && timeConstraint <= 0) {
-            throw new ParseException("Missing or invalid option for -minPrice when -optimizeFor 'time'");
-        } else if (optimizedFor == Enumerator.OptimizationStrategy.MinPrice && timeConstraint > 0) {
-            builder.withTimeLimit(timeConstraint);
-        }
+
         // set step size for grid-based enum.
         if (strategy == Enumerator.EnumerationStrategy.GridBased && stepSize > 1) {
             builder.withStepSizeExecutor(stepSize);

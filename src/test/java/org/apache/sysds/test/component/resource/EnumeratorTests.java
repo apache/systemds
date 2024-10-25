@@ -240,13 +240,14 @@ public class EnumeratorTests extends AutomatedTestBase {
 		SolutionPoint currentSolution;
 		Program emptyProgram = new Program();
 		HashMap<String, CloudInstance> instances = ResourceTestUtils.getSimpleCloudInstanceMap();
+		Enumerator.setMinPrice(100);
 		Enumerator enumerator = (new Enumerator.Builder())
 				.withRuntimeProgram(emptyProgram)
 				.withAvailableInstances(instances)
 				.withEnumerationStrategy(Enumerator.EnumerationStrategy.GridBased)
 				.withOptimizationStrategy(Enumerator.OptimizationStrategy.MinTime)
-				.withBudget(100)
 				.build();
+
 
 		currentSolution = enumerator.getOptimalSolution();
 		Assert.assertEquals(Double.MAX_VALUE, currentSolution.getTimeCost(), 0);
@@ -279,12 +280,12 @@ public class EnumeratorTests extends AutomatedTestBase {
 		SolutionPoint currentSolution;
 		Program emptyProgram = new Program();
 		HashMap<String, CloudInstance> instances = ResourceTestUtils.getSimpleCloudInstanceMap();
+		Enumerator.setMinTime(600);
 		Enumerator enumerator = (new Enumerator.Builder())
 				.withRuntimeProgram(emptyProgram)
 				.withAvailableInstances(instances)
 				.withEnumerationStrategy(Enumerator.EnumerationStrategy.GridBased)
 				.withOptimizationStrategy(Enumerator.OptimizationStrategy.MinPrice)
-				.withTimeLimit(600)
 				.build();
 
 		currentSolution = enumerator.getOptimalSolution();
@@ -505,7 +506,6 @@ public class EnumeratorTests extends AutomatedTestBase {
 	public void processingTest() {
 		// all implemented enumerators should enumerate the same solution pool in this basic case - empty program
 		Enumerator gridBasedEnumerator = getGridBasedEnumeratorPrebuild()
-				.withTimeLimit(Double.MAX_VALUE)
 				.withNumberExecutorsRange(0, 2)
 				.build();
 
@@ -578,7 +578,6 @@ public class EnumeratorTests extends AutomatedTestBase {
 	public void GridBasedEnumerationMinTimeTest() {
 		Enumerator gridBasedEnumerator = getGridBasedEnumeratorPrebuild()
 				.withOptimizationStrategy(Enumerator.OptimizationStrategy.MinPrice)
-				.withBudget(Double.MAX_VALUE)
 				.withNumberExecutorsRange(0, 2)
 				.build();
 
@@ -596,7 +595,6 @@ public class EnumeratorTests extends AutomatedTestBase {
 	public void InterestBasedEnumerationMinTimeTest() {
 		Enumerator interestBasedEnumerator = getInterestBasedEnumeratorPrebuild()
 				.withOptimizationStrategy(Enumerator.OptimizationStrategy.MinTime)
-				.withBudget(Double.MAX_VALUE)
 				.withNumberExecutorsRange(0, 2)
 				.build();
 
@@ -636,8 +634,7 @@ public class EnumeratorTests extends AutomatedTestBase {
 				.withRuntimeProgram(emptyProgram)
 				.withAvailableInstances(instances)
 				.withEnumerationStrategy(Enumerator.EnumerationStrategy.GridBased)
-				.withOptimizationStrategy(Enumerator.OptimizationStrategy.MinPrice)
-				.withTimeLimit(Double.MAX_VALUE);
+				.withOptimizationStrategy(Enumerator.OptimizationStrategy.MinPrice);
 	}
 
 	private static Enumerator.Builder getInterestBasedEnumeratorPrebuild() {
@@ -647,8 +644,7 @@ public class EnumeratorTests extends AutomatedTestBase {
 				.withRuntimeProgram(emptyProgram)
 				.withAvailableInstances(instances)
 				.withEnumerationStrategy(Enumerator.EnumerationStrategy.InterestBased)
-				.withOptimizationStrategy(Enumerator.OptimizationStrategy.MinPrice)
-				.withTimeLimit(Double.MAX_VALUE);
+				.withOptimizationStrategy(Enumerator.OptimizationStrategy.MinPrice);
 	}
 
 	private static Enumerator.Builder getPruneBasedEnumeratorPrebuild() {
@@ -658,8 +654,7 @@ public class EnumeratorTests extends AutomatedTestBase {
 				.withRuntimeProgram(emptyProgram)
 				.withAvailableInstances(instances)
 				.withEnumerationStrategy(Enumerator.EnumerationStrategy.PruneBased)
-				.withOptimizationStrategy(Enumerator.OptimizationStrategy.MinPrice)
-				.withTimeLimit(Double.MAX_VALUE);
+				.withOptimizationStrategy(Enumerator.OptimizationStrategy.MinPrice);
 	}
 
 	private static void assertInstanceInSearchSpace(

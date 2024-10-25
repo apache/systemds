@@ -56,7 +56,6 @@ public abstract class Enumerator {
 	}
 
 	// Static variables ------------------------------------------------------------------------------------------------
-	private static final double LINEAR_OBJECTIVE_RATIO = 0.01; // time/price ratio
 	public static final int DEFAULT_MIN_EXECUTORS = 0; // Single Node execution allowed
 	/**
 	 * A reasonable upper bound for the possible number of executors
@@ -72,8 +71,14 @@ public abstract class Enumerator {
 	 * number of vCPUs running at the same time for the account in a single region.
 	 */
 	// Static configurations -------------------------------------------------------------------------------------------
+	static double LINEAR_OBJECTIVE_RATIO = 0.01; // time/price ratio
+	static double MAX_TIME = Double.MAX_VALUE; // no limit by default
+	static double MAX_PRICE = Double.MAX_VALUE; // no limit by default
 	static int CPU_QUOTA = 1152;
 	// allow changing the default quota value
+	public static void setCostsWeightFactor(double newFactor) { LINEAR_OBJECTIVE_RATIO = newFactor; }
+	public static void setMinTime(double maxTime) { MAX_TIME = maxTime; }
+	public static void setMinPrice(double maxPrice) { MAX_PRICE = maxPrice; }
 	public static void setCpuQuota(int newQuotaValue) { CPU_QUOTA = newQuotaValue; }
 
 	// Instance variables ----------------------------------------------------------------------------------------------
@@ -81,8 +86,6 @@ public abstract class Enumerator {
 	Program program;
 	EnumerationStrategy enumStrategy;
 	OptimizationStrategy optStrategy;
-	private final double maxTime;
-	private final double maxPrice;
 	protected final int minExecutors;
 	protected final int maxExecutors;
 	protected final Set<CloudUtils.InstanceFamily> instanceTypesRange;
@@ -99,8 +102,6 @@ public abstract class Enumerator {
 		this.instances = builder.instances;
 		this.enumStrategy = builder.enumStrategy;
 		this.optStrategy = builder.optStrategy;
-		this.maxTime = builder.maxTime;
-		this.maxPrice = builder.maxPrice;
 		this.minExecutors = builder.minExecutors;
 		this.maxExecutors = builder.maxExecutors;
 		this.instanceTypesRange = builder.instanceFamiliesRange;
@@ -269,14 +270,14 @@ public abstract class Enumerator {
 				return;
 			}
 		} else if (optStrategy == OptimizationStrategy.MinTime) {
-			if (newMonetaryEstimate > maxPrice || newTimeEstimate > currentOptimal.timeCost) {
+			if (newMonetaryEstimate > MAX_PRICE || newTimeEstimate > currentOptimal.timeCost) {
 				return;
 			}
 			if (newTimeEstimate == currentOptimal.timeCost && newMonetaryEstimate > currentOptimal.monetaryCost) {
 				return;
 			}
 		} else if (optStrategy == OptimizationStrategy.MinPrice) {
-			if (newTimeEstimate > maxTime || newMonetaryEstimate > currentOptimal.monetaryCost) {
+			if (newTimeEstimate > MAX_TIME || newMonetaryEstimate > currentOptimal.monetaryCost) {
 				return;
 			}
 			if (newMonetaryEstimate == currentOptimal.monetaryCost && newTimeEstimate > currentOptimal.timeCost) {
@@ -298,8 +299,6 @@ public abstract class Enumerator {
 		private HashMap<String, CloudInstance> instances = null;
 		private EnumerationStrategy enumStrategy = null;
 		private OptimizationStrategy optStrategy = null;
-		private double maxTime = -1d;
-		private double maxPrice = -1d;
 		private int minExecutors = DEFAULT_MIN_EXECUTORS;
 		private int maxExecutors = DEFAULT_MAX_EXECUTORS;
 		private Set<InstanceFamily> instanceFamiliesRange = null;
@@ -332,23 +331,6 @@ public abstract class Enumerator {
 
 		public Builder withOptimizationStrategy(OptimizationStrategy strategy) {
 			this.optStrategy = strategy;
-			return this;
-		}
-
-		public Builder withTimeLimit(double time) {
-			if (time < CloudUtils.MINIMAL_EXECUTION_TIME) {
-				throw new IllegalArgumentException(CloudUtils.MINIMAL_EXECUTION_TIME +
-						"s is the minimum target execution time.");
-			}
-			this.maxTime = time;
-			return this;
-		}
-
-		public Builder withBudget(double price) {
-			if (price <= 0) {
-				throw new IllegalArgumentException("The given budget (target price) should be positive");
-			}
-			this.maxPrice = price;
 			return this;
 		}
 
@@ -427,26 +409,6 @@ public abstract class Enumerator {
 				}
 			}
 			instances = instancesWithinRange;
-
-			switch (optStrategy) {
-				case MinCosts:
-					// no constraints apply
-					break;
-				case MinTime:
-					if (this.maxPrice < 0) {
-						throw new IllegalArgumentException("Budget not specified but required " +
-								"for the chosen optimization strategy: " + optStrategy);
-					}
-					break;
-				case MinPrice:
-					if (this.maxTime < 0) {
-						throw new IllegalArgumentException("Time limit not specified but required " +
-								"for the chosen optimization strategy: " + optStrategy);
-					}
-					break;
-				default: // in case optimization strategy was not configured
-					throw new IllegalArgumentException("Setting an optimization strategy is required.");
-			}
 
 			switch (enumStrategy) {
 				case GridBased:
@@ -540,10 +502,18 @@ public abstract class Enumerator {
 
 	/**
 	 * Meant to be used for testing purposes
+	 * @return configured weight factor optimization function 'costs'
+	 */
+	public double getCostsWeightFactor() {
+		return Enumerator.LINEAR_OBJECTIVE_RATIO;
+	}
+
+	/**
+	 * Meant to be used for testing purposes
 	 * @return configured max time for consideration (seconds)
 	 */
 	public double getMaxTime() {
-		return maxTime;
+		return Enumerator.MAX_TIME;
 	}
 
 	/**
@@ -551,7 +521,7 @@ public abstract class Enumerator {
 	 * @return configured max price for consideration (dollars)
 	 */
 	public double getMaxPrice() {
-		return maxPrice;
+		return Enumerator.MAX_PRICE;
 	}
 
 	/**

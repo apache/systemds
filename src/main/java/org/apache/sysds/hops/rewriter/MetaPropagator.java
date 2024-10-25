@@ -29,7 +29,7 @@ public class MetaPropagator implements Function<RewriterStatement, RewriterState
 			RewriterStatement toSet = propagateDims(el, parent, pIdx, assertions);
 
 			if (toSet != null && toSet != el) {
-				/*System.out.println("HERE: " + toSet);
+				/*System.out.println("Set: " + toSet);
 				System.out.println("Old: " + el);
 				System.out.println("Parent: " + parent.toParsableString(ctx));*/
 				el = toSet;
@@ -96,8 +96,8 @@ public class MetaPropagator implements Function<RewriterStatement, RewriterState
 				System.out.println("All assertions: " + assertions);*/
 				//System.out.println("Asserted: " + asserted  + " (" + (asserted != ret) + ")");
 
-				//if (asserted == null || asserted == parent.getChild(0))
-				//	return ret;
+				if (asserted == null || asserted == parent.getChild(0))
+					return ret;
 
 				return asserted;
 			}

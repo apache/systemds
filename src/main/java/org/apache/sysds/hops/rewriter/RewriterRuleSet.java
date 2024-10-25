@@ -153,12 +153,15 @@ public class RewriterRuleSet {
 	}
 
 	public boolean acceleratedMatch(RewriterStatement exprRoot, RewriterStatement stmt, List<Tuple3<RewriterRule, Boolean, RewriterStatement.MatchingSubexpression>> appRules, String realTypedInstr, String realType, Set<String> properties, int rootIndex, RewriterInstruction parent, MutableObject<HashMap<RewriterStatement, RewriterStatement>> dependencyMap, MutableObject<List<RewriterRule.ExplicitLink>> links, MutableObject<Map<RewriterStatement, RewriterRule.LinkObject>> linkObjects, boolean findFirst) {
+		//System.out.println("AccMatch: " + stmt);
 		List<Tuple2<RewriterRule, Boolean>> potentialMatches;
 		boolean foundMatch = false;
 
 		if (realTypedInstr != null) {
+			//System.out.println("RealType: " + realTypedInstr);
 			potentialMatches = accelerator.get(realTypedInstr);
 			if (potentialMatches != null) {
+				//System.out.println("PotentialMatche");
 				foundMatch |= checkPotentialMatches(stmt, potentialMatches, appRules, rootIndex, parent, dependencyMap, links, linkObjects, exprRoot, findFirst);
 
 				if (foundMatch && findFirst)

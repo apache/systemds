@@ -18,9 +18,7 @@ import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
-import java.util.Set;
 import java.util.function.Function;
 
 public class RewriterClusteringTest {
@@ -66,6 +64,7 @@ public class RewriterClusteringTest {
 		db.forEach(expr -> {
 			// First, build all possible subtrees
 			List<RewriterStatement> subExprs = RewriterUtils.generateSubtrees(expr, ctx);
+			//List<RewriterStatement> subExprs = List.of(expr);
 			long evaluationCtr = 0;
 
 			for (RewriterStatement subExpr : subExprs) {
@@ -74,6 +73,8 @@ public class RewriterClusteringTest {
 						continue;
 
 					evaluationCtr++;
+
+					//System.out.println("Eval: " + subExpr.toParsableString(ctx, true));
 
 					// Duplicate the statement as we do not want to canonicalize the original statement
 					RewriterStatement canonicalForm = converter.apply(subExpr.nestedCopy());

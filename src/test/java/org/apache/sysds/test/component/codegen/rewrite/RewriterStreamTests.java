@@ -1,5 +1,6 @@
 package org.apache.sysds.test.component.codegen.rewrite;
 
+import org.apache.sysds.hops.rewriter.RewriterDatabase;
 import org.apache.sysds.hops.rewriter.RewriterHeuristic;
 import org.apache.sysds.hops.rewriter.RewriterRule;
 import org.apache.sysds.hops.rewriter.RewriterRuleBuilder;
@@ -313,5 +314,26 @@ public class RewriterStreamTests {
 		RewriterStatement stmt = RewriterUtils.parse("A", ctx, "FLOAT:A");
 		stmt = heur.apply(stmt);
 		System.out.println(stmt);
+	}
+
+	@Test
+	public void test3() {
+		RewriterStatement stmt = RewriterUtils.parse("+(+(A,X),t(X))", ctx, "MATRIX:X,A");
+		stmt = canonicalConverter.apply(stmt);
+
+		System.out.println(stmt.toParsableString(ctx));
+	}
+
+	@Test
+	public void test4() {
+		RewriterDatabase db = new RewriterDatabase();
+		RewriterStatement stmt = RewriterUtils.parse("trace(%*%(A, B))", ctx, "MATRIX:A,B");
+		RewriterStatement stmt2 = RewriterUtils.parse("sum(*(A, t(B)))", ctx, "MATRIX:A,B");
+		stmt = canonicalConverter.apply(stmt);
+		stmt2 = canonicalConverter.apply(stmt2);
+
+		db.insertEntry(ctx, stmt);
+
+		assert !db.insertEntry(ctx, stmt2);
 	}
 }

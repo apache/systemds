@@ -126,12 +126,15 @@ public class RewriterAssertions {
 		if (!(stmt1 instanceof RewriterInstruction) || !(stmt2 instanceof RewriterInstruction))
 			throw new UnsupportedOperationException("Asserting uninjectable objects is not yet supported: " + stmt1 + "; " + stmt2);
 
-		System.out.println("Asserting: " + stmt1 + " := " + stmt2);
+		//System.out.println("Asserting: " + stmt1 + " := " + stmt2);
 
 		RewriterStatement e1 = stmt1;
 		RewriterStatement e2 = stmt2;
 		RewriterAssertion stmt1Assertions = assertionMatcher.get(e1);
 		RewriterAssertion stmt2Assertions = assertionMatcher.get(e2);
+
+		//System.out.println("Stmt1Assertion: " + stmt1Assertions);
+		//System.out.println("Stmt2Assertion: " + stmt2Assertions);
 
 		if (stmt1Assertions == stmt2Assertions) {
 			if (stmt1Assertions == null) {
@@ -146,7 +149,7 @@ public class RewriterAssertions {
 				assertionMatcher.put(e2, newAssertion);
 
 				allAssertions.add(newAssertion);
-				System.out.println("New assertion1: " + newAssertion);
+				//System.out.println("New assertion1: " + newAssertion);
 				return true;
 			}
 
@@ -160,9 +163,10 @@ public class RewriterAssertions {
 			existingAssertion.set.add(toAssert);
 			assertionMatcher.put(assert1 ? e1 : e2, existingAssertion);
 			//System.out.println("Existing assertion: " + existingAssertion);
-			if (existingAssertion.stmt != null)
+			if (existingAssertion.stmt != null) {
 				updateInstance(existingAssertion.stmt.getChild(0), existingAssertion.set);
-			System.out.println("New assertion2: " + existingAssertion);
+			}
+			//System.out.println("New assertion2: " + existingAssertion);
 			return true;
 		}
 
@@ -177,15 +181,16 @@ public class RewriterAssertions {
 
 		stmt2Assertions.set.addAll(stmt1Assertions.set);
 		allAssertions.remove(stmt1Assertions);
-		updateInstance(stmt2Assertions.stmt, stmt2Assertions.set);
+		if (stmt2Assertions.stmt != null)
+			updateInstance(stmt2Assertions.stmt.getChild(0), stmt2Assertions.set);
 
 		for (RewriterStatement stmt : stmt1Assertions.set)
 			assertionMatcher.put(stmt, stmt2Assertions);
 
 		if (stmt1Assertions.stmt != null)
-			assertionMatcher.remove(stmt1Assertions.stmt);
+			assertionMatcher.put(stmt1Assertions.stmt, stmt2Assertions); // Only temporary
 
-		System.out.println("New assertion3: " + stmt2Assertions);
+		//System.out.println("New assertion3: " + stmt2Assertions);
 
 		return true;
 	}
@@ -257,10 +262,11 @@ public class RewriterAssertions {
 
 		@Override
 		public String toString() {
+			//throw new IllegalArgumentException();
 			if (stmt != null)
-				return stmt.toString();
+				return stmt.toString() + " -- " + System.identityHashCode(this);
 
-			return set.toString();
+			return set.toString() + " -- " + System.identityHashCode(this);
 		}
 
 		static RewriterAssertion from(Set<RewriterStatement> set) {

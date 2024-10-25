@@ -1318,6 +1318,10 @@ public class RewriterUtils {
 		RewriterRuleCollection.expandStreamingExpressions(expRules, ctx);
 		RewriterHeuristic streamExpansion = new RewriterHeuristic(new RewriterRuleSet(ctx, expRules));
 
+		ArrayList<RewriterRule> expArbitraryMatricesRules = new ArrayList<>();
+		RewriterRuleCollection.expandArbitraryMatrices(expArbitraryMatricesRules, ctx);
+		RewriterHeuristic expandArbitraryMatrices = new RewriterHeuristic(new RewriterRuleSet(ctx, expArbitraryMatricesRules));
+
 		ArrayList<RewriterRule> pd = new ArrayList<>();
 		RewriterRuleCollection.pushdownStreamSelections(pd, ctx);
 		RewriterRuleCollection.buildElementWiseAlgebraicCanonicalization(pd, ctx);
@@ -1330,6 +1334,7 @@ public class RewriterUtils {
 		RewriterHeuristics canonicalFormCreator = new RewriterHeuristics();
 		canonicalFormCreator.add("ALGEBRAIC CANONICALIZATION", algebraicCanonicalization);
 		canonicalFormCreator.add("EXPAND STREAMING EXPRESSIONS", streamExpansion);
+		canonicalFormCreator.add("EXPAND ARBITRARY MATRICES", expandArbitraryMatrices);
 		canonicalFormCreator.add("PUSHDOWN STREAM SELECTIONS", streamSelectPushdown);
 		canonicalFormCreator.add("FLATTEN OPERATIONS", flattenOperations);
 
@@ -1340,7 +1345,7 @@ public class RewriterUtils {
 
 				if (r != null)
 					System.out.println("Applying rule: " + r.getName());
-				System.out.println(t.toString(ctx));
+				System.out.println(t.toParsableString(ctx));
 				return true;
 			}, debug);
 
@@ -1350,7 +1355,7 @@ public class RewriterUtils {
 
 			//RewriterUtils.topologicalSort(stmt, ctx, (el, parent) -> el.isArgumentList() && parent != null && Set.of("+", "-", "*", "_idxExpr").contains(parent.trueInstruction()));
 			//stmt = stmt.getAssertions(ctx).buildEquivalences(stmt);
-			System.out.println(stmt.getAssertions(ctx));
+			//System.out.println(stmt.getAssertions(ctx));
 			TopologicalSort.sort(stmt, ctx);
 
 			if (debug)

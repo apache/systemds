@@ -13,6 +13,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.function.BiFunction;
 import java.util.function.Function;
+import java.util.stream.Collectors;
 
 public class RewriterInstruction extends RewriterStatement {
 
@@ -80,9 +81,9 @@ public class RewriterInstruction extends RewriterStatement {
 		}
 
 		if (isArgumentList())
-			hashCode = Objects.hash(rid, refCtr, instr, getResultingDataType(ctx), operands);
+			hashCode = Objects.hash(rid, refCtr, instr, getResultingDataType(ctx), operands.stream().map(RewriterStatement::structuralHashCode).collect(Collectors.toList()));
 		else
-			hashCode = Objects.hash(rid, refCtr, instr, result, operands);
+			hashCode = Objects.hash(rid, refCtr, instr, result.structuralHashCode(), operands.stream().map(RewriterStatement::structuralHashCode).collect(Collectors.toList()));
 		return hashCode;
 	}
 

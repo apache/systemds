@@ -550,14 +550,14 @@ public class RewriterRuleCollection {
 		);
 
 		// E.g. A + B
-		rules.add(new RewriterRuleBuilder(ctx)
+		rules.add(new RewriterRuleBuilder(ctx, "Expand Element Wise Instruction")
 				.setUnidirectional(true)
 				.parseGlobalVars("MATRIX:A,B")
 				.parseGlobalVars("LITERAL_INT:1")
 				.withParsedStatement("$1:ElementWiseInstruction(A,B)", hooks)
 				.toParsedStatement("$7:_m($2:_idx(1, $5:nrow(A)), $3:_idx(1, $6:ncol(A)), $4:ElementWiseInstruction([](A, $2, $3), [](B, $2, $3)))", hooks)
 				/*.iff(match -> {
-					return match.getMatchParent() == null || match.getMatchParent().getMeta("dontExpand") == null;
+					return !match.getMatchRoot().isInstruction() || match.getMatchRoot().trueInstruction().equals("_m");
 				}, true)*/
 				.link(hooks.get(1).getId(), hooks.get(4).getId(), RewriterStatement::transferMeta)
 				.apply(hooks.get(2).getId(), stmt -> stmt.unsafePutMeta("idxId", UUID.randomUUID()), true) // Assumes it will never collide
@@ -571,8 +571,14 @@ public class RewriterRuleCollection {
 					// Now we assert that nrow(A) = nrow(B) and ncol(A) = ncol(B)
 					RewriterStatement aRef = stmt.getChild(2, 0, 0);
 					RewriterStatement bRef = stmt.getChild(2, 1, 0);
+					/*System.out.println("aNRow: " + aRef.getNRow());
+					System.out.println("bNRow: " + bRef.getNRow());
+					System.out.println("HERE1: " + match.getNewExprRoot().toParsableString(ctx));*/
 					match.getNewExprRoot().getAssertions(ctx).addEqualityAssertion(aRef.getNRow(), bRef.getNRow());
 					match.getNewExprRoot().getAssertions(ctx).addEqualityAssertion(aRef.getNCol(), bRef.getNCol());
+					/*System.out.println(match.getNewExprRoot().getAssertions(ctx).getAssertions(aRef.getNRow()));
+					System.out.println(match.getMatchRoot());
+					System.out.println("HERE2: " + match.getNewExprRoot().toParsableString(ctx));*/
 				}, true) // Assumes it will never collide
 				//.apply(hooks.get(5).getId(), stmt -> stmt.unsafePutMeta("dontExpand", true), true)
 				//.apply(hooks.get(6).getId(), stmt -> stmt.unsafePutMeta("dontExpand", true), true)
@@ -611,10 +617,10 @@ public class RewriterRuleCollection {
 
 					// Assert that the matrix is squared
 					RewriterStatement aRef = stmt.getChild(0, 1, 0);
-					System.out.println("NewRoot: " + match.getNewExprRoot());
+					/*System.out.println("NewRoot: " + match.getNewExprRoot());
 					System.out.println("aRef: " + aRef);
 					System.out.println("nRow: " + aRef.getNRow());
-					System.out.println("nCol: " + aRef.getNCol());
+					System.out.println("nCol: " + aRef.getNCol());*/
 					match.getNewExprRoot().getAssertions(ctx).addEqualityAssertion(aRef.getNRow(), aRef.getNCol());
 				}, true)
 				.build()
@@ -798,7 +804,10 @@ public class RewriterRuleCollection {
 				}, true)
 				.build()
 		);
+	}
 
+	public static void expandArbitraryMatrices(final List<RewriterRule> rules, final RuleContext ctx) {
+		HashMap<Integer, RewriterStatement> hooks = new HashMap<>();
 		// This must be the last rule in the heuristic as it handles any matrix that has not been written as a stream
 		// A -> _m()
 		rules.add(new RewriterRuleBuilder(ctx, "Expand arbitrary matrix expression")
@@ -814,6 +823,7 @@ public class RewriterRuleCollection {
 					// TODO: This check has to be extended to any meta expression
 					return !(root.isInstruction() && root.trueInstruction().equals("_m"))
 							&& (parent == null || (!parent.trueInstruction().equals("[]") && !parent.trueInstruction().equals("ncol") && !parent.trueInstruction().equals("nrow")));*/
+					//System.out.println("HERE");
 					return match.getMatchRoot().getMeta("dontExpand") == null && !(match.getMatchRoot().isInstruction() && match.getMatchRoot().trueInstruction().equals("_m"));
 				}, true)
 				.apply(hooks.get(1).getId(), stmt -> stmt.unsafePutMeta("idxId", UUID.randomUUID()), true) // Assumes it will never collide

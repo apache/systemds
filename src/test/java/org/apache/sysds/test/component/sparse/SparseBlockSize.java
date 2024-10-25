@@ -125,6 +125,21 @@ public class SparseBlockSize extends AutomatedTestBase
 	public void testSparseBlockMCSC3(){
 		runSparseBlockSizeTest(SparseBlock.Type.MCSC, _sparsity3);
 	}
+
+	@Test
+	public void testSparseBlockCSC1(){
+		runSparseBlockSizeTest(SparseBlock.Type.CSC, _sparsity1);
+	}
+
+	@Test
+	public void testSparseBlockCSC2(){
+		runSparseBlockSizeTest(SparseBlock.Type.CSC, _sparsity2);
+	}
+
+	@Test
+	public void testSparseBlockCSC3(){
+		runSparseBlockSizeTest(SparseBlock.Type.CSC, _sparsity3);
+	}
 	
 	@Test
 	public void testSparseBlockMCSRFixed1(){
@@ -143,6 +158,12 @@ public class SparseBlockSize extends AutomatedTestBase
 		double[][] A = getFixedData1();
 		runSparseBlockSizeTest(A, 0, 4, 0, 6, SparseBlock.Type.COO);
 	}
+
+	@Test
+	public void testSparseBlockCSCFixed1(){
+		double[][] A = getFixedData1();
+		runSparseBlockSizeTest(A, 0, 4, 0, 6, SparseBlock.Type.CSC);
+	}
 	
 	@Test
 	public void testSparseBlockMCSRFixed2(){
@@ -154,6 +175,12 @@ public class SparseBlockSize extends AutomatedTestBase
 	public void testSparseBlockCSRFixed2(){
 		double[][] A = getFixedData2();
 		runSparseBlockSizeTest(A, 0, 4, 2, 4, SparseBlock.Type.CSR);
+	}
+
+	@Test
+	public void testSparseBlockCSCFixed2(){
+		double[][] A = getFixedData2();
+		runSparseBlockSizeTest(A, 0, 4, 2, 4, SparseBlock.Type.CSC);
 	}
 	
 	@Test
@@ -172,6 +199,12 @@ public class SparseBlockSize extends AutomatedTestBase
 	public void testSparseBlockCSRFixed3(){
 		double[][] A = getFixedData3();
 		runSparseBlockSizeTest(A, 0, 4, 3, 3, SparseBlock.Type.CSR);
+	}
+
+	@Test
+	public void testSparseBlockCSCFixed3(){
+		double[][] A = getFixedData3();
+		runSparseBlockSizeTest(A, 0, 4, 3, 3, SparseBlock.Type.CSC);
 	}
 	
 	@Test
@@ -204,6 +237,7 @@ public class SparseBlockSize extends AutomatedTestBase
 				case COO: sblock = new SparseBlockCOO(srtmp); break;
 				case DCSR: sblock = new SparseBlockDCSR(srtmp); break;
 				case MCSC: sblock = new SparseBlockMCSC(srtmp, cols); break;
+				case CSC: sblock = new SparseBlockCSC(srtmp, cols); break;
 			}
 			
 			//prepare summary statistics nnz

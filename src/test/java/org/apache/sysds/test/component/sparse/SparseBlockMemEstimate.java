@@ -59,6 +59,7 @@ public class SparseBlockMemEstimate extends AutomatedTestBase
 		double memMCSC = SparseBlockFactory.estimateSizeSparseInMemory(SparseBlock.Type.MCSC, rows, cols, sparsity);
 		double memMCSR = SparseBlockFactory.estimateSizeSparseInMemory(SparseBlock.Type.MCSR, rows, cols, sparsity);
 		double memCSR = SparseBlockFactory.estimateSizeSparseInMemory(SparseBlock.Type.CSR, rows, cols, sparsity);
+		double memCSC = SparseBlockFactory.estimateSizeSparseInMemory(SparseBlock.Type.CSC, rows, cols, sparsity);
 		double memCOO = SparseBlockFactory.estimateSizeSparseInMemory(SparseBlock.Type.COO, rows, cols, sparsity);
 		double memDCSR = SparseBlockFactory.estimateSizeSparseInMemory(SparseBlock.Type.DCSR, rows, cols, sparsity);
 		double memDense = MatrixBlock.estimateSizeDenseInMemory(rows, cols);
@@ -70,6 +71,8 @@ public class SparseBlockMemEstimate extends AutomatedTestBase
 			Assert.fail("SparseBlockMCSR memory estimate <= 0.");
 		if( memCSR  <= 0 )
 			Assert.fail("SparseBlockCSR memory estimate <= 0.");
+		if( memCSC  <= 0 )
+			Assert.fail("SparseBlockCSC memory estimate <= 0.");
 		if( memCOO  <= 0 )
 			Assert.fail("SparseBlockCOO memory estimate <= 0.");
 		if( memDCSR  <= 0 )

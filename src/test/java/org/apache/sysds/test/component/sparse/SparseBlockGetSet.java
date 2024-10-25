@@ -19,15 +19,16 @@
 
 package org.apache.sysds.test.component.sparse;
 
-import org.apache.sysds.runtime.data.SparseBlockDCSR;
-import org.apache.sysds.runtime.data.SparseBlockFactory;
 import org.junit.Assert;
 import org.junit.Test;
 import org.apache.sysds.runtime.data.SparseBlock;
 import org.apache.sysds.runtime.data.SparseBlockCOO;
+import org.apache.sysds.runtime.data.SparseBlockCSC;
 import org.apache.sysds.runtime.data.SparseBlockCSR;
-import org.apache.sysds.runtime.data.SparseBlockMCSR;
+import org.apache.sysds.runtime.data.SparseBlockDCSR;
+import org.apache.sysds.runtime.data.SparseBlockFactory;
 import org.apache.sysds.runtime.data.SparseBlockMCSC;
+import org.apache.sysds.runtime.data.SparseBlockMCSR;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.util.DataConverter;
 import org.apache.sysds.runtime.util.LongLongDoubleHashMap;
@@ -278,19 +279,62 @@ public class SparseBlockGetSet extends AutomatedTestBase
 	}
 
 	@Test
-	public void testSparseBlockMCSC2Rand()  {
+	public void testSparseBlockMCSC2Rand() {
 		runSparseBlockGetSetTest(SparseBlock.Type.MCSC, sparsity2, InitType.RAND_SET);
 	}
 
 	@Test
-	public void testSparseBlockMCSC3Rand()  {
+	public void testSparseBlockMCSC3Rand() {
 		runSparseBlockGetSetTest(SparseBlock.Type.MCSC, sparsity3, InitType.RAND_SET);
 	}
-	
-	private void runSparseBlockGetSetTest( SparseBlock.Type btype, double sparsity, InitType itype)
-	{
-		try
-		{
+
+	@Test
+	public void testSparseBlockCSC1Bulk() {
+		runSparseBlockGetSetTest(SparseBlock.Type.CSC, sparsity1, InitType.BULK);
+	}
+
+	@Test
+	public void testSparseBlockCSC2Bulk() {
+		runSparseBlockGetSetTest(SparseBlock.Type.CSC, sparsity2, InitType.BULK);
+	}
+
+	@Test
+	public void testSparseBlockCSC3Bulk() {
+		runSparseBlockGetSetTest(SparseBlock.Type.CSC, sparsity3, InitType.BULK);
+	}
+
+	@Test
+	public void testSparseBlockCSC1Seq() {
+		runSparseBlockGetSetTest(SparseBlock.Type.CSC, sparsity1, InitType.SEQ_SET);
+	}
+
+	@Test
+	public void testSparseBlockCSC2Seq() {
+		runSparseBlockGetSetTest(SparseBlock.Type.CSC, sparsity2, InitType.SEQ_SET);
+	}
+
+	@Test
+	public void testSparseBlockCSC3Seq() {
+		runSparseBlockGetSetTest(SparseBlock.Type.CSC, sparsity3, InitType.SEQ_SET);
+	}
+
+	@Test
+	public void testSparseBlockCSC1Rand() {
+		runSparseBlockGetSetTest(SparseBlock.Type.CSC, sparsity1, InitType.RAND_SET);
+	}
+
+	@Test
+	public void testSparseBlockCSC2Rand() {
+		runSparseBlockGetSetTest(SparseBlock.Type.CSC, sparsity2, InitType.RAND_SET);
+	}
+
+	@Test
+	public void testSparseBlockCSC3Rand() {
+		runSparseBlockGetSetTest(SparseBlock.Type.CSC, sparsity3, InitType.RAND_SET);
+	}
+
+	private void runSparseBlockGetSetTest(SparseBlock.Type btype, double sparsity, InitType itype) {
+		try {
 			//data generation
 			double[][] A = getRandomMatrix(rows, cols, -10, 10, sparsity, 7654321);
 
@@ -303,11 +347,24 @@ public class SparseBlockGetSet extends AutomatedTestBase
 			}
 			else if( itype == InitType.SEQ_SET || itype == InitType.RAND_SET ) {
 				switch( btype ) {
-					case MCSR: sblock = new SparseBlockMCSR(rows, cols); break;
-					case CSR: sblock = new SparseBlockCSR(rows, cols); break;
-					case COO: sblock = new SparseBlockCOO(rows, cols); break;
-					case DCSR: sblock = new SparseBlockDCSR(rows, cols); break;
-					case MCSC: sblock = new SparseBlockMCSC(rows, cols); break;
+					case MCSR:
+						sblock = new SparseBlockMCSR(rows, cols);
+						break;
+					case CSR:
+						sblock = new SparseBlockCSR(rows, cols);
+						break;
+					case COO:
+						sblock = new SparseBlockCOO(rows, cols);
+						break;
+					case DCSR:
+						sblock = new SparseBlockDCSR(rows, cols);
+						break;
+					case MCSC:
+						sblock = new SparseBlockMCSC(rows, cols);
+						break;
+					case CSC:
+						sblock = new SparseBlockCSC(rows, cols);
+						break;
 				}
 
 				if(itype == InitType.SEQ_SET) {

@@ -126,6 +126,21 @@ public class SparseBlockDelete extends AutomatedTestBase
 	public void testSparseBlockMCSC3()  {
 		runSparseBlockDeleteTest(SparseBlock.Type.MCSC, sparsity3);
 	}
+
+	@Test
+	public void testSparseBlockCSC1()  {
+		runSparseBlockDeleteTest(SparseBlock.Type.CSC, sparsity1);
+	}
+
+	@Test
+	public void testSparseBlockCSC2()  {
+		runSparseBlockDeleteTest(SparseBlock.Type.CSC, sparsity2);
+	}
+
+	@Test
+	public void testSparseBlockCSC3()  {
+		runSparseBlockDeleteTest(SparseBlock.Type.CSC, sparsity3);
+	}
 	
 	private void runSparseBlockDeleteTest( SparseBlock.Type btype, double sparsity)
 	{

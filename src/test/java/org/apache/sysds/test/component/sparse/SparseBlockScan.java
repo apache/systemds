@@ -120,6 +120,21 @@ public class SparseBlockScan extends AutomatedTestBase
 	public void testSparseBlockMCSC3Full()  {
 		runSparseBlockScanTest(SparseBlock.Type.MCSC, sparsity3);
 	}
+
+	@Test
+	public void testSparseBlockCSC1Full()  {
+		runSparseBlockScanTest(SparseBlock.Type.CSC, sparsity1);
+	}
+
+	@Test
+	public void testSparseBlockCSC2Full()  {
+		runSparseBlockScanTest(SparseBlock.Type.CSC, sparsity2);
+	}
+
+	@Test
+	public void testSparseBlockCSC3Full()  {
+		runSparseBlockScanTest(SparseBlock.Type.CSC, sparsity3);
+	}
 	
 	private void runSparseBlockScanTest( SparseBlock.Type btype, double sparsity)
 	{
@@ -138,6 +153,7 @@ public class SparseBlockScan extends AutomatedTestBase
 				case COO: sblock = new SparseBlockCOO(srtmp); break;
 				case DCSR: sblock = new SparseBlockDCSR(srtmp); break;
 				case MCSC: sblock = new SparseBlockMCSC(srtmp); break;
+				case CSC: sblock = new SparseBlockCSC(srtmp); break;
 			}
 			
 			//check for correct number of non-zeros

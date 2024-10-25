@@ -19,14 +19,15 @@
 
 package org.apache.sysds.test.component.sparse;
 
-import org.apache.sysds.runtime.data.SparseBlockDCSR;
 import org.junit.Assert;
 import org.junit.Test;
 import org.apache.sysds.runtime.data.SparseBlock;
 import org.apache.sysds.runtime.data.SparseBlockCOO;
+import org.apache.sysds.runtime.data.SparseBlockCSC;
 import org.apache.sysds.runtime.data.SparseBlockCSR;
-import org.apache.sysds.runtime.data.SparseBlockMCSR;
+import org.apache.sysds.runtime.data.SparseBlockDCSR;
 import org.apache.sysds.runtime.data.SparseBlockMCSC;
+import org.apache.sysds.runtime.data.SparseBlockMCSR;
 import org.apache.sysds.runtime.util.LongLongDoubleHashMap;
 import org.apache.sysds.runtime.util.LongLongDoubleHashMap.ADoubleEntry;
 import org.apache.sysds.test.AutomatedTestBase;
@@ -207,6 +208,36 @@ public class SparseBlockAppendSort extends AutomatedTestBase
 	public void testSparseBlockMCSC3Rand()  {
 		runSparseBlockAppendSortTest(SparseBlock.Type.MCSC, sparsity3, InitType.RAND_SET);
 	}
+
+	@Test
+	public void testSparseBlockCSC1Seq()  {
+		runSparseBlockAppendSortTest(SparseBlock.Type.CSC, sparsity1, InitType.SEQ_SET);
+	}
+
+	@Test
+	public void testSparseBlockCSC2Seq()  {
+		runSparseBlockAppendSortTest(SparseBlock.Type.CSC, sparsity2, InitType.SEQ_SET);
+	}
+
+	@Test
+	public void testSparseBlockCSC3Seq()  {
+		runSparseBlockAppendSortTest(SparseBlock.Type.CSC, sparsity3, InitType.SEQ_SET);
+	}
+
+	@Test
+	public void testSparseBlockCSC1Rand()  {
+		runSparseBlockAppendSortTest(SparseBlock.Type.CSC, sparsity1, InitType.RAND_SET);
+	}
+
+	@Test
+	public void testSparseBlockCSC2Rand()  {
+		runSparseBlockAppendSortTest(SparseBlock.Type.CSC, sparsity2, InitType.RAND_SET);
+	}
+
+	@Test
+	public void testSparseBlockCSC3Rand()  {
+		runSparseBlockAppendSortTest(SparseBlock.Type.CSC, sparsity3, InitType.RAND_SET);
+	}
 	
 	private void runSparseBlockAppendSortTest( SparseBlock.Type btype, double sparsity, InitType itype)
 	{
@@ -223,6 +254,7 @@ public class SparseBlockAppendSort extends AutomatedTestBase
 				case COO: sblock = new SparseBlockCOO(rows, cols); break;
 				case DCSR: sblock = new SparseBlockDCSR(rows, cols); break;
 				case MCSC: sblock = new SparseBlockMCSC(rows, cols); break;
+				case CSC: sblock = new SparseBlockCSC(rows, cols); break;
 			}
 			
 			if(itype == InitType.SEQ_SET) {

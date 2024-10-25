@@ -60,10 +60,9 @@ fi
 
 echo -e "\nWaiting for the instance being stopped upon program completion (automatic termination enabled)..."
 aws ec2 wait instance-stopped --instance-ids "$INSTANCE_ID" --region "$REGION"
-
 echo "...the DML finished, the logs where written to $LOG_URI and the EC2 instance was stopped"
-echo "The instance will be terminated directly now..."
 
+echo "The instance will be terminated directly now..."
 aws ec2 terminate-instances --instance-ids "$INSTANCE_ID" --region "$REGION" >/dev/null
 
 echo "... termination was successful!"

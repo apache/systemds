@@ -37,7 +37,7 @@ INSTANCE_ID=$(aws ec2 run-instances \
     $( [ "$EBS_OPTIMIZED" = "true" ] && echo '--ebs-optimized' ) \
     --key-name "$KEYPAIR_NAME" \
     --monitoring Enabled=true \
-    --user-data fileb://ec2_bootstrap.sh \
+    --user-data fileb://$SCRIPT_DIR/ec2_bootstrap.sh \
     --region "$REGION" \
     --query 'Instances[0].InstanceId' --output text)
 

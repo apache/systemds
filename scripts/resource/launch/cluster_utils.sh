@@ -28,7 +28,7 @@ function set_config(){
 function generate_step_definition() {
     # return empty step generate_step_definition bin case no program given
     if [ -z $SYSTEMDS_PROGRAM ]; then
-        $STEP=""
+        STEP=""
         return 0
     fi
     # define ActionOnFailure

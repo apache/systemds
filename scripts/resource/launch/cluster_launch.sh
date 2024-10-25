@@ -42,26 +42,26 @@ generate_step_definition
 
 echo "Launching EMR cluster via AWS CLI and adding a step to run $SYSTEMDS_PROGRAM with SystemDS"
 CLUSTER_INFO=$(aws emr create-cluster \
- --applications Name=AmazonCloudWatchAgent Name=Spark \
- --ec2-attributes '{
-    "KeyName":"'${KEYPAIR_NAME}'",
-    "InstanceProfile":"EMR_EC2_DefaultRole",
-    "SubnetId": "'${SUBNET}'"
-    '$( [ -n "$SECURITY_GROUP_ID'" ] && echo ',"AdditionalMasterSecurityGroups": ["'${SECURITY_GROUP_ID}'"]' )'
- }'\
- --service-role EMR_DefaultRole \
- --enable-debugging \
- --release-label $EMR_VERSION \
- --log-uri $LOG_URI \
- --name "SystemDS cluster" \
- --instance-groups file://$INSTANCE_CONFIGS \
- --configurations file://$SPARK_CONFIGS \
- --scale-down-behavior TERMINATE_AT_TASK_COMPLETION \
- --no-termination-protected \
- $( [ -n "$STEP" ] && echo "--steps $STEP" ) \
- $( [ "$AUTO_TERMINATION_TIME" = 0 ] && echo "--auto-terminate" ) \
- $( [ "$AUTO_TERMINATION_TIME" -gt 0 ] && echo "--auto-termination-policy IdleTimeout=$AUTO_TERMINATION_TIME" ) \
- --region $REGION)
+    --applications Name=AmazonCloudWatchAgent Name=Spark \
+    --ec2-attributes '{
+        "KeyName":"'${KEYPAIR_NAME}'",
+        "InstanceProfile":"EMR_EC2_DefaultRole",
+        '"$( [ -n "$SECURITY_GROUP_ID'" ] && echo '"AdditionalMasterSecurityGroups": ["'${SECURITY_GROUP_ID}'"],' )"'
+        "SubnetId": "'${SUBNET}'"
+    }'\
+    --service-role EMR_DefaultRole \
+    --enable-debugging \
+    --release-label $EMR_VERSION \
+    --log-uri $LOG_URI \
+    --name "SystemDS cluster" \
+    --instance-groups file://$INSTANCE_CONFIGS \
+    --configurations file://$SPARK_CONFIGS \
+    --scale-down-behavior TERMINATE_AT_TASK_COMPLETION \
+    --no-termination-protected \
+    $( [ -n "$STEP" ] && echo "--steps $STEP" ) \
+    $( [ "$AUTO_TERMINATION_TIME" = 0 ] && echo "--auto-terminate" ) \
+    $( [ "$AUTO_TERMINATION_TIME" -gt 0 ] && echo "--auto-termination-policy IdleTimeout=$AUTO_TERMINATION_TIME" ) \
+    --region $REGION)
 
 echo "Cluster response info"
 echo $CLUSTER_INFO

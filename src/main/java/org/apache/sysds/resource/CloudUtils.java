@@ -402,6 +402,7 @@ public class CloudUtils {
 			// values copied from SparkClusterConfig.analyzeSparkConfiguation
 			sparkDefaultsProperties.put("spark.storage.memoryFraction", String.valueOf(0.6));
 			sparkDefaultsProperties.put("spark.memory.storageFraction", String.valueOf(0.5));
+			sparkDefaultsProperties.put("spark.executor.memoryOverheadFactor", String.valueOf(0.1));
 			// set the custom AM configurations
 			sparkDefaultsProperties.put("spark.yarn.am.memory", (executorResources[3])+"m");
 			sparkDefaultsProperties.put("spark.yarn.am.cores", Integer.toString(executorResources[4]));

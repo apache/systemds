@@ -3,8 +3,11 @@
 # exit in case of error or unbound var
 set -euo pipefail
 
+# get file directory to allow finding the file with the utils
+SCRIPT_DIR="$(dirname "$(realpath "$0")")"
+
 source single_node.env
-source single_node_utils.sh
+source "$SCRIPT_DIR/single_node_utils.sh"
 
 echo "Executing the DML script in single-node mode..."
 

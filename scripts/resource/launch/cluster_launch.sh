@@ -23,8 +23,11 @@
 # exit in case of error or unbound var
 set -euo pipefail
 
+# get file directory to allow finding the file with the utils
+SCRIPT_DIR="$(dirname "$(realpath "$0")")"
+
 source cluster.env
-source cluster_utils.sh
+source "$SCRIPT_DIR/cluster_utils.sh"
 
 if [ -n "$TARGET_SUBNET" ]; then
     SUBNET=$TARGET_SUBNET

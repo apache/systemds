@@ -901,13 +901,17 @@ public abstract class AutomatedTestBase {
 	}
 
 	protected static FrameBlock readDMLFrameFromHDFS(String fileName, FileFormat fmt) throws IOException {
-		return readDMLFrameFromHDFS(fileName, fmt, getMetaData(fileName));
+		return readDMLFrameFromHDFS(fileName, fmt, getMetaData(fileName), true);
 	}
 
-	protected static FrameBlock readDMLFrameFromHDFS(String fileName, FileFormat fmt, MetaDataAll meta)
+	protected static FrameBlock readDMLFrameFromHDFS(String fileName, FileFormat fmt, boolean base) throws IOException {
+		return readDMLFrameFromHDFS(fileName, fmt, getMetaData(fileName), base);
+	}
+
+	protected static FrameBlock readDMLFrameFromHDFS(String fileName, FileFormat fmt, MetaDataAll meta, boolean base)
 		throws IOException {
 		// read frame data from hdfs
-		String strFrameFileName = baseDirectory + OUTPUT_DIR + fileName;
+		String strFrameFileName = base ? baseDirectory + OUTPUT_DIR + fileName : fileName;
 		FrameReader reader = FrameReaderFactory.createFrameReader(fmt);
 		if(meta.getSchema() == null)
 			return reader.readFrameFromHDFS(strFrameFileName,  meta.getDim1(),meta.getDim2());

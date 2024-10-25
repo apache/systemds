@@ -139,6 +139,15 @@ public class CollectionUtils {
 				}
 		return ret;
 	}
+
+	@SafeVarargs
+	public static <T> List<T> naryUnionDistinct(List<T>... lists) {
+		List<T> out = lists[0];
+		for (int i = 1; i < lists.length; i++) {
+			out = unionDistinct(out, lists[i]);
+		}
+		return out;
+	}
 	
 	public static <T> List<T> unionAll(List<T> a, List<T> b) {
 		return CollectionUtils.asList(a, b);

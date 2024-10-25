@@ -100,17 +100,18 @@ public class ColumnEncoderPassThrough extends ColumnEncoder {
 						sparseRowsWZeros = new ArrayList<>();
 					sparseRowsWZeros.add(ii);
 				}
+				int indexWithOffset = sparseRowPointerOffset != null ? sparseRowPointerOffset[ii] - 1 + index : index;
 				if (mcsr) {
 					SparseRowVector row = (SparseRowVector) out.getSparseBlock().get(ii);
-					row.values()[index] = v;
-					row.indexes()[index] = outputCol;
+					row.values()[indexWithOffset] = v;
+					row.indexes()[indexWithOffset] = outputCol;
 				}
 				else { //csr
 					// Manually fill the column-indexes and values array
 					SparseBlockCSR csrblock = (SparseBlockCSR)out.getSparseBlock();
 					int rptr[] = csrblock.rowPointers();
-					csrblock.indexes()[rptr[ii]+index] = outputCol;
-					csrblock.values()[rptr[ii]+index] = codes[ii-rowStart];
+					csrblock.indexes()[rptr[ii]+indexWithOffset] = outputCol;
+					csrblock.values()[rptr[ii]+indexWithOffset] = codes[ii-rowStart];
 				}
 			}
 		}
@@ -160,13 +161,6 @@ public class ColumnEncoderPassThrough extends ColumnEncoder {
 	}
 
 	public static class PassThroughSparseApplyTask extends ColumnApplyTask<ColumnEncoderPassThrough>{
-
-
-		protected PassThroughSparseApplyTask(ColumnEncoderPassThrough encoder, CacheBlock<?> input,
-				MatrixBlock out, int outputCol) {
-			super(encoder, input, out, outputCol);
-		}
-
 		protected PassThroughSparseApplyTask(ColumnEncoderPassThrough encoder, 
 				CacheBlock<?> input, MatrixBlock out, int outputCol, int startRow, int blk) {
 			super(encoder, input, out, outputCol, startRow, blk);

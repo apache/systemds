@@ -48,7 +48,7 @@ ssh  -i "$KEYPAIR_NAME".pem "ec2-user@$PUBLIC_DNS_NAME" \
     gzip -c output.log > output.log.gz &&
     aws s3 cp output.log.gz $LOG_URI/output_$INSTANCE_ID.log.gz --content-type \"text/plain\" --content-encoding \"gzip\" &&
     gzip -c error.log > error.log.gz &&
-    aws s3 cp error.log.gz $LOG_URI/logs/error_$INSTANCE_ID.log.gz --content-type \"text/plain\" --content-encoding \"gzip\" &&
+    aws s3 cp error.log.gz $LOG_URI/error_$INSTANCE_ID.log.gz --content-type \"text/plain\" --content-encoding \"gzip\" &&
     { if [ \"$AUTO_TERMINATION\" = true ]; then sudo shutdown now; fi; }' >> output.log 2>> error.log &"
 
 echo "... the program has been launched"

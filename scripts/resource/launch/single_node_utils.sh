@@ -11,13 +11,13 @@ function get_image_details() {
     if [[ ${INSTANCE_TYPE:2:1} == "g" ]]; then
         ARCHITECTURE="arm64"
     else
-        ARCHITECTURE="amd64"
+        ARCHITECTURE="x86_64"
     fi
     # get lates ubuntu 24.04 LTS image for target CPU architecture
     IMAGE_DETAILS=$(aws ec2 describe-images \
-                            --owners 099720109477 \
+                            --owners 137112412989 \
                             --region "$REGION" \
-                            --filters "Name=name,Values=ubuntu/images/hvm-ssd-gp3/ubuntu-noble-24.04-$ARCHITECTURE-server-*" \
+                            --filters "Name=name,Values=al2023-ami-minimal-2023.*.2024*-$ARCHITECTURE" \
                             --query "Images | sort_by(@, &CreationDate) | [-1].[ImageId,RootDeviceName]" \
                         )
     UBUNTU_IMAGE_ID=$(echo "$IMAGE_DETAILS" | jq -r '.[0]')
@@ -40,7 +40,7 @@ function generate_jvm_configs() {
     JVM_MAX_MEM=$(jq -r '.JvmMaxMemory' $CONFIGURATIONS)
     JVM_START_MEM=$(echo "$JVM_MAX_MEM * 0.7" | bc | awk '{print int($1)}')
     JVM_YOUNG_GEN_MEM=$(echo "$JVM_MAX_MEM * 0.1" | bc | awk '{print int($1)}')
-    echo "The target instance $INSTANCE_TYPE will be setup to use ${JVM_MAX_MEM}MB"
+    echo "The target instance $INSTANCE_TYPE will be setup to use ${JVM_MAX_MEM}MB at executing SystemDS programs"
 }
 
 # create EC2 instance profile with corresponding IAM role for S3 access
@@ -69,8 +69,14 @@ EOL
         # 1. create the IAM role
         aws iam create-role --role-name "$IAM_ROLE_NAME" --assume-role-policy-document file://trust-policy.json  >/dev/null
 
-        # 2. attach a policy to the role
+        # 2. attach the relevant policies to the role
         aws iam attach-role-policy --role-name "$IAM_ROLE_NAME" --policy-arn arn:aws:iam::aws:policy/AmazonS3FullAccess
+        if [ -n $CLOUDWATCH_CONFIGS ]; then
+            aws iam attach-role-policy --role-name "$IAM_ROLE_NAME" \
+                --policy-arn arn:aws:iam::aws:policy/CloudWatchAgentServerPolicy
+            aws iam attach-role-policy --role-name "$IAM_ROLE_NAME" \
+                --policy-arn arn:aws:iam::aws:policy/CloudWatchAgentServerPolicy
+        fi
 
         echo "Role $IAM_ROLE_NAME has been created and AmazonS3FullAccess policy attached."
 
@@ -91,4 +97,21 @@ EOL
 
         echo "Instance profile $INSTANCE_PROFILE_NAME created"
     fi
+}
+
+function check_installation_status() {
+    ssh -o StrictHostKeyChecking=no -i "$KEYPAIR_NAME".pem "ec2-user@$PUBLIC_DNS_NAME" \
+    'while [ ! -f /tmp/systemds_installation_completed ]; do sleep 5; done;'
+}
+
+function start_cloudwatch_agent() {
+    # launch the ssm agent first
+    ssh -i "$KEYPAIR_NAME".pem "ec2-user@$PUBLIC_DNS_NAME" sudo systemctl start amazon-ssm-agent
+    sleep 1
+    # configure and launch start_cloudwatch agent with pre-defined SSM command
+    aws ssm send-command --document-name "AmazonCloudWatch-ManageAgent" \
+        --targets "Key=InstanceIds,Values=$INSTANCE_ID" \
+        --parameters "action=configure,mode=ec2,optionalConfigurationSource=ssm,optionalConfigurationLocation=$CLOUDWATCH_CONFIGS,optionalRestart=yes" \
+        --region $REGION  >/dev/null
+    sleep 5 # sleep 5 seconds should always be enough for execution of the underlying command
 }

@@ -1340,7 +1340,7 @@ public class RewriterUtils {
 
 				if (r != null)
 					System.out.println("Applying rule: " + r.getName());
-				System.out.println(t.toParsableString(ctx, false));
+				System.out.println(t.toString(ctx));
 				return true;
 			}, debug);
 
@@ -1349,7 +1349,7 @@ public class RewriterUtils {
 				System.out.println("PRE1: " + stmt.toParsableString(ctx, false));
 
 			//RewriterUtils.topologicalSort(stmt, ctx, (el, parent) -> el.isArgumentList() && parent != null && Set.of("+", "-", "*", "_idxExpr").contains(parent.trueInstruction()));
-			stmt = stmt.getAssertions(ctx).buildEquivalences(stmt);
+			//stmt = stmt.getAssertions(ctx).buildEquivalences(stmt);
 			System.out.println(stmt.getAssertions(ctx));
 			TopologicalSort.sort(stmt, ctx);
 
@@ -1360,7 +1360,7 @@ public class RewriterUtils {
 		};
 	}
 
-	public static Function<RewriterStatement, RewriterStatement> buildFusedOperatorCreator(final RuleContext ctx, boolean debug) {
+	/*public static Function<RewriterStatement, RewriterStatement> buildFusedOperatorCreator(final RuleContext ctx, boolean debug) {
 		ArrayList<RewriterRule> algebraicCanonicalizationRules = new ArrayList<>();
 		RewriterRuleCollection.canonicalizeBooleanStatements(algebraicCanonicalizationRules, ctx);
 		RewriterRuleCollection.canonicalizeAlgebraicStatements(algebraicCanonicalizationRules, ctx);
@@ -1400,7 +1400,7 @@ public class RewriterUtils {
 
 				if (r != null)
 					System.out.println("Applying rule: " + r.getName());
-				System.out.println(t.toParsableString(ctx, false));
+				System.out.println(t.toParsableString(ctx));
 				return true;
 			}, debug);
 
@@ -1417,7 +1417,7 @@ public class RewriterUtils {
 
 			return stmt;
 		};
-	}
+	}*/
 
 	public static void doCSE(RewriterStatement stmt, final RuleContext ctx) {
 

@@ -58,7 +58,7 @@ public class RewriterHeuristic implements RewriterHeuristicTransformation {
 			foundRewrite.setValue(true);
 
 		while (rule != null) {
-			currentStmt = rule.rule.apply(rule.matches.get(0), currentStmt, rule.forward, true);
+			currentStmt = rule.rule.apply(rule.matches.get(0), currentStmt, rule.forward, false);
 
 			if (handler != null && !handler.apply(currentStmt, rule.rule))
 				break;

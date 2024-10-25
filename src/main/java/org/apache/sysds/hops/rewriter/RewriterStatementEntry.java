@@ -15,19 +15,22 @@ public class RewriterStatementEntry {
 
 	@Override
 	public int hashCode() {
-		return instr.hashCode();
+		return instr.structuralHashCode();
 	}
 
 	@Override
 	public boolean equals(Object o) {
-		if (o.hashCode() != instr.hashCode())
-			return false;
-
 		if (o instanceof RewriterStatement) {
 			if (instr == o)
 				return true;
+			if (instr.structuralHashCode() != ((RewriterStatement)o).structuralHashCode())
+				return false;
 			return instr.match(new RewriterStatement.MatcherContext(ctx, (RewriterStatement) o, null, -1, (RewriterStatement) o, false, false, false, false, false, false, true, new HashMap<>()));
 		}
+
+		if (o.hashCode() != hashCode())
+			return false;
+
 		if (o instanceof RewriterStatementEntry) {
 			if (instr == ((RewriterStatementEntry) o).instr)
 				return true;

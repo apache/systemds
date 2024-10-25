@@ -91,7 +91,7 @@ public class RewriterDataType extends RewriterStatement {
 	}
 
 	@Override
-	public int hashCode() {
+	public int structuralHashCode() {
 		return hashCode;
 	}
 
@@ -188,6 +188,7 @@ public class RewriterDataType extends RewriterStatement {
 		if (meta != null)
 			mCopy.meta = new HashMap<>(meta);
 		copiedObjects.put(this, mCopy);
+		mCopy.nestedCopyOrInjectMetaStatements(copiedObjects, injector);
 
 		return mCopy;
 	}
@@ -252,7 +253,7 @@ public class RewriterDataType extends RewriterStatement {
 	@Override
 	public String toString(final RuleContext ctx) {
 		if (!isLiteral())
-			return getId() + "::" + getResultingDataType(ctx);
+			return getId() + "::" + getResultingDataType(ctx) + "[" + System.identityHashCode(this) + "]";
 
 		if (getLiteral() instanceof Boolean)
 			return getLiteral().toString().toUpperCase();

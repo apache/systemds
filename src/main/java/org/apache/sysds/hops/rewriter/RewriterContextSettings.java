@@ -294,8 +294,8 @@ public class RewriterContextSettings {
 		builder.append("_idxExpr(INT...,FLOAT*)::FLOAT*\n");
 		//builder.append("_idxExpr(INT,FLOAT...)::FLOAT*\n");
 		builder.append("_idx(INT,INT)::INT\n");
-		builder.append("_nrow()::INT\n");
-		builder.append("_ncol()::INT\n");
+		//builder.append("_nrow()::INT\n");
+		//builder.append("_ncol()::INT\n");
 
 		ALL_TYPES.forEach(t -> builder.append("_map(FLOAT...," + t + ")::" + t + "\n"));
 		ALL_TYPES.forEach(t -> builder.append("_reduce(FLOAT...," + t + ")::" + t + "\n"));

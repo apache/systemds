@@ -68,7 +68,7 @@ public abstract class RewriterStatement implements Comparable<RewriterStatement>
 		private final int rootIndex;
 		private final Map<RewriterStatement, RewriterStatement> assocs;
 		private final List<RewriterRule.ExplicitLink> links;
-		public Object shared_data = null;
+		public RewriterStatement newExprRoot;
 
 		public MatchingSubexpression(RewriterStatement expressionRoot, RewriterStatement matchRoot, RewriterStatement matchParent, int rootIndex, Map<RewriterStatement, RewriterStatement> assocs, List<RewriterRule.ExplicitLink> links) {
 			this.expressionRoot = expressionRoot;
@@ -105,6 +105,14 @@ public abstract class RewriterStatement implements Comparable<RewriterStatement>
 
 		public List<RewriterRule.ExplicitLink> getLinks() {
 			return links;
+		}
+
+		public RewriterStatement getNewExprRoot() {
+			return newExprRoot;
+		}
+
+		public void setNewExprRoot(RewriterStatement exprRoot) {
+			newExprRoot = exprRoot;
 		}
 	}
 
@@ -344,6 +352,7 @@ public abstract class RewriterStatement implements Comparable<RewriterStatement>
 	public abstract boolean isInstruction();
 	public abstract String trueInstruction();
 	public abstract String trueTypedInstruction(final RuleContext ctx);
+	public abstract int structuralHashCode();
 	public void prepareDefinitions(final RuleContext ctx, final List<String> strDefs, final Set<String> varDefs) {
 		if (getMeta(META_VARNAME) != null)
 			return;
@@ -605,7 +614,8 @@ public abstract class RewriterStatement implements Comparable<RewriterStatement>
 
 	@Override
 	public String toString() {
-		return toString(RuleContext.currentContext);
+		String str = toString(RuleContext.currentContext);
+		return str;
 	}
 
 	public List<String> toExecutableString(final RuleContext ctx) {
@@ -615,5 +625,17 @@ public abstract class RewriterStatement implements Comparable<RewriterStatement>
 		eraseDefinitions();
 
 		return defList;
+	}
+
+	protected void nestedCopyOrInjectMetaStatements(Map<RewriterStatement, RewriterStatement> copiedObjects, TriFunction<RewriterStatement, RewriterStatement, Integer, RewriterStatement> injector) {
+		if (getNCol() != null) {
+			//RewriterStatement oldNCol = getNCol();
+			//RewriterStatement newNCol = oldNCol.nestedCopyOrInject(copiedObjects, injector, this, -1);
+			unsafePutMeta("ncol", getNCol().nestedCopyOrInject(copiedObjects, injector, this, -1));
+			//System.out.println("Copied meta: " + oldNCol + " => " + getNCol().toString() + " (from " + this + ")");
+		}
+
+		if (getNRow() != null)
+			unsafePutMeta("nrow", getNRow().nestedCopyOrInject(copiedObjects, injector, this, -1));
 	}
 }

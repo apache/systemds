@@ -94,6 +94,8 @@ public class RewriterRule extends AbstractRewriterRule {
 	}
 
 	public RewriterStatement applyForward(RewriterStatement.MatchingSubexpression match, RewriterStatement rootNode, boolean inplace, MutableObject<Tuple3<RewriterStatement, RewriterStatement, Integer>> modificationHandle) {
+		if (inplace)
+			throw new NotImplementedException("Inplace operations are currently not working");
 		return inplace ? applyInplace(match, rootNode, toRoot, applyStmt1ToStmt2 == null ? Collections.emptyList() : applyStmt1ToStmt2) : apply(match, rootNode, toRoot, modificationHandle, applyStmt1ToStmt2 == null ? Collections.emptyList() : applyStmt1ToStmt2);
 	}
 
@@ -102,6 +104,8 @@ public class RewriterRule extends AbstractRewriterRule {
 	}
 
 	public RewriterStatement applyBackward(RewriterStatement.MatchingSubexpression match, RewriterStatement rootNode, boolean inplace, MutableObject<Tuple3<RewriterStatement, RewriterStatement, Integer>> modificationHandle) {
+		if (inplace)
+			throw new NotImplementedException("Inplace operations are currently not working");
 		return inplace ? applyInplace(match, rootNode, fromRoot, applyStmt2ToStmt1 == null ? Collections.emptyList() : applyStmt2ToStmt1) : apply(match, rootNode, fromRoot, modificationHandle, applyStmt2ToStmt1 == null ? Collections.emptyList() : applyStmt2ToStmt1);
 	}
 
@@ -164,22 +168,42 @@ public class RewriterRule extends AbstractRewriterRule {
 			if (tmp != null)
 				cpy = tmp;
 
+			match.setNewExprRoot(cpy);
+
+			RewriterAssertions assertions = (RewriterAssertions) match.getExpressionRoot().getMeta("_assertions");
+
+			if (assertions != null) {
+				assertions = RewriterAssertions.copy(assertions, createdObjects, true);
+				cpy.unsafePutMeta("_assertions", assertions);
+			}
+
 			match.getLinks().forEach(lnk -> lnk.newStmt.replaceAll(createdObjects::get));
 			match.getLinks().forEach(lnk -> lnk.transferFunction.accept(lnk));
+			//RewriterAssertions assertions = RewriterAssertions.ofExpression(cpy, ctx);
+			//cpy.unsafePutMeta("_assertions", assertions);
 			applyFunction.forEach(t -> t._2.accept(createdObjects.get(t._1), match));
 
 			if (postProcessor != null)
 				postProcessor.accept(cpy);
 
-			if (ctx.metaPropagator != null)
-				cpy = ctx.metaPropagator.apply(cpy);
+			//cpy = assertions.buildEquivalences(cpy);
+
+			if (ctx.metaPropagator != null) {
+				RewriterStatement mNew = ctx.metaPropagator.apply(cpy);
+
+				if (mNew != cpy) {
+					mNew.unsafePutMeta("_assertions", assertions);
+					cpy.unsafeRemoveMeta("_assertions");
+					cpy = mNew;
+				}
+			}
 
 			cpy.prepareForHashing();
 			cpy.recomputeHashCodes(ctx);
 
 			modificationHandle.setValue(new Tuple3<>(cpy, null, -1));
 
-			cpy.unsafePutMeta("_assertions", match.getExpressionRoot().getMeta("_assertions"));
+			//cpy.unsafePutMeta("_assertions", match.getExpressionRoot().getMeta("_assertions"));
 
 			return cpy;
 		}
@@ -213,24 +237,43 @@ public class RewriterRule extends AbstractRewriterRule {
 		if (tmp != null)
 			cpy2 = tmp;
 
+		match.setNewExprRoot(cpy2);
+
+		RewriterAssertions assertions = (RewriterAssertions) match.getExpressionRoot().getMeta("_assertions");
+
+		if (assertions != null) {
+			assertions = RewriterAssertions.copy(assertions, createdObjects, true);
+			cpy2.unsafePutMeta("_assertions", assertions);
+		}
+
 		match.getLinks().forEach(lnk -> lnk.newStmt.replaceAll(createdObjects::get));
 		match.getLinks().forEach(lnk -> lnk.transferFunction.accept(lnk));
+		//RewriterAssertions assertions = RewriterAssertions.ofExpression(cpy2, ctx);
+		//cpy2.unsafePutMeta("_assertions", assertions);
 		applyFunction.forEach(t -> t._2.accept(createdObjects.get(t._1), match));
 
 		if (postProcessor != null)
 			postProcessor.accept(cpy2);
 
-		if (ctx.metaPropagator != null)
-			cpy2 = ctx.metaPropagator.apply(cpy2);
+		//cpy2 = assertions.buildEquivalences(cpy2);
+
+		if (ctx.metaPropagator != null) {
+			RewriterStatement mNew = ctx.metaPropagator.apply(cpy2);
+
+			if (mNew != cpy2) {
+				mNew.unsafePutMeta("_assertions", assertions);
+				cpy2.unsafeRemoveMeta("_assertions");
+				cpy2 = mNew;
+			}
+		}
 
 		cpy2.prepareForHashing();
 		cpy2.recomputeHashCodes(ctx);
 
-		cpy2.unsafePutMeta("_assertions", match.getExpressionRoot().getMeta("_assertions"));
-
 		return cpy2;
 	}
 
+	// TODO: ApplyInplace is currently not working
 	private RewriterStatement applyInplace(RewriterStatement.MatchingSubexpression match, RewriterStatement rootInstruction, RewriterStatement dest, List<Tuple2<RewriterStatement, BiConsumer<RewriterStatement, RewriterStatement.MatchingSubexpression>>> applyFunction) {
 		if (match.getMatchParent() == null || match.getMatchParent() == match.getMatchRoot()) {
 			final Map<RewriterStatement, RewriterStatement> createdObjects = new HashMap<>();
@@ -241,10 +284,14 @@ public class RewriterRule extends AbstractRewriterRule {
 
 			match.getLinks().forEach(lnk -> lnk.newStmt.replaceAll(createdObjects::get));
 			match.getLinks().forEach(lnk -> lnk.transferFunction.accept(lnk));
+			//RewriterAssertions assertions = RewriterAssertions.ofExpression(cpy, ctx);
+			//cpy.unsafePutMeta("_assertions", assertions);
 			applyFunction.forEach(t -> t._2.accept(createdObjects.get(t._1), match));
 
 			if (postProcessor != null)
 				postProcessor.accept(cpy);
+
+			//cpy = assertions.buildEquivalences(cpy);
 
 			if (ctx.metaPropagator != null)
 				cpy = ctx.metaPropagator.apply(cpy);
@@ -252,23 +299,27 @@ public class RewriterRule extends AbstractRewriterRule {
 			cpy.prepareForHashing();
 			cpy.recomputeHashCodes(ctx);
 
-			if (match.getExpressionRoot() == match.getMatchRoot())
-				cpy.unsafePutMeta("_assertions", rootInstruction.getMeta("_assertions"));
+			//if (match.getExpressionRoot() == match.getMatchRoot())
+			//	cpy.unsafePutMeta("_assertions", rootInstruction.getMeta("_assertions"));
 			return cpy;
 		}
 
 		final Map<RewriterStatement, RewriterStatement> createdObjects = new HashMap<>();
 		match.getMatchParent().getOperands().set(match.getRootIndex(), dest.nestedCopyOrInject(createdObjects, obj -> match.getAssocs().get(obj)));
-		RewriterStatement out = rootInstruction.simplify(ctx);
+		/*RewriterStatement out = rootInstruction.simplify(ctx);
 		if (out != null)
-			out = rootInstruction;
+			out = rootInstruction;*/
 
 		match.getLinks().forEach(lnk -> lnk.newStmt.replaceAll(createdObjects::get));
 		match.getLinks().forEach(lnk -> lnk.transferFunction.accept(lnk));
+		//RewriterAssertions assertions = RewriterAssertions.ofExpression(rootInstruction, ctx);
+		//rootInstruction.unsafePutMeta("_assertions", assertions);
 		applyFunction.forEach(t -> t._2.accept(createdObjects.get(t._1), match));
 
 		if (postProcessor != null)
 			postProcessor.accept(rootInstruction);
+
+		//rootInstruction = assertions.buildEquivalences(rootInstruction);
 
 		if (ctx.metaPropagator != null)
 			rootInstruction = ctx.metaPropagator.apply(rootInstruction);
@@ -351,7 +402,7 @@ public class RewriterRule extends AbstractRewriterRule {
 
 		@Override
 		public String toString() {
-			return stmt.toString();
+			return stmt.toString() + "[" + hashCode() + "]";
 		}
 	}
 

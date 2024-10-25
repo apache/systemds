@@ -539,7 +539,7 @@ public class RewriterRuleCollection {
 
 					RewriterStatement aRef = stmt.getChild(0, 1, 0);
 					RewriterStatement bRef = stmt.getChild(1, 1, 0);
-					match.getExpressionRoot().getAssertions(ctx).addEqualityAssertion(aRef.getNCol(), bRef.getNRow());
+					match.getNewExprRoot().getAssertions(ctx).addEqualityAssertion(aRef.getNCol(), bRef.getNRow());
 				}, true) // Assumes it will never collide
 				.apply(hooks.get(5).getId(), stmt -> {
 					UUID id = UUID.randomUUID();
@@ -556,9 +556,9 @@ public class RewriterRuleCollection {
 				.parseGlobalVars("LITERAL_INT:1")
 				.withParsedStatement("$1:ElementWiseInstruction(A,B)", hooks)
 				.toParsedStatement("$7:_m($2:_idx(1, $5:nrow(A)), $3:_idx(1, $6:ncol(A)), $4:ElementWiseInstruction([](A, $2, $3), [](B, $2, $3)))", hooks)
-				.iff(match -> {
+				/*.iff(match -> {
 					return match.getMatchParent() == null || match.getMatchParent().getMeta("dontExpand") == null;
-				}, true)
+				}, true)*/
 				.link(hooks.get(1).getId(), hooks.get(4).getId(), RewriterStatement::transferMeta)
 				.apply(hooks.get(2).getId(), stmt -> stmt.unsafePutMeta("idxId", UUID.randomUUID()), true) // Assumes it will never collide
 				.apply(hooks.get(3).getId(), stmt -> stmt.unsafePutMeta("idxId", UUID.randomUUID()), true)
@@ -571,8 +571,8 @@ public class RewriterRuleCollection {
 					// Now we assert that nrow(A) = nrow(B) and ncol(A) = ncol(B)
 					RewriterStatement aRef = stmt.getChild(2, 0, 0);
 					RewriterStatement bRef = stmt.getChild(2, 1, 0);
-					match.getExpressionRoot().getAssertions(ctx).addEqualityAssertion(aRef.getNRow(), bRef.getNRow());
-					match.getExpressionRoot().getAssertions(ctx).addEqualityAssertion(aRef.getNCol(), bRef.getNCol());
+					match.getNewExprRoot().getAssertions(ctx).addEqualityAssertion(aRef.getNRow(), bRef.getNRow());
+					match.getNewExprRoot().getAssertions(ctx).addEqualityAssertion(aRef.getNCol(), bRef.getNCol());
 				}, true) // Assumes it will never collide
 				//.apply(hooks.get(5).getId(), stmt -> stmt.unsafePutMeta("dontExpand", true), true)
 				//.apply(hooks.get(6).getId(), stmt -> stmt.unsafePutMeta("dontExpand", true), true)
@@ -611,7 +611,11 @@ public class RewriterRuleCollection {
 
 					// Assert that the matrix is squared
 					RewriterStatement aRef = stmt.getChild(0, 1, 0);
-					match.getExpressionRoot().getAssertions(ctx).addEqualityAssertion(aRef.getNRow(), aRef.getNCol());
+					System.out.println("NewRoot: " + match.getNewExprRoot());
+					System.out.println("aRef: " + aRef);
+					System.out.println("nRow: " + aRef.getNRow());
+					System.out.println("nCol: " + aRef.getNCol());
+					match.getNewExprRoot().getAssertions(ctx).addEqualityAssertion(aRef.getNRow(), aRef.getNCol());
 				}, true)
 				.build()
 		);
@@ -790,7 +794,7 @@ public class RewriterRuleCollection {
 					stmt.getOperands().get(0).unsafePutMeta("ownerId", id);
 
 					RewriterStatement aRef = stmt.getChild(0, 1, 0);
-					match.getExpressionRoot().getAssertions(ctx).addEqualityAssertion(aRef.getNRow(), aRef.getNCol());
+					match.getNewExprRoot().getAssertions(ctx).addEqualityAssertion(aRef.getNRow(), aRef.getNCol());
 				}, true)
 				.build()
 		);
@@ -804,11 +808,13 @@ public class RewriterRuleCollection {
 				.withParsedStatement("A", hooks)
 				.toParsedStatement("$3:_m($1:_idx(1, nrow(A)), $2:_idx(1, ncol(A)), [](A, $1, $2))", hooks)
 				.iff(match -> {
-					RewriterStatement root = match.getMatchRoot();
+					// TODO: Does not work like this bc cyclic references
+					/*RewriterStatement root = match.getMatchRoot();
 					RewriterStatement parent = match.getMatchParent();
 					// TODO: This check has to be extended to any meta expression
 					return !(root.isInstruction() && root.trueInstruction().equals("_m"))
-							&& (parent == null || (!parent.trueInstruction().equals("[]") && !parent.trueInstruction().equals("ncol") && !parent.trueInstruction().equals("nrow")));
+							&& (parent == null || (!parent.trueInstruction().equals("[]") && !parent.trueInstruction().equals("ncol") && !parent.trueInstruction().equals("nrow")));*/
+					return match.getMatchRoot().getMeta("dontExpand") == null && !(match.getMatchRoot().isInstruction() && match.getMatchRoot().trueInstruction().equals("_m"));
 				}, true)
 				.apply(hooks.get(1).getId(), stmt -> stmt.unsafePutMeta("idxId", UUID.randomUUID()), true) // Assumes it will never collide
 				.apply(hooks.get(2).getId(), stmt -> stmt.unsafePutMeta("idxId", UUID.randomUUID()), true)
@@ -817,6 +823,16 @@ public class RewriterRuleCollection {
 					stmt.unsafePutMeta("ownerId", id);
 					stmt.getOperands().get(0).unsafePutMeta("ownerId", id);
 					stmt.getOperands().get(1).unsafePutMeta("ownerId", id);
+					RewriterStatement A = stmt.getChild(0, 1, 0);
+					A.unsafePutMeta("dontExpand", true);
+					// TODO:
+					//System.out.println("A: " + A);
+					//System.out.println("nrow: " + A.getNRow());
+					if (A.getNRow().isInstruction() && A.getNRow().getChild(0) == stmt)
+						A.getNRow().getOperands().set(0, A);
+					if (A.getNCol().isInstruction() && A.getNCol().getChild(0) == stmt)
+						A.getNCol().getOperands().set(0, A);
+					//System.out.println("newNRow: " + A.getNRow());
 				}, true)
 				.build()
 		);
@@ -1081,8 +1097,8 @@ public class RewriterRuleCollection {
 						.link(hooks.get(2).getId(), hooks.get(3).getId(), RewriterStatement::transferMeta)
 						.apply(hooks.get(3).getId(), (stmt, match) -> {
 							// Then we an infer that the two matrices have the same dimensions
-							match.getExpressionRoot().getAssertions(ctx).addEqualityAssertion(stmt.getNCol(), stmt.getChild(2, 1, 0).getNCol());
-							match.getExpressionRoot().getAssertions(ctx).addEqualityAssertion(stmt.getNRow(), stmt.getChild(2, 1, 0).getNRow());
+							match.getNewExprRoot().getAssertions(ctx).addEqualityAssertion(stmt.getNCol(), stmt.getChild(2, 1, 0).getNCol());
+							match.getNewExprRoot().getAssertions(ctx).addEqualityAssertion(stmt.getNRow(), stmt.getChild(2, 1, 0).getNRow());
 						}, true)
 						.build()
 				);

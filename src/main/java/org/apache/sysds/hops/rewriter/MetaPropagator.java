@@ -19,13 +19,19 @@ public class MetaPropagator implements Function<RewriterStatement, RewriterState
 
 	// TODO: Maybe automatically recompute hash codes?
 	public RewriterStatement apply(RewriterStatement root) {
+		//System.out.println("Propagating...");
+		//System.out.println("--> " + root);
 		RewriterAssertions assertions = root.getAssertions(ctx);
 		MutableObject<RewriterStatement> out = new MutableObject<>(root);
 		HashMap<Object, RewriterStatement> literalMap = new HashMap<>();
-		root.forEachPostOrder((el, parent, pIdx) -> {
+		root.forEachPostOrderWithDuplicates((el, parent, pIdx) -> {
+			//System.out.println("mAssertions: " + assertions);
 			RewriterStatement toSet = propagateDims(el, parent, pIdx, assertions);
 
-			if (toSet != null) {
+			if (toSet != null && toSet != el) {
+				/*System.out.println("HERE: " + toSet);
+				System.out.println("Old: " + el);
+				System.out.println("Parent: " + parent.toParsableString(ctx));*/
 				el = toSet;
 				if (parent == null)
 					out.setValue(toSet);
@@ -56,6 +62,8 @@ public class MetaPropagator implements Function<RewriterStatement, RewriterState
 			validate(el);
 		});
 
+		//System.out.println("Propagation done!");
+
 		return out.getValue();
 	}
 
@@ -77,14 +85,21 @@ public class MetaPropagator implements Function<RewriterStatement, RewriterState
 				if (ret == null)
 					return null;
 
-				return ret;
+				//return ret;
 
-				/*RewriterStatement asserted = assertions != null ? assertions.getAssertionStatement(ret) : null;
+				RewriterStatement asserted = assertions != null ? assertions.getAssertionStatement(ret, parent) : null;
 
-				if (asserted == null || asserted == parent)
-					return ret;
+				/*System.out.println("New assertion!");
+				System.out.println("Old: " + ret);
+				System.out.println("NewInstr: " + asserted.trueInstruction());
+				System.out.println("New: " + asserted);
+				System.out.println("All assertions: " + assertions);*/
+				//System.out.println("Asserted: " + asserted  + " (" + (asserted != ret) + ")");
 
-				return asserted;*/
+				//if (asserted == null || asserted == parent.getChild(0))
+				//	return ret;
+
+				return asserted;
 			}
 			return null;
 		}

@@ -1,5 +1,9 @@
 package org.apache.sysds.test.component.codegen.rewrite;
 
+import org.apache.sysds.hops.rewriter.RewriterHeuristic;
+import org.apache.sysds.hops.rewriter.RewriterRule;
+import org.apache.sysds.hops.rewriter.RewriterRuleBuilder;
+import org.apache.sysds.hops.rewriter.RewriterRuleSet;
 import org.apache.sysds.hops.rewriter.RewriterStatement;
 import org.apache.sysds.hops.rewriter.RewriterUtils;
 import org.apache.sysds.hops.rewriter.RuleContext;
@@ -7,6 +11,8 @@ import org.apache.sysds.hops.rewriter.TopologicalSort;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.function.Function;
 
 public class RewriterStreamTests {
@@ -287,5 +293,25 @@ public class RewriterStreamTests {
 		stmt = canonicalConverter.apply(stmt);
 
 		System.out.println(stmt.toParsableString(ctx));
+	}
+
+	@Test
+	public void mTest() {
+		List<RewriterRule> rules = new ArrayList<>();
+		rules.add(new RewriterRuleBuilder(ctx, "?")
+				.setUnidirectional(true)
+				.parseGlobalVars("FLOAT:a")
+				.withParsedStatement("a")
+				.toParsedStatement("f(a, a)")
+						.iff(match -> {
+							return !match.getExpressionRoot().isInstruction() || !match.getExpressionRoot().trueInstruction().equals("f");
+						}, true)
+				.build()
+		);
+
+		RewriterHeuristic heur = new RewriterHeuristic(new RewriterRuleSet(ctx, rules));
+		RewriterStatement stmt = RewriterUtils.parse("A", ctx, "FLOAT:A");
+		stmt = heur.apply(stmt);
+		System.out.println(stmt);
 	}
 }

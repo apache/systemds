@@ -166,7 +166,6 @@ public class RewriterInstruction extends RewriterStatement {
 			return mCpy;
 		}
 
-
 		RewriterInstruction mCopy = new RewriterInstruction();
 		mCopy.instr = instr;
 		mCopy.result = (RewriterDataType)result.copyNode();
@@ -178,6 +177,7 @@ public class RewriterInstruction extends RewriterStatement {
 			mCopy.meta = new HashMap<>(meta);
 		else
 			mCopy.meta = null;
+		mCopy.nestedCopyOrInjectMetaStatements(copiedObjects, injector);
 		copiedObjects.put(this, mCopy);
 
 		for (int i = 0; i < operands.size(); i++)
@@ -428,11 +428,13 @@ public class RewriterInstruction extends RewriterStatement {
 			builder.append(operands.get(i).toString(ctx));
 		}
 		builder.append(")");
-		return builder.toString() + "::" + getResultingDataType(ctx);
+		//if (builder.toString().equals("ncol(B::MATRIX)"))
+			return builder.toString() + "[" + System.identityHashCode(this) + "]";
+		//return builder.toString() + "::" + getResultingDataType(ctx);
 	}
 
 	@Override
-	public int hashCode() {
+	public int structuralHashCode() {
 		return hashCode;
 	}
 

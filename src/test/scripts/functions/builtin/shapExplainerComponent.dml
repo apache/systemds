@@ -1,0 +1,57 @@
+#-------------------------------------------------------------
+#
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+#
+#-------------------------------------------------------------
+
+########################################################################################################
+# THIS TEST IS HIGHLY DEPENDANT ON THE SAMPING!
+# Changes in the dataset or number of samples etc. migh already be enough to change the expected result.
+########################################################################################################
+
+model_args = list(mult=1)
+x_instances = matrix("100 200 300    100 300 400    100 100 500", rows=3, cols=3)
+X_bg = matrix("11 12  13    21 22 23    31 32 33    41 42 43", rows=4, cols=3)
+n_permutations = 2
+n_samples = 3
+seed = 42
+
+#model for explainer test
+dummyModel = function(Matrix[Double] X, Double mult)
+  return(Matrix[Double] P){
+  P = rowSums(X)*mult
+}
+
+[result_phis, result_e] = shapExplainer("dummyModel", model_args, x_instances, X_bg, n_permutations, n_samples, 0, as.matrix(-1), seed, 1)
+result_e = cbind(as.matrix(result_e), as.matrix(0))
+#TODO for some reason storing just the scalar results in errors, so we create a small matrix by padding with a zero.
+# Might be due to comma vs dot separation of decimals in strings if systems uses german local or other.
+
+expected_result_phis = matrix("69 168 267 69 268 367 69 68 467", rows=3, cols=3)
+expected_result_e = matrix("96 0", rows=1, cols=2)
+
+path_phis=$1+"_phis"
+path_e=$1+"_e"
+path_expected_phis=$2+"_phis"
+path_expected_e=$2+"_e"
+
+write(result_phis, path_phis)
+write(result_e, path_e)
+write(expected_result_phis, path_expected_phis)
+write(expected_result_e, path_expected_e)
+

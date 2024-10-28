@@ -151,6 +151,13 @@ public class MetaPropagator implements Function<RewriterStatement, RewriterState
 					root.unsafePutMeta("nrow", firstMatrixStatement.get().getMeta("nrow"));
 					root.unsafePutMeta("ncol", firstMatrixStatement.get().getMeta("ncol"));
 					return null;
+				case "cast.MATRIX":
+					String mDT = root.getChild(0).getResultingDataType(ctx);
+					if (mDT.equals("BOOL") || mDT.equals("INT") || mDT.equals("FLOAT")) {
+						root.unsafePutMeta("ncol", new RewriterDataType().ofType("INT").as("1").asLiteral(1L));
+						root.unsafePutMeta("nrow", new RewriterDataType().ofType("INT").as("1").asLiteral(1L));
+						return null;
+					}
 			}
 
 			switch(root.trueTypedInstruction(ctx)) {
@@ -186,23 +193,43 @@ public class MetaPropagator implements Function<RewriterStatement, RewriterState
 					root.unsafePutMeta("ncol", new RewriterDataType().ofType("INT").as("1").asLiteral(1L));
 					return null;
 				case "[](MATRIX,INT,INT,INT,INT)":
-					Integer[] ints = new Integer[4];
+					Long[] ints = new Long[4];
 
-					for (int i = 0; i < 4; i++)
-						if (root.getOperands().get(1).isLiteral())
-							ints[i] = (Integer)root.getOperands().get(1).getLiteral();
+					for (int i = 1; i < 5; i++)
+						if (root.getChild(i).isLiteral())
+							if (root.getChild(i).getLiteral() instanceof Integer)
+								ints[i-1] = (Long)root.getChild(i).getLiteral();
 
 					if (ints[0] != null && ints[1] != null) {
-						root.unsafePutMeta("nrow", ints[1] - ints[0] + 1);
+						String literalString = Long.toString(ints[1] - ints[0] + 1);
+						root.unsafePutMeta("nrow", RewriterUtils.parse(literalString, ctx, "LITERAL_INT:" + literalString));
 					} else {
-						throw new NotImplementedException();
-						// TODO:
+						HashMap<String, RewriterStatement> subStmts = new HashMap<>();
+						subStmts.put("i1", root.getOperands().get(2));
+						subStmts.put("i0", root.getOperands().get(1));
+
+						if (ints[0] != null) {
+							root.unsafePutMeta("nrow", RewriterUtils.parse("+(i1, " + (1 - ints[0]) + ")", ctx, subStmts, "LITERAL_INT:" + (1 - ints[0])));
+						} else if (ints[1] != null) {
+							root.unsafePutMeta("nrow", RewriterUtils.parse("-(" + (ints[1] + 1) + ", i0)", ctx, subStmts, "LITERAL_INT:" + (ints[1] + 1)));
+						} else {
+							root.unsafePutMeta("nrow", RewriterUtils.parse("+(-(i1, i0), 1)", ctx, subStmts, "LITERAL_INT:1"));
+						}
 					}
 
 					if (ints[2] != null && ints[3] != null) {
 						root.unsafePutMeta("ncol", ints[3] - ints[2] + 1);
 					} else {
-						throw new NotImplementedException();
+						HashMap<String, RewriterStatement> subStmts = new HashMap<>();
+						subStmts.put("i3", root.getOperands().get(4));
+						subStmts.put("i2", root.getOperands().get(3));
+						if (ints[2] != null) {
+							root.unsafePutMeta("ncol", RewriterUtils.parse("+(i3, " + (1 - ints[2]) + ")", ctx, subStmts, "LITERAL_INT:" + (1 - ints[2])));
+						} else if (ints[3] != null) {
+							root.unsafePutMeta("ncol", RewriterUtils.parse("-(" + (ints[3] + 1) + ", i2)", ctx, subStmts, "LITERAL_INT:" + (ints[3] + 1)));
+						} else {
+							root.unsafePutMeta("ncol", RewriterUtils.parse("+(-(i3, i2), 1)", ctx, subStmts, "LITERAL_INT:1"));
+						}
 					}
 
 					return null;
@@ -214,11 +241,27 @@ public class MetaPropagator implements Function<RewriterStatement, RewriterState
 					root.unsafePutMeta("ncol", root.getOperands().get(0).getMeta("ncol"));
 					root.unsafePutMeta("nrow", new RewriterDataType().ofType("INT").as("1").asLiteral(1L));
 					return null;
+				case "cast.MATRIX(MATRIX)":
+					root.unsafePutMeta("nrow", root.getOperands().get(0).getMeta("nrow"));
+					root.unsafePutMeta("ncol", root.getOperands().get(0).getMeta("ncol"));
+					return null;
 			}
 
 			RewriterInstruction instr = (RewriterInstruction) root;
 
 			if (instr.getProperties(ctx).contains("ElementWiseInstruction")) {
+				if (root.getOperands().get(0).getResultingDataType(ctx).startsWith("MATRIX")) {
+					root.unsafePutMeta("nrow", root.getOperands().get(0).getMeta("nrow"));
+					root.unsafePutMeta("ncol", root.getOperands().get(0).getMeta("ncol"));
+				} else {
+					root.unsafePutMeta("nrow", root.getOperands().get(1).getMeta("nrow"));
+					root.unsafePutMeta("ncol", root.getOperands().get(1).getMeta("ncol"));
+				}
+
+				return null;
+			}
+
+			if (instr.getProperties(ctx).contains("ElementWiseUnary.FLOAT")) {
 				if (root.getOperands().get(0).getResultingDataType(ctx).startsWith("MATRIX")) {
 					root.unsafePutMeta("nrow", root.getOperands().get(0).getMeta("nrow"));
 					root.unsafePutMeta("ncol", root.getOperands().get(0).getMeta("ncol"));

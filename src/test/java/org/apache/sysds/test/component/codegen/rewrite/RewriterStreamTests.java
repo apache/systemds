@@ -332,8 +332,91 @@ public class RewriterStreamTests {
 		stmt = canonicalConverter.apply(stmt);
 		stmt2 = canonicalConverter.apply(stmt2);
 
+		System.out.println("==========");
+		System.out.println(stmt.toParsableString(ctx, true));
+		System.out.println("==========");
+		System.out.println(stmt2.toParsableString(ctx, true));
+
 		db.insertEntry(ctx, stmt);
 
 		assert !db.insertEntry(ctx, stmt2);
+	}
+
+	@Test
+	public void testForFailure() {
+		RewriterStatement stmt = RewriterUtils.parse("[](hIndex,i,i,1,1)", ctx, "MATRIX:hIndex", "INT:i", "LITERAL_INT:1");
+		stmt = canonicalConverter.apply(stmt);
+
+		System.out.println("==========");
+		System.out.println(stmt.toParsableString(ctx, true));
+	}
+
+	@Test
+	public void testTypeConversions() {
+		RewriterStatement stmt1 = RewriterUtils.parse("+(TRUE, 1)", ctx, "LITERAL_BOOL:TRUE", "LITERAL_INT:1");
+		RewriterStatement stmt2 = RewriterUtils.parse("+(1, 1)", ctx, "LITERAL_INT:1");
+
+		stmt1 = canonicalConverter.apply(stmt1);
+		stmt2 = canonicalConverter.apply(stmt2);
+
+		System.out.println("==========");
+		System.out.println(stmt1.toParsableString(ctx, true));
+		System.out.println("==========");
+		System.out.println(stmt2.toParsableString(ctx, true));
+
+		assert stmt1.match(RewriterStatement.MatcherContext.exactMatch(ctx, stmt2));
+	}
+
+	@Test
+	public void testCSE() {
+		RewriterStatement stmt1 = RewriterUtils.parse("+(*(a, b), *(b, a))", ctx, "FLOAT:a,b");
+		RewriterStatement stmt2 = RewriterUtils.parse("+($1:*(a, b), $1)", ctx, "FLOAT:a,b");
+
+		stmt1 = canonicalConverter.apply(stmt1);
+		stmt2 = canonicalConverter.apply(stmt2);
+
+		RewriterDatabase db = new RewriterDatabase();
+
+		System.out.println("==========");
+		System.out.println(stmt1.toParsableString(ctx, true));
+		System.out.println("==========");
+		System.out.println(stmt2.toParsableString(ctx, true));
+
+		db.insertEntry(ctx, stmt1);
+
+		assert !db.insertEntry(ctx, stmt2);
+	}
+
+	@Test
+	public void testExactMatch() {
+		RewriterStatement stmt1 = RewriterUtils.parse("+(*(a, b), *(b, a))", ctx, "FLOAT:a,b");
+		RewriterStatement stmt2 = RewriterUtils.parse("+($1:*(a, b), $1)", ctx, "FLOAT:a,b");
+
+		stmt1 = canonicalConverter.apply(stmt1);
+		stmt2 = canonicalConverter.apply(stmt2);
+
+		System.out.println("==========");
+		System.out.println(stmt1.toParsableString(ctx, true));
+		System.out.println("==========");
+		System.out.println(stmt2.toParsableString(ctx, true));
+
+		assert !stmt1.match(RewriterStatement.MatcherContext.exactMatch(ctx, stmt2));
+		assert !stmt2.match(RewriterStatement.MatcherContext.exactMatch(ctx, stmt1));
+	}
+
+	@Test
+	public void testMinEquivalence() {
+		RewriterStatement stmt1 = RewriterUtils.parse("min(min(A), min(B))", ctx, "MATRIX:A,B");
+		RewriterStatement stmt2 = RewriterUtils.parse("min(A, B)", ctx, "MATRIX:A,B");
+
+		stmt1 = canonicalConverter.apply(stmt1);
+		stmt2 = canonicalConverter.apply(stmt2);
+
+		System.out.println("==========");
+		System.out.println(stmt1.toParsableString(ctx, true));
+		System.out.println("==========");
+		System.out.println(stmt2.toParsableString(ctx, true));
+
+		assert stmt1.match(RewriterStatement.MatcherContext.exactMatch(ctx, stmt2));
 	}
 }

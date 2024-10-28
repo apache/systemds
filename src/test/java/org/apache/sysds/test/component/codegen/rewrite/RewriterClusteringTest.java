@@ -72,6 +72,8 @@ public class RewriterClusteringTest {
 					if (!exactExprDB.insertEntry(ctx, subExpr))
 						continue;
 
+					//System.out.println("Evaluating expression: \n" + subExpr.toParsableString(ctx, true));
+
 					evaluationCtr++;
 
 					//System.out.println("Eval: " + subExpr.toParsableString(ctx, true));

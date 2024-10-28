@@ -58,7 +58,9 @@ public class RewriterHeuristic implements RewriterHeuristicTransformation {
 			foundRewrite.setValue(true);
 
 		while (rule != null) {
-			//System.out.println("Pre-apply: " + rule.rule.getName());
+			/*System.out.println("Pre-apply: " + rule.rule.getName());
+			System.out.println("Expr: " + rule.matches.get(0).getExpressionRoot().toParsableString(ruleSet.getContext()));
+			System.out.println("At: " + rule.matches.get(0).getMatchRoot().toParsableString(ruleSet.getContext()));*/
 			currentStmt = rule.rule.apply(rule.matches.get(0), currentStmt, rule.forward, false);
 
 			if (handler != null && !handler.apply(currentStmt, rule.rule))

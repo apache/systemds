@@ -227,6 +227,10 @@ public class RewriterContextSettings {
 		builder.append("as.float(BOOL)::FLOAT\n");
 		builder.append("as.int(BOOL)::INT\n");
 
+		RewriterUtils.buildBinaryPermutations(ALL_TYPES, (tFrom, tTo) -> {
+			builder.append("cast." + tTo + "(" + tFrom + ")::" + tTo + "\n");
+		});
+
 		builder.append("max(MATRIX)::FLOAT\n");
 		builder.append("min(MATRIX)::FLOAT\n");
 
@@ -258,6 +262,12 @@ public class RewriterContextSettings {
 		RewriterUtils.buildBinaryPermutations(ALL_TYPES, (t1, t2) -> {
 			builder.append("-(" + t1+ "," + t2 + ")::" + RewriterUtils.defaultTypeHierarchy(t1, t2) + "\n");
 			builder.append("/(" + t1+ "," + t2 + ")::" + RewriterUtils.defaultTypeHierarchy(t1, t2) + "\n");
+		});
+
+		// Unary ops
+		ALL_TYPES.forEach(t -> {
+			builder.append("ElementWiseUnary.FLOAT(" + t + ")::" + (t.equals("MATRIX") ? "MATRIX" : "FLOAT") + "\n");
+			builder.append("impl sqrt\n");
 		});
 
 

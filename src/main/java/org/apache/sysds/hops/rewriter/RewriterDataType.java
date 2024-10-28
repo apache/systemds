@@ -132,7 +132,6 @@ public class RewriterDataType extends RewriterStatement {
 
 		RewriterStatement assoc = mCtx.getDependencyMap().get(this);
 		if (assoc == null) {
-			// TODO: This is very inefficient
 			if (!mCtx.allowDuplicatePointers && mCtx.getDependencyMap().containsValue(stmt))
 				return false; // Then the statement variable is already associated with another variable
 			mCtx.getDependencyMap().put(this, stmt);

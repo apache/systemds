@@ -123,8 +123,8 @@ public class RewriterAssertions {
 		if (stmt1 == stmt2 || (stmt1.isLiteral() && stmt2.isLiteral() && stmt1.getLiteral().equals(stmt2.getLiteral())))
 			return false;
 
-		if (!(stmt1 instanceof RewriterInstruction) || !(stmt2 instanceof RewriterInstruction))
-			throw new UnsupportedOperationException("Asserting uninjectable objects is not yet supported: " + stmt1 + "; " + stmt2);
+		//if (!(stmt1 instanceof RewriterInstruction) || !(stmt2 instanceof RewriterInstruction))
+		//	throw new UnsupportedOperationException("Asserting uninjectable objects is not yet supported: " + stmt1 + "; " + stmt2);
 
 		//System.out.println("Asserting: " + stmt1 + " := " + stmt2);
 

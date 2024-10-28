@@ -114,9 +114,13 @@ public class RewriterInstruction extends RewriterStatement {
 			if (this.operands.size() != inst.operands.size())
 				return false;
 
-			RewriterStatement existingRef = mCtx.findInternalReference(new RewriterRule.IdentityRewriterStatement(this));
+			RewriterStatement existingRef = mCtx.findInternalReference(this);
+
 			if (existingRef != null)
 				return existingRef == stmt;
+
+			if (!mCtx.allowDuplicatePointers && mCtx.getInternalReferences().containsValue(stmt))
+				return false;
 
 			RewriterRule.LinkObject ruleLink = mCtx.ruleLinks.get(this);
 
@@ -127,12 +131,12 @@ public class RewriterInstruction extends RewriterStatement {
 
 			for (int i = 0; i < s; i++) {
 				mCtx.currentStatement = inst.operands.get(i);
-				if (!operands.get(i).match(mCtx)) {
+
+				if (!operands.get(i).match(mCtx))
 					return false;
-				}
 			}
 
-			mCtx.getInternalReferences().put(new RewriterRule.IdentityRewriterStatement(this), stmt);
+			mCtx.getInternalReferences().put(this, stmt);
 
 			return true;
 		}

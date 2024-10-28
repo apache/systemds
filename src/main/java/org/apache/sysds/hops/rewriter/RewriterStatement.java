@@ -133,9 +133,9 @@ public abstract class RewriterStatement implements Comparable<RewriterStatement>
 
 		public RewriterStatement currentStatement;
 
-		private HashMap<RewriterStatement, RewriterStatement> dependencyMap;
+		private Map<RewriterStatement, RewriterStatement> dependencyMap;
 		private List<RewriterRule.ExplicitLink> links;
-		private HashMap<RewriterRule.IdentityRewriterStatement, RewriterStatement> internalReferences;
+		private DualHashBidiMap<RewriterStatement, RewriterStatement> internalReferences;
 
 		private List<MatcherContext> subMatches;
 		private boolean debug;
@@ -180,7 +180,10 @@ public abstract class RewriterStatement implements Comparable<RewriterStatement>
 
 		public Map<RewriterStatement, RewriterStatement> getDependencyMap() {
 			if (dependencyMap == null)
-				dependencyMap = new HashMap<>();
+				if (allowDuplicatePointers)
+					dependencyMap = new HashMap<>();
+				else
+					dependencyMap = new DualHashBidiMap<RewriterStatement, RewriterStatement>();
 			return dependencyMap;
 		}
 
@@ -190,15 +193,21 @@ public abstract class RewriterStatement implements Comparable<RewriterStatement>
 			return links;
 		}
 
-		public RewriterStatement findInternalReference(RewriterRule.IdentityRewriterStatement stmt) {
+		public RewriterStatement findInternalReference(RewriterStatement stmt) {
 			if (internalReferences == null)
 				return null;
 			return internalReferences.get(stmt);
 		}
 
-		public Map<RewriterRule.IdentityRewriterStatement, RewriterStatement> getInternalReferences() {
+		public RewriterStatement findReverseInternalReference(RewriterStatement stmt) {
 			if (internalReferences == null)
-				internalReferences = new HashMap<>();
+				return null;
+			return internalReferences.getKey(stmt);
+		}
+
+		public Map<RewriterStatement, RewriterStatement> getInternalReferences() {
+			if (internalReferences == null)
+				internalReferences = new DualHashBidiMap<>();
 			return internalReferences;
 		}
 

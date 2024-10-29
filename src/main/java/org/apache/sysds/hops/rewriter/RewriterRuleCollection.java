@@ -1179,7 +1179,7 @@ public class RewriterRuleCollection {
 				.parseGlobalVars("INT...:indices")
 				.parseGlobalVars("FLOAT...:ops")
 				.withParsedStatement("sum($1:_idxExpr(indices, +(ops)))", hooks)
-				.toParsedStatement("+($3:argList(sum($2:_idxExpr(indices, +(ops)))))", hooks) // The inner +(ops) is temporary and will be removed
+				.toParsedStatement("$4:+($3:argList(sum($2:_idxExpr(indices, +(ops)))))", hooks) // The inner +(ops) is temporary and will be removed
 				.link(hooks.get(1).getId(), hooks.get(2).getId(), RewriterStatement::transferMeta)
 				.apply(hooks.get(3).getId(), newArgList -> {
 					RewriterStatement oldArgList = newArgList.getChild(0, 0, 1, 0);
@@ -1196,6 +1196,11 @@ public class RewriterRuleCollection {
 						RewriterUtils.copyIndexList(newIdxExpr);
 						newArgList.getOperands().add(newSum);
 					}
+
+					newArgList.refreshReturnType(ctx);
+				}, true)
+				.apply(hooks.get(4).getId(), stmt -> {
+					stmt.refreshReturnType(ctx);
 				}, true)
 				.build()
 		);

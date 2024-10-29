@@ -296,6 +296,7 @@ public abstract class RewriterStatement implements Comparable<RewriterStatement>
 	public abstract RewriterStatement nestedCopyOrInject(Map<RewriterStatement, RewriterStatement> copiedObjects, TriFunction<RewriterStatement, RewriterStatement, Integer, RewriterStatement> injector, RewriterStatement parent, int pIdx);
 	// Returns the new maxRefId
 	abstract int toParsableString(StringBuilder builder, Map<RewriterRule.IdentityRewriterStatement, Integer> refs, int maxRefId, Map<String, Set<String>> vars, final RuleContext ctx);
+	abstract void refreshReturnType(final RuleContext ctx);
 
 	public String toParsableString(final RuleContext ctx, boolean includeDefinitions) {
 		StringBuilder sb = new StringBuilder();

@@ -279,6 +279,7 @@ public class RewriterUtils {
 		stmt.forEachPreOrder(el -> {
 			tryFlattenNestedArgList(ctx, el, el, -1);
 			tryFlattenNestedOperatorPatterns(ctx, el);
+			el.refreshReturnType(ctx);
 			return true;
 		});
 

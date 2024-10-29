@@ -18,14 +18,13 @@ import java.util.stream.Collectors;
 public class RewriterInstruction extends RewriterStatement {
 
 	private String id;
+	private String returnType;
 	private String instr;
 	//private RewriterDataType result = new RewriterDataType();
 	private ArrayList<RewriterStatement> operands = new ArrayList<>();
 	private Function<List<RewriterStatement>, Long> costFunction = null;
 	private boolean consolidated = false;
 	private int hashCode;
-
-	//private DualHashBidiMap<RewriterStatement, RewriterStatement> links = null;
 
 	@Override
 	public String getId() {
@@ -34,10 +33,20 @@ public class RewriterInstruction extends RewriterStatement {
 
 	@Override
 	public String getResultingDataType(final RuleContext ctx) {
-		if (isArgumentList()) {
-			return getOperands().stream().map(op -> op.getResultingDataType(ctx)).reduce(RewriterUtils::defaultTypeHierarchy).get() + "...";
-		}
-		return ctx.instrTypes.get(trueTypedInstruction(ctx));//getResult(ctx).getResultingDataType(ctx);
+		if (returnType != null)
+			return returnType;
+
+		if (isArgumentList())
+			returnType = getOperands().stream().map(op -> op.getResultingDataType(ctx)).reduce(RewriterUtils::defaultTypeHierarchy).get() + "...";
+		else
+			returnType = ctx.instrTypes.get(trueTypedInstruction(ctx));//getResult(ctx).getResultingDataType(ctx);
+
+		return returnType;
+	}
+
+	@Override
+	public void refreshReturnType(final RuleContext ctx) {
+		returnType = null;
 	}
 
 	@Override
@@ -472,9 +481,10 @@ public class RewriterInstruction extends RewriterStatement {
 	}
 
 	public String trueInstruction() {
-		Object trueInstrObj = getMeta("trueInstr");
+		// Legacy code
+		/*Object trueInstrObj = getMeta("trueInstr");
 		if (trueInstrObj != null && trueInstrObj instanceof String)
-			return (String)trueInstrObj;
+			return (String)trueInstrObj;*/
 		return instr;
 	}
 

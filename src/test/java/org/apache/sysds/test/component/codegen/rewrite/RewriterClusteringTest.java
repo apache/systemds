@@ -1,5 +1,6 @@
 package org.apache.sysds.test.component.codegen.rewrite;
 
+import org.apache.commons.lang3.mutable.MutableInt;
 import org.apache.commons.lang3.mutable.MutableLong;
 import org.apache.sysds.hops.rewriter.RewriterDatabase;
 import org.apache.sysds.hops.rewriter.RewriterHeuristic;
@@ -61,9 +62,16 @@ public class RewriterClusteringTest {
 		RewriterDatabase canonicalExprDB = new RewriterDatabase();
 		List<RewriterStatement> foundEquivalences = new ArrayList<>();
 
+		int size = db.size();
+		MutableInt ctr = new MutableInt(0);
+
 		db.forEach(expr -> {
+			if (ctr.incrementAndGet() % 10 == 0)
+				System.out.println("Done: " + ctr.intValue() + " / " + size);
 			// First, build all possible subtrees
 			List<RewriterStatement> subExprs = RewriterUtils.generateSubtrees(expr, ctx);
+			if (subExprs.size() > 100)
+				System.out.println("Critical number of subtrees: " + subExprs.size());
 			//List<RewriterStatement> subExprs = List.of(expr);
 			long evaluationCtr = 0;
 

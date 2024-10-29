@@ -31,6 +31,9 @@ public class RewriterDataType extends RewriterStatement {
 	}
 
 	@Override
+	public void refreshReturnType(final RuleContext ctx) {}
+
+	@Override
 	public boolean isLiteral() {
 		return literal != null && !(literal instanceof List<?>);
 	}

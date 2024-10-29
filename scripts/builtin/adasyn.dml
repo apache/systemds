@@ -82,7 +82,8 @@ return (Matrix[Double] Z) {
     # generated for each minority example x_i
     # Then, pre-allocate the result matrix Z
     g = round(r * G)
-    Z = matrix(0, rows=sum(g), cols=ncol(minority)) # output matrix, slightly overallocated
+    gSum = sum(g)
+    Z = matrix(0, rows=gSum, cols=ncol(minority)) # output matrix, slightly overallocated
 
     # (Step 2e)
     # For each minority class data example x_i, generate g_i synthetic data examples by
@@ -90,20 +91,29 @@ return (Matrix[Double] Z) {
     # the k-nearest neighbors. Then, compute the synthetic sample s_i as
     # s_i = x_i + (x_j - x_i) * lambda, with lambda being a random number in [0, 1].
     minNNR = NNR * (NNR <= ms)  # set every index from majority class to zero
+    zeroCount = 0
     for(i in 1:nrow(minority)){
         row = minNNR[i, ]       # slice a row
         minRow = removeEmpty(target=row, margin="cols")     # remove all zero values from that row
-        hasMinorityNN = (as.scalar(minRow[1]) > 0) & (as.scalar(g[i])>0)
+        hasSynthetic = as.scalar(g[i])>0
+        hasMinorityNN = (as.scalar(minRow[1, 1]) > 0) & (hasSynthetic)
         if(hasMinorityNN){
             for(j in 1:as.scalar(g[i])){
                 randomIndex = as.scalar(sample(ncol(minRow), 1))
                 lambda = as.scalar(rand(rows=1, cols=1, min=0, max=1))
                 randomMinIndex = as.scalar(minRow[ , randomIndex])
                 randomMinNN = minority[randomMinIndex, ]
-                Z[i+j-1, ] = minority[i, ] + (randomMinNN - minority[i, ]) * lambda
+                insIdx = i+j-1-zeroCount
+                Z[insIdx, ] = minority[i, ] + (randomMinNN - minority[i, ]) * lambda
             }
+        } else {
+            zeroCount = zeroCount + 1
         }
     }
+
+    diff = nrow(minority) - gSum
+    numTrailZeros = zeroCount - diff
+    Z = Z[1:gSum-numTrailZeros, ]
 
 }
 

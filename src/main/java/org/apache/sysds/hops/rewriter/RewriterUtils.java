@@ -1273,24 +1273,13 @@ public class RewriterUtils {
 	// Tries to find the minimal sub-graph that represents the change
 	// E.g. t(A+B) <=> t(A-B) would return A-B
 	// We assume that stmt1 ≠ stmt2
-	public static Tuple2<RewriterStatement, RewriterStatement> findMinimalDifference(RewriterStatement stmt1, RewriterStatement stmt2, final RuleContext ctx) {
+	/*public static Tuple2<RewriterStatement, RewriterStatement> findMinimalDifference(RewriterStatement stmt1, RewriterStatement stmt2, final RuleContext ctx) {
 		RewriterStatement.MatcherContext mCtx = RewriterStatement.MatcherContext.exactMatch(ctx, stmt2);
-		if (stmt1.match(mCtx)) {
-			return null;
-		} else {
-			RewriterStatement mismatch1 = mCtx.getFirstMismatch()._1;
-			RewriterStatement mismatch2 = mCtx.getFirstMismatch()._2;
-
-			if (mismatch1 == stmt1)
-				return mCtx.getFirstMismatch();
-
-			
-		}
 	}
 
 	private static boolean exactMatchElement(RewriterStatement stmt1, RewriterStatement stmt2) {
 
-	}
+	}*/
 
 	public static void doCSE(RewriterStatement stmt, final RuleContext ctx) {
 

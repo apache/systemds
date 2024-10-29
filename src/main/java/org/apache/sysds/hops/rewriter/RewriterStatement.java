@@ -126,6 +126,7 @@ public abstract class RewriterStatement implements Comparable<RewriterStatement>
 		final boolean allowPropertyScan;
 		final boolean allowTypeHierarchy;
 		final boolean terminateOnFirstMatch;
+		final boolean findMinimalMismatchRoot;
 		final Map<RewriterStatement, RewriterRule.LinkObject> ruleLinks;
 		final RewriterStatement expressionRoot;
 		RewriterStatement matchRoot;
@@ -143,10 +144,10 @@ public abstract class RewriterStatement implements Comparable<RewriterStatement>
 		private boolean debug;
 
 		public MatcherContext(final RuleContext ctx, RewriterStatement matchRoot, RewriterStatement expressionRoot) {
-			this(ctx, matchRoot, expressionRoot, false, false, false, false, false, false, false, Collections.emptyMap());
+			this(ctx, matchRoot, expressionRoot, false, false, false, false, false, false, false, false, Collections.emptyMap());
 		}
 
-		public MatcherContext(final RuleContext ctx, RewriterStatement matchRoot, RewriterStatement expressionRoot, final boolean statementsCanBeVariables, final boolean literalsCanBeVariables, final boolean ignoreLiteralValues, final boolean allowDuplicatePointers, final boolean allowPropertyScan, final boolean allowTypeHierarchy, final boolean terminateOnFirstMatch, final Map<RewriterStatement, RewriterRule.LinkObject> ruleLinks) {
+		public MatcherContext(final RuleContext ctx, RewriterStatement matchRoot, RewriterStatement expressionRoot, final boolean statementsCanBeVariables, final boolean literalsCanBeVariables, final boolean ignoreLiteralValues, final boolean allowDuplicatePointers, final boolean allowPropertyScan, final boolean allowTypeHierarchy, final boolean terminateOnFirstMatch, final boolean findMinimalMismatchRoot, final Map<RewriterStatement, RewriterRule.LinkObject> ruleLinks) {
 			this.ctx = ctx;
 			this.matchRoot = matchRoot;
 			this.expressionRoot = expressionRoot;
@@ -159,10 +160,11 @@ public abstract class RewriterStatement implements Comparable<RewriterStatement>
 			this.allowTypeHierarchy = allowTypeHierarchy;
 			this.terminateOnFirstMatch = terminateOnFirstMatch;
 			this.ruleLinks = ruleLinks;
+			this.findMinimalMismatchRoot = findMinimalMismatchRoot;
 			this.debug = false;
 		}
 
-		public MatcherContext(final RuleContext ctx, RewriterStatement matchRoot, RewriterStatement matchParent, int rootIndex, RewriterStatement expressionRoot, final boolean statementsCanBeVariables, final boolean literalsCanBeVariables, final boolean ignoreLiteralValues, final boolean allowDuplicatePointers, final boolean allowPropertyScan, final boolean allowTypeHierarchy, final boolean terminateOnFirstMatch, final Map<RewriterStatement, RewriterRule.LinkObject> ruleLinks) {
+		public MatcherContext(final RuleContext ctx, RewriterStatement matchRoot, RewriterStatement matchParent, int rootIndex, RewriterStatement expressionRoot, final boolean statementsCanBeVariables, final boolean literalsCanBeVariables, final boolean ignoreLiteralValues, final boolean allowDuplicatePointers, final boolean allowPropertyScan, final boolean allowTypeHierarchy, final boolean terminateOnFirstMatch, final boolean findMinimalMismatchRoot, final Map<RewriterStatement, RewriterRule.LinkObject> ruleLinks) {
 			this.ctx = ctx;
 			this.matchRoot = matchRoot;
 			this.matchParent = matchParent;
@@ -177,6 +179,7 @@ public abstract class RewriterStatement implements Comparable<RewriterStatement>
 			this.allowTypeHierarchy = allowTypeHierarchy;
 			this.terminateOnFirstMatch = terminateOnFirstMatch;
 			this.ruleLinks = ruleLinks;
+			this.findMinimalMismatchRoot = findMinimalMismatchRoot;
 			this.debug = false;
 		}
 
@@ -285,7 +288,11 @@ public abstract class RewriterStatement implements Comparable<RewriterStatement>
 		}
 
 		public static MatcherContext exactMatchWithDifferentLiteralValues(final RuleContext ctx, RewriterStatement stmt) {
-			return new MatcherContext(ctx, stmt, stmt, false, false, true, false, false, false, false, Collections.emptyMap());
+			return new MatcherContext(ctx, stmt, stmt, false, false, true, false, false, false, false, false, Collections.emptyMap());
+		}
+
+		public static MatcherContext findMinimalDifference(final RuleContext ctx, RewriterStatement stmt) {
+			return new MatcherContext(ctx, stmt, stmt, false, false, true, false, false, false, false, true, Collections.emptyMap());
 		}
 	}
 

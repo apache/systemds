@@ -147,16 +147,33 @@ public class RewriterInstruction extends RewriterStatement {
 
 			int s = inst.operands.size();
 
-			for (int i = 0; i < s; i++) {
-				mCtx.currentStatement = inst.operands.get(i);
+			if (mCtx.findMinimalMismatchRoot) {
+				int mismatchCtr = 0;
 
-				if (!operands.get(i).match(mCtx))
-					return false;
+				for (int i = 0; i < s; i++) {
+					mCtx.currentStatement = inst.operands.get(i);
+
+					if (!operands.get(i).match(mCtx))
+						mismatchCtr++;
+				}
+
+				if (mismatchCtr == 0)
+					mCtx.getInternalReferences().put(this, stmt);
+				else if (mismatchCtr > 1)
+					mCtx.setFirstMismatch(this, stmt);
+
+				return mismatchCtr == 0;
+			} else {
+				for (int i = 0; i < s; i++) {
+					mCtx.currentStatement = inst.operands.get(i);
+
+					if (!operands.get(i).match(mCtx))
+						return false;
+				}
+
+				mCtx.getInternalReferences().put(this, stmt);
+				return true;
 			}
-
-			mCtx.getInternalReferences().put(this, stmt);
-
-			return true;
 		}
 
 		mCtx.setFirstMismatch(this, stmt);

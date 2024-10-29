@@ -596,6 +596,10 @@ public abstract class RewriterStatement implements Comparable<RewriterStatement>
 		return (RewriterStatement) getMeta("nrow");
 	}
 
+	public RewriterStatement getChild(int index) {
+		return getOperands().get(index);
+	}
+
 	public RewriterStatement getChild(int... indices) {
 		RewriterStatement current = this;
 
@@ -603,6 +607,21 @@ public abstract class RewriterStatement implements Comparable<RewriterStatement>
 			current = current.getOperands().get(indices[i]);
 
 		return current;
+	}
+
+	// This can only be called from the root expression to add a new assertion manually
+	public RewriterStatement givenThatEqual(RewriterStatement stmt1, RewriterStatement stmt2, final RuleContext ctx) {
+		getAssertions(ctx).addEqualityAssertion(stmt1, stmt2);
+		return this;
+	}
+
+	public RewriterStatement recomputeAssertions() {
+		RewriterAssertions assertions = (RewriterAssertions) getMeta("_assertions");
+
+		if (assertions != null)
+			return assertions.update(this);
+
+		return this;
 	}
 
 	public static void transferMeta(RewriterRule.ExplicitLink link) {

@@ -17,8 +17,9 @@ import java.util.stream.Collectors;
 
 public class RewriterInstruction extends RewriterStatement {
 
+	private String id;
 	private String instr;
-	private RewriterDataType result = new RewriterDataType();
+	//private RewriterDataType result = new RewriterDataType();
 	private ArrayList<RewriterStatement> operands = new ArrayList<>();
 	private Function<List<RewriterStatement>, Long> costFunction = null;
 	private boolean consolidated = false;
@@ -28,7 +29,7 @@ public class RewriterInstruction extends RewriterStatement {
 
 	@Override
 	public String getId() {
-		return result.getId();
+		return id;
 	}
 
 	@Override
@@ -36,7 +37,7 @@ public class RewriterInstruction extends RewriterStatement {
 		if (isArgumentList()) {
 			return getOperands().stream().map(op -> op.getResultingDataType(ctx)).reduce(RewriterUtils::defaultTypeHierarchy).get() + "...";
 		}
-		return getResult(ctx).getResultingDataType(ctx);
+		return ctx.instrTypes.get(trueTypedInstruction(ctx));//getResult(ctx).getResultingDataType(ctx);
 	}
 
 	@Override
@@ -63,12 +64,9 @@ public class RewriterInstruction extends RewriterStatement {
 		for (RewriterStatement operand : operands)
 			operand.consolidate(ctx);
 
-		getResult(ctx).consolidate(ctx);
+		//getResult(ctx).consolidate(ctx);
 
-		if (isArgumentList())
-			hashCode = Objects.hash(rid, refCtr, instr, getResultingDataType(ctx), operands);
-		else
-			hashCode = Objects.hash(rid, refCtr, instr, result, operands);
+		hashCode = Objects.hash(rid, refCtr, instr, getResultingDataType(ctx), operands);
 		consolidated = true;
 
 		return this;
@@ -76,14 +74,11 @@ public class RewriterInstruction extends RewriterStatement {
 	@Override
 	public int recomputeHashCodes(boolean recursively, final RuleContext ctx) {
 		if (recursively) {
-			result.recomputeHashCodes(true, ctx);
+			//result.recomputeHashCodes(true, ctx);
 			operands.forEach(op -> op.recomputeHashCodes(true, ctx));
 		}
 
-		if (isArgumentList())
-			hashCode = Objects.hash(rid, refCtr, instr, getResultingDataType(ctx), operands.stream().map(RewriterStatement::structuralHashCode).collect(Collectors.toList()));
-		else
-			hashCode = Objects.hash(rid, refCtr, instr, result.structuralHashCode(), operands.stream().map(RewriterStatement::structuralHashCode).collect(Collectors.toList()));
+		hashCode = Objects.hash(rid, refCtr, instr, getResultingDataType(ctx), operands.stream().map(RewriterStatement::structuralHashCode).collect(Collectors.toList()));
 		return hashCode;
 	}
 
@@ -148,7 +143,8 @@ public class RewriterInstruction extends RewriterStatement {
 	public RewriterStatement copyNode() {
 		RewriterInstruction mCopy = new RewriterInstruction();
 		mCopy.instr = instr;
-		mCopy.result = (RewriterDataType)result.copyNode();
+		//mCopy.result = (RewriterDataType)result.copyNode();
+		mCopy.id = id;
 		mCopy.costFunction = costFunction;
 		mCopy.consolidated = consolidated;
 		mCopy.operands = new ArrayList<>(operands);
@@ -173,7 +169,8 @@ public class RewriterInstruction extends RewriterStatement {
 
 		RewriterInstruction mCopy = new RewriterInstruction();
 		mCopy.instr = instr;
-		mCopy.result = (RewriterDataType)result.copyNode();
+		//mCopy.result = (RewriterDataType)result.copyNode();
+		mCopy.id = id;
 		mCopy.costFunction = costFunction;
 		mCopy.consolidated = consolidated;
 		mCopy.operands = new ArrayList<>(operands.size());
@@ -211,7 +208,8 @@ public class RewriterInstruction extends RewriterStatement {
 	public RewriterStatement clone() {
 		RewriterInstruction mClone = new RewriterInstruction();
 		mClone.instr = instr;
-		mClone.result = (RewriterDataType)result.clone();
+		//mClone.result = (RewriterDataType)result.clone();
+		mClone.id = id;
 		ArrayList<RewriterStatement> clonedOperands = new ArrayList<>(operands.size());
 
 		for (RewriterStatement stmt : operands)
@@ -224,13 +222,13 @@ public class RewriterInstruction extends RewriterStatement {
 		return mClone;
 	}
 
-	public void injectData(final RuleContext ctx, RewriterInstruction origData) {
+	/*public void injectData(final RuleContext ctx, RewriterInstruction origData) {
 		instr = origData.instr;
 		result = (RewriterDataType)origData.getResult(ctx).copyNode();
 		operands = new ArrayList<>(origData.operands);
 		costFunction = origData.costFunction;
 		meta = origData.meta;
-	}
+	}*/
 
 	/*public RewriterInstruction withLinks(DualHashBidiMap<RewriterStatement, RewriterStatement> links) {
 		this.links = links;
@@ -328,11 +326,11 @@ public class RewriterInstruction extends RewriterStatement {
 	public RewriterInstruction as(String id) {
 		if (consolidated)
 			throw new IllegalArgumentException("An instruction cannot be modified after consolidation");
-		this.result.as(id);
+		this.id = id;
 		return this;
 	}
 
-	public RewriterDataType getResult(final RuleContext ctx) {
+	/*public RewriterDataType getResult(final RuleContext ctx) {
 		if (this.result.getType() == null) {
 			String type = ctx.instrTypes.get(typedInstruction(ctx));
 
@@ -343,7 +341,7 @@ public class RewriterInstruction extends RewriterStatement {
 		}
 
 		return this.result;
-	}
+	}*/
 
 	public String typedInstruction(final RuleContext ctx) {
 		return typedInstruction(this.instr, ctx);

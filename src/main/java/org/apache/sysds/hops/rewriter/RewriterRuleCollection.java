@@ -1062,8 +1062,6 @@ public class RewriterRuleCollection {
 			);
 		});
 
-
-
 		rules.add(new RewriterRuleBuilder(ctx, "sum(sum(v)) => sum(v)")
 				.setUnidirectional(true)
 				.parseGlobalVars("MATRIX:A,B")
@@ -1151,6 +1149,85 @@ public class RewriterRuleCollection {
 		}
 	}
 
+	// This expands the statements to a common canonical form
+	// It is important, however, that
+	public static void canonicalExpandAfterFlattening(final List<RewriterRule> rules, final RuleContext ctx) {
+		HashMap<Integer, RewriterStatement> hooks = new HashMap<>();
+
+		rules.add(new RewriterRuleBuilder(ctx, "sum($1:_idxExpr(indices, -(A))) => -(sum($2:_idxExpr(indices, A)))")
+				.setUnidirectional(true)
+				.parseGlobalVars("FLOAT:a")
+				.parseGlobalVars("INT...:indices")
+				.withParsedStatement("sum($1:_idxExpr(indices, -(a)))", hooks)
+				.toParsedStatement("-(sum($2:_idxExpr(indices, a)))", hooks)
+				.link(hooks.get(1).getId(), hooks.get(2).getId(), RewriterStatement::transferMeta)
+				.build()
+		);
+
+		rules.add(new RewriterRuleBuilder(ctx, "sum($1:_idxExpr(indices, -(a))) => -(sum($2:_idxExpr(indices, a)))")
+				.setUnidirectional(true)
+				.parseGlobalVars("INT:a")
+				.parseGlobalVars("INT...:indices")
+				.withParsedStatement("sum($1:_idxExpr(indices, -(a)))", hooks)
+				.toParsedStatement("-(sum($2:_idxExpr(indices, a)))", hooks)
+				.link(hooks.get(1).getId(), hooks.get(2).getId(), RewriterStatement::transferMeta)
+				.build()
+		);
+
+		rules.add(new RewriterRuleBuilder(ctx, "sum(_idxExpr(indices, +(ops))) => +(argList(sum(_idxExpr(indices, op1)), sum(_idxExpr(...)), ...))")
+				.setUnidirectional(true)
+				.parseGlobalVars("INT...:indices")
+				.parseGlobalVars("FLOAT...:ops")
+				.withParsedStatement("sum($1:_idxExpr(indices, +(ops)))", hooks)
+				.toParsedStatement("+($3:argList(sum($2:_idxExpr(indices, +(ops)))))", hooks) // The inner +(ops) is temporary and will be removed
+				.link(hooks.get(1).getId(), hooks.get(2).getId(), RewriterStatement::transferMeta)
+				.apply(hooks.get(3).getId(), newArgList -> {
+					RewriterStatement oldArgList = newArgList.getChild(0, 0, 1, 0);
+					newArgList.getChild(0, 0).getOperands().set(1, oldArgList.getChild(0));
+
+					for (int i = 1; i < oldArgList.getOperands().size(); i++) {
+						RewriterStatement newIdxExpr = newArgList.getChild(0, 0).copyNode();
+						newIdxExpr.getOperands().set(1, oldArgList.getChild(i));
+						RewriterStatement newSum = new RewriterInstruction()
+								.as(UUID.randomUUID().toString())
+								.withInstruction("sum")
+								.withOps(newIdxExpr)
+								.consolidate(ctx);
+						RewriterUtils.copyIndexList(newIdxExpr);
+						newArgList.getOperands().add(newSum);
+					}
+				}, true)
+				.build()
+		);
+	}
+
+	public static void flattenedAlgebraRewrites(final List<RewriterRule> rules, final RuleContext ctx) {
+		HashMap<Integer, RewriterStatement> hooks = new HashMap<>();
+
+		// Minus pushdown
+		rules.add(new RewriterRuleBuilder(ctx, "-(+(...)) => +(-(el1), -(el2), ...)")
+				.setUnidirectional(true)
+				.parseGlobalVars("FLOAT...:ops")
+				.withParsedStatement("-(+(ops))", hooks)
+				.toParsedStatement("$1:+(ops)", hooks) // Temporary
+				.apply(hooks.get(1).getId(), (stmt, match) -> {
+					RewriterStatement argList = stmt.getChild(0);
+
+					for (int i = 0; i < argList.getOperands().size(); i++) {
+						RewriterInstruction newStmt = new RewriterInstruction().as(UUID.randomUUID().toString()).withInstruction("-").withOps(argList.getOperands().get(i));
+						newStmt.consolidate(ctx);
+						argList.getOperands().set(i, newStmt);
+					}
+
+					// TODO: This is inefficient
+					RewriterUtils.tryFlattenNestedOperatorPatterns(ctx, match.getNewExprRoot());
+				}, true)
+				.build()
+		);
+
+		// TODO: Distributive law
+	}
+
 	public static void buildElementWiseAlgebraicCanonicalization(final List<RewriterRule> rules, final RuleContext ctx) {
 		RewriterUtils.buildTernaryPermutations(List.of("FLOAT", "INT", "BOOL"), (t1, t2, t3) -> {
 			rules.add(new RewriterRuleBuilder(ctx, "*(+(a, b), c) => +(*(a, c), *(b, c))")
@@ -1215,23 +1292,37 @@ public class RewriterRuleCollection {
 		HashMap<Integer, RewriterStatement> hooks = new HashMap<>();
 
 		RewriterUtils.buildBinaryPermutations(List.of("INT", "INT..."), (t1, t2) -> {
-			rules.add(new RewriterRuleBuilder(ctx)
-					.setUnidirectional(true)
-					.parseGlobalVars(t1 + ":i")
-					.parseGlobalVars(t2 + ":j")
-					.parseGlobalVars("FLOAT:v")
-					.withParsedStatement("$1:_idxExpr(i, $2:_idxExpr(j, v))", hooks)
-					.toParsedStatement("$3:_idxExpr(argList(i, j), v)", hooks)
-					.link(hooks.get(1).getId(), hooks.get(3).getId(), RewriterStatement::transferMeta)
-					.apply(hooks.get(3).getId(), (stmt, match) -> {
-						UUID newOwnerId = (UUID)stmt.getMeta("ownerId");
+			for (String t3 : List.of("FLOAT", "FLOAT*", "INT", "INT*", "BOOL", "BOOL*")) {
+				rules.add(new RewriterRuleBuilder(ctx)
+						.setUnidirectional(true)
+						.parseGlobalVars(t1 + ":i")
+						.parseGlobalVars(t2 + ":j")
+						.parseGlobalVars(t3 + ":v")
+						.withParsedStatement("$1:_idxExpr(i, $2:_idxExpr(j, v))", hooks)
+						.toParsedStatement("$3:_idxExpr(argList(i, j), v)", hooks)
+						.link(hooks.get(1).getId(), hooks.get(3).getId(), RewriterStatement::transferMeta)
+						.apply(hooks.get(3).getId(), (stmt, match) -> {
+							UUID newOwnerId = (UUID) stmt.getMeta("ownerId");
 
-						if (newOwnerId == null)
-							throw new IllegalArgumentException();
+							if (newOwnerId == null)
+								throw new IllegalArgumentException();
 
-						stmt.getOperands().get(0).getOperands().get(1).unsafePutMeta("ownerId", newOwnerId);
-					}, true)
-					.build());
+							stmt.getOperands().get(0).getOperands().get(1).unsafePutMeta("ownerId", newOwnerId);
+						}, true)
+						.build());
+
+				if (t1.equals("INT")) {
+					// This must be executed after the rule above
+					rules.add(new RewriterRuleBuilder(ctx)
+							.setUnidirectional(true)
+							.parseGlobalVars(t1 + ":i")
+							.parseGlobalVars(t3 + ":v")
+							.withParsedStatement("$1:_idxExpr(i, v)", hooks)
+							.toParsedStatement("$3:_idxExpr(argList(i), v)", hooks)
+							.link(hooks.get(1).getId(), hooks.get(3).getId(), RewriterStatement::transferMeta)
+							.build());
+				}
+			}
 		});
 
 		RewriterUtils.buildBinaryPermutations(List.of("MATRIX", "INT", "FLOAT", "BOOL"), (t1, t2) -> {

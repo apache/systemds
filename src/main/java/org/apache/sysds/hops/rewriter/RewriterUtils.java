@@ -286,7 +286,7 @@ public class RewriterUtils {
 		stmt.recomputeHashCodes(ctx);
 	}
 
-	private static boolean tryFlattenNestedArgList(final RuleContext ctx, RewriterStatement stmt, RewriterStatement root, int insertAt) {
+	public static boolean tryFlattenNestedArgList(final RuleContext ctx, RewriterStatement stmt, RewriterStatement root, int insertAt) {
 		if (!stmt.isArgumentList())
 			return false;
 
@@ -317,7 +317,7 @@ public class RewriterUtils {
 		return true;
 	}
 
-	private static void tryFlattenNestedOperatorPatterns(final RuleContext ctx, RewriterStatement stmt) {
+	public static void tryFlattenNestedOperatorPatterns(final RuleContext ctx, RewriterStatement stmt) {
 		if (!stmt.isInstruction())
 			return;
 
@@ -353,7 +353,7 @@ public class RewriterUtils {
 		return parse(expr, ctx, new HashMap<>(), varDefinitions);
 	}
 
-	public static RewriterStatement parse(String expr, final RuleContext ctx, HashMap<String, RewriterStatement> dataTypes, String... varDefinitions) {
+	public static RewriterStatement parse(String expr, final RuleContext ctx, Map<String, RewriterStatement> dataTypes, String... varDefinitions) {
 		for (String def : varDefinitions)
 			parseDataTypes(def, dataTypes, ctx);
 
@@ -369,7 +369,7 @@ public class RewriterUtils {
 	 * @param ctx context
 	 * @return test
 	 */
-	public static RewriterStatement parseExpression(String expr, HashMap<Integer, RewriterStatement> refmap, HashMap<String, RewriterStatement> dataTypes, final RuleContext ctx) {
+	public static RewriterStatement parseExpression(String expr, Map<Integer, RewriterStatement> refmap, Map<String, RewriterStatement> dataTypes, final RuleContext ctx) {
 		RuleContext.currentContext = ctx;
 		expr = expr.replaceAll("\\s+", "");
 		MutableObject<String> mexpr = new MutableObject<>(expr);
@@ -379,7 +379,7 @@ public class RewriterUtils {
 		return stmt;
 	}
 
-	private static RewriterStatement doParseExpression(MutableObject<String> mexpr, HashMap<Integer, RewriterStatement> refmap, HashMap<String, RewriterStatement> dataTypes, final RuleContext ctx) {
+	private static RewriterStatement doParseExpression(MutableObject<String> mexpr, Map<Integer, RewriterStatement> refmap, Map<String, RewriterStatement> dataTypes, final RuleContext ctx) {
 		String expr = mexpr.getValue();
 		if (expr.startsWith("$")) {
 			expr = expr.substring(1);
@@ -414,7 +414,7 @@ public class RewriterUtils {
 		}
 	}
 
-	public static boolean parseDataTypes(String expr, HashMap<String, RewriterStatement> dataTypes, final RuleContext ctx) {
+	public static boolean parseDataTypes(String expr, Map<String, RewriterStatement> dataTypes, final RuleContext ctx) {
 		RuleContext.currentContext = ctx;
 		Pattern pattern = Pattern.compile("([A-Za-z0-9]|_|\\.|\\*)+");
 		Matcher matcher = pattern.matcher(expr);
@@ -473,7 +473,7 @@ public class RewriterUtils {
 		return false;
 	}
 
-	private static RewriterStatement parseRawExpression(MutableObject<String> mexpr, HashMap<Integer, RewriterStatement> refmap, HashMap<String, RewriterStatement> dataTypes, final RuleContext ctx) {
+	private static RewriterStatement parseRawExpression(MutableObject<String> mexpr, Map<Integer, RewriterStatement> refmap, Map<String, RewriterStatement> dataTypes, final RuleContext ctx) {
 		String expr = mexpr.getValue();
 
 		Pattern pattern = Pattern.compile("^[^(),:]+");
@@ -695,18 +695,66 @@ public class RewriterUtils {
 		return out;
 	}
 
+	public static void copyIndexList(RewriterStatement idxExprRoot) {
+		if (!idxExprRoot.isInstruction() || !idxExprRoot.trueInstruction().equals("_idxExpr"))
+			throw new IllegalArgumentException();
+
+		Map<UUID, RewriterStatement> replacements = new HashMap<>();
+		UUID newOwnerId = UUID.randomUUID();
+		idxExprRoot.unsafePutMeta("ownerId", newOwnerId);
+
+		RewriterStatement newArgList = idxExprRoot.getChild(0).copyNode();
+		idxExprRoot.getOperands().set(0, newArgList);
+
+		List<RewriterStatement> operands = newArgList.getOperands();
+
+		for (int i = 0; i < operands.size(); i++) {
+			RewriterStatement idx = operands.get(i);
+			RewriterStatement cpy = idx.copyNode();
+			UUID newId = UUID.randomUUID();
+			cpy.unsafePutMeta("idxId", newId);
+			cpy.unsafePutMeta("ownerId", newOwnerId);
+			replacements.put((UUID)idx.getMeta("idxId"), cpy);
+			operands.set(i, cpy);
+		}
+
+		RewriterUtils.replaceReferenceAware(idxExprRoot.getChild(1), stmt -> {
+			UUID idxId = (UUID) stmt.getMeta("idxId");
+			if (idxId != null) {
+				RewriterStatement newStmt = replacements.get(idxId);
+				if (newStmt != null)
+					return newStmt;
+			}
+
+			return null;
+		});
+	}
+
+	public static void retargetIndexExpressions(RewriterStatement rootExpr, UUID oldIdxId, RewriterStatement newStatement) {
+		RewriterUtils.replaceReferenceAware(rootExpr, stmt -> {
+			UUID idxId = (UUID) stmt.getMeta("idxId");
+			if (idxId != null) {
+				if (idxId.equals(oldIdxId))
+					return newStatement;
+			}
+
+			return null;
+		});
+	}
+
 	public static RewriterStatement replaceReferenceAware(RewriterStatement root, Function<RewriterStatement, RewriterStatement> comparer) {
 		return replaceReferenceAware(root, false, comparer, new HashMap<>());
 	}
 
-	public static RewriterStatement replaceReferenceAware(RewriterStatement root, boolean duplicateReferences, Function<RewriterStatement, RewriterStatement> comparer, HashMap<RewriterRule.IdentityRewriterStatement, RewriterStatement> visited) {
-		RewriterRule.IdentityRewriterStatement is = new RewriterRule.IdentityRewriterStatement(root);
-		if (visited.containsKey(is)) {
-			return visited.get(is);
-		}
+	public static RewriterStatement replaceReferenceAware(RewriterStatement root, boolean duplicateReferences, Function<RewriterStatement, RewriterStatement> comparer, HashMap<RewriterStatement, RewriterStatement> visited) {
+		if (visited.containsKey(root))
+			return visited.get(root);
 
-		RewriterStatement oldRef = root;
 		RewriterStatement newOne = comparer.apply(root);
+
+		if (newOne == root)
+			newOne = null;
+
 		root = newOne != null ? newOne : root;
 
 		if (newOne == null)
@@ -717,9 +765,8 @@ public class RewriterUtils {
 				RewriterStatement newSub = replaceReferenceAware(root.getOperands().get(i), duplicateReferences, comparer, visited);
 
 				if (newSub != null) {
-					if (duplicateReferences && newOne == null) {
+					if (duplicateReferences && newOne == null)
 						root = root.copyNode();
-					}
 
 					root.getOperands().set(i, newSub);
 				}
@@ -1171,6 +1218,18 @@ public class RewriterUtils {
 		canonicalFormCreator.add("PUSHDOWN STREAM SELECTIONS", streamSelectPushdown);
 		canonicalFormCreator.add("FLATTEN OPERATIONS", flattenOperations);
 
+		ArrayList<RewriterRule> canonicalExpand = new ArrayList<>();
+		RewriterRuleCollection.canonicalExpandAfterFlattening(canonicalExpand, ctx);
+		RewriterHeuristic canonicalExpandOps = new RewriterHeuristic(new RewriterRuleSet(ctx, canonicalExpand));
+
+		ArrayList<RewriterRule> flattenAlgebraicRewriteList = new ArrayList<>();
+		RewriterRuleCollection.flattenedAlgebraRewrites(flattenAlgebraicRewriteList, ctx);
+		RewriterHeuristic flattenedAlgebraicRewrites = new RewriterHeuristic(new RewriterRuleSet(ctx, flattenAlgebraicRewriteList));
+
+		RewriterHeuristics afterFlattening = new RewriterHeuristics();
+		afterFlattening.add("CANONICAL EXPAND", canonicalExpandOps);
+		afterFlattening.add("FLATTENED ALGEBRA REWRITES", flattenedAlgebraicRewrites);
+
 		return stmt -> {
 			stmt = canonicalFormCreator.apply(stmt, (t, r) -> {
 				if (!debug)
@@ -1183,6 +1242,18 @@ public class RewriterUtils {
 			}, debug);
 
 			RewriterUtils.mergeArgLists(stmt, ctx);
+			stmt = afterFlattening.apply(stmt, (t, r) -> {
+				if (!debug)
+					return true;
+
+				if (r != null)
+					System.out.println("Applying rule: " + r.getName());
+				System.out.println(t.toParsableString(ctx));
+				return true;
+			}, debug);
+
+			// TODO: After this, stuff like CSE, A-A = 0, etc. must still be applied
+
 			if (debug)
 				System.out.println("PRE1: " + stmt.toParsableString(ctx, false));
 

@@ -201,6 +201,8 @@ public class RewriterAssertions {
 	}
 
 	public RewriterStatement getAssertionStatement(RewriterStatement stmt, RewriterStatement parent) {
+		//System.out.println("Checking: " + stmt);
+		//System.out.println("In: " + this);
 		RewriterAssertion set = assertionMatcher.get(stmt);
 
 		if (set == null)
@@ -220,6 +222,32 @@ public class RewriterAssertions {
 		}
 
 		return mstmt;
+	}
+
+	// TODO: This does not handle metadata
+	public RewriterStatement update(RewriterStatement root) {
+		RewriterStatement eClass = getAssertionStatement(root, null);
+
+		if (eClass == null)
+			eClass = root;
+		else if (root.getMeta("_assertions") != null)
+			eClass.unsafePutMeta("_assertions", root.getMeta("_assertions"));
+
+		updateRecursively(eClass);
+
+		return eClass;
+	}
+
+	private void updateRecursively(RewriterStatement cur) {
+		for (int i = 0; i < cur.getOperands().size(); i++) {
+			RewriterStatement child = cur.getChild(i);
+			RewriterStatement eClass = getAssertionStatement(child, cur);
+
+			if (eClass != child)
+				cur.getOperands().set(i, eClass);
+
+			updateRecursively(cur.getChild(i));
+		}
 	}
 
 	// TODO: We have to copy the assertions to the root node if it changes

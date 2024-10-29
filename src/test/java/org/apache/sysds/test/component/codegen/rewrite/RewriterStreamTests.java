@@ -13,7 +13,9 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.function.Function;
 
 public class RewriterStreamTests {
@@ -418,5 +420,112 @@ public class RewriterStreamTests {
 		System.out.println(stmt2.toParsableString(ctx, true));
 
 		assert stmt1.match(RewriterStatement.MatcherContext.exactMatch(ctx, stmt2));
+	}
+
+	@Test
+	public void testSumEquivalence() {
+		RewriterStatement stmt1 = RewriterUtils.parse("sum(A)", ctx, "MATRIX:A,B");
+		RewriterStatement stmt2 = RewriterUtils.parse("sum(t(A))", ctx, "MATRIX:A,B");
+
+		stmt1 = canonicalConverter.apply(stmt1);
+		stmt2 = canonicalConverter.apply(stmt2);
+
+		System.out.println("==========");
+		System.out.println(stmt1.toParsableString(ctx, true));
+		System.out.println("==========");
+		System.out.println(stmt2.toParsableString(ctx, true));
+
+		assert stmt1.match(RewriterStatement.MatcherContext.exactMatch(ctx, stmt2));
+	}
+
+	@Test
+	public void testSimpleAlgebra1() {
+		RewriterStatement stmt1 = RewriterUtils.parse("-(X, *(Y, X))", ctx, "MATRIX:X,Y");
+		RewriterStatement stmt2 = RewriterUtils.parse("*(-(1, Y), X)", ctx, "MATRIX:X,Y", "LITERAL_INT:1");
+
+		stmt1 = canonicalConverter.apply(stmt1);
+		stmt2 = canonicalConverter.apply(stmt2);
+
+		System.out.println("==========");
+		System.out.println(stmt1.toParsableString(ctx, true));
+		System.out.println("==========");
+		System.out.println(stmt2.toParsableString(ctx, true));
+
+		assert stmt1.match(RewriterStatement.MatcherContext.exactMatch(ctx, stmt2));
+	}
+
+	@Test
+	public void testSimpleAlgebra2() {
+		RewriterStatement stmt1 = RewriterUtils.parse("diag(*(X, 7))", ctx, "MATRIX:X,Y", "LITERAL_INT:7");
+		RewriterStatement stmt2 = RewriterUtils.parse("*(diag(X), 7)", ctx, "MATRIX:X,Y", "LITERAL_INT:7");
+
+		stmt1 = canonicalConverter.apply(stmt1);
+		stmt2 = canonicalConverter.apply(stmt2);
+
+		System.out.println("==========");
+		System.out.println(stmt1.toParsableString(ctx, true));
+		System.out.println("==========");
+		System.out.println(stmt2.toParsableString(ctx, true));
+
+		assert stmt1.match(RewriterStatement.MatcherContext.exactMatch(ctx, stmt2));
+	}
+
+	@Test
+	public void testSimpleAlgebra3() {
+		RewriterStatement stmt1 = RewriterUtils.parse("sum(+(+(X, 7), Y))", ctx, "MATRIX:X,Y", "LITERAL_INT:7");
+		RewriterStatement stmt2 = RewriterUtils.parse("+(+(sum(X), 7), sum(Y))", ctx, "MATRIX:X,Y", "LITERAL_INT:7");
+
+		stmt1 = canonicalConverter.apply(stmt1);
+		stmt2 = canonicalConverter.apply(stmt2);
+
+		System.out.println("==========");
+		System.out.println(stmt1.toParsableString(ctx, true));
+		System.out.println("==========");
+		System.out.println(stmt2.toParsableString(ctx, true));
+
+		assert stmt1.match(RewriterStatement.MatcherContext.exactMatch(ctx, stmt2));
+	}
+
+	@Test
+	public void testSimpleAlgebra4() {
+		RewriterStatement stmt1 = RewriterUtils.parse("sum(-(+(+(X, 7), Y)))", ctx, "MATRIX:X,Y", "LITERAL_INT:7");
+
+		RewriterStatement matX = RewriterUtils.parse("X", ctx, "MATRIX:X");
+		RewriterStatement matY = RewriterUtils.parse("Y", ctx, "MATRIX:Y");
+		Map<String, RewriterStatement> vars = new HashMap<>();
+		vars.put("X", matX);
+		vars.put("Y", matY);
+		RewriterStatement stmt2 = RewriterUtils.parse("-(+(sum(+(X, 7)), sum(Y)))", ctx, vars, "LITERAL_INT:7");
+		stmt2.givenThatEqual(vars.get("X").getNCol(), vars.get("Y").getNCol(), ctx);
+		stmt2.givenThatEqual(vars.get("X").getNRow(), vars.get("Y").getNRow(), ctx);
+		stmt2 = stmt2.recomputeAssertions();
+
+		stmt1 = canonicalConverter.apply(stmt1);
+		stmt2 = canonicalConverter.apply(stmt2);
+
+		System.out.println("==========");
+		System.out.println(stmt1.toParsableString(ctx, true));
+		System.out.println("==========");
+		System.out.println(stmt2.toParsableString(ctx, true));
+
+		assert stmt1.match(RewriterStatement.MatcherContext.exactMatch(ctx, stmt2));
+	}
+
+	@Test
+	public void myTest() {
+		RewriterStatement stmt1 = RewriterUtils.parse("sum(-(X, 7))", ctx, "MATRIX:X,Y", "LITERAL_INT:1,7", "INT:a", "LITERAL_FLOAT:7.0");
+		stmt1 = canonicalConverter.apply(stmt1);
+
+		System.out.println("==========");
+		System.out.println(stmt1.toParsableString(ctx, true));
+	}
+
+	@Test
+	public void myTest2() {
+		RewriterStatement stmt1 = RewriterUtils.parse("sum(_idxExpr(_idx(1, 7), -(a)))", ctx, "MATRIX:X,Y", "LITERAL_INT:1,7", "INT:a");
+		stmt1 = canonicalConverter.apply(stmt1);
+
+		System.out.println("==========");
+		System.out.println(stmt1.toParsableString(ctx, true));
 	}
 }

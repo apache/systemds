@@ -301,6 +301,7 @@ public enum Builtins {
 	SELVARTHRESH("selectByVarThresh", true),
 	SEQ("seq", false),
 	SYMMETRICDIFFERENCE("symmetricDifference", true),
+	SHAPEXPLAINER("shapExplainer", true),
 	SHERLOCK("sherlock", true),
 	SHERLOCKPREDICT("sherlockPredict", true),
 	SHORTESTPATH("shortestPath", true),

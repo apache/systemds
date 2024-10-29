@@ -109,40 +109,55 @@ public class RewriterDataType extends RewriterStatement {
 		RuleContext ctx = mCtx.ctx;
 		String dType = stmt.getResultingDataType(ctx);
 
-		if (!(stmt instanceof RewriterDataType) && !mCtx.statementsCanBeVariables)
+		if (!(stmt instanceof RewriterDataType) && !mCtx.statementsCanBeVariables) {
+			mCtx.setFirstMismatch(this, stmt);
 			return false;
+		}
 
 		if (!dType.equals(type)) {
-			if (!mCtx.allowTypeHierarchy)
+			if (!mCtx.allowTypeHierarchy) {
+				mCtx.setFirstMismatch(this, stmt);
 				return false;
+			}
 
 			Set<String> types = ctx.typeHierarchy.get(dType);
-			if (types == null || !types.contains(type))
+			if (types == null || !types.contains(type)) {
+				mCtx.setFirstMismatch(this, stmt);
 				return false;
+			}
 		}
 
 		// TODO: This way of literal matching might cause confusion later on
 		if (mCtx.literalsCanBeVariables) {
 			if (isLiteral())
-				if (!mCtx.ignoreLiteralValues && (!stmt.isLiteral() || !getLiteral().equals(stmt.getLiteral())))
+				if (!mCtx.ignoreLiteralValues && (!stmt.isLiteral() || !getLiteral().equals(stmt.getLiteral()))) {
+					mCtx.setFirstMismatch(this, stmt);
 					return false;
+				}
 		} else {
-			if (isLiteral() != stmt.isLiteral())
+			if (isLiteral() != stmt.isLiteral()) {
+				mCtx.setFirstMismatch(this, stmt);
 				return false;
-			if (!mCtx.ignoreLiteralValues && isLiteral() && !getLiteral().equals(stmt.getLiteral()))
+			}
+			if (!mCtx.ignoreLiteralValues && isLiteral() && !getLiteral().equals(stmt.getLiteral())) {
+				mCtx.setFirstMismatch(this, stmt);
 				return false;
+			}
 		}
 
 		RewriterStatement assoc = mCtx.getDependencyMap().get(this);
 		if (assoc == null) {
-			if (!mCtx.allowDuplicatePointers && mCtx.getDependencyMap().containsValue(stmt))
+			if (!mCtx.allowDuplicatePointers && mCtx.getDependencyMap().containsValue(stmt)) {
+				mCtx.setFirstMismatch(this, stmt);
 				return false; // Then the statement variable is already associated with another variable
+			}
 			mCtx.getDependencyMap().put(this, stmt);
 			return true;
 		} else if (assoc == stmt) {
 			return true;
 		}
 
+		mCtx.setFirstMismatch(this, stmt);
 		return false;
 	}
 

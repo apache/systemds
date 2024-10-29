@@ -108,23 +108,37 @@ public class RewriterInstruction extends RewriterStatement {
 			RewriterInstruction inst = (RewriterInstruction)stmt;
 
 			if(!inst.instr.equals(this.instr)) {
-				if (!mCtx.allowPropertyScan)
+				if (!mCtx.allowPropertyScan) {
+					mCtx.setFirstMismatch(this, stmt);
 					return false;
+				}
 				Set<String> props = inst.getProperties(ctx);
 
-				if (props == null || !props.contains(typedInstruction(ctx)))
+				if (props == null || !props.contains(typedInstruction(ctx))) {
+					mCtx.setFirstMismatch(this, stmt);
 					return false;
+				}
 			}
-			if (this.operands.size() != inst.operands.size())
+			if (this.operands.size() != inst.operands.size()) {
+				mCtx.setFirstMismatch(this, stmt);
 				return false;
+			}
 
 			RewriterStatement existingRef = mCtx.findInternalReference(this);
 
-			if (existingRef != null)
-				return existingRef == stmt;
+			if (existingRef != null) {
+				if (existingRef == stmt)
+					return true;
+				else {
+					mCtx.setFirstMismatch(this, stmt);
+					return false;
+				}
+			}
 
-			if (!mCtx.allowDuplicatePointers && mCtx.getInternalReferences().containsValue(stmt))
+			if (!mCtx.allowDuplicatePointers && mCtx.getInternalReferences().containsValue(stmt)) {
+				mCtx.setFirstMismatch(this, stmt);
 				return false;
+			}
 
 			RewriterRule.LinkObject ruleLink = mCtx.ruleLinks.get(this);
 
@@ -145,6 +159,7 @@ public class RewriterInstruction extends RewriterStatement {
 			return true;
 		}
 
+		mCtx.setFirstMismatch(this, stmt);
 		return false;
 	}
 

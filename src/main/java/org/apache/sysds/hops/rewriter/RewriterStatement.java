@@ -6,6 +6,7 @@ import org.apache.commons.lang3.function.TriFunction;
 import org.apache.commons.lang3.mutable.MutableObject;
 import org.apache.logging.log4j.util.TriConsumer;
 import org.jetbrains.annotations.NotNull;
+import scala.Tuple2;
 import spire.macros.CheckedRewriter;
 
 import javax.annotation.Nullable;
@@ -138,6 +139,7 @@ public abstract class RewriterStatement implements Comparable<RewriterStatement>
 		private DualHashBidiMap<RewriterStatement, RewriterStatement> internalReferences;
 
 		private List<MatcherContext> subMatches;
+		private Tuple2<RewriterStatement, RewriterStatement> firstMismatch;
 		private boolean debug;
 
 		public MatcherContext(final RuleContext ctx, RewriterStatement matchRoot, RewriterStatement expressionRoot) {
@@ -244,6 +246,14 @@ public abstract class RewriterStatement implements Comparable<RewriterStatement>
 				links.clear();
 			if (internalReferences != null)
 				internalReferences.clear();
+		}
+
+		public void setFirstMismatch(RewriterStatement stmt1, RewriterStatement stmt2) {
+			firstMismatch = new Tuple2<>(stmt1, stmt2);
+		}
+
+		public Tuple2<RewriterStatement, RewriterStatement> getFirstMismatch() {
+			return firstMismatch;
 		}
 
 		/*public MatcherContext createCheckpoint() {

@@ -1270,64 +1270,27 @@ public class RewriterUtils {
 		};
 	}
 
-	/*public static Function<RewriterStatement, RewriterStatement> buildFusedOperatorCreator(final RuleContext ctx, boolean debug) {
-		ArrayList<RewriterRule> algebraicCanonicalizationRules = new ArrayList<>();
-		RewriterRuleCollection.canonicalizeBooleanStatements(algebraicCanonicalizationRules, ctx);
-		RewriterRuleCollection.canonicalizeAlgebraicStatements(algebraicCanonicalizationRules, ctx);
-		RewriterHeuristic algebraicCanonicalization = new RewriterHeuristic(new RewriterRuleSet(ctx, algebraicCanonicalizationRules));
+	// Tries to find the minimal sub-graph that represents the change
+	// E.g. t(A+B) <=> t(A-B) would return A-B
+	// We assume that stmt1 ≠ stmt2
+	public static Tuple2<RewriterStatement, RewriterStatement> findMinimalDifference(RewriterStatement stmt1, RewriterStatement stmt2, final RuleContext ctx) {
+		RewriterStatement.MatcherContext mCtx = RewriterStatement.MatcherContext.exactMatch(ctx, stmt2);
+		if (stmt1.match(mCtx)) {
+			return null;
+		} else {
+			RewriterStatement mismatch1 = mCtx.getFirstMismatch()._1;
+			RewriterStatement mismatch2 = mCtx.getFirstMismatch()._2;
 
-		ArrayList<RewriterRule> expRules = new ArrayList<>();
-		RewriterRuleCollection.expandStreamingExpressions(expRules, ctx);
-		RewriterHeuristic streamExpansion = new RewriterHeuristic(new RewriterRuleSet(ctx, expRules));
+			if (mismatch1 == stmt1)
+				return mCtx.getFirstMismatch();
 
-		ArrayList<RewriterRule> pd = new ArrayList<>();
-		RewriterRuleCollection.pushdownStreamSelections(pd, ctx);
-		RewriterHeuristic streamSelectPushdown = new RewriterHeuristic(new RewriterRuleSet(ctx, pd));
+			
+		}
+	}
 
-		ArrayList<RewriterRule> streamifyRules = new ArrayList<>();
-		RewriterRuleCollection.streamifyExpressions(streamifyRules, ctx);
-		RewriterHeuristic streamify = new RewriterHeuristic(new RewriterRuleSet(ctx, streamifyRules));
+	private static boolean exactMatchElement(RewriterStatement stmt1, RewriterStatement stmt2) {
 
-		ArrayList<RewriterRule> flatten = new ArrayList<>();
-		RewriterRuleCollection.flattenOperations(flatten, ctx);
-		RewriterHeuristic flattenOperations = new RewriterHeuristic(new RewriterRuleSet(ctx, flatten));
-
-		RewriterHeuristics canonicalFormCreator = new RewriterHeuristics();
-		canonicalFormCreator.add("ALGEBRAIC CANONICALIZATION", algebraicCanonicalization);
-		canonicalFormCreator.add("EXPAND STREAMING EXPRESSIONS", streamExpansion);
-
-		RewriterHeuristics pushDownAndStreamify = new RewriterHeuristics();
-		pushDownAndStreamify.add("PUSHDOWN STREAM SELECTIONS", streamSelectPushdown);
-		pushDownAndStreamify.add("STREAMIFY", streamify);
-		canonicalFormCreator.addRepeated("PUSHDOWN AND STREAMIFY", pushDownAndStreamify);
-
-		canonicalFormCreator.add("FLATTEN OPERATIONS", flattenOperations);
-
-		return stmt -> {
-			stmt = canonicalFormCreator.apply(stmt, (t, r) -> {
-				if (!debug)
-					return true;
-
-				if (r != null)
-					System.out.println("Applying rule: " + r.getName());
-				System.out.println(t.toParsableString(ctx));
-				return true;
-			}, debug);
-
-			RewriterUtils.mergeArgLists(stmt, ctx);
-			if (debug)
-				System.out.println("PRE1: " + stmt.toParsableString(ctx, false));
-
-			TopologicalSort.sort(stmt, ctx);
-			//RewriterUtils.topologicalSort(stmt, ctx, (el, parent) -> el.isArgumentList() && parent != null && Set.of("+", "-", "*", "_idxExpr").contains(parent.trueInstruction()));
-			//TopologicalSort.setupOrderFacts(stmt, (el, parent) -> el.isArgumentList() && parent != null && Set.of("+", "-", "*", "_idxExpr").contains(parent.trueInstruction()), ctx);
-
-			if (debug)
-				System.out.println("FINAL1: " + stmt.toParsableString(ctx, false));
-
-			return stmt;
-		};
-	}*/
+	}
 
 	public static void doCSE(RewriterStatement stmt, final RuleContext ctx) {
 

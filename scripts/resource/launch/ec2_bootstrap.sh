@@ -34,8 +34,6 @@ echo "JDK 11 and MAVEN ware installed successfully"
 # TODO: point to main repo install the end: git clone https://github.com/apache/systemds.git
 git clone https://github.com/lachezar-n/systemds.git
 cd systemds
-# TODO: point to main repo install the end
-git checkout resource-optimizer
 sudo mvn install -Dmaven.test.skip=true
 echo "SystemDS installed and setup (single-node) globally"
 # install ssm and cloudwatch agents by default (to allow collecting metrics)

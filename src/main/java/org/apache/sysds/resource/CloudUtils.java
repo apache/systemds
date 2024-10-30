@@ -65,8 +65,8 @@ public class CloudUtils {
 			return InstanceSize.valueOf("_"+name.toUpperCase());
 		}
 	}
-	public static final double SINGLE_NODE_JVM_MEMORY_FACTOR = 0.9; // (10% for the OS)
-	public static final double DRIVER_JVM_MEMORY_FACTOR = 0.8; // (10% for the OS, 10% for management processes)
+	public static final double JVM_MEMORY_FACTOR = 0.9; // (10% for the OS and other external processes)
+
 	public static final String EC2_REGEX = "^([a-z]+)([0-9])(a|g|i?)([bdnez]*)\\.([a-z0-9]+)$";
 	public static final int EBS_DEFAULT_ROOT_SIZE_EMR = 15; // GB
 	public static final int EBS_DEFAULT_ROOT_SIZE_EC2 = 8; // GB
@@ -291,7 +291,7 @@ public class CloudUtils {
 			ec2Config.put("VolumeType", "gp3");
 			ec2Config.put("EbsOptimized", true);
 			// JVM memory budget used at resource optimization
-			int cpMemory = (int) (instance.getMemory()/ (1024*1024) * SINGLE_NODE_JVM_MEMORY_FACTOR);
+			int cpMemory = (int) (instance.getMemory()/ (1024*1024) * JVM_MEMORY_FACTOR);
 			ec2Config.put("JvmMaxMemory", cpMemory);
 
 			try (FileWriter file = new FileWriter(filePath)) {
@@ -387,7 +387,7 @@ public class CloudUtils {
 			sparkDefaultsConfig.put("Classification", "spark-defaults");
 
 			JSONObject sparkDefaultsProperties = new JSONObject();
-			int driverMemory = (int) (clusterConfig.driverInstance.getMemory()/ (1024*1024) * DRIVER_JVM_MEMORY_FACTOR);
+			int driverMemory = (int) (clusterConfig.driverInstance.getMemory()/ (1024*1024) * JVM_MEMORY_FACTOR);
 			sparkDefaultsProperties.put("spark.driver.memory", (driverMemory)+"m");
 			sparkDefaultsProperties.put("spark.driver.maxResultSize", String.valueOf(0));
 			// calculate the exact resource limits for YARN containers to maximize the utilization

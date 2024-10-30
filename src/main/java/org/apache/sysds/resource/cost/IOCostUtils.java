@@ -33,9 +33,6 @@ public class IOCostUtils {
 	private static final double WRITE_DENSE_FACTOR = 0.3;
 	private static final double SPARSE_FACTOR = 0.5;
 	private static final double TEXT_FACTOR = 0.3;
-	// NOTE: skip using such factors for now
-	//	private static final double WRITE_MEMORY_FACTOR = 0.9;
-	//	private static final double WRITE_DISK_FACTOR = 0.5;
 	private static final double SERIALIZATION_FACTOR = 0.5;
 	private static final double DESERIALIZATION_FACTOR = 0.8;
 	public static final long DEFAULT_FLOPS = 2L * 1024 * 1024 * 1024; // 2 gFLOPS
@@ -399,7 +396,7 @@ public class IOCostUtils {
 	}
 
 	/**
-	 * Estimates the time ro parallelize a local object to Spark.
+	 * Estimates the time to parallelize a local object to Spark.
 	 *
 	 * @param output RDD statistics for the object to be collected/transferred.
 	 * @param driverMetrics I/O metrics for the receiver - driver node
@@ -407,7 +404,6 @@ public class IOCostUtils {
 	 * @return estimated time in seconds
 	 */
 	public static double getSparkParallelizeTime(RDDStats output, IOMetrics driverMetrics, IOMetrics executorMetrics) {
-		// TODO: ensure the object related to stats is read in memory already ot add logic to account for its read time
 		// it is assumed that the RDD object is already created/read
 		// general idea: time = <serialization time> + <transfer time>;
 		// NOTE: currently it is assumed that ht serialized data has the same size as the original data what may not be true in the general case
@@ -533,7 +529,6 @@ public class IOCostUtils {
 		// TODO: ensure the object related to stats is read in memory already ot add logic to account for its read time
 		// it is assumed that the Cp broadcast object is already created/read
 		// general idea: time = <serialization time> + <transfer time>;
-		// NOTE: currently it is assumed that ht serialized data has the same size as the original data what may not be true in the general case
 		double sizeMB = (double) OptimizerUtils.estimatePartitionedSizeExactSparsity(stats.characteristics) / (1024 * 1024);
 		// 1. serialization time
 		double serializationTime = sizeMB / driverMetrics.serializationBandwidth;

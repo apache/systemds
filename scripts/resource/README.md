@@ -86,6 +86,7 @@ The enumeration strategy has influence mostly on the speed of completing the pro
 Here is a list of all of the rest of the options available:
 
 * `CPU_QUOTA` (default 1152) - specifies the limit of (virtual) CPU cores allowed for evaluation. This corresponds to the EC2 service quota for limiting the running instances within the same region at the same moment.
+* `COSTS_WEIGHT` (default 0.01) - specifies the weighing factor for the multi-objective function for optimization
 * `MIN_EXECUTORS` (default 0) - specifies minimum desired executors, where 0 includes single node execution. Allows configuring minimum cluster size.
 * `MAX_EXECUTORS` (default 200) - specifies maximum desired executors. The maximum number of executors can be limited dynamically further more in case of reaching the CPU quota number.
 * `INSTANCE_FAMILIES` - specifies VM instance types for consideration at searching for optimal configuration. If not specified, all instances from the table with instance metadata are considered
@@ -107,28 +108,58 @@ For optimal solution with Spark cluster, the target environment is EMR cluster. 
 
 Both files follow a structure supported by AWS CLI so they can be directly passed in a command for launching an EMR cluster in combination with all further required options.
 
+*Note: For proper execution of all of the shell scripts mentioned bellow, please do not delete any of the optional variables in the corresponding `.env` files but just leave them empty, otherwise the scripts could fail due to "unbound variable" error*
+
 ### Launching in Single-node Mode Automatically
 
 For saving additional user effort and the need of background knowledge for Amazon EC2, the project includes scripts for automating the processes of launching an instance based on the output configurations and running the target SystemDS script on it. 
 
-The shell script `./scripts/resource/launch/launch_single_node.sh` is used for launching the EC2 instance based in a corresponding `ec2_configurations.json`. All configuration and options should be specified in `./scripts/resource/launch/single_node.env` and the script expects no arguments passed. The options file includes all required and optional configurations and explanations for their functionality. The launch process utilizes AWS CLI and executes automatically the following steps:
+The shell script `./scripts/resource/launch/single_node_launch.sh` is used for launching the EC2 instance based in a corresponding `ec2_configurations.json`. All configuration and options should be specified in `./scripts/resource/launch/single_node.env` and the script expects no arguments passed. The options file includes all required and optional configurations and explanations for their functionality. The launch process utilizes AWS CLI and executes automatically the following steps:
 1. Query the AWS API for an OS image with Ubuntu 24.04 for the corresponding processor architecture and AWS region.
 2. Generates instance profile for accessing S3 by the instance
 3. Launches the target EC2 with all additional options needed in our case and with providing a bootstrap script for SystemDS installation
 4. Waits for the instance to enter state `RUNNING` 
 5. Waits for the completion of the SystemDS installation
 
-*Note: the SSH key generation is not automated and an existing key should be provided in the options file before executing the scripts, otherwise the launch will fail. 
+*Note: the SSH key generation is not automated and an existing key should be provided in the options file before executing the scripts, otherwise the launch will fail.*
 
 After the script completes without any errors, the instance is already fully prepared for running SystemDS programs. However, before running the script for automated program execution, the user needs to manually uploads the needed files (including the DML script) to S3.
 
-Once all files are uploaded to S3, the user can execute the `./scripts/resource/launch/run_single_node.sh` script. All configurations are again provided via the same options file like for the launch. This scripts does the following:
+Once all files are uploaded to S3, the user can execute the `./scripts/resource/launch/single_node_run_script.sh` script. All configurations are again provided via the same options file like for the launch. This scripts does the following:
 1. Prepare a command for executing the SystemDS program with all the required arguments and with optimal JVM configurations.
 2. Submits the command to the target machine and additionally sets simple a logging mechanism: the execution writes directly to log files that are compressed after program completion/fail to S3.
 3. Optionally (depending on the option `AUTO_TERMINATION`) the scripts sets that the instance should be stopped after the program completes/fails and the log files are uploaded to S3. In that case the script wait for the machine to enters state `STOPPED` and trigger its termination.
+
+The provided URI addresses for S3 files should always use the `s3a://` prefix to allow for the proper functionality
+of the Hadoop-AWS S3 connector. 
 
 *Note 1: if automatic termination is disabled the user should manually check for program completion and terminate the EC2 instance*
 
 *Note 2: if automatic termination is enabled the user should ensure that all the output files are written to S3 because the EC2 instance storage is always configured to be ephemeral.*
 
-### Launching in Cluster (Hybrid) Mode Automatically
+### Launching in Cluster (Hybrid) Mode Automatically 
+
+The project includes also the equivalent script files to automate the launching process of EMR cluster 
+and the submission of steps for executing SystemDS programs.
+
+The shell script `./scripts/resource/launch/cluster_launch.sh` is used ofr launching the cluster 
+based on the auto-generated files from the Resource Optimizer. Additional configurations regarding the launching
+process or submitting steps should be defined in `./scripts/resource/launch/cluster.env` and the script does not
+expect any passed arguments. Like for EC2 launch, the script uses AWC CLI and executed the following steps:
+1. Queries the default subnet in the user have not defined one
+2. In case of provided SystemDS script for execution in the configuration file, it prepares the whole step definition
+3. Launched the cluster with all provided configurations. Depending on the set value for `AUTO_TERMINATION_TIME` the cluster can be set 
+to be automatically terminated after the completion of the initially provided step (of one provided at all) or terminate automatically 
+after staying for a given period of time in idle state.
+4. The script waits until the cluster enter state `RUNNING` and completes.
+
+The script `./scripts/resource/launch/cluster_run_script.sh` can be used for submitting
+steps to running EMR cluster, again by getting all its arguments from the file `./scripts/resource/launch/cluster.env`.
+The script will for the completion of the step by polling for the step's state and 
+if `AUTO_TERMINATION_TIME` is set to 0 the cluster will be automatically terminated.
+
+
+The provided URI addresses for S3 files should always use the `s3://` prefix to allow for the proper functionality
+of the EMR-specific S3 connector. 
+
+*The same notes as for the launch on programs as EC2 are valid here as well!*

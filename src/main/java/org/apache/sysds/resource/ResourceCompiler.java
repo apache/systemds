@@ -235,7 +235,7 @@ public class ResourceCompiler {
 	public static void setSingleNodeResourceConfigs(long nodeMemory, int nodeCores) {
 		DMLScript.setGlobalExecMode(Types.ExecMode.SINGLE_NODE);
 		// use 90% of the node's memory for the JVM heap -> rest needed for the OS
-		long effectiveSingleNodeMemory = (long) (nodeMemory * SINGLE_NODE_JVM_MEMORY_FACTOR);
+		long effectiveSingleNodeMemory = (long) (nodeMemory * JVM_MEMORY_FACTOR);
 		// CPU core would be shared with OS -> no further limitation
 		InfrastructureAnalyzer.setLocalMaxMemory(effectiveSingleNodeMemory);
 		InfrastructureAnalyzer.setLocalPar(nodeCores);
@@ -257,8 +257,8 @@ public class ResourceCompiler {
 			throw new RuntimeException("The given number of executors was non-positive");
 		}
 		// ------------------- CP (driver) configurations -------------------
-		// use 80% of the node's memory for the JVM heap -> rest needed for the OS and resource management
-		long effectiveDriverMemory = (long) (driverMemory * DRIVER_JVM_MEMORY_FACTOR);
+		// use 90% of the node's memory for the JVM heap -> rest needed for the OS and resource management
+		long effectiveDriverMemory = (long) (driverMemory * JVM_MEMORY_FACTOR);
 		// CPU core would be shared -> no further limitation
 		InfrastructureAnalyzer.setLocalMaxMemory(effectiveDriverMemory);
 		InfrastructureAnalyzer.setLocalPar(driverCores);

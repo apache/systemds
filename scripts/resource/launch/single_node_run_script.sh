@@ -1,4 +1,24 @@
 #!/usr/bin/env bash
+#-------------------------------------------------------------
+#
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+#
+#-------------------------------------------------------------
 
 # exit in case of error or unbound var
 set -euo pipefail
@@ -59,7 +79,24 @@ if [ $AUTO_TERMINATION != true ]; then
 fi
 
 echo -e "\nWaiting for the instance being stopped upon program completion (automatic termination enabled)..."
-aws ec2 wait instance-stopped --instance-ids "$INSTANCE_ID" --region "$REGION"
+set +e # avoid exiting on error to achieve waiting in a loop
+while true; do
+    # wait and poll every 15 up to 40 times
+    aws ec2 wait instance-stopped --instance-ids "$INSTANCE_ID" --region "$REGION"
+    # get the status to decide for the next loop
+    status=$?
+    if [ "$status" -eq 0 ]; then
+        # the instance was indeed stopped."
+        break
+    elif [ "$status" -eq 255 ]; then
+        echo "Restart the waiting mechanism..."
+        sleep 15   # wait another window before retrying
+    else
+        echo "Unknown error '$status' occurred while waiting for the instance to stop"
+        exit 1
+    fi
+done
+set -e # restore the state
 echo "...the DML finished, the logs where written to $LOG_URI and the EC2 instance was stopped"
 
 echo "The instance will be terminated directly now..."

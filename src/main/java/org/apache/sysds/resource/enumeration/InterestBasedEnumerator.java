@@ -28,6 +28,8 @@ import org.apache.sysds.resource.enumeration.EnumerationUtils.InstanceSearchSpac
 import java.util.*;
 import java.util.stream.Collectors;
 
+import static org.apache.sysds.resource.CloudUtils.JVM_MEMORY_FACTOR;
+
 public class InterestBasedEnumerator extends Enumerator {
 	// Static configurations -------------------------------------------------------------------------------------------
 	public final static long MINIMUM_RELEVANT_MEM_ESTIMATE = 2L * 1024 * 1024 * 1024; // 2GB
@@ -37,10 +39,15 @@ public class InterestBasedEnumerator extends Enumerator {
 	public final static boolean USE_MEMORY_DELTA = true; // NOTE: be careful for the proper logic implementation
 	// 10% -> account for the deltas in between equivalent Amazon EC2 instances from different generations
 	public final static double MEMORY_DELTA_FRACTION = 0.1;
+	public final static double MEMORY_FACTOR = OptimizerUtils.MEM_UTIL_FACTOR * JVM_MEMORY_FACTOR;
+	// Represents an approximation for the fraction of the whole node's memory budget available to the executor
+	// since the exact value is not static <- for more info check CloudUtils.getEffectiveExecutorResources
+	private final static double EXECUTOR_MEMORY_FACTOR = 0.6;
 	// fraction of the available memory budget for broadcast variables
-	public final static double BROADCAST_MEMORY_FACTOR = 0.21;
+	// 0.21 -> represents 70% of the storage fraction of the executors memory which is 30% of the whole executor memory
+	public final static double BROADCAST_MEMORY_FACTOR = 0.21 * EXECUTOR_MEMORY_FACTOR;
 	// fraction of the minimum available memory budget for data storing data in-memory
-	public final static double CACHE_MEMORY_FACTOR = 0.3;
+	public final static double CACHE_MEMORY_FACTOR = 0.3 * EXECUTOR_MEMORY_FACTOR;
 
 	// User-defined configurations (flag for enabling/disabling the different available options) -----------------------
 	/**
@@ -91,7 +98,7 @@ public class InterestBasedEnumerator extends Enumerator {
 
 		if (interestEstimatesInCP || interestLargestEstimate) {
 			// get full memory estimates and scale according ot the driver memory factor
-			TreeSet<Long> memoryEstimatesForDriver = getMemoryEstimates(program, false, OptimizerUtils.MEM_UTIL_FACTOR);
+			TreeSet<Long> memoryEstimatesForDriver = getMemoryEstimates(program, false, MEMORY_FACTOR);
 			setInstanceSpace(fullSearchSpace, driverSpace, memoryEstimatesForDriver);
 			if (interestLargestEstimate) {
 				largestMemoryEstimateCP = !memoryEstimatesForDriver.isEmpty()? memoryEstimatesForDriver.last() : -1;
@@ -105,7 +112,7 @@ public class InterestBasedEnumerator extends Enumerator {
 			setInstanceSpace(fullSearchSpace, executorSpace, memoryEstimatesOutputSpark);
 			// avoid calling getMemoryEstimates with different factor but rescale: output should fit twice in the CP memory
 			TreeSet<Long> memoryEstimatesOutputCP = memoryEstimatesOutputSpark.stream()
-					.map(mem -> 2 * (long) (mem * BROADCAST_MEMORY_FACTOR / OptimizerUtils.MEM_UTIL_FACTOR))
+					.map(mem -> 2 * (long) (mem * BROADCAST_MEMORY_FACTOR / MEMORY_FACTOR))
 					.collect(Collectors.toCollection(TreeSet::new));
 			setInstanceSpace(fullSearchSpace, driverSpace, memoryEstimatesOutputCP);
 

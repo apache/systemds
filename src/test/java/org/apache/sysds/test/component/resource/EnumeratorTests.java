@@ -133,9 +133,8 @@ public class EnumeratorTests extends AutomatedTestBase {
 
 		// assertions for driver space
 		InstanceSearchSpace driverSpace = interestBasedEnumerator.getDriverSpace();
-		assertEquals(2, driverSpace.size());
+		assertEquals(1, driverSpace.size());
 		assertInstanceInSearchSpace("c5.xlarge", driverSpace, 8, 4, 0);
-		assertInstanceInSearchSpace("c5n.xlarge", driverSpace, 10.5, 4, 0);
 		Assert.assertNull(driverSpace.get(GBtoBytes(32)));
 		// assertions for executor space
 		InstanceSearchSpace executorSpace = interestBasedEnumerator.getExecutorSpace();
@@ -181,9 +180,11 @@ public class EnumeratorTests extends AutomatedTestBase {
 		// assertions for executor space
 		InstanceSearchSpace executorSpace = interestBasedEnumerator.getExecutorSpace();
 		assertEquals(2, executorSpace.size());
-		assertInstanceInSearchSpace("c5n.xlarge", executorSpace, 10.5, 4, 0);
 		assertInstanceInSearchSpace("m5.xlarge", executorSpace, 16, 4, 0);
-		Assert.assertNull(executorSpace.get(GBtoBytes(32)));
+		assertInstanceInSearchSpace("m5d.xlarge", executorSpace, 16, 4, 1);
+		assertInstanceInSearchSpace("m5n.xlarge", executorSpace, 16, 4, 2);
+		assertInstanceInSearchSpace("m5.2xlarge", executorSpace, 32, 8, 0);
+		Assert.assertNull(executorSpace.get(GBtoBytes(10.5)));
 	}
 
 	@Test
@@ -421,7 +422,7 @@ public class EnumeratorTests extends AutomatedTestBase {
 					.when(() -> InterestBasedEnumerator.getMemoryEstimates(
 							any(Program.class),
 							eq(false),
-							eq(OptimizerUtils.MEM_UTIL_FACTOR)))
+							eq(InterestBasedEnumerator.MEMORY_FACTOR)))
 					.thenReturn(mockingMemoryEstimates);
 			// initiate memoryEstimatesSpark
 			interestBasedEnumerator.preprocessing();

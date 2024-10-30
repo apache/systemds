@@ -38,7 +38,7 @@ import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import static org.apache.sysds.resource.CloudUtils.DRIVER_JVM_MEMORY_FACTOR;
+import static org.apache.sysds.resource.CloudUtils.JVM_MEMORY_FACTOR;
 import static org.apache.sysds.resource.CloudUtils.getEffectiveExecutorResources;
 import static org.apache.sysds.runtime.controlprogram.context.SparkExecutionContext.SparkClusterConfig.RESERVED_SYSTEM_MEMORY_BYTES;
 
@@ -82,7 +82,7 @@ public class RecompilationTest extends AutomatedTestBase {
 
 		ResourceCompiler.setSparkClusterResourceConfigs(driverMemory, driverThreads, numberExecutors, executorMemory, executorThreads);
 
-		long expectedDriverMemory = (long) (driverMemory * DRIVER_JVM_MEMORY_FACTOR);
+		long expectedDriverMemory = (long) (driverMemory * JVM_MEMORY_FACTOR);
 		int[] expectedExecutorValues = getEffectiveExecutorResources(executorMemory, executorThreads, numberExecutors);
 		int expectedNumExecutors = expectedExecutorValues[2];
 		long expectedExecutorMemoryBudget = (long) (0.6 * (

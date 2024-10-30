@@ -40,7 +40,7 @@ fi
 # generate the step definition into STEP variable
 generate_step_definition
 
-echo "Launching EMR cluster via AWS CLI and adding a step to run $SYSTEMDS_PROGRAM with SystemDS"
+echo -e "\nLaunching EMR cluster via AWS CLI and adding a step to run $SYSTEMDS_PROGRAM with SystemDS"
 CLUSTER_INFO=$(aws emr create-cluster \
     --applications Name=AmazonCloudWatchAgent Name=Spark \
     --ec2-attributes '{
@@ -63,27 +63,24 @@ CLUSTER_INFO=$(aws emr create-cluster \
     $( [ "$AUTO_TERMINATION_TIME" -gt 0 ] && echo "--auto-termination-policy IdleTimeout=$AUTO_TERMINATION_TIME" ) \
     --region $REGION)
 
-echo "Cluster response info"
-echo $CLUSTER_INFO
-
 CLUSTER_ID=$(echo $CLUSTER_INFO | jq .ClusterId | tr -d '"')
 echo "Cluster successfully initialized with cluster ID: "${CLUSTER_ID}
 set_config "CLUSTER_ID" $CLUSTER_ID
 
 # Wait for cluster to start
-echo "Waiting for cluster to enter running state"
+echo -e "\nWaiting for cluster to enter running state..."
 aws emr wait cluster-running --cluster-id $CLUSTER_ID --region $REGION
 
 CLUSTER_URL=$(aws emr describe-cluster --cluster-id $CLUSTER_ID --region $REGION | jq .Cluster.MasterPublicDnsName | tr -d '"')
 set_config "CLUSTER_URL" "$CLUSTER_URL"
 
-echo "Launching process finished."
+echo "...launching process has finished and the cluster is not in state running."
 
 if [ "$AUTO_TERMINATION_TIME" = 0 ]; then
-    echo "Immediate automatic termination was enabled so the cluster will terminate directly after the step completion"
+    echo -e "\nImmediate automatic termination was enabled so the cluster will terminate directly after the step completion"
 elif [ "$AUTO_TERMINATION_TIME" -gt 0 ]; then
-    echo "Delayed automatic termination was enabled so the cluster will terminate $AUTO_TERMINATION_TIME
+    echo -e "\nDelayed automatic termination was enabled so the cluster will terminate $AUTO_TERMINATION_TIME
     seconds after entering idle state"
 else
-    echo "Automatic termination was not enabled so you should manually terminate the cluster"
+    echo -e "\nAutomatic termination was not enabled so you should manually terminate the cluster"
 fi

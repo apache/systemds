@@ -14,6 +14,7 @@ import org.apache.sysds.hops.rewriter.RuleContext;
 import org.apache.sysds.hops.rewriter.TopologicalSort;
 import org.junit.BeforeClass;
 import org.junit.Test;
+import scala.Tuple2;
 
 import java.io.BufferedReader;
 import java.io.FileReader;
@@ -160,17 +161,14 @@ public class RewriterClusteringTest {
 				TopologicalSort.sort(stmt1, ctx);
 				TopologicalSort.sort(stmt2, ctx);
 
-				match &= stmt1.match(RewriterStatement.MatcherContext.exactMatchWithDifferentLiteralValues(ctx, stmt2));
+				if (!stmt1.match(RewriterStatement.MatcherContext.exactMatchWithDifferentLiteralValues(ctx, stmt2))) {
+					RewriterStatement.MatcherContext mCtx = RewriterStatement.MatcherContext.findMinimalDifference(ctx, stmts.get(j));
+					stmts.get(i).match(mCtx);
+					Tuple2<RewriterStatement, RewriterStatement> minimalDifference = mCtx.getFirstMismatch();
 
-				if (match && stmt2.toString(ctx).contains("t(t(")) {
-					System.out.println("MATCH: " + stmt1.toParsableString(ctx) + " [" + stmt1.hashCode() + "]; " + stmt2.toParsableString(ctx) + "[" + stmt2.hashCode() + "]");
-					stmt1.match(RewriterStatement.MatcherContext.exactMatchWithDifferentLiteralValues(ctx, stmt2).debug(true));
+					if (minimalDifference._1 == stmts.get(i))
+						match = false;
 				}
-
-				/*if (match)
-					System.out.println("Equals: " + stmt1 + "; " + stmt2);
-				else
-					System.out.println("NEquals: " + stmt1 + "; " + stmt2);*/
 			}
 		}
 

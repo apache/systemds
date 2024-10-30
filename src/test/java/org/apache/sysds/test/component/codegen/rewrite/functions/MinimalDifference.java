@@ -30,4 +30,16 @@ public class MinimalDifference {
 		System.out.println(mCtx.getFirstMismatch()._1.toParsableString(ctx));
 		System.out.println(mCtx.getFirstMismatch()._2.toParsableString(ctx));
 	}
+
+	@Test
+	public void test2() {
+		RewriterStatement stmt1 = RewriterUtils.parse("-(A, t(+(A, A)))", ctx, "MATRIX:A");
+		RewriterStatement stmt2 = RewriterUtils.parse("-(A, t(*(2, A)))", ctx, "MATRIX:A", "LITERAL_INT:2");
+
+		RewriterStatement.MatcherContext mCtx = RewriterStatement.MatcherContext.findMinimalDifference(ctx, stmt2);
+		stmt1.match(mCtx);
+		System.out.println("Minimal Difference: ");
+		System.out.println(mCtx.getFirstMismatch()._1.toParsableString(ctx));
+		System.out.println(mCtx.getFirstMismatch()._2.toParsableString(ctx));
+	}
 }

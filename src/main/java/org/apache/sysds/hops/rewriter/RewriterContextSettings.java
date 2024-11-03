@@ -116,6 +116,7 @@ public class RewriterContextSettings {
 
 		// Meta preserving instructions
 
+		// TODO: Remove
 		builder.append("SizePreservingInstruction(MATRIX,MATRIX)::MATRIX\n"); // Maintains the size information of the matrix
 		builder.append("impl +\n");
 		//builder.append("impl -\n");
@@ -143,6 +144,14 @@ public class RewriterContextSettings {
 			builder.append("impl /\n");
 			builder.append("impl max\n");
 			builder.append("impl min\n");
+			builder.append("impl ^\n");
+			builder.append("impl >\n");
+			builder.append("impl <\n");
+			builder.append("impl >=\n");
+			builder.append("impl <=\n");
+			builder.append("impl ==\n");
+			builder.append("impl |\n");
+			builder.append("impl &\n");
 		});
 
 		builder.append("ElementWiseInstruction(MATRIX...)::MATRIX\n");
@@ -150,6 +159,14 @@ public class RewriterContextSettings {
 		builder.append("impl /\n");
 		builder.append("impl max\n");
 		builder.append("impl min\n");
+		builder.append("impl ^\n");
+		builder.append("impl >\n");
+		builder.append("impl <\n");
+		builder.append("impl >=\n");
+		builder.append("impl <=\n");
+		builder.append("impl ==\n");
+		builder.append("impl |\n");
+		builder.append("impl &\n");
 
 		RewriterUtils.buildBinaryPermutations(List.of("MATRIX...", "MATRIX", "INT", "FLOAT", "BOOL"), (t1, t2) -> {
 			builder.append("ElementWiseSumExpandableInstruction(" + t1 + "," + t2 + ")::" + RewriterUtils.defaultTypeHierarchy(t1, t2) + "\n"); // Any instruction that allows op(sum(A*), sum(B*)) = sum(op(A, B))
@@ -170,6 +187,9 @@ public class RewriterContextSettings {
 			builder.append("UnaryElementWiseOperator(" + t + ")::" + t + "\n");
 			builder.append("impl -\n");
 			builder.append("impl inv\n");
+			builder.append("impl abs\n");
+			builder.append("impl !\n");
+			builder.append("impl round\n");
 		});
 
 		//
@@ -204,6 +224,7 @@ public class RewriterContextSettings {
 		RewriterUtils.buildBinaryAlgebraInstructions(builder, "+", List.of("INT", "FLOAT", "BOOL", "MATRIX"));
 		//RewriterUtils.buildBinaryAlgebraInstructions(builder, "-", List.of("INT", "FLOAT", "BOOL", "MATRIX"));
 		RewriterUtils.buildBinaryAlgebraInstructions(builder, "*", List.of("INT", "FLOAT", "BOOL", "MATRIX"));
+		RewriterUtils.buildBinaryAlgebraInstructions(builder, "^", ALL_TYPES);
 		ALL_TYPES.forEach(t -> builder.append("-(" + t + ")::" + t + "\n"));
 		ALL_TYPES.forEach(t -> builder.append("inv(" + t + ")::" + t + "\n"));
 		//RewriterUtils.buildBinaryAlgebraInstructions(builder, "/", List.of("INT", "FLOAT", "BOOL", "MATRIX"));
@@ -268,6 +289,8 @@ public class RewriterContextSettings {
 		ALL_TYPES.forEach(t -> {
 			builder.append("ElementWiseUnary.FLOAT(" + t + ")::" + (t.equals("MATRIX") ? "MATRIX" : "FLOAT") + "\n");
 			builder.append("impl sqrt\n");
+			builder.append("impl exp\n");
+			builder.append("impl log\n");
 		});
 
 
@@ -318,6 +341,7 @@ public class RewriterContextSettings {
 		builder.append("_cur()::FLOAT\n");
 
 		ALL_TYPES.forEach(t -> builder.append("_EClass(" + t + "...)::" + t + "\n"));
+		ALL_TYPES.forEach(t -> builder.append("_backRef." + t + "()::" + t + "\n"));
 
 		builder.append("f(FLOAT,FLOAT)::FLOAT"); // Some testing function that is not commutative
 

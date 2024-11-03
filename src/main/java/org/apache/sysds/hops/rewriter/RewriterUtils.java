@@ -1097,7 +1097,7 @@ public class RewriterUtils {
 		}
 	}
 
-	public static List<RewriterStatement> mergeSubtreeCombinations(RewriterStatement stmt, List<Integer> indices, List<List<RewriterStatement>> mList, final RuleContext ctx) {
+	public static List<RewriterStatement> mergeSubtreeCombinations(RewriterStatement stmt, List<Integer> indices, List<List<RewriterStatement>> mList, final RuleContext ctx, int maximumCombinations) {
 		if (indices.isEmpty())
 			return List.of(stmt);
 
@@ -1110,14 +1110,14 @@ public class RewriterUtils {
 			cpy.prepareForHashing();
 			cpy.recomputeHashCodes(ctx);
 			mergedTreeCombinations.add(cpy);
-			return true;
+			return mergedTreeCombinations.size() < maximumCombinations;
 		});
 
 		return mergedTreeCombinations;
 	}
 
-	public static List<RewriterStatement> generateSubtrees(RewriterStatement stmt, final RuleContext ctx) {
-		List<RewriterStatement> l = generateSubtrees(stmt, new HashMap<>(), ctx);
+	public static List<RewriterStatement> generateSubtrees(RewriterStatement stmt, final RuleContext ctx, int maximumCombinations) {
+		List<RewriterStatement> l = generateSubtrees(stmt, new HashMap<>(), ctx, maximumCombinations);
 
 		if (ctx.metaPropagator != null)
 			l.forEach(subtree -> ctx.metaPropagator.apply(subtree));
@@ -1132,7 +1132,7 @@ public class RewriterUtils {
 		}).collect(Collectors.toList());
 	}
 
-	private static List<RewriterStatement> generateSubtrees(RewriterStatement stmt, Map<RewriterRule.IdentityRewriterStatement, List<RewriterStatement>> visited, final RuleContext ctx) {
+	private static List<RewriterStatement> generateSubtrees(RewriterStatement stmt, Map<RewriterRule.IdentityRewriterStatement, List<RewriterStatement>> visited, final RuleContext ctx, int maxCombinations) {
 		if (stmt == null)
 			return Collections.emptyList();
 
@@ -1162,7 +1162,7 @@ public class RewriterUtils {
 		//if (totalSubsets == 0)
 			//return List.of();
 
-		List<List<RewriterStatement>> mOptions = indices.stream().map(i -> generateSubtrees(stmt.getOperands().get(i), visited, ctx)).collect(Collectors.toList());
+		List<List<RewriterStatement>> mOptions = indices.stream().map(i -> generateSubtrees(stmt.getOperands().get(i), visited, ctx, maxCombinations)).collect(Collectors.toList());
 		List<RewriterStatement> out = new ArrayList<>();
 
 		for (int subsetMask = 0; subsetMask < totalSubsets; subsetMask++) {
@@ -1177,7 +1177,11 @@ public class RewriterUtils {
 				}
 			}
 
-			out.addAll(mergeSubtreeCombinations(stmt, indices, mOptionCpy, ctx));
+			out.addAll(mergeSubtreeCombinations(stmt, indices, mOptionCpy, ctx, maxCombinations));
+			if (out.size() > maxCombinations) {
+				System.out.println("Aborting early due to too many combinations");
+				return out;
+			}
 		}
 
 		return out;

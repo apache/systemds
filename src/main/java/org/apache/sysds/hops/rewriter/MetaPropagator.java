@@ -31,12 +31,15 @@ public class MetaPropagator implements Function<RewriterStatement, RewriterState
 			if (toSet != null && toSet != el) {
 				/*System.out.println("Set: " + toSet);
 				System.out.println("Old: " + el);
-				System.out.println("Parent: " + parent.toParsableString(ctx));*/
+				System.out.println("Parent: " + parent.toParsableString(ctx));
+				System.out.println("PIdx: " + pIdx);*/
 				el = toSet;
 				if (parent == null)
 					out.setValue(toSet);
 				else
 					parent.getOperands().set(pIdx, toSet);
+
+				//System.out.println("New parent: " + parent.toParsableString(ctx));
 			}
 
 			// Assert
@@ -96,7 +99,7 @@ public class MetaPropagator implements Function<RewriterStatement, RewriterState
 				System.out.println("All assertions: " + assertions);*/
 				//System.out.println("Asserted: " + asserted  + " (" + (asserted != ret) + ")");
 
-				if (asserted == null || asserted == parent.getChild(0))
+				if (asserted == null || (parent != null && asserted == parent.getChild(0)))
 					return ret;
 
 				return asserted;
@@ -146,6 +149,10 @@ public class MetaPropagator implements Function<RewriterStatement, RewriterState
 				case "|":
 				case "<":
 				case ">":
+				case "abs":
+				case "round":
+				case "exp":
+				case "^":
 					if (firstMatrixStatement.isEmpty())
 						throw new IllegalArgumentException(root.toString(ctx) + " has empty args!");
 					root.unsafePutMeta("nrow", firstMatrixStatement.get().getMeta("nrow"));
@@ -244,6 +251,20 @@ public class MetaPropagator implements Function<RewriterStatement, RewriterState
 				case "cast.MATRIX(MATRIX)":
 					root.unsafePutMeta("nrow", root.getOperands().get(0).getMeta("nrow"));
 					root.unsafePutMeta("ncol", root.getOperands().get(0).getMeta("ncol"));
+					return null;
+				case "RBind(MATRIX,MATRIX)":
+					HashMap<String, RewriterStatement> mstmts = new HashMap<>();
+					mstmts.put("row1", (RewriterStatement)root.getOperands().get(0).getMeta("nrow"));
+					mstmts.put("row2", (RewriterStatement)root.getOperands().get(1).getMeta("nrow"));
+					root.unsafePutMeta("nrow", RewriterUtils.parse("+(row1, row2)", ctx, mstmts));
+					root.unsafePutMeta("ncol", root.getOperands().get(0).getMeta("ncol"));
+					return null;
+				case "CBind(MATRIX,MATRIX)":
+					mstmts = new HashMap<>();
+					mstmts.put("col1", (RewriterStatement)root.getOperands().get(0).getMeta("ncol"));
+					mstmts.put("col2", (RewriterStatement)root.getOperands().get(1).getMeta("ncol"));
+					root.unsafePutMeta("nrow", root.getOperands().get(0).getMeta("nrow"));
+					root.unsafePutMeta("ncol", RewriterUtils.parse("+(col1, col2)", ctx, mstmts));
 					return null;
 			}
 

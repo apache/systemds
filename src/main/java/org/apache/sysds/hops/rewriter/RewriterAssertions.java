@@ -1,5 +1,7 @@
 package org.apache.sysds.hops.rewriter;
 
+import org.apache.commons.lang3.mutable.MutableObject;
+
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -149,6 +151,8 @@ public class RewriterAssertions {
 				assertionMatcher.put(e2, newAssertion);
 
 				allAssertions.add(newAssertion);
+
+				resolveCyclicAssertions(newAssertion);
 				//System.out.println("New assertion1: " + newAssertion);
 				return true;
 			}
@@ -163,9 +167,10 @@ public class RewriterAssertions {
 			existingAssertion.set.add(toAssert);
 			assertionMatcher.put(assert1 ? e1 : e2, existingAssertion);
 			//System.out.println("Existing assertion: " + existingAssertion);
-			if (existingAssertion.stmt != null) {
+			if (existingAssertion.stmt != null)
 				updateInstance(existingAssertion.stmt.getChild(0), existingAssertion.set);
-			}
+
+			resolveCyclicAssertions(existingAssertion);
 			//System.out.println("New assertion2: " + existingAssertion);
 			return true;
 		}
@@ -191,8 +196,39 @@ public class RewriterAssertions {
 			assertionMatcher.put(stmt1Assertions.stmt, stmt2Assertions); // Only temporary
 
 		//System.out.println("New assertion3: " + stmt2Assertions);
+		resolveCyclicAssertions(stmt2Assertions);
 
 		return true;
+	}
+
+	// Replace cycles with _backRef()
+	private void resolveCyclicAssertions(RewriterAssertion assertion) {
+		if (assertion.stmt == null)
+			return;
+
+		//System.out.println("Resolving cycles in: " + assertion);
+
+		String rType = assertion.stmt.getResultingDataType(ctx);
+
+		RewriterStatement backref = new RewriterInstruction()
+				.as(UUID.randomUUID().toString())
+				.withInstruction("_backRef." + rType)
+				.consolidate(ctx);
+		backref.unsafePutMeta("_backRef", assertion.stmt);
+
+		for (RewriterStatement eq : assertion.set) {
+			eq.forEachPreOrder((cur, parent, pIdx) -> {
+				for (int i = 0; i < cur.getOperands().size(); i++)
+					if (getAssertionObj(cur.getChild(i)) == assertion)
+						cur.getOperands().set(i, backref);
+
+				return true;
+			});
+		}
+	}
+
+	public RewriterAssertion getAssertionObj(RewriterStatement stmt) {
+		return assertionMatcher.get(stmt);
 	}
 
 	public Set<RewriterStatement> getAssertions(RewriterStatement stmt) {
@@ -217,6 +253,7 @@ public class RewriterAssertions {
 			mstmt.consolidate(ctx);
 			set.stmt = mstmt;
 			assertionMatcher.put(set.stmt, set);
+			resolveCyclicAssertions(set);
 		} else if (mstmt.getChild(0) == parent) {
 			return stmt;
 		}

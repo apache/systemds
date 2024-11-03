@@ -528,4 +528,33 @@ public class RewriterStreamTests {
 		System.out.println("==========");
 		System.out.println(stmt1.toParsableString(ctx, true));
 	}
+
+	@Test
+	public void myTest3() {
+		RewriterStatement stmt = RewriterUtils.parse("%*%(X,[](B,1,ncol(X),1,ncol(B)))", ctx, "MATRIX:X,B,intercept", "LITERAL_INT:1");
+		stmt = canonicalConverter.apply(stmt);
+
+		System.out.println("==========");
+		System.out.println(stmt.toParsableString(ctx, true));
+	}
+
+	@Test
+	public void myTest4() {
+		RewriterStatement stmt = RewriterUtils.parse("*(CBind(t(KM),KM_cols_select),KM_cols_select)", ctx, "MATRIX:KM,KM_cols_select");
+		stmt = canonicalConverter.apply(stmt);
+
+		System.out.println("==========");
+		System.out.println(stmt.toParsableString(ctx, true));
+	}
+
+	@Test
+	public void myTest5() {
+		RewriterStatement stmt = RewriterUtils.parse("*(CBind(A, A),A)", ctx, "MATRIX:A");
+		stmt = canonicalConverter.apply(stmt);
+
+		System.out.println("==========");
+		System.out.println(stmt.toParsableString(ctx, true));
+	}
+
+	// TODO: There is a problem if e.g. _EClass(argList(ncol(X), +(ncol(X), 0))) as then ncol(X) will be replaced again with the _EClass
 }

@@ -395,6 +395,14 @@ public class RewriterRuleCollection {
 					.build()
 			);
 		});
+
+		rules.add(new RewriterRuleBuilder(ctx, "length(A) => nrow(A) * ncol(A)")
+				.setUnidirectional(true)
+				.parseGlobalVars("MATRIX:A")
+				.withParsedStatement("length(A)", hooks)
+				.toParsedStatement("*(nrow(A), ncol(A))", hooks)
+				.build()
+		);
 	}
 
 	public static void canonicalizeBooleanStatements(final List<RewriterRule> rules, final RuleContext ctx) {
@@ -522,7 +530,7 @@ public class RewriterRuleCollection {
 
 
 		// Matrix Multiplication
-		rules.add(new RewriterRuleBuilder(ctx)
+		rules.add(new RewriterRuleBuilder(ctx, "Expand matrix product")
 				.setUnidirectional(true)
 				.parseGlobalVars("MATRIX:A,B")
 				.parseGlobalVars("LITERAL_INT:1")

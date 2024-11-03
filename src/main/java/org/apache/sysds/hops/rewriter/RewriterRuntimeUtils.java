@@ -50,7 +50,7 @@ public class RewriterRuntimeUtils {
 	public static final boolean printUnknowns = true;
 	public static final String dbFile = "/Users/janniklindemann/Dev/MScThesis/expressions.db";
 	public static final boolean readDB = true;
-	public static final boolean writeDB = false;
+	public static final boolean writeDB = true;
 
 
 	private static final String matrixDefs = "MATRIX:A,B,C";
@@ -98,7 +98,7 @@ public class RewriterRuntimeUtils {
 				long startMillis = System.currentTimeMillis();
 				RewriterRuntimeUtils.forAllUniqueTranslatableStatements(prog, 5, mstmt -> {
 					//List<RewriterStatement> subtrees = RewriterUtils.generateSubtrees(mstmt, new HashMap<>(), ctx);
-					List<RewriterStatement> subtrees = List.of(mstmt);
+					/*List<RewriterStatement> subtrees = List.of(mstmt);
 					for (RewriterStatement stmt : subtrees) {
 						try {
 							stmt = ctx.metaPropagator.apply(stmt);
@@ -135,7 +135,7 @@ public class RewriterRuntimeUtils {
 							e.printStackTrace();
 							failures++;
 						}
-					}
+					}*/
 				}, exactExprDB, ctx);
 				totalCPUTime += System.currentTimeMillis() - startMillis;
 				return false;
@@ -192,17 +192,21 @@ public class RewriterRuntimeUtils {
 	}
 
 	public static void forAllUniqueTranslatableStatements(DMLProgram program, int maxDepth, Consumer<RewriterStatement> stmt, RewriterDatabase db, final RuleContext ctx) {
-		Set<Hop> visited = new HashSet<>();
+		try {
+			Set<Hop> visited = new HashSet<>();
 
-		for (String namespaceKey : program.getNamespaces().keySet()) {
-			for (String fname : program.getFunctionStatementBlocks(namespaceKey).keySet()) {
-				FunctionStatementBlock fsblock = program.getFunctionStatementBlock(namespaceKey, fname);
-				handleStatementBlock(fsblock, maxDepth, stmt, visited, db, ctx);
+			for (String namespaceKey : program.getNamespaces().keySet()) {
+				for (String fname : program.getFunctionStatementBlocks(namespaceKey).keySet()) {
+					FunctionStatementBlock fsblock = program.getFunctionStatementBlock(namespaceKey, fname);
+					handleStatementBlock(fsblock, maxDepth, stmt, visited, db, ctx);
+				}
 			}
-		}
 
-		for (StatementBlock sb : program.getStatementBlocks()) {
-			handleStatementBlock(sb, maxDepth, stmt, visited, db, ctx);
+			for (StatementBlock sb : program.getStatementBlocks()) {
+				handleStatementBlock(sb, maxDepth, stmt, visited, db, ctx);
+			}
+		} catch (Exception e) {
+			e.printStackTrace();
 		}
 	}
 
@@ -256,7 +260,7 @@ public class RewriterRuntimeUtils {
 		else {
 			// TODO: What to do about TWrite and PWrite?
 			// Just ignore these ops?
-			if (!currentHop.getOpString().startsWith("TWrite") && !currentHop.getOpString().startsWith("PWrite") && !currentHop.getValueType().toString().equals("STRING") && !currentHop.getOpString().startsWith("LiteralOp") && !currentHop.getOpString().startsWith("fcall"))
+			if (!currentHop.getOpString().startsWith("TWrite") && !currentHop.getOpString().startsWith("PWrite") && !currentHop.getValueType().toString().equals("STRING") && !currentHop.getOpString().startsWith("LiteralOp") && !currentHop.getOpString().startsWith("fcall") && !currentHop.getOpString().startsWith("TRead"))
 				unknownOps.compute(currentHop.getOpString() + "::" + currentHop.getDataType() + "::" + currentHop.getValueType(), (k, v) -> v == null ? 1 : v + 1);
 		}
 
@@ -449,12 +453,12 @@ public class RewriterRuntimeUtils {
 		switch (hop.getValueType()) {
 			case FP64:
 			case FP32:
-				return RewriterUtils.parse(newName, ctx, "FLOAT:" + hop.getName());
+				return RewriterUtils.parse(newName, ctx, "FLOAT:" + newName);
 			case INT64:
 			case INT32:
-				return RewriterUtils.parse(newName, ctx, "INT:" + hop.getName());
+				return RewriterUtils.parse(newName, ctx, "INT:" + newName);
 			case BOOLEAN:
-				return RewriterUtils.parse(newName, ctx, "BOOL:" + hop.getName());
+				return RewriterUtils.parse(newName, ctx, "BOOL:" + newName);
 		}
 
 		return null; // Not supported then
@@ -534,6 +538,18 @@ public class RewriterRuntimeUtils {
 				return RewriterUtils.parse("sqrt(A)", ctx, fromType + ":A");
 			case "u(!)":
 				return RewriterUtils.parse("!(A)", ctx, fromType + ":A");
+			case "u(ncol)":
+				return RewriterUtils.parse("ncol(A)", ctx, "MATRIX:A");
+			case "u(nrow)":
+				return RewriterUtils.parse("nrow(A)", ctx, "MATRIX:A");
+			case "u(length)":
+				return RewriterUtils.parse("length(A)", ctx, "MATRIX:A");
+			case "u(exp)":
+				return RewriterUtils.parse("exp(A)", ctx, fromType + ":A");
+			case "u(round)":
+				return RewriterUtils.parse("round(A)", ctx, fromType + ":A");
+			case "u(abs)":
+				return RewriterUtils.parse("abs(A)", ctx, fromType + ":A");
 		}
 
 		if (printUnknowns)
@@ -632,8 +648,17 @@ public class RewriterRuntimeUtils {
 			case "b(<)":
 				return RewriterUtils.parse("<(a, b)", ctx, t1, t2);
 			case "b(>)":
-				// TODO: Add heuristic to transform > to <
 				return RewriterUtils.parse(">(a, b)", ctx, t1, t2);
+			case "b(>=)":
+				return RewriterUtils.parse(">=(a, b)", ctx, t1, t2);
+			case "b(<=)":
+				return RewriterUtils.parse("<=(a, b)", ctx, t1, t2);
+			case "b(^)":
+				return RewriterUtils.parse("^(a, b)", ctx, t1, t2);
+			case "b(rbind)":
+				return RewriterUtils.parse("RBind(a, b)", ctx, t1, t2);
+			case "b(cbind)":
+				return RewriterUtils.parse("CBind(a, b)", ctx, t1, t2);
 		}
 
 		if (printUnknowns)

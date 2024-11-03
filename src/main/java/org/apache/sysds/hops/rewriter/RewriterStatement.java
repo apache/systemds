@@ -683,5 +683,10 @@ public abstract class RewriterStatement implements Comparable<RewriterStatement>
 
 		if (getNRow() != null)
 			unsafePutMeta("nrow", getNRow().nestedCopyOrInject(copiedObjects, injector, this, -1));
+
+		RewriterStatement backRef = (RewriterStatement) getMeta("_backRef");
+
+		if (backRef != null)
+			unsafePutMeta("_backRef", backRef.nestedCopyOrInject(copiedObjects, injector, this, -1));
 	}
 }

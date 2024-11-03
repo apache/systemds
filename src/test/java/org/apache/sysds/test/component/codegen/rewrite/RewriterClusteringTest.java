@@ -69,6 +69,8 @@ public class RewriterClusteringTest {
 		db.forEach(expr -> {
 			if (ctr.incrementAndGet() % 10 == 0)
 				System.out.println("Done: " + ctr.intValue() + " / " + size);
+			if (ctr.intValue() > 1000)
+				return; // Skip
 			// First, build all possible subtrees
 			System.out.println("Eval: " + expr.toParsableString(ctx));
 			List<RewriterStatement> subExprs = RewriterUtils.generateSubtrees(expr, ctx, 500);
@@ -163,12 +165,26 @@ public class RewriterClusteringTest {
 				TopologicalSort.sort(stmt2, ctx);
 
 				if (!stmt1.match(RewriterStatement.MatcherContext.exactMatchWithDifferentLiteralValues(ctx, stmt2))) {
+					// TODO: Minimal difference can still prune valid rewrites (e.g. sum(A %*% B) -> sum(A * t(B)))
 					RewriterStatement.MatcherContext mCtx = RewriterStatement.MatcherContext.findMinimalDifference(ctx, stmts.get(j));
 					stmts.get(i).match(mCtx);
 					Tuple2<RewriterStatement, RewriterStatement> minimalDifference = mCtx.getFirstMismatch();
 
 					if (minimalDifference._1 == stmts.get(i))
 						match = false;
+					else {
+						// Otherwise we need to work ourselves backwards to the root if both canonical forms don't match now
+						RewriterStatement minStmt1 = minimalDifference._1.nestedCopy();
+						RewriterStatement minStmt2 = minimalDifference._2.nestedCopy();
+						minStmt1 = converter.apply(minStmt1);
+						minStmt2 = converter.apply(minStmt2);
+
+						if (minStmt1.match(RewriterStatement.MatcherContext.exactMatch(ctx, minStmt2))) {
+							// Then the minimal difference does not imply equivalence
+							// For now, just keep every result then
+							match = false;
+						}
+					}
 				}
 			}
 		}

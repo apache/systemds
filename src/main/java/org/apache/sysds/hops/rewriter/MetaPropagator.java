@@ -71,6 +71,8 @@ public class MetaPropagator implements Function<RewriterStatement, RewriterState
 	}
 
 	private RewriterStatement propagateDims(RewriterStatement root, RewriterStatement parent, int pIdx, RewriterAssertions assertions) {
+		if (root.getResultingDataType(ctx) == null)
+			throw new IllegalArgumentException("Null type: " + root.toParsableString(ctx));
 		if (!root.getResultingDataType(ctx).startsWith("MATRIX")) {
 			if (root.isInstruction()) {
 				String ti = root.trueTypedInstruction(ctx);

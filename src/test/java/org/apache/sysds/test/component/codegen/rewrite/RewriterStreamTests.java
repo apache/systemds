@@ -556,5 +556,14 @@ public class RewriterStreamTests {
 		System.out.println(stmt.toParsableString(ctx, true));
 	}
 
+	@Test
+	public void myTest6() {
+		RewriterStatement stmt = RewriterUtils.parse("rowSums(<=(D,minD))", ctx, "MATRIX:D,minD");
+		stmt = canonicalConverter.apply(stmt);
+
+		System.out.println("==========");
+		System.out.println(stmt.toParsableString(ctx, true));
+	}
+
 	// TODO: There is a problem if e.g. _EClass(argList(ncol(X), +(ncol(X), 0))) as then ncol(X) will be replaced again with the _EClass
 }

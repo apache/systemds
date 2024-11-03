@@ -189,6 +189,7 @@ public class RewriterInstruction extends RewriterStatement {
 		mCopy.costFunction = costFunction;
 		mCopy.consolidated = consolidated;
 		mCopy.operands = new ArrayList<>(operands);
+		mCopy.returnType = returnType;
 		if (meta != null)
 			mCopy.meta = new HashMap<>(meta);
 		else
@@ -215,6 +216,7 @@ public class RewriterInstruction extends RewriterStatement {
 		mCopy.costFunction = costFunction;
 		mCopy.consolidated = consolidated;
 		mCopy.operands = new ArrayList<>(operands.size());
+		mCopy.returnType = returnType;
 		mCopy.hashCode = hashCode;
 		if (meta != null)
 			mCopy.meta = new HashMap<>(meta);
@@ -245,6 +247,7 @@ public class RewriterInstruction extends RewriterStatement {
 		return true;
 	}
 
+	@Deprecated
 	@Override
 	public RewriterStatement clone() {
 		RewriterInstruction mClone = new RewriterInstruction();
@@ -259,6 +262,7 @@ public class RewriterInstruction extends RewriterStatement {
 		mClone.operands = clonedOperands;
 		mClone.costFunction = costFunction;
 		mClone.consolidated = consolidated;
+		mClone.returnType = returnType;
 		mClone.meta = meta;
 		return mClone;
 	}

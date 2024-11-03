@@ -446,6 +446,8 @@ public class RewriterInstruction extends RewriterStatement {
 		}
 
 		sb.append(')');
+		// TODO: Remove
+		sb.append("::" + getResultingDataType(ctx));
 
 		return maxRefId;
 	}

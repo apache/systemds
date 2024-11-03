@@ -309,6 +309,9 @@ public class MetaPropagator implements Function<RewriterStatement, RewriterState
 
 			if (stmt.trueInstruction().equals("_m") && stmt.getMeta("ownerId") == null)
 				throw new IllegalArgumentException(stmt.toString(ctx));
+
+			if (stmt.getResultingDataType(ctx) == null)
+				throw new IllegalArgumentException(stmt.toString(ctx));
 		}
 	}
 }

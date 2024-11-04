@@ -324,7 +324,7 @@ public class EnumeratorTests extends AutomatedTestBase {
 				.build();
 
 		// memory not relevant for grid-based enumerator
-		result = gridBasedEnumerator.evaluateSingleNodeExecution(-1);
+		result = gridBasedEnumerator.evaluateSingleNodeExecution(-1, 1);
 		Assert.assertTrue(result);
 
 		gridBasedEnumerator = getGridBasedEnumeratorPrebuild()
@@ -332,7 +332,7 @@ public class EnumeratorTests extends AutomatedTestBase {
 				.build();
 
 		// memory not relevant for grid-based enumerator
-		result = gridBasedEnumerator.evaluateSingleNodeExecution(-1);
+		result = gridBasedEnumerator.evaluateSingleNodeExecution(-1, 1);
 		Assert.assertFalse(result);
 	}
 
@@ -428,7 +428,7 @@ public class EnumeratorTests extends AutomatedTestBase {
 			interestBasedEnumerator.preprocessing();
 		}
 
-		result = interestBasedEnumerator.evaluateSingleNodeExecution(GBtoBytes(8));
+		result = interestBasedEnumerator.evaluateSingleNodeExecution(GBtoBytes(8), 1);
 		Assert.assertFalse(result);
 	}
 

@@ -143,7 +143,7 @@ public abstract class Enumerator {
 			for (Entry<Integer, LinkedList<CloudInstance>> dCoresEntry: dMemoryEntry.getValue().entrySet()) {
 				driverCores = dCoresEntry.getKey();
 				// single node execution mode
-				if (evaluateSingleNodeExecution(driverMemory)) {
+				if (evaluateSingleNodeExecution(driverMemory, driverCores)) {
 					ResourceCompiler.setSingleNodeResourceConfigs(driverMemory, driverCores);
 					program = ResourceCompiler.doFullRecompilation(program);
 					// no need of recompilation for single nodes with identical memory budget and #v. cores
@@ -207,7 +207,7 @@ public abstract class Enumerator {
 
 	// Helper methods --------------------------------------------------------------------------------------------------
 
-	public abstract boolean evaluateSingleNodeExecution(long driverMemory);
+	public abstract boolean evaluateSingleNodeExecution(long driverMemory, int cores);
 
 	/**
 	 * Estimates the minimum and maximum number of

@@ -45,7 +45,8 @@ public class GridBasedEnumerator extends Enumerator {
 	}
 
 	@Override
-	public boolean evaluateSingleNodeExecution(long driverMemory) {
+	public boolean evaluateSingleNodeExecution(long driverMemory, int cores) {
+		if (cores > CPU_QUOTA) return false;
 		return minExecutors == 0;
 	}
 

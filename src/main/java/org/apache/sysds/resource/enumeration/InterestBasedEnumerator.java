@@ -135,7 +135,8 @@ public class InterestBasedEnumerator extends Enumerator {
 	}
 
 	@Override
-	public boolean evaluateSingleNodeExecution(long driverMemory) {
+	public boolean evaluateSingleNodeExecution(long driverMemory, int cores) {
+		if (cores > CPU_QUOTA) return false;
 		if (interestLargestEstimate            /* enabled? */
 				&& minExecutors == 0 			/* single node exec. allowed */
 				&& largestMemoryEstimateCP > 0 	/* at least one memory estimate above the threshold */

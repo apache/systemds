@@ -220,7 +220,7 @@ public class ResourceCompiler {
 			BasicProgramBlock bpb = (BasicProgramBlock)originBlock;
 			StatementBlock sb = bpb.getStatementBlock();
 			ArrayList<Instruction> inst = Recompiler.recompile(sb, sb.getHops(), ExecutionContextFactory.createContext(target), null, true, false, true, false, false, null, 0);
-					bpb.setInstructions(inst);
+			bpb.setInstructions(inst);
 			target.addProgramBlock(bpb);
 		}
 	}

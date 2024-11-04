@@ -69,7 +69,7 @@ public class PruneBasedEnumerator extends Enumerator {
             for (Entry<Integer, LinkedList<CloudInstance>> dCoresEntry: dMemoryEntry.getValue().entrySet()) {
                 driverCores = dCoresEntry.getKey();
                 // single node execution mode
-                if (evaluateSingleNodeExecution(driverMemory)) {
+                if (evaluateSingleNodeExecution(driverMemory, driverCores)) {
                     ResourceCompiler.setSingleNodeResourceConfigs(driverMemory, driverCores);
                     program = ResourceCompiler.doFullRecompilation(program);
                     // no need of recompilation for single nodes with identical memory budget and #v. cores
@@ -170,7 +170,8 @@ public class PruneBasedEnumerator extends Enumerator {
     }
 
     @Override
-    public boolean evaluateSingleNodeExecution(long driverMemory) {
+    public boolean evaluateSingleNodeExecution(long driverMemory, int cores) {
+        if (cores > CPU_QUOTA || minExecutors > 0) return false;
         return insufficientSingleNodeMemory != driverMemory;
     }
 

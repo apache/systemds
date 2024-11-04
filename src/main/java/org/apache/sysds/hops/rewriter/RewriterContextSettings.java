@@ -324,6 +324,8 @@ public class RewriterContextSettings {
 		});
 
 		builder.append("_m(INT,INT,FLOAT)::MATRIX\n");
+		builder.append("_m(INT,INT,BOOL)::MATRIX\n");
+		builder.append("_m(INT,INT,INT)::MATRIX\n");
 		List.of("FLOAT", "INT", "BOOL").forEach(t -> {
 			builder.append("_idxExpr(INT," + t + ")::" + t + "*\n");
 			builder.append("_idxExpr(INT," + t + "*)::" + t + "*\n");

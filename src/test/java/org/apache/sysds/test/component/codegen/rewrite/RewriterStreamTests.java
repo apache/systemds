@@ -528,6 +528,14 @@ public class RewriterStreamTests {
 	}
 
 	@Test
+	public void testBackrefInequality() {
+		// TODO
+		// Some example where _backRef() is not the same as another one
+		// As we need to compare to the meta-data
+		assert false;
+	}
+
+	@Test
 	public void myTest() {
 		RewriterStatement stmt1 = RewriterUtils.parse("sum(-(X, 7))", ctx, "MATRIX:X,Y", "LITERAL_INT:1,7", "INT:a", "LITERAL_FLOAT:7.0");
 		stmt1 = canonicalConverter.apply(stmt1);
@@ -581,5 +589,32 @@ public class RewriterStreamTests {
 		System.out.println(stmt.toParsableString(ctx, true));
 	}
 
-	// TODO: There is a problem if e.g. _EClass(argList(ncol(X), +(ncol(X), 0))) as then ncol(X) will be replaced again with the _EClass
+	@Test
+	public void myTest7() {
+		String stmtStr = "MATRIX:combined\n" +
+				"FLOAT:int0,int496,int236,int618\n" +
+				"LITERAL_INT:1,2\n" +
+				"INT:parsertemp71754,int497,int280\n" +
+				"&(RBind(!=([](combined,1,-(parsertemp71754,int497),1,ncol(combined)),[](combined,2,nrow(combined),1,ncol(combined))),rand(1,1,int0,int496)),RBind(rand(1,1,int618,int236),!=([](combined,1,-(parsertemp71754,int280),1,ncol(combined)),[](combined,2,nrow(combined),1,ncol(combined)))))";
+
+		RewriterStatement stmt = RewriterUtils.parse(stmtStr, ctx);
+		stmt = canonicalConverter.apply(stmt);
+
+		System.out.println("==========");
+		System.out.println(stmt.toParsableString(ctx, true));
+	}
+
+	@Test
+	public void myTest8() {
+		String stmtStr = "MATRIX:prec_chol,X,mu\n" +
+				"INT:i,k\n" +
+				"LITERAL_INT:1,5\n" +
+				"%*%(X,[](prec_chol,1,*(i,ncol(X)),1,5))";
+
+		RewriterStatement stmt = RewriterUtils.parse(stmtStr, ctx);
+		stmt = canonicalConverter.apply(stmt);
+
+		System.out.println("==========");
+		System.out.println(stmt.toParsableString(ctx, true));
+	}
 }

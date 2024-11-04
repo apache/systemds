@@ -20,18 +20,21 @@ public class MetaPropagator implements Function<RewriterStatement, RewriterState
 	// TODO: Maybe automatically recompute hash codes?
 	public RewriterStatement apply(RewriterStatement root) {
 		//System.out.println("Propagating...");
-		//System.out.println("--> " + root);
+		//System.out.println("--> " + root.toParsableString(ctx));
 		RewriterAssertions assertions = root.getAssertions(ctx);
 		MutableObject<RewriterStatement> out = new MutableObject<>(root);
 		HashMap<Object, RewriterStatement> literalMap = new HashMap<>();
 		root.forEachPostOrderWithDuplicates((el, parent, pIdx) -> {
 			//System.out.println("mAssertions: " + assertions);
+			/*System.out.println("Assessing: " + el.toParsableString(ctx));
+			if (parent != null)
+				System.out.println("With parent: " + parent.toParsableString(ctx));*/
 			RewriterStatement toSet = propagateDims(el, parent, pIdx, assertions);
 
 			if (toSet != null && toSet != el) {
 				/*System.out.println("Set: " + toSet);
 				System.out.println("Old: " + el);
-				System.out.println("Parent: " + parent.toParsableString(ctx));
+				System.out.println("Parent: " + parent);
 				System.out.println("PIdx: " + pIdx);*/
 				el = toSet;
 				if (parent == null)
@@ -296,7 +299,7 @@ public class MetaPropagator implements Function<RewriterStatement, RewriterState
 				return null;
 			}
 
-			throw new NotImplementedException("Unknown instruction: " + instr.trueTypedInstruction(ctx) + "\n" + instr.toString(ctx));
+			throw new NotImplementedException("Unknown instruction: " + instr.trueTypedInstruction(ctx) + "\n" + instr.toParsableString(ctx));
 		}
 
 		return null;

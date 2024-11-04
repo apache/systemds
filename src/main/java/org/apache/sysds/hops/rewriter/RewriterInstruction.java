@@ -41,6 +41,9 @@ public class RewriterInstruction extends RewriterStatement {
 		else
 			returnType = ctx.instrTypes.get(trueTypedInstruction(ctx));//getResult(ctx).getResultingDataType(ctx);
 
+		if (returnType == null)
+			throw new IllegalArgumentException("Return type not found for: " + trueTypedInstruction(ctx));
+
 		return returnType;
 	}
 
@@ -446,8 +449,7 @@ public class RewriterInstruction extends RewriterStatement {
 		}
 
 		sb.append(')');
-		// TODO: Remove
-		sb.append("::" + getResultingDataType(ctx));
+		//sb.append("::" + getResultingDataType(ctx));
 
 		return maxRefId;
 	}

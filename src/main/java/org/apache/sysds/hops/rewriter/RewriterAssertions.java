@@ -5,15 +5,19 @@ import org.apache.commons.lang3.mutable.MutableObject;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
+import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
 public class RewriterAssertions {
 	private final RuleContext ctx;
 	private Map<RewriterStatement, RewriterAssertion> assertionMatcher = new HashMap<>();
+	// Tracks which statements are part of which assertions
+	private Map<RewriterStatement, Set<RewriterAssertion>> partOfAssertion = new HashMap<>();
 	private Set<RewriterAssertion> allAssertions = new HashSet<>();
 
 	public RewriterAssertions(final RuleContext ctx) {
@@ -40,6 +44,7 @@ public class RewriterAssertions {
 		return assertions;
 	}*/
 
+	// TODO: Add parts of assertions map
 	public static RewriterAssertions copy(RewriterAssertions old, Map<RewriterStatement, RewriterStatement> createdObjects, boolean removeOthers) {
 		//System.out.println("Copying: " + old);
 		RewriterAssertions newAssertions = new RewriterAssertions(old.ctx);
@@ -69,9 +74,16 @@ public class RewriterAssertions {
 			RewriterAssertion mapped = RewriterAssertion.from(newSet);
 			if (assertion.stmt != null)
 				mapped.stmt = createdObjects.get(assertion.stmt);
+			if (assertion.backRef != null)
+				mapped.backRef = createdObjects.get(assertion.backRef);
 			mappedAssertions.put(assertion, mapped);
 			return mapped;
 		}).filter(Objects::nonNull).collect(Collectors.toSet());
+
+		newAssertions.partOfAssertion = old.partOfAssertion.entrySet().stream().collect(Collectors.toMap(
+				v -> createdObjects.getOrDefault(v.getKey(), v.getKey()),
+				v -> v.getValue().stream().map(mappedAssertions::get).collect(Collectors.toSet())
+		));
 
 		if (removeOthers) {
 			old.assertionMatcher.forEach((k, v) -> {
@@ -100,6 +112,7 @@ public class RewriterAssertions {
 		}
 
 		//System.out.println("New: " + newAssertions);
+		//System.out.println("New parts: " + newAssertions.partOfAssertion);
 
 		return newAssertions;
 	}
@@ -153,6 +166,19 @@ public class RewriterAssertions {
 				allAssertions.add(newAssertion);
 
 				resolveCyclicAssertions(newAssertion);
+
+				forEachUniqueElementInAssertion(newAssertion, cur -> {
+					partOfAssertion.compute(cur, (k, v) -> {
+						if (v == null)
+							v = new HashSet<>();
+
+						v.add(newAssertion);
+						return v;
+					});
+				});
+
+				//System.out.println("MNew parts: " + partOfAssertion);
+
 				//System.out.println("New assertion1: " + newAssertion);
 				return true;
 			}
@@ -171,6 +197,18 @@ public class RewriterAssertions {
 				updateInstance(existingAssertion.stmt.getChild(0), existingAssertion.set);
 
 			resolveCyclicAssertions(existingAssertion);
+
+			toAssert.forEachPreOrder(cur -> {
+				partOfAssertion.compute(cur, (k, v) -> {
+					if (v == null)
+						v = new HashSet<>();
+
+					v.add(existingAssertion);
+					return v;
+				});
+				return true;
+			});
+
 			//System.out.println("New assertion2: " + existingAssertion);
 			return true;
 		}
@@ -198,23 +236,53 @@ public class RewriterAssertions {
 		//System.out.println("New assertion3: " + stmt2Assertions);
 		resolveCyclicAssertions(stmt2Assertions);
 
+		final RewriterAssertion assertionToRemove = stmt1Assertions;
+		final RewriterAssertion assertionToExtend = stmt2Assertions;
+		forEachUniqueElementInAssertion(stmt1Assertions, cur -> {
+			Set<RewriterAssertion> v = partOfAssertion.get(cur);
+			v.remove(assertionToRemove);
+			v.add(assertionToExtend);
+		});
+
 		return true;
 	}
 
+	private void forEachUniqueElementInAssertion(RewriterAssertion assertion, Consumer<RewriterStatement> consumer) {
+		Set<RewriterStatement> visited = new HashSet<>();
+		for (RewriterStatement eq : assertion.set) {
+			eq.forEachPreOrderWithDuplicates(cur -> {
+				if (!visited.add(cur))
+					return false;
+
+				consumer.accept(cur);
+				return true;
+			});
+		}
+	}
+
 	// Replace cycles with _backRef()
+	// TODO: Also copy duplicate referenced sub-trees to avoid cycles (e.g. _EClass(a*b+c, a) and sqrt(a*b) => What to do with a in a*b? _backRef or _EClass?)
+	// TODO: This requires a guarantee that reference counts are intact
 	private void resolveCyclicAssertions(RewriterAssertion assertion) {
 		if (assertion.stmt == null)
 			return;
 
 		//System.out.println("Resolving cycles in: " + assertion);
 
-		String rType = assertion.stmt.getResultingDataType(ctx);
+		RewriterStatement backref = assertion.getBackRef(ctx, this);
+		//String rType = assertion.stmt.getResultingDataType(ctx);
 
-		RewriterStatement backref = new RewriterInstruction()
+		/*RewriterStatement backref = new RewriterInstruction()
 				.as(UUID.randomUUID().toString())
 				.withInstruction("_backRef." + rType)
 				.consolidate(ctx);
-		backref.unsafePutMeta("_backRef", assertion.stmt);
+		backref.unsafePutMeta("_backRef", assertion.stmt);*/
+
+		// Check if any sub-graph of the E-Graph is referenced outside the E-Class
+		// If any child of the duplicate reference would create a back-reference, we need to copy the entire sub-graph
+		//HashMap<RewriterStatement, Integer> refCtr = new HashMap<>();
+
+
 
 		for (RewriterStatement eq : assertion.set) {
 			eq.forEachPreOrder((cur, parent, pIdx) -> {
@@ -241,12 +309,18 @@ public class RewriterAssertions {
 		//System.out.println("In: " + this);
 		RewriterAssertion set = assertionMatcher.get(stmt);
 
-		if (set == null)
+		if (set == null || set.getEClassStmt(ctx, this).getChild(0) == parent)
 			return stmt;
 
-		RewriterStatement mstmt = set.stmt;
+		//System.out.println("EClassStmt: " + set.getEClassStmt(ctx, this).getChild(0));
+		if (parent != null && parent != set.getEClassStmt(ctx, this).getChild(0) && partOfAssertion.getOrDefault(parent, Collections.emptySet()).contains(set))
+			return set.getBackRef(ctx, this);
 
-		if (mstmt == null) {
+		/*RewriterStatement mstmt = set.stmt;
+
+		if (mstmt == null)
+			mstmt = set.getEClassStmt(ctx, this);
+			{
 			// Then we create a new statement for it
 			RewriterStatement argList = new RewriterInstruction().as(UUID.randomUUID().toString()).withInstruction("argList").withOps(set.set.toArray(RewriterStatement[]::new));
 			mstmt = new RewriterInstruction().as(UUID.randomUUID().toString()).withInstruction("_EClass").withOps(argList);
@@ -254,11 +328,11 @@ public class RewriterAssertions {
 			set.stmt = mstmt;
 			assertionMatcher.put(set.stmt, set);
 			resolveCyclicAssertions(set);
-		} else if (mstmt.getChild(0) == parent) {
+		}*/ /*else if (mstmt.getChild(0) == parent) {
 			return stmt;
-		}
+		}*/
 
-		return mstmt;
+		return set.getEClassStmt(ctx, this);
 	}
 
 	// TODO: This does not handle metadata
@@ -324,6 +398,52 @@ public class RewriterAssertions {
 	private static class RewriterAssertion {
 		Set<RewriterStatement> set;
 		RewriterStatement stmt;
+		RewriterStatement backRef; // The back-reference to this assertion
+
+		RewriterStatement getEClassStmt(final RuleContext ctx, RewriterAssertions assertions) {
+			if (stmt != null)
+				return stmt;
+
+			RewriterStatement argList = new RewriterInstruction().as(UUID.randomUUID().toString()).withInstruction("argList").withOps(set.toArray(RewriterStatement[]::new));
+			stmt = new RewriterInstruction().as(UUID.randomUUID().toString()).withInstruction("_EClass").withOps(argList);
+			stmt.consolidate(ctx);
+			assertions.assertionMatcher.put(stmt, this);
+			assertions.partOfAssertion.compute(stmt, (k, v) -> {
+				if (v == null)
+					v = new HashSet<>();
+
+				v.add(this);
+				return v;
+			});
+			assertions.partOfAssertion.compute(argList, (k, v) -> {
+				if (v == null)
+					v = new HashSet<>();
+
+				v.add(this);
+				return v;
+			});
+			assertions.resolveCyclicAssertions(this);
+			return stmt;
+		}
+
+		RewriterStatement getBackRef(final RuleContext ctx, RewriterAssertions assertions) {
+			if (backRef != null)
+				return backRef;
+
+			backRef = new RewriterInstruction()
+					.as(UUID.randomUUID().toString())
+					.withInstruction("_backRef." + getEClassStmt(ctx, assertions).getResultingDataType(ctx))
+					.consolidate(ctx);
+			backRef.unsafePutMeta("_backRef", getEClassStmt(ctx, assertions));
+			assertions.partOfAssertion.compute(backRef, (k, v) -> {
+				if (v == null)
+					v = new HashSet<>();
+
+				v.add(this);
+				return v;
+			});
+			return backRef;
+		}
 
 		@Override
 		public String toString() {

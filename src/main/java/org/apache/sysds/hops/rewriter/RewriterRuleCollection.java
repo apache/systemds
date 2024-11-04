@@ -969,13 +969,14 @@ public class RewriterRuleCollection {
 				.build()
 		);
 
-		rules.add(new RewriterRuleBuilder(ctx, "_m(i::<const>, j::<const>, v) => v")
+		// TODO: Deal with boolean or int matrices
+		rules.add(new RewriterRuleBuilder(ctx, "_m(i::<const>, j::<const>, v) => cast.MATRIX(v)")
 				.setUnidirectional(true)
 				.parseGlobalVars("MATRIX:A,B")
 				.parseGlobalVars("INT:i,j")
 				.parseGlobalVars("FLOAT:v")
 				.withParsedStatement("_m(i, j, v)", hooks)
-				.toParsedStatement("v", hooks)
+				.toParsedStatement("cast.MATRIX(v)", hooks)
 				.iff(match -> {
 					List<RewriterStatement> ops = match.getMatchRoot().getOperands();
 

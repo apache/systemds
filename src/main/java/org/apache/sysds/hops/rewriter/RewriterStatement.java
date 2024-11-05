@@ -406,6 +406,7 @@ public abstract class RewriterStatement implements Comparable<RewriterStatement>
 	public abstract boolean isArgumentList();
 	public abstract List<RewriterStatement> getArgumentList();
 	public abstract boolean isInstruction();
+	public abstract boolean isEClass();
 	public abstract String trueInstruction();
 	public abstract String trueTypedInstruction(final RuleContext ctx);
 	public abstract int structuralHashCode();

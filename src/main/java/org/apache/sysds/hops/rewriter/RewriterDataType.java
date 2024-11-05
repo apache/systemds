@@ -97,6 +97,11 @@ public class RewriterDataType extends RewriterStatement {
 	}
 
 	@Override
+	public boolean isEClass() {
+		return false;
+	}
+
+	@Override
 	public String trueInstruction() {
 		return null;
 	}

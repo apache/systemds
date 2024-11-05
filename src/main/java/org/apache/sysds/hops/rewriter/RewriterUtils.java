@@ -1344,17 +1344,20 @@ public class RewriterUtils {
 		int[] literals = IntStream.range(0, argList.size()).filter(i -> argList.get(i).isLiteral()).toArray();
 
 		if (literals.length == 1) {
+			RewriterStatement overwrite = ConstantFoldingFunctions.overwritesLiteral((Number)argList.get(literals[0]).getLiteral(), stmt.trueInstruction(), ctx);
+			if (overwrite != null)
+				return overwrite;
+
 			// Check if is neutral element
 			if (ConstantFoldingFunctions.isNeutralElement(argList.get(literals[0]).getLiteral(), stmt.trueInstruction())) {
+				RewriterStatement neutral = argList.get(literals[0]);
 				argList.remove(literals[0]);
 
 				if (argList.size() == 1)
 					return argList.get(0);
+				else if (argList.isEmpty())
+					return neutral;
 			}
-
-			RewriterStatement overwrite = ConstantFoldingFunctions.overwritesLiteral((Number)argList.get(literals[0]).getLiteral(), stmt.trueInstruction(), ctx);
-			if (overwrite != null)
-				return overwrite;
 		}
 
 		if (literals.length < 2)

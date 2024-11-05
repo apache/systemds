@@ -274,6 +274,11 @@ public class RewriterInstruction extends RewriterStatement {
 		return true;
 	}
 
+	@Override
+	public boolean isEClass() {
+		return trueInstruction().equals("_EClass");
+	}
+
 	@Deprecated
 	@Override
 	public RewriterStatement clone() {

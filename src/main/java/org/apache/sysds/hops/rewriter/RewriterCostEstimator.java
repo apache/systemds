@@ -1,22 +1,48 @@
 package org.apache.sysds.hops.rewriter;
 
-import org.apache.spark.internal.config.R;
-
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.UUID;
 import java.util.function.Function;
 
 public class RewriterCostEstimator {
-	public static long estimateCost(RewriterStatement stmt, Function<RewriterStatement, VarProperties> propertyGenerator, final RuleContext ctx) {
+	public static long estimateCost(RewriterStatement stmt, Function<RewriterStatement, Long> propertyGenerator, final RuleContext ctx) {
 		RewriterAssertions assertions = new RewriterAssertions(ctx);
 		RewriterStatement costFn = propagateCostFunction(stmt, ctx, assertions);
+
+		// Now, assign
 		System.out.println(costFn);
-		return 0;
+
+		Map<RewriterStatement, RewriterStatement> map = new HashMap<>();
+
+		costFn.forEachPostOrder((cur, parent, pIdx) -> {
+			for (int i = 0; i < cur.getOperands().size(); i++) {
+				RewriterStatement op = cur.getChild(i);
+
+				RewriterStatement mNew = map.get(op);
+				if (mNew != null) {
+					cur.getOperands().set(i, mNew);
+					continue;
+				}
+
+				if (op.isEClass()) {
+					mNew = RewriterStatement.literal(ctx, propertyGenerator.apply(op));
+					map.put(op, mNew);
+					cur.getOperands().set(i, mNew);
+				} else if (op.isInstruction()) {
+					if (op.trueInstruction().equals("ncol") || op.trueInstruction().equals("nrow")) {
+						mNew = RewriterStatement.literal(ctx, propertyGenerator.apply(op));
+						map.put(op, mNew);
+						cur.getOperands().set(i, mNew);
+					}
+				}
+			}
+		});
+
+		costFn = RewriterUtils.foldConstants(costFn, ctx);
+		return (long)costFn.getLiteral();
 	}
 
 	private static RewriterStatement propagateCostFunction(RewriterStatement stmt, final RuleContext ctx, RewriterAssertions assertions) {
@@ -59,6 +85,12 @@ public class RewriterCostEstimator {
 				// Rough estimation
 				cost = RewriterUtils.parse("*(argList(nrowA, ncolA, ncolB, +(argList(mulCost, sumCost))))", ctx, map);
 				assertions.addEqualityAssertion(map.get("ncolA"), map.get("nrowB"));
+				break;
+			case "t":
+				map.put("nrowA", instr.getChild(0).getNRow());
+				map.put("ncolA", instr.getChild(0).getNCol());
+				// Rough estimation
+				cost = RewriterUtils.parse("*(argList(nrowA, ncolA))", ctx, map);
 		}
 
 		if (cost == null) {
@@ -107,19 +139,5 @@ public class RewriterCostEstimator {
 		}
 
 		throw new IllegalArgumentException();
-	}
-
-
-
-	static class VarProperties {
-		long nRows;
-		long nCols;
-		double sparsity;
-
-		public VarProperties(long nRows, long nCols, double sparsity) {
-			this.nRows = nRows;
-			this.nCols = nCols;
-			this.sparsity = sparsity;
-		}
 	}
 }

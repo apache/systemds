@@ -4,6 +4,8 @@ package org.apache.sysds.hops.rewriter;
 import java.util.function.BiFunction;
 
 public class ConstantFoldingFunctions {
+	static final double EPS = 1e-10;
+
 	public static BiFunction<Number, RewriterStatement, Number> foldingBiFunction(String op, String type) {
 		switch (op) {
 			case "+":
@@ -34,6 +36,15 @@ public class ConstantFoldingFunctions {
 		}
 
 		return false;
+	}
+
+	// TODO: What about NaNs?
+	public static RewriterStatement overwritesLiteral(Number num, String op, final RuleContext ctx) {
+		if (op.equals("*") && Math.abs(num.doubleValue()) < EPS) {
+				return RewriterStatement.literal(ctx, num);
+		}
+
+		return null;
 	}
 
 	public static double foldSumFloat(double num, RewriterStatement next) {

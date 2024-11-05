@@ -1248,7 +1248,6 @@ public class RewriterUtils {
 			}, debug);
 
 			RewriterUtils.mergeArgLists(stmt, ctx);
-			stmt = foldConstants(stmt, ctx);
 			stmt = afterFlattening.apply(stmt, (t, r) -> {
 				if (!debug)
 					return true;
@@ -1352,6 +1351,10 @@ public class RewriterUtils {
 				if (argList.size() == 1)
 					return argList.get(0);
 			}
+
+			RewriterStatement overwrite = ConstantFoldingFunctions.overwritesLiteral((Number)argList.get(literals[0]).getLiteral(), stmt.trueInstruction(), ctx);
+			if (overwrite != null)
+				return overwrite;
 		}
 
 		if (literals.length < 2)
@@ -1367,11 +1370,16 @@ public class RewriterUtils {
 		for (int literal : literals)
 			val = foldingFunction.apply(val, argList.get(literal));
 
+
+		RewriterStatement overwrite = ConstantFoldingFunctions.overwritesLiteral(val, stmt.trueInstruction(), ctx);
+		if (overwrite != null)
+			return overwrite;
+
 		foldedLiteral.as(val.toString()).ofType(rType).asLiteral(val).consolidate(ctx);
 
 		argList.removeIf(RewriterStatement::isLiteral);
 
-		if (!ConstantFoldingFunctions.isNeutralElement(foldedLiteral.getLiteral(), stmt.trueInstruction()))
+		if (argList.isEmpty() || !ConstantFoldingFunctions.isNeutralElement(foldedLiteral.getLiteral(), stmt.trueInstruction()))
 			argList.add(foldedLiteral);
 
 		if (argList.size() == 1)

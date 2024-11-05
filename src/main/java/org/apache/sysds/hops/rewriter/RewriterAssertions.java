@@ -80,10 +80,26 @@ public class RewriterAssertions {
 			return mapped;
 		}).filter(Objects::nonNull).collect(Collectors.toSet());
 
-		newAssertions.partOfAssertion = old.partOfAssertion.entrySet().stream().collect(Collectors.toMap(
-				v -> createdObjects.getOrDefault(v.getKey(), v.getKey()),
-				v -> v.getValue().stream().map(mappedAssertions::get).collect(Collectors.toSet())
-		));
+		/*System.out.println(old.partOfAssertion);
+		System.out.println("IntMap: " + createdObjects.get(RewriterUtils.parse("1", RuleContext.currentContext, "LITERAL_INT:1")));
+		System.out.println("MappedAssertion: " + mappedAssertions);*/
+
+		for (Map.Entry<RewriterStatement, Set<RewriterAssertion>> e : old.partOfAssertion.entrySet()) {
+			RewriterStatement k = createdObjects.get(e.getKey());
+
+			if (k == null)
+				continue;
+
+			Set<RewriterAssertion> v = e.getValue();
+			Set<RewriterAssertion> newV = v.stream().map(mappedAssertions::get).filter(Objects::nonNull).collect(Collectors.toSet());
+
+			newAssertions.partOfAssertion.put(k, newV);
+		}
+
+		/*newAssertions.partOfAssertion = old.partOfAssertion.entrySet().stream().collect(Collectors.toMap(
+				v -> {System.out.println(v.getKey() + " -> " + createdObjects.get(v.getKey())); return createdObjects.getOrDefault(v.getKey(), v.getKey());},
+				v -> {System.out.println(v.getValue() + " -> " + v.getValue().stream().map(mappedAssertions::get).collect(Collectors.toSet())); return v.getValue().stream().map(mappedAssertions::get).collect(Collectors.toSet());}
+		));*/
 
 		if (removeOthers) {
 			old.assertionMatcher.forEach((k, v) -> {
@@ -117,6 +133,16 @@ public class RewriterAssertions {
 		return newAssertions;
 	}
 
+	private static RewriterStatement getOrCreate(RewriterStatement stmt, Map<RewriterStatement, RewriterStatement> createdObjects) {
+		RewriterStatement get = createdObjects.get(stmt);
+
+		if (get != null)
+			return get;
+
+		//createdObjects
+		return null;
+	}
+
 	/*public void update(Map<RewriterRule.IdentityRewriterStatement, RewriterRule.IdentityRewriterStatement> createdObjects) {
 		for (RewriterAssertion assertion : allAssertions) {
 			assertion.set = assertion.set.stream().map(el -> createdObjects.getOrDefault(el, el)).collect(Collectors.toSet());
@@ -142,6 +168,9 @@ public class RewriterAssertions {
 		//	throw new UnsupportedOperationException("Asserting uninjectable objects is not yet supported: " + stmt1 + "; " + stmt2);
 
 		//System.out.println("Asserting: " + stmt1 + " := " + stmt2);
+
+		if (stmt1.hashCode() == 0)
+			throw new IllegalArgumentException();
 
 		RewriterStatement e1 = stmt1;
 		RewriterStatement e2 = stmt2;

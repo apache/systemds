@@ -45,6 +45,9 @@ public class RewriterDataType extends RewriterStatement {
 
 	@Override
 	public void setLiteral(Object literal) {
+		if (consolidated)
+			throw new IllegalArgumentException();
+
 		this.literal = literal;
 	}
 
@@ -83,19 +86,54 @@ public class RewriterDataType extends RewriterStatement {
 		if (type == null ||type.isEmpty())
 			throw new IllegalArgumentException("The type of a data type cannot be empty");
 
-		hashCode = Objects.hash(rid, refCtr, type);
+		if (isLiteral())
+			hashCode = Objects.hash(-1, -1, type, literal);
+		else
+			hashCode = Objects.hash(rid, refCtr, type);
 		return this;
 	}
 
 	@Override
 	public int recomputeHashCodes(boolean recursively, final RuleContext ctx) {
-		hashCode = Objects.hash(rid, refCtr, type);
+		if (isLiteral())
+			hashCode = Objects.hash(-1, -1, type, literal);
+		else
+			hashCode = Objects.hash(rid, refCtr, type);
 		return hashCode;
 	}
 
 	@Override
 	public int structuralHashCode() {
 		return hashCode;
+	}
+
+	@Override
+	public int hashCode() {
+		if (isLiteral())
+			return hashCode;
+
+		return super.hashCode();
+	}
+
+	@Override
+	public boolean equals(Object o) {
+		if (isLiteral())
+			return o instanceof RewriterDataType && getLiteral().equals(((RewriterDataType)o).getLiteral());
+		return super.equals(o);
+	}
+
+	@Override
+	public int computeIds(int id) {
+		if (!isLiteral())
+			return super.computeIds(id);
+
+		rid = -1;
+		return id;
+	}
+
+	@Override
+	public void computeRefCtrs() {
+		refCtr = -1;
 	}
 
 	@Override
@@ -153,7 +191,7 @@ public class RewriterDataType extends RewriterStatement {
 			}
 			mCtx.getDependencyMap().put(this, stmt);
 			return true;
-		} else if (assoc == stmt) {
+		} else if (assoc.equals(stmt)) {
 			return true;
 		}
 
@@ -270,11 +308,11 @@ public class RewriterDataType extends RewriterStatement {
 	@Override
 	public String toString(final RuleContext ctx) {
 		if (!isLiteral())
-			return getId() + "::" + getResultingDataType(ctx) + "[" + System.identityHashCode(this) + "]";
+			return getId() + "::" + getResultingDataType(ctx) + "[" + hashCode() + "]";
 
 		if (getLiteral() instanceof Boolean)
 			return getLiteral().toString().toUpperCase();
 
-		return getLiteral().toString() + "::" + getResultingDataType(ctx);
+		return getLiteral().toString() + "::" + getResultingDataType(ctx) + "["  + hashCode() + "]";
 	}
 }

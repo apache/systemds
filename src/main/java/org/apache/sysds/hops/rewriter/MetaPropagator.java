@@ -132,8 +132,8 @@ public class MetaPropagator implements Function<RewriterStatement, RewriterState
 					root.unsafePutMeta("ncol", root.getOperands().get(1));
 					return null;
 				case "as.matrix":
-					root.unsafePutMeta("ncol", new RewriterDataType().ofType("INT").as("1").asLiteral(1L));
-					root.unsafePutMeta("nrow", new RewriterDataType().ofType("INT").as("1").asLiteral(1L));
+					root.unsafePutMeta("ncol", new RewriterDataType().ofType("INT").as("1").asLiteral(1L).consolidate(ctx));
+					root.unsafePutMeta("nrow", new RewriterDataType().ofType("INT").as("1").asLiteral(1L).consolidate(ctx));
 					return null;
 				case "argList":
 					// TODO: We assume argLists always occur if the matrix properties don't change (for now)
@@ -166,8 +166,8 @@ public class MetaPropagator implements Function<RewriterStatement, RewriterState
 				case "cast.MATRIX":
 					String mDT = root.getChild(0).getResultingDataType(ctx);
 					if (mDT.equals("BOOL") || mDT.equals("INT") || mDT.equals("FLOAT")) {
-						root.unsafePutMeta("ncol", new RewriterDataType().ofType("INT").as("1").asLiteral(1L));
-						root.unsafePutMeta("nrow", new RewriterDataType().ofType("INT").as("1").asLiteral(1L));
+						root.unsafePutMeta("ncol", new RewriterDataType().ofType("INT").as("1").asLiteral(1L).consolidate(ctx));
+						root.unsafePutMeta("nrow", new RewriterDataType().ofType("INT").as("1").asLiteral(1L).consolidate(ctx));
 						return null;
 					}
 			}
@@ -202,7 +202,7 @@ public class MetaPropagator implements Function<RewriterStatement, RewriterState
 					return null;
 				case "diag(MATRIX)":
 					root.unsafePutMeta("nrow", root.getOperands().get(0).getMeta("nrow"));
-					root.unsafePutMeta("ncol", new RewriterDataType().ofType("INT").as("1").asLiteral(1L));
+					root.unsafePutMeta("ncol", new RewriterDataType().ofType("INT").as("1").asLiteral(1L).consolidate(ctx));
 					return null;
 				case "[](MATRIX,INT,INT,INT,INT)":
 					Long[] ints = new Long[4];
@@ -247,11 +247,11 @@ public class MetaPropagator implements Function<RewriterStatement, RewriterState
 					return null;
 				case "rowSums(MATRIX)":
 					root.unsafePutMeta("nrow", root.getOperands().get(0).getMeta("nrow"));
-					root.unsafePutMeta("ncol", new RewriterDataType().ofType("INT").as("1").asLiteral(1L));
+					root.unsafePutMeta("ncol", new RewriterDataType().ofType("INT").as("1").asLiteral(1L).consolidate(ctx));
 					return null;
 				case "colSums(MATRIX)":
 					root.unsafePutMeta("ncol", root.getOperands().get(0).getMeta("ncol"));
-					root.unsafePutMeta("nrow", new RewriterDataType().ofType("INT").as("1").asLiteral(1L));
+					root.unsafePutMeta("nrow", new RewriterDataType().ofType("INT").as("1").asLiteral(1L).consolidate(ctx));
 					return null;
 				case "cast.MATRIX(MATRIX)":
 					root.unsafePutMeta("nrow", root.getOperands().get(0).getMeta("nrow"));

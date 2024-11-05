@@ -18,6 +18,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.Stack;
+import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -60,6 +62,29 @@ public abstract class RewriterStatement implements Comparable<RewriterStatement>
 		if (origin != dest)
 			links.put(origin, dest);
 	}
+
+	/*private static final Map<Object, RewriterStatement> allLiterals = new ConcurrentHashMap<>();
+
+	public static RewriterStatement newLiteral(Object literal, final RuleContext ctx) {
+		RewriterStatement mLiteral = allLiterals.get(literal);
+		if (mLiteral != null)
+			return mLiteral;
+
+		String type;
+		if (literal instanceof Long)
+			type = "INT";
+		else if (literal instanceof Double)
+			type = "FLOAT";
+		else if (literal instanceof Boolean)
+			type = "BOOL";
+		else
+			throw new IllegalArgumentException();
+
+		RewriterStatement stmt = new RewriterDataType().as(UUID.randomUUID().toString()).ofType(type).asLiteral(literal).consolidate(ctx);
+		allLiterals.put(literal, stmt);
+
+		return stmt;
+	}*/
 
 
 	public static class MatchingSubexpression {

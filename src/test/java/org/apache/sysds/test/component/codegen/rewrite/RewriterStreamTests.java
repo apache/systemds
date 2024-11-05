@@ -617,4 +617,30 @@ public class RewriterStreamTests {
 		System.out.println("==========");
 		System.out.println(stmt.toParsableString(ctx, true));
 	}
+
+	@Test
+	public void myTest9() {
+		String stmtStr = "MATRIX:A,scale_X,shift_X,parsertemp282257,parsertemp282256,parsertemp282259,parsertemp282258\n" +
+				"INT:m_ext\n" +
+				"LITERAL_INT:1\n" +
+				"+(%*%(diag(scale_X),t(+(%*%(parsertemp282256,A),%*%(shift_X,A)))),%*%(shift_X,[](t(+(parsertemp282257,parsertemp282258)),m_ext,m_ext,1,nrow(parsertemp282259))))";
+
+		RewriterStatement stmt = RewriterUtils.parse(stmtStr, ctx);
+		stmt = canonicalConverter.apply(stmt);
+
+		System.out.println("==========");
+		System.out.println(stmt.toParsableString(ctx, true));
+	}
+
+	@Test
+	public void myTest10() {
+		String stmtStr = "MATRIX:P,minD,D,X\n" +
+				"/(%*%(t(/(<=(D,minD),rowSums(P))),X),t(colSums(/(<=(D,minD),rowSums(P)))))";
+
+		RewriterStatement stmt = RewriterUtils.parse(stmtStr, ctx);
+		stmt = canonicalConverter.apply(stmt);
+
+		System.out.println("==========");
+		System.out.println(stmt.toParsableString(ctx, true));
+	}
 }

@@ -72,7 +72,7 @@ public class RewriterClusteringTest {
 			//if (ctr.intValue() > 1000)
 				//return; // Skip
 			// First, build all possible subtrees
-			//System.out.println("Eval:\n" + expr.toParsableString(ctx, true));
+			System.out.println("Eval:\n" + expr.toParsableString(ctx, true));
 			List<RewriterStatement> subExprs = RewriterUtils.generateSubtrees(expr, ctx, 500);
 			if (subExprs.size() > 100)
 				System.out.println("Critical number of subtrees: " + subExprs.size());

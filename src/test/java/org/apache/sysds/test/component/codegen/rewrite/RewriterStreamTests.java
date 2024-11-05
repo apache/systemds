@@ -8,7 +8,6 @@ import org.apache.sysds.hops.rewriter.RewriterRuleSet;
 import org.apache.sysds.hops.rewriter.RewriterStatement;
 import org.apache.sysds.hops.rewriter.RewriterUtils;
 import org.apache.sysds.hops.rewriter.RuleContext;
-import org.apache.sysds.hops.rewriter.TopologicalSort;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
@@ -528,6 +527,22 @@ public class RewriterStreamTests {
 	}
 
 	@Test
+	public void testSimpleInverseEquivalence() {
+		RewriterStatement stmt1 = RewriterUtils.parse("inv(A)", ctx, "MATRIX:A,B", "LITERAL_INT:7");
+		RewriterStatement stmt2 = RewriterUtils.parse("-(inv(-(A)))", ctx, "MATRIX:A,B", "LITERAL_INT:7");
+
+		stmt1 = canonicalConverter.apply(stmt1);
+		stmt2 = canonicalConverter.apply(stmt2);
+
+		System.out.println("==========");
+		System.out.println(stmt1.toParsableString(ctx, true));
+		System.out.println("==========");
+		System.out.println(stmt2.toParsableString(ctx, true));
+
+		assert stmt1.match(RewriterStatement.MatcherContext.exactMatch(ctx, stmt2));
+	}
+
+	@Test
 	public void testBackrefInequality() {
 		// TODO
 		// Some example where _backRef() is not the same as another one
@@ -642,5 +657,53 @@ public class RewriterStreamTests {
 
 		System.out.println("==========");
 		System.out.println(stmt.toParsableString(ctx, true));
+	}
+
+	@Test
+	public void testConstantFolding1() {
+		RewriterStatement stmt1 = RewriterUtils.parse("*(1, A)", ctx, "MATRIX:A", "LITERAL_INT:1");
+		RewriterStatement stmt2 = RewriterUtils.parse("A", ctx, "MATRIX:A");
+
+		stmt1 = canonicalConverter.apply(stmt1);
+		stmt2 = canonicalConverter.apply(stmt2);
+
+		System.out.println("==========");
+		System.out.println(stmt1.toParsableString(ctx, true));
+		System.out.println("==========");
+		System.out.println(stmt2.toParsableString(ctx, true));
+
+		assert stmt1.match(RewriterStatement.MatcherContext.exactMatch(ctx, stmt2));
+	}
+
+	@Test
+	public void testConstantFolding2() {
+		RewriterStatement stmt1 = RewriterUtils.parse("+(A, 0)", ctx, "MATRIX:A", "LITERAL_INT:0");
+		RewriterStatement stmt2 = RewriterUtils.parse("A", ctx, "MATRIX:A");
+
+		stmt1 = canonicalConverter.apply(stmt1);
+		stmt2 = canonicalConverter.apply(stmt2);
+
+		System.out.println("==========");
+		System.out.println(stmt1.toParsableString(ctx, true));
+		System.out.println("==========");
+		System.out.println(stmt2.toParsableString(ctx, true));
+
+		assert stmt1.match(RewriterStatement.MatcherContext.exactMatch(ctx, stmt2));
+	}
+
+	@Test
+	public void testConstantFolding3() {
+		RewriterStatement stmt1 = RewriterUtils.parse("+(A, *(3, -(1, 1)))", ctx, "MATRIX:A", "LITERAL_INT:1,3");
+		RewriterStatement stmt2 = RewriterUtils.parse("A", ctx, "MATRIX:A");
+
+		stmt1 = canonicalConverter.apply(stmt1);
+		stmt2 = canonicalConverter.apply(stmt2);
+
+		System.out.println("==========");
+		System.out.println(stmt1.toParsableString(ctx, true));
+		System.out.println("==========");
+		System.out.println(stmt2.toParsableString(ctx, true));
+
+		assert stmt1.match(RewriterStatement.MatcherContext.exactMatch(ctx, stmt2));
 	}
 }

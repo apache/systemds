@@ -325,6 +325,10 @@ public abstract class RewriterStatement implements Comparable<RewriterStatement>
 	public abstract String getResultingDataType(final RuleContext ctx);
 	public abstract boolean isLiteral();
 	public abstract Object getLiteral();
+	public abstract RewriterStatement getLiteralStatement();
+	public abstract long intLiteral();
+	public abstract double floatLiteral();
+	public abstract boolean boolLiteral();
 
 	public void setLiteral(Object literal) {
 		throw new IllegalArgumentException("This class does not support setting literals");
@@ -713,5 +717,25 @@ public abstract class RewriterStatement implements Comparable<RewriterStatement>
 
 		if (backRef != null)
 			unsafePutMeta("_backRef", backRef.nestedCopyOrInject(copiedObjects, injector, this, -1));
+	}
+
+	public static RewriterStatement argList(final RuleContext ctx, RewriterStatement... args) {
+		return new RewriterInstruction().as(UUID.randomUUID().toString()).withInstruction("argList").withOps(args).consolidate(ctx);
+	}
+
+	public static RewriterStatement argList(final RuleContext ctx, List<RewriterStatement> args) {
+		return argList(ctx, args.toArray(RewriterStatement[]::new));
+	}
+
+	public static RewriterStatement literal(final RuleContext ctx, Object literal) {
+		if (literal instanceof Double) {
+			return new RewriterDataType().as(literal.toString()).ofType("FLOAT").asLiteral(literal).consolidate(ctx);
+		} else if (literal instanceof Long) {
+			return new RewriterDataType().as(literal.toString()).ofType("INT").asLiteral(literal).consolidate(ctx);
+		} else if (literal instanceof Boolean)  {
+			return new RewriterDataType().as(literal.toString()).ofType("BOOL").asLiteral(literal).consolidate(ctx);
+		}
+
+		throw new IllegalArgumentException();
 	}
 }

@@ -35,6 +35,7 @@ import java.util.function.Function;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 public class RewriterUtils {
 
@@ -1247,6 +1248,7 @@ public class RewriterUtils {
 			}, debug);
 
 			RewriterUtils.mergeArgLists(stmt, ctx);
+			stmt = foldConstants(stmt, ctx);
 			stmt = afterFlattening.apply(stmt, (t, r) -> {
 				if (!debug)
 					return true;
@@ -1256,6 +1258,8 @@ public class RewriterUtils {
 				System.out.println(t.toParsableString(ctx));
 				return true;
 			}, debug);
+
+			stmt = foldConstants(stmt, ctx);
 
 			// TODO: After this, stuff like CSE, A-A = 0, etc. must still be applied
 
@@ -1284,6 +1288,122 @@ public class RewriterUtils {
 	private static boolean exactMatchElement(RewriterStatement stmt1, RewriterStatement stmt2) {
 
 	}*/
+
+	public static RewriterStatement foldConstants(RewriterStatement stmt, final RuleContext ctx) {
+		Map<RewriterStatement, RewriterStatement> replaced = new HashMap<>();
+		RewriterStatement ret = foldConstantsRecursively(stmt, ctx, replaced);
+		ret.prepareForHashing();
+		ret.recomputeHashCodes(ctx);
+		return ret;
+	}
+
+	private static RewriterStatement foldConstantsRecursively(RewriterStatement cur, final RuleContext ctx, Map<RewriterStatement, RewriterStatement> alreadyFolded) {
+		if (!cur.isInstruction())
+			return cur;
+
+		RewriterStatement folded = alreadyFolded.get(cur);
+
+		if (folded != null)
+			return folded;
+
+		for (int i = 0; i < cur.getOperands().size(); i++)
+			cur.getOperands().set(i, foldConstantsRecursively(cur.getChild(i), ctx, alreadyFolded));
+
+		RewriterStatement ret = cur;
+
+		switch (cur.trueInstruction()) {
+			case "+":
+			case "*":
+				ret = foldNaryReducible(cur, ctx);
+				break;
+			case "_EClass":
+				ret = foldEClass(cur, ctx);
+				break;
+			default:
+				if (cur.getOperands().size() == 1)
+					ret = foldUnary(cur, ctx);
+				break;
+		}
+
+		alreadyFolded.put(cur, ret);
+		return ret;
+	}
+
+	private static RewriterStatement foldEClass(RewriterStatement stmt, final RuleContext ctx) {
+		RewriterStatement lit = stmt.getLiteralStatement();
+		if (lit != null)
+			return lit;
+		return stmt;
+	}
+
+	private static RewriterStatement foldNaryReducible(RewriterStatement stmt, final RuleContext ctx) {
+		List<RewriterStatement> argList = stmt.getChild(0).getOperands();
+
+		if (argList.size() < 2)
+			return argList.get(0);
+
+		int[] literals = IntStream.range(0, argList.size()).filter(i -> argList.get(i).isLiteral()).toArray();
+
+		if (literals.length == 1) {
+			// Check if is neutral element
+			if (ConstantFoldingFunctions.isNeutralElement(argList.get(literals[0]).getLiteral(), stmt.trueInstruction())) {
+				argList.remove(literals[0]);
+
+				if (argList.size() == 1)
+					return argList.get(0);
+			}
+		}
+
+		if (literals.length < 2)
+			return stmt;
+
+		String rType = stmt.getResultingDataType(ctx);
+
+		BiFunction<Number, RewriterStatement, Number> foldingFunction = ConstantFoldingFunctions.foldingBiFunction(stmt.trueInstruction(), rType);
+
+		RewriterDataType foldedLiteral = new RewriterDataType();
+		Number val = null;
+
+		for (int literal : literals)
+			val = foldingFunction.apply(val, argList.get(literal));
+
+		foldedLiteral.as(val.toString()).ofType(rType).asLiteral(val).consolidate(ctx);
+
+		argList.removeIf(RewriterStatement::isLiteral);
+
+		if (!ConstantFoldingFunctions.isNeutralElement(foldedLiteral.getLiteral(), stmt.trueInstruction()))
+			argList.add(foldedLiteral);
+
+		if (argList.size() == 1)
+			return argList.get(0);
+
+		return stmt;
+	}
+
+	private static RewriterStatement foldUnary(RewriterStatement stmt, final RuleContext ctx) {
+		RewriterStatement child = stmt.getChild(0);
+
+		if (!child.isLiteral())
+			return stmt;
+
+		boolean isFloat = stmt.getResultingDataType(ctx).equals("FLOAT");
+
+		switch (stmt.trueInstruction()) {
+			case "inv":
+				if (isFloat)
+					return RewriterStatement.literal(ctx, 1.0 / child.floatLiteral());
+				else
+					return RewriterStatement.literal(ctx, 1L / child.intLiteral());
+			case "-":
+				if (isFloat)
+					return RewriterStatement.literal(ctx, -child.floatLiteral());
+				else
+					return RewriterStatement.literal(ctx, -child.intLiteral());
+		}
+
+		// Not implemented yet
+		return stmt;
+	}
 
 	public static void doCSE(RewriterStatement stmt, final RuleContext ctx) {
 

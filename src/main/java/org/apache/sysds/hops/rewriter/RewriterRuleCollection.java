@@ -1,11 +1,15 @@
 package org.apache.sysds.hops.rewriter;
 
+import org.apache.spark.internal.config.R;
+
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.UUID;
 import java.util.function.Function;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 import static org.apache.sysds.hops.rewriter.RewriterContextSettings.ALL_TYPES;
@@ -1412,6 +1416,7 @@ public class RewriterRuleCollection {
 
 	}
 
+	@Deprecated
 	public static void collapseStreamingExpressions(final List<RewriterRule> rules, final RuleContext ctx) {
 
 		HashMap<Integer, RewriterStatement> hooks = new HashMap<>();

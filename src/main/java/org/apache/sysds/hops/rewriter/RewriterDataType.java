@@ -44,11 +44,41 @@ public class RewriterDataType extends RewriterStatement {
 	}
 
 	@Override
+	public long intLiteral() {
+		if (getLiteral() instanceof Boolean)
+			return (boolean)getLiteral() ? 1 : 0;
+		return (long)getLiteral();
+	}
+
+	@Override
+	public double floatLiteral() {
+		if (getLiteral() instanceof Boolean)
+			return (boolean)getLiteral() ? 1 : 0;
+		if (getLiteral() instanceof Long)
+			return Double.valueOf((Long)getLiteral());
+		return (double)getLiteral();
+	}
+
+	@Override
+	public boolean boolLiteral() {
+		if (getLiteral() instanceof Boolean)
+			return (boolean)getLiteral();
+		if (getLiteral() instanceof Long)
+			return (long)getLiteral() == 0L;
+		return (double)getLiteral() == 0.0;
+	}
+
+	@Override
 	public void setLiteral(Object literal) {
 		if (consolidated)
 			throw new IllegalArgumentException();
 
 		this.literal = literal;
+	}
+
+	@Override
+	public RewriterStatement getLiteralStatement() {
+		return this;
 	}
 
 	@Override

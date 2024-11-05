@@ -63,6 +63,30 @@ public class RewriterInstruction extends RewriterStatement {
 	}
 
 	@Override
+	public RewriterStatement getLiteralStatement() {
+		for (RewriterStatement op : getChild(0).getOperands())
+			if (op.isLiteral())
+				return op;
+
+		return null;
+	}
+
+	@Override
+	public long intLiteral() {
+		throw new UnsupportedOperationException();
+	}
+
+	@Override
+	public double floatLiteral() {
+		throw new UnsupportedOperationException();
+	}
+
+	@Override
+	public boolean boolLiteral() {
+		throw new UnsupportedOperationException();
+	}
+
+	@Override
 	public RewriterStatement consolidate(final RuleContext ctx) {
 		if (consolidated)
 			return this;

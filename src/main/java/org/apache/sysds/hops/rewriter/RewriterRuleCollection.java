@@ -1183,9 +1183,6 @@ public class RewriterRuleCollection {
 				.build()
 		);
 
-		System.out.println("MRULE:");
-		System.out.println(rules.get(rules.size()-1).getStmt1().toParsableString(ctx));
-
 		rules.add(new RewriterRuleBuilder(ctx, "sum(_idxExpr(indices, +(ops))) => +(argList(sum(_idxExpr(indices, op1)), sum(_idxExpr(...)), ...))")
 				.setUnidirectional(true)
 				.parseGlobalVars("INT...:indices")

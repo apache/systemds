@@ -180,6 +180,8 @@ public class MetaPropagator implements Function<RewriterStatement, RewriterState
 					root.unsafePutMeta("nrow", colAccess);
 					return null;
 				case "_m(INT,INT,FLOAT)":
+				case "_m(INT,INT,BOOL)":
+				case "_m(INT,INT,INT)":
 					if (root.getOperands().get(0).isInstruction()
 							&& root.getOperands().get(0).trueTypedInstruction(ctx).equals("_idx(INT,INT)")) {
 						root.unsafePutMeta("nrow", root.getOperands().get(0).getOperands().get(1));

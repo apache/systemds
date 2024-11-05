@@ -133,16 +133,6 @@ public class RewriterAssertions {
 		return newAssertions;
 	}
 
-	private static RewriterStatement getOrCreate(RewriterStatement stmt, Map<RewriterStatement, RewriterStatement> createdObjects) {
-		RewriterStatement get = createdObjects.get(stmt);
-
-		if (get != null)
-			return get;
-
-		//createdObjects
-		return null;
-	}
-
 	/*public void update(Map<RewriterRule.IdentityRewriterStatement, RewriterRule.IdentityRewriterStatement> createdObjects) {
 		for (RewriterAssertion assertion : allAssertions) {
 			assertion.set = assertion.set.stream().map(el -> createdObjects.getOrDefault(el, el)).collect(Collectors.toSet());
@@ -299,24 +289,11 @@ public class RewriterAssertions {
 		//System.out.println("Resolving cycles in: " + assertion);
 
 		RewriterStatement backref = assertion.getBackRef(ctx, this);
-		//String rType = assertion.stmt.getResultingDataType(ctx);
-
-		/*RewriterStatement backref = new RewriterInstruction()
-				.as(UUID.randomUUID().toString())
-				.withInstruction("_backRef." + rType)
-				.consolidate(ctx);
-		backref.unsafePutMeta("_backRef", assertion.stmt);*/
-
-		// Check if any sub-graph of the E-Graph is referenced outside the E-Class
-		// If any child of the duplicate reference would create a back-reference, we need to copy the entire sub-graph
-		//HashMap<RewriterStatement, Integer> refCtr = new HashMap<>();
-
-
 
 		for (RewriterStatement eq : assertion.set) {
 			eq.forEachPreOrder((cur, parent, pIdx) -> {
 				for (int i = 0; i < cur.getOperands().size(); i++)
-					if (getAssertionObj(cur.getChild(i)) == assertion)
+					if (!cur.getChild(i).isLiteral() && getAssertionObj(cur.getChild(i)) == assertion)
 						cur.getOperands().set(i, backref);
 
 				return true;

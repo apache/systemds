@@ -318,9 +318,18 @@ public class RewriterContextSettings {
 		builder.append("diag(MATRIX)::MATRIX\n");
 
 		List.of("INT", "FLOAT", "BOOL").forEach(t -> {
-			builder.append("sum(" + t + "...)::" + t + "\n");
-			builder.append("sum(" + t + "*)::" + t + "\n");
-			builder.append("sum(" + t + ")::" + t + "\n");
+			String newType = t.equals("BOOL") ? "INT" : t;
+			builder.append("sum(" + t + "...)::" + newType + "\n");
+			builder.append("sum(" + t + "*)::" + newType + "\n");
+			builder.append("sum(" + t + ")::" + newType + "\n");
+
+			builder.append("min(" + t + "...)::" + t + "\n");
+			builder.append("min(" + t + "*)::" + t + "\n");
+			builder.append("min(" + t + ")::" + t + "\n");
+
+			builder.append("max(" + t + "...)::" + t + "\n");
+			builder.append("max(" + t + "*)::" + t + "\n");
+			builder.append("max(" + t + ")::" + t + "\n");
 		});
 
 		builder.append("_m(INT,INT,FLOAT)::MATRIX\n");

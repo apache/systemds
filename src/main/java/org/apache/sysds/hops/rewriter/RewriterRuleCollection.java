@@ -816,6 +816,19 @@ public class RewriterRuleCollection {
 				}, true)
 				.build()
 		);
+
+		// cast.MATRIX(a) => _m(1, 1, a)
+		for (String t : List.of("INT", "BOOL", "FLOAT")) {
+			rules.add(new RewriterRuleBuilder(ctx)
+					.setUnidirectional(true)
+					.parseGlobalVars(t + ":a")
+					.parseGlobalVars("LITERAL_INT:1")
+					.withParsedStatement("cast.MATRIX(a)", hooks)
+					.toParsedStatement("$2:_m(1, 1, a)", hooks)
+					.apply(hooks.get(2).getId(), (stmt, match) -> stmt.unsafePutMeta("ownerId", UUID.randomUUID()), true)
+					.build()
+			);
+		}
 	}
 
 	public static void expandArbitraryMatrices(final List<RewriterRule> rules, final RuleContext ctx) {

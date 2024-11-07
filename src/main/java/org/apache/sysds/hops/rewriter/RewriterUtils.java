@@ -1149,7 +1149,7 @@ public class RewriterUtils {
 		// Scan if operand is not a DataType
 		List<Integer> indices = new ArrayList<>();
 		for (int i = 0; i < stmt.getOperands().size(); i++) {
-			if (stmt.getOperands().get(i).isInstruction() || stmt.isLiteral())
+			if (stmt.getChild(i).isInstruction() || stmt.getChild(i).isLiteral())
 				indices.add(i);
 		}
 
@@ -1165,6 +1165,8 @@ public class RewriterUtils {
 
 		List<List<RewriterStatement>> mOptions = indices.stream().map(i -> generateSubtrees(stmt.getOperands().get(i), visited, ctx, maxCombinations)).collect(Collectors.toList());
 		List<RewriterStatement> out = new ArrayList<>();
+		//System.out.println("Stmt: " + stmt.toParsableString(ctx));
+		//System.out.println("mOptions: " + mOptions);
 
 		for (int subsetMask = 0; subsetMask < totalSubsets; subsetMask++) {
 			List<List<RewriterStatement>> mOptionCpy = new ArrayList<>(mOptions);
@@ -1178,6 +1180,7 @@ public class RewriterUtils {
 				}
 			}
 
+			//System.out.println("mOptionCopy: " + mOptionCpy);
 			out.addAll(mergeSubtreeCombinations(stmt, indices, mOptionCpy, ctx, maxCombinations));
 			if (out.size() > maxCombinations) {
 				System.out.println("Aborting early due to too many combinations");

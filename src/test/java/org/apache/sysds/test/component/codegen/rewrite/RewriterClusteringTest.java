@@ -82,7 +82,7 @@ public class RewriterClusteringTest {
 		db.parForEach(expr -> {
 			if (ctr.incrementAndGet() % 10 == 0)
 				System.out.println("Done: " + ctr.intValue() + " / " + size);
-			if (ctr.intValue() > 2000)
+			if (ctr.intValue() > 10000)
 				return; // Skip
 			// First, build all possible subtrees
 			//System.out.println("Eval:\n" + expr.toParsableString(ctx, true));
@@ -140,7 +140,7 @@ public class RewriterClusteringTest {
 			totalCanonicalizationMillis.addAndGet(mCanonicalizationMillis);
 		});
 
-		printEquivalences(foundEquivalences, System.currentTimeMillis() - startTime, generatedExpressions.longValue(), evaluatedExpressions.longValue(), totalCanonicalizationMillis.longValue(), failures.longValue(), true);
+		printEquivalences(/*foundEquivalences*/ Collections.emptyList(), System.currentTimeMillis() - startTime, generatedExpressions.longValue(), evaluatedExpressions.longValue(), totalCanonicalizationMillis.longValue(), failures.longValue(), true);
 
 		System.out.println("===== SUGGESTED REWRITES =====");
 		List<Tuple5<Double, Long, Long, RewriterStatement, RewriterStatement>> rewrites = findSuggestedRewrites(foundEquivalences);

@@ -386,6 +386,7 @@ public class RewriterRule extends AbstractRewriterRule {
 	static class IdentityRewriterStatement {
 		public RewriterStatement stmt;
 
+		@Deprecated
 		public IdentityRewriterStatement(RewriterStatement stmt) {
 			this.stmt = stmt;
 		}

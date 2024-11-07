@@ -520,6 +520,11 @@ public class RewriterInstruction extends RewriterStatement {
 	}
 
 	@Override
+	public void rename(String id) {
+		this.id = id;
+	}
+
+	@Override
 	public long getCost() {
 		if (costFunction == null)
 			throw new NullPointerException("No cost function has been defined for the instruction: '" + instr + "'");

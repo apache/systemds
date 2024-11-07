@@ -2,11 +2,13 @@ package org.apache.sysds.test.component.codegen.rewrite;
 
 import org.apache.commons.lang3.mutable.MutableInt;
 import org.apache.commons.lang3.mutable.MutableLong;
+import org.apache.spark.internal.config.R;
 import org.apache.sysds.hops.rewriter.RewriterCostEstimator;
 import org.apache.sysds.hops.rewriter.RewriterDatabase;
 import org.apache.sysds.hops.rewriter.RewriterHeuristic;
 import org.apache.sysds.hops.rewriter.RewriterRule;
 import org.apache.sysds.hops.rewriter.RewriterRuleCollection;
+import org.apache.sysds.hops.rewriter.RewriterRuleCreator;
 import org.apache.sysds.hops.rewriter.RewriterRuleSet;
 import org.apache.sysds.hops.rewriter.RewriterRuntimeUtils;
 import org.apache.sysds.hops.rewriter.RewriterStatement;
@@ -72,6 +74,7 @@ public class RewriterClusteringTest {
 		RewriterDatabase canonicalExprDB = new RewriterDatabase();
 
 		List<RewriterStatement> foundEquivalences = Collections.synchronizedList(new ArrayList<>());
+		RewriterRuleCreator ruleCreator = new RewriterRuleCreator(ctx);
 
 		int size = db.size();
 		MutableInt ctr = new MutableInt(0);
@@ -79,8 +82,8 @@ public class RewriterClusteringTest {
 		db.parForEach(expr -> {
 			if (ctr.incrementAndGet() % 10 == 0)
 				System.out.println("Done: " + ctr.intValue() + " / " + size);
-			//if (ctr.intValue() > 1000)
-				//return; // Skip
+			if (ctr.intValue() > 2000)
+				return; // Skip
 			// First, build all possible subtrees
 			//System.out.println("Eval:\n" + expr.toParsableString(ctx, true));
 			List<RewriterStatement> subExprs = RewriterUtils.generateSubtrees(expr, ctx, 300);
@@ -143,13 +146,23 @@ public class RewriterClusteringTest {
 		List<Tuple5<Double, Long, Long, RewriterStatement, RewriterStatement>> rewrites = findSuggestedRewrites(foundEquivalences);
 
 		for (Tuple5<Double, Long, Long, RewriterStatement, RewriterStatement> rewrite : rewrites) {
-			System.out.println();
+			RewriterStatement canonicalFormFrom = converter.apply(rewrite._4());
+			RewriterStatement canonicalFormTo = converter.apply(rewrite._5());
+			RewriterRule rule = RewriterRuleCreator.createRule(rewrite._4(), rewrite._5(), canonicalFormFrom, canonicalFormTo, ctx);
+
+			if (ruleCreator.registerRule(rule, rewrite._2(), rewrite._3())) {
+
+			/*System.out.println();
 			System.out.println(rewrite._4().toParsableString(ctx, true));
 			System.out.println("=>");
-			System.out.println(rewrite._5().toParsableString(ctx, true));
-			System.out.println("Score: " + rewrite._1());
-			System.out.println("Cost1: " + rewrite._2());
-			System.out.println("Cost2: " + rewrite._3());
+			System.out.println(rewrite._5().toParsableString(ctx, true));*/
+				System.out.println(rule);
+				System.out.println("Score: " + rewrite._1());
+				System.out.println("Cost1: " + rewrite._2());
+				System.out.println("Cost2: " + rewrite._3());
+			} else {
+				System.out.println("[Duplicate rule]");
+			}
 		}
 	}
 
@@ -248,7 +261,8 @@ public class RewriterClusteringTest {
 						minCost = cost;
 					}
 				} catch (Exception e) {
-					e.printStackTrace();
+					// TODO: Enable
+					//e.printStackTrace();
 				}
 			}
 

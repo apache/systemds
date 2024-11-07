@@ -143,6 +143,11 @@ public class RewriterDataType extends RewriterStatement {
 	}
 
 	@Override
+	public void rename(String id) {
+		this.id = id;
+	}
+
+	@Override
 	public int hashCode() {
 		if (isLiteral())
 			return hashCode;

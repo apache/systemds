@@ -1,13 +1,81 @@
 package org.apache.sysds.hops.rewriter;
 
+import org.apache.commons.collections4.bidimap.DualHashBidiMap;
+
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.Map;
 
 public class RewriterRuleCreator {
+
+	private RuleContext ctx;
+	private RewriterRuleSet ruleSet;
+	private List<RewriterRule> activeRules;
+
+	public RewriterRuleCreator(final RuleContext ctx) {
+		this.ctx = ctx;
+		activeRules = Collections.synchronizedList(new LinkedList<>());
+		ruleSet = new RewriterRuleSet(ctx, activeRules);
+	}
+
+	public synchronized boolean registerRule(RewriterRule rule, long preCost, long postCost) {
+		// First, we check if an existing rule already applies an equivalent rewrite (cost wise)
+		RewriterStatement toTest = rule.getStmt1().nestedCopy();
+
+		boolean converged = false;
+
+		for (int i = 0; i < 1000; i++) {
+			RewriterRuleSet.ApplicableRule applicableRule = ruleSet.acceleratedFindFirst(toTest);
+
+			if (applicableRule == null) {
+				converged = true;
+				break; // Then we converged
+			}
+
+			toTest = applicableRule.rule.apply(applicableRule.matches.get(0), toTest, applicableRule.forward, false);
+		}
+
+		if (!converged)
+			throw new IllegalArgumentException("The existing rule-set did not seem to converge for the example: \n" + toTest.toParsableString(ctx, true));
+
+		long existingPostCost;
+
+		try {
+			existingPostCost = RewriterCostEstimator.estimateCost(toTest, el -> 2000L, ctx);
+		} catch (Exception e) {
+			e.printStackTrace();
+			return false;
+		}
+
+		if (existingPostCost <= postCost)
+			return false; // Then this rule is not beneficial
+
+		// Now, we include the rule to the system
+		// TODO: Check, if we can eliminate an existing rule instead as the new one is more general
+		// TODO: Further checks are needed, especially if the new heuristic converges in all cases
+		activeRules.add(0, rule);
+
+		ruleSet.accelerate();
+		return true;
+	}
+
+
+
+
+
+
+	///// STATIC METHODS /////
+
 	public static RewriterRule createRule(RewriterStatement from, RewriterStatement to, RewriterStatement canonicalForm1, RewriterStatement canonicalForm2, final RuleContext ctx) {
 		from = from.nestedCopy();
 		to = to.nestedCopy();
 		Map<RewriterStatement, RewriterStatement> assocs = getAssociations(from, to, canonicalForm1, canonicalForm2, ctx);
+
+		final RewriterStatement fFrom = from;
+		final RewriterStatement fTo = to;
 
 		// Now, we replace all variables with a common element
 		from.forEachPreOrder((cur, parent, pIdx) -> {
@@ -15,12 +83,13 @@ public class RewriterRuleCreator {
 				RewriterStatement child = cur.getChild(i);
 
 				if (child instanceof RewriterDataType && !child.isLiteral()) {
-					RewriterStatement newRef = assocs.get(cur.getChild(i));
+					RewriterStatement newRef = assocs.get(child);
 
-					if (newRef == null)
-						throw new IllegalArgumentException();
+					//if (newRef == null)
+					//	throw new IllegalArgumentException("Null assoc for: " + child + "\nIn:\n" + fFrom.toParsableString(ctx) + "\n" + fTo.toParsableString(ctx) + "\n" + canonicalForm1.toParsableString(ctx));
 
-					cur.getOperands().set(i, newRef);
+					if (newRef != null)
+						cur.getOperands().set(i, newRef);
 				}
 			}
 
@@ -67,7 +136,7 @@ public class RewriterRuleCreator {
 				throw new IllegalArgumentException("Duplicate variable name: " + cur.toParsableString(RuleContext.currentContext));
 		});
 
-		Map<RewriterStatement, RewriterStatement> assoc = new HashMap<>();
+		Map<RewriterStatement, RewriterStatement> assoc = new DualHashBidiMap<>();
 
 		canonicalForm.forEachPostOrder((cur, parent, pIdx) -> {
 			if (!(cur instanceof RewriterDataType) || cur.isLiteral())
@@ -83,6 +152,21 @@ public class RewriterRuleCreator {
 			else
 				assoc.put(ref, cur);
 		});
+
+		namedVariables.values().forEach(ref -> {
+			if (reversed) {
+				if (!assoc.containsValue(ref))
+					ref.rename("?");
+			} else {
+				if (!assoc.containsKey(ref))
+					ref.rename("?");
+			}
+		});
+
+		// TODO: If there are some dead references, replace it with an any.<TYPE>() function
+		// TODO: Or: just replace var id with '?' to signalize that there is something weird happening
+		//if (namedVariables.size() != assoc.size())
+		//	throw new IllegalArgumentException("Some variables are not referenced!");
 
 		return assoc;
 	}

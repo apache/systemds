@@ -50,7 +50,7 @@ public class RewriterCostEstimator {
 		costFn = RewriterUtils.foldConstants(costFn, ctx);
 
 		if (!costFn.isLiteral()) {
-			//throw new IllegalArgumentException("Cost function must be a literal: " + costFn.toParsableString(ctx) + "\nCorresponding statement:\n" + stmt.toParsableString(ctx));
+			throw new IllegalArgumentException("Cost function must be a literal: " + costFn.toParsableString(ctx) + "\nCorresponding statement:\n" + stmt.toParsableString(ctx));
 		}
 
 		return (long)costFn.getLiteral();
@@ -255,6 +255,7 @@ public class RewriterCostEstimator {
 			case ">=":
 			case "<":
 			case "<=":
+			case "==":
 				return 1;
 			case "round":
 				return 2;

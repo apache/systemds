@@ -79,14 +79,14 @@ public class RewriterClusteringTest {
 		db.parForEach(expr -> {
 			if (ctr.incrementAndGet() % 10 == 0)
 				System.out.println("Done: " + ctr.intValue() + " / " + size);
-			if (ctr.intValue() > 1000)
-				return; // Skip
+			//if (ctr.intValue() > 1000)
+				//return; // Skip
 			// First, build all possible subtrees
 			//System.out.println("Eval:\n" + expr.toParsableString(ctx, true));
-			List<RewriterStatement> subExprs = RewriterUtils.generateSubtrees(expr, ctx, 500);
+			List<RewriterStatement> subExprs = RewriterUtils.generateSubtrees(expr, ctx, 300);
 			if (subExprs.size() > 100)
 				System.out.println("Critical number of subtrees: " + subExprs.size());
-			if (subExprs.size() > 2000) {
+			if (subExprs.size() > 500) {
 				System.out.println("Skipping subtrees...");
 				subExprs = List.of(expr);
 			}
@@ -261,8 +261,8 @@ public class RewriterClusteringTest {
 
 					if (cost != null) {
 						double score = (((double)cost.longValue()) / minCost - 1) * 1000; // Relative cost reduction
-						score += cost.longValue() - minCost; // Absolute cost reduction
-						if (score > 0.000001)
+						score *= cost.longValue() - minCost; // Absolute cost reduction
+						if (score > 1e-10)
 							suggestedRewrites.add(new Tuple5<>(score, cost, minCost, eq, optimalStatement));
 					}
 				}

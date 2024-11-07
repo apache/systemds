@@ -1,5 +1,4 @@
 a = 1; # true
-b = 0; # false
 
 result = (a | !a); # Expected result: true (1.0)
 

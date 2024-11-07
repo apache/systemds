@@ -331,9 +331,9 @@ public class RewriterRule extends AbstractRewriterRule {
 
 	public String toString() {
 		if (isUnidirectional())
-			return fromRoot.toString() + " => " + toRoot.toString();
+			return fromRoot.toParsableString(ctx) + " => " + toRoot.toParsableString(ctx);
 		else
-			return fromRoot.toString() + " <=> " + toRoot.toString();
+			return fromRoot.toParsableString(ctx) + " <=> " + toRoot.toParsableString(ctx);
 	}
 
 	// TODO: Rework

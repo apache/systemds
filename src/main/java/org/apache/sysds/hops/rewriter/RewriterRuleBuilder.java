@@ -235,6 +235,17 @@ public class RewriterRuleBuilder {
 		return this;
 	}
 
+	public RewriterRuleBuilder completeRule(RewriterStatement from, RewriterStatement to) {
+		if (!canBeModified)
+			throw new IllegalArgumentException("The DAG is final and cannot be modified");
+		if (mappingState)
+			throw new IllegalArgumentException("Cannot add an instruction when a mapping instruction was already defined");
+		this.fromRoot = from;
+		this.toRoot = to;
+		this.mappingState = true;
+		return this;
+	}
+
 	public RewriterRuleBuilder withOps(RewriterDataType... operands) {
 		if (!canBeModified)
 			throw new IllegalArgumentException("The DAG is final and cannot be modified");

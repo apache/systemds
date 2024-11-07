@@ -1,0 +1,5 @@
+a = 1; # true
+b = 0; # false
+
+result = (a & !a); # Expected result: false (0.0)
+

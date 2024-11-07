@@ -34,6 +34,10 @@ public class RewriterDatabase {
 		db.values().forEach(consumer);
 	}
 
+	public void parForEach(Consumer<RewriterStatement> consumer) {
+		db.values().parallelStream().forEach(consumer);
+	}
+
 	public int size() {return db.size(); }
 
 	public void serialize(BufferedWriter writer, final RuleContext ctx) throws IOException {

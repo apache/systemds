@@ -19,6 +19,8 @@ public class RewriterCostEstimator {
 
 		Map<RewriterStatement, RewriterStatement> map = new HashMap<>();
 
+		//System.out.println("Cost1: " + costFn.toParsableString(ctx));
+
 		costFn.forEachPostOrder((cur, parent, pIdx) -> {
 			for (int i = 0; i < cur.getOperands().size(); i++) {
 				RewriterStatement op = cur.getChild(i);
@@ -43,7 +45,13 @@ public class RewriterCostEstimator {
 			}
 		});
 
+		//System.out.println("Cost2: " + costFn.toParsableString(ctx));
+
 		costFn = RewriterUtils.foldConstants(costFn, ctx);
+
+		if (!costFn.isLiteral())
+			throw new IllegalArgumentException("Cost function must be a literal: " + costFn.toParsableString(ctx));
+
 		return (long)costFn.getLiteral();
 	}
 
@@ -64,6 +72,9 @@ public class RewriterCostEstimator {
 		RewriterStatement argList = RewriterStatement.argList(ctx, includedCosts);
 		RewriterStatement add = new RewriterInstruction().as(UUID.randomUUID().toString()).withInstruction("+").withOps(argList).consolidate(ctx);
 		add.unsafePutMeta("_assertions", assertions);
+
+		//System.out.println("Cost0: " + add.toParsableString(ctx));
+		//System.out.println("Assertions: " + assertions);
 
 		add = RewriterUtils.buildCanonicalFormConverter(ctx, false).apply(add);
 		return add;
@@ -113,44 +124,68 @@ public class RewriterCostEstimator {
 				cost = RewriterStatement.literal(ctx, 5L);
 				break;
 			case "[]":
+				cost = RewriterStatement.literal(ctx, 0L);
 				break; // I assume that nothing is materialized
 			case "RBind":
 				map.put("nrowA", instr.getChild(0).getNRow());
 				map.put("ncolA", instr.getChild(0).getNCol());
-				map.put("nrowA", instr.getChild(1).getNRow());
-				map.put("ncolA", instr.getChild(1).getNCol());
-				cost = map.get("+(argList(*(argList(nrowA, ncolA)), *(argList(nrowB, ncolB))))");
+				map.put("nrowB", instr.getChild(1).getNRow());
+				map.put("ncolB", instr.getChild(1).getNCol());
+				cost = RewriterUtils.parse("+(argList(*(argList(nrowA, ncolA)), *(argList(nrowB, ncolB))))", ctx, map);
 				assertions.addEqualityAssertion(instr.getChild(0).getNCol(), instr.getChild(1).getNCol());
 				overhead.add(MALLOC_COST);
 				break;
 			case "CBind":
 				map.put("nrowA", instr.getChild(0).getNRow());
 				map.put("ncolA", instr.getChild(0).getNCol());
-				map.put("nrowA", instr.getChild(1).getNRow());
-				map.put("ncolA", instr.getChild(1).getNCol());
-				cost = map.get("+(argList(*(argList(nrowA, ncolA)), *(argList(nrowB, ncolB))))");
+				map.put("nrowB", instr.getChild(1).getNRow());
+				map.put("ncolB", instr.getChild(1).getNCol());
+				cost = RewriterUtils.parse("+(argList(*(argList(nrowA, ncolA)), *(argList(nrowB, ncolB))))", ctx, map);
 				assertions.addEqualityAssertion(instr.getChild(0).getNRow(), instr.getChild(1).getNRow());
 				overhead.add(MALLOC_COST);
 				break;
 			case "rand":
-				map.put("nrowA", instr.getChild(0).getNRow());
-				map.put("ncolA", instr.getChild(0).getNCol());
-				cost = map.get("*(argList(nrowA, ncolA))");
+				map.put("nrowA", instr.getNRow());
+				map.put("ncolA", instr.getNCol());
+				cost = RewriterUtils.parse("*(argList(nrowA, ncolA))", ctx, map);
 				overhead.add(MALLOC_COST);
 				break;
 		}
 
 		if (cost == null) {
 			if (instr.hasProperty("ElementWiseInstruction", ctx)) {
+				RewriterStatement firstMatrix = null;
+				RewriterStatement secondMatrix = null;
+				if (instr.getChild(0).getResultingDataType(ctx).equals("MATRIX")) {
+					firstMatrix = instr.getChild(0);
+				}
+
+				if (instr.getChild(1).getResultingDataType(ctx).equals("MATRIX")) {
+					if (firstMatrix == null)
+						firstMatrix = instr.getChild(1);
+					else
+						secondMatrix = instr.getChild(1);
+				}
+
 				RewriterStatement opCost = atomicOpCostStmt(instr.trueInstruction(), ctx);
 				cost = new RewriterInstruction().as(UUID.randomUUID().toString())
 						.withInstruction("*")
 						.withOps(RewriterStatement.argList(ctx, opCost, instr.getNCol(), instr.getNRow()));
-				assertions.addEqualityAssertion(instr.getChild(0).getNCol(), instr.getChild(1).getNCol());
-				assertions.addEqualityAssertion(instr.getChild(0).getNRow(), instr.getChild(1).getNRow());
+
+				if (secondMatrix != null) {
+					assertions.addEqualityAssertion(firstMatrix.getNCol(), secondMatrix.getNCol());
+					assertions.addEqualityAssertion(firstMatrix.getNRow(), secondMatrix.getNRow());
+				}
+
+				overhead.add(MALLOC_COST);
+			} else if (instr.hasProperty("UnaryElementWiseOperator", ctx)) {
+				RewriterStatement opCost = atomicOpCostStmt(instr.trueInstruction(), ctx);
+				cost = new RewriterInstruction().as(UUID.randomUUID().toString())
+						.withInstruction("*")
+						.withOps(RewriterStatement.argList(ctx, opCost, instr.getNCol(), instr.getNRow()));
 				overhead.add(MALLOC_COST);
 			} else {
-				throw new IllegalArgumentException();
+				throw new IllegalArgumentException("Unknown instruction: " + instr.trueTypedInstruction(ctx));
 			}
 		}
 
@@ -174,6 +209,13 @@ public class RewriterCostEstimator {
 				assertions.addEqualityAssertion(map.get("nrowA"), map.get("ncolA"));
 				return;
 			case "[](MATRIX,INT,INT)":
+				return;
+			case "cast.FLOAT(MATRIX)":
+				map.put("nrowA", instr.getChild(0).getNRow());
+				map.put("ncolA", instr.getChild(0).getNCol());
+				uniqueCosts.add(map.get("nrowA"));
+				assertions.addEqualityAssertion(map.get("nrowA"), map.get("ncolA"));
+				assertions.addEqualityAssertion(map.get("nrowA"), RewriterStatement.literal(ctx, 1L));
 				return;
 		}
 
@@ -217,8 +259,10 @@ public class RewriterCostEstimator {
 				return 2;
 			case "abs":
 				return 2;
+			case "cast.FLOAT":
+				return 1;
 		}
 
-		throw new IllegalArgumentException();
+		throw new IllegalArgumentException("Unknown instruction: " + op);
 	}
 }

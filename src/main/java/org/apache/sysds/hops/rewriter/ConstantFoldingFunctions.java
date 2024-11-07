@@ -4,7 +4,7 @@ package org.apache.sysds.hops.rewriter;
 import java.util.function.BiFunction;
 
 public class ConstantFoldingFunctions {
-	static final double EPS = 1e-10;
+	static final double EPS = 1e-20;
 
 	public static BiFunction<Number, RewriterStatement, Number> foldingBiFunction(String op, String type) {
 		switch (op) {
@@ -41,7 +41,10 @@ public class ConstantFoldingFunctions {
 	// TODO: What about NaNs?
 	public static RewriterStatement overwritesLiteral(Number num, String op, final RuleContext ctx) {
 		if (op.equals("*") && Math.abs(num.doubleValue()) < EPS) {
-				return RewriterStatement.literal(ctx, num);
+			if (num instanceof Double)
+				return RewriterStatement.literal(ctx, 0.0);
+			else
+				return RewriterStatement.literal(ctx, 0L);
 		}
 
 		return null;

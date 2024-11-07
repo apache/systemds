@@ -63,6 +63,11 @@ public class CostEstimates {
 
 		stmt1 = canonicalConverter.apply(stmt1);
 		stmt2 = canonicalConverter.apply(stmt2);
+
+		System.out.println("==========");
+		System.out.println(stmt1.toParsableString(ctx, true));
+		System.out.println("==========");
+		System.out.println(stmt2.toParsableString(ctx, true));
 		assert stmt1.match(RewriterStatement.MatcherContext.exactMatch(ctx, stmt2));
 	}
 
@@ -114,6 +119,94 @@ public class CostEstimates {
 		System.out.println("Cost2: " + cost2);
 		System.out.println("Ratio: " + ((double)cost1)/cost2);
 		assert cost1 < cost2;
+
+		stmt1 = canonicalConverter.apply(stmt1);
+		stmt2 = canonicalConverter.apply(stmt2);
+
+		System.out.println("==========");
+		System.out.println(stmt1.toParsableString(ctx, true));
+		System.out.println("==========");
+		System.out.println(stmt2.toParsableString(ctx, true));
+		assert stmt1.match(RewriterStatement.MatcherContext.exactMatch(ctx, stmt2));
+	}
+
+	@Test
+	public void test9() {
+		String stmt1Str = "MATRIX:WM\n" +
+				"FLOAT:m2X,c19b086e-34d2-46dd-9651-7b6d1d16e459\n" +
+				"LITERAL_FLOAT:1.0\n" +
+				"sqrt(*(m2X,/(sum(WM),-(c19b086e-34d2-46dd-9651-7b6d1d16e459,1.0))))";
+		String stmt2Str = "MATRIX:1167aa9b-102a-4bae-9801-8b18d210f954\n" +
+				"FLOAT:m2,41d7e6fb-d4a7-45cf-89cb-cea8ecf3430a\n" +
+				"LITERAL_FLOAT:1.0\n" +
+				"sqrt(/(*(m2,sum(1167aa9b-102a-4bae-9801-8b18d210f954)),-(41d7e6fb-d4a7-45cf-89cb-cea8ecf3430a,1.0)))";
+
+		RewriterStatement stmt1 = RewriterUtils.parse(stmt1Str, ctx);
+		RewriterStatement stmt2 = RewriterUtils.parse(stmt2Str, ctx);
+
+		long cost1 = RewriterCostEstimator.estimateCost(stmt1, el -> 2000L, ctx);
+		long cost2 = RewriterCostEstimator.estimateCost(stmt2, el -> 2000L, ctx);
+		System.out.println("Cost1: " + cost1);
+		System.out.println("Cost2: " + cost2);
+		System.out.println("Ratio: " + ((double)cost1)/cost2);
+		assert cost1 == cost2;
+
+		stmt1 = canonicalConverter.apply(stmt1);
+		stmt2 = canonicalConverter.apply(stmt2);
+
+		System.out.println("==========");
+		System.out.println(stmt1.toParsableString(ctx, true));
+		System.out.println("==========");
+		System.out.println(stmt2.toParsableString(ctx, true));
+		assert stmt1.match(RewriterStatement.MatcherContext.exactMatch(ctx, stmt2));
+	}
+
+	@Test
+	public void test10() {
+		String stmt1Str = "INT:num_records\n" +
+				"LITERAL_INT:3\n" +
+				"*(num_records,3)";
+		String stmt2Str = "LITERAL_INT:3\n" +
+				"INT:run_index\n" +
+				"*(3,run_index)";
+
+		RewriterStatement stmt1 = RewriterUtils.parse(stmt1Str, ctx);
+		RewriterStatement stmt2 = RewriterUtils.parse(stmt2Str, ctx);
+
+		long cost1 = RewriterCostEstimator.estimateCost(stmt1, el -> 2000L, ctx);
+		long cost2 = RewriterCostEstimator.estimateCost(stmt2, el -> 2000L, ctx);
+		System.out.println("Cost1: " + cost1);
+		System.out.println("Cost2: " + cost2);
+		System.out.println("Ratio: " + ((double)cost1)/cost2);
+		assert cost1 == cost2;
+
+		stmt1 = canonicalConverter.apply(stmt1);
+		stmt2 = canonicalConverter.apply(stmt2);
+
+		System.out.println("==========");
+		System.out.println(stmt1.toParsableString(ctx, true));
+		System.out.println("==========");
+		System.out.println(stmt2.toParsableString(ctx, true));
+		assert stmt1.match(RewriterStatement.MatcherContext.exactMatch(ctx, stmt2));
+	}
+
+	@Test
+	public void test11() {
+		String stmtStr1 = "MATRIX:A,p_CG,z\n" +
+				"FLOAT:trust_delta_sq\n" +
+				"*(cast.FLOAT(A),cast.FLOAT(%*%(p_CG,z)))";
+		String stmtStr2 = "MATRIX:A,p_CG,z\n" +
+				"FLOAT:trust_delta_sq\n" +
+				"*(cast.FLOAT(%*%(p_CG,z)),cast.FLOAT(A))";
+
+		RewriterStatement stmt1 = RewriterUtils.parse(stmtStr1, ctx);
+		RewriterStatement stmt2 = RewriterUtils.parse(stmtStr2, ctx);
+
+		long cost1 = RewriterCostEstimator.estimateCost(stmt1, el -> 2000L, ctx);
+		long cost2 = RewriterCostEstimator.estimateCost(stmt2, el -> 2000L, ctx);
+		System.out.println("Cost1: " + cost1);
+		System.out.println("Cost2: " + cost2);
+		System.out.println("Ratio: " + ((double)cost1)/cost2);
 
 		stmt1 = canonicalConverter.apply(stmt1);
 		stmt2 = canonicalConverter.apply(stmt2);

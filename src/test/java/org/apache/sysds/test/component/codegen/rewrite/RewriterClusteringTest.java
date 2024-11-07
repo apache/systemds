@@ -2,6 +2,7 @@ package org.apache.sysds.test.component.codegen.rewrite;
 
 import org.apache.commons.lang3.mutable.MutableInt;
 import org.apache.commons.lang3.mutable.MutableLong;
+import org.apache.sysds.hops.rewriter.RewriterCostEstimator;
 import org.apache.sysds.hops.rewriter.RewriterDatabase;
 import org.apache.sysds.hops.rewriter.RewriterHeuristic;
 import org.apache.sysds.hops.rewriter.RewriterRule;
@@ -15,13 +16,20 @@ import org.apache.sysds.hops.rewriter.TopologicalSort;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import scala.Tuple2;
+import scala.Tuple3;
+import scala.Tuple5;
+import scala.xml.Atom;
 
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Function;
+import java.util.stream.Collectors;
 
 public class RewriterClusteringTest {
 	private static RuleContext ctx;
@@ -55,22 +63,24 @@ public class RewriterClusteringTest {
 	@Test
 	public void testExpressionClustering() {
 		long startTime = System.currentTimeMillis();
-		MutableLong generatedExpressions = new MutableLong(0);
-		MutableLong evaluatedExpressions = new MutableLong(0);
-		MutableLong failures = new MutableLong(0);
+		AtomicLong generatedExpressions = new AtomicLong(0);
+		AtomicLong evaluatedExpressions = new AtomicLong(0);
+		AtomicLong failures = new AtomicLong(0);
+		AtomicLong totalCanonicalizationMillis = new AtomicLong(0);
 
 		RewriterDatabase exactExprDB = new RewriterDatabase();
 		RewriterDatabase canonicalExprDB = new RewriterDatabase();
-		List<RewriterStatement> foundEquivalences = new ArrayList<>();
+
+		List<RewriterStatement> foundEquivalences = Collections.synchronizedList(new ArrayList<>());
 
 		int size = db.size();
 		MutableInt ctr = new MutableInt(0);
 
-		db.forEach(expr -> {
+		db.parForEach(expr -> {
 			if (ctr.incrementAndGet() % 10 == 0)
 				System.out.println("Done: " + ctr.intValue() + " / " + size);
-			//if (ctr.intValue() > 1000)
-				//return; // Skip
+			if (ctr.intValue() > 1000)
+				return; // Skip
 			// First, build all possible subtrees
 			//System.out.println("Eval:\n" + expr.toParsableString(ctx, true));
 			List<RewriterStatement> subExprs = RewriterUtils.generateSubtrees(expr, ctx, 500);
@@ -82,6 +92,7 @@ public class RewriterClusteringTest {
 			}
 			//List<RewriterStatement> subExprs = List.of(expr);
 			long evaluationCtr = 0;
+			long mCanonicalizationMillis = 0;
 
 			for (RewriterStatement subExpr : subExprs) {
 				try {
@@ -95,7 +106,9 @@ public class RewriterClusteringTest {
 					//System.out.println("Eval: " + subExpr.toParsableString(ctx, true));
 
 					// Duplicate the statement as we do not want to canonicalize the original statement
+					long startMillis = System.currentTimeMillis();
 					RewriterStatement canonicalForm = converter.apply(subExpr.nestedCopy());
+					mCanonicalizationMillis += System.currentTimeMillis() - startMillis;
 
 					// Insert the canonical form or retrieve the existing entry
 					RewriterStatement existingEntry = canonicalExprDB.insertOrReturn(ctx, canonicalForm);
@@ -115,18 +128,32 @@ public class RewriterClusteringTest {
 					}
 				} catch (Exception e) {
 					e.printStackTrace();
-					failures.increment();
+					failures.incrementAndGet();
 				}
 			}
 
-			generatedExpressions.add(subExprs.size());
-			evaluatedExpressions.add(evaluationCtr);
+			generatedExpressions.addAndGet(subExprs.size());
+			evaluatedExpressions.addAndGet(evaluationCtr);
+			totalCanonicalizationMillis.addAndGet(mCanonicalizationMillis);
 		});
 
-		printEquivalences(foundEquivalences, System.currentTimeMillis() - startTime, generatedExpressions.longValue(), evaluatedExpressions.longValue(), failures.longValue(), true);
+		printEquivalences(foundEquivalences, System.currentTimeMillis() - startTime, generatedExpressions.longValue(), evaluatedExpressions.longValue(), totalCanonicalizationMillis.longValue(), failures.longValue(), true);
+
+		System.out.println("===== SUGGESTED REWRITES =====");
+		List<Tuple5<Double, Long, Long, RewriterStatement, RewriterStatement>> rewrites = findSuggestedRewrites(foundEquivalences);
+
+		for (Tuple5<Double, Long, Long, RewriterStatement, RewriterStatement> rewrite : rewrites) {
+			System.out.println();
+			System.out.println(rewrite._4().toParsableString(ctx, true));
+			System.out.println("=>");
+			System.out.println(rewrite._5().toParsableString(ctx, true));
+			System.out.println("Score: " + rewrite._1());
+			System.out.println("Cost1: " + rewrite._2());
+			System.out.println("Cost2: " + rewrite._3());
+		}
 	}
 
-	private void printEquivalences(List<RewriterStatement> equivalentStatements, long cpuTime, long generatedExpressions, long evaluatedExpressions, long failures, boolean preFilter) {
+	private void printEquivalences(List<RewriterStatement> equivalentStatements, long cpuTime, long generatedExpressions, long evaluatedExpressions, long canonicalizationMillis, long failures, boolean preFilter) {
 		System.out.println("===== ALL EQUIVALENCES =====");
 		if (preFilter)
 			System.out.println("Pre-filtering is active! Note that this hides some (probably less impactful) equivalences");
@@ -151,6 +178,7 @@ public class RewriterClusteringTest {
 		System.out.println("Total rewriter CPU time: " + cpuTime + "ms");
 		System.out.println("Total generated expressions: " + generatedExpressions);
 		System.out.println("Total evaluated unique expressions: " + evaluatedExpressions);
+		System.out.println("Avg canonicalization time: " + Math.round(((double)canonicalizationMillis)/evaluatedExpressions) + "ms");
 		System.out.println("Total failures: " + failures);
 	}
 
@@ -194,5 +222,55 @@ public class RewriterClusteringTest {
 		}
 
 		return !match;
+	}
+
+	private List<Tuple5<Double, Long, Long, RewriterStatement, RewriterStatement>> findSuggestedRewrites(List<RewriterStatement> equivalences) {
+		List<Tuple5<Double, Long, Long, RewriterStatement, RewriterStatement>> suggestedRewrites = new ArrayList<>();
+
+		for (RewriterStatement eStmt : equivalences) {
+			List<RewriterStatement> mEq = (List<RewriterStatement>)eStmt.getMeta("equivalentExpressions");
+			RewriterStatement optimalStatement = null;
+			long minCost = 0;
+
+			for (RewriterStatement eq : mEq) {
+				try {
+					long cost = RewriterCostEstimator.estimateCost(eq, el -> 2000L, ctx);
+					eq.unsafePutMeta("_cost", cost);
+
+					if (optimalStatement == null) {
+						minCost = cost;
+						optimalStatement = eq;
+						continue;
+					}
+
+					if (cost < minCost) {
+						optimalStatement = eq;
+						minCost = cost;
+					}
+				} catch (Exception e) {
+					e.printStackTrace();
+				}
+			}
+
+			if (optimalStatement != null) {
+				for (RewriterStatement eq : mEq) {
+					if (eq == optimalStatement)
+						continue;
+
+					Long cost = (Long) eq.getMeta("_cost");
+
+					if (cost != null) {
+						double score = (((double)cost.longValue()) / minCost - 1) * 1000; // Relative cost reduction
+						score += cost.longValue() - minCost; // Absolute cost reduction
+						if (score > 0.000001)
+							suggestedRewrites.add(new Tuple5<>(score, cost, minCost, eq, optimalStatement));
+					}
+				}
+			}
+		}
+
+		suggestedRewrites.sort(Comparator.comparing(Tuple5::_1));
+		Collections.reverse(suggestedRewrites);
+		return suggestedRewrites;
 	}
 }

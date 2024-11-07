@@ -418,7 +418,7 @@ public class RewriterUtils {
 
 	public static boolean parseDataTypes(String expr, Map<String, RewriterStatement> dataTypes, final RuleContext ctx) {
 		RuleContext.currentContext = ctx;
-		Pattern pattern = Pattern.compile("([A-Za-z0-9]|_|\\.|\\*)+");
+		Pattern pattern = Pattern.compile("([A-Za-z0-9]|_|\\.|\\*)([A-Za-z0-9]|_|\\.|\\*|-)*");
 		Matcher matcher = pattern.matcher(expr);
 
 		if (!matcher.find())

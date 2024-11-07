@@ -152,6 +152,7 @@ public class RewriterContextSettings {
 			builder.append("impl ==\n");
 			builder.append("impl |\n");
 			builder.append("impl &\n");
+			builder.append("impl /\n");
 		});
 
 		builder.append("ElementWiseInstruction(MATRIX...)::MATRIX\n");
@@ -175,7 +176,7 @@ public class RewriterContextSettings {
 
 			builder.append("ElementWiseAdditiveInstruction(" + t1 + "," + t2 + ")::" + RewriterUtils.defaultTypeHierarchy(t1, t2) + "\n");
 			builder.append("impl +\n");
-			//builder.append("impl -\n");
+			builder.append("impl -\n");
 		});
 
 		builder.append("ElementWiseAdditiveInstruction(MATRIX...)::MATRIX\n");
@@ -186,7 +187,7 @@ public class RewriterContextSettings {
 		ALL_TYPES.forEach(t -> {
 			builder.append("UnaryElementWiseOperator(" + t + ")::" + t + "\n");
 			builder.append("impl -\n");
-			builder.append("impl inv\n");
+			//builder.append("impl inv\n");
 			builder.append("impl abs\n");
 			builder.append("impl !\n");
 			builder.append("impl round\n");
@@ -291,6 +292,7 @@ public class RewriterContextSettings {
 			builder.append("impl sqrt\n");
 			builder.append("impl exp\n");
 			builder.append("impl log\n");
+			builder.append("impl inv\n");
 		});
 
 

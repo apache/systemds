@@ -104,7 +104,7 @@ public class MetaPropagator implements Function<RewriterStatement, RewriterState
 				System.out.println("All assertions: " + assertions);*/
 				//System.out.println("Asserted: " + asserted  + " (" + (asserted != ret) + ")");
 
-				if (asserted == null || (parent != null && asserted == parent.getChild(0)))
+				if (asserted == null)
 					return ret;
 
 				return asserted;

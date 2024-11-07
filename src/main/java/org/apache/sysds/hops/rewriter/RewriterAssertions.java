@@ -1,7 +1,8 @@
 package org.apache.sysds.hops.rewriter;
 
-import org.apache.commons.lang3.mutable.MutableObject;
+import org.apache.spark.internal.config.R;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -148,6 +149,46 @@ public class RewriterAssertions {
 
 		assertionMatcher = newAssertionMatcher;
 	}*/
+
+	public void resolveExistingAssertions(RewriterStatement root) {
+		List<RewriterStatement> backRefs = new ArrayList<>();
+		root.forEachPreOrder(stmt -> {
+			if (stmt.isEClass()) {
+				if (!assertionMatcher.containsKey(stmt)) {
+					RewriterAssertion assertion = new RewriterAssertion();
+					assertion.stmt = stmt;
+					assertion.set = new HashSet<>(stmt.getChild(0).getOperands());
+					allAssertions.add(assertion);
+
+					for (RewriterStatement eStmt : assertion.set)
+						assertionMatcher.put(eStmt, assertion);
+
+					forEachUniqueElementInAssertion(assertion, cur -> {
+						partOfAssertion.compute(cur, (k, v) -> {
+							if (v == null)
+								v = new HashSet<>();
+
+							v.add(assertion);
+							return v;
+						});
+					});
+				}
+			} else if (stmt.isInstruction() && stmt.trueInstruction().equals("_backRef")) {
+				backRefs.add(stmt);
+			}
+
+			return true;
+		});
+
+		for (RewriterStatement backRef : backRefs) {
+			RewriterAssertion assertion = getAssertionObj(backRef);
+			if (assertion != null) {
+				assertion.backRef = backRef;
+			} else {
+				// TODO
+			}
+		}
+	}
 
 	// TODO: What happens if the rewriter statement has already been instantiated? Updates will not occur
 	public boolean addEqualityAssertion(RewriterStatement stmt1, RewriterStatement stmt2) {
@@ -315,8 +356,9 @@ public class RewriterAssertions {
 		//System.out.println("In: " + this);
 		RewriterAssertion set = assertionMatcher.get(stmt);
 
-		if (set == null || set.getEClassStmt(ctx, this).getChild(0) == parent)
+		if (set == null || set.getEClassStmt(ctx, this).getChild(0) == parent) {
 			return stmt;
+		}
 
 		//System.out.println("EClassStmt: " + set.getEClassStmt(ctx, this).getChild(0));
 		if (parent != null && parent != set.getEClassStmt(ctx, this).getChild(0) && partOfAssertion.getOrDefault(parent, Collections.emptySet()).contains(set))

@@ -1118,6 +1118,16 @@ public class RewriterRuleCollection {
 				.build()
 		);
 
+		rules.add(new RewriterRuleBuilder(ctx, "[](ElementWiseUnary.FLOAT(A), i, j) => ElementWiseUnary.FLOAT([](A, i, j))")
+				.setUnidirectional(true)
+				.parseGlobalVars("MATRIX:A")
+				.parseGlobalVars("INT:i,j")
+				.withParsedStatement("[]($1:ElementWiseUnary.FLOAT(A), i, j)", hooks)
+				.toParsedStatement("$2:ElementWiseUnary.FLOAT([](A, i, j))", hooks)
+				.link(hooks.get(1).getId(), hooks.get(2).getId(), RewriterStatement::transferMeta)
+				.build()
+		);
+
 		for (String t : ALL_TYPES) {
 			if (t.equals("MATRIX")) {
 				rules.add(new RewriterRuleBuilder(ctx, "ElementWiseInstruction(_m(i, j, v), b) => _m(i, j, ElementWiseInstruction(v, b))")

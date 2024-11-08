@@ -2,7 +2,7 @@ package org.apache.sysds.hops.rewriter;
 
 import org.jetbrains.annotations.NotNull;
 
-public class RewriterQueuedTransformation implements Comparable<RewriterQueuedTransformation> {
+public class RewriterQueuedTransformation {
 	final RewriterInstruction root;
 	final RewriterRuleSet.ApplicableRule rule;
 
@@ -11,8 +11,8 @@ public class RewriterQueuedTransformation implements Comparable<RewriterQueuedTr
 		this.rule = rule;
 	}
 
-	@Override
+	/*@Override
 	public int compareTo(@NotNull RewriterQueuedTransformation o) {
 		return Long.compare(root.getCost(), o.root.getCost());
-	}
+	}*/
 }

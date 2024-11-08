@@ -1,8 +1,6 @@
 package org.apache.sysds.test.component.codegen.rewrite;
 
 import org.apache.commons.lang3.mutable.MutableInt;
-import org.apache.commons.lang3.mutable.MutableLong;
-import org.apache.spark.internal.config.R;
 import org.apache.sysds.hops.rewriter.RewriterCostEstimator;
 import org.apache.sysds.hops.rewriter.RewriterDatabase;
 import org.apache.sysds.hops.rewriter.RewriterHeuristic;
@@ -18,9 +16,7 @@ import org.apache.sysds.hops.rewriter.TopologicalSort;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import scala.Tuple2;
-import scala.Tuple3;
 import scala.Tuple5;
-import scala.xml.Atom;
 
 import java.io.BufferedReader;
 import java.io.FileReader;
@@ -31,7 +27,6 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Function;
-import java.util.stream.Collectors;
 
 public class RewriterClusteringTest {
 	private static RuleContext ctx;
@@ -82,8 +77,8 @@ public class RewriterClusteringTest {
 		db.parForEach(expr -> {
 			if (ctr.incrementAndGet() % 10 == 0)
 				System.out.println("Done: " + ctr.intValue() + " / " + size);
-			if (ctr.intValue() > 10000)
-				return; // Skip
+			//if (ctr.intValue() > 5000)
+			//	return; // Skip
 			// First, build all possible subtrees
 			//System.out.println("Eval:\n" + expr.toParsableString(ctx, true));
 			List<RewriterStatement> subExprs = RewriterUtils.generateSubtrees(expr, ctx, 300);
@@ -110,8 +105,10 @@ public class RewriterClusteringTest {
 
 					// Duplicate the statement as we do not want to canonicalize the original statement
 					long startMillis = System.currentTimeMillis();
-					RewriterStatement canonicalForm = converter.apply(subExpr.nestedCopy());
+					RewriterStatement canonicalForm = converter.apply(subExpr.nestedCopy(true));
 					mCanonicalizationMillis += System.currentTimeMillis() - startMillis;
+
+					computeCost(subExpr, ctx);
 
 					// Insert the canonical form or retrieve the existing entry
 					RewriterStatement existingEntry = canonicalExprDB.insertOrReturn(ctx, canonicalForm);
@@ -150,21 +147,91 @@ public class RewriterClusteringTest {
 			RewriterStatement canonicalFormTo = converter.apply(rewrite._5());
 			RewriterRule rule = RewriterRuleCreator.createRule(rewrite._4(), rewrite._5(), canonicalFormFrom, canonicalFormTo, ctx);
 
-			if (ruleCreator.registerRule(rule, rewrite._2(), rewrite._3())) {
+			ruleCreator.registerRule(rule, rewrite._2(), rewrite._3());
 
-			/*System.out.println();
-			System.out.println(rewrite._4().toParsableString(ctx, true));
-			System.out.println("=>");
-			System.out.println(rewrite._5().toParsableString(ctx, true));*/
+			/*if (ruleCreator.registerRule(rule, rewrite._2(), rewrite._3())) {
 				System.out.println(rule);
 				System.out.println("Score: " + rewrite._1());
 				System.out.println("Cost1: " + rewrite._2());
 				System.out.println("Cost2: " + rewrite._3());
 			} else {
 				System.out.println("[Duplicate rule]");
+			}*/
+		}
+
+		ruleCreator.forEachRule(rule -> {
+			System.out.println(rule);
+			//System.out.println("Score: " + rewrite._1());
+			System.out.println("Cost1: " + rule.getStmt1().getCost(ctx));
+			System.out.println("Cost2: " + rule.getStmt2().getCost(ctx));
+		});
+	}
+
+	private void computeCost(RewriterStatement subExpr, final RuleContext ctx) {
+		if (subExpr.getMeta("_cost") == null) {
+			long cost = -1;
+			try {
+				cost = RewriterCostEstimator.estimateCost(subExpr, el -> 2000L, ctx);
+			} catch (Exception e) {
 			}
+			subExpr.unsafePutMeta("_cost", cost);
 		}
 	}
+
+	// This function should be called regularly if the number of equivalent expressions get too big
+	/*private void updateOptimum(RewriterStatement dbEntry) {
+		long optimalCost = -1;
+		RewriterStatement currentOptimum = (RewriterStatement) dbEntry.getMeta("_optimum");
+		List<RewriterStatement> equivalences = (List<RewriterStatement>) dbEntry.getMeta("equivalentExpressions");
+
+		if (currentOptimum == null) {
+			for (int i = 0; i < equivalences.size(); i++) {
+				currentOptimum = equivalences.get(i);
+				// TODO: Failures will be recomputed as _cost is still null
+				if (currentOptimum.getMeta("_cost") == null) {
+					try {
+						optimalCost = RewriterCostEstimator.estimateCost(currentOptimum, el -> 2000L, ctx);
+						currentOptimum.unsafePutMeta("_cost", optimalCost);
+					} catch (Exception e) {
+						currentOptimum.unsafePutMeta("_cost", -1L);
+					}
+				} else {
+					optimalCost = (Long) currentOptimum.getMeta("_cost");
+				}
+
+				if (optimalCost != -1)
+					break;
+			}
+		}
+
+		if (optimalCost == -1)
+			return;
+
+		for (RewriterStatement eq : equivalences) {
+			if (eq != currentOptimum) {
+				Object obj = eq.getMeta("_cost");
+				long cost;
+				if (obj == null) {
+					try {
+						cost = RewriterCostEstimator.estimateCost(eq, el -> 2000L, ctx);
+						eq.unsafePutMeta("_cost", cost);
+					} catch (Exception e) {
+						cost = -1;
+						eq.unsafePutMeta("_cost", -1L);
+					}
+				} else {
+					cost = (Long) obj;
+				}
+
+				if (cost != -1 && cost < optimalCost) {
+					currentOptimum = eq;
+					optimalCost = cost;
+				}
+			}
+		}
+
+		dbEntry.unsafePutMeta("_optimum", currentOptimum);
+	}*/
 
 	private void printEquivalences(List<RewriterStatement> equivalentStatements, long cpuTime, long generatedExpressions, long evaluatedExpressions, long canonicalizationMillis, long failures, boolean preFilter) {
 		System.out.println("===== ALL EQUIVALENCES =====");
@@ -200,8 +267,8 @@ public class RewriterClusteringTest {
 
 		for (int i = 0; i < stmts.size(); i++) {
 			for (int j = stmts.size() - 1; j > i; j--) {
-				RewriterStatement stmt1 = stmts.get(i).nestedCopy();
-				RewriterStatement stmt2 = stmts.get(j).nestedCopy();
+				RewriterStatement stmt1 = stmts.get(i).nestedCopy(true);
+				RewriterStatement stmt2 = stmts.get(j).nestedCopy(true);
 
 				stmt1 = flattenAndMerge.apply(stmt1);
 				stmt2 = flattenAndMerge.apply(stmt2);
@@ -219,8 +286,8 @@ public class RewriterClusteringTest {
 						match = false;
 					else {
 						// Otherwise we need to work ourselves backwards to the root if both canonical forms don't match now
-						RewriterStatement minStmt1 = minimalDifference._1.nestedCopy();
-						RewriterStatement minStmt2 = minimalDifference._2.nestedCopy();
+						RewriterStatement minStmt1 = minimalDifference._1.nestedCopy(true);
+						RewriterStatement minStmt2 = minimalDifference._2.nestedCopy(true);
 						minStmt1 = converter.apply(minStmt1);
 						minStmt2 = converter.apply(minStmt2);
 
@@ -243,12 +310,14 @@ public class RewriterClusteringTest {
 		for (RewriterStatement eStmt : equivalences) {
 			List<RewriterStatement> mEq = (List<RewriterStatement>)eStmt.getMeta("equivalentExpressions");
 			RewriterStatement optimalStatement = null;
-			long minCost = 0;
+			long minCost = -1;
 
 			for (RewriterStatement eq : mEq) {
 				try {
-					long cost = RewriterCostEstimator.estimateCost(eq, el -> 2000L, ctx);
-					eq.unsafePutMeta("_cost", cost);
+					long cost = (Long)eq.getMeta("_cost");
+
+					if (cost == -1)
+						continue;
 
 					if (optimalStatement == null) {
 						minCost = cost;
@@ -271,11 +340,11 @@ public class RewriterClusteringTest {
 					if (eq == optimalStatement)
 						continue;
 
-					Long cost = (Long) eq.getMeta("_cost");
+					long cost = (Long) eq.getMeta("_cost");
 
-					if (cost != null) {
-						double score = (((double)cost.longValue()) / minCost - 1) * 1000; // Relative cost reduction
-						score *= cost.longValue() - minCost; // Absolute cost reduction
+					if (cost != -1) {
+						double score = (((double)cost) / minCost - 1) * 1000; // Relative cost reduction
+						score *= cost - minCost; // Absolute cost reduction
 						if (score > 1e-10)
 							suggestedRewrites.add(new Tuple5<>(score, cost, minCost, eq, optimalStatement));
 					}

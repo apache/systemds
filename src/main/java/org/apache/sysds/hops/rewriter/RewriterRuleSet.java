@@ -1194,7 +1194,7 @@ public class RewriterRuleSet {
 
 		hooks = new HashMap<>();
 
-		rules.add(new RewriterRuleBuilder(ctx)
+		/*rules.add(new RewriterRuleBuilder(ctx)
 				.setUnidirectional(true)
 				.parseGlobalVars("MATRIX:A,B")
 				.intLiteral("1", 1)
@@ -1250,7 +1250,7 @@ public class RewriterRuleSet {
 					return ops.get(0).getCost() < ops.get(1).getCost();
 				}, true)
 				.build()
-		);
+		);*/
 
 		return new RewriterRuleSet(ctx, rules);
 	}

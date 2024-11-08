@@ -91,8 +91,10 @@ public class RewriterUtils {
 		};
 	}
 
+	// No longer maintained
+	@Deprecated
 	public static RewriterStatement buildFusedPlan(RewriterStatement origStatement, final RuleContext ctx) {
-		RewriterStatement cpy = origStatement.nestedCopy();
+		RewriterStatement cpy = origStatement.nestedCopy(true);
 		MutableObject<RewriterStatement> mCpy = new MutableObject<>(cpy);
 
 		Map<Tuple2<RewriterRule.IdentityRewriterStatement, RewriterRule.IdentityRewriterStatement>, List<RewriterStatement>> mmap = eraseAccessTypes(mCpy, ctx);

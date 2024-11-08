@@ -250,11 +250,6 @@ public class RewriterDataType extends RewriterStatement {
 	}
 
 	@Override
-	public long getCost() {
-		return 0;
-	}
-
-	@Override
 	public RewriterStatement nestedCopyOrInject(Map<RewriterStatement, RewriterStatement> copiedObjects, TriFunction<RewriterStatement, RewriterStatement, Integer, RewriterStatement> injector, RewriterStatement parent, int pIdx) {
 		RewriterStatement mCpy = copiedObjects.get(this);
 		if (mCpy != null)

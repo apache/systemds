@@ -26,7 +26,7 @@ import java.util.function.Function;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
-public abstract class RewriterStatement implements Comparable<RewriterStatement> {
+public abstract class RewriterStatement {
 	public static final String META_VARNAME = "_varName";
 
 
@@ -390,8 +390,21 @@ public abstract class RewriterStatement implements Comparable<RewriterStatement>
 	}
 
 	// TODO: This does not copy the associations if they exist
-	public RewriterStatement nestedCopy() {
-		return nestedCopyOrInject(new HashMap<>(), el -> null);
+	public RewriterStatement nestedCopy(boolean copyAssertions) {
+		Map<RewriterStatement, RewriterStatement> createdObjects = new HashMap<>();
+		RewriterStatement cpy = nestedCopyOrInject(createdObjects, el -> null);
+
+		if (copyAssertions) {
+			RewriterAssertions assertions = (RewriterAssertions) getMeta("_assertions");
+
+			if (assertions != null) {
+				cpy.unsafePutMeta("_assertions", RewriterAssertions.copy(assertions, createdObjects, true));
+			}
+		} else {
+			cpy.unsafeRemoveMeta("_assertions");
+		}
+
+		return cpy;
 	}
 	//String toStringWithLinking(int dagId, DualHashBidiMap<RewriterStatementLink, RewriterStatementLink> links);
 
@@ -403,7 +416,7 @@ public abstract class RewriterStatement implements Comparable<RewriterStatement>
 	}*/
 
 	public abstract int recomputeHashCodes(boolean recursively, final RuleContext ctx);
-	public abstract long getCost();
+	//public abstract long getCost();
 	public abstract RewriterStatement simplify(final RuleContext ctx);
 	public abstract RewriterStatement as(String id);
 	public abstract String toString(final RuleContext ctx);
@@ -592,10 +605,10 @@ public abstract class RewriterStatement implements Comparable<RewriterStatement>
 		consumer.accept(this, parent, pIdx);
 	}
 
-	@Override
+	/*@Override
 	public int compareTo(@NotNull RewriterStatement o) {
 		return Long.compare(getCost(), o.getCost());
-	}
+	}*/
 
 	public void putMeta(String key, Object value) {
 		if (isConsolidated())
@@ -706,6 +719,21 @@ public abstract class RewriterStatement implements Comparable<RewriterStatement>
 		eraseDefinitions();
 
 		return defList;
+	}
+
+	public long getCost(final RuleContext ctx) {
+		Long costObj = (Long) getMeta("_cost");
+
+		if (costObj == null) {
+			try {
+				costObj = RewriterCostEstimator.estimateCost(this, ctx);
+			} catch (Exception e) {
+				costObj = -1L;
+			}
+			unsafePutMeta("_cost", costObj);
+		}
+
+		return costObj;
 	}
 
 	protected void nestedCopyOrInjectMetaStatements(Map<RewriterStatement, RewriterStatement> copiedObjects, TriFunction<RewriterStatement, RewriterStatement, Integer, RewriterStatement> injector) {

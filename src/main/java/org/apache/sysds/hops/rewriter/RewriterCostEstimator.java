@@ -12,6 +12,11 @@ import java.util.function.Function;
 public class RewriterCostEstimator {
 	private static final long INSTRUCTION_OVERHEAD = 10;
 	private static final long MALLOC_COST = 10000;
+	private static final Function<RewriterStatement, Long> DEFAULT_COST_FN = el -> 2000L;
+
+	public static long estimateCost(RewriterStatement stmt, final RuleContext ctx) {
+		return estimateCost(stmt, DEFAULT_COST_FN, ctx);
+	}
 
 	public static long estimateCost(RewriterStatement stmt, Function<RewriterStatement, Long> propertyGenerator, final RuleContext ctx) {
 		RewriterAssertions assertions = new RewriterAssertions(ctx);

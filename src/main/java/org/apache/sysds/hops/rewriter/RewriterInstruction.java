@@ -524,16 +524,6 @@ public class RewriterInstruction extends RewriterStatement {
 		this.id = id;
 	}
 
-	@Override
-	public long getCost() {
-		if (costFunction == null)
-			throw new NullPointerException("No cost function has been defined for the instruction: '" + instr + "'");
-		long cost = costFunction.apply(operands);
-		for (RewriterStatement stmt : operands)
-			cost += stmt.getCost();
-		return cost;
-	}
-
 	public String changeConsolidatedInstruction(String newName, final RuleContext ctx) {
 		String typedInstruction = newName;
 		String newInstrReturnType = ctx.instrTypes.get(typedInstruction);

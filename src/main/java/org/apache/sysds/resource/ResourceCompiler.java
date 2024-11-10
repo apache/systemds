@@ -257,8 +257,13 @@ public class ResourceCompiler {
 			throw new RuntimeException("The given number of executors was non-positive");
 		}
 		// ------------------- CP (driver) configurations -------------------
-		// use 90% of the node's memory for the JVM heap -> rest needed for the OS and resource management
-		long effectiveDriverMemory = (long) (driverMemory * JVM_MEMORY_FACTOR);
+		// use at most 90% of the node's memory for the JVM heap -> rest needed for the OS and resource management
+		// adapt the minimum based on the need for YAN RM
+		long effectiveDriverMemory = calculateEffectiveDriverMemoryBudget(driverMemory, numExecutors*executorCores);
+		// require that always at least half of the memory budget is left for driver memory or 1GB
+		if (effectiveDriverMemory <= GBtoBytes(1)  || driverMemory > 2*effectiveDriverMemory) {
+			throw new IllegalArgumentException("Driver resources are not sufficient to handle the cluster");
+		}
 		// CPU core would be shared -> no further limitation
 		InfrastructureAnalyzer.setLocalMaxMemory(effectiveDriverMemory);
 		InfrastructureAnalyzer.setLocalPar(driverCores);

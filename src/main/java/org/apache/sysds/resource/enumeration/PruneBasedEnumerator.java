@@ -100,13 +100,18 @@ public class PruneBasedEnumerator extends Enumerator {
                         int newLocalBestNumberExecutors = -1;
                         // for Spark execution mode
                         for (int numberExecutors: numberExecutorsSet) {
-                            ResourceCompiler.setSparkClusterResourceConfigs(
-                                    driverMemory,
-                                    driverCores,
-                                    numberExecutors,
-                                    executorMemory,
-                                    executorCores
-                            );
+                            try {
+                                ResourceCompiler.setSparkClusterResourceConfigs(
+                                        driverMemory,
+                                        driverCores,
+                                        numberExecutors,
+                                        executorMemory,
+                                        executorCores
+                                );
+                            } catch (IllegalArgumentException e) {
+                                // insufficient driver memory detected
+                                break;
+                            }
                             program = ResourceCompiler.doFullRecompilation(program);
                             if (!hasSparkInstructions(program)) {
                                 // mark the current CP memory budget as dominant for the global optimal solution

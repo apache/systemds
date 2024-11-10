@@ -44,7 +44,7 @@ public class SparkCostUtils {
         double readTime = getHadoopReadTime(input, executorMetrics);
         long sizeTextFile = OptimizerUtils.estimateSizeTextOutput(input.getM(), input.getN(), input.getNNZ(), (Types.FileFormat) input.fileInfo[1]);
         RDDStats textRdd = new RDDStats(sizeTextFile, -1);
-        double shuffleTime = getSparkShuffleTime(textRdd, executorMetrics, true);
+        double shuffleTime = getSparkShuffleTime(textRdd, executorMetrics, false);
         double timeStage1 = readTime + shuffleTime;
         // new stage: transform partitioned shuffled text object into partitioned binary object
         long nflop = getInstNFLOP(SPType.Reblock, opcode, output);

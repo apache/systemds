@@ -29,13 +29,17 @@ import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 
 public class IOCostUtils {
 
+	// empirical factor to scale down theoretical peak CPU performance
+	private static final double COMPUTE_EFFICIENCY = 0.5;
 	private static final double READ_DENSE_FACTOR = 0.5;
 	private static final double WRITE_DENSE_FACTOR = 0.3;
 	private static final double SPARSE_FACTOR = 0.5;
-	private static final double TEXT_FACTOR = 0.3;
+	private static final double TEXT_FACTOR = 0.5;
+	// empirical value for data transfer between S3 and EC2 instances
+	private static final double S3_COMPUTE_BOUND = 1.2 * 1E+9; // GFLOP/MB
 	private static final double SERIALIZATION_FACTOR = 0.5;
 	private static final double DESERIALIZATION_FACTOR = 0.8;
-	public static final long DEFAULT_FLOPS = 2L * 1024 * 1024 * 1024; // 2 gFLOPS
+	public static final long DEFAULT_FLOPS = 2L * 1024 * 1024 * 1024; // 2 GFLOPS
 
 	public static class IOMetrics {
 		// FLOPS value not directly related to I/O metrics,
@@ -54,11 +58,7 @@ public class IOCostUtils {
 		double hdfsReadTextSparseBandwidth;
 		double hdfsWriteTextDenseBandwidth;
 		double hdfsWriteTextSparseBandwidth;
-		// no s3 read/write metrics since it will not be used for any intermediate operations
-		double s3ReadTextDenseBandwidth;
-		double s3ReadTextSparseBandwidth;
-		double s3WriteTextDenseBandwidth;
-		double s3WriteTextSparseBandwidth;
+		double s3BandwidthEfficiency;
 		// Metrics for main memory I/O operations
 		double memReadBandwidth;
 		double memWriteBandwidth;
@@ -80,7 +80,7 @@ public class IOCostUtils {
 		}
 		public IOMetrics(long flops, int cores, double memoryBandwidth, double diskReadBandwidth, double diskWriteBandwidth, double networkBandwidth) {
 			// CPU metrics
-			cpuFLOPS = flops;
+			cpuFLOPS = (long) (flops * COMPUTE_EFFICIENCY);
 			cpuCores = cores;
 			// Metrics for main memory I/O operations
 			memReadBandwidth = memoryBandwidth;
@@ -99,10 +99,7 @@ public class IOCostUtils {
 			hdfsReadTextSparseBandwidth = hdfsReadBinarySparseBandwidth * TEXT_FACTOR;
 			hdfsWriteTextDenseBandwidth = hdfsWriteBinaryDenseBandwidth * TEXT_FACTOR;
 			hdfsWriteTextSparseBandwidth = hdfsWriteBinarySparseBandwidth * TEXT_FACTOR;
-			s3ReadTextDenseBandwidth = networkingBandwidth * READ_DENSE_FACTOR * TEXT_FACTOR;
-			s3ReadTextSparseBandwidth = s3ReadTextDenseBandwidth * SPARSE_FACTOR;
-			s3WriteTextDenseBandwidth = networkingBandwidth * WRITE_DENSE_FACTOR * TEXT_FACTOR;
-			s3WriteTextSparseBandwidth = s3WriteTextDenseBandwidth * SPARSE_FACTOR;
+			s3BandwidthEfficiency = (S3_COMPUTE_BOUND / cpuFLOPS); // [s/MB]
 			// Metrics for (de)serialization
 			double currentFlopsFactor = (double) DEFAULT_FLOPS / cpuFLOPS;
 			serializationBandwidth = memReadBandwidth * SERIALIZATION_FACTOR * currentFlopsFactor;
@@ -117,15 +114,11 @@ public class IOCostUtils {
 		public static final double DEFAULT_MBS_NETWORK_BANDWIDTH = 640; // e.g. m5.4xlarge, baseline bandwidth: 5Gbps = 640MB/s
 		public static final double DEFAULT_MBS_HDFS_READ_BINARY_DENSE = 150;
 		public static final double DEFAULT_MBS_HDFS_READ_BINARY_SPARSE = 75;
-		public static final double DEFAULT_MBS_S3_READ_TEXT_DENSE = 50;
-		public static final double DEFAULT_MBS_S3_READ_TEXT_SPARSE = 25;
 		public static final double DEFAULT_MBS_HDFS_READ_TEXT_DENSE = 75;
 		public static final double DEFAULT_MBS_HDFS_READ_TEXT_SPARSE = 50;
 		// IO Write
 		public static final double DEFAULT_MBS_HDFS_WRITE_BINARY_DENSE = 120;
 		public static final double DEFAULT_MBS_HDFS_WRITE_BINARY_SPARSE = 60;
-		public static final double DEFAULT_MBS_S3_WRITE_TEXT_DENSE = 30;
-		public static final double DEFAULT_MBS_S3_WRITE_TEXT_SPARSE = 20;
 		public static final double DEFAULT_MBS_HDFS_WRITE_TEXT_DENSE = 40;
 		public static final double DEFAULT_MBS_HDFS_WRITE_TEXT_SPARSE = 30;
 
@@ -148,10 +141,7 @@ public class IOCostUtils {
 			hdfsReadTextSparseBandwidth = DEFAULT_MBS_HDFS_READ_TEXT_SPARSE;
 			hdfsWriteTextDenseBandwidth = DEFAULT_MBS_HDFS_WRITE_TEXT_DENSE;
 			hdfsWriteTextSparseBandwidth = DEFAULT_MBS_HDFS_WRITE_TEXT_SPARSE;
-			s3ReadTextDenseBandwidth = DEFAULT_MBS_S3_READ_TEXT_DENSE;
-			s3ReadTextSparseBandwidth = DEFAULT_MBS_S3_READ_TEXT_SPARSE;
-			s3WriteTextDenseBandwidth = DEFAULT_MBS_S3_WRITE_TEXT_DENSE;
-			s3WriteTextSparseBandwidth = DEFAULT_MBS_S3_WRITE_TEXT_SPARSE;
+			s3BandwidthEfficiency = (S3_COMPUTE_BOUND / cpuFLOPS);
 			// Metrics for main memory I/O operations
 			memReadBandwidth = DEFAULT_MBS_MEMORY_BANDWIDTH;
 			memWriteBandwidth = DEFAULT_MBS_MEMORY_BANDWIDTH;
@@ -278,25 +268,33 @@ public class IOCostUtils {
 		// since getDiskReadTime() computes the write time utilizing the whole executor resources
 		// use the fact that <partition size> / <bandwidth per slot> = <partition size> * <slots per executor> / <bandwidth per executor>
 		long hdfsBlockSize = InfrastructureAnalyzer.getHDFSBlockSize();
+
 		double numPartitions = Math.ceil((double) size / hdfsBlockSize);
-		double sizePerExecutorMB = (double) (metrics.cpuCores * hdfsBlockSize) / (1024*1024);
+		double sizePerExecutorMB;
+		if (size < hdfsBlockSize) {
+			// emulate full executor utilization
+			sizePerExecutorMB = (double) (metrics.cpuCores * size) / (1024 * 1024);
+		} else {
+			sizePerExecutorMB =(double) (metrics.cpuCores * hdfsBlockSize) / (1024 * 1024);
+		}
 		boolean isSparse = MatrixBlock.evalSparseFormatOnDisk(stats.getM(), stats.getN(), stats.getNNZ());
 		double timePerCore = getStorageReadTime(sizePerExecutorMB, isSparse, sourceType, format, metrics); // same as time per executor
 		// number of execution waves (maximum task to execute per core)
-		double numWaves = Math.ceil(numPartitions / (SparkExecutionContext.getNumExecutors() * metrics.cpuCores));
+		double numWaves = Math.ceil(numPartitions / (SparkExecutionContext.getDefaultParallelism(false)));
 		return numWaves * timePerCore;
 	}
 
 	private static double getStorageReadTime(double sizeMB, boolean isSparse, String source, Types.FileFormat format, IOMetrics metrics)
 	{
 		double time;
-		// TODO: consider if the text or binary should be default if format == null
 		if (format == null || format.isTextFormat()) {
 			if (source.equals(S3_SOURCE_IDENTIFIER)) {
-				if (isSparse)
-					time = sizeMB / metrics.s3ReadTextSparseBandwidth;
-				else // dense
-					time = sizeMB / metrics.s3ReadTextDenseBandwidth;
+				if (isSparse) {
+					time = SPARSE_FACTOR * metrics.s3BandwidthEfficiency * sizeMB;
+				}
+				else {// dense
+					time = metrics.s3BandwidthEfficiency * sizeMB;
+				}
 			} else { // HDFS
 				if (isSparse)
 					time = sizeMB / metrics.hdfsReadTextSparseBandwidth;
@@ -371,9 +369,9 @@ public class IOCostUtils {
 		if (format.isTextFormat()) {
 			if (source.equals(S3_SOURCE_IDENTIFIER)) {
 				if (isSparse)
-					time = sizeMB / metrics.s3WriteTextSparseBandwidth;
+					time = SPARSE_FACTOR * metrics.s3BandwidthEfficiency * sizeMB;
 				else // dense
-					time = sizeMB / metrics.s3WriteTextDenseBandwidth;
+					time = metrics.s3BandwidthEfficiency * sizeMB;
 			} else { // HDFS
 				if (isSparse)
 					time = sizeMB / metrics.hdfsWriteTextSparseBandwidth;
@@ -577,9 +575,9 @@ public class IOCostUtils {
 		Types.FileFormat format = (Types.FileFormat) fileStats.fileInfo[1];
 		long size;
 		if (format == Types.FileFormat.BINARY) {
-			size = MatrixBlock.estimateSizeOnDisk(fileStats.getM(), fileStats.getM(), fileStats.getNNZ());
+			size = MatrixBlock.estimateSizeOnDisk(fileStats.getM(), fileStats.getN(), fileStats.getNNZ());
 		} else if (format.isTextFormat()) {
-			size = OptimizerUtils.estimateSizeTextOutput(fileStats.getM(), fileStats.getM(), fileStats.getNNZ(), format);
+			size = OptimizerUtils.estimateSizeTextOutput(fileStats.getM(), fileStats.getN(), fileStats.getNNZ(), format);
 		} else { // compressed
 			throw new RuntimeException("Format " + format + " is not supported for estimation yet.");
 		}

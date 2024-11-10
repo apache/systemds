@@ -54,6 +54,8 @@ public class CostEstimator
 {
 	private static final long MIN_MEMORY_TO_TRACK = 1024 * 1024; // 1MB
 	private static final int DEFAULT_NUM_ITER = 10;
+	// leaves room for GC overhead
+	private static final double MEM_ALLOCATION_LIMIT_FRACTION = 0.9;
 	// Non-static members
 	private final Program _program;
 	// declare here the hashmaps
@@ -82,7 +84,7 @@ public class CostEstimator
 		// initialize here the hashmaps
 		_stats = new HashMap<>();
 		_functions = new HashSet<>();
-		localMemoryLimit = (long) OptimizerUtils.getLocalMemBudget();
+		localMemoryLimit = (long) (OptimizerUtils.getLocalMemBudget() * MEM_ALLOCATION_LIMIT_FRACTION);
 		freeLocalMemory = localMemoryLimit;
 		driverMetrics = new IOMetrics(driverNode);
 		if (executorNode == null) {
@@ -631,6 +633,8 @@ public class CostEstimator
 
 			output = getStats(cinst.getOutputVariableName());
 			SparkCostUtils.assignOutputRDDStats(inst, output, input);
+
+			output.fileInfo = input.fileInfo;
 			output.rddStats.checkpoint = true;
 			// assume the rdd object is only marked as checkpoint;
 			// adding spilling or serializing cost is skipped
@@ -889,7 +893,6 @@ public class CostEstimator
 
 			output.rddStats.cost = loadTime + SparkCostUtils.getQuaternaryInstTime(quatInst,
 					input1, input2, input3, output, driverMetrics, executorMetrics);
-			return 0;
 		} else if (inst instanceof WriteSPInstruction) {
 			WriteSPInstruction wInst = (WriteSPInstruction) inst;
 			VarStats input = getStats(wInst.input1.getName());
@@ -954,7 +957,7 @@ public class CostEstimator
 		} else if (computeTime == Double.POSITIVE_INFINITY || collectTime == Double.POSITIVE_INFINITY) {
 			throw new RuntimeException("Unexpected infinity value at estimating Spark Job execution time");
 		}
-		return computeTime + computeTime;
+		return collectTime + computeTime;
 	}
 
 	//////////////////////////////////////////////////////////////////////////////////////////////
@@ -974,7 +977,7 @@ public class CostEstimator
 		double loadTime;
 		// input.fileInfo != null output of reblock inst. -> execution not triggered
 		// input.rddStats.checkpoint for output of checkpoint inst. -> execution not triggered
-		if (input.rddStats != null && (input.fileInfo == null || !input.rddStats.checkpoint)) {
+		if (input.rddStats != null && ((input.fileInfo == null && !input.rddStats.checkpoint) || (input.fileInfo != null && input.rddStats.checkpoint))) {
 			// loading from RDD
 			loadTime = getTimeEstimateSparkJob(input);
 		} else {

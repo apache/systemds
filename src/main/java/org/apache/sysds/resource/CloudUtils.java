@@ -387,7 +387,9 @@ public class CloudUtils {
 			sparkDefaultsConfig.put("Classification", "spark-defaults");
 
 			JSONObject sparkDefaultsProperties = new JSONObject();
-			int driverMemory = (int) (clusterConfig.driverInstance.getMemory()/ (1024*1024) * JVM_MEMORY_FACTOR);
+			long driverMemoryBytes = calculateEffectiveDriverMemoryBudget(clusterConfig.driverInstance.getMemory(),
+					clusterConfig.numberExecutors * clusterConfig.executorInstance.getVCPUs());
+			int driverMemory = (int) (driverMemoryBytes / (1024*1024));
 			sparkDefaultsProperties.put("spark.driver.memory", (driverMemory)+"m");
 			sparkDefaultsProperties.put("spark.driver.maxResultSize", String.valueOf(0));
 			// calculate the exact resource limits for YARN containers to maximize the utilization
@@ -489,7 +491,7 @@ public class CloudUtils {
 	}
 
 	public static int calculateAmMemoryMB(int totalExecutorCores) {
-		// 512MB base emory budget + 256MB for each 16 cores extra
+		// 512MB base Application Master memory budget + 256MB for each 16 cores extra
 		return 512 + (int) Math.floor((double) totalExecutorCores / 16) * 256;
 	}
 
@@ -498,5 +500,15 @@ public class CloudUtils {
 		int scaledCores = (int) Math.ceil((totalExecutorCores) / 64.0);
 		// cap to 8 cores for large clusters (cores > 512)
 		return Math.min(8, scaledCores);
+	}
+
+	public static long calculateEffectiveDriverMemoryBudget(long driverMemory, int totalExecutorCores) {
+		// 1GB Resource Manager memory budget + 256MB for each 16 cores extra
+		int effectiveBudgetMB =  1024 + (int) Math.floor((double) totalExecutorCores / 16) * 256;
+		long effectiveBudgetBytes = ((long) effectiveBudgetMB * 1024 * 1024);
+		// validation if the memory is negative or insufficient is to be done separately
+		// return value in bytes
+		return Math.min((long) (driverMemory * JVM_MEMORY_FACTOR),
+				driverMemory - effectiveBudgetBytes);
 	}
 }

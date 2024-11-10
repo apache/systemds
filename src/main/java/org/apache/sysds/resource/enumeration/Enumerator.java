@@ -164,13 +164,18 @@ public abstract class Enumerator {
 								estimateRangeExecutors(driverCores, executorMemory, executorCores);
 						// for Spark execution mode
 						for (int numberExecutors: numberExecutorsSet) {
-							ResourceCompiler.setSparkClusterResourceConfigs(
-									driverMemory,
-									driverCores,
-									numberExecutors,
-									executorMemory,
-									executorCores
-							);
+							try {
+								ResourceCompiler.setSparkClusterResourceConfigs(
+										driverMemory,
+										driverCores,
+										numberExecutors,
+										executorMemory,
+										executorCores
+								);
+							} catch (IllegalArgumentException e) {
+								// insufficient driver memory detected
+								break;
+							}
 							program = ResourceCompiler.doFullRecompilation(program);
 //							System.out.println(Explain.explain(program));
 							// no need of recompilation for a cluster with identical #executors and

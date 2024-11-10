@@ -37,7 +37,6 @@ generate_jvm_configs
 if [[ -n "$SYSTEMDS_ARGS" ]]; then
     IFS=',' read -r -a args_array <<< "$SYSTEMDS_ARGS"
     LAUNCH_ARGS="${args_array[*]}"
-    echo "Using arguments: $LAUNCH_ARGS"
 else
     LAUNCH_ARGS=""
 fi
@@ -45,7 +44,6 @@ fi
 if [[ -n "$SYSTEMDS_NVARGS" ]]; then
     IFS=',' read -r -a nvargs_array <<< "$SYSTEMDS_NVARGS"
     LAUNCH_NVARGS="${nvargs_array[*]}"
-    echo "Using key-value arguments: $LAUNCH_NVARGS"
 else
     LAUNCH_NVARGS=""
 fi

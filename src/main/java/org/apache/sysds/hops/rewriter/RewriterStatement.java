@@ -773,7 +773,8 @@ public abstract class RewriterStatement {
 		RewriterAssertions assertions = (RewriterAssertions) getMeta("_assertions");
 		if (assertions == null) {
 			assertions = new RewriterAssertions(ctx);
-			unsafePutMeta("_assertions", assertions);
+			if (!isLiteral()) // Otherwise the assertion object will just be temporary
+				unsafePutMeta("_assertions", assertions);
 		}
 
 		return assertions;
@@ -866,15 +867,15 @@ public abstract class RewriterStatement {
 
 	// This may create cycles if visited objects are not tracked
 	public void forEachMetaObject(BiConsumer<RewriterStatement, RewriterPredecessor> consumer) {
-		RewriterStatement ncol = getNCol();
-		RewriterStatement nrow = getNRow();
+		//RewriterStatement ncol = getNCol();
+		//RewriterStatement nrow = getNRow();
 		RewriterStatement backref = getBackRef();
 		RewriterAssertions assertions = (RewriterAssertions) getMeta("_assertions");
 
-		if (ncol != null)
+		/*if (ncol != null)
 			consumer.accept(ncol, new RewriterPredecessor(this, "ncol"));
 		if (nrow != null)
-			consumer.accept(nrow, new RewriterPredecessor(this, "nrow"));
+			consumer.accept(nrow, new RewriterPredecessor(this, "nrow"));*/
 		if (backref != null)
 			consumer.accept(backref, new RewriterPredecessor(this, "_backRef"));
 		if (assertions != null)
@@ -882,13 +883,13 @@ public abstract class RewriterStatement {
 	}
 
 	public void updateMetaObjects(Function<RewriterStatement, RewriterStatement> f) {
-		RewriterStatement ncol = getNCol();
-		RewriterStatement nrow = getNRow();
+		//RewriterStatement ncol = getNCol();
+		//RewriterStatement nrow = getNRow();
 		RewriterStatement backref = getBackRef();
 
 		RewriterStatement mNew;
 
-		if (ncol != null) {
+		/*if (ncol != null) {
 			mNew = f.apply(ncol);
 
 			if (ncol != mNew)
@@ -900,7 +901,7 @@ public abstract class RewriterStatement {
 
 			if (nrow != mNew)
 				unsafePutMeta("nrow", nrow);
-		}
+		}*/
 
 		if (backref != null) {
 			mNew = f.apply(backref);

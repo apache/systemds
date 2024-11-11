@@ -381,16 +381,18 @@ public class RewriterRuleCollection {
 					.build()
 			);
 
-			rules.add(new RewriterRuleBuilder(ctx, "")
+			rules.add(new RewriterRuleBuilder(ctx, "-(+(a, b)) => +(-(a), -(b))")
 					.setUnidirectional(true)
 					.parseGlobalVars(t1 + ":a")
 					.parseGlobalVars(t2 + ":b")
 					.withParsedStatement("-(+(a, b))", hooks)
-					.toParsedStatement("+(-(a), -(b))", hooks)
+					.toParsedStatement("$1:+(-(a), -(b))", hooks)
+					/*.iff(match -> {System.out.println("Parent: " + match.getPredecessor().getParent()); System.out.println("Is Meta: " + match.getPredecessor().isMetaObject()); System.out.println("Child: " + match.getMatchRoot()); return true;}, true)
+							.apply(hooks.get(1).getId(), (t, match) -> {System.out.println("New: " + t); System.out.println("New Assertions: " + match.getNewExprRoot().getAssertions(ctx));}, true)*/
 					.build()
 			);
 
-			rules.add(new RewriterRuleBuilder(ctx, "")
+			rules.add(new RewriterRuleBuilder(ctx, "-(-(a)) => a")
 					.setUnidirectional(true)
 					.parseGlobalVars(t1 + ":a")
 					.parseGlobalVars(t2 + ":b")
@@ -1371,24 +1373,7 @@ public class RewriterRuleCollection {
 						.parseGlobalVars(t2 + ":B")
 						.withParsedStatement("$1:FusableBinaryOperator(A,B)", hooks)
 						.toParsedStatement("$2:FusedOperator(argList(A,B))", hooks)
-								.iff(match -> {
-									System.out.println("Old: " + match.getMatchRoot());
-									if (match.getPredecessor().isOperand())
-										System.out.println("OldParent: " + match.getPredecessor().getParent());
-									else if (match.getPredecessor().isAssertionObject())
-										System.out.println("OldAssertion: " + match.getPredecessor().getAssertion());
-									else if (match.getPredecessor().isMetaObject())
-										System.out.println("OldMeta: " + match.getPredecessor().getMetaKey());
-									System.out.println("OldRoot: " + match.getExpressionRoot());
-									System.out.println("OldAssertions: " + match.getExpressionRoot().getAssertions(ctx));
-									return true;
-								}, true)
 						.link(hooks.get(1).getId(), hooks.get(2).getId(), RewriterStatement::transferMeta)
-						.apply(hooks.get(2).getId(), (stmt, match) -> {
-							System.out.println("Hi3: " + stmt);
-							System.out.println("Root: " + match.getNewExprRoot());
-							System.out.println("Assertions: " + match.getNewExprRoot().getAssertions(ctx));
-						}, true)
 						.build());
 
 				rules.add(new RewriterRuleBuilder(ctx, "Flatten fusable binary operator")

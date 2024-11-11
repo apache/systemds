@@ -57,8 +57,8 @@ public class RewriterHeuristic implements RewriterHeuristicTransformation {
 		if (rule != null)
 			foundRewrite.setValue(true);
 
-		while (rule != null) {
-			System.out.println("Pre-apply: " + rule.rule.getName());
+		for (int i = 0; i < 1000 && rule != null; i++) {
+			//System.out.println("Pre-apply: " + rule.rule.getName());
 			/*if (currentStmt.toParsableString(ruleSet.getContext()).equals("%*%(X,[](B,1,ncol(X),1,ncol(B)))"))
 				System.out.println("test");*/
 			/*System.out.println("Expr: " + rule.matches.get(0).getExpressionRoot().toParsableString(ruleSet.getContext()));
@@ -77,6 +77,9 @@ public class RewriterHeuristic implements RewriterHeuristicTransformation {
 			else
 				throw new IllegalArgumentException("Must use accelerated mode!");//rule = ruleSet.findFirstApplicableRule(current);
 		}
+
+		if (rule != null)
+			throw new IllegalArgumentException("Expression did not converge:\n" + currentStmt.toParsableString(ruleSet.getContext(), true));
 
 		return currentStmt;
 	}

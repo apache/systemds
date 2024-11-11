@@ -786,4 +786,18 @@ public class RewriterStreamTests {
 
 		assert !stmt1.match(RewriterStatement.MatcherContext.exactMatch(ctx, stmt2));
 	}
+
+	@Test
+	public void convergenceTest() {
+		String stmtStr = "MATRIX:dl_matrix\n" +
+				"INT:i,j,46307663-5c68-48ba-aa86-c1c36de45dbe\n" +
+				"LITERAL_INT:1,2\n" +
+				"[](dl_matrix,+(i,-(2)),-(i,2),1,1)";
+
+		RewriterStatement stmt = RewriterUtils.parse(stmtStr, ctx);
+		stmt = canonicalConverter.apply(stmt);
+
+		System.out.println("==========");
+		System.out.println(stmt.toParsableString(ctx, true));
+	}
 }

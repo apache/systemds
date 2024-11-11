@@ -151,7 +151,7 @@ public class RewriterRule extends AbstractRewriterRule {
 
 	private RewriterStatement apply(RewriterStatement.MatchingSubexpression match, RewriterStatement rootInstruction, RewriterStatement dest, MutableObject<Tuple3<RewriterStatement, RewriterStatement, Integer>> modificationHandle, List<Tuple2<RewriterStatement, BiConsumer<RewriterStatement, RewriterStatement.MatchingSubexpression>>> applyFunction) {
 		if (match.getPredecessor().isRoot() /*|| match.getMatchParent() == match.getMatchRoot()*/) {
-			System.out.println("As root");
+			//System.out.println("As root");
 			final Map<RewriterStatement, RewriterStatement> createdObjects = new HashMap<>();
 			RewriterStatement cpy = dest.nestedCopyOrInject(createdObjects, obj -> {
 				RewriterStatement assoc = match.getAssocs().get(obj);
@@ -180,7 +180,7 @@ public class RewriterRule extends AbstractRewriterRule {
 			if (oldRootCpy != null) {
 				assertions = (RewriterAssertions) oldRootCpy.getMeta("_assertions");
 				oldRootCpy.unsafeRemoveMeta("_assertions");
-				System.out.println("HERE: " + assertions);
+				//System.out.println("HERE: " + assertions);
 			} else if (match.getExpressionRoot().getMeta("_assertions") != null) {
 				assertions = ((RewriterAssertions) match.getExpressionRoot().getMeta("_assertions")).nestedCopyOrInject(createdObjects, (obj, p, pIdx) -> {
 					RewriterStatement assoc = match.getAssocs().get(obj);
@@ -196,12 +196,12 @@ public class RewriterRule extends AbstractRewriterRule {
 
 					return null;
 				}, match.getNewExprRoot());
-				System.out.println("Copied assertions");
+				//System.out.println("Copied assertions");
 			}
 
 			if (assertions != null) {
 				cpy.unsafePutMeta("_assertions", assertions);
-				System.out.println("Put: " + assertions);
+				//System.out.println("Put: " + assertions);
 			}
 
 			/*RewriterAssertions assertions = (RewriterAssertions) match.getExpressionRoot().getMeta("_assertions");

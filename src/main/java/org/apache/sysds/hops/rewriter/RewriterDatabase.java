@@ -63,6 +63,8 @@ public class RewriterDatabase {
 					insertEntry(ctx, stmt);
 					strBuffer.clear();
 				} catch (Exception e) {
+					System.err.println("An error occurred while parsing the string:\n" + String.join("\n", strBuffer));
+					strBuffer.clear();
 					e.printStackTrace();
 				}
 			} else {

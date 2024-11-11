@@ -77,7 +77,7 @@ public class RewriterClusteringTest {
 		db.parForEach(expr -> {
 			if (ctr.incrementAndGet() % 10 == 0)
 				System.out.println("Done: " + ctr.intValue() + " / " + size);
-			//if (ctr.intValue() > 5000)
+			//if (ctr.intValue() > 1000)
 			//	return; // Skip
 			// First, build all possible subtrees
 			//System.out.println("Eval:\n" + expr.toParsableString(ctx, true));

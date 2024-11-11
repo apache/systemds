@@ -770,4 +770,20 @@ public class RewriterStreamTests {
 
 		assert stmt1.match(RewriterStatement.MatcherContext.exactMatch(ctx, stmt2));
 	}
+
+	@Test
+	public void testRIXInequality() {
+		RewriterStatement stmt1 = RewriterUtils.parse("+(A, [](B, 1, nrow(A), 1, ncol(A)))", ctx, "MATRIX:A,B", "LITERAL_INT:1");
+		RewriterStatement stmt2 = RewriterUtils.parse("+(A, B)", ctx, "MATRIX:A,B");
+
+		stmt1 = canonicalConverter.apply(stmt1);
+		stmt2 = canonicalConverter.apply(stmt2);
+
+		System.out.println("==========");
+		System.out.println(stmt1.toParsableString(ctx, true));
+		System.out.println("==========");
+		System.out.println(stmt2.toParsableString(ctx, true));
+
+		assert !stmt1.match(RewriterStatement.MatcherContext.exactMatch(ctx, stmt2));
+	}
 }

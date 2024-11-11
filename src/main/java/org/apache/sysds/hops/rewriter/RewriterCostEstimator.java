@@ -26,7 +26,7 @@ public class RewriterCostEstimator {
 
 		//System.out.println("Cost1: " + costFn.toParsableString(ctx));
 
-		costFn.forEachPostOrder((cur, parent, pIdx) -> {
+		costFn.forEachPostOrder((cur, pred) -> {
 			for (int i = 0; i < cur.getOperands().size(); i++) {
 				RewriterStatement op = cur.getChild(i);
 
@@ -48,7 +48,7 @@ public class RewriterCostEstimator {
 					}
 				}
 			}
-		});
+		}, false);
 
 		//System.out.println("Cost2: " + costFn.toParsableString(ctx));
 
@@ -65,13 +65,13 @@ public class RewriterCostEstimator {
 		List<RewriterStatement> includedCosts = new ArrayList<>();
 		MutableLong instructionOverhead = new MutableLong(0);
 
-		stmt.forEachPostOrder((cur, parent, pIdx) -> {
+		stmt.forEachPostOrder((cur, pred) -> {
 			if (!(cur instanceof RewriterInstruction))
 				return;
 
 			computeCostOf((RewriterInstruction) cur, ctx, includedCosts, assertions, instructionOverhead);
 			instructionOverhead.add(INSTRUCTION_OVERHEAD);
-		});
+		}, false);
 
 		includedCosts.add(RewriterStatement.literal(ctx, instructionOverhead.longValue()));
 

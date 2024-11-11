@@ -77,19 +77,25 @@ public class TopologicalSort {
 
 		// Create a random global order which will be used for indistinguishable sub-DAGs
 		MutableInt nameCtr = new MutableInt(0);
-		root.forEachPostOrder((el, parent, pIdx) -> {
+		root.forEachPostOrder((el, pred) -> {
+			if (el.isLiteral())
+				return;
+
 			el.unsafePutMeta("_tempName", nameCtr.intValue());
 			nameCtr.increment();
-			boolean arrangable = isArrangable.apply(el, parent);
+			boolean arrangable = isArrangable.apply(el, pred.getParent());
 
 			if (arrangable && el.refCtr > 1)
 				throw new IllegalArgumentException("Expecting unique parents for arrangable items!");
 
 			el.unsafePutMeta("_arrangable", arrangable);
-		});
+		}, false);
 
 		// Try to establish a first order
-		root.forEachPostOrder((el, parent, pIdx) -> {
+		root.forEachPostOrder((el, pred) -> {
+			if (el.isLiteral())
+				return;
+
 			boolean arrangable = (boolean) el.getMeta("_arrangable");
 
 			HashMap<Object, Integer> facts = new HashMap<>();
@@ -135,7 +141,7 @@ public class TopologicalSort {
 					knownOrder.add(currSet.get(0));
 				else {
 					final RewriterStatement first = currSet.get(0);
-					if (currSet.stream().allMatch(mEl -> first == mEl)) {
+					if (currSet.stream().allMatch(first::equals)) {
 						knownOrder.addAll(currSet);
 					} else {
 						containsUnorderedSet = true;
@@ -149,7 +155,7 @@ public class TopologicalSort {
 			} else {
 				knownOrder.addAll(el.getOperands());
 			}
-		});
+		}, false);
 
 		return uncertainParents;
 	}
@@ -162,6 +168,9 @@ public class TopologicalSort {
 
 	private static int introduceFacts(Collection<UnorderedSet> sets, int factCtr) {
 		for (RewriterStatement stmt : allChildren(sets)) {
+			if (stmt.isLiteral())
+				continue;
+
 			if (stmt.getMeta("_addresses") == null)
 				stmt.unsafePutMeta("_addresses", new ArrayList<>());
 
@@ -205,6 +214,9 @@ public class TopologicalSort {
 	}
 
 	private static boolean recursivelyFindLowestUncertainties(RewriterStatement current, Set<UnorderedSet> lowestUncertainties) {
+		if (current.isLiteral())
+			return false;
+
 		List<Object> knownOrder = (List<Object>) current.getMeta("_knownOrder");
 		boolean containsUncertainty = false;
 
@@ -227,7 +239,7 @@ public class TopologicalSort {
 	}
 
 	public static void constructNewDAG(RewriterStatement root, final RuleContext ctx) {
-		root.forEachPostOrder((cur, parent, pIdx) -> {
+		root.forEachPostOrder((cur, pred) -> {
 			List<Object> knownOrder = (List<Object>) cur.getMeta("_knownOrder");
 
 			for (int i = 0; i < cur.getOperands().size(); i++)
@@ -238,7 +250,7 @@ public class TopologicalSort {
 			cur.unsafeRemoveMeta("_address");
 			cur.unsafeRemoveMeta("_arrangable");
 			cur.unsafeRemoveMeta("_tempName");
-		});
+		}, false);
 
 		root.prepareForHashing();
 		root.recomputeHashCodes(ctx);
@@ -315,7 +327,7 @@ public class TopologicalSort {
 		RewriterStatement compareTo = set.contents.get(0);
 		// Check if ambiguity could be resolved
 		for (int i = 1; i < set.contents.size(); i++) {
-			if (compareTo == set.contents.get(i))
+			if (compareTo.equals(set.contents.get(i)))
 				continue; // Ignore same instances
 
 			//String compAddress = getAddress(compareTo);
@@ -352,6 +364,11 @@ public class TopologicalSort {
 	private static void recursivelyBuildAddresses(RewriterStatement current, String currentAddress, final RuleContext ctx, List<RewriterStatement> elementsWithAddress) {
 		List<Object> knownOrder = (List<Object>)current.getMeta("_knownOrder");
 		List<String> addresses = (List<String>)current.getMeta("_addresses");
+
+		if (knownOrder == null)
+			knownOrder = Collections.emptyList();
+
+
 
 		if (DEBUG) {
 			System.out.println("CUR: " + current);
@@ -391,7 +408,7 @@ public class TopologicalSort {
 	public static int compare(RewriterStatement stmt1, RewriterStatement stmt2, final RuleContext ctx) {
 		int comp = toOrderString(ctx, stmt1, false).compareTo(toOrderString(ctx, stmt2, false));
 
-		if (comp != 0)
+		if (comp != 0 || stmt1.equals(stmt2))
 			return comp;
 
 		List<Object> knownOrder1 = (List<Object>)stmt1.getMeta("_knownOrder");

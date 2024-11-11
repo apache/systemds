@@ -625,7 +625,7 @@ public class RewriterRuleCollection {
 					UUID id = UUID.randomUUID();
 					stmt.unsafePutMeta("ownerId", id);
 					stmt.getOperands().get(0).unsafePutMeta("ownerId", id);
-					stmt.getOperands().get(1).unsafePutMeta("ownerId", id);
+					//stmt.getOperands().get(1).unsafePutMeta("ownerId", id);
 
 					// Assert that the matrix is squared
 					RewriterStatement aRef = stmt.getChild(0, 1, 0);
@@ -862,10 +862,10 @@ public class RewriterRuleCollection {
 					A.unsafePutMeta("dontExpand", true);
 					// TODO:
 					//System.out.println("A: " + A);
-					//System.out.println("nrow: " + A.getNRow());
-					if (A.getNRow().isInstruction() && A.getNRow().getChild(0) == stmt)
+					//System.out.println("ncol: " + A.getNCol());
+					if (A.getNRow().isInstruction() && A.getNRow().trueInstruction().equals("nrow") && A.getNRow().getChild(0) == stmt)
 						A.getNRow().getOperands().set(0, A);
-					if (A.getNCol().isInstruction() && A.getNCol().getChild(0) == stmt)
+					if (A.getNCol().isInstruction() && A.getNCol().trueInstruction().equals("ncol") && A.getNCol().getChild(0) == stmt)
 						A.getNCol().getOperands().set(0, A);
 					//System.out.println("newNRow: " + A.getNRow());
 				}, true)
@@ -907,18 +907,16 @@ public class RewriterRuleCollection {
 						RewriterStatement newRef = lnk.newStmt.get(0).getOperands().get(idx);
 
 						// Replace all references to h with
-						lnk.newStmt.get(0).getOperands().get(2).forEachPreOrder((el, parent, pIdx) -> {
-							if (el.getOperands() != null) {
-								for (int i = 0; i < el.getOperands().size(); i++) {
-									RewriterStatement child = el.getOperands().get(i);
-									Object meta = child.getMeta("idxId");
+						lnk.newStmt.get(0).getOperands().get(2).forEachPreOrder((el, pred) -> {
+							for (int i = 0; i < el.getOperands().size(); i++) {
+								RewriterStatement child = el.getOperands().get(i);
+								Object meta = child.getMeta("idxId");
 
-									if (meta instanceof UUID && meta.equals(oldRef.getMeta("idxId")))
-										el.getOperands().set(i, newRef);
-								}
+								if (meta instanceof UUID && meta.equals(oldRef.getMeta("idxId")))
+									el.getOperands().set(i, newRef);
 							}
 							return true;
-						});
+						}, false);
 
 					}
 				}, true)
@@ -958,18 +956,16 @@ public class RewriterRuleCollection {
 						RewriterStatement newRef = lnk.newStmt.get(0).getOperands().get(idx);
 
 						// Replace all references to h with
-						lnk.newStmt.get(0).getOperands().get(2).forEachPreOrder((el, parent, pIdx) -> {
-							if (el.getOperands() != null) {
-								for (int i = 0; i < el.getOperands().size(); i++) {
-									RewriterStatement child = el.getOperands().get(i);
-									Object meta = child.getMeta("idxId");
+						lnk.newStmt.get(0).getOperands().get(2).forEachPreOrder((el, pred) -> {
+							for (int i = 0; i < el.getOperands().size(); i++) {
+								RewriterStatement child = el.getOperands().get(i);
+								Object meta = child.getMeta("idxId");
 
-									if (meta instanceof UUID && meta.equals(oldRef.getMeta("idxId")))
-										el.getOperands().set(i, newRef);
-								}
+								if (meta instanceof UUID && meta.equals(oldRef.getMeta("idxId")))
+									el.getOperands().set(i, newRef);
 							}
 							return true;
-						});
+						}, false);
 
 					}
 				}, true)
@@ -1335,7 +1331,7 @@ public class RewriterRuleCollection {
 
 		RewriterUtils.buildBinaryPermutations(List.of("INT", "INT..."), (t1, t2) -> {
 			for (String t3 : List.of("FLOAT", "FLOAT*", "INT", "INT*", "BOOL", "BOOL*")) {
-				rules.add(new RewriterRuleBuilder(ctx)
+				rules.add(new RewriterRuleBuilder(ctx, "Flatten nested index expression")
 						.setUnidirectional(true)
 						.parseGlobalVars(t1 + ":i")
 						.parseGlobalVars(t2 + ":j")
@@ -1355,7 +1351,7 @@ public class RewriterRuleCollection {
 
 				if (t1.equals("INT")) {
 					// This must be executed after the rule above
-					rules.add(new RewriterRuleBuilder(ctx)
+					rules.add(new RewriterRuleBuilder(ctx, "Flatten nested index expression")
 							.setUnidirectional(true)
 							.parseGlobalVars(t1 + ":i")
 							.parseGlobalVars(t3 + ":v")
@@ -1369,16 +1365,33 @@ public class RewriterRuleCollection {
 
 		RewriterUtils.buildBinaryPermutations(List.of("MATRIX", "INT", "FLOAT", "BOOL"), (t1, t2) -> {
 			//if (RewriterUtils.convertibleType(t1, t2) != null) {
-				rules.add(new RewriterRuleBuilder(ctx)
+				rules.add(new RewriterRuleBuilder(ctx, "Flatten fusable binary operator")
 						.setUnidirectional(true)
 						.parseGlobalVars(t1 + ":A")
 						.parseGlobalVars(t2 + ":B")
 						.withParsedStatement("$1:FusableBinaryOperator(A,B)", hooks)
 						.toParsedStatement("$2:FusedOperator(argList(A,B))", hooks)
+								.iff(match -> {
+									System.out.println("Old: " + match.getMatchRoot());
+									if (match.getPredecessor().isOperand())
+										System.out.println("OldParent: " + match.getPredecessor().getParent());
+									else if (match.getPredecessor().isAssertionObject())
+										System.out.println("OldAssertion: " + match.getPredecessor().getAssertion());
+									else if (match.getPredecessor().isMetaObject())
+										System.out.println("OldMeta: " + match.getPredecessor().getMetaKey());
+									System.out.println("OldRoot: " + match.getExpressionRoot());
+									System.out.println("OldAssertions: " + match.getExpressionRoot().getAssertions(ctx));
+									return true;
+								}, true)
 						.link(hooks.get(1).getId(), hooks.get(2).getId(), RewriterStatement::transferMeta)
+						.apply(hooks.get(2).getId(), (stmt, match) -> {
+							System.out.println("Hi3: " + stmt);
+							System.out.println("Root: " + match.getNewExprRoot());
+							System.out.println("Assertions: " + match.getNewExprRoot().getAssertions(ctx));
+						}, true)
 						.build());
 
-				rules.add(new RewriterRuleBuilder(ctx)
+				rules.add(new RewriterRuleBuilder(ctx, "Flatten fusable binary operator")
 						.setUnidirectional(true)
 						.parseGlobalVars(t1 + "...:A")
 						.parseGlobalVars(t2 + ":B")
@@ -1390,7 +1403,7 @@ public class RewriterRuleCollection {
 						.link(hooks.get(2).getId(), hooks.get(3).getId(), RewriterStatement::transferMeta)
 						.build());
 
-				rules.add(new RewriterRuleBuilder(ctx)
+				rules.add(new RewriterRuleBuilder(ctx, "Flatten fusable binary operator")
 						.setUnidirectional(true)
 						.parseGlobalVars(t1 + "...:A")
 						.parseGlobalVars(t2 + ":B")

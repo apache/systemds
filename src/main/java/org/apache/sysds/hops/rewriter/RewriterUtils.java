@@ -284,7 +284,7 @@ public class RewriterUtils {
 			tryFlattenNestedOperatorPatterns(ctx, el);
 			el.refreshReturnType(ctx);
 			return true;
-		});
+		}, true);
 
 		stmt.prepareForHashing();
 		stmt.recomputeHashCodes(ctx);
@@ -1310,8 +1310,12 @@ public class RewriterUtils {
 		if (folded != null)
 			return folded;
 
+		alreadyFolded.put(cur, cur);
+
 		for (int i = 0; i < cur.getOperands().size(); i++)
 			cur.getOperands().set(i, foldConstantsRecursively(cur.getChild(i), ctx, alreadyFolded));
+
+		cur.updateMetaObjects(el -> foldConstantsRecursively(el, ctx, alreadyFolded));
 
 		RewriterStatement ret = cur;
 
@@ -1342,6 +1346,9 @@ public class RewriterUtils {
 
 	private static RewriterStatement foldNaryReducible(RewriterStatement stmt, final RuleContext ctx) {
 		List<RewriterStatement> argList = stmt.getChild(0).getOperands();
+
+		if (argList.isEmpty())
+			throw new IllegalArgumentException(stmt.toString(ctx));
 
 		if (argList.size() < 2)
 			return argList.get(0);

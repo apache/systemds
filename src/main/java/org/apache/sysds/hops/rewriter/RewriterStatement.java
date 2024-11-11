@@ -5,6 +5,7 @@ import org.apache.commons.lang3.NotImplementedException;
 import org.apache.commons.lang3.function.TriFunction;
 import org.apache.commons.lang3.mutable.MutableObject;
 import org.apache.logging.log4j.util.TriConsumer;
+import org.apache.spark.internal.config.R;
 import org.jetbrains.annotations.NotNull;
 import scala.Tuple2;
 import spire.macros.CheckedRewriter;
@@ -20,11 +21,13 @@ import java.util.Set;
 import java.util.Stack;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 public abstract class RewriterStatement {
 	public static final String META_VARNAME = "_varName";
@@ -90,23 +93,17 @@ public abstract class RewriterStatement {
 	public static class MatchingSubexpression {
 		private final RewriterStatement expressionRoot;
 		private final RewriterStatement matchRoot;
-		private final RewriterStatement matchParent;
-		private final int rootIndex;
+		private final RewriterPredecessor pred;
 		private final Map<RewriterStatement, RewriterStatement> assocs;
 		private final List<RewriterRule.ExplicitLink> links;
 		public RewriterStatement newExprRoot;
 
-		public MatchingSubexpression(RewriterStatement expressionRoot, RewriterStatement matchRoot, RewriterStatement matchParent, int rootIndex, Map<RewriterStatement, RewriterStatement> assocs, List<RewriterRule.ExplicitLink> links) {
+		public MatchingSubexpression(RewriterStatement expressionRoot, RewriterStatement matchRoot, RewriterPredecessor pred, Map<RewriterStatement, RewriterStatement> assocs, List<RewriterRule.ExplicitLink> links) {
 			this.expressionRoot = expressionRoot;
 			this.matchRoot = matchRoot;
-			this.matchParent = matchParent;
+			this.pred = pred;
 			this.assocs = assocs;
-			this.rootIndex = rootIndex;
 			this.links = links;
-		}
-
-		public boolean isRootInstruction() {
-			return matchParent == null || matchParent == matchRoot;
 		}
 
 		public RewriterStatement getExpressionRoot() {
@@ -117,12 +114,8 @@ public abstract class RewriterStatement {
 			return matchRoot;
 		}
 
-		public RewriterStatement getMatchParent() {
-			return matchParent;
-		}
-
-		public int getRootIndex() {
-			return rootIndex;
+		public RewriterPredecessor getPredecessor() {
+			return pred;
 		}
 
 		public Map<RewriterStatement, RewriterStatement> getAssocs() {
@@ -156,8 +149,7 @@ public abstract class RewriterStatement {
 		final Map<RewriterStatement, RewriterRule.LinkObject> ruleLinks;
 		final RewriterStatement expressionRoot;
 		RewriterStatement matchRoot;
-		RewriterStatement matchParent;
-		int matchParentIndex;
+		RewriterPredecessor pred;
 
 		public RewriterStatement currentStatement;
 
@@ -176,6 +168,7 @@ public abstract class RewriterStatement {
 		public MatcherContext(final RuleContext ctx, RewriterStatement matchRoot, RewriterStatement expressionRoot, final boolean statementsCanBeVariables, final boolean literalsCanBeVariables, final boolean ignoreLiteralValues, final boolean allowDuplicatePointers, final boolean allowPropertyScan, final boolean allowTypeHierarchy, final boolean terminateOnFirstMatch, final boolean findMinimalMismatchRoot, boolean traceVariableEliminations, final Map<RewriterStatement, RewriterRule.LinkObject> ruleLinks) {
 			this.ctx = ctx;
 			this.matchRoot = matchRoot;
+			this.pred = new RewriterPredecessor();
 			this.expressionRoot = expressionRoot;
 			this.statementsCanBeVariables = statementsCanBeVariables;
 			this.currentStatement = matchRoot;
@@ -191,11 +184,10 @@ public abstract class RewriterStatement {
 			this.debug = false;
 		}
 
-		public MatcherContext(final RuleContext ctx, RewriterStatement matchRoot, RewriterStatement matchParent, int rootIndex, RewriterStatement expressionRoot, final boolean statementsCanBeVariables, final boolean literalsCanBeVariables, final boolean ignoreLiteralValues, final boolean allowDuplicatePointers, final boolean allowPropertyScan, final boolean allowTypeHierarchy, final boolean terminateOnFirstMatch, final boolean findMinimalMismatchRoot, boolean traceVariableEliminations, final Map<RewriterStatement, RewriterRule.LinkObject> ruleLinks) {
+		public MatcherContext(final RuleContext ctx, RewriterStatement matchRoot, RewriterPredecessor pred, RewriterStatement expressionRoot, final boolean statementsCanBeVariables, final boolean literalsCanBeVariables, final boolean ignoreLiteralValues, final boolean allowDuplicatePointers, final boolean allowPropertyScan, final boolean allowTypeHierarchy, final boolean terminateOnFirstMatch, final boolean findMinimalMismatchRoot, boolean traceVariableEliminations, final Map<RewriterStatement, RewriterRule.LinkObject> ruleLinks) {
 			this.ctx = ctx;
 			this.matchRoot = matchRoot;
-			this.matchParent = matchParent;
-			this.matchParentIndex = rootIndex;
+			this.pred = pred;
 			this.expressionRoot = expressionRoot;
 			this.currentStatement = matchRoot;
 			this.statementsCanBeVariables = statementsCanBeVariables;
@@ -267,7 +259,7 @@ public abstract class RewriterStatement {
 		}
 
 		public MatchingSubexpression toMatch() {
-			return new MatchingSubexpression(expressionRoot, matchRoot, matchParent, matchParentIndex, getDependencyMap(), getLinks());
+			return new MatchingSubexpression(expressionRoot, matchRoot, pred, getDependencyMap(), getLinks());
 		}
 
 		public void reset() {
@@ -321,6 +313,124 @@ public abstract class RewriterStatement {
 
 		public static MatcherContext findMinimalDifference(final RuleContext ctx, RewriterStatement stmt) {
 			return new MatcherContext(ctx, stmt, stmt, false, false, true, false, false, false, false, true, false, Collections.emptyMap());
+		}
+	}
+
+	public static final class RewriterPredecessor {
+		private final Object obj;
+		private final Object meta;
+
+		// Use iff the element is already the root
+		public RewriterPredecessor() {
+			obj = null;
+			meta = null;
+		}
+
+		public RewriterPredecessor(RewriterStatement parent, Integer idx) {
+			obj = parent;
+			meta = idx;
+		}
+
+		// Use iff the element is a meta object
+		public RewriterPredecessor(RewriterStatement parent, String meta) {
+			obj = parent;
+			this.meta = meta;
+		}
+
+		public RewriterPredecessor(RewriterAssertions assertions, RewriterAssertions.RewriterAssertion assertion) {
+			obj = assertions;
+			meta = assertion;
+		}
+
+		public boolean isOperand() {
+			return obj instanceof RewriterStatement && meta instanceof Integer;
+		}
+
+		public boolean isRoot() {
+			return obj == null && meta == null;
+		}
+
+		public boolean isMetaObject() {
+			return obj instanceof RewriterStatement && meta instanceof String;
+		}
+
+		public boolean isAssertionObject() {
+			return obj instanceof RewriterAssertions && meta instanceof RewriterAssertions.RewriterAssertion;
+		}
+
+		public RewriterStatement getParent() {
+			return (RewriterStatement) obj;
+		}
+
+		public RewriterAssertions getAssertions() {
+			return (RewriterAssertions) obj;
+		}
+
+		public RewriterAssertions.RewriterAssertion getAssertion() {
+			return (RewriterAssertions.RewriterAssertion) meta;
+		}
+
+		public String getMetaKey() {
+			return (String) meta;
+		}
+
+		public int getIndex() {
+			return (Integer) meta;
+		}
+	}
+
+	public static enum ReferenceType {
+		ROOT, OPERAND, NCOL, NROW, BACKREF, ASSERTION
+	}
+
+	public static class RewriterStatementReference {
+		public final ReferenceType referenceType;
+		public final RewriterStatement stmt;
+		public final Object parentRef;
+		public final Object ref;
+
+		// TODO: What about root?
+		public RewriterStatementReference(ReferenceType type, RewriterStatement stmt, RewriterStatement parentRef) {
+			this.referenceType = type;
+			this.stmt = stmt;
+			this.parentRef = parentRef;
+			this.ref = null;
+		}
+
+		public RewriterStatementReference(RewriterStatement stmt, RewriterStatement parentRef, int idx) {
+			this.referenceType = parentRef == null ? ReferenceType.ROOT : ReferenceType.OPERAND;
+			this.stmt = stmt;
+			this.parentRef = parentRef;
+			this.ref = idx;
+		}
+
+		public RewriterStatementReference(RewriterStatement stmt, RewriterAssertions assertions, RewriterAssertions.RewriterAssertion assertion) {
+			this.referenceType = ReferenceType.ASSERTION;
+			this.stmt = stmt;
+			this.parentRef = assertions;
+			this.ref = assertion;
+		}
+
+		public void replace(RewriterStatement newStmt) {
+			switch (referenceType) {
+				case ROOT:
+					throw new NotImplementedException();
+				case OPERAND:
+					((RewriterStatement) parentRef).getOperands().set((Integer)ref, newStmt);
+					break;
+				case NCOL:
+					((RewriterStatement) parentRef).unsafePutMeta("ncol", newStmt);
+					break;
+				case NROW:
+					((RewriterStatement) parentRef).unsafePutMeta("nrow", newStmt);
+					break;
+				case BACKREF:
+					((RewriterStatement) parentRef).unsafePutMeta("backRef", newStmt);
+					break;
+				case ASSERTION:
+					((RewriterAssertions) parentRef).replaceAssertionContent(stmt, newStmt, (RewriterAssertions.RewriterAssertion) ref);
+					break;
+			}
 		}
 	}
 
@@ -556,48 +666,59 @@ public abstract class RewriterStatement {
 	 * If the function returns false, the sub-DAG of the current node will not be traversed.
 	 * @param function test
 	 */
+	@Deprecated
 	public void forEachPreOrderWithDuplicates(Function<RewriterStatement, Boolean> function) {
 		if (function.apply(this) && getOperands() != null)
 			for (int i = 0; i < getOperands().size(); i++)
 				getOperands().get(i).forEachPreOrderWithDuplicates(function);
 	}
 
-	public void forEachPreOrder(Function<RewriterStatement, Boolean> function) {
-		forEachPreOrder((el, p, pIdx) -> function.apply(el));
+	public void forEachPreOrder(Function<RewriterStatement, Boolean> function, boolean includeMeta) {
+		forEachPreOrder((el, pred) -> function.apply(el), includeMeta);
 	}
 
-	public void forEachPreOrder(TriFunction<RewriterStatement, RewriterStatement, Integer, Boolean> function) {
-		forEachPreOrder(function, new HashSet<>(), null, -1);
+	public void forEachPreOrder(BiFunction<RewriterStatement, RewriterPredecessor, Boolean> function, boolean includeMeta) {
+		forEachPreOrder(function, new HashSet<>(), new RewriterPredecessor(), includeMeta);
 	}
 
-	private void forEachPreOrder(TriFunction<RewriterStatement, RewriterStatement, Integer, Boolean> function, Set<RewriterRule.IdentityRewriterStatement> visited, RewriterStatement parent, int rootIdx) {
-		if (!visited.add(new RewriterRule.IdentityRewriterStatement(this)))
+	// We will also include metadata
+	private void forEachPreOrder(BiFunction<RewriterStatement, RewriterPredecessor, Boolean> function, Set<RewriterStatement> visited, RewriterPredecessor pred, boolean includeMeta) {
+		if (!visited.add(this))
 			return;
 
-		if (function.apply(this, parent, rootIdx) && getOperands() != null)
+		if (function.apply(this, pred)) {
 			for (int i = 0; i < getOperands().size(); i++)
-				getOperands().get(i).forEachPreOrder(function, visited, this, i);
+				getOperands().get(i).forEachPreOrder(function, visited, new RewriterPredecessor(this, i), includeMeta);
+
+			if (includeMeta)
+				forEachMetaObject((stmt, mPred) -> stmt.forEachPreOrder(function, visited, mPred, includeMeta));
+		}
 	}
 
-	public void forEachPostOrder(TriConsumer<RewriterStatement, RewriterStatement, Integer> consumer) {
-		forEachPostOrder(consumer, new HashSet<>(), null, -1);
+	public void forEachPostOrder(BiConsumer<RewriterStatement, RewriterPredecessor> consumer, boolean includeMeta) {
+		forEachPostOrder(consumer, new HashSet<>(), new RewriterPredecessor(), includeMeta);
 	}
 
-	private void forEachPostOrder(TriConsumer<RewriterStatement, RewriterStatement, Integer> consumer, Set<RewriterRule.IdentityRewriterStatement> visited, RewriterStatement parent, int rootIdx) {
-		if (!visited.add(new RewriterRule.IdentityRewriterStatement(this)))
+	private void forEachPostOrder(BiConsumer<RewriterStatement, RewriterPredecessor> consumer, Set<RewriterStatement> visited, RewriterPredecessor pred, boolean includeMeta) {
+		if (!visited.add(this))
 			return;
 
 		if (getOperands() != null)
 			for (int i = 0; i < getOperands().size(); i++)
-				getOperands().get(i).forEachPostOrder(consumer, visited, this, i);
+				getOperands().get(i).forEachPostOrder(consumer, visited, new RewriterPredecessor(this, i), includeMeta);
 
-		consumer.accept(this, parent, rootIdx);
+		if (includeMeta)
+			forEachMetaObject((stmt, mPred) -> stmt.forEachPostOrder(consumer, visited, mPred, includeMeta));
+
+		consumer.accept(this, pred);
 	}
 
+	@Deprecated
 	public void forEachPostOrderWithDuplicates(TriConsumer<RewriterStatement, RewriterStatement, Integer> consumer) {
 		forEachPostOrderWithDuplicates(consumer, null, -1);
 	}
 
+	@Deprecated
 	private void forEachPostOrderWithDuplicates(TriConsumer<RewriterStatement, RewriterStatement, Integer> consumer, RewriterStatement parent, int pIdx) {
 		for (int i = 0; i < getOperands().size(); i++)
 			getOperands().get(i).forEachPostOrderWithDuplicates(consumer, this, i);
@@ -621,6 +742,9 @@ public abstract class RewriterStatement {
 	}
 
 	public void unsafePutMeta(String key, Object value) {
+		if (isLiteral())
+			throw new UnsupportedOperationException("Cannot put meta for literals");
+
 		if (meta == null)
 			meta = new HashMap<>();
 
@@ -660,6 +784,10 @@ public abstract class RewriterStatement {
 
 	public RewriterStatement getNRow() {
 		return (RewriterStatement) getMeta("nrow");
+	}
+
+	public RewriterStatement getBackRef() {
+		return (RewriterStatement) getMeta("_backRef");
 	}
 
 	public RewriterStatement getChild(int index) {
@@ -708,8 +836,7 @@ public abstract class RewriterStatement {
 
 	@Override
 	public String toString() {
-		String str = toString(RuleContext.currentContext);
-		return str;
+		return toString(RuleContext.currentContext);
 	}
 
 	public List<String> toExecutableString(final RuleContext ctx) {
@@ -736,6 +863,57 @@ public abstract class RewriterStatement {
 		return costObj;
 	}
 
+	// This may create cycles if visited objects are not tracked
+	public void forEachMetaObject(BiConsumer<RewriterStatement, RewriterPredecessor> consumer) {
+		RewriterStatement ncol = getNCol();
+		RewriterStatement nrow = getNRow();
+		RewriterStatement backref = getBackRef();
+		RewriterAssertions assertions = (RewriterAssertions) getMeta("_assertions");
+
+		if (ncol != null)
+			consumer.accept(ncol, new RewriterPredecessor(this, "ncol"));
+		if (nrow != null)
+			consumer.accept(nrow, new RewriterPredecessor(this, "nrow"));
+		if (backref != null)
+			consumer.accept(backref, new RewriterPredecessor(this, "_backRef"));
+		if (assertions != null)
+			assertions.forEachAssertionContents(consumer);
+	}
+
+	public void updateMetaObjects(Function<RewriterStatement, RewriterStatement> f) {
+		RewriterStatement ncol = getNCol();
+		RewriterStatement nrow = getNRow();
+		RewriterStatement backref = getBackRef();
+
+		RewriterStatement mNew;
+
+		if (ncol != null) {
+			mNew = f.apply(ncol);
+
+			if (ncol != mNew)
+				unsafePutMeta("ncol", ncol);
+		}
+
+		if (nrow != null) {
+			mNew = f.apply(nrow);
+
+			if (nrow != mNew)
+				unsafePutMeta("nrow", nrow);
+		}
+
+		if (backref != null) {
+			mNew = f.apply(backref);
+
+			if (backref != mNew)
+				unsafePutMeta("_backRef", backref);
+		}
+
+		RewriterAssertions assertions = (RewriterAssertions) getMeta("_assertions");
+
+		if (assertions != null)
+			assertions.updateAssertionContents(f);
+	}
+
 	protected void nestedCopyOrInjectMetaStatements(Map<RewriterStatement, RewriterStatement> copiedObjects, TriFunction<RewriterStatement, RewriterStatement, Integer, RewriterStatement> injector) {
 		if (getNCol() != null) {
 			//RewriterStatement oldNCol = getNCol();
@@ -751,6 +929,36 @@ public abstract class RewriterStatement {
 
 		if (backRef != null)
 			unsafePutMeta("_backRef", backRef.nestedCopyOrInject(copiedObjects, injector, this, -1));
+
+		RewriterAssertions assertions = (RewriterAssertions) getMeta("_assertions");
+
+		if (assertions != null) {
+			assertions = assertions.nestedCopyOrInject(copiedObjects, injector, this);
+			unsafePutMeta("_assertions", assertions);
+		}
+	}
+
+	// This returns a stream of all children including metadata and assertions if available
+	// This may contain loops in case of back references
+	public Stream<RewriterStatement> allChildren() {
+		Stream<RewriterStatement> stream = getOperands().stream();
+		RewriterStatement ncol = getNCol();
+		RewriterStatement nrow = getNRow();
+		RewriterStatement backRef = getBackRef();
+
+		if (ncol != null)
+			stream = Stream.concat(stream, Stream.of(ncol));
+		if (nrow != null)
+			stream = Stream.concat(stream, Stream.of(nrow));
+		if (backRef != null)
+			stream = Stream.concat(stream, Stream.of(backRef));
+
+		RewriterAssertions assertions = (RewriterAssertions) getMeta("_assertions");
+
+		if (assertions != null)
+			stream = Stream.concat(stream, assertions.streamOfContents());
+
+		return stream;
 	}
 
 	public static RewriterStatement argList(final RuleContext ctx, RewriterStatement... args) {

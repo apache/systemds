@@ -24,6 +24,7 @@ public class MetaPropagator implements Function<RewriterStatement, RewriterState
 		RewriterAssertions assertions = root.getAssertions(ctx);
 		MutableObject<RewriterStatement> out = new MutableObject<>(root);
 		HashMap<Object, RewriterStatement> literalMap = new HashMap<>();
+
 		root.forEachPostOrderWithDuplicates((el, parent, pIdx) -> {
 			//System.out.println("mAssertions: " + assertions);
 			/*System.out.println("Assessing: " + el.toParsableString(ctx));
@@ -223,11 +224,11 @@ public class MetaPropagator implements Function<RewriterStatement, RewriterState
 						subStmts.put("i0", root.getOperands().get(1));
 
 						if (ints[0] != null) {
-							root.unsafePutMeta("nrow", RewriterUtils.parse("+(i1, " + (1 - ints[0]) + ")", ctx, subStmts, "LITERAL_INT:" + (1 - ints[0])));
+							root.unsafePutMeta("nrow", RewriterUtils.parse("+(argList(i1, " + (1 - ints[0]) + "))", ctx, subStmts, "LITERAL_INT:" + (1 - ints[0])));
 						} else if (ints[1] != null) {
-							root.unsafePutMeta("nrow", RewriterUtils.parse("-(" + (ints[1] + 1) + ", i0)", ctx, subStmts, "LITERAL_INT:" + (ints[1] + 1)));
+							root.unsafePutMeta("nrow", RewriterUtils.parse("+(argList(" + (ints[1] + 1) + ", -(i0)))", ctx, subStmts, "LITERAL_INT:" + (ints[1] + 1)));
 						} else {
-							root.unsafePutMeta("nrow", RewriterUtils.parse("+(-(i1, i0), 1)", ctx, subStmts, "LITERAL_INT:1"));
+							root.unsafePutMeta("nrow", RewriterUtils.parse("+(argList(+(argList(i1, -(i0))), 1))", ctx, subStmts, "LITERAL_INT:1"));
 						}
 					}
 
@@ -238,11 +239,11 @@ public class MetaPropagator implements Function<RewriterStatement, RewriterState
 						subStmts.put("i3", root.getOperands().get(4));
 						subStmts.put("i2", root.getOperands().get(3));
 						if (ints[2] != null) {
-							root.unsafePutMeta("ncol", RewriterUtils.parse("+(i3, " + (1 - ints[2]) + ")", ctx, subStmts, "LITERAL_INT:" + (1 - ints[2])));
+							root.unsafePutMeta("ncol", RewriterUtils.parse("+(argList(i3, " + (1 - ints[2]) + "))", ctx, subStmts, "LITERAL_INT:" + (1 - ints[2])));
 						} else if (ints[3] != null) {
-							root.unsafePutMeta("ncol", RewriterUtils.parse("-(" + (ints[3] + 1) + ", i2)", ctx, subStmts, "LITERAL_INT:" + (ints[3] + 1)));
+							root.unsafePutMeta("ncol", RewriterUtils.parse("+(argList(" + (ints[3] + 1) + ", -(i2)))", ctx, subStmts, "LITERAL_INT:" + (ints[3] + 1)));
 						} else {
-							root.unsafePutMeta("ncol", RewriterUtils.parse("+(-(i3, i2), 1)", ctx, subStmts, "LITERAL_INT:1"));
+							root.unsafePutMeta("ncol", RewriterUtils.parse("+(argList(+(argList(i3, -(i2))), 1))", ctx, subStmts, "LITERAL_INT:1"));
 						}
 					}
 
@@ -263,7 +264,7 @@ public class MetaPropagator implements Function<RewriterStatement, RewriterState
 					HashMap<String, RewriterStatement> mstmts = new HashMap<>();
 					mstmts.put("row1", (RewriterStatement)root.getOperands().get(0).getMeta("nrow"));
 					mstmts.put("row2", (RewriterStatement)root.getOperands().get(1).getMeta("nrow"));
-					root.unsafePutMeta("nrow", RewriterUtils.parse("+(row1, row2)", ctx, mstmts));
+					root.unsafePutMeta("nrow", RewriterUtils.parse("+(argList(row1, row2))", ctx, mstmts));
 					root.unsafePutMeta("ncol", root.getOperands().get(0).getMeta("ncol"));
 					return null;
 				case "CBind(MATRIX,MATRIX)":
@@ -271,7 +272,7 @@ public class MetaPropagator implements Function<RewriterStatement, RewriterState
 					mstmts.put("col1", (RewriterStatement)root.getOperands().get(0).getMeta("ncol"));
 					mstmts.put("col2", (RewriterStatement)root.getOperands().get(1).getMeta("ncol"));
 					root.unsafePutMeta("nrow", root.getOperands().get(0).getMeta("nrow"));
-					root.unsafePutMeta("ncol", RewriterUtils.parse("+(col1, col2)", ctx, mstmts));
+					root.unsafePutMeta("ncol", RewriterUtils.parse("+(argList(col1, col2))", ctx, mstmts));
 					return null;
 			}
 

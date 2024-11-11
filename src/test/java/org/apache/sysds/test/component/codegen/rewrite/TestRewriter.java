@@ -642,10 +642,10 @@ public class TestRewriter {
 			this.stmt = stmt;
 			this.statementSize = 0;
 
-			this.stmt.forEachPreOrder((el, parent, pIdx) -> {
+			this.stmt.forEachPreOrder((el, pred) -> {
 				this.statementSize++;
 				return true;
-			});
+			}, false);
 
 			this.executableString = executableString;
 			this.hops = hops;

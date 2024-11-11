@@ -1,6 +1,8 @@
 package org.apache.sysds.hops.rewriter;
 
-import org.apache.spark.internal.config.R;
+import org.apache.commons.lang3.NotImplementedException;
+import org.apache.commons.lang3.function.TriFunction;
+import scala.Tuple2;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -11,8 +13,11 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
+import java.util.function.BiConsumer;
 import java.util.function.Consumer;
+import java.util.function.Function;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 public class RewriterAssertions {
 	private final RuleContext ctx;
@@ -45,6 +50,52 @@ public class RewriterAssertions {
 		return assertions;
 	}*/
 
+	public RewriterAssertions nestedCopyOrInject(Map<RewriterStatement, RewriterStatement> createdObjects, TriFunction<RewriterStatement, RewriterStatement, Integer, RewriterStatement> injector, RewriterStatement parent) {
+		RewriterAssertions out = new RewriterAssertions(ctx);
+		out.allAssertions = allAssertions.stream().map(assertion -> {
+			Set<RewriterStatement> newSet = new HashSet<>(assertion.set.size());
+			RewriterAssertion mapped = RewriterAssertion.from(newSet);
+
+			for (RewriterStatement entry : assertion.set) {
+				RewriterStatement newStmt = entry.nestedCopyOrInject(createdObjects, injector, parent, -1);
+				newSet.add(newStmt);
+				out.assertionMatcher.put(newStmt, mapped);
+			}
+
+			if (assertion.stmt != null) {
+				mapped.stmt = assertion.stmt.nestedCopyOrInject(createdObjects, injector, parent, -1);
+				out.assertionMatcher.put(mapped.stmt, mapped);
+			}
+
+			if (assertion.backRef != null) {
+				mapped.backRef = assertion.backRef.nestedCopyOrInject(createdObjects, injector, parent, -1);
+				out.assertionMatcher.put(mapped.backRef, mapped);
+			}
+
+			return mapped;
+		}).collect(Collectors.toSet());
+
+		for (RewriterAssertion assertion : out.allAssertions) {
+			forEachUniqueElementInAssertion(assertion, el -> {
+				Set<RewriterAssertion> partOfAssertions = out.partOfAssertion.get(el);
+
+				if (partOfAssertions == null) {
+					partOfAssertions = new HashSet<>();
+					out.partOfAssertion.put(el, partOfAssertions);
+				}
+
+				partOfAssertions.add(assertion);
+				//System.out.println(el + " :: " + partOfAssertions);
+			});
+		}
+
+		/*System.out.println("Copied: " + this);
+		System.out.println("To: " + out);
+		System.out.println("Root: " + parent.trueInstruction());*/
+
+		return out;
+	}
+
 	// TODO: Add parts of assertions map
 	public static RewriterAssertions copy(RewriterAssertions old, Map<RewriterStatement, RewriterStatement> createdObjects, boolean removeOthers) {
 		//System.out.println("Copying: " + old);
@@ -53,28 +104,63 @@ public class RewriterAssertions {
 		Map<RewriterAssertion, RewriterAssertion> mappedAssertions = new HashMap<>();
 
 		newAssertions.allAssertions = old.allAssertions.stream().map(assertion -> {
-			Set<RewriterStatement> newSet;
+			Set<RewriterStatement> newSet = new HashSet<>();
+			List<RewriterStatement> backRefsToCheck = new ArrayList<>();
 
-			if (removeOthers) {
+			for (RewriterStatement oldEl : assertion.set) {
+				RewriterStatement cpy = createdObjects.get(oldEl);
+
+				if (cpy == null)
+					cpy = oldEl.nestedCopyOrInject(createdObjects, stmt -> null);
+
+				if (cpy.isInstruction() && cpy.trueInstruction().startsWith("_backRef."))
+					backRefsToCheck.add(cpy);
+
+				newSet.add(cpy);
+			}
+
+			List<RewriterStatement> backRefsToRemove = Collections.emptyList();
+
+			if (!backRefsToCheck.isEmpty()) {
+				backRefsToRemove = new ArrayList<>();
+
+				for (RewriterStatement backRef : backRefsToCheck) {
+					System.out.println("Candidate: " + backRef);
+					if (newSet.contains(backRef.getMeta("_backRef"))) {
+						newSet.remove(backRef);
+						backRefsToRemove.add(backRef);
+					}
+				}
+			}
+
+			// TODO: Check if the eclass can be removed (e.g. _EClass(nrow(A), backref.INT())
+			// TODO: But then, we would have to eliminate all references _EClass(nrow(A), backref.INT()) => nrow(A)
+
+			/*if (removeOthers) {
 				newSet = assertion.set.stream().map(el -> {
 					RewriterStatement ret = createdObjects.get(el);
 					//System.out.println("Found: " + el + " => " + ret);
 					return ret;
 				}).filter(Objects::nonNull).collect(Collectors.toSet());
-				/*if (newSet.size() != assertion.set.size()) {
-					System.out.println(createdObjects);
-				}*/
 			} else {
 				newSet = assertion.set.stream().map(el -> createdObjects.getOrDefault(el, el)).collect(Collectors.toSet());
-			}
+			}*/
 
 			//System.out.println("NewSet: " + newSet);
-			if (newSet.size() < 2)
+			// TODO: What happens to existing e-classes?
+			if (newSet.size() < 2) {
+				System.out.println("Removing E-Class: " + assertion);
 				return null;
+			}
 
 			RewriterAssertion mapped = RewriterAssertion.from(newSet);
-			if (assertion.stmt != null)
+			if (assertion.stmt != null) {
 				mapped.stmt = createdObjects.get(assertion.stmt);
+
+				if (!backRefsToRemove.isEmpty()) {
+					mapped.stmt.getChild(0).getOperands().removeAll(backRefsToRemove);
+				}
+			}
 			if (assertion.backRef != null)
 				mapped.backRef = createdObjects.get(assertion.backRef);
 			mappedAssertions.put(assertion, mapped);
@@ -134,6 +220,98 @@ public class RewriterAssertions {
 		return newAssertions;
 	}
 
+	public void forEachAssertionContents(BiConsumer<RewriterStatement, RewriterStatement.RewriterPredecessor> consumer) {
+		allAssertions.forEach(assertion -> assertion.set.forEach(set -> consumer.accept(set, new RewriterStatement.RewriterPredecessor(this, assertion))));
+	}
+
+	public void updateAssertionContents(Function<RewriterStatement, RewriterStatement> f) {
+		for (RewriterAssertion assertion : allAssertions) {
+			Set<RewriterStatement> toRemove = new HashSet<>();
+			Map<RewriterStatement, RewriterStatement> toReplace = new HashMap<>();
+
+			for (RewriterStatement stmt : assertion.set) {
+				RewriterStatement mNew = f.apply(stmt);
+				if (mNew != stmt) {
+					toRemove.add(stmt);
+					toReplace.put(stmt, mNew);
+				}
+			}
+
+			if (toReplace.isEmpty())
+				continue;
+
+			toRemove.forEach(assertion.set::remove);
+			assertion.set.addAll(toReplace.values());
+
+			if (assertion.stmt != null) {
+				List<RewriterStatement> argList = assertion.stmt.getChild(0).getOperands();
+				for (int i = 0; i < argList.size(); i++) {
+					RewriterStatement replaced = toReplace.get(argList.get(i));
+
+					if (replaced != null)
+						argList.set(i, replaced);
+				}
+			}
+
+			// Now, we have to recompute partOfAssertion for removed and newly added elements
+			for (RewriterStatement removed : toRemove) {
+				removed.forEachPreOrder((cur, pred) -> {
+					Set<RewriterAssertion> set = partOfAssertion.get(cur);
+
+					if (set != null)
+						set.remove(assertion);
+
+					return true;
+				}, false);
+			}
+
+			forEachUniqueElementInAssertion(assertion, cur -> {
+				partOfAssertion.compute(cur, (k, v) -> {
+					if (v == null)
+						v = new HashSet<>();
+
+					v.add(assertion);
+					return v;
+				});
+			});
+		}
+
+		// TODO: What about backRef?
+	}
+
+	public Stream<RewriterStatement> streamOfContents() {
+		return allAssertions.stream().flatMap(assertion -> {
+			if (assertion.stmt != null) {
+				if (assertion.backRef != null)
+					return Stream.of(assertion.stmt, assertion.backRef);
+				return Stream.of(assertion.stmt);
+			} else {
+				return assertion.set.stream();
+			}
+		});
+	}
+
+	public void replaceAssertionContent(RewriterStatement oldStmt, RewriterStatement newStmt, RewriterAssertion assertion) {
+		if (oldStmt == assertion.stmt) {
+			// Then we will remove this assertion
+			allAssertions.remove(assertion);
+			assertion.set.forEach(s -> {
+				this.assertionMatcher.remove(s);
+				// TODO
+			});
+		}
+
+		assertion.set.remove(oldStmt);
+		assertion.set.add(newStmt);
+
+		if (assertion.stmt != null) {
+			// TODO
+			assertion.stmt.getChild();
+		}
+
+		throw new NotImplementedException();
+	}
+
 	/*public void update(Map<RewriterRule.IdentityRewriterStatement, RewriterRule.IdentityRewriterStatement> createdObjects) {
 		for (RewriterAssertion assertion : allAssertions) {
 			assertion.set = assertion.set.stream().map(el -> createdObjects.getOrDefault(el, el)).collect(Collectors.toSet());
@@ -178,7 +356,7 @@ public class RewriterAssertions {
 			}
 
 			return true;
-		});
+		}, false);
 
 		for (RewriterStatement backRef : backRefs) {
 			RewriterAssertion assertion = getAssertionObj(backRef);
@@ -267,7 +445,7 @@ public class RewriterAssertions {
 					return v;
 				});
 				return true;
-			});
+			}, false);
 
 			//System.out.println("New assertion2: " + existingAssertion);
 			return true;
@@ -300,6 +478,10 @@ public class RewriterAssertions {
 		final RewriterAssertion assertionToExtend = stmt2Assertions;
 		forEachUniqueElementInAssertion(stmt1Assertions, cur -> {
 			Set<RewriterAssertion> v = partOfAssertion.get(cur);
+
+			if (v == null)
+				throw new IllegalArgumentException(cur.toString());
+
 			v.remove(assertionToRemove);
 			v.add(assertionToExtend);
 		});
@@ -332,13 +514,13 @@ public class RewriterAssertions {
 		RewriterStatement backref = assertion.getBackRef(ctx, this);
 
 		for (RewriterStatement eq : assertion.set) {
-			eq.forEachPreOrder((cur, parent, pIdx) -> {
+			eq.forEachPreOrder((cur, pred) -> {
 				for (int i = 0; i < cur.getOperands().size(); i++)
 					if (!cur.getChild(i).isLiteral() && getAssertionObj(cur.getChild(i)) == assertion)
 						cur.getOperands().set(i, backref);
 
 				return true;
-			});
+			}, false);
 		}
 	}
 
@@ -359,6 +541,12 @@ public class RewriterAssertions {
 		if (set == null || set.getEClassStmt(ctx, this).getChild(0) == parent) {
 			return stmt;
 		}
+
+		/*System.out.println("Checking: " + stmt);
+		System.out.println("Parent: " + parent);
+		System.out.println("EClass: " + set.getEClassStmt(ctx, this));
+		System.out.println("Set: " + set.set);
+		System.out.println("Assertion: " + this);*/
 
 		//System.out.println("EClassStmt: " + set.getEClassStmt(ctx, this).getChild(0));
 		if (parent != null && parent != set.getEClassStmt(ctx, this).getChild(0) && partOfAssertion.getOrDefault(parent, Collections.emptySet()).contains(set))
@@ -443,7 +631,7 @@ public class RewriterAssertions {
 		}
 	}
 
-	private static class RewriterAssertion {
+	public static class RewriterAssertion {
 		Set<RewriterStatement> set;
 		RewriterStatement stmt;
 		RewriterStatement backRef; // The back-reference to this assertion

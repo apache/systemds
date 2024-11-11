@@ -343,7 +343,7 @@ public class ResourceOptimizer {
         try {
             Files.createDirectory(folderPath);
         } catch (FileAlreadyExistsException e) {
-            System.err.println("Folder 'OUTPUT_FOLDER' already exists on the given path. Files will be overwritten!");
+            System.err.printf("Folder '%s' already exists on the given path. Files will be overwritten!\n", folderPath);
         } catch (IOException e) {
             throw new RuntimeException("Given value for option 'OUTPUT_FOLDER' is not a valid path: "+e);
         }

@@ -2,6 +2,7 @@ package org.apache.sysds.hops.rewriter;
 
 import org.apache.commons.lang3.NotImplementedException;
 import org.apache.commons.lang3.function.TriFunction;
+import org.apache.commons.lang3.mutable.MutableObject;
 import scala.Tuple2;
 
 import java.util.ArrayList;
@@ -279,14 +280,14 @@ public class RewriterAssertions {
 		// TODO: What about backRef?
 	}
 
-	public Stream<RewriterStatement> streamOfContents() {
+	public Stream<Tuple2<RewriterStatement, RewriterStatement.RewriterPredecessor>> streamOfContents() {
 		return allAssertions.stream().flatMap(assertion -> {
 			if (assertion.stmt != null) {
 				if (assertion.backRef != null)
-					return Stream.of(assertion.stmt, assertion.backRef);
-				return Stream.of(assertion.stmt);
+					return Stream.of(new Tuple2<>(assertion.stmt, new RewriterStatement.RewriterPredecessor(this, assertion)), new Tuple2<>(assertion.backRef, new RewriterStatement.RewriterPredecessor(this, assertion)));
+				return Stream.of(new Tuple2<>(assertion.stmt, new RewriterStatement.RewriterPredecessor(this, assertion)));
 			} else {
-				return assertion.set.stream();
+				return assertion.set.stream().map(stmt -> new Tuple2<>(stmt, new RewriterStatement.RewriterPredecessor(this, assertion)));
 			}
 		});
 	}
@@ -583,6 +584,72 @@ public class RewriterAssertions {
 		updateRecursively(eClass);
 
 		return eClass;
+	}
+
+	// This removes E-Classes that are not actually E-Classes like _EClass(argList(nrow(A), nrow(A))), or _EClass(argList(nrow(A), _backRef.INT()))
+	public RewriterStatement cleanupEClasses(RewriterStatement expressionRoot) {
+		Set<RewriterAssertion> toRemoveList = new HashSet<>();
+		Map<RewriterStatement, RewriterStatement> toRemove = new HashMap<>();
+
+		for (RewriterAssertion assertion : allAssertions) {
+			int previousSize = assertion.set.size();
+			if (assertion.stmt != null) {
+				// Eliminate top-level back-refs
+				assertion.set.removeIf(el -> el.isInstruction() && el.trueInstruction().startsWith("_backRef") && el.getMeta("_backRef").equals(assertion.stmt));
+			}
+
+			if (assertion.set.size() < 2) {
+				toRemoveList.add(assertion);
+
+				if (assertion.stmt != null)
+					toRemove.put(assertion.stmt, assertion.set.stream().findFirst().get());
+			}
+
+			if (previousSize != assertion.set.size() && assertion.stmt != null) {
+				// Then we need to update the EClass
+				assertion.stmt.getChild(0).getOperands().removeIf(el -> !assertion.set.contains(el));
+
+				if (assertion.stmt.getChild(0).getOperands().size() != assertion.set.size()) {
+					// Then there are still duplicates which we need to rule out
+					Set<RewriterStatement> visited = new HashSet<>();
+					List<RewriterStatement> eItems = assertion.stmt.getChild(0).getOperands();
+					for (int i = 0; i < eItems.size(); i++) {
+						if (!visited.add(eItems.get(i)))
+							eItems.remove(i--);
+					}
+				}
+			}
+		}
+
+		if (!toRemoveList.isEmpty()) {
+			allAssertions.removeAll(toRemoveList);
+
+			if (!toRemove.isEmpty()) {
+				if (expressionRoot.isEClass()) {
+					RewriterStatement mNew = toRemove.get(expressionRoot);
+
+					if (mNew != null)
+						expressionRoot = mNew;
+				}
+
+				expressionRoot.forEachPostOrder((cur, pred) -> {
+					cur.allChildren().forEach(t -> {
+						if (t._1.isEClass()) {
+							RewriterStatement mNew = toRemove.get(t._1);
+							if (mNew != null) {
+								if (t._2.isOperand()) {
+									cur.getOperands().set(t._2.getIndex(), mNew);
+								} else if (t._2.isMetaObject()) {
+									cur.unsafePutMeta(t._2.getMetaKey(), mNew);
+								}
+							}
+						}
+					});
+				}, true);
+			}
+		}
+
+		return expressionRoot;
 	}
 
 	private void updateRecursively(RewriterStatement cur) {

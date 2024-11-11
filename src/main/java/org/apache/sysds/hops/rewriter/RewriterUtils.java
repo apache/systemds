@@ -1264,6 +1264,7 @@ public class RewriterUtils {
 			}, debug);
 
 			stmt = foldConstants(stmt, ctx);
+			stmt = stmt.getAssertions(ctx).cleanupEClasses(stmt);
 
 			// TODO: After this, stuff like CSE, A-A = 0, etc. must still be applied
 

@@ -27,6 +27,7 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 public abstract class RewriterStatement {
@@ -940,18 +941,18 @@ public abstract class RewriterStatement {
 
 	// This returns a stream of all children including metadata and assertions if available
 	// This may contain loops in case of back references
-	public Stream<RewriterStatement> allChildren() {
-		Stream<RewriterStatement> stream = getOperands().stream();
+	public Stream<Tuple2<RewriterStatement, RewriterPredecessor>> allChildren() {
+		Stream<Tuple2<RewriterStatement, RewriterPredecessor>> stream = IntStream.range(0, getOperands().size()).mapToObj(i -> new Tuple2<>(getOperands().get(i), new RewriterPredecessor(this, i)));
 		RewriterStatement ncol = getNCol();
 		RewriterStatement nrow = getNRow();
 		RewriterStatement backRef = getBackRef();
 
 		if (ncol != null)
-			stream = Stream.concat(stream, Stream.of(ncol));
+			stream = Stream.concat(stream, Stream.of(new Tuple2<>(ncol, new RewriterPredecessor(this, "ncol"))));
 		if (nrow != null)
-			stream = Stream.concat(stream, Stream.of(nrow));
+			stream = Stream.concat(stream, Stream.of(new Tuple2<>(nrow, new RewriterPredecessor(this, "nrow"))));
 		if (backRef != null)
-			stream = Stream.concat(stream, Stream.of(backRef));
+			stream = Stream.concat(stream, Stream.of(new Tuple2<>(backRef, new RewriterPredecessor(this, "_backRef"))));
 
 		RewriterAssertions assertions = (RewriterAssertions) getMeta("_assertions");
 

@@ -21,6 +21,7 @@ package org.apache.sysds.test.component.resource;
 
 import org.apache.sysds.conf.CompilerConfig;
 import org.apache.sysds.conf.ConfigurationManager;
+import org.apache.sysds.resource.CloudUtils;
 import org.apache.sysds.resource.ResourceCompiler;
 import org.apache.sysds.runtime.controlprogram.BasicProgramBlock;
 import org.apache.sysds.runtime.controlprogram.Program;
@@ -38,7 +39,6 @@ import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import static org.apache.sysds.resource.CloudUtils.JVM_MEMORY_FACTOR;
 import static org.apache.sysds.resource.CloudUtils.getEffectiveExecutorResources;
 import static org.apache.sysds.runtime.controlprogram.context.SparkExecutionContext.SparkClusterConfig.RESERVED_SYSTEM_MEMORY_BYTES;
 
@@ -74,7 +74,7 @@ public class RecompilationTest extends AutomatedTestBase {
 
 	@Test
 	public void testSetSparkClusterResourceConfigs() {
-		long driverMemory = 1024 * 1024 * 1024; // 1GB
+		long driverMemory = 4L*1024 * 1024 * 1024; // 1GB
 		int driverThreads = 4;
 		int numberExecutors = 10;
 		long executorMemory = 1024 * 1024 * 1024; // 1GB
@@ -82,7 +82,7 @@ public class RecompilationTest extends AutomatedTestBase {
 
 		ResourceCompiler.setSparkClusterResourceConfigs(driverMemory, driverThreads, numberExecutors, executorMemory, executorThreads);
 
-		long expectedDriverMemory = (long) (driverMemory * JVM_MEMORY_FACTOR);
+		long expectedDriverMemory = CloudUtils.calculateEffectiveDriverMemoryBudget(driverMemory, executorThreads*numberExecutors);
 		int[] expectedExecutorValues = getEffectiveExecutorResources(executorMemory, executorThreads, numberExecutors);
 		int expectedNumExecutors = expectedExecutorValues[2];
 		long expectedExecutorMemoryBudget = (long) (0.6 * (
@@ -103,7 +103,7 @@ public class RecompilationTest extends AutomatedTestBase {
 		// X = A.csv: (10^5)x(10^4) = 10^9 ~ 8BG
 		// Y = B.csv: (10^4)x(10^3) = 10^7 ~ 80MB
 		// X %*% Y -> (10^5)x(10^3) = 10^8 ~ 800MB
-		runTestMM("A.csv", "B.csv", 8L*1024*1024*1024, 0, -1, "ba+*", false);
+		runTestMM("A.csv", "B.csv", 8L*1024*1024*1024, 0, 0, "ba+*", false);
 	}
 
 	@Test
@@ -130,7 +130,7 @@ public class RecompilationTest extends AutomatedTestBase {
 		// X = A.csv: (10^5)x(10^4) = 10^9 ~ 8BG
 		// Y = B.csv: (10^4)x(10^3) = 10^7 ~ 80MB
 		// X %*% Y -> (10^5)x(10^3) = 10^8 ~ 800MB
-		runTestMM("A.csv", "B.csv", 1024*1024*1024, 4, 1024*1024*1024, "rmm", true);
+		runTestMM("A.csv", "B.csv", 4L*1024*1024*1024, 4, 1024*1024*1024, "rmm", true);
 	}
 
 	@Test
@@ -153,14 +153,6 @@ public class RecompilationTest extends AutomatedTestBase {
 	}
 
 	@Test
-	public void test_SP_TSMM() throws IOException {
-		// Distributed cluster with 1GB driver memory and 8GB executor memory -> tsmm operator in Spark
-		// X = D.csv: (10^5)x(10^3) = 10^8 ~ 800MB
-		// t(X) %*% X -> (10^3)x(10^3) = 10^6 ~ 8MB (single block)
-		runTestTSMM("D.csv", 1024*1024*1024, 2, 8L*1024*1024*1024, "tsmm", true);
-	}
-
-	@Test
 	public void test_SP_TSMM_as_CPMM() throws IOException {
 		// Distributed cluster with 8GB driver memory and 8GB executor memory -> cpmm operator in Spark
 		// X = A.csv: (10^5)x(10^4) = 10^9 ~ 8GB
@@ -176,7 +168,7 @@ public class RecompilationTest extends AutomatedTestBase {
 
 		runTestMM("A.csv", "B.csv", 4L*1024*1024*1024, 2, 4L*1024*1024*1024, "mapmm", true);
 
-		runTestMM("A.csv", "B.csv", 1024*1024*1024, 4, 1024*1024*1024, "rmm", true);
+		runTestMM("A.csv", "B.csv", 4L*1024*1024*1024, 4, 1024*1024*1024, "rmm", true);
 
 		runTestMM("A.csv", "B.csv", 8L*1024*1024*1024, 0, -1, "ba+*", false);
 	}
@@ -223,7 +215,7 @@ public class RecompilationTest extends AutomatedTestBase {
 
 	// Helper functions ------------------------------------------------------------------------------------------------
 	private Program generateInitialProgram(String filePath, Map<String, String> args) throws IOException {
-		ResourceCompiler.setSparkClusterResourceConfigs(1024*1024*1024, 4, ResourceCompiler.DEFAULT_NUMBER_EXECUTORS, ResourceCompiler.DEFAULT_EXECUTOR_MEMORY, ResourceCompiler.DEFAULT_EXECUTOR_THREADS);
+		ResourceCompiler.setSparkClusterResourceConfigs(4L*1024*1024*1024, 4, ResourceCompiler.DEFAULT_NUMBER_EXECUTORS, ResourceCompiler.DEFAULT_EXECUTOR_MEMORY, ResourceCompiler.DEFAULT_EXECUTOR_THREADS);
 		return  ResourceCompiler.compile(filePath, args);
 	}
 

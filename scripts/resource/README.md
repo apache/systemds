@@ -75,7 +75,11 @@ The enumeration strategy and optimization functions has defaults values and are 
 * Default for enumeration strategy is: grid
 * Default for optimization function is: costs
 
-As mentioned in [Usage](#usage), the filepaths for the input datasets should be the URI addresses for the distributed S3 file. This allows Resource Optimizer to account for the costs of fetching these external files. To allow greater flexibility at using the extension, the user is provided with the possibility of omitting this requirement in certain scenarios: the user provides the program arguments as S3 URI paths but with an imaginary name (and leading S3 URI schema - `s3://`) and then fills the `LOCAL_INPUTS` property. This property holds key-value pairs where the key is the imaginary S3 file paths and the value is the local path for these files. The local path could also point to a non existing file as long as a corresponding metadata (`.mtd`) file is locally available on this path. 
+We provide a table comprising the relevant EC2 instances characteristics supported currently by the resource optimizer 
+and table with pricing parameters for all regions supported by EMR. The python script from `update_prcies.py` provides and automation
+for updating the prices of the EC2 instances in the fist mention table be setting a target AWS region.
+
+As mentioned in [Usage](#usage), the filepath s for the input datasets should be the URI addresses for the distributed S3 file. This allows Resource Optimizer to account for the costs of fetching these external files. To allow greater flexibility at using the extension, the user is provided with the possibility of omitting this requirement in certain scenarios: the user provides the program arguments as S3 URI paths but with an imaginary name (and leading S3 URI schema - `s3://`) and then fills the `LOCAL_INPUTS` property. This property holds key-value pairs where the key is the imaginary S3 file paths and the value is the local path for these files. The local path could also point to a non existing file as long as a corresponding metadata (`.mtd`) file is locally available on this path. 
 
 ### Further Options 
 
@@ -83,7 +87,7 @@ As mentioned above, the user can decide to switch between different options for 
 
 The enumeration strategy has influence mostly on the speed of completing the process of finding the optimal configuration. The default value is `grid` and this sets a grid-based enumeration where each configuration combination within the configured constraints is being evaluated. The next possible option value is `prune` which prunes dynamically certain configuration during the progress of the enumeration process based on the intermediate results for the already evaluated configurations. In theory this should deliver the same optimal result as the grid-based enumeration and the experiments so far proved that while showed great speed-up. The last possibility is fot that option is `interest`, which uses a interest-based enumeration which uses several (configurable) criterias for statically reducing the search space for the optimal configuration base on program and hardware properties.
 
-Here is a list of all of the rest of the options available:
+Here is a list of all the rest of the options available:
 
 * `CPU_QUOTA` (default 1152) - specifies the limit of (virtual) CPU cores allowed for evaluation. This corresponds to the EC2 service quota for limiting the running instances within the same region at the same moment.
 * `COSTS_WEIGHT` (default 0.01) - specifies the weighing factor for the multi-objective function for optimization

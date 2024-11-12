@@ -1346,7 +1346,11 @@ public class RewriterUtils {
 	}
 
 	private static RewriterStatement foldNaryReducible(RewriterStatement stmt, final RuleContext ctx) {
-		List<RewriterStatement> argList = stmt.getChild(0).getOperands();
+		List<RewriterStatement> argList;
+		if (stmt.getChild(0).isArgumentList())
+			argList = stmt.getChild(0).getOperands();
+		else
+			argList = stmt.getOperands();
 
 		if (argList.isEmpty())
 			throw new IllegalArgumentException(stmt.toString(ctx));

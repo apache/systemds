@@ -770,9 +770,9 @@ public class RewriterRuleCollection {
 
 		rules.add(new RewriterRuleBuilder(ctx)
 				.setUnidirectional(true)
-				.parseGlobalVars("LITERAL_INT:1")
-				.withParsedStatement("_idx(1, 1)", hooks)
-				.toParsedStatement("$1:1", hooks)
+				.parseGlobalVars("INT:l")
+				.withParsedStatement("_idx(l, l)", hooks)
+				.toParsedStatement("l", hooks)
 				.build()
 		);
 
@@ -879,6 +879,25 @@ public class RewriterRuleCollection {
 	public static void pushdownStreamSelections(final List<RewriterRule> rules, final RuleContext ctx) {
 		HashMap<Integer, RewriterStatement> hooks = new HashMap<>();
 
+		rules.add(new RewriterRuleBuilder(ctx)
+				.setUnidirectional(true)
+				.parseGlobalVars("INT:l")
+				.withParsedStatement("_idx(l, l)", hooks)
+				.toParsedStatement("l", hooks)
+				.build()
+		);
+
+		rules.add(new RewriterRuleBuilder(ctx, "Eliminate scalar matrices")
+				.setUnidirectional(true)
+				.parseGlobalVars("MATRIX:A,B")
+				.parseGlobalVars("INT:i,j")
+				.parseGlobalVars("FLOAT:v")
+				.withParsedStatement("as.scalar(v)", hooks)
+				.toParsedStatement("v", hooks)
+				.build()
+		);
+
+		// TODO: We would have to take into account the offset of h, i
 		rules.add(new RewriterRuleBuilder(ctx, "Element selection pushdown")
 				.setUnidirectional(true)
 				.parseGlobalVars("MATRIX:A,B")
@@ -886,30 +905,28 @@ public class RewriterRuleCollection {
 				.parseGlobalVars("FLOAT:v")
 				.parseGlobalVars("LITERAL_INT:1")
 				.withParsedStatement("[]($1:_m(h, i, v), l, m)", hooks)
-				.toParsedStatement("as.scalar($2:_m(l, m, v))", hooks)
-				/*.iff(match -> {
+				.toParsedStatement("$3:as.scalar($2:_m(l, m, v))", hooks)
+				.iff(match -> {
 					List<RewriterStatement> ops = match.getMatchRoot().getOperands().get(0).getOperands();
-					return ops.get(0).isInstruction()
-							&& ops.get(1).isInstruction()
-							&& ops.get(0).trueTypedInstruction(ctx).equals("_idx(INT,INT)")
-							&& ops.get(1).trueTypedInstruction(ctx).equals("_idx(INT,INT)");
-				}, true)*/
+					return (ops.get(0).isInstruction()
+							&& ops.get(0).trueTypedInstruction(ctx).equals("_idx(INT,INT)"))
+							|| (ops.get(1).isInstruction()
+							&& ops.get(1).trueTypedInstruction(ctx).equals("_idx(INT,INT)"));
+				}, true)
 				.linkUnidirectional(hooks.get(1).getId(), hooks.get(2).getId(), lnk -> {
 					RewriterStatement.transferMeta(lnk);
-					/*UUID ownerId = (UUID)lnk.newStmt.get(0).getMeta("ownerId");
-					System.out.println("OwnerId: " + ownerId);
-					lnk.newStmt.get(0).getOperands().get(0).unsafePutMeta("ownerId", ownerId);
-					lnk.newStmt.get(0).getOperands().get(0).unsafePutMeta("idxId", UUID.randomUUID());
-					lnk.newStmt.get(0).getOperands().get(1).unsafePutMeta("ownerId", ownerId);
-					lnk.newStmt.get(0).getOperands().get(1).unsafePutMeta("idxId", UUID.randomUUID());*/
 
 					// TODO: Big issue when having multiple references to the same sub-dag
 					for (int idx = 0; idx < 2; idx++) {
-						RewriterStatement oldRef = lnk.oldStmt.getOperands().get(idx);
-						RewriterStatement newRef = lnk.newStmt.get(0).getOperands().get(idx);
+						RewriterStatement oldRef = lnk.oldStmt.getChild(idx);
+
+						if (!oldRef.isInstruction() || !oldRef.trueTypedInstruction(ctx).equals("_idx(INT,INT)"))
+							continue;
+
+						RewriterStatement newRef = lnk.newStmt.get(0).getChild(idx);
 
 						// Replace all references to h with
-						lnk.newStmt.get(0).getOperands().get(2).forEachPreOrder((el, pred) -> {
+						lnk.newStmt.get(0).getOperands().get(2).forEachPostOrder((el, pred) -> {
 							for (int i = 0; i < el.getOperands().size(); i++) {
 								RewriterStatement child = el.getOperands().get(i);
 								Object meta = child.getMeta("idxId");
@@ -917,11 +934,27 @@ public class RewriterRuleCollection {
 								if (meta instanceof UUID && meta.equals(oldRef.getMeta("idxId")))
 									el.getOperands().set(i, newRef);
 							}
-							return true;
+							//return true;
 						}, false);
 
 					}
 				}, true)
+				.apply(hooks.get(3).getId(), stmt -> {
+					//System.out.println("BEFORE: " + stmt.toParsableString(ctx));
+					stmt.getOperands().set(0, stmt.getChild(0, 2));
+					//System.out.println("AFTER: " + stmt.toParsableString(ctx));
+				}, true)
+				.build()
+		);
+
+		rules.add(new RewriterRuleBuilder(ctx, "Scalar matrix selection pushdown")
+				.setUnidirectional(true)
+				.parseGlobalVars("MATRIX:A,B")
+				.parseGlobalVars("INT:h,i,j,k,l,m")
+				.parseGlobalVars("FLOAT:v")
+				.parseGlobalVars("LITERAL_INT:1")
+				.withParsedStatement("[]($1:_m(1, 1, v), j, k)", hooks)
+				.toParsedStatement("v", hooks)
 				.build()
 		);
 
@@ -932,41 +965,27 @@ public class RewriterRuleCollection {
 				.parseGlobalVars("FLOAT:v")
 				.parseGlobalVars("LITERAL_INT:1")
 				.withParsedStatement("[]($1:_m(h, i, v), j, k, l, m)", hooks)
-				.toParsedStatement("$2:_m(_idx(j, l), _idx(k, m), v)", hooks) // Assuming that selections are valid
-				/*.iff(match -> {
-					List<RewriterStatement> ops = match.getMatchRoot().getOperands().get(0).getOperands();
-					return ops.get(0).isInstruction()
-							&& ops.get(1).isInstruction()
-							&& ops.get(0).trueTypedInstruction(ctx).equals("_idx(INT,INT)")
-							&& ops.get(1).trueTypedInstruction(ctx).equals("_idx(INT,INT)");
-				}, true)*/
+				.toParsedStatement("$2:_m(_idx(1, +(+(k, 1), -(j))), _idx(1, +(+(m, 1), -(l))), v)", hooks) // Assuming that selections are valid
 				.linkUnidirectional(hooks.get(1).getId(), hooks.get(2).getId(), lnk -> {
 					// TODO: Big issue when having multiple references to the same sub-dag
 					// BUT: This should usually not happen if indices are never referenced
 					RewriterStatement.transferMeta(lnk);
-					/*UUID ownerId = (UUID)lnk.newStmt.get(0).getMeta("ownerId");
-					lnk.newStmt.get(0).getOperands().get(0).unsafePutMeta("ownerId", ownerId);
-					lnk.newStmt.get(0).getOperands().get(0).unsafePutMeta("idxId", UUID.randomUUID());
-					lnk.newStmt.get(0).getOperands().get(1).unsafePutMeta("ownerId", ownerId);
-					lnk.newStmt.get(0).getOperands().get(1).unsafePutMeta("idxId", UUID.randomUUID());*/
-
-					//if (ownerId == null)
-						//throw new IllegalArgumentException();
 
 					for (int idx = 0; idx < 2; idx++) {
 						RewriterStatement oldRef = lnk.oldStmt.getOperands().get(idx);
-						RewriterStatement newRef = lnk.newStmt.get(0).getOperands().get(idx);
+						RewriterStatement newRef = lnk.newStmt.get(0).getChild(idx);
+						RewriterStatement mStmt = new RewriterInstruction().as(UUID.randomUUID().toString()).withInstruction("+").withOps(newRef, newRef.getChild(1, 1, 0)).consolidate(ctx);
+						final RewriterStatement newStmt = RewriterUtils.foldConstants(mStmt, ctx);
 
 						// Replace all references to h with
-						lnk.newStmt.get(0).getOperands().get(2).forEachPreOrder((el, pred) -> {
+						lnk.newStmt.get(0).getOperands().get(2).forEachPostOrder((el, pred) -> {
 							for (int i = 0; i < el.getOperands().size(); i++) {
 								RewriterStatement child = el.getOperands().get(i);
 								Object meta = child.getMeta("idxId");
 
 								if (meta instanceof UUID && meta.equals(oldRef.getMeta("idxId")))
-									el.getOperands().set(i, newRef);
+									el.getOperands().set(i, newStmt);
 							}
-							return true;
 						}, false);
 
 					}
@@ -974,15 +993,6 @@ public class RewriterRuleCollection {
 				.build()
 		);
 
-		rules.add(new RewriterRuleBuilder(ctx, "Eliminate scalar matrices")
-				.setUnidirectional(true)
-				.parseGlobalVars("MATRIX:A,B")
-				.parseGlobalVars("INT:i,j")
-				.parseGlobalVars("FLOAT:v")
-				.withParsedStatement("as.scalar(_m(i, j, v))", hooks)
-				.toParsedStatement("v", hooks)
-				.build()
-		);
 
 		// TODO: Deal with boolean or int matrices
 		rules.add(new RewriterRuleBuilder(ctx, "_m(i::<const>, j::<const>, v) => cast.MATRIX(v)")

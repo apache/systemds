@@ -1,6 +1,7 @@
 package org.apache.sysds.test.component.codegen.rewrite.functions;
 
 import org.apache.sysds.common.Types;
+import org.apache.sysds.hops.AggUnaryOp;
 import org.apache.sysds.hops.BinaryOp;
 import org.apache.sysds.hops.DataGenOp;
 import org.apache.sysds.hops.Hop;
@@ -162,6 +163,40 @@ public class CodeGenTests {
 			Hop result = f.apply(matmul);
 
 			assert result instanceof ReorgOp && result.getInput().size() == 1 && HopRewriteUtils.isMatrixMultiply(result.getInput(0));
+		} catch (Exception e) {
+			e.printStackTrace();
+			assert false;
+		}
+	}
+
+	@Test
+	public void test5() {
+		HashMap<String, RewriterStatement> vars = new HashMap<>();
+		vars.put("A", RewriterUtils.parse("A", ctx, "MATRIX:A"));
+		vars.put("B", RewriterUtils.parse("B", ctx, "MATRIX:B"));
+		RewriterStatement stmt1 = RewriterUtils.parse("rowSums(t(A))", ctx, vars);
+		RewriterStatement stmt2 = RewriterUtils.parse("t(colSums(A))", ctx, vars);
+
+		RewriterRule rule = new RewriterRuleBuilder(ctx, "testRule")
+				.setUnidirectional(true)
+				.completeRule(stmt1, stmt2)
+				.build();
+
+		System.out.println(RewriterCodeGen.generateClass("MRuleTest", List.of(new Tuple2<>("testRule", rule)), ctx));
+
+		try {
+			Function<Hop, Hop> f = RewriterCodeGen.compileRewrites("MRuleTest", List.of(new Tuple2<>("testRule", rule)), ctx);
+			HashMap<String, Hop> inputParams = new HashMap<>();
+			inputParams.put(DataExpression.RAND_ROWS, new LiteralOp(100));
+			inputParams.put(DataExpression.RAND_COLS, new LiteralOp(100));
+			inputParams.put(DataExpression.RAND_MIN, new LiteralOp(0.0));
+			inputParams.put(DataExpression.RAND_MAX, new LiteralOp(1.0));
+			Hop A = new DataGenOp(Types.OpOpDG.RAND, new DataIdentifier("A", Types.DataType.MATRIX, Types.ValueType.FP64), inputParams);
+			Hop tA = new ReorgOp("t", Types.DataType.MATRIX, Types.ValueType.FP64, Types.ReOrgOp.TRANS, A);
+			Hop rowSums = HopRewriteUtils.createAggUnaryOp(tA, Types.AggOp.SUM, Types.Direction.Row);
+			Hop result = f.apply(rowSums);
+
+			assert result instanceof ReorgOp && result.getInput().size() == 1 && result.getInput(0) instanceof AggUnaryOp;
 		} catch (Exception e) {
 			e.printStackTrace();
 			assert false;

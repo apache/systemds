@@ -31,8 +31,10 @@ public class RewriterCodeGen {
 		sb.append("\n");
 		sb.append("import org.apache.sysds.hops.Hop;\n");
 		sb.append("import org.apache.sysds.hops.LiteralOp;\n");
+		sb.append("import org.apache.sysds.hops.UnaryOp;\n");
 		sb.append("import org.apache.sysds.hops.BinaryOp;\n");
 		sb.append("import org.apache.sysds.hops.ReorgOp;\n");
+		sb.append("import org.apache.sysds.hops.AggUnaryOp;\n");
 		sb.append("import org.apache.sysds.hops.AggBinaryOp;\n");
 		sb.append("import org.apache.sysds.common.Types;\n");
 		sb.append("import org.apache.sysds.hops.rewrite.HopRewriteUtils;\n");
@@ -102,16 +104,16 @@ public class RewriterCodeGen {
 
 		sb.append('\n');
 		indent(indentation, sb);
-		sb.append("// Remove old unreferenced Hops\n");
-		removeUnreferencedHops(from, activeStatements, sb, vars, ctx, indentation);
-
-		sb.append('\n');
-		indent(indentation, sb);
 		sb.append("ArrayList<Hop> parents = new ArrayList<>(hi.getParent());\n\n");
 		indent(indentation, sb);
 		sb.append("for ( Hop p : parents )\n");
 		indent(indentation + 1, sb);
 		sb.append("HopRewriteUtils.replaceChildReference(p, hi, " + vars.get(to) + ");\n\n");
+
+		indent(indentation, sb);
+		sb.append("// Remove old unreferenced Hops\n");
+		removeUnreferencedHops(from, activeStatements, sb, vars, ctx, indentation);
+		sb.append('\n');
 
 		indent(indentation, sb);
 		sb.append("return " + vars.get(to) + ";\n");
@@ -133,7 +135,7 @@ public class RewriterCodeGen {
 				return true;
 
 			indent(indentation, sb);
-			sb.append("HopRewriteUtils.removeAllChildReferences(" + vars.get(cur) + ");\n");
+			sb.append("HopRewriteUtils.cleanupUnreferenced(" + vars.get(cur) + ");\n");
 			return true;
 		}, false);
 	}
@@ -214,8 +216,6 @@ public class RewriterCodeGen {
 			indent(indentation + 1, sb);
 			sb.append("return hi;\n\n");
 		} else {
-
-			String opCode = CodeGenUtils.getOpCode(cur, ctx);
 			String opClass = CodeGenUtils.getOpClass(cur, ctx);
 
 			// Generate initial class check
@@ -228,6 +228,8 @@ public class RewriterCodeGen {
 			String cCurVar = "c_" + curVar;
 			indent(indentation, sb);
 			sb.append(opClass + " " + cCurVar + " = (" + opClass + ") " + curVar + ";\n\n");
+
+			String opCode = CodeGenUtils.getOpCode(cur, ctx);
 
 			// Check if the instruction matches
 			indent(indentation, sb);
@@ -250,6 +252,15 @@ public class RewriterCodeGen {
 			sb.append(" )\n");
 			indent(indentation + 1, sb);
 			sb.append("return hi;\n\n");
+
+			String additionalCheck = CodeGenUtils.getAdditionalCheck(cur, ctx, cCurVar);
+
+			if (additionalCheck != null) {
+				indent(indentation, sb);
+				sb.append("if ( !(" + additionalCheck + ") )\n");
+				indent(indentation + 1, sb);
+				sb.append("return hi;\n\n");
+			}
 		}
 
 		// Now, we match the children
@@ -281,11 +292,6 @@ public class RewriterCodeGen {
 				sb.append('\n');
 			}
 		}
-
-		//indent(indentation + 1, sb);
-		//sb.append("}\n");
-		//indent(indentation, sb);
-		//sb.append("}\n");
 	}
 
 	private static String resolveOperand(RewriterStatement stmt, int idx, StringBuilder sb, String curVar, final RuleContext ctx, int indentation) {

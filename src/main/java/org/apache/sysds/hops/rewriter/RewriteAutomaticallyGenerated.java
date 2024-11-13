@@ -9,10 +9,12 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
 
 public class RewriteAutomaticallyGenerated extends HopRewriteRule {
 	public static final String FILE_PATH = "/Users/janniklindemann/Dev/MScThesis/rules.rl";
+	public static RewriteAutomaticallyGenerated existingRewrites;
 
 	private Function<Hop, Hop> rewriteFn;
 
@@ -24,6 +26,7 @@ public class RewriteAutomaticallyGenerated extends HopRewriteRule {
 			RewriterRuleSet ruleSet = RewriterRuleSet.deserialize(lines, ctx);
 
 			rewriteFn = ruleSet.compile("AutomaticallyGeneratedRewriteFunction", true);
+			existingRewrites = this;
 		} catch (IOException e) {
 		}
 	}
@@ -70,6 +73,8 @@ public class RewriteAutomaticallyGenerated extends HopRewriteRule {
 		if(hop.isVisited())
 			return;
 
+		//System.out.println("Stepping into: " + hop);
+
 		//recursively process children
 		for( int i=0; i<hop.getInput().size(); i++)
 		{
@@ -80,7 +85,7 @@ public class RewriteAutomaticallyGenerated extends HopRewriteRule {
 				rule_apply(hi, descendFirst); //see below
 
 			//apply actual simplification rewrites (of childs incl checks)
-			hi = rewriteFn.apply(hop);
+			hi = rewriteFn.apply(hi);
 
 			//process childs recursively after rewrites (to investigate pattern newly created by rewrites)
 			if( !descendFirst )

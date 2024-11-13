@@ -13,11 +13,10 @@ import java.util.Set;
 import java.util.function.Function;
 
 public class RewriterCodeGen {
-	public static boolean DEBUG = false;
+	public static boolean DEBUG = true;
 
 	public static Function<Hop, Hop> compileRewrites(String className, List<Tuple2<String, RewriterRule>> rewrites, final RuleContext ctx, boolean ignoreErrors, boolean printErrors) throws Exception {
 		String code = generateClass(className, rewrites, ctx, ignoreErrors, printErrors);
-		System.out.println(code);
 		SimpleCompiler compiler = new SimpleCompiler();
 		compiler.cook(code);
 		Class<?> mClass = compiler.getClassLoader().loadClass(className);
@@ -102,7 +101,7 @@ public class RewriterCodeGen {
 		sb.append("private static Hop " + fName + "(Hop hi) {\n");
 
 		// Build the function body
-		buildMatchingSequence(rule.getStmt1(), rule.getStmt2(), sb, ctx, indentation + 1);
+		buildMatchingSequence(rule.toString(), rule.getStmt1(), rule.getStmt2(), sb, ctx, indentation + 1);
 		indent(indentation, sb);
 
 		sb.append("}\n");
@@ -110,7 +109,7 @@ public class RewriterCodeGen {
 		return sb.toString();
 	}
 
-	private static void buildMatchingSequence(RewriterStatement from, RewriterStatement to, StringBuilder sb, final RuleContext ctx, int indentation) {
+	private static void buildMatchingSequence(String name, RewriterStatement from, RewriterStatement to, StringBuilder sb, final RuleContext ctx, int indentation) {
 		Map<RewriterStatement, String> vars = new HashMap<>();
 		vars.put(from, "hi");
 		recursivelyBuildMatchingSequence(from, sb, "hi", ctx, indentation, vars);
@@ -120,7 +119,7 @@ public class RewriterCodeGen {
 
 		if (DEBUG) {
 			indent(indentation, sb);
-			sb.append("System.out.println(\"HERE\");\n");
+			sb.append("System.out.println(\"Applying rewrite: " + name + "\");\n");
 		}
 
 		Set<RewriterStatement> activeStatements = buildRewrite(to, sb, vars, ctx, indentation);

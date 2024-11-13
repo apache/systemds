@@ -8,10 +8,11 @@ import scala.Tuple2;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.function.Function;
 
 public class RewriterCodeGen {
+	public static boolean DEBUG = false;
+
 	public static Function<Hop, Hop> compileRewrites(String className, List<Tuple2<String, RewriterRule>> rewrites, final RuleContext ctx) throws Exception {
 		String code = generateClass(className, rewrites, ctx);
 		SimpleCompiler compiler = new SimpleCompiler();
@@ -29,7 +30,10 @@ public class RewriterCodeGen {
 		sb.append("import org.apache.sysds.hops.Hop;\n");
 		sb.append("import org.apache.sysds.hops.LiteralOp;\n");
 		sb.append("import org.apache.sysds.hops.BinaryOp;\n");
+		sb.append("import org.apache.sysds.hops.ReorgOp;\n");
+		sb.append("import org.apache.sysds.hops.AggBinaryOp;\n");
 		sb.append("import org.apache.sysds.common.Types;\n");
+		sb.append("import org.apache.sysds.hops.rewrite.HopRewriteUtils;\n");
 		sb.append("\n");
 		sb.append("public class " + className + " implements Function {\n\n");
 		indent(1, sb);
@@ -54,6 +58,8 @@ public class RewriterCodeGen {
 
 		for (Tuple2<String, RewriterRule> appliedRewrites : rewrites) {
 			sb.append('\n');
+			indent(1, sb);
+			sb.append("// Implementation of the rule " + appliedRewrites._2 + "\n");
 			sb.append(generateRewriteFunction(appliedRewrites._2, appliedRewrites._1, 1, ctx));
 		}
 
@@ -83,8 +89,11 @@ public class RewriterCodeGen {
 		sb.append("\n");
 		indent(indentation, sb);
 		sb.append("// Now we start building the new Hop\n");
-		indent(indentation, sb);
-		sb.append("System.out.println(\"HERE\");\n");
+
+		if (DEBUG) {
+			indent(indentation, sb);
+			sb.append("System.out.println(\"HERE\");\n");
+		}
 
 		buildRewrite(to, sb, vars, ctx, indentation);
 
@@ -106,12 +115,22 @@ public class RewriterCodeGen {
 			varCtr = recursivelyBuildNewHop(sb, child, vars, ctx, indentation, varCtr);
 		}
 
-		if (cur.isLiteral()) {
-			indent(indentation, sb);
-			String name = "l" + (varCtr++);
-			sb.append("LiteralOp " + name + " = new LiteralOp( " + cur.getLiteral() + " );\n");
-			vars.put(cur, name);
+		if (cur instanceof RewriterDataType) {
+			if (cur.isLiteral()) {
+				indent(indentation, sb);
+				String name = "l" + (varCtr++);
+				sb.append("LiteralOp " + name + " = new LiteralOp( " + cur.getLiteral() + " );\n");
+				vars.put(cur, name);
+			}
+
 			return varCtr;
+		} else {
+			String opClass = CodeGenUtils.getOpClass(cur, ctx);
+			String constructor = CodeGenUtils.getHopConstructor(cur, ctx, cur.getOperands().stream().map(vars::get).toArray(String[]::new));
+			String name = "v"  + (varCtr++);
+			indent(indentation, sb);
+			sb.append(opClass + " " + name + " = " + constructor + ";\n");
+			vars.put(cur, name);
 		}
 
 		return varCtr;
@@ -155,41 +174,52 @@ public class RewriterCodeGen {
 			return;
 		}
 
-		String opCode = CodeGenUtils.getOpCode(cur, ctx);
-		String opClass = CodeGenUtils.getOpClass(cur, ctx);
+		String specialOpCheck = CodeGenUtils.getSpecialOpCheck(cur, ctx, curVar);
 
-		// Generate initial class check
-		indent(indentation, sb);
-		sb.append("if ( !(" + curVar + " instanceof " + opClass + ") )\n");
-		indent(indentation + 1, sb);
-		sb.append("return hi;\n\n");
+		// E.g. A %*% B, which is an AggBinaryOp consisting of multiple OpCodes
+		if (specialOpCheck != null) {
+			indent(indentation, sb);
+			sb.append("if ( !" + specialOpCheck + " )\n");
+			indent(indentation + 1, sb);
+			sb.append("return hi;\n\n");
+		} else {
 
-		// Cast the expression to the corresponding op-class
-		String cCurVar = "c_" + curVar;
-		indent(indentation, sb);
-		sb.append(opClass + " " + cCurVar + " = (" + opClass + ") " + curVar + ";\n\n");
+			String opCode = CodeGenUtils.getOpCode(cur, ctx);
+			String opClass = CodeGenUtils.getOpClass(cur, ctx);
 
-		// Check if the instruction matches
-		indent(indentation, sb);
-		sb.append("if ( " + cCurVar + ".getOp() != " + opCode);
-		String[] types = CodeGenUtils.getReturnType(cur, ctx);
-		sb.append(" || " + cCurVar + ".getDataType() != " + types[0]);
+			// Generate initial class check
+			indent(indentation, sb);
+			sb.append("if ( !(" + curVar + " instanceof " + opClass + ") )\n");
+			indent(indentation + 1, sb);
+			sb.append("return hi;\n\n");
 
-		for (int i = 1; i < types.length; i++) {
-			if (i == 1) {
-				sb.append(" || (" + cCurVar + ".getValueType() != " + types[1]);
-				continue;
+			// Cast the expression to the corresponding op-class
+			String cCurVar = "c_" + curVar;
+			indent(indentation, sb);
+			sb.append(opClass + " " + cCurVar + " = (" + opClass + ") " + curVar + ";\n\n");
+
+			// Check if the instruction matches
+			indent(indentation, sb);
+			sb.append("if ( " + cCurVar + ".getOp() != " + opCode);
+			String[] types = CodeGenUtils.getReturnType(cur, ctx);
+			sb.append(" || " + cCurVar + ".getDataType() != " + types[0]);
+
+			for (int i = 1; i < types.length; i++) {
+				if (i == 1) {
+					sb.append(" || (" + cCurVar + ".getValueType() != " + types[1]);
+					continue;
+				}
+
+				sb.append(" && " + cCurVar + ".getValueType() != " + types[i]);
+
+				if (i == types.length - 1)
+					sb.append(')');
 			}
 
-			sb.append(" && " + cCurVar + ".getValueType() != " + types[i]);
-
-			if (i == types.length - 1)
-				sb.append(')');
+			sb.append(" )\n");
+			indent(indentation + 1, sb);
+			sb.append("return hi;\n\n");
 		}
-
-		sb.append(" )\n");
-		indent(indentation + 1, sb);
-		sb.append("return hi;\n\n");
 
 		// Now, we match the children
 		for (int i = 0; i < cur.getOperands().size(); i++) {

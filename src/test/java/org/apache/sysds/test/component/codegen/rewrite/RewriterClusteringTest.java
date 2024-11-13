@@ -1,6 +1,7 @@
 package org.apache.sysds.test.component.codegen.rewrite;
 
 import org.apache.commons.lang3.mutable.MutableInt;
+import org.apache.sysds.hops.rewriter.RewriteAutomaticallyGenerated;
 import org.apache.sysds.hops.rewriter.RewriterCostEstimator;
 import org.apache.sysds.hops.rewriter.RewriterDatabase;
 import org.apache.sysds.hops.rewriter.RewriterHeuristic;
@@ -170,7 +171,7 @@ public class RewriterClusteringTest {
 
 		String serialized = ruleCreator.getRuleSet().serialize(ctx);
 
-		try (FileWriter writer = new FileWriter("/Users/janniklindemann/Dev/MScThesis/rules.rl")) {
+		try (FileWriter writer = new FileWriter(RewriteAutomaticallyGenerated.FILE_PATH)) {
 			writer.write(serialized);
 		} catch (IOException ex) {
 			ex.printStackTrace();

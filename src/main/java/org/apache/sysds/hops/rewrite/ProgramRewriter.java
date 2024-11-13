@@ -87,7 +87,7 @@ public class ProgramRewriter{
 			if( OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION )
 				_dagRuleSet.add( new RewriteAlgebraicSimplificationStatic()      ); //dependencies: cse
 			if ( OptimizerUtils.ALLOW_DISCOVERED_REWRITES )
-				_dagRuleSet.add( new RewriteAutomaticallyGenerated(""));	// TODO											// Rewrites automatically found by the rewrite discovery system
+				_dagRuleSet.add( new RewriteAutomaticallyGenerated());				// Rewrites automatically found by the rewrite discovery system
 			if( OptimizerUtils.ALLOW_COMMON_SUBEXPRESSION_ELIMINATION )             //dependency: simplifications (no need to merge leafs again)
 				_dagRuleSet.add( new RewriteCommonSubexpressionElimination()     );
 			if( OptimizerUtils.ALLOW_AUTO_VECTORIZATION )

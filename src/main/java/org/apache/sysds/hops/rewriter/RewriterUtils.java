@@ -357,7 +357,7 @@ public class RewriterUtils {
 		// Remove empty lines
 		expr = expr.replaceAll("\n\\s*\n", "\n");
 		String[] split = expr.split("\n");
-		return parseRule(split[split.length-2], split[split.length-1], ctx, Arrays.copyOfRange(split, 0, split.length-2));
+		return parseRule(split[split.length-3], split[split.length-1], ctx, Arrays.copyOfRange(split, 0, split.length-3));
 	}
 
 	public static RewriterStatement parse(String expr, final RuleContext ctx, String... varDefinitions) {
@@ -446,7 +446,7 @@ public class RewriterUtils {
 
 	public static boolean parseDataTypes(String expr, Map<String, RewriterStatement> dataTypes, final RuleContext ctx) {
 		RuleContext.currentContext = ctx;
-		Pattern pattern = Pattern.compile("([A-Za-z0-9]|_|\\.|\\*)([A-Za-z0-9]|_|\\.|\\*|-)*");
+		Pattern pattern = Pattern.compile("([A-Za-z0-9]|_|\\.|\\*|\\?)([A-Za-z0-9]|_|\\.|\\*|-)*");
 		Matcher matcher = pattern.matcher(expr);
 
 		if (!matcher.find())

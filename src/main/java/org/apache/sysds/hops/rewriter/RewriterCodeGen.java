@@ -15,8 +15,9 @@ import java.util.function.Function;
 public class RewriterCodeGen {
 	public static boolean DEBUG = false;
 
-	public static Function<Hop, Hop> compileRewrites(String className, List<Tuple2<String, RewriterRule>> rewrites, final RuleContext ctx) throws Exception {
-		String code = generateClass(className, rewrites, ctx);
+	public static Function<Hop, Hop> compileRewrites(String className, List<Tuple2<String, RewriterRule>> rewrites, final RuleContext ctx, boolean ignoreErrors, boolean printErrors) throws Exception {
+		String code = generateClass(className, rewrites, ctx, ignoreErrors, printErrors);
+		System.out.println(code);
 		SimpleCompiler compiler = new SimpleCompiler();
 		compiler.cook(code);
 		Class<?> mClass = compiler.getClassLoader().loadClass(className);
@@ -24,51 +25,73 @@ public class RewriterCodeGen {
 		return (Function<Hop, Hop>) instance;
 	}
 
-	public static String generateClass(String className, List<Tuple2<String, RewriterRule>> rewrites, final RuleContext ctx) {
-		StringBuilder sb = new StringBuilder();
-		sb.append("import java.util.ArrayList;\n");
-		sb.append("import java.util.function.Function;\n");
-		sb.append("\n");
-		sb.append("import org.apache.sysds.hops.Hop;\n");
-		sb.append("import org.apache.sysds.hops.LiteralOp;\n");
-		sb.append("import org.apache.sysds.hops.UnaryOp;\n");
-		sb.append("import org.apache.sysds.hops.BinaryOp;\n");
-		sb.append("import org.apache.sysds.hops.ReorgOp;\n");
-		sb.append("import org.apache.sysds.hops.AggUnaryOp;\n");
-		sb.append("import org.apache.sysds.hops.AggBinaryOp;\n");
-		sb.append("import org.apache.sysds.common.Types;\n");
-		sb.append("import org.apache.sysds.hops.rewrite.HopRewriteUtils;\n");
-		sb.append("\n");
-		sb.append("public class " + className + " implements Function {\n\n");
-		indent(1, sb);
-		sb.append("@Override\n");
-		indent(1, sb);
-		sb.append("public Object apply( Object hi ) {\n");
-		indent(2, sb);
-		sb.append("if ( hi == null )\n");
-		indent(3, sb);
-		sb.append("return null;\n\n");
+	public static String generateClass(String className, List<Tuple2<String, RewriterRule>> rewrites, final RuleContext ctx, boolean ignoreErrors, boolean printErrors) {
+		StringBuilder msb = new StringBuilder();
+		msb.append("import java.util.ArrayList;\n");
+		msb.append("import java.util.function.Function;\n");
+		msb.append("\n");
+		msb.append("import org.apache.sysds.hops.Hop;\n");
+		msb.append("import org.apache.sysds.hops.LiteralOp;\n");
+		msb.append("import org.apache.sysds.hops.UnaryOp;\n");
+		msb.append("import org.apache.sysds.hops.BinaryOp;\n");
+		msb.append("import org.apache.sysds.hops.ReorgOp;\n");
+		msb.append("import org.apache.sysds.hops.AggUnaryOp;\n");
+		msb.append("import org.apache.sysds.hops.AggBinaryOp;\n");
+		msb.append("import org.apache.sysds.common.Types;\n");
+		msb.append("import org.apache.sysds.hops.rewrite.HopRewriteUtils;\n");
+		msb.append("\n");
+		msb.append("public class " + className + " implements Function {\n\n");
 
+		StringBuilder implSb = new StringBuilder();
+		Set<String> implemented = new HashSet<>();
 		for (Tuple2<String, RewriterRule> appliedRewrites : rewrites) {
-			indent(2, sb);
-			sb.append("hi = " + appliedRewrites._1 + "((Hop) hi);\n");
+			String mRewriteFn;
+			if (ignoreErrors) {
+				try {
+					mRewriteFn = generateRewriteFunction(appliedRewrites._2, appliedRewrites._1, 1, ctx);
+				} catch (Exception e) {
+					if (printErrors)
+						e.printStackTrace();
+
+					continue;
+				}
+			} else {
+				mRewriteFn = generateRewriteFunction(appliedRewrites._2, appliedRewrites._1, 1, ctx);
+			}
+
+			implSb.append('\n');
+			indent(1, implSb);
+			implSb.append("// Implementation of the rule " + appliedRewrites._2 + "\n");
+			implSb.append(mRewriteFn);
+			implemented.add(appliedRewrites._1);
 		}
 
-		indent(2, sb);
-		sb.append("return hi;\n");
-
-		indent(1, sb);
-		sb.append("}\n");
+		indent(1, msb);
+		msb.append("@Override\n");
+		indent(1, msb);
+		msb.append("public Object apply( Object hi ) {\n");
+		indent(2, msb);
+		msb.append("if ( hi == null )\n");
+		indent(3, msb);
+		msb.append("return null;\n\n");
 
 		for (Tuple2<String, RewriterRule> appliedRewrites : rewrites) {
-			sb.append('\n');
-			indent(1, sb);
-			sb.append("// Implementation of the rule " + appliedRewrites._2 + "\n");
-			sb.append(generateRewriteFunction(appliedRewrites._2, appliedRewrites._1, 1, ctx));
+			if (implemented.contains(appliedRewrites._1)) {
+				indent(2, msb);
+				msb.append("hi = " + appliedRewrites._1 + "((Hop) hi);\n");
+			}
 		}
 
-		sb.append("}");
-		return sb.toString();
+		indent(2, msb);
+		msb.append("return hi;\n");
+
+		indent(1, msb);
+		msb.append("}\n");
+
+		msb.append(implSb);
+
+		msb.append("}");
+		return msb.toString();
 	}
 
 	private static String generateRewriteFunction(RewriterRule rule, String fName, int indentation, final RuleContext ctx) {

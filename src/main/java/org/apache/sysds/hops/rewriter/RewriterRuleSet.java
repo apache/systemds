@@ -2,6 +2,7 @@ package org.apache.sysds.hops.rewriter;
 
 import org.apache.commons.collections4.bidimap.DualHashBidiMap;
 import org.apache.commons.lang3.mutable.MutableObject;
+import org.apache.sysds.hops.Hop;
 import org.apache.sysds.utils.Hash;
 import org.checkerframework.checker.units.qual.A;
 import org.jetbrains.annotations.NotNull;
@@ -19,6 +20,7 @@ import java.util.Set;
 import java.util.function.BiConsumer;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 public class RewriterRuleSet {
 
@@ -259,25 +261,39 @@ public class RewriterRuleSet {
 		StringBuilder sb = new StringBuilder();
 
 		for (RewriterRule rule : rules) {
-			sb.append("::RULE\n");
-			sb.append(rule.toParsableString(ctx));
-			sb.append('\n');
+			try {
+				sb.append("::RULE\n");
+				sb.append(rule.toParsableString(ctx));
+				sb.append("\n\n");
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
 		}
 
 		return sb.toString();
 	}
 
 	public static RewriterRuleSet deserialize(String data, final RuleContext ctx) {
-		String[] lines = data.split("\n");
+		return deserialize(data.split("\n"), ctx);
+	}
+
+	public static RewriterRuleSet deserialize(List<String> data, final RuleContext ctx) {
+		return deserialize(data.toArray(String[]::new), ctx);
+	}
+
+	public static RewriterRuleSet deserialize(String[] data, final RuleContext ctx) {
+		//String[] lines = data.split("\n");
 		List<String> currentLines = new ArrayList<>();
 		List<RewriterRule> rules = new ArrayList<>();
 
-		for (int i = 0; i < lines.length; i++) {
-			if (lines[i].equals("::RULE")) {
-				rules.add(RewriterUtils.parseRule(String.join("\n", currentLines), ctx));
-				currentLines.clear();
+		for (int i = 0; i < data.length; i++) {
+			if (data[i].equals("::RULE")) {
+				if (!currentLines.isEmpty()) {
+					rules.add(RewriterUtils.parseRule(String.join("\n", currentLines), ctx));
+					currentLines.clear();
+				}
 			} else {
-				currentLines.add(lines[i]);
+				currentLines.add(data[i]);
 			}
 		}
 
@@ -287,6 +303,18 @@ public class RewriterRuleSet {
 		}
 
 		return new RewriterRuleSet(ctx, rules);
+	}
+
+	public Function<Hop, Hop> compile(String className, boolean printErrors) {
+		try {
+			List<Tuple2<String, RewriterRule>> mRules = IntStream.range(0, rules.size()).mapToObj(i -> new Tuple2<>("_applyRewrite" + i, rules.get(i))).collect(Collectors.toList());
+			return RewriterCodeGen.compileRewrites(className, mRules, ctx, true, printErrors);
+		} catch (Exception e) {
+			if (printErrors)
+				e.printStackTrace();
+
+			return null;
+		}
 	}
 
 

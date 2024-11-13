@@ -4,15 +4,28 @@ import org.apache.sysds.hops.Hop;
 import org.apache.sysds.hops.rewrite.HopRewriteRule;
 import org.apache.sysds.hops.rewrite.ProgramRewriteStatus;
 
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.function.Function;
 
 public class RewriteAutomaticallyGenerated extends HopRewriteRule {
+	public static final String FILE_PATH = "/Users/janniklindemann/Dev/MScThesis/rules.rl";
 
 	private Function<Hop, Hop> rewriteFn;
 
-	public RewriteAutomaticallyGenerated(String file) {
-		// TODO
+	public RewriteAutomaticallyGenerated() {
+		// Try to read the file
+		try {
+			final RuleContext ctx = RewriterUtils.buildDefaultContext();
+			List<String> lines = Files.readAllLines(Paths.get(FILE_PATH));
+			RewriterRuleSet ruleSet = RewriterRuleSet.deserialize(lines, ctx);
+
+			rewriteFn = ruleSet.compile("AutomaticallyGeneratedRewriteFunction", true);
+		} catch (IOException e) {
+		}
 	}
 
 	public RewriteAutomaticallyGenerated(Function<Hop, Hop> rewriteFn) {

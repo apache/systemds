@@ -46,10 +46,10 @@ public class CodeGenTests {
 				.completeRule(stmt1, stmt2)
 				.build();
 
-		System.out.println(RewriterCodeGen.generateClass("MRuleTest", List.of(new Tuple2<>("testRule", rule)), ctx));
+		System.out.println(RewriterCodeGen.generateClass("MRuleTest", List.of(new Tuple2<>("testRule", rule)), ctx, false, false));
 
 		try {
-			Function<Hop, Hop> f = RewriterCodeGen.compileRewrites("MRuleTest", List.of(new Tuple2<>("testRule", rule)), ctx);
+			Function<Hop, Hop> f = RewriterCodeGen.compileRewrites("MRuleTest", List.of(new Tuple2<>("testRule", rule)), ctx, false, false);
 			Hop l = new LiteralOp(1);
 			Hop add = new BinaryOp("test", Types.DataType.SCALAR, Types.ValueType.INT64, Types.OpOp2.PLUS, l, l);
 			Hop result = f.apply(add);
@@ -74,10 +74,10 @@ public class CodeGenTests {
 				.completeRule(stmt1, stmt2)
 				.build();
 
-		System.out.println(RewriterCodeGen.generateClass("MRuleTest", List.of(new Tuple2<>("testRule", rule)), ctx));
+		System.out.println(RewriterCodeGen.generateClass("MRuleTest", List.of(new Tuple2<>("testRule", rule)), ctx, false, false));
 
 		try {
-			Function<Hop, Hop> f = RewriterCodeGen.compileRewrites("MRuleTest", List.of(new Tuple2<>("testRule", rule)), ctx);
+			Function<Hop, Hop> f = RewriterCodeGen.compileRewrites("MRuleTest", List.of(new Tuple2<>("testRule", rule)), ctx, false, false);
 			HashMap<String, Hop> inputParams = new HashMap<>();
 			inputParams.put(DataExpression.RAND_ROWS, new LiteralOp(100));
 			inputParams.put(DataExpression.RAND_COLS, new LiteralOp(100));
@@ -110,10 +110,10 @@ public class CodeGenTests {
 				.completeRule(stmt1, stmt2)
 				.build();
 
-		System.out.println(RewriterCodeGen.generateClass("MRuleTest", List.of(new Tuple2<>("testRule", rule)), ctx));
+		System.out.println(RewriterCodeGen.generateClass("MRuleTest", List.of(new Tuple2<>("testRule", rule)), ctx, false, false));
 
 		try {
-			Function<Hop, Hop> f = RewriterCodeGen.compileRewrites("MRuleTest", List.of(new Tuple2<>("testRule", rule)), ctx);
+			Function<Hop, Hop> f = RewriterCodeGen.compileRewrites("MRuleTest", List.of(new Tuple2<>("testRule", rule)), ctx, false, false);
 			HashMap<String, Hop> inputParams = new HashMap<>();
 			inputParams.put(DataExpression.RAND_ROWS, new LiteralOp(100));
 			inputParams.put(DataExpression.RAND_COLS, new LiteralOp(100));
@@ -146,10 +146,10 @@ public class CodeGenTests {
 				.completeRule(stmt1, stmt2)
 				.build();
 
-		System.out.println(RewriterCodeGen.generateClass("MRuleTest", List.of(new Tuple2<>("testRule", rule)), ctx));
+		System.out.println(RewriterCodeGen.generateClass("MRuleTest", List.of(new Tuple2<>("testRule", rule)), ctx, false, false));
 
 		try {
-			Function<Hop, Hop> f = RewriterCodeGen.compileRewrites("MRuleTest", List.of(new Tuple2<>("testRule", rule)), ctx);
+			Function<Hop, Hop> f = RewriterCodeGen.compileRewrites("MRuleTest", List.of(new Tuple2<>("testRule", rule)), ctx, false, false);
 			HashMap<String, Hop> inputParams = new HashMap<>();
 			inputParams.put(DataExpression.RAND_ROWS, new LiteralOp(100));
 			inputParams.put(DataExpression.RAND_COLS, new LiteralOp(100));
@@ -182,10 +182,10 @@ public class CodeGenTests {
 				.completeRule(stmt1, stmt2)
 				.build();
 
-		System.out.println(RewriterCodeGen.generateClass("MRuleTest", List.of(new Tuple2<>("testRule", rule)), ctx));
+		System.out.println(RewriterCodeGen.generateClass("MRuleTest", List.of(new Tuple2<>("testRule", rule)), ctx, false, false));
 
 		try {
-			Function<Hop, Hop> f = RewriterCodeGen.compileRewrites("MRuleTest", List.of(new Tuple2<>("testRule", rule)), ctx);
+			Function<Hop, Hop> f = RewriterCodeGen.compileRewrites("MRuleTest", List.of(new Tuple2<>("testRule", rule)), ctx, false, false);
 			HashMap<String, Hop> inputParams = new HashMap<>();
 			inputParams.put(DataExpression.RAND_ROWS, new LiteralOp(100));
 			inputParams.put(DataExpression.RAND_COLS, new LiteralOp(100));

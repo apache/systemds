@@ -448,9 +448,8 @@ public class RewriterInstruction extends RewriterStatement {
 	}
 
 	@Override
-	public int toParsableString(StringBuilder sb, Map<RewriterRule.IdentityRewriterStatement, Integer> refs, int maxRefId, Map<String, Set<String>> vars, final RuleContext ctx) {
-		RewriterRule.IdentityRewriterStatement id = new RewriterRule.IdentityRewriterStatement(this);
-		Integer ref = refs.get(id);
+	public int toParsableString(StringBuilder sb, Map<RewriterStatement, Integer> refs, int maxRefId, Map<String, Set<String>> vars, final RuleContext ctx) {
+		Integer ref = refs.get(this);
 
 		if (ref != null) {
 			sb.append('$');
@@ -463,7 +462,7 @@ public class RewriterInstruction extends RewriterStatement {
 			sb.append('$');
 			sb.append(maxRefId);
 			sb.append(':');
-			refs.put(id, maxRefId);
+			refs.put(this, maxRefId);
 		}
 
 		sb.append(instr);

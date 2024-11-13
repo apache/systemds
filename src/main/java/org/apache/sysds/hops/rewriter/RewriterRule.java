@@ -373,6 +373,14 @@ public class RewriterRule extends AbstractRewriterRule {
 			return fromRoot.toParsableString(ctx) + " <=> " + toRoot.toParsableString(ctx);
 	}
 
+	public String toParsableString(final RuleContext ctx) {
+		Map<String, Set<String>> varDefs = new HashMap<>();
+		String stmt1 = fromRoot.toParsableString(ctx, varDefs);
+		String stmt2 = toRoot.toParsableString(ctx, varDefs);
+		String defs = RewriterStatement.parsableDefinitions(varDefs);
+		return defs + "\n" + stmt1 + "\n=>\n" + stmt2;
+	}
+
 	// TODO: Rework
 	public List<RewriterRule> createNonGenericRules(Map<String, Set<String>> funcMappings) {
 		/*Set<IdentityRewriterStatement> visited = new HashSet<>();

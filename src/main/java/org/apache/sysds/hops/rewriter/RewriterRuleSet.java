@@ -255,6 +255,48 @@ public class RewriterRuleSet {
 		return builder.toString();
 	}
 
+	public String serialize(final RuleContext ctx) {
+		StringBuilder sb = new StringBuilder();
+
+		for (RewriterRule rule : rules) {
+			sb.append("::RULE\n");
+			sb.append(rule.toParsableString(ctx));
+			sb.append('\n');
+		}
+
+		return sb.toString();
+	}
+
+	public static RewriterRuleSet deserialize(String data, final RuleContext ctx) {
+		String[] lines = data.split("\n");
+		List<String> currentLines = new ArrayList<>();
+		List<RewriterRule> rules = new ArrayList<>();
+
+		for (int i = 0; i < lines.length; i++) {
+			if (lines[i].equals("::RULE")) {
+				rules.add(RewriterUtils.parseRule(String.join("\n", currentLines), ctx));
+				currentLines.clear();
+			} else {
+				currentLines.add(lines[i]);
+			}
+		}
+
+		if (!currentLines.isEmpty()) {
+			rules.add(RewriterUtils.parseRule(String.join("\n", currentLines), ctx));
+			currentLines.clear();
+		}
+
+		return new RewriterRuleSet(ctx, rules);
+	}
+
+
+
+
+
+
+
+	////////// LEGACY CODE //////////
+
 	public static RewriterRuleSet buildUnfoldAggregations(final RuleContext ctx) {
 		ArrayList<RewriterRule> rules = new ArrayList<>();
 		HashMap<Integer, RewriterStatement> hooks = new HashMap<>();

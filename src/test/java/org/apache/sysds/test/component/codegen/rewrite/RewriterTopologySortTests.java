@@ -150,11 +150,6 @@ public class RewriterTopologySortTests {
 	}
 
 	@Test
-	public void test3() {
-		RewriterRuntimeUtils.setupIfNecessary();
-	}
-
-	@Test
 	public void test4() {
 		RewriterStatement stmt = RewriterUtils.parse("sum(*(A, A))", ctx, "MATRIX:A");
 		stmt = converter.apply(stmt);

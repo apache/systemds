@@ -13,6 +13,7 @@ import org.apache.sysds.hops.rewriter.RewriterStatement;
 import org.apache.sysds.hops.rewriter.RewriterUtils;
 import org.apache.sysds.hops.rewriter.RuleContext;
 import org.apache.sysds.hops.rewriter.TopologicalSort;
+import org.apache.sysds.performance.TimingUtils;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import scala.Tuple2;
@@ -20,6 +21,7 @@ import scala.Tuple5;
 
 import java.io.BufferedReader;
 import java.io.FileReader;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -165,6 +167,14 @@ public class RewriterClusteringTest {
 			System.out.println("Cost1: " + rule.getStmt1().getCost(ctx));
 			System.out.println("Cost2: " + rule.getStmt2().getCost(ctx));
 		});
+
+		String serialized = ruleCreator.getRuleSet().serialize(ctx);
+
+		try (FileWriter writer = new FileWriter("/Users/janniklindemann/Dev/MScThesis/rules.rl")) {
+			writer.write(serialized);
+		} catch (IOException ex) {
+			ex.printStackTrace();
+		}
 	}
 
 	private void computeCost(RewriterStatement subExpr, final RuleContext ctx) {

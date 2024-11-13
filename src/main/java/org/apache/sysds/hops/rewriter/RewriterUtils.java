@@ -353,8 +353,19 @@ public class RewriterUtils {
 		return parse(split[split.length-1], ctx, Arrays.copyOfRange(split, 0, split.length-1));
 	}
 
+	public static RewriterRule parseRule(String expr, final RuleContext ctx) {
+		// Remove empty lines
+		expr = expr.replaceAll("\n\\s*\n", "\n");
+		String[] split = expr.split("\n");
+		return parseRule(split[split.length-2], split[split.length-1], ctx, Arrays.copyOfRange(split, 0, split.length-2));
+	}
+
 	public static RewriterStatement parse(String expr, final RuleContext ctx, String... varDefinitions) {
 		return parse(expr, ctx, new HashMap<>(), varDefinitions);
+	}
+
+	public static RewriterRule parseRule(String exprFrom, String exprTo, final RuleContext ctx, String... varDefinitions) {
+		return parseRule(exprFrom, exprTo, ctx, new HashMap<>(), varDefinitions);
 	}
 
 	public static RewriterStatement parse(String expr, final RuleContext ctx, Map<String, RewriterStatement> dataTypes, String... varDefinitions) {
@@ -363,6 +374,21 @@ public class RewriterUtils {
 
 		RewriterStatement parsed = parseExpression(expr, new HashMap<>(), dataTypes, ctx);
 		return ctx.metaPropagator != null ? ctx.metaPropagator.apply(parsed) : parsed;
+	}
+
+	public static RewriterRule parseRule(String exprFrom, String exprTo, final RuleContext ctx, Map<String, RewriterStatement> dataTypes, String... varDefinitions) {
+		for (String def : varDefinitions)
+			parseDataTypes(def, dataTypes, ctx);
+
+		RewriterStatement parsedFrom = parseExpression(exprFrom, new HashMap<>(), dataTypes, ctx);
+		RewriterStatement parsedTo = parseExpression(exprTo, new HashMap<>(), dataTypes, ctx);
+
+		if (ctx.metaPropagator != null) {
+			parsedFrom = ctx.metaPropagator.apply(parsedFrom);
+			parsedTo = ctx.metaPropagator.apply(parsedTo);
+		}
+
+		return new RewriterRuleBuilder(ctx).completeRule(parsedFrom, parsedTo).build();
 	}
 
 	/**

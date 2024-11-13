@@ -455,35 +455,43 @@ public abstract class RewriterStatement {
 	// Performs a nested copy until a condition is met
 	public abstract RewriterStatement nestedCopyOrInject(Map<RewriterStatement, RewriterStatement> copiedObjects, TriFunction<RewriterStatement, RewriterStatement, Integer, RewriterStatement> injector, RewriterStatement parent, int pIdx);
 	// Returns the new maxRefId
-	abstract int toParsableString(StringBuilder builder, Map<RewriterRule.IdentityRewriterStatement, Integer> refs, int maxRefId, Map<String, Set<String>> vars, final RuleContext ctx);
+	abstract int toParsableString(StringBuilder builder, Map<RewriterStatement, Integer> refs, int maxRefId, Map<String, Set<String>> vars, final RuleContext ctx);
 	abstract void refreshReturnType(final RuleContext ctx);
+
+	public static String parsableDefinitions(Map<String, Set<String>> defs) {
+		StringBuilder sb = new StringBuilder();
+		defs.forEach((k, v) -> {
+			sb.append(k);
+			sb.append(':');
+
+			int i = 0;
+			for (String varName : v) {
+				if (i > 0)
+					sb.append(',');
+
+				sb.append(varName);
+				i++;
+			}
+
+			sb.append('\n');
+		});
+
+		return sb.toString();
+	}
+
+	public String toParsableString(final RuleContext ctx, Map<String, Set<String>> defs) {
+		StringBuilder sb = new StringBuilder();
+		toParsableString(sb, new HashMap<>(), 0, defs, ctx);
+		return sb.toString();
+	}
 
 	public String toParsableString(final RuleContext ctx, boolean includeDefinitions) {
 		StringBuilder sb = new StringBuilder();
 		HashMap<String, Set<String>> defs = new HashMap<>();
 		toParsableString(sb, new HashMap<>(), 0, defs, ctx);
 
-		if (includeDefinitions) {
-			StringBuilder newSB = new StringBuilder();
-			defs.forEach((k, v) -> {
-				newSB.append(k);
-				newSB.append(':');
-
-				int i = 0;
-				for (String varName : v) {
-					if (i > 0)
-						newSB.append(',');
-
-					newSB.append(varName);
-					i++;
-				}
-
-				newSB.append('\n');
-			});
-
-			newSB.append(sb);
-			return newSB.toString();
-		}
+		if (includeDefinitions)
+			return parsableDefinitions(defs) + sb;
 
 		return sb.toString();
 	}

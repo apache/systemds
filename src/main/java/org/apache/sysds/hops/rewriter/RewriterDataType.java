@@ -315,7 +315,7 @@ public class RewriterDataType extends RewriterStatement {
 	}
 
 	@Override
-	public int toParsableString(StringBuilder sb, Map<RewriterRule.IdentityRewriterStatement, Integer> refs, int maxRefId, Map<String, Set<String>> vars, final RuleContext ctx) {
+	public int toParsableString(StringBuilder sb, Map<RewriterStatement, Integer> refs, int maxRefId, Map<String, Set<String>> vars, final RuleContext ctx) {
 		String mType = type;
 		String varStr = id;
 

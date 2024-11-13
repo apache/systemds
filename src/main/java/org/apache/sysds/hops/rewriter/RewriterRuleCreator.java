@@ -117,6 +117,10 @@ public class RewriterRuleCreator {
 		return true;
 	}
 
+	public RewriterRuleSet getRuleSet() {
+		return ruleSet;
+	}
+
 
 
 

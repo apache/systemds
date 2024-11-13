@@ -1,0 +1,79 @@
+package org.apache.sysds.hops.rewriter;
+
+import org.apache.sysds.hops.Hop;
+import org.apache.sysds.hops.rewrite.HopRewriteRule;
+import org.apache.sysds.hops.rewrite.ProgramRewriteStatus;
+
+import java.util.ArrayList;
+import java.util.function.Function;
+
+public class RewriteAutomaticallyGenerated extends HopRewriteRule {
+
+	private Function<Hop, Hop> rewriteFn;
+
+	public RewriteAutomaticallyGenerated(String file) {
+		// TODO
+	}
+
+	public RewriteAutomaticallyGenerated(Function<Hop, Hop> rewriteFn) {
+		this.rewriteFn = rewriteFn;
+	}
+
+	@Override
+	public ArrayList<Hop> rewriteHopDAGs(ArrayList<Hop> roots, ProgramRewriteStatus state) {
+		if( roots == null || rewriteFn == null )
+			return roots;
+
+		//one pass rewrite-descend (rewrite created pattern)
+		for( Hop h : roots )
+			rule_apply( h, false );
+		Hop.resetVisitStatus(roots, true);
+
+		//one pass descend-rewrite (for rollup)
+		for( Hop h : roots )
+			rule_apply( h, true );
+
+		return roots;
+	}
+
+	@Override
+	public Hop rewriteHopDAG(Hop root, ProgramRewriteStatus state) {
+		if( root == null || rewriteFn == null )
+			return root;
+
+		//one pass rewrite-descend (rewrite created pattern)
+		rule_apply( root, false );
+
+		root.resetVisitStatus();
+
+		//one pass descend-rewrite (for rollup)
+		rule_apply( root, true );
+
+		return root;
+	}
+
+	private void rule_apply(Hop hop, boolean descendFirst)
+	{
+		if(hop.isVisited())
+			return;
+
+		//recursively process children
+		for( int i=0; i<hop.getInput().size(); i++)
+		{
+			Hop hi = hop.getInput().get(i);
+
+			//process childs recursively first (to allow roll-up)
+			if( descendFirst )
+				rule_apply(hi, descendFirst); //see below
+
+			//apply actual simplification rewrites (of childs incl checks)
+			hi = rewriteFn.apply(hop);
+
+			//process childs recursively after rewrites (to investigate pattern newly created by rewrites)
+			if( !descendFirst )
+				rule_apply(hi, descendFirst);
+		}
+
+		hop.setVisited();
+	}
+}

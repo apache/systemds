@@ -183,7 +183,7 @@ public class CodeGenUtils {
 				return "AggUnaryOp";
 		}
 
-		throw new NotImplementedException();
+		throw new NotImplementedException(stmt.trueTypedInstruction(ctx));
 	}
 
 	public static String[] getReturnType(RewriterStatement stmt, final RuleContext ctx) {

@@ -17,6 +17,7 @@ public class RewriterCodeGen {
 
 	public static Function<Hop, Hop> compileRewrites(String className, List<Tuple2<String, RewriterRule>> rewrites, final RuleContext ctx, boolean ignoreErrors, boolean printErrors) throws Exception {
 		String code = generateClass(className, rewrites, ctx, ignoreErrors, printErrors);
+		System.out.println("Compiling code:\n" + code);
 		SimpleCompiler compiler = new SimpleCompiler();
 		compiler.cook(code);
 		Class<?> mClass = compiler.getClassLoader().loadClass(className);

@@ -8,9 +8,11 @@ import org.apache.sysds.hops.Hop;
 import org.apache.sysds.hops.LiteralOp;
 import org.apache.sysds.hops.ReorgOp;
 import org.apache.sysds.hops.rewrite.HopRewriteUtils;
+import org.apache.sysds.hops.rewriter.RewriteAutomaticallyGenerated;
 import org.apache.sysds.hops.rewriter.RewriterCodeGen;
 import org.apache.sysds.hops.rewriter.RewriterRule;
 import org.apache.sysds.hops.rewriter.RewriterRuleBuilder;
+import org.apache.sysds.hops.rewriter.RewriterRuleSet;
 import org.apache.sysds.hops.rewriter.RewriterStatement;
 import org.apache.sysds.hops.rewriter.RewriterUtils;
 import org.apache.sysds.hops.rewriter.RuleContext;
@@ -20,6 +22,9 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 import scala.Tuple2;
 
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -200,6 +205,17 @@ public class CodeGenTests {
 		} catch (Exception e) {
 			e.printStackTrace();
 			assert false;
+		}
+	}
+
+	@Test
+	public void codeGen() {
+		try {
+			List<String> lines = Files.readAllLines(Paths.get(RewriteAutomaticallyGenerated.FILE_PATH));
+			RewriterRuleSet ruleSet = RewriterRuleSet.deserialize(lines, ctx);
+			System.out.println(ruleSet.toJavaCode("GeneratedRewriteClass", false));
+		} catch (IOException e) {
+			e.printStackTrace();
 		}
 	}
 

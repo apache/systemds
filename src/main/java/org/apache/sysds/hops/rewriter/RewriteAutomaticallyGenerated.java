@@ -25,7 +25,7 @@ public class RewriteAutomaticallyGenerated extends HopRewriteRule {
 			List<String> lines = Files.readAllLines(Paths.get(FILE_PATH));
 			RewriterRuleSet ruleSet = RewriterRuleSet.deserialize(lines, ctx);
 
-			rewriteFn = ruleSet.compile("AutomaticallyGeneratedRewriteFunction", true);
+			rewriteFn = ruleSet.compile("AutomaticallyGeneratedRewriteFunction", false);
 			existingRewrites = this;
 		} catch (IOException e) {
 		}

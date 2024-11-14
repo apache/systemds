@@ -305,6 +305,11 @@ public class RewriterRuleSet {
 		return new RewriterRuleSet(ctx, rules);
 	}
 
+	public String toJavaCode(String className, boolean printErrors) {
+		List<Tuple2<String, RewriterRule>> mRules = IntStream.range(0, rules.size()).mapToObj(i -> new Tuple2<>("_applyRewrite" + i, rules.get(i))).collect(Collectors.toList());
+		return RewriterCodeGen.generateClass(className, mRules, ctx, true, printErrors);
+	}
+
 	public Function<Hop, Hop> compile(String className, boolean printErrors) {
 		try {
 			List<Tuple2<String, RewriterRule>> mRules = IntStream.range(0, rules.size()).mapToObj(i -> new Tuple2<>("_applyRewrite" + i, rules.get(i))).collect(Collectors.toList());

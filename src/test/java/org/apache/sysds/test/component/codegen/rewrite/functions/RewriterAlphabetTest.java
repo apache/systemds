@@ -1,9 +1,26 @@
 package org.apache.sysds.test.component.codegen.rewrite.functions;
 
+import com.ibm.icu.text.PluralRules;
 import org.apache.sysds.hops.rewriter.RewriterAlphabetEncoder;
+import org.apache.sysds.hops.rewriter.RewriterStatement;
+import org.apache.sysds.hops.rewriter.RewriterUtils;
+import org.apache.sysds.hops.rewriter.RuleContext;
+import org.junit.BeforeClass;
 import org.junit.Test;
 
+import java.util.List;
+import java.util.function.Function;
+
 public class RewriterAlphabetTest {
+
+	private static RuleContext ctx;
+	private static Function<RewriterStatement, RewriterStatement> canonicalConverter;
+
+	@BeforeClass
+	public static void setup() {
+		ctx = RewriterUtils.buildDefaultContext();
+		canonicalConverter = RewriterUtils.buildCanonicalFormConverter(ctx, false);
+	}
 
 	@Test
 	public void testDecode1() {
@@ -14,11 +31,38 @@ public class RewriterAlphabetTest {
 	}
 
 	@Test
+	public void testDecode2() {
+		int l = 5;
+		int n = 5;
+		int[] digits = RewriterAlphabetEncoder.fromBaseNNumber(l, n);
+		assert digits.length == 2 && digits[0] == 0 && digits[1] == 0;
+	}
+
+	@Test
 	public void testEncode1() {
 		int[] digits = new int[] { 1, 0, 2 };
+		int[] digits2 = new int[] {4, 4, 4};
 		int n = 5;
 		int l = RewriterAlphabetEncoder.toBaseNNumber(digits, n);
+		int l2 = RewriterAlphabetEncoder.toBaseNNumber(digits2, n);
+		System.out.println(l);
+		System.out.println(Integer.toBinaryString(l));
+		System.out.println(l2);
+		System.out.println(Integer.toBinaryString(l2));
 		assert l == 27;
+	}
+
+	@Test
+	public void testRandomStatementGeneration() {
+		for (int i = 1; i < 10000; i++) {
+			List<RewriterAlphabetEncoder.Operand> ops = RewriterAlphabetEncoder.decodeOrderedStatements(i);
+			System.out.println(ops);
+			System.out.println(RewriterAlphabetEncoder.buildAllPossibleDAGs(ops, ctx).size());
+
+			/*for (RewriterStatement stmt : RewriterAlphabetEncoder.buildAllPossibleDAGs(ops, ctx)) {
+				System.out.println(stmt);
+			}*/
+		}
 	}
 
 }

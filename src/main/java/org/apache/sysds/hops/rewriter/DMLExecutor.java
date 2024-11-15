@@ -9,6 +9,10 @@ import java.util.function.Consumer;
 public class DMLExecutor {
 	private static PrintStream origPrintStream = System.out;
 
+	public static synchronized void executeCode(String code) {
+		executeCode(code, s -> {});
+	}
+
 	// TODO: We will probably need some kind of watchdog
 	// This cannot run in parallel
 	public static synchronized void executeCode(String code, Consumer<String> consoleInterceptor) {

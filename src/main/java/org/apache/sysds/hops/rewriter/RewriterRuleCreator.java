@@ -135,15 +135,22 @@ public class RewriterRuleCreator {
 		String sessionId = UUID.randomUUID().toString();
 		String code = DMLCodeGenerator.generateRuleValidationDML(rule, sessionId);
 
-		RewriterRuntimeUtils.attachHopInterceptor(prog -> {
-			List<RewriterStatement> topLevelStmts = RewriterRuntimeUtils.getTopLevelHops(prog, ctx);
-			System.out.println(topLevelStmts);
-			// TODO: Evaluate cost and if our rule can still be applied
-			return true; // The program should still be executed for validation purposes
-		});
-
 		MutableBoolean isValid = new MutableBoolean(false);
 		DMLExecutor.executeCode(code, DMLCodeGenerator.ruleValidationScript(sessionId, isValid::setValue));
+
+		String code2 = DMLCodeGenerator.generateDML(rule.getStmt1());
+		RewriterRuntimeUtils.attachHopInterceptor(prog -> {
+			DMLExecutor.println("HERE");
+			DMLExecutor.println(prog.getStatementBlocks().get(0).getHops().get(0).getInput(0));
+			List<RewriterStatement> topLevelStmts = RewriterRuntimeUtils.getTopLevelHops(prog, ctx);
+			DMLExecutor.println(topLevelStmts);
+			// TODO: Evaluate cost and if our rule can still be applied
+			return false; // The program should not be executed as we just want to extract any rewrites that are applied to the current statement
+		});
+
+		System.out.println(code2);
+
+		DMLExecutor.executeCode(code2);
 
 		return isValid.booleanValue();
 	}

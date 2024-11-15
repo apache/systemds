@@ -4,6 +4,7 @@ import org.apache.commons.lang3.mutable.MutableBoolean;
 import org.apache.sysds.hops.rewriter.DMLCodeGenerator;
 import org.apache.sysds.hops.rewriter.DMLExecutor;
 import org.apache.sysds.hops.rewriter.RewriterRule;
+import org.apache.sysds.hops.rewriter.RewriterRuleCreator;
 import org.apache.sysds.hops.rewriter.RewriterRuleSet;
 import org.apache.sysds.hops.rewriter.RewriterStatement;
 import org.apache.sysds.hops.rewriter.RewriterUtils;
@@ -57,5 +58,13 @@ public class DMLCodeGenTest {
 
 		System.out.println("Exiting...");
 		assert valid.booleanValue();
+	}
+
+	@Test
+	public void test3() {
+		String ruleStr2 = "MATRIX:A,B\nt(+(A,t(B)))\n=>\n+(t(A),B)";
+		RewriterRule rule2 = RewriterUtils.parseRule(ruleStr2, ctx);
+
+		RewriterRuleCreator.validateRuleCorrectnessAndGains(rule2, ctx);
 	}
 }

@@ -1,6 +1,7 @@
 package org.apache.sysds.hops.rewriter;
 
 import org.apache.commons.collections4.bidimap.DualHashBidiMap;
+import org.apache.commons.lang3.mutable.MutableBoolean;
 import scala.App;
 
 import java.util.ArrayList;
@@ -9,6 +10,7 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 import java.util.function.Consumer;
 
 public class RewriterRuleCreator {
@@ -127,6 +129,24 @@ public class RewriterRuleCreator {
 
 
 	///// STATIC METHODS /////
+
+	// This runs the rule from expressions
+	public static boolean validateRuleCorrectnessAndGains(RewriterRule rule, final RuleContext ctx) {
+		String sessionId = UUID.randomUUID().toString();
+		String code = DMLCodeGenerator.generateRuleValidationDML(rule, sessionId);
+
+		RewriterRuntimeUtils.attachHopInterceptor(prog -> {
+			List<RewriterStatement> topLevelStmts = RewriterRuntimeUtils.getTopLevelHops(prog, ctx);
+			System.out.println(topLevelStmts);
+			// TODO: Evaluate cost and if our rule can still be applied
+			return true; // The program should still be executed for validation purposes
+		});
+
+		MutableBoolean isValid = new MutableBoolean(false);
+		DMLExecutor.executeCode(code, DMLCodeGenerator.ruleValidationScript(sessionId, isValid::setValue));
+
+		return isValid.booleanValue();
+	}
 
 	public static RewriterRule createRule(RewriterStatement from, RewriterStatement to, RewriterStatement canonicalForm1, RewriterStatement canonicalForm2, final RuleContext ctx) {
 		from = from.nestedCopy(true);

@@ -38,6 +38,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Random;
 import java.util.Set;
 import java.util.UUID;
@@ -208,6 +209,71 @@ public class RewriterRuntimeUtils {
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
+	}
+
+	public static List<RewriterStatement> getTopLevelHops(DMLProgram program, final RuleContext ctx) {
+		List<RewriterStatement> l = new ArrayList<>();
+		try {
+			for (String namespaceKey : program.getNamespaces().keySet()) {
+				for (String fname : program.getFunctionStatementBlocks(namespaceKey).keySet()) {
+					FunctionStatementBlock fsblock = program.getFunctionStatementBlock(namespaceKey, fname);
+					l.addAll(getTopLevelHops(fsblock, ctx));
+				}
+			}
+
+			for (StatementBlock sb : program.getStatementBlocks()) {
+				l.addAll(getTopLevelHops(sb, ctx));
+			}
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+
+		return l;
+	}
+
+	private static List<RewriterStatement> getTopLevelHops(StatementBlock sb, final RuleContext ctx) {
+		List<RewriterStatement> l = new ArrayList<>();
+		if (sb instanceof FunctionStatementBlock)
+		{
+			FunctionStatementBlock fsb = (FunctionStatementBlock) sb;
+			FunctionStatement fstmt = (FunctionStatement) fsb.getStatement(0);
+			fstmt.getBody().forEach(s -> l.addAll(getTopLevelHops(s, ctx)));
+		}
+		else if (sb instanceof WhileStatementBlock)
+		{
+			WhileStatementBlock wsb = (WhileStatementBlock) sb;
+			WhileStatement wstmt = (WhileStatement)wsb.getStatement(0);
+			l.add(buildDAG(wsb.getPredicateHops(), ctx));
+			wstmt.getBody().forEach(s -> l.addAll(getTopLevelHops(s, ctx)));
+		}
+		else if (sb instanceof IfStatementBlock)
+		{
+			IfStatementBlock isb = (IfStatementBlock) sb;
+			IfStatement istmt = (IfStatement)isb.getStatement(0);
+			l.add(buildDAG(isb.getPredicateHops(), ctx));
+			istmt.getIfBody().forEach(s -> l.addAll(getTopLevelHops(s, ctx)));
+			istmt.getElseBody().forEach(s -> l.addAll(getTopLevelHops(s, ctx)));
+		}
+		else if (sb instanceof ForStatementBlock)
+		{
+			ForStatementBlock fsb = (ForStatementBlock) sb;
+			ForStatement fstmt = (ForStatement)fsb.getStatement(0);
+			l.add(buildDAG(fsb.getFromHops(), ctx));
+			l.add(buildDAG(fsb.getToHops(), ctx));
+			l.add(buildDAG(fsb.getIncrementHops(), ctx));
+			fstmt.getBody().forEach(s -> l.addAll(getTopLevelHops(s, ctx)));
+		}
+		else
+		{
+			if (sb.getHops() != null)
+				sb.getHops().forEach(hop -> l.add(buildDAG(hop, ctx)));
+		}
+
+		return l.stream().filter(Objects::nonNull).collect(Collectors.toList());
+	}
+
+	private static RewriterStatement buildDAG(Hop hop, final RuleContext ctx) {
+		return buildDAGRecursively(hop, null, new HashMap<>(), 0, 1000, ctx);
 	}
 
 	private static void handleStatementBlock(StatementBlock sb, int maxDepth, Consumer<RewriterStatement> consumer, Set<Hop> visited, RewriterDatabase db, final RuleContext ctx) {

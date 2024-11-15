@@ -7,6 +7,7 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.BiFunction;
+import java.util.function.Consumer;
 import java.util.function.Function;
 
 public class DMLCodeGenerator {
@@ -57,6 +58,24 @@ public class DMLCodeGenerator {
 
 			return false;
 		});
+	}
+
+	public static Consumer<String> ruleValidationScript(String sessionId, Consumer<Boolean> validator) {
+		return line -> {
+			if (!line.startsWith(sessionId))
+				return;
+
+			if (line.endsWith("valid: TRUE")) {
+				validator.accept(true);
+			} else {
+				DMLExecutor.println("An invalid rule was found!");
+				validator.accept(false);
+			}
+		};
+	}
+
+	public static String generateRuleValidationDML(RewriterRule rule, String sessionId) {
+		return generateRuleValidationDML(rule, EPS, sessionId);
 	}
 
 	public static String generateRuleValidationDML(RewriterRule rule, double eps, String sessionId) {

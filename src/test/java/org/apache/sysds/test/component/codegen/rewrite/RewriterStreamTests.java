@@ -826,4 +826,20 @@ public class RewriterStreamTests {
 		System.out.println("==========");
 		System.out.println(stmt1.toParsableString(ctx, true));
 	}
+
+	@Test
+	public void testSumEquality2() {
+		RewriterStatement stmt1 = RewriterUtils.parse("rowSums(colSums(A)", ctx, "MATRIX:A");
+		RewriterStatement stmt2 = RewriterUtils.parse("as.matrix(sum(A))", ctx, "MATRIX:A");
+
+		stmt1 = canonicalConverter.apply(stmt1);
+		stmt2 = canonicalConverter.apply(stmt2);
+
+		System.out.println("==========");
+		System.out.println(stmt1.toParsableString(ctx, true));
+		System.out.println("==========");
+		System.out.println(stmt2.toParsableString(ctx, true));
+
+		assert stmt1.match(RewriterStatement.MatcherContext.exactMatch(ctx, stmt2));
+	}
 }

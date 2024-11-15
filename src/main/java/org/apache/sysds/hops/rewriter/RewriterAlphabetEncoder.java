@@ -26,7 +26,11 @@ public class RewriterAlphabetEncoder {
 
 			new Operand("sum", 1, MATRIX),
 			new Operand("t", 1, MATRIX),
-			new Operand("trace", 1, MATRIX)
+			new Operand("trace", 1, MATRIX),
+			new Operand("rowSums", 1, MATRIX),
+			new Operand("colSums", 1, MATRIX),
+			new Operand("max", 1, MATRIX),
+			new Operand("min", 1, MATRIX),
 	};
 
 	private static String[] varNames = new String[] {

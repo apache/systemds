@@ -83,8 +83,8 @@ public class RewriterClusteringTest {
 		db.parForEach(expr -> {
 			if (ctr.incrementAndGet() % 10 == 0)
 				System.out.println("Done: " + ctr.intValue() + " / " + size);
-			if (ctr.intValue() > 1000)
-				return; // Skip
+			//if (ctr.intValue() > 100)
+			//	return; // Skip
 			// First, build all possible subtrees
 			//System.out.println("Eval:\n" + expr.toParsableString(ctx, true));
 			List<RewriterStatement> subExprs = RewriterUtils.generateSubtrees(expr, ctx, 300);
@@ -143,8 +143,8 @@ public class RewriterClusteringTest {
 			totalCanonicalizationMillis.addAndGet(mCanonicalizationMillis);
 		});
 
-		long MAX_MILLIS = 50000;
-		int BATCH_SIZE = 200;
+		long MAX_MILLIS = 200000;
+		int BATCH_SIZE = 400;
 		long startMillis = System.currentTimeMillis();
 
 		for (int batch = 0; batch < 100 && System.currentTimeMillis() - startMillis < MAX_MILLIS; batch++) {
@@ -152,9 +152,10 @@ public class RewriterClusteringTest {
 			Collections.shuffle(indices);
 			MutableInt ctr2 = new MutableInt(0);
 			int maxSize = indices.size();
+			final int mBATCH = batch;
 			indices.parallelStream().forEach(idx -> {
 				if (ctr2.incrementAndGet() % 10 == 0)
-					System.out.println("Done: " + ctr2.intValue() + " / " + maxSize);
+					System.out.println("Done: " + (mBATCH * BATCH_SIZE + ctr2.intValue()) + " / " + (mBATCH * BATCH_SIZE + maxSize));
 
 				List<RewriterAlphabetEncoder.Operand> ops = RewriterAlphabetEncoder.decodeOrderedStatements(idx);
 				List<RewriterStatement> stmts = RewriterAlphabetEncoder.buildAllPossibleDAGs(ops, ctx, true);
@@ -188,7 +189,11 @@ public class RewriterClusteringTest {
 		System.out.println("===== SUGGESTED REWRITES =====");
 		List<Tuple5<Double, Long, Long, RewriterStatement, RewriterStatement>> rewrites = findSuggestedRewrites(foundEquivalences);
 
+		int mCtr = 0;
 		for (Tuple5<Double, Long, Long, RewriterStatement, RewriterStatement> rewrite : rewrites) {
+			if (++mCtr % 100 == 0)
+				System.out.println("Creating rule: " + mCtr + " / " + rewrites.size());
+
 			RewriterStatement canonicalFormFrom = converter.apply(rewrite._4());
 			RewriterStatement canonicalFormTo = converter.apply(rewrite._5());
 			RewriterRule rule = RewriterRuleCreator.createRule(rewrite._4(), rewrite._5(), canonicalFormFrom, canonicalFormTo, ctx);
@@ -215,11 +220,11 @@ public class RewriterClusteringTest {
 		String serialized = ruleCreator.getRuleSet().serialize(ctx);
 		System.out.println(serialized);
 
-		/*try (FileWriter writer = new FileWriter(RewriteAutomaticallyGenerated.FILE_PATH)) {
+		try (FileWriter writer = new FileWriter(RewriteAutomaticallyGenerated.FILE_PATH)) {
 			writer.write(serialized);
 		} catch (IOException ex) {
 			ex.printStackTrace();
-		}*/
+		}
 	}
 
 	private void computeCost(RewriterStatement subExpr, final RuleContext ctx) {

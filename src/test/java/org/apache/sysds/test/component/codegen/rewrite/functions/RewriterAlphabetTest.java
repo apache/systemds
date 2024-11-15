@@ -1,6 +1,5 @@
 package org.apache.sysds.test.component.codegen.rewrite.functions;
 
-import com.ibm.icu.text.PluralRules;
 import org.apache.sysds.hops.rewriter.RewriterAlphabetEncoder;
 import org.apache.sysds.hops.rewriter.RewriterStatement;
 import org.apache.sysds.hops.rewriter.RewriterUtils;
@@ -56,8 +55,9 @@ public class RewriterAlphabetTest {
 	public void testRandomStatementGeneration() {
 		for (int i = 1; i < 10000; i++) {
 			List<RewriterAlphabetEncoder.Operand> ops = RewriterAlphabetEncoder.decodeOrderedStatements(i);
+			System.out.println("Idx: " + i);
 			System.out.println(ops);
-			System.out.println(RewriterAlphabetEncoder.buildAllPossibleDAGs(ops, ctx).size());
+			System.out.println(RewriterAlphabetEncoder.buildAllPossibleDAGs(ops, ctx, false).size());
 
 			/*for (RewriterStatement stmt : RewriterAlphabetEncoder.buildAllPossibleDAGs(ops, ctx)) {
 				System.out.println(stmt);

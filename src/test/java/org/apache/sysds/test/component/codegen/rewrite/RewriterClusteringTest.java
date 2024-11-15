@@ -2,6 +2,7 @@ package org.apache.sysds.test.component.codegen.rewrite;
 
 import org.apache.commons.lang3.mutable.MutableInt;
 import org.apache.sysds.hops.rewriter.RewriteAutomaticallyGenerated;
+import org.apache.sysds.hops.rewriter.RewriterAlphabetEncoder;
 import org.apache.sysds.hops.rewriter.RewriterCostEstimator;
 import org.apache.sysds.hops.rewriter.RewriterDatabase;
 import org.apache.sysds.hops.rewriter.RewriterHeuristic;
@@ -30,6 +31,8 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Function;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 public class RewriterClusteringTest {
 	private static RuleContext ctx;
@@ -80,8 +83,8 @@ public class RewriterClusteringTest {
 		db.parForEach(expr -> {
 			if (ctr.incrementAndGet() % 10 == 0)
 				System.out.println("Done: " + ctr.intValue() + " / " + size);
-			//if (ctr.intValue() > 1000)
-			//	return; // Skip
+			if (ctr.intValue() > 1000)
+				return; // Skip
 			// First, build all possible subtrees
 			//System.out.println("Eval:\n" + expr.toParsableString(ctx, true));
 			List<RewriterStatement> subExprs = RewriterUtils.generateSubtrees(expr, ctx, 300);
@@ -140,6 +143,46 @@ public class RewriterClusteringTest {
 			totalCanonicalizationMillis.addAndGet(mCanonicalizationMillis);
 		});
 
+		long MAX_MILLIS = 50000;
+		int BATCH_SIZE = 200;
+		long startMillis = System.currentTimeMillis();
+
+		for (int batch = 0; batch < 100 && System.currentTimeMillis() - startMillis < MAX_MILLIS; batch++) {
+			List<Integer> indices = IntStream.range(batch * BATCH_SIZE, (batch + 1) * BATCH_SIZE - 1).boxed().collect(Collectors.toList());
+			Collections.shuffle(indices);
+			MutableInt ctr2 = new MutableInt(0);
+			int maxSize = indices.size();
+			indices.parallelStream().forEach(idx -> {
+				if (ctr2.incrementAndGet() % 10 == 0)
+					System.out.println("Done: " + ctr2.intValue() + " / " + maxSize);
+
+				List<RewriterAlphabetEncoder.Operand> ops = RewriterAlphabetEncoder.decodeOrderedStatements(idx);
+				List<RewriterStatement> stmts = RewriterAlphabetEncoder.buildAllPossibleDAGs(ops, ctx, true);
+
+				for (RewriterStatement stmt : stmts) {
+					RewriterStatement canonicalForm = converter.apply(stmt);
+					computeCost(stmt, ctx);
+
+					// Insert the canonical form or retrieve the existing entry
+					RewriterStatement existingEntry = canonicalExprDB.insertOrReturn(ctx, canonicalForm);
+
+					if (existingEntry == null) {
+						List<RewriterStatement> equivalentExpressions = new ArrayList<>();
+						equivalentExpressions.add(stmt);
+						canonicalForm.unsafePutMeta("equivalentExpressions", equivalentExpressions);
+					} else {
+						List<RewriterStatement> equivalentExpressions = (List<RewriterStatement>) existingEntry.getMeta("equivalentExpressions");
+						equivalentExpressions.add(stmt);
+
+						if (equivalentExpressions.size() == 2)
+							foundEquivalences.add(existingEntry);
+
+						//System.out.println("Found equivalent statement!");
+					}
+				}
+			});
+		}
+
 		printEquivalences(/*foundEquivalences*/ Collections.emptyList(), System.currentTimeMillis() - startTime, generatedExpressions.longValue(), evaluatedExpressions.longValue(), totalCanonicalizationMillis.longValue(), failures.longValue(), true);
 
 		System.out.println("===== SUGGESTED REWRITES =====");
@@ -170,12 +213,13 @@ public class RewriterClusteringTest {
 		});
 
 		String serialized = ruleCreator.getRuleSet().serialize(ctx);
+		System.out.println(serialized);
 
-		try (FileWriter writer = new FileWriter(RewriteAutomaticallyGenerated.FILE_PATH)) {
+		/*try (FileWriter writer = new FileWriter(RewriteAutomaticallyGenerated.FILE_PATH)) {
 			writer.write(serialized);
 		} catch (IOException ex) {
 			ex.printStackTrace();
-		}
+		}*/
 	}
 
 	private void computeCost(RewriterStatement subExpr, final RuleContext ctx) {

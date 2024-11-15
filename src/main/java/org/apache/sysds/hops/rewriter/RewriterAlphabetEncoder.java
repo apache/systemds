@@ -1,25 +1,41 @@
 package org.apache.sysds.hops.rewriter;
 
 import org.apache.commons.lang3.NotImplementedException;
+import org.apache.commons.lang3.mutable.MutableInt;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
 public class RewriterAlphabetEncoder {
+	private static final List<String> ALL_TYPES = List.of("MATRIX", "FLOAT");
+	private static final List<String> MATRIX = List.of("MATRIX");
+
 	private static Operand[] instructionAlphabet = new Operand[] {
-			new Operand("+", 2),
-			new Operand("-", 2),
-			new Operand("*", 2),
-			new Operand("/", 2),
-			new Operand("%*%", 2),
+			new Operand("+", 2, ALL_TYPES),
+			new Operand("-", 2, ALL_TYPES),
+			new Operand("*", 2, ALL_TYPES),
+			new Operand("/", 2, ALL_TYPES),
+			new Operand("%*%", 2, ALL_TYPES),
+
+			new Operand("sum", 1, MATRIX),
+			new Operand("t", 1, MATRIX),
+			new Operand("trace", 1, MATRIX)
+	};
+
+	private static String[] varNames = new String[] {
+		"A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M"
 	};
 
 	private static RuleContext ctx;
 
-	private static List<String> allPossibleTypes(Operand op, int argNum) {
+	/*private static List<String> allPossibleTypes(Operand op, int argNum) {
 		if (op == null)
 			return List.of("MATRIX", "FLOAT");
 
@@ -35,16 +51,42 @@ public class RewriterAlphabetEncoder {
 		}
 
 		throw new NotImplementedException();
+	}*/
+
+	public static void rename(RewriterStatement stmt) {
+		Set<RewriterStatement> namedVars = new HashSet<>();
+
+		stmt.forEachPostOrder((cur, pred) -> {
+			if (!cur.isInstruction() && !cur.isLiteral()) {
+				if (!namedVars.contains(cur)) {
+					if (cur.getResultingDataType(ctx).equals("MATRIX"))
+						cur.rename(varNames[namedVars.size()]);
+					else
+						cur.rename(varNames[namedVars.size()].toLowerCase());
+
+					namedVars.add(cur);
+				}
+			}
+		}, false);
 	}
 
-	public static List<RewriterStatement> buildAllPossibleDAGs(List<Operand> operands, final RuleContext ctx) {
+	public static List<RewriterStatement> buildAllPossibleDAGs(List<Operand> operands, final RuleContext ctx, boolean rename) {
 		RewriterAlphabetEncoder.ctx = ctx;
-		return recursivelyFindAllCombinations(operands);
+
+		List<RewriterStatement> allStmts = recursivelyFindAllCombinations(operands);
+
+		if (rename)
+			allStmts.forEach(RewriterAlphabetEncoder::rename);
+
+		if (ctx.metaPropagator != null)
+			return allStmts.stream().map(stmt -> ctx.metaPropagator.apply(stmt)).collect(Collectors.toList());
+		else
+			return allStmts;
 	}
 
 	private static List<RewriterStatement> recursivelyFindAllCombinations(List<Operand> operands) {
 		if (operands.isEmpty())
-			return allPossibleTypes(null, 0).stream().map(t -> new RewriterDataType().as(UUID.randomUUID().toString()).ofType(t).consolidate(ctx)).collect(Collectors.toList());
+			return ALL_TYPES.stream().map(t -> new RewriterDataType().as(UUID.randomUUID().toString()).ofType(t).consolidate(ctx)).collect(Collectors.toList());
 
 		int nOps = operands.get(0).numArgs;
 		int[] slices = new int[nOps-1];
@@ -87,6 +129,11 @@ public class RewriterAlphabetEncoder {
 	}
 
 	private static void forEachSlice(int startIdx, int pos, int maxIdx, int[] slices, Runnable trigger) {
+		if (pos >= slices.length) {
+			trigger.run();
+			return;
+		}
+
 		for (int idx = startIdx; idx < maxIdx; idx++) {
 			slices[pos] = idx;
 
@@ -110,7 +157,7 @@ public class RewriterAlphabetEncoder {
 
 	public static int[] fromBaseNNumber(int l, int n) {
 		if (l == 0)
-			throw new IllegalArgumentException();
+			return new int[0];
 
 		// We put 1 as the last bit to signalize end of sequence
 		int m = Integer.numberOfTrailingZeros(Integer.highestOneBit(l));
@@ -151,9 +198,11 @@ public class RewriterAlphabetEncoder {
 	public static final class Operand {
 		public final String op;
 		public final int numArgs;
-		public Operand(String op, int numArgs) {
+		public final List<String> supportedTypes;
+		public Operand(String op, int numArgs, List<String> supportedTypes) {
 			this.op = op;
 			this.numArgs = numArgs;
+			this.supportedTypes = supportedTypes;
 		}
 
 		public String toString() {

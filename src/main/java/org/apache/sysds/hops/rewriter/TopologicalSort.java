@@ -64,7 +64,7 @@ public class TopologicalSort {
 			ctr++;
 
 			if (ctr > 100)
-				throw new RuntimeException("Could not finish sorting process"); // Should never get here but just to make sure
+				throw new RuntimeException("Could not finish sorting process for expression:\n" + root.toParsableString(ctx)); // Should never get here but just to make sure
 		}
 
 		// At the end

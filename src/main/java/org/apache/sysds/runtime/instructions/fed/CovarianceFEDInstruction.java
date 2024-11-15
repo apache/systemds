@@ -386,7 +386,7 @@ public class CovarianceFEDInstruction extends BinaryFEDInstruction {
 				.replace(partsSum2[3], partsSum2[3] + "·false")
 				.replace(partsSum2[4], divInstrOutput);
 			divInstr = divInstr + "°" + partsSum2[4];
-
+			System.out.println(divInstr);
 			FederatedRequest divFr1 = FederationUtils.callInstruction(
 				divInstr,
 				new CPOperand(
@@ -492,7 +492,7 @@ public class CovarianceFEDInstruction extends BinaryFEDInstruction {
 			.replace(partsSum2[3], partsSum2[3] + "·false")
 			.replace(partsSum2[4], divInstrOutput);
 		divInstr = divInstr + "°" + partsSum2[4];
-
+		System.out.println(divInstr);
 		FederatedRequest divFr1 = FederationUtils.callInstruction(
 			divInstr,
 			new CPOperand(

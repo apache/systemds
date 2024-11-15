@@ -380,13 +380,11 @@ public class CovarianceFEDInstruction extends BinaryFEDInstruction {
 			// divide sum(X*W) by sum(W)
 			String[] partsSum2 = sumInstr2.split("°");
 			String divInstrOutput = incrementVar(sumInstr2Output, 1);
-			String divInstr = sumInstr2
-				.replace("uak+", "/")
-				.replace(partsSum2[2], sumInstr1Output + "·false")
-				.replace(partsSum2[3], partsSum2[3] + "·false")
-				.replace(partsSum2[4], divInstrOutput);
-			divInstr = divInstr + "°" + partsSum2[4];
-			System.out.println(divInstr);
+			String divInstrInput1 = partsSum2[2].replace(partsSum2[2], sumInstr1Output + "·false");
+			String divInstrInput2 = partsSum2[3].replace(partsSum2[3], sumInstr2Output + "·false");
+			String divInstr = partsSum2[0] + "°" + partsSum2[1].replace("uak+", "/") + "°" +
+					divInstrInput1 + "°" + divInstrInput2 + "°" + divInstrOutput + "°" + partsSum2[4];
+
 			FederatedRequest divFr1 = FederationUtils.callInstruction(
 				divInstr,
 				new CPOperand(
@@ -486,13 +484,11 @@ public class CovarianceFEDInstruction extends BinaryFEDInstruction {
 		// divide sum(X*W) by sum(W)
 		String[] partsSum2 = sumInstr2.split("°");
 		String divInstrOutput = incrementVar(sumInstr2Output, 1);
-		String divInstr = sumInstr2
-			.replace("uak+", "/")
-			.replace(partsSum2[2], sumInstr1Output + "·false")
-			.replace(partsSum2[3], partsSum2[3] + "·false")
-			.replace(partsSum2[4], divInstrOutput);
-		divInstr = divInstr + "°" + partsSum2[4];
-		System.out.println(divInstr);
+		String divInstrInput1 = partsSum2[2].replace(partsSum2[2], sumInstr1Output + "·false");
+		String divInstrInput2 = partsSum2[3].replace(partsSum2[3], sumInstr2Output + "·false");
+		String divInstr = partsSum2[0] + "°" + partsSum2[1].replace("uak+", "/") + "°" +
+				divInstrInput1 + "°" + divInstrInput2 + "°" + divInstrOutput + "°" + partsSum2[4];
+
 		FederatedRequest divFr1 = FederationUtils.callInstruction(
 			divInstr,
 			new CPOperand(

@@ -36,70 +36,70 @@ import java.util.HashMap;
 @net.jcip.annotations.NotThreadSafe
 public class BuiltinImageSamplePairingLinearizedTest extends AutomatedTestBase {
 
-    private final static String TEST_NAME_LINEARIZED = "image_sample_pairing_linearized";
-    private final static String TEST_DIR = "functions/builtin/";
-    private final static String TEST_CLASS_DIR = TEST_DIR + BuiltinImageSamplePairingLinearizedTest.class.getSimpleName() + "/";
-    private final static double eps = 1e-10;
-    private final static double spSparse = 0.05; 
-    private final static double spDense = 0.5; 
+	private final static String TEST_NAME_LINEARIZED = "image_sample_pairing_linearized";
+	private final static String TEST_DIR = "functions/builtin/";
+	private final static String TEST_CLASS_DIR = TEST_DIR + BuiltinImageSamplePairingLinearizedTest.class.getSimpleName() + "/";
+	private final static double eps = 1e-10;
+	private final static double spSparse = 0.05; 
+	private final static double spDense = 0.5; 
 
-    @Parameterized.Parameter()
-    public int value;
-    
-    @Parameterized.Parameters
-    public static Collection<Object[]> data() {
-        return Arrays.asList(new Object[][] {
-          {10},
-          {-5},
-           {3}
-        });
-    }
+	@Parameterized.Parameter()
+	public int value;
+	
+	@Parameterized.Parameters
+	public static Collection<Object[]> data() {
+		return Arrays.asList(new Object[][] {
+		  {10},
+		  {-5},
+		   {3}
+		});
+	}
 
-    @Override
-    public void setUp() {
+	@Override
+	public void setUp() {
 
-        addTestConfiguration(TEST_NAME_LINEARIZED, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME_LINEARIZED, new String[]{"B_x"}));
-    }
+		addTestConfiguration(TEST_NAME_LINEARIZED, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME_LINEARIZED, new String[]{"B_x"}));
+	}
 
-    @Test
-    public void testImageSamplePairingLinearized() {
-        runImageSamplePairingLinearizedTest(false, ExecType.CP);
-    }
+	@Test
+	public void testImageSamplePairingLinearized() {
+		runImageSamplePairingLinearizedTest(false, ExecType.CP);
+	}
 
-    private void runImageSamplePairingLinearizedTest(boolean sparse, ExecType instType) {
-        ExecMode platformOld = setExecMode(instType);
-        disableOutAndExpectedDeletion();
+	private void runImageSamplePairingLinearizedTest(boolean sparse, ExecType instType) {
+		ExecMode platformOld = setExecMode(instType);
+		disableOutAndExpectedDeletion();
 
-        try {
-            loadTestConfiguration(getTestConfiguration(TEST_NAME_LINEARIZED));
+		try {
+			loadTestConfiguration(getTestConfiguration(TEST_NAME_LINEARIZED));
 
-            double sparsity = sparse ? spSparse : spDense;
-            String HOME = SCRIPT_DIR + TEST_DIR;
+			double sparsity = sparse ? spSparse : spDense;
+			String HOME = SCRIPT_DIR + TEST_DIR;
 
-            fullDMLScriptName = HOME + TEST_NAME_LINEARIZED + ".dml";
-            programArgs = new String[]{"-nvargs",
-                 "in_file=" + input("A"), 
-                 "in_file_second=" + input("secondMatrix"),
-                 "x_out_reshape_file=" + output("B_x_reshape"), 
-                 "x_out_file=" + output("B_x"),
-                 "value=" +value
-            };
+			fullDMLScriptName = HOME + TEST_NAME_LINEARIZED + ".dml";
+			programArgs = new String[]{"-nvargs",
+				 "in_file=" + input("A"), 
+				 "in_file_second=" + input("secondMatrix"),
+				 "x_out_reshape_file=" + output("B_x_reshape"), 
+				 "x_out_file=" + output("B_x"),
+				 "value=" +value
+			};
 
-            double[][] A = getRandomMatrix(100,50, 0, 255, sparsity, 7);
-            double[][] secondMatrix = getRandomMatrix(1,50, 0, 255, sparsity, 7);
-            writeInputMatrixWithMTD("A", A, true);
-            writeInputMatrixWithMTD("secondMatrix", secondMatrix, true);
-            runTest(true, false, null, -1);
+			double[][] A = getRandomMatrix(100,50, 0, 255, sparsity, 7);
+			double[][] secondMatrix = getRandomMatrix(1,50, 0, 255, sparsity, 7);
+			writeInputMatrixWithMTD("A", A, true);
+			writeInputMatrixWithMTD("secondMatrix", secondMatrix, true);
+			runTest(true, false, null, -1);
 
-            HashMap<MatrixValue.CellIndex, Double> dmlfileLinearizedX = readDMLMatrixFromOutputDir("B_x");
+			HashMap<MatrixValue.CellIndex, Double> dmlfileLinearizedX = readDMLMatrixFromOutputDir("B_x");
 
-            HashMap<MatrixValue.CellIndex, Double> dmlfileX = readDMLMatrixFromOutputDir("B_x_reshape");
+			HashMap<MatrixValue.CellIndex, Double> dmlfileX = readDMLMatrixFromOutputDir("B_x_reshape");
 
-            TestUtils.compareMatrices(dmlfileLinearizedX, dmlfileX, eps, "Stat-DML-LinearizedX", "Stat-DML-X");
+			TestUtils.compareMatrices(dmlfileLinearizedX, dmlfileX, eps, "Stat-DML-LinearizedX", "Stat-DML-X");
 
 
-        } finally {
-            rtplatform = platformOld;
-        }
-    }
+		} finally {
+			rtplatform = platformOld;
+		}
+	}
 }

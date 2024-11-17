@@ -1,0 +1,118 @@
+#-------------------------------------------------------------
+#
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+#
+#-------------------------------------------------------------
+
+# Builtin function for handing class imbalance using Adaptive Synthetic Sampling (ADASYN)
+# by Haibo He et. al. In International Joint Conference on Neural Networks (2008). 1322-1328
+#
+# INPUT:
+# --------------------------------------------------------------------------------------
+# minority        Matrix of minority class samples
+# majority        Matrix of majority class samples
+# k               Number of nearest neighbors
+# beta            Desired balance level after generation of synthetic data [0, 1]
+# --------------------------------------------------------------------------------------
+#
+# OUTPUT:
+# -------------------------------------------------------------------------------------
+# Z     Matrix of G synthetic minority class samples, with G = (ml-ms)*beta
+# -------------------------------------------------------------------------------------
+
+m_adasyn = function(Matrix[Double] minority, Matrix[Double] majority, Integer k = 1, Double beta = 0.8)
+  return (Matrix[Double] Z)
+{
+  if(k < 1) {
+    print("ADASYN: k should not be less than 1. Setting k value to default k = 1.")
+    k = 1
+  }
+
+  # Preprocessing
+  dth = 0.9
+  ms = nrow(minority)
+  ml = nrow(majority)
+  combined = rbind(minority, majority)
+
+  # (Step 1)
+  # Calculate the degree of class imbalance, where d in (0, 1]
+  d = ms/ml
+
+  # (Step 2)
+  # Check if imbalance is lower than predefined threshold
+  if(d >= dth){
+      stop("ADASYN: Class imbalance not large enough.")
+  }
+
+  # (Step 2a)
+  # Calculate number of synthetic data examples
+  G = (ml-ms)*beta
+
+  # (Step 2b)
+  # For each x_i in minority class, find k nearest neighbors.
+  # Then, compute ratio r of neighbors belonging to majority class to total number of neighbors k
+  NNR = knnbf(combined, minority, k+1)
+  NNR = NNR[,2:ncol(NNR)]
+  delta = rowSums(NNR>ms)
+  r = delta/k
+  r = r + 0   #only to force materialization, caught by compiler rewrites
+
+  # (Step 2c)
+  # Normalize ratio vector r
+  rSum = sum(r)
+  r = r/rSum
+
+  # (Step 2d)
+  # Calculate the number of synthetic data examples that need to be
+  # generated for each minority example x_i
+  # Then, pre-allocate the result matrix Z
+  g = round(r * G)
+  gSum = sum(g)
+  Z = matrix(0, rows=gSum, cols=ncol(minority)) # output matrix, slightly overallocated
+
+  # (Step 2e)
+  # For each minority class data example x_i, generate g_i synthetic data examples by
+  # looping from 1 to g_i and randomly choosing one minority data example x_j from
+  # the k-nearest neighbors. Then, compute the synthetic sample s_i as
+  # s_i = x_i + (x_j - x_i) * lambda, with lambda being a random number in [0, 1].
+  minNNR = NNR * (NNR <= ms)  # set every index from majority class to zero
+  zeroCount = 0
+  for(i in 1:nrow(minority)){
+      row = minNNR[i, ]       # slice a row
+      minRow = removeEmpty(target=row, margin="cols")     # remove all zero values from that row
+      hasSynthetic = as.scalar(g[i])>0
+      hasMinorityNN = (as.scalar(minRow[1, 1]) > 0) & (hasSynthetic)
+      if(hasMinorityNN){
+          for(j in 1:as.scalar(g[i])){
+              randomIndex = as.scalar(sample(ncol(minRow), 1))
+              lambda = as.scalar(rand(rows=1, cols=1, min=0, max=1))
+              randomMinIndex = as.scalar(minRow[ , randomIndex])
+              randomMinNN = minority[randomMinIndex, ]
+              insIdx = i+j-1-zeroCount
+              Z[insIdx, ] = minority[i, ] + (randomMinNN - minority[i, ]) * lambda
+          }
+      } else {
+          zeroCount = zeroCount + 1
+      }
+  }
+
+  diff = nrow(minority) - gSum
+  numTrailZeros = zeroCount - diff
+  Z = Z[1:gSum-numTrailZeros, ]
+}
+

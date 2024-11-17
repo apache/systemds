@@ -25,11 +25,11 @@ Y = M[, ncol(M)] + 1
 X = M[, 1:ncol(M)-1]
 upsample = as.logical($2)
 
-[Xtrain, Xtest, Ytrain, Ytest] = split(X=X, Y=Y, f=0.7);
+[Xtrain, Xtest, Ytrain, Ytest] = split(X=X, Y=Y, f=0.7, seed=3);
 
 if( upsample ) {
   # oversampling all classes other than majority
-  [Xtrain,Ytrain] = adasyn(X=Xtrain, Y=Ytrain, k=$3);
+  [Xtrain,Ytrain] = adasyn(X=Xtrain, Y=Ytrain, k=$3, seed=7);
 }
 
 B = multiLogReg(X=Xtrain, Y=Ytrain, icpt=2);

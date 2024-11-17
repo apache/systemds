@@ -29,6 +29,7 @@
 # k        Number of nearest neighbors
 # beta     Desired balance level after generation of synthetic data [0, 1]
 # dth      Distribution threshold
+# seed     Seed for randomized data point selection
 # --------------------------------------------------------------------------------------
 #
 # OUTPUT:
@@ -38,7 +39,7 @@
 # -------------------------------------------------------------------------------------
 
 m_adasyn = function(Matrix[Double] X, Matrix[Double] Y, Integer k = 2,
-  Double beta = 1.0, Double dth = 0.9)
+  Double beta = 1.0, Double dth = 0.9, Integer seed = -1)
   return (Matrix[Double] Xp, Matrix[Double] Yp)
 {
   if(k < 1) {
@@ -74,7 +75,7 @@ m_adasyn = function(Matrix[Double] X, Matrix[Double] Y, Integer k = 2,
   Ynonmajor = removeEmpty(target=Y, margin="rows", select=(Y!=majorIdx))
   NNR = knnbf(Xnonmajor, Xnonmajor, k+1)
   NNR = matrix(NNR, rows=length(NNR), cols=1)
-  I = rand(rows=nrow(NNR), cols=1) < (G/nrow(NNR))
+  I = rand(rows=nrow(NNR), cols=1, seed=seed) < (G/nrow(NNR))
   NNRg = removeEmpty(target=NNR, margin="rows", select=I);
   P = table(seq(1, nrow(NNRg)), NNRg, nrow(NNRg), nrow(Xnonmajor));
   Xp = rbind(X, P %*% Xnonmajor);

@@ -41,6 +41,7 @@ public enum Builtins {
 	ABSTAIN("abstain", true),
 	ABS("abs", false),
 	ACOS("acos", false),
+	ADASYN("adasyn", true),
 	ALS("als", true),
 	ALS_CG("alsCG", true),
 	ALS_DS("alsDS", true),

@@ -132,14 +132,17 @@ public class DMLCodeGenerator {
 		return sb.toString();
 	}
 
-	public static String generateDMLVariables(RewriterStatement root) {
+	public static Set<RewriterStatement> getVariables(RewriterStatement root) {
 		Set<RewriterStatement> vars = new HashSet<>();
 		root.forEachPostOrder((stmt, pred) -> {
 			if (!stmt.isInstruction() && !stmt.isLiteral())
 				vars.add(stmt);
 		}, false);
+		return vars;
+	}
 
-		return generateDMLVariables(vars);
+	public static String generateDMLVariables(RewriterStatement root) {
+		return generateDMLVariables(getVariables(root));
 	}
 
 	public static String generateDMLVariables(Set<RewriterStatement> vars) {

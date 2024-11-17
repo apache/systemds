@@ -182,6 +182,10 @@ public class RewriterRuntimeUtils {
 		DMLScript.hopInterceptor = interceptor;
 	}
 
+	public static void detachHopInterceptor() {
+		DMLScript.hopInterceptor = null;
+	}
+
 	// TODO: Make more flexible regarding program structure
 	public static void forAllHops(DMLProgram program, Consumer<Hop> consumer) {
 		for (StatementBlock sb : program.getStatementBlocks())
@@ -778,7 +782,7 @@ public class RewriterRuntimeUtils {
 				interestingHops.add(op.getParam("cols"));
 				interestingHops.add(op.getParam("min"));
 				interestingHops.add(op.getParam("max"));
-				return RewriterUtils.parse("rand(i1, i2, f1, f2)", ctx, matrixDefs, floatDefs, intDefs, boolDefs);
+				return RewriterUtils.parse("rand(i1, i2, f1, f2)", ctx, matrixDefs, floatDefs, intDefs, boolDefs).rename(op.getName());
 		}
 		return null;
 	}

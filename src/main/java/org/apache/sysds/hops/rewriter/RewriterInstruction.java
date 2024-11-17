@@ -519,8 +519,9 @@ public class RewriterInstruction extends RewriterStatement {
 	}
 
 	@Override
-	public void rename(String id) {
+	public RewriterStatement rename(String id) {
 		this.id = id;
+		return this;
 	}
 
 	public String changeConsolidatedInstruction(String newName, final RuleContext ctx) {

@@ -62,9 +62,17 @@ public class DMLCodeGenTest {
 
 	@Test
 	public void test3() {
+		String ruleStr2 = "MATRIX:A,B\nt(*(A,t(B)))\n=>\n*(t(A),B)";
+		RewriterRule rule2 = RewriterUtils.parseRule(ruleStr2, ctx);
+
+		assert RewriterRuleCreator.validateRuleCorrectnessAndGains(rule2, ctx);
+	}
+
+	@Test
+	public void test4() {
 		String ruleStr2 = "MATRIX:A,B\nt(+(A,t(B)))\n=>\n+(t(A),B)";
 		RewriterRule rule2 = RewriterUtils.parseRule(ruleStr2, ctx);
 
-		RewriterRuleCreator.validateRuleCorrectnessAndGains(rule2, ctx);
+		assert !RewriterRuleCreator.validateRuleCorrectnessAndGains(rule2, ctx);
 	}
 }

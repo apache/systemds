@@ -2,6 +2,7 @@ package org.apache.sysds.hops.rewriter;
 
 import org.apache.commons.collections4.bidimap.DualHashBidiMap;
 import org.apache.commons.lang3.mutable.MutableBoolean;
+import org.apache.sysds.hops.Hop;
 import scala.App;
 
 import java.util.ArrayList;
@@ -10,8 +11,10 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 import java.util.function.Consumer;
+import java.util.stream.Collectors;
 
 public class RewriterRuleCreator {
 
@@ -138,22 +141,72 @@ public class RewriterRuleCreator {
 		MutableBoolean isValid = new MutableBoolean(false);
 		DMLExecutor.executeCode(code, DMLCodeGenerator.ruleValidationScript(sessionId, isValid::setValue));
 
-		String code2Header = DMLCodeGenerator.generateDMLVariables(rule.getStmt1());
+		if (!isValid.booleanValue())
+			return false;
+
+		Set<RewriterStatement> vars = DMLCodeGenerator.getVariables(rule.getStmt1());
+		Set<String> varNames = vars.stream().map(RewriterStatement::getId).collect(Collectors.toSet());
+		String code2Header = DMLCodeGenerator.generateDMLVariables(vars);
 		String code2 = code2Header + "\nresult = " + DMLCodeGenerator.generateDML(rule.getStmt1()) + "\nprint(lineage(result))";
+		MutableBoolean isRelevant = new MutableBoolean(false);
+
 		RewriterRuntimeUtils.attachHopInterceptor(prog -> {
-			DMLExecutor.println("HERE");
-			DMLExecutor.println(prog.getStatementBlocks().get(0).getHops().get(0).getInput(0).getInput(0));
-			List<RewriterStatement> topLevelStmts = RewriterRuntimeUtils.getTopLevelHops(prog, ctx);
-			DMLExecutor.println(topLevelStmts);
+			Hop hop = prog.getStatementBlocks().get(0).getHops().get(0).getInput(0).getInput(0);
+			RewriterStatement stmt = RewriterRuntimeUtils.buildDAGFromHop(hop, 1000, ctx);
+
+			Map<String, RewriterStatement> nameAssocs = new HashMap<>();
+			// Find the variables that are actually leafs in the original rule
+			stmt.forEachPreOrder(cur -> {
+				for (int i = 0; i < cur.getOperands().size(); i++) {
+					RewriterStatement child = cur.getChild(i);
+
+					if (varNames.contains(child.getId())) {
+						RewriterStatement assoc = nameAssocs.get(child.getId());
+
+						if (assoc == null) {
+							assoc = new RewriterDataType().as(child.getId()).ofType(child.getResultingDataType(ctx)).consolidate(ctx);
+							nameAssocs.put(child.getId(), assoc);
+						}
+
+						cur.getOperands().set(i, assoc);
+					}
+				}
+
+				return true;
+			}, false);
+
+			stmt.prepareForHashing();
+			stmt.recomputeHashCodes(ctx);
+
+			RewriterStatement.MatcherContext mCtx  = RewriterStatement.MatcherContext.exactMatch(ctx, stmt);
+			if (rule.getStmt1().match(mCtx)) {
+				// Check if also the right variables are associated
+				boolean assocsMatching = true;
+				for (RewriterStatement var : vars) {
+					RewriterStatement assoc = mCtx.getDependencyMap().get(var);
+
+					if (!assoc.getId().equals(var.getId())) {
+						assocsMatching = false;
+						break;
+					}
+				}
+
+				if (assocsMatching) {
+					// Then the rule matches, meaning that the statement is not rewritten by SystemDS
+					isRelevant.setValue(true);
+				}
+			}
+
+			// TODO: Maybe we can still rewrite the new graph if it still has less cost
+
 			// TODO: Evaluate cost and if our rule can still be applied
 			return false; // The program should not be executed as we just want to extract any rewrites that are applied to the current statement
 		});
 
-		System.out.println(code2);
-
 		DMLExecutor.executeCode(code2);
+		RewriterRuntimeUtils.detachHopInterceptor();
 
-		return isValid.booleanValue();
+		return isValid.booleanValue() && isRelevant.booleanValue();
 	}
 
 	public static RewriterRule createRule(RewriterStatement from, RewriterStatement to, RewriterStatement canonicalForm1, RewriterStatement canonicalForm2, final RuleContext ctx) {

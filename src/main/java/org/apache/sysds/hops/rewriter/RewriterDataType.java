@@ -143,8 +143,9 @@ public class RewriterDataType extends RewriterStatement {
 	}
 
 	@Override
-	public void rename(String id) {
+	public RewriterStatement rename(String id) {
 		this.id = id;
+		return this;
 	}
 
 	@Override

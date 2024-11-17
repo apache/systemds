@@ -136,7 +136,7 @@ public abstract class AutomatedTestBase {
 	protected static final String DATASET_DIR = "./src/test/resources/datasets/";
 	protected static final String INPUT_DIR = "in/";
 	protected static final String OUTPUT_DIR = "out/";
-	protected static final String EXPECTED_DIR = "expected/";
+	protected static final String EXPECTED_DIR = "expectedInstances/";
 
 	/** Location where this class writes files for inspection if DEBUG is set to true. */
 	private static final String DEBUG_TEMP_DIR = "./tmp/";
@@ -1146,7 +1146,7 @@ public abstract class AutomatedTestBase {
 		// *** HACK ALERT *** HACK ALERT *** HACK ALERT ***
 		// Some of the R scripts will fail if the "expected" directory doesn't exist.
 		// Make sure the directory exists.
-		File expectedDir = new File(baseDirectory, "expected" + "/" + cacheDir);
+		File expectedDir = new File(baseDirectory, "expectedInstances" + "/" + cacheDir);
 		expectedDir.mkdirs();
 		// *** END HACK ***
 

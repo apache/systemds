@@ -26,6 +26,7 @@ import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.instructions.cp.*;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.matrix.operators.CMOperator;
+import org.apache.sysds.utils.stats.InfrastructureAnalyzer;
 
 import static org.apache.sysds.resource.cost.IOCostUtils.IOMetrics;
 import static org.apache.sysds.runtime.instructions.cp.CPInstruction.CPType;
@@ -121,6 +122,9 @@ public class CPCostUtils {
 		long nflop = getInstNFLOP(instructionType, opcode, output, input);
 		if (includeWeights)
 			return getCPUTime(nflop, metrics, output, input, weights);
+		if (!opcodeRequiresScan(opcode)) {
+			return getCPUTime(nflop, metrics, output);
+		}
 		return getCPUTime(nflop, metrics, output, input);
 	}
 
@@ -196,6 +200,13 @@ public class CPCostUtils {
 	}
 
 	// HELPERS
+	public static boolean opcodeRequiresScan(String opcode) {
+		return  !opcode.equals("ncol") &&
+				!opcode.equals("nrow") &&
+				!opcode.equals("length") &&
+				!opcode.equals("exists") &&
+				!opcode.equals("lineage");
+	}
 	public static void assignOutputMemoryStats(CPInstruction inst, VarStats output, VarStats...inputs) {
 		CPType instType = inst.getCPInstructionType();
 		String opcode = inst.getOpcode();
@@ -722,12 +733,12 @@ public class CPCostUtils {
 				if (opcode.contains("_tl")) costs = inputs[0].getCellsWithSparsity();
 				if (opcode.contains("_tr")) costs = inputs[1].getCellsWithSparsity();
 				// else ba+*/pmm (or any of cpmm/rmm/mapmm from the Spark instructions)
-				// reduce by factor of 2: matrix multiplication better than average FLOP count: 2*m*n*p=m*n*p
+				// reduce by factor of 2: matrix multiplication better than average FLOP count: 2*m*n*p->m*n*p
 				return (long) (inputs[0].getN() * inputs[0].getSparsity()) * output.getCells() + (long) costs;
 			case Append:
 				if (inputs.length < 2)
 					throw new RuntimeException("Not all required arguments for Append operation is passed initialized");
-				return inputs[0].getCellsWithSparsity() * inputs[1].getCellsWithSparsity();
+				return inputs[0].getCellsWithSparsity() + inputs[1].getCellsWithSparsity();
 			case Covariance:
 				if (inputs.length < 1)
 					throw new RuntimeException("Not all required arguments for Covariance operation is passed initialized");
@@ -753,8 +764,9 @@ public class CPCostUtils {
 				switch (opcode) {
 					case "+*":
 					case "-*":
-					case "ifelse":
 						return 2 * output.getCells();
+					case "ifelse":
+						return output.getCells();
 					case "_map":
 						throw new RuntimeException("Specific Frame operation with opcode '" + opcode + "' is not supported yet");
 					default:
@@ -767,7 +779,6 @@ public class CPCostUtils {
 					return 6 * inputs[0].getCellsWithSparsity();
 				throw new DMLRuntimeException("AggregateTernary operation with opcode '" + opcode + "' is not supported by SystemDS");
 			case Quaternary:
-				//TODO pattern specific and all inputs required
 				if (inputs.length < 1)
 					throw new RuntimeException("Not all required arguments for Quaternary operation is passed initialized");
 				if (opcode.equals("wsloss") || opcode.equals("wdivmm") || opcode.equals("wcemm")) {
@@ -886,7 +897,10 @@ public class CPCostUtils {
 					default:
 						throw new DMLRuntimeException(" MultiReturnBuiltin operation with opcode '" + opcode + "' is not supported by SystemDS");
 				}
-				return (long) (costs * inputs[0].getCells() * inputs[0].getN());
+				// scale up the nflop value to represent that the operations are executed by a single thread only
+				// adapt later for fft/fft_linearized since they utilize all threads
+				int cpuFactor = InfrastructureAnalyzer.getLocalParallelism();
+				return (long) (cpuFactor * costs * inputs[0].getCells() * inputs[0].getN());
 			case Prefetch:
 			case EvictLineageCache:
 			case Broadcast:

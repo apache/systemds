@@ -19,39 +19,37 @@
 
 package org.apache.sysds.test.component.resource;
 
-import org.apache.sysds.resource.AWSUtils;
 import org.apache.sysds.resource.CloudInstance;
-import org.apache.sysds.resource.CloudUtils.InstanceType;
+import org.apache.sysds.resource.CloudUtils;
+import org.apache.sysds.resource.CloudUtils.InstanceFamily;
 import org.apache.sysds.resource.CloudUtils.InstanceSize;
+import org.junit.Assert;
 import org.junit.Test;
 
 import java.io.File;
 import java.io.IOException;
-import java.nio.file.Files;
 import java.util.HashMap;
 
-import static org.apache.sysds.test.component.resource.TestingUtils.assertEqualsCloudInstances;
-import static org.apache.sysds.test.component.resource.TestingUtils.getSimpleCloudInstanceMap;
+import static org.apache.sysds.resource.CloudUtils.*;
+import static org.apache.sysds.test.component.resource.ResourceTestUtils.*;
 import static org.junit.Assert.*;
 
 @net.jcip.annotations.NotThreadSafe
 public class CloudUtilsTests {
 
 	@Test
-	public void getInstanceTypeAWSTest() {
-		AWSUtils utils = new AWSUtils();
+	public void getInstanceFamilyTest() {
+		InstanceFamily expectedValue = InstanceFamily.M5;
+		CloudUtils.InstanceFamily actualValue;
 
-		InstanceType expectedValue = InstanceType.M5;
-		InstanceType actualValue;
-
-		actualValue = utils.getInstanceType("m5.xlarge");
+		actualValue = CloudUtils.getInstanceFamily("m5.xlarge");
 		assertEquals(expectedValue, actualValue);
 
-		actualValue = utils.getInstanceType("M5.XLARGE");
+		actualValue = CloudUtils.getInstanceFamily("M5.XLARGE");
 		assertEquals(expectedValue, actualValue);
 
 		try {
-			utils.getInstanceType("NON-M5.xlarge");
+			CloudUtils.getInstanceFamily("NON-M5.xlarge");
 			fail("Throwing IllegalArgumentException was expected");
 		} catch (IllegalArgumentException e) {
 			// this block ensures correct execution of the test
@@ -59,20 +57,18 @@ public class CloudUtilsTests {
 	}
 
 	@Test
-	public void getInstanceSizeAWSTest() {
-		AWSUtils utils = new AWSUtils();
-
+	public void getInstanceSizeTest() {
 		InstanceSize expectedValue = InstanceSize._XLARGE;
 		InstanceSize actualValue;
 
-		actualValue = utils.getInstanceSize("m5.xlarge");
+		actualValue = CloudUtils.getInstanceSize("m5.xlarge");
 		assertEquals(expectedValue, actualValue);
 
-		actualValue = utils.getInstanceSize("M5.XLARGE");
+		actualValue = CloudUtils.getInstanceSize("M5.XLARGE");
 		assertEquals(expectedValue, actualValue);
 
 		try {
-			utils.getInstanceSize("m5.nonxlarge");
+			CloudUtils.getInstanceSize("m5.nonxlarge");
 			fail("Throwing IllegalArgumentException was expected");
 		} catch (IllegalArgumentException e) {
 			// this block ensures correct execution of the test
@@ -80,39 +76,145 @@ public class CloudUtilsTests {
 	}
 
 	@Test
-	public void validateInstanceNameAWSTest() {
-		AWSUtils utils = new AWSUtils();
-
+	public void validateInstanceNameTest() {
 		// basic intel instance (old)
-		assertTrue(utils.validateInstanceName("m5.2xlarge"));
-		assertTrue(utils.validateInstanceName("M5.2XLARGE"));
+		assertTrue(CloudUtils.validateInstanceName("m5.2xlarge"));
+		assertTrue(CloudUtils.validateInstanceName("M5.2XLARGE"));
 		// basic intel instance (new)
-		assertTrue(utils.validateInstanceName("m6i.xlarge"));
+		assertTrue(CloudUtils.validateInstanceName("m6i.xlarge"));
 		// basic amd instance
-		assertTrue(utils.validateInstanceName("m6a.xlarge"));
+		assertTrue(CloudUtils.validateInstanceName("m6a.xlarge"));
 		// basic graviton instance
-		assertTrue(utils.validateInstanceName("m6g.xlarge"));
+		assertTrue(CloudUtils.validateInstanceName("m6g.xlarge"));
 		// invalid values
-		assertFalse(utils.validateInstanceName("v5.xlarge"));
-		assertFalse(utils.validateInstanceName("m5.notlarge"));
-		assertFalse(utils.validateInstanceName("m5xlarge"));
-		assertFalse(utils.validateInstanceName(".xlarge"));
-		assertFalse(utils.validateInstanceName("m5."));
+		assertFalse(CloudUtils.validateInstanceName("v5.xlarge"));
+		assertFalse(CloudUtils.validateInstanceName("m5.notlarge"));
+		assertFalse(CloudUtils.validateInstanceName("m5xlarge"));
+		assertFalse(CloudUtils.validateInstanceName(".xlarge"));
+		assertFalse(CloudUtils.validateInstanceName("m5."));
 	}
 
 	@Test
-	public void loadCSVFileAWSTest() throws IOException {
-		AWSUtils utils = new AWSUtils();
+	public void loadDefaultFeeTableTest() {
+		// test that the provided default file is accounted as valid by the function for loading
+		String[] regions = {
+				"us-east-1",
+				"us-east-2",
+				"us-west-1",
+				"us-west-2",
+				"ca-central-1",
+				"ca-west-1",
+				"af-south-1",
+				"ap-east-1",
+				"ap-south-2",
+				"ap-southeast-3",
+				"ap-southeast-5",
+				"ap-southeast-4",
+				"ap-south-1",
+				"ap-northeast-3",
+				"ap-northeast-2",
+				"ap-southeast-1",
+				"ap-southeast-2",
+				"ap-northeast-1",
+				"eu-central-1",
+				"eu-west-1",
+				"eu-west-2",
+				"eu-south-1",
+				"eu-west-3",
+				"eu-south-2",
+				"eu-north-1",
+				"eu-central-2",
+				"il-central-1",
+				"me-south-1",
+				"me-central-1",
+				"sa-east-1"
+		};
 
-		File tmpFile = TestingUtils.generateTmpInstanceInfoTableFile();
+		for (String region : regions) {
+			try {
+				double[] prices = CloudUtils.loadRegionalPrices(DEFAULT_REGIONAL_PRICE_TABLE, region);
+				double feeRatio = prices[0];
+				double ebsPrice = prices[1];
+				Assert.assertTrue(feeRatio >= 0.15 && feeRatio <= 0.25);
+				Assert.assertTrue(ebsPrice >= 0.08);
+			} catch (IOException e) {
+				Assert.fail("Throwing IOException not expected: " + e);
+			}
+		}
+	}
 
-		HashMap<String, CloudInstance> actual = utils.loadInstanceInfoTable(tmpFile.getPath());
+	@Test
+	public void loadingInstanceInfoTest() throws IOException {
+		// test the proper loading of the table
+		File file = ResourceTestUtils.getMinimalInstanceInfoTableFile();
+
+		HashMap<String, CloudInstance> actual = CloudUtils.loadInstanceInfoTable(file.getPath(), TEST_FEE_RATIO, TEST_STORAGE_PRICE);
 		HashMap<String, CloudInstance> expected = getSimpleCloudInstanceMap();
 
 		for (String instanceName: expected.keySet()) {
 			assertEqualsCloudInstances(expected.get(instanceName), actual.get(instanceName));
 		}
+	}
 
-		Files.deleteIfExists(tmpFile.toPath());
+	@Test
+	public void loadDefaultInstanceInfoTableFileTest() throws IOException {
+		// test that the provided default file is accounted as valid by the function for loading
+		HashMap<String, CloudInstance> instanceMap = CloudUtils.loadInstanceInfoTable(DEFAULT_INSTANCE_INFO_TABLE, TEST_FEE_RATIO, TEST_STORAGE_PRICE);
+		// test if all instances from 'M', 'C' or 'R' families
+		// and if the minimum size is xlarge as required for EMR
+		for (String instanceType : instanceMap.keySet()) {
+			Assert.assertTrue(instanceType.startsWith("m") || instanceType.startsWith("c") || instanceType.startsWith("r"));
+			Assert.assertTrue(instanceType.contains("xlarge"));
+		}
+	}
+
+	@Test
+	public void getEffectiveExecutorResourcesGeneralCaseTest() {
+		long inputMemory = GBtoBytes(16);
+		int inputCores = 4;
+		int inputNumExecutors = 4;
+
+		int expectedAmMemoryMB = 768; // 512 + 256
+		int expectedAmMemoryOverhead = 384; // using the absolute minimum
+		int expectedExecutorMemoryMB = (int) (((0.75 * inputMemory / (1024 * 1024))
+				- (expectedAmMemoryMB + expectedAmMemoryOverhead)) / 1.1);
+		int expectedAmCores = 1;
+		int expectedExecutorCores = inputCores - expectedAmCores;
+
+		int[] result = getEffectiveExecutorResources(inputMemory, inputCores, inputNumExecutors);
+		int resultExecutorMemoryMB = result[0];
+		int resultExecutorCores = result[1];
+		int resultNumExecutors = result[2];
+		int resultAmMemoryMB = result[3];
+		int resultAmCores = result[4];
+
+		Assert.assertEquals(resultExecutorMemoryMB, expectedExecutorMemoryMB);
+		Assert.assertEquals(resultExecutorCores, expectedExecutorCores);
+		Assert.assertEquals(resultNumExecutors, inputNumExecutors);
+		Assert.assertEquals(resultAmMemoryMB, expectedAmMemoryMB);
+		Assert.assertEquals(resultAmCores, expectedAmCores);
+	}
+
+	@Test
+	public void getEffectiveExecutorResourcesEdgeCaseTest() {
+		// edge case -> large cluster with small machines -> dedicated machine for the AM
+		long inputMemory = GBtoBytes(8);
+		int inputCores = 4;
+		int inputNumExecutors = 48;
+
+		int expectedContainerMemoryMB = (int) (((0.75 * inputMemory / (1024 * 1024))) / 1.1);
+
+		int[] result = getEffectiveExecutorResources(inputMemory, inputCores, inputNumExecutors);
+		int resultExecutorMemoryMB = result[0];
+		int resultExecutorCores = result[1];
+		int resultNumExecutors = result[2];
+		int resultAmMemoryMB = result[3];
+		int resultAmCores = result[4];
+
+		Assert.assertEquals(resultExecutorMemoryMB, expectedContainerMemoryMB);
+		Assert.assertEquals(resultExecutorCores, inputCores);
+		Assert.assertEquals(resultNumExecutors, inputNumExecutors - 1);
+		Assert.assertEquals(resultAmMemoryMB, expectedContainerMemoryMB);
+		Assert.assertEquals(resultAmCores, inputCores);
 	}
 }

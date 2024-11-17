@@ -1,0 +1,7 @@
+#!/usr/bin/env bash
+
+ROPT_JAR_FILE="${SYSTEMDS_ROOT}/target/ResourceOptimizer.jar"
+DEFAULT_PROPERTIES="${SYSTEMDS_ROOT}/scripts/resource/options.properties"
+
+java -jar "$ROPT_JAR_FILE" "$@" -options "$DEFAULT_PROPERTIES"
+

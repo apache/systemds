@@ -40,7 +40,7 @@ import org.junit.Test;
 import java.util.HashMap;
 
 import static org.apache.sysds.resource.CloudUtils.GBtoBytes;
-import static org.apache.sysds.test.component.resource.TestingUtils.getSimpleCloudInstanceMap;
+import static org.apache.sysds.test.component.resource.ResourceTestUtils.getSimpleCloudInstanceMap;
 
 public class InstructionsCostEstimatorTest {
 	private static final HashMap<String, CloudInstance> instanceMap = getSimpleCloudInstanceMap();
@@ -49,15 +49,13 @@ public class InstructionsCostEstimatorTest {
 
 	@Before
 	public void setup() {
-		ResourceCompiler.setDriverConfigurations(GBtoBytes(8), 4);
-		ResourceCompiler.setExecutorConfigurations(4, GBtoBytes(8), 4);
+		ResourceCompiler.setSparkClusterResourceConfigs(GBtoBytes(8), 4, 4, GBtoBytes(8), 4);
 		estimator = new CostEstimator(new Program(), instanceMap.get("m5.xlarge"), instanceMap.get("m5.xlarge"));
 	}
 
 	////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-	// Tests for CP Instructions																					  //
-	////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
+	// Tests for CP Instructions
+	
 	@Test
 	public void createvarMatrixVariableCPInstructionTest() throws CostEstimationException {
 		String instDefinition = "CP°createvar°testVar°testOutputFile°false°MATRIX°binary°100°100°1000°10000°COPY";
@@ -123,9 +121,8 @@ public class InstructionsCostEstimatorTest {
 	}
 
 	////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-	// Tests for Spark Instructions																				   //
-	////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
+	// Tests for Spark Instructions
+	
 	@Test
 	public void plusBinaryMatrixMatrixSpInstructionTest() throws CostEstimationException {
 		HashMap<String, VarStats> inputStats = new HashMap<>();
@@ -138,8 +135,7 @@ public class InstructionsCostEstimatorTest {
 	}
 
 	////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-	// Helper methods for testing Instructions																		//
-	////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+	// Helper methods for testing Instructions
 
 	private VarStats generateStats(String name, long m, long n, long nnz) {
 		MatrixCharacteristics mc = new MatrixCharacteristics(m, n, nnz);

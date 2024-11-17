@@ -44,7 +44,7 @@ public class SparkCostUtils {
 		double readTime = getHadoopReadTime(input, executorMetrics);
 		long sizeTextFile = OptimizerUtils.estimateSizeTextOutput(input.getM(), input.getN(), input.getNNZ(), (Types.FileFormat) input.fileInfo[1]);
 		RDDStats textRdd = new RDDStats(sizeTextFile, -1);
-		double shuffleTime = getSparkShuffleTime(textRdd, executorMetrics, true);
+		double shuffleTime = getSparkShuffleTime(textRdd, executorMetrics, false);
 		double timeStage1 = readTime + shuffleTime;
 		// new stage: transform partitioned shuffled text object into partitioned binary object
 		long nflop = getInstNFLOP(SPType.Reblock, opcode, output);
@@ -256,7 +256,7 @@ public class SparkCostUtils {
 				output.rddStats.numPartitions = input.rddStats.numPartitions;
 				output.rddStats.hashPartitioned = input.rddStats.hashPartitioned;
 				break;
-			default:  // rsort
+			default: // rsort
 				String ixretAsString = InstructionUtils.getInstructionParts(inst.getInstructionString())[4];
 				boolean ixret = ixretAsString.equalsIgnoreCase("true");
 				int shuffleFactor;
@@ -498,6 +498,69 @@ public class SparkCostUtils {
 		return dataTransmissionTime + mapTime;
 	}
 
+	public static double getTernaryInstTime(TernarySPInstruction tInst, VarStats input1, VarStats input2, VarStats input3, VarStats output, IOMetrics executorMetrics) {
+		RDDStats[] inputRddStats = {}; // to be used later at CPU time estimation (mem. scanning)
+		double dataTransmissionTime = 0;
+		if (!input1.isScalar() && !input2.isScalar()) {
+			inputRddStats = new RDDStats[]{input1.rddStats, input2.rddStats};
+			// input1.join(input2)
+			dataTransmissionTime += getSparkShuffleTime(input1.rddStats, executorMetrics,
+					input1.rddStats.hashPartitioned);
+			dataTransmissionTime += getSparkShuffleTime(input2.rddStats, executorMetrics,
+					input2.rddStats.hashPartitioned);
+		} else if (!input1.isScalar() && !input3.isScalar()) {
+			inputRddStats = new RDDStats[]{input1.rddStats, input3.rddStats};
+			// input1.join(input3)
+			dataTransmissionTime += getSparkShuffleTime(input1.rddStats, executorMetrics,
+					input1.rddStats.hashPartitioned);
+			dataTransmissionTime += getSparkShuffleTime(input3.rddStats, executorMetrics,
+					input3.rddStats.hashPartitioned);
+		} else if (!input2.isScalar() || !input3.isScalar()) {
+			inputRddStats = new RDDStats[]{input2.rddStats, input3.rddStats};
+			// input2.join(input3)
+			dataTransmissionTime += getSparkShuffleTime(input2.rddStats, executorMetrics,
+					input2.rddStats.hashPartitioned);
+			dataTransmissionTime += getSparkShuffleTime(input3.rddStats, executorMetrics,
+					input3.rddStats.hashPartitioned);
+		} else if (!input1.isScalar() && !input2.isScalar() && !input3.isScalar()) {
+			inputRddStats = new RDDStats[]{input1.rddStats, input2.rddStats, input3.rddStats};
+			// input1.join(input2).join(input3)
+			dataTransmissionTime += getSparkShuffleTime(input1.rddStats, executorMetrics,
+					input1.rddStats.hashPartitioned);
+			dataTransmissionTime += getSparkShuffleTime(input2.rddStats, executorMetrics,
+					input2.rddStats.hashPartitioned);
+			dataTransmissionTime += getSparkShuffleTime(input3.rddStats, executorMetrics,
+					input3.rddStats.hashPartitioned);
+		}
+
+		long nflop = getInstNFLOP(SPType.Ternary, tInst.getOpcode(), output, input1, input2, input3);
+		double mapTime = getCPUTime(nflop, output.rddStats.numPartitions, executorMetrics,
+				output.rddStats, inputRddStats);
+
+		return dataTransmissionTime + mapTime;
+	}
+
+	public static double getQuaternaryInstTime(QuaternarySPInstruction quatInst, VarStats input1, VarStats input2, VarStats input3, VarStats output, IOMetrics driverMetrics, IOMetrics executorMetrics) {
+		String opcode = quatInst.getOpcode();
+		if (opcode.startsWith("red")) {
+			throw new RuntimeException("Spark Quaternary reduce-operations are not supported yet");
+		}
+		double dataTransmissionTime;
+		dataTransmissionTime = getSparkBroadcastTime(input2, driverMetrics, executorMetrics)
+				+ getSparkBroadcastTime(input3, driverMetrics, executorMetrics); // for map-side ops only
+		if (opcode.equals("mapwsloss") || opcode.equals("mapwcemm")) {
+			output.rddStats.isCollected = true;
+		} else if (opcode.equals("mapwdivmm")) {
+			dataTransmissionTime += getSparkShuffleTime(output.rddStats, executorMetrics, true);
+		}
+
+		long nflop = getInstNFLOP(quatInst.getSPInstructionType(), opcode, output, input1);
+		double mapTime = getCPUTime(nflop, input1.rddStats.numPartitions, executorMetrics,
+				output.rddStats, input1.rddStats);
+
+		return dataTransmissionTime + mapTime;
+	}
+
 	/**
 	 * Computes an estimate for the time needed by the CPU to execute (including memory access)
 	 * an instruction by providing number of floating operations.
@@ -674,139 +737,16 @@ public class SparkCostUtils {
 				return CPCostUtils.getInstNFLOP(CPType.Ctable, opcode, output, inputs);
 			case ParameterizedBuiltin:
 				return CPCostUtils.getInstNFLOP(CPType.ParameterizedBuiltin, opcode, output, inputs);
+			case Ternary:
+				// only the output is relevant for the calculation
+				return CPCostUtils.getInstNFLOP(CPType.Ternary, opcode, output);
+			case Quaternary:
+				String opcodeRoot = opcode.substring(3);
+				return CPCostUtils.getInstNFLOP(CPType.Quaternary, opcodeRoot, output, inputs);
 			default:
 				// all existing cases should have been handled above
 				throw new DMLRuntimeException("Spark operation type'" + instructionType + "' is not supported by SystemDS");
 		}
 		throw new RuntimeException();
 	}
-
-
-//		//ternary aggregate operators
-//		case "tak+*":
-//			break;
-//		case "tack+*":
-//			break;
-//		// Neural network operators
-//		case "conv2d":
-//		case "conv2d_bias_add":
-//		case "maxpooling":
-//		case "relu_maxpooling":
-//		case RightIndex.OPCODE:
-//		case LeftIndex.OPCODE:
-//		case "mapLeftIndex":
-//		case "_map",:
-//			break;
-//		// Spark-specific instructions
-//		case Checkpoint.DEFAULT_CP_OPCODE,:
-//			break;
-//		case Checkpoint.ASYNC_CP_OPCODE,:
-//			break;
-//		case Compression.OPCODE,:
-//			break;
-//		case DeCompression.OPCODE,:
-//			break;
-//		// Parameterized Builtin Functions
-//		case "autoDiff",:
-//			break;
-//		case "contains",:
-//			break;
-//		case "groupedagg",:
-//			break;
-//		case "mapgroupedagg",:
-//			break;
-//		case "rmempty",:
-//			break;
-//		case "replace",:
-//			break;
-//		case "rexpand",:
-//			break;
-//		case "lowertri",:
-//			break;
-//		case "uppertri",:
-//			break;
-//		case "tokenize",:
-//			break;
-//		case "transformapply",:
-//			break;
-//		case "transformdecode",:
-//			break;
-//		case "transformencode",:
-//			break;
-//		case "mappend",:
-//			break;
-//		case "rappend",:
-//			break;
-//		case "gappend",:
-//			break;
-//		case "galignedappend",:
-//			break;
-//		//ternary instruction opcodes
-//		case "ctable",:
-//			break;
-//		case "ctableexpand",:
-//			break;
-//
-//		//ternary instruction opcodes
-//		case "+*",:
-//			break;
-//		case "-*",:
-//			break;
-//		case "ifelse",:
-//			break;
-//
-//		//quaternary instruction opcodes
-//		case WeightedSquaredLoss.OPCODE,:
-//			break;
-//		case WeightedSquaredLossR.OPCODE,:
-//			break;
-//		case WeightedSigmoid.OPCODE,:
-//			break;
-//		case WeightedSigmoidR.OPCODE,:
-//			break;
-//		case WeightedDivMM.OPCODE,:
-//			break;
-//		case WeightedDivMMR.OPCODE,:
-//			break;
-//		case WeightedCrossEntropy.OPCODE,:
-//			break;
-//		case WeightedCrossEntropyR.OPCODE,:
-//			break;
-//		case WeightedUnaryMM.OPCODE,:
-//			break;
-//		case WeightedUnaryMMR.OPCODE,:
-//			break;
-//		case "bcumoffk+":
-//			break;
-//		case "bcumoff*":
-//			break;
-//		case "bcumoff+*":
-//			break;
-//		case "bcumoffmin",:
-//			break;
-//		case "bcumoffmax",:
-//			break;
-//
-//		//central moment, covariance, quantiles (sort/pick)
-//		case "cm"	 ,:
-//			break;
-//		case "cov"	,:
-//			break;
-//		case "qsort"  ,:
-//			break;
-//		case "qpick"  ,:
-//			break;
-//
-//		case "binuaggchain",:
-//			break;
-//
-//		case "write"	,:
-//			break;
-//
-//
-//		case "spoof":
-//			break;
-//		default:
-//			throw RuntimeException("No complexity factor for op. code: " + opcode);
-//	}
 }

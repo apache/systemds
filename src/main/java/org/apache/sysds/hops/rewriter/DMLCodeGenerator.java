@@ -96,6 +96,55 @@ public class DMLCodeGenerator {
 
 		StringBuilder sb = new StringBuilder();
 
+		sb.append(generateDMLVariables(vars));
+		/*for (RewriterStatement var : vars) {
+			switch (var.getResultingDataType(ctx)) {
+				case "MATRIX":
+					sb.append(var.getId() + " = rand(rows=1000, cols=1000, min=0.0, max=1.0)\n");
+					break;
+				case "FLOAT":
+					sb.append(var.getId() + " = as.scalar(rand())\n");
+					break;
+				case "INT":
+					sb.append(var.getId() + " = as.integer(as.scalar(rand(min=0.0, max=10000.0)))\n");
+					break;
+				case "BOOL":
+					sb.append(var.getId() + " = as.scalar(rand()) < 0.5\n");
+					break;
+				default:
+					throw new NotImplementedException(var.getResultingDataType(ctx));
+			}
+		}*/
+
+		sb.append('\n');
+		sb.append("R1 = ");
+		sb.append(generateDML(stmtFrom));
+		sb.append('\n');
+		sb.append("R2 = ");
+		sb.append(generateDML(stmtTo));
+		sb.append('\n');
+		sb.append("print(\"");
+		sb.append(sessionId);
+		sb.append(" valid: \" + (");
+		sb.append(generateEqualityCheck("R1", "R2", stmtFrom.getResultingDataType(ctx), eps));
+		sb.append("))");
+
+		return sb.toString();
+	}
+
+	public static String generateDMLVariables(RewriterStatement root) {
+		Set<RewriterStatement> vars = new HashSet<>();
+		root.forEachPostOrder((stmt, pred) -> {
+			if (!stmt.isInstruction() && !stmt.isLiteral())
+				vars.add(stmt);
+		}, false);
+
+		return generateDMLVariables(vars);
+	}
+
+	public static String generateDMLVariables(Set<RewriterStatement> vars) {
+		StringBuilder sb = new StringBuilder();
+
 		for (RewriterStatement var : vars) {
 			switch (var.getResultingDataType(ctx)) {
 				case "MATRIX":
@@ -115,19 +164,6 @@ public class DMLCodeGenerator {
 			}
 		}
 
-		sb.append('\n');
-		sb.append("R1 = ");
-		sb.append(generateDML(stmtFrom));
-		sb.append('\n');
-		sb.append("R2 = ");
-		sb.append(generateDML(stmtTo));
-		sb.append('\n');
-		sb.append("print(\"");
-		sb.append(sessionId);
-		sb.append(" valid: \" + (");
-		sb.append(generateEqualityCheck("R1", "R2", stmtFrom.getResultingDataType(ctx), eps));
-		sb.append("))");
-
 		return sb.toString();
 	}
 
@@ -143,6 +179,17 @@ public class DMLCodeGenerator {
 		}
 
 		throw new NotImplementedException();
+	}
+
+	public static String generateDMLDefs(RewriterStatement stmt) {
+		Map<String, RewriterStatement> vars = new HashMap<>();
+
+		stmt.forEachPostOrder((cur, pred) -> {
+			if (!cur.isInstruction() && !cur.isLiteral())
+				vars.put(cur.getId(), cur);
+		}, false);
+
+		return generateDMLDefs(vars);
 	}
 
 	public static String generateDMLDefs(Map<String, RewriterStatement> defs) {

@@ -44,13 +44,8 @@ public class FTypes
 			return this != NONE && this != RUNTIME;
 		}
 		public static boolean isCompiled(String planner) {
-			try {
-				return FederatedPlanner.valueOf(planner.toUpperCase()).isCompiled();
-			}
-			catch(Exception ex) {
-				ex.printStackTrace();
-				return false;
-			}
+			return planner != null 
+				&& FederatedPlanner.valueOf(planner.toUpperCase()).isCompiled();
 		}
 	}
 	

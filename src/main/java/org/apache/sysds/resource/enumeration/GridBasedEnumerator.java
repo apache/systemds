@@ -22,13 +22,10 @@ package org.apache.sysds.resource.enumeration;
 import java.util.*;
 
 public class GridBasedEnumerator extends Enumerator {
-	// marks if the number of executors should
-	// be increased by a given step
+	/** sets the step size at iterating over number of executors at enumeration */
 	private final int stepSizeExecutors;
-	// marks if the number of executors should
-	// be increased exponentially
-	// (single node execution mode is not excluded)
-	// -1 marks no exp. increasing
+	/** sets the exponential base for exp. iteration over number of executors at enumeration
+	 * (-1 suggest to not use exponential increments - the default behaviour) */
 	private final int expBaseExecutors;
 	public GridBasedEnumerator(Builder builder, int stepSizeExecutors, int expBaseExecutors) {
 		super(builder);
@@ -48,19 +45,20 @@ public class GridBasedEnumerator extends Enumerator {
 	}
 
 	@Override
-	public boolean evaluateSingleNodeExecution(long driverMemory) {
+	public boolean evaluateSingleNodeExecution(long driverMemory, int cores) {
+		if (cores > CPU_QUOTA) return false;
 		return minExecutors == 0;
 	}
 
 	@Override
-	public ArrayList<Integer> estimateRangeExecutors(long executorMemory, int executorCores) {
-		// consider the maximum level of parallelism and
+	public ArrayList<Integer> estimateRangeExecutors(int driverCores, long executorMemory, int executorCores) {
+		// consider the cpu quota (limit) for cloud instances and
 		// based on the initiated flags decides for the following methods
 		// for enumeration of the number of executors:
 		// 1. Increasing the number of executor with given step size (default 1)
-		// 2. Exponentially increasing number of executors based on
-		//	a given exponent base - with additional option for 0 executors
-		int currentMax = Math.min(maxExecutors, MAX_LEVEL_PARALLELISM / executorCores);
+		// 2. Exponentially increasing number of executors based on a given exponent base
+		int maxAchievableLevelOfParallelism  = CPU_QUOTA - driverCores;
+		int currentMax = Math.min(maxExecutors, maxAchievableLevelOfParallelism / executorCores);
 		ArrayList<Integer> result;
 		if (expBaseExecutors > 1) {
 			int maxCapacity = (int) Math.floor(Math.log(currentMax) / Math.log(2));
@@ -85,5 +83,23 @@ public class GridBasedEnumerator extends Enumerator {
 		}
 
 		return result;
+	}
+
+	// Public Getters and Setter meant for testing purposes only -------------------------------------------------------
+
+	/**
+	 * Meant to be used for testing purposes
+	 * @return the set step size for the grid search
+	 */
+	public int getStepSize() {
+		return stepSizeExecutors;
+	}
+
+	/**
+	 * Meant to be used for testing purposes
+	 * @return the set exponential base for the grid search
+	 */
+	public int getExpBase() {
+		return expBaseExecutors;
 	}
 }

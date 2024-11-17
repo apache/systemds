@@ -53,6 +53,8 @@ public class StringIdentifier extends ConstIdentifier
 	public String getValue(){
 		return _val;
 	}
+
+	public void setValue(String val) { _val = val; }
 	
 	@Override
 	public String toString(){

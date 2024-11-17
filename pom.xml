@@ -64,6 +64,8 @@
 		<maven-shade-plugin.version>3.5.0</maven-shade-plugin.version>
 		<maven-compiler-plugin.version>3.11.0</maven-compiler-plugin.version>
 		<maven-antrun-plugin.version>3.1.0</maven-antrun-plugin.version>
+		<!-- aws-java-sdk-bundle version should align with hadoop-aws version -->
+		<!-- aws-java-sdk-bundle.version>1.12.367</aws-java-sdk-bundle.version -->
 		<!-- Set java compile level via argument, ex: 1.8 1.9 10 11-->
 		<java.level>11</java.level>
 		<java.version>{java.level}</java.version>
@@ -274,7 +276,7 @@
 								<manifest>
 									<addClasspath>true</addClasspath>
 									<classpathPrefix>lib/</classpathPrefix>
-									<mainClass>org.apache.sysds.api.ropt.Executor</mainClass>
+									<mainClass>org.apache.sysds.resource.ResourceOptimizer</mainClass>
 								</manifest>
 								<manifestEntries>
 									<Class-Path>SystemDS.jar ${project.artifactId}-${project.version}.jar</Class-Path>
@@ -407,6 +409,18 @@
 							<target name="copy and rename test JAR" unless="maven.test.skip">
 								<copy file="${project.build.directory}/${project.artifactId}-${project.version}-tests.jar" tofile="${project.build.directory}/SystemDS-tests.jar" />
 								<copy file="${project.build.directory}/${project.artifactId}-${project.version}-perf.jar" tofile="${project.build.directory}/SystemDS-perf.jar" />
+							</target>
+						</configuration>
+						<goals>
+							<goal>run</goal>
+						</goals>
+					</execution>
+					<execution>
+						<id>rename-ropt-jar</id>
+						<phase>package</phase>
+						<configuration>
+							<target name="rename test JAR">
+								<copy file="${project.build.directory}/${project.artifactId}-${project.version}-ropt.jar" tofile="${project.build.directory}/ResourceOptimizer.jar" />
 							</target>
 						</configuration>
 						<goals>
@@ -1336,6 +1350,18 @@
 				</exclusion>
 			</exclusions>
 		</dependency>
+
+		<!--dependency>
+			<groupId>org.apache.hadoop</groupId>
+			<artifactId>hadoop-aws</artifactId>
+			<version>${hadoop.version}</version>
+		</dependency-->
+
+		<!--dependency>
+			<groupId>com.amazonaws</groupId>
+			<artifactId>aws-java-sdk-bundle</artifactId>
+			<version>${aws-java-sdk-bundle.version}</version>
+		</dependency-->
 
 		<dependency>
 			<groupId>commons-logging</groupId>

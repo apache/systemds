@@ -28,6 +28,7 @@ public class RDDStats {
 	long distributedSize;
 	int numPartitions;
 	boolean hashPartitioned;
+	// NOTE: checkpointing not fully considered by the cost estimator currently
 	boolean checkpoint;
 	double cost;
 	boolean isCollected;

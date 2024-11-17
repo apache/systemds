@@ -23,8 +23,10 @@ import java.io.BufferedReader;
 import java.io.FileReader;
 import java.util.HashMap;
 
+import org.apache.sysds.conf.CompilerConfig;
 import org.apache.sysds.resource.CloudInstance;
 import org.apache.sysds.resource.ResourceCompiler;
+import org.apache.sysds.resource.cost.CostEstimationException;
 import org.apache.sysds.utils.Explain;
 import org.junit.Assert;
 import org.junit.Test;
@@ -41,11 +43,12 @@ import org.apache.sysds.test.AutomatedTestBase;
 import org.apache.sysds.test.TestConfiguration;
 import scala.Tuple2;
 
-import static org.apache.sysds.test.component.resource.TestingUtils.getSimpleCloudInstanceMap;
+import static org.apache.sysds.test.component.resource.ResourceTestUtils.*;
 
-public class CostEstimatorTest extends AutomatedTestBase
-{
-	private static final boolean DEBUG_MODE = true;
+public class CostEstimatorTest extends AutomatedTestBase {
+	static {
+		ConfigurationManager.getCompilerConfig().set(CompilerConfig.ConfigType.RESOURCE_OPTIMIZATION, true);
+	}
 	private static final String TEST_DIR = "component/resource/";
 	private static final String HOME = SCRIPT_DIR + TEST_DIR;
 	private static final String TEST_CLASS_DIR = TEST_DIR + CostEstimatorTest.class.getSimpleName() + "/";
@@ -56,34 +59,193 @@ public class CostEstimatorTest extends AutomatedTestBase
 	public void setUp() {}
 
 	@Test
-	public void testL2SVMSingleNode() { runTest("Algorithm_L2SVM.dml", "m5.xlarge", null); }
+	public void L2SVMSingleNodeTest() {
+		try { // single node configuration
+			runTest("Algorithm_L2SVM.dml", "m5.xlarge", null);
+		} catch (CostEstimationException e) {
+			Assert.fail("Memory is expected to be sufficient, but exception thrown: " + e);
+		}
+	}
 
 	@Test
-	public void testL2SVMHybrid() { runTest("Algorithm_L2SVM.dml", "m5.xlarge", "m5.xlarge"); }
+	public void L2SVMHybridTest() {
+		// m and n values force Spark operations
+		Tuple2<String, String> mVar = new Tuple2<>("$m", "100000");
+		Tuple2<String, String> nVar = new Tuple2<>("$n", "15000");
+		try {
+			runTest("Algorithm_L2SVM.dml", "m5.xlarge", "m5.xlarge", mVar, nVar);
+		} catch (CostEstimationException e) {
+			Assert.fail("Memory is expected to be sufficient, but exception thrown: " + e);
+		}
+	}
 
 	@Test
-	public void testLinregSingleNode() { runTest("Algorithm_Linreg.dml", "m5.xlarge", null); }
+	public void L2SVMSingleNodeOverHybridTest() {
+		// m and n values do NOT force Spark operations (4GB input)
+		Tuple2<String, String> mVar = new Tuple2<>("$m", "50000");
+		Tuple2<String, String> nVar = new Tuple2<>("$n", "10000");
+		double singleNodeTimeCost, clusterTimeCost;
+		try { // single node configuration
+			singleNodeTimeCost = runTest("Algorithm_L2SVM.dml", "m5.xlarge", null, mVar, nVar);
+		} catch (CostEstimationException e) {
+			Assert.fail("Memory is expected to be sufficient, but exception thrown: " + e);
+			return;
+		}
+
+		try { // cluster configuration
+			clusterTimeCost = runTest("Algorithm_L2SVM.dml", "m5.xlarge", "m5.xlarge", mVar, nVar);
+		} catch (CostEstimationException e) {
+			Assert.fail("Memory is expected to be sufficient, but exception thrown: " + e);
+			return;
+		}
+		// not equal because some operations are directly scheduled on spark in hybrid mode
+		Assert.assertTrue(singleNodeTimeCost <= clusterTimeCost);
+	}
+
+
 
 	@Test
-	public void testLinregHybrid() { runTest("Algorithm_Linreg.dml", "m5.xlarge", "m5.xlarge"); }
+	public void LinregSingleNodeTest() {
+		try { // single node configuration
+			runTest("Algorithm_Linreg.dml", "m5.xlarge", null);
+		} catch (CostEstimationException e) {
+			Assert.fail("Memory is expected to be sufficient, but exception thrown: " + e);
+		}
+	}
 
 	@Test
-	public void testPCASingleNode() { runTest("Algorithm_PCA.dml", "m5.xlarge", null); }
-	@Test
-	public void testPCAHybrid() { runTest("Algorithm_PCA.dml", "m5.xlarge", "m5.xlarge"); }
+	public void LinregHybridTest() {
+		// m and n values force Spark operations
+		Tuple2<String, String> mVar = new Tuple2<>("$m", "100000");
+		Tuple2<String, String> nVar = new Tuple2<>("$n", "15000");
+
+		try { // cluster configuration
+			runTest("Algorithm_Linreg.dml", "m5.xlarge", "m5.xlarge", mVar, nVar);
+		} catch (CostEstimationException e) {
+			Assert.fail("Memory is expected to be sufficient, but exception thrown: " + e);
+		}
+	}
 
 	@Test
-	public void testPNMFSingleNode() { runTest("Algorithm_PNMF.dml", "m5.xlarge", null); }
+	public void LinregSingleNodeOverHybridTest() {
+		// m and n values do NOT force Spark operations (4GB input)
+		Tuple2<String, String> mVar = new Tuple2<>("$m", "50000");
+		Tuple2<String, String> nVar = new Tuple2<>("$n", "10000");
+		double singleNodeTimeCost, clusterTimeCost;
+		try { // single node configuration
+			singleNodeTimeCost = runTest("Algorithm_Linreg.dml", "m5.xlarge", null, mVar, nVar);
+		} catch (CostEstimationException e) {
+			Assert.fail("Memory is expected to be sufficient, but exception thrown: " + e);
+			return;
+		}
+
+		try { // cluster configuration
+			clusterTimeCost = runTest("Algorithm_Linreg.dml", "m5.xlarge", "m5.xlarge", mVar, nVar);
+		} catch (CostEstimationException e) {
+			Assert.fail("Memory is expected to be sufficient, but exception thrown: " + e);
+			return;
+		}
+		// not equal because some operations are directly scheduled on spark in hybrid mode
+		Assert.assertTrue(singleNodeTimeCost <= clusterTimeCost);
+	}
 
 	@Test
-	public void testPNMFHybrid() { runTest("Algorithm_PNMF.dml", "m5.xlarge", "m5.xlarge"); }
+	public void testPCASingleNode() {
+		try { // single node configuration
+			runTest("Algorithm_PCA.dml", "m5.xlarge", null);
+		} catch (CostEstimationException e) {
+			Assert.fail("Memory is expected to be sufficient, but exception thrown: " + e);
+		}
+	}
+	@Test
+	public void testPCAHybrid() {
+		// m and n values force Spark operations
+		Tuple2<String, String> mVar = new Tuple2<>("$m", "100000");
+		Tuple2<String, String> nVar = new Tuple2<>("$n", "15000");
+		try { // cluster configuration
+			runTest("Algorithm_PCA.dml", "m5.xlarge", "m5.xlarge", mVar, nVar);
+		} catch (CostEstimationException e) {
+			Assert.fail("Memory is expected to be sufficient, but exception thrown: " + e);
+		}
+	}
+
+	@Test
+	public void testPCASingleOverHybrid() {
+		// m and n values do Not force Spark operations
+		Tuple2<String, String> mVar = new Tuple2<>("$m", "40000");
+		Tuple2<String, String> nVar = new Tuple2<>("$n", "10000");
+		double singleNodeTimeCost, clusterTimeCost;
+		try { // single node configuration
+			singleNodeTimeCost = runTest("Algorithm_PCA.dml", "m5.xlarge", null, mVar, nVar);
+		} catch (CostEstimationException e) {
+			Assert.fail("Memory is expected to be sufficient, but exception thrown: " + e);
+			return;
+		}
+
+		try { // cluster configuration
+			clusterTimeCost = runTest("Algorithm_PCA.dml", "m5.xlarge", "m5.xlarge", mVar, nVar);
+		} catch (CostEstimationException e) {
+			Assert.fail("Memory is expected to be sufficient, but exception thrown: " + e);
+			return;
+		}
+		// not equal because some operations are directly scheduled on spark in hybrid mode
+		Assert.assertTrue(singleNodeTimeCost <= clusterTimeCost);
+	}
+
+	@Test
+	public void testPNMFSingleNode() {
+		try { // single node configuration
+			runTest("Algorithm_PNMF.dml", "m5.xlarge", null);
+		} catch (CostEstimationException e) {
+			Assert.fail("Memory is expected to be sufficient, but exception thrown: " + e);
+		}
+	}
+
+	@Test
+	public void testPNMFHybrid() {
+		// m and n values force Spark operations (80GB input)
+		Tuple2<String, String> mVar = new Tuple2<>("$m", "1000000");
+		Tuple2<String, String> nVar = new Tuple2<>("$n", "10000");
+		try { // cluster configuration
+			runTest("Algorithm_PNMF.dml", "m5.xlarge", "m5.xlarge", mVar, nVar);
+		} catch (CostEstimationException e) {
+			Assert.fail("Memory is expected to be sufficient, but exception thrown: " + e);
+		}
+	}
+
+	@Test
+	public void testPNMFSingleNodeOverHybrid() {
+		// m and n values do NOT force Spark operations (4GB input)
+		Tuple2<String, String> mVar = new Tuple2<>("$m", "500000");
+		Tuple2<String, String> nVar = new Tuple2<>("$n", "1000");
+		double singleNodeTimeCost, clusterTimeCost;
+		try { // single node configuration
+			singleNodeTimeCost = runTest("Algorithm_PNMF.dml", "m5.xlarge", null, nVar, mVar);
+		} catch (CostEstimationException e) {
+			Assert.fail("Memory is expected to be sufficient, but exception thrown: " + e);
+			return;
+		}
+
+		try {
+			clusterTimeCost = runTest("Algorithm_PNMF.dml", "m5.xlarge", "m5.xlarge", mVar, nVar);
+		} catch (CostEstimationException e) {
+			Assert.fail("Memory is expected to be sufficient, but exception thrown: " + e);
+			return;
+		}
+		// not equal because some operations are directly scheduled on spark in hybrid mode
+		Assert.assertTrue(singleNodeTimeCost <= clusterTimeCost);
+	}
 
 	@Test
 	public void testReadAndWriteSingleNode() {
 		Tuple2<String, String> arg1 = new Tuple2<>("$fileA", HOME+"data/A.csv");
 		Tuple2<String, String> arg2 = new Tuple2<>("$fileA_Csv", HOME+"data/A_copy.csv");
 		Tuple2<String, String> arg3 = new Tuple2<>("$fileA_Text", HOME+"data/A_copy_text.text");
-		runTest("ReadAndWrite.dml", "m5.xlarge", null, arg1, arg2, arg3);
+		try {
+			runTest("ReadAndWrite.dml", "m5.xlarge", null, arg1, arg2, arg3);
+		} catch (CostEstimationException e) {
+			Assert.fail("Memory is expected to be sufficient, but exception thrown: " + e);
+		}
 	}
 
 	@Test
@@ -91,30 +253,46 @@ public class CostEstimatorTest extends AutomatedTestBase
 		Tuple2<String, String> arg1 = new Tuple2<>("$fileA", HOME+"data/A.csv");
 		Tuple2<String, String> arg2 = new Tuple2<>("$fileA_Csv", HOME+"data/A_copy.csv");
 		Tuple2<String, String> arg3 = new Tuple2<>("$fileA_Text", HOME+"data/A_copy_text.text");
-		runTest("ReadAndWrite.dml", "c5.xlarge", "m5.xlarge", arg1, arg2, arg3);
+		try {
+			runTest("ReadAndWrite.dml", "c5.xlarge", "m5.xlarge", arg1, arg2, arg3);
+		} catch (CostEstimationException e) {
+			Assert.fail("Memory is expected to be sufficient, but exception thrown: " + e);
+		}
 	}
 
+	@Test
+	public void withInsufficientMem() {
+		// m and n values do NOT force Spark operations
+		Tuple2<String, String> mVar = new Tuple2<>("$m", "100000");
+		Tuple2<String, String> nVar = new Tuple2<>("$n", "10000");
+		try { // cluster configuration
+			runTest("Algorithm_Linreg.dml", "m5.xlarge", "m5.xlarge", mVar, nVar);
+			Assert.fail("Memory is expected to be insufficient, but no exception thrown: ");
+		} catch (CostEstimationException e) {
+			Assert.assertEquals(e.getMessage(), "Insufficient local memory");
+		}
+	}
 
+	// Helpers ---------------------------------------------------------------------------------------------------------
 
 	@SafeVarargs
-	private void runTest(String scriptFilename, String driverInstance, String executorInstance, Tuple2<String, String>...args) {
+	private double runTest(String scriptFilename, String driverInstance, String executorInstance, Tuple2<String, String>...args) throws CostEstimationException {
 		CloudInstance driver;
 		CloudInstance executor;
 		try {
-			// setting driver node is required
+			// setting CP (driver) node is required
 			driver = INSTANCE_MAP.get(driverInstance);
-			ResourceCompiler.setDriverConfigurations(driver.getMemory(), driver.getVCPUs());
-			// setting executor node is optional: no executor -> single node execution
+			// setting executor node is optional: no executors -> single node execution
 			if (executorInstance == null) {
 				executor = null;
-				ResourceCompiler.setSingleNodeExecution();
+				ResourceCompiler.setSingleNodeResourceConfigs(driver.getMemory(), driver.getVCPUs());
 			} else {
 				executor = INSTANCE_MAP.get(executorInstance);
-				ResourceCompiler.setExecutorConfigurations(DEFAULT_NUM_EXECUTORS, executor.getMemory(), executor.getVCPUs());
+				ResourceCompiler.setSparkClusterResourceConfigs(driver.getMemory(), driver.getVCPUs(), DEFAULT_NUM_EXECUTORS, executor.getMemory(), executor.getVCPUs());
 			}
 		} catch (Exception e) {
 			e.printStackTrace();
-			throw new RuntimeException("Resource initialization for teh current test failed.");
+			throw new RuntimeException("Resource initialization for the current test failed.");
 		}
 		try
 		{
@@ -129,23 +307,23 @@ public class CostEstimatorTest extends AutomatedTestBase
 			
 			DMLConfig conf = new DMLConfig(getCurConfigFile().getPath());
 			ConfigurationManager.setLocalConfig(conf);
-			
-			String dmlScriptString="";
+
 			// assign arguments
 			HashMap<String, String> argVals = new HashMap<>();
 			for (Tuple2<String, String> arg : args)
 				argVals.put(arg._1, arg._2);
 
 			//read script
+			StringBuilder dmlScriptString= new StringBuilder();
 			try( BufferedReader in = new BufferedReader(new FileReader(HOME + scriptFilename)) ) {
-				String s1 = null;
+				String s1;
 				while ((s1 = in.readLine()) != null)
-					dmlScriptString += s1 + "\n";
+					dmlScriptString.append(s1).append("\n");
 			}
 			
 			//simplified compilation chain
 			ParserWrapper parser = ParserFactory.createParser();
-			DMLProgram prog = parser.parse(DMLScript.DML_FILE_PATH_ANTLR_PARSER, dmlScriptString, argVals);
+			DMLProgram prog = parser.parse(DMLScript.DML_FILE_PATH_ANTLR_PARSER, dmlScriptString.toString(), argVals);
 			DMLTranslator dmlt = new DMLTranslator(prog);
 			dmlt.liveVariableAnalysis(prog);
 			dmlt.validateParseTree(prog);
@@ -153,13 +331,18 @@ public class CostEstimatorTest extends AutomatedTestBase
 			dmlt.rewriteHopsDAG(prog);
 			dmlt.constructLops(prog);
 			Program rtprog = dmlt.getRuntimeProgram(prog, ConfigurationManager.getDMLConfig());
-			if (DEBUG_MODE) System.out.println(Explain.explain(rtprog));
+			if (DEBUG) System.out.println(Explain.explain(rtprog));
 			double timeCost = CostEstimator.estimateExecutionTime(rtprog, driver, executor);
-			if (DEBUG_MODE) System.out.println("Estimated execution time: " + timeCost + " seconds.");
+			if (DEBUG) System.out.println("Estimated execution time: " + timeCost + " seconds.");
 			// check error-free cost estimation and meaningful result
 			Assert.assertTrue(timeCost > 0);
+			// return time cost for further assertions
+			return timeCost;
 		}
 		catch(Exception e) {
+			if (e instanceof CostEstimationException)
+				throw new CostEstimationException(e.getMessage());
+			// else
 			e.printStackTrace();
 			throw new RuntimeException("Error at parsing the return program for cost estimation");
 		}

@@ -17,4 +17,25 @@
 # specific language governing permissions and limitations
 # under the License.
 #
-#--------------------------------------
+#-------------------------------------------------------------
+
+
+M = read($1, data_type="matrix", format="csv", header=TRUE);
+Y = M[, ncol(M)] + 1
+X = M[, 1:ncol(M)-1]
+upsample = as.logical($2)
+
+[Xtrain, Xtest, Ytrain, Ytest] = split(X=X, Y=Y, f=0.7);
+
+if( upsample ) {
+  # oversampling all classes other than majority
+  [Xtrain,Ytrain] = adasyn(X=Xtrain, Y=Ytrain, k=$3);
+}
+
+B = multiLogReg(X=Xtrain, Y=Ytrain, icpt=2);
+[P,yhat,acc] = multiLogRegPredict(X=Xtest, Y=Ytest, B=B);
+print("accuracy: "+acc)
+
+R = as.matrix(acc/100);
+write(R, $4);
+

@@ -62,7 +62,7 @@ jobs:
           "**.functions.compress.**,**.functions.data.tensor.**,**.functions.codegenalg.parttwo.**,**.functions.codegen.**,**.functions.caching.**",
           "**.functions.binary.matrix_full_cellwise.**,**.functions.binary.matrix_full_other.**",
           "**.functions.federated.algorithms.**,**.functions.federated.io.**,**.functions.federated.paramserv.**",
-          "**.functions.federated.transform.**",
+          "**.functions.federated.transform.**,**.functions.federated.fedplanner.**",
           "**.functions.federated.primitives.part1.** -Dtest-threadCount=1 -Dtest-forkCount=1",
           "**.functions.federated.primitives.part2.** -Dtest-threadCount=1 -Dtest-forkCount=1",
           "**.functions.federated.primitives.part3.** -Dtest-threadCount=1 -Dtest-forkCount=1",
@@ -147,7 +147,7 @@ jobs:
       run: mvn jacoco:report
 
     - name: Upload coverage to Codecov
-      uses: codecov/codecov-action@v4.6.0
+      uses: codecov/codecov-action@v5.0.0
       if: github.repository_owner == 'apache'
       with:
         fail_ci_if_error: false

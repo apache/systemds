@@ -62,7 +62,6 @@ public class CostEstimatorStaticRuntime extends CostEstimator
 	private static final double DEFAULT_MBS_HDFSWRITE_TEXT_SPARSE = 30;
 	
 	@Override
-	@SuppressWarnings("unused")
 	protected double getCPInstTimeEstimate( Instruction inst, VarStats[] vs, String[] args )
 	{
 		CPInstruction cpinst = (CPInstruction)inst;

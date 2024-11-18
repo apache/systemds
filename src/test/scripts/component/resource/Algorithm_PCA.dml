@@ -19,7 +19,9 @@
 #
 #-------------------------------------------------------------
 
-X = rand(rows=10000, cols=10);
+m = ifdef($m, 10000);
+n = ifdef($n, 10);
+X = rand(rows=m, cols=n);
 [X, C, C2, S2] = pca(X=X, center=TRUE, scale=TRUE);
 print(sum(X));
 

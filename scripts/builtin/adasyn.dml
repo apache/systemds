@@ -1,0 +1,84 @@
+#-------------------------------------------------------------
+#
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+#
+#-------------------------------------------------------------
+
+# Builtin function for handing class imbalance using Adaptive Synthetic Sampling (ADASYN)
+# by Haibo He et. al. In International Joint Conference on Neural Networks (2008). 1322-1328
+#
+# INPUT:
+# --------------------------------------------------------------------------------------
+# X        Feature matrix [shape: n-by-m]
+# Y        Class labels [shape: n-by-1]
+# k        Number of nearest neighbors
+# beta     Desired balance level after generation of synthetic data [0, 1]
+# dth      Distribution threshold
+# seed     Seed for randomized data point selection
+# --------------------------------------------------------------------------------------
+#
+# OUTPUT:
+# -------------------------------------------------------------------------------------
+# Xp       Feature matrix of n original rows followed by G = (ml-ms)*beta synthetic rows
+# Yp       Class labels aligned with output X
+# -------------------------------------------------------------------------------------
+
+m_adasyn = function(Matrix[Double] X, Matrix[Double] Y, Integer k = 2,
+  Double beta = 1.0, Double dth = 0.9, Integer seed = -1)
+  return (Matrix[Double] Xp, Matrix[Double] Yp)
+{
+  if(k < 1) {
+    print("ADASYN: k should not be less than 1. Setting k value to default k = 1.")
+    k = 1
+  }
+
+  # Preprocessing
+  freq = t(table(Y, 1));
+  minorIdx = as.scalar(rowIndexMin(freq))
+  majorIdx = as.scalar(rowIndexMax(freq))
+
+  # (Step 1)
+  # Calculate the degree of class imbalance, where d in (0, 1]
+  d = as.scalar(freq[1,minorIdx])/sum(freq)
+
+  # (Step 2)
+  # Check if imbalance is lower than predefined threshold
+  print("ADASYN: class imbalance: " + d)
+
+  if(d >= dth) {
+      stop("ADASYN: Class imbalance not large enough.")
+  }
+
+  # (Step 2a)
+  # Calculate number of synthetic data examples
+  G = as.scalar(freq[1,majorIdx]-freq[1,minorIdx])*beta
+
+  # (Step 2b)
+  # For each x_i in non-majority class, find k nearest neighbors.
+  # Get G random points from the KNN set via a permutation matrix multiply
+  Xnonmajor = removeEmpty(target=X, margin="rows", select=(Y!=majorIdx))
+  Ynonmajor = removeEmpty(target=Y, margin="rows", select=(Y!=majorIdx))
+  NNR = knnbf(Xnonmajor, Xnonmajor, k+1)
+  NNR = matrix(NNR, rows=length(NNR), cols=1)
+  I = rand(rows=nrow(NNR), cols=1, seed=seed) < (G/nrow(NNR))
+  NNRg = removeEmpty(target=NNR, margin="rows", select=I);
+  P = table(seq(1, nrow(NNRg)), NNRg, nrow(NNRg), nrow(Xnonmajor));
+  Xp = rbind(X, P %*% Xnonmajor);
+  Yp = rbind(Y, P %*% Ynonmajor); # multi-class
+}
+

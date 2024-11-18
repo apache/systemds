@@ -286,20 +286,10 @@ public class FederatedCovarianceTest extends AutomatedTestBase {
 				if (!alignedWeights) {
 					// Run reference dml script with a normal matrix
 					fullDMLScriptName = HOME + TEST_NAME + "Reference.dml";
-					programArgs = new String[] {
-						"-stats", "100", "-args",
-						input("X1"),
-						input("X2"),
-						input("X3"),
-						input("X4"),
-
-						input("Y1"),
-						input("Y2"),
-						input("Y3"),
-						input("Y4"),
-
-						input("W"),
-						expected("S")
+					programArgs = new String[] { "-stats", "100", "-args",
+						input("X1"), input("X2"), input("X3"), input("X4"),
+						input("Y1"), input("Y2"), input("Y3"), input("Y4"),
+						input("W"), expected("S")
 					};
 					runTest(null);
 					
@@ -308,19 +298,13 @@ public class FederatedCovarianceTest extends AutomatedTestBase {
 					programArgs = new String[] {"-stats", "100", "-nvargs",
 						"in_X1=" + TestUtils.federatedAddress(port1, input("X1")),
 						"in_Y1=" + TestUtils.federatedAddress(port1, input("Y1")),
-						
 						"in_X2=" + TestUtils.federatedAddress(port2, input("X2")),
 						"in_Y2=" + TestUtils.federatedAddress(port2, input("Y2")),
-						
 						"in_X3=" + TestUtils.federatedAddress(port3, input("X3")),
 						"in_Y3=" + TestUtils.federatedAddress(port3, input("Y3")),
-						
 						"in_X4=" + TestUtils.federatedAddress(port4, input("X4")),
 						"in_Y4=" + TestUtils.federatedAddress(port4, input("Y4")),
-
-						"in_W1=" + input("W"),
-						"rows=" + rows, "cols=" + cols,
-						"out_S=" + output("S")};
+						"in_W1=" + input("W"), "rows=" + rows, "cols=" + cols, "out_S=" + output("S")};
 					runTest(null);
 				}
 				else {
@@ -336,24 +320,10 @@ public class FederatedCovarianceTest extends AutomatedTestBase {
 
 					// Run reference dml script with a normal matrix
 					fullDMLScriptName = HOME + TEST_NAME + "Reference.dml";
-					programArgs = new String[] {
-						"-stats", "100", "-args",
-						input("X1"),
-						input("X2"),
-						input("X3"),
-						input("X4"),
-
-						input("Y1"),
-						input("Y2"),
-						input("Y3"),
-						input("Y4"),
-
-						input("W1"),
-						input("W2"),
-						input("W3"),
-						input("W4"),
-
-						expected("S")
+					programArgs = new String[] {"-stats", "100", "-args",
+						input("X1"), input("X2"), input("X3"), input("X4"),
+						input("Y1"), input("Y2"), input("Y3"), input("Y4"),
+						input("W1"), input("W2"), input("W3"), input("W4"), expected("S")
 					};
 					runTest(null);
 
@@ -363,21 +333,16 @@ public class FederatedCovarianceTest extends AutomatedTestBase {
 						"in_X1=" + TestUtils.federatedAddress(port1, input("X1")),
 						"in_Y1=" + TestUtils.federatedAddress(port1, input("Y1")),
 						"in_W1=" + TestUtils.federatedAddress(port1, input("W1")),
-						
 						"in_X2=" + TestUtils.federatedAddress(port2, input("X2")),
 						"in_Y2=" + TestUtils.federatedAddress(port2, input("Y2")),
 						"in_W2=" + TestUtils.federatedAddress(port2, input("W2")),
-						
 						"in_X3=" + TestUtils.federatedAddress(port3, input("X3")),
 						"in_Y3=" + TestUtils.federatedAddress(port3, input("Y3")),
 						"in_W3=" + TestUtils.federatedAddress(port3, input("W3")),
-						
 						"in_X4=" + TestUtils.federatedAddress(port4, input("X4")),
 						"in_Y4=" + TestUtils.federatedAddress(port4, input("Y4")),
 						"in_W4=" + TestUtils.federatedAddress(port4, input("W4")),
-
-						"rows=" + rows, "cols=" + cols,
-						"out_S=" + output("S")};
+						"rows=" + rows, "cols=" + cols, "out_S=" + output("S")};
 					runTest(null);
 				}
 				
@@ -389,13 +354,8 @@ public class FederatedCovarianceTest extends AutomatedTestBase {
 
 				// Run reference dml script with a normal matrix
 				fullDMLScriptName = HOME + TEST_NAME + "Reference.dml";
-				programArgs = new String[] {
-					"-stats", "100", "-args",
-					input("X1"),
-					input("X2"),
-					input("X3"),
-					input("X4"),
-
+				programArgs = new String[] {"-stats", "100", "-args",
+					input("X1"), input("X2"), input("X3"), input("X4"),
 					input("Y"), input("W"), expected("S")
 				};
 				runTest(null);
@@ -407,13 +367,8 @@ public class FederatedCovarianceTest extends AutomatedTestBase {
 					"in_X2=" + TestUtils.federatedAddress(port2, input("X2")),
 					"in_X3=" + TestUtils.federatedAddress(port3, input("X3")),
 					"in_X4=" + TestUtils.federatedAddress(port4, input("X4")),
-
-					"in_W1=" + input("W"),
-					"Y=" + input("Y"),
-
-					"rows=" + rows,
-					"cols=" + cols,
-					"out_S=" + output("S")};
+					"in_W1=" + input("W"), "Y=" + input("Y"),
+					"rows=" + rows, "cols=" + cols, "out_S=" + output("S")};
 				runTest(null);
 			}
 

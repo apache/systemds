@@ -257,47 +257,47 @@ public class CovarianceFEDInstruction extends BinaryFEDInstruction {
 		
 		// calculate global means
 		double totalMeanX = 0;
-        double totalMeanY = 0;
-        int totalCount = 0;
-        for (int i = 0; i < mean1.length; i++) {
-            totalMeanX += mean1[i] * sizes[i];
-            totalMeanY += mean2[i] * sizes[i];
-            totalCount += sizes[i];
-        }
+		double totalMeanY = 0;
+		int totalCount = 0;
+		for (int i = 0; i < mean1.length; i++) {
+			totalMeanX += mean1[i] * sizes[i];
+			totalMeanY += mean2[i] * sizes[i];
+			totalCount += sizes[i];
+		}
 
-        totalMeanX /= totalCount;
-        totalMeanY /= totalCount;
+		totalMeanX /= totalCount;
+		totalMeanY /= totalCount;
 
 		// calculate global covariance
-        double cov = 0;
-        for (int i = 0; i < covValues.length; i++) {
-            cov += (sizes[i] - 1) * covValues[i];
-            cov += sizes[i] * (mean1[i] - totalMeanX) * (mean2[i] - totalMeanY);
-        }
-        return cov / (totalCount - 1); // adjusting for degrees of freedom
+		double cov = 0;
+		for (int i = 0; i < covValues.length; i++) {
+			cov += (sizes[i] - 1) * covValues[i];
+			cov += sizes[i] * (mean1[i] - totalMeanX) * (mean2[i] - totalMeanY);
+		}
+		return cov / (totalCount - 1); // adjusting for degrees of freedom
 	}
 
 	private static double aggWeightedCov(Double[] covValues, Double[] mean1, Double[] mean2, Double[] weights) {
 		// calculate global weighted means
 		double totalWeightedMeanX = 0;
-        double totalWeightedMeanY = 0;
-        double totalWeight = 0;
-        for (int i = 0; i < mean1.length; i++) {
-            totalWeight += weights[i];
-            totalWeightedMeanX += mean1[i] * weights[i];
-            totalWeightedMeanY += mean2[i] * weights[i];
-        }
+		double totalWeightedMeanY = 0;
+		double totalWeight = 0;
+		for (int i = 0; i < mean1.length; i++) {
+			totalWeight += weights[i];
+			totalWeightedMeanX += mean1[i] * weights[i];
+			totalWeightedMeanY += mean2[i] * weights[i];
+		}
 
-        totalWeightedMeanX /= totalWeight;
-        totalWeightedMeanY /= totalWeight;
+		totalWeightedMeanX /= totalWeight;
+		totalWeightedMeanY /= totalWeight;
 
 		// calculate global weighted covariance
-        double cov = 0;
-        for (int i = 0; i < covValues.length; i++) {
-            cov += (weights[i] - 1) * covValues[i];
-            cov += weights[i] * (mean1[i] - totalWeightedMeanX) * (mean2[i] - totalWeightedMeanY);
-        }
-        return cov / (totalWeight - 1); // adjusting for degrees of freedom
+		double cov = 0;
+		for (int i = 0; i < covValues.length; i++) {
+			cov += (weights[i] - 1) * covValues[i];
+			cov += weights[i] * (mean1[i] - totalWeightedMeanX) * (mean2[i] - totalWeightedMeanY);
+		}
+		return cov / (totalWeight - 1); // adjusting for degrees of freedom
 	}
 
 	private Future<FederatedResponse>[] processMean(MatrixObject mo1, MatrixLineagePair moLin3, int var){
@@ -326,8 +326,7 @@ public class CovarianceFEDInstruction extends BinaryFEDInstruction {
 
 			CPOperand multOutputCPOp = new CPOperand(
 				multOutput.substring(0, multOutput.indexOf("·")),
-				mo1.getValueType(),
-				mo1.getDataType()
+				mo1.getValueType(), mo1.getDataType()
 			);
 
 			FederatedRequest multFr = FederationUtils.callInstruction(
@@ -352,8 +351,7 @@ public class CovarianceFEDInstruction extends BinaryFEDInstruction {
 				sumInstr1,
 				new CPOperand(
 					sumInstr1Output.substring(0, sumInstr1Output.indexOf("·")),
-					output.getValueType(),
-					output.getDataType()
+					output.getValueType(), output.getDataType()
 				),
 				new CPOperand[]{multOutputCPOp},
 				new long[]{multFr.getID()}
@@ -370,8 +368,7 @@ public class CovarianceFEDInstruction extends BinaryFEDInstruction {
 				sumInstr2,
 				new CPOperand(
 					sumInstr2Output.substring(0, sumInstr2Output.indexOf("·")),
-					output.getValueType(),
-					output.getDataType()
+					output.getValueType(), output.getDataType()
 				),
 				new CPOperand[]{input3},
 				new long[]{moLin3.getFedMapping().getID()}
@@ -380,32 +377,25 @@ public class CovarianceFEDInstruction extends BinaryFEDInstruction {
 			// divide sum(X*W) by sum(W)
 			String[] partsSum2 = sumInstr2.split("°");
 			String divInstrOutput = incrementVar(sumInstr2Output, 1);
-			String divInstr = sumInstr2
-				.replace("uak+", "/")
-				.replace(partsSum2[2], sumInstr1Output + "·false")
-				.replace(partsSum2[3], partsSum2[3] + "·false")
-				.replace(partsSum2[4], divInstrOutput);
-			divInstr = divInstr + "°" + partsSum2[4];
+			String divInstrInput1 = partsSum2[2].replace(partsSum2[2], sumInstr1Output + "·false");
+			String divInstrInput2 = partsSum2[3].replace(partsSum2[3], sumInstr2Output + "·false");
+			String divInstr = partsSum2[0] + "°" + partsSum2[1].replace("uak+", "/") + "°" +
+					divInstrInput1 + "°" + divInstrInput2 + "°" + divInstrOutput + "°" + partsSum2[4];
 
 			FederatedRequest divFr1 = FederationUtils.callInstruction(
 				divInstr,
 				new CPOperand(
 					divInstrOutput.substring(0, divInstrOutput.indexOf("·")),
-					output.getValueType(),
-					output.getDataType()
+					output.getValueType(), output.getDataType()
 				),
 				new CPOperand[]{
 					new CPOperand(
 						sumInstr1Output.substring(0, sumInstr1Output.indexOf("·")),
-						output.getValueType(),
-						output.getDataType(),
-						output.isLiteral()
+						output.getValueType(), output.getDataType(), output.isLiteral()
 					),
 					new CPOperand(
 						sumInstr2Output.substring(0, sumInstr2Output.indexOf("·")),
-						output.getValueType(),
-						output.getDataType(),
-						output.isLiteral()
+						output.getValueType(), output.getDataType(), output.isLiteral()
 					)
 				},
 				new long[]{sumFr1.getID(), sumFr2.getID()}
@@ -432,8 +422,7 @@ public class CovarianceFEDInstruction extends BinaryFEDInstruction {
 
 		CPOperand multOutputCPOp = new CPOperand(
 			multOutput.substring(0, multOutput.indexOf("·")),
-			mo1.getValueType(),
-			mo1.getDataType()
+			mo1.getValueType(), mo1.getDataType()
 		);
 
 		FederatedRequest multFr = FederationUtils.callInstruction(
@@ -458,8 +447,7 @@ public class CovarianceFEDInstruction extends BinaryFEDInstruction {
 			sumInstr1,
 			new CPOperand(
 				sumInstr1Output.substring(0, sumInstr1Output.indexOf("·")),
-				output.getValueType(),
-				output.getDataType()
+				output.getValueType(), output.getDataType()
 			),
 			new CPOperand[]{multOutputCPOp},
 			new long[]{multFr.getID()}
@@ -476,8 +464,7 @@ public class CovarianceFEDInstruction extends BinaryFEDInstruction {
 			sumInstr2,
 			new CPOperand(
 				sumInstr2Output.substring(0, sumInstr2Output.indexOf("·")),
-				output.getValueType(),
-				output.getDataType()
+				output.getValueType(), output.getDataType()
 			),
 			new CPOperand[]{input3},
 			new long[]{weightsID}
@@ -486,32 +473,25 @@ public class CovarianceFEDInstruction extends BinaryFEDInstruction {
 		// divide sum(X*W) by sum(W)
 		String[] partsSum2 = sumInstr2.split("°");
 		String divInstrOutput = incrementVar(sumInstr2Output, 1);
-		String divInstr = sumInstr2
-			.replace("uak+", "/")
-			.replace(partsSum2[2], sumInstr1Output + "·false")
-			.replace(partsSum2[3], partsSum2[3] + "·false")
-			.replace(partsSum2[4], divInstrOutput);
-		divInstr = divInstr + "°" + partsSum2[4];
+		String divInstrInput1 = partsSum2[2].replace(partsSum2[2], sumInstr1Output + "·false");
+		String divInstrInput2 = partsSum2[3].replace(partsSum2[3], sumInstr2Output + "·false");
+		String divInstr = partsSum2[0] + "°" + partsSum2[1].replace("uak+", "/") + "°" +
+				divInstrInput1 + "°" + divInstrInput2 + "°" + divInstrOutput + "°" + partsSum2[4];
 
 		FederatedRequest divFr1 = FederationUtils.callInstruction(
 			divInstr,
 			new CPOperand(
 				divInstrOutput.substring(0, divInstrOutput.indexOf("·")),
-				output.getValueType(),
-				output.getDataType()
+				output.getValueType(), output.getDataType()
 			),
 			new CPOperand[]{
 				new CPOperand(
 					sumInstr1Output.substring(0, sumInstr1Output.indexOf("·")),
-					output.getValueType(),
-					output.getDataType(),
-					output.isLiteral()
+					output.getValueType(), output.getDataType(), output.isLiteral()
 				),
 				new CPOperand(
 					sumInstr2Output.substring(0, sumInstr2Output.indexOf("·")),
-					output.getValueType(),
-					output.getDataType(),
-					output.isLiteral()
+					output.getValueType(), output.getDataType(), output.isLiteral()
 				)
 			},
 			new long[]{sumFr1.getID(), sumFr2.getID()}
@@ -566,17 +546,17 @@ public class CovarianceFEDInstruction extends BinaryFEDInstruction {
 	}
 
 	private static String incrementVar(String str, int inc) {
-        StringBuilder strOut = new StringBuilder(str);
-        Pattern pattern = Pattern.compile("\\d+");
-        Matcher matcher = pattern.matcher(strOut);
-        if (matcher.find()) {
-            int num = Integer.parseInt(matcher.group()) + inc;
-            int start = matcher.start();
-            int end = matcher.end();
-            strOut.replace(start, end, String.valueOf(num));
-        }
-        return strOut.toString();
-    }
+		StringBuilder strOut = new StringBuilder(str);
+		Pattern pattern = Pattern.compile("\\d+");
+		Matcher matcher = pattern.matcher(strOut);
+		if (matcher.find()) {
+			int num = Integer.parseInt(matcher.group()) + inc;
+			int start = matcher.start();
+			int end = matcher.end();
+			strOut.replace(start, end, String.valueOf(num));
+		}
+		return strOut.toString();
+	}
 
 	private static class COVFunction extends FederatedUDF {
 

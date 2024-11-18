@@ -270,7 +270,7 @@ public class MappingTests {
 	public void getUnique() {
 		int u = m.getUnique();
 		if(max != u)
-			fail("incorrect number of unique " + m + "\n expected" + max + " got" + u);
+			fail("incorrect number of unique " + m + "expectedInstances" + max + " got" + u);
 	}
 
 	@Test

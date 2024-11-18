@@ -19,8 +19,10 @@
 #
 #-------------------------------------------------------------
 
-X = rand(rows=100000, cols=1000);
-rank = 10;
+m = ifdef($m, 100000);
+n = ifdef($n, 1000);
+rank = ifdef($rank, 10);
+X = rand(rows=m, cols=n);
 
 [w, h] = pnmf(X=X, rnk=rank, verbose=FALSE);
 print(sum(w));

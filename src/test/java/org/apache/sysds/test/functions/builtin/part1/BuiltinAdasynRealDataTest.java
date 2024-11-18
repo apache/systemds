@@ -35,6 +35,8 @@ public class BuiltinAdasynRealDataTest extends AutomatedTestBase {
 
 	private final static String DIABETES_DATA = DATASET_DIR + "diabetes/diabetes.csv";
 	private final static String DIABETES_TFSPEC = DATASET_DIR + "diabetes/tfspec.json";
+	private final static String TITANIC_DATA = DATASET_DIR + "titanic/titanic.csv";
+	private final static String TITANIC_TFSPEC = DATASET_DIR + "titanic/tfspec.json";
 
 	@Override
 	public void setUp() {
@@ -56,6 +58,21 @@ public class BuiltinAdasynRealDataTest extends AutomatedTestBase {
 		runAdasynTest(DIABETES_DATA, DIABETES_TFSPEC, true, 0.787, 6, ExecType.CP);
 	}
 	
+	@Test
+	public void testTitanicNoAdasyn() {
+		runAdasynTest(TITANIC_DATA, TITANIC_TFSPEC, false, 0.781, -1, ExecType.CP);
+	}
+	
+	@Test
+	public void testTitanicAdasynK4() {
+		runAdasynTest(TITANIC_DATA, TITANIC_TFSPEC, true, 0.797, 4, ExecType.CP);
+	}
+	
+	@Test
+	public void testTitanicAdasynK5() {
+		runAdasynTest(TITANIC_DATA, TITANIC_TFSPEC, true, 0.797, 5, ExecType.CP);
+	}
+	
 	private void runAdasynTest(String data, String tfspec, boolean adasyn, double minAcc, int k, ExecType instType) {
 		Types.ExecMode platformOld = setExecMode(instType);
 		try {
@@ -63,8 +80,8 @@ public class BuiltinAdasynRealDataTest extends AutomatedTestBase {
 			
 			String HOME = SCRIPT_DIR + TEST_DIR;
 			fullDMLScriptName = HOME + TEST_NAME + ".dml";
-			programArgs = new String[] {"-stats",
-				"-args", data, String.valueOf(adasyn), String.valueOf(k), output("R")};
+			programArgs = new String[] {"-stats", "-args",
+				data, tfspec, String.valueOf(adasyn), String.valueOf(k), output("R")};
 
 			runTest(true, false, null, -1);
 

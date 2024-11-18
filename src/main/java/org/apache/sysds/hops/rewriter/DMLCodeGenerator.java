@@ -5,6 +5,7 @@ import org.apache.commons.lang3.NotImplementedException;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
+import java.util.Random;
 import java.util.Set;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
@@ -12,6 +13,7 @@ import java.util.function.Function;
 
 public class DMLCodeGenerator {
 	public static final double EPS = 1e-10;
+	public static Random rd = new Random(42);
 
 
 	private static final HashSet<String> printAsBinary = new HashSet<>();
@@ -151,7 +153,7 @@ public class DMLCodeGenerator {
 		for (RewriterStatement var : vars) {
 			switch (var.getResultingDataType(ctx)) {
 				case "MATRIX":
-					sb.append(var.getId() + " = rand(rows=1000, cols=1000, min=0.0, max=1.0)\n");
+					sb.append(var.getId() + " = rand(rows=500, cols=500, min=(as.scalar(rand())+1.0), max=(as.scalar(rand())+2.0), seed=" + rd.nextInt(1000) + ")^as.scalar(rand())\n");
 					break;
 				case "FLOAT":
 					sb.append(var.getId() + " = as.scalar(rand())\n");

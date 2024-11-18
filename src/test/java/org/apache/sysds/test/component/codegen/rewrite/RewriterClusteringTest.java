@@ -19,6 +19,7 @@ import org.apache.sysds.performance.TimingUtils;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import scala.Tuple2;
+import scala.Tuple3;
 import scala.Tuple5;
 
 import java.io.BufferedReader;
@@ -75,7 +76,6 @@ public class RewriterClusteringTest {
 		RewriterDatabase canonicalExprDB = new RewriterDatabase();
 
 		List<RewriterStatement> foundEquivalences = Collections.synchronizedList(new ArrayList<>());
-		RewriterRuleCreator ruleCreator = new RewriterRuleCreator(ctx);
 
 		int size = db.size();
 		MutableInt ctr = new MutableInt(0);
@@ -189,6 +189,8 @@ public class RewriterClusteringTest {
 		System.out.println("===== SUGGESTED REWRITES =====");
 		List<Tuple5<Double, Long, Long, RewriterStatement, RewriterStatement>> rewrites = findSuggestedRewrites(foundEquivalences);
 
+		// Here, we create any rule
+		List<Tuple3<RewriterRule, Long, Long>> allRules = new ArrayList<>();
 		int mCtr = 0;
 		for (Tuple5<Double, Long, Long, RewriterStatement, RewriterStatement> rewrite : rewrites) {
 			if (++mCtr % 100 == 0)
@@ -198,17 +200,24 @@ public class RewriterClusteringTest {
 			RewriterStatement canonicalFormTo = converter.apply(rewrite._5());
 			RewriterRule rule = RewriterRuleCreator.createRule(rewrite._4(), rewrite._5(), canonicalFormFrom, canonicalFormTo, ctx);
 
-			ruleCreator.registerRule(rule, rewrite._2(), rewrite._3());
-
-			/*if (ruleCreator.registerRule(rule, rewrite._2(), rewrite._3())) {
-				System.out.println(rule);
-				System.out.println("Score: " + rewrite._1());
-				System.out.println("Cost1: " + rewrite._2());
-				System.out.println("Cost2: " + rewrite._3());
-			} else {
-				System.out.println("[Duplicate rule]");
-			}*/
+			allRules.add(new Tuple3<>(rule, rewrite._2(), rewrite._3()));
+			//ruleCreator.registerRule(rule, rewrite._2(), rewrite._3());
 		}
+
+		{
+			RewriterRuleSet rawRuleSet = new RewriterRuleSet(ctx, allRules.stream().map(Tuple3::_1).collect(Collectors.toList()));
+
+			try (FileWriter writer = new FileWriter(RewriteAutomaticallyGenerated.RAW_FILE_PATH)) {
+				writer.write(rawRuleSet.serialize(ctx));
+			} catch (IOException ex) {
+				ex.printStackTrace();
+			}
+		}
+
+		RewriterRuleCreator ruleCreator = new RewriterRuleCreator(ctx);
+
+		for (Tuple3<RewriterRule, Long, Long> t : allRules)
+			ruleCreator.registerRule(t._1(), t._2(), t._3());
 
 		ruleCreator.forEachRule(rule -> {
 			System.out.println(rule);

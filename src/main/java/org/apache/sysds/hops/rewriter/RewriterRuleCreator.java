@@ -69,6 +69,10 @@ public class RewriterRuleCreator {
 				return false; // Then this rule is not beneficial
 		}
 
+		// Now, we validate the rule by executing it in the system
+		if (!validateRuleCorrectnessAndGains(rule, ctx))
+			return false; // Then, either the rule is incorrect or is already implemented
+
 		RewriterRuleSet probingSet = new RewriterRuleSet(ctx, List.of(rule));
 		List<RewriterRule> rulesToRemove = new ArrayList<>();
 		List<RewriterRule> rulesThatMustComeBefore = new ArrayList<>();
@@ -114,7 +118,6 @@ public class RewriterRuleCreator {
 		activeRules.removeAll(rulesToRemove);
 
 		// Now, we include the rule to the system
-		// TODO: Check, if we can eliminate an existing rule instead as the new one is more general
 		// TODO: Further checks are needed, especially if the new heuristic converges in all cases
 		activeRules.add(rule);
 
@@ -147,7 +150,13 @@ public class RewriterRuleCreator {
 		Set<RewriterStatement> vars = DMLCodeGenerator.getVariables(rule.getStmt1());
 		Set<String> varNames = vars.stream().map(RewriterStatement::getId).collect(Collectors.toSet());
 		String code2Header = DMLCodeGenerator.generateDMLVariables(vars);
-		String code2 = code2Header + "\nresult = " + DMLCodeGenerator.generateDML(rule.getStmt1()) + "\nprint(lineage(result))";
+		String code2 = code2Header + "\nresult = " + DMLCodeGenerator.generateDML(rule.getStmt1());
+
+		if (rule.getStmt1().getResultingDataType(ctx).equals("MATRIX"))
+			code2 += "\nprint(lineage(result))";
+		else
+			code2 += "\nprint(lineage(as.matrix(result)))";
+
 		MutableBoolean isRelevant = new MutableBoolean(false);
 
 		RewriterRuntimeUtils.attachHopInterceptor(prog -> {

@@ -14,6 +14,7 @@ import java.util.function.Function;
 
 public class RewriteAutomaticallyGenerated extends HopRewriteRule {
 	public static final String FILE_PATH = "/Users/janniklindemann/Dev/MScThesis/rules.rl";
+	public static final String RAW_FILE_PATH = "/Users/janniklindemann/Dev/MScThesis/raw_rules.rl";
 	public static RewriteAutomaticallyGenerated existingRewrites;
 
 	private Function<Hop, Hop> rewriteFn;

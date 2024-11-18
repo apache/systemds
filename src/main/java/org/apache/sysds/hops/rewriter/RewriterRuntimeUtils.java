@@ -687,49 +687,75 @@ public class RewriterRuntimeUtils {
 		if (t1 == null || t2 == null)
 			return null;
 
+		/*System.out.println(t1 + " :: " + t2);
+
 		if (expectedType != null) {
 			t1 = RewriterUtils.convertibleType(t1, expectedType);
 			t2 = RewriterUtils.convertibleType(t2, expectedType);
 
+			System.out.println(t1 + " :: " + t2);
+
 			if (t1 == null || t2 == null)
 				return null;
-		}
+		}*/
 
 		t1 += ":a";
 		t2 += ":b";
 
+		RewriterStatement parsed = null;
+
 		switch(op.getOpString()) {
 			case "b(+)": // Addition
-				return RewriterUtils.parse("+(a, b)", ctx, t1, t2);
+				parsed = RewriterUtils.parse("+(a, b)", ctx, t1, t2);
+				break;
 			case "b(*)": // Matrix multiplication
-				return RewriterUtils.parse("*(a, b)", ctx, t1, t2);
+				parsed = RewriterUtils.parse("*(a, b)", ctx, t1, t2);
+				break;
 			case "b(-)":
-				return RewriterUtils.parse("-(a, b)", ctx, t1, t2);
+				parsed = RewriterUtils.parse("-(a, b)", ctx, t1, t2);
+				break;
 			case "b(/)":
-				return RewriterUtils.parse("/(a, b)", ctx, t1, t2);
+				parsed = RewriterUtils.parse("/(a, b)", ctx, t1, t2);
+				break;
 			case "b(||)":
-				return RewriterUtils.parse("|(a, b)", ctx, t1, t2);
+				parsed = RewriterUtils.parse("|(a, b)", ctx, t1, t2);
+				break;
 			case "b(!=)":
-				return RewriterUtils.parse("!=(a, b)", ctx, t1, t2);
+				parsed = RewriterUtils.parse("!=(a, b)", ctx, t1, t2);
+				break;
 			case "b(==)":
-				return RewriterUtils.parse("==(a, b)", ctx, t1, t2);
+				parsed = RewriterUtils.parse("==(a, b)", ctx, t1, t2);
+				break;
 			case "b(&&)":
-				return RewriterUtils.parse("&(a, b)", ctx, t1, t2);
+				parsed = RewriterUtils.parse("&(a, b)", ctx, t1, t2);
+				break;
 			case "b(<)":
-				return RewriterUtils.parse("<(a, b)", ctx, t1, t2);
+				parsed = RewriterUtils.parse("<(a, b)", ctx, t1, t2);
+				break;
 			case "b(>)":
-				return RewriterUtils.parse(">(a, b)", ctx, t1, t2);
+				parsed = RewriterUtils.parse(">(a, b)", ctx, t1, t2);
+				break;
 			case "b(>=)":
-				return RewriterUtils.parse(">=(a, b)", ctx, t1, t2);
+				parsed = RewriterUtils.parse(">=(a, b)", ctx, t1, t2);
+				break;
 			case "b(<=)":
-				return RewriterUtils.parse("<=(a, b)", ctx, t1, t2);
+				parsed = RewriterUtils.parse("<=(a, b)", ctx, t1, t2);
+				break;
 			case "b(^)":
-				return RewriterUtils.parse("^(a, b)", ctx, t1, t2);
+				parsed = RewriterUtils.parse("^(a, b)", ctx, t1, t2);
+				break;
 			case "b(rbind)":
+				if (!t1.equals("MATRIX") || !t2.equals("MATRIX"))
+					return null;
 				return RewriterUtils.parse("RBind(a, b)", ctx, t1, t2);
 			case "b(cbind)":
+				if (!t1.equals("MATRIX") || !t2.equals("MATRIX"))
+					return null;
 				return RewriterUtils.parse("CBind(a, b)", ctx, t1, t2);
 		}
+
+		if (parsed != null)
+			return parsed.rename(op.getName());
 
 		if (printUnknowns)
 			System.out.println("Unknown BinaryOp: " + op.getOpString());

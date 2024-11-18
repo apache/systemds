@@ -52,6 +52,7 @@ public class DMLCodeGenTest {
 
 			if (!line.endsWith("valid: TRUE")) {
 				DMLExecutor.println("An invalid rule was found!");
+				DMLExecutor.println(line);
 				valid.setValue(false);
 			}
 		});
@@ -70,9 +71,25 @@ public class DMLCodeGenTest {
 
 	@Test
 	public void test4() {
+		// Should already be implemented
 		String ruleStr2 = "MATRIX:A,B\nt(+(A,t(B)))\n=>\n+(t(A),B)";
 		RewriterRule rule2 = RewriterUtils.parseRule(ruleStr2, ctx);
 
 		assert !RewriterRuleCreator.validateRuleCorrectnessAndGains(rule2, ctx);
+	}
+
+	@Test
+	public void test5() {
+		String ruleStr2 = "MATRIX:A\nLITERAL_INT:1,2\n-(+(1,A), 1)\n=>\n*(1,A)";
+		RewriterRule rule2 = RewriterUtils.parseRule(ruleStr2, ctx);
+
+		assert RewriterRuleCreator.validateRuleCorrectnessAndGains(rule2, ctx);
+	}
+	@Test
+	public void test6() {
+		String ruleStr2 = "MATRIX:A,B\nLITERAL_INT:1,2\n+(A,B)\n=>\n*(1,+(A,B))";
+		RewriterRule rule2 = RewriterUtils.parseRule(ruleStr2, ctx);
+
+		assert RewriterRuleCreator.validateRuleCorrectnessAndGains(rule2, ctx);
 	}
 }

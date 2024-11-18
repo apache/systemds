@@ -100,4 +100,18 @@ public class DMLCodeGenTest {
 
 		assert RewriterRuleCreator.validateRuleCorrectnessAndGains(rule2, ctx);
 	}
+
+	@Test
+	public void test8() {
+		// TODO: This rule has been ignored, but why?
+		String ruleStr = "MATRIX:8cbda53a-49a8-479f-bf34-baeeb1eb8b0f,is_LT_infinite,flip_pos\n" +
+				"\n" +
+				"+(%*%(is_LT_infinite,flip_pos),%*%(8cbda53a-49a8-479f-bf34-baeeb1eb8b0f,flip_pos))\n" +
+				"=>\n" +
+				"%*%(+(8cbda53a-49a8-479f-bf34-baeeb1eb8b0f,is_LT_infinite),flip_pos)";
+
+		RewriterRule rule = RewriterUtils.parseRule(ruleStr, ctx);
+
+		assert RewriterRuleCreator.validateRuleCorrectnessAndGains(rule, ctx);
+	}
 }

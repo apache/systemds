@@ -20,16 +20,30 @@
 #-------------------------------------------------------------
 
 
-M = read($1, data_type="matrix", format="csv", header=TRUE);
-Y = M[, ncol(M)] + 1
-X = M[, 1:ncol(M)-1]
-upsample = as.logical($2)
+M = read($1, data_type="frame", format="csv", header=TRUE,
+        naStrings= ["NA", "null","  ","NaN", "nan", "", " ", "_nan_", "inf", "?", "NAN", "99999", "99999.00"]);
+Y = as.matrix(M[, ncol(M)]) + 1
+F = M[, 1:ncol(M)-1]
+tfspec = read($2, data_type="scalar", value_type="string")
+upsample = as.logical($3)
+
+if( tfspec != " " ) {
+  F = M[, 1:ncol(M)] # FIXME
+  [X,meta] = transformencode(target=F, spec=tfspec);
+  X = X[,1:ncol(X)-1];
+  X = imputeByMode(X);
+}
+else {
+  X = as.matrix(F);
+}
+
+[X,C,S] = scale(X=X, scale=TRUE, center=TRUE);
 
 [Xtrain, Xtest, Ytrain, Ytest] = split(X=X, Y=Y, f=0.7, seed=3);
 
 if( upsample ) {
   # oversampling all classes other than majority
-  [Xtrain,Ytrain] = adasyn(X=Xtrain, Y=Ytrain, k=$3, seed=7);
+  [Xtrain,Ytrain] = adasyn(X=Xtrain, Y=Ytrain, k=$4, seed=7);
 }
 
 B = multiLogReg(X=Xtrain, Y=Ytrain, icpt=2);
@@ -37,5 +51,5 @@ B = multiLogReg(X=Xtrain, Y=Ytrain, icpt=2);
 print("accuracy: "+acc)
 
 R = as.matrix(acc/100);
-write(R, $4);
+write(R, $5);
 

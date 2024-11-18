@@ -388,7 +388,7 @@ public class RewriterUtils {
 			parsedTo = ctx.metaPropagator.apply(parsedTo);
 		}
 
-		return new RewriterRuleBuilder(ctx).completeRule(parsedFrom, parsedTo).build();
+		return new RewriterRuleBuilder(ctx).completeRule(parsedFrom, parsedTo).setUnidirectional(true).build();
 	}
 
 	/**
@@ -1459,7 +1459,64 @@ public class RewriterUtils {
 		return stmt;
 	}
 
-	public static void doCSE(RewriterStatement stmt, final RuleContext ctx) {
+	public static RewriterStatement doCSE(RewriterStatement stmt, final RuleContext ctx) {
+		throw new NotImplementedException();
+	}
 
+	public static void renameIllegalVarnames(final RuleContext ctx, RewriterStatement... stmts) {
+		MutableInt matrixVarCtr = new MutableInt(0);
+		MutableInt scalarVarCtr = new MutableInt(0);
+
+		Set<String> varnames = new HashSet<>();
+		for (RewriterStatement stmt : stmts) {
+			stmt.forEachPreOrder(cur -> {
+				if (cur.isInstruction())
+					return true;
+
+				varnames.add(cur.getId());
+				return true;
+			}, false);
+		}
+
+		for (RewriterStatement stmt : stmts) {
+			stmt.forEachPreOrder(cur -> {
+				if (cur.isInstruction())
+					return true;
+
+				boolean isMatrix = cur.getResultingDataType(ctx).equals("MATRIX");
+
+				if (cur.getId().equals("?")) {
+					cur.rename(getVarname(varnames, isMatrix ? matrixVarCtr : scalarVarCtr, isMatrix));
+					return true;
+				}
+
+				try {
+					UUID.fromString(cur.getId());
+					// If it could parse, then we should rename
+					cur.rename(getVarname(varnames, isMatrix ? matrixVarCtr : scalarVarCtr, isMatrix));
+					return true;
+				} catch (Exception e) {
+					// Then this is not a UUID
+				}
+
+				return true;
+			}, false);
+		}
+	}
+
+	private static String getVarname(Set<String> existingNames, MutableInt mInt, boolean matrix) {
+		char origChar;
+
+		if (matrix)
+			origChar = 'A';
+		else
+			origChar = 'a';
+
+		char ch = (char)(origChar + mInt.getAndIncrement());
+
+		while (existingNames.contains(String.valueOf(ch)))
+			ch = (char)(origChar + mInt.getAndIncrement());
+
+		return String.valueOf(ch);
 	}
 }

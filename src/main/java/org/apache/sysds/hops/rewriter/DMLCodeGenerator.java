@@ -32,6 +32,7 @@ public class DMLCodeGenerator {
 		printAsBinary.add(">=");
 		printAsBinary.add("<");
 		printAsBinary.add("<=");
+		printAsBinary.add("%*%");
 
 		customEncoders.put("[]", (stmt, sb) -> {
 			if (stmt.getOperands().size() == 3) {
@@ -156,10 +157,10 @@ public class DMLCodeGenerator {
 					sb.append(var.getId() + " = rand(rows=500, cols=500, min=(as.scalar(rand())+1.0), max=(as.scalar(rand())+2.0), seed=" + rd.nextInt(1000) + ")^as.scalar(rand())\n");
 					break;
 				case "FLOAT":
-					sb.append(var.getId() + " = as.scalar(rand())\n");
+					sb.append(var.getId() + " = as.scalar(rand(min=(as.scalar(rand())+1.0), max=(as.scalar(rand())+2.0), seed=" + rd.nextInt(1000) + "))^as.scalar(rand())\n");
 					break;
 				case "INT":
-					sb.append(var.getId() + " = as.integer(as.scalar(rand(min=0.0, max=10000.0)))\n");
+					sb.append(var.getId() + " = as.integer(as.scalar(rand(min=(as.scalar(rand())+1.0), max=(as.scalar(rand()+200000.0)), seed=" + rd.nextInt(1000) + "))^as.scalar(rand()))\n");
 					break;
 				case "BOOL":
 					sb.append(var.getId() + " = as.scalar(rand()) < 0.5\n");

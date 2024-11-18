@@ -107,6 +107,7 @@ public class DMLScript
 	public static int         STATISTICS_TOP_K_NGRAMS    = DMLOptions.defaultOptions.statsTopKNGrams;
 	// Set if N-Grams use lineage for data-dependent tracking
 	public static boolean     STATISTICS_NGRAMS_USE_LINEAGE = DMLOptions.defaultOptions.statsNGramsUseLineage;
+	public static boolean     APPLY_GENERATED_REWRITES   = DMLOptions.defaultOptions.applyGeneratedRewrites;
 	// Set statistics maximum wrap length
 	public static int         STATISTICS_MAX_WRAP_LEN    = 30;
 	// Enable/disable to print federated statistics
@@ -262,6 +263,7 @@ public class DMLScript
 			STATISTICS_NGRAMS     = dmlOptions.statsNGrams;
 			STATISTICS_NGRAM_SIZES = dmlOptions.statsNGramSizes;
 			STATISTICS_TOP_K_NGRAMS = dmlOptions.statsTopKNGrams;
+			APPLY_GENERATED_REWRITES = dmlOptions.applyGeneratedRewrites;
 			FED_STATISTICS        = dmlOptions.fedStats;
 			FED_STATISTICS_COUNT  = dmlOptions.fedStatsCount;
 			JMLC_MEM_STATISTICS   = dmlOptions.memStats;

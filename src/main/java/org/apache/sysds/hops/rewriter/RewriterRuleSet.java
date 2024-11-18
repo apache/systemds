@@ -75,6 +75,10 @@ public class RewriterRuleSet {
 		rules.forEach(r -> consumer.accept(r, ctx));
 	}
 
+	public List<RewriterRule> getRules() {
+		return rules;
+	}
+
 	/*public ApplicableRule findFirstApplicableRule(RewriterStatement stmt) {
 		ArrayList<RewriterStatement.MatchingSubexpression> matches = new ArrayList<>();
 

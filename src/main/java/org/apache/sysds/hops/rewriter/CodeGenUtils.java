@@ -7,6 +7,8 @@ import org.apache.sysds.hops.rewrite.HopRewriteUtils;
 
 public class CodeGenUtils {
 	public static String getSpecialOpCheck(RewriterStatement stmt, final RuleContext ctx, String hopVar) {
+		if (!stmt.isInstruction())
+			return null;
 		//Types.AggOp.SUM
 		//HopRewriteUtils.is
 		switch (stmt.trueInstruction()) {
@@ -18,6 +20,9 @@ public class CodeGenUtils {
 	}
 
 	public static String getAdditionalCheck(RewriterStatement stmt, final RuleContext ctx, String hopVar) {
+		if (!stmt.isInstruction())
+			return null;
+
 		switch (stmt.trueInstruction()) {
 			case "rowSums":
 				return hopVar + ".getDirection() == Types.Direction.Row";

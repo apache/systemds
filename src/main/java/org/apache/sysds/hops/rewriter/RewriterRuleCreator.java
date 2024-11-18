@@ -39,7 +39,7 @@ public class RewriterRuleCreator {
 		boolean converged = false;
 		boolean changed = false;
 
-		for (int i = 0; i < 1000; i++) {
+		for (int i = 0; i < 500; i++) {
 			RewriterRuleSet.ApplicableRule applicableRule = ruleSet.acceleratedFindFirst(toTest);
 
 			if (applicableRule == null) {
@@ -138,6 +138,7 @@ public class RewriterRuleCreator {
 
 	// This runs the rule from expressions
 	public static boolean validateRuleCorrectnessAndGains(RewriterRule rule, final RuleContext ctx) {
+		RewriterUtils.renameIllegalVarnames(ctx, rule.getStmt1(), rule.getStmt2());
 		String sessionId = UUID.randomUUID().toString();
 		String code = DMLCodeGenerator.generateRuleValidationDML(rule, sessionId);
 
@@ -162,6 +163,9 @@ public class RewriterRuleCreator {
 		RewriterRuntimeUtils.attachHopInterceptor(prog -> {
 			Hop hop = prog.getStatementBlocks().get(0).getHops().get(0).getInput(0).getInput(0);
 			RewriterStatement stmt = RewriterRuntimeUtils.buildDAGFromHop(hop, 1000, ctx);
+
+			if (stmt == null)
+				return false;
 
 			Map<String, RewriterStatement> nameAssocs = new HashMap<>();
 			// Find the variables that are actually leafs in the original rule

@@ -137,7 +137,6 @@ public class OptimizerUtils
 	
 	public static boolean ALLOW_ALGEBRAIC_SIMPLIFICATION = true;
 	public static boolean ALLOW_OPERATOR_FUSION = true;
-	public static boolean ALLOW_DISCOVERED_REWRITES = true;
 	
 	/**
 	 * Enables if-else branch removal for constant predicates (original literals or 

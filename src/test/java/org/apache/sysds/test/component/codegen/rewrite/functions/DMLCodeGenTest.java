@@ -87,7 +87,15 @@ public class DMLCodeGenTest {
 	}
 	@Test
 	public void test6() {
-		String ruleStr2 = "MATRIX:A,B\nLITERAL_INT:1,2\n+(A,B)\n=>\n*(1,+(A,B))";
+		String ruleStr2 = "MATRIX:?,B\nLITERAL_INT:1,2\n+(?,B)\n=>\n*(1,+(?,B))";
+		RewriterRule rule2 = RewriterUtils.parseRule(ruleStr2, ctx);
+
+		assert RewriterRuleCreator.validateRuleCorrectnessAndGains(rule2, ctx);
+	}
+
+	@Test
+	public void test7() {
+		String ruleStr2 = "MATRIX:?,B\nLITERAL_INT:1,2\n+(?,B)\n=>\n*(1,+(?,B))";
 		RewriterRule rule2 = RewriterUtils.parseRule(ruleStr2, ctx);
 
 		assert RewriterRuleCreator.validateRuleCorrectnessAndGains(rule2, ctx);

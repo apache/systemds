@@ -238,7 +238,7 @@ public class RewriterCodeGen {
 			sb.append("if ( !" + specialOpCheck + " )\n");
 			indent(indentation + 1, sb);
 			sb.append("return hi;\n\n");
-		} else {
+		} else if (cur.isInstruction()) {
 			String opClass = CodeGenUtils.getOpClass(cur, ctx);
 
 			// Generate initial class check
@@ -284,6 +284,35 @@ public class RewriterCodeGen {
 				indent(indentation + 1, sb);
 				sb.append("return hi;\n\n");
 			}
+		} else {
+			indent(indentation, sb);
+			String[] types = CodeGenUtils.getReturnType(cur, ctx);
+			sb.append("if ( " + curVar + ".getDataType() != " + types[0]);
+
+			for (int i = 1; i < types.length; i++) {
+				if (i == 1) {
+					sb.append(" || (" + curVar + ".getValueType() != " + types[1]);
+					continue;
+				}
+
+				sb.append(" && " + curVar + ".getValueType() != " + types[i]);
+
+				if (i == types.length - 1)
+					sb.append(')');
+			}
+
+			sb.append(" )\n");
+			indent(indentation + 1, sb);
+			sb.append("return hi;\n\n");
+
+			String additionalCheck = CodeGenUtils.getAdditionalCheck(cur, ctx, curVar);
+
+			if (additionalCheck != null) {
+				indent(indentation, sb);
+				sb.append("if ( !(" + additionalCheck + ") )\n");
+				indent(indentation + 1, sb);
+				sb.append("return hi;\n\n");
+			}
 		}
 
 		// Now, we match the children
@@ -303,17 +332,17 @@ public class RewriterCodeGen {
 				continue;
 			}
 
-			if (stmt.isLiteral() || stmt.isInstruction()) {
+			//if (stmt.isLiteral() || stmt.isInstruction()) {
 				// Build the variable definition
 				String name = resolveOperand(cur, i, sb, curVar, ctx, indentation);
 				map.put(stmt, name);
 				sb.append('\n');
 				recursivelyBuildMatchingSequence(stmt, sb, name, ctx, indentation, map);
-			} else {
+			/*} else {
 				String name = resolveOperand(cur, i, sb, curVar, ctx, indentation);
 				map.put(stmt, name);
 				sb.append('\n');
-			}
+			}*/
 		}
 	}
 

@@ -28,9 +28,7 @@ tfspec = read($2, data_type="scalar", value_type="string")
 upsample = as.logical($3)
 
 if( tfspec != " " ) {
-  F = M[, 1:ncol(M)] # FIXME
   [X,meta] = transformencode(target=F, spec=tfspec);
-  X = X[,1:ncol(X)-1];
   X = imputeByMode(X);
 }
 else {

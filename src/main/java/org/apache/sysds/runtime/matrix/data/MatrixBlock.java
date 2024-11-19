@@ -686,6 +686,19 @@ public class MatrixBlock extends MatrixValue implements CacheBlock<MatrixBlock>,
 		//get iterator over sparse block
 		return sparseBlock.getIterator(rl, ru);
 	}
+	
+	public Iterator<IJV> getSparseBlockIterator(int rl, int ru, int cl, int cu) {
+		//check for valid format, should have been checked from outside
+		if( !sparse )
+			throw new RuntimeException("getSparseBlockInterator should not be called for dense format");
+		
+		//check for existing sparse block: return empty list
+		if( sparseBlock==null )
+			return Collections.emptyListIterator();
+		
+		//get iterator over sparse block
+		return sparseBlock.getIterator(rl, ru, cl, cu);
+	}
 
 	@Override
 	public double get(int r, int c) {

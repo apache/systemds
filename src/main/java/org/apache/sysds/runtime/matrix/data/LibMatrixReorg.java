@@ -234,8 +234,8 @@ public class LibMatrixReorg {
 			|| (SHALLOW_COPY_REORG && !in.sparse && !out.sparse && (in.rlen == 1 || in.clen == 1)) //
 			|| (in.sparse && !out.sparse && in.rlen == 1) //
 			|| (!in.sparse && out.sparse && in.rlen == 1) //
-			|| (in.sparse && out.sparse && in.nonZeros < Math.max(in.rlen, in.clen)) // ultra-sparse
-		) {
+			|| (in.sparse && out.sparse && in.isUltraSparse(false)))
+		{
 			return transpose(in, out);
 		}
 		// set meta data and allocate output arrays (if required)
@@ -250,7 +250,9 @@ public class LibMatrixReorg {
 		// Timing time = new Timing(true);
 
 		// CSR is only allowed in the transposed output if the number of non zeros is counted in the columns
-		allowCSR = allowCSR && (in.clen <= 4096 || out.nonZeros < 10000000);
+		// and the temporary count arrays are not larger than the entire input
+		allowCSR = allowCSR && (in.clen <= 4096 || out.nonZeros < 10000000) 
+				&& (k*4*in.clen < in.getInMemorySize());
 		
 		int[] cnt = null;
 		final ExecutorService pool = CommonThreadPool.get(k);
@@ -276,12 +278,13 @@ public class LibMatrixReorg {
 				out.allocateSparseRowsBlock(false);
 			else
 				out.allocateDenseBlock(false);
-	
 
 			// compute actual transpose and check for errors
 			ArrayList<TransposeTask> tasks = new ArrayList<>();
-			boolean allowReturnBlock = out.sparse && in.sparse && in.rlen >= in.clen && cnt == null;
-			boolean row = (in.sparse || in.rlen >= in.clen) && (!out.sparse || allowReturnBlock);
+			boolean allowReturnBlock = out.sparse && in.sparse 
+				&& in.rlen >= in.clen && cnt == null && !in.isUltraSparse(false);
+			boolean row = (in.sparse || in.rlen >= in.clen)
+				&& (!out.sparse || allowReturnBlock) && !in.isUltraSparse(false);
 			int len = row ? in.rlen : in.clen;
 			int blklen = (int) (Math.ceil((double) len / k));
 			blklen += (!out.sparse && (blklen % 8) != 0) ? 8 - blklen % 8 : 0;
@@ -1190,6 +1193,15 @@ public class LibMatrixReorg {
 			b.append(cell.getJ(), cell.getI(), cell.getV());
 		}
 		out.setNonZeros(in.getNonZeros());
+	}
+	
+	private static void transposeUltraSparse(MatrixBlock in, MatrixBlock out, int rl, int ru, int cl, int cu) {
+		Iterator<IJV> iter = in.getSparseBlockIterator(rl, ru, cl, cu);
+		SparseBlock b = out.getSparseBlock();
+		while( iter.hasNext() ) {
+			IJV cell = iter.next();
+			b.append(cell.getJ(), cell.getI(), cell.getV());
+		}
 	}
 	
 	private static void transposeSparseToSparse(MatrixBlock in, MatrixBlock out, int rl, int ru, int cl, int cu,
@@ -3861,6 +3873,8 @@ public class LibMatrixReorg {
 				transposeDenseToDense( _in, _out, rl, ru, cl, cu );
 			else if( _in.sparse && _out.sparse && _out.sparseBlock instanceof SparseBlockCSR)
 				transposeSparseToSparseCSR(_in, _out, rl, ru, cl, cu, _cnt);
+			else if( _in.sparse && _out.sparse && _in.isUltraSparse(false) )
+				transposeUltraSparse(_in, _out, rl, ru, cl, cu);
 			else if( _in.sparse && _out.sparse ){
 				if(allowReturnBlock)
 					return transposeSparseToSparseBlock(_in, rl, ru);

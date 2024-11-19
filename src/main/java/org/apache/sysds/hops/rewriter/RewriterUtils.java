@@ -1256,6 +1256,8 @@ public class RewriterUtils {
 		canonicalFormCreator.add("EXPAND STREAMING EXPRESSIONS", streamExpansion);
 		canonicalFormCreator.add("EXPAND ARBITRARY MATRICES", expandArbitraryMatrices);
 		canonicalFormCreator.add("PUSHDOWN STREAM SELECTIONS", streamSelectPushdown);
+		canonicalFormCreator.add("FOLD CONSTANTS", new RewriterHeuristic(t -> foldConstants(t, ctx)));
+		canonicalFormCreator.add("PUSHDOWN STREAM SELECTIONS", streamSelectPushdown);
 		canonicalFormCreator.add("FLATTEN OPERATIONS", flattenOperations);
 
 		ArrayList<RewriterRule> canonicalExpand = new ArrayList<>();

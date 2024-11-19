@@ -10,6 +10,7 @@ import java.util.function.Function;
 
 public class RewriterHeuristic implements RewriterHeuristicTransformation {
 	private final RewriterRuleSet ruleSet;
+	private final Function<RewriterStatement, RewriterStatement> f;
 	private final boolean accelerated;
 	//private final List<String> desiredProperties;
 
@@ -20,7 +21,14 @@ public class RewriterHeuristic implements RewriterHeuristicTransformation {
 	public RewriterHeuristic(RewriterRuleSet ruleSet, boolean accelerated/*, List<String> desiredProperties*/) {
 		this.ruleSet = ruleSet;
 		this.accelerated = accelerated;
+		this.f = null;
 		//this.desiredProperties = desiredProperties;
+	}
+
+	public RewriterHeuristic(Function<RewriterStatement, RewriterStatement> f) {
+		this.ruleSet = null;
+		this.accelerated = false;
+		this.f = f;
 	}
 
 	public void forEachRuleSet(Consumer<RewriterRuleSet> consumer, boolean printNames) {
@@ -36,6 +44,9 @@ public class RewriterHeuristic implements RewriterHeuristicTransformation {
 	}
 
 	public RewriterStatement apply(RewriterStatement currentStmt, @Nullable BiFunction<RewriterStatement, RewriterRule, Boolean> handler, MutableBoolean foundRewrite, boolean print) {
+		if (f != null)
+			return f.apply(currentStmt);
+
 		RuleContext.currentContext = ruleSet.getContext();
 
 		//current.forEachPostOrderWithDuplicates(RewriterUtils.propertyExtractor(desiredProperties, ruleSet.getContext()));

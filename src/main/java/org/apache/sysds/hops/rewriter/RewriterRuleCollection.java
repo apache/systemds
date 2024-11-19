@@ -375,6 +375,16 @@ public class RewriterRuleCollection {
 				.toParsedStatement("cast.FLOAT(A)")
 				.build()
 		);
+
+		SCALARS.forEach(t -> {
+			rules.add(new RewriterRuleBuilder(ctx, "as.matrix(a) => cast.MATRIX(a)")
+					.setUnidirectional(true)
+					.parseGlobalVars(t + ":a")
+					.withParsedStatement("as.matrix(a)")
+					.toParsedStatement("cast.MATRIX(a)")
+					.build()
+			);
+		});
 	}
 
 	public static void eliminateMultipleCasts(final List<RewriterRule> rules, final RuleContext ctx) {
@@ -413,13 +423,7 @@ public class RewriterRuleCollection {
 				);
 			});
 		});
-
-
-
-
 	}
-
-
 
 	public static void canonicalizeAlgebraicStatements(final List<RewriterRule> rules, final RuleContext ctx) {
 		HashMap<Integer, RewriterStatement> hooks = new HashMap<>();

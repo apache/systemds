@@ -44,16 +44,17 @@ public class RewriterRuleValidationTest {
 
 				ctr++;
 				try {
+					System.out.println(rule.getStmt1().toParsableString(ctx) + " => " + rule.getStmt2().toParsableString(ctx));
 					long preCost = RewriterCostEstimator.estimateCost(rule.getStmt1(), ctx);
 					long postCost = RewriterCostEstimator.estimateCost(rule.getStmt2(), ctx);
-					ruleCreator.registerRule(rule, preCost, postCost);
+					System.out.println(ruleCreator.registerRule(rule, preCost, postCost));
 				} catch (Exception e) {
 					e.printStackTrace();
 				}
 			}
 			//System.out.println(ruleSet.toJavaCode("GeneratedRewriteClass", false));
 			String serialized = ruleCreator.getRuleSet().serialize(ctx);
-			System.out.println(serialized);
+			//System.out.println(serialized);
 
 			try (FileWriter writer = new FileWriter(RewriteAutomaticallyGenerated.FILE_PATH)) {
 				writer.write(serialized);

@@ -1479,7 +1479,7 @@ public abstract class AutomatedTestBase {
 		}
 
 		// TODO
-		args.add("-applyGeneratedRewrites");
+		//args.add("-applyGeneratedRewrites");
 	
 		ByteArrayOutputStream buff = outputBuffering ? new ByteArrayOutputStream() : null;
 		PrintStream old = System.out;

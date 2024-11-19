@@ -1227,6 +1227,8 @@ public class RewriterUtils {
 
 	public static Function<RewriterStatement, RewriterStatement> buildCanonicalFormConverter(final RuleContext ctx, boolean debug) {
 		ArrayList<RewriterRule> algebraicCanonicalizationRules = new ArrayList<>();
+		RewriterRuleCollection.substituteEquivalentStatements(algebraicCanonicalizationRules, ctx);
+		RewriterRuleCollection.eliminateMultipleCasts(algebraicCanonicalizationRules, ctx);
 		RewriterRuleCollection.canonicalizeBooleanStatements(algebraicCanonicalizationRules, ctx);
 		RewriterRuleCollection.canonicalizeAlgebraicStatements(algebraicCanonicalizationRules, ctx);
 		RewriterHeuristic algebraicCanonicalization = new RewriterHeuristic(new RewriterRuleSet(ctx, algebraicCanonicalizationRules));
@@ -1242,6 +1244,7 @@ public class RewriterUtils {
 		ArrayList<RewriterRule> pd = new ArrayList<>();
 		RewriterRuleCollection.pushdownStreamSelections(pd, ctx);
 		RewriterRuleCollection.buildElementWiseAlgebraicCanonicalization(pd, ctx);
+		RewriterRuleCollection.eliminateMultipleCasts(pd, ctx);
 		RewriterHeuristic streamSelectPushdown = new RewriterHeuristic(new RewriterRuleSet(ctx, pd));
 
 		ArrayList<RewriterRule> flatten = new ArrayList<>();

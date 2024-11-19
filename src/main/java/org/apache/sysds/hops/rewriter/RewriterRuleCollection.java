@@ -13,6 +13,7 @@ import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 import static org.apache.sysds.hops.rewriter.RewriterContextSettings.ALL_TYPES;
+import static org.apache.sysds.hops.rewriter.RewriterContextSettings.SCALARS;
 
 public class RewriterRuleCollection {
 
@@ -358,6 +359,67 @@ public class RewriterRuleCollection {
 
 		return new RewriterHeuristic(rs, true);
 	}
+
+
+
+	////////// ACTUAL RULES START HERE //////////
+
+
+	public static void substituteEquivalentStatements(final List<RewriterRule> rules, final RuleContext ctx) {
+		HashMap<Integer, RewriterStatement> hooks = new HashMap<>();
+
+		rules.add(new RewriterRuleBuilder(ctx, "as.scalar(A) => cast.FLOAT(A)")
+				.setUnidirectional(true)
+				.parseGlobalVars("MATRIX:A")
+				.withParsedStatement("as.scalar(A)")
+				.toParsedStatement("cast.FLOAT(A)")
+				.build()
+		);
+	}
+
+	public static void eliminateMultipleCasts(final List<RewriterRule> rules, final RuleContext ctx) {
+		SCALARS.forEach(t -> {
+			rules.add(new RewriterRuleBuilder(ctx, "cast.TYPE(cast.TYPE(A)) => cast.TYPE(A)")
+					.setUnidirectional(true)
+					.parseGlobalVars(t + ":a")
+					.withParsedStatement("cast.MATRIX(cast.MATRIX(a))")
+					.toParsedStatement("cast.MATRIX(a)")
+					.build()
+			);
+
+			rules.add(new RewriterRuleBuilder(ctx, "cast.TYPE(a::TYPE) => a")
+					.setUnidirectional(true)
+					.parseGlobalVars(t + ":a")
+					.withParsedStatement("cast." + t + "(a)")
+					.toParsedStatement("a")
+					.build()
+			);
+
+			SCALARS.forEach(t2 -> {
+				rules.add(new RewriterRuleBuilder(ctx, "cast.TYPE(cast.TYPE(A)) => cast.TYPE(A)")
+						.setUnidirectional(true)
+						.parseGlobalVars(t + ":a")
+						.withParsedStatement("cast." + t2 + "(cast." + t2 + "(a))")
+						.toParsedStatement("cast." + t2 + "(a)")
+						.build()
+				);
+
+				rules.add(new RewriterRuleBuilder(ctx, "cast.SCALAR(cast.MATRIX(a)) => a")
+						.setUnidirectional(true)
+						.parseGlobalVars(t2 + ":a")
+						.withParsedStatement("cast." + t + "(cast.MATRIX(a))")
+						.toParsedStatement("cast." + t + "(a)")
+						.build()
+				);
+			});
+		});
+
+
+
+
+	}
+
+
 
 	public static void canonicalizeAlgebraicStatements(final List<RewriterRule> rules, final RuleContext ctx) {
 		HashMap<Integer, RewriterStatement> hooks = new HashMap<>();

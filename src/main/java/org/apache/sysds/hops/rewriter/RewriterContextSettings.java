@@ -7,6 +7,7 @@ import java.util.stream.Collectors;
 public class RewriterContextSettings {
 
 	public static final List<String> ALL_TYPES = List.of("FLOAT", "INT", "BOOL", "MATRIX");
+	public static final List<String> SCALARS = List.of("FLOAT", "INT", "BOOL");
 
 	public static String getDefaultContextString() {
 		StringBuilder builder = new StringBuilder();

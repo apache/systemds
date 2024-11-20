@@ -1,5 +1,7 @@
 package org.apache.sysds.test.component.codegen.rewrite.functions;
 
+import org.apache.commons.lang3.mutable.MutableObject;
+import org.apache.sysds.hops.rewriter.RewriterAssertions;
 import org.apache.sysds.hops.rewriter.RewriterCostEstimator;
 import org.apache.sysds.hops.rewriter.RewriterStatement;
 import org.apache.sysds.hops.rewriter.RewriterUtils;
@@ -22,8 +24,12 @@ public class CostEstimates {
 	@Test
 	public void test1() {
 		RewriterStatement stmt = RewriterUtils.parse("%*%(+(A,B), C)", ctx, "MATRIX:A,B,C");
-		long cost = RewriterCostEstimator.estimateCost(stmt, el -> 2000L, ctx);
-		System.out.println(cost);
+		MutableObject<RewriterAssertions> assertionRef = new MutableObject<>();
+		long cost1 = RewriterCostEstimator.estimateCost(stmt, el -> 2000L, ctx, assertionRef);
+		System.out.println(cost1);
+		long cost2 = RewriterCostEstimator.estimateCost(stmt.getChild(0), el -> 2000L, ctx, assertionRef);
+		System.out.println(cost2);
+		assert cost2 < cost1;
 	}
 
 	@Test

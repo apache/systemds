@@ -1,6 +1,7 @@
 package org.apache.sysds.hops.rewriter;
 
 import org.apache.commons.lang3.mutable.MutableLong;
+import org.apache.commons.lang3.mutable.MutableObject;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -19,15 +20,22 @@ public class RewriterCostEstimator {
 	}
 
 	public static long estimateCost(RewriterStatement stmt, Function<RewriterStatement, Long> propertyGenerator, final RuleContext ctx) {
-		RewriterAssertions assertions = new RewriterAssertions(ctx);
+		return estimateCost(stmt, propertyGenerator, ctx, null);
+	}
+
+	public static long estimateCost(RewriterStatement stmt, Function<RewriterStatement, Long> propertyGenerator, final RuleContext ctx, MutableObject<RewriterAssertions> assertionRef) {
+		RewriterAssertions assertions = assertionRef != null && assertionRef.getValue() != null ? assertionRef.getValue() : new RewriterAssertions(ctx);
+
+		if (assertionRef != null)
+			assertionRef.setValue(assertions);
 		RewriterStatement costFn = propagateCostFunction(stmt, ctx, assertions);
-		System.out.println(costFn.toParsableString(ctx));
+		costFn = assertions.update(costFn);
 
 		Map<RewriterStatement, RewriterStatement> map = new HashMap<>();
 
 		//System.out.println("Cost1: " + costFn.toParsableString(ctx));
 
-		costFn.forEachPostOrder((cur, pred) -> {
+		costFn.forEachPreOrder((cur, pred) -> {
 			for (int i = 0; i < cur.getOperands().size(); i++) {
 				RewriterStatement op = cur.getChild(i);
 
@@ -43,13 +51,14 @@ public class RewriterCostEstimator {
 					cur.getOperands().set(i, mNew);
 				} else if (op.isInstruction()) {
 					if (op.trueInstruction().equals("ncol") || op.trueInstruction().equals("nrow")) {
-						System.out.println("Generating for: " + op);
 						mNew = RewriterStatement.literal(ctx, propertyGenerator.apply(op));
 						map.put(op, mNew);
 						cur.getOperands().set(i, mNew);
 					}
 				}
 			}
+
+			return true;
 		}, false);
 
 		//System.out.println("Cost2: " + costFn.toParsableString(ctx));
@@ -84,18 +93,19 @@ public class RewriterCostEstimator {
 		//System.out.println("Cost0: " + add.toParsableString(ctx));
 		//System.out.println("Assertions: " + assertions);
 
-		add = RewriterUtils.buildCanonicalFormConverter(ctx, false).apply(add);
+		// TODO: Validate that this is not needed
+		//add = RewriterUtils.buildCanonicalFormConverter(ctx, false).apply(add);
 		return add;
 	}
 
-	private static void computeCostOf(RewriterInstruction instr, final RuleContext ctx, List<RewriterStatement> uniqueCosts, RewriterAssertions assertions, MutableLong instructionOverhead) {
+	private static RewriterStatement computeCostOf(RewriterInstruction instr, final RuleContext ctx, List<RewriterStatement> uniqueCosts, RewriterAssertions assertions, MutableLong instructionOverhead) {
 		if (instr.getResultingDataType(ctx).equals("MATRIX"))
-			computeMatrixOpCost(instr, ctx, uniqueCosts, assertions, instructionOverhead);
+			return computeMatrixOpCost(instr, ctx, uniqueCosts, assertions, instructionOverhead);
 		else
-			computeScalarOpCost(instr, ctx, uniqueCosts, assertions, instructionOverhead);
+			return computeScalarOpCost(instr, ctx, uniqueCosts, assertions, instructionOverhead);
 	}
 
-	private static void computeMatrixOpCost(RewriterInstruction instr, final RuleContext ctx, List<RewriterStatement> uniqueCosts, RewriterAssertions assertions, MutableLong overhead) {
+	private static RewriterStatement computeMatrixOpCost(RewriterInstruction instr, final RuleContext ctx, List<RewriterStatement> uniqueCosts, RewriterAssertions assertions, MutableLong overhead) {
 		RewriterStatement cost = null;
 		Map<String, RewriterStatement> map = new HashMap<>();
 
@@ -198,9 +208,10 @@ public class RewriterCostEstimator {
 		}
 
 		uniqueCosts.add(cost);
+		return cost;
 	}
 
-	private static void computeScalarOpCost(RewriterInstruction instr, final RuleContext ctx, List<RewriterStatement> uniqueCosts, RewriterAssertions assertions, MutableLong overhead) {
+	private static RewriterStatement computeScalarOpCost(RewriterInstruction instr, final RuleContext ctx, List<RewriterStatement> uniqueCosts, RewriterAssertions assertions, MutableLong overhead) {
 		Map<String, RewriterStatement> map = new HashMap<>();
 		switch (instr.trueTypedInstruction(ctx)) {
 			case "sum(MATRIX)":
@@ -209,26 +220,27 @@ public class RewriterCostEstimator {
 				map.put("nrowA", instr.getChild(0).getNRow());
 				map.put("ncolA", instr.getChild(0).getNCol());
 				uniqueCosts.add(RewriterUtils.parse("*(argList(nrowA, ncolA))", ctx, map));
-				return;
+				return uniqueCosts.get(uniqueCosts.size()-1);
 			case "trace(MATRIX)":
 				map.put("nrowA", instr.getChild(0).getNRow());
 				map.put("ncolA", instr.getChild(0).getNCol());
 				uniqueCosts.add(map.get("nrowA"));
 				assertions.addEqualityAssertion(map.get("nrowA"), map.get("ncolA"));
-				return;
+				return uniqueCosts.get(uniqueCosts.size()-1);
 			case "[](MATRIX,INT,INT)":
-				return;
+				return RewriterStatement.literal(ctx, 0L);
 			case "cast.FLOAT(MATRIX)":
 				map.put("nrowA", instr.getChild(0).getNRow());
 				map.put("ncolA", instr.getChild(0).getNCol());
 				uniqueCosts.add(map.get("nrowA"));
 				assertions.addEqualityAssertion(map.get("nrowA"), map.get("ncolA"));
 				assertions.addEqualityAssertion(map.get("nrowA"), RewriterStatement.literal(ctx, 1L));
-				return;
+				return uniqueCosts.get(uniqueCosts.size()-1);
 		}
 
 		long opCost = atomicOpCost(instr.trueInstruction());
 		uniqueCosts.add(RewriterUtils.parse(Long.toString(opCost), ctx, "LITERAL_INT:" + opCost));
+		return uniqueCosts.get(uniqueCosts.size()-1);
 	}
 
 	private static RewriterStatement atomicOpCostStmt(String op, final RuleContext ctx) {

@@ -66,6 +66,9 @@ public class RewriterClusteringTest {
 
 	@Test
 	public void testExpressionClustering() {
+		boolean useData = false;
+		boolean useRandomized = true;
+
 		long startTime = System.currentTimeMillis();
 		AtomicLong generatedExpressions = new AtomicLong(0);
 		AtomicLong evaluatedExpressions = new AtomicLong(0);
@@ -80,108 +83,117 @@ public class RewriterClusteringTest {
 		int size = db.size();
 		MutableInt ctr = new MutableInt(0);
 
-		db.parForEach(expr -> {
-			if (ctr.incrementAndGet() % 10 == 0)
-				System.out.println("Done: " + ctr.intValue() + " / " + size);
-			//if (ctr.intValue() > 100)
-			//	return; // Skip
-			// First, build all possible subtrees
-			//System.out.println("Eval:\n" + expr.toParsableString(ctx, true));
-			List<RewriterStatement> subExprs = RewriterUtils.generateSubtrees(expr, ctx, 300);
-			if (subExprs.size() > 100)
-				System.out.println("Critical number of subtrees: " + subExprs.size());
-			if (subExprs.size() > 500) {
-				System.out.println("Skipping subtrees...");
-				subExprs = List.of(expr);
-			}
-			//List<RewriterStatement> subExprs = List.of(expr);
-			long evaluationCtr = 0;
-			long mCanonicalizationMillis = 0;
-
-			for (RewriterStatement subExpr : subExprs) {
-				try {
-					if (!exactExprDB.insertEntry(ctx, subExpr))
-						continue;
-
-					//System.out.println("Evaluating expression: \n" + subExpr.toParsableString(ctx, true));
-
-					evaluationCtr++;
-
-					//System.out.println("Eval: " + subExpr.toParsableString(ctx, true));
-
-					// Duplicate the statement as we do not want to canonicalize the original statement
-					long startMillis = System.currentTimeMillis();
-					RewriterStatement canonicalForm = converter.apply(subExpr.nestedCopy(true));
-					mCanonicalizationMillis += System.currentTimeMillis() - startMillis;
-
-					computeCost(subExpr, ctx);
-
-					// Insert the canonical form or retrieve the existing entry
-					RewriterStatement existingEntry = canonicalExprDB.insertOrReturn(ctx, canonicalForm);
-
-					if (existingEntry == null) {
-						List<RewriterStatement> equivalentExpressions = new ArrayList<>();
-						equivalentExpressions.add(subExpr);
-						canonicalForm.unsafePutMeta("equivalentExpressions", equivalentExpressions);
-					} else {
-						List<RewriterStatement> equivalentExpressions = (List<RewriterStatement>) existingEntry.getMeta("equivalentExpressions");
-						equivalentExpressions.add(subExpr);
-
-						if (equivalentExpressions.size() == 2)
-							foundEquivalences.add(existingEntry);
-
-						//System.out.println("Found equivalent statement!");
-					}
-				} catch (Exception e) {
-					e.printStackTrace();
-					failures.incrementAndGet();
+		if (useData) {
+			db.parForEach(expr -> {
+				if (ctr.incrementAndGet() % 10 == 0)
+					System.out.println("Done: " + ctr.intValue() + " / " + size);
+				//if (ctr.intValue() > 100)
+				//	return; // Skip
+				// First, build all possible subtrees
+				//System.out.println("Eval:\n" + expr.toParsableString(ctx, true));
+				List<RewriterStatement> subExprs = RewriterUtils.generateSubtrees(expr, ctx, 300);
+				if (subExprs.size() > 100)
+					System.out.println("Critical number of subtrees: " + subExprs.size());
+				if (subExprs.size() > 500) {
+					System.out.println("Skipping subtrees...");
+					subExprs = List.of(expr);
 				}
-			}
+				//List<RewriterStatement> subExprs = List.of(expr);
+				long evaluationCtr = 0;
+				long mCanonicalizationMillis = 0;
 
-			generatedExpressions.addAndGet(subExprs.size());
-			evaluatedExpressions.addAndGet(evaluationCtr);
-			totalCanonicalizationMillis.addAndGet(mCanonicalizationMillis);
-		});
+				for (RewriterStatement subExpr : subExprs) {
+					try {
+						if (!exactExprDB.insertEntry(ctx, subExpr))
+							continue;
 
-		long MAX_MILLIS = 200000;
-		int BATCH_SIZE = 400;
-		long startMillis = System.currentTimeMillis();
+						//System.out.println("Evaluating expression: \n" + subExpr.toParsableString(ctx, true));
 
-		for (int batch = 0; batch < 100 && System.currentTimeMillis() - startMillis < MAX_MILLIS; batch++) {
-			List<Integer> indices = IntStream.range(batch * BATCH_SIZE, (batch + 1) * BATCH_SIZE - 1).boxed().collect(Collectors.toList());
-			Collections.shuffle(indices);
-			MutableInt ctr2 = new MutableInt(0);
-			int maxSize = indices.size();
-			final int mBATCH = batch;
-			indices.parallelStream().forEach(idx -> {
-				if (ctr2.incrementAndGet() % 10 == 0)
-					System.out.println("Done: " + (mBATCH * BATCH_SIZE + ctr2.intValue()) + " / " + (mBATCH * BATCH_SIZE + maxSize));
+						evaluationCtr++;
 
-				List<RewriterAlphabetEncoder.Operand> ops = RewriterAlphabetEncoder.decodeOrderedStatements(idx);
-				List<RewriterStatement> stmts = RewriterAlphabetEncoder.buildAllPossibleDAGs(ops, ctx, true);
+						//System.out.println("Eval: " + subExpr.toParsableString(ctx, true));
 
-				for (RewriterStatement stmt : stmts) {
-					RewriterStatement canonicalForm = converter.apply(stmt);
-					computeCost(stmt, ctx);
+						// Duplicate the statement as we do not want to canonicalize the original statement
+						long startMillis = System.currentTimeMillis();
+						RewriterStatement canonicalForm = converter.apply(subExpr.nestedCopy(true));
+						mCanonicalizationMillis += System.currentTimeMillis() - startMillis;
 
-					// Insert the canonical form or retrieve the existing entry
-					RewriterStatement existingEntry = canonicalExprDB.insertOrReturn(ctx, canonicalForm);
+						computeCost(subExpr, ctx);
 
-					if (existingEntry == null) {
-						List<RewriterStatement> equivalentExpressions = new ArrayList<>();
-						equivalentExpressions.add(stmt);
-						canonicalForm.unsafePutMeta("equivalentExpressions", equivalentExpressions);
-					} else {
-						List<RewriterStatement> equivalentExpressions = (List<RewriterStatement>) existingEntry.getMeta("equivalentExpressions");
-						equivalentExpressions.add(stmt);
+						// Insert the canonical form or retrieve the existing entry
+						RewriterStatement existingEntry = canonicalExprDB.insertOrReturn(ctx, canonicalForm);
 
-						if (equivalentExpressions.size() == 2)
-							foundEquivalences.add(existingEntry);
+						if (existingEntry == null) {
+							List<RewriterStatement> equivalentExpressions = new ArrayList<>();
+							equivalentExpressions.add(subExpr);
+							canonicalForm.unsafePutMeta("equivalentExpressions", equivalentExpressions);
+						} else {
+							List<RewriterStatement> equivalentExpressions = (List<RewriterStatement>) existingEntry.getMeta("equivalentExpressions");
+							equivalentExpressions.add(subExpr);
 
-						//System.out.println("Found equivalent statement!");
+							if (equivalentExpressions.size() == 2)
+								foundEquivalences.add(existingEntry);
+
+							//System.out.println("Found equivalent statement!");
+						}
+					} catch (Exception e) {
+						e.printStackTrace();
+						failures.incrementAndGet();
 					}
 				}
+
+				generatedExpressions.addAndGet(subExprs.size());
+				evaluatedExpressions.addAndGet(evaluationCtr);
+				totalCanonicalizationMillis.addAndGet(mCanonicalizationMillis);
 			});
+		}
+
+		if (useRandomized) {
+			long MAX_MILLIS = 1000;
+			int BATCH_SIZE = 400;
+			long startMillis = System.currentTimeMillis();
+
+			for (int batch = 0; batch < 100 && System.currentTimeMillis() - startMillis < MAX_MILLIS; batch++) {
+				List<Integer> indices = IntStream.range(batch * BATCH_SIZE, (batch + 1) * BATCH_SIZE - 1).boxed().collect(Collectors.toList());
+				Collections.shuffle(indices);
+				MutableInt ctr2 = new MutableInt(0);
+				int maxSize = indices.size();
+				final int mBATCH = batch;
+				indices.parallelStream().forEach(idx -> {
+					if (ctr2.incrementAndGet() % 10 == 0)
+						System.out.println("Done: " + (mBATCH * BATCH_SIZE + ctr2.intValue()) + " / " + (mBATCH * BATCH_SIZE + maxSize));
+
+					List<RewriterAlphabetEncoder.Operand> ops = RewriterAlphabetEncoder.decodeOrderedStatements(idx);
+					List<RewriterStatement> stmts = RewriterAlphabetEncoder.buildAllPossibleDAGs(ops, ctx, true);
+
+					for (RewriterStatement dag : stmts) {
+						List<RewriterStatement> expanded = new ArrayList<>();
+						expanded.addAll(RewriterAlphabetEncoder.buildAssertionVariations(dag, ctx, true));
+						expanded.addAll(RewriterAlphabetEncoder.buildVariations(dag, ctx));
+						for (RewriterStatement stmt : expanded) {
+							RewriterStatement canonicalForm = converter.apply(stmt);
+							computeCost(stmt, ctx);
+
+							// Insert the canonical form or retrieve the existing entry
+							RewriterStatement existingEntry = canonicalExprDB.insertOrReturn(ctx, canonicalForm);
+
+							if (existingEntry == null) {
+								List<RewriterStatement> equivalentExpressions = new ArrayList<>();
+								equivalentExpressions.add(stmt);
+								canonicalForm.unsafePutMeta("equivalentExpressions", equivalentExpressions);
+							} else {
+								List<RewriterStatement> equivalentExpressions = (List<RewriterStatement>) existingEntry.getMeta("equivalentExpressions");
+								equivalentExpressions.add(stmt);
+
+								if (equivalentExpressions.size() == 2)
+									foundEquivalences.add(existingEntry);
+
+								//System.out.println("Found equivalent statement!");
+							}
+						}
+					}
+				});
+			}
 		}
 
 		printEquivalences(/*foundEquivalences*/ Collections.emptyList(), System.currentTimeMillis() - startTime, generatedExpressions.longValue(), evaluatedExpressions.longValue(), totalCanonicalizationMillis.longValue(), failures.longValue(), true);

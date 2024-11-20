@@ -251,8 +251,8 @@ public class RewriterRuleCreator {
 	}
 
 	private static Map<RewriterStatement, RewriterStatement> getAssociations(RewriterStatement from, RewriterStatement to, RewriterStatement canonicalFormFrom, RewriterStatement canonicalFormTo, final RuleContext ctx) {
-		Map<RewriterStatement, RewriterStatement> fromCanonicalLink = getAssociationToCanonicalForm(from, canonicalFormFrom, true);
-		Map<RewriterStatement, RewriterStatement> toCanonicalLink = getAssociationToCanonicalForm(to, canonicalFormTo, true);
+		Map<RewriterStatement, RewriterStatement> fromCanonicalLink = getAssociationToCanonicalForm(from, canonicalFormFrom, true, ctx);
+		Map<RewriterStatement, RewriterStatement> toCanonicalLink = getAssociationToCanonicalForm(to, canonicalFormTo, true, ctx);
 
 		RewriterStatement.MatcherContext matcher = RewriterStatement.MatcherContext.exactMatch(ctx, canonicalFormTo);
 		canonicalFormFrom.match(matcher);
@@ -274,7 +274,7 @@ public class RewriterRuleCreator {
 		return assocs;
 	}
 
-	private static Map<RewriterStatement, RewriterStatement> getAssociationToCanonicalForm(RewriterStatement stmt, RewriterStatement canonicalForm, boolean reversed) {
+	private static Map<RewriterStatement, RewriterStatement> getAssociationToCanonicalForm(RewriterStatement stmt, RewriterStatement canonicalForm, boolean reversed, final RuleContext ctx) {
 		// We identify all associations by their names
 		// If there are name collisions, this does not work
 		Map<String, RewriterStatement> namedVariables = new HashMap<>();
@@ -283,7 +283,7 @@ public class RewriterRuleCreator {
 				return;
 
 			if (namedVariables.put(cur.getId(), cur) != null)
-				throw new IllegalArgumentException("Duplicate variable name: " + cur.toParsableString(RuleContext.currentContext));
+				throw new IllegalArgumentException("Duplicate variable name: " + cur.toParsableString(RuleContext.currentContext) + "\nEntire statement:\n" + stmt.toParsableString(ctx));
 		}, false);
 
 		Map<RewriterStatement, RewriterStatement> assoc = new DualHashBidiMap<>();

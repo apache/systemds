@@ -216,7 +216,7 @@ public class RewriterRuleCreator {
 			return false; // The program should not be executed as we just want to extract any rewrites that are applied to the current statement
 		});
 
-		DMLExecutor.executeCode(code2);
+		DMLExecutor.executeCode(code2, true);
 		RewriterRuntimeUtils.detachHopInterceptor();
 
 		return isValid.booleanValue() && isRelevant.booleanValue();

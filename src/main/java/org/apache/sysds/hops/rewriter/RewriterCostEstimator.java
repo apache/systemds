@@ -21,6 +21,7 @@ public class RewriterCostEstimator {
 	public static long estimateCost(RewriterStatement stmt, Function<RewriterStatement, Long> propertyGenerator, final RuleContext ctx) {
 		RewriterAssertions assertions = new RewriterAssertions(ctx);
 		RewriterStatement costFn = propagateCostFunction(stmt, ctx, assertions);
+		System.out.println(costFn.toParsableString(ctx));
 
 		Map<RewriterStatement, RewriterStatement> map = new HashMap<>();
 
@@ -42,6 +43,7 @@ public class RewriterCostEstimator {
 					cur.getOperands().set(i, mNew);
 				} else if (op.isInstruction()) {
 					if (op.trueInstruction().equals("ncol") || op.trueInstruction().equals("nrow")) {
+						System.out.println("Generating for: " + op);
 						mNew = RewriterStatement.literal(ctx, propertyGenerator.apply(op));
 						map.put(op, mNew);
 						cur.getOperands().set(i, mNew);

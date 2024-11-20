@@ -9,18 +9,25 @@ import java.util.function.Consumer;
 public class DMLExecutor {
 	private static PrintStream origPrintStream = System.out;
 
-	public static synchronized void executeCode(String code) {
-		executeCode(code, s -> {});
+	public static synchronized void executeCode(String code, boolean intercept, String... additionalArgs) {
+		executeCode(code, intercept ? s -> {} : null, additionalArgs);
 	}
 
 	// TODO: We will probably need some kind of watchdog
 	// This cannot run in parallel
-	public static synchronized void executeCode(String code, Consumer<String> consoleInterceptor) {
+	public static synchronized void executeCode(String code, Consumer<String> consoleInterceptor, String... additionalArgs) {
 		try {
 			if (consoleInterceptor != null)
 				System.setOut(new PrintStream(new CustomOutputStream(System.out, consoleInterceptor)));
 
-			DMLScript.executeScript(new String[]{"-s", code});
+			String[] args = new String[additionalArgs.length + 2];
+
+			for (int i = 0; i < additionalArgs.length; i++)
+				args[i] = additionalArgs[i];
+
+			args[additionalArgs.length] = "-s";
+			args[additionalArgs.length + 1] = code;
+			DMLScript.executeScript(args);
 
 		} catch (Exception e) {
 			e.printStackTrace();

@@ -2,6 +2,7 @@ package org.apache.sysds.hops.rewriter;
 
 import org.apache.sysds.hops.Hop;
 import org.apache.sysds.hops.rewrite.HopRewriteRule;
+import org.apache.sysds.hops.rewrite.HopRewriteUtils;
 import org.apache.sysds.hops.rewrite.ProgramRewriteStatus;
 
 import java.io.IOException;
@@ -73,6 +74,9 @@ public class RewriteAutomaticallyGenerated extends HopRewriteRule {
 	{
 		if(hop.isVisited())
 			return;
+
+		//DMLExecutor.println("Hop: " + hop + ", " + hop.getName() + ": " + HopRewriteUtils.isSparse(hop));
+		//DMLExecutor.println("NNZ: " + hop.getNnz());
 
 		//System.out.println("Stepping into: " + hop);
 

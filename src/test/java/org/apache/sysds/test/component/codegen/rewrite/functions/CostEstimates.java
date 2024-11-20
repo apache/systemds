@@ -16,7 +16,7 @@ public class CostEstimates {
 	@BeforeClass
 	public static void setup() {
 		ctx = RewriterUtils.buildDefaultContext();
-		canonicalConverter = RewriterUtils.buildCanonicalFormConverter(ctx, false);
+		canonicalConverter = RewriterUtils.buildCanonicalFormConverter(ctx, true);
 	}
 
 	@Test
@@ -207,6 +207,57 @@ public class CostEstimates {
 		System.out.println("Cost1: " + cost1);
 		System.out.println("Cost2: " + cost2);
 		System.out.println("Ratio: " + ((double)cost1)/cost2);
+
+		stmt1 = canonicalConverter.apply(stmt1);
+		stmt2 = canonicalConverter.apply(stmt2);
+
+		System.out.println("==========");
+		System.out.println(stmt1.toParsableString(ctx, true));
+		System.out.println("==========");
+		System.out.println(stmt2.toParsableString(ctx, true));
+		assert stmt1.match(RewriterStatement.MatcherContext.exactMatch(ctx, stmt2));
+	}
+
+	@Test
+	public void test12() {
+		String stmtStr1 = "MATRIX:A,B\n" +
+				"LITERAL_INT:1\n" +
+				"+([](A, 1, nrow(A), 1, 1),B)";
+		String stmtStr2 = "MATRIX:A,B\n" +
+				"LITERAL_INT:1\n" +
+				"+([](A, 1, nrow(A), 1, ncol(A)), B)";
+
+		RewriterStatement stmt1 = RewriterUtils.parse(stmtStr1, ctx);
+		RewriterStatement stmt2 = RewriterUtils.parse(stmtStr2, ctx);
+
+		long cost1 = RewriterCostEstimator.estimateCost(stmt1, el -> 2000L, ctx);
+		long cost2 = RewriterCostEstimator.estimateCost(stmt2, el -> 2000L, ctx);
+		System.out.println("Cost1: " + cost1);
+		System.out.println("Cost2: " + cost2);
+		System.out.println("Ratio: " + ((double)cost1)/cost2);
+
+		assert cost1 < cost2;
+	}
+
+	@Test
+	public void test13() {
+		String stmtStr1 = "MATRIX:A,B\n" +
+				"LITERAL_INT:1\n" +
+				"[](rowSums(A), 1, nrow(A), 1, 1)";
+		String stmtStr2 = "MATRIX:A,B\n" +
+				"LITERAL_INT:1\n" +
+				"rowSums(A)";
+
+		RewriterStatement stmt1 = RewriterUtils.parse(stmtStr1, ctx);
+		RewriterStatement stmt2 = RewriterUtils.parse(stmtStr2, ctx);
+
+		long cost1 = RewriterCostEstimator.estimateCost(stmt1, el -> 2000L, ctx);
+		long cost2 = RewriterCostEstimator.estimateCost(stmt2, el -> 2000L, ctx);
+		System.out.println("Cost1: " + cost1);
+		System.out.println("Cost2: " + cost2);
+		System.out.println("Ratio: " + ((double)cost1)/cost2);
+
+		assert cost2 < cost1;
 
 		stmt1 = canonicalConverter.apply(stmt1);
 		stmt2 = canonicalConverter.apply(stmt2);

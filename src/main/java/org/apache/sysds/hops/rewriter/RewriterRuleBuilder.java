@@ -6,9 +6,11 @@ import scala.Tuple2;
 
 import javax.ws.rs.core.Link;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
@@ -38,6 +40,9 @@ public class RewriterRuleBuilder {
 	private boolean mappingState = false;
 
 	private boolean canBeModified = true;
+
+	private Set<RewriterStatement> allowedMultiReferences = Collections.emptySet();
+	private boolean allowCombinations = false;
 
 	public RewriterRuleBuilder(final RuleContext ctx) {
 		this.ctx = ctx;
@@ -165,7 +170,9 @@ public class RewriterRuleBuilder {
 		if (getCurrentInstruction() != null)
 			getCurrentInstruction().consolidate(ctx);
 		prepare();
-		return new RewriterRule(ctx, ruleName, fromRoot, toRoot, isUnidirectional, linksStmt1ToStmt2, linksStmt2ToStmt1, iff1to2, iff2to1, applyStmt1ToStmt2, applyStmt2ToStmt1);
+		RewriterRule rule = new RewriterRule(ctx, ruleName, fromRoot, toRoot, isUnidirectional, linksStmt1ToStmt2, linksStmt2ToStmt1, iff1to2, iff2to1, applyStmt1ToStmt2, applyStmt2ToStmt1);
+		rule.setAllowedMultiReferences(allowedMultiReferences, allowCombinations);
+		return rule;
 	}
 
 	public RewriterStatement buildDAG() {
@@ -243,6 +250,17 @@ public class RewriterRuleBuilder {
 		this.fromRoot = from;
 		this.toRoot = to;
 		this.mappingState = true;
+		return this;
+	}
+
+	public RewriterRuleBuilder withAllowedMultiRefs(Set<RewriterStatement> allowedMultiRefs, boolean allowCombinations) {
+		if (!canBeModified)
+			throw new IllegalArgumentException("The DAG is final and cannot be modified");
+		if (!mappingState)
+			throw new IllegalArgumentException("Cannot add an instruction when a mapping instruction was already defined");
+
+		this.allowedMultiReferences = allowedMultiRefs;
+		this.allowCombinations = allowCombinations;
 		return this;
 	}
 

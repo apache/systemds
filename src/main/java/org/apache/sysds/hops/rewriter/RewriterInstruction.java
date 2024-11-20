@@ -448,7 +448,7 @@ public class RewriterInstruction extends RewriterStatement {
 	}
 
 	@Override
-	public int toParsableString(StringBuilder sb, Map<RewriterStatement, Integer> refs, int maxRefId, Map<String, Set<String>> vars, final RuleContext ctx) {
+	public int toParsableString(StringBuilder sb, Map<RewriterStatement, Integer> refs, int maxRefId, Map<String, Set<String>> vars, Set<RewriterStatement> forceCreateRefs, final RuleContext ctx) {
 		Integer ref = refs.get(this);
 
 		if (ref != null) {
@@ -457,7 +457,7 @@ public class RewriterInstruction extends RewriterStatement {
 			return maxRefId;
 		}
 
-		if (refCtr > 1) {
+		if (refCtr > 1 || forceCreateRefs.contains(this)) {
 			maxRefId++;
 			sb.append('$');
 			sb.append(maxRefId);
@@ -473,7 +473,7 @@ public class RewriterInstruction extends RewriterStatement {
 				sb.append(',');
 
 			RewriterStatement op = getOperands().get(i);
-			maxRefId = op.toParsableString(sb, refs, maxRefId, vars, ctx);
+			maxRefId = op.toParsableString(sb, refs, maxRefId, vars, forceCreateRefs, ctx);
 		}
 
 		sb.append(')');

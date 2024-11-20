@@ -46,7 +46,7 @@ public class RewriterCostEstimator {
 		for (Tuple2<RewriterStatement, Long> t : subDAGCosts) {
 			curCost += t._2;
 
-			if (curCost >= fullCost) {
+			if (curCost >= maxCost) {
 				canCombine = false;
 				break;
 			}

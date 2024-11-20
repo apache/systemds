@@ -455,7 +455,7 @@ public abstract class RewriterStatement {
 	// Performs a nested copy until a condition is met
 	public abstract RewriterStatement nestedCopyOrInject(Map<RewriterStatement, RewriterStatement> copiedObjects, TriFunction<RewriterStatement, RewriterStatement, Integer, RewriterStatement> injector, RewriterStatement parent, int pIdx);
 	// Returns the new maxRefId
-	abstract int toParsableString(StringBuilder builder, Map<RewriterStatement, Integer> refs, int maxRefId, Map<String, Set<String>> vars, final RuleContext ctx);
+	abstract int toParsableString(StringBuilder builder, Map<RewriterStatement, Integer> refs, int maxRefId, Map<String, Set<String>> vars, Set<RewriterStatement> forceCreateRefs, final RuleContext ctx);
 	abstract void refreshReturnType(final RuleContext ctx);
 
 	public static String parsableDefinitions(Map<String, Set<String>> defs) {
@@ -480,15 +480,23 @@ public abstract class RewriterStatement {
 	}
 
 	public String toParsableString(final RuleContext ctx, Map<String, Set<String>> defs) {
+		return toParsableString(ctx, defs, Collections.emptySet());
+	}
+
+	public String toParsableString(final RuleContext ctx, Map<String, Set<String>> defs, Set<RewriterStatement> forceCreateRefs) {
 		StringBuilder sb = new StringBuilder();
-		toParsableString(sb, new HashMap<>(), 0, defs, ctx);
+		toParsableString(sb, new HashMap<>(), 0, defs, forceCreateRefs, ctx);
 		return sb.toString();
 	}
 
 	public String toParsableString(final RuleContext ctx, boolean includeDefinitions) {
+		return toParsableString(ctx, includeDefinitions, Collections.emptySet());
+	}
+
+	public String toParsableString(final RuleContext ctx, boolean includeDefinitions, Set<RewriterStatement> forceCreateRefs) {
 		StringBuilder sb = new StringBuilder();
 		HashMap<String, Set<String>> defs = new HashMap<>();
-		toParsableString(sb, new HashMap<>(), 0, defs, ctx);
+		toParsableString(sb, new HashMap<>(), 0, defs, forceCreateRefs, ctx);
 
 		if (includeDefinitions)
 			return parsableDefinitions(defs) + sb;

@@ -37,6 +37,8 @@ public class RewriterRule extends AbstractRewriterRule {
 	private final Function<RewriterStatement.MatchingSubexpression, Boolean> iff2to1;
 	private final boolean unidirectional;
 	private final Consumer<RewriterStatement> postProcessor;
+	private Set<RewriterStatement> allowedMultiReferences = Collections.emptySet();
+	private boolean allowCombinations = false;
 
 	public RewriterRule(final RuleContext ctx, String name, RewriterStatement fromRoot, RewriterStatement toRoot, boolean unidirectional, HashMap<RewriterStatement, LinkObject> linksStmt1ToStmt2, HashMap<RewriterStatement, LinkObject> linksStmt2ToStmt1) {
 		this(ctx, name, fromRoot, toRoot, unidirectional, linksStmt1ToStmt2, linksStmt2ToStmt1, null, null, null, null, null);
@@ -59,6 +61,11 @@ public class RewriterRule extends AbstractRewriterRule {
 		this.applyStmt1ToStmt2 = apply1To2;
 		this.applyStmt2ToStmt1 = apply2To1;
 		this.postProcessor = postProcessor;
+	}
+
+	public void setAllowedMultiReferences(Set<RewriterStatement> allowed, boolean allowCombinations) {
+		this.allowedMultiReferences = allowed;
+		this.allowCombinations = allowCombinations;
 	}
 
 	public String getName() {
@@ -375,10 +382,23 @@ public class RewriterRule extends AbstractRewriterRule {
 
 	public String toParsableString(final RuleContext ctx) {
 		Map<String, Set<String>> varDefs = new HashMap<>();
-		String stmt1 = fromRoot.toParsableString(ctx, varDefs);
-		String stmt2 = toRoot.toParsableString(ctx, varDefs);
+		StringBuilder sb = new StringBuilder();
+		Map<RewriterStatement, Integer> refs = new HashMap<>();
+		int refIdx = fromRoot.toParsableString(sb, refs, 0, varDefs, allowedMultiReferences, ctx);
+		String stmt1 = sb.toString();
+		sb = new StringBuilder();
+		toRoot.toParsableString(sb, refs, refIdx, varDefs, allowedMultiReferences, ctx);
+		String stmt2 = sb.toString();
+		//String stmt1 = fromRoot.toParsableString(ctx, varDefs, allowedMultiReferences);
+		//String stmt2 = toRoot.toParsableString(ctx, varDefs, allowedMultiReferences);
+		String multiRefDefs = "";
+
+		if (!allowedMultiReferences.isEmpty()) {
+			multiRefDefs = "AllowedMultiRefs:" + allowedMultiReferences.stream().map(stmt -> "$" + refs.get(stmt)).collect(Collectors.joining(",")) + "\nAllowCombinations:" + allowCombinations + "\n";
+		}
+
 		String defs = RewriterStatement.parsableDefinitions(varDefs);
-		return defs + "\n" + stmt1 + "\n=>\n" + stmt2;
+		return multiRefDefs + defs + "\n" + stmt1 + "\n=>\n" + stmt2;
 	}
 
 	// TODO: Rework

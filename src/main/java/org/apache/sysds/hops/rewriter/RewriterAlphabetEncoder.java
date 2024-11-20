@@ -1,5 +1,6 @@
 package org.apache.sysds.hops.rewriter;
 
+import com.google.protobuf.Internal;
 import org.apache.commons.lang3.NotImplementedException;
 import org.apache.commons.lang3.mutable.MutableInt;
 
@@ -74,6 +75,115 @@ public class RewriterAlphabetEncoder {
 		}, false);
 	}
 
+	// To include structures like row/column vectors etc.
+	public static List<RewriterStatement> buildAssertionVariations(RewriterStatement root, final RuleContext ctx) {
+		List<RewriterStatement> interestingLeaves = new ArrayList<>();
+		root.forEachPreOrder(cur -> {
+			if (!cur.isInstruction() && !cur.isLiteral() && cur.getResultingDataType(ctx).equals("MATRIX"))
+				interestingLeaves.add(cur);
+			return true;
+		}, true);
+
+		if (interestingLeaves.size() < 2)
+			return List.of(root);
+
+		List<RewriterStatement> out = new ArrayList<>();
+		out.add(root);
+
+		for (int i = 0; i < interestingLeaves.size(); i++) {
+			RewriterStatement from = interestingLeaves.get(i);
+			RewriterStatement rv = createVector(root, from, true);
+			if (ctx.metaPropagator != null)
+				rv = ctx.metaPropagator.apply(rv);
+			out.add(rv);
+			RewriterStatement cv = createVector(root, from, false);
+			if (ctx.metaPropagator != null)
+				cv = ctx.metaPropagator.apply(cv);
+			out.add(cv);
+		}
+
+		if (ctx.metaPropagator != null)
+			return out.stream().map(stmt -> ctx.metaPropagator.apply(stmt)).collect(Collectors.toList());
+
+		return out;
+	}
+
+	private static RewriterStatement createVector(RewriterStatement root, RewriterStatement of, boolean rowVector) {
+		HashMap<RewriterStatement, RewriterStatement> createdObjects = new HashMap<>();
+		if (rowVector) {
+			RewriterStatement out = root.nestedCopyOrInject(createdObjects, stmt -> {
+				if (stmt.equals(of)) {
+					// TODO: Why is it necessary to discard the old DataType?
+					RewriterStatement mCpy = new RewriterDataType().as(of.getId()).ofType(of.getResultingDataType(ctx)).consolidate(ctx);
+					createdObjects.put(of, mCpy);
+					return new RewriterInstruction()
+							.as(UUID.randomUUID().toString())
+							.withInstruction("[]")
+							.withOps(
+									//of.nestedCopyOrInject(createdObjects, cur -> null),
+									mCpy,
+									RewriterStatement.literal(ctx, 1L),
+									new RewriterInstruction().as(UUID.randomUUID().toString()).withInstruction("nrow").withOps(mCpy).consolidate(ctx),
+									RewriterStatement.literal(ctx, 1L),
+									RewriterStatement.literal(ctx, 1L))
+							.consolidate(ctx);
+				}
+
+				return null;
+			});
+
+			return out;
+		} else {
+			RewriterStatement out = root.nestedCopyOrInject(createdObjects, stmt -> {
+				if (stmt.equals(of)) {
+					RewriterStatement mCpy = new RewriterDataType().as(of.getId()).ofType(of.getResultingDataType(ctx)).consolidate(ctx);
+					createdObjects.put(of, mCpy);
+					return new RewriterInstruction()
+							.as(UUID.randomUUID().toString())
+							.withInstruction("[]")
+							.withOps(
+									mCpy,
+									RewriterStatement.literal(ctx, 1L),
+									RewriterStatement.literal(ctx, 1L),
+									RewriterStatement.literal(ctx, 1L),
+									new RewriterInstruction().as(UUID.randomUUID().toString()).withInstruction("ncol").withOps(mCpy).consolidate(ctx))
+							//createdObjects.get(of).getNCol())
+							.consolidate(ctx);
+				}
+
+				return null;
+			});
+
+			return out;
+		}
+	}
+
+	// Builds variations of the same graph (e.g. +(A,B) -> +(A,A))
+	public static List<RewriterStatement> buildVariations(RewriterStatement root, final RuleContext ctx) {
+		List<RewriterStatement> interestingLeaves = new ArrayList<>();
+		root.forEachPreOrder(cur -> {
+			if (!cur.isInstruction() && !cur.isLiteral() && cur.getResultingDataType(ctx).equals("MATRIX"))
+				interestingLeaves.add(cur);
+			return true;
+		}, true);
+
+		if (interestingLeaves.size() < 2)
+			return List.of(root);
+
+		List<RewriterStatement> out = new ArrayList<>();
+		out.add(root);
+
+		for (int i = 0; i < interestingLeaves.size(); i++) {
+			RewriterStatement to = interestingLeaves.get(i);
+			for (int j = i + 1; j < interestingLeaves.size(); j++) {
+				RewriterStatement from = interestingLeaves.get(j);
+				out.add(root.nestedCopyOrInject(new HashMap<>(), stmt -> stmt.equals(from) ? to.nestedCopy(false) : null));
+			}
+		}
+
+		return out;
+	}
+
 	public static List<RewriterStatement> buildAllPossibleDAGs(List<Operand> operands, final RuleContext ctx, boolean rename) {
 		RewriterAlphabetEncoder.ctx = ctx;
 
@@ -83,9 +193,9 @@ public class RewriterAlphabetEncoder {
 			allStmts.forEach(RewriterAlphabetEncoder::rename);
 
 		if (ctx.metaPropagator != null)
-			return allStmts.stream().map(stmt -> ctx.metaPropagator.apply(stmt)).collect(Collectors.toList());
-		else
-			return allStmts;
+			allStmts = allStmts.stream().map(stmt -> ctx.metaPropagator.apply(stmt)).collect(Collectors.toList());
+
+		return allStmts;
 	}
 
 	private static List<RewriterStatement> recursivelyFindAllCombinations(List<Operand> operands) {

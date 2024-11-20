@@ -1251,6 +1251,7 @@ public class RewriterUtils {
 		RewriterHeuristic algebraicCanonicalization = new RewriterHeuristic(new RewriterRuleSet(ctx, algebraicCanonicalizationRules));
 
 		ArrayList<RewriterRule> expRules = new ArrayList<>();
+		//RewriterRuleCollection.pushdownStreamSelections(expRules, ctx); // To eliminate some stuff early on
 		RewriterRuleCollection.expandStreamingExpressions(expRules, ctx);
 		RewriterHeuristic streamExpansion = new RewriterHeuristic(new RewriterRuleSet(ctx, expRules));
 

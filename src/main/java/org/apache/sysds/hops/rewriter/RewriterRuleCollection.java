@@ -1040,10 +1040,8 @@ public class RewriterRuleCollection {
 					for (int idx = 0; idx < 2; idx++) {
 						RewriterStatement oldRef = lnk.oldStmt.getOperands().get(idx);
 						RewriterStatement newRef = lnk.newStmt.get(0).getChild(idx);
-						System.out.println("NewRef: " + newRef.toParsableString(ctx));
 						RewriterStatement mStmtC = new RewriterInstruction().as(UUID.randomUUID().toString()).withInstruction("+").withOps(newRef.getChild(1, 1, 0), RewriterStatement.literal(ctx, -1L)).consolidate(ctx);
 						RewriterStatement mStmt = new RewriterInstruction().as(UUID.randomUUID().toString()).withInstruction("+").withOps(newRef, mStmtC).consolidate(ctx);
-						System.out.println("mStmt: " + mStmt.toParsableString(ctx));
 						final RewriterStatement newStmt = RewriterUtils.foldConstants(mStmt, ctx);
 
 						// Replace all references to h with
@@ -1053,7 +1051,6 @@ public class RewriterRuleCollection {
 								Object meta = child.getMeta("idxId");
 
 								if (meta instanceof UUID && meta.equals(oldRef.getMeta("idxId"))) {
-									System.out.println("NewStmt: " + newStmt.toParsableString(ctx));
 									el.getOperands().set(i, newStmt);
 								}
 							}

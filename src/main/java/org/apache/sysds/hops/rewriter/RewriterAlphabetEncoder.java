@@ -76,7 +76,7 @@ public class RewriterAlphabetEncoder {
 	}
 
 	// To include structures like row/column vectors etc.
-	public static List<RewriterStatement> buildAssertionVariations(RewriterStatement root, final RuleContext ctx) {
+	public static List<RewriterStatement> buildAssertionVariations(RewriterStatement root, final RuleContext ctx, boolean increasedVariance) {
 		List<RewriterStatement> interestingLeaves = new ArrayList<>();
 		root.forEachPreOrder(cur -> {
 			if (!cur.isInstruction() && !cur.isLiteral() && cur.getResultingDataType(ctx).equals("MATRIX"))
@@ -92,14 +92,28 @@ public class RewriterAlphabetEncoder {
 
 		for (int i = 0; i < interestingLeaves.size(); i++) {
 			RewriterStatement from = interestingLeaves.get(i);
-			RewriterStatement rv = createVector(root, from, true);
+			RewriterStatement rv = createVectorizedStatement(root, from, true);
 			if (ctx.metaPropagator != null)
 				rv = ctx.metaPropagator.apply(rv);
 			out.add(rv);
-			RewriterStatement cv = createVector(root, from, false);
+			RewriterStatement cv = createVectorizedStatement(root, from, false);
 			if (ctx.metaPropagator != null)
 				cv = ctx.metaPropagator.apply(cv);
 			out.add(cv);
+
+			for (int j = i + 1; j < interestingLeaves.size(); j++) {
+				RewriterStatement to = interestingLeaves.get(i);
+				Map<RewriterStatement, Boolean> map = new HashMap<>();
+				map.put(from, false);
+				map.put(to, false);
+				out.add(createVectorizedStatements(root, map));
+				map.put(from, true);
+				out.add(createVectorizedStatements(root, map));
+				map.put(to, true);
+				out.add(createVectorizedStatements(root, map));
+				map.put(from, false);
+				out.add(createVectorizedStatements(root, map));
+			}
 		}
 
 		if (ctx.metaPropagator != null)
@@ -108,54 +122,50 @@ public class RewriterAlphabetEncoder {
 		return out;
 	}
 
-	private static RewriterStatement createVector(RewriterStatement root, RewriterStatement of, boolean rowVector) {
+	private static RewriterStatement createVector(RewriterStatement of, boolean rowVector, Map<RewriterStatement, RewriterStatement> createdObjects) {
+		// TODO: Why is it necessary to discard the old DataType?
+		RewriterStatement mCpy = new RewriterDataType().as(of.getId()).ofType(of.getResultingDataType(ctx)).consolidate(ctx);
+		RewriterStatement nRowCol = new RewriterInstruction().as(UUID.randomUUID().toString()).withInstruction(rowVector ? "nrow" : "ncol").withOps(mCpy).consolidate(ctx);
+		createdObjects.put(of, mCpy);
+		return new RewriterInstruction()
+				.as(UUID.randomUUID().toString())
+				.withInstruction("[]")
+				.withOps(
+						mCpy,
+						RewriterStatement.literal(ctx, 1L),
+						rowVector ? nRowCol : RewriterStatement.literal(ctx, 1L),
+						RewriterStatement.literal(ctx, 1L),
+						rowVector ? RewriterStatement.literal(ctx, 1L) : nRowCol)
+				.consolidate(ctx);
+	}
+
+	private static RewriterStatement createVectorizedStatement(RewriterStatement root, RewriterStatement of, boolean rowVector) {
 		HashMap<RewriterStatement, RewriterStatement> createdObjects = new HashMap<>();
-		if (rowVector) {
-			RewriterStatement out = root.nestedCopyOrInject(createdObjects, stmt -> {
-				if (stmt.equals(of)) {
-					// TODO: Why is it necessary to discard the old DataType?
-					RewriterStatement mCpy = new RewriterDataType().as(of.getId()).ofType(of.getResultingDataType(ctx)).consolidate(ctx);
-					createdObjects.put(of, mCpy);
-					return new RewriterInstruction()
-							.as(UUID.randomUUID().toString())
-							.withInstruction("[]")
-							.withOps(
-									//of.nestedCopyOrInject(createdObjects, cur -> null),
-									mCpy,
-									RewriterStatement.literal(ctx, 1L),
-									new RewriterInstruction().as(UUID.randomUUID().toString()).withInstruction("nrow").withOps(mCpy).consolidate(ctx),
-									RewriterStatement.literal(ctx, 1L),
-									RewriterStatement.literal(ctx, 1L))
-							.consolidate(ctx);
-				}
+		RewriterStatement out = root.nestedCopyOrInject(createdObjects, stmt -> {
+			if (stmt.equals(of))
+				return createVector(of, rowVector, createdObjects);
 
-				return null;
-			});
+			return null;
+		});
 
-			return out;
-		} else {
-			RewriterStatement out = root.nestedCopyOrInject(createdObjects, stmt -> {
-				if (stmt.equals(of)) {
-					RewriterStatement mCpy = new RewriterDataType().as(of.getId()).ofType(of.getResultingDataType(ctx)).consolidate(ctx);
-					createdObjects.put(of, mCpy);
-					return new RewriterInstruction()
-							.as(UUID.randomUUID().toString())
-							.withInstruction("[]")
-							.withOps(
-									mCpy,
-									RewriterStatement.literal(ctx, 1L),
-									RewriterStatement.literal(ctx, 1L),
-									RewriterStatement.literal(ctx, 1L),
-									new RewriterInstruction().as(UUID.randomUUID().toString()).withInstruction("ncol").withOps(mCpy).consolidate(ctx))
-							//createdObjects.get(of).getNCol())
-							.consolidate(ctx);
-				}
+		return out;
+	}
 
-				return null;
-			});
+	private static RewriterStatement createVectorizedStatements(RewriterStatement root, Map<RewriterStatement, Boolean> of) {
+		HashMap<RewriterStatement, RewriterStatement> createdObjects = new HashMap<>();
 
-			return out;
-		}
+		RewriterStatement out = root.nestedCopyOrInject(createdObjects, stmt -> {
+			if (!stmt.isInstruction() && !stmt.isLiteral() && stmt.getResultingDataType(ctx).equals("MATRIX")) {
+				Boolean rowVector = of.get(stmt);
+
+				if (rowVector != null)
+					return createVector(stmt, rowVector, createdObjects);
+			}
+
+			return null;
+		});
+
+		return out;
 	}
 
 	// Builds variations of the same graph (e.g. +(A,B) -> +(A,A))

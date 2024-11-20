@@ -32,7 +32,7 @@ public class RewriterCostEstimator {
 
 			long cost = estimateCost(cur, costFn, ctx, new MutableObject<>(assertions));
 
-			if (fullCost + cost < maxCost) {
+			if (fullCost + cost <= maxCost) {
 				subDAGCosts.add(new Tuple2<>(cur, cost));
 				return false;
 			}
@@ -46,7 +46,7 @@ public class RewriterCostEstimator {
 		for (Tuple2<RewriterStatement, Long> t : subDAGCosts) {
 			curCost += t._2;
 
-			if (curCost >= maxCost) {
+			if (curCost > maxCost) {
 				canCombine = false;
 				break;
 			}

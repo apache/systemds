@@ -87,4 +87,44 @@ public class RuleSerializationTest {
 
 		assert serialized.equals(newSerialized);
 	}
+
+	@Test
+	public void test3() {
+		RewriterStatement from = RewriterUtils.parse("sum(t(U))", ctx, "MATRIX:U,V");
+		RewriterStatement to = RewriterUtils.parse("sum(U)", ctx, "MATRIX:U,V");
+		RewriterStatement canonicalForm1 = canonicalConverter.apply(from);
+		RewriterStatement canonicalForm2 = canonicalConverter.apply(to);
+
+		System.out.println("==========");
+		System.out.println(canonicalForm1.toParsableString(ctx, true));
+		System.out.println("==========");
+		System.out.println(canonicalForm2.toParsableString(ctx, true));
+		assert canonicalForm1.match(RewriterStatement.MatcherContext.exactMatch(ctx, canonicalForm2));
+
+		RewriterRule rule = RewriterRuleCreator.createRule(from, to, canonicalForm1, canonicalForm2, ctx);
+		from = rule.getStmt1();
+		to = rule.getStmt2();
+
+		MutableObject<RewriterAssertions> assertionRef = new MutableObject<>();
+		long fullCost = RewriterCostEstimator.estimateCost(to, ctx);
+		long maxCost = RewriterCostEstimator.estimateCost(from, ctx, assertionRef);
+		Tuple2<Set<RewriterStatement>, Boolean> result = RewriterCostEstimator.determineSingleReferenceRequirement(from, RewriterCostEstimator.DEFAULT_COST_FN, assertionRef.getValue(), fullCost, maxCost, ctx);
+
+		assert result._1.size() == 1 && result._2;
+
+		rule.setAllowedMultiReferences(result._1, result._2);
+
+		String serialized = rule.toParsableString(ctx);
+
+		System.out.println("::RULE");
+		System.out.println(serialized);
+		System.out.println();
+
+		RewriterRule newRule = RewriterUtils.parseRule(serialized, ctx);
+		String newSerialized = newRule.toParsableString(ctx);
+
+		System.out.println(newSerialized);
+
+		assert serialized.equals(newSerialized);
+	}
 }

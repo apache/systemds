@@ -2,21 +2,65 @@ package org.apache.sysds.hops.rewriter;
 
 import org.apache.commons.lang3.mutable.MutableLong;
 import org.apache.commons.lang3.mutable.MutableObject;
+import scala.Tuple2;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 import java.util.function.Function;
+import java.util.stream.Collectors;
 
 public class RewriterCostEstimator {
 	private static final long INSTRUCTION_OVERHEAD = 10;
 	private static final long MALLOC_COST = 10000;
-	private static final Function<RewriterStatement, Long> DEFAULT_COST_FN = el -> 2000L;
+	public static final Function<RewriterStatement, Long> DEFAULT_COST_FN = el -> 2000L;
+
+	// Returns all (upmost) sub-DAGs that can have multiple references and true as a second arg if all statements can have multiple references at once
+	public static Tuple2<Set<RewriterStatement>, Boolean> determineSingleReferenceRequirement(RewriterStatement root, Function<RewriterStatement, Long> costFn, RewriterAssertions assertions, long fullCost, long maxCost, final RuleContext ctx) {
+		if (fullCost >= maxCost)
+			return new Tuple2<>(Collections.emptySet(), true);
+
+		List<Tuple2<RewriterStatement, Long>> subDAGCosts = new ArrayList<>();
+
+		root.forEachPreOrder((cur, pred) -> {
+			if (pred.isRoot() || !cur.isInstruction())
+				return true;
+
+			long cost = estimateCost(cur, costFn, ctx, new MutableObject<>(assertions));
+
+			if (fullCost + cost < maxCost) {
+				subDAGCosts.add(new Tuple2<>(cur, cost));
+				return false;
+			}
+
+			return true;
+		}, true);
+
+		boolean canCombine = true;
+		long curCost = fullCost;
+
+		for (Tuple2<RewriterStatement, Long> t : subDAGCosts) {
+			curCost += t._2;
+
+			if (curCost >= fullCost) {
+				canCombine = false;
+				break;
+			}
+		}
+
+		return new Tuple2<>(subDAGCosts.stream().map(t -> t._1).collect(Collectors.toSet()), canCombine);
+	}
 
 	public static long estimateCost(RewriterStatement stmt, final RuleContext ctx) {
 		return estimateCost(stmt, DEFAULT_COST_FN, ctx);
+	}
+
+	public static long estimateCost(RewriterStatement stmt, final RuleContext ctx, MutableObject<RewriterAssertions> assertionRef) {
+		return estimateCost(stmt, DEFAULT_COST_FN, ctx, assertionRef);
 	}
 
 	public static long estimateCost(RewriterStatement stmt, Function<RewriterStatement, Long> propertyGenerator, final RuleContext ctx) {

@@ -8,7 +8,9 @@ import org.apache.sysds.hops.rewriter.RewriterUtils;
 import org.apache.sysds.hops.rewriter.RuleContext;
 import org.junit.BeforeClass;
 import org.junit.Test;
+import scala.Tuple2;
 
+import java.util.Set;
 import java.util.function.Function;
 
 public class CostEstimates {
@@ -273,5 +275,29 @@ public class CostEstimates {
 		System.out.println("==========");
 		System.out.println(stmt2.toParsableString(ctx, true));
 		assert stmt1.match(RewriterStatement.MatcherContext.exactMatch(ctx, stmt2));
+	}
+
+	@Test
+	public void test14() {
+		RewriterStatement stmt1 = RewriterUtils.parse("t(t(A))", ctx, "MATRIX:A");
+		MutableObject<RewriterAssertions> assertionRef = new MutableObject<>();
+		long maxCost = RewriterCostEstimator.estimateCost(stmt1, ctx, assertionRef);
+		Tuple2<Set<RewriterStatement>, Boolean> allowedCombinations = RewriterCostEstimator.determineSingleReferenceRequirement(stmt1, RewriterCostEstimator.DEFAULT_COST_FN, assertionRef.getValue(), 0, maxCost, ctx);
+		System.out.println(allowedCombinations._1);
+		System.out.println("AllowCombinations: " + allowedCombinations._2);
+		assert allowedCombinations._1.size() == 1;
+	}
+
+	@Test
+	public void test15() {
+		RewriterStatement stmt1 = RewriterUtils.parse("sum(rowSums(A))", ctx, "MATRIX:A");
+		RewriterStatement stmt2 = RewriterUtils.parse("sum(A)", ctx, "MATRIX:A");
+		MutableObject<RewriterAssertions> assertionRef = new MutableObject<>();
+		long maxCost = RewriterCostEstimator.estimateCost(stmt1, ctx, assertionRef);
+		long fullCost = RewriterCostEstimator.estimateCost(stmt2, ctx, assertionRef);
+		Tuple2<Set<RewriterStatement>, Boolean> allowedCombinations = RewriterCostEstimator.determineSingleReferenceRequirement(stmt1, RewriterCostEstimator.DEFAULT_COST_FN, assertionRef.getValue(), fullCost, maxCost, ctx);
+		System.out.println(allowedCombinations._1);
+		System.out.println("AllowCombinations: " + allowedCombinations._2);
+		assert allowedCombinations._1.isEmpty();
 	}
 }

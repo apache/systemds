@@ -74,6 +74,11 @@ public class RewriterCostEstimator {
 			assertionRef.setValue(assertions);
 		RewriterStatement costFn = propagateCostFunction(stmt, ctx, assertions);
 		costFn = assertions.update(costFn);
+		// TODO: Something makes this necessary
+		costFn = RewriterUtils.foldConstants(costFn, ctx);
+
+		//System.out.println(costFn.toParsableString(ctx));
+		//System.out.println(RewriterUtils.foldConstants(costFn, ctx).toParsableString(ctx));
 
 		Map<RewriterStatement, RewriterStatement> map = new HashMap<>();
 

@@ -300,4 +300,13 @@ public class CostEstimates {
 		System.out.println("AllowCombinations: " + allowedCombinations._2);
 		assert allowedCombinations._1.isEmpty();
 	}
+
+	@Test
+	public void test16() {
+		RewriterStatement stmt1 = RewriterUtils.parse("+(colSums(A),[](B,1,1,1,ncol(B)))", ctx, "MATRIX:A,B", "LITERAL_INT:1");
+		RewriterStatement stmt2 = RewriterUtils.parse("+(colSums(A),colSums([](B,1,1,1,ncol(B))))", ctx, "MATRIX:A,B", "LITERAL_INT:1");
+		long cost1 = RewriterCostEstimator.estimateCost(stmt1, ctx);
+		long cost2 = RewriterCostEstimator.estimateCost(stmt2, ctx);
+		assert cost1 < cost2;
+	}
 }

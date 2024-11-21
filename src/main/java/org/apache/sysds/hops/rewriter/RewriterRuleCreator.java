@@ -155,8 +155,8 @@ public class RewriterRuleCreator {
 		if (!isValid.booleanValue())
 			return false;
 
-		if (true)
-			return true;
+		/*if (true)
+			return true;*/
 
 		Set<RewriterStatement> vars = DMLCodeGenerator.getVariables(rule.getStmt1());
 		Set<String> varNames = vars.stream().map(RewriterStatement::getId).collect(Collectors.toSet());
@@ -198,14 +198,36 @@ public class RewriterRuleCreator {
 				return true;
 			}, false);
 
+			stmt = ctx.metaPropagator.apply(stmt);
+
+			stmt = stmt.nestedCopyOrInject(new HashMap<>(), mstmt -> {
+				if (mstmt.isInstruction() && (mstmt.trueInstruction().equals("ncol") || mstmt.trueInstruction().equals("nrow")))
+					return RewriterStatement.literal(ctx, 500L);
+				return null;
+			});
+
 			stmt.prepareForHashing();
 			stmt.recomputeHashCodes(ctx);
 
-			RewriterStatement.MatcherContext mCtx  = RewriterStatement.MatcherContext.exactMatch(ctx, stmt, rule.getStmt1());
-			if (rule.getStmt1().match(mCtx)) {
+			Map<RewriterStatement, RewriterStatement> createdObjects = new HashMap<>();
+
+			RewriterStatement stmt1ReplaceNCols = rule.getStmt1().nestedCopyOrInject(createdObjects, mstmt -> {
+				if (mstmt.isInstruction() && (mstmt.trueInstruction().equals("ncol") || mstmt.trueInstruction().equals("nrow")))
+					return RewriterStatement.literal(ctx, 500L);
+				return null;
+			});
+
+			stmt1ReplaceNCols.prepareForHashing();
+			stmt1ReplaceNCols.recomputeHashCodes(ctx);
+
+			Set<RewriterStatement> mVars = vars.stream().map(createdObjects::get).collect(Collectors.toSet());
+
+			RewriterStatement.MatcherContext mCtx  = RewriterStatement.MatcherContext.exactMatch(ctx, stmt, stmt1ReplaceNCols);
+			if (stmt1ReplaceNCols.match(mCtx)) {
 				// Check if also the right variables are associated
 				boolean assocsMatching = true;
-				for (RewriterStatement var : vars) {
+				DMLExecutor.println(mCtx.getDependencyMap());
+				for (RewriterStatement var : mVars) {
 					RewriterStatement assoc = mCtx.getDependencyMap().get(var);
 
 					if (!assoc.getId().equals(var.getId())) {

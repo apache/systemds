@@ -225,7 +225,7 @@ public class RewriterDataType extends RewriterStatement {
 		}
 
 		// If matrix, check if the dimensions
-		if (dType.equals("MATRIX")) {
+		if (!mCtx.statementsCanBeVariables && dType.equals("MATRIX")) {
 			RewriterStatement ncolEquiv = getNCol();
 			RewriterStatement nrowEquiv = getNRow();
 

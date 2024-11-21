@@ -357,9 +357,9 @@ public class RewriterClusteringTest {
 				TopologicalSort.sort(stmt1, ctx);
 				TopologicalSort.sort(stmt2, ctx);
 
-				if (!stmt1.match(RewriterStatement.MatcherContext.exactMatchWithDifferentLiteralValues(ctx, stmt2))) {
+				if (!stmt1.match(RewriterStatement.MatcherContext.exactMatchWithDifferentLiteralValues(ctx, stmt2, stmt1))) {
 					// TODO: Minimal difference can still prune valid rewrites (e.g. sum(A %*% B) -> sum(A * t(B)))
-					RewriterStatement.MatcherContext mCtx = RewriterStatement.MatcherContext.findMinimalDifference(ctx, stmts.get(j));
+					RewriterStatement.MatcherContext mCtx = RewriterStatement.MatcherContext.findMinimalDifference(ctx, stmts.get(j), stmts.get(i));
 					stmts.get(i).match(mCtx);
 					Tuple2<RewriterStatement, RewriterStatement> minimalDifference = mCtx.getFirstMismatch();
 
@@ -372,7 +372,7 @@ public class RewriterClusteringTest {
 						minStmt1 = converter.apply(minStmt1);
 						minStmt2 = converter.apply(minStmt2);
 
-						if (minStmt1.match(RewriterStatement.MatcherContext.exactMatch(ctx, minStmt2))) {
+						if (minStmt1.match(RewriterStatement.MatcherContext.exactMatch(ctx, minStmt2, minStmt1))) {
 							// Then the minimal difference does not imply equivalence
 							// For now, just keep every result then
 							match = false;

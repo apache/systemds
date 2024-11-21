@@ -77,6 +77,7 @@ public class DMLCodeGenerator {
 				return;
 
 			if (line.endsWith("valid: TRUE")) {
+				//DMLExecutor.println("Rule is valid!");
 				validator.accept(true);
 			} else {
 				DMLExecutor.println("An invalid rule was found!");

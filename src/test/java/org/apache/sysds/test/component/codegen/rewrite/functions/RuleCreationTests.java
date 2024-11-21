@@ -36,7 +36,7 @@ public class RuleCreationTests {
 		System.out.println(canonicalForm1.toParsableString(ctx, true));
 		System.out.println("==========");
 		System.out.println(canonicalForm2.toParsableString(ctx, true));
-		assert canonicalForm1.match(RewriterStatement.MatcherContext.exactMatch(ctx, canonicalForm2));
+		assert canonicalForm1.match(RewriterStatement.MatcherContext.exactMatch(ctx, canonicalForm2, canonicalForm1));
 
 		RewriterRule rule = RewriterRuleCreator.createRule(from, to, canonicalForm1, canonicalForm2, ctx);
 		System.out.println(rule);

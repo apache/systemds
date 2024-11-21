@@ -76,7 +76,7 @@ public class CostEstimates {
 		System.out.println(stmt1.toParsableString(ctx, true));
 		System.out.println("==========");
 		System.out.println(stmt2.toParsableString(ctx, true));
-		assert stmt1.match(RewriterStatement.MatcherContext.exactMatch(ctx, stmt2));
+		assert stmt1.match(RewriterStatement.MatcherContext.exactMatch(ctx, stmt2, stmt1));
 	}
 
 	@Test
@@ -92,7 +92,7 @@ public class CostEstimates {
 
 		stmt1 = canonicalConverter.apply(stmt1);
 		stmt2 = canonicalConverter.apply(stmt2);
-		assert stmt1.match(RewriterStatement.MatcherContext.exactMatch(ctx, stmt2));
+		assert stmt1.match(RewriterStatement.MatcherContext.exactMatch(ctx, stmt2, stmt1));
 	}
 
 	@Test
@@ -113,7 +113,7 @@ public class CostEstimates {
 		System.out.println(stmt1.toParsableString(ctx, true));
 		System.out.println("==========");
 		System.out.println(stmt2.toParsableString(ctx, true));
-		assert stmt1.match(RewriterStatement.MatcherContext.exactMatch(ctx, stmt2));
+		assert stmt1.match(RewriterStatement.MatcherContext.exactMatch(ctx, stmt2, stmt1));
 	}
 
 	@Test
@@ -135,7 +135,7 @@ public class CostEstimates {
 		System.out.println(stmt1.toParsableString(ctx, true));
 		System.out.println("==========");
 		System.out.println(stmt2.toParsableString(ctx, true));
-		assert stmt1.match(RewriterStatement.MatcherContext.exactMatch(ctx, stmt2));
+		assert stmt1.match(RewriterStatement.MatcherContext.exactMatch(ctx, stmt2, stmt1));
 	}
 
 	@Test
@@ -166,7 +166,7 @@ public class CostEstimates {
 		System.out.println(stmt1.toParsableString(ctx, true));
 		System.out.println("==========");
 		System.out.println(stmt2.toParsableString(ctx, true));
-		assert stmt1.match(RewriterStatement.MatcherContext.exactMatch(ctx, stmt2));
+		assert stmt1.match(RewriterStatement.MatcherContext.exactMatch(ctx, stmt2, stmt1));
 	}
 
 	@Test
@@ -195,7 +195,7 @@ public class CostEstimates {
 		System.out.println(stmt1.toParsableString(ctx, true));
 		System.out.println("==========");
 		System.out.println(stmt2.toParsableString(ctx, true));
-		assert stmt1.match(RewriterStatement.MatcherContext.exactMatch(ctx, stmt2));
+		assert stmt1.match(RewriterStatement.MatcherContext.exactMatch(ctx, stmt2, stmt1));
 	}
 
 	@Test
@@ -223,7 +223,7 @@ public class CostEstimates {
 		System.out.println(stmt1.toParsableString(ctx, true));
 		System.out.println("==========");
 		System.out.println(stmt2.toParsableString(ctx, true));
-		assert stmt1.match(RewriterStatement.MatcherContext.exactMatch(ctx, stmt2));
+		assert stmt1.match(RewriterStatement.MatcherContext.exactMatch(ctx, stmt2, stmt1));
 	}
 
 	@Test
@@ -274,7 +274,7 @@ public class CostEstimates {
 		System.out.println(stmt1.toParsableString(ctx, true));
 		System.out.println("==========");
 		System.out.println(stmt2.toParsableString(ctx, true));
-		assert stmt1.match(RewriterStatement.MatcherContext.exactMatch(ctx, stmt2));
+		assert stmt1.match(RewriterStatement.MatcherContext.exactMatch(ctx, stmt2, stmt1));
 	}
 
 	@Test

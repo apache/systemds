@@ -117,10 +117,28 @@ public class MetaPropagator implements Function<RewriterStatement, RewriterState
 		Object rowAccess;
 
 		if (root.getOperands() == null || root.getOperands().isEmpty()) {
-			if (root.getMeta("ncol") == null)
+			RewriterStatement ncol = root.getNCol();
+
+			if (ncol == null) {
 				root.unsafePutMeta("ncol", new RewriterInstruction().withInstruction("ncol").withOps(root).as(UUID.randomUUID().toString()).consolidate(ctx));
-			if (root.getMeta("nrow") == null)
+			} /*else {
+				RewriterStatement asserted = assertions != null ? assertions.getAssertionStatement(ncol, null) : null;
+
+				if (asserted != null && asserted != ncol)
+					root.unsafePutMeta("ncol", asserted);
+			}*/
+
+			RewriterStatement nrow = root.getNRow();
+
+			if (nrow == null) {
 				root.unsafePutMeta("nrow", new RewriterInstruction().withInstruction("nrow").withOps(root).as(UUID.randomUUID().toString()).consolidate(ctx));
+			} /*else {
+				RewriterStatement asserted = assertions != null ? assertions.getAssertionStatement(nrow, null) : null;
+
+				if (asserted != null && asserted != ncol)
+					root.unsafePutMeta("nrow", asserted);
+			}*/
+
 			return null;
 		}
 

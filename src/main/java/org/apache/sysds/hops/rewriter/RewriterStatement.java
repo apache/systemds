@@ -149,6 +149,7 @@ public abstract class RewriterStatement {
 		final boolean traceVariableEliminations;
 		final Map<RewriterStatement, RewriterRule.LinkObject> ruleLinks;
 		final RewriterStatement expressionRoot;
+		final RewriterStatement thisExpressionRoot;
 		RewriterStatement matchRoot;
 		RewriterPredecessor pred;
 
@@ -161,16 +162,21 @@ public abstract class RewriterStatement {
 		private List<MatcherContext> subMatches;
 		private Tuple2<RewriterStatement, RewriterStatement> firstMismatch;
 		private boolean debug;
+		private boolean assertionsFetched = false;
+		private RewriterAssertions assertionsThat;
+		private RewriterAssertions assertionsThis;
+		private Set<RewriterStatement> dontVisitAgain;
 
-		public MatcherContext(final RuleContext ctx, RewriterStatement matchRoot, RewriterStatement expressionRoot) {
-			this(ctx, matchRoot, expressionRoot, false, false, false, false, false, false, false, false, false, Collections.emptyMap());
+		public MatcherContext(final RuleContext ctx, RewriterStatement matchRoot, RewriterStatement expressionRoot, RewriterStatement thisExpressionRoot) {
+			this(ctx, matchRoot, expressionRoot, thisExpressionRoot, false, false, false, false, false, false, false, false, false, Collections.emptyMap());
 		}
 
-		public MatcherContext(final RuleContext ctx, RewriterStatement matchRoot, RewriterStatement expressionRoot, final boolean statementsCanBeVariables, final boolean literalsCanBeVariables, final boolean ignoreLiteralValues, final boolean allowDuplicatePointers, final boolean allowPropertyScan, final boolean allowTypeHierarchy, final boolean terminateOnFirstMatch, final boolean findMinimalMismatchRoot, boolean traceVariableEliminations, final Map<RewriterStatement, RewriterRule.LinkObject> ruleLinks) {
+		public MatcherContext(final RuleContext ctx, RewriterStatement matchRoot, RewriterStatement expressionRoot, RewriterStatement thisExpressionRoot, final boolean statementsCanBeVariables, final boolean literalsCanBeVariables, final boolean ignoreLiteralValues, final boolean allowDuplicatePointers, final boolean allowPropertyScan, final boolean allowTypeHierarchy, final boolean terminateOnFirstMatch, final boolean findMinimalMismatchRoot, boolean traceVariableEliminations, final Map<RewriterStatement, RewriterRule.LinkObject> ruleLinks) {
 			this.ctx = ctx;
 			this.matchRoot = matchRoot;
 			this.pred = new RewriterPredecessor();
 			this.expressionRoot = expressionRoot;
+			this.thisExpressionRoot = thisExpressionRoot;
 			this.statementsCanBeVariables = statementsCanBeVariables;
 			this.currentStatement = matchRoot;
 			this.literalsCanBeVariables = literalsCanBeVariables;
@@ -185,11 +191,12 @@ public abstract class RewriterStatement {
 			this.debug = false;
 		}
 
-		public MatcherContext(final RuleContext ctx, RewriterStatement matchRoot, RewriterPredecessor pred, RewriterStatement expressionRoot, final boolean statementsCanBeVariables, final boolean literalsCanBeVariables, final boolean ignoreLiteralValues, final boolean allowDuplicatePointers, final boolean allowPropertyScan, final boolean allowTypeHierarchy, final boolean terminateOnFirstMatch, final boolean findMinimalMismatchRoot, boolean traceVariableEliminations, final Map<RewriterStatement, RewriterRule.LinkObject> ruleLinks) {
+		public MatcherContext(final RuleContext ctx, RewriterStatement matchRoot, RewriterPredecessor pred, RewriterStatement expressionRoot, RewriterStatement thisExprRoot, final boolean statementsCanBeVariables, final boolean literalsCanBeVariables, final boolean ignoreLiteralValues, final boolean allowDuplicatePointers, final boolean allowPropertyScan, final boolean allowTypeHierarchy, final boolean terminateOnFirstMatch, final boolean findMinimalMismatchRoot, boolean traceVariableEliminations, final Map<RewriterStatement, RewriterRule.LinkObject> ruleLinks) {
 			this.ctx = ctx;
 			this.matchRoot = matchRoot;
 			this.pred = pred;
 			this.expressionRoot = expressionRoot;
+			this.thisExpressionRoot = thisExprRoot;
 			this.currentStatement = matchRoot;
 			this.statementsCanBeVariables = statementsCanBeVariables;
 			this.literalsCanBeVariables = literalsCanBeVariables;
@@ -202,6 +209,41 @@ public abstract class RewriterStatement {
 			this.findMinimalMismatchRoot = findMinimalMismatchRoot;
 			this.traceVariableEliminations = traceVariableEliminations;
 			this.debug = false;
+		}
+
+		private void fetchAssertions() {
+			if (!assertionsFetched) {
+				assertionsThat = (RewriterAssertions) expressionRoot.getMeta("_assertions");
+				assertionsThis = (RewriterAssertions) thisExpressionRoot.getMeta("_assertions");
+				assertionsFetched = true;
+			}
+		}
+
+		public void dontVisitAgain(RewriterStatement stmt) {
+			if (dontVisitAgain == null) {
+				dontVisitAgain = new HashSet<>();
+			}
+
+			dontVisitAgain.add(stmt);
+		}
+
+		public boolean wasVisited(RewriterStatement stmt) {
+			if (dontVisitAgain == null)
+				return false;
+
+			return dontVisitAgain.contains(stmt);
+		}
+
+		public RewriterAssertions getOldAssertionsThat() {
+			fetchAssertions();
+
+			return assertionsThat;
+		}
+
+		public RewriterAssertions getOldAssertionsThis() {
+			fetchAssertions();
+
+			return assertionsThis;
 		}
 
 		public Map<RewriterStatement, RewriterStatement> getDependencyMap() {
@@ -304,16 +346,16 @@ public abstract class RewriterStatement {
 			return debug;
 		}
 
-		public static MatcherContext exactMatch(final RuleContext ctx, RewriterStatement stmt) {
-			return new MatcherContext(ctx, stmt, stmt);
+		public static MatcherContext exactMatch(final RuleContext ctx, RewriterStatement stmt, RewriterStatement thisExprRoot) {
+			return new MatcherContext(ctx, stmt, stmt, thisExprRoot);
 		}
 
-		public static MatcherContext exactMatchWithDifferentLiteralValues(final RuleContext ctx, RewriterStatement stmt) {
-			return new MatcherContext(ctx, stmt, stmt, false, false, true, false, false, false, false, false, false, Collections.emptyMap());
+		public static MatcherContext exactMatchWithDifferentLiteralValues(final RuleContext ctx, RewriterStatement stmt, RewriterStatement thisExprRoot) {
+			return new MatcherContext(ctx, stmt, stmt, thisExprRoot, false, false, true, false, false, false, false, false, false, Collections.emptyMap());
 		}
 
-		public static MatcherContext findMinimalDifference(final RuleContext ctx, RewriterStatement stmt) {
-			return new MatcherContext(ctx, stmt, stmt, false, false, true, false, false, false, false, true, false, Collections.emptyMap());
+		public static MatcherContext findMinimalDifference(final RuleContext ctx, RewriterStatement stmt, RewriterStatement thisExpressionRoot) {
+			return new MatcherContext(ctx, stmt, stmt, thisExpressionRoot, false, false, true, false, false, false, false, true, false, Collections.emptyMap());
 		}
 	}
 

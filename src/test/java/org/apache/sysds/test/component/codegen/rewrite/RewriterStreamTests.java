@@ -35,7 +35,7 @@ public class RewriterStreamTests {
 		RewriterStatement stmt = RewriterUtils.parse("+(+(a, b), 1)", ctx, "MATRIX:A,B,C", "FLOAT:a,b", "LITERAL_INT:0,1");
 		stmt = canonicalConverter.apply(stmt);
 		System.out.println(stmt.toParsableString(ctx, true));
-		assert stmt.match(RewriterStatement.MatcherContext.exactMatch(ctx, RewriterUtils.parse("+(argList(a, b, 1))", ctx, "FLOAT:a,b", "LITERAL_INT:0,1")));
+		assert stmt.match(RewriterStatement.MatcherContext.exactMatch(ctx, RewriterUtils.parse("+(argList(a, b, 1))", ctx, "FLOAT:a,b", "LITERAL_INT:0,1"), stmt));
 	}
 
 	@Test
@@ -43,7 +43,7 @@ public class RewriterStreamTests {
 		RewriterStatement stmt = RewriterUtils.parse("+(1, +(a, b))", ctx, "FLOAT:a,b", "LITERAL_INT:0,1");
 		stmt = canonicalConverter.apply(stmt);
 		System.out.println(stmt.toParsableString(ctx, true));
-		assert stmt.match(RewriterStatement.MatcherContext.exactMatch(ctx, RewriterUtils.parse("+(argList(a, b, 1))", ctx, "FLOAT:a,b", "LITERAL_INT:0,1")));
+		assert stmt.match(RewriterStatement.MatcherContext.exactMatch(ctx, RewriterUtils.parse("+(argList(a, b, 1))", ctx, "FLOAT:a,b", "LITERAL_INT:0,1"), stmt));
 	}
 
 	@Test
@@ -58,7 +58,7 @@ public class RewriterStreamTests {
 		System.out.println(stmt1.toParsableString(ctx, true));
 		System.out.println("==========");
 		System.out.println(stmt2.toParsableString(ctx, true));
-		assert stmt1.match(RewriterStatement.MatcherContext.exactMatch(ctx, stmt2));
+		assert stmt1.match(RewriterStatement.MatcherContext.exactMatch(ctx, stmt2, stmt1));
 	}
 
 	@Test
@@ -66,7 +66,7 @@ public class RewriterStreamTests {
 		RewriterStatement stmt = RewriterUtils.parse("+(-(a, b), 1)", ctx, "MATRIX:A,B,C", "FLOAT:a,b", "LITERAL_INT:0,1");
 		stmt = canonicalConverter.apply(stmt);
 		System.out.println(stmt.toParsableString(ctx, true));
-		assert stmt.match(RewriterStatement.MatcherContext.exactMatch(ctx, RewriterUtils.parse("+(argList(-(b), a, 1))", ctx, "FLOAT:a,b", "LITERAL_INT:0,1")));
+		assert stmt.match(RewriterStatement.MatcherContext.exactMatch(ctx, RewriterUtils.parse("+(argList(-(b), a, 1))", ctx, "FLOAT:a,b", "LITERAL_INT:0,1"), stmt));
 	}
 
 	@Test
@@ -74,7 +74,7 @@ public class RewriterStreamTests {
 		RewriterStatement stmt = RewriterUtils.parse("+(1, -(a, -(b, c)))", ctx, "MATRIX:A,B,C", "FLOAT:a,b,c", "LITERAL_INT:0,1");
 		stmt = canonicalConverter.apply(stmt);
 		System.out.println(stmt.toParsableString(ctx, true));
-		assert stmt.match(RewriterStatement.MatcherContext.exactMatch(ctx, RewriterUtils.parse("+(argList(-(b), a, c, 1))", ctx, "FLOAT:a,b, c", "LITERAL_INT:0,1")));
+		assert stmt.match(RewriterStatement.MatcherContext.exactMatch(ctx, RewriterUtils.parse("+(argList(-(b), a, c, 1))", ctx, "FLOAT:a,b, c", "LITERAL_INT:0,1"), stmt));
 	}
 
 	// Fusion will no longer be pursued
@@ -116,7 +116,7 @@ public class RewriterStreamTests {
 		System.out.println(stmt1.toParsableString(ctx, true));
 		System.out.println("==========");
 		System.out.println(stmt2.toParsableString(ctx, true));
-		assert stmt1.match(RewriterStatement.MatcherContext.exactMatch(ctx, stmt2));
+		assert stmt1.match(RewriterStatement.MatcherContext.exactMatch(ctx, stmt2, stmt1));
 	}
 
 	@Test
@@ -130,7 +130,7 @@ public class RewriterStreamTests {
 		System.out.println(stmt.toParsableString(ctx, true));
 		System.out.println("==========");
 		System.out.println(stmt2.toParsableString(ctx, true));
-		assert stmt.match(RewriterStatement.MatcherContext.exactMatch(ctx, stmt2));
+		assert stmt.match(RewriterStatement.MatcherContext.exactMatch(ctx, stmt2, stmt));
 	}
 
 	@Test
@@ -144,7 +144,7 @@ public class RewriterStreamTests {
 		System.out.println(stmt.toParsableString(ctx, true));
 		System.out.println("==========");
 		System.out.println(stmt2.toParsableString(ctx, true));
-		assert stmt.match(RewriterStatement.MatcherContext.exactMatch(ctx, stmt2));
+		assert stmt.match(RewriterStatement.MatcherContext.exactMatch(ctx, stmt2, stmt));
 	}
 
 	@Test
@@ -158,7 +158,7 @@ public class RewriterStreamTests {
 		System.out.println(stmt.toParsableString(ctx, true));
 		System.out.println("==========");
 		System.out.println(stmt2.toParsableString(ctx, true));
-		assert stmt.match(RewriterStatement.MatcherContext.exactMatch(ctx, stmt2));
+		assert stmt.match(RewriterStatement.MatcherContext.exactMatch(ctx, stmt2, stmt));
 	}
 
 	@Test
@@ -172,7 +172,7 @@ public class RewriterStreamTests {
 		System.out.println(stmt.toParsableString(ctx, true));
 		System.out.println("==========");
 		System.out.println(stmt2.toParsableString(ctx, true));
-		assert stmt.match(RewriterStatement.MatcherContext.exactMatch(ctx, stmt2));
+		assert stmt.match(RewriterStatement.MatcherContext.exactMatch(ctx, stmt2, stmt));
 	}
 
 	@Test
@@ -186,7 +186,7 @@ public class RewriterStreamTests {
 		System.out.println(stmt.toParsableString(ctx, true));
 		System.out.println("==========");
 		System.out.println(stmt2.toParsableString(ctx, true));
-		assert !stmt.match(RewriterStatement.MatcherContext.exactMatch(ctx, stmt2));
+		assert !stmt.match(RewriterStatement.MatcherContext.exactMatch(ctx, stmt2, stmt));
 	}
 
 	@Test
@@ -200,7 +200,7 @@ public class RewriterStreamTests {
 		System.out.println(stmt.toParsableString(ctx, true));
 		System.out.println("==========");
 		System.out.println(stmt2.toParsableString(ctx, true));
-		assert stmt.match(RewriterStatement.MatcherContext.exactMatch(ctx, stmt2));
+		assert stmt.match(RewriterStatement.MatcherContext.exactMatch(ctx, stmt2, stmt));
 	}
 
 	@Test
@@ -214,7 +214,7 @@ public class RewriterStreamTests {
 		System.out.println(stmt.toParsableString(ctx, true));
 		System.out.println("==========");
 		System.out.println(stmt2.toParsableString(ctx, true));
-		assert stmt.match(RewriterStatement.MatcherContext.exactMatch(ctx, stmt2));
+		assert stmt.match(RewriterStatement.MatcherContext.exactMatch(ctx, stmt2, stmt));
 	}
 
 	@Test
@@ -228,7 +228,7 @@ public class RewriterStreamTests {
 		System.out.println(stmt.toParsableString(ctx, true));
 		System.out.println("==========");
 		System.out.println(stmt2.toParsableString(ctx, true));
-		assert stmt.match(RewriterStatement.MatcherContext.exactMatch(ctx, stmt2));
+		assert stmt.match(RewriterStatement.MatcherContext.exactMatch(ctx, stmt2, stmt));
 	}
 
 	@Test
@@ -242,7 +242,7 @@ public class RewriterStreamTests {
 		System.out.println(stmt.toParsableString(ctx, true));
 		System.out.println("==========");
 		System.out.println(stmt2.toParsableString(ctx, true));
-		assert stmt.match(RewriterStatement.MatcherContext.exactMatch(ctx, stmt2));
+		assert stmt.match(RewriterStatement.MatcherContext.exactMatch(ctx, stmt2, stmt));
 	}
 
 	@Test
@@ -256,7 +256,7 @@ public class RewriterStreamTests {
 		System.out.println(stmt.toParsableString(ctx, true));
 		System.out.println("==========");
 		System.out.println(stmt2.toParsableString(ctx, true));
-		assert stmt.match(RewriterStatement.MatcherContext.exactMatch(ctx, stmt2));
+		assert stmt.match(RewriterStatement.MatcherContext.exactMatch(ctx, stmt2, stmt));
 	}
 
 	@Test
@@ -272,7 +272,7 @@ public class RewriterStreamTests {
 		System.out.println(stmt1.toParsableString(ctx, true));
 		System.out.println("==========");
 		System.out.println(stmt2.toParsableString(ctx, true));
-		assert stmt1.match(RewriterStatement.MatcherContext.exactMatch(ctx, stmt2));
+		assert stmt1.match(RewriterStatement.MatcherContext.exactMatch(ctx, stmt2, stmt1));
 	}
 
 	@Test
@@ -286,7 +286,7 @@ public class RewriterStreamTests {
 		System.out.println(stmt.toParsableString(ctx, true));
 		System.out.println("==========");
 		System.out.println(stmt2.toParsableString(ctx, true));
-		assert !stmt.match(RewriterStatement.MatcherContext.exactMatch(ctx, stmt2));
+		assert !stmt.match(RewriterStatement.MatcherContext.exactMatch(ctx, stmt2, stmt));
 	}
 
 	@Test
@@ -365,7 +365,7 @@ public class RewriterStreamTests {
 		System.out.println("==========");
 		System.out.println(stmt2.toParsableString(ctx, true));
 
-		assert stmt1.match(RewriterStatement.MatcherContext.exactMatch(ctx, stmt2));
+		assert stmt1.match(RewriterStatement.MatcherContext.exactMatch(ctx, stmt2, stmt1));
 	}
 
 	@Test
@@ -401,8 +401,8 @@ public class RewriterStreamTests {
 		System.out.println("==========");
 		System.out.println(stmt2.toParsableString(ctx, true));
 
-		assert !stmt1.match(RewriterStatement.MatcherContext.exactMatch(ctx, stmt2));
-		assert !stmt2.match(RewriterStatement.MatcherContext.exactMatch(ctx, stmt1));
+		assert !stmt1.match(RewriterStatement.MatcherContext.exactMatch(ctx, stmt2, stmt1));
+		assert !stmt2.match(RewriterStatement.MatcherContext.exactMatch(ctx, stmt1, stmt2));
 	}
 
 	@Test
@@ -418,7 +418,7 @@ public class RewriterStreamTests {
 		System.out.println("==========");
 		System.out.println(stmt2.toParsableString(ctx, true));
 
-		assert stmt1.match(RewriterStatement.MatcherContext.exactMatch(ctx, stmt2));
+		assert stmt1.match(RewriterStatement.MatcherContext.exactMatch(ctx, stmt2, stmt1));
 	}
 
 	@Test
@@ -434,7 +434,7 @@ public class RewriterStreamTests {
 		System.out.println("==========");
 		System.out.println(stmt2.toParsableString(ctx, true));
 
-		assert stmt1.match(RewriterStatement.MatcherContext.exactMatch(ctx, stmt2));
+		assert stmt1.match(RewriterStatement.MatcherContext.exactMatch(ctx, stmt2, stmt1));
 	}
 
 	@Test
@@ -450,7 +450,7 @@ public class RewriterStreamTests {
 		System.out.println("==========");
 		System.out.println(stmt2.toParsableString(ctx, true));
 
-		assert stmt1.match(RewriterStatement.MatcherContext.exactMatch(ctx, stmt2));
+		assert stmt1.match(RewriterStatement.MatcherContext.exactMatch(ctx, stmt2, stmt1));
 	}
 
 	@Test
@@ -466,7 +466,7 @@ public class RewriterStreamTests {
 		System.out.println("==========");
 		System.out.println(stmt2.toParsableString(ctx, true));
 
-		assert stmt1.match(RewriterStatement.MatcherContext.exactMatch(ctx, stmt2));
+		assert stmt1.match(RewriterStatement.MatcherContext.exactMatch(ctx, stmt2, stmt1));
 	}
 
 	@Test
@@ -482,7 +482,7 @@ public class RewriterStreamTests {
 		System.out.println("==========");
 		System.out.println(stmt2.toParsableString(ctx, true));
 
-		assert stmt1.match(RewriterStatement.MatcherContext.exactMatch(ctx, stmt2));
+		assert stmt1.match(RewriterStatement.MatcherContext.exactMatch(ctx, stmt2, stmt1));
 	}
 
 	@Test
@@ -507,7 +507,7 @@ public class RewriterStreamTests {
 		System.out.println("==========");
 		System.out.println(stmt2.toParsableString(ctx, true));
 
-		assert stmt1.match(RewriterStatement.MatcherContext.exactMatch(ctx, stmt2));
+		assert stmt1.match(RewriterStatement.MatcherContext.exactMatch(ctx, stmt2, stmt1));
 	}
 
 	@Test
@@ -523,7 +523,7 @@ public class RewriterStreamTests {
 		System.out.println("==========");
 		System.out.println(stmt2.toParsableString(ctx, true));
 
-		assert stmt1.match(RewriterStatement.MatcherContext.exactMatch(ctx, stmt2));
+		assert stmt1.match(RewriterStatement.MatcherContext.exactMatch(ctx, stmt2, stmt1));
 	}
 
 	@Test
@@ -539,7 +539,7 @@ public class RewriterStreamTests {
 		System.out.println("==========");
 		System.out.println(stmt2.toParsableString(ctx, true));
 
-		assert stmt1.match(RewriterStatement.MatcherContext.exactMatch(ctx, stmt2));
+		assert stmt1.match(RewriterStatement.MatcherContext.exactMatch(ctx, stmt2, stmt1));
 	}
 
 	@Test
@@ -672,7 +672,7 @@ public class RewriterStreamTests {
 		System.out.println("==========");
 		System.out.println(stmt2.toParsableString(ctx, true));
 
-		assert stmt1.match(RewriterStatement.MatcherContext.exactMatch(ctx, stmt2));
+		assert stmt1.match(RewriterStatement.MatcherContext.exactMatch(ctx, stmt2, stmt1));
 	}
 
 	@Test
@@ -688,7 +688,7 @@ public class RewriterStreamTests {
 		System.out.println("==========");
 		System.out.println(stmt2.toParsableString(ctx, true));
 
-		assert stmt1.match(RewriterStatement.MatcherContext.exactMatch(ctx, stmt2));
+		assert stmt1.match(RewriterStatement.MatcherContext.exactMatch(ctx, stmt2, stmt1));
 	}
 
 	@Test
@@ -704,7 +704,7 @@ public class RewriterStreamTests {
 		System.out.println("==========");
 		System.out.println(stmt2.toParsableString(ctx, true));
 
-		assert stmt1.match(RewriterStatement.MatcherContext.exactMatch(ctx, stmt2));
+		assert stmt1.match(RewriterStatement.MatcherContext.exactMatch(ctx, stmt2, stmt1));
 	}
 
 	@Test
@@ -720,7 +720,7 @@ public class RewriterStreamTests {
 		System.out.println("==========");
 		System.out.println(stmt2.toParsableString(ctx, true));
 
-		assert stmt1.match(RewriterStatement.MatcherContext.exactMatch(ctx, stmt2));
+		assert stmt1.match(RewriterStatement.MatcherContext.exactMatch(ctx, stmt2, stmt1));
 	}
 
 	@Test
@@ -736,7 +736,7 @@ public class RewriterStreamTests {
 		System.out.println("==========");
 		System.out.println(stmt2.toParsableString(ctx, true));
 
-		assert stmt1.match(RewriterStatement.MatcherContext.exactMatch(ctx, stmt2));
+		assert stmt1.match(RewriterStatement.MatcherContext.exactMatch(ctx, stmt2, stmt1));
 	}
 
 	@Test
@@ -752,7 +752,7 @@ public class RewriterStreamTests {
 		System.out.println("==========");
 		System.out.println(stmt2.toParsableString(ctx, true));
 
-		assert !stmt1.match(RewriterStatement.MatcherContext.exactMatch(ctx, stmt2));
+		assert !stmt1.match(RewriterStatement.MatcherContext.exactMatch(ctx, stmt2, stmt1));
 	}
 
 	@Test
@@ -768,7 +768,7 @@ public class RewriterStreamTests {
 		System.out.println("==========");
 		System.out.println(stmt2.toParsableString(ctx, true));
 
-		assert stmt1.match(RewriterStatement.MatcherContext.exactMatch(ctx, stmt2));
+		assert stmt1.match(RewriterStatement.MatcherContext.exactMatch(ctx, stmt2, stmt1));
 	}
 
 	@Test
@@ -784,7 +784,7 @@ public class RewriterStreamTests {
 		System.out.println("==========");
 		System.out.println(stmt2.toParsableString(ctx, true));
 
-		assert !stmt1.match(RewriterStatement.MatcherContext.exactMatch(ctx, stmt2));
+		assert !stmt1.match(RewriterStatement.MatcherContext.exactMatch(ctx, stmt2, stmt1));
 	}
 
 	@Test
@@ -814,7 +814,7 @@ public class RewriterStreamTests {
 		System.out.println("==========");
 		System.out.println(stmt2.toParsableString(ctx, true));
 
-		assert !stmt1.match(RewriterStatement.MatcherContext.exactMatch(ctx, stmt2));
+		assert !stmt1.match(RewriterStatement.MatcherContext.exactMatch(ctx, stmt2, stmt1));
 	}
 
 	@Test
@@ -840,7 +840,7 @@ public class RewriterStreamTests {
 		System.out.println("==========");
 		System.out.println(stmt2.toParsableString(ctx, true));
 
-		assert stmt1.match(RewriterStatement.MatcherContext.exactMatch(ctx, stmt2));
+		assert stmt1.match(RewriterStatement.MatcherContext.exactMatch(ctx, stmt2, stmt1));
 	}
 
 	@Test
@@ -856,7 +856,7 @@ public class RewriterStreamTests {
 		System.out.println("==========");
 		System.out.println(stmt2.toParsableString(ctx, true));
 
-		assert stmt1.match(RewriterStatement.MatcherContext.exactMatch(ctx, stmt2));
+		assert stmt1.match(RewriterStatement.MatcherContext.exactMatch(ctx, stmt2, stmt1));
 	}
 
 	@Test
@@ -872,7 +872,7 @@ public class RewriterStreamTests {
 		System.out.println("==========");
 		System.out.println(stmt2.toParsableString(ctx, true));
 
-		assert stmt1.match(RewriterStatement.MatcherContext.exactMatch(ctx, stmt2));
+		assert stmt1.match(RewriterStatement.MatcherContext.exactMatch(ctx, stmt2, stmt1));
 	}
 
 	@Test
@@ -888,7 +888,7 @@ public class RewriterStreamTests {
 		System.out.println("==========");
 		System.out.println(stmt2.toParsableString(ctx, true));
 
-		assert stmt1.match(RewriterStatement.MatcherContext.exactMatch(ctx, stmt2));
+		assert stmt1.match(RewriterStatement.MatcherContext.exactMatch(ctx, stmt2, stmt1));
 	}
 
 	@Test
@@ -899,5 +899,21 @@ public class RewriterStreamTests {
 
 		System.out.println("==========");
 		System.out.println(stmt1.toParsableString(ctx, true));
+	}
+
+	@Test
+	public void testImplicitInequality() {
+		RewriterStatement stmt1 = RewriterUtils.parse("+([](A,1, nrow(A), 1, 1), B)", ctx, "MATRIX:A,B", "LITERAL_INT:1");
+		RewriterStatement stmt2 = RewriterUtils.parse("+([](A,1, nrow(A), 1, 1), [](B, 1, nrow(B), 1, 1))", ctx, "MATRIX:A,B", "LITERAL_INT:1");
+
+		stmt1 = canonicalConverter.apply(stmt1);
+		stmt2 = canonicalConverter.apply(stmt2);
+
+		System.out.println("==========");
+		System.out.println(stmt1.toParsableString(ctx, true));
+		System.out.println("==========");
+		System.out.println(stmt2.toParsableString(ctx, true));
+
+		assert !stmt1.match(RewriterStatement.MatcherContext.exactMatch(ctx, stmt2, stmt1));
 	}
 }

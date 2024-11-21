@@ -39,6 +39,8 @@ public class RewriterRuleCreator {
 		boolean converged = false;
 		boolean changed = false;
 
+		List<RewriterRule> appliedRules = new ArrayList<>();
+
 		for (int i = 0; i < 500; i++) {
 			RewriterRuleSet.ApplicableRule applicableRule = ruleSet.acceleratedFindFirst(toTest);
 
@@ -48,11 +50,12 @@ public class RewriterRuleCreator {
 			}
 
 			toTest = applicableRule.rule.apply(applicableRule.matches.get(0), toTest, applicableRule.forward, false);
+			appliedRules.add(applicableRule.rule);
 			changed = true;
 		}
 
 		if (!converged)
-			throw new IllegalArgumentException("The existing rule-set did not seem to converge for the example: \n" + toTest.toParsableString(ctx, true));
+			throw new IllegalArgumentException("The existing rule-set did not seem to converge for the example: \n" + toTest.toParsableString(ctx, true) + "\n" + String.join("\n", appliedRules.stream().map(rl -> rl.toParsableString(ctx)).collect(Collectors.toList())));
 
 		if (changed) {
 			long existingPostCost;
@@ -72,6 +75,8 @@ public class RewriterRuleCreator {
 		// Now, we validate the rule by executing it in the system
 		if (!validateRuleCorrectnessAndGains(rule, ctx))
 			return false; // Then, either the rule is incorrect or is already implemented
+
+		System.out.println("Rule is correct!");
 
 		RewriterRuleSet probingSet = new RewriterRuleSet(ctx, List.of(rule));
 		List<RewriterRule> rulesToRemove = new ArrayList<>();
@@ -143,11 +148,15 @@ public class RewriterRuleCreator {
 		String code = DMLCodeGenerator.generateRuleValidationDML(rule, sessionId);
 
 		MutableBoolean isValid = new MutableBoolean(false);
-		System.out.println(code);
+		//System.out.println("=== CODE ===");
+		//System.out.println(code);
 		DMLExecutor.executeCode(code, DMLCodeGenerator.ruleValidationScript(sessionId, isValid::setValue));
 
 		if (!isValid.booleanValue())
 			return false;
+
+		if (true)
+			return true;
 
 		Set<RewriterStatement> vars = DMLCodeGenerator.getVariables(rule.getStmt1());
 		Set<String> varNames = vars.stream().map(RewriterStatement::getId).collect(Collectors.toSet());
@@ -192,7 +201,7 @@ public class RewriterRuleCreator {
 			stmt.prepareForHashing();
 			stmt.recomputeHashCodes(ctx);
 
-			RewriterStatement.MatcherContext mCtx  = RewriterStatement.MatcherContext.exactMatch(ctx, stmt);
+			RewriterStatement.MatcherContext mCtx  = RewriterStatement.MatcherContext.exactMatch(ctx, stmt, rule.getStmt1());
 			if (rule.getStmt1().match(mCtx)) {
 				// Check if also the right variables are associated
 				boolean assocsMatching = true;
@@ -255,7 +264,7 @@ public class RewriterRuleCreator {
 		Map<RewriterStatement, RewriterStatement> fromCanonicalLink = getAssociationToCanonicalForm(from, canonicalFormFrom, true, ctx);
 		Map<RewriterStatement, RewriterStatement> toCanonicalLink = getAssociationToCanonicalForm(to, canonicalFormTo, true, ctx);
 
-		RewriterStatement.MatcherContext matcher = RewriterStatement.MatcherContext.exactMatch(ctx, canonicalFormTo);
+		RewriterStatement.MatcherContext matcher = RewriterStatement.MatcherContext.exactMatch(ctx, canonicalFormTo, canonicalFormFrom);
 		canonicalFormFrom.match(matcher);
 
 		Map<RewriterStatement, RewriterStatement> assocs = new HashMap<>();

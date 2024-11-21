@@ -224,6 +224,47 @@ public class RewriterDataType extends RewriterStatement {
 			}
 		}
 
+		// If matrix, check if the dimensions
+		if (dType.equals("MATRIX")) {
+			RewriterStatement ncolEquiv = getNCol();
+			RewriterStatement nrowEquiv = getNRow();
+
+			if (ncolEquiv != null && nrowEquiv != null) {
+				if (!mCtx.wasVisited(this)) {
+					mCtx.dontVisitAgain(this);
+					RewriterStatement ncolEquivThat = stmt.getNCol();
+					RewriterStatement nrowEquivThat = stmt.getNRow();
+
+					RewriterAssertions assertionsThis = mCtx.getOldAssertionsThis();
+					RewriterAssertions assertionsThat = mCtx.getOldAssertionsThat();
+
+					if (assertionsThis != null) {
+						RewriterStatement ncolAssertion = assertionsThis.getAssertionStatement(ncolEquiv, null);
+
+						RewriterStatement nrowAssertion = assertionsThis.getAssertionStatement(nrowEquiv, null);
+						ncolEquiv = ncolAssertion == null ? ncolEquiv : ncolAssertion;
+						nrowEquiv = nrowAssertion == null ? nrowEquiv : nrowAssertion;
+					}
+
+					if (assertionsThat != null) {
+						RewriterStatement ncolAssertionThat = assertionsThat.getAssertionStatement(ncolEquivThat, null);
+
+						RewriterStatement nrowAssertionThat = assertionsThat.getAssertionStatement(nrowEquivThat, null);
+						ncolEquivThat = ncolAssertionThat == null ? ncolEquiv : ncolAssertionThat;
+						nrowEquivThat = nrowAssertionThat == null ? nrowEquiv : nrowAssertionThat;
+					}
+
+					// Now, match those statements
+					mCtx.currentStatement = ncolEquivThat;
+					if (!ncolEquiv.match(mCtx))
+						return false;
+					mCtx.currentStatement = nrowEquivThat;
+					if (!nrowEquiv.match(mCtx))
+						return false;
+				}
+			}
+		}
+
 		RewriterStatement assoc = mCtx.getDependencyMap().get(this);
 		if (assoc == null) {
 			if (!mCtx.allowDuplicatePointers && mCtx.getDependencyMap().containsValue(stmt)) {

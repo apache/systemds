@@ -226,7 +226,7 @@ public class RewriterRuleCreator {
 			if (stmt1ReplaceNCols.match(mCtx)) {
 				// Check if also the right variables are associated
 				boolean assocsMatching = true;
-				DMLExecutor.println(mCtx.getDependencyMap());
+				//DMLExecutor.println(mCtx.getDependencyMap());
 				for (RewriterStatement var : mVars) {
 					RewriterStatement assoc = mCtx.getDependencyMap().get(var);
 

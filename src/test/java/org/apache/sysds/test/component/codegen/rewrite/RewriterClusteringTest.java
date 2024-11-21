@@ -210,10 +210,17 @@ public class RewriterClusteringTest {
 
 			RewriterStatement canonicalFormFrom = converter.apply(rewrite._4());
 			RewriterStatement canonicalFormTo = converter.apply(rewrite._5());
-			RewriterRule rule = RewriterRuleCreator.createRule(rewrite._4(), rewrite._5(), canonicalFormFrom, canonicalFormTo, ctx);
+			try {
+				RewriterRule rule = RewriterRuleCreator.createRule(rewrite._4(), rewrite._5(), canonicalFormFrom, canonicalFormTo, ctx);
 
-			allRules.add(new Tuple3<>(rule, rewrite._2(), rewrite._3()));
-			//ruleCreator.registerRule(rule, rewrite._2(), rewrite._3());
+				allRules.add(new Tuple3<>(rule, rewrite._2(), rewrite._3()));
+				//ruleCreator.registerRule(rule, rewrite._2(), rewrite._3());
+			} catch (Exception e) {
+				System.err.println("An error occurred while trying to create a rule:");
+				System.err.println(rewrite._4().toParsableString(ctx, true));
+				System.err.println(rewrite._5().toParsableString(ctx, true));
+				e.printStackTrace();
+			}
 		}
 
 		{

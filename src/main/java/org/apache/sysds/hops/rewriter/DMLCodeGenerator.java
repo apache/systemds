@@ -71,7 +71,7 @@ public class DMLCodeGenerator {
 		});
 	}
 
-	public static Consumer<String> ruleValidationScript(String sessionId, Consumer<Boolean> validator) {
+	public static Consumer<String> ruleValidationScript(String ruleName, String sessionId, Consumer<Boolean> validator) {
 		return line -> {
 			if (!line.startsWith(sessionId))
 				return;
@@ -80,7 +80,7 @@ public class DMLCodeGenerator {
 				//DMLExecutor.println("Rule is valid!");
 				validator.accept(true);
 			} else {
-				DMLExecutor.println("An invalid rule was found!");
+				DMLExecutor.println("An invalid rule was found: " + ruleName);
 				validator.accept(false);
 			}
 		};

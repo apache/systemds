@@ -1,5 +1,6 @@
 package org.apache.sysds.test.component.codegen.rewrite;
 
+import org.apache.sysds.hops.rewriter.RewriterCostEstimator;
 import org.apache.sysds.hops.rewriter.RewriterDatabase;
 import org.apache.sysds.hops.rewriter.RewriterHeuristic;
 import org.apache.sysds.hops.rewriter.RewriterRule;
@@ -915,5 +916,24 @@ public class RewriterStreamTests {
 		System.out.println(stmt2.toParsableString(ctx, true));
 
 		assert !stmt1.match(RewriterStatement.MatcherContext.exactMatch(ctx, stmt2, stmt1));
+	}
+
+	@Test
+	public void testTraceEquivalence() {
+		RewriterStatement stmt1 = RewriterUtils.parse("trace(%*%(t(S),R))", ctx, "MATRIX:S,R", "LITERAL_INT:1");
+		RewriterStatement stmt2 = RewriterUtils.parse("sum(*(S,R))", ctx, "MATRIX:S,R", "LITERAL_INT:1");
+
+		System.out.println("Cost1: " + RewriterCostEstimator.estimateCost(stmt1, ctx));
+		System.out.println("Cost2: " + RewriterCostEstimator.estimateCost(stmt2, ctx));
+
+		stmt1 = canonicalConverter.apply(stmt1);
+		stmt2 = canonicalConverter.apply(stmt2);
+
+		System.out.println("==========");
+		System.out.println(stmt1.toParsableString(ctx, true));
+		System.out.println("==========");
+		System.out.println(stmt2.toParsableString(ctx, true));
+
+		assert stmt1.match(RewriterStatement.MatcherContext.exactMatch(ctx, stmt2, stmt1));
 	}
 }

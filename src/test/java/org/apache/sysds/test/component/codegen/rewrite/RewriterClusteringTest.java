@@ -149,8 +149,8 @@ public class RewriterClusteringTest {
 		}
 
 		if (useRandomized) {
-			long MAX_MILLIS = 1000;
-			int BATCH_SIZE = 400;
+			long MAX_MILLIS = 300000;
+			int BATCH_SIZE = 200;
 			long startMillis = System.currentTimeMillis();
 
 			for (int batch = 0; batch < 100 && System.currentTimeMillis() - startMillis < MAX_MILLIS; batch++) {

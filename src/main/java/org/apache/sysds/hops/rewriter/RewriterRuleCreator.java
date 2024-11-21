@@ -143,6 +143,7 @@ public class RewriterRuleCreator {
 		String code = DMLCodeGenerator.generateRuleValidationDML(rule, sessionId);
 
 		MutableBoolean isValid = new MutableBoolean(false);
+		System.out.println(code);
 		DMLExecutor.executeCode(code, DMLCodeGenerator.ruleValidationScript(sessionId, isValid::setValue));
 
 		if (!isValid.booleanValue())

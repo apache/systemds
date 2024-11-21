@@ -1184,6 +1184,16 @@ public class RewriterRuleCollection {
 				.build()
 		);
 
+		SCALARS.forEach(t -> {
+			rules.add(new RewriterRuleBuilder(ctx, "sum(v::" + t + ") => v::" + t)
+					.setUnidirectional(true)
+					.parseGlobalVars(t + ":v")
+					.withParsedStatement("sum(v)", hooks)
+					.toParsedStatement("v", hooks)
+					.build()
+			);
+		});
+
 		rules.add(new RewriterRuleBuilder(ctx, "[](UnaryElementWiseOperator(A), i, j) => UnaryElementWiseOperator([](A, i, j))")
 				.setUnidirectional(true)
 				.parseGlobalVars("MATRIX:A")

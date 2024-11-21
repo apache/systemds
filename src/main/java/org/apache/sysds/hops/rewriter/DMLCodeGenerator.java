@@ -1,9 +1,15 @@
 package org.apache.sysds.hops.rewriter;
 
 import org.apache.commons.lang3.NotImplementedException;
+import org.apache.commons.lang3.function.TriFunction;
+import org.apache.commons.lang3.mutable.MutableInt;
+import scala.Tuple2;
 
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Random;
 import java.util.Set;
@@ -17,7 +23,7 @@ public class DMLCodeGenerator {
 
 
 	private static final HashSet<String> printAsBinary = new HashSet<>();
-	private static final HashMap<String, BiFunction<RewriterStatement, StringBuilder, Boolean>> customEncoders = new HashMap<>();
+	private static final HashMap<String, TriFunction<RewriterStatement, StringBuilder, Map<RewriterStatement, String>, Boolean>> customEncoders = new HashMap<>();
 	private static final RuleContext ctx = RewriterUtils.buildDefaultContext();
 
 	static {
@@ -34,27 +40,29 @@ public class DMLCodeGenerator {
 		printAsBinary.add("<=");
 		printAsBinary.add("%*%");
 
-		customEncoders.put("[]", (stmt, sb) -> {
+		customEncoders.put("[]", (stmt, sb, tmpVars) -> {
 			if (stmt.getOperands().size() == 3) {
-				sb.append('(');
-				appendExpression(stmt.getChild(0), sb);
-				sb.append(")[");
-				appendExpression(stmt.getChild(1), sb);
+				//sb.append('(');
+				appendExpression(stmt.getChild(0), sb, tmpVars);
+				//sb.append(")[");
+				sb.append('[');
+				appendExpression(stmt.getChild(1), sb, tmpVars);
 				sb.append(", ");
-				appendExpression(stmt.getChild(2), sb);
+				appendExpression(stmt.getChild(2), sb, tmpVars);
 				sb.append(']');
 				return true;
 			} else if (stmt.getOperands().size() == 5) {
-				sb.append('(');
-				appendExpression(stmt.getChild(0), sb);
-				sb.append(")[");
-				appendExpression(stmt.getChild(1), sb);
+				//sb.append('(');
+				appendExpression(stmt.getChild(0), sb, tmpVars);
+				//sb.append(")[");
+				sb.append('[');
+				appendExpression(stmt.getChild(1), sb, tmpVars);
 				sb.append(" : ");
-				appendExpression(stmt.getChild(2), sb);
+				appendExpression(stmt.getChild(2), sb, tmpVars);
 				sb.append(", ");
-				appendExpression(stmt.getChild(3), sb);
+				appendExpression(stmt.getChild(3), sb, tmpVars);
 				sb.append(" : ");
-				appendExpression(stmt.getChild(4), sb);
+				appendExpression(stmt.getChild(4), sb, tmpVars);
 				sb.append(']');
 				return true;
 			}
@@ -86,45 +94,44 @@ public class DMLCodeGenerator {
 		RewriterStatement stmtTo = rule.getStmt2();
 
 		Set<RewriterStatement> vars = new HashSet<>();
+		List<Tuple2<RewriterStatement, String>> orderedTmpVars = new ArrayList<>();
+		Map<RewriterStatement, String> tmpVars = new HashMap<>();
+		MutableInt tmpVarCtr = new MutableInt(0);
 
 		stmtFrom.forEachPostOrder((stmt, pred) -> {
 			if (!stmt.isInstruction() && !stmt.isLiteral())
 				vars.add(stmt);
+
+			createTmpVars(stmt, orderedTmpVars, tmpVars, tmpVarCtr);
 		}, false);
 
 		stmtTo.forEachPostOrder((stmt, pred) -> {
 			if (!stmt.isInstruction() && !stmt.isLiteral())
 				vars.add(stmt);
+
+			createTmpVars(stmt, orderedTmpVars, tmpVars, tmpVarCtr);
 		}, false);
 
 		StringBuilder sb = new StringBuilder();
 
 		sb.append(generateDMLVariables(vars));
-		/*for (RewriterStatement var : vars) {
-			switch (var.getResultingDataType(ctx)) {
-				case "MATRIX":
-					sb.append(var.getId() + " = rand(rows=1000, cols=1000, min=0.0, max=1.0)\n");
-					break;
-				case "FLOAT":
-					sb.append(var.getId() + " = as.scalar(rand())\n");
-					break;
-				case "INT":
-					sb.append(var.getId() + " = as.integer(as.scalar(rand(min=0.0, max=10000.0)))\n");
-					break;
-				case "BOOL":
-					sb.append(var.getId() + " = as.scalar(rand()) < 0.5\n");
-					break;
-				default:
-					throw new NotImplementedException(var.getResultingDataType(ctx));
-			}
-		}*/
+
+		Map<RewriterStatement, String> incrementingTmpVars = new HashMap<>();
+
+		for (Tuple2<RewriterStatement, String> t : orderedTmpVars) {
+			sb.append(t._2);
+			sb.append(" = ");
+			sb.append(generateDML(t._1, incrementingTmpVars));
+			sb.append('\n');
+			incrementingTmpVars.put(t._1, t._2);
+		}
 
 		sb.append('\n');
 		sb.append("R1 = ");
-		sb.append(generateDML(stmtFrom));
+		sb.append(generateDML(stmtFrom, tmpVars));
 		sb.append('\n');
 		sb.append("R2 = ");
-		sb.append(generateDML(stmtTo));
+		sb.append(generateDML(stmtTo, tmpVars));
 		sb.append('\n');
 		sb.append("print(\"");
 		sb.append(sessionId);
@@ -133,6 +140,21 @@ public class DMLCodeGenerator {
 		sb.append("))");
 
 		return sb.toString();
+	}
+
+	private static boolean createTmpVars(RewriterStatement stmt, List<Tuple2<RewriterStatement, String>> orderedTmpVars, Map<RewriterStatement, String> tmpVars, MutableInt tmpVarCtr) {
+		if (stmt.isInstruction() && stmt.trueInstruction().equals("[]")) {
+			// Then we need to put the child into a variable
+			RewriterStatement child = stmt.getChild(0);
+			if (child.isInstruction() || child.isLiteral()) {
+				String tmpVar = "tmp" + tmpVarCtr.getAndIncrement();
+				tmpVars.put(child, tmpVar);
+				orderedTmpVars.add(new Tuple2<>(child, tmpVar));
+				return true;
+			}
+		}
+
+		return false;
 	}
 
 	public static Set<RewriterStatement> getVariables(RewriterStatement root) {
@@ -212,15 +234,26 @@ public class DMLCodeGenerator {
 	}
 
 	public static String generateDML(RewriterStatement root) {
+		return generateDML(root, Collections.emptyMap());
+	}
+
+	public static String generateDML(RewriterStatement root, Map<RewriterStatement, String> tmpVars) {
 		StringBuilder sb = new StringBuilder();
-		appendExpression(root, sb);
+		appendExpression(root, sb, tmpVars);
 
 		return sb.toString();
 	}
 
-	private static void appendExpression(RewriterStatement cur, StringBuilder sb) {
+	private static void appendExpression(RewriterStatement cur, StringBuilder sb, Map<RewriterStatement, String> tmpVars) {
+		String tmpVar = tmpVars.get(cur);
+
+		if (tmpVar != null) {
+			sb.append(tmpVar);
+			return;
+		}
+
 		if (cur.isInstruction()) {
-			resolveExpression((RewriterInstruction) cur, sb);
+			resolveExpression((RewriterInstruction) cur, sb, tmpVars);
 		} else {
 			if (cur.isLiteral())
 				sb.append(cur.getLiteral());
@@ -229,22 +262,22 @@ public class DMLCodeGenerator {
 		}
 	}
 
-	private static void resolveExpression(RewriterInstruction expr, StringBuilder sb) {
+	private static void resolveExpression(RewriterInstruction expr, StringBuilder sb, Map<RewriterStatement, String> tmpVars) {
 		String typedInstr = expr.trueTypedInstruction(ctx);
 		String unTypedInstr = expr.trueInstruction();
 
 		if (expr.getOperands().size() == 2 && (printAsBinary.contains(typedInstr) || printAsBinary.contains(unTypedInstr))) {
 			sb.append('(');
-			appendExpression(expr.getChild(0), sb);
+			appendExpression(expr.getChild(0), sb, tmpVars);
 			sb.append(") ");
 			sb.append(unTypedInstr);
 			sb.append(" (");
-			appendExpression(expr.getChild(1), sb);
+			appendExpression(expr.getChild(1), sb, tmpVars);
 			sb.append(')');
 			return;
 		}
 
-		BiFunction<RewriterStatement, StringBuilder, Boolean> customEncoder = customEncoders.get(typedInstr);
+		TriFunction<RewriterStatement, StringBuilder, Map<RewriterStatement, String>, Boolean> customEncoder = customEncoders.get(typedInstr);
 
 		if (customEncoder == null)
 			customEncoder = customEncoders.get(unTypedInstr);
@@ -257,12 +290,12 @@ public class DMLCodeGenerator {
 				if (i != 0)
 					sb.append(", ");
 
-				appendExpression(expr.getChild(i), sb);
+				appendExpression(expr.getChild(i), sb, tmpVars);
 			}
 
 			sb.append(')');
 		} else {
-			customEncoder.apply(expr, sb);
+			customEncoder.apply(expr, sb, tmpVars);
 		}
 	}
 }

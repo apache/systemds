@@ -86,7 +86,7 @@ public class MemoTable {
 	 *
 	 * @param hop    The Hop object.
 	 * @param fType  The associated FType.
-	 * @param newFedPlanList The list of FedPlans to add.
+	 * @param fedPlanList  The list of FedPlans to add.
 	 */
 	public void addFedPlanList(Hop hop, FType fType, List<FedPlan> fedPlanList) {
 		if (contains(hop, fType)) {

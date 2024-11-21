@@ -3,6 +3,7 @@ package org.apache.sysds.hops.rewriter;
 import com.google.protobuf.Internal;
 import org.apache.commons.lang3.NotImplementedException;
 import org.apache.commons.lang3.mutable.MutableInt;
+import org.apache.spark.internal.config.R;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -188,7 +189,15 @@ public class RewriterAlphabetEncoder {
 			RewriterStatement to = interestingLeaves.get(i);
 			for (int j = i + 1; j < interestingLeaves.size(); j++) {
 				RewriterStatement from = interestingLeaves.get(j);
-				out.add(root.nestedCopyOrInject(new HashMap<>(), stmt -> stmt.equals(from) ? to.nestedCopy(false) : null));
+				HashMap<RewriterStatement, RewriterStatement> createdObjects = new HashMap<>();
+				RewriterStatement toCpy = new RewriterDataType().as(to.getId()).ofType(to.getResultingDataType(ctx)).consolidate(ctx);
+				createdObjects.put(from, toCpy);
+				createdObjects.put(to, toCpy);
+				RewriterStatement cpy = root.nestedCopyOrInject(createdObjects, stmt -> null);
+				if (ctx.metaPropagator != null)
+					cpy = ctx.metaPropagator.apply(cpy);
+				out.add(cpy);
+				//System.out.println("HERE:" + out.get(out.size()-1));
 			}
 		}
 

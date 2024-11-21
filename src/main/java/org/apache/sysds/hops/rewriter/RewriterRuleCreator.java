@@ -284,7 +284,7 @@ public class RewriterRuleCreator {
 				return;
 
 			if (namedVariables.put(cur.getId(), cur) != null)
-				throw new IllegalArgumentException("Duplicate variable name: " + cur.toParsableString(RuleContext.currentContext) + "\nEntire statement:\n" + stmt.toParsableString(ctx));
+				throw new IllegalArgumentException("Duplicate variable name: " + cur.toParsableString(RuleContext.currentContext) + "\nEntire statement:\n" + stmt.toParsableString(ctx) + "\nRaw: " + stmt);
 		}, false);
 
 		Map<RewriterStatement, RewriterStatement> assoc = new DualHashBidiMap<>();

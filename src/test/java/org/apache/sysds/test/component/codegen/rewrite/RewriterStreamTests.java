@@ -890,4 +890,14 @@ public class RewriterStreamTests {
 
 		assert stmt1.match(RewriterStatement.MatcherContext.exactMatch(ctx, stmt2));
 	}
+
+	@Test
+	public void testSimpleConvergence() {
+		RewriterStatement stmt1 = RewriterUtils.parse("sum(a)", ctx, "FLOAT:a");
+
+		stmt1 = canonicalConverter.apply(stmt1);
+
+		System.out.println("==========");
+		System.out.println(stmt1.toParsableString(ctx, true));
+	}
 }

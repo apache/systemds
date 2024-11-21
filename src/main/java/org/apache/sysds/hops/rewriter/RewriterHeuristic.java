@@ -4,6 +4,8 @@ import org.apache.commons.lang3.NotImplementedException;
 import org.apache.commons.lang3.mutable.MutableBoolean;
 
 import javax.annotation.Nullable;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -68,7 +70,7 @@ public class RewriterHeuristic implements RewriterHeuristicTransformation {
 		if (rule != null)
 			foundRewrite.setValue(true);
 
-		for (int i = 0; i < 1000 && rule != null; i++) {
+		for (int i = 0; i < 500 && rule != null; i++) {
 			//System.out.println("Pre-apply: " + rule.rule.getName());
 			/*if (currentStmt.toParsableString(ruleSet.getContext()).equals("%*%(X,[](B,1,ncol(X),1,ncol(B)))"))
 				System.out.println("test");*/
@@ -77,11 +79,17 @@ public class RewriterHeuristic implements RewriterHeuristicTransformation {
 			currentStmt = rule.rule.apply(rule.matches.get(0), currentStmt, rule.forward, false);
 			//System.out.println("Now: " + currentStmt.toParsableString(ruleSet.getContext()));
 
-			if (handler != null && !handler.apply(currentStmt, rule.rule))
-				break;
+			//transforms.add(currentStmt.toParsableString(ruleSet.getContext()));
 
-			if (!(currentStmt instanceof RewriterInstruction))
+			if (handler != null && !handler.apply(currentStmt, rule.rule)) {
+				rule = null;
 				break;
+			}
+
+			if (!(currentStmt instanceof RewriterInstruction)) {
+				rule = null;
+				break;
+			}
 
 			if (accelerated)
 				rule = ruleSet.acceleratedFindFirst(currentStmt);
@@ -90,7 +98,7 @@ public class RewriterHeuristic implements RewriterHeuristicTransformation {
 		}
 
 		if (rule != null)
-			throw new IllegalArgumentException("Expression did not converge:\n" + currentStmt.toParsableString(ruleSet.getContext(), true));
+			throw new IllegalArgumentException("Expression did not converge:\n" + currentStmt.toParsableString(ruleSet.getContext(), true) + "\nRule: " + rule);
 
 		return currentStmt;
 	}

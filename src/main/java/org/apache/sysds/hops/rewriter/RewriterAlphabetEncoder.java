@@ -19,6 +19,7 @@ public class RewriterAlphabetEncoder {
 	private static final List<String> MATRIX = List.of("MATRIX");
 
 	private static Operand[] instructionAlphabet = new Operand[] {
+			null,
 			new Operand("+", 2, ALL_TYPES),
 			new Operand("-", 2, ALL_TYPES),
 			new Operand("*", 2, ALL_TYPES),
@@ -84,7 +85,7 @@ public class RewriterAlphabetEncoder {
 			return true;
 		}, true);
 
-		if (interestingLeaves.size() < 2)
+		if (interestingLeaves.isEmpty())
 			return List.of(root);
 
 		List<RewriterStatement> out = new ArrayList<>();
@@ -195,6 +196,9 @@ public class RewriterAlphabetEncoder {
 	}
 
 	public static List<RewriterStatement> buildAllPossibleDAGs(List<Operand> operands, final RuleContext ctx, boolean rename) {
+		if (operands == null)
+			return Collections.emptyList();
+
 		RewriterAlphabetEncoder.ctx = ctx;
 
 		List<RewriterStatement> allStmts = recursivelyFindAllCombinations(operands);
@@ -272,9 +276,17 @@ public class RewriterAlphabetEncoder {
 	public static List<Operand> decodeOrderedStatements(int stmt) {
 		int[] instructions = fromBaseNNumber(stmt, instructionAlphabet.length);
 		List<Operand> out = new ArrayList<>(instructions.length);
+		//System.out.println("StmtIdx: " + stmt);
 
-		for (int i = 0; i < instructions.length; i++)
-			out.add(instructionAlphabet[instructions[i]]);
+		for (int i = 0; i < instructions.length; i++) {
+			/*System.out.println("Idx: " + i);
+			System.out.println("digits[" + i + "]: " + instructions[i]);
+			System.out.println("As op: " + instructionAlphabet[instructions[i]]);*/
+			Operand toAdd = instructionAlphabet[instructions[i]];
+			if (toAdd == null)
+				return null;
+			out.add(toAdd);
+		}
 
 		return out;
 	}
@@ -284,17 +296,25 @@ public class RewriterAlphabetEncoder {
 			return new int[0];
 
 		// We put 1 as the last bit to signalize end of sequence
-		int m = Integer.numberOfTrailingZeros(Integer.highestOneBit(l));
+		/*int m = Integer.numberOfTrailingZeros(Integer.highestOneBit(l));
 		int maxRepr = 1 << (m - 1);
 		l = l ^ (1 << m);
 
-		int numDigits = (int)(Math.log(maxRepr) / Math.log(n)) + 1;
+		System.out.println("Bin: " + Integer.toBinaryString(l));
+		System.out.println("m: " + m);
+		System.out.println("l: " + l);*/
+
+		int numDigits = (int)(Math.log(l) / Math.log(n)) + 1;
 		int[] digits = new int[numDigits];
 
 		for (int i = numDigits - 1; i >= 0; i--) {
+			//System.out.println(l + " % " + n);
 			digits[i] = l % n;
 			l = l / n;
 		}
+
+		/*System.out.println("numDigits: " + numDigits);
+		System.out.println("digits[0]: " + digits[0]);*/
 
 		return digits;
 	}
@@ -305,16 +325,16 @@ public class RewriterAlphabetEncoder {
 
 		int multiplicator = 1;
 		int out = 0;
-		int maxPossible = 0;
+		//int maxPossible = 0;
 
 		for (int i = digits.length - 1; i >= 0; i--) {
 			out += multiplicator * digits[i];
-			maxPossible += multiplicator * (n - 1);
+			//maxPossible += multiplicator * (n - 1);
 			multiplicator *= n;
 		}
 
-		int m = Integer.numberOfTrailingZeros(Integer.highestOneBit(maxPossible));
-		out |= (1 << m);
+		/*int m = Integer.numberOfTrailingZeros(Integer.highestOneBit(maxPossible));
+		out |= (1 << m);*/
 
 		return out;
 	}

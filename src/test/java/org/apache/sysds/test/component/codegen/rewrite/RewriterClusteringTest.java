@@ -174,15 +174,15 @@ public class RewriterClusteringTest {
 							RewriterStatement canonicalForm = converter.apply(stmt);
 							computeCost(stmt, ctx);
 
+							List<RewriterStatement> equivalentExpressions = new ArrayList<>();
+							equivalentExpressions.add(stmt);
+							canonicalForm.unsafePutMeta("equivalentExpressions", equivalentExpressions);
+
 							// Insert the canonical form or retrieve the existing entry
 							RewriterStatement existingEntry = canonicalExprDB.insertOrReturn(ctx, canonicalForm);
 
-							if (existingEntry == null) {
-								List<RewriterStatement> equivalentExpressions = new ArrayList<>();
-								equivalentExpressions.add(stmt);
-								canonicalForm.unsafePutMeta("equivalentExpressions", equivalentExpressions);
-							} else {
-								List<RewriterStatement> equivalentExpressions = (List<RewriterStatement>) existingEntry.getMeta("equivalentExpressions");
+							if (existingEntry != null) {
+								equivalentExpressions = (List<RewriterStatement>) existingEntry.getMeta("equivalentExpressions");
 								equivalentExpressions.add(stmt);
 
 								if (equivalentExpressions.size() == 2)

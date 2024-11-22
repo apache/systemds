@@ -189,6 +189,11 @@ public class MetaPropagator implements Function<RewriterStatement, RewriterState
 						root.unsafePutMeta("nrow", new RewriterDataType().ofType("INT").as("1").asLiteral(1L).consolidate(ctx));
 						return null;
 					}
+				case "log_nz":
+				case "log":
+					root.unsafePutMeta("nrow", root.getOperands().get(0).getMeta("nrow"));
+					root.unsafePutMeta("ncol", root.getOperands().get(0).getMeta("ncol"));
+					return null;
 			}
 
 			switch(root.trueTypedInstruction(ctx)) {

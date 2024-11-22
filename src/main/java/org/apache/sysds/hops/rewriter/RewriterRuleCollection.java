@@ -403,6 +403,27 @@ public class RewriterRuleCollection {
 				.toParsedStatement("*(!=(A, 0.0), log(A))")
 				.build()
 		);
+
+		SCALARS.forEach(t -> {
+			rules.add(new RewriterRuleBuilder(ctx, "log_nz(A, a) => *(!=(A, 0.0), *(log(A), inv(log(a)))")
+					.setUnidirectional(true)
+					.parseGlobalVars("MATRIX:A")
+					.parseGlobalVars("FLOAT:a") // We take a float as this framework is optimized for floats
+					.parseGlobalVars("LITERAL_FLOAT:0.0")
+					.withParsedStatement("log_nz(A, a)")
+					.toParsedStatement("*(!=(A, 0.0), *(log(A), inv(log(a))))")
+					.build()
+			);
+
+			rules.add(new RewriterRuleBuilder(ctx, "log(A, a) => *(log(A), inv(log(a)))")
+					.setUnidirectional(true)
+					.parseGlobalVars("MATRIX:A")
+					.parseGlobalVars("FLOAT:a")
+					.withParsedStatement("log(A, a)")
+					.toParsedStatement("*(log(A), inv(log(a)))")
+					.build()
+			);
+		});
 	}
 
 	public static void eliminateMultipleCasts(final List<RewriterRule> rules, final RuleContext ctx) {
@@ -1505,19 +1526,6 @@ public class RewriterRuleCollection {
 						}, true)
 						.link(hooks.get(2).getId(), hooks.get(3).getId(), RewriterStatement::transferMeta)
 						.build());
-
-			// Flatten non-fusable ops
-			rules.add(new RewriterRuleBuilder(ctx, "!=(a,b) => !=(argList(a,b))")
-					.setUnidirectional(true)
-					.parseGlobalVars(t1 + "...:A")
-					.parseGlobalVars(t2 + ":B")
-					.withParsedStatement("$1:FusableBinaryOperator(B, $2:FusedOperator(A))", hooks)
-					.toParsedStatement("$3:FusedOperator(argList(B, A))", hooks)
-					.iff(match -> {
-						return match.getMatchRoot().trueInstruction().equals(match.getMatchRoot().getOperands().get(0).trueInstruction());
-					}, true)
-					.link(hooks.get(2).getId(), hooks.get(3).getId(), RewriterStatement::transferMeta)
-					.build());
 			//}
 		});
 

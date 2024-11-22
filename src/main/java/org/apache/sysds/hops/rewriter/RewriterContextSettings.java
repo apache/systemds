@@ -340,6 +340,10 @@ public class RewriterContextSettings {
 		// Some fused operators
 		builder.append("1-*(MATRIX,MATRIX)::MATRIX\n"); 		// OpOp2.MINUS1_MULT
 		builder.append("log_nz(MATRIX)::MATRIX\n");				// OpOp1.LOG_NZ
+		SCALARS.forEach(t -> {
+			builder.append("log(MATRIX," + t + ")::MATRIX\n");
+			builder.append("log_nz(MATRIX," + t + ")::MATRIX\n");
+		});
 
 		builder.append("_m(INT,INT,FLOAT)::MATRIX\n");
 		builder.append("_m(INT,INT,BOOL)::MATRIX\n");

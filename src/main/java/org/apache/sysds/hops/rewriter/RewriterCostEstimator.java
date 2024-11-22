@@ -226,17 +226,27 @@ public class RewriterCostEstimator {
 				assertions.addEqualityAssertion(instr.getChild(0).getNRow(), instr.getChild(1).getNRow());
 				overhead.add(MALLOC_COST);
 				break;
-			case "log_nz":
+			case "log_nz": {
+				// Must be a matrix
 				RewriterStatement logCost = atomicOpCostStmt("log", ctx);
+				RewriterStatement twoLogCost = RewriterStatement.multiArgInstr(ctx, "*", RewriterStatement.literal(ctx, 2L), logCost);
 				RewriterStatement neqCost = atomicOpCostStmt("!=", ctx);
-				sum = RewriterStatement.multiArgInstr(ctx, "+", logCost, neqCost);
+				sum = RewriterStatement.multiArgInstr(ctx, "+", neqCost, instr.getOperands().size() == 2 ? twoLogCost : logCost);
 				cost = RewriterStatement.multiArgInstr(ctx, "*", sum, instr.getNCol(), instr.getNRow());
 				overhead.add(MALLOC_COST);
 				break;
+			}
 			case "log":
-				logCost = atomicOpCostStmt("log", ctx);
-				cost = RewriterStatement.multiArgInstr(ctx, "*", logCost, instr.getNCol(), instr.getNRow());
-				overhead.add(MALLOC_COST);
+				if (instr.getChild(0).getResultingDataType(ctx).equals("MATRIX")) {
+					RewriterStatement logCost = atomicOpCostStmt("log", ctx);
+					RewriterStatement twoLogCost = RewriterStatement.multiArgInstr(ctx, "*", RewriterStatement.literal(ctx, 2L), logCost);
+					cost = RewriterStatement.multiArgInstr(ctx, "*", instr.getOperands().size() == 2 ? twoLogCost : logCost, instr.getNCol(), instr.getNRow());
+					overhead.add(MALLOC_COST);
+				} else {
+					RewriterStatement logCost = atomicOpCostStmt("log", ctx);
+					RewriterStatement twoLogCost = RewriterStatement.multiArgInstr(ctx, "*", RewriterStatement.literal(ctx, 2L), logCost);
+					cost = instr.getOperands().size() == 2 ? twoLogCost : logCost;
+				}
 				break;
 		}
 

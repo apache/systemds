@@ -230,20 +230,32 @@ public class RewriterClusteringTest {
 			}
 		}
 
-		{
-			RewriterRuleSet rawRuleSet = new RewriterRuleSet(ctx, allRules.stream().map(Tuple3::_1).collect(Collectors.toList()));
 
-			try (FileWriter writer = new FileWriter(RewriteAutomaticallyGenerated.RAW_FILE_PATH)) {
-				writer.write(rawRuleSet.serialize(ctx));
-			} catch (IOException ex) {
-				ex.printStackTrace();
-			}
-		}
 
 		RewriterRuleCreator ruleCreator = new RewriterRuleCreator(ctx);
 
+		for (Tuple3<RewriterRule, Long, Long> t : allRules) {
+			// First, without validating correctness
+			// This might throw out some fallback options if a rule turns out to be incorrect but we there is a huge performance benefit
+			ruleCreator.registerRule(t._1(), t._2(), t._3(), false);
+		}
+
+		allRules = null;
+
+		RewriterRuleSet rawRuleSet = ruleCreator.getRuleSet();
+
+		try (FileWriter writer = new FileWriter(RewriteAutomaticallyGenerated.RAW_FILE_PATH)) {
+			writer.write(rawRuleSet.serialize(ctx));
+		} catch (IOException ex) {
+			ex.printStackTrace();
+		}
+
+		ruleCreator.throwOutInvalidRules();
+
+		/*RewriterRuleCreator ruleCreator = new RewriterRuleCreator(ctx);
+
 		for (Tuple3<RewriterRule, Long, Long> t : allRules)
-			ruleCreator.registerRule(t._1(), t._2(), t._3());
+			ruleCreator.registerRule(t._1(), t._2(), t._3());*/
 
 		ruleCreator.forEachRule(rule -> {
 			System.out.println(rule);

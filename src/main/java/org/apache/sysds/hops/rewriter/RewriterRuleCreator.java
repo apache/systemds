@@ -32,7 +32,7 @@ public class RewriterRuleCreator {
 		activeRules.forEach(consumer);
 	}
 
-	public synchronized boolean registerRule(RewriterRule rule, long preCost, long postCost) {
+	public synchronized boolean registerRule(RewriterRule rule, long preCost, long postCost, boolean validateCorrectness) {
 		// First, we check if an existing rule already applies an equivalent rewrite (cost wise)
 		RewriterStatement toTest = rule.getStmt1().nestedCopy(false);
 
@@ -72,11 +72,13 @@ public class RewriterRuleCreator {
 				return false; // Then this rule is not beneficial
 		}
 
-		// Now, we validate the rule by executing it in the system
-		if (!validateRuleCorrectnessAndGains(rule, ctx))
-			return false; // Then, either the rule is incorrect or is already implemented
+		if (validateCorrectness) {
+			// Now, we validate the rule by executing it in the system
+			if (!validateRuleCorrectnessAndGains(rule, ctx))
+				return false; // Then, either the rule is incorrect or is already implemented
+		}
 
-		System.out.println("Rule is correct!");
+		//System.out.println("Rule is correct!");
 
 		RewriterRuleSet probingSet = new RewriterRuleSet(ctx, List.of(rule));
 		List<RewriterRule> rulesToRemove = new ArrayList<>();
@@ -132,6 +134,11 @@ public class RewriterRuleCreator {
 
 	public RewriterRuleSet getRuleSet() {
 		return ruleSet;
+	}
+
+	public void throwOutInvalidRules() {
+		activeRules.removeIf(rule -> !validateRuleCorrectnessAndGains(rule, ctx));
+		ruleSet.accelerate();
 	}
 
 

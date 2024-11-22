@@ -1301,7 +1301,12 @@ public class RewriterUtils {
 				return true;
 			}, debug);
 
+			// TODO: Do this in a loop until nothing is found anymore
 			RewriterUtils.mergeArgLists(stmt, ctx);
+			RewriterUtils.pullOutConstants(stmt, ctx);
+			stmt.prepareForHashing();
+			stmt.recomputeHashCodes(ctx);
+
 			stmt = afterFlattening.apply(stmt, (t, r) -> {
 				if (!debug)
 					return true;
@@ -1332,16 +1337,119 @@ public class RewriterUtils {
 		};
 	}
 
-	// Tries to find the minimal sub-graph that represents the change
-	// E.g. t(A+B) <=> t(A-B) would return A-B
-	// We assume that stmt1 ≠ stmt2
-	/*public static Tuple2<RewriterStatement, RewriterStatement> findMinimalDifference(RewriterStatement stmt1, RewriterStatement stmt2, final RuleContext ctx) {
-		RewriterStatement.MatcherContext mCtx = RewriterStatement.MatcherContext.exactMatch(ctx, stmt2);
+	public static RewriterStatement pullOutConstants(RewriterStatement root, final RuleContext ctx) {
+		return pullOutConstantsRecursively(root, ctx, new HashMap<>());
 	}
 
-	private static boolean exactMatchElement(RewriterStatement stmt1, RewriterStatement stmt2) {
+	private static RewriterStatement pullOutConstantsRecursively(RewriterStatement cur, final RuleContext ctx, Map<RewriterStatement, RewriterStatement> alreadyModified) {
+		if (!cur.isInstruction())
+			return cur;
 
-	}*/
+		RewriterStatement modified = alreadyModified.get(cur);
+
+		if (modified != null)
+			return modified;
+
+		alreadyModified.put(cur, cur);
+
+		for (int i = 0; i < cur.getOperands().size(); i++)
+			cur.getOperands().set(i, pullOutConstantsRecursively(cur.getChild(i), ctx, alreadyModified));
+
+		cur.updateMetaObjects(el -> pullOutConstantsRecursively(el, ctx, alreadyModified));
+
+		switch (cur.trueInstruction()) {
+			case "sum":
+				return tryPullOutSum(cur, ctx);
+		}
+
+		return cur;
+	}
+
+	private static RewriterStatement tryPullOutSum(RewriterStatement sum, final RuleContext ctx) {
+		// TODO: What happens on multi-index? Then, some unnecessary indices wil currently not be pulled out
+		RewriterStatement idxExpr = sum.getChild(0);
+		UUID ownerId = (UUID) idxExpr.getMeta("ownerId");
+		RewriterStatement sumBody = idxExpr.getChild(1);
+
+		Map<RewriterStatement, Boolean> checked = new HashMap<>();
+
+		RewriterStatement idxFrom = idxExpr.getChild(0, 0, 0);
+		RewriterStatement idxTo = idxExpr.getChild(0, 0, 1);
+
+		if (!checkSubgraphDependency(sumBody, ownerId, checked)) {
+			// Then we have to remove the sum entirely
+			RewriterStatement negation = new RewriterInstruction().as(UUID.randomUUID().toString()).withInstruction("-").withOps(idxFrom).consolidate(ctx);
+			RewriterStatement add = RewriterStatement.multiArgInstr(ctx, "+", idxTo, negation);
+			add = foldConstants(add, ctx);
+			return RewriterStatement.multiArgInstr(ctx, "*", sumBody, add);
+		}
+
+		if (isDirectlyDependent(sumBody, ownerId))
+			return sum;
+
+		if (sumBody.trueInstruction().equals("*")) {
+			// We have to assume here, that this instruction is not referenced anywhere else in the graph
+			List<RewriterStatement> argList = sumBody.getChild(0).getOperands();
+			List<RewriterStatement> toRemove = new ArrayList<>(argList.size());
+
+			for (RewriterStatement stmt : argList) {
+				if (!checkSubgraphDependency(stmt, ownerId, checked))
+					toRemove.add(stmt);
+			}
+
+			if (!toRemove.isEmpty()) {
+				argList.removeAll(toRemove);
+
+				if (argList.size() == 1) {
+					idxExpr.getOperands().set(1, argList.get(0));
+				}
+
+				toRemove.add(sum);
+
+				return RewriterStatement.multiArgInstr(ctx, "*", toRemove.toArray(RewriterStatement[]::new));
+			}
+		}
+
+		return sum;
+	}
+
+	// Returns true if the subgraph is dependent on the corresponding owner
+	private static boolean checkSubgraphDependency(RewriterStatement expr, UUID id, Map<RewriterStatement, Boolean> checked) {
+		// TODO: What happens on multi-index?
+		Boolean b = checked.get(expr);
+
+		if (b != null)
+			return b;
+
+		if (expr.isInstruction() && expr.trueInstruction().equals("_idx")) {
+			UUID mid = (UUID) expr.getMeta("ownerId");
+			boolean isDependent = id.equals(mid);
+
+			if (isDependent) {
+				checked.put(expr, true);
+				return true;
+			}
+		}
+
+		for (RewriterStatement stmt : expr.getOperands()) {
+			if (checkSubgraphDependency(stmt, id, checked)) {
+				checked.put(expr, true);
+				return true;
+			}
+		}
+
+		checked.put(expr, false);
+		return false;
+	}
+
+	private static boolean isDirectlyDependent(RewriterStatement child, UUID ownerId) {
+		if (child.isInstruction() && child.trueInstruction().equals("_idx")) {
+			UUID mid = (UUID) child.getMeta("_ownerId");
+			return ownerId.equals(mid);
+		}
+
+		return false;
+	}
 
 	public static RewriterStatement foldConstants(RewriterStatement stmt, final RuleContext ctx) {
 		Map<RewriterStatement, RewriterStatement> replaced = new HashMap<>();

@@ -187,8 +187,9 @@ public class RewriterRule extends AbstractRewriterRule {
 			if (oldRootCpy != null) {
 				assertions = (RewriterAssertions) oldRootCpy.getMeta("_assertions");
 				oldRootCpy.unsafeRemoveMeta("_assertions");
-				//System.out.println("HERE: " + assertions);
+				System.out.println("HERE: " + assertions);
 			} else if (match.getExpressionRoot().getMeta("_assertions") != null) {
+				System.out.println("MAssertions: " + match.getExpressionRoot().getMeta("_assertions"));
 				assertions = ((RewriterAssertions) match.getExpressionRoot().getMeta("_assertions")).nestedCopyOrInject(createdObjects, (obj, p, pIdx) -> {
 					RewriterStatement assoc = match.getAssocs().get(obj);
 					if (assoc != null) {
@@ -203,7 +204,8 @@ public class RewriterRule extends AbstractRewriterRule {
 
 					return null;
 				}, match.getNewExprRoot());
-				//System.out.println("Copied assertions");
+				match.getExpressionRoot().unsafeRemoveMeta("_assertions");
+				System.out.println("Copied assertions");
 			}
 
 			if (assertions != null) {
@@ -218,6 +220,7 @@ public class RewriterRule extends AbstractRewriterRule {
 				cpy.unsafePutMeta("_assertions", assertions);
 			}*/
 
+			System.out.println("NewAssertion0: " + cpy.getMeta("_assertions"));
 			match.getLinks().forEach(lnk -> lnk.newStmt.replaceAll(createdObjects::get));
 			match.getLinks().forEach(lnk -> lnk.transferFunction.accept(lnk));
 			//RewriterAssertions assertions = RewriterAssertions.ofExpression(cpy, ctx);
@@ -228,6 +231,7 @@ public class RewriterRule extends AbstractRewriterRule {
 				postProcessor.accept(cpy);
 
 			//cpy = assertions.buildEquivalences(cpy);
+			System.out.println("NewAssertion1: " + cpy.getMeta("_assertions"));
 
 			if (ctx.metaPropagator != null) {
 				RewriterStatement mNew = ctx.metaPropagator.apply(cpy);
@@ -245,6 +249,7 @@ public class RewriterRule extends AbstractRewriterRule {
 			modificationHandle.setValue(new Tuple3<>(cpy, null, -1));
 
 			//cpy.unsafePutMeta("_assertions", match.getExpressionRoot().getMeta("_assertions"));
+			System.out.println("NewAssertion2: " + cpy.getMeta("_assertions"));
 
 			return cpy;
 		}

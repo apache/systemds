@@ -57,15 +57,15 @@ public class RewriterAssertions {
 			Set<RewriterStatement> newSet = new HashSet<>(assertion.set.size());
 			RewriterAssertion mapped = RewriterAssertion.from(newSet);
 
+			if (assertion.stmt != null) {
+				mapped.stmt = assertion.stmt.nestedCopyOrInject(createdObjects, injector, parent, -1);
+				out.assertionMatcher.put(mapped.stmt, mapped);
+			}
+
 			for (RewriterStatement entry : assertion.set) {
 				RewriterStatement newStmt = entry.nestedCopyOrInject(createdObjects, injector, parent, -1);
 				newSet.add(newStmt);
 				out.assertionMatcher.put(newStmt, mapped);
-			}
-
-			if (assertion.stmt != null) {
-				mapped.stmt = assertion.stmt.nestedCopyOrInject(createdObjects, injector, parent, -1);
-				out.assertionMatcher.put(mapped.stmt, mapped);
 			}
 
 			if (assertion.backRef != null) {

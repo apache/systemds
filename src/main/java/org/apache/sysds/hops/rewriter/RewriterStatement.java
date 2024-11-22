@@ -888,10 +888,61 @@ public abstract class RewriterStatement {
 			}
 		}
 
-		if (link.oldStmt.meta != null)
-			link.newStmt.forEach(stmt -> stmt.meta = new HashMap<>(link.oldStmt.meta));
+		if (link.oldStmt.meta != null) {
+			link.newStmt.forEach(stmt -> {
+				HashMap<String, Object> newMap = new HashMap<>(link.oldStmt.meta);
+				stmt.overwriteImplicitMetaObjects(newMap);
+				stmt.meta = newMap;
+			});
+		}
 		else
-			link.newStmt.forEach(stmt -> stmt.meta = null);
+			link.newStmt.forEach(RewriterStatement::cleanupMeta/*stmt.meta = null*/);
+	}
+
+	private void overwriteImplicitMetaObjects(Map<String, Object> map) {
+		RewriterAssertions assertions = (RewriterAssertions) getMeta("_assertions");
+		RewriterStatement ncol = getNCol();
+		RewriterStatement nrow = getNRow();
+		RewriterStatement backref = getBackRef();
+
+		if (assertions != null)
+			map.put("_assertions", assertions);
+
+		if (ncol != null)
+			map.put("ncol", ncol);
+
+		if (nrow != null)
+			map.put("nrow", nrow);
+
+		if (backref != null)
+			map.put("_backRef", backref);
+	}
+
+	private void cleanupMeta() {
+		if (meta == null)
+			return;
+
+		RewriterAssertions assertions = (RewriterAssertions) getMeta("_assertions");
+		RewriterStatement ncol = getNCol();
+		RewriterStatement nrow = getNRow();
+		RewriterStatement backref = getBackRef();
+
+		if (assertions == null && ncol == null && nrow == null && backref == null)
+			return;
+
+		meta = new HashMap<>();
+
+		if (assertions != null)
+			meta.put("_assertions", assertions);
+
+		if (ncol != null)
+			meta.put("ncol", ncol);
+
+		if (nrow != null)
+			meta.put("nrow", nrow);
+
+		if (backref != null)
+			meta.put("_backRef", ncol);
 	}
 
 	@Override
@@ -1039,5 +1090,10 @@ public abstract class RewriterStatement {
 		}
 
 		throw new IllegalArgumentException();
+	}
+
+	public static RewriterStatement multiArgInstr(final RuleContext ctx, String instrName, RewriterStatement... ops) {
+		RewriterStatement argList = new RewriterInstruction().as(UUID.randomUUID().toString()).withInstruction("argList").withOps(ops).consolidate(ctx);
+		return new RewriterInstruction().as(UUID.randomUUID().toString()).withInstruction(instrName).withOps(argList).consolidate(ctx);
 	}
 }

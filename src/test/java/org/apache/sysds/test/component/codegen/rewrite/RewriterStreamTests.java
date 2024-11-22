@@ -193,7 +193,7 @@ public class RewriterStreamTests {
 	@Test
 	public void testSumEquality() {
 		RewriterStatement stmt = RewriterUtils.parse("sum(+(B, sum(*(a, A))))", ctx, "MATRIX:A,B", "FLOAT:a");
-		RewriterStatement stmt2 = RewriterUtils.parse("sum(+(B, *(*(*(nrow(A), ncol(A)), a), sum(A))))", ctx, "MATRIX:A,B", "FLOAT:a");
+		RewriterStatement stmt2 = RewriterUtils.parse("sum(+(B, *(*(length(A), a), sum(A))))", ctx, "MATRIX:A,B", "FLOAT:a");
 		stmt = canonicalConverter.apply(stmt);
 		stmt2 = canonicalConverter.apply(stmt2);
 

@@ -96,7 +96,7 @@ public class TopologicalSort {
 			boolean arrangable = isArrangable.apply(el, pred.getParent());
 
 			if (arrangable && el.refCtr > 1)
-				throw new IllegalArgumentException("Expecting unique parents for arrangable items!");
+				throw new IllegalArgumentException("Expecting unique parents for arrangable items!\n" + root.toParsableString(ctx, true) + "\n" + el.toParsableString(ctx));
 
 			el.unsafePutMeta("_arrangable", arrangable);
 		}, false);

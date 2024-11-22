@@ -156,7 +156,7 @@ public class RewriterClusteringTest {
 		if (useRandomized) {
 			long MAX_MILLIS = 100000000; // Should be bound by number of ops
 			int BATCH_SIZE = 200;
-			int maxN = RewriterAlphabetEncoder.getMaxSearchNumberForNumOps(2);
+			int maxN = RewriterAlphabetEncoder.getMaxSearchNumberForNumOps(3);
 			long startMillis = System.currentTimeMillis();
 
 			for (int batch = 0; batch < 100 && System.currentTimeMillis() - startMillis < MAX_MILLIS && batch * BATCH_SIZE < maxN; batch++) {
@@ -177,23 +177,24 @@ public class RewriterClusteringTest {
 						expanded.addAll(RewriterAlphabetEncoder.buildAssertionVariations(dag, ctx, true));
 						expanded.addAll(RewriterAlphabetEncoder.buildVariations(dag, ctx));
 						for (RewriterStatement stmt : expanded) {
-							RewriterStatement canonicalForm = converter.apply(stmt);
-							computeCost(stmt, ctx);
+							try {
+								RewriterStatement canonicalForm = converter.apply(stmt);
+								computeCost(stmt, ctx);
 
-							List<RewriterStatement> equivalentExpressions = new ArrayList<>();
-							equivalentExpressions.add(stmt);
+								List<RewriterStatement> equivalentExpressions = new ArrayList<>();
+								equivalentExpressions.add(stmt);
 
-							// TODO: Better handling
-							if (!canonicalForm.isLiteral())
-								canonicalForm.unsafePutMeta("equivalentExpressions", equivalentExpressions);
+								// TODO: Better handling
+								if (!canonicalForm.isLiteral())
+									canonicalForm.unsafePutMeta("equivalentExpressions", equivalentExpressions);
 
-							stmt.getCost(ctx); // Fetch cost already
-							RewriterEquivalenceDatabase.DBEntry entry = canonicalExprDB.insert(ctx, canonicalForm, stmt);
+								stmt.getCost(ctx); // Fetch cost already
+								RewriterEquivalenceDatabase.DBEntry entry = canonicalExprDB.insert(ctx, canonicalForm, stmt);
 
-							if (entry.equivalences.size() == 2)
-								foundEquivalences.add(entry);
+								if (entry.equivalences.size() == 2)
+									foundEquivalences.add(entry);
 
-							// Insert the canonical form or retrieve the existing entry
+								// Insert the canonical form or retrieve the existing entry
 							/*RewriterStatement existingEntry = canonicalExprDB.insertOrReturn(ctx, canonicalForm);
 
 							if (existingEntry != null) {
@@ -208,6 +209,9 @@ public class RewriterClusteringTest {
 
 								//System.out.println("Found equivalent statement!");
 							}*/
+							} catch (Exception e) {
+								e.printStackTrace();
+							}
 						}
 					}
 				});

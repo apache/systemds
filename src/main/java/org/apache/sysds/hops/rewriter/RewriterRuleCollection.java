@@ -649,6 +649,25 @@ public class RewriterRuleCollection {
 	public static void expandStreamingExpressions(final List<RewriterRule> rules, final RuleContext ctx) {
 		HashMap<Integer, RewriterStatement> hooks = new HashMap<>();
 
+		// Const
+		rules.add(new RewriterRuleBuilder(ctx, "Expand const matrix")
+				.setUnidirectional(true)
+				.parseGlobalVars("MATRIX:A")
+				.parseGlobalVars("FLOAT:a")
+				.parseGlobalVars("LITERAL_INT:1")
+				.withParsedStatement("const(A, a)", hooks)
+				.toParsedStatement("$4:_m($1:_idx(1, nrow(A)), $2:_idx(1, ncol(A)), a)", hooks)
+				.apply(hooks.get(1).getId(), stmt -> stmt.unsafePutMeta("idxId", UUID.randomUUID()), true) // Assumes it will never collide
+				.apply(hooks.get(2).getId(), stmt -> stmt.unsafePutMeta("idxId", UUID.randomUUID()), true) // Assumes it will never collide
+				.apply(hooks.get(4).getId(), (stmt, match) -> {
+					UUID id = UUID.randomUUID();
+					stmt.unsafePutMeta("ownerId", id);
+					stmt.getChild(0).unsafePutMeta("ownerId", id);
+					stmt.getChild(1).unsafePutMeta("ownerId", id);
+				}, true) // Assumes it will never collide
+				.build()
+		);
+
 
 		// Matrix Multiplication
 		rules.add(new RewriterRuleBuilder(ctx, "Expand matrix product")

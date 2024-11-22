@@ -300,10 +300,11 @@ public class MetaPropagator implements Function<RewriterStatement, RewriterState
 
 				// Fused ops
 				case "1-*(MATRIX,MATRIX)":
+				case "log_nz(MATRIX)":
 					root.unsafePutMeta("nrow", root.getOperands().get(0).getMeta("nrow"));
 					root.unsafePutMeta("ncol", root.getOperands().get(0).getMeta("ncol"));
 					return null;
-				case "log_nz(MATRIX)":
+				case "const(MATRIX,FLOAT)":
 					root.unsafePutMeta("nrow", root.getOperands().get(0).getMeta("nrow"));
 					root.unsafePutMeta("ncol", root.getOperands().get(0).getMeta("ncol"));
 					return null;

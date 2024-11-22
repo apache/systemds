@@ -40,7 +40,11 @@ public class RewriterAlphabetEncoder {
 
 			// Fused operators
 			new Operand("1-*", 2, MATRIX), 			// TODO: We have to include literals in the search
-			new Operand("log_nz", 1, MATRIX)			// TODO: We have to include literals in the search
+			new Operand("log_nz", 1, MATRIX),			// TODO: We have to include literals in the search
+
+			// Placeholder operators
+			new Operand("zero", 0, ALL_TYPES),
+			new Operand("one", 0, ALL_TYPES)
 	};
 
 	private static String[] varNames = new String[] {
@@ -66,6 +70,14 @@ public class RewriterAlphabetEncoder {
 
 		throw new NotImplementedException();
 	}*/
+
+	public static int getMaxSearchNumberForNumOps(int numOps) {
+		int out = 1;
+		for (int i = 0; i < numOps; i++)
+			out *= instructionAlphabet.length;
+
+		return out;
+	}
 
 	public static void rename(RewriterStatement stmt) {
 		Set<RewriterStatement> namedVars = new HashSet<>();
@@ -230,7 +242,18 @@ public class RewriterAlphabetEncoder {
 
 	private static List<RewriterStatement> recursivelyFindAllCombinations(List<Operand> operands) {
 		if (operands.isEmpty())
-			return Stream.concat(ALL_TYPES.stream().map(t -> new RewriterDataType().as(UUID.randomUUID().toString()).ofType(t).consolidate(ctx)), Stream.of(RewriterStatement.literal(ctx, 1.0D), RewriterStatement.literal(ctx, 0.0D))).collect(Collectors.toList());
+			return ALL_TYPES.stream().map(t -> new RewriterDataType().as(UUID.randomUUID().toString()).ofType(t).consolidate(ctx)).collect(Collectors.toList());
+
+		// Check if op is a placeholder
+		Operand op = operands.get(0);
+		if (op.op.equals("zero") || op.op.equals("one")) {
+			List<RewriterStatement> l = new ArrayList<>(4);
+			l.add(RewriterStatement.literal(ctx, 1.0D));
+			l.add(RewriterStatement.literal(ctx, 0.0D));
+			l.add(new RewriterInstruction().as(UUID.randomUUID().toString()).withInstruction("const").withOps(new RewriterDataType().as(UUID.randomUUID().toString()).ofType("MATRIX").consolidate(ctx), RewriterStatement.literal(ctx, 0.0D)).consolidate(ctx));
+			l.add(new RewriterInstruction().as(UUID.randomUUID().toString()).withInstruction("const").withOps(new RewriterDataType().as(UUID.randomUUID().toString()).ofType("MATRIX").consolidate(ctx), RewriterStatement.literal(ctx, 1.0D)).consolidate(ctx));
+			return l;
+		}
 
 		int nOps = operands.get(0).numArgs;
 		int[] slices = new int[nOps-1];

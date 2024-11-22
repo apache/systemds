@@ -54,7 +54,7 @@ public class RewriterAlphabetTest {
 	@Test
 	public void testRandomStatementGeneration() {
 		int ctr = 0;
-		for (int i = 1; i < 16; i++) {
+		for (int i = 0; i < 20; i++) {
 			List<RewriterAlphabetEncoder.Operand> ops = RewriterAlphabetEncoder.decodeOrderedStatements(i);
 			//System.out.println("Idx: " + i);
 			//System.out.println(ops);

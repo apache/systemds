@@ -323,6 +323,8 @@ public class RewriterCostEstimator {
 				assertions.addEqualityAssertion(map.get("nrowA"), map.get("ncolA"));
 				assertions.addEqualityAssertion(map.get("nrowA"), RewriterStatement.literal(ctx, 1L));
 				return uniqueCosts.get(uniqueCosts.size()-1);
+			case "const(MATRIX,FLOAT)":
+				return RewriterStatement.literal(ctx, 0L);
 		}
 
 		long opCost = atomicOpCost(instr.trueInstruction());

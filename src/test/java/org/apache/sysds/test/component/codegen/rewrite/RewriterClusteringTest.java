@@ -149,12 +149,13 @@ public class RewriterClusteringTest {
 		}
 
 		if (useRandomized) {
-			long MAX_MILLIS = 300000;
+			long MAX_MILLIS = 100000000; // Should be bound by number of ops
 			int BATCH_SIZE = 200;
+			int maxN = RewriterAlphabetEncoder.getMaxSearchNumberForNumOps(2);
 			long startMillis = System.currentTimeMillis();
 
-			for (int batch = 0; batch < 100 && System.currentTimeMillis() - startMillis < MAX_MILLIS; batch++) {
-				List<Integer> indices = IntStream.range(batch * BATCH_SIZE, (batch + 1) * BATCH_SIZE - 1).boxed().collect(Collectors.toList());
+			for (int batch = 0; batch < 100 && System.currentTimeMillis() - startMillis < MAX_MILLIS && batch * BATCH_SIZE < maxN; batch++) {
+				List<Integer> indices = IntStream.range(batch * BATCH_SIZE, Math.min((batch + 1) * BATCH_SIZE - 1, maxN)).boxed().collect(Collectors.toList());
 				Collections.shuffle(indices);
 				MutableInt ctr2 = new MutableInt(0);
 				int maxSize = indices.size();
@@ -176,17 +177,23 @@ public class RewriterClusteringTest {
 
 							List<RewriterStatement> equivalentExpressions = new ArrayList<>();
 							equivalentExpressions.add(stmt);
-							canonicalForm.unsafePutMeta("equivalentExpressions", equivalentExpressions);
+
+							// TODO: Better handling
+							if (!canonicalForm.isLiteral())
+								canonicalForm.unsafePutMeta("equivalentExpressions", equivalentExpressions);
 
 							// Insert the canonical form or retrieve the existing entry
 							RewriterStatement existingEntry = canonicalExprDB.insertOrReturn(ctx, canonicalForm);
 
 							if (existingEntry != null) {
 								equivalentExpressions = (List<RewriterStatement>) existingEntry.getMeta("equivalentExpressions");
-								equivalentExpressions.add(stmt);
+								// TODO: Better handling
+								if (equivalentExpressions != null) {
+									equivalentExpressions.add(stmt);
 
-								if (equivalentExpressions.size() == 2)
-									foundEquivalences.add(existingEntry);
+									if (equivalentExpressions.size() == 2)
+										foundEquivalences.add(existingEntry);
+								}
 
 								//System.out.println("Found equivalent statement!");
 							}
@@ -256,6 +263,9 @@ public class RewriterClusteringTest {
 	}
 
 	private void computeCost(RewriterStatement subExpr, final RuleContext ctx) {
+		if (subExpr.isLiteral())
+			return;
+
 		if (subExpr.getMeta("_cost") == null) {
 			long cost = -1;
 			try {

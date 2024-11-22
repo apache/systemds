@@ -255,6 +255,9 @@ public class RewriterCostEstimator {
 					cost = instr.getOperands().size() == 2 ? twoLogCost : logCost;
 				}
 				break;
+			case "const":
+				cost = RewriterStatement.literal(ctx, 0L);
+				break;
 		}
 
 		if (cost == null) {

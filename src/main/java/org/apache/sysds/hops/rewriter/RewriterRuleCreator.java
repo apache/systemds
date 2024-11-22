@@ -99,7 +99,7 @@ public class RewriterRuleCreator {
 					applicableRule = probingSet.acceleratedFindFirst(mProbe);
 
 					if (i == 19)
-						throw new IllegalArgumentException("The following rule created a conflict with another rule:\nNew one:\n" + rule + "\nExisting:\n" + existingRule);
+						throw new IllegalArgumentException("The following rule created a conflict with another rule:\nNew one:\n" + rule + "\t[Cost: " + preCost + " => " + postCost + "]\nExisting:\n" + existingRule + "\t[Cost: " + existingRule.getStmt1().getCost(ctx) + " => " + existingRule.getStmt2().getCost(ctx) + "]");
 					if (applicableRule != null)
 						mProbe = applicableRule.rule.apply(applicableRule.matches.get(0), mProbe, applicableRule.forward, false);
 					else

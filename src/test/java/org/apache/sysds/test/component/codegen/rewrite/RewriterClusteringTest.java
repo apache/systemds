@@ -5,6 +5,7 @@ import org.apache.sysds.hops.rewriter.RewriteAutomaticallyGenerated;
 import org.apache.sysds.hops.rewriter.RewriterAlphabetEncoder;
 import org.apache.sysds.hops.rewriter.RewriterCostEstimator;
 import org.apache.sysds.hops.rewriter.RewriterDatabase;
+import org.apache.sysds.hops.rewriter.RewriterEquivalenceDatabase;
 import org.apache.sysds.hops.rewriter.RewriterHeuristic;
 import org.apache.sysds.hops.rewriter.RewriterRule;
 import org.apache.sysds.hops.rewriter.RewriterRuleCollection;
@@ -76,9 +77,9 @@ public class RewriterClusteringTest {
 		AtomicLong totalCanonicalizationMillis = new AtomicLong(0);
 
 		RewriterDatabase exactExprDB = new RewriterDatabase();
-		RewriterDatabase canonicalExprDB = new RewriterDatabase();
+		RewriterEquivalenceDatabase canonicalExprDB = new RewriterEquivalenceDatabase();
 
-		List<RewriterStatement> foundEquivalences = Collections.synchronizedList(new ArrayList<>());
+		List<RewriterEquivalenceDatabase.DBEntry> foundEquivalences = Collections.synchronizedList(new ArrayList<>());
 
 		int size = db.size();
 		MutableInt ctr = new MutableInt(0);
@@ -121,9 +122,13 @@ public class RewriterClusteringTest {
 						computeCost(subExpr, ctx);
 
 						// Insert the canonical form or retrieve the existing entry
-						RewriterStatement existingEntry = canonicalExprDB.insertOrReturn(ctx, canonicalForm);
+						RewriterEquivalenceDatabase.DBEntry entry = canonicalExprDB.insert(ctx, canonicalForm, subExpr);
 
-						if (existingEntry == null) {
+						if (entry.equivalences.size() == 2) {
+							foundEquivalences.add(entry);
+						}
+
+						/*if (existingEntry == null) {
 							List<RewriterStatement> equivalentExpressions = new ArrayList<>();
 							equivalentExpressions.add(subExpr);
 							canonicalForm.unsafePutMeta("equivalentExpressions", equivalentExpressions);
@@ -135,7 +140,7 @@ public class RewriterClusteringTest {
 								foundEquivalences.add(existingEntry);
 
 							//System.out.println("Found equivalent statement!");
-						}
+						}*/
 					} catch (Exception e) {
 						e.printStackTrace();
 						failures.incrementAndGet();
@@ -182,8 +187,14 @@ public class RewriterClusteringTest {
 							if (!canonicalForm.isLiteral())
 								canonicalForm.unsafePutMeta("equivalentExpressions", equivalentExpressions);
 
+							stmt.getCost(ctx); // Fetch cost already
+							RewriterEquivalenceDatabase.DBEntry entry = canonicalExprDB.insert(ctx, canonicalForm, stmt);
+
+							if (entry.equivalences.size() == 2)
+								foundEquivalences.add(entry);
+
 							// Insert the canonical form or retrieve the existing entry
-							RewriterStatement existingEntry = canonicalExprDB.insertOrReturn(ctx, canonicalForm);
+							/*RewriterStatement existingEntry = canonicalExprDB.insertOrReturn(ctx, canonicalForm);
 
 							if (existingEntry != null) {
 								equivalentExpressions = (List<RewriterStatement>) existingEntry.getMeta("equivalentExpressions");
@@ -196,7 +207,7 @@ public class RewriterClusteringTest {
 								}
 
 								//System.out.println("Found equivalent statement!");
-							}
+							}*/
 						}
 					}
 				});
@@ -414,17 +425,17 @@ public class RewriterClusteringTest {
 		return !match;
 	}
 
-	private List<Tuple5<Double, Long, Long, RewriterStatement, RewriterStatement>> findSuggestedRewrites(List<RewriterStatement> equivalences) {
+	private List<Tuple5<Double, Long, Long, RewriterStatement, RewriterStatement>> findSuggestedRewrites(List<RewriterEquivalenceDatabase.DBEntry> equivalences) {
 		List<Tuple5<Double, Long, Long, RewriterStatement, RewriterStatement>> suggestedRewrites = new ArrayList<>();
 
-		for (RewriterStatement eStmt : equivalences) {
-			List<RewriterStatement> mEq = (List<RewriterStatement>)eStmt.getMeta("equivalentExpressions");
+		for (RewriterEquivalenceDatabase.DBEntry entry : equivalences) {
+			List<RewriterStatement> mEq = entry.equivalences;
 			RewriterStatement optimalStatement = null;
 			long minCost = -1;
 
 			for (RewriterStatement eq : mEq) {
 				try {
-					long cost = (Long)eq.getMeta("_cost");
+					long cost = eq.getCost(ctx);
 
 					if (cost == -1)
 						continue;
@@ -450,7 +461,7 @@ public class RewriterClusteringTest {
 					if (eq == optimalStatement)
 						continue;
 
-					long cost = (Long) eq.getMeta("_cost");
+					long cost = eq.getCost();
 
 					if (cost != -1) {
 						double score = (((double)cost) / minCost - 1) * 1000; // Relative cost reduction

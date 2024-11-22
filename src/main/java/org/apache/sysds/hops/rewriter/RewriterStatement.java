@@ -827,6 +827,13 @@ public abstract class RewriterStatement {
 		return meta.get(key);
 	}
 
+	public long getCost() {
+		if (!isInstruction())
+			return 0;
+
+		return (long) getMeta("_cost");
+	}
+
 	public RewriterAssertions getAssertions(final RuleContext ctx) {
 		RewriterAssertions assertions = (RewriterAssertions) getMeta("_assertions");
 		if (assertions == null) {
@@ -967,6 +974,9 @@ public abstract class RewriterStatement {
 	}
 
 	public long getCost(final RuleContext ctx) {
+		if (!this.isInstruction())
+			return 0;
+
 		Long costObj = (Long) getMeta("_cost");
 
 		if (costObj == null) {

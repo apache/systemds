@@ -336,6 +336,9 @@ public class RewriterContextSettings {
 			builder.append("max(" + t + ")::" + t + "\n");
 		});
 
+		// Some fused operators
+		builder.append("1-*(MATRIX,MATRIX)::MATRIX\n"); // OpOp2.MINUS1_MULT
+
 		builder.append("_m(INT,INT,FLOAT)::MATRIX\n");
 		builder.append("_m(INT,INT,BOOL)::MATRIX\n");
 		builder.append("_m(INT,INT,INT)::MATRIX\n");

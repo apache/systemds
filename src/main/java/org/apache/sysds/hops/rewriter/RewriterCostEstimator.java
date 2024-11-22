@@ -217,6 +217,15 @@ public class RewriterCostEstimator {
 				cost = RewriterUtils.parse("*(argList(nrowA, ncolA))", ctx, map);
 				overhead.add(MALLOC_COST);
 				break;
+			case "1-*":
+				RewriterStatement subtractionCost = atomicOpCostStmt("-", ctx);
+				RewriterStatement mulCost = atomicOpCostStmt("*", ctx);
+				RewriterStatement sum = RewriterStatement.multiArgInstr(ctx, "+", subtractionCost, mulCost);
+				cost = RewriterStatement.multiArgInstr(ctx, "*", sum, instr.getNCol(), instr.getNRow());
+				assertions.addEqualityAssertion(instr.getChild(0).getNCol(), instr.getChild(1).getNCol());
+				assertions.addEqualityAssertion(instr.getChild(0).getNRow(), instr.getChild(1).getNRow());
+				overhead.add(MALLOC_COST);
+				break;
 		}
 
 		if (cost == null) {

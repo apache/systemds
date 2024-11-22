@@ -144,6 +144,11 @@ public class CodeGenUtils {
 						throw new IllegalArgumentException();
 
 					return "Types.OpOp2.CBIND";
+				case "1-*":
+					if (stmt.getOperands().size() != 2)
+						throw new IllegalArgumentException();
+
+					return "Types.OpOp2.MINUS1_MULT";
 			}
 		}
 

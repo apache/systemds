@@ -385,6 +385,16 @@ public class RewriterRuleCollection {
 					.build()
 			);
 		});
+
+		// Now resolve fused operators
+		rules.add(new RewriterRuleBuilder(ctx, "1-*(A,B) => -(1, *(A, B))")
+				.setUnidirectional(true)
+				.parseGlobalVars("MATRIX:A,B")
+				.parseGlobalVars("LITERAL_FLOAT:1.0") // We take a float as this framework is optimized for floats
+				.withParsedStatement("1-*(A, B)")
+				.toParsedStatement("-(1.0, *(A, B))")
+				.build()
+		);
 	}
 
 	public static void eliminateMultipleCasts(final List<RewriterRule> rules, final RuleContext ctx) {

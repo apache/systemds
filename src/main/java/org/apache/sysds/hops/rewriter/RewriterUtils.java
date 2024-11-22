@@ -1303,7 +1303,7 @@ public class RewriterUtils {
 
 			// TODO: Do this in a loop until nothing is found anymore
 			RewriterUtils.mergeArgLists(stmt, ctx);
-			RewriterUtils.pullOutConstants(stmt, ctx);
+			stmt = RewriterUtils.pullOutConstants(stmt, ctx);
 			stmt.prepareForHashing();
 			stmt.recomputeHashCodes(ctx);
 
@@ -1337,8 +1337,14 @@ public class RewriterUtils {
 		};
 	}
 
-	public static RewriterStatement pullOutConstants(RewriterStatement root, final RuleContext ctx) {
-		return pullOutConstantsRecursively(root, ctx, new HashMap<>());
+	public static RewriterStatement pullOutConstants(RewriterStatement oldRoot, final RuleContext ctx) {
+		RewriterStatement newRoot = pullOutConstantsRecursively(oldRoot, ctx, new HashMap<>());
+
+		// Check if we have to move the assertions to new root
+		if (newRoot != oldRoot)
+			oldRoot.moveRootTo(newRoot);
+
+		return newRoot;
 	}
 
 	private static RewriterStatement pullOutConstantsRecursively(RewriterStatement cur, final RuleContext ctx, Map<RewriterStatement, RewriterStatement> alreadyModified) {

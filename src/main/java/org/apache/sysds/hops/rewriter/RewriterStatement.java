@@ -899,6 +899,13 @@ public abstract class RewriterStatement {
 			link.newStmt.forEach(RewriterStatement::cleanupMeta/*stmt.meta = null*/);
 	}
 
+	public void moveRootTo(RewriterStatement newRoot) {
+		RewriterAssertions assertions = (RewriterAssertions) getMeta("_assertions");
+
+		if (assertions != null)
+			newRoot.unsafePutMeta("_assertions", assertions);
+	}
+
 	private void overwriteImplicitMetaObjects(Map<String, Object> map) {
 		RewriterAssertions assertions = (RewriterAssertions) getMeta("_assertions");
 		RewriterStatement ncol = getNCol();

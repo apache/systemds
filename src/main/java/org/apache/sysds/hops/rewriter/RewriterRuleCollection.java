@@ -514,6 +514,16 @@ public class RewriterRuleCollection {
 				.toParsedStatement("*(nrow(A), ncol(A))", hooks)
 				.build()
 		);
+
+		for (String t : ALL_TYPES) {
+			rules.add(new RewriterRuleBuilder(ctx, "-(inv(a)) => inv(-(a))")
+					.setUnidirectional(true)
+					.parseGlobalVars(t + ":A")
+					.withParsedStatement("-(inv(A))", hooks)
+					.toParsedStatement("inv(-(A))", hooks)
+					.build()
+			);
+		}
 	}
 
 	public static void canonicalizeBooleanStatements(final List<RewriterRule> rules, final RuleContext ctx) {

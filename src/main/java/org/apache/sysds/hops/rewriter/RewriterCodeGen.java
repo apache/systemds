@@ -1,10 +1,12 @@
 package org.apache.sysds.hops.rewriter;
 
 
+import org.apache.commons.lang3.mutable.MutableObject;
 import org.apache.sysds.hops.Hop;
 import org.codehaus.janino.SimpleCompiler;
 import scala.Tuple2;
 
+import java.util.AbstractCollection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -97,14 +99,26 @@ public class RewriterCodeGen {
 	}
 
 	private static String generateRewriteFunction(RewriterRule rule, String fName, int indentation, final RuleContext ctx) {
+		Tuple2<Set<RewriterStatement>, Boolean> t = RewriterCostEstimator.determineSingleReferenceRequirement(rule, ctx);
+		Set<RewriterStatement> mSet = t._1;
+		if (mSet instanceof AbstractCollection)
+			mSet = new HashSet<>(mSet);
+		mSet.add(rule.getStmt1());
+		boolean allowCombinedMultiRefs = t._2;
+
 		StringBuilder sb = new StringBuilder();
 
 		// Append the function signature
 		indent(indentation, sb);
 		sb.append("private static Hop " + fName + "(Hop hi) {\n");
 
+		if (!allowCombinedMultiRefs) {
+			indent(indentation + 1, sb);
+			sb.append("boolean _multiReference = false;\n");
+		}
+
 		// Build the function body
-		buildMatchingSequence(rule.toString(), rule.getStmt1(), rule.getStmt2(), sb, ctx, indentation + 1);
+		buildMatchingSequence(rule.toString(), rule.getStmt1(), rule.getStmt2(), sb, ctx, indentation + 1, mSet, allowCombinedMultiRefs);
 		indent(indentation, sb);
 
 		sb.append("}\n");
@@ -112,10 +126,10 @@ public class RewriterCodeGen {
 		return sb.toString();
 	}
 
-	private static void buildMatchingSequence(String name, RewriterStatement from, RewriterStatement to, StringBuilder sb, final RuleContext ctx, int indentation) {
+	private static void buildMatchingSequence(String name, RewriterStatement from, RewriterStatement to, StringBuilder sb, final RuleContext ctx, int indentation, Set<RewriterStatement> allowedMultiRefs, boolean allowCombinations) {
 		Map<RewriterStatement, String> vars = new HashMap<>();
 		vars.put(from, "hi");
-		recursivelyBuildMatchingSequence(from, sb, "hi", ctx, indentation, vars);
+		recursivelyBuildMatchingSequence(from, sb, "hi", ctx, indentation, vars, allowedMultiRefs, allowCombinations);
 		sb.append("\n");
 		indent(indentation, sb);
 		sb.append("// Now, we start building the new Hop\n");
@@ -194,7 +208,7 @@ public class RewriterCodeGen {
 		return varCtr;
 	}
 
-	private static void recursivelyBuildMatchingSequence(RewriterStatement cur, StringBuilder sb, String curVar, final RuleContext ctx, int indentation, Map<RewriterStatement, String> map) {
+	private static void recursivelyBuildMatchingSequence(RewriterStatement cur, StringBuilder sb, String curVar, final RuleContext ctx, int indentation, Map<RewriterStatement, String> map, Set<RewriterStatement> allowedMultiRefs, boolean allowCombinations) {
 		if (cur.isLiteral()) {
 			String[] types = CodeGenUtils.getReturnType(cur, ctx);
 			indent(indentation, sb);
@@ -230,6 +244,32 @@ public class RewriterCodeGen {
 			sb.append("return hi;\n\n");
 
 			return;
+		}
+
+		// Check if we have to ensure a single reference to this object
+		// TODO: This check is not entirely correct
+		if (cur.isInstruction() && !allowedMultiRefs.contains(cur)) {
+			if (allowCombinations && !allowedMultiRefs.contains(cur)) {
+				indent(indentation, sb);
+				sb.append("if (");
+				sb.append(curVar);
+				sb.append(".getParent().size() > 1)\n");
+				indent(indentation + 1, sb);
+				sb.append("return hi;\n");
+			} else if (!allowedMultiRefs.contains(cur)) {
+				indent(indentation, sb);
+				sb.append("if (");
+				sb.append(curVar);
+				sb.append(".getParent().size() > 1) {\n");
+				indent(indentation + 1, sb);
+				sb.append("if (_multiReference)\n");
+				indent(indentation + 2, sb);
+				sb.append("return hi;\n");
+				indent(indentation + 1, sb);
+				sb.append("else\n");
+				indent(indentation + 2, sb);
+				sb.append("_multiReference = true;\n");
+			}
 		}
 
 		String specialOpCheck = CodeGenUtils.getSpecialOpCheck(cur, ctx, curVar);
@@ -339,7 +379,7 @@ public class RewriterCodeGen {
 				String name = resolveOperand(cur, i, sb, curVar, ctx, indentation);
 				map.put(stmt, name);
 				sb.append('\n');
-				recursivelyBuildMatchingSequence(stmt, sb, name, ctx, indentation, map);
+				recursivelyBuildMatchingSequence(stmt, sb, name, ctx, indentation, map, allowedMultiRefs, allowCombinations);
 			/*} else {
 				String name = resolveOperand(cur, i, sb, curVar, ctx, indentation);
 				map.put(stmt, name);

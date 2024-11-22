@@ -19,6 +19,13 @@ public class RewriterCostEstimator {
 	private static final long MALLOC_COST = 10000;
 	public static final Function<RewriterStatement, Long> DEFAULT_COST_FN = el -> 2000L;
 
+	public static Tuple2<Set<RewriterStatement>, Boolean> determineSingleReferenceRequirement(RewriterRule rule, final RuleContext ctx) {
+		MutableObject<RewriterAssertions> assertionRef = new MutableObject<>();
+		long fullCost = RewriterCostEstimator.estimateCost(rule.getStmt1(), ctx, assertionRef);
+		long maxCost = RewriterCostEstimator.estimateCost(rule.getStmt2(), ctx);
+		return RewriterCostEstimator.determineSingleReferenceRequirement(rule.getStmt2(), RewriterCostEstimator.DEFAULT_COST_FN, assertionRef.getValue(), fullCost, maxCost, ctx);
+	}
+
 	// Returns all (upmost) sub-DAGs that can have multiple references and true as a second arg if all statements can have multiple references at once
 	public static Tuple2<Set<RewriterStatement>, Boolean> determineSingleReferenceRequirement(RewriterStatement root, Function<RewriterStatement, Long> costFn, RewriterAssertions assertions, long fullCost, long maxCost, final RuleContext ctx) {
 		if (fullCost >= maxCost)

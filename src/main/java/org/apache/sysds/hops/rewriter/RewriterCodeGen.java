@@ -78,7 +78,9 @@ public class RewriterCodeGen {
 		for (Tuple2<String, RewriterRule> appliedRewrites : rewrites) {
 			if (implemented.contains(appliedRewrites._1)) {
 				indent(2, msb);
-				msb.append("hi = " + appliedRewrites._1 + "((Hop) hi);\n");
+				msb.append("hi = " + appliedRewrites._1 + "((Hop) hi);\t\t// ");
+				msb.append(appliedRewrites._2.toString());
+				msb.append('\n');
 			}
 		}
 

@@ -177,7 +177,7 @@ public class RewriterStreamTests {
 	}
 
 	@Test
-	public void testSumInequality() {
+	public void testSumEquality6() {
 		RewriterStatement stmt = RewriterUtils.parse("sum(+(B, sum(*(a, A))))", ctx, "MATRIX:A,B", "FLOAT:a");
 		RewriterStatement stmt2 = RewriterUtils.parse("sum(+(B, *(a, sum(A))))", ctx, "MATRIX:A,B", "FLOAT:a");
 		stmt = canonicalConverter.apply(stmt);
@@ -187,7 +187,7 @@ public class RewriterStreamTests {
 		System.out.println(stmt.toParsableString(ctx, true));
 		System.out.println("==========");
 		System.out.println(stmt2.toParsableString(ctx, true));
-		assert !stmt.match(RewriterStatement.MatcherContext.exactMatch(ctx, stmt2, stmt));
+		assert stmt.match(RewriterStatement.MatcherContext.exactMatch(ctx, stmt2, stmt));
 	}
 
 	@Test

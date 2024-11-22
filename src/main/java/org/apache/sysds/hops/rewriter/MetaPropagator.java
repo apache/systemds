@@ -298,6 +298,10 @@ public class MetaPropagator implements Function<RewriterStatement, RewriterState
 					root.unsafePutMeta("nrow", root.getOperands().get(0).getMeta("nrow"));
 					root.unsafePutMeta("ncol", root.getOperands().get(0).getMeta("ncol"));
 					return null;
+				case "log_nz(MATRIX)":
+					root.unsafePutMeta("nrow", root.getOperands().get(0).getMeta("nrow"));
+					root.unsafePutMeta("ncol", root.getOperands().get(0).getMeta("ncol"));
+					return null;
 			}
 
 			RewriterInstruction instr = (RewriterInstruction) root;

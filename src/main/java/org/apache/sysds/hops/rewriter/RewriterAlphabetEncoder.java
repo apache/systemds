@@ -4,6 +4,7 @@ import com.google.protobuf.Internal;
 import org.apache.commons.lang3.NotImplementedException;
 import org.apache.commons.lang3.mutable.MutableInt;
 import org.apache.spark.internal.config.R;
+import org.apache.sysds.runtime.compress.workload.Op;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -34,6 +35,11 @@ public class RewriterAlphabetEncoder {
 			new Operand("colSums", 1, MATRIX),
 			new Operand("max", 1, MATRIX),
 			new Operand("min", 1, MATRIX),
+			new Operand("log", 1, MATRIX),
+
+			// Fused operators
+			new Operand("1-*", 2, MATRIX), 			// TODO: We have to include literals in the search
+			new Operand("log_nz", 1, MATRIX)			// TODO: We have to include literals in the search
 	};
 
 	private static String[] varNames = new String[] {

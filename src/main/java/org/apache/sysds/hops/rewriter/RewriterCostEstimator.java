@@ -226,6 +226,18 @@ public class RewriterCostEstimator {
 				assertions.addEqualityAssertion(instr.getChild(0).getNRow(), instr.getChild(1).getNRow());
 				overhead.add(MALLOC_COST);
 				break;
+			case "log_nz":
+				RewriterStatement logCost = atomicOpCostStmt("log", ctx);
+				RewriterStatement neqCost = atomicOpCostStmt("!=", ctx);
+				sum = RewriterStatement.multiArgInstr(ctx, "+", logCost, neqCost);
+				cost = RewriterStatement.multiArgInstr(ctx, "*", sum, instr.getNCol(), instr.getNRow());
+				overhead.add(MALLOC_COST);
+				break;
+			case "log":
+				logCost = atomicOpCostStmt("log", ctx);
+				cost = RewriterStatement.multiArgInstr(ctx, "*", logCost, instr.getNCol(), instr.getNRow());
+				overhead.add(MALLOC_COST);
+				break;
 		}
 
 		if (cost == null) {
@@ -323,6 +335,7 @@ public class RewriterCostEstimator {
 			case "sqrt":
 				return 10;
 			case "exp":
+			case "log":
 			case "^":
 				return 20;
 			case "!":
@@ -333,6 +346,7 @@ public class RewriterCostEstimator {
 			case "<":
 			case "<=":
 			case "==":
+			case "!=":
 				return 1;
 			case "round":
 				return 2;

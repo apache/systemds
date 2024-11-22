@@ -395,6 +395,14 @@ public class RewriterRuleCollection {
 				.toParsedStatement("-(1.0, *(A, B))")
 				.build()
 		);
+		rules.add(new RewriterRuleBuilder(ctx, "log_nz(A) => *(!=(A, 0), log(A))")
+				.setUnidirectional(true)
+				.parseGlobalVars("MATRIX:A")
+				.parseGlobalVars("LITERAL_FLOAT:0.0") // We take a float as this framework is optimized for floats
+				.withParsedStatement("log_nz(A)")
+				.toParsedStatement("*(!=(A, 0.0), log(A))")
+				.build()
+		);
 	}
 
 	public static void eliminateMultipleCasts(final List<RewriterRule> rules, final RuleContext ctx) {
@@ -1498,38 +1506,18 @@ public class RewriterRuleCollection {
 						.link(hooks.get(2).getId(), hooks.get(3).getId(), RewriterStatement::transferMeta)
 						.build());
 
-				/*List.of(t1, t1 + "...").forEach(t -> {
-					ALL_TYPES.forEach(mT -> {
-						rules.add(new RewriterRuleBuilder(ctx)
-								.setUnidirectional(true)
-								.parseGlobalVars(t2 + ":A")
-								.parseGlobalVars(mT + ":B")
-								.parseGlobalVars(t + ":C")
-								.withParsedStatement("$1:FusedOperator(argList($2:FusableBinaryOperator(A, B), C))", hooks)
-								.toParsedStatement("$3:FusedOperator(argList(argList(A, B), C))", hooks)
-								.iff(match -> {
-									return match.getMatchRoot().trueInstruction().equals(match.getMatchRoot().getOperands().get(0).getOperands().get(0).trueInstruction());
-								}, true)
-								.link(hooks.get(2).getId(), hooks.get(3).getId(), RewriterStatement::transferMeta)
-								.build());
-
-						rules.add(new RewriterRuleBuilder(ctx)
-								.setUnidirectional(true)
-								.parseGlobalVars(t2 + ":A")
-								.parseGlobalVars(mT + ":B")
-								.parseGlobalVars(t + ":C")
-								.withParsedStatement("$1:FusedOperator(argList(C, $2:FusableBinaryOperator(A, B)))", hooks)
-								.toParsedStatement("$3:FusedOperator(argList(C, argList(A, B)))", hooks)
-								.iff(match -> {
-									return match.getMatchRoot().trueInstruction().equals(match.getMatchRoot().getOperands().get(0).getOperands().get(1).trueInstruction());
-								}, true)
-								.link(hooks.get(2).getId(), hooks.get(3).getId(), RewriterStatement::transferMeta)
-								.build());
-
-						//System.out.println("Rule: " + rules.get(rules.size()-2));
-					});
-
-				});*/
+			// Flatten non-fusable ops
+			rules.add(new RewriterRuleBuilder(ctx, "!=(a,b) => !=(argList(a,b))")
+					.setUnidirectional(true)
+					.parseGlobalVars(t1 + "...:A")
+					.parseGlobalVars(t2 + ":B")
+					.withParsedStatement("$1:FusableBinaryOperator(B, $2:FusedOperator(A))", hooks)
+					.toParsedStatement("$3:FusedOperator(argList(B, A))", hooks)
+					.iff(match -> {
+						return match.getMatchRoot().trueInstruction().equals(match.getMatchRoot().getOperands().get(0).trueInstruction());
+					}, true)
+					.link(hooks.get(2).getId(), hooks.get(3).getId(), RewriterStatement::transferMeta)
+					.build());
 			//}
 		});
 

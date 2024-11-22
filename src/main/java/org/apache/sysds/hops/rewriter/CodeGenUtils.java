@@ -149,6 +149,11 @@ public class CodeGenUtils {
 						throw new IllegalArgumentException();
 
 					return "Types.OpOp2.MINUS1_MULT";
+				case "log_nz":
+					if (stmt.getOperands().size() != 1)
+						throw new IllegalArgumentException();
+
+					return "Types.OpOp1.LOG_NZ";
 			}
 		}
 

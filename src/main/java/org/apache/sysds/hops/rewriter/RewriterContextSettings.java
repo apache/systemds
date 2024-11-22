@@ -154,6 +154,7 @@ public class RewriterContextSettings {
 			builder.append("impl |\n");
 			builder.append("impl &\n");
 			builder.append("impl /\n");
+			builder.append("impl !=\n");
 		});
 
 		builder.append("ElementWiseInstruction(MATRIX...)::MATRIX\n");
@@ -337,7 +338,8 @@ public class RewriterContextSettings {
 		});
 
 		// Some fused operators
-		builder.append("1-*(MATRIX,MATRIX)::MATRIX\n"); // OpOp2.MINUS1_MULT
+		builder.append("1-*(MATRIX,MATRIX)::MATRIX\n"); 		// OpOp2.MINUS1_MULT
+		builder.append("log_nz(MATRIX)::MATRIX\n");				// OpOp1.LOG_NZ
 
 		builder.append("_m(INT,INT,FLOAT)::MATRIX\n");
 		builder.append("_m(INT,INT,BOOL)::MATRIX\n");

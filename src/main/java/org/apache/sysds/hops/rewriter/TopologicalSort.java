@@ -14,10 +14,20 @@ import java.util.function.BiFunction;
 // For now, we assume that _argList() will have one unique parent
 public class TopologicalSort {
 	public static boolean DEBUG = false;
+	private static final Set<String> SORTABLE_ARGLIST_OPS = Set.of("+", "-", "*", "_idxExpr", "_EClass");
+	private static final Set<String> SORTABLE_OPS = Set.of("==", "!=");
 
 	// TODO: Sort doesn't work if we have sth like _EClass(argList(nrow(U), nrow(V)), as the lowest address will be nrow, ncol and not U, V
 	public static void sort(RewriterStatement root, final RuleContext ctx) {
-		sort(root, (el, parent) -> el.isArgumentList() && parent != null && Set.of("+", "-", "*", "_idxExpr", "_EClass").contains(parent.trueInstruction()), ctx);
+		sort(root, (el, parent) -> {
+			if (!el.isInstruction())
+				return false;
+
+			if (el.isArgumentList())
+				return parent != null && SORTABLE_ARGLIST_OPS.contains(parent.trueInstruction());
+
+			return SORTABLE_OPS.contains(el.trueInstruction());
+		}, ctx);
 	}
 
 	public static void sort(RewriterStatement root, BiFunction<RewriterStatement, RewriterStatement, Boolean> isArrangable, final RuleContext ctx) {

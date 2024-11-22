@@ -206,7 +206,9 @@ public class RewriterRule extends AbstractRewriterRule {
 			}
 
 			if (assertions != null) {
-				cpy.unsafePutMeta("_assertions", assertions);
+				// TODO: Maybe there is a better way?
+				if (!cpy.isLiteral())
+					cpy.unsafePutMeta("_assertions", assertions);
 				//System.out.println("Put: " + assertions);
 			}
 

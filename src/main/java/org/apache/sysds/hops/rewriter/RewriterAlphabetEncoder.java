@@ -15,6 +15,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 public class RewriterAlphabetEncoder {
 	private static final List<String> ALL_TYPES = List.of("MATRIX", "FLOAT");
@@ -229,7 +230,7 @@ public class RewriterAlphabetEncoder {
 
 	private static List<RewriterStatement> recursivelyFindAllCombinations(List<Operand> operands) {
 		if (operands.isEmpty())
-			return ALL_TYPES.stream().map(t -> new RewriterDataType().as(UUID.randomUUID().toString()).ofType(t).consolidate(ctx)).collect(Collectors.toList());
+			return Stream.concat(ALL_TYPES.stream().map(t -> new RewriterDataType().as(UUID.randomUUID().toString()).ofType(t).consolidate(ctx)), Stream.of(RewriterStatement.literal(ctx, 1.0D), RewriterStatement.literal(ctx, 0.0D))).collect(Collectors.toList());
 
 		int nOps = operands.get(0).numArgs;
 		int[] slices = new int[nOps-1];

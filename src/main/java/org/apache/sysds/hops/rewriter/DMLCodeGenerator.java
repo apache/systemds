@@ -18,6 +18,7 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 
 public class DMLCodeGenerator {
+	public static final int MATRIX_DIMS = 500;
 	public static final double EPS = 1e-10;
 	public static Random rd = new Random(42);
 
@@ -68,6 +69,18 @@ public class DMLCodeGenerator {
 			}
 
 			return false;
+		});
+
+		customEncoders.put("const", (stmt, sb, tmpVars) -> {
+			sb.append("matrix(");
+			appendExpression(stmt.getChild(1), sb, tmpVars);
+			sb.append(", rows=");
+			sb.append(MATRIX_DIMS);
+			sb.append(", cols=");
+			sb.append(MATRIX_DIMS);
+			sb.append(')');
+
+			return true;
 		});
 	}
 

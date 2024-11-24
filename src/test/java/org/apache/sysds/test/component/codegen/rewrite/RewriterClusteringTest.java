@@ -119,7 +119,8 @@ public class RewriterClusteringTest {
 						RewriterStatement canonicalForm = converter.apply(subExpr.nestedCopy(true));
 						mCanonicalizationMillis += System.currentTimeMillis() - startMillis;
 
-						computeCost(subExpr, ctx);
+						//computeCost(subExpr, ctx);
+						subExpr.getCost(ctx);
 
 						// Insert the canonical form or retrieve the existing entry
 						RewriterEquivalenceDatabase.DBEntry entry = canonicalExprDB.insert(ctx, canonicalForm, subExpr);
@@ -154,12 +155,12 @@ public class RewriterClusteringTest {
 		}
 
 		if (useRandomized) {
-			long MAX_MILLIS = 100000000; // Should be bound by number of ops
+			long MAX_MILLIS = 300000; // Should be bound by number of ops
 			int BATCH_SIZE = 200;
 			int maxN = RewriterAlphabetEncoder.getMaxSearchNumberForNumOps(3);
 			long startMillis = System.currentTimeMillis();
 
-			for (int batch = 0; batch < 100 && System.currentTimeMillis() - startMillis < MAX_MILLIS && batch * BATCH_SIZE < maxN; batch++) {
+			for (int batch = 0; batch < 8 && System.currentTimeMillis() - startMillis < MAX_MILLIS && batch * BATCH_SIZE < maxN; batch++) {
 				List<Integer> indices = IntStream.range(batch * BATCH_SIZE, Math.min((batch + 1) * BATCH_SIZE - 1, maxN)).boxed().collect(Collectors.toList());
 				Collections.shuffle(indices);
 				MutableInt ctr2 = new MutableInt(0);
@@ -171,24 +172,29 @@ public class RewriterClusteringTest {
 
 					List<RewriterAlphabetEncoder.Operand> ops = RewriterAlphabetEncoder.decodeOrderedStatements(idx);
 					List<RewriterStatement> stmts = RewriterAlphabetEncoder.buildAllPossibleDAGs(ops, ctx, true);
+					long actualCtr = 0;
 
 					for (RewriterStatement dag : stmts) {
 						List<RewriterStatement> expanded = new ArrayList<>();
 						expanded.addAll(RewriterAlphabetEncoder.buildAssertionVariations(dag, ctx, true));
 						expanded.addAll(RewriterAlphabetEncoder.buildVariations(dag, ctx));
+						actualCtr += expanded.size();
 						for (RewriterStatement stmt : expanded) {
 							try {
 								RewriterStatement canonicalForm = converter.apply(stmt);
-								computeCost(stmt, ctx);
+								stmt.getCost(ctx);
+								//computeCost(stmt, ctx);
 
-								List<RewriterStatement> equivalentExpressions = new ArrayList<>();
-								equivalentExpressions.add(stmt);
+								//List<RewriterStatement> equivalentExpressions = new ArrayList<>();
+								//equivalentExpressions.add(stmt);
 
 								// TODO: Better handling
-								if (!canonicalForm.isLiteral())
-									canonicalForm.unsafePutMeta("equivalentExpressions", equivalentExpressions);
+								//if (!canonicalForm.isLiteral())
+								//	canonicalForm.unsafePutMeta("equivalentExpressions", equivalentExpressions);
 
 								stmt.getCost(ctx); // Fetch cost already
+								//canonicalForm.compress();
+								//stmt.compress();
 								RewriterEquivalenceDatabase.DBEntry entry = canonicalExprDB.insert(ctx, canonicalForm, stmt);
 
 								if (entry.equivalences.size() == 2)
@@ -214,6 +220,8 @@ public class RewriterClusteringTest {
 							}
 						}
 					}
+
+					//System.out.println(ops + " >> " + actualCtr);
 				});
 			}
 		}
@@ -470,8 +478,11 @@ public class RewriterClusteringTest {
 					if (cost != -1) {
 						double score = (((double)cost) / minCost - 1) * 1000; // Relative cost reduction
 						score *= cost - minCost; // Absolute cost reduction
-						if (score > 1e-10)
+						if (score > 1e-10) {
+							//ctx.metaPropagator.apply(eq); // To (partially) decompress the statement
+							//ctx.metaPropagator.apply(optimalStatement);
 							suggestedRewrites.add(new Tuple5<>(score, cost, minCost, eq, optimalStatement));
+						}
 					}
 				}
 			}

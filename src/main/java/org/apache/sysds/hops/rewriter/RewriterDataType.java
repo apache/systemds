@@ -19,6 +19,48 @@ public class RewriterDataType extends RewriterStatement {
 	private Object literal = null;
 	private boolean consolidated = false;
 	private int hashCode;
+	private RewriterStatement ncol;
+	private RewriterStatement nrow;
+
+	@Override
+	protected void compress(RewriterAssertions assertions) {
+		if (literal != null)
+			id = null;
+
+		if (meta != null) {
+			if (type.equals("MATRIX")) {
+				nrow = getNRow();
+				ncol = getNCol();
+
+				if (assertions != null) {
+					RewriterStatement mAss1 = assertions.getAssertionStatement(nrow, null);
+					RewriterStatement mAss2 = assertions.getAssertionStatement(ncol, null);
+
+					if (mAss1 != null)
+						nrow = mAss1;
+
+					if (mAss2 != null)
+						ncol = mAss2;
+				}
+			}
+		}
+	}
+
+	@Override
+	public RewriterStatement getNRow() {
+		if (nrow != null)
+			return nrow;
+
+		return super.getNRow();
+	}
+
+	@Override
+	public RewriterStatement getNCol() {
+		if (ncol != null)
+			return ncol;
+
+		return super.getNCol();
+	}
 
 	@Override
 	public String getId() {

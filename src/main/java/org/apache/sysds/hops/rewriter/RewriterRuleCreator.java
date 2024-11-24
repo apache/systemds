@@ -50,6 +50,8 @@ public class RewriterRuleCreator {
 			}
 
 			toTest = applicableRule.rule.apply(applicableRule.matches.get(0), toTest, applicableRule.forward, false);
+			RewriterUtils.mergeArgLists(toTest, ctx);
+			toTest = RewriterUtils.foldConstants(toTest, ctx);
 			appliedRules.add(applicableRule.rule);
 			changed = true;
 		}
@@ -64,6 +66,8 @@ public class RewriterRuleCreator {
 				existingPostCost = RewriterCostEstimator.estimateCost(toTest, el -> 2000L, ctx);
 			} catch (Exception e) {
 				System.err.println("Err in cost from orig: " + rule.getStmt1().toParsableString(ctx));
+				System.err.println("ToTest: " + toTest.toParsableString(ctx));
+				System.err.println("AppliedRules: " + appliedRules);
 				e.printStackTrace();
 				return false;
 			}

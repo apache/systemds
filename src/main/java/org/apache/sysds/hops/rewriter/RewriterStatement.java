@@ -36,6 +36,7 @@ public abstract class RewriterStatement {
 
 	protected int rid = 0;
 	protected int refCtr = 0;
+	protected long cost = -2;
 
 	protected HashMap<String, Object> meta = null;
 
@@ -499,6 +500,7 @@ public abstract class RewriterStatement {
 	// Returns the new maxRefId
 	abstract int toParsableString(StringBuilder builder, Map<RewriterStatement, Integer> refs, int maxRefId, Map<String, Set<String>> vars, Set<RewriterStatement> forceCreateRefs, final RuleContext ctx);
 	abstract void refreshReturnType(final RuleContext ctx);
+	protected abstract void compress(RewriterAssertions assertions);
 
 	public static String parsableDefinitions(Map<String, Set<String>> defs) {
 		StringBuilder sb = new StringBuilder();
@@ -831,7 +833,7 @@ public abstract class RewriterStatement {
 		if (!isInstruction())
 			return 0;
 
-		return (long) getMeta("_cost");
+		return cost;
 	}
 
 	public RewriterAssertions getAssertions(final RuleContext ctx) {
@@ -973,22 +975,27 @@ public abstract class RewriterStatement {
 		return defList;
 	}
 
+	public void compress() {
+		RewriterAssertions assertions = (RewriterAssertions) getMeta("_assertions");
+		this.forEachPostOrder((cur, pred) -> {
+			cur.compress(assertions);
+		}, true);
+	}
+
 	public long getCost(final RuleContext ctx) {
 		if (!this.isInstruction())
 			return 0;
 
-		Long costObj = (Long) getMeta("_cost");
+		if (cost != -2)
+			return cost;
 
-		if (costObj == null) {
-			try {
-				costObj = RewriterCostEstimator.estimateCost(this, ctx);
-			} catch (Exception e) {
-				costObj = -1L;
-			}
-			unsafePutMeta("_cost", costObj);
+		try {
+			cost = RewriterCostEstimator.estimateCost(this, ctx);
+		} catch (Exception e) {
+			cost = -1L;
 		}
 
-		return costObj;
+		return cost;
 	}
 
 	// This may create cycles if visited objects are not tracked

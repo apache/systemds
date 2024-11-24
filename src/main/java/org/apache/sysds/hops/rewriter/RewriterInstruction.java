@@ -27,6 +27,13 @@ public class RewriterInstruction extends RewriterStatement {
 	private int hashCode;
 
 	@Override
+	protected void compress(RewriterAssertions assertions) {
+		id = null;
+		operands.trimToSize();
+		meta = null;
+	}
+
+	@Override
 	public String getId() {
 		return id;
 	}

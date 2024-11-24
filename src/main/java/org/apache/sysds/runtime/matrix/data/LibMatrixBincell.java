@@ -184,7 +184,7 @@ public class LibMatrixBincell {
 	public static MatrixBlock bincellOp(MatrixBlock m1, MatrixBlock m2, MatrixBlock ret, BinaryOperator op) {
 		try{
 
-			// Timing time = new Timing(true);
+			//Timing time = new Timing(true);
 			isValidDimensionsBinary(m1, m2);
 			op = replaceOpWithSparseSafeIfApplicable(m1, m2, op);
 			
@@ -212,11 +212,13 @@ public class LibMatrixBincell {
 			int k = op.getNumThreads();
 
 			// fallback to sequential computation for specialized operations
+			// TODO fix all variants to be feasible for multi-threading
 			if(k <= 1 || m1.isEmpty() || m2.isEmpty()
 				|| ret.getLength() < PAR_NUMCELL_THRESHOLD2
 				|| ((op.sparseSafe || isSparseSafeDivideOrPow(op, m2))
 					&& !(atype == BinaryAccessType.MATRIX_MATRIX
-						|| atype.isMatrixVector() && isAllDense(m1, m2, ret)))
+						|| (atype.isMatrixVector() && isAllDense(m1, m2, ret))
+						|| (atype.isMatrixVector() && m1.sparse && (m2.sparse || ret.sparse))))
 				|| !CommonThreadPool.useParallelismOnThread())
 			{
 				bincellOpMatrixSingle(m1, m2, ret, op, atype);
@@ -227,7 +229,7 @@ public class LibMatrixBincell {
 			
 			if(ret.isEmptyBlock(false))
 				ret.examSparsity(k);
-			// System.out.println("BinCell " + op + " " + m1.getNumRows() + ", " + m1.getNumColumns() + ", " + m1.getNonZeros()
+			//System.out.println("BinCell " + op + " " + m1.getNumRows() + ", " + m1.getNumColumns() + ", " + m1.getNonZeros()
 			// 	+ " -- " + m2.getNumRows() + ", " + m2.getNumColumns() + " " + m2.getNonZeros() + "\t\t" + time.stop());
 			
 			return ret;
@@ -732,7 +734,7 @@ public class LibMatrixBincell {
 			&& atype == BinaryAccessType.MATRIX_ROW_VECTOR)
 			safeBinaryMVSparseDenseRow(m1, m2, ret, op);
 		else if( m1.sparse ) //SPARSE m1
-			safeBinaryMVSparseLeft(m1, m2, ret, op);
+			return safeBinaryMVSparseLeft(m1, m2, ret, op, rl, ru);
 		else if( !m1.sparse && !m2.sparse && ret.sparse && op.fn instanceof Multiply
 			&& atype == BinaryAccessType.MATRIX_COL_VECTOR
 			&& (long)m1.rlen * m2.clen < Integer.MAX_VALUE )
@@ -977,31 +979,31 @@ public class LibMatrixBincell {
 		ret.nonZeros = nnz;
 	}
 	
-	private static void safeBinaryMVSparseLeft(MatrixBlock m1, MatrixBlock m2, MatrixBlock ret, BinaryOperator op) {
+	private static long safeBinaryMVSparseLeft(MatrixBlock m1, MatrixBlock m2, MatrixBlock ret, 
+		BinaryOperator op, int rl, int ru)
+	{
 		boolean isMultiply = (op.fn instanceof Multiply);
 		boolean skipEmpty = (isMultiply || isSparseSafeDivideOrPow(op, m2));
 		BinaryAccessType atype = getBinaryAccessType(m1, m2);
 
 		// early abort on skip and empty
 		if(skipEmpty && (m1.isEmptyBlock(false) || m2.isEmptyBlock(false)))
-			return; // skip entire empty block
-
+			return 0; // skip entire empty block
 
 		if(atype == BinaryAccessType.MATRIX_COL_VECTOR)
-			safeBinaryMVSparseLeftColVector(m1, m2, ret, op);
+			safeBinaryMVSparseLeftColVector(m1, m2, ret, op, rl, ru);
 		else if(atype == BinaryAccessType.MATRIX_ROW_VECTOR)
-			safeBinaryMVSparseLeftRowVector(m1, m2, ret, op);
+			safeBinaryMVSparseLeftRowVector(m1, m2, ret, op, rl, ru);
 
-		ret.recomputeNonZeros();
-
+		return ret.recomputeNonZeros(rl, ru-1);
 	}
 
-	@SuppressWarnings("null")
-	private static void safeBinaryMVSparseLeftColVector(MatrixBlock m1, MatrixBlock m2, MatrixBlock ret, BinaryOperator op) {
+	private static void safeBinaryMVSparseLeftColVector(MatrixBlock m1, MatrixBlock m2, MatrixBlock ret, 
+		BinaryOperator op, int rl, int ru)
+	{
 		final boolean isMultiply = (op.fn instanceof Multiply);
 		final boolean skipEmpty = (isMultiply || isSparseSafeDivideOrPow(op, m2));
 
-		final int rlen = m1.rlen;
 		final int clen = m1.clen;
 		final SparseBlock a = m1.sparseBlock;
 		final boolean aNull = a == null;
@@ -1009,7 +1011,7 @@ public class LibMatrixBincell {
 			return;
 		if(ret.isInSparseFormat()){
 			final SparseBlockMCSR rb = (SparseBlockMCSR) ret.getSparseBlock();
-			for(int i = 0; i < rlen; i++) {
+			for(int i = rl; i < ru; i++) {
 				final double v2 = m2.get(i, 0);
 				final boolean emptyRow = !aNull ? a.isEmpty(i) : true;
 				if((skipEmpty && (emptyRow || v2 == 0))  // skip empty one side zero
@@ -1029,7 +1031,7 @@ public class LibMatrixBincell {
 		}
 		else{
 			final DenseBlock db = ret.getDenseBlock();
-			for(int i = 0; i < rlen; i++) {
+			for(int i = rl; i < ru; i++) {
 				final double v2 = m2.get(i, 0);
 
 				final boolean emptyRow = !aNull ? a.isEmpty(i) : true;
@@ -1045,7 +1047,6 @@ public class LibMatrixBincell {
 					safeBinaryMVSparseColVectorRowNoFill(a, i, db, v2, emptyRow, op);
 				else  // GENERAL CASE
 					safeBinaryMVSparseColVectorRowWithFill(a, i, db, vz, v2, clen, emptyRow, op);
-
 			}
 		}
 	}
@@ -1141,18 +1142,17 @@ public class LibMatrixBincell {
 		ret.set(rpos, rpos + 1, cpos, len, v);
 	}
 
-	@SuppressWarnings("null")
-	private static void safeBinaryMVSparseLeftRowVector(MatrixBlock m1, MatrixBlock m2, MatrixBlock ret, BinaryOperator op) {
+	private static void safeBinaryMVSparseLeftRowVector(MatrixBlock m1, MatrixBlock m2, MatrixBlock ret, 
+		BinaryOperator op, int rl, int ru)
+	{
 		boolean isMultiply = (op.fn instanceof Multiply);
 		boolean skipEmpty = (isMultiply || isSparseSafeDivideOrPow(op, m2));
 
-		int rlen = m1.rlen;
 		int clen = m1.clen;
 		SparseBlock a = m1.sparseBlock;
 		if(ret.isInSparseFormat()){
 			SparseBlock sb = ret.getSparseBlock();
-			long nnz = 0;
-			for(int i = 0; i < rlen; i++) {
+			for(int i = rl; i < ru; i++) {
 				if(skipEmpty && (a == null || a.isEmpty(i)))
 					continue; // skip empty rows
 				if(skipEmpty && ret.sparse)
@@ -1170,18 +1170,16 @@ public class LibMatrixBincell {
 						double v2 = m2.get(0, aix[j]);
 						double v = op.fn.execute(avals[j], v2);
 						sb.append(i, aix[j], v);
-						nnz += v != 0 ? 1 : 0;
 						lastIx = aix[j];
 					}
 				}
 				// empty left
 				fillZeroValues(op, m2, ret, skipEmpty, i, lastIx + 1, clen);
 			}
-			ret.setNonZeros(nnz);
 		}
 		else{
 			DenseBlock db = ret.getDenseBlock();
-			for(int i = 0; i < rlen; i++){
+			for(int i = rl; i < ru; i++){
 				if(skipEmpty && (a == null || a.isEmpty(i)))
 					continue; // skip empty rows
 				if(skipEmpty && ret.sparse)

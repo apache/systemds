@@ -62,9 +62,9 @@ public class ColumnEncoderComposite extends ColumnEncoder {
 
 	public ColumnEncoderComposite(List<ColumnEncoder> columnEncoders, FrameBlock meta) {
 		super(-1);
-		if(!(columnEncoders.size() > 0 &&
+		if(!(!columnEncoders.isEmpty() &&
 			columnEncoders.stream().allMatch((encoder -> encoder._colID == columnEncoders.get(0)._colID))))
-			throw new DMLRuntimeException("Tried to create Composite Encoder with no encoders or mismatching columIDs");
+			throw new DMLRuntimeException("Tried to create Composite Encoder with no encoders or mismatching columnIDs");
 		_colID = columnEncoders.get(0)._colID;
 		_meta = meta;
 		_columnEncoders = columnEncoders;
@@ -72,6 +72,11 @@ public class ColumnEncoderComposite extends ColumnEncoder {
 
 	public ColumnEncoderComposite(List<ColumnEncoder> columnEncoders) {
 		this(columnEncoders, null);
+	}
+	public ColumnEncoderComposite(List<ColumnEncoder> columnEncoders, int colID) {
+		super(colID);
+		_columnEncoders = columnEncoders;
+		_meta = null;
 	}
 
 	public ColumnEncoderComposite(ColumnEncoder columnEncoder) {
@@ -166,7 +171,8 @@ public class ColumnEncoderComposite extends ColumnEncoder {
 			if(t == null)
 				continue;
 			// Linear execution between encoders so they can't be built in parallel
-			if(tasks.size() != 0) {
+			if(!tasks.isEmpty()) {
+				// TODO: is that still needed? currently there is no CompositeEncoder with 2 encoders with build phase
 				// avoid unnecessary map initialization
 				depMap = (depMap == null) ? new HashMap<>() : depMap;
 				// This workaround is needed since sublist is only valid for effective final lists,
@@ -207,6 +213,8 @@ public class ColumnEncoderComposite extends ColumnEncoder {
 	public MatrixBlock apply(CacheBlock<?> in, MatrixBlock out, int outputCol, int rowStart, int blk) {
 		try {
 			for(int i = 0; i < _columnEncoders.size(); i++) {
+				// set sparseRowPointerOffset in the encoder
+				_columnEncoders.get(i).sparseRowPointerOffset = this.sparseRowPointerOffset;
 				if(i == 0) {
 					// 1. encoder writes data into MatrixBlock Column all others use this column for further encoding
 					_columnEncoders.get(i).apply(in, out, outputCol, rowStart, blk);

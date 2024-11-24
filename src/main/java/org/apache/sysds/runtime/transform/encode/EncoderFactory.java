@@ -265,6 +265,8 @@ public interface EncoderFactory {
 			return EncoderType.Recode.ordinal();
 		else if(columnEncoder instanceof ColumnEncoderWordEmbedding)
 			return EncoderType.WordEmbedding.ordinal();
+		else if(columnEncoder instanceof ColumnEncoderBagOfWords)
+			return EncoderType.BagOfWords.ordinal();
 		throw new DMLRuntimeException("Unsupported encoder type: " + columnEncoder.getClass().getCanonicalName());
 	}
 
@@ -283,6 +285,8 @@ public interface EncoderFactory {
 				return new ColumnEncoderRecode();
 			case WordEmbedding:
 				return new ColumnEncoderWordEmbedding();
+			case BagOfWords:
+				return new ColumnEncoderBagOfWords();
 			default:
 				throw new DMLRuntimeException("Unsupported encoder type: " + etype);
 		}

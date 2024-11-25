@@ -166,7 +166,7 @@ public class RewriterDataType extends RewriterStatement {
 		if (consolidated)
 			return this;
 
-		if (id == null || id.isEmpty())
+		if (!isLiteral() && (id == null || id.isEmpty()))
 			throw new IllegalArgumentException("The id of a data type cannot be empty");
 		if (type == null ||type.isEmpty())
 			throw new IllegalArgumentException("The type of a data type cannot be empty");

@@ -1305,6 +1305,7 @@ public class RewriterUtils {
 		afterFlattening.add("FLATTENED ALGEBRA REWRITES", flattenedAlgebraicRewrites);
 
 		return stmt -> {
+			stmt = stmt.nestedCopy(true);
 			stmt = canonicalFormCreator.apply(stmt, (t, r) -> {
 				if (!debug)
 					return true;
@@ -1316,6 +1317,7 @@ public class RewriterUtils {
 			}, debug);
 
 			// TODO: Do this in a loop until nothing is found anymore
+
 			RewriterUtils.mergeArgLists(stmt, ctx);
 			stmt = RewriterUtils.pullOutConstants(stmt, ctx);
 			stmt.prepareForHashing();
@@ -1631,7 +1633,7 @@ public class RewriterUtils {
 
 		for (RewriterStatement stmt : stmts) {
 			stmt.forEachPreOrder(cur -> {
-				if (cur.isInstruction())
+				if (cur.isInstruction() || cur.isLiteral())
 					return true;
 
 				boolean isMatrix = cur.getResultingDataType(ctx).equals("MATRIX");

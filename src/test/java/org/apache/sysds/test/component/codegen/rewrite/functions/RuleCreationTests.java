@@ -206,4 +206,32 @@ public class RuleCreationTests {
 
 		System.out.println(rc.getRuleSet().serialize(ctx));
 	}
+
+	@Test
+	public void test6() {
+		RewriterStatement from = RewriterUtils.parse("%*%(const(colVec(A),0.0),log_nz(B))", ctx, "MATRIX:A,B", "LITERAL_FLOAT:0.0");
+		RewriterStatement to = RewriterUtils.parse("%*%(colVec(A),const(B,0.0))", ctx, "MATRIX:A,B", "LITERAL_FLOAT:0.0");
+		RewriterStatement canonicalForm1 = canonicalConverter.apply(from);
+		RewriterStatement canonicalForm2 = canonicalConverter.apply(to);
+
+		System.out.println("==========");
+		System.out.println(canonicalForm1.toParsableString(ctx, true));
+		System.out.println("==========");
+		System.out.println(canonicalForm2.toParsableString(ctx, true));
+		/*System.out.println(canonicalForm1.getChild(1, 1, 0));
+		System.out.println(canonicalForm1.getChild(1, 1, 0).getNCol());
+		System.out.println(canonicalForm1.getChild(1, 1, 0).getNRow());
+		System.out.println(canonicalForm2.getChild(1, 1, 0));
+		System.out.println(canonicalForm2.getChild(1, 1, 0).getNCol());
+		System.out.println(canonicalForm2.getChild(1, 1, 0).getNRow());*/
+		RewriterStatement.MatcherContext mCtx = RewriterStatement.MatcherContext.exactMatch(ctx, canonicalForm2, canonicalForm1);
+		if (!canonicalForm1.match(mCtx)) {
+			System.out.println(mCtx.getFirstMismatch()._1);
+			System.out.println(mCtx.getFirstMismatch()._2);
+			assert false;
+		}
+
+		RewriterRule rule = RewriterRuleCreator.createRule(from, to, canonicalForm1, canonicalForm2, ctx);
+		System.out.println(rule);
+	}
 }

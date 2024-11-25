@@ -7,6 +7,7 @@ import org.apache.sysds.hops.rewriter.RewriterCostEstimator;
 import org.apache.sysds.hops.rewriter.RewriterDatabase;
 import org.apache.sysds.hops.rewriter.RewriterEquivalenceDatabase;
 import org.apache.sysds.hops.rewriter.RewriterHeuristic;
+import org.apache.sysds.hops.rewriter.RewriterInstruction;
 import org.apache.sysds.hops.rewriter.RewriterRule;
 import org.apache.sysds.hops.rewriter.RewriterRuleCollection;
 import org.apache.sysds.hops.rewriter.RewriterRuleCreator;
@@ -29,6 +30,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
+import java.util.UUID;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -156,14 +158,15 @@ public class RewriterClusteringTest {
 		}
 
 		db = null;
+		Object lock = new Object();
 
 		if (useRandomized) {
 			long MAX_MILLIS = 600000; // Should be bound by number of ops
 			int BATCH_SIZE = 200;
-			int maxN = RewriterAlphabetEncoder.getMaxSearchNumberForNumOps(3);
+			int maxN = RewriterAlphabetEncoder.getMaxSearchNumberForNumOps(2);
 			long startMillis = System.currentTimeMillis();
 
-			for (int batch = 0; batch < 10 && System.currentTimeMillis() - startMillis < MAX_MILLIS && batch * BATCH_SIZE < maxN; batch++) {
+			for (int batch = 0; batch < 50 && System.currentTimeMillis() - startMillis < MAX_MILLIS && batch * BATCH_SIZE < maxN; batch++) {
 				List<Integer> indices = IntStream.range(batch * BATCH_SIZE, Math.min((batch + 1) * BATCH_SIZE - 1, maxN)).boxed().collect(Collectors.toList());
 				Collections.shuffle(indices);
 				MutableInt ctr2 = new MutableInt(0);
@@ -179,6 +182,7 @@ public class RewriterClusteringTest {
 
 					for (RewriterStatement dag : stmts) {
 						List<RewriterStatement> expanded = new ArrayList<>();
+						expanded.add(dag);
 						expanded.addAll(RewriterAlphabetEncoder.buildAssertionVariations(dag, ctx, true));
 						expanded.addAll(RewriterAlphabetEncoder.buildVariations(dag, ctx));
 						actualCtr += expanded.size();
@@ -186,6 +190,24 @@ public class RewriterClusteringTest {
 							try {
 								RewriterStatement canonicalForm = converter.apply(stmt);
 								stmt.getCost(ctx);
+
+								/*RewriterStatement stmt2 = null;
+								RewriterStatement canonicalForm2 = null;
+								if (canonicalForm.getResultingDataType(ctx).equals("FLOAT")) {
+									stmt2 = stmt.nestedCopy(true);
+									stmt2 = new RewriterInstruction()
+											.as(UUID.randomUUID().toString())
+											.withInstruction("cast.MATRIX")
+											.withOps(stmt2)
+											.consolidate(ctx);
+									canonicalForm2 = canonicalForm.nestedCopy(true);
+									canonicalForm2 = new RewriterInstruction()
+											.as(UUID.randomUUID().toString())
+											.withInstruction("_m")
+											.withOps(RewriterStatement.literal(ctx, 1L), RewriterStatement.literal(ctx, 1L), canonicalForm2)
+											.consolidate(ctx);
+								}*/
+
 								//computeCost(stmt, ctx);
 
 								//List<RewriterStatement> equivalentExpressions = new ArrayList<>();
@@ -195,13 +217,25 @@ public class RewriterClusteringTest {
 								//if (!canonicalForm.isLiteral())
 								//	canonicalForm.unsafePutMeta("equivalentExpressions", equivalentExpressions);
 
-								stmt.getCost(ctx); // Fetch cost already
-								//canonicalForm.compress();
-								//stmt.compress();
-								RewriterEquivalenceDatabase.DBEntry entry = canonicalExprDB.insert(ctx, canonicalForm, stmt);
+								//stmt.getCost(ctx); // Fetch cost already
+								canonicalForm.compress();
+								stmt.compress();
+								synchronized (lock) {
+									RewriterEquivalenceDatabase.DBEntry entry = canonicalExprDB.insert(ctx, canonicalForm, stmt);
 
-								if (entry.equivalences.size() == 2)
-									foundEquivalences.add(entry);
+									if (entry.equivalences.size() == 2)
+										foundEquivalences.add(entry);
+
+									/*if (stmt2 != null) {
+										//System.out.println("HERE");
+										//stmt2.compress();
+										//canonicalForm2.compress();
+										entry = canonicalExprDB.insert(ctx, canonicalForm2, stmt2);
+
+										if (entry.equivalences.size() == 2)
+											foundEquivalences.add(entry);
+									}*/
+								}
 
 								// Insert the canonical form or retrieve the existing entry
 							/*RewriterStatement existingEntry = canonicalExprDB.insertOrReturn(ctx, canonicalForm);
@@ -219,6 +253,7 @@ public class RewriterClusteringTest {
 								//System.out.println("Found equivalent statement!");
 							}*/
 							} catch (Exception e) {
+								System.err.println("Faulty expression: " + stmt.toParsableString(ctx));
 								e.printStackTrace();
 							}
 						}
@@ -233,6 +268,9 @@ public class RewriterClusteringTest {
 
 		System.out.println("===== SUGGESTED REWRITES =====");
 		List<Tuple5<Double, Long, Long, RewriterStatement, RewriterStatement>> rewrites = findSuggestedRewrites(foundEquivalences);
+		foundEquivalences.clear();
+		exactExprDB.clear();
+		canonicalExprDB.clear();
 
 		// Here, we create any rule
 		List<Tuple4<RewriterRule, Long, Long, Integer>> allRules = new ArrayList<>();
@@ -241,6 +279,8 @@ public class RewriterClusteringTest {
 			if (++mCtr % 100 == 0)
 				System.out.println("Creating rule: " + mCtr + " / " + rewrites.size());
 
+			ctx.metaPropagator.apply(rewrite._4());
+			ctx.metaPropagator.apply(rewrite._5());
 			RewriterStatement canonicalFormFrom = converter.apply(rewrite._4());
 			RewriterStatement canonicalFormTo = converter.apply(rewrite._5());
 			try {
@@ -280,7 +320,15 @@ public class RewriterClusteringTest {
 			ex.printStackTrace();
 		}
 
-		ruleCreator.throwOutInvalidRules();
+		ruleCreator.throwOutInvalidRules(true, false);
+
+		try (FileWriter writer = new FileWriter(RewriteAutomaticallyGenerated.VALIDATED_FILE_PATH)) {
+			writer.write(rawRuleSet.serialize(ctx));
+		} catch (IOException ex) {
+			ex.printStackTrace();
+		}
+
+		ruleCreator.throwOutInvalidRules(false, true);
 
 		/*RewriterRuleCreator ruleCreator = new RewriterRuleCreator(ctx);
 

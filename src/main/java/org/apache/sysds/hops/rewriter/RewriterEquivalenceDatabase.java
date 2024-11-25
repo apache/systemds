@@ -11,6 +11,10 @@ import java.util.function.Consumer;
 public class RewriterEquivalenceDatabase {
 	private ConcurrentHashMap<RewriterStatementEntry, DBEntry> db = new ConcurrentHashMap<>();
 
+	public void clear() {
+		db.clear();
+	}
+
 	public boolean containsEntry(RewriterStatement instr) {
 		return db.containsKey(instr);
 	}

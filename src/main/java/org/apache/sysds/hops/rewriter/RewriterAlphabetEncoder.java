@@ -107,10 +107,10 @@ public class RewriterAlphabetEncoder {
 		}, true);
 
 		if (interestingLeaves.isEmpty())
-			return List.of(root);
+			return Collections.emptyList();
 
 		List<RewriterStatement> out = new ArrayList<>();
-		out.add(root);
+		//out.add(root);
 
 		for (int i = 0; i < interestingLeaves.size(); i++) {
 			RewriterStatement from = interestingLeaves.get(i);
@@ -195,10 +195,10 @@ public class RewriterAlphabetEncoder {
 		}, true);
 
 		if (interestingLeaves.size() < 2)
-			return List.of(root);
+			return Collections.emptyList();
 
 		List<RewriterStatement> out = new ArrayList<>();
-		out.add(root);
+		//out.add(root);
 
 		for (int i = 0; i < interestingLeaves.size(); i++) {
 			RewriterStatement to = interestingLeaves.get(i);
@@ -243,11 +243,15 @@ public class RewriterAlphabetEncoder {
 		// Check if op is a placeholder
 		Operand op = operands.get(0);
 		if (op.op.equals("zero") || op.op.equals("one")) {
-			List<RewriterStatement> l = new ArrayList<>(4);
-			l.add(RewriterStatement.literal(ctx, 1.0D));
-			l.add(RewriterStatement.literal(ctx, 0.0D));
-			l.add(new RewriterInstruction().as(UUID.randomUUID().toString()).withInstruction("const").withOps(new RewriterDataType().as(UUID.randomUUID().toString()).ofType("MATRIX").consolidate(ctx), RewriterStatement.literal(ctx, 0.0D)).consolidate(ctx));
-			l.add(new RewriterInstruction().as(UUID.randomUUID().toString()).withInstruction("const").withOps(new RewriterDataType().as(UUID.randomUUID().toString()).ofType("MATRIX").consolidate(ctx), RewriterStatement.literal(ctx, 1.0D)).consolidate(ctx));
+			List<RewriterStatement> l = new ArrayList<>(2);
+			if (op.op.equals("zero")) {
+				l.add(RewriterStatement.literal(ctx, 0.0D));
+				l.add(new RewriterInstruction().as(UUID.randomUUID().toString()).withInstruction("const").withOps(new RewriterDataType().as(UUID.randomUUID().toString()).ofType("MATRIX").consolidate(ctx), RewriterStatement.literal(ctx, 0.0D)).consolidate(ctx));
+			} else {
+				l.add(RewriterStatement.literal(ctx, 1.0D));
+				l.add(new RewriterInstruction().as(UUID.randomUUID().toString()).withInstruction("const").withOps(new RewriterDataType().as(UUID.randomUUID().toString()).ofType("MATRIX").consolidate(ctx), RewriterStatement.literal(ctx, 1.0D)).consolidate(ctx));
+			}
+
 			return l;
 		}
 

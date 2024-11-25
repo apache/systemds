@@ -15,6 +15,10 @@ public class RewriterDatabase {
 
 	private ConcurrentHashMap<RewriterStatementEntry, RewriterStatement> db = new ConcurrentHashMap<>();
 
+	public void clear() {
+		db.clear();
+	}
+
 	public boolean containsEntry(RewriterStatement instr) {
 		return db.containsKey(instr);
 	}

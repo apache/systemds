@@ -184,8 +184,11 @@ public class RewriterRuleCreator {
 		return ruleSet;
 	}
 
-	public void throwOutInvalidRules() {
-		activeRules.removeIf(rule -> !validateRuleCorrectnessAndGains(rule, ctx));
+	public void throwOutInvalidRules(boolean correctness, boolean relevance) {
+		if (!correctness && !relevance)
+			return;
+
+		activeRules.removeIf(rule -> (correctness && !validateRuleCorrectness(rule, ctx)) || (relevance && !validateRuleApplicability(rule, ctx)));
 		ruleSet.accelerate();
 	}
 
@@ -375,7 +378,7 @@ public class RewriterRuleCreator {
 			RewriterStatement newValue = toCanonicalLink.get(v);
 
 			if (newKey == null || newValue == null)
-				throw new IllegalArgumentException("Null reference detected: " + k + ", " + v + "\nFromCanonicalLink: " + fromCanonicalLink + "\nToCanonicalLink: " + toCanonicalLink);
+				return;//throw new IllegalArgumentException("Null reference detected: " + k + ", " + v + "\nFromCanonicalLink: " + fromCanonicalLink + "\nToCanonicalLink: " + toCanonicalLink);
 
 			assocs.put(newKey, newValue);
 		});

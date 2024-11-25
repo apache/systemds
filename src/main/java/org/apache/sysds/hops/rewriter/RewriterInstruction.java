@@ -138,6 +138,15 @@ public class RewriterInstruction extends RewriterStatement {
 		if (mCtx.isDebug())
 			System.out.println("Matching: " + this.toString(ctx) + " <=> " + stmt.toString(ctx));
 
+		// Check for some meta information
+		if (mCtx.statementsCanBeVariables && getResultingDataType(ctx).equals("MATRIX")) {
+			if (trueInstruction().equals("rowVec") && stmt.isRowVector()) {
+				return true;
+			} else if (trueInstruction().equals("colVec") && stmt.isColVector()) {
+				return true;
+			}
+		}
+
 		if (stmt instanceof RewriterInstruction && getResultingDataType(ctx).equals(stmt.getResultingDataType(ctx))) {
 			RewriterInstruction inst = (RewriterInstruction)stmt;
 

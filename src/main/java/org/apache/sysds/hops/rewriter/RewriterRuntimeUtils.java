@@ -192,8 +192,77 @@ public class RewriterRuntimeUtils {
 			sb.getHops().forEach(consumer);
 	}
 
-	public static RewriterStatement buildDAGFromHop(Hop hop, int maxDepth, final RuleContext ctx) {
-		return buildDAGRecursively(hop, null, new HashMap<>(), 0, maxDepth, ctx);
+	public static RewriterStatement buildDAGFromHop(Hop hop, int maxDepth, boolean mindDataCharacteristics, final RuleContext ctx) {
+		RewriterStatement out = buildDAGRecursively(hop, null, new HashMap<>(), 0, maxDepth, ctx);
+
+		if (mindDataCharacteristics)
+			return populateDataCharacteristics(out, ctx);
+
+		return out;
+	}
+
+	public static RewriterStatement populateDataCharacteristics(RewriterStatement stmt, final RuleContext ctx) {
+		if (stmt == null)
+			return null;
+
+		if (stmt instanceof RewriterDataType && stmt.getResultingDataType(ctx).equals("MATRIX")) {
+			Long nrow = (Long) stmt.getMeta("_actualNRow");
+			Long ncol = (Long) stmt.getMeta("_actualNCol");
+			int matType = 0;
+
+			// TODO: what if matrix consists of one single element?
+			if (nrow != null && nrow == 1L) {
+				matType = 1;
+			} else if (ncol != null && ncol == 1L) {
+				matType = 2;
+			}
+
+			if (matType > 0) {
+				return new RewriterInstruction()
+						.as(UUID.randomUUID().toString())
+						.withInstruction(matType == 1 ? "rowVec" : "colVec")
+						.withOps(stmt)
+						.consolidate(ctx);
+			}
+		}
+
+		Map<RewriterStatement, RewriterStatement> createdObjects = new HashMap<>();
+
+		stmt.forEachPostOrder((cur, pred) -> {
+			for (int i = 0; i < cur.getOperands().size(); i++) {
+				RewriterStatement child = cur.getChild(i);
+
+				if (child instanceof RewriterDataType && child.getResultingDataType(ctx).equals("MATRIX")) {
+					Long nrow = (Long) child.getMeta("_actualNRow");
+					Long ncol = (Long) child.getMeta("_actualNCol");
+					int matType = 0;
+
+					// TODO: what if matrix consists of one single element?
+					if (nrow != null && nrow == 1L) {
+						matType = 1;
+					} else if (ncol != null && ncol == 1L) {
+						matType = 2;
+					}
+
+					if (matType > 0) {
+						RewriterStatement created = createdObjects.get(child);
+
+						if (created == null) {
+							created = new RewriterInstruction()
+									.as(UUID.randomUUID().toString())
+									.withInstruction(matType == 1 ? "rowVec" : "colVec")
+									.withOps(child)
+									.consolidate(ctx);
+							createdObjects.put(child, created);
+						}
+
+						cur.getOperands().set(i, created);
+					}
+				}
+			}
+		}, false);
+
+		return stmt;
 	}
 
 	public static void forAllUniqueTranslatableStatements(DMLProgram program, int maxDepth, Consumer<RewriterStatement> stmt, RewriterDatabase db, final RuleContext ctx) {
@@ -364,6 +433,8 @@ public class RewriterRuntimeUtils {
 			if (stmt == null)
 				return buildLeaf(next, expectedType, ctx);
 
+			insertDataCharacteristics(next, stmt, ctx);
+
 			if (buildInputs(stmt, next.getInput(), cache, true, depth, maxDepth, ctx))
 				return stmt;
 
@@ -376,6 +447,8 @@ public class RewriterRuntimeUtils {
 
 			if (stmt == null)
 				return buildLeaf(next, expectedType, ctx);
+
+			insertDataCharacteristics(next, stmt, ctx);
 
 			if (buildInputs(stmt, next.getInput(), cache, true, depth, maxDepth, ctx))
 				return stmt;
@@ -390,6 +463,8 @@ public class RewriterRuntimeUtils {
 			if (stmt == null)
 				return buildLeaf(next, expectedType, ctx);
 
+			insertDataCharacteristics(next, stmt, ctx);
+
 			if (buildInputs(stmt, next.getInput(), cache, true, depth, maxDepth, ctx))
 				return stmt;
 
@@ -402,6 +477,8 @@ public class RewriterRuntimeUtils {
 
 			if (stmt == null)
 				return buildLeaf(next, expectedType, ctx);
+
+			insertDataCharacteristics(next, stmt, ctx);
 
 			if (buildInputs(stmt, next.getInput(), cache, true, depth, maxDepth, ctx))
 				return stmt;
@@ -416,6 +493,8 @@ public class RewriterRuntimeUtils {
 			if (stmt == null)
 				return buildLeaf(next, expectedType, ctx);
 
+			insertDataCharacteristics(next, stmt, ctx);
+
 			if (buildInputs(stmt, next.getInput(), cache, true, depth, maxDepth, ctx))
 				return stmt;
 
@@ -428,6 +507,8 @@ public class RewriterRuntimeUtils {
 
 			if (stmt == null)
 				return buildLeaf(next, expectedType, ctx);
+
+			insertDataCharacteristics(next, stmt, ctx);
 
 			if (buildInputs(stmt, next.getInput(), cache, true, depth, maxDepth, ctx))
 				return stmt;
@@ -442,6 +523,8 @@ public class RewriterRuntimeUtils {
 
 			if (stmt == null)
 				return buildLeaf(next, expectedType, ctx);
+
+			insertDataCharacteristics(next, stmt, ctx);
 
 			if (buildInputs(stmt, interestingHops, cache, true, depth, maxDepth, ctx))
 				return stmt;
@@ -463,6 +546,19 @@ public class RewriterRuntimeUtils {
 		}
 
 		return null;
+	}
+
+	private static void insertDataCharacteristics(Hop hop, RewriterStatement stmt, final RuleContext ctx) {
+		if (stmt.getResultingDataType(ctx).equals("MATRIX")) {
+			if (hop.getDataCharacteristics() != null) {
+				long nrows = hop.getDataCharacteristics().getRows();
+				long ncols = hop.getDataCharacteristics().getCols();
+				if (nrows > 0)
+					stmt.unsafePutMeta("_actualNRow", RewriterStatement.literal(ctx, nrows));
+				if (ncols > 0)
+					stmt.unsafePutMeta("_actualNCol", RewriterStatement.literal(ctx, nrows));
+			}
+		}
 	}
 
 	// TODO: Maybe introduce other implicit conversions if types mismatch
@@ -500,14 +596,19 @@ public class RewriterRuntimeUtils {
 		if (RewriterUtils.DOUBLE_PATTERN.matcher(hopName).matches() || RewriterUtils.SPECIAL_FLOAT_PATTERN.matcher(hopName).matches())
 			hopName = "float" + new Random().nextInt(1000);
 
-		if (expectedType != null)
-			return RewriterUtils.parse(hopName, ctx, expectedType + ":" + hopName);
+		if (expectedType != null) {
+			RewriterStatement stmt = RewriterUtils.parse(hopName, ctx, expectedType + ":" + hopName);
+			insertDataCharacteristics(hop, stmt, ctx);
+			return stmt;
+		}
 
 		switch (hop.getDataType()) {
 			case SCALAR:
 				return buildScalarLeaf(hop, hopName, ctx);
 			case MATRIX:
-				return RewriterUtils.parse(hopName, ctx, "MATRIX:" + hopName);
+				RewriterStatement stmt = RewriterUtils.parse(hopName, ctx, "MATRIX:" + hopName);
+				insertDataCharacteristics(hop, stmt, ctx);
+				return stmt;
 		}
 
 		return null; // Not supported then

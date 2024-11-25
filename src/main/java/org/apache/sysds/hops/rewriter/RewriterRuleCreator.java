@@ -192,7 +192,7 @@ public class RewriterRuleCreator {
 			else
 				hop =  prog.getStatementBlocks().get(0).getHops().get(0).getInput(0).getInput(0).getInput(0);
 
-			RewriterStatement stmt = RewriterRuntimeUtils.buildDAGFromHop(hop, 1000, ctx);
+			RewriterStatement stmt = RewriterRuntimeUtils.buildDAGFromHop(hop, 1000, true, ctx);
 
 			if (stmt == null)
 				return false;

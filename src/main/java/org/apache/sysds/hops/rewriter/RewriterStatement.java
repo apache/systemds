@@ -966,6 +966,36 @@ public abstract class RewriterStatement {
 		return toString(RuleContext.currentContext);
 	}
 
+	public boolean isColVector() {
+		RewriterStatement nrow = getNRow();
+
+		if (nrow == null)
+			return false;
+
+		if (nrow.isLiteral() && nrow.getLiteral().equals(1L))
+			return true;
+
+		if (nrow.isEClass() && nrow.getChild(0).getOperands().stream().anyMatch(el -> el.isLiteral() && el.getLiteral().equals(1L)))
+			return true;
+
+		return false;
+	}
+
+	public boolean isRowVector() {
+		RewriterStatement ncol = getNCol();
+
+		if (ncol == null)
+			return false;
+
+		if (ncol.isLiteral() && ncol.getLiteral().equals(1L))
+			return true;
+
+		if (ncol.isEClass() && ncol.getChild(0).getOperands().stream().anyMatch(el -> el.isLiteral() && el.getLiteral().equals(1L)))
+			return true;
+
+		return false;
+	}
+
 	public List<String> toExecutableString(final RuleContext ctx) {
 		ArrayList<String> defList = new ArrayList<>();
 		prepareDefinitions(ctx, defList, new HashSet<>());

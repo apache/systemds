@@ -49,7 +49,7 @@ public class RewriterRuleValidationTest {
 					System.out.println(rule.getStmt1().toParsableString(ctx) + " => " + rule.getStmt2().toParsableString(ctx));
 					long preCost = RewriterCostEstimator.estimateCost(rule.getStmt1(), ctx);
 					long postCost = RewriterCostEstimator.estimateCost(rule.getStmt2(), ctx);
-					System.out.println(ruleCreator.registerRule(rule, preCost, postCost, true));
+					System.out.println(ruleCreator.registerRule(rule, preCost, postCost, true, canonicalConverter));
 				} catch (Exception e) {
 					e.printStackTrace();
 				}

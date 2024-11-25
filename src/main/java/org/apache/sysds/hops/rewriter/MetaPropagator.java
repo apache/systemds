@@ -316,6 +316,10 @@ public class MetaPropagator implements Function<RewriterStatement, RewriterState
 					root.unsafePutMeta("ncol", root.getOperands().get(0).getMeta("ncol"));
 					root.unsafePutMeta("nrow", RewriterStatement.literal(ctx, 1L));
 					return null;
+				case "rev(MATRIX)":
+					root.unsafePutMeta("nrow", root.getOperands().get(0).getMeta("nrow"));
+					root.unsafePutMeta("ncol", root.getOperands().get(0).getMeta("ncol"));
+					return null;
 			}
 
 			RewriterInstruction instr = (RewriterInstruction) root;

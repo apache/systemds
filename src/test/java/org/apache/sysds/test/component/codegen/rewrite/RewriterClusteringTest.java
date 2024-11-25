@@ -16,11 +16,9 @@ import org.apache.sysds.hops.rewriter.RewriterStatement;
 import org.apache.sysds.hops.rewriter.RewriterUtils;
 import org.apache.sysds.hops.rewriter.RuleContext;
 import org.apache.sysds.hops.rewriter.TopologicalSort;
-import org.apache.sysds.performance.TimingUtils;
-import org.junit.BeforeClass;
-import org.junit.Test;
 import scala.Tuple2;
 import scala.Tuple3;
+import scala.Tuple4;
 import scala.Tuple5;
 
 import java.io.BufferedReader;
@@ -42,7 +40,11 @@ public class RewriterClusteringTest {
 	private static RewriterDatabase db;
 	private static Function<RewriterStatement, RewriterStatement> flattenAndMerge;
 
-	@BeforeClass
+	public static void main(String[] args) {
+		setup();
+		testExpressionClustering();
+	}
+
 	public static void setup() {
 		ctx = RewriterUtils.buildDefaultContext();
 		converter = RewriterUtils.buildCanonicalFormConverter(ctx, false);
@@ -65,8 +67,7 @@ public class RewriterClusteringTest {
 		};
 	}
 
-	@Test
-	public void testExpressionClustering() {
+	public static void testExpressionClustering() {
 		boolean useData = false;
 		boolean useRandomized = true;
 
@@ -154,8 +155,10 @@ public class RewriterClusteringTest {
 			});
 		}
 
+		db = null;
+
 		if (useRandomized) {
-			long MAX_MILLIS = 300000; // Should be bound by number of ops
+			long MAX_MILLIS = 600000; // Should be bound by number of ops
 			int BATCH_SIZE = 200;
 			int maxN = RewriterAlphabetEncoder.getMaxSearchNumberForNumOps(3);
 			long startMillis = System.currentTimeMillis();
@@ -232,7 +235,7 @@ public class RewriterClusteringTest {
 		List<Tuple5<Double, Long, Long, RewriterStatement, RewriterStatement>> rewrites = findSuggestedRewrites(foundEquivalences);
 
 		// Here, we create any rule
-		List<Tuple3<RewriterRule, Long, Long>> allRules = new ArrayList<>();
+		List<Tuple4<RewriterRule, Long, Long, Integer>> allRules = new ArrayList<>();
 		int mCtr = 0;
 		for (Tuple5<Double, Long, Long, RewriterStatement, RewriterStatement> rewrite : rewrites) {
 			if (++mCtr % 100 == 0)
@@ -243,7 +246,7 @@ public class RewriterClusteringTest {
 			try {
 				RewriterRule rule = RewriterRuleCreator.createRule(rewrite._4(), rewrite._5(), canonicalFormFrom, canonicalFormTo, ctx);
 
-				allRules.add(new Tuple3<>(rule, rewrite._2(), rewrite._3()));
+				allRules.add(new Tuple4<>(rule, rewrite._2(), rewrite._3(), rule.getStmt1().countInstructions()));
 				//ruleCreator.registerRule(rule, rewrite._2(), rewrite._3());
 			} catch (Exception e) {
 				System.err.println("An error occurred while trying to create a rule:");
@@ -253,14 +256,14 @@ public class RewriterClusteringTest {
 			}
 		}
 
-
+		allRules.sort(Comparator.comparing(Tuple4::_4));
 
 		RewriterRuleCreator ruleCreator = new RewriterRuleCreator(ctx);
 
-		for (Tuple3<RewriterRule, Long, Long> t : allRules) {
+		for (Tuple4<RewriterRule, Long, Long, Integer> t : allRules) {
 			// First, without validating correctness
 			// This might throw out some fallback options if a rule turns out to be incorrect but we there is a huge performance benefit
-			ruleCreator.registerRule(t._1(), t._2(), t._3(), false);
+			ruleCreator.registerRule(t._1(), t._2(), t._3(), false, converter);
 		}
 
 		allRules = null;
@@ -297,7 +300,7 @@ public class RewriterClusteringTest {
 		}
 	}
 
-	private void computeCost(RewriterStatement subExpr, final RuleContext ctx) {
+	private static void computeCost(RewriterStatement subExpr, final RuleContext ctx) {
 		if (subExpr.isLiteral())
 			return;
 
@@ -366,7 +369,7 @@ public class RewriterClusteringTest {
 		dbEntry.unsafePutMeta("_optimum", currentOptimum);
 	}*/
 
-	private void printEquivalences(List<RewriterStatement> equivalentStatements, long cpuTime, long generatedExpressions, long evaluatedExpressions, long canonicalizationMillis, long failures, boolean preFilter) {
+	private static void printEquivalences(List<RewriterStatement> equivalentStatements, long cpuTime, long generatedExpressions, long evaluatedExpressions, long canonicalizationMillis, long failures, boolean preFilter) {
 		System.out.println("===== ALL EQUIVALENCES =====");
 		if (preFilter)
 			System.out.println("Pre-filtering is active! Note that this hides some (probably less impactful) equivalences");
@@ -395,7 +398,7 @@ public class RewriterClusteringTest {
 		System.out.println("Total failures: " + failures);
 	}
 
-	private boolean checkRelevance(List<RewriterStatement> stmts) {
+	private static boolean checkRelevance(List<RewriterStatement> stmts) {
 		boolean match = true;
 
 		for (int i = 0; i < stmts.size(); i++) {
@@ -437,7 +440,7 @@ public class RewriterClusteringTest {
 		return !match;
 	}
 
-	private List<Tuple5<Double, Long, Long, RewriterStatement, RewriterStatement>> findSuggestedRewrites(List<RewriterEquivalenceDatabase.DBEntry> equivalences) {
+	private static List<Tuple5<Double, Long, Long, RewriterStatement, RewriterStatement>> findSuggestedRewrites(List<RewriterEquivalenceDatabase.DBEntry> equivalences) {
 		List<Tuple5<Double, Long, Long, RewriterStatement, RewriterStatement>> suggestedRewrites = new ArrayList<>();
 
 		for (RewriterEquivalenceDatabase.DBEntry entry : equivalences) {

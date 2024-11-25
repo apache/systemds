@@ -14,6 +14,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 import java.util.function.Consumer;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 public class RewriterRuleCreator {
@@ -32,14 +33,36 @@ public class RewriterRuleCreator {
 		activeRules.forEach(consumer);
 	}
 
-	public synchronized boolean registerRule(RewriterRule rule, long preCost, long postCost, boolean validateCorrectness) {
+	public synchronized boolean registerRule(RewriterRule rule, long preCost, long postCost, boolean validateCorrectness, Function<RewriterStatement, RewriterStatement> canonicalFormCreator) {
 		// First, we check if an existing rule already applies an equivalent rewrite (cost wise)
 		RewriterStatement toTest = rule.getStmt1().nestedCopy(false);
+
+		RewriterStatement newStmt = rule.getStmt2().nestedCopy(false);
 
 		boolean converged = false;
 		boolean changed = false;
 
 		List<RewriterRule> appliedRules = new ArrayList<>();
+
+		for (int i = 0; i < 500; i++) {
+			RewriterRuleSet.ApplicableRule applicableRule = ruleSet.acceleratedFindFirst(newStmt);
+
+			if (applicableRule == null) {
+				converged = true;
+				break; // Then we converged
+			}
+
+			newStmt = applicableRule.rule.apply(applicableRule.matches.get(0), newStmt, applicableRule.forward, false);
+			RewriterUtils.mergeArgLists(newStmt, ctx);
+			newStmt = RewriterUtils.foldConstants(newStmt, ctx);
+			appliedRules.add(applicableRule.rule);
+			changed = true;
+		}
+
+		if (!converged)
+			throw new IllegalArgumentException("The existing rule-set did not seem to converge for the example: \n" + toTest.toParsableString(ctx, true) + "\n" + String.join("\n", appliedRules.stream().map(rl -> rl.toParsableString(ctx)).collect(Collectors.toList())));
+
+		appliedRules.clear();
 
 		for (int i = 0; i < 500; i++) {
 			RewriterRuleSet.ApplicableRule applicableRule = ruleSet.acceleratedFindFirst(toTest);
@@ -59,6 +82,18 @@ public class RewriterRuleCreator {
 		if (!converged)
 			throw new IllegalArgumentException("The existing rule-set did not seem to converge for the example: \n" + toTest.toParsableString(ctx, true) + "\n" + String.join("\n", appliedRules.stream().map(rl -> rl.toParsableString(ctx)).collect(Collectors.toList())));
 
+		if (newStmt != rule.getStmt2()) {
+			// Then the mapping has changed, and we need to
+			try {
+				postCost = RewriterCostEstimator.estimateCost(newStmt, el -> 2000L, ctx);
+			} catch (Exception e) {
+				System.err.println("Err in cost from orig: " + rule.getStmt2().toParsableString(ctx));
+				System.err.println("NewStmt: " + newStmt.toParsableString(ctx));
+				e.printStackTrace();
+				return false;
+			}
+		}
+
 		if (changed) {
 			long existingPostCost;
 
@@ -72,8 +107,13 @@ public class RewriterRuleCreator {
 				return false;
 			}
 
-			if (existingPostCost <= postCost)
+			if (existingPostCost <= postCost || preCost >= postCost)
 				return false; // Then this rule is not beneficial
+		}
+
+		// We might have to rebuild the rule
+		if (changed || newStmt != rule.getStmt2()) {
+			rule = createRule(toTest, newStmt, canonicalFormCreator.apply(toTest), canonicalFormCreator.apply(newStmt), ctx);
 		}
 
 		if (validateCorrectness) {
@@ -161,7 +201,6 @@ public class RewriterRuleCreator {
 		RewriterUtils.renameIllegalVarnames(ctx, rule.getStmt1(), rule.getStmt2());
 		String sessionId = UUID.randomUUID().toString();
 		String code = DMLCodeGenerator.generateRuleValidationDML(rule, sessionId);
-		System.out.println(code);
 
 		MutableBoolean isValid = new MutableBoolean(false);
 		DMLExecutor.executeCode(code, DMLCodeGenerator.ruleValidationScript(rule.toParsableString(ctx), sessionId, isValid::setValue));

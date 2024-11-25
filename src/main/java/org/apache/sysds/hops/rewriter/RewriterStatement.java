@@ -3,6 +3,7 @@ package org.apache.sysds.hops.rewriter;
 import org.apache.commons.collections4.bidimap.DualHashBidiMap;
 import org.apache.commons.lang3.NotImplementedException;
 import org.apache.commons.lang3.function.TriFunction;
+import org.apache.commons.lang3.mutable.MutableInt;
 import org.apache.commons.lang3.mutable.MutableObject;
 import org.apache.logging.log4j.util.TriConsumer;
 import org.apache.spark.internal.config.R;
@@ -1138,6 +1139,17 @@ public abstract class RewriterStatement {
 		}
 
 		return false;
+	}
+
+	public int countInstructions() {
+		MutableInt i = new MutableInt();
+		forEachPreOrder(cur -> {
+			if (!cur.isDataOrigin()) {
+				i.increment();
+			}
+			return true;
+		}, false);
+		return i.getAndIncrement();
 	}
 
 	public static RewriterStatement argList(final RuleContext ctx, RewriterStatement... args) {

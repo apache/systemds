@@ -97,6 +97,7 @@ public class RewriterContextSettings {
 		builder.append("Rearrangement(MATRIX)::MATRIX\n"); // An operation that keeps all elements but can reformat the matrix
 		builder.append("impl Permutation\n");
 		builder.append("impl t\n"); // Transposition
+		builder.append("impl rev\n");
 
 		builder.append("RowPermutation(MATRIX)::MATRIX\n");
 

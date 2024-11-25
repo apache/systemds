@@ -179,6 +179,7 @@ public class RewriterCostEstimator {
 				overhead.add(MALLOC_COST);
 				break;
 			case "t":
+			case "rev":
 			case "rowSums":
 			case "colSums":
 				map.put("nrowA", instr.getChild(0).getNRow());

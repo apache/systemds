@@ -139,4 +139,71 @@ public class RuleCreationTests {
 
 		assert ar != null;
 	}
+
+	@Test
+	public void test4() {
+		RewriterStatement from = RewriterUtils.parse("*(a,0.0)", ctx, "FLOAT:a", "LITERAL_FLOAT:0.0");
+		RewriterStatement to = RewriterUtils.parse("0.0", ctx, "LITERAL_FLOAT:0.0");
+		RewriterStatement canonicalForm1 = canonicalConverter.apply(from);
+		RewriterStatement canonicalForm2 = canonicalConverter.apply(to);
+
+		System.out.println("==========");
+		System.out.println(canonicalForm1.toParsableString(ctx, true));
+		System.out.println("==========");
+		System.out.println(canonicalForm2.toParsableString(ctx, true));
+
+		assert canonicalForm1.match(RewriterStatement.MatcherContext.exactMatch(ctx, canonicalForm2, canonicalForm1));
+
+		RewriterRule rule = RewriterRuleCreator.createRule(from, to, canonicalForm1, canonicalForm2, ctx);
+		System.out.println(rule);
+
+		RewriterStatement from2 = RewriterUtils.parse("/(0.0,a)", ctx, "FLOAT:a", "LITERAL_FLOAT:0.0");
+		RewriterStatement to2 = RewriterUtils.parse("0.0", ctx, "LITERAL_FLOAT:0.0");
+		RewriterStatement canonicalForm12 = canonicalConverter.apply(from2);
+		RewriterStatement canonicalForm22 = canonicalConverter.apply(to2);
+
+		System.out.println("==========");
+		System.out.println(canonicalForm12.toParsableString(ctx, true));
+		System.out.println("==========");
+		System.out.println(canonicalForm22.toParsableString(ctx, true));
+
+		assert canonicalForm12.match(RewriterStatement.MatcherContext.exactMatch(ctx, canonicalForm22, canonicalForm12));
+
+		RewriterRule rule2 = RewriterRuleCreator.createRule(from2, to2, canonicalForm12, canonicalForm22, ctx);
+		System.out.println(rule2);
+
+		RewriterRuleSet rs = new RewriterRuleSet(ctx, List.of(rule, rule2));
+
+		RewriterStatement testStmt = RewriterUtils.parse("/(*(a,0.0), b)", ctx, "FLOAT:a,b", "LITERAL_FLOAT:0.0");
+
+		RewriterRuleSet.ApplicableRule ar = rs.acceleratedFindFirst(testStmt);
+
+		assert ar != null;
+
+		testStmt = ar.rule.apply(ar.matches.get(0), testStmt, true, false);
+
+		System.out.println("HERE");
+		System.out.println(testStmt.toParsableString(ctx));
+
+		ar = rs.acceleratedFindFirst(testStmt);
+
+		assert ar != null;
+
+		testStmt = ar.rule.apply(ar.matches.get(0), testStmt, true, false);
+
+		System.out.println(testStmt);
+	}
+
+	@Test
+	public void test5() {
+		RewriterRule rule1 = RewriterUtils.parseRule("FLOAT:a\nLITERAL_FLOAT:0.0\n*(a, 0.0)\n=>\n0.0", ctx);
+		RewriterRule rule2 = RewriterUtils.parseRule("FLOAT:a\nLITERAL_FLOAT:0.0\n/(0.0, a)\n=>\n0.0", ctx);
+		RewriterRule rule3 = RewriterUtils.parseRule("FLOAT:a,b\nLITERAL_FLOAT:0.0\n/(*(a, 0.0), b)\n=>\n0.0", ctx);
+		RewriterRuleCreator rc = new RewriterRuleCreator(ctx);
+		rc.registerRule(rule3, rule3.getStmt1().getCost(ctx), rule3.getStmt2().getCost(ctx), false, canonicalConverter);
+		rc.registerRule(rule2, rule2.getStmt1().getCost(ctx), rule2.getStmt2().getCost(ctx), false, canonicalConverter);
+		rc.registerRule(rule1, rule1.getStmt1().getCost(ctx), rule1.getStmt2().getCost(ctx), false, canonicalConverter);
+
+		System.out.println(rc.getRuleSet().serialize(ctx));
+	}
 }

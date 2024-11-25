@@ -45,6 +45,16 @@ import java.util.stream.IntStream;
  */
 public class EstimatorBitsetMM extends SparsityEstimator
 {
+	private final int _type;
+	
+	public EstimatorBitsetMM() {
+		this(-1);
+	}
+	
+	public EstimatorBitsetMM(int type) {
+		_type = type;
+	}
+	
 	@Override
 	public DataCharacteristics estim(MMNode root) {
 		BitsetMatrix m1Map = getCachedSynopsis(root.getLeft());
@@ -205,14 +215,14 @@ public class EstimatorBitsetMM extends SparsityEstimator
 		//protected abstract BitsetMatrix reshape(int rows, int cols, boolean byrow);
 	}
 	
-	public static BitsetMatrix createBitset(int m, int n) {
-		return (long)m*n < Integer.MAX_VALUE ?
+	public BitsetMatrix createBitset(int m, int n) {
+		return ((long)m*n < Integer.MAX_VALUE && _type != 2) ?
 			new BitsetMatrix1(m, n) : //linearized long array
 			new BitsetMatrix2(m, n);  //bitset per row
 	}
 	
-	public static BitsetMatrix createBitset(MatrixBlock in) {
-		return in.getLength() < Integer.MAX_VALUE ?
+	public BitsetMatrix createBitset(MatrixBlock in) {
+		return (in.getLength() < Integer.MAX_VALUE && _type != 2) ?
 			new BitsetMatrix1(in) : //linearized long array
 			new BitsetMatrix2(in);  //bitset per row
 	}

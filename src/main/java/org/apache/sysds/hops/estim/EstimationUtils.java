@@ -94,8 +94,8 @@ public abstract class EstimationUtils
 				double[] avals = a.values(i);
 				int aix = a.pos(i);
 				Arrays.fill(tmp, 0); //reset
-				for( int k=aix; k<aix+n; k++ ) {
-					double aval = avals[k];
+				for( int k=0; k<n; k++ ) {
+					double aval = avals[aix+k];
 					if( aval == 0 ) continue;
 					double[] bvals = a.values(k);
 					int bix = a.pos(k);

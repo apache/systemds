@@ -35,7 +35,13 @@ import org.apache.sysds.runtime.frame.data.FrameBlock;
  */
 public abstract class FrameWriter {
 	protected static final Log LOG = LogFactory.getLog(FrameWriter.class.getName());
+	
+	protected boolean _forcedParallel = false;
+	
 	public abstract void writeFrameToHDFS( FrameBlock src, String fname, long rlen, long clen )
 		throws IOException, DMLRuntimeException;
 
+	public void setForcedParallel(boolean par) {
+		_forcedParallel = par;
+	}
 }

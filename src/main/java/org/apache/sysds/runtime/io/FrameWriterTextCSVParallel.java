@@ -60,7 +60,7 @@ public class FrameWriterTextCSVParallel extends FrameWriterTextCSV
 		numThreads = Math.min(numThreads, numPartFiles);
 		
 		//fall back to sequential write if dop is 1 (e.g., <128MB) in order to create single file
-		if( numThreads <= 1 ) {
+		if( !_forcedParallel && numThreads <= 1 ) {
 			super.writeCSVFrameToHDFS(path, job, src, rlen, clen, csvprops);
 			return;
 		}

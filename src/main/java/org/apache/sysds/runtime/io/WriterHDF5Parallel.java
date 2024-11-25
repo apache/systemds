@@ -59,7 +59,7 @@ public class WriterHDF5Parallel extends WriterHDF5 {
 		numThreads = Math.min(numThreads, numPartFiles);
 
 		//fall back to sequential write if dop is 1 (e.g., <128MB) in order to create single file
-		if(numThreads <= 1) {
+		if( !_forcedParallel && numThreads <= 1 ) {
 			super.writeHDF5MatrixToHDFS(path, job, fs, src);
 			return;
 		}

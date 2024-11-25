@@ -169,13 +169,15 @@ public class SeqParReadTest2 extends AutomatedTestBase {
 		try {
 			if( _matrix ) {
 				MatrixWriter writer = createMatrixWriter(FileFormat.safeValueOf(_format), _par);
-				writer.writeMatrixToHDFS(data, fname, rows, cols, 1000, data.getNonZeros());
+				writer.writeMatrixToHDFS(data, fname, rows, cols, 100, data.getNonZeros());
+				writer.setForcedParallel(_par);
 				MatrixReader reader = createMatrixReader(FileFormat.safeValueOf(_format), _par);
-				data2 = reader.readMatrixFromHDFS(fname, rows, cols, 1000, data.getNonZeros());
+				data2 = reader.readMatrixFromHDFS(fname, rows, cols, 100, data.getNonZeros());
 			}
 			else {
 				FrameBlock fdata = DataConverter.convertToFrameBlock(data);
 				FrameWriter writer = createFrameWriter(FileFormat.safeValueOf(_format), _par);
+				writer.setForcedParallel(_par);
 				writer.writeFrameToHDFS(fdata, fname, rows, cols);
 				FrameReader reader = createFrameReader(FileFormat.safeValueOf(_format), _par);
 				FrameBlock fdata2 = reader.readFrameFromHDFS(fname, schema, rows, cols);

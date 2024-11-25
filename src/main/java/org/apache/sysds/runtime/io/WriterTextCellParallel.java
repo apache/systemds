@@ -54,7 +54,7 @@ public class WriterTextCellParallel extends WriterTextCell
 		numThreads = Math.min(numThreads, numPartFiles);
 		
 		//fall back to sequential write if dop is 1 (e.g., <128MB) in order to create single file
-		if( numThreads <= 1 || src.getNonZeros()==0 ) {
+		if( !_forcedParallel && (numThreads <= 1 || src.getNonZeros()==0) ) {
 			super.writeTextCellMatrixToHDFS(path, job, fs, src, rlen, clen);
 			return;
 		}

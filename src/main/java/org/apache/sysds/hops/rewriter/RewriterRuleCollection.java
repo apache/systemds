@@ -386,6 +386,25 @@ public class RewriterRuleCollection {
 			);
 		});
 
+		// Some meta operators
+		rules.add(new RewriterRuleBuilder(ctx, "rowVec(A) => [](A, ...)")
+				.setUnidirectional(true)
+				.parseGlobalVars("MATRIX:A")
+				.parseGlobalVars("LITERAL_INT:1")
+				.withParsedStatement("rowVec(A)")
+				.toParsedStatement("[](A, 1, nrow(A), 1, 1)")
+				.build()
+		);
+
+		rules.add(new RewriterRuleBuilder(ctx, "colVec(A) => [](A, ...)")
+				.setUnidirectional(true)
+				.parseGlobalVars("MATRIX:A")
+				.parseGlobalVars("LITERAL_INT:1")
+				.withParsedStatement("colVec(A)")
+				.toParsedStatement("[](A, 1, 1, 1, ncol(A))")
+				.build()
+		);
+
 		// Now resolve fused operators
 		rules.add(new RewriterRuleBuilder(ctx, "1-*(A,B) => -(1, *(A, B))")
 				.setUnidirectional(true)

@@ -4,6 +4,7 @@ import org.apache.commons.lang3.mutable.MutableObject;
 import org.apache.sysds.hops.rewriter.RewriterAssertions;
 import org.apache.sysds.hops.rewriter.RewriterCostEstimator;
 import org.apache.sysds.hops.rewriter.RewriterRule;
+import org.apache.sysds.hops.rewriter.RewriterRuleBuilder;
 import org.apache.sysds.hops.rewriter.RewriterRuleCreator;
 import org.apache.sysds.hops.rewriter.RewriterRuleSet;
 import org.apache.sysds.hops.rewriter.RewriterStatement;
@@ -67,5 +68,46 @@ public class RuleCreationTests {
 		RewriterRuleSet.ApplicableRule ar = rs.acceleratedFindFirst(testStmt);
 
 		assert ar != null;
+	}
+
+	@Test
+	public void validationTest1() {
+		RewriterRule rule = new RewriterRuleBuilder(ctx)
+				.setUnidirectional(true)
+				.parseGlobalVars("MATRIX:A")
+				.parseGlobalVars("FLOAT:b")
+				.withParsedStatement("sum(/(A, b))")
+				.toParsedStatement("/(sum(A), b)")
+				.build();
+
+		assert RewriterRuleCreator.validateRuleCorrectnessAndGains(rule, ctx);
+	}
+
+	@Test
+	public void validationTest2() {
+		RewriterRule rule = new RewriterRuleBuilder(ctx)
+				.setUnidirectional(true)
+				.parseGlobalVars("MATRIX:A,B")
+				.parseGlobalVars("FLOAT:b")
+				.withParsedStatement("rowSums(colSums(%*%(A, B)))")
+				.toParsedStatement("%*%(colSums(A), rowSums(B))")
+				.build();
+
+		assert RewriterRuleCreator.validateRuleCorrectness(rule, ctx);
+		assert !RewriterRuleCreator.validateRuleApplicability(rule, ctx);
+	}
+
+	@Test
+	public void validationTest3() {
+		RewriterRule rule = new RewriterRuleBuilder(ctx)
+				.setUnidirectional(true)
+				.parseGlobalVars("MATRIX:A,B")
+				.parseGlobalVars("LITERAL_INT:1")
+				.withParsedStatement("*(sum([](A,1,1,1,ncol(A))),colSums(B))")
+				.toParsedStatement("%*%([](A,1,1,1,ncol(A)),colSums(B))")
+				.build();
+
+		assert RewriterRuleCreator.validateRuleCorrectness(rule, ctx);
+		assert !RewriterRuleCreator.validateRuleApplicability(rule, ctx);
 	}
 }

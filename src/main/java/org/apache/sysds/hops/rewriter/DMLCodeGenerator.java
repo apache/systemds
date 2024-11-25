@@ -18,7 +18,7 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 
 public class DMLCodeGenerator {
-	public static final int MATRIX_DIMS = 500;
+	public static final int MATRIX_DIMS = 100;
 	public static final double EPS = 1e-10;
 	public static Random rd = new Random(42);
 
@@ -190,7 +190,7 @@ public class DMLCodeGenerator {
 		for (RewriterStatement var : vars) {
 			switch (var.getResultingDataType(ctx)) {
 				case "MATRIX":
-					sb.append(var.getId() + " = rand(rows=500, cols=500, min=(as.scalar(rand())+1.0), max=(as.scalar(rand())+2.0), seed=" + rd.nextInt(1000) + ")^as.scalar(rand())\n");
+					sb.append(var.getId() + " = rand(rows=" + MATRIX_DIMS + ", cols=" + MATRIX_DIMS + ", min=(as.scalar(rand())+1.0), max=(as.scalar(rand())+2.0), seed=" + rd.nextInt(1000) + ")^as.scalar(rand())\n");
 					break;
 				case "FLOAT":
 					sb.append(var.getId() + " = as.scalar(rand(min=(as.scalar(rand())+1.0), max=(as.scalar(rand())+2.0), seed=" + rd.nextInt(1000) + "))^as.scalar(rand())\n");

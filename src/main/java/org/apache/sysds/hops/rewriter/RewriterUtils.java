@@ -461,7 +461,7 @@ public class RewriterUtils {
 		}
 	}
 
-	public static boolean parseDataTypes(String expr, Map<String, RewriterStatement> dataTypes, final RuleContext ctx) {
+	public static boolean parseDataTypes(String expr, Map<String, RewriterStatement> dataTypes, /*List<Tuple2<RewriterStatement, Integer>> matrixTypes,*/ final RuleContext ctx) {
 		RuleContext.currentContext = ctx;
 		Pattern pattern = Pattern.compile("([A-Za-z0-9]|_|\\.|\\*|\\?)([A-Za-z0-9]|_|\\.|\\*|-)*");
 		Matcher matcher = pattern.matcher(expr);
@@ -500,7 +500,21 @@ public class RewriterUtils {
 				dt = new RewriterDataType().as(varName).ofType("BOOL").asLiteral(Boolean.parseBoolean(varName));
 			} else if (floatLiteral) {
 				dt = new RewriterDataType().as(varName).ofType("FLOAT").asLiteral(Double.parseDouble(varName));
-			} else {
+			} /*else if (dType.equals("MATRIX")) {
+				// TODO
+				int matType = 0;
+				if (varName.startsWith("rowVec.")) {
+					matType = 1;
+					varName = varName.substring(7);
+				} else if (varName.startsWith("colVec.")) {
+					matType = 2;
+					varName = varName.substring(7);
+				}
+
+				dt = new RewriterDataType().as(varName).ofType(dType);
+
+				//matrixModes.add(new Tuple2<>(dt, matType));
+			}*/ else {
 				dt = new RewriterDataType().as(varName).ofType(dType);
 			}
 

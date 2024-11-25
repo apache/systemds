@@ -54,12 +54,20 @@ public class RewriterDataType extends RewriterStatement {
 		return super.getNRow();
 	}
 
+	public void setNRow(RewriterStatement stmt) {
+		nrow = stmt;
+	}
+
 	@Override
 	public RewriterStatement getNCol() {
 		if (ncol != null)
 			return ncol;
 
 		return super.getNCol();
+	}
+
+	public void setNCol(RewriterStatement stmt) {
+		ncol = stmt;
 	}
 
 	@Override

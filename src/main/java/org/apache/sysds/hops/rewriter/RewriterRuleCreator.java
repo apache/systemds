@@ -154,27 +154,30 @@ public class RewriterRuleCreator {
 
 	// This runs the rule from expressions
 	public static boolean validateRuleCorrectnessAndGains(RewriterRule rule, final RuleContext ctx) {
+		return validateRuleCorrectness(rule, ctx) && validateRuleApplicability(rule, ctx);
+	}
+
+	public static boolean validateRuleCorrectness(RewriterRule rule, final RuleContext ctx) {
 		RewriterUtils.renameIllegalVarnames(ctx, rule.getStmt1(), rule.getStmt2());
 		String sessionId = UUID.randomUUID().toString();
 		String code = DMLCodeGenerator.generateRuleValidationDML(rule, sessionId);
+		System.out.println(code);
 
 		MutableBoolean isValid = new MutableBoolean(false);
-		//System.out.println("=== CODE ===");
-		//System.out.println(code);
 		DMLExecutor.executeCode(code, DMLCodeGenerator.ruleValidationScript(rule.toParsableString(ctx), sessionId, isValid::setValue));
 
-		if (!isValid.booleanValue())
-			return false;
+		return isValid.booleanValue();
+	}
 
-		/*if (true)
-			return true;*/
-
+	public static boolean validateRuleApplicability(RewriterRule rule, final RuleContext ctx) {
 		Set<RewriterStatement> vars = DMLCodeGenerator.getVariables(rule.getStmt1());
 		Set<String> varNames = vars.stream().map(RewriterStatement::getId).collect(Collectors.toSet());
 		String code2Header = DMLCodeGenerator.generateDMLVariables(vars);
 		String code2 = code2Header + "\nresult = " + DMLCodeGenerator.generateDML(rule.getStmt1());
 
-		if (rule.getStmt1().getResultingDataType(ctx).equals("MATRIX"))
+		boolean isMatrix = rule.getStmt1().getResultingDataType(ctx).equals("MATRIX");
+
+		if (isMatrix)
 			code2 += "\nprint(lineage(result))";
 		else
 			code2 += "\nprint(lineage(as.matrix(result)))";
@@ -182,11 +185,19 @@ public class RewriterRuleCreator {
 		MutableBoolean isRelevant = new MutableBoolean(false);
 
 		RewriterRuntimeUtils.attachHopInterceptor(prog -> {
-			Hop hop = prog.getStatementBlocks().get(0).getHops().get(0).getInput(0).getInput(0);
+			Hop hop;
+
+			if (isMatrix)
+				hop = prog.getStatementBlocks().get(0).getHops().get(0).getInput(0).getInput(0);
+			else
+				hop =  prog.getStatementBlocks().get(0).getHops().get(0).getInput(0).getInput(0).getInput(0);
+
 			RewriterStatement stmt = RewriterRuntimeUtils.buildDAGFromHop(hop, 1000, ctx);
 
 			if (stmt == null)
 				return false;
+
+			DMLExecutor.println(stmt.toParsableString(ctx));
 
 			Map<String, RewriterStatement> nameAssocs = new HashMap<>();
 			// Find the variables that are actually leafs in the original rule
@@ -262,7 +273,7 @@ public class RewriterRuleCreator {
 		DMLExecutor.executeCode(code2, true);
 		RewriterRuntimeUtils.detachHopInterceptor();
 
-		return isValid.booleanValue() && isRelevant.booleanValue();
+		return isRelevant.booleanValue();
 	}
 
 	public static RewriterRule createRule(RewriterStatement from, RewriterStatement to, RewriterStatement canonicalForm1, RewriterStatement canonicalForm2, final RuleContext ctx) {

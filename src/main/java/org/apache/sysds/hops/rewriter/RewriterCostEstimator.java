@@ -256,6 +256,8 @@ public class RewriterCostEstimator {
 				}
 				break;
 			case "const":
+			case "rowVec":
+			case "colVec":
 				cost = RewriterStatement.literal(ctx, 0L);
 				break;
 		}

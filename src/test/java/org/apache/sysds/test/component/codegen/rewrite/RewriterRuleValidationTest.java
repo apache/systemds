@@ -1,8 +1,10 @@
 package org.apache.sysds.test.component.codegen.rewrite;
 
+import org.apache.sysds.hops.rewriter.DMLCodeGenerator;
 import org.apache.sysds.hops.rewriter.RewriteAutomaticallyGenerated;
 import org.apache.sysds.hops.rewriter.RewriterCostEstimator;
 import org.apache.sysds.hops.rewriter.RewriterRule;
+import org.apache.sysds.hops.rewriter.RewriterRuleBuilder;
 import org.apache.sysds.hops.rewriter.RewriterRuleCreator;
 import org.apache.sysds.hops.rewriter.RewriterRuleSet;
 import org.apache.sysds.hops.rewriter.RewriterStatement;
@@ -65,5 +67,4 @@ public class RewriterRuleValidationTest {
 			e.printStackTrace();
 		}
 	}
-
 }

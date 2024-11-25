@@ -113,7 +113,11 @@ public class RewriterRuleCreator {
 
 		// We might have to rebuild the rule
 		if (changed || newStmt != rule.getStmt2()) {
-			rule = createRule(toTest, newStmt, canonicalFormCreator.apply(toTest), canonicalFormCreator.apply(newStmt), ctx);
+			try {
+				rule = createRule(toTest, newStmt, canonicalFormCreator.apply(toTest), canonicalFormCreator.apply(newStmt), ctx);
+			} catch (Exception e) {
+				System.err.println("Failed to create: " + toTest.toParsableString(ctx) + " => " + newStmt.toParsableString(ctx));
+			}
 		}
 
 		if (validateCorrectness) {

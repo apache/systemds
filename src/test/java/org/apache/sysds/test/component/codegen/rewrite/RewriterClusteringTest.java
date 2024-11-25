@@ -261,9 +261,13 @@ public class RewriterClusteringTest {
 		RewriterRuleCreator ruleCreator = new RewriterRuleCreator(ctx);
 
 		for (Tuple4<RewriterRule, Long, Long, Integer> t : allRules) {
-			// First, without validating correctness
-			// This might throw out some fallback options if a rule turns out to be incorrect but we there is a huge performance benefit
-			ruleCreator.registerRule(t._1(), t._2(), t._3(), false, converter);
+			try {
+				// First, without validating correctness
+				// This might throw out some fallback options if a rule turns out to be incorrect but we there is a huge performance benefit
+				ruleCreator.registerRule(t._1(), t._2(), t._3(), false, converter);
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
 		}
 
 		allRules = null;

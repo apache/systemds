@@ -170,6 +170,9 @@ public class RewriterRuleCreator {
 	}
 
 	public static boolean validateRuleApplicability(RewriterRule rule, final RuleContext ctx) {
+		if (ctx.metaPropagator != null)
+			ctx.metaPropagator.apply(rule.getStmt1());
+
 		Set<RewriterStatement> vars = DMLCodeGenerator.getVariables(rule.getStmt1());
 		Set<String> varNames = vars.stream().map(RewriterStatement::getId).collect(Collectors.toSet());
 		String code2Header = DMLCodeGenerator.generateDMLVariables(vars);
@@ -197,8 +200,6 @@ public class RewriterRuleCreator {
 			if (stmt == null)
 				return false;
 
-			DMLExecutor.println(stmt.toParsableString(ctx));
-
 			Map<String, RewriterStatement> nameAssocs = new HashMap<>();
 			// Find the variables that are actually leafs in the original rule
 			stmt.forEachPreOrder(cur -> {
@@ -210,6 +211,19 @@ public class RewriterRuleCreator {
 
 						if (assoc == null) {
 							assoc = new RewriterDataType().as(child.getId()).ofType(child.getResultingDataType(ctx)).consolidate(ctx);
+
+							Long ncol = (Long) child.getMeta("_actualNCol");
+							Long nrow = (Long) child.getMeta("_actualNRow");
+
+							if (ncol != null)
+								assoc.unsafePutMeta("_actualNCol", ncol);
+
+							if (nrow != null)
+								assoc.unsafePutMeta("_actualNRow", nrow);
+
+							DMLExecutor.println("NCol: " + ncol);
+							DMLExecutor.println("NRow: " + nrow);
+
 							nameAssocs.put(child.getId(), assoc);
 						}
 
@@ -220,11 +234,16 @@ public class RewriterRuleCreator {
 				return true;
 			}, false);
 
+			DMLExecutor.println(stmt.toParsableString(ctx));
+			DMLExecutor.println(stmt.getChild(0, 0).getMeta("_actualNRow"));
+			stmt = RewriterRuntimeUtils.populateDataCharacteristics(stmt, ctx);
 			stmt = ctx.metaPropagator.apply(stmt);
+
+			DMLExecutor.println(stmt.toParsableString(ctx));
 
 			stmt = stmt.nestedCopyOrInject(new HashMap<>(), mstmt -> {
 				if (mstmt.isInstruction() && (mstmt.trueInstruction().equals("ncol") || mstmt.trueInstruction().equals("nrow")))
-					return RewriterStatement.literal(ctx, 500L);
+					return RewriterStatement.literal(ctx, DMLCodeGenerator.MATRIX_DIMS);
 				return null;
 			});
 
@@ -235,7 +254,7 @@ public class RewriterRuleCreator {
 
 			RewriterStatement stmt1ReplaceNCols = rule.getStmt1().nestedCopyOrInject(createdObjects, mstmt -> {
 				if (mstmt.isInstruction() && (mstmt.trueInstruction().equals("ncol") || mstmt.trueInstruction().equals("nrow")))
-					return RewriterStatement.literal(ctx, 500L);
+					return RewriterStatement.literal(ctx, DMLCodeGenerator.MATRIX_DIMS);
 				return null;
 			});
 
@@ -246,11 +265,12 @@ public class RewriterRuleCreator {
 
 			RewriterStatement.MatcherContext mCtx  = RewriterStatement.MatcherContext.exactMatch(ctx, stmt, stmt1ReplaceNCols);
 			if (stmt1ReplaceNCols.match(mCtx)) {
+				DMLExecutor.println(mCtx.getDependencyMap());
 				// Check if also the right variables are associated
 				boolean assocsMatching = true;
 				//DMLExecutor.println(mCtx.getDependencyMap());
 				for (RewriterStatement var : mVars) {
-					RewriterStatement assoc = mCtx.getDependencyMap().get(var);
+					RewriterStatement assoc = mCtx.getDependencyMap().get(var.isInstruction() ? var.getChild(0) : var);
 
 					if (!assoc.getId().equals(var.getId())) {
 						assocsMatching = false;

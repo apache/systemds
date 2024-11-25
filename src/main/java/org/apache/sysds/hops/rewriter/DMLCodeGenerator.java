@@ -16,9 +16,10 @@ import java.util.Set;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.stream.Collectors;
 
 public class DMLCodeGenerator {
-	public static final int MATRIX_DIMS = 100;
+	public static final long MATRIX_DIMS = 100;
 	public static final double EPS = 1e-10;
 	public static Random rd = new Random(42);
 
@@ -82,6 +83,14 @@ public class DMLCodeGenerator {
 
 			return true;
 		});
+
+		customEncoders.put("cast.MATRIX", (stmt, sb, tmpVars) -> {
+			sb.append("as.matrix(");
+			appendExpression(stmt.getChild(0), sb, tmpVars);
+			sb.append(')');
+
+			return true;
+		});
 	}
 
 	public static Consumer<String> ruleValidationScript(String ruleName, String sessionId, Consumer<Boolean> validator) {
@@ -113,18 +122,21 @@ public class DMLCodeGenerator {
 		MutableInt tmpVarCtr = new MutableInt(0);
 
 		stmtFrom.forEachPostOrder((stmt, pred) -> {
-			if (!stmt.isInstruction() && !stmt.isLiteral())
+			if (stmt.isDataOrigin() && !stmt.isLiteral())
 				vars.add(stmt);
-
-			createTmpVars(stmt, orderedTmpVars, tmpVars, tmpVarCtr);
+			else
+				createTmpVars(stmt, orderedTmpVars, tmpVars, tmpVarCtr);
 		}, false);
 
 		stmtTo.forEachPostOrder((stmt, pred) -> {
-			if (!stmt.isInstruction() && !stmt.isLiteral())
+			if (stmt.isDataOrigin() && !stmt.isLiteral())
 				vars.add(stmt);
-
-			createTmpVars(stmt, orderedTmpVars, tmpVars, tmpVarCtr);
+			else
+				createTmpVars(stmt, orderedTmpVars, tmpVars, tmpVarCtr);
 		}, false);
+
+		Set<RewriterStatement> toRemove = vars.stream().filter(RewriterStatement::isInstruction).map(instr -> instr.getChild(0)).collect(Collectors.toSet());
+		vars.removeAll(toRemove);
 
 		StringBuilder sb = new StringBuilder();
 
@@ -174,9 +186,13 @@ public class DMLCodeGenerator {
 	public static Set<RewriterStatement> getVariables(RewriterStatement root) {
 		Set<RewriterStatement> vars = new HashSet<>();
 		root.forEachPostOrder((stmt, pred) -> {
-			if (!stmt.isInstruction() && !stmt.isLiteral())
+			if (stmt.isDataOrigin() && !stmt.isLiteral())
 				vars.add(stmt);
 		}, false);
+
+		Set<RewriterStatement> toRemove = vars.stream().filter(RewriterStatement::isInstruction).map(instr -> instr.getChild(0)).collect(Collectors.toSet());
+		vars.removeAll(toRemove);
+
 		return vars;
 	}
 
@@ -190,7 +206,19 @@ public class DMLCodeGenerator {
 		for (RewriterStatement var : vars) {
 			switch (var.getResultingDataType(ctx)) {
 				case "MATRIX":
-					sb.append(var.getId() + " = rand(rows=" + MATRIX_DIMS + ", cols=" + MATRIX_DIMS + ", min=(as.scalar(rand())+1.0), max=(as.scalar(rand())+2.0), seed=" + rd.nextInt(1000) + ")^as.scalar(rand())\n");
+					String mId = var.getId();
+					long nrow = MATRIX_DIMS;
+					long ncol = MATRIX_DIMS;
+					if (var.isInstruction()) {
+						if (var.trueInstruction().equals("rowVec")) {
+							mId = var.getChild(0).getId();
+							ncol = 1L;
+						} else if (var.trueInstruction().equals("colVec")) {
+							mId = var.getChild(0).getId();
+							nrow = 1L;
+						}
+					}
+					sb.append(mId + " = rand(rows=" + nrow + ", cols=" + ncol + ", min=(as.scalar(rand())+1.0), max=(as.scalar(rand())+2.0), seed=" + rd.nextInt(1000) + ")^as.scalar(rand())\n");
 					break;
 				case "FLOAT":
 					sb.append(var.getId() + " = as.scalar(rand(min=(as.scalar(rand())+1.0), max=(as.scalar(rand())+2.0), seed=" + rd.nextInt(1000) + "))^as.scalar(rand())\n");
@@ -267,7 +295,10 @@ public class DMLCodeGenerator {
 		}
 
 		if (cur.isInstruction()) {
-			resolveExpression((RewriterInstruction) cur, sb, tmpVars);
+			if (cur.isDataOrigin())
+				sb.append(cur.getChild(0).getId());
+			else
+				resolveExpression((RewriterInstruction) cur, sb, tmpVars);
 		} else {
 			if (cur.isLiteral())
 				sb.append(cur.getLiteral());

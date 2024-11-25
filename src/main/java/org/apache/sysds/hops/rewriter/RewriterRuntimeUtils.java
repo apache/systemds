@@ -219,8 +219,8 @@ public class RewriterRuntimeUtils {
 
 			if (matType > 0) {
 				return new RewriterInstruction()
-						.as(UUID.randomUUID().toString())
-						.withInstruction(matType == 1 ? "rowVec" : "colVec")
+						.as(stmt.getId())
+						.withInstruction(matType == 1L ? "colVec" : "rowVec")
 						.withOps(stmt)
 						.consolidate(ctx);
 			}
@@ -249,8 +249,8 @@ public class RewriterRuntimeUtils {
 
 						if (created == null) {
 							created = new RewriterInstruction()
-									.as(UUID.randomUUID().toString())
-									.withInstruction(matType == 1 ? "rowVec" : "colVec")
+									.as(stmt.getId())
+									.withInstruction(matType == 1 ? "colVec" : "rowVec")
 									.withOps(child)
 									.consolidate(ctx);
 							createdObjects.put(child, created);
@@ -554,9 +554,9 @@ public class RewriterRuntimeUtils {
 				long nrows = hop.getDataCharacteristics().getRows();
 				long ncols = hop.getDataCharacteristics().getCols();
 				if (nrows > 0)
-					stmt.unsafePutMeta("_actualNRow", RewriterStatement.literal(ctx, nrows));
+					stmt.unsafePutMeta("_actualNRow", nrows);
 				if (ncols > 0)
-					stmt.unsafePutMeta("_actualNCol", RewriterStatement.literal(ctx, nrows));
+					stmt.unsafePutMeta("_actualNCol", ncols);
 			}
 		}
 	}
@@ -705,6 +705,11 @@ public class RewriterRuntimeUtils {
 					return RewriterUtils.parse("cast." + expectedType + "(A)", ctx, fromType + ":A");
 
 				return null;
+			case "u(castdtm)":
+				if (fromType != null)
+					return RewriterUtils.parse("cast.MATRIX(a)", ctx, fromType + ":a");
+
+				return null;
 			case "u(sqrt)":
 				return RewriterUtils.parse("sqrt(A)", ctx, fromType + ":A");
 			case "u(!)":
@@ -724,7 +729,7 @@ public class RewriterRuntimeUtils {
 		}
 
 		if (printUnknowns)
-			System.out.println("Unknown UnaryOp: " + op.getOpString());
+			DMLExecutor.println("Unknown UnaryOp: " + op.getOpString());
 		return null;
 	}
 

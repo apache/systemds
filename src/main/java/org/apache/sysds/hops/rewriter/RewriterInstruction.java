@@ -35,6 +35,9 @@ public class RewriterInstruction extends RewriterStatement {
 
 	@Override
 	public String getId() {
+		if (isDataOrigin())
+			return getChild(0).getId();
+
 		return id;
 	}
 
@@ -140,9 +143,25 @@ public class RewriterInstruction extends RewriterStatement {
 
 		// Check for some meta information
 		if (mCtx.statementsCanBeVariables && getResultingDataType(ctx).equals("MATRIX")) {
-			if (trueInstruction().equals("rowVec") && stmt.isRowVector()) {
-				return true;
-			} else if (trueInstruction().equals("colVec") && stmt.isColVector()) {
+			if ((trueInstruction().equals("rowVec") && stmt.isRowVector())
+				|| (trueInstruction().equals("colVec") && stmt.isColVector())) {
+				RewriterStatement existingRef = mCtx.findInternalReference(this);
+
+				if (existingRef != null) {
+					if (existingRef == stmt)
+						return true;
+					else {
+						mCtx.setFirstMismatch(this, stmt);
+						return false;
+					}
+				}
+
+				if (!mCtx.allowDuplicatePointers && mCtx.getInternalReferences().containsValue(stmt)) {
+					mCtx.setFirstMismatch(this, stmt);
+					return false;
+				}
+
+				mCtx.getInternalReferences().put(this, stmt);
 				return true;
 			}
 		}

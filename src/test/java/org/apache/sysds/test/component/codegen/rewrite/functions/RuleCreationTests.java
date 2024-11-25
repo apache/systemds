@@ -102,12 +102,15 @@ public class RuleCreationTests {
 		RewriterRule rule = new RewriterRuleBuilder(ctx)
 				.setUnidirectional(true)
 				.parseGlobalVars("MATRIX:A,B")
-				.parseGlobalVars("LITERAL_INT:1")
-				.withParsedStatement("*(sum([](A,1,1,1,ncol(A))),colSums(B))")
-				.toParsedStatement("%*%([](A,1,1,1,ncol(A)),colSums(B))")
+				.withParsedStatement("cast.MATRIX(sum(colVec(A)))")
+				.toParsedStatement("rowSums(colVec(A))")
 				.build();
 
+		//RewriterRuleSet rs = new RewriterRuleSet(ctx, List.of(rule));
+
+		//RewriterStatement stmt = RewriterUtils.parse("as.matrix(sum(t(colVec(A))))", ctx, "MATRIX:A,B");
+
 		assert RewriterRuleCreator.validateRuleCorrectness(rule, ctx);
-		assert !RewriterRuleCreator.validateRuleApplicability(rule, ctx);
+		assert RewriterRuleCreator.validateRuleApplicability(rule, ctx);
 	}
 }

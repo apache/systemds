@@ -1126,6 +1126,20 @@ public abstract class RewriterStatement {
 		return stream;
 	}
 
+	public boolean isDataOrigin() {
+		if (!isInstruction())
+			return true;
+
+		switch (trueInstruction()) {
+			case "rowVec":
+			case "colVec":
+			//case "const":
+				return true;
+		}
+
+		return false;
+	}
+
 	public static RewriterStatement argList(final RuleContext ctx, RewriterStatement... args) {
 		return new RewriterInstruction().as(UUID.randomUUID().toString()).withInstruction("argList").withOps(args).consolidate(ctx);
 	}

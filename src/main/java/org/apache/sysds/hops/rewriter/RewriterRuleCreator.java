@@ -221,9 +221,6 @@ public class RewriterRuleCreator {
 							if (nrow != null)
 								assoc.unsafePutMeta("_actualNRow", nrow);
 
-							DMLExecutor.println("NCol: " + ncol);
-							DMLExecutor.println("NRow: " + nrow);
-
 							nameAssocs.put(child.getId(), assoc);
 						}
 
@@ -234,12 +231,8 @@ public class RewriterRuleCreator {
 				return true;
 			}, false);
 
-			DMLExecutor.println(stmt.toParsableString(ctx));
-			DMLExecutor.println(stmt.getChild(0, 0).getMeta("_actualNRow"));
 			stmt = RewriterRuntimeUtils.populateDataCharacteristics(stmt, ctx);
 			stmt = ctx.metaPropagator.apply(stmt);
-
-			DMLExecutor.println(stmt.toParsableString(ctx));
 
 			stmt = stmt.nestedCopyOrInject(new HashMap<>(), mstmt -> {
 				if (mstmt.isInstruction() && (mstmt.trueInstruction().equals("ncol") || mstmt.trueInstruction().equals("nrow")))
@@ -265,7 +258,6 @@ public class RewriterRuleCreator {
 
 			RewriterStatement.MatcherContext mCtx  = RewriterStatement.MatcherContext.exactMatch(ctx, stmt, stmt1ReplaceNCols);
 			if (stmt1ReplaceNCols.match(mCtx)) {
-				DMLExecutor.println(mCtx.getDependencyMap());
 				// Check if also the right variables are associated
 				boolean assocsMatching = true;
 				//DMLExecutor.println(mCtx.getDependencyMap());
@@ -340,7 +332,7 @@ public class RewriterRuleCreator {
 			RewriterStatement newValue = toCanonicalLink.get(v);
 
 			if (newKey == null || newValue == null)
-				throw new IllegalArgumentException("Null reference detected!");
+				throw new IllegalArgumentException("Null reference detected: " + k + ", " + v + "\nFromCanonicalLink: " + fromCanonicalLink + "\nToCanonicalLink: " + toCanonicalLink);
 
 			assocs.put(newKey, newValue);
 		});

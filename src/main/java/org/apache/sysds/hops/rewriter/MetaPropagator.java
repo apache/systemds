@@ -313,8 +313,8 @@ public class MetaPropagator implements Function<RewriterStatement, RewriterState
 					root.unsafePutMeta("ncol", RewriterStatement.literal(ctx, 1L));
 					return null;
 				case "colVec(MATRIX)":
-					root.unsafePutMeta("nrow", root.getOperands().get(0).getMeta("nrow"));
-					root.unsafePutMeta("ncol", RewriterStatement.literal(ctx, 1L));
+					root.unsafePutMeta("ncol", root.getOperands().get(0).getMeta("ncol"));
+					root.unsafePutMeta("nrow", RewriterStatement.literal(ctx, 1L));
 					return null;
 			}
 

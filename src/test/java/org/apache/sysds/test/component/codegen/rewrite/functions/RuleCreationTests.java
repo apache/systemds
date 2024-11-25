@@ -25,7 +25,7 @@ public class RuleCreationTests {
 	@BeforeClass
 	public static void setup() {
 		ctx = RewriterUtils.buildDefaultContext();
-		canonicalConverter = RewriterUtils.buildCanonicalFormConverter(ctx, false);
+		canonicalConverter = RewriterUtils.buildCanonicalFormConverter(ctx, true);
 	}
 
 	@Test
@@ -112,5 +112,31 @@ public class RuleCreationTests {
 
 		assert RewriterRuleCreator.validateRuleCorrectness(rule, ctx);
 		assert RewriterRuleCreator.validateRuleApplicability(rule, ctx);
+	}
+
+	@Test
+	public void test3() {
+		RewriterStatement from = RewriterUtils.parse("%*%(A,%*%(B,colVec(C)))", ctx, "MATRIX:A,B,C");
+		RewriterStatement to = RewriterUtils.parse("%*%(%*%(A,B),colVec(C))", ctx, "MATRIX:A,B,C");
+		RewriterStatement canonicalForm1 = canonicalConverter.apply(from);
+		RewriterStatement canonicalForm2 = canonicalConverter.apply(to);
+
+		System.out.println("==========");
+		System.out.println(canonicalForm1.toParsableString(ctx, true));
+		System.out.println("==========");
+		System.out.println(canonicalForm2.toParsableString(ctx, true));
+
+		assert canonicalForm1.match(RewriterStatement.MatcherContext.exactMatch(ctx, canonicalForm2, canonicalForm1));
+
+		RewriterRule rule = RewriterRuleCreator.createRule(from, to, canonicalForm1, canonicalForm2, ctx);
+		System.out.println(rule);
+
+		RewriterRuleSet rs = new RewriterRuleSet(ctx, List.of(rule));
+
+		RewriterStatement testStmt = RewriterUtils.parse("t(t(colVec(A)))", ctx, "MATRIX:A", "LITERAL_INT:1");
+
+		RewriterRuleSet.ApplicableRule ar = rs.acceleratedFindFirst(testStmt);
+
+		assert ar != null;
 	}
 }

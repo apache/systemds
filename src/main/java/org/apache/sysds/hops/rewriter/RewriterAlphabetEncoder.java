@@ -145,18 +145,13 @@ public class RewriterAlphabetEncoder {
 
 	private static RewriterStatement createVector(RewriterStatement of, boolean rowVector, Map<RewriterStatement, RewriterStatement> createdObjects) {
 		// TODO: Why is it necessary to discard the old DataType?
-		RewriterStatement mCpy = new RewriterDataType().as(of.getId()).ofType(of.getResultingDataType(ctx)).consolidate(ctx);
-		RewriterStatement nRowCol = new RewriterInstruction().as(UUID.randomUUID().toString()).withInstruction(rowVector ? "nrow" : "ncol").withOps(mCpy).consolidate(ctx);
-		createdObjects.put(of, mCpy);
+		//RewriterStatement mCpy = new RewriterDataType().as(of.getId()).ofType(of.getResultingDataType(ctx)).consolidate(ctx);
+		//RewriterStatement nRowCol = new RewriterInstruction().as(UUID.randomUUID().toString()).withInstruction(rowVector ? "nrow" : "ncol").withOps(mCpy).consolidate(ctx);
+		//createdObjects.put(of, mCpy);
 		return new RewriterInstruction()
-				.as(UUID.randomUUID().toString())
-				.withInstruction("[]")
-				.withOps(
-						mCpy,
-						RewriterStatement.literal(ctx, 1L),
-						rowVector ? nRowCol : RewriterStatement.literal(ctx, 1L),
-						RewriterStatement.literal(ctx, 1L),
-						rowVector ? RewriterStatement.literal(ctx, 1L) : nRowCol)
+				.as(of.getId())
+				.withInstruction(rowVector ? "rowVec" : "colVec")
+				.withOps(of)
 				.consolidate(ctx);
 	}
 

@@ -309,4 +309,15 @@ public class CostEstimates {
 		long cost2 = RewriterCostEstimator.estimateCost(stmt2, ctx);
 		assert cost1 < cost2;
 	}
+
+	@Test
+	public void test17() {
+		RewriterStatement stmt1 = RewriterUtils.parse("%*%(colVec(A),B)", ctx, "MATRIX:A,B", "LITERAL_INT:1");
+		RewriterStatement stmt2 = RewriterUtils.parse("%*%(colSums(colVec(A)),B)", ctx, "MATRIX:A,B", "LITERAL_INT:1");
+		long cost1 = RewriterCostEstimator.estimateCost(stmt1, ctx);
+		long cost2 = RewriterCostEstimator.estimateCost(stmt2, ctx);
+		System.out.println("Cost1: " + cost1);
+		System.out.println("Cost2: " + cost2);
+		assert cost1 < cost2;
+	}
 }

@@ -162,6 +162,13 @@ public class RewriterInstruction extends RewriterStatement {
 				}
 
 				mCtx.getInternalReferences().put(this, stmt);
+
+				if (stmt.isInstruction() && (stmt.trueInstruction().equals("rowVec") || stmt.trueInstruction().equals("colVec")))
+					mCtx.getDependencyMap().put(getChild(0), stmt.getChild(0));
+				else
+					mCtx.getDependencyMap().put(getChild(0), stmt);
+
+
 				return true;
 			}
 		}

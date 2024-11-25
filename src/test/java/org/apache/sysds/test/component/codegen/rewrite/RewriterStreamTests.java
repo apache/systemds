@@ -1035,6 +1035,30 @@ public class RewriterStreamTests {
 	}
 
 	@Test
+	public void testMMScalarPullout() {
+		RewriterStatement stmt1 = RewriterUtils.parse("%*%(*(A, b), B)", ctx, "MATRIX:A,B", "FLOAT:b", "LITERAL_INT:1", "LITERAL_FLOAT:0.0");
+		RewriterStatement stmt2 = RewriterUtils.parse("*(b, %*%(A, B))", ctx, "MATRIX:A,B", "FLOAT:b", "LITERAL_INT:1", "LITERAL_FLOAT:0.0");
+
+		long cost1 = RewriterCostEstimator.estimateCost(stmt1, ctx);
+		long cost2 = RewriterCostEstimator.estimateCost(stmt2, ctx);
+
+		System.out.println("Cost1: " + cost1);
+		System.out.println("Cost2: " + cost2);
+
+		assert cost2 == cost1;
+
+		stmt1 = canonicalConverter.apply(stmt1);
+		stmt2 = canonicalConverter.apply(stmt2);
+
+		System.out.println("==========");
+		System.out.println(stmt1.toParsableString(ctx, true));
+		System.out.println("==========");
+		System.out.println(stmt2.toParsableString(ctx, true));
+
+		assert stmt1.match(RewriterStatement.MatcherContext.exactMatch(ctx, stmt2, stmt1));
+	}
+
+	@Test
 	public void testWrong() {
 		RewriterStatement stmt1 = RewriterUtils.parse("*(sum(colVec(A)),colSums(B))", ctx, "MATRIX:A,B", "LITERAL_INT:1");
 		RewriterStatement stmt2 = RewriterUtils.parse("%*%(colVec(A),colSums(B))", ctx, "MATRIX:A,B", "LITERAL_INT:1");

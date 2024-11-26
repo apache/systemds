@@ -189,6 +189,7 @@ public class RewriterClusteringTest {
 						actualCtr += expanded.size();
 						for (RewriterStatement stmt : expanded) {
 							try {
+								ctx.metaPropagator.apply(stmt);
 								RewriterStatement canonicalForm = converter.apply(stmt);
 								stmt.getCost(ctx);
 
@@ -220,8 +221,8 @@ public class RewriterClusteringTest {
 
 								//stmt.getCost(ctx); // Fetch cost already
 								// TODO: Not quite working yet
-								//canonicalForm.compress();
-								//stmt.compress();
+								canonicalForm.compress();
+								stmt.compress();
 								synchronized (lock) {
 									RewriterEquivalenceDatabase.DBEntry entry = canonicalExprDB.insert(ctx, canonicalForm, stmt);
 

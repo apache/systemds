@@ -18,8 +18,8 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 public class RewriterAlphabetEncoder {
-	private static final List<String> ALL_TYPES = List.of("MATRIX", "FLOAT");
-	private static final List<String> MATRIX = List.of("MATRIX");
+	public static final List<String> ALL_TYPES = List.of("MATRIX", "FLOAT");
+	public static final List<String> MATRIX = List.of("MATRIX");
 
 	private static Operand[] instructionAlphabet = new Operand[] {
 			null,
@@ -146,13 +146,18 @@ public class RewriterAlphabetEncoder {
 
 	private static RewriterStatement createVector(RewriterStatement of, boolean rowVector, Map<RewriterStatement, RewriterStatement> createdObjects) {
 		// TODO: Why is it necessary to discard the old DataType?
-		//RewriterStatement mCpy = new RewriterDataType().as(of.getId()).ofType(of.getResultingDataType(ctx)).consolidate(ctx);
+		RewriterStatement mCpy = createdObjects.get(of);
+
+		if (mCpy == null) {
+			mCpy = new RewriterDataType().as(of.getId()).ofType(of.getResultingDataType(ctx)).consolidate(ctx);
+			createdObjects.put(of, mCpy);
+		}
 		//RewriterStatement nRowCol = new RewriterInstruction().as(UUID.randomUUID().toString()).withInstruction(rowVector ? "nrow" : "ncol").withOps(mCpy).consolidate(ctx);
 		//createdObjects.put(of, mCpy);
 		return new RewriterInstruction()
 				.as(of.getId())
 				.withInstruction(rowVector ? "rowVec" : "colVec")
-				.withOps(of)
+				.withOps(mCpy)
 				.consolidate(ctx);
 	}
 

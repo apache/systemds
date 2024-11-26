@@ -471,6 +471,14 @@ public class RewriterRuleCollection {
 				.build()
 		);
 
+		rules.add(new RewriterRuleBuilder(ctx, "*2(A) => +(A,A)")
+				.setUnidirectional(true)
+				.parseGlobalVars("MATRIX:A")
+				.withParsedStatement("*2(A)")
+				.toParsedStatement("+(A,A)")
+				.build()
+		);
+
 		// TODO
 		/*rules.add(new RewriterRuleBuilder(ctx, "replace(A, a, b) => A")
 				.setUnidirectional(true)

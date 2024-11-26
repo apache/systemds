@@ -148,4 +148,21 @@ public class DMLCodeGenTest {
 
 		assert RewriterRuleCreator.validateRuleApplicability(rule, ctx);
 	}
+
+	@Test
+	public void testFused3() {
+		// TODO: This rule has been ignored, but why?
+		String ruleStr = "MATRIX:A,B\nLITERAL_FLOAT:0.0,1.0\n" +
+				"+(-(A,B),A)\n" +
+				"=>\n" +
+				"-(*2(A), B)";
+
+		RewriterRule rule = RewriterUtils.parseRule(ruleStr, ctx);
+
+		System.out.println(DMLCodeGenerator.generateRuleValidationDML(rule, "test", ctx));
+
+		assert RewriterRuleCreator.validateRuleCorrectness(rule, ctx);
+
+		assert RewriterRuleCreator.validateRuleApplicability(rule, ctx);
+	}
 }

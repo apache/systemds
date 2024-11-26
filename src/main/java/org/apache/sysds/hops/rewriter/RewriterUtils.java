@@ -1461,6 +1461,8 @@ public class RewriterUtils {
 				return RewriterStatement.multiArgInstr(ctx, "*", toRemove.toArray(RewriterStatement[]::new));
 			}
 		} else if (sumBody.trueInstruction().equals("+")) {
+			// TODO: What about sum(+(A, *(a, B)))? We could pull out a
+
 			// We have to assume here, that this instruction is not referenced anywhere else in the graph
 			List<RewriterStatement> argList = sumBody.getChild(0).getOperands();
 			List<RewriterStatement> toRemove = new ArrayList<>(argList.size());
@@ -1489,9 +1491,10 @@ public class RewriterUtils {
 				}
 
 				mul.add(outerSum);
-				mul.add(sum);
+				RewriterStatement mulStmt = RewriterStatement.multiArgInstr(ctx, "*", mul.toArray(RewriterStatement[]::new));
+				//mul.add(sum);
 
-				return RewriterStatement.multiArgInstr(ctx, "*", mul.toArray(RewriterStatement[]::new));
+				return RewriterStatement.multiArgInstr(ctx, "+", mulStmt, sum);
 			}
 		}
 

@@ -193,14 +193,19 @@ public class RewriterStreamTests {
 	@Test
 	public void testSumEquality() {
 		RewriterStatement stmt = RewriterUtils.parse("sum(+(B, sum(*(a, A))))", ctx, "MATRIX:A,B", "FLOAT:a");
-		RewriterStatement stmt2 = RewriterUtils.parse("*(a, sum(+(B, sum(A))))", ctx, "MATRIX:A,B", "FLOAT:a");
+		RewriterStatement stmt2 = RewriterUtils.parse("+(*(a, length(A)), sum(+(B, sum(A))))", ctx, "MATRIX:A,B", "FLOAT:a");
+		RewriterStatement stmt3 = RewriterUtils.parse("sum(+(B, *(a, sum(A))))", ctx, "MATRIX:A,B", "FLOAT:a");
 		stmt = canonicalConverter.apply(stmt);
 		stmt2 = canonicalConverter.apply(stmt2);
+		stmt3 = canonicalConverter.apply(stmt3);
 
 		System.out.println("==========");
 		System.out.println(stmt.toParsableString(ctx, true));
 		System.out.println("==========");
+		System.out.println(stmt3.toParsableString(ctx, true));
+		System.out.println("==========");
 		System.out.println(stmt2.toParsableString(ctx, true));
+		assert stmt.match(RewriterStatement.MatcherContext.exactMatch(ctx, stmt3, stmt));
 		assert stmt.match(RewriterStatement.MatcherContext.exactMatch(ctx, stmt2, stmt));
 	}
 
@@ -1231,6 +1236,44 @@ public class RewriterStreamTests {
 	public void testFused6() {
 		RewriterStatement stmt1 = RewriterUtils.parse("/(A,A)", ctx, "MATRIX:A,B", "FLOAT:a");
 		RewriterStatement stmt2 = RewriterUtils.parse("/(A,rev(A))", ctx, "MATRIX:A,B", "FLOAT:a", "LITERAL_FLOAT:0.0");
+
+		System.out.println("Cost1: " + RewriterCostEstimator.estimateCost(stmt1, ctx));
+		System.out.println("Cost2: " + RewriterCostEstimator.estimateCost(stmt2, ctx));
+
+		stmt1 = canonicalConverter.apply(stmt1);
+		stmt2 = canonicalConverter.apply(stmt2);
+
+		System.out.println("==========");
+		System.out.println(stmt1.toParsableString(ctx, true));
+		System.out.println("==========");
+		System.out.println(stmt2.toParsableString(ctx, true));
+
+		assert !stmt1.match(RewriterStatement.MatcherContext.exactMatch(ctx, stmt2, stmt1));
+	}
+
+	@Test
+	public void testSum() {
+		RewriterStatement stmt1 = RewriterUtils.parse("sum(+(a,A))", ctx, "MATRIX:A,B", "FLOAT:a");
+		RewriterStatement stmt2 = RewriterUtils.parse("+(*(a, length(A)), sum(A))", ctx, "MATRIX:A,B", "FLOAT:a", "LITERAL_FLOAT:0.0");
+
+		System.out.println("Cost1: " + RewriterCostEstimator.estimateCost(stmt1, ctx));
+		System.out.println("Cost2: " + RewriterCostEstimator.estimateCost(stmt2, ctx));
+
+		stmt1 = canonicalConverter.apply(stmt1);
+		stmt2 = canonicalConverter.apply(stmt2);
+
+		System.out.println("==========");
+		System.out.println(stmt1.toParsableString(ctx, true));
+		System.out.println("==========");
+		System.out.println(stmt2.toParsableString(ctx, true));
+
+		assert stmt1.match(RewriterStatement.MatcherContext.exactMatch(ctx, stmt2, stmt1));
+	}
+
+	@Test
+	public void testSumInequality() {
+		RewriterStatement stmt1 = RewriterUtils.parse("sum(+(a,*(B,c)))", ctx, "MATRIX:B", "FLOAT:a,c");
+		RewriterStatement stmt2 = RewriterUtils.parse("*(a, sum(+(B,c)))", ctx, "MATRIX:B", "FLOAT:a,c", "LITERAL_FLOAT:0.0");
 
 		System.out.println("Cost1: " + RewriterCostEstimator.estimateCost(stmt1, ctx));
 		System.out.println("Cost2: " + RewriterCostEstimator.estimateCost(stmt2, ctx));

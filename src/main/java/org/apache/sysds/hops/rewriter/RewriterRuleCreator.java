@@ -207,7 +207,7 @@ public class RewriterRuleCreator {
 	public static boolean validateRuleCorrectness(RewriterRule rule, final RuleContext ctx) {
 		RewriterUtils.renameIllegalVarnames(ctx, rule.getStmt1(), rule.getStmt2());
 		String sessionId = UUID.randomUUID().toString();
-		String code = DMLCodeGenerator.generateRuleValidationDML(rule, sessionId);
+		String code = DMLCodeGenerator.generateRuleValidationDML(rule, sessionId, ctx);
 
 		MutableBoolean isValid = new MutableBoolean(false);
 		DMLExecutor.executeCode(code, DMLCodeGenerator.ruleValidationScript(rule.toParsableString(ctx), sessionId, isValid::setValue));

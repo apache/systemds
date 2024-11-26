@@ -42,7 +42,7 @@ public class DMLCodeGenTest {
 
 		//RewriterRuleSet ruleSet = new RewriterRuleSet(ctx, List.of(rule1, rule2));
 		String sessionId = UUID.randomUUID().toString();
-		String validationScript = DMLCodeGenerator.generateRuleValidationDML(rule2, DMLCodeGenerator.EPS, sessionId);
+		String validationScript = DMLCodeGenerator.generateRuleValidationDML(rule2, DMLCodeGenerator.EPS, sessionId, ctx);
 		System.out.println("Validation script:");
 		System.out.println(validationScript);
 		MutableBoolean valid = new MutableBoolean(true);
@@ -113,5 +113,39 @@ public class DMLCodeGenTest {
 		RewriterRule rule = RewriterUtils.parseRule(ruleStr, ctx);
 
 		assert RewriterRuleCreator.validateRuleCorrectnessAndGains(rule, ctx);
+	}
+
+	@Test
+	public void testFused1() {
+		// TODO: This rule has been ignored, but why?
+		String ruleStr = "MATRIX:A\nLITERAL_FLOAT:0.0\n" +
+				"sum(!=(0.0,A))\n" +
+				"=>\n" +
+				"_nnz(A)";
+
+		RewriterRule rule = RewriterUtils.parseRule(ruleStr, ctx);
+
+		System.out.println(DMLCodeGenerator.generateRuleValidationDML(rule, "test", ctx));
+
+		assert RewriterRuleCreator.validateRuleCorrectness(rule, ctx);
+
+		assert RewriterRuleCreator.validateRuleApplicability(rule, ctx);
+	}
+
+	@Test
+	public void testFused2() {
+		// TODO: This rule has been ignored, but why?
+		String ruleStr = "MATRIX:A,B\nLITERAL_FLOAT:0.0,1.0\n" +
+				"-(0.0, -(*(A,B), 1.0))\n" +
+				"=>\n" +
+				"1-*(A,B)";
+
+		RewriterRule rule = RewriterUtils.parseRule(ruleStr, ctx);
+
+		System.out.println(DMLCodeGenerator.generateRuleValidationDML(rule, "test", ctx));
+
+		assert RewriterRuleCreator.validateRuleCorrectness(rule, ctx);
+
+		assert RewriterRuleCreator.validateRuleApplicability(rule, ctx);
 	}
 }

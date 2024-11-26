@@ -1256,6 +1256,23 @@ public class RewriterUtils {
 		return ctx;
 	}
 
+	private static RuleContext lastCtx;
+	private static Function<RewriterStatement, RewriterStatement> lastUnfuse;
+	public static RewriterStatement unfuseOperators(RewriterStatement stmt, final RuleContext ctx) {
+		return unfuseOperators(ctx).apply(stmt);
+	}
+	public static Function<RewriterStatement, RewriterStatement> unfuseOperators(final RuleContext ctx) {
+		if (lastCtx == ctx)
+			return lastUnfuse;
+
+		ArrayList<RewriterRule> unfuseRules = new ArrayList<>();
+		RewriterRuleCollection.substituteFusedOps(unfuseRules, ctx);
+		RewriterHeuristic heur = new RewriterHeuristic(new RewriterRuleSet(ctx, unfuseRules));
+		lastCtx = ctx;
+		lastUnfuse = heur::apply;
+		return lastUnfuse;
+	}
+
 	public static Function<RewriterStatement, RewriterStatement> buildCanonicalFormConverter(final RuleContext ctx, boolean debug) {
 		ArrayList<RewriterRule> algebraicCanonicalizationRules = new ArrayList<>();
 		RewriterRuleCollection.substituteEquivalentStatements(algebraicCanonicalizationRules, ctx);

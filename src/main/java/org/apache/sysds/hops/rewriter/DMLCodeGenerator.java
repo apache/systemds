@@ -108,13 +108,13 @@ public class DMLCodeGenerator {
 		};
 	}
 
-	public static String generateRuleValidationDML(RewriterRule rule, String sessionId) {
-		return generateRuleValidationDML(rule, EPS, sessionId);
+	public static String generateRuleValidationDML(RewriterRule rule, String sessionId, final RuleContext ctx) {
+		return generateRuleValidationDML(rule, EPS, sessionId, ctx);
 	}
 
-	public static String generateRuleValidationDML(RewriterRule rule, double eps, String sessionId) {
-		RewriterStatement stmtFrom = rule.getStmt1();
-		RewriterStatement stmtTo = rule.getStmt2();
+	public static String generateRuleValidationDML(RewriterRule rule, double eps, String sessionId, final RuleContext ctx) {
+		RewriterStatement stmtFrom = RewriterUtils.unfuseOperators(rule.getStmt1(), ctx);
+		RewriterStatement stmtTo = RewriterUtils.unfuseOperators(rule.getStmt2(), ctx);
 
 		Set<RewriterStatement> vars = new HashSet<>();
 		List<Tuple2<RewriterStatement, String>> orderedTmpVars = new ArrayList<>();
@@ -218,7 +218,7 @@ public class DMLCodeGenerator {
 							nrow = 1L;
 						}
 					}
-					sb.append(mId + " = rand(rows=" + nrow + ", cols=" + ncol + ", min=(as.scalar(rand())+1.0), max=(as.scalar(rand())+2.0), seed=" + rd.nextInt(1000) + ")^as.scalar(rand())\n");
+					sb.append(mId + " = (rand(rows=" + nrow + ", cols=" + ncol + ") * rand(rows=" + nrow + ", cols=" + ncol + ", min=(as.scalar(rand())+1.0), max=(as.scalar(rand())+2.0), seed=" + rd.nextInt(1000) + "))^as.scalar(rand())\n");
 					break;
 				case "FLOAT":
 					sb.append(var.getId() + " = as.scalar(rand(min=(as.scalar(rand())+1.0), max=(as.scalar(rand())+2.0), seed=" + rd.nextInt(1000) + "))^as.scalar(rand())\n");

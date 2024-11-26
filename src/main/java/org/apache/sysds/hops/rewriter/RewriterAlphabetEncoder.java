@@ -55,8 +55,13 @@ public class RewriterAlphabetEncoder {
 			new Operand("length", 1, true, MATRIX),
 
 			new Operand("!=", 2, ALL_TYPES, ALL_TYPES),
+			new Operand("!=0", 1, MATRIX),
+			new Operand("0!=", 1, MATRIX),
 			//new Operand("!=", 2, SCALAR, MATRIX),
 			//new Operand("!=", 2, MATRIX,MATRIX),
+
+			new Operand("cast.MATRIX",1, SCALAR),
+			new Operand("cast.FLOAT", 1, MATRIX),
 
 			new Operand("1-*", 2, MATRIX, MATRIX),
 			new Operand("+*", 2, MATRIX, SCALAR, MATRIX),
@@ -330,7 +335,7 @@ public class RewriterAlphabetEncoder {
 						if (!op.supportedTypes[i].contains(stack[i].getResultingDataType(ctx)))
 							return true;
 
-					RewriterStatement stmt = new RewriterInstruction().as(UUID.randomUUID().toString()).withInstruction(operands.get(0).op).withOps(stack).consolidate(ctx);
+					RewriterStatement stmt = buildStmt(operands.get(0), stack);
 					possibleStmts.add(stmt);
 				} catch (Exception e) {
 					// Might fail, as there could be wrong types
@@ -341,6 +346,20 @@ public class RewriterAlphabetEncoder {
 		});
 
 		return possibleStmts;
+	}
+
+	private static RewriterStatement buildStmt(Operand op, RewriterStatement[] stack) {
+		RewriterInstruction stmt = new RewriterInstruction().as(UUID.randomUUID().toString());
+		if (op.op.equals("!=0")) {
+			stmt.withInstruction("!=").addOp(stack[0]).addOp(RewriterStatement.literal(ctx, 0.0D));
+		} else if (op.op.equals("0!=")) {
+			stmt.withInstruction("!=").addOp(RewriterStatement.literal(ctx, 0.0D)).addOp(stack[0]);
+		} else {
+			stmt.withInstruction(op.op).withOps(stack);
+		}
+
+		stmt.consolidate(ctx);
+		return stmt;
 	}
 
 	private static void forEachSlice(int startIdx, int pos, int maxIdx, int[] slices, Runnable trigger) {

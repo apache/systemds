@@ -136,17 +136,13 @@ public class FederatedCovarianceTest extends AutomatedTestBase {
 		Process t1 = startLocalFedWorker(port1, FED_WORKER_WAIT_S);
 		Process t2 = startLocalFedWorker(port2, FED_WORKER_WAIT_S);
 		Process t3 = startLocalFedWorker(port3, FED_WORKER_WAIT_S);
-		Process t4 = startLocalFedWorker(port4);
+		Process t4 = startLocalFedWorker(port4, FED_WORKER_WAIT);
 
 		try {
 			if(!isAlive(t1, t2, t3, t4))
 				throw new RuntimeException("Failed starting federated worker");
 
-			rtplatform = execMode;
-			if(rtplatform == ExecMode.SPARK) {
-				System.out.println(7);
-				DMLScript.USE_LOCAL_SPARK_CONFIG = true;
-			}
+			setExecMode(execMode);
 			TestConfiguration config = availableTestConfigurations.get(TEST_NAME);
 			loadTestConfiguration(config);
 
@@ -214,11 +210,7 @@ public class FederatedCovarianceTest extends AutomatedTestBase {
 
 	private void runWeightedCovarianceTest(ExecMode execMode, boolean alignedInput, boolean alignedWeights) {
 		boolean sparkConfigOld = DMLScript.USE_LOCAL_SPARK_CONFIG;
-		ExecMode platformOld = rtplatform;
-
-		if(rtplatform == ExecMode.SPARK)
-			DMLScript.USE_LOCAL_SPARK_CONFIG = true;
-
+		ExecMode platformOld = setExecMode(execMode);
 		String TEST_NAME = !alignedInput ? TEST_NAME3 : (!alignedWeights ? TEST_NAME4 : TEST_NAME5);
 		getAndLoadTestConfiguration(TEST_NAME);
 
@@ -256,18 +248,11 @@ public class FederatedCovarianceTest extends AutomatedTestBase {
 		Process t1 = startLocalFedWorker(port1, FED_WORKER_WAIT_S);
 		Process t2 = startLocalFedWorker(port2, FED_WORKER_WAIT_S);
 		Process t3 = startLocalFedWorker(port3, FED_WORKER_WAIT_S);
-		Process t4 = startLocalFedWorker(port4);
+		Process t4 = startLocalFedWorker(port4, FED_WORKER_WAIT);
 
 		try {
 			if(!isAlive(t1, t2, t3, t4))
 				throw new RuntimeException("Failed starting federated worker");
-
-			rtplatform = execMode;
-			if(rtplatform == ExecMode.SPARK) {
-				System.out.println(7);
-				DMLScript.USE_LOCAL_SPARK_CONFIG = true;
-			}
-
 			TestConfiguration config = availableTestConfigurations.get(TEST_NAME);
 			loadTestConfiguration(config);
 

@@ -530,6 +530,26 @@ public class RewriterRuleCollection {
 			);
 
 			SCALARS.forEach(t2 -> {
+				SCALARS.forEach(t3 -> {
+					rules.add(new RewriterRuleBuilder(ctx, "cast.TYPE(+(a, b)) => ...")
+							.setUnidirectional(true)
+							.parseGlobalVars(t2 + ":a")
+							.parseGlobalVars(t3 + ":b")
+							.withParsedStatement("cast." + t + "(+(a,b))")
+							.toParsedStatement("+(cast." + t + "(a), cast." + t + "(b))")
+							.build()
+					);
+
+					rules.add(new RewriterRuleBuilder(ctx, "cast.TYPE(*(a, b)) => ...")
+							.setUnidirectional(true)
+							.parseGlobalVars(t2 + ":a")
+							.parseGlobalVars(t3 + ":b")
+							.withParsedStatement("cast." + t + "(*(a,b))")
+							.toParsedStatement("*(cast." + t + "(a), cast." + t + "(b))")
+							.build()
+					);
+				});
+
 				rules.add(new RewriterRuleBuilder(ctx, "cast.TYPE(cast.TYPE(A)) => cast.TYPE(A)")
 						.setUnidirectional(true)
 						.parseGlobalVars(t + ":a")

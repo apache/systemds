@@ -167,7 +167,7 @@ public class RewriterClusteringTest {
 			System.out.println("MaxN: " + maxN);
 			long startMillis = System.currentTimeMillis();
 
-			for (int batch = 0; batch < 50 && System.currentTimeMillis() - startMillis < MAX_MILLIS && batch * BATCH_SIZE < maxN; batch++) {
+			for (int batch = 0; batch < 1000 && System.currentTimeMillis() - startMillis < MAX_MILLIS && batch * BATCH_SIZE < maxN; batch++) {
 				List<Integer> indices = IntStream.range(batch * BATCH_SIZE, Math.min((batch + 1) * BATCH_SIZE - 1, maxN)).boxed().collect(Collectors.toList());
 				Collections.shuffle(indices);
 				MutableInt ctr2 = new MutableInt(0);

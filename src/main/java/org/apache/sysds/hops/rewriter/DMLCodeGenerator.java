@@ -91,6 +91,14 @@ public class DMLCodeGenerator {
 
 			return true;
 		});
+
+		customEncoders.put("cast.FLOAT", (stmt, sb, tmpVars) -> {
+			sb.append("as.scalar(");
+			appendExpression(stmt.getChild(0), sb, tmpVars);
+			sb.append(')');
+
+			return true;
+		});
 	}
 
 	public static Consumer<String> ruleValidationScript(String ruleName, String sessionId, Consumer<Boolean> validator) {

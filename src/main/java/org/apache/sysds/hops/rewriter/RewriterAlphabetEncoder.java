@@ -22,7 +22,7 @@ public class RewriterAlphabetEncoder {
 	public static final List<String> SCALAR = List.of("FLOAT");
 	public static final List<String> MATRIX = List.of("MATRIX");
 
-	private static Operand[] instructionAlphabet = new Operand[] {
+	public static Operand[] instructionAlphabet = new Operand[] {
 			null,
 			new Operand("+", 2, ALL_TYPES, ALL_TYPES),
 			//new Operand("+", 2, MATRIX, SCALAR),
@@ -43,6 +43,7 @@ public class RewriterAlphabetEncoder {
 			new Operand("%*%", 2, MATRIX, MATRIX),
 
 			new Operand("sum", 1, MATRIX),
+			new Operand("*sum", 2, ALL_TYPES, ALL_TYPES), // To have a bigger search space for this instruction combination
 			new Operand("t", 1, MATRIX),
 			new Operand("rev", 1, MATRIX),
 			new Operand("trace", 1, MATRIX),
@@ -50,9 +51,9 @@ public class RewriterAlphabetEncoder {
 			new Operand("colSums", 1, MATRIX),
 			new Operand("max", 1, MATRIX),
 			new Operand("min", 1, MATRIX),
-			new Operand("ncol", 1, true, MATRIX),
-			new Operand("nrow", 1, true, MATRIX),
-			new Operand("length", 1, true, MATRIX),
+			new Operand("fncol", 1, true, MATRIX),
+			new Operand("fnrow", 1, true, MATRIX),
+			new Operand("flength", 1, true, MATRIX),
 
 			new Operand("!=", 2, ALL_TYPES, ALL_TYPES),
 			new Operand("!=0", 1, MATRIX),
@@ -354,6 +355,13 @@ public class RewriterAlphabetEncoder {
 			stmt.withInstruction("!=").addOp(stack[0]).addOp(RewriterStatement.literal(ctx, 0.0D));
 		} else if (op.op.equals("0!=")) {
 			stmt.withInstruction("!=").addOp(RewriterStatement.literal(ctx, 0.0D)).addOp(stack[0]);
+		} else if (op.op.equals("fncol") || op.op.equals("fnrow") || op.op.equals("flength")) {
+			String actualOp = op.op.substring(1);
+			stmt.withInstruction(actualOp).withOps(stack).consolidate(ctx);
+			stmt = (RewriterInstruction) RewriterStatement.castFloat(ctx, stmt);
+		} else if (op.op.equals("*sum")) {
+			RewriterStatement old = stmt.withInstruction("sum").withOps(stack[0]).consolidate(ctx);
+			stmt = new RewriterInstruction("*", ctx, old, stack[1]);
 		} else {
 			stmt.withInstruction(op.op).withOps(stack);
 		}

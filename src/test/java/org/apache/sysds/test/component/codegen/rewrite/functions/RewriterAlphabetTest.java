@@ -78,6 +78,28 @@ public class RewriterAlphabetTest {
 	}
 
 	@Test
+	public void testRandomStatementGeneration2() {
+		int ctr = 0;
+		//for (int i = 0; i < 20; i++) {
+			List<RewriterAlphabetEncoder.Operand> ops = List.of(RewriterAlphabetEncoder.instructionAlphabet[3], RewriterAlphabetEncoder.instructionAlphabet[16], RewriterAlphabetEncoder.instructionAlphabet[6]);
+			//System.out.println("Idx: " + i);
+			//System.out.println(ops);
+			//System.out.println(RewriterAlphabetEncoder.buildAllPossibleDAGs(ops, ctx, false).size());
+			for (RewriterStatement stmt : RewriterAlphabetEncoder.buildAllPossibleDAGs(ops, ctx, true)) {
+				System.out.println("Base: " + stmt.toParsableString(ctx));
+				for (RewriterStatement sstmt : RewriterAlphabetEncoder.buildVariations(stmt, ctx)) {
+					canonicalConverter.apply(sstmt);
+					System.out.println(sstmt.toParsableString(ctx));
+					//System.out.println("Raw: " + sstmt);
+					ctr++;
+				}
+			}
+		//}
+
+		System.out.println("Total DAGs: " + ctr);
+	}
+
+	@Test
 	public void test() {
 		RewriterStatement stmt = RewriterUtils.parse("+([](A, 1, 1, 1, 1), B)", ctx, "MATRIX:A,B", "LITERAL_INT:1");
 		stmt = canonicalConverter.apply(stmt);

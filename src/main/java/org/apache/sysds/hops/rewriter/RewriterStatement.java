@@ -1160,6 +1160,24 @@ public abstract class RewriterStatement {
 		return argList(ctx, args.toArray(RewriterStatement[]::new));
 	}
 
+	public static RewriterStatement castFloat(final RuleContext ctx, RewriterStatement stmt) {
+		return new RewriterInstruction().as(UUID.randomUUID().toString()).withInstruction("cast.FLOAT").withOps(stmt).consolidate(ctx);
+	}
+
+	public static RewriterStatement castMatrix(final RuleContext ctx, RewriterStatement stmt) {
+		return new RewriterInstruction().as(UUID.randomUUID().toString()).withInstruction("cast.MATRIX").withOps(stmt).consolidate(ctx);
+	}
+
+	public static RewriterStatement ensureFloat(final RuleContext ctx, RewriterStatement stmt) {
+		if (stmt.getResultingDataType(ctx).equals("FLOAT"))
+			return stmt;
+
+		if (stmt.isLiteral())
+			return literal(ctx, stmt.floatLiteral());
+
+		return castFloat(ctx, stmt);
+	}
+
 	public static RewriterStatement literal(final RuleContext ctx, Object literal) {
 		if (literal instanceof Double) {
 			return new RewriterDataType().as(literal.toString()).ofType("FLOAT").asLiteral(literal).consolidate(ctx);

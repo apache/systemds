@@ -137,7 +137,10 @@ public class TopologicalSort {
 								knownOrder.addAll(currSet);
 							} else {
 								containsUnorderedSet = true;
-								currSet.forEach(cur -> cur.unsafePutMeta("_addresses", new ArrayList<String>()));
+								currSet.forEach(cur -> {
+									if (!cur.isLiteral())
+										cur.unsafePutMeta("_addresses", new ArrayList<String>());
+								});
 								knownOrder.add(new UnorderedSet(currSet));
 								currSet = new ArrayList<>();
 							}

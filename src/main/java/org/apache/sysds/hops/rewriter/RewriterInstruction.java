@@ -11,6 +11,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.UUID;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -25,6 +26,15 @@ public class RewriterInstruction extends RewriterStatement {
 	private Function<List<RewriterStatement>, Long> costFunction = null;
 	private boolean consolidated = false;
 	private int hashCode;
+
+	public RewriterInstruction() {
+	}
+
+	public RewriterInstruction(String instr, final RuleContext ctx, RewriterStatement... ops) {
+		id = UUID.randomUUID().toString();
+		withOps(ops);
+		consolidate(ctx);
+	}
 
 	@Override
 	protected void compress(RewriterAssertions assertions) {

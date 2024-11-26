@@ -234,6 +234,32 @@ public class RewriterCostEstimator {
 				assertions.addEqualityAssertion(instr.getChild(0).getNRow(), instr.getChild(1).getNRow());
 				overhead.add(MALLOC_COST);
 				break;
+			case "+*":
+				RewriterStatement additionCost = atomicOpCostStmt("+", ctx);
+				mulCost = atomicOpCostStmt("*", ctx);
+				sum = RewriterStatement.multiArgInstr(ctx, "+", additionCost, mulCost);
+				cost = RewriterStatement.multiArgInstr(ctx, "*", sum, instr.getNCol(), instr.getNRow());
+				assertions.addEqualityAssertion(instr.getChild(0).getNCol(), instr.getChild(1).getNCol());
+				assertions.addEqualityAssertion(instr.getChild(0).getNRow(), instr.getChild(1).getNRow());
+				overhead.add(MALLOC_COST + 50); // To make it worse than 1-*
+				break;
+			case "-*":
+				subtractionCost = atomicOpCostStmt("-", ctx);
+				mulCost = atomicOpCostStmt("*", ctx);
+				sum = RewriterStatement.multiArgInstr(ctx, "+", subtractionCost, mulCost);
+				cost = RewriterStatement.multiArgInstr(ctx, "*", sum, instr.getNCol(), instr.getNRow());
+				assertions.addEqualityAssertion(instr.getChild(0).getNCol(), instr.getChild(1).getNCol());
+				assertions.addEqualityAssertion(instr.getChild(0).getNRow(), instr.getChild(1).getNRow());
+				overhead.add(MALLOC_COST + 50); // To make it worse than 1-*
+				break;
+			case "*2":
+				cost = RewriterStatement.multiArgInstr(ctx, "*", atomicOpCostStmt("*2", ctx), instr.getChild(0).getNRow(), instr.getChild(0).getNCol());
+				overhead.add(MALLOC_COST);
+				break;
+			case "sq":
+				cost = RewriterStatement.multiArgInstr(ctx, "*", atomicOpCostStmt("sq", ctx), instr.getChild(0).getNRow(), instr.getChild(0).getNCol());
+				overhead.add(MALLOC_COST);
+				break;
 			case "log_nz": {
 				// Must be a matrix
 				RewriterStatement logCost = atomicOpCostStmt("log", ctx);
@@ -330,6 +356,7 @@ public class RewriterCostEstimator {
 				assertions.addEqualityAssertion(map.get("nrowA"), RewriterStatement.literal(ctx, 1L));
 				return uniqueCosts.get(uniqueCosts.size()-1);
 			case "const(MATRIX,FLOAT)":
+			case "_nnz":
 				return RewriterStatement.literal(ctx, 0L);
 		}
 
@@ -350,6 +377,8 @@ public class RewriterCostEstimator {
 				return 1;
 			case "*":
 				return 2;
+			case "*2":
+				return 1; // To make *2 cheaper than *
 			case "/":
 			case "inv":
 				return 3;
@@ -359,6 +388,8 @@ public class RewriterCostEstimator {
 				return 0; // These just fetch metadata
 			case "sqrt":
 				return 10;
+			case "sq":
+				return 5;
 			case "exp":
 			case "log":
 			case "^":

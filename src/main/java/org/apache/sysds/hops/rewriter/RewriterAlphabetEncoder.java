@@ -19,24 +19,52 @@ import java.util.stream.Stream;
 
 public class RewriterAlphabetEncoder {
 	public static final List<String> ALL_TYPES = List.of("MATRIX", "FLOAT");
+	public static final List<String> SCALAR = List.of("FLOAT");
 	public static final List<String> MATRIX = List.of("MATRIX");
 
 	private static Operand[] instructionAlphabet = new Operand[] {
 			null,
-			new Operand("+", 2, ALL_TYPES),
-			new Operand("-", 2, ALL_TYPES),
-			new Operand("*", 2, ALL_TYPES),
-			new Operand("/", 2, ALL_TYPES),
-			new Operand("%*%", 2, ALL_TYPES),
+			new Operand("+", 2, ALL_TYPES, ALL_TYPES),
+			//new Operand("+", 2, MATRIX, SCALAR),
+			//new Operand("+", 2, MATRIX, MATRIX),
+
+			new Operand("-", 2, ALL_TYPES, ALL_TYPES),
+			//new Operand("-", 2, MATRIX, SCALAR),
+			//new Operand("-", 2, MATRIX, MATRIX),
+
+			new Operand("*", 2, ALL_TYPES, ALL_TYPES),
+			//new Operand("*", 2, MATRIX, SCALAR),
+			//new Operand("*", 2, MATRIX, MATRIX),
+
+			new Operand("/", 2, ALL_TYPES, ALL_TYPES),
+			//new Operand("/", 2, MATRIX, SCALAR),
+			//new Operand("/", 2, MATRIX, MATRIX),
+
+			new Operand("%*%", 2, MATRIX, MATRIX),
 
 			new Operand("sum", 1, MATRIX),
 			new Operand("t", 1, MATRIX),
-			//new Operand("rev", 1, MATRIX),
+			new Operand("rev", 1, MATRIX),
 			new Operand("trace", 1, MATRIX),
 			new Operand("rowSums", 1, MATRIX),
 			new Operand("colSums", 1, MATRIX),
 			new Operand("max", 1, MATRIX),
 			new Operand("min", 1, MATRIX),
+			new Operand("ncol", 1, true, MATRIX),
+			new Operand("nrow", 1, true, MATRIX),
+			new Operand("length", 1, true, MATRIX),
+
+			new Operand("!=", 2, ALL_TYPES, ALL_TYPES),
+			//new Operand("!=", 2, SCALAR, MATRIX),
+			//new Operand("!=", 2, MATRIX,MATRIX),
+
+			new Operand("1-*", 2, MATRIX, MATRIX),
+			new Operand("+*", 2, MATRIX, SCALAR, MATRIX),
+			new Operand("-*", 2, MATRIX, SCALAR, MATRIX),
+			new Operand("*2", 1, MATRIX),
+			new Operand("_nnz", 1, MATRIX),
+			new Operand("sumSq", 1, MATRIX),
+			new Operand("sq", 1, MATRIX),
 			//new Operand("log", 1, MATRIX),
 
 			// Fused operators
@@ -44,8 +72,8 @@ public class RewriterAlphabetEncoder {
 			//new Operand("log_nz", 1, MATRIX),			// TODO: We have to include literals in the search
 
 			// Placeholder operators
-			new Operand("zero", 0, ALL_TYPES),
-			new Operand("one", 0, ALL_TYPES)
+			new Operand("zero", 0, true),
+			new Operand("one", 0, true)
 	};
 
 	private static String[] varNames = new String[] {
@@ -230,7 +258,7 @@ public class RewriterAlphabetEncoder {
 
 		RewriterAlphabetEncoder.ctx = ctx;
 
-		List<RewriterStatement> allStmts = recursivelyFindAllCombinations(operands);
+		List<RewriterStatement> allStmts = recursivelyFindAllCombinations(operands, null, ALL_TYPES);
 
 		if (rename)
 			allStmts.forEach(RewriterAlphabetEncoder::rename);
@@ -241,20 +269,29 @@ public class RewriterAlphabetEncoder {
 		return allStmts;
 	}
 
-	private static List<RewriterStatement> recursivelyFindAllCombinations(List<Operand> operands) {
+	private static List<RewriterStatement> recursivelyFindAllCombinations(List<Operand> operands, Operand parent, List<String> supportedTypes) {
 		if (operands.isEmpty())
-			return ALL_TYPES.stream().map(t -> new RewriterDataType().as(UUID.randomUUID().toString()).ofType(t).consolidate(ctx)).collect(Collectors.toList());
+			return supportedTypes.stream().map(t -> new RewriterDataType().as(UUID.randomUUID().toString()).ofType(t).consolidate(ctx)).collect(Collectors.toList());
 
 		// Check if op is a placeholder
 		Operand op = operands.get(0);
+
+		if (op.isLeaf && operands.size() > 1)
+			return Collections.emptyList();
+
 		if (op.op.equals("zero") || op.op.equals("one")) {
 			List<RewriterStatement> l = new ArrayList<>(2);
 			if (op.op.equals("zero")) {
-				l.add(RewriterStatement.literal(ctx, 0.0D));
-				l.add(new RewriterInstruction().as(UUID.randomUUID().toString()).withInstruction("const").withOps(new RewriterDataType().as(UUID.randomUUID().toString()).ofType("MATRIX").consolidate(ctx), RewriterStatement.literal(ctx, 0.0D)).consolidate(ctx));
+				if (supportedTypes.contains("FLOAT"))
+					l.add(RewriterStatement.literal(ctx, 0.0D));
+				if (supportedTypes.contains("MATRIX"))
+					l.add(new RewriterInstruction().as(UUID.randomUUID().toString()).withInstruction("const").withOps(new RewriterDataType().as(UUID.randomUUID().toString()).ofType("MATRIX").consolidate(ctx), RewriterStatement.literal(ctx, 0.0D)).consolidate(ctx));
 			} else {
-				l.add(RewriterStatement.literal(ctx, 1.0D));
-				l.add(new RewriterInstruction().as(UUID.randomUUID().toString()).withInstruction("const").withOps(new RewriterDataType().as(UUID.randomUUID().toString()).ofType("MATRIX").consolidate(ctx), RewriterStatement.literal(ctx, 1.0D)).consolidate(ctx));
+				if (supportedTypes.contains("FLOAT"))
+					l.add(RewriterStatement.literal(ctx, 1.0D));
+
+				if (supportedTypes.contains("MATRIX"))
+					l.add(new RewriterInstruction().as(UUID.randomUUID().toString()).withInstruction("const").withOps(new RewriterDataType().as(UUID.randomUUID().toString()).ofType("MATRIX").consolidate(ctx), RewriterStatement.literal(ctx, 1.0D)).consolidate(ctx));
 			}
 
 			return l;
@@ -278,7 +315,8 @@ public class RewriterAlphabetEncoder {
 				else
 					view = operands.subList(lIdx, uIdx);
 
-				List<RewriterStatement> combs = recursivelyFindAllCombinations(view);
+				List<RewriterStatement> combs = recursivelyFindAllCombinations(view, op, op.supportedTypes[i]);
+
 				if (combs.isEmpty())
 					return; // Then no subgraph can be created from that order
 
@@ -288,7 +326,12 @@ public class RewriterAlphabetEncoder {
 			RewriterStatement[] stack = new RewriterStatement[nOps];
 			RewriterUtils.cartesianProduct(cartesianBuilder, stack, mStack -> {
 				try {
-					possibleStmts.add(new RewriterInstruction().as(UUID.randomUUID().toString()).withInstruction(operands.get(0).op).withOps(stack).consolidate(ctx));
+					for (int i = 0; i < stack.length; i++)
+						if (!op.supportedTypes[i].contains(stack[i].getResultingDataType(ctx)))
+							return true;
+
+					RewriterStatement stmt = new RewriterInstruction().as(UUID.randomUUID().toString()).withInstruction(operands.get(0).op).withOps(stack).consolidate(ctx);
+					possibleStmts.add(stmt);
 				} catch (Exception e) {
 					// Might fail, as there could be wrong types
 					//e.printStackTrace();
@@ -386,11 +429,17 @@ public class RewriterAlphabetEncoder {
 	public static final class Operand {
 		public final String op;
 		public final int numArgs;
-		public final List<String> supportedTypes;
-		public Operand(String op, int numArgs, List<String> supportedTypes) {
+		public final List<String>[] supportedTypes;
+		public final boolean isLeaf;
+
+		public Operand(String op, int numArgs, List<String>... supportedTypes) {
+			this(op, numArgs, false, supportedTypes);
+		}
+		public Operand(String op, int numArgs, boolean isLeaf, List<String>... supportedTypes) {
 			this.op = op;
 			this.numArgs = numArgs;
 			this.supportedTypes = supportedTypes;
+			this.isLeaf = isLeaf;
 		}
 
 		public String toString() {

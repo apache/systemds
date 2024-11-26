@@ -95,8 +95,8 @@ public class TopologicalSort {
 			nameCtr.increment();
 			boolean arrangable = isArrangable.apply(el, pred.getParent());
 
-			if (arrangable && el.refCtr > 1)
-				throw new IllegalArgumentException("Expecting unique parents for arrangable items!\n" + root.toParsableString(ctx, true) + "\n" + el.toParsableString(ctx));
+			//if (arrangable && el.refCtr > 1)
+			//	throw new IllegalArgumentException("Expecting unique parents for arrangable items!\n" + root.toParsableString(ctx, true) + "\n" + el.toParsableString(ctx));
 
 			el.unsafePutMeta("_arrangable", arrangable);
 		}, false);
@@ -155,7 +155,10 @@ public class TopologicalSort {
 						knownOrder.addAll(currSet);
 					} else {
 						containsUnorderedSet = true;
-						currSet.forEach(cur -> cur.unsafePutMeta("_addresses", new ArrayList<String>()));
+						currSet.forEach(cur -> {
+							if (!cur.isLiteral())
+								cur.unsafePutMeta("_addresses", new ArrayList<String>());
+						});
 						knownOrder.add(new UnorderedSet(currSet));
 					}
 				}

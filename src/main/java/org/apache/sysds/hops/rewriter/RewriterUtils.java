@@ -1320,6 +1320,10 @@ public class RewriterUtils {
 
 			// TODO: Do this in a loop until nothing is found anymore
 
+			for (int i = 0; i < 2; i++) {
+				RewriterUtils.mergeArgLists(stmt, ctx);
+				stmt = RewriterUtils.pullOutConstants(stmt, ctx);
+			}
 			RewriterUtils.mergeArgLists(stmt, ctx);
 			stmt = RewriterUtils.pullOutConstants(stmt, ctx);
 			stmt.prepareForHashing();
@@ -1336,6 +1340,13 @@ public class RewriterUtils {
 			}, debug);
 
 			stmt = foldConstants(stmt, ctx);
+
+			for (int i = 0; i < 2; i++) {
+				RewriterUtils.mergeArgLists(stmt, ctx);
+				stmt = RewriterUtils.pullOutConstants(stmt, ctx);
+			}
+			RewriterUtils.mergeArgLists(stmt, ctx);
+
 			stmt = stmt.getAssertions(ctx).cleanupEClasses(stmt);
 
 			// TODO: After this, stuff like CSE, A-A = 0, etc. must still be applied
@@ -1431,6 +1442,39 @@ public class RewriterUtils {
 				toRemove.add(sum);
 
 				return RewriterStatement.multiArgInstr(ctx, "*", toRemove.toArray(RewriterStatement[]::new));
+			}
+		} else if (sumBody.trueInstruction().equals("+")) {
+			// We have to assume here, that this instruction is not referenced anywhere else in the graph
+			List<RewriterStatement> argList = sumBody.getChild(0).getOperands();
+			List<RewriterStatement> toRemove = new ArrayList<>(argList.size());
+
+			for (RewriterStatement stmt : argList) {
+				if (!checkSubgraphDependency(stmt, ownerId, checked))
+					toRemove.add(stmt);
+			}
+
+			if (!toRemove.isEmpty()) {
+				argList.removeAll(toRemove);
+
+				if (argList.size() == 1) {
+					idxExpr.getOperands().set(1, argList.get(0));
+				}
+
+				//toRemove.add(sum);
+
+				RewriterStatement outerSum = RewriterStatement.multiArgInstr(ctx, "+", toRemove.toArray(RewriterStatement[]::new));
+				List<RewriterStatement> mul = new ArrayList<>();
+
+				for (RewriterStatement idx : idxExpr.getChild(0).getOperands()) {
+					RewriterStatement neg = new RewriterInstruction().as(UUID.randomUUID().toString()).withInstruction("-").withOps(idx.getChild(0)).consolidate(ctx);
+					RewriterStatement msum = RewriterStatement.multiArgInstr(ctx, "+", idx.getChild(1), neg, RewriterStatement.literal(ctx, 1L));
+					mul.add(msum);
+				}
+
+				mul.add(outerSum);
+				mul.add(sum);
+
+				return RewriterStatement.multiArgInstr(ctx, "*", mul.toArray(RewriterStatement[]::new));
 			}
 		}
 

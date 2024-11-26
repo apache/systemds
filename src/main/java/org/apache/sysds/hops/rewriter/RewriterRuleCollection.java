@@ -405,6 +405,10 @@ public class RewriterRuleCollection {
 				.build()
 		);
 
+		substituteFusedOps(rules, ctx);
+	}
+
+	public static void substituteFusedOps(final List<RewriterRule> rules, final RuleContext ctx) {
 		// Now resolve fused operators
 		rules.add(new RewriterRuleBuilder(ctx, "1-*(A,B) => -(1, *(A, B))")
 				.setUnidirectional(true)
@@ -414,7 +418,7 @@ public class RewriterRuleCollection {
 				.toParsedStatement("-(1.0, *(A, B))")
 				.build()
 		);
-		rules.add(new RewriterRuleBuilder(ctx, "log_nz(A) => *(!=(A, 0), log(A))")
+		rules.add(new RewriterRuleBuilder(ctx, "log_nz(A) => *(!=(A, 0.0), log(A))")
 				.setUnidirectional(true)
 				.parseGlobalVars("MATRIX:A")
 				.parseGlobalVars("LITERAL_FLOAT:0.0") // We take a float as this framework is optimized for floats
@@ -422,6 +426,60 @@ public class RewriterRuleCollection {
 				.toParsedStatement("*(!=(A, 0.0), log(A))")
 				.build()
 		);
+
+		rules.add(new RewriterRuleBuilder(ctx, "sumSq(A) => sum(*(A,A))")
+				.setUnidirectional(true)
+				.parseGlobalVars("MATRIX:A")
+				.parseGlobalVars("LITERAL_FLOAT:0.0")
+				.withParsedStatement("sumSq(A)")
+				.toParsedStatement("sum(*(A,A))")
+				.build()
+		);
+
+		rules.add(new RewriterRuleBuilder(ctx, "+*(A,s,Y) => +(A, *(s, Y))")
+				.setUnidirectional(true)
+				.parseGlobalVars("MATRIX:A,Y")
+				.parseGlobalVars("FLOAT:s")
+				.withParsedStatement("+*(A,s,Y)")
+				.toParsedStatement("+(A, *(s, Y))")
+				.build()
+		);
+
+		rules.add(new RewriterRuleBuilder(ctx, "-*(A,s,Y) => -(A, *(s, Y))")
+				.setUnidirectional(true)
+				.parseGlobalVars("MATRIX:A,Y")
+				.parseGlobalVars("FLOAT:s")
+				.withParsedStatement("-*(A,s,Y)")
+				.toParsedStatement("-(A, *(s, Y))")
+				.build()
+		);
+
+		rules.add(new RewriterRuleBuilder(ctx, "sq(A) => *(A,A)")
+				.setUnidirectional(true)
+				.parseGlobalVars("MATRIX:A")
+				.withParsedStatement("sq(A)")
+				.toParsedStatement("*(A, A)")
+				.build()
+		);
+
+		rules.add(new RewriterRuleBuilder(ctx, "_nnz(A) => sum(!=(A,0.0))")
+				.setUnidirectional(true)
+				.parseGlobalVars("MATRIX:A")
+				.parseGlobalVars("LITERAL_FLOAT:0.0")
+				.withParsedStatement("_nnz(A)")
+				.toParsedStatement("sum(!=(A,0.0))")
+				.build()
+		);
+
+		// TODO
+		/*rules.add(new RewriterRuleBuilder(ctx, "replace(A, a, b) => A")
+				.setUnidirectional(true)
+				.parseGlobalVars("MATRIX:A")
+				.parseGlobalVars("LITERAL_FLOAT:0.0")
+				.withParsedStatement("_nnz(A)")
+				.toParsedStatement("sum(!=(A,0.0))")
+				.build()
+		);*/
 
 		SCALARS.forEach(t -> {
 			rules.add(new RewriterRuleBuilder(ctx, "log_nz(A, a) => *(!=(A, 0.0), *(log(A), inv(log(a)))")
@@ -543,6 +601,14 @@ public class RewriterRuleCollection {
 					.build()
 			);
 		}
+
+		rules.add(new RewriterRuleBuilder(ctx, "-(sum(A)) => sum(-(A))")
+				.setUnidirectional(true)
+				.parseGlobalVars("MATRIX:A")
+				.withParsedStatement("-(sum(A))", hooks)
+				.toParsedStatement("sum(-(A))", hooks)
+				.build()
+		);
 	}
 
 	public static void canonicalizeBooleanStatements(final List<RewriterRule> rules, final RuleContext ctx) {

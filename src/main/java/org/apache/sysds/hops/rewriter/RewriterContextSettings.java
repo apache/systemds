@@ -322,6 +322,14 @@ public class RewriterContextSettings {
 		builder.append("[](MATRIX,INT,INT)::FLOAT\n");
 		builder.append("[](MATRIX,INT,INT,INT,INT)::MATRIX\n");
 		builder.append("diag(MATRIX)::MATRIX\n");
+		builder.append("replace(MATRIX,FLOAT,FLOAT)::MATRIX\n");
+		builder.append("_nnz(MATRIX)::INT\n");
+		builder.append("sumSq(MATRIX)::FLOAT\n");
+		builder.append("sq(MATRIX)::MATRIX\n"); // This is not an actual op
+		builder.append("+*(MATRIX,FLOAT,MATRIX)::MATRIX\n");
+		builder.append("-*(MATRIX,FLOAT,MATRIX)::MATRIX\n");
+		builder.append("*2(MATRIX)::MATRIX\n");
+		builder.append("ifelse(BOOL,FLOAT,FLOAT)::FLOAT\n");
 
 		List.of("INT", "FLOAT", "BOOL").forEach(t -> {
 			String newType = t.equals("BOOL") ? "INT" : t;

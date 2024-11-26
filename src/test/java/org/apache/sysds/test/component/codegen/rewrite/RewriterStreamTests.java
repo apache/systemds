@@ -193,7 +193,7 @@ public class RewriterStreamTests {
 	@Test
 	public void testSumEquality() {
 		RewriterStatement stmt = RewriterUtils.parse("sum(+(B, sum(*(a, A))))", ctx, "MATRIX:A,B", "FLOAT:a");
-		RewriterStatement stmt2 = RewriterUtils.parse("sum(+(B, *(*(length(A), a), sum(A))))", ctx, "MATRIX:A,B", "FLOAT:a");
+		RewriterStatement stmt2 = RewriterUtils.parse("*(a, sum(+(B, sum(A))))", ctx, "MATRIX:A,B", "FLOAT:a");
 		stmt = canonicalConverter.apply(stmt);
 		stmt2 = canonicalConverter.apply(stmt2);
 
@@ -514,7 +514,7 @@ public class RewriterStreamTests {
 	@Test
 	public void testSimpleSumPullOut() {
 		RewriterStatement stmt1 = RewriterUtils.parse("-(sum(+(A, 7)))", ctx, "MATRIX:A", "LITERAL_INT:7");
-		RewriterStatement stmt2 = RewriterUtils.parse("sum(-(-(A), 7))", ctx, "MATRIX:A", "LITERAL_INT:7");
+		RewriterStatement stmt2 = RewriterUtils.parse("sum(+(-(A), -7))", ctx, "MATRIX:A", "LITERAL_INT:-7");
 
 		stmt1 = canonicalConverter.apply(stmt1);
 		stmt2 = canonicalConverter.apply(stmt2);
@@ -999,7 +999,7 @@ public class RewriterStreamTests {
 	@Test
 	public void testColSumEquivalence5() {
 		RewriterStatement stmt1 = RewriterUtils.parse("colSums(*(A, b))", ctx, "MATRIX:A,B", "FLOAT:b", "LITERAL_INT:1");
-		RewriterStatement stmt2 = RewriterUtils.parse("+(*(ncol(A), b), colSums(A))", ctx, "MATRIX:A,B", "FLOAT:b", "LITERAL_INT:1");
+		RewriterStatement stmt2 = RewriterUtils.parse("*(b, colSums(A))", ctx, "MATRIX:A,B", "FLOAT:b", "LITERAL_INT:1");
 
 		System.out.println("Cost1: " + RewriterCostEstimator.estimateCost(stmt1, ctx));
 		System.out.println("Cost2: " + RewriterCostEstimator.estimateCost(stmt2, ctx));
@@ -1118,6 +1118,28 @@ public class RewriterStreamTests {
 	}
 
 	@Test
+	public void testTrace() {
+		RewriterStatement stmt1 = RewriterUtils.parse("trace(%*%(B,B))", ctx, "MATRIX:A,B", "LITERAL_INT:1");
+		RewriterStatement stmt2 = RewriterUtils.parse("sum(*(A, t(B)))", ctx, "MATRIX:A,B", "LITERAL_INT:1");
+
+		System.out.println("Cost1: " + RewriterCostEstimator.estimateCost(stmt1, ctx));
+		System.out.println("Cost2: " + RewriterCostEstimator.estimateCost(stmt2, ctx));
+
+		stmt1 = canonicalConverter.apply(stmt1);
+		stmt2 = canonicalConverter.apply(stmt2);
+
+		stmt1.compress();
+		stmt2.compress();
+
+		System.out.println("==========");
+		System.out.println(stmt1.toParsableString(ctx, true));
+		System.out.println("==========");
+		System.out.println(stmt2.toParsableString(ctx, true));
+
+		assert !stmt1.match(RewriterStatement.MatcherContext.exactMatch(ctx, stmt2, stmt1));
+	}
+
+	@Test
 	public void testFused1() {
 		RewriterStatement stmt1 = RewriterUtils.parse("1-*(A, B)", ctx, "MATRIX:A,B");
 		RewriterStatement stmt2 = RewriterUtils.parse("-(1.0, *(A, B))", ctx, "MATRIX:A,B", "LITERAL_FLOAT:1.0");
@@ -1191,5 +1213,36 @@ public class RewriterStreamTests {
 		System.out.println(stmt2.toParsableString(ctx, true));
 
 		assert stmt1.match(RewriterStatement.MatcherContext.exactMatch(ctx, stmt2, stmt1));
+	}
+
+	@Test
+	public void testFused5() {
+		RewriterStatement stmt1 = RewriterUtils.parse("sq(1-*(A,A))", ctx, "MATRIX:A,B", "FLOAT:a");
+
+		System.out.println("Cost1: " + RewriterCostEstimator.estimateCost(stmt1, ctx));
+
+		stmt1 = canonicalConverter.apply(stmt1);
+
+		System.out.println("==========");
+		System.out.println(stmt1.toParsableString(ctx, true));
+	}
+
+	@Test
+	public void testFused6() {
+		RewriterStatement stmt1 = RewriterUtils.parse("/(A,A)", ctx, "MATRIX:A,B", "FLOAT:a");
+		RewriterStatement stmt2 = RewriterUtils.parse("/(A,rev(A))", ctx, "MATRIX:A,B", "FLOAT:a", "LITERAL_FLOAT:0.0");
+
+		System.out.println("Cost1: " + RewriterCostEstimator.estimateCost(stmt1, ctx));
+		System.out.println("Cost2: " + RewriterCostEstimator.estimateCost(stmt2, ctx));
+
+		stmt1 = canonicalConverter.apply(stmt1);
+		stmt2 = canonicalConverter.apply(stmt2);
+
+		System.out.println("==========");
+		System.out.println(stmt1.toParsableString(ctx, true));
+		System.out.println("==========");
+		System.out.println(stmt2.toParsableString(ctx, true));
+
+		assert !stmt1.match(RewriterStatement.MatcherContext.exactMatch(ctx, stmt2, stmt1));
 	}
 }

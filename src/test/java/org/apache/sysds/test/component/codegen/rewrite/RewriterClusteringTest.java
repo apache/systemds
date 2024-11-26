@@ -161,8 +161,8 @@ public class RewriterClusteringTest {
 		Object lock = new Object();
 
 		if (useRandomized) {
-			long MAX_MILLIS = 600000; // Should be bound by number of ops
-			int BATCH_SIZE = 200;
+			long MAX_MILLIS = 1200000; // Should be bound by number of ops
+			int BATCH_SIZE = 400;
 			int maxN = RewriterAlphabetEncoder.getMaxSearchNumberForNumOps(3);
 			System.out.println("MaxN: " + maxN);
 			long startMillis = System.currentTimeMillis();
@@ -184,77 +184,24 @@ public class RewriterClusteringTest {
 					for (RewriterStatement dag : stmts) {
 						List<RewriterStatement> expanded = new ArrayList<>();
 						expanded.add(dag);
-						expanded.addAll(RewriterAlphabetEncoder.buildAssertionVariations(dag, ctx, true));
+						//expanded.addAll(RewriterAlphabetEncoder.buildAssertionVariations(dag, ctx, true));
 						expanded.addAll(RewriterAlphabetEncoder.buildVariations(dag, ctx));
 						actualCtr += expanded.size();
 						for (RewriterStatement stmt : expanded) {
 							try {
+								String mstmt = stmt.toParsableString(ctx, true);
+								stmt = RewriterUtils.parse(mstmt, ctx);
 								ctx.metaPropagator.apply(stmt);
 								RewriterStatement canonicalForm = converter.apply(stmt);
-								stmt.getCost(ctx);
 
-								/*RewriterStatement stmt2 = null;
-								RewriterStatement canonicalForm2 = null;
-								if (canonicalForm.getResultingDataType(ctx).equals("FLOAT")) {
-									stmt2 = stmt.nestedCopy(true);
-									stmt2 = new RewriterInstruction()
-											.as(UUID.randomUUID().toString())
-											.withInstruction("cast.MATRIX")
-											.withOps(stmt2)
-											.consolidate(ctx);
-									canonicalForm2 = canonicalForm.nestedCopy(true);
-									canonicalForm2 = new RewriterInstruction()
-											.as(UUID.randomUUID().toString())
-											.withInstruction("_m")
-											.withOps(RewriterStatement.literal(ctx, 1L), RewriterStatement.literal(ctx, 1L), canonicalForm2)
-											.consolidate(ctx);
-								}*/
-
-								//computeCost(stmt, ctx);
-
-								//List<RewriterStatement> equivalentExpressions = new ArrayList<>();
-								//equivalentExpressions.add(stmt);
-
-								// TODO: Better handling
-								//if (!canonicalForm.isLiteral())
-								//	canonicalForm.unsafePutMeta("equivalentExpressions", equivalentExpressions);
-
-								//stmt.getCost(ctx); // Fetch cost already
-								// TODO: Not quite working yet
-								canonicalForm.compress();
-								stmt.compress();
+								//canonicalForm.compress();
+								//stmt.compress();
 								synchronized (lock) {
 									RewriterEquivalenceDatabase.DBEntry entry = canonicalExprDB.insert(ctx, canonicalForm, stmt);
 
 									if (entry.equivalences.size() == 2)
 										foundEquivalences.add(entry);
-
-									/*if (stmt2 != null) {
-										//System.out.println("HERE");
-										//stmt2.compress();
-										//canonicalForm2.compress();
-										entry = canonicalExprDB.insert(ctx, canonicalForm2, stmt2);
-
-										if (entry.equivalences.size() == 2)
-											foundEquivalences.add(entry);
-									}*/
 								}
-
-								// Insert the canonical form or retrieve the existing entry
-							/*RewriterStatement existingEntry = canonicalExprDB.insertOrReturn(ctx, canonicalForm);
-
-							if (existingEntry != null) {
-								equivalentExpressions = (List<RewriterStatement>) existingEntry.getMeta("equivalentExpressions");
-								// TODO: Better handling
-								if (equivalentExpressions != null) {
-									equivalentExpressions.add(stmt);
-
-									if (equivalentExpressions.size() == 2)
-										foundEquivalences.add(existingEntry);
-								}
-
-								//System.out.println("Found equivalent statement!");
-							}*/
 							} catch (Exception e) {
 								System.err.println("Faulty expression: " + stmt.toParsableString(ctx));
 								e.printStackTrace();
@@ -522,7 +469,8 @@ public class RewriterClusteringTest {
 					}
 				} catch (Exception e) {
 					// TODO: Enable
-					//e.printStackTrace();
+					System.out.println("Could not compute cost for: " + eq.toParsableString(ctx));
+					e.printStackTrace();
 				}
 			}
 

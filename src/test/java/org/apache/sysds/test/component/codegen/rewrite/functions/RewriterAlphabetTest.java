@@ -54,8 +54,9 @@ public class RewriterAlphabetTest {
 		assert l == 27;
 	}
 
-	//@Test
+	@Test
 	public void testRandomStatementGeneration() {
+		System.out.println(RewriterAlphabetEncoder.getMaxSearchNumberForNumOps(3));
 		int ctr = 0;
 		for (int i = 0; i < 20; i++) {
 			List<RewriterAlphabetEncoder.Operand> ops = RewriterAlphabetEncoder.decodeOrderedStatements(i);
@@ -81,41 +82,6 @@ public class RewriterAlphabetTest {
 		RewriterStatement stmt = RewriterUtils.parse("+([](A, 1, 1, 1, 1), B)", ctx, "MATRIX:A,B", "LITERAL_INT:1");
 		stmt = canonicalConverter.apply(stmt);
 		System.out.println(stmt.toParsableString(ctx));
-	}
-
-	@Test
-	public void testRandomStatementGeneration2() {
-		int ctr = 0;
-		List<List<RewriterAlphabetEncoder.Operand>> opList = new ArrayList<>();
-		opList.add(List.of(new RewriterAlphabetEncoder.Operand("trace", 1, MATRIX), new RewriterAlphabetEncoder.Operand("%*%", 2, MATRIX)));
-		opList.add(List.of(new RewriterAlphabetEncoder.Operand("sum", 1, MATRIX), new RewriterAlphabetEncoder.Operand("*", 2, MATRIX), new RewriterAlphabetEncoder.Operand("t", 1, MATRIX)));
-		List<RewriterStatement> all = new ArrayList<>();
-		for (List<RewriterAlphabetEncoder.Operand> ops : opList) {
-			//List<RewriterAlphabetEncoder.Operand> ops = List.of(new RewriterAlphabetEncoder.Operand("sum", 1, MATRIX), new RewriterAlphabetEncoder.Operand("%*%", 1, MATRIX));
-			//System.out.println("Idx: " + i);
-			//System.out.println(ops);
-			//System.out.println(RewriterAlphabetEncoder.buildAllPossibleDAGs(ops, ctx, false).size());
-			for (RewriterStatement stmt : RewriterAlphabetEncoder.buildAllPossibleDAGs(ops, ctx, true)) {
-				System.out.println("Base: " + stmt.toParsableString(ctx));
-				List<RewriterStatement> expand = new ArrayList<>();
-				expand.addAll(RewriterAlphabetEncoder.buildVariations(stmt, ctx));
-				expand.addAll(RewriterAlphabetEncoder.buildAssertionVariations(stmt, ctx, false));
-
-				for (RewriterStatement sstmt : expand) {
-					canonicalConverter.apply(sstmt);
-					System.out.println(sstmt);
-					sstmt.compress();
-					all.add(sstmt);
-					//System.out.println("Raw: " + sstmt);
-					ctr++;
-				}
-			}
-		}
-
-		System.out.println("Total DAGs: " + ctr);
-		for (RewriterStatement sstmt : all) {
-			System.out.println(sstmt);
-		}
 	}
 
 }

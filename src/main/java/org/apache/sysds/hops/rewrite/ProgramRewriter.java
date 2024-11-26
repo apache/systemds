@@ -152,7 +152,7 @@ public class ProgramRewriter{
 		_sbRuleSet.add(  new RewriteRemoveEmptyBasicBlocks()                 );
 		_sbRuleSet.add(  new RewriteRemoveEmptyForLoops()                    );
 
-		if ( DMLScript.APPLY_GENERATED_REWRITES || true ) {
+		if ( DMLScript.APPLY_GENERATED_REWRITES ) {
 			_dagRuleSet.add(new RewriteAutomaticallyGenerated(new GeneratedRewriteClass()));                // Rewrites automatically found by the rewrite discovery system
 
 			if( OptimizerUtils.ALLOW_COMMON_SUBEXPRESSION_ELIMINATION )

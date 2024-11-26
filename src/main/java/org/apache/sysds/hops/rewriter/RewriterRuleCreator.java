@@ -216,15 +216,18 @@ public class RewriterRuleCreator {
 	}
 
 	public static boolean validateRuleApplicability(RewriterRule rule, final RuleContext ctx) {
+		RewriterStatement _mstmt = rule.getStmt1();
 		if (ctx.metaPropagator != null)
-			ctx.metaPropagator.apply(rule.getStmt1());
+			ctx.metaPropagator.apply(_mstmt);
 
-		Set<RewriterStatement> vars = DMLCodeGenerator.getVariables(rule.getStmt1());
+		final RewriterStatement stmt1 = RewriterUtils.unfuseOperators(_mstmt, ctx);
+
+		Set<RewriterStatement> vars = DMLCodeGenerator.getVariables(stmt1);
 		Set<String> varNames = vars.stream().map(RewriterStatement::getId).collect(Collectors.toSet());
 		String code2Header = DMLCodeGenerator.generateDMLVariables(vars);
-		String code2 = code2Header + "\nresult = " + DMLCodeGenerator.generateDML(rule.getStmt1());
+		String code2 = code2Header + "\nresult = " + DMLCodeGenerator.generateDML(stmt1);
 
-		boolean isMatrix = rule.getStmt1().getResultingDataType(ctx).equals("MATRIX");
+		boolean isMatrix = stmt1.getResultingDataType(ctx).equals("MATRIX");
 
 		if (isMatrix)
 			code2 += "\nprint(lineage(result))";
@@ -291,7 +294,7 @@ public class RewriterRuleCreator {
 
 			Map<RewriterStatement, RewriterStatement> createdObjects = new HashMap<>();
 
-			RewriterStatement stmt1ReplaceNCols = rule.getStmt1().nestedCopyOrInject(createdObjects, mstmt -> {
+			RewriterStatement stmt1ReplaceNCols = stmt1.nestedCopyOrInject(createdObjects, mstmt -> {
 				if (mstmt.isInstruction() && (mstmt.trueInstruction().equals("ncol") || mstmt.trueInstruction().equals("nrow")))
 					return RewriterStatement.literal(ctx, DMLCodeGenerator.MATRIX_DIMS);
 				return null;

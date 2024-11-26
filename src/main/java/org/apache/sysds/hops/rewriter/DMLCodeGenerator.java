@@ -93,9 +93,15 @@ public class DMLCodeGenerator {
 		});
 
 		customEncoders.put("cast.FLOAT", (stmt, sb, tmpVars) -> {
-			sb.append("as.scalar(");
-			appendExpression(stmt.getChild(0), sb, tmpVars);
-			sb.append(')');
+			if (stmt.getChild(0).getResultingDataType(ctx).equals("MATRIX")) {
+				sb.append("as.scalar(");
+				appendExpression(stmt.getChild(0), sb, tmpVars);
+				sb.append(')');
+			} else {
+				sb.append("as.double(");
+				appendExpression(stmt.getChild(0), sb, tmpVars);
+				sb.append(')');
+			}
 
 			return true;
 		});

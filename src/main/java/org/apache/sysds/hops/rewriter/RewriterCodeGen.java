@@ -280,7 +280,7 @@ public class RewriterCodeGen {
 			sb.append("if ( !" + specialOpCheck + " )\n");
 			indent(indentation + 1, sb);
 			sb.append("return hi;\n\n");
-		} else if (cur.isInstruction()) {
+		} else if (!cur.isDataOrigin()) {
 			String opClass = CodeGenUtils.getOpClass(cur, ctx);
 
 			// Generate initial class check
@@ -341,6 +341,12 @@ public class RewriterCodeGen {
 
 				if (i == types.length - 1)
 					sb.append(')');
+			}
+
+			if (cur.isRowVector()) {
+				sb.append(" || !(" + curVar + ".getDim2() == 1L)");
+			} else if (cur.isColVector()) {
+				sb.append(" || !(" + curVar + ".getDim1() == 1L)");
 			}
 
 			sb.append(" )\n");

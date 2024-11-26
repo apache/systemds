@@ -1,6 +1,10 @@
 package org.apache.sysds.hops.rewriter;
 
 
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 import java.util.function.BiFunction;
 
 public class ConstantFoldingFunctions {
@@ -36,6 +40,57 @@ public class ConstantFoldingFunctions {
 		}
 
 		return false;
+	}
+
+	public static boolean cancelOutNary(String op, List<RewriterStatement> stmts) {
+		Set<Integer> toRemove = new HashSet<>();
+		switch (op) {
+			case "+":
+				for (int i = 0; i < stmts.size(); i++) {
+					RewriterStatement stmt1 = stmts.get(i);
+					for (int j = i+1; j < stmts.size(); j++) {
+						RewriterStatement stmt2 = stmts.get(j);
+
+						if (stmt1.isInstruction() && stmt1.trueInstruction().equals("-") && stmt1.getChild(0).equals(stmt2)
+							|| (stmt2.isInstruction() && stmt2.trueInstruction().equals("-") && stmt2.getChild(0).equals(stmt1))) {
+							if (!toRemove.contains(i) && !toRemove.contains(j)) {
+								toRemove.add(i);
+								toRemove.add(j);
+							}
+						}
+
+					}
+				}
+			case "*":
+				for (int i = 0; i < stmts.size(); i++) {
+					RewriterStatement stmt1 = stmts.get(i);
+					for (int j = i+1; j < stmts.size(); j++) {
+						RewriterStatement stmt2 = stmts.get(j);
+
+						if (stmt1.isInstruction() && stmt1.trueInstruction().equals("inv") && stmt1.getChild(0).equals(stmt2)
+								|| (stmt2.isInstruction() && stmt2.trueInstruction().equals("inv") && stmt2.getChild(0).equals(stmt1))) {
+							if (!toRemove.contains(i) && !toRemove.contains(j)) {
+								toRemove.add(i);
+								toRemove.add(j);
+							}
+						}
+
+					}
+				}
+		}
+
+		if (toRemove.isEmpty())
+			return false;
+
+		List<RewriterStatement> oldCpy = new ArrayList<>(stmts);
+		stmts.clear();
+
+		for (int i = 0; i < oldCpy.size(); i++) {
+			if (!toRemove.contains(i))
+				stmts.add(oldCpy.get(i));
+		}
+
+		return true;
 	}
 
 	// TODO: What about NaNs?

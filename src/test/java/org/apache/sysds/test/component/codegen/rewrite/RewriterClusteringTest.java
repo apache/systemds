@@ -163,7 +163,8 @@ public class RewriterClusteringTest {
 		if (useRandomized) {
 			long MAX_MILLIS = 600000; // Should be bound by number of ops
 			int BATCH_SIZE = 200;
-			int maxN = RewriterAlphabetEncoder.getMaxSearchNumberForNumOps(2);
+			int maxN = RewriterAlphabetEncoder.getMaxSearchNumberForNumOps(3);
+			System.out.println("MaxN: " + maxN);
 			long startMillis = System.currentTimeMillis();
 
 			for (int batch = 0; batch < 50 && System.currentTimeMillis() - startMillis < MAX_MILLIS && batch * BATCH_SIZE < maxN; batch++) {
@@ -218,8 +219,9 @@ public class RewriterClusteringTest {
 								//	canonicalForm.unsafePutMeta("equivalentExpressions", equivalentExpressions);
 
 								//stmt.getCost(ctx); // Fetch cost already
-								canonicalForm.compress();
-								stmt.compress();
+								// TODO: Not quite working yet
+								//canonicalForm.compress();
+								//stmt.compress();
 								synchronized (lock) {
 									RewriterEquivalenceDatabase.DBEntry entry = canonicalExprDB.insert(ctx, canonicalForm, stmt);
 

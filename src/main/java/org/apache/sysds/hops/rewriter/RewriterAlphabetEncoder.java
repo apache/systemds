@@ -37,11 +37,11 @@ public class RewriterAlphabetEncoder {
 			new Operand("colSums", 1, MATRIX),
 			new Operand("max", 1, MATRIX),
 			new Operand("min", 1, MATRIX),
-			new Operand("log", 1, MATRIX),
+			//new Operand("log", 1, MATRIX),
 
 			// Fused operators
-			new Operand("1-*", 2, MATRIX), 			// TODO: We have to include literals in the search
-			new Operand("log_nz", 1, MATRIX),			// TODO: We have to include literals in the search
+			//new Operand("1-*", 2, MATRIX), 			// TODO: We have to include literals in the search
+			//new Operand("log_nz", 1, MATRIX),			// TODO: We have to include literals in the search
 
 			// Placeholder operators
 			new Operand("zero", 0, ALL_TYPES),

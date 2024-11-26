@@ -1099,6 +1099,25 @@ public class RewriterStreamTests {
 	}
 
 	@Test
+	public void testRev() {
+		RewriterStatement stmt1 = RewriterUtils.parse("rev(rev(A))", ctx, "MATRIX:A,B", "LITERAL_INT:1");
+		RewriterStatement stmt2 = RewriterUtils.parse("A", ctx, "MATRIX:A,B", "LITERAL_INT:1");
+
+		System.out.println("Cost1: " + RewriterCostEstimator.estimateCost(stmt1, ctx));
+		System.out.println("Cost2: " + RewriterCostEstimator.estimateCost(stmt2, ctx));
+
+		stmt1 = canonicalConverter.apply(stmt1);
+		stmt2 = canonicalConverter.apply(stmt2);
+
+		System.out.println("==========");
+		System.out.println(stmt1.toParsableString(ctx, true));
+		System.out.println("==========");
+		System.out.println(stmt2.toParsableString(ctx, true));
+
+		assert stmt1.match(RewriterStatement.MatcherContext.exactMatch(ctx, stmt2, stmt1));
+	}
+
+	@Test
 	public void testFused1() {
 		RewriterStatement stmt1 = RewriterUtils.parse("1-*(A, B)", ctx, "MATRIX:A,B");
 		RewriterStatement stmt2 = RewriterUtils.parse("-(1.0, *(A, B))", ctx, "MATRIX:A,B", "LITERAL_FLOAT:1.0");

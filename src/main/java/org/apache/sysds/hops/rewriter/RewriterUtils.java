@@ -1277,6 +1277,8 @@ public class RewriterUtils {
 		RewriterRuleCollection.pushdownStreamSelections(pd, ctx);
 		RewriterRuleCollection.buildElementWiseAlgebraicCanonicalization(pd, ctx);
 		RewriterRuleCollection.eliminateMultipleCasts(pd, ctx);
+		RewriterRuleCollection.canonicalizeBooleanStatements(pd, ctx);
+		RewriterRuleCollection.canonicalizeAlgebraicStatements(pd, ctx);
 		RewriterHeuristic streamSelectPushdown = new RewriterHeuristic(new RewriterRuleSet(ctx, pd));
 
 		ArrayList<RewriterRule> flatten = new ArrayList<>();
@@ -1580,6 +1582,8 @@ public class RewriterUtils {
 
 		if (argList.isEmpty() || !ConstantFoldingFunctions.isNeutralElement(foldedLiteral.getLiteral(), stmt.trueInstruction()))
 			argList.add(foldedLiteral);
+
+		ConstantFoldingFunctions.cancelOutNary(stmt.trueInstruction(), argList);
 
 		if (argList.size() == 1)
 			return argList.get(0);

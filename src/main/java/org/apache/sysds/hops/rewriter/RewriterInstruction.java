@@ -10,6 +10,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Random;
 import java.util.Set;
 import java.util.UUID;
 import java.util.function.BiFunction;
@@ -45,8 +46,23 @@ public class RewriterInstruction extends RewriterStatement {
 
 	@Override
 	public String getId() {
-		if (isDataOrigin())
-			return getChild(0).getId();
+		if (isDataOrigin()) {
+			if (trueInstruction().equals("const")) {
+				boolean regen = id == null;
+				if (!regen) {
+					try {
+						UUID.fromString(id);
+						regen = true;
+					} catch (Exception e) {
+					}
+				}
+				if (regen) {
+					id = "mConst" + new Random().nextInt(10000);
+				}
+			} else {
+				return getChild(0).getId();
+			}
+		}
 
 		return id;
 	}

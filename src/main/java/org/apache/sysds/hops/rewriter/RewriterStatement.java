@@ -1134,7 +1134,7 @@ public abstract class RewriterStatement {
 		switch (trueInstruction()) {
 			case "rowVec":
 			case "colVec":
-			//case "const":
+			case "const":
 				return true;
 		}
 

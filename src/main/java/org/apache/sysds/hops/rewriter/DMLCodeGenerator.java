@@ -149,7 +149,7 @@ public class DMLCodeGenerator {
 				createTmpVars(stmt, orderedTmpVars, tmpVars, tmpVarCtr);
 		}, false);
 
-		Set<RewriterStatement> toRemove = vars.stream().filter(RewriterStatement::isInstruction).map(instr -> instr.getChild(0)).collect(Collectors.toSet());
+		Set<RewriterStatement> toRemove = vars.stream().filter(t -> t.isInstruction() && !t.trueInstruction().equals("const")).map(instr -> instr.getChild(0)).collect(Collectors.toSet());
 		vars.removeAll(toRemove);
 
 		StringBuilder sb = new StringBuilder();
@@ -204,7 +204,7 @@ public class DMLCodeGenerator {
 				vars.add(stmt);
 		}, false);
 
-		Set<RewriterStatement> toRemove = vars.stream().filter(RewriterStatement::isInstruction).map(instr -> instr.getChild(0)).collect(Collectors.toSet());
+		Set<RewriterStatement> toRemove = vars.stream().filter(stmt -> stmt.isInstruction() && !stmt.trueInstruction().equals("const")).map(instr -> instr.getChild(0)).collect(Collectors.toSet());
 		vars.removeAll(toRemove);
 
 		return vars;
@@ -218,6 +218,7 @@ public class DMLCodeGenerator {
 		StringBuilder sb = new StringBuilder();
 
 		for (RewriterStatement var : vars) {
+
 			switch (var.getResultingDataType(ctx)) {
 				case "MATRIX":
 					String mId = var.getId();
@@ -230,6 +231,10 @@ public class DMLCodeGenerator {
 						} else if (var.trueInstruction().equals("colVec")) {
 							mId = var.getChild(0).getId();
 							nrow = 1L;
+						} else if (var.trueInstruction().equals("const")) {
+							sb.append(var.getId());
+							sb.append(" = matrix(" + var.getChild(1).getLiteral() + ", rows=" + nrow + ", cols=" + ncol + ")\n");
+							continue;
 						}
 					}
 					sb.append(mId + " = (rand(rows=" + nrow + ", cols=" + ncol + ") * rand(rows=" + nrow + ", cols=" + ncol + ", min=(as.scalar(rand())+1.0), max=(as.scalar(rand())+2.0), seed=" + rd.nextInt(1000) + "))^as.scalar(rand())\n");
@@ -310,7 +315,7 @@ public class DMLCodeGenerator {
 
 		if (cur.isInstruction()) {
 			if (cur.isDataOrigin())
-				sb.append(cur.getChild(0).getId());
+				sb.append(cur.getId());
 			else
 				resolveExpression((RewriterInstruction) cur, sb, tmpVars);
 		} else {

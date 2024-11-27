@@ -216,6 +216,10 @@ public class RewriterRuleCreator {
 	}
 
 	public static boolean validateRuleApplicability(RewriterRule rule, final RuleContext ctx) {
+		return validateRuleApplicability(rule, ctx, false);
+	}
+
+	public static boolean validateRuleApplicability(RewriterRule rule, final RuleContext ctx, boolean print) {
 		RewriterStatement _mstmt = rule.getStmt1();
 		if (ctx.metaPropagator != null)
 			ctx.metaPropagator.apply(_mstmt);
@@ -294,7 +298,7 @@ public class RewriterRuleCreator {
 
 			Map<RewriterStatement, RewriterStatement> createdObjects = new HashMap<>();
 
-			RewriterStatement stmt1ReplaceNCols = stmt1.nestedCopyOrInject(createdObjects, mstmt -> {
+			RewriterStatement stmt1ReplaceNCols = _mstmt.nestedCopyOrInject(createdObjects, mstmt -> {
 				if (mstmt.isInstruction() && (mstmt.trueInstruction().equals("ncol") || mstmt.trueInstruction().equals("nrow")))
 					return RewriterStatement.literal(ctx, DMLCodeGenerator.MATRIX_DIMS);
 				return null;
@@ -305,7 +309,10 @@ public class RewriterRuleCreator {
 
 			Set<RewriterStatement> mVars = vars.stream().map(createdObjects::get).collect(Collectors.toSet());
 
-			//DMLExecutor.println(stmt.toParsableString(ctx));
+			if (print) {
+				DMLExecutor.println("Observed statement: " + stmt.toParsableString(ctx));
+				DMLExecutor.println("Expected statement: " + stmt1ReplaceNCols.toParsableString(ctx));
+			}
 
 			RewriterStatement.MatcherContext mCtx  = RewriterStatement.MatcherContext.exactMatch(ctx, stmt, stmt1ReplaceNCols);
 			if (stmt1ReplaceNCols.match(mCtx)) {

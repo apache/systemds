@@ -744,7 +744,7 @@ public class RewriterRuntimeUtils {
 		}
 
 		if (printUnknowns)
-			System.out.println("Unknown AggBinaryOp: " + op.getOpString());
+			DMLExecutor.println("Unknown AggBinaryOp: " + op.getOpString());
 		return null;
 	}
 
@@ -782,7 +782,7 @@ public class RewriterRuntimeUtils {
 		}
 
 		if (printUnknowns)
-			System.out.println("Unknown AggUnaryOp: " + op.getOpString());
+			DMLExecutor.println("Unknown AggUnaryOp: " + op.getOpString());
 		return null;
 	}
 
@@ -858,13 +858,15 @@ public class RewriterRuntimeUtils {
 				if (!t1.equals("MATRIX") || !t2.equals("MATRIX"))
 					return null;
 				return RewriterUtils.parse("CBind(a, b)", ctx, t1, t2);
+			case "b(1-*)":
+				return RewriterUtils.parse("1-*(A, B)", ctx, "MATRIX:A,B");
 		}
 
 		if (parsed != null)
 			return parsed.rename(op.getName());
 
 		if (printUnknowns)
-			System.out.println("Unknown BinaryOp: " + op.getOpString());
+			DMLExecutor.println("Unknown BinaryOp: " + op.getOpString());
 		return null;
 	}
 
@@ -884,7 +886,7 @@ public class RewriterRuntimeUtils {
 		}
 
 		if (printUnknowns)
-			System.out.println("Unknown type: " + hop + " -> " + hop.getDataType() + " : " + hop.getValueType());
+			DMLExecutor.println("Unknown type: " + hop + " -> " + hop.getDataType() + " : " + hop.getValueType());
 
 		return null;
 	}
@@ -903,6 +905,8 @@ public class RewriterRuntimeUtils {
 		}
 
 		//System.out.println("Unknown BinaryOp: " + op.getOpString());
+		if (printUnknowns)
+			DMLExecutor.println("Unknown ReorgOp: " + op.getOpString());
 		return null;
 	}
 
@@ -918,6 +922,7 @@ public class RewriterRuntimeUtils {
 				interestingHops.add(op.getParam("max"));
 				return RewriterUtils.parse("rand(i1, i2, f1, f2)", ctx, matrixDefs, floatDefs, intDefs, boolDefs).rename(op.getName());
 		}
+
 		return null;
 	}
 

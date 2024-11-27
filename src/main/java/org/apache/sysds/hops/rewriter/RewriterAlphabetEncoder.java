@@ -65,8 +65,8 @@ public class RewriterAlphabetEncoder {
 			new Operand("cast.FLOAT", 1, MATRIX),
 
 			new Operand("1-*", 2, MATRIX, MATRIX),
-			new Operand("+*", 2, MATRIX, SCALAR, MATRIX),
-			new Operand("-*", 2, MATRIX, SCALAR, MATRIX),
+			new Operand("+*", 3, MATRIX, SCALAR, MATRIX),
+			new Operand("-*", 3, MATRIX, SCALAR, MATRIX),
 			new Operand("*2", 1, MATRIX),
 			new Operand("_nnz", 1, MATRIX),
 			new Operand("sumSq", 1, MATRIX),

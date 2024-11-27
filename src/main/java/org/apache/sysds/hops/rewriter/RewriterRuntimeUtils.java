@@ -896,6 +896,8 @@ public class RewriterRuntimeUtils {
 		switch(op.getOpString()) {
 			case "r(r')": // Matrix multiplication
 				return RewriterUtils.parse("t(A)", ctx, matrixDefs, floatDefs, intDefs, boolDefs);
+			case "r(rev)":
+				return RewriterUtils.parse("rev(A)", ctx, "MATRIX:A");
 			case "r(rdiag)":
 				return RewriterUtils.parse("diag(A)", ctx, "MATRIX:A");
 		}

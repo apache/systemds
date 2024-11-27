@@ -305,6 +305,8 @@ public class RewriterRuleCreator {
 
 			Set<RewriterStatement> mVars = vars.stream().map(createdObjects::get).collect(Collectors.toSet());
 
+			//DMLExecutor.println(stmt.toParsableString(ctx));
+
 			RewriterStatement.MatcherContext mCtx  = RewriterStatement.MatcherContext.exactMatch(ctx, stmt, stmt1ReplaceNCols);
 			if (stmt1ReplaceNCols.match(mCtx)) {
 				// Check if also the right variables are associated

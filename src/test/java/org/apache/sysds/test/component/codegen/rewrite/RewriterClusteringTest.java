@@ -30,6 +30,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Random;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Function;
@@ -170,6 +171,55 @@ public class RewriterClusteringTest {
 			for (int batch = 0; batch < 1000 && System.currentTimeMillis() - startMillis < MAX_MILLIS && batch * BATCH_SIZE < maxN; batch++) {
 				List<Integer> indices = IntStream.range(batch * BATCH_SIZE, Math.min((batch + 1) * BATCH_SIZE - 1, maxN)).boxed().collect(Collectors.toList());
 				Collections.shuffle(indices);
+				MutableInt ctr2 = new MutableInt(0);
+				int maxSize = indices.size();
+				final int mBATCH = batch;
+				indices.parallelStream().forEach(idx -> {
+					if (ctr2.incrementAndGet() % 10 == 0)
+						System.out.println("Done: " + (mBATCH * BATCH_SIZE + ctr2.intValue()) + " / " + (mBATCH * BATCH_SIZE + maxSize));
+
+					List<RewriterAlphabetEncoder.Operand> ops = RewriterAlphabetEncoder.decodeOrderedStatements(idx);
+					List<RewriterStatement> stmts = RewriterAlphabetEncoder.buildAllPossibleDAGs(ops, ctx, true);
+					long actualCtr = 0;
+
+					for (RewriterStatement dag : stmts) {
+						List<RewriterStatement> expanded = new ArrayList<>();
+						expanded.add(dag);
+						//expanded.addAll(RewriterAlphabetEncoder.buildAssertionVariations(dag, ctx, true));
+						expanded.addAll(RewriterAlphabetEncoder.buildVariations(dag, ctx));
+						actualCtr += expanded.size();
+						for (RewriterStatement stmt : expanded) {
+							try {
+								String mstmt = stmt.toParsableString(ctx, true);
+								stmt = RewriterUtils.parse(mstmt, ctx);
+								ctx.metaPropagator.apply(stmt);
+								RewriterStatement canonicalForm = converter.apply(stmt);
+
+								//canonicalForm.compress();
+								//stmt.compress();
+								synchronized (lock) {
+									RewriterEquivalenceDatabase.DBEntry entry = canonicalExprDB.insert(ctx, canonicalForm, stmt);
+
+									if (entry.equivalences.size() == 2)
+										foundEquivalences.add(entry);
+								}
+							} catch (Exception e) {
+								System.err.println("Faulty expression: " + stmt.toParsableString(ctx));
+								e.printStackTrace();
+							}
+						}
+					}
+
+					//System.out.println(ops + " >> " + actualCtr);
+				});
+			}
+
+			// Now we will just do random sampling for a few rounds
+			Random rd = new Random(42);
+			int nMaxN = RewriterAlphabetEncoder.getMaxSearchNumberForNumOps(4);
+			for (int batch = 0; batch < 200 && System.currentTimeMillis() - startMillis < MAX_MILLIS && batch * BATCH_SIZE < maxN; batch++) {
+				List<Integer> indices = IntStream.range(batch * BATCH_SIZE, (batch + 1) * BATCH_SIZE - 1).boxed().map(v -> maxN + rd.nextInt(nMaxN)).collect(Collectors.toList());
+				//Collections.shuffle(indices);
 				MutableInt ctr2 = new MutableInt(0);
 				int maxSize = indices.size();
 				final int mBATCH = batch;

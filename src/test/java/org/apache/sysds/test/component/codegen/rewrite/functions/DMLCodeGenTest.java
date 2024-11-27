@@ -165,4 +165,22 @@ public class DMLCodeGenTest {
 
 		assert RewriterRuleCreator.validateRuleApplicability(rule, ctx);
 	}
+
+	@Test
+	public void testRev() {
+		String ruleStr = "MATRIX:A\n" +
+				"FLOAT:b\n" +
+				"\n" +
+				"rev(*(rev(A),b))\n" +
+				"=>\n" +
+				"*(A,b)";
+
+		RewriterRule rule = RewriterUtils.parseRule(ruleStr, ctx);
+
+		System.out.println(DMLCodeGenerator.generateRuleValidationDML(rule, "test", ctx));
+
+		assert RewriterRuleCreator.validateRuleCorrectness(rule, ctx);
+
+		assert RewriterRuleCreator.validateRuleApplicability(rule, ctx);
+	}
 }

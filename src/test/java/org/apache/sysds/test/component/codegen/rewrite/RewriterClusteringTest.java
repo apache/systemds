@@ -165,11 +165,11 @@ public class RewriterClusteringTest {
 		if (useRandomized) {
 			long MAX_MILLIS = 1200000; // Should be bound by number of ops
 			int BATCH_SIZE = 400;
-			int maxN = RewriterAlphabetEncoder.getMaxSearchNumberForNumOps(3);
+			int maxN = RewriterAlphabetEncoder.getMaxSearchNumberForNumOps(4);
 			System.out.println("MaxN: " + maxN);
 			long startMillis = System.currentTimeMillis();
 
-			for (int batch = 0; batch < 1000 && System.currentTimeMillis() - startMillis < MAX_MILLIS && batch * BATCH_SIZE < maxN; batch++) {
+			for (int batch = 0; batch < 10000 && System.currentTimeMillis() - startMillis < MAX_MILLIS && batch * BATCH_SIZE < maxN; batch++) {
 				List<Integer> indices = IntStream.range(batch * BATCH_SIZE, Math.min((batch + 1) * BATCH_SIZE - 1, maxN)).boxed().collect(Collectors.toList());
 				Collections.shuffle(indices);
 				MutableInt ctr2 = new MutableInt(0);

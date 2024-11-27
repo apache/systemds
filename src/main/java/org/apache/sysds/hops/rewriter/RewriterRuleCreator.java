@@ -320,7 +320,10 @@ public class RewriterRuleCreator {
 				boolean assocsMatching = true;
 				//DMLExecutor.println(mCtx.getDependencyMap());
 				for (RewriterStatement var : mVars) {
-					RewriterStatement assoc = mCtx.getDependencyMap().get(var.isInstruction() ? var.getChild(0) : var);
+					RewriterStatement assoc = mCtx.getDependencyMap().get(var.isInstruction() && !var.trueInstruction().equals("const") ? var.getChild(0) : var);
+
+					if (assoc == null)
+						throw new IllegalArgumentException("Association is null!");
 
 					if (!assoc.getId().equals(var.getId())) {
 						assocsMatching = false;

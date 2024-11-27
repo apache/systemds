@@ -371,6 +371,9 @@ public class RewriterAssertions {
 
 	// TODO: What happens if the rewriter statement has already been instantiated? Updates will not occur
 	public boolean addEqualityAssertion(RewriterStatement stmt1, RewriterStatement stmt2) {
+		if (stmt1 == null || stmt2 == null)
+			throw new IllegalArgumentException("Cannot add an equality assertion to a null reference!");
+
 		if (stmt1 == stmt2 || (stmt1.isLiteral() && stmt2.isLiteral() && stmt1.getLiteral().equals(stmt2.getLiteral())))
 			return false;
 

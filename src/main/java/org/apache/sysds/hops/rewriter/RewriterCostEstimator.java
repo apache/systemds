@@ -79,6 +79,7 @@ public class RewriterCostEstimator {
 
 		if (assertionRef != null)
 			assertionRef.setValue(assertions);
+
 		RewriterStatement costFn = propagateCostFunction(stmt, ctx, assertions);
 		costFn = assertions.update(costFn);
 		// TODO: Something makes this necessary
@@ -239,8 +240,8 @@ public class RewriterCostEstimator {
 				mulCost = atomicOpCostStmt("*", ctx);
 				sum = RewriterStatement.multiArgInstr(ctx, "+", additionCost, mulCost);
 				cost = RewriterStatement.multiArgInstr(ctx, "*", sum, instr.getNCol(), instr.getNRow());
-				assertions.addEqualityAssertion(instr.getChild(0).getNCol(), instr.getChild(1).getNCol());
-				assertions.addEqualityAssertion(instr.getChild(0).getNRow(), instr.getChild(1).getNRow());
+				assertions.addEqualityAssertion(instr.getChild(0).getNCol(), instr.getChild(2).getNCol());
+				assertions.addEqualityAssertion(instr.getChild(0).getNRow(), instr.getChild(2).getNRow());
 				overhead.add(MALLOC_COST + 50); // To make it worse than 1-*
 				break;
 			case "-*":
@@ -248,8 +249,8 @@ public class RewriterCostEstimator {
 				mulCost = atomicOpCostStmt("*", ctx);
 				sum = RewriterStatement.multiArgInstr(ctx, "+", subtractionCost, mulCost);
 				cost = RewriterStatement.multiArgInstr(ctx, "*", sum, instr.getNCol(), instr.getNRow());
-				assertions.addEqualityAssertion(instr.getChild(0).getNCol(), instr.getChild(1).getNCol());
-				assertions.addEqualityAssertion(instr.getChild(0).getNRow(), instr.getChild(1).getNRow());
+				assertions.addEqualityAssertion(instr.getChild(0).getNCol(), instr.getChild(2).getNCol());
+				assertions.addEqualityAssertion(instr.getChild(0).getNRow(), instr.getChild(2).getNRow());
 				overhead.add(MALLOC_COST + 50); // To make it worse than 1-*
 				break;
 			case "*2":

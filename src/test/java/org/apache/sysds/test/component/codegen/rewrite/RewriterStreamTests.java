@@ -1265,7 +1265,26 @@ public class RewriterStreamTests {
 		System.out.println("==========");
 		System.out.println(stmt1.toParsableString(ctx, true));
 		System.out.println("==========");
+		System.out.println(stmt2.toParsableString(ctx, true));
+
+		assert stmt1.match(RewriterStatement.MatcherContext.exactMatch(ctx, stmt2, stmt1));
+	}
+
+	@Test
+	public void testFused8() {
+		RewriterStatement stmt1 = RewriterUtils.parse("sum(!=(0.0, A))", ctx, "MATRIX:A,B", "LITERAL_FLOAT:0.0");
+		RewriterStatement stmt2 = RewriterUtils.parse("_nnz(A)", ctx, "MATRIX:A,B", "FLOAT:a");
+
+		System.out.println("Cost1: " + RewriterCostEstimator.estimateCost(stmt1, ctx));
+		System.out.println("Cost2: " + RewriterCostEstimator.estimateCost(stmt2, ctx));
+
+		stmt1 = canonicalConverter.apply(stmt1);
+		stmt2 = canonicalConverter.apply(stmt2);
+
+		System.out.println("==========");
 		System.out.println(stmt1.toParsableString(ctx, true));
+		System.out.println("==========");
+		System.out.println(stmt2.toParsableString(ctx, true));
 
 		assert stmt1.match(RewriterStatement.MatcherContext.exactMatch(ctx, stmt2, stmt1));
 	}

@@ -386,6 +386,7 @@ public class RewriterCostEstimator {
 			case "length":
 			case "nrow":
 			case "ncol":
+			case "_nnz":
 				return 0; // These just fetch metadata
 			case "sqrt":
 				return 10;

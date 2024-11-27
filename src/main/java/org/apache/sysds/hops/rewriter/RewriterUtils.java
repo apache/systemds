@@ -1380,6 +1380,8 @@ public class RewriterUtils {
 			if (debug)
 				System.out.println("FINAL1: " + stmt.toParsableString(ctx, false));
 
+			stmt.compress();
+
 			return stmt;
 		};
 	}

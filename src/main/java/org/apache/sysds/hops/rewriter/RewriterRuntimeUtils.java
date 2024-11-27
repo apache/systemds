@@ -779,6 +779,8 @@ public class RewriterRuntimeUtils {
 				if (expectedType != null && !expectedType.equals("FLOAT"))
 					throw new IllegalArgumentException("Unexpected type: " + expectedType);
 				return RewriterUtils.parse("min(A)", ctx, "MATRIX:A");
+			case "ua(traceRC)":
+				return RewriterUtils.parse("trace(A)", ctx, "MATRIX:A");
 		}
 
 		if (printUnknowns)

@@ -24,6 +24,7 @@ import org.junit.runners.Parameterized;
 import org.junit.runner.RunWith;
 import org.apache.sysds.api.DMLScript;
 import org.apache.sysds.common.Types;
+import org.apache.sysds.runtime.util.CommonThreadPool;
 import org.apache.sysds.test.AutomatedTestBase;
 import org.apache.sysds.test.TestConfiguration;
 import org.apache.sysds.test.TestUtils;
@@ -197,8 +198,7 @@ public class FederatedMatrixScalarOperationsTest extends AutomatedTestBase {
 			// we need the reference file to not be written to hdfs, so we get the correct format
 			rtplatform = Types.ExecMode.SINGLE_NODE;
 			programArgs = new String[] {"-w", Integer.toString(FEDERATED_WORKER_PORT)};
-			t = new Thread(() -> runTest(true, false, null, -1));
-			t.start();
+			CommonThreadPool.get().submit(() -> runTest(true, false, null, -1));
 			sleep(FED_WORKER_WAIT);
 			fullDMLScriptName = SCRIPT_DIR + TEST_DIR + dmlFile + ".dml";
 			programArgs = new String[] {"-nvargs",

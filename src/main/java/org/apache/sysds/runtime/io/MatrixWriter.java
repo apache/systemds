@@ -34,12 +34,18 @@ import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 public abstract class MatrixWriter {
 	protected static final Log LOG = LogFactory.getLog(MatrixWriter.class.getName());
 	
+	protected boolean _forcedParallel = false;
+	
 	public void writeMatrixToHDFS( MatrixBlock src, String fname, long rlen, long clen, int blen, long nnz ) throws IOException {
 		writeMatrixToHDFS(src, fname, rlen, clen, blen, nnz, false);
 	}
 
 	public abstract void writeMatrixToHDFS( MatrixBlock src, String fname, long rlen, long clen, int blen, long nnz, boolean diag )
 		throws IOException;
+	
+	public void setForcedParallel(boolean par) {
+		_forcedParallel = par;
+	}
 	
 	
 	/**

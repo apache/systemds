@@ -191,6 +191,7 @@ public class CodeGenUtils {
 				return "AggBinaryOp";
 
 			case "t":
+			case "rev":
 				return "ReorgOp";
 
 			case "rowSums":
@@ -252,8 +253,12 @@ public class CodeGenUtils {
 			case "t":
 				if (children.length != 1)
 					throw new IllegalArgumentException();
-
 				return "HopRewriteUtils.createTranspose(" + children[0] + ")";
+
+			case "rev":
+				if (children.length != 1)
+					throw new IllegalArgumentException();
+				return "HopRewriteUtils.createReorg(" + children[0] + ", Types.ReOrgOp.REV)";
 
 			case "rowSums":
 				if (children.length != 1)

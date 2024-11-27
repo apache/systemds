@@ -165,7 +165,7 @@ public class RewriterClusteringTest {
 		if (useRandomized) {
 			long MAX_MILLIS = 1200000; // Should be bound by number of ops
 			int BATCH_SIZE = 400;
-			int maxN = RewriterAlphabetEncoder.getMaxSearchNumberForNumOps(4);
+			int maxN = RewriterAlphabetEncoder.getMaxSearchNumberForNumOps(3);
 			System.out.println("MaxN: " + maxN);
 			long startMillis = System.currentTimeMillis();
 

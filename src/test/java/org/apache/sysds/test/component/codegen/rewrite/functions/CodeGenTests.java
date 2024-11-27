@@ -213,10 +213,12 @@ public class CodeGenTests {
 		try {
 			List<String> lines = Files.readAllLines(Paths.get(RewriteAutomaticallyGenerated.FILE_PATH));
 			RewriterRuleSet ruleSet = RewriterRuleSet.deserialize(lines, ctx);
-			System.out.println(ruleSet.toJavaCode("GeneratedRewriteClass", false));
+			System.out.println(ruleSet.toJavaCode("GeneratedRewriteClass", true));
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
+
+		Types.ReOrgOp
 	}
 
 }

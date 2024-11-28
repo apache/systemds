@@ -19,7 +19,6 @@
 
 package org.apache.sysds.runtime.instructions.gpu;
 
-import org.apache.sysds.common.Opcodes;
 import org.apache.sysds.common.Types.DataType;
 import org.apache.sysds.common.Types.ValueType;
 import org.apache.sysds.runtime.DMLRuntimeException;
@@ -77,5 +76,4 @@ public abstract class BuiltinBinaryGPUInstruction extends GPUInstruction {
 			throw new DMLRuntimeException(
 				"GPU : Unsupported GPU builtin operations on a matrix and a scalar:" + opcode);
 	}
-
 }

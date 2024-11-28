@@ -863,6 +863,7 @@ public interface Types {
 		FEDERATED, // A federated matrix
 		PROTO,  // protocol buffer representation
 		HDF5,   // Hierarchical Data Format (HDF)
+		COG,   // Cloud-optimized GeoTIFF
 		UNKNOWN;
 		
 		public boolean isIJV() {

@@ -1,9 +1,11 @@
-package org.apache.sysds.hops.rewriter;
+package org.apache.sysds.hops.rewriter.codegen;
 
 import org.apache.commons.lang3.NotImplementedException;
 import org.apache.sysds.common.Types;
 import org.apache.sysds.hops.AggUnaryOp;
 import org.apache.sysds.hops.rewrite.HopRewriteUtils;
+import org.apache.sysds.hops.rewriter.RewriterStatement;
+import org.apache.sysds.hops.rewriter.RuleContext;
 
 public class CodeGenUtils {
 	public static String getSpecialOpCheck(RewriterStatement stmt, final RuleContext ctx, String hopVar) {

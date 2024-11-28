@@ -9,7 +9,7 @@ import org.apache.sysds.hops.LiteralOp;
 import org.apache.sysds.hops.ReorgOp;
 import org.apache.sysds.hops.rewrite.HopRewriteUtils;
 import org.apache.sysds.hops.rewriter.RewriteAutomaticallyGenerated;
-import org.apache.sysds.hops.rewriter.RewriterCodeGen;
+import org.apache.sysds.hops.rewriter.codegen.RewriterCodeGen;
 import org.apache.sysds.hops.rewriter.RewriterRule;
 import org.apache.sysds.hops.rewriter.RewriterRuleBuilder;
 import org.apache.sysds.hops.rewriter.RewriterRuleSet;
@@ -27,7 +27,6 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.function.Function;
 
 public class CodeGenTests {

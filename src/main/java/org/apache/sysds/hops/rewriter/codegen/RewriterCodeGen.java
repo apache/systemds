@@ -1,8 +1,12 @@
-package org.apache.sysds.hops.rewriter;
+package org.apache.sysds.hops.rewriter.codegen;
 
 
-import org.apache.commons.lang3.mutable.MutableObject;
 import org.apache.sysds.hops.Hop;
+import org.apache.sysds.hops.rewriter.RewriterCostEstimator;
+import org.apache.sysds.hops.rewriter.RewriterDataType;
+import org.apache.sysds.hops.rewriter.RewriterRule;
+import org.apache.sysds.hops.rewriter.RewriterStatement;
+import org.apache.sysds.hops.rewriter.RuleContext;
 import org.codehaus.janino.SimpleCompiler;
 import scala.Tuple2;
 

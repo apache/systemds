@@ -85,18 +85,12 @@ public class RewriteSimplifyTraceMatrixMultTest extends AutomatedTestBase {
 			TestUtils.compareMatrices(dmlfile, rfile, eps, "Stat-DML", "Stat-R");
 
 			//check trace operator existence
-			String uaktrace = "uaktrace";
-			long numTrace = Statistics.getCPHeavyHitterCount(uaktrace);
-
-			if(rewrites)
-				Assert.assertTrue(numTrace == 0);
-			else
-				Assert.assertTrue(numTrace == 1);
-
+			long numTrace = Statistics.getCPHeavyHitterCount("uaktrace");
+			Assert.assertTrue(numTrace == (rewrites ? 1 : 2)); 
+			Assert.assertTrue(heavyHittersContainsString("rev"));
 		}
 		finally {
 			OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION = oldFlag;
 		}
-
 	}
 }

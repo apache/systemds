@@ -26,6 +26,8 @@ B = read($2)
 
 # Perform the operation
 R = trace(A %*% B)
+R = R + trace(rev(A))
 
 # Write the result R
 write(R, $3)
+

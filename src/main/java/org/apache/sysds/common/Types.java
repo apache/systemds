@@ -751,6 +751,10 @@ public interface Types {
 		DIAG, //DIAG_V2M and DIAG_M2V could not be distinguished if sizes unknown
 		RESHAPE, REV, ROLL, SORT, TRANS;
 		
+		public boolean preservesValues() {
+			return this != DIAG && this != SORT;
+		}
+		
 		@Override
 		public String toString() {
 			switch(this) {

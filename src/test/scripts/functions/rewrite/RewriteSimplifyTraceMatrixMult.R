@@ -36,6 +36,11 @@ B = as.matrix(readMM(paste(args[1], "B.mtx", sep="")))
 
 # Perform the matrix operation
 R = sum(diag(A %*% B))
+rA = A;
+for(i in 1:nrow(rA)) {
+  rA[,i] = rev(rA[,i])
+}
+R = R + sum(diag(rA))
 
 # Write the result scalar R
 write(R, paste(args[2], "R" ,sep=""))

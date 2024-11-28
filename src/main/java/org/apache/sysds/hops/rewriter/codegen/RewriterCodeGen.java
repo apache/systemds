@@ -409,7 +409,7 @@ public class RewriterCodeGen {
 		return name;
 	}
 
-	private static void indent(int depth, StringBuilder sb) {
+	public static void indent(int depth, StringBuilder sb) {
 		for (int i = 0; i < depth; i++)
 			sb.append('\t');
 	}

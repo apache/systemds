@@ -58,6 +58,8 @@ public class CodeGenUtils {
 					return "Types.OpOp1.ROUND";
 				case "rowSums":
 				case "colSums":
+				case "sum":
+				case "trace":
 					return "Types.AggOp.SUM";
 			}
 		} else if (stmt.getOperands().size() == 2) {
@@ -158,6 +160,9 @@ public class CodeGenUtils {
 						throw new IllegalArgumentException();
 
 					return "Types.OpOp1.LOG_NZ";
+
+				case "%*%":
+					return "true"; // This should be resolved by the custom handler function
 			}
 		}
 
@@ -200,6 +205,8 @@ public class CodeGenUtils {
 
 			case "rowSums":
 			case "colSums":
+			case "sum":
+			case "trace":
 				return "AggUnaryOp";
 		}
 
@@ -207,7 +214,11 @@ public class CodeGenUtils {
 	}
 
 	public static String[] getReturnType(RewriterStatement stmt, final RuleContext ctx) {
-		switch (stmt.getResultingDataType(ctx)) {
+		return getReturnType(stmt.getResultingDataType(ctx));
+	}
+
+	public static String[] getReturnType(String typeStr) {
+		switch (typeStr) {
 			case "FLOAT":
 				return new String[] { "Types.DataType.SCALAR", "Types.ValueType.FP64", "Types.ValueType.FP32" };
 			case "INT":
@@ -218,7 +229,7 @@ public class CodeGenUtils {
 				return new String[] { "Types.DataType.MATRIX" };
 		}
 
-		throw new NotImplementedException();
+		throw new NotImplementedException(typeStr);
 	}
 
 	public static String literalGetterFunction(RewriterStatement stmt, final RuleContext ctx) {

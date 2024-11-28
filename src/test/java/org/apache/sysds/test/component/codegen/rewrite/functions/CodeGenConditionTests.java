@@ -1,6 +1,8 @@
 package org.apache.sysds.test.component.codegen.rewrite.functions;
 
+import org.apache.sysds.hops.rewriter.RewriteAutomaticallyGenerated;
 import org.apache.sysds.hops.rewriter.RewriterRule;
+import org.apache.sysds.hops.rewriter.RewriterRuleSet;
 import org.apache.sysds.hops.rewriter.RewriterStatement;
 import org.apache.sysds.hops.rewriter.RewriterUtils;
 import org.apache.sysds.hops.rewriter.RuleContext;
@@ -8,7 +10,12 @@ import org.apache.sysds.hops.rewriter.codegen.CodeGenCondition;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.function.Function;
 
 public class CodeGenConditionTests {
@@ -32,8 +39,62 @@ public class CodeGenConditionTests {
 
 		RewriterRule rule = RewriterUtils.parseRule(ruleStr, ctx);
 
-		List<CodeGenCondition> cgcs = CodeGenCondition.buildCondition(List.of(rule), ctx);
+		List<CodeGenCondition> cgcs = CodeGenCondition.buildCondition(List.of(rule), 1, ctx);
 		System.out.println(cgcs);
+	}
+
+	@Test
+	public void test2() {
+		String ruleStr = "MATRIX:A\n" +
+				"\n" +
+				"t(t(A))\n" +
+				"=>\n" +
+				"A";
+
+		RewriterRule rule = RewriterUtils.parseRule(ruleStr, ctx);
+
+		String ruleStr2 = "MATRIX:A,B\n" +
+				"\n" +
+				"+(t(A), t(B))\n" +
+				"=>\n" +
+				"t(+(A, B))";
+
+		RewriterRule rule2 = RewriterUtils.parseRule(ruleStr2, ctx);
+
+		String ruleStr3 = "MATRIX:A,B\n" +
+				"\n" +
+				"%*%(t(A), t(B))\n" +
+				"=>\n" +
+				"t(%*%(B, A))";
+
+		RewriterRule rule3 = RewriterUtils.parseRule(ruleStr3, ctx);
+
+		Map<RewriterRule, String> fNames = new HashMap<>();
+		fNames.put(rule, "rule1");
+		fNames.put(rule2, "rule2");
+		fNames.put(rule3, "rule3");
+
+		List<CodeGenCondition> cgcs = CodeGenCondition.buildCondition(List.of(rule, rule2, rule3), 1, ctx);
+		System.out.println(cgcs);
+		System.out.println(CodeGenCondition.getSelectionString(cgcs, 0, fNames, ctx));
+	}
+
+	@Test
+	public void codeGen() {
+		try {
+			List<String> lines = Files.readAllLines(Paths.get(RewriteAutomaticallyGenerated.FILE_PATH));
+			RewriterRuleSet ruleSet = RewriterRuleSet.deserialize(lines, ctx);
+			Map<RewriterRule, String> fNames = new HashMap<>();
+			int ruleCtr = 1;
+			for (RewriterRule rr : ruleSet.getRules())
+				fNames.put(rr, "rule_" + (ruleCtr++));
+
+			List<CodeGenCondition> cgcs = CodeGenCondition.buildCondition(ruleSet.getRules(), 5, ctx);
+			System.out.println(CodeGenCondition.getSelectionString(cgcs, 0, fNames, ctx));
+			//System.out.println(ruleSet.toJavaCode("GeneratedRewriteClass", true));
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
 	}
 
 }

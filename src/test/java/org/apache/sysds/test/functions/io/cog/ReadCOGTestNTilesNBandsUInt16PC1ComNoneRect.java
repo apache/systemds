@@ -6,9 +6,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- *
+ * 
  *   http://www.apache.org/licenses/LICENSE-2.0
- * O
+ * 
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -17,27 +17,27 @@
  * under the License.
  */
 
-package org.apache.sysds.runtime.compress.colgroup.dictionary;
+package org.apache.sysds.test.functions.io.cog;
 
-import java.lang.ref.SoftReference;
+public class ReadCOGTestNTilesNBandsUInt16PC1ComNoneRect extends ReadCOGTest {
+	private final static String TEST_NAME = "ReadCOGTest";
+	public final static String TEST_CLASS_DIR = TEST_DIR + ReadCOGTestNTilesNBandsUInt16PC1ComNoneRect.class.getSimpleName() + "/";
 
-public abstract class ACachingMBDictionary extends ADictionary {
-
-	private static final long serialVersionUID = 7035552219254994595L;
-	/** A Cache to contain a materialized version of the identity matrix. */
-	protected volatile SoftReference<MatrixBlockDictionary> cache = null;
-
-	@Override
-	public final MatrixBlockDictionary getMBDict(int nCol) {
-		if(cache != null) {
-			MatrixBlockDictionary r = cache.get();
-			if(r != null)
-				return r;
-		}
-		MatrixBlockDictionary ret = createMBDict(nCol);
-		cache = new SoftReference<>(ret);
-		return ret;
+	protected String getTestName() {
+		return TEST_NAME;
 	}
 
-	public abstract MatrixBlockDictionary createMBDict(int nCol);
+	protected String getTestClassDir() {
+		return TEST_CLASS_DIR;
+	}
+
+	protected double getResult(){ return 199571808.0; }
+
+	protected int getScriptId() {
+		return 1;
+	}
+
+	protected int getId() {
+		return 5;
+	}
 }

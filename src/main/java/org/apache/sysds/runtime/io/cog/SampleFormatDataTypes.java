@@ -6,9 +6,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- *
+ * 
  *   http://www.apache.org/licenses/LICENSE-2.0
- * O
+ * 
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -17,27 +17,33 @@
  * under the License.
  */
 
-package org.apache.sysds.runtime.compress.colgroup.dictionary;
+package org.apache.sysds.runtime.io.cog;
 
-import java.lang.ref.SoftReference;
+/**
+ * Enum for mapping sample formats of TIFF image data to names
+ */
+public enum SampleFormatDataTypes {
+	UNSIGNED_INTEGER(1),
+	SIGNED_INTEGER(2),
+	FLOATING_POINT(3),
+	UNDEFINED(4);
 
-public abstract class ACachingMBDictionary extends ADictionary {
+	private final int value;
 
-	private static final long serialVersionUID = 7035552219254994595L;
-	/** A Cache to contain a materialized version of the identity matrix. */
-	protected volatile SoftReference<MatrixBlockDictionary> cache = null;
-
-	@Override
-	public final MatrixBlockDictionary getMBDict(int nCol) {
-		if(cache != null) {
-			MatrixBlockDictionary r = cache.get();
-			if(r != null)
-				return r;
-		}
-		MatrixBlockDictionary ret = createMBDict(nCol);
-		cache = new SoftReference<>(ret);
-		return ret;
+	SampleFormatDataTypes(int value) {
+		this.value = value;
 	}
 
-	public abstract MatrixBlockDictionary createMBDict(int nCol);
+	public int getValue() {
+		return value;
+	}
+
+	public static SampleFormatDataTypes valueOf(int value) {
+		for (SampleFormatDataTypes dataType : SampleFormatDataTypes.values()) {
+			if (dataType.getValue() == value) {
+				return dataType;
+			}
+		}
+		return null;
+	}
 }

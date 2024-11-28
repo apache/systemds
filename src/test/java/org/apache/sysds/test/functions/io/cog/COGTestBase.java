@@ -6,9 +6,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- *
+ * 
  *   http://www.apache.org/licenses/LICENSE-2.0
- * O
+ * 
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -17,27 +17,27 @@
  * under the License.
  */
 
-package org.apache.sysds.runtime.compress.colgroup.dictionary;
+package org.apache.sysds.test.functions.io.cog;
 
-import java.lang.ref.SoftReference;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+import org.apache.sysds.test.AutomatedTestBase;
+import org.apache.sysds.test.TestConfiguration;
 
-public abstract class ACachingMBDictionary extends ADictionary {
+public abstract class COGTestBase extends AutomatedTestBase {
+	protected final static String TEST_DIR = "functions/io/cog/";
+	protected static final Log LOG = LogFactory.getLog(COGTestBase.class.getName());
+	protected final static double eps = 1e-6;
 
-	private static final long serialVersionUID = 7035552219254994595L;
-	/** A Cache to contain a materialized version of the identity matrix. */
-	protected volatile SoftReference<MatrixBlockDictionary> cache = null;
+	protected abstract String getTestClassDir();
+
+	protected abstract String getTestName();
+
+	protected abstract int getScriptId();
 
 	@Override
-	public final MatrixBlockDictionary getMBDict(int nCol) {
-		if(cache != null) {
-			MatrixBlockDictionary r = cache.get();
-			if(r != null)
-				return r;
-		}
-		MatrixBlockDictionary ret = createMBDict(nCol);
-		cache = new SoftReference<>(ret);
-		return ret;
+	public void setUp() {
+		addTestConfiguration(getTestName(),
+				new TestConfiguration(getTestClassDir(), getTestName(), new String[] {"Rout"}));
 	}
-
-	public abstract MatrixBlockDictionary createMBDict(int nCol);
 }

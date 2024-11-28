@@ -22,6 +22,7 @@ package org.apache.sysds.runtime.compress.colgroup.dictionary;
 import org.apache.sysds.runtime.compress.DMLCompressionException;
 
 public abstract class AIdentityDictionary extends ACachingMBDictionary {
+	private static final long serialVersionUID = 5013713435287705877L;
 	/** The number of rows or columns, rows can be +1 if withEmpty is set. */
 	protected final int nRowCol;
 	/** Specify if the Identity matrix should contain an empty row in the end. */

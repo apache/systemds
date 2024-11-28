@@ -145,10 +145,10 @@ public class SeqParReadTest2 extends AutomatedTestBase {
 			{false, "binary", false, 0.1},
 			{false, "binary", true, 0.7},
 			{false, "binary", true, 0.1},
-			{true, "hdf5", false, 0.7}, 
-			//{true, "hdf5", false, 0.1}, //FIXME
-			//{true, "hdf5", true, 0.7},
-			//{true, "hdf5", true, 0.1},
+			{true, "hdf5", false, 0.7},
+			{true, "hdf5", false, 0.1},
+			{true, "hdf5", true, 0.7},
+			{true, "hdf5", true, 0.1},
 			{true, "libsvm", false, 0.7},
 			{true, "libsvm", false, 0.1},
 			{true, "libsvm", true, 0.7},
@@ -190,8 +190,10 @@ public class SeqParReadTest2 extends AutomatedTestBase {
 		}
 		
 		//compare read content is equivalent to original
-		if( data2 != null )
+		if( data2 != null ) {
+			Assert.assertEquals(data.getNonZeros(), data2.getNonZeros());
 			TestUtils.compareMatrices(data, data2, eps);
+		}
 	}
 	
 	@SuppressWarnings("incomplete-switch")

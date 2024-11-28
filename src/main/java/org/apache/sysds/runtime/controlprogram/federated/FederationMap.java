@@ -147,10 +147,8 @@ public class FederationMap {
 		return broadcastSliced(data, null, transposed);
 	}
 
-	public FederatedRequest[] broadcastSliced(MatrixLineagePair moLin,
-		boolean transposed) {
-		return broadcastSliced(moLin.getMO(), moLin.getLI(),
-			transposed);
+	public FederatedRequest[] broadcastSliced(MatrixLineagePair moLin, boolean transposed) {
+		return broadcastSliced(moLin.getMO(), moLin.getLI(), transposed);
 	}
 
 	/**

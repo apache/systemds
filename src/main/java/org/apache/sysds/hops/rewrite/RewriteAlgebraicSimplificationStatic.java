@@ -980,23 +980,21 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 
 	private static Hop simplifyUnaryAggReorgOperation( Hop parent, Hop hi, int pos )
 	{
-		if(   hi instanceof AggUnaryOp && ((AggUnaryOp)hi).getDirection()==Direction.RowCol  //full uagg
-				&& hi.getInput().get(0) instanceof ReorgOp  ) //reorg operation
+		if( hi instanceof AggUnaryOp && ((AggUnaryOp)hi).getDirection()==Direction.RowCol 
+			&& ((AggUnaryOp)hi).getOp() != AggOp.TRACE    //full uagg
+			&& hi.getInput().get(0) instanceof ReorgOp  ) //reorg operation
 		{
 			ReorgOp rop = (ReorgOp)hi.getInput().get(0);
-			if(   (rop.getOp()==ReOrgOp.TRANS || rop.getOp()==ReOrgOp.RESHAPE
-					|| rop.getOp() == ReOrgOp.REV )         //valid reorg
-					&& rop.getParent().size()==1 )              //uagg only reorg consumer
+			if( rop.getOp().preservesValues()       //valid reorg
+				&& rop.getParent().size()==1 )      //uagg only reorg consumer
 			{
 				Hop input = rop.getInput().get(0);
 				HopRewriteUtils.removeAllChildReferences(hi);
 				HopRewriteUtils.removeAllChildReferences(rop);
 				HopRewriteUtils.addChildReference(hi, input);
-
 				LOG.debug("Applied simplifyUnaryAggReorgOperation");
 			}
 		}
-
 		return hi;
 	}
 

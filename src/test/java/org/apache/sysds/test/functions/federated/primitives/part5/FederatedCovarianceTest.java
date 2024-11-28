@@ -49,7 +49,7 @@ public class FederatedCovarianceTest extends AutomatedTestBase {
 	private final static String TEST_DIR = "functions/federated/";
 	private static final String TEST_CLASS_DIR = TEST_DIR + FederatedCovarianceTest.class.getSimpleName() + "/";
 
-	private final static int blocksize = 1024;
+	private final static int blocksize = 1000;
 	@Parameterized.Parameter
 	public int rows;
 	@Parameterized.Parameter(1)
@@ -57,8 +57,9 @@ public class FederatedCovarianceTest extends AutomatedTestBase {
 
 	@Parameterized.Parameters
 	public static Collection<Object[]> data() {
-		return Arrays.asList(new Object[][] {{20, 1},
-			// {100, 1}, {1000, 1}
+		return Arrays.asList(new Object[][] {
+			{120, 1},
+			{1100, 1},
 		});
 	}
 

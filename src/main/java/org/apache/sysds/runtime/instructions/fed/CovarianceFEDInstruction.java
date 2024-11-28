@@ -114,27 +114,20 @@ public class CovarianceFEDInstruction extends BinaryFEDInstruction {
 				new CPOperand[]{input1, input2, input3}, new long[]{mo1.getFedMapping().getID(),
 					mo2.getFedMapping().getID(), moLin3.getFedMapping().getID()});
 		}
-			
+
 		FederatedRequest fr2 = new FederatedRequest(FederatedRequest.RequestType.GET_VAR, fr1.getID());
 		FederatedRequest fr3 = mo1.getFedMapping().cleanup(getTID(), fr1.getID());
-		Future<FederatedResponse>[] covTmp = mo1.getFedMapping().execute(getTID(), true, fr1, fr2, fr3);
-
-		//means
-		Future<FederatedResponse>[] meanTmp1 = processMean(mo1, moLin3, 0);
-		Future<FederatedResponse>[] meanTmp2 = processMean(mo2, moLin3, 1);
-
-		Double[] cov = getResponses(covTmp);
-		Double[] mean1 = getResponses(meanTmp1);
-		Double[] mean2 = getResponses(meanTmp2);
+		Double[] cov = getResponses(mo1.getFedMapping().execute(getTID(), fr1, fr2, fr3));
+		Double[] mean1 = getResponses(processMean(mo1, moLin3, 0));
+		Double[] mean2 = getResponses(processMean(mo2, moLin3, 1));
 
 		if (moLin3 == null) {
 			double result = aggCov(cov, mean1, mean2, mo1.getFedMapping().getFederatedRanges());
 			ec.setVariable(output.getName(), new DoubleObject(result));
 		}
 		else {
-			Future<FederatedResponse>[] weightsSumTmp = getWeightsSum(moLin3, moLin3.getFedMapping().getID(), instString, moLin3.getFedMapping());
-			Double[] weights = getResponses(weightsSumTmp);
-			
+			Double[] weights = getResponses(
+				getWeightsSum(moLin3, moLin3.getFedMapping().getID(), instString, moLin3.getFedMapping()));
 			double result = aggWeightedCov(cov, mean1, mean2, weights);
 			ec.setVariable(output.getName(), new DoubleObject(result));
 		}
@@ -154,21 +147,13 @@ public class CovarianceFEDInstruction extends BinaryFEDInstruction {
 			new CPOperand[]{input1, input2, input3},
 			new long[]{mo1.getFedMapping().getID(), mo2.getFedMapping().getID(), fr1[0].getID()}
 		);
+		//sequential execution of cov and means for robustness
 		FederatedRequest fr3 = new FederatedRequest(FederatedRequest.RequestType.GET_VAR, fr2.getID());
 		FederatedRequest fr4 = mo1.getFedMapping().cleanup(getTID(), fr2.getID());
-		Future<FederatedResponse>[] covTmp = mo1.getFedMapping().execute(getTID(), fr1, fr2, fr3, fr4);
-
-		//means
-		Future<FederatedResponse>[] meanTmp1 = processMean(mo1, 0, fr1[0].getID());
-		Future<FederatedResponse>[] meanTmp2 = processMean(mo2, 1, fr1[0].getID());
-
-		Double[] cov = getResponses(covTmp);
-		Double[] mean1 = getResponses(meanTmp1);
-		Double[] mean2 = getResponses(meanTmp2);
-
-		Future<FederatedResponse>[] weightsSumTmp = getWeightsSum(moLin3, fr1[0].getID(), instString, mo1.getFedMapping());
-		Double[] weights = getResponses(weightsSumTmp);
-		
+		Double[] cov = getResponses(mo1.getFedMapping().execute(getTID(), true, fr1, fr2, fr3, fr4));
+		Double[] mean1 = getResponses(processMean(mo1, 0, fr1[0].getID()));
+		Double[] mean2 = getResponses(processMean(mo2, 1, fr1[0].getID()));
+		Double[] weights = getResponses(getWeightsSum(moLin3, fr1[0].getID(), instString, mo1.getFedMapping()));
 		double result = aggWeightedCov(cov, mean1, mean2, weights);
 		ec.setVariable(output.getName(), new DoubleObject(result));
 	}
@@ -243,7 +228,7 @@ public class CovarianceFEDInstruction extends BinaryFEDInstruction {
 				fr[i] = ((ScalarObject) ffr[i].get().getData()[0]).getDoubleValue();
 			}
 			catch(Exception e) {
-				throw new DMLRuntimeException("CovarianceFEDInstruction: incorrect means or cov.");
+				throw new DMLRuntimeException("CovarianceFEDInstruction: incorrect means or cov.", e);
 			}
 		});
 
@@ -302,7 +287,7 @@ public class CovarianceFEDInstruction extends BinaryFEDInstruction {
 	}
 
 	private Future<FederatedResponse>[] processMean(MatrixObject mo1, MatrixLineagePair moLin3, int var){
-		String[] parts = instString.split("°");
+		String[] parts = instString.split(Lop.OPERAND_DELIMITOR);
 		Future<FederatedResponse>[] meanTmp = null;
 		if (moLin3 == null) {
 			String meanInstr = instString.replace(getOpcode(), getOpcode().replace("cov", "uamean"));

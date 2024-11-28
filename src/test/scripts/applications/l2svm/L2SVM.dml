@@ -80,16 +80,16 @@ while(continue == 1 & iter < maxiterations)  {
 	# minimizing primal obj along direction s
 	step_sz = 0
 	Xd = X %*% s
-	wd = lambda * sum(w * s)
+	wd = lambda * sum(w * s) # w = matrix(0,...) for first iteration
 	dd = lambda * sum(s * s)
 	continue1 = 1
 	while(continue1 == 1){
 		tmp_Xw = Xw + step_sz*Xd
-		out = 1 - Y * (tmp_Xw)
+		out = 1 - Y * (tmp_Xw) # 1 - Y * (Xw + step_sz * (X %*% s))
 		sv = (out > 0)
 		out = out * sv
-		g = wd + step_sz*dd - sum(out * Y * Xd)
-		h = dd + sum(Xd * sv * Xd)
+		g = wd + step_sz*dd - sum(out * Y * Xd) # sum((1 - Y * tmp_Xw) * Y * (X %*% s))
+		h = dd + sum(Xd * sv * Xd) # sum((X %*% s) * ((1 - Y * (Xw + stepSize * Xd)) > 0) * (X %*% s))
 		step_sz = step_sz - g/h
 		if (g*g/h < 0.0000000001){
 			continue1 = 0
@@ -100,7 +100,7 @@ while(continue == 1 & iter < maxiterations)  {
 	w = w + step_sz*s
 	Xw = Xw + step_sz*Xd
 	
-	out = 1 - Y * Xw
+	out = 1 - Y * Xw # 1 - Y * (Xw + step_sz * (X %*% s))
 	sv = (out > 0)
 	out = sv * out
 	obj = 0.5 * sum(out * out) + lambda/2 * sum(w * w)

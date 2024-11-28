@@ -43,6 +43,12 @@ public class RewriteAutomaticallyGenerated extends HopRewriteRule {
 		if( roots == null || rewriteFn == null )
 			return roots;
 
+		/*System.out.println("Rewriting DAGs...");
+		StackTraceElement[] ste = Thread.currentThread().getStackTrace();
+		System.out.println("Caller:\t" + ste[2]);
+		System.out.println("\t\t\t" + ste[3]);
+		long startMillis = System.currentTimeMillis();*/
+
 		//one pass rewrite-descend (rewrite created pattern)
 		for( Hop h : roots )
 			rule_apply( h, false );
@@ -52,6 +58,8 @@ public class RewriteAutomaticallyGenerated extends HopRewriteRule {
 		for( Hop h : roots )
 			rule_apply( h, true );
 
+		//System.out.println("Generated rewrites took " + (System.currentTimeMillis() - startMillis) + "ms");
+
 		return roots;
 	}
 
@@ -60,6 +68,8 @@ public class RewriteAutomaticallyGenerated extends HopRewriteRule {
 		if( root == null || rewriteFn == null )
 			return root;
 
+		//long startMillis = System.currentTimeMillis();
+
 		//one pass rewrite-descend (rewrite created pattern)
 		rule_apply( root, false );
 
@@ -67,6 +77,8 @@ public class RewriteAutomaticallyGenerated extends HopRewriteRule {
 
 		//one pass descend-rewrite (for rollup)
 		rule_apply( root, true );
+
+		//System.out.println("Generated rewrites took " + (System.currentTimeMillis() - startMillis) + "ms");
 
 		return root;
 	}

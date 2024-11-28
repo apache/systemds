@@ -42,6 +42,8 @@ public class CodeGenUtils {
 			switch (stmt.trueInstruction()) {
 				case "t":
 					return "Types.ReOrgOp.TRANS";
+				case "rev":
+					return "Types.ReOrgOp.REV";
 				case "!":
 					return "Types.OpOp1.NOT";
 				case "sqrt":
@@ -157,7 +159,7 @@ public class CodeGenUtils {
 			}
 		}
 
-		throw new NotImplementedException();
+		throw new NotImplementedException(stmt.trueInstruction());
 	}
 
 	public static String getOpClass(RewriterStatement stmt, final RuleContext ctx) {

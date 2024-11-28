@@ -217,8 +217,6 @@ public class CodeGenTests {
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
-
-		Types.ReOrgOp
 	}
 
 }

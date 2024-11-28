@@ -462,7 +462,9 @@ public class DMLScript
 		initHadoopExecution( ConfigurationManager.getDMLConfig() );
 	
 		//Step 5: rewrite HOP DAGs (incl IPA and memory estimates)
+		long startMillis = System.currentTimeMillis();
 		dmlt.rewriteHopsDAG(prog);
+		System.out.println("Rewrite procedure took: " + (System.currentTimeMillis() - startMillis) + "ms");
 
 		if (hopInterceptor != null && !hopInterceptor.apply(prog))
 			return;

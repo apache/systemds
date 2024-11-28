@@ -220,8 +220,9 @@ public class RewriterCodeGen {
 			sb.append("LiteralOp " + lVar + " = (LiteralOp) " + curVar + ";\n\n");
 			indent(indentation, sb);
 			sb.append("if ( " + lVar + ".getDataType() != " + types[0]);
+			sb.append("|| !" + lVar + ".getValueType().isNumeric()");
 
-			for (int i = 1; i < types.length; i++) {
+			/*for (int i = 1; i < types.length; i++) {
 				if (i == 1) {
 					sb.append(" || (" + lVar + ".getValueType() != " + types[1]);
 					continue;
@@ -231,7 +232,7 @@ public class RewriterCodeGen {
 
 				if (i == types.length - 1)
 					sb.append(')');
-			}
+			}*/
 
 			sb.append(" )\n");
 
@@ -299,10 +300,11 @@ public class RewriterCodeGen {
 			// Check if the instruction matches
 			indent(indentation, sb);
 			sb.append("if ( " + cCurVar + ".getOp() != " + opCode);
-			String[] types = CodeGenUtils.getReturnType(cur, ctx);
-			sb.append(" || " + cCurVar + ".getDataType() != " + types[0]);
+			sb.append(" || !" + cCurVar + ".getValueType().isNumeric()");
+			//String[] types = CodeGenUtils.getReturnType(cur, ctx);
+			//sb.append(" || " + cCurVar + ".getDataType() != " + types[0]);
 
-			for (int i = 1; i < types.length; i++) {
+			/*for (int i = 1; i < types.length; i++) {
 				if (i == 1) {
 					sb.append(" || (" + cCurVar + ".getValueType() != " + types[1]);
 					continue;
@@ -312,7 +314,7 @@ public class RewriterCodeGen {
 
 				if (i == types.length - 1)
 					sb.append(')');
-			}
+			}*/
 
 			sb.append(" )\n");
 			indent(indentation + 1, sb);
@@ -330,8 +332,9 @@ public class RewriterCodeGen {
 			indent(indentation, sb);
 			String[] types = CodeGenUtils.getReturnType(cur, ctx);
 			sb.append("if ( " + curVar + ".getDataType() != " + types[0]);
+			sb.append(" || !" + curVar + ".getValueType().isNumeric()");
 
-			for (int i = 1; i < types.length; i++) {
+			/*for (int i = 1; i < types.length; i++) {
 				if (i == 1) {
 					sb.append(" || (" + curVar + ".getValueType() != " + types[1]);
 					continue;
@@ -341,12 +344,12 @@ public class RewriterCodeGen {
 
 				if (i == types.length - 1)
 					sb.append(')');
-			}
+			}*/
 
 			if (cur.isRowVector()) {
-				sb.append(" || !(" + curVar + ".getDim2() == 1L)");
+				sb.append(" || " + curVar + ".getDim2() != 1L");
 			} else if (cur.isColVector()) {
-				sb.append(" || !(" + curVar + ".getDim1() == 1L)");
+				sb.append(" || " + curVar + ".getDim1() != 1L");
 			}
 
 			sb.append(" )\n");

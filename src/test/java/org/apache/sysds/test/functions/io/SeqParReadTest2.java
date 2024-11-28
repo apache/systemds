@@ -147,8 +147,8 @@ public class SeqParReadTest2 extends AutomatedTestBase {
 			{false, "binary", true, 0.1},
 			{true, "hdf5", false, 0.7},
 			{true, "hdf5", false, 0.1},
-			//{true, "hdf5", true, 0.7}, //FIXME
-			//{true, "hdf5", true, 0.1},
+			{true, "hdf5", true, 0.7},
+			{true, "hdf5", true, 0.1},
 			{true, "libsvm", false, 0.7},
 			{true, "libsvm", false, 0.1},
 			{true, "libsvm", true, 0.7},

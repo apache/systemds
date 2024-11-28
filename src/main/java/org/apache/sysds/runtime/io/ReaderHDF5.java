@@ -108,7 +108,7 @@ public class ReaderHDF5 extends MatrixReader {
 
 		//determine matrix size via additional pass if required
 		if(dest == null) {
-			dest = computeHDF5Size(files, fs, datasetName);
+			dest = computeHDF5Size(files, fs, datasetName, rlen*clen);
 			clen = dest.getNumColumns();
 			rlen = dest.getNumRows();
 		}
@@ -169,7 +169,7 @@ public class ReaderHDF5 extends MatrixReader {
 		return lnnz;
 	}
 
-	public static MatrixBlock computeHDF5Size(List<Path> files, FileSystem fs, String datasetName)
+	public static MatrixBlock computeHDF5Size(List<Path> files, FileSystem fs, String datasetName, long estnnz)
 		throws IOException, DMLRuntimeException
 	{
 		int nrow = 0;
@@ -186,6 +186,6 @@ public class ReaderHDF5 extends MatrixReader {
 			IOUtilFunctions.closeSilently(bis);
 		}
 		// allocate target matrix block based on given size;
-		return createOutputMatrixBlock(nrow, ncol, nrow, (long) nrow * ncol, true, false);
+		return createOutputMatrixBlock(nrow, ncol, nrow, estnnz, true, true);
 	}
 }

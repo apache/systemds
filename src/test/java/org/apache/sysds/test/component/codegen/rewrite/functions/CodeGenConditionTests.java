@@ -80,6 +80,44 @@ public class CodeGenConditionTests {
 	}
 
 	@Test
+	public void test3() {
+		String ruleStr = "MATRIX:A\nFLOAT:b\n" +
+				"\n" +
+				"!=(-(b,rev(A)),A)\n" +
+				"=>\n" +
+				"!=(A,-(b,A))";
+
+		RewriterRule rule = RewriterUtils.parseRule(ruleStr, ctx);
+
+		String ruleStr2 = "MATRIX:A,B\n" +
+				"\n" +
+				"!=(-(B,rev(A)),A)\n" +
+				"=>\n" +
+				"!=(A,-(B,A))";
+
+		RewriterRule rule2 = RewriterUtils.parseRule(ruleStr2, ctx);
+
+		String ruleStr3 = "MATRIX:A,B\n" +
+				"\n" +
+				"%*%(t(A), t(B))\n" +
+				"=>\n" +
+				"t(%*%(B, A))";
+
+		RewriterRule rule3 = RewriterUtils.parseRule(ruleStr3, ctx);
+
+		Map<RewriterRule, String> fNames = new HashMap<>();
+		fNames.put(rule, "rule1");
+		fNames.put(rule2, "rule2");
+		fNames.put(rule3, "rule3");
+
+		List<CodeGenCondition> cgcs = CodeGenCondition.buildCondition(List.of(rule, rule2, rule3), 1, ctx);
+		System.out.println(cgcs);
+		System.out.println(CodeGenCondition.getSelectionString(cgcs, 0, fNames, ctx));
+	}
+
+
+
+	/*@Test
 	public void codeGen() {
 		try {
 			List<String> lines = Files.readAllLines(Paths.get(RewriteAutomaticallyGenerated.FILE_PATH));
@@ -95,6 +133,6 @@ public class CodeGenConditionTests {
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
-	}
+	}*/
 
 }

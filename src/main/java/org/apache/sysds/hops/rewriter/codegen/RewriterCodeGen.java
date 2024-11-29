@@ -17,12 +17,13 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.Function;
+import java.util.stream.Collectors;
 
 public class RewriterCodeGen {
 	public static boolean DEBUG = true;
 
 	public static Function<Hop, Hop> compileRewrites(String className, List<Tuple2<String, RewriterRule>> rewrites, final RuleContext ctx, boolean ignoreErrors, boolean printErrors) throws Exception {
-		String code = generateClass(className, rewrites, ctx, ignoreErrors, printErrors);
+		String code = generateClass(className, rewrites, false, false, ctx, ignoreErrors, printErrors);
 		System.out.println("Compiling code:\n" + code);
 		SimpleCompiler compiler = new SimpleCompiler();
 		compiler.cook(code);
@@ -31,8 +32,12 @@ public class RewriterCodeGen {
 		return (Function<Hop, Hop>) instance;
 	}
 
-	public static String generateClass(String className, List<Tuple2<String, RewriterRule>> rewrites, final RuleContext ctx, boolean ignoreErrors, boolean printErrors) {
+	public static String generateClass(String className, List<Tuple2<String, RewriterRule>> rewrites, boolean optimize, boolean includePackageInfo, final RuleContext ctx, boolean ignoreErrors, boolean printErrors) {
 		StringBuilder msb = new StringBuilder();
+
+		if (includePackageInfo)
+			msb.append("package org.apache.sysds.hops.rewriter;\n\n");
+
 		msb.append("import java.util.ArrayList;\n");
 		msb.append("import java.util.function.Function;\n");
 		msb.append("\n");
@@ -75,18 +80,33 @@ public class RewriterCodeGen {
 		indent(1, msb);
 		msb.append("@Override\n");
 		indent(1, msb);
-		msb.append("public Object apply( Object hi ) {\n");
+		msb.append("public Object apply( Object _hi ) {\n");
 		indent(2, msb);
-		msb.append("if ( hi == null )\n");
+		msb.append("if ( _hi == null )\n");
 		indent(3, msb);
 		msb.append("return null;\n\n");
+		indent(2, msb);
+		msb.append("Hop hi = (Hop) _hi;\n\n");
 
-		for (Tuple2<String, RewriterRule> appliedRewrites : rewrites) {
-			if (implemented.contains(appliedRewrites._1)) {
-				indent(2, msb);
-				msb.append("hi = " + appliedRewrites._1 + "((Hop) hi);\t\t// ");
-				msb.append(appliedRewrites._2.toString());
-				msb.append('\n');
+		if (optimize) {
+			List<Tuple2<String, RewriterRule>> implementedRewrites = rewrites.stream().filter(t -> implemented.contains(t._1)).collect(Collectors.toList());
+
+			List<RewriterRule> rules = rewrites.stream().map(t -> t._2).collect(Collectors.toList());
+			Map<RewriterRule, String> ruleNames = new HashMap<>();
+
+			for (Tuple2<String, RewriterRule> t : implementedRewrites)
+				ruleNames.put(t._2, t._1);
+
+			List<CodeGenCondition> conditions = CodeGenCondition.buildCondition(rules, 5, ctx);
+			CodeGenCondition.buildSelection(msb, conditions, 2, ruleNames, ctx);
+		} else {
+			for (Tuple2<String, RewriterRule> appliedRewrites : rewrites) {
+				if (implemented.contains(appliedRewrites._1)) {
+					indent(2, msb);
+					msb.append("hi = " + appliedRewrites._1 + "((Hop) hi);\t\t// ");
+					msb.append(appliedRewrites._2.toString());
+					msb.append('\n');
+				}
 			}
 		}
 

@@ -22,6 +22,7 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 import scala.Tuple2;
 
+import java.io.FileWriter;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
@@ -50,7 +51,7 @@ public class CodeGenTests {
 				.completeRule(stmt1, stmt2)
 				.build();
 
-		System.out.println(RewriterCodeGen.generateClass("MRuleTest", List.of(new Tuple2<>("testRule", rule)), ctx, false, false));
+		System.out.println(RewriterCodeGen.generateClass("MRuleTest", List.of(new Tuple2<>("testRule", rule)), false, false, ctx, false, false));
 
 		try {
 			Function<Hop, Hop> f = RewriterCodeGen.compileRewrites("MRuleTest", List.of(new Tuple2<>("testRule", rule)), ctx, false, false);
@@ -78,7 +79,7 @@ public class CodeGenTests {
 				.completeRule(stmt1, stmt2)
 				.build();
 
-		System.out.println(RewriterCodeGen.generateClass("MRuleTest", List.of(new Tuple2<>("testRule", rule)), ctx, false, false));
+		System.out.println(RewriterCodeGen.generateClass("MRuleTest", List.of(new Tuple2<>("testRule", rule)), false, false, ctx, false, false));
 
 		try {
 			Function<Hop, Hop> f = RewriterCodeGen.compileRewrites("MRuleTest", List.of(new Tuple2<>("testRule", rule)), ctx, false, false);
@@ -114,7 +115,7 @@ public class CodeGenTests {
 				.completeRule(stmt1, stmt2)
 				.build();
 
-		System.out.println(RewriterCodeGen.generateClass("MRuleTest", List.of(new Tuple2<>("testRule", rule)), ctx, false, false));
+		System.out.println(RewriterCodeGen.generateClass("MRuleTest", List.of(new Tuple2<>("testRule", rule)), false, false, ctx, false, false));
 
 		try {
 			Function<Hop, Hop> f = RewriterCodeGen.compileRewrites("MRuleTest", List.of(new Tuple2<>("testRule", rule)), ctx, false, false);
@@ -150,7 +151,7 @@ public class CodeGenTests {
 				.completeRule(stmt1, stmt2)
 				.build();
 
-		System.out.println(RewriterCodeGen.generateClass("MRuleTest", List.of(new Tuple2<>("testRule", rule)), ctx, false, false));
+		System.out.println(RewriterCodeGen.generateClass("MRuleTest", List.of(new Tuple2<>("testRule", rule)), false, false, ctx, false, false));
 
 		try {
 			Function<Hop, Hop> f = RewriterCodeGen.compileRewrites("MRuleTest", List.of(new Tuple2<>("testRule", rule)), ctx, false, false);
@@ -186,7 +187,7 @@ public class CodeGenTests {
 				.completeRule(stmt1, stmt2)
 				.build();
 
-		System.out.println(RewriterCodeGen.generateClass("MRuleTest", List.of(new Tuple2<>("testRule", rule)), ctx, false, false));
+		System.out.println(RewriterCodeGen.generateClass("MRuleTest", List.of(new Tuple2<>("testRule", rule)), false, false, ctx, false, false));
 
 		try {
 			Function<Hop, Hop> f = RewriterCodeGen.compileRewrites("MRuleTest", List.of(new Tuple2<>("testRule", rule)), ctx, false, false);
@@ -212,7 +213,16 @@ public class CodeGenTests {
 		try {
 			List<String> lines = Files.readAllLines(Paths.get(RewriteAutomaticallyGenerated.FILE_PATH));
 			RewriterRuleSet ruleSet = RewriterRuleSet.deserialize(lines, ctx);
-			System.out.println(ruleSet.toJavaCode("GeneratedRewriteClass", true));
+			String javaCode = ruleSet.toJavaCode("GeneratedRewriteClass", true, true, true);
+			String filePath = "/Users/janniklindemann/Dev/MScThesis/other/GeneratedRewriteClass.java";
+
+			try (FileWriter writer = new FileWriter(filePath)) {
+				writer.write(javaCode);
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+
+			System.out.println(javaCode);
 		} catch (IOException e) {
 			e.printStackTrace();
 		}

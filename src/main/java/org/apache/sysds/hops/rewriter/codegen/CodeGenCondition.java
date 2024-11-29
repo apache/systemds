@@ -58,15 +58,25 @@ public class CodeGenCondition {
 
 		for (int i = 0; i < out.size(); i++) {
 			CodeGenCondition c = (CodeGenCondition) out.get(i);
+
+			if (c.rulesIf.size() <= maxNumRules)
+				continue;
+
 			c.rulesIf = populateOpClassLayer(c.rulesIf, relativeChildPath, ctx);
 
 			for (int j = 0; j < c.rulesIf.size(); j++) {
 				CodeGenCondition c2 = (CodeGenCondition) c.rulesIf.get(j);
 				c2.rulesIf = populateOpCodeLayer(c2.rulesIf, relativeChildPath, ctx);
 
+				if (c.rulesIf.size() <= maxNumRules)
+					continue;
+
 				for (int k = 0; k < c2.rulesIf.size(); k++) {
 					CodeGenCondition c3 = (CodeGenCondition) c2.rulesIf.get(k);
 					c3.rulesIf = populateInputSizeLayer(c3.rulesIf, relativeChildPath, ctx);
+
+					if (c.rulesIf.size() <= maxNumRules)
+						continue;
 					//int maxChildSize = c3.rulesIf.stream().flatMap(o -> ((CodeGenCondition)o).rulesIf.stream()).mapToInt(o -> ((Tuple2<RewriterRule, RewriterStatement>) o)._2.getOperands().size()).max().getAsInt();
 
 					for (int l = 0; l < c3.rulesIf.size(); l++) {
@@ -227,11 +237,17 @@ public class CodeGenCondition {
 					hopVar += "_";
 					hopVar += relativeChildPath.stream().map(Object::toString).collect(Collectors.joining("_"));
 				}
+
 				String specialInstr = CodeGenUtils.getSpecialOpCheck(representant, ctx, hopVar);
 				if (specialInstr != null) {
 					sb.append(specialInstr);
 				} else {
+					// Some type casting
+					sb.append("(( ");
+					sb.append(CodeGenUtils.getOpClass(representant, ctx));
+					sb.append(" ) ");
 					sb.append(hopVar);
+					sb.append(" )");
 					sb.append(".getOp() == ");
 					sb.append(CodeGenUtils.getOpCode(representant, ctx));
 				}
@@ -367,7 +383,8 @@ public class CodeGenCondition {
 						RewriterCodeGen.indent(indentation, sb);
 						sb.append("hi = ");
 						sb.append(fMapping);
-						sb.append("(hi);");
+						sb.append("(hi); // ");
+						sb.append(t._1.toString());
 						sb.append("\n");
 					}
 				}
@@ -379,6 +396,24 @@ public class CodeGenCondition {
 		sb.append("if ( ");
 		firstCond.buildConditionCheck(sb, ctx);
 		sb.append(" ) {\n");
+
+		if (firstCond.conditionType == ConditionType.NUM_INPUTS) {
+			int numInputs = (int)firstCond.conditionValue;
+
+			for (int i = 0; i < numInputs; i++) {
+				RewriterCodeGen.indent(indentation + 1, sb);
+				sb.append("Hop ");
+				sb.append(firstCond.getVarName());
+				sb.append("_");
+				sb.append(i);
+				sb.append(" = ");
+				sb.append(firstCond.getVarName());
+				sb.append(".getInput(");
+				sb.append(i);
+				sb.append(");\n");
+			}
+		}
+
 		List<CodeGenCondition> nestedCondition = firstCond.rulesIf.stream().filter(o -> o instanceof CodeGenCondition).map(o -> (CodeGenCondition)o).collect(Collectors.toList());
 		buildSelection(sb, nestedCondition, indentation + 1, ruleFunctionMappings, ctx);
 
@@ -388,10 +423,11 @@ public class CodeGenCondition {
 			for (Tuple2<RewriterRule, RewriterStatement> t : cur) {
 				String fMapping = ruleFunctionMappings.get(t._1);
 				if (fMapping != null) {
-					RewriterCodeGen.indent(indentation, sb);
+					RewriterCodeGen.indent(indentation + 1, sb);
 					sb.append("hi = ");
 					sb.append(fMapping);
-					sb.append("(hi);");
+					sb.append("(hi); // ");
+					sb.append(t._1.toString());
 					sb.append("\n");
 				}
 			}
@@ -409,6 +445,23 @@ public class CodeGenCondition {
 				sb.append(" ) {\n");
 			}
 
+			if (cond.conditionType == ConditionType.NUM_INPUTS) {
+				int numInputs = (int)cond.conditionValue;
+
+				for (int i = 0; i < numInputs; i++) {
+					RewriterCodeGen.indent(indentation + 1, sb);
+					sb.append("Hop ");
+					sb.append(cond.getVarName());
+					sb.append("_");
+					sb.append(i);
+					sb.append(" = ");
+					sb.append(cond.getVarName());
+					sb.append(".getInput(");
+					sb.append(i);
+					sb.append(");");
+				}
+			}
+
 			List<CodeGenCondition> mNestedCondition = cond.rulesIf.stream().filter(o -> o instanceof CodeGenCondition).map(o -> (CodeGenCondition)o).collect(Collectors.toList());
 			buildSelection(sb, mNestedCondition, indentation + 1, ruleFunctionMappings, ctx);
 
@@ -421,7 +474,8 @@ public class CodeGenCondition {
 						RewriterCodeGen.indent(indentation, sb);
 						sb.append("hi = ");
 						sb.append(fMapping);
-						sb.append("(hi);");
+						sb.append("(hi); // ");
+						sb.append(t._1.toString());
 						sb.append("\n");
 					}
 				}

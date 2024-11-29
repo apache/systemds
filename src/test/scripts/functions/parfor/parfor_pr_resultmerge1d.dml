@@ -7,9 +7,9 @@
 # to you under the Apache License, Version 2.0 (the
 # "License"); you may not use this file except in compliance
 # with the License.  You may obtain a copy of the License at
-# 
+#
 #   http://www.apache.org/licenses/LICENSE-2.0
-# 
+#
 # Unless required by applicable law or agreed to in writing,
 # software distributed under the License is distributed on an
 # "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -28,8 +28,9 @@ R1 = matrix(1,rows=m,cols=n);
 parfor( i in 1:(n-7), par=8, mode=REMOTE_SPARK, resultmerge=REMOTE_SPARK, taskpartitioner=FACTORING, opt=NONE )
 {
    X = V[,i];
+   while(FALSE){} # prevent auto vectorization
    R1[,i] = X;
-}   
+}
 
-R = R1 + R1; 
-write(R, $4);       
+R = R1 + R1;
+write(R, $4);

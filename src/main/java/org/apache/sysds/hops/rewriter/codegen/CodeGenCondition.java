@@ -118,6 +118,12 @@ public class CodeGenCondition {
 		return out;
 	}
 
+	private static boolean validateSizeMaintenance(List<Object> rules, List<Object> generatedConditions) {
+		int origSize = rules.size();
+		int newSize = generatedConditions.stream().mapToInt(o -> ((CodeGenCondition)o).rulesIf.size()).sum();
+		return origSize == newSize;
+	}
+
 	private static List<Object> populateDataTypeLayer(List<Object> rules, List<Integer> relativeChildPath, final RuleContext ctx) {
 		List<Object> conds = new ArrayList<>();
 
@@ -130,15 +136,18 @@ public class CodeGenCondition {
 			}
 		}
 
+		if (!validateSizeMaintenance(rules, conds))
+			throw new IllegalArgumentException();
+
 		return conds;
 	}
 
 	private static List<Object> populateOpClassLayer(List<Object> l, List<Integer> relativeChildPath, final RuleContext ctx) {
-		try {
-			List<Object> conds = new ArrayList<>();
-			List<Object> remaining = new ArrayList<>();
+		List<Object> conds = new ArrayList<>();
+		List<Object> remaining = new ArrayList<>();
 
-			for (Object o : l) {
+		for (Object o : l) {
+			try {
 				Tuple2<RewriterRule, RewriterStatement> t = (Tuple2<RewriterRule, RewriterStatement>) o;
 				if (canGenerateOpClassCheck(t._2, ctx)) {
 					if (!conds.stream().anyMatch(cond -> ((CodeGenCondition) cond).insertIfMatches(t, ctx))) {
@@ -149,16 +158,19 @@ public class CodeGenCondition {
 				} else {
 					remaining.add(t);
 				}
+			} catch (Exception e) {
+				e.printStackTrace();
 			}
-
-			if (!remaining.isEmpty()) {
-				conds.add(CodeGenCondition.conditionalElse(remaining, relativeChildPath, ((Tuple2<RewriterRule, RewriterStatement>) remaining.get(0))._2, ctx));
-			}
-
-			return conds;
-		} catch (Exception e) {
-			return Collections.emptyList();
 		}
+
+		if (!remaining.isEmpty()) {
+			conds.add(CodeGenCondition.conditionalElse(remaining, relativeChildPath, ((Tuple2<RewriterRule, RewriterStatement>) remaining.get(0))._2, ctx));
+		}
+
+		//if (!validateSizeMaintenance(l, conds))
+		//	throw new IllegalArgumentException();
+
+		return conds;
 	}
 
 	private static List<Object> populateOpCodeLayer(List<Object> l, List<Integer> relativeChildPath, final RuleContext ctx) {
@@ -181,6 +193,9 @@ public class CodeGenCondition {
 		if (!remaining.isEmpty()) {
 			conds.add(CodeGenCondition.conditionalElse(remaining, relativeChildPath, ((Tuple2<RewriterRule, RewriterStatement>) remaining.get(0))._2, ctx));
 		}
+
+		if (!validateSizeMaintenance(l, conds))
+			throw new IllegalArgumentException();
 
 		return conds;
 	}
@@ -205,6 +220,9 @@ public class CodeGenCondition {
 		if (!remaining.isEmpty()) {
 			conds.add(CodeGenCondition.conditionalElse(remaining, relativeChildPath, ((Tuple2<RewriterRule, RewriterStatement>) remaining.get(0))._2, ctx));
 		}
+
+		if (!validateSizeMaintenance(l, conds))
+			throw new IllegalArgumentException();
 
 		return conds;
 	}

@@ -97,20 +97,38 @@ public class CodeGenConditionTests {
 
 		RewriterRule rule2 = RewriterUtils.parseRule(ruleStr2, ctx);
 
-		String ruleStr3 = "MATRIX:A,B\n" +
+		String ruleStr3 = "MATRIX:A,B,C\n" +
 				"\n" +
-				"%*%(t(A), t(B))\n" +
+				"+(*(A,C),*(A,B))\n" +
 				"=>\n" +
-				"t(%*%(B, A))";
+				"*(A,+(B,C))";
 
 		RewriterRule rule3 = RewriterUtils.parseRule(ruleStr3, ctx);
+
+		String ruleStr4 = "MATRIX:A,B,C\n" +
+				"\n" +
+				"+(*(A,C),*(B,A))\n" +
+				"=>\n" +
+				"*(A,+(B,C))";
+
+		RewriterRule rule4 = RewriterUtils.parseRule(ruleStr4, ctx);
+
+		String ruleStr5 = "FLOAT:A,B,C\n" +
+				"\n" +
+				"+(cast.MATRIX(A), B)\n" +
+				"=>\n" +
+				"cast.MATRIX(+(A,B))";
+
+		RewriterRule rule5 = RewriterUtils.parseRule(ruleStr5, ctx);
 
 		Map<RewriterRule, String> fNames = new HashMap<>();
 		fNames.put(rule, "rule1");
 		fNames.put(rule2, "rule2");
 		fNames.put(rule3, "rule3");
+		fNames.put(rule4, "rule4");
+		fNames.put(rule5, "rule5");
 
-		List<CodeGenCondition> cgcs = CodeGenCondition.buildCondition(List.of(rule, rule2, rule3), 0, ctx);
+		List<CodeGenCondition> cgcs = CodeGenCondition.buildCondition(List.of(rule, rule2, rule3, rule4, rule5), 1, ctx);
 		System.out.println(cgcs);
 		System.out.println(CodeGenCondition.getSelectionString(cgcs, 0, fNames, ctx));
 	}

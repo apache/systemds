@@ -196,7 +196,7 @@ public abstract class AutomatedTestBase {
 	protected static ExecMode rtplatform = ExecMode.HYBRID;
 
 	protected static final boolean DEBUG = false;
-	protected static final boolean ALLOW_GENERATED_REWRITES = true;
+	protected static final boolean ALLOW_GENERATED_REWRITES = false;
 
 	public static boolean VERBOSE_STATS = false;
 

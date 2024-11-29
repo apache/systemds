@@ -160,6 +160,189 @@ public class GeneratedRewriteClass implements Function {
 								hi = _applyRewrite89(hi); // +(-(0.0,b),A) => -(A,b)
 							} else {
 								if ( hi_1.getDataType() == Types.DataType.MATRIX ) {
+									if ( hi_1 instanceof BinaryOp ) {
+										if ( (( BinaryOp ) hi_1 ).getOp() == Types.OpOp2.MINUS ) {
+											if ( hi_1.getInput().size() == 2 ) {
+												Hop hi_1_0 = hi_1.getInput(0);
+												Hop hi_1_1 = hi_1.getInput(1);
+												if ( hi_1_0.getDataType() == Types.DataType.SCALAR ) {
+													if ( hi_1_1.getDataType() == Types.DataType.MATRIX ) {
+														if ( hi_1_1 instanceof BinaryOp ) {
+															if ( (( BinaryOp ) hi_1_1 ).getOp() == Types.OpOp2.MINUS ) {
+																hi = _applyRewrite311(hi); // +(b,-(A,-(D,c))) => +(A,-(+(b,c),D))
+																hi = _applyRewrite320(hi); // +(c,-(A,-(d,B))) => +(A,+(B,-(c,d)))
+															} else if ( (( BinaryOp ) hi_1_1 ).getOp() == Types.OpOp2.PLUS ) {
+																hi = _applyRewrite343(hi); // +(b,-(A,+(c,D))) => +(A,-(-(b,c),D))
+																hi = _applyRewrite344(hi); // +(b,-(A,+(D,c))) => +(A,-(-(b,c),D))
+															} else if ( (( BinaryOp ) hi_1_1 ).getOp() == Types.OpOp2.MULT ) {
+															}
+														} else {
+															hi = _applyRewrite44(hi); // +(a,-(0.0,B)) => -(a,B)
+															hi = _applyRewrite48(hi); // +(A,-(0.0,B)) => -(A,B)
+															hi = _applyRewrite55(hi); // +(a,-(b,C)) => -(+(a,b),C)
+															hi = _applyRewrite298(hi); // +(-(a,D),-(b,C)) => -(+(a,b),+(C,D))
+															hi = _applyRewrite299(hi); // +(a,-(-(b,D),C)) => -(+(a,b),+(C,D))
+															hi = _applyRewrite314(hi); // +(b,-(+(c,A),D)) => +(A,-(+(b,c),D))
+															hi = _applyRewrite315(hi); // +(b,-(+(A,c),D)) => +(A,-(+(b,c),D))
+															hi = _applyRewrite339(hi); // +(-(A,c),-(b,D)) => +(A,-(-(b,c),D))
+															hi = _applyRewrite340(hi); // +(b,-(-(A,c),D)) => +(A,-(-(b,c),D))
+														}
+													} else if ( hi_1_1.getDataType() == Types.DataType.SCALAR ) {
+														hi = _applyRewrite60(hi); // +(b,-(A,c)) => +(A,-(b,c))
+														hi = _applyRewrite304(hi); // +(-(B,c),-(A,d)) => +(A,-(B,+(c,d)))
+														hi = _applyRewrite338(hi); // +(-(b,D),-(A,c)) => +(A,-(-(b,c),D))
+													}
+												} else if ( hi_1_0.getDataType() == Types.DataType.MATRIX ) {
+													if ( hi_1_0 instanceof BinaryOp ) {
+														if ( (( BinaryOp ) hi_1_0 ).getOp() == Types.OpOp2.MINUS ) {
+															hi = _applyRewrite299(hi); // +(a,-(-(b,D),C)) => -(+(a,b),+(C,D))
+															hi = _applyRewrite340(hi); // +(b,-(-(A,c),D)) => +(A,-(-(b,c),D))
+														} else if ( (( BinaryOp ) hi_1_0 ).getOp() == Types.OpOp2.PLUS ) {
+															hi = _applyRewrite314(hi); // +(b,-(+(c,A),D)) => +(A,-(+(b,c),D))
+															hi = _applyRewrite315(hi); // +(b,-(+(A,c),D)) => +(A,-(+(b,c),D))
+														} else if ( (( BinaryOp ) hi_1_0 ).getOp() == Types.OpOp2.MULT ) {
+															if ( hi_1_0.getInput().size() == 2 ) {
+																Hop hi_1_0_0 = hi_1_0.getInput(0);
+																Hop hi_1_0_1 = hi_1_0.getInput(1);
+																if ( hi_1_1.getDataType() == Types.DataType.MATRIX ) {
+																	if ( hi_1_1 instanceof BinaryOp ) {
+																		if ( (( BinaryOp ) hi_1_1 ).getOp() == Types.OpOp2.MINUS ) {
+																			hi = _applyRewrite311(hi); // +(b,-(A,-(D,c))) => +(A,-(+(b,c),D))
+																			hi = _applyRewrite320(hi); // +(c,-(A,-(d,B))) => +(A,+(B,-(c,d)))
+																		} else if ( (( BinaryOp ) hi_1_1 ).getOp() == Types.OpOp2.PLUS ) {
+																			hi = _applyRewrite343(hi); // +(b,-(A,+(c,D))) => +(A,-(-(b,c),D))
+																			hi = _applyRewrite344(hi); // +(b,-(A,+(D,c))) => +(A,-(-(b,c),D))
+																		} else if ( (( BinaryOp ) hi_1_1 ).getOp() == Types.OpOp2.MULT ) {
+																		}
+																	} else {
+																		if ( hi_1_0_0.getDataType() == Types.DataType.SCALAR ) {
+																		} else if ( hi_1_0_0.getDataType() == Types.DataType.MATRIX ) {
+																		}
+																	}
+																} else if ( hi_1_1.getDataType() == Types.DataType.SCALAR ) {
+																	hi = _applyRewrite60(hi); // +(b,-(A,c)) => +(A,-(b,c))
+																	hi = _applyRewrite304(hi); // +(-(B,c),-(A,d)) => +(A,-(B,+(c,d)))
+																	hi = _applyRewrite338(hi); // +(-(b,D),-(A,c)) => +(A,-(-(b,c),D))
+																}
+															}
+														}
+													} else {
+														if ( hi_1_1.getDataType() == Types.DataType.MATRIX ) {
+															if ( hi_1_1 instanceof BinaryOp ) {
+																if ( (( BinaryOp ) hi_1_1 ).getOp() == Types.OpOp2.MINUS ) {
+																	hi = _applyRewrite311(hi); // +(b,-(A,-(D,c))) => +(A,-(+(b,c),D))
+																	hi = _applyRewrite320(hi); // +(c,-(A,-(d,B))) => +(A,+(B,-(c,d)))
+																} else if ( (( BinaryOp ) hi_1_1 ).getOp() == Types.OpOp2.PLUS ) {
+																	hi = _applyRewrite343(hi); // +(b,-(A,+(c,D))) => +(A,-(-(b,c),D))
+																	hi = _applyRewrite344(hi); // +(b,-(A,+(D,c))) => +(A,-(-(b,c),D))
+																} else if ( (( BinaryOp ) hi_1_1 ).getOp() == Types.OpOp2.MULT ) {
+																}
+															} else {
+																hi = _applyRewrite44(hi); // +(a,-(0.0,B)) => -(a,B)
+																hi = _applyRewrite48(hi); // +(A,-(0.0,B)) => -(A,B)
+																hi = _applyRewrite55(hi); // +(a,-(b,C)) => -(+(a,b),C)
+																hi = _applyRewrite298(hi); // +(-(a,D),-(b,C)) => -(+(a,b),+(C,D))
+																hi = _applyRewrite299(hi); // +(a,-(-(b,D),C)) => -(+(a,b),+(C,D))
+																hi = _applyRewrite314(hi); // +(b,-(+(c,A),D)) => +(A,-(+(b,c),D))
+																hi = _applyRewrite315(hi); // +(b,-(+(A,c),D)) => +(A,-(+(b,c),D))
+																hi = _applyRewrite339(hi); // +(-(A,c),-(b,D)) => +(A,-(-(b,c),D))
+																hi = _applyRewrite340(hi); // +(b,-(-(A,c),D)) => +(A,-(-(b,c),D))
+															}
+														} else if ( hi_1_1.getDataType() == Types.DataType.SCALAR ) {
+															hi = _applyRewrite60(hi); // +(b,-(A,c)) => +(A,-(b,c))
+															hi = _applyRewrite304(hi); // +(-(B,c),-(A,d)) => +(A,-(B,+(c,d)))
+															hi = _applyRewrite338(hi); // +(-(b,D),-(A,c)) => +(A,-(-(b,c),D))
+														}
+													}
+												}
+											}
+										} else if ( (( BinaryOp ) hi_1 ).getOp() == Types.OpOp2.MULT ) {
+											if ( hi_1.getInput().size() == 2 ) {
+												Hop hi_1_0 = hi_1.getInput(0);
+												Hop hi_1_1 = hi_1.getInput(1);
+												if ( hi_1_0.getDataType() == Types.DataType.MATRIX ) {
+													if ( hi_1_0 instanceof BinaryOp ) {
+													} else {
+														hi = _applyRewrite124(hi); // +(*(C,A),*(B,A)) => *(A,+(B,C))
+														hi = _applyRewrite125(hi); // +(*(B,A),*(A,C)) => *(A,+(B,C))
+														hi = _applyRewrite126(hi); // +(*(A,C),*(B,A)) => *(A,+(B,C))
+														hi = _applyRewrite127(hi); // +(*(A,C),*(A,B)) => *(A,+(B,C))
+													}
+												}
+											}
+										} else if ( (( BinaryOp ) hi_1 ).getOp() == Types.OpOp2.NOTEQUAL ) {
+											hi = _applyRewrite248(hi); // +(A,!=(rev(A),c)) => +(A,!=(A,c))
+											hi = _applyRewrite249(hi); // +(A,!=(c,rev(A))) => +(A,!=(A,c))
+											hi = _applyRewrite256(hi); // +(A,!=(rev(A),C)) => +(A,!=(A,C))
+											hi = _applyRewrite257(hi); // +(A,!=(C,rev(A))) => +(A,!=(A,C))
+										} else if ( (( BinaryOp ) hi_1 ).getOp() == Types.OpOp2.DIV ) {
+										}
+									} else if ( hi_1 instanceof AggBinaryOp ) {
+										if ( HopRewriteUtils.isMatrixMultiply(hi_1) ) {
+											if ( hi_1.getInput().size() == 2 ) {
+												Hop hi_1_0 = hi_1.getInput(0);
+												Hop hi_1_1 = hi_1.getInput(1);
+												if ( hi_1_0.getDataType() == Types.DataType.MATRIX ) {
+													if ( hi_1_0 instanceof BinaryOp ) {
+													} else {
+														hi = _applyRewrite94(hi); // +(%*%(B,C),%*%(A,C)) => %*%(+(A,B),C)
+														hi = _applyRewrite95(hi); // +(%*%(A,C),%*%(A,B)) => %*%(A,+(B,C))
+													}
+												}
+											}
+										}
+									} else if ( hi_1 instanceof ReorgOp ) {
+										if ( (( ReorgOp ) hi_1 ).getOp() == Types.ReOrgOp.TRANS ) {
+											if ( hi_1.getInput().size() == 1 ) {
+												Hop hi_1_0 = hi_1.getInput(0);
+												if ( hi_1_0.getDataType() == Types.DataType.MATRIX ) {
+													if ( hi_1_0 instanceof BinaryOp ) {
+														if ( (( BinaryOp ) hi_1_0 ).getOp() == Types.OpOp2.MINUS ) {
+															hi = _applyRewrite347(hi); // +(a,t(-(b,C))) => -(+(a,b),t(C))
+															hi = _applyRewrite352(hi); // +(a,t(-(C,b))) => +(-(a,b),t(C))
+														} else if ( (( BinaryOp ) hi_1_0 ).getOp() == Types.OpOp2.PLUS ) {
+															hi = _applyRewrite355(hi); // +(a,t(+(b,C))) => +(+(a,b),t(C))
+															hi = _applyRewrite356(hi); // +(a,t(+(C,b))) => +(+(a,b),t(C))
+														} else if ( (( BinaryOp ) hi_1_0 ).getOp() == Types.OpOp2.MULT ) {
+														}
+													} else {
+														hi = _applyRewrite192(hi); // +(t(B),t(A)) => t(+(A,B))
+													}
+												}
+											}
+										} else if ( (( ReorgOp ) hi_1 ).getOp() == Types.ReOrgOp.REV ) {
+											if ( hi_1.getInput().size() == 1 ) {
+												Hop hi_1_0 = hi_1.getInput(0);
+												if ( hi_1_0.getDataType() == Types.DataType.MATRIX ) {
+													if ( hi_1_0 instanceof BinaryOp ) {
+														if ( (( BinaryOp ) hi_1_0 ).getOp() == Types.OpOp2.NOTEQUAL ) {
+															hi = _applyRewrite252(hi); // +(A,rev(!=(c,A))) => +(A,!=(A,c))
+															hi = _applyRewrite253(hi); // +(A,rev(!=(A,c))) => +(A,!=(A,c))
+														} else if ( (( BinaryOp ) hi_1_0 ).getOp() == Types.OpOp2.MINUS ) {
+															hi = _applyRewrite283(hi); // +(a,rev(-(b,C))) => -(+(a,b),rev(C))
+															hi = _applyRewrite288(hi); // +(a,rev(-(C,b))) => +(-(a,b),rev(C))
+														} else if ( (( BinaryOp ) hi_1_0 ).getOp() == Types.OpOp2.PLUS ) {
+															hi = _applyRewrite291(hi); // +(a,rev(+(b,C))) => +(+(a,b),rev(C))
+															hi = _applyRewrite292(hi); // +(a,rev(+(C,b))) => +(+(a,b),rev(C))
+														} else if ( (( BinaryOp ) hi_1_0 ).getOp() == Types.OpOp2.MULT ) {
+														}
+													}
+												}
+											}
+										}
+									} else if ( hi_1 instanceof AggUnaryOp ) {
+										hi = _applyRewrite441(hi); // +(A,colSums(rev(A))) => +(A,colSums(A))
+									} else {
+										hi = _applyRewrite5(hi); // +(0.0,A) => A
+										hi = _applyRewrite47(hi); // +(-(0.0,B),A) => -(A,B)
+										hi = _applyRewrite89(hi); // +(-(0.0,b),A) => -(A,b)
+										hi = _applyRewrite246(hi); // +(!=(rev(A),c),A) => +(A,!=(A,c))
+										hi = _applyRewrite247(hi); // +(!=(c,rev(A)),A) => +(A,!=(A,c))
+										hi = _applyRewrite250(hi); // +(rev(!=(c,A)),A) => +(A,!=(A,c))
+										hi = _applyRewrite251(hi); // +(rev(!=(A,c)),A) => +(A,!=(A,c))
+										hi = _applyRewrite254(hi); // +(!=(rev(A),C),A) => +(A,!=(A,C))
+										hi = _applyRewrite255(hi); // +(!=(C,rev(A)),A) => +(A,!=(A,C))
+									}
 								} else if ( hi_1.getDataType() == Types.DataType.SCALAR ) {
 									if ( hi_1 instanceof BinaryOp ) {
 										hi = _applyRewrite90(hi); // +(A,-(0.0,b)) => -(A,b)
@@ -188,6 +371,1716 @@ public class GeneratedRewriteClass implements Function {
 								}
 							}
 						} else if ( hi_0.getDataType() == Types.DataType.MATRIX ) {
+							if ( hi_0 instanceof BinaryOp ) {
+								if ( (( BinaryOp ) hi_0 ).getOp() == Types.OpOp2.MINUS ) {
+									if ( hi_0.getInput().size() == 2 ) {
+										Hop hi_0_0 = hi_0.getInput(0);
+										Hop hi_0_1 = hi_0.getInput(1);
+										if ( hi_1.getDataType() == Types.DataType.MATRIX ) {
+											if ( hi_1 instanceof BinaryOp ) {
+												if ( (( BinaryOp ) hi_1 ).getOp() == Types.OpOp2.MINUS ) {
+													if ( hi_1.getInput().size() == 2 ) {
+														Hop hi_1_0 = hi_1.getInput(0);
+														Hop hi_1_1 = hi_1.getInput(1);
+														if ( hi_0_0.getDataType() == Types.DataType.SCALAR ) {
+															if ( hi_0_1.getDataType() == Types.DataType.MATRIX ) {
+																if ( hi_0_1 instanceof BinaryOp ) {
+																	if ( (( BinaryOp ) hi_0_1 ).getOp() == Types.OpOp2.MINUS ) {
+																		hi = _applyRewrite310(hi); // +(-(A,-(D,b)),c) => +(A,-(+(b,c),D))
+																		hi = _applyRewrite319(hi); // +(-(A,-(d,B)),c) => +(A,+(B,-(c,d)))
+																	} else if ( (( BinaryOp ) hi_0_1 ).getOp() == Types.OpOp2.PLUS ) {
+																		hi = _applyRewrite341(hi); // +(-(A,+(c,D)),b) => +(A,-(-(b,c),D))
+																		hi = _applyRewrite342(hi); // +(-(A,+(D,c)),b) => +(A,-(-(b,c),D))
+																	} else if ( (( BinaryOp ) hi_0_1 ).getOp() == Types.OpOp2.MULT ) {
+																	}
+																} else {
+																	if ( hi_1_0.getDataType() == Types.DataType.SCALAR ) {
+																		if ( hi_1_1.getDataType() == Types.DataType.MATRIX ) {
+																			if ( hi_1_1 instanceof BinaryOp ) {
+																				if ( (( BinaryOp ) hi_1_1 ).getOp() == Types.OpOp2.MINUS ) {
+																					hi = _applyRewrite311(hi); // +(b,-(A,-(D,c))) => +(A,-(+(b,c),D))
+																					hi = _applyRewrite320(hi); // +(c,-(A,-(d,B))) => +(A,+(B,-(c,d)))
+																				} else if ( (( BinaryOp ) hi_1_1 ).getOp() == Types.OpOp2.PLUS ) {
+																					hi = _applyRewrite343(hi); // +(b,-(A,+(c,D))) => +(A,-(-(b,c),D))
+																					hi = _applyRewrite344(hi); // +(b,-(A,+(D,c))) => +(A,-(-(b,c),D))
+																				} else if ( (( BinaryOp ) hi_1_1 ).getOp() == Types.OpOp2.MULT ) {
+																				}
+																			} else {
+																				hi = _applyRewrite44(hi); // +(a,-(0.0,B)) => -(a,B)
+																				hi = _applyRewrite48(hi); // +(A,-(0.0,B)) => -(A,B)
+																				hi = _applyRewrite55(hi); // +(a,-(b,C)) => -(+(a,b),C)
+																				hi = _applyRewrite298(hi); // +(-(a,D),-(b,C)) => -(+(a,b),+(C,D))
+																				hi = _applyRewrite299(hi); // +(a,-(-(b,D),C)) => -(+(a,b),+(C,D))
+																				hi = _applyRewrite314(hi); // +(b,-(+(c,A),D)) => +(A,-(+(b,c),D))
+																				hi = _applyRewrite315(hi); // +(b,-(+(A,c),D)) => +(A,-(+(b,c),D))
+																				hi = _applyRewrite339(hi); // +(-(A,c),-(b,D)) => +(A,-(-(b,c),D))
+																				hi = _applyRewrite340(hi); // +(b,-(-(A,c),D)) => +(A,-(-(b,c),D))
+																			}
+																		} else if ( hi_1_1.getDataType() == Types.DataType.SCALAR ) {
+																			hi = _applyRewrite60(hi); // +(b,-(A,c)) => +(A,-(b,c))
+																			hi = _applyRewrite304(hi); // +(-(B,c),-(A,d)) => +(A,-(B,+(c,d)))
+																			hi = _applyRewrite338(hi); // +(-(b,D),-(A,c)) => +(A,-(-(b,c),D))
+																		}
+																	} else if ( hi_1_0.getDataType() == Types.DataType.MATRIX ) {
+																		if ( hi_1_0 instanceof BinaryOp ) {
+																			if ( (( BinaryOp ) hi_1_0 ).getOp() == Types.OpOp2.MINUS ) {
+																				hi = _applyRewrite299(hi); // +(a,-(-(b,D),C)) => -(+(a,b),+(C,D))
+																				hi = _applyRewrite340(hi); // +(b,-(-(A,c),D)) => +(A,-(-(b,c),D))
+																			} else if ( (( BinaryOp ) hi_1_0 ).getOp() == Types.OpOp2.PLUS ) {
+																				hi = _applyRewrite314(hi); // +(b,-(+(c,A),D)) => +(A,-(+(b,c),D))
+																				hi = _applyRewrite315(hi); // +(b,-(+(A,c),D)) => +(A,-(+(b,c),D))
+																			} else if ( (( BinaryOp ) hi_1_0 ).getOp() == Types.OpOp2.MULT ) {
+																				if ( hi_1_0.getInput().size() == 2 ) {
+																					Hop hi_1_0_0 = hi_1_0.getInput(0);
+																					Hop hi_1_0_1 = hi_1_0.getInput(1);
+																					if ( hi_1_1.getDataType() == Types.DataType.MATRIX ) {
+																						if ( hi_1_1 instanceof BinaryOp ) {
+																							if ( (( BinaryOp ) hi_1_1 ).getOp() == Types.OpOp2.MINUS ) {
+																								hi = _applyRewrite311(hi); // +(b,-(A,-(D,c))) => +(A,-(+(b,c),D))
+																								hi = _applyRewrite320(hi); // +(c,-(A,-(d,B))) => +(A,+(B,-(c,d)))
+																							} else if ( (( BinaryOp ) hi_1_1 ).getOp() == Types.OpOp2.PLUS ) {
+																								hi = _applyRewrite343(hi); // +(b,-(A,+(c,D))) => +(A,-(-(b,c),D))
+																								hi = _applyRewrite344(hi); // +(b,-(A,+(D,c))) => +(A,-(-(b,c),D))
+																							} else if ( (( BinaryOp ) hi_1_1 ).getOp() == Types.OpOp2.MULT ) {
+																							}
+																						} else {
+																							if ( hi_1_0_0.getDataType() == Types.DataType.SCALAR ) {
+																							} else if ( hi_1_0_0.getDataType() == Types.DataType.MATRIX ) {
+																							}
+																						}
+																					} else if ( hi_1_1.getDataType() == Types.DataType.SCALAR ) {
+																						hi = _applyRewrite60(hi); // +(b,-(A,c)) => +(A,-(b,c))
+																						hi = _applyRewrite304(hi); // +(-(B,c),-(A,d)) => +(A,-(B,+(c,d)))
+																						hi = _applyRewrite338(hi); // +(-(b,D),-(A,c)) => +(A,-(-(b,c),D))
+																					}
+																				}
+																			}
+																		} else {
+																			if ( hi_1_1.getDataType() == Types.DataType.MATRIX ) {
+																				if ( hi_1_1 instanceof BinaryOp ) {
+																					if ( (( BinaryOp ) hi_1_1 ).getOp() == Types.OpOp2.MINUS ) {
+																						hi = _applyRewrite311(hi); // +(b,-(A,-(D,c))) => +(A,-(+(b,c),D))
+																						hi = _applyRewrite320(hi); // +(c,-(A,-(d,B))) => +(A,+(B,-(c,d)))
+																					} else if ( (( BinaryOp ) hi_1_1 ).getOp() == Types.OpOp2.PLUS ) {
+																						hi = _applyRewrite343(hi); // +(b,-(A,+(c,D))) => +(A,-(-(b,c),D))
+																						hi = _applyRewrite344(hi); // +(b,-(A,+(D,c))) => +(A,-(-(b,c),D))
+																					} else if ( (( BinaryOp ) hi_1_1 ).getOp() == Types.OpOp2.MULT ) {
+																					}
+																				} else {
+																					hi = _applyRewrite44(hi); // +(a,-(0.0,B)) => -(a,B)
+																					hi = _applyRewrite48(hi); // +(A,-(0.0,B)) => -(A,B)
+																					hi = _applyRewrite55(hi); // +(a,-(b,C)) => -(+(a,b),C)
+																					hi = _applyRewrite298(hi); // +(-(a,D),-(b,C)) => -(+(a,b),+(C,D))
+																					hi = _applyRewrite299(hi); // +(a,-(-(b,D),C)) => -(+(a,b),+(C,D))
+																					hi = _applyRewrite314(hi); // +(b,-(+(c,A),D)) => +(A,-(+(b,c),D))
+																					hi = _applyRewrite315(hi); // +(b,-(+(A,c),D)) => +(A,-(+(b,c),D))
+																					hi = _applyRewrite339(hi); // +(-(A,c),-(b,D)) => +(A,-(-(b,c),D))
+																					hi = _applyRewrite340(hi); // +(b,-(-(A,c),D)) => +(A,-(-(b,c),D))
+																				}
+																			} else if ( hi_1_1.getDataType() == Types.DataType.SCALAR ) {
+																				hi = _applyRewrite60(hi); // +(b,-(A,c)) => +(A,-(b,c))
+																				hi = _applyRewrite304(hi); // +(-(B,c),-(A,d)) => +(A,-(B,+(c,d)))
+																				hi = _applyRewrite338(hi); // +(-(b,D),-(A,c)) => +(A,-(-(b,c),D))
+																			}
+																		}
+																	}
+																}
+															} else if ( hi_0_1.getDataType() == Types.DataType.SCALAR ) {
+																hi = _applyRewrite59(hi); // +(-(A,c),b) => +(A,-(b,c))
+																hi = _applyRewrite304(hi); // +(-(B,c),-(A,d)) => +(A,-(B,+(c,d)))
+																hi = _applyRewrite339(hi); // +(-(A,c),-(b,D)) => +(A,-(-(b,c),D))
+															}
+														} else if ( hi_0_0.getDataType() == Types.DataType.MATRIX ) {
+															if ( hi_0_0 instanceof BinaryOp ) {
+																if ( (( BinaryOp ) hi_0_0 ).getOp() == Types.OpOp2.MINUS ) {
+																	hi = _applyRewrite297(hi); // +(-(-(a,C),D),b) => -(+(a,b),+(C,D))
+																	hi = _applyRewrite337(hi); // +(-(-(A,c),D),b) => +(A,-(-(b,c),D))
+																} else if ( (( BinaryOp ) hi_0_0 ).getOp() == Types.OpOp2.PLUS ) {
+																	hi = _applyRewrite312(hi); // +(-(+(b,A),D),c) => +(A,-(+(b,c),D))
+																	hi = _applyRewrite313(hi); // +(-(+(A,b),D),c) => +(A,-(+(b,c),D))
+																} else if ( (( BinaryOp ) hi_0_0 ).getOp() == Types.OpOp2.MULT ) {
+																	if ( hi_0_0.getInput().size() == 2 ) {
+																		Hop hi_0_0_0 = hi_0_0.getInput(0);
+																		Hop hi_0_0_1 = hi_0_0.getInput(1);
+																		if ( hi_0_1.getDataType() == Types.DataType.MATRIX ) {
+																			if ( hi_0_1 instanceof BinaryOp ) {
+																				if ( (( BinaryOp ) hi_0_1 ).getOp() == Types.OpOp2.MINUS ) {
+																					hi = _applyRewrite310(hi); // +(-(A,-(D,b)),c) => +(A,-(+(b,c),D))
+																					hi = _applyRewrite319(hi); // +(-(A,-(d,B)),c) => +(A,+(B,-(c,d)))
+																				} else if ( (( BinaryOp ) hi_0_1 ).getOp() == Types.OpOp2.PLUS ) {
+																					hi = _applyRewrite341(hi); // +(-(A,+(c,D)),b) => +(A,-(-(b,c),D))
+																					hi = _applyRewrite342(hi); // +(-(A,+(D,c)),b) => +(A,-(-(b,c),D))
+																				} else if ( (( BinaryOp ) hi_0_1 ).getOp() == Types.OpOp2.MULT ) {
+																				}
+																			} else {
+																				if ( hi_1_0.getDataType() == Types.DataType.SCALAR ) {
+																					if ( hi_1_1.getDataType() == Types.DataType.MATRIX ) {
+																						if ( hi_1_1 instanceof BinaryOp ) {
+																							if ( (( BinaryOp ) hi_1_1 ).getOp() == Types.OpOp2.MINUS ) {
+																								hi = _applyRewrite311(hi); // +(b,-(A,-(D,c))) => +(A,-(+(b,c),D))
+																								hi = _applyRewrite320(hi); // +(c,-(A,-(d,B))) => +(A,+(B,-(c,d)))
+																							} else if ( (( BinaryOp ) hi_1_1 ).getOp() == Types.OpOp2.PLUS ) {
+																								hi = _applyRewrite343(hi); // +(b,-(A,+(c,D))) => +(A,-(-(b,c),D))
+																								hi = _applyRewrite344(hi); // +(b,-(A,+(D,c))) => +(A,-(-(b,c),D))
+																							} else if ( (( BinaryOp ) hi_1_1 ).getOp() == Types.OpOp2.MULT ) {
+																							}
+																						} else {
+																							if ( hi_0_0_0.getDataType() == Types.DataType.SCALAR ) {
+																							} else if ( hi_0_0_0.getDataType() == Types.DataType.MATRIX ) {
+																							}
+																						}
+																					} else if ( hi_1_1.getDataType() == Types.DataType.SCALAR ) {
+																						hi = _applyRewrite60(hi); // +(b,-(A,c)) => +(A,-(b,c))
+																						hi = _applyRewrite304(hi); // +(-(B,c),-(A,d)) => +(A,-(B,+(c,d)))
+																						hi = _applyRewrite338(hi); // +(-(b,D),-(A,c)) => +(A,-(-(b,c),D))
+																					}
+																				} else if ( hi_1_0.getDataType() == Types.DataType.MATRIX ) {
+																					if ( hi_1_0 instanceof BinaryOp ) {
+																						if ( (( BinaryOp ) hi_1_0 ).getOp() == Types.OpOp2.MINUS ) {
+																							hi = _applyRewrite299(hi); // +(a,-(-(b,D),C)) => -(+(a,b),+(C,D))
+																							hi = _applyRewrite340(hi); // +(b,-(-(A,c),D)) => +(A,-(-(b,c),D))
+																						} else if ( (( BinaryOp ) hi_1_0 ).getOp() == Types.OpOp2.PLUS ) {
+																							hi = _applyRewrite314(hi); // +(b,-(+(c,A),D)) => +(A,-(+(b,c),D))
+																							hi = _applyRewrite315(hi); // +(b,-(+(A,c),D)) => +(A,-(+(b,c),D))
+																						} else if ( (( BinaryOp ) hi_1_0 ).getOp() == Types.OpOp2.MULT ) {
+																							if ( hi_1_0.getInput().size() == 2 ) {
+																								Hop hi_1_0_0 = hi_1_0.getInput(0);
+																								Hop hi_1_0_1 = hi_1_0.getInput(1);
+																								if ( hi_1_1.getDataType() == Types.DataType.MATRIX ) {
+																									if ( hi_1_1 instanceof BinaryOp ) {
+																										if ( (( BinaryOp ) hi_1_1 ).getOp() == Types.OpOp2.MINUS ) {
+																											hi = _applyRewrite311(hi); // +(b,-(A,-(D,c))) => +(A,-(+(b,c),D))
+																											hi = _applyRewrite320(hi); // +(c,-(A,-(d,B))) => +(A,+(B,-(c,d)))
+																										} else if ( (( BinaryOp ) hi_1_1 ).getOp() == Types.OpOp2.PLUS ) {
+																											hi = _applyRewrite343(hi); // +(b,-(A,+(c,D))) => +(A,-(-(b,c),D))
+																											hi = _applyRewrite344(hi); // +(b,-(A,+(D,c))) => +(A,-(-(b,c),D))
+																										} else if ( (( BinaryOp ) hi_1_1 ).getOp() == Types.OpOp2.MULT ) {
+																										}
+																									} else {
+																										if ( hi_0_0_0.getDataType() == Types.DataType.SCALAR ) {
+																										} else if ( hi_0_0_0.getDataType() == Types.DataType.MATRIX ) {
+																										}
+																									}
+																								} else if ( hi_1_1.getDataType() == Types.DataType.SCALAR ) {
+																									hi = _applyRewrite60(hi); // +(b,-(A,c)) => +(A,-(b,c))
+																									hi = _applyRewrite304(hi); // +(-(B,c),-(A,d)) => +(A,-(B,+(c,d)))
+																									hi = _applyRewrite338(hi); // +(-(b,D),-(A,c)) => +(A,-(-(b,c),D))
+																								}
+																							}
+																						}
+																					} else {
+																						if ( hi_1_1.getDataType() == Types.DataType.MATRIX ) {
+																							if ( hi_1_1 instanceof BinaryOp ) {
+																								if ( (( BinaryOp ) hi_1_1 ).getOp() == Types.OpOp2.MINUS ) {
+																									hi = _applyRewrite311(hi); // +(b,-(A,-(D,c))) => +(A,-(+(b,c),D))
+																									hi = _applyRewrite320(hi); // +(c,-(A,-(d,B))) => +(A,+(B,-(c,d)))
+																								} else if ( (( BinaryOp ) hi_1_1 ).getOp() == Types.OpOp2.PLUS ) {
+																									hi = _applyRewrite343(hi); // +(b,-(A,+(c,D))) => +(A,-(-(b,c),D))
+																									hi = _applyRewrite344(hi); // +(b,-(A,+(D,c))) => +(A,-(-(b,c),D))
+																								} else if ( (( BinaryOp ) hi_1_1 ).getOp() == Types.OpOp2.MULT ) {
+																								}
+																							} else {
+																								if ( hi_0_0_0.getDataType() == Types.DataType.SCALAR ) {
+																								} else if ( hi_0_0_0.getDataType() == Types.DataType.MATRIX ) {
+																								}
+																							}
+																						} else if ( hi_1_1.getDataType() == Types.DataType.SCALAR ) {
+																							hi = _applyRewrite60(hi); // +(b,-(A,c)) => +(A,-(b,c))
+																							hi = _applyRewrite304(hi); // +(-(B,c),-(A,d)) => +(A,-(B,+(c,d)))
+																							hi = _applyRewrite338(hi); // +(-(b,D),-(A,c)) => +(A,-(-(b,c),D))
+																						}
+																					}
+																				}
+																			}
+																		} else if ( hi_0_1.getDataType() == Types.DataType.SCALAR ) {
+																			hi = _applyRewrite59(hi); // +(-(A,c),b) => +(A,-(b,c))
+																			hi = _applyRewrite304(hi); // +(-(B,c),-(A,d)) => +(A,-(B,+(c,d)))
+																			hi = _applyRewrite339(hi); // +(-(A,c),-(b,D)) => +(A,-(-(b,c),D))
+																		}
+																	}
+																}
+															} else {
+																if ( hi_0_1.getDataType() == Types.DataType.MATRIX ) {
+																	if ( hi_0_1 instanceof BinaryOp ) {
+																		if ( (( BinaryOp ) hi_0_1 ).getOp() == Types.OpOp2.MINUS ) {
+																			hi = _applyRewrite310(hi); // +(-(A,-(D,b)),c) => +(A,-(+(b,c),D))
+																			hi = _applyRewrite319(hi); // +(-(A,-(d,B)),c) => +(A,+(B,-(c,d)))
+																		} else if ( (( BinaryOp ) hi_0_1 ).getOp() == Types.OpOp2.PLUS ) {
+																			hi = _applyRewrite341(hi); // +(-(A,+(c,D)),b) => +(A,-(-(b,c),D))
+																			hi = _applyRewrite342(hi); // +(-(A,+(D,c)),b) => +(A,-(-(b,c),D))
+																		} else if ( (( BinaryOp ) hi_0_1 ).getOp() == Types.OpOp2.MULT ) {
+																		}
+																	} else {
+																		if ( hi_1_0.getDataType() == Types.DataType.SCALAR ) {
+																			if ( hi_1_1.getDataType() == Types.DataType.MATRIX ) {
+																				if ( hi_1_1 instanceof BinaryOp ) {
+																					if ( (( BinaryOp ) hi_1_1 ).getOp() == Types.OpOp2.MINUS ) {
+																						hi = _applyRewrite311(hi); // +(b,-(A,-(D,c))) => +(A,-(+(b,c),D))
+																						hi = _applyRewrite320(hi); // +(c,-(A,-(d,B))) => +(A,+(B,-(c,d)))
+																					} else if ( (( BinaryOp ) hi_1_1 ).getOp() == Types.OpOp2.PLUS ) {
+																						hi = _applyRewrite343(hi); // +(b,-(A,+(c,D))) => +(A,-(-(b,c),D))
+																						hi = _applyRewrite344(hi); // +(b,-(A,+(D,c))) => +(A,-(-(b,c),D))
+																					} else if ( (( BinaryOp ) hi_1_1 ).getOp() == Types.OpOp2.MULT ) {
+																					}
+																				} else {
+																					hi = _applyRewrite44(hi); // +(a,-(0.0,B)) => -(a,B)
+																					hi = _applyRewrite48(hi); // +(A,-(0.0,B)) => -(A,B)
+																					hi = _applyRewrite55(hi); // +(a,-(b,C)) => -(+(a,b),C)
+																					hi = _applyRewrite298(hi); // +(-(a,D),-(b,C)) => -(+(a,b),+(C,D))
+																					hi = _applyRewrite299(hi); // +(a,-(-(b,D),C)) => -(+(a,b),+(C,D))
+																					hi = _applyRewrite314(hi); // +(b,-(+(c,A),D)) => +(A,-(+(b,c),D))
+																					hi = _applyRewrite315(hi); // +(b,-(+(A,c),D)) => +(A,-(+(b,c),D))
+																					hi = _applyRewrite339(hi); // +(-(A,c),-(b,D)) => +(A,-(-(b,c),D))
+																					hi = _applyRewrite340(hi); // +(b,-(-(A,c),D)) => +(A,-(-(b,c),D))
+																				}
+																			} else if ( hi_1_1.getDataType() == Types.DataType.SCALAR ) {
+																				hi = _applyRewrite60(hi); // +(b,-(A,c)) => +(A,-(b,c))
+																				hi = _applyRewrite304(hi); // +(-(B,c),-(A,d)) => +(A,-(B,+(c,d)))
+																				hi = _applyRewrite338(hi); // +(-(b,D),-(A,c)) => +(A,-(-(b,c),D))
+																			}
+																		} else if ( hi_1_0.getDataType() == Types.DataType.MATRIX ) {
+																			if ( hi_1_0 instanceof BinaryOp ) {
+																				if ( (( BinaryOp ) hi_1_0 ).getOp() == Types.OpOp2.MINUS ) {
+																					hi = _applyRewrite299(hi); // +(a,-(-(b,D),C)) => -(+(a,b),+(C,D))
+																					hi = _applyRewrite340(hi); // +(b,-(-(A,c),D)) => +(A,-(-(b,c),D))
+																				} else if ( (( BinaryOp ) hi_1_0 ).getOp() == Types.OpOp2.PLUS ) {
+																					hi = _applyRewrite314(hi); // +(b,-(+(c,A),D)) => +(A,-(+(b,c),D))
+																					hi = _applyRewrite315(hi); // +(b,-(+(A,c),D)) => +(A,-(+(b,c),D))
+																				} else if ( (( BinaryOp ) hi_1_0 ).getOp() == Types.OpOp2.MULT ) {
+																					if ( hi_1_0.getInput().size() == 2 ) {
+																						Hop hi_1_0_0 = hi_1_0.getInput(0);
+																						Hop hi_1_0_1 = hi_1_0.getInput(1);
+																						if ( hi_1_1.getDataType() == Types.DataType.MATRIX ) {
+																							if ( hi_1_1 instanceof BinaryOp ) {
+																								if ( (( BinaryOp ) hi_1_1 ).getOp() == Types.OpOp2.MINUS ) {
+																									hi = _applyRewrite311(hi); // +(b,-(A,-(D,c))) => +(A,-(+(b,c),D))
+																									hi = _applyRewrite320(hi); // +(c,-(A,-(d,B))) => +(A,+(B,-(c,d)))
+																								} else if ( (( BinaryOp ) hi_1_1 ).getOp() == Types.OpOp2.PLUS ) {
+																									hi = _applyRewrite343(hi); // +(b,-(A,+(c,D))) => +(A,-(-(b,c),D))
+																									hi = _applyRewrite344(hi); // +(b,-(A,+(D,c))) => +(A,-(-(b,c),D))
+																								} else if ( (( BinaryOp ) hi_1_1 ).getOp() == Types.OpOp2.MULT ) {
+																								}
+																							} else {
+																								if ( hi_1_0_0.getDataType() == Types.DataType.SCALAR ) {
+																								} else if ( hi_1_0_0.getDataType() == Types.DataType.MATRIX ) {
+																								}
+																							}
+																						} else if ( hi_1_1.getDataType() == Types.DataType.SCALAR ) {
+																							hi = _applyRewrite60(hi); // +(b,-(A,c)) => +(A,-(b,c))
+																							hi = _applyRewrite304(hi); // +(-(B,c),-(A,d)) => +(A,-(B,+(c,d)))
+																							hi = _applyRewrite338(hi); // +(-(b,D),-(A,c)) => +(A,-(-(b,c),D))
+																						}
+																					}
+																				}
+																			} else {
+																				if ( hi_1_1.getDataType() == Types.DataType.MATRIX ) {
+																					if ( hi_1_1 instanceof BinaryOp ) {
+																						if ( (( BinaryOp ) hi_1_1 ).getOp() == Types.OpOp2.MINUS ) {
+																							hi = _applyRewrite311(hi); // +(b,-(A,-(D,c))) => +(A,-(+(b,c),D))
+																							hi = _applyRewrite320(hi); // +(c,-(A,-(d,B))) => +(A,+(B,-(c,d)))
+																						} else if ( (( BinaryOp ) hi_1_1 ).getOp() == Types.OpOp2.PLUS ) {
+																							hi = _applyRewrite343(hi); // +(b,-(A,+(c,D))) => +(A,-(-(b,c),D))
+																							hi = _applyRewrite344(hi); // +(b,-(A,+(D,c))) => +(A,-(-(b,c),D))
+																						} else if ( (( BinaryOp ) hi_1_1 ).getOp() == Types.OpOp2.MULT ) {
+																						}
+																					} else {
+																						hi = _applyRewrite44(hi); // +(a,-(0.0,B)) => -(a,B)
+																						hi = _applyRewrite48(hi); // +(A,-(0.0,B)) => -(A,B)
+																						hi = _applyRewrite55(hi); // +(a,-(b,C)) => -(+(a,b),C)
+																						hi = _applyRewrite298(hi); // +(-(a,D),-(b,C)) => -(+(a,b),+(C,D))
+																						hi = _applyRewrite299(hi); // +(a,-(-(b,D),C)) => -(+(a,b),+(C,D))
+																						hi = _applyRewrite314(hi); // +(b,-(+(c,A),D)) => +(A,-(+(b,c),D))
+																						hi = _applyRewrite315(hi); // +(b,-(+(A,c),D)) => +(A,-(+(b,c),D))
+																						hi = _applyRewrite339(hi); // +(-(A,c),-(b,D)) => +(A,-(-(b,c),D))
+																						hi = _applyRewrite340(hi); // +(b,-(-(A,c),D)) => +(A,-(-(b,c),D))
+																					}
+																				} else if ( hi_1_1.getDataType() == Types.DataType.SCALAR ) {
+																					hi = _applyRewrite60(hi); // +(b,-(A,c)) => +(A,-(b,c))
+																					hi = _applyRewrite304(hi); // +(-(B,c),-(A,d)) => +(A,-(B,+(c,d)))
+																					hi = _applyRewrite338(hi); // +(-(b,D),-(A,c)) => +(A,-(-(b,c),D))
+																				}
+																			}
+																		}
+																	}
+																} else if ( hi_0_1.getDataType() == Types.DataType.SCALAR ) {
+																	hi = _applyRewrite59(hi); // +(-(A,c),b) => +(A,-(b,c))
+																	hi = _applyRewrite304(hi); // +(-(B,c),-(A,d)) => +(A,-(B,+(c,d)))
+																	hi = _applyRewrite339(hi); // +(-(A,c),-(b,D)) => +(A,-(-(b,c),D))
+																}
+															}
+														}
+													}
+												} else if ( (( BinaryOp ) hi_1 ).getOp() == Types.OpOp2.MULT ) {
+													if ( hi_1.getInput().size() == 2 ) {
+														Hop hi_1_0 = hi_1.getInput(0);
+														Hop hi_1_1 = hi_1.getInput(1);
+														if ( hi_0_0.getDataType() == Types.DataType.SCALAR ) {
+															if ( hi_0_1.getDataType() == Types.DataType.MATRIX ) {
+																if ( hi_0_1 instanceof BinaryOp ) {
+																	if ( (( BinaryOp ) hi_0_1 ).getOp() == Types.OpOp2.MINUS ) {
+																		hi = _applyRewrite310(hi); // +(-(A,-(D,b)),c) => +(A,-(+(b,c),D))
+																		hi = _applyRewrite319(hi); // +(-(A,-(d,B)),c) => +(A,+(B,-(c,d)))
+																	} else if ( (( BinaryOp ) hi_0_1 ).getOp() == Types.OpOp2.PLUS ) {
+																		hi = _applyRewrite341(hi); // +(-(A,+(c,D)),b) => +(A,-(-(b,c),D))
+																		hi = _applyRewrite342(hi); // +(-(A,+(D,c)),b) => +(A,-(-(b,c),D))
+																	} else if ( (( BinaryOp ) hi_0_1 ).getOp() == Types.OpOp2.MULT ) {
+																	}
+																} else {
+																	if ( hi_1_0.getDataType() == Types.DataType.MATRIX ) {
+																		if ( hi_1_0 instanceof BinaryOp ) {
+																		} else {
+																			hi = _applyRewrite124(hi); // +(*(C,A),*(B,A)) => *(A,+(B,C))
+																			hi = _applyRewrite125(hi); // +(*(B,A),*(A,C)) => *(A,+(B,C))
+																			hi = _applyRewrite126(hi); // +(*(A,C),*(B,A)) => *(A,+(B,C))
+																			hi = _applyRewrite127(hi); // +(*(A,C),*(A,B)) => *(A,+(B,C))
+																		}
+																	}
+																}
+															} else if ( hi_0_1.getDataType() == Types.DataType.SCALAR ) {
+																hi = _applyRewrite59(hi); // +(-(A,c),b) => +(A,-(b,c))
+																hi = _applyRewrite304(hi); // +(-(B,c),-(A,d)) => +(A,-(B,+(c,d)))
+																hi = _applyRewrite339(hi); // +(-(A,c),-(b,D)) => +(A,-(-(b,c),D))
+															}
+														} else if ( hi_0_0.getDataType() == Types.DataType.MATRIX ) {
+															if ( hi_0_0 instanceof BinaryOp ) {
+																if ( (( BinaryOp ) hi_0_0 ).getOp() == Types.OpOp2.MINUS ) {
+																	hi = _applyRewrite297(hi); // +(-(-(a,C),D),b) => -(+(a,b),+(C,D))
+																	hi = _applyRewrite337(hi); // +(-(-(A,c),D),b) => +(A,-(-(b,c),D))
+																} else if ( (( BinaryOp ) hi_0_0 ).getOp() == Types.OpOp2.PLUS ) {
+																	hi = _applyRewrite312(hi); // +(-(+(b,A),D),c) => +(A,-(+(b,c),D))
+																	hi = _applyRewrite313(hi); // +(-(+(A,b),D),c) => +(A,-(+(b,c),D))
+																} else if ( (( BinaryOp ) hi_0_0 ).getOp() == Types.OpOp2.MULT ) {
+																	if ( hi_0_0.getInput().size() == 2 ) {
+																		Hop hi_0_0_0 = hi_0_0.getInput(0);
+																		Hop hi_0_0_1 = hi_0_0.getInput(1);
+																		if ( hi_0_1.getDataType() == Types.DataType.MATRIX ) {
+																			if ( hi_0_1 instanceof BinaryOp ) {
+																				if ( (( BinaryOp ) hi_0_1 ).getOp() == Types.OpOp2.MINUS ) {
+																					hi = _applyRewrite310(hi); // +(-(A,-(D,b)),c) => +(A,-(+(b,c),D))
+																					hi = _applyRewrite319(hi); // +(-(A,-(d,B)),c) => +(A,+(B,-(c,d)))
+																				} else if ( (( BinaryOp ) hi_0_1 ).getOp() == Types.OpOp2.PLUS ) {
+																					hi = _applyRewrite341(hi); // +(-(A,+(c,D)),b) => +(A,-(-(b,c),D))
+																					hi = _applyRewrite342(hi); // +(-(A,+(D,c)),b) => +(A,-(-(b,c),D))
+																				} else if ( (( BinaryOp ) hi_0_1 ).getOp() == Types.OpOp2.MULT ) {
+																				}
+																			} else {
+																				if ( hi_1_0.getDataType() == Types.DataType.MATRIX ) {
+																					if ( hi_1_0 instanceof BinaryOp ) {
+																					} else {
+																						hi = _applyRewrite124(hi); // +(*(C,A),*(B,A)) => *(A,+(B,C))
+																						hi = _applyRewrite125(hi); // +(*(B,A),*(A,C)) => *(A,+(B,C))
+																						hi = _applyRewrite126(hi); // +(*(A,C),*(B,A)) => *(A,+(B,C))
+																						hi = _applyRewrite127(hi); // +(*(A,C),*(A,B)) => *(A,+(B,C))
+																					}
+																				}
+																			}
+																		} else if ( hi_0_1.getDataType() == Types.DataType.SCALAR ) {
+																			hi = _applyRewrite59(hi); // +(-(A,c),b) => +(A,-(b,c))
+																			hi = _applyRewrite304(hi); // +(-(B,c),-(A,d)) => +(A,-(B,+(c,d)))
+																			hi = _applyRewrite339(hi); // +(-(A,c),-(b,D)) => +(A,-(-(b,c),D))
+																		}
+																	}
+																}
+															} else {
+																if ( hi_0_1.getDataType() == Types.DataType.MATRIX ) {
+																	if ( hi_0_1 instanceof BinaryOp ) {
+																		if ( (( BinaryOp ) hi_0_1 ).getOp() == Types.OpOp2.MINUS ) {
+																			hi = _applyRewrite310(hi); // +(-(A,-(D,b)),c) => +(A,-(+(b,c),D))
+																			hi = _applyRewrite319(hi); // +(-(A,-(d,B)),c) => +(A,+(B,-(c,d)))
+																		} else if ( (( BinaryOp ) hi_0_1 ).getOp() == Types.OpOp2.PLUS ) {
+																			hi = _applyRewrite341(hi); // +(-(A,+(c,D)),b) => +(A,-(-(b,c),D))
+																			hi = _applyRewrite342(hi); // +(-(A,+(D,c)),b) => +(A,-(-(b,c),D))
+																		} else if ( (( BinaryOp ) hi_0_1 ).getOp() == Types.OpOp2.MULT ) {
+																		}
+																	} else {
+																		if ( hi_1_0.getDataType() == Types.DataType.MATRIX ) {
+																			if ( hi_1_0 instanceof BinaryOp ) {
+																			} else {
+																				hi = _applyRewrite124(hi); // +(*(C,A),*(B,A)) => *(A,+(B,C))
+																				hi = _applyRewrite125(hi); // +(*(B,A),*(A,C)) => *(A,+(B,C))
+																				hi = _applyRewrite126(hi); // +(*(A,C),*(B,A)) => *(A,+(B,C))
+																				hi = _applyRewrite127(hi); // +(*(A,C),*(A,B)) => *(A,+(B,C))
+																			}
+																		}
+																	}
+																} else if ( hi_0_1.getDataType() == Types.DataType.SCALAR ) {
+																	hi = _applyRewrite59(hi); // +(-(A,c),b) => +(A,-(b,c))
+																	hi = _applyRewrite304(hi); // +(-(B,c),-(A,d)) => +(A,-(B,+(c,d)))
+																	hi = _applyRewrite339(hi); // +(-(A,c),-(b,D)) => +(A,-(-(b,c),D))
+																}
+															}
+														}
+													}
+												} else if ( (( BinaryOp ) hi_1 ).getOp() == Types.OpOp2.NOTEQUAL ) {
+													hi = _applyRewrite248(hi); // +(A,!=(rev(A),c)) => +(A,!=(A,c))
+													hi = _applyRewrite249(hi); // +(A,!=(c,rev(A))) => +(A,!=(A,c))
+													hi = _applyRewrite256(hi); // +(A,!=(rev(A),C)) => +(A,!=(A,C))
+													hi = _applyRewrite257(hi); // +(A,!=(C,rev(A))) => +(A,!=(A,C))
+												} else if ( (( BinaryOp ) hi_1 ).getOp() == Types.OpOp2.DIV ) {
+												}
+											} else if ( hi_1 instanceof AggBinaryOp ) {
+												if ( HopRewriteUtils.isMatrixMultiply(hi_1) ) {
+													if ( hi_1.getInput().size() == 2 ) {
+														Hop hi_1_0 = hi_1.getInput(0);
+														Hop hi_1_1 = hi_1.getInput(1);
+														if ( hi_0_0.getDataType() == Types.DataType.SCALAR ) {
+															if ( hi_0_1.getDataType() == Types.DataType.MATRIX ) {
+																if ( hi_0_1 instanceof BinaryOp ) {
+																	if ( (( BinaryOp ) hi_0_1 ).getOp() == Types.OpOp2.MINUS ) {
+																		hi = _applyRewrite310(hi); // +(-(A,-(D,b)),c) => +(A,-(+(b,c),D))
+																		hi = _applyRewrite319(hi); // +(-(A,-(d,B)),c) => +(A,+(B,-(c,d)))
+																	} else if ( (( BinaryOp ) hi_0_1 ).getOp() == Types.OpOp2.PLUS ) {
+																		hi = _applyRewrite341(hi); // +(-(A,+(c,D)),b) => +(A,-(-(b,c),D))
+																		hi = _applyRewrite342(hi); // +(-(A,+(D,c)),b) => +(A,-(-(b,c),D))
+																	} else if ( (( BinaryOp ) hi_0_1 ).getOp() == Types.OpOp2.MULT ) {
+																	}
+																} else {
+																	if ( hi_1_0.getDataType() == Types.DataType.MATRIX ) {
+																		if ( hi_1_0 instanceof BinaryOp ) {
+																		} else {
+																			hi = _applyRewrite94(hi); // +(%*%(B,C),%*%(A,C)) => %*%(+(A,B),C)
+																			hi = _applyRewrite95(hi); // +(%*%(A,C),%*%(A,B)) => %*%(A,+(B,C))
+																		}
+																	}
+																}
+															} else if ( hi_0_1.getDataType() == Types.DataType.SCALAR ) {
+																hi = _applyRewrite59(hi); // +(-(A,c),b) => +(A,-(b,c))
+																hi = _applyRewrite304(hi); // +(-(B,c),-(A,d)) => +(A,-(B,+(c,d)))
+																hi = _applyRewrite339(hi); // +(-(A,c),-(b,D)) => +(A,-(-(b,c),D))
+															}
+														} else if ( hi_0_0.getDataType() == Types.DataType.MATRIX ) {
+															if ( hi_0_0 instanceof BinaryOp ) {
+																if ( (( BinaryOp ) hi_0_0 ).getOp() == Types.OpOp2.MINUS ) {
+																	hi = _applyRewrite297(hi); // +(-(-(a,C),D),b) => -(+(a,b),+(C,D))
+																	hi = _applyRewrite337(hi); // +(-(-(A,c),D),b) => +(A,-(-(b,c),D))
+																} else if ( (( BinaryOp ) hi_0_0 ).getOp() == Types.OpOp2.PLUS ) {
+																	hi = _applyRewrite312(hi); // +(-(+(b,A),D),c) => +(A,-(+(b,c),D))
+																	hi = _applyRewrite313(hi); // +(-(+(A,b),D),c) => +(A,-(+(b,c),D))
+																} else if ( (( BinaryOp ) hi_0_0 ).getOp() == Types.OpOp2.MULT ) {
+																	if ( hi_0_0.getInput().size() == 2 ) {
+																		Hop hi_0_0_0 = hi_0_0.getInput(0);
+																		Hop hi_0_0_1 = hi_0_0.getInput(1);
+																		if ( hi_0_1.getDataType() == Types.DataType.MATRIX ) {
+																			if ( hi_0_1 instanceof BinaryOp ) {
+																				if ( (( BinaryOp ) hi_0_1 ).getOp() == Types.OpOp2.MINUS ) {
+																					hi = _applyRewrite310(hi); // +(-(A,-(D,b)),c) => +(A,-(+(b,c),D))
+																					hi = _applyRewrite319(hi); // +(-(A,-(d,B)),c) => +(A,+(B,-(c,d)))
+																				} else if ( (( BinaryOp ) hi_0_1 ).getOp() == Types.OpOp2.PLUS ) {
+																					hi = _applyRewrite341(hi); // +(-(A,+(c,D)),b) => +(A,-(-(b,c),D))
+																					hi = _applyRewrite342(hi); // +(-(A,+(D,c)),b) => +(A,-(-(b,c),D))
+																				} else if ( (( BinaryOp ) hi_0_1 ).getOp() == Types.OpOp2.MULT ) {
+																				}
+																			} else {
+																				if ( hi_1_0.getDataType() == Types.DataType.MATRIX ) {
+																					if ( hi_1_0 instanceof BinaryOp ) {
+																					} else {
+																						hi = _applyRewrite94(hi); // +(%*%(B,C),%*%(A,C)) => %*%(+(A,B),C)
+																						hi = _applyRewrite95(hi); // +(%*%(A,C),%*%(A,B)) => %*%(A,+(B,C))
+																					}
+																				}
+																			}
+																		} else if ( hi_0_1.getDataType() == Types.DataType.SCALAR ) {
+																			hi = _applyRewrite59(hi); // +(-(A,c),b) => +(A,-(b,c))
+																			hi = _applyRewrite304(hi); // +(-(B,c),-(A,d)) => +(A,-(B,+(c,d)))
+																			hi = _applyRewrite339(hi); // +(-(A,c),-(b,D)) => +(A,-(-(b,c),D))
+																		}
+																	}
+																}
+															} else {
+																if ( hi_0_1.getDataType() == Types.DataType.MATRIX ) {
+																	if ( hi_0_1 instanceof BinaryOp ) {
+																		if ( (( BinaryOp ) hi_0_1 ).getOp() == Types.OpOp2.MINUS ) {
+																			hi = _applyRewrite310(hi); // +(-(A,-(D,b)),c) => +(A,-(+(b,c),D))
+																			hi = _applyRewrite319(hi); // +(-(A,-(d,B)),c) => +(A,+(B,-(c,d)))
+																		} else if ( (( BinaryOp ) hi_0_1 ).getOp() == Types.OpOp2.PLUS ) {
+																			hi = _applyRewrite341(hi); // +(-(A,+(c,D)),b) => +(A,-(-(b,c),D))
+																			hi = _applyRewrite342(hi); // +(-(A,+(D,c)),b) => +(A,-(-(b,c),D))
+																		} else if ( (( BinaryOp ) hi_0_1 ).getOp() == Types.OpOp2.MULT ) {
+																		}
+																	} else {
+																		if ( hi_1_0.getDataType() == Types.DataType.MATRIX ) {
+																			if ( hi_1_0 instanceof BinaryOp ) {
+																			} else {
+																				hi = _applyRewrite94(hi); // +(%*%(B,C),%*%(A,C)) => %*%(+(A,B),C)
+																				hi = _applyRewrite95(hi); // +(%*%(A,C),%*%(A,B)) => %*%(A,+(B,C))
+																			}
+																		}
+																	}
+																} else if ( hi_0_1.getDataType() == Types.DataType.SCALAR ) {
+																	hi = _applyRewrite59(hi); // +(-(A,c),b) => +(A,-(b,c))
+																	hi = _applyRewrite304(hi); // +(-(B,c),-(A,d)) => +(A,-(B,+(c,d)))
+																	hi = _applyRewrite339(hi); // +(-(A,c),-(b,D)) => +(A,-(-(b,c),D))
+																}
+															}
+														}
+													}
+												}
+											} else if ( hi_1 instanceof ReorgOp ) {
+												if ( (( ReorgOp ) hi_1 ).getOp() == Types.ReOrgOp.TRANS ) {
+													if ( hi_1.getInput().size() == 1 ) {
+														Hop hi_1_0 = hi_1.getInput(0);
+														if ( hi_0_0.getDataType() == Types.DataType.SCALAR ) {
+															if ( hi_0_1.getDataType() == Types.DataType.MATRIX ) {
+																if ( hi_0_1 instanceof BinaryOp ) {
+																	if ( (( BinaryOp ) hi_0_1 ).getOp() == Types.OpOp2.MINUS ) {
+																		hi = _applyRewrite310(hi); // +(-(A,-(D,b)),c) => +(A,-(+(b,c),D))
+																		hi = _applyRewrite319(hi); // +(-(A,-(d,B)),c) => +(A,+(B,-(c,d)))
+																	} else if ( (( BinaryOp ) hi_0_1 ).getOp() == Types.OpOp2.PLUS ) {
+																		hi = _applyRewrite341(hi); // +(-(A,+(c,D)),b) => +(A,-(-(b,c),D))
+																		hi = _applyRewrite342(hi); // +(-(A,+(D,c)),b) => +(A,-(-(b,c),D))
+																	} else if ( (( BinaryOp ) hi_0_1 ).getOp() == Types.OpOp2.MULT ) {
+																	}
+																} else {
+																	if ( hi_1_0.getDataType() == Types.DataType.MATRIX ) {
+																		if ( hi_1_0 instanceof BinaryOp ) {
+																			if ( (( BinaryOp ) hi_1_0 ).getOp() == Types.OpOp2.MINUS ) {
+																				hi = _applyRewrite347(hi); // +(a,t(-(b,C))) => -(+(a,b),t(C))
+																				hi = _applyRewrite352(hi); // +(a,t(-(C,b))) => +(-(a,b),t(C))
+																			} else if ( (( BinaryOp ) hi_1_0 ).getOp() == Types.OpOp2.PLUS ) {
+																				hi = _applyRewrite355(hi); // +(a,t(+(b,C))) => +(+(a,b),t(C))
+																				hi = _applyRewrite356(hi); // +(a,t(+(C,b))) => +(+(a,b),t(C))
+																			} else if ( (( BinaryOp ) hi_1_0 ).getOp() == Types.OpOp2.MULT ) {
+																			}
+																		} else {
+																			hi = _applyRewrite192(hi); // +(t(B),t(A)) => t(+(A,B))
+																		}
+																	}
+																}
+															} else if ( hi_0_1.getDataType() == Types.DataType.SCALAR ) {
+																hi = _applyRewrite59(hi); // +(-(A,c),b) => +(A,-(b,c))
+																hi = _applyRewrite304(hi); // +(-(B,c),-(A,d)) => +(A,-(B,+(c,d)))
+																hi = _applyRewrite339(hi); // +(-(A,c),-(b,D)) => +(A,-(-(b,c),D))
+															}
+														} else if ( hi_0_0.getDataType() == Types.DataType.MATRIX ) {
+															if ( hi_0_0 instanceof BinaryOp ) {
+																if ( (( BinaryOp ) hi_0_0 ).getOp() == Types.OpOp2.MINUS ) {
+																	hi = _applyRewrite297(hi); // +(-(-(a,C),D),b) => -(+(a,b),+(C,D))
+																	hi = _applyRewrite337(hi); // +(-(-(A,c),D),b) => +(A,-(-(b,c),D))
+																} else if ( (( BinaryOp ) hi_0_0 ).getOp() == Types.OpOp2.PLUS ) {
+																	hi = _applyRewrite312(hi); // +(-(+(b,A),D),c) => +(A,-(+(b,c),D))
+																	hi = _applyRewrite313(hi); // +(-(+(A,b),D),c) => +(A,-(+(b,c),D))
+																} else if ( (( BinaryOp ) hi_0_0 ).getOp() == Types.OpOp2.MULT ) {
+																	if ( hi_0_0.getInput().size() == 2 ) {
+																		Hop hi_0_0_0 = hi_0_0.getInput(0);
+																		Hop hi_0_0_1 = hi_0_0.getInput(1);
+																		if ( hi_0_1.getDataType() == Types.DataType.MATRIX ) {
+																			if ( hi_0_1 instanceof BinaryOp ) {
+																				if ( (( BinaryOp ) hi_0_1 ).getOp() == Types.OpOp2.MINUS ) {
+																					hi = _applyRewrite310(hi); // +(-(A,-(D,b)),c) => +(A,-(+(b,c),D))
+																					hi = _applyRewrite319(hi); // +(-(A,-(d,B)),c) => +(A,+(B,-(c,d)))
+																				} else if ( (( BinaryOp ) hi_0_1 ).getOp() == Types.OpOp2.PLUS ) {
+																					hi = _applyRewrite341(hi); // +(-(A,+(c,D)),b) => +(A,-(-(b,c),D))
+																					hi = _applyRewrite342(hi); // +(-(A,+(D,c)),b) => +(A,-(-(b,c),D))
+																				} else if ( (( BinaryOp ) hi_0_1 ).getOp() == Types.OpOp2.MULT ) {
+																				}
+																			} else {
+																				if ( hi_1_0.getDataType() == Types.DataType.MATRIX ) {
+																					if ( hi_1_0 instanceof BinaryOp ) {
+																						if ( (( BinaryOp ) hi_1_0 ).getOp() == Types.OpOp2.MINUS ) {
+																							hi = _applyRewrite347(hi); // +(a,t(-(b,C))) => -(+(a,b),t(C))
+																							hi = _applyRewrite352(hi); // +(a,t(-(C,b))) => +(-(a,b),t(C))
+																						} else if ( (( BinaryOp ) hi_1_0 ).getOp() == Types.OpOp2.PLUS ) {
+																							hi = _applyRewrite355(hi); // +(a,t(+(b,C))) => +(+(a,b),t(C))
+																							hi = _applyRewrite356(hi); // +(a,t(+(C,b))) => +(+(a,b),t(C))
+																						} else if ( (( BinaryOp ) hi_1_0 ).getOp() == Types.OpOp2.MULT ) {
+																						}
+																					} else {
+																						hi = _applyRewrite192(hi); // +(t(B),t(A)) => t(+(A,B))
+																					}
+																				}
+																			}
+																		} else if ( hi_0_1.getDataType() == Types.DataType.SCALAR ) {
+																			hi = _applyRewrite59(hi); // +(-(A,c),b) => +(A,-(b,c))
+																			hi = _applyRewrite304(hi); // +(-(B,c),-(A,d)) => +(A,-(B,+(c,d)))
+																			hi = _applyRewrite339(hi); // +(-(A,c),-(b,D)) => +(A,-(-(b,c),D))
+																		}
+																	}
+																}
+															} else {
+																if ( hi_0_1.getDataType() == Types.DataType.MATRIX ) {
+																	if ( hi_0_1 instanceof BinaryOp ) {
+																		if ( (( BinaryOp ) hi_0_1 ).getOp() == Types.OpOp2.MINUS ) {
+																			hi = _applyRewrite310(hi); // +(-(A,-(D,b)),c) => +(A,-(+(b,c),D))
+																			hi = _applyRewrite319(hi); // +(-(A,-(d,B)),c) => +(A,+(B,-(c,d)))
+																		} else if ( (( BinaryOp ) hi_0_1 ).getOp() == Types.OpOp2.PLUS ) {
+																			hi = _applyRewrite341(hi); // +(-(A,+(c,D)),b) => +(A,-(-(b,c),D))
+																			hi = _applyRewrite342(hi); // +(-(A,+(D,c)),b) => +(A,-(-(b,c),D))
+																		} else if ( (( BinaryOp ) hi_0_1 ).getOp() == Types.OpOp2.MULT ) {
+																		}
+																	} else {
+																		if ( hi_1_0.getDataType() == Types.DataType.MATRIX ) {
+																			if ( hi_1_0 instanceof BinaryOp ) {
+																				if ( (( BinaryOp ) hi_1_0 ).getOp() == Types.OpOp2.MINUS ) {
+																					hi = _applyRewrite347(hi); // +(a,t(-(b,C))) => -(+(a,b),t(C))
+																					hi = _applyRewrite352(hi); // +(a,t(-(C,b))) => +(-(a,b),t(C))
+																				} else if ( (( BinaryOp ) hi_1_0 ).getOp() == Types.OpOp2.PLUS ) {
+																					hi = _applyRewrite355(hi); // +(a,t(+(b,C))) => +(+(a,b),t(C))
+																					hi = _applyRewrite356(hi); // +(a,t(+(C,b))) => +(+(a,b),t(C))
+																				} else if ( (( BinaryOp ) hi_1_0 ).getOp() == Types.OpOp2.MULT ) {
+																				}
+																			} else {
+																				hi = _applyRewrite192(hi); // +(t(B),t(A)) => t(+(A,B))
+																			}
+																		}
+																	}
+																} else if ( hi_0_1.getDataType() == Types.DataType.SCALAR ) {
+																	hi = _applyRewrite59(hi); // +(-(A,c),b) => +(A,-(b,c))
+																	hi = _applyRewrite304(hi); // +(-(B,c),-(A,d)) => +(A,-(B,+(c,d)))
+																	hi = _applyRewrite339(hi); // +(-(A,c),-(b,D)) => +(A,-(-(b,c),D))
+																}
+															}
+														}
+													}
+												} else if ( (( ReorgOp ) hi_1 ).getOp() == Types.ReOrgOp.REV ) {
+													if ( hi_1.getInput().size() == 1 ) {
+														Hop hi_1_0 = hi_1.getInput(0);
+														if ( hi_0_0.getDataType() == Types.DataType.SCALAR ) {
+															if ( hi_0_1.getDataType() == Types.DataType.MATRIX ) {
+																if ( hi_0_1 instanceof BinaryOp ) {
+																	if ( (( BinaryOp ) hi_0_1 ).getOp() == Types.OpOp2.MINUS ) {
+																		hi = _applyRewrite310(hi); // +(-(A,-(D,b)),c) => +(A,-(+(b,c),D))
+																		hi = _applyRewrite319(hi); // +(-(A,-(d,B)),c) => +(A,+(B,-(c,d)))
+																	} else if ( (( BinaryOp ) hi_0_1 ).getOp() == Types.OpOp2.PLUS ) {
+																		hi = _applyRewrite341(hi); // +(-(A,+(c,D)),b) => +(A,-(-(b,c),D))
+																		hi = _applyRewrite342(hi); // +(-(A,+(D,c)),b) => +(A,-(-(b,c),D))
+																	} else if ( (( BinaryOp ) hi_0_1 ).getOp() == Types.OpOp2.MULT ) {
+																	}
+																} else {
+																	if ( hi_1_0.getDataType() == Types.DataType.MATRIX ) {
+																		if ( hi_1_0 instanceof BinaryOp ) {
+																			if ( (( BinaryOp ) hi_1_0 ).getOp() == Types.OpOp2.NOTEQUAL ) {
+																				hi = _applyRewrite252(hi); // +(A,rev(!=(c,A))) => +(A,!=(A,c))
+																				hi = _applyRewrite253(hi); // +(A,rev(!=(A,c))) => +(A,!=(A,c))
+																			} else if ( (( BinaryOp ) hi_1_0 ).getOp() == Types.OpOp2.MINUS ) {
+																				hi = _applyRewrite283(hi); // +(a,rev(-(b,C))) => -(+(a,b),rev(C))
+																				hi = _applyRewrite288(hi); // +(a,rev(-(C,b))) => +(-(a,b),rev(C))
+																			} else if ( (( BinaryOp ) hi_1_0 ).getOp() == Types.OpOp2.PLUS ) {
+																				hi = _applyRewrite291(hi); // +(a,rev(+(b,C))) => +(+(a,b),rev(C))
+																				hi = _applyRewrite292(hi); // +(a,rev(+(C,b))) => +(+(a,b),rev(C))
+																			} else if ( (( BinaryOp ) hi_1_0 ).getOp() == Types.OpOp2.MULT ) {
+																			}
+																		}
+																	}
+																}
+															} else if ( hi_0_1.getDataType() == Types.DataType.SCALAR ) {
+																hi = _applyRewrite59(hi); // +(-(A,c),b) => +(A,-(b,c))
+																hi = _applyRewrite304(hi); // +(-(B,c),-(A,d)) => +(A,-(B,+(c,d)))
+																hi = _applyRewrite339(hi); // +(-(A,c),-(b,D)) => +(A,-(-(b,c),D))
+															}
+														} else if ( hi_0_0.getDataType() == Types.DataType.MATRIX ) {
+															if ( hi_0_0 instanceof BinaryOp ) {
+																if ( (( BinaryOp ) hi_0_0 ).getOp() == Types.OpOp2.MINUS ) {
+																	hi = _applyRewrite297(hi); // +(-(-(a,C),D),b) => -(+(a,b),+(C,D))
+																	hi = _applyRewrite337(hi); // +(-(-(A,c),D),b) => +(A,-(-(b,c),D))
+																} else if ( (( BinaryOp ) hi_0_0 ).getOp() == Types.OpOp2.PLUS ) {
+																	hi = _applyRewrite312(hi); // +(-(+(b,A),D),c) => +(A,-(+(b,c),D))
+																	hi = _applyRewrite313(hi); // +(-(+(A,b),D),c) => +(A,-(+(b,c),D))
+																} else if ( (( BinaryOp ) hi_0_0 ).getOp() == Types.OpOp2.MULT ) {
+																	if ( hi_0_0.getInput().size() == 2 ) {
+																		Hop hi_0_0_0 = hi_0_0.getInput(0);
+																		Hop hi_0_0_1 = hi_0_0.getInput(1);
+																		if ( hi_0_1.getDataType() == Types.DataType.MATRIX ) {
+																			if ( hi_0_1 instanceof BinaryOp ) {
+																				if ( (( BinaryOp ) hi_0_1 ).getOp() == Types.OpOp2.MINUS ) {
+																					hi = _applyRewrite310(hi); // +(-(A,-(D,b)),c) => +(A,-(+(b,c),D))
+																					hi = _applyRewrite319(hi); // +(-(A,-(d,B)),c) => +(A,+(B,-(c,d)))
+																				} else if ( (( BinaryOp ) hi_0_1 ).getOp() == Types.OpOp2.PLUS ) {
+																					hi = _applyRewrite341(hi); // +(-(A,+(c,D)),b) => +(A,-(-(b,c),D))
+																					hi = _applyRewrite342(hi); // +(-(A,+(D,c)),b) => +(A,-(-(b,c),D))
+																				} else if ( (( BinaryOp ) hi_0_1 ).getOp() == Types.OpOp2.MULT ) {
+																				}
+																			} else {
+																				if ( hi_1_0.getDataType() == Types.DataType.MATRIX ) {
+																					if ( hi_1_0 instanceof BinaryOp ) {
+																						if ( (( BinaryOp ) hi_1_0 ).getOp() == Types.OpOp2.NOTEQUAL ) {
+																							hi = _applyRewrite252(hi); // +(A,rev(!=(c,A))) => +(A,!=(A,c))
+																							hi = _applyRewrite253(hi); // +(A,rev(!=(A,c))) => +(A,!=(A,c))
+																						} else if ( (( BinaryOp ) hi_1_0 ).getOp() == Types.OpOp2.MINUS ) {
+																							hi = _applyRewrite283(hi); // +(a,rev(-(b,C))) => -(+(a,b),rev(C))
+																							hi = _applyRewrite288(hi); // +(a,rev(-(C,b))) => +(-(a,b),rev(C))
+																						} else if ( (( BinaryOp ) hi_1_0 ).getOp() == Types.OpOp2.PLUS ) {
+																							hi = _applyRewrite291(hi); // +(a,rev(+(b,C))) => +(+(a,b),rev(C))
+																							hi = _applyRewrite292(hi); // +(a,rev(+(C,b))) => +(+(a,b),rev(C))
+																						} else if ( (( BinaryOp ) hi_1_0 ).getOp() == Types.OpOp2.MULT ) {
+																						}
+																					}
+																				}
+																			}
+																		} else if ( hi_0_1.getDataType() == Types.DataType.SCALAR ) {
+																			hi = _applyRewrite59(hi); // +(-(A,c),b) => +(A,-(b,c))
+																			hi = _applyRewrite304(hi); // +(-(B,c),-(A,d)) => +(A,-(B,+(c,d)))
+																			hi = _applyRewrite339(hi); // +(-(A,c),-(b,D)) => +(A,-(-(b,c),D))
+																		}
+																	}
+																}
+															} else {
+																if ( hi_0_1.getDataType() == Types.DataType.MATRIX ) {
+																	if ( hi_0_1 instanceof BinaryOp ) {
+																		if ( (( BinaryOp ) hi_0_1 ).getOp() == Types.OpOp2.MINUS ) {
+																			hi = _applyRewrite310(hi); // +(-(A,-(D,b)),c) => +(A,-(+(b,c),D))
+																			hi = _applyRewrite319(hi); // +(-(A,-(d,B)),c) => +(A,+(B,-(c,d)))
+																		} else if ( (( BinaryOp ) hi_0_1 ).getOp() == Types.OpOp2.PLUS ) {
+																			hi = _applyRewrite341(hi); // +(-(A,+(c,D)),b) => +(A,-(-(b,c),D))
+																			hi = _applyRewrite342(hi); // +(-(A,+(D,c)),b) => +(A,-(-(b,c),D))
+																		} else if ( (( BinaryOp ) hi_0_1 ).getOp() == Types.OpOp2.MULT ) {
+																		}
+																	} else {
+																		if ( hi_1_0.getDataType() == Types.DataType.MATRIX ) {
+																			if ( hi_1_0 instanceof BinaryOp ) {
+																				if ( (( BinaryOp ) hi_1_0 ).getOp() == Types.OpOp2.NOTEQUAL ) {
+																					hi = _applyRewrite252(hi); // +(A,rev(!=(c,A))) => +(A,!=(A,c))
+																					hi = _applyRewrite253(hi); // +(A,rev(!=(A,c))) => +(A,!=(A,c))
+																				} else if ( (( BinaryOp ) hi_1_0 ).getOp() == Types.OpOp2.MINUS ) {
+																					hi = _applyRewrite283(hi); // +(a,rev(-(b,C))) => -(+(a,b),rev(C))
+																					hi = _applyRewrite288(hi); // +(a,rev(-(C,b))) => +(-(a,b),rev(C))
+																				} else if ( (( BinaryOp ) hi_1_0 ).getOp() == Types.OpOp2.PLUS ) {
+																					hi = _applyRewrite291(hi); // +(a,rev(+(b,C))) => +(+(a,b),rev(C))
+																					hi = _applyRewrite292(hi); // +(a,rev(+(C,b))) => +(+(a,b),rev(C))
+																				} else if ( (( BinaryOp ) hi_1_0 ).getOp() == Types.OpOp2.MULT ) {
+																				}
+																			}
+																		}
+																	}
+																} else if ( hi_0_1.getDataType() == Types.DataType.SCALAR ) {
+																	hi = _applyRewrite59(hi); // +(-(A,c),b) => +(A,-(b,c))
+																	hi = _applyRewrite304(hi); // +(-(B,c),-(A,d)) => +(A,-(B,+(c,d)))
+																	hi = _applyRewrite339(hi); // +(-(A,c),-(b,D)) => +(A,-(-(b,c),D))
+																}
+															}
+														}
+													}
+												}
+											} else if ( hi_1 instanceof AggUnaryOp ) {
+												hi = _applyRewrite441(hi); // +(A,colSums(rev(A))) => +(A,colSums(A))
+											} else {
+												if ( hi_0_0.getDataType() == Types.DataType.SCALAR ) {
+													if ( hi_0_1.getDataType() == Types.DataType.MATRIX ) {
+														if ( hi_0_1 instanceof BinaryOp ) {
+															if ( (( BinaryOp ) hi_0_1 ).getOp() == Types.OpOp2.MINUS ) {
+																hi = _applyRewrite310(hi); // +(-(A,-(D,b)),c) => +(A,-(+(b,c),D))
+																hi = _applyRewrite319(hi); // +(-(A,-(d,B)),c) => +(A,+(B,-(c,d)))
+															} else if ( (( BinaryOp ) hi_0_1 ).getOp() == Types.OpOp2.PLUS ) {
+																hi = _applyRewrite341(hi); // +(-(A,+(c,D)),b) => +(A,-(-(b,c),D))
+																hi = _applyRewrite342(hi); // +(-(A,+(D,c)),b) => +(A,-(-(b,c),D))
+															} else if ( (( BinaryOp ) hi_0_1 ).getOp() == Types.OpOp2.MULT ) {
+															}
+														} else {
+															hi = _applyRewrite43(hi); // +(-(0.0,B),a) => -(a,B)
+															hi = _applyRewrite47(hi); // +(-(0.0,B),A) => -(A,B)
+															hi = _applyRewrite54(hi); // +(-(a,C),b) => -(+(a,b),C)
+															hi = _applyRewrite297(hi); // +(-(-(a,C),D),b) => -(+(a,b),+(C,D))
+															hi = _applyRewrite298(hi); // +(-(a,D),-(b,C)) => -(+(a,b),+(C,D))
+															hi = _applyRewrite312(hi); // +(-(+(b,A),D),c) => +(A,-(+(b,c),D))
+															hi = _applyRewrite313(hi); // +(-(+(A,b),D),c) => +(A,-(+(b,c),D))
+															hi = _applyRewrite337(hi); // +(-(-(A,c),D),b) => +(A,-(-(b,c),D))
+															hi = _applyRewrite338(hi); // +(-(b,D),-(A,c)) => +(A,-(-(b,c),D))
+														}
+													} else if ( hi_0_1.getDataType() == Types.DataType.SCALAR ) {
+														hi = _applyRewrite59(hi); // +(-(A,c),b) => +(A,-(b,c))
+														hi = _applyRewrite304(hi); // +(-(B,c),-(A,d)) => +(A,-(B,+(c,d)))
+														hi = _applyRewrite339(hi); // +(-(A,c),-(b,D)) => +(A,-(-(b,c),D))
+													}
+												} else if ( hi_0_0.getDataType() == Types.DataType.MATRIX ) {
+													if ( hi_0_0 instanceof BinaryOp ) {
+														if ( (( BinaryOp ) hi_0_0 ).getOp() == Types.OpOp2.MINUS ) {
+															hi = _applyRewrite297(hi); // +(-(-(a,C),D),b) => -(+(a,b),+(C,D))
+															hi = _applyRewrite337(hi); // +(-(-(A,c),D),b) => +(A,-(-(b,c),D))
+														} else if ( (( BinaryOp ) hi_0_0 ).getOp() == Types.OpOp2.PLUS ) {
+															hi = _applyRewrite312(hi); // +(-(+(b,A),D),c) => +(A,-(+(b,c),D))
+															hi = _applyRewrite313(hi); // +(-(+(A,b),D),c) => +(A,-(+(b,c),D))
+														} else if ( (( BinaryOp ) hi_0_0 ).getOp() == Types.OpOp2.MULT ) {
+															if ( hi_0_0.getInput().size() == 2 ) {
+																Hop hi_0_0_0 = hi_0_0.getInput(0);
+																Hop hi_0_0_1 = hi_0_0.getInput(1);
+																if ( hi_0_1.getDataType() == Types.DataType.MATRIX ) {
+																	if ( hi_0_1 instanceof BinaryOp ) {
+																		if ( (( BinaryOp ) hi_0_1 ).getOp() == Types.OpOp2.MINUS ) {
+																			hi = _applyRewrite310(hi); // +(-(A,-(D,b)),c) => +(A,-(+(b,c),D))
+																			hi = _applyRewrite319(hi); // +(-(A,-(d,B)),c) => +(A,+(B,-(c,d)))
+																		} else if ( (( BinaryOp ) hi_0_1 ).getOp() == Types.OpOp2.PLUS ) {
+																			hi = _applyRewrite341(hi); // +(-(A,+(c,D)),b) => +(A,-(-(b,c),D))
+																			hi = _applyRewrite342(hi); // +(-(A,+(D,c)),b) => +(A,-(-(b,c),D))
+																		} else if ( (( BinaryOp ) hi_0_1 ).getOp() == Types.OpOp2.MULT ) {
+																		}
+																	} else {
+																		if ( hi_0_0_0.getDataType() == Types.DataType.SCALAR ) {
+																		} else if ( hi_0_0_0.getDataType() == Types.DataType.MATRIX ) {
+																		}
+																	}
+																} else if ( hi_0_1.getDataType() == Types.DataType.SCALAR ) {
+																	hi = _applyRewrite59(hi); // +(-(A,c),b) => +(A,-(b,c))
+																	hi = _applyRewrite304(hi); // +(-(B,c),-(A,d)) => +(A,-(B,+(c,d)))
+																	hi = _applyRewrite339(hi); // +(-(A,c),-(b,D)) => +(A,-(-(b,c),D))
+																}
+															}
+														}
+													} else {
+														if ( hi_0_1.getDataType() == Types.DataType.MATRIX ) {
+															if ( hi_0_1 instanceof BinaryOp ) {
+																if ( (( BinaryOp ) hi_0_1 ).getOp() == Types.OpOp2.MINUS ) {
+																	hi = _applyRewrite310(hi); // +(-(A,-(D,b)),c) => +(A,-(+(b,c),D))
+																	hi = _applyRewrite319(hi); // +(-(A,-(d,B)),c) => +(A,+(B,-(c,d)))
+																} else if ( (( BinaryOp ) hi_0_1 ).getOp() == Types.OpOp2.PLUS ) {
+																	hi = _applyRewrite341(hi); // +(-(A,+(c,D)),b) => +(A,-(-(b,c),D))
+																	hi = _applyRewrite342(hi); // +(-(A,+(D,c)),b) => +(A,-(-(b,c),D))
+																} else if ( (( BinaryOp ) hi_0_1 ).getOp() == Types.OpOp2.MULT ) {
+																}
+															} else {
+																hi = _applyRewrite43(hi); // +(-(0.0,B),a) => -(a,B)
+																hi = _applyRewrite47(hi); // +(-(0.0,B),A) => -(A,B)
+																hi = _applyRewrite54(hi); // +(-(a,C),b) => -(+(a,b),C)
+																hi = _applyRewrite297(hi); // +(-(-(a,C),D),b) => -(+(a,b),+(C,D))
+																hi = _applyRewrite298(hi); // +(-(a,D),-(b,C)) => -(+(a,b),+(C,D))
+																hi = _applyRewrite312(hi); // +(-(+(b,A),D),c) => +(A,-(+(b,c),D))
+																hi = _applyRewrite313(hi); // +(-(+(A,b),D),c) => +(A,-(+(b,c),D))
+																hi = _applyRewrite337(hi); // +(-(-(A,c),D),b) => +(A,-(-(b,c),D))
+																hi = _applyRewrite338(hi); // +(-(b,D),-(A,c)) => +(A,-(-(b,c),D))
+															}
+														} else if ( hi_0_1.getDataType() == Types.DataType.SCALAR ) {
+															hi = _applyRewrite59(hi); // +(-(A,c),b) => +(A,-(b,c))
+															hi = _applyRewrite304(hi); // +(-(B,c),-(A,d)) => +(A,-(B,+(c,d)))
+															hi = _applyRewrite339(hi); // +(-(A,c),-(b,D)) => +(A,-(-(b,c),D))
+														}
+													}
+												}
+											}
+										} else if ( hi_1.getDataType() == Types.DataType.SCALAR ) {
+											if ( hi_1 instanceof BinaryOp ) {
+												hi = _applyRewrite90(hi); // +(A,-(0.0,b)) => -(A,b)
+											} else {
+												if ( hi_0_0.getDataType() == Types.DataType.SCALAR ) {
+													if ( hi_0_1.getDataType() == Types.DataType.MATRIX ) {
+														if ( hi_0_1 instanceof BinaryOp ) {
+															if ( (( BinaryOp ) hi_0_1 ).getOp() == Types.OpOp2.MINUS ) {
+																hi = _applyRewrite310(hi); // +(-(A,-(D,b)),c) => +(A,-(+(b,c),D))
+																hi = _applyRewrite319(hi); // +(-(A,-(d,B)),c) => +(A,+(B,-(c,d)))
+															} else if ( (( BinaryOp ) hi_0_1 ).getOp() == Types.OpOp2.PLUS ) {
+																hi = _applyRewrite341(hi); // +(-(A,+(c,D)),b) => +(A,-(-(b,c),D))
+																hi = _applyRewrite342(hi); // +(-(A,+(D,c)),b) => +(A,-(-(b,c),D))
+															} else if ( (( BinaryOp ) hi_0_1 ).getOp() == Types.OpOp2.MULT ) {
+															}
+														} else {
+															hi = _applyRewrite43(hi); // +(-(0.0,B),a) => -(a,B)
+															hi = _applyRewrite47(hi); // +(-(0.0,B),A) => -(A,B)
+															hi = _applyRewrite54(hi); // +(-(a,C),b) => -(+(a,b),C)
+															hi = _applyRewrite297(hi); // +(-(-(a,C),D),b) => -(+(a,b),+(C,D))
+															hi = _applyRewrite298(hi); // +(-(a,D),-(b,C)) => -(+(a,b),+(C,D))
+															hi = _applyRewrite312(hi); // +(-(+(b,A),D),c) => +(A,-(+(b,c),D))
+															hi = _applyRewrite313(hi); // +(-(+(A,b),D),c) => +(A,-(+(b,c),D))
+															hi = _applyRewrite337(hi); // +(-(-(A,c),D),b) => +(A,-(-(b,c),D))
+															hi = _applyRewrite338(hi); // +(-(b,D),-(A,c)) => +(A,-(-(b,c),D))
+														}
+													} else if ( hi_0_1.getDataType() == Types.DataType.SCALAR ) {
+														hi = _applyRewrite59(hi); // +(-(A,c),b) => +(A,-(b,c))
+														hi = _applyRewrite304(hi); // +(-(B,c),-(A,d)) => +(A,-(B,+(c,d)))
+														hi = _applyRewrite339(hi); // +(-(A,c),-(b,D)) => +(A,-(-(b,c),D))
+													}
+												} else if ( hi_0_0.getDataType() == Types.DataType.MATRIX ) {
+													if ( hi_0_0 instanceof BinaryOp ) {
+														if ( (( BinaryOp ) hi_0_0 ).getOp() == Types.OpOp2.MINUS ) {
+															hi = _applyRewrite297(hi); // +(-(-(a,C),D),b) => -(+(a,b),+(C,D))
+															hi = _applyRewrite337(hi); // +(-(-(A,c),D),b) => +(A,-(-(b,c),D))
+														} else if ( (( BinaryOp ) hi_0_0 ).getOp() == Types.OpOp2.PLUS ) {
+															hi = _applyRewrite312(hi); // +(-(+(b,A),D),c) => +(A,-(+(b,c),D))
+															hi = _applyRewrite313(hi); // +(-(+(A,b),D),c) => +(A,-(+(b,c),D))
+														} else if ( (( BinaryOp ) hi_0_0 ).getOp() == Types.OpOp2.MULT ) {
+															if ( hi_0_0.getInput().size() == 2 ) {
+																Hop hi_0_0_0 = hi_0_0.getInput(0);
+																Hop hi_0_0_1 = hi_0_0.getInput(1);
+																if ( hi_0_1.getDataType() == Types.DataType.MATRIX ) {
+																	if ( hi_0_1 instanceof BinaryOp ) {
+																		if ( (( BinaryOp ) hi_0_1 ).getOp() == Types.OpOp2.MINUS ) {
+																			hi = _applyRewrite310(hi); // +(-(A,-(D,b)),c) => +(A,-(+(b,c),D))
+																			hi = _applyRewrite319(hi); // +(-(A,-(d,B)),c) => +(A,+(B,-(c,d)))
+																		} else if ( (( BinaryOp ) hi_0_1 ).getOp() == Types.OpOp2.PLUS ) {
+																			hi = _applyRewrite341(hi); // +(-(A,+(c,D)),b) => +(A,-(-(b,c),D))
+																			hi = _applyRewrite342(hi); // +(-(A,+(D,c)),b) => +(A,-(-(b,c),D))
+																		} else if ( (( BinaryOp ) hi_0_1 ).getOp() == Types.OpOp2.MULT ) {
+																		}
+																	} else {
+																		if ( hi_0_0_0.getDataType() == Types.DataType.SCALAR ) {
+																		} else if ( hi_0_0_0.getDataType() == Types.DataType.MATRIX ) {
+																		}
+																	}
+																} else if ( hi_0_1.getDataType() == Types.DataType.SCALAR ) {
+																	hi = _applyRewrite59(hi); // +(-(A,c),b) => +(A,-(b,c))
+																	hi = _applyRewrite304(hi); // +(-(B,c),-(A,d)) => +(A,-(B,+(c,d)))
+																	hi = _applyRewrite339(hi); // +(-(A,c),-(b,D)) => +(A,-(-(b,c),D))
+																}
+															}
+														}
+													} else {
+														if ( hi_0_1.getDataType() == Types.DataType.MATRIX ) {
+															if ( hi_0_1 instanceof BinaryOp ) {
+																if ( (( BinaryOp ) hi_0_1 ).getOp() == Types.OpOp2.MINUS ) {
+																	hi = _applyRewrite310(hi); // +(-(A,-(D,b)),c) => +(A,-(+(b,c),D))
+																	hi = _applyRewrite319(hi); // +(-(A,-(d,B)),c) => +(A,+(B,-(c,d)))
+																} else if ( (( BinaryOp ) hi_0_1 ).getOp() == Types.OpOp2.PLUS ) {
+																	hi = _applyRewrite341(hi); // +(-(A,+(c,D)),b) => +(A,-(-(b,c),D))
+																	hi = _applyRewrite342(hi); // +(-(A,+(D,c)),b) => +(A,-(-(b,c),D))
+																} else if ( (( BinaryOp ) hi_0_1 ).getOp() == Types.OpOp2.MULT ) {
+																}
+															} else {
+																hi = _applyRewrite43(hi); // +(-(0.0,B),a) => -(a,B)
+																hi = _applyRewrite47(hi); // +(-(0.0,B),A) => -(A,B)
+																hi = _applyRewrite54(hi); // +(-(a,C),b) => -(+(a,b),C)
+																hi = _applyRewrite297(hi); // +(-(-(a,C),D),b) => -(+(a,b),+(C,D))
+																hi = _applyRewrite298(hi); // +(-(a,D),-(b,C)) => -(+(a,b),+(C,D))
+																hi = _applyRewrite312(hi); // +(-(+(b,A),D),c) => +(A,-(+(b,c),D))
+																hi = _applyRewrite313(hi); // +(-(+(A,b),D),c) => +(A,-(+(b,c),D))
+																hi = _applyRewrite337(hi); // +(-(-(A,c),D),b) => +(A,-(-(b,c),D))
+																hi = _applyRewrite338(hi); // +(-(b,D),-(A,c)) => +(A,-(-(b,c),D))
+															}
+														} else if ( hi_0_1.getDataType() == Types.DataType.SCALAR ) {
+															hi = _applyRewrite59(hi); // +(-(A,c),b) => +(A,-(b,c))
+															hi = _applyRewrite304(hi); // +(-(B,c),-(A,d)) => +(A,-(B,+(c,d)))
+															hi = _applyRewrite339(hi); // +(-(A,c),-(b,D)) => +(A,-(-(b,c),D))
+														}
+													}
+												}
+											}
+										}
+									}
+								} else if ( (( BinaryOp ) hi_0 ).getOp() == Types.OpOp2.MULT ) {
+									if ( hi_0.getInput().size() == 2 ) {
+										Hop hi_0_0 = hi_0.getInput(0);
+										Hop hi_0_1 = hi_0.getInput(1);
+										if ( hi_1.getDataType() == Types.DataType.MATRIX ) {
+											if ( hi_1 instanceof BinaryOp ) {
+												if ( (( BinaryOp ) hi_1 ).getOp() == Types.OpOp2.MINUS ) {
+													if ( hi_1.getInput().size() == 2 ) {
+														Hop hi_1_0 = hi_1.getInput(0);
+														Hop hi_1_1 = hi_1.getInput(1);
+														if ( hi_0_0.getDataType() == Types.DataType.MATRIX ) {
+															if ( hi_0_0 instanceof BinaryOp ) {
+															} else {
+																hi = _applyRewrite124(hi); // +(*(C,A),*(B,A)) => *(A,+(B,C))
+																hi = _applyRewrite125(hi); // +(*(B,A),*(A,C)) => *(A,+(B,C))
+																hi = _applyRewrite126(hi); // +(*(A,C),*(B,A)) => *(A,+(B,C))
+																hi = _applyRewrite127(hi); // +(*(A,C),*(A,B)) => *(A,+(B,C))
+															}
+														}
+													}
+												} else if ( (( BinaryOp ) hi_1 ).getOp() == Types.OpOp2.MULT ) {
+													if ( hi_1.getInput().size() == 2 ) {
+														Hop hi_1_0 = hi_1.getInput(0);
+														Hop hi_1_1 = hi_1.getInput(1);
+														if ( hi_0_0.getDataType() == Types.DataType.MATRIX ) {
+															if ( hi_0_0 instanceof BinaryOp ) {
+															} else {
+																hi = _applyRewrite124(hi); // +(*(C,A),*(B,A)) => *(A,+(B,C))
+																hi = _applyRewrite125(hi); // +(*(B,A),*(A,C)) => *(A,+(B,C))
+																hi = _applyRewrite126(hi); // +(*(A,C),*(B,A)) => *(A,+(B,C))
+																hi = _applyRewrite127(hi); // +(*(A,C),*(A,B)) => *(A,+(B,C))
+															}
+														}
+													}
+												} else if ( (( BinaryOp ) hi_1 ).getOp() == Types.OpOp2.NOTEQUAL ) {
+													hi = _applyRewrite248(hi); // +(A,!=(rev(A),c)) => +(A,!=(A,c))
+													hi = _applyRewrite249(hi); // +(A,!=(c,rev(A))) => +(A,!=(A,c))
+													hi = _applyRewrite256(hi); // +(A,!=(rev(A),C)) => +(A,!=(A,C))
+													hi = _applyRewrite257(hi); // +(A,!=(C,rev(A))) => +(A,!=(A,C))
+												} else if ( (( BinaryOp ) hi_1 ).getOp() == Types.OpOp2.DIV ) {
+												}
+											} else if ( hi_1 instanceof AggBinaryOp ) {
+												if ( HopRewriteUtils.isMatrixMultiply(hi_1) ) {
+													if ( hi_1.getInput().size() == 2 ) {
+														Hop hi_1_0 = hi_1.getInput(0);
+														Hop hi_1_1 = hi_1.getInput(1);
+														if ( hi_0_0.getDataType() == Types.DataType.MATRIX ) {
+															if ( hi_0_0 instanceof BinaryOp ) {
+															} else {
+																hi = _applyRewrite124(hi); // +(*(C,A),*(B,A)) => *(A,+(B,C))
+																hi = _applyRewrite125(hi); // +(*(B,A),*(A,C)) => *(A,+(B,C))
+																hi = _applyRewrite126(hi); // +(*(A,C),*(B,A)) => *(A,+(B,C))
+																hi = _applyRewrite127(hi); // +(*(A,C),*(A,B)) => *(A,+(B,C))
+															}
+														}
+													}
+												}
+											} else if ( hi_1 instanceof ReorgOp ) {
+												if ( (( ReorgOp ) hi_1 ).getOp() == Types.ReOrgOp.TRANS ) {
+													if ( hi_1.getInput().size() == 1 ) {
+														Hop hi_1_0 = hi_1.getInput(0);
+														if ( hi_0_0.getDataType() == Types.DataType.MATRIX ) {
+															if ( hi_0_0 instanceof BinaryOp ) {
+															} else {
+																hi = _applyRewrite124(hi); // +(*(C,A),*(B,A)) => *(A,+(B,C))
+																hi = _applyRewrite125(hi); // +(*(B,A),*(A,C)) => *(A,+(B,C))
+																hi = _applyRewrite126(hi); // +(*(A,C),*(B,A)) => *(A,+(B,C))
+																hi = _applyRewrite127(hi); // +(*(A,C),*(A,B)) => *(A,+(B,C))
+															}
+														}
+													}
+												} else if ( (( ReorgOp ) hi_1 ).getOp() == Types.ReOrgOp.REV ) {
+													if ( hi_1.getInput().size() == 1 ) {
+														Hop hi_1_0 = hi_1.getInput(0);
+														if ( hi_0_0.getDataType() == Types.DataType.MATRIX ) {
+															if ( hi_0_0 instanceof BinaryOp ) {
+															} else {
+																hi = _applyRewrite124(hi); // +(*(C,A),*(B,A)) => *(A,+(B,C))
+																hi = _applyRewrite125(hi); // +(*(B,A),*(A,C)) => *(A,+(B,C))
+																hi = _applyRewrite126(hi); // +(*(A,C),*(B,A)) => *(A,+(B,C))
+																hi = _applyRewrite127(hi); // +(*(A,C),*(A,B)) => *(A,+(B,C))
+															}
+														}
+													}
+												}
+											} else if ( hi_1 instanceof AggUnaryOp ) {
+												hi = _applyRewrite441(hi); // +(A,colSums(rev(A))) => +(A,colSums(A))
+											} else {
+												if ( hi_0_0.getDataType() == Types.DataType.MATRIX ) {
+													if ( hi_0_0 instanceof BinaryOp ) {
+													} else {
+														hi = _applyRewrite124(hi); // +(*(C,A),*(B,A)) => *(A,+(B,C))
+														hi = _applyRewrite125(hi); // +(*(B,A),*(A,C)) => *(A,+(B,C))
+														hi = _applyRewrite126(hi); // +(*(A,C),*(B,A)) => *(A,+(B,C))
+														hi = _applyRewrite127(hi); // +(*(A,C),*(A,B)) => *(A,+(B,C))
+													}
+												}
+											}
+										} else if ( hi_1.getDataType() == Types.DataType.SCALAR ) {
+											if ( hi_1 instanceof BinaryOp ) {
+												hi = _applyRewrite90(hi); // +(A,-(0.0,b)) => -(A,b)
+											} else {
+												if ( hi_0_0.getDataType() == Types.DataType.MATRIX ) {
+													if ( hi_0_0 instanceof BinaryOp ) {
+													} else {
+														hi = _applyRewrite124(hi); // +(*(C,A),*(B,A)) => *(A,+(B,C))
+														hi = _applyRewrite125(hi); // +(*(B,A),*(A,C)) => *(A,+(B,C))
+														hi = _applyRewrite126(hi); // +(*(A,C),*(B,A)) => *(A,+(B,C))
+														hi = _applyRewrite127(hi); // +(*(A,C),*(A,B)) => *(A,+(B,C))
+													}
+												}
+											}
+										}
+									}
+								} else if ( (( BinaryOp ) hi_0 ).getOp() == Types.OpOp2.NOTEQUAL ) {
+									hi = _applyRewrite246(hi); // +(!=(rev(A),c),A) => +(A,!=(A,c))
+									hi = _applyRewrite247(hi); // +(!=(c,rev(A)),A) => +(A,!=(A,c))
+									hi = _applyRewrite254(hi); // +(!=(rev(A),C),A) => +(A,!=(A,C))
+									hi = _applyRewrite255(hi); // +(!=(C,rev(A)),A) => +(A,!=(A,C))
+								} else if ( (( BinaryOp ) hi_0 ).getOp() == Types.OpOp2.DIV ) {
+								}
+							} else if ( hi_0 instanceof AggBinaryOp ) {
+								if ( HopRewriteUtils.isMatrixMultiply(hi_0) ) {
+									if ( hi_0.getInput().size() == 2 ) {
+										Hop hi_0_0 = hi_0.getInput(0);
+										Hop hi_0_1 = hi_0.getInput(1);
+										if ( hi_1.getDataType() == Types.DataType.MATRIX ) {
+											if ( hi_1 instanceof BinaryOp ) {
+												if ( (( BinaryOp ) hi_1 ).getOp() == Types.OpOp2.MINUS ) {
+													if ( hi_1.getInput().size() == 2 ) {
+														Hop hi_1_0 = hi_1.getInput(0);
+														Hop hi_1_1 = hi_1.getInput(1);
+														if ( hi_0_0.getDataType() == Types.DataType.MATRIX ) {
+															if ( hi_0_0 instanceof BinaryOp ) {
+															} else {
+																hi = _applyRewrite94(hi); // +(%*%(B,C),%*%(A,C)) => %*%(+(A,B),C)
+																hi = _applyRewrite95(hi); // +(%*%(A,C),%*%(A,B)) => %*%(A,+(B,C))
+															}
+														}
+													}
+												} else if ( (( BinaryOp ) hi_1 ).getOp() == Types.OpOp2.MULT ) {
+													if ( hi_1.getInput().size() == 2 ) {
+														Hop hi_1_0 = hi_1.getInput(0);
+														Hop hi_1_1 = hi_1.getInput(1);
+														if ( hi_0_0.getDataType() == Types.DataType.MATRIX ) {
+															if ( hi_0_0 instanceof BinaryOp ) {
+															} else {
+																hi = _applyRewrite94(hi); // +(%*%(B,C),%*%(A,C)) => %*%(+(A,B),C)
+																hi = _applyRewrite95(hi); // +(%*%(A,C),%*%(A,B)) => %*%(A,+(B,C))
+															}
+														}
+													}
+												} else if ( (( BinaryOp ) hi_1 ).getOp() == Types.OpOp2.NOTEQUAL ) {
+													hi = _applyRewrite248(hi); // +(A,!=(rev(A),c)) => +(A,!=(A,c))
+													hi = _applyRewrite249(hi); // +(A,!=(c,rev(A))) => +(A,!=(A,c))
+													hi = _applyRewrite256(hi); // +(A,!=(rev(A),C)) => +(A,!=(A,C))
+													hi = _applyRewrite257(hi); // +(A,!=(C,rev(A))) => +(A,!=(A,C))
+												} else if ( (( BinaryOp ) hi_1 ).getOp() == Types.OpOp2.DIV ) {
+												}
+											} else if ( hi_1 instanceof AggBinaryOp ) {
+												if ( HopRewriteUtils.isMatrixMultiply(hi_1) ) {
+													if ( hi_1.getInput().size() == 2 ) {
+														Hop hi_1_0 = hi_1.getInput(0);
+														Hop hi_1_1 = hi_1.getInput(1);
+														if ( hi_0_0.getDataType() == Types.DataType.MATRIX ) {
+															if ( hi_0_0 instanceof BinaryOp ) {
+															} else {
+																hi = _applyRewrite94(hi); // +(%*%(B,C),%*%(A,C)) => %*%(+(A,B),C)
+																hi = _applyRewrite95(hi); // +(%*%(A,C),%*%(A,B)) => %*%(A,+(B,C))
+															}
+														}
+													}
+												}
+											} else if ( hi_1 instanceof ReorgOp ) {
+												if ( (( ReorgOp ) hi_1 ).getOp() == Types.ReOrgOp.TRANS ) {
+													if ( hi_1.getInput().size() == 1 ) {
+														Hop hi_1_0 = hi_1.getInput(0);
+														if ( hi_0_0.getDataType() == Types.DataType.MATRIX ) {
+															if ( hi_0_0 instanceof BinaryOp ) {
+															} else {
+																hi = _applyRewrite94(hi); // +(%*%(B,C),%*%(A,C)) => %*%(+(A,B),C)
+																hi = _applyRewrite95(hi); // +(%*%(A,C),%*%(A,B)) => %*%(A,+(B,C))
+															}
+														}
+													}
+												} else if ( (( ReorgOp ) hi_1 ).getOp() == Types.ReOrgOp.REV ) {
+													if ( hi_1.getInput().size() == 1 ) {
+														Hop hi_1_0 = hi_1.getInput(0);
+														if ( hi_0_0.getDataType() == Types.DataType.MATRIX ) {
+															if ( hi_0_0 instanceof BinaryOp ) {
+															} else {
+																hi = _applyRewrite94(hi); // +(%*%(B,C),%*%(A,C)) => %*%(+(A,B),C)
+																hi = _applyRewrite95(hi); // +(%*%(A,C),%*%(A,B)) => %*%(A,+(B,C))
+															}
+														}
+													}
+												}
+											} else if ( hi_1 instanceof AggUnaryOp ) {
+												hi = _applyRewrite441(hi); // +(A,colSums(rev(A))) => +(A,colSums(A))
+											} else {
+												if ( hi_0_0.getDataType() == Types.DataType.MATRIX ) {
+													if ( hi_0_0 instanceof BinaryOp ) {
+													} else {
+														hi = _applyRewrite94(hi); // +(%*%(B,C),%*%(A,C)) => %*%(+(A,B),C)
+														hi = _applyRewrite95(hi); // +(%*%(A,C),%*%(A,B)) => %*%(A,+(B,C))
+													}
+												}
+											}
+										} else if ( hi_1.getDataType() == Types.DataType.SCALAR ) {
+											if ( hi_1 instanceof BinaryOp ) {
+												hi = _applyRewrite90(hi); // +(A,-(0.0,b)) => -(A,b)
+											} else {
+												if ( hi_0_0.getDataType() == Types.DataType.MATRIX ) {
+													if ( hi_0_0 instanceof BinaryOp ) {
+													} else {
+														hi = _applyRewrite94(hi); // +(%*%(B,C),%*%(A,C)) => %*%(+(A,B),C)
+														hi = _applyRewrite95(hi); // +(%*%(A,C),%*%(A,B)) => %*%(A,+(B,C))
+													}
+												}
+											}
+										}
+									}
+								}
+							} else if ( hi_0 instanceof ReorgOp ) {
+								if ( (( ReorgOp ) hi_0 ).getOp() == Types.ReOrgOp.TRANS ) {
+									if ( hi_0.getInput().size() == 1 ) {
+										Hop hi_0_0 = hi_0.getInput(0);
+										if ( hi_1.getDataType() == Types.DataType.MATRIX ) {
+											if ( hi_1 instanceof BinaryOp ) {
+												if ( (( BinaryOp ) hi_1 ).getOp() == Types.OpOp2.MINUS ) {
+													if ( hi_1.getInput().size() == 2 ) {
+														Hop hi_1_0 = hi_1.getInput(0);
+														Hop hi_1_1 = hi_1.getInput(1);
+														if ( hi_0_0.getDataType() == Types.DataType.MATRIX ) {
+															if ( hi_0_0 instanceof BinaryOp ) {
+																if ( (( BinaryOp ) hi_0_0 ).getOp() == Types.OpOp2.MINUS ) {
+																	hi = _applyRewrite346(hi); // +(t(-(a,C)),b) => -(+(a,b),t(C))
+																	hi = _applyRewrite351(hi); // +(t(-(C,b)),a) => +(-(a,b),t(C))
+																} else if ( (( BinaryOp ) hi_0_0 ).getOp() == Types.OpOp2.PLUS ) {
+																	hi = _applyRewrite353(hi); // +(t(+(a,C)),b) => +(+(a,b),t(C))
+																	hi = _applyRewrite354(hi); // +(t(+(C,a)),b) => +(+(a,b),t(C))
+																} else if ( (( BinaryOp ) hi_0_0 ).getOp() == Types.OpOp2.MULT ) {
+																}
+															} else {
+																hi = _applyRewrite192(hi); // +(t(B),t(A)) => t(+(A,B))
+															}
+														}
+													}
+												} else if ( (( BinaryOp ) hi_1 ).getOp() == Types.OpOp2.MULT ) {
+													if ( hi_1.getInput().size() == 2 ) {
+														Hop hi_1_0 = hi_1.getInput(0);
+														Hop hi_1_1 = hi_1.getInput(1);
+														if ( hi_0_0.getDataType() == Types.DataType.MATRIX ) {
+															if ( hi_0_0 instanceof BinaryOp ) {
+																if ( (( BinaryOp ) hi_0_0 ).getOp() == Types.OpOp2.MINUS ) {
+																	hi = _applyRewrite346(hi); // +(t(-(a,C)),b) => -(+(a,b),t(C))
+																	hi = _applyRewrite351(hi); // +(t(-(C,b)),a) => +(-(a,b),t(C))
+																} else if ( (( BinaryOp ) hi_0_0 ).getOp() == Types.OpOp2.PLUS ) {
+																	hi = _applyRewrite353(hi); // +(t(+(a,C)),b) => +(+(a,b),t(C))
+																	hi = _applyRewrite354(hi); // +(t(+(C,a)),b) => +(+(a,b),t(C))
+																} else if ( (( BinaryOp ) hi_0_0 ).getOp() == Types.OpOp2.MULT ) {
+																}
+															} else {
+																hi = _applyRewrite192(hi); // +(t(B),t(A)) => t(+(A,B))
+															}
+														}
+													}
+												} else if ( (( BinaryOp ) hi_1 ).getOp() == Types.OpOp2.NOTEQUAL ) {
+													hi = _applyRewrite248(hi); // +(A,!=(rev(A),c)) => +(A,!=(A,c))
+													hi = _applyRewrite249(hi); // +(A,!=(c,rev(A))) => +(A,!=(A,c))
+													hi = _applyRewrite256(hi); // +(A,!=(rev(A),C)) => +(A,!=(A,C))
+													hi = _applyRewrite257(hi); // +(A,!=(C,rev(A))) => +(A,!=(A,C))
+												} else if ( (( BinaryOp ) hi_1 ).getOp() == Types.OpOp2.DIV ) {
+												}
+											} else if ( hi_1 instanceof AggBinaryOp ) {
+												if ( HopRewriteUtils.isMatrixMultiply(hi_1) ) {
+													if ( hi_1.getInput().size() == 2 ) {
+														Hop hi_1_0 = hi_1.getInput(0);
+														Hop hi_1_1 = hi_1.getInput(1);
+														if ( hi_0_0.getDataType() == Types.DataType.MATRIX ) {
+															if ( hi_0_0 instanceof BinaryOp ) {
+																if ( (( BinaryOp ) hi_0_0 ).getOp() == Types.OpOp2.MINUS ) {
+																	hi = _applyRewrite346(hi); // +(t(-(a,C)),b) => -(+(a,b),t(C))
+																	hi = _applyRewrite351(hi); // +(t(-(C,b)),a) => +(-(a,b),t(C))
+																} else if ( (( BinaryOp ) hi_0_0 ).getOp() == Types.OpOp2.PLUS ) {
+																	hi = _applyRewrite353(hi); // +(t(+(a,C)),b) => +(+(a,b),t(C))
+																	hi = _applyRewrite354(hi); // +(t(+(C,a)),b) => +(+(a,b),t(C))
+																} else if ( (( BinaryOp ) hi_0_0 ).getOp() == Types.OpOp2.MULT ) {
+																}
+															} else {
+																hi = _applyRewrite192(hi); // +(t(B),t(A)) => t(+(A,B))
+															}
+														}
+													}
+												}
+											} else if ( hi_1 instanceof ReorgOp ) {
+												if ( (( ReorgOp ) hi_1 ).getOp() == Types.ReOrgOp.TRANS ) {
+													if ( hi_1.getInput().size() == 1 ) {
+														Hop hi_1_0 = hi_1.getInput(0);
+														if ( hi_0_0.getDataType() == Types.DataType.MATRIX ) {
+															if ( hi_0_0 instanceof BinaryOp ) {
+																if ( (( BinaryOp ) hi_0_0 ).getOp() == Types.OpOp2.MINUS ) {
+																	hi = _applyRewrite346(hi); // +(t(-(a,C)),b) => -(+(a,b),t(C))
+																	hi = _applyRewrite351(hi); // +(t(-(C,b)),a) => +(-(a,b),t(C))
+																} else if ( (( BinaryOp ) hi_0_0 ).getOp() == Types.OpOp2.PLUS ) {
+																	hi = _applyRewrite353(hi); // +(t(+(a,C)),b) => +(+(a,b),t(C))
+																	hi = _applyRewrite354(hi); // +(t(+(C,a)),b) => +(+(a,b),t(C))
+																} else if ( (( BinaryOp ) hi_0_0 ).getOp() == Types.OpOp2.MULT ) {
+																}
+															} else {
+																hi = _applyRewrite192(hi); // +(t(B),t(A)) => t(+(A,B))
+															}
+														}
+													}
+												} else if ( (( ReorgOp ) hi_1 ).getOp() == Types.ReOrgOp.REV ) {
+													if ( hi_1.getInput().size() == 1 ) {
+														Hop hi_1_0 = hi_1.getInput(0);
+														if ( hi_0_0.getDataType() == Types.DataType.MATRIX ) {
+															if ( hi_0_0 instanceof BinaryOp ) {
+																if ( (( BinaryOp ) hi_0_0 ).getOp() == Types.OpOp2.MINUS ) {
+																	hi = _applyRewrite346(hi); // +(t(-(a,C)),b) => -(+(a,b),t(C))
+																	hi = _applyRewrite351(hi); // +(t(-(C,b)),a) => +(-(a,b),t(C))
+																} else if ( (( BinaryOp ) hi_0_0 ).getOp() == Types.OpOp2.PLUS ) {
+																	hi = _applyRewrite353(hi); // +(t(+(a,C)),b) => +(+(a,b),t(C))
+																	hi = _applyRewrite354(hi); // +(t(+(C,a)),b) => +(+(a,b),t(C))
+																} else if ( (( BinaryOp ) hi_0_0 ).getOp() == Types.OpOp2.MULT ) {
+																}
+															} else {
+																hi = _applyRewrite192(hi); // +(t(B),t(A)) => t(+(A,B))
+															}
+														}
+													}
+												}
+											} else if ( hi_1 instanceof AggUnaryOp ) {
+												hi = _applyRewrite441(hi); // +(A,colSums(rev(A))) => +(A,colSums(A))
+											} else {
+												if ( hi_0_0.getDataType() == Types.DataType.MATRIX ) {
+													if ( hi_0_0 instanceof BinaryOp ) {
+														if ( (( BinaryOp ) hi_0_0 ).getOp() == Types.OpOp2.MINUS ) {
+															hi = _applyRewrite346(hi); // +(t(-(a,C)),b) => -(+(a,b),t(C))
+															hi = _applyRewrite351(hi); // +(t(-(C,b)),a) => +(-(a,b),t(C))
+														} else if ( (( BinaryOp ) hi_0_0 ).getOp() == Types.OpOp2.PLUS ) {
+															hi = _applyRewrite353(hi); // +(t(+(a,C)),b) => +(+(a,b),t(C))
+															hi = _applyRewrite354(hi); // +(t(+(C,a)),b) => +(+(a,b),t(C))
+														} else if ( (( BinaryOp ) hi_0_0 ).getOp() == Types.OpOp2.MULT ) {
+														}
+													} else {
+														hi = _applyRewrite192(hi); // +(t(B),t(A)) => t(+(A,B))
+													}
+												}
+											}
+										} else if ( hi_1.getDataType() == Types.DataType.SCALAR ) {
+											if ( hi_1 instanceof BinaryOp ) {
+												hi = _applyRewrite90(hi); // +(A,-(0.0,b)) => -(A,b)
+											} else {
+												if ( hi_0_0.getDataType() == Types.DataType.MATRIX ) {
+													if ( hi_0_0 instanceof BinaryOp ) {
+														if ( (( BinaryOp ) hi_0_0 ).getOp() == Types.OpOp2.MINUS ) {
+															hi = _applyRewrite346(hi); // +(t(-(a,C)),b) => -(+(a,b),t(C))
+															hi = _applyRewrite351(hi); // +(t(-(C,b)),a) => +(-(a,b),t(C))
+														} else if ( (( BinaryOp ) hi_0_0 ).getOp() == Types.OpOp2.PLUS ) {
+															hi = _applyRewrite353(hi); // +(t(+(a,C)),b) => +(+(a,b),t(C))
+															hi = _applyRewrite354(hi); // +(t(+(C,a)),b) => +(+(a,b),t(C))
+														} else if ( (( BinaryOp ) hi_0_0 ).getOp() == Types.OpOp2.MULT ) {
+														}
+													} else {
+														hi = _applyRewrite192(hi); // +(t(B),t(A)) => t(+(A,B))
+													}
+												}
+											}
+										}
+									}
+								} else if ( (( ReorgOp ) hi_0 ).getOp() == Types.ReOrgOp.REV ) {
+									if ( hi_0.getInput().size() == 1 ) {
+										Hop hi_0_0 = hi_0.getInput(0);
+										if ( hi_1.getDataType() == Types.DataType.MATRIX ) {
+											if ( hi_1 instanceof BinaryOp ) {
+												if ( (( BinaryOp ) hi_1 ).getOp() == Types.OpOp2.MINUS ) {
+													if ( hi_1.getInput().size() == 2 ) {
+														Hop hi_1_0 = hi_1.getInput(0);
+														Hop hi_1_1 = hi_1.getInput(1);
+														if ( hi_0_0.getDataType() == Types.DataType.MATRIX ) {
+															if ( hi_0_0 instanceof BinaryOp ) {
+																if ( (( BinaryOp ) hi_0_0 ).getOp() == Types.OpOp2.NOTEQUAL ) {
+																	hi = _applyRewrite250(hi); // +(rev(!=(c,A)),A) => +(A,!=(A,c))
+																	hi = _applyRewrite251(hi); // +(rev(!=(A,c)),A) => +(A,!=(A,c))
+																} else if ( (( BinaryOp ) hi_0_0 ).getOp() == Types.OpOp2.MINUS ) {
+																	hi = _applyRewrite282(hi); // +(rev(-(a,C)),b) => -(+(a,b),rev(C))
+																	hi = _applyRewrite287(hi); // +(rev(-(C,b)),a) => +(-(a,b),rev(C))
+																} else if ( (( BinaryOp ) hi_0_0 ).getOp() == Types.OpOp2.PLUS ) {
+																	hi = _applyRewrite289(hi); // +(rev(+(a,C)),b) => +(+(a,b),rev(C))
+																	hi = _applyRewrite290(hi); // +(rev(+(C,a)),b) => +(+(a,b),rev(C))
+																} else if ( (( BinaryOp ) hi_0_0 ).getOp() == Types.OpOp2.MULT ) {
+																}
+															}
+														}
+													}
+												} else if ( (( BinaryOp ) hi_1 ).getOp() == Types.OpOp2.MULT ) {
+													if ( hi_1.getInput().size() == 2 ) {
+														Hop hi_1_0 = hi_1.getInput(0);
+														Hop hi_1_1 = hi_1.getInput(1);
+														if ( hi_0_0.getDataType() == Types.DataType.MATRIX ) {
+															if ( hi_0_0 instanceof BinaryOp ) {
+																if ( (( BinaryOp ) hi_0_0 ).getOp() == Types.OpOp2.NOTEQUAL ) {
+																	hi = _applyRewrite250(hi); // +(rev(!=(c,A)),A) => +(A,!=(A,c))
+																	hi = _applyRewrite251(hi); // +(rev(!=(A,c)),A) => +(A,!=(A,c))
+																} else if ( (( BinaryOp ) hi_0_0 ).getOp() == Types.OpOp2.MINUS ) {
+																	hi = _applyRewrite282(hi); // +(rev(-(a,C)),b) => -(+(a,b),rev(C))
+																	hi = _applyRewrite287(hi); // +(rev(-(C,b)),a) => +(-(a,b),rev(C))
+																} else if ( (( BinaryOp ) hi_0_0 ).getOp() == Types.OpOp2.PLUS ) {
+																	hi = _applyRewrite289(hi); // +(rev(+(a,C)),b) => +(+(a,b),rev(C))
+																	hi = _applyRewrite290(hi); // +(rev(+(C,a)),b) => +(+(a,b),rev(C))
+																} else if ( (( BinaryOp ) hi_0_0 ).getOp() == Types.OpOp2.MULT ) {
+																}
+															}
+														}
+													}
+												} else if ( (( BinaryOp ) hi_1 ).getOp() == Types.OpOp2.NOTEQUAL ) {
+													hi = _applyRewrite248(hi); // +(A,!=(rev(A),c)) => +(A,!=(A,c))
+													hi = _applyRewrite249(hi); // +(A,!=(c,rev(A))) => +(A,!=(A,c))
+													hi = _applyRewrite256(hi); // +(A,!=(rev(A),C)) => +(A,!=(A,C))
+													hi = _applyRewrite257(hi); // +(A,!=(C,rev(A))) => +(A,!=(A,C))
+												} else if ( (( BinaryOp ) hi_1 ).getOp() == Types.OpOp2.DIV ) {
+												}
+											} else if ( hi_1 instanceof AggBinaryOp ) {
+												if ( HopRewriteUtils.isMatrixMultiply(hi_1) ) {
+													if ( hi_1.getInput().size() == 2 ) {
+														Hop hi_1_0 = hi_1.getInput(0);
+														Hop hi_1_1 = hi_1.getInput(1);
+														if ( hi_0_0.getDataType() == Types.DataType.MATRIX ) {
+															if ( hi_0_0 instanceof BinaryOp ) {
+																if ( (( BinaryOp ) hi_0_0 ).getOp() == Types.OpOp2.NOTEQUAL ) {
+																	hi = _applyRewrite250(hi); // +(rev(!=(c,A)),A) => +(A,!=(A,c))
+																	hi = _applyRewrite251(hi); // +(rev(!=(A,c)),A) => +(A,!=(A,c))
+																} else if ( (( BinaryOp ) hi_0_0 ).getOp() == Types.OpOp2.MINUS ) {
+																	hi = _applyRewrite282(hi); // +(rev(-(a,C)),b) => -(+(a,b),rev(C))
+																	hi = _applyRewrite287(hi); // +(rev(-(C,b)),a) => +(-(a,b),rev(C))
+																} else if ( (( BinaryOp ) hi_0_0 ).getOp() == Types.OpOp2.PLUS ) {
+																	hi = _applyRewrite289(hi); // +(rev(+(a,C)),b) => +(+(a,b),rev(C))
+																	hi = _applyRewrite290(hi); // +(rev(+(C,a)),b) => +(+(a,b),rev(C))
+																} else if ( (( BinaryOp ) hi_0_0 ).getOp() == Types.OpOp2.MULT ) {
+																}
+															}
+														}
+													}
+												}
+											} else if ( hi_1 instanceof ReorgOp ) {
+												if ( (( ReorgOp ) hi_1 ).getOp() == Types.ReOrgOp.TRANS ) {
+													if ( hi_1.getInput().size() == 1 ) {
+														Hop hi_1_0 = hi_1.getInput(0);
+														if ( hi_0_0.getDataType() == Types.DataType.MATRIX ) {
+															if ( hi_0_0 instanceof BinaryOp ) {
+																if ( (( BinaryOp ) hi_0_0 ).getOp() == Types.OpOp2.NOTEQUAL ) {
+																	hi = _applyRewrite250(hi); // +(rev(!=(c,A)),A) => +(A,!=(A,c))
+																	hi = _applyRewrite251(hi); // +(rev(!=(A,c)),A) => +(A,!=(A,c))
+																} else if ( (( BinaryOp ) hi_0_0 ).getOp() == Types.OpOp2.MINUS ) {
+																	hi = _applyRewrite282(hi); // +(rev(-(a,C)),b) => -(+(a,b),rev(C))
+																	hi = _applyRewrite287(hi); // +(rev(-(C,b)),a) => +(-(a,b),rev(C))
+																} else if ( (( BinaryOp ) hi_0_0 ).getOp() == Types.OpOp2.PLUS ) {
+																	hi = _applyRewrite289(hi); // +(rev(+(a,C)),b) => +(+(a,b),rev(C))
+																	hi = _applyRewrite290(hi); // +(rev(+(C,a)),b) => +(+(a,b),rev(C))
+																} else if ( (( BinaryOp ) hi_0_0 ).getOp() == Types.OpOp2.MULT ) {
+																}
+															}
+														}
+													}
+												} else if ( (( ReorgOp ) hi_1 ).getOp() == Types.ReOrgOp.REV ) {
+													if ( hi_1.getInput().size() == 1 ) {
+														Hop hi_1_0 = hi_1.getInput(0);
+														if ( hi_0_0.getDataType() == Types.DataType.MATRIX ) {
+															if ( hi_0_0 instanceof BinaryOp ) {
+																if ( (( BinaryOp ) hi_0_0 ).getOp() == Types.OpOp2.NOTEQUAL ) {
+																	hi = _applyRewrite250(hi); // +(rev(!=(c,A)),A) => +(A,!=(A,c))
+																	hi = _applyRewrite251(hi); // +(rev(!=(A,c)),A) => +(A,!=(A,c))
+																} else if ( (( BinaryOp ) hi_0_0 ).getOp() == Types.OpOp2.MINUS ) {
+																	hi = _applyRewrite282(hi); // +(rev(-(a,C)),b) => -(+(a,b),rev(C))
+																	hi = _applyRewrite287(hi); // +(rev(-(C,b)),a) => +(-(a,b),rev(C))
+																} else if ( (( BinaryOp ) hi_0_0 ).getOp() == Types.OpOp2.PLUS ) {
+																	hi = _applyRewrite289(hi); // +(rev(+(a,C)),b) => +(+(a,b),rev(C))
+																	hi = _applyRewrite290(hi); // +(rev(+(C,a)),b) => +(+(a,b),rev(C))
+																} else if ( (( BinaryOp ) hi_0_0 ).getOp() == Types.OpOp2.MULT ) {
+																}
+															}
+														}
+													}
+												}
+											} else if ( hi_1 instanceof AggUnaryOp ) {
+												hi = _applyRewrite441(hi); // +(A,colSums(rev(A))) => +(A,colSums(A))
+											} else {
+												if ( hi_0_0.getDataType() == Types.DataType.MATRIX ) {
+													if ( hi_0_0 instanceof BinaryOp ) {
+														if ( (( BinaryOp ) hi_0_0 ).getOp() == Types.OpOp2.NOTEQUAL ) {
+															hi = _applyRewrite250(hi); // +(rev(!=(c,A)),A) => +(A,!=(A,c))
+															hi = _applyRewrite251(hi); // +(rev(!=(A,c)),A) => +(A,!=(A,c))
+														} else if ( (( BinaryOp ) hi_0_0 ).getOp() == Types.OpOp2.MINUS ) {
+															hi = _applyRewrite282(hi); // +(rev(-(a,C)),b) => -(+(a,b),rev(C))
+															hi = _applyRewrite287(hi); // +(rev(-(C,b)),a) => +(-(a,b),rev(C))
+														} else if ( (( BinaryOp ) hi_0_0 ).getOp() == Types.OpOp2.PLUS ) {
+															hi = _applyRewrite289(hi); // +(rev(+(a,C)),b) => +(+(a,b),rev(C))
+															hi = _applyRewrite290(hi); // +(rev(+(C,a)),b) => +(+(a,b),rev(C))
+														} else if ( (( BinaryOp ) hi_0_0 ).getOp() == Types.OpOp2.MULT ) {
+														}
+													}
+												}
+											}
+										} else if ( hi_1.getDataType() == Types.DataType.SCALAR ) {
+											if ( hi_1 instanceof BinaryOp ) {
+												hi = _applyRewrite90(hi); // +(A,-(0.0,b)) => -(A,b)
+											} else {
+												if ( hi_0_0.getDataType() == Types.DataType.MATRIX ) {
+													if ( hi_0_0 instanceof BinaryOp ) {
+														if ( (( BinaryOp ) hi_0_0 ).getOp() == Types.OpOp2.NOTEQUAL ) {
+															hi = _applyRewrite250(hi); // +(rev(!=(c,A)),A) => +(A,!=(A,c))
+															hi = _applyRewrite251(hi); // +(rev(!=(A,c)),A) => +(A,!=(A,c))
+														} else if ( (( BinaryOp ) hi_0_0 ).getOp() == Types.OpOp2.MINUS ) {
+															hi = _applyRewrite282(hi); // +(rev(-(a,C)),b) => -(+(a,b),rev(C))
+															hi = _applyRewrite287(hi); // +(rev(-(C,b)),a) => +(-(a,b),rev(C))
+														} else if ( (( BinaryOp ) hi_0_0 ).getOp() == Types.OpOp2.PLUS ) {
+															hi = _applyRewrite289(hi); // +(rev(+(a,C)),b) => +(+(a,b),rev(C))
+															hi = _applyRewrite290(hi); // +(rev(+(C,a)),b) => +(+(a,b),rev(C))
+														} else if ( (( BinaryOp ) hi_0_0 ).getOp() == Types.OpOp2.MULT ) {
+														}
+													}
+												}
+											}
+										}
+									}
+								}
+							} else {
+								if ( hi_1.getDataType() == Types.DataType.MATRIX ) {
+									if ( hi_1 instanceof BinaryOp ) {
+										if ( (( BinaryOp ) hi_1 ).getOp() == Types.OpOp2.MINUS ) {
+											if ( hi_1.getInput().size() == 2 ) {
+												Hop hi_1_0 = hi_1.getInput(0);
+												Hop hi_1_1 = hi_1.getInput(1);
+												if ( hi_1_0.getDataType() == Types.DataType.SCALAR ) {
+													if ( hi_1_1.getDataType() == Types.DataType.MATRIX ) {
+														if ( hi_1_1 instanceof BinaryOp ) {
+															if ( (( BinaryOp ) hi_1_1 ).getOp() == Types.OpOp2.MINUS ) {
+																hi = _applyRewrite311(hi); // +(b,-(A,-(D,c))) => +(A,-(+(b,c),D))
+																hi = _applyRewrite320(hi); // +(c,-(A,-(d,B))) => +(A,+(B,-(c,d)))
+															} else if ( (( BinaryOp ) hi_1_1 ).getOp() == Types.OpOp2.PLUS ) {
+																hi = _applyRewrite343(hi); // +(b,-(A,+(c,D))) => +(A,-(-(b,c),D))
+																hi = _applyRewrite344(hi); // +(b,-(A,+(D,c))) => +(A,-(-(b,c),D))
+															} else if ( (( BinaryOp ) hi_1_1 ).getOp() == Types.OpOp2.MULT ) {
+															}
+														} else {
+															hi = _applyRewrite44(hi); // +(a,-(0.0,B)) => -(a,B)
+															hi = _applyRewrite48(hi); // +(A,-(0.0,B)) => -(A,B)
+															hi = _applyRewrite55(hi); // +(a,-(b,C)) => -(+(a,b),C)
+															hi = _applyRewrite298(hi); // +(-(a,D),-(b,C)) => -(+(a,b),+(C,D))
+															hi = _applyRewrite299(hi); // +(a,-(-(b,D),C)) => -(+(a,b),+(C,D))
+															hi = _applyRewrite314(hi); // +(b,-(+(c,A),D)) => +(A,-(+(b,c),D))
+															hi = _applyRewrite315(hi); // +(b,-(+(A,c),D)) => +(A,-(+(b,c),D))
+															hi = _applyRewrite339(hi); // +(-(A,c),-(b,D)) => +(A,-(-(b,c),D))
+															hi = _applyRewrite340(hi); // +(b,-(-(A,c),D)) => +(A,-(-(b,c),D))
+														}
+													} else if ( hi_1_1.getDataType() == Types.DataType.SCALAR ) {
+														hi = _applyRewrite60(hi); // +(b,-(A,c)) => +(A,-(b,c))
+														hi = _applyRewrite304(hi); // +(-(B,c),-(A,d)) => +(A,-(B,+(c,d)))
+														hi = _applyRewrite338(hi); // +(-(b,D),-(A,c)) => +(A,-(-(b,c),D))
+													}
+												} else if ( hi_1_0.getDataType() == Types.DataType.MATRIX ) {
+													if ( hi_1_0 instanceof BinaryOp ) {
+														if ( (( BinaryOp ) hi_1_0 ).getOp() == Types.OpOp2.MINUS ) {
+															hi = _applyRewrite299(hi); // +(a,-(-(b,D),C)) => -(+(a,b),+(C,D))
+															hi = _applyRewrite340(hi); // +(b,-(-(A,c),D)) => +(A,-(-(b,c),D))
+														} else if ( (( BinaryOp ) hi_1_0 ).getOp() == Types.OpOp2.PLUS ) {
+															hi = _applyRewrite314(hi); // +(b,-(+(c,A),D)) => +(A,-(+(b,c),D))
+															hi = _applyRewrite315(hi); // +(b,-(+(A,c),D)) => +(A,-(+(b,c),D))
+														} else if ( (( BinaryOp ) hi_1_0 ).getOp() == Types.OpOp2.MULT ) {
+															if ( hi_1_0.getInput().size() == 2 ) {
+																Hop hi_1_0_0 = hi_1_0.getInput(0);
+																Hop hi_1_0_1 = hi_1_0.getInput(1);
+																if ( hi_1_1.getDataType() == Types.DataType.MATRIX ) {
+																	if ( hi_1_1 instanceof BinaryOp ) {
+																		if ( (( BinaryOp ) hi_1_1 ).getOp() == Types.OpOp2.MINUS ) {
+																			hi = _applyRewrite311(hi); // +(b,-(A,-(D,c))) => +(A,-(+(b,c),D))
+																			hi = _applyRewrite320(hi); // +(c,-(A,-(d,B))) => +(A,+(B,-(c,d)))
+																		} else if ( (( BinaryOp ) hi_1_1 ).getOp() == Types.OpOp2.PLUS ) {
+																			hi = _applyRewrite343(hi); // +(b,-(A,+(c,D))) => +(A,-(-(b,c),D))
+																			hi = _applyRewrite344(hi); // +(b,-(A,+(D,c))) => +(A,-(-(b,c),D))
+																		} else if ( (( BinaryOp ) hi_1_1 ).getOp() == Types.OpOp2.MULT ) {
+																		}
+																	} else {
+																		if ( hi_1_0_0.getDataType() == Types.DataType.SCALAR ) {
+																		} else if ( hi_1_0_0.getDataType() == Types.DataType.MATRIX ) {
+																		}
+																	}
+																} else if ( hi_1_1.getDataType() == Types.DataType.SCALAR ) {
+																	hi = _applyRewrite60(hi); // +(b,-(A,c)) => +(A,-(b,c))
+																	hi = _applyRewrite304(hi); // +(-(B,c),-(A,d)) => +(A,-(B,+(c,d)))
+																	hi = _applyRewrite338(hi); // +(-(b,D),-(A,c)) => +(A,-(-(b,c),D))
+																}
+															}
+														}
+													} else {
+														if ( hi_1_1.getDataType() == Types.DataType.MATRIX ) {
+															if ( hi_1_1 instanceof BinaryOp ) {
+																if ( (( BinaryOp ) hi_1_1 ).getOp() == Types.OpOp2.MINUS ) {
+																	hi = _applyRewrite311(hi); // +(b,-(A,-(D,c))) => +(A,-(+(b,c),D))
+																	hi = _applyRewrite320(hi); // +(c,-(A,-(d,B))) => +(A,+(B,-(c,d)))
+																} else if ( (( BinaryOp ) hi_1_1 ).getOp() == Types.OpOp2.PLUS ) {
+																	hi = _applyRewrite343(hi); // +(b,-(A,+(c,D))) => +(A,-(-(b,c),D))
+																	hi = _applyRewrite344(hi); // +(b,-(A,+(D,c))) => +(A,-(-(b,c),D))
+																} else if ( (( BinaryOp ) hi_1_1 ).getOp() == Types.OpOp2.MULT ) {
+																}
+															} else {
+																hi = _applyRewrite44(hi); // +(a,-(0.0,B)) => -(a,B)
+																hi = _applyRewrite48(hi); // +(A,-(0.0,B)) => -(A,B)
+																hi = _applyRewrite55(hi); // +(a,-(b,C)) => -(+(a,b),C)
+																hi = _applyRewrite298(hi); // +(-(a,D),-(b,C)) => -(+(a,b),+(C,D))
+																hi = _applyRewrite299(hi); // +(a,-(-(b,D),C)) => -(+(a,b),+(C,D))
+																hi = _applyRewrite314(hi); // +(b,-(+(c,A),D)) => +(A,-(+(b,c),D))
+																hi = _applyRewrite315(hi); // +(b,-(+(A,c),D)) => +(A,-(+(b,c),D))
+																hi = _applyRewrite339(hi); // +(-(A,c),-(b,D)) => +(A,-(-(b,c),D))
+																hi = _applyRewrite340(hi); // +(b,-(-(A,c),D)) => +(A,-(-(b,c),D))
+															}
+														} else if ( hi_1_1.getDataType() == Types.DataType.SCALAR ) {
+															hi = _applyRewrite60(hi); // +(b,-(A,c)) => +(A,-(b,c))
+															hi = _applyRewrite304(hi); // +(-(B,c),-(A,d)) => +(A,-(B,+(c,d)))
+															hi = _applyRewrite338(hi); // +(-(b,D),-(A,c)) => +(A,-(-(b,c),D))
+														}
+													}
+												}
+											}
+										} else if ( (( BinaryOp ) hi_1 ).getOp() == Types.OpOp2.MULT ) {
+											if ( hi_1.getInput().size() == 2 ) {
+												Hop hi_1_0 = hi_1.getInput(0);
+												Hop hi_1_1 = hi_1.getInput(1);
+												if ( hi_1_0.getDataType() == Types.DataType.MATRIX ) {
+													if ( hi_1_0 instanceof BinaryOp ) {
+													} else {
+														hi = _applyRewrite124(hi); // +(*(C,A),*(B,A)) => *(A,+(B,C))
+														hi = _applyRewrite125(hi); // +(*(B,A),*(A,C)) => *(A,+(B,C))
+														hi = _applyRewrite126(hi); // +(*(A,C),*(B,A)) => *(A,+(B,C))
+														hi = _applyRewrite127(hi); // +(*(A,C),*(A,B)) => *(A,+(B,C))
+													}
+												}
+											}
+										} else if ( (( BinaryOp ) hi_1 ).getOp() == Types.OpOp2.NOTEQUAL ) {
+											hi = _applyRewrite248(hi); // +(A,!=(rev(A),c)) => +(A,!=(A,c))
+											hi = _applyRewrite249(hi); // +(A,!=(c,rev(A))) => +(A,!=(A,c))
+											hi = _applyRewrite256(hi); // +(A,!=(rev(A),C)) => +(A,!=(A,C))
+											hi = _applyRewrite257(hi); // +(A,!=(C,rev(A))) => +(A,!=(A,C))
+										} else if ( (( BinaryOp ) hi_1 ).getOp() == Types.OpOp2.DIV ) {
+										}
+									} else if ( hi_1 instanceof AggBinaryOp ) {
+										if ( HopRewriteUtils.isMatrixMultiply(hi_1) ) {
+											if ( hi_1.getInput().size() == 2 ) {
+												Hop hi_1_0 = hi_1.getInput(0);
+												Hop hi_1_1 = hi_1.getInput(1);
+												if ( hi_1_0.getDataType() == Types.DataType.MATRIX ) {
+													if ( hi_1_0 instanceof BinaryOp ) {
+													} else {
+														hi = _applyRewrite94(hi); // +(%*%(B,C),%*%(A,C)) => %*%(+(A,B),C)
+														hi = _applyRewrite95(hi); // +(%*%(A,C),%*%(A,B)) => %*%(A,+(B,C))
+													}
+												}
+											}
+										}
+									} else if ( hi_1 instanceof ReorgOp ) {
+										if ( (( ReorgOp ) hi_1 ).getOp() == Types.ReOrgOp.TRANS ) {
+											if ( hi_1.getInput().size() == 1 ) {
+												Hop hi_1_0 = hi_1.getInput(0);
+												if ( hi_1_0.getDataType() == Types.DataType.MATRIX ) {
+													if ( hi_1_0 instanceof BinaryOp ) {
+														if ( (( BinaryOp ) hi_1_0 ).getOp() == Types.OpOp2.MINUS ) {
+															hi = _applyRewrite347(hi); // +(a,t(-(b,C))) => -(+(a,b),t(C))
+															hi = _applyRewrite352(hi); // +(a,t(-(C,b))) => +(-(a,b),t(C))
+														} else if ( (( BinaryOp ) hi_1_0 ).getOp() == Types.OpOp2.PLUS ) {
+															hi = _applyRewrite355(hi); // +(a,t(+(b,C))) => +(+(a,b),t(C))
+															hi = _applyRewrite356(hi); // +(a,t(+(C,b))) => +(+(a,b),t(C))
+														} else if ( (( BinaryOp ) hi_1_0 ).getOp() == Types.OpOp2.MULT ) {
+														}
+													} else {
+														hi = _applyRewrite192(hi); // +(t(B),t(A)) => t(+(A,B))
+													}
+												}
+											}
+										} else if ( (( ReorgOp ) hi_1 ).getOp() == Types.ReOrgOp.REV ) {
+											if ( hi_1.getInput().size() == 1 ) {
+												Hop hi_1_0 = hi_1.getInput(0);
+												if ( hi_1_0.getDataType() == Types.DataType.MATRIX ) {
+													if ( hi_1_0 instanceof BinaryOp ) {
+														if ( (( BinaryOp ) hi_1_0 ).getOp() == Types.OpOp2.NOTEQUAL ) {
+															hi = _applyRewrite252(hi); // +(A,rev(!=(c,A))) => +(A,!=(A,c))
+															hi = _applyRewrite253(hi); // +(A,rev(!=(A,c))) => +(A,!=(A,c))
+														} else if ( (( BinaryOp ) hi_1_0 ).getOp() == Types.OpOp2.MINUS ) {
+															hi = _applyRewrite283(hi); // +(a,rev(-(b,C))) => -(+(a,b),rev(C))
+															hi = _applyRewrite288(hi); // +(a,rev(-(C,b))) => +(-(a,b),rev(C))
+														} else if ( (( BinaryOp ) hi_1_0 ).getOp() == Types.OpOp2.PLUS ) {
+															hi = _applyRewrite291(hi); // +(a,rev(+(b,C))) => +(+(a,b),rev(C))
+															hi = _applyRewrite292(hi); // +(a,rev(+(C,b))) => +(+(a,b),rev(C))
+														} else if ( (( BinaryOp ) hi_1_0 ).getOp() == Types.OpOp2.MULT ) {
+														}
+													}
+												}
+											}
+										}
+									} else if ( hi_1 instanceof AggUnaryOp ) {
+										hi = _applyRewrite441(hi); // +(A,colSums(rev(A))) => +(A,colSums(A))
+									} else {
+										hi = _applyRewrite5(hi); // +(0.0,A) => A
+										hi = _applyRewrite47(hi); // +(-(0.0,B),A) => -(A,B)
+										hi = _applyRewrite89(hi); // +(-(0.0,b),A) => -(A,b)
+										hi = _applyRewrite246(hi); // +(!=(rev(A),c),A) => +(A,!=(A,c))
+										hi = _applyRewrite247(hi); // +(!=(c,rev(A)),A) => +(A,!=(A,c))
+										hi = _applyRewrite250(hi); // +(rev(!=(c,A)),A) => +(A,!=(A,c))
+										hi = _applyRewrite251(hi); // +(rev(!=(A,c)),A) => +(A,!=(A,c))
+										hi = _applyRewrite254(hi); // +(!=(rev(A),C),A) => +(A,!=(A,C))
+										hi = _applyRewrite255(hi); // +(!=(C,rev(A)),A) => +(A,!=(A,C))
+									}
+								} else if ( hi_1.getDataType() == Types.DataType.SCALAR ) {
+									if ( hi_1 instanceof BinaryOp ) {
+										hi = _applyRewrite90(hi); // +(A,-(0.0,b)) => -(A,b)
+									} else {
+										hi = _applyRewrite6(hi); // +(A,0.0) => A
+										hi = _applyRewrite43(hi); // +(-(0.0,B),a) => -(a,B)
+										hi = _applyRewrite54(hi); // +(-(a,C),b) => -(+(a,b),C)
+										hi = _applyRewrite59(hi); // +(-(A,c),b) => +(A,-(b,c))
+										hi = _applyRewrite282(hi); // +(rev(-(a,C)),b) => -(+(a,b),rev(C))
+										hi = _applyRewrite287(hi); // +(rev(-(C,b)),a) => +(-(a,b),rev(C))
+										hi = _applyRewrite289(hi); // +(rev(+(a,C)),b) => +(+(a,b),rev(C))
+										hi = _applyRewrite290(hi); // +(rev(+(C,a)),b) => +(+(a,b),rev(C))
+										hi = _applyRewrite297(hi); // +(-(-(a,C),D),b) => -(+(a,b),+(C,D))
+										hi = _applyRewrite310(hi); // +(-(A,-(D,b)),c) => +(A,-(+(b,c),D))
+										hi = _applyRewrite312(hi); // +(-(+(b,A),D),c) => +(A,-(+(b,c),D))
+										hi = _applyRewrite313(hi); // +(-(+(A,b),D),c) => +(A,-(+(b,c),D))
+										hi = _applyRewrite319(hi); // +(-(A,-(d,B)),c) => +(A,+(B,-(c,d)))
+										hi = _applyRewrite337(hi); // +(-(-(A,c),D),b) => +(A,-(-(b,c),D))
+										hi = _applyRewrite341(hi); // +(-(A,+(c,D)),b) => +(A,-(-(b,c),D))
+										hi = _applyRewrite342(hi); // +(-(A,+(D,c)),b) => +(A,-(-(b,c),D))
+										hi = _applyRewrite346(hi); // +(t(-(a,C)),b) => -(+(a,b),t(C))
+										hi = _applyRewrite351(hi); // +(t(-(C,b)),a) => +(-(a,b),t(C))
+										hi = _applyRewrite353(hi); // +(t(+(a,C)),b) => +(+(a,b),t(C))
+										hi = _applyRewrite354(hi); // +(t(+(C,a)),b) => +(+(a,b),t(C))
+									}
+								}
+							}
 						}
 					}
 				} else if ( (( BinaryOp ) hi ).getOp() == Types.OpOp2.DIV ) {
@@ -202,6 +2095,19 @@ public class GeneratedRewriteClass implements Function {
 								hi = _applyRewrite421(hi); // /(rev(!=(A,b)),A) => /(!=(A,b),A)
 							} else {
 								if ( hi_1.getDataType() == Types.DataType.MATRIX ) {
+									if ( hi_1 instanceof ReorgOp ) {
+										hi = _applyRewrite409(hi); // /(t(A),t(B)) => t(/(A,B))
+										hi = _applyRewrite422(hi); // /(A,rev(!=(c,A))) => /(A,!=(A,c))
+										hi = _applyRewrite423(hi); // /(A,rev(!=(A,c))) => /(A,!=(A,c))
+									} else if ( hi_1 instanceof BinaryOp ) {
+										hi = _applyRewrite424(hi); // /(A,!=(rev(A),c)) => /(A,!=(A,c))
+										hi = _applyRewrite425(hi); // /(A,!=(c,rev(A))) => /(A,!=(A,c))
+										hi = _applyRewrite426(hi); // /(A,!=(rev(A),C)) => /(A,!=(A,C))
+										hi = _applyRewrite427(hi); // /(A,!=(C,rev(A))) => /(A,!=(A,C))
+									} else {
+										hi = _applyRewrite93(hi); // /(-(a,0.0),B) => /(a,B)
+										hi = _applyRewrite421(hi); // /(rev(!=(A,b)),A) => /(!=(A,b),A)
+									}
 								} else if ( hi_1.getDataType() == Types.DataType.SCALAR ) {
 									hi = _applyRewrite13(hi); // /(A,c) => *(A,/(1.0,c))
 								}
@@ -217,6 +2123,61 @@ public class GeneratedRewriteClass implements Function {
 								hi = _applyRewrite91(hi); // *(-(b,0.0),A) => *(A,b)
 							} else {
 								if ( hi_1.getDataType() == Types.DataType.MATRIX ) {
+									if ( hi_1 instanceof BinaryOp ) {
+										if ( (( BinaryOp ) hi_1 ).getOp() == Types.OpOp2.DIV ) {
+											if ( hi_1.getInput().size() == 2 ) {
+												Hop hi_1_0 = hi_1.getInput(0);
+												Hop hi_1_1 = hi_1.getInput(1);
+												if ( hi_1_0.getDataType() == Types.DataType.SCALAR ) {
+													hi = _applyRewrite33(hi); // *(a,/(1.0,B)) => /(a,B)
+													hi = _applyRewrite35(hi); // *(A,/(1.0,B)) => /(A,B)
+													hi = _applyRewrite37(hi); // *(a,/(b,C)) => /(*(a,b),C)
+													hi = _applyRewrite175(hi); // *(/(a,C),/(b,D)) => /(/(*(a,b),C),D)
+												} else if ( hi_1_0.getDataType() == Types.DataType.MATRIX ) {
+													hi = _applyRewrite172(hi); // *(a,/(*(b,C),D)) => *(*(a,b),/(C,D))
+													hi = _applyRewrite173(hi); // *(a,/(*(C,b),D)) => *(*(a,b),/(C,D))
+													hi = _applyRewrite176(hi); // *(a,/(/(b,C),D)) => /(/(*(a,b),C),D)
+												}
+											}
+										} else if ( (( BinaryOp ) hi_1 ).getOp() == Types.OpOp2.NOTEQUAL ) {
+											hi = _applyRewrite394(hi); // *(A,!=(rev(A),c)) => *(A,!=(A,c))
+											hi = _applyRewrite395(hi); // *(A,!=(c,rev(A))) => *(A,!=(A,c))
+											hi = _applyRewrite402(hi); // *(A,!=(rev(A),C)) => *(A,!=(A,C))
+											hi = _applyRewrite403(hi); // *(A,!=(C,rev(A))) => *(A,!=(A,C))
+										}
+									} else if ( hi_1 instanceof ReorgOp ) {
+										if ( (( ReorgOp ) hi_1 ).getOp() == Types.ReOrgOp.TRANS ) {
+											hi = _applyRewrite130(hi); // *(a,t(*(b,C))) => *(*(a,b),t(C))
+											hi = _applyRewrite131(hi); // *(a,t(*(C,b))) => *(*(a,b),t(C))
+											hi = _applyRewrite153(hi); // *(a,t(/(b,C))) => /(*(a,b),t(C))
+											hi = _applyRewrite372(hi); // *(t(A),t(B)) => t(*(A,B))
+										} else if ( (( ReorgOp ) hi_1 ).getOp() == Types.ReOrgOp.REV ) {
+											hi = _applyRewrite134(hi); // *(a,rev(*(b,C))) => *(*(a,b),rev(C))
+											hi = _applyRewrite135(hi); // *(a,rev(*(C,b))) => *(*(a,b),rev(C))
+											hi = _applyRewrite155(hi); // *(a,rev(/(b,C))) => /(*(a,b),rev(C))
+											hi = _applyRewrite398(hi); // *(A,rev(!=(c,A))) => *(A,!=(A,c))
+											hi = _applyRewrite399(hi); // *(A,rev(!=(A,c))) => *(A,!=(A,c))
+										}
+									} else if ( hi_1 instanceof AggUnaryOp ) {
+										hi = _applyRewrite442(hi); // *(A,colSums(rev(A))) => *(A,colSums(A))
+										hi = _applyRewrite495(hi); // *(a,colSums(/(b,C))) => colSums(/(*(a,b),C))
+										hi = _applyRewrite497(hi); // *(a,rowSums(/(b,C))) => rowSums(/(*(a,b),C))
+									} else if ( hi_1 instanceof AggBinaryOp ) {
+										hi = _applyRewrite450(hi); // *(a,%*%(*(b,C),D)) => *(*(a,b),%*%(C,D))
+										hi = _applyRewrite451(hi); // *(a,%*%(*(C,b),D)) => *(*(a,b),%*%(C,D))
+										hi = _applyRewrite452(hi); // *(a,%*%(C,*(b,D))) => *(*(a,b),%*%(C,D))
+										hi = _applyRewrite456(hi); // *(a,%*%(/(b,C),D)) => %*%(/(*(a,b),C),D)
+										hi = _applyRewrite460(hi); // *(b,%*%(A,/(c,D))) => %*%(A,/(*(b,c),D))
+									} else {
+										hi = _applyRewrite34(hi); // *(/(1.0,B),A) => /(A,B)
+										hi = _applyRewrite91(hi); // *(-(b,0.0),A) => *(A,b)
+										hi = _applyRewrite392(hi); // *(!=(rev(A),c),A) => *(A,!=(A,c))
+										hi = _applyRewrite393(hi); // *(!=(c,rev(A)),A) => *(A,!=(A,c))
+										hi = _applyRewrite396(hi); // *(rev(!=(c,A)),A) => *(A,!=(A,c))
+										hi = _applyRewrite397(hi); // *(rev(!=(A,c)),A) => *(A,!=(A,c))
+										hi = _applyRewrite400(hi); // *(!=(rev(A),C),A) => *(A,!=(A,C))
+										hi = _applyRewrite401(hi); // *(!=(C,rev(A)),A) => *(A,!=(A,C))
+									}
 								} else if ( hi_1.getDataType() == Types.DataType.SCALAR ) {
 									if ( hi_1 instanceof BinaryOp ) {
 										hi = _applyRewrite92(hi); // *(A,-(b,0.0)) => *(A,b)
@@ -243,6 +2204,196 @@ public class GeneratedRewriteClass implements Function {
 								}
 							}
 						} else if ( hi_0.getDataType() == Types.DataType.MATRIX ) {
+							if ( hi_0 instanceof BinaryOp ) {
+								if ( (( BinaryOp ) hi_0 ).getOp() == Types.OpOp2.DIV ) {
+									if ( hi_0.getInput().size() == 2 ) {
+										Hop hi_0_0 = hi_0.getInput(0);
+										Hop hi_0_1 = hi_0.getInput(1);
+										if ( hi_1.getDataType() == Types.DataType.MATRIX ) {
+											if ( hi_1 instanceof BinaryOp ) {
+												if ( (( BinaryOp ) hi_1 ).getOp() == Types.OpOp2.DIV ) {
+													if ( hi_1.getInput().size() == 2 ) {
+														Hop hi_1_0 = hi_1.getInput(0);
+														Hop hi_1_1 = hi_1.getInput(1);
+														if ( hi_0_0.getDataType() == Types.DataType.SCALAR ) {
+															hi = _applyRewrite32(hi); // *(/(1.0,B),a) => /(a,B)
+															hi = _applyRewrite34(hi); // *(/(1.0,B),A) => /(A,B)
+															hi = _applyRewrite36(hi); // *(/(a,C),b) => /(*(a,b),C)
+															hi = _applyRewrite175(hi); // *(/(a,C),/(b,D)) => /(/(*(a,b),C),D)
+														} else if ( hi_0_0.getDataType() == Types.DataType.MATRIX ) {
+															hi = _applyRewrite170(hi); // *(/(*(a,C),D),b) => *(*(a,b),/(C,D))
+															hi = _applyRewrite171(hi); // *(/(*(C,a),D),b) => *(*(a,b),/(C,D))
+															hi = _applyRewrite174(hi); // *(/(/(a,C),D),b) => /(/(*(a,b),C),D)
+														}
+													}
+												} else if ( (( BinaryOp ) hi_1 ).getOp() == Types.OpOp2.NOTEQUAL ) {
+													hi = _applyRewrite394(hi); // *(A,!=(rev(A),c)) => *(A,!=(A,c))
+													hi = _applyRewrite395(hi); // *(A,!=(c,rev(A))) => *(A,!=(A,c))
+													hi = _applyRewrite402(hi); // *(A,!=(rev(A),C)) => *(A,!=(A,C))
+													hi = _applyRewrite403(hi); // *(A,!=(C,rev(A))) => *(A,!=(A,C))
+												}
+											} else if ( hi_1 instanceof ReorgOp ) {
+												if ( (( ReorgOp ) hi_1 ).getOp() == Types.ReOrgOp.TRANS ) {
+													hi = _applyRewrite130(hi); // *(a,t(*(b,C))) => *(*(a,b),t(C))
+													hi = _applyRewrite131(hi); // *(a,t(*(C,b))) => *(*(a,b),t(C))
+													hi = _applyRewrite153(hi); // *(a,t(/(b,C))) => /(*(a,b),t(C))
+													hi = _applyRewrite372(hi); // *(t(A),t(B)) => t(*(A,B))
+												} else if ( (( ReorgOp ) hi_1 ).getOp() == Types.ReOrgOp.REV ) {
+													hi = _applyRewrite134(hi); // *(a,rev(*(b,C))) => *(*(a,b),rev(C))
+													hi = _applyRewrite135(hi); // *(a,rev(*(C,b))) => *(*(a,b),rev(C))
+													hi = _applyRewrite155(hi); // *(a,rev(/(b,C))) => /(*(a,b),rev(C))
+													hi = _applyRewrite398(hi); // *(A,rev(!=(c,A))) => *(A,!=(A,c))
+													hi = _applyRewrite399(hi); // *(A,rev(!=(A,c))) => *(A,!=(A,c))
+												}
+											} else if ( hi_1 instanceof AggUnaryOp ) {
+												hi = _applyRewrite442(hi); // *(A,colSums(rev(A))) => *(A,colSums(A))
+												hi = _applyRewrite495(hi); // *(a,colSums(/(b,C))) => colSums(/(*(a,b),C))
+												hi = _applyRewrite497(hi); // *(a,rowSums(/(b,C))) => rowSums(/(*(a,b),C))
+											} else if ( hi_1 instanceof AggBinaryOp ) {
+												hi = _applyRewrite450(hi); // *(a,%*%(*(b,C),D)) => *(*(a,b),%*%(C,D))
+												hi = _applyRewrite451(hi); // *(a,%*%(*(C,b),D)) => *(*(a,b),%*%(C,D))
+												hi = _applyRewrite452(hi); // *(a,%*%(C,*(b,D))) => *(*(a,b),%*%(C,D))
+												hi = _applyRewrite456(hi); // *(a,%*%(/(b,C),D)) => %*%(/(*(a,b),C),D)
+												hi = _applyRewrite460(hi); // *(b,%*%(A,/(c,D))) => %*%(A,/(*(b,c),D))
+											} else {
+												if ( hi_0_0.getDataType() == Types.DataType.SCALAR ) {
+													hi = _applyRewrite32(hi); // *(/(1.0,B),a) => /(a,B)
+													hi = _applyRewrite34(hi); // *(/(1.0,B),A) => /(A,B)
+													hi = _applyRewrite36(hi); // *(/(a,C),b) => /(*(a,b),C)
+													hi = _applyRewrite175(hi); // *(/(a,C),/(b,D)) => /(/(*(a,b),C),D)
+												} else if ( hi_0_0.getDataType() == Types.DataType.MATRIX ) {
+													hi = _applyRewrite170(hi); // *(/(*(a,C),D),b) => *(*(a,b),/(C,D))
+													hi = _applyRewrite171(hi); // *(/(*(C,a),D),b) => *(*(a,b),/(C,D))
+													hi = _applyRewrite174(hi); // *(/(/(a,C),D),b) => /(/(*(a,b),C),D)
+												}
+											}
+										} else if ( hi_1.getDataType() == Types.DataType.SCALAR ) {
+											if ( hi_1 instanceof BinaryOp ) {
+												hi = _applyRewrite92(hi); // *(A,-(b,0.0)) => *(A,b)
+											} else {
+												if ( hi_0_0.getDataType() == Types.DataType.SCALAR ) {
+													hi = _applyRewrite32(hi); // *(/(1.0,B),a) => /(a,B)
+													hi = _applyRewrite34(hi); // *(/(1.0,B),A) => /(A,B)
+													hi = _applyRewrite36(hi); // *(/(a,C),b) => /(*(a,b),C)
+													hi = _applyRewrite175(hi); // *(/(a,C),/(b,D)) => /(/(*(a,b),C),D)
+												} else if ( hi_0_0.getDataType() == Types.DataType.MATRIX ) {
+													hi = _applyRewrite170(hi); // *(/(*(a,C),D),b) => *(*(a,b),/(C,D))
+													hi = _applyRewrite171(hi); // *(/(*(C,a),D),b) => *(*(a,b),/(C,D))
+													hi = _applyRewrite174(hi); // *(/(/(a,C),D),b) => /(/(*(a,b),C),D)
+												}
+											}
+										}
+									}
+								} else if ( (( BinaryOp ) hi_0 ).getOp() == Types.OpOp2.NOTEQUAL ) {
+									hi = _applyRewrite392(hi); // *(!=(rev(A),c),A) => *(A,!=(A,c))
+									hi = _applyRewrite393(hi); // *(!=(c,rev(A)),A) => *(A,!=(A,c))
+									hi = _applyRewrite400(hi); // *(!=(rev(A),C),A) => *(A,!=(A,C))
+									hi = _applyRewrite401(hi); // *(!=(C,rev(A)),A) => *(A,!=(A,C))
+								}
+							} else if ( hi_0 instanceof ReorgOp ) {
+								if ( (( ReorgOp ) hi_0 ).getOp() == Types.ReOrgOp.TRANS ) {
+									hi = _applyRewrite128(hi); // *(t(*(a,C)),b) => *(*(a,b),t(C))
+									hi = _applyRewrite129(hi); // *(t(*(C,a)),b) => *(*(a,b),t(C))
+									hi = _applyRewrite152(hi); // *(t(/(a,C)),b) => /(*(a,b),t(C))
+									hi = _applyRewrite372(hi); // *(t(A),t(B)) => t(*(A,B))
+								} else if ( (( ReorgOp ) hi_0 ).getOp() == Types.ReOrgOp.REV ) {
+									hi = _applyRewrite132(hi); // *(rev(*(a,C)),b) => *(*(a,b),rev(C))
+									hi = _applyRewrite133(hi); // *(rev(*(C,a)),b) => *(*(a,b),rev(C))
+									hi = _applyRewrite154(hi); // *(rev(/(a,C)),b) => /(*(a,b),rev(C))
+									hi = _applyRewrite396(hi); // *(rev(!=(c,A)),A) => *(A,!=(A,c))
+									hi = _applyRewrite397(hi); // *(rev(!=(A,c)),A) => *(A,!=(A,c))
+								}
+							} else if ( hi_0 instanceof AggBinaryOp ) {
+								hi = _applyRewrite447(hi); // *(%*%(*(a,C),D),b) => *(*(a,b),%*%(C,D))
+								hi = _applyRewrite448(hi); // *(%*%(*(C,a),D),b) => *(*(a,b),%*%(C,D))
+								hi = _applyRewrite449(hi); // *(%*%(C,*(D,a)),b) => *(*(a,b),%*%(C,D))
+								hi = _applyRewrite455(hi); // *(%*%(/(a,C),D),b) => %*%(/(*(a,b),C),D)
+								hi = _applyRewrite459(hi); // *(%*%(A,/(b,D)),c) => %*%(A,/(*(b,c),D))
+							} else if ( hi_0 instanceof AggUnaryOp ) {
+								hi = _applyRewrite494(hi); // *(colSums(/(a,C)),b) => colSums(/(*(a,b),C))
+								hi = _applyRewrite496(hi); // *(rowSums(/(a,C)),b) => rowSums(/(*(a,b),C))
+							} else {
+								if ( hi_1.getDataType() == Types.DataType.MATRIX ) {
+									if ( hi_1 instanceof BinaryOp ) {
+										if ( (( BinaryOp ) hi_1 ).getOp() == Types.OpOp2.DIV ) {
+											if ( hi_1.getInput().size() == 2 ) {
+												Hop hi_1_0 = hi_1.getInput(0);
+												Hop hi_1_1 = hi_1.getInput(1);
+												if ( hi_1_0.getDataType() == Types.DataType.SCALAR ) {
+													hi = _applyRewrite33(hi); // *(a,/(1.0,B)) => /(a,B)
+													hi = _applyRewrite35(hi); // *(A,/(1.0,B)) => /(A,B)
+													hi = _applyRewrite37(hi); // *(a,/(b,C)) => /(*(a,b),C)
+													hi = _applyRewrite175(hi); // *(/(a,C),/(b,D)) => /(/(*(a,b),C),D)
+												} else if ( hi_1_0.getDataType() == Types.DataType.MATRIX ) {
+													hi = _applyRewrite172(hi); // *(a,/(*(b,C),D)) => *(*(a,b),/(C,D))
+													hi = _applyRewrite173(hi); // *(a,/(*(C,b),D)) => *(*(a,b),/(C,D))
+													hi = _applyRewrite176(hi); // *(a,/(/(b,C),D)) => /(/(*(a,b),C),D)
+												}
+											}
+										} else if ( (( BinaryOp ) hi_1 ).getOp() == Types.OpOp2.NOTEQUAL ) {
+											hi = _applyRewrite394(hi); // *(A,!=(rev(A),c)) => *(A,!=(A,c))
+											hi = _applyRewrite395(hi); // *(A,!=(c,rev(A))) => *(A,!=(A,c))
+											hi = _applyRewrite402(hi); // *(A,!=(rev(A),C)) => *(A,!=(A,C))
+											hi = _applyRewrite403(hi); // *(A,!=(C,rev(A))) => *(A,!=(A,C))
+										}
+									} else if ( hi_1 instanceof ReorgOp ) {
+										if ( (( ReorgOp ) hi_1 ).getOp() == Types.ReOrgOp.TRANS ) {
+											hi = _applyRewrite130(hi); // *(a,t(*(b,C))) => *(*(a,b),t(C))
+											hi = _applyRewrite131(hi); // *(a,t(*(C,b))) => *(*(a,b),t(C))
+											hi = _applyRewrite153(hi); // *(a,t(/(b,C))) => /(*(a,b),t(C))
+											hi = _applyRewrite372(hi); // *(t(A),t(B)) => t(*(A,B))
+										} else if ( (( ReorgOp ) hi_1 ).getOp() == Types.ReOrgOp.REV ) {
+											hi = _applyRewrite134(hi); // *(a,rev(*(b,C))) => *(*(a,b),rev(C))
+											hi = _applyRewrite135(hi); // *(a,rev(*(C,b))) => *(*(a,b),rev(C))
+											hi = _applyRewrite155(hi); // *(a,rev(/(b,C))) => /(*(a,b),rev(C))
+											hi = _applyRewrite398(hi); // *(A,rev(!=(c,A))) => *(A,!=(A,c))
+											hi = _applyRewrite399(hi); // *(A,rev(!=(A,c))) => *(A,!=(A,c))
+										}
+									} else if ( hi_1 instanceof AggUnaryOp ) {
+										hi = _applyRewrite442(hi); // *(A,colSums(rev(A))) => *(A,colSums(A))
+										hi = _applyRewrite495(hi); // *(a,colSums(/(b,C))) => colSums(/(*(a,b),C))
+										hi = _applyRewrite497(hi); // *(a,rowSums(/(b,C))) => rowSums(/(*(a,b),C))
+									} else if ( hi_1 instanceof AggBinaryOp ) {
+										hi = _applyRewrite450(hi); // *(a,%*%(*(b,C),D)) => *(*(a,b),%*%(C,D))
+										hi = _applyRewrite451(hi); // *(a,%*%(*(C,b),D)) => *(*(a,b),%*%(C,D))
+										hi = _applyRewrite452(hi); // *(a,%*%(C,*(b,D))) => *(*(a,b),%*%(C,D))
+										hi = _applyRewrite456(hi); // *(a,%*%(/(b,C),D)) => %*%(/(*(a,b),C),D)
+										hi = _applyRewrite460(hi); // *(b,%*%(A,/(c,D))) => %*%(A,/(*(b,c),D))
+									} else {
+										hi = _applyRewrite34(hi); // *(/(1.0,B),A) => /(A,B)
+										hi = _applyRewrite91(hi); // *(-(b,0.0),A) => *(A,b)
+										hi = _applyRewrite392(hi); // *(!=(rev(A),c),A) => *(A,!=(A,c))
+										hi = _applyRewrite393(hi); // *(!=(c,rev(A)),A) => *(A,!=(A,c))
+										hi = _applyRewrite396(hi); // *(rev(!=(c,A)),A) => *(A,!=(A,c))
+										hi = _applyRewrite397(hi); // *(rev(!=(A,c)),A) => *(A,!=(A,c))
+										hi = _applyRewrite400(hi); // *(!=(rev(A),C),A) => *(A,!=(A,C))
+										hi = _applyRewrite401(hi); // *(!=(C,rev(A)),A) => *(A,!=(A,C))
+									}
+								} else if ( hi_1.getDataType() == Types.DataType.SCALAR ) {
+									if ( hi_1 instanceof BinaryOp ) {
+										hi = _applyRewrite92(hi); // *(A,-(b,0.0)) => *(A,b)
+									} else {
+										hi = _applyRewrite32(hi); // *(/(1.0,B),a) => /(a,B)
+										hi = _applyRewrite36(hi); // *(/(a,C),b) => /(*(a,b),C)
+										hi = _applyRewrite128(hi); // *(t(*(a,C)),b) => *(*(a,b),t(C))
+										hi = _applyRewrite129(hi); // *(t(*(C,a)),b) => *(*(a,b),t(C))
+										hi = _applyRewrite132(hi); // *(rev(*(a,C)),b) => *(*(a,b),rev(C))
+										hi = _applyRewrite133(hi); // *(rev(*(C,a)),b) => *(*(a,b),rev(C))
+										hi = _applyRewrite152(hi); // *(t(/(a,C)),b) => /(*(a,b),t(C))
+										hi = _applyRewrite154(hi); // *(rev(/(a,C)),b) => /(*(a,b),rev(C))
+										hi = _applyRewrite170(hi); // *(/(*(a,C),D),b) => *(*(a,b),/(C,D))
+										hi = _applyRewrite171(hi); // *(/(*(C,a),D),b) => *(*(a,b),/(C,D))
+										hi = _applyRewrite174(hi); // *(/(/(a,C),D),b) => /(/(*(a,b),C),D)
+										hi = _applyRewrite447(hi); // *(%*%(*(a,C),D),b) => *(*(a,b),%*%(C,D))
+										hi = _applyRewrite448(hi); // *(%*%(*(C,a),D),b) => *(*(a,b),%*%(C,D))
+										hi = _applyRewrite449(hi); // *(%*%(C,*(D,a)),b) => *(*(a,b),%*%(C,D))
+										hi = _applyRewrite455(hi); // *(%*%(/(a,C),D),b) => %*%(/(*(a,b),C),D)
+										hi = _applyRewrite459(hi); // *(%*%(A,/(b,D)),c) => %*%(A,/(*(b,c),D))
+										hi = _applyRewrite494(hi); // *(colSums(/(a,C)),b) => colSums(/(*(a,b),C))
+										hi = _applyRewrite496(hi); // *(rowSums(/(a,C)),b) => rowSums(/(*(a,b),C))
+									}
+								}
+							}
 						}
 					}
 				} else if ( (( BinaryOp ) hi ).getOp() == Types.OpOp2.MINUS ) {
@@ -251,6 +2402,216 @@ public class GeneratedRewriteClass implements Function {
 						Hop hi_1 = hi.getInput(1);
 						if ( hi_0.getDataType() == Types.DataType.SCALAR ) {
 							if ( hi_1.getDataType() == Types.DataType.MATRIX ) {
+								if ( hi_1 instanceof BinaryOp ) {
+									if ( (( BinaryOp ) hi_1 ).getOp() == Types.OpOp2.MINUS ) {
+										if ( hi_1.getInput().size() == 2 ) {
+											Hop hi_1_0 = hi_1.getInput(0);
+											Hop hi_1_1 = hi_1.getInput(1);
+											if ( hi_1_0.getDataType() == Types.DataType.MATRIX ) {
+												if ( hi_1_0 instanceof BinaryOp ) {
+													if ( (( BinaryOp ) hi_1_0 ).getOp() == Types.OpOp2.MINUS ) {
+														hi = _applyRewrite305(hi); // -(b,-(-(D,c),A)) => +(A,-(+(b,c),D))
+														hi = _applyRewrite316(hi); // -(c,-(-(d,B),A)) => +(A,+(B,-(c,d)))
+													} else if ( (( BinaryOp ) hi_1_0 ).getOp() == Types.OpOp2.PLUS ) {
+														hi = _applyRewrite327(hi); // -(b,-(+(c,D),A)) => +(A,-(-(b,c),D))
+														hi = _applyRewrite328(hi); // -(b,-(+(D,c),A)) => +(A,-(-(b,c),D))
+													} else if ( (( BinaryOp ) hi_1_0 ).getOp() == Types.OpOp2.MULT ) {
+														if ( hi_1_0.getInput().size() == 2 ) {
+															Hop hi_1_0_0 = hi_1_0.getInput(0);
+															Hop hi_1_0_1 = hi_1_0.getInput(1);
+															if ( hi_1_1.getDataType() == Types.DataType.SCALAR ) {
+																if ( hi_1_0_0.getDataType() == Types.DataType.SCALAR ) {
+																} else if ( hi_1_0_0.getDataType() == Types.DataType.MATRIX ) {
+																}
+															} else if ( hi_1_1.getDataType() == Types.DataType.MATRIX ) {
+																if ( hi_1_1 instanceof BinaryOp ) {
+																	if ( (( BinaryOp ) hi_1_1 ).getOp() == Types.OpOp2.MINUS ) {
+																		hi = _applyRewrite294(hi); // -(a,-(C,-(b,D))) => -(+(a,b),+(C,D))
+																		hi = _applyRewrite324(hi); // -(b,-(D,-(A,c))) => +(A,-(-(b,c),D))
+																	} else if ( (( BinaryOp ) hi_1_1 ).getOp() == Types.OpOp2.PLUS ) {
+																		hi = _applyRewrite306(hi); // -(b,-(D,+(c,A))) => +(A,-(+(b,c),D))
+																		hi = _applyRewrite307(hi); // -(b,-(D,+(A,c))) => +(A,-(+(b,c),D))
+																	} else if ( (( BinaryOp ) hi_1_1 ).getOp() == Types.OpOp2.MULT ) {
+																	}
+																} else {
+																	if ( hi_1_0_0.getDataType() == Types.DataType.SCALAR ) {
+																	} else if ( hi_1_0_0.getDataType() == Types.DataType.MATRIX ) {
+																	}
+																}
+															}
+														}
+													}
+												} else {
+													if ( hi_1_1.getDataType() == Types.DataType.SCALAR ) {
+														hi = _applyRewrite42(hi); // -(0.0,-(B,a)) => -(a,B)
+														hi = _applyRewrite53(hi); // -(a,-(C,b)) => -(+(a,b),C)
+														hi = _applyRewrite293(hi); // -(-(a,C),-(D,b)) => -(+(a,b),+(C,D))
+														hi = _applyRewrite308(hi); // -(+(b,A),-(D,c)) => +(A,-(+(b,c),D))
+														hi = _applyRewrite309(hi); // -(+(A,b),-(D,c)) => +(A,-(+(b,c),D))
+														hi = _applyRewrite323(hi); // -(-(A,c),-(D,b)) => +(A,-(-(b,c),D))
+													} else if ( hi_1_1.getDataType() == Types.DataType.MATRIX ) {
+														if ( hi_1_1 instanceof BinaryOp ) {
+															if ( (( BinaryOp ) hi_1_1 ).getOp() == Types.OpOp2.MINUS ) {
+																hi = _applyRewrite294(hi); // -(a,-(C,-(b,D))) => -(+(a,b),+(C,D))
+																hi = _applyRewrite324(hi); // -(b,-(D,-(A,c))) => +(A,-(-(b,c),D))
+															} else if ( (( BinaryOp ) hi_1_1 ).getOp() == Types.OpOp2.PLUS ) {
+																hi = _applyRewrite306(hi); // -(b,-(D,+(c,A))) => +(A,-(+(b,c),D))
+																hi = _applyRewrite307(hi); // -(b,-(D,+(A,c))) => +(A,-(+(b,c),D))
+															} else if ( (( BinaryOp ) hi_1_1 ).getOp() == Types.OpOp2.MULT ) {
+															}
+														} else {
+															hi = _applyRewrite45(hi); // -(0.0,-(b,A)) => -(A,b)
+															hi = _applyRewrite46(hi); // -(0.0,-(B,A)) => -(A,B)
+															hi = _applyRewrite58(hi); // -(b,-(c,A)) => +(A,-(b,c))
+															hi = _applyRewrite301(hi); // -(-(B,c),-(d,A)) => +(A,-(B,+(c,d)))
+															hi = _applyRewrite305(hi); // -(b,-(-(D,c),A)) => +(A,-(+(b,c),D))
+															hi = _applyRewrite316(hi); // -(c,-(-(d,B),A)) => +(A,+(B,-(c,d)))
+															hi = _applyRewrite317(hi); // -(+(c,B),-(d,A)) => +(A,+(B,-(c,d)))
+															hi = _applyRewrite318(hi); // -(+(B,c),-(d,A)) => +(A,+(B,-(c,d)))
+															hi = _applyRewrite322(hi); // -(-(b,D),-(c,A)) => +(A,-(-(b,c),D))
+															hi = _applyRewrite327(hi); // -(b,-(+(c,D),A)) => +(A,-(-(b,c),D))
+															hi = _applyRewrite328(hi); // -(b,-(+(D,c),A)) => +(A,-(-(b,c),D))
+														}
+													}
+												}
+											} else if ( hi_1_0.getDataType() == Types.DataType.SCALAR ) {
+												if ( hi_1_1.getDataType() == Types.DataType.SCALAR ) {
+													hi = _applyRewrite42(hi); // -(0.0,-(B,a)) => -(a,B)
+													hi = _applyRewrite53(hi); // -(a,-(C,b)) => -(+(a,b),C)
+													hi = _applyRewrite293(hi); // -(-(a,C),-(D,b)) => -(+(a,b),+(C,D))
+													hi = _applyRewrite308(hi); // -(+(b,A),-(D,c)) => +(A,-(+(b,c),D))
+													hi = _applyRewrite309(hi); // -(+(A,b),-(D,c)) => +(A,-(+(b,c),D))
+													hi = _applyRewrite323(hi); // -(-(A,c),-(D,b)) => +(A,-(-(b,c),D))
+												} else if ( hi_1_1.getDataType() == Types.DataType.MATRIX ) {
+													if ( hi_1_1 instanceof BinaryOp ) {
+														if ( (( BinaryOp ) hi_1_1 ).getOp() == Types.OpOp2.MINUS ) {
+															hi = _applyRewrite294(hi); // -(a,-(C,-(b,D))) => -(+(a,b),+(C,D))
+															hi = _applyRewrite324(hi); // -(b,-(D,-(A,c))) => +(A,-(-(b,c),D))
+														} else if ( (( BinaryOp ) hi_1_1 ).getOp() == Types.OpOp2.PLUS ) {
+															hi = _applyRewrite306(hi); // -(b,-(D,+(c,A))) => +(A,-(+(b,c),D))
+															hi = _applyRewrite307(hi); // -(b,-(D,+(A,c))) => +(A,-(+(b,c),D))
+														} else if ( (( BinaryOp ) hi_1_1 ).getOp() == Types.OpOp2.MULT ) {
+														}
+													} else {
+														hi = _applyRewrite45(hi); // -(0.0,-(b,A)) => -(A,b)
+														hi = _applyRewrite46(hi); // -(0.0,-(B,A)) => -(A,B)
+														hi = _applyRewrite58(hi); // -(b,-(c,A)) => +(A,-(b,c))
+														hi = _applyRewrite301(hi); // -(-(B,c),-(d,A)) => +(A,-(B,+(c,d)))
+														hi = _applyRewrite305(hi); // -(b,-(-(D,c),A)) => +(A,-(+(b,c),D))
+														hi = _applyRewrite316(hi); // -(c,-(-(d,B),A)) => +(A,+(B,-(c,d)))
+														hi = _applyRewrite317(hi); // -(+(c,B),-(d,A)) => +(A,+(B,-(c,d)))
+														hi = _applyRewrite318(hi); // -(+(B,c),-(d,A)) => +(A,+(B,-(c,d)))
+														hi = _applyRewrite322(hi); // -(-(b,D),-(c,A)) => +(A,-(-(b,c),D))
+														hi = _applyRewrite327(hi); // -(b,-(+(c,D),A)) => +(A,-(-(b,c),D))
+														hi = _applyRewrite328(hi); // -(b,-(+(D,c),A)) => +(A,-(-(b,c),D))
+													}
+												}
+											}
+										}
+									} else if ( (( BinaryOp ) hi_1 ).getOp() == Types.OpOp2.PLUS ) {
+										if ( hi_1.getInput().size() == 2 ) {
+											Hop hi_1_0 = hi_1.getInput(0);
+											Hop hi_1_1 = hi_1.getInput(1);
+											if ( hi_1_0.getDataType() == Types.DataType.SCALAR ) {
+												if ( hi_1_1.getDataType() == Types.DataType.MATRIX ) {
+													if ( hi_1_1 instanceof BinaryOp ) {
+														hi = _applyRewrite296(hi); // -(a,+(D,-(C,b))) => -(+(a,b),+(C,D))
+														hi = _applyRewrite336(hi); // -(b,+(D,-(c,A))) => +(A,-(-(b,c),D))
+													} else {
+														hi = _applyRewrite50(hi); // -(a,+(b,C)) => -(-(a,b),C)
+														hi = _applyRewrite274(hi); // -(-(a,C),+(b,D)) => -(-(a,b),+(C,D))
+														hi = _applyRewrite279(hi); // -(-(A,c),+(d,B)) => -(A,+(B,+(c,d)))
+														hi = _applyRewrite295(hi); // -(a,+(-(D,b),C)) => -(+(a,b),+(C,D))
+														hi = _applyRewrite330(hi); // -(+(b,A),+(c,D)) => +(A,-(-(b,c),D))
+														hi = _applyRewrite332(hi); // -(+(A,b),+(c,D)) => +(A,-(-(b,c),D))
+														hi = _applyRewrite335(hi); // -(b,+(-(c,A),D)) => +(A,-(-(b,c),D))
+													}
+												} else if ( hi_1_1.getDataType() == Types.DataType.SCALAR ) {
+													hi = _applyRewrite51(hi); // -(a,+(C,b)) => -(-(a,b),C)
+													hi = _applyRewrite275(hi); // -(-(a,D),+(C,b)) => -(-(a,b),+(C,D))
+													hi = _applyRewrite280(hi); // -(-(A,c),+(B,d)) => -(A,+(B,+(c,d)))
+													hi = _applyRewrite331(hi); // -(+(b,A),+(D,c)) => +(A,-(-(b,c),D))
+													hi = _applyRewrite333(hi); // -(+(A,b),+(D,c)) => +(A,-(-(b,c),D))
+												}
+											} else if ( hi_1_0.getDataType() == Types.DataType.MATRIX ) {
+												if ( hi_1_0 instanceof BinaryOp ) {
+													hi = _applyRewrite295(hi); // -(a,+(-(D,b),C)) => -(+(a,b),+(C,D))
+													hi = _applyRewrite335(hi); // -(b,+(-(c,A),D)) => +(A,-(-(b,c),D))
+												} else {
+													if ( hi_1_1.getDataType() == Types.DataType.MATRIX ) {
+														if ( hi_1_1 instanceof BinaryOp ) {
+															hi = _applyRewrite296(hi); // -(a,+(D,-(C,b))) => -(+(a,b),+(C,D))
+															hi = _applyRewrite336(hi); // -(b,+(D,-(c,A))) => +(A,-(-(b,c),D))
+														} else {
+															hi = _applyRewrite50(hi); // -(a,+(b,C)) => -(-(a,b),C)
+															hi = _applyRewrite274(hi); // -(-(a,C),+(b,D)) => -(-(a,b),+(C,D))
+															hi = _applyRewrite279(hi); // -(-(A,c),+(d,B)) => -(A,+(B,+(c,d)))
+															hi = _applyRewrite295(hi); // -(a,+(-(D,b),C)) => -(+(a,b),+(C,D))
+															hi = _applyRewrite330(hi); // -(+(b,A),+(c,D)) => +(A,-(-(b,c),D))
+															hi = _applyRewrite332(hi); // -(+(A,b),+(c,D)) => +(A,-(-(b,c),D))
+															hi = _applyRewrite335(hi); // -(b,+(-(c,A),D)) => +(A,-(-(b,c),D))
+														}
+													} else if ( hi_1_1.getDataType() == Types.DataType.SCALAR ) {
+														hi = _applyRewrite51(hi); // -(a,+(C,b)) => -(-(a,b),C)
+														hi = _applyRewrite275(hi); // -(-(a,D),+(C,b)) => -(-(a,b),+(C,D))
+														hi = _applyRewrite280(hi); // -(-(A,c),+(B,d)) => -(A,+(B,+(c,d)))
+														hi = _applyRewrite331(hi); // -(+(b,A),+(D,c)) => +(A,-(-(b,c),D))
+														hi = _applyRewrite333(hi); // -(+(A,b),+(D,c)) => +(A,-(-(b,c),D))
+													}
+												}
+											}
+										}
+									} else if ( (( BinaryOp ) hi_1 ).getOp() == Types.OpOp2.MULT ) {
+									} else if ( (( BinaryOp ) hi_1 ).getOp() == Types.OpOp2.NOTEQUAL ) {
+										hi = _applyRewrite259(hi); // -(A,!=(rev(A),c)) => -(A,!=(A,c))
+										hi = _applyRewrite260(hi); // -(A,!=(c,rev(A))) => -(A,!=(A,c))
+										hi = _applyRewrite263(hi); // -(A,!=(rev(A),C)) => -(A,!=(A,C))
+										hi = _applyRewrite264(hi); // -(A,!=(C,rev(A))) => -(A,!=(A,C))
+									} else if ( (( BinaryOp ) hi_1 ).getOp() == Types.OpOp2.DIV ) {
+									}
+								} else if ( hi_1 instanceof ReorgOp ) {
+									if ( (( ReorgOp ) hi_1 ).getOp() == Types.ReOrgOp.TRANS ) {
+										if ( hi_1.getInput().size() == 1 ) {
+											Hop hi_1_0 = hi_1.getInput(0);
+											if ( hi_1_0.getDataType() == Types.DataType.MATRIX ) {
+												if ( hi_1_0 instanceof BinaryOp ) {
+													if ( (( BinaryOp ) hi_1_0 ).getOp() == Types.OpOp2.PLUS ) {
+														hi = _applyRewrite267(hi); // -(a,t(+(b,C))) => -(-(a,b),t(C))
+														hi = _applyRewrite268(hi); // -(a,t(+(C,b))) => -(-(a,b),t(C))
+													} else if ( (( BinaryOp ) hi_1_0 ).getOp() == Types.OpOp2.MINUS ) {
+														hi = _applyRewrite345(hi); // -(a,t(-(C,b))) => -(+(a,b),t(C))
+														hi = _applyRewrite350(hi); // -(a,t(-(b,C))) => +(-(a,b),t(C))
+													} else if ( (( BinaryOp ) hi_1_0 ).getOp() == Types.OpOp2.MULT ) {
+													}
+												} else {
+													hi = _applyRewrite191(hi); // -(t(A),t(B)) => t(-(A,B))
+												}
+											}
+										}
+									} else if ( (( ReorgOp ) hi_1 ).getOp() == Types.ReOrgOp.REV ) {
+										if ( hi_1.getInput().size() == 1 ) {
+											Hop hi_1_0 = hi_1.getInput(0);
+											if ( hi_1_0.getDataType() == Types.DataType.MATRIX ) {
+												if ( hi_1_0 instanceof BinaryOp ) {
+													if ( (( BinaryOp ) hi_1_0 ).getOp() == Types.OpOp2.NOTEQUAL ) {
+														hi = _applyRewrite261(hi); // -(A,rev(!=(c,A))) => -(A,!=(A,c))
+														hi = _applyRewrite262(hi); // -(A,rev(!=(A,c))) => -(A,!=(A,c))
+													} else if ( (( BinaryOp ) hi_1_0 ).getOp() == Types.OpOp2.PLUS ) {
+														hi = _applyRewrite271(hi); // -(a,rev(+(b,C))) => -(-(a,b),rev(C))
+														hi = _applyRewrite272(hi); // -(a,rev(+(C,b))) => -(-(a,b),rev(C))
+													} else if ( (( BinaryOp ) hi_1_0 ).getOp() == Types.OpOp2.MINUS ) {
+														hi = _applyRewrite281(hi); // -(a,rev(-(C,b))) => -(+(a,b),rev(C))
+														hi = _applyRewrite284(hi); // -(a,rev(-(b,C))) => +(-(a,b),rev(C))
+													} else if ( (( BinaryOp ) hi_1_0 ).getOp() == Types.OpOp2.MULT ) {
+													}
+												}
+											}
+										}
+									}
+								} else if ( hi_1 instanceof AggBinaryOp ) {
+								} else {
+									hi = _applyRewrite258(hi); // -(rev(!=(A,b)),A) => -(!=(A,b),A)
+								}
 							} else if ( hi_1.getDataType() == Types.DataType.SCALAR ) {
 								if ( hi_1 instanceof BinaryOp ) {
 									hi = _applyRewrite88(hi); // -(A,-(b,0.0)) => -(A,b)
@@ -282,6 +2643,1993 @@ public class GeneratedRewriteClass implements Function {
 								}
 							}
 						} else if ( hi_0.getDataType() == Types.DataType.MATRIX ) {
+							if ( hi_0 instanceof BinaryOp ) {
+								if ( (( BinaryOp ) hi_0 ).getOp() == Types.OpOp2.MINUS ) {
+									if ( hi_0.getInput().size() == 2 ) {
+										Hop hi_0_0 = hi_0.getInput(0);
+										Hop hi_0_1 = hi_0.getInput(1);
+										if ( hi_1.getDataType() == Types.DataType.MATRIX ) {
+											if ( hi_1 instanceof BinaryOp ) {
+												if ( (( BinaryOp ) hi_1 ).getOp() == Types.OpOp2.MINUS ) {
+													if ( hi_1.getInput().size() == 2 ) {
+														Hop hi_1_0 = hi_1.getInput(0);
+														Hop hi_1_1 = hi_1.getInput(1);
+														if ( hi_0_0.getDataType() == Types.DataType.MATRIX ) {
+															if ( hi_0_0 instanceof BinaryOp ) {
+																hi = _applyRewrite273(hi); // -(-(-(a,D),C),b) => -(-(a,b),+(C,D))
+																hi = _applyRewrite276(hi); // -(-(-(A,c),B),d) => -(A,+(B,+(c,d)))
+																hi = _applyRewrite325(hi); // -(-(+(b,A),D),c) => +(A,-(-(b,c),D))
+																hi = _applyRewrite326(hi); // -(-(+(A,b),D),c) => +(A,-(-(b,c),D))
+															} else {
+																if ( hi_0_1.getDataType() == Types.DataType.SCALAR ) {
+																	hi = _applyRewrite49(hi); // -(-(A,b),c) => -(A,+(b,c))
+																	hi = _applyRewrite279(hi); // -(-(A,c),+(d,B)) => -(A,+(B,+(c,d)))
+																	hi = _applyRewrite280(hi); // -(-(A,c),+(B,d)) => -(A,+(B,+(c,d)))
+																	hi = _applyRewrite301(hi); // -(-(B,c),-(d,A)) => +(A,-(B,+(c,d)))
+																	hi = _applyRewrite323(hi); // -(-(A,c),-(D,b)) => +(A,-(-(b,c),D))
+																} else if ( hi_0_1.getDataType() == Types.DataType.MATRIX ) {
+																	if ( hi_0_1 instanceof BinaryOp ) {
+																		if ( (( BinaryOp ) hi_0_1 ).getOp() == Types.OpOp2.PLUS ) {
+																			hi = _applyRewrite277(hi); // -(-(A,+(c,B)),d) => -(A,+(B,+(c,d)))
+																			hi = _applyRewrite278(hi); // -(-(A,+(B,c)),d) => -(A,+(B,+(c,d)))
+																		} else if ( (( BinaryOp ) hi_0_1 ).getOp() == Types.OpOp2.MINUS ) {
+																			hi = _applyRewrite300(hi); // -(-(A,-(c,B)),d) => +(A,-(B,+(c,d)))
+																			hi = _applyRewrite321(hi); // -(-(A,-(D,b)),c) => +(A,-(-(b,c),D))
+																		} else if ( (( BinaryOp ) hi_0_1 ).getOp() == Types.OpOp2.MULT ) {
+																		}
+																	} else {
+																		if ( hi_1_0.getDataType() == Types.DataType.MATRIX ) {
+																			if ( hi_1_0 instanceof BinaryOp ) {
+																				if ( (( BinaryOp ) hi_1_0 ).getOp() == Types.OpOp2.MINUS ) {
+																					hi = _applyRewrite305(hi); // -(b,-(-(D,c),A)) => +(A,-(+(b,c),D))
+																					hi = _applyRewrite316(hi); // -(c,-(-(d,B),A)) => +(A,+(B,-(c,d)))
+																				} else if ( (( BinaryOp ) hi_1_0 ).getOp() == Types.OpOp2.PLUS ) {
+																					hi = _applyRewrite327(hi); // -(b,-(+(c,D),A)) => +(A,-(-(b,c),D))
+																					hi = _applyRewrite328(hi); // -(b,-(+(D,c),A)) => +(A,-(-(b,c),D))
+																				} else if ( (( BinaryOp ) hi_1_0 ).getOp() == Types.OpOp2.MULT ) {
+																					if ( hi_1_0.getInput().size() == 2 ) {
+																						Hop hi_1_0_0 = hi_1_0.getInput(0);
+																						Hop hi_1_0_1 = hi_1_0.getInput(1);
+																						if ( hi_1_1.getDataType() == Types.DataType.SCALAR ) {
+																							if ( hi_1_0_0.getDataType() == Types.DataType.SCALAR ) {
+																							} else if ( hi_1_0_0.getDataType() == Types.DataType.MATRIX ) {
+																							}
+																						} else if ( hi_1_1.getDataType() == Types.DataType.MATRIX ) {
+																							if ( hi_1_1 instanceof BinaryOp ) {
+																								if ( (( BinaryOp ) hi_1_1 ).getOp() == Types.OpOp2.MINUS ) {
+																									hi = _applyRewrite294(hi); // -(a,-(C,-(b,D))) => -(+(a,b),+(C,D))
+																									hi = _applyRewrite324(hi); // -(b,-(D,-(A,c))) => +(A,-(-(b,c),D))
+																								} else if ( (( BinaryOp ) hi_1_1 ).getOp() == Types.OpOp2.PLUS ) {
+																									hi = _applyRewrite306(hi); // -(b,-(D,+(c,A))) => +(A,-(+(b,c),D))
+																									hi = _applyRewrite307(hi); // -(b,-(D,+(A,c))) => +(A,-(+(b,c),D))
+																								} else if ( (( BinaryOp ) hi_1_1 ).getOp() == Types.OpOp2.MULT ) {
+																								}
+																							} else {
+																								if ( hi_1_0_0.getDataType() == Types.DataType.SCALAR ) {
+																								} else if ( hi_1_0_0.getDataType() == Types.DataType.MATRIX ) {
+																								}
+																							}
+																						}
+																					}
+																				}
+																			} else {
+																				if ( hi_1_1.getDataType() == Types.DataType.SCALAR ) {
+																					hi = _applyRewrite42(hi); // -(0.0,-(B,a)) => -(a,B)
+																					hi = _applyRewrite53(hi); // -(a,-(C,b)) => -(+(a,b),C)
+																					hi = _applyRewrite293(hi); // -(-(a,C),-(D,b)) => -(+(a,b),+(C,D))
+																					hi = _applyRewrite308(hi); // -(+(b,A),-(D,c)) => +(A,-(+(b,c),D))
+																					hi = _applyRewrite309(hi); // -(+(A,b),-(D,c)) => +(A,-(+(b,c),D))
+																					hi = _applyRewrite323(hi); // -(-(A,c),-(D,b)) => +(A,-(-(b,c),D))
+																				} else if ( hi_1_1.getDataType() == Types.DataType.MATRIX ) {
+																					if ( hi_1_1 instanceof BinaryOp ) {
+																						if ( (( BinaryOp ) hi_1_1 ).getOp() == Types.OpOp2.MINUS ) {
+																							hi = _applyRewrite294(hi); // -(a,-(C,-(b,D))) => -(+(a,b),+(C,D))
+																							hi = _applyRewrite324(hi); // -(b,-(D,-(A,c))) => +(A,-(-(b,c),D))
+																						} else if ( (( BinaryOp ) hi_1_1 ).getOp() == Types.OpOp2.PLUS ) {
+																							hi = _applyRewrite306(hi); // -(b,-(D,+(c,A))) => +(A,-(+(b,c),D))
+																							hi = _applyRewrite307(hi); // -(b,-(D,+(A,c))) => +(A,-(+(b,c),D))
+																						} else if ( (( BinaryOp ) hi_1_1 ).getOp() == Types.OpOp2.MULT ) {
+																						}
+																					} else {
+																						hi = _applyRewrite45(hi); // -(0.0,-(b,A)) => -(A,b)
+																						hi = _applyRewrite46(hi); // -(0.0,-(B,A)) => -(A,B)
+																						hi = _applyRewrite58(hi); // -(b,-(c,A)) => +(A,-(b,c))
+																						hi = _applyRewrite301(hi); // -(-(B,c),-(d,A)) => +(A,-(B,+(c,d)))
+																						hi = _applyRewrite305(hi); // -(b,-(-(D,c),A)) => +(A,-(+(b,c),D))
+																						hi = _applyRewrite316(hi); // -(c,-(-(d,B),A)) => +(A,+(B,-(c,d)))
+																						hi = _applyRewrite317(hi); // -(+(c,B),-(d,A)) => +(A,+(B,-(c,d)))
+																						hi = _applyRewrite318(hi); // -(+(B,c),-(d,A)) => +(A,+(B,-(c,d)))
+																						hi = _applyRewrite322(hi); // -(-(b,D),-(c,A)) => +(A,-(-(b,c),D))
+																						hi = _applyRewrite327(hi); // -(b,-(+(c,D),A)) => +(A,-(-(b,c),D))
+																						hi = _applyRewrite328(hi); // -(b,-(+(D,c),A)) => +(A,-(-(b,c),D))
+																					}
+																				}
+																			}
+																		} else if ( hi_1_0.getDataType() == Types.DataType.SCALAR ) {
+																			if ( hi_1_1.getDataType() == Types.DataType.SCALAR ) {
+																				hi = _applyRewrite42(hi); // -(0.0,-(B,a)) => -(a,B)
+																				hi = _applyRewrite53(hi); // -(a,-(C,b)) => -(+(a,b),C)
+																				hi = _applyRewrite293(hi); // -(-(a,C),-(D,b)) => -(+(a,b),+(C,D))
+																				hi = _applyRewrite308(hi); // -(+(b,A),-(D,c)) => +(A,-(+(b,c),D))
+																				hi = _applyRewrite309(hi); // -(+(A,b),-(D,c)) => +(A,-(+(b,c),D))
+																				hi = _applyRewrite323(hi); // -(-(A,c),-(D,b)) => +(A,-(-(b,c),D))
+																			} else if ( hi_1_1.getDataType() == Types.DataType.MATRIX ) {
+																				if ( hi_1_1 instanceof BinaryOp ) {
+																					if ( (( BinaryOp ) hi_1_1 ).getOp() == Types.OpOp2.MINUS ) {
+																						hi = _applyRewrite294(hi); // -(a,-(C,-(b,D))) => -(+(a,b),+(C,D))
+																						hi = _applyRewrite324(hi); // -(b,-(D,-(A,c))) => +(A,-(-(b,c),D))
+																					} else if ( (( BinaryOp ) hi_1_1 ).getOp() == Types.OpOp2.PLUS ) {
+																						hi = _applyRewrite306(hi); // -(b,-(D,+(c,A))) => +(A,-(+(b,c),D))
+																						hi = _applyRewrite307(hi); // -(b,-(D,+(A,c))) => +(A,-(+(b,c),D))
+																					} else if ( (( BinaryOp ) hi_1_1 ).getOp() == Types.OpOp2.MULT ) {
+																					}
+																				} else {
+																					hi = _applyRewrite45(hi); // -(0.0,-(b,A)) => -(A,b)
+																					hi = _applyRewrite46(hi); // -(0.0,-(B,A)) => -(A,B)
+																					hi = _applyRewrite58(hi); // -(b,-(c,A)) => +(A,-(b,c))
+																					hi = _applyRewrite301(hi); // -(-(B,c),-(d,A)) => +(A,-(B,+(c,d)))
+																					hi = _applyRewrite305(hi); // -(b,-(-(D,c),A)) => +(A,-(+(b,c),D))
+																					hi = _applyRewrite316(hi); // -(c,-(-(d,B),A)) => +(A,+(B,-(c,d)))
+																					hi = _applyRewrite317(hi); // -(+(c,B),-(d,A)) => +(A,+(B,-(c,d)))
+																					hi = _applyRewrite318(hi); // -(+(B,c),-(d,A)) => +(A,+(B,-(c,d)))
+																					hi = _applyRewrite322(hi); // -(-(b,D),-(c,A)) => +(A,-(-(b,c),D))
+																					hi = _applyRewrite327(hi); // -(b,-(+(c,D),A)) => +(A,-(-(b,c),D))
+																					hi = _applyRewrite328(hi); // -(b,-(+(D,c),A)) => +(A,-(-(b,c),D))
+																				}
+																			}
+																		}
+																	}
+																}
+															}
+														} else if ( hi_0_0.getDataType() == Types.DataType.SCALAR ) {
+															if ( hi_0_1.getDataType() == Types.DataType.SCALAR ) {
+																hi = _applyRewrite49(hi); // -(-(A,b),c) => -(A,+(b,c))
+																hi = _applyRewrite279(hi); // -(-(A,c),+(d,B)) => -(A,+(B,+(c,d)))
+																hi = _applyRewrite280(hi); // -(-(A,c),+(B,d)) => -(A,+(B,+(c,d)))
+																hi = _applyRewrite301(hi); // -(-(B,c),-(d,A)) => +(A,-(B,+(c,d)))
+																hi = _applyRewrite323(hi); // -(-(A,c),-(D,b)) => +(A,-(-(b,c),D))
+															} else if ( hi_0_1.getDataType() == Types.DataType.MATRIX ) {
+																if ( hi_0_1 instanceof BinaryOp ) {
+																	if ( (( BinaryOp ) hi_0_1 ).getOp() == Types.OpOp2.PLUS ) {
+																		hi = _applyRewrite277(hi); // -(-(A,+(c,B)),d) => -(A,+(B,+(c,d)))
+																		hi = _applyRewrite278(hi); // -(-(A,+(B,c)),d) => -(A,+(B,+(c,d)))
+																	} else if ( (( BinaryOp ) hi_0_1 ).getOp() == Types.OpOp2.MINUS ) {
+																		hi = _applyRewrite300(hi); // -(-(A,-(c,B)),d) => +(A,-(B,+(c,d)))
+																		hi = _applyRewrite321(hi); // -(-(A,-(D,b)),c) => +(A,-(-(b,c),D))
+																	} else if ( (( BinaryOp ) hi_0_1 ).getOp() == Types.OpOp2.MULT ) {
+																	}
+																} else {
+																	if ( hi_1_0.getDataType() == Types.DataType.MATRIX ) {
+																		if ( hi_1_0 instanceof BinaryOp ) {
+																			if ( (( BinaryOp ) hi_1_0 ).getOp() == Types.OpOp2.MINUS ) {
+																				hi = _applyRewrite305(hi); // -(b,-(-(D,c),A)) => +(A,-(+(b,c),D))
+																				hi = _applyRewrite316(hi); // -(c,-(-(d,B),A)) => +(A,+(B,-(c,d)))
+																			} else if ( (( BinaryOp ) hi_1_0 ).getOp() == Types.OpOp2.PLUS ) {
+																				hi = _applyRewrite327(hi); // -(b,-(+(c,D),A)) => +(A,-(-(b,c),D))
+																				hi = _applyRewrite328(hi); // -(b,-(+(D,c),A)) => +(A,-(-(b,c),D))
+																			} else if ( (( BinaryOp ) hi_1_0 ).getOp() == Types.OpOp2.MULT ) {
+																				if ( hi_1_0.getInput().size() == 2 ) {
+																					Hop hi_1_0_0 = hi_1_0.getInput(0);
+																					Hop hi_1_0_1 = hi_1_0.getInput(1);
+																					if ( hi_1_1.getDataType() == Types.DataType.SCALAR ) {
+																						if ( hi_1_0_0.getDataType() == Types.DataType.SCALAR ) {
+																						} else if ( hi_1_0_0.getDataType() == Types.DataType.MATRIX ) {
+																						}
+																					} else if ( hi_1_1.getDataType() == Types.DataType.MATRIX ) {
+																						if ( hi_1_1 instanceof BinaryOp ) {
+																							if ( (( BinaryOp ) hi_1_1 ).getOp() == Types.OpOp2.MINUS ) {
+																								hi = _applyRewrite294(hi); // -(a,-(C,-(b,D))) => -(+(a,b),+(C,D))
+																								hi = _applyRewrite324(hi); // -(b,-(D,-(A,c))) => +(A,-(-(b,c),D))
+																							} else if ( (( BinaryOp ) hi_1_1 ).getOp() == Types.OpOp2.PLUS ) {
+																								hi = _applyRewrite306(hi); // -(b,-(D,+(c,A))) => +(A,-(+(b,c),D))
+																								hi = _applyRewrite307(hi); // -(b,-(D,+(A,c))) => +(A,-(+(b,c),D))
+																							} else if ( (( BinaryOp ) hi_1_1 ).getOp() == Types.OpOp2.MULT ) {
+																							}
+																						} else {
+																							if ( hi_1_0_0.getDataType() == Types.DataType.SCALAR ) {
+																							} else if ( hi_1_0_0.getDataType() == Types.DataType.MATRIX ) {
+																							}
+																						}
+																					}
+																				}
+																			}
+																		} else {
+																			if ( hi_1_1.getDataType() == Types.DataType.SCALAR ) {
+																				hi = _applyRewrite42(hi); // -(0.0,-(B,a)) => -(a,B)
+																				hi = _applyRewrite53(hi); // -(a,-(C,b)) => -(+(a,b),C)
+																				hi = _applyRewrite293(hi); // -(-(a,C),-(D,b)) => -(+(a,b),+(C,D))
+																				hi = _applyRewrite308(hi); // -(+(b,A),-(D,c)) => +(A,-(+(b,c),D))
+																				hi = _applyRewrite309(hi); // -(+(A,b),-(D,c)) => +(A,-(+(b,c),D))
+																				hi = _applyRewrite323(hi); // -(-(A,c),-(D,b)) => +(A,-(-(b,c),D))
+																			} else if ( hi_1_1.getDataType() == Types.DataType.MATRIX ) {
+																				if ( hi_1_1 instanceof BinaryOp ) {
+																					if ( (( BinaryOp ) hi_1_1 ).getOp() == Types.OpOp2.MINUS ) {
+																						hi = _applyRewrite294(hi); // -(a,-(C,-(b,D))) => -(+(a,b),+(C,D))
+																						hi = _applyRewrite324(hi); // -(b,-(D,-(A,c))) => +(A,-(-(b,c),D))
+																					} else if ( (( BinaryOp ) hi_1_1 ).getOp() == Types.OpOp2.PLUS ) {
+																						hi = _applyRewrite306(hi); // -(b,-(D,+(c,A))) => +(A,-(+(b,c),D))
+																						hi = _applyRewrite307(hi); // -(b,-(D,+(A,c))) => +(A,-(+(b,c),D))
+																					} else if ( (( BinaryOp ) hi_1_1 ).getOp() == Types.OpOp2.MULT ) {
+																					}
+																				} else {
+																					hi = _applyRewrite45(hi); // -(0.0,-(b,A)) => -(A,b)
+																					hi = _applyRewrite46(hi); // -(0.0,-(B,A)) => -(A,B)
+																					hi = _applyRewrite58(hi); // -(b,-(c,A)) => +(A,-(b,c))
+																					hi = _applyRewrite301(hi); // -(-(B,c),-(d,A)) => +(A,-(B,+(c,d)))
+																					hi = _applyRewrite305(hi); // -(b,-(-(D,c),A)) => +(A,-(+(b,c),D))
+																					hi = _applyRewrite316(hi); // -(c,-(-(d,B),A)) => +(A,+(B,-(c,d)))
+																					hi = _applyRewrite317(hi); // -(+(c,B),-(d,A)) => +(A,+(B,-(c,d)))
+																					hi = _applyRewrite318(hi); // -(+(B,c),-(d,A)) => +(A,+(B,-(c,d)))
+																					hi = _applyRewrite322(hi); // -(-(b,D),-(c,A)) => +(A,-(-(b,c),D))
+																					hi = _applyRewrite327(hi); // -(b,-(+(c,D),A)) => +(A,-(-(b,c),D))
+																					hi = _applyRewrite328(hi); // -(b,-(+(D,c),A)) => +(A,-(-(b,c),D))
+																				}
+																			}
+																		}
+																	} else if ( hi_1_0.getDataType() == Types.DataType.SCALAR ) {
+																		if ( hi_1_1.getDataType() == Types.DataType.SCALAR ) {
+																			hi = _applyRewrite42(hi); // -(0.0,-(B,a)) => -(a,B)
+																			hi = _applyRewrite53(hi); // -(a,-(C,b)) => -(+(a,b),C)
+																			hi = _applyRewrite293(hi); // -(-(a,C),-(D,b)) => -(+(a,b),+(C,D))
+																			hi = _applyRewrite308(hi); // -(+(b,A),-(D,c)) => +(A,-(+(b,c),D))
+																			hi = _applyRewrite309(hi); // -(+(A,b),-(D,c)) => +(A,-(+(b,c),D))
+																			hi = _applyRewrite323(hi); // -(-(A,c),-(D,b)) => +(A,-(-(b,c),D))
+																		} else if ( hi_1_1.getDataType() == Types.DataType.MATRIX ) {
+																			if ( hi_1_1 instanceof BinaryOp ) {
+																				if ( (( BinaryOp ) hi_1_1 ).getOp() == Types.OpOp2.MINUS ) {
+																					hi = _applyRewrite294(hi); // -(a,-(C,-(b,D))) => -(+(a,b),+(C,D))
+																					hi = _applyRewrite324(hi); // -(b,-(D,-(A,c))) => +(A,-(-(b,c),D))
+																				} else if ( (( BinaryOp ) hi_1_1 ).getOp() == Types.OpOp2.PLUS ) {
+																					hi = _applyRewrite306(hi); // -(b,-(D,+(c,A))) => +(A,-(+(b,c),D))
+																					hi = _applyRewrite307(hi); // -(b,-(D,+(A,c))) => +(A,-(+(b,c),D))
+																				} else if ( (( BinaryOp ) hi_1_1 ).getOp() == Types.OpOp2.MULT ) {
+																				}
+																			} else {
+																				hi = _applyRewrite45(hi); // -(0.0,-(b,A)) => -(A,b)
+																				hi = _applyRewrite46(hi); // -(0.0,-(B,A)) => -(A,B)
+																				hi = _applyRewrite58(hi); // -(b,-(c,A)) => +(A,-(b,c))
+																				hi = _applyRewrite301(hi); // -(-(B,c),-(d,A)) => +(A,-(B,+(c,d)))
+																				hi = _applyRewrite305(hi); // -(b,-(-(D,c),A)) => +(A,-(+(b,c),D))
+																				hi = _applyRewrite316(hi); // -(c,-(-(d,B),A)) => +(A,+(B,-(c,d)))
+																				hi = _applyRewrite317(hi); // -(+(c,B),-(d,A)) => +(A,+(B,-(c,d)))
+																				hi = _applyRewrite318(hi); // -(+(B,c),-(d,A)) => +(A,+(B,-(c,d)))
+																				hi = _applyRewrite322(hi); // -(-(b,D),-(c,A)) => +(A,-(-(b,c),D))
+																				hi = _applyRewrite327(hi); // -(b,-(+(c,D),A)) => +(A,-(-(b,c),D))
+																				hi = _applyRewrite328(hi); // -(b,-(+(D,c),A)) => +(A,-(-(b,c),D))
+																			}
+																		}
+																	}
+																}
+															}
+														}
+													}
+												} else if ( (( BinaryOp ) hi_1 ).getOp() == Types.OpOp2.PLUS ) {
+													if ( hi_1.getInput().size() == 2 ) {
+														Hop hi_1_0 = hi_1.getInput(0);
+														Hop hi_1_1 = hi_1.getInput(1);
+														if ( hi_0_0.getDataType() == Types.DataType.MATRIX ) {
+															if ( hi_0_0 instanceof BinaryOp ) {
+																hi = _applyRewrite273(hi); // -(-(-(a,D),C),b) => -(-(a,b),+(C,D))
+																hi = _applyRewrite276(hi); // -(-(-(A,c),B),d) => -(A,+(B,+(c,d)))
+																hi = _applyRewrite325(hi); // -(-(+(b,A),D),c) => +(A,-(-(b,c),D))
+																hi = _applyRewrite326(hi); // -(-(+(A,b),D),c) => +(A,-(-(b,c),D))
+															} else {
+																if ( hi_0_1.getDataType() == Types.DataType.SCALAR ) {
+																	hi = _applyRewrite49(hi); // -(-(A,b),c) => -(A,+(b,c))
+																	hi = _applyRewrite279(hi); // -(-(A,c),+(d,B)) => -(A,+(B,+(c,d)))
+																	hi = _applyRewrite280(hi); // -(-(A,c),+(B,d)) => -(A,+(B,+(c,d)))
+																	hi = _applyRewrite301(hi); // -(-(B,c),-(d,A)) => +(A,-(B,+(c,d)))
+																	hi = _applyRewrite323(hi); // -(-(A,c),-(D,b)) => +(A,-(-(b,c),D))
+																} else if ( hi_0_1.getDataType() == Types.DataType.MATRIX ) {
+																	if ( hi_0_1 instanceof BinaryOp ) {
+																		if ( (( BinaryOp ) hi_0_1 ).getOp() == Types.OpOp2.PLUS ) {
+																			hi = _applyRewrite277(hi); // -(-(A,+(c,B)),d) => -(A,+(B,+(c,d)))
+																			hi = _applyRewrite278(hi); // -(-(A,+(B,c)),d) => -(A,+(B,+(c,d)))
+																		} else if ( (( BinaryOp ) hi_0_1 ).getOp() == Types.OpOp2.MINUS ) {
+																			hi = _applyRewrite300(hi); // -(-(A,-(c,B)),d) => +(A,-(B,+(c,d)))
+																			hi = _applyRewrite321(hi); // -(-(A,-(D,b)),c) => +(A,-(-(b,c),D))
+																		} else if ( (( BinaryOp ) hi_0_1 ).getOp() == Types.OpOp2.MULT ) {
+																		}
+																	} else {
+																		if ( hi_1_0.getDataType() == Types.DataType.SCALAR ) {
+																			if ( hi_1_1.getDataType() == Types.DataType.MATRIX ) {
+																				if ( hi_1_1 instanceof BinaryOp ) {
+																					hi = _applyRewrite296(hi); // -(a,+(D,-(C,b))) => -(+(a,b),+(C,D))
+																					hi = _applyRewrite336(hi); // -(b,+(D,-(c,A))) => +(A,-(-(b,c),D))
+																				} else {
+																					hi = _applyRewrite50(hi); // -(a,+(b,C)) => -(-(a,b),C)
+																					hi = _applyRewrite274(hi); // -(-(a,C),+(b,D)) => -(-(a,b),+(C,D))
+																					hi = _applyRewrite279(hi); // -(-(A,c),+(d,B)) => -(A,+(B,+(c,d)))
+																					hi = _applyRewrite295(hi); // -(a,+(-(D,b),C)) => -(+(a,b),+(C,D))
+																					hi = _applyRewrite330(hi); // -(+(b,A),+(c,D)) => +(A,-(-(b,c),D))
+																					hi = _applyRewrite332(hi); // -(+(A,b),+(c,D)) => +(A,-(-(b,c),D))
+																					hi = _applyRewrite335(hi); // -(b,+(-(c,A),D)) => +(A,-(-(b,c),D))
+																				}
+																			} else if ( hi_1_1.getDataType() == Types.DataType.SCALAR ) {
+																				hi = _applyRewrite51(hi); // -(a,+(C,b)) => -(-(a,b),C)
+																				hi = _applyRewrite275(hi); // -(-(a,D),+(C,b)) => -(-(a,b),+(C,D))
+																				hi = _applyRewrite280(hi); // -(-(A,c),+(B,d)) => -(A,+(B,+(c,d)))
+																				hi = _applyRewrite331(hi); // -(+(b,A),+(D,c)) => +(A,-(-(b,c),D))
+																				hi = _applyRewrite333(hi); // -(+(A,b),+(D,c)) => +(A,-(-(b,c),D))
+																			}
+																		} else if ( hi_1_0.getDataType() == Types.DataType.MATRIX ) {
+																			if ( hi_1_0 instanceof BinaryOp ) {
+																				hi = _applyRewrite295(hi); // -(a,+(-(D,b),C)) => -(+(a,b),+(C,D))
+																				hi = _applyRewrite335(hi); // -(b,+(-(c,A),D)) => +(A,-(-(b,c),D))
+																			} else {
+																				if ( hi_1_1.getDataType() == Types.DataType.MATRIX ) {
+																					if ( hi_1_1 instanceof BinaryOp ) {
+																						hi = _applyRewrite296(hi); // -(a,+(D,-(C,b))) => -(+(a,b),+(C,D))
+																						hi = _applyRewrite336(hi); // -(b,+(D,-(c,A))) => +(A,-(-(b,c),D))
+																					} else {
+																						hi = _applyRewrite50(hi); // -(a,+(b,C)) => -(-(a,b),C)
+																						hi = _applyRewrite274(hi); // -(-(a,C),+(b,D)) => -(-(a,b),+(C,D))
+																						hi = _applyRewrite279(hi); // -(-(A,c),+(d,B)) => -(A,+(B,+(c,d)))
+																						hi = _applyRewrite295(hi); // -(a,+(-(D,b),C)) => -(+(a,b),+(C,D))
+																						hi = _applyRewrite330(hi); // -(+(b,A),+(c,D)) => +(A,-(-(b,c),D))
+																						hi = _applyRewrite332(hi); // -(+(A,b),+(c,D)) => +(A,-(-(b,c),D))
+																						hi = _applyRewrite335(hi); // -(b,+(-(c,A),D)) => +(A,-(-(b,c),D))
+																					}
+																				} else if ( hi_1_1.getDataType() == Types.DataType.SCALAR ) {
+																					hi = _applyRewrite51(hi); // -(a,+(C,b)) => -(-(a,b),C)
+																					hi = _applyRewrite275(hi); // -(-(a,D),+(C,b)) => -(-(a,b),+(C,D))
+																					hi = _applyRewrite280(hi); // -(-(A,c),+(B,d)) => -(A,+(B,+(c,d)))
+																					hi = _applyRewrite331(hi); // -(+(b,A),+(D,c)) => +(A,-(-(b,c),D))
+																					hi = _applyRewrite333(hi); // -(+(A,b),+(D,c)) => +(A,-(-(b,c),D))
+																				}
+																			}
+																		}
+																	}
+																}
+															}
+														} else if ( hi_0_0.getDataType() == Types.DataType.SCALAR ) {
+															if ( hi_0_1.getDataType() == Types.DataType.SCALAR ) {
+																hi = _applyRewrite49(hi); // -(-(A,b),c) => -(A,+(b,c))
+																hi = _applyRewrite279(hi); // -(-(A,c),+(d,B)) => -(A,+(B,+(c,d)))
+																hi = _applyRewrite280(hi); // -(-(A,c),+(B,d)) => -(A,+(B,+(c,d)))
+																hi = _applyRewrite301(hi); // -(-(B,c),-(d,A)) => +(A,-(B,+(c,d)))
+																hi = _applyRewrite323(hi); // -(-(A,c),-(D,b)) => +(A,-(-(b,c),D))
+															} else if ( hi_0_1.getDataType() == Types.DataType.MATRIX ) {
+																if ( hi_0_1 instanceof BinaryOp ) {
+																	if ( (( BinaryOp ) hi_0_1 ).getOp() == Types.OpOp2.PLUS ) {
+																		hi = _applyRewrite277(hi); // -(-(A,+(c,B)),d) => -(A,+(B,+(c,d)))
+																		hi = _applyRewrite278(hi); // -(-(A,+(B,c)),d) => -(A,+(B,+(c,d)))
+																	} else if ( (( BinaryOp ) hi_0_1 ).getOp() == Types.OpOp2.MINUS ) {
+																		hi = _applyRewrite300(hi); // -(-(A,-(c,B)),d) => +(A,-(B,+(c,d)))
+																		hi = _applyRewrite321(hi); // -(-(A,-(D,b)),c) => +(A,-(-(b,c),D))
+																	} else if ( (( BinaryOp ) hi_0_1 ).getOp() == Types.OpOp2.MULT ) {
+																	}
+																} else {
+																	if ( hi_1_0.getDataType() == Types.DataType.SCALAR ) {
+																		if ( hi_1_1.getDataType() == Types.DataType.MATRIX ) {
+																			if ( hi_1_1 instanceof BinaryOp ) {
+																				hi = _applyRewrite296(hi); // -(a,+(D,-(C,b))) => -(+(a,b),+(C,D))
+																				hi = _applyRewrite336(hi); // -(b,+(D,-(c,A))) => +(A,-(-(b,c),D))
+																			} else {
+																				hi = _applyRewrite50(hi); // -(a,+(b,C)) => -(-(a,b),C)
+																				hi = _applyRewrite274(hi); // -(-(a,C),+(b,D)) => -(-(a,b),+(C,D))
+																				hi = _applyRewrite279(hi); // -(-(A,c),+(d,B)) => -(A,+(B,+(c,d)))
+																				hi = _applyRewrite295(hi); // -(a,+(-(D,b),C)) => -(+(a,b),+(C,D))
+																				hi = _applyRewrite330(hi); // -(+(b,A),+(c,D)) => +(A,-(-(b,c),D))
+																				hi = _applyRewrite332(hi); // -(+(A,b),+(c,D)) => +(A,-(-(b,c),D))
+																				hi = _applyRewrite335(hi); // -(b,+(-(c,A),D)) => +(A,-(-(b,c),D))
+																			}
+																		} else if ( hi_1_1.getDataType() == Types.DataType.SCALAR ) {
+																			hi = _applyRewrite51(hi); // -(a,+(C,b)) => -(-(a,b),C)
+																			hi = _applyRewrite275(hi); // -(-(a,D),+(C,b)) => -(-(a,b),+(C,D))
+																			hi = _applyRewrite280(hi); // -(-(A,c),+(B,d)) => -(A,+(B,+(c,d)))
+																			hi = _applyRewrite331(hi); // -(+(b,A),+(D,c)) => +(A,-(-(b,c),D))
+																			hi = _applyRewrite333(hi); // -(+(A,b),+(D,c)) => +(A,-(-(b,c),D))
+																		}
+																	} else if ( hi_1_0.getDataType() == Types.DataType.MATRIX ) {
+																		if ( hi_1_0 instanceof BinaryOp ) {
+																			hi = _applyRewrite295(hi); // -(a,+(-(D,b),C)) => -(+(a,b),+(C,D))
+																			hi = _applyRewrite335(hi); // -(b,+(-(c,A),D)) => +(A,-(-(b,c),D))
+																		} else {
+																			if ( hi_1_1.getDataType() == Types.DataType.MATRIX ) {
+																				if ( hi_1_1 instanceof BinaryOp ) {
+																					hi = _applyRewrite296(hi); // -(a,+(D,-(C,b))) => -(+(a,b),+(C,D))
+																					hi = _applyRewrite336(hi); // -(b,+(D,-(c,A))) => +(A,-(-(b,c),D))
+																				} else {
+																					hi = _applyRewrite50(hi); // -(a,+(b,C)) => -(-(a,b),C)
+																					hi = _applyRewrite274(hi); // -(-(a,C),+(b,D)) => -(-(a,b),+(C,D))
+																					hi = _applyRewrite279(hi); // -(-(A,c),+(d,B)) => -(A,+(B,+(c,d)))
+																					hi = _applyRewrite295(hi); // -(a,+(-(D,b),C)) => -(+(a,b),+(C,D))
+																					hi = _applyRewrite330(hi); // -(+(b,A),+(c,D)) => +(A,-(-(b,c),D))
+																					hi = _applyRewrite332(hi); // -(+(A,b),+(c,D)) => +(A,-(-(b,c),D))
+																					hi = _applyRewrite335(hi); // -(b,+(-(c,A),D)) => +(A,-(-(b,c),D))
+																				}
+																			} else if ( hi_1_1.getDataType() == Types.DataType.SCALAR ) {
+																				hi = _applyRewrite51(hi); // -(a,+(C,b)) => -(-(a,b),C)
+																				hi = _applyRewrite275(hi); // -(-(a,D),+(C,b)) => -(-(a,b),+(C,D))
+																				hi = _applyRewrite280(hi); // -(-(A,c),+(B,d)) => -(A,+(B,+(c,d)))
+																				hi = _applyRewrite331(hi); // -(+(b,A),+(D,c)) => +(A,-(-(b,c),D))
+																				hi = _applyRewrite333(hi); // -(+(A,b),+(D,c)) => +(A,-(-(b,c),D))
+																			}
+																		}
+																	}
+																}
+															}
+														}
+													}
+												} else if ( (( BinaryOp ) hi_1 ).getOp() == Types.OpOp2.MULT ) {
+												} else if ( (( BinaryOp ) hi_1 ).getOp() == Types.OpOp2.NOTEQUAL ) {
+													hi = _applyRewrite259(hi); // -(A,!=(rev(A),c)) => -(A,!=(A,c))
+													hi = _applyRewrite260(hi); // -(A,!=(c,rev(A))) => -(A,!=(A,c))
+													hi = _applyRewrite263(hi); // -(A,!=(rev(A),C)) => -(A,!=(A,C))
+													hi = _applyRewrite264(hi); // -(A,!=(C,rev(A))) => -(A,!=(A,C))
+												} else if ( (( BinaryOp ) hi_1 ).getOp() == Types.OpOp2.DIV ) {
+												}
+											} else if ( hi_1 instanceof ReorgOp ) {
+												if ( (( ReorgOp ) hi_1 ).getOp() == Types.ReOrgOp.TRANS ) {
+													if ( hi_1.getInput().size() == 1 ) {
+														Hop hi_1_0 = hi_1.getInput(0);
+														if ( hi_0_0.getDataType() == Types.DataType.MATRIX ) {
+															if ( hi_0_0 instanceof BinaryOp ) {
+																hi = _applyRewrite273(hi); // -(-(-(a,D),C),b) => -(-(a,b),+(C,D))
+																hi = _applyRewrite276(hi); // -(-(-(A,c),B),d) => -(A,+(B,+(c,d)))
+																hi = _applyRewrite325(hi); // -(-(+(b,A),D),c) => +(A,-(-(b,c),D))
+																hi = _applyRewrite326(hi); // -(-(+(A,b),D),c) => +(A,-(-(b,c),D))
+															} else {
+																if ( hi_0_1.getDataType() == Types.DataType.SCALAR ) {
+																	hi = _applyRewrite49(hi); // -(-(A,b),c) => -(A,+(b,c))
+																	hi = _applyRewrite279(hi); // -(-(A,c),+(d,B)) => -(A,+(B,+(c,d)))
+																	hi = _applyRewrite280(hi); // -(-(A,c),+(B,d)) => -(A,+(B,+(c,d)))
+																	hi = _applyRewrite301(hi); // -(-(B,c),-(d,A)) => +(A,-(B,+(c,d)))
+																	hi = _applyRewrite323(hi); // -(-(A,c),-(D,b)) => +(A,-(-(b,c),D))
+																} else if ( hi_0_1.getDataType() == Types.DataType.MATRIX ) {
+																	if ( hi_0_1 instanceof BinaryOp ) {
+																		if ( (( BinaryOp ) hi_0_1 ).getOp() == Types.OpOp2.PLUS ) {
+																			hi = _applyRewrite277(hi); // -(-(A,+(c,B)),d) => -(A,+(B,+(c,d)))
+																			hi = _applyRewrite278(hi); // -(-(A,+(B,c)),d) => -(A,+(B,+(c,d)))
+																		} else if ( (( BinaryOp ) hi_0_1 ).getOp() == Types.OpOp2.MINUS ) {
+																			hi = _applyRewrite300(hi); // -(-(A,-(c,B)),d) => +(A,-(B,+(c,d)))
+																			hi = _applyRewrite321(hi); // -(-(A,-(D,b)),c) => +(A,-(-(b,c),D))
+																		} else if ( (( BinaryOp ) hi_0_1 ).getOp() == Types.OpOp2.MULT ) {
+																		}
+																	} else {
+																		if ( hi_1_0.getDataType() == Types.DataType.MATRIX ) {
+																			if ( hi_1_0 instanceof BinaryOp ) {
+																				if ( (( BinaryOp ) hi_1_0 ).getOp() == Types.OpOp2.PLUS ) {
+																					hi = _applyRewrite267(hi); // -(a,t(+(b,C))) => -(-(a,b),t(C))
+																					hi = _applyRewrite268(hi); // -(a,t(+(C,b))) => -(-(a,b),t(C))
+																				} else if ( (( BinaryOp ) hi_1_0 ).getOp() == Types.OpOp2.MINUS ) {
+																					hi = _applyRewrite345(hi); // -(a,t(-(C,b))) => -(+(a,b),t(C))
+																					hi = _applyRewrite350(hi); // -(a,t(-(b,C))) => +(-(a,b),t(C))
+																				} else if ( (( BinaryOp ) hi_1_0 ).getOp() == Types.OpOp2.MULT ) {
+																				}
+																			} else {
+																				hi = _applyRewrite191(hi); // -(t(A),t(B)) => t(-(A,B))
+																			}
+																		}
+																	}
+																}
+															}
+														} else if ( hi_0_0.getDataType() == Types.DataType.SCALAR ) {
+															if ( hi_0_1.getDataType() == Types.DataType.SCALAR ) {
+																hi = _applyRewrite49(hi); // -(-(A,b),c) => -(A,+(b,c))
+																hi = _applyRewrite279(hi); // -(-(A,c),+(d,B)) => -(A,+(B,+(c,d)))
+																hi = _applyRewrite280(hi); // -(-(A,c),+(B,d)) => -(A,+(B,+(c,d)))
+																hi = _applyRewrite301(hi); // -(-(B,c),-(d,A)) => +(A,-(B,+(c,d)))
+																hi = _applyRewrite323(hi); // -(-(A,c),-(D,b)) => +(A,-(-(b,c),D))
+															} else if ( hi_0_1.getDataType() == Types.DataType.MATRIX ) {
+																if ( hi_0_1 instanceof BinaryOp ) {
+																	if ( (( BinaryOp ) hi_0_1 ).getOp() == Types.OpOp2.PLUS ) {
+																		hi = _applyRewrite277(hi); // -(-(A,+(c,B)),d) => -(A,+(B,+(c,d)))
+																		hi = _applyRewrite278(hi); // -(-(A,+(B,c)),d) => -(A,+(B,+(c,d)))
+																	} else if ( (( BinaryOp ) hi_0_1 ).getOp() == Types.OpOp2.MINUS ) {
+																		hi = _applyRewrite300(hi); // -(-(A,-(c,B)),d) => +(A,-(B,+(c,d)))
+																		hi = _applyRewrite321(hi); // -(-(A,-(D,b)),c) => +(A,-(-(b,c),D))
+																	} else if ( (( BinaryOp ) hi_0_1 ).getOp() == Types.OpOp2.MULT ) {
+																	}
+																} else {
+																	if ( hi_1_0.getDataType() == Types.DataType.MATRIX ) {
+																		if ( hi_1_0 instanceof BinaryOp ) {
+																			if ( (( BinaryOp ) hi_1_0 ).getOp() == Types.OpOp2.PLUS ) {
+																				hi = _applyRewrite267(hi); // -(a,t(+(b,C))) => -(-(a,b),t(C))
+																				hi = _applyRewrite268(hi); // -(a,t(+(C,b))) => -(-(a,b),t(C))
+																			} else if ( (( BinaryOp ) hi_1_0 ).getOp() == Types.OpOp2.MINUS ) {
+																				hi = _applyRewrite345(hi); // -(a,t(-(C,b))) => -(+(a,b),t(C))
+																				hi = _applyRewrite350(hi); // -(a,t(-(b,C))) => +(-(a,b),t(C))
+																			} else if ( (( BinaryOp ) hi_1_0 ).getOp() == Types.OpOp2.MULT ) {
+																			}
+																		} else {
+																			hi = _applyRewrite191(hi); // -(t(A),t(B)) => t(-(A,B))
+																		}
+																	}
+																}
+															}
+														}
+													}
+												} else if ( (( ReorgOp ) hi_1 ).getOp() == Types.ReOrgOp.REV ) {
+													if ( hi_1.getInput().size() == 1 ) {
+														Hop hi_1_0 = hi_1.getInput(0);
+														if ( hi_0_0.getDataType() == Types.DataType.MATRIX ) {
+															if ( hi_0_0 instanceof BinaryOp ) {
+																hi = _applyRewrite273(hi); // -(-(-(a,D),C),b) => -(-(a,b),+(C,D))
+																hi = _applyRewrite276(hi); // -(-(-(A,c),B),d) => -(A,+(B,+(c,d)))
+																hi = _applyRewrite325(hi); // -(-(+(b,A),D),c) => +(A,-(-(b,c),D))
+																hi = _applyRewrite326(hi); // -(-(+(A,b),D),c) => +(A,-(-(b,c),D))
+															} else {
+																if ( hi_0_1.getDataType() == Types.DataType.SCALAR ) {
+																	hi = _applyRewrite49(hi); // -(-(A,b),c) => -(A,+(b,c))
+																	hi = _applyRewrite279(hi); // -(-(A,c),+(d,B)) => -(A,+(B,+(c,d)))
+																	hi = _applyRewrite280(hi); // -(-(A,c),+(B,d)) => -(A,+(B,+(c,d)))
+																	hi = _applyRewrite301(hi); // -(-(B,c),-(d,A)) => +(A,-(B,+(c,d)))
+																	hi = _applyRewrite323(hi); // -(-(A,c),-(D,b)) => +(A,-(-(b,c),D))
+																} else if ( hi_0_1.getDataType() == Types.DataType.MATRIX ) {
+																	if ( hi_0_1 instanceof BinaryOp ) {
+																		if ( (( BinaryOp ) hi_0_1 ).getOp() == Types.OpOp2.PLUS ) {
+																			hi = _applyRewrite277(hi); // -(-(A,+(c,B)),d) => -(A,+(B,+(c,d)))
+																			hi = _applyRewrite278(hi); // -(-(A,+(B,c)),d) => -(A,+(B,+(c,d)))
+																		} else if ( (( BinaryOp ) hi_0_1 ).getOp() == Types.OpOp2.MINUS ) {
+																			hi = _applyRewrite300(hi); // -(-(A,-(c,B)),d) => +(A,-(B,+(c,d)))
+																			hi = _applyRewrite321(hi); // -(-(A,-(D,b)),c) => +(A,-(-(b,c),D))
+																		} else if ( (( BinaryOp ) hi_0_1 ).getOp() == Types.OpOp2.MULT ) {
+																		}
+																	} else {
+																		if ( hi_1_0.getDataType() == Types.DataType.MATRIX ) {
+																			if ( hi_1_0 instanceof BinaryOp ) {
+																				if ( (( BinaryOp ) hi_1_0 ).getOp() == Types.OpOp2.NOTEQUAL ) {
+																					hi = _applyRewrite261(hi); // -(A,rev(!=(c,A))) => -(A,!=(A,c))
+																					hi = _applyRewrite262(hi); // -(A,rev(!=(A,c))) => -(A,!=(A,c))
+																				} else if ( (( BinaryOp ) hi_1_0 ).getOp() == Types.OpOp2.PLUS ) {
+																					hi = _applyRewrite271(hi); // -(a,rev(+(b,C))) => -(-(a,b),rev(C))
+																					hi = _applyRewrite272(hi); // -(a,rev(+(C,b))) => -(-(a,b),rev(C))
+																				} else if ( (( BinaryOp ) hi_1_0 ).getOp() == Types.OpOp2.MINUS ) {
+																					hi = _applyRewrite281(hi); // -(a,rev(-(C,b))) => -(+(a,b),rev(C))
+																					hi = _applyRewrite284(hi); // -(a,rev(-(b,C))) => +(-(a,b),rev(C))
+																				} else if ( (( BinaryOp ) hi_1_0 ).getOp() == Types.OpOp2.MULT ) {
+																				}
+																			}
+																		}
+																	}
+																}
+															}
+														} else if ( hi_0_0.getDataType() == Types.DataType.SCALAR ) {
+															if ( hi_0_1.getDataType() == Types.DataType.SCALAR ) {
+																hi = _applyRewrite49(hi); // -(-(A,b),c) => -(A,+(b,c))
+																hi = _applyRewrite279(hi); // -(-(A,c),+(d,B)) => -(A,+(B,+(c,d)))
+																hi = _applyRewrite280(hi); // -(-(A,c),+(B,d)) => -(A,+(B,+(c,d)))
+																hi = _applyRewrite301(hi); // -(-(B,c),-(d,A)) => +(A,-(B,+(c,d)))
+																hi = _applyRewrite323(hi); // -(-(A,c),-(D,b)) => +(A,-(-(b,c),D))
+															} else if ( hi_0_1.getDataType() == Types.DataType.MATRIX ) {
+																if ( hi_0_1 instanceof BinaryOp ) {
+																	if ( (( BinaryOp ) hi_0_1 ).getOp() == Types.OpOp2.PLUS ) {
+																		hi = _applyRewrite277(hi); // -(-(A,+(c,B)),d) => -(A,+(B,+(c,d)))
+																		hi = _applyRewrite278(hi); // -(-(A,+(B,c)),d) => -(A,+(B,+(c,d)))
+																	} else if ( (( BinaryOp ) hi_0_1 ).getOp() == Types.OpOp2.MINUS ) {
+																		hi = _applyRewrite300(hi); // -(-(A,-(c,B)),d) => +(A,-(B,+(c,d)))
+																		hi = _applyRewrite321(hi); // -(-(A,-(D,b)),c) => +(A,-(-(b,c),D))
+																	} else if ( (( BinaryOp ) hi_0_1 ).getOp() == Types.OpOp2.MULT ) {
+																	}
+																} else {
+																	if ( hi_1_0.getDataType() == Types.DataType.MATRIX ) {
+																		if ( hi_1_0 instanceof BinaryOp ) {
+																			if ( (( BinaryOp ) hi_1_0 ).getOp() == Types.OpOp2.NOTEQUAL ) {
+																				hi = _applyRewrite261(hi); // -(A,rev(!=(c,A))) => -(A,!=(A,c))
+																				hi = _applyRewrite262(hi); // -(A,rev(!=(A,c))) => -(A,!=(A,c))
+																			} else if ( (( BinaryOp ) hi_1_0 ).getOp() == Types.OpOp2.PLUS ) {
+																				hi = _applyRewrite271(hi); // -(a,rev(+(b,C))) => -(-(a,b),rev(C))
+																				hi = _applyRewrite272(hi); // -(a,rev(+(C,b))) => -(-(a,b),rev(C))
+																			} else if ( (( BinaryOp ) hi_1_0 ).getOp() == Types.OpOp2.MINUS ) {
+																				hi = _applyRewrite281(hi); // -(a,rev(-(C,b))) => -(+(a,b),rev(C))
+																				hi = _applyRewrite284(hi); // -(a,rev(-(b,C))) => +(-(a,b),rev(C))
+																			} else if ( (( BinaryOp ) hi_1_0 ).getOp() == Types.OpOp2.MULT ) {
+																			}
+																		}
+																	}
+																}
+															}
+														}
+													}
+												}
+											} else if ( hi_1 instanceof AggBinaryOp ) {
+											} else {
+												if ( hi_0_0.getDataType() == Types.DataType.MATRIX ) {
+													if ( hi_0_0 instanceof BinaryOp ) {
+														hi = _applyRewrite273(hi); // -(-(-(a,D),C),b) => -(-(a,b),+(C,D))
+														hi = _applyRewrite276(hi); // -(-(-(A,c),B),d) => -(A,+(B,+(c,d)))
+														hi = _applyRewrite325(hi); // -(-(+(b,A),D),c) => +(A,-(-(b,c),D))
+														hi = _applyRewrite326(hi); // -(-(+(A,b),D),c) => +(A,-(-(b,c),D))
+													} else {
+														if ( hi_0_1.getDataType() == Types.DataType.SCALAR ) {
+															hi = _applyRewrite49(hi); // -(-(A,b),c) => -(A,+(b,c))
+															hi = _applyRewrite279(hi); // -(-(A,c),+(d,B)) => -(A,+(B,+(c,d)))
+															hi = _applyRewrite280(hi); // -(-(A,c),+(B,d)) => -(A,+(B,+(c,d)))
+															hi = _applyRewrite301(hi); // -(-(B,c),-(d,A)) => +(A,-(B,+(c,d)))
+															hi = _applyRewrite323(hi); // -(-(A,c),-(D,b)) => +(A,-(-(b,c),D))
+														} else if ( hi_0_1.getDataType() == Types.DataType.MATRIX ) {
+															if ( hi_0_1 instanceof BinaryOp ) {
+																if ( (( BinaryOp ) hi_0_1 ).getOp() == Types.OpOp2.PLUS ) {
+																	hi = _applyRewrite277(hi); // -(-(A,+(c,B)),d) => -(A,+(B,+(c,d)))
+																	hi = _applyRewrite278(hi); // -(-(A,+(B,c)),d) => -(A,+(B,+(c,d)))
+																} else if ( (( BinaryOp ) hi_0_1 ).getOp() == Types.OpOp2.MINUS ) {
+																	hi = _applyRewrite300(hi); // -(-(A,-(c,B)),d) => +(A,-(B,+(c,d)))
+																	hi = _applyRewrite321(hi); // -(-(A,-(D,b)),c) => +(A,-(-(b,c),D))
+																} else if ( (( BinaryOp ) hi_0_1 ).getOp() == Types.OpOp2.MULT ) {
+																}
+															} else {
+																hi = _applyRewrite52(hi); // -(-(a,C),b) => -(-(a,b),C)
+																hi = _applyRewrite273(hi); // -(-(-(a,D),C),b) => -(-(a,b),+(C,D))
+																hi = _applyRewrite274(hi); // -(-(a,C),+(b,D)) => -(-(a,b),+(C,D))
+																hi = _applyRewrite275(hi); // -(-(a,D),+(C,b)) => -(-(a,b),+(C,D))
+																hi = _applyRewrite276(hi); // -(-(-(A,c),B),d) => -(A,+(B,+(c,d)))
+																hi = _applyRewrite293(hi); // -(-(a,C),-(D,b)) => -(+(a,b),+(C,D))
+																hi = _applyRewrite322(hi); // -(-(b,D),-(c,A)) => +(A,-(-(b,c),D))
+																hi = _applyRewrite325(hi); // -(-(+(b,A),D),c) => +(A,-(-(b,c),D))
+																hi = _applyRewrite326(hi); // -(-(+(A,b),D),c) => +(A,-(-(b,c),D))
+															}
+														}
+													}
+												} else if ( hi_0_0.getDataType() == Types.DataType.SCALAR ) {
+													if ( hi_0_1.getDataType() == Types.DataType.SCALAR ) {
+														hi = _applyRewrite49(hi); // -(-(A,b),c) => -(A,+(b,c))
+														hi = _applyRewrite279(hi); // -(-(A,c),+(d,B)) => -(A,+(B,+(c,d)))
+														hi = _applyRewrite280(hi); // -(-(A,c),+(B,d)) => -(A,+(B,+(c,d)))
+														hi = _applyRewrite301(hi); // -(-(B,c),-(d,A)) => +(A,-(B,+(c,d)))
+														hi = _applyRewrite323(hi); // -(-(A,c),-(D,b)) => +(A,-(-(b,c),D))
+													} else if ( hi_0_1.getDataType() == Types.DataType.MATRIX ) {
+														if ( hi_0_1 instanceof BinaryOp ) {
+															if ( (( BinaryOp ) hi_0_1 ).getOp() == Types.OpOp2.PLUS ) {
+																hi = _applyRewrite277(hi); // -(-(A,+(c,B)),d) => -(A,+(B,+(c,d)))
+																hi = _applyRewrite278(hi); // -(-(A,+(B,c)),d) => -(A,+(B,+(c,d)))
+															} else if ( (( BinaryOp ) hi_0_1 ).getOp() == Types.OpOp2.MINUS ) {
+																hi = _applyRewrite300(hi); // -(-(A,-(c,B)),d) => +(A,-(B,+(c,d)))
+																hi = _applyRewrite321(hi); // -(-(A,-(D,b)),c) => +(A,-(-(b,c),D))
+															} else if ( (( BinaryOp ) hi_0_1 ).getOp() == Types.OpOp2.MULT ) {
+															}
+														} else {
+															hi = _applyRewrite52(hi); // -(-(a,C),b) => -(-(a,b),C)
+															hi = _applyRewrite273(hi); // -(-(-(a,D),C),b) => -(-(a,b),+(C,D))
+															hi = _applyRewrite274(hi); // -(-(a,C),+(b,D)) => -(-(a,b),+(C,D))
+															hi = _applyRewrite275(hi); // -(-(a,D),+(C,b)) => -(-(a,b),+(C,D))
+															hi = _applyRewrite276(hi); // -(-(-(A,c),B),d) => -(A,+(B,+(c,d)))
+															hi = _applyRewrite293(hi); // -(-(a,C),-(D,b)) => -(+(a,b),+(C,D))
+															hi = _applyRewrite322(hi); // -(-(b,D),-(c,A)) => +(A,-(-(b,c),D))
+															hi = _applyRewrite325(hi); // -(-(+(b,A),D),c) => +(A,-(-(b,c),D))
+															hi = _applyRewrite326(hi); // -(-(+(A,b),D),c) => +(A,-(-(b,c),D))
+														}
+													}
+												}
+											}
+										} else if ( hi_1.getDataType() == Types.DataType.SCALAR ) {
+											if ( hi_1 instanceof BinaryOp ) {
+												hi = _applyRewrite88(hi); // -(A,-(b,0.0)) => -(A,b)
+											} else {
+												if ( hi_0_0.getDataType() == Types.DataType.MATRIX ) {
+													if ( hi_0_0 instanceof BinaryOp ) {
+														hi = _applyRewrite273(hi); // -(-(-(a,D),C),b) => -(-(a,b),+(C,D))
+														hi = _applyRewrite276(hi); // -(-(-(A,c),B),d) => -(A,+(B,+(c,d)))
+														hi = _applyRewrite325(hi); // -(-(+(b,A),D),c) => +(A,-(-(b,c),D))
+														hi = _applyRewrite326(hi); // -(-(+(A,b),D),c) => +(A,-(-(b,c),D))
+													} else {
+														if ( hi_0_1.getDataType() == Types.DataType.SCALAR ) {
+															hi = _applyRewrite49(hi); // -(-(A,b),c) => -(A,+(b,c))
+															hi = _applyRewrite279(hi); // -(-(A,c),+(d,B)) => -(A,+(B,+(c,d)))
+															hi = _applyRewrite280(hi); // -(-(A,c),+(B,d)) => -(A,+(B,+(c,d)))
+															hi = _applyRewrite301(hi); // -(-(B,c),-(d,A)) => +(A,-(B,+(c,d)))
+															hi = _applyRewrite323(hi); // -(-(A,c),-(D,b)) => +(A,-(-(b,c),D))
+														} else if ( hi_0_1.getDataType() == Types.DataType.MATRIX ) {
+															if ( hi_0_1 instanceof BinaryOp ) {
+																if ( (( BinaryOp ) hi_0_1 ).getOp() == Types.OpOp2.PLUS ) {
+																	hi = _applyRewrite277(hi); // -(-(A,+(c,B)),d) => -(A,+(B,+(c,d)))
+																	hi = _applyRewrite278(hi); // -(-(A,+(B,c)),d) => -(A,+(B,+(c,d)))
+																} else if ( (( BinaryOp ) hi_0_1 ).getOp() == Types.OpOp2.MINUS ) {
+																	hi = _applyRewrite300(hi); // -(-(A,-(c,B)),d) => +(A,-(B,+(c,d)))
+																	hi = _applyRewrite321(hi); // -(-(A,-(D,b)),c) => +(A,-(-(b,c),D))
+																} else if ( (( BinaryOp ) hi_0_1 ).getOp() == Types.OpOp2.MULT ) {
+																}
+															} else {
+																hi = _applyRewrite52(hi); // -(-(a,C),b) => -(-(a,b),C)
+																hi = _applyRewrite273(hi); // -(-(-(a,D),C),b) => -(-(a,b),+(C,D))
+																hi = _applyRewrite274(hi); // -(-(a,C),+(b,D)) => -(-(a,b),+(C,D))
+																hi = _applyRewrite275(hi); // -(-(a,D),+(C,b)) => -(-(a,b),+(C,D))
+																hi = _applyRewrite276(hi); // -(-(-(A,c),B),d) => -(A,+(B,+(c,d)))
+																hi = _applyRewrite293(hi); // -(-(a,C),-(D,b)) => -(+(a,b),+(C,D))
+																hi = _applyRewrite322(hi); // -(-(b,D),-(c,A)) => +(A,-(-(b,c),D))
+																hi = _applyRewrite325(hi); // -(-(+(b,A),D),c) => +(A,-(-(b,c),D))
+																hi = _applyRewrite326(hi); // -(-(+(A,b),D),c) => +(A,-(-(b,c),D))
+															}
+														}
+													}
+												} else if ( hi_0_0.getDataType() == Types.DataType.SCALAR ) {
+													if ( hi_0_1.getDataType() == Types.DataType.SCALAR ) {
+														hi = _applyRewrite49(hi); // -(-(A,b),c) => -(A,+(b,c))
+														hi = _applyRewrite279(hi); // -(-(A,c),+(d,B)) => -(A,+(B,+(c,d)))
+														hi = _applyRewrite280(hi); // -(-(A,c),+(B,d)) => -(A,+(B,+(c,d)))
+														hi = _applyRewrite301(hi); // -(-(B,c),-(d,A)) => +(A,-(B,+(c,d)))
+														hi = _applyRewrite323(hi); // -(-(A,c),-(D,b)) => +(A,-(-(b,c),D))
+													} else if ( hi_0_1.getDataType() == Types.DataType.MATRIX ) {
+														if ( hi_0_1 instanceof BinaryOp ) {
+															if ( (( BinaryOp ) hi_0_1 ).getOp() == Types.OpOp2.PLUS ) {
+																hi = _applyRewrite277(hi); // -(-(A,+(c,B)),d) => -(A,+(B,+(c,d)))
+																hi = _applyRewrite278(hi); // -(-(A,+(B,c)),d) => -(A,+(B,+(c,d)))
+															} else if ( (( BinaryOp ) hi_0_1 ).getOp() == Types.OpOp2.MINUS ) {
+																hi = _applyRewrite300(hi); // -(-(A,-(c,B)),d) => +(A,-(B,+(c,d)))
+																hi = _applyRewrite321(hi); // -(-(A,-(D,b)),c) => +(A,-(-(b,c),D))
+															} else if ( (( BinaryOp ) hi_0_1 ).getOp() == Types.OpOp2.MULT ) {
+															}
+														} else {
+															hi = _applyRewrite52(hi); // -(-(a,C),b) => -(-(a,b),C)
+															hi = _applyRewrite273(hi); // -(-(-(a,D),C),b) => -(-(a,b),+(C,D))
+															hi = _applyRewrite274(hi); // -(-(a,C),+(b,D)) => -(-(a,b),+(C,D))
+															hi = _applyRewrite275(hi); // -(-(a,D),+(C,b)) => -(-(a,b),+(C,D))
+															hi = _applyRewrite276(hi); // -(-(-(A,c),B),d) => -(A,+(B,+(c,d)))
+															hi = _applyRewrite293(hi); // -(-(a,C),-(D,b)) => -(+(a,b),+(C,D))
+															hi = _applyRewrite322(hi); // -(-(b,D),-(c,A)) => +(A,-(-(b,c),D))
+															hi = _applyRewrite325(hi); // -(-(+(b,A),D),c) => +(A,-(-(b,c),D))
+															hi = _applyRewrite326(hi); // -(-(+(A,b),D),c) => +(A,-(-(b,c),D))
+														}
+													}
+												}
+											}
+										}
+									}
+								} else if ( (( BinaryOp ) hi_0 ).getOp() == Types.OpOp2.PLUS ) {
+									if ( hi_0.getInput().size() == 2 ) {
+										Hop hi_0_0 = hi_0.getInput(0);
+										Hop hi_0_1 = hi_0.getInput(1);
+										if ( hi_1.getDataType() == Types.DataType.MATRIX ) {
+											if ( hi_1 instanceof BinaryOp ) {
+												if ( (( BinaryOp ) hi_1 ).getOp() == Types.OpOp2.MINUS ) {
+													if ( hi_1.getInput().size() == 2 ) {
+														Hop hi_1_0 = hi_1.getInput(0);
+														Hop hi_1_1 = hi_1.getInput(1);
+														if ( hi_0_0.getDataType() == Types.DataType.SCALAR ) {
+															if ( hi_0_1.getDataType() == Types.DataType.MATRIX ) {
+																if ( hi_0_1 instanceof BinaryOp ) {
+																	hi = _applyRewrite303(hi); // -(+(A,-(B,c)),d) => +(A,-(B,+(c,d)))
+																	hi = _applyRewrite334(hi); // -(+(A,-(b,D)),c) => +(A,-(-(b,c),D))
+																} else {
+																	if ( hi_1_0.getDataType() == Types.DataType.MATRIX ) {
+																		if ( hi_1_0 instanceof BinaryOp ) {
+																			if ( (( BinaryOp ) hi_1_0 ).getOp() == Types.OpOp2.MINUS ) {
+																				hi = _applyRewrite305(hi); // -(b,-(-(D,c),A)) => +(A,-(+(b,c),D))
+																				hi = _applyRewrite316(hi); // -(c,-(-(d,B),A)) => +(A,+(B,-(c,d)))
+																			} else if ( (( BinaryOp ) hi_1_0 ).getOp() == Types.OpOp2.PLUS ) {
+																				hi = _applyRewrite327(hi); // -(b,-(+(c,D),A)) => +(A,-(-(b,c),D))
+																				hi = _applyRewrite328(hi); // -(b,-(+(D,c),A)) => +(A,-(-(b,c),D))
+																			} else if ( (( BinaryOp ) hi_1_0 ).getOp() == Types.OpOp2.MULT ) {
+																				if ( hi_1_0.getInput().size() == 2 ) {
+																					Hop hi_1_0_0 = hi_1_0.getInput(0);
+																					Hop hi_1_0_1 = hi_1_0.getInput(1);
+																					if ( hi_1_1.getDataType() == Types.DataType.SCALAR ) {
+																						if ( hi_1_0_0.getDataType() == Types.DataType.SCALAR ) {
+																						} else if ( hi_1_0_0.getDataType() == Types.DataType.MATRIX ) {
+																						}
+																					} else if ( hi_1_1.getDataType() == Types.DataType.MATRIX ) {
+																						if ( hi_1_1 instanceof BinaryOp ) {
+																							if ( (( BinaryOp ) hi_1_1 ).getOp() == Types.OpOp2.MINUS ) {
+																								hi = _applyRewrite294(hi); // -(a,-(C,-(b,D))) => -(+(a,b),+(C,D))
+																								hi = _applyRewrite324(hi); // -(b,-(D,-(A,c))) => +(A,-(-(b,c),D))
+																							} else if ( (( BinaryOp ) hi_1_1 ).getOp() == Types.OpOp2.PLUS ) {
+																								hi = _applyRewrite306(hi); // -(b,-(D,+(c,A))) => +(A,-(+(b,c),D))
+																								hi = _applyRewrite307(hi); // -(b,-(D,+(A,c))) => +(A,-(+(b,c),D))
+																							} else if ( (( BinaryOp ) hi_1_1 ).getOp() == Types.OpOp2.MULT ) {
+																							}
+																						} else {
+																							if ( hi_1_0_0.getDataType() == Types.DataType.SCALAR ) {
+																							} else if ( hi_1_0_0.getDataType() == Types.DataType.MATRIX ) {
+																							}
+																						}
+																					}
+																				}
+																			}
+																		} else {
+																			if ( hi_1_1.getDataType() == Types.DataType.SCALAR ) {
+																				hi = _applyRewrite42(hi); // -(0.0,-(B,a)) => -(a,B)
+																				hi = _applyRewrite53(hi); // -(a,-(C,b)) => -(+(a,b),C)
+																				hi = _applyRewrite293(hi); // -(-(a,C),-(D,b)) => -(+(a,b),+(C,D))
+																				hi = _applyRewrite308(hi); // -(+(b,A),-(D,c)) => +(A,-(+(b,c),D))
+																				hi = _applyRewrite309(hi); // -(+(A,b),-(D,c)) => +(A,-(+(b,c),D))
+																				hi = _applyRewrite323(hi); // -(-(A,c),-(D,b)) => +(A,-(-(b,c),D))
+																			} else if ( hi_1_1.getDataType() == Types.DataType.MATRIX ) {
+																				if ( hi_1_1 instanceof BinaryOp ) {
+																					if ( (( BinaryOp ) hi_1_1 ).getOp() == Types.OpOp2.MINUS ) {
+																						hi = _applyRewrite294(hi); // -(a,-(C,-(b,D))) => -(+(a,b),+(C,D))
+																						hi = _applyRewrite324(hi); // -(b,-(D,-(A,c))) => +(A,-(-(b,c),D))
+																					} else if ( (( BinaryOp ) hi_1_1 ).getOp() == Types.OpOp2.PLUS ) {
+																						hi = _applyRewrite306(hi); // -(b,-(D,+(c,A))) => +(A,-(+(b,c),D))
+																						hi = _applyRewrite307(hi); // -(b,-(D,+(A,c))) => +(A,-(+(b,c),D))
+																					} else if ( (( BinaryOp ) hi_1_1 ).getOp() == Types.OpOp2.MULT ) {
+																					}
+																				} else {
+																					hi = _applyRewrite45(hi); // -(0.0,-(b,A)) => -(A,b)
+																					hi = _applyRewrite46(hi); // -(0.0,-(B,A)) => -(A,B)
+																					hi = _applyRewrite58(hi); // -(b,-(c,A)) => +(A,-(b,c))
+																					hi = _applyRewrite301(hi); // -(-(B,c),-(d,A)) => +(A,-(B,+(c,d)))
+																					hi = _applyRewrite305(hi); // -(b,-(-(D,c),A)) => +(A,-(+(b,c),D))
+																					hi = _applyRewrite316(hi); // -(c,-(-(d,B),A)) => +(A,+(B,-(c,d)))
+																					hi = _applyRewrite317(hi); // -(+(c,B),-(d,A)) => +(A,+(B,-(c,d)))
+																					hi = _applyRewrite318(hi); // -(+(B,c),-(d,A)) => +(A,+(B,-(c,d)))
+																					hi = _applyRewrite322(hi); // -(-(b,D),-(c,A)) => +(A,-(-(b,c),D))
+																					hi = _applyRewrite327(hi); // -(b,-(+(c,D),A)) => +(A,-(-(b,c),D))
+																					hi = _applyRewrite328(hi); // -(b,-(+(D,c),A)) => +(A,-(-(b,c),D))
+																				}
+																			}
+																		}
+																	} else if ( hi_1_0.getDataType() == Types.DataType.SCALAR ) {
+																		if ( hi_1_1.getDataType() == Types.DataType.SCALAR ) {
+																			hi = _applyRewrite42(hi); // -(0.0,-(B,a)) => -(a,B)
+																			hi = _applyRewrite53(hi); // -(a,-(C,b)) => -(+(a,b),C)
+																			hi = _applyRewrite293(hi); // -(-(a,C),-(D,b)) => -(+(a,b),+(C,D))
+																			hi = _applyRewrite308(hi); // -(+(b,A),-(D,c)) => +(A,-(+(b,c),D))
+																			hi = _applyRewrite309(hi); // -(+(A,b),-(D,c)) => +(A,-(+(b,c),D))
+																			hi = _applyRewrite323(hi); // -(-(A,c),-(D,b)) => +(A,-(-(b,c),D))
+																		} else if ( hi_1_1.getDataType() == Types.DataType.MATRIX ) {
+																			if ( hi_1_1 instanceof BinaryOp ) {
+																				if ( (( BinaryOp ) hi_1_1 ).getOp() == Types.OpOp2.MINUS ) {
+																					hi = _applyRewrite294(hi); // -(a,-(C,-(b,D))) => -(+(a,b),+(C,D))
+																					hi = _applyRewrite324(hi); // -(b,-(D,-(A,c))) => +(A,-(-(b,c),D))
+																				} else if ( (( BinaryOp ) hi_1_1 ).getOp() == Types.OpOp2.PLUS ) {
+																					hi = _applyRewrite306(hi); // -(b,-(D,+(c,A))) => +(A,-(+(b,c),D))
+																					hi = _applyRewrite307(hi); // -(b,-(D,+(A,c))) => +(A,-(+(b,c),D))
+																				} else if ( (( BinaryOp ) hi_1_1 ).getOp() == Types.OpOp2.MULT ) {
+																				}
+																			} else {
+																				hi = _applyRewrite45(hi); // -(0.0,-(b,A)) => -(A,b)
+																				hi = _applyRewrite46(hi); // -(0.0,-(B,A)) => -(A,B)
+																				hi = _applyRewrite58(hi); // -(b,-(c,A)) => +(A,-(b,c))
+																				hi = _applyRewrite301(hi); // -(-(B,c),-(d,A)) => +(A,-(B,+(c,d)))
+																				hi = _applyRewrite305(hi); // -(b,-(-(D,c),A)) => +(A,-(+(b,c),D))
+																				hi = _applyRewrite316(hi); // -(c,-(-(d,B),A)) => +(A,+(B,-(c,d)))
+																				hi = _applyRewrite317(hi); // -(+(c,B),-(d,A)) => +(A,+(B,-(c,d)))
+																				hi = _applyRewrite318(hi); // -(+(B,c),-(d,A)) => +(A,+(B,-(c,d)))
+																				hi = _applyRewrite322(hi); // -(-(b,D),-(c,A)) => +(A,-(-(b,c),D))
+																				hi = _applyRewrite327(hi); // -(b,-(+(c,D),A)) => +(A,-(-(b,c),D))
+																				hi = _applyRewrite328(hi); // -(b,-(+(D,c),A)) => +(A,-(-(b,c),D))
+																			}
+																		}
+																	}
+																}
+															} else if ( hi_0_1.getDataType() == Types.DataType.SCALAR ) {
+																if ( hi_1_0.getDataType() == Types.DataType.MATRIX ) {
+																	if ( hi_1_0 instanceof BinaryOp ) {
+																		if ( (( BinaryOp ) hi_1_0 ).getOp() == Types.OpOp2.MINUS ) {
+																			hi = _applyRewrite305(hi); // -(b,-(-(D,c),A)) => +(A,-(+(b,c),D))
+																			hi = _applyRewrite316(hi); // -(c,-(-(d,B),A)) => +(A,+(B,-(c,d)))
+																		} else if ( (( BinaryOp ) hi_1_0 ).getOp() == Types.OpOp2.PLUS ) {
+																			hi = _applyRewrite327(hi); // -(b,-(+(c,D),A)) => +(A,-(-(b,c),D))
+																			hi = _applyRewrite328(hi); // -(b,-(+(D,c),A)) => +(A,-(-(b,c),D))
+																		} else if ( (( BinaryOp ) hi_1_0 ).getOp() == Types.OpOp2.MULT ) {
+																			if ( hi_1_0.getInput().size() == 2 ) {
+																				Hop hi_1_0_0 = hi_1_0.getInput(0);
+																				Hop hi_1_0_1 = hi_1_0.getInput(1);
+																				if ( hi_1_1.getDataType() == Types.DataType.SCALAR ) {
+																					if ( hi_1_0_0.getDataType() == Types.DataType.SCALAR ) {
+																					} else if ( hi_1_0_0.getDataType() == Types.DataType.MATRIX ) {
+																					}
+																				} else if ( hi_1_1.getDataType() == Types.DataType.MATRIX ) {
+																					if ( hi_1_1 instanceof BinaryOp ) {
+																						if ( (( BinaryOp ) hi_1_1 ).getOp() == Types.OpOp2.MINUS ) {
+																							hi = _applyRewrite294(hi); // -(a,-(C,-(b,D))) => -(+(a,b),+(C,D))
+																							hi = _applyRewrite324(hi); // -(b,-(D,-(A,c))) => +(A,-(-(b,c),D))
+																						} else if ( (( BinaryOp ) hi_1_1 ).getOp() == Types.OpOp2.PLUS ) {
+																							hi = _applyRewrite306(hi); // -(b,-(D,+(c,A))) => +(A,-(+(b,c),D))
+																							hi = _applyRewrite307(hi); // -(b,-(D,+(A,c))) => +(A,-(+(b,c),D))
+																						} else if ( (( BinaryOp ) hi_1_1 ).getOp() == Types.OpOp2.MULT ) {
+																						}
+																					} else {
+																						if ( hi_1_0_0.getDataType() == Types.DataType.SCALAR ) {
+																						} else if ( hi_1_0_0.getDataType() == Types.DataType.MATRIX ) {
+																						}
+																					}
+																				}
+																			}
+																		}
+																	} else {
+																		if ( hi_1_1.getDataType() == Types.DataType.SCALAR ) {
+																			hi = _applyRewrite42(hi); // -(0.0,-(B,a)) => -(a,B)
+																			hi = _applyRewrite53(hi); // -(a,-(C,b)) => -(+(a,b),C)
+																			hi = _applyRewrite293(hi); // -(-(a,C),-(D,b)) => -(+(a,b),+(C,D))
+																			hi = _applyRewrite308(hi); // -(+(b,A),-(D,c)) => +(A,-(+(b,c),D))
+																			hi = _applyRewrite309(hi); // -(+(A,b),-(D,c)) => +(A,-(+(b,c),D))
+																			hi = _applyRewrite323(hi); // -(-(A,c),-(D,b)) => +(A,-(-(b,c),D))
+																		} else if ( hi_1_1.getDataType() == Types.DataType.MATRIX ) {
+																			if ( hi_1_1 instanceof BinaryOp ) {
+																				if ( (( BinaryOp ) hi_1_1 ).getOp() == Types.OpOp2.MINUS ) {
+																					hi = _applyRewrite294(hi); // -(a,-(C,-(b,D))) => -(+(a,b),+(C,D))
+																					hi = _applyRewrite324(hi); // -(b,-(D,-(A,c))) => +(A,-(-(b,c),D))
+																				} else if ( (( BinaryOp ) hi_1_1 ).getOp() == Types.OpOp2.PLUS ) {
+																					hi = _applyRewrite306(hi); // -(b,-(D,+(c,A))) => +(A,-(+(b,c),D))
+																					hi = _applyRewrite307(hi); // -(b,-(D,+(A,c))) => +(A,-(+(b,c),D))
+																				} else if ( (( BinaryOp ) hi_1_1 ).getOp() == Types.OpOp2.MULT ) {
+																				}
+																			} else {
+																				hi = _applyRewrite45(hi); // -(0.0,-(b,A)) => -(A,b)
+																				hi = _applyRewrite46(hi); // -(0.0,-(B,A)) => -(A,B)
+																				hi = _applyRewrite58(hi); // -(b,-(c,A)) => +(A,-(b,c))
+																				hi = _applyRewrite301(hi); // -(-(B,c),-(d,A)) => +(A,-(B,+(c,d)))
+																				hi = _applyRewrite305(hi); // -(b,-(-(D,c),A)) => +(A,-(+(b,c),D))
+																				hi = _applyRewrite316(hi); // -(c,-(-(d,B),A)) => +(A,+(B,-(c,d)))
+																				hi = _applyRewrite317(hi); // -(+(c,B),-(d,A)) => +(A,+(B,-(c,d)))
+																				hi = _applyRewrite318(hi); // -(+(B,c),-(d,A)) => +(A,+(B,-(c,d)))
+																				hi = _applyRewrite322(hi); // -(-(b,D),-(c,A)) => +(A,-(-(b,c),D))
+																				hi = _applyRewrite327(hi); // -(b,-(+(c,D),A)) => +(A,-(-(b,c),D))
+																				hi = _applyRewrite328(hi); // -(b,-(+(D,c),A)) => +(A,-(-(b,c),D))
+																			}
+																		}
+																	}
+																} else if ( hi_1_0.getDataType() == Types.DataType.SCALAR ) {
+																	if ( hi_1_1.getDataType() == Types.DataType.SCALAR ) {
+																		hi = _applyRewrite42(hi); // -(0.0,-(B,a)) => -(a,B)
+																		hi = _applyRewrite53(hi); // -(a,-(C,b)) => -(+(a,b),C)
+																		hi = _applyRewrite293(hi); // -(-(a,C),-(D,b)) => -(+(a,b),+(C,D))
+																		hi = _applyRewrite308(hi); // -(+(b,A),-(D,c)) => +(A,-(+(b,c),D))
+																		hi = _applyRewrite309(hi); // -(+(A,b),-(D,c)) => +(A,-(+(b,c),D))
+																		hi = _applyRewrite323(hi); // -(-(A,c),-(D,b)) => +(A,-(-(b,c),D))
+																	} else if ( hi_1_1.getDataType() == Types.DataType.MATRIX ) {
+																		if ( hi_1_1 instanceof BinaryOp ) {
+																			if ( (( BinaryOp ) hi_1_1 ).getOp() == Types.OpOp2.MINUS ) {
+																				hi = _applyRewrite294(hi); // -(a,-(C,-(b,D))) => -(+(a,b),+(C,D))
+																				hi = _applyRewrite324(hi); // -(b,-(D,-(A,c))) => +(A,-(-(b,c),D))
+																			} else if ( (( BinaryOp ) hi_1_1 ).getOp() == Types.OpOp2.PLUS ) {
+																				hi = _applyRewrite306(hi); // -(b,-(D,+(c,A))) => +(A,-(+(b,c),D))
+																				hi = _applyRewrite307(hi); // -(b,-(D,+(A,c))) => +(A,-(+(b,c),D))
+																			} else if ( (( BinaryOp ) hi_1_1 ).getOp() == Types.OpOp2.MULT ) {
+																			}
+																		} else {
+																			hi = _applyRewrite45(hi); // -(0.0,-(b,A)) => -(A,b)
+																			hi = _applyRewrite46(hi); // -(0.0,-(B,A)) => -(A,B)
+																			hi = _applyRewrite58(hi); // -(b,-(c,A)) => +(A,-(b,c))
+																			hi = _applyRewrite301(hi); // -(-(B,c),-(d,A)) => +(A,-(B,+(c,d)))
+																			hi = _applyRewrite305(hi); // -(b,-(-(D,c),A)) => +(A,-(+(b,c),D))
+																			hi = _applyRewrite316(hi); // -(c,-(-(d,B),A)) => +(A,+(B,-(c,d)))
+																			hi = _applyRewrite317(hi); // -(+(c,B),-(d,A)) => +(A,+(B,-(c,d)))
+																			hi = _applyRewrite318(hi); // -(+(B,c),-(d,A)) => +(A,+(B,-(c,d)))
+																			hi = _applyRewrite322(hi); // -(-(b,D),-(c,A)) => +(A,-(-(b,c),D))
+																			hi = _applyRewrite327(hi); // -(b,-(+(c,D),A)) => +(A,-(-(b,c),D))
+																			hi = _applyRewrite328(hi); // -(b,-(+(D,c),A)) => +(A,-(-(b,c),D))
+																		}
+																	}
+																}
+															}
+														} else if ( hi_0_0.getDataType() == Types.DataType.MATRIX ) {
+															if ( hi_0_0 instanceof BinaryOp ) {
+																hi = _applyRewrite302(hi); // -(+(-(B,c),A),d) => +(A,-(B,+(c,d)))
+																hi = _applyRewrite329(hi); // -(+(-(b,D),A),c) => +(A,-(-(b,c),D))
+															} else {
+																if ( hi_0_1.getDataType() == Types.DataType.MATRIX ) {
+																	if ( hi_0_1 instanceof BinaryOp ) {
+																		hi = _applyRewrite303(hi); // -(+(A,-(B,c)),d) => +(A,-(B,+(c,d)))
+																		hi = _applyRewrite334(hi); // -(+(A,-(b,D)),c) => +(A,-(-(b,c),D))
+																	} else {
+																		if ( hi_1_0.getDataType() == Types.DataType.MATRIX ) {
+																			if ( hi_1_0 instanceof BinaryOp ) {
+																				if ( (( BinaryOp ) hi_1_0 ).getOp() == Types.OpOp2.MINUS ) {
+																					hi = _applyRewrite305(hi); // -(b,-(-(D,c),A)) => +(A,-(+(b,c),D))
+																					hi = _applyRewrite316(hi); // -(c,-(-(d,B),A)) => +(A,+(B,-(c,d)))
+																				} else if ( (( BinaryOp ) hi_1_0 ).getOp() == Types.OpOp2.PLUS ) {
+																					hi = _applyRewrite327(hi); // -(b,-(+(c,D),A)) => +(A,-(-(b,c),D))
+																					hi = _applyRewrite328(hi); // -(b,-(+(D,c),A)) => +(A,-(-(b,c),D))
+																				} else if ( (( BinaryOp ) hi_1_0 ).getOp() == Types.OpOp2.MULT ) {
+																					if ( hi_1_0.getInput().size() == 2 ) {
+																						Hop hi_1_0_0 = hi_1_0.getInput(0);
+																						Hop hi_1_0_1 = hi_1_0.getInput(1);
+																						if ( hi_1_1.getDataType() == Types.DataType.SCALAR ) {
+																							if ( hi_1_0_0.getDataType() == Types.DataType.SCALAR ) {
+																							} else if ( hi_1_0_0.getDataType() == Types.DataType.MATRIX ) {
+																							}
+																						} else if ( hi_1_1.getDataType() == Types.DataType.MATRIX ) {
+																							if ( hi_1_1 instanceof BinaryOp ) {
+																								if ( (( BinaryOp ) hi_1_1 ).getOp() == Types.OpOp2.MINUS ) {
+																									hi = _applyRewrite294(hi); // -(a,-(C,-(b,D))) => -(+(a,b),+(C,D))
+																									hi = _applyRewrite324(hi); // -(b,-(D,-(A,c))) => +(A,-(-(b,c),D))
+																								} else if ( (( BinaryOp ) hi_1_1 ).getOp() == Types.OpOp2.PLUS ) {
+																									hi = _applyRewrite306(hi); // -(b,-(D,+(c,A))) => +(A,-(+(b,c),D))
+																									hi = _applyRewrite307(hi); // -(b,-(D,+(A,c))) => +(A,-(+(b,c),D))
+																								} else if ( (( BinaryOp ) hi_1_1 ).getOp() == Types.OpOp2.MULT ) {
+																								}
+																							} else {
+																								if ( hi_1_0_0.getDataType() == Types.DataType.SCALAR ) {
+																								} else if ( hi_1_0_0.getDataType() == Types.DataType.MATRIX ) {
+																								}
+																							}
+																						}
+																					}
+																				}
+																			} else {
+																				if ( hi_1_1.getDataType() == Types.DataType.SCALAR ) {
+																					hi = _applyRewrite42(hi); // -(0.0,-(B,a)) => -(a,B)
+																					hi = _applyRewrite53(hi); // -(a,-(C,b)) => -(+(a,b),C)
+																					hi = _applyRewrite293(hi); // -(-(a,C),-(D,b)) => -(+(a,b),+(C,D))
+																					hi = _applyRewrite308(hi); // -(+(b,A),-(D,c)) => +(A,-(+(b,c),D))
+																					hi = _applyRewrite309(hi); // -(+(A,b),-(D,c)) => +(A,-(+(b,c),D))
+																					hi = _applyRewrite323(hi); // -(-(A,c),-(D,b)) => +(A,-(-(b,c),D))
+																				} else if ( hi_1_1.getDataType() == Types.DataType.MATRIX ) {
+																					if ( hi_1_1 instanceof BinaryOp ) {
+																						if ( (( BinaryOp ) hi_1_1 ).getOp() == Types.OpOp2.MINUS ) {
+																							hi = _applyRewrite294(hi); // -(a,-(C,-(b,D))) => -(+(a,b),+(C,D))
+																							hi = _applyRewrite324(hi); // -(b,-(D,-(A,c))) => +(A,-(-(b,c),D))
+																						} else if ( (( BinaryOp ) hi_1_1 ).getOp() == Types.OpOp2.PLUS ) {
+																							hi = _applyRewrite306(hi); // -(b,-(D,+(c,A))) => +(A,-(+(b,c),D))
+																							hi = _applyRewrite307(hi); // -(b,-(D,+(A,c))) => +(A,-(+(b,c),D))
+																						} else if ( (( BinaryOp ) hi_1_1 ).getOp() == Types.OpOp2.MULT ) {
+																						}
+																					} else {
+																						hi = _applyRewrite45(hi); // -(0.0,-(b,A)) => -(A,b)
+																						hi = _applyRewrite46(hi); // -(0.0,-(B,A)) => -(A,B)
+																						hi = _applyRewrite58(hi); // -(b,-(c,A)) => +(A,-(b,c))
+																						hi = _applyRewrite301(hi); // -(-(B,c),-(d,A)) => +(A,-(B,+(c,d)))
+																						hi = _applyRewrite305(hi); // -(b,-(-(D,c),A)) => +(A,-(+(b,c),D))
+																						hi = _applyRewrite316(hi); // -(c,-(-(d,B),A)) => +(A,+(B,-(c,d)))
+																						hi = _applyRewrite317(hi); // -(+(c,B),-(d,A)) => +(A,+(B,-(c,d)))
+																						hi = _applyRewrite318(hi); // -(+(B,c),-(d,A)) => +(A,+(B,-(c,d)))
+																						hi = _applyRewrite322(hi); // -(-(b,D),-(c,A)) => +(A,-(-(b,c),D))
+																						hi = _applyRewrite327(hi); // -(b,-(+(c,D),A)) => +(A,-(-(b,c),D))
+																						hi = _applyRewrite328(hi); // -(b,-(+(D,c),A)) => +(A,-(-(b,c),D))
+																					}
+																				}
+																			}
+																		} else if ( hi_1_0.getDataType() == Types.DataType.SCALAR ) {
+																			if ( hi_1_1.getDataType() == Types.DataType.SCALAR ) {
+																				hi = _applyRewrite42(hi); // -(0.0,-(B,a)) => -(a,B)
+																				hi = _applyRewrite53(hi); // -(a,-(C,b)) => -(+(a,b),C)
+																				hi = _applyRewrite293(hi); // -(-(a,C),-(D,b)) => -(+(a,b),+(C,D))
+																				hi = _applyRewrite308(hi); // -(+(b,A),-(D,c)) => +(A,-(+(b,c),D))
+																				hi = _applyRewrite309(hi); // -(+(A,b),-(D,c)) => +(A,-(+(b,c),D))
+																				hi = _applyRewrite323(hi); // -(-(A,c),-(D,b)) => +(A,-(-(b,c),D))
+																			} else if ( hi_1_1.getDataType() == Types.DataType.MATRIX ) {
+																				if ( hi_1_1 instanceof BinaryOp ) {
+																					if ( (( BinaryOp ) hi_1_1 ).getOp() == Types.OpOp2.MINUS ) {
+																						hi = _applyRewrite294(hi); // -(a,-(C,-(b,D))) => -(+(a,b),+(C,D))
+																						hi = _applyRewrite324(hi); // -(b,-(D,-(A,c))) => +(A,-(-(b,c),D))
+																					} else if ( (( BinaryOp ) hi_1_1 ).getOp() == Types.OpOp2.PLUS ) {
+																						hi = _applyRewrite306(hi); // -(b,-(D,+(c,A))) => +(A,-(+(b,c),D))
+																						hi = _applyRewrite307(hi); // -(b,-(D,+(A,c))) => +(A,-(+(b,c),D))
+																					} else if ( (( BinaryOp ) hi_1_1 ).getOp() == Types.OpOp2.MULT ) {
+																					}
+																				} else {
+																					hi = _applyRewrite45(hi); // -(0.0,-(b,A)) => -(A,b)
+																					hi = _applyRewrite46(hi); // -(0.0,-(B,A)) => -(A,B)
+																					hi = _applyRewrite58(hi); // -(b,-(c,A)) => +(A,-(b,c))
+																					hi = _applyRewrite301(hi); // -(-(B,c),-(d,A)) => +(A,-(B,+(c,d)))
+																					hi = _applyRewrite305(hi); // -(b,-(-(D,c),A)) => +(A,-(+(b,c),D))
+																					hi = _applyRewrite316(hi); // -(c,-(-(d,B),A)) => +(A,+(B,-(c,d)))
+																					hi = _applyRewrite317(hi); // -(+(c,B),-(d,A)) => +(A,+(B,-(c,d)))
+																					hi = _applyRewrite318(hi); // -(+(B,c),-(d,A)) => +(A,+(B,-(c,d)))
+																					hi = _applyRewrite322(hi); // -(-(b,D),-(c,A)) => +(A,-(-(b,c),D))
+																					hi = _applyRewrite327(hi); // -(b,-(+(c,D),A)) => +(A,-(-(b,c),D))
+																					hi = _applyRewrite328(hi); // -(b,-(+(D,c),A)) => +(A,-(-(b,c),D))
+																				}
+																			}
+																		}
+																	}
+																} else if ( hi_0_1.getDataType() == Types.DataType.SCALAR ) {
+																	if ( hi_1_0.getDataType() == Types.DataType.MATRIX ) {
+																		if ( hi_1_0 instanceof BinaryOp ) {
+																			if ( (( BinaryOp ) hi_1_0 ).getOp() == Types.OpOp2.MINUS ) {
+																				hi = _applyRewrite305(hi); // -(b,-(-(D,c),A)) => +(A,-(+(b,c),D))
+																				hi = _applyRewrite316(hi); // -(c,-(-(d,B),A)) => +(A,+(B,-(c,d)))
+																			} else if ( (( BinaryOp ) hi_1_0 ).getOp() == Types.OpOp2.PLUS ) {
+																				hi = _applyRewrite327(hi); // -(b,-(+(c,D),A)) => +(A,-(-(b,c),D))
+																				hi = _applyRewrite328(hi); // -(b,-(+(D,c),A)) => +(A,-(-(b,c),D))
+																			} else if ( (( BinaryOp ) hi_1_0 ).getOp() == Types.OpOp2.MULT ) {
+																				if ( hi_1_0.getInput().size() == 2 ) {
+																					Hop hi_1_0_0 = hi_1_0.getInput(0);
+																					Hop hi_1_0_1 = hi_1_0.getInput(1);
+																					if ( hi_1_1.getDataType() == Types.DataType.SCALAR ) {
+																						if ( hi_1_0_0.getDataType() == Types.DataType.SCALAR ) {
+																						} else if ( hi_1_0_0.getDataType() == Types.DataType.MATRIX ) {
+																						}
+																					} else if ( hi_1_1.getDataType() == Types.DataType.MATRIX ) {
+																						if ( hi_1_1 instanceof BinaryOp ) {
+																							if ( (( BinaryOp ) hi_1_1 ).getOp() == Types.OpOp2.MINUS ) {
+																								hi = _applyRewrite294(hi); // -(a,-(C,-(b,D))) => -(+(a,b),+(C,D))
+																								hi = _applyRewrite324(hi); // -(b,-(D,-(A,c))) => +(A,-(-(b,c),D))
+																							} else if ( (( BinaryOp ) hi_1_1 ).getOp() == Types.OpOp2.PLUS ) {
+																								hi = _applyRewrite306(hi); // -(b,-(D,+(c,A))) => +(A,-(+(b,c),D))
+																								hi = _applyRewrite307(hi); // -(b,-(D,+(A,c))) => +(A,-(+(b,c),D))
+																							} else if ( (( BinaryOp ) hi_1_1 ).getOp() == Types.OpOp2.MULT ) {
+																							}
+																						} else {
+																							if ( hi_1_0_0.getDataType() == Types.DataType.SCALAR ) {
+																							} else if ( hi_1_0_0.getDataType() == Types.DataType.MATRIX ) {
+																							}
+																						}
+																					}
+																				}
+																			}
+																		} else {
+																			if ( hi_1_1.getDataType() == Types.DataType.SCALAR ) {
+																				hi = _applyRewrite42(hi); // -(0.0,-(B,a)) => -(a,B)
+																				hi = _applyRewrite53(hi); // -(a,-(C,b)) => -(+(a,b),C)
+																				hi = _applyRewrite293(hi); // -(-(a,C),-(D,b)) => -(+(a,b),+(C,D))
+																				hi = _applyRewrite308(hi); // -(+(b,A),-(D,c)) => +(A,-(+(b,c),D))
+																				hi = _applyRewrite309(hi); // -(+(A,b),-(D,c)) => +(A,-(+(b,c),D))
+																				hi = _applyRewrite323(hi); // -(-(A,c),-(D,b)) => +(A,-(-(b,c),D))
+																			} else if ( hi_1_1.getDataType() == Types.DataType.MATRIX ) {
+																				if ( hi_1_1 instanceof BinaryOp ) {
+																					if ( (( BinaryOp ) hi_1_1 ).getOp() == Types.OpOp2.MINUS ) {
+																						hi = _applyRewrite294(hi); // -(a,-(C,-(b,D))) => -(+(a,b),+(C,D))
+																						hi = _applyRewrite324(hi); // -(b,-(D,-(A,c))) => +(A,-(-(b,c),D))
+																					} else if ( (( BinaryOp ) hi_1_1 ).getOp() == Types.OpOp2.PLUS ) {
+																						hi = _applyRewrite306(hi); // -(b,-(D,+(c,A))) => +(A,-(+(b,c),D))
+																						hi = _applyRewrite307(hi); // -(b,-(D,+(A,c))) => +(A,-(+(b,c),D))
+																					} else if ( (( BinaryOp ) hi_1_1 ).getOp() == Types.OpOp2.MULT ) {
+																					}
+																				} else {
+																					hi = _applyRewrite45(hi); // -(0.0,-(b,A)) => -(A,b)
+																					hi = _applyRewrite46(hi); // -(0.0,-(B,A)) => -(A,B)
+																					hi = _applyRewrite58(hi); // -(b,-(c,A)) => +(A,-(b,c))
+																					hi = _applyRewrite301(hi); // -(-(B,c),-(d,A)) => +(A,-(B,+(c,d)))
+																					hi = _applyRewrite305(hi); // -(b,-(-(D,c),A)) => +(A,-(+(b,c),D))
+																					hi = _applyRewrite316(hi); // -(c,-(-(d,B),A)) => +(A,+(B,-(c,d)))
+																					hi = _applyRewrite317(hi); // -(+(c,B),-(d,A)) => +(A,+(B,-(c,d)))
+																					hi = _applyRewrite318(hi); // -(+(B,c),-(d,A)) => +(A,+(B,-(c,d)))
+																					hi = _applyRewrite322(hi); // -(-(b,D),-(c,A)) => +(A,-(-(b,c),D))
+																					hi = _applyRewrite327(hi); // -(b,-(+(c,D),A)) => +(A,-(-(b,c),D))
+																					hi = _applyRewrite328(hi); // -(b,-(+(D,c),A)) => +(A,-(-(b,c),D))
+																				}
+																			}
+																		}
+																	} else if ( hi_1_0.getDataType() == Types.DataType.SCALAR ) {
+																		if ( hi_1_1.getDataType() == Types.DataType.SCALAR ) {
+																			hi = _applyRewrite42(hi); // -(0.0,-(B,a)) => -(a,B)
+																			hi = _applyRewrite53(hi); // -(a,-(C,b)) => -(+(a,b),C)
+																			hi = _applyRewrite293(hi); // -(-(a,C),-(D,b)) => -(+(a,b),+(C,D))
+																			hi = _applyRewrite308(hi); // -(+(b,A),-(D,c)) => +(A,-(+(b,c),D))
+																			hi = _applyRewrite309(hi); // -(+(A,b),-(D,c)) => +(A,-(+(b,c),D))
+																			hi = _applyRewrite323(hi); // -(-(A,c),-(D,b)) => +(A,-(-(b,c),D))
+																		} else if ( hi_1_1.getDataType() == Types.DataType.MATRIX ) {
+																			if ( hi_1_1 instanceof BinaryOp ) {
+																				if ( (( BinaryOp ) hi_1_1 ).getOp() == Types.OpOp2.MINUS ) {
+																					hi = _applyRewrite294(hi); // -(a,-(C,-(b,D))) => -(+(a,b),+(C,D))
+																					hi = _applyRewrite324(hi); // -(b,-(D,-(A,c))) => +(A,-(-(b,c),D))
+																				} else if ( (( BinaryOp ) hi_1_1 ).getOp() == Types.OpOp2.PLUS ) {
+																					hi = _applyRewrite306(hi); // -(b,-(D,+(c,A))) => +(A,-(+(b,c),D))
+																					hi = _applyRewrite307(hi); // -(b,-(D,+(A,c))) => +(A,-(+(b,c),D))
+																				} else if ( (( BinaryOp ) hi_1_1 ).getOp() == Types.OpOp2.MULT ) {
+																				}
+																			} else {
+																				hi = _applyRewrite45(hi); // -(0.0,-(b,A)) => -(A,b)
+																				hi = _applyRewrite46(hi); // -(0.0,-(B,A)) => -(A,B)
+																				hi = _applyRewrite58(hi); // -(b,-(c,A)) => +(A,-(b,c))
+																				hi = _applyRewrite301(hi); // -(-(B,c),-(d,A)) => +(A,-(B,+(c,d)))
+																				hi = _applyRewrite305(hi); // -(b,-(-(D,c),A)) => +(A,-(+(b,c),D))
+																				hi = _applyRewrite316(hi); // -(c,-(-(d,B),A)) => +(A,+(B,-(c,d)))
+																				hi = _applyRewrite317(hi); // -(+(c,B),-(d,A)) => +(A,+(B,-(c,d)))
+																				hi = _applyRewrite318(hi); // -(+(B,c),-(d,A)) => +(A,+(B,-(c,d)))
+																				hi = _applyRewrite322(hi); // -(-(b,D),-(c,A)) => +(A,-(-(b,c),D))
+																				hi = _applyRewrite327(hi); // -(b,-(+(c,D),A)) => +(A,-(-(b,c),D))
+																				hi = _applyRewrite328(hi); // -(b,-(+(D,c),A)) => +(A,-(-(b,c),D))
+																			}
+																		}
+																	}
+																}
+															}
+														}
+													}
+												} else if ( (( BinaryOp ) hi_1 ).getOp() == Types.OpOp2.PLUS ) {
+													if ( hi_1.getInput().size() == 2 ) {
+														Hop hi_1_0 = hi_1.getInput(0);
+														Hop hi_1_1 = hi_1.getInput(1);
+														if ( hi_0_0.getDataType() == Types.DataType.SCALAR ) {
+															if ( hi_0_1.getDataType() == Types.DataType.MATRIX ) {
+																if ( hi_0_1 instanceof BinaryOp ) {
+																	hi = _applyRewrite303(hi); // -(+(A,-(B,c)),d) => +(A,-(B,+(c,d)))
+																	hi = _applyRewrite334(hi); // -(+(A,-(b,D)),c) => +(A,-(-(b,c),D))
+																} else {
+																	if ( hi_1_0.getDataType() == Types.DataType.SCALAR ) {
+																		if ( hi_1_1.getDataType() == Types.DataType.MATRIX ) {
+																			if ( hi_1_1 instanceof BinaryOp ) {
+																				hi = _applyRewrite296(hi); // -(a,+(D,-(C,b))) => -(+(a,b),+(C,D))
+																				hi = _applyRewrite336(hi); // -(b,+(D,-(c,A))) => +(A,-(-(b,c),D))
+																			} else {
+																				hi = _applyRewrite50(hi); // -(a,+(b,C)) => -(-(a,b),C)
+																				hi = _applyRewrite274(hi); // -(-(a,C),+(b,D)) => -(-(a,b),+(C,D))
+																				hi = _applyRewrite279(hi); // -(-(A,c),+(d,B)) => -(A,+(B,+(c,d)))
+																				hi = _applyRewrite295(hi); // -(a,+(-(D,b),C)) => -(+(a,b),+(C,D))
+																				hi = _applyRewrite330(hi); // -(+(b,A),+(c,D)) => +(A,-(-(b,c),D))
+																				hi = _applyRewrite332(hi); // -(+(A,b),+(c,D)) => +(A,-(-(b,c),D))
+																				hi = _applyRewrite335(hi); // -(b,+(-(c,A),D)) => +(A,-(-(b,c),D))
+																			}
+																		} else if ( hi_1_1.getDataType() == Types.DataType.SCALAR ) {
+																			hi = _applyRewrite51(hi); // -(a,+(C,b)) => -(-(a,b),C)
+																			hi = _applyRewrite275(hi); // -(-(a,D),+(C,b)) => -(-(a,b),+(C,D))
+																			hi = _applyRewrite280(hi); // -(-(A,c),+(B,d)) => -(A,+(B,+(c,d)))
+																			hi = _applyRewrite331(hi); // -(+(b,A),+(D,c)) => +(A,-(-(b,c),D))
+																			hi = _applyRewrite333(hi); // -(+(A,b),+(D,c)) => +(A,-(-(b,c),D))
+																		}
+																	} else if ( hi_1_0.getDataType() == Types.DataType.MATRIX ) {
+																		if ( hi_1_0 instanceof BinaryOp ) {
+																			hi = _applyRewrite295(hi); // -(a,+(-(D,b),C)) => -(+(a,b),+(C,D))
+																			hi = _applyRewrite335(hi); // -(b,+(-(c,A),D)) => +(A,-(-(b,c),D))
+																		} else {
+																			if ( hi_1_1.getDataType() == Types.DataType.MATRIX ) {
+																				if ( hi_1_1 instanceof BinaryOp ) {
+																					hi = _applyRewrite296(hi); // -(a,+(D,-(C,b))) => -(+(a,b),+(C,D))
+																					hi = _applyRewrite336(hi); // -(b,+(D,-(c,A))) => +(A,-(-(b,c),D))
+																				} else {
+																					hi = _applyRewrite50(hi); // -(a,+(b,C)) => -(-(a,b),C)
+																					hi = _applyRewrite274(hi); // -(-(a,C),+(b,D)) => -(-(a,b),+(C,D))
+																					hi = _applyRewrite279(hi); // -(-(A,c),+(d,B)) => -(A,+(B,+(c,d)))
+																					hi = _applyRewrite295(hi); // -(a,+(-(D,b),C)) => -(+(a,b),+(C,D))
+																					hi = _applyRewrite330(hi); // -(+(b,A),+(c,D)) => +(A,-(-(b,c),D))
+																					hi = _applyRewrite332(hi); // -(+(A,b),+(c,D)) => +(A,-(-(b,c),D))
+																					hi = _applyRewrite335(hi); // -(b,+(-(c,A),D)) => +(A,-(-(b,c),D))
+																				}
+																			} else if ( hi_1_1.getDataType() == Types.DataType.SCALAR ) {
+																				hi = _applyRewrite51(hi); // -(a,+(C,b)) => -(-(a,b),C)
+																				hi = _applyRewrite275(hi); // -(-(a,D),+(C,b)) => -(-(a,b),+(C,D))
+																				hi = _applyRewrite280(hi); // -(-(A,c),+(B,d)) => -(A,+(B,+(c,d)))
+																				hi = _applyRewrite331(hi); // -(+(b,A),+(D,c)) => +(A,-(-(b,c),D))
+																				hi = _applyRewrite333(hi); // -(+(A,b),+(D,c)) => +(A,-(-(b,c),D))
+																			}
+																		}
+																	}
+																}
+															} else if ( hi_0_1.getDataType() == Types.DataType.SCALAR ) {
+																if ( hi_1_0.getDataType() == Types.DataType.SCALAR ) {
+																	if ( hi_1_1.getDataType() == Types.DataType.MATRIX ) {
+																		if ( hi_1_1 instanceof BinaryOp ) {
+																			hi = _applyRewrite296(hi); // -(a,+(D,-(C,b))) => -(+(a,b),+(C,D))
+																			hi = _applyRewrite336(hi); // -(b,+(D,-(c,A))) => +(A,-(-(b,c),D))
+																		} else {
+																			hi = _applyRewrite50(hi); // -(a,+(b,C)) => -(-(a,b),C)
+																			hi = _applyRewrite274(hi); // -(-(a,C),+(b,D)) => -(-(a,b),+(C,D))
+																			hi = _applyRewrite279(hi); // -(-(A,c),+(d,B)) => -(A,+(B,+(c,d)))
+																			hi = _applyRewrite295(hi); // -(a,+(-(D,b),C)) => -(+(a,b),+(C,D))
+																			hi = _applyRewrite330(hi); // -(+(b,A),+(c,D)) => +(A,-(-(b,c),D))
+																			hi = _applyRewrite332(hi); // -(+(A,b),+(c,D)) => +(A,-(-(b,c),D))
+																			hi = _applyRewrite335(hi); // -(b,+(-(c,A),D)) => +(A,-(-(b,c),D))
+																		}
+																	} else if ( hi_1_1.getDataType() == Types.DataType.SCALAR ) {
+																		hi = _applyRewrite51(hi); // -(a,+(C,b)) => -(-(a,b),C)
+																		hi = _applyRewrite275(hi); // -(-(a,D),+(C,b)) => -(-(a,b),+(C,D))
+																		hi = _applyRewrite280(hi); // -(-(A,c),+(B,d)) => -(A,+(B,+(c,d)))
+																		hi = _applyRewrite331(hi); // -(+(b,A),+(D,c)) => +(A,-(-(b,c),D))
+																		hi = _applyRewrite333(hi); // -(+(A,b),+(D,c)) => +(A,-(-(b,c),D))
+																	}
+																} else if ( hi_1_0.getDataType() == Types.DataType.MATRIX ) {
+																	if ( hi_1_0 instanceof BinaryOp ) {
+																		hi = _applyRewrite295(hi); // -(a,+(-(D,b),C)) => -(+(a,b),+(C,D))
+																		hi = _applyRewrite335(hi); // -(b,+(-(c,A),D)) => +(A,-(-(b,c),D))
+																	} else {
+																		if ( hi_1_1.getDataType() == Types.DataType.MATRIX ) {
+																			if ( hi_1_1 instanceof BinaryOp ) {
+																				hi = _applyRewrite296(hi); // -(a,+(D,-(C,b))) => -(+(a,b),+(C,D))
+																				hi = _applyRewrite336(hi); // -(b,+(D,-(c,A))) => +(A,-(-(b,c),D))
+																			} else {
+																				hi = _applyRewrite50(hi); // -(a,+(b,C)) => -(-(a,b),C)
+																				hi = _applyRewrite274(hi); // -(-(a,C),+(b,D)) => -(-(a,b),+(C,D))
+																				hi = _applyRewrite279(hi); // -(-(A,c),+(d,B)) => -(A,+(B,+(c,d)))
+																				hi = _applyRewrite295(hi); // -(a,+(-(D,b),C)) => -(+(a,b),+(C,D))
+																				hi = _applyRewrite330(hi); // -(+(b,A),+(c,D)) => +(A,-(-(b,c),D))
+																				hi = _applyRewrite332(hi); // -(+(A,b),+(c,D)) => +(A,-(-(b,c),D))
+																				hi = _applyRewrite335(hi); // -(b,+(-(c,A),D)) => +(A,-(-(b,c),D))
+																			}
+																		} else if ( hi_1_1.getDataType() == Types.DataType.SCALAR ) {
+																			hi = _applyRewrite51(hi); // -(a,+(C,b)) => -(-(a,b),C)
+																			hi = _applyRewrite275(hi); // -(-(a,D),+(C,b)) => -(-(a,b),+(C,D))
+																			hi = _applyRewrite280(hi); // -(-(A,c),+(B,d)) => -(A,+(B,+(c,d)))
+																			hi = _applyRewrite331(hi); // -(+(b,A),+(D,c)) => +(A,-(-(b,c),D))
+																			hi = _applyRewrite333(hi); // -(+(A,b),+(D,c)) => +(A,-(-(b,c),D))
+																		}
+																	}
+																}
+															}
+														} else if ( hi_0_0.getDataType() == Types.DataType.MATRIX ) {
+															if ( hi_0_0 instanceof BinaryOp ) {
+																hi = _applyRewrite302(hi); // -(+(-(B,c),A),d) => +(A,-(B,+(c,d)))
+																hi = _applyRewrite329(hi); // -(+(-(b,D),A),c) => +(A,-(-(b,c),D))
+															} else {
+																if ( hi_0_1.getDataType() == Types.DataType.MATRIX ) {
+																	if ( hi_0_1 instanceof BinaryOp ) {
+																		hi = _applyRewrite303(hi); // -(+(A,-(B,c)),d) => +(A,-(B,+(c,d)))
+																		hi = _applyRewrite334(hi); // -(+(A,-(b,D)),c) => +(A,-(-(b,c),D))
+																	} else {
+																		if ( hi_1_0.getDataType() == Types.DataType.SCALAR ) {
+																			if ( hi_1_1.getDataType() == Types.DataType.MATRIX ) {
+																				if ( hi_1_1 instanceof BinaryOp ) {
+																					hi = _applyRewrite296(hi); // -(a,+(D,-(C,b))) => -(+(a,b),+(C,D))
+																					hi = _applyRewrite336(hi); // -(b,+(D,-(c,A))) => +(A,-(-(b,c),D))
+																				} else {
+																					hi = _applyRewrite50(hi); // -(a,+(b,C)) => -(-(a,b),C)
+																					hi = _applyRewrite274(hi); // -(-(a,C),+(b,D)) => -(-(a,b),+(C,D))
+																					hi = _applyRewrite279(hi); // -(-(A,c),+(d,B)) => -(A,+(B,+(c,d)))
+																					hi = _applyRewrite295(hi); // -(a,+(-(D,b),C)) => -(+(a,b),+(C,D))
+																					hi = _applyRewrite330(hi); // -(+(b,A),+(c,D)) => +(A,-(-(b,c),D))
+																					hi = _applyRewrite332(hi); // -(+(A,b),+(c,D)) => +(A,-(-(b,c),D))
+																					hi = _applyRewrite335(hi); // -(b,+(-(c,A),D)) => +(A,-(-(b,c),D))
+																				}
+																			} else if ( hi_1_1.getDataType() == Types.DataType.SCALAR ) {
+																				hi = _applyRewrite51(hi); // -(a,+(C,b)) => -(-(a,b),C)
+																				hi = _applyRewrite275(hi); // -(-(a,D),+(C,b)) => -(-(a,b),+(C,D))
+																				hi = _applyRewrite280(hi); // -(-(A,c),+(B,d)) => -(A,+(B,+(c,d)))
+																				hi = _applyRewrite331(hi); // -(+(b,A),+(D,c)) => +(A,-(-(b,c),D))
+																				hi = _applyRewrite333(hi); // -(+(A,b),+(D,c)) => +(A,-(-(b,c),D))
+																			}
+																		} else if ( hi_1_0.getDataType() == Types.DataType.MATRIX ) {
+																			if ( hi_1_0 instanceof BinaryOp ) {
+																				hi = _applyRewrite295(hi); // -(a,+(-(D,b),C)) => -(+(a,b),+(C,D))
+																				hi = _applyRewrite335(hi); // -(b,+(-(c,A),D)) => +(A,-(-(b,c),D))
+																			} else {
+																				if ( hi_1_1.getDataType() == Types.DataType.MATRIX ) {
+																					if ( hi_1_1 instanceof BinaryOp ) {
+																						hi = _applyRewrite296(hi); // -(a,+(D,-(C,b))) => -(+(a,b),+(C,D))
+																						hi = _applyRewrite336(hi); // -(b,+(D,-(c,A))) => +(A,-(-(b,c),D))
+																					} else {
+																						hi = _applyRewrite50(hi); // -(a,+(b,C)) => -(-(a,b),C)
+																						hi = _applyRewrite274(hi); // -(-(a,C),+(b,D)) => -(-(a,b),+(C,D))
+																						hi = _applyRewrite279(hi); // -(-(A,c),+(d,B)) => -(A,+(B,+(c,d)))
+																						hi = _applyRewrite295(hi); // -(a,+(-(D,b),C)) => -(+(a,b),+(C,D))
+																						hi = _applyRewrite330(hi); // -(+(b,A),+(c,D)) => +(A,-(-(b,c),D))
+																						hi = _applyRewrite332(hi); // -(+(A,b),+(c,D)) => +(A,-(-(b,c),D))
+																						hi = _applyRewrite335(hi); // -(b,+(-(c,A),D)) => +(A,-(-(b,c),D))
+																					}
+																				} else if ( hi_1_1.getDataType() == Types.DataType.SCALAR ) {
+																					hi = _applyRewrite51(hi); // -(a,+(C,b)) => -(-(a,b),C)
+																					hi = _applyRewrite275(hi); // -(-(a,D),+(C,b)) => -(-(a,b),+(C,D))
+																					hi = _applyRewrite280(hi); // -(-(A,c),+(B,d)) => -(A,+(B,+(c,d)))
+																					hi = _applyRewrite331(hi); // -(+(b,A),+(D,c)) => +(A,-(-(b,c),D))
+																					hi = _applyRewrite333(hi); // -(+(A,b),+(D,c)) => +(A,-(-(b,c),D))
+																				}
+																			}
+																		}
+																	}
+																} else if ( hi_0_1.getDataType() == Types.DataType.SCALAR ) {
+																	if ( hi_1_0.getDataType() == Types.DataType.SCALAR ) {
+																		if ( hi_1_1.getDataType() == Types.DataType.MATRIX ) {
+																			if ( hi_1_1 instanceof BinaryOp ) {
+																				hi = _applyRewrite296(hi); // -(a,+(D,-(C,b))) => -(+(a,b),+(C,D))
+																				hi = _applyRewrite336(hi); // -(b,+(D,-(c,A))) => +(A,-(-(b,c),D))
+																			} else {
+																				hi = _applyRewrite50(hi); // -(a,+(b,C)) => -(-(a,b),C)
+																				hi = _applyRewrite274(hi); // -(-(a,C),+(b,D)) => -(-(a,b),+(C,D))
+																				hi = _applyRewrite279(hi); // -(-(A,c),+(d,B)) => -(A,+(B,+(c,d)))
+																				hi = _applyRewrite295(hi); // -(a,+(-(D,b),C)) => -(+(a,b),+(C,D))
+																				hi = _applyRewrite330(hi); // -(+(b,A),+(c,D)) => +(A,-(-(b,c),D))
+																				hi = _applyRewrite332(hi); // -(+(A,b),+(c,D)) => +(A,-(-(b,c),D))
+																				hi = _applyRewrite335(hi); // -(b,+(-(c,A),D)) => +(A,-(-(b,c),D))
+																			}
+																		} else if ( hi_1_1.getDataType() == Types.DataType.SCALAR ) {
+																			hi = _applyRewrite51(hi); // -(a,+(C,b)) => -(-(a,b),C)
+																			hi = _applyRewrite275(hi); // -(-(a,D),+(C,b)) => -(-(a,b),+(C,D))
+																			hi = _applyRewrite280(hi); // -(-(A,c),+(B,d)) => -(A,+(B,+(c,d)))
+																			hi = _applyRewrite331(hi); // -(+(b,A),+(D,c)) => +(A,-(-(b,c),D))
+																			hi = _applyRewrite333(hi); // -(+(A,b),+(D,c)) => +(A,-(-(b,c),D))
+																		}
+																	} else if ( hi_1_0.getDataType() == Types.DataType.MATRIX ) {
+																		if ( hi_1_0 instanceof BinaryOp ) {
+																			hi = _applyRewrite295(hi); // -(a,+(-(D,b),C)) => -(+(a,b),+(C,D))
+																			hi = _applyRewrite335(hi); // -(b,+(-(c,A),D)) => +(A,-(-(b,c),D))
+																		} else {
+																			if ( hi_1_1.getDataType() == Types.DataType.MATRIX ) {
+																				if ( hi_1_1 instanceof BinaryOp ) {
+																					hi = _applyRewrite296(hi); // -(a,+(D,-(C,b))) => -(+(a,b),+(C,D))
+																					hi = _applyRewrite336(hi); // -(b,+(D,-(c,A))) => +(A,-(-(b,c),D))
+																				} else {
+																					hi = _applyRewrite50(hi); // -(a,+(b,C)) => -(-(a,b),C)
+																					hi = _applyRewrite274(hi); // -(-(a,C),+(b,D)) => -(-(a,b),+(C,D))
+																					hi = _applyRewrite279(hi); // -(-(A,c),+(d,B)) => -(A,+(B,+(c,d)))
+																					hi = _applyRewrite295(hi); // -(a,+(-(D,b),C)) => -(+(a,b),+(C,D))
+																					hi = _applyRewrite330(hi); // -(+(b,A),+(c,D)) => +(A,-(-(b,c),D))
+																					hi = _applyRewrite332(hi); // -(+(A,b),+(c,D)) => +(A,-(-(b,c),D))
+																					hi = _applyRewrite335(hi); // -(b,+(-(c,A),D)) => +(A,-(-(b,c),D))
+																				}
+																			} else if ( hi_1_1.getDataType() == Types.DataType.SCALAR ) {
+																				hi = _applyRewrite51(hi); // -(a,+(C,b)) => -(-(a,b),C)
+																				hi = _applyRewrite275(hi); // -(-(a,D),+(C,b)) => -(-(a,b),+(C,D))
+																				hi = _applyRewrite280(hi); // -(-(A,c),+(B,d)) => -(A,+(B,+(c,d)))
+																				hi = _applyRewrite331(hi); // -(+(b,A),+(D,c)) => +(A,-(-(b,c),D))
+																				hi = _applyRewrite333(hi); // -(+(A,b),+(D,c)) => +(A,-(-(b,c),D))
+																			}
+																		}
+																	}
+																}
+															}
+														}
+													}
+												} else if ( (( BinaryOp ) hi_1 ).getOp() == Types.OpOp2.MULT ) {
+												} else if ( (( BinaryOp ) hi_1 ).getOp() == Types.OpOp2.NOTEQUAL ) {
+													hi = _applyRewrite259(hi); // -(A,!=(rev(A),c)) => -(A,!=(A,c))
+													hi = _applyRewrite260(hi); // -(A,!=(c,rev(A))) => -(A,!=(A,c))
+													hi = _applyRewrite263(hi); // -(A,!=(rev(A),C)) => -(A,!=(A,C))
+													hi = _applyRewrite264(hi); // -(A,!=(C,rev(A))) => -(A,!=(A,C))
+												} else if ( (( BinaryOp ) hi_1 ).getOp() == Types.OpOp2.DIV ) {
+												}
+											} else if ( hi_1 instanceof ReorgOp ) {
+												if ( (( ReorgOp ) hi_1 ).getOp() == Types.ReOrgOp.TRANS ) {
+													if ( hi_1.getInput().size() == 1 ) {
+														Hop hi_1_0 = hi_1.getInput(0);
+														if ( hi_0_0.getDataType() == Types.DataType.SCALAR ) {
+															if ( hi_0_1.getDataType() == Types.DataType.MATRIX ) {
+																if ( hi_0_1 instanceof BinaryOp ) {
+																	hi = _applyRewrite303(hi); // -(+(A,-(B,c)),d) => +(A,-(B,+(c,d)))
+																	hi = _applyRewrite334(hi); // -(+(A,-(b,D)),c) => +(A,-(-(b,c),D))
+																} else {
+																	if ( hi_1_0.getDataType() == Types.DataType.MATRIX ) {
+																		if ( hi_1_0 instanceof BinaryOp ) {
+																			if ( (( BinaryOp ) hi_1_0 ).getOp() == Types.OpOp2.PLUS ) {
+																				hi = _applyRewrite267(hi); // -(a,t(+(b,C))) => -(-(a,b),t(C))
+																				hi = _applyRewrite268(hi); // -(a,t(+(C,b))) => -(-(a,b),t(C))
+																			} else if ( (( BinaryOp ) hi_1_0 ).getOp() == Types.OpOp2.MINUS ) {
+																				hi = _applyRewrite345(hi); // -(a,t(-(C,b))) => -(+(a,b),t(C))
+																				hi = _applyRewrite350(hi); // -(a,t(-(b,C))) => +(-(a,b),t(C))
+																			} else if ( (( BinaryOp ) hi_1_0 ).getOp() == Types.OpOp2.MULT ) {
+																			}
+																		} else {
+																			hi = _applyRewrite191(hi); // -(t(A),t(B)) => t(-(A,B))
+																		}
+																	}
+																}
+															} else if ( hi_0_1.getDataType() == Types.DataType.SCALAR ) {
+																if ( hi_1_0.getDataType() == Types.DataType.MATRIX ) {
+																	if ( hi_1_0 instanceof BinaryOp ) {
+																		if ( (( BinaryOp ) hi_1_0 ).getOp() == Types.OpOp2.PLUS ) {
+																			hi = _applyRewrite267(hi); // -(a,t(+(b,C))) => -(-(a,b),t(C))
+																			hi = _applyRewrite268(hi); // -(a,t(+(C,b))) => -(-(a,b),t(C))
+																		} else if ( (( BinaryOp ) hi_1_0 ).getOp() == Types.OpOp2.MINUS ) {
+																			hi = _applyRewrite345(hi); // -(a,t(-(C,b))) => -(+(a,b),t(C))
+																			hi = _applyRewrite350(hi); // -(a,t(-(b,C))) => +(-(a,b),t(C))
+																		} else if ( (( BinaryOp ) hi_1_0 ).getOp() == Types.OpOp2.MULT ) {
+																		}
+																	} else {
+																		hi = _applyRewrite191(hi); // -(t(A),t(B)) => t(-(A,B))
+																	}
+																}
+															}
+														} else if ( hi_0_0.getDataType() == Types.DataType.MATRIX ) {
+															if ( hi_0_0 instanceof BinaryOp ) {
+																hi = _applyRewrite302(hi); // -(+(-(B,c),A),d) => +(A,-(B,+(c,d)))
+																hi = _applyRewrite329(hi); // -(+(-(b,D),A),c) => +(A,-(-(b,c),D))
+															} else {
+																if ( hi_0_1.getDataType() == Types.DataType.MATRIX ) {
+																	if ( hi_0_1 instanceof BinaryOp ) {
+																		hi = _applyRewrite303(hi); // -(+(A,-(B,c)),d) => +(A,-(B,+(c,d)))
+																		hi = _applyRewrite334(hi); // -(+(A,-(b,D)),c) => +(A,-(-(b,c),D))
+																	} else {
+																		if ( hi_1_0.getDataType() == Types.DataType.MATRIX ) {
+																			if ( hi_1_0 instanceof BinaryOp ) {
+																				if ( (( BinaryOp ) hi_1_0 ).getOp() == Types.OpOp2.PLUS ) {
+																					hi = _applyRewrite267(hi); // -(a,t(+(b,C))) => -(-(a,b),t(C))
+																					hi = _applyRewrite268(hi); // -(a,t(+(C,b))) => -(-(a,b),t(C))
+																				} else if ( (( BinaryOp ) hi_1_0 ).getOp() == Types.OpOp2.MINUS ) {
+																					hi = _applyRewrite345(hi); // -(a,t(-(C,b))) => -(+(a,b),t(C))
+																					hi = _applyRewrite350(hi); // -(a,t(-(b,C))) => +(-(a,b),t(C))
+																				} else if ( (( BinaryOp ) hi_1_0 ).getOp() == Types.OpOp2.MULT ) {
+																				}
+																			} else {
+																				hi = _applyRewrite191(hi); // -(t(A),t(B)) => t(-(A,B))
+																			}
+																		}
+																	}
+																} else if ( hi_0_1.getDataType() == Types.DataType.SCALAR ) {
+																	if ( hi_1_0.getDataType() == Types.DataType.MATRIX ) {
+																		if ( hi_1_0 instanceof BinaryOp ) {
+																			if ( (( BinaryOp ) hi_1_0 ).getOp() == Types.OpOp2.PLUS ) {
+																				hi = _applyRewrite267(hi); // -(a,t(+(b,C))) => -(-(a,b),t(C))
+																				hi = _applyRewrite268(hi); // -(a,t(+(C,b))) => -(-(a,b),t(C))
+																			} else if ( (( BinaryOp ) hi_1_0 ).getOp() == Types.OpOp2.MINUS ) {
+																				hi = _applyRewrite345(hi); // -(a,t(-(C,b))) => -(+(a,b),t(C))
+																				hi = _applyRewrite350(hi); // -(a,t(-(b,C))) => +(-(a,b),t(C))
+																			} else if ( (( BinaryOp ) hi_1_0 ).getOp() == Types.OpOp2.MULT ) {
+																			}
+																		} else {
+																			hi = _applyRewrite191(hi); // -(t(A),t(B)) => t(-(A,B))
+																		}
+																	}
+																}
+															}
+														}
+													}
+												} else if ( (( ReorgOp ) hi_1 ).getOp() == Types.ReOrgOp.REV ) {
+													if ( hi_1.getInput().size() == 1 ) {
+														Hop hi_1_0 = hi_1.getInput(0);
+														if ( hi_0_0.getDataType() == Types.DataType.SCALAR ) {
+															if ( hi_0_1.getDataType() == Types.DataType.MATRIX ) {
+																if ( hi_0_1 instanceof BinaryOp ) {
+																	hi = _applyRewrite303(hi); // -(+(A,-(B,c)),d) => +(A,-(B,+(c,d)))
+																	hi = _applyRewrite334(hi); // -(+(A,-(b,D)),c) => +(A,-(-(b,c),D))
+																} else {
+																	if ( hi_1_0.getDataType() == Types.DataType.MATRIX ) {
+																		if ( hi_1_0 instanceof BinaryOp ) {
+																			if ( (( BinaryOp ) hi_1_0 ).getOp() == Types.OpOp2.NOTEQUAL ) {
+																				hi = _applyRewrite261(hi); // -(A,rev(!=(c,A))) => -(A,!=(A,c))
+																				hi = _applyRewrite262(hi); // -(A,rev(!=(A,c))) => -(A,!=(A,c))
+																			} else if ( (( BinaryOp ) hi_1_0 ).getOp() == Types.OpOp2.PLUS ) {
+																				hi = _applyRewrite271(hi); // -(a,rev(+(b,C))) => -(-(a,b),rev(C))
+																				hi = _applyRewrite272(hi); // -(a,rev(+(C,b))) => -(-(a,b),rev(C))
+																			} else if ( (( BinaryOp ) hi_1_0 ).getOp() == Types.OpOp2.MINUS ) {
+																				hi = _applyRewrite281(hi); // -(a,rev(-(C,b))) => -(+(a,b),rev(C))
+																				hi = _applyRewrite284(hi); // -(a,rev(-(b,C))) => +(-(a,b),rev(C))
+																			} else if ( (( BinaryOp ) hi_1_0 ).getOp() == Types.OpOp2.MULT ) {
+																			}
+																		}
+																	}
+																}
+															} else if ( hi_0_1.getDataType() == Types.DataType.SCALAR ) {
+																if ( hi_1_0.getDataType() == Types.DataType.MATRIX ) {
+																	if ( hi_1_0 instanceof BinaryOp ) {
+																		if ( (( BinaryOp ) hi_1_0 ).getOp() == Types.OpOp2.NOTEQUAL ) {
+																			hi = _applyRewrite261(hi); // -(A,rev(!=(c,A))) => -(A,!=(A,c))
+																			hi = _applyRewrite262(hi); // -(A,rev(!=(A,c))) => -(A,!=(A,c))
+																		} else if ( (( BinaryOp ) hi_1_0 ).getOp() == Types.OpOp2.PLUS ) {
+																			hi = _applyRewrite271(hi); // -(a,rev(+(b,C))) => -(-(a,b),rev(C))
+																			hi = _applyRewrite272(hi); // -(a,rev(+(C,b))) => -(-(a,b),rev(C))
+																		} else if ( (( BinaryOp ) hi_1_0 ).getOp() == Types.OpOp2.MINUS ) {
+																			hi = _applyRewrite281(hi); // -(a,rev(-(C,b))) => -(+(a,b),rev(C))
+																			hi = _applyRewrite284(hi); // -(a,rev(-(b,C))) => +(-(a,b),rev(C))
+																		} else if ( (( BinaryOp ) hi_1_0 ).getOp() == Types.OpOp2.MULT ) {
+																		}
+																	}
+																}
+															}
+														} else if ( hi_0_0.getDataType() == Types.DataType.MATRIX ) {
+															if ( hi_0_0 instanceof BinaryOp ) {
+																hi = _applyRewrite302(hi); // -(+(-(B,c),A),d) => +(A,-(B,+(c,d)))
+																hi = _applyRewrite329(hi); // -(+(-(b,D),A),c) => +(A,-(-(b,c),D))
+															} else {
+																if ( hi_0_1.getDataType() == Types.DataType.MATRIX ) {
+																	if ( hi_0_1 instanceof BinaryOp ) {
+																		hi = _applyRewrite303(hi); // -(+(A,-(B,c)),d) => +(A,-(B,+(c,d)))
+																		hi = _applyRewrite334(hi); // -(+(A,-(b,D)),c) => +(A,-(-(b,c),D))
+																	} else {
+																		if ( hi_1_0.getDataType() == Types.DataType.MATRIX ) {
+																			if ( hi_1_0 instanceof BinaryOp ) {
+																				if ( (( BinaryOp ) hi_1_0 ).getOp() == Types.OpOp2.NOTEQUAL ) {
+																					hi = _applyRewrite261(hi); // -(A,rev(!=(c,A))) => -(A,!=(A,c))
+																					hi = _applyRewrite262(hi); // -(A,rev(!=(A,c))) => -(A,!=(A,c))
+																				} else if ( (( BinaryOp ) hi_1_0 ).getOp() == Types.OpOp2.PLUS ) {
+																					hi = _applyRewrite271(hi); // -(a,rev(+(b,C))) => -(-(a,b),rev(C))
+																					hi = _applyRewrite272(hi); // -(a,rev(+(C,b))) => -(-(a,b),rev(C))
+																				} else if ( (( BinaryOp ) hi_1_0 ).getOp() == Types.OpOp2.MINUS ) {
+																					hi = _applyRewrite281(hi); // -(a,rev(-(C,b))) => -(+(a,b),rev(C))
+																					hi = _applyRewrite284(hi); // -(a,rev(-(b,C))) => +(-(a,b),rev(C))
+																				} else if ( (( BinaryOp ) hi_1_0 ).getOp() == Types.OpOp2.MULT ) {
+																				}
+																			}
+																		}
+																	}
+																} else if ( hi_0_1.getDataType() == Types.DataType.SCALAR ) {
+																	if ( hi_1_0.getDataType() == Types.DataType.MATRIX ) {
+																		if ( hi_1_0 instanceof BinaryOp ) {
+																			if ( (( BinaryOp ) hi_1_0 ).getOp() == Types.OpOp2.NOTEQUAL ) {
+																				hi = _applyRewrite261(hi); // -(A,rev(!=(c,A))) => -(A,!=(A,c))
+																				hi = _applyRewrite262(hi); // -(A,rev(!=(A,c))) => -(A,!=(A,c))
+																			} else if ( (( BinaryOp ) hi_1_0 ).getOp() == Types.OpOp2.PLUS ) {
+																				hi = _applyRewrite271(hi); // -(a,rev(+(b,C))) => -(-(a,b),rev(C))
+																				hi = _applyRewrite272(hi); // -(a,rev(+(C,b))) => -(-(a,b),rev(C))
+																			} else if ( (( BinaryOp ) hi_1_0 ).getOp() == Types.OpOp2.MINUS ) {
+																				hi = _applyRewrite281(hi); // -(a,rev(-(C,b))) => -(+(a,b),rev(C))
+																				hi = _applyRewrite284(hi); // -(a,rev(-(b,C))) => +(-(a,b),rev(C))
+																			} else if ( (( BinaryOp ) hi_1_0 ).getOp() == Types.OpOp2.MULT ) {
+																			}
+																		}
+																	}
+																}
+															}
+														}
+													}
+												}
+											} else if ( hi_1 instanceof AggBinaryOp ) {
+											} else {
+												if ( hi_0_0.getDataType() == Types.DataType.SCALAR ) {
+													if ( hi_0_1.getDataType() == Types.DataType.MATRIX ) {
+														if ( hi_0_1 instanceof BinaryOp ) {
+															hi = _applyRewrite303(hi); // -(+(A,-(B,c)),d) => +(A,-(B,+(c,d)))
+															hi = _applyRewrite334(hi); // -(+(A,-(b,D)),c) => +(A,-(-(b,c),D))
+														} else {
+															hi = _applyRewrite56(hi); // -(+(b,A),c) => +(A,-(b,c))
+															hi = _applyRewrite302(hi); // -(+(-(B,c),A),d) => +(A,-(B,+(c,d)))
+															hi = _applyRewrite308(hi); // -(+(b,A),-(D,c)) => +(A,-(+(b,c),D))
+															hi = _applyRewrite317(hi); // -(+(c,B),-(d,A)) => +(A,+(B,-(c,d)))
+															hi = _applyRewrite329(hi); // -(+(-(b,D),A),c) => +(A,-(-(b,c),D))
+															hi = _applyRewrite330(hi); // -(+(b,A),+(c,D)) => +(A,-(-(b,c),D))
+															hi = _applyRewrite331(hi); // -(+(b,A),+(D,c)) => +(A,-(-(b,c),D))
+														}
+													} else if ( hi_0_1.getDataType() == Types.DataType.SCALAR ) {
+														hi = _applyRewrite57(hi); // -(+(A,b),c) => +(A,-(b,c))
+														hi = _applyRewrite309(hi); // -(+(A,b),-(D,c)) => +(A,-(+(b,c),D))
+														hi = _applyRewrite318(hi); // -(+(B,c),-(d,A)) => +(A,+(B,-(c,d)))
+														hi = _applyRewrite332(hi); // -(+(A,b),+(c,D)) => +(A,-(-(b,c),D))
+														hi = _applyRewrite333(hi); // -(+(A,b),+(D,c)) => +(A,-(-(b,c),D))
+													}
+												} else if ( hi_0_0.getDataType() == Types.DataType.MATRIX ) {
+													if ( hi_0_0 instanceof BinaryOp ) {
+														hi = _applyRewrite302(hi); // -(+(-(B,c),A),d) => +(A,-(B,+(c,d)))
+														hi = _applyRewrite329(hi); // -(+(-(b,D),A),c) => +(A,-(-(b,c),D))
+													} else {
+														if ( hi_0_1.getDataType() == Types.DataType.MATRIX ) {
+															if ( hi_0_1 instanceof BinaryOp ) {
+																hi = _applyRewrite303(hi); // -(+(A,-(B,c)),d) => +(A,-(B,+(c,d)))
+																hi = _applyRewrite334(hi); // -(+(A,-(b,D)),c) => +(A,-(-(b,c),D))
+															} else {
+																hi = _applyRewrite56(hi); // -(+(b,A),c) => +(A,-(b,c))
+																hi = _applyRewrite302(hi); // -(+(-(B,c),A),d) => +(A,-(B,+(c,d)))
+																hi = _applyRewrite308(hi); // -(+(b,A),-(D,c)) => +(A,-(+(b,c),D))
+																hi = _applyRewrite317(hi); // -(+(c,B),-(d,A)) => +(A,+(B,-(c,d)))
+																hi = _applyRewrite329(hi); // -(+(-(b,D),A),c) => +(A,-(-(b,c),D))
+																hi = _applyRewrite330(hi); // -(+(b,A),+(c,D)) => +(A,-(-(b,c),D))
+																hi = _applyRewrite331(hi); // -(+(b,A),+(D,c)) => +(A,-(-(b,c),D))
+															}
+														} else if ( hi_0_1.getDataType() == Types.DataType.SCALAR ) {
+															hi = _applyRewrite57(hi); // -(+(A,b),c) => +(A,-(b,c))
+															hi = _applyRewrite309(hi); // -(+(A,b),-(D,c)) => +(A,-(+(b,c),D))
+															hi = _applyRewrite318(hi); // -(+(B,c),-(d,A)) => +(A,+(B,-(c,d)))
+															hi = _applyRewrite332(hi); // -(+(A,b),+(c,D)) => +(A,-(-(b,c),D))
+															hi = _applyRewrite333(hi); // -(+(A,b),+(D,c)) => +(A,-(-(b,c),D))
+														}
+													}
+												}
+											}
+										} else if ( hi_1.getDataType() == Types.DataType.SCALAR ) {
+											if ( hi_1 instanceof BinaryOp ) {
+												hi = _applyRewrite88(hi); // -(A,-(b,0.0)) => -(A,b)
+											} else {
+												if ( hi_0_0.getDataType() == Types.DataType.SCALAR ) {
+													if ( hi_0_1.getDataType() == Types.DataType.MATRIX ) {
+														if ( hi_0_1 instanceof BinaryOp ) {
+															hi = _applyRewrite303(hi); // -(+(A,-(B,c)),d) => +(A,-(B,+(c,d)))
+															hi = _applyRewrite334(hi); // -(+(A,-(b,D)),c) => +(A,-(-(b,c),D))
+														} else {
+															hi = _applyRewrite56(hi); // -(+(b,A),c) => +(A,-(b,c))
+															hi = _applyRewrite302(hi); // -(+(-(B,c),A),d) => +(A,-(B,+(c,d)))
+															hi = _applyRewrite308(hi); // -(+(b,A),-(D,c)) => +(A,-(+(b,c),D))
+															hi = _applyRewrite317(hi); // -(+(c,B),-(d,A)) => +(A,+(B,-(c,d)))
+															hi = _applyRewrite329(hi); // -(+(-(b,D),A),c) => +(A,-(-(b,c),D))
+															hi = _applyRewrite330(hi); // -(+(b,A),+(c,D)) => +(A,-(-(b,c),D))
+															hi = _applyRewrite331(hi); // -(+(b,A),+(D,c)) => +(A,-(-(b,c),D))
+														}
+													} else if ( hi_0_1.getDataType() == Types.DataType.SCALAR ) {
+														hi = _applyRewrite57(hi); // -(+(A,b),c) => +(A,-(b,c))
+														hi = _applyRewrite309(hi); // -(+(A,b),-(D,c)) => +(A,-(+(b,c),D))
+														hi = _applyRewrite318(hi); // -(+(B,c),-(d,A)) => +(A,+(B,-(c,d)))
+														hi = _applyRewrite332(hi); // -(+(A,b),+(c,D)) => +(A,-(-(b,c),D))
+														hi = _applyRewrite333(hi); // -(+(A,b),+(D,c)) => +(A,-(-(b,c),D))
+													}
+												} else if ( hi_0_0.getDataType() == Types.DataType.MATRIX ) {
+													if ( hi_0_0 instanceof BinaryOp ) {
+														hi = _applyRewrite302(hi); // -(+(-(B,c),A),d) => +(A,-(B,+(c,d)))
+														hi = _applyRewrite329(hi); // -(+(-(b,D),A),c) => +(A,-(-(b,c),D))
+													} else {
+														if ( hi_0_1.getDataType() == Types.DataType.MATRIX ) {
+															if ( hi_0_1 instanceof BinaryOp ) {
+																hi = _applyRewrite303(hi); // -(+(A,-(B,c)),d) => +(A,-(B,+(c,d)))
+																hi = _applyRewrite334(hi); // -(+(A,-(b,D)),c) => +(A,-(-(b,c),D))
+															} else {
+																hi = _applyRewrite56(hi); // -(+(b,A),c) => +(A,-(b,c))
+																hi = _applyRewrite302(hi); // -(+(-(B,c),A),d) => +(A,-(B,+(c,d)))
+																hi = _applyRewrite308(hi); // -(+(b,A),-(D,c)) => +(A,-(+(b,c),D))
+																hi = _applyRewrite317(hi); // -(+(c,B),-(d,A)) => +(A,+(B,-(c,d)))
+																hi = _applyRewrite329(hi); // -(+(-(b,D),A),c) => +(A,-(-(b,c),D))
+																hi = _applyRewrite330(hi); // -(+(b,A),+(c,D)) => +(A,-(-(b,c),D))
+																hi = _applyRewrite331(hi); // -(+(b,A),+(D,c)) => +(A,-(-(b,c),D))
+															}
+														} else if ( hi_0_1.getDataType() == Types.DataType.SCALAR ) {
+															hi = _applyRewrite57(hi); // -(+(A,b),c) => +(A,-(b,c))
+															hi = _applyRewrite309(hi); // -(+(A,b),-(D,c)) => +(A,-(+(b,c),D))
+															hi = _applyRewrite318(hi); // -(+(B,c),-(d,A)) => +(A,+(B,-(c,d)))
+															hi = _applyRewrite332(hi); // -(+(A,b),+(c,D)) => +(A,-(-(b,c),D))
+															hi = _applyRewrite333(hi); // -(+(A,b),+(D,c)) => +(A,-(-(b,c),D))
+														}
+													}
+												}
+											}
+										}
+									}
+								} else if ( (( BinaryOp ) hi_0 ).getOp() == Types.OpOp2.MULT ) {
+									if ( hi_0.getInput().size() == 2 ) {
+										Hop hi_0_0 = hi_0.getInput(0);
+										Hop hi_0_1 = hi_0.getInput(1);
+										if ( hi_1.getDataType() == Types.DataType.MATRIX ) {
+											if ( hi_1 instanceof BinaryOp ) {
+												if ( (( BinaryOp ) hi_1 ).getOp() == Types.OpOp2.MINUS ) {
+													if ( hi_1.getInput().size() == 2 ) {
+														Hop hi_1_0 = hi_1.getInput(0);
+														Hop hi_1_1 = hi_1.getInput(1);
+														if ( hi_0_0.getDataType() == Types.DataType.SCALAR ) {
+														} else if ( hi_0_0.getDataType() == Types.DataType.MATRIX ) {
+														}
+													}
+												} else if ( (( BinaryOp ) hi_1 ).getOp() == Types.OpOp2.PLUS ) {
+													if ( hi_1.getInput().size() == 2 ) {
+														Hop hi_1_0 = hi_1.getInput(0);
+														Hop hi_1_1 = hi_1.getInput(1);
+														if ( hi_0_0.getDataType() == Types.DataType.SCALAR ) {
+														} else if ( hi_0_0.getDataType() == Types.DataType.MATRIX ) {
+														}
+													}
+												} else if ( (( BinaryOp ) hi_1 ).getOp() == Types.OpOp2.MULT ) {
+												} else if ( (( BinaryOp ) hi_1 ).getOp() == Types.OpOp2.NOTEQUAL ) {
+													hi = _applyRewrite259(hi); // -(A,!=(rev(A),c)) => -(A,!=(A,c))
+													hi = _applyRewrite260(hi); // -(A,!=(c,rev(A))) => -(A,!=(A,c))
+													hi = _applyRewrite263(hi); // -(A,!=(rev(A),C)) => -(A,!=(A,C))
+													hi = _applyRewrite264(hi); // -(A,!=(C,rev(A))) => -(A,!=(A,C))
+												} else if ( (( BinaryOp ) hi_1 ).getOp() == Types.OpOp2.DIV ) {
+												}
+											} else if ( hi_1 instanceof ReorgOp ) {
+												if ( (( ReorgOp ) hi_1 ).getOp() == Types.ReOrgOp.TRANS ) {
+													if ( hi_1.getInput().size() == 1 ) {
+														Hop hi_1_0 = hi_1.getInput(0);
+														if ( hi_0_0.getDataType() == Types.DataType.SCALAR ) {
+														} else if ( hi_0_0.getDataType() == Types.DataType.MATRIX ) {
+														}
+													}
+												} else if ( (( ReorgOp ) hi_1 ).getOp() == Types.ReOrgOp.REV ) {
+													if ( hi_1.getInput().size() == 1 ) {
+														Hop hi_1_0 = hi_1.getInput(0);
+														if ( hi_0_0.getDataType() == Types.DataType.SCALAR ) {
+														} else if ( hi_0_0.getDataType() == Types.DataType.MATRIX ) {
+														}
+													}
+												}
+											} else if ( hi_1 instanceof AggBinaryOp ) {
+											} else {
+												if ( hi_0_0.getDataType() == Types.DataType.SCALAR ) {
+												} else if ( hi_0_0.getDataType() == Types.DataType.MATRIX ) {
+												}
+											}
+										} else if ( hi_1.getDataType() == Types.DataType.SCALAR ) {
+											if ( hi_1 instanceof BinaryOp ) {
+												hi = _applyRewrite88(hi); // -(A,-(b,0.0)) => -(A,b)
+											} else {
+												if ( hi_0_0.getDataType() == Types.DataType.SCALAR ) {
+												} else if ( hi_0_0.getDataType() == Types.DataType.MATRIX ) {
+												}
+											}
+										}
+									}
+								}
+							} else if ( hi_0 instanceof ReorgOp ) {
+								if ( (( ReorgOp ) hi_0 ).getOp() == Types.ReOrgOp.TRANS ) {
+									hi = _applyRewrite191(hi); // -(t(A),t(B)) => t(-(A,B))
+									hi = _applyRewrite265(hi); // -(t(-(A,b)),c) => -(t(A),+(b,c))
+									hi = _applyRewrite266(hi); // -(t(-(a,C)),b) => -(-(a,b),t(C))
+									hi = _applyRewrite348(hi); // -(t(+(a,C)),b) => +(-(a,b),t(C))
+									hi = _applyRewrite349(hi); // -(t(+(C,a)),b) => +(-(a,b),t(C))
+								} else if ( (( ReorgOp ) hi_0 ).getOp() == Types.ReOrgOp.REV ) {
+									hi = _applyRewrite258(hi); // -(rev(!=(A,b)),A) => -(!=(A,b),A)
+									hi = _applyRewrite269(hi); // -(rev(-(A,b)),c) => -(rev(A),+(b,c))
+									hi = _applyRewrite270(hi); // -(rev(-(a,C)),b) => -(-(a,b),rev(C))
+									hi = _applyRewrite285(hi); // -(rev(+(a,C)),b) => +(-(a,b),rev(C))
+									hi = _applyRewrite286(hi); // -(rev(+(C,a)),b) => +(-(a,b),rev(C))
+								}
+							} else {
+								if ( hi_1.getDataType() == Types.DataType.MATRIX ) {
+									if ( hi_1 instanceof BinaryOp ) {
+										if ( (( BinaryOp ) hi_1 ).getOp() == Types.OpOp2.MINUS ) {
+											if ( hi_1.getInput().size() == 2 ) {
+												Hop hi_1_0 = hi_1.getInput(0);
+												Hop hi_1_1 = hi_1.getInput(1);
+												if ( hi_1_0.getDataType() == Types.DataType.MATRIX ) {
+													if ( hi_1_0 instanceof BinaryOp ) {
+														if ( (( BinaryOp ) hi_1_0 ).getOp() == Types.OpOp2.MINUS ) {
+															hi = _applyRewrite305(hi); // -(b,-(-(D,c),A)) => +(A,-(+(b,c),D))
+															hi = _applyRewrite316(hi); // -(c,-(-(d,B),A)) => +(A,+(B,-(c,d)))
+														} else if ( (( BinaryOp ) hi_1_0 ).getOp() == Types.OpOp2.PLUS ) {
+															hi = _applyRewrite327(hi); // -(b,-(+(c,D),A)) => +(A,-(-(b,c),D))
+															hi = _applyRewrite328(hi); // -(b,-(+(D,c),A)) => +(A,-(-(b,c),D))
+														} else if ( (( BinaryOp ) hi_1_0 ).getOp() == Types.OpOp2.MULT ) {
+															if ( hi_1_0.getInput().size() == 2 ) {
+																Hop hi_1_0_0 = hi_1_0.getInput(0);
+																Hop hi_1_0_1 = hi_1_0.getInput(1);
+																if ( hi_1_1.getDataType() == Types.DataType.SCALAR ) {
+																	if ( hi_1_0_0.getDataType() == Types.DataType.SCALAR ) {
+																	} else if ( hi_1_0_0.getDataType() == Types.DataType.MATRIX ) {
+																	}
+																} else if ( hi_1_1.getDataType() == Types.DataType.MATRIX ) {
+																	if ( hi_1_1 instanceof BinaryOp ) {
+																		if ( (( BinaryOp ) hi_1_1 ).getOp() == Types.OpOp2.MINUS ) {
+																			hi = _applyRewrite294(hi); // -(a,-(C,-(b,D))) => -(+(a,b),+(C,D))
+																			hi = _applyRewrite324(hi); // -(b,-(D,-(A,c))) => +(A,-(-(b,c),D))
+																		} else if ( (( BinaryOp ) hi_1_1 ).getOp() == Types.OpOp2.PLUS ) {
+																			hi = _applyRewrite306(hi); // -(b,-(D,+(c,A))) => +(A,-(+(b,c),D))
+																			hi = _applyRewrite307(hi); // -(b,-(D,+(A,c))) => +(A,-(+(b,c),D))
+																		} else if ( (( BinaryOp ) hi_1_1 ).getOp() == Types.OpOp2.MULT ) {
+																		}
+																	} else {
+																		if ( hi_1_0_0.getDataType() == Types.DataType.SCALAR ) {
+																		} else if ( hi_1_0_0.getDataType() == Types.DataType.MATRIX ) {
+																		}
+																	}
+																}
+															}
+														}
+													} else {
+														if ( hi_1_1.getDataType() == Types.DataType.SCALAR ) {
+															hi = _applyRewrite42(hi); // -(0.0,-(B,a)) => -(a,B)
+															hi = _applyRewrite53(hi); // -(a,-(C,b)) => -(+(a,b),C)
+															hi = _applyRewrite293(hi); // -(-(a,C),-(D,b)) => -(+(a,b),+(C,D))
+															hi = _applyRewrite308(hi); // -(+(b,A),-(D,c)) => +(A,-(+(b,c),D))
+															hi = _applyRewrite309(hi); // -(+(A,b),-(D,c)) => +(A,-(+(b,c),D))
+															hi = _applyRewrite323(hi); // -(-(A,c),-(D,b)) => +(A,-(-(b,c),D))
+														} else if ( hi_1_1.getDataType() == Types.DataType.MATRIX ) {
+															if ( hi_1_1 instanceof BinaryOp ) {
+																if ( (( BinaryOp ) hi_1_1 ).getOp() == Types.OpOp2.MINUS ) {
+																	hi = _applyRewrite294(hi); // -(a,-(C,-(b,D))) => -(+(a,b),+(C,D))
+																	hi = _applyRewrite324(hi); // -(b,-(D,-(A,c))) => +(A,-(-(b,c),D))
+																} else if ( (( BinaryOp ) hi_1_1 ).getOp() == Types.OpOp2.PLUS ) {
+																	hi = _applyRewrite306(hi); // -(b,-(D,+(c,A))) => +(A,-(+(b,c),D))
+																	hi = _applyRewrite307(hi); // -(b,-(D,+(A,c))) => +(A,-(+(b,c),D))
+																} else if ( (( BinaryOp ) hi_1_1 ).getOp() == Types.OpOp2.MULT ) {
+																}
+															} else {
+																hi = _applyRewrite45(hi); // -(0.0,-(b,A)) => -(A,b)
+																hi = _applyRewrite46(hi); // -(0.0,-(B,A)) => -(A,B)
+																hi = _applyRewrite58(hi); // -(b,-(c,A)) => +(A,-(b,c))
+																hi = _applyRewrite301(hi); // -(-(B,c),-(d,A)) => +(A,-(B,+(c,d)))
+																hi = _applyRewrite305(hi); // -(b,-(-(D,c),A)) => +(A,-(+(b,c),D))
+																hi = _applyRewrite316(hi); // -(c,-(-(d,B),A)) => +(A,+(B,-(c,d)))
+																hi = _applyRewrite317(hi); // -(+(c,B),-(d,A)) => +(A,+(B,-(c,d)))
+																hi = _applyRewrite318(hi); // -(+(B,c),-(d,A)) => +(A,+(B,-(c,d)))
+																hi = _applyRewrite322(hi); // -(-(b,D),-(c,A)) => +(A,-(-(b,c),D))
+																hi = _applyRewrite327(hi); // -(b,-(+(c,D),A)) => +(A,-(-(b,c),D))
+																hi = _applyRewrite328(hi); // -(b,-(+(D,c),A)) => +(A,-(-(b,c),D))
+															}
+														}
+													}
+												} else if ( hi_1_0.getDataType() == Types.DataType.SCALAR ) {
+													if ( hi_1_1.getDataType() == Types.DataType.SCALAR ) {
+														hi = _applyRewrite42(hi); // -(0.0,-(B,a)) => -(a,B)
+														hi = _applyRewrite53(hi); // -(a,-(C,b)) => -(+(a,b),C)
+														hi = _applyRewrite293(hi); // -(-(a,C),-(D,b)) => -(+(a,b),+(C,D))
+														hi = _applyRewrite308(hi); // -(+(b,A),-(D,c)) => +(A,-(+(b,c),D))
+														hi = _applyRewrite309(hi); // -(+(A,b),-(D,c)) => +(A,-(+(b,c),D))
+														hi = _applyRewrite323(hi); // -(-(A,c),-(D,b)) => +(A,-(-(b,c),D))
+													} else if ( hi_1_1.getDataType() == Types.DataType.MATRIX ) {
+														if ( hi_1_1 instanceof BinaryOp ) {
+															if ( (( BinaryOp ) hi_1_1 ).getOp() == Types.OpOp2.MINUS ) {
+																hi = _applyRewrite294(hi); // -(a,-(C,-(b,D))) => -(+(a,b),+(C,D))
+																hi = _applyRewrite324(hi); // -(b,-(D,-(A,c))) => +(A,-(-(b,c),D))
+															} else if ( (( BinaryOp ) hi_1_1 ).getOp() == Types.OpOp2.PLUS ) {
+																hi = _applyRewrite306(hi); // -(b,-(D,+(c,A))) => +(A,-(+(b,c),D))
+																hi = _applyRewrite307(hi); // -(b,-(D,+(A,c))) => +(A,-(+(b,c),D))
+															} else if ( (( BinaryOp ) hi_1_1 ).getOp() == Types.OpOp2.MULT ) {
+															}
+														} else {
+															hi = _applyRewrite45(hi); // -(0.0,-(b,A)) => -(A,b)
+															hi = _applyRewrite46(hi); // -(0.0,-(B,A)) => -(A,B)
+															hi = _applyRewrite58(hi); // -(b,-(c,A)) => +(A,-(b,c))
+															hi = _applyRewrite301(hi); // -(-(B,c),-(d,A)) => +(A,-(B,+(c,d)))
+															hi = _applyRewrite305(hi); // -(b,-(-(D,c),A)) => +(A,-(+(b,c),D))
+															hi = _applyRewrite316(hi); // -(c,-(-(d,B),A)) => +(A,+(B,-(c,d)))
+															hi = _applyRewrite317(hi); // -(+(c,B),-(d,A)) => +(A,+(B,-(c,d)))
+															hi = _applyRewrite318(hi); // -(+(B,c),-(d,A)) => +(A,+(B,-(c,d)))
+															hi = _applyRewrite322(hi); // -(-(b,D),-(c,A)) => +(A,-(-(b,c),D))
+															hi = _applyRewrite327(hi); // -(b,-(+(c,D),A)) => +(A,-(-(b,c),D))
+															hi = _applyRewrite328(hi); // -(b,-(+(D,c),A)) => +(A,-(-(b,c),D))
+														}
+													}
+												}
+											}
+										} else if ( (( BinaryOp ) hi_1 ).getOp() == Types.OpOp2.PLUS ) {
+											if ( hi_1.getInput().size() == 2 ) {
+												Hop hi_1_0 = hi_1.getInput(0);
+												Hop hi_1_1 = hi_1.getInput(1);
+												if ( hi_1_0.getDataType() == Types.DataType.SCALAR ) {
+													if ( hi_1_1.getDataType() == Types.DataType.MATRIX ) {
+														if ( hi_1_1 instanceof BinaryOp ) {
+															hi = _applyRewrite296(hi); // -(a,+(D,-(C,b))) => -(+(a,b),+(C,D))
+															hi = _applyRewrite336(hi); // -(b,+(D,-(c,A))) => +(A,-(-(b,c),D))
+														} else {
+															hi = _applyRewrite50(hi); // -(a,+(b,C)) => -(-(a,b),C)
+															hi = _applyRewrite274(hi); // -(-(a,C),+(b,D)) => -(-(a,b),+(C,D))
+															hi = _applyRewrite279(hi); // -(-(A,c),+(d,B)) => -(A,+(B,+(c,d)))
+															hi = _applyRewrite295(hi); // -(a,+(-(D,b),C)) => -(+(a,b),+(C,D))
+															hi = _applyRewrite330(hi); // -(+(b,A),+(c,D)) => +(A,-(-(b,c),D))
+															hi = _applyRewrite332(hi); // -(+(A,b),+(c,D)) => +(A,-(-(b,c),D))
+															hi = _applyRewrite335(hi); // -(b,+(-(c,A),D)) => +(A,-(-(b,c),D))
+														}
+													} else if ( hi_1_1.getDataType() == Types.DataType.SCALAR ) {
+														hi = _applyRewrite51(hi); // -(a,+(C,b)) => -(-(a,b),C)
+														hi = _applyRewrite275(hi); // -(-(a,D),+(C,b)) => -(-(a,b),+(C,D))
+														hi = _applyRewrite280(hi); // -(-(A,c),+(B,d)) => -(A,+(B,+(c,d)))
+														hi = _applyRewrite331(hi); // -(+(b,A),+(D,c)) => +(A,-(-(b,c),D))
+														hi = _applyRewrite333(hi); // -(+(A,b),+(D,c)) => +(A,-(-(b,c),D))
+													}
+												} else if ( hi_1_0.getDataType() == Types.DataType.MATRIX ) {
+													if ( hi_1_0 instanceof BinaryOp ) {
+														hi = _applyRewrite295(hi); // -(a,+(-(D,b),C)) => -(+(a,b),+(C,D))
+														hi = _applyRewrite335(hi); // -(b,+(-(c,A),D)) => +(A,-(-(b,c),D))
+													} else {
+														if ( hi_1_1.getDataType() == Types.DataType.MATRIX ) {
+															if ( hi_1_1 instanceof BinaryOp ) {
+																hi = _applyRewrite296(hi); // -(a,+(D,-(C,b))) => -(+(a,b),+(C,D))
+																hi = _applyRewrite336(hi); // -(b,+(D,-(c,A))) => +(A,-(-(b,c),D))
+															} else {
+																hi = _applyRewrite50(hi); // -(a,+(b,C)) => -(-(a,b),C)
+																hi = _applyRewrite274(hi); // -(-(a,C),+(b,D)) => -(-(a,b),+(C,D))
+																hi = _applyRewrite279(hi); // -(-(A,c),+(d,B)) => -(A,+(B,+(c,d)))
+																hi = _applyRewrite295(hi); // -(a,+(-(D,b),C)) => -(+(a,b),+(C,D))
+																hi = _applyRewrite330(hi); // -(+(b,A),+(c,D)) => +(A,-(-(b,c),D))
+																hi = _applyRewrite332(hi); // -(+(A,b),+(c,D)) => +(A,-(-(b,c),D))
+																hi = _applyRewrite335(hi); // -(b,+(-(c,A),D)) => +(A,-(-(b,c),D))
+															}
+														} else if ( hi_1_1.getDataType() == Types.DataType.SCALAR ) {
+															hi = _applyRewrite51(hi); // -(a,+(C,b)) => -(-(a,b),C)
+															hi = _applyRewrite275(hi); // -(-(a,D),+(C,b)) => -(-(a,b),+(C,D))
+															hi = _applyRewrite280(hi); // -(-(A,c),+(B,d)) => -(A,+(B,+(c,d)))
+															hi = _applyRewrite331(hi); // -(+(b,A),+(D,c)) => +(A,-(-(b,c),D))
+															hi = _applyRewrite333(hi); // -(+(A,b),+(D,c)) => +(A,-(-(b,c),D))
+														}
+													}
+												}
+											}
+										} else if ( (( BinaryOp ) hi_1 ).getOp() == Types.OpOp2.MULT ) {
+										} else if ( (( BinaryOp ) hi_1 ).getOp() == Types.OpOp2.NOTEQUAL ) {
+											hi = _applyRewrite259(hi); // -(A,!=(rev(A),c)) => -(A,!=(A,c))
+											hi = _applyRewrite260(hi); // -(A,!=(c,rev(A))) => -(A,!=(A,c))
+											hi = _applyRewrite263(hi); // -(A,!=(rev(A),C)) => -(A,!=(A,C))
+											hi = _applyRewrite264(hi); // -(A,!=(C,rev(A))) => -(A,!=(A,C))
+										} else if ( (( BinaryOp ) hi_1 ).getOp() == Types.OpOp2.DIV ) {
+										}
+									} else if ( hi_1 instanceof ReorgOp ) {
+										if ( (( ReorgOp ) hi_1 ).getOp() == Types.ReOrgOp.TRANS ) {
+											if ( hi_1.getInput().size() == 1 ) {
+												Hop hi_1_0 = hi_1.getInput(0);
+												if ( hi_1_0.getDataType() == Types.DataType.MATRIX ) {
+													if ( hi_1_0 instanceof BinaryOp ) {
+														if ( (( BinaryOp ) hi_1_0 ).getOp() == Types.OpOp2.PLUS ) {
+															hi = _applyRewrite267(hi); // -(a,t(+(b,C))) => -(-(a,b),t(C))
+															hi = _applyRewrite268(hi); // -(a,t(+(C,b))) => -(-(a,b),t(C))
+														} else if ( (( BinaryOp ) hi_1_0 ).getOp() == Types.OpOp2.MINUS ) {
+															hi = _applyRewrite345(hi); // -(a,t(-(C,b))) => -(+(a,b),t(C))
+															hi = _applyRewrite350(hi); // -(a,t(-(b,C))) => +(-(a,b),t(C))
+														} else if ( (( BinaryOp ) hi_1_0 ).getOp() == Types.OpOp2.MULT ) {
+														}
+													} else {
+														hi = _applyRewrite191(hi); // -(t(A),t(B)) => t(-(A,B))
+													}
+												}
+											}
+										} else if ( (( ReorgOp ) hi_1 ).getOp() == Types.ReOrgOp.REV ) {
+											if ( hi_1.getInput().size() == 1 ) {
+												Hop hi_1_0 = hi_1.getInput(0);
+												if ( hi_1_0.getDataType() == Types.DataType.MATRIX ) {
+													if ( hi_1_0 instanceof BinaryOp ) {
+														if ( (( BinaryOp ) hi_1_0 ).getOp() == Types.OpOp2.NOTEQUAL ) {
+															hi = _applyRewrite261(hi); // -(A,rev(!=(c,A))) => -(A,!=(A,c))
+															hi = _applyRewrite262(hi); // -(A,rev(!=(A,c))) => -(A,!=(A,c))
+														} else if ( (( BinaryOp ) hi_1_0 ).getOp() == Types.OpOp2.PLUS ) {
+															hi = _applyRewrite271(hi); // -(a,rev(+(b,C))) => -(-(a,b),rev(C))
+															hi = _applyRewrite272(hi); // -(a,rev(+(C,b))) => -(-(a,b),rev(C))
+														} else if ( (( BinaryOp ) hi_1_0 ).getOp() == Types.OpOp2.MINUS ) {
+															hi = _applyRewrite281(hi); // -(a,rev(-(C,b))) => -(+(a,b),rev(C))
+															hi = _applyRewrite284(hi); // -(a,rev(-(b,C))) => +(-(a,b),rev(C))
+														} else if ( (( BinaryOp ) hi_1_0 ).getOp() == Types.OpOp2.MULT ) {
+														}
+													}
+												}
+											}
+										}
+									} else if ( hi_1 instanceof AggBinaryOp ) {
+									} else {
+										hi = _applyRewrite258(hi); // -(rev(!=(A,b)),A) => -(!=(A,b),A)
+									}
+								} else if ( hi_1.getDataType() == Types.DataType.SCALAR ) {
+									if ( hi_1 instanceof BinaryOp ) {
+										hi = _applyRewrite88(hi); // -(A,-(b,0.0)) => -(A,b)
+									} else {
+										hi = _applyRewrite49(hi); // -(-(A,b),c) => -(A,+(b,c))
+										hi = _applyRewrite52(hi); // -(-(a,C),b) => -(-(a,b),C)
+										hi = _applyRewrite56(hi); // -(+(b,A),c) => +(A,-(b,c))
+										hi = _applyRewrite57(hi); // -(+(A,b),c) => +(A,-(b,c))
+										hi = _applyRewrite265(hi); // -(t(-(A,b)),c) => -(t(A),+(b,c))
+										hi = _applyRewrite266(hi); // -(t(-(a,C)),b) => -(-(a,b),t(C))
+										hi = _applyRewrite269(hi); // -(rev(-(A,b)),c) => -(rev(A),+(b,c))
+										hi = _applyRewrite270(hi); // -(rev(-(a,C)),b) => -(-(a,b),rev(C))
+										hi = _applyRewrite273(hi); // -(-(-(a,D),C),b) => -(-(a,b),+(C,D))
+										hi = _applyRewrite276(hi); // -(-(-(A,c),B),d) => -(A,+(B,+(c,d)))
+										hi = _applyRewrite277(hi); // -(-(A,+(c,B)),d) => -(A,+(B,+(c,d)))
+										hi = _applyRewrite278(hi); // -(-(A,+(B,c)),d) => -(A,+(B,+(c,d)))
+										hi = _applyRewrite285(hi); // -(rev(+(a,C)),b) => +(-(a,b),rev(C))
+										hi = _applyRewrite286(hi); // -(rev(+(C,a)),b) => +(-(a,b),rev(C))
+										hi = _applyRewrite300(hi); // -(-(A,-(c,B)),d) => +(A,-(B,+(c,d)))
+										hi = _applyRewrite302(hi); // -(+(-(B,c),A),d) => +(A,-(B,+(c,d)))
+										hi = _applyRewrite303(hi); // -(+(A,-(B,c)),d) => +(A,-(B,+(c,d)))
+										hi = _applyRewrite321(hi); // -(-(A,-(D,b)),c) => +(A,-(-(b,c),D))
+										hi = _applyRewrite325(hi); // -(-(+(b,A),D),c) => +(A,-(-(b,c),D))
+										hi = _applyRewrite326(hi); // -(-(+(A,b),D),c) => +(A,-(-(b,c),D))
+										hi = _applyRewrite329(hi); // -(+(-(b,D),A),c) => +(A,-(-(b,c),D))
+										hi = _applyRewrite334(hi); // -(+(A,-(b,D)),c) => +(A,-(-(b,c),D))
+										hi = _applyRewrite348(hi); // -(t(+(a,C)),b) => +(-(a,b),t(C))
+										hi = _applyRewrite349(hi); // -(t(+(C,a)),b) => +(-(a,b),t(C))
+									}
+								}
+							}
 						}
 					}
 				} else if ( (( BinaryOp ) hi ).getOp() == Types.OpOp2.NOTEQUAL ) {
@@ -948,6 +5296,78 @@ public class GeneratedRewriteClass implements Function {
 					if ( hi.getInput().size() == 1 ) {
 						Hop hi_0 = hi.getInput(0);
 						if ( hi_0.getDataType() == Types.DataType.MATRIX ) {
+							if ( hi_0 instanceof AggUnaryOp ) {
+								hi = _applyRewrite76(hi); // rev(colSums(A)) => colSums(A)
+							} else if ( hi_0 instanceof BinaryOp ) {
+								if ( (( BinaryOp ) hi_0 ).getOp() == Types.OpOp2.MINUS ) {
+									if ( hi_0.getInput().size() == 2 ) {
+										Hop hi_0_0 = hi_0.getInput(0);
+										Hop hi_0_1 = hi_0.getInput(1);
+										if ( hi_0_0.getDataType() == Types.DataType.SCALAR ) {
+											hi = _applyRewrite98(hi); // rev(-(a,rev(B))) => -(a,B)
+											hi = _applyRewrite485(hi); // rev(-(a,colSums(B))) => -(a,colSums(B))
+										} else if ( hi_0_0.getDataType() == Types.DataType.MATRIX ) {
+											hi = _applyRewrite100(hi); // rev(-(rev(A),b)) => -(A,b)
+											hi = _applyRewrite187(hi); // rev(-(rev(A),B)) => -(A,rev(B))
+											hi = _applyRewrite188(hi); // rev(-(A,rev(B))) => -(rev(A),B)
+											hi = _applyRewrite484(hi); // rev(-(colSums(A),b)) => -(colSums(A),b)
+										}
+									}
+								} else if ( (( BinaryOp ) hi_0 ).getOp() == Types.OpOp2.NOTEQUAL ) {
+									if ( hi_0.getInput().size() == 2 ) {
+										Hop hi_0_0 = hi_0.getInput(0);
+										Hop hi_0_1 = hi_0.getInput(1);
+										if ( hi_0_0.getDataType() == Types.DataType.MATRIX ) {
+											hi = _applyRewrite102(hi); // rev(!=(rev(A),b)) => !=(A,b)
+											hi = _applyRewrite208(hi); // rev(!=(rev(A),B)) => !=(A,rev(B))
+											hi = _applyRewrite209(hi); // rev(!=(B,rev(A))) => !=(A,rev(B))
+											hi = _applyRewrite486(hi); // rev(!=(colSums(B),a)) => !=(a,colSums(B))
+										} else if ( hi_0_0.getDataType() == Types.DataType.SCALAR ) {
+											hi = _applyRewrite103(hi); // rev(!=(b,rev(A))) => !=(A,b)
+											hi = _applyRewrite487(hi); // rev(!=(a,colSums(B))) => !=(a,colSums(B))
+										}
+									}
+								} else if ( (( BinaryOp ) hi_0 ).getOp() == Types.OpOp2.PLUS ) {
+									if ( hi_0.getInput().size() == 2 ) {
+										Hop hi_0_0 = hi_0.getInput(0);
+										Hop hi_0_1 = hi_0.getInput(1);
+										if ( hi_0_0.getDataType() == Types.DataType.MATRIX ) {
+											hi = _applyRewrite106(hi); // rev(+(rev(A),b)) => +(A,b)
+											hi = _applyRewrite242(hi); // rev(+(rev(A),B)) => +(A,rev(B))
+											hi = _applyRewrite243(hi); // rev(+(B,rev(A))) => +(A,rev(B))
+											hi = _applyRewrite489(hi); // rev(+(colSums(B),a)) => +(a,colSums(B))
+										} else if ( hi_0_0.getDataType() == Types.DataType.SCALAR ) {
+											hi = _applyRewrite107(hi); // rev(+(b,rev(A))) => +(A,b)
+											hi = _applyRewrite490(hi); // rev(+(a,colSums(B))) => +(a,colSums(B))
+										}
+									}
+								} else if ( (( BinaryOp ) hi_0 ).getOp() == Types.OpOp2.MULT ) {
+									if ( hi_0.getInput().size() == 2 ) {
+										Hop hi_0_0 = hi_0.getInput(0);
+										Hop hi_0_1 = hi_0.getInput(1);
+										if ( hi_0_0.getDataType() == Types.DataType.MATRIX ) {
+											hi = _applyRewrite110(hi); // rev(*(rev(A),b)) => *(A,b)
+											hi = _applyRewrite388(hi); // rev(*(rev(A),B)) => *(A,rev(B))
+											hi = _applyRewrite389(hi); // rev(*(B,rev(A))) => *(A,rev(B))
+											hi = _applyRewrite491(hi); // rev(*(colSums(B),a)) => *(a,colSums(B))
+										} else if ( hi_0_0.getDataType() == Types.DataType.SCALAR ) {
+											hi = _applyRewrite111(hi); // rev(*(b,rev(A))) => *(A,b)
+											hi = _applyRewrite492(hi); // rev(*(a,colSums(B))) => *(a,colSums(B))
+										}
+									}
+								} else if ( (( BinaryOp ) hi_0 ).getOp() == Types.OpOp2.DIV ) {
+									hi = _applyRewrite118(hi); // rev(/(a,rev(B))) => /(a,B)
+									hi = _applyRewrite405(hi); // rev(/(rev(A),B)) => /(A,rev(B))
+									hi = _applyRewrite406(hi); // rev(/(A,rev(B))) => /(rev(A),B)
+									hi = _applyRewrite493(hi); // rev(/(a,colSums(B))) => /(a,colSums(B))
+								}
+							} else if ( hi_0 instanceof AggBinaryOp ) {
+								hi = _applyRewrite470(hi); // rev(%*%(!=(b,A),A)) => %*%(!=(A,b),A)
+								hi = _applyRewrite471(hi); // rev(%*%(!=(A,b),A)) => %*%(!=(A,b),A)
+								hi = _applyRewrite498(hi); // rev(%*%(colSums(A),B)) => %*%(colSums(A),B)
+							} else if ( hi_0 instanceof ReorgOp ) {
+								hi = _applyRewrite488(hi); // rev(t(rowSums(A))) => t(rowSums(A))
+							}
 						}
 					}
 				} else if ( (( ReorgOp ) hi ).getOp() == Types.ReOrgOp.TRANS ) {
@@ -1146,7 +5566,6 @@ public class GeneratedRewriteClass implements Function {
 
 
 		// Now, we start building the new Hop
-		System.out.println("Applying rewrite: *(1.0,a) => a");
 
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
@@ -1190,7 +5609,6 @@ public class GeneratedRewriteClass implements Function {
 
 
 		// Now, we start building the new Hop
-		System.out.println("Applying rewrite: *(a,1.0) => a");
 
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
@@ -1234,7 +5652,6 @@ public class GeneratedRewriteClass implements Function {
 
 
 		// Now, we start building the new Hop
-		System.out.println("Applying rewrite: /(a,1.0) => a");
 
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
@@ -1278,7 +5695,6 @@ public class GeneratedRewriteClass implements Function {
 
 
 		// Now, we start building the new Hop
-		System.out.println("Applying rewrite: +(0.0,a) => a");
 
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
@@ -1322,7 +5738,6 @@ public class GeneratedRewriteClass implements Function {
 
 
 		// Now, we start building the new Hop
-		System.out.println("Applying rewrite: +(a,0.0) => a");
 
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
@@ -1366,7 +5781,6 @@ public class GeneratedRewriteClass implements Function {
 
 
 		// Now, we start building the new Hop
-		System.out.println("Applying rewrite: +(0.0,A) => A");
 
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
@@ -1410,7 +5824,6 @@ public class GeneratedRewriteClass implements Function {
 
 
 		// Now, we start building the new Hop
-		System.out.println("Applying rewrite: +(A,0.0) => A");
 
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
@@ -1454,7 +5867,6 @@ public class GeneratedRewriteClass implements Function {
 
 
 		// Now, we start building the new Hop
-		System.out.println("Applying rewrite: *(0.0,a) => 0.0");
 
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
@@ -1498,7 +5910,6 @@ public class GeneratedRewriteClass implements Function {
 
 
 		// Now, we start building the new Hop
-		System.out.println("Applying rewrite: *(a,0.0) => 0.0");
 
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
@@ -1542,7 +5953,6 @@ public class GeneratedRewriteClass implements Function {
 
 
 		// Now, we start building the new Hop
-		System.out.println("Applying rewrite: /(0.0,a) => 0.0");
 
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
@@ -1578,7 +5988,6 @@ public class GeneratedRewriteClass implements Function {
 
 
 		// Now, we start building the new Hop
-		System.out.println("Applying rewrite: /(A,c) => *(A,/(1.0,c))");
 		LiteralOp l1 = new LiteralOp( 1.0 );
 		BinaryOp v2 = HopRewriteUtils.createBinary(l1, hi_1, Types.OpOp2.DIV);
 		BinaryOp v3 = HopRewriteUtils.createBinary(hi_0, v2, Types.OpOp2.MULT);
@@ -1631,7 +6040,6 @@ public class GeneratedRewriteClass implements Function {
 
 
 		// Now, we start building the new Hop
-		System.out.println("Applying rewrite: colSums(*(a,B)) => *(a,colSums(B))");
 		AggUnaryOp v1 = HopRewriteUtils.createAggUnaryOp(hi_0_1, Types.AggOp.SUM, Types.Direction.Col);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0_0, v1, Types.OpOp2.MULT);
 
@@ -1684,7 +6092,6 @@ public class GeneratedRewriteClass implements Function {
 
 
 		// Now, we start building the new Hop
-		System.out.println("Applying rewrite: colSums(*(B,a)) => *(a,colSums(B))");
 		AggUnaryOp v1 = HopRewriteUtils.createAggUnaryOp(hi_0_0, Types.AggOp.SUM, Types.Direction.Col);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0_1, v1, Types.OpOp2.MULT);
 
@@ -1737,7 +6144,6 @@ public class GeneratedRewriteClass implements Function {
 
 
 		// Now, we start building the new Hop
-		System.out.println("Applying rewrite: rowSums(*(a,B)) => *(a,rowSums(B))");
 		AggUnaryOp v1 = HopRewriteUtils.createAggUnaryOp(hi_0_1, Types.AggOp.SUM, Types.Direction.Row);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0_0, v1, Types.OpOp2.MULT);
 
@@ -1790,7 +6196,6 @@ public class GeneratedRewriteClass implements Function {
 
 
 		// Now, we start building the new Hop
-		System.out.println("Applying rewrite: rowSums(*(B,a)) => *(a,rowSums(B))");
 		AggUnaryOp v1 = HopRewriteUtils.createAggUnaryOp(hi_0_0, Types.AggOp.SUM, Types.Direction.Row);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0_1, v1, Types.OpOp2.MULT);
 
@@ -1853,7 +6258,6 @@ public class GeneratedRewriteClass implements Function {
 
 
 		// Now, we start building the new Hop
-		System.out.println("Applying rewrite: *(/(1.0,B),a) => /(a,B)");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_1, hi_0_1, Types.OpOp2.DIV);
 
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
@@ -1916,7 +6320,6 @@ public class GeneratedRewriteClass implements Function {
 
 
 		// Now, we start building the new Hop
-		System.out.println("Applying rewrite: *(a,/(1.0,B)) => /(a,B)");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0, hi_1_1, Types.OpOp2.DIV);
 
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
@@ -1979,7 +6382,6 @@ public class GeneratedRewriteClass implements Function {
 
 
 		// Now, we start building the new Hop
-		System.out.println("Applying rewrite: *(/(1.0,B),A) => /(A,B)");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_1, hi_0_1, Types.OpOp2.DIV);
 
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
@@ -2042,7 +6444,6 @@ public class GeneratedRewriteClass implements Function {
 
 
 		// Now, we start building the new Hop
-		System.out.println("Applying rewrite: *(A,/(1.0,B)) => /(A,B)");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0, hi_1_1, Types.OpOp2.DIV);
 
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
@@ -2097,7 +6498,6 @@ public class GeneratedRewriteClass implements Function {
 
 
 		// Now, we start building the new Hop
-		System.out.println("Applying rewrite: *(/(a,C),b) => /(*(a,b),C)");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0, hi_1, Types.OpOp2.MULT);
 		BinaryOp v2 = HopRewriteUtils.createBinary(v1, hi_0_1, Types.OpOp2.DIV);
 
@@ -2152,7 +6552,6 @@ public class GeneratedRewriteClass implements Function {
 
 
 		// Now, we start building the new Hop
-		System.out.println("Applying rewrite: *(a,/(b,C)) => /(*(a,b),C)");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0, hi_1_0, Types.OpOp2.MULT);
 		BinaryOp v2 = HopRewriteUtils.createBinary(v1, hi_1_1, Types.OpOp2.DIV);
 
@@ -2213,7 +6612,6 @@ public class GeneratedRewriteClass implements Function {
 
 
 		// Now, we start building the new Hop
-		System.out.println("Applying rewrite: sum(-(0.0,B)) => -(0.0,sum(B))");
 		AggUnaryOp v1 = HopRewriteUtils.createAggUnaryOp(hi_0_1, Types.AggOp.SUM, Types.Direction.RowCol);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0_0, v1, Types.OpOp2.MINUS);
 
@@ -2276,7 +6674,6 @@ public class GeneratedRewriteClass implements Function {
 
 
 		// Now, we start building the new Hop
-		System.out.println("Applying rewrite: -(0.0,-(B,a)) => -(a,B)");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_1_1, hi_1_0, Types.OpOp2.MINUS);
 
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
@@ -2339,7 +6736,6 @@ public class GeneratedRewriteClass implements Function {
 
 
 		// Now, we start building the new Hop
-		System.out.println("Applying rewrite: +(-(0.0,B),a) => -(a,B)");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_1, hi_0_1, Types.OpOp2.MINUS);
 
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
@@ -2402,7 +6798,6 @@ public class GeneratedRewriteClass implements Function {
 
 
 		// Now, we start building the new Hop
-		System.out.println("Applying rewrite: +(a,-(0.0,B)) => -(a,B)");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0, hi_1_1, Types.OpOp2.MINUS);
 
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
@@ -2465,7 +6860,6 @@ public class GeneratedRewriteClass implements Function {
 
 
 		// Now, we start building the new Hop
-		System.out.println("Applying rewrite: -(0.0,-(b,A)) => -(A,b)");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_1_1, hi_1_0, Types.OpOp2.MINUS);
 
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
@@ -2528,7 +6922,6 @@ public class GeneratedRewriteClass implements Function {
 
 
 		// Now, we start building the new Hop
-		System.out.println("Applying rewrite: -(0.0,-(B,A)) => -(A,B)");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_1_1, hi_1_0, Types.OpOp2.MINUS);
 
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
@@ -2591,7 +6984,6 @@ public class GeneratedRewriteClass implements Function {
 
 
 		// Now, we start building the new Hop
-		System.out.println("Applying rewrite: +(-(0.0,B),A) => -(A,B)");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_1, hi_0_1, Types.OpOp2.MINUS);
 
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
@@ -2654,7 +7046,6 @@ public class GeneratedRewriteClass implements Function {
 
 
 		// Now, we start building the new Hop
-		System.out.println("Applying rewrite: +(A,-(0.0,B)) => -(A,B)");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0, hi_1_1, Types.OpOp2.MINUS);
 
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
@@ -2709,7 +7100,6 @@ public class GeneratedRewriteClass implements Function {
 
 
 		// Now, we start building the new Hop
-		System.out.println("Applying rewrite: -(-(A,b),c) => -(A,+(b,c))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_1, hi_1, Types.OpOp2.PLUS);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0_0, v1, Types.OpOp2.MINUS);
 
@@ -2764,7 +7154,6 @@ public class GeneratedRewriteClass implements Function {
 
 
 		// Now, we start building the new Hop
-		System.out.println("Applying rewrite: -(a,+(b,C)) => -(-(a,b),C)");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0, hi_1_0, Types.OpOp2.MINUS);
 		BinaryOp v2 = HopRewriteUtils.createBinary(v1, hi_1_1, Types.OpOp2.MINUS);
 
@@ -2819,7 +7208,6 @@ public class GeneratedRewriteClass implements Function {
 
 
 		// Now, we start building the new Hop
-		System.out.println("Applying rewrite: -(a,+(C,b)) => -(-(a,b),C)");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0, hi_1_1, Types.OpOp2.MINUS);
 		BinaryOp v2 = HopRewriteUtils.createBinary(v1, hi_1_0, Types.OpOp2.MINUS);
 
@@ -2874,7 +7262,6 @@ public class GeneratedRewriteClass implements Function {
 
 
 		// Now, we start building the new Hop
-		System.out.println("Applying rewrite: -(-(a,C),b) => -(-(a,b),C)");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0, hi_1, Types.OpOp2.MINUS);
 		BinaryOp v2 = HopRewriteUtils.createBinary(v1, hi_0_1, Types.OpOp2.MINUS);
 
@@ -2929,7 +7316,6 @@ public class GeneratedRewriteClass implements Function {
 
 
 		// Now, we start building the new Hop
-		System.out.println("Applying rewrite: -(a,-(C,b)) => -(+(a,b),C)");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0, hi_1_1, Types.OpOp2.PLUS);
 		BinaryOp v2 = HopRewriteUtils.createBinary(v1, hi_1_0, Types.OpOp2.MINUS);
 
@@ -2984,7 +7370,6 @@ public class GeneratedRewriteClass implements Function {
 
 
 		// Now, we start building the new Hop
-		System.out.println("Applying rewrite: +(-(a,C),b) => -(+(a,b),C)");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0, hi_1, Types.OpOp2.PLUS);
 		BinaryOp v2 = HopRewriteUtils.createBinary(v1, hi_0_1, Types.OpOp2.MINUS);
 
@@ -3039,7 +7424,6 @@ public class GeneratedRewriteClass implements Function {
 
 
 		// Now, we start building the new Hop
-		System.out.println("Applying rewrite: +(a,-(b,C)) => -(+(a,b),C)");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0, hi_1_0, Types.OpOp2.PLUS);
 		BinaryOp v2 = HopRewriteUtils.createBinary(v1, hi_1_1, Types.OpOp2.MINUS);
 
@@ -3094,7 +7478,6 @@ public class GeneratedRewriteClass implements Function {
 
 
 		// Now, we start building the new Hop
-		System.out.println("Applying rewrite: -(+(b,A),c) => +(A,-(b,c))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0, hi_1, Types.OpOp2.MINUS);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0_1, v1, Types.OpOp2.PLUS);
 
@@ -3149,7 +7532,6 @@ public class GeneratedRewriteClass implements Function {
 
 
 		// Now, we start building the new Hop
-		System.out.println("Applying rewrite: -(+(A,b),c) => +(A,-(b,c))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_1, hi_1, Types.OpOp2.MINUS);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0_0, v1, Types.OpOp2.PLUS);
 
@@ -3204,7 +7586,6 @@ public class GeneratedRewriteClass implements Function {
 
 
 		// Now, we start building the new Hop
-		System.out.println("Applying rewrite: -(b,-(c,A)) => +(A,-(b,c))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0, hi_1_0, Types.OpOp2.MINUS);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_1_1, v1, Types.OpOp2.PLUS);
 
@@ -3259,7 +7640,6 @@ public class GeneratedRewriteClass implements Function {
 
 
 		// Now, we start building the new Hop
-		System.out.println("Applying rewrite: +(-(A,c),b) => +(A,-(b,c))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_1, hi_0_1, Types.OpOp2.MINUS);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0_0, v1, Types.OpOp2.PLUS);
 
@@ -3314,7 +7694,6 @@ public class GeneratedRewriteClass implements Function {
 
 
 		// Now, we start building the new Hop
-		System.out.println("Applying rewrite: +(b,-(A,c)) => +(A,-(b,c))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0, hi_1_1, Types.OpOp2.MINUS);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_1_0, v1, Types.OpOp2.PLUS);
 
@@ -3375,7 +7754,6 @@ public class GeneratedRewriteClass implements Function {
 
 
 		// Now, we start building the new Hop
-		System.out.println("Applying rewrite: colSums(-(0.0,B)) => -(0.0,colSums(B))");
 		AggUnaryOp v1 = HopRewriteUtils.createAggUnaryOp(hi_0_1, Types.AggOp.SUM, Types.Direction.Col);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0_0, v1, Types.OpOp2.MINUS);
 
@@ -3436,7 +7814,6 @@ public class GeneratedRewriteClass implements Function {
 
 
 		// Now, we start building the new Hop
-		System.out.println("Applying rewrite: rowSums(-(0.0,B)) => -(0.0,rowSums(B))");
 		AggUnaryOp v1 = HopRewriteUtils.createAggUnaryOp(hi_0_1, Types.AggOp.SUM, Types.Direction.Row);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0_0, v1, Types.OpOp2.MINUS);
 
@@ -3484,7 +7861,6 @@ public class GeneratedRewriteClass implements Function {
 
 
 		// Now, we start building the new Hop
-		System.out.println("Applying rewrite: rev(colSums(A)) => colSums(A)");
 		AggUnaryOp v1 = HopRewriteUtils.createAggUnaryOp(hi_0_0, Types.AggOp.SUM, Types.Direction.Col);
 
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
@@ -3546,7 +7922,6 @@ public class GeneratedRewriteClass implements Function {
 
 
 		// Now, we start building the new Hop
-		System.out.println("Applying rewrite: *(/(1.0,b),a) => /(a,b)");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_1, hi_0_1, Types.OpOp2.DIV);
 
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
@@ -3609,7 +7984,6 @@ public class GeneratedRewriteClass implements Function {
 
 
 		// Now, we start building the new Hop
-		System.out.println("Applying rewrite: *(a,/(1.0,b)) => /(a,b)");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0, hi_1_1, Types.OpOp2.DIV);
 
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
@@ -3672,7 +8046,6 @@ public class GeneratedRewriteClass implements Function {
 
 
 		// Now, we start building the new Hop
-		System.out.println("Applying rewrite: -(0.0,-(b,a)) => -(a,b)");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_1_1, hi_1_0, Types.OpOp2.MINUS);
 
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
@@ -3735,7 +8108,6 @@ public class GeneratedRewriteClass implements Function {
 
 
 		// Now, we start building the new Hop
-		System.out.println("Applying rewrite: -(a,-(b,0.0)) => -(a,b)");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0, hi_1_0, Types.OpOp2.MINUS);
 
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
@@ -3798,7 +8170,6 @@ public class GeneratedRewriteClass implements Function {
 
 
 		// Now, we start building the new Hop
-		System.out.println("Applying rewrite: +(-(0.0,b),a) => -(a,b)");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_1, hi_0_1, Types.OpOp2.MINUS);
 
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
@@ -3861,7 +8232,6 @@ public class GeneratedRewriteClass implements Function {
 
 
 		// Now, we start building the new Hop
-		System.out.println("Applying rewrite: +(a,-(0.0,b)) => -(a,b)");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0, hi_1_1, Types.OpOp2.MINUS);
 
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
@@ -3924,7 +8294,6 @@ public class GeneratedRewriteClass implements Function {
 
 
 		// Now, we start building the new Hop
-		System.out.println("Applying rewrite: *(-(a,0.0),b) => *(a,b)");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0, hi_1, Types.OpOp2.MULT);
 
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
@@ -3987,7 +8356,6 @@ public class GeneratedRewriteClass implements Function {
 
 
 		// Now, we start building the new Hop
-		System.out.println("Applying rewrite: *(a,-(b,0.0)) => *(a,b)");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0, hi_1_0, Types.OpOp2.MULT);
 
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
@@ -4050,7 +8418,6 @@ public class GeneratedRewriteClass implements Function {
 
 
 		// Now, we start building the new Hop
-		System.out.println("Applying rewrite: /(-(a,0.0),b) => /(a,b)");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0, hi_1, Types.OpOp2.DIV);
 
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
@@ -4113,7 +8480,6 @@ public class GeneratedRewriteClass implements Function {
 
 
 		// Now, we start building the new Hop
-		System.out.println("Applying rewrite: -(A,-(b,0.0)) => -(A,b)");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0, hi_1_0, Types.OpOp2.MINUS);
 
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
@@ -4176,7 +8542,6 @@ public class GeneratedRewriteClass implements Function {
 
 
 		// Now, we start building the new Hop
-		System.out.println("Applying rewrite: +(-(0.0,b),A) => -(A,b)");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_1, hi_0_1, Types.OpOp2.MINUS);
 
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
@@ -4239,7 +8604,6 @@ public class GeneratedRewriteClass implements Function {
 
 
 		// Now, we start building the new Hop
-		System.out.println("Applying rewrite: +(A,-(0.0,b)) => -(A,b)");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0, hi_1_1, Types.OpOp2.MINUS);
 
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
@@ -4302,7 +8666,6 @@ public class GeneratedRewriteClass implements Function {
 
 
 		// Now, we start building the new Hop
-		System.out.println("Applying rewrite: *(-(b,0.0),A) => *(A,b)");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_1, hi_0_0, Types.OpOp2.MULT);
 
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
@@ -4365,7 +8728,6 @@ public class GeneratedRewriteClass implements Function {
 
 
 		// Now, we start building the new Hop
-		System.out.println("Applying rewrite: *(A,-(b,0.0)) => *(A,b)");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0, hi_1_0, Types.OpOp2.MULT);
 
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
@@ -4428,7 +8790,6 @@ public class GeneratedRewriteClass implements Function {
 
 
 		// Now, we start building the new Hop
-		System.out.println("Applying rewrite: /(-(a,0.0),B) => /(a,B)");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0, hi_1, Types.OpOp2.DIV);
 
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
@@ -4490,7 +8851,6 @@ public class GeneratedRewriteClass implements Function {
 
 
 		// Now, we start building the new Hop
-		System.out.println("Applying rewrite: +(%*%(B,C),%*%(A,C)) => %*%(+(A,B),C)");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_1_0, hi_0_0, Types.OpOp2.PLUS);
 		AggBinaryOp v2 = HopRewriteUtils.createMatrixMultiply(v1, hi_0_1);
 
@@ -4553,7 +8913,6 @@ public class GeneratedRewriteClass implements Function {
 
 
 		// Now, we start building the new Hop
-		System.out.println("Applying rewrite: +(%*%(A,C),%*%(A,B)) => %*%(A,+(B,C))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_1_1, hi_0_1, Types.OpOp2.PLUS);
 		AggBinaryOp v2 = HopRewriteUtils.createMatrixMultiply(hi_0_0, v1);
 
@@ -4616,7 +8975,6 @@ public class GeneratedRewriteClass implements Function {
 
 
 		// Now, we start building the new Hop
-		System.out.println("Applying rewrite: rev(-(a,rev(B))) => -(a,B)");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0, hi_0_1_0, Types.OpOp2.MINUS);
 
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
@@ -4678,7 +9036,6 @@ public class GeneratedRewriteClass implements Function {
 
 
 		// Now, we start building the new Hop
-		System.out.println("Applying rewrite: t(-(a,t(B))) => -(a,B)");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0, hi_0_1_0, Types.OpOp2.MINUS);
 
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
@@ -4740,7 +9097,6 @@ public class GeneratedRewriteClass implements Function {
 
 
 		// Now, we start building the new Hop
-		System.out.println("Applying rewrite: rev(-(rev(A),b)) => -(A,b)");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0_0, hi_0_1, Types.OpOp2.MINUS);
 
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
@@ -4802,7 +9158,6 @@ public class GeneratedRewriteClass implements Function {
 
 
 		// Now, we start building the new Hop
-		System.out.println("Applying rewrite: t(-(t(A),b)) => -(A,b)");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0_0, hi_0_1, Types.OpOp2.MINUS);
 
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
@@ -4864,7 +9219,6 @@ public class GeneratedRewriteClass implements Function {
 
 
 		// Now, we start building the new Hop
-		System.out.println("Applying rewrite: rev(!=(rev(A),b)) => !=(A,b)");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0_0, hi_0_1, Types.OpOp2.NOTEQUAL);
 
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
@@ -4926,7 +9280,6 @@ public class GeneratedRewriteClass implements Function {
 
 
 		// Now, we start building the new Hop
-		System.out.println("Applying rewrite: rev(!=(b,rev(A))) => !=(A,b)");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_1_0, hi_0_0, Types.OpOp2.NOTEQUAL);
 
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
@@ -4988,7 +9341,6 @@ public class GeneratedRewriteClass implements Function {
 
 
 		// Now, we start building the new Hop
-		System.out.println("Applying rewrite: t(!=(t(A),b)) => !=(A,b)");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0_0, hi_0_1, Types.OpOp2.NOTEQUAL);
 
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
@@ -5050,7 +9402,6 @@ public class GeneratedRewriteClass implements Function {
 
 
 		// Now, we start building the new Hop
-		System.out.println("Applying rewrite: t(!=(b,t(A))) => !=(A,b)");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_1_0, hi_0_0, Types.OpOp2.NOTEQUAL);
 
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
@@ -5112,7 +9463,6 @@ public class GeneratedRewriteClass implements Function {
 
 
 		// Now, we start building the new Hop
-		System.out.println("Applying rewrite: rev(+(rev(A),b)) => +(A,b)");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0_0, hi_0_1, Types.OpOp2.PLUS);
 
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
@@ -5174,7 +9524,6 @@ public class GeneratedRewriteClass implements Function {
 
 
 		// Now, we start building the new Hop
-		System.out.println("Applying rewrite: rev(+(b,rev(A))) => +(A,b)");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_1_0, hi_0_0, Types.OpOp2.PLUS);
 
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
@@ -5236,7 +9585,6 @@ public class GeneratedRewriteClass implements Function {
 
 
 		// Now, we start building the new Hop
-		System.out.println("Applying rewrite: t(+(t(A),b)) => +(A,b)");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0_0, hi_0_1, Types.OpOp2.PLUS);
 
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
@@ -5298,7 +9646,6 @@ public class GeneratedRewriteClass implements Function {
 
 
 		// Now, we start building the new Hop
-		System.out.println("Applying rewrite: t(+(b,t(A))) => +(A,b)");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_1_0, hi_0_0, Types.OpOp2.PLUS);
 
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
@@ -5360,7 +9707,6 @@ public class GeneratedRewriteClass implements Function {
 
 
 		// Now, we start building the new Hop
-		System.out.println("Applying rewrite: rev(*(rev(A),b)) => *(A,b)");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0_0, hi_0_1, Types.OpOp2.MULT);
 
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
@@ -5422,7 +9768,6 @@ public class GeneratedRewriteClass implements Function {
 
 
 		// Now, we start building the new Hop
-		System.out.println("Applying rewrite: rev(*(b,rev(A))) => *(A,b)");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_1_0, hi_0_0, Types.OpOp2.MULT);
 
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
@@ -5484,7 +9829,6 @@ public class GeneratedRewriteClass implements Function {
 
 
 		// Now, we start building the new Hop
-		System.out.println("Applying rewrite: t(*(t(A),b)) => *(A,b)");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0_0, hi_0_1, Types.OpOp2.MULT);
 
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
@@ -5546,7 +9890,6 @@ public class GeneratedRewriteClass implements Function {
 
 
 		// Now, we start building the new Hop
-		System.out.println("Applying rewrite: t(*(b,t(A))) => *(A,b)");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_1_0, hi_0_0, Types.OpOp2.MULT);
 
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
@@ -5611,7 +9954,6 @@ public class GeneratedRewriteClass implements Function {
 
 
 		// Now, we start building the new Hop
-		System.out.println("Applying rewrite: rowSums(rev(*(a,B))) => *(a,rowSums(rev(B)))");
 		ReorgOp v1 = HopRewriteUtils.createReorg(hi_0_0_1, Types.ReOrgOp.REV);
 		AggUnaryOp v2 = HopRewriteUtils.createAggUnaryOp(v1, Types.AggOp.SUM, Types.Direction.Row);
 		BinaryOp v3 = HopRewriteUtils.createBinary(hi_0_0_0, v2, Types.OpOp2.MULT);
@@ -5678,7 +10020,6 @@ public class GeneratedRewriteClass implements Function {
 
 
 		// Now, we start building the new Hop
-		System.out.println("Applying rewrite: rowSums(rev(*(B,a))) => *(a,rowSums(rev(B)))");
 		ReorgOp v1 = HopRewriteUtils.createReorg(hi_0_0_0, Types.ReOrgOp.REV);
 		AggUnaryOp v2 = HopRewriteUtils.createAggUnaryOp(v1, Types.AggOp.SUM, Types.Direction.Row);
 		BinaryOp v3 = HopRewriteUtils.createBinary(hi_0_0_1, v2, Types.OpOp2.MULT);
@@ -5745,7 +10086,6 @@ public class GeneratedRewriteClass implements Function {
 
 
 		// Now, we start building the new Hop
-		System.out.println("Applying rewrite: colSums(rev(*(a,B))) => *(a,colSums(rev(B)))");
 		ReorgOp v1 = HopRewriteUtils.createReorg(hi_0_0_1, Types.ReOrgOp.REV);
 		AggUnaryOp v2 = HopRewriteUtils.createAggUnaryOp(v1, Types.AggOp.SUM, Types.Direction.Col);
 		BinaryOp v3 = HopRewriteUtils.createBinary(hi_0_0_0, v2, Types.OpOp2.MULT);
@@ -5812,7 +10152,6 @@ public class GeneratedRewriteClass implements Function {
 
 
 		// Now, we start building the new Hop
-		System.out.println("Applying rewrite: colSums(rev(*(B,a))) => *(a,colSums(rev(B)))");
 		ReorgOp v1 = HopRewriteUtils.createReorg(hi_0_0_0, Types.ReOrgOp.REV);
 		AggUnaryOp v2 = HopRewriteUtils.createAggUnaryOp(v1, Types.AggOp.SUM, Types.Direction.Col);
 		BinaryOp v3 = HopRewriteUtils.createBinary(hi_0_0_1, v2, Types.OpOp2.MULT);
@@ -5876,7 +10215,6 @@ public class GeneratedRewriteClass implements Function {
 
 
 		// Now, we start building the new Hop
-		System.out.println("Applying rewrite: rev(/(a,rev(B))) => /(a,B)");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0, hi_0_1_0, Types.OpOp2.DIV);
 
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
@@ -5938,7 +10276,6 @@ public class GeneratedRewriteClass implements Function {
 
 
 		// Now, we start building the new Hop
-		System.out.println("Applying rewrite: t(/(a,t(B))) => /(a,B)");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0, hi_0_1_0, Types.OpOp2.DIV);
 
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
@@ -6010,7 +10347,6 @@ public class GeneratedRewriteClass implements Function {
 
 
 		// Now, we start building the new Hop
-		System.out.println("Applying rewrite: +(*(C,A),*(B,A)) => *(A,+(B,C))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_1_0, hi_0_0, Types.OpOp2.PLUS);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0_1, v1, Types.OpOp2.MULT);
 
@@ -6083,7 +10419,6 @@ public class GeneratedRewriteClass implements Function {
 
 
 		// Now, we start building the new Hop
-		System.out.println("Applying rewrite: +(*(B,A),*(A,C)) => *(A,+(B,C))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0, hi_1_1, Types.OpOp2.PLUS);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0_1, v1, Types.OpOp2.MULT);
 
@@ -6156,7 +10491,6 @@ public class GeneratedRewriteClass implements Function {
 
 
 		// Now, we start building the new Hop
-		System.out.println("Applying rewrite: +(*(A,C),*(B,A)) => *(A,+(B,C))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_1_0, hi_0_1, Types.OpOp2.PLUS);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0_0, v1, Types.OpOp2.MULT);
 
@@ -6229,7 +10563,6 @@ public class GeneratedRewriteClass implements Function {
 
 
 		// Now, we start building the new Hop
-		System.out.println("Applying rewrite: +(*(A,C),*(A,B)) => *(A,+(B,C))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_1_1, hi_0_1, Types.OpOp2.PLUS);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0_0, v1, Types.OpOp2.MULT);
 
@@ -6297,7 +10630,6 @@ public class GeneratedRewriteClass implements Function {
 
 
 		// Now, we start building the new Hop
-		System.out.println("Applying rewrite: *(t(*(a,C)),b) => *(*(a,b),t(C))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0_0, hi_1, Types.OpOp2.MULT);
 		ReorgOp v2 = HopRewriteUtils.createTranspose(hi_0_0_1);
 		BinaryOp v3 = HopRewriteUtils.createBinary(v1, v2, Types.OpOp2.MULT);
@@ -6366,7 +10698,6 @@ public class GeneratedRewriteClass implements Function {
 
 
 		// Now, we start building the new Hop
-		System.out.println("Applying rewrite: *(t(*(C,a)),b) => *(*(a,b),t(C))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0_1, hi_1, Types.OpOp2.MULT);
 		ReorgOp v2 = HopRewriteUtils.createTranspose(hi_0_0_0);
 		BinaryOp v3 = HopRewriteUtils.createBinary(v1, v2, Types.OpOp2.MULT);
@@ -6435,7 +10766,6 @@ public class GeneratedRewriteClass implements Function {
 
 
 		// Now, we start building the new Hop
-		System.out.println("Applying rewrite: *(a,t(*(b,C))) => *(*(a,b),t(C))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0, hi_1_0_0, Types.OpOp2.MULT);
 		ReorgOp v2 = HopRewriteUtils.createTranspose(hi_1_0_1);
 		BinaryOp v3 = HopRewriteUtils.createBinary(v1, v2, Types.OpOp2.MULT);
@@ -6504,7 +10834,6 @@ public class GeneratedRewriteClass implements Function {
 
 
 		// Now, we start building the new Hop
-		System.out.println("Applying rewrite: *(a,t(*(C,b))) => *(*(a,b),t(C))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0, hi_1_0_1, Types.OpOp2.MULT);
 		ReorgOp v2 = HopRewriteUtils.createTranspose(hi_1_0_0);
 		BinaryOp v3 = HopRewriteUtils.createBinary(v1, v2, Types.OpOp2.MULT);
@@ -6573,7 +10902,6 @@ public class GeneratedRewriteClass implements Function {
 
 
 		// Now, we start building the new Hop
-		System.out.println("Applying rewrite: *(rev(*(a,C)),b) => *(*(a,b),rev(C))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0_0, hi_1, Types.OpOp2.MULT);
 		ReorgOp v2 = HopRewriteUtils.createReorg(hi_0_0_1, Types.ReOrgOp.REV);
 		BinaryOp v3 = HopRewriteUtils.createBinary(v1, v2, Types.OpOp2.MULT);
@@ -6642,7 +10970,6 @@ public class GeneratedRewriteClass implements Function {
 
 
 		// Now, we start building the new Hop
-		System.out.println("Applying rewrite: *(rev(*(C,a)),b) => *(*(a,b),rev(C))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0_1, hi_1, Types.OpOp2.MULT);
 		ReorgOp v2 = HopRewriteUtils.createReorg(hi_0_0_0, Types.ReOrgOp.REV);
 		BinaryOp v3 = HopRewriteUtils.createBinary(v1, v2, Types.OpOp2.MULT);
@@ -6711,7 +11038,6 @@ public class GeneratedRewriteClass implements Function {
 
 
 		// Now, we start building the new Hop
-		System.out.println("Applying rewrite: *(a,rev(*(b,C))) => *(*(a,b),rev(C))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0, hi_1_0_0, Types.OpOp2.MULT);
 		ReorgOp v2 = HopRewriteUtils.createReorg(hi_1_0_1, Types.ReOrgOp.REV);
 		BinaryOp v3 = HopRewriteUtils.createBinary(v1, v2, Types.OpOp2.MULT);
@@ -6780,7 +11106,6 @@ public class GeneratedRewriteClass implements Function {
 
 
 		// Now, we start building the new Hop
-		System.out.println("Applying rewrite: *(a,rev(*(C,b))) => *(*(a,b),rev(C))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0, hi_1_0_1, Types.OpOp2.MULT);
 		ReorgOp v2 = HopRewriteUtils.createReorg(hi_1_0_0, Types.ReOrgOp.REV);
 		BinaryOp v3 = HopRewriteUtils.createBinary(v1, v2, Types.OpOp2.MULT);
@@ -6852,7 +11177,6 @@ public class GeneratedRewriteClass implements Function {
 
 
 		// Now, we start building the new Hop
-		System.out.println("Applying rewrite: sum(/(*(a,B),C)) => *(a,sum(/(B,C)))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0_1, hi_0_1, Types.OpOp2.DIV);
 		AggUnaryOp v2 = HopRewriteUtils.createAggUnaryOp(v1, Types.AggOp.SUM, Types.Direction.RowCol);
 		BinaryOp v3 = HopRewriteUtils.createBinary(hi_0_0_0, v2, Types.OpOp2.MULT);
@@ -6924,7 +11248,6 @@ public class GeneratedRewriteClass implements Function {
 
 
 		// Now, we start building the new Hop
-		System.out.println("Applying rewrite: sum(/(*(B,a),C)) => *(a,sum(/(B,C)))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0_0, hi_0_1, Types.OpOp2.DIV);
 		AggUnaryOp v2 = HopRewriteUtils.createAggUnaryOp(v1, Types.AggOp.SUM, Types.Direction.RowCol);
 		BinaryOp v3 = HopRewriteUtils.createBinary(hi_0_0_1, v2, Types.OpOp2.MULT);
@@ -6996,7 +11319,6 @@ public class GeneratedRewriteClass implements Function {
 
 
 		// Now, we start building the new Hop
-		System.out.println("Applying rewrite: sum(*(/(a,C),B)) => *(a,sum(/(B,C)))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_1, hi_0_0_1, Types.OpOp2.DIV);
 		AggUnaryOp v2 = HopRewriteUtils.createAggUnaryOp(v1, Types.AggOp.SUM, Types.Direction.RowCol);
 		BinaryOp v3 = HopRewriteUtils.createBinary(hi_0_0_0, v2, Types.OpOp2.MULT);
@@ -7068,7 +11390,6 @@ public class GeneratedRewriteClass implements Function {
 
 
 		// Now, we start building the new Hop
-		System.out.println("Applying rewrite: sum(*(B,/(a,C))) => *(a,sum(/(B,C)))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0, hi_0_1_1, Types.OpOp2.DIV);
 		AggUnaryOp v2 = HopRewriteUtils.createAggUnaryOp(v1, Types.AggOp.SUM, Types.Direction.RowCol);
 		BinaryOp v3 = HopRewriteUtils.createBinary(hi_0_1_0, v2, Types.OpOp2.MULT);
@@ -7137,7 +11458,6 @@ public class GeneratedRewriteClass implements Function {
 
 
 		// Now, we start building the new Hop
-		System.out.println("Applying rewrite: *(t(/(a,C)),b) => /(*(a,b),t(C))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0_0, hi_1, Types.OpOp2.MULT);
 		ReorgOp v2 = HopRewriteUtils.createTranspose(hi_0_0_1);
 		BinaryOp v3 = HopRewriteUtils.createBinary(v1, v2, Types.OpOp2.DIV);
@@ -7206,7 +11526,6 @@ public class GeneratedRewriteClass implements Function {
 
 
 		// Now, we start building the new Hop
-		System.out.println("Applying rewrite: *(a,t(/(b,C))) => /(*(a,b),t(C))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0, hi_1_0_0, Types.OpOp2.MULT);
 		ReorgOp v2 = HopRewriteUtils.createTranspose(hi_1_0_1);
 		BinaryOp v3 = HopRewriteUtils.createBinary(v1, v2, Types.OpOp2.DIV);
@@ -7275,7 +11594,6 @@ public class GeneratedRewriteClass implements Function {
 
 
 		// Now, we start building the new Hop
-		System.out.println("Applying rewrite: *(rev(/(a,C)),b) => /(*(a,b),rev(C))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0_0, hi_1, Types.OpOp2.MULT);
 		ReorgOp v2 = HopRewriteUtils.createReorg(hi_0_0_1, Types.ReOrgOp.REV);
 		BinaryOp v3 = HopRewriteUtils.createBinary(v1, v2, Types.OpOp2.DIV);
@@ -7344,7 +11662,6 @@ public class GeneratedRewriteClass implements Function {
 
 
 		// Now, we start building the new Hop
-		System.out.println("Applying rewrite: *(a,rev(/(b,C))) => /(*(a,b),rev(C))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0, hi_1_0_0, Types.OpOp2.MULT);
 		ReorgOp v2 = HopRewriteUtils.createReorg(hi_1_0_1, Types.ReOrgOp.REV);
 		BinaryOp v3 = HopRewriteUtils.createBinary(v1, v2, Types.OpOp2.DIV);
@@ -7411,7 +11728,6 @@ public class GeneratedRewriteClass implements Function {
 
 
 		// Now, we start building the new Hop
-		System.out.println("Applying rewrite: %*%(colSums(B),*(a,C)) => *(a,%*%(colSums(B),C))");
 		AggUnaryOp v1 = HopRewriteUtils.createAggUnaryOp(hi_0_0, Types.AggOp.SUM, Types.Direction.Col);
 		AggBinaryOp v2 = HopRewriteUtils.createMatrixMultiply(v1, hi_1_1);
 		BinaryOp v3 = HopRewriteUtils.createBinary(hi_1_0, v2, Types.OpOp2.MULT);
@@ -7478,7 +11794,6 @@ public class GeneratedRewriteClass implements Function {
 
 
 		// Now, we start building the new Hop
-		System.out.println("Applying rewrite: %*%(colSums(B),*(C,a)) => *(a,%*%(colSums(B),C))");
 		AggUnaryOp v1 = HopRewriteUtils.createAggUnaryOp(hi_0_0, Types.AggOp.SUM, Types.Direction.Col);
 		AggBinaryOp v2 = HopRewriteUtils.createMatrixMultiply(v1, hi_1_0);
 		BinaryOp v3 = HopRewriteUtils.createBinary(hi_1_1, v2, Types.OpOp2.MULT);
@@ -7545,7 +11860,6 @@ public class GeneratedRewriteClass implements Function {
 
 
 		// Now, we start building the new Hop
-		System.out.println("Applying rewrite: %*%(*(a,B),rowSums(C)) => *(a,%*%(B,rowSums(C)))");
 		AggUnaryOp v1 = HopRewriteUtils.createAggUnaryOp(hi_1_0, Types.AggOp.SUM, Types.Direction.Row);
 		AggBinaryOp v2 = HopRewriteUtils.createMatrixMultiply(hi_0_1, v1);
 		BinaryOp v3 = HopRewriteUtils.createBinary(hi_0_0, v2, Types.OpOp2.MULT);
@@ -7612,7 +11926,6 @@ public class GeneratedRewriteClass implements Function {
 
 
 		// Now, we start building the new Hop
-		System.out.println("Applying rewrite: %*%(*(B,a),rowSums(C)) => *(a,%*%(B,rowSums(C)))");
 		AggUnaryOp v1 = HopRewriteUtils.createAggUnaryOp(hi_1_0, Types.AggOp.SUM, Types.Direction.Row);
 		AggBinaryOp v2 = HopRewriteUtils.createMatrixMultiply(hi_0_0, v1);
 		BinaryOp v3 = HopRewriteUtils.createBinary(hi_0_1, v2, Types.OpOp2.MULT);
@@ -7684,7 +11997,6 @@ public class GeneratedRewriteClass implements Function {
 
 
 		// Now, we start building the new Hop
-		System.out.println("Applying rewrite: colSums(/(*(a,B),C)) => *(a,colSums(/(B,C)))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0_1, hi_0_1, Types.OpOp2.DIV);
 		AggUnaryOp v2 = HopRewriteUtils.createAggUnaryOp(v1, Types.AggOp.SUM, Types.Direction.Col);
 		BinaryOp v3 = HopRewriteUtils.createBinary(hi_0_0_0, v2, Types.OpOp2.MULT);
@@ -7756,7 +12068,6 @@ public class GeneratedRewriteClass implements Function {
 
 
 		// Now, we start building the new Hop
-		System.out.println("Applying rewrite: colSums(/(*(B,a),C)) => *(a,colSums(/(B,C)))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0_0, hi_0_1, Types.OpOp2.DIV);
 		AggUnaryOp v2 = HopRewriteUtils.createAggUnaryOp(v1, Types.AggOp.SUM, Types.Direction.Col);
 		BinaryOp v3 = HopRewriteUtils.createBinary(hi_0_0_1, v2, Types.OpOp2.MULT);
@@ -7828,7 +12139,6 @@ public class GeneratedRewriteClass implements Function {
 
 
 		// Now, we start building the new Hop
-		System.out.println("Applying rewrite: colSums(*(/(a,C),B)) => *(a,colSums(/(B,C)))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_1, hi_0_0_1, Types.OpOp2.DIV);
 		AggUnaryOp v2 = HopRewriteUtils.createAggUnaryOp(v1, Types.AggOp.SUM, Types.Direction.Col);
 		BinaryOp v3 = HopRewriteUtils.createBinary(hi_0_0_0, v2, Types.OpOp2.MULT);
@@ -7900,7 +12210,6 @@ public class GeneratedRewriteClass implements Function {
 
 
 		// Now, we start building the new Hop
-		System.out.println("Applying rewrite: colSums(*(B,/(a,C))) => *(a,colSums(/(B,C)))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0, hi_0_1_1, Types.OpOp2.DIV);
 		AggUnaryOp v2 = HopRewriteUtils.createAggUnaryOp(v1, Types.AggOp.SUM, Types.Direction.Col);
 		BinaryOp v3 = HopRewriteUtils.createBinary(hi_0_1_0, v2, Types.OpOp2.MULT);
@@ -7972,7 +12281,6 @@ public class GeneratedRewriteClass implements Function {
 
 
 		// Now, we start building the new Hop
-		System.out.println("Applying rewrite: rowSums(*(/(a,C),B)) => *(a,rowSums(/(B,C)))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_1, hi_0_0_1, Types.OpOp2.DIV);
 		AggUnaryOp v2 = HopRewriteUtils.createAggUnaryOp(v1, Types.AggOp.SUM, Types.Direction.Row);
 		BinaryOp v3 = HopRewriteUtils.createBinary(hi_0_0_0, v2, Types.OpOp2.MULT);
@@ -8044,7 +12352,6 @@ public class GeneratedRewriteClass implements Function {
 
 
 		// Now, we start building the new Hop
-		System.out.println("Applying rewrite: rowSums(*(B,/(a,C))) => *(a,rowSums(/(B,C)))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0, hi_0_1_1, Types.OpOp2.DIV);
 		AggUnaryOp v2 = HopRewriteUtils.createAggUnaryOp(v1, Types.AggOp.SUM, Types.Direction.Row);
 		BinaryOp v3 = HopRewriteUtils.createBinary(hi_0_1_0, v2, Types.OpOp2.MULT);
@@ -8116,7 +12423,6 @@ public class GeneratedRewriteClass implements Function {
 
 
 		// Now, we start building the new Hop
-		System.out.println("Applying rewrite: rowSums(/(*(a,B),C)) => *(a,rowSums(/(B,C)))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0_1, hi_0_1, Types.OpOp2.DIV);
 		AggUnaryOp v2 = HopRewriteUtils.createAggUnaryOp(v1, Types.AggOp.SUM, Types.Direction.Row);
 		BinaryOp v3 = HopRewriteUtils.createBinary(hi_0_0_0, v2, Types.OpOp2.MULT);
@@ -8188,7 +12494,6 @@ public class GeneratedRewriteClass implements Function {
 
 
 		// Now, we start building the new Hop
-		System.out.println("Applying rewrite: rowSums(/(*(B,a),C)) => *(a,rowSums(/(B,C)))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0_0, hi_0_1, Types.OpOp2.DIV);
 		AggUnaryOp v2 = HopRewriteUtils.createAggUnaryOp(v1, Types.AggOp.SUM, Types.Direction.Row);
 		BinaryOp v3 = HopRewriteUtils.createBinary(hi_0_0_1, v2, Types.OpOp2.MULT);
@@ -8262,7 +12567,6 @@ public class GeneratedRewriteClass implements Function {
 
 
 		// Now, we start building the new Hop
-		System.out.println("Applying rewrite: *(/(*(a,C),D),b) => *(*(a,b),/(C,D))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0_0, hi_1, Types.OpOp2.MULT);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0_0_1, hi_0_1, Types.OpOp2.DIV);
 		BinaryOp v3 = HopRewriteUtils.createBinary(v1, v2, Types.OpOp2.MULT);
@@ -8336,7 +12640,6 @@ public class GeneratedRewriteClass implements Function {
 
 
 		// Now, we start building the new Hop
-		System.out.println("Applying rewrite: *(/(*(C,a),D),b) => *(*(a,b),/(C,D))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0_1, hi_1, Types.OpOp2.MULT);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0_0_0, hi_0_1, Types.OpOp2.DIV);
 		BinaryOp v3 = HopRewriteUtils.createBinary(v1, v2, Types.OpOp2.MULT);
@@ -8410,7 +12713,6 @@ public class GeneratedRewriteClass implements Function {
 
 
 		// Now, we start building the new Hop
-		System.out.println("Applying rewrite: *(a,/(*(b,C),D)) => *(*(a,b),/(C,D))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0, hi_1_0_0, Types.OpOp2.MULT);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_1_0_1, hi_1_1, Types.OpOp2.DIV);
 		BinaryOp v3 = HopRewriteUtils.createBinary(v1, v2, Types.OpOp2.MULT);
@@ -8484,7 +12786,6 @@ public class GeneratedRewriteClass implements Function {
 
 
 		// Now, we start building the new Hop
-		System.out.println("Applying rewrite: *(a,/(*(C,b),D)) => *(*(a,b),/(C,D))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0, hi_1_0_1, Types.OpOp2.MULT);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_1_0_0, hi_1_1, Types.OpOp2.DIV);
 		BinaryOp v3 = HopRewriteUtils.createBinary(v1, v2, Types.OpOp2.MULT);
@@ -8558,7 +12859,6 @@ public class GeneratedRewriteClass implements Function {
 
 
 		// Now, we start building the new Hop
-		System.out.println("Applying rewrite: *(/(/(a,C),D),b) => /(/(*(a,b),C),D)");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0_0, hi_1, Types.OpOp2.MULT);
 		BinaryOp v2 = HopRewriteUtils.createBinary(v1, hi_0_0_1, Types.OpOp2.DIV);
 		BinaryOp v3 = HopRewriteUtils.createBinary(v2, hi_0_1, Types.OpOp2.DIV);
@@ -8632,7 +12932,6 @@ public class GeneratedRewriteClass implements Function {
 
 
 		// Now, we start building the new Hop
-		System.out.println("Applying rewrite: *(/(a,C),/(b,D)) => /(/(*(a,b),C),D)");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0, hi_1_0, Types.OpOp2.MULT);
 		BinaryOp v2 = HopRewriteUtils.createBinary(v1, hi_0_1, Types.OpOp2.DIV);
 		BinaryOp v3 = HopRewriteUtils.createBinary(v2, hi_1_1, Types.OpOp2.DIV);
@@ -8706,7 +13005,6 @@ public class GeneratedRewriteClass implements Function {
 
 
 		// Now, we start building the new Hop
-		System.out.println("Applying rewrite: *(a,/(/(b,C),D)) => /(/(*(a,b),C),D)");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0, hi_1_0_0, Types.OpOp2.MULT);
 		BinaryOp v2 = HopRewriteUtils.createBinary(v1, hi_1_0_1, Types.OpOp2.DIV);
 		BinaryOp v3 = HopRewriteUtils.createBinary(v2, hi_1_1, Types.OpOp2.DIV);
@@ -8773,7 +13071,6 @@ public class GeneratedRewriteClass implements Function {
 
 
 		// Now, we start building the new Hop
-		System.out.println("Applying rewrite: sum(-(t(A),b)) => sum(-(A,b))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0_0, hi_0_1, Types.OpOp2.MINUS);
 		AggUnaryOp v2 = HopRewriteUtils.createAggUnaryOp(v1, Types.AggOp.SUM, Types.Direction.RowCol);
 
@@ -8839,7 +13136,6 @@ public class GeneratedRewriteClass implements Function {
 
 
 		// Now, we start building the new Hop
-		System.out.println("Applying rewrite: sum(-(a,t(B))) => sum(-(a,B))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0, hi_0_1_0, Types.OpOp2.MINUS);
 		AggUnaryOp v2 = HopRewriteUtils.createAggUnaryOp(v1, Types.AggOp.SUM, Types.Direction.RowCol);
 
@@ -8905,7 +13201,6 @@ public class GeneratedRewriteClass implements Function {
 
 
 		// Now, we start building the new Hop
-		System.out.println("Applying rewrite: sum(!=(t(A),b)) => sum(!=(A,b))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0_0, hi_0_1, Types.OpOp2.NOTEQUAL);
 		AggUnaryOp v2 = HopRewriteUtils.createAggUnaryOp(v1, Types.AggOp.SUM, Types.Direction.RowCol);
 
@@ -8971,7 +13266,6 @@ public class GeneratedRewriteClass implements Function {
 
 
 		// Now, we start building the new Hop
-		System.out.println("Applying rewrite: sum(!=(b,t(A))) => sum(!=(A,b))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_1_0, hi_0_0, Types.OpOp2.NOTEQUAL);
 		AggUnaryOp v2 = HopRewriteUtils.createAggUnaryOp(v1, Types.AggOp.SUM, Types.Direction.RowCol);
 
@@ -9037,7 +13331,6 @@ public class GeneratedRewriteClass implements Function {
 
 
 		// Now, we start building the new Hop
-		System.out.println("Applying rewrite: sum(+(t(A),b)) => sum(+(A,b))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0_0, hi_0_1, Types.OpOp2.PLUS);
 		AggUnaryOp v2 = HopRewriteUtils.createAggUnaryOp(v1, Types.AggOp.SUM, Types.Direction.RowCol);
 
@@ -9103,7 +13396,6 @@ public class GeneratedRewriteClass implements Function {
 
 
 		// Now, we start building the new Hop
-		System.out.println("Applying rewrite: sum(+(b,t(A))) => sum(+(A,b))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_1_0, hi_0_0, Types.OpOp2.PLUS);
 		AggUnaryOp v2 = HopRewriteUtils.createAggUnaryOp(v1, Types.AggOp.SUM, Types.Direction.RowCol);
 
@@ -9166,7 +13458,6 @@ public class GeneratedRewriteClass implements Function {
 
 
 		// Now, we start building the new Hop
-		System.out.println("Applying rewrite: !=(t(A),t(B)) => t(!=(A,B))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0, hi_1_0, Types.OpOp2.NOTEQUAL);
 		ReorgOp v2 = HopRewriteUtils.createTranspose(v1);
 
@@ -9229,7 +13520,6 @@ public class GeneratedRewriteClass implements Function {
 
 
 		// Now, we start building the new Hop
-		System.out.println("Applying rewrite: !=(rev(A),rev(A)) => rev(!=(A,A))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0, hi_0_0, Types.OpOp2.NOTEQUAL);
 		ReorgOp v2 = HopRewriteUtils.createReorg(v1, Types.ReOrgOp.REV);
 
@@ -9292,7 +13582,6 @@ public class GeneratedRewriteClass implements Function {
 
 
 		// Now, we start building the new Hop
-		System.out.println("Applying rewrite: rev(-(rev(A),B)) => -(A,rev(B))");
 		ReorgOp v1 = HopRewriteUtils.createReorg(hi_0_1, Types.ReOrgOp.REV);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0_0_0, v1, Types.OpOp2.MINUS);
 
@@ -9355,7 +13644,6 @@ public class GeneratedRewriteClass implements Function {
 
 
 		// Now, we start building the new Hop
-		System.out.println("Applying rewrite: rev(-(A,rev(B))) => -(rev(A),B)");
 		ReorgOp v1 = HopRewriteUtils.createReorg(hi_0_0, Types.ReOrgOp.REV);
 		BinaryOp v2 = HopRewriteUtils.createBinary(v1, hi_0_1_0, Types.OpOp2.MINUS);
 
@@ -9418,7 +13706,6 @@ public class GeneratedRewriteClass implements Function {
 
 
 		// Now, we start building the new Hop
-		System.out.println("Applying rewrite: t(-(t(A),B)) => -(A,t(B))");
 		ReorgOp v1 = HopRewriteUtils.createTranspose(hi_0_1);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0_0_0, v1, Types.OpOp2.MINUS);
 
@@ -9481,7 +13768,6 @@ public class GeneratedRewriteClass implements Function {
 
 
 		// Now, we start building the new Hop
-		System.out.println("Applying rewrite: t(-(A,t(B))) => -(t(A),B)");
 		ReorgOp v1 = HopRewriteUtils.createTranspose(hi_0_0);
 		BinaryOp v2 = HopRewriteUtils.createBinary(v1, hi_0_1_0, Types.OpOp2.MINUS);
 
@@ -9544,7 +13830,6 @@ public class GeneratedRewriteClass implements Function {
 
 
 		// Now, we start building the new Hop
-		System.out.println("Applying rewrite: -(t(A),t(B)) => t(-(A,B))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0, hi_1_0, Types.OpOp2.MINUS);
 		ReorgOp v2 = HopRewriteUtils.createTranspose(v1);
 
@@ -9607,7 +13892,6 @@ public class GeneratedRewriteClass implements Function {
 
 
 		// Now, we start building the new Hop
-		System.out.println("Applying rewrite: +(t(B),t(A)) => t(+(A,B))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_1_0, hi_0_0, Types.OpOp2.PLUS);
 		ReorgOp v2 = HopRewriteUtils.createTranspose(v1);
 
@@ -9675,7 +13959,6 @@ public class GeneratedRewriteClass implements Function {
 
 
 		// Now, we start building the new Hop
-		System.out.println("Applying rewrite: !=(rev(-(b,A)),A) => !=(A,-(b,A))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0_0, hi_0_0_1, Types.OpOp2.MINUS);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0_0_1, v1, Types.OpOp2.NOTEQUAL);
 
@@ -9743,7 +14026,6 @@ public class GeneratedRewriteClass implements Function {
 
 
 		// Now, we start building the new Hop
-		System.out.println("Applying rewrite: !=(A,rev(-(b,A))) => !=(A,-(b,A))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_1_0_0, hi_0, Types.OpOp2.MINUS);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0, v1, Types.OpOp2.NOTEQUAL);
 
@@ -9811,7 +14093,6 @@ public class GeneratedRewriteClass implements Function {
 
 
 		// Now, we start building the new Hop
-		System.out.println("Applying rewrite: !=(-(b,rev(A)),A) => !=(A,-(b,A))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0, hi_0_1_0, Types.OpOp2.MINUS);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0_1_0, v1, Types.OpOp2.NOTEQUAL);
 
@@ -9879,7 +14160,6 @@ public class GeneratedRewriteClass implements Function {
 
 
 		// Now, we start building the new Hop
-		System.out.println("Applying rewrite: !=(-(b,A),rev(A)) => !=(A,-(b,A))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0, hi_0_1, Types.OpOp2.MINUS);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0_1, v1, Types.OpOp2.NOTEQUAL);
 
@@ -9947,7 +14227,6 @@ public class GeneratedRewriteClass implements Function {
 
 
 		// Now, we start building the new Hop
-		System.out.println("Applying rewrite: !=(A,-(b,rev(A))) => !=(A,-(b,A))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_1_0, hi_0, Types.OpOp2.MINUS);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0, v1, Types.OpOp2.NOTEQUAL);
 
@@ -10015,7 +14294,6 @@ public class GeneratedRewriteClass implements Function {
 
 
 		// Now, we start building the new Hop
-		System.out.println("Applying rewrite: !=(rev(-(A,c)),A) => !=(A,-(A,c))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0_0, hi_0_0_1, Types.OpOp2.MINUS);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0_0_0, v1, Types.OpOp2.NOTEQUAL);
 
@@ -10083,7 +14361,6 @@ public class GeneratedRewriteClass implements Function {
 
 
 		// Now, we start building the new Hop
-		System.out.println("Applying rewrite: !=(A,rev(-(A,c))) => !=(A,-(A,c))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0, hi_1_0_1, Types.OpOp2.MINUS);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0, v1, Types.OpOp2.NOTEQUAL);
 
@@ -10151,7 +14428,6 @@ public class GeneratedRewriteClass implements Function {
 
 
 		// Now, we start building the new Hop
-		System.out.println("Applying rewrite: !=(-(rev(A),c),A) => !=(A,-(A,c))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0_0, hi_0_1, Types.OpOp2.MINUS);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0_0_0, v1, Types.OpOp2.NOTEQUAL);
 
@@ -10219,7 +14495,6 @@ public class GeneratedRewriteClass implements Function {
 
 
 		// Now, we start building the new Hop
-		System.out.println("Applying rewrite: !=(A,-(rev(A),c)) => !=(A,-(A,c))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0, hi_1_1, Types.OpOp2.MINUS);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0, v1, Types.OpOp2.NOTEQUAL);
 
@@ -10287,7 +14562,6 @@ public class GeneratedRewriteClass implements Function {
 
 
 		// Now, we start building the new Hop
-		System.out.println("Applying rewrite: !=(-(B,rev(A)),A) => !=(A,-(B,A))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0, hi_0_1_0, Types.OpOp2.MINUS);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0_1_0, v1, Types.OpOp2.NOTEQUAL);
 
@@ -10355,7 +14629,6 @@ public class GeneratedRewriteClass implements Function {
 
 
 		// Now, we start building the new Hop
-		System.out.println("Applying rewrite: !=(-(B,A),rev(A)) => !=(A,-(B,A))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0, hi_0_1, Types.OpOp2.MINUS);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0_1, v1, Types.OpOp2.NOTEQUAL);
 
@@ -10423,7 +14696,6 @@ public class GeneratedRewriteClass implements Function {
 
 
 		// Now, we start building the new Hop
-		System.out.println("Applying rewrite: !=(A,-(B,rev(A))) => !=(A,-(B,A))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_1_0, hi_0, Types.OpOp2.MINUS);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0, v1, Types.OpOp2.NOTEQUAL);
 
@@ -10491,7 +14763,6 @@ public class GeneratedRewriteClass implements Function {
 
 
 		// Now, we start building the new Hop
-		System.out.println("Applying rewrite: !=(-(rev(A),C),A) => !=(A,-(A,C))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0_0, hi_0_1, Types.OpOp2.MINUS);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0_0_0, v1, Types.OpOp2.NOTEQUAL);
 
@@ -10559,7 +14830,6 @@ public class GeneratedRewriteClass implements Function {
 
 
 		// Now, we start building the new Hop
-		System.out.println("Applying rewrite: !=(-(A,C),rev(A)) => !=(A,-(A,C))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0, hi_0_1, Types.OpOp2.MINUS);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0_0, v1, Types.OpOp2.NOTEQUAL);
 
@@ -10627,7 +14897,6 @@ public class GeneratedRewriteClass implements Function {
 
 
 		// Now, we start building the new Hop
-		System.out.println("Applying rewrite: !=(A,-(rev(A),C)) => !=(A,-(A,C))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0, hi_1_1, Types.OpOp2.MINUS);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0, v1, Types.OpOp2.NOTEQUAL);
 
@@ -10690,7 +14959,6 @@ public class GeneratedRewriteClass implements Function {
 
 
 		// Now, we start building the new Hop
-		System.out.println("Applying rewrite: rev(!=(rev(A),B)) => !=(A,rev(B))");
 		ReorgOp v1 = HopRewriteUtils.createReorg(hi_0_1, Types.ReOrgOp.REV);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0_0_0, v1, Types.OpOp2.NOTEQUAL);
 
@@ -10753,7 +15021,6 @@ public class GeneratedRewriteClass implements Function {
 
 
 		// Now, we start building the new Hop
-		System.out.println("Applying rewrite: rev(!=(B,rev(A))) => !=(A,rev(B))");
 		ReorgOp v1 = HopRewriteUtils.createReorg(hi_0_0, Types.ReOrgOp.REV);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0_1_0, v1, Types.OpOp2.NOTEQUAL);
 
@@ -10816,7 +15083,6 @@ public class GeneratedRewriteClass implements Function {
 
 
 		// Now, we start building the new Hop
-		System.out.println("Applying rewrite: t(!=(t(A),B)) => !=(A,t(B))");
 		ReorgOp v1 = HopRewriteUtils.createTranspose(hi_0_1);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0_0_0, v1, Types.OpOp2.NOTEQUAL);
 
@@ -10879,7 +15145,6 @@ public class GeneratedRewriteClass implements Function {
 
 
 		// Now, we start building the new Hop
-		System.out.println("Applying rewrite: t(!=(B,t(A))) => !=(A,t(B))");
 		ReorgOp v1 = HopRewriteUtils.createTranspose(hi_0_0);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0_1_0, v1, Types.OpOp2.NOTEQUAL);
 
@@ -10947,7 +15212,6 @@ public class GeneratedRewriteClass implements Function {
 
 
 		// Now, we start building the new Hop
-		System.out.println("Applying rewrite: !=(rev(+(c,A)),A) => !=(A,+(A,c))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0_1, hi_0_0_0, Types.OpOp2.PLUS);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0_0_1, v1, Types.OpOp2.NOTEQUAL);
 
@@ -11015,7 +15279,6 @@ public class GeneratedRewriteClass implements Function {
 
 
 		// Now, we start building the new Hop
-		System.out.println("Applying rewrite: !=(rev(+(A,c)),A) => !=(A,+(A,c))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0_0, hi_0_0_1, Types.OpOp2.PLUS);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0_0_0, v1, Types.OpOp2.NOTEQUAL);
 
@@ -11083,7 +15346,6 @@ public class GeneratedRewriteClass implements Function {
 
 
 		// Now, we start building the new Hop
-		System.out.println("Applying rewrite: !=(A,rev(+(c,A))) => !=(A,+(A,c))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0, hi_1_0_0, Types.OpOp2.PLUS);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0, v1, Types.OpOp2.NOTEQUAL);
 
@@ -11151,7 +15413,6 @@ public class GeneratedRewriteClass implements Function {
 
 
 		// Now, we start building the new Hop
-		System.out.println("Applying rewrite: !=(A,rev(+(A,c))) => !=(A,+(A,c))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0, hi_1_0_1, Types.OpOp2.PLUS);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0, v1, Types.OpOp2.NOTEQUAL);
 
@@ -11219,7 +15480,6 @@ public class GeneratedRewriteClass implements Function {
 
 
 		// Now, we start building the new Hop
-		System.out.println("Applying rewrite: !=(+(rev(A),c),A) => !=(A,+(A,c))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0_0, hi_0_1, Types.OpOp2.PLUS);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0_0_0, v1, Types.OpOp2.NOTEQUAL);
 
@@ -11287,7 +15547,6 @@ public class GeneratedRewriteClass implements Function {
 
 
 		// Now, we start building the new Hop
-		System.out.println("Applying rewrite: !=(+(c,rev(A)),A) => !=(A,+(A,c))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_1_0, hi_0_0, Types.OpOp2.PLUS);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0_1_0, v1, Types.OpOp2.NOTEQUAL);
 
@@ -11355,7 +15614,6 @@ public class GeneratedRewriteClass implements Function {
 
 
 		// Now, we start building the new Hop
-		System.out.println("Applying rewrite: !=(+(c,A),rev(A)) => !=(A,+(A,c))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_1, hi_0_0, Types.OpOp2.PLUS);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0_1, v1, Types.OpOp2.NOTEQUAL);
 
@@ -11423,7 +15681,6 @@ public class GeneratedRewriteClass implements Function {
 
 
 		// Now, we start building the new Hop
-		System.out.println("Applying rewrite: !=(A,+(rev(A),c)) => !=(A,+(A,c))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0, hi_1_1, Types.OpOp2.PLUS);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0, v1, Types.OpOp2.NOTEQUAL);
 
@@ -11491,7 +15748,6 @@ public class GeneratedRewriteClass implements Function {
 
 
 		// Now, we start building the new Hop
-		System.out.println("Applying rewrite: !=(A,+(c,rev(A))) => !=(A,+(A,c))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0, hi_1_0, Types.OpOp2.PLUS);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0, v1, Types.OpOp2.NOTEQUAL);
 
@@ -11559,7 +15815,6 @@ public class GeneratedRewriteClass implements Function {
 
 
 		// Now, we start building the new Hop
-		System.out.println("Applying rewrite: !=(+(rev(A),C),A) => !=(A,+(A,C))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0_0, hi_0_1, Types.OpOp2.PLUS);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0_0_0, v1, Types.OpOp2.NOTEQUAL);
 
@@ -11627,7 +15882,6 @@ public class GeneratedRewriteClass implements Function {
 
 
 		// Now, we start building the new Hop
-		System.out.println("Applying rewrite: !=(+(C,rev(A)),A) => !=(A,+(A,C))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_1_0, hi_0_0, Types.OpOp2.PLUS);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0_1_0, v1, Types.OpOp2.NOTEQUAL);
 
@@ -11695,7 +15949,6 @@ public class GeneratedRewriteClass implements Function {
 
 
 		// Now, we start building the new Hop
-		System.out.println("Applying rewrite: !=(+(C,A),rev(A)) => !=(A,+(A,C))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_1, hi_0_0, Types.OpOp2.PLUS);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0_1, v1, Types.OpOp2.NOTEQUAL);
 
@@ -11763,7 +16016,6 @@ public class GeneratedRewriteClass implements Function {
 
 
 		// Now, we start building the new Hop
-		System.out.println("Applying rewrite: !=(+(A,C),rev(A)) => !=(A,+(A,C))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0, hi_0_1, Types.OpOp2.PLUS);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0_0, v1, Types.OpOp2.NOTEQUAL);
 
@@ -11831,7 +16083,6 @@ public class GeneratedRewriteClass implements Function {
 
 
 		// Now, we start building the new Hop
-		System.out.println("Applying rewrite: !=(A,+(rev(A),C)) => !=(A,+(A,C))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0, hi_1_1, Types.OpOp2.PLUS);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0, v1, Types.OpOp2.NOTEQUAL);
 
@@ -11899,7 +16150,6 @@ public class GeneratedRewriteClass implements Function {
 
 
 		// Now, we start building the new Hop
-		System.out.println("Applying rewrite: !=(A,+(C,rev(A))) => !=(A,+(A,C))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0, hi_1_0, Types.OpOp2.PLUS);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0, v1, Types.OpOp2.NOTEQUAL);
 
@@ -11967,7 +16217,6 @@ public class GeneratedRewriteClass implements Function {
 
 
 		// Now, we start building the new Hop
-		System.out.println("Applying rewrite: !=(!=(rev(A),c),A) => !=(A,!=(A,c))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0_0, hi_0_1, Types.OpOp2.NOTEQUAL);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0_0_0, v1, Types.OpOp2.NOTEQUAL);
 
@@ -12035,7 +16284,6 @@ public class GeneratedRewriteClass implements Function {
 
 
 		// Now, we start building the new Hop
-		System.out.println("Applying rewrite: !=(!=(c,rev(A)),A) => !=(A,!=(A,c))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_1_0, hi_0_0, Types.OpOp2.NOTEQUAL);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0_1_0, v1, Types.OpOp2.NOTEQUAL);
 
@@ -12103,7 +16351,6 @@ public class GeneratedRewriteClass implements Function {
 
 
 		// Now, we start building the new Hop
-		System.out.println("Applying rewrite: !=(!=(c,A),rev(A)) => !=(A,!=(A,c))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_1, hi_0_0, Types.OpOp2.NOTEQUAL);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0_1, v1, Types.OpOp2.NOTEQUAL);
 
@@ -12171,7 +16418,6 @@ public class GeneratedRewriteClass implements Function {
 
 
 		// Now, we start building the new Hop
-		System.out.println("Applying rewrite: !=(A,!=(rev(A),c)) => !=(A,!=(A,c))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0, hi_1_1, Types.OpOp2.NOTEQUAL);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0, v1, Types.OpOp2.NOTEQUAL);
 
@@ -12239,7 +16485,6 @@ public class GeneratedRewriteClass implements Function {
 
 
 		// Now, we start building the new Hop
-		System.out.println("Applying rewrite: !=(A,!=(c,rev(A))) => !=(A,!=(A,c))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0, hi_1_0, Types.OpOp2.NOTEQUAL);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0, v1, Types.OpOp2.NOTEQUAL);
 
@@ -12307,7 +16552,6 @@ public class GeneratedRewriteClass implements Function {
 
 
 		// Now, we start building the new Hop
-		System.out.println("Applying rewrite: !=(rev(!=(c,A)),A) => !=(A,!=(A,c))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0_1, hi_0_0_0, Types.OpOp2.NOTEQUAL);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0_0_1, v1, Types.OpOp2.NOTEQUAL);
 
@@ -12375,7 +16619,6 @@ public class GeneratedRewriteClass implements Function {
 
 
 		// Now, we start building the new Hop
-		System.out.println("Applying rewrite: !=(rev(!=(A,c)),A) => !=(A,!=(A,c))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0_0, hi_0_0_1, Types.OpOp2.NOTEQUAL);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0_0_0, v1, Types.OpOp2.NOTEQUAL);
 
@@ -12443,7 +16686,6 @@ public class GeneratedRewriteClass implements Function {
 
 
 		// Now, we start building the new Hop
-		System.out.println("Applying rewrite: !=(A,rev(!=(c,A))) => !=(A,!=(A,c))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0, hi_1_0_0, Types.OpOp2.NOTEQUAL);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0, v1, Types.OpOp2.NOTEQUAL);
 
@@ -12511,7 +16753,6 @@ public class GeneratedRewriteClass implements Function {
 
 
 		// Now, we start building the new Hop
-		System.out.println("Applying rewrite: !=(A,rev(!=(A,c))) => !=(A,!=(A,c))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0, hi_1_0_1, Types.OpOp2.NOTEQUAL);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0, v1, Types.OpOp2.NOTEQUAL);
 
@@ -12579,7 +16820,6 @@ public class GeneratedRewriteClass implements Function {
 
 
 		// Now, we start building the new Hop
-		System.out.println("Applying rewrite: !=(!=(rev(A),C),A) => !=(A,!=(A,C))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0_0, hi_0_1, Types.OpOp2.NOTEQUAL);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0_0_0, v1, Types.OpOp2.NOTEQUAL);
 
@@ -12647,7 +16887,6 @@ public class GeneratedRewriteClass implements Function {
 
 
 		// Now, we start building the new Hop
-		System.out.println("Applying rewrite: !=(!=(C,rev(A)),A) => !=(A,!=(A,C))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_1_0, hi_0_0, Types.OpOp2.NOTEQUAL);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0_1_0, v1, Types.OpOp2.NOTEQUAL);
 
@@ -12715,7 +16954,6 @@ public class GeneratedRewriteClass implements Function {
 
 
 		// Now, we start building the new Hop
-		System.out.println("Applying rewrite: !=(!=(C,A),rev(A)) => !=(A,!=(A,C))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_1, hi_0_0, Types.OpOp2.NOTEQUAL);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0_1, v1, Types.OpOp2.NOTEQUAL);
 
@@ -12783,7 +17021,6 @@ public class GeneratedRewriteClass implements Function {
 
 
 		// Now, we start building the new Hop
-		System.out.println("Applying rewrite: !=(!=(A,C),rev(A)) => !=(A,!=(A,C))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0, hi_0_1, Types.OpOp2.NOTEQUAL);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0_0, v1, Types.OpOp2.NOTEQUAL);
 
@@ -12851,7 +17088,6 @@ public class GeneratedRewriteClass implements Function {
 
 
 		// Now, we start building the new Hop
-		System.out.println("Applying rewrite: !=(A,!=(rev(A),C)) => !=(A,!=(A,C))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0, hi_1_1, Types.OpOp2.NOTEQUAL);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0, v1, Types.OpOp2.NOTEQUAL);
 
@@ -12919,7 +17155,6 @@ public class GeneratedRewriteClass implements Function {
 
 
 		// Now, we start building the new Hop
-		System.out.println("Applying rewrite: !=(A,!=(C,rev(A))) => !=(A,!=(A,C))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0, hi_1_0, Types.OpOp2.NOTEQUAL);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0, v1, Types.OpOp2.NOTEQUAL);
 
@@ -12982,7 +17217,6 @@ public class GeneratedRewriteClass implements Function {
 
 
 		// Now, we start building the new Hop
-		System.out.println("Applying rewrite: rev(+(rev(A),B)) => +(A,rev(B))");
 		ReorgOp v1 = HopRewriteUtils.createReorg(hi_0_1, Types.ReOrgOp.REV);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0_0_0, v1, Types.OpOp2.PLUS);
 
@@ -13045,7 +17279,6 @@ public class GeneratedRewriteClass implements Function {
 
 
 		// Now, we start building the new Hop
-		System.out.println("Applying rewrite: rev(+(B,rev(A))) => +(A,rev(B))");
 		ReorgOp v1 = HopRewriteUtils.createReorg(hi_0_0, Types.ReOrgOp.REV);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0_1_0, v1, Types.OpOp2.PLUS);
 
@@ -13108,7 +17341,6 @@ public class GeneratedRewriteClass implements Function {
 
 
 		// Now, we start building the new Hop
-		System.out.println("Applying rewrite: t(+(t(A),B)) => +(A,t(B))");
 		ReorgOp v1 = HopRewriteUtils.createTranspose(hi_0_1);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0_0_0, v1, Types.OpOp2.PLUS);
 
@@ -13171,7 +17403,6 @@ public class GeneratedRewriteClass implements Function {
 
 
 		// Now, we start building the new Hop
-		System.out.println("Applying rewrite: t(+(B,t(A))) => +(A,t(B))");
 		ReorgOp v1 = HopRewriteUtils.createTranspose(hi_0_0);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0_1_0, v1, Types.OpOp2.PLUS);
 
@@ -13239,7 +17470,6 @@ public class GeneratedRewriteClass implements Function {
 
 
 		// Now, we start building the new Hop
-		System.out.println("Applying rewrite: +(!=(rev(A),c),A) => +(A,!=(A,c))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0_0, hi_0_1, Types.OpOp2.NOTEQUAL);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0_0_0, v1, Types.OpOp2.PLUS);
 
@@ -13307,7 +17537,6 @@ public class GeneratedRewriteClass implements Function {
 
 
 		// Now, we start building the new Hop
-		System.out.println("Applying rewrite: +(!=(c,rev(A)),A) => +(A,!=(A,c))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_1_0, hi_0_0, Types.OpOp2.NOTEQUAL);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0_1_0, v1, Types.OpOp2.PLUS);
 
@@ -13375,7 +17604,6 @@ public class GeneratedRewriteClass implements Function {
 
 
 		// Now, we start building the new Hop
-		System.out.println("Applying rewrite: +(A,!=(rev(A),c)) => +(A,!=(A,c))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0, hi_1_1, Types.OpOp2.NOTEQUAL);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0, v1, Types.OpOp2.PLUS);
 
@@ -13443,7 +17671,6 @@ public class GeneratedRewriteClass implements Function {
 
 
 		// Now, we start building the new Hop
-		System.out.println("Applying rewrite: +(A,!=(c,rev(A))) => +(A,!=(A,c))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0, hi_1_0, Types.OpOp2.NOTEQUAL);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0, v1, Types.OpOp2.PLUS);
 
@@ -13511,7 +17738,6 @@ public class GeneratedRewriteClass implements Function {
 
 
 		// Now, we start building the new Hop
-		System.out.println("Applying rewrite: +(rev(!=(c,A)),A) => +(A,!=(A,c))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0_1, hi_0_0_0, Types.OpOp2.NOTEQUAL);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0_0_1, v1, Types.OpOp2.PLUS);
 
@@ -13579,7 +17805,6 @@ public class GeneratedRewriteClass implements Function {
 
 
 		// Now, we start building the new Hop
-		System.out.println("Applying rewrite: +(rev(!=(A,c)),A) => +(A,!=(A,c))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0_0, hi_0_0_1, Types.OpOp2.NOTEQUAL);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0_0_0, v1, Types.OpOp2.PLUS);
 
@@ -13647,7 +17872,6 @@ public class GeneratedRewriteClass implements Function {
 
 
 		// Now, we start building the new Hop
-		System.out.println("Applying rewrite: +(A,rev(!=(c,A))) => +(A,!=(A,c))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0, hi_1_0_0, Types.OpOp2.NOTEQUAL);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0, v1, Types.OpOp2.PLUS);
 
@@ -13715,7 +17939,6 @@ public class GeneratedRewriteClass implements Function {
 
 
 		// Now, we start building the new Hop
-		System.out.println("Applying rewrite: +(A,rev(!=(A,c))) => +(A,!=(A,c))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0, hi_1_0_1, Types.OpOp2.NOTEQUAL);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0, v1, Types.OpOp2.PLUS);
 
@@ -13783,7 +18006,6 @@ public class GeneratedRewriteClass implements Function {
 
 
 		// Now, we start building the new Hop
-		System.out.println("Applying rewrite: +(!=(rev(A),C),A) => +(A,!=(A,C))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0_0, hi_0_1, Types.OpOp2.NOTEQUAL);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0_0_0, v1, Types.OpOp2.PLUS);
 
@@ -13851,7 +18073,6 @@ public class GeneratedRewriteClass implements Function {
 
 
 		// Now, we start building the new Hop
-		System.out.println("Applying rewrite: +(!=(C,rev(A)),A) => +(A,!=(A,C))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_1_0, hi_0_0, Types.OpOp2.NOTEQUAL);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0_1_0, v1, Types.OpOp2.PLUS);
 
@@ -13919,7 +18140,6 @@ public class GeneratedRewriteClass implements Function {
 
 
 		// Now, we start building the new Hop
-		System.out.println("Applying rewrite: +(A,!=(rev(A),C)) => +(A,!=(A,C))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0, hi_1_1, Types.OpOp2.NOTEQUAL);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0, v1, Types.OpOp2.PLUS);
 
@@ -13987,7 +18207,6 @@ public class GeneratedRewriteClass implements Function {
 
 
 		// Now, we start building the new Hop
-		System.out.println("Applying rewrite: +(A,!=(C,rev(A))) => +(A,!=(A,C))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0, hi_1_0, Types.OpOp2.NOTEQUAL);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0, v1, Types.OpOp2.PLUS);
 
@@ -14055,7 +18274,6 @@ public class GeneratedRewriteClass implements Function {
 
 
 		// Now, we start building the new Hop
-		System.out.println("Applying rewrite: -(rev(!=(A,b)),A) => -(!=(A,b),A)");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0_0, hi_0_0_1, Types.OpOp2.NOTEQUAL);
 		BinaryOp v2 = HopRewriteUtils.createBinary(v1, hi_0_0_0, Types.OpOp2.MINUS);
 
@@ -14123,7 +18341,6 @@ public class GeneratedRewriteClass implements Function {
 
 
 		// Now, we start building the new Hop
-		System.out.println("Applying rewrite: -(A,!=(rev(A),c)) => -(A,!=(A,c))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0, hi_1_1, Types.OpOp2.NOTEQUAL);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0, v1, Types.OpOp2.MINUS);
 
@@ -14191,7 +18408,6 @@ public class GeneratedRewriteClass implements Function {
 
 
 		// Now, we start building the new Hop
-		System.out.println("Applying rewrite: -(A,!=(c,rev(A))) => -(A,!=(A,c))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0, hi_1_0, Types.OpOp2.NOTEQUAL);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0, v1, Types.OpOp2.MINUS);
 
@@ -14259,7 +18475,6 @@ public class GeneratedRewriteClass implements Function {
 
 
 		// Now, we start building the new Hop
-		System.out.println("Applying rewrite: -(A,rev(!=(c,A))) => -(A,!=(A,c))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0, hi_1_0_0, Types.OpOp2.NOTEQUAL);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0, v1, Types.OpOp2.MINUS);
 
@@ -14327,7 +18542,6 @@ public class GeneratedRewriteClass implements Function {
 
 
 		// Now, we start building the new Hop
-		System.out.println("Applying rewrite: -(A,rev(!=(A,c))) => -(A,!=(A,c))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0, hi_1_0_1, Types.OpOp2.NOTEQUAL);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0, v1, Types.OpOp2.MINUS);
 
@@ -14395,7 +18609,6 @@ public class GeneratedRewriteClass implements Function {
 
 
 		// Now, we start building the new Hop
-		System.out.println("Applying rewrite: -(A,!=(rev(A),C)) => -(A,!=(A,C))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0, hi_1_1, Types.OpOp2.NOTEQUAL);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0, v1, Types.OpOp2.MINUS);
 
@@ -14463,7 +18676,6 @@ public class GeneratedRewriteClass implements Function {
 
 
 		// Now, we start building the new Hop
-		System.out.println("Applying rewrite: -(A,!=(C,rev(A))) => -(A,!=(A,C))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0, hi_1_0, Types.OpOp2.NOTEQUAL);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0, v1, Types.OpOp2.MINUS);
 
@@ -14531,7 +18743,6 @@ public class GeneratedRewriteClass implements Function {
 
 
 		// Now, we start building the new Hop
-		System.out.println("Applying rewrite: -(t(-(A,b)),c) => -(t(A),+(b,c))");
 		ReorgOp v1 = HopRewriteUtils.createTranspose(hi_0_0_0);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0_0_1, hi_1, Types.OpOp2.PLUS);
 		BinaryOp v3 = HopRewriteUtils.createBinary(v1, v2, Types.OpOp2.MINUS);
@@ -14600,7 +18811,6 @@ public class GeneratedRewriteClass implements Function {
 
 
 		// Now, we start building the new Hop
-		System.out.println("Applying rewrite: -(t(-(a,C)),b) => -(-(a,b),t(C))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0_0, hi_1, Types.OpOp2.MINUS);
 		ReorgOp v2 = HopRewriteUtils.createTranspose(hi_0_0_1);
 		BinaryOp v3 = HopRewriteUtils.createBinary(v1, v2, Types.OpOp2.MINUS);
@@ -14669,7 +18879,6 @@ public class GeneratedRewriteClass implements Function {
 
 
 		// Now, we start building the new Hop
-		System.out.println("Applying rewrite: -(a,t(+(b,C))) => -(-(a,b),t(C))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0, hi_1_0_0, Types.OpOp2.MINUS);
 		ReorgOp v2 = HopRewriteUtils.createTranspose(hi_1_0_1);
 		BinaryOp v3 = HopRewriteUtils.createBinary(v1, v2, Types.OpOp2.MINUS);
@@ -14738,7 +18947,6 @@ public class GeneratedRewriteClass implements Function {
 
 
 		// Now, we start building the new Hop
-		System.out.println("Applying rewrite: -(a,t(+(C,b))) => -(-(a,b),t(C))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0, hi_1_0_1, Types.OpOp2.MINUS);
 		ReorgOp v2 = HopRewriteUtils.createTranspose(hi_1_0_0);
 		BinaryOp v3 = HopRewriteUtils.createBinary(v1, v2, Types.OpOp2.MINUS);
@@ -14807,7 +19015,6 @@ public class GeneratedRewriteClass implements Function {
 
 
 		// Now, we start building the new Hop
-		System.out.println("Applying rewrite: -(rev(-(A,b)),c) => -(rev(A),+(b,c))");
 		ReorgOp v1 = HopRewriteUtils.createReorg(hi_0_0_0, Types.ReOrgOp.REV);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0_0_1, hi_1, Types.OpOp2.PLUS);
 		BinaryOp v3 = HopRewriteUtils.createBinary(v1, v2, Types.OpOp2.MINUS);
@@ -14876,7 +19083,6 @@ public class GeneratedRewriteClass implements Function {
 
 
 		// Now, we start building the new Hop
-		System.out.println("Applying rewrite: -(rev(-(a,C)),b) => -(-(a,b),rev(C))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0_0, hi_1, Types.OpOp2.MINUS);
 		ReorgOp v2 = HopRewriteUtils.createReorg(hi_0_0_1, Types.ReOrgOp.REV);
 		BinaryOp v3 = HopRewriteUtils.createBinary(v1, v2, Types.OpOp2.MINUS);
@@ -14945,7 +19151,6 @@ public class GeneratedRewriteClass implements Function {
 
 
 		// Now, we start building the new Hop
-		System.out.println("Applying rewrite: -(a,rev(+(b,C))) => -(-(a,b),rev(C))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0, hi_1_0_0, Types.OpOp2.MINUS);
 		ReorgOp v2 = HopRewriteUtils.createReorg(hi_1_0_1, Types.ReOrgOp.REV);
 		BinaryOp v3 = HopRewriteUtils.createBinary(v1, v2, Types.OpOp2.MINUS);
@@ -15014,7 +19219,6 @@ public class GeneratedRewriteClass implements Function {
 
 
 		// Now, we start building the new Hop
-		System.out.println("Applying rewrite: -(a,rev(+(C,b))) => -(-(a,b),rev(C))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0, hi_1_0_1, Types.OpOp2.MINUS);
 		ReorgOp v2 = HopRewriteUtils.createReorg(hi_1_0_0, Types.ReOrgOp.REV);
 		BinaryOp v3 = HopRewriteUtils.createBinary(v1, v2, Types.OpOp2.MINUS);
@@ -15088,7 +19292,6 @@ public class GeneratedRewriteClass implements Function {
 
 
 		// Now, we start building the new Hop
-		System.out.println("Applying rewrite: -(-(-(a,D),C),b) => -(-(a,b),+(C,D))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0_0, hi_1, Types.OpOp2.MINUS);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0_1, hi_0_0_1, Types.OpOp2.PLUS);
 		BinaryOp v3 = HopRewriteUtils.createBinary(v1, v2, Types.OpOp2.MINUS);
@@ -15162,7 +19365,6 @@ public class GeneratedRewriteClass implements Function {
 
 
 		// Now, we start building the new Hop
-		System.out.println("Applying rewrite: -(-(a,C),+(b,D)) => -(-(a,b),+(C,D))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0, hi_1_0, Types.OpOp2.MINUS);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0_1, hi_1_1, Types.OpOp2.PLUS);
 		BinaryOp v3 = HopRewriteUtils.createBinary(v1, v2, Types.OpOp2.MINUS);
@@ -15236,7 +19438,6 @@ public class GeneratedRewriteClass implements Function {
 
 
 		// Now, we start building the new Hop
-		System.out.println("Applying rewrite: -(-(a,D),+(C,b)) => -(-(a,b),+(C,D))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0, hi_1_1, Types.OpOp2.MINUS);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_1_0, hi_0_1, Types.OpOp2.PLUS);
 		BinaryOp v3 = HopRewriteUtils.createBinary(v1, v2, Types.OpOp2.MINUS);
@@ -15310,7 +19511,6 @@ public class GeneratedRewriteClass implements Function {
 
 
 		// Now, we start building the new Hop
-		System.out.println("Applying rewrite: -(-(-(A,c),B),d) => -(A,+(B,+(c,d)))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0_1, hi_1, Types.OpOp2.PLUS);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0_1, v1, Types.OpOp2.PLUS);
 		BinaryOp v3 = HopRewriteUtils.createBinary(hi_0_0_0, v2, Types.OpOp2.MINUS);
@@ -15384,7 +19584,6 @@ public class GeneratedRewriteClass implements Function {
 
 
 		// Now, we start building the new Hop
-		System.out.println("Applying rewrite: -(-(A,+(c,B)),d) => -(A,+(B,+(c,d)))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_1_0, hi_1, Types.OpOp2.PLUS);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0_1_1, v1, Types.OpOp2.PLUS);
 		BinaryOp v3 = HopRewriteUtils.createBinary(hi_0_0, v2, Types.OpOp2.MINUS);
@@ -15458,7 +19657,6 @@ public class GeneratedRewriteClass implements Function {
 
 
 		// Now, we start building the new Hop
-		System.out.println("Applying rewrite: -(-(A,+(B,c)),d) => -(A,+(B,+(c,d)))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_1_1, hi_1, Types.OpOp2.PLUS);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0_1_0, v1, Types.OpOp2.PLUS);
 		BinaryOp v3 = HopRewriteUtils.createBinary(hi_0_0, v2, Types.OpOp2.MINUS);
@@ -15532,7 +19730,6 @@ public class GeneratedRewriteClass implements Function {
 
 
 		// Now, we start building the new Hop
-		System.out.println("Applying rewrite: -(-(A,c),+(d,B)) => -(A,+(B,+(c,d)))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_1, hi_1_0, Types.OpOp2.PLUS);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_1_1, v1, Types.OpOp2.PLUS);
 		BinaryOp v3 = HopRewriteUtils.createBinary(hi_0_0, v2, Types.OpOp2.MINUS);
@@ -15606,7 +19803,6 @@ public class GeneratedRewriteClass implements Function {
 
 
 		// Now, we start building the new Hop
-		System.out.println("Applying rewrite: -(-(A,c),+(B,d)) => -(A,+(B,+(c,d)))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_1, hi_1_1, Types.OpOp2.PLUS);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_1_0, v1, Types.OpOp2.PLUS);
 		BinaryOp v3 = HopRewriteUtils.createBinary(hi_0_0, v2, Types.OpOp2.MINUS);
@@ -15675,7 +19871,6 @@ public class GeneratedRewriteClass implements Function {
 
 
 		// Now, we start building the new Hop
-		System.out.println("Applying rewrite: -(a,rev(-(C,b))) => -(+(a,b),rev(C))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0, hi_1_0_1, Types.OpOp2.PLUS);
 		ReorgOp v2 = HopRewriteUtils.createReorg(hi_1_0_0, Types.ReOrgOp.REV);
 		BinaryOp v3 = HopRewriteUtils.createBinary(v1, v2, Types.OpOp2.MINUS);
@@ -15744,7 +19939,6 @@ public class GeneratedRewriteClass implements Function {
 
 
 		// Now, we start building the new Hop
-		System.out.println("Applying rewrite: +(rev(-(a,C)),b) => -(+(a,b),rev(C))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0_0, hi_1, Types.OpOp2.PLUS);
 		ReorgOp v2 = HopRewriteUtils.createReorg(hi_0_0_1, Types.ReOrgOp.REV);
 		BinaryOp v3 = HopRewriteUtils.createBinary(v1, v2, Types.OpOp2.MINUS);
@@ -15813,7 +20007,6 @@ public class GeneratedRewriteClass implements Function {
 
 
 		// Now, we start building the new Hop
-		System.out.println("Applying rewrite: +(a,rev(-(b,C))) => -(+(a,b),rev(C))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0, hi_1_0_0, Types.OpOp2.PLUS);
 		ReorgOp v2 = HopRewriteUtils.createReorg(hi_1_0_1, Types.ReOrgOp.REV);
 		BinaryOp v3 = HopRewriteUtils.createBinary(v1, v2, Types.OpOp2.MINUS);
@@ -15882,7 +20075,6 @@ public class GeneratedRewriteClass implements Function {
 
 
 		// Now, we start building the new Hop
-		System.out.println("Applying rewrite: -(a,rev(-(b,C))) => +(-(a,b),rev(C))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0, hi_1_0_0, Types.OpOp2.MINUS);
 		ReorgOp v2 = HopRewriteUtils.createReorg(hi_1_0_1, Types.ReOrgOp.REV);
 		BinaryOp v3 = HopRewriteUtils.createBinary(v1, v2, Types.OpOp2.PLUS);
@@ -15951,7 +20143,6 @@ public class GeneratedRewriteClass implements Function {
 
 
 		// Now, we start building the new Hop
-		System.out.println("Applying rewrite: -(rev(+(a,C)),b) => +(-(a,b),rev(C))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0_0, hi_1, Types.OpOp2.MINUS);
 		ReorgOp v2 = HopRewriteUtils.createReorg(hi_0_0_1, Types.ReOrgOp.REV);
 		BinaryOp v3 = HopRewriteUtils.createBinary(v1, v2, Types.OpOp2.PLUS);
@@ -16020,7 +20211,6 @@ public class GeneratedRewriteClass implements Function {
 
 
 		// Now, we start building the new Hop
-		System.out.println("Applying rewrite: -(rev(+(C,a)),b) => +(-(a,b),rev(C))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0_1, hi_1, Types.OpOp2.MINUS);
 		ReorgOp v2 = HopRewriteUtils.createReorg(hi_0_0_0, Types.ReOrgOp.REV);
 		BinaryOp v3 = HopRewriteUtils.createBinary(v1, v2, Types.OpOp2.PLUS);
@@ -16089,7 +20279,6 @@ public class GeneratedRewriteClass implements Function {
 
 
 		// Now, we start building the new Hop
-		System.out.println("Applying rewrite: +(rev(-(C,b)),a) => +(-(a,b),rev(C))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_1, hi_0_0_1, Types.OpOp2.MINUS);
 		ReorgOp v2 = HopRewriteUtils.createReorg(hi_0_0_0, Types.ReOrgOp.REV);
 		BinaryOp v3 = HopRewriteUtils.createBinary(v1, v2, Types.OpOp2.PLUS);
@@ -16158,7 +20347,6 @@ public class GeneratedRewriteClass implements Function {
 
 
 		// Now, we start building the new Hop
-		System.out.println("Applying rewrite: +(a,rev(-(C,b))) => +(-(a,b),rev(C))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0, hi_1_0_1, Types.OpOp2.MINUS);
 		ReorgOp v2 = HopRewriteUtils.createReorg(hi_1_0_0, Types.ReOrgOp.REV);
 		BinaryOp v3 = HopRewriteUtils.createBinary(v1, v2, Types.OpOp2.PLUS);
@@ -16227,7 +20415,6 @@ public class GeneratedRewriteClass implements Function {
 
 
 		// Now, we start building the new Hop
-		System.out.println("Applying rewrite: +(rev(+(a,C)),b) => +(+(a,b),rev(C))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0_0, hi_1, Types.OpOp2.PLUS);
 		ReorgOp v2 = HopRewriteUtils.createReorg(hi_0_0_1, Types.ReOrgOp.REV);
 		BinaryOp v3 = HopRewriteUtils.createBinary(v1, v2, Types.OpOp2.PLUS);
@@ -16296,7 +20483,6 @@ public class GeneratedRewriteClass implements Function {
 
 
 		// Now, we start building the new Hop
-		System.out.println("Applying rewrite: +(rev(+(C,a)),b) => +(+(a,b),rev(C))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0_1, hi_1, Types.OpOp2.PLUS);
 		ReorgOp v2 = HopRewriteUtils.createReorg(hi_0_0_0, Types.ReOrgOp.REV);
 		BinaryOp v3 = HopRewriteUtils.createBinary(v1, v2, Types.OpOp2.PLUS);
@@ -16365,7 +20551,6 @@ public class GeneratedRewriteClass implements Function {
 
 
 		// Now, we start building the new Hop
-		System.out.println("Applying rewrite: +(a,rev(+(b,C))) => +(+(a,b),rev(C))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0, hi_1_0_0, Types.OpOp2.PLUS);
 		ReorgOp v2 = HopRewriteUtils.createReorg(hi_1_0_1, Types.ReOrgOp.REV);
 		BinaryOp v3 = HopRewriteUtils.createBinary(v1, v2, Types.OpOp2.PLUS);
@@ -16434,7 +20619,6 @@ public class GeneratedRewriteClass implements Function {
 
 
 		// Now, we start building the new Hop
-		System.out.println("Applying rewrite: +(a,rev(+(C,b))) => +(+(a,b),rev(C))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0, hi_1_0_1, Types.OpOp2.PLUS);
 		ReorgOp v2 = HopRewriteUtils.createReorg(hi_1_0_0, Types.ReOrgOp.REV);
 		BinaryOp v3 = HopRewriteUtils.createBinary(v1, v2, Types.OpOp2.PLUS);
@@ -16508,7 +20692,6 @@ public class GeneratedRewriteClass implements Function {
 
 
 		// Now, we start building the new Hop
-		System.out.println("Applying rewrite: -(-(a,C),-(D,b)) => -(+(a,b),+(C,D))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0, hi_1_1, Types.OpOp2.PLUS);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0_1, hi_1_0, Types.OpOp2.PLUS);
 		BinaryOp v3 = HopRewriteUtils.createBinary(v1, v2, Types.OpOp2.MINUS);
@@ -16582,7 +20765,6 @@ public class GeneratedRewriteClass implements Function {
 
 
 		// Now, we start building the new Hop
-		System.out.println("Applying rewrite: -(a,-(C,-(b,D))) => -(+(a,b),+(C,D))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0, hi_1_1_0, Types.OpOp2.PLUS);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_1_0, hi_1_1_1, Types.OpOp2.PLUS);
 		BinaryOp v3 = HopRewriteUtils.createBinary(v1, v2, Types.OpOp2.MINUS);
@@ -16656,7 +20838,6 @@ public class GeneratedRewriteClass implements Function {
 
 
 		// Now, we start building the new Hop
-		System.out.println("Applying rewrite: -(a,+(-(D,b),C)) => -(+(a,b),+(C,D))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0, hi_1_0_1, Types.OpOp2.PLUS);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_1_1, hi_1_0_0, Types.OpOp2.PLUS);
 		BinaryOp v3 = HopRewriteUtils.createBinary(v1, v2, Types.OpOp2.MINUS);
@@ -16730,7 +20911,6 @@ public class GeneratedRewriteClass implements Function {
 
 
 		// Now, we start building the new Hop
-		System.out.println("Applying rewrite: -(a,+(D,-(C,b))) => -(+(a,b),+(C,D))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0, hi_1_1_1, Types.OpOp2.PLUS);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_1_1_0, hi_1_0, Types.OpOp2.PLUS);
 		BinaryOp v3 = HopRewriteUtils.createBinary(v1, v2, Types.OpOp2.MINUS);
@@ -16804,7 +20984,6 @@ public class GeneratedRewriteClass implements Function {
 
 
 		// Now, we start building the new Hop
-		System.out.println("Applying rewrite: +(-(-(a,C),D),b) => -(+(a,b),+(C,D))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0_0, hi_1, Types.OpOp2.PLUS);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0_0_1, hi_0_1, Types.OpOp2.PLUS);
 		BinaryOp v3 = HopRewriteUtils.createBinary(v1, v2, Types.OpOp2.MINUS);
@@ -16878,7 +21057,6 @@ public class GeneratedRewriteClass implements Function {
 
 
 		// Now, we start building the new Hop
-		System.out.println("Applying rewrite: +(-(a,D),-(b,C)) => -(+(a,b),+(C,D))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0, hi_1_0, Types.OpOp2.PLUS);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_1_1, hi_0_1, Types.OpOp2.PLUS);
 		BinaryOp v3 = HopRewriteUtils.createBinary(v1, v2, Types.OpOp2.MINUS);
@@ -16952,7 +21130,6 @@ public class GeneratedRewriteClass implements Function {
 
 
 		// Now, we start building the new Hop
-		System.out.println("Applying rewrite: +(a,-(-(b,D),C)) => -(+(a,b),+(C,D))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0, hi_1_0_0, Types.OpOp2.PLUS);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_1_1, hi_1_0_1, Types.OpOp2.PLUS);
 		BinaryOp v3 = HopRewriteUtils.createBinary(v1, v2, Types.OpOp2.MINUS);
@@ -17026,7 +21203,6 @@ public class GeneratedRewriteClass implements Function {
 
 
 		// Now, we start building the new Hop
-		System.out.println("Applying rewrite: -(-(A,-(c,B)),d) => +(A,-(B,+(c,d)))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_1_0, hi_1, Types.OpOp2.PLUS);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0_1_1, v1, Types.OpOp2.MINUS);
 		BinaryOp v3 = HopRewriteUtils.createBinary(hi_0_0, v2, Types.OpOp2.PLUS);
@@ -17100,7 +21276,6 @@ public class GeneratedRewriteClass implements Function {
 
 
 		// Now, we start building the new Hop
-		System.out.println("Applying rewrite: -(-(B,c),-(d,A)) => +(A,-(B,+(c,d)))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_1, hi_1_0, Types.OpOp2.PLUS);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0_0, v1, Types.OpOp2.MINUS);
 		BinaryOp v3 = HopRewriteUtils.createBinary(hi_1_1, v2, Types.OpOp2.PLUS);
@@ -17174,7 +21349,6 @@ public class GeneratedRewriteClass implements Function {
 
 
 		// Now, we start building the new Hop
-		System.out.println("Applying rewrite: -(+(-(B,c),A),d) => +(A,-(B,+(c,d)))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0_1, hi_1, Types.OpOp2.PLUS);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0_0_0, v1, Types.OpOp2.MINUS);
 		BinaryOp v3 = HopRewriteUtils.createBinary(hi_0_1, v2, Types.OpOp2.PLUS);
@@ -17248,7 +21422,6 @@ public class GeneratedRewriteClass implements Function {
 
 
 		// Now, we start building the new Hop
-		System.out.println("Applying rewrite: -(+(A,-(B,c)),d) => +(A,-(B,+(c,d)))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_1_1, hi_1, Types.OpOp2.PLUS);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0_1_0, v1, Types.OpOp2.MINUS);
 		BinaryOp v3 = HopRewriteUtils.createBinary(hi_0_0, v2, Types.OpOp2.PLUS);
@@ -17322,7 +21495,6 @@ public class GeneratedRewriteClass implements Function {
 
 
 		// Now, we start building the new Hop
-		System.out.println("Applying rewrite: +(-(B,c),-(A,d)) => +(A,-(B,+(c,d)))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_1, hi_1_1, Types.OpOp2.PLUS);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0_0, v1, Types.OpOp2.MINUS);
 		BinaryOp v3 = HopRewriteUtils.createBinary(hi_1_0, v2, Types.OpOp2.PLUS);
@@ -17396,7 +21568,6 @@ public class GeneratedRewriteClass implements Function {
 
 
 		// Now, we start building the new Hop
-		System.out.println("Applying rewrite: -(b,-(-(D,c),A)) => +(A,-(+(b,c),D))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0, hi_1_0_1, Types.OpOp2.PLUS);
 		BinaryOp v2 = HopRewriteUtils.createBinary(v1, hi_1_0_0, Types.OpOp2.MINUS);
 		BinaryOp v3 = HopRewriteUtils.createBinary(hi_1_1, v2, Types.OpOp2.PLUS);
@@ -17470,7 +21641,6 @@ public class GeneratedRewriteClass implements Function {
 
 
 		// Now, we start building the new Hop
-		System.out.println("Applying rewrite: -(b,-(D,+(c,A))) => +(A,-(+(b,c),D))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0, hi_1_1_0, Types.OpOp2.PLUS);
 		BinaryOp v2 = HopRewriteUtils.createBinary(v1, hi_1_0, Types.OpOp2.MINUS);
 		BinaryOp v3 = HopRewriteUtils.createBinary(hi_1_1_1, v2, Types.OpOp2.PLUS);
@@ -17544,7 +21714,6 @@ public class GeneratedRewriteClass implements Function {
 
 
 		// Now, we start building the new Hop
-		System.out.println("Applying rewrite: -(b,-(D,+(A,c))) => +(A,-(+(b,c),D))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0, hi_1_1_1, Types.OpOp2.PLUS);
 		BinaryOp v2 = HopRewriteUtils.createBinary(v1, hi_1_0, Types.OpOp2.MINUS);
 		BinaryOp v3 = HopRewriteUtils.createBinary(hi_1_1_0, v2, Types.OpOp2.PLUS);
@@ -17618,7 +21787,6 @@ public class GeneratedRewriteClass implements Function {
 
 
 		// Now, we start building the new Hop
-		System.out.println("Applying rewrite: -(+(b,A),-(D,c)) => +(A,-(+(b,c),D))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0, hi_1_1, Types.OpOp2.PLUS);
 		BinaryOp v2 = HopRewriteUtils.createBinary(v1, hi_1_0, Types.OpOp2.MINUS);
 		BinaryOp v3 = HopRewriteUtils.createBinary(hi_0_1, v2, Types.OpOp2.PLUS);
@@ -17692,7 +21860,6 @@ public class GeneratedRewriteClass implements Function {
 
 
 		// Now, we start building the new Hop
-		System.out.println("Applying rewrite: -(+(A,b),-(D,c)) => +(A,-(+(b,c),D))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_1, hi_1_1, Types.OpOp2.PLUS);
 		BinaryOp v2 = HopRewriteUtils.createBinary(v1, hi_1_0, Types.OpOp2.MINUS);
 		BinaryOp v3 = HopRewriteUtils.createBinary(hi_0_0, v2, Types.OpOp2.PLUS);
@@ -17766,7 +21933,6 @@ public class GeneratedRewriteClass implements Function {
 
 
 		// Now, we start building the new Hop
-		System.out.println("Applying rewrite: +(-(A,-(D,b)),c) => +(A,-(+(b,c),D))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_1_1, hi_1, Types.OpOp2.PLUS);
 		BinaryOp v2 = HopRewriteUtils.createBinary(v1, hi_0_1_0, Types.OpOp2.MINUS);
 		BinaryOp v3 = HopRewriteUtils.createBinary(hi_0_0, v2, Types.OpOp2.PLUS);
@@ -17840,7 +22006,6 @@ public class GeneratedRewriteClass implements Function {
 
 
 		// Now, we start building the new Hop
-		System.out.println("Applying rewrite: +(b,-(A,-(D,c))) => +(A,-(+(b,c),D))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0, hi_1_1_1, Types.OpOp2.PLUS);
 		BinaryOp v2 = HopRewriteUtils.createBinary(v1, hi_1_1_0, Types.OpOp2.MINUS);
 		BinaryOp v3 = HopRewriteUtils.createBinary(hi_1_0, v2, Types.OpOp2.PLUS);
@@ -17914,7 +22079,6 @@ public class GeneratedRewriteClass implements Function {
 
 
 		// Now, we start building the new Hop
-		System.out.println("Applying rewrite: +(-(+(b,A),D),c) => +(A,-(+(b,c),D))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0_0, hi_1, Types.OpOp2.PLUS);
 		BinaryOp v2 = HopRewriteUtils.createBinary(v1, hi_0_1, Types.OpOp2.MINUS);
 		BinaryOp v3 = HopRewriteUtils.createBinary(hi_0_0_1, v2, Types.OpOp2.PLUS);
@@ -17988,7 +22152,6 @@ public class GeneratedRewriteClass implements Function {
 
 
 		// Now, we start building the new Hop
-		System.out.println("Applying rewrite: +(-(+(A,b),D),c) => +(A,-(+(b,c),D))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0_1, hi_1, Types.OpOp2.PLUS);
 		BinaryOp v2 = HopRewriteUtils.createBinary(v1, hi_0_1, Types.OpOp2.MINUS);
 		BinaryOp v3 = HopRewriteUtils.createBinary(hi_0_0_0, v2, Types.OpOp2.PLUS);
@@ -18062,7 +22225,6 @@ public class GeneratedRewriteClass implements Function {
 
 
 		// Now, we start building the new Hop
-		System.out.println("Applying rewrite: +(b,-(+(c,A),D)) => +(A,-(+(b,c),D))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0, hi_1_0_0, Types.OpOp2.PLUS);
 		BinaryOp v2 = HopRewriteUtils.createBinary(v1, hi_1_1, Types.OpOp2.MINUS);
 		BinaryOp v3 = HopRewriteUtils.createBinary(hi_1_0_1, v2, Types.OpOp2.PLUS);
@@ -18136,7 +22298,6 @@ public class GeneratedRewriteClass implements Function {
 
 
 		// Now, we start building the new Hop
-		System.out.println("Applying rewrite: +(b,-(+(A,c),D)) => +(A,-(+(b,c),D))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0, hi_1_0_1, Types.OpOp2.PLUS);
 		BinaryOp v2 = HopRewriteUtils.createBinary(v1, hi_1_1, Types.OpOp2.MINUS);
 		BinaryOp v3 = HopRewriteUtils.createBinary(hi_1_0_0, v2, Types.OpOp2.PLUS);
@@ -18210,7 +22371,6 @@ public class GeneratedRewriteClass implements Function {
 
 
 		// Now, we start building the new Hop
-		System.out.println("Applying rewrite: -(c,-(-(d,B),A)) => +(A,+(B,-(c,d)))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0, hi_1_0_0, Types.OpOp2.MINUS);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_1_0_1, v1, Types.OpOp2.PLUS);
 		BinaryOp v3 = HopRewriteUtils.createBinary(hi_1_1, v2, Types.OpOp2.PLUS);
@@ -18284,7 +22444,6 @@ public class GeneratedRewriteClass implements Function {
 
 
 		// Now, we start building the new Hop
-		System.out.println("Applying rewrite: -(+(c,B),-(d,A)) => +(A,+(B,-(c,d)))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0, hi_1_0, Types.OpOp2.MINUS);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0_1, v1, Types.OpOp2.PLUS);
 		BinaryOp v3 = HopRewriteUtils.createBinary(hi_1_1, v2, Types.OpOp2.PLUS);
@@ -18358,7 +22517,6 @@ public class GeneratedRewriteClass implements Function {
 
 
 		// Now, we start building the new Hop
-		System.out.println("Applying rewrite: -(+(B,c),-(d,A)) => +(A,+(B,-(c,d)))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_1, hi_1_0, Types.OpOp2.MINUS);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0_0, v1, Types.OpOp2.PLUS);
 		BinaryOp v3 = HopRewriteUtils.createBinary(hi_1_1, v2, Types.OpOp2.PLUS);
@@ -18432,7 +22590,6 @@ public class GeneratedRewriteClass implements Function {
 
 
 		// Now, we start building the new Hop
-		System.out.println("Applying rewrite: +(-(A,-(d,B)),c) => +(A,+(B,-(c,d)))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_1, hi_0_1_0, Types.OpOp2.MINUS);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0_1_1, v1, Types.OpOp2.PLUS);
 		BinaryOp v3 = HopRewriteUtils.createBinary(hi_0_0, v2, Types.OpOp2.PLUS);
@@ -18506,7 +22663,6 @@ public class GeneratedRewriteClass implements Function {
 
 
 		// Now, we start building the new Hop
-		System.out.println("Applying rewrite: +(c,-(A,-(d,B))) => +(A,+(B,-(c,d)))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0, hi_1_1_0, Types.OpOp2.MINUS);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_1_1_1, v1, Types.OpOp2.PLUS);
 		BinaryOp v3 = HopRewriteUtils.createBinary(hi_1_0, v2, Types.OpOp2.PLUS);
@@ -18580,7 +22736,6 @@ public class GeneratedRewriteClass implements Function {
 
 
 		// Now, we start building the new Hop
-		System.out.println("Applying rewrite: -(-(A,-(D,b)),c) => +(A,-(-(b,c),D))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_1_1, hi_1, Types.OpOp2.MINUS);
 		BinaryOp v2 = HopRewriteUtils.createBinary(v1, hi_0_1_0, Types.OpOp2.MINUS);
 		BinaryOp v3 = HopRewriteUtils.createBinary(hi_0_0, v2, Types.OpOp2.PLUS);
@@ -18654,7 +22809,6 @@ public class GeneratedRewriteClass implements Function {
 
 
 		// Now, we start building the new Hop
-		System.out.println("Applying rewrite: -(-(b,D),-(c,A)) => +(A,-(-(b,c),D))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0, hi_1_0, Types.OpOp2.MINUS);
 		BinaryOp v2 = HopRewriteUtils.createBinary(v1, hi_0_1, Types.OpOp2.MINUS);
 		BinaryOp v3 = HopRewriteUtils.createBinary(hi_1_1, v2, Types.OpOp2.PLUS);
@@ -18728,7 +22882,6 @@ public class GeneratedRewriteClass implements Function {
 
 
 		// Now, we start building the new Hop
-		System.out.println("Applying rewrite: -(-(A,c),-(D,b)) => +(A,-(-(b,c),D))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_1_1, hi_0_1, Types.OpOp2.MINUS);
 		BinaryOp v2 = HopRewriteUtils.createBinary(v1, hi_1_0, Types.OpOp2.MINUS);
 		BinaryOp v3 = HopRewriteUtils.createBinary(hi_0_0, v2, Types.OpOp2.PLUS);
@@ -18802,7 +22955,6 @@ public class GeneratedRewriteClass implements Function {
 
 
 		// Now, we start building the new Hop
-		System.out.println("Applying rewrite: -(b,-(D,-(A,c))) => +(A,-(-(b,c),D))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0, hi_1_1_1, Types.OpOp2.MINUS);
 		BinaryOp v2 = HopRewriteUtils.createBinary(v1, hi_1_0, Types.OpOp2.MINUS);
 		BinaryOp v3 = HopRewriteUtils.createBinary(hi_1_1_0, v2, Types.OpOp2.PLUS);
@@ -18876,7 +23028,6 @@ public class GeneratedRewriteClass implements Function {
 
 
 		// Now, we start building the new Hop
-		System.out.println("Applying rewrite: -(-(+(b,A),D),c) => +(A,-(-(b,c),D))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0_0, hi_1, Types.OpOp2.MINUS);
 		BinaryOp v2 = HopRewriteUtils.createBinary(v1, hi_0_1, Types.OpOp2.MINUS);
 		BinaryOp v3 = HopRewriteUtils.createBinary(hi_0_0_1, v2, Types.OpOp2.PLUS);
@@ -18950,7 +23101,6 @@ public class GeneratedRewriteClass implements Function {
 
 
 		// Now, we start building the new Hop
-		System.out.println("Applying rewrite: -(-(+(A,b),D),c) => +(A,-(-(b,c),D))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0_1, hi_1, Types.OpOp2.MINUS);
 		BinaryOp v2 = HopRewriteUtils.createBinary(v1, hi_0_1, Types.OpOp2.MINUS);
 		BinaryOp v3 = HopRewriteUtils.createBinary(hi_0_0_0, v2, Types.OpOp2.PLUS);
@@ -19024,7 +23174,6 @@ public class GeneratedRewriteClass implements Function {
 
 
 		// Now, we start building the new Hop
-		System.out.println("Applying rewrite: -(b,-(+(c,D),A)) => +(A,-(-(b,c),D))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0, hi_1_0_0, Types.OpOp2.MINUS);
 		BinaryOp v2 = HopRewriteUtils.createBinary(v1, hi_1_0_1, Types.OpOp2.MINUS);
 		BinaryOp v3 = HopRewriteUtils.createBinary(hi_1_1, v2, Types.OpOp2.PLUS);
@@ -19098,7 +23247,6 @@ public class GeneratedRewriteClass implements Function {
 
 
 		// Now, we start building the new Hop
-		System.out.println("Applying rewrite: -(b,-(+(D,c),A)) => +(A,-(-(b,c),D))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0, hi_1_0_1, Types.OpOp2.MINUS);
 		BinaryOp v2 = HopRewriteUtils.createBinary(v1, hi_1_0_0, Types.OpOp2.MINUS);
 		BinaryOp v3 = HopRewriteUtils.createBinary(hi_1_1, v2, Types.OpOp2.PLUS);
@@ -19172,7 +23320,6 @@ public class GeneratedRewriteClass implements Function {
 
 
 		// Now, we start building the new Hop
-		System.out.println("Applying rewrite: -(+(-(b,D),A),c) => +(A,-(-(b,c),D))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0_0, hi_1, Types.OpOp2.MINUS);
 		BinaryOp v2 = HopRewriteUtils.createBinary(v1, hi_0_0_1, Types.OpOp2.MINUS);
 		BinaryOp v3 = HopRewriteUtils.createBinary(hi_0_1, v2, Types.OpOp2.PLUS);
@@ -19246,7 +23393,6 @@ public class GeneratedRewriteClass implements Function {
 
 
 		// Now, we start building the new Hop
-		System.out.println("Applying rewrite: -(+(b,A),+(c,D)) => +(A,-(-(b,c),D))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0, hi_1_0, Types.OpOp2.MINUS);
 		BinaryOp v2 = HopRewriteUtils.createBinary(v1, hi_1_1, Types.OpOp2.MINUS);
 		BinaryOp v3 = HopRewriteUtils.createBinary(hi_0_1, v2, Types.OpOp2.PLUS);
@@ -19320,7 +23466,6 @@ public class GeneratedRewriteClass implements Function {
 
 
 		// Now, we start building the new Hop
-		System.out.println("Applying rewrite: -(+(b,A),+(D,c)) => +(A,-(-(b,c),D))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0, hi_1_1, Types.OpOp2.MINUS);
 		BinaryOp v2 = HopRewriteUtils.createBinary(v1, hi_1_0, Types.OpOp2.MINUS);
 		BinaryOp v3 = HopRewriteUtils.createBinary(hi_0_1, v2, Types.OpOp2.PLUS);
@@ -19394,7 +23539,6 @@ public class GeneratedRewriteClass implements Function {
 
 
 		// Now, we start building the new Hop
-		System.out.println("Applying rewrite: -(+(A,b),+(c,D)) => +(A,-(-(b,c),D))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_1, hi_1_0, Types.OpOp2.MINUS);
 		BinaryOp v2 = HopRewriteUtils.createBinary(v1, hi_1_1, Types.OpOp2.MINUS);
 		BinaryOp v3 = HopRewriteUtils.createBinary(hi_0_0, v2, Types.OpOp2.PLUS);
@@ -19468,7 +23612,6 @@ public class GeneratedRewriteClass implements Function {
 
 
 		// Now, we start building the new Hop
-		System.out.println("Applying rewrite: -(+(A,b),+(D,c)) => +(A,-(-(b,c),D))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_1, hi_1_1, Types.OpOp2.MINUS);
 		BinaryOp v2 = HopRewriteUtils.createBinary(v1, hi_1_0, Types.OpOp2.MINUS);
 		BinaryOp v3 = HopRewriteUtils.createBinary(hi_0_0, v2, Types.OpOp2.PLUS);
@@ -19542,7 +23685,6 @@ public class GeneratedRewriteClass implements Function {
 
 
 		// Now, we start building the new Hop
-		System.out.println("Applying rewrite: -(+(A,-(b,D)),c) => +(A,-(-(b,c),D))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_1_0, hi_1, Types.OpOp2.MINUS);
 		BinaryOp v2 = HopRewriteUtils.createBinary(v1, hi_0_1_1, Types.OpOp2.MINUS);
 		BinaryOp v3 = HopRewriteUtils.createBinary(hi_0_0, v2, Types.OpOp2.PLUS);
@@ -19616,7 +23758,6 @@ public class GeneratedRewriteClass implements Function {
 
 
 		// Now, we start building the new Hop
-		System.out.println("Applying rewrite: -(b,+(-(c,A),D)) => +(A,-(-(b,c),D))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0, hi_1_0_0, Types.OpOp2.MINUS);
 		BinaryOp v2 = HopRewriteUtils.createBinary(v1, hi_1_1, Types.OpOp2.MINUS);
 		BinaryOp v3 = HopRewriteUtils.createBinary(hi_1_0_1, v2, Types.OpOp2.PLUS);
@@ -19690,7 +23831,6 @@ public class GeneratedRewriteClass implements Function {
 
 
 		// Now, we start building the new Hop
-		System.out.println("Applying rewrite: -(b,+(D,-(c,A))) => +(A,-(-(b,c),D))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0, hi_1_1_0, Types.OpOp2.MINUS);
 		BinaryOp v2 = HopRewriteUtils.createBinary(v1, hi_1_0, Types.OpOp2.MINUS);
 		BinaryOp v3 = HopRewriteUtils.createBinary(hi_1_1_1, v2, Types.OpOp2.PLUS);
@@ -19764,7 +23904,6 @@ public class GeneratedRewriteClass implements Function {
 
 
 		// Now, we start building the new Hop
-		System.out.println("Applying rewrite: +(-(-(A,c),D),b) => +(A,-(-(b,c),D))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_1, hi_0_0_1, Types.OpOp2.MINUS);
 		BinaryOp v2 = HopRewriteUtils.createBinary(v1, hi_0_1, Types.OpOp2.MINUS);
 		BinaryOp v3 = HopRewriteUtils.createBinary(hi_0_0_0, v2, Types.OpOp2.PLUS);
@@ -19838,7 +23977,6 @@ public class GeneratedRewriteClass implements Function {
 
 
 		// Now, we start building the new Hop
-		System.out.println("Applying rewrite: +(-(b,D),-(A,c)) => +(A,-(-(b,c),D))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0, hi_1_1, Types.OpOp2.MINUS);
 		BinaryOp v2 = HopRewriteUtils.createBinary(v1, hi_0_1, Types.OpOp2.MINUS);
 		BinaryOp v3 = HopRewriteUtils.createBinary(hi_1_0, v2, Types.OpOp2.PLUS);
@@ -19912,7 +24050,6 @@ public class GeneratedRewriteClass implements Function {
 
 
 		// Now, we start building the new Hop
-		System.out.println("Applying rewrite: +(-(A,c),-(b,D)) => +(A,-(-(b,c),D))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_1_0, hi_0_1, Types.OpOp2.MINUS);
 		BinaryOp v2 = HopRewriteUtils.createBinary(v1, hi_1_1, Types.OpOp2.MINUS);
 		BinaryOp v3 = HopRewriteUtils.createBinary(hi_0_0, v2, Types.OpOp2.PLUS);
@@ -19986,7 +24123,6 @@ public class GeneratedRewriteClass implements Function {
 
 
 		// Now, we start building the new Hop
-		System.out.println("Applying rewrite: +(b,-(-(A,c),D)) => +(A,-(-(b,c),D))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0, hi_1_0_1, Types.OpOp2.MINUS);
 		BinaryOp v2 = HopRewriteUtils.createBinary(v1, hi_1_1, Types.OpOp2.MINUS);
 		BinaryOp v3 = HopRewriteUtils.createBinary(hi_1_0_0, v2, Types.OpOp2.PLUS);
@@ -20060,7 +24196,6 @@ public class GeneratedRewriteClass implements Function {
 
 
 		// Now, we start building the new Hop
-		System.out.println("Applying rewrite: +(-(A,+(c,D)),b) => +(A,-(-(b,c),D))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_1, hi_0_1_0, Types.OpOp2.MINUS);
 		BinaryOp v2 = HopRewriteUtils.createBinary(v1, hi_0_1_1, Types.OpOp2.MINUS);
 		BinaryOp v3 = HopRewriteUtils.createBinary(hi_0_0, v2, Types.OpOp2.PLUS);
@@ -20134,7 +24269,6 @@ public class GeneratedRewriteClass implements Function {
 
 
 		// Now, we start building the new Hop
-		System.out.println("Applying rewrite: +(-(A,+(D,c)),b) => +(A,-(-(b,c),D))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_1, hi_0_1_1, Types.OpOp2.MINUS);
 		BinaryOp v2 = HopRewriteUtils.createBinary(v1, hi_0_1_0, Types.OpOp2.MINUS);
 		BinaryOp v3 = HopRewriteUtils.createBinary(hi_0_0, v2, Types.OpOp2.PLUS);
@@ -20208,7 +24342,6 @@ public class GeneratedRewriteClass implements Function {
 
 
 		// Now, we start building the new Hop
-		System.out.println("Applying rewrite: +(b,-(A,+(c,D))) => +(A,-(-(b,c),D))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0, hi_1_1_0, Types.OpOp2.MINUS);
 		BinaryOp v2 = HopRewriteUtils.createBinary(v1, hi_1_1_1, Types.OpOp2.MINUS);
 		BinaryOp v3 = HopRewriteUtils.createBinary(hi_1_0, v2, Types.OpOp2.PLUS);
@@ -20282,7 +24415,6 @@ public class GeneratedRewriteClass implements Function {
 
 
 		// Now, we start building the new Hop
-		System.out.println("Applying rewrite: +(b,-(A,+(D,c))) => +(A,-(-(b,c),D))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0, hi_1_1_1, Types.OpOp2.MINUS);
 		BinaryOp v2 = HopRewriteUtils.createBinary(v1, hi_1_1_0, Types.OpOp2.MINUS);
 		BinaryOp v3 = HopRewriteUtils.createBinary(hi_1_0, v2, Types.OpOp2.PLUS);
@@ -20351,7 +24483,6 @@ public class GeneratedRewriteClass implements Function {
 
 
 		// Now, we start building the new Hop
-		System.out.println("Applying rewrite: -(a,t(-(C,b))) => -(+(a,b),t(C))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0, hi_1_0_1, Types.OpOp2.PLUS);
 		ReorgOp v2 = HopRewriteUtils.createTranspose(hi_1_0_0);
 		BinaryOp v3 = HopRewriteUtils.createBinary(v1, v2, Types.OpOp2.MINUS);
@@ -20420,7 +24551,6 @@ public class GeneratedRewriteClass implements Function {
 
 
 		// Now, we start building the new Hop
-		System.out.println("Applying rewrite: +(t(-(a,C)),b) => -(+(a,b),t(C))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0_0, hi_1, Types.OpOp2.PLUS);
 		ReorgOp v2 = HopRewriteUtils.createTranspose(hi_0_0_1);
 		BinaryOp v3 = HopRewriteUtils.createBinary(v1, v2, Types.OpOp2.MINUS);
@@ -20489,7 +24619,6 @@ public class GeneratedRewriteClass implements Function {
 
 
 		// Now, we start building the new Hop
-		System.out.println("Applying rewrite: +(a,t(-(b,C))) => -(+(a,b),t(C))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0, hi_1_0_0, Types.OpOp2.PLUS);
 		ReorgOp v2 = HopRewriteUtils.createTranspose(hi_1_0_1);
 		BinaryOp v3 = HopRewriteUtils.createBinary(v1, v2, Types.OpOp2.MINUS);
@@ -20558,7 +24687,6 @@ public class GeneratedRewriteClass implements Function {
 
 
 		// Now, we start building the new Hop
-		System.out.println("Applying rewrite: -(t(+(a,C)),b) => +(-(a,b),t(C))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0_0, hi_1, Types.OpOp2.MINUS);
 		ReorgOp v2 = HopRewriteUtils.createTranspose(hi_0_0_1);
 		BinaryOp v3 = HopRewriteUtils.createBinary(v1, v2, Types.OpOp2.PLUS);
@@ -20627,7 +24755,6 @@ public class GeneratedRewriteClass implements Function {
 
 
 		// Now, we start building the new Hop
-		System.out.println("Applying rewrite: -(t(+(C,a)),b) => +(-(a,b),t(C))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0_1, hi_1, Types.OpOp2.MINUS);
 		ReorgOp v2 = HopRewriteUtils.createTranspose(hi_0_0_0);
 		BinaryOp v3 = HopRewriteUtils.createBinary(v1, v2, Types.OpOp2.PLUS);
@@ -20696,7 +24823,6 @@ public class GeneratedRewriteClass implements Function {
 
 
 		// Now, we start building the new Hop
-		System.out.println("Applying rewrite: -(a,t(-(b,C))) => +(-(a,b),t(C))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0, hi_1_0_0, Types.OpOp2.MINUS);
 		ReorgOp v2 = HopRewriteUtils.createTranspose(hi_1_0_1);
 		BinaryOp v3 = HopRewriteUtils.createBinary(v1, v2, Types.OpOp2.PLUS);
@@ -20765,7 +24891,6 @@ public class GeneratedRewriteClass implements Function {
 
 
 		// Now, we start building the new Hop
-		System.out.println("Applying rewrite: +(t(-(C,b)),a) => +(-(a,b),t(C))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_1, hi_0_0_1, Types.OpOp2.MINUS);
 		ReorgOp v2 = HopRewriteUtils.createTranspose(hi_0_0_0);
 		BinaryOp v3 = HopRewriteUtils.createBinary(v1, v2, Types.OpOp2.PLUS);
@@ -20834,7 +24959,6 @@ public class GeneratedRewriteClass implements Function {
 
 
 		// Now, we start building the new Hop
-		System.out.println("Applying rewrite: +(a,t(-(C,b))) => +(-(a,b),t(C))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0, hi_1_0_1, Types.OpOp2.MINUS);
 		ReorgOp v2 = HopRewriteUtils.createTranspose(hi_1_0_0);
 		BinaryOp v3 = HopRewriteUtils.createBinary(v1, v2, Types.OpOp2.PLUS);
@@ -20903,7 +25027,6 @@ public class GeneratedRewriteClass implements Function {
 
 
 		// Now, we start building the new Hop
-		System.out.println("Applying rewrite: +(t(+(a,C)),b) => +(+(a,b),t(C))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0_0, hi_1, Types.OpOp2.PLUS);
 		ReorgOp v2 = HopRewriteUtils.createTranspose(hi_0_0_1);
 		BinaryOp v3 = HopRewriteUtils.createBinary(v1, v2, Types.OpOp2.PLUS);
@@ -20972,7 +25095,6 @@ public class GeneratedRewriteClass implements Function {
 
 
 		// Now, we start building the new Hop
-		System.out.println("Applying rewrite: +(t(+(C,a)),b) => +(+(a,b),t(C))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0_1, hi_1, Types.OpOp2.PLUS);
 		ReorgOp v2 = HopRewriteUtils.createTranspose(hi_0_0_0);
 		BinaryOp v3 = HopRewriteUtils.createBinary(v1, v2, Types.OpOp2.PLUS);
@@ -21041,7 +25163,6 @@ public class GeneratedRewriteClass implements Function {
 
 
 		// Now, we start building the new Hop
-		System.out.println("Applying rewrite: +(a,t(+(b,C))) => +(+(a,b),t(C))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0, hi_1_0_0, Types.OpOp2.PLUS);
 		ReorgOp v2 = HopRewriteUtils.createTranspose(hi_1_0_1);
 		BinaryOp v3 = HopRewriteUtils.createBinary(v1, v2, Types.OpOp2.PLUS);
@@ -21110,7 +25231,6 @@ public class GeneratedRewriteClass implements Function {
 
 
 		// Now, we start building the new Hop
-		System.out.println("Applying rewrite: +(a,t(+(C,b))) => +(+(a,b),t(C))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0, hi_1_0_1, Types.OpOp2.PLUS);
 		ReorgOp v2 = HopRewriteUtils.createTranspose(hi_1_0_0);
 		BinaryOp v3 = HopRewriteUtils.createBinary(v1, v2, Types.OpOp2.PLUS);
@@ -21177,7 +25297,6 @@ public class GeneratedRewriteClass implements Function {
 
 
 		// Now, we start building the new Hop
-		System.out.println("Applying rewrite: colSums(-(t(A),b)) => t(rowSums(-(A,b)))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0_0, hi_0_1, Types.OpOp2.MINUS);
 		AggUnaryOp v2 = HopRewriteUtils.createAggUnaryOp(v1, Types.AggOp.SUM, Types.Direction.Row);
 		ReorgOp v3 = HopRewriteUtils.createTranspose(v2);
@@ -21244,7 +25363,6 @@ public class GeneratedRewriteClass implements Function {
 
 
 		// Now, we start building the new Hop
-		System.out.println("Applying rewrite: colSums(-(a,t(B))) => t(rowSums(-(a,B)))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0, hi_0_1_0, Types.OpOp2.MINUS);
 		AggUnaryOp v2 = HopRewriteUtils.createAggUnaryOp(v1, Types.AggOp.SUM, Types.Direction.Row);
 		ReorgOp v3 = HopRewriteUtils.createTranspose(v2);
@@ -21311,7 +25429,6 @@ public class GeneratedRewriteClass implements Function {
 
 
 		// Now, we start building the new Hop
-		System.out.println("Applying rewrite: rowSums(-(t(A),b)) => t(colSums(-(A,b)))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0_0, hi_0_1, Types.OpOp2.MINUS);
 		AggUnaryOp v2 = HopRewriteUtils.createAggUnaryOp(v1, Types.AggOp.SUM, Types.Direction.Col);
 		ReorgOp v3 = HopRewriteUtils.createTranspose(v2);
@@ -21378,7 +25495,6 @@ public class GeneratedRewriteClass implements Function {
 
 
 		// Now, we start building the new Hop
-		System.out.println("Applying rewrite: rowSums(-(a,t(B))) => t(colSums(-(a,B)))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0, hi_0_1_0, Types.OpOp2.MINUS);
 		AggUnaryOp v2 = HopRewriteUtils.createAggUnaryOp(v1, Types.AggOp.SUM, Types.Direction.Col);
 		ReorgOp v3 = HopRewriteUtils.createTranspose(v2);
@@ -21445,7 +25561,6 @@ public class GeneratedRewriteClass implements Function {
 
 
 		// Now, we start building the new Hop
-		System.out.println("Applying rewrite: colSums(!=(t(A),b)) => t(rowSums(!=(A,b)))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0_0, hi_0_1, Types.OpOp2.NOTEQUAL);
 		AggUnaryOp v2 = HopRewriteUtils.createAggUnaryOp(v1, Types.AggOp.SUM, Types.Direction.Row);
 		ReorgOp v3 = HopRewriteUtils.createTranspose(v2);
@@ -21512,7 +25627,6 @@ public class GeneratedRewriteClass implements Function {
 
 
 		// Now, we start building the new Hop
-		System.out.println("Applying rewrite: colSums(!=(b,t(A))) => t(rowSums(!=(A,b)))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_1_0, hi_0_0, Types.OpOp2.NOTEQUAL);
 		AggUnaryOp v2 = HopRewriteUtils.createAggUnaryOp(v1, Types.AggOp.SUM, Types.Direction.Row);
 		ReorgOp v3 = HopRewriteUtils.createTranspose(v2);
@@ -21579,7 +25693,6 @@ public class GeneratedRewriteClass implements Function {
 
 
 		// Now, we start building the new Hop
-		System.out.println("Applying rewrite: rowSums(!=(t(A),b)) => t(colSums(!=(A,b)))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0_0, hi_0_1, Types.OpOp2.NOTEQUAL);
 		AggUnaryOp v2 = HopRewriteUtils.createAggUnaryOp(v1, Types.AggOp.SUM, Types.Direction.Col);
 		ReorgOp v3 = HopRewriteUtils.createTranspose(v2);
@@ -21646,7 +25759,6 @@ public class GeneratedRewriteClass implements Function {
 
 
 		// Now, we start building the new Hop
-		System.out.println("Applying rewrite: rowSums(!=(b,t(A))) => t(colSums(!=(A,b)))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_1_0, hi_0_0, Types.OpOp2.NOTEQUAL);
 		AggUnaryOp v2 = HopRewriteUtils.createAggUnaryOp(v1, Types.AggOp.SUM, Types.Direction.Col);
 		ReorgOp v3 = HopRewriteUtils.createTranspose(v2);
@@ -21713,7 +25825,6 @@ public class GeneratedRewriteClass implements Function {
 
 
 		// Now, we start building the new Hop
-		System.out.println("Applying rewrite: colSums(+(t(A),b)) => t(rowSums(+(A,b)))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0_0, hi_0_1, Types.OpOp2.PLUS);
 		AggUnaryOp v2 = HopRewriteUtils.createAggUnaryOp(v1, Types.AggOp.SUM, Types.Direction.Row);
 		ReorgOp v3 = HopRewriteUtils.createTranspose(v2);
@@ -21780,7 +25891,6 @@ public class GeneratedRewriteClass implements Function {
 
 
 		// Now, we start building the new Hop
-		System.out.println("Applying rewrite: colSums(+(b,t(A))) => t(rowSums(+(A,b)))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_1_0, hi_0_0, Types.OpOp2.PLUS);
 		AggUnaryOp v2 = HopRewriteUtils.createAggUnaryOp(v1, Types.AggOp.SUM, Types.Direction.Row);
 		ReorgOp v3 = HopRewriteUtils.createTranspose(v2);
@@ -21847,7 +25957,6 @@ public class GeneratedRewriteClass implements Function {
 
 
 		// Now, we start building the new Hop
-		System.out.println("Applying rewrite: rowSums(+(t(A),b)) => t(colSums(+(A,b)))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0_0, hi_0_1, Types.OpOp2.PLUS);
 		AggUnaryOp v2 = HopRewriteUtils.createAggUnaryOp(v1, Types.AggOp.SUM, Types.Direction.Col);
 		ReorgOp v3 = HopRewriteUtils.createTranspose(v2);
@@ -21914,7 +26023,6 @@ public class GeneratedRewriteClass implements Function {
 
 
 		// Now, we start building the new Hop
-		System.out.println("Applying rewrite: rowSums(+(b,t(A))) => t(colSums(+(A,b)))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_1_0, hi_0_0, Types.OpOp2.PLUS);
 		AggUnaryOp v2 = HopRewriteUtils.createAggUnaryOp(v1, Types.AggOp.SUM, Types.Direction.Col);
 		ReorgOp v3 = HopRewriteUtils.createTranspose(v2);
@@ -21978,7 +26086,6 @@ public class GeneratedRewriteClass implements Function {
 
 
 		// Now, we start building the new Hop
-		System.out.println("Applying rewrite: *(t(A),t(B)) => t(*(A,B))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0, hi_1_0, Types.OpOp2.MULT);
 		ReorgOp v2 = HopRewriteUtils.createTranspose(v1);
 
@@ -22046,7 +26153,6 @@ public class GeneratedRewriteClass implements Function {
 
 
 		// Now, we start building the new Hop
-		System.out.println("Applying rewrite: !=(*(rev(A),c),A) => !=(A,*(A,c))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0_0, hi_0_1, Types.OpOp2.MULT);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0_0_0, v1, Types.OpOp2.NOTEQUAL);
 
@@ -22114,7 +26220,6 @@ public class GeneratedRewriteClass implements Function {
 
 
 		// Now, we start building the new Hop
-		System.out.println("Applying rewrite: !=(*(c,rev(A)),A) => !=(A,*(A,c))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_1_0, hi_0_0, Types.OpOp2.MULT);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0_1_0, v1, Types.OpOp2.NOTEQUAL);
 
@@ -22182,7 +26287,6 @@ public class GeneratedRewriteClass implements Function {
 
 
 		// Now, we start building the new Hop
-		System.out.println("Applying rewrite: !=(*(c,A),rev(A)) => !=(A,*(A,c))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_1, hi_0_0, Types.OpOp2.MULT);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0_1, v1, Types.OpOp2.NOTEQUAL);
 
@@ -22250,7 +26354,6 @@ public class GeneratedRewriteClass implements Function {
 
 
 		// Now, we start building the new Hop
-		System.out.println("Applying rewrite: !=(A,*(rev(A),c)) => !=(A,*(A,c))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0, hi_1_1, Types.OpOp2.MULT);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0, v1, Types.OpOp2.NOTEQUAL);
 
@@ -22318,7 +26421,6 @@ public class GeneratedRewriteClass implements Function {
 
 
 		// Now, we start building the new Hop
-		System.out.println("Applying rewrite: !=(A,*(c,rev(A))) => !=(A,*(A,c))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0, hi_1_0, Types.OpOp2.MULT);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0, v1, Types.OpOp2.NOTEQUAL);
 
@@ -22386,7 +26488,6 @@ public class GeneratedRewriteClass implements Function {
 
 
 		// Now, we start building the new Hop
-		System.out.println("Applying rewrite: !=(rev(*(c,A)),A) => !=(A,*(A,c))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0_1, hi_0_0_0, Types.OpOp2.MULT);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0_0_1, v1, Types.OpOp2.NOTEQUAL);
 
@@ -22454,7 +26555,6 @@ public class GeneratedRewriteClass implements Function {
 
 
 		// Now, we start building the new Hop
-		System.out.println("Applying rewrite: !=(rev(*(A,c)),A) => !=(A,*(A,c))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0_0, hi_0_0_1, Types.OpOp2.MULT);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0_0_0, v1, Types.OpOp2.NOTEQUAL);
 
@@ -22522,7 +26622,6 @@ public class GeneratedRewriteClass implements Function {
 
 
 		// Now, we start building the new Hop
-		System.out.println("Applying rewrite: !=(A,rev(*(c,A))) => !=(A,*(A,c))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0, hi_1_0_0, Types.OpOp2.MULT);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0, v1, Types.OpOp2.NOTEQUAL);
 
@@ -22590,7 +26689,6 @@ public class GeneratedRewriteClass implements Function {
 
 
 		// Now, we start building the new Hop
-		System.out.println("Applying rewrite: !=(A,rev(*(A,c))) => !=(A,*(A,c))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0, hi_1_0_1, Types.OpOp2.MULT);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0, v1, Types.OpOp2.NOTEQUAL);
 
@@ -22658,7 +26756,6 @@ public class GeneratedRewriteClass implements Function {
 
 
 		// Now, we start building the new Hop
-		System.out.println("Applying rewrite: !=(*(rev(A),C),A) => !=(A,*(A,C))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0_0, hi_0_1, Types.OpOp2.MULT);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0_0_0, v1, Types.OpOp2.NOTEQUAL);
 
@@ -22726,7 +26823,6 @@ public class GeneratedRewriteClass implements Function {
 
 
 		// Now, we start building the new Hop
-		System.out.println("Applying rewrite: !=(*(C,rev(A)),A) => !=(A,*(A,C))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_1_0, hi_0_0, Types.OpOp2.MULT);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0_1_0, v1, Types.OpOp2.NOTEQUAL);
 
@@ -22794,7 +26890,6 @@ public class GeneratedRewriteClass implements Function {
 
 
 		// Now, we start building the new Hop
-		System.out.println("Applying rewrite: !=(*(C,A),rev(A)) => !=(A,*(A,C))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_1, hi_0_0, Types.OpOp2.MULT);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0_1, v1, Types.OpOp2.NOTEQUAL);
 
@@ -22862,7 +26957,6 @@ public class GeneratedRewriteClass implements Function {
 
 
 		// Now, we start building the new Hop
-		System.out.println("Applying rewrite: !=(*(A,C),rev(A)) => !=(A,*(A,C))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0, hi_0_1, Types.OpOp2.MULT);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0_0, v1, Types.OpOp2.NOTEQUAL);
 
@@ -22930,7 +27024,6 @@ public class GeneratedRewriteClass implements Function {
 
 
 		// Now, we start building the new Hop
-		System.out.println("Applying rewrite: !=(A,*(rev(A),C)) => !=(A,*(A,C))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0, hi_1_1, Types.OpOp2.MULT);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0, v1, Types.OpOp2.NOTEQUAL);
 
@@ -22998,7 +27091,6 @@ public class GeneratedRewriteClass implements Function {
 
 
 		// Now, we start building the new Hop
-		System.out.println("Applying rewrite: !=(A,*(C,rev(A))) => !=(A,*(A,C))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0, hi_1_0, Types.OpOp2.MULT);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0, v1, Types.OpOp2.NOTEQUAL);
 
@@ -23061,7 +27153,6 @@ public class GeneratedRewriteClass implements Function {
 
 
 		// Now, we start building the new Hop
-		System.out.println("Applying rewrite: rev(*(rev(A),B)) => *(A,rev(B))");
 		ReorgOp v1 = HopRewriteUtils.createReorg(hi_0_1, Types.ReOrgOp.REV);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0_0_0, v1, Types.OpOp2.MULT);
 
@@ -23124,7 +27215,6 @@ public class GeneratedRewriteClass implements Function {
 
 
 		// Now, we start building the new Hop
-		System.out.println("Applying rewrite: rev(*(B,rev(A))) => *(A,rev(B))");
 		ReorgOp v1 = HopRewriteUtils.createReorg(hi_0_0, Types.ReOrgOp.REV);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0_1_0, v1, Types.OpOp2.MULT);
 
@@ -23187,7 +27277,6 @@ public class GeneratedRewriteClass implements Function {
 
 
 		// Now, we start building the new Hop
-		System.out.println("Applying rewrite: t(*(t(A),B)) => *(A,t(B))");
 		ReorgOp v1 = HopRewriteUtils.createTranspose(hi_0_1);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0_0_0, v1, Types.OpOp2.MULT);
 
@@ -23250,7 +27339,6 @@ public class GeneratedRewriteClass implements Function {
 
 
 		// Now, we start building the new Hop
-		System.out.println("Applying rewrite: t(*(B,t(A))) => *(A,t(B))");
 		ReorgOp v1 = HopRewriteUtils.createTranspose(hi_0_0);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0_1_0, v1, Types.OpOp2.MULT);
 
@@ -23318,7 +27406,6 @@ public class GeneratedRewriteClass implements Function {
 
 
 		// Now, we start building the new Hop
-		System.out.println("Applying rewrite: *(!=(rev(A),c),A) => *(A,!=(A,c))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0_0, hi_0_1, Types.OpOp2.NOTEQUAL);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0_0_0, v1, Types.OpOp2.MULT);
 
@@ -23386,7 +27473,6 @@ public class GeneratedRewriteClass implements Function {
 
 
 		// Now, we start building the new Hop
-		System.out.println("Applying rewrite: *(!=(c,rev(A)),A) => *(A,!=(A,c))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_1_0, hi_0_0, Types.OpOp2.NOTEQUAL);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0_1_0, v1, Types.OpOp2.MULT);
 
@@ -23454,7 +27540,6 @@ public class GeneratedRewriteClass implements Function {
 
 
 		// Now, we start building the new Hop
-		System.out.println("Applying rewrite: *(A,!=(rev(A),c)) => *(A,!=(A,c))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0, hi_1_1, Types.OpOp2.NOTEQUAL);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0, v1, Types.OpOp2.MULT);
 
@@ -23522,7 +27607,6 @@ public class GeneratedRewriteClass implements Function {
 
 
 		// Now, we start building the new Hop
-		System.out.println("Applying rewrite: *(A,!=(c,rev(A))) => *(A,!=(A,c))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0, hi_1_0, Types.OpOp2.NOTEQUAL);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0, v1, Types.OpOp2.MULT);
 
@@ -23590,7 +27674,6 @@ public class GeneratedRewriteClass implements Function {
 
 
 		// Now, we start building the new Hop
-		System.out.println("Applying rewrite: *(rev(!=(c,A)),A) => *(A,!=(A,c))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0_1, hi_0_0_0, Types.OpOp2.NOTEQUAL);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0_0_1, v1, Types.OpOp2.MULT);
 
@@ -23658,7 +27741,6 @@ public class GeneratedRewriteClass implements Function {
 
 
 		// Now, we start building the new Hop
-		System.out.println("Applying rewrite: *(rev(!=(A,c)),A) => *(A,!=(A,c))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0_0, hi_0_0_1, Types.OpOp2.NOTEQUAL);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0_0_0, v1, Types.OpOp2.MULT);
 
@@ -23726,7 +27808,6 @@ public class GeneratedRewriteClass implements Function {
 
 
 		// Now, we start building the new Hop
-		System.out.println("Applying rewrite: *(A,rev(!=(c,A))) => *(A,!=(A,c))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0, hi_1_0_0, Types.OpOp2.NOTEQUAL);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0, v1, Types.OpOp2.MULT);
 
@@ -23794,7 +27875,6 @@ public class GeneratedRewriteClass implements Function {
 
 
 		// Now, we start building the new Hop
-		System.out.println("Applying rewrite: *(A,rev(!=(A,c))) => *(A,!=(A,c))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0, hi_1_0_1, Types.OpOp2.NOTEQUAL);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0, v1, Types.OpOp2.MULT);
 
@@ -23862,7 +27942,6 @@ public class GeneratedRewriteClass implements Function {
 
 
 		// Now, we start building the new Hop
-		System.out.println("Applying rewrite: *(!=(rev(A),C),A) => *(A,!=(A,C))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0_0, hi_0_1, Types.OpOp2.NOTEQUAL);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0_0_0, v1, Types.OpOp2.MULT);
 
@@ -23930,7 +28009,6 @@ public class GeneratedRewriteClass implements Function {
 
 
 		// Now, we start building the new Hop
-		System.out.println("Applying rewrite: *(!=(C,rev(A)),A) => *(A,!=(A,C))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_1_0, hi_0_0, Types.OpOp2.NOTEQUAL);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0_1_0, v1, Types.OpOp2.MULT);
 
@@ -23998,7 +28076,6 @@ public class GeneratedRewriteClass implements Function {
 
 
 		// Now, we start building the new Hop
-		System.out.println("Applying rewrite: *(A,!=(rev(A),C)) => *(A,!=(A,C))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0, hi_1_1, Types.OpOp2.NOTEQUAL);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0, v1, Types.OpOp2.MULT);
 
@@ -24066,7 +28143,6 @@ public class GeneratedRewriteClass implements Function {
 
 
 		// Now, we start building the new Hop
-		System.out.println("Applying rewrite: *(A,!=(C,rev(A))) => *(A,!=(A,C))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0, hi_1_0, Types.OpOp2.NOTEQUAL);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0, v1, Types.OpOp2.MULT);
 
@@ -24132,7 +28208,6 @@ public class GeneratedRewriteClass implements Function {
 
 
 		// Now, we start building the new Hop
-		System.out.println("Applying rewrite: sum(/(a,t(B))) => sum(/(a,B))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0, hi_0_1_0, Types.OpOp2.DIV);
 		AggUnaryOp v2 = HopRewriteUtils.createAggUnaryOp(v1, Types.AggOp.SUM, Types.Direction.RowCol);
 
@@ -24195,7 +28270,6 @@ public class GeneratedRewriteClass implements Function {
 
 
 		// Now, we start building the new Hop
-		System.out.println("Applying rewrite: rev(/(rev(A),B)) => /(A,rev(B))");
 		ReorgOp v1 = HopRewriteUtils.createReorg(hi_0_1, Types.ReOrgOp.REV);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0_0_0, v1, Types.OpOp2.DIV);
 
@@ -24258,7 +28332,6 @@ public class GeneratedRewriteClass implements Function {
 
 
 		// Now, we start building the new Hop
-		System.out.println("Applying rewrite: rev(/(A,rev(B))) => /(rev(A),B)");
 		ReorgOp v1 = HopRewriteUtils.createReorg(hi_0_0, Types.ReOrgOp.REV);
 		BinaryOp v2 = HopRewriteUtils.createBinary(v1, hi_0_1_0, Types.OpOp2.DIV);
 
@@ -24321,7 +28394,6 @@ public class GeneratedRewriteClass implements Function {
 
 
 		// Now, we start building the new Hop
-		System.out.println("Applying rewrite: t(/(t(A),B)) => /(A,t(B))");
 		ReorgOp v1 = HopRewriteUtils.createTranspose(hi_0_1);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0_0_0, v1, Types.OpOp2.DIV);
 
@@ -24384,7 +28456,6 @@ public class GeneratedRewriteClass implements Function {
 
 
 		// Now, we start building the new Hop
-		System.out.println("Applying rewrite: t(/(A,t(B))) => /(t(A),B)");
 		ReorgOp v1 = HopRewriteUtils.createTranspose(hi_0_0);
 		BinaryOp v2 = HopRewriteUtils.createBinary(v1, hi_0_1_0, Types.OpOp2.DIV);
 
@@ -24447,7 +28518,6 @@ public class GeneratedRewriteClass implements Function {
 
 
 		// Now, we start building the new Hop
-		System.out.println("Applying rewrite: /(t(A),t(B)) => t(/(A,B))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0, hi_1_0, Types.OpOp2.DIV);
 		ReorgOp v2 = HopRewriteUtils.createTranspose(v1);
 
@@ -24515,7 +28585,6 @@ public class GeneratedRewriteClass implements Function {
 
 
 		// Now, we start building the new Hop
-		System.out.println("Applying rewrite: !=(/(b,rev(A)),A) => !=(A,/(b,A))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0, hi_0_1_0, Types.OpOp2.DIV);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0_1_0, v1, Types.OpOp2.NOTEQUAL);
 
@@ -24583,7 +28652,6 @@ public class GeneratedRewriteClass implements Function {
 
 
 		// Now, we start building the new Hop
-		System.out.println("Applying rewrite: !=(/(b,A),rev(A)) => !=(A,/(b,A))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0, hi_0_1, Types.OpOp2.DIV);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0_1, v1, Types.OpOp2.NOTEQUAL);
 
@@ -24651,7 +28719,6 @@ public class GeneratedRewriteClass implements Function {
 
 
 		// Now, we start building the new Hop
-		System.out.println("Applying rewrite: !=(A,/(b,rev(A))) => !=(A,/(b,A))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_1_0, hi_0, Types.OpOp2.DIV);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0, v1, Types.OpOp2.NOTEQUAL);
 
@@ -24719,7 +28786,6 @@ public class GeneratedRewriteClass implements Function {
 
 
 		// Now, we start building the new Hop
-		System.out.println("Applying rewrite: !=(rev(/(b,A)),A) => !=(A,/(b,A))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0_0, hi_0_0_1, Types.OpOp2.DIV);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0_0_1, v1, Types.OpOp2.NOTEQUAL);
 
@@ -24787,7 +28853,6 @@ public class GeneratedRewriteClass implements Function {
 
 
 		// Now, we start building the new Hop
-		System.out.println("Applying rewrite: !=(A,rev(/(b,A))) => !=(A,/(b,A))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_1_0_0, hi_0, Types.OpOp2.DIV);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0, v1, Types.OpOp2.NOTEQUAL);
 
@@ -24855,7 +28920,6 @@ public class GeneratedRewriteClass implements Function {
 
 
 		// Now, we start building the new Hop
-		System.out.println("Applying rewrite: !=(/(B,rev(A)),A) => !=(A,/(B,A))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0, hi_0_1_0, Types.OpOp2.DIV);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0_1_0, v1, Types.OpOp2.NOTEQUAL);
 
@@ -24923,7 +28987,6 @@ public class GeneratedRewriteClass implements Function {
 
 
 		// Now, we start building the new Hop
-		System.out.println("Applying rewrite: !=(/(B,A),rev(A)) => !=(A,/(B,A))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0, hi_0_1, Types.OpOp2.DIV);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0_1, v1, Types.OpOp2.NOTEQUAL);
 
@@ -24991,7 +29054,6 @@ public class GeneratedRewriteClass implements Function {
 
 
 		// Now, we start building the new Hop
-		System.out.println("Applying rewrite: !=(A,/(B,rev(A))) => !=(A,/(B,A))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_1_0, hi_0, Types.OpOp2.DIV);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0, v1, Types.OpOp2.NOTEQUAL);
 
@@ -25059,7 +29121,6 @@ public class GeneratedRewriteClass implements Function {
 
 
 		// Now, we start building the new Hop
-		System.out.println("Applying rewrite: !=(/(rev(A),C),A) => !=(A,/(A,C))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0_0, hi_0_1, Types.OpOp2.DIV);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0_0_0, v1, Types.OpOp2.NOTEQUAL);
 
@@ -25127,7 +29188,6 @@ public class GeneratedRewriteClass implements Function {
 
 
 		// Now, we start building the new Hop
-		System.out.println("Applying rewrite: !=(/(A,C),rev(A)) => !=(A,/(A,C))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0, hi_0_1, Types.OpOp2.DIV);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0_0, v1, Types.OpOp2.NOTEQUAL);
 
@@ -25195,7 +29255,6 @@ public class GeneratedRewriteClass implements Function {
 
 
 		// Now, we start building the new Hop
-		System.out.println("Applying rewrite: !=(A,/(rev(A),C)) => !=(A,/(A,C))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0, hi_1_1, Types.OpOp2.DIV);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0, v1, Types.OpOp2.NOTEQUAL);
 
@@ -25263,7 +29322,6 @@ public class GeneratedRewriteClass implements Function {
 
 
 		// Now, we start building the new Hop
-		System.out.println("Applying rewrite: /(rev(!=(A,b)),A) => /(!=(A,b),A)");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0_0, hi_0_0_1, Types.OpOp2.NOTEQUAL);
 		BinaryOp v2 = HopRewriteUtils.createBinary(v1, hi_0_0_0, Types.OpOp2.DIV);
 
@@ -25331,7 +29389,6 @@ public class GeneratedRewriteClass implements Function {
 
 
 		// Now, we start building the new Hop
-		System.out.println("Applying rewrite: /(A,rev(!=(c,A))) => /(A,!=(A,c))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0, hi_1_0_0, Types.OpOp2.NOTEQUAL);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0, v1, Types.OpOp2.DIV);
 
@@ -25399,7 +29456,6 @@ public class GeneratedRewriteClass implements Function {
 
 
 		// Now, we start building the new Hop
-		System.out.println("Applying rewrite: /(A,rev(!=(A,c))) => /(A,!=(A,c))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0, hi_1_0_1, Types.OpOp2.NOTEQUAL);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0, v1, Types.OpOp2.DIV);
 
@@ -25467,7 +29523,6 @@ public class GeneratedRewriteClass implements Function {
 
 
 		// Now, we start building the new Hop
-		System.out.println("Applying rewrite: /(A,!=(rev(A),c)) => /(A,!=(A,c))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0, hi_1_1, Types.OpOp2.NOTEQUAL);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0, v1, Types.OpOp2.DIV);
 
@@ -25535,7 +29590,6 @@ public class GeneratedRewriteClass implements Function {
 
 
 		// Now, we start building the new Hop
-		System.out.println("Applying rewrite: /(A,!=(c,rev(A))) => /(A,!=(A,c))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0, hi_1_0, Types.OpOp2.NOTEQUAL);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0, v1, Types.OpOp2.DIV);
 
@@ -25603,7 +29657,6 @@ public class GeneratedRewriteClass implements Function {
 
 
 		// Now, we start building the new Hop
-		System.out.println("Applying rewrite: /(A,!=(rev(A),C)) => /(A,!=(A,C))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0, hi_1_1, Types.OpOp2.NOTEQUAL);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0, v1, Types.OpOp2.DIV);
 
@@ -25671,7 +29724,6 @@ public class GeneratedRewriteClass implements Function {
 
 
 		// Now, we start building the new Hop
-		System.out.println("Applying rewrite: /(A,!=(C,rev(A))) => /(A,!=(A,C))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0, hi_1_0, Types.OpOp2.NOTEQUAL);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0, v1, Types.OpOp2.DIV);
 
@@ -25737,7 +29789,6 @@ public class GeneratedRewriteClass implements Function {
 
 
 		// Now, we start building the new Hop
-		System.out.println("Applying rewrite: colSums(/(a,t(B))) => t(rowSums(/(a,B)))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0, hi_0_1_0, Types.OpOp2.DIV);
 		AggUnaryOp v2 = HopRewriteUtils.createAggUnaryOp(v1, Types.AggOp.SUM, Types.Direction.Row);
 		ReorgOp v3 = HopRewriteUtils.createTranspose(v2);
@@ -25804,7 +29855,6 @@ public class GeneratedRewriteClass implements Function {
 
 
 		// Now, we start building the new Hop
-		System.out.println("Applying rewrite: rowSums(/(a,t(B))) => t(colSums(/(a,B)))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0, hi_0_1_0, Types.OpOp2.DIV);
 		AggUnaryOp v2 = HopRewriteUtils.createAggUnaryOp(v1, Types.AggOp.SUM, Types.Direction.Col);
 		ReorgOp v3 = HopRewriteUtils.createTranspose(v2);
@@ -25871,7 +29921,6 @@ public class GeneratedRewriteClass implements Function {
 
 
 		// Now, we start building the new Hop
-		System.out.println("Applying rewrite: !=(A,rev(rowSums(A))) => !=(A,rowSums(A))");
 		AggUnaryOp v1 = HopRewriteUtils.createAggUnaryOp(hi_0, Types.AggOp.SUM, Types.Direction.Row);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0, v1, Types.OpOp2.NOTEQUAL);
 
@@ -25937,7 +29986,6 @@ public class GeneratedRewriteClass implements Function {
 
 
 		// Now, we start building the new Hop
-		System.out.println("Applying rewrite: !=(A,rowSums(rev(A))) => !=(A,rowSums(A))");
 		AggUnaryOp v1 = HopRewriteUtils.createAggUnaryOp(hi_0, Types.AggOp.SUM, Types.Direction.Row);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0, v1, Types.OpOp2.NOTEQUAL);
 
@@ -26003,7 +30051,6 @@ public class GeneratedRewriteClass implements Function {
 
 
 		// Now, we start building the new Hop
-		System.out.println("Applying rewrite: !=(A,colSums(rev(A))) => !=(A,colSums(A))");
 		AggUnaryOp v1 = HopRewriteUtils.createAggUnaryOp(hi_0, Types.AggOp.SUM, Types.Direction.Col);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0, v1, Types.OpOp2.NOTEQUAL);
 
@@ -26069,7 +30116,6 @@ public class GeneratedRewriteClass implements Function {
 
 
 		// Now, we start building the new Hop
-		System.out.println("Applying rewrite: +(A,colSums(rev(A))) => +(A,colSums(A))");
 		AggUnaryOp v1 = HopRewriteUtils.createAggUnaryOp(hi_0, Types.AggOp.SUM, Types.Direction.Col);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0, v1, Types.OpOp2.PLUS);
 
@@ -26135,7 +30181,6 @@ public class GeneratedRewriteClass implements Function {
 
 
 		// Now, we start building the new Hop
-		System.out.println("Applying rewrite: *(A,colSums(rev(A))) => *(A,colSums(A))");
 		AggUnaryOp v1 = HopRewriteUtils.createAggUnaryOp(hi_0, Types.AggOp.SUM, Types.Direction.Col);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0, v1, Types.OpOp2.MULT);
 
@@ -26203,7 +30248,6 @@ public class GeneratedRewriteClass implements Function {
 
 
 		// Now, we start building the new Hop
-		System.out.println("Applying rewrite: %*%(*(a,C),*(b,D)) => *(*(a,b),%*%(C,D))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0, hi_1_0, Types.OpOp2.MULT);
 		AggBinaryOp v2 = HopRewriteUtils.createMatrixMultiply(hi_0_1, hi_1_1);
 		BinaryOp v3 = HopRewriteUtils.createBinary(v1, v2, Types.OpOp2.MULT);
@@ -26272,7 +30316,6 @@ public class GeneratedRewriteClass implements Function {
 
 
 		// Now, we start building the new Hop
-		System.out.println("Applying rewrite: %*%(*(a,C),*(D,b)) => *(*(a,b),%*%(C,D))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0, hi_1_1, Types.OpOp2.MULT);
 		AggBinaryOp v2 = HopRewriteUtils.createMatrixMultiply(hi_0_1, hi_1_0);
 		BinaryOp v3 = HopRewriteUtils.createBinary(v1, v2, Types.OpOp2.MULT);
@@ -26341,7 +30384,6 @@ public class GeneratedRewriteClass implements Function {
 
 
 		// Now, we start building the new Hop
-		System.out.println("Applying rewrite: %*%(*(C,a),*(b,D)) => *(*(a,b),%*%(C,D))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_1, hi_1_0, Types.OpOp2.MULT);
 		AggBinaryOp v2 = HopRewriteUtils.createMatrixMultiply(hi_0_0, hi_1_1);
 		BinaryOp v3 = HopRewriteUtils.createBinary(v1, v2, Types.OpOp2.MULT);
@@ -26410,7 +30452,6 @@ public class GeneratedRewriteClass implements Function {
 
 
 		// Now, we start building the new Hop
-		System.out.println("Applying rewrite: %*%(*(C,a),*(D,b)) => *(*(a,b),%*%(C,D))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_1, hi_1_1, Types.OpOp2.MULT);
 		AggBinaryOp v2 = HopRewriteUtils.createMatrixMultiply(hi_0_0, hi_1_0);
 		BinaryOp v3 = HopRewriteUtils.createBinary(v1, v2, Types.OpOp2.MULT);
@@ -26479,7 +30520,6 @@ public class GeneratedRewriteClass implements Function {
 
 
 		// Now, we start building the new Hop
-		System.out.println("Applying rewrite: *(%*%(*(a,C),D),b) => *(*(a,b),%*%(C,D))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0_0, hi_1, Types.OpOp2.MULT);
 		AggBinaryOp v2 = HopRewriteUtils.createMatrixMultiply(hi_0_0_1, hi_0_1);
 		BinaryOp v3 = HopRewriteUtils.createBinary(v1, v2, Types.OpOp2.MULT);
@@ -26548,7 +30588,6 @@ public class GeneratedRewriteClass implements Function {
 
 
 		// Now, we start building the new Hop
-		System.out.println("Applying rewrite: *(%*%(*(C,a),D),b) => *(*(a,b),%*%(C,D))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0_1, hi_1, Types.OpOp2.MULT);
 		AggBinaryOp v2 = HopRewriteUtils.createMatrixMultiply(hi_0_0_0, hi_0_1);
 		BinaryOp v3 = HopRewriteUtils.createBinary(v1, v2, Types.OpOp2.MULT);
@@ -26617,7 +30656,6 @@ public class GeneratedRewriteClass implements Function {
 
 
 		// Now, we start building the new Hop
-		System.out.println("Applying rewrite: *(%*%(C,*(D,a)),b) => *(*(a,b),%*%(C,D))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_1_1, hi_1, Types.OpOp2.MULT);
 		AggBinaryOp v2 = HopRewriteUtils.createMatrixMultiply(hi_0_0, hi_0_1_0);
 		BinaryOp v3 = HopRewriteUtils.createBinary(v1, v2, Types.OpOp2.MULT);
@@ -26686,7 +30724,6 @@ public class GeneratedRewriteClass implements Function {
 
 
 		// Now, we start building the new Hop
-		System.out.println("Applying rewrite: *(a,%*%(*(b,C),D)) => *(*(a,b),%*%(C,D))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0, hi_1_0_0, Types.OpOp2.MULT);
 		AggBinaryOp v2 = HopRewriteUtils.createMatrixMultiply(hi_1_0_1, hi_1_1);
 		BinaryOp v3 = HopRewriteUtils.createBinary(v1, v2, Types.OpOp2.MULT);
@@ -26755,7 +30792,6 @@ public class GeneratedRewriteClass implements Function {
 
 
 		// Now, we start building the new Hop
-		System.out.println("Applying rewrite: *(a,%*%(*(C,b),D)) => *(*(a,b),%*%(C,D))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0, hi_1_0_1, Types.OpOp2.MULT);
 		AggBinaryOp v2 = HopRewriteUtils.createMatrixMultiply(hi_1_0_0, hi_1_1);
 		BinaryOp v3 = HopRewriteUtils.createBinary(v1, v2, Types.OpOp2.MULT);
@@ -26824,7 +30860,6 @@ public class GeneratedRewriteClass implements Function {
 
 
 		// Now, we start building the new Hop
-		System.out.println("Applying rewrite: *(a,%*%(C,*(b,D))) => *(*(a,b),%*%(C,D))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0, hi_1_1_0, Types.OpOp2.MULT);
 		AggBinaryOp v2 = HopRewriteUtils.createMatrixMultiply(hi_1_0, hi_1_1_1);
 		BinaryOp v3 = HopRewriteUtils.createBinary(v1, v2, Types.OpOp2.MULT);
@@ -26893,7 +30928,6 @@ public class GeneratedRewriteClass implements Function {
 
 
 		// Now, we start building the new Hop
-		System.out.println("Applying rewrite: %*%(/(a,C),*(b,D)) => %*%(/(*(a,b),C),D)");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0, hi_1_0, Types.OpOp2.MULT);
 		BinaryOp v2 = HopRewriteUtils.createBinary(v1, hi_0_1, Types.OpOp2.DIV);
 		AggBinaryOp v3 = HopRewriteUtils.createMatrixMultiply(v2, hi_1_1);
@@ -26962,7 +30996,6 @@ public class GeneratedRewriteClass implements Function {
 
 
 		// Now, we start building the new Hop
-		System.out.println("Applying rewrite: %*%(/(a,C),*(D,b)) => %*%(/(*(a,b),C),D)");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0, hi_1_1, Types.OpOp2.MULT);
 		BinaryOp v2 = HopRewriteUtils.createBinary(v1, hi_0_1, Types.OpOp2.DIV);
 		AggBinaryOp v3 = HopRewriteUtils.createMatrixMultiply(v2, hi_1_0);
@@ -27031,7 +31064,6 @@ public class GeneratedRewriteClass implements Function {
 
 
 		// Now, we start building the new Hop
-		System.out.println("Applying rewrite: *(%*%(/(a,C),D),b) => %*%(/(*(a,b),C),D)");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0_0, hi_1, Types.OpOp2.MULT);
 		BinaryOp v2 = HopRewriteUtils.createBinary(v1, hi_0_0_1, Types.OpOp2.DIV);
 		AggBinaryOp v3 = HopRewriteUtils.createMatrixMultiply(v2, hi_0_1);
@@ -27100,7 +31132,6 @@ public class GeneratedRewriteClass implements Function {
 
 
 		// Now, we start building the new Hop
-		System.out.println("Applying rewrite: *(a,%*%(/(b,C),D)) => %*%(/(*(a,b),C),D)");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0, hi_1_0_0, Types.OpOp2.MULT);
 		BinaryOp v2 = HopRewriteUtils.createBinary(v1, hi_1_0_1, Types.OpOp2.DIV);
 		AggBinaryOp v3 = HopRewriteUtils.createMatrixMultiply(v2, hi_1_1);
@@ -27169,7 +31200,6 @@ public class GeneratedRewriteClass implements Function {
 
 
 		// Now, we start building the new Hop
-		System.out.println("Applying rewrite: %*%(*(b,A),/(c,D)) => %*%(A,/(*(b,c),D))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0, hi_1_0, Types.OpOp2.MULT);
 		BinaryOp v2 = HopRewriteUtils.createBinary(v1, hi_1_1, Types.OpOp2.DIV);
 		AggBinaryOp v3 = HopRewriteUtils.createMatrixMultiply(hi_0_1, v2);
@@ -27238,7 +31268,6 @@ public class GeneratedRewriteClass implements Function {
 
 
 		// Now, we start building the new Hop
-		System.out.println("Applying rewrite: %*%(*(A,b),/(c,D)) => %*%(A,/(*(b,c),D))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_1, hi_1_0, Types.OpOp2.MULT);
 		BinaryOp v2 = HopRewriteUtils.createBinary(v1, hi_1_1, Types.OpOp2.DIV);
 		AggBinaryOp v3 = HopRewriteUtils.createMatrixMultiply(hi_0_0, v2);
@@ -27307,7 +31336,6 @@ public class GeneratedRewriteClass implements Function {
 
 
 		// Now, we start building the new Hop
-		System.out.println("Applying rewrite: *(%*%(A,/(b,D)),c) => %*%(A,/(*(b,c),D))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_1_0, hi_1, Types.OpOp2.MULT);
 		BinaryOp v2 = HopRewriteUtils.createBinary(v1, hi_0_1_1, Types.OpOp2.DIV);
 		AggBinaryOp v3 = HopRewriteUtils.createMatrixMultiply(hi_0_0, v2);
@@ -27376,7 +31404,6 @@ public class GeneratedRewriteClass implements Function {
 
 
 		// Now, we start building the new Hop
-		System.out.println("Applying rewrite: *(b,%*%(A,/(c,D))) => %*%(A,/(*(b,c),D))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0, hi_1_1_0, Types.OpOp2.MULT);
 		BinaryOp v2 = HopRewriteUtils.createBinary(v1, hi_1_1_1, Types.OpOp2.DIV);
 		AggBinaryOp v3 = HopRewriteUtils.createMatrixMultiply(hi_1_0, v2);
@@ -27435,7 +31462,6 @@ public class GeneratedRewriteClass implements Function {
 
 
 		// Now, we start building the new Hop
-		System.out.println("Applying rewrite: t(%*%(t(B),A)) => %*%(t(A),B)");
 		ReorgOp v1 = HopRewriteUtils.createTranspose(hi_0_1);
 		AggBinaryOp v2 = HopRewriteUtils.createMatrixMultiply(v1, hi_0_0_0);
 
@@ -27493,7 +31519,6 @@ public class GeneratedRewriteClass implements Function {
 
 
 		// Now, we start building the new Hop
-		System.out.println("Applying rewrite: t(%*%(B,t(A))) => %*%(A,t(B))");
 		ReorgOp v1 = HopRewriteUtils.createTranspose(hi_0_0);
 		AggBinaryOp v2 = HopRewriteUtils.createMatrixMultiply(hi_0_1_0, v1);
 
@@ -27551,7 +31576,6 @@ public class GeneratedRewriteClass implements Function {
 
 
 		// Now, we start building the new Hop
-		System.out.println("Applying rewrite: %*%(t(B),t(A)) => t(%*%(A,B))");
 		AggBinaryOp v1 = HopRewriteUtils.createMatrixMultiply(hi_1_0, hi_0_0);
 		ReorgOp v2 = HopRewriteUtils.createTranspose(v1);
 
@@ -27614,7 +31638,6 @@ public class GeneratedRewriteClass implements Function {
 
 
 		// Now, we start building the new Hop
-		System.out.println("Applying rewrite: !=(%*%(B,rev(A)),A) => !=(A,%*%(B,A))");
 		AggBinaryOp v1 = HopRewriteUtils.createMatrixMultiply(hi_0_0, hi_0_1_0);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0_1_0, v1, Types.OpOp2.NOTEQUAL);
 
@@ -27677,7 +31700,6 @@ public class GeneratedRewriteClass implements Function {
 
 
 		// Now, we start building the new Hop
-		System.out.println("Applying rewrite: !=(A,%*%(B,rev(A))) => !=(A,%*%(B,A))");
 		AggBinaryOp v1 = HopRewriteUtils.createMatrixMultiply(hi_1_0, hi_0);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0, v1, Types.OpOp2.NOTEQUAL);
 
@@ -27740,7 +31762,6 @@ public class GeneratedRewriteClass implements Function {
 
 
 		// Now, we start building the new Hop
-		System.out.println("Applying rewrite: !=(rev(%*%(A,C)),A) => !=(A,%*%(A,C))");
 		AggBinaryOp v1 = HopRewriteUtils.createMatrixMultiply(hi_0_0_0, hi_0_0_1);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0_0_0, v1, Types.OpOp2.NOTEQUAL);
 
@@ -27803,7 +31824,6 @@ public class GeneratedRewriteClass implements Function {
 
 
 		// Now, we start building the new Hop
-		System.out.println("Applying rewrite: !=(A,rev(%*%(A,C))) => !=(A,%*%(A,C))");
 		AggBinaryOp v1 = HopRewriteUtils.createMatrixMultiply(hi_0, hi_1_0_1);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0, v1, Types.OpOp2.NOTEQUAL);
 
@@ -27866,7 +31886,6 @@ public class GeneratedRewriteClass implements Function {
 
 
 		// Now, we start building the new Hop
-		System.out.println("Applying rewrite: !=(%*%(rev(A),C),A) => !=(A,%*%(A,C))");
 		AggBinaryOp v1 = HopRewriteUtils.createMatrixMultiply(hi_0_0_0, hi_0_1);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0_0_0, v1, Types.OpOp2.NOTEQUAL);
 
@@ -27929,7 +31948,6 @@ public class GeneratedRewriteClass implements Function {
 
 
 		// Now, we start building the new Hop
-		System.out.println("Applying rewrite: !=(A,%*%(rev(A),C)) => !=(A,%*%(A,C))");
 		AggBinaryOp v1 = HopRewriteUtils.createMatrixMultiply(hi_0, hi_1_1);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0, v1, Types.OpOp2.NOTEQUAL);
 
@@ -27992,7 +32010,6 @@ public class GeneratedRewriteClass implements Function {
 
 
 		// Now, we start building the new Hop
-		System.out.println("Applying rewrite: rev(%*%(!=(b,A),A)) => %*%(!=(A,b),A)");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0_1, hi_0_0_0, Types.OpOp2.NOTEQUAL);
 		AggBinaryOp v2 = HopRewriteUtils.createMatrixMultiply(v1, hi_0_0_1);
 
@@ -28055,7 +32072,6 @@ public class GeneratedRewriteClass implements Function {
 
 
 		// Now, we start building the new Hop
-		System.out.println("Applying rewrite: rev(%*%(!=(A,b),A)) => %*%(!=(A,b),A)");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0_0, hi_0_0_1, Types.OpOp2.NOTEQUAL);
 		AggBinaryOp v2 = HopRewriteUtils.createMatrixMultiply(v1, hi_0_0_0);
 
@@ -28118,7 +32134,6 @@ public class GeneratedRewriteClass implements Function {
 
 
 		// Now, we start building the new Hop
-		System.out.println("Applying rewrite: %*%(!=(rev(A),b),A) => %*%(!=(A,b),A)");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0_0, hi_0_1, Types.OpOp2.NOTEQUAL);
 		AggBinaryOp v2 = HopRewriteUtils.createMatrixMultiply(v1, hi_0_0_0);
 
@@ -28181,7 +32196,6 @@ public class GeneratedRewriteClass implements Function {
 
 
 		// Now, we start building the new Hop
-		System.out.println("Applying rewrite: %*%(!=(b,rev(A)),A) => %*%(!=(A,b),A)");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_1_0, hi_0_0, Types.OpOp2.NOTEQUAL);
 		AggBinaryOp v2 = HopRewriteUtils.createMatrixMultiply(v1, hi_0_1_0);
 
@@ -28244,7 +32258,6 @@ public class GeneratedRewriteClass implements Function {
 
 
 		// Now, we start building the new Hop
-		System.out.println("Applying rewrite: %*%(rev(!=(b,A)),A) => %*%(!=(A,b),A)");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0_1, hi_0_0_0, Types.OpOp2.NOTEQUAL);
 		AggBinaryOp v2 = HopRewriteUtils.createMatrixMultiply(v1, hi_0_0_1);
 
@@ -28307,7 +32320,6 @@ public class GeneratedRewriteClass implements Function {
 
 
 		// Now, we start building the new Hop
-		System.out.println("Applying rewrite: %*%(rev(!=(A,b)),A) => %*%(!=(A,b),A)");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0_0, hi_0_0_1, Types.OpOp2.NOTEQUAL);
 		AggBinaryOp v2 = HopRewriteUtils.createMatrixMultiply(v1, hi_0_0_0);
 
@@ -28370,7 +32382,6 @@ public class GeneratedRewriteClass implements Function {
 
 
 		// Now, we start building the new Hop
-		System.out.println("Applying rewrite: %*%(!=(rev(A),B),A) => %*%(!=(A,B),A)");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0_0, hi_0_1, Types.OpOp2.NOTEQUAL);
 		AggBinaryOp v2 = HopRewriteUtils.createMatrixMultiply(v1, hi_0_0_0);
 
@@ -28433,7 +32444,6 @@ public class GeneratedRewriteClass implements Function {
 
 
 		// Now, we start building the new Hop
-		System.out.println("Applying rewrite: %*%(!=(B,rev(A)),A) => %*%(!=(A,B),A)");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_1_0, hi_0_0, Types.OpOp2.NOTEQUAL);
 		AggBinaryOp v2 = HopRewriteUtils.createMatrixMultiply(v1, hi_0_1_0);
 
@@ -28496,7 +32506,6 @@ public class GeneratedRewriteClass implements Function {
 
 
 		// Now, we start building the new Hop
-		System.out.println("Applying rewrite: %*%(A,!=(rev(A),c)) => %*%(A,!=(A,c))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0, hi_1_1, Types.OpOp2.NOTEQUAL);
 		AggBinaryOp v2 = HopRewriteUtils.createMatrixMultiply(hi_0, v1);
 
@@ -28559,7 +32568,6 @@ public class GeneratedRewriteClass implements Function {
 
 
 		// Now, we start building the new Hop
-		System.out.println("Applying rewrite: %*%(A,!=(c,rev(A))) => %*%(A,!=(A,c))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0, hi_1_0, Types.OpOp2.NOTEQUAL);
 		AggBinaryOp v2 = HopRewriteUtils.createMatrixMultiply(hi_0, v1);
 
@@ -28622,7 +32630,6 @@ public class GeneratedRewriteClass implements Function {
 
 
 		// Now, we start building the new Hop
-		System.out.println("Applying rewrite: %*%(A,rev(!=(c,A))) => %*%(A,!=(A,c))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0, hi_1_0_0, Types.OpOp2.NOTEQUAL);
 		AggBinaryOp v2 = HopRewriteUtils.createMatrixMultiply(hi_0, v1);
 
@@ -28685,7 +32692,6 @@ public class GeneratedRewriteClass implements Function {
 
 
 		// Now, we start building the new Hop
-		System.out.println("Applying rewrite: %*%(A,rev(!=(A,c))) => %*%(A,!=(A,c))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0, hi_1_0_1, Types.OpOp2.NOTEQUAL);
 		AggBinaryOp v2 = HopRewriteUtils.createMatrixMultiply(hi_0, v1);
 
@@ -28748,7 +32754,6 @@ public class GeneratedRewriteClass implements Function {
 
 
 		// Now, we start building the new Hop
-		System.out.println("Applying rewrite: %*%(A,!=(rev(A),C)) => %*%(A,!=(A,C))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0, hi_1_1, Types.OpOp2.NOTEQUAL);
 		AggBinaryOp v2 = HopRewriteUtils.createMatrixMultiply(hi_0, v1);
 
@@ -28811,7 +32816,6 @@ public class GeneratedRewriteClass implements Function {
 
 
 		// Now, we start building the new Hop
-		System.out.println("Applying rewrite: %*%(A,!=(C,rev(A))) => %*%(A,!=(A,C))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0, hi_1_0, Types.OpOp2.NOTEQUAL);
 		AggBinaryOp v2 = HopRewriteUtils.createMatrixMultiply(hi_0, v1);
 
@@ -28877,7 +32881,6 @@ public class GeneratedRewriteClass implements Function {
 
 
 		// Now, we start building the new Hop
-		System.out.println("Applying rewrite: rev(-(colSums(A),b)) => -(colSums(A),b)");
 		AggUnaryOp v1 = HopRewriteUtils.createAggUnaryOp(hi_0_0_0, Types.AggOp.SUM, Types.Direction.Col);
 		BinaryOp v2 = HopRewriteUtils.createBinary(v1, hi_0_1, Types.OpOp2.MINUS);
 
@@ -28943,7 +32946,6 @@ public class GeneratedRewriteClass implements Function {
 
 
 		// Now, we start building the new Hop
-		System.out.println("Applying rewrite: rev(-(a,colSums(B))) => -(a,colSums(B))");
 		AggUnaryOp v1 = HopRewriteUtils.createAggUnaryOp(hi_0_1_0, Types.AggOp.SUM, Types.Direction.Col);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0_0, v1, Types.OpOp2.MINUS);
 
@@ -29009,7 +33011,6 @@ public class GeneratedRewriteClass implements Function {
 
 
 		// Now, we start building the new Hop
-		System.out.println("Applying rewrite: rev(!=(colSums(B),a)) => !=(a,colSums(B))");
 		AggUnaryOp v1 = HopRewriteUtils.createAggUnaryOp(hi_0_0_0, Types.AggOp.SUM, Types.Direction.Col);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0_1, v1, Types.OpOp2.NOTEQUAL);
 
@@ -29075,7 +33076,6 @@ public class GeneratedRewriteClass implements Function {
 
 
 		// Now, we start building the new Hop
-		System.out.println("Applying rewrite: rev(!=(a,colSums(B))) => !=(a,colSums(B))");
 		AggUnaryOp v1 = HopRewriteUtils.createAggUnaryOp(hi_0_1_0, Types.AggOp.SUM, Types.Direction.Col);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0_0, v1, Types.OpOp2.NOTEQUAL);
 
@@ -29136,7 +33136,6 @@ public class GeneratedRewriteClass implements Function {
 
 
 		// Now, we start building the new Hop
-		System.out.println("Applying rewrite: rev(t(rowSums(A))) => t(rowSums(A))");
 		AggUnaryOp v1 = HopRewriteUtils.createAggUnaryOp(hi_0_0_0, Types.AggOp.SUM, Types.Direction.Row);
 		ReorgOp v2 = HopRewriteUtils.createTranspose(v1);
 
@@ -29202,7 +33201,6 @@ public class GeneratedRewriteClass implements Function {
 
 
 		// Now, we start building the new Hop
-		System.out.println("Applying rewrite: rev(+(colSums(B),a)) => +(a,colSums(B))");
 		AggUnaryOp v1 = HopRewriteUtils.createAggUnaryOp(hi_0_0_0, Types.AggOp.SUM, Types.Direction.Col);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0_1, v1, Types.OpOp2.PLUS);
 
@@ -29268,7 +33266,6 @@ public class GeneratedRewriteClass implements Function {
 
 
 		// Now, we start building the new Hop
-		System.out.println("Applying rewrite: rev(+(a,colSums(B))) => +(a,colSums(B))");
 		AggUnaryOp v1 = HopRewriteUtils.createAggUnaryOp(hi_0_1_0, Types.AggOp.SUM, Types.Direction.Col);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0_0, v1, Types.OpOp2.PLUS);
 
@@ -29334,7 +33331,6 @@ public class GeneratedRewriteClass implements Function {
 
 
 		// Now, we start building the new Hop
-		System.out.println("Applying rewrite: rev(*(colSums(B),a)) => *(a,colSums(B))");
 		AggUnaryOp v1 = HopRewriteUtils.createAggUnaryOp(hi_0_0_0, Types.AggOp.SUM, Types.Direction.Col);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0_1, v1, Types.OpOp2.MULT);
 
@@ -29400,7 +33396,6 @@ public class GeneratedRewriteClass implements Function {
 
 
 		// Now, we start building the new Hop
-		System.out.println("Applying rewrite: rev(*(a,colSums(B))) => *(a,colSums(B))");
 		AggUnaryOp v1 = HopRewriteUtils.createAggUnaryOp(hi_0_1_0, Types.AggOp.SUM, Types.Direction.Col);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0_0, v1, Types.OpOp2.MULT);
 
@@ -29466,7 +33461,6 @@ public class GeneratedRewriteClass implements Function {
 
 
 		// Now, we start building the new Hop
-		System.out.println("Applying rewrite: rev(/(a,colSums(B))) => /(a,colSums(B))");
 		AggUnaryOp v1 = HopRewriteUtils.createAggUnaryOp(hi_0_1_0, Types.AggOp.SUM, Types.Direction.Col);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0_0, v1, Types.OpOp2.DIV);
 
@@ -29537,7 +33531,6 @@ public class GeneratedRewriteClass implements Function {
 
 
 		// Now, we start building the new Hop
-		System.out.println("Applying rewrite: *(colSums(/(a,C)),b) => colSums(/(*(a,b),C))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0_0, hi_1, Types.OpOp2.MULT);
 		BinaryOp v2 = HopRewriteUtils.createBinary(v1, hi_0_0_1, Types.OpOp2.DIV);
 		AggUnaryOp v3 = HopRewriteUtils.createAggUnaryOp(v2, Types.AggOp.SUM, Types.Direction.Col);
@@ -29609,7 +33602,6 @@ public class GeneratedRewriteClass implements Function {
 
 
 		// Now, we start building the new Hop
-		System.out.println("Applying rewrite: *(a,colSums(/(b,C))) => colSums(/(*(a,b),C))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0, hi_1_0_0, Types.OpOp2.MULT);
 		BinaryOp v2 = HopRewriteUtils.createBinary(v1, hi_1_0_1, Types.OpOp2.DIV);
 		AggUnaryOp v3 = HopRewriteUtils.createAggUnaryOp(v2, Types.AggOp.SUM, Types.Direction.Col);
@@ -29681,7 +33673,6 @@ public class GeneratedRewriteClass implements Function {
 
 
 		// Now, we start building the new Hop
-		System.out.println("Applying rewrite: *(rowSums(/(a,C)),b) => rowSums(/(*(a,b),C))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0_0, hi_1, Types.OpOp2.MULT);
 		BinaryOp v2 = HopRewriteUtils.createBinary(v1, hi_0_0_1, Types.OpOp2.DIV);
 		AggUnaryOp v3 = HopRewriteUtils.createAggUnaryOp(v2, Types.AggOp.SUM, Types.Direction.Row);
@@ -29753,7 +33744,6 @@ public class GeneratedRewriteClass implements Function {
 
 
 		// Now, we start building the new Hop
-		System.out.println("Applying rewrite: *(a,rowSums(/(b,C))) => rowSums(/(*(a,b),C))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0, hi_1_0_0, Types.OpOp2.MULT);
 		BinaryOp v2 = HopRewriteUtils.createBinary(v1, hi_1_0_1, Types.OpOp2.DIV);
 		AggUnaryOp v3 = HopRewriteUtils.createAggUnaryOp(v2, Types.AggOp.SUM, Types.Direction.Row);
@@ -29815,7 +33805,6 @@ public class GeneratedRewriteClass implements Function {
 
 
 		// Now, we start building the new Hop
-		System.out.println("Applying rewrite: rev(%*%(colSums(A),B)) => %*%(colSums(A),B)");
 		AggUnaryOp v1 = HopRewriteUtils.createAggUnaryOp(hi_0_0_0, Types.AggOp.SUM, Types.Direction.Col);
 		AggBinaryOp v2 = HopRewriteUtils.createMatrixMultiply(v1, hi_0_1);
 

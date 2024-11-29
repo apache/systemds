@@ -110,7 +110,7 @@ public class CodeGenConditionTests {
 		fNames.put(rule2, "rule2");
 		fNames.put(rule3, "rule3");
 
-		List<CodeGenCondition> cgcs = CodeGenCondition.buildCondition(List.of(rule, rule2, rule3), 1, ctx);
+		List<CodeGenCondition> cgcs = CodeGenCondition.buildCondition(List.of(rule, rule2, rule3), 0, ctx);
 		System.out.println(cgcs);
 		System.out.println(CodeGenCondition.getSelectionString(cgcs, 0, fNames, ctx));
 	}

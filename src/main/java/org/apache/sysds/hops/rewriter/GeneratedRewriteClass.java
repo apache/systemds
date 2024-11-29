@@ -16,430 +16,1103 @@ import org.apache.sysds.hops.rewrite.HopRewriteUtils;
 public class GeneratedRewriteClass implements Function {
 
 	@Override
-	public Object apply( Object hi ) {
-		if ( hi == null )
+	public Object apply( Object _hi ) {
+		if ( _hi == null )
 			return null;
 
-		hi = _applyRewrite0((Hop) hi);		// *(1.0,a) => a
-		hi = _applyRewrite1((Hop) hi);		// *(a,1.0) => a
-		hi = _applyRewrite2((Hop) hi);		// /(a,1.0) => a
-		hi = _applyRewrite3((Hop) hi);		// +(0.0,a) => a
-		hi = _applyRewrite4((Hop) hi);		// +(a,0.0) => a
-		hi = _applyRewrite5((Hop) hi);		// +(0.0,A) => A
-		hi = _applyRewrite6((Hop) hi);		// +(A,0.0) => A
-		hi = _applyRewrite7((Hop) hi);		// *(0.0,a) => 0.0
-		hi = _applyRewrite8((Hop) hi);		// *(a,0.0) => 0.0
-		hi = _applyRewrite9((Hop) hi);		// /(0.0,a) => 0.0
-		//hi = _applyRewrite13((Hop) hi);		// /(A,c) => *(A,/(1.0,c))
-		hi = _applyRewrite21((Hop) hi);		// colSums(*(a,B)) => *(a,colSums(B))
-		hi = _applyRewrite22((Hop) hi);		// colSums(*(B,a)) => *(a,colSums(B))
-		hi = _applyRewrite23((Hop) hi);		// rowSums(*(a,B)) => *(a,rowSums(B))
-		hi = _applyRewrite24((Hop) hi);		// rowSums(*(B,a)) => *(a,rowSums(B))
-		hi = _applyRewrite32((Hop) hi);		// *(/(1.0,B),a) => /(a,B)
-		hi = _applyRewrite33((Hop) hi);		// *(a,/(1.0,B)) => /(a,B)
-		hi = _applyRewrite34((Hop) hi);		// *(/(1.0,B),A) => /(A,B)
-		hi = _applyRewrite35((Hop) hi);		// *(A,/(1.0,B)) => /(A,B)
-		hi = _applyRewrite36((Hop) hi);		// *(/(a,C),b) => /(*(a,b),C)
-		hi = _applyRewrite37((Hop) hi);		// *(a,/(b,C)) => /(*(a,b),C)
-		hi = _applyRewrite42((Hop) hi);		// -(0.0,-(B,a)) => -(a,B)
-		hi = _applyRewrite43((Hop) hi);		// +(-(0.0,B),a) => -(a,B)
-		hi = _applyRewrite44((Hop) hi);		// +(a,-(0.0,B)) => -(a,B)
-		hi = _applyRewrite45((Hop) hi);		// -(0.0,-(b,A)) => -(A,b)
+		Hop hi = (Hop) _hi;
 
-		hi = _applyRewrite46((Hop) hi);		// -(0.0,-(B,A)) => -(A,B)
-		hi = _applyRewrite47((Hop) hi);		// +(-(0.0,B),A) => -(A,B)
-		hi = _applyRewrite48((Hop) hi);		// +(A,-(0.0,B)) => -(A,B)
-		hi = _applyRewrite49((Hop) hi);		// -(-(A,b),c) => -(A,+(b,c))
-		hi = _applyRewrite50((Hop) hi);		// -(a,+(b,C)) => -(-(a,b),C)
-		hi = _applyRewrite51((Hop) hi);		// -(a,+(C,b)) => -(-(a,b),C)
-		hi = _applyRewrite52((Hop) hi);		// -(-(a,C),b) => -(-(a,b),C)
-		hi = _applyRewrite53((Hop) hi);		// -(a,-(C,b)) => -(+(a,b),C)
-		hi = _applyRewrite54((Hop) hi);		// +(-(a,C),b) => -(+(a,b),C)
-		hi = _applyRewrite55((Hop) hi);		// +(a,-(b,C)) => -(+(a,b),C)
-		hi = _applyRewrite56((Hop) hi);		// -(+(b,A),c) => +(A,-(b,c))
-		hi = _applyRewrite57((Hop) hi);		// -(+(A,b),c) => +(A,-(b,c))
-		hi = _applyRewrite58((Hop) hi);		// -(b,-(c,A)) => +(A,-(b,c))
-		hi = _applyRewrite59((Hop) hi);		// +(-(A,c),b) => +(A,-(b,c))
-		hi = _applyRewrite60((Hop) hi);		// +(b,-(A,c)) => +(A,-(b,c))
-		hi = _applyRewrite61((Hop) hi);		// colSums(-(0.0,B)) => -(0.0,colSums(B))
-		hi = _applyRewrite62((Hop) hi);		// rowSums(-(0.0,B)) => -(0.0,rowSums(B))
-		hi = _applyRewrite76((Hop) hi);		// rev(colSums(A)) => colSums(A)
-		hi = _applyRewrite77((Hop) hi);		// *(/(1.0,b),a) => /(a,b)
-		hi = _applyRewrite78((Hop) hi);		// *(a,/(1.0,b)) => /(a,b)
-		hi = _applyRewrite79((Hop) hi);		// -(0.0,-(b,a)) => -(a,b)
-		hi = _applyRewrite80((Hop) hi);		// -(a,-(b,0.0)) => -(a,b)
-		hi = _applyRewrite81((Hop) hi);		// +(-(0.0,b),a) => -(a,b)
-		hi = _applyRewrite82((Hop) hi);		// +(a,-(0.0,b)) => -(a,b)
-		hi = _applyRewrite83((Hop) hi);		// *(-(a,0.0),b) => *(a,b)
-		hi = _applyRewrite84((Hop) hi);		// *(a,-(b,0.0)) => *(a,b)
-		hi = _applyRewrite85((Hop) hi);		// /(-(a,0.0),b) => /(a,b)
-		hi = _applyRewrite88((Hop) hi);		// -(A,-(b,0.0)) => -(A,b)
-		hi = _applyRewrite89((Hop) hi);		// +(-(0.0,b),A) => -(A,b)
-		hi = _applyRewrite90((Hop) hi);		// +(A,-(0.0,b)) => -(A,b)
-		hi = _applyRewrite91((Hop) hi);		// *(-(b,0.0),A) => *(A,b)
-		hi = _applyRewrite92((Hop) hi);		// *(A,-(b,0.0)) => *(A,b)
-		hi = _applyRewrite93((Hop) hi);		// /(-(a,0.0),B) => /(a,B)
-		//hi = _applyRewrite94((Hop) hi);		// +(%*%(B,C),%*%(A,C)) => %*%(+(A,B),C)
-		//hi = _applyRewrite95((Hop) hi);		// +(%*%(A,C),%*%(A,B)) => %*%(A,+(B,C))
-		hi = _applyRewrite98((Hop) hi);		// rev(-(a,rev(B))) => -(a,B)
-		hi = _applyRewrite99((Hop) hi);		// t(-(a,t(B))) => -(a,B)
-		hi = _applyRewrite100((Hop) hi);		// rev(-(rev(A),b)) => -(A,b)
-		hi = _applyRewrite101((Hop) hi);		// t(-(t(A),b)) => -(A,b)
-		hi = _applyRewrite102((Hop) hi);		// rev(!=(rev(A),b)) => !=(A,b)
-		hi = _applyRewrite103((Hop) hi);		// rev(!=(b,rev(A))) => !=(A,b)
-		hi = _applyRewrite104((Hop) hi);		// t(!=(t(A),b)) => !=(A,b)
-		hi = _applyRewrite105((Hop) hi);		// t(!=(b,t(A))) => !=(A,b)
-		hi = _applyRewrite106((Hop) hi);		// rev(+(rev(A),b)) => +(A,b)
-		hi = _applyRewrite107((Hop) hi);		// rev(+(b,rev(A))) => +(A,b)
-		hi = _applyRewrite108((Hop) hi);		// t(+(t(A),b)) => +(A,b)
-		hi = _applyRewrite109((Hop) hi);		// t(+(b,t(A))) => +(A,b)
-		hi = _applyRewrite110((Hop) hi);		// rev(*(rev(A),b)) => *(A,b)
-		hi = _applyRewrite111((Hop) hi);		// rev(*(b,rev(A))) => *(A,b)
-		hi = _applyRewrite112((Hop) hi);		// t(*(t(A),b)) => *(A,b)
-		hi = _applyRewrite113((Hop) hi);		// t(*(b,t(A))) => *(A,b)
-		hi = _applyRewrite114((Hop) hi);		// rowSums(rev(*(a,B))) => *(a,rowSums(rev(B)))
-		hi = _applyRewrite115((Hop) hi);		// rowSums(rev(*(B,a))) => *(a,rowSums(rev(B)))
-		hi = _applyRewrite116((Hop) hi);		// colSums(rev(*(a,B))) => *(a,colSums(rev(B)))
-		hi = _applyRewrite117((Hop) hi);		// colSums(rev(*(B,a))) => *(a,colSums(rev(B)))
-		hi = _applyRewrite118((Hop) hi);		// rev(/(a,rev(B))) => /(a,B)
-		hi = _applyRewrite119((Hop) hi);		// t(/(a,t(B))) => /(a,B)
-		hi = _applyRewrite124((Hop) hi);		// +(*(C,A),*(B,A)) => *(A,+(B,C))
-		hi = _applyRewrite125((Hop) hi);		// +(*(B,A),*(A,C)) => *(A,+(B,C))
-		hi = _applyRewrite126((Hop) hi);		// +(*(A,C),*(B,A)) => *(A,+(B,C))
-		hi = _applyRewrite127((Hop) hi);		// +(*(A,C),*(A,B)) => *(A,+(B,C))
-		hi = _applyRewrite128((Hop) hi);		// *(t(*(a,C)),b) => *(*(a,b),t(C))
-		hi = _applyRewrite129((Hop) hi);		// *(t(*(C,a)),b) => *(*(a,b),t(C))
-		hi = _applyRewrite130((Hop) hi);		// *(a,t(*(b,C))) => *(*(a,b),t(C))
-		hi = _applyRewrite131((Hop) hi);		// *(a,t(*(C,b))) => *(*(a,b),t(C))
-		hi = _applyRewrite132((Hop) hi);		// *(rev(*(a,C)),b) => *(*(a,b),rev(C))
-		hi = _applyRewrite133((Hop) hi);		// *(rev(*(C,a)),b) => *(*(a,b),rev(C))
-		hi = _applyRewrite134((Hop) hi);		// *(a,rev(*(b,C))) => *(*(a,b),rev(C))
-		hi = _applyRewrite135((Hop) hi);		// *(a,rev(*(C,b))) => *(*(a,b),rev(C))
-		hi = _applyRewrite152((Hop) hi);		// *(t(/(a,C)),b) => /(*(a,b),t(C))
-		hi = _applyRewrite153((Hop) hi);		// *(a,t(/(b,C))) => /(*(a,b),t(C))
-		hi = _applyRewrite154((Hop) hi);		// *(rev(/(a,C)),b) => /(*(a,b),rev(C))
-		hi = _applyRewrite155((Hop) hi);		// *(a,rev(/(b,C))) => /(*(a,b),rev(C))
-		hi = _applyRewrite156((Hop) hi);		// %*%(colSums(B),*(a,C)) => *(a,%*%(colSums(B),C))
-		hi = _applyRewrite157((Hop) hi);		// %*%(colSums(B),*(C,a)) => *(a,%*%(colSums(B),C))
-		hi = _applyRewrite158((Hop) hi);		// %*%(*(a,B),rowSums(C)) => *(a,%*%(B,rowSums(C)))
-		hi = _applyRewrite159((Hop) hi);		// %*%(*(B,a),rowSums(C)) => *(a,%*%(B,rowSums(C)))
-		hi = _applyRewrite160((Hop) hi);		// colSums(/(*(a,B),C)) => *(a,colSums(/(B,C)))
-		hi = _applyRewrite161((Hop) hi);		// colSums(/(*(B,a),C)) => *(a,colSums(/(B,C)))
-		hi = _applyRewrite162((Hop) hi);		// colSums(*(/(a,C),B)) => *(a,colSums(/(B,C)))
-		hi = _applyRewrite163((Hop) hi);		// colSums(*(B,/(a,C))) => *(a,colSums(/(B,C)))
-		hi = _applyRewrite164((Hop) hi);		// rowSums(*(/(a,C),B)) => *(a,rowSums(/(B,C)))
-		hi = _applyRewrite165((Hop) hi);		// rowSums(*(B,/(a,C))) => *(a,rowSums(/(B,C)))
-		hi = _applyRewrite166((Hop) hi);		// rowSums(/(*(a,B),C)) => *(a,rowSums(/(B,C)))
-		hi = _applyRewrite167((Hop) hi);		// rowSums(/(*(B,a),C)) => *(a,rowSums(/(B,C)))
-		hi = _applyRewrite170((Hop) hi);		// *(/(*(a,C),D),b) => *(*(a,b),/(C,D))
-		hi = _applyRewrite171((Hop) hi);		// *(/(*(C,a),D),b) => *(*(a,b),/(C,D))
-		hi = _applyRewrite172((Hop) hi);		// *(a,/(*(b,C),D)) => *(*(a,b),/(C,D))
-		hi = _applyRewrite173((Hop) hi);		// *(a,/(*(C,b),D)) => *(*(a,b),/(C,D))
-		hi = _applyRewrite174((Hop) hi);		// *(/(/(a,C),D),b) => /(/(*(a,b),C),D)
-		hi = _applyRewrite175((Hop) hi);		// *(/(a,C),/(b,D)) => /(/(*(a,b),C),D)
-		hi = _applyRewrite176((Hop) hi);		// *(a,/(/(b,C),D)) => /(/(*(a,b),C),D)
-		hi = _applyRewrite185((Hop) hi);		// !=(t(A),t(B)) => t(!=(A,B))
-		hi = _applyRewrite186((Hop) hi);		// !=(rev(A),rev(A)) => rev(!=(A,A))
-		hi = _applyRewrite187((Hop) hi);		// rev(-(rev(A),B)) => -(A,rev(B))
-		hi = _applyRewrite188((Hop) hi);		// rev(-(A,rev(B))) => -(rev(A),B)
-		hi = _applyRewrite189((Hop) hi);		// t(-(t(A),B)) => -(A,t(B))
-		hi = _applyRewrite190((Hop) hi);		// t(-(A,t(B))) => -(t(A),B)
-		hi = _applyRewrite191((Hop) hi);		// -(t(A),t(B)) => t(-(A,B))
-		hi = _applyRewrite192((Hop) hi);		// +(t(B),t(A)) => t(+(A,B))
-		hi = _applyRewrite193((Hop) hi);		// !=(rev(-(b,A)),A) => !=(A,-(b,A))
-		hi = _applyRewrite194((Hop) hi);		// !=(A,rev(-(b,A))) => !=(A,-(b,A))
-		hi = _applyRewrite195((Hop) hi);		// !=(-(b,rev(A)),A) => !=(A,-(b,A))
-		hi = _applyRewrite196((Hop) hi);		// !=(-(b,A),rev(A)) => !=(A,-(b,A))
-		hi = _applyRewrite197((Hop) hi);		// !=(A,-(b,rev(A))) => !=(A,-(b,A))
-		hi = _applyRewrite198((Hop) hi);		// !=(rev(-(A,c)),A) => !=(A,-(A,c))
-		hi = _applyRewrite199((Hop) hi);		// !=(A,rev(-(A,c))) => !=(A,-(A,c))
-		hi = _applyRewrite200((Hop) hi);		// !=(-(rev(A),c),A) => !=(A,-(A,c))
-		hi = _applyRewrite201((Hop) hi);		// !=(A,-(rev(A),c)) => !=(A,-(A,c))
-		hi = _applyRewrite202((Hop) hi);		// !=(-(B,rev(A)),A) => !=(A,-(B,A))
-		hi = _applyRewrite203((Hop) hi);		// !=(-(B,A),rev(A)) => !=(A,-(B,A))
-		hi = _applyRewrite204((Hop) hi);		// !=(A,-(B,rev(A))) => !=(A,-(B,A))
-		hi = _applyRewrite205((Hop) hi);		// !=(-(rev(A),C),A) => !=(A,-(A,C))
-		hi = _applyRewrite206((Hop) hi);		// !=(-(A,C),rev(A)) => !=(A,-(A,C))
-		hi = _applyRewrite207((Hop) hi);		// !=(A,-(rev(A),C)) => !=(A,-(A,C))
-		hi = _applyRewrite208((Hop) hi);		// rev(!=(rev(A),B)) => !=(A,rev(B))
-		hi = _applyRewrite209((Hop) hi);		// rev(!=(B,rev(A))) => !=(A,rev(B))
-		hi = _applyRewrite210((Hop) hi);		// t(!=(t(A),B)) => !=(A,t(B))
-		hi = _applyRewrite211((Hop) hi);		// t(!=(B,t(A))) => !=(A,t(B))
-		hi = _applyRewrite212((Hop) hi);		// !=(rev(+(c,A)),A) => !=(A,+(A,c))
-		hi = _applyRewrite213((Hop) hi);		// !=(rev(+(A,c)),A) => !=(A,+(A,c))
-		hi = _applyRewrite214((Hop) hi);		// !=(A,rev(+(c,A))) => !=(A,+(A,c))
-		hi = _applyRewrite215((Hop) hi);		// !=(A,rev(+(A,c))) => !=(A,+(A,c))
-		hi = _applyRewrite216((Hop) hi);		// !=(+(rev(A),c),A) => !=(A,+(A,c))
-		hi = _applyRewrite217((Hop) hi);		// !=(+(c,rev(A)),A) => !=(A,+(A,c))
-		hi = _applyRewrite218((Hop) hi);		// !=(+(c,A),rev(A)) => !=(A,+(A,c))
-		hi = _applyRewrite219((Hop) hi);		// !=(A,+(rev(A),c)) => !=(A,+(A,c))
-		hi = _applyRewrite220((Hop) hi);		// !=(A,+(c,rev(A))) => !=(A,+(A,c))
-		hi = _applyRewrite221((Hop) hi);		// !=(+(rev(A),C),A) => !=(A,+(A,C))
-		hi = _applyRewrite222((Hop) hi);		// !=(+(C,rev(A)),A) => !=(A,+(A,C))
-		hi = _applyRewrite223((Hop) hi);		// !=(+(C,A),rev(A)) => !=(A,+(A,C))
-		hi = _applyRewrite224((Hop) hi);		// !=(+(A,C),rev(A)) => !=(A,+(A,C))
-		hi = _applyRewrite225((Hop) hi);		// !=(A,+(rev(A),C)) => !=(A,+(A,C))
-		hi = _applyRewrite226((Hop) hi);		// !=(A,+(C,rev(A))) => !=(A,+(A,C))
-		hi = _applyRewrite227((Hop) hi);		// !=(!=(rev(A),c),A) => !=(A,!=(A,c))
-		hi = _applyRewrite228((Hop) hi);		// !=(!=(c,rev(A)),A) => !=(A,!=(A,c))
-		hi = _applyRewrite229((Hop) hi);		// !=(!=(c,A),rev(A)) => !=(A,!=(A,c))
-		hi = _applyRewrite230((Hop) hi);		// !=(A,!=(rev(A),c)) => !=(A,!=(A,c))
-		hi = _applyRewrite231((Hop) hi);		// !=(A,!=(c,rev(A))) => !=(A,!=(A,c))
-		hi = _applyRewrite232((Hop) hi);		// !=(rev(!=(c,A)),A) => !=(A,!=(A,c))
-		hi = _applyRewrite233((Hop) hi);		// !=(rev(!=(A,c)),A) => !=(A,!=(A,c))
-		hi = _applyRewrite234((Hop) hi);		// !=(A,rev(!=(c,A))) => !=(A,!=(A,c))
-		hi = _applyRewrite235((Hop) hi);		// !=(A,rev(!=(A,c))) => !=(A,!=(A,c))
-		hi = _applyRewrite236((Hop) hi);		// !=(!=(rev(A),C),A) => !=(A,!=(A,C))
-		hi = _applyRewrite237((Hop) hi);		// !=(!=(C,rev(A)),A) => !=(A,!=(A,C))
-		hi = _applyRewrite238((Hop) hi);		// !=(!=(C,A),rev(A)) => !=(A,!=(A,C))
-		hi = _applyRewrite239((Hop) hi);		// !=(!=(A,C),rev(A)) => !=(A,!=(A,C))
-		hi = _applyRewrite240((Hop) hi);		// !=(A,!=(rev(A),C)) => !=(A,!=(A,C))
-		hi = _applyRewrite241((Hop) hi);		// !=(A,!=(C,rev(A))) => !=(A,!=(A,C))
-		hi = _applyRewrite242((Hop) hi);		// rev(+(rev(A),B)) => +(A,rev(B))
-		hi = _applyRewrite243((Hop) hi);		// rev(+(B,rev(A))) => +(A,rev(B))
-		hi = _applyRewrite244((Hop) hi);		// t(+(t(A),B)) => +(A,t(B))
-		hi = _applyRewrite245((Hop) hi);		// t(+(B,t(A))) => +(A,t(B))
-		hi = _applyRewrite246((Hop) hi);		// +(!=(rev(A),c),A) => +(A,!=(A,c))
-		hi = _applyRewrite247((Hop) hi);		// +(!=(c,rev(A)),A) => +(A,!=(A,c))
-		hi = _applyRewrite248((Hop) hi);		// +(A,!=(rev(A),c)) => +(A,!=(A,c))
-		hi = _applyRewrite249((Hop) hi);		// +(A,!=(c,rev(A))) => +(A,!=(A,c))
-		hi = _applyRewrite250((Hop) hi);		// +(rev(!=(c,A)),A) => +(A,!=(A,c))
-		hi = _applyRewrite251((Hop) hi);		// +(rev(!=(A,c)),A) => +(A,!=(A,c))
-		hi = _applyRewrite252((Hop) hi);		// +(A,rev(!=(c,A))) => +(A,!=(A,c))
-		hi = _applyRewrite253((Hop) hi);		// +(A,rev(!=(A,c))) => +(A,!=(A,c))
-		hi = _applyRewrite254((Hop) hi);		// +(!=(rev(A),C),A) => +(A,!=(A,C))
-		hi = _applyRewrite255((Hop) hi);		// +(!=(C,rev(A)),A) => +(A,!=(A,C))
-		hi = _applyRewrite256((Hop) hi);		// +(A,!=(rev(A),C)) => +(A,!=(A,C))
-		hi = _applyRewrite257((Hop) hi);		// +(A,!=(C,rev(A))) => +(A,!=(A,C))
-		hi = _applyRewrite258((Hop) hi);		// -(rev(!=(A,b)),A) => -(!=(A,b),A)
-		hi = _applyRewrite259((Hop) hi);		// -(A,!=(rev(A),c)) => -(A,!=(A,c))
-		hi = _applyRewrite260((Hop) hi);		// -(A,!=(c,rev(A))) => -(A,!=(A,c))
-		hi = _applyRewrite261((Hop) hi);		// -(A,rev(!=(c,A))) => -(A,!=(A,c))
-		hi = _applyRewrite262((Hop) hi);		// -(A,rev(!=(A,c))) => -(A,!=(A,c))
-		hi = _applyRewrite263((Hop) hi);		// -(A,!=(rev(A),C)) => -(A,!=(A,C))
-		hi = _applyRewrite264((Hop) hi);		// -(A,!=(C,rev(A))) => -(A,!=(A,C))
-		hi = _applyRewrite265((Hop) hi);		// -(t(-(A,b)),c) => -(t(A),+(b,c))
-		hi = _applyRewrite266((Hop) hi);		// -(t(-(a,C)),b) => -(-(a,b),t(C))
-		hi = _applyRewrite267((Hop) hi);		// -(a,t(+(b,C))) => -(-(a,b),t(C))
-		hi = _applyRewrite268((Hop) hi);		// -(a,t(+(C,b))) => -(-(a,b),t(C))
-		hi = _applyRewrite269((Hop) hi);		// -(rev(-(A,b)),c) => -(rev(A),+(b,c))
-		hi = _applyRewrite270((Hop) hi);		// -(rev(-(a,C)),b) => -(-(a,b),rev(C))
-		hi = _applyRewrite271((Hop) hi);		// -(a,rev(+(b,C))) => -(-(a,b),rev(C))
-		hi = _applyRewrite272((Hop) hi);		// -(a,rev(+(C,b))) => -(-(a,b),rev(C))
-		hi = _applyRewrite273((Hop) hi);		// -(-(-(a,D),C),b) => -(-(a,b),+(C,D))
-		hi = _applyRewrite274((Hop) hi);		// -(-(a,C),+(b,D)) => -(-(a,b),+(C,D))
-		hi = _applyRewrite275((Hop) hi);		// -(-(a,D),+(C,b)) => -(-(a,b),+(C,D))
-		hi = _applyRewrite276((Hop) hi);		// -(-(-(A,c),B),d) => -(A,+(B,+(c,d)))
-		hi = _applyRewrite277((Hop) hi);		// -(-(A,+(c,B)),d) => -(A,+(B,+(c,d)))
-		hi = _applyRewrite278((Hop) hi);		// -(-(A,+(B,c)),d) => -(A,+(B,+(c,d)))
-		hi = _applyRewrite279((Hop) hi);		// -(-(A,c),+(d,B)) => -(A,+(B,+(c,d)))
-		hi = _applyRewrite280((Hop) hi);		// -(-(A,c),+(B,d)) => -(A,+(B,+(c,d)))
-		hi = _applyRewrite281((Hop) hi);		// -(a,rev(-(C,b))) => -(+(a,b),rev(C))
-		hi = _applyRewrite282((Hop) hi);		// +(rev(-(a,C)),b) => -(+(a,b),rev(C))
-		hi = _applyRewrite283((Hop) hi);		// +(a,rev(-(b,C))) => -(+(a,b),rev(C))
-		hi = _applyRewrite284((Hop) hi);		// -(a,rev(-(b,C))) => +(-(a,b),rev(C))
-		hi = _applyRewrite285((Hop) hi);		// -(rev(+(a,C)),b) => +(-(a,b),rev(C))
-		hi = _applyRewrite286((Hop) hi);		// -(rev(+(C,a)),b) => +(-(a,b),rev(C))
-		hi = _applyRewrite287((Hop) hi);		// +(rev(-(C,b)),a) => +(-(a,b),rev(C))
-		hi = _applyRewrite288((Hop) hi);		// +(a,rev(-(C,b))) => +(-(a,b),rev(C))
-		hi = _applyRewrite289((Hop) hi);		// +(rev(+(a,C)),b) => +(+(a,b),rev(C))
-		hi = _applyRewrite290((Hop) hi);		// +(rev(+(C,a)),b) => +(+(a,b),rev(C))
-		hi = _applyRewrite291((Hop) hi);		// +(a,rev(+(b,C))) => +(+(a,b),rev(C))
-		hi = _applyRewrite292((Hop) hi);		// +(a,rev(+(C,b))) => +(+(a,b),rev(C))
-		hi = _applyRewrite293((Hop) hi);		// -(-(a,C),-(D,b)) => -(+(a,b),+(C,D))
-		hi = _applyRewrite294((Hop) hi);		// -(a,-(C,-(b,D))) => -(+(a,b),+(C,D))
-		hi = _applyRewrite295((Hop) hi);		// -(a,+(-(D,b),C)) => -(+(a,b),+(C,D))
-		hi = _applyRewrite296((Hop) hi);		// -(a,+(D,-(C,b))) => -(+(a,b),+(C,D))
-		hi = _applyRewrite297((Hop) hi);		// +(-(-(a,C),D),b) => -(+(a,b),+(C,D))
-		hi = _applyRewrite298((Hop) hi);		// +(-(a,D),-(b,C)) => -(+(a,b),+(C,D))
-		hi = _applyRewrite299((Hop) hi);		// +(a,-(-(b,D),C)) => -(+(a,b),+(C,D))
-		hi = _applyRewrite300((Hop) hi);		// -(-(A,-(c,B)),d) => +(A,-(B,+(c,d)))
-		hi = _applyRewrite301((Hop) hi);		// -(-(B,c),-(d,A)) => +(A,-(B,+(c,d)))
-		hi = _applyRewrite302((Hop) hi);		// -(+(-(B,c),A),d) => +(A,-(B,+(c,d)))
-		hi = _applyRewrite303((Hop) hi);		// -(+(A,-(B,c)),d) => +(A,-(B,+(c,d)))
-		hi = _applyRewrite304((Hop) hi);		// +(-(B,c),-(A,d)) => +(A,-(B,+(c,d)))
-		hi = _applyRewrite305((Hop) hi);		// -(b,-(-(D,c),A)) => +(A,-(+(b,c),D))
-		hi = _applyRewrite306((Hop) hi);		// -(b,-(D,+(c,A))) => +(A,-(+(b,c),D))
-		hi = _applyRewrite307((Hop) hi);		// -(b,-(D,+(A,c))) => +(A,-(+(b,c),D))
-		hi = _applyRewrite308((Hop) hi);		// -(+(b,A),-(D,c)) => +(A,-(+(b,c),D))
-		hi = _applyRewrite309((Hop) hi);		// -(+(A,b),-(D,c)) => +(A,-(+(b,c),D))
-		hi = _applyRewrite310((Hop) hi);		// +(-(A,-(D,b)),c) => +(A,-(+(b,c),D))
-		hi = _applyRewrite311((Hop) hi);		// +(b,-(A,-(D,c))) => +(A,-(+(b,c),D))
-		hi = _applyRewrite312((Hop) hi);		// +(-(+(b,A),D),c) => +(A,-(+(b,c),D))
-		hi = _applyRewrite313((Hop) hi);		// +(-(+(A,b),D),c) => +(A,-(+(b,c),D))
-		hi = _applyRewrite314((Hop) hi);		// +(b,-(+(c,A),D)) => +(A,-(+(b,c),D))
-		hi = _applyRewrite315((Hop) hi);		// +(b,-(+(A,c),D)) => +(A,-(+(b,c),D))
-		hi = _applyRewrite316((Hop) hi);		// -(c,-(-(d,B),A)) => +(A,+(B,-(c,d)))
-		hi = _applyRewrite317((Hop) hi);		// -(+(c,B),-(d,A)) => +(A,+(B,-(c,d)))
-		hi = _applyRewrite318((Hop) hi);		// -(+(B,c),-(d,A)) => +(A,+(B,-(c,d)))
-		hi = _applyRewrite319((Hop) hi);		// +(-(A,-(d,B)),c) => +(A,+(B,-(c,d)))
-		hi = _applyRewrite320((Hop) hi);		// +(c,-(A,-(d,B))) => +(A,+(B,-(c,d)))
-		hi = _applyRewrite321((Hop) hi);		// -(-(A,-(D,b)),c) => +(A,-(-(b,c),D))
-		hi = _applyRewrite322((Hop) hi);		// -(-(b,D),-(c,A)) => +(A,-(-(b,c),D))
-		hi = _applyRewrite323((Hop) hi);		// -(-(A,c),-(D,b)) => +(A,-(-(b,c),D))
-		hi = _applyRewrite324((Hop) hi);		// -(b,-(D,-(A,c))) => +(A,-(-(b,c),D))
-		hi = _applyRewrite325((Hop) hi);		// -(-(+(b,A),D),c) => +(A,-(-(b,c),D))
-		hi = _applyRewrite326((Hop) hi);		// -(-(+(A,b),D),c) => +(A,-(-(b,c),D))
-		hi = _applyRewrite327((Hop) hi);		// -(b,-(+(c,D),A)) => +(A,-(-(b,c),D))
-		hi = _applyRewrite328((Hop) hi);		// -(b,-(+(D,c),A)) => +(A,-(-(b,c),D))
-		hi = _applyRewrite329((Hop) hi);		// -(+(-(b,D),A),c) => +(A,-(-(b,c),D))
-		hi = _applyRewrite330((Hop) hi);		// -(+(b,A),+(c,D)) => +(A,-(-(b,c),D))
-		hi = _applyRewrite331((Hop) hi);		// -(+(b,A),+(D,c)) => +(A,-(-(b,c),D))
-		hi = _applyRewrite332((Hop) hi);		// -(+(A,b),+(c,D)) => +(A,-(-(b,c),D))
-		hi = _applyRewrite333((Hop) hi);		// -(+(A,b),+(D,c)) => +(A,-(-(b,c),D))
-		hi = _applyRewrite334((Hop) hi);		// -(+(A,-(b,D)),c) => +(A,-(-(b,c),D))
-		hi = _applyRewrite335((Hop) hi);		// -(b,+(-(c,A),D)) => +(A,-(-(b,c),D))
-		hi = _applyRewrite336((Hop) hi);		// -(b,+(D,-(c,A))) => +(A,-(-(b,c),D))
-		hi = _applyRewrite337((Hop) hi);		// +(-(-(A,c),D),b) => +(A,-(-(b,c),D))
-		hi = _applyRewrite338((Hop) hi);		// +(-(b,D),-(A,c)) => +(A,-(-(b,c),D))
-		hi = _applyRewrite339((Hop) hi);		// +(-(A,c),-(b,D)) => +(A,-(-(b,c),D))
-		hi = _applyRewrite340((Hop) hi);		// +(b,-(-(A,c),D)) => +(A,-(-(b,c),D))
-		hi = _applyRewrite341((Hop) hi);		// +(-(A,+(c,D)),b) => +(A,-(-(b,c),D))
-		hi = _applyRewrite342((Hop) hi);		// +(-(A,+(D,c)),b) => +(A,-(-(b,c),D))
-		hi = _applyRewrite343((Hop) hi);		// +(b,-(A,+(c,D))) => +(A,-(-(b,c),D))
-		hi = _applyRewrite344((Hop) hi);		// +(b,-(A,+(D,c))) => +(A,-(-(b,c),D))
-		hi = _applyRewrite345((Hop) hi);		// -(a,t(-(C,b))) => -(+(a,b),t(C))
-		hi = _applyRewrite346((Hop) hi);		// +(t(-(a,C)),b) => -(+(a,b),t(C))
-		hi = _applyRewrite347((Hop) hi);		// +(a,t(-(b,C))) => -(+(a,b),t(C))
-		hi = _applyRewrite348((Hop) hi);		// -(t(+(a,C)),b) => +(-(a,b),t(C))
-		hi = _applyRewrite349((Hop) hi);		// -(t(+(C,a)),b) => +(-(a,b),t(C))
-		hi = _applyRewrite350((Hop) hi);		// -(a,t(-(b,C))) => +(-(a,b),t(C))
-		hi = _applyRewrite351((Hop) hi);		// +(t(-(C,b)),a) => +(-(a,b),t(C))
-		hi = _applyRewrite352((Hop) hi);		// +(a,t(-(C,b))) => +(-(a,b),t(C))
-		hi = _applyRewrite353((Hop) hi);		// +(t(+(a,C)),b) => +(+(a,b),t(C))
-		hi = _applyRewrite354((Hop) hi);		// +(t(+(C,a)),b) => +(+(a,b),t(C))
-		hi = _applyRewrite355((Hop) hi);		// +(a,t(+(b,C))) => +(+(a,b),t(C))
-		hi = _applyRewrite356((Hop) hi);		// +(a,t(+(C,b))) => +(+(a,b),t(C))
-		hi = _applyRewrite357((Hop) hi);		// colSums(-(t(A),b)) => t(rowSums(-(A,b)))
-		hi = _applyRewrite358((Hop) hi);		// colSums(-(a,t(B))) => t(rowSums(-(a,B)))
-		hi = _applyRewrite359((Hop) hi);		// rowSums(-(t(A),b)) => t(colSums(-(A,b)))
-		hi = _applyRewrite360((Hop) hi);		// rowSums(-(a,t(B))) => t(colSums(-(a,B)))
-		hi = _applyRewrite361((Hop) hi);		// colSums(!=(t(A),b)) => t(rowSums(!=(A,b)))
-		hi = _applyRewrite362((Hop) hi);		// colSums(!=(b,t(A))) => t(rowSums(!=(A,b)))
-		hi = _applyRewrite363((Hop) hi);		// rowSums(!=(t(A),b)) => t(colSums(!=(A,b)))
-		hi = _applyRewrite364((Hop) hi);		// rowSums(!=(b,t(A))) => t(colSums(!=(A,b)))
-		hi = _applyRewrite365((Hop) hi);		// colSums(+(t(A),b)) => t(rowSums(+(A,b)))
-		hi = _applyRewrite366((Hop) hi);		// colSums(+(b,t(A))) => t(rowSums(+(A,b)))
-		hi = _applyRewrite367((Hop) hi);		// rowSums(+(t(A),b)) => t(colSums(+(A,b)))
-		hi = _applyRewrite368((Hop) hi);		// rowSums(+(b,t(A))) => t(colSums(+(A,b)))
-		hi = _applyRewrite372((Hop) hi);		// *(t(A),t(B)) => t(*(A,B))
-		hi = _applyRewrite373((Hop) hi);		// !=(*(rev(A),c),A) => !=(A,*(A,c))
-		hi = _applyRewrite374((Hop) hi);		// !=(*(c,rev(A)),A) => !=(A,*(A,c))
-		hi = _applyRewrite375((Hop) hi);		// !=(*(c,A),rev(A)) => !=(A,*(A,c))
-		hi = _applyRewrite376((Hop) hi);		// !=(A,*(rev(A),c)) => !=(A,*(A,c))
-		hi = _applyRewrite377((Hop) hi);		// !=(A,*(c,rev(A))) => !=(A,*(A,c))
-		hi = _applyRewrite378((Hop) hi);		// !=(rev(*(c,A)),A) => !=(A,*(A,c))
-		hi = _applyRewrite379((Hop) hi);		// !=(rev(*(A,c)),A) => !=(A,*(A,c))
-		hi = _applyRewrite380((Hop) hi);		// !=(A,rev(*(c,A))) => !=(A,*(A,c))
-		hi = _applyRewrite381((Hop) hi);		// !=(A,rev(*(A,c))) => !=(A,*(A,c))
-		hi = _applyRewrite382((Hop) hi);		// !=(*(rev(A),C),A) => !=(A,*(A,C))
-		hi = _applyRewrite383((Hop) hi);		// !=(*(C,rev(A)),A) => !=(A,*(A,C))
-		hi = _applyRewrite384((Hop) hi);		// !=(*(C,A),rev(A)) => !=(A,*(A,C))
-		hi = _applyRewrite385((Hop) hi);		// !=(*(A,C),rev(A)) => !=(A,*(A,C))
-		hi = _applyRewrite386((Hop) hi);		// !=(A,*(rev(A),C)) => !=(A,*(A,C))
-		hi = _applyRewrite387((Hop) hi);		// !=(A,*(C,rev(A))) => !=(A,*(A,C))
-		hi = _applyRewrite388((Hop) hi);		// rev(*(rev(A),B)) => *(A,rev(B))
-		hi = _applyRewrite389((Hop) hi);		// rev(*(B,rev(A))) => *(A,rev(B))
-		hi = _applyRewrite390((Hop) hi);		// t(*(t(A),B)) => *(A,t(B))
-		hi = _applyRewrite391((Hop) hi);		// t(*(B,t(A))) => *(A,t(B))
-		hi = _applyRewrite392((Hop) hi);		// *(!=(rev(A),c),A) => *(A,!=(A,c))
-		hi = _applyRewrite393((Hop) hi);		// *(!=(c,rev(A)),A) => *(A,!=(A,c))
-		hi = _applyRewrite394((Hop) hi);		// *(A,!=(rev(A),c)) => *(A,!=(A,c))
-		hi = _applyRewrite395((Hop) hi);		// *(A,!=(c,rev(A))) => *(A,!=(A,c))
-		hi = _applyRewrite396((Hop) hi);		// *(rev(!=(c,A)),A) => *(A,!=(A,c))
-		hi = _applyRewrite397((Hop) hi);		// *(rev(!=(A,c)),A) => *(A,!=(A,c))
-		hi = _applyRewrite398((Hop) hi);		// *(A,rev(!=(c,A))) => *(A,!=(A,c))
-		hi = _applyRewrite399((Hop) hi);		// *(A,rev(!=(A,c))) => *(A,!=(A,c))
-		hi = _applyRewrite400((Hop) hi);		// *(!=(rev(A),C),A) => *(A,!=(A,C))
-		hi = _applyRewrite401((Hop) hi);		// *(!=(C,rev(A)),A) => *(A,!=(A,C))
-		hi = _applyRewrite402((Hop) hi);		// *(A,!=(rev(A),C)) => *(A,!=(A,C))
-		hi = _applyRewrite403((Hop) hi);		// *(A,!=(C,rev(A))) => *(A,!=(A,C))
-		hi = _applyRewrite405((Hop) hi);		// rev(/(rev(A),B)) => /(A,rev(B))
-		hi = _applyRewrite406((Hop) hi);		// rev(/(A,rev(B))) => /(rev(A),B)
-		hi = _applyRewrite407((Hop) hi);		// t(/(t(A),B)) => /(A,t(B))
-		hi = _applyRewrite408((Hop) hi);		// t(/(A,t(B))) => /(t(A),B)
-		hi = _applyRewrite409((Hop) hi);		// /(t(A),t(B)) => t(/(A,B))
-		hi = _applyRewrite410((Hop) hi);		// !=(/(b,rev(A)),A) => !=(A,/(b,A))
-		hi = _applyRewrite411((Hop) hi);		// !=(/(b,A),rev(A)) => !=(A,/(b,A))
-		hi = _applyRewrite412((Hop) hi);		// !=(A,/(b,rev(A))) => !=(A,/(b,A))
-		hi = _applyRewrite413((Hop) hi);		// !=(rev(/(b,A)),A) => !=(A,/(b,A))
-		hi = _applyRewrite414((Hop) hi);		// !=(A,rev(/(b,A))) => !=(A,/(b,A))
-		hi = _applyRewrite415((Hop) hi);		// !=(/(B,rev(A)),A) => !=(A,/(B,A))
-		hi = _applyRewrite416((Hop) hi);		// !=(/(B,A),rev(A)) => !=(A,/(B,A))
-		hi = _applyRewrite417((Hop) hi);		// !=(A,/(B,rev(A))) => !=(A,/(B,A))
-		hi = _applyRewrite418((Hop) hi);		// !=(/(rev(A),C),A) => !=(A,/(A,C))
-		hi = _applyRewrite419((Hop) hi);		// !=(/(A,C),rev(A)) => !=(A,/(A,C))
-		hi = _applyRewrite420((Hop) hi);		// !=(A,/(rev(A),C)) => !=(A,/(A,C))
-		hi = _applyRewrite421((Hop) hi);		// /(rev(!=(A,b)),A) => /(!=(A,b),A)
-		hi = _applyRewrite422((Hop) hi);		// /(A,rev(!=(c,A))) => /(A,!=(A,c))
-		hi = _applyRewrite423((Hop) hi);		// /(A,rev(!=(A,c))) => /(A,!=(A,c))
-		hi = _applyRewrite424((Hop) hi);		// /(A,!=(rev(A),c)) => /(A,!=(A,c))
-		hi = _applyRewrite425((Hop) hi);		// /(A,!=(c,rev(A))) => /(A,!=(A,c))
-		hi = _applyRewrite426((Hop) hi);		// /(A,!=(rev(A),C)) => /(A,!=(A,C))
-		hi = _applyRewrite427((Hop) hi);		// /(A,!=(C,rev(A))) => /(A,!=(A,C))
-		hi = _applyRewrite428((Hop) hi);		// colSums(/(a,t(B))) => t(rowSums(/(a,B)))
-		hi = _applyRewrite429((Hop) hi);		// rowSums(/(a,t(B))) => t(colSums(/(a,B)))
-		hi = _applyRewrite438((Hop) hi);		// !=(A,rev(rowSums(A))) => !=(A,rowSums(A))
-		hi = _applyRewrite439((Hop) hi);		// !=(A,rowSums(rev(A))) => !=(A,rowSums(A))
-		hi = _applyRewrite440((Hop) hi);		// !=(A,colSums(rev(A))) => !=(A,colSums(A))
-		hi = _applyRewrite441((Hop) hi);		// +(A,colSums(rev(A))) => +(A,colSums(A))
-		hi = _applyRewrite442((Hop) hi);		// *(A,colSums(rev(A))) => *(A,colSums(A))
-		hi = _applyRewrite443((Hop) hi);		// %*%(*(a,C),*(b,D)) => *(*(a,b),%*%(C,D))
-		hi = _applyRewrite444((Hop) hi);		// %*%(*(a,C),*(D,b)) => *(*(a,b),%*%(C,D))
-		hi = _applyRewrite445((Hop) hi);		// %*%(*(C,a),*(b,D)) => *(*(a,b),%*%(C,D))
-		hi = _applyRewrite446((Hop) hi);		// %*%(*(C,a),*(D,b)) => *(*(a,b),%*%(C,D))
-		hi = _applyRewrite447((Hop) hi);		// *(%*%(*(a,C),D),b) => *(*(a,b),%*%(C,D))
-		hi = _applyRewrite448((Hop) hi);		// *(%*%(*(C,a),D),b) => *(*(a,b),%*%(C,D))
-		hi = _applyRewrite449((Hop) hi);		// *(%*%(C,*(D,a)),b) => *(*(a,b),%*%(C,D))
-		hi = _applyRewrite450((Hop) hi);		// *(a,%*%(*(b,C),D)) => *(*(a,b),%*%(C,D))
-		hi = _applyRewrite451((Hop) hi);		// *(a,%*%(*(C,b),D)) => *(*(a,b),%*%(C,D))
-		hi = _applyRewrite452((Hop) hi);		// *(a,%*%(C,*(b,D))) => *(*(a,b),%*%(C,D))
-		hi = _applyRewrite453((Hop) hi);		// %*%(/(a,C),*(b,D)) => %*%(/(*(a,b),C),D)
-		hi = _applyRewrite454((Hop) hi);		// %*%(/(a,C),*(D,b)) => %*%(/(*(a,b),C),D)
-		hi = _applyRewrite455((Hop) hi);		// *(%*%(/(a,C),D),b) => %*%(/(*(a,b),C),D)
-		hi = _applyRewrite456((Hop) hi);		// *(a,%*%(/(b,C),D)) => %*%(/(*(a,b),C),D)
-		hi = _applyRewrite457((Hop) hi);		// %*%(*(b,A),/(c,D)) => %*%(A,/(*(b,c),D))
-		hi = _applyRewrite458((Hop) hi);		// %*%(*(A,b),/(c,D)) => %*%(A,/(*(b,c),D))
-		hi = _applyRewrite459((Hop) hi);		// *(%*%(A,/(b,D)),c) => %*%(A,/(*(b,c),D))
-		hi = _applyRewrite460((Hop) hi);		// *(b,%*%(A,/(c,D))) => %*%(A,/(*(b,c),D))
-		hi = _applyRewrite461((Hop) hi);		// t(%*%(t(B),A)) => %*%(t(A),B)
-		hi = _applyRewrite462((Hop) hi);		// t(%*%(B,t(A))) => %*%(A,t(B))
-		hi = _applyRewrite463((Hop) hi);		// %*%(t(B),t(A)) => t(%*%(A,B))
-		hi = _applyRewrite464((Hop) hi);		// !=(%*%(B,rev(A)),A) => !=(A,%*%(B,A))
-		hi = _applyRewrite465((Hop) hi);		// !=(A,%*%(B,rev(A))) => !=(A,%*%(B,A))
-		hi = _applyRewrite466((Hop) hi);		// !=(rev(%*%(A,C)),A) => !=(A,%*%(A,C))
-		hi = _applyRewrite467((Hop) hi);		// !=(A,rev(%*%(A,C))) => !=(A,%*%(A,C))
-		hi = _applyRewrite468((Hop) hi);		// !=(%*%(rev(A),C),A) => !=(A,%*%(A,C))
-		hi = _applyRewrite469((Hop) hi);		// !=(A,%*%(rev(A),C)) => !=(A,%*%(A,C))
-		hi = _applyRewrite470((Hop) hi);		// rev(%*%(!=(b,A),A)) => %*%(!=(A,b),A)
-		hi = _applyRewrite471((Hop) hi);		// rev(%*%(!=(A,b),A)) => %*%(!=(A,b),A)
-		hi = _applyRewrite472((Hop) hi);		// %*%(!=(rev(A),b),A) => %*%(!=(A,b),A)
-		hi = _applyRewrite473((Hop) hi);		// %*%(!=(b,rev(A)),A) => %*%(!=(A,b),A)
-		hi = _applyRewrite474((Hop) hi);		// %*%(rev(!=(b,A)),A) => %*%(!=(A,b),A)
-		hi = _applyRewrite475((Hop) hi);		// %*%(rev(!=(A,b)),A) => %*%(!=(A,b),A)
-		hi = _applyRewrite476((Hop) hi);		// %*%(!=(rev(A),B),A) => %*%(!=(A,B),A)
-		hi = _applyRewrite477((Hop) hi);		// %*%(!=(B,rev(A)),A) => %*%(!=(A,B),A)
-		hi = _applyRewrite478((Hop) hi);		// %*%(A,!=(rev(A),c)) => %*%(A,!=(A,c))
-		hi = _applyRewrite479((Hop) hi);		// %*%(A,!=(c,rev(A))) => %*%(A,!=(A,c))
-		hi = _applyRewrite480((Hop) hi);		// %*%(A,rev(!=(c,A))) => %*%(A,!=(A,c))
-		hi = _applyRewrite481((Hop) hi);		// %*%(A,rev(!=(A,c))) => %*%(A,!=(A,c))
-		hi = _applyRewrite482((Hop) hi);		// %*%(A,!=(rev(A),C)) => %*%(A,!=(A,C))
-		hi = _applyRewrite483((Hop) hi);		// %*%(A,!=(C,rev(A))) => %*%(A,!=(A,C))
-		hi = _applyRewrite484((Hop) hi);		// rev(-(colSums(A),b)) => -(colSums(A),b)
-		hi = _applyRewrite485((Hop) hi);		// rev(-(a,colSums(B))) => -(a,colSums(B))
-		hi = _applyRewrite486((Hop) hi);		// rev(!=(colSums(B),a)) => !=(a,colSums(B))
-		hi = _applyRewrite487((Hop) hi);		// rev(!=(a,colSums(B))) => !=(a,colSums(B))
-		hi = _applyRewrite488((Hop) hi);		// rev(t(rowSums(A))) => t(rowSums(A))
-		hi = _applyRewrite489((Hop) hi);		// rev(+(colSums(B),a)) => +(a,colSums(B))
-		hi = _applyRewrite490((Hop) hi);		// rev(+(a,colSums(B))) => +(a,colSums(B))
-		hi = _applyRewrite491((Hop) hi);		// rev(*(colSums(B),a)) => *(a,colSums(B))
-		hi = _applyRewrite492((Hop) hi);		// rev(*(a,colSums(B))) => *(a,colSums(B))
-		hi = _applyRewrite493((Hop) hi);		// rev(/(a,colSums(B))) => /(a,colSums(B))
-		hi = _applyRewrite494((Hop) hi);		// *(colSums(/(a,C)),b) => colSums(/(*(a,b),C))
-		hi = _applyRewrite495((Hop) hi);		// *(a,colSums(/(b,C))) => colSums(/(*(a,b),C))
-		hi = _applyRewrite496((Hop) hi);		// *(rowSums(/(a,C)),b) => rowSums(/(*(a,b),C))
-		hi = _applyRewrite497((Hop) hi);		// *(a,rowSums(/(b,C))) => rowSums(/(*(a,b),C))
-		hi = _applyRewrite498((Hop) hi);		// rev(%*%(colSums(A),B)) => %*%(colSums(A),B)
+		if ( hi.getDataType() == Types.DataType.SCALAR ) {
+			if ( hi instanceof BinaryOp ) {
+				if ( (( BinaryOp ) hi ).getOp() == Types.OpOp2.MULT ) {
+					if ( hi.getInput().size() == 2 ) {
+						Hop hi_0 = hi.getInput(0);
+						Hop hi_1 = hi.getInput(1);
+						if ( hi_0.getDataType() == Types.DataType.SCALAR ) {
+							if ( hi_0 instanceof BinaryOp ) {
+								hi = _applyRewrite77(hi); // *(/(1.0,b),a) => /(a,b)
+								hi = _applyRewrite83(hi); // *(-(a,0.0),b) => *(a,b)
+							} else {
+								if ( hi_1.getDataType() == Types.DataType.SCALAR ) {
+									if ( hi_1 instanceof BinaryOp ) {
+										hi = _applyRewrite78(hi); // *(a,/(1.0,b)) => /(a,b)
+										hi = _applyRewrite84(hi); // *(a,-(b,0.0)) => *(a,b)
+									} else {
+										hi = _applyRewrite0(hi); // *(1.0,a) => a
+										hi = _applyRewrite1(hi); // *(a,1.0) => a
+										hi = _applyRewrite7(hi); // *(0.0,a) => 0.0
+										hi = _applyRewrite8(hi); // *(a,0.0) => 0.0
+										hi = _applyRewrite77(hi); // *(/(1.0,b),a) => /(a,b)
+										hi = _applyRewrite83(hi); // *(-(a,0.0),b) => *(a,b)
+									}
+								}
+							}
+						}
+					}
+				} else if ( (( BinaryOp ) hi ).getOp() == Types.OpOp2.DIV ) {
+					hi = _applyRewrite2(hi); // /(a,1.0) => a
+					hi = _applyRewrite9(hi); // /(0.0,a) => 0.0
+					hi = _applyRewrite85(hi); // /(-(a,0.0),b) => /(a,b)
+				} else if ( (( BinaryOp ) hi ).getOp() == Types.OpOp2.PLUS ) {
+					hi = _applyRewrite3(hi); // +(0.0,a) => a
+					hi = _applyRewrite4(hi); // +(a,0.0) => a
+					hi = _applyRewrite81(hi); // +(-(0.0,b),a) => -(a,b)
+					hi = _applyRewrite82(hi); // +(a,-(0.0,b)) => -(a,b)
+				} else if ( (( BinaryOp ) hi ).getOp() == Types.OpOp2.MINUS ) {
+					hi = _applyRewrite79(hi); // -(0.0,-(b,a)) => -(a,b)
+					hi = _applyRewrite80(hi); // -(a,-(b,0.0)) => -(a,b)
+				}
+			} else if ( hi instanceof AggUnaryOp ) {
+				if ( (( AggUnaryOp ) hi ).getOp() == Types.AggOp.SUM ) {
+					if ( hi.getInput().size() == 1 ) {
+						Hop hi_0 = hi.getInput(0);
+						if ( hi_0.getDataType() == Types.DataType.MATRIX ) {
+							if ( hi_0 instanceof BinaryOp ) {
+								if ( (( BinaryOp ) hi_0 ).getOp() == Types.OpOp2.NOTEQUAL ) {
+									if ( hi_0.getInput().size() == 2 ) {
+										Hop hi_0_0 = hi_0.getInput(0);
+										Hop hi_0_1 = hi_0.getInput(1);
+										if ( hi_0_0.getDataType() == Types.DataType.SCALAR ) {
+											hi = _applyRewrite180(hi); // sum(!=(b,t(A))) => sum(!=(A,b))
+										} else if ( hi_0_0.getDataType() == Types.DataType.MATRIX ) {
+											if ( hi_0_0 instanceof ReorgOp ) {
+												hi = _applyRewrite179(hi); // sum(!=(t(A),b)) => sum(!=(A,b))
+											} else {
+											}
+										}
+									}
+								} else if ( (( BinaryOp ) hi_0 ).getOp() == Types.OpOp2.MULT ) {
+									if ( hi_0.getInput().size() == 2 ) {
+										Hop hi_0_0 = hi_0.getInput(0);
+										Hop hi_0_1 = hi_0.getInput(1);
+										if ( hi_0_0.getDataType() == Types.DataType.SCALAR ) {
+										} else if ( hi_0_0.getDataType() == Types.DataType.MATRIX ) {
+											if ( hi_0_0 instanceof BinaryOp ) {
+												hi = _applyRewrite150(hi); // sum(*(/(a,C),B)) => *(a,sum(/(B,C)))
+											} else if ( hi_0_0 instanceof ReorgOp ) {
+											} else {
+												hi = _applyRewrite151(hi); // sum(*(B,/(a,C))) => *(a,sum(/(B,C)))
+											}
+										}
+									}
+								} else if ( (( BinaryOp ) hi_0 ).getOp() == Types.OpOp2.MINUS ) {
+									if ( hi_0.getInput().size() == 2 ) {
+										Hop hi_0_0 = hi_0.getInput(0);
+										Hop hi_0_1 = hi_0.getInput(1);
+										if ( hi_0_0.getDataType() == Types.DataType.SCALAR ) {
+											if ( hi_0_1.getDataType() == Types.DataType.MATRIX ) {
+												if ( hi_0_1 instanceof ReorgOp ) {
+													hi = _applyRewrite178(hi); // sum(-(a,t(B))) => sum(-(a,B))
+												} else if ( hi_0_1 instanceof AggUnaryOp ) {
+												} else {
+													hi = _applyRewrite38(hi); // sum(-(0.0,B)) => -(0.0,sum(B))
+												}
+											} else if ( hi_0_1.getDataType() == Types.DataType.SCALAR ) {
+												hi = _applyRewrite177(hi); // sum(-(t(A),b)) => sum(-(A,b))
+											}
+										} else if ( hi_0_0.getDataType() == Types.DataType.MATRIX ) {
+											hi = _applyRewrite177(hi); // sum(-(t(A),b)) => sum(-(A,b))
+										}
+									}
+								} else if ( (( BinaryOp ) hi_0 ).getOp() == Types.OpOp2.PLUS ) {
+									if ( hi_0.getInput().size() == 2 ) {
+										Hop hi_0_0 = hi_0.getInput(0);
+										Hop hi_0_1 = hi_0.getInput(1);
+										if ( hi_0_0.getDataType() == Types.DataType.SCALAR ) {
+											hi = _applyRewrite182(hi); // sum(+(b,t(A))) => sum(+(A,b))
+										} else if ( hi_0_0.getDataType() == Types.DataType.MATRIX ) {
+											if ( hi_0_0 instanceof ReorgOp ) {
+												hi = _applyRewrite181(hi); // sum(+(t(A),b)) => sum(+(A,b))
+											} else if ( hi_0_0 instanceof AggUnaryOp ) {
+											} else {
+											}
+										}
+									}
+								} else if ( (( BinaryOp ) hi_0 ).getOp() == Types.OpOp2.DIV ) {
+									if ( hi_0.getInput().size() == 2 ) {
+										Hop hi_0_0 = hi_0.getInput(0);
+										Hop hi_0_1 = hi_0.getInput(1);
+										if ( hi_0_0.getDataType() == Types.DataType.MATRIX ) {
+											if ( hi_0_0 instanceof BinaryOp ) {
+												hi = _applyRewrite148(hi); // sum(/(*(a,B),C)) => *(a,sum(/(B,C)))
+												hi = _applyRewrite149(hi); // sum(/(*(B,a),C)) => *(a,sum(/(B,C)))
+											} else if ( hi_0_0 instanceof ReorgOp ) {
+											} else {
+											}
+										} else if ( hi_0_0.getDataType() == Types.DataType.SCALAR ) {
+											hi = _applyRewrite404(hi); // sum(/(a,t(B))) => sum(/(a,B))
+										}
+									}
+								}
+							}
+						}
+					}
+				}
+			}
+		} else if ( hi.getDataType() == Types.DataType.MATRIX ) {
+			if ( hi instanceof BinaryOp ) {
+				if ( (( BinaryOp ) hi ).getOp() == Types.OpOp2.PLUS ) {
+					if ( hi.getInput().size() == 2 ) {
+						Hop hi_0 = hi.getInput(0);
+						Hop hi_1 = hi.getInput(1);
+						if ( hi_0.getDataType() == Types.DataType.SCALAR ) {
+							if ( hi_0 instanceof BinaryOp ) {
+								hi = _applyRewrite89(hi); // +(-(0.0,b),A) => -(A,b)
+							} else {
+								if ( hi_1.getDataType() == Types.DataType.MATRIX ) {
+								} else if ( hi_1.getDataType() == Types.DataType.SCALAR ) {
+									if ( hi_1 instanceof BinaryOp ) {
+										hi = _applyRewrite90(hi); // +(A,-(0.0,b)) => -(A,b)
+									} else {
+										hi = _applyRewrite6(hi); // +(A,0.0) => A
+										hi = _applyRewrite43(hi); // +(-(0.0,B),a) => -(a,B)
+										hi = _applyRewrite54(hi); // +(-(a,C),b) => -(+(a,b),C)
+										hi = _applyRewrite59(hi); // +(-(A,c),b) => +(A,-(b,c))
+										hi = _applyRewrite282(hi); // +(rev(-(a,C)),b) => -(+(a,b),rev(C))
+										hi = _applyRewrite287(hi); // +(rev(-(C,b)),a) => +(-(a,b),rev(C))
+										hi = _applyRewrite289(hi); // +(rev(+(a,C)),b) => +(+(a,b),rev(C))
+										hi = _applyRewrite290(hi); // +(rev(+(C,a)),b) => +(+(a,b),rev(C))
+										hi = _applyRewrite297(hi); // +(-(-(a,C),D),b) => -(+(a,b),+(C,D))
+										hi = _applyRewrite310(hi); // +(-(A,-(D,b)),c) => +(A,-(+(b,c),D))
+										hi = _applyRewrite312(hi); // +(-(+(b,A),D),c) => +(A,-(+(b,c),D))
+										hi = _applyRewrite313(hi); // +(-(+(A,b),D),c) => +(A,-(+(b,c),D))
+										hi = _applyRewrite319(hi); // +(-(A,-(d,B)),c) => +(A,+(B,-(c,d)))
+										hi = _applyRewrite337(hi); // +(-(-(A,c),D),b) => +(A,-(-(b,c),D))
+										hi = _applyRewrite341(hi); // +(-(A,+(c,D)),b) => +(A,-(-(b,c),D))
+										hi = _applyRewrite342(hi); // +(-(A,+(D,c)),b) => +(A,-(-(b,c),D))
+										hi = _applyRewrite346(hi); // +(t(-(a,C)),b) => -(+(a,b),t(C))
+										hi = _applyRewrite351(hi); // +(t(-(C,b)),a) => +(-(a,b),t(C))
+										hi = _applyRewrite353(hi); // +(t(+(a,C)),b) => +(+(a,b),t(C))
+										hi = _applyRewrite354(hi); // +(t(+(C,a)),b) => +(+(a,b),t(C))
+									}
+								}
+							}
+						} else if ( hi_0.getDataType() == Types.DataType.MATRIX ) {
+						}
+					}
+				} else if ( (( BinaryOp ) hi ).getOp() == Types.OpOp2.DIV ) {
+					if ( hi.getInput().size() == 2 ) {
+						Hop hi_0 = hi.getInput(0);
+						Hop hi_1 = hi.getInput(1);
+						if ( hi_0.getDataType() == Types.DataType.SCALAR ) {
+							hi = _applyRewrite93(hi); // /(-(a,0.0),B) => /(a,B)
+						} else if ( hi_0.getDataType() == Types.DataType.MATRIX ) {
+							if ( hi_0 instanceof ReorgOp ) {
+								hi = _applyRewrite409(hi); // /(t(A),t(B)) => t(/(A,B))
+								hi = _applyRewrite421(hi); // /(rev(!=(A,b)),A) => /(!=(A,b),A)
+							} else {
+								if ( hi_1.getDataType() == Types.DataType.MATRIX ) {
+								} else if ( hi_1.getDataType() == Types.DataType.SCALAR ) {
+									hi = _applyRewrite13(hi); // /(A,c) => *(A,/(1.0,c))
+								}
+							}
+						}
+					}
+				} else if ( (( BinaryOp ) hi ).getOp() == Types.OpOp2.MULT ) {
+					if ( hi.getInput().size() == 2 ) {
+						Hop hi_0 = hi.getInput(0);
+						Hop hi_1 = hi.getInput(1);
+						if ( hi_0.getDataType() == Types.DataType.SCALAR ) {
+							if ( hi_0 instanceof BinaryOp ) {
+								hi = _applyRewrite91(hi); // *(-(b,0.0),A) => *(A,b)
+							} else {
+								if ( hi_1.getDataType() == Types.DataType.MATRIX ) {
+								} else if ( hi_1.getDataType() == Types.DataType.SCALAR ) {
+									if ( hi_1 instanceof BinaryOp ) {
+										hi = _applyRewrite92(hi); // *(A,-(b,0.0)) => *(A,b)
+									} else {
+										hi = _applyRewrite32(hi); // *(/(1.0,B),a) => /(a,B)
+										hi = _applyRewrite36(hi); // *(/(a,C),b) => /(*(a,b),C)
+										hi = _applyRewrite128(hi); // *(t(*(a,C)),b) => *(*(a,b),t(C))
+										hi = _applyRewrite129(hi); // *(t(*(C,a)),b) => *(*(a,b),t(C))
+										hi = _applyRewrite132(hi); // *(rev(*(a,C)),b) => *(*(a,b),rev(C))
+										hi = _applyRewrite133(hi); // *(rev(*(C,a)),b) => *(*(a,b),rev(C))
+										hi = _applyRewrite152(hi); // *(t(/(a,C)),b) => /(*(a,b),t(C))
+										hi = _applyRewrite154(hi); // *(rev(/(a,C)),b) => /(*(a,b),rev(C))
+										hi = _applyRewrite170(hi); // *(/(*(a,C),D),b) => *(*(a,b),/(C,D))
+										hi = _applyRewrite171(hi); // *(/(*(C,a),D),b) => *(*(a,b),/(C,D))
+										hi = _applyRewrite174(hi); // *(/(/(a,C),D),b) => /(/(*(a,b),C),D)
+										hi = _applyRewrite447(hi); // *(%*%(*(a,C),D),b) => *(*(a,b),%*%(C,D))
+										hi = _applyRewrite448(hi); // *(%*%(*(C,a),D),b) => *(*(a,b),%*%(C,D))
+										hi = _applyRewrite449(hi); // *(%*%(C,*(D,a)),b) => *(*(a,b),%*%(C,D))
+										hi = _applyRewrite455(hi); // *(%*%(/(a,C),D),b) => %*%(/(*(a,b),C),D)
+										hi = _applyRewrite459(hi); // *(%*%(A,/(b,D)),c) => %*%(A,/(*(b,c),D))
+										hi = _applyRewrite494(hi); // *(colSums(/(a,C)),b) => colSums(/(*(a,b),C))
+										hi = _applyRewrite496(hi); // *(rowSums(/(a,C)),b) => rowSums(/(*(a,b),C))
+									}
+								}
+							}
+						} else if ( hi_0.getDataType() == Types.DataType.MATRIX ) {
+						}
+					}
+				} else if ( (( BinaryOp ) hi ).getOp() == Types.OpOp2.MINUS ) {
+					if ( hi.getInput().size() == 2 ) {
+						Hop hi_0 = hi.getInput(0);
+						Hop hi_1 = hi.getInput(1);
+						if ( hi_0.getDataType() == Types.DataType.SCALAR ) {
+							if ( hi_1.getDataType() == Types.DataType.MATRIX ) {
+							} else if ( hi_1.getDataType() == Types.DataType.SCALAR ) {
+								if ( hi_1 instanceof BinaryOp ) {
+									hi = _applyRewrite88(hi); // -(A,-(b,0.0)) => -(A,b)
+								} else {
+									hi = _applyRewrite49(hi); // -(-(A,b),c) => -(A,+(b,c))
+									hi = _applyRewrite52(hi); // -(-(a,C),b) => -(-(a,b),C)
+									hi = _applyRewrite56(hi); // -(+(b,A),c) => +(A,-(b,c))
+									hi = _applyRewrite57(hi); // -(+(A,b),c) => +(A,-(b,c))
+									hi = _applyRewrite265(hi); // -(t(-(A,b)),c) => -(t(A),+(b,c))
+									hi = _applyRewrite266(hi); // -(t(-(a,C)),b) => -(-(a,b),t(C))
+									hi = _applyRewrite269(hi); // -(rev(-(A,b)),c) => -(rev(A),+(b,c))
+									hi = _applyRewrite270(hi); // -(rev(-(a,C)),b) => -(-(a,b),rev(C))
+									hi = _applyRewrite273(hi); // -(-(-(a,D),C),b) => -(-(a,b),+(C,D))
+									hi = _applyRewrite276(hi); // -(-(-(A,c),B),d) => -(A,+(B,+(c,d)))
+									hi = _applyRewrite277(hi); // -(-(A,+(c,B)),d) => -(A,+(B,+(c,d)))
+									hi = _applyRewrite278(hi); // -(-(A,+(B,c)),d) => -(A,+(B,+(c,d)))
+									hi = _applyRewrite285(hi); // -(rev(+(a,C)),b) => +(-(a,b),rev(C))
+									hi = _applyRewrite286(hi); // -(rev(+(C,a)),b) => +(-(a,b),rev(C))
+									hi = _applyRewrite300(hi); // -(-(A,-(c,B)),d) => +(A,-(B,+(c,d)))
+									hi = _applyRewrite302(hi); // -(+(-(B,c),A),d) => +(A,-(B,+(c,d)))
+									hi = _applyRewrite303(hi); // -(+(A,-(B,c)),d) => +(A,-(B,+(c,d)))
+									hi = _applyRewrite321(hi); // -(-(A,-(D,b)),c) => +(A,-(-(b,c),D))
+									hi = _applyRewrite325(hi); // -(-(+(b,A),D),c) => +(A,-(-(b,c),D))
+									hi = _applyRewrite326(hi); // -(-(+(A,b),D),c) => +(A,-(-(b,c),D))
+									hi = _applyRewrite329(hi); // -(+(-(b,D),A),c) => +(A,-(-(b,c),D))
+									hi = _applyRewrite334(hi); // -(+(A,-(b,D)),c) => +(A,-(-(b,c),D))
+									hi = _applyRewrite348(hi); // -(t(+(a,C)),b) => +(-(a,b),t(C))
+									hi = _applyRewrite349(hi); // -(t(+(C,a)),b) => +(-(a,b),t(C))
+								}
+							}
+						} else if ( hi_0.getDataType() == Types.DataType.MATRIX ) {
+						}
+					}
+				} else if ( (( BinaryOp ) hi ).getOp() == Types.OpOp2.NOTEQUAL ) {
+					if ( hi.getInput().size() == 2 ) {
+						Hop hi_0 = hi.getInput(0);
+						Hop hi_1 = hi.getInput(1);
+						if ( hi_0.getDataType() == Types.DataType.MATRIX ) {
+							if ( hi_0 instanceof ReorgOp ) {
+								if ( (( ReorgOp ) hi_0 ).getOp() == Types.ReOrgOp.TRANS ) {
+									hi = _applyRewrite185(hi); // !=(t(A),t(B)) => t(!=(A,B))
+								} else if ( (( ReorgOp ) hi_0 ).getOp() == Types.ReOrgOp.REV ) {
+									if ( hi_0.getInput().size() == 1 ) {
+										Hop hi_0_0 = hi_0.getInput(0);
+										if ( hi_1.getDataType() == Types.DataType.MATRIX ) {
+											if ( hi_1 instanceof ReorgOp ) {
+												if ( (( ReorgOp ) hi_1 ).getOp() == Types.ReOrgOp.TRANS ) {
+													hi = _applyRewrite185(hi); // !=(t(A),t(B)) => t(!=(A,B))
+												} else if ( (( ReorgOp ) hi_1 ).getOp() == Types.ReOrgOp.REV ) {
+													if ( hi_1.getInput().size() == 1 ) {
+														Hop hi_1_0 = hi_1.getInput(0);
+														if ( hi_0_0.getDataType() == Types.DataType.MATRIX ) {
+															if ( hi_0_0 instanceof BinaryOp ) {
+																if ( (( BinaryOp ) hi_0_0 ).getOp() == Types.OpOp2.MINUS ) {
+																	hi = _applyRewrite193(hi); // !=(rev(-(b,A)),A) => !=(A,-(b,A))
+																	hi = _applyRewrite198(hi); // !=(rev(-(A,c)),A) => !=(A,-(A,c))
+																} else if ( (( BinaryOp ) hi_0_0 ).getOp() == Types.OpOp2.PLUS ) {
+																	hi = _applyRewrite212(hi); // !=(rev(+(c,A)),A) => !=(A,+(A,c))
+																	hi = _applyRewrite213(hi); // !=(rev(+(A,c)),A) => !=(A,+(A,c))
+																} else if ( (( BinaryOp ) hi_0_0 ).getOp() == Types.OpOp2.NOTEQUAL ) {
+																	hi = _applyRewrite232(hi); // !=(rev(!=(c,A)),A) => !=(A,!=(A,c))
+																	hi = _applyRewrite233(hi); // !=(rev(!=(A,c)),A) => !=(A,!=(A,c))
+																} else if ( (( BinaryOp ) hi_0_0 ).getOp() == Types.OpOp2.MULT ) {
+																	hi = _applyRewrite378(hi); // !=(rev(*(c,A)),A) => !=(A,*(A,c))
+																	hi = _applyRewrite379(hi); // !=(rev(*(A,c)),A) => !=(A,*(A,c))
+																} else if ( (( BinaryOp ) hi_0_0 ).getOp() == Types.OpOp2.DIV ) {
+																	hi = _applyRewrite413(hi); // !=(rev(/(b,A)),A) => !=(A,/(b,A))
+																}
+															} else if ( hi_0_0 instanceof AggBinaryOp ) {
+																hi = _applyRewrite466(hi); // !=(rev(%*%(A,C)),A) => !=(A,%*%(A,C))
+															} else {
+																hi = _applyRewrite186(hi); // !=(rev(A),rev(A)) => rev(!=(A,A))
+															}
+														}
+													}
+												}
+											} else if ( hi_1 instanceof BinaryOp ) {
+												if ( (( BinaryOp ) hi_1 ).getOp() == Types.OpOp2.MINUS ) {
+													hi = _applyRewrite197(hi); // !=(A,-(b,rev(A))) => !=(A,-(b,A))
+													hi = _applyRewrite201(hi); // !=(A,-(rev(A),c)) => !=(A,-(A,c))
+													hi = _applyRewrite204(hi); // !=(A,-(B,rev(A))) => !=(A,-(B,A))
+													hi = _applyRewrite207(hi); // !=(A,-(rev(A),C)) => !=(A,-(A,C))
+												} else if ( (( BinaryOp ) hi_1 ).getOp() == Types.OpOp2.PLUS ) {
+													hi = _applyRewrite219(hi); // !=(A,+(rev(A),c)) => !=(A,+(A,c))
+													hi = _applyRewrite220(hi); // !=(A,+(c,rev(A))) => !=(A,+(A,c))
+													hi = _applyRewrite225(hi); // !=(A,+(rev(A),C)) => !=(A,+(A,C))
+													hi = _applyRewrite226(hi); // !=(A,+(C,rev(A))) => !=(A,+(A,C))
+												} else if ( (( BinaryOp ) hi_1 ).getOp() == Types.OpOp2.NOTEQUAL ) {
+													hi = _applyRewrite230(hi); // !=(A,!=(rev(A),c)) => !=(A,!=(A,c))
+													hi = _applyRewrite231(hi); // !=(A,!=(c,rev(A))) => !=(A,!=(A,c))
+													hi = _applyRewrite240(hi); // !=(A,!=(rev(A),C)) => !=(A,!=(A,C))
+													hi = _applyRewrite241(hi); // !=(A,!=(C,rev(A))) => !=(A,!=(A,C))
+												} else if ( (( BinaryOp ) hi_1 ).getOp() == Types.OpOp2.MULT ) {
+													hi = _applyRewrite376(hi); // !=(A,*(rev(A),c)) => !=(A,*(A,c))
+													hi = _applyRewrite377(hi); // !=(A,*(c,rev(A))) => !=(A,*(A,c))
+													hi = _applyRewrite386(hi); // !=(A,*(rev(A),C)) => !=(A,*(A,C))
+													hi = _applyRewrite387(hi); // !=(A,*(C,rev(A))) => !=(A,*(A,C))
+												} else if ( (( BinaryOp ) hi_1 ).getOp() == Types.OpOp2.DIV ) {
+													hi = _applyRewrite412(hi); // !=(A,/(b,rev(A))) => !=(A,/(b,A))
+													hi = _applyRewrite417(hi); // !=(A,/(B,rev(A))) => !=(A,/(B,A))
+													hi = _applyRewrite420(hi); // !=(A,/(rev(A),C)) => !=(A,/(A,C))
+												}
+											} else if ( hi_1 instanceof AggUnaryOp ) {
+												hi = _applyRewrite439(hi); // !=(A,rowSums(rev(A))) => !=(A,rowSums(A))
+												hi = _applyRewrite440(hi); // !=(A,colSums(rev(A))) => !=(A,colSums(A))
+											} else if ( hi_1 instanceof AggBinaryOp ) {
+												hi = _applyRewrite465(hi); // !=(A,%*%(B,rev(A))) => !=(A,%*%(B,A))
+												hi = _applyRewrite469(hi); // !=(A,%*%(rev(A),C)) => !=(A,%*%(A,C))
+											} else {
+												if ( hi_0_0.getDataType() == Types.DataType.MATRIX ) {
+													if ( hi_0_0 instanceof BinaryOp ) {
+														if ( (( BinaryOp ) hi_0_0 ).getOp() == Types.OpOp2.MINUS ) {
+															hi = _applyRewrite193(hi); // !=(rev(-(b,A)),A) => !=(A,-(b,A))
+															hi = _applyRewrite198(hi); // !=(rev(-(A,c)),A) => !=(A,-(A,c))
+														} else if ( (( BinaryOp ) hi_0_0 ).getOp() == Types.OpOp2.PLUS ) {
+															hi = _applyRewrite212(hi); // !=(rev(+(c,A)),A) => !=(A,+(A,c))
+															hi = _applyRewrite213(hi); // !=(rev(+(A,c)),A) => !=(A,+(A,c))
+														} else if ( (( BinaryOp ) hi_0_0 ).getOp() == Types.OpOp2.NOTEQUAL ) {
+															hi = _applyRewrite232(hi); // !=(rev(!=(c,A)),A) => !=(A,!=(A,c))
+															hi = _applyRewrite233(hi); // !=(rev(!=(A,c)),A) => !=(A,!=(A,c))
+														} else if ( (( BinaryOp ) hi_0_0 ).getOp() == Types.OpOp2.MULT ) {
+															hi = _applyRewrite378(hi); // !=(rev(*(c,A)),A) => !=(A,*(A,c))
+															hi = _applyRewrite379(hi); // !=(rev(*(A,c)),A) => !=(A,*(A,c))
+														} else if ( (( BinaryOp ) hi_0_0 ).getOp() == Types.OpOp2.DIV ) {
+															hi = _applyRewrite413(hi); // !=(rev(/(b,A)),A) => !=(A,/(b,A))
+														}
+													} else if ( hi_0_0 instanceof AggBinaryOp ) {
+														hi = _applyRewrite466(hi); // !=(rev(%*%(A,C)),A) => !=(A,%*%(A,C))
+													} else {
+														hi = _applyRewrite186(hi); // !=(rev(A),rev(A)) => rev(!=(A,A))
+													}
+												}
+											}
+										}
+									}
+								}
+							} else if ( hi_0 instanceof BinaryOp ) {
+								if ( (( BinaryOp ) hi_0 ).getOp() == Types.OpOp2.MINUS ) {
+									if ( hi_0.getInput().size() == 2 ) {
+										Hop hi_0_0 = hi_0.getInput(0);
+										Hop hi_0_1 = hi_0.getInput(1);
+										if ( hi_1.getDataType() == Types.DataType.MATRIX ) {
+											if ( hi_1 instanceof ReorgOp ) {
+												if ( (( ReorgOp ) hi_1 ).getOp() == Types.ReOrgOp.TRANS ) {
+													hi = _applyRewrite185(hi); // !=(t(A),t(B)) => t(!=(A,B))
+												} else if ( (( ReorgOp ) hi_1 ).getOp() == Types.ReOrgOp.REV ) {
+													if ( hi_1.getInput().size() == 1 ) {
+														Hop hi_1_0 = hi_1.getInput(0);
+														if ( hi_0_0.getDataType() == Types.DataType.SCALAR ) {
+															hi = _applyRewrite195(hi); // !=(-(b,rev(A)),A) => !=(A,-(b,A))
+															hi = _applyRewrite196(hi); // !=(-(b,A),rev(A)) => !=(A,-(b,A))
+														} else if ( hi_0_0.getDataType() == Types.DataType.MATRIX ) {
+															hi = _applyRewrite200(hi); // !=(-(rev(A),c),A) => !=(A,-(A,c))
+															hi = _applyRewrite202(hi); // !=(-(B,rev(A)),A) => !=(A,-(B,A))
+															hi = _applyRewrite203(hi); // !=(-(B,A),rev(A)) => !=(A,-(B,A))
+															hi = _applyRewrite205(hi); // !=(-(rev(A),C),A) => !=(A,-(A,C))
+															hi = _applyRewrite206(hi); // !=(-(A,C),rev(A)) => !=(A,-(A,C))
+														}
+													}
+												}
+											} else if ( hi_1 instanceof BinaryOp ) {
+												if ( (( BinaryOp ) hi_1 ).getOp() == Types.OpOp2.MINUS ) {
+													hi = _applyRewrite197(hi); // !=(A,-(b,rev(A))) => !=(A,-(b,A))
+													hi = _applyRewrite201(hi); // !=(A,-(rev(A),c)) => !=(A,-(A,c))
+													hi = _applyRewrite204(hi); // !=(A,-(B,rev(A))) => !=(A,-(B,A))
+													hi = _applyRewrite207(hi); // !=(A,-(rev(A),C)) => !=(A,-(A,C))
+												} else if ( (( BinaryOp ) hi_1 ).getOp() == Types.OpOp2.PLUS ) {
+													hi = _applyRewrite219(hi); // !=(A,+(rev(A),c)) => !=(A,+(A,c))
+													hi = _applyRewrite220(hi); // !=(A,+(c,rev(A))) => !=(A,+(A,c))
+													hi = _applyRewrite225(hi); // !=(A,+(rev(A),C)) => !=(A,+(A,C))
+													hi = _applyRewrite226(hi); // !=(A,+(C,rev(A))) => !=(A,+(A,C))
+												} else if ( (( BinaryOp ) hi_1 ).getOp() == Types.OpOp2.NOTEQUAL ) {
+													hi = _applyRewrite230(hi); // !=(A,!=(rev(A),c)) => !=(A,!=(A,c))
+													hi = _applyRewrite231(hi); // !=(A,!=(c,rev(A))) => !=(A,!=(A,c))
+													hi = _applyRewrite240(hi); // !=(A,!=(rev(A),C)) => !=(A,!=(A,C))
+													hi = _applyRewrite241(hi); // !=(A,!=(C,rev(A))) => !=(A,!=(A,C))
+												} else if ( (( BinaryOp ) hi_1 ).getOp() == Types.OpOp2.MULT ) {
+													hi = _applyRewrite376(hi); // !=(A,*(rev(A),c)) => !=(A,*(A,c))
+													hi = _applyRewrite377(hi); // !=(A,*(c,rev(A))) => !=(A,*(A,c))
+													hi = _applyRewrite386(hi); // !=(A,*(rev(A),C)) => !=(A,*(A,C))
+													hi = _applyRewrite387(hi); // !=(A,*(C,rev(A))) => !=(A,*(A,C))
+												} else if ( (( BinaryOp ) hi_1 ).getOp() == Types.OpOp2.DIV ) {
+													hi = _applyRewrite412(hi); // !=(A,/(b,rev(A))) => !=(A,/(b,A))
+													hi = _applyRewrite417(hi); // !=(A,/(B,rev(A))) => !=(A,/(B,A))
+													hi = _applyRewrite420(hi); // !=(A,/(rev(A),C)) => !=(A,/(A,C))
+												}
+											} else if ( hi_1 instanceof AggUnaryOp ) {
+												hi = _applyRewrite439(hi); // !=(A,rowSums(rev(A))) => !=(A,rowSums(A))
+												hi = _applyRewrite440(hi); // !=(A,colSums(rev(A))) => !=(A,colSums(A))
+											} else if ( hi_1 instanceof AggBinaryOp ) {
+												hi = _applyRewrite465(hi); // !=(A,%*%(B,rev(A))) => !=(A,%*%(B,A))
+												hi = _applyRewrite469(hi); // !=(A,%*%(rev(A),C)) => !=(A,%*%(A,C))
+											} else {
+												if ( hi_0_0.getDataType() == Types.DataType.SCALAR ) {
+													hi = _applyRewrite195(hi); // !=(-(b,rev(A)),A) => !=(A,-(b,A))
+													hi = _applyRewrite196(hi); // !=(-(b,A),rev(A)) => !=(A,-(b,A))
+												} else if ( hi_0_0.getDataType() == Types.DataType.MATRIX ) {
+													hi = _applyRewrite200(hi); // !=(-(rev(A),c),A) => !=(A,-(A,c))
+													hi = _applyRewrite202(hi); // !=(-(B,rev(A)),A) => !=(A,-(B,A))
+													hi = _applyRewrite203(hi); // !=(-(B,A),rev(A)) => !=(A,-(B,A))
+													hi = _applyRewrite205(hi); // !=(-(rev(A),C),A) => !=(A,-(A,C))
+													hi = _applyRewrite206(hi); // !=(-(A,C),rev(A)) => !=(A,-(A,C))
+												}
+											}
+										}
+									}
+								} else if ( (( BinaryOp ) hi_0 ).getOp() == Types.OpOp2.PLUS ) {
+									if ( hi_0.getInput().size() == 2 ) {
+										Hop hi_0_0 = hi_0.getInput(0);
+										Hop hi_0_1 = hi_0.getInput(1);
+										if ( hi_1.getDataType() == Types.DataType.MATRIX ) {
+											if ( hi_1 instanceof ReorgOp ) {
+												if ( (( ReorgOp ) hi_1 ).getOp() == Types.ReOrgOp.TRANS ) {
+													hi = _applyRewrite185(hi); // !=(t(A),t(B)) => t(!=(A,B))
+												} else if ( (( ReorgOp ) hi_1 ).getOp() == Types.ReOrgOp.REV ) {
+													if ( hi_1.getInput().size() == 1 ) {
+														Hop hi_1_0 = hi_1.getInput(0);
+														if ( hi_0_0.getDataType() == Types.DataType.MATRIX ) {
+															hi = _applyRewrite216(hi); // !=(+(rev(A),c),A) => !=(A,+(A,c))
+															hi = _applyRewrite221(hi); // !=(+(rev(A),C),A) => !=(A,+(A,C))
+															hi = _applyRewrite222(hi); // !=(+(C,rev(A)),A) => !=(A,+(A,C))
+															hi = _applyRewrite223(hi); // !=(+(C,A),rev(A)) => !=(A,+(A,C))
+															hi = _applyRewrite224(hi); // !=(+(A,C),rev(A)) => !=(A,+(A,C))
+														} else if ( hi_0_0.getDataType() == Types.DataType.SCALAR ) {
+															hi = _applyRewrite217(hi); // !=(+(c,rev(A)),A) => !=(A,+(A,c))
+															hi = _applyRewrite218(hi); // !=(+(c,A),rev(A)) => !=(A,+(A,c))
+														}
+													}
+												}
+											} else if ( hi_1 instanceof BinaryOp ) {
+												if ( (( BinaryOp ) hi_1 ).getOp() == Types.OpOp2.MINUS ) {
+													hi = _applyRewrite197(hi); // !=(A,-(b,rev(A))) => !=(A,-(b,A))
+													hi = _applyRewrite201(hi); // !=(A,-(rev(A),c)) => !=(A,-(A,c))
+													hi = _applyRewrite204(hi); // !=(A,-(B,rev(A))) => !=(A,-(B,A))
+													hi = _applyRewrite207(hi); // !=(A,-(rev(A),C)) => !=(A,-(A,C))
+												} else if ( (( BinaryOp ) hi_1 ).getOp() == Types.OpOp2.PLUS ) {
+													hi = _applyRewrite219(hi); // !=(A,+(rev(A),c)) => !=(A,+(A,c))
+													hi = _applyRewrite220(hi); // !=(A,+(c,rev(A))) => !=(A,+(A,c))
+													hi = _applyRewrite225(hi); // !=(A,+(rev(A),C)) => !=(A,+(A,C))
+													hi = _applyRewrite226(hi); // !=(A,+(C,rev(A))) => !=(A,+(A,C))
+												} else if ( (( BinaryOp ) hi_1 ).getOp() == Types.OpOp2.NOTEQUAL ) {
+													hi = _applyRewrite230(hi); // !=(A,!=(rev(A),c)) => !=(A,!=(A,c))
+													hi = _applyRewrite231(hi); // !=(A,!=(c,rev(A))) => !=(A,!=(A,c))
+													hi = _applyRewrite240(hi); // !=(A,!=(rev(A),C)) => !=(A,!=(A,C))
+													hi = _applyRewrite241(hi); // !=(A,!=(C,rev(A))) => !=(A,!=(A,C))
+												} else if ( (( BinaryOp ) hi_1 ).getOp() == Types.OpOp2.MULT ) {
+													hi = _applyRewrite376(hi); // !=(A,*(rev(A),c)) => !=(A,*(A,c))
+													hi = _applyRewrite377(hi); // !=(A,*(c,rev(A))) => !=(A,*(A,c))
+													hi = _applyRewrite386(hi); // !=(A,*(rev(A),C)) => !=(A,*(A,C))
+													hi = _applyRewrite387(hi); // !=(A,*(C,rev(A))) => !=(A,*(A,C))
+												} else if ( (( BinaryOp ) hi_1 ).getOp() == Types.OpOp2.DIV ) {
+													hi = _applyRewrite412(hi); // !=(A,/(b,rev(A))) => !=(A,/(b,A))
+													hi = _applyRewrite417(hi); // !=(A,/(B,rev(A))) => !=(A,/(B,A))
+													hi = _applyRewrite420(hi); // !=(A,/(rev(A),C)) => !=(A,/(A,C))
+												}
+											} else if ( hi_1 instanceof AggUnaryOp ) {
+												hi = _applyRewrite439(hi); // !=(A,rowSums(rev(A))) => !=(A,rowSums(A))
+												hi = _applyRewrite440(hi); // !=(A,colSums(rev(A))) => !=(A,colSums(A))
+											} else if ( hi_1 instanceof AggBinaryOp ) {
+												hi = _applyRewrite465(hi); // !=(A,%*%(B,rev(A))) => !=(A,%*%(B,A))
+												hi = _applyRewrite469(hi); // !=(A,%*%(rev(A),C)) => !=(A,%*%(A,C))
+											} else {
+												if ( hi_0_0.getDataType() == Types.DataType.MATRIX ) {
+													hi = _applyRewrite216(hi); // !=(+(rev(A),c),A) => !=(A,+(A,c))
+													hi = _applyRewrite221(hi); // !=(+(rev(A),C),A) => !=(A,+(A,C))
+													hi = _applyRewrite222(hi); // !=(+(C,rev(A)),A) => !=(A,+(A,C))
+													hi = _applyRewrite223(hi); // !=(+(C,A),rev(A)) => !=(A,+(A,C))
+													hi = _applyRewrite224(hi); // !=(+(A,C),rev(A)) => !=(A,+(A,C))
+												} else if ( hi_0_0.getDataType() == Types.DataType.SCALAR ) {
+													hi = _applyRewrite217(hi); // !=(+(c,rev(A)),A) => !=(A,+(A,c))
+													hi = _applyRewrite218(hi); // !=(+(c,A),rev(A)) => !=(A,+(A,c))
+												}
+											}
+										}
+									}
+								} else if ( (( BinaryOp ) hi_0 ).getOp() == Types.OpOp2.NOTEQUAL ) {
+									if ( hi_0.getInput().size() == 2 ) {
+										Hop hi_0_0 = hi_0.getInput(0);
+										Hop hi_0_1 = hi_0.getInput(1);
+										if ( hi_1.getDataType() == Types.DataType.MATRIX ) {
+											if ( hi_1 instanceof ReorgOp ) {
+												if ( (( ReorgOp ) hi_1 ).getOp() == Types.ReOrgOp.TRANS ) {
+													hi = _applyRewrite185(hi); // !=(t(A),t(B)) => t(!=(A,B))
+												} else if ( (( ReorgOp ) hi_1 ).getOp() == Types.ReOrgOp.REV ) {
+													if ( hi_1.getInput().size() == 1 ) {
+														Hop hi_1_0 = hi_1.getInput(0);
+														if ( hi_0_0.getDataType() == Types.DataType.MATRIX ) {
+															hi = _applyRewrite227(hi); // !=(!=(rev(A),c),A) => !=(A,!=(A,c))
+															hi = _applyRewrite236(hi); // !=(!=(rev(A),C),A) => !=(A,!=(A,C))
+															hi = _applyRewrite237(hi); // !=(!=(C,rev(A)),A) => !=(A,!=(A,C))
+															hi = _applyRewrite238(hi); // !=(!=(C,A),rev(A)) => !=(A,!=(A,C))
+															hi = _applyRewrite239(hi); // !=(!=(A,C),rev(A)) => !=(A,!=(A,C))
+														} else if ( hi_0_0.getDataType() == Types.DataType.SCALAR ) {
+															hi = _applyRewrite228(hi); // !=(!=(c,rev(A)),A) => !=(A,!=(A,c))
+															hi = _applyRewrite229(hi); // !=(!=(c,A),rev(A)) => !=(A,!=(A,c))
+														}
+													}
+												}
+											} else if ( hi_1 instanceof BinaryOp ) {
+												if ( (( BinaryOp ) hi_1 ).getOp() == Types.OpOp2.MINUS ) {
+													hi = _applyRewrite197(hi); // !=(A,-(b,rev(A))) => !=(A,-(b,A))
+													hi = _applyRewrite201(hi); // !=(A,-(rev(A),c)) => !=(A,-(A,c))
+													hi = _applyRewrite204(hi); // !=(A,-(B,rev(A))) => !=(A,-(B,A))
+													hi = _applyRewrite207(hi); // !=(A,-(rev(A),C)) => !=(A,-(A,C))
+												} else if ( (( BinaryOp ) hi_1 ).getOp() == Types.OpOp2.PLUS ) {
+													hi = _applyRewrite219(hi); // !=(A,+(rev(A),c)) => !=(A,+(A,c))
+													hi = _applyRewrite220(hi); // !=(A,+(c,rev(A))) => !=(A,+(A,c))
+													hi = _applyRewrite225(hi); // !=(A,+(rev(A),C)) => !=(A,+(A,C))
+													hi = _applyRewrite226(hi); // !=(A,+(C,rev(A))) => !=(A,+(A,C))
+												} else if ( (( BinaryOp ) hi_1 ).getOp() == Types.OpOp2.NOTEQUAL ) {
+													hi = _applyRewrite230(hi); // !=(A,!=(rev(A),c)) => !=(A,!=(A,c))
+													hi = _applyRewrite231(hi); // !=(A,!=(c,rev(A))) => !=(A,!=(A,c))
+													hi = _applyRewrite240(hi); // !=(A,!=(rev(A),C)) => !=(A,!=(A,C))
+													hi = _applyRewrite241(hi); // !=(A,!=(C,rev(A))) => !=(A,!=(A,C))
+												} else if ( (( BinaryOp ) hi_1 ).getOp() == Types.OpOp2.MULT ) {
+													hi = _applyRewrite376(hi); // !=(A,*(rev(A),c)) => !=(A,*(A,c))
+													hi = _applyRewrite377(hi); // !=(A,*(c,rev(A))) => !=(A,*(A,c))
+													hi = _applyRewrite386(hi); // !=(A,*(rev(A),C)) => !=(A,*(A,C))
+													hi = _applyRewrite387(hi); // !=(A,*(C,rev(A))) => !=(A,*(A,C))
+												} else if ( (( BinaryOp ) hi_1 ).getOp() == Types.OpOp2.DIV ) {
+													hi = _applyRewrite412(hi); // !=(A,/(b,rev(A))) => !=(A,/(b,A))
+													hi = _applyRewrite417(hi); // !=(A,/(B,rev(A))) => !=(A,/(B,A))
+													hi = _applyRewrite420(hi); // !=(A,/(rev(A),C)) => !=(A,/(A,C))
+												}
+											} else if ( hi_1 instanceof AggUnaryOp ) {
+												hi = _applyRewrite439(hi); // !=(A,rowSums(rev(A))) => !=(A,rowSums(A))
+												hi = _applyRewrite440(hi); // !=(A,colSums(rev(A))) => !=(A,colSums(A))
+											} else if ( hi_1 instanceof AggBinaryOp ) {
+												hi = _applyRewrite465(hi); // !=(A,%*%(B,rev(A))) => !=(A,%*%(B,A))
+												hi = _applyRewrite469(hi); // !=(A,%*%(rev(A),C)) => !=(A,%*%(A,C))
+											} else {
+												if ( hi_0_0.getDataType() == Types.DataType.MATRIX ) {
+													hi = _applyRewrite227(hi); // !=(!=(rev(A),c),A) => !=(A,!=(A,c))
+													hi = _applyRewrite236(hi); // !=(!=(rev(A),C),A) => !=(A,!=(A,C))
+													hi = _applyRewrite237(hi); // !=(!=(C,rev(A)),A) => !=(A,!=(A,C))
+													hi = _applyRewrite238(hi); // !=(!=(C,A),rev(A)) => !=(A,!=(A,C))
+													hi = _applyRewrite239(hi); // !=(!=(A,C),rev(A)) => !=(A,!=(A,C))
+												} else if ( hi_0_0.getDataType() == Types.DataType.SCALAR ) {
+													hi = _applyRewrite228(hi); // !=(!=(c,rev(A)),A) => !=(A,!=(A,c))
+													hi = _applyRewrite229(hi); // !=(!=(c,A),rev(A)) => !=(A,!=(A,c))
+												}
+											}
+										}
+									}
+								} else if ( (( BinaryOp ) hi_0 ).getOp() == Types.OpOp2.MULT ) {
+									if ( hi_0.getInput().size() == 2 ) {
+										Hop hi_0_0 = hi_0.getInput(0);
+										Hop hi_0_1 = hi_0.getInput(1);
+										if ( hi_1.getDataType() == Types.DataType.MATRIX ) {
+											if ( hi_1 instanceof ReorgOp ) {
+												if ( (( ReorgOp ) hi_1 ).getOp() == Types.ReOrgOp.TRANS ) {
+													hi = _applyRewrite185(hi); // !=(t(A),t(B)) => t(!=(A,B))
+												} else if ( (( ReorgOp ) hi_1 ).getOp() == Types.ReOrgOp.REV ) {
+													if ( hi_1.getInput().size() == 1 ) {
+														Hop hi_1_0 = hi_1.getInput(0);
+														if ( hi_0_0.getDataType() == Types.DataType.MATRIX ) {
+															hi = _applyRewrite373(hi); // !=(*(rev(A),c),A) => !=(A,*(A,c))
+															hi = _applyRewrite382(hi); // !=(*(rev(A),C),A) => !=(A,*(A,C))
+															hi = _applyRewrite383(hi); // !=(*(C,rev(A)),A) => !=(A,*(A,C))
+															hi = _applyRewrite384(hi); // !=(*(C,A),rev(A)) => !=(A,*(A,C))
+															hi = _applyRewrite385(hi); // !=(*(A,C),rev(A)) => !=(A,*(A,C))
+														} else if ( hi_0_0.getDataType() == Types.DataType.SCALAR ) {
+															hi = _applyRewrite374(hi); // !=(*(c,rev(A)),A) => !=(A,*(A,c))
+															hi = _applyRewrite375(hi); // !=(*(c,A),rev(A)) => !=(A,*(A,c))
+														}
+													}
+												}
+											} else if ( hi_1 instanceof BinaryOp ) {
+												if ( (( BinaryOp ) hi_1 ).getOp() == Types.OpOp2.MINUS ) {
+													hi = _applyRewrite197(hi); // !=(A,-(b,rev(A))) => !=(A,-(b,A))
+													hi = _applyRewrite201(hi); // !=(A,-(rev(A),c)) => !=(A,-(A,c))
+													hi = _applyRewrite204(hi); // !=(A,-(B,rev(A))) => !=(A,-(B,A))
+													hi = _applyRewrite207(hi); // !=(A,-(rev(A),C)) => !=(A,-(A,C))
+												} else if ( (( BinaryOp ) hi_1 ).getOp() == Types.OpOp2.PLUS ) {
+													hi = _applyRewrite219(hi); // !=(A,+(rev(A),c)) => !=(A,+(A,c))
+													hi = _applyRewrite220(hi); // !=(A,+(c,rev(A))) => !=(A,+(A,c))
+													hi = _applyRewrite225(hi); // !=(A,+(rev(A),C)) => !=(A,+(A,C))
+													hi = _applyRewrite226(hi); // !=(A,+(C,rev(A))) => !=(A,+(A,C))
+												} else if ( (( BinaryOp ) hi_1 ).getOp() == Types.OpOp2.NOTEQUAL ) {
+													hi = _applyRewrite230(hi); // !=(A,!=(rev(A),c)) => !=(A,!=(A,c))
+													hi = _applyRewrite231(hi); // !=(A,!=(c,rev(A))) => !=(A,!=(A,c))
+													hi = _applyRewrite240(hi); // !=(A,!=(rev(A),C)) => !=(A,!=(A,C))
+													hi = _applyRewrite241(hi); // !=(A,!=(C,rev(A))) => !=(A,!=(A,C))
+												} else if ( (( BinaryOp ) hi_1 ).getOp() == Types.OpOp2.MULT ) {
+													hi = _applyRewrite376(hi); // !=(A,*(rev(A),c)) => !=(A,*(A,c))
+													hi = _applyRewrite377(hi); // !=(A,*(c,rev(A))) => !=(A,*(A,c))
+													hi = _applyRewrite386(hi); // !=(A,*(rev(A),C)) => !=(A,*(A,C))
+													hi = _applyRewrite387(hi); // !=(A,*(C,rev(A))) => !=(A,*(A,C))
+												} else if ( (( BinaryOp ) hi_1 ).getOp() == Types.OpOp2.DIV ) {
+													hi = _applyRewrite412(hi); // !=(A,/(b,rev(A))) => !=(A,/(b,A))
+													hi = _applyRewrite417(hi); // !=(A,/(B,rev(A))) => !=(A,/(B,A))
+													hi = _applyRewrite420(hi); // !=(A,/(rev(A),C)) => !=(A,/(A,C))
+												}
+											} else if ( hi_1 instanceof AggUnaryOp ) {
+												hi = _applyRewrite439(hi); // !=(A,rowSums(rev(A))) => !=(A,rowSums(A))
+												hi = _applyRewrite440(hi); // !=(A,colSums(rev(A))) => !=(A,colSums(A))
+											} else if ( hi_1 instanceof AggBinaryOp ) {
+												hi = _applyRewrite465(hi); // !=(A,%*%(B,rev(A))) => !=(A,%*%(B,A))
+												hi = _applyRewrite469(hi); // !=(A,%*%(rev(A),C)) => !=(A,%*%(A,C))
+											} else {
+												if ( hi_0_0.getDataType() == Types.DataType.MATRIX ) {
+													hi = _applyRewrite373(hi); // !=(*(rev(A),c),A) => !=(A,*(A,c))
+													hi = _applyRewrite382(hi); // !=(*(rev(A),C),A) => !=(A,*(A,C))
+													hi = _applyRewrite383(hi); // !=(*(C,rev(A)),A) => !=(A,*(A,C))
+													hi = _applyRewrite384(hi); // !=(*(C,A),rev(A)) => !=(A,*(A,C))
+													hi = _applyRewrite385(hi); // !=(*(A,C),rev(A)) => !=(A,*(A,C))
+												} else if ( hi_0_0.getDataType() == Types.DataType.SCALAR ) {
+													hi = _applyRewrite374(hi); // !=(*(c,rev(A)),A) => !=(A,*(A,c))
+													hi = _applyRewrite375(hi); // !=(*(c,A),rev(A)) => !=(A,*(A,c))
+												}
+											}
+										}
+									}
+								} else if ( (( BinaryOp ) hi_0 ).getOp() == Types.OpOp2.DIV ) {
+									if ( hi_0.getInput().size() == 2 ) {
+										Hop hi_0_0 = hi_0.getInput(0);
+										Hop hi_0_1 = hi_0.getInput(1);
+										if ( hi_1.getDataType() == Types.DataType.MATRIX ) {
+											if ( hi_1 instanceof ReorgOp ) {
+												if ( (( ReorgOp ) hi_1 ).getOp() == Types.ReOrgOp.TRANS ) {
+													hi = _applyRewrite185(hi); // !=(t(A),t(B)) => t(!=(A,B))
+												} else if ( (( ReorgOp ) hi_1 ).getOp() == Types.ReOrgOp.REV ) {
+													if ( hi_1.getInput().size() == 1 ) {
+														Hop hi_1_0 = hi_1.getInput(0);
+														if ( hi_0_0.getDataType() == Types.DataType.SCALAR ) {
+															hi = _applyRewrite410(hi); // !=(/(b,rev(A)),A) => !=(A,/(b,A))
+															hi = _applyRewrite411(hi); // !=(/(b,A),rev(A)) => !=(A,/(b,A))
+														} else if ( hi_0_0.getDataType() == Types.DataType.MATRIX ) {
+															hi = _applyRewrite415(hi); // !=(/(B,rev(A)),A) => !=(A,/(B,A))
+															hi = _applyRewrite416(hi); // !=(/(B,A),rev(A)) => !=(A,/(B,A))
+															hi = _applyRewrite418(hi); // !=(/(rev(A),C),A) => !=(A,/(A,C))
+															hi = _applyRewrite419(hi); // !=(/(A,C),rev(A)) => !=(A,/(A,C))
+														}
+													}
+												}
+											} else if ( hi_1 instanceof BinaryOp ) {
+												if ( (( BinaryOp ) hi_1 ).getOp() == Types.OpOp2.MINUS ) {
+													hi = _applyRewrite197(hi); // !=(A,-(b,rev(A))) => !=(A,-(b,A))
+													hi = _applyRewrite201(hi); // !=(A,-(rev(A),c)) => !=(A,-(A,c))
+													hi = _applyRewrite204(hi); // !=(A,-(B,rev(A))) => !=(A,-(B,A))
+													hi = _applyRewrite207(hi); // !=(A,-(rev(A),C)) => !=(A,-(A,C))
+												} else if ( (( BinaryOp ) hi_1 ).getOp() == Types.OpOp2.PLUS ) {
+													hi = _applyRewrite219(hi); // !=(A,+(rev(A),c)) => !=(A,+(A,c))
+													hi = _applyRewrite220(hi); // !=(A,+(c,rev(A))) => !=(A,+(A,c))
+													hi = _applyRewrite225(hi); // !=(A,+(rev(A),C)) => !=(A,+(A,C))
+													hi = _applyRewrite226(hi); // !=(A,+(C,rev(A))) => !=(A,+(A,C))
+												} else if ( (( BinaryOp ) hi_1 ).getOp() == Types.OpOp2.NOTEQUAL ) {
+													hi = _applyRewrite230(hi); // !=(A,!=(rev(A),c)) => !=(A,!=(A,c))
+													hi = _applyRewrite231(hi); // !=(A,!=(c,rev(A))) => !=(A,!=(A,c))
+													hi = _applyRewrite240(hi); // !=(A,!=(rev(A),C)) => !=(A,!=(A,C))
+													hi = _applyRewrite241(hi); // !=(A,!=(C,rev(A))) => !=(A,!=(A,C))
+												} else if ( (( BinaryOp ) hi_1 ).getOp() == Types.OpOp2.MULT ) {
+													hi = _applyRewrite376(hi); // !=(A,*(rev(A),c)) => !=(A,*(A,c))
+													hi = _applyRewrite377(hi); // !=(A,*(c,rev(A))) => !=(A,*(A,c))
+													hi = _applyRewrite386(hi); // !=(A,*(rev(A),C)) => !=(A,*(A,C))
+													hi = _applyRewrite387(hi); // !=(A,*(C,rev(A))) => !=(A,*(A,C))
+												} else if ( (( BinaryOp ) hi_1 ).getOp() == Types.OpOp2.DIV ) {
+													hi = _applyRewrite412(hi); // !=(A,/(b,rev(A))) => !=(A,/(b,A))
+													hi = _applyRewrite417(hi); // !=(A,/(B,rev(A))) => !=(A,/(B,A))
+													hi = _applyRewrite420(hi); // !=(A,/(rev(A),C)) => !=(A,/(A,C))
+												}
+											} else if ( hi_1 instanceof AggUnaryOp ) {
+												hi = _applyRewrite439(hi); // !=(A,rowSums(rev(A))) => !=(A,rowSums(A))
+												hi = _applyRewrite440(hi); // !=(A,colSums(rev(A))) => !=(A,colSums(A))
+											} else if ( hi_1 instanceof AggBinaryOp ) {
+												hi = _applyRewrite465(hi); // !=(A,%*%(B,rev(A))) => !=(A,%*%(B,A))
+												hi = _applyRewrite469(hi); // !=(A,%*%(rev(A),C)) => !=(A,%*%(A,C))
+											} else {
+												if ( hi_0_0.getDataType() == Types.DataType.SCALAR ) {
+													hi = _applyRewrite410(hi); // !=(/(b,rev(A)),A) => !=(A,/(b,A))
+													hi = _applyRewrite411(hi); // !=(/(b,A),rev(A)) => !=(A,/(b,A))
+												} else if ( hi_0_0.getDataType() == Types.DataType.MATRIX ) {
+													hi = _applyRewrite415(hi); // !=(/(B,rev(A)),A) => !=(A,/(B,A))
+													hi = _applyRewrite416(hi); // !=(/(B,A),rev(A)) => !=(A,/(B,A))
+													hi = _applyRewrite418(hi); // !=(/(rev(A),C),A) => !=(A,/(A,C))
+													hi = _applyRewrite419(hi); // !=(/(A,C),rev(A)) => !=(A,/(A,C))
+												}
+											}
+										}
+									}
+								}
+							} else if ( hi_0 instanceof AggBinaryOp ) {
+								hi = _applyRewrite464(hi); // !=(%*%(B,rev(A)),A) => !=(A,%*%(B,A))
+								hi = _applyRewrite468(hi); // !=(%*%(rev(A),C),A) => !=(A,%*%(A,C))
+							} else {
+								if ( hi_1.getDataType() == Types.DataType.MATRIX ) {
+									if ( hi_1 instanceof ReorgOp ) {
+										if ( (( ReorgOp ) hi_1 ).getOp() == Types.ReOrgOp.TRANS ) {
+											hi = _applyRewrite185(hi); // !=(t(A),t(B)) => t(!=(A,B))
+										} else if ( (( ReorgOp ) hi_1 ).getOp() == Types.ReOrgOp.REV ) {
+											if ( hi_1.getInput().size() == 1 ) {
+												Hop hi_1_0 = hi_1.getInput(0);
+												if ( hi_1_0.getDataType() == Types.DataType.MATRIX ) {
+													if ( hi_1_0 instanceof BinaryOp ) {
+														if ( (( BinaryOp ) hi_1_0 ).getOp() == Types.OpOp2.MINUS ) {
+															hi = _applyRewrite194(hi); // !=(A,rev(-(b,A))) => !=(A,-(b,A))
+															hi = _applyRewrite199(hi); // !=(A,rev(-(A,c))) => !=(A,-(A,c))
+														} else if ( (( BinaryOp ) hi_1_0 ).getOp() == Types.OpOp2.PLUS ) {
+															hi = _applyRewrite214(hi); // !=(A,rev(+(c,A))) => !=(A,+(A,c))
+															hi = _applyRewrite215(hi); // !=(A,rev(+(A,c))) => !=(A,+(A,c))
+														} else if ( (( BinaryOp ) hi_1_0 ).getOp() == Types.OpOp2.NOTEQUAL ) {
+															hi = _applyRewrite234(hi); // !=(A,rev(!=(c,A))) => !=(A,!=(A,c))
+															hi = _applyRewrite235(hi); // !=(A,rev(!=(A,c))) => !=(A,!=(A,c))
+														} else if ( (( BinaryOp ) hi_1_0 ).getOp() == Types.OpOp2.MULT ) {
+															hi = _applyRewrite380(hi); // !=(A,rev(*(c,A))) => !=(A,*(A,c))
+															hi = _applyRewrite381(hi); // !=(A,rev(*(A,c))) => !=(A,*(A,c))
+														} else if ( (( BinaryOp ) hi_1_0 ).getOp() == Types.OpOp2.DIV ) {
+															hi = _applyRewrite414(hi); // !=(A,rev(/(b,A))) => !=(A,/(b,A))
+														}
+													} else if ( hi_1_0 instanceof AggUnaryOp ) {
+														hi = _applyRewrite438(hi); // !=(A,rev(rowSums(A))) => !=(A,rowSums(A))
+													} else if ( hi_1_0 instanceof AggBinaryOp ) {
+														hi = _applyRewrite467(hi); // !=(A,rev(%*%(A,C))) => !=(A,%*%(A,C))
+													} else {
+														hi = _applyRewrite186(hi); // !=(rev(A),rev(A)) => rev(!=(A,A))
+														hi = _applyRewrite196(hi); // !=(-(b,A),rev(A)) => !=(A,-(b,A))
+														hi = _applyRewrite203(hi); // !=(-(B,A),rev(A)) => !=(A,-(B,A))
+														hi = _applyRewrite206(hi); // !=(-(A,C),rev(A)) => !=(A,-(A,C))
+														hi = _applyRewrite218(hi); // !=(+(c,A),rev(A)) => !=(A,+(A,c))
+														hi = _applyRewrite223(hi); // !=(+(C,A),rev(A)) => !=(A,+(A,C))
+														hi = _applyRewrite224(hi); // !=(+(A,C),rev(A)) => !=(A,+(A,C))
+														hi = _applyRewrite229(hi); // !=(!=(c,A),rev(A)) => !=(A,!=(A,c))
+														hi = _applyRewrite238(hi); // !=(!=(C,A),rev(A)) => !=(A,!=(A,C))
+														hi = _applyRewrite239(hi); // !=(!=(A,C),rev(A)) => !=(A,!=(A,C))
+														hi = _applyRewrite375(hi); // !=(*(c,A),rev(A)) => !=(A,*(A,c))
+														hi = _applyRewrite384(hi); // !=(*(C,A),rev(A)) => !=(A,*(A,C))
+														hi = _applyRewrite385(hi); // !=(*(A,C),rev(A)) => !=(A,*(A,C))
+														hi = _applyRewrite411(hi); // !=(/(b,A),rev(A)) => !=(A,/(b,A))
+														hi = _applyRewrite416(hi); // !=(/(B,A),rev(A)) => !=(A,/(B,A))
+														hi = _applyRewrite419(hi); // !=(/(A,C),rev(A)) => !=(A,/(A,C))
+													}
+												}
+											}
+										}
+									} else if ( hi_1 instanceof BinaryOp ) {
+										if ( (( BinaryOp ) hi_1 ).getOp() == Types.OpOp2.MINUS ) {
+											hi = _applyRewrite197(hi); // !=(A,-(b,rev(A))) => !=(A,-(b,A))
+											hi = _applyRewrite201(hi); // !=(A,-(rev(A),c)) => !=(A,-(A,c))
+											hi = _applyRewrite204(hi); // !=(A,-(B,rev(A))) => !=(A,-(B,A))
+											hi = _applyRewrite207(hi); // !=(A,-(rev(A),C)) => !=(A,-(A,C))
+										} else if ( (( BinaryOp ) hi_1 ).getOp() == Types.OpOp2.PLUS ) {
+											hi = _applyRewrite219(hi); // !=(A,+(rev(A),c)) => !=(A,+(A,c))
+											hi = _applyRewrite220(hi); // !=(A,+(c,rev(A))) => !=(A,+(A,c))
+											hi = _applyRewrite225(hi); // !=(A,+(rev(A),C)) => !=(A,+(A,C))
+											hi = _applyRewrite226(hi); // !=(A,+(C,rev(A))) => !=(A,+(A,C))
+										} else if ( (( BinaryOp ) hi_1 ).getOp() == Types.OpOp2.NOTEQUAL ) {
+											hi = _applyRewrite230(hi); // !=(A,!=(rev(A),c)) => !=(A,!=(A,c))
+											hi = _applyRewrite231(hi); // !=(A,!=(c,rev(A))) => !=(A,!=(A,c))
+											hi = _applyRewrite240(hi); // !=(A,!=(rev(A),C)) => !=(A,!=(A,C))
+											hi = _applyRewrite241(hi); // !=(A,!=(C,rev(A))) => !=(A,!=(A,C))
+										} else if ( (( BinaryOp ) hi_1 ).getOp() == Types.OpOp2.MULT ) {
+											hi = _applyRewrite376(hi); // !=(A,*(rev(A),c)) => !=(A,*(A,c))
+											hi = _applyRewrite377(hi); // !=(A,*(c,rev(A))) => !=(A,*(A,c))
+											hi = _applyRewrite386(hi); // !=(A,*(rev(A),C)) => !=(A,*(A,C))
+											hi = _applyRewrite387(hi); // !=(A,*(C,rev(A))) => !=(A,*(A,C))
+										} else if ( (( BinaryOp ) hi_1 ).getOp() == Types.OpOp2.DIV ) {
+											hi = _applyRewrite412(hi); // !=(A,/(b,rev(A))) => !=(A,/(b,A))
+											hi = _applyRewrite417(hi); // !=(A,/(B,rev(A))) => !=(A,/(B,A))
+											hi = _applyRewrite420(hi); // !=(A,/(rev(A),C)) => !=(A,/(A,C))
+										}
+									} else if ( hi_1 instanceof AggUnaryOp ) {
+										hi = _applyRewrite439(hi); // !=(A,rowSums(rev(A))) => !=(A,rowSums(A))
+										hi = _applyRewrite440(hi); // !=(A,colSums(rev(A))) => !=(A,colSums(A))
+									} else if ( hi_1 instanceof AggBinaryOp ) {
+										hi = _applyRewrite465(hi); // !=(A,%*%(B,rev(A))) => !=(A,%*%(B,A))
+										hi = _applyRewrite469(hi); // !=(A,%*%(rev(A),C)) => !=(A,%*%(A,C))
+									} else {
+										hi = _applyRewrite193(hi); // !=(rev(-(b,A)),A) => !=(A,-(b,A))
+										hi = _applyRewrite195(hi); // !=(-(b,rev(A)),A) => !=(A,-(b,A))
+										hi = _applyRewrite198(hi); // !=(rev(-(A,c)),A) => !=(A,-(A,c))
+										hi = _applyRewrite200(hi); // !=(-(rev(A),c),A) => !=(A,-(A,c))
+										hi = _applyRewrite202(hi); // !=(-(B,rev(A)),A) => !=(A,-(B,A))
+										hi = _applyRewrite205(hi); // !=(-(rev(A),C),A) => !=(A,-(A,C))
+										hi = _applyRewrite212(hi); // !=(rev(+(c,A)),A) => !=(A,+(A,c))
+										hi = _applyRewrite213(hi); // !=(rev(+(A,c)),A) => !=(A,+(A,c))
+										hi = _applyRewrite216(hi); // !=(+(rev(A),c),A) => !=(A,+(A,c))
+										hi = _applyRewrite217(hi); // !=(+(c,rev(A)),A) => !=(A,+(A,c))
+										hi = _applyRewrite221(hi); // !=(+(rev(A),C),A) => !=(A,+(A,C))
+										hi = _applyRewrite222(hi); // !=(+(C,rev(A)),A) => !=(A,+(A,C))
+										hi = _applyRewrite227(hi); // !=(!=(rev(A),c),A) => !=(A,!=(A,c))
+										hi = _applyRewrite228(hi); // !=(!=(c,rev(A)),A) => !=(A,!=(A,c))
+										hi = _applyRewrite232(hi); // !=(rev(!=(c,A)),A) => !=(A,!=(A,c))
+										hi = _applyRewrite233(hi); // !=(rev(!=(A,c)),A) => !=(A,!=(A,c))
+										hi = _applyRewrite236(hi); // !=(!=(rev(A),C),A) => !=(A,!=(A,C))
+										hi = _applyRewrite237(hi); // !=(!=(C,rev(A)),A) => !=(A,!=(A,C))
+										hi = _applyRewrite373(hi); // !=(*(rev(A),c),A) => !=(A,*(A,c))
+										hi = _applyRewrite374(hi); // !=(*(c,rev(A)),A) => !=(A,*(A,c))
+										hi = _applyRewrite378(hi); // !=(rev(*(c,A)),A) => !=(A,*(A,c))
+										hi = _applyRewrite379(hi); // !=(rev(*(A,c)),A) => !=(A,*(A,c))
+										hi = _applyRewrite382(hi); // !=(*(rev(A),C),A) => !=(A,*(A,C))
+										hi = _applyRewrite383(hi); // !=(*(C,rev(A)),A) => !=(A,*(A,C))
+										hi = _applyRewrite410(hi); // !=(/(b,rev(A)),A) => !=(A,/(b,A))
+										hi = _applyRewrite413(hi); // !=(rev(/(b,A)),A) => !=(A,/(b,A))
+										hi = _applyRewrite415(hi); // !=(/(B,rev(A)),A) => !=(A,/(B,A))
+										hi = _applyRewrite418(hi); // !=(/(rev(A),C),A) => !=(A,/(A,C))
+										hi = _applyRewrite464(hi); // !=(%*%(B,rev(A)),A) => !=(A,%*%(B,A))
+										hi = _applyRewrite466(hi); // !=(rev(%*%(A,C)),A) => !=(A,%*%(A,C))
+										hi = _applyRewrite468(hi); // !=(%*%(rev(A),C),A) => !=(A,%*%(A,C))
+									}
+								}
+							}
+						}
+					}
+				}
+			} else if ( hi instanceof AggUnaryOp ) {
+				if ( (( AggUnaryOp ) hi ).getOp() == Types.AggOp.SUM ) {
+					if ( hi.getInput().size() == 1 ) {
+						Hop hi_0 = hi.getInput(0);
+						if ( hi_0.getDataType() == Types.DataType.MATRIX ) {
+							if ( hi_0 instanceof BinaryOp ) {
+								if ( (( BinaryOp ) hi_0 ).getOp() == Types.OpOp2.MULT ) {
+									if ( hi_0.getInput().size() == 2 ) {
+										Hop hi_0_0 = hi_0.getInput(0);
+										Hop hi_0_1 = hi_0.getInput(1);
+										if ( hi_0_0.getDataType() == Types.DataType.SCALAR ) {
+											hi = _applyRewrite21(hi); // colSums(*(a,B)) => *(a,colSums(B))
+											hi = _applyRewrite23(hi); // rowSums(*(a,B)) => *(a,rowSums(B))
+										} else if ( hi_0_0.getDataType() == Types.DataType.MATRIX ) {
+											if ( hi_0_0 instanceof BinaryOp ) {
+												hi = _applyRewrite162(hi); // colSums(*(/(a,C),B)) => *(a,colSums(/(B,C)))
+												hi = _applyRewrite164(hi); // rowSums(*(/(a,C),B)) => *(a,rowSums(/(B,C)))
+											} else {
+												hi = _applyRewrite22(hi); // colSums(*(B,a)) => *(a,colSums(B))
+												hi = _applyRewrite24(hi); // rowSums(*(B,a)) => *(a,rowSums(B))
+												hi = _applyRewrite163(hi); // colSums(*(B,/(a,C))) => *(a,colSums(/(B,C)))
+												hi = _applyRewrite165(hi); // rowSums(*(B,/(a,C))) => *(a,rowSums(/(B,C)))
+											}
+										}
+									}
+								} else if ( (( BinaryOp ) hi_0 ).getOp() == Types.OpOp2.MINUS ) {
+									if ( hi_0.getInput().size() == 2 ) {
+										Hop hi_0_0 = hi_0.getInput(0);
+										Hop hi_0_1 = hi_0.getInput(1);
+										if ( hi_0_0.getDataType() == Types.DataType.SCALAR ) {
+											if ( hi_0_1.getDataType() == Types.DataType.MATRIX ) {
+												if ( hi_0_1 instanceof ReorgOp ) {
+													hi = _applyRewrite358(hi); // colSums(-(a,t(B))) => t(rowSums(-(a,B)))
+													hi = _applyRewrite360(hi); // rowSums(-(a,t(B))) => t(colSums(-(a,B)))
+												} else {
+													hi = _applyRewrite61(hi); // colSums(-(0.0,B)) => -(0.0,colSums(B))
+													hi = _applyRewrite62(hi); // rowSums(-(0.0,B)) => -(0.0,rowSums(B))
+												}
+											} else if ( hi_0_1.getDataType() == Types.DataType.SCALAR ) {
+												hi = _applyRewrite357(hi); // colSums(-(t(A),b)) => t(rowSums(-(A,b)))
+												hi = _applyRewrite359(hi); // rowSums(-(t(A),b)) => t(colSums(-(A,b)))
+											}
+										} else if ( hi_0_0.getDataType() == Types.DataType.MATRIX ) {
+											hi = _applyRewrite357(hi); // colSums(-(t(A),b)) => t(rowSums(-(A,b)))
+											hi = _applyRewrite359(hi); // rowSums(-(t(A),b)) => t(colSums(-(A,b)))
+										}
+									}
+								} else if ( (( BinaryOp ) hi_0 ).getOp() == Types.OpOp2.PLUS ) {
+									if ( hi_0.getInput().size() == 2 ) {
+										Hop hi_0_0 = hi_0.getInput(0);
+										Hop hi_0_1 = hi_0.getInput(1);
+										if ( hi_0_0.getDataType() == Types.DataType.SCALAR ) {
+											hi = _applyRewrite366(hi); // colSums(+(b,t(A))) => t(rowSums(+(A,b)))
+											hi = _applyRewrite368(hi); // rowSums(+(b,t(A))) => t(colSums(+(A,b)))
+										} else if ( hi_0_0.getDataType() == Types.DataType.MATRIX ) {
+											hi = _applyRewrite365(hi); // colSums(+(t(A),b)) => t(rowSums(+(A,b)))
+											hi = _applyRewrite367(hi); // rowSums(+(t(A),b)) => t(colSums(+(A,b)))
+										}
+									}
+								} else if ( (( BinaryOp ) hi_0 ).getOp() == Types.OpOp2.DIV ) {
+									if ( hi_0.getInput().size() == 2 ) {
+										Hop hi_0_0 = hi_0.getInput(0);
+										Hop hi_0_1 = hi_0.getInput(1);
+										if ( hi_0_0.getDataType() == Types.DataType.MATRIX ) {
+											hi = _applyRewrite160(hi); // colSums(/(*(a,B),C)) => *(a,colSums(/(B,C)))
+											hi = _applyRewrite161(hi); // colSums(/(*(B,a),C)) => *(a,colSums(/(B,C)))
+											hi = _applyRewrite166(hi); // rowSums(/(*(a,B),C)) => *(a,rowSums(/(B,C)))
+											hi = _applyRewrite167(hi); // rowSums(/(*(B,a),C)) => *(a,rowSums(/(B,C)))
+										} else if ( hi_0_0.getDataType() == Types.DataType.SCALAR ) {
+											hi = _applyRewrite428(hi); // colSums(/(a,t(B))) => t(rowSums(/(a,B)))
+											hi = _applyRewrite429(hi); // rowSums(/(a,t(B))) => t(colSums(/(a,B)))
+										}
+									}
+								} else if ( (( BinaryOp ) hi_0 ).getOp() == Types.OpOp2.NOTEQUAL ) {
+									hi = _applyRewrite361(hi); // colSums(!=(t(A),b)) => t(rowSums(!=(A,b)))
+									hi = _applyRewrite362(hi); // colSums(!=(b,t(A))) => t(rowSums(!=(A,b)))
+									hi = _applyRewrite363(hi); // rowSums(!=(t(A),b)) => t(colSums(!=(A,b)))
+									hi = _applyRewrite364(hi); // rowSums(!=(b,t(A))) => t(colSums(!=(A,b)))
+								}
+							} else if ( hi_0 instanceof ReorgOp ) {
+								hi = _applyRewrite114(hi); // rowSums(rev(*(a,B))) => *(a,rowSums(rev(B)))
+								hi = _applyRewrite115(hi); // rowSums(rev(*(B,a))) => *(a,rowSums(rev(B)))
+								hi = _applyRewrite116(hi); // colSums(rev(*(a,B))) => *(a,colSums(rev(B)))
+								hi = _applyRewrite117(hi); // colSums(rev(*(B,a))) => *(a,colSums(rev(B)))
+							}
+						}
+					}
+				}
+			} else if ( hi instanceof ReorgOp ) {
+				if ( (( ReorgOp ) hi ).getOp() == Types.ReOrgOp.REV ) {
+					if ( hi.getInput().size() == 1 ) {
+						Hop hi_0 = hi.getInput(0);
+						if ( hi_0.getDataType() == Types.DataType.MATRIX ) {
+						}
+					}
+				} else if ( (( ReorgOp ) hi ).getOp() == Types.ReOrgOp.TRANS ) {
+					if ( hi.getInput().size() == 1 ) {
+						Hop hi_0 = hi.getInput(0);
+						if ( hi_0.getDataType() == Types.DataType.MATRIX ) {
+							if ( hi_0 instanceof BinaryOp ) {
+								if ( (( BinaryOp ) hi_0 ).getOp() == Types.OpOp2.MINUS ) {
+									hi = _applyRewrite99(hi); // t(-(a,t(B))) => -(a,B)
+									hi = _applyRewrite101(hi); // t(-(t(A),b)) => -(A,b)
+									hi = _applyRewrite189(hi); // t(-(t(A),B)) => -(A,t(B))
+									hi = _applyRewrite190(hi); // t(-(A,t(B))) => -(t(A),B)
+								} else if ( (( BinaryOp ) hi_0 ).getOp() == Types.OpOp2.NOTEQUAL ) {
+									hi = _applyRewrite104(hi); // t(!=(t(A),b)) => !=(A,b)
+									hi = _applyRewrite105(hi); // t(!=(b,t(A))) => !=(A,b)
+									hi = _applyRewrite210(hi); // t(!=(t(A),B)) => !=(A,t(B))
+									hi = _applyRewrite211(hi); // t(!=(B,t(A))) => !=(A,t(B))
+								} else if ( (( BinaryOp ) hi_0 ).getOp() == Types.OpOp2.PLUS ) {
+									hi = _applyRewrite108(hi); // t(+(t(A),b)) => +(A,b)
+									hi = _applyRewrite109(hi); // t(+(b,t(A))) => +(A,b)
+									hi = _applyRewrite244(hi); // t(+(t(A),B)) => +(A,t(B))
+									hi = _applyRewrite245(hi); // t(+(B,t(A))) => +(A,t(B))
+								} else if ( (( BinaryOp ) hi_0 ).getOp() == Types.OpOp2.MULT ) {
+									hi = _applyRewrite112(hi); // t(*(t(A),b)) => *(A,b)
+									hi = _applyRewrite113(hi); // t(*(b,t(A))) => *(A,b)
+									hi = _applyRewrite390(hi); // t(*(t(A),B)) => *(A,t(B))
+									hi = _applyRewrite391(hi); // t(*(B,t(A))) => *(A,t(B))
+								} else if ( (( BinaryOp ) hi_0 ).getOp() == Types.OpOp2.DIV ) {
+									hi = _applyRewrite119(hi); // t(/(a,t(B))) => /(a,B)
+									hi = _applyRewrite407(hi); // t(/(t(A),B)) => /(A,t(B))
+									hi = _applyRewrite408(hi); // t(/(A,t(B))) => /(t(A),B)
+								}
+							} else if ( hi_0 instanceof AggBinaryOp ) {
+								hi = _applyRewrite461(hi); // t(%*%(t(B),A)) => %*%(t(A),B)
+								hi = _applyRewrite462(hi); // t(%*%(B,t(A))) => %*%(A,t(B))
+							}
+						}
+					}
+				}
+			} else if ( hi instanceof AggBinaryOp ) {
+				if ( HopRewriteUtils.isMatrixMultiply(hi) ) {
+					if ( hi.getInput().size() == 2 ) {
+						Hop hi_0 = hi.getInput(0);
+						Hop hi_1 = hi.getInput(1);
+						if ( hi_0.getDataType() == Types.DataType.MATRIX ) {
+							if ( hi_0 instanceof AggUnaryOp ) {
+								hi = _applyRewrite156(hi); // %*%(colSums(B),*(a,C)) => *(a,%*%(colSums(B),C))
+								hi = _applyRewrite157(hi); // %*%(colSums(B),*(C,a)) => *(a,%*%(colSums(B),C))
+							} else if ( hi_0 instanceof BinaryOp ) {
+								if ( (( BinaryOp ) hi_0 ).getOp() == Types.OpOp2.MULT ) {
+									if ( hi_0.getInput().size() == 2 ) {
+										Hop hi_0_0 = hi_0.getInput(0);
+										Hop hi_0_1 = hi_0.getInput(1);
+										if ( hi_1.getDataType() == Types.DataType.MATRIX ) {
+											if ( hi_1 instanceof BinaryOp ) {
+												if ( (( BinaryOp ) hi_1 ).getOp() == Types.OpOp2.MULT ) {
+													if ( hi_1.getInput().size() == 2 ) {
+														Hop hi_1_0 = hi_1.getInput(0);
+														Hop hi_1_1 = hi_1.getInput(1);
+														if ( hi_0_0.getDataType() == Types.DataType.SCALAR ) {
+															hi = _applyRewrite158(hi); // %*%(*(a,B),rowSums(C)) => *(a,%*%(B,rowSums(C)))
+															hi = _applyRewrite443(hi); // %*%(*(a,C),*(b,D)) => *(*(a,b),%*%(C,D))
+															hi = _applyRewrite444(hi); // %*%(*(a,C),*(D,b)) => *(*(a,b),%*%(C,D))
+															hi = _applyRewrite457(hi); // %*%(*(b,A),/(c,D)) => %*%(A,/(*(b,c),D))
+														} else if ( hi_0_0.getDataType() == Types.DataType.MATRIX ) {
+															hi = _applyRewrite159(hi); // %*%(*(B,a),rowSums(C)) => *(a,%*%(B,rowSums(C)))
+															hi = _applyRewrite445(hi); // %*%(*(C,a),*(b,D)) => *(*(a,b),%*%(C,D))
+															hi = _applyRewrite446(hi); // %*%(*(C,a),*(D,b)) => *(*(a,b),%*%(C,D))
+															hi = _applyRewrite458(hi); // %*%(*(A,b),/(c,D)) => %*%(A,/(*(b,c),D))
+														}
+													}
+												} else if ( (( BinaryOp ) hi_1 ).getOp() == Types.OpOp2.DIV ) {
+													hi = _applyRewrite457(hi); // %*%(*(b,A),/(c,D)) => %*%(A,/(*(b,c),D))
+													hi = _applyRewrite458(hi); // %*%(*(A,b),/(c,D)) => %*%(A,/(*(b,c),D))
+												} else if ( (( BinaryOp ) hi_1 ).getOp() == Types.OpOp2.NOTEQUAL ) {
+													hi = _applyRewrite478(hi); // %*%(A,!=(rev(A),c)) => %*%(A,!=(A,c))
+													hi = _applyRewrite479(hi); // %*%(A,!=(c,rev(A))) => %*%(A,!=(A,c))
+													hi = _applyRewrite482(hi); // %*%(A,!=(rev(A),C)) => %*%(A,!=(A,C))
+													hi = _applyRewrite483(hi); // %*%(A,!=(C,rev(A))) => %*%(A,!=(A,C))
+												}
+											} else if ( hi_1 instanceof AggUnaryOp ) {
+												hi = _applyRewrite158(hi); // %*%(*(a,B),rowSums(C)) => *(a,%*%(B,rowSums(C)))
+												hi = _applyRewrite159(hi); // %*%(*(B,a),rowSums(C)) => *(a,%*%(B,rowSums(C)))
+											} else if ( hi_1 instanceof ReorgOp ) {
+												hi = _applyRewrite463(hi); // %*%(t(B),t(A)) => t(%*%(A,B))
+												hi = _applyRewrite480(hi); // %*%(A,rev(!=(c,A))) => %*%(A,!=(A,c))
+												hi = _applyRewrite481(hi); // %*%(A,rev(!=(A,c))) => %*%(A,!=(A,c))
+											} else {
+												if ( hi_0_0.getDataType() == Types.DataType.SCALAR ) {
+													hi = _applyRewrite158(hi); // %*%(*(a,B),rowSums(C)) => *(a,%*%(B,rowSums(C)))
+													hi = _applyRewrite443(hi); // %*%(*(a,C),*(b,D)) => *(*(a,b),%*%(C,D))
+													hi = _applyRewrite444(hi); // %*%(*(a,C),*(D,b)) => *(*(a,b),%*%(C,D))
+													hi = _applyRewrite457(hi); // %*%(*(b,A),/(c,D)) => %*%(A,/(*(b,c),D))
+												} else if ( hi_0_0.getDataType() == Types.DataType.MATRIX ) {
+													hi = _applyRewrite159(hi); // %*%(*(B,a),rowSums(C)) => *(a,%*%(B,rowSums(C)))
+													hi = _applyRewrite445(hi); // %*%(*(C,a),*(b,D)) => *(*(a,b),%*%(C,D))
+													hi = _applyRewrite446(hi); // %*%(*(C,a),*(D,b)) => *(*(a,b),%*%(C,D))
+													hi = _applyRewrite458(hi); // %*%(*(A,b),/(c,D)) => %*%(A,/(*(b,c),D))
+												}
+											}
+										}
+									}
+								} else if ( (( BinaryOp ) hi_0 ).getOp() == Types.OpOp2.DIV ) {
+									hi = _applyRewrite453(hi); // %*%(/(a,C),*(b,D)) => %*%(/(*(a,b),C),D)
+									hi = _applyRewrite454(hi); // %*%(/(a,C),*(D,b)) => %*%(/(*(a,b),C),D)
+								} else if ( (( BinaryOp ) hi_0 ).getOp() == Types.OpOp2.NOTEQUAL ) {
+									hi = _applyRewrite472(hi); // %*%(!=(rev(A),b),A) => %*%(!=(A,b),A)
+									hi = _applyRewrite473(hi); // %*%(!=(b,rev(A)),A) => %*%(!=(A,b),A)
+									hi = _applyRewrite476(hi); // %*%(!=(rev(A),B),A) => %*%(!=(A,B),A)
+									hi = _applyRewrite477(hi); // %*%(!=(B,rev(A)),A) => %*%(!=(A,B),A)
+								}
+							} else if ( hi_0 instanceof ReorgOp ) {
+								hi = _applyRewrite463(hi); // %*%(t(B),t(A)) => t(%*%(A,B))
+								hi = _applyRewrite474(hi); // %*%(rev(!=(b,A)),A) => %*%(!=(A,b),A)
+								hi = _applyRewrite475(hi); // %*%(rev(!=(A,b)),A) => %*%(!=(A,b),A)
+							} else {
+								if ( hi_1.getDataType() == Types.DataType.MATRIX ) {
+									if ( hi_1 instanceof BinaryOp ) {
+										if ( (( BinaryOp ) hi_1 ).getOp() == Types.OpOp2.MULT ) {
+											if ( hi_1.getInput().size() == 2 ) {
+												Hop hi_1_0 = hi_1.getInput(0);
+												Hop hi_1_1 = hi_1.getInput(1);
+												if ( hi_1_0.getDataType() == Types.DataType.SCALAR ) {
+													hi = _applyRewrite156(hi); // %*%(colSums(B),*(a,C)) => *(a,%*%(colSums(B),C))
+													hi = _applyRewrite443(hi); // %*%(*(a,C),*(b,D)) => *(*(a,b),%*%(C,D))
+													hi = _applyRewrite445(hi); // %*%(*(C,a),*(b,D)) => *(*(a,b),%*%(C,D))
+													hi = _applyRewrite453(hi); // %*%(/(a,C),*(b,D)) => %*%(/(*(a,b),C),D)
+												} else if ( hi_1_0.getDataType() == Types.DataType.MATRIX ) {
+													hi = _applyRewrite157(hi); // %*%(colSums(B),*(C,a)) => *(a,%*%(colSums(B),C))
+													hi = _applyRewrite444(hi); // %*%(*(a,C),*(D,b)) => *(*(a,b),%*%(C,D))
+													hi = _applyRewrite446(hi); // %*%(*(C,a),*(D,b)) => *(*(a,b),%*%(C,D))
+													hi = _applyRewrite454(hi); // %*%(/(a,C),*(D,b)) => %*%(/(*(a,b),C),D)
+												}
+											}
+										} else if ( (( BinaryOp ) hi_1 ).getOp() == Types.OpOp2.DIV ) {
+											hi = _applyRewrite457(hi); // %*%(*(b,A),/(c,D)) => %*%(A,/(*(b,c),D))
+											hi = _applyRewrite458(hi); // %*%(*(A,b),/(c,D)) => %*%(A,/(*(b,c),D))
+										} else if ( (( BinaryOp ) hi_1 ).getOp() == Types.OpOp2.NOTEQUAL ) {
+											hi = _applyRewrite478(hi); // %*%(A,!=(rev(A),c)) => %*%(A,!=(A,c))
+											hi = _applyRewrite479(hi); // %*%(A,!=(c,rev(A))) => %*%(A,!=(A,c))
+											hi = _applyRewrite482(hi); // %*%(A,!=(rev(A),C)) => %*%(A,!=(A,C))
+											hi = _applyRewrite483(hi); // %*%(A,!=(C,rev(A))) => %*%(A,!=(A,C))
+										}
+									} else if ( hi_1 instanceof AggUnaryOp ) {
+										hi = _applyRewrite158(hi); // %*%(*(a,B),rowSums(C)) => *(a,%*%(B,rowSums(C)))
+										hi = _applyRewrite159(hi); // %*%(*(B,a),rowSums(C)) => *(a,%*%(B,rowSums(C)))
+									} else if ( hi_1 instanceof ReorgOp ) {
+										hi = _applyRewrite463(hi); // %*%(t(B),t(A)) => t(%*%(A,B))
+										hi = _applyRewrite480(hi); // %*%(A,rev(!=(c,A))) => %*%(A,!=(A,c))
+										hi = _applyRewrite481(hi); // %*%(A,rev(!=(A,c))) => %*%(A,!=(A,c))
+									} else {
+										hi = _applyRewrite472(hi); // %*%(!=(rev(A),b),A) => %*%(!=(A,b),A)
+										hi = _applyRewrite473(hi); // %*%(!=(b,rev(A)),A) => %*%(!=(A,b),A)
+										hi = _applyRewrite474(hi); // %*%(rev(!=(b,A)),A) => %*%(!=(A,b),A)
+										hi = _applyRewrite475(hi); // %*%(rev(!=(A,b)),A) => %*%(!=(A,b),A)
+										hi = _applyRewrite476(hi); // %*%(!=(rev(A),B),A) => %*%(!=(A,B),A)
+										hi = _applyRewrite477(hi); // %*%(!=(B,rev(A)),A) => %*%(!=(A,B),A)
+									}
+								}
+							}
+						}
+					}
+				}
+			}
+		}
 		return hi;
 	}
 
@@ -1491,6 +2164,67 @@ public class GeneratedRewriteClass implements Function {
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_1);
+
+		return v2;
+	}
+
+	// Implementation of the rule sum(-(0.0,B)) => -(0.0,sum(B))
+	private static Hop _applyRewrite38(Hop hi) {
+		if ( !(hi instanceof AggUnaryOp) )
+			return hi;
+
+		AggUnaryOp c_hi = (AggUnaryOp) hi;
+
+		if ( c_hi.getOp() != Types.AggOp.SUM || !c_hi.getValueType().isNumeric() )
+			return hi;
+
+		if ( !(c_hi.getDirection() == Types.Direction.RowCol) )
+			return hi;
+
+		Hop hi_0 = hi.getInput(0);
+
+		if (hi_0.getParent().size() > 1)
+			return hi;
+		if ( !(hi_0 instanceof BinaryOp) )
+			return hi;
+
+		BinaryOp c_hi_0 = (BinaryOp) hi_0;
+
+		if ( c_hi_0.getOp() != Types.OpOp2.MINUS || !c_hi_0.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_0_0 = hi_0.getInput(0);
+
+		if ( !(hi_0_0 instanceof LiteralOp) )
+			return hi;
+
+		LiteralOp l_hi_0_0 = (LiteralOp) hi_0_0;
+
+		if ( l_hi_0_0.getDataType() != Types.DataType.SCALAR|| !l_hi_0_0.getValueType().isNumeric() )
+			return hi;
+
+		if ( l_hi_0_0.getDoubleValue() != 0.0 )
+			return hi;
+
+		Hop hi_0_1 = hi_0.getInput(1);
+
+		if ( hi_0_1.getDataType() != Types.DataType.MATRIX || !hi_0_1.getValueType().isNumeric() )
+			return hi;
+
+
+		// Now, we start building the new Hop
+		System.out.println("Applying rewrite: sum(-(0.0,B)) => -(0.0,sum(B))");
+		AggUnaryOp v1 = HopRewriteUtils.createAggUnaryOp(hi_0_1, Types.AggOp.SUM, Types.Direction.RowCol);
+		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0_0, v1, Types.OpOp2.MINUS);
+
+		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
+
+		for ( Hop p : parents )
+			HopRewriteUtils.replaceChildReference(p, hi, v2);
+
+		// Remove old unreferenced Hops
+		HopRewriteUtils.cleanupUnreferenced(hi);
+		HopRewriteUtils.cleanupUnreferenced(hi_0);
 
 		return v2;
 	}
@@ -6064,6 +6798,294 @@ public class GeneratedRewriteClass implements Function {
 		return v3;
 	}
 
+	// Implementation of the rule sum(/(*(a,B),C)) => *(a,sum(/(B,C)))
+	private static Hop _applyRewrite148(Hop hi) {
+		if ( !(hi instanceof AggUnaryOp) )
+			return hi;
+
+		AggUnaryOp c_hi = (AggUnaryOp) hi;
+
+		if ( c_hi.getOp() != Types.AggOp.SUM || !c_hi.getValueType().isNumeric() )
+			return hi;
+
+		if ( !(c_hi.getDirection() == Types.Direction.RowCol) )
+			return hi;
+
+		Hop hi_0 = hi.getInput(0);
+
+		if (hi_0.getParent().size() > 1)
+			return hi;
+		if ( !(hi_0 instanceof BinaryOp) )
+			return hi;
+
+		BinaryOp c_hi_0 = (BinaryOp) hi_0;
+
+		if ( c_hi_0.getOp() != Types.OpOp2.DIV || !c_hi_0.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_0_0 = hi_0.getInput(0);
+
+		if (hi_0_0.getParent().size() > 1)
+			return hi;
+		if ( !(hi_0_0 instanceof BinaryOp) )
+			return hi;
+
+		BinaryOp c_hi_0_0 = (BinaryOp) hi_0_0;
+
+		if ( c_hi_0_0.getOp() != Types.OpOp2.MULT || !c_hi_0_0.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_0_0_0 = hi_0_0.getInput(0);
+
+		if ( hi_0_0_0.getDataType() != Types.DataType.SCALAR || !hi_0_0_0.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_0_0_1 = hi_0_0.getInput(1);
+
+		if ( hi_0_0_1.getDataType() != Types.DataType.MATRIX || !hi_0_0_1.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_0_1 = hi_0.getInput(1);
+
+		if ( hi_0_1.getDataType() != Types.DataType.MATRIX || !hi_0_1.getValueType().isNumeric() )
+			return hi;
+
+
+		// Now, we start building the new Hop
+		System.out.println("Applying rewrite: sum(/(*(a,B),C)) => *(a,sum(/(B,C)))");
+		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0_1, hi_0_1, Types.OpOp2.DIV);
+		AggUnaryOp v2 = HopRewriteUtils.createAggUnaryOp(v1, Types.AggOp.SUM, Types.Direction.RowCol);
+		BinaryOp v3 = HopRewriteUtils.createBinary(hi_0_0_0, v2, Types.OpOp2.MULT);
+
+		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
+
+		for ( Hop p : parents )
+			HopRewriteUtils.replaceChildReference(p, hi, v3);
+
+		// Remove old unreferenced Hops
+		HopRewriteUtils.cleanupUnreferenced(hi);
+		HopRewriteUtils.cleanupUnreferenced(hi_0);
+		HopRewriteUtils.cleanupUnreferenced(hi_0_0);
+
+		return v3;
+	}
+
+	// Implementation of the rule sum(/(*(B,a),C)) => *(a,sum(/(B,C)))
+	private static Hop _applyRewrite149(Hop hi) {
+		if ( !(hi instanceof AggUnaryOp) )
+			return hi;
+
+		AggUnaryOp c_hi = (AggUnaryOp) hi;
+
+		if ( c_hi.getOp() != Types.AggOp.SUM || !c_hi.getValueType().isNumeric() )
+			return hi;
+
+		if ( !(c_hi.getDirection() == Types.Direction.RowCol) )
+			return hi;
+
+		Hop hi_0 = hi.getInput(0);
+
+		if (hi_0.getParent().size() > 1)
+			return hi;
+		if ( !(hi_0 instanceof BinaryOp) )
+			return hi;
+
+		BinaryOp c_hi_0 = (BinaryOp) hi_0;
+
+		if ( c_hi_0.getOp() != Types.OpOp2.DIV || !c_hi_0.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_0_0 = hi_0.getInput(0);
+
+		if (hi_0_0.getParent().size() > 1)
+			return hi;
+		if ( !(hi_0_0 instanceof BinaryOp) )
+			return hi;
+
+		BinaryOp c_hi_0_0 = (BinaryOp) hi_0_0;
+
+		if ( c_hi_0_0.getOp() != Types.OpOp2.MULT || !c_hi_0_0.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_0_0_0 = hi_0_0.getInput(0);
+
+		if ( hi_0_0_0.getDataType() != Types.DataType.MATRIX || !hi_0_0_0.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_0_0_1 = hi_0_0.getInput(1);
+
+		if ( hi_0_0_1.getDataType() != Types.DataType.SCALAR || !hi_0_0_1.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_0_1 = hi_0.getInput(1);
+
+		if ( hi_0_1.getDataType() != Types.DataType.MATRIX || !hi_0_1.getValueType().isNumeric() )
+			return hi;
+
+
+		// Now, we start building the new Hop
+		System.out.println("Applying rewrite: sum(/(*(B,a),C)) => *(a,sum(/(B,C)))");
+		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0_0, hi_0_1, Types.OpOp2.DIV);
+		AggUnaryOp v2 = HopRewriteUtils.createAggUnaryOp(v1, Types.AggOp.SUM, Types.Direction.RowCol);
+		BinaryOp v3 = HopRewriteUtils.createBinary(hi_0_0_1, v2, Types.OpOp2.MULT);
+
+		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
+
+		for ( Hop p : parents )
+			HopRewriteUtils.replaceChildReference(p, hi, v3);
+
+		// Remove old unreferenced Hops
+		HopRewriteUtils.cleanupUnreferenced(hi);
+		HopRewriteUtils.cleanupUnreferenced(hi_0);
+		HopRewriteUtils.cleanupUnreferenced(hi_0_0);
+
+		return v3;
+	}
+
+	// Implementation of the rule sum(*(/(a,C),B)) => *(a,sum(/(B,C)))
+	private static Hop _applyRewrite150(Hop hi) {
+		if ( !(hi instanceof AggUnaryOp) )
+			return hi;
+
+		AggUnaryOp c_hi = (AggUnaryOp) hi;
+
+		if ( c_hi.getOp() != Types.AggOp.SUM || !c_hi.getValueType().isNumeric() )
+			return hi;
+
+		if ( !(c_hi.getDirection() == Types.Direction.RowCol) )
+			return hi;
+
+		Hop hi_0 = hi.getInput(0);
+
+		if (hi_0.getParent().size() > 1)
+			return hi;
+		if ( !(hi_0 instanceof BinaryOp) )
+			return hi;
+
+		BinaryOp c_hi_0 = (BinaryOp) hi_0;
+
+		if ( c_hi_0.getOp() != Types.OpOp2.MULT || !c_hi_0.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_0_0 = hi_0.getInput(0);
+
+		if (hi_0_0.getParent().size() > 1)
+			return hi;
+		if ( !(hi_0_0 instanceof BinaryOp) )
+			return hi;
+
+		BinaryOp c_hi_0_0 = (BinaryOp) hi_0_0;
+
+		if ( c_hi_0_0.getOp() != Types.OpOp2.DIV || !c_hi_0_0.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_0_0_0 = hi_0_0.getInput(0);
+
+		if ( hi_0_0_0.getDataType() != Types.DataType.SCALAR || !hi_0_0_0.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_0_0_1 = hi_0_0.getInput(1);
+
+		if ( hi_0_0_1.getDataType() != Types.DataType.MATRIX || !hi_0_0_1.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_0_1 = hi_0.getInput(1);
+
+		if ( hi_0_1.getDataType() != Types.DataType.MATRIX || !hi_0_1.getValueType().isNumeric() )
+			return hi;
+
+
+		// Now, we start building the new Hop
+		System.out.println("Applying rewrite: sum(*(/(a,C),B)) => *(a,sum(/(B,C)))");
+		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_1, hi_0_0_1, Types.OpOp2.DIV);
+		AggUnaryOp v2 = HopRewriteUtils.createAggUnaryOp(v1, Types.AggOp.SUM, Types.Direction.RowCol);
+		BinaryOp v3 = HopRewriteUtils.createBinary(hi_0_0_0, v2, Types.OpOp2.MULT);
+
+		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
+
+		for ( Hop p : parents )
+			HopRewriteUtils.replaceChildReference(p, hi, v3);
+
+		// Remove old unreferenced Hops
+		HopRewriteUtils.cleanupUnreferenced(hi);
+		HopRewriteUtils.cleanupUnreferenced(hi_0);
+		HopRewriteUtils.cleanupUnreferenced(hi_0_0);
+
+		return v3;
+	}
+
+	// Implementation of the rule sum(*(B,/(a,C))) => *(a,sum(/(B,C)))
+	private static Hop _applyRewrite151(Hop hi) {
+		if ( !(hi instanceof AggUnaryOp) )
+			return hi;
+
+		AggUnaryOp c_hi = (AggUnaryOp) hi;
+
+		if ( c_hi.getOp() != Types.AggOp.SUM || !c_hi.getValueType().isNumeric() )
+			return hi;
+
+		if ( !(c_hi.getDirection() == Types.Direction.RowCol) )
+			return hi;
+
+		Hop hi_0 = hi.getInput(0);
+
+		if (hi_0.getParent().size() > 1)
+			return hi;
+		if ( !(hi_0 instanceof BinaryOp) )
+			return hi;
+
+		BinaryOp c_hi_0 = (BinaryOp) hi_0;
+
+		if ( c_hi_0.getOp() != Types.OpOp2.MULT || !c_hi_0.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_0_0 = hi_0.getInput(0);
+
+		if ( hi_0_0.getDataType() != Types.DataType.MATRIX || !hi_0_0.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_0_1 = hi_0.getInput(1);
+
+		if (hi_0_1.getParent().size() > 1)
+			return hi;
+		if ( !(hi_0_1 instanceof BinaryOp) )
+			return hi;
+
+		BinaryOp c_hi_0_1 = (BinaryOp) hi_0_1;
+
+		if ( c_hi_0_1.getOp() != Types.OpOp2.DIV || !c_hi_0_1.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_0_1_0 = hi_0_1.getInput(0);
+
+		if ( hi_0_1_0.getDataType() != Types.DataType.SCALAR || !hi_0_1_0.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_0_1_1 = hi_0_1.getInput(1);
+
+		if ( hi_0_1_1.getDataType() != Types.DataType.MATRIX || !hi_0_1_1.getValueType().isNumeric() )
+			return hi;
+
+
+		// Now, we start building the new Hop
+		System.out.println("Applying rewrite: sum(*(B,/(a,C))) => *(a,sum(/(B,C)))");
+		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0, hi_0_1_1, Types.OpOp2.DIV);
+		AggUnaryOp v2 = HopRewriteUtils.createAggUnaryOp(v1, Types.AggOp.SUM, Types.Direction.RowCol);
+		BinaryOp v3 = HopRewriteUtils.createBinary(hi_0_1_0, v2, Types.OpOp2.MULT);
+
+		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
+
+		for ( Hop p : parents )
+			HopRewriteUtils.replaceChildReference(p, hi, v3);
+
+		// Remove old unreferenced Hops
+		HopRewriteUtils.cleanupUnreferenced(hi);
+		HopRewriteUtils.cleanupUnreferenced(hi_0);
+		HopRewriteUtils.cleanupUnreferenced(hi_0_1);
+
+		return v3;
+	}
+
 	// Implementation of the rule *(t(/(a,C)),b) => /(*(a,b),t(C))
 	private static Hop _applyRewrite152(Hop hi) {
 		if ( !(hi instanceof BinaryOp) )
@@ -7700,6 +8722,402 @@ public class GeneratedRewriteClass implements Function {
 		HopRewriteUtils.cleanupUnreferenced(hi_1_0);
 
 		return v3;
+	}
+
+	// Implementation of the rule sum(-(t(A),b)) => sum(-(A,b))
+	private static Hop _applyRewrite177(Hop hi) {
+		if ( !(hi instanceof AggUnaryOp) )
+			return hi;
+
+		AggUnaryOp c_hi = (AggUnaryOp) hi;
+
+		if ( c_hi.getOp() != Types.AggOp.SUM || !c_hi.getValueType().isNumeric() )
+			return hi;
+
+		if ( !(c_hi.getDirection() == Types.Direction.RowCol) )
+			return hi;
+
+		Hop hi_0 = hi.getInput(0);
+
+		if (hi_0.getParent().size() > 1)
+			return hi;
+		if ( !(hi_0 instanceof BinaryOp) )
+			return hi;
+
+		BinaryOp c_hi_0 = (BinaryOp) hi_0;
+
+		if ( c_hi_0.getOp() != Types.OpOp2.MINUS || !c_hi_0.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_0_0 = hi_0.getInput(0);
+
+		if (hi_0_0.getParent().size() > 1)
+			return hi;
+		if ( !(hi_0_0 instanceof ReorgOp) )
+			return hi;
+
+		ReorgOp c_hi_0_0 = (ReorgOp) hi_0_0;
+
+		if ( c_hi_0_0.getOp() != Types.ReOrgOp.TRANS || !c_hi_0_0.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_0_0_0 = hi_0_0.getInput(0);
+
+		if ( hi_0_0_0.getDataType() != Types.DataType.MATRIX || !hi_0_0_0.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_0_1 = hi_0.getInput(1);
+
+		if ( hi_0_1.getDataType() != Types.DataType.SCALAR || !hi_0_1.getValueType().isNumeric() )
+			return hi;
+
+
+		// Now, we start building the new Hop
+		System.out.println("Applying rewrite: sum(-(t(A),b)) => sum(-(A,b))");
+		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0_0, hi_0_1, Types.OpOp2.MINUS);
+		AggUnaryOp v2 = HopRewriteUtils.createAggUnaryOp(v1, Types.AggOp.SUM, Types.Direction.RowCol);
+
+		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
+
+		for ( Hop p : parents )
+			HopRewriteUtils.replaceChildReference(p, hi, v2);
+
+		// Remove old unreferenced Hops
+		HopRewriteUtils.cleanupUnreferenced(hi);
+		HopRewriteUtils.cleanupUnreferenced(hi_0);
+		HopRewriteUtils.cleanupUnreferenced(hi_0_0);
+
+		return v2;
+	}
+
+	// Implementation of the rule sum(-(a,t(B))) => sum(-(a,B))
+	private static Hop _applyRewrite178(Hop hi) {
+		if ( !(hi instanceof AggUnaryOp) )
+			return hi;
+
+		AggUnaryOp c_hi = (AggUnaryOp) hi;
+
+		if ( c_hi.getOp() != Types.AggOp.SUM || !c_hi.getValueType().isNumeric() )
+			return hi;
+
+		if ( !(c_hi.getDirection() == Types.Direction.RowCol) )
+			return hi;
+
+		Hop hi_0 = hi.getInput(0);
+
+		if (hi_0.getParent().size() > 1)
+			return hi;
+		if ( !(hi_0 instanceof BinaryOp) )
+			return hi;
+
+		BinaryOp c_hi_0 = (BinaryOp) hi_0;
+
+		if ( c_hi_0.getOp() != Types.OpOp2.MINUS || !c_hi_0.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_0_0 = hi_0.getInput(0);
+
+		if ( hi_0_0.getDataType() != Types.DataType.SCALAR || !hi_0_0.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_0_1 = hi_0.getInput(1);
+
+		if (hi_0_1.getParent().size() > 1)
+			return hi;
+		if ( !(hi_0_1 instanceof ReorgOp) )
+			return hi;
+
+		ReorgOp c_hi_0_1 = (ReorgOp) hi_0_1;
+
+		if ( c_hi_0_1.getOp() != Types.ReOrgOp.TRANS || !c_hi_0_1.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_0_1_0 = hi_0_1.getInput(0);
+
+		if ( hi_0_1_0.getDataType() != Types.DataType.MATRIX || !hi_0_1_0.getValueType().isNumeric() )
+			return hi;
+
+
+		// Now, we start building the new Hop
+		System.out.println("Applying rewrite: sum(-(a,t(B))) => sum(-(a,B))");
+		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0, hi_0_1_0, Types.OpOp2.MINUS);
+		AggUnaryOp v2 = HopRewriteUtils.createAggUnaryOp(v1, Types.AggOp.SUM, Types.Direction.RowCol);
+
+		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
+
+		for ( Hop p : parents )
+			HopRewriteUtils.replaceChildReference(p, hi, v2);
+
+		// Remove old unreferenced Hops
+		HopRewriteUtils.cleanupUnreferenced(hi);
+		HopRewriteUtils.cleanupUnreferenced(hi_0);
+		HopRewriteUtils.cleanupUnreferenced(hi_0_1);
+
+		return v2;
+	}
+
+	// Implementation of the rule sum(!=(t(A),b)) => sum(!=(A,b))
+	private static Hop _applyRewrite179(Hop hi) {
+		if ( !(hi instanceof AggUnaryOp) )
+			return hi;
+
+		AggUnaryOp c_hi = (AggUnaryOp) hi;
+
+		if ( c_hi.getOp() != Types.AggOp.SUM || !c_hi.getValueType().isNumeric() )
+			return hi;
+
+		if ( !(c_hi.getDirection() == Types.Direction.RowCol) )
+			return hi;
+
+		Hop hi_0 = hi.getInput(0);
+
+		if (hi_0.getParent().size() > 1)
+			return hi;
+		if ( !(hi_0 instanceof BinaryOp) )
+			return hi;
+
+		BinaryOp c_hi_0 = (BinaryOp) hi_0;
+
+		if ( c_hi_0.getOp() != Types.OpOp2.NOTEQUAL || !c_hi_0.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_0_0 = hi_0.getInput(0);
+
+		if (hi_0_0.getParent().size() > 1)
+			return hi;
+		if ( !(hi_0_0 instanceof ReorgOp) )
+			return hi;
+
+		ReorgOp c_hi_0_0 = (ReorgOp) hi_0_0;
+
+		if ( c_hi_0_0.getOp() != Types.ReOrgOp.TRANS || !c_hi_0_0.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_0_0_0 = hi_0_0.getInput(0);
+
+		if ( hi_0_0_0.getDataType() != Types.DataType.MATRIX || !hi_0_0_0.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_0_1 = hi_0.getInput(1);
+
+		if ( hi_0_1.getDataType() != Types.DataType.SCALAR || !hi_0_1.getValueType().isNumeric() )
+			return hi;
+
+
+		// Now, we start building the new Hop
+		System.out.println("Applying rewrite: sum(!=(t(A),b)) => sum(!=(A,b))");
+		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0_0, hi_0_1, Types.OpOp2.NOTEQUAL);
+		AggUnaryOp v2 = HopRewriteUtils.createAggUnaryOp(v1, Types.AggOp.SUM, Types.Direction.RowCol);
+
+		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
+
+		for ( Hop p : parents )
+			HopRewriteUtils.replaceChildReference(p, hi, v2);
+
+		// Remove old unreferenced Hops
+		HopRewriteUtils.cleanupUnreferenced(hi);
+		HopRewriteUtils.cleanupUnreferenced(hi_0);
+		HopRewriteUtils.cleanupUnreferenced(hi_0_0);
+
+		return v2;
+	}
+
+	// Implementation of the rule sum(!=(b,t(A))) => sum(!=(A,b))
+	private static Hop _applyRewrite180(Hop hi) {
+		if ( !(hi instanceof AggUnaryOp) )
+			return hi;
+
+		AggUnaryOp c_hi = (AggUnaryOp) hi;
+
+		if ( c_hi.getOp() != Types.AggOp.SUM || !c_hi.getValueType().isNumeric() )
+			return hi;
+
+		if ( !(c_hi.getDirection() == Types.Direction.RowCol) )
+			return hi;
+
+		Hop hi_0 = hi.getInput(0);
+
+		if (hi_0.getParent().size() > 1)
+			return hi;
+		if ( !(hi_0 instanceof BinaryOp) )
+			return hi;
+
+		BinaryOp c_hi_0 = (BinaryOp) hi_0;
+
+		if ( c_hi_0.getOp() != Types.OpOp2.NOTEQUAL || !c_hi_0.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_0_0 = hi_0.getInput(0);
+
+		if ( hi_0_0.getDataType() != Types.DataType.SCALAR || !hi_0_0.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_0_1 = hi_0.getInput(1);
+
+		if (hi_0_1.getParent().size() > 1)
+			return hi;
+		if ( !(hi_0_1 instanceof ReorgOp) )
+			return hi;
+
+		ReorgOp c_hi_0_1 = (ReorgOp) hi_0_1;
+
+		if ( c_hi_0_1.getOp() != Types.ReOrgOp.TRANS || !c_hi_0_1.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_0_1_0 = hi_0_1.getInput(0);
+
+		if ( hi_0_1_0.getDataType() != Types.DataType.MATRIX || !hi_0_1_0.getValueType().isNumeric() )
+			return hi;
+
+
+		// Now, we start building the new Hop
+		System.out.println("Applying rewrite: sum(!=(b,t(A))) => sum(!=(A,b))");
+		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_1_0, hi_0_0, Types.OpOp2.NOTEQUAL);
+		AggUnaryOp v2 = HopRewriteUtils.createAggUnaryOp(v1, Types.AggOp.SUM, Types.Direction.RowCol);
+
+		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
+
+		for ( Hop p : parents )
+			HopRewriteUtils.replaceChildReference(p, hi, v2);
+
+		// Remove old unreferenced Hops
+		HopRewriteUtils.cleanupUnreferenced(hi);
+		HopRewriteUtils.cleanupUnreferenced(hi_0);
+		HopRewriteUtils.cleanupUnreferenced(hi_0_1);
+
+		return v2;
+	}
+
+	// Implementation of the rule sum(+(t(A),b)) => sum(+(A,b))
+	private static Hop _applyRewrite181(Hop hi) {
+		if ( !(hi instanceof AggUnaryOp) )
+			return hi;
+
+		AggUnaryOp c_hi = (AggUnaryOp) hi;
+
+		if ( c_hi.getOp() != Types.AggOp.SUM || !c_hi.getValueType().isNumeric() )
+			return hi;
+
+		if ( !(c_hi.getDirection() == Types.Direction.RowCol) )
+			return hi;
+
+		Hop hi_0 = hi.getInput(0);
+
+		if (hi_0.getParent().size() > 1)
+			return hi;
+		if ( !(hi_0 instanceof BinaryOp) )
+			return hi;
+
+		BinaryOp c_hi_0 = (BinaryOp) hi_0;
+
+		if ( c_hi_0.getOp() != Types.OpOp2.PLUS || !c_hi_0.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_0_0 = hi_0.getInput(0);
+
+		if (hi_0_0.getParent().size() > 1)
+			return hi;
+		if ( !(hi_0_0 instanceof ReorgOp) )
+			return hi;
+
+		ReorgOp c_hi_0_0 = (ReorgOp) hi_0_0;
+
+		if ( c_hi_0_0.getOp() != Types.ReOrgOp.TRANS || !c_hi_0_0.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_0_0_0 = hi_0_0.getInput(0);
+
+		if ( hi_0_0_0.getDataType() != Types.DataType.MATRIX || !hi_0_0_0.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_0_1 = hi_0.getInput(1);
+
+		if ( hi_0_1.getDataType() != Types.DataType.SCALAR || !hi_0_1.getValueType().isNumeric() )
+			return hi;
+
+
+		// Now, we start building the new Hop
+		System.out.println("Applying rewrite: sum(+(t(A),b)) => sum(+(A,b))");
+		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0_0, hi_0_1, Types.OpOp2.PLUS);
+		AggUnaryOp v2 = HopRewriteUtils.createAggUnaryOp(v1, Types.AggOp.SUM, Types.Direction.RowCol);
+
+		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
+
+		for ( Hop p : parents )
+			HopRewriteUtils.replaceChildReference(p, hi, v2);
+
+		// Remove old unreferenced Hops
+		HopRewriteUtils.cleanupUnreferenced(hi);
+		HopRewriteUtils.cleanupUnreferenced(hi_0);
+		HopRewriteUtils.cleanupUnreferenced(hi_0_0);
+
+		return v2;
+	}
+
+	// Implementation of the rule sum(+(b,t(A))) => sum(+(A,b))
+	private static Hop _applyRewrite182(Hop hi) {
+		if ( !(hi instanceof AggUnaryOp) )
+			return hi;
+
+		AggUnaryOp c_hi = (AggUnaryOp) hi;
+
+		if ( c_hi.getOp() != Types.AggOp.SUM || !c_hi.getValueType().isNumeric() )
+			return hi;
+
+		if ( !(c_hi.getDirection() == Types.Direction.RowCol) )
+			return hi;
+
+		Hop hi_0 = hi.getInput(0);
+
+		if (hi_0.getParent().size() > 1)
+			return hi;
+		if ( !(hi_0 instanceof BinaryOp) )
+			return hi;
+
+		BinaryOp c_hi_0 = (BinaryOp) hi_0;
+
+		if ( c_hi_0.getOp() != Types.OpOp2.PLUS || !c_hi_0.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_0_0 = hi_0.getInput(0);
+
+		if ( hi_0_0.getDataType() != Types.DataType.SCALAR || !hi_0_0.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_0_1 = hi_0.getInput(1);
+
+		if (hi_0_1.getParent().size() > 1)
+			return hi;
+		if ( !(hi_0_1 instanceof ReorgOp) )
+			return hi;
+
+		ReorgOp c_hi_0_1 = (ReorgOp) hi_0_1;
+
+		if ( c_hi_0_1.getOp() != Types.ReOrgOp.TRANS || !c_hi_0_1.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_0_1_0 = hi_0_1.getInput(0);
+
+		if ( hi_0_1_0.getDataType() != Types.DataType.MATRIX || !hi_0_1_0.getValueType().isNumeric() )
+			return hi;
+
+
+		// Now, we start building the new Hop
+		System.out.println("Applying rewrite: sum(+(b,t(A))) => sum(+(A,b))");
+		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_1_0, hi_0_0, Types.OpOp2.PLUS);
+		AggUnaryOp v2 = HopRewriteUtils.createAggUnaryOp(v1, Types.AggOp.SUM, Types.Direction.RowCol);
+
+		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
+
+		for ( Hop p : parents )
+			HopRewriteUtils.replaceChildReference(p, hi, v2);
+
+		// Remove old unreferenced Hops
+		HopRewriteUtils.cleanupUnreferenced(hi);
+		HopRewriteUtils.cleanupUnreferenced(hi_0);
+		HopRewriteUtils.cleanupUnreferenced(hi_0_1);
+
+		return v2;
 	}
 
 	// Implementation of the rule !=(t(A),t(B)) => t(!=(A,B))
@@ -22661,6 +24079,72 @@ public class GeneratedRewriteClass implements Function {
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_1);
 		HopRewriteUtils.cleanupUnreferenced(hi_1_1);
+
+		return v2;
+	}
+
+	// Implementation of the rule sum(/(a,t(B))) => sum(/(a,B))
+	private static Hop _applyRewrite404(Hop hi) {
+		if ( !(hi instanceof AggUnaryOp) )
+			return hi;
+
+		AggUnaryOp c_hi = (AggUnaryOp) hi;
+
+		if ( c_hi.getOp() != Types.AggOp.SUM || !c_hi.getValueType().isNumeric() )
+			return hi;
+
+		if ( !(c_hi.getDirection() == Types.Direction.RowCol) )
+			return hi;
+
+		Hop hi_0 = hi.getInput(0);
+
+		if (hi_0.getParent().size() > 1)
+			return hi;
+		if ( !(hi_0 instanceof BinaryOp) )
+			return hi;
+
+		BinaryOp c_hi_0 = (BinaryOp) hi_0;
+
+		if ( c_hi_0.getOp() != Types.OpOp2.DIV || !c_hi_0.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_0_0 = hi_0.getInput(0);
+
+		if ( hi_0_0.getDataType() != Types.DataType.SCALAR || !hi_0_0.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_0_1 = hi_0.getInput(1);
+
+		if (hi_0_1.getParent().size() > 1)
+			return hi;
+		if ( !(hi_0_1 instanceof ReorgOp) )
+			return hi;
+
+		ReorgOp c_hi_0_1 = (ReorgOp) hi_0_1;
+
+		if ( c_hi_0_1.getOp() != Types.ReOrgOp.TRANS || !c_hi_0_1.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_0_1_0 = hi_0_1.getInput(0);
+
+		if ( hi_0_1_0.getDataType() != Types.DataType.MATRIX || !hi_0_1_0.getValueType().isNumeric() )
+			return hi;
+
+
+		// Now, we start building the new Hop
+		System.out.println("Applying rewrite: sum(/(a,t(B))) => sum(/(a,B))");
+		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0, hi_0_1_0, Types.OpOp2.DIV);
+		AggUnaryOp v2 = HopRewriteUtils.createAggUnaryOp(v1, Types.AggOp.SUM, Types.Direction.RowCol);
+
+		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
+
+		for ( Hop p : parents )
+			HopRewriteUtils.replaceChildReference(p, hi, v2);
+
+		// Remove old unreferenced Hops
+		HopRewriteUtils.cleanupUnreferenced(hi);
+		HopRewriteUtils.cleanupUnreferenced(hi_0);
+		HopRewriteUtils.cleanupUnreferenced(hi_0_1);
 
 		return v2;
 	}

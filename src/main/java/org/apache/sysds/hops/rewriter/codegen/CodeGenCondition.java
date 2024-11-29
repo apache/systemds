@@ -66,17 +66,20 @@ public class CodeGenCondition {
 
 			for (int j = 0; j < c.rulesIf.size(); j++) {
 				CodeGenCondition c2 = (CodeGenCondition) c.rulesIf.get(j);
-				c2.rulesIf = populateOpCodeLayer(c2.rulesIf, relativeChildPath, ctx);
 
-				if (c.rulesIf.size() <= maxNumRules)
+				if (c2.rulesIf.size() <= maxNumRules)
 					continue;
+
+				c2.rulesIf = populateOpCodeLayer(c2.rulesIf, relativeChildPath, ctx);
 
 				for (int k = 0; k < c2.rulesIf.size(); k++) {
 					CodeGenCondition c3 = (CodeGenCondition) c2.rulesIf.get(k);
+
+					if (c3.rulesIf.size() <= maxNumRules)
+						continue;
+
 					c3.rulesIf = populateInputSizeLayer(c3.rulesIf, relativeChildPath, ctx);
 
-					if (c.rulesIf.size() <= maxNumRules)
-						continue;
 					//int maxChildSize = c3.rulesIf.stream().flatMap(o -> ((CodeGenCondition)o).rulesIf.stream()).mapToInt(o -> ((Tuple2<RewriterRule, RewriterStatement>) o)._2.getOperands().size()).max().getAsInt();
 
 					for (int l = 0; l < c3.rulesIf.size(); l++) {
@@ -471,7 +474,7 @@ public class CodeGenCondition {
 				for (Tuple2<RewriterRule, RewriterStatement> t : cur) {
 					String fMapping = ruleFunctionMappings.get(t._1);
 					if (fMapping != null) {
-						RewriterCodeGen.indent(indentation, sb);
+						RewriterCodeGen.indent(indentation + 1, sb);
 						sb.append("hi = ");
 						sb.append(fMapping);
 						sb.append("(hi); // ");

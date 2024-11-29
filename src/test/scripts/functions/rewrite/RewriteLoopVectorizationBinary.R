@@ -1,5 +1,3 @@
-#-------------------------------------------------------------
-#
 # Licensed to the Apache Software Foundation (ASF) under one
 # or more contributor license agreements.  See the NOTICE file
 # distributed with this work for additional information
@@ -19,12 +17,18 @@
 #
 #-------------------------------------------------------------
 
+args<-commandArgs(TRUE)
+
 A = matrix(7.0, 10, 10)
+B = matrix(3.0, 10, 10)
 n = nrow(A)
 s = 0.0
 
-for( i in 1:n ) {
-  s = s + as.scalar(A[i,1])
+X = A
+for(i in 2:(n-1)) {
+  X[i,2] = A[i,1] + B[i,3]
 }
+s = sum(X)
 
-write(s, $1)
+write(s, paste(args[2], "Scalar",sep=""))
+

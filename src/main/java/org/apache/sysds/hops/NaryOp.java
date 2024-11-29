@@ -67,10 +67,6 @@ public class NaryOp extends Hop {
 		refreshSizeInformation();
 	}
 
-	/** MultipleOp may have any number of inputs. */
-	@Override
-	public void checkArity() {}
-
 	public OpOpN getOp() {
 		return _op;
 	}

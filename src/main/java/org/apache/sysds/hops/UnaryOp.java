@@ -74,11 +74,6 @@ public class UnaryOp extends MultiThreadedHop
 		refreshSizeInformation();
 	}
 
-	@Override
-	public void checkArity() {
-		HopsException.check(_input.size() == 1, this, "should have arity 1 but has arity %d", _input.size());
-	}
-
 	// this is for OpOp1, e.g. A = -B (0-B); and a=!b
 	public OpOp1 getOp() {
 		return _op;

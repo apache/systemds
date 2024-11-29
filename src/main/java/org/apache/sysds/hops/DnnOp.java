@@ -84,11 +84,6 @@ public class DnnOp extends MultiThreadedHop {
 		refreshSizeInformation();
 	}
 
-	@Override
-	public void checkArity() {
-		HopsException.check(_input.size() >= 1, this, "should have at least one input but has %d inputs", _input.size());
-	}
-
 	public OpOpDnn getOp() {
 		return op;
 	}

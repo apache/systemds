@@ -81,27 +81,6 @@ public class ReorgOp extends MultiThreadedHop
 		refreshSizeInformation();
 	}
 
-	@Override
-	public void checkArity() {
-		int sz = _input.size();
-		switch( _op ) {
-			case TRANS:
-			case DIAG:
-			case REV:
-				HopsException.check(sz == 1, this, "should have arity 1 for op %s but has arity %d", _op, sz);
-				break;
-			case ROLL:
-				HopsException.check(sz == 2, this, "should have arity 2 for op %s but has arity %d", _op, sz);
-				break;
-			case RESHAPE:
-			case SORT:
-				HopsException.check(sz == 5, this, "should have arity 5 for op %s but has arity %d", _op, sz);
-				break;
-			default:
-				throw new HopsException("Unsupported lops construction for operation type '" + _op + "'.");
-		}
-	}
-
 	public ReOrgOp getOp() {
 		return _op;
 	}

@@ -27,8 +27,6 @@ import java.io.Serializable;
 import java.util.ArrayList;
 
 import org.apache.sysds.runtime.DMLRuntimeException;
-import org.apache.sysds.runtime.functionobjects.CTable;
-import org.apache.sysds.runtime.functionobjects.ReduceDiag;
 import org.apache.sysds.runtime.instructions.spark.data.IndexedMatrixValue;
 import org.apache.sysds.runtime.matrix.operators.AggregateOperator;
 import org.apache.sysds.runtime.matrix.operators.AggregateUnaryOperator;
@@ -45,19 +43,8 @@ public class MatrixCell extends MatrixValue implements Serializable
 	
 	protected double value;
 
-	public MatrixCell()
-	{
+	public MatrixCell() {
 		value=0;
-	}
-
-	public MatrixCell(MatrixCell that)
-	{
-		this.value=that.value;
-	}
-	
-	public MatrixCell(MatrixValue that) {
-		if(that instanceof MatrixCell)
-			this.value=((MatrixCell)that).value;
 	}
 
 	public MatrixCell(double v) {
@@ -167,20 +154,12 @@ public class MatrixCell extends MatrixValue implements Serializable
 	@Override
 	public MatrixValue binaryOperations(BinaryOperator op,
 			MatrixValue thatValue, MatrixValue result) {
-		MatrixCell c2=checkType(thatValue);
-		MatrixCell c3=checkType(result);
-		if(c3==null)
-			c3=new MatrixCell();
-		c3.setValue(op.fn.execute(this.getValue(), c2.getValue()));
-		return c3;
+		throw new UnsupportedOperationException();
 	}
 
 	@Override
-	public MatrixValue binaryOperationsInPlace(BinaryOperator op,
-			MatrixValue thatValue) {
-		MatrixCell c2=checkType(thatValue);
-		setValue(op.fn.execute(this.getValue(), c2.getValue()));
-		return this;
+	public MatrixValue binaryOperationsInPlace(BinaryOperator op, MatrixValue thatValue) {
+		throw new UnsupportedOperationException();
 	}
 
 	public void denseScalarOperationsInPlace(ScalarOperator op) {
@@ -190,11 +169,7 @@ public class MatrixCell extends MatrixValue implements Serializable
 	@Override
 	public MatrixValue reorgOperations(ReorgOperator op, MatrixValue result,
 			int startRow, int startColumn, int length) { 
-		MatrixCell c3=checkType(result);
-		if(c3==null)
-			c3=new MatrixCell();
-		c3.setValue(getValue());
-		return c3;
+		throw new UnsupportedOperationException();
 	}
 
 	@Override
@@ -245,127 +220,70 @@ public class MatrixCell extends MatrixValue implements Serializable
 	@Override
 	public void incrementalAggregate(AggregateOperator aggOp,
 			MatrixValue correction, MatrixValue newWithCorrection, boolean deep) {
-		throw new DMLRuntimeException("MatrixCell.incrementalAggregate should never be called");
+		throw new UnsupportedOperationException();
 	}
 
 	@Override
 	public MatrixValue zeroOutOperations(MatrixValue result, IndexRange range) {
-		if(range.rowStart!=0 || range.rowEnd!=0 || range.colStart!=0 || range.colEnd!=0)
-			throw new DMLRuntimeException("wrong range: "+range+" for matrixCell");
-		MatrixCell c3=checkType(result);
-		c3.setValue(value);
-		return c3;
+		throw new UnsupportedOperationException();
 	}
 
 	@Override
 	public void incrementalAggregate(AggregateOperator aggOp,
 			MatrixValue newWithCorrection) {
-		throw new DMLRuntimeException("MatrixCell.incrementalAggregate should never be called");
+		throw new UnsupportedOperationException();
 	}
 
 	@Override
 	public void ctableOperations(Operator op, MatrixValue that,
 			MatrixValue that2, CTableMap resultMap, MatrixBlock resultBlock) {
-		MatrixCell c2=checkType(that);
-		MatrixCell c3=checkType(that2);
-		CTable ctable = CTable.getCTableFnObject();
-		if ( resultMap != null)
-			ctable.execute(this.value, c2.value, c3.value, false, resultMap);
-		else
-			ctable.execute(this.value, c2.value, c3.value, false, resultBlock);
+		throw new UnsupportedOperationException();
 	}
 
 	@Override
 	public void ctableOperations(Operator op, MatrixValue that, double scalarThat2, boolean ignoreZeros, 
 			CTableMap ctableResult, MatrixBlock ctableResultBlock) {
-		MatrixCell c2=checkType(that);
-		CTable ctable = CTable.getCTableFnObject();
-		if ( ctableResult != null)
-			ctable.execute(this.value, c2.value, scalarThat2, ignoreZeros, ctableResult);
-		else
-			ctable.execute(this.value, c2.value, scalarThat2, ignoreZeros, ctableResultBlock);
+		throw new UnsupportedOperationException();
 	}
 
 	@Override
 	public void ctableOperations(Operator op, double scalarThat,
 			double scalarThat2, CTableMap resultMap, MatrixBlock resultBlock) {
-		CTable ctable = CTable.getCTableFnObject();
-		if ( resultMap != null)
-			ctable.execute(this.value, scalarThat, scalarThat2, false, resultMap);
-		else
-			ctable.execute(this.value, scalarThat, scalarThat2, false, resultBlock);
+		throw new UnsupportedOperationException();
 	}
 	
 	@Override
 	public void ctableOperations(Operator op, MatrixIndexes ix1, double scalarThat, boolean left, int blen,
 			CTableMap resultMap, MatrixBlock resultBlock) {
-		//ctable expand (column vector to ctable)
-		CTable ctable = CTable.getCTableFnObject();
-		if ( resultMap != null ) {
-			if( left )
-				ctable.execute(ix1.getRowIndex(), this.value, scalarThat, false, resultMap);
-			else
-				ctable.execute(this.value, ix1.getRowIndex(), scalarThat, false, resultMap);
-		} 
-		else {
-			if( left )
-				ctable.execute(ix1.getRowIndex(), this.value, scalarThat, false, resultBlock);
-			else
-				ctable.execute(this.value, ix1.getRowIndex(), scalarThat, false, resultBlock);
-		}
+		throw new UnsupportedOperationException();
 	}
 
 	@Override
 	public void ctableOperations(Operator op, double scalarThat,
 			MatrixValue that2, CTableMap resultMap, MatrixBlock resultBlock) {
-		MatrixCell c3=checkType(that2);
-		CTable ctable = CTable.getCTableFnObject();
-		if ( resultMap != null)
-			ctable.execute(this.value, scalarThat, c3.value, false, resultMap);
-		else 
-			ctable.execute(this.value, scalarThat, c3.value, false, resultBlock);
-
+		throw new UnsupportedOperationException();
 	}
 
 	@Override
 	public void slice(ArrayList<IndexedMatrixValue> outlist,
 			IndexRange range, int rowCut, int colCut, int blen, int boundaryRlen, int boundaryClen) {
-		((MatrixCell)outlist.get(0).getValue()).setValue(this.value);
+		throw new UnsupportedOperationException();
 	}
 	
 	@Override
 	public MatrixValue replaceOperations(MatrixValue result, double pattern, double replacement) {
-		MatrixCell out = checkType(result);
-		if( value == pattern || (Double.isNaN(pattern) && Double.isNaN(value)) )
-			out.value = replacement;
-		else
-			out.value = value;
-		return out;
+		throw new UnsupportedOperationException();
 	}
 
 	@Override
 	public MatrixValue aggregateUnaryOperations(AggregateUnaryOperator op, MatrixValue result, int blen,
 		MatrixIndexes indexesIn, boolean inCP) {
-		MatrixCell c3 = checkType(result);
-		if(c3 == null)
-			c3 = new MatrixCell();
-
-		if(op.indexFn instanceof ReduceDiag) {
-			if(indexesIn.getRowIndex() == indexesIn.getColumnIndex())
-				c3.setValue(getValue());
-			else
-				c3.setValue(0);
-		}
-		else
-			c3.setValue(getValue());
-		return c3;
+		throw new UnsupportedOperationException();
 	}
 
 	@Override
 	public void append(MatrixValue valueIn2, ArrayList<IndexedMatrixValue> outlist,
 			int blen, boolean cbind, boolean m2IsLast, int nextNCol) {
-		((MatrixCell)outlist.get(0).getValue()).setValue(this.value);
-		MatrixCell c2=checkType(valueIn2);
-		((MatrixCell)outlist.get(1).getValue()).setValue(c2.getValue());
+		throw new UnsupportedOperationException();
 	}
 }

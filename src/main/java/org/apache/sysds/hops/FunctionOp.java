@@ -91,10 +91,6 @@ public class FunctionOp extends MultiThreadedHop
 		}
 	}
 
-	/** FunctionOps may have any number of inputs. */
-	@Override
-	public void checkArity() {}
-	
 	public String getFunctionKey() {
 		return DMLProgram.constructFunctionKey(
 			getFunctionNamespace(), getFunctionName());
@@ -403,10 +399,11 @@ public class FunctionOp extends MultiThreadedHop
 		if ( getFunctionType() == FunctionType.MULTIRETURN_BUILTIN ) {
 			boolean isBuiltinFunction = isBuiltinFunction();
 			// check if there is sufficient memory to execute this function
+			double mem = getMemEstimate(); // obtain memory estimates for all (e.g., used in parfor)
 			if(isBuiltinFunction && getFunctionName().equalsIgnoreCase("transformencode") ) {
 				_etype = ((_etypeForced==ExecType.SPARK 
-					|| (getMemEstimate() >= OptimizerUtils.getLocalMemBudget()
-						&& OptimizerUtils.isSparkExecutionMode())) ? ExecType.SPARK : ExecType.CP);
+					|| (mem >= OptimizerUtils.getLocalMemBudget() && OptimizerUtils.isSparkExecutionMode())) ? 
+					ExecType.SPARK : ExecType.CP);
 			}
 			else if(isBuiltinFunction && (getFunctionName().equalsIgnoreCase("lstm") || getFunctionName().equalsIgnoreCase("lstm_backward"))) {
 				_etype = DMLScript.USE_ACCELERATOR ? ExecType.GPU : ExecType.CP;

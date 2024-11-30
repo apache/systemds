@@ -539,7 +539,7 @@ public class TemplateUtils
 	
 	public static boolean isValidNumVectorIntermediates(CNode node, CNode main, Map<Long, Set<Long>> parents, Map<Long, Pair<Long, MutableInt>> inUse, Set<Long> inUse2, int count) {
 		if( count <= 1 ) return false;
-		IDSequence buff = new IDSequence(true, count-1); //zero based
+		IDSequence buff = new IDSequence(true, count-2); //-1 based
 		inUse.clear(); inUse2.clear();
 		node.resetVisitStatus();
 		return rIsValidNumVectorIntermediates(node, main, parents, inUse, inUse2, buff);

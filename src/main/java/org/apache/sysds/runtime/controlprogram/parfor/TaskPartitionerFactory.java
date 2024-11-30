@@ -23,7 +23,7 @@ import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.controlprogram.ParForProgramBlock.PTaskPartitioner;
 import org.apache.sysds.runtime.instructions.cp.IntObject;
 
-public abstract class TaskPartitionerFactory 
+public class TaskPartitionerFactory 
 {
 	public static TaskPartitioner createTaskPartitioner(PTaskPartitioner type, 
 		IntObject from, IntObject to, IntObject incr, long taskSize, int numThreads, String iterPredVar) 

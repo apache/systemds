@@ -63,20 +63,27 @@ public class ResultMergeTest extends AutomatedTestBase{
 	}
 	
 	private void testResultMergeAll(PResultMerge mtype) {
-		testResultMerge(false, false, false, mtype);
-		testResultMerge(false, true, false, mtype);
-		testResultMerge(true, false, false, mtype);
-		testResultMerge(false, false, true, mtype);
+		testResultMerge(false, false, false, false, mtype);
+		testResultMerge(false, true, false, false, mtype);
+		testResultMerge(true, false, false, false, mtype);
+		testResultMerge(false, false, true, false, mtype);
 		if( mtype != PResultMerge.LOCAL_FILE ) //FIXME
-			testResultMerge(false, true, true, mtype);
-		testResultMerge(true, false, true, mtype);
-		
-		//testResultMerge(true, true, false, mtype); invalid
+			testResultMerge(false, true, true, false, mtype);
+		testResultMerge(true, false, true, false, mtype);
+		//testResultMerge(true, true, false, false, mtype); invalid
+	
+		/* FIXME sparse compare
+		testResultMerge(false, false, false, true, mtype);
+		testResultMerge(false, true, false, true, mtype);
+		testResultMerge(true, false, false, true, mtype);
+		testResultMerge(false, false, true, true, mtype);
+		testResultMerge(false, true, true, true, mtype);
+		testResultMerge(true, false, true, true, mtype);
+		*/
 	}
 	
-	private void testResultMerge(boolean par, boolean accum, boolean compare, PResultMerge mtype) {
+	private void testResultMerge(boolean par, boolean accum, boolean compare, boolean sparseCompare, PResultMerge mtype) {
 		try{
-
 			loadTestConfiguration(getTestConfiguration(TEST_NAME));
 	
 			//create input and output objects
@@ -85,16 +92,17 @@ public class ResultMergeTest extends AutomatedTestBase{
 				toMatrixObject(new MatrixBlock(1200,1100,1d), output("C")) :
 				toMatrixObject(new MatrixBlock(1200,1100,true), output("C"));
 			MatrixBlock rest = compare ? 
-				new MatrixBlock(400,1100,1d) :  //constant (also dense)
+				new MatrixBlock(400,1100,sparseCompare?0.2:1.0) : //constant
 				new MatrixBlock(400,1100,true); //empty (also sparse)
-			MatrixObject[] Bobj = new MatrixObject[3];
+			MatrixObject[] Bobj = new MatrixObject[4];
 			Bobj[0] = toMatrixObject(A.slice(0,399).rbind(rest).rbind(rest), output("B0"));
 			Bobj[1] = toMatrixObject(rest.rbind(A.slice(400,799)).rbind(rest), output("B1"));
 			Bobj[2] = toMatrixObject(rest.rbind(rest).rbind(A.slice(800,1199)), output("B2"));
-		
+			Bobj[3] = toMatrixObject(rest.rbind(rest).rbind(rest), output("B3"));
+	
 			//create result merge
 			ExecutionContext ec = ExecutionContextFactory.createContext();
-			int numThreads = 3;
+			int numThreads = 4;
 			ResultMerge<?> rm = ParForProgramBlock.createResultMerge(
 				mtype, Cobj, Bobj, output("R"), accum, numThreads, ec);
 				

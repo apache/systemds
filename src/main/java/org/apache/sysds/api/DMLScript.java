@@ -624,11 +624,11 @@ public class DMLScript
 				// TODO fix and replace localhost identifyer with hostname in federated instructions SYSTEMDS-3440
 				// https://issues.apache.org/jira/browse/SYSTEMDS-3440
 				model.host = "localhost"; 
-				model.processId = Long.parseLong(IDHandler.getProcessID());
+				model.processId = IDHandler.getProcessID();
 
 				String requestBody = objectMapper
-						.writerWithDefaultPrettyPrinter()
-						.writeValueAsString(model);
+					.writerWithDefaultPrettyPrinter()
+					.writeValueAsString(model);
 
 				var client = HttpClient.newHttpClient();
 				var request = HttpRequest.newBuilder(URI.create(uriString))

@@ -19,36 +19,26 @@
 
 package org.apache.sysds.runtime.controlprogram.parfor;
 
-import java.io.BufferedWriter;
+import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
-import java.io.OutputStreamWriter;
-import java.util.HashMap;
+import java.io.InputStreamReader;
 import java.util.LinkedList;
-import java.util.Map.Entry;
 
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
-import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.io.SequenceFile;
 import org.apache.hadoop.io.SequenceFile.Writer;
-import org.apache.hadoop.io.Text;
-import org.apache.hadoop.mapred.FileInputFormat;
-import org.apache.hadoop.mapred.InputSplit;
 import org.apache.hadoop.mapred.JobConf;
-import org.apache.hadoop.mapred.RecordReader;
-import org.apache.hadoop.mapred.Reporter;
-import org.apache.hadoop.mapred.TextInputFormat;
 import org.apache.sysds.common.Types.FileFormat;
 import org.apache.sysds.conf.ConfigurationManager;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.controlprogram.ParForProgramBlock.PDataPartitionFormat;
 import org.apache.sysds.runtime.controlprogram.ParForProgramBlock.PartitionFormat;
 import org.apache.sysds.runtime.controlprogram.caching.MatrixObject;
-import org.apache.sysds.runtime.controlprogram.parfor.util.Cell;
-import org.apache.sysds.runtime.controlprogram.parfor.util.IDSequence;
-import org.apache.sysds.runtime.controlprogram.parfor.util.StagingFileUtils;
 import org.apache.sysds.runtime.io.IOUtilFunctions;
+import org.apache.sysds.runtime.matrix.data.IJV;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.matrix.data.MatrixCell;
 import org.apache.sysds.runtime.matrix.data.MatrixIndexes;
@@ -78,7 +68,6 @@ public class DataPartitionerLocal extends DataPartitioner
 {
 	private static final boolean PARALLEL = true; 
 	
-	private IDSequence _seq = null;
 	private MatrixBlock _reuseBlk = null;
 	
 	private int _par = -1;
@@ -93,7 +82,6 @@ public class DataPartitionerLocal extends DataPartitioner
 		super(dpf._dpf, dpf._N);
 		if( dpf.isBlockwise() )
 			throw new DMLRuntimeException("Data partitioning formt '"+dpf+"' not supported by DataPartitionerLocal" );
-		_seq = new IDSequence();
 		_par = (par > 0) ? par : 1;
 	}
 	
@@ -107,105 +95,12 @@ public class DataPartitionerLocal extends DataPartitioner
 		String fnameStaging = LocalFileUtils.getUniqueWorkingDir( LocalFileUtils.CATEGORY_PARTITIONING );
 		
 		//reblock input matrix
-		if( fmt == FileFormat.TEXT )
-			partitionTextCell( fname, fnameStaging, fnameNew, rlen, clen, blen );
-		else if( fmt == FileFormat.BINARY )
+		if( fmt == FileFormat.BINARY )
 			partitionBinaryBlock( fname, fnameStaging, fnameNew, rlen, clen, blen );
 		else
 			throw new DMLRuntimeException("Cannot create data partitions of format: "+fmt.toString());
 	
 		LocalFileUtils.cleanupWorkingDirectory(fnameStaging);
-	}
-
-	private void partitionTextCell( String fname, String fnameStaging, String fnameNew, long rlen, long clen, int blen ) 
-	{
-		long row = -1;
-		long col = -1;
-		
-		try 
-		{
-			//STEP 1: read matrix from HDFS and write blocks to local staging area
-			//check and add input path
-			JobConf job = new JobConf(ConfigurationManager.getCachedJobConf());
-			Path path = new Path(fname);
-			FileInputFormat.addInputPath(job, path);
-			TextInputFormat informat = new TextInputFormat();
-			informat.configure(job);
-			InputSplit[] splits = informat.getSplits(job, 1);
-			
-			LinkedList<Cell> buffer = new LinkedList<>();
-			LongWritable key = new LongWritable();
-			Text value = new Text();
-			FastStringTokenizer st = new FastStringTokenizer(' ');
-			
-			for(InputSplit split: splits)
-			{
-				RecordReader<LongWritable,Text> reader = informat.getRecordReader(split, job, Reporter.NULL);
-				try
-				{
-					while(reader.next(key, value))
-					{
-						st.reset( value.toString() ); //reset tokenizer
-						row = st.nextLong();
-						col = st.nextLong();
-						double lvalue = st.nextDouble();
-						Cell tmp = new Cell( row, col, lvalue ); 
-		
-						buffer.addLast( tmp );
-						if( buffer.size() > StagingFileUtils.CELL_BUFFER_SIZE ) //periodic flush
-						{
-							appendCellBufferToStagingArea(fnameStaging, buffer, blen);
-							buffer.clear();
-						}
-					}
-					
-					//final flush
-					if( !buffer.isEmpty() )
-					{
-						appendCellBufferToStagingArea(fnameStaging, buffer, blen);
-						buffer.clear();
-					}
-				}
-				finally {
-					IOUtilFunctions.closeSilently(reader);
-				}
-			}
-
-			//STEP 2: read matrix blocks from staging area and write matrix to HDFS
-			String[] fnamesPartitions = new File(fnameStaging).list();	
-			if(PARALLEL) 
-			{
-				int len = Math.min(fnamesPartitions.length, _par);
-				Thread[] threads = new Thread[len];
-				for( int i=0;i<len;i++ )
-				{
-					int start = i*(int)Math.ceil(((double)fnamesPartitions.length)/len);
-					int end = (i+1)*(int)Math.ceil(((double)fnamesPartitions.length)/len)-1;
-					end = Math.min(end, fnamesPartitions.length-1);
-					threads[i] = new Thread(new DataPartitionerWorkerTextCell(job, fnameNew, fnameStaging, fnamesPartitions, start, end));
-					threads[i].start();
-				}
-				
-				for( Thread t : threads )
-					t.join();
-			}
-			else
-			{
-				for( String pdir : fnamesPartitions  )
-					writeTextCellFileToHDFS( job, fnameNew, fnameStaging+"/"+pdir );	
-			}
-		} 
-		catch (Exception e) 
-		{
-			//post-mortem error handling and bounds checking
-			if( row < 1 || row > rlen || col < 1 || col > clen )
-			{
-				throw new DMLRuntimeException("Matrix cell ["+(row)+","+(col)+"] " +
-									          "out of overall matrix range [1:"+rlen+",1:"+clen+"].");
-			}
-			else
-				throw new DMLRuntimeException("Unable to partition text cell matrix.", e);
-		}
 	}
 
 	@SuppressWarnings("deprecation")
@@ -323,52 +218,6 @@ public class DataPartitionerLocal extends DataPartitioner
 			LocalFileUtils.writeMatrixBlockToLocal(pfname, mb);
 		}
 	}
-
-	private void appendCellBufferToStagingArea( String dir, LinkedList<Cell> buffer, int blen ) 
-		throws IOException
-	{
-		HashMap<Long,LinkedList<Cell>> sortedBuffer = new HashMap<>();
-		
-		//sort cells in buffer wrt key
-		long key = -1;
-		for( Cell c : buffer )
-		{
-			switch(_format)
-			{
-				case ROW_WISE:
-					key = c.getRow();
-					c.setRow(1);
-					break;
-				case ROW_BLOCK_WISE:
-					key = (c.getRow()-1)/blen+1;
-					c.setRow((c.getRow()-1)%blen+1);
-					break;
-				case COLUMN_WISE:
-					key = c.getCol();
-					c.setCol(1);
-					break;
-				case COLUMN_BLOCK_WISE:
-					key = (c.getCol()-1)/blen+1;
-					c.setCol((c.getCol()-1)%blen+1);
-					break;
-				default:
-					//do nothing
-			}
-			
-			if( !sortedBuffer.containsKey(key) )
-				sortedBuffer.put(key, new LinkedList<Cell>());
-			sortedBuffer.get(key).addLast(c);
-		}	
-		
-		//write lists of cells to local files
-		for( Entry<Long,LinkedList<Cell>> e : sortedBuffer.entrySet() )
-		{
-			String pdir = LocalFileUtils.checkAndCreateStagingDir(dir+"/"+e.getKey());
-			String pfname = pdir+"/"+"block_"+_seq.getNextID();
-			StagingFileUtils.writeCellListToLocal(pfname, e.getValue());
-		}
-	}	
-
 	
 	/////////////////////////////////////
 	//     Helper methods for HDFS     //
@@ -425,11 +274,11 @@ public class DataPartitionerLocal extends DataPartitioner
 			String[] fnameBlocks = new File( lpdir ).list();
 			for( String fnameBlock : fnameBlocks  )
 			{
-				LinkedList<Cell> tmp = StagingFileUtils.readCellListFromLocal(lpdir+"/"+fnameBlock);
-				for( Cell c : tmp )
+				LinkedList<IJV> tmp = readCellListFromLocal(lpdir+"/"+fnameBlock);
+				for( IJV c : tmp )
 				{
-					indexes.setIndexes(c.getRow(), c.getCol());
-					cell.setValue(c.getValue());
+					indexes.setIndexes(c.getI(), c.getJ());
+					cell.setValue(c.getV());
 					writer.append(indexes, cell);
 				}
 			}
@@ -438,37 +287,26 @@ public class DataPartitionerLocal extends DataPartitioner
 			IOUtilFunctions.closeSilently(writer);
 		}
 	}
-	
-	public void writeTextCellFileToHDFS( JobConf job, String dir, String lpdir ) 
+
+	private static LinkedList<IJV> readCellListFromLocal( String fname ) 
 		throws IOException
 	{
-		long key = getKeyFromFilePath(lpdir);
-		Path path = new Path(dir+"/"+key);
-		FileSystem fs = IOUtilFunctions.getFileSystem(path, job);
-		try(BufferedWriter out = new BufferedWriter(new OutputStreamWriter(fs.create(path,true))))
-		{
-			//for obj reuse and preventing repeated buffer re-allocations
-			StringBuilder sb = new StringBuilder();
-			
-			String[] fnameBlocks = new File( lpdir ).list();
-			for( String fnameBlock : fnameBlocks  )
-			{
-				LinkedList<Cell> tmp = StagingFileUtils.readCellListFromLocal(lpdir+"/"+fnameBlock);
-				for( Cell c : tmp )
-				{
-					sb.append(c.getRow());
-					sb.append(' ');
-					sb.append(c.getCol());
-					sb.append(' ');
-					sb.append(c.getValue());
-					sb.append('\n');
-					out.write( sb.toString() );
-					sb.setLength(0);
-				}
+		FileInputStream fis = new FileInputStream( fname );
+		LinkedList<IJV> buffer = new LinkedList<>();
+		try(BufferedReader in = new BufferedReader(new InputStreamReader(fis)))  {
+			String value = null;
+			FastStringTokenizer st = new FastStringTokenizer(' '); 
+			while( (value=in.readLine())!=null ) {
+				st.reset( value ); //reset tokenizer
+				int row = (int)st.nextLong();
+				int col = (int)st.nextLong();
+				double lvalue = st.nextDouble();
+				IJV c =  new IJV().set( row, col, lvalue );
+				buffer.addLast( c );
 			}
 		}
+		return buffer;
 	}
-	
 	
 	/////////////////////////////////
 	// Helper methods for local fs //
@@ -525,21 +363,7 @@ public class DataPartitionerLocal extends DataPartitioner
 		public abstract void writeFileToHDFS( JobConf job, String fnameNew, String stagingDir ) 
 			throws IOException;
 	}
-	
-	private class DataPartitionerWorkerTextCell extends DataPartitionerWorker
-	{
-		public DataPartitionerWorkerTextCell(JobConf job, String fnameNew, String fnameStaging, String[] fnamesPartitions, int start, int end) {
-			super(job, fnameNew, fnameStaging, fnamesPartitions, start, end);
-		}
 
-		@Override
-		public void writeFileToHDFS(JobConf job, String fnameNew, String stagingDir) 
-			throws IOException 
-		{
-			writeTextCellFileToHDFS( job, fnameNew, stagingDir );
-		}
-	}
-	
 	private class DataPartitionerWorkerBinaryBlock extends DataPartitionerWorker
 	{
 		public DataPartitionerWorkerBinaryBlock(JobConf job, String fnameNew, String fnameStaging, String[] fnamesPartitions, int start, int end) {

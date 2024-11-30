@@ -2161,10 +2161,10 @@ public class TestUtils {
 	 * @param seed seed
 	 * @return random symmetric MatrixBlock
 	 */
-	public static MatrixBlock generateTestMatrixBlockSym(int rows, int cols, double min, double max, double sparsity, long seed){
-		MatrixBlock m = MatrixBlock.randOperations(rows, cols, sparsity, min, max, "Uniform", seed);
-		for(int i = 0; i < rows; i++) {
-			for(int j = i+1; j < cols; j++) {
+	public static MatrixBlock generateTestMatrixBlockSym(int size, double min, double max, double sparsity, long seed){
+		MatrixBlock m = MatrixBlock.randOperations(size, size, sparsity, min, max, "Uniform", seed);
+		for(int i = 0; i < size; i++) {
+			for(int j = i+1; j < size; j++) {
 				m.set(i,j, m.get(j,i));
 			}
 		}

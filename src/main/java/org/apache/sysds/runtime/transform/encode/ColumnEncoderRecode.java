@@ -19,6 +19,8 @@
 
 package org.apache.sysds.runtime.transform.encode;
 
+import static org.apache.sysds.runtime.transform.encode.EncodeBuildCache.getEncodeBuildCache;
+import static org.apache.sysds.runtime.transform.encode.EncoderType.Recode;
 import static org.apache.sysds.runtime.util.UtilFunctions.getEndIndex;
 
 import java.io.IOException;
@@ -33,7 +35,9 @@ import java.util.Objects;
 import java.util.concurrent.Callable;
 
 import org.apache.sysds.api.DMLScript;
+import org.apache.sysds.conf.ConfigurationManager;
 import org.apache.sysds.lops.Lop;
+import org.apache.sysds.runtime.compress.estim.ComEstSample;
 import org.apache.sysds.runtime.compress.estim.sample.SampleEstimatorFactory;
 import org.apache.sysds.runtime.controlprogram.caching.CacheBlock;
 import org.apache.sysds.runtime.frame.data.FrameBlock;
@@ -175,7 +179,35 @@ public class ColumnEncoderRecode extends ColumnEncoder {
 		if(!isApplicable())
 			return;
 		long t0 = DMLScript.STATISTICS ? System.nanoTime() : 0;
-		makeRcdMap(in, _rcdMap, _colID, 0, in.getNumRows());
+
+
+		if (EncodeCacheConfig.isCacheEnabled()) {
+			EncodeCacheKey key = new EncodeCacheKey(_colID, Recode);
+			EncodeBuildCache cache = getEncodeBuildCache();
+			EncodeCacheEntry<Object> entry = cache.get(key);
+
+			if (entry == null) {
+				LOG.debug(String.format("No entry found for key: %s, creating new rcdmap\n", key));
+				makeRcdMap(in, _rcdMap, _colID, 0, in.getNumRows());
+
+				int sampleSize = (int) (0.1 * in.getNumRows());
+				int seed = (int) System.nanoTime();
+				int[] sampleInds = ComEstSample.getSortedSample(in.getNumRows(), sampleSize, seed, 1);
+				computeRCDMapSizeEstimate(in, sampleInds); // compute returns in case the estimated map size is already set
+
+				cache.put(key, new EncodeCacheEntry<>(key, new RCDMap(_rcdMap, _estMetaSize)));
+				LOG.debug(String.format("cache entry: %s\n", cache.get(key)));
+			} else {
+				Map<Object, Long> rcdMap = ((RCDMap) entry.getValue()).get_rcdMap();
+				LOG.debug(String.format("using existing map: %s\n", rcdMap));
+				_rcdMap = rcdMap;
+			}
+		} else {
+			makeRcdMap(in, _rcdMap, _colID, 0, in.getNumRows());
+		}
+
+
+
 		if(DMLScript.STATISTICS){
 			TransformStatistics.incRecodeBuildTime(System.nanoTime() - t0);
 		}

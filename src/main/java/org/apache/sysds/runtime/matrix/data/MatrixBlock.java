@@ -5779,7 +5779,7 @@ public class MatrixBlock extends MatrixValue implements CacheBlock<MatrixBlock>,
 	}
 
 	/**
-	 * Analyze if the matrixBlocks are equivalent, the comparsion supports if the differnet sides are differently
+	 * Analyze if the matrixBlocks are equivalent, the comparison supports if the different sides are differently
 	 * allocated such as sparse and dense.
 	 * 
 	 * <p>

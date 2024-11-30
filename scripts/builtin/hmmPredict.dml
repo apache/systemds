@@ -1,0 +1,76 @@
+#-------------------------------------------------------------
+#
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+#
+#-------------------------------------------------------------
+
+# This script implements the hidden markov model method
+# INPUT:
+# --------------------------------------------------------------------------------------------
+# X         Output of hmm of last n timestep
+# k         Number of timesteps to predict the output for
+# OUTPUT:
+# --------------------------------------------------------------------------------------------
+# outputs   Output of hmm for k timesteps
+# --------------------------------------------------------------------------------------------
+
+m_hmmPredict = function (Matrix[Double] X, Integer k) return (Matrix[Double] outputs)
+{
+    /*
+    Only discrete model implemented, need to discretize the cotinous outputs
+    to work with the continous model
+    */
+    [ip, A, B] = hmm(X)
+    /*
+    Also only discrete model implemented, need to discretize the cotinous outputs
+    to work with the continous model
+    */
+    seed = 42
+    init_state = choose_value(ip, seed)
+
+    states = matrix(0, rows=k, cols=1)
+    
+    states[1, 1] = init_state
+    s = init_state
+    for (i in 2:k) {
+        seed=seed +1
+        next_state = choose_value(t(A[s, ]), seed) 
+        states[i, 1] = next_state
+        s = next_state
+    }
+
+    outputs = matrix(0, rows=nrow(states), cols=1)
+    for (i in 1:nrow(states)) {
+        seed = seed+1
+        s = as.scalar(states[i, 1])
+        outputs[i, 1] = choose_value(t(B[s, ]), seed)
+    }
+}
+
+choose_value = function (Matrix[Double] prob_dist, Integer seed) return (Double val)
+{
+    # for selecting output or states given probability distribution
+
+    # choosing using cumulative distribution
+    cum_prob = cumsum(prob_dist)
+    
+    R = rand(rows=1, cols=1, min=0, max=1, seed=seed)
+    
+    # adding 1 to colsum because indexing starts from 1
+    val = as.scalar(colSums(cum_prob <= R) + 1)
+}

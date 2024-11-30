@@ -13,6 +13,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Queue;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 public class CodeGenCondition {
@@ -85,7 +86,19 @@ public class CodeGenCondition {
 					for (int l = 0; l < c3.rulesIf.size(); l++) {
 						CodeGenCondition c4 = (CodeGenCondition) c3.rulesIf.get(l);
 						final int maxIndex = ((Tuple2<RewriterRule, RewriterStatement>) c4.rulesIf.get(0))._2.getOperands().size();
-						Queue<Tuple2<List<Object>, List<Integer>>> mQueue = new LinkedList<>(queue);
+						Set<RewriterRule> activeRules = c4.rulesIf.stream().map(o -> ((Tuple2<RewriterRule, RewriterStatement>) o)._1).collect(Collectors.toSet());
+						Queue<Tuple2<List<Object>, List<Integer>>> mQueue = new LinkedList<>();
+
+						for (Tuple2<List<Object>, List<Integer>> t : queue) {
+							List<Object> mObj = new ArrayList<>();
+							for (Object o : t._1) {
+								if (activeRules.contains(((Tuple2<RewriterRule, RewriterStatement>) o)._1))
+									mObj.add(o);
+							}
+
+							if (!mObj.isEmpty())
+								mQueue.add(new Tuple2<>(mObj, t._2));
+						}
 
 						for (int idx = 0; idx < maxIndex; idx++) {
 							final int mIdx = idx;
@@ -101,6 +114,7 @@ public class CodeGenCondition {
 						}
 
 						if (!mQueue.isEmpty()) {
+							// TODO: Filter unnecessary elements from previous queue
 							Tuple2<List<Object>, List<Integer>> next = mQueue.poll();
 							c4.rulesIf = populateLayerRecursively(next._1, next._2(), mQueue, maxNumRules, ctx);
 						}
@@ -127,12 +141,24 @@ public class CodeGenCondition {
 	private static List<Object> populateDataTypeLayer(List<Object> rules, List<Integer> relativeChildPath, final RuleContext ctx) {
 		List<Object> conds = new ArrayList<>();
 
+		//System.out.println("=====");
+
 		for (Object o : rules) {
 			Tuple2<RewriterRule, RewriterStatement> t = (Tuple2<RewriterRule, RewriterStatement>) o;
 			if (!conds.stream().anyMatch(cond -> ((CodeGenCondition) cond).insertIfMatches(t, ctx))) {
 				CodeGenCondition cond = CodeGenCondition.conditionalDataType(t._2, relativeChildPath, t._2, ctx);
 				cond.insertIfMatches(t, ctx);
 				conds.add(cond);
+				StringBuilder sb = new StringBuilder();
+				cond.buildConditionCheck(sb, ctx);
+				//System.out.println("Add: " + sb.toString());
+				//System.out.println("For: " + t._1);
+			} else {
+				//System.out.println("Merging: " + t._1);
+				CodeGenCondition condse = (CodeGenCondition) conds.stream().filter(cond -> ((CodeGenCondition) cond).matchesCondition(t._1, t._2, ctx)).findFirst().get();
+				StringBuilder sb = new StringBuilder();
+				condse.buildConditionCheck(sb, ctx);
+				//System.out.println("Condse: " + sb);
 			}
 		}
 

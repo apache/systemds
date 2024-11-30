@@ -20,7 +20,7 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 
 public class RewriterCodeGen {
-	public static boolean DEBUG = false;
+	public static boolean DEBUG = true;
 
 	public static Function<Hop, Hop> compileRewrites(String className, List<Tuple2<String, RewriterRule>> rewrites, final RuleContext ctx, boolean ignoreErrors, boolean printErrors) throws Exception {
 		String code = generateClass(className, rewrites, false, false, ctx, ignoreErrors, printErrors);

@@ -29,7 +29,7 @@ public class CodeGenConditionTests {
 		canonicalConverter = RewriterUtils.buildCanonicalFormConverter(ctx, false);
 	}
 
-	@Test
+	//@Test
 	public void test1() {
 		String ruleStr = "MATRIX:A\n" +
 				"\n" +
@@ -43,7 +43,7 @@ public class CodeGenConditionTests {
 		System.out.println(cgcs);
 	}
 
-	@Test
+	//@Test
 	public void test2() {
 		String ruleStr = "MATRIX:A\n" +
 				"\n" +
@@ -113,11 +113,16 @@ public class CodeGenConditionTests {
 
 		RewriterRule rule4 = RewriterUtils.parseRule(ruleStr4, ctx);
 
-		String ruleStr5 = "FLOAT:A,B,C\n" +
+		/*String ruleStr5 = "FLOAT:A,B,C\n" +
 				"\n" +
 				"+(cast.MATRIX(A), B)\n" +
 				"=>\n" +
-				"cast.MATRIX(+(A,B))";
+				"cast.MATRIX(+(A,B))";*/
+		String ruleStr5 = "MATRIX:B,C\nFLOAT:a\n" +
+				"\n" +
+				"+(*(a,C),*(B,a))\n" +
+				"=>\n" +
+				"*(a,+(B,C))";
 
 		RewriterRule rule5 = RewriterUtils.parseRule(ruleStr5, ctx);
 

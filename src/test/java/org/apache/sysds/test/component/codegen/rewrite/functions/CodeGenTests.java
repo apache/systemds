@@ -213,6 +213,7 @@ public class CodeGenTests {
 		try {
 			List<String> lines = Files.readAllLines(Paths.get(RewriteAutomaticallyGenerated.FILE_PATH));
 			RewriterRuleSet ruleSet = RewriterRuleSet.deserialize(lines, ctx);
+			RewriterCodeGen.DEBUG = true;
 			String javaCode = ruleSet.toJavaCode("GeneratedRewriteClass", true, true, true);
 			String filePath = "/Users/janniklindemann/Dev/MScThesis/other/GeneratedRewriteClass.java";
 

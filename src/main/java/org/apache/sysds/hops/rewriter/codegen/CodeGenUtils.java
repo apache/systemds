@@ -61,6 +61,8 @@ public class CodeGenUtils {
 				case "sum":
 				case "trace":
 					return "Types.AggOp.SUM";
+				case "*2":
+					return "Types.OpOp1.MULT2";
 			}
 		} else if (stmt.getOperands().size() == 2) {
 			switch (stmt.trueInstruction()) {
@@ -164,6 +166,19 @@ public class CodeGenUtils {
 				case "%*%":
 					return "true"; // This should be resolved by the custom handler function
 			}
+		} else {
+			switch (stmt.trueInstruction()) {
+				case "+*":
+					if (stmt.getOperands().size() != 3)
+						throw new IllegalArgumentException();
+
+					return "Types.OpOp3.PLUS_MULT";
+				case "-*":
+					if (stmt.getOperands().size() != 3)
+						throw new IllegalArgumentException();
+
+					return "Types.OpOp3.MINUS_MULT";
+			}
 		}
 
 		throw new NotImplementedException(stmt.trueInstruction());
@@ -171,6 +186,20 @@ public class CodeGenUtils {
 
 	public static String getOpClass(RewriterStatement stmt, final RuleContext ctx) {
 		switch (stmt.trueInstruction()) {
+			case "!":
+			case "sqrt":
+			case "log":
+			case "abs":
+			case "round":
+			case "*2":
+				return "UnaryOp";
+
+			case "rowSums":
+			case "colSums":
+			case "sum":
+			case "trace":
+				return "AggUnaryOp";
+
 			case "+":
 			case "-":
 			case "*":
@@ -188,6 +217,7 @@ public class CodeGenUtils {
 			case "^":
 			case "RBind":
 			case "CBind":
+			case "1-*":
 				if (stmt.getOperands().size() != 2)
 					throw new IllegalArgumentException();
 
@@ -203,11 +233,9 @@ public class CodeGenUtils {
 			case "rev":
 				return "ReorgOp";
 
-			case "rowSums":
-			case "colSums":
-			case "sum":
-			case "trace":
-				return "AggUnaryOp";
+			case "+*":
+			case "-*":
+				return "TernaryOp";
 		}
 
 		throw new NotImplementedException(stmt.trueTypedInstruction(ctx));
@@ -247,14 +275,21 @@ public class CodeGenUtils {
 
 	public static String getHopConstructor(RewriterStatement cur, final RuleContext ctx, String... children) {
 		String opClass = getOpClass(cur, ctx);
+		String opCode = null;
 
 		switch (opClass) {
 			case "BinaryOp":
 				if (children.length != 2)
 					throw new IllegalArgumentException();
 
-				String opCode = getOpCode(cur, ctx);
+				opCode = getOpCode(cur, ctx);
 				return "HopRewriteUtils.createBinary(" + children[0] + ", " + children[1] + ", " + opCode + ")";
+			case "TernaryOp":
+				if (children.length != 3)
+					throw new IllegalArgumentException();
+
+				opCode = getOpCode(cur, ctx);
+				return "HopRewriteUtils.createTernary(" + children[0] + ", " + children[1] + ", " + children[2] + "," + opCode + ")";
 		}
 
 		// Special instructions

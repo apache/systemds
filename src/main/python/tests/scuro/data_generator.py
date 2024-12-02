@@ -36,7 +36,7 @@ class TestDataGenerator:
         self.balanced = balanced
 
         for modality in modalities:
-            mod_path = f"{self.path}/{modality.name.lower()}"
+            mod_path = f"{self.path}/{modality.name.lower()}/"
             os.mkdir(mod_path)
             modality.file_path = mod_path
         self.labels = []

@@ -34,6 +34,7 @@ public class RewriterInstruction extends RewriterStatement {
 
 	public RewriterInstruction(String instr, final RuleContext ctx, RewriterStatement... ops) {
 		id = UUID.randomUUID().toString();
+		this.instr = instr;
 		withOps(ops);
 		consolidate(ctx);
 	}

@@ -1,5 +1,6 @@
 package org.apache.sysds.hops.rewriter;
 
+import org.apache.commons.collections4.bidimap.DualHashBidiMap;
 import org.apache.commons.lang3.NotImplementedException;
 import org.apache.commons.lang3.mutable.MutableBoolean;
 
@@ -14,17 +15,15 @@ public class RewriterHeuristic implements RewriterHeuristicTransformation {
 	private final RewriterRuleSet ruleSet;
 	private final Function<RewriterStatement, RewriterStatement> f;
 	private final boolean accelerated;
-	//private final List<String> desiredProperties;
 
 	public RewriterHeuristic(RewriterRuleSet ruleSet) {
 		this(ruleSet, true);
 	}
 
-	public RewriterHeuristic(RewriterRuleSet ruleSet, boolean accelerated/*, List<String> desiredProperties*/) {
+	public RewriterHeuristic(RewriterRuleSet ruleSet, boolean accelerated) {
 		this.ruleSet = ruleSet;
 		this.accelerated = accelerated;
 		this.f = null;
-		//this.desiredProperties = desiredProperties;
 	}
 
 	public RewriterHeuristic(Function<RewriterStatement, RewriterStatement> f) {

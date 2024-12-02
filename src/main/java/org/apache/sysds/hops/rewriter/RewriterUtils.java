@@ -1273,6 +1273,25 @@ public class RewriterUtils {
 		return lastUnfuse;
 	}
 
+	private static RuleContext lastSparsityCtx;
+	private static Function<RewriterStatement, RewriterStatement> lastPrepareForSparsity;
+
+	public static Function<RewriterStatement, RewriterStatement> prepareForSparsityEstimation(final RuleContext ctx) {
+		if (lastSparsityCtx == ctx)
+			return lastPrepareForSparsity;
+
+		ArrayList<RewriterRule> mRules = new ArrayList<>();
+		RewriterRuleCollection.substituteFusedOps(mRules, ctx);
+		RewriterRuleCollection.substituteEquivalentStatements(mRules, ctx);
+		RewriterRuleCollection.eliminateMultipleCasts(mRules, ctx);
+		RewriterRuleCollection.canonicalizeBooleanStatements(mRules, ctx);
+		RewriterRuleCollection.canonicalizeAlgebraicStatements(mRules, ctx);
+		RewriterHeuristic heur = new RewriterHeuristic(new RewriterRuleSet(ctx, mRules));
+		lastSparsityCtx = ctx;
+		lastPrepareForSparsity = heur::apply;
+		return lastPrepareForSparsity;
+	}
+
 	public static Function<RewriterStatement, RewriterStatement> buildCanonicalFormConverter(final RuleContext ctx, boolean debug) {
 		ArrayList<RewriterRule> algebraicCanonicalizationRules = new ArrayList<>();
 		RewriterRuleCollection.substituteEquivalentStatements(algebraicCanonicalizationRules, ctx);

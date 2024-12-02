@@ -1,8 +1,13 @@
-package org.apache.sysds.hops.rewriter;
+package org.apache.sysds.hops.rewriter.dml;
 
 import org.apache.commons.lang3.NotImplementedException;
 import org.apache.commons.lang3.function.TriFunction;
 import org.apache.commons.lang3.mutable.MutableInt;
+import org.apache.sysds.hops.rewriter.RewriterInstruction;
+import org.apache.sysds.hops.rewriter.RewriterRule;
+import org.apache.sysds.hops.rewriter.RewriterStatement;
+import org.apache.sysds.hops.rewriter.RewriterUtils;
+import org.apache.sysds.hops.rewriter.RuleContext;
 import scala.Tuple2;
 
 import java.util.ArrayList;
@@ -13,9 +18,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Random;
 import java.util.Set;
-import java.util.function.BiFunction;
 import java.util.function.Consumer;
-import java.util.function.Function;
 import java.util.stream.Collectors;
 
 public class DMLCodeGenerator {

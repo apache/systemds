@@ -3,7 +3,9 @@ package org.apache.sysds.hops.rewriter;
 import org.apache.commons.collections4.bidimap.DualHashBidiMap;
 import org.apache.commons.lang3.mutable.MutableBoolean;
 import org.apache.sysds.hops.Hop;
-import scala.App;
+import org.apache.sysds.hops.rewriter.dml.DMLCodeGenerator;
+import org.apache.sysds.hops.rewriter.dml.DMLExecutor;
+import org.apache.sysds.hops.rewriter.estimators.RewriterCostEstimator;
 
 import java.util.ArrayList;
 import java.util.Collections;

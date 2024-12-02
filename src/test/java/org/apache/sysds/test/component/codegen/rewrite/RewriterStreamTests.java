@@ -1,6 +1,6 @@
 package org.apache.sysds.test.component.codegen.rewrite;
 
-import org.apache.sysds.hops.rewriter.RewriterCostEstimator;
+import org.apache.sysds.hops.rewriter.estimators.RewriterCostEstimator;
 import org.apache.sysds.hops.rewriter.RewriterDatabase;
 import org.apache.sysds.hops.rewriter.RewriterHeuristic;
 import org.apache.sysds.hops.rewriter.RewriterRule;

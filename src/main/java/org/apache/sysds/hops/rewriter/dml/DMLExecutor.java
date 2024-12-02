@@ -1,4 +1,4 @@
-package org.apache.sysds.hops.rewriter;
+package org.apache.sysds.hops.rewriter.dml;
 
 import org.apache.sysds.api.DMLScript;
 

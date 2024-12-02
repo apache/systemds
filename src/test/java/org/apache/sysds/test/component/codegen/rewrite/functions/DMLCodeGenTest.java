@@ -1,18 +1,16 @@
 package org.apache.sysds.test.component.codegen.rewrite.functions;
 
 import org.apache.commons.lang3.mutable.MutableBoolean;
-import org.apache.sysds.hops.rewriter.DMLCodeGenerator;
-import org.apache.sysds.hops.rewriter.DMLExecutor;
+import org.apache.sysds.hops.rewriter.dml.DMLCodeGenerator;
+import org.apache.sysds.hops.rewriter.dml.DMLExecutor;
 import org.apache.sysds.hops.rewriter.RewriterRule;
 import org.apache.sysds.hops.rewriter.RewriterRuleCreator;
-import org.apache.sysds.hops.rewriter.RewriterRuleSet;
 import org.apache.sysds.hops.rewriter.RewriterStatement;
 import org.apache.sysds.hops.rewriter.RewriterUtils;
 import org.apache.sysds.hops.rewriter.RuleContext;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
-import java.util.List;
 import java.util.UUID;
 import java.util.function.Function;
 

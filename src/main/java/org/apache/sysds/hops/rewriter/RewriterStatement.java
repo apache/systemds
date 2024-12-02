@@ -6,6 +6,7 @@ import org.apache.commons.lang3.function.TriFunction;
 import org.apache.commons.lang3.mutable.MutableInt;
 import org.apache.logging.log4j.util.TriConsumer;
 import org.apache.sysds.hops.rewriter.assertions.RewriterAssertions;
+import org.apache.sysds.hops.rewriter.estimators.RewriterCostEstimator;
 import scala.Tuple2;
 
 import java.util.ArrayList;
@@ -1169,6 +1170,10 @@ public abstract class RewriterStatement {
 			return literal(ctx, stmt.floatLiteral());
 
 		return castFloat(ctx, stmt);
+	}
+
+	public static RewriterStatement nnz(RewriterStatement of, final RuleContext ctx) {
+		return new RewriterInstruction().as(UUID.randomUUID().toString()).withInstruction("_nnz").withOps(of).consolidate(ctx);
 	}
 
 	public static RewriterStatement literal(final RuleContext ctx, Object literal) {

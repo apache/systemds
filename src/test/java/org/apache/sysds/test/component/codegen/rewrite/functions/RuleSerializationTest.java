@@ -2,7 +2,7 @@ package org.apache.sysds.test.component.codegen.rewrite.functions;
 
 import org.apache.commons.lang3.mutable.MutableObject;
 import org.apache.sysds.hops.rewriter.assertions.RewriterAssertions;
-import org.apache.sysds.hops.rewriter.RewriterCostEstimator;
+import org.apache.sysds.hops.rewriter.estimators.RewriterCostEstimator;
 import org.apache.sysds.hops.rewriter.RewriterRule;
 import org.apache.sysds.hops.rewriter.RewriterRuleCreator;
 import org.apache.sysds.hops.rewriter.RewriterRuleSet;

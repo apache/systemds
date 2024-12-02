@@ -1,7 +1,12 @@
-package org.apache.sysds.hops.rewriter;
+package org.apache.sysds.hops.rewriter.estimators;
 
 import org.apache.commons.lang3.mutable.MutableLong;
 import org.apache.commons.lang3.mutable.MutableObject;
+import org.apache.sysds.hops.rewriter.RewriterInstruction;
+import org.apache.sysds.hops.rewriter.RewriterRule;
+import org.apache.sysds.hops.rewriter.RewriterStatement;
+import org.apache.sysds.hops.rewriter.RewriterUtils;
+import org.apache.sysds.hops.rewriter.RuleContext;
 import org.apache.sysds.hops.rewriter.assertions.RewriterAssertionUtils;
 import org.apache.sysds.hops.rewriter.assertions.RewriterAssertions;
 import scala.Tuple2;

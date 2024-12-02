@@ -1,7 +1,7 @@
 package org.apache.sysds.test.component.codegen.rewrite.functions;
 
 import org.apache.sysds.api.DMLScript;
-import org.apache.sysds.hops.rewriter.DMLExecutor;
+import org.apache.sysds.hops.rewriter.dml.DMLExecutor;
 import org.junit.Test;
 
 public class CodeTest {

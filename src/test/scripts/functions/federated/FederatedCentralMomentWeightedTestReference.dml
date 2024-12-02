@@ -19,13 +19,10 @@
 #
 #-------------------------------------------------------------
 
+X = rbind(read($1), read($2), read($3), read($4));
 
-if($6) { A = rbind(read($1), read($2), read($3), read($4)); }
-else { A = cbind(read($1), read($2), read($3), read($4)); }
+w = read($5);
+W = rbind(w, w, w, w)
 
-c1 = ifelse(3, A + matrix(1, nrow(A), ncol(A)), A*2);
-c2 = ifelse(A-3>0, A + matrix(1, nrow(A), ncol(A)), 3);
-
-s = c2 + 1;
-s = s + 3*c1;
-write(s, $5);
+s = moment(X, W, $7);
+write(s, $6);

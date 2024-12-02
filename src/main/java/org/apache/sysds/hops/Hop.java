@@ -181,19 +181,7 @@ public abstract class Hop implements ParseInfo {
 		return _ID;
 	}
 
-	/**
-	 * Check whether this Hop has a correct number of inputs.
-	 *
-	 * (Some Hops can have a variable number of inputs, such as DataOp, DataGenOp, ParameterizedBuiltinOp,
-	 * ReorgOp, TernaryOp, QuaternaryOp, MultipleOp, DnnOp, and SpoofFusedOp.)
-	 *
-	 * Parameterized Hops (such as DataOp) can check that the number of parameters matches the number of inputs.
-	 *
-	 */
-	public abstract void checkArity();
-	
-	public ExecType getExecType()
-	{
+	public ExecType getExecType() {
 		return _etype;
 	}
 
@@ -306,18 +294,6 @@ public abstract class Hop implements ParseInfo {
 		for( Hop in : getInput() )
 			invalid |= !OptimizerUtils.isValidCPDimensions(in._dc.getRows(), in._dc.getCols());
 		return !invalid;
-	}
-
-	public boolean hasMatrixInputWithDifferentBlocksizes() {
-		for( Hop c : getInput() ) {
-			if( c.getDataType()==DataType.MATRIX
-				&& getBlocksize() != c.getBlocksize() )
-			{
-				return true;
-			}
-		}
-		
-		return false;
 	}
 	
 	public void setRequiresReblock(boolean flag) {

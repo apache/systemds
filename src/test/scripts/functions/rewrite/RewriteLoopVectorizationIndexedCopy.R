@@ -1,5 +1,3 @@
-#-------------------------------------------------------------
-#
 # Licensed to the Apache Software Foundation (ASF) under one
 # or more contributor license agreements.  See the NOTICE file
 # distributed with this work for additional information
@@ -7,9 +5,9 @@
 # to you under the Apache License, Version 2.0 (the
 # "License"); you may not use this file except in compliance
 # with the License.  You may obtain a copy of the License at
-# 
+#
 #   http://www.apache.org/licenses/LICENSE-2.0
-# 
+#
 # Unless required by applicable law or agreed to in writing,
 # software distributed under the License is distributed on an
 # "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -19,18 +17,17 @@
 #
 #-------------------------------------------------------------
 
+args<-commandArgs(TRUE)
 
-V = read($1,rows=$2,cols=$3);
-m = $2;
-n = $3;
+A = matrix(7.0, 10, 10)
+B = matrix(3.0, 10, 10)
+n = nrow(A)
+s = 0.0
 
-R1 = matrix(0,rows=m,cols=n);
-parfor( i in 1:(n-7), par=8, mode=REMOTE_SPARK, resultmerge=REMOTE_SPARK, taskpartitioner=FACTORING, opt=NONE )
-{
-   X = V[,i];
-   while(FALSE){} # prevent auto vectorization
-   R1[,i] = X;
+for(i in 1:n) {
+  A[i,2] = B[i,1]
 }
+s = sum(A)
 
-R = R1 + R1;
-write(R, $4);
+write(s, paste(args[2], "Scalar",sep=""))
+

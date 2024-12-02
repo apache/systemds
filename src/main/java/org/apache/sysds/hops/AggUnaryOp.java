@@ -63,28 +63,19 @@ public class AggUnaryOp extends MultiThreadedHop
 		inp.getParent().add(this);
 	}
 
-	@Override
-	public void checkArity() {
-		HopsException.check(_input.size() == 1, this, "should have arity 1 but has arity %d", _input.size());
-	}
-
-	public AggOp getOp()
-	{
+	public AggOp getOp() {
 		return _op;
 	}
 	
-	public void setOp(AggOp op)
-	{
+	public void setOp(AggOp op) {
 		_op = op;
 	}
 	
-	public Direction getDirection()
-	{
+	public Direction getDirection() {
 		return _direction;
 	}
 	
-	public void setDirection(Direction direction)
-	{
+	public void setDirection(Direction direction) {
 		_direction = direction;
 	}
 
@@ -370,9 +361,8 @@ public class AggUnaryOp extends MultiThreadedHop
 		ExecType REMOTE = ExecType.SPARK;
 		
 		//forced / memory-based / threshold-based decision
-		if( _etypeForced != null )
-		{
-			_etype = _etypeForced;
+		if( _etypeForced != null ) {
+			setExecType(_etypeForced);
 		}
 		else
 		{
@@ -381,10 +371,10 @@ public class AggUnaryOp extends MultiThreadedHop
 			}
 			// Choose CP, if the input dimensions are below threshold or if the input is a vector
 			else if(getInput().get(0).areDimsBelowThreshold() || getInput().get(0).isVector()) {
-				_etype = ExecType.CP;
+				setExecType(ExecType.CP);
 			}
 			else {
-				_etype = REMOTE;
+				setExecType(REMOTE);
 			}
 			
 			//check for valid CP dimensions and matrix size
@@ -402,15 +392,15 @@ public class AggUnaryOp extends MultiThreadedHop
 			&& (onlyOneParent() || allParentsSpark() || inputDoesNotRequireAggregation() ))
 		{
 			//pull unary aggregate into spark 
-			_etype = ExecType.SPARK;
+			setExecType(ExecType.SPARK);
 		}
 
 		//ensure cp exec type for single-node operations
-		if( _op == AggOp.UNIQUE ) {
-			_etype = ExecType.CP;
-		} else {
+		if( _op == AggOp.UNIQUE )
+			setExecType(ExecType.CP);
+		else
 			setRequiresRecompileIfNecessary();
-		}
+		
 		return _etype;
 	}
 

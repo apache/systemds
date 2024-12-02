@@ -200,33 +200,6 @@ public class DataOp extends Hop {
 			setFileFormat(FileFormat.BINARY);
 	}
 
-	/** Check for N (READ) or N+1 (WRITE) inputs. */
-	@Override
-	public void checkArity() {
-		int sz = _input.size();
-		int pz = _paramIndexMap.size();
-		switch (_op) {
-			case PERSISTENTREAD:
-			case TRANSIENTREAD:
-			case SQLREAD:
-				HopsException.check(sz == pz, this,
-					"in %s operator type has %d inputs and %d parameters", _op.name(), sz, pz);
-				break;
-			case PERSISTENTWRITE:
-			case TRANSIENTWRITE:
-			case FUNCTIONOUTPUT:
-				HopsException.check(sz == pz + 1, this,
-						"in %s operator type has %d inputs and %d parameters (expect 1 more input for write operator type)",
-						_op.name(), sz, pz);
-				break;
-			
-			case FEDERATED:
-				//TODO 
-			default:
-				//do nothing
-		}
-	}
-
 	public OpOpData getOp() {
 		return _op;
 	}

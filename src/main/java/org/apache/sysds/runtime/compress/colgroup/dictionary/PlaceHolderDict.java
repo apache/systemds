@@ -25,6 +25,7 @@ import java.io.IOException;
 import java.io.Serializable;
 
 import org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex;
+import org.apache.sysds.runtime.data.DenseBlock;
 import org.apache.sysds.runtime.data.SparseBlock;
 import org.apache.sysds.runtime.functionobjects.Builtin;
 import org.apache.sysds.runtime.functionobjects.ValueFunction;
@@ -526,7 +527,12 @@ public class PlaceHolderDict implements IDictionary, Serializable {
 	}
 	
 	@Override
-	public void put(SparseBlock sb, int idx, int rowOut, int nCol, IColIndex columns) {
+	public void putSparse(SparseBlock sb, int idx, int rowOut, int nCol, IColIndex columns) {
+		throw new RuntimeException(errMessage);
+	}
+
+	@Override
+	public void putDense(DenseBlock sb, int idx, int rowOut, int nCol, IColIndex columns) {
 		throw new RuntimeException(errMessage);
 	}
 }

@@ -198,6 +198,8 @@ public class CodeGenUtils {
 			case "round":
 			case "*2":
 			case "cast.MATRIX":
+			case "nrow":
+			case "ncol":
 				return "UnaryOp";
 
 			case "rowSums":
@@ -326,7 +328,7 @@ public class CodeGenUtils {
 				if (children.length != 1)
 					throw new IllegalArgumentException();
 
-				return "HopRewriteUtils.createAggUnaryOp(" + children[0] + ", Types.AggOp.TRACE, Direction.RowCol)";
+				return "HopRewriteUtils.createAggUnaryOp(" + children[0] + ", Types.AggOp.TRACE, Types.Direction.RowCol)";
 
 			case "ncol":
 				if (children.length != 1)
@@ -341,62 +343,70 @@ public class CodeGenUtils {
 				return "HopRewriteUtils.createUnary(" + children[0] + ", Types.OpOp1.NROW)";
 
 			case "const":
-				Optional<RewriterStatement> nrowLiteral = cur.getNRow().isLiteral() ? Optional.of(cur.getNRow()) : Optional.empty();
-				Optional<RewriterStatement> ncolLiteral = cur.getNCol().isLiteral() ? Optional.of(cur.getNCol()) : Optional.empty();
-
-				RewriterAssertions.RewriterAssertion nrowAssertion = assertions.getAssertionObj(cur.getNRow());
-				RewriterAssertions.RewriterAssertion ncolAssertion = assertions.getAssertionObj(cur.getNCol());
-
-				nrowLiteral = nrowAssertion == null ? nrowLiteral : nrowAssertion.getLiteral();
-				ncolLiteral = ncolAssertion == null ? ncolLiteral : ncolAssertion.getLiteral();
+				String referredVarName = varNameMapping.get(cur.getChild(0));
 				String nrowContent;
 				String ncolContent;
 
-				if (nrowLiteral.isPresent()) {
-					nrowContent = "new LiteralOp(" + nrowLiteral.get().getLiteral().toString() + ")";
-				} else {
-					// Find the first
-					nrowContent = null;
+				if (referredVarName == null) {
+					Optional<RewriterStatement> nrowLiteral = cur.getNRow().isLiteral() ? Optional.of(cur.getNRow()) : Optional.empty();
+					Optional<RewriterStatement> ncolLiteral = cur.getNCol().isLiteral() ? Optional.of(cur.getNCol()) : Optional.empty();
 
-					if (nrowAssertion == null)
-						throw new IllegalArgumentException();
+					RewriterAssertions.RewriterAssertion nrowAssertion = assertions.getAssertionObj(cur.getNRow());
+					RewriterAssertions.RewriterAssertion ncolAssertion = assertions.getAssertionObj(cur.getNCol());
 
-					for (RewriterStatement stmt : nrowAssertion.getEClass()) {
-						String mappedName = varNameMapping.get(stmt);
+					nrowLiteral = nrowAssertion == null ? nrowLiteral : nrowAssertion.getLiteral();
+					ncolLiteral = ncolAssertion == null ? ncolLiteral : ncolAssertion.getLiteral();
 
-						if (mappedName != null) {
-							nrowContent = getHopConstructor(stmt, assertions, varNameMapping, ctx, mappedName);
-							break;
+
+					if (nrowLiteral.isPresent()) {
+						nrowContent = "new LiteralOp(" + nrowLiteral.get().getLiteral().toString() + ")";
+					} else {
+						// Find the first
+						nrowContent = null;
+
+						if (nrowAssertion == null)
+							throw new IllegalArgumentException();
+
+						for (RewriterStatement stmt : nrowAssertion.getEClass()) {
+							String mappedName = varNameMapping.get(stmt);
+
+							if (mappedName != null) {
+								nrowContent = getHopConstructor(stmt, assertions, varNameMapping, ctx, mappedName);
+								break;
+							}
 						}
+
+						if (nrowContent == null)
+							throw new IllegalArgumentException();
 					}
 
-					if (nrowContent == null)
-						throw new IllegalArgumentException();
-				}
+					if (ncolLiteral.isPresent()) {
+						ncolContent = "new LiteralOp(" + ncolLiteral.get().getLiteral().toString() + ")";
+					} else {
+						// Find the first
+						ncolContent = null;
 
-				if (ncolLiteral.isPresent()) {
-					ncolContent = "new LiteralOp(" + ncolLiteral.get().getLiteral().toString() + ")";
-				} else {
-					// Find the first
-					ncolContent = null;
+						if (ncolAssertion == null)
+							throw new IllegalArgumentException();
 
-					if (ncolAssertion == null)
-						throw new IllegalArgumentException();
+						for (RewriterStatement stmt : ncolAssertion.getEClass()) {
+							String mappedName = varNameMapping.get(stmt);
 
-					for (RewriterStatement stmt : ncolAssertion.getEClass()) {
-						String mappedName = varNameMapping.get(stmt);
-
-						if (mappedName != null) {
-							ncolContent = getHopConstructor(stmt, assertions, varNameMapping, ctx, mappedName);
-							break;
+							if (mappedName != null) {
+								ncolContent = getHopConstructor(stmt, assertions, varNameMapping, ctx, mappedName);
+								break;
+							}
 						}
-					}
 
-					if (ncolContent == null)
-						throw new IllegalArgumentException();
+						if (ncolContent == null)
+							throw new IllegalArgumentException();
+					}
+				} else {
+					nrowContent = getHopConstructor(cur.getChild(0).getNRow(), assertions, varNameMapping, ctx, referredVarName);
+					ncolContent = getHopConstructor(cur.getChild(0).getNCol(), assertions, varNameMapping, ctx, referredVarName);
 				}
 
-				return "HopRewriteUtils.createDataGenOp(" + nrowContent + "," + ncolContent + "," + children[0] + ")";
+				return "((DataGenOp) HopRewriteUtils.createDataGenOp(" + nrowContent + "," + ncolContent + "," + cur.getChild(1).getLiteral() + "D))";
 		}
 
 		switch (opClass) {
@@ -404,6 +414,7 @@ public class CodeGenUtils {
 				if (children.length != 1)
 					throw new IllegalArgumentException();
 
+				opCode = getOpCode(cur, ctx);
 				return "HopRewriteUtils.createUnary(" + children[0] + ", " + opCode + ")";
 			case "BinaryOp":
 				if (children.length != 2)

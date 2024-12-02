@@ -49,6 +49,8 @@ public class RewriterCodeGen {
 		msb.append("import org.apache.sysds.hops.ReorgOp;\n");
 		msb.append("import org.apache.sysds.hops.AggUnaryOp;\n");
 		msb.append("import org.apache.sysds.hops.AggBinaryOp;\n");
+		msb.append("import org.apache.sysds.hops.DataGenOp;\n");
+		msb.append("import org.apache.sysds.hops.TernaryOp;\n");
 		msb.append("import org.apache.sysds.common.Types;\n");
 		msb.append("import org.apache.sysds.hops.rewrite.HopRewriteUtils;\n");
 		msb.append("\n");

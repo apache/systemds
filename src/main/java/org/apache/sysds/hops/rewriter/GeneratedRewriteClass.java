@@ -10,6 +10,8 @@ import org.apache.sysds.hops.BinaryOp;
 import org.apache.sysds.hops.ReorgOp;
 import org.apache.sysds.hops.AggUnaryOp;
 import org.apache.sysds.hops.AggBinaryOp;
+import org.apache.sysds.hops.DataGenOp;
+import org.apache.sysds.hops.TernaryOp;
 import org.apache.sysds.common.Types;
 import org.apache.sysds.hops.rewrite.HopRewriteUtils;
 
@@ -71,11 +73,17 @@ public class GeneratedRewriteClass implements Function {
 										Hop hi_0_0 = hi_0.getInput(0);
 										Hop hi_0_1 = hi_0.getInput(1);
 										if ( hi_0_0.getDataType() == Types.DataType.SCALAR ) {
+											hi = _applyRewrite147(hi); // trace(!=(b,t(A))) => trace(!=(A,b))
+											hi = _applyRewrite168(hi); // trace(!=(sum(A),A)) => trace(!=(A,trace(A)))
 											hi = _applyRewrite180(hi); // sum(!=(b,t(A))) => sum(!=(A,b))
 										} else if ( hi_0_0.getDataType() == Types.DataType.MATRIX ) {
 											if ( hi_0_0 instanceof ReorgOp ) {
+												hi = _applyRewrite136(hi); // trace(!=(t(B),A)) => trace(!=(A,B))
+												hi = _applyRewrite146(hi); // trace(!=(t(A),b)) => trace(!=(A,b))
 												hi = _applyRewrite179(hi); // sum(!=(t(A),b)) => sum(!=(A,b))
 											} else {
+												hi = _applyRewrite137(hi); // trace(!=(A,t(B))) => trace(!=(A,B))
+												hi = _applyRewrite169(hi); // trace(!=(A,sum(A))) => trace(!=(A,trace(A)))
 											}
 										}
 									}
@@ -84,12 +92,18 @@ public class GeneratedRewriteClass implements Function {
 										Hop hi_0_0 = hi_0.getInput(0);
 										Hop hi_0_1 = hi_0.getInput(1);
 										if ( hi_0_0.getDataType() == Types.DataType.SCALAR ) {
+											hi = _applyRewrite16(hi); // trace(*(a,B)) => *(a,trace(B))
 										} else if ( hi_0_0.getDataType() == Types.DataType.MATRIX ) {
 											if ( hi_0_0 instanceof BinaryOp ) {
+												hi = _applyRewrite120(hi); // trace(*(/(a,C),B)) => *(a,trace(/(B,C)))
 												hi = _applyRewrite150(hi); // sum(*(/(a,C),B)) => *(a,sum(/(B,C)))
 											} else if ( hi_0_0 instanceof ReorgOp ) {
+												hi = _applyRewrite183(hi); // trace(*(t(B),A)) => trace(*(A,B))
 											} else {
+												hi = _applyRewrite17(hi); // trace(*(B,a)) => *(a,trace(B))
+												hi = _applyRewrite121(hi); // trace(*(B,/(a,C))) => *(a,trace(/(B,C)))
 												hi = _applyRewrite151(hi); // sum(*(B,/(a,C))) => *(a,sum(/(B,C)))
+												hi = _applyRewrite184(hi); // trace(*(B,t(A))) => trace(*(A,B))
 											}
 										}
 									}
@@ -100,14 +114,20 @@ public class GeneratedRewriteClass implements Function {
 										if ( hi_0_0.getDataType() == Types.DataType.SCALAR ) {
 											if ( hi_0_1.getDataType() == Types.DataType.MATRIX ) {
 												if ( hi_0_1 instanceof ReorgOp ) {
+													hi = _applyRewrite139(hi); // trace(-(a,t(B))) => trace(-(a,B))
 													hi = _applyRewrite178(hi); // sum(-(a,t(B))) => sum(-(a,B))
 												} else if ( hi_0_1 instanceof AggUnaryOp ) {
+													hi = _applyRewrite435(hi); // trace(-(a,colSums(B))) => -(a,trace(colSums(B)))
 												} else {
 													hi = _applyRewrite38(hi); // sum(-(0.0,B)) => -(0.0,sum(B))
 												}
 											}
 										} else if ( hi_0_0.getDataType() == Types.DataType.MATRIX ) {
+											hi = _applyRewrite138(hi); // trace(-(t(A),b)) => trace(-(A,b))
+											hi = _applyRewrite140(hi); // trace(-(t(A),B)) => trace(-(A,B))
+											hi = _applyRewrite141(hi); // trace(-(A,t(B))) => trace(-(A,B))
 											hi = _applyRewrite177(hi); // sum(-(t(A),b)) => sum(-(A,b))
+											hi = _applyRewrite434(hi); // trace(-(colSums(A),b)) => -(trace(colSums(A)),b)
 										}
 									}
 								} else if ( (( BinaryOp ) hi_0 ).getOp() == Types.OpOp2.PLUS ) {
@@ -115,12 +135,20 @@ public class GeneratedRewriteClass implements Function {
 										Hop hi_0_0 = hi_0.getInput(0);
 										Hop hi_0_1 = hi_0.getInput(1);
 										if ( hi_0_0.getDataType() == Types.DataType.SCALAR ) {
+											hi = _applyRewrite145(hi); // trace(+(b,t(A))) => trace(+(A,b))
 											hi = _applyRewrite182(hi); // sum(+(b,t(A))) => sum(+(A,b))
+											hi = _applyRewrite437(hi); // trace(+(b,colSums(A))) => +(trace(colSums(A)),b)
 										} else if ( hi_0_0.getDataType() == Types.DataType.MATRIX ) {
 											if ( hi_0_0 instanceof ReorgOp ) {
+												hi = _applyRewrite96(hi); // trace(+(t(A),A)) => +(trace(A),trace(A))
+												hi = _applyRewrite142(hi); // trace(+(t(B),A)) => trace(+(A,B))
+												hi = _applyRewrite144(hi); // trace(+(t(A),b)) => trace(+(A,b))
 												hi = _applyRewrite181(hi); // sum(+(t(A),b)) => sum(+(A,b))
 											} else if ( hi_0_0 instanceof AggUnaryOp ) {
+												hi = _applyRewrite436(hi); // trace(+(colSums(A),b)) => +(trace(colSums(A)),b)
 											} else {
+												hi = _applyRewrite97(hi); // trace(+(A,t(A))) => +(trace(A),trace(A))
+												hi = _applyRewrite143(hi); // trace(+(B,t(A))) => trace(+(A,B))
 											}
 										}
 									}
@@ -130,12 +158,17 @@ public class GeneratedRewriteClass implements Function {
 										Hop hi_0_1 = hi_0.getInput(1);
 										if ( hi_0_0.getDataType() == Types.DataType.MATRIX ) {
 											if ( hi_0_0 instanceof BinaryOp ) {
+												hi = _applyRewrite122(hi); // trace(/(*(a,B),C)) => *(a,trace(/(B,C)))
+												hi = _applyRewrite123(hi); // trace(/(*(B,a),C)) => *(a,trace(/(B,C)))
 												hi = _applyRewrite148(hi); // sum(/(*(a,B),C)) => *(a,sum(/(B,C)))
 												hi = _applyRewrite149(hi); // sum(/(*(B,a),C)) => *(a,sum(/(B,C)))
 											} else if ( hi_0_0 instanceof ReorgOp ) {
+												hi = _applyRewrite370(hi); // trace(/(t(A),B)) => trace(/(A,B))
 											} else {
+												hi = _applyRewrite371(hi); // trace(/(A,t(B))) => trace(/(A,B))
 											}
 										} else if ( hi_0_0.getDataType() == Types.DataType.SCALAR ) {
+											hi = _applyRewrite369(hi); // trace(/(a,t(B))) => trace(/(a,B))
 											hi = _applyRewrite404(hi); // sum(/(a,t(B))) => sum(/(a,B))
 										}
 									}
@@ -156,7 +189,10 @@ public class GeneratedRewriteClass implements Function {
 								hi = _applyRewrite89(hi); // +(-(0.0,b),A) => -(A,b)
 							} else {
 								if ( hi_1.getDataType() == Types.DataType.MATRIX ) {
-									if ( hi_1 instanceof BinaryOp ) {
+									if ( hi_1 instanceof UnaryOp ) {
+										hi = _applyRewrite30(hi); // +(a,cast.MATRIX(0.0)) => cast.MATRIX(a)
+										hi = _applyRewrite72(hi); // +(a,cast.MATRIX(b)) => cast.MATRIX(+(a,b))
+									} else if ( hi_1 instanceof BinaryOp ) {
 										if ( (( BinaryOp ) hi_1 ).getOp() == Types.OpOp2.MINUS ) {
 											if ( hi_1.getInput().size() == 2 ) {
 												Hop hi_1_0 = hi_1.getInput(0);
@@ -173,6 +209,8 @@ public class GeneratedRewriteClass implements Function {
 															hi = _applyRewrite314(hi); // +(b,-(+(c,A),D)) => +(A,-(+(b,c),D))
 															hi = _applyRewrite315(hi); // +(b,-(+(A,c),D)) => +(A,-(+(b,c),D))
 														} else if ( (( BinaryOp ) hi_1_0 ).getOp() == Types.OpOp2.MULT ) {
+															hi = _applyRewrite524(hi); // +(a,-(*(c,D),B)) => -(a,-*(B,c,D))
+															hi = _applyRewrite525(hi); // +(a,-(*(D,c),B)) => -(a,-*(B,c,D))
 														}
 													} else {
 														hi = _applyRewrite60(hi); // +(b,-(A,c)) => +(A,-(b,c))
@@ -202,7 +240,10 @@ public class GeneratedRewriteClass implements Function {
 								}
 							}
 						} else if ( hi_0.getDataType() == Types.DataType.MATRIX ) {
-							if ( hi_0 instanceof BinaryOp ) {
+							if ( hi_0 instanceof UnaryOp ) {
+								hi = _applyRewrite29(hi); // +(cast.MATRIX(0.0),a) => cast.MATRIX(a)
+								hi = _applyRewrite71(hi); // +(cast.MATRIX(a),b) => cast.MATRIX(+(a,b))
+							} else if ( hi_0 instanceof BinaryOp ) {
 								if ( (( BinaryOp ) hi_0 ).getOp() == Types.OpOp2.MINUS ) {
 									if ( hi_0.getInput().size() == 2 ) {
 										Hop hi_0_0 = hi_0.getInput(0);
@@ -220,6 +261,8 @@ public class GeneratedRewriteClass implements Function {
 														hi = _applyRewrite312(hi); // +(-(+(b,A),D),c) => +(A,-(+(b,c),D))
 														hi = _applyRewrite313(hi); // +(-(+(A,b),D),c) => +(A,-(+(b,c),D))
 													} else if ( (( BinaryOp ) hi_0_0 ).getOp() == Types.OpOp2.MULT ) {
+														hi = _applyRewrite522(hi); // +(-(*(c,D),B),a) => -(a,-*(B,c,D))
+														hi = _applyRewrite523(hi); // +(-(*(D,c),B),a) => -(a,-*(B,c,D))
 													}
 												} else {
 													hi = _applyRewrite59(hi); // +(-(A,c),b) => +(A,-(b,c))
@@ -238,7 +281,13 @@ public class GeneratedRewriteClass implements Function {
 											} else {
 												if ( hi_0_0.getDataType() == Types.DataType.SCALAR ) {
 													hi = _applyRewrite47(hi); // +(-(0.0,B),A) => -(A,B)
+													hi = _applyRewrite538(hi); // +(-(a,*(c,D)),B) => +(a,-*(B,c,D))
+													hi = _applyRewrite539(hi); // +(-(a,*(D,c)),B) => +(a,-*(B,c,D))
 												} else if ( hi_0_0.getDataType() == Types.DataType.MATRIX ) {
+													hi = _applyRewrite530(hi); // +(-(*(b,C),d),A) => -(+*(A,b,C),d)
+													hi = _applyRewrite531(hi); // +(-(*(C,b),d),A) => -(+*(A,b,C),d)
+													hi = _applyRewrite546(hi); // +(-(*(c,D),B),A) => -(A,-*(B,c,D))
+													hi = _applyRewrite547(hi); // +(-(*(D,c),B),A) => -(A,-*(B,c,D))
 												}
 											}
 										}
@@ -254,6 +303,8 @@ public class GeneratedRewriteClass implements Function {
 												hi = _applyRewrite126(hi); // +(*(A,C),*(B,A)) => *(A,+(B,C))
 												hi = _applyRewrite127(hi); // +(*(A,C),*(A,B)) => *(A,+(B,C))
 											} else {
+												hi = _applyRewrite554(hi); // +(*(/(b,D),C),A) => +*(A,b,/(C,D))
+												hi = _applyRewrite557(hi); // +(*(C,/(b,D)),A) => +*(A,b,/(C,D))
 											}
 										}
 									}
@@ -263,6 +314,8 @@ public class GeneratedRewriteClass implements Function {
 									hi = _applyRewrite254(hi); // +(!=(rev(A),C),A) => +(A,!=(A,C))
 									hi = _applyRewrite255(hi); // +(!=(C,rev(A)),A) => +(A,!=(A,C))
 								} else if ( (( BinaryOp ) hi_0 ).getOp() == Types.OpOp2.DIV ) {
+									hi = _applyRewrite555(hi); // +(/(*(b,C),D),A) => +*(A,b,/(C,D))
+									hi = _applyRewrite556(hi); // +(/(*(C,b),D),A) => +*(A,b,/(C,D))
 								}
 							} else if ( hi_0 instanceof AggBinaryOp ) {
 								if ( HopRewriteUtils.isMatrixMultiply(hi_0) ) {
@@ -274,6 +327,10 @@ public class GeneratedRewriteClass implements Function {
 												hi = _applyRewrite94(hi); // +(%*%(B,C),%*%(A,C)) => %*%(+(A,B),C)
 												hi = _applyRewrite95(hi); // +(%*%(A,C),%*%(A,B)) => %*%(A,+(B,C))
 											} else {
+												hi = _applyRewrite566(hi); // +(%*%(*(b,C),D),A) => +*(A,b,%*%(C,D))
+												hi = _applyRewrite567(hi); // +(%*%(*(C,b),D),A) => +*(A,b,%*%(C,D))
+												hi = _applyRewrite568(hi); // +(%*%(C,*(b,D)),A) => +*(A,b,%*%(C,D))
+												hi = _applyRewrite569(hi); // +(%*%(C,*(D,b)),A) => +*(A,b,%*%(C,D))
 											}
 										}
 									}
@@ -284,6 +341,8 @@ public class GeneratedRewriteClass implements Function {
 										Hop hi_0_0 = hi_0.getInput(0);
 										if ( hi_1.getDataType() == Types.DataType.MATRIX ) {
 											hi = _applyRewrite192(hi); // +(t(B),t(A)) => t(+(A,B))
+											hi = _applyRewrite512(hi); // +(t(*(b,C)),A) => +*(A,b,t(C))
+											hi = _applyRewrite513(hi); // +(t(*(C,b)),A) => +*(A,b,t(C))
 										} else if ( hi_1.getDataType() == Types.DataType.SCALAR ) {
 											hi = _applyRewrite346(hi); // +(t(-(a,C)),b) => -(+(a,b),t(C))
 											hi = _applyRewrite351(hi); // +(t(-(C,b)),a) => +(-(a,b),t(C))
@@ -297,6 +356,8 @@ public class GeneratedRewriteClass implements Function {
 										if ( hi_1.getDataType() == Types.DataType.MATRIX ) {
 											hi = _applyRewrite250(hi); // +(rev(!=(c,A)),A) => +(A,!=(A,c))
 											hi = _applyRewrite251(hi); // +(rev(!=(A,c)),A) => +(A,!=(A,c))
+											hi = _applyRewrite503(hi); // +(rev(*(b,C)),A) => +*(A,b,rev(C))
+											hi = _applyRewrite504(hi); // +(rev(*(C,b)),A) => +*(A,b,rev(C))
 										} else if ( hi_1.getDataType() == Types.DataType.SCALAR ) {
 											hi = _applyRewrite282(hi); // +(rev(-(a,C)),b) => -(+(a,b),rev(C))
 											hi = _applyRewrite287(hi); // +(rev(-(C,b)),a) => +(-(a,b),rev(C))
@@ -317,7 +378,13 @@ public class GeneratedRewriteClass implements Function {
 												Hop hi_1_1 = hi_1.getInput(1);
 												if ( hi_1_0.getDataType() == Types.DataType.SCALAR ) {
 													hi = _applyRewrite48(hi); // +(A,-(0.0,B)) => -(A,B)
+													hi = _applyRewrite540(hi); // +(B,-(a,*(c,D))) => +(a,-*(B,c,D))
+													hi = _applyRewrite541(hi); // +(B,-(a,*(D,c))) => +(a,-*(B,c,D))
 												} else if ( hi_1_0.getDataType() == Types.DataType.MATRIX ) {
+													hi = _applyRewrite532(hi); // +(A,-(*(b,C),d)) => -(+*(A,b,C),d)
+													hi = _applyRewrite533(hi); // +(A,-(*(C,b),d)) => -(+*(A,b,C),d)
+													hi = _applyRewrite548(hi); // +(A,-(*(c,D),B)) => -(A,-*(B,c,D))
+													hi = _applyRewrite549(hi); // +(A,-(*(D,c),B)) => -(A,-*(B,c,D))
 												}
 											}
 										} else if ( (( BinaryOp ) hi_1 ).getOp() == Types.OpOp2.NOTEQUAL ) {
@@ -326,14 +393,25 @@ public class GeneratedRewriteClass implements Function {
 											hi = _applyRewrite256(hi); // +(A,!=(rev(A),C)) => +(A,!=(A,C))
 											hi = _applyRewrite257(hi); // +(A,!=(C,rev(A))) => +(A,!=(A,C))
 										} else if ( (( BinaryOp ) hi_1 ).getOp() == Types.OpOp2.DIV ) {
+											hi = _applyRewrite558(hi); // +(A,/(*(b,C),D)) => +*(A,b,/(C,D))
+											hi = _applyRewrite560(hi); // +(A,/(*(C,b),D)) => +*(A,b,/(C,D))
 										} else if ( (( BinaryOp ) hi_1 ).getOp() == Types.OpOp2.MULT ) {
+											hi = _applyRewrite559(hi); // +(A,*(/(b,D),C)) => +*(A,b,/(C,D))
+											hi = _applyRewrite561(hi); // +(A,*(C,/(b,D))) => +*(A,b,/(C,D))
 										}
 									} else if ( hi_1 instanceof ReorgOp ) {
 										hi = _applyRewrite252(hi); // +(A,rev(!=(c,A))) => +(A,!=(A,c))
 										hi = _applyRewrite253(hi); // +(A,rev(!=(A,c))) => +(A,!=(A,c))
+										hi = _applyRewrite505(hi); // +(A,rev(*(C,b))) => +*(A,b,rev(C))
+										hi = _applyRewrite514(hi); // +(A,t(*(b,C))) => +*(A,b,t(C))
+										hi = _applyRewrite515(hi); // +(A,t(*(C,b))) => +*(A,b,t(C))
 									} else if ( hi_1 instanceof AggUnaryOp ) {
 										hi = _applyRewrite441(hi); // +(A,colSums(rev(A))) => +(A,colSums(A))
 									} else if ( hi_1 instanceof AggBinaryOp ) {
+										hi = _applyRewrite570(hi); // +(A,%*%(*(b,C),D)) => +*(A,b,%*%(C,D))
+										hi = _applyRewrite571(hi); // +(A,%*%(*(C,b),D)) => +*(A,b,%*%(C,D))
+										hi = _applyRewrite572(hi); // +(A,%*%(C,*(b,D))) => +*(A,b,%*%(C,D))
+										hi = _applyRewrite573(hi); // +(A,%*%(C,*(D,b))) => +*(A,b,%*%(C,D))
 									}
 								}
 							}
@@ -344,6 +422,8 @@ public class GeneratedRewriteClass implements Function {
 						Hop hi_0 = hi.getInput(0);
 						Hop hi_1 = hi.getInput(1);
 						if ( hi_0.getDataType() == Types.DataType.SCALAR ) {
+							hi = _applyRewrite10(hi); // /(0.0,A) => const(A,0.0)
+							hi = _applyRewrite75(hi); // /(a,cast.MATRIX(b)) => cast.MATRIX(/(a,b))
 							hi = _applyRewrite93(hi); // /(-(a,0.0),B) => /(a,B)
 						} else if ( hi_0.getDataType() == Types.DataType.MATRIX ) {
 							if ( hi_0 instanceof ReorgOp ) {
@@ -375,7 +455,11 @@ public class GeneratedRewriteClass implements Function {
 								hi = _applyRewrite91(hi); // *(-(b,0.0),A) => *(A,b)
 							} else {
 								if ( hi_1.getDataType() == Types.DataType.MATRIX ) {
-									if ( hi_1 instanceof BinaryOp ) {
+									if ( hi_1 instanceof UnaryOp ) {
+										hi = _applyRewrite26(hi); // *(a,cast.MATRIX(0.0)) => cast.MATRIX(0.0)
+										hi = _applyRewrite28(hi); // *(a,cast.MATRIX(1.0)) => cast.MATRIX(a)
+										hi = _applyRewrite74(hi); // *(a,cast.MATRIX(b)) => cast.MATRIX(*(a,b))
+									} else if ( hi_1 instanceof BinaryOp ) {
 										hi = _applyRewrite33(hi); // *(a,/(1.0,B)) => /(a,B)
 										hi = _applyRewrite37(hi); // *(a,/(b,C)) => /(*(a,b),C)
 										hi = _applyRewrite172(hi); // *(a,/(*(b,C),D)) => *(*(a,b),/(C,D))
@@ -401,11 +485,16 @@ public class GeneratedRewriteClass implements Function {
 										hi = _applyRewrite495(hi); // *(a,colSums(/(b,C))) => colSums(/(*(a,b),C))
 										hi = _applyRewrite497(hi); // *(a,rowSums(/(b,C))) => rowSums(/(*(a,b),C))
 									} else {
+										hi = _applyRewrite11(hi); // *(0.0,A) => const(A,0.0)
 									}
 								}
 							}
 						} else if ( hi_0.getDataType() == Types.DataType.MATRIX ) {
-							if ( hi_0 instanceof BinaryOp ) {
+							if ( hi_0 instanceof UnaryOp ) {
+								hi = _applyRewrite25(hi); // *(cast.MATRIX(0.0),a) => cast.MATRIX(0.0)
+								hi = _applyRewrite27(hi); // *(cast.MATRIX(1.0),a) => cast.MATRIX(a)
+								hi = _applyRewrite73(hi); // *(cast.MATRIX(a),b) => cast.MATRIX(*(a,b))
+							} else if ( hi_0 instanceof BinaryOp ) {
 								if ( (( BinaryOp ) hi_0 ).getOp() == Types.OpOp2.DIV ) {
 									if ( hi_0.getInput().size() == 2 ) {
 										Hop hi_0_0 = hi_0.getInput(0);
@@ -451,6 +540,7 @@ public class GeneratedRewriteClass implements Function {
 								hi = _applyRewrite496(hi); // *(rowSums(/(a,C)),b) => rowSums(/(*(a,b),C))
 							} else {
 								if ( hi_1.getDataType() == Types.DataType.SCALAR ) {
+									hi = _applyRewrite12(hi); // *(A,0.0) => const(A,0.0)
 									hi = _applyRewrite92(hi); // *(A,-(b,0.0)) => *(A,b)
 								} else if ( hi_1.getDataType() == Types.DataType.MATRIX ) {
 									if ( hi_1 instanceof BinaryOp ) {
@@ -489,6 +579,8 @@ public class GeneratedRewriteClass implements Function {
 														hi = _applyRewrite327(hi); // -(b,-(+(c,D),A)) => +(A,-(-(b,c),D))
 														hi = _applyRewrite328(hi); // -(b,-(+(D,c),A)) => +(A,-(-(b,c),D))
 													} else if ( (( BinaryOp ) hi_1_0 ).getOp() == Types.OpOp2.MULT ) {
+														hi = _applyRewrite534(hi); // -(a,-(*(c,D),B)) => +(a,-*(B,c,D))
+														hi = _applyRewrite535(hi); // -(a,-(*(D,c),B)) => +(a,-*(B,c,D))
 													}
 												} else {
 													if ( hi_1_1.getDataType() == Types.DataType.SCALAR ) {
@@ -522,7 +614,11 @@ public class GeneratedRewriteClass implements Function {
 											}
 										}
 									} else if ( (( BinaryOp ) hi_1 ).getOp() == Types.OpOp2.MULT ) {
+										hi = _applyRewrite86(hi); // -(0.0,*(b,A)) => -*(const(A,0.0),b,A)
+										hi = _applyRewrite87(hi); // -(0.0,*(A,b)) => -*(const(A,0.0),b,A)
 									}
+								} else if ( hi_1 instanceof UnaryOp ) {
+									hi = _applyRewrite70(hi); // -(a,cast.MATRIX(b)) => cast.MATRIX(-(a,b))
 								} else if ( hi_1 instanceof ReorgOp ) {
 									if ( (( ReorgOp ) hi_1 ).getOp() == Types.ReOrgOp.TRANS ) {
 										hi = _applyRewrite267(hi); // -(a,t(+(b,C))) => -(-(a,b),t(C))
@@ -574,6 +670,8 @@ public class GeneratedRewriteClass implements Function {
 													hi = _applyRewrite323(hi); // -(-(A,c),-(D,b)) => +(A,-(-(b,c),D))
 												}
 											} else {
+												hi = _applyRewrite506(hi); // -(-(a,*(c,D)),B) => -(a,+*(B,c,D))
+												hi = _applyRewrite507(hi); // -(-(a,*(D,c)),B) => -(a,+*(B,c,D))
 											}
 										}
 									}
@@ -605,6 +703,10 @@ public class GeneratedRewriteClass implements Function {
 													hi = _applyRewrite333(hi); // -(+(A,b),+(D,c)) => +(A,-(-(b,c),D))
 												}
 											} else {
+												hi = _applyRewrite516(hi); // -(+(*(c,D),a),B) => -(a,-*(B,c,D))
+												hi = _applyRewrite517(hi); // -(+(*(D,c),a),B) => -(a,-*(B,c,D))
+												hi = _applyRewrite518(hi); // -(+(a,*(c,D)),B) => -(a,-*(B,c,D))
+												hi = _applyRewrite519(hi); // -(+(a,*(D,c)),B) => -(a,-*(B,c,D))
 											}
 										}
 									}
@@ -619,7 +721,13 @@ public class GeneratedRewriteClass implements Function {
 														Hop hi_1_0 = hi_1.getInput(0);
 														Hop hi_1_1 = hi_1.getInput(1);
 														if ( hi_0_0.getDataType() == Types.DataType.SCALAR ) {
+															hi = _applyRewrite520(hi); // -(*(c,D),-(B,a)) => -(a,-*(B,c,D))
+															hi = _applyRewrite528(hi); // -(*(b,C),-(d,A)) => -(+*(A,b,C),d)
+															hi = _applyRewrite544(hi); // -(*(c,D),-(B,A)) => -(A,-*(B,c,D))
 														} else if ( hi_0_0.getDataType() == Types.DataType.MATRIX ) {
+															hi = _applyRewrite521(hi); // -(*(D,c),-(B,a)) => -(a,-*(B,c,D))
+															hi = _applyRewrite529(hi); // -(*(C,b),-(d,A)) => -(+*(A,b,C),d)
+															hi = _applyRewrite545(hi); // -(*(D,c),-(B,A)) => -(A,-*(B,c,D))
 														}
 													}
 												}
@@ -627,6 +735,8 @@ public class GeneratedRewriteClass implements Function {
 										}
 									}
 								}
+							} else if ( hi_0 instanceof UnaryOp ) {
+								hi = _applyRewrite69(hi); // -(cast.MATRIX(a),b) => cast.MATRIX(-(a,b))
 							} else if ( hi_0 instanceof ReorgOp ) {
 								if ( (( ReorgOp ) hi_0 ).getOp() == Types.ReOrgOp.TRANS ) {
 									hi = _applyRewrite191(hi); // -(t(A),t(B)) => t(-(A,B))
@@ -652,24 +762,46 @@ public class GeneratedRewriteClass implements Function {
 											hi = _applyRewrite263(hi); // -(A,!=(rev(A),C)) => -(A,!=(A,C))
 											hi = _applyRewrite264(hi); // -(A,!=(C,rev(A))) => -(A,!=(A,C))
 										} else if ( (( BinaryOp ) hi_1 ).getOp() == Types.OpOp2.PLUS ) {
+											hi = _applyRewrite508(hi); // -(A,+(*(b,C),d)) => -(-*(A,b,C),d)
+											hi = _applyRewrite509(hi); // -(A,+(*(C,b),d)) => -(-*(A,b,C),d)
+											hi = _applyRewrite510(hi); // -(A,+(d,*(b,C))) => -(-*(A,b,C),d)
+											hi = _applyRewrite511(hi); // -(A,+(d,*(C,b))) => -(-*(A,b,C),d)
 										} else if ( (( BinaryOp ) hi_1 ).getOp() == Types.OpOp2.MINUS ) {
 											if ( hi_1.getInput().size() == 2 ) {
 												Hop hi_1_0 = hi_1.getInput(0);
 												Hop hi_1_1 = hi_1.getInput(1);
 												if ( hi_1_0.getDataType() == Types.DataType.SCALAR ) {
+													hi = _applyRewrite526(hi); // -(A,-(d,*(b,C))) => -(+*(A,b,C),d)
+													hi = _applyRewrite527(hi); // -(A,-(d,*(C,b))) => -(+*(A,b,C),d)
 												} else if ( hi_1_0.getDataType() == Types.DataType.MATRIX ) {
+													hi = _applyRewrite536(hi); // -(B,-(*(c,D),a)) => +(a,-*(B,c,D))
+													hi = _applyRewrite537(hi); // -(B,-(*(D,c),a)) => +(a,-*(B,c,D))
+													hi = _applyRewrite542(hi); // -(B,-(*(c,D),A)) => +(A,-*(B,c,D))
+													hi = _applyRewrite543(hi); // -(B,-(*(D,c),A)) => +(A,-*(B,c,D))
 												}
 											}
 										} else if ( (( BinaryOp ) hi_1 ).getOp() == Types.OpOp2.MULT ) {
+											hi = _applyRewrite550(hi); // -(A,*(/(b,D),C)) => -*(A,b,/(C,D))
+											hi = _applyRewrite551(hi); // -(A,*(C,/(b,D))) => -*(A,b,/(C,D))
 										} else if ( (( BinaryOp ) hi_1 ).getOp() == Types.OpOp2.DIV ) {
+											hi = _applyRewrite552(hi); // -(A,/(*(b,C),D)) => -*(A,b,/(C,D))
+											hi = _applyRewrite553(hi); // -(A,/(*(C,b),D)) => -*(A,b,/(C,D))
 										}
 									} else if ( hi_1 instanceof ReorgOp ) {
 										if ( (( ReorgOp ) hi_1 ).getOp() == Types.ReOrgOp.REV ) {
 											hi = _applyRewrite261(hi); // -(A,rev(!=(c,A))) => -(A,!=(A,c))
 											hi = _applyRewrite262(hi); // -(A,rev(!=(A,c))) => -(A,!=(A,c))
+											hi = _applyRewrite499(hi); // -(A,rev(*(b,C))) => -*(A,b,rev(C))
+											hi = _applyRewrite500(hi); // -(A,rev(*(C,b))) => -*(A,b,rev(C))
 										} else if ( (( ReorgOp ) hi_1 ).getOp() == Types.ReOrgOp.TRANS ) {
+											hi = _applyRewrite501(hi); // -(A,t(*(b,C))) => -*(A,b,t(C))
+											hi = _applyRewrite502(hi); // -(A,t(*(C,b))) => -*(A,b,t(C))
 										}
 									} else if ( hi_1 instanceof AggBinaryOp ) {
+										hi = _applyRewrite562(hi); // -(A,%*%(*(b,C),D)) => -*(A,b,%*%(C,D))
+										hi = _applyRewrite563(hi); // -(A,%*%(*(C,b),D)) => -*(A,b,%*%(C,D))
+										hi = _applyRewrite564(hi); // -(A,%*%(C,*(b,D))) => -*(A,b,%*%(C,D))
+										hi = _applyRewrite565(hi); // -(A,%*%(C,*(D,b))) => -*(A,b,%*%(C,D))
 									}
 								}
 							}
@@ -683,6 +815,7 @@ public class GeneratedRewriteClass implements Function {
 							if ( hi_0 instanceof ReorgOp ) {
 								if ( (( ReorgOp ) hi_0 ).getOp() == Types.ReOrgOp.TRANS ) {
 									hi = _applyRewrite185(hi); // !=(t(A),t(B)) => t(!=(A,B))
+									hi = _applyRewrite430(hi); // !=(t(A),colSums(A)) => !=(A,cast.MATRIX(sum(A)))
 								} else if ( (( ReorgOp ) hi_0 ).getOp() == Types.ReOrgOp.REV ) {
 									if ( hi_0.getInput().size() == 1 ) {
 										Hop hi_0_0 = hi_0.getInput(0);
@@ -835,6 +968,7 @@ public class GeneratedRewriteClass implements Function {
 												}
 											}
 										} else if ( (( ReorgOp ) hi_1 ).getOp() == Types.ReOrgOp.TRANS ) {
+											hi = _applyRewrite431(hi); // !=(A,t(colSums(A))) => !=(A,cast.MATRIX(sum(A)))
 										}
 									} else if ( hi_1 instanceof BinaryOp ) {
 										if ( (( BinaryOp ) hi_1 ).getOp() == Types.OpOp2.MINUS ) {
@@ -964,7 +1098,9 @@ public class GeneratedRewriteClass implements Function {
 					if ( hi.getInput().size() == 1 ) {
 						Hop hi_0 = hi.getInput(0);
 						if ( hi_0.getDataType() == Types.DataType.MATRIX ) {
-							if ( hi_0 instanceof AggUnaryOp ) {
+							if ( hi_0 instanceof UnaryOp ) {
+								hi = _applyRewrite31(hi); // rev(cast.MATRIX(a)) => cast.MATRIX(a)
+							} else if ( hi_0 instanceof AggUnaryOp ) {
 								hi = _applyRewrite76(hi); // rev(colSums(A)) => colSums(A)
 							} else if ( hi_0 instanceof BinaryOp ) {
 								if ( (( BinaryOp ) hi_0 ).getOp() == Types.OpOp2.MINUS ) {
@@ -989,9 +1125,11 @@ public class GeneratedRewriteClass implements Function {
 											hi = _applyRewrite102(hi); // rev(!=(rev(A),b)) => !=(A,b)
 											hi = _applyRewrite208(hi); // rev(!=(rev(A),B)) => !=(A,rev(B))
 											hi = _applyRewrite209(hi); // rev(!=(B,rev(A))) => !=(A,rev(B))
+											hi = _applyRewrite432(hi); // rev(!=(cast.MATRIX(a),b)) => !=(a,cast.MATRIX(b))
 											hi = _applyRewrite486(hi); // rev(!=(colSums(B),a)) => !=(a,colSums(B))
 										} else if ( hi_0_0.getDataType() == Types.DataType.SCALAR ) {
 											hi = _applyRewrite103(hi); // rev(!=(b,rev(A))) => !=(A,b)
+											hi = _applyRewrite433(hi); // rev(!=(a,cast.MATRIX(b))) => !=(a,cast.MATRIX(b))
 											hi = _applyRewrite487(hi); // rev(!=(a,colSums(B))) => !=(a,colSums(B))
 										}
 									}
@@ -1580,6 +1718,138 @@ public class GeneratedRewriteClass implements Function {
 		return hi_0;
 	}
 
+	// Implementation of the rule /(0.0,A) => const(A,0.0)
+	private static Hop _applyRewrite10(Hop hi) {
+		if ( !(hi instanceof BinaryOp) )
+			return hi;
+
+		BinaryOp c_hi = (BinaryOp) hi;
+
+		if ( c_hi.getOp() != Types.OpOp2.DIV || !c_hi.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_0 = hi.getInput(0);
+
+		if ( !(hi_0 instanceof LiteralOp) )
+			return hi;
+
+		LiteralOp l_hi_0 = (LiteralOp) hi_0;
+
+		if ( l_hi_0.getDataType() != Types.DataType.SCALAR|| !l_hi_0.getValueType().isNumeric() )
+			return hi;
+
+		if ( l_hi_0.getDoubleValue() != 0.0 )
+			return hi;
+
+		Hop hi_1 = hi.getInput(1);
+
+		if ( hi_1.getDataType() != Types.DataType.MATRIX || !hi_1.getValueType().isNumeric() )
+			return hi;
+
+
+		// Now, we start building the new Hop
+		System.out.println("Applying rewrite: /(0.0,A) => const(A,0.0)");
+		DataGenOp v1 = ((DataGenOp) HopRewriteUtils.createDataGenOp(HopRewriteUtils.createUnary(hi_1, Types.OpOp1.NROW),HopRewriteUtils.createUnary(hi_1, Types.OpOp1.NCOL),0.0D));
+
+		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
+
+		for ( Hop p : parents )
+			HopRewriteUtils.replaceChildReference(p, hi, v1);
+
+		// Remove old unreferenced Hops
+		HopRewriteUtils.cleanupUnreferenced(hi);
+
+		return v1;
+	}
+
+	// Implementation of the rule *(0.0,A) => const(A,0.0)
+	private static Hop _applyRewrite11(Hop hi) {
+		if ( !(hi instanceof BinaryOp) )
+			return hi;
+
+		BinaryOp c_hi = (BinaryOp) hi;
+
+		if ( c_hi.getOp() != Types.OpOp2.MULT || !c_hi.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_0 = hi.getInput(0);
+
+		if ( !(hi_0 instanceof LiteralOp) )
+			return hi;
+
+		LiteralOp l_hi_0 = (LiteralOp) hi_0;
+
+		if ( l_hi_0.getDataType() != Types.DataType.SCALAR|| !l_hi_0.getValueType().isNumeric() )
+			return hi;
+
+		if ( l_hi_0.getDoubleValue() != 0.0 )
+			return hi;
+
+		Hop hi_1 = hi.getInput(1);
+
+		if ( hi_1.getDataType() != Types.DataType.MATRIX || !hi_1.getValueType().isNumeric() )
+			return hi;
+
+
+		// Now, we start building the new Hop
+		System.out.println("Applying rewrite: *(0.0,A) => const(A,0.0)");
+		DataGenOp v1 = ((DataGenOp) HopRewriteUtils.createDataGenOp(HopRewriteUtils.createUnary(hi_1, Types.OpOp1.NROW),HopRewriteUtils.createUnary(hi_1, Types.OpOp1.NCOL),0.0D));
+
+		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
+
+		for ( Hop p : parents )
+			HopRewriteUtils.replaceChildReference(p, hi, v1);
+
+		// Remove old unreferenced Hops
+		HopRewriteUtils.cleanupUnreferenced(hi);
+
+		return v1;
+	}
+
+	// Implementation of the rule *(A,0.0) => const(A,0.0)
+	private static Hop _applyRewrite12(Hop hi) {
+		if ( !(hi instanceof BinaryOp) )
+			return hi;
+
+		BinaryOp c_hi = (BinaryOp) hi;
+
+		if ( c_hi.getOp() != Types.OpOp2.MULT || !c_hi.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_0 = hi.getInput(0);
+
+		if ( hi_0.getDataType() != Types.DataType.MATRIX || !hi_0.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_1 = hi.getInput(1);
+
+		if ( !(hi_1 instanceof LiteralOp) )
+			return hi;
+
+		LiteralOp l_hi_1 = (LiteralOp) hi_1;
+
+		if ( l_hi_1.getDataType() != Types.DataType.SCALAR|| !l_hi_1.getValueType().isNumeric() )
+			return hi;
+
+		if ( l_hi_1.getDoubleValue() != 0.0 )
+			return hi;
+
+
+		// Now, we start building the new Hop
+		System.out.println("Applying rewrite: *(A,0.0) => const(A,0.0)");
+		DataGenOp v1 = ((DataGenOp) HopRewriteUtils.createDataGenOp(HopRewriteUtils.createUnary(hi_0, Types.OpOp1.NROW),HopRewriteUtils.createUnary(hi_0, Types.OpOp1.NCOL),0.0D));
+
+		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
+
+		for ( Hop p : parents )
+			HopRewriteUtils.replaceChildReference(p, hi, v1);
+
+		// Remove old unreferenced Hops
+		HopRewriteUtils.cleanupUnreferenced(hi);
+
+		return v1;
+	}
+
 	// Implementation of the rule /(A,c) => *(A,/(1.0,c))
 	private static Hop _applyRewrite13(Hop hi) {
 		if ( !(hi instanceof BinaryOp) )
@@ -1616,6 +1886,106 @@ public class GeneratedRewriteClass implements Function {
 		HopRewriteUtils.cleanupUnreferenced(hi);
 
 		return v3;
+	}
+
+	// Implementation of the rule trace(*(a,B)) => *(a,trace(B))
+	private static Hop _applyRewrite16(Hop hi) {
+		if ( !(hi instanceof AggUnaryOp) )
+			return hi;
+
+		AggUnaryOp c_hi = (AggUnaryOp) hi;
+
+		if ( c_hi.getOp() != Types.AggOp.SUM || !c_hi.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_0 = hi.getInput(0);
+
+		if (hi_0.getParent().size() > 1)
+			return hi;
+		if ( !(hi_0 instanceof BinaryOp) )
+			return hi;
+
+		BinaryOp c_hi_0 = (BinaryOp) hi_0;
+
+		if ( c_hi_0.getOp() != Types.OpOp2.MULT || !c_hi_0.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_0_0 = hi_0.getInput(0);
+
+		if ( hi_0_0.getDataType() != Types.DataType.SCALAR || !hi_0_0.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_0_1 = hi_0.getInput(1);
+
+		if ( hi_0_1.getDataType() != Types.DataType.MATRIX || !hi_0_1.getValueType().isNumeric() )
+			return hi;
+
+
+		// Now, we start building the new Hop
+		System.out.println("Applying rewrite: trace(*(a,B)) => *(a,trace(B))");
+		AggUnaryOp v1 = HopRewriteUtils.createAggUnaryOp(hi_0_1, Types.AggOp.TRACE, Types.Direction.RowCol);
+		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0_0, v1, Types.OpOp2.MULT);
+
+		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
+
+		for ( Hop p : parents )
+			HopRewriteUtils.replaceChildReference(p, hi, v2);
+
+		// Remove old unreferenced Hops
+		HopRewriteUtils.cleanupUnreferenced(hi);
+		HopRewriteUtils.cleanupUnreferenced(hi_0);
+
+		return v2;
+	}
+
+	// Implementation of the rule trace(*(B,a)) => *(a,trace(B))
+	private static Hop _applyRewrite17(Hop hi) {
+		if ( !(hi instanceof AggUnaryOp) )
+			return hi;
+
+		AggUnaryOp c_hi = (AggUnaryOp) hi;
+
+		if ( c_hi.getOp() != Types.AggOp.SUM || !c_hi.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_0 = hi.getInput(0);
+
+		if (hi_0.getParent().size() > 1)
+			return hi;
+		if ( !(hi_0 instanceof BinaryOp) )
+			return hi;
+
+		BinaryOp c_hi_0 = (BinaryOp) hi_0;
+
+		if ( c_hi_0.getOp() != Types.OpOp2.MULT || !c_hi_0.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_0_0 = hi_0.getInput(0);
+
+		if ( hi_0_0.getDataType() != Types.DataType.MATRIX || !hi_0_0.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_0_1 = hi_0.getInput(1);
+
+		if ( hi_0_1.getDataType() != Types.DataType.SCALAR || !hi_0_1.getValueType().isNumeric() )
+			return hi;
+
+
+		// Now, we start building the new Hop
+		System.out.println("Applying rewrite: trace(*(B,a)) => *(a,trace(B))");
+		AggUnaryOp v1 = HopRewriteUtils.createAggUnaryOp(hi_0_0, Types.AggOp.TRACE, Types.Direction.RowCol);
+		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0_1, v1, Types.OpOp2.MULT);
+
+		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
+
+		for ( Hop p : parents )
+			HopRewriteUtils.replaceChildReference(p, hi, v2);
+
+		// Remove old unreferenced Hops
+		HopRewriteUtils.cleanupUnreferenced(hi);
+		HopRewriteUtils.cleanupUnreferenced(hi_0);
+
+		return v2;
 	}
 
 	// Implementation of the rule colSums(*(a,B)) => *(a,colSums(B))
@@ -1828,6 +2198,398 @@ public class GeneratedRewriteClass implements Function {
 		HopRewriteUtils.cleanupUnreferenced(hi_0);
 
 		return v2;
+	}
+
+	// Implementation of the rule *(cast.MATRIX(0.0),a) => cast.MATRIX(0.0)
+	private static Hop _applyRewrite25(Hop hi) {
+		if ( !(hi instanceof BinaryOp) )
+			return hi;
+
+		BinaryOp c_hi = (BinaryOp) hi;
+
+		if ( c_hi.getOp() != Types.OpOp2.MULT || !c_hi.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_0 = hi.getInput(0);
+
+		if (hi_0.getParent().size() > 1)
+			return hi;
+		if ( !(hi_0 instanceof UnaryOp) )
+			return hi;
+
+		UnaryOp c_hi_0 = (UnaryOp) hi_0;
+
+		if ( c_hi_0.getOp() != Types.OpOp1.CAST_AS_MATRIX || !c_hi_0.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_0_0 = hi_0.getInput(0);
+
+		if ( !(hi_0_0 instanceof LiteralOp) )
+			return hi;
+
+		LiteralOp l_hi_0_0 = (LiteralOp) hi_0_0;
+
+		if ( l_hi_0_0.getDataType() != Types.DataType.SCALAR|| !l_hi_0_0.getValueType().isNumeric() )
+			return hi;
+
+		if ( l_hi_0_0.getDoubleValue() != 0.0 )
+			return hi;
+
+		Hop hi_1 = hi.getInput(1);
+
+		if ( hi_1.getDataType() != Types.DataType.SCALAR || !hi_1.getValueType().isNumeric() )
+			return hi;
+
+
+		// Now, we start building the new Hop
+		System.out.println("Applying rewrite: *(cast.MATRIX(0.0),a) => cast.MATRIX(0.0)");
+		UnaryOp v1 = HopRewriteUtils.createUnary(hi_0_0, Types.OpOp1.CAST_AS_MATRIX);
+
+		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
+
+		for ( Hop p : parents )
+			HopRewriteUtils.replaceChildReference(p, hi, v1);
+
+		// Remove old unreferenced Hops
+		HopRewriteUtils.cleanupUnreferenced(hi);
+		HopRewriteUtils.cleanupUnreferenced(hi_0);
+		HopRewriteUtils.cleanupUnreferenced(hi_1);
+
+		return v1;
+	}
+
+	// Implementation of the rule *(a,cast.MATRIX(0.0)) => cast.MATRIX(0.0)
+	private static Hop _applyRewrite26(Hop hi) {
+		if ( !(hi instanceof BinaryOp) )
+			return hi;
+
+		BinaryOp c_hi = (BinaryOp) hi;
+
+		if ( c_hi.getOp() != Types.OpOp2.MULT || !c_hi.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_0 = hi.getInput(0);
+
+		if ( hi_0.getDataType() != Types.DataType.SCALAR || !hi_0.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_1 = hi.getInput(1);
+
+		if (hi_1.getParent().size() > 1)
+			return hi;
+		if ( !(hi_1 instanceof UnaryOp) )
+			return hi;
+
+		UnaryOp c_hi_1 = (UnaryOp) hi_1;
+
+		if ( c_hi_1.getOp() != Types.OpOp1.CAST_AS_MATRIX || !c_hi_1.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_1_0 = hi_1.getInput(0);
+
+		if ( !(hi_1_0 instanceof LiteralOp) )
+			return hi;
+
+		LiteralOp l_hi_1_0 = (LiteralOp) hi_1_0;
+
+		if ( l_hi_1_0.getDataType() != Types.DataType.SCALAR|| !l_hi_1_0.getValueType().isNumeric() )
+			return hi;
+
+		if ( l_hi_1_0.getDoubleValue() != 0.0 )
+			return hi;
+
+
+		// Now, we start building the new Hop
+		System.out.println("Applying rewrite: *(a,cast.MATRIX(0.0)) => cast.MATRIX(0.0)");
+		UnaryOp v1 = HopRewriteUtils.createUnary(hi_1_0, Types.OpOp1.CAST_AS_MATRIX);
+
+		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
+
+		for ( Hop p : parents )
+			HopRewriteUtils.replaceChildReference(p, hi, v1);
+
+		// Remove old unreferenced Hops
+		HopRewriteUtils.cleanupUnreferenced(hi);
+		HopRewriteUtils.cleanupUnreferenced(hi_0);
+		HopRewriteUtils.cleanupUnreferenced(hi_1);
+
+		return v1;
+	}
+
+	// Implementation of the rule *(cast.MATRIX(1.0),a) => cast.MATRIX(a)
+	private static Hop _applyRewrite27(Hop hi) {
+		if ( !(hi instanceof BinaryOp) )
+			return hi;
+
+		BinaryOp c_hi = (BinaryOp) hi;
+
+		if ( c_hi.getOp() != Types.OpOp2.MULT || !c_hi.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_0 = hi.getInput(0);
+
+		if (hi_0.getParent().size() > 1)
+			return hi;
+		if ( !(hi_0 instanceof UnaryOp) )
+			return hi;
+
+		UnaryOp c_hi_0 = (UnaryOp) hi_0;
+
+		if ( c_hi_0.getOp() != Types.OpOp1.CAST_AS_MATRIX || !c_hi_0.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_0_0 = hi_0.getInput(0);
+
+		if ( !(hi_0_0 instanceof LiteralOp) )
+			return hi;
+
+		LiteralOp l_hi_0_0 = (LiteralOp) hi_0_0;
+
+		if ( l_hi_0_0.getDataType() != Types.DataType.SCALAR|| !l_hi_0_0.getValueType().isNumeric() )
+			return hi;
+
+		if ( l_hi_0_0.getDoubleValue() != 1.0 )
+			return hi;
+
+		Hop hi_1 = hi.getInput(1);
+
+		if ( hi_1.getDataType() != Types.DataType.SCALAR || !hi_1.getValueType().isNumeric() )
+			return hi;
+
+
+		// Now, we start building the new Hop
+		System.out.println("Applying rewrite: *(cast.MATRIX(1.0),a) => cast.MATRIX(a)");
+		UnaryOp v1 = HopRewriteUtils.createUnary(hi_1, Types.OpOp1.CAST_AS_MATRIX);
+
+		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
+
+		for ( Hop p : parents )
+			HopRewriteUtils.replaceChildReference(p, hi, v1);
+
+		// Remove old unreferenced Hops
+		HopRewriteUtils.cleanupUnreferenced(hi);
+		HopRewriteUtils.cleanupUnreferenced(hi_0);
+		HopRewriteUtils.cleanupUnreferenced(hi_0_0);
+
+		return v1;
+	}
+
+	// Implementation of the rule *(a,cast.MATRIX(1.0)) => cast.MATRIX(a)
+	private static Hop _applyRewrite28(Hop hi) {
+		if ( !(hi instanceof BinaryOp) )
+			return hi;
+
+		BinaryOp c_hi = (BinaryOp) hi;
+
+		if ( c_hi.getOp() != Types.OpOp2.MULT || !c_hi.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_0 = hi.getInput(0);
+
+		if ( hi_0.getDataType() != Types.DataType.SCALAR || !hi_0.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_1 = hi.getInput(1);
+
+		if (hi_1.getParent().size() > 1)
+			return hi;
+		if ( !(hi_1 instanceof UnaryOp) )
+			return hi;
+
+		UnaryOp c_hi_1 = (UnaryOp) hi_1;
+
+		if ( c_hi_1.getOp() != Types.OpOp1.CAST_AS_MATRIX || !c_hi_1.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_1_0 = hi_1.getInput(0);
+
+		if ( !(hi_1_0 instanceof LiteralOp) )
+			return hi;
+
+		LiteralOp l_hi_1_0 = (LiteralOp) hi_1_0;
+
+		if ( l_hi_1_0.getDataType() != Types.DataType.SCALAR|| !l_hi_1_0.getValueType().isNumeric() )
+			return hi;
+
+		if ( l_hi_1_0.getDoubleValue() != 1.0 )
+			return hi;
+
+
+		// Now, we start building the new Hop
+		System.out.println("Applying rewrite: *(a,cast.MATRIX(1.0)) => cast.MATRIX(a)");
+		UnaryOp v1 = HopRewriteUtils.createUnary(hi_0, Types.OpOp1.CAST_AS_MATRIX);
+
+		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
+
+		for ( Hop p : parents )
+			HopRewriteUtils.replaceChildReference(p, hi, v1);
+
+		// Remove old unreferenced Hops
+		HopRewriteUtils.cleanupUnreferenced(hi);
+		HopRewriteUtils.cleanupUnreferenced(hi_1);
+		HopRewriteUtils.cleanupUnreferenced(hi_1_0);
+
+		return v1;
+	}
+
+	// Implementation of the rule +(cast.MATRIX(0.0),a) => cast.MATRIX(a)
+	private static Hop _applyRewrite29(Hop hi) {
+		if ( !(hi instanceof BinaryOp) )
+			return hi;
+
+		BinaryOp c_hi = (BinaryOp) hi;
+
+		if ( c_hi.getOp() != Types.OpOp2.PLUS || !c_hi.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_0 = hi.getInput(0);
+
+		if (hi_0.getParent().size() > 1)
+			return hi;
+		if ( !(hi_0 instanceof UnaryOp) )
+			return hi;
+
+		UnaryOp c_hi_0 = (UnaryOp) hi_0;
+
+		if ( c_hi_0.getOp() != Types.OpOp1.CAST_AS_MATRIX || !c_hi_0.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_0_0 = hi_0.getInput(0);
+
+		if ( !(hi_0_0 instanceof LiteralOp) )
+			return hi;
+
+		LiteralOp l_hi_0_0 = (LiteralOp) hi_0_0;
+
+		if ( l_hi_0_0.getDataType() != Types.DataType.SCALAR|| !l_hi_0_0.getValueType().isNumeric() )
+			return hi;
+
+		if ( l_hi_0_0.getDoubleValue() != 0.0 )
+			return hi;
+
+		Hop hi_1 = hi.getInput(1);
+
+		if ( hi_1.getDataType() != Types.DataType.SCALAR || !hi_1.getValueType().isNumeric() )
+			return hi;
+
+
+		// Now, we start building the new Hop
+		System.out.println("Applying rewrite: +(cast.MATRIX(0.0),a) => cast.MATRIX(a)");
+		UnaryOp v1 = HopRewriteUtils.createUnary(hi_1, Types.OpOp1.CAST_AS_MATRIX);
+
+		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
+
+		for ( Hop p : parents )
+			HopRewriteUtils.replaceChildReference(p, hi, v1);
+
+		// Remove old unreferenced Hops
+		HopRewriteUtils.cleanupUnreferenced(hi);
+		HopRewriteUtils.cleanupUnreferenced(hi_0);
+		HopRewriteUtils.cleanupUnreferenced(hi_0_0);
+
+		return v1;
+	}
+
+	// Implementation of the rule +(a,cast.MATRIX(0.0)) => cast.MATRIX(a)
+	private static Hop _applyRewrite30(Hop hi) {
+		if ( !(hi instanceof BinaryOp) )
+			return hi;
+
+		BinaryOp c_hi = (BinaryOp) hi;
+
+		if ( c_hi.getOp() != Types.OpOp2.PLUS || !c_hi.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_0 = hi.getInput(0);
+
+		if ( hi_0.getDataType() != Types.DataType.SCALAR || !hi_0.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_1 = hi.getInput(1);
+
+		if (hi_1.getParent().size() > 1)
+			return hi;
+		if ( !(hi_1 instanceof UnaryOp) )
+			return hi;
+
+		UnaryOp c_hi_1 = (UnaryOp) hi_1;
+
+		if ( c_hi_1.getOp() != Types.OpOp1.CAST_AS_MATRIX || !c_hi_1.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_1_0 = hi_1.getInput(0);
+
+		if ( !(hi_1_0 instanceof LiteralOp) )
+			return hi;
+
+		LiteralOp l_hi_1_0 = (LiteralOp) hi_1_0;
+
+		if ( l_hi_1_0.getDataType() != Types.DataType.SCALAR|| !l_hi_1_0.getValueType().isNumeric() )
+			return hi;
+
+		if ( l_hi_1_0.getDoubleValue() != 0.0 )
+			return hi;
+
+
+		// Now, we start building the new Hop
+		System.out.println("Applying rewrite: +(a,cast.MATRIX(0.0)) => cast.MATRIX(a)");
+		UnaryOp v1 = HopRewriteUtils.createUnary(hi_0, Types.OpOp1.CAST_AS_MATRIX);
+
+		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
+
+		for ( Hop p : parents )
+			HopRewriteUtils.replaceChildReference(p, hi, v1);
+
+		// Remove old unreferenced Hops
+		HopRewriteUtils.cleanupUnreferenced(hi);
+		HopRewriteUtils.cleanupUnreferenced(hi_1);
+		HopRewriteUtils.cleanupUnreferenced(hi_1_0);
+
+		return v1;
+	}
+
+	// Implementation of the rule rev(cast.MATRIX(a)) => cast.MATRIX(a)
+	private static Hop _applyRewrite31(Hop hi) {
+		if ( !(hi instanceof ReorgOp) )
+			return hi;
+
+		ReorgOp c_hi = (ReorgOp) hi;
+
+		if ( c_hi.getOp() != Types.ReOrgOp.REV || !c_hi.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_0 = hi.getInput(0);
+
+		if (hi_0.getParent().size() > 1)
+			return hi;
+		if ( !(hi_0 instanceof UnaryOp) )
+			return hi;
+
+		UnaryOp c_hi_0 = (UnaryOp) hi_0;
+
+		if ( c_hi_0.getOp() != Types.OpOp1.CAST_AS_MATRIX || !c_hi_0.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_0_0 = hi_0.getInput(0);
+
+		if ( hi_0_0.getDataType() != Types.DataType.SCALAR || !hi_0_0.getValueType().isNumeric() )
+			return hi;
+
+
+		// Now, we start building the new Hop
+		System.out.println("Applying rewrite: rev(cast.MATRIX(a)) => cast.MATRIX(a)");
+		UnaryOp v1 = HopRewriteUtils.createUnary(hi_0_0, Types.OpOp1.CAST_AS_MATRIX);
+
+		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
+
+		for ( Hop p : parents )
+			HopRewriteUtils.replaceChildReference(p, hi, v1);
+
+		// Remove old unreferenced Hops
+		HopRewriteUtils.cleanupUnreferenced(hi);
+		HopRewriteUtils.cleanupUnreferenced(hi_0);
+
+		return v1;
 	}
 
 	// Implementation of the rule *(/(1.0,B),a) => /(a,B)
@@ -3476,6 +4238,356 @@ public class GeneratedRewriteClass implements Function {
 		return v2;
 	}
 
+	// Implementation of the rule -(cast.MATRIX(a),b) => cast.MATRIX(-(a,b))
+	private static Hop _applyRewrite69(Hop hi) {
+		if ( !(hi instanceof BinaryOp) )
+			return hi;
+
+		BinaryOp c_hi = (BinaryOp) hi;
+
+		if ( c_hi.getOp() != Types.OpOp2.MINUS || !c_hi.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_0 = hi.getInput(0);
+
+		if (hi_0.getParent().size() > 1)
+			return hi;
+		if ( !(hi_0 instanceof UnaryOp) )
+			return hi;
+
+		UnaryOp c_hi_0 = (UnaryOp) hi_0;
+
+		if ( c_hi_0.getOp() != Types.OpOp1.CAST_AS_MATRIX || !c_hi_0.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_0_0 = hi_0.getInput(0);
+
+		if ( hi_0_0.getDataType() != Types.DataType.SCALAR || !hi_0_0.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_1 = hi.getInput(1);
+
+		if ( hi_1.getDataType() != Types.DataType.SCALAR || !hi_1.getValueType().isNumeric() )
+			return hi;
+
+
+		// Now, we start building the new Hop
+		System.out.println("Applying rewrite: -(cast.MATRIX(a),b) => cast.MATRIX(-(a,b))");
+		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0, hi_1, Types.OpOp2.MINUS);
+		UnaryOp v2 = HopRewriteUtils.createUnary(v1, Types.OpOp1.CAST_AS_MATRIX);
+
+		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
+
+		for ( Hop p : parents )
+			HopRewriteUtils.replaceChildReference(p, hi, v2);
+
+		// Remove old unreferenced Hops
+		HopRewriteUtils.cleanupUnreferenced(hi);
+		HopRewriteUtils.cleanupUnreferenced(hi_0);
+
+		return v2;
+	}
+
+	// Implementation of the rule -(a,cast.MATRIX(b)) => cast.MATRIX(-(a,b))
+	private static Hop _applyRewrite70(Hop hi) {
+		if ( !(hi instanceof BinaryOp) )
+			return hi;
+
+		BinaryOp c_hi = (BinaryOp) hi;
+
+		if ( c_hi.getOp() != Types.OpOp2.MINUS || !c_hi.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_0 = hi.getInput(0);
+
+		if ( hi_0.getDataType() != Types.DataType.SCALAR || !hi_0.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_1 = hi.getInput(1);
+
+		if (hi_1.getParent().size() > 1)
+			return hi;
+		if ( !(hi_1 instanceof UnaryOp) )
+			return hi;
+
+		UnaryOp c_hi_1 = (UnaryOp) hi_1;
+
+		if ( c_hi_1.getOp() != Types.OpOp1.CAST_AS_MATRIX || !c_hi_1.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_1_0 = hi_1.getInput(0);
+
+		if ( hi_1_0.getDataType() != Types.DataType.SCALAR || !hi_1_0.getValueType().isNumeric() )
+			return hi;
+
+
+		// Now, we start building the new Hop
+		System.out.println("Applying rewrite: -(a,cast.MATRIX(b)) => cast.MATRIX(-(a,b))");
+		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0, hi_1_0, Types.OpOp2.MINUS);
+		UnaryOp v2 = HopRewriteUtils.createUnary(v1, Types.OpOp1.CAST_AS_MATRIX);
+
+		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
+
+		for ( Hop p : parents )
+			HopRewriteUtils.replaceChildReference(p, hi, v2);
+
+		// Remove old unreferenced Hops
+		HopRewriteUtils.cleanupUnreferenced(hi);
+		HopRewriteUtils.cleanupUnreferenced(hi_1);
+
+		return v2;
+	}
+
+	// Implementation of the rule +(cast.MATRIX(a),b) => cast.MATRIX(+(a,b))
+	private static Hop _applyRewrite71(Hop hi) {
+		if ( !(hi instanceof BinaryOp) )
+			return hi;
+
+		BinaryOp c_hi = (BinaryOp) hi;
+
+		if ( c_hi.getOp() != Types.OpOp2.PLUS || !c_hi.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_0 = hi.getInput(0);
+
+		if (hi_0.getParent().size() > 1)
+			return hi;
+		if ( !(hi_0 instanceof UnaryOp) )
+			return hi;
+
+		UnaryOp c_hi_0 = (UnaryOp) hi_0;
+
+		if ( c_hi_0.getOp() != Types.OpOp1.CAST_AS_MATRIX || !c_hi_0.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_0_0 = hi_0.getInput(0);
+
+		if ( hi_0_0.getDataType() != Types.DataType.SCALAR || !hi_0_0.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_1 = hi.getInput(1);
+
+		if ( hi_1.getDataType() != Types.DataType.SCALAR || !hi_1.getValueType().isNumeric() )
+			return hi;
+
+
+		// Now, we start building the new Hop
+		System.out.println("Applying rewrite: +(cast.MATRIX(a),b) => cast.MATRIX(+(a,b))");
+		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0, hi_1, Types.OpOp2.PLUS);
+		UnaryOp v2 = HopRewriteUtils.createUnary(v1, Types.OpOp1.CAST_AS_MATRIX);
+
+		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
+
+		for ( Hop p : parents )
+			HopRewriteUtils.replaceChildReference(p, hi, v2);
+
+		// Remove old unreferenced Hops
+		HopRewriteUtils.cleanupUnreferenced(hi);
+		HopRewriteUtils.cleanupUnreferenced(hi_0);
+
+		return v2;
+	}
+
+	// Implementation of the rule +(a,cast.MATRIX(b)) => cast.MATRIX(+(a,b))
+	private static Hop _applyRewrite72(Hop hi) {
+		if ( !(hi instanceof BinaryOp) )
+			return hi;
+
+		BinaryOp c_hi = (BinaryOp) hi;
+
+		if ( c_hi.getOp() != Types.OpOp2.PLUS || !c_hi.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_0 = hi.getInput(0);
+
+		if ( hi_0.getDataType() != Types.DataType.SCALAR || !hi_0.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_1 = hi.getInput(1);
+
+		if (hi_1.getParent().size() > 1)
+			return hi;
+		if ( !(hi_1 instanceof UnaryOp) )
+			return hi;
+
+		UnaryOp c_hi_1 = (UnaryOp) hi_1;
+
+		if ( c_hi_1.getOp() != Types.OpOp1.CAST_AS_MATRIX || !c_hi_1.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_1_0 = hi_1.getInput(0);
+
+		if ( hi_1_0.getDataType() != Types.DataType.SCALAR || !hi_1_0.getValueType().isNumeric() )
+			return hi;
+
+
+		// Now, we start building the new Hop
+		System.out.println("Applying rewrite: +(a,cast.MATRIX(b)) => cast.MATRIX(+(a,b))");
+		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0, hi_1_0, Types.OpOp2.PLUS);
+		UnaryOp v2 = HopRewriteUtils.createUnary(v1, Types.OpOp1.CAST_AS_MATRIX);
+
+		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
+
+		for ( Hop p : parents )
+			HopRewriteUtils.replaceChildReference(p, hi, v2);
+
+		// Remove old unreferenced Hops
+		HopRewriteUtils.cleanupUnreferenced(hi);
+		HopRewriteUtils.cleanupUnreferenced(hi_1);
+
+		return v2;
+	}
+
+	// Implementation of the rule *(cast.MATRIX(a),b) => cast.MATRIX(*(a,b))
+	private static Hop _applyRewrite73(Hop hi) {
+		if ( !(hi instanceof BinaryOp) )
+			return hi;
+
+		BinaryOp c_hi = (BinaryOp) hi;
+
+		if ( c_hi.getOp() != Types.OpOp2.MULT || !c_hi.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_0 = hi.getInput(0);
+
+		if (hi_0.getParent().size() > 1)
+			return hi;
+		if ( !(hi_0 instanceof UnaryOp) )
+			return hi;
+
+		UnaryOp c_hi_0 = (UnaryOp) hi_0;
+
+		if ( c_hi_0.getOp() != Types.OpOp1.CAST_AS_MATRIX || !c_hi_0.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_0_0 = hi_0.getInput(0);
+
+		if ( hi_0_0.getDataType() != Types.DataType.SCALAR || !hi_0_0.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_1 = hi.getInput(1);
+
+		if ( hi_1.getDataType() != Types.DataType.SCALAR || !hi_1.getValueType().isNumeric() )
+			return hi;
+
+
+		// Now, we start building the new Hop
+		System.out.println("Applying rewrite: *(cast.MATRIX(a),b) => cast.MATRIX(*(a,b))");
+		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0, hi_1, Types.OpOp2.MULT);
+		UnaryOp v2 = HopRewriteUtils.createUnary(v1, Types.OpOp1.CAST_AS_MATRIX);
+
+		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
+
+		for ( Hop p : parents )
+			HopRewriteUtils.replaceChildReference(p, hi, v2);
+
+		// Remove old unreferenced Hops
+		HopRewriteUtils.cleanupUnreferenced(hi);
+		HopRewriteUtils.cleanupUnreferenced(hi_0);
+
+		return v2;
+	}
+
+	// Implementation of the rule *(a,cast.MATRIX(b)) => cast.MATRIX(*(a,b))
+	private static Hop _applyRewrite74(Hop hi) {
+		if ( !(hi instanceof BinaryOp) )
+			return hi;
+
+		BinaryOp c_hi = (BinaryOp) hi;
+
+		if ( c_hi.getOp() != Types.OpOp2.MULT || !c_hi.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_0 = hi.getInput(0);
+
+		if ( hi_0.getDataType() != Types.DataType.SCALAR || !hi_0.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_1 = hi.getInput(1);
+
+		if (hi_1.getParent().size() > 1)
+			return hi;
+		if ( !(hi_1 instanceof UnaryOp) )
+			return hi;
+
+		UnaryOp c_hi_1 = (UnaryOp) hi_1;
+
+		if ( c_hi_1.getOp() != Types.OpOp1.CAST_AS_MATRIX || !c_hi_1.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_1_0 = hi_1.getInput(0);
+
+		if ( hi_1_0.getDataType() != Types.DataType.SCALAR || !hi_1_0.getValueType().isNumeric() )
+			return hi;
+
+
+		// Now, we start building the new Hop
+		System.out.println("Applying rewrite: *(a,cast.MATRIX(b)) => cast.MATRIX(*(a,b))");
+		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0, hi_1_0, Types.OpOp2.MULT);
+		UnaryOp v2 = HopRewriteUtils.createUnary(v1, Types.OpOp1.CAST_AS_MATRIX);
+
+		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
+
+		for ( Hop p : parents )
+			HopRewriteUtils.replaceChildReference(p, hi, v2);
+
+		// Remove old unreferenced Hops
+		HopRewriteUtils.cleanupUnreferenced(hi);
+		HopRewriteUtils.cleanupUnreferenced(hi_1);
+
+		return v2;
+	}
+
+	// Implementation of the rule /(a,cast.MATRIX(b)) => cast.MATRIX(/(a,b))
+	private static Hop _applyRewrite75(Hop hi) {
+		if ( !(hi instanceof BinaryOp) )
+			return hi;
+
+		BinaryOp c_hi = (BinaryOp) hi;
+
+		if ( c_hi.getOp() != Types.OpOp2.DIV || !c_hi.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_0 = hi.getInput(0);
+
+		if ( hi_0.getDataType() != Types.DataType.SCALAR || !hi_0.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_1 = hi.getInput(1);
+
+		if (hi_1.getParent().size() > 1)
+			return hi;
+		if ( !(hi_1 instanceof UnaryOp) )
+			return hi;
+
+		UnaryOp c_hi_1 = (UnaryOp) hi_1;
+
+		if ( c_hi_1.getOp() != Types.OpOp1.CAST_AS_MATRIX || !c_hi_1.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_1_0 = hi_1.getInput(0);
+
+		if ( hi_1_0.getDataType() != Types.DataType.SCALAR || !hi_1_0.getValueType().isNumeric() )
+			return hi;
+
+
+		// Now, we start building the new Hop
+		System.out.println("Applying rewrite: /(a,cast.MATRIX(b)) => cast.MATRIX(/(a,b))");
+		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0, hi_1_0, Types.OpOp2.DIV);
+		UnaryOp v2 = HopRewriteUtils.createUnary(v1, Types.OpOp1.CAST_AS_MATRIX);
+
+		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
+
+		for ( Hop p : parents )
+			HopRewriteUtils.replaceChildReference(p, hi, v2);
+
+		// Remove old unreferenced Hops
+		HopRewriteUtils.cleanupUnreferenced(hi);
+		HopRewriteUtils.cleanupUnreferenced(hi_1);
+
+		return v2;
+	}
+
 	// Implementation of the rule rev(colSums(A)) => colSums(A)
 	private static Hop _applyRewrite76(Hop hi) {
 		if ( !(hi instanceof ReorgOp) )
@@ -4090,6 +5202,132 @@ public class GeneratedRewriteClass implements Function {
 		return v1;
 	}
 
+	// Implementation of the rule -(0.0,*(b,A)) => -*(const(A,0.0),b,A)
+	private static Hop _applyRewrite86(Hop hi) {
+		if ( !(hi instanceof BinaryOp) )
+			return hi;
+
+		BinaryOp c_hi = (BinaryOp) hi;
+
+		if ( c_hi.getOp() != Types.OpOp2.MINUS || !c_hi.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_0 = hi.getInput(0);
+
+		if ( !(hi_0 instanceof LiteralOp) )
+			return hi;
+
+		LiteralOp l_hi_0 = (LiteralOp) hi_0;
+
+		if ( l_hi_0.getDataType() != Types.DataType.SCALAR|| !l_hi_0.getValueType().isNumeric() )
+			return hi;
+
+		if ( l_hi_0.getDoubleValue() != 0.0 )
+			return hi;
+
+		Hop hi_1 = hi.getInput(1);
+
+		if (hi_1.getParent().size() > 1)
+			return hi;
+		if ( !(hi_1 instanceof BinaryOp) )
+			return hi;
+
+		BinaryOp c_hi_1 = (BinaryOp) hi_1;
+
+		if ( c_hi_1.getOp() != Types.OpOp2.MULT || !c_hi_1.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_1_0 = hi_1.getInput(0);
+
+		if ( hi_1_0.getDataType() != Types.DataType.SCALAR || !hi_1_0.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_1_1 = hi_1.getInput(1);
+
+		if ( hi_1_1.getDataType() != Types.DataType.MATRIX || !hi_1_1.getValueType().isNumeric() )
+			return hi;
+
+
+		// Now, we start building the new Hop
+		System.out.println("Applying rewrite: -(0.0,*(b,A)) => -*(const(A,0.0),b,A)");
+		DataGenOp v1 = ((DataGenOp) HopRewriteUtils.createDataGenOp(HopRewriteUtils.createUnary(hi_1_1, Types.OpOp1.NROW),HopRewriteUtils.createUnary(hi_1_1, Types.OpOp1.NCOL),0.0D));
+		TernaryOp v2 = HopRewriteUtils.createTernary(v1, hi_1_0, hi_1_1,Types.OpOp3.MINUS_MULT);
+
+		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
+
+		for ( Hop p : parents )
+			HopRewriteUtils.replaceChildReference(p, hi, v2);
+
+		// Remove old unreferenced Hops
+		HopRewriteUtils.cleanupUnreferenced(hi);
+		HopRewriteUtils.cleanupUnreferenced(hi_1);
+
+		return v2;
+	}
+
+	// Implementation of the rule -(0.0,*(A,b)) => -*(const(A,0.0),b,A)
+	private static Hop _applyRewrite87(Hop hi) {
+		if ( !(hi instanceof BinaryOp) )
+			return hi;
+
+		BinaryOp c_hi = (BinaryOp) hi;
+
+		if ( c_hi.getOp() != Types.OpOp2.MINUS || !c_hi.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_0 = hi.getInput(0);
+
+		if ( !(hi_0 instanceof LiteralOp) )
+			return hi;
+
+		LiteralOp l_hi_0 = (LiteralOp) hi_0;
+
+		if ( l_hi_0.getDataType() != Types.DataType.SCALAR|| !l_hi_0.getValueType().isNumeric() )
+			return hi;
+
+		if ( l_hi_0.getDoubleValue() != 0.0 )
+			return hi;
+
+		Hop hi_1 = hi.getInput(1);
+
+		if (hi_1.getParent().size() > 1)
+			return hi;
+		if ( !(hi_1 instanceof BinaryOp) )
+			return hi;
+
+		BinaryOp c_hi_1 = (BinaryOp) hi_1;
+
+		if ( c_hi_1.getOp() != Types.OpOp2.MULT || !c_hi_1.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_1_0 = hi_1.getInput(0);
+
+		if ( hi_1_0.getDataType() != Types.DataType.MATRIX || !hi_1_0.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_1_1 = hi_1.getInput(1);
+
+		if ( hi_1_1.getDataType() != Types.DataType.SCALAR || !hi_1_1.getValueType().isNumeric() )
+			return hi;
+
+
+		// Now, we start building the new Hop
+		System.out.println("Applying rewrite: -(0.0,*(A,b)) => -*(const(A,0.0),b,A)");
+		DataGenOp v1 = ((DataGenOp) HopRewriteUtils.createDataGenOp(HopRewriteUtils.createUnary(hi_1_0, Types.OpOp1.NROW),HopRewriteUtils.createUnary(hi_1_0, Types.OpOp1.NCOL),0.0D));
+		TernaryOp v2 = HopRewriteUtils.createTernary(v1, hi_1_1, hi_1_0,Types.OpOp3.MINUS_MULT);
+
+		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
+
+		for ( Hop p : parents )
+			HopRewriteUtils.replaceChildReference(p, hi, v2);
+
+		// Remove old unreferenced Hops
+		HopRewriteUtils.cleanupUnreferenced(hi);
+		HopRewriteUtils.cleanupUnreferenced(hi_1);
+
+		return v2;
+	}
+
 	// Implementation of the rule -(A,-(b,0.0)) => -(A,b)
 	private static Hop _applyRewrite88(Hop hi) {
 		if ( !(hi instanceof BinaryOp) )
@@ -4592,6 +5830,134 @@ public class GeneratedRewriteClass implements Function {
 		HopRewriteUtils.cleanupUnreferenced(hi_1);
 
 		return v2;
+	}
+
+	// Implementation of the rule trace(+(t(A),A)) => +(trace(A),trace(A))
+	private static Hop _applyRewrite96(Hop hi) {
+		if ( !(hi instanceof AggUnaryOp) )
+			return hi;
+
+		AggUnaryOp c_hi = (AggUnaryOp) hi;
+
+		if ( c_hi.getOp() != Types.AggOp.SUM || !c_hi.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_0 = hi.getInput(0);
+
+		if (hi_0.getParent().size() > 1)
+			return hi;
+		if ( !(hi_0 instanceof BinaryOp) )
+			return hi;
+
+		BinaryOp c_hi_0 = (BinaryOp) hi_0;
+
+		if ( c_hi_0.getOp() != Types.OpOp2.PLUS || !c_hi_0.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_0_0 = hi_0.getInput(0);
+
+		if (hi_0_0.getParent().size() > 1)
+			return hi;
+		if ( !(hi_0_0 instanceof ReorgOp) )
+			return hi;
+
+		ReorgOp c_hi_0_0 = (ReorgOp) hi_0_0;
+
+		if ( c_hi_0_0.getOp() != Types.ReOrgOp.TRANS || !c_hi_0_0.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_0_0_0 = hi_0_0.getInput(0);
+
+		if ( hi_0_0_0.getDataType() != Types.DataType.MATRIX || !hi_0_0_0.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_0_1 = hi_0.getInput(1);
+
+		if ( hi_0_0_0 != hi_0_1 )
+			return hi;
+
+
+		// Now, we start building the new Hop
+		System.out.println("Applying rewrite: trace(+(t(A),A)) => +(trace(A),trace(A))");
+		AggUnaryOp v1 = HopRewriteUtils.createAggUnaryOp(hi_0_0_0, Types.AggOp.TRACE, Types.Direction.RowCol);
+		AggUnaryOp v2 = HopRewriteUtils.createAggUnaryOp(hi_0_0_0, Types.AggOp.TRACE, Types.Direction.RowCol);
+		BinaryOp v3 = HopRewriteUtils.createBinary(v1, v2, Types.OpOp2.PLUS);
+
+		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
+
+		for ( Hop p : parents )
+			HopRewriteUtils.replaceChildReference(p, hi, v3);
+
+		// Remove old unreferenced Hops
+		HopRewriteUtils.cleanupUnreferenced(hi);
+		HopRewriteUtils.cleanupUnreferenced(hi_0);
+		HopRewriteUtils.cleanupUnreferenced(hi_0_0);
+
+		return v3;
+	}
+
+	// Implementation of the rule trace(+(A,t(A))) => +(trace(A),trace(A))
+	private static Hop _applyRewrite97(Hop hi) {
+		if ( !(hi instanceof AggUnaryOp) )
+			return hi;
+
+		AggUnaryOp c_hi = (AggUnaryOp) hi;
+
+		if ( c_hi.getOp() != Types.AggOp.SUM || !c_hi.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_0 = hi.getInput(0);
+
+		if (hi_0.getParent().size() > 1)
+			return hi;
+		if ( !(hi_0 instanceof BinaryOp) )
+			return hi;
+
+		BinaryOp c_hi_0 = (BinaryOp) hi_0;
+
+		if ( c_hi_0.getOp() != Types.OpOp2.PLUS || !c_hi_0.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_0_0 = hi_0.getInput(0);
+
+		if ( hi_0_0.getDataType() != Types.DataType.MATRIX || !hi_0_0.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_0_1 = hi_0.getInput(1);
+
+		if (hi_0_1.getParent().size() > 1)
+			return hi;
+		if ( !(hi_0_1 instanceof ReorgOp) )
+			return hi;
+
+		ReorgOp c_hi_0_1 = (ReorgOp) hi_0_1;
+
+		if ( c_hi_0_1.getOp() != Types.ReOrgOp.TRANS || !c_hi_0_1.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_0_1_0 = hi_0_1.getInput(0);
+
+		if ( hi_0_0 != hi_0_1_0 )
+			return hi;
+
+
+		// Now, we start building the new Hop
+		System.out.println("Applying rewrite: trace(+(A,t(A))) => +(trace(A),trace(A))");
+		AggUnaryOp v1 = HopRewriteUtils.createAggUnaryOp(hi_0_0, Types.AggOp.TRACE, Types.Direction.RowCol);
+		AggUnaryOp v2 = HopRewriteUtils.createAggUnaryOp(hi_0_0, Types.AggOp.TRACE, Types.Direction.RowCol);
+		BinaryOp v3 = HopRewriteUtils.createBinary(v1, v2, Types.OpOp2.PLUS);
+
+		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
+
+		for ( Hop p : parents )
+			HopRewriteUtils.replaceChildReference(p, hi, v3);
+
+		// Remove old unreferenced Hops
+		HopRewriteUtils.cleanupUnreferenced(hi);
+		HopRewriteUtils.cleanupUnreferenced(hi_0);
+		HopRewriteUtils.cleanupUnreferenced(hi_0_1);
+
+		return v3;
 	}
 
 	// Implementation of the rule rev(-(a,rev(B))) => -(a,B)
@@ -5978,6 +7344,282 @@ public class GeneratedRewriteClass implements Function {
 		return v1;
 	}
 
+	// Implementation of the rule trace(*(/(a,C),B)) => *(a,trace(/(B,C)))
+	private static Hop _applyRewrite120(Hop hi) {
+		if ( !(hi instanceof AggUnaryOp) )
+			return hi;
+
+		AggUnaryOp c_hi = (AggUnaryOp) hi;
+
+		if ( c_hi.getOp() != Types.AggOp.SUM || !c_hi.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_0 = hi.getInput(0);
+
+		if (hi_0.getParent().size() > 1)
+			return hi;
+		if ( !(hi_0 instanceof BinaryOp) )
+			return hi;
+
+		BinaryOp c_hi_0 = (BinaryOp) hi_0;
+
+		if ( c_hi_0.getOp() != Types.OpOp2.MULT || !c_hi_0.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_0_0 = hi_0.getInput(0);
+
+		if (hi_0_0.getParent().size() > 1)
+			return hi;
+		if ( !(hi_0_0 instanceof BinaryOp) )
+			return hi;
+
+		BinaryOp c_hi_0_0 = (BinaryOp) hi_0_0;
+
+		if ( c_hi_0_0.getOp() != Types.OpOp2.DIV || !c_hi_0_0.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_0_0_0 = hi_0_0.getInput(0);
+
+		if ( hi_0_0_0.getDataType() != Types.DataType.SCALAR || !hi_0_0_0.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_0_0_1 = hi_0_0.getInput(1);
+
+		if ( hi_0_0_1.getDataType() != Types.DataType.MATRIX || !hi_0_0_1.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_0_1 = hi_0.getInput(1);
+
+		if ( hi_0_1.getDataType() != Types.DataType.MATRIX || !hi_0_1.getValueType().isNumeric() )
+			return hi;
+
+
+		// Now, we start building the new Hop
+		System.out.println("Applying rewrite: trace(*(/(a,C),B)) => *(a,trace(/(B,C)))");
+		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_1, hi_0_0_1, Types.OpOp2.DIV);
+		AggUnaryOp v2 = HopRewriteUtils.createAggUnaryOp(v1, Types.AggOp.TRACE, Types.Direction.RowCol);
+		BinaryOp v3 = HopRewriteUtils.createBinary(hi_0_0_0, v2, Types.OpOp2.MULT);
+
+		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
+
+		for ( Hop p : parents )
+			HopRewriteUtils.replaceChildReference(p, hi, v3);
+
+		// Remove old unreferenced Hops
+		HopRewriteUtils.cleanupUnreferenced(hi);
+		HopRewriteUtils.cleanupUnreferenced(hi_0);
+		HopRewriteUtils.cleanupUnreferenced(hi_0_0);
+
+		return v3;
+	}
+
+	// Implementation of the rule trace(*(B,/(a,C))) => *(a,trace(/(B,C)))
+	private static Hop _applyRewrite121(Hop hi) {
+		if ( !(hi instanceof AggUnaryOp) )
+			return hi;
+
+		AggUnaryOp c_hi = (AggUnaryOp) hi;
+
+		if ( c_hi.getOp() != Types.AggOp.SUM || !c_hi.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_0 = hi.getInput(0);
+
+		if (hi_0.getParent().size() > 1)
+			return hi;
+		if ( !(hi_0 instanceof BinaryOp) )
+			return hi;
+
+		BinaryOp c_hi_0 = (BinaryOp) hi_0;
+
+		if ( c_hi_0.getOp() != Types.OpOp2.MULT || !c_hi_0.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_0_0 = hi_0.getInput(0);
+
+		if ( hi_0_0.getDataType() != Types.DataType.MATRIX || !hi_0_0.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_0_1 = hi_0.getInput(1);
+
+		if (hi_0_1.getParent().size() > 1)
+			return hi;
+		if ( !(hi_0_1 instanceof BinaryOp) )
+			return hi;
+
+		BinaryOp c_hi_0_1 = (BinaryOp) hi_0_1;
+
+		if ( c_hi_0_1.getOp() != Types.OpOp2.DIV || !c_hi_0_1.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_0_1_0 = hi_0_1.getInput(0);
+
+		if ( hi_0_1_0.getDataType() != Types.DataType.SCALAR || !hi_0_1_0.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_0_1_1 = hi_0_1.getInput(1);
+
+		if ( hi_0_1_1.getDataType() != Types.DataType.MATRIX || !hi_0_1_1.getValueType().isNumeric() )
+			return hi;
+
+
+		// Now, we start building the new Hop
+		System.out.println("Applying rewrite: trace(*(B,/(a,C))) => *(a,trace(/(B,C)))");
+		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0, hi_0_1_1, Types.OpOp2.DIV);
+		AggUnaryOp v2 = HopRewriteUtils.createAggUnaryOp(v1, Types.AggOp.TRACE, Types.Direction.RowCol);
+		BinaryOp v3 = HopRewriteUtils.createBinary(hi_0_1_0, v2, Types.OpOp2.MULT);
+
+		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
+
+		for ( Hop p : parents )
+			HopRewriteUtils.replaceChildReference(p, hi, v3);
+
+		// Remove old unreferenced Hops
+		HopRewriteUtils.cleanupUnreferenced(hi);
+		HopRewriteUtils.cleanupUnreferenced(hi_0);
+		HopRewriteUtils.cleanupUnreferenced(hi_0_1);
+
+		return v3;
+	}
+
+	// Implementation of the rule trace(/(*(a,B),C)) => *(a,trace(/(B,C)))
+	private static Hop _applyRewrite122(Hop hi) {
+		if ( !(hi instanceof AggUnaryOp) )
+			return hi;
+
+		AggUnaryOp c_hi = (AggUnaryOp) hi;
+
+		if ( c_hi.getOp() != Types.AggOp.SUM || !c_hi.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_0 = hi.getInput(0);
+
+		if (hi_0.getParent().size() > 1)
+			return hi;
+		if ( !(hi_0 instanceof BinaryOp) )
+			return hi;
+
+		BinaryOp c_hi_0 = (BinaryOp) hi_0;
+
+		if ( c_hi_0.getOp() != Types.OpOp2.DIV || !c_hi_0.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_0_0 = hi_0.getInput(0);
+
+		if (hi_0_0.getParent().size() > 1)
+			return hi;
+		if ( !(hi_0_0 instanceof BinaryOp) )
+			return hi;
+
+		BinaryOp c_hi_0_0 = (BinaryOp) hi_0_0;
+
+		if ( c_hi_0_0.getOp() != Types.OpOp2.MULT || !c_hi_0_0.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_0_0_0 = hi_0_0.getInput(0);
+
+		if ( hi_0_0_0.getDataType() != Types.DataType.SCALAR || !hi_0_0_0.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_0_0_1 = hi_0_0.getInput(1);
+
+		if ( hi_0_0_1.getDataType() != Types.DataType.MATRIX || !hi_0_0_1.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_0_1 = hi_0.getInput(1);
+
+		if ( hi_0_1.getDataType() != Types.DataType.MATRIX || !hi_0_1.getValueType().isNumeric() )
+			return hi;
+
+
+		// Now, we start building the new Hop
+		System.out.println("Applying rewrite: trace(/(*(a,B),C)) => *(a,trace(/(B,C)))");
+		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0_1, hi_0_1, Types.OpOp2.DIV);
+		AggUnaryOp v2 = HopRewriteUtils.createAggUnaryOp(v1, Types.AggOp.TRACE, Types.Direction.RowCol);
+		BinaryOp v3 = HopRewriteUtils.createBinary(hi_0_0_0, v2, Types.OpOp2.MULT);
+
+		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
+
+		for ( Hop p : parents )
+			HopRewriteUtils.replaceChildReference(p, hi, v3);
+
+		// Remove old unreferenced Hops
+		HopRewriteUtils.cleanupUnreferenced(hi);
+		HopRewriteUtils.cleanupUnreferenced(hi_0);
+		HopRewriteUtils.cleanupUnreferenced(hi_0_0);
+
+		return v3;
+	}
+
+	// Implementation of the rule trace(/(*(B,a),C)) => *(a,trace(/(B,C)))
+	private static Hop _applyRewrite123(Hop hi) {
+		if ( !(hi instanceof AggUnaryOp) )
+			return hi;
+
+		AggUnaryOp c_hi = (AggUnaryOp) hi;
+
+		if ( c_hi.getOp() != Types.AggOp.SUM || !c_hi.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_0 = hi.getInput(0);
+
+		if (hi_0.getParent().size() > 1)
+			return hi;
+		if ( !(hi_0 instanceof BinaryOp) )
+			return hi;
+
+		BinaryOp c_hi_0 = (BinaryOp) hi_0;
+
+		if ( c_hi_0.getOp() != Types.OpOp2.DIV || !c_hi_0.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_0_0 = hi_0.getInput(0);
+
+		if (hi_0_0.getParent().size() > 1)
+			return hi;
+		if ( !(hi_0_0 instanceof BinaryOp) )
+			return hi;
+
+		BinaryOp c_hi_0_0 = (BinaryOp) hi_0_0;
+
+		if ( c_hi_0_0.getOp() != Types.OpOp2.MULT || !c_hi_0_0.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_0_0_0 = hi_0_0.getInput(0);
+
+		if ( hi_0_0_0.getDataType() != Types.DataType.MATRIX || !hi_0_0_0.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_0_0_1 = hi_0_0.getInput(1);
+
+		if ( hi_0_0_1.getDataType() != Types.DataType.SCALAR || !hi_0_0_1.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_0_1 = hi_0.getInput(1);
+
+		if ( hi_0_1.getDataType() != Types.DataType.MATRIX || !hi_0_1.getValueType().isNumeric() )
+			return hi;
+
+
+		// Now, we start building the new Hop
+		System.out.println("Applying rewrite: trace(/(*(B,a),C)) => *(a,trace(/(B,C)))");
+		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0_0, hi_0_1, Types.OpOp2.DIV);
+		AggUnaryOp v2 = HopRewriteUtils.createAggUnaryOp(v1, Types.AggOp.TRACE, Types.Direction.RowCol);
+		BinaryOp v3 = HopRewriteUtils.createBinary(hi_0_0_1, v2, Types.OpOp2.MULT);
+
+		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
+
+		for ( Hop p : parents )
+			HopRewriteUtils.replaceChildReference(p, hi, v3);
+
+		// Remove old unreferenced Hops
+		HopRewriteUtils.cleanupUnreferenced(hi);
+		HopRewriteUtils.cleanupUnreferenced(hi_0);
+		HopRewriteUtils.cleanupUnreferenced(hi_0_0);
+
+		return v3;
+	}
+
 	// Implementation of the rule +(*(C,A),*(B,A)) => *(A,+(B,C))
 	private static Hop _applyRewrite124(Hop hi) {
 		if ( !(hi instanceof BinaryOp) )
@@ -6820,6 +8462,762 @@ public class GeneratedRewriteClass implements Function {
 		HopRewriteUtils.cleanupUnreferenced(hi_1_0);
 
 		return v3;
+	}
+
+	// Implementation of the rule trace(!=(t(B),A)) => trace(!=(A,B))
+	private static Hop _applyRewrite136(Hop hi) {
+		if ( !(hi instanceof AggUnaryOp) )
+			return hi;
+
+		AggUnaryOp c_hi = (AggUnaryOp) hi;
+
+		if ( c_hi.getOp() != Types.AggOp.SUM || !c_hi.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_0 = hi.getInput(0);
+
+		if (hi_0.getParent().size() > 1)
+			return hi;
+		if ( !(hi_0 instanceof BinaryOp) )
+			return hi;
+
+		BinaryOp c_hi_0 = (BinaryOp) hi_0;
+
+		if ( c_hi_0.getOp() != Types.OpOp2.NOTEQUAL || !c_hi_0.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_0_0 = hi_0.getInput(0);
+
+		if (hi_0_0.getParent().size() > 1)
+			return hi;
+		if ( !(hi_0_0 instanceof ReorgOp) )
+			return hi;
+
+		ReorgOp c_hi_0_0 = (ReorgOp) hi_0_0;
+
+		if ( c_hi_0_0.getOp() != Types.ReOrgOp.TRANS || !c_hi_0_0.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_0_0_0 = hi_0_0.getInput(0);
+
+		if ( hi_0_0_0.getDataType() != Types.DataType.MATRIX || !hi_0_0_0.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_0_1 = hi_0.getInput(1);
+
+		if ( hi_0_1.getDataType() != Types.DataType.MATRIX || !hi_0_1.getValueType().isNumeric() )
+			return hi;
+
+
+		// Now, we start building the new Hop
+		System.out.println("Applying rewrite: trace(!=(t(B),A)) => trace(!=(A,B))");
+		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_1, hi_0_0_0, Types.OpOp2.NOTEQUAL);
+		AggUnaryOp v2 = HopRewriteUtils.createAggUnaryOp(v1, Types.AggOp.TRACE, Types.Direction.RowCol);
+
+		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
+
+		for ( Hop p : parents )
+			HopRewriteUtils.replaceChildReference(p, hi, v2);
+
+		// Remove old unreferenced Hops
+		HopRewriteUtils.cleanupUnreferenced(hi);
+		HopRewriteUtils.cleanupUnreferenced(hi_0);
+		HopRewriteUtils.cleanupUnreferenced(hi_0_0);
+
+		return v2;
+	}
+
+	// Implementation of the rule trace(!=(A,t(B))) => trace(!=(A,B))
+	private static Hop _applyRewrite137(Hop hi) {
+		if ( !(hi instanceof AggUnaryOp) )
+			return hi;
+
+		AggUnaryOp c_hi = (AggUnaryOp) hi;
+
+		if ( c_hi.getOp() != Types.AggOp.SUM || !c_hi.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_0 = hi.getInput(0);
+
+		if (hi_0.getParent().size() > 1)
+			return hi;
+		if ( !(hi_0 instanceof BinaryOp) )
+			return hi;
+
+		BinaryOp c_hi_0 = (BinaryOp) hi_0;
+
+		if ( c_hi_0.getOp() != Types.OpOp2.NOTEQUAL || !c_hi_0.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_0_0 = hi_0.getInput(0);
+
+		if ( hi_0_0.getDataType() != Types.DataType.MATRIX || !hi_0_0.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_0_1 = hi_0.getInput(1);
+
+		if (hi_0_1.getParent().size() > 1)
+			return hi;
+		if ( !(hi_0_1 instanceof ReorgOp) )
+			return hi;
+
+		ReorgOp c_hi_0_1 = (ReorgOp) hi_0_1;
+
+		if ( c_hi_0_1.getOp() != Types.ReOrgOp.TRANS || !c_hi_0_1.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_0_1_0 = hi_0_1.getInput(0);
+
+		if ( hi_0_1_0.getDataType() != Types.DataType.MATRIX || !hi_0_1_0.getValueType().isNumeric() )
+			return hi;
+
+
+		// Now, we start building the new Hop
+		System.out.println("Applying rewrite: trace(!=(A,t(B))) => trace(!=(A,B))");
+		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0, hi_0_1_0, Types.OpOp2.NOTEQUAL);
+		AggUnaryOp v2 = HopRewriteUtils.createAggUnaryOp(v1, Types.AggOp.TRACE, Types.Direction.RowCol);
+
+		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
+
+		for ( Hop p : parents )
+			HopRewriteUtils.replaceChildReference(p, hi, v2);
+
+		// Remove old unreferenced Hops
+		HopRewriteUtils.cleanupUnreferenced(hi);
+		HopRewriteUtils.cleanupUnreferenced(hi_0);
+		HopRewriteUtils.cleanupUnreferenced(hi_0_1);
+
+		return v2;
+	}
+
+	// Implementation of the rule trace(-(t(A),b)) => trace(-(A,b))
+	private static Hop _applyRewrite138(Hop hi) {
+		if ( !(hi instanceof AggUnaryOp) )
+			return hi;
+
+		AggUnaryOp c_hi = (AggUnaryOp) hi;
+
+		if ( c_hi.getOp() != Types.AggOp.SUM || !c_hi.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_0 = hi.getInput(0);
+
+		if (hi_0.getParent().size() > 1)
+			return hi;
+		if ( !(hi_0 instanceof BinaryOp) )
+			return hi;
+
+		BinaryOp c_hi_0 = (BinaryOp) hi_0;
+
+		if ( c_hi_0.getOp() != Types.OpOp2.MINUS || !c_hi_0.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_0_0 = hi_0.getInput(0);
+
+		if (hi_0_0.getParent().size() > 1)
+			return hi;
+		if ( !(hi_0_0 instanceof ReorgOp) )
+			return hi;
+
+		ReorgOp c_hi_0_0 = (ReorgOp) hi_0_0;
+
+		if ( c_hi_0_0.getOp() != Types.ReOrgOp.TRANS || !c_hi_0_0.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_0_0_0 = hi_0_0.getInput(0);
+
+		if ( hi_0_0_0.getDataType() != Types.DataType.MATRIX || !hi_0_0_0.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_0_1 = hi_0.getInput(1);
+
+		if ( hi_0_1.getDataType() != Types.DataType.SCALAR || !hi_0_1.getValueType().isNumeric() )
+			return hi;
+
+
+		// Now, we start building the new Hop
+		System.out.println("Applying rewrite: trace(-(t(A),b)) => trace(-(A,b))");
+		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0_0, hi_0_1, Types.OpOp2.MINUS);
+		AggUnaryOp v2 = HopRewriteUtils.createAggUnaryOp(v1, Types.AggOp.TRACE, Types.Direction.RowCol);
+
+		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
+
+		for ( Hop p : parents )
+			HopRewriteUtils.replaceChildReference(p, hi, v2);
+
+		// Remove old unreferenced Hops
+		HopRewriteUtils.cleanupUnreferenced(hi);
+		HopRewriteUtils.cleanupUnreferenced(hi_0);
+		HopRewriteUtils.cleanupUnreferenced(hi_0_0);
+
+		return v2;
+	}
+
+	// Implementation of the rule trace(-(a,t(B))) => trace(-(a,B))
+	private static Hop _applyRewrite139(Hop hi) {
+		if ( !(hi instanceof AggUnaryOp) )
+			return hi;
+
+		AggUnaryOp c_hi = (AggUnaryOp) hi;
+
+		if ( c_hi.getOp() != Types.AggOp.SUM || !c_hi.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_0 = hi.getInput(0);
+
+		if (hi_0.getParent().size() > 1)
+			return hi;
+		if ( !(hi_0 instanceof BinaryOp) )
+			return hi;
+
+		BinaryOp c_hi_0 = (BinaryOp) hi_0;
+
+		if ( c_hi_0.getOp() != Types.OpOp2.MINUS || !c_hi_0.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_0_0 = hi_0.getInput(0);
+
+		if ( hi_0_0.getDataType() != Types.DataType.SCALAR || !hi_0_0.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_0_1 = hi_0.getInput(1);
+
+		if (hi_0_1.getParent().size() > 1)
+			return hi;
+		if ( !(hi_0_1 instanceof ReorgOp) )
+			return hi;
+
+		ReorgOp c_hi_0_1 = (ReorgOp) hi_0_1;
+
+		if ( c_hi_0_1.getOp() != Types.ReOrgOp.TRANS || !c_hi_0_1.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_0_1_0 = hi_0_1.getInput(0);
+
+		if ( hi_0_1_0.getDataType() != Types.DataType.MATRIX || !hi_0_1_0.getValueType().isNumeric() )
+			return hi;
+
+
+		// Now, we start building the new Hop
+		System.out.println("Applying rewrite: trace(-(a,t(B))) => trace(-(a,B))");
+		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0, hi_0_1_0, Types.OpOp2.MINUS);
+		AggUnaryOp v2 = HopRewriteUtils.createAggUnaryOp(v1, Types.AggOp.TRACE, Types.Direction.RowCol);
+
+		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
+
+		for ( Hop p : parents )
+			HopRewriteUtils.replaceChildReference(p, hi, v2);
+
+		// Remove old unreferenced Hops
+		HopRewriteUtils.cleanupUnreferenced(hi);
+		HopRewriteUtils.cleanupUnreferenced(hi_0);
+		HopRewriteUtils.cleanupUnreferenced(hi_0_1);
+
+		return v2;
+	}
+
+	// Implementation of the rule trace(-(t(A),B)) => trace(-(A,B))
+	private static Hop _applyRewrite140(Hop hi) {
+		if ( !(hi instanceof AggUnaryOp) )
+			return hi;
+
+		AggUnaryOp c_hi = (AggUnaryOp) hi;
+
+		if ( c_hi.getOp() != Types.AggOp.SUM || !c_hi.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_0 = hi.getInput(0);
+
+		if (hi_0.getParent().size() > 1)
+			return hi;
+		if ( !(hi_0 instanceof BinaryOp) )
+			return hi;
+
+		BinaryOp c_hi_0 = (BinaryOp) hi_0;
+
+		if ( c_hi_0.getOp() != Types.OpOp2.MINUS || !c_hi_0.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_0_0 = hi_0.getInput(0);
+
+		if (hi_0_0.getParent().size() > 1)
+			return hi;
+		if ( !(hi_0_0 instanceof ReorgOp) )
+			return hi;
+
+		ReorgOp c_hi_0_0 = (ReorgOp) hi_0_0;
+
+		if ( c_hi_0_0.getOp() != Types.ReOrgOp.TRANS || !c_hi_0_0.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_0_0_0 = hi_0_0.getInput(0);
+
+		if ( hi_0_0_0.getDataType() != Types.DataType.MATRIX || !hi_0_0_0.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_0_1 = hi_0.getInput(1);
+
+		if ( hi_0_1.getDataType() != Types.DataType.MATRIX || !hi_0_1.getValueType().isNumeric() )
+			return hi;
+
+
+		// Now, we start building the new Hop
+		System.out.println("Applying rewrite: trace(-(t(A),B)) => trace(-(A,B))");
+		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0_0, hi_0_1, Types.OpOp2.MINUS);
+		AggUnaryOp v2 = HopRewriteUtils.createAggUnaryOp(v1, Types.AggOp.TRACE, Types.Direction.RowCol);
+
+		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
+
+		for ( Hop p : parents )
+			HopRewriteUtils.replaceChildReference(p, hi, v2);
+
+		// Remove old unreferenced Hops
+		HopRewriteUtils.cleanupUnreferenced(hi);
+		HopRewriteUtils.cleanupUnreferenced(hi_0);
+		HopRewriteUtils.cleanupUnreferenced(hi_0_0);
+
+		return v2;
+	}
+
+	// Implementation of the rule trace(-(A,t(B))) => trace(-(A,B))
+	private static Hop _applyRewrite141(Hop hi) {
+		if ( !(hi instanceof AggUnaryOp) )
+			return hi;
+
+		AggUnaryOp c_hi = (AggUnaryOp) hi;
+
+		if ( c_hi.getOp() != Types.AggOp.SUM || !c_hi.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_0 = hi.getInput(0);
+
+		if (hi_0.getParent().size() > 1)
+			return hi;
+		if ( !(hi_0 instanceof BinaryOp) )
+			return hi;
+
+		BinaryOp c_hi_0 = (BinaryOp) hi_0;
+
+		if ( c_hi_0.getOp() != Types.OpOp2.MINUS || !c_hi_0.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_0_0 = hi_0.getInput(0);
+
+		if ( hi_0_0.getDataType() != Types.DataType.MATRIX || !hi_0_0.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_0_1 = hi_0.getInput(1);
+
+		if (hi_0_1.getParent().size() > 1)
+			return hi;
+		if ( !(hi_0_1 instanceof ReorgOp) )
+			return hi;
+
+		ReorgOp c_hi_0_1 = (ReorgOp) hi_0_1;
+
+		if ( c_hi_0_1.getOp() != Types.ReOrgOp.TRANS || !c_hi_0_1.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_0_1_0 = hi_0_1.getInput(0);
+
+		if ( hi_0_1_0.getDataType() != Types.DataType.MATRIX || !hi_0_1_0.getValueType().isNumeric() )
+			return hi;
+
+
+		// Now, we start building the new Hop
+		System.out.println("Applying rewrite: trace(-(A,t(B))) => trace(-(A,B))");
+		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0, hi_0_1_0, Types.OpOp2.MINUS);
+		AggUnaryOp v2 = HopRewriteUtils.createAggUnaryOp(v1, Types.AggOp.TRACE, Types.Direction.RowCol);
+
+		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
+
+		for ( Hop p : parents )
+			HopRewriteUtils.replaceChildReference(p, hi, v2);
+
+		// Remove old unreferenced Hops
+		HopRewriteUtils.cleanupUnreferenced(hi);
+		HopRewriteUtils.cleanupUnreferenced(hi_0);
+		HopRewriteUtils.cleanupUnreferenced(hi_0_1);
+
+		return v2;
+	}
+
+	// Implementation of the rule trace(+(t(B),A)) => trace(+(A,B))
+	private static Hop _applyRewrite142(Hop hi) {
+		if ( !(hi instanceof AggUnaryOp) )
+			return hi;
+
+		AggUnaryOp c_hi = (AggUnaryOp) hi;
+
+		if ( c_hi.getOp() != Types.AggOp.SUM || !c_hi.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_0 = hi.getInput(0);
+
+		if (hi_0.getParent().size() > 1)
+			return hi;
+		if ( !(hi_0 instanceof BinaryOp) )
+			return hi;
+
+		BinaryOp c_hi_0 = (BinaryOp) hi_0;
+
+		if ( c_hi_0.getOp() != Types.OpOp2.PLUS || !c_hi_0.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_0_0 = hi_0.getInput(0);
+
+		if (hi_0_0.getParent().size() > 1)
+			return hi;
+		if ( !(hi_0_0 instanceof ReorgOp) )
+			return hi;
+
+		ReorgOp c_hi_0_0 = (ReorgOp) hi_0_0;
+
+		if ( c_hi_0_0.getOp() != Types.ReOrgOp.TRANS || !c_hi_0_0.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_0_0_0 = hi_0_0.getInput(0);
+
+		if ( hi_0_0_0.getDataType() != Types.DataType.MATRIX || !hi_0_0_0.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_0_1 = hi_0.getInput(1);
+
+		if ( hi_0_1.getDataType() != Types.DataType.MATRIX || !hi_0_1.getValueType().isNumeric() )
+			return hi;
+
+
+		// Now, we start building the new Hop
+		System.out.println("Applying rewrite: trace(+(t(B),A)) => trace(+(A,B))");
+		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_1, hi_0_0_0, Types.OpOp2.PLUS);
+		AggUnaryOp v2 = HopRewriteUtils.createAggUnaryOp(v1, Types.AggOp.TRACE, Types.Direction.RowCol);
+
+		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
+
+		for ( Hop p : parents )
+			HopRewriteUtils.replaceChildReference(p, hi, v2);
+
+		// Remove old unreferenced Hops
+		HopRewriteUtils.cleanupUnreferenced(hi);
+		HopRewriteUtils.cleanupUnreferenced(hi_0);
+		HopRewriteUtils.cleanupUnreferenced(hi_0_0);
+
+		return v2;
+	}
+
+	// Implementation of the rule trace(+(B,t(A))) => trace(+(A,B))
+	private static Hop _applyRewrite143(Hop hi) {
+		if ( !(hi instanceof AggUnaryOp) )
+			return hi;
+
+		AggUnaryOp c_hi = (AggUnaryOp) hi;
+
+		if ( c_hi.getOp() != Types.AggOp.SUM || !c_hi.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_0 = hi.getInput(0);
+
+		if (hi_0.getParent().size() > 1)
+			return hi;
+		if ( !(hi_0 instanceof BinaryOp) )
+			return hi;
+
+		BinaryOp c_hi_0 = (BinaryOp) hi_0;
+
+		if ( c_hi_0.getOp() != Types.OpOp2.PLUS || !c_hi_0.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_0_0 = hi_0.getInput(0);
+
+		if ( hi_0_0.getDataType() != Types.DataType.MATRIX || !hi_0_0.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_0_1 = hi_0.getInput(1);
+
+		if (hi_0_1.getParent().size() > 1)
+			return hi;
+		if ( !(hi_0_1 instanceof ReorgOp) )
+			return hi;
+
+		ReorgOp c_hi_0_1 = (ReorgOp) hi_0_1;
+
+		if ( c_hi_0_1.getOp() != Types.ReOrgOp.TRANS || !c_hi_0_1.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_0_1_0 = hi_0_1.getInput(0);
+
+		if ( hi_0_1_0.getDataType() != Types.DataType.MATRIX || !hi_0_1_0.getValueType().isNumeric() )
+			return hi;
+
+
+		// Now, we start building the new Hop
+		System.out.println("Applying rewrite: trace(+(B,t(A))) => trace(+(A,B))");
+		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_1_0, hi_0_0, Types.OpOp2.PLUS);
+		AggUnaryOp v2 = HopRewriteUtils.createAggUnaryOp(v1, Types.AggOp.TRACE, Types.Direction.RowCol);
+
+		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
+
+		for ( Hop p : parents )
+			HopRewriteUtils.replaceChildReference(p, hi, v2);
+
+		// Remove old unreferenced Hops
+		HopRewriteUtils.cleanupUnreferenced(hi);
+		HopRewriteUtils.cleanupUnreferenced(hi_0);
+		HopRewriteUtils.cleanupUnreferenced(hi_0_1);
+
+		return v2;
+	}
+
+	// Implementation of the rule trace(+(t(A),b)) => trace(+(A,b))
+	private static Hop _applyRewrite144(Hop hi) {
+		if ( !(hi instanceof AggUnaryOp) )
+			return hi;
+
+		AggUnaryOp c_hi = (AggUnaryOp) hi;
+
+		if ( c_hi.getOp() != Types.AggOp.SUM || !c_hi.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_0 = hi.getInput(0);
+
+		if (hi_0.getParent().size() > 1)
+			return hi;
+		if ( !(hi_0 instanceof BinaryOp) )
+			return hi;
+
+		BinaryOp c_hi_0 = (BinaryOp) hi_0;
+
+		if ( c_hi_0.getOp() != Types.OpOp2.PLUS || !c_hi_0.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_0_0 = hi_0.getInput(0);
+
+		if (hi_0_0.getParent().size() > 1)
+			return hi;
+		if ( !(hi_0_0 instanceof ReorgOp) )
+			return hi;
+
+		ReorgOp c_hi_0_0 = (ReorgOp) hi_0_0;
+
+		if ( c_hi_0_0.getOp() != Types.ReOrgOp.TRANS || !c_hi_0_0.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_0_0_0 = hi_0_0.getInput(0);
+
+		if ( hi_0_0_0.getDataType() != Types.DataType.MATRIX || !hi_0_0_0.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_0_1 = hi_0.getInput(1);
+
+		if ( hi_0_1.getDataType() != Types.DataType.SCALAR || !hi_0_1.getValueType().isNumeric() )
+			return hi;
+
+
+		// Now, we start building the new Hop
+		System.out.println("Applying rewrite: trace(+(t(A),b)) => trace(+(A,b))");
+		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0_0, hi_0_1, Types.OpOp2.PLUS);
+		AggUnaryOp v2 = HopRewriteUtils.createAggUnaryOp(v1, Types.AggOp.TRACE, Types.Direction.RowCol);
+
+		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
+
+		for ( Hop p : parents )
+			HopRewriteUtils.replaceChildReference(p, hi, v2);
+
+		// Remove old unreferenced Hops
+		HopRewriteUtils.cleanupUnreferenced(hi);
+		HopRewriteUtils.cleanupUnreferenced(hi_0);
+		HopRewriteUtils.cleanupUnreferenced(hi_0_0);
+
+		return v2;
+	}
+
+	// Implementation of the rule trace(+(b,t(A))) => trace(+(A,b))
+	private static Hop _applyRewrite145(Hop hi) {
+		if ( !(hi instanceof AggUnaryOp) )
+			return hi;
+
+		AggUnaryOp c_hi = (AggUnaryOp) hi;
+
+		if ( c_hi.getOp() != Types.AggOp.SUM || !c_hi.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_0 = hi.getInput(0);
+
+		if (hi_0.getParent().size() > 1)
+			return hi;
+		if ( !(hi_0 instanceof BinaryOp) )
+			return hi;
+
+		BinaryOp c_hi_0 = (BinaryOp) hi_0;
+
+		if ( c_hi_0.getOp() != Types.OpOp2.PLUS || !c_hi_0.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_0_0 = hi_0.getInput(0);
+
+		if ( hi_0_0.getDataType() != Types.DataType.SCALAR || !hi_0_0.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_0_1 = hi_0.getInput(1);
+
+		if (hi_0_1.getParent().size() > 1)
+			return hi;
+		if ( !(hi_0_1 instanceof ReorgOp) )
+			return hi;
+
+		ReorgOp c_hi_0_1 = (ReorgOp) hi_0_1;
+
+		if ( c_hi_0_1.getOp() != Types.ReOrgOp.TRANS || !c_hi_0_1.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_0_1_0 = hi_0_1.getInput(0);
+
+		if ( hi_0_1_0.getDataType() != Types.DataType.MATRIX || !hi_0_1_0.getValueType().isNumeric() )
+			return hi;
+
+
+		// Now, we start building the new Hop
+		System.out.println("Applying rewrite: trace(+(b,t(A))) => trace(+(A,b))");
+		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_1_0, hi_0_0, Types.OpOp2.PLUS);
+		AggUnaryOp v2 = HopRewriteUtils.createAggUnaryOp(v1, Types.AggOp.TRACE, Types.Direction.RowCol);
+
+		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
+
+		for ( Hop p : parents )
+			HopRewriteUtils.replaceChildReference(p, hi, v2);
+
+		// Remove old unreferenced Hops
+		HopRewriteUtils.cleanupUnreferenced(hi);
+		HopRewriteUtils.cleanupUnreferenced(hi_0);
+		HopRewriteUtils.cleanupUnreferenced(hi_0_1);
+
+		return v2;
+	}
+
+	// Implementation of the rule trace(!=(t(A),b)) => trace(!=(A,b))
+	private static Hop _applyRewrite146(Hop hi) {
+		if ( !(hi instanceof AggUnaryOp) )
+			return hi;
+
+		AggUnaryOp c_hi = (AggUnaryOp) hi;
+
+		if ( c_hi.getOp() != Types.AggOp.SUM || !c_hi.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_0 = hi.getInput(0);
+
+		if (hi_0.getParent().size() > 1)
+			return hi;
+		if ( !(hi_0 instanceof BinaryOp) )
+			return hi;
+
+		BinaryOp c_hi_0 = (BinaryOp) hi_0;
+
+		if ( c_hi_0.getOp() != Types.OpOp2.NOTEQUAL || !c_hi_0.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_0_0 = hi_0.getInput(0);
+
+		if (hi_0_0.getParent().size() > 1)
+			return hi;
+		if ( !(hi_0_0 instanceof ReorgOp) )
+			return hi;
+
+		ReorgOp c_hi_0_0 = (ReorgOp) hi_0_0;
+
+		if ( c_hi_0_0.getOp() != Types.ReOrgOp.TRANS || !c_hi_0_0.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_0_0_0 = hi_0_0.getInput(0);
+
+		if ( hi_0_0_0.getDataType() != Types.DataType.MATRIX || !hi_0_0_0.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_0_1 = hi_0.getInput(1);
+
+		if ( hi_0_1.getDataType() != Types.DataType.SCALAR || !hi_0_1.getValueType().isNumeric() )
+			return hi;
+
+
+		// Now, we start building the new Hop
+		System.out.println("Applying rewrite: trace(!=(t(A),b)) => trace(!=(A,b))");
+		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0_0, hi_0_1, Types.OpOp2.NOTEQUAL);
+		AggUnaryOp v2 = HopRewriteUtils.createAggUnaryOp(v1, Types.AggOp.TRACE, Types.Direction.RowCol);
+
+		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
+
+		for ( Hop p : parents )
+			HopRewriteUtils.replaceChildReference(p, hi, v2);
+
+		// Remove old unreferenced Hops
+		HopRewriteUtils.cleanupUnreferenced(hi);
+		HopRewriteUtils.cleanupUnreferenced(hi_0);
+		HopRewriteUtils.cleanupUnreferenced(hi_0_0);
+
+		return v2;
+	}
+
+	// Implementation of the rule trace(!=(b,t(A))) => trace(!=(A,b))
+	private static Hop _applyRewrite147(Hop hi) {
+		if ( !(hi instanceof AggUnaryOp) )
+			return hi;
+
+		AggUnaryOp c_hi = (AggUnaryOp) hi;
+
+		if ( c_hi.getOp() != Types.AggOp.SUM || !c_hi.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_0 = hi.getInput(0);
+
+		if (hi_0.getParent().size() > 1)
+			return hi;
+		if ( !(hi_0 instanceof BinaryOp) )
+			return hi;
+
+		BinaryOp c_hi_0 = (BinaryOp) hi_0;
+
+		if ( c_hi_0.getOp() != Types.OpOp2.NOTEQUAL || !c_hi_0.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_0_0 = hi_0.getInput(0);
+
+		if ( hi_0_0.getDataType() != Types.DataType.SCALAR || !hi_0_0.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_0_1 = hi_0.getInput(1);
+
+		if (hi_0_1.getParent().size() > 1)
+			return hi;
+		if ( !(hi_0_1 instanceof ReorgOp) )
+			return hi;
+
+		ReorgOp c_hi_0_1 = (ReorgOp) hi_0_1;
+
+		if ( c_hi_0_1.getOp() != Types.ReOrgOp.TRANS || !c_hi_0_1.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_0_1_0 = hi_0_1.getInput(0);
+
+		if ( hi_0_1_0.getDataType() != Types.DataType.MATRIX || !hi_0_1_0.getValueType().isNumeric() )
+			return hi;
+
+
+		// Now, we start building the new Hop
+		System.out.println("Applying rewrite: trace(!=(b,t(A))) => trace(!=(A,b))");
+		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_1_0, hi_0_0, Types.OpOp2.NOTEQUAL);
+		AggUnaryOp v2 = HopRewriteUtils.createAggUnaryOp(v1, Types.AggOp.TRACE, Types.Direction.RowCol);
+
+		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
+
+		for ( Hop p : parents )
+			HopRewriteUtils.replaceChildReference(p, hi, v2);
+
+		// Remove old unreferenced Hops
+		HopRewriteUtils.cleanupUnreferenced(hi);
+		HopRewriteUtils.cleanupUnreferenced(hi_0);
+		HopRewriteUtils.cleanupUnreferenced(hi_0_1);
+
+		return v2;
 	}
 
 	// Implementation of the rule sum(/(*(a,B),C)) => *(a,sum(/(B,C)))
@@ -8230,6 +10628,140 @@ public class GeneratedRewriteClass implements Function {
 		return v3;
 	}
 
+	// Implementation of the rule trace(!=(sum(A),A)) => trace(!=(A,trace(A)))
+	private static Hop _applyRewrite168(Hop hi) {
+		if ( !(hi instanceof AggUnaryOp) )
+			return hi;
+
+		AggUnaryOp c_hi = (AggUnaryOp) hi;
+
+		if ( c_hi.getOp() != Types.AggOp.SUM || !c_hi.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_0 = hi.getInput(0);
+
+		if (hi_0.getParent().size() > 1)
+			return hi;
+		if ( !(hi_0 instanceof BinaryOp) )
+			return hi;
+
+		BinaryOp c_hi_0 = (BinaryOp) hi_0;
+
+		if ( c_hi_0.getOp() != Types.OpOp2.NOTEQUAL || !c_hi_0.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_0_0 = hi_0.getInput(0);
+
+		if (hi_0_0.getParent().size() > 1)
+			return hi;
+		if ( !(hi_0_0 instanceof AggUnaryOp) )
+			return hi;
+
+		AggUnaryOp c_hi_0_0 = (AggUnaryOp) hi_0_0;
+
+		if ( c_hi_0_0.getOp() != Types.AggOp.SUM || !c_hi_0_0.getValueType().isNumeric() )
+			return hi;
+
+		if ( !(c_hi_0_0.getDirection() == Types.Direction.RowCol) )
+			return hi;
+
+		Hop hi_0_0_0 = hi_0_0.getInput(0);
+
+		if ( hi_0_0_0.getDataType() != Types.DataType.MATRIX || !hi_0_0_0.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_0_1 = hi_0.getInput(1);
+
+		if ( hi_0_0_0 != hi_0_1 )
+			return hi;
+
+
+		// Now, we start building the new Hop
+		System.out.println("Applying rewrite: trace(!=(sum(A),A)) => trace(!=(A,trace(A)))");
+		AggUnaryOp v1 = HopRewriteUtils.createAggUnaryOp(hi_0_0_0, Types.AggOp.TRACE, Types.Direction.RowCol);
+		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0_0_0, v1, Types.OpOp2.NOTEQUAL);
+		AggUnaryOp v3 = HopRewriteUtils.createAggUnaryOp(v2, Types.AggOp.TRACE, Types.Direction.RowCol);
+
+		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
+
+		for ( Hop p : parents )
+			HopRewriteUtils.replaceChildReference(p, hi, v3);
+
+		// Remove old unreferenced Hops
+		HopRewriteUtils.cleanupUnreferenced(hi);
+		HopRewriteUtils.cleanupUnreferenced(hi_0);
+		HopRewriteUtils.cleanupUnreferenced(hi_0_0);
+
+		return v3;
+	}
+
+	// Implementation of the rule trace(!=(A,sum(A))) => trace(!=(A,trace(A)))
+	private static Hop _applyRewrite169(Hop hi) {
+		if ( !(hi instanceof AggUnaryOp) )
+			return hi;
+
+		AggUnaryOp c_hi = (AggUnaryOp) hi;
+
+		if ( c_hi.getOp() != Types.AggOp.SUM || !c_hi.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_0 = hi.getInput(0);
+
+		if (hi_0.getParent().size() > 1)
+			return hi;
+		if ( !(hi_0 instanceof BinaryOp) )
+			return hi;
+
+		BinaryOp c_hi_0 = (BinaryOp) hi_0;
+
+		if ( c_hi_0.getOp() != Types.OpOp2.NOTEQUAL || !c_hi_0.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_0_0 = hi_0.getInput(0);
+
+		if ( hi_0_0.getDataType() != Types.DataType.MATRIX || !hi_0_0.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_0_1 = hi_0.getInput(1);
+
+		if (hi_0_1.getParent().size() > 1)
+			return hi;
+		if ( !(hi_0_1 instanceof AggUnaryOp) )
+			return hi;
+
+		AggUnaryOp c_hi_0_1 = (AggUnaryOp) hi_0_1;
+
+		if ( c_hi_0_1.getOp() != Types.AggOp.SUM || !c_hi_0_1.getValueType().isNumeric() )
+			return hi;
+
+		if ( !(c_hi_0_1.getDirection() == Types.Direction.RowCol) )
+			return hi;
+
+		Hop hi_0_1_0 = hi_0_1.getInput(0);
+
+		if ( hi_0_0 != hi_0_1_0 )
+			return hi;
+
+
+		// Now, we start building the new Hop
+		System.out.println("Applying rewrite: trace(!=(A,sum(A))) => trace(!=(A,trace(A)))");
+		AggUnaryOp v1 = HopRewriteUtils.createAggUnaryOp(hi_0_0, Types.AggOp.TRACE, Types.Direction.RowCol);
+		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0_0, v1, Types.OpOp2.NOTEQUAL);
+		AggUnaryOp v3 = HopRewriteUtils.createAggUnaryOp(v2, Types.AggOp.TRACE, Types.Direction.RowCol);
+
+		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
+
+		for ( Hop p : parents )
+			HopRewriteUtils.replaceChildReference(p, hi, v3);
+
+		// Remove old unreferenced Hops
+		HopRewriteUtils.cleanupUnreferenced(hi);
+		HopRewriteUtils.cleanupUnreferenced(hi_0);
+		HopRewriteUtils.cleanupUnreferenced(hi_0_1);
+
+		return v3;
+	}
+
 	// Implementation of the rule *(/(*(a,C),D),b) => *(*(a,b),/(C,D))
 	private static Hop _applyRewrite170(Hop hi) {
 		if ( !(hi instanceof BinaryOp) )
@@ -9130,6 +11662,132 @@ public class GeneratedRewriteClass implements Function {
 		System.out.println("Applying rewrite: sum(+(b,t(A))) => sum(+(A,b))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_1_0, hi_0_0, Types.OpOp2.PLUS);
 		AggUnaryOp v2 = HopRewriteUtils.createAggUnaryOp(v1, Types.AggOp.SUM, Types.Direction.RowCol);
+
+		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
+
+		for ( Hop p : parents )
+			HopRewriteUtils.replaceChildReference(p, hi, v2);
+
+		// Remove old unreferenced Hops
+		HopRewriteUtils.cleanupUnreferenced(hi);
+		HopRewriteUtils.cleanupUnreferenced(hi_0);
+		HopRewriteUtils.cleanupUnreferenced(hi_0_1);
+
+		return v2;
+	}
+
+	// Implementation of the rule trace(*(t(B),A)) => trace(*(A,B))
+	private static Hop _applyRewrite183(Hop hi) {
+		if ( !(hi instanceof AggUnaryOp) )
+			return hi;
+
+		AggUnaryOp c_hi = (AggUnaryOp) hi;
+
+		if ( c_hi.getOp() != Types.AggOp.SUM || !c_hi.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_0 = hi.getInput(0);
+
+		if (hi_0.getParent().size() > 1)
+			return hi;
+		if ( !(hi_0 instanceof BinaryOp) )
+			return hi;
+
+		BinaryOp c_hi_0 = (BinaryOp) hi_0;
+
+		if ( c_hi_0.getOp() != Types.OpOp2.MULT || !c_hi_0.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_0_0 = hi_0.getInput(0);
+
+		if (hi_0_0.getParent().size() > 1)
+			return hi;
+		if ( !(hi_0_0 instanceof ReorgOp) )
+			return hi;
+
+		ReorgOp c_hi_0_0 = (ReorgOp) hi_0_0;
+
+		if ( c_hi_0_0.getOp() != Types.ReOrgOp.TRANS || !c_hi_0_0.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_0_0_0 = hi_0_0.getInput(0);
+
+		if ( hi_0_0_0.getDataType() != Types.DataType.MATRIX || !hi_0_0_0.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_0_1 = hi_0.getInput(1);
+
+		if ( hi_0_1.getDataType() != Types.DataType.MATRIX || !hi_0_1.getValueType().isNumeric() )
+			return hi;
+
+
+		// Now, we start building the new Hop
+		System.out.println("Applying rewrite: trace(*(t(B),A)) => trace(*(A,B))");
+		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_1, hi_0_0_0, Types.OpOp2.MULT);
+		AggUnaryOp v2 = HopRewriteUtils.createAggUnaryOp(v1, Types.AggOp.TRACE, Types.Direction.RowCol);
+
+		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
+
+		for ( Hop p : parents )
+			HopRewriteUtils.replaceChildReference(p, hi, v2);
+
+		// Remove old unreferenced Hops
+		HopRewriteUtils.cleanupUnreferenced(hi);
+		HopRewriteUtils.cleanupUnreferenced(hi_0);
+		HopRewriteUtils.cleanupUnreferenced(hi_0_0);
+
+		return v2;
+	}
+
+	// Implementation of the rule trace(*(B,t(A))) => trace(*(A,B))
+	private static Hop _applyRewrite184(Hop hi) {
+		if ( !(hi instanceof AggUnaryOp) )
+			return hi;
+
+		AggUnaryOp c_hi = (AggUnaryOp) hi;
+
+		if ( c_hi.getOp() != Types.AggOp.SUM || !c_hi.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_0 = hi.getInput(0);
+
+		if (hi_0.getParent().size() > 1)
+			return hi;
+		if ( !(hi_0 instanceof BinaryOp) )
+			return hi;
+
+		BinaryOp c_hi_0 = (BinaryOp) hi_0;
+
+		if ( c_hi_0.getOp() != Types.OpOp2.MULT || !c_hi_0.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_0_0 = hi_0.getInput(0);
+
+		if ( hi_0_0.getDataType() != Types.DataType.MATRIX || !hi_0_0.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_0_1 = hi_0.getInput(1);
+
+		if (hi_0_1.getParent().size() > 1)
+			return hi;
+		if ( !(hi_0_1 instanceof ReorgOp) )
+			return hi;
+
+		ReorgOp c_hi_0_1 = (ReorgOp) hi_0_1;
+
+		if ( c_hi_0_1.getOp() != Types.ReOrgOp.TRANS || !c_hi_0_1.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_0_1_0 = hi_0_1.getInput(0);
+
+		if ( hi_0_1_0.getDataType() != Types.DataType.MATRIX || !hi_0_1_0.getValueType().isNumeric() )
+			return hi;
+
+
+		// Now, we start building the new Hop
+		System.out.println("Applying rewrite: trace(*(B,t(A))) => trace(*(A,B))");
+		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_1_0, hi_0_0, Types.OpOp2.MULT);
+		AggUnaryOp v2 = HopRewriteUtils.createAggUnaryOp(v1, Types.AggOp.TRACE, Types.Direction.RowCol);
 
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
@@ -21956,6 +24614,195 @@ public class GeneratedRewriteClass implements Function {
 		return v3;
 	}
 
+	// Implementation of the rule trace(/(a,t(B))) => trace(/(a,B))
+	private static Hop _applyRewrite369(Hop hi) {
+		if ( !(hi instanceof AggUnaryOp) )
+			return hi;
+
+		AggUnaryOp c_hi = (AggUnaryOp) hi;
+
+		if ( c_hi.getOp() != Types.AggOp.SUM || !c_hi.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_0 = hi.getInput(0);
+
+		if (hi_0.getParent().size() > 1)
+			return hi;
+		if ( !(hi_0 instanceof BinaryOp) )
+			return hi;
+
+		BinaryOp c_hi_0 = (BinaryOp) hi_0;
+
+		if ( c_hi_0.getOp() != Types.OpOp2.DIV || !c_hi_0.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_0_0 = hi_0.getInput(0);
+
+		if ( hi_0_0.getDataType() != Types.DataType.SCALAR || !hi_0_0.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_0_1 = hi_0.getInput(1);
+
+		if (hi_0_1.getParent().size() > 1)
+			return hi;
+		if ( !(hi_0_1 instanceof ReorgOp) )
+			return hi;
+
+		ReorgOp c_hi_0_1 = (ReorgOp) hi_0_1;
+
+		if ( c_hi_0_1.getOp() != Types.ReOrgOp.TRANS || !c_hi_0_1.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_0_1_0 = hi_0_1.getInput(0);
+
+		if ( hi_0_1_0.getDataType() != Types.DataType.MATRIX || !hi_0_1_0.getValueType().isNumeric() )
+			return hi;
+
+
+		// Now, we start building the new Hop
+		System.out.println("Applying rewrite: trace(/(a,t(B))) => trace(/(a,B))");
+		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0, hi_0_1_0, Types.OpOp2.DIV);
+		AggUnaryOp v2 = HopRewriteUtils.createAggUnaryOp(v1, Types.AggOp.TRACE, Types.Direction.RowCol);
+
+		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
+
+		for ( Hop p : parents )
+			HopRewriteUtils.replaceChildReference(p, hi, v2);
+
+		// Remove old unreferenced Hops
+		HopRewriteUtils.cleanupUnreferenced(hi);
+		HopRewriteUtils.cleanupUnreferenced(hi_0);
+		HopRewriteUtils.cleanupUnreferenced(hi_0_1);
+
+		return v2;
+	}
+
+	// Implementation of the rule trace(/(t(A),B)) => trace(/(A,B))
+	private static Hop _applyRewrite370(Hop hi) {
+		if ( !(hi instanceof AggUnaryOp) )
+			return hi;
+
+		AggUnaryOp c_hi = (AggUnaryOp) hi;
+
+		if ( c_hi.getOp() != Types.AggOp.SUM || !c_hi.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_0 = hi.getInput(0);
+
+		if (hi_0.getParent().size() > 1)
+			return hi;
+		if ( !(hi_0 instanceof BinaryOp) )
+			return hi;
+
+		BinaryOp c_hi_0 = (BinaryOp) hi_0;
+
+		if ( c_hi_0.getOp() != Types.OpOp2.DIV || !c_hi_0.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_0_0 = hi_0.getInput(0);
+
+		if (hi_0_0.getParent().size() > 1)
+			return hi;
+		if ( !(hi_0_0 instanceof ReorgOp) )
+			return hi;
+
+		ReorgOp c_hi_0_0 = (ReorgOp) hi_0_0;
+
+		if ( c_hi_0_0.getOp() != Types.ReOrgOp.TRANS || !c_hi_0_0.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_0_0_0 = hi_0_0.getInput(0);
+
+		if ( hi_0_0_0.getDataType() != Types.DataType.MATRIX || !hi_0_0_0.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_0_1 = hi_0.getInput(1);
+
+		if ( hi_0_1.getDataType() != Types.DataType.MATRIX || !hi_0_1.getValueType().isNumeric() )
+			return hi;
+
+
+		// Now, we start building the new Hop
+		System.out.println("Applying rewrite: trace(/(t(A),B)) => trace(/(A,B))");
+		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0_0, hi_0_1, Types.OpOp2.DIV);
+		AggUnaryOp v2 = HopRewriteUtils.createAggUnaryOp(v1, Types.AggOp.TRACE, Types.Direction.RowCol);
+
+		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
+
+		for ( Hop p : parents )
+			HopRewriteUtils.replaceChildReference(p, hi, v2);
+
+		// Remove old unreferenced Hops
+		HopRewriteUtils.cleanupUnreferenced(hi);
+		HopRewriteUtils.cleanupUnreferenced(hi_0);
+		HopRewriteUtils.cleanupUnreferenced(hi_0_0);
+
+		return v2;
+	}
+
+	// Implementation of the rule trace(/(A,t(B))) => trace(/(A,B))
+	private static Hop _applyRewrite371(Hop hi) {
+		if ( !(hi instanceof AggUnaryOp) )
+			return hi;
+
+		AggUnaryOp c_hi = (AggUnaryOp) hi;
+
+		if ( c_hi.getOp() != Types.AggOp.SUM || !c_hi.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_0 = hi.getInput(0);
+
+		if (hi_0.getParent().size() > 1)
+			return hi;
+		if ( !(hi_0 instanceof BinaryOp) )
+			return hi;
+
+		BinaryOp c_hi_0 = (BinaryOp) hi_0;
+
+		if ( c_hi_0.getOp() != Types.OpOp2.DIV || !c_hi_0.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_0_0 = hi_0.getInput(0);
+
+		if ( hi_0_0.getDataType() != Types.DataType.MATRIX || !hi_0_0.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_0_1 = hi_0.getInput(1);
+
+		if (hi_0_1.getParent().size() > 1)
+			return hi;
+		if ( !(hi_0_1 instanceof ReorgOp) )
+			return hi;
+
+		ReorgOp c_hi_0_1 = (ReorgOp) hi_0_1;
+
+		if ( c_hi_0_1.getOp() != Types.ReOrgOp.TRANS || !c_hi_0_1.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_0_1_0 = hi_0_1.getInput(0);
+
+		if ( hi_0_1_0.getDataType() != Types.DataType.MATRIX || !hi_0_1_0.getValueType().isNumeric() )
+			return hi;
+
+
+		// Now, we start building the new Hop
+		System.out.println("Applying rewrite: trace(/(A,t(B))) => trace(/(A,B))");
+		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0, hi_0_1_0, Types.OpOp2.DIV);
+		AggUnaryOp v2 = HopRewriteUtils.createAggUnaryOp(v1, Types.AggOp.TRACE, Types.Direction.RowCol);
+
+		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
+
+		for ( Hop p : parents )
+			HopRewriteUtils.replaceChildReference(p, hi, v2);
+
+		// Remove old unreferenced Hops
+		HopRewriteUtils.cleanupUnreferenced(hi);
+		HopRewriteUtils.cleanupUnreferenced(hi_0);
+		HopRewriteUtils.cleanupUnreferenced(hi_0_1);
+
+		return v2;
+	}
+
 	// Implementation of the rule *(t(A),t(B)) => t(*(A,B))
 	private static Hop _applyRewrite372(Hop hi) {
 		if ( !(hi instanceof BinaryOp) )
@@ -25832,6 +28679,534 @@ public class GeneratedRewriteClass implements Function {
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0, hi_0_1_0, Types.OpOp2.DIV);
 		AggUnaryOp v2 = HopRewriteUtils.createAggUnaryOp(v1, Types.AggOp.SUM, Types.Direction.Col);
 		ReorgOp v3 = HopRewriteUtils.createTranspose(v2);
+
+		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
+
+		for ( Hop p : parents )
+			HopRewriteUtils.replaceChildReference(p, hi, v3);
+
+		// Remove old unreferenced Hops
+		HopRewriteUtils.cleanupUnreferenced(hi);
+		HopRewriteUtils.cleanupUnreferenced(hi_0);
+		HopRewriteUtils.cleanupUnreferenced(hi_0_1);
+
+		return v3;
+	}
+
+	// Implementation of the rule !=(t(A),colSums(A)) => !=(A,cast.MATRIX(sum(A)))
+	private static Hop _applyRewrite430(Hop hi) {
+		if ( !(hi instanceof BinaryOp) )
+			return hi;
+
+		BinaryOp c_hi = (BinaryOp) hi;
+
+		if ( c_hi.getOp() != Types.OpOp2.NOTEQUAL || !c_hi.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_0 = hi.getInput(0);
+
+		if (hi_0.getParent().size() > 1)
+			return hi;
+		if ( !(hi_0 instanceof ReorgOp) )
+			return hi;
+
+		ReorgOp c_hi_0 = (ReorgOp) hi_0;
+
+		if ( c_hi_0.getOp() != Types.ReOrgOp.TRANS || !c_hi_0.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_0_0 = hi_0.getInput(0);
+
+		if ( hi_0_0.getDataType() != Types.DataType.MATRIX || !hi_0_0.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_1 = hi.getInput(1);
+
+		if (hi_1.getParent().size() > 1)
+			return hi;
+		if ( !(hi_1 instanceof AggUnaryOp) )
+			return hi;
+
+		AggUnaryOp c_hi_1 = (AggUnaryOp) hi_1;
+
+		if ( c_hi_1.getOp() != Types.AggOp.SUM || !c_hi_1.getValueType().isNumeric() )
+			return hi;
+
+		if ( !(c_hi_1.getDirection() == Types.Direction.Col) )
+			return hi;
+
+		Hop hi_1_0 = hi_1.getInput(0);
+
+		if ( hi_0_0 != hi_1_0 )
+			return hi;
+
+
+		// Now, we start building the new Hop
+		System.out.println("Applying rewrite: !=(t(A),colSums(A)) => !=(A,cast.MATRIX(sum(A)))");
+		AggUnaryOp v1 = HopRewriteUtils.createAggUnaryOp(hi_0_0, Types.AggOp.SUM, Types.Direction.RowCol);
+		UnaryOp v2 = HopRewriteUtils.createUnary(v1, Types.OpOp1.CAST_AS_MATRIX);
+		BinaryOp v3 = HopRewriteUtils.createBinary(hi_0_0, v2, Types.OpOp2.NOTEQUAL);
+
+		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
+
+		for ( Hop p : parents )
+			HopRewriteUtils.replaceChildReference(p, hi, v3);
+
+		// Remove old unreferenced Hops
+		HopRewriteUtils.cleanupUnreferenced(hi);
+		HopRewriteUtils.cleanupUnreferenced(hi_0);
+		HopRewriteUtils.cleanupUnreferenced(hi_1);
+
+		return v3;
+	}
+
+	// Implementation of the rule !=(A,t(colSums(A))) => !=(A,cast.MATRIX(sum(A)))
+	private static Hop _applyRewrite431(Hop hi) {
+		if ( !(hi instanceof BinaryOp) )
+			return hi;
+
+		BinaryOp c_hi = (BinaryOp) hi;
+
+		if ( c_hi.getOp() != Types.OpOp2.NOTEQUAL || !c_hi.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_0 = hi.getInput(0);
+
+		if ( hi_0.getDataType() != Types.DataType.MATRIX || !hi_0.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_1 = hi.getInput(1);
+
+		if (hi_1.getParent().size() > 1)
+			return hi;
+		if ( !(hi_1 instanceof ReorgOp) )
+			return hi;
+
+		ReorgOp c_hi_1 = (ReorgOp) hi_1;
+
+		if ( c_hi_1.getOp() != Types.ReOrgOp.TRANS || !c_hi_1.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_1_0 = hi_1.getInput(0);
+
+		if (hi_1_0.getParent().size() > 1)
+			return hi;
+		if ( !(hi_1_0 instanceof AggUnaryOp) )
+			return hi;
+
+		AggUnaryOp c_hi_1_0 = (AggUnaryOp) hi_1_0;
+
+		if ( c_hi_1_0.getOp() != Types.AggOp.SUM || !c_hi_1_0.getValueType().isNumeric() )
+			return hi;
+
+		if ( !(c_hi_1_0.getDirection() == Types.Direction.Col) )
+			return hi;
+
+		Hop hi_1_0_0 = hi_1_0.getInput(0);
+
+		if ( hi_0 != hi_1_0_0 )
+			return hi;
+
+
+		// Now, we start building the new Hop
+		System.out.println("Applying rewrite: !=(A,t(colSums(A))) => !=(A,cast.MATRIX(sum(A)))");
+		AggUnaryOp v1 = HopRewriteUtils.createAggUnaryOp(hi_0, Types.AggOp.SUM, Types.Direction.RowCol);
+		UnaryOp v2 = HopRewriteUtils.createUnary(v1, Types.OpOp1.CAST_AS_MATRIX);
+		BinaryOp v3 = HopRewriteUtils.createBinary(hi_0, v2, Types.OpOp2.NOTEQUAL);
+
+		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
+
+		for ( Hop p : parents )
+			HopRewriteUtils.replaceChildReference(p, hi, v3);
+
+		// Remove old unreferenced Hops
+		HopRewriteUtils.cleanupUnreferenced(hi);
+		HopRewriteUtils.cleanupUnreferenced(hi_1);
+		HopRewriteUtils.cleanupUnreferenced(hi_1_0);
+
+		return v3;
+	}
+
+	// Implementation of the rule rev(!=(cast.MATRIX(a),b)) => !=(a,cast.MATRIX(b))
+	private static Hop _applyRewrite432(Hop hi) {
+		if ( !(hi instanceof ReorgOp) )
+			return hi;
+
+		ReorgOp c_hi = (ReorgOp) hi;
+
+		if ( c_hi.getOp() != Types.ReOrgOp.REV || !c_hi.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_0 = hi.getInput(0);
+
+		if (hi_0.getParent().size() > 1)
+			return hi;
+		if ( !(hi_0 instanceof BinaryOp) )
+			return hi;
+
+		BinaryOp c_hi_0 = (BinaryOp) hi_0;
+
+		if ( c_hi_0.getOp() != Types.OpOp2.NOTEQUAL || !c_hi_0.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_0_0 = hi_0.getInput(0);
+
+		if (hi_0_0.getParent().size() > 1)
+			return hi;
+		if ( !(hi_0_0 instanceof UnaryOp) )
+			return hi;
+
+		UnaryOp c_hi_0_0 = (UnaryOp) hi_0_0;
+
+		if ( c_hi_0_0.getOp() != Types.OpOp1.CAST_AS_MATRIX || !c_hi_0_0.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_0_0_0 = hi_0_0.getInput(0);
+
+		if ( hi_0_0_0.getDataType() != Types.DataType.SCALAR || !hi_0_0_0.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_0_1 = hi_0.getInput(1);
+
+		if ( hi_0_1.getDataType() != Types.DataType.SCALAR || !hi_0_1.getValueType().isNumeric() )
+			return hi;
+
+
+		// Now, we start building the new Hop
+		System.out.println("Applying rewrite: rev(!=(cast.MATRIX(a),b)) => !=(a,cast.MATRIX(b))");
+		UnaryOp v1 = HopRewriteUtils.createUnary(hi_0_1, Types.OpOp1.CAST_AS_MATRIX);
+		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0_0_0, v1, Types.OpOp2.NOTEQUAL);
+
+		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
+
+		for ( Hop p : parents )
+			HopRewriteUtils.replaceChildReference(p, hi, v2);
+
+		// Remove old unreferenced Hops
+		HopRewriteUtils.cleanupUnreferenced(hi);
+		HopRewriteUtils.cleanupUnreferenced(hi_0);
+		HopRewriteUtils.cleanupUnreferenced(hi_0_0);
+
+		return v2;
+	}
+
+	// Implementation of the rule rev(!=(a,cast.MATRIX(b))) => !=(a,cast.MATRIX(b))
+	private static Hop _applyRewrite433(Hop hi) {
+		if ( !(hi instanceof ReorgOp) )
+			return hi;
+
+		ReorgOp c_hi = (ReorgOp) hi;
+
+		if ( c_hi.getOp() != Types.ReOrgOp.REV || !c_hi.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_0 = hi.getInput(0);
+
+		if (hi_0.getParent().size() > 1)
+			return hi;
+		if ( !(hi_0 instanceof BinaryOp) )
+			return hi;
+
+		BinaryOp c_hi_0 = (BinaryOp) hi_0;
+
+		if ( c_hi_0.getOp() != Types.OpOp2.NOTEQUAL || !c_hi_0.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_0_0 = hi_0.getInput(0);
+
+		if ( hi_0_0.getDataType() != Types.DataType.SCALAR || !hi_0_0.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_0_1 = hi_0.getInput(1);
+
+		if (hi_0_1.getParent().size() > 1)
+			return hi;
+		if ( !(hi_0_1 instanceof UnaryOp) )
+			return hi;
+
+		UnaryOp c_hi_0_1 = (UnaryOp) hi_0_1;
+
+		if ( c_hi_0_1.getOp() != Types.OpOp1.CAST_AS_MATRIX || !c_hi_0_1.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_0_1_0 = hi_0_1.getInput(0);
+
+		if ( hi_0_1_0.getDataType() != Types.DataType.SCALAR || !hi_0_1_0.getValueType().isNumeric() )
+			return hi;
+
+
+		// Now, we start building the new Hop
+		System.out.println("Applying rewrite: rev(!=(a,cast.MATRIX(b))) => !=(a,cast.MATRIX(b))");
+		UnaryOp v1 = HopRewriteUtils.createUnary(hi_0_1_0, Types.OpOp1.CAST_AS_MATRIX);
+		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0_0, v1, Types.OpOp2.NOTEQUAL);
+
+		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
+
+		for ( Hop p : parents )
+			HopRewriteUtils.replaceChildReference(p, hi, v2);
+
+		// Remove old unreferenced Hops
+		HopRewriteUtils.cleanupUnreferenced(hi);
+		HopRewriteUtils.cleanupUnreferenced(hi_0);
+		HopRewriteUtils.cleanupUnreferenced(hi_0_1);
+
+		return v2;
+	}
+
+	// Implementation of the rule trace(-(colSums(A),b)) => -(trace(colSums(A)),b)
+	private static Hop _applyRewrite434(Hop hi) {
+		if ( !(hi instanceof AggUnaryOp) )
+			return hi;
+
+		AggUnaryOp c_hi = (AggUnaryOp) hi;
+
+		if ( c_hi.getOp() != Types.AggOp.SUM || !c_hi.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_0 = hi.getInput(0);
+
+		if (hi_0.getParent().size() > 1)
+			return hi;
+		if ( !(hi_0 instanceof BinaryOp) )
+			return hi;
+
+		BinaryOp c_hi_0 = (BinaryOp) hi_0;
+
+		if ( c_hi_0.getOp() != Types.OpOp2.MINUS || !c_hi_0.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_0_0 = hi_0.getInput(0);
+
+		if (hi_0_0.getParent().size() > 1)
+			return hi;
+		if ( !(hi_0_0 instanceof AggUnaryOp) )
+			return hi;
+
+		AggUnaryOp c_hi_0_0 = (AggUnaryOp) hi_0_0;
+
+		if ( c_hi_0_0.getOp() != Types.AggOp.SUM || !c_hi_0_0.getValueType().isNumeric() )
+			return hi;
+
+		if ( !(c_hi_0_0.getDirection() == Types.Direction.Col) )
+			return hi;
+
+		Hop hi_0_0_0 = hi_0_0.getInput(0);
+
+		if ( hi_0_0_0.getDataType() != Types.DataType.MATRIX || !hi_0_0_0.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_0_1 = hi_0.getInput(1);
+
+		if ( hi_0_1.getDataType() != Types.DataType.SCALAR || !hi_0_1.getValueType().isNumeric() )
+			return hi;
+
+
+		// Now, we start building the new Hop
+		System.out.println("Applying rewrite: trace(-(colSums(A),b)) => -(trace(colSums(A)),b)");
+		AggUnaryOp v1 = HopRewriteUtils.createAggUnaryOp(hi_0_0_0, Types.AggOp.SUM, Types.Direction.Col);
+		AggUnaryOp v2 = HopRewriteUtils.createAggUnaryOp(v1, Types.AggOp.TRACE, Types.Direction.RowCol);
+		BinaryOp v3 = HopRewriteUtils.createBinary(v2, hi_0_1, Types.OpOp2.MINUS);
+
+		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
+
+		for ( Hop p : parents )
+			HopRewriteUtils.replaceChildReference(p, hi, v3);
+
+		// Remove old unreferenced Hops
+		HopRewriteUtils.cleanupUnreferenced(hi);
+		HopRewriteUtils.cleanupUnreferenced(hi_0);
+		HopRewriteUtils.cleanupUnreferenced(hi_0_0);
+
+		return v3;
+	}
+
+	// Implementation of the rule trace(-(a,colSums(B))) => -(a,trace(colSums(B)))
+	private static Hop _applyRewrite435(Hop hi) {
+		if ( !(hi instanceof AggUnaryOp) )
+			return hi;
+
+		AggUnaryOp c_hi = (AggUnaryOp) hi;
+
+		if ( c_hi.getOp() != Types.AggOp.SUM || !c_hi.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_0 = hi.getInput(0);
+
+		if (hi_0.getParent().size() > 1)
+			return hi;
+		if ( !(hi_0 instanceof BinaryOp) )
+			return hi;
+
+		BinaryOp c_hi_0 = (BinaryOp) hi_0;
+
+		if ( c_hi_0.getOp() != Types.OpOp2.MINUS || !c_hi_0.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_0_0 = hi_0.getInput(0);
+
+		if ( hi_0_0.getDataType() != Types.DataType.SCALAR || !hi_0_0.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_0_1 = hi_0.getInput(1);
+
+		if (hi_0_1.getParent().size() > 1)
+			return hi;
+		if ( !(hi_0_1 instanceof AggUnaryOp) )
+			return hi;
+
+		AggUnaryOp c_hi_0_1 = (AggUnaryOp) hi_0_1;
+
+		if ( c_hi_0_1.getOp() != Types.AggOp.SUM || !c_hi_0_1.getValueType().isNumeric() )
+			return hi;
+
+		if ( !(c_hi_0_1.getDirection() == Types.Direction.Col) )
+			return hi;
+
+		Hop hi_0_1_0 = hi_0_1.getInput(0);
+
+		if ( hi_0_1_0.getDataType() != Types.DataType.MATRIX || !hi_0_1_0.getValueType().isNumeric() )
+			return hi;
+
+
+		// Now, we start building the new Hop
+		System.out.println("Applying rewrite: trace(-(a,colSums(B))) => -(a,trace(colSums(B)))");
+		AggUnaryOp v1 = HopRewriteUtils.createAggUnaryOp(hi_0_1_0, Types.AggOp.SUM, Types.Direction.Col);
+		AggUnaryOp v2 = HopRewriteUtils.createAggUnaryOp(v1, Types.AggOp.TRACE, Types.Direction.RowCol);
+		BinaryOp v3 = HopRewriteUtils.createBinary(hi_0_0, v2, Types.OpOp2.MINUS);
+
+		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
+
+		for ( Hop p : parents )
+			HopRewriteUtils.replaceChildReference(p, hi, v3);
+
+		// Remove old unreferenced Hops
+		HopRewriteUtils.cleanupUnreferenced(hi);
+		HopRewriteUtils.cleanupUnreferenced(hi_0);
+		HopRewriteUtils.cleanupUnreferenced(hi_0_1);
+
+		return v3;
+	}
+
+	// Implementation of the rule trace(+(colSums(A),b)) => +(trace(colSums(A)),b)
+	private static Hop _applyRewrite436(Hop hi) {
+		if ( !(hi instanceof AggUnaryOp) )
+			return hi;
+
+		AggUnaryOp c_hi = (AggUnaryOp) hi;
+
+		if ( c_hi.getOp() != Types.AggOp.SUM || !c_hi.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_0 = hi.getInput(0);
+
+		if (hi_0.getParent().size() > 1)
+			return hi;
+		if ( !(hi_0 instanceof BinaryOp) )
+			return hi;
+
+		BinaryOp c_hi_0 = (BinaryOp) hi_0;
+
+		if ( c_hi_0.getOp() != Types.OpOp2.PLUS || !c_hi_0.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_0_0 = hi_0.getInput(0);
+
+		if (hi_0_0.getParent().size() > 1)
+			return hi;
+		if ( !(hi_0_0 instanceof AggUnaryOp) )
+			return hi;
+
+		AggUnaryOp c_hi_0_0 = (AggUnaryOp) hi_0_0;
+
+		if ( c_hi_0_0.getOp() != Types.AggOp.SUM || !c_hi_0_0.getValueType().isNumeric() )
+			return hi;
+
+		if ( !(c_hi_0_0.getDirection() == Types.Direction.Col) )
+			return hi;
+
+		Hop hi_0_0_0 = hi_0_0.getInput(0);
+
+		if ( hi_0_0_0.getDataType() != Types.DataType.MATRIX || !hi_0_0_0.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_0_1 = hi_0.getInput(1);
+
+		if ( hi_0_1.getDataType() != Types.DataType.SCALAR || !hi_0_1.getValueType().isNumeric() )
+			return hi;
+
+
+		// Now, we start building the new Hop
+		System.out.println("Applying rewrite: trace(+(colSums(A),b)) => +(trace(colSums(A)),b)");
+		AggUnaryOp v1 = HopRewriteUtils.createAggUnaryOp(hi_0_0_0, Types.AggOp.SUM, Types.Direction.Col);
+		AggUnaryOp v2 = HopRewriteUtils.createAggUnaryOp(v1, Types.AggOp.TRACE, Types.Direction.RowCol);
+		BinaryOp v3 = HopRewriteUtils.createBinary(v2, hi_0_1, Types.OpOp2.PLUS);
+
+		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
+
+		for ( Hop p : parents )
+			HopRewriteUtils.replaceChildReference(p, hi, v3);
+
+		// Remove old unreferenced Hops
+		HopRewriteUtils.cleanupUnreferenced(hi);
+		HopRewriteUtils.cleanupUnreferenced(hi_0);
+		HopRewriteUtils.cleanupUnreferenced(hi_0_0);
+
+		return v3;
+	}
+
+	// Implementation of the rule trace(+(b,colSums(A))) => +(trace(colSums(A)),b)
+	private static Hop _applyRewrite437(Hop hi) {
+		if ( !(hi instanceof AggUnaryOp) )
+			return hi;
+
+		AggUnaryOp c_hi = (AggUnaryOp) hi;
+
+		if ( c_hi.getOp() != Types.AggOp.SUM || !c_hi.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_0 = hi.getInput(0);
+
+		if (hi_0.getParent().size() > 1)
+			return hi;
+		if ( !(hi_0 instanceof BinaryOp) )
+			return hi;
+
+		BinaryOp c_hi_0 = (BinaryOp) hi_0;
+
+		if ( c_hi_0.getOp() != Types.OpOp2.PLUS || !c_hi_0.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_0_0 = hi_0.getInput(0);
+
+		if ( hi_0_0.getDataType() != Types.DataType.SCALAR || !hi_0_0.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_0_1 = hi_0.getInput(1);
+
+		if (hi_0_1.getParent().size() > 1)
+			return hi;
+		if ( !(hi_0_1 instanceof AggUnaryOp) )
+			return hi;
+
+		AggUnaryOp c_hi_0_1 = (AggUnaryOp) hi_0_1;
+
+		if ( c_hi_0_1.getOp() != Types.AggOp.SUM || !c_hi_0_1.getValueType().isNumeric() )
+			return hi;
+
+		if ( !(c_hi_0_1.getDirection() == Types.Direction.Col) )
+			return hi;
+
+		Hop hi_0_1_0 = hi_0_1.getInput(0);
+
+		if ( hi_0_1_0.getDataType() != Types.DataType.MATRIX || !hi_0_1_0.getValueType().isNumeric() )
+			return hi;
+
+
+		// Now, we start building the new Hop
+		System.out.println("Applying rewrite: trace(+(b,colSums(A))) => +(trace(colSums(A)),b)");
+		AggUnaryOp v1 = HopRewriteUtils.createAggUnaryOp(hi_0_1_0, Types.AggOp.SUM, Types.Direction.Col);
+		AggUnaryOp v2 = HopRewriteUtils.createAggUnaryOp(v1, Types.AggOp.TRACE, Types.Direction.RowCol);
+		BinaryOp v3 = HopRewriteUtils.createBinary(v2, hi_0_0, Types.OpOp2.PLUS);
 
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
@@ -29852,6 +33227,5366 @@ public class GeneratedRewriteClass implements Function {
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_0);
 		HopRewriteUtils.cleanupUnreferenced(hi_0_0);
+
+		return v2;
+	}
+
+	// Implementation of the rule -(A,rev(*(b,C))) => -*(A,b,rev(C))
+	private static Hop _applyRewrite499(Hop hi) {
+		if ( !(hi instanceof BinaryOp) )
+			return hi;
+
+		BinaryOp c_hi = (BinaryOp) hi;
+
+		if ( c_hi.getOp() != Types.OpOp2.MINUS || !c_hi.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_0 = hi.getInput(0);
+
+		if ( hi_0.getDataType() != Types.DataType.MATRIX || !hi_0.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_1 = hi.getInput(1);
+
+		if (hi_1.getParent().size() > 1)
+			return hi;
+		if ( !(hi_1 instanceof ReorgOp) )
+			return hi;
+
+		ReorgOp c_hi_1 = (ReorgOp) hi_1;
+
+		if ( c_hi_1.getOp() != Types.ReOrgOp.REV || !c_hi_1.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_1_0 = hi_1.getInput(0);
+
+		if (hi_1_0.getParent().size() > 1)
+			return hi;
+		if ( !(hi_1_0 instanceof BinaryOp) )
+			return hi;
+
+		BinaryOp c_hi_1_0 = (BinaryOp) hi_1_0;
+
+		if ( c_hi_1_0.getOp() != Types.OpOp2.MULT || !c_hi_1_0.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_1_0_0 = hi_1_0.getInput(0);
+
+		if ( hi_1_0_0.getDataType() != Types.DataType.SCALAR || !hi_1_0_0.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_1_0_1 = hi_1_0.getInput(1);
+
+		if ( hi_1_0_1.getDataType() != Types.DataType.MATRIX || !hi_1_0_1.getValueType().isNumeric() )
+			return hi;
+
+
+		// Now, we start building the new Hop
+		System.out.println("Applying rewrite: -(A,rev(*(b,C))) => -*(A,b,rev(C))");
+		ReorgOp v1 = HopRewriteUtils.createReorg(hi_1_0_1, Types.ReOrgOp.REV);
+		TernaryOp v2 = HopRewriteUtils.createTernary(hi_0, hi_1_0_0, v1,Types.OpOp3.MINUS_MULT);
+
+		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
+
+		for ( Hop p : parents )
+			HopRewriteUtils.replaceChildReference(p, hi, v2);
+
+		// Remove old unreferenced Hops
+		HopRewriteUtils.cleanupUnreferenced(hi);
+		HopRewriteUtils.cleanupUnreferenced(hi_1);
+		HopRewriteUtils.cleanupUnreferenced(hi_1_0);
+
+		return v2;
+	}
+
+	// Implementation of the rule -(A,rev(*(C,b))) => -*(A,b,rev(C))
+	private static Hop _applyRewrite500(Hop hi) {
+		if ( !(hi instanceof BinaryOp) )
+			return hi;
+
+		BinaryOp c_hi = (BinaryOp) hi;
+
+		if ( c_hi.getOp() != Types.OpOp2.MINUS || !c_hi.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_0 = hi.getInput(0);
+
+		if ( hi_0.getDataType() != Types.DataType.MATRIX || !hi_0.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_1 = hi.getInput(1);
+
+		if (hi_1.getParent().size() > 1)
+			return hi;
+		if ( !(hi_1 instanceof ReorgOp) )
+			return hi;
+
+		ReorgOp c_hi_1 = (ReorgOp) hi_1;
+
+		if ( c_hi_1.getOp() != Types.ReOrgOp.REV || !c_hi_1.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_1_0 = hi_1.getInput(0);
+
+		if (hi_1_0.getParent().size() > 1)
+			return hi;
+		if ( !(hi_1_0 instanceof BinaryOp) )
+			return hi;
+
+		BinaryOp c_hi_1_0 = (BinaryOp) hi_1_0;
+
+		if ( c_hi_1_0.getOp() != Types.OpOp2.MULT || !c_hi_1_0.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_1_0_0 = hi_1_0.getInput(0);
+
+		if ( hi_1_0_0.getDataType() != Types.DataType.MATRIX || !hi_1_0_0.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_1_0_1 = hi_1_0.getInput(1);
+
+		if ( hi_1_0_1.getDataType() != Types.DataType.SCALAR || !hi_1_0_1.getValueType().isNumeric() )
+			return hi;
+
+
+		// Now, we start building the new Hop
+		System.out.println("Applying rewrite: -(A,rev(*(C,b))) => -*(A,b,rev(C))");
+		ReorgOp v1 = HopRewriteUtils.createReorg(hi_1_0_0, Types.ReOrgOp.REV);
+		TernaryOp v2 = HopRewriteUtils.createTernary(hi_0, hi_1_0_1, v1,Types.OpOp3.MINUS_MULT);
+
+		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
+
+		for ( Hop p : parents )
+			HopRewriteUtils.replaceChildReference(p, hi, v2);
+
+		// Remove old unreferenced Hops
+		HopRewriteUtils.cleanupUnreferenced(hi);
+		HopRewriteUtils.cleanupUnreferenced(hi_1);
+		HopRewriteUtils.cleanupUnreferenced(hi_1_0);
+
+		return v2;
+	}
+
+	// Implementation of the rule -(A,t(*(b,C))) => -*(A,b,t(C))
+	private static Hop _applyRewrite501(Hop hi) {
+		if ( !(hi instanceof BinaryOp) )
+			return hi;
+
+		BinaryOp c_hi = (BinaryOp) hi;
+
+		if ( c_hi.getOp() != Types.OpOp2.MINUS || !c_hi.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_0 = hi.getInput(0);
+
+		if ( hi_0.getDataType() != Types.DataType.MATRIX || !hi_0.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_1 = hi.getInput(1);
+
+		if (hi_1.getParent().size() > 1)
+			return hi;
+		if ( !(hi_1 instanceof ReorgOp) )
+			return hi;
+
+		ReorgOp c_hi_1 = (ReorgOp) hi_1;
+
+		if ( c_hi_1.getOp() != Types.ReOrgOp.TRANS || !c_hi_1.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_1_0 = hi_1.getInput(0);
+
+		if (hi_1_0.getParent().size() > 1)
+			return hi;
+		if ( !(hi_1_0 instanceof BinaryOp) )
+			return hi;
+
+		BinaryOp c_hi_1_0 = (BinaryOp) hi_1_0;
+
+		if ( c_hi_1_0.getOp() != Types.OpOp2.MULT || !c_hi_1_0.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_1_0_0 = hi_1_0.getInput(0);
+
+		if ( hi_1_0_0.getDataType() != Types.DataType.SCALAR || !hi_1_0_0.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_1_0_1 = hi_1_0.getInput(1);
+
+		if ( hi_1_0_1.getDataType() != Types.DataType.MATRIX || !hi_1_0_1.getValueType().isNumeric() )
+			return hi;
+
+
+		// Now, we start building the new Hop
+		System.out.println("Applying rewrite: -(A,t(*(b,C))) => -*(A,b,t(C))");
+		ReorgOp v1 = HopRewriteUtils.createTranspose(hi_1_0_1);
+		TernaryOp v2 = HopRewriteUtils.createTernary(hi_0, hi_1_0_0, v1,Types.OpOp3.MINUS_MULT);
+
+		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
+
+		for ( Hop p : parents )
+			HopRewriteUtils.replaceChildReference(p, hi, v2);
+
+		// Remove old unreferenced Hops
+		HopRewriteUtils.cleanupUnreferenced(hi);
+		HopRewriteUtils.cleanupUnreferenced(hi_1);
+		HopRewriteUtils.cleanupUnreferenced(hi_1_0);
+
+		return v2;
+	}
+
+	// Implementation of the rule -(A,t(*(C,b))) => -*(A,b,t(C))
+	private static Hop _applyRewrite502(Hop hi) {
+		if ( !(hi instanceof BinaryOp) )
+			return hi;
+
+		BinaryOp c_hi = (BinaryOp) hi;
+
+		if ( c_hi.getOp() != Types.OpOp2.MINUS || !c_hi.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_0 = hi.getInput(0);
+
+		if ( hi_0.getDataType() != Types.DataType.MATRIX || !hi_0.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_1 = hi.getInput(1);
+
+		if (hi_1.getParent().size() > 1)
+			return hi;
+		if ( !(hi_1 instanceof ReorgOp) )
+			return hi;
+
+		ReorgOp c_hi_1 = (ReorgOp) hi_1;
+
+		if ( c_hi_1.getOp() != Types.ReOrgOp.TRANS || !c_hi_1.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_1_0 = hi_1.getInput(0);
+
+		if (hi_1_0.getParent().size() > 1)
+			return hi;
+		if ( !(hi_1_0 instanceof BinaryOp) )
+			return hi;
+
+		BinaryOp c_hi_1_0 = (BinaryOp) hi_1_0;
+
+		if ( c_hi_1_0.getOp() != Types.OpOp2.MULT || !c_hi_1_0.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_1_0_0 = hi_1_0.getInput(0);
+
+		if ( hi_1_0_0.getDataType() != Types.DataType.MATRIX || !hi_1_0_0.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_1_0_1 = hi_1_0.getInput(1);
+
+		if ( hi_1_0_1.getDataType() != Types.DataType.SCALAR || !hi_1_0_1.getValueType().isNumeric() )
+			return hi;
+
+
+		// Now, we start building the new Hop
+		System.out.println("Applying rewrite: -(A,t(*(C,b))) => -*(A,b,t(C))");
+		ReorgOp v1 = HopRewriteUtils.createTranspose(hi_1_0_0);
+		TernaryOp v2 = HopRewriteUtils.createTernary(hi_0, hi_1_0_1, v1,Types.OpOp3.MINUS_MULT);
+
+		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
+
+		for ( Hop p : parents )
+			HopRewriteUtils.replaceChildReference(p, hi, v2);
+
+		// Remove old unreferenced Hops
+		HopRewriteUtils.cleanupUnreferenced(hi);
+		HopRewriteUtils.cleanupUnreferenced(hi_1);
+		HopRewriteUtils.cleanupUnreferenced(hi_1_0);
+
+		return v2;
+	}
+
+	// Implementation of the rule +(rev(*(b,C)),A) => +*(A,b,rev(C))
+	private static Hop _applyRewrite503(Hop hi) {
+		if ( !(hi instanceof BinaryOp) )
+			return hi;
+
+		BinaryOp c_hi = (BinaryOp) hi;
+
+		if ( c_hi.getOp() != Types.OpOp2.PLUS || !c_hi.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_0 = hi.getInput(0);
+
+		if (hi_0.getParent().size() > 1)
+			return hi;
+		if ( !(hi_0 instanceof ReorgOp) )
+			return hi;
+
+		ReorgOp c_hi_0 = (ReorgOp) hi_0;
+
+		if ( c_hi_0.getOp() != Types.ReOrgOp.REV || !c_hi_0.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_0_0 = hi_0.getInput(0);
+
+		if (hi_0_0.getParent().size() > 1)
+			return hi;
+		if ( !(hi_0_0 instanceof BinaryOp) )
+			return hi;
+
+		BinaryOp c_hi_0_0 = (BinaryOp) hi_0_0;
+
+		if ( c_hi_0_0.getOp() != Types.OpOp2.MULT || !c_hi_0_0.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_0_0_0 = hi_0_0.getInput(0);
+
+		if ( hi_0_0_0.getDataType() != Types.DataType.SCALAR || !hi_0_0_0.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_0_0_1 = hi_0_0.getInput(1);
+
+		if ( hi_0_0_1.getDataType() != Types.DataType.MATRIX || !hi_0_0_1.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_1 = hi.getInput(1);
+
+		if ( hi_1.getDataType() != Types.DataType.MATRIX || !hi_1.getValueType().isNumeric() )
+			return hi;
+
+
+		// Now, we start building the new Hop
+		System.out.println("Applying rewrite: +(rev(*(b,C)),A) => +*(A,b,rev(C))");
+		ReorgOp v1 = HopRewriteUtils.createReorg(hi_0_0_1, Types.ReOrgOp.REV);
+		TernaryOp v2 = HopRewriteUtils.createTernary(hi_1, hi_0_0_0, v1,Types.OpOp3.PLUS_MULT);
+
+		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
+
+		for ( Hop p : parents )
+			HopRewriteUtils.replaceChildReference(p, hi, v2);
+
+		// Remove old unreferenced Hops
+		HopRewriteUtils.cleanupUnreferenced(hi);
+		HopRewriteUtils.cleanupUnreferenced(hi_0);
+		HopRewriteUtils.cleanupUnreferenced(hi_0_0);
+
+		return v2;
+	}
+
+	// Implementation of the rule +(rev(*(C,b)),A) => +*(A,b,rev(C))
+	private static Hop _applyRewrite504(Hop hi) {
+		if ( !(hi instanceof BinaryOp) )
+			return hi;
+
+		BinaryOp c_hi = (BinaryOp) hi;
+
+		if ( c_hi.getOp() != Types.OpOp2.PLUS || !c_hi.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_0 = hi.getInput(0);
+
+		if (hi_0.getParent().size() > 1)
+			return hi;
+		if ( !(hi_0 instanceof ReorgOp) )
+			return hi;
+
+		ReorgOp c_hi_0 = (ReorgOp) hi_0;
+
+		if ( c_hi_0.getOp() != Types.ReOrgOp.REV || !c_hi_0.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_0_0 = hi_0.getInput(0);
+
+		if (hi_0_0.getParent().size() > 1)
+			return hi;
+		if ( !(hi_0_0 instanceof BinaryOp) )
+			return hi;
+
+		BinaryOp c_hi_0_0 = (BinaryOp) hi_0_0;
+
+		if ( c_hi_0_0.getOp() != Types.OpOp2.MULT || !c_hi_0_0.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_0_0_0 = hi_0_0.getInput(0);
+
+		if ( hi_0_0_0.getDataType() != Types.DataType.MATRIX || !hi_0_0_0.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_0_0_1 = hi_0_0.getInput(1);
+
+		if ( hi_0_0_1.getDataType() != Types.DataType.SCALAR || !hi_0_0_1.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_1 = hi.getInput(1);
+
+		if ( hi_1.getDataType() != Types.DataType.MATRIX || !hi_1.getValueType().isNumeric() )
+			return hi;
+
+
+		// Now, we start building the new Hop
+		System.out.println("Applying rewrite: +(rev(*(C,b)),A) => +*(A,b,rev(C))");
+		ReorgOp v1 = HopRewriteUtils.createReorg(hi_0_0_0, Types.ReOrgOp.REV);
+		TernaryOp v2 = HopRewriteUtils.createTernary(hi_1, hi_0_0_1, v1,Types.OpOp3.PLUS_MULT);
+
+		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
+
+		for ( Hop p : parents )
+			HopRewriteUtils.replaceChildReference(p, hi, v2);
+
+		// Remove old unreferenced Hops
+		HopRewriteUtils.cleanupUnreferenced(hi);
+		HopRewriteUtils.cleanupUnreferenced(hi_0);
+		HopRewriteUtils.cleanupUnreferenced(hi_0_0);
+
+		return v2;
+	}
+
+	// Implementation of the rule +(A,rev(*(C,b))) => +*(A,b,rev(C))
+	private static Hop _applyRewrite505(Hop hi) {
+		if ( !(hi instanceof BinaryOp) )
+			return hi;
+
+		BinaryOp c_hi = (BinaryOp) hi;
+
+		if ( c_hi.getOp() != Types.OpOp2.PLUS || !c_hi.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_0 = hi.getInput(0);
+
+		if ( hi_0.getDataType() != Types.DataType.MATRIX || !hi_0.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_1 = hi.getInput(1);
+
+		if (hi_1.getParent().size() > 1)
+			return hi;
+		if ( !(hi_1 instanceof ReorgOp) )
+			return hi;
+
+		ReorgOp c_hi_1 = (ReorgOp) hi_1;
+
+		if ( c_hi_1.getOp() != Types.ReOrgOp.REV || !c_hi_1.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_1_0 = hi_1.getInput(0);
+
+		if (hi_1_0.getParent().size() > 1)
+			return hi;
+		if ( !(hi_1_0 instanceof BinaryOp) )
+			return hi;
+
+		BinaryOp c_hi_1_0 = (BinaryOp) hi_1_0;
+
+		if ( c_hi_1_0.getOp() != Types.OpOp2.MULT || !c_hi_1_0.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_1_0_0 = hi_1_0.getInput(0);
+
+		if ( hi_1_0_0.getDataType() != Types.DataType.MATRIX || !hi_1_0_0.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_1_0_1 = hi_1_0.getInput(1);
+
+		if ( hi_1_0_1.getDataType() != Types.DataType.SCALAR || !hi_1_0_1.getValueType().isNumeric() )
+			return hi;
+
+
+		// Now, we start building the new Hop
+		System.out.println("Applying rewrite: +(A,rev(*(C,b))) => +*(A,b,rev(C))");
+		ReorgOp v1 = HopRewriteUtils.createReorg(hi_1_0_0, Types.ReOrgOp.REV);
+		TernaryOp v2 = HopRewriteUtils.createTernary(hi_0, hi_1_0_1, v1,Types.OpOp3.PLUS_MULT);
+
+		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
+
+		for ( Hop p : parents )
+			HopRewriteUtils.replaceChildReference(p, hi, v2);
+
+		// Remove old unreferenced Hops
+		HopRewriteUtils.cleanupUnreferenced(hi);
+		HopRewriteUtils.cleanupUnreferenced(hi_1);
+		HopRewriteUtils.cleanupUnreferenced(hi_1_0);
+
+		return v2;
+	}
+
+	// Implementation of the rule -(-(a,*(c,D)),B) => -(a,+*(B,c,D))
+	private static Hop _applyRewrite506(Hop hi) {
+		if ( !(hi instanceof BinaryOp) )
+			return hi;
+
+		BinaryOp c_hi = (BinaryOp) hi;
+
+		if ( c_hi.getOp() != Types.OpOp2.MINUS || !c_hi.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_0 = hi.getInput(0);
+
+		if (hi_0.getParent().size() > 1)
+			return hi;
+		if ( !(hi_0 instanceof BinaryOp) )
+			return hi;
+
+		BinaryOp c_hi_0 = (BinaryOp) hi_0;
+
+		if ( c_hi_0.getOp() != Types.OpOp2.MINUS || !c_hi_0.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_0_0 = hi_0.getInput(0);
+
+		if ( hi_0_0.getDataType() != Types.DataType.SCALAR || !hi_0_0.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_0_1 = hi_0.getInput(1);
+
+		if (hi_0_1.getParent().size() > 1)
+			return hi;
+		if ( !(hi_0_1 instanceof BinaryOp) )
+			return hi;
+
+		BinaryOp c_hi_0_1 = (BinaryOp) hi_0_1;
+
+		if ( c_hi_0_1.getOp() != Types.OpOp2.MULT || !c_hi_0_1.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_0_1_0 = hi_0_1.getInput(0);
+
+		if ( hi_0_1_0.getDataType() != Types.DataType.SCALAR || !hi_0_1_0.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_0_1_1 = hi_0_1.getInput(1);
+
+		if ( hi_0_1_1.getDataType() != Types.DataType.MATRIX || !hi_0_1_1.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_1 = hi.getInput(1);
+
+		if ( hi_1.getDataType() != Types.DataType.MATRIX || !hi_1.getValueType().isNumeric() )
+			return hi;
+
+
+		// Now, we start building the new Hop
+		System.out.println("Applying rewrite: -(-(a,*(c,D)),B) => -(a,+*(B,c,D))");
+		TernaryOp v1 = HopRewriteUtils.createTernary(hi_1, hi_0_1_0, hi_0_1_1,Types.OpOp3.PLUS_MULT);
+		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0_0, v1, Types.OpOp2.MINUS);
+
+		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
+
+		for ( Hop p : parents )
+			HopRewriteUtils.replaceChildReference(p, hi, v2);
+
+		// Remove old unreferenced Hops
+		HopRewriteUtils.cleanupUnreferenced(hi);
+		HopRewriteUtils.cleanupUnreferenced(hi_0);
+		HopRewriteUtils.cleanupUnreferenced(hi_0_1);
+
+		return v2;
+	}
+
+	// Implementation of the rule -(-(a,*(D,c)),B) => -(a,+*(B,c,D))
+	private static Hop _applyRewrite507(Hop hi) {
+		if ( !(hi instanceof BinaryOp) )
+			return hi;
+
+		BinaryOp c_hi = (BinaryOp) hi;
+
+		if ( c_hi.getOp() != Types.OpOp2.MINUS || !c_hi.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_0 = hi.getInput(0);
+
+		if (hi_0.getParent().size() > 1)
+			return hi;
+		if ( !(hi_0 instanceof BinaryOp) )
+			return hi;
+
+		BinaryOp c_hi_0 = (BinaryOp) hi_0;
+
+		if ( c_hi_0.getOp() != Types.OpOp2.MINUS || !c_hi_0.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_0_0 = hi_0.getInput(0);
+
+		if ( hi_0_0.getDataType() != Types.DataType.SCALAR || !hi_0_0.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_0_1 = hi_0.getInput(1);
+
+		if (hi_0_1.getParent().size() > 1)
+			return hi;
+		if ( !(hi_0_1 instanceof BinaryOp) )
+			return hi;
+
+		BinaryOp c_hi_0_1 = (BinaryOp) hi_0_1;
+
+		if ( c_hi_0_1.getOp() != Types.OpOp2.MULT || !c_hi_0_1.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_0_1_0 = hi_0_1.getInput(0);
+
+		if ( hi_0_1_0.getDataType() != Types.DataType.MATRIX || !hi_0_1_0.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_0_1_1 = hi_0_1.getInput(1);
+
+		if ( hi_0_1_1.getDataType() != Types.DataType.SCALAR || !hi_0_1_1.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_1 = hi.getInput(1);
+
+		if ( hi_1.getDataType() != Types.DataType.MATRIX || !hi_1.getValueType().isNumeric() )
+			return hi;
+
+
+		// Now, we start building the new Hop
+		System.out.println("Applying rewrite: -(-(a,*(D,c)),B) => -(a,+*(B,c,D))");
+		TernaryOp v1 = HopRewriteUtils.createTernary(hi_1, hi_0_1_1, hi_0_1_0,Types.OpOp3.PLUS_MULT);
+		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0_0, v1, Types.OpOp2.MINUS);
+
+		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
+
+		for ( Hop p : parents )
+			HopRewriteUtils.replaceChildReference(p, hi, v2);
+
+		// Remove old unreferenced Hops
+		HopRewriteUtils.cleanupUnreferenced(hi);
+		HopRewriteUtils.cleanupUnreferenced(hi_0);
+		HopRewriteUtils.cleanupUnreferenced(hi_0_1);
+
+		return v2;
+	}
+
+	// Implementation of the rule -(A,+(*(b,C),d)) => -(-*(A,b,C),d)
+	private static Hop _applyRewrite508(Hop hi) {
+		if ( !(hi instanceof BinaryOp) )
+			return hi;
+
+		BinaryOp c_hi = (BinaryOp) hi;
+
+		if ( c_hi.getOp() != Types.OpOp2.MINUS || !c_hi.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_0 = hi.getInput(0);
+
+		if ( hi_0.getDataType() != Types.DataType.MATRIX || !hi_0.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_1 = hi.getInput(1);
+
+		if (hi_1.getParent().size() > 1)
+			return hi;
+		if ( !(hi_1 instanceof BinaryOp) )
+			return hi;
+
+		BinaryOp c_hi_1 = (BinaryOp) hi_1;
+
+		if ( c_hi_1.getOp() != Types.OpOp2.PLUS || !c_hi_1.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_1_0 = hi_1.getInput(0);
+
+		if (hi_1_0.getParent().size() > 1)
+			return hi;
+		if ( !(hi_1_0 instanceof BinaryOp) )
+			return hi;
+
+		BinaryOp c_hi_1_0 = (BinaryOp) hi_1_0;
+
+		if ( c_hi_1_0.getOp() != Types.OpOp2.MULT || !c_hi_1_0.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_1_0_0 = hi_1_0.getInput(0);
+
+		if ( hi_1_0_0.getDataType() != Types.DataType.SCALAR || !hi_1_0_0.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_1_0_1 = hi_1_0.getInput(1);
+
+		if ( hi_1_0_1.getDataType() != Types.DataType.MATRIX || !hi_1_0_1.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_1_1 = hi_1.getInput(1);
+
+		if ( hi_1_1.getDataType() != Types.DataType.SCALAR || !hi_1_1.getValueType().isNumeric() )
+			return hi;
+
+
+		// Now, we start building the new Hop
+		System.out.println("Applying rewrite: -(A,+(*(b,C),d)) => -(-*(A,b,C),d)");
+		TernaryOp v1 = HopRewriteUtils.createTernary(hi_0, hi_1_0_0, hi_1_0_1,Types.OpOp3.MINUS_MULT);
+		BinaryOp v2 = HopRewriteUtils.createBinary(v1, hi_1_1, Types.OpOp2.MINUS);
+
+		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
+
+		for ( Hop p : parents )
+			HopRewriteUtils.replaceChildReference(p, hi, v2);
+
+		// Remove old unreferenced Hops
+		HopRewriteUtils.cleanupUnreferenced(hi);
+		HopRewriteUtils.cleanupUnreferenced(hi_1);
+		HopRewriteUtils.cleanupUnreferenced(hi_1_0);
+
+		return v2;
+	}
+
+	// Implementation of the rule -(A,+(*(C,b),d)) => -(-*(A,b,C),d)
+	private static Hop _applyRewrite509(Hop hi) {
+		if ( !(hi instanceof BinaryOp) )
+			return hi;
+
+		BinaryOp c_hi = (BinaryOp) hi;
+
+		if ( c_hi.getOp() != Types.OpOp2.MINUS || !c_hi.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_0 = hi.getInput(0);
+
+		if ( hi_0.getDataType() != Types.DataType.MATRIX || !hi_0.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_1 = hi.getInput(1);
+
+		if (hi_1.getParent().size() > 1)
+			return hi;
+		if ( !(hi_1 instanceof BinaryOp) )
+			return hi;
+
+		BinaryOp c_hi_1 = (BinaryOp) hi_1;
+
+		if ( c_hi_1.getOp() != Types.OpOp2.PLUS || !c_hi_1.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_1_0 = hi_1.getInput(0);
+
+		if (hi_1_0.getParent().size() > 1)
+			return hi;
+		if ( !(hi_1_0 instanceof BinaryOp) )
+			return hi;
+
+		BinaryOp c_hi_1_0 = (BinaryOp) hi_1_0;
+
+		if ( c_hi_1_0.getOp() != Types.OpOp2.MULT || !c_hi_1_0.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_1_0_0 = hi_1_0.getInput(0);
+
+		if ( hi_1_0_0.getDataType() != Types.DataType.MATRIX || !hi_1_0_0.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_1_0_1 = hi_1_0.getInput(1);
+
+		if ( hi_1_0_1.getDataType() != Types.DataType.SCALAR || !hi_1_0_1.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_1_1 = hi_1.getInput(1);
+
+		if ( hi_1_1.getDataType() != Types.DataType.SCALAR || !hi_1_1.getValueType().isNumeric() )
+			return hi;
+
+
+		// Now, we start building the new Hop
+		System.out.println("Applying rewrite: -(A,+(*(C,b),d)) => -(-*(A,b,C),d)");
+		TernaryOp v1 = HopRewriteUtils.createTernary(hi_0, hi_1_0_1, hi_1_0_0,Types.OpOp3.MINUS_MULT);
+		BinaryOp v2 = HopRewriteUtils.createBinary(v1, hi_1_1, Types.OpOp2.MINUS);
+
+		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
+
+		for ( Hop p : parents )
+			HopRewriteUtils.replaceChildReference(p, hi, v2);
+
+		// Remove old unreferenced Hops
+		HopRewriteUtils.cleanupUnreferenced(hi);
+		HopRewriteUtils.cleanupUnreferenced(hi_1);
+		HopRewriteUtils.cleanupUnreferenced(hi_1_0);
+
+		return v2;
+	}
+
+	// Implementation of the rule -(A,+(d,*(b,C))) => -(-*(A,b,C),d)
+	private static Hop _applyRewrite510(Hop hi) {
+		if ( !(hi instanceof BinaryOp) )
+			return hi;
+
+		BinaryOp c_hi = (BinaryOp) hi;
+
+		if ( c_hi.getOp() != Types.OpOp2.MINUS || !c_hi.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_0 = hi.getInput(0);
+
+		if ( hi_0.getDataType() != Types.DataType.MATRIX || !hi_0.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_1 = hi.getInput(1);
+
+		if (hi_1.getParent().size() > 1)
+			return hi;
+		if ( !(hi_1 instanceof BinaryOp) )
+			return hi;
+
+		BinaryOp c_hi_1 = (BinaryOp) hi_1;
+
+		if ( c_hi_1.getOp() != Types.OpOp2.PLUS || !c_hi_1.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_1_0 = hi_1.getInput(0);
+
+		if ( hi_1_0.getDataType() != Types.DataType.SCALAR || !hi_1_0.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_1_1 = hi_1.getInput(1);
+
+		if (hi_1_1.getParent().size() > 1)
+			return hi;
+		if ( !(hi_1_1 instanceof BinaryOp) )
+			return hi;
+
+		BinaryOp c_hi_1_1 = (BinaryOp) hi_1_1;
+
+		if ( c_hi_1_1.getOp() != Types.OpOp2.MULT || !c_hi_1_1.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_1_1_0 = hi_1_1.getInput(0);
+
+		if ( hi_1_1_0.getDataType() != Types.DataType.SCALAR || !hi_1_1_0.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_1_1_1 = hi_1_1.getInput(1);
+
+		if ( hi_1_1_1.getDataType() != Types.DataType.MATRIX || !hi_1_1_1.getValueType().isNumeric() )
+			return hi;
+
+
+		// Now, we start building the new Hop
+		System.out.println("Applying rewrite: -(A,+(d,*(b,C))) => -(-*(A,b,C),d)");
+		TernaryOp v1 = HopRewriteUtils.createTernary(hi_0, hi_1_1_0, hi_1_1_1,Types.OpOp3.MINUS_MULT);
+		BinaryOp v2 = HopRewriteUtils.createBinary(v1, hi_1_0, Types.OpOp2.MINUS);
+
+		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
+
+		for ( Hop p : parents )
+			HopRewriteUtils.replaceChildReference(p, hi, v2);
+
+		// Remove old unreferenced Hops
+		HopRewriteUtils.cleanupUnreferenced(hi);
+		HopRewriteUtils.cleanupUnreferenced(hi_1);
+		HopRewriteUtils.cleanupUnreferenced(hi_1_1);
+
+		return v2;
+	}
+
+	// Implementation of the rule -(A,+(d,*(C,b))) => -(-*(A,b,C),d)
+	private static Hop _applyRewrite511(Hop hi) {
+		if ( !(hi instanceof BinaryOp) )
+			return hi;
+
+		BinaryOp c_hi = (BinaryOp) hi;
+
+		if ( c_hi.getOp() != Types.OpOp2.MINUS || !c_hi.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_0 = hi.getInput(0);
+
+		if ( hi_0.getDataType() != Types.DataType.MATRIX || !hi_0.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_1 = hi.getInput(1);
+
+		if (hi_1.getParent().size() > 1)
+			return hi;
+		if ( !(hi_1 instanceof BinaryOp) )
+			return hi;
+
+		BinaryOp c_hi_1 = (BinaryOp) hi_1;
+
+		if ( c_hi_1.getOp() != Types.OpOp2.PLUS || !c_hi_1.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_1_0 = hi_1.getInput(0);
+
+		if ( hi_1_0.getDataType() != Types.DataType.SCALAR || !hi_1_0.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_1_1 = hi_1.getInput(1);
+
+		if (hi_1_1.getParent().size() > 1)
+			return hi;
+		if ( !(hi_1_1 instanceof BinaryOp) )
+			return hi;
+
+		BinaryOp c_hi_1_1 = (BinaryOp) hi_1_1;
+
+		if ( c_hi_1_1.getOp() != Types.OpOp2.MULT || !c_hi_1_1.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_1_1_0 = hi_1_1.getInput(0);
+
+		if ( hi_1_1_0.getDataType() != Types.DataType.MATRIX || !hi_1_1_0.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_1_1_1 = hi_1_1.getInput(1);
+
+		if ( hi_1_1_1.getDataType() != Types.DataType.SCALAR || !hi_1_1_1.getValueType().isNumeric() )
+			return hi;
+
+
+		// Now, we start building the new Hop
+		System.out.println("Applying rewrite: -(A,+(d,*(C,b))) => -(-*(A,b,C),d)");
+		TernaryOp v1 = HopRewriteUtils.createTernary(hi_0, hi_1_1_1, hi_1_1_0,Types.OpOp3.MINUS_MULT);
+		BinaryOp v2 = HopRewriteUtils.createBinary(v1, hi_1_0, Types.OpOp2.MINUS);
+
+		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
+
+		for ( Hop p : parents )
+			HopRewriteUtils.replaceChildReference(p, hi, v2);
+
+		// Remove old unreferenced Hops
+		HopRewriteUtils.cleanupUnreferenced(hi);
+		HopRewriteUtils.cleanupUnreferenced(hi_1);
+		HopRewriteUtils.cleanupUnreferenced(hi_1_1);
+
+		return v2;
+	}
+
+	// Implementation of the rule +(t(*(b,C)),A) => +*(A,b,t(C))
+	private static Hop _applyRewrite512(Hop hi) {
+		if ( !(hi instanceof BinaryOp) )
+			return hi;
+
+		BinaryOp c_hi = (BinaryOp) hi;
+
+		if ( c_hi.getOp() != Types.OpOp2.PLUS || !c_hi.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_0 = hi.getInput(0);
+
+		if (hi_0.getParent().size() > 1)
+			return hi;
+		if ( !(hi_0 instanceof ReorgOp) )
+			return hi;
+
+		ReorgOp c_hi_0 = (ReorgOp) hi_0;
+
+		if ( c_hi_0.getOp() != Types.ReOrgOp.TRANS || !c_hi_0.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_0_0 = hi_0.getInput(0);
+
+		if (hi_0_0.getParent().size() > 1)
+			return hi;
+		if ( !(hi_0_0 instanceof BinaryOp) )
+			return hi;
+
+		BinaryOp c_hi_0_0 = (BinaryOp) hi_0_0;
+
+		if ( c_hi_0_0.getOp() != Types.OpOp2.MULT || !c_hi_0_0.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_0_0_0 = hi_0_0.getInput(0);
+
+		if ( hi_0_0_0.getDataType() != Types.DataType.SCALAR || !hi_0_0_0.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_0_0_1 = hi_0_0.getInput(1);
+
+		if ( hi_0_0_1.getDataType() != Types.DataType.MATRIX || !hi_0_0_1.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_1 = hi.getInput(1);
+
+		if ( hi_1.getDataType() != Types.DataType.MATRIX || !hi_1.getValueType().isNumeric() )
+			return hi;
+
+
+		// Now, we start building the new Hop
+		System.out.println("Applying rewrite: +(t(*(b,C)),A) => +*(A,b,t(C))");
+		ReorgOp v1 = HopRewriteUtils.createTranspose(hi_0_0_1);
+		TernaryOp v2 = HopRewriteUtils.createTernary(hi_1, hi_0_0_0, v1,Types.OpOp3.PLUS_MULT);
+
+		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
+
+		for ( Hop p : parents )
+			HopRewriteUtils.replaceChildReference(p, hi, v2);
+
+		// Remove old unreferenced Hops
+		HopRewriteUtils.cleanupUnreferenced(hi);
+		HopRewriteUtils.cleanupUnreferenced(hi_0);
+		HopRewriteUtils.cleanupUnreferenced(hi_0_0);
+
+		return v2;
+	}
+
+	// Implementation of the rule +(t(*(C,b)),A) => +*(A,b,t(C))
+	private static Hop _applyRewrite513(Hop hi) {
+		if ( !(hi instanceof BinaryOp) )
+			return hi;
+
+		BinaryOp c_hi = (BinaryOp) hi;
+
+		if ( c_hi.getOp() != Types.OpOp2.PLUS || !c_hi.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_0 = hi.getInput(0);
+
+		if (hi_0.getParent().size() > 1)
+			return hi;
+		if ( !(hi_0 instanceof ReorgOp) )
+			return hi;
+
+		ReorgOp c_hi_0 = (ReorgOp) hi_0;
+
+		if ( c_hi_0.getOp() != Types.ReOrgOp.TRANS || !c_hi_0.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_0_0 = hi_0.getInput(0);
+
+		if (hi_0_0.getParent().size() > 1)
+			return hi;
+		if ( !(hi_0_0 instanceof BinaryOp) )
+			return hi;
+
+		BinaryOp c_hi_0_0 = (BinaryOp) hi_0_0;
+
+		if ( c_hi_0_0.getOp() != Types.OpOp2.MULT || !c_hi_0_0.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_0_0_0 = hi_0_0.getInput(0);
+
+		if ( hi_0_0_0.getDataType() != Types.DataType.MATRIX || !hi_0_0_0.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_0_0_1 = hi_0_0.getInput(1);
+
+		if ( hi_0_0_1.getDataType() != Types.DataType.SCALAR || !hi_0_0_1.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_1 = hi.getInput(1);
+
+		if ( hi_1.getDataType() != Types.DataType.MATRIX || !hi_1.getValueType().isNumeric() )
+			return hi;
+
+
+		// Now, we start building the new Hop
+		System.out.println("Applying rewrite: +(t(*(C,b)),A) => +*(A,b,t(C))");
+		ReorgOp v1 = HopRewriteUtils.createTranspose(hi_0_0_0);
+		TernaryOp v2 = HopRewriteUtils.createTernary(hi_1, hi_0_0_1, v1,Types.OpOp3.PLUS_MULT);
+
+		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
+
+		for ( Hop p : parents )
+			HopRewriteUtils.replaceChildReference(p, hi, v2);
+
+		// Remove old unreferenced Hops
+		HopRewriteUtils.cleanupUnreferenced(hi);
+		HopRewriteUtils.cleanupUnreferenced(hi_0);
+		HopRewriteUtils.cleanupUnreferenced(hi_0_0);
+
+		return v2;
+	}
+
+	// Implementation of the rule +(A,t(*(b,C))) => +*(A,b,t(C))
+	private static Hop _applyRewrite514(Hop hi) {
+		if ( !(hi instanceof BinaryOp) )
+			return hi;
+
+		BinaryOp c_hi = (BinaryOp) hi;
+
+		if ( c_hi.getOp() != Types.OpOp2.PLUS || !c_hi.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_0 = hi.getInput(0);
+
+		if ( hi_0.getDataType() != Types.DataType.MATRIX || !hi_0.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_1 = hi.getInput(1);
+
+		if (hi_1.getParent().size() > 1)
+			return hi;
+		if ( !(hi_1 instanceof ReorgOp) )
+			return hi;
+
+		ReorgOp c_hi_1 = (ReorgOp) hi_1;
+
+		if ( c_hi_1.getOp() != Types.ReOrgOp.TRANS || !c_hi_1.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_1_0 = hi_1.getInput(0);
+
+		if (hi_1_0.getParent().size() > 1)
+			return hi;
+		if ( !(hi_1_0 instanceof BinaryOp) )
+			return hi;
+
+		BinaryOp c_hi_1_0 = (BinaryOp) hi_1_0;
+
+		if ( c_hi_1_0.getOp() != Types.OpOp2.MULT || !c_hi_1_0.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_1_0_0 = hi_1_0.getInput(0);
+
+		if ( hi_1_0_0.getDataType() != Types.DataType.SCALAR || !hi_1_0_0.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_1_0_1 = hi_1_0.getInput(1);
+
+		if ( hi_1_0_1.getDataType() != Types.DataType.MATRIX || !hi_1_0_1.getValueType().isNumeric() )
+			return hi;
+
+
+		// Now, we start building the new Hop
+		System.out.println("Applying rewrite: +(A,t(*(b,C))) => +*(A,b,t(C))");
+		ReorgOp v1 = HopRewriteUtils.createTranspose(hi_1_0_1);
+		TernaryOp v2 = HopRewriteUtils.createTernary(hi_0, hi_1_0_0, v1,Types.OpOp3.PLUS_MULT);
+
+		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
+
+		for ( Hop p : parents )
+			HopRewriteUtils.replaceChildReference(p, hi, v2);
+
+		// Remove old unreferenced Hops
+		HopRewriteUtils.cleanupUnreferenced(hi);
+		HopRewriteUtils.cleanupUnreferenced(hi_1);
+		HopRewriteUtils.cleanupUnreferenced(hi_1_0);
+
+		return v2;
+	}
+
+	// Implementation of the rule +(A,t(*(C,b))) => +*(A,b,t(C))
+	private static Hop _applyRewrite515(Hop hi) {
+		if ( !(hi instanceof BinaryOp) )
+			return hi;
+
+		BinaryOp c_hi = (BinaryOp) hi;
+
+		if ( c_hi.getOp() != Types.OpOp2.PLUS || !c_hi.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_0 = hi.getInput(0);
+
+		if ( hi_0.getDataType() != Types.DataType.MATRIX || !hi_0.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_1 = hi.getInput(1);
+
+		if (hi_1.getParent().size() > 1)
+			return hi;
+		if ( !(hi_1 instanceof ReorgOp) )
+			return hi;
+
+		ReorgOp c_hi_1 = (ReorgOp) hi_1;
+
+		if ( c_hi_1.getOp() != Types.ReOrgOp.TRANS || !c_hi_1.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_1_0 = hi_1.getInput(0);
+
+		if (hi_1_0.getParent().size() > 1)
+			return hi;
+		if ( !(hi_1_0 instanceof BinaryOp) )
+			return hi;
+
+		BinaryOp c_hi_1_0 = (BinaryOp) hi_1_0;
+
+		if ( c_hi_1_0.getOp() != Types.OpOp2.MULT || !c_hi_1_0.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_1_0_0 = hi_1_0.getInput(0);
+
+		if ( hi_1_0_0.getDataType() != Types.DataType.MATRIX || !hi_1_0_0.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_1_0_1 = hi_1_0.getInput(1);
+
+		if ( hi_1_0_1.getDataType() != Types.DataType.SCALAR || !hi_1_0_1.getValueType().isNumeric() )
+			return hi;
+
+
+		// Now, we start building the new Hop
+		System.out.println("Applying rewrite: +(A,t(*(C,b))) => +*(A,b,t(C))");
+		ReorgOp v1 = HopRewriteUtils.createTranspose(hi_1_0_0);
+		TernaryOp v2 = HopRewriteUtils.createTernary(hi_0, hi_1_0_1, v1,Types.OpOp3.PLUS_MULT);
+
+		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
+
+		for ( Hop p : parents )
+			HopRewriteUtils.replaceChildReference(p, hi, v2);
+
+		// Remove old unreferenced Hops
+		HopRewriteUtils.cleanupUnreferenced(hi);
+		HopRewriteUtils.cleanupUnreferenced(hi_1);
+		HopRewriteUtils.cleanupUnreferenced(hi_1_0);
+
+		return v2;
+	}
+
+	// Implementation of the rule -(+(*(c,D),a),B) => -(a,-*(B,c,D))
+	private static Hop _applyRewrite516(Hop hi) {
+		if ( !(hi instanceof BinaryOp) )
+			return hi;
+
+		BinaryOp c_hi = (BinaryOp) hi;
+
+		if ( c_hi.getOp() != Types.OpOp2.MINUS || !c_hi.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_0 = hi.getInput(0);
+
+		if (hi_0.getParent().size() > 1)
+			return hi;
+		if ( !(hi_0 instanceof BinaryOp) )
+			return hi;
+
+		BinaryOp c_hi_0 = (BinaryOp) hi_0;
+
+		if ( c_hi_0.getOp() != Types.OpOp2.PLUS || !c_hi_0.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_0_0 = hi_0.getInput(0);
+
+		if (hi_0_0.getParent().size() > 1)
+			return hi;
+		if ( !(hi_0_0 instanceof BinaryOp) )
+			return hi;
+
+		BinaryOp c_hi_0_0 = (BinaryOp) hi_0_0;
+
+		if ( c_hi_0_0.getOp() != Types.OpOp2.MULT || !c_hi_0_0.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_0_0_0 = hi_0_0.getInput(0);
+
+		if ( hi_0_0_0.getDataType() != Types.DataType.SCALAR || !hi_0_0_0.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_0_0_1 = hi_0_0.getInput(1);
+
+		if ( hi_0_0_1.getDataType() != Types.DataType.MATRIX || !hi_0_0_1.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_0_1 = hi_0.getInput(1);
+
+		if ( hi_0_1.getDataType() != Types.DataType.SCALAR || !hi_0_1.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_1 = hi.getInput(1);
+
+		if ( hi_1.getDataType() != Types.DataType.MATRIX || !hi_1.getValueType().isNumeric() )
+			return hi;
+
+
+		// Now, we start building the new Hop
+		System.out.println("Applying rewrite: -(+(*(c,D),a),B) => -(a,-*(B,c,D))");
+		TernaryOp v1 = HopRewriteUtils.createTernary(hi_1, hi_0_0_0, hi_0_0_1,Types.OpOp3.MINUS_MULT);
+		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0_1, v1, Types.OpOp2.MINUS);
+
+		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
+
+		for ( Hop p : parents )
+			HopRewriteUtils.replaceChildReference(p, hi, v2);
+
+		// Remove old unreferenced Hops
+		HopRewriteUtils.cleanupUnreferenced(hi);
+		HopRewriteUtils.cleanupUnreferenced(hi_0);
+		HopRewriteUtils.cleanupUnreferenced(hi_0_0);
+
+		return v2;
+	}
+
+	// Implementation of the rule -(+(*(D,c),a),B) => -(a,-*(B,c,D))
+	private static Hop _applyRewrite517(Hop hi) {
+		if ( !(hi instanceof BinaryOp) )
+			return hi;
+
+		BinaryOp c_hi = (BinaryOp) hi;
+
+		if ( c_hi.getOp() != Types.OpOp2.MINUS || !c_hi.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_0 = hi.getInput(0);
+
+		if (hi_0.getParent().size() > 1)
+			return hi;
+		if ( !(hi_0 instanceof BinaryOp) )
+			return hi;
+
+		BinaryOp c_hi_0 = (BinaryOp) hi_0;
+
+		if ( c_hi_0.getOp() != Types.OpOp2.PLUS || !c_hi_0.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_0_0 = hi_0.getInput(0);
+
+		if (hi_0_0.getParent().size() > 1)
+			return hi;
+		if ( !(hi_0_0 instanceof BinaryOp) )
+			return hi;
+
+		BinaryOp c_hi_0_0 = (BinaryOp) hi_0_0;
+
+		if ( c_hi_0_0.getOp() != Types.OpOp2.MULT || !c_hi_0_0.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_0_0_0 = hi_0_0.getInput(0);
+
+		if ( hi_0_0_0.getDataType() != Types.DataType.MATRIX || !hi_0_0_0.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_0_0_1 = hi_0_0.getInput(1);
+
+		if ( hi_0_0_1.getDataType() != Types.DataType.SCALAR || !hi_0_0_1.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_0_1 = hi_0.getInput(1);
+
+		if ( hi_0_1.getDataType() != Types.DataType.SCALAR || !hi_0_1.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_1 = hi.getInput(1);
+
+		if ( hi_1.getDataType() != Types.DataType.MATRIX || !hi_1.getValueType().isNumeric() )
+			return hi;
+
+
+		// Now, we start building the new Hop
+		System.out.println("Applying rewrite: -(+(*(D,c),a),B) => -(a,-*(B,c,D))");
+		TernaryOp v1 = HopRewriteUtils.createTernary(hi_1, hi_0_0_1, hi_0_0_0,Types.OpOp3.MINUS_MULT);
+		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0_1, v1, Types.OpOp2.MINUS);
+
+		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
+
+		for ( Hop p : parents )
+			HopRewriteUtils.replaceChildReference(p, hi, v2);
+
+		// Remove old unreferenced Hops
+		HopRewriteUtils.cleanupUnreferenced(hi);
+		HopRewriteUtils.cleanupUnreferenced(hi_0);
+		HopRewriteUtils.cleanupUnreferenced(hi_0_0);
+
+		return v2;
+	}
+
+	// Implementation of the rule -(+(a,*(c,D)),B) => -(a,-*(B,c,D))
+	private static Hop _applyRewrite518(Hop hi) {
+		if ( !(hi instanceof BinaryOp) )
+			return hi;
+
+		BinaryOp c_hi = (BinaryOp) hi;
+
+		if ( c_hi.getOp() != Types.OpOp2.MINUS || !c_hi.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_0 = hi.getInput(0);
+
+		if (hi_0.getParent().size() > 1)
+			return hi;
+		if ( !(hi_0 instanceof BinaryOp) )
+			return hi;
+
+		BinaryOp c_hi_0 = (BinaryOp) hi_0;
+
+		if ( c_hi_0.getOp() != Types.OpOp2.PLUS || !c_hi_0.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_0_0 = hi_0.getInput(0);
+
+		if ( hi_0_0.getDataType() != Types.DataType.SCALAR || !hi_0_0.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_0_1 = hi_0.getInput(1);
+
+		if (hi_0_1.getParent().size() > 1)
+			return hi;
+		if ( !(hi_0_1 instanceof BinaryOp) )
+			return hi;
+
+		BinaryOp c_hi_0_1 = (BinaryOp) hi_0_1;
+
+		if ( c_hi_0_1.getOp() != Types.OpOp2.MULT || !c_hi_0_1.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_0_1_0 = hi_0_1.getInput(0);
+
+		if ( hi_0_1_0.getDataType() != Types.DataType.SCALAR || !hi_0_1_0.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_0_1_1 = hi_0_1.getInput(1);
+
+		if ( hi_0_1_1.getDataType() != Types.DataType.MATRIX || !hi_0_1_1.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_1 = hi.getInput(1);
+
+		if ( hi_1.getDataType() != Types.DataType.MATRIX || !hi_1.getValueType().isNumeric() )
+			return hi;
+
+
+		// Now, we start building the new Hop
+		System.out.println("Applying rewrite: -(+(a,*(c,D)),B) => -(a,-*(B,c,D))");
+		TernaryOp v1 = HopRewriteUtils.createTernary(hi_1, hi_0_1_0, hi_0_1_1,Types.OpOp3.MINUS_MULT);
+		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0_0, v1, Types.OpOp2.MINUS);
+
+		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
+
+		for ( Hop p : parents )
+			HopRewriteUtils.replaceChildReference(p, hi, v2);
+
+		// Remove old unreferenced Hops
+		HopRewriteUtils.cleanupUnreferenced(hi);
+		HopRewriteUtils.cleanupUnreferenced(hi_0);
+		HopRewriteUtils.cleanupUnreferenced(hi_0_1);
+
+		return v2;
+	}
+
+	// Implementation of the rule -(+(a,*(D,c)),B) => -(a,-*(B,c,D))
+	private static Hop _applyRewrite519(Hop hi) {
+		if ( !(hi instanceof BinaryOp) )
+			return hi;
+
+		BinaryOp c_hi = (BinaryOp) hi;
+
+		if ( c_hi.getOp() != Types.OpOp2.MINUS || !c_hi.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_0 = hi.getInput(0);
+
+		if (hi_0.getParent().size() > 1)
+			return hi;
+		if ( !(hi_0 instanceof BinaryOp) )
+			return hi;
+
+		BinaryOp c_hi_0 = (BinaryOp) hi_0;
+
+		if ( c_hi_0.getOp() != Types.OpOp2.PLUS || !c_hi_0.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_0_0 = hi_0.getInput(0);
+
+		if ( hi_0_0.getDataType() != Types.DataType.SCALAR || !hi_0_0.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_0_1 = hi_0.getInput(1);
+
+		if (hi_0_1.getParent().size() > 1)
+			return hi;
+		if ( !(hi_0_1 instanceof BinaryOp) )
+			return hi;
+
+		BinaryOp c_hi_0_1 = (BinaryOp) hi_0_1;
+
+		if ( c_hi_0_1.getOp() != Types.OpOp2.MULT || !c_hi_0_1.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_0_1_0 = hi_0_1.getInput(0);
+
+		if ( hi_0_1_0.getDataType() != Types.DataType.MATRIX || !hi_0_1_0.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_0_1_1 = hi_0_1.getInput(1);
+
+		if ( hi_0_1_1.getDataType() != Types.DataType.SCALAR || !hi_0_1_1.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_1 = hi.getInput(1);
+
+		if ( hi_1.getDataType() != Types.DataType.MATRIX || !hi_1.getValueType().isNumeric() )
+			return hi;
+
+
+		// Now, we start building the new Hop
+		System.out.println("Applying rewrite: -(+(a,*(D,c)),B) => -(a,-*(B,c,D))");
+		TernaryOp v1 = HopRewriteUtils.createTernary(hi_1, hi_0_1_1, hi_0_1_0,Types.OpOp3.MINUS_MULT);
+		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0_0, v1, Types.OpOp2.MINUS);
+
+		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
+
+		for ( Hop p : parents )
+			HopRewriteUtils.replaceChildReference(p, hi, v2);
+
+		// Remove old unreferenced Hops
+		HopRewriteUtils.cleanupUnreferenced(hi);
+		HopRewriteUtils.cleanupUnreferenced(hi_0);
+		HopRewriteUtils.cleanupUnreferenced(hi_0_1);
+
+		return v2;
+	}
+
+	// Implementation of the rule -(*(c,D),-(B,a)) => -(a,-*(B,c,D))
+	private static Hop _applyRewrite520(Hop hi) {
+		if ( !(hi instanceof BinaryOp) )
+			return hi;
+
+		BinaryOp c_hi = (BinaryOp) hi;
+
+		if ( c_hi.getOp() != Types.OpOp2.MINUS || !c_hi.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_0 = hi.getInput(0);
+
+		if (hi_0.getParent().size() > 1)
+			return hi;
+		if ( !(hi_0 instanceof BinaryOp) )
+			return hi;
+
+		BinaryOp c_hi_0 = (BinaryOp) hi_0;
+
+		if ( c_hi_0.getOp() != Types.OpOp2.MULT || !c_hi_0.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_0_0 = hi_0.getInput(0);
+
+		if ( hi_0_0.getDataType() != Types.DataType.SCALAR || !hi_0_0.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_0_1 = hi_0.getInput(1);
+
+		if ( hi_0_1.getDataType() != Types.DataType.MATRIX || !hi_0_1.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_1 = hi.getInput(1);
+
+		if (hi_1.getParent().size() > 1)
+			return hi;
+		if ( !(hi_1 instanceof BinaryOp) )
+			return hi;
+
+		BinaryOp c_hi_1 = (BinaryOp) hi_1;
+
+		if ( c_hi_1.getOp() != Types.OpOp2.MINUS || !c_hi_1.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_1_0 = hi_1.getInput(0);
+
+		if ( hi_1_0.getDataType() != Types.DataType.MATRIX || !hi_1_0.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_1_1 = hi_1.getInput(1);
+
+		if ( hi_1_1.getDataType() != Types.DataType.SCALAR || !hi_1_1.getValueType().isNumeric() )
+			return hi;
+
+
+		// Now, we start building the new Hop
+		System.out.println("Applying rewrite: -(*(c,D),-(B,a)) => -(a,-*(B,c,D))");
+		TernaryOp v1 = HopRewriteUtils.createTernary(hi_1_0, hi_0_0, hi_0_1,Types.OpOp3.MINUS_MULT);
+		BinaryOp v2 = HopRewriteUtils.createBinary(hi_1_1, v1, Types.OpOp2.MINUS);
+
+		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
+
+		for ( Hop p : parents )
+			HopRewriteUtils.replaceChildReference(p, hi, v2);
+
+		// Remove old unreferenced Hops
+		HopRewriteUtils.cleanupUnreferenced(hi);
+		HopRewriteUtils.cleanupUnreferenced(hi_0);
+		HopRewriteUtils.cleanupUnreferenced(hi_1);
+
+		return v2;
+	}
+
+	// Implementation of the rule -(*(D,c),-(B,a)) => -(a,-*(B,c,D))
+	private static Hop _applyRewrite521(Hop hi) {
+		if ( !(hi instanceof BinaryOp) )
+			return hi;
+
+		BinaryOp c_hi = (BinaryOp) hi;
+
+		if ( c_hi.getOp() != Types.OpOp2.MINUS || !c_hi.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_0 = hi.getInput(0);
+
+		if (hi_0.getParent().size() > 1)
+			return hi;
+		if ( !(hi_0 instanceof BinaryOp) )
+			return hi;
+
+		BinaryOp c_hi_0 = (BinaryOp) hi_0;
+
+		if ( c_hi_0.getOp() != Types.OpOp2.MULT || !c_hi_0.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_0_0 = hi_0.getInput(0);
+
+		if ( hi_0_0.getDataType() != Types.DataType.MATRIX || !hi_0_0.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_0_1 = hi_0.getInput(1);
+
+		if ( hi_0_1.getDataType() != Types.DataType.SCALAR || !hi_0_1.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_1 = hi.getInput(1);
+
+		if (hi_1.getParent().size() > 1)
+			return hi;
+		if ( !(hi_1 instanceof BinaryOp) )
+			return hi;
+
+		BinaryOp c_hi_1 = (BinaryOp) hi_1;
+
+		if ( c_hi_1.getOp() != Types.OpOp2.MINUS || !c_hi_1.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_1_0 = hi_1.getInput(0);
+
+		if ( hi_1_0.getDataType() != Types.DataType.MATRIX || !hi_1_0.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_1_1 = hi_1.getInput(1);
+
+		if ( hi_1_1.getDataType() != Types.DataType.SCALAR || !hi_1_1.getValueType().isNumeric() )
+			return hi;
+
+
+		// Now, we start building the new Hop
+		System.out.println("Applying rewrite: -(*(D,c),-(B,a)) => -(a,-*(B,c,D))");
+		TernaryOp v1 = HopRewriteUtils.createTernary(hi_1_0, hi_0_1, hi_0_0,Types.OpOp3.MINUS_MULT);
+		BinaryOp v2 = HopRewriteUtils.createBinary(hi_1_1, v1, Types.OpOp2.MINUS);
+
+		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
+
+		for ( Hop p : parents )
+			HopRewriteUtils.replaceChildReference(p, hi, v2);
+
+		// Remove old unreferenced Hops
+		HopRewriteUtils.cleanupUnreferenced(hi);
+		HopRewriteUtils.cleanupUnreferenced(hi_0);
+		HopRewriteUtils.cleanupUnreferenced(hi_1);
+
+		return v2;
+	}
+
+	// Implementation of the rule +(-(*(c,D),B),a) => -(a,-*(B,c,D))
+	private static Hop _applyRewrite522(Hop hi) {
+		if ( !(hi instanceof BinaryOp) )
+			return hi;
+
+		BinaryOp c_hi = (BinaryOp) hi;
+
+		if ( c_hi.getOp() != Types.OpOp2.PLUS || !c_hi.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_0 = hi.getInput(0);
+
+		if (hi_0.getParent().size() > 1)
+			return hi;
+		if ( !(hi_0 instanceof BinaryOp) )
+			return hi;
+
+		BinaryOp c_hi_0 = (BinaryOp) hi_0;
+
+		if ( c_hi_0.getOp() != Types.OpOp2.MINUS || !c_hi_0.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_0_0 = hi_0.getInput(0);
+
+		if (hi_0_0.getParent().size() > 1)
+			return hi;
+		if ( !(hi_0_0 instanceof BinaryOp) )
+			return hi;
+
+		BinaryOp c_hi_0_0 = (BinaryOp) hi_0_0;
+
+		if ( c_hi_0_0.getOp() != Types.OpOp2.MULT || !c_hi_0_0.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_0_0_0 = hi_0_0.getInput(0);
+
+		if ( hi_0_0_0.getDataType() != Types.DataType.SCALAR || !hi_0_0_0.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_0_0_1 = hi_0_0.getInput(1);
+
+		if ( hi_0_0_1.getDataType() != Types.DataType.MATRIX || !hi_0_0_1.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_0_1 = hi_0.getInput(1);
+
+		if ( hi_0_1.getDataType() != Types.DataType.MATRIX || !hi_0_1.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_1 = hi.getInput(1);
+
+		if ( hi_1.getDataType() != Types.DataType.SCALAR || !hi_1.getValueType().isNumeric() )
+			return hi;
+
+
+		// Now, we start building the new Hop
+		System.out.println("Applying rewrite: +(-(*(c,D),B),a) => -(a,-*(B,c,D))");
+		TernaryOp v1 = HopRewriteUtils.createTernary(hi_0_1, hi_0_0_0, hi_0_0_1,Types.OpOp3.MINUS_MULT);
+		BinaryOp v2 = HopRewriteUtils.createBinary(hi_1, v1, Types.OpOp2.MINUS);
+
+		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
+
+		for ( Hop p : parents )
+			HopRewriteUtils.replaceChildReference(p, hi, v2);
+
+		// Remove old unreferenced Hops
+		HopRewriteUtils.cleanupUnreferenced(hi);
+		HopRewriteUtils.cleanupUnreferenced(hi_0);
+		HopRewriteUtils.cleanupUnreferenced(hi_0_0);
+
+		return v2;
+	}
+
+	// Implementation of the rule +(-(*(D,c),B),a) => -(a,-*(B,c,D))
+	private static Hop _applyRewrite523(Hop hi) {
+		if ( !(hi instanceof BinaryOp) )
+			return hi;
+
+		BinaryOp c_hi = (BinaryOp) hi;
+
+		if ( c_hi.getOp() != Types.OpOp2.PLUS || !c_hi.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_0 = hi.getInput(0);
+
+		if (hi_0.getParent().size() > 1)
+			return hi;
+		if ( !(hi_0 instanceof BinaryOp) )
+			return hi;
+
+		BinaryOp c_hi_0 = (BinaryOp) hi_0;
+
+		if ( c_hi_0.getOp() != Types.OpOp2.MINUS || !c_hi_0.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_0_0 = hi_0.getInput(0);
+
+		if (hi_0_0.getParent().size() > 1)
+			return hi;
+		if ( !(hi_0_0 instanceof BinaryOp) )
+			return hi;
+
+		BinaryOp c_hi_0_0 = (BinaryOp) hi_0_0;
+
+		if ( c_hi_0_0.getOp() != Types.OpOp2.MULT || !c_hi_0_0.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_0_0_0 = hi_0_0.getInput(0);
+
+		if ( hi_0_0_0.getDataType() != Types.DataType.MATRIX || !hi_0_0_0.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_0_0_1 = hi_0_0.getInput(1);
+
+		if ( hi_0_0_1.getDataType() != Types.DataType.SCALAR || !hi_0_0_1.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_0_1 = hi_0.getInput(1);
+
+		if ( hi_0_1.getDataType() != Types.DataType.MATRIX || !hi_0_1.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_1 = hi.getInput(1);
+
+		if ( hi_1.getDataType() != Types.DataType.SCALAR || !hi_1.getValueType().isNumeric() )
+			return hi;
+
+
+		// Now, we start building the new Hop
+		System.out.println("Applying rewrite: +(-(*(D,c),B),a) => -(a,-*(B,c,D))");
+		TernaryOp v1 = HopRewriteUtils.createTernary(hi_0_1, hi_0_0_1, hi_0_0_0,Types.OpOp3.MINUS_MULT);
+		BinaryOp v2 = HopRewriteUtils.createBinary(hi_1, v1, Types.OpOp2.MINUS);
+
+		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
+
+		for ( Hop p : parents )
+			HopRewriteUtils.replaceChildReference(p, hi, v2);
+
+		// Remove old unreferenced Hops
+		HopRewriteUtils.cleanupUnreferenced(hi);
+		HopRewriteUtils.cleanupUnreferenced(hi_0);
+		HopRewriteUtils.cleanupUnreferenced(hi_0_0);
+
+		return v2;
+	}
+
+	// Implementation of the rule +(a,-(*(c,D),B)) => -(a,-*(B,c,D))
+	private static Hop _applyRewrite524(Hop hi) {
+		if ( !(hi instanceof BinaryOp) )
+			return hi;
+
+		BinaryOp c_hi = (BinaryOp) hi;
+
+		if ( c_hi.getOp() != Types.OpOp2.PLUS || !c_hi.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_0 = hi.getInput(0);
+
+		if ( hi_0.getDataType() != Types.DataType.SCALAR || !hi_0.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_1 = hi.getInput(1);
+
+		if (hi_1.getParent().size() > 1)
+			return hi;
+		if ( !(hi_1 instanceof BinaryOp) )
+			return hi;
+
+		BinaryOp c_hi_1 = (BinaryOp) hi_1;
+
+		if ( c_hi_1.getOp() != Types.OpOp2.MINUS || !c_hi_1.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_1_0 = hi_1.getInput(0);
+
+		if (hi_1_0.getParent().size() > 1)
+			return hi;
+		if ( !(hi_1_0 instanceof BinaryOp) )
+			return hi;
+
+		BinaryOp c_hi_1_0 = (BinaryOp) hi_1_0;
+
+		if ( c_hi_1_0.getOp() != Types.OpOp2.MULT || !c_hi_1_0.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_1_0_0 = hi_1_0.getInput(0);
+
+		if ( hi_1_0_0.getDataType() != Types.DataType.SCALAR || !hi_1_0_0.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_1_0_1 = hi_1_0.getInput(1);
+
+		if ( hi_1_0_1.getDataType() != Types.DataType.MATRIX || !hi_1_0_1.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_1_1 = hi_1.getInput(1);
+
+		if ( hi_1_1.getDataType() != Types.DataType.MATRIX || !hi_1_1.getValueType().isNumeric() )
+			return hi;
+
+
+		// Now, we start building the new Hop
+		System.out.println("Applying rewrite: +(a,-(*(c,D),B)) => -(a,-*(B,c,D))");
+		TernaryOp v1 = HopRewriteUtils.createTernary(hi_1_1, hi_1_0_0, hi_1_0_1,Types.OpOp3.MINUS_MULT);
+		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0, v1, Types.OpOp2.MINUS);
+
+		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
+
+		for ( Hop p : parents )
+			HopRewriteUtils.replaceChildReference(p, hi, v2);
+
+		// Remove old unreferenced Hops
+		HopRewriteUtils.cleanupUnreferenced(hi);
+		HopRewriteUtils.cleanupUnreferenced(hi_1);
+		HopRewriteUtils.cleanupUnreferenced(hi_1_0);
+
+		return v2;
+	}
+
+	// Implementation of the rule +(a,-(*(D,c),B)) => -(a,-*(B,c,D))
+	private static Hop _applyRewrite525(Hop hi) {
+		if ( !(hi instanceof BinaryOp) )
+			return hi;
+
+		BinaryOp c_hi = (BinaryOp) hi;
+
+		if ( c_hi.getOp() != Types.OpOp2.PLUS || !c_hi.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_0 = hi.getInput(0);
+
+		if ( hi_0.getDataType() != Types.DataType.SCALAR || !hi_0.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_1 = hi.getInput(1);
+
+		if (hi_1.getParent().size() > 1)
+			return hi;
+		if ( !(hi_1 instanceof BinaryOp) )
+			return hi;
+
+		BinaryOp c_hi_1 = (BinaryOp) hi_1;
+
+		if ( c_hi_1.getOp() != Types.OpOp2.MINUS || !c_hi_1.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_1_0 = hi_1.getInput(0);
+
+		if (hi_1_0.getParent().size() > 1)
+			return hi;
+		if ( !(hi_1_0 instanceof BinaryOp) )
+			return hi;
+
+		BinaryOp c_hi_1_0 = (BinaryOp) hi_1_0;
+
+		if ( c_hi_1_0.getOp() != Types.OpOp2.MULT || !c_hi_1_0.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_1_0_0 = hi_1_0.getInput(0);
+
+		if ( hi_1_0_0.getDataType() != Types.DataType.MATRIX || !hi_1_0_0.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_1_0_1 = hi_1_0.getInput(1);
+
+		if ( hi_1_0_1.getDataType() != Types.DataType.SCALAR || !hi_1_0_1.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_1_1 = hi_1.getInput(1);
+
+		if ( hi_1_1.getDataType() != Types.DataType.MATRIX || !hi_1_1.getValueType().isNumeric() )
+			return hi;
+
+
+		// Now, we start building the new Hop
+		System.out.println("Applying rewrite: +(a,-(*(D,c),B)) => -(a,-*(B,c,D))");
+		TernaryOp v1 = HopRewriteUtils.createTernary(hi_1_1, hi_1_0_1, hi_1_0_0,Types.OpOp3.MINUS_MULT);
+		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0, v1, Types.OpOp2.MINUS);
+
+		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
+
+		for ( Hop p : parents )
+			HopRewriteUtils.replaceChildReference(p, hi, v2);
+
+		// Remove old unreferenced Hops
+		HopRewriteUtils.cleanupUnreferenced(hi);
+		HopRewriteUtils.cleanupUnreferenced(hi_1);
+		HopRewriteUtils.cleanupUnreferenced(hi_1_0);
+
+		return v2;
+	}
+
+	// Implementation of the rule -(A,-(d,*(b,C))) => -(+*(A,b,C),d)
+	private static Hop _applyRewrite526(Hop hi) {
+		if ( !(hi instanceof BinaryOp) )
+			return hi;
+
+		BinaryOp c_hi = (BinaryOp) hi;
+
+		if ( c_hi.getOp() != Types.OpOp2.MINUS || !c_hi.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_0 = hi.getInput(0);
+
+		if ( hi_0.getDataType() != Types.DataType.MATRIX || !hi_0.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_1 = hi.getInput(1);
+
+		if (hi_1.getParent().size() > 1)
+			return hi;
+		if ( !(hi_1 instanceof BinaryOp) )
+			return hi;
+
+		BinaryOp c_hi_1 = (BinaryOp) hi_1;
+
+		if ( c_hi_1.getOp() != Types.OpOp2.MINUS || !c_hi_1.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_1_0 = hi_1.getInput(0);
+
+		if ( hi_1_0.getDataType() != Types.DataType.SCALAR || !hi_1_0.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_1_1 = hi_1.getInput(1);
+
+		if (hi_1_1.getParent().size() > 1)
+			return hi;
+		if ( !(hi_1_1 instanceof BinaryOp) )
+			return hi;
+
+		BinaryOp c_hi_1_1 = (BinaryOp) hi_1_1;
+
+		if ( c_hi_1_1.getOp() != Types.OpOp2.MULT || !c_hi_1_1.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_1_1_0 = hi_1_1.getInput(0);
+
+		if ( hi_1_1_0.getDataType() != Types.DataType.SCALAR || !hi_1_1_0.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_1_1_1 = hi_1_1.getInput(1);
+
+		if ( hi_1_1_1.getDataType() != Types.DataType.MATRIX || !hi_1_1_1.getValueType().isNumeric() )
+			return hi;
+
+
+		// Now, we start building the new Hop
+		System.out.println("Applying rewrite: -(A,-(d,*(b,C))) => -(+*(A,b,C),d)");
+		TernaryOp v1 = HopRewriteUtils.createTernary(hi_0, hi_1_1_0, hi_1_1_1,Types.OpOp3.PLUS_MULT);
+		BinaryOp v2 = HopRewriteUtils.createBinary(v1, hi_1_0, Types.OpOp2.MINUS);
+
+		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
+
+		for ( Hop p : parents )
+			HopRewriteUtils.replaceChildReference(p, hi, v2);
+
+		// Remove old unreferenced Hops
+		HopRewriteUtils.cleanupUnreferenced(hi);
+		HopRewriteUtils.cleanupUnreferenced(hi_1);
+		HopRewriteUtils.cleanupUnreferenced(hi_1_1);
+
+		return v2;
+	}
+
+	// Implementation of the rule -(A,-(d,*(C,b))) => -(+*(A,b,C),d)
+	private static Hop _applyRewrite527(Hop hi) {
+		if ( !(hi instanceof BinaryOp) )
+			return hi;
+
+		BinaryOp c_hi = (BinaryOp) hi;
+
+		if ( c_hi.getOp() != Types.OpOp2.MINUS || !c_hi.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_0 = hi.getInput(0);
+
+		if ( hi_0.getDataType() != Types.DataType.MATRIX || !hi_0.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_1 = hi.getInput(1);
+
+		if (hi_1.getParent().size() > 1)
+			return hi;
+		if ( !(hi_1 instanceof BinaryOp) )
+			return hi;
+
+		BinaryOp c_hi_1 = (BinaryOp) hi_1;
+
+		if ( c_hi_1.getOp() != Types.OpOp2.MINUS || !c_hi_1.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_1_0 = hi_1.getInput(0);
+
+		if ( hi_1_0.getDataType() != Types.DataType.SCALAR || !hi_1_0.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_1_1 = hi_1.getInput(1);
+
+		if (hi_1_1.getParent().size() > 1)
+			return hi;
+		if ( !(hi_1_1 instanceof BinaryOp) )
+			return hi;
+
+		BinaryOp c_hi_1_1 = (BinaryOp) hi_1_1;
+
+		if ( c_hi_1_1.getOp() != Types.OpOp2.MULT || !c_hi_1_1.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_1_1_0 = hi_1_1.getInput(0);
+
+		if ( hi_1_1_0.getDataType() != Types.DataType.MATRIX || !hi_1_1_0.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_1_1_1 = hi_1_1.getInput(1);
+
+		if ( hi_1_1_1.getDataType() != Types.DataType.SCALAR || !hi_1_1_1.getValueType().isNumeric() )
+			return hi;
+
+
+		// Now, we start building the new Hop
+		System.out.println("Applying rewrite: -(A,-(d,*(C,b))) => -(+*(A,b,C),d)");
+		TernaryOp v1 = HopRewriteUtils.createTernary(hi_0, hi_1_1_1, hi_1_1_0,Types.OpOp3.PLUS_MULT);
+		BinaryOp v2 = HopRewriteUtils.createBinary(v1, hi_1_0, Types.OpOp2.MINUS);
+
+		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
+
+		for ( Hop p : parents )
+			HopRewriteUtils.replaceChildReference(p, hi, v2);
+
+		// Remove old unreferenced Hops
+		HopRewriteUtils.cleanupUnreferenced(hi);
+		HopRewriteUtils.cleanupUnreferenced(hi_1);
+		HopRewriteUtils.cleanupUnreferenced(hi_1_1);
+
+		return v2;
+	}
+
+	// Implementation of the rule -(*(b,C),-(d,A)) => -(+*(A,b,C),d)
+	private static Hop _applyRewrite528(Hop hi) {
+		if ( !(hi instanceof BinaryOp) )
+			return hi;
+
+		BinaryOp c_hi = (BinaryOp) hi;
+
+		if ( c_hi.getOp() != Types.OpOp2.MINUS || !c_hi.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_0 = hi.getInput(0);
+
+		if (hi_0.getParent().size() > 1)
+			return hi;
+		if ( !(hi_0 instanceof BinaryOp) )
+			return hi;
+
+		BinaryOp c_hi_0 = (BinaryOp) hi_0;
+
+		if ( c_hi_0.getOp() != Types.OpOp2.MULT || !c_hi_0.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_0_0 = hi_0.getInput(0);
+
+		if ( hi_0_0.getDataType() != Types.DataType.SCALAR || !hi_0_0.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_0_1 = hi_0.getInput(1);
+
+		if ( hi_0_1.getDataType() != Types.DataType.MATRIX || !hi_0_1.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_1 = hi.getInput(1);
+
+		if (hi_1.getParent().size() > 1)
+			return hi;
+		if ( !(hi_1 instanceof BinaryOp) )
+			return hi;
+
+		BinaryOp c_hi_1 = (BinaryOp) hi_1;
+
+		if ( c_hi_1.getOp() != Types.OpOp2.MINUS || !c_hi_1.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_1_0 = hi_1.getInput(0);
+
+		if ( hi_1_0.getDataType() != Types.DataType.SCALAR || !hi_1_0.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_1_1 = hi_1.getInput(1);
+
+		if ( hi_1_1.getDataType() != Types.DataType.MATRIX || !hi_1_1.getValueType().isNumeric() )
+			return hi;
+
+
+		// Now, we start building the new Hop
+		System.out.println("Applying rewrite: -(*(b,C),-(d,A)) => -(+*(A,b,C),d)");
+		TernaryOp v1 = HopRewriteUtils.createTernary(hi_1_1, hi_0_0, hi_0_1,Types.OpOp3.PLUS_MULT);
+		BinaryOp v2 = HopRewriteUtils.createBinary(v1, hi_1_0, Types.OpOp2.MINUS);
+
+		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
+
+		for ( Hop p : parents )
+			HopRewriteUtils.replaceChildReference(p, hi, v2);
+
+		// Remove old unreferenced Hops
+		HopRewriteUtils.cleanupUnreferenced(hi);
+		HopRewriteUtils.cleanupUnreferenced(hi_0);
+		HopRewriteUtils.cleanupUnreferenced(hi_1);
+
+		return v2;
+	}
+
+	// Implementation of the rule -(*(C,b),-(d,A)) => -(+*(A,b,C),d)
+	private static Hop _applyRewrite529(Hop hi) {
+		if ( !(hi instanceof BinaryOp) )
+			return hi;
+
+		BinaryOp c_hi = (BinaryOp) hi;
+
+		if ( c_hi.getOp() != Types.OpOp2.MINUS || !c_hi.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_0 = hi.getInput(0);
+
+		if (hi_0.getParent().size() > 1)
+			return hi;
+		if ( !(hi_0 instanceof BinaryOp) )
+			return hi;
+
+		BinaryOp c_hi_0 = (BinaryOp) hi_0;
+
+		if ( c_hi_0.getOp() != Types.OpOp2.MULT || !c_hi_0.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_0_0 = hi_0.getInput(0);
+
+		if ( hi_0_0.getDataType() != Types.DataType.MATRIX || !hi_0_0.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_0_1 = hi_0.getInput(1);
+
+		if ( hi_0_1.getDataType() != Types.DataType.SCALAR || !hi_0_1.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_1 = hi.getInput(1);
+
+		if (hi_1.getParent().size() > 1)
+			return hi;
+		if ( !(hi_1 instanceof BinaryOp) )
+			return hi;
+
+		BinaryOp c_hi_1 = (BinaryOp) hi_1;
+
+		if ( c_hi_1.getOp() != Types.OpOp2.MINUS || !c_hi_1.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_1_0 = hi_1.getInput(0);
+
+		if ( hi_1_0.getDataType() != Types.DataType.SCALAR || !hi_1_0.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_1_1 = hi_1.getInput(1);
+
+		if ( hi_1_1.getDataType() != Types.DataType.MATRIX || !hi_1_1.getValueType().isNumeric() )
+			return hi;
+
+
+		// Now, we start building the new Hop
+		System.out.println("Applying rewrite: -(*(C,b),-(d,A)) => -(+*(A,b,C),d)");
+		TernaryOp v1 = HopRewriteUtils.createTernary(hi_1_1, hi_0_1, hi_0_0,Types.OpOp3.PLUS_MULT);
+		BinaryOp v2 = HopRewriteUtils.createBinary(v1, hi_1_0, Types.OpOp2.MINUS);
+
+		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
+
+		for ( Hop p : parents )
+			HopRewriteUtils.replaceChildReference(p, hi, v2);
+
+		// Remove old unreferenced Hops
+		HopRewriteUtils.cleanupUnreferenced(hi);
+		HopRewriteUtils.cleanupUnreferenced(hi_0);
+		HopRewriteUtils.cleanupUnreferenced(hi_1);
+
+		return v2;
+	}
+
+	// Implementation of the rule +(-(*(b,C),d),A) => -(+*(A,b,C),d)
+	private static Hop _applyRewrite530(Hop hi) {
+		if ( !(hi instanceof BinaryOp) )
+			return hi;
+
+		BinaryOp c_hi = (BinaryOp) hi;
+
+		if ( c_hi.getOp() != Types.OpOp2.PLUS || !c_hi.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_0 = hi.getInput(0);
+
+		if (hi_0.getParent().size() > 1)
+			return hi;
+		if ( !(hi_0 instanceof BinaryOp) )
+			return hi;
+
+		BinaryOp c_hi_0 = (BinaryOp) hi_0;
+
+		if ( c_hi_0.getOp() != Types.OpOp2.MINUS || !c_hi_0.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_0_0 = hi_0.getInput(0);
+
+		if (hi_0_0.getParent().size() > 1)
+			return hi;
+		if ( !(hi_0_0 instanceof BinaryOp) )
+			return hi;
+
+		BinaryOp c_hi_0_0 = (BinaryOp) hi_0_0;
+
+		if ( c_hi_0_0.getOp() != Types.OpOp2.MULT || !c_hi_0_0.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_0_0_0 = hi_0_0.getInput(0);
+
+		if ( hi_0_0_0.getDataType() != Types.DataType.SCALAR || !hi_0_0_0.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_0_0_1 = hi_0_0.getInput(1);
+
+		if ( hi_0_0_1.getDataType() != Types.DataType.MATRIX || !hi_0_0_1.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_0_1 = hi_0.getInput(1);
+
+		if ( hi_0_1.getDataType() != Types.DataType.SCALAR || !hi_0_1.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_1 = hi.getInput(1);
+
+		if ( hi_1.getDataType() != Types.DataType.MATRIX || !hi_1.getValueType().isNumeric() )
+			return hi;
+
+
+		// Now, we start building the new Hop
+		System.out.println("Applying rewrite: +(-(*(b,C),d),A) => -(+*(A,b,C),d)");
+		TernaryOp v1 = HopRewriteUtils.createTernary(hi_1, hi_0_0_0, hi_0_0_1,Types.OpOp3.PLUS_MULT);
+		BinaryOp v2 = HopRewriteUtils.createBinary(v1, hi_0_1, Types.OpOp2.MINUS);
+
+		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
+
+		for ( Hop p : parents )
+			HopRewriteUtils.replaceChildReference(p, hi, v2);
+
+		// Remove old unreferenced Hops
+		HopRewriteUtils.cleanupUnreferenced(hi);
+		HopRewriteUtils.cleanupUnreferenced(hi_0);
+		HopRewriteUtils.cleanupUnreferenced(hi_0_0);
+
+		return v2;
+	}
+
+	// Implementation of the rule +(-(*(C,b),d),A) => -(+*(A,b,C),d)
+	private static Hop _applyRewrite531(Hop hi) {
+		if ( !(hi instanceof BinaryOp) )
+			return hi;
+
+		BinaryOp c_hi = (BinaryOp) hi;
+
+		if ( c_hi.getOp() != Types.OpOp2.PLUS || !c_hi.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_0 = hi.getInput(0);
+
+		if (hi_0.getParent().size() > 1)
+			return hi;
+		if ( !(hi_0 instanceof BinaryOp) )
+			return hi;
+
+		BinaryOp c_hi_0 = (BinaryOp) hi_0;
+
+		if ( c_hi_0.getOp() != Types.OpOp2.MINUS || !c_hi_0.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_0_0 = hi_0.getInput(0);
+
+		if (hi_0_0.getParent().size() > 1)
+			return hi;
+		if ( !(hi_0_0 instanceof BinaryOp) )
+			return hi;
+
+		BinaryOp c_hi_0_0 = (BinaryOp) hi_0_0;
+
+		if ( c_hi_0_0.getOp() != Types.OpOp2.MULT || !c_hi_0_0.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_0_0_0 = hi_0_0.getInput(0);
+
+		if ( hi_0_0_0.getDataType() != Types.DataType.MATRIX || !hi_0_0_0.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_0_0_1 = hi_0_0.getInput(1);
+
+		if ( hi_0_0_1.getDataType() != Types.DataType.SCALAR || !hi_0_0_1.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_0_1 = hi_0.getInput(1);
+
+		if ( hi_0_1.getDataType() != Types.DataType.SCALAR || !hi_0_1.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_1 = hi.getInput(1);
+
+		if ( hi_1.getDataType() != Types.DataType.MATRIX || !hi_1.getValueType().isNumeric() )
+			return hi;
+
+
+		// Now, we start building the new Hop
+		System.out.println("Applying rewrite: +(-(*(C,b),d),A) => -(+*(A,b,C),d)");
+		TernaryOp v1 = HopRewriteUtils.createTernary(hi_1, hi_0_0_1, hi_0_0_0,Types.OpOp3.PLUS_MULT);
+		BinaryOp v2 = HopRewriteUtils.createBinary(v1, hi_0_1, Types.OpOp2.MINUS);
+
+		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
+
+		for ( Hop p : parents )
+			HopRewriteUtils.replaceChildReference(p, hi, v2);
+
+		// Remove old unreferenced Hops
+		HopRewriteUtils.cleanupUnreferenced(hi);
+		HopRewriteUtils.cleanupUnreferenced(hi_0);
+		HopRewriteUtils.cleanupUnreferenced(hi_0_0);
+
+		return v2;
+	}
+
+	// Implementation of the rule +(A,-(*(b,C),d)) => -(+*(A,b,C),d)
+	private static Hop _applyRewrite532(Hop hi) {
+		if ( !(hi instanceof BinaryOp) )
+			return hi;
+
+		BinaryOp c_hi = (BinaryOp) hi;
+
+		if ( c_hi.getOp() != Types.OpOp2.PLUS || !c_hi.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_0 = hi.getInput(0);
+
+		if ( hi_0.getDataType() != Types.DataType.MATRIX || !hi_0.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_1 = hi.getInput(1);
+
+		if (hi_1.getParent().size() > 1)
+			return hi;
+		if ( !(hi_1 instanceof BinaryOp) )
+			return hi;
+
+		BinaryOp c_hi_1 = (BinaryOp) hi_1;
+
+		if ( c_hi_1.getOp() != Types.OpOp2.MINUS || !c_hi_1.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_1_0 = hi_1.getInput(0);
+
+		if (hi_1_0.getParent().size() > 1)
+			return hi;
+		if ( !(hi_1_0 instanceof BinaryOp) )
+			return hi;
+
+		BinaryOp c_hi_1_0 = (BinaryOp) hi_1_0;
+
+		if ( c_hi_1_0.getOp() != Types.OpOp2.MULT || !c_hi_1_0.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_1_0_0 = hi_1_0.getInput(0);
+
+		if ( hi_1_0_0.getDataType() != Types.DataType.SCALAR || !hi_1_0_0.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_1_0_1 = hi_1_0.getInput(1);
+
+		if ( hi_1_0_1.getDataType() != Types.DataType.MATRIX || !hi_1_0_1.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_1_1 = hi_1.getInput(1);
+
+		if ( hi_1_1.getDataType() != Types.DataType.SCALAR || !hi_1_1.getValueType().isNumeric() )
+			return hi;
+
+
+		// Now, we start building the new Hop
+		System.out.println("Applying rewrite: +(A,-(*(b,C),d)) => -(+*(A,b,C),d)");
+		TernaryOp v1 = HopRewriteUtils.createTernary(hi_0, hi_1_0_0, hi_1_0_1,Types.OpOp3.PLUS_MULT);
+		BinaryOp v2 = HopRewriteUtils.createBinary(v1, hi_1_1, Types.OpOp2.MINUS);
+
+		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
+
+		for ( Hop p : parents )
+			HopRewriteUtils.replaceChildReference(p, hi, v2);
+
+		// Remove old unreferenced Hops
+		HopRewriteUtils.cleanupUnreferenced(hi);
+		HopRewriteUtils.cleanupUnreferenced(hi_1);
+		HopRewriteUtils.cleanupUnreferenced(hi_1_0);
+
+		return v2;
+	}
+
+	// Implementation of the rule +(A,-(*(C,b),d)) => -(+*(A,b,C),d)
+	private static Hop _applyRewrite533(Hop hi) {
+		if ( !(hi instanceof BinaryOp) )
+			return hi;
+
+		BinaryOp c_hi = (BinaryOp) hi;
+
+		if ( c_hi.getOp() != Types.OpOp2.PLUS || !c_hi.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_0 = hi.getInput(0);
+
+		if ( hi_0.getDataType() != Types.DataType.MATRIX || !hi_0.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_1 = hi.getInput(1);
+
+		if (hi_1.getParent().size() > 1)
+			return hi;
+		if ( !(hi_1 instanceof BinaryOp) )
+			return hi;
+
+		BinaryOp c_hi_1 = (BinaryOp) hi_1;
+
+		if ( c_hi_1.getOp() != Types.OpOp2.MINUS || !c_hi_1.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_1_0 = hi_1.getInput(0);
+
+		if (hi_1_0.getParent().size() > 1)
+			return hi;
+		if ( !(hi_1_0 instanceof BinaryOp) )
+			return hi;
+
+		BinaryOp c_hi_1_0 = (BinaryOp) hi_1_0;
+
+		if ( c_hi_1_0.getOp() != Types.OpOp2.MULT || !c_hi_1_0.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_1_0_0 = hi_1_0.getInput(0);
+
+		if ( hi_1_0_0.getDataType() != Types.DataType.MATRIX || !hi_1_0_0.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_1_0_1 = hi_1_0.getInput(1);
+
+		if ( hi_1_0_1.getDataType() != Types.DataType.SCALAR || !hi_1_0_1.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_1_1 = hi_1.getInput(1);
+
+		if ( hi_1_1.getDataType() != Types.DataType.SCALAR || !hi_1_1.getValueType().isNumeric() )
+			return hi;
+
+
+		// Now, we start building the new Hop
+		System.out.println("Applying rewrite: +(A,-(*(C,b),d)) => -(+*(A,b,C),d)");
+		TernaryOp v1 = HopRewriteUtils.createTernary(hi_0, hi_1_0_1, hi_1_0_0,Types.OpOp3.PLUS_MULT);
+		BinaryOp v2 = HopRewriteUtils.createBinary(v1, hi_1_1, Types.OpOp2.MINUS);
+
+		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
+
+		for ( Hop p : parents )
+			HopRewriteUtils.replaceChildReference(p, hi, v2);
+
+		// Remove old unreferenced Hops
+		HopRewriteUtils.cleanupUnreferenced(hi);
+		HopRewriteUtils.cleanupUnreferenced(hi_1);
+		HopRewriteUtils.cleanupUnreferenced(hi_1_0);
+
+		return v2;
+	}
+
+	// Implementation of the rule -(a,-(*(c,D),B)) => +(a,-*(B,c,D))
+	private static Hop _applyRewrite534(Hop hi) {
+		if ( !(hi instanceof BinaryOp) )
+			return hi;
+
+		BinaryOp c_hi = (BinaryOp) hi;
+
+		if ( c_hi.getOp() != Types.OpOp2.MINUS || !c_hi.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_0 = hi.getInput(0);
+
+		if ( hi_0.getDataType() != Types.DataType.SCALAR || !hi_0.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_1 = hi.getInput(1);
+
+		if (hi_1.getParent().size() > 1)
+			return hi;
+		if ( !(hi_1 instanceof BinaryOp) )
+			return hi;
+
+		BinaryOp c_hi_1 = (BinaryOp) hi_1;
+
+		if ( c_hi_1.getOp() != Types.OpOp2.MINUS || !c_hi_1.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_1_0 = hi_1.getInput(0);
+
+		if (hi_1_0.getParent().size() > 1)
+			return hi;
+		if ( !(hi_1_0 instanceof BinaryOp) )
+			return hi;
+
+		BinaryOp c_hi_1_0 = (BinaryOp) hi_1_0;
+
+		if ( c_hi_1_0.getOp() != Types.OpOp2.MULT || !c_hi_1_0.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_1_0_0 = hi_1_0.getInput(0);
+
+		if ( hi_1_0_0.getDataType() != Types.DataType.SCALAR || !hi_1_0_0.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_1_0_1 = hi_1_0.getInput(1);
+
+		if ( hi_1_0_1.getDataType() != Types.DataType.MATRIX || !hi_1_0_1.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_1_1 = hi_1.getInput(1);
+
+		if ( hi_1_1.getDataType() != Types.DataType.MATRIX || !hi_1_1.getValueType().isNumeric() )
+			return hi;
+
+
+		// Now, we start building the new Hop
+		System.out.println("Applying rewrite: -(a,-(*(c,D),B)) => +(a,-*(B,c,D))");
+		TernaryOp v1 = HopRewriteUtils.createTernary(hi_1_1, hi_1_0_0, hi_1_0_1,Types.OpOp3.MINUS_MULT);
+		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0, v1, Types.OpOp2.PLUS);
+
+		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
+
+		for ( Hop p : parents )
+			HopRewriteUtils.replaceChildReference(p, hi, v2);
+
+		// Remove old unreferenced Hops
+		HopRewriteUtils.cleanupUnreferenced(hi);
+		HopRewriteUtils.cleanupUnreferenced(hi_1);
+		HopRewriteUtils.cleanupUnreferenced(hi_1_0);
+
+		return v2;
+	}
+
+	// Implementation of the rule -(a,-(*(D,c),B)) => +(a,-*(B,c,D))
+	private static Hop _applyRewrite535(Hop hi) {
+		if ( !(hi instanceof BinaryOp) )
+			return hi;
+
+		BinaryOp c_hi = (BinaryOp) hi;
+
+		if ( c_hi.getOp() != Types.OpOp2.MINUS || !c_hi.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_0 = hi.getInput(0);
+
+		if ( hi_0.getDataType() != Types.DataType.SCALAR || !hi_0.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_1 = hi.getInput(1);
+
+		if (hi_1.getParent().size() > 1)
+			return hi;
+		if ( !(hi_1 instanceof BinaryOp) )
+			return hi;
+
+		BinaryOp c_hi_1 = (BinaryOp) hi_1;
+
+		if ( c_hi_1.getOp() != Types.OpOp2.MINUS || !c_hi_1.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_1_0 = hi_1.getInput(0);
+
+		if (hi_1_0.getParent().size() > 1)
+			return hi;
+		if ( !(hi_1_0 instanceof BinaryOp) )
+			return hi;
+
+		BinaryOp c_hi_1_0 = (BinaryOp) hi_1_0;
+
+		if ( c_hi_1_0.getOp() != Types.OpOp2.MULT || !c_hi_1_0.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_1_0_0 = hi_1_0.getInput(0);
+
+		if ( hi_1_0_0.getDataType() != Types.DataType.MATRIX || !hi_1_0_0.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_1_0_1 = hi_1_0.getInput(1);
+
+		if ( hi_1_0_1.getDataType() != Types.DataType.SCALAR || !hi_1_0_1.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_1_1 = hi_1.getInput(1);
+
+		if ( hi_1_1.getDataType() != Types.DataType.MATRIX || !hi_1_1.getValueType().isNumeric() )
+			return hi;
+
+
+		// Now, we start building the new Hop
+		System.out.println("Applying rewrite: -(a,-(*(D,c),B)) => +(a,-*(B,c,D))");
+		TernaryOp v1 = HopRewriteUtils.createTernary(hi_1_1, hi_1_0_1, hi_1_0_0,Types.OpOp3.MINUS_MULT);
+		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0, v1, Types.OpOp2.PLUS);
+
+		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
+
+		for ( Hop p : parents )
+			HopRewriteUtils.replaceChildReference(p, hi, v2);
+
+		// Remove old unreferenced Hops
+		HopRewriteUtils.cleanupUnreferenced(hi);
+		HopRewriteUtils.cleanupUnreferenced(hi_1);
+		HopRewriteUtils.cleanupUnreferenced(hi_1_0);
+
+		return v2;
+	}
+
+	// Implementation of the rule -(B,-(*(c,D),a)) => +(a,-*(B,c,D))
+	private static Hop _applyRewrite536(Hop hi) {
+		if ( !(hi instanceof BinaryOp) )
+			return hi;
+
+		BinaryOp c_hi = (BinaryOp) hi;
+
+		if ( c_hi.getOp() != Types.OpOp2.MINUS || !c_hi.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_0 = hi.getInput(0);
+
+		if ( hi_0.getDataType() != Types.DataType.MATRIX || !hi_0.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_1 = hi.getInput(1);
+
+		if (hi_1.getParent().size() > 1)
+			return hi;
+		if ( !(hi_1 instanceof BinaryOp) )
+			return hi;
+
+		BinaryOp c_hi_1 = (BinaryOp) hi_1;
+
+		if ( c_hi_1.getOp() != Types.OpOp2.MINUS || !c_hi_1.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_1_0 = hi_1.getInput(0);
+
+		if (hi_1_0.getParent().size() > 1)
+			return hi;
+		if ( !(hi_1_0 instanceof BinaryOp) )
+			return hi;
+
+		BinaryOp c_hi_1_0 = (BinaryOp) hi_1_0;
+
+		if ( c_hi_1_0.getOp() != Types.OpOp2.MULT || !c_hi_1_0.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_1_0_0 = hi_1_0.getInput(0);
+
+		if ( hi_1_0_0.getDataType() != Types.DataType.SCALAR || !hi_1_0_0.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_1_0_1 = hi_1_0.getInput(1);
+
+		if ( hi_1_0_1.getDataType() != Types.DataType.MATRIX || !hi_1_0_1.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_1_1 = hi_1.getInput(1);
+
+		if ( hi_1_1.getDataType() != Types.DataType.SCALAR || !hi_1_1.getValueType().isNumeric() )
+			return hi;
+
+
+		// Now, we start building the new Hop
+		System.out.println("Applying rewrite: -(B,-(*(c,D),a)) => +(a,-*(B,c,D))");
+		TernaryOp v1 = HopRewriteUtils.createTernary(hi_0, hi_1_0_0, hi_1_0_1,Types.OpOp3.MINUS_MULT);
+		BinaryOp v2 = HopRewriteUtils.createBinary(hi_1_1, v1, Types.OpOp2.PLUS);
+
+		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
+
+		for ( Hop p : parents )
+			HopRewriteUtils.replaceChildReference(p, hi, v2);
+
+		// Remove old unreferenced Hops
+		HopRewriteUtils.cleanupUnreferenced(hi);
+		HopRewriteUtils.cleanupUnreferenced(hi_1);
+		HopRewriteUtils.cleanupUnreferenced(hi_1_0);
+
+		return v2;
+	}
+
+	// Implementation of the rule -(B,-(*(D,c),a)) => +(a,-*(B,c,D))
+	private static Hop _applyRewrite537(Hop hi) {
+		if ( !(hi instanceof BinaryOp) )
+			return hi;
+
+		BinaryOp c_hi = (BinaryOp) hi;
+
+		if ( c_hi.getOp() != Types.OpOp2.MINUS || !c_hi.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_0 = hi.getInput(0);
+
+		if ( hi_0.getDataType() != Types.DataType.MATRIX || !hi_0.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_1 = hi.getInput(1);
+
+		if (hi_1.getParent().size() > 1)
+			return hi;
+		if ( !(hi_1 instanceof BinaryOp) )
+			return hi;
+
+		BinaryOp c_hi_1 = (BinaryOp) hi_1;
+
+		if ( c_hi_1.getOp() != Types.OpOp2.MINUS || !c_hi_1.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_1_0 = hi_1.getInput(0);
+
+		if (hi_1_0.getParent().size() > 1)
+			return hi;
+		if ( !(hi_1_0 instanceof BinaryOp) )
+			return hi;
+
+		BinaryOp c_hi_1_0 = (BinaryOp) hi_1_0;
+
+		if ( c_hi_1_0.getOp() != Types.OpOp2.MULT || !c_hi_1_0.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_1_0_0 = hi_1_0.getInput(0);
+
+		if ( hi_1_0_0.getDataType() != Types.DataType.MATRIX || !hi_1_0_0.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_1_0_1 = hi_1_0.getInput(1);
+
+		if ( hi_1_0_1.getDataType() != Types.DataType.SCALAR || !hi_1_0_1.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_1_1 = hi_1.getInput(1);
+
+		if ( hi_1_1.getDataType() != Types.DataType.SCALAR || !hi_1_1.getValueType().isNumeric() )
+			return hi;
+
+
+		// Now, we start building the new Hop
+		System.out.println("Applying rewrite: -(B,-(*(D,c),a)) => +(a,-*(B,c,D))");
+		TernaryOp v1 = HopRewriteUtils.createTernary(hi_0, hi_1_0_1, hi_1_0_0,Types.OpOp3.MINUS_MULT);
+		BinaryOp v2 = HopRewriteUtils.createBinary(hi_1_1, v1, Types.OpOp2.PLUS);
+
+		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
+
+		for ( Hop p : parents )
+			HopRewriteUtils.replaceChildReference(p, hi, v2);
+
+		// Remove old unreferenced Hops
+		HopRewriteUtils.cleanupUnreferenced(hi);
+		HopRewriteUtils.cleanupUnreferenced(hi_1);
+		HopRewriteUtils.cleanupUnreferenced(hi_1_0);
+
+		return v2;
+	}
+
+	// Implementation of the rule +(-(a,*(c,D)),B) => +(a,-*(B,c,D))
+	private static Hop _applyRewrite538(Hop hi) {
+		if ( !(hi instanceof BinaryOp) )
+			return hi;
+
+		BinaryOp c_hi = (BinaryOp) hi;
+
+		if ( c_hi.getOp() != Types.OpOp2.PLUS || !c_hi.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_0 = hi.getInput(0);
+
+		if (hi_0.getParent().size() > 1)
+			return hi;
+		if ( !(hi_0 instanceof BinaryOp) )
+			return hi;
+
+		BinaryOp c_hi_0 = (BinaryOp) hi_0;
+
+		if ( c_hi_0.getOp() != Types.OpOp2.MINUS || !c_hi_0.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_0_0 = hi_0.getInput(0);
+
+		if ( hi_0_0.getDataType() != Types.DataType.SCALAR || !hi_0_0.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_0_1 = hi_0.getInput(1);
+
+		if (hi_0_1.getParent().size() > 1)
+			return hi;
+		if ( !(hi_0_1 instanceof BinaryOp) )
+			return hi;
+
+		BinaryOp c_hi_0_1 = (BinaryOp) hi_0_1;
+
+		if ( c_hi_0_1.getOp() != Types.OpOp2.MULT || !c_hi_0_1.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_0_1_0 = hi_0_1.getInput(0);
+
+		if ( hi_0_1_0.getDataType() != Types.DataType.SCALAR || !hi_0_1_0.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_0_1_1 = hi_0_1.getInput(1);
+
+		if ( hi_0_1_1.getDataType() != Types.DataType.MATRIX || !hi_0_1_1.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_1 = hi.getInput(1);
+
+		if ( hi_1.getDataType() != Types.DataType.MATRIX || !hi_1.getValueType().isNumeric() )
+			return hi;
+
+
+		// Now, we start building the new Hop
+		System.out.println("Applying rewrite: +(-(a,*(c,D)),B) => +(a,-*(B,c,D))");
+		TernaryOp v1 = HopRewriteUtils.createTernary(hi_1, hi_0_1_0, hi_0_1_1,Types.OpOp3.MINUS_MULT);
+		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0_0, v1, Types.OpOp2.PLUS);
+
+		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
+
+		for ( Hop p : parents )
+			HopRewriteUtils.replaceChildReference(p, hi, v2);
+
+		// Remove old unreferenced Hops
+		HopRewriteUtils.cleanupUnreferenced(hi);
+		HopRewriteUtils.cleanupUnreferenced(hi_0);
+		HopRewriteUtils.cleanupUnreferenced(hi_0_1);
+
+		return v2;
+	}
+
+	// Implementation of the rule +(-(a,*(D,c)),B) => +(a,-*(B,c,D))
+	private static Hop _applyRewrite539(Hop hi) {
+		if ( !(hi instanceof BinaryOp) )
+			return hi;
+
+		BinaryOp c_hi = (BinaryOp) hi;
+
+		if ( c_hi.getOp() != Types.OpOp2.PLUS || !c_hi.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_0 = hi.getInput(0);
+
+		if (hi_0.getParent().size() > 1)
+			return hi;
+		if ( !(hi_0 instanceof BinaryOp) )
+			return hi;
+
+		BinaryOp c_hi_0 = (BinaryOp) hi_0;
+
+		if ( c_hi_0.getOp() != Types.OpOp2.MINUS || !c_hi_0.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_0_0 = hi_0.getInput(0);
+
+		if ( hi_0_0.getDataType() != Types.DataType.SCALAR || !hi_0_0.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_0_1 = hi_0.getInput(1);
+
+		if (hi_0_1.getParent().size() > 1)
+			return hi;
+		if ( !(hi_0_1 instanceof BinaryOp) )
+			return hi;
+
+		BinaryOp c_hi_0_1 = (BinaryOp) hi_0_1;
+
+		if ( c_hi_0_1.getOp() != Types.OpOp2.MULT || !c_hi_0_1.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_0_1_0 = hi_0_1.getInput(0);
+
+		if ( hi_0_1_0.getDataType() != Types.DataType.MATRIX || !hi_0_1_0.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_0_1_1 = hi_0_1.getInput(1);
+
+		if ( hi_0_1_1.getDataType() != Types.DataType.SCALAR || !hi_0_1_1.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_1 = hi.getInput(1);
+
+		if ( hi_1.getDataType() != Types.DataType.MATRIX || !hi_1.getValueType().isNumeric() )
+			return hi;
+
+
+		// Now, we start building the new Hop
+		System.out.println("Applying rewrite: +(-(a,*(D,c)),B) => +(a,-*(B,c,D))");
+		TernaryOp v1 = HopRewriteUtils.createTernary(hi_1, hi_0_1_1, hi_0_1_0,Types.OpOp3.MINUS_MULT);
+		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0_0, v1, Types.OpOp2.PLUS);
+
+		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
+
+		for ( Hop p : parents )
+			HopRewriteUtils.replaceChildReference(p, hi, v2);
+
+		// Remove old unreferenced Hops
+		HopRewriteUtils.cleanupUnreferenced(hi);
+		HopRewriteUtils.cleanupUnreferenced(hi_0);
+		HopRewriteUtils.cleanupUnreferenced(hi_0_1);
+
+		return v2;
+	}
+
+	// Implementation of the rule +(B,-(a,*(c,D))) => +(a,-*(B,c,D))
+	private static Hop _applyRewrite540(Hop hi) {
+		if ( !(hi instanceof BinaryOp) )
+			return hi;
+
+		BinaryOp c_hi = (BinaryOp) hi;
+
+		if ( c_hi.getOp() != Types.OpOp2.PLUS || !c_hi.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_0 = hi.getInput(0);
+
+		if ( hi_0.getDataType() != Types.DataType.MATRIX || !hi_0.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_1 = hi.getInput(1);
+
+		if (hi_1.getParent().size() > 1)
+			return hi;
+		if ( !(hi_1 instanceof BinaryOp) )
+			return hi;
+
+		BinaryOp c_hi_1 = (BinaryOp) hi_1;
+
+		if ( c_hi_1.getOp() != Types.OpOp2.MINUS || !c_hi_1.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_1_0 = hi_1.getInput(0);
+
+		if ( hi_1_0.getDataType() != Types.DataType.SCALAR || !hi_1_0.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_1_1 = hi_1.getInput(1);
+
+		if (hi_1_1.getParent().size() > 1)
+			return hi;
+		if ( !(hi_1_1 instanceof BinaryOp) )
+			return hi;
+
+		BinaryOp c_hi_1_1 = (BinaryOp) hi_1_1;
+
+		if ( c_hi_1_1.getOp() != Types.OpOp2.MULT || !c_hi_1_1.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_1_1_0 = hi_1_1.getInput(0);
+
+		if ( hi_1_1_0.getDataType() != Types.DataType.SCALAR || !hi_1_1_0.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_1_1_1 = hi_1_1.getInput(1);
+
+		if ( hi_1_1_1.getDataType() != Types.DataType.MATRIX || !hi_1_1_1.getValueType().isNumeric() )
+			return hi;
+
+
+		// Now, we start building the new Hop
+		System.out.println("Applying rewrite: +(B,-(a,*(c,D))) => +(a,-*(B,c,D))");
+		TernaryOp v1 = HopRewriteUtils.createTernary(hi_0, hi_1_1_0, hi_1_1_1,Types.OpOp3.MINUS_MULT);
+		BinaryOp v2 = HopRewriteUtils.createBinary(hi_1_0, v1, Types.OpOp2.PLUS);
+
+		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
+
+		for ( Hop p : parents )
+			HopRewriteUtils.replaceChildReference(p, hi, v2);
+
+		// Remove old unreferenced Hops
+		HopRewriteUtils.cleanupUnreferenced(hi);
+		HopRewriteUtils.cleanupUnreferenced(hi_1);
+		HopRewriteUtils.cleanupUnreferenced(hi_1_1);
+
+		return v2;
+	}
+
+	// Implementation of the rule +(B,-(a,*(D,c))) => +(a,-*(B,c,D))
+	private static Hop _applyRewrite541(Hop hi) {
+		if ( !(hi instanceof BinaryOp) )
+			return hi;
+
+		BinaryOp c_hi = (BinaryOp) hi;
+
+		if ( c_hi.getOp() != Types.OpOp2.PLUS || !c_hi.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_0 = hi.getInput(0);
+
+		if ( hi_0.getDataType() != Types.DataType.MATRIX || !hi_0.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_1 = hi.getInput(1);
+
+		if (hi_1.getParent().size() > 1)
+			return hi;
+		if ( !(hi_1 instanceof BinaryOp) )
+			return hi;
+
+		BinaryOp c_hi_1 = (BinaryOp) hi_1;
+
+		if ( c_hi_1.getOp() != Types.OpOp2.MINUS || !c_hi_1.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_1_0 = hi_1.getInput(0);
+
+		if ( hi_1_0.getDataType() != Types.DataType.SCALAR || !hi_1_0.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_1_1 = hi_1.getInput(1);
+
+		if (hi_1_1.getParent().size() > 1)
+			return hi;
+		if ( !(hi_1_1 instanceof BinaryOp) )
+			return hi;
+
+		BinaryOp c_hi_1_1 = (BinaryOp) hi_1_1;
+
+		if ( c_hi_1_1.getOp() != Types.OpOp2.MULT || !c_hi_1_1.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_1_1_0 = hi_1_1.getInput(0);
+
+		if ( hi_1_1_0.getDataType() != Types.DataType.MATRIX || !hi_1_1_0.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_1_1_1 = hi_1_1.getInput(1);
+
+		if ( hi_1_1_1.getDataType() != Types.DataType.SCALAR || !hi_1_1_1.getValueType().isNumeric() )
+			return hi;
+
+
+		// Now, we start building the new Hop
+		System.out.println("Applying rewrite: +(B,-(a,*(D,c))) => +(a,-*(B,c,D))");
+		TernaryOp v1 = HopRewriteUtils.createTernary(hi_0, hi_1_1_1, hi_1_1_0,Types.OpOp3.MINUS_MULT);
+		BinaryOp v2 = HopRewriteUtils.createBinary(hi_1_0, v1, Types.OpOp2.PLUS);
+
+		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
+
+		for ( Hop p : parents )
+			HopRewriteUtils.replaceChildReference(p, hi, v2);
+
+		// Remove old unreferenced Hops
+		HopRewriteUtils.cleanupUnreferenced(hi);
+		HopRewriteUtils.cleanupUnreferenced(hi_1);
+		HopRewriteUtils.cleanupUnreferenced(hi_1_1);
+
+		return v2;
+	}
+
+	// Implementation of the rule -(B,-(*(c,D),A)) => +(A,-*(B,c,D))
+	private static Hop _applyRewrite542(Hop hi) {
+		if ( !(hi instanceof BinaryOp) )
+			return hi;
+
+		BinaryOp c_hi = (BinaryOp) hi;
+
+		if ( c_hi.getOp() != Types.OpOp2.MINUS || !c_hi.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_0 = hi.getInput(0);
+
+		if ( hi_0.getDataType() != Types.DataType.MATRIX || !hi_0.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_1 = hi.getInput(1);
+
+		if (hi_1.getParent().size() > 1)
+			return hi;
+		if ( !(hi_1 instanceof BinaryOp) )
+			return hi;
+
+		BinaryOp c_hi_1 = (BinaryOp) hi_1;
+
+		if ( c_hi_1.getOp() != Types.OpOp2.MINUS || !c_hi_1.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_1_0 = hi_1.getInput(0);
+
+		if (hi_1_0.getParent().size() > 1)
+			return hi;
+		if ( !(hi_1_0 instanceof BinaryOp) )
+			return hi;
+
+		BinaryOp c_hi_1_0 = (BinaryOp) hi_1_0;
+
+		if ( c_hi_1_0.getOp() != Types.OpOp2.MULT || !c_hi_1_0.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_1_0_0 = hi_1_0.getInput(0);
+
+		if ( hi_1_0_0.getDataType() != Types.DataType.SCALAR || !hi_1_0_0.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_1_0_1 = hi_1_0.getInput(1);
+
+		if ( hi_1_0_1.getDataType() != Types.DataType.MATRIX || !hi_1_0_1.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_1_1 = hi_1.getInput(1);
+
+		if ( hi_1_1.getDataType() != Types.DataType.MATRIX || !hi_1_1.getValueType().isNumeric() )
+			return hi;
+
+
+		// Now, we start building the new Hop
+		System.out.println("Applying rewrite: -(B,-(*(c,D),A)) => +(A,-*(B,c,D))");
+		TernaryOp v1 = HopRewriteUtils.createTernary(hi_0, hi_1_0_0, hi_1_0_1,Types.OpOp3.MINUS_MULT);
+		BinaryOp v2 = HopRewriteUtils.createBinary(hi_1_1, v1, Types.OpOp2.PLUS);
+
+		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
+
+		for ( Hop p : parents )
+			HopRewriteUtils.replaceChildReference(p, hi, v2);
+
+		// Remove old unreferenced Hops
+		HopRewriteUtils.cleanupUnreferenced(hi);
+		HopRewriteUtils.cleanupUnreferenced(hi_1);
+		HopRewriteUtils.cleanupUnreferenced(hi_1_0);
+
+		return v2;
+	}
+
+	// Implementation of the rule -(B,-(*(D,c),A)) => +(A,-*(B,c,D))
+	private static Hop _applyRewrite543(Hop hi) {
+		if ( !(hi instanceof BinaryOp) )
+			return hi;
+
+		BinaryOp c_hi = (BinaryOp) hi;
+
+		if ( c_hi.getOp() != Types.OpOp2.MINUS || !c_hi.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_0 = hi.getInput(0);
+
+		if ( hi_0.getDataType() != Types.DataType.MATRIX || !hi_0.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_1 = hi.getInput(1);
+
+		if (hi_1.getParent().size() > 1)
+			return hi;
+		if ( !(hi_1 instanceof BinaryOp) )
+			return hi;
+
+		BinaryOp c_hi_1 = (BinaryOp) hi_1;
+
+		if ( c_hi_1.getOp() != Types.OpOp2.MINUS || !c_hi_1.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_1_0 = hi_1.getInput(0);
+
+		if (hi_1_0.getParent().size() > 1)
+			return hi;
+		if ( !(hi_1_0 instanceof BinaryOp) )
+			return hi;
+
+		BinaryOp c_hi_1_0 = (BinaryOp) hi_1_0;
+
+		if ( c_hi_1_0.getOp() != Types.OpOp2.MULT || !c_hi_1_0.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_1_0_0 = hi_1_0.getInput(0);
+
+		if ( hi_1_0_0.getDataType() != Types.DataType.MATRIX || !hi_1_0_0.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_1_0_1 = hi_1_0.getInput(1);
+
+		if ( hi_1_0_1.getDataType() != Types.DataType.SCALAR || !hi_1_0_1.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_1_1 = hi_1.getInput(1);
+
+		if ( hi_1_1.getDataType() != Types.DataType.MATRIX || !hi_1_1.getValueType().isNumeric() )
+			return hi;
+
+
+		// Now, we start building the new Hop
+		System.out.println("Applying rewrite: -(B,-(*(D,c),A)) => +(A,-*(B,c,D))");
+		TernaryOp v1 = HopRewriteUtils.createTernary(hi_0, hi_1_0_1, hi_1_0_0,Types.OpOp3.MINUS_MULT);
+		BinaryOp v2 = HopRewriteUtils.createBinary(hi_1_1, v1, Types.OpOp2.PLUS);
+
+		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
+
+		for ( Hop p : parents )
+			HopRewriteUtils.replaceChildReference(p, hi, v2);
+
+		// Remove old unreferenced Hops
+		HopRewriteUtils.cleanupUnreferenced(hi);
+		HopRewriteUtils.cleanupUnreferenced(hi_1);
+		HopRewriteUtils.cleanupUnreferenced(hi_1_0);
+
+		return v2;
+	}
+
+	// Implementation of the rule -(*(c,D),-(B,A)) => -(A,-*(B,c,D))
+	private static Hop _applyRewrite544(Hop hi) {
+		if ( !(hi instanceof BinaryOp) )
+			return hi;
+
+		BinaryOp c_hi = (BinaryOp) hi;
+
+		if ( c_hi.getOp() != Types.OpOp2.MINUS || !c_hi.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_0 = hi.getInput(0);
+
+		if (hi_0.getParent().size() > 1)
+			return hi;
+		if ( !(hi_0 instanceof BinaryOp) )
+			return hi;
+
+		BinaryOp c_hi_0 = (BinaryOp) hi_0;
+
+		if ( c_hi_0.getOp() != Types.OpOp2.MULT || !c_hi_0.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_0_0 = hi_0.getInput(0);
+
+		if ( hi_0_0.getDataType() != Types.DataType.SCALAR || !hi_0_0.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_0_1 = hi_0.getInput(1);
+
+		if ( hi_0_1.getDataType() != Types.DataType.MATRIX || !hi_0_1.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_1 = hi.getInput(1);
+
+		if (hi_1.getParent().size() > 1)
+			return hi;
+		if ( !(hi_1 instanceof BinaryOp) )
+			return hi;
+
+		BinaryOp c_hi_1 = (BinaryOp) hi_1;
+
+		if ( c_hi_1.getOp() != Types.OpOp2.MINUS || !c_hi_1.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_1_0 = hi_1.getInput(0);
+
+		if ( hi_1_0.getDataType() != Types.DataType.MATRIX || !hi_1_0.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_1_1 = hi_1.getInput(1);
+
+		if ( hi_1_1.getDataType() != Types.DataType.MATRIX || !hi_1_1.getValueType().isNumeric() )
+			return hi;
+
+
+		// Now, we start building the new Hop
+		System.out.println("Applying rewrite: -(*(c,D),-(B,A)) => -(A,-*(B,c,D))");
+		TernaryOp v1 = HopRewriteUtils.createTernary(hi_1_0, hi_0_0, hi_0_1,Types.OpOp3.MINUS_MULT);
+		BinaryOp v2 = HopRewriteUtils.createBinary(hi_1_1, v1, Types.OpOp2.MINUS);
+
+		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
+
+		for ( Hop p : parents )
+			HopRewriteUtils.replaceChildReference(p, hi, v2);
+
+		// Remove old unreferenced Hops
+		HopRewriteUtils.cleanupUnreferenced(hi);
+		HopRewriteUtils.cleanupUnreferenced(hi_0);
+		HopRewriteUtils.cleanupUnreferenced(hi_1);
+
+		return v2;
+	}
+
+	// Implementation of the rule -(*(D,c),-(B,A)) => -(A,-*(B,c,D))
+	private static Hop _applyRewrite545(Hop hi) {
+		if ( !(hi instanceof BinaryOp) )
+			return hi;
+
+		BinaryOp c_hi = (BinaryOp) hi;
+
+		if ( c_hi.getOp() != Types.OpOp2.MINUS || !c_hi.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_0 = hi.getInput(0);
+
+		if (hi_0.getParent().size() > 1)
+			return hi;
+		if ( !(hi_0 instanceof BinaryOp) )
+			return hi;
+
+		BinaryOp c_hi_0 = (BinaryOp) hi_0;
+
+		if ( c_hi_0.getOp() != Types.OpOp2.MULT || !c_hi_0.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_0_0 = hi_0.getInput(0);
+
+		if ( hi_0_0.getDataType() != Types.DataType.MATRIX || !hi_0_0.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_0_1 = hi_0.getInput(1);
+
+		if ( hi_0_1.getDataType() != Types.DataType.SCALAR || !hi_0_1.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_1 = hi.getInput(1);
+
+		if (hi_1.getParent().size() > 1)
+			return hi;
+		if ( !(hi_1 instanceof BinaryOp) )
+			return hi;
+
+		BinaryOp c_hi_1 = (BinaryOp) hi_1;
+
+		if ( c_hi_1.getOp() != Types.OpOp2.MINUS || !c_hi_1.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_1_0 = hi_1.getInput(0);
+
+		if ( hi_1_0.getDataType() != Types.DataType.MATRIX || !hi_1_0.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_1_1 = hi_1.getInput(1);
+
+		if ( hi_1_1.getDataType() != Types.DataType.MATRIX || !hi_1_1.getValueType().isNumeric() )
+			return hi;
+
+
+		// Now, we start building the new Hop
+		System.out.println("Applying rewrite: -(*(D,c),-(B,A)) => -(A,-*(B,c,D))");
+		TernaryOp v1 = HopRewriteUtils.createTernary(hi_1_0, hi_0_1, hi_0_0,Types.OpOp3.MINUS_MULT);
+		BinaryOp v2 = HopRewriteUtils.createBinary(hi_1_1, v1, Types.OpOp2.MINUS);
+
+		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
+
+		for ( Hop p : parents )
+			HopRewriteUtils.replaceChildReference(p, hi, v2);
+
+		// Remove old unreferenced Hops
+		HopRewriteUtils.cleanupUnreferenced(hi);
+		HopRewriteUtils.cleanupUnreferenced(hi_0);
+		HopRewriteUtils.cleanupUnreferenced(hi_1);
+
+		return v2;
+	}
+
+	// Implementation of the rule +(-(*(c,D),B),A) => -(A,-*(B,c,D))
+	private static Hop _applyRewrite546(Hop hi) {
+		if ( !(hi instanceof BinaryOp) )
+			return hi;
+
+		BinaryOp c_hi = (BinaryOp) hi;
+
+		if ( c_hi.getOp() != Types.OpOp2.PLUS || !c_hi.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_0 = hi.getInput(0);
+
+		if (hi_0.getParent().size() > 1)
+			return hi;
+		if ( !(hi_0 instanceof BinaryOp) )
+			return hi;
+
+		BinaryOp c_hi_0 = (BinaryOp) hi_0;
+
+		if ( c_hi_0.getOp() != Types.OpOp2.MINUS || !c_hi_0.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_0_0 = hi_0.getInput(0);
+
+		if (hi_0_0.getParent().size() > 1)
+			return hi;
+		if ( !(hi_0_0 instanceof BinaryOp) )
+			return hi;
+
+		BinaryOp c_hi_0_0 = (BinaryOp) hi_0_0;
+
+		if ( c_hi_0_0.getOp() != Types.OpOp2.MULT || !c_hi_0_0.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_0_0_0 = hi_0_0.getInput(0);
+
+		if ( hi_0_0_0.getDataType() != Types.DataType.SCALAR || !hi_0_0_0.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_0_0_1 = hi_0_0.getInput(1);
+
+		if ( hi_0_0_1.getDataType() != Types.DataType.MATRIX || !hi_0_0_1.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_0_1 = hi_0.getInput(1);
+
+		if ( hi_0_1.getDataType() != Types.DataType.MATRIX || !hi_0_1.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_1 = hi.getInput(1);
+
+		if ( hi_1.getDataType() != Types.DataType.MATRIX || !hi_1.getValueType().isNumeric() )
+			return hi;
+
+
+		// Now, we start building the new Hop
+		System.out.println("Applying rewrite: +(-(*(c,D),B),A) => -(A,-*(B,c,D))");
+		TernaryOp v1 = HopRewriteUtils.createTernary(hi_0_1, hi_0_0_0, hi_0_0_1,Types.OpOp3.MINUS_MULT);
+		BinaryOp v2 = HopRewriteUtils.createBinary(hi_1, v1, Types.OpOp2.MINUS);
+
+		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
+
+		for ( Hop p : parents )
+			HopRewriteUtils.replaceChildReference(p, hi, v2);
+
+		// Remove old unreferenced Hops
+		HopRewriteUtils.cleanupUnreferenced(hi);
+		HopRewriteUtils.cleanupUnreferenced(hi_0);
+		HopRewriteUtils.cleanupUnreferenced(hi_0_0);
+
+		return v2;
+	}
+
+	// Implementation of the rule +(-(*(D,c),B),A) => -(A,-*(B,c,D))
+	private static Hop _applyRewrite547(Hop hi) {
+		if ( !(hi instanceof BinaryOp) )
+			return hi;
+
+		BinaryOp c_hi = (BinaryOp) hi;
+
+		if ( c_hi.getOp() != Types.OpOp2.PLUS || !c_hi.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_0 = hi.getInput(0);
+
+		if (hi_0.getParent().size() > 1)
+			return hi;
+		if ( !(hi_0 instanceof BinaryOp) )
+			return hi;
+
+		BinaryOp c_hi_0 = (BinaryOp) hi_0;
+
+		if ( c_hi_0.getOp() != Types.OpOp2.MINUS || !c_hi_0.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_0_0 = hi_0.getInput(0);
+
+		if (hi_0_0.getParent().size() > 1)
+			return hi;
+		if ( !(hi_0_0 instanceof BinaryOp) )
+			return hi;
+
+		BinaryOp c_hi_0_0 = (BinaryOp) hi_0_0;
+
+		if ( c_hi_0_0.getOp() != Types.OpOp2.MULT || !c_hi_0_0.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_0_0_0 = hi_0_0.getInput(0);
+
+		if ( hi_0_0_0.getDataType() != Types.DataType.MATRIX || !hi_0_0_0.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_0_0_1 = hi_0_0.getInput(1);
+
+		if ( hi_0_0_1.getDataType() != Types.DataType.SCALAR || !hi_0_0_1.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_0_1 = hi_0.getInput(1);
+
+		if ( hi_0_1.getDataType() != Types.DataType.MATRIX || !hi_0_1.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_1 = hi.getInput(1);
+
+		if ( hi_1.getDataType() != Types.DataType.MATRIX || !hi_1.getValueType().isNumeric() )
+			return hi;
+
+
+		// Now, we start building the new Hop
+		System.out.println("Applying rewrite: +(-(*(D,c),B),A) => -(A,-*(B,c,D))");
+		TernaryOp v1 = HopRewriteUtils.createTernary(hi_0_1, hi_0_0_1, hi_0_0_0,Types.OpOp3.MINUS_MULT);
+		BinaryOp v2 = HopRewriteUtils.createBinary(hi_1, v1, Types.OpOp2.MINUS);
+
+		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
+
+		for ( Hop p : parents )
+			HopRewriteUtils.replaceChildReference(p, hi, v2);
+
+		// Remove old unreferenced Hops
+		HopRewriteUtils.cleanupUnreferenced(hi);
+		HopRewriteUtils.cleanupUnreferenced(hi_0);
+		HopRewriteUtils.cleanupUnreferenced(hi_0_0);
+
+		return v2;
+	}
+
+	// Implementation of the rule +(A,-(*(c,D),B)) => -(A,-*(B,c,D))
+	private static Hop _applyRewrite548(Hop hi) {
+		if ( !(hi instanceof BinaryOp) )
+			return hi;
+
+		BinaryOp c_hi = (BinaryOp) hi;
+
+		if ( c_hi.getOp() != Types.OpOp2.PLUS || !c_hi.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_0 = hi.getInput(0);
+
+		if ( hi_0.getDataType() != Types.DataType.MATRIX || !hi_0.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_1 = hi.getInput(1);
+
+		if (hi_1.getParent().size() > 1)
+			return hi;
+		if ( !(hi_1 instanceof BinaryOp) )
+			return hi;
+
+		BinaryOp c_hi_1 = (BinaryOp) hi_1;
+
+		if ( c_hi_1.getOp() != Types.OpOp2.MINUS || !c_hi_1.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_1_0 = hi_1.getInput(0);
+
+		if (hi_1_0.getParent().size() > 1)
+			return hi;
+		if ( !(hi_1_0 instanceof BinaryOp) )
+			return hi;
+
+		BinaryOp c_hi_1_0 = (BinaryOp) hi_1_0;
+
+		if ( c_hi_1_0.getOp() != Types.OpOp2.MULT || !c_hi_1_0.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_1_0_0 = hi_1_0.getInput(0);
+
+		if ( hi_1_0_0.getDataType() != Types.DataType.SCALAR || !hi_1_0_0.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_1_0_1 = hi_1_0.getInput(1);
+
+		if ( hi_1_0_1.getDataType() != Types.DataType.MATRIX || !hi_1_0_1.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_1_1 = hi_1.getInput(1);
+
+		if ( hi_1_1.getDataType() != Types.DataType.MATRIX || !hi_1_1.getValueType().isNumeric() )
+			return hi;
+
+
+		// Now, we start building the new Hop
+		System.out.println("Applying rewrite: +(A,-(*(c,D),B)) => -(A,-*(B,c,D))");
+		TernaryOp v1 = HopRewriteUtils.createTernary(hi_1_1, hi_1_0_0, hi_1_0_1,Types.OpOp3.MINUS_MULT);
+		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0, v1, Types.OpOp2.MINUS);
+
+		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
+
+		for ( Hop p : parents )
+			HopRewriteUtils.replaceChildReference(p, hi, v2);
+
+		// Remove old unreferenced Hops
+		HopRewriteUtils.cleanupUnreferenced(hi);
+		HopRewriteUtils.cleanupUnreferenced(hi_1);
+		HopRewriteUtils.cleanupUnreferenced(hi_1_0);
+
+		return v2;
+	}
+
+	// Implementation of the rule +(A,-(*(D,c),B)) => -(A,-*(B,c,D))
+	private static Hop _applyRewrite549(Hop hi) {
+		if ( !(hi instanceof BinaryOp) )
+			return hi;
+
+		BinaryOp c_hi = (BinaryOp) hi;
+
+		if ( c_hi.getOp() != Types.OpOp2.PLUS || !c_hi.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_0 = hi.getInput(0);
+
+		if ( hi_0.getDataType() != Types.DataType.MATRIX || !hi_0.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_1 = hi.getInput(1);
+
+		if (hi_1.getParent().size() > 1)
+			return hi;
+		if ( !(hi_1 instanceof BinaryOp) )
+			return hi;
+
+		BinaryOp c_hi_1 = (BinaryOp) hi_1;
+
+		if ( c_hi_1.getOp() != Types.OpOp2.MINUS || !c_hi_1.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_1_0 = hi_1.getInput(0);
+
+		if (hi_1_0.getParent().size() > 1)
+			return hi;
+		if ( !(hi_1_0 instanceof BinaryOp) )
+			return hi;
+
+		BinaryOp c_hi_1_0 = (BinaryOp) hi_1_0;
+
+		if ( c_hi_1_0.getOp() != Types.OpOp2.MULT || !c_hi_1_0.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_1_0_0 = hi_1_0.getInput(0);
+
+		if ( hi_1_0_0.getDataType() != Types.DataType.MATRIX || !hi_1_0_0.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_1_0_1 = hi_1_0.getInput(1);
+
+		if ( hi_1_0_1.getDataType() != Types.DataType.SCALAR || !hi_1_0_1.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_1_1 = hi_1.getInput(1);
+
+		if ( hi_1_1.getDataType() != Types.DataType.MATRIX || !hi_1_1.getValueType().isNumeric() )
+			return hi;
+
+
+		// Now, we start building the new Hop
+		System.out.println("Applying rewrite: +(A,-(*(D,c),B)) => -(A,-*(B,c,D))");
+		TernaryOp v1 = HopRewriteUtils.createTernary(hi_1_1, hi_1_0_1, hi_1_0_0,Types.OpOp3.MINUS_MULT);
+		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0, v1, Types.OpOp2.MINUS);
+
+		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
+
+		for ( Hop p : parents )
+			HopRewriteUtils.replaceChildReference(p, hi, v2);
+
+		// Remove old unreferenced Hops
+		HopRewriteUtils.cleanupUnreferenced(hi);
+		HopRewriteUtils.cleanupUnreferenced(hi_1);
+		HopRewriteUtils.cleanupUnreferenced(hi_1_0);
+
+		return v2;
+	}
+
+	// Implementation of the rule -(A,*(/(b,D),C)) => -*(A,b,/(C,D))
+	private static Hop _applyRewrite550(Hop hi) {
+		if ( !(hi instanceof BinaryOp) )
+			return hi;
+
+		BinaryOp c_hi = (BinaryOp) hi;
+
+		if ( c_hi.getOp() != Types.OpOp2.MINUS || !c_hi.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_0 = hi.getInput(0);
+
+		if ( hi_0.getDataType() != Types.DataType.MATRIX || !hi_0.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_1 = hi.getInput(1);
+
+		if (hi_1.getParent().size() > 1)
+			return hi;
+		if ( !(hi_1 instanceof BinaryOp) )
+			return hi;
+
+		BinaryOp c_hi_1 = (BinaryOp) hi_1;
+
+		if ( c_hi_1.getOp() != Types.OpOp2.MULT || !c_hi_1.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_1_0 = hi_1.getInput(0);
+
+		if (hi_1_0.getParent().size() > 1)
+			return hi;
+		if ( !(hi_1_0 instanceof BinaryOp) )
+			return hi;
+
+		BinaryOp c_hi_1_0 = (BinaryOp) hi_1_0;
+
+		if ( c_hi_1_0.getOp() != Types.OpOp2.DIV || !c_hi_1_0.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_1_0_0 = hi_1_0.getInput(0);
+
+		if ( hi_1_0_0.getDataType() != Types.DataType.SCALAR || !hi_1_0_0.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_1_0_1 = hi_1_0.getInput(1);
+
+		if ( hi_1_0_1.getDataType() != Types.DataType.MATRIX || !hi_1_0_1.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_1_1 = hi_1.getInput(1);
+
+		if ( hi_1_1.getDataType() != Types.DataType.MATRIX || !hi_1_1.getValueType().isNumeric() )
+			return hi;
+
+
+		// Now, we start building the new Hop
+		System.out.println("Applying rewrite: -(A,*(/(b,D),C)) => -*(A,b,/(C,D))");
+		BinaryOp v1 = HopRewriteUtils.createBinary(hi_1_1, hi_1_0_1, Types.OpOp2.DIV);
+		TernaryOp v2 = HopRewriteUtils.createTernary(hi_0, hi_1_0_0, v1,Types.OpOp3.MINUS_MULT);
+
+		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
+
+		for ( Hop p : parents )
+			HopRewriteUtils.replaceChildReference(p, hi, v2);
+
+		// Remove old unreferenced Hops
+		HopRewriteUtils.cleanupUnreferenced(hi);
+		HopRewriteUtils.cleanupUnreferenced(hi_1);
+		HopRewriteUtils.cleanupUnreferenced(hi_1_0);
+
+		return v2;
+	}
+
+	// Implementation of the rule -(A,*(C,/(b,D))) => -*(A,b,/(C,D))
+	private static Hop _applyRewrite551(Hop hi) {
+		if ( !(hi instanceof BinaryOp) )
+			return hi;
+
+		BinaryOp c_hi = (BinaryOp) hi;
+
+		if ( c_hi.getOp() != Types.OpOp2.MINUS || !c_hi.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_0 = hi.getInput(0);
+
+		if ( hi_0.getDataType() != Types.DataType.MATRIX || !hi_0.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_1 = hi.getInput(1);
+
+		if (hi_1.getParent().size() > 1)
+			return hi;
+		if ( !(hi_1 instanceof BinaryOp) )
+			return hi;
+
+		BinaryOp c_hi_1 = (BinaryOp) hi_1;
+
+		if ( c_hi_1.getOp() != Types.OpOp2.MULT || !c_hi_1.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_1_0 = hi_1.getInput(0);
+
+		if ( hi_1_0.getDataType() != Types.DataType.MATRIX || !hi_1_0.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_1_1 = hi_1.getInput(1);
+
+		if (hi_1_1.getParent().size() > 1)
+			return hi;
+		if ( !(hi_1_1 instanceof BinaryOp) )
+			return hi;
+
+		BinaryOp c_hi_1_1 = (BinaryOp) hi_1_1;
+
+		if ( c_hi_1_1.getOp() != Types.OpOp2.DIV || !c_hi_1_1.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_1_1_0 = hi_1_1.getInput(0);
+
+		if ( hi_1_1_0.getDataType() != Types.DataType.SCALAR || !hi_1_1_0.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_1_1_1 = hi_1_1.getInput(1);
+
+		if ( hi_1_1_1.getDataType() != Types.DataType.MATRIX || !hi_1_1_1.getValueType().isNumeric() )
+			return hi;
+
+
+		// Now, we start building the new Hop
+		System.out.println("Applying rewrite: -(A,*(C,/(b,D))) => -*(A,b,/(C,D))");
+		BinaryOp v1 = HopRewriteUtils.createBinary(hi_1_0, hi_1_1_1, Types.OpOp2.DIV);
+		TernaryOp v2 = HopRewriteUtils.createTernary(hi_0, hi_1_1_0, v1,Types.OpOp3.MINUS_MULT);
+
+		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
+
+		for ( Hop p : parents )
+			HopRewriteUtils.replaceChildReference(p, hi, v2);
+
+		// Remove old unreferenced Hops
+		HopRewriteUtils.cleanupUnreferenced(hi);
+		HopRewriteUtils.cleanupUnreferenced(hi_1);
+		HopRewriteUtils.cleanupUnreferenced(hi_1_1);
+
+		return v2;
+	}
+
+	// Implementation of the rule -(A,/(*(b,C),D)) => -*(A,b,/(C,D))
+	private static Hop _applyRewrite552(Hop hi) {
+		if ( !(hi instanceof BinaryOp) )
+			return hi;
+
+		BinaryOp c_hi = (BinaryOp) hi;
+
+		if ( c_hi.getOp() != Types.OpOp2.MINUS || !c_hi.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_0 = hi.getInput(0);
+
+		if ( hi_0.getDataType() != Types.DataType.MATRIX || !hi_0.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_1 = hi.getInput(1);
+
+		if (hi_1.getParent().size() > 1)
+			return hi;
+		if ( !(hi_1 instanceof BinaryOp) )
+			return hi;
+
+		BinaryOp c_hi_1 = (BinaryOp) hi_1;
+
+		if ( c_hi_1.getOp() != Types.OpOp2.DIV || !c_hi_1.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_1_0 = hi_1.getInput(0);
+
+		if (hi_1_0.getParent().size() > 1)
+			return hi;
+		if ( !(hi_1_0 instanceof BinaryOp) )
+			return hi;
+
+		BinaryOp c_hi_1_0 = (BinaryOp) hi_1_0;
+
+		if ( c_hi_1_0.getOp() != Types.OpOp2.MULT || !c_hi_1_0.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_1_0_0 = hi_1_0.getInput(0);
+
+		if ( hi_1_0_0.getDataType() != Types.DataType.SCALAR || !hi_1_0_0.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_1_0_1 = hi_1_0.getInput(1);
+
+		if ( hi_1_0_1.getDataType() != Types.DataType.MATRIX || !hi_1_0_1.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_1_1 = hi_1.getInput(1);
+
+		if ( hi_1_1.getDataType() != Types.DataType.MATRIX || !hi_1_1.getValueType().isNumeric() )
+			return hi;
+
+
+		// Now, we start building the new Hop
+		System.out.println("Applying rewrite: -(A,/(*(b,C),D)) => -*(A,b,/(C,D))");
+		BinaryOp v1 = HopRewriteUtils.createBinary(hi_1_0_1, hi_1_1, Types.OpOp2.DIV);
+		TernaryOp v2 = HopRewriteUtils.createTernary(hi_0, hi_1_0_0, v1,Types.OpOp3.MINUS_MULT);
+
+		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
+
+		for ( Hop p : parents )
+			HopRewriteUtils.replaceChildReference(p, hi, v2);
+
+		// Remove old unreferenced Hops
+		HopRewriteUtils.cleanupUnreferenced(hi);
+		HopRewriteUtils.cleanupUnreferenced(hi_1);
+		HopRewriteUtils.cleanupUnreferenced(hi_1_0);
+
+		return v2;
+	}
+
+	// Implementation of the rule -(A,/(*(C,b),D)) => -*(A,b,/(C,D))
+	private static Hop _applyRewrite553(Hop hi) {
+		if ( !(hi instanceof BinaryOp) )
+			return hi;
+
+		BinaryOp c_hi = (BinaryOp) hi;
+
+		if ( c_hi.getOp() != Types.OpOp2.MINUS || !c_hi.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_0 = hi.getInput(0);
+
+		if ( hi_0.getDataType() != Types.DataType.MATRIX || !hi_0.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_1 = hi.getInput(1);
+
+		if (hi_1.getParent().size() > 1)
+			return hi;
+		if ( !(hi_1 instanceof BinaryOp) )
+			return hi;
+
+		BinaryOp c_hi_1 = (BinaryOp) hi_1;
+
+		if ( c_hi_1.getOp() != Types.OpOp2.DIV || !c_hi_1.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_1_0 = hi_1.getInput(0);
+
+		if (hi_1_0.getParent().size() > 1)
+			return hi;
+		if ( !(hi_1_0 instanceof BinaryOp) )
+			return hi;
+
+		BinaryOp c_hi_1_0 = (BinaryOp) hi_1_0;
+
+		if ( c_hi_1_0.getOp() != Types.OpOp2.MULT || !c_hi_1_0.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_1_0_0 = hi_1_0.getInput(0);
+
+		if ( hi_1_0_0.getDataType() != Types.DataType.MATRIX || !hi_1_0_0.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_1_0_1 = hi_1_0.getInput(1);
+
+		if ( hi_1_0_1.getDataType() != Types.DataType.SCALAR || !hi_1_0_1.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_1_1 = hi_1.getInput(1);
+
+		if ( hi_1_1.getDataType() != Types.DataType.MATRIX || !hi_1_1.getValueType().isNumeric() )
+			return hi;
+
+
+		// Now, we start building the new Hop
+		System.out.println("Applying rewrite: -(A,/(*(C,b),D)) => -*(A,b,/(C,D))");
+		BinaryOp v1 = HopRewriteUtils.createBinary(hi_1_0_0, hi_1_1, Types.OpOp2.DIV);
+		TernaryOp v2 = HopRewriteUtils.createTernary(hi_0, hi_1_0_1, v1,Types.OpOp3.MINUS_MULT);
+
+		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
+
+		for ( Hop p : parents )
+			HopRewriteUtils.replaceChildReference(p, hi, v2);
+
+		// Remove old unreferenced Hops
+		HopRewriteUtils.cleanupUnreferenced(hi);
+		HopRewriteUtils.cleanupUnreferenced(hi_1);
+		HopRewriteUtils.cleanupUnreferenced(hi_1_0);
+
+		return v2;
+	}
+
+	// Implementation of the rule +(*(/(b,D),C),A) => +*(A,b,/(C,D))
+	private static Hop _applyRewrite554(Hop hi) {
+		if ( !(hi instanceof BinaryOp) )
+			return hi;
+
+		BinaryOp c_hi = (BinaryOp) hi;
+
+		if ( c_hi.getOp() != Types.OpOp2.PLUS || !c_hi.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_0 = hi.getInput(0);
+
+		if (hi_0.getParent().size() > 1)
+			return hi;
+		if ( !(hi_0 instanceof BinaryOp) )
+			return hi;
+
+		BinaryOp c_hi_0 = (BinaryOp) hi_0;
+
+		if ( c_hi_0.getOp() != Types.OpOp2.MULT || !c_hi_0.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_0_0 = hi_0.getInput(0);
+
+		if (hi_0_0.getParent().size() > 1)
+			return hi;
+		if ( !(hi_0_0 instanceof BinaryOp) )
+			return hi;
+
+		BinaryOp c_hi_0_0 = (BinaryOp) hi_0_0;
+
+		if ( c_hi_0_0.getOp() != Types.OpOp2.DIV || !c_hi_0_0.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_0_0_0 = hi_0_0.getInput(0);
+
+		if ( hi_0_0_0.getDataType() != Types.DataType.SCALAR || !hi_0_0_0.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_0_0_1 = hi_0_0.getInput(1);
+
+		if ( hi_0_0_1.getDataType() != Types.DataType.MATRIX || !hi_0_0_1.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_0_1 = hi_0.getInput(1);
+
+		if ( hi_0_1.getDataType() != Types.DataType.MATRIX || !hi_0_1.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_1 = hi.getInput(1);
+
+		if ( hi_1.getDataType() != Types.DataType.MATRIX || !hi_1.getValueType().isNumeric() )
+			return hi;
+
+
+		// Now, we start building the new Hop
+		System.out.println("Applying rewrite: +(*(/(b,D),C),A) => +*(A,b,/(C,D))");
+		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_1, hi_0_0_1, Types.OpOp2.DIV);
+		TernaryOp v2 = HopRewriteUtils.createTernary(hi_1, hi_0_0_0, v1,Types.OpOp3.PLUS_MULT);
+
+		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
+
+		for ( Hop p : parents )
+			HopRewriteUtils.replaceChildReference(p, hi, v2);
+
+		// Remove old unreferenced Hops
+		HopRewriteUtils.cleanupUnreferenced(hi);
+		HopRewriteUtils.cleanupUnreferenced(hi_0);
+		HopRewriteUtils.cleanupUnreferenced(hi_0_0);
+
+		return v2;
+	}
+
+	// Implementation of the rule +(/(*(b,C),D),A) => +*(A,b,/(C,D))
+	private static Hop _applyRewrite555(Hop hi) {
+		if ( !(hi instanceof BinaryOp) )
+			return hi;
+
+		BinaryOp c_hi = (BinaryOp) hi;
+
+		if ( c_hi.getOp() != Types.OpOp2.PLUS || !c_hi.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_0 = hi.getInput(0);
+
+		if (hi_0.getParent().size() > 1)
+			return hi;
+		if ( !(hi_0 instanceof BinaryOp) )
+			return hi;
+
+		BinaryOp c_hi_0 = (BinaryOp) hi_0;
+
+		if ( c_hi_0.getOp() != Types.OpOp2.DIV || !c_hi_0.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_0_0 = hi_0.getInput(0);
+
+		if (hi_0_0.getParent().size() > 1)
+			return hi;
+		if ( !(hi_0_0 instanceof BinaryOp) )
+			return hi;
+
+		BinaryOp c_hi_0_0 = (BinaryOp) hi_0_0;
+
+		if ( c_hi_0_0.getOp() != Types.OpOp2.MULT || !c_hi_0_0.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_0_0_0 = hi_0_0.getInput(0);
+
+		if ( hi_0_0_0.getDataType() != Types.DataType.SCALAR || !hi_0_0_0.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_0_0_1 = hi_0_0.getInput(1);
+
+		if ( hi_0_0_1.getDataType() != Types.DataType.MATRIX || !hi_0_0_1.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_0_1 = hi_0.getInput(1);
+
+		if ( hi_0_1.getDataType() != Types.DataType.MATRIX || !hi_0_1.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_1 = hi.getInput(1);
+
+		if ( hi_1.getDataType() != Types.DataType.MATRIX || !hi_1.getValueType().isNumeric() )
+			return hi;
+
+
+		// Now, we start building the new Hop
+		System.out.println("Applying rewrite: +(/(*(b,C),D),A) => +*(A,b,/(C,D))");
+		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0_1, hi_0_1, Types.OpOp2.DIV);
+		TernaryOp v2 = HopRewriteUtils.createTernary(hi_1, hi_0_0_0, v1,Types.OpOp3.PLUS_MULT);
+
+		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
+
+		for ( Hop p : parents )
+			HopRewriteUtils.replaceChildReference(p, hi, v2);
+
+		// Remove old unreferenced Hops
+		HopRewriteUtils.cleanupUnreferenced(hi);
+		HopRewriteUtils.cleanupUnreferenced(hi_0);
+		HopRewriteUtils.cleanupUnreferenced(hi_0_0);
+
+		return v2;
+	}
+
+	// Implementation of the rule +(/(*(C,b),D),A) => +*(A,b,/(C,D))
+	private static Hop _applyRewrite556(Hop hi) {
+		if ( !(hi instanceof BinaryOp) )
+			return hi;
+
+		BinaryOp c_hi = (BinaryOp) hi;
+
+		if ( c_hi.getOp() != Types.OpOp2.PLUS || !c_hi.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_0 = hi.getInput(0);
+
+		if (hi_0.getParent().size() > 1)
+			return hi;
+		if ( !(hi_0 instanceof BinaryOp) )
+			return hi;
+
+		BinaryOp c_hi_0 = (BinaryOp) hi_0;
+
+		if ( c_hi_0.getOp() != Types.OpOp2.DIV || !c_hi_0.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_0_0 = hi_0.getInput(0);
+
+		if (hi_0_0.getParent().size() > 1)
+			return hi;
+		if ( !(hi_0_0 instanceof BinaryOp) )
+			return hi;
+
+		BinaryOp c_hi_0_0 = (BinaryOp) hi_0_0;
+
+		if ( c_hi_0_0.getOp() != Types.OpOp2.MULT || !c_hi_0_0.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_0_0_0 = hi_0_0.getInput(0);
+
+		if ( hi_0_0_0.getDataType() != Types.DataType.MATRIX || !hi_0_0_0.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_0_0_1 = hi_0_0.getInput(1);
+
+		if ( hi_0_0_1.getDataType() != Types.DataType.SCALAR || !hi_0_0_1.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_0_1 = hi_0.getInput(1);
+
+		if ( hi_0_1.getDataType() != Types.DataType.MATRIX || !hi_0_1.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_1 = hi.getInput(1);
+
+		if ( hi_1.getDataType() != Types.DataType.MATRIX || !hi_1.getValueType().isNumeric() )
+			return hi;
+
+
+		// Now, we start building the new Hop
+		System.out.println("Applying rewrite: +(/(*(C,b),D),A) => +*(A,b,/(C,D))");
+		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0_0, hi_0_1, Types.OpOp2.DIV);
+		TernaryOp v2 = HopRewriteUtils.createTernary(hi_1, hi_0_0_1, v1,Types.OpOp3.PLUS_MULT);
+
+		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
+
+		for ( Hop p : parents )
+			HopRewriteUtils.replaceChildReference(p, hi, v2);
+
+		// Remove old unreferenced Hops
+		HopRewriteUtils.cleanupUnreferenced(hi);
+		HopRewriteUtils.cleanupUnreferenced(hi_0);
+		HopRewriteUtils.cleanupUnreferenced(hi_0_0);
+
+		return v2;
+	}
+
+	// Implementation of the rule +(*(C,/(b,D)),A) => +*(A,b,/(C,D))
+	private static Hop _applyRewrite557(Hop hi) {
+		if ( !(hi instanceof BinaryOp) )
+			return hi;
+
+		BinaryOp c_hi = (BinaryOp) hi;
+
+		if ( c_hi.getOp() != Types.OpOp2.PLUS || !c_hi.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_0 = hi.getInput(0);
+
+		if (hi_0.getParent().size() > 1)
+			return hi;
+		if ( !(hi_0 instanceof BinaryOp) )
+			return hi;
+
+		BinaryOp c_hi_0 = (BinaryOp) hi_0;
+
+		if ( c_hi_0.getOp() != Types.OpOp2.MULT || !c_hi_0.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_0_0 = hi_0.getInput(0);
+
+		if ( hi_0_0.getDataType() != Types.DataType.MATRIX || !hi_0_0.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_0_1 = hi_0.getInput(1);
+
+		if (hi_0_1.getParent().size() > 1)
+			return hi;
+		if ( !(hi_0_1 instanceof BinaryOp) )
+			return hi;
+
+		BinaryOp c_hi_0_1 = (BinaryOp) hi_0_1;
+
+		if ( c_hi_0_1.getOp() != Types.OpOp2.DIV || !c_hi_0_1.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_0_1_0 = hi_0_1.getInput(0);
+
+		if ( hi_0_1_0.getDataType() != Types.DataType.SCALAR || !hi_0_1_0.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_0_1_1 = hi_0_1.getInput(1);
+
+		if ( hi_0_1_1.getDataType() != Types.DataType.MATRIX || !hi_0_1_1.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_1 = hi.getInput(1);
+
+		if ( hi_1.getDataType() != Types.DataType.MATRIX || !hi_1.getValueType().isNumeric() )
+			return hi;
+
+
+		// Now, we start building the new Hop
+		System.out.println("Applying rewrite: +(*(C,/(b,D)),A) => +*(A,b,/(C,D))");
+		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0, hi_0_1_1, Types.OpOp2.DIV);
+		TernaryOp v2 = HopRewriteUtils.createTernary(hi_1, hi_0_1_0, v1,Types.OpOp3.PLUS_MULT);
+
+		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
+
+		for ( Hop p : parents )
+			HopRewriteUtils.replaceChildReference(p, hi, v2);
+
+		// Remove old unreferenced Hops
+		HopRewriteUtils.cleanupUnreferenced(hi);
+		HopRewriteUtils.cleanupUnreferenced(hi_0);
+		HopRewriteUtils.cleanupUnreferenced(hi_0_1);
+
+		return v2;
+	}
+
+	// Implementation of the rule +(A,/(*(b,C),D)) => +*(A,b,/(C,D))
+	private static Hop _applyRewrite558(Hop hi) {
+		if ( !(hi instanceof BinaryOp) )
+			return hi;
+
+		BinaryOp c_hi = (BinaryOp) hi;
+
+		if ( c_hi.getOp() != Types.OpOp2.PLUS || !c_hi.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_0 = hi.getInput(0);
+
+		if ( hi_0.getDataType() != Types.DataType.MATRIX || !hi_0.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_1 = hi.getInput(1);
+
+		if (hi_1.getParent().size() > 1)
+			return hi;
+		if ( !(hi_1 instanceof BinaryOp) )
+			return hi;
+
+		BinaryOp c_hi_1 = (BinaryOp) hi_1;
+
+		if ( c_hi_1.getOp() != Types.OpOp2.DIV || !c_hi_1.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_1_0 = hi_1.getInput(0);
+
+		if (hi_1_0.getParent().size() > 1)
+			return hi;
+		if ( !(hi_1_0 instanceof BinaryOp) )
+			return hi;
+
+		BinaryOp c_hi_1_0 = (BinaryOp) hi_1_0;
+
+		if ( c_hi_1_0.getOp() != Types.OpOp2.MULT || !c_hi_1_0.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_1_0_0 = hi_1_0.getInput(0);
+
+		if ( hi_1_0_0.getDataType() != Types.DataType.SCALAR || !hi_1_0_0.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_1_0_1 = hi_1_0.getInput(1);
+
+		if ( hi_1_0_1.getDataType() != Types.DataType.MATRIX || !hi_1_0_1.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_1_1 = hi_1.getInput(1);
+
+		if ( hi_1_1.getDataType() != Types.DataType.MATRIX || !hi_1_1.getValueType().isNumeric() )
+			return hi;
+
+
+		// Now, we start building the new Hop
+		System.out.println("Applying rewrite: +(A,/(*(b,C),D)) => +*(A,b,/(C,D))");
+		BinaryOp v1 = HopRewriteUtils.createBinary(hi_1_0_1, hi_1_1, Types.OpOp2.DIV);
+		TernaryOp v2 = HopRewriteUtils.createTernary(hi_0, hi_1_0_0, v1,Types.OpOp3.PLUS_MULT);
+
+		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
+
+		for ( Hop p : parents )
+			HopRewriteUtils.replaceChildReference(p, hi, v2);
+
+		// Remove old unreferenced Hops
+		HopRewriteUtils.cleanupUnreferenced(hi);
+		HopRewriteUtils.cleanupUnreferenced(hi_1);
+		HopRewriteUtils.cleanupUnreferenced(hi_1_0);
+
+		return v2;
+	}
+
+	// Implementation of the rule +(A,*(/(b,D),C)) => +*(A,b,/(C,D))
+	private static Hop _applyRewrite559(Hop hi) {
+		if ( !(hi instanceof BinaryOp) )
+			return hi;
+
+		BinaryOp c_hi = (BinaryOp) hi;
+
+		if ( c_hi.getOp() != Types.OpOp2.PLUS || !c_hi.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_0 = hi.getInput(0);
+
+		if ( hi_0.getDataType() != Types.DataType.MATRIX || !hi_0.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_1 = hi.getInput(1);
+
+		if (hi_1.getParent().size() > 1)
+			return hi;
+		if ( !(hi_1 instanceof BinaryOp) )
+			return hi;
+
+		BinaryOp c_hi_1 = (BinaryOp) hi_1;
+
+		if ( c_hi_1.getOp() != Types.OpOp2.MULT || !c_hi_1.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_1_0 = hi_1.getInput(0);
+
+		if (hi_1_0.getParent().size() > 1)
+			return hi;
+		if ( !(hi_1_0 instanceof BinaryOp) )
+			return hi;
+
+		BinaryOp c_hi_1_0 = (BinaryOp) hi_1_0;
+
+		if ( c_hi_1_0.getOp() != Types.OpOp2.DIV || !c_hi_1_0.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_1_0_0 = hi_1_0.getInput(0);
+
+		if ( hi_1_0_0.getDataType() != Types.DataType.SCALAR || !hi_1_0_0.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_1_0_1 = hi_1_0.getInput(1);
+
+		if ( hi_1_0_1.getDataType() != Types.DataType.MATRIX || !hi_1_0_1.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_1_1 = hi_1.getInput(1);
+
+		if ( hi_1_1.getDataType() != Types.DataType.MATRIX || !hi_1_1.getValueType().isNumeric() )
+			return hi;
+
+
+		// Now, we start building the new Hop
+		System.out.println("Applying rewrite: +(A,*(/(b,D),C)) => +*(A,b,/(C,D))");
+		BinaryOp v1 = HopRewriteUtils.createBinary(hi_1_1, hi_1_0_1, Types.OpOp2.DIV);
+		TernaryOp v2 = HopRewriteUtils.createTernary(hi_0, hi_1_0_0, v1,Types.OpOp3.PLUS_MULT);
+
+		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
+
+		for ( Hop p : parents )
+			HopRewriteUtils.replaceChildReference(p, hi, v2);
+
+		// Remove old unreferenced Hops
+		HopRewriteUtils.cleanupUnreferenced(hi);
+		HopRewriteUtils.cleanupUnreferenced(hi_1);
+		HopRewriteUtils.cleanupUnreferenced(hi_1_0);
+
+		return v2;
+	}
+
+	// Implementation of the rule +(A,/(*(C,b),D)) => +*(A,b,/(C,D))
+	private static Hop _applyRewrite560(Hop hi) {
+		if ( !(hi instanceof BinaryOp) )
+			return hi;
+
+		BinaryOp c_hi = (BinaryOp) hi;
+
+		if ( c_hi.getOp() != Types.OpOp2.PLUS || !c_hi.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_0 = hi.getInput(0);
+
+		if ( hi_0.getDataType() != Types.DataType.MATRIX || !hi_0.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_1 = hi.getInput(1);
+
+		if (hi_1.getParent().size() > 1)
+			return hi;
+		if ( !(hi_1 instanceof BinaryOp) )
+			return hi;
+
+		BinaryOp c_hi_1 = (BinaryOp) hi_1;
+
+		if ( c_hi_1.getOp() != Types.OpOp2.DIV || !c_hi_1.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_1_0 = hi_1.getInput(0);
+
+		if (hi_1_0.getParent().size() > 1)
+			return hi;
+		if ( !(hi_1_0 instanceof BinaryOp) )
+			return hi;
+
+		BinaryOp c_hi_1_0 = (BinaryOp) hi_1_0;
+
+		if ( c_hi_1_0.getOp() != Types.OpOp2.MULT || !c_hi_1_0.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_1_0_0 = hi_1_0.getInput(0);
+
+		if ( hi_1_0_0.getDataType() != Types.DataType.MATRIX || !hi_1_0_0.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_1_0_1 = hi_1_0.getInput(1);
+
+		if ( hi_1_0_1.getDataType() != Types.DataType.SCALAR || !hi_1_0_1.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_1_1 = hi_1.getInput(1);
+
+		if ( hi_1_1.getDataType() != Types.DataType.MATRIX || !hi_1_1.getValueType().isNumeric() )
+			return hi;
+
+
+		// Now, we start building the new Hop
+		System.out.println("Applying rewrite: +(A,/(*(C,b),D)) => +*(A,b,/(C,D))");
+		BinaryOp v1 = HopRewriteUtils.createBinary(hi_1_0_0, hi_1_1, Types.OpOp2.DIV);
+		TernaryOp v2 = HopRewriteUtils.createTernary(hi_0, hi_1_0_1, v1,Types.OpOp3.PLUS_MULT);
+
+		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
+
+		for ( Hop p : parents )
+			HopRewriteUtils.replaceChildReference(p, hi, v2);
+
+		// Remove old unreferenced Hops
+		HopRewriteUtils.cleanupUnreferenced(hi);
+		HopRewriteUtils.cleanupUnreferenced(hi_1);
+		HopRewriteUtils.cleanupUnreferenced(hi_1_0);
+
+		return v2;
+	}
+
+	// Implementation of the rule +(A,*(C,/(b,D))) => +*(A,b,/(C,D))
+	private static Hop _applyRewrite561(Hop hi) {
+		if ( !(hi instanceof BinaryOp) )
+			return hi;
+
+		BinaryOp c_hi = (BinaryOp) hi;
+
+		if ( c_hi.getOp() != Types.OpOp2.PLUS || !c_hi.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_0 = hi.getInput(0);
+
+		if ( hi_0.getDataType() != Types.DataType.MATRIX || !hi_0.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_1 = hi.getInput(1);
+
+		if (hi_1.getParent().size() > 1)
+			return hi;
+		if ( !(hi_1 instanceof BinaryOp) )
+			return hi;
+
+		BinaryOp c_hi_1 = (BinaryOp) hi_1;
+
+		if ( c_hi_1.getOp() != Types.OpOp2.MULT || !c_hi_1.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_1_0 = hi_1.getInput(0);
+
+		if ( hi_1_0.getDataType() != Types.DataType.MATRIX || !hi_1_0.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_1_1 = hi_1.getInput(1);
+
+		if (hi_1_1.getParent().size() > 1)
+			return hi;
+		if ( !(hi_1_1 instanceof BinaryOp) )
+			return hi;
+
+		BinaryOp c_hi_1_1 = (BinaryOp) hi_1_1;
+
+		if ( c_hi_1_1.getOp() != Types.OpOp2.DIV || !c_hi_1_1.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_1_1_0 = hi_1_1.getInput(0);
+
+		if ( hi_1_1_0.getDataType() != Types.DataType.SCALAR || !hi_1_1_0.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_1_1_1 = hi_1_1.getInput(1);
+
+		if ( hi_1_1_1.getDataType() != Types.DataType.MATRIX || !hi_1_1_1.getValueType().isNumeric() )
+			return hi;
+
+
+		// Now, we start building the new Hop
+		System.out.println("Applying rewrite: +(A,*(C,/(b,D))) => +*(A,b,/(C,D))");
+		BinaryOp v1 = HopRewriteUtils.createBinary(hi_1_0, hi_1_1_1, Types.OpOp2.DIV);
+		TernaryOp v2 = HopRewriteUtils.createTernary(hi_0, hi_1_1_0, v1,Types.OpOp3.PLUS_MULT);
+
+		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
+
+		for ( Hop p : parents )
+			HopRewriteUtils.replaceChildReference(p, hi, v2);
+
+		// Remove old unreferenced Hops
+		HopRewriteUtils.cleanupUnreferenced(hi);
+		HopRewriteUtils.cleanupUnreferenced(hi_1);
+		HopRewriteUtils.cleanupUnreferenced(hi_1_1);
+
+		return v2;
+	}
+
+	// Implementation of the rule -(A,%*%(*(b,C),D)) => -*(A,b,%*%(C,D))
+	private static Hop _applyRewrite562(Hop hi) {
+		if ( !(hi instanceof BinaryOp) )
+			return hi;
+
+		BinaryOp c_hi = (BinaryOp) hi;
+
+		if ( c_hi.getOp() != Types.OpOp2.MINUS || !c_hi.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_0 = hi.getInput(0);
+
+		if ( hi_0.getDataType() != Types.DataType.MATRIX || !hi_0.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_1 = hi.getInput(1);
+
+		if (hi_1.getParent().size() > 1)
+			return hi;
+		if ( !HopRewriteUtils.isMatrixMultiply(hi_1) )
+			return hi;
+
+		Hop hi_1_0 = hi_1.getInput(0);
+
+		if (hi_1_0.getParent().size() > 1)
+			return hi;
+		if ( !(hi_1_0 instanceof BinaryOp) )
+			return hi;
+
+		BinaryOp c_hi_1_0 = (BinaryOp) hi_1_0;
+
+		if ( c_hi_1_0.getOp() != Types.OpOp2.MULT || !c_hi_1_0.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_1_0_0 = hi_1_0.getInput(0);
+
+		if ( hi_1_0_0.getDataType() != Types.DataType.SCALAR || !hi_1_0_0.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_1_0_1 = hi_1_0.getInput(1);
+
+		if ( hi_1_0_1.getDataType() != Types.DataType.MATRIX || !hi_1_0_1.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_1_1 = hi_1.getInput(1);
+
+		if ( hi_1_1.getDataType() != Types.DataType.MATRIX || !hi_1_1.getValueType().isNumeric() )
+			return hi;
+
+
+		// Now, we start building the new Hop
+		System.out.println("Applying rewrite: -(A,%*%(*(b,C),D)) => -*(A,b,%*%(C,D))");
+		AggBinaryOp v1 = HopRewriteUtils.createMatrixMultiply(hi_1_0_1, hi_1_1);
+		TernaryOp v2 = HopRewriteUtils.createTernary(hi_0, hi_1_0_0, v1,Types.OpOp3.MINUS_MULT);
+
+		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
+
+		for ( Hop p : parents )
+			HopRewriteUtils.replaceChildReference(p, hi, v2);
+
+		// Remove old unreferenced Hops
+		HopRewriteUtils.cleanupUnreferenced(hi);
+		HopRewriteUtils.cleanupUnreferenced(hi_1);
+		HopRewriteUtils.cleanupUnreferenced(hi_1_0);
+
+		return v2;
+	}
+
+	// Implementation of the rule -(A,%*%(*(C,b),D)) => -*(A,b,%*%(C,D))
+	private static Hop _applyRewrite563(Hop hi) {
+		if ( !(hi instanceof BinaryOp) )
+			return hi;
+
+		BinaryOp c_hi = (BinaryOp) hi;
+
+		if ( c_hi.getOp() != Types.OpOp2.MINUS || !c_hi.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_0 = hi.getInput(0);
+
+		if ( hi_0.getDataType() != Types.DataType.MATRIX || !hi_0.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_1 = hi.getInput(1);
+
+		if (hi_1.getParent().size() > 1)
+			return hi;
+		if ( !HopRewriteUtils.isMatrixMultiply(hi_1) )
+			return hi;
+
+		Hop hi_1_0 = hi_1.getInput(0);
+
+		if (hi_1_0.getParent().size() > 1)
+			return hi;
+		if ( !(hi_1_0 instanceof BinaryOp) )
+			return hi;
+
+		BinaryOp c_hi_1_0 = (BinaryOp) hi_1_0;
+
+		if ( c_hi_1_0.getOp() != Types.OpOp2.MULT || !c_hi_1_0.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_1_0_0 = hi_1_0.getInput(0);
+
+		if ( hi_1_0_0.getDataType() != Types.DataType.MATRIX || !hi_1_0_0.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_1_0_1 = hi_1_0.getInput(1);
+
+		if ( hi_1_0_1.getDataType() != Types.DataType.SCALAR || !hi_1_0_1.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_1_1 = hi_1.getInput(1);
+
+		if ( hi_1_1.getDataType() != Types.DataType.MATRIX || !hi_1_1.getValueType().isNumeric() )
+			return hi;
+
+
+		// Now, we start building the new Hop
+		System.out.println("Applying rewrite: -(A,%*%(*(C,b),D)) => -*(A,b,%*%(C,D))");
+		AggBinaryOp v1 = HopRewriteUtils.createMatrixMultiply(hi_1_0_0, hi_1_1);
+		TernaryOp v2 = HopRewriteUtils.createTernary(hi_0, hi_1_0_1, v1,Types.OpOp3.MINUS_MULT);
+
+		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
+
+		for ( Hop p : parents )
+			HopRewriteUtils.replaceChildReference(p, hi, v2);
+
+		// Remove old unreferenced Hops
+		HopRewriteUtils.cleanupUnreferenced(hi);
+		HopRewriteUtils.cleanupUnreferenced(hi_1);
+		HopRewriteUtils.cleanupUnreferenced(hi_1_0);
+
+		return v2;
+	}
+
+	// Implementation of the rule -(A,%*%(C,*(b,D))) => -*(A,b,%*%(C,D))
+	private static Hop _applyRewrite564(Hop hi) {
+		if ( !(hi instanceof BinaryOp) )
+			return hi;
+
+		BinaryOp c_hi = (BinaryOp) hi;
+
+		if ( c_hi.getOp() != Types.OpOp2.MINUS || !c_hi.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_0 = hi.getInput(0);
+
+		if ( hi_0.getDataType() != Types.DataType.MATRIX || !hi_0.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_1 = hi.getInput(1);
+
+		if (hi_1.getParent().size() > 1)
+			return hi;
+		if ( !HopRewriteUtils.isMatrixMultiply(hi_1) )
+			return hi;
+
+		Hop hi_1_0 = hi_1.getInput(0);
+
+		if ( hi_1_0.getDataType() != Types.DataType.MATRIX || !hi_1_0.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_1_1 = hi_1.getInput(1);
+
+		if (hi_1_1.getParent().size() > 1)
+			return hi;
+		if ( !(hi_1_1 instanceof BinaryOp) )
+			return hi;
+
+		BinaryOp c_hi_1_1 = (BinaryOp) hi_1_1;
+
+		if ( c_hi_1_1.getOp() != Types.OpOp2.MULT || !c_hi_1_1.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_1_1_0 = hi_1_1.getInput(0);
+
+		if ( hi_1_1_0.getDataType() != Types.DataType.SCALAR || !hi_1_1_0.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_1_1_1 = hi_1_1.getInput(1);
+
+		if ( hi_1_1_1.getDataType() != Types.DataType.MATRIX || !hi_1_1_1.getValueType().isNumeric() )
+			return hi;
+
+
+		// Now, we start building the new Hop
+		System.out.println("Applying rewrite: -(A,%*%(C,*(b,D))) => -*(A,b,%*%(C,D))");
+		AggBinaryOp v1 = HopRewriteUtils.createMatrixMultiply(hi_1_0, hi_1_1_1);
+		TernaryOp v2 = HopRewriteUtils.createTernary(hi_0, hi_1_1_0, v1,Types.OpOp3.MINUS_MULT);
+
+		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
+
+		for ( Hop p : parents )
+			HopRewriteUtils.replaceChildReference(p, hi, v2);
+
+		// Remove old unreferenced Hops
+		HopRewriteUtils.cleanupUnreferenced(hi);
+		HopRewriteUtils.cleanupUnreferenced(hi_1);
+		HopRewriteUtils.cleanupUnreferenced(hi_1_1);
+
+		return v2;
+	}
+
+	// Implementation of the rule -(A,%*%(C,*(D,b))) => -*(A,b,%*%(C,D))
+	private static Hop _applyRewrite565(Hop hi) {
+		if ( !(hi instanceof BinaryOp) )
+			return hi;
+
+		BinaryOp c_hi = (BinaryOp) hi;
+
+		if ( c_hi.getOp() != Types.OpOp2.MINUS || !c_hi.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_0 = hi.getInput(0);
+
+		if ( hi_0.getDataType() != Types.DataType.MATRIX || !hi_0.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_1 = hi.getInput(1);
+
+		if (hi_1.getParent().size() > 1)
+			return hi;
+		if ( !HopRewriteUtils.isMatrixMultiply(hi_1) )
+			return hi;
+
+		Hop hi_1_0 = hi_1.getInput(0);
+
+		if ( hi_1_0.getDataType() != Types.DataType.MATRIX || !hi_1_0.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_1_1 = hi_1.getInput(1);
+
+		if (hi_1_1.getParent().size() > 1)
+			return hi;
+		if ( !(hi_1_1 instanceof BinaryOp) )
+			return hi;
+
+		BinaryOp c_hi_1_1 = (BinaryOp) hi_1_1;
+
+		if ( c_hi_1_1.getOp() != Types.OpOp2.MULT || !c_hi_1_1.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_1_1_0 = hi_1_1.getInput(0);
+
+		if ( hi_1_1_0.getDataType() != Types.DataType.MATRIX || !hi_1_1_0.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_1_1_1 = hi_1_1.getInput(1);
+
+		if ( hi_1_1_1.getDataType() != Types.DataType.SCALAR || !hi_1_1_1.getValueType().isNumeric() )
+			return hi;
+
+
+		// Now, we start building the new Hop
+		System.out.println("Applying rewrite: -(A,%*%(C,*(D,b))) => -*(A,b,%*%(C,D))");
+		AggBinaryOp v1 = HopRewriteUtils.createMatrixMultiply(hi_1_0, hi_1_1_0);
+		TernaryOp v2 = HopRewriteUtils.createTernary(hi_0, hi_1_1_1, v1,Types.OpOp3.MINUS_MULT);
+
+		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
+
+		for ( Hop p : parents )
+			HopRewriteUtils.replaceChildReference(p, hi, v2);
+
+		// Remove old unreferenced Hops
+		HopRewriteUtils.cleanupUnreferenced(hi);
+		HopRewriteUtils.cleanupUnreferenced(hi_1);
+		HopRewriteUtils.cleanupUnreferenced(hi_1_1);
+
+		return v2;
+	}
+
+	// Implementation of the rule +(%*%(*(b,C),D),A) => +*(A,b,%*%(C,D))
+	private static Hop _applyRewrite566(Hop hi) {
+		if ( !(hi instanceof BinaryOp) )
+			return hi;
+
+		BinaryOp c_hi = (BinaryOp) hi;
+
+		if ( c_hi.getOp() != Types.OpOp2.PLUS || !c_hi.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_0 = hi.getInput(0);
+
+		if (hi_0.getParent().size() > 1)
+			return hi;
+		if ( !HopRewriteUtils.isMatrixMultiply(hi_0) )
+			return hi;
+
+		Hop hi_0_0 = hi_0.getInput(0);
+
+		if (hi_0_0.getParent().size() > 1)
+			return hi;
+		if ( !(hi_0_0 instanceof BinaryOp) )
+			return hi;
+
+		BinaryOp c_hi_0_0 = (BinaryOp) hi_0_0;
+
+		if ( c_hi_0_0.getOp() != Types.OpOp2.MULT || !c_hi_0_0.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_0_0_0 = hi_0_0.getInput(0);
+
+		if ( hi_0_0_0.getDataType() != Types.DataType.SCALAR || !hi_0_0_0.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_0_0_1 = hi_0_0.getInput(1);
+
+		if ( hi_0_0_1.getDataType() != Types.DataType.MATRIX || !hi_0_0_1.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_0_1 = hi_0.getInput(1);
+
+		if ( hi_0_1.getDataType() != Types.DataType.MATRIX || !hi_0_1.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_1 = hi.getInput(1);
+
+		if ( hi_1.getDataType() != Types.DataType.MATRIX || !hi_1.getValueType().isNumeric() )
+			return hi;
+
+
+		// Now, we start building the new Hop
+		System.out.println("Applying rewrite: +(%*%(*(b,C),D),A) => +*(A,b,%*%(C,D))");
+		AggBinaryOp v1 = HopRewriteUtils.createMatrixMultiply(hi_0_0_1, hi_0_1);
+		TernaryOp v2 = HopRewriteUtils.createTernary(hi_1, hi_0_0_0, v1,Types.OpOp3.PLUS_MULT);
+
+		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
+
+		for ( Hop p : parents )
+			HopRewriteUtils.replaceChildReference(p, hi, v2);
+
+		// Remove old unreferenced Hops
+		HopRewriteUtils.cleanupUnreferenced(hi);
+		HopRewriteUtils.cleanupUnreferenced(hi_0);
+		HopRewriteUtils.cleanupUnreferenced(hi_0_0);
+
+		return v2;
+	}
+
+	// Implementation of the rule +(%*%(*(C,b),D),A) => +*(A,b,%*%(C,D))
+	private static Hop _applyRewrite567(Hop hi) {
+		if ( !(hi instanceof BinaryOp) )
+			return hi;
+
+		BinaryOp c_hi = (BinaryOp) hi;
+
+		if ( c_hi.getOp() != Types.OpOp2.PLUS || !c_hi.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_0 = hi.getInput(0);
+
+		if (hi_0.getParent().size() > 1)
+			return hi;
+		if ( !HopRewriteUtils.isMatrixMultiply(hi_0) )
+			return hi;
+
+		Hop hi_0_0 = hi_0.getInput(0);
+
+		if (hi_0_0.getParent().size() > 1)
+			return hi;
+		if ( !(hi_0_0 instanceof BinaryOp) )
+			return hi;
+
+		BinaryOp c_hi_0_0 = (BinaryOp) hi_0_0;
+
+		if ( c_hi_0_0.getOp() != Types.OpOp2.MULT || !c_hi_0_0.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_0_0_0 = hi_0_0.getInput(0);
+
+		if ( hi_0_0_0.getDataType() != Types.DataType.MATRIX || !hi_0_0_0.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_0_0_1 = hi_0_0.getInput(1);
+
+		if ( hi_0_0_1.getDataType() != Types.DataType.SCALAR || !hi_0_0_1.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_0_1 = hi_0.getInput(1);
+
+		if ( hi_0_1.getDataType() != Types.DataType.MATRIX || !hi_0_1.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_1 = hi.getInput(1);
+
+		if ( hi_1.getDataType() != Types.DataType.MATRIX || !hi_1.getValueType().isNumeric() )
+			return hi;
+
+
+		// Now, we start building the new Hop
+		System.out.println("Applying rewrite: +(%*%(*(C,b),D),A) => +*(A,b,%*%(C,D))");
+		AggBinaryOp v1 = HopRewriteUtils.createMatrixMultiply(hi_0_0_0, hi_0_1);
+		TernaryOp v2 = HopRewriteUtils.createTernary(hi_1, hi_0_0_1, v1,Types.OpOp3.PLUS_MULT);
+
+		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
+
+		for ( Hop p : parents )
+			HopRewriteUtils.replaceChildReference(p, hi, v2);
+
+		// Remove old unreferenced Hops
+		HopRewriteUtils.cleanupUnreferenced(hi);
+		HopRewriteUtils.cleanupUnreferenced(hi_0);
+		HopRewriteUtils.cleanupUnreferenced(hi_0_0);
+
+		return v2;
+	}
+
+	// Implementation of the rule +(%*%(C,*(b,D)),A) => +*(A,b,%*%(C,D))
+	private static Hop _applyRewrite568(Hop hi) {
+		if ( !(hi instanceof BinaryOp) )
+			return hi;
+
+		BinaryOp c_hi = (BinaryOp) hi;
+
+		if ( c_hi.getOp() != Types.OpOp2.PLUS || !c_hi.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_0 = hi.getInput(0);
+
+		if (hi_0.getParent().size() > 1)
+			return hi;
+		if ( !HopRewriteUtils.isMatrixMultiply(hi_0) )
+			return hi;
+
+		Hop hi_0_0 = hi_0.getInput(0);
+
+		if ( hi_0_0.getDataType() != Types.DataType.MATRIX || !hi_0_0.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_0_1 = hi_0.getInput(1);
+
+		if (hi_0_1.getParent().size() > 1)
+			return hi;
+		if ( !(hi_0_1 instanceof BinaryOp) )
+			return hi;
+
+		BinaryOp c_hi_0_1 = (BinaryOp) hi_0_1;
+
+		if ( c_hi_0_1.getOp() != Types.OpOp2.MULT || !c_hi_0_1.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_0_1_0 = hi_0_1.getInput(0);
+
+		if ( hi_0_1_0.getDataType() != Types.DataType.SCALAR || !hi_0_1_0.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_0_1_1 = hi_0_1.getInput(1);
+
+		if ( hi_0_1_1.getDataType() != Types.DataType.MATRIX || !hi_0_1_1.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_1 = hi.getInput(1);
+
+		if ( hi_1.getDataType() != Types.DataType.MATRIX || !hi_1.getValueType().isNumeric() )
+			return hi;
+
+
+		// Now, we start building the new Hop
+		System.out.println("Applying rewrite: +(%*%(C,*(b,D)),A) => +*(A,b,%*%(C,D))");
+		AggBinaryOp v1 = HopRewriteUtils.createMatrixMultiply(hi_0_0, hi_0_1_1);
+		TernaryOp v2 = HopRewriteUtils.createTernary(hi_1, hi_0_1_0, v1,Types.OpOp3.PLUS_MULT);
+
+		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
+
+		for ( Hop p : parents )
+			HopRewriteUtils.replaceChildReference(p, hi, v2);
+
+		// Remove old unreferenced Hops
+		HopRewriteUtils.cleanupUnreferenced(hi);
+		HopRewriteUtils.cleanupUnreferenced(hi_0);
+		HopRewriteUtils.cleanupUnreferenced(hi_0_1);
+
+		return v2;
+	}
+
+	// Implementation of the rule +(%*%(C,*(D,b)),A) => +*(A,b,%*%(C,D))
+	private static Hop _applyRewrite569(Hop hi) {
+		if ( !(hi instanceof BinaryOp) )
+			return hi;
+
+		BinaryOp c_hi = (BinaryOp) hi;
+
+		if ( c_hi.getOp() != Types.OpOp2.PLUS || !c_hi.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_0 = hi.getInput(0);
+
+		if (hi_0.getParent().size() > 1)
+			return hi;
+		if ( !HopRewriteUtils.isMatrixMultiply(hi_0) )
+			return hi;
+
+		Hop hi_0_0 = hi_0.getInput(0);
+
+		if ( hi_0_0.getDataType() != Types.DataType.MATRIX || !hi_0_0.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_0_1 = hi_0.getInput(1);
+
+		if (hi_0_1.getParent().size() > 1)
+			return hi;
+		if ( !(hi_0_1 instanceof BinaryOp) )
+			return hi;
+
+		BinaryOp c_hi_0_1 = (BinaryOp) hi_0_1;
+
+		if ( c_hi_0_1.getOp() != Types.OpOp2.MULT || !c_hi_0_1.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_0_1_0 = hi_0_1.getInput(0);
+
+		if ( hi_0_1_0.getDataType() != Types.DataType.MATRIX || !hi_0_1_0.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_0_1_1 = hi_0_1.getInput(1);
+
+		if ( hi_0_1_1.getDataType() != Types.DataType.SCALAR || !hi_0_1_1.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_1 = hi.getInput(1);
+
+		if ( hi_1.getDataType() != Types.DataType.MATRIX || !hi_1.getValueType().isNumeric() )
+			return hi;
+
+
+		// Now, we start building the new Hop
+		System.out.println("Applying rewrite: +(%*%(C,*(D,b)),A) => +*(A,b,%*%(C,D))");
+		AggBinaryOp v1 = HopRewriteUtils.createMatrixMultiply(hi_0_0, hi_0_1_0);
+		TernaryOp v2 = HopRewriteUtils.createTernary(hi_1, hi_0_1_1, v1,Types.OpOp3.PLUS_MULT);
+
+		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
+
+		for ( Hop p : parents )
+			HopRewriteUtils.replaceChildReference(p, hi, v2);
+
+		// Remove old unreferenced Hops
+		HopRewriteUtils.cleanupUnreferenced(hi);
+		HopRewriteUtils.cleanupUnreferenced(hi_0);
+		HopRewriteUtils.cleanupUnreferenced(hi_0_1);
+
+		return v2;
+	}
+
+	// Implementation of the rule +(A,%*%(*(b,C),D)) => +*(A,b,%*%(C,D))
+	private static Hop _applyRewrite570(Hop hi) {
+		if ( !(hi instanceof BinaryOp) )
+			return hi;
+
+		BinaryOp c_hi = (BinaryOp) hi;
+
+		if ( c_hi.getOp() != Types.OpOp2.PLUS || !c_hi.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_0 = hi.getInput(0);
+
+		if ( hi_0.getDataType() != Types.DataType.MATRIX || !hi_0.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_1 = hi.getInput(1);
+
+		if (hi_1.getParent().size() > 1)
+			return hi;
+		if ( !HopRewriteUtils.isMatrixMultiply(hi_1) )
+			return hi;
+
+		Hop hi_1_0 = hi_1.getInput(0);
+
+		if (hi_1_0.getParent().size() > 1)
+			return hi;
+		if ( !(hi_1_0 instanceof BinaryOp) )
+			return hi;
+
+		BinaryOp c_hi_1_0 = (BinaryOp) hi_1_0;
+
+		if ( c_hi_1_0.getOp() != Types.OpOp2.MULT || !c_hi_1_0.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_1_0_0 = hi_1_0.getInput(0);
+
+		if ( hi_1_0_0.getDataType() != Types.DataType.SCALAR || !hi_1_0_0.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_1_0_1 = hi_1_0.getInput(1);
+
+		if ( hi_1_0_1.getDataType() != Types.DataType.MATRIX || !hi_1_0_1.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_1_1 = hi_1.getInput(1);
+
+		if ( hi_1_1.getDataType() != Types.DataType.MATRIX || !hi_1_1.getValueType().isNumeric() )
+			return hi;
+
+
+		// Now, we start building the new Hop
+		System.out.println("Applying rewrite: +(A,%*%(*(b,C),D)) => +*(A,b,%*%(C,D))");
+		AggBinaryOp v1 = HopRewriteUtils.createMatrixMultiply(hi_1_0_1, hi_1_1);
+		TernaryOp v2 = HopRewriteUtils.createTernary(hi_0, hi_1_0_0, v1,Types.OpOp3.PLUS_MULT);
+
+		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
+
+		for ( Hop p : parents )
+			HopRewriteUtils.replaceChildReference(p, hi, v2);
+
+		// Remove old unreferenced Hops
+		HopRewriteUtils.cleanupUnreferenced(hi);
+		HopRewriteUtils.cleanupUnreferenced(hi_1);
+		HopRewriteUtils.cleanupUnreferenced(hi_1_0);
+
+		return v2;
+	}
+
+	// Implementation of the rule +(A,%*%(*(C,b),D)) => +*(A,b,%*%(C,D))
+	private static Hop _applyRewrite571(Hop hi) {
+		if ( !(hi instanceof BinaryOp) )
+			return hi;
+
+		BinaryOp c_hi = (BinaryOp) hi;
+
+		if ( c_hi.getOp() != Types.OpOp2.PLUS || !c_hi.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_0 = hi.getInput(0);
+
+		if ( hi_0.getDataType() != Types.DataType.MATRIX || !hi_0.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_1 = hi.getInput(1);
+
+		if (hi_1.getParent().size() > 1)
+			return hi;
+		if ( !HopRewriteUtils.isMatrixMultiply(hi_1) )
+			return hi;
+
+		Hop hi_1_0 = hi_1.getInput(0);
+
+		if (hi_1_0.getParent().size() > 1)
+			return hi;
+		if ( !(hi_1_0 instanceof BinaryOp) )
+			return hi;
+
+		BinaryOp c_hi_1_0 = (BinaryOp) hi_1_0;
+
+		if ( c_hi_1_0.getOp() != Types.OpOp2.MULT || !c_hi_1_0.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_1_0_0 = hi_1_0.getInput(0);
+
+		if ( hi_1_0_0.getDataType() != Types.DataType.MATRIX || !hi_1_0_0.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_1_0_1 = hi_1_0.getInput(1);
+
+		if ( hi_1_0_1.getDataType() != Types.DataType.SCALAR || !hi_1_0_1.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_1_1 = hi_1.getInput(1);
+
+		if ( hi_1_1.getDataType() != Types.DataType.MATRIX || !hi_1_1.getValueType().isNumeric() )
+			return hi;
+
+
+		// Now, we start building the new Hop
+		System.out.println("Applying rewrite: +(A,%*%(*(C,b),D)) => +*(A,b,%*%(C,D))");
+		AggBinaryOp v1 = HopRewriteUtils.createMatrixMultiply(hi_1_0_0, hi_1_1);
+		TernaryOp v2 = HopRewriteUtils.createTernary(hi_0, hi_1_0_1, v1,Types.OpOp3.PLUS_MULT);
+
+		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
+
+		for ( Hop p : parents )
+			HopRewriteUtils.replaceChildReference(p, hi, v2);
+
+		// Remove old unreferenced Hops
+		HopRewriteUtils.cleanupUnreferenced(hi);
+		HopRewriteUtils.cleanupUnreferenced(hi_1);
+		HopRewriteUtils.cleanupUnreferenced(hi_1_0);
+
+		return v2;
+	}
+
+	// Implementation of the rule +(A,%*%(C,*(b,D))) => +*(A,b,%*%(C,D))
+	private static Hop _applyRewrite572(Hop hi) {
+		if ( !(hi instanceof BinaryOp) )
+			return hi;
+
+		BinaryOp c_hi = (BinaryOp) hi;
+
+		if ( c_hi.getOp() != Types.OpOp2.PLUS || !c_hi.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_0 = hi.getInput(0);
+
+		if ( hi_0.getDataType() != Types.DataType.MATRIX || !hi_0.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_1 = hi.getInput(1);
+
+		if (hi_1.getParent().size() > 1)
+			return hi;
+		if ( !HopRewriteUtils.isMatrixMultiply(hi_1) )
+			return hi;
+
+		Hop hi_1_0 = hi_1.getInput(0);
+
+		if ( hi_1_0.getDataType() != Types.DataType.MATRIX || !hi_1_0.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_1_1 = hi_1.getInput(1);
+
+		if (hi_1_1.getParent().size() > 1)
+			return hi;
+		if ( !(hi_1_1 instanceof BinaryOp) )
+			return hi;
+
+		BinaryOp c_hi_1_1 = (BinaryOp) hi_1_1;
+
+		if ( c_hi_1_1.getOp() != Types.OpOp2.MULT || !c_hi_1_1.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_1_1_0 = hi_1_1.getInput(0);
+
+		if ( hi_1_1_0.getDataType() != Types.DataType.SCALAR || !hi_1_1_0.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_1_1_1 = hi_1_1.getInput(1);
+
+		if ( hi_1_1_1.getDataType() != Types.DataType.MATRIX || !hi_1_1_1.getValueType().isNumeric() )
+			return hi;
+
+
+		// Now, we start building the new Hop
+		System.out.println("Applying rewrite: +(A,%*%(C,*(b,D))) => +*(A,b,%*%(C,D))");
+		AggBinaryOp v1 = HopRewriteUtils.createMatrixMultiply(hi_1_0, hi_1_1_1);
+		TernaryOp v2 = HopRewriteUtils.createTernary(hi_0, hi_1_1_0, v1,Types.OpOp3.PLUS_MULT);
+
+		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
+
+		for ( Hop p : parents )
+			HopRewriteUtils.replaceChildReference(p, hi, v2);
+
+		// Remove old unreferenced Hops
+		HopRewriteUtils.cleanupUnreferenced(hi);
+		HopRewriteUtils.cleanupUnreferenced(hi_1);
+		HopRewriteUtils.cleanupUnreferenced(hi_1_1);
+
+		return v2;
+	}
+
+	// Implementation of the rule +(A,%*%(C,*(D,b))) => +*(A,b,%*%(C,D))
+	private static Hop _applyRewrite573(Hop hi) {
+		if ( !(hi instanceof BinaryOp) )
+			return hi;
+
+		BinaryOp c_hi = (BinaryOp) hi;
+
+		if ( c_hi.getOp() != Types.OpOp2.PLUS || !c_hi.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_0 = hi.getInput(0);
+
+		if ( hi_0.getDataType() != Types.DataType.MATRIX || !hi_0.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_1 = hi.getInput(1);
+
+		if (hi_1.getParent().size() > 1)
+			return hi;
+		if ( !HopRewriteUtils.isMatrixMultiply(hi_1) )
+			return hi;
+
+		Hop hi_1_0 = hi_1.getInput(0);
+
+		if ( hi_1_0.getDataType() != Types.DataType.MATRIX || !hi_1_0.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_1_1 = hi_1.getInput(1);
+
+		if (hi_1_1.getParent().size() > 1)
+			return hi;
+		if ( !(hi_1_1 instanceof BinaryOp) )
+			return hi;
+
+		BinaryOp c_hi_1_1 = (BinaryOp) hi_1_1;
+
+		if ( c_hi_1_1.getOp() != Types.OpOp2.MULT || !c_hi_1_1.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_1_1_0 = hi_1_1.getInput(0);
+
+		if ( hi_1_1_0.getDataType() != Types.DataType.MATRIX || !hi_1_1_0.getValueType().isNumeric() )
+			return hi;
+
+		Hop hi_1_1_1 = hi_1_1.getInput(1);
+
+		if ( hi_1_1_1.getDataType() != Types.DataType.SCALAR || !hi_1_1_1.getValueType().isNumeric() )
+			return hi;
+
+
+		// Now, we start building the new Hop
+		System.out.println("Applying rewrite: +(A,%*%(C,*(D,b))) => +*(A,b,%*%(C,D))");
+		AggBinaryOp v1 = HopRewriteUtils.createMatrixMultiply(hi_1_0, hi_1_1_0);
+		TernaryOp v2 = HopRewriteUtils.createTernary(hi_0, hi_1_1_1, v1,Types.OpOp3.PLUS_MULT);
+
+		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
+
+		for ( Hop p : parents )
+			HopRewriteUtils.replaceChildReference(p, hi, v2);
+
+		// Remove old unreferenced Hops
+		HopRewriteUtils.cleanupUnreferenced(hi);
+		HopRewriteUtils.cleanupUnreferenced(hi_1);
+		HopRewriteUtils.cleanupUnreferenced(hi_1_1);
 
 		return v2;
 	}

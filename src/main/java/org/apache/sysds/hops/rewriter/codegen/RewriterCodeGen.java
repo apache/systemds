@@ -2,6 +2,7 @@ package org.apache.sysds.hops.rewriter.codegen;
 
 
 import org.apache.sysds.hops.Hop;
+import org.apache.sysds.hops.rewriter.assertions.RewriterAssertions;
 import org.apache.sysds.hops.rewriter.RewriterCostEstimator;
 import org.apache.sysds.hops.rewriter.RewriterDataType;
 import org.apache.sysds.hops.rewriter.RewriterRule;
@@ -123,34 +124,39 @@ public class RewriterCodeGen {
 	}
 
 	private static String generateRewriteFunction(RewriterRule rule, String fName, int indentation, final RuleContext ctx) {
-		Tuple2<Set<RewriterStatement>, Boolean> t = RewriterCostEstimator.determineSingleReferenceRequirement(rule, ctx);
-		Set<RewriterStatement> mSet = t._1;
-		if (mSet instanceof AbstractCollection)
-			mSet = new HashSet<>(mSet);
-		mSet.add(rule.getStmt1());
-		boolean allowCombinedMultiRefs = t._2;
+		try {
+			Tuple2<Set<RewriterStatement>, Boolean> t = RewriterCostEstimator.determineSingleReferenceRequirement(rule, ctx);
+			Set<RewriterStatement> mSet = t._1;
+			if (mSet instanceof AbstractCollection)
+				mSet = new HashSet<>(mSet);
+			mSet.add(rule.getStmt1());
+			boolean allowCombinedMultiRefs = t._2;
 
-		StringBuilder sb = new StringBuilder();
+			StringBuilder sb = new StringBuilder();
 
-		// Append the function signature
-		indent(indentation, sb);
-		sb.append("private static Hop " + fName + "(Hop hi) {\n");
+			// Append the function signature
+			indent(indentation, sb);
+			sb.append("private static Hop " + fName + "(Hop hi) {\n");
 
-		if (!allowCombinedMultiRefs) {
-			indent(indentation + 1, sb);
-			sb.append("boolean _multiReference = false;\n");
+			if (!allowCombinedMultiRefs) {
+				indent(indentation + 1, sb);
+				sb.append("boolean _multiReference = false;\n");
+			}
+
+			// Build the function body
+			buildMatchingSequence(rule.toString(), rule.getStmt1(), rule.getStmt2(), rule.getCombinedAssertions(), sb, ctx, indentation + 1, mSet, allowCombinedMultiRefs);
+			indent(indentation, sb);
+
+			sb.append("}\n");
+
+			return sb.toString();
+		} catch (Exception e) {
+			e.addSuppressed(new Exception("Failed to generate rewrite rule: " + rule.toString() + "\nAssertions: " + rule.getCombinedAssertions()));
+			throw e;
 		}
-
-		// Build the function body
-		buildMatchingSequence(rule.toString(), rule.getStmt1(), rule.getStmt2(), sb, ctx, indentation + 1, mSet, allowCombinedMultiRefs);
-		indent(indentation, sb);
-
-		sb.append("}\n");
-
-		return sb.toString();
 	}
 
-	private static void buildMatchingSequence(String name, RewriterStatement from, RewriterStatement to, StringBuilder sb, final RuleContext ctx, int indentation, Set<RewriterStatement> allowedMultiRefs, boolean allowCombinations) {
+	private static void buildMatchingSequence(String name, RewriterStatement from, RewriterStatement to, RewriterAssertions combinedAssertions, StringBuilder sb, final RuleContext ctx, int indentation, Set<RewriterStatement> allowedMultiRefs, boolean allowCombinations) {
 		Map<RewriterStatement, String> vars = new HashMap<>();
 		vars.put(from, "hi");
 		recursivelyBuildMatchingSequence(from, sb, "hi", ctx, indentation, vars, allowedMultiRefs, allowCombinations);
@@ -163,7 +169,7 @@ public class RewriterCodeGen {
 			sb.append("System.out.println(\"Applying rewrite: " + name + "\");\n");
 		}
 
-		Set<RewriterStatement> activeStatements = buildRewrite(to, sb, vars, ctx, indentation);
+		Set<RewriterStatement> activeStatements = buildRewrite(to, sb, combinedAssertions, vars, ctx, indentation);
 
 		sb.append('\n');
 		indent(indentation, sb);
@@ -183,9 +189,9 @@ public class RewriterCodeGen {
 	}
 
 	// Returns the set of all active statements after the rewrite
-	private static Set<RewriterStatement> buildRewrite(RewriterStatement newRoot, StringBuilder sb, Map<RewriterStatement, String> vars, final RuleContext ctx, int indentation) {
+	private static Set<RewriterStatement> buildRewrite(RewriterStatement newRoot, StringBuilder sb, RewriterAssertions assertions, Map<RewriterStatement, String> vars, final RuleContext ctx, int indentation) {
 		Set<RewriterStatement> visited = new HashSet<>();
-		recursivelyBuildNewHop(sb, newRoot, vars, ctx, indentation, 1, visited);
+		recursivelyBuildNewHop(sb, newRoot, assertions, vars, ctx, indentation, 1, visited);
 		//indent(indentation, sb);
 		//sb.append("hi = " + vars.get(newRoot) + ";\n");
 
@@ -203,13 +209,13 @@ public class RewriterCodeGen {
 		}, false);
 	}
 
-	private static int recursivelyBuildNewHop(StringBuilder sb, RewriterStatement cur, Map<RewriterStatement, String> vars, final RuleContext ctx, int indentation, int varCtr, Set<RewriterStatement> visited) {
+	private static int recursivelyBuildNewHop(StringBuilder sb, RewriterStatement cur, RewriterAssertions assertions, Map<RewriterStatement, String> vars, final RuleContext ctx, int indentation, int varCtr, Set<RewriterStatement> visited) {
 		visited.add(cur);
 		if (vars.containsKey(cur))
 			return varCtr;
 
 		for (RewriterStatement child : cur.getOperands())
-			varCtr = recursivelyBuildNewHop(sb, child, vars, ctx, indentation, varCtr, visited);
+			varCtr = recursivelyBuildNewHop(sb, child, assertions, vars, ctx, indentation, varCtr, visited);
 
 		if (cur instanceof RewriterDataType) {
 			if (cur.isLiteral()) {
@@ -222,7 +228,7 @@ public class RewriterCodeGen {
 			return varCtr;
 		} else {
 			String opClass = CodeGenUtils.getOpClass(cur, ctx);
-			String constructor = CodeGenUtils.getHopConstructor(cur, ctx, cur.getOperands().stream().map(vars::get).toArray(String[]::new));
+			String constructor = CodeGenUtils.getHopConstructor(cur, assertions, vars, ctx, cur.getOperands().stream().map(vars::get).toArray(String[]::new));
 			String name = "v"  + (varCtr++);
 			indent(indentation, sb);
 			sb.append(opClass + " " + name + " = " + constructor + ";\n");

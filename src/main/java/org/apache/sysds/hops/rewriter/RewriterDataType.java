@@ -1,8 +1,7 @@
 package org.apache.sysds.hops.rewriter;
 
-import org.apache.commons.collections4.bidimap.DualHashBidiMap;
-import org.apache.commons.lang3.NotImplementedException;
 import org.apache.commons.lang3.function.TriFunction;
+import org.apache.sysds.hops.rewriter.assertions.RewriterAssertions;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -11,7 +10,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
-import java.util.function.Function;
 
 public class RewriterDataType extends RewriterStatement {
 	private String id;

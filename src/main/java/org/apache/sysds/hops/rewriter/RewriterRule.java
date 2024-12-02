@@ -1,24 +1,19 @@
 package org.apache.sysds.hops.rewriter;
 
-import com.google.common.collect.Sets;
-import org.apache.commons.collections4.bidimap.DualHashBidiMap;
 import org.apache.commons.lang3.NotImplementedException;
 import org.apache.commons.lang3.mutable.MutableObject;
-import org.apache.hadoop.yarn.webapp.hamlet2.Hamlet;
-import org.apache.spark.sql.catalyst.expressions.Exp;
+import org.apache.sysds.hops.rewriter.assertions.RewriterAssertionUtils;
+import org.apache.sysds.hops.rewriter.assertions.RewriterAssertions;
 import scala.Tuple2;
 import scala.Tuple3;
-import scala.reflect.internal.Trees;
 
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.BiConsumer;
-import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -38,6 +33,7 @@ public class RewriterRule extends AbstractRewriterRule {
 	private final boolean unidirectional;
 	private final Consumer<RewriterStatement> postProcessor;
 	private Set<RewriterStatement> allowedMultiReferences = Collections.emptySet();
+	private RewriterAssertions combinedAssertions;
 	private boolean allowCombinations = false;
 
 	public RewriterRule(final RuleContext ctx, String name, RewriterStatement fromRoot, RewriterStatement toRoot, boolean unidirectional, HashMap<RewriterStatement, LinkObject> linksStmt1ToStmt2, HashMap<RewriterStatement, LinkObject> linksStmt2ToStmt1) {
@@ -61,6 +57,18 @@ public class RewriterRule extends AbstractRewriterRule {
 		this.applyStmt1ToStmt2 = apply1To2;
 		this.applyStmt2ToStmt1 = apply2To1;
 		this.postProcessor = postProcessor;
+	}
+
+	public void buildCombinedAssertions() {
+		combinedAssertions = RewriterAssertionUtils.buildImplicitAssertions(fromRoot, ctx);
+		RewriterAssertionUtils.buildImplicitAssertions(toRoot, combinedAssertions, ctx);
+	}
+
+	public RewriterAssertions getCombinedAssertions() {
+		if (combinedAssertions == null)
+			buildCombinedAssertions();
+
+		return combinedAssertions;
 	}
 
 	public void setAllowedMultiReferences(Set<RewriterStatement> allowed, boolean allowCombinations) {

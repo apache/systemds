@@ -1,6 +1,7 @@
 package org.apache.sysds.hops.rewriter;
 
 import org.apache.commons.lang3.function.TriFunction;
+import org.apache.sysds.hops.rewriter.assertions.RewriterAssertions;
 
 import java.util.ArrayList;
 import java.util.Arrays;

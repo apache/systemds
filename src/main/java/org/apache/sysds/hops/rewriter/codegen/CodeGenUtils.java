@@ -1,11 +1,12 @@
 package org.apache.sysds.hops.rewriter.codegen;
 
 import org.apache.commons.lang3.NotImplementedException;
-import org.apache.sysds.common.Types;
-import org.apache.sysds.hops.AggUnaryOp;
-import org.apache.sysds.hops.rewrite.HopRewriteUtils;
+import org.apache.sysds.hops.rewriter.assertions.RewriterAssertions;
 import org.apache.sysds.hops.rewriter.RewriterStatement;
 import org.apache.sysds.hops.rewriter.RuleContext;
+
+import java.util.Map;
+import java.util.Optional;
 
 public class CodeGenUtils {
 	public static String getSpecialOpCheck(RewriterStatement stmt, final RuleContext ctx, String hopVar) {
@@ -63,6 +64,10 @@ public class CodeGenUtils {
 					return "Types.AggOp.SUM";
 				case "*2":
 					return "Types.OpOp1.MULT2";
+				case "cast.MATRIX":
+					return "Types.OpOp1.CAST_AS_MATRIX";
+				case "const":
+					return "Types.OpOpDG.RAND";
 			}
 		} else if (stmt.getOperands().size() == 2) {
 			switch (stmt.trueInstruction()) {
@@ -192,6 +197,7 @@ public class CodeGenUtils {
 			case "abs":
 			case "round":
 			case "*2":
+			case "cast.MATRIX":
 				return "UnaryOp";
 
 			case "rowSums":
@@ -236,6 +242,9 @@ public class CodeGenUtils {
 			case "+*":
 			case "-*":
 				return "TernaryOp";
+
+			case "const":
+				return "DataGenOp";
 		}
 
 		throw new NotImplementedException(stmt.trueTypedInstruction(ctx));
@@ -273,24 +282,9 @@ public class CodeGenUtils {
 		throw new IllegalArgumentException();
 	}
 
-	public static String getHopConstructor(RewriterStatement cur, final RuleContext ctx, String... children) {
+	public static String getHopConstructor(RewriterStatement cur, RewriterAssertions assertions, Map<RewriterStatement, String> varNameMapping, final RuleContext ctx, String... children) {
 		String opClass = getOpClass(cur, ctx);
 		String opCode = null;
-
-		switch (opClass) {
-			case "BinaryOp":
-				if (children.length != 2)
-					throw new IllegalArgumentException();
-
-				opCode = getOpCode(cur, ctx);
-				return "HopRewriteUtils.createBinary(" + children[0] + ", " + children[1] + ", " + opCode + ")";
-			case "TernaryOp":
-				if (children.length != 3)
-					throw new IllegalArgumentException();
-
-				opCode = getOpCode(cur, ctx);
-				return "HopRewriteUtils.createTernary(" + children[0] + ", " + children[1] + ", " + children[2] + "," + opCode + ")";
-		}
 
 		// Special instructions
 		switch (cur.trueInstruction()) {
@@ -327,6 +321,102 @@ public class CodeGenUtils {
 					throw new IllegalArgumentException();
 
 				return "HopRewriteUtils.createAggUnaryOp(" + children[0] + ", Types.AggOp.SUM, Types.Direction.RowCol)";
+
+			case "trace":
+				if (children.length != 1)
+					throw new IllegalArgumentException();
+
+				return "HopRewriteUtils.createAggUnaryOp(" + children[0] + ", Types.AggOp.TRACE, Direction.RowCol)";
+
+			case "ncol":
+				if (children.length != 1)
+					throw new IllegalArgumentException();
+
+				return "HopRewriteUtils.createUnary(" + children[0] + ", Types.OpOp1.NCOL)";
+
+			case "nrow":
+				if (children.length != 1)
+					throw new IllegalArgumentException();
+
+				return "HopRewriteUtils.createUnary(" + children[0] + ", Types.OpOp1.NROW)";
+
+			case "const":
+				Optional<RewriterStatement> nrowLiteral = cur.getNRow().isLiteral() ? Optional.of(cur.getNRow()) : Optional.empty();
+				Optional<RewriterStatement> ncolLiteral = cur.getNCol().isLiteral() ? Optional.of(cur.getNCol()) : Optional.empty();
+
+				RewriterAssertions.RewriterAssertion nrowAssertion = assertions.getAssertionObj(cur.getNRow());
+				RewriterAssertions.RewriterAssertion ncolAssertion = assertions.getAssertionObj(cur.getNCol());
+
+				nrowLiteral = nrowAssertion == null ? nrowLiteral : nrowAssertion.getLiteral();
+				ncolLiteral = ncolAssertion == null ? ncolLiteral : ncolAssertion.getLiteral();
+				String nrowContent;
+				String ncolContent;
+
+				if (nrowLiteral.isPresent()) {
+					nrowContent = "new LiteralOp(" + nrowLiteral.get().getLiteral().toString() + ")";
+				} else {
+					// Find the first
+					nrowContent = null;
+
+					if (nrowAssertion == null)
+						throw new IllegalArgumentException();
+
+					for (RewriterStatement stmt : nrowAssertion.getEClass()) {
+						String mappedName = varNameMapping.get(stmt);
+
+						if (mappedName != null) {
+							nrowContent = getHopConstructor(stmt, assertions, varNameMapping, ctx, mappedName);
+							break;
+						}
+					}
+
+					if (nrowContent == null)
+						throw new IllegalArgumentException();
+				}
+
+				if (ncolLiteral.isPresent()) {
+					ncolContent = "new LiteralOp(" + ncolLiteral.get().getLiteral().toString() + ")";
+				} else {
+					// Find the first
+					ncolContent = null;
+
+					if (ncolAssertion == null)
+						throw new IllegalArgumentException();
+
+					for (RewriterStatement stmt : ncolAssertion.getEClass()) {
+						String mappedName = varNameMapping.get(stmt);
+
+						if (mappedName != null) {
+							ncolContent = getHopConstructor(stmt, assertions, varNameMapping, ctx, mappedName);
+							break;
+						}
+					}
+
+					if (ncolContent == null)
+						throw new IllegalArgumentException();
+				}
+
+				return "HopRewriteUtils.createDataGenOp(" + nrowContent + "," + ncolContent + "," + children[0] + ")";
+		}
+
+		switch (opClass) {
+			case "UnaryOp":
+				if (children.length != 1)
+					throw new IllegalArgumentException();
+
+				return "HopRewriteUtils.createUnary(" + children[0] + ", " + opCode + ")";
+			case "BinaryOp":
+				if (children.length != 2)
+					throw new IllegalArgumentException();
+
+				opCode = getOpCode(cur, ctx);
+				return "HopRewriteUtils.createBinary(" + children[0] + ", " + children[1] + ", " + opCode + ")";
+			case "TernaryOp":
+				if (children.length != 3)
+					throw new IllegalArgumentException();
+
+				opCode = getOpCode(cur, ctx);
+				return "HopRewriteUtils.createTernary(" + children[0] + ", " + children[1] + ", " + children[2] + "," + opCode + ")";
 		}
 
 		throw new NotImplementedException(cur.trueTypedInstruction(ctx));

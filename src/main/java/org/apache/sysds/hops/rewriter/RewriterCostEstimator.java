@@ -2,6 +2,8 @@ package org.apache.sysds.hops.rewriter;
 
 import org.apache.commons.lang3.mutable.MutableLong;
 import org.apache.commons.lang3.mutable.MutableObject;
+import org.apache.sysds.hops.rewriter.assertions.RewriterAssertionUtils;
+import org.apache.sysds.hops.rewriter.assertions.RewriterAssertions;
 import scala.Tuple2;
 
 import java.util.ArrayList;
@@ -163,6 +165,8 @@ public class RewriterCostEstimator {
 	}
 
 	private static RewriterStatement computeMatrixOpCost(RewriterInstruction instr, final RuleContext ctx, List<RewriterStatement> uniqueCosts, RewriterAssertions assertions, MutableLong overhead) {
+		RewriterAssertionUtils.buildImplicitAssertion(instr, assertions, ctx);
+
 		RewriterStatement cost = null;
 		Map<String, RewriterStatement> map = new HashMap<>();
 
@@ -176,7 +180,7 @@ public class RewriterCostEstimator {
 				map.put("sumCost", atomicOpCostStmt("+", ctx));
 				// Rough estimation
 				cost = RewriterUtils.parse("*(argList(nrowA, ncolA, ncolB, +(argList(mulCost, sumCost))))", ctx, map);
-				assertions.addEqualityAssertion(map.get("ncolA"), map.get("nrowB"));
+				//assertions.addEqualityAssertion(map.get("ncolA"), map.get("nrowB"));
 				overhead.add(MALLOC_COST);
 				break;
 			case "t":
@@ -193,7 +197,7 @@ public class RewriterCostEstimator {
 				map.put("nrowA", instr.getChild(0).getNRow());
 				map.put("ncolA", instr.getChild(0).getNCol());
 				cost = map.get("nrowA");
-				assertions.addEqualityAssertion(map.get("nrowA"), map.get("ncolA"));
+				//assertions.addEqualityAssertion(map.get("nrowA"), map.get("ncolA"));
 				overhead.add(MALLOC_COST);
 				break;
 			case "cast.MATRIX":
@@ -208,7 +212,7 @@ public class RewriterCostEstimator {
 				map.put("nrowB", instr.getChild(1).getNRow());
 				map.put("ncolB", instr.getChild(1).getNCol());
 				cost = RewriterUtils.parse("+(argList(*(argList(nrowA, ncolA)), *(argList(nrowB, ncolB))))", ctx, map);
-				assertions.addEqualityAssertion(instr.getChild(0).getNCol(), instr.getChild(1).getNCol());
+				//assertions.addEqualityAssertion(instr.getChild(0).getNCol(), instr.getChild(1).getNCol());
 				overhead.add(MALLOC_COST);
 				break;
 			case "CBind":
@@ -217,7 +221,7 @@ public class RewriterCostEstimator {
 				map.put("nrowB", instr.getChild(1).getNRow());
 				map.put("ncolB", instr.getChild(1).getNCol());
 				cost = RewriterUtils.parse("+(argList(*(argList(nrowA, ncolA)), *(argList(nrowB, ncolB))))", ctx, map);
-				assertions.addEqualityAssertion(instr.getChild(0).getNRow(), instr.getChild(1).getNRow());
+				//assertions.addEqualityAssertion(instr.getChild(0).getNRow(), instr.getChild(1).getNRow());
 				overhead.add(MALLOC_COST);
 				break;
 			case "rand":
@@ -231,8 +235,8 @@ public class RewriterCostEstimator {
 				RewriterStatement mulCost = atomicOpCostStmt("*", ctx);
 				RewriterStatement sum = RewriterStatement.multiArgInstr(ctx, "+", subtractionCost, mulCost);
 				cost = RewriterStatement.multiArgInstr(ctx, "*", sum, instr.getNCol(), instr.getNRow());
-				assertions.addEqualityAssertion(instr.getChild(0).getNCol(), instr.getChild(1).getNCol());
-				assertions.addEqualityAssertion(instr.getChild(0).getNRow(), instr.getChild(1).getNRow());
+				//assertions.addEqualityAssertion(instr.getChild(0).getNCol(), instr.getChild(1).getNCol());
+				//assertions.addEqualityAssertion(instr.getChild(0).getNRow(), instr.getChild(1).getNRow());
 				overhead.add(MALLOC_COST);
 				break;
 			case "+*":
@@ -240,8 +244,8 @@ public class RewriterCostEstimator {
 				mulCost = atomicOpCostStmt("*", ctx);
 				sum = RewriterStatement.multiArgInstr(ctx, "+", additionCost, mulCost);
 				cost = RewriterStatement.multiArgInstr(ctx, "*", sum, instr.getNCol(), instr.getNRow());
-				assertions.addEqualityAssertion(instr.getChild(0).getNCol(), instr.getChild(2).getNCol());
-				assertions.addEqualityAssertion(instr.getChild(0).getNRow(), instr.getChild(2).getNRow());
+				//assertions.addEqualityAssertion(instr.getChild(0).getNCol(), instr.getChild(2).getNCol());
+				//assertions.addEqualityAssertion(instr.getChild(0).getNRow(), instr.getChild(2).getNRow());
 				overhead.add(MALLOC_COST + 50); // To make it worse than 1-*
 				break;
 			case "-*":
@@ -249,8 +253,8 @@ public class RewriterCostEstimator {
 				mulCost = atomicOpCostStmt("*", ctx);
 				sum = RewriterStatement.multiArgInstr(ctx, "+", subtractionCost, mulCost);
 				cost = RewriterStatement.multiArgInstr(ctx, "*", sum, instr.getNCol(), instr.getNRow());
-				assertions.addEqualityAssertion(instr.getChild(0).getNCol(), instr.getChild(2).getNCol());
-				assertions.addEqualityAssertion(instr.getChild(0).getNRow(), instr.getChild(2).getNRow());
+				//assertions.addEqualityAssertion(instr.getChild(0).getNCol(), instr.getChild(2).getNCol());
+				//assertions.addEqualityAssertion(instr.getChild(0).getNRow(), instr.getChild(2).getNRow());
 				overhead.add(MALLOC_COST + 50); // To make it worse than 1-*
 				break;
 			case "*2":
@@ -311,8 +315,8 @@ public class RewriterCostEstimator {
 						.withOps(RewriterStatement.argList(ctx, opCost, instr.getNCol(), instr.getNRow()));
 
 				if (secondMatrix != null) {
-					assertions.addEqualityAssertion(firstMatrix.getNCol(), secondMatrix.getNCol());
-					assertions.addEqualityAssertion(firstMatrix.getNRow(), secondMatrix.getNRow());
+					//assertions.addEqualityAssertion(firstMatrix.getNCol(), secondMatrix.getNCol());
+					//assertions.addEqualityAssertion(firstMatrix.getNRow(), secondMatrix.getNRow());
 				}
 
 				overhead.add(MALLOC_COST);
@@ -332,6 +336,7 @@ public class RewriterCostEstimator {
 	}
 
 	private static RewriterStatement computeScalarOpCost(RewriterInstruction instr, final RuleContext ctx, List<RewriterStatement> uniqueCosts, RewriterAssertions assertions, MutableLong overhead) {
+		RewriterAssertionUtils.buildImplicitAssertion(instr, assertions, ctx);
 		Map<String, RewriterStatement> map = new HashMap<>();
 		switch (instr.trueTypedInstruction(ctx)) {
 			case "sum(MATRIX)":
@@ -345,7 +350,7 @@ public class RewriterCostEstimator {
 				map.put("nrowA", instr.getChild(0).getNRow());
 				map.put("ncolA", instr.getChild(0).getNCol());
 				uniqueCosts.add(map.get("nrowA"));
-				assertions.addEqualityAssertion(map.get("nrowA"), map.get("ncolA"));
+				//assertions.addEqualityAssertion(map.get("nrowA"), map.get("ncolA"));
 				return uniqueCosts.get(uniqueCosts.size()-1);
 			case "[](MATRIX,INT,INT)":
 				return RewriterStatement.literal(ctx, 0L);
@@ -353,8 +358,8 @@ public class RewriterCostEstimator {
 				map.put("nrowA", instr.getChild(0).getNRow());
 				map.put("ncolA", instr.getChild(0).getNCol());
 				uniqueCosts.add(map.get("nrowA"));
-				assertions.addEqualityAssertion(map.get("nrowA"), map.get("ncolA"));
-				assertions.addEqualityAssertion(map.get("nrowA"), RewriterStatement.literal(ctx, 1L));
+				//assertions.addEqualityAssertion(map.get("nrowA"), map.get("ncolA"));
+				//assertions.addEqualityAssertion(map.get("nrowA"), RewriterStatement.literal(ctx, 1L));
 				return uniqueCosts.get(uniqueCosts.size()-1);
 			case "const(MATRIX,FLOAT)":
 			case "_nnz":

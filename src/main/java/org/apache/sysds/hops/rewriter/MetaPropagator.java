@@ -2,11 +2,10 @@ package org.apache.sysds.hops.rewriter;
 
 import org.apache.commons.lang3.NotImplementedException;
 import org.apache.commons.lang3.mutable.MutableObject;
-import scala.Tuple3;
+import org.apache.sysds.hops.rewriter.assertions.RewriterAssertions;
 
 import java.util.HashMap;
 import java.util.Optional;
-import java.util.Set;
 import java.util.UUID;
 import java.util.function.Function;
 

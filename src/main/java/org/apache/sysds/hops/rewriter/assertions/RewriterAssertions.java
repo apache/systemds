@@ -1,17 +1,21 @@
-package org.apache.sysds.hops.rewriter;
+package org.apache.sysds.hops.rewriter.assertions;
 
 import org.apache.commons.lang3.NotImplementedException;
 import org.apache.commons.lang3.function.TriFunction;
-import org.apache.commons.lang3.mutable.MutableObject;
+import org.apache.sysds.hops.rewriter.RewriterInstruction;
+import org.apache.sysds.hops.rewriter.RewriterStatement;
+import org.apache.sysds.hops.rewriter.RuleContext;
 import scala.Tuple2;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 import java.util.function.BiConsumer;
@@ -377,6 +381,9 @@ public class RewriterAssertions {
 		if (stmt1 == stmt2 || (stmt1.isLiteral() && stmt2.isLiteral() && stmt1.getLiteral().equals(stmt2.getLiteral())))
 			return false;
 
+		if (stmt1.isLiteral() && stmt2.isLiteral() && !stmt1.getLiteral().equals(stmt2.getLiteral()))
+			throw new IllegalArgumentException("Cannot assert equality of two different literals!");
+
 		//if (!(stmt1 instanceof RewriterInstruction) || !(stmt2 instanceof RewriterInstruction))
 		//	throw new UnsupportedOperationException("Asserting uninjectable objects is not yet supported: " + stmt1 + "; " + stmt2);
 
@@ -389,6 +396,44 @@ public class RewriterAssertions {
 		RewriterStatement e2 = stmt2;
 		RewriterAssertion stmt1Assertions = assertionMatcher.get(e1);
 		RewriterAssertion stmt2Assertions = assertionMatcher.get(e2);
+
+		if (stmt1.isLiteral() || stmt2.isLiteral()) {
+			RewriterStatement literal = stmt1.isLiteral() ? stmt1 : stmt2;
+
+			if (stmt1Assertions != null) {
+				Optional<RewriterStatement> existingLiteral = stmt1Assertions.getLiteral();
+
+				if (existingLiteral.isPresent()) {
+					if (literal.getLiteral().equals(existingLiteral.get().getLiteral()))
+						return false;
+					else
+						throw new IllegalArgumentException("Cannot assert equality of two different literals!");
+				}
+			}
+
+			if (stmt2Assertions != null) {
+				Optional<RewriterStatement> existingLiteral = stmt2Assertions.getLiteral();
+
+				if (existingLiteral.isPresent()) {
+					if (literal.getLiteral().equals(existingLiteral.get().getLiteral()))
+						return false;
+					else
+						throw new IllegalArgumentException("Cannot assert equality of two different literals!");
+				}
+			}
+
+			if (stmt1Assertions != null && stmt2Assertions != null) {
+				// Here, we need to check if both assertions already contain a literal
+				// If the literals are identical, we need to deduplicate, otherwise throw an error
+				Optional<RewriterStatement> existingLiteral1 = stmt1Assertions.getLiteral();
+				Optional<RewriterStatement> existingLiteral2 = stmt2Assertions.getLiteral();
+
+				if (existingLiteral1.isPresent() && existingLiteral2.isPresent()) {
+					if (!existingLiteral1.get().getLiteral().equals(existingLiteral2.get().getLiteral()))
+						throw new IllegalArgumentException("Cannot assert equality of two different literal!");
+				}
+			}
+		}
 
 		//System.out.println("Stmt1Assertion: " + stmt1Assertions);
 		//System.out.println("Stmt2Assertion: " + stmt2Assertions);
@@ -477,6 +522,7 @@ public class RewriterAssertions {
 
 		//System.out.println("New assertion3: " + stmt2Assertions);
 		resolveCyclicAssertions(stmt2Assertions);
+		stmt2Assertions.deduplicate();
 
 		final RewriterAssertion assertionToRemove = stmt1Assertions;
 		final RewriterAssertion assertionToExtend = stmt2Assertions;
@@ -706,7 +752,11 @@ public class RewriterAssertions {
 		RewriterStatement stmt;
 		RewriterStatement backRef; // The back-reference to this assertion
 
-		RewriterStatement getEClassStmt(final RuleContext ctx, RewriterAssertions assertions) {
+		public Collection<RewriterStatement> getEClass() {
+			return set;
+		}
+
+		public RewriterStatement getEClassStmt(final RuleContext ctx, RewriterAssertions assertions) {
 			if (stmt != null)
 				return stmt;
 
@@ -732,7 +782,7 @@ public class RewriterAssertions {
 			return stmt;
 		}
 
-		RewriterStatement getBackRef(final RuleContext ctx, RewriterAssertions assertions) {
+		public RewriterStatement getBackRef(final RuleContext ctx, RewriterAssertions assertions) {
 			if (backRef != null)
 				return backRef;
 
@@ -749,6 +799,30 @@ public class RewriterAssertions {
 				return v;
 			});
 			return backRef;
+		}
+
+		// Returns a literal if available, otherwise null
+		public Optional<RewriterStatement> getLiteral() {
+			return set.stream().filter(RewriterStatement::isLiteral).findFirst();
+		}
+
+		// Removes duplicate entries (e.g. duplicate literals etc.)
+		public void deduplicate() {
+			if (stmt != null && stmt.getChild(0).getOperands().size() != set.size()) {
+				List<RewriterStatement> operands = stmt.getChild(0).getOperands();
+				Set<RewriterStatement> elementTracker = new HashSet<>();
+
+				for (int i = 0; i < operands.size(); i++) {
+					RewriterStatement el = operands.get(i);
+
+					if (elementTracker.contains(el)) {
+						operands.remove(i);
+						i--;
+					} else {
+						elementTracker.add(el);
+					}
+				}
+			}
 		}
 
 		@Override

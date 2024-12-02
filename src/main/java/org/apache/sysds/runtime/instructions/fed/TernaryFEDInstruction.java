@@ -122,7 +122,38 @@ public class TernaryFEDInstruction extends ComputationFEDInstruction {
 		if(matrixInputsCount == 3)
 			processMatrixInput(ec, mo1, mo2, mo3);
 		else if(matrixInputsCount == 1) {
-			CPOperand in = mo1 == null ? mo2 == null ? input3 : input2 : input1;
+			CPOperand in;
+			// determine the position of a matrix in the input and whether any of the scalars are not literals
+			if (mo1 == null) {
+				if (mo2 == null) { // sc, sc, mat
+					in = input3;
+					instString = InstructionUtils.replaceOperand(instString, 2,
+						InstructionUtils.createLiteralOperand(ec.getScalarInput(input1).getStringValue(), Types.ValueType.FP64));
+					if (!input2.isLiteral()) {
+						instString = InstructionUtils.replaceOperand(instString, 3,
+							InstructionUtils.createLiteralOperand(ec.getScalarInput(input2).getStringValue(), Types.ValueType.FP64));
+					}
+				} else { // sc, mat, sc
+					in = input2;
+					instString = InstructionUtils.replaceOperand(instString, 2,
+						InstructionUtils.createLiteralOperand(ec.getScalarInput(input1).getStringValue(), Types.ValueType.FP64));
+					if (!input3.isLiteral()) {
+						instString = InstructionUtils.replaceOperand(instString, 4,
+							InstructionUtils.createLiteralOperand(ec.getScalarInput(input3).getStringValue(), Types.ValueType.FP64));
+					}
+				}
+			} else { // mat, sc, sc
+				in = input1;
+				if (!input2.isLiteral()) {
+					instString = InstructionUtils.replaceOperand(instString, 3,
+						InstructionUtils.createLiteralOperand(ec.getScalarInput(input2).getStringValue(), Types.ValueType.FP64));
+				}
+				if (!input3.isLiteral()) {
+					instString = InstructionUtils.replaceOperand(instString, 4,
+						InstructionUtils.createLiteralOperand(ec.getScalarInput(input3).getStringValue(), Types.ValueType.FP64));
+				}
+			}
+
 			mo1 = mo1 == null ? mo2 == null ? mo3 : mo2 : mo1;
 			processMatrixScalarInput(ec, mo1, in);
 		}
@@ -150,11 +181,10 @@ public class TernaryFEDInstruction extends ComputationFEDInstruction {
 
 	private void processMatrixScalarInput(ExecutionContext ec, MatrixLineagePair mo1, CPOperand in) {
 		long id = FederationUtils.getNextFedDataID();
-		FederatedRequest fr1 = new FederatedRequest(FederatedRequest.RequestType.PUT_VAR, id, new MatrixCharacteristics(-1, -1), mo1.getDataType());
-
-		FederatedRequest fr2 = FederationUtils.callInstruction(instString, output, id, new CPOperand[] {in}, new long[] {mo1.getFedMapping().getID()},
+		FederatedRequest fr = FederationUtils.callInstruction(instString, output, id, new CPOperand[] {in}, new long[] {mo1.getFedMapping().getID()},
 			InstructionUtils.getExecType(instString), false);
-		sendFederatedRequests(ec, mo1.getMO(), fr1.getID(), fr1, fr2);
+
+		sendFederatedRequests(ec, mo1.getMO(), fr.getID(), fr);
 	}
 
 	private void process2MatrixScalarInput(ExecutionContext ec, MatrixLineagePair mo1, MatrixLineagePair mo2, CPOperand in1, CPOperand in2) {

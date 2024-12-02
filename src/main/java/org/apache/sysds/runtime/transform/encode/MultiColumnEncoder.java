@@ -842,6 +842,7 @@ public class MultiColumnEncoder implements Encoder {
 		}
 		else {
 			output.recomputeNonZeros(k);
+			output.examSparsity(k);
 		}
 		if(DMLScript.STATISTICS)
 			TransformStatistics.incOutMatrixPostProcessingTime(System.nanoTime()-t0);

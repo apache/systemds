@@ -119,19 +119,25 @@ public class CompressedSizeInfoColGroup {
 	 */
 	public CompressedSizeInfoColGroup(IColIndex columns, int nRows, CompressionType ct) {
 		_cols = columns;
-		_facts = new EstimationFactors(0, nRows);
 		_sizes = new EnumMap<>(CompressionType.class);
 		switch(ct) {
 			case EMPTY:
+				_facts = new EstimationFactors(1, nRows);
 				_sizes.put(ct, (double) ColGroupSizes.estimateInMemorySizeEMPTY(columns.size(), columns.isContiguous()));
 				break;
 			case CONST:
+				_facts = new EstimationFactors(1, nRows);
 				_sizes.put(ct,
 					(double) ColGroupSizes.estimateInMemorySizeCONST(columns.size(), columns.isContiguous(), 1.0, false));
 				break;
 			case UNCOMPRESSED:
+				_facts = new EstimationFactors(nRows, nRows);
 				_sizes.put(ct, (double) ColGroupSizes.estimateInMemorySizeUncompressed(nRows, columns.isContiguous(),
 					columns.size(), 1.0));
+				break;
+			case OHE:
+				_facts = new EstimationFactors(columns.size(), nRows);
+				_sizes.put(ct, (double) ColGroupSizes.estimateInMemorySizeOHE(columns.size(), columns.isContiguous(), nRows));
 				break;
 			default:
 				throw new DMLCompressionException("Invalid instantiation of const Cost");

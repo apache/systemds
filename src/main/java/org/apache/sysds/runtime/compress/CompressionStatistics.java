@@ -46,6 +46,8 @@ public class CompressionStatistics {
 	/** Compressed size */
 	public long compressedSize;
 
+	/** Sparsity of input matrix */
+	public double sparsity;
 	/** Cost calculated by the cost estimator on input */
 	public double originalCost = Double.NaN;
 	/** Summed cost estimated from individual columns */

@@ -114,6 +114,8 @@ jobs:
           torch \
           librosa \
           h5py \
+          nltk \
+          gensim \
           black
 
     - name: Build Python Package

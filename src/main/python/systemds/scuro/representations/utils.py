@@ -18,6 +18,8 @@
 # under the License.
 #
 # -------------------------------------------------------------
+import os
+import pickle
 
 import numpy as np
 
@@ -33,3 +35,39 @@ def pad_sequences(sequences, maxlen=None, dtype="float32", value=0):
         result[i, : len(data)] = data
 
     return result
+
+
+def get_segments(data, key_prefix):
+    segments = {}
+    counter = 1
+    for line in data:
+        line = line.replace("\n", "")
+        segments[key_prefix + str(counter)] = line
+        counter += 1
+
+    return segments
+
+
+def read_data_from_file(filepath, indices):
+    data = {}
+
+    is_dir = True if os.path.isdir(filepath) else False
+
+    if is_dir:
+        files = os.listdir(filepath)
+
+        # get file extension
+        _, ext = os.path.splitext(files[0])
+        for key in indices:
+            with open(filepath + key + ext) as segm:
+                data.update(get_segments(segm, key + "_"))
+    else:
+        with open(filepath) as file:
+            data.update(get_segments(file, ""))
+
+    return data
+
+
+def save_embeddings(data, file_name):
+    with open(file_name, "wb") as file:
+        pickle.dump(data, file)

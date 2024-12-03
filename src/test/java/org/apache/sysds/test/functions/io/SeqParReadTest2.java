@@ -27,6 +27,8 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameters;
+import org.apache.log4j.Level;
+import org.apache.log4j.Logger;
 import org.apache.sysds.common.Types.FileFormat;
 import org.apache.sysds.common.Types.ValueType;
 import org.apache.sysds.runtime.frame.data.FrameBlock;
@@ -85,6 +87,8 @@ public class SeqParReadTest2 extends AutomatedTestBase {
 	private final static String TEST_NAME = "SeqParReadTest";
 	private final static String TEST_DIR = "functions/io/";
 	private final static String TEST_CLASS_DIR = TEST_DIR + SeqParReadTest2.class.getSimpleName() + "/";
+	private static final String PACKAGE = "org.apache.sysds.runtime.io";
+	private static Level _oldLevel = null;
 	
 	private final static int rows = 1200;
 	private final static int cols = 300;
@@ -107,6 +111,8 @@ public class SeqParReadTest2 extends AutomatedTestBase {
 		TestUtils.clearAssertionInformation();
 		addTestConfiguration(TEST_NAME, 
 			new TestConfiguration(TEST_CLASS_DIR, TEST_NAME, new String[] { "Rout" }) ); 
+		_oldLevel = Logger.getLogger(PACKAGE).getLevel();
+		Logger.getLogger(PACKAGE).setLevel( Level.TRACE );
 	}
 	
 	@Parameters
@@ -155,6 +161,12 @@ public class SeqParReadTest2 extends AutomatedTestBase {
 			{true, "libsvm", true, 0.1},
 		};
 		return Arrays.asList(data);
+	}
+	
+	@Override
+	public void tearDown() {
+		super.tearDown();
+		Logger.getLogger(PACKAGE).setLevel( _oldLevel );
 	}
 	
 	@Test

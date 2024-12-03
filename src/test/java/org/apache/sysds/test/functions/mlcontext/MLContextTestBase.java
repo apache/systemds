@@ -26,6 +26,8 @@ import java.io.PrintStream;
 
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.Pair;
+import org.apache.log4j.Level;
+import org.apache.log4j.Logger;
 import org.apache.spark.api.java.JavaSparkContext;
 import org.apache.spark.sql.SparkSession;
 import org.apache.sysds.api.mlcontext.MLContext;
@@ -63,6 +65,7 @@ public abstract class MLContextTestBase extends AutomatedTestBase {
 
 	protected String testDir = null;
 	protected String testName = null;
+	protected Level _oldLevel = null;
 
 	@Override
 	public void setUp() {
@@ -72,6 +75,11 @@ public abstract class MLContextTestBase extends AutomatedTestBase {
 
 		addTestConfiguration(dir, name);
 		getAndLoadTestConfiguration(name);
+		
+		//run all mlcontext tests in loglevel trace to improve test coverage
+		//of all logging in various components
+		_oldLevel = Logger.getLogger("org.apache.sysds").getLevel();
+		Logger.getLogger("org.apache.sysds").setLevel( Level.TRACE );
 	}
 
 	@BeforeClass
@@ -85,6 +93,7 @@ public abstract class MLContextTestBase extends AutomatedTestBase {
 	@Override
 	public void tearDown() {
 		super.tearDown();
+		Logger.getLogger("org.apache.sysds").setLevel( _oldLevel );
 	}
 
 	@AfterClass

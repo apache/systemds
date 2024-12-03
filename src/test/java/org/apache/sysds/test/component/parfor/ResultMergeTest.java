@@ -21,6 +21,8 @@ package org.apache.sysds.test.component.parfor;
 
 import static org.junit.Assert.fail;
 
+import org.apache.log4j.Level;
+import org.apache.log4j.Logger;
 import org.apache.sysds.common.Types.FileFormat;
 import org.apache.sysds.common.Types.ValueType;
 import org.apache.sysds.runtime.controlprogram.ParForProgramBlock;
@@ -43,10 +45,20 @@ public class ResultMergeTest extends AutomatedTestBase{
 	private final static String TEST_NAME = "parfor_rm";
 	private final static String TEST_DIR = "functions/parfor/";
 	private static final String TEST_CLASS_DIR = TEST_DIR + ResultMergeTest.class.getSimpleName() + "/";
+	private static final String PACKAGE = "org.apache.sysds.runtime.controlprogram.parfor";
+	private static Level _oldLevel = null;
 	
 	@Override
 	public void setUp() {
-		addTestConfiguration(TEST_NAME,new TestConfiguration(TEST_CLASS_DIR, TEST_NAME,new String[]{"C"})); 
+		addTestConfiguration(TEST_NAME,new TestConfiguration(TEST_CLASS_DIR, TEST_NAME,new String[]{"C"}));
+		_oldLevel = Logger.getLogger(PACKAGE).getLevel();
+		Logger.getLogger(PACKAGE).setLevel( Level.TRACE );
+	}
+	
+	@Override
+	public void tearDown() {
+		super.tearDown();
+		Logger.getLogger(PACKAGE).setLevel( _oldLevel );
 	}
 	
 	@Test

@@ -15,10 +15,13 @@ import scala.Tuple2;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
+import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -26,7 +29,53 @@ public class RewriterCostEstimator {
 	private static final long INSTRUCTION_OVERHEAD = 10;
 	private static final long MALLOC_COST = 10000;
 	public static final Function<RewriterStatement, Long> DEFAULT_COST_FN = el -> 2000L;
-	public static final Function<RewriterStatement, Long> DEFAULT_NNZ_FN = el -> 2000L * 2000L;
+	public static final BiFunction<RewriterStatement, Tuple2<Long, Long>, Long> DEFAULT_NNZ_FN = (el, tpl) -> tpl._1 * tpl._2;
+
+	// Computes the cost of an expression using different matrix dimensions and sparsities
+	public static void compareCosts(RewriterStatement stmt1, RewriterStatement stmt2, final RuleContext ctx) {
+		Map<RewriterStatement, RewriterStatement> estimates1 = RewriterSparsityEstimator.estimateAllNNZ(stmt1, ctx);
+		Map<RewriterStatement, RewriterStatement> estimates2 = RewriterSparsityEstimator.estimateAllNNZ(stmt2, ctx);
+
+		MutableObject<RewriterAssertions> assertionRef = new MutableObject<>();
+		RewriterStatement costFn1 = getRawCostFunction(stmt1, ctx, assertionRef);
+		RewriterStatement costFn2 = getRawCostFunction(stmt2, ctx, assertionRef);
+
+		costFn1 = RewriterSparsityEstimator.rollupSparsities(costFn1, estimates1, ctx);
+		costFn2 = RewriterSparsityEstimator.rollupSparsities(costFn2, estimates2, ctx);
+
+		long[] dimVals = new long[] {1, 5000};
+		double[] sparsities = new double[] {1.0D, 0.2D, 0.001D};
+
+		Map<RewriterStatement, RewriterStatement> createdObjects = new HashMap<>();
+		RewriterStatement costFn1Cpy = costFn1.nestedCopy(true, createdObjects);
+		RewriterStatement costFn2Cpy = costFn2.nestedCopy(true, createdObjects);
+
+		Set<RewriterStatement> dimsToPopulate = new HashSet<>();
+		Set<RewriterStatement> nnzsToPopulate = new HashSet<>();
+
+		long cost1 = computeCostFunction(costFn1Cpy, el -> {
+				dimsToPopulate.add(el);
+				return 2000L;
+			}, (nnz, tpl) -> {
+				nnzsToPopulate.add(nnz.getChild(0));
+				return tpl._1 * tpl._2;
+			}, costFn1Cpy.getAssertions(ctx), ctx);
+		long cost2 = computeCostFunction(costFn2Cpy, el -> {
+			dimsToPopulate.add(el);
+				return 2000L;
+			}, (nnz, tpl) -> {
+				nnzsToPopulate.add(nnz.getChild(0));
+				return tpl._1 * tpl._2;
+			}, costFn2Cpy.getAssertions(ctx), ctx);
+
+		int nDimsToPopulate = dimsToPopulate.size();
+		int nNNZsToPopulate = nnzsToPopulate.size();
+
+		System.out.println("nDimsToPopulate: " + nDimsToPopulate);
+		System.out.println(dimsToPopulate);
+		System.out.println("nNNZsToPopulate: " + nNNZsToPopulate);
+		System.out.println(nnzsToPopulate);
+	}
 
 	public static Tuple2<Set<RewriterStatement>, Boolean> determineSingleReferenceRequirement(RewriterRule rule, final RuleContext ctx) {
 		MutableObject<RewriterAssertions> assertionRef = new MutableObject<>();
@@ -40,7 +89,7 @@ public class RewriterCostEstimator {
 	}
 
 	// Returns all (upmost) sub-DAGs that can have multiple references and true as a second arg if all statements can have multiple references at once
-	public static Tuple2<Set<RewriterStatement>, Boolean> determineSingleReferenceRequirement(RewriterStatement root, Function<RewriterStatement, Long> costFn, Function<RewriterStatement, Long> nnzFn, RewriterAssertions assertions, long fullCost, long maxCost, final RuleContext ctx) {
+	public static Tuple2<Set<RewriterStatement>, Boolean> determineSingleReferenceRequirement(RewriterStatement root, Function<RewriterStatement, Long> costFn, BiFunction<RewriterStatement, Tuple2<Long, Long>, Long> nnzFn, RewriterAssertions assertions, long fullCost, long maxCost, final RuleContext ctx) {
 		if (fullCost >= maxCost)
 			return new Tuple2<>(Collections.emptySet(), true);
 
@@ -87,7 +136,7 @@ public class RewriterCostEstimator {
 		return estimateCost(stmt, propertyGenerator, DEFAULT_NNZ_FN, ctx, null);
 	}
 
-	public static long estimateCost(RewriterStatement stmt, Function<RewriterStatement, Long> propertyGenerator, Function<RewriterStatement, Long> nnzGenerator, final RuleContext ctx, MutableObject<RewriterAssertions> assertionRef) {
+	public static long estimateCost(RewriterStatement stmt, Function<RewriterStatement, Long> propertyGenerator, BiFunction<RewriterStatement, Tuple2<Long, Long>, Long> nnzGenerator, final RuleContext ctx, MutableObject<RewriterAssertions> assertionRef) {
 		if (assertionRef == null)
 			assertionRef = new MutableObject<>();
 
@@ -109,7 +158,7 @@ public class RewriterCostEstimator {
 		return costFn;
 	}
 
-	public static long computeCostFunction(RewriterStatement costFn, Function<RewriterStatement, Long> propertyGenerator, Function<RewriterStatement, Long> nnzGenerator, RewriterAssertions assertions, final RuleContext ctx) {
+	public static long computeCostFunction(RewriterStatement costFn, Function<RewriterStatement, Long> propertyGenerator, BiFunction<RewriterStatement, Tuple2<Long, Long>, Long> nnzGenerator, RewriterAssertions assertions, final RuleContext ctx) {
 		Map<RewriterStatement, RewriterStatement> map = new HashMap<>();
 
 		costFn.forEachPreOrder((cur, pred) -> {
@@ -123,19 +172,78 @@ public class RewriterCostEstimator {
 				}
 
 				if (op.isEClass()) {
-					mNew = RewriterStatement.literal(ctx, propertyGenerator.apply(op));
+					RewriterAssertions.RewriterAssertion assertion = assertions.getAssertionObj(op);
+					Optional<RewriterStatement> literal = assertion != null ? assertion.getLiteral() : Optional.empty();
+
+					mNew = literal.orElseGet(() -> RewriterStatement.literal(ctx, propertyGenerator.apply(op)));
+
 					map.put(op, mNew);
 					cur.getOperands().set(i, mNew);
 				} else if (op.isInstruction()) {
 					if (op.trueInstruction().equals("ncol") || op.trueInstruction().equals("nrow")) {
-						mNew = RewriterStatement.literal(ctx, propertyGenerator.apply(op));
-						map.put(op, mNew);
-						cur.getOperands().set(i, mNew);
-					} else if (op.trueInstruction().equals("_nnz")) {
-						mNew = RewriterStatement.literal(ctx, nnzGenerator.apply(op));
-						map.put(op, mNew);
+						RewriterStatement eClassStmt = assertions.getAssertionStatement(op, null);
+						mNew = RewriterStatement.literal(ctx, propertyGenerator.apply(eClassStmt));
+						map.put(eClassStmt, mNew);
 						cur.getOperands().set(i, mNew);
 					}
+				}
+			}
+
+			return true;
+		}, false);
+
+		costFn.forEachPreOrder((cur, pred) -> {
+			for (int i = 0; i < cur.getOperands().size(); i++) {
+				RewriterStatement op = cur.getChild(i);
+
+				RewriterStatement mNew = map.get(op);
+				if (mNew != null) {
+					cur.getOperands().set(i, mNew);
+					continue;
+				}
+
+				if (op.isInstruction() && op.trueInstruction().equals("_nnz")) {
+					RewriterStatement ncolLiteral = map.get(op.getChild(0).getNCol());
+
+					if (ncolLiteral == null) {
+						RewriterAssertions.RewriterAssertion assertion = assertions.getAssertionObj(op.getChild(0).getNCol());
+
+						if (assertion != null) {
+							RewriterStatement assStmt = assertion.getEClassStmt(ctx, assertions);
+							ncolLiteral = map.get(assStmt);
+
+							if (ncolLiteral == null) {
+								ncolLiteral = RewriterStatement.literal(ctx, propertyGenerator.apply(assStmt));
+								map.put(assStmt, ncolLiteral);
+							}
+						} else {
+							ncolLiteral = RewriterStatement.literal(ctx, propertyGenerator.apply(op.getChild(0).getNCol()));
+							map.put(op.getChild(0).getNCol(), ncolLiteral);
+						}
+					}
+
+					RewriterStatement nrowLiteral = map.get(op.getChild(0).getNRow());
+
+					if (nrowLiteral == null) {
+						RewriterAssertions.RewriterAssertion assertion = assertions.getAssertionObj(op.getChild(0).getNRow());
+
+						if (assertion != null) {
+							RewriterStatement assStmt = assertion.getEClassStmt(ctx, assertions);
+							nrowLiteral = map.get(assStmt);
+
+							if (nrowLiteral == null) {
+								nrowLiteral = RewriterStatement.literal(ctx, propertyGenerator.apply(assStmt));
+								map.put(assStmt, nrowLiteral);
+							}
+						} else {
+							nrowLiteral = RewriterStatement.literal(ctx, propertyGenerator.apply(op.getChild(0).getNRow()));
+							map.put(op.getChild(0).getNRow(), nrowLiteral);
+						}
+					}
+
+					mNew = RewriterStatement.literal(ctx, nnzGenerator.apply(op, new Tuple2<>(nrowLiteral.intLiteral(), ncolLiteral.intLiteral())));
+					map.put(op, mNew);
+					cur.getOperands().set(i, mNew);
 				}
 			}
 

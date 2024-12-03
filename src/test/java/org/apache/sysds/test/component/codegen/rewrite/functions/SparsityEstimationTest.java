@@ -1,6 +1,9 @@
 package org.apache.sysds.test.component.codegen.rewrite.functions;
 
 import org.apache.commons.lang3.mutable.MutableObject;
+import org.apache.sysds.hops.rewriter.RewriterRule;
+import org.apache.sysds.hops.rewriter.RewriterRuleCreator;
+import org.apache.sysds.hops.rewriter.RewriterRuleSet;
 import org.apache.sysds.hops.rewriter.RewriterStatement;
 import org.apache.sysds.hops.rewriter.RewriterUtils;
 import org.apache.sysds.hops.rewriter.RuleContext;
@@ -12,6 +15,7 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
 
@@ -63,11 +67,34 @@ public class SparsityEstimationTest {
 		System.out.println(costFunction.toParsableString(ctx));
 
 		System.out.println("Dense cost:  " + RewriterCostEstimator.estimateCost(stmt, ctx));
-		System.out.println("Sparse cost: " + RewriterCostEstimator.computeCostFunction(costFunction, RewriterCostEstimator.DEFAULT_COST_FN, el -> nnzs.get(el.getChild(0)), assertionRef.getValue(), ctx));
+		System.out.println("Sparse cost: " + RewriterCostEstimator.computeCostFunction(costFunction, RewriterCostEstimator.DEFAULT_COST_FN, (el, tpl) -> nnzs.get(el.getChild(0)), assertionRef.getValue(), ctx));
 
 		/*System.out.println(RewriterCostEstimator.estimateCost(stmt, RewriterCostEstimator.DEFAULT_COST_FN, el -> {
 			System.out.println(el.getChild(0));
 			return nnzs.get(el.getChild(0));
 		}, ctx, null));*/
+	}
+
+	@Test
+	public void test4() {
+		RewriterStatement from = RewriterUtils.parse("+(*(A, B), *(A, C))", ctx, "MATRIX:A,B,C");
+		RewriterStatement to = RewriterUtils.parse("*(A, +(B, C))", ctx, "MATRIX:A,B,C");
+		RewriterStatement canonicalForm1 = canonicalConverter.apply(from);
+		RewriterStatement canonicalForm2 = canonicalConverter.apply(to);
+
+		System.out.println("==========");
+		System.out.println(canonicalForm1.toParsableString(ctx, true));
+		System.out.println("==========");
+		System.out.println(canonicalForm2.toParsableString(ctx, true));
+		assert canonicalForm1.match(RewriterStatement.MatcherContext.exactMatch(ctx, canonicalForm2, canonicalForm1));
+
+		RewriterRule rule = RewriterRuleCreator.createRule(from, to, canonicalForm1, canonicalForm2, ctx);
+		System.out.println(rule);
+
+		RewriterAssertionUtils.buildImplicitAssertion(rule.getStmt1(), rule.getStmt1().getAssertions(ctx), ctx);
+		RewriterAssertionUtils.buildImplicitAssertion(rule.getStmt2(), rule.getStmt1().getAssertions(ctx), ctx);
+		rule.getStmt2().unsafePutMeta("_assertions", rule.getStmt1().getAssertions(ctx));
+
+		RewriterCostEstimator.compareCosts(rule.getStmt1(), rule.getStmt2(), ctx);
 	}
 }

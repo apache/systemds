@@ -555,9 +555,12 @@ public abstract class RewriterStatement {
 		return nestedCopyOrInject(copiedObjects, (el, parent, pIdx) -> injector.apply(el), null, -1);
 	}
 
-	// TODO: This does not copy the associations if they exist
 	public RewriterStatement nestedCopy(boolean copyAssertions) {
-		Map<RewriterStatement, RewriterStatement> createdObjects = new HashMap<>();
+		return nestedCopy(copyAssertions, new HashMap<>());
+	}
+
+	// TODO: This does not copy the associations if they exist
+	public RewriterStatement nestedCopy(boolean copyAssertions, Map<RewriterStatement, RewriterStatement> createdObjects) {
 		RewriterStatement cpy = nestedCopyOrInject(createdObjects, el -> null);
 
 		if (copyAssertions) {

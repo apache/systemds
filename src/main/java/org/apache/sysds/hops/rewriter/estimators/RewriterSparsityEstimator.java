@@ -112,6 +112,9 @@ public class RewriterSparsityEstimator {
 					return RewriterStatement.literal(ctx, 0L);
 				return StatementUtils.length(ctx, stmt);
 
+			case "RBind(MATRIX,MATRIX)":
+			case "CBind(MATRIX,MATRIX)":
+				return StatementUtils.add(ctx, RewriterStatement.nnz(stmt.getChild(0), ctx), RewriterStatement.nnz(stmt.getChild(1), ctx));
 
 			// Fused operators
 			case "log_nz(MATRIX)":

@@ -1590,6 +1590,8 @@ public class RewriterUtils {
 		switch (cur.trueInstruction()) {
 			case "+":
 			case "*":
+			case "min":
+			case "max":
 				ret = foldNaryReducible(cur, ctx);
 				break;
 			case "_EClass":

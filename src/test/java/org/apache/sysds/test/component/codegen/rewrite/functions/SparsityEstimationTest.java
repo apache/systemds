@@ -1,12 +1,17 @@
 package org.apache.sysds.test.component.codegen.rewrite.functions;
 
+import org.apache.commons.lang3.mutable.MutableObject;
 import org.apache.sysds.hops.rewriter.RewriterStatement;
 import org.apache.sysds.hops.rewriter.RewriterUtils;
 import org.apache.sysds.hops.rewriter.RuleContext;
+import org.apache.sysds.hops.rewriter.assertions.RewriterAssertionUtils;
+import org.apache.sysds.hops.rewriter.assertions.RewriterAssertions;
+import org.apache.sysds.hops.rewriter.estimators.RewriterCostEstimator;
 import org.apache.sysds.hops.rewriter.estimators.RewriterSparsityEstimator;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
+import java.util.HashMap;
 import java.util.Map;
 import java.util.function.Function;
 
@@ -35,13 +40,34 @@ public class SparsityEstimationTest {
 	@Test
 	public void test3() {
 		RewriterStatement stmt = RewriterUtils.parse("+(A, -(B, A))", ctx, "MATRIX:A,B", "FLOAT:a");
+		RewriterAssertionUtils.buildImplicitAssertions(stmt, stmt.getAssertions(ctx), ctx);
+
 		Map<RewriterStatement, RewriterStatement> estimates = RewriterSparsityEstimator.estimateAllNNZ(stmt, ctx);
 
 		estimates.forEach((k, v) -> {
+			stmt.getAssertions(ctx).update(v);
 			System.out.println("K: " + k.toParsableString(ctx));
-			System.out.println("Sparsity: " + v.toParsableString(ctx));
+			System.out.println("NNZ: " + v.toParsableString(ctx));
 		});
 
 		System.out.println("Rollup: " + RewriterSparsityEstimator.rollupSparsities(estimates.get(stmt), estimates, ctx).toParsableString(ctx));
+
+		Map<RewriterStatement, Long> nnzs = new HashMap<>();
+		nnzs.put(stmt.getChild(0), 3000L);
+		nnzs.put(stmt.getChild(1, 0), 50000L);
+
+		MutableObject<RewriterAssertions> assertionRef = new MutableObject<>();
+		RewriterStatement costFunction = RewriterCostEstimator.getRawCostFunction(stmt, ctx, assertionRef);
+		costFunction = RewriterSparsityEstimator.rollupSparsities(costFunction, estimates, ctx);
+
+		System.out.println(costFunction.toString(ctx));
+
+		System.out.println("Dense cost:  " + RewriterCostEstimator.estimateCost(stmt, ctx));
+		System.out.println("Sparse cost: " + RewriterCostEstimator.computeCostFunction(costFunction, RewriterCostEstimator.DEFAULT_COST_FN, el -> nnzs.get(el.getChild(0)), assertionRef.getValue(), ctx));
+
+		/*System.out.println(RewriterCostEstimator.estimateCost(stmt, RewriterCostEstimator.DEFAULT_COST_FN, el -> {
+			System.out.println(el.getChild(0));
+			return nnzs.get(el.getChild(0));
+		}, ctx, null));*/
 	}
 }

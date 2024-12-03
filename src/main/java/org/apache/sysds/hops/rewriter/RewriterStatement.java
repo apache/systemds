@@ -1177,6 +1177,9 @@ public abstract class RewriterStatement {
 	}
 
 	public static RewriterStatement literal(final RuleContext ctx, Object literal) {
+		if (literal == null)
+			throw new IllegalArgumentException();
+
 		if (literal instanceof Double) {
 			return new RewriterDataType().as(literal.toString()).ofType("FLOAT").asLiteral(literal).consolidate(ctx);
 		} else if (literal instanceof Long) {

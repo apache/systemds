@@ -9,6 +9,7 @@ import org.apache.sysds.hops.rewriter.RewriterUtils;
 import org.apache.sysds.hops.rewriter.RuleContext;
 import org.apache.sysds.hops.rewriter.assertions.RewriterAssertionUtils;
 import org.apache.sysds.hops.rewriter.assertions.RewriterAssertions;
+import org.apache.sysds.hops.rewriter.utils.StatementUtils;
 import scala.Tuple2;
 
 import java.util.ArrayList;
@@ -25,16 +26,21 @@ public class RewriterCostEstimator {
 	private static final long INSTRUCTION_OVERHEAD = 10;
 	private static final long MALLOC_COST = 10000;
 	public static final Function<RewriterStatement, Long> DEFAULT_COST_FN = el -> 2000L;
+	public static final Function<RewriterStatement, Long> DEFAULT_NNZ_FN = el -> 2000L * 2000L;
 
 	public static Tuple2<Set<RewriterStatement>, Boolean> determineSingleReferenceRequirement(RewriterRule rule, final RuleContext ctx) {
 		MutableObject<RewriterAssertions> assertionRef = new MutableObject<>();
 		long fullCost = RewriterCostEstimator.estimateCost(rule.getStmt1(), ctx, assertionRef);
 		long maxCost = RewriterCostEstimator.estimateCost(rule.getStmt2(), ctx);
-		return RewriterCostEstimator.determineSingleReferenceRequirement(rule.getStmt2(), RewriterCostEstimator.DEFAULT_COST_FN, assertionRef.getValue(), fullCost, maxCost, ctx);
+		return RewriterCostEstimator.determineSingleReferenceRequirement(rule.getStmt2(), RewriterCostEstimator.DEFAULT_COST_FN, RewriterCostEstimator.DEFAULT_NNZ_FN, assertionRef.getValue(), fullCost, maxCost, ctx);
+	}
+
+	public static Tuple2<Set<RewriterStatement>, Boolean> determineSingleReferenceRequirement(RewriterStatement root, Function<RewriterStatement, Long> costFn, RewriterAssertions assertions, long fullCost, long maxCost, final RuleContext ctx) {
+		return determineSingleReferenceRequirement(root, costFn, RewriterCostEstimator.DEFAULT_NNZ_FN, assertions, fullCost, maxCost, ctx);
 	}
 
 	// Returns all (upmost) sub-DAGs that can have multiple references and true as a second arg if all statements can have multiple references at once
-	public static Tuple2<Set<RewriterStatement>, Boolean> determineSingleReferenceRequirement(RewriterStatement root, Function<RewriterStatement, Long> costFn, RewriterAssertions assertions, long fullCost, long maxCost, final RuleContext ctx) {
+	public static Tuple2<Set<RewriterStatement>, Boolean> determineSingleReferenceRequirement(RewriterStatement root, Function<RewriterStatement, Long> costFn, Function<RewriterStatement, Long> nnzFn, RewriterAssertions assertions, long fullCost, long maxCost, final RuleContext ctx) {
 		if (fullCost >= maxCost)
 			return new Tuple2<>(Collections.emptySet(), true);
 
@@ -44,7 +50,7 @@ public class RewriterCostEstimator {
 			if (pred.isRoot() || !cur.isInstruction())
 				return true;
 
-			long cost = estimateCost(cur, costFn, ctx, new MutableObject<>(assertions));
+			long cost = estimateCost(cur, costFn, nnzFn, ctx, new MutableObject<>(assertions));
 
 			if (fullCost + cost <= maxCost) {
 				subDAGCosts.add(new Tuple2<>(cur, cost));
@@ -74,14 +80,22 @@ public class RewriterCostEstimator {
 	}
 
 	public static long estimateCost(RewriterStatement stmt, final RuleContext ctx, MutableObject<RewriterAssertions> assertionRef) {
-		return estimateCost(stmt, DEFAULT_COST_FN, ctx, assertionRef);
+		return estimateCost(stmt, DEFAULT_COST_FN, DEFAULT_NNZ_FN, ctx, assertionRef);
 	}
 
 	public static long estimateCost(RewriterStatement stmt, Function<RewriterStatement, Long> propertyGenerator, final RuleContext ctx) {
-		return estimateCost(stmt, propertyGenerator, ctx, null);
+		return estimateCost(stmt, propertyGenerator, DEFAULT_NNZ_FN, ctx, null);
 	}
 
-	public static long estimateCost(RewriterStatement stmt, Function<RewriterStatement, Long> propertyGenerator, final RuleContext ctx, MutableObject<RewriterAssertions> assertionRef) {
+	public static long estimateCost(RewriterStatement stmt, Function<RewriterStatement, Long> propertyGenerator, Function<RewriterStatement, Long> nnzGenerator, final RuleContext ctx, MutableObject<RewriterAssertions> assertionRef) {
+		if (assertionRef == null)
+			assertionRef = new MutableObject<>();
+
+		RewriterStatement costFn = getRawCostFunction(stmt, ctx, assertionRef);
+		return computeCostFunction(costFn, propertyGenerator, nnzGenerator, assertionRef.getValue(), ctx);
+	}
+
+	public static RewriterStatement getRawCostFunction(RewriterStatement stmt, final RuleContext ctx, MutableObject<RewriterAssertions> assertionRef) {
 		RewriterAssertions assertions = assertionRef != null && assertionRef.getValue() != null ? assertionRef.getValue() : new RewriterAssertions(ctx);
 
 		if (assertionRef != null)
@@ -92,12 +106,11 @@ public class RewriterCostEstimator {
 		// TODO: Something makes this necessary
 		costFn = RewriterUtils.foldConstants(costFn, ctx);
 
-		//System.out.println(costFn.toParsableString(ctx));
-		//System.out.println(RewriterUtils.foldConstants(costFn, ctx).toParsableString(ctx));
+		return costFn;
+	}
 
+	public static long computeCostFunction(RewriterStatement costFn, Function<RewriterStatement, Long> propertyGenerator, Function<RewriterStatement, Long> nnzGenerator, RewriterAssertions assertions, final RuleContext ctx) {
 		Map<RewriterStatement, RewriterStatement> map = new HashMap<>();
-
-		//System.out.println("Cost1: " + costFn.toParsableString(ctx));
 
 		costFn.forEachPreOrder((cur, pred) -> {
 			for (int i = 0; i < cur.getOperands().size(); i++) {
@@ -118,6 +131,10 @@ public class RewriterCostEstimator {
 						mNew = RewriterStatement.literal(ctx, propertyGenerator.apply(op));
 						map.put(op, mNew);
 						cur.getOperands().set(i, mNew);
+					} else if (op.trueInstruction().equals("_nnz")) {
+						mNew = RewriterStatement.literal(ctx, nnzGenerator.apply(op));
+						map.put(op, mNew);
+						cur.getOperands().set(i, mNew);
 					}
 				}
 			}
@@ -130,7 +147,7 @@ public class RewriterCostEstimator {
 		costFn = RewriterUtils.foldConstants(costFn, ctx);
 
 		if (!costFn.isLiteral()) {
-			throw new IllegalArgumentException("Cost function must be a literal: " + costFn.toParsableString(ctx) + "\nCorresponding statement:\n" + stmt.toParsableString(ctx));
+			throw new IllegalArgumentException("Cost function must be a literal: " + costFn.toParsableString(ctx));
 		}
 
 		return (long)costFn.getLiteral();
@@ -177,6 +194,8 @@ public class RewriterCostEstimator {
 
 		switch (instr.trueInstruction()) {
 			case "%*%":
+				map.put("A", instr.getChild(0));
+				map.put("B", instr.getChild(1));
 				map.put("nrowA", instr.getChild(0).getNRow());
 				map.put("ncolA", instr.getChild(0).getNCol());
 				map.put("nrowB", instr.getChild(1).getNRow());
@@ -184,62 +203,58 @@ public class RewriterCostEstimator {
 				map.put("mulCost", atomicOpCostStmt("*", ctx));
 				map.put("sumCost", atomicOpCostStmt("+", ctx));
 				// Rough estimation
-				cost = RewriterUtils.parse("*(argList(nrowA, ncolA, ncolB, +(argList(mulCost, sumCost))))", ctx, map);
+				cost = RewriterUtils.parse("*(argList(min(_nnz(A), _nnz(B)), ncolA, +(argList(mulCost, sumCost))))", ctx, map);
 				//assertions.addEqualityAssertion(map.get("ncolA"), map.get("nrowB"));
 				overhead.add(MALLOC_COST);
 				break;
 			case "t":
 			case "rev":
+				map.put("A", instr.getChild(0));
+				cost = RewriterUtils.parse("_nnz(A)", ctx, map);
+				overhead.add(MALLOC_COST);
+				break;
 			case "rowSums":
 			case "colSums":
-				map.put("nrowA", instr.getChild(0).getNRow());
-				map.put("ncolA", instr.getChild(0).getNCol());
+				map.put("A", instr.getChild(0));
+				RewriterStatement aoc = atomicOpCostStmt("+", ctx);
+				map.put("opcost", aoc);
 				// Rough estimation
-				cost = RewriterUtils.parse("*(argList(nrowA, ncolA))", ctx, map);
+				cost = RewriterUtils.parse("*(argList(_nnz(A), opcost))", ctx, map);
 				overhead.add(MALLOC_COST);
 				break;
 			case "diag":
 				map.put("nrowA", instr.getChild(0).getNRow());
-				map.put("ncolA", instr.getChild(0).getNCol());
-				cost = map.get("nrowA");
+				map.put("A", instr.getChild(0));
+				cost = RewriterUtils.parse("min(_nnz(A), nrowA)", ctx, map);//map.get("nrowA");
 				//assertions.addEqualityAssertion(map.get("nrowA"), map.get("ncolA"));
 				overhead.add(MALLOC_COST);
 				break;
 			case "cast.MATRIX":
-				cost = RewriterStatement.literal(ctx, 5L);
+				cost = RewriterStatement.literal(ctx, 20L);
 				break;
 			case "[]":
 				cost = RewriterStatement.literal(ctx, 0L);
 				break; // I assume that nothing is materialized
 			case "RBind":
-				map.put("nrowA", instr.getChild(0).getNRow());
-				map.put("ncolA", instr.getChild(0).getNCol());
-				map.put("nrowB", instr.getChild(1).getNRow());
-				map.put("ncolB", instr.getChild(1).getNCol());
-				cost = RewriterUtils.parse("+(argList(*(argList(nrowA, ncolA)), *(argList(nrowB, ncolB))))", ctx, map);
+			case "CBind":
+				map.put("A", instr.getChild(0));
+				map.put("B", instr.getChild(1));
+				cost = RewriterUtils.parse("+(argList(_nnz(A), _nnz(B)))", ctx, map);
 				//assertions.addEqualityAssertion(instr.getChild(0).getNCol(), instr.getChild(1).getNCol());
 				overhead.add(MALLOC_COST);
 				break;
-			case "CBind":
-				map.put("nrowA", instr.getChild(0).getNRow());
-				map.put("ncolA", instr.getChild(0).getNCol());
-				map.put("nrowB", instr.getChild(1).getNRow());
-				map.put("ncolB", instr.getChild(1).getNCol());
-				cost = RewriterUtils.parse("+(argList(*(argList(nrowA, ncolA)), *(argList(nrowB, ncolB))))", ctx, map);
-				//assertions.addEqualityAssertion(instr.getChild(0).getNRow(), instr.getChild(1).getNRow());
-				overhead.add(MALLOC_COST);
-				break;
 			case "rand":
-				map.put("nrowA", instr.getNRow());
-				map.put("ncolA", instr.getNCol());
-				cost = RewriterUtils.parse("*(argList(nrowA, ncolA))", ctx, map);
+				map.put("A", instr);
+				cost = RewriterUtils.parse("_nnz(A)", ctx, map);
 				overhead.add(MALLOC_COST);
 				break;
 			case "1-*":
 				RewriterStatement subtractionCost = atomicOpCostStmt("-", ctx);
 				RewriterStatement mulCost = atomicOpCostStmt("*", ctx);
-				RewriterStatement sum = RewriterStatement.multiArgInstr(ctx, "+", subtractionCost, mulCost);
-				cost = RewriterStatement.multiArgInstr(ctx, "*", sum, instr.getNCol(), instr.getNRow());
+				RewriterStatement sparsityAwareMul = RewriterStatement.multiArgInstr(ctx, "*", mulCost, StatementUtils.min(ctx, RewriterStatement.nnz(instr.getChild(0), ctx), RewriterStatement.nnz(instr.getChild(1), ctx)));
+				RewriterStatement oneMinus = RewriterStatement.multiArgInstr(ctx, "*", subtractionCost, instr.getNCol(), instr.getNRow());
+				//RewriterStatement sum = RewriterStatement.multiArgInstr(ctx, "+", subtractionCost, mulCost);
+				cost = RewriterStatement.multiArgInstr(ctx, "+", oneMinus, sparsityAwareMul);
 				//assertions.addEqualityAssertion(instr.getChild(0).getNCol(), instr.getChild(1).getNCol());
 				//assertions.addEqualityAssertion(instr.getChild(0).getNRow(), instr.getChild(1).getNRow());
 				overhead.add(MALLOC_COST);
@@ -247,8 +262,8 @@ public class RewriterCostEstimator {
 			case "+*":
 				RewriterStatement additionCost = atomicOpCostStmt("+", ctx);
 				mulCost = atomicOpCostStmt("*", ctx);
-				sum = RewriterStatement.multiArgInstr(ctx, "+", additionCost, mulCost);
-				cost = RewriterStatement.multiArgInstr(ctx, "*", sum, instr.getNCol(), instr.getNRow());
+				RewriterStatement sum = RewriterStatement.multiArgInstr(ctx, "+", additionCost, mulCost);
+				cost = RewriterStatement.multiArgInstr(ctx, "*", sum, StatementUtils.min(ctx, RewriterStatement.nnz(instr.getChild(0), ctx), RewriterStatement.nnz(instr.getChild(2), ctx)));
 				//assertions.addEqualityAssertion(instr.getChild(0).getNCol(), instr.getChild(2).getNCol());
 				//assertions.addEqualityAssertion(instr.getChild(0).getNRow(), instr.getChild(2).getNRow());
 				overhead.add(MALLOC_COST + 50); // To make it worse than 1-*
@@ -257,17 +272,17 @@ public class RewriterCostEstimator {
 				subtractionCost = atomicOpCostStmt("-", ctx);
 				mulCost = atomicOpCostStmt("*", ctx);
 				sum = RewriterStatement.multiArgInstr(ctx, "+", subtractionCost, mulCost);
-				cost = RewriterStatement.multiArgInstr(ctx, "*", sum, instr.getNCol(), instr.getNRow());
+				cost = RewriterStatement.multiArgInstr(ctx, "*", sum, StatementUtils.min(ctx, RewriterStatement.nnz(instr.getChild(0), ctx), RewriterStatement.nnz(instr.getChild(2), ctx)));
 				//assertions.addEqualityAssertion(instr.getChild(0).getNCol(), instr.getChild(2).getNCol());
 				//assertions.addEqualityAssertion(instr.getChild(0).getNRow(), instr.getChild(2).getNRow());
 				overhead.add(MALLOC_COST + 50); // To make it worse than 1-*
 				break;
 			case "*2":
-				cost = RewriterStatement.multiArgInstr(ctx, "*", atomicOpCostStmt("*2", ctx), instr.getChild(0).getNRow(), instr.getChild(0).getNCol());
+				cost = RewriterStatement.multiArgInstr(ctx, "*", atomicOpCostStmt("*2", ctx), RewriterStatement.nnz(instr.getChild(0), ctx));
 				overhead.add(MALLOC_COST);
 				break;
 			case "sq":
-				cost = RewriterStatement.multiArgInstr(ctx, "*", atomicOpCostStmt("sq", ctx), instr.getChild(0).getNRow(), instr.getChild(0).getNCol());
+				cost = RewriterStatement.multiArgInstr(ctx, "*", atomicOpCostStmt("sq", ctx), RewriterStatement.nnz(instr.getChild(0), ctx));
 				overhead.add(MALLOC_COST);
 				break;
 			case "log_nz": {
@@ -276,7 +291,7 @@ public class RewriterCostEstimator {
 				RewriterStatement twoLogCost = RewriterStatement.multiArgInstr(ctx, "*", RewriterStatement.literal(ctx, 2L), logCost);
 				RewriterStatement neqCost = atomicOpCostStmt("!=", ctx);
 				sum = RewriterStatement.multiArgInstr(ctx, "+", neqCost, instr.getOperands().size() == 2 ? twoLogCost : logCost);
-				cost = RewriterStatement.multiArgInstr(ctx, "*", sum, instr.getNCol(), instr.getNRow());
+				cost = RewriterStatement.multiArgInstr(ctx, "*", sum, RewriterStatement.nnz(instr.getChild(0), ctx));
 				overhead.add(MALLOC_COST);
 				break;
 			}
@@ -315,21 +330,45 @@ public class RewriterCostEstimator {
 				}
 
 				RewriterStatement opCost = atomicOpCostStmt(instr.trueInstruction(), ctx);
-				cost = new RewriterInstruction().as(UUID.randomUUID().toString())
-						.withInstruction("*")
-						.withOps(RewriterStatement.argList(ctx, opCost, instr.getNCol(), instr.getNRow()));
 
-				if (secondMatrix != null) {
-					//assertions.addEqualityAssertion(firstMatrix.getNCol(), secondMatrix.getNCol());
-					//assertions.addEqualityAssertion(firstMatrix.getNRow(), secondMatrix.getNRow());
+				if (firstMatrix != null) {
+					switch (instr.trueInstruction()) {
+						case "*":
+							cost = new RewriterInstruction().as(UUID.randomUUID().toString())
+									.withInstruction("*")
+									.withOps(RewriterStatement.argList(ctx, opCost, secondMatrix != null ? StatementUtils.min(ctx, RewriterStatement.nnz(firstMatrix, ctx), RewriterStatement.nnz(secondMatrix, ctx)) : RewriterStatement.nnz(firstMatrix, ctx)));
+							break;
+						case "/":
+							if (instr.getChild(0).getResultingDataType(ctx).equals("MATRIX"))
+								cost = new RewriterInstruction().as(UUID.randomUUID().toString())
+										.withInstruction("*")
+										.withOps(RewriterStatement.argList(ctx, opCost, RewriterStatement.nnz(instr.getChild(0), ctx)));
+							else
+								cost = new RewriterInstruction().as(UUID.randomUUID().toString())
+										.withInstruction("*")
+										.withOps(RewriterStatement.argList(ctx, opCost, StatementUtils.length(ctx, firstMatrix)));
+
+							break;
+						case "+":
+						case "-":
+							cost = new RewriterInstruction().as(UUID.randomUUID().toString())
+									.withInstruction("*")
+									.withOps(RewriterStatement.argList(ctx, opCost, secondMatrix != null ? StatementUtils.add(ctx, RewriterStatement.nnz(firstMatrix, ctx), RewriterStatement.nnz(secondMatrix, ctx)) : RewriterStatement.nnz(firstMatrix, ctx)));
+							break;
+						default:
+							cost = RewriterStatement.multiArgInstr(ctx, "*", opCost, instr.getNRow(), instr.getNCol());
+							break;
+					}
+
+					overhead.add(MALLOC_COST);
+				} else {
+					cost = opCost;
 				}
-
-				overhead.add(MALLOC_COST);
 			} else if (instr.hasProperty("UnaryElementWiseOperator", ctx)) {
 				RewriterStatement opCost = atomicOpCostStmt(instr.trueInstruction(), ctx);
 				cost = new RewriterInstruction().as(UUID.randomUUID().toString())
 						.withInstruction("*")
-						.withOps(RewriterStatement.argList(ctx, opCost, instr.getNCol(), instr.getNRow()));
+						.withOps(RewriterStatement.argList(ctx, opCost, RewriterStatement.nnz(instr.getChild(0), ctx)));
 				overhead.add(MALLOC_COST);
 			} else {
 				throw new IllegalArgumentException("Unknown instruction: " + instr.trueTypedInstruction(ctx));
@@ -347,25 +386,20 @@ public class RewriterCostEstimator {
 			case "sum(MATRIX)":
 			case "min(MATRIX)":
 			case "max(MATRIX)":
-				map.put("nrowA", instr.getChild(0).getNRow());
-				map.put("ncolA", instr.getChild(0).getNCol());
-				uniqueCosts.add(RewriterUtils.parse("*(argList(nrowA, ncolA))", ctx, map));
+				map.put("A", instr.getChild(0));
+				uniqueCosts.add(RewriterUtils.parse("_nnz(A)", ctx, map));
 				return uniqueCosts.get(uniqueCosts.size()-1);
 			case "trace(MATRIX)":
-				map.put("nrowA", instr.getChild(0).getNRow());
-				map.put("ncolA", instr.getChild(0).getNCol());
-				uniqueCosts.add(map.get("nrowA"));
+				uniqueCosts.add(StatementUtils.min(ctx, RewriterStatement.nnz(instr.getChild(0), ctx), instr.getChild(0).getNRow()));
 				//assertions.addEqualityAssertion(map.get("nrowA"), map.get("ncolA"));
 				return uniqueCosts.get(uniqueCosts.size()-1);
 			case "[](MATRIX,INT,INT)":
 				return RewriterStatement.literal(ctx, 0L);
 			case "cast.FLOAT(MATRIX)":
-				map.put("nrowA", instr.getChild(0).getNRow());
-				map.put("ncolA", instr.getChild(0).getNCol());
-				uniqueCosts.add(map.get("nrowA"));
+				//uniqueCosts.add(map.get("nrowA"));
 				//assertions.addEqualityAssertion(map.get("nrowA"), map.get("ncolA"));
 				//assertions.addEqualityAssertion(map.get("nrowA"), RewriterStatement.literal(ctx, 1L));
-				return uniqueCosts.get(uniqueCosts.size()-1);
+				return RewriterStatement.literal(ctx, INSTRUCTION_OVERHEAD);
 			case "const(MATRIX,FLOAT)":
 			case "_nnz":
 				return RewriterStatement.literal(ctx, 0L);

@@ -31,4 +31,11 @@ public class StatementUtils {
 
 		return new RewriterInstruction("*", ctx, matrix.getNRow(), matrix.getNCol());
 	}
+
+	public static RewriterStatement add(final RuleContext ctx, RewriterStatement... terms) {
+		if (terms.length == 1)
+			return terms[0];
+
+		return new RewriterInstruction("+", ctx, new RewriterInstruction("argList", ctx, terms));
+	}
 }

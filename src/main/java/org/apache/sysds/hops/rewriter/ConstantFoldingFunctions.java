@@ -26,6 +26,18 @@ public class ConstantFoldingFunctions {
 					return (num, stmt) -> foldMulInt(num == null ? 1L : (long)num, stmt);
 				else
 					throw new UnsupportedOperationException();
+			case "min":
+				if (type.equals("FLOAT"))
+					return (num, stmt) -> num == null ? stmt.floatLiteral() : foldMinFloat((double)num, stmt);
+				else if (type.equals("INT"))
+					return (num, stmt) -> num == null ? stmt.intLiteral() : foldMinInt((long)num, stmt);
+				break;
+			case "max":
+				if (type.equals("FLOAT"))
+					return (num, stmt) -> num == null ? stmt.floatLiteral() : foldMaxFloat((double)num, stmt);
+				else if (type.equals("INT"))
+					return (num, stmt) -> num == null ? stmt.intLiteral() : foldMaxInt((long)num, stmt);
+				break;
 		}
 
 		throw new UnsupportedOperationException();
@@ -119,5 +131,21 @@ public class ConstantFoldingFunctions {
 
 	public static long foldMulInt(long num, RewriterStatement next) {
 		return num * next.intLiteral();
+	}
+
+	public static double foldMinFloat(double num, RewriterStatement next) {
+		return Math.min(num, next.floatLiteral());
+	}
+
+	public static long foldMinInt(long num, RewriterStatement next) {
+		return Math.min(num, next.intLiteral());
+	}
+
+	public static double foldMaxFloat(double num, RewriterStatement next) {
+		return Math.max(num, next.floatLiteral());
+	}
+
+	public static long foldMaxInt(long num, RewriterStatement next) {
+		return Math.max(num, next.intLiteral());
 	}
 }

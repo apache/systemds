@@ -27,9 +27,9 @@ public class CostEstimates {
 	public void test1() {
 		RewriterStatement stmt = RewriterUtils.parse("%*%(+(A,B), C)", ctx, "MATRIX:A,B,C");
 		MutableObject<RewriterAssertions> assertionRef = new MutableObject<>();
-		long cost1 = RewriterCostEstimator.estimateCost(stmt, el -> 2000L, ctx, assertionRef);
+		long cost1 = RewriterCostEstimator.estimateCost(stmt, ctx, assertionRef);
 		System.out.println(cost1);
-		long cost2 = RewriterCostEstimator.estimateCost(stmt.getChild(0), el -> 2000L, ctx, assertionRef);
+		long cost2 = RewriterCostEstimator.estimateCost(stmt.getChild(0), ctx, assertionRef);
 		System.out.println(cost2);
 		assert cost2 < cost1;
 	}

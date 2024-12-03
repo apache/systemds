@@ -32,6 +32,11 @@ public abstract class BaseTest extends MLContextTestBase {
 
 	private static final String ERROR_STRING = "ERROR:";
 
+	public BaseTest() {
+		//disable debug and trace logging in mlcontext super class since
+		//the nn tests execute a lot of mini-batch operations
+		_enableTracing = false;
+	}
 
 	protected void run(String name) {
 		run(name, false);

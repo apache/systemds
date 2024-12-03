@@ -32,11 +32,11 @@ public class RewriterCostEstimator {
 	public static final BiFunction<RewriterStatement, Tuple2<Long, Long>, Long> DEFAULT_NNZ_FN = (el, tpl) -> tpl._1 * tpl._2;
 
 	// Computes the cost of an expression using different matrix dimensions and sparsities
-	public static void compareCosts(RewriterStatement stmt1, RewriterStatement stmt2, final RuleContext ctx) {
+	public static void compareCosts(RewriterStatement stmt1, RewriterStatement stmt2, RewriterAssertions jointAssertions, final RuleContext ctx) {
 		Map<RewriterStatement, RewriterStatement> estimates1 = RewriterSparsityEstimator.estimateAllNNZ(stmt1, ctx);
 		Map<RewriterStatement, RewriterStatement> estimates2 = RewriterSparsityEstimator.estimateAllNNZ(stmt2, ctx);
 
-		MutableObject<RewriterAssertions> assertionRef = new MutableObject<>();
+		MutableObject<RewriterAssertions> assertionRef = new MutableObject<>(jointAssertions);
 		RewriterStatement costFn1 = getRawCostFunction(stmt1, ctx, assertionRef);
 		RewriterStatement costFn2 = getRawCostFunction(stmt2, ctx, assertionRef);
 
@@ -46,9 +46,12 @@ public class RewriterCostEstimator {
 		long[] dimVals = new long[] {1, 5000};
 		double[] sparsities = new double[] {1.0D, 0.2D, 0.001D};
 
+
+		costFn1.unsafePutMeta("_assertions", jointAssertions);
 		Map<RewriterStatement, RewriterStatement> createdObjects = new HashMap<>();
 		RewriterStatement costFn1Cpy = costFn1.nestedCopy(true, createdObjects);
-		RewriterStatement costFn2Cpy = costFn2.nestedCopy(true, createdObjects);
+		RewriterStatement costFn2Cpy = costFn2.nestedCopy(false, createdObjects);
+		costFn2Cpy.unsafePutMeta("_assertions", costFn1Cpy.getAssertions(ctx));
 
 		Set<RewriterStatement> dimsToPopulate = new HashSet<>();
 		Set<RewriterStatement> nnzsToPopulate = new HashSet<>();

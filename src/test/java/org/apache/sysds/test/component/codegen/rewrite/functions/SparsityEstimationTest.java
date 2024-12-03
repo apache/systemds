@@ -39,7 +39,7 @@ public class SparsityEstimationTest {
 
 	@Test
 	public void test3() {
-		RewriterStatement stmt = RewriterUtils.parse("+(A, -(B, A))", ctx, "MATRIX:A,B", "FLOAT:a");
+		RewriterStatement stmt = RewriterUtils.parse("%*%(A, -(B, A))", ctx, "MATRIX:A,B", "FLOAT:a");
 		RewriterAssertionUtils.buildImplicitAssertions(stmt, stmt.getAssertions(ctx), ctx);
 
 		Map<RewriterStatement, RewriterStatement> estimates = RewriterSparsityEstimator.estimateAllNNZ(stmt, ctx);
@@ -60,7 +60,7 @@ public class SparsityEstimationTest {
 		RewriterStatement costFunction = RewriterCostEstimator.getRawCostFunction(stmt, ctx, assertionRef);
 		costFunction = RewriterSparsityEstimator.rollupSparsities(costFunction, estimates, ctx);
 
-		System.out.println(costFunction.toString(ctx));
+		System.out.println(costFunction.toParsableString(ctx));
 
 		System.out.println("Dense cost:  " + RewriterCostEstimator.estimateCost(stmt, ctx));
 		System.out.println("Sparse cost: " + RewriterCostEstimator.computeCostFunction(costFunction, RewriterCostEstimator.DEFAULT_COST_FN, el -> nnzs.get(el.getChild(0)), assertionRef.getValue(), ctx));

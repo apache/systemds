@@ -95,6 +95,6 @@ public class SparsityEstimationTest {
 		RewriterAssertionUtils.buildImplicitAssertion(rule.getStmt2(), rule.getStmt1().getAssertions(ctx), ctx);
 		//rule.getStmt2().unsafePutMeta("_assertions", rule.getStmt1().getAssertions(ctx));
 
-		RewriterCostEstimator.compareCosts(rule.getStmt1(), rule.getStmt2(), rule.getStmt1().getAssertions(ctx), ctx);
+		RewriterCostEstimator.compareCosts(rule.getStmt1(), rule.getStmt2(), rule.getStmt1().getAssertions(ctx), ctx, true, 5, false);
 	}
 }

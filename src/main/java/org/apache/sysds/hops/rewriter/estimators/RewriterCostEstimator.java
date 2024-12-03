@@ -21,6 +21,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Random;
 import java.util.Set;
 import java.util.UUID;
 import java.util.function.BiFunction;
@@ -34,7 +35,7 @@ public class RewriterCostEstimator {
 	public static final BiFunction<RewriterStatement, Tuple2<Long, Long>, Long> DEFAULT_NNZ_FN = (el, tpl) -> tpl._1 * tpl._2;
 
 	// Computes the cost of an expression using different matrix dimensions and sparsities
-	public static void compareCosts(RewriterStatement stmt1, RewriterStatement stmt2, RewriterAssertions jointAssertions, final RuleContext ctx) {
+	public static List<Tuple2<Long, Long>> compareCosts(RewriterStatement stmt1, RewriterStatement stmt2, RewriterAssertions jointAssertions, final RuleContext ctx, boolean sample, int sampleSize, boolean returnOnDifference) {
 		Map<RewriterStatement, RewriterStatement> estimates1 = RewriterSparsityEstimator.estimateAllNNZ(stmt1, ctx);
 		Map<RewriterStatement, RewriterStatement> estimates2 = RewriterSparsityEstimator.estimateAllNNZ(stmt2, ctx);
 
@@ -48,7 +49,7 @@ public class RewriterCostEstimator {
 		final RewriterStatement fCostFn1 = costFn1;
 		final RewriterStatement fCostFn2 = costFn2;
 
-		long[] dimVals = new long[] {1, 5000};
+		long[] dimVals = new long[] {10, 5000};
 		double[] sparsities = new double[] {1.0D, 0.05D};
 
 
@@ -76,6 +77,9 @@ public class RewriterCostEstimator {
 				return tpl._1 * tpl._2;
 			}, costFn2Cpy.getAssertions(ctx), ctx);
 
+		if (returnOnDifference && cost1 != cost2)
+			return List.of(new Tuple2<>(cost1, cost2));
+
 		int nDimsToPopulate = dimsToPopulate.size();
 		int nNNZsToPopulate = nnzsToPopulate.size();
 
@@ -88,15 +92,35 @@ public class RewriterCostEstimator {
 		List<Number> dimList = Arrays.stream(dimVals).mapToObj(dim -> ((Number)dim)).collect(Collectors.toList());
 		List<Number> sparsityList = Arrays.stream(sparsities).mapToObj(s -> ((Number)s)).collect(Collectors.toList());
 
-		for (int i = 0; i < nDimsToPopulate; i++)
-			nums.add(dimList);
+		int numCombinations = 1;
 
-		for (int i = 0; i < nNNZsToPopulate; i++)
+		for (int i = 0; i < nDimsToPopulate; i++) {
+			nums.add(dimList);
+			numCombinations *= dimList.size();
+		}
+
+		for (int i = 0; i < nNNZsToPopulate; i++) {
 			nums.add(sparsityList);
+			numCombinations *= sparsityList.size();
+		}
 
 		// TODO: What if cartesian product too big?
+		Set<Integer> samples = new HashSet<>();
+
+		if (sample && sampleSize < numCombinations) {
+			Random rd = new Random(42);
+			while (samples.size() < sampleSize)
+				samples.add(rd.nextInt(numCombinations));
+		}
+
+		MutableInt ctr = new MutableInt();
+		List<Tuple2<Long, Long>> out = new ArrayList<>();
+		out.add(new Tuple2<>(cost1, cost2));
 
 		RewriterUtils.cartesianProduct(nums, new Number[nums.size()], stack -> {
+			if (sample && !samples.contains(ctr.getAndIncrement()))
+				return true;
+
 			int sparsityStart = 0;
 
 			for (Number num : stack) {
@@ -123,7 +147,7 @@ public class RewriterCostEstimator {
 
 				if (literal == null) {
 					literal = (Long) stack[dimCtr.getAndIncrement()];
-					System.out.println("populated size with: " + literal);
+					//System.out.println("populated size with: " + literal);
 					replace.put(el, literal);
 				}
 
@@ -134,7 +158,7 @@ public class RewriterCostEstimator {
 				if (literal == null) {
 					double sparsity = (double) stack[fSparsityStart + sCtr.getAndIncrement()];
 					literal = (long)Math.ceil(sparsity * tpl._1 * tpl._2);
-					System.out.println("populated nnz with: " + literal);
+					//System.out.println("populated nnz with: " + literal);
 					replace.put(nnz.getChild(0), literal);
 				}
 
@@ -145,7 +169,7 @@ public class RewriterCostEstimator {
 
 				if (literal == null) {
 					literal = (Long) stack[dimCtr.getAndIncrement()];
-					System.out.println("populated size with: " + literal);
+					//System.out.println("populated size with: " + literal);
 					replace.put(el, literal);
 				}
 
@@ -163,11 +187,12 @@ public class RewriterCostEstimator {
 				return literal;
 			}, mCpy1.getAssertions(ctx), ctx);
 
-			System.out.println("Cost1: " + mCost1);
-			System.out.println("Cost2: " + mCost2);
+			out.add(new Tuple2<>(mCost1, mCost2));
 
-			return true;
+			return returnOnDifference && mCost1 != mCost2;
 		});
+
+		return out;
 	}
 
 	public static Tuple2<Set<RewriterStatement>, Boolean> determineSingleReferenceRequirement(RewriterRule rule, final RuleContext ctx) {

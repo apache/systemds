@@ -1,5 +1,6 @@
 package org.apache.sysds.hops.rewriter.estimators;
 
+import org.apache.commons.lang3.mutable.MutableInt;
 import org.apache.commons.lang3.mutable.MutableLong;
 import org.apache.commons.lang3.mutable.MutableObject;
 import org.apache.sysds.hops.rewriter.RewriterInstruction;
@@ -13,6 +14,7 @@ import org.apache.sysds.hops.rewriter.utils.StatementUtils;
 import scala.Tuple2;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -43,8 +45,11 @@ public class RewriterCostEstimator {
 		costFn1 = RewriterSparsityEstimator.rollupSparsities(costFn1, estimates1, ctx);
 		costFn2 = RewriterSparsityEstimator.rollupSparsities(costFn2, estimates2, ctx);
 
+		final RewriterStatement fCostFn1 = costFn1;
+		final RewriterStatement fCostFn2 = costFn2;
+
 		long[] dimVals = new long[] {1, 5000};
-		double[] sparsities = new double[] {1.0D, 0.2D, 0.001D};
+		double[] sparsities = new double[] {1.0D, 0.05D};
 
 
 		costFn1.unsafePutMeta("_assertions", jointAssertions);
@@ -78,6 +83,91 @@ public class RewriterCostEstimator {
 		System.out.println(dimsToPopulate);
 		System.out.println("nNNZsToPopulate: " + nNNZsToPopulate);
 		System.out.println(nnzsToPopulate);
+
+		List<List<Number>> nums = new ArrayList<>();
+		List<Number> dimList = Arrays.stream(dimVals).mapToObj(dim -> ((Number)dim)).collect(Collectors.toList());
+		List<Number> sparsityList = Arrays.stream(sparsities).mapToObj(s -> ((Number)s)).collect(Collectors.toList());
+
+		for (int i = 0; i < nDimsToPopulate; i++)
+			nums.add(dimList);
+
+		for (int i = 0; i < nNNZsToPopulate; i++)
+			nums.add(sparsityList);
+
+		// TODO: What if cartesian product too big?
+
+		RewriterUtils.cartesianProduct(nums, new Number[nums.size()], stack -> {
+			int sparsityStart = 0;
+
+			for (Number num : stack) {
+				if (num instanceof Double)
+					break;
+
+				sparsityStart++;
+			}
+
+			final int fSparsityStart = sparsityStart;
+
+			Map<RewriterStatement, Long> replace = new HashMap<>();
+
+			MutableInt dimCtr = new MutableInt();
+			MutableInt sCtr = new MutableInt();
+
+			Map<RewriterStatement, RewriterStatement> mCreatedObjects = new HashMap<>();
+			RewriterStatement mCpy1 = fCostFn1.nestedCopy(true, mCreatedObjects);
+			RewriterStatement mCpy2 = fCostFn2.nestedCopy(false, mCreatedObjects);
+			mCpy2.unsafePutMeta("_assertions", mCpy1.getAssertions(ctx));
+
+			long mCost1 = computeCostFunction(mCpy1, el -> {
+				Long literal = replace.get(el);
+
+				if (literal == null) {
+					literal = (Long) stack[dimCtr.getAndIncrement()];
+					System.out.println("populated size with: " + literal);
+					replace.put(el, literal);
+				}
+
+				return literal;
+			}, (nnz, tpl) -> {
+				Long literal = replace.get(nnz.getChild(0));
+
+				if (literal == null) {
+					double sparsity = (double) stack[fSparsityStart + sCtr.getAndIncrement()];
+					literal = (long)Math.ceil(sparsity * tpl._1 * tpl._2);
+					System.out.println("populated nnz with: " + literal);
+					replace.put(nnz.getChild(0), literal);
+				}
+
+				return literal;
+			}, mCpy1.getAssertions(ctx), ctx);
+			long mCost2 = computeCostFunction(mCpy2, el -> {
+				Long literal = replace.get(el);
+
+				if (literal == null) {
+					literal = (Long) stack[dimCtr.getAndIncrement()];
+					System.out.println("populated size with: " + literal);
+					replace.put(el, literal);
+				}
+
+				return literal;
+			}, (nnz, tpl) -> {
+				Long literal = replace.get(nnz.getChild(0));
+
+				if (literal == null) {
+					double sparsity = (double) stack[fSparsityStart + sCtr.getAndIncrement()];
+					literal = (long)Math.ceil(sparsity * tpl._1 * tpl._2);
+					//System.out.println("populated nnz with: " + literal);
+					replace.put(nnz.getChild(0), literal);
+				}
+
+				return literal;
+			}, mCpy1.getAssertions(ctx), ctx);
+
+			System.out.println("Cost1: " + mCost1);
+			System.out.println("Cost2: " + mCost2);
+
+			return true;
+		});
 	}
 
 	public static Tuple2<Set<RewriterStatement>, Boolean> determineSingleReferenceRequirement(RewriterRule rule, final RuleContext ctx) {

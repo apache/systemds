@@ -86,4 +86,8 @@ if __name__ == "__main__":
         help=help_force_dtype,
     )
     args = parser.parse_args()
+
+    if args.dtype == "string":  # numpy has no "string" dtype, convert to "str"
+        args.dtype = "str"
+
     main(args)

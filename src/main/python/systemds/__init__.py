@@ -54,8 +54,10 @@ if all(check_package_version(pkg, version) for pkg, version in required_packages
         print(f"Scuro could not be imported: {e}")
 else:
     missing = [
-        f'{pkg} {version}'
+        f"{pkg} {version}"
         for pkg, version in required_packages
         if not check_package_version(pkg, version)
     ]
-    print(f"Warning: Scuro dependencies missing or wrong version installed: {', '.join(missing)}")
+    print(
+        f"Warning: Scuro dependencies missing or wrong version installed: {', '.join(missing)}"
+    )

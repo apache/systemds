@@ -1,6 +1,7 @@
 package org.apache.sysds.hops.rewriter.estimators;
 
 import org.apache.sysds.hops.rewriter.ConstantFoldingFunctions;
+import org.apache.sysds.hops.rewriter.RewriterInstruction;
 import org.apache.sysds.hops.rewriter.RewriterStatement;
 import org.apache.sysds.hops.rewriter.RuleContext;
 import org.apache.sysds.hops.rewriter.utils.StatementUtils;
@@ -62,7 +63,9 @@ public class RewriterSparsityEstimator {
 			return null;
 		switch (stmt.trueInstruction()) {
 			case "%*%":
-				return RewriterStatement.multiArgInstr(ctx, "*", StatementUtils.min(ctx, RewriterStatement.multiArgInstr(ctx, "*", stmt.getNRow(), stmt.getNCol()), RewriterStatement.nnz(stmt.getChild(1), ctx)), RewriterStatement.multiArgInstr(ctx, "*", stmt.getNRow(), stmt.getNCol()), RewriterStatement.nnz(stmt.getChild(0), ctx));
+				RewriterStatement min1 = StatementUtils.min(ctx, RewriterStatement.multiArgInstr(ctx, "*", RewriterStatement.nnz(stmt.getChild(0), ctx), new RewriterInstruction("inv", ctx, stmt.getChild(0).getNRow())), RewriterStatement.literal(ctx, 1.0D));
+				RewriterStatement min2 = StatementUtils.min(ctx, RewriterStatement.multiArgInstr(ctx, "*", RewriterStatement.nnz(stmt.getChild(1), ctx), new RewriterInstruction("inv", ctx, stmt.getChild(1).getNCol())), RewriterStatement.literal(ctx, 1.0D));
+				return RewriterStatement.multiArgInstr(ctx, "*", min1, min2, stmt.getNRow(), stmt.getNCol());
 		}
 
 		switch (stmt.trueTypedInstruction(ctx)) {

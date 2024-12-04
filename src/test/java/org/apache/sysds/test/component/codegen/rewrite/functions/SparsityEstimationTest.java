@@ -13,6 +13,8 @@ import org.apache.sysds.hops.rewriter.estimators.RewriterCostEstimator;
 import org.apache.sysds.hops.rewriter.estimators.RewriterSparsityEstimator;
 import org.junit.BeforeClass;
 import org.junit.Test;
+import scala.Tuple2;
+import scala.Tuple3;
 
 import java.util.HashMap;
 import java.util.List;
@@ -96,5 +98,56 @@ public class SparsityEstimationTest {
 		//rule.getStmt2().unsafePutMeta("_assertions", rule.getStmt1().getAssertions(ctx));
 
 		RewriterCostEstimator.compareCosts(rule.getStmt1(), rule.getStmt2(), rule.getStmt1().getAssertions(ctx), ctx, true, 5, false);
+	}
+
+	@Test
+	public void test5() {
+		RewriterStatement from = RewriterUtils.parse("t(%*%(t(A), B))", ctx, "MATRIX:A,B,C");
+		RewriterStatement to = RewriterUtils.parse("%*%(t(B), A)", ctx, "MATRIX:A,B,C");
+		RewriterStatement canonicalForm1 = canonicalConverter.apply(from);
+		RewriterStatement canonicalForm2 = canonicalConverter.apply(to);
+
+		System.out.println("==========");
+		System.out.println(canonicalForm1.toParsableString(ctx, true));
+		System.out.println("==========");
+		System.out.println(canonicalForm2.toParsableString(ctx, true));
+		assert canonicalForm1.match(RewriterStatement.MatcherContext.exactMatch(ctx, canonicalForm2, canonicalForm1));
+
+		RewriterRule rule = RewriterRuleCreator.createRule(from, to, canonicalForm1, canonicalForm2, ctx);
+		System.out.println(rule);
+
+		RewriterAssertionUtils.buildImplicitAssertion(rule.getStmt1(), rule.getStmt1().getAssertions(ctx), ctx);
+		RewriterAssertionUtils.buildImplicitAssertion(rule.getStmt2(), rule.getStmt1().getAssertions(ctx), ctx);
+		//rule.getStmt2().unsafePutMeta("_assertions", rule.getStmt1().getAssertions(ctx));
+
+		List<Tuple3<List<Number>, Long, Long>> costs = RewriterCostEstimator.compareCosts(rule.getStmt1(), rule.getStmt2(), rule.getStmt1().getAssertions(ctx), ctx, false, 5, false);
+		System.out.println(costs);
+		System.out.println("Does sparsity have an impact on optimal expression? >> " + RewriterCostEstimator.doesHaveAnImpactOnOptimalExpression(costs, true));
+	}
+
+	@Test
+	public void test6() {
+		RewriterStatement from = RewriterUtils.parse("t(+(A, B))", ctx, "MATRIX:A,B,C");
+		RewriterStatement to = RewriterUtils.parse("+(t(A), t(B))", ctx, "MATRIX:A,B,C");
+		RewriterStatement canonicalForm1 = canonicalConverter.apply(from);
+		RewriterStatement canonicalForm2 = canonicalConverter.apply(to);
+
+		System.out.println("==========");
+		System.out.println(canonicalForm1.toParsableString(ctx, true));
+		System.out.println("==========");
+		System.out.println(canonicalForm2.toParsableString(ctx, true));
+		assert canonicalForm1.match(RewriterStatement.MatcherContext.exactMatch(ctx, canonicalForm2, canonicalForm1));
+
+		RewriterRule rule = RewriterRuleCreator.createRule(from, to, canonicalForm1, canonicalForm2, ctx);
+		System.out.println(rule);
+
+		RewriterAssertionUtils.buildImplicitAssertion(rule.getStmt1(), rule.getStmt1().getAssertions(ctx), ctx);
+		RewriterAssertionUtils.buildImplicitAssertion(rule.getStmt2(), rule.getStmt1().getAssertions(ctx), ctx);
+		//rule.getStmt2().unsafePutMeta("_assertions", rule.getStmt1().getAssertions(ctx));
+
+		List<Tuple3<List<Number>, Long, Long>> costs = RewriterCostEstimator.compareCosts(rule.getStmt1(), rule.getStmt2(), rule.getStmt1().getAssertions(ctx), ctx, false, 5, false);
+		System.out.println(costs);
+		System.out.println("Does sparsity have an impact on optimal expression? >> " + RewriterCostEstimator.doesHaveAnImpactOnOptimalExpression(costs, true));
+		System.out.println("Does anything have an impact on optimal expression? >> " + RewriterCostEstimator.doesHaveAnImpactOnOptimalExpression(costs, true));
 	}
 }

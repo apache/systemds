@@ -12,6 +12,7 @@ import org.apache.sysds.hops.rewriter.assertions.RewriterAssertionUtils;
 import org.apache.sysds.hops.rewriter.assertions.RewriterAssertions;
 import org.apache.sysds.hops.rewriter.utils.StatementUtils;
 import scala.Tuple2;
+import scala.Tuple3;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -34,8 +35,64 @@ public class RewriterCostEstimator {
 	public static final Function<RewriterStatement, Long> DEFAULT_COST_FN = el -> 2000L;
 	public static final BiFunction<RewriterStatement, Tuple2<Long, Long>, Long> DEFAULT_NNZ_FN = (el, tpl) -> tpl._1 * tpl._2;
 
+	// This is an important check as many intermediate matrices do not contain any sparsity information
+	// Thus, we want to use cost functions without sparsity information if possible
+	public static boolean doesHaveAnImpactOnOptimalExpression(List<Tuple3<List<Number>, Long, Long>> list, boolean sparsity) {
+		sort(list);
+
+		int diff = 0;
+		Tuple3<List<Number>, Long, Long> last = null;
+
+		for (Tuple3<List<Number>, Long, Long> t : list) {
+			if (last == null || (sparsity && !hasSameDims(last._1(), t._1()))) {
+				last = t;
+				diff = Long.signum(t._2() - t._3());
+				continue;
+			}
+
+			int mDiff = Long.signum(t._2() - t._3());
+
+			if (diff != mDiff) {
+				System.out.println("Found dependency: ");
+				System.out.println(diff + " != " + mDiff);
+				System.out.println(t);
+				System.out.println(last);
+				return true;
+			}
+		}
+
+		return false;
+	}
+
+	private static boolean hasSameDims(List<Number> l1, List<Number> l2) {
+		int maxN = Math.min(l1.size(), l2.size());
+
+		for (int i = 0; i < maxN; i++) {
+			Number el1 = l1.get(i);
+			Number el2 = l2.get(i);
+
+			if (el1 instanceof Long && el1.longValue() != el2.longValue())
+				return false;
+		}
+
+		return true;
+	}
+
+	private static void sort(List<Tuple3<List<Number>, Long, Long>> list) {
+		list.sort((t1, t2) -> {
+			int size = Math.min(t1._1().size(), t2._1().size());
+			for (int i = 0; i < size; i++) {
+				int cmp = Double.compare(t1._1().get(i).doubleValue(), t2._1().get(i).doubleValue());
+				if (cmp != 0)
+					return cmp; // Return non-zero comparison result if elements differ
+			}
+
+			return Integer.compare(t1._1().size(), t2._1().size());
+		});
+	}
+
 	// Computes the cost of an expression using different matrix dimensions and sparsities
-	public static List<Tuple2<Long, Long>> compareCosts(RewriterStatement stmt1, RewriterStatement stmt2, RewriterAssertions jointAssertions, final RuleContext ctx, boolean sample, int sampleSize, boolean returnOnDifference) {
+	public static List<Tuple3<List<Number>, Long, Long>> compareCosts(RewriterStatement stmt1, RewriterStatement stmt2, RewriterAssertions jointAssertions, final RuleContext ctx, boolean sample, int sampleSize, boolean returnOnDifference) {
 		Map<RewriterStatement, RewriterStatement> estimates1 = RewriterSparsityEstimator.estimateAllNNZ(stmt1, ctx);
 		Map<RewriterStatement, RewriterStatement> estimates2 = RewriterSparsityEstimator.estimateAllNNZ(stmt2, ctx);
 
@@ -43,8 +100,14 @@ public class RewriterCostEstimator {
 		RewriterStatement costFn1 = getRawCostFunction(stmt1, ctx, assertionRef);
 		RewriterStatement costFn2 = getRawCostFunction(stmt2, ctx, assertionRef);
 
+		System.out.println("CostFn1NoRollup: " + costFn1.toParsableString(ctx));
+		System.out.println("CostFn2NoRollup: " + costFn2.toParsableString(ctx));
+
 		costFn1 = RewriterSparsityEstimator.rollupSparsities(costFn1, estimates1, ctx);
 		costFn2 = RewriterSparsityEstimator.rollupSparsities(costFn2, estimates2, ctx);
+
+		System.out.println("CostFn1: " + costFn1.toParsableString(ctx));
+		System.out.println("CostFn2: " + costFn2.toParsableString(ctx));
 
 		final RewriterStatement fCostFn1 = costFn1;
 		final RewriterStatement fCostFn2 = costFn2;
@@ -77,16 +140,18 @@ public class RewriterCostEstimator {
 				return tpl._1 * tpl._2;
 			}, costFn2Cpy.getAssertions(ctx), ctx);
 
-		if (returnOnDifference && cost1 != cost2)
-			return List.of(new Tuple2<>(cost1, cost2));
-
 		int nDimsToPopulate = dimsToPopulate.size();
 		int nNNZsToPopulate = nnzsToPopulate.size();
 
-		System.out.println("nDimsToPopulate: " + nDimsToPopulate);
-		System.out.println(dimsToPopulate);
-		System.out.println("nNNZsToPopulate: " + nNNZsToPopulate);
-		System.out.println(nnzsToPopulate);
+		List<Number> firstList = new ArrayList<>();
+		for (int i = 0; i < nDimsToPopulate; i++)
+			firstList.add(2000L);
+		for (int i = 0; i < nNNZsToPopulate; i++)
+			firstList.add(1.0D);
+
+
+		if (returnOnDifference && cost1 != cost2)
+			return List.of(new Tuple3<>(firstList, cost1, cost2));
 
 		List<List<Number>> nums = new ArrayList<>();
 		List<Number> dimList = Arrays.stream(dimVals).mapToObj(dim -> ((Number)dim)).collect(Collectors.toList());
@@ -114,8 +179,9 @@ public class RewriterCostEstimator {
 		}
 
 		MutableInt ctr = new MutableInt();
-		List<Tuple2<Long, Long>> out = new ArrayList<>();
-		out.add(new Tuple2<>(cost1, cost2));
+
+		List<Tuple3<List<Number>, Long, Long>> out = new ArrayList<>();
+		out.add(new Tuple3<>(firstList, cost1, cost2));
 
 		RewriterUtils.cartesianProduct(nums, new Number[nums.size()], stack -> {
 			if (sample && !samples.contains(ctr.getAndIncrement()))
@@ -187,9 +253,12 @@ public class RewriterCostEstimator {
 				return literal;
 			}, mCpy1.getAssertions(ctx), ctx);
 
-			out.add(new Tuple2<>(mCost1, mCost2));
+			out.add(new Tuple3<>(new ArrayList<>(Arrays.asList(stack)), mCost1, mCost2));
 
-			return returnOnDifference && mCost1 != mCost2;
+			System.out.println(Arrays.toString(stack) + " cost1: " + mCost1);
+			System.out.println(Arrays.toString(stack) + " cost2: " + mCost2);
+
+			return !returnOnDifference || mCost1 == mCost2;
 		});
 
 		return out;
@@ -368,13 +437,22 @@ public class RewriterCostEstimator {
 			return true;
 		}, false);
 
-		//System.out.println("Cost2: " + costFn.toParsableString(ctx));
+		costFn.forEachPreOrder(cur -> {
+			if (cur.isInstruction())
+				((RewriterInstruction) cur).refreshReturnType(ctx);
+
+			return true;
+		}, false);
+		//((RewriterInstruction)costFn).refreshReturnType(ctx);
 
 		costFn = RewriterUtils.foldConstants(costFn, ctx);
 
 		if (!costFn.isLiteral()) {
 			throw new IllegalArgumentException("Cost function must be a literal: " + costFn.toParsableString(ctx));
 		}
+
+		if (costFn.getLiteral() instanceof Double)
+			return (long)((double)costFn.getLiteral());
 
 		return (long)costFn.getLiteral();
 	}

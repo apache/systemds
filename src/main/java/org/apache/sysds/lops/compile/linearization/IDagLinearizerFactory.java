@@ -28,7 +28,7 @@ public class IDagLinearizerFactory {
 	public static Log LOG = LogFactory.getLog(IDagLinearizerFactory.class.getName());
 
 	public enum DagLinearizer {
-		DEPTH_FIRST, BREADTH_FIRST, MIN_INTERMEDIATE, MAX_PARALLELIZE, AUTO, PIPELINE_DEPTH_FIRST, RESOURCE_AWARE;
+		DEPTH_FIRST, BREADTH_FIRST, MIN_INTERMEDIATE, MAX_PARALLELIZE, AUTO, PIPELINE_DEPTH_FIRST, RESOURCE_AWARE, RESOURCE_AWARE_BRUTE_FORCE, RESOURCE_AWARE_OPTIMAL;
 	}
 
 	public static IDagLinearizer createDagLinearizer() {
@@ -52,6 +52,8 @@ public class IDagLinearizerFactory {
 				return new LinearizerPipelineAware();
 			case RESOURCE_AWARE:
 				return new LinearizerResourceAware();
+			case RESOURCE_AWARE_OPTIMAL:
+				return new LinearizerResourceAwareOptimal();
 			default:
 				LOG.warn("Invalid DAG_LINEARIZATION: " + type + ", falling back to DEPTH_FIRST ordering");
 				return new LinearizerDepthFirst();

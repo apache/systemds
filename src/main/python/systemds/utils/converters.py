@@ -23,6 +23,7 @@ import struct
 
 import numpy as np
 import pandas as pd
+import concurrent.futures
 from py4j.java_gateway import JavaClass, JavaGateway, JavaObject, JVMView
 
 
@@ -81,6 +82,33 @@ def matrix_block_to_numpy(jvm: JVMView, mb: JavaObject):
     )
 
 
+def convert_column(jvm, rows, j, col_type, pd_col):
+    """Converts a given pandas column to a FrameBlock representation.
+
+    :param jvm: The JVMView of the current SystemDS context.
+    :param rows: The number of rows in the pandas DataFrame.
+    :param j: The current column index.
+    :param col_type: The ValueType of the column.
+    :param pd_col: The pandas column to convert.
+    """
+    if col_type == jvm.org.apache.sysds.common.Types.ValueType.STRING:
+        byte_data = bytearray()
+        for value in pd_col.astype(str):
+            encoded_value = value.encode("utf-8")
+            byte_data.extend(struct.pack(">I", len(encoded_value)))
+            byte_data.extend(encoded_value)
+    else:
+        col_data = pd_col.fillna("").to_numpy()
+        byte_data = bytearray(col_data.tobytes())
+
+    converted_array = (
+        jvm.org.apache.sysds.runtime.util.Py4jConverterUtils.convert(
+            byte_data, rows, col_type
+        )
+    )
+    return j, converted_array
+
+
 def pandas_to_frame_block(sds, pd_df: pd.DataFrame):
     """Converts a given pandas DataFrame to an internal FrameBlock representation.
 
@@ -131,25 +159,15 @@ def pandas_to_frame_block(sds, pd_df: pd.DataFrame):
 
             fb = jc_FrameBlock(j_valueTypeArray, j_colNameArray, rows)
 
-            # convert and set data for each column
-            for j, col_name in enumerate(col_names):
-                col_type = schema[j]
-                if col_type == jvm.org.apache.sysds.common.Types.ValueType.STRING:
-                    byte_data = bytearray()
-                    for value in pd_df[col_name].astype(str):
-                        encoded_value = value.encode("utf-8")
-                        byte_data.extend(struct.pack(">I", len(encoded_value)))
-                        byte_data.extend(encoded_value)
-                else:
-                    col_data = pd_df[col_name].fillna("").to_numpy()
-                    byte_data = bytearray(col_data.tobytes())
+            with concurrent.futures.ThreadPoolExecutor() as executor:
+                futures = [
+                    executor.submit(convert_column, jvm, rows, j, schema[j], pd_df[col_name])
+                    for j, col_name in enumerate(col_names)
+                ]
+                for future in concurrent.futures.as_completed(futures):
+                    j, converted_array = future.result()
+                    fb.setColumn(j, converted_array)
 
-                converted_array = (
-                    jvm.org.apache.sysds.runtime.util.Py4jConverterUtils.convert(
-                        byte_data, rows, col_type
-                    )
-                )
-                fb.setColumn(j, converted_array)
             return fb
         else:
             j_dataArray = java_gate.new_array(jc_String, rows, cols)

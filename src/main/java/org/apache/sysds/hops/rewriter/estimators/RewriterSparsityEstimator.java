@@ -59,7 +59,7 @@ public class RewriterSparsityEstimator {
 	}
 
 	public static RewriterStatement estimateNNZ(RewriterStatement stmt, final RuleContext ctx) {
-		if (!stmt.isInstruction())
+		if (!stmt.isInstruction() || !stmt.getResultingDataType(ctx).equals("MATRIX"))
 			return null;
 		switch (stmt.trueInstruction()) {
 			case "%*%":
@@ -72,11 +72,11 @@ public class RewriterSparsityEstimator {
 			case "*(MATRIX,MATRIX)":
 				return StatementUtils.min(ctx, RewriterStatement.nnz(stmt.getChild(0), ctx), RewriterStatement.nnz(stmt.getChild(1), ctx));
 			case "*(MATRIX,FLOAT)":
-				if (stmt.getChild(1).isLiteral() && ConstantFoldingFunctions.overwritesLiteral(((Float) stmt.getChild(1).getLiteral()), "*", ctx) != null)
+				if (stmt.getChild(1).isLiteral() && ConstantFoldingFunctions.overwritesLiteral(((Double) stmt.getChild(1).getLiteral()), "*", ctx) != null)
 					return RewriterStatement.literal(ctx, 0L);
 				return RewriterStatement.nnz(stmt.getChild(0), ctx);
 			case "*(FLOAT,MATRIX)":
-				if (stmt.getChild(0).isLiteral() && ConstantFoldingFunctions.overwritesLiteral(((Float) stmt.getChild(0).getLiteral()), "*", ctx) != null)
+				if (stmt.getChild(0).isLiteral() && ConstantFoldingFunctions.overwritesLiteral(((Double) stmt.getChild(0).getLiteral()), "*", ctx) != null)
 					return RewriterStatement.literal(ctx, 0L);
 				return RewriterStatement.nnz(stmt.getChild(1), ctx);
 			case "+(MATRIX,MATRIX)":

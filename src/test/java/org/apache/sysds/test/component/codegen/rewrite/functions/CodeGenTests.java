@@ -223,7 +223,7 @@ public class CodeGenTests {
 				e.printStackTrace();
 			}
 
-			System.out.println(javaCode);
+			//System.out.println(javaCode);
 		} catch (IOException e) {
 			e.printStackTrace();
 		}

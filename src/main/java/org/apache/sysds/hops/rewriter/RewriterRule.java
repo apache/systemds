@@ -4,6 +4,7 @@ import org.apache.commons.lang3.NotImplementedException;
 import org.apache.commons.lang3.mutable.MutableObject;
 import org.apache.sysds.hops.rewriter.assertions.RewriterAssertionUtils;
 import org.apache.sysds.hops.rewriter.assertions.RewriterAssertions;
+import org.apache.sysds.hops.rewriter.estimators.RewriterCostEstimator;
 import scala.Tuple2;
 import scala.Tuple3;
 
@@ -35,6 +36,9 @@ public class RewriterRule extends AbstractRewriterRule {
 	private Set<RewriterStatement> allowedMultiReferences = Collections.emptySet();
 	private RewriterAssertions combinedAssertions;
 	private boolean allowCombinations = false;
+	private boolean requireCostCheck = false;
+	private RewriterStatement fromCost = null;
+	private RewriterStatement toCost = null;
 
 	public RewriterRule(final RuleContext ctx, String name, RewriterStatement fromRoot, RewriterStatement toRoot, boolean unidirectional, HashMap<RewriterStatement, LinkObject> linksStmt1ToStmt2, HashMap<RewriterStatement, LinkObject> linksStmt2ToStmt1) {
 		this(ctx, name, fromRoot, toRoot, unidirectional, linksStmt1ToStmt2, linksStmt2ToStmt1, null, null, null, null, null);
@@ -57,6 +61,42 @@ public class RewriterRule extends AbstractRewriterRule {
 		this.applyStmt1ToStmt2 = apply1To2;
 		this.applyStmt2ToStmt1 = apply2To1;
 		this.postProcessor = postProcessor;
+	}
+
+	// Determine if this rule can universally be applied or only in some conditions (e.g. certain dimensions / sparsity)
+	public boolean determineConditionalApplicability() {
+		RewriterAssertions assertions = new RewriterAssertions(ctx);
+		RewriterAssertionUtils.buildImplicitAssertion(fromRoot, assertions, ctx);
+		RewriterAssertionUtils.buildImplicitAssertion(toRoot, assertions, ctx);
+
+		List<Tuple3<List<Number>, Long, Long>> costs = RewriterCostEstimator.compareCosts(fromRoot, toRoot, assertions, ctx, false, -1, false);
+
+		requireCostCheck = RewriterCostEstimator.doesHaveAnImpactOnOptimalExpression(costs, false, true, 20);
+
+		if (!requireCostCheck)
+			return false;
+
+		boolean integrateSparsityInCosts = RewriterCostEstimator.doesHaveAnImpactOnOptimalExpression(costs, true, false, 20);
+
+		System.out.println("Require cost check (sparsity >> " + integrateSparsityInCosts + "): " + this);
+
+		MutableObject<RewriterAssertions> assertionRef = new MutableObject<>(assertions);
+		fromCost = RewriterCostEstimator.getRawCostFunction(fromRoot, ctx, assertionRef, !integrateSparsityInCosts);
+		toCost = RewriterCostEstimator.getRawCostFunction(toRoot, ctx, assertionRef, !integrateSparsityInCosts);
+
+		return requireCostCheck;
+	}
+
+	public boolean requiresCostCheck() {
+		return requireCostCheck;
+	}
+
+	public RewriterStatement getStmt1Cost() {
+		return fromCost;
+	}
+
+	public RewriterStatement getStmt2Cost() {
+		return toCost;
 	}
 
 	public void buildCombinedAssertions() {

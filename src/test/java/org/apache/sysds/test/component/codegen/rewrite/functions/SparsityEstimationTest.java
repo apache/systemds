@@ -63,7 +63,7 @@ public class SparsityEstimationTest {
 		nnzs.put(stmt.getChild(1, 0), 50000L);
 
 		MutableObject<RewriterAssertions> assertionRef = new MutableObject<>();
-		RewriterStatement costFunction = RewriterCostEstimator.getRawCostFunction(stmt, ctx, assertionRef);
+		RewriterStatement costFunction = RewriterCostEstimator.getRawCostFunction(stmt, ctx, assertionRef, false);
 		costFunction = RewriterSparsityEstimator.rollupSparsities(costFunction, estimates, ctx);
 
 		System.out.println(costFunction.toParsableString(ctx));
@@ -122,7 +122,7 @@ public class SparsityEstimationTest {
 
 		List<Tuple3<List<Number>, Long, Long>> costs = RewriterCostEstimator.compareCosts(rule.getStmt1(), rule.getStmt2(), rule.getStmt1().getAssertions(ctx), ctx, false, 5, false);
 		System.out.println(costs);
-		System.out.println("Does sparsity have an impact on optimal expression? >> " + RewriterCostEstimator.doesHaveAnImpactOnOptimalExpression(costs, true));
+		System.out.println("Does sparsity have an impact on optimal expression? >> " + RewriterCostEstimator.doesHaveAnImpactOnOptimalExpression(costs, true, true, 0));
 	}
 
 	@Test
@@ -147,7 +147,7 @@ public class SparsityEstimationTest {
 
 		List<Tuple3<List<Number>, Long, Long>> costs = RewriterCostEstimator.compareCosts(rule.getStmt1(), rule.getStmt2(), rule.getStmt1().getAssertions(ctx), ctx, false, 5, false);
 		System.out.println(costs);
-		System.out.println("Does sparsity have an impact on optimal expression? >> " + RewriterCostEstimator.doesHaveAnImpactOnOptimalExpression(costs, true));
-		System.out.println("Does anything have an impact on optimal expression? >> " + RewriterCostEstimator.doesHaveAnImpactOnOptimalExpression(costs, true));
+		System.out.println("Does sparsity have an impact on optimal expression? >> " + RewriterCostEstimator.doesHaveAnImpactOnOptimalExpression(costs, true, true, 0));
+		System.out.println("Does anything have an impact on optimal expression? >> " + RewriterCostEstimator.doesHaveAnImpactOnOptimalExpression(costs, true, false, 0));
 	}
 }

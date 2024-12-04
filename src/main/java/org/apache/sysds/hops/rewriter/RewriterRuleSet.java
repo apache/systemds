@@ -302,6 +302,14 @@ public class RewriterRuleSet {
 			currentLines.clear();
 		}
 
+		for (RewriterRule rule : rules) {
+			System.out.println("Checking: " + rule);
+			rule.determineConditionalApplicability();
+
+			if (rule.requiresCostCheck())
+				System.out.println("Rule requires cost check: " + rule);
+		}
+
 		return new RewriterRuleSet(ctx, rules);
 	}
 

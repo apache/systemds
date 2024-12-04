@@ -7,6 +7,7 @@ import org.apache.commons.lang3.mutable.MutableInt;
 import org.apache.logging.log4j.util.TriConsumer;
 import org.apache.sysds.hops.rewriter.assertions.RewriterAssertions;
 import org.apache.sysds.hops.rewriter.estimators.RewriterCostEstimator;
+import org.apache.sysds.hops.rewriter.utils.StatementUtils;
 import scala.Tuple2;
 
 import java.util.ArrayList;
@@ -1176,6 +1177,12 @@ public abstract class RewriterStatement {
 	}
 
 	public static RewriterStatement nnz(RewriterStatement of, final RuleContext ctx) {
+		return nnz(of, ctx, false);
+	}
+
+	public static RewriterStatement nnz(RewriterStatement of, final RuleContext ctx, boolean treatAsDense) {
+		if (treatAsDense)
+			return StatementUtils.length(ctx, of);
 		return new RewriterInstruction().as(UUID.randomUUID().toString()).withInstruction("_nnz").withOps(of).consolidate(ctx);
 	}
 

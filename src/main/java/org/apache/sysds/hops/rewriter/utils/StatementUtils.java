@@ -27,7 +27,7 @@ public class StatementUtils {
 
 	public static RewriterStatement length(final RuleContext ctx, RewriterStatement matrix) {
 		if (!matrix.getResultingDataType(ctx).equals("MATRIX"))
-			throw new IllegalArgumentException();
+			throw new IllegalArgumentException(matrix.toParsableString(ctx));
 
 		return new RewriterInstruction("*", ctx, matrix.getNRow(), matrix.getNCol());
 	}

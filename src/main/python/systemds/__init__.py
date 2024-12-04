@@ -18,10 +18,46 @@
 # under the License.
 #
 # -------------------------------------------------------------
-
+from importlib.metadata import version, PackageNotFoundError
 from systemds import context
 from systemds import operator
 from systemds import examples
-from systemds import scuro
 
-__all__ = ["context", "operator", "examples", "scuro"]
+__all__ = ["context", "operator", "examples"]
+
+required_packages = [
+    ("torch", "2.5.1"),
+    ("torchvision", "0.20.1"),
+    ("librosa", "0.10.2"),
+    ("opencv-python", "4.10.0.84"),
+    ("opt-einsum", "3.3.0"),
+    ("h5py", "3.11.0"),
+    ("transformers", "4.46.3"),
+    ("nltk", "3.9.1"),
+    ("gensim", "4.3.3"),
+]
+
+
+def check_package_version(package_name, required_version):
+    try:
+        return version(package_name) >= required_version
+    except PackageNotFoundError:
+        return False
+
+
+if all(check_package_version(pkg, version) for pkg, version in required_packages):
+    try:
+        from systemds import scuro
+
+        __all__.append("scuro")
+    except ImportError as e:
+        print(f"Scuro could not be imported: {e}")
+else:
+    missing = [
+        f"{pkg} {version}"
+        for pkg, version in required_packages
+        if not check_package_version(pkg, version)
+    ]
+    print(
+        f"Warning: Scuro dependencies missing or wrong version installed: {', '.join(missing)}"
+    )

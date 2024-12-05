@@ -421,7 +421,7 @@ public class GeneratedRewriteClass implements Function {
 								hi = _applyRewrite421(hi); // /(rev($1:!=(A,b)),A) => /(!=(A,b),A)
 							} else {
 								if ( hi_1.getDataType() == Types.DataType.SCALAR ) {
-									hi = _applyRewrite13(hi); // /(A,c) => *(A,/(1.0,c))
+									//hi = _applyRewrite13(hi); // /(A,c) => *(A,/(1.0,c))
 								} else if ( hi_1.getDataType() == Types.DataType.MATRIX ) {
 									if ( hi_1 instanceof ReorgOp ) {
 										hi = _applyRewrite422(hi); // /(A,rev(!=(c,A))) => /(A,!=(A,c))

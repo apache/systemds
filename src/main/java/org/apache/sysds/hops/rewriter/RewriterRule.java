@@ -5,6 +5,7 @@ import org.apache.commons.lang3.mutable.MutableObject;
 import org.apache.sysds.hops.rewriter.assertions.RewriterAssertionUtils;
 import org.apache.sysds.hops.rewriter.assertions.RewriterAssertions;
 import org.apache.sysds.hops.rewriter.estimators.RewriterCostEstimator;
+import org.apache.sysds.hops.rewriter.estimators.RewriterSparsityEstimator;
 import scala.Tuple2;
 import scala.Tuple3;
 
@@ -83,6 +84,9 @@ public class RewriterRule extends AbstractRewriterRule {
 		MutableObject<RewriterAssertions> assertionRef = new MutableObject<>(assertions);
 		fromCost = RewriterCostEstimator.getRawCostFunction(fromRoot, ctx, assertionRef, !integrateSparsityInCosts);
 		toCost = RewriterCostEstimator.getRawCostFunction(toRoot, ctx, assertionRef, !integrateSparsityInCosts);
+
+		fromCost = RewriterSparsityEstimator.rollupSparsities(fromCost, RewriterSparsityEstimator.estimateAllNNZ(fromRoot, ctx), ctx);
+		toCost = RewriterSparsityEstimator.rollupSparsities(toCost, RewriterSparsityEstimator.estimateAllNNZ(toRoot, ctx), ctx);
 
 		return requireCostCheck;
 	}

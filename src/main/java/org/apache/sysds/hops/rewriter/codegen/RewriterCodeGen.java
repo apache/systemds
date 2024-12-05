@@ -12,6 +12,7 @@ import org.codehaus.janino.SimpleCompiler;
 import scala.Tuple2;
 
 import java.util.AbstractCollection;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -146,7 +147,7 @@ public class RewriterCodeGen {
 			}
 
 			// Build the function body
-			buildMatchingSequence(rule.toString(), rule.getStmt1(), rule.getStmt2(), rule.getCombinedAssertions(), sb, ctx, indentation + 1, mSet, allowCombinedMultiRefs);
+			buildMatchingSequence(rule.toString(), rule.getStmt1(), rule.getStmt2(), rule.getStmt1Cost(), rule.getStmt2Cost(), rule.getCombinedAssertions(), sb, ctx, indentation + 1, mSet, allowCombinedMultiRefs);
 			indent(indentation, sb);
 
 			sb.append("}\n");
@@ -158,11 +159,73 @@ public class RewriterCodeGen {
 		}
 	}
 
-	private static void buildMatchingSequence(String name, RewriterStatement from, RewriterStatement to, RewriterAssertions combinedAssertions, StringBuilder sb, final RuleContext ctx, int indentation, Set<RewriterStatement> allowedMultiRefs, boolean allowCombinations) {
+	private static void buildMatchingSequence(String name, RewriterStatement from, RewriterStatement to, RewriterStatement fromCost, RewriterStatement toCost, RewriterAssertions combinedAssertions, StringBuilder sb, final RuleContext ctx, int indentation, Set<RewriterStatement> allowedMultiRefs, boolean allowCombinations) {
 		Map<RewriterStatement, String> vars = new HashMap<>();
 		vars.put(from, "hi");
 		recursivelyBuildMatchingSequence(from, sb, "hi", ctx, indentation, vars, allowedMultiRefs, allowCombinations);
-		sb.append("\n");
+
+		if (fromCost != null && toCost != null) {
+			System.out.println("FromCost: " + fromCost.toParsableString(ctx));
+			System.out.println("ToCost: " + toCost.toParsableString(ctx));
+
+			StringBuilder msb = new StringBuilder();
+			StringBuilder msb2 = new StringBuilder();
+			Set<Tuple2<String, String>> requirements = new HashSet<>();
+			buildCostFnRecursively(fromCost, vars, ctx, msb, requirements);
+			buildCostFnRecursively(toCost, vars, ctx, msb2, requirements);
+
+			// First, we build the necessary checks (e.g. if we have nnz / dim information we need, otherwise this rewrite cannot be applied)
+			if (!requirements.isEmpty()) {
+				sb.append('\n');
+				indent(indentation, sb);
+				sb.append("if ( ");
+
+				int ctr = 0;
+				for (Tuple2<String, String> req : requirements) {
+					if (ctr != 0)
+						sb.append(" || ");
+
+					sb.append(req._1);
+					switch (req._2) {
+						case "_nnz":
+							sb.append(".getNnz() == -1");
+							break;
+						case "nrow":
+							sb.append(".getDim1() == -1");
+							break;
+						case "ncol":
+							sb.append(".getDim2() == -1");
+							break;
+						default:
+							throw new IllegalArgumentException(req._2);
+					}
+
+					ctr++;
+				}
+
+				sb.append(" )\n");
+				indent(indentation + 1, sb);
+				sb.append("return hi;\n\n");
+			}
+
+			// Then we build the cost functions
+			sb.append('\n');
+			indent(indentation, sb);
+			sb.append("double costFrom = ");
+			sb.append(msb);
+			sb.append(";\n");
+			indent(indentation, sb);
+			sb.append("double costTo = ");
+			sb.append(msb2);
+			sb.append(";\n\n");
+			indent(indentation, sb);
+			sb.append("if ( costFrom <= costTo )\n");
+			indent(indentation + 1, sb);
+			sb.append("return hi;\n\n");
+		}
+
+
+		sb.append('\n');
 		indent(indentation, sb);
 		sb.append("// Now, we start building the new Hop\n");
 
@@ -188,6 +251,103 @@ public class RewriterCodeGen {
 
 		indent(indentation, sb);
 		sb.append("return " + vars.get(to) + ";\n");
+	}
+
+	private static void buildCostFnRecursively(RewriterStatement costFn, Map<RewriterStatement, String> vars, final RuleContext ctx, StringBuilder sb, Set<Tuple2<String, String>> requirements) {
+		if (costFn.isLiteral()) {
+			sb.append(costFn.floatLiteral());
+			return;
+		}
+
+		if (!costFn.isInstruction())
+			throw new IllegalArgumentException();
+
+		List<RewriterStatement> operands;
+
+		if (!costFn.getOperands().isEmpty() && costFn.getChild(0).isArgumentList())
+			operands = costFn.getChild(0).getOperands();
+		else
+			operands = costFn.getOperands();
+
+		String varName;
+
+		// Then, the cost function is an instruction
+		switch (costFn.trueInstruction()) {
+			case "_nnz":
+				varName = vars.get(costFn.getChild(0));
+
+				if (varName == null)
+					throw new IllegalArgumentException(costFn.toParsableString(ctx));
+
+				requirements.add(new Tuple2<>(varName, "_nnz"));
+				sb.append(varName);
+				sb.append(".getNnz()");
+				break;
+
+			case "nrow":
+				varName = vars.get(costFn.getChild(0));
+
+				if (varName == null)
+					throw new IllegalArgumentException();
+
+				requirements.add(new Tuple2<>(varName, "nrow"));
+				sb.append(varName);
+				sb.append(".getDim1()");
+				break;
+
+			case "ncol":
+				varName = vars.get(costFn.getChild(0));
+
+				if (varName == null)
+					throw new IllegalArgumentException();
+
+				requirements.add(new Tuple2<>(varName, "ncol"));
+				sb.append(varName);
+				sb.append(".getDim2()");
+				break;
+
+			case "+":
+			case "*":
+				sb.append('(');
+
+				for (int i = 0; i < operands.size(); i++) {
+					if (i != 0) {
+						sb.append(' ');
+						sb.append(costFn.trueInstruction());
+						sb.append(' ');
+					}
+
+					buildCostFnRecursively(operands.get(i), vars, ctx, sb, requirements);
+				}
+
+				sb.append(')');
+				break;
+			case "inv":
+				sb.append("(1.0 / ");
+				buildCostFnRecursively(operands.get(0), vars, ctx, sb, requirements);
+				sb.append(')');
+				break;
+			case "min":
+			case "max":
+				sb.append("Math.");
+				sb.append(costFn.trueInstruction());
+				sb.append('(');
+				for (int i = 0; i < operands.size(); i++) {
+					if (i != 0)
+						sb.append(", ");
+
+					buildCostFnRecursively(operands.get(i), vars, ctx, sb, requirements);
+				}
+				sb.append(')');
+				break;
+			case "_EClass":
+				// Here, we can just select a random representant
+				// Ideally, we would choose one that has dimensions available, but for now, we just take the first
+				buildCostFnRecursively(operands.get(0), vars, ctx, sb, requirements);
+				break;
+			default:
+				throw new IllegalArgumentException(costFn.trueInstruction());
+		}
 	}
 
 	// Returns the set of all active statements after the rewrite

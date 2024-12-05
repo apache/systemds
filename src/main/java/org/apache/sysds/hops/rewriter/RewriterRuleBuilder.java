@@ -1,19 +1,15 @@
 package org.apache.sysds.hops.rewriter;
 
-import org.apache.commons.collections4.bidimap.DualHashBidiMap;
-import org.apache.commons.lang3.mutable.MutableObject;
+import org.apache.sysds.hops.rewriter.utils.RewriterUtils;
 import scala.Tuple2;
 
-import javax.ws.rs.core.Link;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 import java.util.function.BiConsumer;
-import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.Function;
 

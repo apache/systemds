@@ -3,9 +3,8 @@ package org.apache.sysds.test.component.codegen.rewrite.functions;
 import org.apache.commons.lang3.mutable.MutableObject;
 import org.apache.sysds.hops.rewriter.RewriterRule;
 import org.apache.sysds.hops.rewriter.RewriterRuleCreator;
-import org.apache.sysds.hops.rewriter.RewriterRuleSet;
 import org.apache.sysds.hops.rewriter.RewriterStatement;
-import org.apache.sysds.hops.rewriter.RewriterUtils;
+import org.apache.sysds.hops.rewriter.utils.RewriterUtils;
 import org.apache.sysds.hops.rewriter.RuleContext;
 import org.apache.sysds.hops.rewriter.assertions.RewriterAssertionUtils;
 import org.apache.sysds.hops.rewriter.assertions.RewriterAssertions;
@@ -13,7 +12,6 @@ import org.apache.sysds.hops.rewriter.estimators.RewriterCostEstimator;
 import org.apache.sysds.hops.rewriter.estimators.RewriterSparsityEstimator;
 import org.junit.BeforeClass;
 import org.junit.Test;
-import scala.Tuple2;
 import scala.Tuple3;
 
 import java.util.HashMap;

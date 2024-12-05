@@ -1,8 +1,7 @@
 package org.apache.sysds.test.component.codegen.rewrite;
 
-import org.apache.sysds.hops.rewriter.RewriterRuntimeUtils;
 import org.apache.sysds.hops.rewriter.RewriterStatement;
-import org.apache.sysds.hops.rewriter.RewriterUtils;
+import org.apache.sysds.hops.rewriter.utils.RewriterUtils;
 import org.apache.sysds.hops.rewriter.RuleContext;
 import org.apache.sysds.hops.rewriter.TopologicalSort;
 import org.junit.BeforeClass;

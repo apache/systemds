@@ -31,7 +31,7 @@ public abstract class RewriterStatement {
 
 
 	protected int rid = 0;
-	protected int refCtr = 0;
+	public int refCtr = 0;
 	protected long cost = -2;
 
 	protected HashMap<String, Object> meta = null;
@@ -495,7 +495,7 @@ public abstract class RewriterStatement {
 	public abstract RewriterStatement nestedCopyOrInject(Map<RewriterStatement, RewriterStatement> copiedObjects, TriFunction<RewriterStatement, RewriterStatement, Integer, RewriterStatement> injector, RewriterStatement parent, int pIdx);
 	// Returns the new maxRefId
 	abstract int toParsableString(StringBuilder builder, Map<RewriterStatement, Integer> refs, int maxRefId, Map<String, Set<String>> vars, Set<RewriterStatement> forceCreateRefs, final RuleContext ctx);
-	abstract void refreshReturnType(final RuleContext ctx);
+	public abstract void refreshReturnType(final RuleContext ctx);
 	protected abstract void compress(RewriterAssertions assertions);
 
 	public static String parsableDefinitions(Map<String, Set<String>> defs) {

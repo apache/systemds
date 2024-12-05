@@ -501,7 +501,7 @@ public class RewriterRule extends AbstractRewriterRule {
 		throw new NotImplementedException();
 	}
 
-	static class IdentityRewriterStatement {
+	/*static class IdentityRewriterStatement {
 		public RewriterStatement stmt;
 
 		@Deprecated
@@ -523,7 +523,7 @@ public class RewriterRule extends AbstractRewriterRule {
 		public String toString() {
 			return stmt.toString() + "[" + hashCode() + "]";
 		}
-	}
+	}*/
 
 	public static class LinkObject {
 		List<RewriterStatement> stmt;

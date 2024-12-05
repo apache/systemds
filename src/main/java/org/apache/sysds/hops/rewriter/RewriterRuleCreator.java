@@ -6,6 +6,7 @@ import org.apache.sysds.hops.Hop;
 import org.apache.sysds.hops.rewriter.dml.DMLCodeGenerator;
 import org.apache.sysds.hops.rewriter.dml.DMLExecutor;
 import org.apache.sysds.hops.rewriter.estimators.RewriterCostEstimator;
+import org.apache.sysds.hops.rewriter.utils.RewriterUtils;
 
 import java.util.ArrayList;
 import java.util.Collections;

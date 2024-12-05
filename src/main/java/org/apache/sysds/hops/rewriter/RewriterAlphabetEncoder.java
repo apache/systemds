@@ -1,10 +1,6 @@
 package org.apache.sysds.hops.rewriter;
 
-import com.google.protobuf.Internal;
-import org.apache.commons.lang3.NotImplementedException;
-import org.apache.commons.lang3.mutable.MutableInt;
-import org.apache.spark.internal.config.R;
-import org.apache.sysds.runtime.compress.workload.Op;
+import org.apache.sysds.hops.rewriter.utils.RewriterUtils;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -15,7 +11,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 public class RewriterAlphabetEncoder {
 	public static final List<String> ALL_TYPES = List.of("MATRIX", "FLOAT");

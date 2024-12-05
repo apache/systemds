@@ -1,36 +1,38 @@
-package org.apache.sysds.hops.rewriter;
+package org.apache.sysds.hops.rewriter.utils;
 
 import org.apache.commons.lang3.NotImplementedException;
 import org.apache.commons.lang3.mutable.MutableBoolean;
 import org.apache.commons.lang3.mutable.MutableInt;
 import org.apache.commons.lang3.mutable.MutableObject;
 import org.apache.logging.log4j.util.TriConsumer;
-import org.apache.spark.internal.config.R;
-import org.apache.zookeeper.data.Id;
+import org.apache.sysds.hops.rewriter.ConstantFoldingFunctions;
+import org.apache.sysds.hops.rewriter.MetaPropagator;
+import org.apache.sysds.hops.rewriter.RewriterContextSettings;
+import org.apache.sysds.hops.rewriter.RewriterDataType;
+import org.apache.sysds.hops.rewriter.RewriterHeuristic;
+import org.apache.sysds.hops.rewriter.RewriterHeuristics;
+import org.apache.sysds.hops.rewriter.RewriterInstruction;
+import org.apache.sysds.hops.rewriter.RewriterRule;
+import org.apache.sysds.hops.rewriter.RewriterRuleBuilder;
+import org.apache.sysds.hops.rewriter.RewriterRuleCollection;
+import org.apache.sysds.hops.rewriter.RewriterRuleSet;
+import org.apache.sysds.hops.rewriter.RewriterStatement;
+import org.apache.sysds.hops.rewriter.RuleContext;
+import org.apache.sysds.hops.rewriter.TopologicalSort;
 import scala.Tuple2;
-import scala.Tuple3;
-import scala.collection.parallel.ParIterableLike;
-import scala.reflect.internal.Trees;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collection;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Iterator;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.Random;
 import java.util.Set;
-import java.util.Stack;
 import java.util.UUID;
 import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
-import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -97,7 +99,7 @@ public class RewriterUtils {
 		RewriterStatement cpy = origStatement.nestedCopy(true);
 		MutableObject<RewriterStatement> mCpy = new MutableObject<>(cpy);
 
-		Map<Tuple2<RewriterRule.IdentityRewriterStatement, RewriterRule.IdentityRewriterStatement>, List<RewriterStatement>> mmap = eraseAccessTypes(mCpy, ctx);
+		Map<Tuple2<RewriterStatement, RewriterStatement>, List<RewriterStatement>> mmap = eraseAccessTypes(mCpy, ctx);
 		cpy = mCpy.getValue();
 
 		// Identify common element wise accesses (e.g. A[i, j] + B[i, j] for all i, j)
@@ -139,7 +141,7 @@ public class RewriterUtils {
 		//
 
 		if (mmap.size() == 1) {
-			Map.Entry<Tuple2<RewriterRule.IdentityRewriterStatement, RewriterRule.IdentityRewriterStatement>, List<RewriterStatement>> entry = mmap.entrySet().iterator().next();
+			Map.Entry<Tuple2<RewriterStatement, RewriterStatement>, List<RewriterStatement>> entry = mmap.entrySet().iterator().next();
 			HashMap<String, RewriterStatement> args = new HashMap<>();
 
 			RewriterStatement mS = null;
@@ -167,10 +169,10 @@ public class RewriterUtils {
 		return null;
 	}
 
-	public static Map<Tuple2<RewriterRule.IdentityRewriterStatement, RewriterRule.IdentityRewriterStatement>, List<RewriterStatement>> eraseAccessTypes(MutableObject<RewriterStatement> stmt, final RuleContext ctx) {
+	public static Map<Tuple2<RewriterStatement, RewriterStatement>, List<RewriterStatement>> eraseAccessTypes(MutableObject<RewriterStatement> stmt, final RuleContext ctx) {
 		//Map<Tuple3<RewriterRule.IdentityRewriterStatement, RewriterRule.IdentityRewriterStatement, RewriterRule.IdentityRewriterStatement>, RewriterStatement> out = new HashMap<>();
 
-		Map<Tuple2<RewriterRule.IdentityRewriterStatement, RewriterRule.IdentityRewriterStatement>, List<RewriterStatement>> rewrites = new HashMap<>();
+		Map<Tuple2<RewriterStatement, RewriterStatement>, List<RewriterStatement>> rewrites = new HashMap<>();
 
 		HashMap<Integer, RewriterStatement> hooks = new HashMap<>();
 
@@ -193,9 +195,9 @@ public class RewriterUtils {
 					t.unsafePutMeta("idx1", m.getMatchRoot().getOperands().get(1));
 					t.unsafePutMeta("idx2", m.getMatchRoot().getOperands().get(2));
 
-					RewriterRule.IdentityRewriterStatement idx1 = new RewriterRule.IdentityRewriterStatement(m.getMatchRoot().getOperands().get(1));
-					RewriterRule.IdentityRewriterStatement idx2 = new RewriterRule.IdentityRewriterStatement(m.getMatchRoot().getOperands().get(2));
-					Tuple2<RewriterRule.IdentityRewriterStatement, RewriterRule.IdentityRewriterStatement> mT = new Tuple2<>(idx1, idx2);
+					RewriterStatement idx1 = m.getMatchRoot().getOperands().get(1);
+					RewriterStatement idx2 = m.getMatchRoot().getOperands().get(2);
+					Tuple2<RewriterStatement, RewriterStatement> mT = new Tuple2<>(idx1, idx2);
 
 					List<RewriterStatement> r = rewrites.get(mT);
 
@@ -953,7 +955,7 @@ public class RewriterUtils {
 			if (el.getOperands() == null)
 				return;
 
-			RewriterRule.IdentityRewriterStatement voter = new RewriterRule.IdentityRewriterStatement(el);
+			RewriterStatement voter = el;
 			createHierarchy(ctx, el, el.getOperands());
 
 			/*if (votes.containsKey(voter))
@@ -1192,11 +1194,11 @@ public class RewriterUtils {
 		}).collect(Collectors.toList());
 	}
 
-	private static List<RewriterStatement> generateSubtrees(RewriterStatement stmt, Map<RewriterRule.IdentityRewriterStatement, List<RewriterStatement>> visited, final RuleContext ctx, int maxCombinations) {
+	private static List<RewriterStatement> generateSubtrees(RewriterStatement stmt, Map<RewriterStatement, List<RewriterStatement>> visited, final RuleContext ctx, int maxCombinations) {
 		if (stmt == null)
 			return Collections.emptyList();
 
-		RewriterRule.IdentityRewriterStatement is = new RewriterRule.IdentityRewriterStatement(stmt);
+		RewriterStatement is = stmt;
 		List<RewriterStatement> alreadyVisited = visited.get(is);
 
 		if (alreadyVisited != null)

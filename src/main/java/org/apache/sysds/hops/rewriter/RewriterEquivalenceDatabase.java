@@ -1,5 +1,7 @@
 package org.apache.sysds.hops.rewriter;
 
+import org.apache.sysds.hops.rewriter.utils.RewriterUtils;
+
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.IOException;

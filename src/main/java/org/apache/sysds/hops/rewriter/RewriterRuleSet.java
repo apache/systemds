@@ -4,6 +4,7 @@ import org.apache.commons.collections4.bidimap.DualHashBidiMap;
 import org.apache.commons.lang3.mutable.MutableObject;
 import org.apache.sysds.hops.Hop;
 import org.apache.sysds.hops.rewriter.codegen.RewriterCodeGen;
+import org.apache.sysds.hops.rewriter.utils.RewriterUtils;
 import scala.Tuple2;
 import scala.Tuple3;
 

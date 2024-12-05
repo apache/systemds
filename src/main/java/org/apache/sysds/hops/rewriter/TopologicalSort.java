@@ -210,7 +210,7 @@ public class TopologicalSort {
 
 	// All children in post order and unique
 	private static List<RewriterStatement> allChildren(Collection<UnorderedSet> unorderedSets) {
-		Set<RewriterRule.IdentityRewriterStatement> is = new HashSet<>();
+		Set<RewriterStatement> is = new HashSet<>();
 		List<RewriterStatement> children = new ArrayList<>();
 		for (UnorderedSet set : unorderedSets)
 			for (RewriterStatement s : set.contents)
@@ -219,11 +219,11 @@ public class TopologicalSort {
 		return children;
 	}
 
-	private static void traverse(RewriterStatement stmt, Set<RewriterRule.IdentityRewriterStatement> visited, List<RewriterStatement> l) {
-		if (visited.contains(new RewriterRule.IdentityRewriterStatement(stmt)))
+	private static void traverse(RewriterStatement stmt, Set<RewriterStatement> visited, List<RewriterStatement> l) {
+		if (visited.contains(stmt))
 			return;
 
-		visited.add(new RewriterRule.IdentityRewriterStatement(stmt));
+		visited.add(stmt);
 		stmt.getOperands().forEach(el -> traverse(el, visited, l));
 
 		l.add(stmt);

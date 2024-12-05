@@ -2,16 +2,13 @@ package org.apache.sysds.test.component.codegen.rewrite.functions;
 
 import org.apache.sysds.hops.rewriter.RewriterAlphabetEncoder;
 import org.apache.sysds.hops.rewriter.RewriterStatement;
-import org.apache.sysds.hops.rewriter.RewriterUtils;
+import org.apache.sysds.hops.rewriter.utils.RewriterUtils;
 import org.apache.sysds.hops.rewriter.RuleContext;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Function;
-
-import static org.apache.sysds.hops.rewriter.RewriterAlphabetEncoder.MATRIX;
 
 public class RewriterAlphabetTest {
 

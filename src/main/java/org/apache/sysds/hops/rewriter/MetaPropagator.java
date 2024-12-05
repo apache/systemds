@@ -3,6 +3,7 @@ package org.apache.sysds.hops.rewriter;
 import org.apache.commons.lang3.NotImplementedException;
 import org.apache.commons.lang3.mutable.MutableObject;
 import org.apache.sysds.hops.rewriter.assertions.RewriterAssertions;
+import org.apache.sysds.hops.rewriter.utils.RewriterUtils;
 
 import java.util.HashMap;
 import java.util.Optional;

@@ -1,8 +1,9 @@
 package org.apache.sysds.hops.rewriter;
 
+import org.apache.sysds.hops.rewriter.utils.RewriterUtils;
+
 import java.util.List;
 import java.util.Random;
-import java.util.stream.Collectors;
 
 public class RewriterContextSettings {
 

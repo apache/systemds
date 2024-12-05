@@ -108,6 +108,11 @@ public class NNComponentTest extends TestFolder {
 		run("transpose_NCHW_to_CNHW.dml");
 	}
 
+	@Test
+	public void transpose_ABCD_to_ACBD() {
+		run("transpose_ABCD_to_ACBD.dml");
+	}
+
 	@Test 
 	public void logcosh(){
 		run("logcosh.dml");

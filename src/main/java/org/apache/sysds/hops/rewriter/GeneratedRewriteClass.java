@@ -69,42 +69,43 @@ public class GeneratedRewriteClass implements Function {
 						if ( hi_0.getDataType() == Types.DataType.MATRIX ) {
 							if ( hi_0 instanceof BinaryOp ) {
 								if ( (( BinaryOp ) hi_0 ).getOp() == Types.OpOp2.NOTEQUAL ) {
-									if ( hi_0.getInput().size() == 2 ) {
-										Hop hi_0_0 = hi_0.getInput(0);
-										Hop hi_0_1 = hi_0.getInput(1);
-										if ( hi_0_0.getDataType() == Types.DataType.SCALAR ) {
-											hi = _applyRewrite147(hi); // trace(!=(b,t(A))) => trace(!=(A,b))
-											hi = _applyRewrite168(hi); // trace(!=(sum(A),A)) => trace(!=(A,trace(A)))
-											hi = _applyRewrite180(hi); // sum(!=(b,t(A))) => sum(!=(A,b))
-										} else if ( hi_0_0.getDataType() == Types.DataType.MATRIX ) {
-											if ( hi_0_0 instanceof ReorgOp ) {
-												hi = _applyRewrite136(hi); // trace(!=(t(B),A)) => trace(!=(A,B))
-												hi = _applyRewrite146(hi); // trace(!=(t(A),b)) => trace(!=(A,b))
-												hi = _applyRewrite179(hi); // sum(!=(t(A),b)) => sum(!=(A,b))
-											} else {
-												hi = _applyRewrite137(hi); // trace(!=(A,t(B))) => trace(!=(A,B))
-												hi = _applyRewrite169(hi); // trace(!=(A,sum(A))) => trace(!=(A,trace(A)))
-											}
-										}
-									}
+									hi = _applyRewrite179(hi); // sum(!=(t(A),b)) => sum(!=(A,b))
+									hi = _applyRewrite180(hi); // sum(!=(b,t(A))) => sum(!=(A,b))
+								} else if ( (( BinaryOp ) hi_0 ).getOp() == Types.OpOp2.MINUS ) {
+									hi = _applyRewrite38(hi); // sum(-(0.0,B)) => -(0.0,sum(B))
+									hi = _applyRewrite177(hi); // sum(-($1:t(A),b)) => sum(-(A,b))
+									hi = _applyRewrite178(hi); // sum(-(a,$1:t(B))) => sum(-(a,B))
+								} else if ( (( BinaryOp ) hi_0 ).getOp() == Types.OpOp2.PLUS ) {
+									hi = _applyRewrite181(hi); // sum(+($1:t(A),b)) => sum(+(A,b))
+									hi = _applyRewrite182(hi); // sum(+(b,$1:t(A))) => sum(+(A,b))
+								} else if ( (( BinaryOp ) hi_0 ).getOp() == Types.OpOp2.DIV ) {
+									hi = _applyRewrite148(hi); // sum(/($1:*(a,B),C)) => *(a,sum(/(B,C)))
+									hi = _applyRewrite149(hi); // sum(/($1:*(B,a),C)) => *(a,sum(/(B,C)))
+									hi = _applyRewrite404(hi); // sum(/(a,t(B))) => sum(/(a,B))
 								} else if ( (( BinaryOp ) hi_0 ).getOp() == Types.OpOp2.MULT ) {
+									hi = _applyRewrite150(hi); // sum(*($1:/(a,C),B)) => *(a,sum(/(B,C)))
+									hi = _applyRewrite151(hi); // sum(*(B,$1:/(a,C))) => *(a,sum(/(B,C)))
+								}
+							}
+						}
+					}
+				} else if ( (( AggUnaryOp ) hi ).getOp() == Types.AggOp.TRACE ) {
+					if ( hi.getInput().size() == 1 ) {
+						Hop hi_0 = hi.getInput(0);
+						if ( hi_0.getDataType() == Types.DataType.MATRIX ) {
+							if ( hi_0 instanceof BinaryOp ) {
+								if ( (( BinaryOp ) hi_0 ).getOp() == Types.OpOp2.MULT ) {
 									if ( hi_0.getInput().size() == 2 ) {
 										Hop hi_0_0 = hi_0.getInput(0);
 										Hop hi_0_1 = hi_0.getInput(1);
 										if ( hi_0_0.getDataType() == Types.DataType.SCALAR ) {
 											hi = _applyRewrite16(hi); // trace(*(a,B)) => *(a,trace(B))
 										} else if ( hi_0_0.getDataType() == Types.DataType.MATRIX ) {
-											if ( hi_0_0 instanceof BinaryOp ) {
-												hi = _applyRewrite120(hi); // trace(*($1:/(a,C),B)) => *(a,trace(/(B,C)))
-												hi = _applyRewrite150(hi); // sum(*($1:/(a,C),B)) => *(a,sum(/(B,C)))
-											} else if ( hi_0_0 instanceof ReorgOp ) {
-												hi = _applyRewrite183(hi); // trace(*($1:t(B),A)) => trace(*(A,B))
-											} else {
-												hi = _applyRewrite17(hi); // trace(*(B,a)) => *(a,trace(B))
-												hi = _applyRewrite121(hi); // trace(*(B,$1:/(a,C))) => *(a,trace(/(B,C)))
-												hi = _applyRewrite151(hi); // sum(*(B,$1:/(a,C))) => *(a,sum(/(B,C)))
-												hi = _applyRewrite184(hi); // trace(*(B,$1:t(A))) => trace(*(A,B))
-											}
+											hi = _applyRewrite17(hi); // trace(*(B,a)) => *(a,trace(B))
+											hi = _applyRewrite120(hi); // trace(*($1:/(a,C),B)) => *(a,trace(/(B,C)))
+											hi = _applyRewrite121(hi); // trace(*(B,$1:/(a,C))) => *(a,trace(/(B,C)))
+											hi = _applyRewrite183(hi); // trace(*($1:t(B),A)) => trace(*(A,B))
+											hi = _applyRewrite184(hi); // trace(*(B,$1:t(A))) => trace(*(A,B))
 										}
 									}
 								} else if ( (( BinaryOp ) hi_0 ).getOp() == Types.OpOp2.MINUS ) {
@@ -112,21 +113,12 @@ public class GeneratedRewriteClass implements Function {
 										Hop hi_0_0 = hi_0.getInput(0);
 										Hop hi_0_1 = hi_0.getInput(1);
 										if ( hi_0_0.getDataType() == Types.DataType.SCALAR ) {
-											if ( hi_0_1.getDataType() == Types.DataType.MATRIX ) {
-												if ( hi_0_1 instanceof ReorgOp ) {
-													hi = _applyRewrite139(hi); // trace(-(a,$1:t(B))) => trace(-(a,B))
-													hi = _applyRewrite178(hi); // sum(-(a,$1:t(B))) => sum(-(a,B))
-												} else if ( hi_0_1 instanceof AggUnaryOp ) {
-													hi = _applyRewrite435(hi); // trace(-(a,$1:colSums(B))) => -(a,trace(colSums(B)))
-												} else {
-													hi = _applyRewrite38(hi); // sum(-(0.0,B)) => -(0.0,sum(B))
-												}
-											}
+											hi = _applyRewrite139(hi); // trace(-(a,$1:t(B))) => trace(-(a,B))
+											hi = _applyRewrite435(hi); // trace(-(a,$1:colSums(B))) => -(a,trace(colSums(B)))
 										} else if ( hi_0_0.getDataType() == Types.DataType.MATRIX ) {
 											hi = _applyRewrite138(hi); // trace(-($1:t(A),b)) => trace(-(A,b))
 											hi = _applyRewrite140(hi); // trace(-($1:t(A),B)) => trace(-(A,B))
 											hi = _applyRewrite141(hi); // trace(-(A,$1:t(B))) => trace(-(A,B))
-											hi = _applyRewrite177(hi); // sum(-($1:t(A),b)) => sum(-(A,b))
 											hi = _applyRewrite434(hi); // trace(-($1:colSums(A),b)) => -(trace(colSums(A)),b)
 										}
 									}
@@ -136,14 +128,12 @@ public class GeneratedRewriteClass implements Function {
 										Hop hi_0_1 = hi_0.getInput(1);
 										if ( hi_0_0.getDataType() == Types.DataType.SCALAR ) {
 											hi = _applyRewrite145(hi); // trace(+(b,$1:t(A))) => trace(+(A,b))
-											hi = _applyRewrite182(hi); // sum(+(b,$1:t(A))) => sum(+(A,b))
 											hi = _applyRewrite437(hi); // trace(+(b,$1:colSums(A))) => +(trace(colSums(A)),b)
 										} else if ( hi_0_0.getDataType() == Types.DataType.MATRIX ) {
 											if ( hi_0_0 instanceof ReorgOp ) {
 												hi = _applyRewrite96(hi); // trace(+($1:t(A),A)) => +(trace(A),trace(A))
 												hi = _applyRewrite142(hi); // trace(+($1:t(B),A)) => trace(+(A,B))
 												hi = _applyRewrite144(hi); // trace(+($1:t(A),b)) => trace(+(A,b))
-												hi = _applyRewrite181(hi); // sum(+($1:t(A),b)) => sum(+(A,b))
 											} else if ( hi_0_0 instanceof AggUnaryOp ) {
 												hi = _applyRewrite436(hi); // trace(+($1:colSums(A),b)) => +(trace(colSums(A)),b)
 											} else {
@@ -153,23 +143,23 @@ public class GeneratedRewriteClass implements Function {
 										}
 									}
 								} else if ( (( BinaryOp ) hi_0 ).getOp() == Types.OpOp2.DIV ) {
+									hi = _applyRewrite122(hi); // trace(/($1:*(a,B),C)) => *(a,trace(/(B,C)))
+									hi = _applyRewrite123(hi); // trace(/($1:*(B,a),C)) => *(a,trace(/(B,C)))
+									hi = _applyRewrite369(hi); // trace(/(a,t(B))) => trace(/(a,B))
+									hi = _applyRewrite370(hi); // trace(/($1:t(A),B)) => trace(/(A,B))
+									hi = _applyRewrite371(hi); // trace(/(A,t(B))) => trace(/(A,B))
+								} else if ( (( BinaryOp ) hi_0 ).getOp() == Types.OpOp2.NOTEQUAL ) {
 									if ( hi_0.getInput().size() == 2 ) {
 										Hop hi_0_0 = hi_0.getInput(0);
 										Hop hi_0_1 = hi_0.getInput(1);
 										if ( hi_0_0.getDataType() == Types.DataType.MATRIX ) {
-											if ( hi_0_0 instanceof BinaryOp ) {
-												hi = _applyRewrite122(hi); // trace(/($1:*(a,B),C)) => *(a,trace(/(B,C)))
-												hi = _applyRewrite123(hi); // trace(/($1:*(B,a),C)) => *(a,trace(/(B,C)))
-												hi = _applyRewrite148(hi); // sum(/($1:*(a,B),C)) => *(a,sum(/(B,C)))
-												hi = _applyRewrite149(hi); // sum(/($1:*(B,a),C)) => *(a,sum(/(B,C)))
-											} else if ( hi_0_0 instanceof ReorgOp ) {
-												hi = _applyRewrite370(hi); // trace(/($1:t(A),B)) => trace(/(A,B))
-											} else {
-												hi = _applyRewrite371(hi); // trace(/(A,t(B))) => trace(/(A,B))
-											}
+											hi = _applyRewrite136(hi); // trace(!=(t(B),A)) => trace(!=(A,B))
+											hi = _applyRewrite137(hi); // trace(!=(A,t(B))) => trace(!=(A,B))
+											hi = _applyRewrite146(hi); // trace(!=(t(A),b)) => trace(!=(A,b))
+											hi = _applyRewrite169(hi); // trace(!=(A,sum(A))) => trace(!=(A,trace(A)))
 										} else if ( hi_0_0.getDataType() == Types.DataType.SCALAR ) {
-											hi = _applyRewrite369(hi); // trace(/(a,t(B))) => trace(/(a,B))
-											hi = _applyRewrite404(hi); // sum(/(a,t(B))) => sum(/(a,B))
+											hi = _applyRewrite147(hi); // trace(!=(b,t(A))) => trace(!=(A,b))
+											hi = _applyRewrite168(hi); // trace(!=(sum(A),A)) => trace(!=(A,trace(A)))
 										}
 									}
 								}
@@ -1895,7 +1885,7 @@ public class GeneratedRewriteClass implements Function {
 
 		AggUnaryOp c_hi = (AggUnaryOp) hi;
 
-		if ( c_hi.getOp() != Types.AggOp.SUM || !c_hi.getValueType().isNumeric() )
+		if ( c_hi.getOp() != Types.AggOp.TRACE || !c_hi.getValueType().isNumeric() )
 			return hi;
 
 		Hop hi_0 = hi.getInput(0);
@@ -1945,7 +1935,7 @@ public class GeneratedRewriteClass implements Function {
 
 		AggUnaryOp c_hi = (AggUnaryOp) hi;
 
-		if ( c_hi.getOp() != Types.AggOp.SUM || !c_hi.getValueType().isNumeric() )
+		if ( c_hi.getOp() != Types.AggOp.TRACE || !c_hi.getValueType().isNumeric() )
 			return hi;
 
 		Hop hi_0 = hi.getInput(0);
@@ -5927,7 +5917,7 @@ public class GeneratedRewriteClass implements Function {
 
 		AggUnaryOp c_hi = (AggUnaryOp) hi;
 
-		if ( c_hi.getOp() != Types.AggOp.SUM || !c_hi.getValueType().isNumeric() )
+		if ( c_hi.getOp() != Types.AggOp.TRACE || !c_hi.getValueType().isNumeric() )
 			return hi;
 
 		Hop hi_0 = hi.getInput(0);
@@ -5991,7 +5981,7 @@ public class GeneratedRewriteClass implements Function {
 
 		AggUnaryOp c_hi = (AggUnaryOp) hi;
 
-		if ( c_hi.getOp() != Types.AggOp.SUM || !c_hi.getValueType().isNumeric() )
+		if ( c_hi.getOp() != Types.AggOp.TRACE || !c_hi.getValueType().isNumeric() )
 			return hi;
 
 		Hop hi_0 = hi.getInput(0);
@@ -7483,7 +7473,7 @@ public class GeneratedRewriteClass implements Function {
 
 		AggUnaryOp c_hi = (AggUnaryOp) hi;
 
-		if ( c_hi.getOp() != Types.AggOp.SUM || !c_hi.getValueType().isNumeric() )
+		if ( c_hi.getOp() != Types.AggOp.TRACE || !c_hi.getValueType().isNumeric() )
 			return hi;
 
 		Hop hi_0 = hi.getInput(0);
@@ -7552,7 +7542,7 @@ public class GeneratedRewriteClass implements Function {
 
 		AggUnaryOp c_hi = (AggUnaryOp) hi;
 
-		if ( c_hi.getOp() != Types.AggOp.SUM || !c_hi.getValueType().isNumeric() )
+		if ( c_hi.getOp() != Types.AggOp.TRACE || !c_hi.getValueType().isNumeric() )
 			return hi;
 
 		Hop hi_0 = hi.getInput(0);
@@ -7621,7 +7611,7 @@ public class GeneratedRewriteClass implements Function {
 
 		AggUnaryOp c_hi = (AggUnaryOp) hi;
 
-		if ( c_hi.getOp() != Types.AggOp.SUM || !c_hi.getValueType().isNumeric() )
+		if ( c_hi.getOp() != Types.AggOp.TRACE || !c_hi.getValueType().isNumeric() )
 			return hi;
 
 		Hop hi_0 = hi.getInput(0);
@@ -7690,7 +7680,7 @@ public class GeneratedRewriteClass implements Function {
 
 		AggUnaryOp c_hi = (AggUnaryOp) hi;
 
-		if ( c_hi.getOp() != Types.AggOp.SUM || !c_hi.getValueType().isNumeric() )
+		if ( c_hi.getOp() != Types.AggOp.TRACE || !c_hi.getValueType().isNumeric() )
 			return hi;
 
 		Hop hi_0 = hi.getInput(0);
@@ -8647,7 +8637,7 @@ public class GeneratedRewriteClass implements Function {
 
 		AggUnaryOp c_hi = (AggUnaryOp) hi;
 
-		if ( c_hi.getOp() != Types.AggOp.SUM || !c_hi.getValueType().isNumeric() )
+		if ( c_hi.getOp() != Types.AggOp.TRACE || !c_hi.getValueType().isNumeric() )
 			return hi;
 
 		Hop hi_0 = hi.getInput(0);
@@ -8710,7 +8700,7 @@ public class GeneratedRewriteClass implements Function {
 
 		AggUnaryOp c_hi = (AggUnaryOp) hi;
 
-		if ( c_hi.getOp() != Types.AggOp.SUM || !c_hi.getValueType().isNumeric() )
+		if ( c_hi.getOp() != Types.AggOp.TRACE || !c_hi.getValueType().isNumeric() )
 			return hi;
 
 		Hop hi_0 = hi.getInput(0);
@@ -8773,7 +8763,7 @@ public class GeneratedRewriteClass implements Function {
 
 		AggUnaryOp c_hi = (AggUnaryOp) hi;
 
-		if ( c_hi.getOp() != Types.AggOp.SUM || !c_hi.getValueType().isNumeric() )
+		if ( c_hi.getOp() != Types.AggOp.TRACE || !c_hi.getValueType().isNumeric() )
 			return hi;
 
 		Hop hi_0 = hi.getInput(0);
@@ -8836,7 +8826,7 @@ public class GeneratedRewriteClass implements Function {
 
 		AggUnaryOp c_hi = (AggUnaryOp) hi;
 
-		if ( c_hi.getOp() != Types.AggOp.SUM || !c_hi.getValueType().isNumeric() )
+		if ( c_hi.getOp() != Types.AggOp.TRACE || !c_hi.getValueType().isNumeric() )
 			return hi;
 
 		Hop hi_0 = hi.getInput(0);
@@ -8899,7 +8889,7 @@ public class GeneratedRewriteClass implements Function {
 
 		AggUnaryOp c_hi = (AggUnaryOp) hi;
 
-		if ( c_hi.getOp() != Types.AggOp.SUM || !c_hi.getValueType().isNumeric() )
+		if ( c_hi.getOp() != Types.AggOp.TRACE || !c_hi.getValueType().isNumeric() )
 			return hi;
 
 		Hop hi_0 = hi.getInput(0);
@@ -8962,7 +8952,7 @@ public class GeneratedRewriteClass implements Function {
 
 		AggUnaryOp c_hi = (AggUnaryOp) hi;
 
-		if ( c_hi.getOp() != Types.AggOp.SUM || !c_hi.getValueType().isNumeric() )
+		if ( c_hi.getOp() != Types.AggOp.TRACE || !c_hi.getValueType().isNumeric() )
 			return hi;
 
 		Hop hi_0 = hi.getInput(0);
@@ -9025,7 +9015,7 @@ public class GeneratedRewriteClass implements Function {
 
 		AggUnaryOp c_hi = (AggUnaryOp) hi;
 
-		if ( c_hi.getOp() != Types.AggOp.SUM || !c_hi.getValueType().isNumeric() )
+		if ( c_hi.getOp() != Types.AggOp.TRACE || !c_hi.getValueType().isNumeric() )
 			return hi;
 
 		Hop hi_0 = hi.getInput(0);
@@ -9088,7 +9078,7 @@ public class GeneratedRewriteClass implements Function {
 
 		AggUnaryOp c_hi = (AggUnaryOp) hi;
 
-		if ( c_hi.getOp() != Types.AggOp.SUM || !c_hi.getValueType().isNumeric() )
+		if ( c_hi.getOp() != Types.AggOp.TRACE || !c_hi.getValueType().isNumeric() )
 			return hi;
 
 		Hop hi_0 = hi.getInput(0);
@@ -9151,7 +9141,7 @@ public class GeneratedRewriteClass implements Function {
 
 		AggUnaryOp c_hi = (AggUnaryOp) hi;
 
-		if ( c_hi.getOp() != Types.AggOp.SUM || !c_hi.getValueType().isNumeric() )
+		if ( c_hi.getOp() != Types.AggOp.TRACE || !c_hi.getValueType().isNumeric() )
 			return hi;
 
 		Hop hi_0 = hi.getInput(0);
@@ -9214,7 +9204,7 @@ public class GeneratedRewriteClass implements Function {
 
 		AggUnaryOp c_hi = (AggUnaryOp) hi;
 
-		if ( c_hi.getOp() != Types.AggOp.SUM || !c_hi.getValueType().isNumeric() )
+		if ( c_hi.getOp() != Types.AggOp.TRACE || !c_hi.getValueType().isNumeric() )
 			return hi;
 
 		Hop hi_0 = hi.getInput(0);
@@ -9277,7 +9267,7 @@ public class GeneratedRewriteClass implements Function {
 
 		AggUnaryOp c_hi = (AggUnaryOp) hi;
 
-		if ( c_hi.getOp() != Types.AggOp.SUM || !c_hi.getValueType().isNumeric() )
+		if ( c_hi.getOp() != Types.AggOp.TRACE || !c_hi.getValueType().isNumeric() )
 			return hi;
 
 		Hop hi_0 = hi.getInput(0);
@@ -9340,7 +9330,7 @@ public class GeneratedRewriteClass implements Function {
 
 		AggUnaryOp c_hi = (AggUnaryOp) hi;
 
-		if ( c_hi.getOp() != Types.AggOp.SUM || !c_hi.getValueType().isNumeric() )
+		if ( c_hi.getOp() != Types.AggOp.TRACE || !c_hi.getValueType().isNumeric() )
 			return hi;
 
 		Hop hi_0 = hi.getInput(0);
@@ -10855,7 +10845,7 @@ public class GeneratedRewriteClass implements Function {
 
 		AggUnaryOp c_hi = (AggUnaryOp) hi;
 
-		if ( c_hi.getOp() != Types.AggOp.SUM || !c_hi.getValueType().isNumeric() )
+		if ( c_hi.getOp() != Types.AggOp.TRACE || !c_hi.getValueType().isNumeric() )
 			return hi;
 
 		Hop hi_0 = hi.getInput(0);
@@ -10922,7 +10912,7 @@ public class GeneratedRewriteClass implements Function {
 
 		AggUnaryOp c_hi = (AggUnaryOp) hi;
 
-		if ( c_hi.getOp() != Types.AggOp.SUM || !c_hi.getValueType().isNumeric() )
+		if ( c_hi.getOp() != Types.AggOp.TRACE || !c_hi.getValueType().isNumeric() )
 			return hi;
 
 		Hop hi_0 = hi.getInput(0);
@@ -11903,7 +11893,7 @@ public class GeneratedRewriteClass implements Function {
 
 		AggUnaryOp c_hi = (AggUnaryOp) hi;
 
-		if ( c_hi.getOp() != Types.AggOp.SUM || !c_hi.getValueType().isNumeric() )
+		if ( c_hi.getOp() != Types.AggOp.TRACE || !c_hi.getValueType().isNumeric() )
 			return hi;
 
 		Hop hi_0 = hi.getInput(0);
@@ -11966,7 +11956,7 @@ public class GeneratedRewriteClass implements Function {
 
 		AggUnaryOp c_hi = (AggUnaryOp) hi;
 
-		if ( c_hi.getOp() != Types.AggOp.SUM || !c_hi.getValueType().isNumeric() )
+		if ( c_hi.getOp() != Types.AggOp.TRACE || !c_hi.getValueType().isNumeric() )
 			return hi;
 
 		Hop hi_0 = hi.getInput(0);
@@ -24896,7 +24886,7 @@ public class GeneratedRewriteClass implements Function {
 
 		AggUnaryOp c_hi = (AggUnaryOp) hi;
 
-		if ( c_hi.getOp() != Types.AggOp.SUM || !c_hi.getValueType().isNumeric() )
+		if ( c_hi.getOp() != Types.AggOp.TRACE || !c_hi.getValueType().isNumeric() )
 			return hi;
 
 		Hop hi_0 = hi.getInput(0);
@@ -24959,7 +24949,7 @@ public class GeneratedRewriteClass implements Function {
 
 		AggUnaryOp c_hi = (AggUnaryOp) hi;
 
-		if ( c_hi.getOp() != Types.AggOp.SUM || !c_hi.getValueType().isNumeric() )
+		if ( c_hi.getOp() != Types.AggOp.TRACE || !c_hi.getValueType().isNumeric() )
 			return hi;
 
 		Hop hi_0 = hi.getInput(0);
@@ -25022,7 +25012,7 @@ public class GeneratedRewriteClass implements Function {
 
 		AggUnaryOp c_hi = (AggUnaryOp) hi;
 
-		if ( c_hi.getOp() != Types.AggOp.SUM || !c_hi.getValueType().isNumeric() )
+		if ( c_hi.getOp() != Types.AggOp.TRACE || !c_hi.getValueType().isNumeric() )
 			return hi;
 
 		Hop hi_0 = hi.getInput(0);
@@ -29323,7 +29313,7 @@ public class GeneratedRewriteClass implements Function {
 
 		AggUnaryOp c_hi = (AggUnaryOp) hi;
 
-		if ( c_hi.getOp() != Types.AggOp.SUM || !c_hi.getValueType().isNumeric() )
+		if ( c_hi.getOp() != Types.AggOp.TRACE || !c_hi.getValueType().isNumeric() )
 			return hi;
 
 		Hop hi_0 = hi.getInput(0);
@@ -29390,7 +29380,7 @@ public class GeneratedRewriteClass implements Function {
 
 		AggUnaryOp c_hi = (AggUnaryOp) hi;
 
-		if ( c_hi.getOp() != Types.AggOp.SUM || !c_hi.getValueType().isNumeric() )
+		if ( c_hi.getOp() != Types.AggOp.TRACE || !c_hi.getValueType().isNumeric() )
 			return hi;
 
 		Hop hi_0 = hi.getInput(0);
@@ -29457,7 +29447,7 @@ public class GeneratedRewriteClass implements Function {
 
 		AggUnaryOp c_hi = (AggUnaryOp) hi;
 
-		if ( c_hi.getOp() != Types.AggOp.SUM || !c_hi.getValueType().isNumeric() )
+		if ( c_hi.getOp() != Types.AggOp.TRACE || !c_hi.getValueType().isNumeric() )
 			return hi;
 
 		Hop hi_0 = hi.getInput(0);
@@ -29524,7 +29514,7 @@ public class GeneratedRewriteClass implements Function {
 
 		AggUnaryOp c_hi = (AggUnaryOp) hi;
 
-		if ( c_hi.getOp() != Types.AggOp.SUM || !c_hi.getValueType().isNumeric() )
+		if ( c_hi.getOp() != Types.AggOp.TRACE || !c_hi.getValueType().isNumeric() )
 			return hi;
 
 		Hop hi_0 = hi.getInput(0);

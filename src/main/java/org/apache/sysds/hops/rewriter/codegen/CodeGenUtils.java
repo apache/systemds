@@ -60,8 +60,9 @@ public class CodeGenUtils {
 				case "rowSums":
 				case "colSums":
 				case "sum":
-				case "trace":
 					return "Types.AggOp.SUM";
+				case "trace":
+					return "Types.AggOp.TRACE";
 				case "*2":
 					return "Types.OpOp1.MULT2";
 				case "cast.MATRIX":

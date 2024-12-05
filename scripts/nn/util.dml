@@ -380,3 +380,28 @@ top_k2d = function(matrix[double] X, int k, int C, int Hin, int Win)
   indices = transpose_NCHW_to_CNHW(indices_K_NHW, N)
 }
 
+transpose_ABCD_to_ACBD = function(matrix[double] X, int B, int C)
+    return (matrix[double] out) {
+  /*
+   * Reshape util for tensors in ABCD format.
+   * Transposes the 2nd and 3rd axes.
+   *
+   * Inputs:
+   *  - X: Inputs, of shape (A, B*C*D).
+   *  - B: Dimension of 2nd axis.
+   *  - C: Dimension of 3rd axis.
+   *
+   * Outputs:
+   *  - out: Outputs with the 2nd and 3rd axes transposed, of
+   *      shape (A, C*B*D).
+   */
+  A = nrow(X)
+  BCD = ncol(X)
+
+  # use NCHW_to_CNHW for X: (A, B*C*D) -> (B, A*C*D)
+  X_BACD = transpose_NCHW_to_CNHW(X, B)
+  # use NCHW_to_CNHW for X: (B, A*C*D) -> (A*C, B*D)
+  X_ACBD = transpose_NCHW_to_CNHW(X_BACD, A*C)
+  # reshape X: (A*C, B*D) -> (A, C*B*D)
+  out = matrix(X_ACBD, rows=A, cols=BCD)
+}

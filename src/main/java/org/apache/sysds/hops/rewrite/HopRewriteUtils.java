@@ -393,6 +393,30 @@ public class HopRewriteUtils {
 			
 		return datagen;
 	}
+
+	public static Hop createDataGenOpFomDims( Hop rows, Hop cols, double value ) {
+		Hop val = new LiteralOp(value);
+
+		HashMap<String, Hop> params = new HashMap<>();
+		params.put(DataExpression.RAND_ROWS, rows);
+		params.put(DataExpression.RAND_COLS, cols);
+		params.put(DataExpression.RAND_MIN, val);
+		params.put(DataExpression.RAND_MAX, val);
+		params.put(DataExpression.RAND_PDF, new LiteralOp(DataExpression.RAND_PDF_UNIFORM));
+		params.put(DataExpression.RAND_LAMBDA, new LiteralOp(-1.0));
+		params.put(DataExpression.RAND_SPARSITY, new LiteralOp(1.0));
+		params.put(DataExpression.RAND_SEED, new LiteralOp(DataGenOp.UNSPECIFIED_SEED) );
+
+		//note internal refresh size information
+		Hop datagen = new DataGenOp(OpOpDG.RAND, new DataIdentifier("tmp"), params);
+		datagen.setBlocksize(1000);
+		//copyLineNumbers(rowInput, datagen);
+
+		if( value==0 )
+			datagen.setNnz(0);
+
+		return datagen;
+	}
 	
 	public static Hop createDataGenOp( Hop rowInput, Hop colInput, double value ) 
 	{

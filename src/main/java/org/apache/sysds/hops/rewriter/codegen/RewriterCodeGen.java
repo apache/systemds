@@ -246,8 +246,8 @@ public class RewriterCodeGen {
 		if (DEBUG) {
 			indent(indentation, sb);
 			sb.append("System.out.println(\"Applying rewrite: " + name + "\");\n");
-			//indent(indentation, sb);
-			//sb.append("DMLExecutor.println(\"Applying rewrite: " + name + "\");\n");
+			indent(indentation, sb);
+			sb.append("DMLExecutor.println(\"Applying rewrite: " + name + "\");\n");
 		}
 
 		Set<RewriterStatement> activeStatements = buildRewrite(to, sb, combinedAssertions, vars, ctx, indentation);

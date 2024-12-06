@@ -14,6 +14,7 @@ import org.apache.sysds.hops.DataGenOp;
 import org.apache.sysds.hops.TernaryOp;
 import org.apache.sysds.common.Types;
 import org.apache.sysds.hops.rewrite.HopRewriteUtils;
+import org.apache.sysds.hops.rewriter.dml.DMLExecutor;
 
 public class GeneratedRewriteClass implements Function {
 
@@ -412,7 +413,6 @@ public class GeneratedRewriteClass implements Function {
 						Hop hi_0 = hi.getInput(0);
 						Hop hi_1 = hi.getInput(1);
 						if ( hi_0.getDataType() == Types.DataType.SCALAR ) {
-							hi = _applyRewrite10(hi); // /(0.0,A) => const(A,0.0)
 							hi = _applyRewrite75(hi); // /(a,cast.MATRIX(b)) => cast.MATRIX(/(a,b))
 							hi = _applyRewrite93(hi); // /(-(a,0.0),B) => /(a,B)
 						} else if ( hi_0.getDataType() == Types.DataType.MATRIX ) {
@@ -421,7 +421,7 @@ public class GeneratedRewriteClass implements Function {
 								hi = _applyRewrite421(hi); // /(rev($1:!=(A,b)),A) => /(!=(A,b),A)
 							} else {
 								if ( hi_1.getDataType() == Types.DataType.SCALAR ) {
-									//hi = _applyRewrite13(hi); // /(A,c) => *(A,/(1.0,c))
+									hi = _applyRewrite13(hi); // /(A,c) => *(A,/(1.0,c))
 								} else if ( hi_1.getDataType() == Types.DataType.MATRIX ) {
 									if ( hi_1 instanceof ReorgOp ) {
 										hi = _applyRewrite422(hi); // /(A,rev(!=(c,A))) => /(A,!=(A,c))
@@ -475,7 +475,6 @@ public class GeneratedRewriteClass implements Function {
 										hi = _applyRewrite495(hi); // *(a,colSums($1:/(b,C))) => colSums(/(*(a,b),C))
 										hi = _applyRewrite497(hi); // *(a,rowSums($1:/(b,C))) => rowSums(/(*(a,b),C))
 									} else {
-										hi = _applyRewrite11(hi); // *(0.0,A) => const(A,0.0)
 									}
 								}
 							}
@@ -530,7 +529,6 @@ public class GeneratedRewriteClass implements Function {
 								hi = _applyRewrite496(hi); // *(rowSums($1:/(a,C)),b) => rowSums(/(*(a,b),C))
 							} else {
 								if ( hi_1.getDataType() == Types.DataType.SCALAR ) {
-									hi = _applyRewrite12(hi); // *(A,0.0) => const(A,0.0)
 									hi = _applyRewrite92(hi); // *(A,-(b,0.0)) => *(A,b)
 								} else if ( hi_1.getDataType() == Types.DataType.MATRIX ) {
 									if ( hi_1 instanceof BinaryOp ) {
@@ -604,8 +602,6 @@ public class GeneratedRewriteClass implements Function {
 											}
 										}
 									} else if ( (( BinaryOp ) hi_1 ).getOp() == Types.OpOp2.MULT ) {
-										hi = _applyRewrite86(hi); // -(0.0,*(b,A)) => -*(const(A,0.0),b,A)
-										hi = _applyRewrite87(hi); // -(0.0,*(A,b)) => -*(const(A,0.0),b,A)
 									}
 								} else if ( hi_1 instanceof UnaryOp ) {
 									hi = _applyRewrite70(hi); // -(a,cast.MATRIX(b)) => cast.MATRIX(-(a,b))
@@ -1299,6 +1295,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: *(1.0,a) => a");
+		DMLExecutor.println("Applying rewrite: *(1.0,a) => a");
 
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
@@ -1343,6 +1340,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: *(a,1.0) => a");
+		DMLExecutor.println("Applying rewrite: *(a,1.0) => a");
 
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
@@ -1387,6 +1385,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: /(a,1.0) => a");
+		DMLExecutor.println("Applying rewrite: /(a,1.0) => a");
 
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
@@ -1431,6 +1430,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: +(0.0,a) => a");
+		DMLExecutor.println("Applying rewrite: +(0.0,a) => a");
 
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
@@ -1475,6 +1475,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: +(a,0.0) => a");
+		DMLExecutor.println("Applying rewrite: +(a,0.0) => a");
 
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
@@ -1519,6 +1520,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: +(0.0,A) => A");
+		DMLExecutor.println("Applying rewrite: +(0.0,A) => A");
 
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
@@ -1563,6 +1565,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: +(A,0.0) => A");
+		DMLExecutor.println("Applying rewrite: +(A,0.0) => A");
 
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
@@ -1607,6 +1610,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: *(0.0,a) => 0.0");
+		DMLExecutor.println("Applying rewrite: *(0.0,a) => 0.0");
 
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
@@ -1651,6 +1655,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: *(a,0.0) => 0.0");
+		DMLExecutor.println("Applying rewrite: *(a,0.0) => 0.0");
 
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
@@ -1695,6 +1700,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: /(0.0,a) => 0.0");
+		DMLExecutor.println("Applying rewrite: /(0.0,a) => 0.0");
 
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
@@ -1706,138 +1712,6 @@ public class GeneratedRewriteClass implements Function {
 		HopRewriteUtils.cleanupUnreferenced(hi_1);
 
 		return hi_0;
-	}
-
-	// Implementation of the rule /(0.0,A) => const(A,0.0)
-	private static Hop _applyRewrite10(Hop hi) {
-		if ( !(hi instanceof BinaryOp) )
-			return hi;
-
-		BinaryOp c_hi = (BinaryOp) hi;
-
-		if ( c_hi.getOp() != Types.OpOp2.DIV || !c_hi.getValueType().isNumeric() )
-			return hi;
-
-		Hop hi_0 = hi.getInput(0);
-
-		if ( !(hi_0 instanceof LiteralOp) )
-			return hi;
-
-		LiteralOp l_hi_0 = (LiteralOp) hi_0;
-
-		if ( l_hi_0.getDataType() != Types.DataType.SCALAR|| !l_hi_0.getValueType().isNumeric() )
-			return hi;
-
-		if ( l_hi_0.getDoubleValue() != 0.0 )
-			return hi;
-
-		Hop hi_1 = hi.getInput(1);
-
-		if ( hi_1.getDataType() != Types.DataType.MATRIX || !hi_1.getValueType().isNumeric() )
-			return hi;
-
-
-		// Now, we start building the new Hop
-		System.out.println("Applying rewrite: /(0.0,A) => const(A,0.0)");
-		DataGenOp v1 = ((DataGenOp) HopRewriteUtils.createDataGenOp(HopRewriteUtils.createUnary(hi_1, Types.OpOp1.NROW),HopRewriteUtils.createUnary(hi_1, Types.OpOp1.NCOL),0.0D));
-
-		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
-
-		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v1);
-
-		// Remove old unreferenced Hops
-		HopRewriteUtils.cleanupUnreferenced(hi);
-
-		return v1;
-	}
-
-	// Implementation of the rule *(0.0,A) => const(A,0.0)
-	private static Hop _applyRewrite11(Hop hi) {
-		if ( !(hi instanceof BinaryOp) )
-			return hi;
-
-		BinaryOp c_hi = (BinaryOp) hi;
-
-		if ( c_hi.getOp() != Types.OpOp2.MULT || !c_hi.getValueType().isNumeric() )
-			return hi;
-
-		Hop hi_0 = hi.getInput(0);
-
-		if ( !(hi_0 instanceof LiteralOp) )
-			return hi;
-
-		LiteralOp l_hi_0 = (LiteralOp) hi_0;
-
-		if ( l_hi_0.getDataType() != Types.DataType.SCALAR|| !l_hi_0.getValueType().isNumeric() )
-			return hi;
-
-		if ( l_hi_0.getDoubleValue() != 0.0 )
-			return hi;
-
-		Hop hi_1 = hi.getInput(1);
-
-		if ( hi_1.getDataType() != Types.DataType.MATRIX || !hi_1.getValueType().isNumeric() )
-			return hi;
-
-
-		// Now, we start building the new Hop
-		System.out.println("Applying rewrite: *(0.0,A) => const(A,0.0)");
-		DataGenOp v1 = ((DataGenOp) HopRewriteUtils.createDataGenOp(HopRewriteUtils.createUnary(hi_1, Types.OpOp1.NROW),HopRewriteUtils.createUnary(hi_1, Types.OpOp1.NCOL),0.0D));
-
-		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
-
-		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v1);
-
-		// Remove old unreferenced Hops
-		HopRewriteUtils.cleanupUnreferenced(hi);
-
-		return v1;
-	}
-
-	// Implementation of the rule *(A,0.0) => const(A,0.0)
-	private static Hop _applyRewrite12(Hop hi) {
-		if ( !(hi instanceof BinaryOp) )
-			return hi;
-
-		BinaryOp c_hi = (BinaryOp) hi;
-
-		if ( c_hi.getOp() != Types.OpOp2.MULT || !c_hi.getValueType().isNumeric() )
-			return hi;
-
-		Hop hi_0 = hi.getInput(0);
-
-		if ( hi_0.getDataType() != Types.DataType.MATRIX || !hi_0.getValueType().isNumeric() )
-			return hi;
-
-		Hop hi_1 = hi.getInput(1);
-
-		if ( !(hi_1 instanceof LiteralOp) )
-			return hi;
-
-		LiteralOp l_hi_1 = (LiteralOp) hi_1;
-
-		if ( l_hi_1.getDataType() != Types.DataType.SCALAR|| !l_hi_1.getValueType().isNumeric() )
-			return hi;
-
-		if ( l_hi_1.getDoubleValue() != 0.0 )
-			return hi;
-
-
-		// Now, we start building the new Hop
-		System.out.println("Applying rewrite: *(A,0.0) => const(A,0.0)");
-		DataGenOp v1 = ((DataGenOp) HopRewriteUtils.createDataGenOp(HopRewriteUtils.createUnary(hi_0, Types.OpOp1.NROW),HopRewriteUtils.createUnary(hi_0, Types.OpOp1.NCOL),0.0D));
-
-		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
-
-		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v1);
-
-		// Remove old unreferenced Hops
-		HopRewriteUtils.cleanupUnreferenced(hi);
-
-		return v1;
 	}
 
 	// Implementation of the rule /(A,c) => *(A,/(1.0,c))
@@ -1863,6 +1737,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: /(A,c) => *(A,/(1.0,c))");
+		DMLExecutor.println("Applying rewrite: /(A,c) => *(A,/(1.0,c))");
 		LiteralOp l1 = new LiteralOp( 1.0 );
 		BinaryOp v2 = HopRewriteUtils.createBinary(l1, hi_1, Types.OpOp2.DIV);
 		BinaryOp v3 = HopRewriteUtils.createBinary(hi_0, v2, Types.OpOp2.MULT);
@@ -1913,6 +1788,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: trace(*(a,B)) => *(a,trace(B))");
+		DMLExecutor.println("Applying rewrite: trace(*(a,B)) => *(a,trace(B))");
 		AggUnaryOp v1 = HopRewriteUtils.createAggUnaryOp(hi_0_1, Types.AggOp.TRACE, Types.Direction.RowCol);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0_0, v1, Types.OpOp2.MULT);
 
@@ -1963,6 +1839,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: trace(*(B,a)) => *(a,trace(B))");
+		DMLExecutor.println("Applying rewrite: trace(*(B,a)) => *(a,trace(B))");
 		AggUnaryOp v1 = HopRewriteUtils.createAggUnaryOp(hi_0_0, Types.AggOp.TRACE, Types.Direction.RowCol);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0_1, v1, Types.OpOp2.MULT);
 
@@ -2027,6 +1904,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: colSums(*(a,B)) => *(a,colSums(B))");
+		DMLExecutor.println("Applying rewrite: colSums(*(a,B)) => *(a,colSums(B))");
 		AggUnaryOp v1 = HopRewriteUtils.createAggUnaryOp(hi_0_1, Types.AggOp.SUM, Types.Direction.Col);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0_0, v1, Types.OpOp2.MULT);
 
@@ -2091,6 +1969,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: colSums(*(B,a)) => *(a,colSums(B))");
+		DMLExecutor.println("Applying rewrite: colSums(*(B,a)) => *(a,colSums(B))");
 		AggUnaryOp v1 = HopRewriteUtils.createAggUnaryOp(hi_0_0, Types.AggOp.SUM, Types.Direction.Col);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0_1, v1, Types.OpOp2.MULT);
 
@@ -2155,6 +2034,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: rowSums(*(a,B)) => *(a,rowSums(B))");
+		DMLExecutor.println("Applying rewrite: rowSums(*(a,B)) => *(a,rowSums(B))");
 		AggUnaryOp v1 = HopRewriteUtils.createAggUnaryOp(hi_0_1, Types.AggOp.SUM, Types.Direction.Row);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0_0, v1, Types.OpOp2.MULT);
 
@@ -2219,6 +2099,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: rowSums(*(B,a)) => *(a,rowSums(B))");
+		DMLExecutor.println("Applying rewrite: rowSums(*(B,a)) => *(a,rowSums(B))");
 		AggUnaryOp v1 = HopRewriteUtils.createAggUnaryOp(hi_0_0, Types.AggOp.SUM, Types.Direction.Row);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0_1, v1, Types.OpOp2.MULT);
 
@@ -2277,6 +2158,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: *(cast.MATRIX(0.0),a) => cast.MATRIX(0.0)");
+		DMLExecutor.println("Applying rewrite: *(cast.MATRIX(0.0),a) => cast.MATRIX(0.0)");
 		UnaryOp v1 = HopRewriteUtils.createUnary(hi_0_0, Types.OpOp1.CAST_AS_MATRIX);
 
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
@@ -2335,6 +2217,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: *(a,cast.MATRIX(0.0)) => cast.MATRIX(0.0)");
+		DMLExecutor.println("Applying rewrite: *(a,cast.MATRIX(0.0)) => cast.MATRIX(0.0)");
 		UnaryOp v1 = HopRewriteUtils.createUnary(hi_1_0, Types.OpOp1.CAST_AS_MATRIX);
 
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
@@ -2393,6 +2276,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: *(cast.MATRIX(1.0),a) => cast.MATRIX(a)");
+		DMLExecutor.println("Applying rewrite: *(cast.MATRIX(1.0),a) => cast.MATRIX(a)");
 		UnaryOp v1 = HopRewriteUtils.createUnary(hi_1, Types.OpOp1.CAST_AS_MATRIX);
 
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
@@ -2451,6 +2335,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: *(a,cast.MATRIX(1.0)) => cast.MATRIX(a)");
+		DMLExecutor.println("Applying rewrite: *(a,cast.MATRIX(1.0)) => cast.MATRIX(a)");
 		UnaryOp v1 = HopRewriteUtils.createUnary(hi_0, Types.OpOp1.CAST_AS_MATRIX);
 
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
@@ -2509,6 +2394,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: +(cast.MATRIX(0.0),a) => cast.MATRIX(a)");
+		DMLExecutor.println("Applying rewrite: +(cast.MATRIX(0.0),a) => cast.MATRIX(a)");
 		UnaryOp v1 = HopRewriteUtils.createUnary(hi_1, Types.OpOp1.CAST_AS_MATRIX);
 
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
@@ -2567,6 +2453,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: +(a,cast.MATRIX(0.0)) => cast.MATRIX(a)");
+		DMLExecutor.println("Applying rewrite: +(a,cast.MATRIX(0.0)) => cast.MATRIX(a)");
 		UnaryOp v1 = HopRewriteUtils.createUnary(hi_0, Types.OpOp1.CAST_AS_MATRIX);
 
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
@@ -2612,6 +2499,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: rev(cast.MATRIX(a)) => cast.MATRIX(a)");
+		DMLExecutor.println("Applying rewrite: rev(cast.MATRIX(a)) => cast.MATRIX(a)");
 		UnaryOp v1 = HopRewriteUtils.createUnary(hi_0_0, Types.OpOp1.CAST_AS_MATRIX);
 
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
@@ -2674,6 +2562,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: *(/(1.0,B),a) => /(a,B)");
+		DMLExecutor.println("Applying rewrite: *(/(1.0,B),a) => /(a,B)");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_1, hi_0_1, Types.OpOp2.DIV);
 
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
@@ -2737,6 +2626,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: *(a,/(1.0,B)) => /(a,B)");
+		DMLExecutor.println("Applying rewrite: *(a,/(1.0,B)) => /(a,B)");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0, hi_1_1, Types.OpOp2.DIV);
 
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
@@ -2800,6 +2690,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: *(/(1.0,B),A) => /(A,B)");
+		DMLExecutor.println("Applying rewrite: *(/(1.0,B),A) => /(A,B)");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_1, hi_0_1, Types.OpOp2.DIV);
 
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
@@ -2863,6 +2754,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: *(A,/(1.0,B)) => /(A,B)");
+		DMLExecutor.println("Applying rewrite: *(A,/(1.0,B)) => /(A,B)");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0, hi_1_1, Types.OpOp2.DIV);
 
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
@@ -2918,6 +2810,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: *(/(a,C),b) => /(*(a,b),C)");
+		DMLExecutor.println("Applying rewrite: *(/(a,C),b) => /(*(a,b),C)");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0, hi_1, Types.OpOp2.MULT);
 		BinaryOp v2 = HopRewriteUtils.createBinary(v1, hi_0_1, Types.OpOp2.DIV);
 
@@ -2973,6 +2866,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: *(a,/(b,C)) => /(*(a,b),C)");
+		DMLExecutor.println("Applying rewrite: *(a,/(b,C)) => /(*(a,b),C)");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0, hi_1_0, Types.OpOp2.MULT);
 		BinaryOp v2 = HopRewriteUtils.createBinary(v1, hi_1_1, Types.OpOp2.DIV);
 
@@ -3034,6 +2928,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: sum(-(0.0,B)) => -(0.0,sum(B))");
+		DMLExecutor.println("Applying rewrite: sum(-(0.0,B)) => -(0.0,sum(B))");
 		AggUnaryOp v1 = HopRewriteUtils.createAggUnaryOp(hi_0_1, Types.AggOp.SUM, Types.Direction.RowCol);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0_0, v1, Types.OpOp2.MINUS);
 
@@ -3097,6 +2992,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: -(0.0,-(B,a)) => -(a,B)");
+		DMLExecutor.println("Applying rewrite: -(0.0,-(B,a)) => -(a,B)");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_1_1, hi_1_0, Types.OpOp2.MINUS);
 
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
@@ -3160,6 +3056,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: +(-(0.0,B),a) => -(a,B)");
+		DMLExecutor.println("Applying rewrite: +(-(0.0,B),a) => -(a,B)");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_1, hi_0_1, Types.OpOp2.MINUS);
 
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
@@ -3223,6 +3120,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: +(a,-(0.0,B)) => -(a,B)");
+		DMLExecutor.println("Applying rewrite: +(a,-(0.0,B)) => -(a,B)");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0, hi_1_1, Types.OpOp2.MINUS);
 
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
@@ -3286,6 +3184,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: -(0.0,-(b,A)) => -(A,b)");
+		DMLExecutor.println("Applying rewrite: -(0.0,-(b,A)) => -(A,b)");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_1_1, hi_1_0, Types.OpOp2.MINUS);
 
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
@@ -3349,6 +3248,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: -(0.0,-(B,A)) => -(A,B)");
+		DMLExecutor.println("Applying rewrite: -(0.0,-(B,A)) => -(A,B)");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_1_1, hi_1_0, Types.OpOp2.MINUS);
 
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
@@ -3412,6 +3312,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: +(-(0.0,B),A) => -(A,B)");
+		DMLExecutor.println("Applying rewrite: +(-(0.0,B),A) => -(A,B)");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_1, hi_0_1, Types.OpOp2.MINUS);
 
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
@@ -3475,6 +3376,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: +(A,-(0.0,B)) => -(A,B)");
+		DMLExecutor.println("Applying rewrite: +(A,-(0.0,B)) => -(A,B)");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0, hi_1_1, Types.OpOp2.MINUS);
 
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
@@ -3530,6 +3432,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: -(-(A,b),c) => -(A,+(b,c))");
+		DMLExecutor.println("Applying rewrite: -(-(A,b),c) => -(A,+(b,c))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_1, hi_1, Types.OpOp2.PLUS);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0_0, v1, Types.OpOp2.MINUS);
 
@@ -3585,6 +3488,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: -(a,+(b,C)) => -(-(a,b),C)");
+		DMLExecutor.println("Applying rewrite: -(a,+(b,C)) => -(-(a,b),C)");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0, hi_1_0, Types.OpOp2.MINUS);
 		BinaryOp v2 = HopRewriteUtils.createBinary(v1, hi_1_1, Types.OpOp2.MINUS);
 
@@ -3640,6 +3544,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: -(a,+(C,b)) => -(-(a,b),C)");
+		DMLExecutor.println("Applying rewrite: -(a,+(C,b)) => -(-(a,b),C)");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0, hi_1_1, Types.OpOp2.MINUS);
 		BinaryOp v2 = HopRewriteUtils.createBinary(v1, hi_1_0, Types.OpOp2.MINUS);
 
@@ -3695,6 +3600,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: -(-(a,C),b) => -(-(a,b),C)");
+		DMLExecutor.println("Applying rewrite: -(-(a,C),b) => -(-(a,b),C)");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0, hi_1, Types.OpOp2.MINUS);
 		BinaryOp v2 = HopRewriteUtils.createBinary(v1, hi_0_1, Types.OpOp2.MINUS);
 
@@ -3750,6 +3656,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: -(a,-(C,b)) => -(+(a,b),C)");
+		DMLExecutor.println("Applying rewrite: -(a,-(C,b)) => -(+(a,b),C)");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0, hi_1_1, Types.OpOp2.PLUS);
 		BinaryOp v2 = HopRewriteUtils.createBinary(v1, hi_1_0, Types.OpOp2.MINUS);
 
@@ -3805,6 +3712,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: +(-(a,C),b) => -(+(a,b),C)");
+		DMLExecutor.println("Applying rewrite: +(-(a,C),b) => -(+(a,b),C)");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0, hi_1, Types.OpOp2.PLUS);
 		BinaryOp v2 = HopRewriteUtils.createBinary(v1, hi_0_1, Types.OpOp2.MINUS);
 
@@ -3860,6 +3768,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: +(a,-(b,C)) => -(+(a,b),C)");
+		DMLExecutor.println("Applying rewrite: +(a,-(b,C)) => -(+(a,b),C)");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0, hi_1_0, Types.OpOp2.PLUS);
 		BinaryOp v2 = HopRewriteUtils.createBinary(v1, hi_1_1, Types.OpOp2.MINUS);
 
@@ -3915,6 +3824,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: -(+(b,A),c) => +(A,-(b,c))");
+		DMLExecutor.println("Applying rewrite: -(+(b,A),c) => +(A,-(b,c))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0, hi_1, Types.OpOp2.MINUS);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0_1, v1, Types.OpOp2.PLUS);
 
@@ -3970,6 +3880,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: -(+(A,b),c) => +(A,-(b,c))");
+		DMLExecutor.println("Applying rewrite: -(+(A,b),c) => +(A,-(b,c))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_1, hi_1, Types.OpOp2.MINUS);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0_0, v1, Types.OpOp2.PLUS);
 
@@ -4025,6 +3936,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: -(b,-(c,A)) => +(A,-(b,c))");
+		DMLExecutor.println("Applying rewrite: -(b,-(c,A)) => +(A,-(b,c))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0, hi_1_0, Types.OpOp2.MINUS);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_1_1, v1, Types.OpOp2.PLUS);
 
@@ -4080,6 +3992,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: +(-(A,c),b) => +(A,-(b,c))");
+		DMLExecutor.println("Applying rewrite: +(-(A,c),b) => +(A,-(b,c))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_1, hi_0_1, Types.OpOp2.MINUS);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0_0, v1, Types.OpOp2.PLUS);
 
@@ -4135,6 +4048,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: +(b,-(A,c)) => +(A,-(b,c))");
+		DMLExecutor.println("Applying rewrite: +(b,-(A,c)) => +(A,-(b,c))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0, hi_1_1, Types.OpOp2.MINUS);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_1_0, v1, Types.OpOp2.PLUS);
 
@@ -4207,6 +4121,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: colSums(-(0.0,B)) => -(0.0,colSums(B))");
+		DMLExecutor.println("Applying rewrite: colSums(-(0.0,B)) => -(0.0,colSums(B))");
 		AggUnaryOp v1 = HopRewriteUtils.createAggUnaryOp(hi_0_1, Types.AggOp.SUM, Types.Direction.Col);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0_0, v1, Types.OpOp2.MINUS);
 
@@ -4279,6 +4194,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: rowSums(-(0.0,B)) => -(0.0,rowSums(B))");
+		DMLExecutor.println("Applying rewrite: rowSums(-(0.0,B)) => -(0.0,rowSums(B))");
 		AggUnaryOp v1 = HopRewriteUtils.createAggUnaryOp(hi_0_1, Types.AggOp.SUM, Types.Direction.Row);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0_0, v1, Types.OpOp2.MINUS);
 
@@ -4329,6 +4245,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: -(cast.MATRIX(a),b) => cast.MATRIX(-(a,b))");
+		DMLExecutor.println("Applying rewrite: -(cast.MATRIX(a),b) => cast.MATRIX(-(a,b))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0, hi_1, Types.OpOp2.MINUS);
 		UnaryOp v2 = HopRewriteUtils.createUnary(v1, Types.OpOp1.CAST_AS_MATRIX);
 
@@ -4379,6 +4296,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: -(a,cast.MATRIX(b)) => cast.MATRIX(-(a,b))");
+		DMLExecutor.println("Applying rewrite: -(a,cast.MATRIX(b)) => cast.MATRIX(-(a,b))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0, hi_1_0, Types.OpOp2.MINUS);
 		UnaryOp v2 = HopRewriteUtils.createUnary(v1, Types.OpOp1.CAST_AS_MATRIX);
 
@@ -4429,6 +4347,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: +(cast.MATRIX(a),b) => cast.MATRIX(+(a,b))");
+		DMLExecutor.println("Applying rewrite: +(cast.MATRIX(a),b) => cast.MATRIX(+(a,b))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0, hi_1, Types.OpOp2.PLUS);
 		UnaryOp v2 = HopRewriteUtils.createUnary(v1, Types.OpOp1.CAST_AS_MATRIX);
 
@@ -4479,6 +4398,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: +(a,cast.MATRIX(b)) => cast.MATRIX(+(a,b))");
+		DMLExecutor.println("Applying rewrite: +(a,cast.MATRIX(b)) => cast.MATRIX(+(a,b))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0, hi_1_0, Types.OpOp2.PLUS);
 		UnaryOp v2 = HopRewriteUtils.createUnary(v1, Types.OpOp1.CAST_AS_MATRIX);
 
@@ -4529,6 +4449,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: *(cast.MATRIX(a),b) => cast.MATRIX(*(a,b))");
+		DMLExecutor.println("Applying rewrite: *(cast.MATRIX(a),b) => cast.MATRIX(*(a,b))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0, hi_1, Types.OpOp2.MULT);
 		UnaryOp v2 = HopRewriteUtils.createUnary(v1, Types.OpOp1.CAST_AS_MATRIX);
 
@@ -4579,6 +4500,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: *(a,cast.MATRIX(b)) => cast.MATRIX(*(a,b))");
+		DMLExecutor.println("Applying rewrite: *(a,cast.MATRIX(b)) => cast.MATRIX(*(a,b))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0, hi_1_0, Types.OpOp2.MULT);
 		UnaryOp v2 = HopRewriteUtils.createUnary(v1, Types.OpOp1.CAST_AS_MATRIX);
 
@@ -4629,6 +4551,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: /(a,cast.MATRIX(b)) => cast.MATRIX(/(a,b))");
+		DMLExecutor.println("Applying rewrite: /(a,cast.MATRIX(b)) => cast.MATRIX(/(a,b))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0, hi_1_0, Types.OpOp2.DIV);
 		UnaryOp v2 = HopRewriteUtils.createUnary(v1, Types.OpOp1.CAST_AS_MATRIX);
 
@@ -4677,6 +4600,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: rev(colSums(A)) => colSums(A)");
+		DMLExecutor.println("Applying rewrite: rev(colSums(A)) => colSums(A)");
 		AggUnaryOp v1 = HopRewriteUtils.createAggUnaryOp(hi_0_0, Types.AggOp.SUM, Types.Direction.Col);
 
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
@@ -4739,6 +4663,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: *(/(1.0,b),a) => /(a,b)");
+		DMLExecutor.println("Applying rewrite: *(/(1.0,b),a) => /(a,b)");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_1, hi_0_1, Types.OpOp2.DIV);
 
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
@@ -4802,6 +4727,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: *(a,/(1.0,b)) => /(a,b)");
+		DMLExecutor.println("Applying rewrite: *(a,/(1.0,b)) => /(a,b)");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0, hi_1_1, Types.OpOp2.DIV);
 
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
@@ -4865,6 +4791,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: -(0.0,-(b,a)) => -(a,b)");
+		DMLExecutor.println("Applying rewrite: -(0.0,-(b,a)) => -(a,b)");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_1_1, hi_1_0, Types.OpOp2.MINUS);
 
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
@@ -4928,6 +4855,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: -(a,-(b,0.0)) => -(a,b)");
+		DMLExecutor.println("Applying rewrite: -(a,-(b,0.0)) => -(a,b)");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0, hi_1_0, Types.OpOp2.MINUS);
 
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
@@ -4991,6 +4919,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: +(-(0.0,b),a) => -(a,b)");
+		DMLExecutor.println("Applying rewrite: +(-(0.0,b),a) => -(a,b)");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_1, hi_0_1, Types.OpOp2.MINUS);
 
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
@@ -5054,6 +4983,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: +(a,-(0.0,b)) => -(a,b)");
+		DMLExecutor.println("Applying rewrite: +(a,-(0.0,b)) => -(a,b)");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0, hi_1_1, Types.OpOp2.MINUS);
 
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
@@ -5117,6 +5047,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: *(-(a,0.0),b) => *(a,b)");
+		DMLExecutor.println("Applying rewrite: *(-(a,0.0),b) => *(a,b)");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0, hi_1, Types.OpOp2.MULT);
 
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
@@ -5180,6 +5111,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: *(a,-(b,0.0)) => *(a,b)");
+		DMLExecutor.println("Applying rewrite: *(a,-(b,0.0)) => *(a,b)");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0, hi_1_0, Types.OpOp2.MULT);
 
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
@@ -5243,6 +5175,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: /(-(a,0.0),b) => /(a,b)");
+		DMLExecutor.println("Applying rewrite: /(-(a,0.0),b) => /(a,b)");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0, hi_1, Types.OpOp2.DIV);
 
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
@@ -5256,132 +5189,6 @@ public class GeneratedRewriteClass implements Function {
 		HopRewriteUtils.cleanupUnreferenced(hi_0_1);
 
 		return v1;
-	}
-
-	// Implementation of the rule -(0.0,*(b,A)) => -*(const(A,0.0),b,A)
-	private static Hop _applyRewrite86(Hop hi) {
-		if ( !(hi instanceof BinaryOp) )
-			return hi;
-
-		BinaryOp c_hi = (BinaryOp) hi;
-
-		if ( c_hi.getOp() != Types.OpOp2.MINUS || !c_hi.getValueType().isNumeric() )
-			return hi;
-
-		Hop hi_0 = hi.getInput(0);
-
-		if ( !(hi_0 instanceof LiteralOp) )
-			return hi;
-
-		LiteralOp l_hi_0 = (LiteralOp) hi_0;
-
-		if ( l_hi_0.getDataType() != Types.DataType.SCALAR|| !l_hi_0.getValueType().isNumeric() )
-			return hi;
-
-		if ( l_hi_0.getDoubleValue() != 0.0 )
-			return hi;
-
-		Hop hi_1 = hi.getInput(1);
-
-		if (hi_1.getParent().size() > 1)
-			return hi;
-		if ( !(hi_1 instanceof BinaryOp) )
-			return hi;
-
-		BinaryOp c_hi_1 = (BinaryOp) hi_1;
-
-		if ( c_hi_1.getOp() != Types.OpOp2.MULT || !c_hi_1.getValueType().isNumeric() )
-			return hi;
-
-		Hop hi_1_0 = hi_1.getInput(0);
-
-		if ( hi_1_0.getDataType() != Types.DataType.SCALAR || !hi_1_0.getValueType().isNumeric() )
-			return hi;
-
-		Hop hi_1_1 = hi_1.getInput(1);
-
-		if ( hi_1_1.getDataType() != Types.DataType.MATRIX || !hi_1_1.getValueType().isNumeric() )
-			return hi;
-
-
-		// Now, we start building the new Hop
-		System.out.println("Applying rewrite: -(0.0,*(b,A)) => -*(const(A,0.0),b,A)");
-		DataGenOp v1 = ((DataGenOp) HopRewriteUtils.createDataGenOp(HopRewriteUtils.createUnary(hi_1_1, Types.OpOp1.NROW),HopRewriteUtils.createUnary(hi_1_1, Types.OpOp1.NCOL),0.0D));
-		TernaryOp v2 = HopRewriteUtils.createTernary(v1, hi_1_0, hi_1_1,Types.OpOp3.MINUS_MULT);
-
-		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
-
-		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v2);
-
-		// Remove old unreferenced Hops
-		HopRewriteUtils.cleanupUnreferenced(hi);
-		HopRewriteUtils.cleanupUnreferenced(hi_1);
-
-		return v2;
-	}
-
-	// Implementation of the rule -(0.0,*(A,b)) => -*(const(A,0.0),b,A)
-	private static Hop _applyRewrite87(Hop hi) {
-		if ( !(hi instanceof BinaryOp) )
-			return hi;
-
-		BinaryOp c_hi = (BinaryOp) hi;
-
-		if ( c_hi.getOp() != Types.OpOp2.MINUS || !c_hi.getValueType().isNumeric() )
-			return hi;
-
-		Hop hi_0 = hi.getInput(0);
-
-		if ( !(hi_0 instanceof LiteralOp) )
-			return hi;
-
-		LiteralOp l_hi_0 = (LiteralOp) hi_0;
-
-		if ( l_hi_0.getDataType() != Types.DataType.SCALAR|| !l_hi_0.getValueType().isNumeric() )
-			return hi;
-
-		if ( l_hi_0.getDoubleValue() != 0.0 )
-			return hi;
-
-		Hop hi_1 = hi.getInput(1);
-
-		if (hi_1.getParent().size() > 1)
-			return hi;
-		if ( !(hi_1 instanceof BinaryOp) )
-			return hi;
-
-		BinaryOp c_hi_1 = (BinaryOp) hi_1;
-
-		if ( c_hi_1.getOp() != Types.OpOp2.MULT || !c_hi_1.getValueType().isNumeric() )
-			return hi;
-
-		Hop hi_1_0 = hi_1.getInput(0);
-
-		if ( hi_1_0.getDataType() != Types.DataType.MATRIX || !hi_1_0.getValueType().isNumeric() )
-			return hi;
-
-		Hop hi_1_1 = hi_1.getInput(1);
-
-		if ( hi_1_1.getDataType() != Types.DataType.SCALAR || !hi_1_1.getValueType().isNumeric() )
-			return hi;
-
-
-		// Now, we start building the new Hop
-		System.out.println("Applying rewrite: -(0.0,*(A,b)) => -*(const(A,0.0),b,A)");
-		DataGenOp v1 = ((DataGenOp) HopRewriteUtils.createDataGenOp(HopRewriteUtils.createUnary(hi_1_0, Types.OpOp1.NROW),HopRewriteUtils.createUnary(hi_1_0, Types.OpOp1.NCOL),0.0D));
-		TernaryOp v2 = HopRewriteUtils.createTernary(v1, hi_1_1, hi_1_0,Types.OpOp3.MINUS_MULT);
-
-		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
-
-		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v2);
-
-		// Remove old unreferenced Hops
-		HopRewriteUtils.cleanupUnreferenced(hi);
-		HopRewriteUtils.cleanupUnreferenced(hi_1);
-
-		return v2;
 	}
 
 	// Implementation of the rule -(A,-(b,0.0)) => -(A,b)
@@ -5432,6 +5239,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: -(A,-(b,0.0)) => -(A,b)");
+		DMLExecutor.println("Applying rewrite: -(A,-(b,0.0)) => -(A,b)");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0, hi_1_0, Types.OpOp2.MINUS);
 
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
@@ -5495,6 +5303,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: +(-(0.0,b),A) => -(A,b)");
+		DMLExecutor.println("Applying rewrite: +(-(0.0,b),A) => -(A,b)");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_1, hi_0_1, Types.OpOp2.MINUS);
 
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
@@ -5558,6 +5367,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: +(A,-(0.0,b)) => -(A,b)");
+		DMLExecutor.println("Applying rewrite: +(A,-(0.0,b)) => -(A,b)");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0, hi_1_1, Types.OpOp2.MINUS);
 
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
@@ -5621,6 +5431,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: *(-(b,0.0),A) => *(A,b)");
+		DMLExecutor.println("Applying rewrite: *(-(b,0.0),A) => *(A,b)");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_1, hi_0_0, Types.OpOp2.MULT);
 
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
@@ -5684,6 +5495,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: *(A,-(b,0.0)) => *(A,b)");
+		DMLExecutor.println("Applying rewrite: *(A,-(b,0.0)) => *(A,b)");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0, hi_1_0, Types.OpOp2.MULT);
 
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
@@ -5747,6 +5559,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: /(-(a,0.0),B) => /(a,B)");
+		DMLExecutor.println("Applying rewrite: /(-(a,0.0),B) => /(a,B)");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0, hi_1, Types.OpOp2.DIV);
 
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
@@ -5807,12 +5620,12 @@ public class GeneratedRewriteClass implements Function {
 			return hi;
 
 
-		if ( hi_1_0.getNnz() == -1 || hi_0_0.getDim1() == -1 || hi_0_1.getDim2() == -1 || hi_0_1.getNnz() == -1 || hi_1_0.getDim1() == -1 || hi_1_0.getDim2() == -1 || hi_0_0.getNnz() == -1 || hi_0_0.getDim2() == -1 )
+		if ( hi_1_0.getNnz() == -1 || hi_0_0.getDim1() == -1 || hi_0_1.getDim2() == -1 || hi_0_1.getNnz() == -1 || hi_1_0.getDim1() == -1 || hi_1_0.getDim2() == -1 || hi_0_0.getNnz() == -1 || hi_0_1.getDim1() == -1 )
 			return hi;
 
 
-		double costFrom = ((Math.min(hi_0_0.getNnz(), hi_0_1.getNnz()) * hi_0_0.getDim2() * 3.0) + (Math.min(hi_1_0.getNnz(), hi_0_1.getNnz()) * hi_0_0.getDim2() * 3.0) + ((Math.min((hi_0_0.getNnz() * (1.0 / hi_0_0.getDim1())), 1.0) * Math.min((hi_0_1.getNnz() * (1.0 / hi_0_1.getDim2())), 1.0) * hi_0_0.getDim1() * hi_0_1.getDim2()) + (Math.min((hi_1_0.getNnz() * (1.0 / hi_1_0.getDim1())), 1.0) * Math.min((hi_0_1.getNnz() * (1.0 / hi_0_1.getDim2())), 1.0) * hi_1_0.getDim1() * hi_0_1.getDim2())) + 30030.0);
-		double costTo = ((hi_1_0.getNnz() + hi_0_0.getNnz()) + (Math.min(Math.min((hi_1_0.getNnz() + hi_0_0.getNnz()), (hi_1_0.getDim1() * hi_1_0.getDim2())), hi_0_1.getNnz()) * hi_0_0.getDim2() * 3.0) + 20020.0);
+		double costFrom = ((Math.min(hi_0_0.getNnz(), hi_0_1.getNnz()) * hi_0_1.getDim1() * 3.0) + (Math.min(hi_1_0.getNnz(), hi_0_1.getNnz()) * hi_0_1.getDim1() * 3.0) + ((Math.min((hi_0_0.getNnz() * (1.0 / hi_0_0.getDim1())), 1.0) * Math.min((hi_0_1.getNnz() * (1.0 / hi_0_1.getDim2())), 1.0) * hi_0_0.getDim1() * hi_0_1.getDim2()) + (Math.min((hi_1_0.getNnz() * (1.0 / hi_1_0.getDim1())), 1.0) * Math.min((hi_0_1.getNnz() * (1.0 / hi_0_1.getDim2())), 1.0) * hi_1_0.getDim1() * hi_0_1.getDim2())) + 30030.0);
+		double costTo = ((hi_1_0.getNnz() + hi_0_0.getNnz()) + (Math.min(Math.min((hi_1_0.getNnz() + hi_0_0.getNnz()), (hi_1_0.getDim1() * hi_1_0.getDim2())), hi_0_1.getNnz()) * hi_0_1.getDim1() * 3.0) + 20020.0);
 
 		if ( costFrom <= costTo )
 			return hi;
@@ -5820,6 +5633,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: +(%*%(B,C),%*%(A,C)) => %*%(+(A,B),C)");
+		DMLExecutor.println("Applying rewrite: +(%*%(B,C),%*%(A,C)) => %*%(+(A,B),C)");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_1_0, hi_0_0, Types.OpOp2.PLUS);
 		AggBinaryOp v2 = HopRewriteUtils.createMatrixMultiply(v1, hi_0_1);
 
@@ -5881,12 +5695,12 @@ public class GeneratedRewriteClass implements Function {
 			return hi;
 
 
-		if ( hi_0_0.getDim1() == -1 || hi_0_1.getDim2() == -1 || hi_1_1.getDim2() == -1 || hi_0_1.getNnz() == -1 || hi_0_0.getNnz() == -1 || hi_1_1.getDim1() == -1 || hi_0_1.getDim1() == -1 || hi_1_1.getNnz() == -1 )
+		if ( hi_0_0.getDim1() == -1 || hi_0_1.getDim2() == -1 || hi_1_1.getDim2() == -1 || hi_0_1.getNnz() == -1 || hi_0_0.getNnz() == -1 || hi_1_1.getDim1() == -1 || hi_0_0.getDim2() == -1 || hi_1_1.getNnz() == -1 )
 			return hi;
 
 
-		double costFrom = ((Math.min(hi_0_0.getNnz(), hi_0_1.getNnz()) * hi_0_1.getDim1() * 3.0) + (Math.min(hi_0_0.getNnz(), hi_1_1.getNnz()) * hi_0_1.getDim1() * 3.0) + ((Math.min((hi_0_0.getNnz() * (1.0 / hi_0_0.getDim1())), 1.0) * Math.min((hi_0_1.getNnz() * (1.0 / hi_0_1.getDim2())), 1.0) * hi_0_0.getDim1() * hi_0_1.getDim2()) + (Math.min((hi_0_0.getNnz() * (1.0 / hi_0_0.getDim1())), 1.0) * Math.min((hi_1_1.getNnz() * (1.0 / hi_1_1.getDim2())), 1.0) * hi_0_0.getDim1() * hi_1_1.getDim2())) + 30030.0);
-		double costTo = ((hi_1_1.getNnz() + hi_0_1.getNnz()) + (Math.min(hi_0_0.getNnz(), Math.min((hi_1_1.getNnz() + hi_0_1.getNnz()), (hi_1_1.getDim1() * hi_1_1.getDim2()))) * hi_0_1.getDim1() * 3.0) + 20020.0);
+		double costFrom = ((Math.min(hi_0_0.getNnz(), hi_0_1.getNnz()) * hi_0_0.getDim2() * 3.0) + (Math.min(hi_0_0.getNnz(), hi_1_1.getNnz()) * hi_0_0.getDim2() * 3.0) + ((Math.min((hi_0_0.getNnz() * (1.0 / hi_0_0.getDim1())), 1.0) * Math.min((hi_0_1.getNnz() * (1.0 / hi_0_1.getDim2())), 1.0) * hi_0_0.getDim1() * hi_0_1.getDim2()) + (Math.min((hi_0_0.getNnz() * (1.0 / hi_0_0.getDim1())), 1.0) * Math.min((hi_1_1.getNnz() * (1.0 / hi_1_1.getDim2())), 1.0) * hi_0_0.getDim1() * hi_1_1.getDim2())) + 30030.0);
+		double costTo = ((hi_1_1.getNnz() + hi_0_1.getNnz()) + (Math.min(hi_0_0.getNnz(), Math.min((hi_1_1.getNnz() + hi_0_1.getNnz()), (hi_1_1.getDim1() * hi_1_1.getDim2()))) * hi_0_0.getDim2() * 3.0) + 20020.0);
 
 		if ( costFrom <= costTo )
 			return hi;
@@ -5894,6 +5708,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: +(%*%(A,C),%*%(A,B)) => %*%(A,+(B,C))");
+		DMLExecutor.println("Applying rewrite: +(%*%(A,C),%*%(A,B)) => %*%(A,+(B,C))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_1_1, hi_0_1, Types.OpOp2.PLUS);
 		AggBinaryOp v2 = HopRewriteUtils.createMatrixMultiply(hi_0_0, v1);
 
@@ -5957,6 +5772,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: trace(+($1:t(A),A)) => +(trace(A),trace(A))");
+		DMLExecutor.println("Applying rewrite: trace(+($1:t(A),A)) => +(trace(A),trace(A))");
 		AggUnaryOp v1 = HopRewriteUtils.createAggUnaryOp(hi_0_0_0, Types.AggOp.TRACE, Types.Direction.RowCol);
 		AggUnaryOp v2 = HopRewriteUtils.createAggUnaryOp(hi_0_0_0, Types.AggOp.TRACE, Types.Direction.RowCol);
 		BinaryOp v3 = HopRewriteUtils.createBinary(v1, v2, Types.OpOp2.PLUS);
@@ -6021,6 +5837,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: trace(+(A,$1:t(A))) => +(trace(A),trace(A))");
+		DMLExecutor.println("Applying rewrite: trace(+(A,$1:t(A))) => +(trace(A),trace(A))");
 		AggUnaryOp v1 = HopRewriteUtils.createAggUnaryOp(hi_0_0, Types.AggOp.TRACE, Types.Direction.RowCol);
 		AggUnaryOp v2 = HopRewriteUtils.createAggUnaryOp(hi_0_0, Types.AggOp.TRACE, Types.Direction.RowCol);
 		BinaryOp v3 = HopRewriteUtils.createBinary(v1, v2, Types.OpOp2.PLUS);
@@ -6085,6 +5902,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: rev(-(a,$1:rev(B))) => -(a,B)");
+		DMLExecutor.println("Applying rewrite: rev(-(a,$1:rev(B))) => -(a,B)");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0, hi_0_1_0, Types.OpOp2.MINUS);
 
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
@@ -6147,6 +5965,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: t(-(a,$1:t(B))) => -(a,B)");
+		DMLExecutor.println("Applying rewrite: t(-(a,$1:t(B))) => -(a,B)");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0, hi_0_1_0, Types.OpOp2.MINUS);
 
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
@@ -6209,6 +6028,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: rev(-($1:rev(A),b)) => -(A,b)");
+		DMLExecutor.println("Applying rewrite: rev(-($1:rev(A),b)) => -(A,b)");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0_0, hi_0_1, Types.OpOp2.MINUS);
 
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
@@ -6271,6 +6091,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: t(-($1:t(A),b)) => -(A,b)");
+		DMLExecutor.println("Applying rewrite: t(-($1:t(A),b)) => -(A,b)");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0_0, hi_0_1, Types.OpOp2.MINUS);
 
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
@@ -6333,6 +6154,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: rev(!=(rev(A),b)) => !=(A,b)");
+		DMLExecutor.println("Applying rewrite: rev(!=(rev(A),b)) => !=(A,b)");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0_0, hi_0_1, Types.OpOp2.NOTEQUAL);
 
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
@@ -6395,6 +6217,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: rev(!=(b,rev(A))) => !=(A,b)");
+		DMLExecutor.println("Applying rewrite: rev(!=(b,rev(A))) => !=(A,b)");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_1_0, hi_0_0, Types.OpOp2.NOTEQUAL);
 
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
@@ -6457,6 +6280,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: t(!=(t(A),b)) => !=(A,b)");
+		DMLExecutor.println("Applying rewrite: t(!=(t(A),b)) => !=(A,b)");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0_0, hi_0_1, Types.OpOp2.NOTEQUAL);
 
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
@@ -6519,6 +6343,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: t(!=(b,t(A))) => !=(A,b)");
+		DMLExecutor.println("Applying rewrite: t(!=(b,t(A))) => !=(A,b)");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_1_0, hi_0_0, Types.OpOp2.NOTEQUAL);
 
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
@@ -6581,6 +6406,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: rev(+($1:rev(A),b)) => +(A,b)");
+		DMLExecutor.println("Applying rewrite: rev(+($1:rev(A),b)) => +(A,b)");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0_0, hi_0_1, Types.OpOp2.PLUS);
 
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
@@ -6643,6 +6469,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: rev(+(b,$1:rev(A))) => +(A,b)");
+		DMLExecutor.println("Applying rewrite: rev(+(b,$1:rev(A))) => +(A,b)");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_1_0, hi_0_0, Types.OpOp2.PLUS);
 
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
@@ -6705,6 +6532,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: t(+($1:t(A),b)) => +(A,b)");
+		DMLExecutor.println("Applying rewrite: t(+($1:t(A),b)) => +(A,b)");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0_0, hi_0_1, Types.OpOp2.PLUS);
 
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
@@ -6767,6 +6595,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: t(+(b,$1:t(A))) => +(A,b)");
+		DMLExecutor.println("Applying rewrite: t(+(b,$1:t(A))) => +(A,b)");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_1_0, hi_0_0, Types.OpOp2.PLUS);
 
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
@@ -6829,6 +6658,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: rev(*($1:rev(A),b)) => *(A,b)");
+		DMLExecutor.println("Applying rewrite: rev(*($1:rev(A),b)) => *(A,b)");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0_0, hi_0_1, Types.OpOp2.MULT);
 
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
@@ -6891,6 +6721,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: rev(*(b,$1:rev(A))) => *(A,b)");
+		DMLExecutor.println("Applying rewrite: rev(*(b,$1:rev(A))) => *(A,b)");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_1_0, hi_0_0, Types.OpOp2.MULT);
 
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
@@ -6953,6 +6784,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: t(*($1:t(A),b)) => *(A,b)");
+		DMLExecutor.println("Applying rewrite: t(*($1:t(A),b)) => *(A,b)");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0_0, hi_0_1, Types.OpOp2.MULT);
 
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
@@ -7015,6 +6847,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: t(*(b,$1:t(A))) => *(A,b)");
+		DMLExecutor.println("Applying rewrite: t(*(b,$1:t(A))) => *(A,b)");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_1_0, hi_0_0, Types.OpOp2.MULT);
 
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
@@ -7091,6 +6924,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: rowSums(rev($1:*(a,B))) => *(a,rowSums($1:rev(B)))");
+		DMLExecutor.println("Applying rewrite: rowSums(rev($1:*(a,B))) => *(a,rowSums($1:rev(B)))");
 		ReorgOp v1 = HopRewriteUtils.createReorg(hi_0_0_1, Types.ReOrgOp.REV);
 		AggUnaryOp v2 = HopRewriteUtils.createAggUnaryOp(v1, Types.AggOp.SUM, Types.Direction.Row);
 		BinaryOp v3 = HopRewriteUtils.createBinary(hi_0_0_0, v2, Types.OpOp2.MULT);
@@ -7169,6 +7003,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: rowSums(rev($1:*(B,a))) => *(a,rowSums($1:rev(B)))");
+		DMLExecutor.println("Applying rewrite: rowSums(rev($1:*(B,a))) => *(a,rowSums($1:rev(B)))");
 		ReorgOp v1 = HopRewriteUtils.createReorg(hi_0_0_0, Types.ReOrgOp.REV);
 		AggUnaryOp v2 = HopRewriteUtils.createAggUnaryOp(v1, Types.AggOp.SUM, Types.Direction.Row);
 		BinaryOp v3 = HopRewriteUtils.createBinary(hi_0_0_1, v2, Types.OpOp2.MULT);
@@ -7247,6 +7082,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: colSums(rev($1:*(a,B))) => *(a,colSums($1:rev(B)))");
+		DMLExecutor.println("Applying rewrite: colSums(rev($1:*(a,B))) => *(a,colSums($1:rev(B)))");
 		ReorgOp v1 = HopRewriteUtils.createReorg(hi_0_0_1, Types.ReOrgOp.REV);
 		AggUnaryOp v2 = HopRewriteUtils.createAggUnaryOp(v1, Types.AggOp.SUM, Types.Direction.Col);
 		BinaryOp v3 = HopRewriteUtils.createBinary(hi_0_0_0, v2, Types.OpOp2.MULT);
@@ -7325,6 +7161,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: colSums(rev($1:*(B,a))) => *(a,colSums($1:rev(B)))");
+		DMLExecutor.println("Applying rewrite: colSums(rev($1:*(B,a))) => *(a,colSums($1:rev(B)))");
 		ReorgOp v1 = HopRewriteUtils.createReorg(hi_0_0_0, Types.ReOrgOp.REV);
 		AggUnaryOp v2 = HopRewriteUtils.createAggUnaryOp(v1, Types.AggOp.SUM, Types.Direction.Col);
 		BinaryOp v3 = HopRewriteUtils.createBinary(hi_0_0_1, v2, Types.OpOp2.MULT);
@@ -7389,6 +7226,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: rev(/(a,rev(B))) => /(a,B)");
+		DMLExecutor.println("Applying rewrite: rev(/(a,rev(B))) => /(a,B)");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0, hi_0_1_0, Types.OpOp2.DIV);
 
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
@@ -7451,6 +7289,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: t(/(a,t(B))) => /(a,B)");
+		DMLExecutor.println("Applying rewrite: t(/(a,t(B))) => /(a,B)");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0, hi_0_1_0, Types.OpOp2.DIV);
 
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
@@ -7518,6 +7357,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: trace(*($1:/(a,C),B)) => *(a,trace(/(B,C)))");
+		DMLExecutor.println("Applying rewrite: trace(*($1:/(a,C),B)) => *(a,trace(/(B,C)))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_1, hi_0_0_1, Types.OpOp2.DIV);
 		AggUnaryOp v2 = HopRewriteUtils.createAggUnaryOp(v1, Types.AggOp.TRACE, Types.Direction.RowCol);
 		BinaryOp v3 = HopRewriteUtils.createBinary(hi_0_0_0, v2, Types.OpOp2.MULT);
@@ -7587,6 +7427,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: trace(*(B,$1:/(a,C))) => *(a,trace(/(B,C)))");
+		DMLExecutor.println("Applying rewrite: trace(*(B,$1:/(a,C))) => *(a,trace(/(B,C)))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0, hi_0_1_1, Types.OpOp2.DIV);
 		AggUnaryOp v2 = HopRewriteUtils.createAggUnaryOp(v1, Types.AggOp.TRACE, Types.Direction.RowCol);
 		BinaryOp v3 = HopRewriteUtils.createBinary(hi_0_1_0, v2, Types.OpOp2.MULT);
@@ -7656,6 +7497,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: trace(/($1:*(a,B),C)) => *(a,trace(/(B,C)))");
+		DMLExecutor.println("Applying rewrite: trace(/($1:*(a,B),C)) => *(a,trace(/(B,C)))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0_1, hi_0_1, Types.OpOp2.DIV);
 		AggUnaryOp v2 = HopRewriteUtils.createAggUnaryOp(v1, Types.AggOp.TRACE, Types.Direction.RowCol);
 		BinaryOp v3 = HopRewriteUtils.createBinary(hi_0_0_0, v2, Types.OpOp2.MULT);
@@ -7725,6 +7567,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: trace(/($1:*(B,a),C)) => *(a,trace(/(B,C)))");
+		DMLExecutor.println("Applying rewrite: trace(/($1:*(B,a),C)) => *(a,trace(/(B,C)))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0_0, hi_0_1, Types.OpOp2.DIV);
 		AggUnaryOp v2 = HopRewriteUtils.createAggUnaryOp(v1, Types.AggOp.TRACE, Types.Direction.RowCol);
 		BinaryOp v3 = HopRewriteUtils.createBinary(hi_0_0_1, v2, Types.OpOp2.MULT);
@@ -7810,6 +7653,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: +(*(C,A),*(B,A)) => *(A,+(B,C))");
+		DMLExecutor.println("Applying rewrite: +(*(C,A),*(B,A)) => *(A,+(B,C))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_1_0, hi_0_0, Types.OpOp2.PLUS);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0_1, v1, Types.OpOp2.MULT);
 
@@ -7894,6 +7738,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: +(*(B,A),*(A,C)) => *(A,+(B,C))");
+		DMLExecutor.println("Applying rewrite: +(*(B,A),*(A,C)) => *(A,+(B,C))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0, hi_1_1, Types.OpOp2.PLUS);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0_1, v1, Types.OpOp2.MULT);
 
@@ -7978,6 +7823,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: +(*(A,C),*(B,A)) => *(A,+(B,C))");
+		DMLExecutor.println("Applying rewrite: +(*(A,C),*(B,A)) => *(A,+(B,C))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_1_0, hi_0_1, Types.OpOp2.PLUS);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0_0, v1, Types.OpOp2.MULT);
 
@@ -8062,6 +7908,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: +(*(A,C),*(A,B)) => *(A,+(B,C))");
+		DMLExecutor.println("Applying rewrite: +(*(A,C),*(A,B)) => *(A,+(B,C))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_1_1, hi_0_1, Types.OpOp2.PLUS);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0_0, v1, Types.OpOp2.MULT);
 
@@ -8130,6 +7977,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: *(t($1:*(a,C)),b) => *(*(a,b),t(C))");
+		DMLExecutor.println("Applying rewrite: *(t($1:*(a,C)),b) => *(*(a,b),t(C))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0_0, hi_1, Types.OpOp2.MULT);
 		ReorgOp v2 = HopRewriteUtils.createTranspose(hi_0_0_1);
 		BinaryOp v3 = HopRewriteUtils.createBinary(v1, v2, Types.OpOp2.MULT);
@@ -8199,6 +8047,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: *(t($1:*(C,a)),b) => *(*(a,b),t(C))");
+		DMLExecutor.println("Applying rewrite: *(t($1:*(C,a)),b) => *(*(a,b),t(C))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0_1, hi_1, Types.OpOp2.MULT);
 		ReorgOp v2 = HopRewriteUtils.createTranspose(hi_0_0_0);
 		BinaryOp v3 = HopRewriteUtils.createBinary(v1, v2, Types.OpOp2.MULT);
@@ -8268,6 +8117,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: *(a,t($1:*(b,C))) => *(*(a,b),t(C))");
+		DMLExecutor.println("Applying rewrite: *(a,t($1:*(b,C))) => *(*(a,b),t(C))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0, hi_1_0_0, Types.OpOp2.MULT);
 		ReorgOp v2 = HopRewriteUtils.createTranspose(hi_1_0_1);
 		BinaryOp v3 = HopRewriteUtils.createBinary(v1, v2, Types.OpOp2.MULT);
@@ -8337,6 +8187,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: *(a,t($1:*(C,b))) => *(*(a,b),t(C))");
+		DMLExecutor.println("Applying rewrite: *(a,t($1:*(C,b))) => *(*(a,b),t(C))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0, hi_1_0_1, Types.OpOp2.MULT);
 		ReorgOp v2 = HopRewriteUtils.createTranspose(hi_1_0_0);
 		BinaryOp v3 = HopRewriteUtils.createBinary(v1, v2, Types.OpOp2.MULT);
@@ -8406,6 +8257,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: *(rev($1:*(a,C)),b) => *(*(a,b),rev(C))");
+		DMLExecutor.println("Applying rewrite: *(rev($1:*(a,C)),b) => *(*(a,b),rev(C))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0_0, hi_1, Types.OpOp2.MULT);
 		ReorgOp v2 = HopRewriteUtils.createReorg(hi_0_0_1, Types.ReOrgOp.REV);
 		BinaryOp v3 = HopRewriteUtils.createBinary(v1, v2, Types.OpOp2.MULT);
@@ -8475,6 +8327,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: *(rev($1:*(C,a)),b) => *(*(a,b),rev(C))");
+		DMLExecutor.println("Applying rewrite: *(rev($1:*(C,a)),b) => *(*(a,b),rev(C))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0_1, hi_1, Types.OpOp2.MULT);
 		ReorgOp v2 = HopRewriteUtils.createReorg(hi_0_0_0, Types.ReOrgOp.REV);
 		BinaryOp v3 = HopRewriteUtils.createBinary(v1, v2, Types.OpOp2.MULT);
@@ -8544,6 +8397,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: *(a,rev($1:*(b,C))) => *(*(a,b),rev(C))");
+		DMLExecutor.println("Applying rewrite: *(a,rev($1:*(b,C))) => *(*(a,b),rev(C))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0, hi_1_0_0, Types.OpOp2.MULT);
 		ReorgOp v2 = HopRewriteUtils.createReorg(hi_1_0_1, Types.ReOrgOp.REV);
 		BinaryOp v3 = HopRewriteUtils.createBinary(v1, v2, Types.OpOp2.MULT);
@@ -8613,6 +8467,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: *(a,rev($1:*(C,b))) => *(*(a,b),rev(C))");
+		DMLExecutor.println("Applying rewrite: *(a,rev($1:*(C,b))) => *(*(a,b),rev(C))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0, hi_1_0_1, Types.OpOp2.MULT);
 		ReorgOp v2 = HopRewriteUtils.createReorg(hi_1_0_0, Types.ReOrgOp.REV);
 		BinaryOp v3 = HopRewriteUtils.createBinary(v1, v2, Types.OpOp2.MULT);
@@ -8677,6 +8532,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: trace(!=(t(B),A)) => trace(!=(A,B))");
+		DMLExecutor.println("Applying rewrite: trace(!=(t(B),A)) => trace(!=(A,B))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_1, hi_0_0_0, Types.OpOp2.NOTEQUAL);
 		AggUnaryOp v2 = HopRewriteUtils.createAggUnaryOp(v1, Types.AggOp.TRACE, Types.Direction.RowCol);
 
@@ -8740,6 +8596,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: trace(!=(A,t(B))) => trace(!=(A,B))");
+		DMLExecutor.println("Applying rewrite: trace(!=(A,t(B))) => trace(!=(A,B))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0, hi_0_1_0, Types.OpOp2.NOTEQUAL);
 		AggUnaryOp v2 = HopRewriteUtils.createAggUnaryOp(v1, Types.AggOp.TRACE, Types.Direction.RowCol);
 
@@ -8803,6 +8660,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: trace(-($1:t(A),b)) => trace(-(A,b))");
+		DMLExecutor.println("Applying rewrite: trace(-($1:t(A),b)) => trace(-(A,b))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0_0, hi_0_1, Types.OpOp2.MINUS);
 		AggUnaryOp v2 = HopRewriteUtils.createAggUnaryOp(v1, Types.AggOp.TRACE, Types.Direction.RowCol);
 
@@ -8866,6 +8724,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: trace(-(a,$1:t(B))) => trace(-(a,B))");
+		DMLExecutor.println("Applying rewrite: trace(-(a,$1:t(B))) => trace(-(a,B))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0, hi_0_1_0, Types.OpOp2.MINUS);
 		AggUnaryOp v2 = HopRewriteUtils.createAggUnaryOp(v1, Types.AggOp.TRACE, Types.Direction.RowCol);
 
@@ -8929,6 +8788,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: trace(-($1:t(A),B)) => trace(-(A,B))");
+		DMLExecutor.println("Applying rewrite: trace(-($1:t(A),B)) => trace(-(A,B))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0_0, hi_0_1, Types.OpOp2.MINUS);
 		AggUnaryOp v2 = HopRewriteUtils.createAggUnaryOp(v1, Types.AggOp.TRACE, Types.Direction.RowCol);
 
@@ -8992,6 +8852,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: trace(-(A,$1:t(B))) => trace(-(A,B))");
+		DMLExecutor.println("Applying rewrite: trace(-(A,$1:t(B))) => trace(-(A,B))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0, hi_0_1_0, Types.OpOp2.MINUS);
 		AggUnaryOp v2 = HopRewriteUtils.createAggUnaryOp(v1, Types.AggOp.TRACE, Types.Direction.RowCol);
 
@@ -9055,6 +8916,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: trace(+($1:t(B),A)) => trace(+(A,B))");
+		DMLExecutor.println("Applying rewrite: trace(+($1:t(B),A)) => trace(+(A,B))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_1, hi_0_0_0, Types.OpOp2.PLUS);
 		AggUnaryOp v2 = HopRewriteUtils.createAggUnaryOp(v1, Types.AggOp.TRACE, Types.Direction.RowCol);
 
@@ -9118,6 +8980,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: trace(+(B,$1:t(A))) => trace(+(A,B))");
+		DMLExecutor.println("Applying rewrite: trace(+(B,$1:t(A))) => trace(+(A,B))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_1_0, hi_0_0, Types.OpOp2.PLUS);
 		AggUnaryOp v2 = HopRewriteUtils.createAggUnaryOp(v1, Types.AggOp.TRACE, Types.Direction.RowCol);
 
@@ -9181,6 +9044,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: trace(+($1:t(A),b)) => trace(+(A,b))");
+		DMLExecutor.println("Applying rewrite: trace(+($1:t(A),b)) => trace(+(A,b))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0_0, hi_0_1, Types.OpOp2.PLUS);
 		AggUnaryOp v2 = HopRewriteUtils.createAggUnaryOp(v1, Types.AggOp.TRACE, Types.Direction.RowCol);
 
@@ -9244,6 +9108,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: trace(+(b,$1:t(A))) => trace(+(A,b))");
+		DMLExecutor.println("Applying rewrite: trace(+(b,$1:t(A))) => trace(+(A,b))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_1_0, hi_0_0, Types.OpOp2.PLUS);
 		AggUnaryOp v2 = HopRewriteUtils.createAggUnaryOp(v1, Types.AggOp.TRACE, Types.Direction.RowCol);
 
@@ -9307,6 +9172,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: trace(!=(t(A),b)) => trace(!=(A,b))");
+		DMLExecutor.println("Applying rewrite: trace(!=(t(A),b)) => trace(!=(A,b))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0_0, hi_0_1, Types.OpOp2.NOTEQUAL);
 		AggUnaryOp v2 = HopRewriteUtils.createAggUnaryOp(v1, Types.AggOp.TRACE, Types.Direction.RowCol);
 
@@ -9370,6 +9236,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: trace(!=(b,t(A))) => trace(!=(A,b))");
+		DMLExecutor.println("Applying rewrite: trace(!=(b,t(A))) => trace(!=(A,b))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_1_0, hi_0_0, Types.OpOp2.NOTEQUAL);
 		AggUnaryOp v2 = HopRewriteUtils.createAggUnaryOp(v1, Types.AggOp.TRACE, Types.Direction.RowCol);
 
@@ -9441,6 +9308,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: sum(/($1:*(a,B),C)) => *(a,sum(/(B,C)))");
+		DMLExecutor.println("Applying rewrite: sum(/($1:*(a,B),C)) => *(a,sum(/(B,C)))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0_1, hi_0_1, Types.OpOp2.DIV);
 		AggUnaryOp v2 = HopRewriteUtils.createAggUnaryOp(v1, Types.AggOp.SUM, Types.Direction.RowCol);
 		BinaryOp v3 = HopRewriteUtils.createBinary(hi_0_0_0, v2, Types.OpOp2.MULT);
@@ -9513,6 +9381,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: sum(/($1:*(B,a),C)) => *(a,sum(/(B,C)))");
+		DMLExecutor.println("Applying rewrite: sum(/($1:*(B,a),C)) => *(a,sum(/(B,C)))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0_0, hi_0_1, Types.OpOp2.DIV);
 		AggUnaryOp v2 = HopRewriteUtils.createAggUnaryOp(v1, Types.AggOp.SUM, Types.Direction.RowCol);
 		BinaryOp v3 = HopRewriteUtils.createBinary(hi_0_0_1, v2, Types.OpOp2.MULT);
@@ -9585,6 +9454,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: sum(*($1:/(a,C),B)) => *(a,sum(/(B,C)))");
+		DMLExecutor.println("Applying rewrite: sum(*($1:/(a,C),B)) => *(a,sum(/(B,C)))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_1, hi_0_0_1, Types.OpOp2.DIV);
 		AggUnaryOp v2 = HopRewriteUtils.createAggUnaryOp(v1, Types.AggOp.SUM, Types.Direction.RowCol);
 		BinaryOp v3 = HopRewriteUtils.createBinary(hi_0_0_0, v2, Types.OpOp2.MULT);
@@ -9657,6 +9527,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: sum(*(B,$1:/(a,C))) => *(a,sum(/(B,C)))");
+		DMLExecutor.println("Applying rewrite: sum(*(B,$1:/(a,C))) => *(a,sum(/(B,C)))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0, hi_0_1_1, Types.OpOp2.DIV);
 		AggUnaryOp v2 = HopRewriteUtils.createAggUnaryOp(v1, Types.AggOp.SUM, Types.Direction.RowCol);
 		BinaryOp v3 = HopRewriteUtils.createBinary(hi_0_1_0, v2, Types.OpOp2.MULT);
@@ -9726,6 +9597,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: *(t($1:/(a,C)),b) => /(*(a,b),t(C))");
+		DMLExecutor.println("Applying rewrite: *(t($1:/(a,C)),b) => /(*(a,b),t(C))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0_0, hi_1, Types.OpOp2.MULT);
 		ReorgOp v2 = HopRewriteUtils.createTranspose(hi_0_0_1);
 		BinaryOp v3 = HopRewriteUtils.createBinary(v1, v2, Types.OpOp2.DIV);
@@ -9795,6 +9667,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: *(a,t($1:/(b,C))) => /(*(a,b),t(C))");
+		DMLExecutor.println("Applying rewrite: *(a,t($1:/(b,C))) => /(*(a,b),t(C))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0, hi_1_0_0, Types.OpOp2.MULT);
 		ReorgOp v2 = HopRewriteUtils.createTranspose(hi_1_0_1);
 		BinaryOp v3 = HopRewriteUtils.createBinary(v1, v2, Types.OpOp2.DIV);
@@ -9864,6 +9737,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: *(rev($1:/(a,C)),b) => /(*(a,b),rev(C))");
+		DMLExecutor.println("Applying rewrite: *(rev($1:/(a,C)),b) => /(*(a,b),rev(C))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0_0, hi_1, Types.OpOp2.MULT);
 		ReorgOp v2 = HopRewriteUtils.createReorg(hi_0_0_1, Types.ReOrgOp.REV);
 		BinaryOp v3 = HopRewriteUtils.createBinary(v1, v2, Types.OpOp2.DIV);
@@ -9933,6 +9807,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: *(a,rev($1:/(b,C))) => /(*(a,b),rev(C))");
+		DMLExecutor.println("Applying rewrite: *(a,rev($1:/(b,C))) => /(*(a,b),rev(C))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0, hi_1_0_0, Types.OpOp2.MULT);
 		ReorgOp v2 = HopRewriteUtils.createReorg(hi_1_0_1, Types.ReOrgOp.REV);
 		BinaryOp v3 = HopRewriteUtils.createBinary(v1, v2, Types.OpOp2.DIV);
@@ -10000,6 +9875,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: %*%(colSums(B),*(a,C)) => *(a,%*%($1:colSums(B),C))");
+		DMLExecutor.println("Applying rewrite: %*%(colSums(B),*(a,C)) => *(a,%*%($1:colSums(B),C))");
 		AggUnaryOp v1 = HopRewriteUtils.createAggUnaryOp(hi_0_0, Types.AggOp.SUM, Types.Direction.Col);
 		AggBinaryOp v2 = HopRewriteUtils.createMatrixMultiply(v1, hi_1_1);
 		BinaryOp v3 = HopRewriteUtils.createBinary(hi_1_0, v2, Types.OpOp2.MULT);
@@ -10067,6 +9943,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: %*%(colSums(B),*(C,a)) => *(a,%*%($1:colSums(B),C))");
+		DMLExecutor.println("Applying rewrite: %*%(colSums(B),*(C,a)) => *(a,%*%($1:colSums(B),C))");
 		AggUnaryOp v1 = HopRewriteUtils.createAggUnaryOp(hi_0_0, Types.AggOp.SUM, Types.Direction.Col);
 		AggBinaryOp v2 = HopRewriteUtils.createMatrixMultiply(v1, hi_1_0);
 		BinaryOp v3 = HopRewriteUtils.createBinary(hi_1_1, v2, Types.OpOp2.MULT);
@@ -10134,6 +10011,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: %*%(*(a,B),rowSums(C)) => *(a,%*%(B,$1:rowSums(C)))");
+		DMLExecutor.println("Applying rewrite: %*%(*(a,B),rowSums(C)) => *(a,%*%(B,$1:rowSums(C)))");
 		AggUnaryOp v1 = HopRewriteUtils.createAggUnaryOp(hi_1_0, Types.AggOp.SUM, Types.Direction.Row);
 		AggBinaryOp v2 = HopRewriteUtils.createMatrixMultiply(hi_0_1, v1);
 		BinaryOp v3 = HopRewriteUtils.createBinary(hi_0_0, v2, Types.OpOp2.MULT);
@@ -10201,6 +10079,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: %*%(*(B,a),rowSums(C)) => *(a,%*%(B,$1:rowSums(C)))");
+		DMLExecutor.println("Applying rewrite: %*%(*(B,a),rowSums(C)) => *(a,%*%(B,$1:rowSums(C)))");
 		AggUnaryOp v1 = HopRewriteUtils.createAggUnaryOp(hi_1_0, Types.AggOp.SUM, Types.Direction.Row);
 		AggBinaryOp v2 = HopRewriteUtils.createMatrixMultiply(hi_0_0, v1);
 		BinaryOp v3 = HopRewriteUtils.createBinary(hi_0_1, v2, Types.OpOp2.MULT);
@@ -10284,6 +10163,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: colSums(/($1:*(a,B),C)) => *(a,colSums($1:/(B,C)))");
+		DMLExecutor.println("Applying rewrite: colSums(/($1:*(a,B),C)) => *(a,colSums($1:/(B,C)))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0_1, hi_0_1, Types.OpOp2.DIV);
 		AggUnaryOp v2 = HopRewriteUtils.createAggUnaryOp(v1, Types.AggOp.SUM, Types.Direction.Col);
 		BinaryOp v3 = HopRewriteUtils.createBinary(hi_0_0_0, v2, Types.OpOp2.MULT);
@@ -10367,6 +10247,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: colSums(/($1:*(B,a),C)) => *(a,colSums($1:/(B,C)))");
+		DMLExecutor.println("Applying rewrite: colSums(/($1:*(B,a),C)) => *(a,colSums($1:/(B,C)))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0_0, hi_0_1, Types.OpOp2.DIV);
 		AggUnaryOp v2 = HopRewriteUtils.createAggUnaryOp(v1, Types.AggOp.SUM, Types.Direction.Col);
 		BinaryOp v3 = HopRewriteUtils.createBinary(hi_0_0_1, v2, Types.OpOp2.MULT);
@@ -10439,6 +10320,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: colSums(*($1:/(a,C),B)) => *(a,colSums($1:/(B,C)))");
+		DMLExecutor.println("Applying rewrite: colSums(*($1:/(a,C),B)) => *(a,colSums($1:/(B,C)))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_1, hi_0_0_1, Types.OpOp2.DIV);
 		AggUnaryOp v2 = HopRewriteUtils.createAggUnaryOp(v1, Types.AggOp.SUM, Types.Direction.Col);
 		BinaryOp v3 = HopRewriteUtils.createBinary(hi_0_0_0, v2, Types.OpOp2.MULT);
@@ -10511,6 +10393,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: colSums(*(B,$1:/(a,C))) => *(a,colSums($1:/(B,C)))");
+		DMLExecutor.println("Applying rewrite: colSums(*(B,$1:/(a,C))) => *(a,colSums($1:/(B,C)))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0, hi_0_1_1, Types.OpOp2.DIV);
 		AggUnaryOp v2 = HopRewriteUtils.createAggUnaryOp(v1, Types.AggOp.SUM, Types.Direction.Col);
 		BinaryOp v3 = HopRewriteUtils.createBinary(hi_0_1_0, v2, Types.OpOp2.MULT);
@@ -10583,6 +10466,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: rowSums(*($1:/(a,C),B)) => *(a,rowSums($1:/(B,C)))");
+		DMLExecutor.println("Applying rewrite: rowSums(*($1:/(a,C),B)) => *(a,rowSums($1:/(B,C)))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_1, hi_0_0_1, Types.OpOp2.DIV);
 		AggUnaryOp v2 = HopRewriteUtils.createAggUnaryOp(v1, Types.AggOp.SUM, Types.Direction.Row);
 		BinaryOp v3 = HopRewriteUtils.createBinary(hi_0_0_0, v2, Types.OpOp2.MULT);
@@ -10655,6 +10539,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: rowSums(*(B,$1:/(a,C))) => *(a,rowSums($1:/(B,C)))");
+		DMLExecutor.println("Applying rewrite: rowSums(*(B,$1:/(a,C))) => *(a,rowSums($1:/(B,C)))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0, hi_0_1_1, Types.OpOp2.DIV);
 		AggUnaryOp v2 = HopRewriteUtils.createAggUnaryOp(v1, Types.AggOp.SUM, Types.Direction.Row);
 		BinaryOp v3 = HopRewriteUtils.createBinary(hi_0_1_0, v2, Types.OpOp2.MULT);
@@ -10738,6 +10623,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: rowSums(/($1:*(a,B),C)) => *(a,rowSums($1:/(B,C)))");
+		DMLExecutor.println("Applying rewrite: rowSums(/($1:*(a,B),C)) => *(a,rowSums($1:/(B,C)))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0_1, hi_0_1, Types.OpOp2.DIV);
 		AggUnaryOp v2 = HopRewriteUtils.createAggUnaryOp(v1, Types.AggOp.SUM, Types.Direction.Row);
 		BinaryOp v3 = HopRewriteUtils.createBinary(hi_0_0_0, v2, Types.OpOp2.MULT);
@@ -10821,6 +10707,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: rowSums(/($1:*(B,a),C)) => *(a,rowSums($1:/(B,C)))");
+		DMLExecutor.println("Applying rewrite: rowSums(/($1:*(B,a),C)) => *(a,rowSums($1:/(B,C)))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0_0, hi_0_1, Types.OpOp2.DIV);
 		AggUnaryOp v2 = HopRewriteUtils.createAggUnaryOp(v1, Types.AggOp.SUM, Types.Direction.Row);
 		BinaryOp v3 = HopRewriteUtils.createBinary(hi_0_0_1, v2, Types.OpOp2.MULT);
@@ -10888,6 +10775,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: trace(!=(sum(A),A)) => trace(!=(A,trace(A)))");
+		DMLExecutor.println("Applying rewrite: trace(!=(sum(A),A)) => trace(!=(A,trace(A)))");
 		AggUnaryOp v1 = HopRewriteUtils.createAggUnaryOp(hi_0_0_0, Types.AggOp.TRACE, Types.Direction.RowCol);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0_0_0, v1, Types.OpOp2.NOTEQUAL);
 		AggUnaryOp v3 = HopRewriteUtils.createAggUnaryOp(v2, Types.AggOp.TRACE, Types.Direction.RowCol);
@@ -10955,6 +10843,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: trace(!=(A,sum(A))) => trace(!=(A,trace(A)))");
+		DMLExecutor.println("Applying rewrite: trace(!=(A,sum(A))) => trace(!=(A,trace(A)))");
 		AggUnaryOp v1 = HopRewriteUtils.createAggUnaryOp(hi_0_0, Types.AggOp.TRACE, Types.Direction.RowCol);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0_0, v1, Types.OpOp2.NOTEQUAL);
 		AggUnaryOp v3 = HopRewriteUtils.createAggUnaryOp(v2, Types.AggOp.TRACE, Types.Direction.RowCol);
@@ -11029,6 +10918,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: *(/($1:*(a,C),D),b) => *(*(a,b),/(C,D))");
+		DMLExecutor.println("Applying rewrite: *(/($1:*(a,C),D),b) => *(*(a,b),/(C,D))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0_0, hi_1, Types.OpOp2.MULT);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0_0_1, hi_0_1, Types.OpOp2.DIV);
 		BinaryOp v3 = HopRewriteUtils.createBinary(v1, v2, Types.OpOp2.MULT);
@@ -11103,6 +10993,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: *(/($1:*(C,a),D),b) => *(*(a,b),/(C,D))");
+		DMLExecutor.println("Applying rewrite: *(/($1:*(C,a),D),b) => *(*(a,b),/(C,D))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0_1, hi_1, Types.OpOp2.MULT);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0_0_0, hi_0_1, Types.OpOp2.DIV);
 		BinaryOp v3 = HopRewriteUtils.createBinary(v1, v2, Types.OpOp2.MULT);
@@ -11177,6 +11068,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: *(a,/($1:*(b,C),D)) => *(*(a,b),/(C,D))");
+		DMLExecutor.println("Applying rewrite: *(a,/($1:*(b,C),D)) => *(*(a,b),/(C,D))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0, hi_1_0_0, Types.OpOp2.MULT);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_1_0_1, hi_1_1, Types.OpOp2.DIV);
 		BinaryOp v3 = HopRewriteUtils.createBinary(v1, v2, Types.OpOp2.MULT);
@@ -11251,6 +11143,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: *(a,/($1:*(C,b),D)) => *(*(a,b),/(C,D))");
+		DMLExecutor.println("Applying rewrite: *(a,/($1:*(C,b),D)) => *(*(a,b),/(C,D))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0, hi_1_0_1, Types.OpOp2.MULT);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_1_0_0, hi_1_1, Types.OpOp2.DIV);
 		BinaryOp v3 = HopRewriteUtils.createBinary(v1, v2, Types.OpOp2.MULT);
@@ -11325,6 +11218,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: *(/($1:/(a,C),D),b) => /(/(*(a,b),C),D)");
+		DMLExecutor.println("Applying rewrite: *(/($1:/(a,C),D),b) => /(/(*(a,b),C),D)");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0_0, hi_1, Types.OpOp2.MULT);
 		BinaryOp v2 = HopRewriteUtils.createBinary(v1, hi_0_0_1, Types.OpOp2.DIV);
 		BinaryOp v3 = HopRewriteUtils.createBinary(v2, hi_0_1, Types.OpOp2.DIV);
@@ -11399,6 +11293,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: *(/(a,C),/(b,D)) => /(/(*(a,b),C),D)");
+		DMLExecutor.println("Applying rewrite: *(/(a,C),/(b,D)) => /(/(*(a,b),C),D)");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0, hi_1_0, Types.OpOp2.MULT);
 		BinaryOp v2 = HopRewriteUtils.createBinary(v1, hi_0_1, Types.OpOp2.DIV);
 		BinaryOp v3 = HopRewriteUtils.createBinary(v2, hi_1_1, Types.OpOp2.DIV);
@@ -11473,6 +11368,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: *(a,/($1:/(b,C),D)) => /(/(*(a,b),C),D)");
+		DMLExecutor.println("Applying rewrite: *(a,/($1:/(b,C),D)) => /(/(*(a,b),C),D)");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0, hi_1_0_0, Types.OpOp2.MULT);
 		BinaryOp v2 = HopRewriteUtils.createBinary(v1, hi_1_0_1, Types.OpOp2.DIV);
 		BinaryOp v3 = HopRewriteUtils.createBinary(v2, hi_1_1, Types.OpOp2.DIV);
@@ -11540,6 +11436,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: sum(-($1:t(A),b)) => sum(-(A,b))");
+		DMLExecutor.println("Applying rewrite: sum(-($1:t(A),b)) => sum(-(A,b))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0_0, hi_0_1, Types.OpOp2.MINUS);
 		AggUnaryOp v2 = HopRewriteUtils.createAggUnaryOp(v1, Types.AggOp.SUM, Types.Direction.RowCol);
 
@@ -11606,6 +11503,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: sum(-(a,$1:t(B))) => sum(-(a,B))");
+		DMLExecutor.println("Applying rewrite: sum(-(a,$1:t(B))) => sum(-(a,B))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0, hi_0_1_0, Types.OpOp2.MINUS);
 		AggUnaryOp v2 = HopRewriteUtils.createAggUnaryOp(v1, Types.AggOp.SUM, Types.Direction.RowCol);
 
@@ -11672,6 +11570,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: sum(!=(t(A),b)) => sum(!=(A,b))");
+		DMLExecutor.println("Applying rewrite: sum(!=(t(A),b)) => sum(!=(A,b))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0_0, hi_0_1, Types.OpOp2.NOTEQUAL);
 		AggUnaryOp v2 = HopRewriteUtils.createAggUnaryOp(v1, Types.AggOp.SUM, Types.Direction.RowCol);
 
@@ -11738,6 +11637,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: sum(!=(b,t(A))) => sum(!=(A,b))");
+		DMLExecutor.println("Applying rewrite: sum(!=(b,t(A))) => sum(!=(A,b))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_1_0, hi_0_0, Types.OpOp2.NOTEQUAL);
 		AggUnaryOp v2 = HopRewriteUtils.createAggUnaryOp(v1, Types.AggOp.SUM, Types.Direction.RowCol);
 
@@ -11804,6 +11704,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: sum(+($1:t(A),b)) => sum(+(A,b))");
+		DMLExecutor.println("Applying rewrite: sum(+($1:t(A),b)) => sum(+(A,b))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0_0, hi_0_1, Types.OpOp2.PLUS);
 		AggUnaryOp v2 = HopRewriteUtils.createAggUnaryOp(v1, Types.AggOp.SUM, Types.Direction.RowCol);
 
@@ -11870,6 +11771,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: sum(+(b,$1:t(A))) => sum(+(A,b))");
+		DMLExecutor.println("Applying rewrite: sum(+(b,$1:t(A))) => sum(+(A,b))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_1_0, hi_0_0, Types.OpOp2.PLUS);
 		AggUnaryOp v2 = HopRewriteUtils.createAggUnaryOp(v1, Types.AggOp.SUM, Types.Direction.RowCol);
 
@@ -11933,6 +11835,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: trace(*($1:t(B),A)) => trace(*(A,B))");
+		DMLExecutor.println("Applying rewrite: trace(*($1:t(B),A)) => trace(*(A,B))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_1, hi_0_0_0, Types.OpOp2.MULT);
 		AggUnaryOp v2 = HopRewriteUtils.createAggUnaryOp(v1, Types.AggOp.TRACE, Types.Direction.RowCol);
 
@@ -11996,6 +11899,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: trace(*(B,$1:t(A))) => trace(*(A,B))");
+		DMLExecutor.println("Applying rewrite: trace(*(B,$1:t(A))) => trace(*(A,B))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_1_0, hi_0_0, Types.OpOp2.MULT);
 		AggUnaryOp v2 = HopRewriteUtils.createAggUnaryOp(v1, Types.AggOp.TRACE, Types.Direction.RowCol);
 
@@ -12070,6 +11974,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: !=(t(A),t(B)) => t(!=(A,B))");
+		DMLExecutor.println("Applying rewrite: !=(t(A),t(B)) => t(!=(A,B))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0, hi_1_0, Types.OpOp2.NOTEQUAL);
 		ReorgOp v2 = HopRewriteUtils.createTranspose(v1);
 
@@ -12133,6 +12038,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: !=(rev(A),rev(A)) => rev(!=(A,A))");
+		DMLExecutor.println("Applying rewrite: !=(rev(A),rev(A)) => rev(!=(A,A))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0, hi_0_0, Types.OpOp2.NOTEQUAL);
 		ReorgOp v2 = HopRewriteUtils.createReorg(v1, Types.ReOrgOp.REV);
 
@@ -12196,6 +12102,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: rev(-($1:rev(A),B)) => -(A,rev(B))");
+		DMLExecutor.println("Applying rewrite: rev(-($1:rev(A),B)) => -(A,rev(B))");
 		ReorgOp v1 = HopRewriteUtils.createReorg(hi_0_1, Types.ReOrgOp.REV);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0_0_0, v1, Types.OpOp2.MINUS);
 
@@ -12259,6 +12166,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: rev(-(A,$1:rev(B))) => -(rev(A),B)");
+		DMLExecutor.println("Applying rewrite: rev(-(A,$1:rev(B))) => -(rev(A),B)");
 		ReorgOp v1 = HopRewriteUtils.createReorg(hi_0_0, Types.ReOrgOp.REV);
 		BinaryOp v2 = HopRewriteUtils.createBinary(v1, hi_0_1_0, Types.OpOp2.MINUS);
 
@@ -12322,6 +12230,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: t(-($1:t(A),B)) => -(A,t(B))");
+		DMLExecutor.println("Applying rewrite: t(-($1:t(A),B)) => -(A,t(B))");
 		ReorgOp v1 = HopRewriteUtils.createTranspose(hi_0_1);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0_0_0, v1, Types.OpOp2.MINUS);
 
@@ -12385,6 +12294,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: t(-(A,$1:t(B))) => -(t(A),B)");
+		DMLExecutor.println("Applying rewrite: t(-(A,$1:t(B))) => -(t(A),B)");
 		ReorgOp v1 = HopRewriteUtils.createTranspose(hi_0_0);
 		BinaryOp v2 = HopRewriteUtils.createBinary(v1, hi_0_1_0, Types.OpOp2.MINUS);
 
@@ -12448,6 +12358,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: -(t(A),t(B)) => t(-(A,B))");
+		DMLExecutor.println("Applying rewrite: -(t(A),t(B)) => t(-(A,B))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0, hi_1_0, Types.OpOp2.MINUS);
 		ReorgOp v2 = HopRewriteUtils.createTranspose(v1);
 
@@ -12511,6 +12422,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: +(t(B),t(A)) => t(+(A,B))");
+		DMLExecutor.println("Applying rewrite: +(t(B),t(A)) => t(+(A,B))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_1_0, hi_0_0, Types.OpOp2.PLUS);
 		ReorgOp v2 = HopRewriteUtils.createTranspose(v1);
 
@@ -12579,6 +12491,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: !=(rev(-(b,A)),A) => !=(A,-(b,A))");
+		DMLExecutor.println("Applying rewrite: !=(rev(-(b,A)),A) => !=(A,-(b,A))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0_0, hi_0_0_1, Types.OpOp2.MINUS);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0_0_1, v1, Types.OpOp2.NOTEQUAL);
 
@@ -12647,6 +12560,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: !=(A,rev(-(b,A))) => !=(A,-(b,A))");
+		DMLExecutor.println("Applying rewrite: !=(A,rev(-(b,A))) => !=(A,-(b,A))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_1_0_0, hi_0, Types.OpOp2.MINUS);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0, v1, Types.OpOp2.NOTEQUAL);
 
@@ -12715,6 +12629,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: !=(-(b,rev(A)),A) => !=(A,-(b,A))");
+		DMLExecutor.println("Applying rewrite: !=(-(b,rev(A)),A) => !=(A,-(b,A))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0, hi_0_1_0, Types.OpOp2.MINUS);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0_1_0, v1, Types.OpOp2.NOTEQUAL);
 
@@ -12783,6 +12698,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: !=(-(b,A),rev(A)) => !=(A,-(b,A))");
+		DMLExecutor.println("Applying rewrite: !=(-(b,A),rev(A)) => !=(A,-(b,A))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0, hi_0_1, Types.OpOp2.MINUS);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0_1, v1, Types.OpOp2.NOTEQUAL);
 
@@ -12851,6 +12767,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: !=(A,-(b,rev(A))) => !=(A,-(b,A))");
+		DMLExecutor.println("Applying rewrite: !=(A,-(b,rev(A))) => !=(A,-(b,A))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_1_0, hi_0, Types.OpOp2.MINUS);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0, v1, Types.OpOp2.NOTEQUAL);
 
@@ -12919,6 +12836,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: !=(rev(-(A,c)),A) => !=(A,-(A,c))");
+		DMLExecutor.println("Applying rewrite: !=(rev(-(A,c)),A) => !=(A,-(A,c))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0_0, hi_0_0_1, Types.OpOp2.MINUS);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0_0_0, v1, Types.OpOp2.NOTEQUAL);
 
@@ -12987,6 +12905,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: !=(A,rev(-(A,c))) => !=(A,-(A,c))");
+		DMLExecutor.println("Applying rewrite: !=(A,rev(-(A,c))) => !=(A,-(A,c))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0, hi_1_0_1, Types.OpOp2.MINUS);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0, v1, Types.OpOp2.NOTEQUAL);
 
@@ -13055,6 +12974,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: !=(-(rev(A),c),A) => !=(A,-(A,c))");
+		DMLExecutor.println("Applying rewrite: !=(-(rev(A),c),A) => !=(A,-(A,c))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0_0, hi_0_1, Types.OpOp2.MINUS);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0_0_0, v1, Types.OpOp2.NOTEQUAL);
 
@@ -13123,6 +13043,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: !=(A,-(rev(A),c)) => !=(A,-(A,c))");
+		DMLExecutor.println("Applying rewrite: !=(A,-(rev(A),c)) => !=(A,-(A,c))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0, hi_1_1, Types.OpOp2.MINUS);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0, v1, Types.OpOp2.NOTEQUAL);
 
@@ -13191,6 +13112,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: !=(-(B,rev(A)),A) => !=(A,-(B,A))");
+		DMLExecutor.println("Applying rewrite: !=(-(B,rev(A)),A) => !=(A,-(B,A))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0, hi_0_1_0, Types.OpOp2.MINUS);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0_1_0, v1, Types.OpOp2.NOTEQUAL);
 
@@ -13259,6 +13181,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: !=(-(B,A),rev(A)) => !=(A,-(B,A))");
+		DMLExecutor.println("Applying rewrite: !=(-(B,A),rev(A)) => !=(A,-(B,A))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0, hi_0_1, Types.OpOp2.MINUS);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0_1, v1, Types.OpOp2.NOTEQUAL);
 
@@ -13327,6 +13250,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: !=(A,-(B,rev(A))) => !=(A,-(B,A))");
+		DMLExecutor.println("Applying rewrite: !=(A,-(B,rev(A))) => !=(A,-(B,A))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_1_0, hi_0, Types.OpOp2.MINUS);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0, v1, Types.OpOp2.NOTEQUAL);
 
@@ -13395,6 +13319,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: !=(-(rev(A),C),A) => !=(A,-(A,C))");
+		DMLExecutor.println("Applying rewrite: !=(-(rev(A),C),A) => !=(A,-(A,C))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0_0, hi_0_1, Types.OpOp2.MINUS);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0_0_0, v1, Types.OpOp2.NOTEQUAL);
 
@@ -13463,6 +13388,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: !=(-(A,C),rev(A)) => !=(A,-(A,C))");
+		DMLExecutor.println("Applying rewrite: !=(-(A,C),rev(A)) => !=(A,-(A,C))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0, hi_0_1, Types.OpOp2.MINUS);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0_0, v1, Types.OpOp2.NOTEQUAL);
 
@@ -13531,6 +13457,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: !=(A,-(rev(A),C)) => !=(A,-(A,C))");
+		DMLExecutor.println("Applying rewrite: !=(A,-(rev(A),C)) => !=(A,-(A,C))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0, hi_1_1, Types.OpOp2.MINUS);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0, v1, Types.OpOp2.NOTEQUAL);
 
@@ -13594,6 +13521,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: rev(!=(rev(A),B)) => !=(A,rev(B))");
+		DMLExecutor.println("Applying rewrite: rev(!=(rev(A),B)) => !=(A,rev(B))");
 		ReorgOp v1 = HopRewriteUtils.createReorg(hi_0_1, Types.ReOrgOp.REV);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0_0_0, v1, Types.OpOp2.NOTEQUAL);
 
@@ -13657,6 +13585,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: rev(!=(B,rev(A))) => !=(A,rev(B))");
+		DMLExecutor.println("Applying rewrite: rev(!=(B,rev(A))) => !=(A,rev(B))");
 		ReorgOp v1 = HopRewriteUtils.createReorg(hi_0_0, Types.ReOrgOp.REV);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0_1_0, v1, Types.OpOp2.NOTEQUAL);
 
@@ -13720,6 +13649,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: t(!=(t(A),B)) => !=(A,t(B))");
+		DMLExecutor.println("Applying rewrite: t(!=(t(A),B)) => !=(A,t(B))");
 		ReorgOp v1 = HopRewriteUtils.createTranspose(hi_0_1);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0_0_0, v1, Types.OpOp2.NOTEQUAL);
 
@@ -13783,6 +13713,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: t(!=(B,t(A))) => !=(A,t(B))");
+		DMLExecutor.println("Applying rewrite: t(!=(B,t(A))) => !=(A,t(B))");
 		ReorgOp v1 = HopRewriteUtils.createTranspose(hi_0_0);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0_1_0, v1, Types.OpOp2.NOTEQUAL);
 
@@ -13851,6 +13782,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: !=(rev(+(c,A)),A) => !=(A,+(A,c))");
+		DMLExecutor.println("Applying rewrite: !=(rev(+(c,A)),A) => !=(A,+(A,c))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0_1, hi_0_0_0, Types.OpOp2.PLUS);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0_0_1, v1, Types.OpOp2.NOTEQUAL);
 
@@ -13919,6 +13851,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: !=(rev(+(A,c)),A) => !=(A,+(A,c))");
+		DMLExecutor.println("Applying rewrite: !=(rev(+(A,c)),A) => !=(A,+(A,c))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0_0, hi_0_0_1, Types.OpOp2.PLUS);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0_0_0, v1, Types.OpOp2.NOTEQUAL);
 
@@ -13987,6 +13920,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: !=(A,rev(+(c,A))) => !=(A,+(A,c))");
+		DMLExecutor.println("Applying rewrite: !=(A,rev(+(c,A))) => !=(A,+(A,c))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0, hi_1_0_0, Types.OpOp2.PLUS);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0, v1, Types.OpOp2.NOTEQUAL);
 
@@ -14055,6 +13989,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: !=(A,rev(+(A,c))) => !=(A,+(A,c))");
+		DMLExecutor.println("Applying rewrite: !=(A,rev(+(A,c))) => !=(A,+(A,c))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0, hi_1_0_1, Types.OpOp2.PLUS);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0, v1, Types.OpOp2.NOTEQUAL);
 
@@ -14123,6 +14058,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: !=(+(rev(A),c),A) => !=(A,+(A,c))");
+		DMLExecutor.println("Applying rewrite: !=(+(rev(A),c),A) => !=(A,+(A,c))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0_0, hi_0_1, Types.OpOp2.PLUS);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0_0_0, v1, Types.OpOp2.NOTEQUAL);
 
@@ -14191,6 +14127,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: !=(+(c,rev(A)),A) => !=(A,+(A,c))");
+		DMLExecutor.println("Applying rewrite: !=(+(c,rev(A)),A) => !=(A,+(A,c))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_1_0, hi_0_0, Types.OpOp2.PLUS);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0_1_0, v1, Types.OpOp2.NOTEQUAL);
 
@@ -14259,6 +14196,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: !=(+(c,A),rev(A)) => !=(A,+(A,c))");
+		DMLExecutor.println("Applying rewrite: !=(+(c,A),rev(A)) => !=(A,+(A,c))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_1, hi_0_0, Types.OpOp2.PLUS);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0_1, v1, Types.OpOp2.NOTEQUAL);
 
@@ -14327,6 +14265,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: !=(A,+(rev(A),c)) => !=(A,+(A,c))");
+		DMLExecutor.println("Applying rewrite: !=(A,+(rev(A),c)) => !=(A,+(A,c))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0, hi_1_1, Types.OpOp2.PLUS);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0, v1, Types.OpOp2.NOTEQUAL);
 
@@ -14395,6 +14334,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: !=(A,+(c,rev(A))) => !=(A,+(A,c))");
+		DMLExecutor.println("Applying rewrite: !=(A,+(c,rev(A))) => !=(A,+(A,c))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0, hi_1_0, Types.OpOp2.PLUS);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0, v1, Types.OpOp2.NOTEQUAL);
 
@@ -14463,6 +14403,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: !=(+(rev(A),C),A) => !=(A,+(A,C))");
+		DMLExecutor.println("Applying rewrite: !=(+(rev(A),C),A) => !=(A,+(A,C))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0_0, hi_0_1, Types.OpOp2.PLUS);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0_0_0, v1, Types.OpOp2.NOTEQUAL);
 
@@ -14531,6 +14472,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: !=(+(C,rev(A)),A) => !=(A,+(A,C))");
+		DMLExecutor.println("Applying rewrite: !=(+(C,rev(A)),A) => !=(A,+(A,C))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_1_0, hi_0_0, Types.OpOp2.PLUS);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0_1_0, v1, Types.OpOp2.NOTEQUAL);
 
@@ -14599,6 +14541,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: !=(+(C,A),rev(A)) => !=(A,+(A,C))");
+		DMLExecutor.println("Applying rewrite: !=(+(C,A),rev(A)) => !=(A,+(A,C))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_1, hi_0_0, Types.OpOp2.PLUS);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0_1, v1, Types.OpOp2.NOTEQUAL);
 
@@ -14667,6 +14610,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: !=(+(A,C),rev(A)) => !=(A,+(A,C))");
+		DMLExecutor.println("Applying rewrite: !=(+(A,C),rev(A)) => !=(A,+(A,C))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0, hi_0_1, Types.OpOp2.PLUS);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0_0, v1, Types.OpOp2.NOTEQUAL);
 
@@ -14735,6 +14679,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: !=(A,+(rev(A),C)) => !=(A,+(A,C))");
+		DMLExecutor.println("Applying rewrite: !=(A,+(rev(A),C)) => !=(A,+(A,C))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0, hi_1_1, Types.OpOp2.PLUS);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0, v1, Types.OpOp2.NOTEQUAL);
 
@@ -14803,6 +14748,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: !=(A,+(C,rev(A))) => !=(A,+(A,C))");
+		DMLExecutor.println("Applying rewrite: !=(A,+(C,rev(A))) => !=(A,+(A,C))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0, hi_1_0, Types.OpOp2.PLUS);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0, v1, Types.OpOp2.NOTEQUAL);
 
@@ -14871,6 +14817,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: !=(!=(rev(A),c),A) => !=(A,!=(A,c))");
+		DMLExecutor.println("Applying rewrite: !=(!=(rev(A),c),A) => !=(A,!=(A,c))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0_0, hi_0_1, Types.OpOp2.NOTEQUAL);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0_0_0, v1, Types.OpOp2.NOTEQUAL);
 
@@ -14939,6 +14886,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: !=(!=(c,rev(A)),A) => !=(A,!=(A,c))");
+		DMLExecutor.println("Applying rewrite: !=(!=(c,rev(A)),A) => !=(A,!=(A,c))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_1_0, hi_0_0, Types.OpOp2.NOTEQUAL);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0_1_0, v1, Types.OpOp2.NOTEQUAL);
 
@@ -15007,6 +14955,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: !=(!=(c,A),rev(A)) => !=(A,!=(A,c))");
+		DMLExecutor.println("Applying rewrite: !=(!=(c,A),rev(A)) => !=(A,!=(A,c))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_1, hi_0_0, Types.OpOp2.NOTEQUAL);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0_1, v1, Types.OpOp2.NOTEQUAL);
 
@@ -15075,6 +15024,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: !=(A,!=(rev(A),c)) => !=(A,!=(A,c))");
+		DMLExecutor.println("Applying rewrite: !=(A,!=(rev(A),c)) => !=(A,!=(A,c))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0, hi_1_1, Types.OpOp2.NOTEQUAL);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0, v1, Types.OpOp2.NOTEQUAL);
 
@@ -15143,6 +15093,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: !=(A,!=(c,rev(A))) => !=(A,!=(A,c))");
+		DMLExecutor.println("Applying rewrite: !=(A,!=(c,rev(A))) => !=(A,!=(A,c))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0, hi_1_0, Types.OpOp2.NOTEQUAL);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0, v1, Types.OpOp2.NOTEQUAL);
 
@@ -15211,6 +15162,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: !=(rev(!=(c,A)),A) => !=(A,!=(A,c))");
+		DMLExecutor.println("Applying rewrite: !=(rev(!=(c,A)),A) => !=(A,!=(A,c))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0_1, hi_0_0_0, Types.OpOp2.NOTEQUAL);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0_0_1, v1, Types.OpOp2.NOTEQUAL);
 
@@ -15279,6 +15231,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: !=(rev(!=(A,c)),A) => !=(A,!=(A,c))");
+		DMLExecutor.println("Applying rewrite: !=(rev(!=(A,c)),A) => !=(A,!=(A,c))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0_0, hi_0_0_1, Types.OpOp2.NOTEQUAL);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0_0_0, v1, Types.OpOp2.NOTEQUAL);
 
@@ -15347,6 +15300,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: !=(A,rev(!=(c,A))) => !=(A,!=(A,c))");
+		DMLExecutor.println("Applying rewrite: !=(A,rev(!=(c,A))) => !=(A,!=(A,c))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0, hi_1_0_0, Types.OpOp2.NOTEQUAL);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0, v1, Types.OpOp2.NOTEQUAL);
 
@@ -15415,6 +15369,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: !=(A,rev(!=(A,c))) => !=(A,!=(A,c))");
+		DMLExecutor.println("Applying rewrite: !=(A,rev(!=(A,c))) => !=(A,!=(A,c))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0, hi_1_0_1, Types.OpOp2.NOTEQUAL);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0, v1, Types.OpOp2.NOTEQUAL);
 
@@ -15483,6 +15438,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: !=(!=(rev(A),C),A) => !=(A,!=(A,C))");
+		DMLExecutor.println("Applying rewrite: !=(!=(rev(A),C),A) => !=(A,!=(A,C))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0_0, hi_0_1, Types.OpOp2.NOTEQUAL);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0_0_0, v1, Types.OpOp2.NOTEQUAL);
 
@@ -15551,6 +15507,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: !=(!=(C,rev(A)),A) => !=(A,!=(A,C))");
+		DMLExecutor.println("Applying rewrite: !=(!=(C,rev(A)),A) => !=(A,!=(A,C))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_1_0, hi_0_0, Types.OpOp2.NOTEQUAL);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0_1_0, v1, Types.OpOp2.NOTEQUAL);
 
@@ -15619,6 +15576,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: !=(!=(C,A),rev(A)) => !=(A,!=(A,C))");
+		DMLExecutor.println("Applying rewrite: !=(!=(C,A),rev(A)) => !=(A,!=(A,C))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_1, hi_0_0, Types.OpOp2.NOTEQUAL);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0_1, v1, Types.OpOp2.NOTEQUAL);
 
@@ -15687,6 +15645,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: !=(!=(A,C),rev(A)) => !=(A,!=(A,C))");
+		DMLExecutor.println("Applying rewrite: !=(!=(A,C),rev(A)) => !=(A,!=(A,C))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0, hi_0_1, Types.OpOp2.NOTEQUAL);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0_0, v1, Types.OpOp2.NOTEQUAL);
 
@@ -15755,6 +15714,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: !=(A,!=(rev(A),C)) => !=(A,!=(A,C))");
+		DMLExecutor.println("Applying rewrite: !=(A,!=(rev(A),C)) => !=(A,!=(A,C))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0, hi_1_1, Types.OpOp2.NOTEQUAL);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0, v1, Types.OpOp2.NOTEQUAL);
 
@@ -15823,6 +15783,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: !=(A,!=(C,rev(A))) => !=(A,!=(A,C))");
+		DMLExecutor.println("Applying rewrite: !=(A,!=(C,rev(A))) => !=(A,!=(A,C))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0, hi_1_0, Types.OpOp2.NOTEQUAL);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0, v1, Types.OpOp2.NOTEQUAL);
 
@@ -15886,6 +15847,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: rev(+($1:rev(A),B)) => +(A,rev(B))");
+		DMLExecutor.println("Applying rewrite: rev(+($1:rev(A),B)) => +(A,rev(B))");
 		ReorgOp v1 = HopRewriteUtils.createReorg(hi_0_1, Types.ReOrgOp.REV);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0_0_0, v1, Types.OpOp2.PLUS);
 
@@ -15949,6 +15911,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: rev(+(B,$1:rev(A))) => +(A,rev(B))");
+		DMLExecutor.println("Applying rewrite: rev(+(B,$1:rev(A))) => +(A,rev(B))");
 		ReorgOp v1 = HopRewriteUtils.createReorg(hi_0_0, Types.ReOrgOp.REV);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0_1_0, v1, Types.OpOp2.PLUS);
 
@@ -16012,6 +15975,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: t(+($1:t(A),B)) => +(A,t(B))");
+		DMLExecutor.println("Applying rewrite: t(+($1:t(A),B)) => +(A,t(B))");
 		ReorgOp v1 = HopRewriteUtils.createTranspose(hi_0_1);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0_0_0, v1, Types.OpOp2.PLUS);
 
@@ -16075,6 +16039,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: t(+(B,$1:t(A))) => +(A,t(B))");
+		DMLExecutor.println("Applying rewrite: t(+(B,$1:t(A))) => +(A,t(B))");
 		ReorgOp v1 = HopRewriteUtils.createTranspose(hi_0_0);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0_1_0, v1, Types.OpOp2.PLUS);
 
@@ -16143,6 +16108,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: +(!=(rev(A),c),A) => +(A,!=(A,c))");
+		DMLExecutor.println("Applying rewrite: +(!=(rev(A),c),A) => +(A,!=(A,c))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0_0, hi_0_1, Types.OpOp2.NOTEQUAL);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0_0_0, v1, Types.OpOp2.PLUS);
 
@@ -16211,6 +16177,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: +(!=(c,rev(A)),A) => +(A,!=(A,c))");
+		DMLExecutor.println("Applying rewrite: +(!=(c,rev(A)),A) => +(A,!=(A,c))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_1_0, hi_0_0, Types.OpOp2.NOTEQUAL);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0_1_0, v1, Types.OpOp2.PLUS);
 
@@ -16279,6 +16246,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: +(A,!=(rev(A),c)) => +(A,!=(A,c))");
+		DMLExecutor.println("Applying rewrite: +(A,!=(rev(A),c)) => +(A,!=(A,c))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0, hi_1_1, Types.OpOp2.NOTEQUAL);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0, v1, Types.OpOp2.PLUS);
 
@@ -16347,6 +16315,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: +(A,!=(c,rev(A))) => +(A,!=(A,c))");
+		DMLExecutor.println("Applying rewrite: +(A,!=(c,rev(A))) => +(A,!=(A,c))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0, hi_1_0, Types.OpOp2.NOTEQUAL);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0, v1, Types.OpOp2.PLUS);
 
@@ -16415,6 +16384,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: +(rev($1:!=(c,A)),A) => +(A,!=(A,c))");
+		DMLExecutor.println("Applying rewrite: +(rev($1:!=(c,A)),A) => +(A,!=(A,c))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0_1, hi_0_0_0, Types.OpOp2.NOTEQUAL);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0_0_1, v1, Types.OpOp2.PLUS);
 
@@ -16483,6 +16453,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: +(rev($1:!=(A,c)),A) => +(A,!=(A,c))");
+		DMLExecutor.println("Applying rewrite: +(rev($1:!=(A,c)),A) => +(A,!=(A,c))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0_0, hi_0_0_1, Types.OpOp2.NOTEQUAL);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0_0_0, v1, Types.OpOp2.PLUS);
 
@@ -16551,6 +16522,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: +(A,rev($1:!=(c,A))) => +(A,!=(A,c))");
+		DMLExecutor.println("Applying rewrite: +(A,rev($1:!=(c,A))) => +(A,!=(A,c))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0, hi_1_0_0, Types.OpOp2.NOTEQUAL);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0, v1, Types.OpOp2.PLUS);
 
@@ -16619,6 +16591,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: +(A,rev($1:!=(A,c))) => +(A,!=(A,c))");
+		DMLExecutor.println("Applying rewrite: +(A,rev($1:!=(A,c))) => +(A,!=(A,c))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0, hi_1_0_1, Types.OpOp2.NOTEQUAL);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0, v1, Types.OpOp2.PLUS);
 
@@ -16687,6 +16660,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: +(!=(rev(A),C),A) => +(A,!=(A,C))");
+		DMLExecutor.println("Applying rewrite: +(!=(rev(A),C),A) => +(A,!=(A,C))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0_0, hi_0_1, Types.OpOp2.NOTEQUAL);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0_0_0, v1, Types.OpOp2.PLUS);
 
@@ -16755,6 +16729,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: +(!=(C,rev(A)),A) => +(A,!=(A,C))");
+		DMLExecutor.println("Applying rewrite: +(!=(C,rev(A)),A) => +(A,!=(A,C))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_1_0, hi_0_0, Types.OpOp2.NOTEQUAL);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0_1_0, v1, Types.OpOp2.PLUS);
 
@@ -16823,6 +16798,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: +(A,!=(rev(A),C)) => +(A,!=(A,C))");
+		DMLExecutor.println("Applying rewrite: +(A,!=(rev(A),C)) => +(A,!=(A,C))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0, hi_1_1, Types.OpOp2.NOTEQUAL);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0, v1, Types.OpOp2.PLUS);
 
@@ -16891,6 +16867,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: +(A,!=(C,rev(A))) => +(A,!=(A,C))");
+		DMLExecutor.println("Applying rewrite: +(A,!=(C,rev(A))) => +(A,!=(A,C))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0, hi_1_0, Types.OpOp2.NOTEQUAL);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0, v1, Types.OpOp2.PLUS);
 
@@ -16959,6 +16936,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: -(rev($1:!=(A,b)),A) => -(!=(A,b),A)");
+		DMLExecutor.println("Applying rewrite: -(rev($1:!=(A,b)),A) => -(!=(A,b),A)");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0_0, hi_0_0_1, Types.OpOp2.NOTEQUAL);
 		BinaryOp v2 = HopRewriteUtils.createBinary(v1, hi_0_0_0, Types.OpOp2.MINUS);
 
@@ -17027,6 +17005,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: -(A,!=(rev(A),c)) => -(A,!=(A,c))");
+		DMLExecutor.println("Applying rewrite: -(A,!=(rev(A),c)) => -(A,!=(A,c))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0, hi_1_1, Types.OpOp2.NOTEQUAL);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0, v1, Types.OpOp2.MINUS);
 
@@ -17095,6 +17074,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: -(A,!=(c,rev(A))) => -(A,!=(A,c))");
+		DMLExecutor.println("Applying rewrite: -(A,!=(c,rev(A))) => -(A,!=(A,c))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0, hi_1_0, Types.OpOp2.NOTEQUAL);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0, v1, Types.OpOp2.MINUS);
 
@@ -17163,6 +17143,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: -(A,rev($1:!=(c,A))) => -(A,!=(A,c))");
+		DMLExecutor.println("Applying rewrite: -(A,rev($1:!=(c,A))) => -(A,!=(A,c))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0, hi_1_0_0, Types.OpOp2.NOTEQUAL);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0, v1, Types.OpOp2.MINUS);
 
@@ -17231,6 +17212,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: -(A,rev($1:!=(A,c))) => -(A,!=(A,c))");
+		DMLExecutor.println("Applying rewrite: -(A,rev($1:!=(A,c))) => -(A,!=(A,c))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0, hi_1_0_1, Types.OpOp2.NOTEQUAL);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0, v1, Types.OpOp2.MINUS);
 
@@ -17299,6 +17281,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: -(A,!=(rev(A),C)) => -(A,!=(A,C))");
+		DMLExecutor.println("Applying rewrite: -(A,!=(rev(A),C)) => -(A,!=(A,C))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0, hi_1_1, Types.OpOp2.NOTEQUAL);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0, v1, Types.OpOp2.MINUS);
 
@@ -17367,6 +17350,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: -(A,!=(C,rev(A))) => -(A,!=(A,C))");
+		DMLExecutor.println("Applying rewrite: -(A,!=(C,rev(A))) => -(A,!=(A,C))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0, hi_1_0, Types.OpOp2.NOTEQUAL);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0, v1, Types.OpOp2.MINUS);
 
@@ -17435,6 +17419,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: -(t($1:-(A,b)),c) => -(t(A),+(b,c))");
+		DMLExecutor.println("Applying rewrite: -(t($1:-(A,b)),c) => -(t(A),+(b,c))");
 		ReorgOp v1 = HopRewriteUtils.createTranspose(hi_0_0_0);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0_0_1, hi_1, Types.OpOp2.PLUS);
 		BinaryOp v3 = HopRewriteUtils.createBinary(v1, v2, Types.OpOp2.MINUS);
@@ -17504,6 +17489,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: -(t($1:-(a,C)),b) => -(-(a,b),t(C))");
+		DMLExecutor.println("Applying rewrite: -(t($1:-(a,C)),b) => -(-(a,b),t(C))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0_0, hi_1, Types.OpOp2.MINUS);
 		ReorgOp v2 = HopRewriteUtils.createTranspose(hi_0_0_1);
 		BinaryOp v3 = HopRewriteUtils.createBinary(v1, v2, Types.OpOp2.MINUS);
@@ -17573,6 +17559,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: -(a,t($1:+(b,C))) => -(-(a,b),t(C))");
+		DMLExecutor.println("Applying rewrite: -(a,t($1:+(b,C))) => -(-(a,b),t(C))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0, hi_1_0_0, Types.OpOp2.MINUS);
 		ReorgOp v2 = HopRewriteUtils.createTranspose(hi_1_0_1);
 		BinaryOp v3 = HopRewriteUtils.createBinary(v1, v2, Types.OpOp2.MINUS);
@@ -17642,6 +17629,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: -(a,t($1:+(C,b))) => -(-(a,b),t(C))");
+		DMLExecutor.println("Applying rewrite: -(a,t($1:+(C,b))) => -(-(a,b),t(C))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0, hi_1_0_1, Types.OpOp2.MINUS);
 		ReorgOp v2 = HopRewriteUtils.createTranspose(hi_1_0_0);
 		BinaryOp v3 = HopRewriteUtils.createBinary(v1, v2, Types.OpOp2.MINUS);
@@ -17711,6 +17699,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: -(rev($1:-(A,b)),c) => -(rev(A),+(b,c))");
+		DMLExecutor.println("Applying rewrite: -(rev($1:-(A,b)),c) => -(rev(A),+(b,c))");
 		ReorgOp v1 = HopRewriteUtils.createReorg(hi_0_0_0, Types.ReOrgOp.REV);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0_0_1, hi_1, Types.OpOp2.PLUS);
 		BinaryOp v3 = HopRewriteUtils.createBinary(v1, v2, Types.OpOp2.MINUS);
@@ -17780,6 +17769,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: -(rev($1:-(a,C)),b) => -(-(a,b),rev(C))");
+		DMLExecutor.println("Applying rewrite: -(rev($1:-(a,C)),b) => -(-(a,b),rev(C))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0_0, hi_1, Types.OpOp2.MINUS);
 		ReorgOp v2 = HopRewriteUtils.createReorg(hi_0_0_1, Types.ReOrgOp.REV);
 		BinaryOp v3 = HopRewriteUtils.createBinary(v1, v2, Types.OpOp2.MINUS);
@@ -17849,6 +17839,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: -(a,rev($1:+(b,C))) => -(-(a,b),rev(C))");
+		DMLExecutor.println("Applying rewrite: -(a,rev($1:+(b,C))) => -(-(a,b),rev(C))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0, hi_1_0_0, Types.OpOp2.MINUS);
 		ReorgOp v2 = HopRewriteUtils.createReorg(hi_1_0_1, Types.ReOrgOp.REV);
 		BinaryOp v3 = HopRewriteUtils.createBinary(v1, v2, Types.OpOp2.MINUS);
@@ -17918,6 +17909,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: -(a,rev($1:+(C,b))) => -(-(a,b),rev(C))");
+		DMLExecutor.println("Applying rewrite: -(a,rev($1:+(C,b))) => -(-(a,b),rev(C))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0, hi_1_0_1, Types.OpOp2.MINUS);
 		ReorgOp v2 = HopRewriteUtils.createReorg(hi_1_0_0, Types.ReOrgOp.REV);
 		BinaryOp v3 = HopRewriteUtils.createBinary(v1, v2, Types.OpOp2.MINUS);
@@ -17992,6 +17984,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: -(-($1:-(a,D),C),b) => -(-(a,b),+(C,D))");
+		DMLExecutor.println("Applying rewrite: -(-($1:-(a,D),C),b) => -(-(a,b),+(C,D))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0_0, hi_1, Types.OpOp2.MINUS);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0_1, hi_0_0_1, Types.OpOp2.PLUS);
 		BinaryOp v3 = HopRewriteUtils.createBinary(v1, v2, Types.OpOp2.MINUS);
@@ -18066,6 +18059,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: -(-(a,C),+(b,D)) => -(-(a,b),+(C,D))");
+		DMLExecutor.println("Applying rewrite: -(-(a,C),+(b,D)) => -(-(a,b),+(C,D))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0, hi_1_0, Types.OpOp2.MINUS);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0_1, hi_1_1, Types.OpOp2.PLUS);
 		BinaryOp v3 = HopRewriteUtils.createBinary(v1, v2, Types.OpOp2.MINUS);
@@ -18140,6 +18134,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: -(-(a,D),+(C,b)) => -(-(a,b),+(C,D))");
+		DMLExecutor.println("Applying rewrite: -(-(a,D),+(C,b)) => -(-(a,b),+(C,D))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0, hi_1_1, Types.OpOp2.MINUS);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_1_0, hi_0_1, Types.OpOp2.PLUS);
 		BinaryOp v3 = HopRewriteUtils.createBinary(v1, v2, Types.OpOp2.MINUS);
@@ -18214,6 +18209,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: -(-($1:-(A,c),B),d) => -(A,+(B,+(c,d)))");
+		DMLExecutor.println("Applying rewrite: -(-($1:-(A,c),B),d) => -(A,+(B,+(c,d)))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0_1, hi_1, Types.OpOp2.PLUS);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0_1, v1, Types.OpOp2.PLUS);
 		BinaryOp v3 = HopRewriteUtils.createBinary(hi_0_0_0, v2, Types.OpOp2.MINUS);
@@ -18288,6 +18284,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: -(-(A,$1:+(c,B)),d) => -(A,+(B,+(c,d)))");
+		DMLExecutor.println("Applying rewrite: -(-(A,$1:+(c,B)),d) => -(A,+(B,+(c,d)))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_1_0, hi_1, Types.OpOp2.PLUS);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0_1_1, v1, Types.OpOp2.PLUS);
 		BinaryOp v3 = HopRewriteUtils.createBinary(hi_0_0, v2, Types.OpOp2.MINUS);
@@ -18362,6 +18359,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: -(-(A,$1:+(B,c)),d) => -(A,+(B,+(c,d)))");
+		DMLExecutor.println("Applying rewrite: -(-(A,$1:+(B,c)),d) => -(A,+(B,+(c,d)))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_1_1, hi_1, Types.OpOp2.PLUS);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0_1_0, v1, Types.OpOp2.PLUS);
 		BinaryOp v3 = HopRewriteUtils.createBinary(hi_0_0, v2, Types.OpOp2.MINUS);
@@ -18436,6 +18434,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: -(-(A,c),+(d,B)) => -(A,+(B,+(c,d)))");
+		DMLExecutor.println("Applying rewrite: -(-(A,c),+(d,B)) => -(A,+(B,+(c,d)))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_1, hi_1_0, Types.OpOp2.PLUS);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_1_1, v1, Types.OpOp2.PLUS);
 		BinaryOp v3 = HopRewriteUtils.createBinary(hi_0_0, v2, Types.OpOp2.MINUS);
@@ -18510,6 +18509,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: -(-(A,c),+(B,d)) => -(A,+(B,+(c,d)))");
+		DMLExecutor.println("Applying rewrite: -(-(A,c),+(B,d)) => -(A,+(B,+(c,d)))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_1, hi_1_1, Types.OpOp2.PLUS);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_1_0, v1, Types.OpOp2.PLUS);
 		BinaryOp v3 = HopRewriteUtils.createBinary(hi_0_0, v2, Types.OpOp2.MINUS);
@@ -18579,6 +18579,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: -(a,rev($1:-(C,b))) => -(+(a,b),rev(C))");
+		DMLExecutor.println("Applying rewrite: -(a,rev($1:-(C,b))) => -(+(a,b),rev(C))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0, hi_1_0_1, Types.OpOp2.PLUS);
 		ReorgOp v2 = HopRewriteUtils.createReorg(hi_1_0_0, Types.ReOrgOp.REV);
 		BinaryOp v3 = HopRewriteUtils.createBinary(v1, v2, Types.OpOp2.MINUS);
@@ -18648,6 +18649,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: +(rev($1:-(a,C)),b) => -(+(a,b),rev(C))");
+		DMLExecutor.println("Applying rewrite: +(rev($1:-(a,C)),b) => -(+(a,b),rev(C))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0_0, hi_1, Types.OpOp2.PLUS);
 		ReorgOp v2 = HopRewriteUtils.createReorg(hi_0_0_1, Types.ReOrgOp.REV);
 		BinaryOp v3 = HopRewriteUtils.createBinary(v1, v2, Types.OpOp2.MINUS);
@@ -18717,6 +18719,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: +(a,rev($1:-(b,C))) => -(+(a,b),rev(C))");
+		DMLExecutor.println("Applying rewrite: +(a,rev($1:-(b,C))) => -(+(a,b),rev(C))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0, hi_1_0_0, Types.OpOp2.PLUS);
 		ReorgOp v2 = HopRewriteUtils.createReorg(hi_1_0_1, Types.ReOrgOp.REV);
 		BinaryOp v3 = HopRewriteUtils.createBinary(v1, v2, Types.OpOp2.MINUS);
@@ -18786,6 +18789,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: -(a,rev($1:-(b,C))) => +(-(a,b),rev(C))");
+		DMLExecutor.println("Applying rewrite: -(a,rev($1:-(b,C))) => +(-(a,b),rev(C))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0, hi_1_0_0, Types.OpOp2.MINUS);
 		ReorgOp v2 = HopRewriteUtils.createReorg(hi_1_0_1, Types.ReOrgOp.REV);
 		BinaryOp v3 = HopRewriteUtils.createBinary(v1, v2, Types.OpOp2.PLUS);
@@ -18855,6 +18859,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: -(rev($1:+(a,C)),b) => +(-(a,b),rev(C))");
+		DMLExecutor.println("Applying rewrite: -(rev($1:+(a,C)),b) => +(-(a,b),rev(C))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0_0, hi_1, Types.OpOp2.MINUS);
 		ReorgOp v2 = HopRewriteUtils.createReorg(hi_0_0_1, Types.ReOrgOp.REV);
 		BinaryOp v3 = HopRewriteUtils.createBinary(v1, v2, Types.OpOp2.PLUS);
@@ -18924,6 +18929,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: -(rev($1:+(C,a)),b) => +(-(a,b),rev(C))");
+		DMLExecutor.println("Applying rewrite: -(rev($1:+(C,a)),b) => +(-(a,b),rev(C))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0_1, hi_1, Types.OpOp2.MINUS);
 		ReorgOp v2 = HopRewriteUtils.createReorg(hi_0_0_0, Types.ReOrgOp.REV);
 		BinaryOp v3 = HopRewriteUtils.createBinary(v1, v2, Types.OpOp2.PLUS);
@@ -18993,6 +18999,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: +(rev($1:-(C,b)),a) => +(-(a,b),rev(C))");
+		DMLExecutor.println("Applying rewrite: +(rev($1:-(C,b)),a) => +(-(a,b),rev(C))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_1, hi_0_0_1, Types.OpOp2.MINUS);
 		ReorgOp v2 = HopRewriteUtils.createReorg(hi_0_0_0, Types.ReOrgOp.REV);
 		BinaryOp v3 = HopRewriteUtils.createBinary(v1, v2, Types.OpOp2.PLUS);
@@ -19062,6 +19069,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: +(a,rev($1:-(C,b))) => +(-(a,b),rev(C))");
+		DMLExecutor.println("Applying rewrite: +(a,rev($1:-(C,b))) => +(-(a,b),rev(C))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0, hi_1_0_1, Types.OpOp2.MINUS);
 		ReorgOp v2 = HopRewriteUtils.createReorg(hi_1_0_0, Types.ReOrgOp.REV);
 		BinaryOp v3 = HopRewriteUtils.createBinary(v1, v2, Types.OpOp2.PLUS);
@@ -19131,6 +19139,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: +(rev($1:+(a,C)),b) => +(+(a,b),rev(C))");
+		DMLExecutor.println("Applying rewrite: +(rev($1:+(a,C)),b) => +(+(a,b),rev(C))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0_0, hi_1, Types.OpOp2.PLUS);
 		ReorgOp v2 = HopRewriteUtils.createReorg(hi_0_0_1, Types.ReOrgOp.REV);
 		BinaryOp v3 = HopRewriteUtils.createBinary(v1, v2, Types.OpOp2.PLUS);
@@ -19200,6 +19209,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: +(rev($1:+(C,a)),b) => +(+(a,b),rev(C))");
+		DMLExecutor.println("Applying rewrite: +(rev($1:+(C,a)),b) => +(+(a,b),rev(C))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0_1, hi_1, Types.OpOp2.PLUS);
 		ReorgOp v2 = HopRewriteUtils.createReorg(hi_0_0_0, Types.ReOrgOp.REV);
 		BinaryOp v3 = HopRewriteUtils.createBinary(v1, v2, Types.OpOp2.PLUS);
@@ -19269,6 +19279,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: +(a,rev($1:+(b,C))) => +(+(a,b),rev(C))");
+		DMLExecutor.println("Applying rewrite: +(a,rev($1:+(b,C))) => +(+(a,b),rev(C))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0, hi_1_0_0, Types.OpOp2.PLUS);
 		ReorgOp v2 = HopRewriteUtils.createReorg(hi_1_0_1, Types.ReOrgOp.REV);
 		BinaryOp v3 = HopRewriteUtils.createBinary(v1, v2, Types.OpOp2.PLUS);
@@ -19338,6 +19349,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: +(a,rev($1:+(C,b))) => +(+(a,b),rev(C))");
+		DMLExecutor.println("Applying rewrite: +(a,rev($1:+(C,b))) => +(+(a,b),rev(C))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0, hi_1_0_1, Types.OpOp2.PLUS);
 		ReorgOp v2 = HopRewriteUtils.createReorg(hi_1_0_0, Types.ReOrgOp.REV);
 		BinaryOp v3 = HopRewriteUtils.createBinary(v1, v2, Types.OpOp2.PLUS);
@@ -19412,6 +19424,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: -(-(a,C),-(D,b)) => -(+(a,b),+(C,D))");
+		DMLExecutor.println("Applying rewrite: -(-(a,C),-(D,b)) => -(+(a,b),+(C,D))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0, hi_1_1, Types.OpOp2.PLUS);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0_1, hi_1_0, Types.OpOp2.PLUS);
 		BinaryOp v3 = HopRewriteUtils.createBinary(v1, v2, Types.OpOp2.MINUS);
@@ -19486,6 +19499,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: -(a,-(C,$1:-(b,D))) => -(+(a,b),+(C,D))");
+		DMLExecutor.println("Applying rewrite: -(a,-(C,$1:-(b,D))) => -(+(a,b),+(C,D))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0, hi_1_1_0, Types.OpOp2.PLUS);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_1_0, hi_1_1_1, Types.OpOp2.PLUS);
 		BinaryOp v3 = HopRewriteUtils.createBinary(v1, v2, Types.OpOp2.MINUS);
@@ -19560,6 +19574,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: -(a,+($1:-(D,b),C)) => -(+(a,b),+(C,D))");
+		DMLExecutor.println("Applying rewrite: -(a,+($1:-(D,b),C)) => -(+(a,b),+(C,D))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0, hi_1_0_1, Types.OpOp2.PLUS);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_1_1, hi_1_0_0, Types.OpOp2.PLUS);
 		BinaryOp v3 = HopRewriteUtils.createBinary(v1, v2, Types.OpOp2.MINUS);
@@ -19634,6 +19649,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: -(a,+(D,$1:-(C,b))) => -(+(a,b),+(C,D))");
+		DMLExecutor.println("Applying rewrite: -(a,+(D,$1:-(C,b))) => -(+(a,b),+(C,D))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0, hi_1_1_1, Types.OpOp2.PLUS);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_1_1_0, hi_1_0, Types.OpOp2.PLUS);
 		BinaryOp v3 = HopRewriteUtils.createBinary(v1, v2, Types.OpOp2.MINUS);
@@ -19708,6 +19724,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: +(-($1:-(a,C),D),b) => -(+(a,b),+(C,D))");
+		DMLExecutor.println("Applying rewrite: +(-($1:-(a,C),D),b) => -(+(a,b),+(C,D))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0_0, hi_1, Types.OpOp2.PLUS);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0_0_1, hi_0_1, Types.OpOp2.PLUS);
 		BinaryOp v3 = HopRewriteUtils.createBinary(v1, v2, Types.OpOp2.MINUS);
@@ -19782,6 +19799,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: +(-(a,D),-(b,C)) => -(+(a,b),+(C,D))");
+		DMLExecutor.println("Applying rewrite: +(-(a,D),-(b,C)) => -(+(a,b),+(C,D))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0, hi_1_0, Types.OpOp2.PLUS);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_1_1, hi_0_1, Types.OpOp2.PLUS);
 		BinaryOp v3 = HopRewriteUtils.createBinary(v1, v2, Types.OpOp2.MINUS);
@@ -19856,6 +19874,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: +(a,-($1:-(b,D),C)) => -(+(a,b),+(C,D))");
+		DMLExecutor.println("Applying rewrite: +(a,-($1:-(b,D),C)) => -(+(a,b),+(C,D))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0, hi_1_0_0, Types.OpOp2.PLUS);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_1_1, hi_1_0_1, Types.OpOp2.PLUS);
 		BinaryOp v3 = HopRewriteUtils.createBinary(v1, v2, Types.OpOp2.MINUS);
@@ -19930,6 +19949,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: -(-(A,$1:-(c,B)),d) => +(A,-(B,+(c,d)))");
+		DMLExecutor.println("Applying rewrite: -(-(A,$1:-(c,B)),d) => +(A,-(B,+(c,d)))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_1_0, hi_1, Types.OpOp2.PLUS);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0_1_1, v1, Types.OpOp2.MINUS);
 		BinaryOp v3 = HopRewriteUtils.createBinary(hi_0_0, v2, Types.OpOp2.PLUS);
@@ -20004,6 +20024,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: -(-(B,c),-(d,A)) => +(A,-(B,+(c,d)))");
+		DMLExecutor.println("Applying rewrite: -(-(B,c),-(d,A)) => +(A,-(B,+(c,d)))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_1, hi_1_0, Types.OpOp2.PLUS);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0_0, v1, Types.OpOp2.MINUS);
 		BinaryOp v3 = HopRewriteUtils.createBinary(hi_1_1, v2, Types.OpOp2.PLUS);
@@ -20078,6 +20099,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: -(+($1:-(B,c),A),d) => +(A,-(B,+(c,d)))");
+		DMLExecutor.println("Applying rewrite: -(+($1:-(B,c),A),d) => +(A,-(B,+(c,d)))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0_1, hi_1, Types.OpOp2.PLUS);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0_0_0, v1, Types.OpOp2.MINUS);
 		BinaryOp v3 = HopRewriteUtils.createBinary(hi_0_1, v2, Types.OpOp2.PLUS);
@@ -20152,6 +20174,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: -(+(A,$1:-(B,c)),d) => +(A,-(B,+(c,d)))");
+		DMLExecutor.println("Applying rewrite: -(+(A,$1:-(B,c)),d) => +(A,-(B,+(c,d)))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_1_1, hi_1, Types.OpOp2.PLUS);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0_1_0, v1, Types.OpOp2.MINUS);
 		BinaryOp v3 = HopRewriteUtils.createBinary(hi_0_0, v2, Types.OpOp2.PLUS);
@@ -20226,6 +20249,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: +(-(B,c),-(A,d)) => +(A,-(B,+(c,d)))");
+		DMLExecutor.println("Applying rewrite: +(-(B,c),-(A,d)) => +(A,-(B,+(c,d)))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_1, hi_1_1, Types.OpOp2.PLUS);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0_0, v1, Types.OpOp2.MINUS);
 		BinaryOp v3 = HopRewriteUtils.createBinary(hi_1_0, v2, Types.OpOp2.PLUS);
@@ -20300,6 +20324,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: -(b,-($1:-(D,c),A)) => +(A,-(+(b,c),D))");
+		DMLExecutor.println("Applying rewrite: -(b,-($1:-(D,c),A)) => +(A,-(+(b,c),D))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0, hi_1_0_1, Types.OpOp2.PLUS);
 		BinaryOp v2 = HopRewriteUtils.createBinary(v1, hi_1_0_0, Types.OpOp2.MINUS);
 		BinaryOp v3 = HopRewriteUtils.createBinary(hi_1_1, v2, Types.OpOp2.PLUS);
@@ -20374,6 +20399,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: -(b,-(D,$1:+(c,A))) => +(A,-(+(b,c),D))");
+		DMLExecutor.println("Applying rewrite: -(b,-(D,$1:+(c,A))) => +(A,-(+(b,c),D))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0, hi_1_1_0, Types.OpOp2.PLUS);
 		BinaryOp v2 = HopRewriteUtils.createBinary(v1, hi_1_0, Types.OpOp2.MINUS);
 		BinaryOp v3 = HopRewriteUtils.createBinary(hi_1_1_1, v2, Types.OpOp2.PLUS);
@@ -20448,6 +20474,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: -(b,-(D,$1:+(A,c))) => +(A,-(+(b,c),D))");
+		DMLExecutor.println("Applying rewrite: -(b,-(D,$1:+(A,c))) => +(A,-(+(b,c),D))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0, hi_1_1_1, Types.OpOp2.PLUS);
 		BinaryOp v2 = HopRewriteUtils.createBinary(v1, hi_1_0, Types.OpOp2.MINUS);
 		BinaryOp v3 = HopRewriteUtils.createBinary(hi_1_1_0, v2, Types.OpOp2.PLUS);
@@ -20522,6 +20549,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: -(+(b,A),-(D,c)) => +(A,-(+(b,c),D))");
+		DMLExecutor.println("Applying rewrite: -(+(b,A),-(D,c)) => +(A,-(+(b,c),D))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0, hi_1_1, Types.OpOp2.PLUS);
 		BinaryOp v2 = HopRewriteUtils.createBinary(v1, hi_1_0, Types.OpOp2.MINUS);
 		BinaryOp v3 = HopRewriteUtils.createBinary(hi_0_1, v2, Types.OpOp2.PLUS);
@@ -20596,6 +20624,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: -(+(A,b),-(D,c)) => +(A,-(+(b,c),D))");
+		DMLExecutor.println("Applying rewrite: -(+(A,b),-(D,c)) => +(A,-(+(b,c),D))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_1, hi_1_1, Types.OpOp2.PLUS);
 		BinaryOp v2 = HopRewriteUtils.createBinary(v1, hi_1_0, Types.OpOp2.MINUS);
 		BinaryOp v3 = HopRewriteUtils.createBinary(hi_0_0, v2, Types.OpOp2.PLUS);
@@ -20670,6 +20699,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: +(-(A,$1:-(D,b)),c) => +(A,-(+(b,c),D))");
+		DMLExecutor.println("Applying rewrite: +(-(A,$1:-(D,b)),c) => +(A,-(+(b,c),D))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_1_1, hi_1, Types.OpOp2.PLUS);
 		BinaryOp v2 = HopRewriteUtils.createBinary(v1, hi_0_1_0, Types.OpOp2.MINUS);
 		BinaryOp v3 = HopRewriteUtils.createBinary(hi_0_0, v2, Types.OpOp2.PLUS);
@@ -20744,6 +20774,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: +(b,-(A,$1:-(D,c))) => +(A,-(+(b,c),D))");
+		DMLExecutor.println("Applying rewrite: +(b,-(A,$1:-(D,c))) => +(A,-(+(b,c),D))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0, hi_1_1_1, Types.OpOp2.PLUS);
 		BinaryOp v2 = HopRewriteUtils.createBinary(v1, hi_1_1_0, Types.OpOp2.MINUS);
 		BinaryOp v3 = HopRewriteUtils.createBinary(hi_1_0, v2, Types.OpOp2.PLUS);
@@ -20818,6 +20849,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: +(-($1:+(b,A),D),c) => +(A,-(+(b,c),D))");
+		DMLExecutor.println("Applying rewrite: +(-($1:+(b,A),D),c) => +(A,-(+(b,c),D))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0_0, hi_1, Types.OpOp2.PLUS);
 		BinaryOp v2 = HopRewriteUtils.createBinary(v1, hi_0_1, Types.OpOp2.MINUS);
 		BinaryOp v3 = HopRewriteUtils.createBinary(hi_0_0_1, v2, Types.OpOp2.PLUS);
@@ -20892,6 +20924,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: +(-($1:+(A,b),D),c) => +(A,-(+(b,c),D))");
+		DMLExecutor.println("Applying rewrite: +(-($1:+(A,b),D),c) => +(A,-(+(b,c),D))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0_1, hi_1, Types.OpOp2.PLUS);
 		BinaryOp v2 = HopRewriteUtils.createBinary(v1, hi_0_1, Types.OpOp2.MINUS);
 		BinaryOp v3 = HopRewriteUtils.createBinary(hi_0_0_0, v2, Types.OpOp2.PLUS);
@@ -20966,6 +20999,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: +(b,-($1:+(c,A),D)) => +(A,-(+(b,c),D))");
+		DMLExecutor.println("Applying rewrite: +(b,-($1:+(c,A),D)) => +(A,-(+(b,c),D))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0, hi_1_0_0, Types.OpOp2.PLUS);
 		BinaryOp v2 = HopRewriteUtils.createBinary(v1, hi_1_1, Types.OpOp2.MINUS);
 		BinaryOp v3 = HopRewriteUtils.createBinary(hi_1_0_1, v2, Types.OpOp2.PLUS);
@@ -21040,6 +21074,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: +(b,-($1:+(A,c),D)) => +(A,-(+(b,c),D))");
+		DMLExecutor.println("Applying rewrite: +(b,-($1:+(A,c),D)) => +(A,-(+(b,c),D))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0, hi_1_0_1, Types.OpOp2.PLUS);
 		BinaryOp v2 = HopRewriteUtils.createBinary(v1, hi_1_1, Types.OpOp2.MINUS);
 		BinaryOp v3 = HopRewriteUtils.createBinary(hi_1_0_0, v2, Types.OpOp2.PLUS);
@@ -21114,6 +21149,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: -(c,-($1:-(d,B),A)) => +(A,+(B,-(c,d)))");
+		DMLExecutor.println("Applying rewrite: -(c,-($1:-(d,B),A)) => +(A,+(B,-(c,d)))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0, hi_1_0_0, Types.OpOp2.MINUS);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_1_0_1, v1, Types.OpOp2.PLUS);
 		BinaryOp v3 = HopRewriteUtils.createBinary(hi_1_1, v2, Types.OpOp2.PLUS);
@@ -21188,6 +21224,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: -(+(c,B),-(d,A)) => +(A,+(B,-(c,d)))");
+		DMLExecutor.println("Applying rewrite: -(+(c,B),-(d,A)) => +(A,+(B,-(c,d)))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0, hi_1_0, Types.OpOp2.MINUS);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0_1, v1, Types.OpOp2.PLUS);
 		BinaryOp v3 = HopRewriteUtils.createBinary(hi_1_1, v2, Types.OpOp2.PLUS);
@@ -21262,6 +21299,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: -(+(B,c),-(d,A)) => +(A,+(B,-(c,d)))");
+		DMLExecutor.println("Applying rewrite: -(+(B,c),-(d,A)) => +(A,+(B,-(c,d)))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_1, hi_1_0, Types.OpOp2.MINUS);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0_0, v1, Types.OpOp2.PLUS);
 		BinaryOp v3 = HopRewriteUtils.createBinary(hi_1_1, v2, Types.OpOp2.PLUS);
@@ -21336,6 +21374,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: +(-(A,$1:-(d,B)),c) => +(A,+(B,-(c,d)))");
+		DMLExecutor.println("Applying rewrite: +(-(A,$1:-(d,B)),c) => +(A,+(B,-(c,d)))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_1, hi_0_1_0, Types.OpOp2.MINUS);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0_1_1, v1, Types.OpOp2.PLUS);
 		BinaryOp v3 = HopRewriteUtils.createBinary(hi_0_0, v2, Types.OpOp2.PLUS);
@@ -21410,6 +21449,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: +(c,-(A,$1:-(d,B))) => +(A,+(B,-(c,d)))");
+		DMLExecutor.println("Applying rewrite: +(c,-(A,$1:-(d,B))) => +(A,+(B,-(c,d)))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0, hi_1_1_0, Types.OpOp2.MINUS);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_1_1_1, v1, Types.OpOp2.PLUS);
 		BinaryOp v3 = HopRewriteUtils.createBinary(hi_1_0, v2, Types.OpOp2.PLUS);
@@ -21484,6 +21524,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: -(-(A,$1:-(D,b)),c) => +(A,-(-(b,c),D))");
+		DMLExecutor.println("Applying rewrite: -(-(A,$1:-(D,b)),c) => +(A,-(-(b,c),D))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_1_1, hi_1, Types.OpOp2.MINUS);
 		BinaryOp v2 = HopRewriteUtils.createBinary(v1, hi_0_1_0, Types.OpOp2.MINUS);
 		BinaryOp v3 = HopRewriteUtils.createBinary(hi_0_0, v2, Types.OpOp2.PLUS);
@@ -21558,6 +21599,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: -(-(b,D),-(c,A)) => +(A,-(-(b,c),D))");
+		DMLExecutor.println("Applying rewrite: -(-(b,D),-(c,A)) => +(A,-(-(b,c),D))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0, hi_1_0, Types.OpOp2.MINUS);
 		BinaryOp v2 = HopRewriteUtils.createBinary(v1, hi_0_1, Types.OpOp2.MINUS);
 		BinaryOp v3 = HopRewriteUtils.createBinary(hi_1_1, v2, Types.OpOp2.PLUS);
@@ -21632,6 +21674,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: -(-(A,c),-(D,b)) => +(A,-(-(b,c),D))");
+		DMLExecutor.println("Applying rewrite: -(-(A,c),-(D,b)) => +(A,-(-(b,c),D))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_1_1, hi_0_1, Types.OpOp2.MINUS);
 		BinaryOp v2 = HopRewriteUtils.createBinary(v1, hi_1_0, Types.OpOp2.MINUS);
 		BinaryOp v3 = HopRewriteUtils.createBinary(hi_0_0, v2, Types.OpOp2.PLUS);
@@ -21706,6 +21749,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: -(b,-(D,$1:-(A,c))) => +(A,-(-(b,c),D))");
+		DMLExecutor.println("Applying rewrite: -(b,-(D,$1:-(A,c))) => +(A,-(-(b,c),D))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0, hi_1_1_1, Types.OpOp2.MINUS);
 		BinaryOp v2 = HopRewriteUtils.createBinary(v1, hi_1_0, Types.OpOp2.MINUS);
 		BinaryOp v3 = HopRewriteUtils.createBinary(hi_1_1_0, v2, Types.OpOp2.PLUS);
@@ -21780,6 +21824,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: -(-($1:+(b,A),D),c) => +(A,-(-(b,c),D))");
+		DMLExecutor.println("Applying rewrite: -(-($1:+(b,A),D),c) => +(A,-(-(b,c),D))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0_0, hi_1, Types.OpOp2.MINUS);
 		BinaryOp v2 = HopRewriteUtils.createBinary(v1, hi_0_1, Types.OpOp2.MINUS);
 		BinaryOp v3 = HopRewriteUtils.createBinary(hi_0_0_1, v2, Types.OpOp2.PLUS);
@@ -21854,6 +21899,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: -(-($1:+(A,b),D),c) => +(A,-(-(b,c),D))");
+		DMLExecutor.println("Applying rewrite: -(-($1:+(A,b),D),c) => +(A,-(-(b,c),D))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0_1, hi_1, Types.OpOp2.MINUS);
 		BinaryOp v2 = HopRewriteUtils.createBinary(v1, hi_0_1, Types.OpOp2.MINUS);
 		BinaryOp v3 = HopRewriteUtils.createBinary(hi_0_0_0, v2, Types.OpOp2.PLUS);
@@ -21928,6 +21974,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: -(b,-($1:+(c,D),A)) => +(A,-(-(b,c),D))");
+		DMLExecutor.println("Applying rewrite: -(b,-($1:+(c,D),A)) => +(A,-(-(b,c),D))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0, hi_1_0_0, Types.OpOp2.MINUS);
 		BinaryOp v2 = HopRewriteUtils.createBinary(v1, hi_1_0_1, Types.OpOp2.MINUS);
 		BinaryOp v3 = HopRewriteUtils.createBinary(hi_1_1, v2, Types.OpOp2.PLUS);
@@ -22002,6 +22049,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: -(b,-($1:+(D,c),A)) => +(A,-(-(b,c),D))");
+		DMLExecutor.println("Applying rewrite: -(b,-($1:+(D,c),A)) => +(A,-(-(b,c),D))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0, hi_1_0_1, Types.OpOp2.MINUS);
 		BinaryOp v2 = HopRewriteUtils.createBinary(v1, hi_1_0_0, Types.OpOp2.MINUS);
 		BinaryOp v3 = HopRewriteUtils.createBinary(hi_1_1, v2, Types.OpOp2.PLUS);
@@ -22076,6 +22124,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: -(+($1:-(b,D),A),c) => +(A,-(-(b,c),D))");
+		DMLExecutor.println("Applying rewrite: -(+($1:-(b,D),A),c) => +(A,-(-(b,c),D))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0_0, hi_1, Types.OpOp2.MINUS);
 		BinaryOp v2 = HopRewriteUtils.createBinary(v1, hi_0_0_1, Types.OpOp2.MINUS);
 		BinaryOp v3 = HopRewriteUtils.createBinary(hi_0_1, v2, Types.OpOp2.PLUS);
@@ -22150,6 +22199,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: -(+(b,A),+(c,D)) => +(A,-(-(b,c),D))");
+		DMLExecutor.println("Applying rewrite: -(+(b,A),+(c,D)) => +(A,-(-(b,c),D))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0, hi_1_0, Types.OpOp2.MINUS);
 		BinaryOp v2 = HopRewriteUtils.createBinary(v1, hi_1_1, Types.OpOp2.MINUS);
 		BinaryOp v3 = HopRewriteUtils.createBinary(hi_0_1, v2, Types.OpOp2.PLUS);
@@ -22224,6 +22274,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: -(+(b,A),+(D,c)) => +(A,-(-(b,c),D))");
+		DMLExecutor.println("Applying rewrite: -(+(b,A),+(D,c)) => +(A,-(-(b,c),D))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0, hi_1_1, Types.OpOp2.MINUS);
 		BinaryOp v2 = HopRewriteUtils.createBinary(v1, hi_1_0, Types.OpOp2.MINUS);
 		BinaryOp v3 = HopRewriteUtils.createBinary(hi_0_1, v2, Types.OpOp2.PLUS);
@@ -22298,6 +22349,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: -(+(A,b),+(c,D)) => +(A,-(-(b,c),D))");
+		DMLExecutor.println("Applying rewrite: -(+(A,b),+(c,D)) => +(A,-(-(b,c),D))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_1, hi_1_0, Types.OpOp2.MINUS);
 		BinaryOp v2 = HopRewriteUtils.createBinary(v1, hi_1_1, Types.OpOp2.MINUS);
 		BinaryOp v3 = HopRewriteUtils.createBinary(hi_0_0, v2, Types.OpOp2.PLUS);
@@ -22372,6 +22424,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: -(+(A,b),+(D,c)) => +(A,-(-(b,c),D))");
+		DMLExecutor.println("Applying rewrite: -(+(A,b),+(D,c)) => +(A,-(-(b,c),D))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_1, hi_1_1, Types.OpOp2.MINUS);
 		BinaryOp v2 = HopRewriteUtils.createBinary(v1, hi_1_0, Types.OpOp2.MINUS);
 		BinaryOp v3 = HopRewriteUtils.createBinary(hi_0_0, v2, Types.OpOp2.PLUS);
@@ -22446,6 +22499,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: -(+(A,$1:-(b,D)),c) => +(A,-(-(b,c),D))");
+		DMLExecutor.println("Applying rewrite: -(+(A,$1:-(b,D)),c) => +(A,-(-(b,c),D))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_1_0, hi_1, Types.OpOp2.MINUS);
 		BinaryOp v2 = HopRewriteUtils.createBinary(v1, hi_0_1_1, Types.OpOp2.MINUS);
 		BinaryOp v3 = HopRewriteUtils.createBinary(hi_0_0, v2, Types.OpOp2.PLUS);
@@ -22520,6 +22574,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: -(b,+($1:-(c,A),D)) => +(A,-(-(b,c),D))");
+		DMLExecutor.println("Applying rewrite: -(b,+($1:-(c,A),D)) => +(A,-(-(b,c),D))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0, hi_1_0_0, Types.OpOp2.MINUS);
 		BinaryOp v2 = HopRewriteUtils.createBinary(v1, hi_1_1, Types.OpOp2.MINUS);
 		BinaryOp v3 = HopRewriteUtils.createBinary(hi_1_0_1, v2, Types.OpOp2.PLUS);
@@ -22594,6 +22649,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: -(b,+(D,$1:-(c,A))) => +(A,-(-(b,c),D))");
+		DMLExecutor.println("Applying rewrite: -(b,+(D,$1:-(c,A))) => +(A,-(-(b,c),D))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0, hi_1_1_0, Types.OpOp2.MINUS);
 		BinaryOp v2 = HopRewriteUtils.createBinary(v1, hi_1_0, Types.OpOp2.MINUS);
 		BinaryOp v3 = HopRewriteUtils.createBinary(hi_1_1_1, v2, Types.OpOp2.PLUS);
@@ -22668,6 +22724,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: +(-($1:-(A,c),D),b) => +(A,-(-(b,c),D))");
+		DMLExecutor.println("Applying rewrite: +(-($1:-(A,c),D),b) => +(A,-(-(b,c),D))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_1, hi_0_0_1, Types.OpOp2.MINUS);
 		BinaryOp v2 = HopRewriteUtils.createBinary(v1, hi_0_1, Types.OpOp2.MINUS);
 		BinaryOp v3 = HopRewriteUtils.createBinary(hi_0_0_0, v2, Types.OpOp2.PLUS);
@@ -22742,6 +22799,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: +(-(b,D),-(A,c)) => +(A,-(-(b,c),D))");
+		DMLExecutor.println("Applying rewrite: +(-(b,D),-(A,c)) => +(A,-(-(b,c),D))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0, hi_1_1, Types.OpOp2.MINUS);
 		BinaryOp v2 = HopRewriteUtils.createBinary(v1, hi_0_1, Types.OpOp2.MINUS);
 		BinaryOp v3 = HopRewriteUtils.createBinary(hi_1_0, v2, Types.OpOp2.PLUS);
@@ -22816,6 +22874,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: +(-(A,c),-(b,D)) => +(A,-(-(b,c),D))");
+		DMLExecutor.println("Applying rewrite: +(-(A,c),-(b,D)) => +(A,-(-(b,c),D))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_1_0, hi_0_1, Types.OpOp2.MINUS);
 		BinaryOp v2 = HopRewriteUtils.createBinary(v1, hi_1_1, Types.OpOp2.MINUS);
 		BinaryOp v3 = HopRewriteUtils.createBinary(hi_0_0, v2, Types.OpOp2.PLUS);
@@ -22890,6 +22949,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: +(b,-($1:-(A,c),D)) => +(A,-(-(b,c),D))");
+		DMLExecutor.println("Applying rewrite: +(b,-($1:-(A,c),D)) => +(A,-(-(b,c),D))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0, hi_1_0_1, Types.OpOp2.MINUS);
 		BinaryOp v2 = HopRewriteUtils.createBinary(v1, hi_1_1, Types.OpOp2.MINUS);
 		BinaryOp v3 = HopRewriteUtils.createBinary(hi_1_0_0, v2, Types.OpOp2.PLUS);
@@ -22964,6 +23024,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: +(-(A,$1:+(c,D)),b) => +(A,-(-(b,c),D))");
+		DMLExecutor.println("Applying rewrite: +(-(A,$1:+(c,D)),b) => +(A,-(-(b,c),D))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_1, hi_0_1_0, Types.OpOp2.MINUS);
 		BinaryOp v2 = HopRewriteUtils.createBinary(v1, hi_0_1_1, Types.OpOp2.MINUS);
 		BinaryOp v3 = HopRewriteUtils.createBinary(hi_0_0, v2, Types.OpOp2.PLUS);
@@ -23038,6 +23099,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: +(-(A,$1:+(D,c)),b) => +(A,-(-(b,c),D))");
+		DMLExecutor.println("Applying rewrite: +(-(A,$1:+(D,c)),b) => +(A,-(-(b,c),D))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_1, hi_0_1_1, Types.OpOp2.MINUS);
 		BinaryOp v2 = HopRewriteUtils.createBinary(v1, hi_0_1_0, Types.OpOp2.MINUS);
 		BinaryOp v3 = HopRewriteUtils.createBinary(hi_0_0, v2, Types.OpOp2.PLUS);
@@ -23112,6 +23174,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: +(b,-(A,$1:+(c,D))) => +(A,-(-(b,c),D))");
+		DMLExecutor.println("Applying rewrite: +(b,-(A,$1:+(c,D))) => +(A,-(-(b,c),D))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0, hi_1_1_0, Types.OpOp2.MINUS);
 		BinaryOp v2 = HopRewriteUtils.createBinary(v1, hi_1_1_1, Types.OpOp2.MINUS);
 		BinaryOp v3 = HopRewriteUtils.createBinary(hi_1_0, v2, Types.OpOp2.PLUS);
@@ -23186,6 +23249,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: +(b,-(A,$1:+(D,c))) => +(A,-(-(b,c),D))");
+		DMLExecutor.println("Applying rewrite: +(b,-(A,$1:+(D,c))) => +(A,-(-(b,c),D))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0, hi_1_1_1, Types.OpOp2.MINUS);
 		BinaryOp v2 = HopRewriteUtils.createBinary(v1, hi_1_1_0, Types.OpOp2.MINUS);
 		BinaryOp v3 = HopRewriteUtils.createBinary(hi_1_0, v2, Types.OpOp2.PLUS);
@@ -23255,6 +23319,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: -(a,t($1:-(C,b))) => -(+(a,b),t(C))");
+		DMLExecutor.println("Applying rewrite: -(a,t($1:-(C,b))) => -(+(a,b),t(C))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0, hi_1_0_1, Types.OpOp2.PLUS);
 		ReorgOp v2 = HopRewriteUtils.createTranspose(hi_1_0_0);
 		BinaryOp v3 = HopRewriteUtils.createBinary(v1, v2, Types.OpOp2.MINUS);
@@ -23324,6 +23389,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: +(t($1:-(a,C)),b) => -(+(a,b),t(C))");
+		DMLExecutor.println("Applying rewrite: +(t($1:-(a,C)),b) => -(+(a,b),t(C))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0_0, hi_1, Types.OpOp2.PLUS);
 		ReorgOp v2 = HopRewriteUtils.createTranspose(hi_0_0_1);
 		BinaryOp v3 = HopRewriteUtils.createBinary(v1, v2, Types.OpOp2.MINUS);
@@ -23393,6 +23459,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: +(a,t($1:-(b,C))) => -(+(a,b),t(C))");
+		DMLExecutor.println("Applying rewrite: +(a,t($1:-(b,C))) => -(+(a,b),t(C))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0, hi_1_0_0, Types.OpOp2.PLUS);
 		ReorgOp v2 = HopRewriteUtils.createTranspose(hi_1_0_1);
 		BinaryOp v3 = HopRewriteUtils.createBinary(v1, v2, Types.OpOp2.MINUS);
@@ -23462,6 +23529,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: -(t($1:+(a,C)),b) => +(-(a,b),t(C))");
+		DMLExecutor.println("Applying rewrite: -(t($1:+(a,C)),b) => +(-(a,b),t(C))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0_0, hi_1, Types.OpOp2.MINUS);
 		ReorgOp v2 = HopRewriteUtils.createTranspose(hi_0_0_1);
 		BinaryOp v3 = HopRewriteUtils.createBinary(v1, v2, Types.OpOp2.PLUS);
@@ -23531,6 +23599,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: -(t($1:+(C,a)),b) => +(-(a,b),t(C))");
+		DMLExecutor.println("Applying rewrite: -(t($1:+(C,a)),b) => +(-(a,b),t(C))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0_1, hi_1, Types.OpOp2.MINUS);
 		ReorgOp v2 = HopRewriteUtils.createTranspose(hi_0_0_0);
 		BinaryOp v3 = HopRewriteUtils.createBinary(v1, v2, Types.OpOp2.PLUS);
@@ -23600,6 +23669,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: -(a,t($1:-(b,C))) => +(-(a,b),t(C))");
+		DMLExecutor.println("Applying rewrite: -(a,t($1:-(b,C))) => +(-(a,b),t(C))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0, hi_1_0_0, Types.OpOp2.MINUS);
 		ReorgOp v2 = HopRewriteUtils.createTranspose(hi_1_0_1);
 		BinaryOp v3 = HopRewriteUtils.createBinary(v1, v2, Types.OpOp2.PLUS);
@@ -23669,6 +23739,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: +(t($1:-(C,b)),a) => +(-(a,b),t(C))");
+		DMLExecutor.println("Applying rewrite: +(t($1:-(C,b)),a) => +(-(a,b),t(C))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_1, hi_0_0_1, Types.OpOp2.MINUS);
 		ReorgOp v2 = HopRewriteUtils.createTranspose(hi_0_0_0);
 		BinaryOp v3 = HopRewriteUtils.createBinary(v1, v2, Types.OpOp2.PLUS);
@@ -23738,6 +23809,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: +(a,t($1:-(C,b))) => +(-(a,b),t(C))");
+		DMLExecutor.println("Applying rewrite: +(a,t($1:-(C,b))) => +(-(a,b),t(C))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0, hi_1_0_1, Types.OpOp2.MINUS);
 		ReorgOp v2 = HopRewriteUtils.createTranspose(hi_1_0_0);
 		BinaryOp v3 = HopRewriteUtils.createBinary(v1, v2, Types.OpOp2.PLUS);
@@ -23807,6 +23879,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: +(t($1:+(a,C)),b) => +(+(a,b),t(C))");
+		DMLExecutor.println("Applying rewrite: +(t($1:+(a,C)),b) => +(+(a,b),t(C))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0_0, hi_1, Types.OpOp2.PLUS);
 		ReorgOp v2 = HopRewriteUtils.createTranspose(hi_0_0_1);
 		BinaryOp v3 = HopRewriteUtils.createBinary(v1, v2, Types.OpOp2.PLUS);
@@ -23876,6 +23949,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: +(t($1:+(C,a)),b) => +(+(a,b),t(C))");
+		DMLExecutor.println("Applying rewrite: +(t($1:+(C,a)),b) => +(+(a,b),t(C))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0_1, hi_1, Types.OpOp2.PLUS);
 		ReorgOp v2 = HopRewriteUtils.createTranspose(hi_0_0_0);
 		BinaryOp v3 = HopRewriteUtils.createBinary(v1, v2, Types.OpOp2.PLUS);
@@ -23945,6 +24019,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: +(a,t($1:+(b,C))) => +(+(a,b),t(C))");
+		DMLExecutor.println("Applying rewrite: +(a,t($1:+(b,C))) => +(+(a,b),t(C))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0, hi_1_0_0, Types.OpOp2.PLUS);
 		ReorgOp v2 = HopRewriteUtils.createTranspose(hi_1_0_1);
 		BinaryOp v3 = HopRewriteUtils.createBinary(v1, v2, Types.OpOp2.PLUS);
@@ -24014,6 +24089,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: +(a,t($1:+(C,b))) => +(+(a,b),t(C))");
+		DMLExecutor.println("Applying rewrite: +(a,t($1:+(C,b))) => +(+(a,b),t(C))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0, hi_1_0_1, Types.OpOp2.PLUS);
 		ReorgOp v2 = HopRewriteUtils.createTranspose(hi_1_0_0);
 		BinaryOp v3 = HopRewriteUtils.createBinary(v1, v2, Types.OpOp2.PLUS);
@@ -24081,6 +24157,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: colSums(-($1:t(A),b)) => t(rowSums($1:-(A,b)))");
+		DMLExecutor.println("Applying rewrite: colSums(-($1:t(A),b)) => t(rowSums($1:-(A,b)))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0_0, hi_0_1, Types.OpOp2.MINUS);
 		AggUnaryOp v2 = HopRewriteUtils.createAggUnaryOp(v1, Types.AggOp.SUM, Types.Direction.Row);
 		ReorgOp v3 = HopRewriteUtils.createTranspose(v2);
@@ -24148,6 +24225,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: colSums(-(a,$1:t(B))) => t(rowSums($1:-(a,B)))");
+		DMLExecutor.println("Applying rewrite: colSums(-(a,$1:t(B))) => t(rowSums($1:-(a,B)))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0, hi_0_1_0, Types.OpOp2.MINUS);
 		AggUnaryOp v2 = HopRewriteUtils.createAggUnaryOp(v1, Types.AggOp.SUM, Types.Direction.Row);
 		ReorgOp v3 = HopRewriteUtils.createTranspose(v2);
@@ -24215,6 +24293,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: rowSums(-($1:t(A),b)) => t(colSums($1:-(A,b)))");
+		DMLExecutor.println("Applying rewrite: rowSums(-($1:t(A),b)) => t(colSums($1:-(A,b)))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0_0, hi_0_1, Types.OpOp2.MINUS);
 		AggUnaryOp v2 = HopRewriteUtils.createAggUnaryOp(v1, Types.AggOp.SUM, Types.Direction.Col);
 		ReorgOp v3 = HopRewriteUtils.createTranspose(v2);
@@ -24282,6 +24361,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: rowSums(-(a,$1:t(B))) => t(colSums($1:-(a,B)))");
+		DMLExecutor.println("Applying rewrite: rowSums(-(a,$1:t(B))) => t(colSums($1:-(a,B)))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0, hi_0_1_0, Types.OpOp2.MINUS);
 		AggUnaryOp v2 = HopRewriteUtils.createAggUnaryOp(v1, Types.AggOp.SUM, Types.Direction.Col);
 		ReorgOp v3 = HopRewriteUtils.createTranspose(v2);
@@ -24360,6 +24440,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: colSums(!=(t(A),b)) => t(rowSums($1:!=(A,b)))");
+		DMLExecutor.println("Applying rewrite: colSums(!=(t(A),b)) => t(rowSums($1:!=(A,b)))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0_0, hi_0_1, Types.OpOp2.NOTEQUAL);
 		AggUnaryOp v2 = HopRewriteUtils.createAggUnaryOp(v1, Types.AggOp.SUM, Types.Direction.Row);
 		ReorgOp v3 = HopRewriteUtils.createTranspose(v2);
@@ -24438,6 +24519,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: colSums(!=(b,t(A))) => t(rowSums($1:!=(A,b)))");
+		DMLExecutor.println("Applying rewrite: colSums(!=(b,t(A))) => t(rowSums($1:!=(A,b)))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_1_0, hi_0_0, Types.OpOp2.NOTEQUAL);
 		AggUnaryOp v2 = HopRewriteUtils.createAggUnaryOp(v1, Types.AggOp.SUM, Types.Direction.Row);
 		ReorgOp v3 = HopRewriteUtils.createTranspose(v2);
@@ -24516,6 +24598,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: rowSums(!=(t(A),b)) => t(colSums($1:!=(A,b)))");
+		DMLExecutor.println("Applying rewrite: rowSums(!=(t(A),b)) => t(colSums($1:!=(A,b)))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0_0, hi_0_1, Types.OpOp2.NOTEQUAL);
 		AggUnaryOp v2 = HopRewriteUtils.createAggUnaryOp(v1, Types.AggOp.SUM, Types.Direction.Col);
 		ReorgOp v3 = HopRewriteUtils.createTranspose(v2);
@@ -24594,6 +24677,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: rowSums(!=(b,t(A))) => t(colSums($1:!=(A,b)))");
+		DMLExecutor.println("Applying rewrite: rowSums(!=(b,t(A))) => t(colSums($1:!=(A,b)))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_1_0, hi_0_0, Types.OpOp2.NOTEQUAL);
 		AggUnaryOp v2 = HopRewriteUtils.createAggUnaryOp(v1, Types.AggOp.SUM, Types.Direction.Col);
 		ReorgOp v3 = HopRewriteUtils.createTranspose(v2);
@@ -24661,6 +24745,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: colSums(+($1:t(A),b)) => t(rowSums($1:+(A,b)))");
+		DMLExecutor.println("Applying rewrite: colSums(+($1:t(A),b)) => t(rowSums($1:+(A,b)))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0_0, hi_0_1, Types.OpOp2.PLUS);
 		AggUnaryOp v2 = HopRewriteUtils.createAggUnaryOp(v1, Types.AggOp.SUM, Types.Direction.Row);
 		ReorgOp v3 = HopRewriteUtils.createTranspose(v2);
@@ -24728,6 +24813,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: colSums(+(b,$1:t(A))) => t(rowSums($1:+(A,b)))");
+		DMLExecutor.println("Applying rewrite: colSums(+(b,$1:t(A))) => t(rowSums($1:+(A,b)))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_1_0, hi_0_0, Types.OpOp2.PLUS);
 		AggUnaryOp v2 = HopRewriteUtils.createAggUnaryOp(v1, Types.AggOp.SUM, Types.Direction.Row);
 		ReorgOp v3 = HopRewriteUtils.createTranspose(v2);
@@ -24795,6 +24881,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: rowSums(+($1:t(A),b)) => t(colSums($1:+(A,b)))");
+		DMLExecutor.println("Applying rewrite: rowSums(+($1:t(A),b)) => t(colSums($1:+(A,b)))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0_0, hi_0_1, Types.OpOp2.PLUS);
 		AggUnaryOp v2 = HopRewriteUtils.createAggUnaryOp(v1, Types.AggOp.SUM, Types.Direction.Col);
 		ReorgOp v3 = HopRewriteUtils.createTranspose(v2);
@@ -24862,6 +24949,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: rowSums(+(b,$1:t(A))) => t(colSums($1:+(A,b)))");
+		DMLExecutor.println("Applying rewrite: rowSums(+(b,$1:t(A))) => t(colSums($1:+(A,b)))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_1_0, hi_0_0, Types.OpOp2.PLUS);
 		AggUnaryOp v2 = HopRewriteUtils.createAggUnaryOp(v1, Types.AggOp.SUM, Types.Direction.Col);
 		ReorgOp v3 = HopRewriteUtils.createTranspose(v2);
@@ -24926,6 +25014,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: trace(/(a,t(B))) => trace(/(a,B))");
+		DMLExecutor.println("Applying rewrite: trace(/(a,t(B))) => trace(/(a,B))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0, hi_0_1_0, Types.OpOp2.DIV);
 		AggUnaryOp v2 = HopRewriteUtils.createAggUnaryOp(v1, Types.AggOp.TRACE, Types.Direction.RowCol);
 
@@ -24989,6 +25078,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: trace(/($1:t(A),B)) => trace(/(A,B))");
+		DMLExecutor.println("Applying rewrite: trace(/($1:t(A),B)) => trace(/(A,B))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0_0, hi_0_1, Types.OpOp2.DIV);
 		AggUnaryOp v2 = HopRewriteUtils.createAggUnaryOp(v1, Types.AggOp.TRACE, Types.Direction.RowCol);
 
@@ -25052,6 +25142,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: trace(/(A,t(B))) => trace(/(A,B))");
+		DMLExecutor.println("Applying rewrite: trace(/(A,t(B))) => trace(/(A,B))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0, hi_0_1_0, Types.OpOp2.DIV);
 		AggUnaryOp v2 = HopRewriteUtils.createAggUnaryOp(v1, Types.AggOp.TRACE, Types.Direction.RowCol);
 
@@ -25115,6 +25206,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: *(t(A),t(B)) => t(*(A,B))");
+		DMLExecutor.println("Applying rewrite: *(t(A),t(B)) => t(*(A,B))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0, hi_1_0, Types.OpOp2.MULT);
 		ReorgOp v2 = HopRewriteUtils.createTranspose(v1);
 
@@ -25183,6 +25275,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: !=(*(rev(A),c),A) => !=(A,*(A,c))");
+		DMLExecutor.println("Applying rewrite: !=(*(rev(A),c),A) => !=(A,*(A,c))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0_0, hi_0_1, Types.OpOp2.MULT);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0_0_0, v1, Types.OpOp2.NOTEQUAL);
 
@@ -25251,6 +25344,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: !=(*(c,rev(A)),A) => !=(A,*(A,c))");
+		DMLExecutor.println("Applying rewrite: !=(*(c,rev(A)),A) => !=(A,*(A,c))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_1_0, hi_0_0, Types.OpOp2.MULT);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0_1_0, v1, Types.OpOp2.NOTEQUAL);
 
@@ -25319,6 +25413,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: !=(*(c,A),rev(A)) => !=(A,*(A,c))");
+		DMLExecutor.println("Applying rewrite: !=(*(c,A),rev(A)) => !=(A,*(A,c))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_1, hi_0_0, Types.OpOp2.MULT);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0_1, v1, Types.OpOp2.NOTEQUAL);
 
@@ -25387,6 +25482,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: !=(A,*(rev(A),c)) => !=(A,*(A,c))");
+		DMLExecutor.println("Applying rewrite: !=(A,*(rev(A),c)) => !=(A,*(A,c))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0, hi_1_1, Types.OpOp2.MULT);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0, v1, Types.OpOp2.NOTEQUAL);
 
@@ -25455,6 +25551,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: !=(A,*(c,rev(A))) => !=(A,*(A,c))");
+		DMLExecutor.println("Applying rewrite: !=(A,*(c,rev(A))) => !=(A,*(A,c))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0, hi_1_0, Types.OpOp2.MULT);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0, v1, Types.OpOp2.NOTEQUAL);
 
@@ -25523,6 +25620,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: !=(rev(*(c,A)),A) => !=(A,*(A,c))");
+		DMLExecutor.println("Applying rewrite: !=(rev(*(c,A)),A) => !=(A,*(A,c))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0_1, hi_0_0_0, Types.OpOp2.MULT);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0_0_1, v1, Types.OpOp2.NOTEQUAL);
 
@@ -25591,6 +25689,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: !=(rev(*(A,c)),A) => !=(A,*(A,c))");
+		DMLExecutor.println("Applying rewrite: !=(rev(*(A,c)),A) => !=(A,*(A,c))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0_0, hi_0_0_1, Types.OpOp2.MULT);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0_0_0, v1, Types.OpOp2.NOTEQUAL);
 
@@ -25659,6 +25758,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: !=(A,rev(*(c,A))) => !=(A,*(A,c))");
+		DMLExecutor.println("Applying rewrite: !=(A,rev(*(c,A))) => !=(A,*(A,c))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0, hi_1_0_0, Types.OpOp2.MULT);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0, v1, Types.OpOp2.NOTEQUAL);
 
@@ -25727,6 +25827,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: !=(A,rev(*(A,c))) => !=(A,*(A,c))");
+		DMLExecutor.println("Applying rewrite: !=(A,rev(*(A,c))) => !=(A,*(A,c))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0, hi_1_0_1, Types.OpOp2.MULT);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0, v1, Types.OpOp2.NOTEQUAL);
 
@@ -25795,6 +25896,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: !=(*(rev(A),C),A) => !=(A,*(A,C))");
+		DMLExecutor.println("Applying rewrite: !=(*(rev(A),C),A) => !=(A,*(A,C))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0_0, hi_0_1, Types.OpOp2.MULT);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0_0_0, v1, Types.OpOp2.NOTEQUAL);
 
@@ -25863,6 +25965,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: !=(*(C,rev(A)),A) => !=(A,*(A,C))");
+		DMLExecutor.println("Applying rewrite: !=(*(C,rev(A)),A) => !=(A,*(A,C))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_1_0, hi_0_0, Types.OpOp2.MULT);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0_1_0, v1, Types.OpOp2.NOTEQUAL);
 
@@ -25931,6 +26034,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: !=(*(C,A),rev(A)) => !=(A,*(A,C))");
+		DMLExecutor.println("Applying rewrite: !=(*(C,A),rev(A)) => !=(A,*(A,C))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_1, hi_0_0, Types.OpOp2.MULT);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0_1, v1, Types.OpOp2.NOTEQUAL);
 
@@ -25999,6 +26103,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: !=(*(A,C),rev(A)) => !=(A,*(A,C))");
+		DMLExecutor.println("Applying rewrite: !=(*(A,C),rev(A)) => !=(A,*(A,C))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0, hi_0_1, Types.OpOp2.MULT);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0_0, v1, Types.OpOp2.NOTEQUAL);
 
@@ -26067,6 +26172,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: !=(A,*(rev(A),C)) => !=(A,*(A,C))");
+		DMLExecutor.println("Applying rewrite: !=(A,*(rev(A),C)) => !=(A,*(A,C))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0, hi_1_1, Types.OpOp2.MULT);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0, v1, Types.OpOp2.NOTEQUAL);
 
@@ -26135,6 +26241,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: !=(A,*(C,rev(A))) => !=(A,*(A,C))");
+		DMLExecutor.println("Applying rewrite: !=(A,*(C,rev(A))) => !=(A,*(A,C))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0, hi_1_0, Types.OpOp2.MULT);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0, v1, Types.OpOp2.NOTEQUAL);
 
@@ -26209,6 +26316,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: rev(*($1:rev(A),B)) => *(A,rev(B))");
+		DMLExecutor.println("Applying rewrite: rev(*($1:rev(A),B)) => *(A,rev(B))");
 		ReorgOp v1 = HopRewriteUtils.createReorg(hi_0_1, Types.ReOrgOp.REV);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0_0_0, v1, Types.OpOp2.MULT);
 
@@ -26283,6 +26391,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: rev(*(B,$1:rev(A))) => *(A,rev(B))");
+		DMLExecutor.println("Applying rewrite: rev(*(B,$1:rev(A))) => *(A,rev(B))");
 		ReorgOp v1 = HopRewriteUtils.createReorg(hi_0_0, Types.ReOrgOp.REV);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0_1_0, v1, Types.OpOp2.MULT);
 
@@ -26357,6 +26466,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: t(*($1:t(A),B)) => *(A,t(B))");
+		DMLExecutor.println("Applying rewrite: t(*($1:t(A),B)) => *(A,t(B))");
 		ReorgOp v1 = HopRewriteUtils.createTranspose(hi_0_1);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0_0_0, v1, Types.OpOp2.MULT);
 
@@ -26431,6 +26541,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: t(*(B,$1:t(A))) => *(A,t(B))");
+		DMLExecutor.println("Applying rewrite: t(*(B,$1:t(A))) => *(A,t(B))");
 		ReorgOp v1 = HopRewriteUtils.createTranspose(hi_0_0);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0_1_0, v1, Types.OpOp2.MULT);
 
@@ -26499,6 +26610,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: *(!=(rev(A),c),A) => *(A,!=(A,c))");
+		DMLExecutor.println("Applying rewrite: *(!=(rev(A),c),A) => *(A,!=(A,c))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0_0, hi_0_1, Types.OpOp2.NOTEQUAL);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0_0_0, v1, Types.OpOp2.MULT);
 
@@ -26567,6 +26679,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: *(!=(c,rev(A)),A) => *(A,!=(A,c))");
+		DMLExecutor.println("Applying rewrite: *(!=(c,rev(A)),A) => *(A,!=(A,c))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_1_0, hi_0_0, Types.OpOp2.NOTEQUAL);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0_1_0, v1, Types.OpOp2.MULT);
 
@@ -26635,6 +26748,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: *(A,!=(rev(A),c)) => *(A,!=(A,c))");
+		DMLExecutor.println("Applying rewrite: *(A,!=(rev(A),c)) => *(A,!=(A,c))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0, hi_1_1, Types.OpOp2.NOTEQUAL);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0, v1, Types.OpOp2.MULT);
 
@@ -26703,6 +26817,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: *(A,!=(c,rev(A))) => *(A,!=(A,c))");
+		DMLExecutor.println("Applying rewrite: *(A,!=(c,rev(A))) => *(A,!=(A,c))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0, hi_1_0, Types.OpOp2.NOTEQUAL);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0, v1, Types.OpOp2.MULT);
 
@@ -26771,6 +26886,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: *(rev($1:!=(c,A)),A) => *(A,!=(A,c))");
+		DMLExecutor.println("Applying rewrite: *(rev($1:!=(c,A)),A) => *(A,!=(A,c))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0_1, hi_0_0_0, Types.OpOp2.NOTEQUAL);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0_0_1, v1, Types.OpOp2.MULT);
 
@@ -26839,6 +26955,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: *(rev($1:!=(A,c)),A) => *(A,!=(A,c))");
+		DMLExecutor.println("Applying rewrite: *(rev($1:!=(A,c)),A) => *(A,!=(A,c))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0_0, hi_0_0_1, Types.OpOp2.NOTEQUAL);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0_0_0, v1, Types.OpOp2.MULT);
 
@@ -26907,6 +27024,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: *(A,rev($1:!=(c,A))) => *(A,!=(A,c))");
+		DMLExecutor.println("Applying rewrite: *(A,rev($1:!=(c,A))) => *(A,!=(A,c))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0, hi_1_0_0, Types.OpOp2.NOTEQUAL);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0, v1, Types.OpOp2.MULT);
 
@@ -26975,6 +27093,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: *(A,rev($1:!=(A,c))) => *(A,!=(A,c))");
+		DMLExecutor.println("Applying rewrite: *(A,rev($1:!=(A,c))) => *(A,!=(A,c))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0, hi_1_0_1, Types.OpOp2.NOTEQUAL);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0, v1, Types.OpOp2.MULT);
 
@@ -27043,6 +27162,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: *(!=(rev(A),C),A) => *(A,!=(A,C))");
+		DMLExecutor.println("Applying rewrite: *(!=(rev(A),C),A) => *(A,!=(A,C))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0_0, hi_0_1, Types.OpOp2.NOTEQUAL);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0_0_0, v1, Types.OpOp2.MULT);
 
@@ -27111,6 +27231,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: *(!=(C,rev(A)),A) => *(A,!=(A,C))");
+		DMLExecutor.println("Applying rewrite: *(!=(C,rev(A)),A) => *(A,!=(A,C))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_1_0, hi_0_0, Types.OpOp2.NOTEQUAL);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0_1_0, v1, Types.OpOp2.MULT);
 
@@ -27179,6 +27300,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: *(A,!=(rev(A),C)) => *(A,!=(A,C))");
+		DMLExecutor.println("Applying rewrite: *(A,!=(rev(A),C)) => *(A,!=(A,C))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0, hi_1_1, Types.OpOp2.NOTEQUAL);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0, v1, Types.OpOp2.MULT);
 
@@ -27247,6 +27369,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: *(A,!=(C,rev(A))) => *(A,!=(A,C))");
+		DMLExecutor.println("Applying rewrite: *(A,!=(C,rev(A))) => *(A,!=(A,C))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0, hi_1_0, Types.OpOp2.NOTEQUAL);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0, v1, Types.OpOp2.MULT);
 
@@ -27313,6 +27436,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: sum(/(a,t(B))) => sum(/(a,B))");
+		DMLExecutor.println("Applying rewrite: sum(/(a,t(B))) => sum(/(a,B))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0, hi_0_1_0, Types.OpOp2.DIV);
 		AggUnaryOp v2 = HopRewriteUtils.createAggUnaryOp(v1, Types.AggOp.SUM, Types.Direction.RowCol);
 
@@ -27376,6 +27500,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: rev(/($1:rev(A),B)) => /(A,rev(B))");
+		DMLExecutor.println("Applying rewrite: rev(/($1:rev(A),B)) => /(A,rev(B))");
 		ReorgOp v1 = HopRewriteUtils.createReorg(hi_0_1, Types.ReOrgOp.REV);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0_0_0, v1, Types.OpOp2.DIV);
 
@@ -27450,6 +27575,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: rev(/(A,rev(B))) => /(rev(A),B)");
+		DMLExecutor.println("Applying rewrite: rev(/(A,rev(B))) => /(rev(A),B)");
 		ReorgOp v1 = HopRewriteUtils.createReorg(hi_0_0, Types.ReOrgOp.REV);
 		BinaryOp v2 = HopRewriteUtils.createBinary(v1, hi_0_1_0, Types.OpOp2.DIV);
 
@@ -27513,6 +27639,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: t(/($1:t(A),B)) => /(A,t(B))");
+		DMLExecutor.println("Applying rewrite: t(/($1:t(A),B)) => /(A,t(B))");
 		ReorgOp v1 = HopRewriteUtils.createTranspose(hi_0_1);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0_0_0, v1, Types.OpOp2.DIV);
 
@@ -27587,6 +27714,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: t(/(A,t(B))) => /(t(A),B)");
+		DMLExecutor.println("Applying rewrite: t(/(A,t(B))) => /(t(A),B)");
 		ReorgOp v1 = HopRewriteUtils.createTranspose(hi_0_0);
 		BinaryOp v2 = HopRewriteUtils.createBinary(v1, hi_0_1_0, Types.OpOp2.DIV);
 
@@ -27650,6 +27778,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: /(t(A),t(B)) => t(/(A,B))");
+		DMLExecutor.println("Applying rewrite: /(t(A),t(B)) => t(/(A,B))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0, hi_1_0, Types.OpOp2.DIV);
 		ReorgOp v2 = HopRewriteUtils.createTranspose(v1);
 
@@ -27718,6 +27847,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: !=(/(b,rev(A)),A) => !=(A,/(b,A))");
+		DMLExecutor.println("Applying rewrite: !=(/(b,rev(A)),A) => !=(A,/(b,A))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0, hi_0_1_0, Types.OpOp2.DIV);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0_1_0, v1, Types.OpOp2.NOTEQUAL);
 
@@ -27786,6 +27916,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: !=(/(b,A),rev(A)) => !=(A,/(b,A))");
+		DMLExecutor.println("Applying rewrite: !=(/(b,A),rev(A)) => !=(A,/(b,A))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0, hi_0_1, Types.OpOp2.DIV);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0_1, v1, Types.OpOp2.NOTEQUAL);
 
@@ -27854,6 +27985,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: !=(A,/(b,rev(A))) => !=(A,/(b,A))");
+		DMLExecutor.println("Applying rewrite: !=(A,/(b,rev(A))) => !=(A,/(b,A))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_1_0, hi_0, Types.OpOp2.DIV);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0, v1, Types.OpOp2.NOTEQUAL);
 
@@ -27922,6 +28054,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: !=(rev(/(b,A)),A) => !=(A,/(b,A))");
+		DMLExecutor.println("Applying rewrite: !=(rev(/(b,A)),A) => !=(A,/(b,A))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0_0, hi_0_0_1, Types.OpOp2.DIV);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0_0_1, v1, Types.OpOp2.NOTEQUAL);
 
@@ -27990,6 +28123,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: !=(A,rev(/(b,A))) => !=(A,/(b,A))");
+		DMLExecutor.println("Applying rewrite: !=(A,rev(/(b,A))) => !=(A,/(b,A))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_1_0_0, hi_0, Types.OpOp2.DIV);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0, v1, Types.OpOp2.NOTEQUAL);
 
@@ -28058,6 +28192,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: !=(/(B,rev(A)),A) => !=(A,/(B,A))");
+		DMLExecutor.println("Applying rewrite: !=(/(B,rev(A)),A) => !=(A,/(B,A))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0, hi_0_1_0, Types.OpOp2.DIV);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0_1_0, v1, Types.OpOp2.NOTEQUAL);
 
@@ -28126,6 +28261,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: !=(/(B,A),rev(A)) => !=(A,/(B,A))");
+		DMLExecutor.println("Applying rewrite: !=(/(B,A),rev(A)) => !=(A,/(B,A))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0, hi_0_1, Types.OpOp2.DIV);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0_1, v1, Types.OpOp2.NOTEQUAL);
 
@@ -28194,6 +28330,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: !=(A,/(B,rev(A))) => !=(A,/(B,A))");
+		DMLExecutor.println("Applying rewrite: !=(A,/(B,rev(A))) => !=(A,/(B,A))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_1_0, hi_0, Types.OpOp2.DIV);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0, v1, Types.OpOp2.NOTEQUAL);
 
@@ -28262,6 +28399,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: !=(/(rev(A),C),A) => !=(A,/(A,C))");
+		DMLExecutor.println("Applying rewrite: !=(/(rev(A),C),A) => !=(A,/(A,C))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0_0, hi_0_1, Types.OpOp2.DIV);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0_0_0, v1, Types.OpOp2.NOTEQUAL);
 
@@ -28330,6 +28468,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: !=(/(A,C),rev(A)) => !=(A,/(A,C))");
+		DMLExecutor.println("Applying rewrite: !=(/(A,C),rev(A)) => !=(A,/(A,C))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0, hi_0_1, Types.OpOp2.DIV);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0_0, v1, Types.OpOp2.NOTEQUAL);
 
@@ -28398,6 +28537,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: !=(A,/(rev(A),C)) => !=(A,/(A,C))");
+		DMLExecutor.println("Applying rewrite: !=(A,/(rev(A),C)) => !=(A,/(A,C))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0, hi_1_1, Types.OpOp2.DIV);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0, v1, Types.OpOp2.NOTEQUAL);
 
@@ -28466,6 +28606,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: /(rev($1:!=(A,b)),A) => /(!=(A,b),A)");
+		DMLExecutor.println("Applying rewrite: /(rev($1:!=(A,b)),A) => /(!=(A,b),A)");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0_0, hi_0_0_1, Types.OpOp2.NOTEQUAL);
 		BinaryOp v2 = HopRewriteUtils.createBinary(v1, hi_0_0_0, Types.OpOp2.DIV);
 
@@ -28534,6 +28675,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: /(A,rev(!=(c,A))) => /(A,!=(A,c))");
+		DMLExecutor.println("Applying rewrite: /(A,rev(!=(c,A))) => /(A,!=(A,c))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0, hi_1_0_0, Types.OpOp2.NOTEQUAL);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0, v1, Types.OpOp2.DIV);
 
@@ -28602,6 +28744,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: /(A,rev(!=(A,c))) => /(A,!=(A,c))");
+		DMLExecutor.println("Applying rewrite: /(A,rev(!=(A,c))) => /(A,!=(A,c))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0, hi_1_0_1, Types.OpOp2.NOTEQUAL);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0, v1, Types.OpOp2.DIV);
 
@@ -28670,6 +28813,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: /(A,!=(rev(A),c)) => /(A,!=(A,c))");
+		DMLExecutor.println("Applying rewrite: /(A,!=(rev(A),c)) => /(A,!=(A,c))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0, hi_1_1, Types.OpOp2.NOTEQUAL);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0, v1, Types.OpOp2.DIV);
 
@@ -28738,6 +28882,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: /(A,!=(c,rev(A))) => /(A,!=(A,c))");
+		DMLExecutor.println("Applying rewrite: /(A,!=(c,rev(A))) => /(A,!=(A,c))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0, hi_1_0, Types.OpOp2.NOTEQUAL);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0, v1, Types.OpOp2.DIV);
 
@@ -28806,6 +28951,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: /(A,!=(rev(A),C)) => /(A,!=(A,C))");
+		DMLExecutor.println("Applying rewrite: /(A,!=(rev(A),C)) => /(A,!=(A,C))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0, hi_1_1, Types.OpOp2.NOTEQUAL);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0, v1, Types.OpOp2.DIV);
 
@@ -28874,6 +29020,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: /(A,!=(C,rev(A))) => /(A,!=(A,C))");
+		DMLExecutor.println("Applying rewrite: /(A,!=(C,rev(A))) => /(A,!=(A,C))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0, hi_1_0, Types.OpOp2.NOTEQUAL);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0, v1, Types.OpOp2.DIV);
 
@@ -28951,6 +29098,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: colSums(/(a,t(B))) => t(rowSums($1:/(a,B)))");
+		DMLExecutor.println("Applying rewrite: colSums(/(a,t(B))) => t(rowSums($1:/(a,B)))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0, hi_0_1_0, Types.OpOp2.DIV);
 		AggUnaryOp v2 = HopRewriteUtils.createAggUnaryOp(v1, Types.AggOp.SUM, Types.Direction.Row);
 		ReorgOp v3 = HopRewriteUtils.createTranspose(v2);
@@ -29029,6 +29177,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: rowSums(/(a,t(B))) => t(colSums($1:/(a,B)))");
+		DMLExecutor.println("Applying rewrite: rowSums(/(a,t(B))) => t(colSums($1:/(a,B)))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0, hi_0_1_0, Types.OpOp2.DIV);
 		AggUnaryOp v2 = HopRewriteUtils.createAggUnaryOp(v1, Types.AggOp.SUM, Types.Direction.Col);
 		ReorgOp v3 = HopRewriteUtils.createTranspose(v2);
@@ -29096,6 +29245,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: !=(t(A),colSums(A)) => !=(A,cast.MATRIX(sum(A)))");
+		DMLExecutor.println("Applying rewrite: !=(t(A),colSums(A)) => !=(A,cast.MATRIX(sum(A)))");
 		AggUnaryOp v1 = HopRewriteUtils.createAggUnaryOp(hi_0_0, Types.AggOp.SUM, Types.Direction.RowCol);
 		UnaryOp v2 = HopRewriteUtils.createUnary(v1, Types.OpOp1.CAST_AS_MATRIX);
 		BinaryOp v3 = HopRewriteUtils.createBinary(hi_0_0, v2, Types.OpOp2.NOTEQUAL);
@@ -29163,6 +29313,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: !=(A,t(colSums(A))) => !=(A,cast.MATRIX(sum(A)))");
+		DMLExecutor.println("Applying rewrite: !=(A,t(colSums(A))) => !=(A,cast.MATRIX(sum(A)))");
 		AggUnaryOp v1 = HopRewriteUtils.createAggUnaryOp(hi_0, Types.AggOp.SUM, Types.Direction.RowCol);
 		UnaryOp v2 = HopRewriteUtils.createUnary(v1, Types.OpOp1.CAST_AS_MATRIX);
 		BinaryOp v3 = HopRewriteUtils.createBinary(hi_0, v2, Types.OpOp2.NOTEQUAL);
@@ -29227,6 +29378,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: rev(!=(cast.MATRIX(a),b)) => !=(a,cast.MATRIX(b))");
+		DMLExecutor.println("Applying rewrite: rev(!=(cast.MATRIX(a),b)) => !=(a,cast.MATRIX(b))");
 		UnaryOp v1 = HopRewriteUtils.createUnary(hi_0_1, Types.OpOp1.CAST_AS_MATRIX);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0_0_0, v1, Types.OpOp2.NOTEQUAL);
 
@@ -29290,6 +29442,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: rev(!=(a,cast.MATRIX(b))) => !=(a,cast.MATRIX(b))");
+		DMLExecutor.println("Applying rewrite: rev(!=(a,cast.MATRIX(b))) => !=(a,cast.MATRIX(b))");
 		UnaryOp v1 = HopRewriteUtils.createUnary(hi_0_1_0, Types.OpOp1.CAST_AS_MATRIX);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0_0, v1, Types.OpOp2.NOTEQUAL);
 
@@ -29356,6 +29509,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: trace(-($1:colSums(A),b)) => -(trace(colSums(A)),b)");
+		DMLExecutor.println("Applying rewrite: trace(-($1:colSums(A),b)) => -(trace(colSums(A)),b)");
 		AggUnaryOp v1 = HopRewriteUtils.createAggUnaryOp(hi_0_0_0, Types.AggOp.SUM, Types.Direction.Col);
 		AggUnaryOp v2 = HopRewriteUtils.createAggUnaryOp(v1, Types.AggOp.TRACE, Types.Direction.RowCol);
 		BinaryOp v3 = HopRewriteUtils.createBinary(v2, hi_0_1, Types.OpOp2.MINUS);
@@ -29423,6 +29577,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: trace(-(a,$1:colSums(B))) => -(a,trace(colSums(B)))");
+		DMLExecutor.println("Applying rewrite: trace(-(a,$1:colSums(B))) => -(a,trace(colSums(B)))");
 		AggUnaryOp v1 = HopRewriteUtils.createAggUnaryOp(hi_0_1_0, Types.AggOp.SUM, Types.Direction.Col);
 		AggUnaryOp v2 = HopRewriteUtils.createAggUnaryOp(v1, Types.AggOp.TRACE, Types.Direction.RowCol);
 		BinaryOp v3 = HopRewriteUtils.createBinary(hi_0_0, v2, Types.OpOp2.MINUS);
@@ -29490,6 +29645,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: trace(+($1:colSums(A),b)) => +(trace(colSums(A)),b)");
+		DMLExecutor.println("Applying rewrite: trace(+($1:colSums(A),b)) => +(trace(colSums(A)),b)");
 		AggUnaryOp v1 = HopRewriteUtils.createAggUnaryOp(hi_0_0_0, Types.AggOp.SUM, Types.Direction.Col);
 		AggUnaryOp v2 = HopRewriteUtils.createAggUnaryOp(v1, Types.AggOp.TRACE, Types.Direction.RowCol);
 		BinaryOp v3 = HopRewriteUtils.createBinary(v2, hi_0_1, Types.OpOp2.PLUS);
@@ -29557,6 +29713,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: trace(+(b,$1:colSums(A))) => +(trace(colSums(A)),b)");
+		DMLExecutor.println("Applying rewrite: trace(+(b,$1:colSums(A))) => +(trace(colSums(A)),b)");
 		AggUnaryOp v1 = HopRewriteUtils.createAggUnaryOp(hi_0_1_0, Types.AggOp.SUM, Types.Direction.Col);
 		AggUnaryOp v2 = HopRewriteUtils.createAggUnaryOp(v1, Types.AggOp.TRACE, Types.Direction.RowCol);
 		BinaryOp v3 = HopRewriteUtils.createBinary(v2, hi_0_0, Types.OpOp2.PLUS);
@@ -29624,6 +29781,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: !=(A,rev(rowSums(A))) => !=(A,rowSums(A))");
+		DMLExecutor.println("Applying rewrite: !=(A,rev(rowSums(A))) => !=(A,rowSums(A))");
 		AggUnaryOp v1 = HopRewriteUtils.createAggUnaryOp(hi_0, Types.AggOp.SUM, Types.Direction.Row);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0, v1, Types.OpOp2.NOTEQUAL);
 
@@ -29690,6 +29848,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: !=(A,rowSums(rev(A))) => !=(A,rowSums(A))");
+		DMLExecutor.println("Applying rewrite: !=(A,rowSums(rev(A))) => !=(A,rowSums(A))");
 		AggUnaryOp v1 = HopRewriteUtils.createAggUnaryOp(hi_0, Types.AggOp.SUM, Types.Direction.Row);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0, v1, Types.OpOp2.NOTEQUAL);
 
@@ -29756,6 +29915,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: !=(A,colSums(rev(A))) => !=(A,colSums(A))");
+		DMLExecutor.println("Applying rewrite: !=(A,colSums(rev(A))) => !=(A,colSums(A))");
 		AggUnaryOp v1 = HopRewriteUtils.createAggUnaryOp(hi_0, Types.AggOp.SUM, Types.Direction.Col);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0, v1, Types.OpOp2.NOTEQUAL);
 
@@ -29822,6 +29982,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: +(A,colSums($1:rev(A))) => +(A,colSums(A))");
+		DMLExecutor.println("Applying rewrite: +(A,colSums($1:rev(A))) => +(A,colSums(A))");
 		AggUnaryOp v1 = HopRewriteUtils.createAggUnaryOp(hi_0, Types.AggOp.SUM, Types.Direction.Col);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0, v1, Types.OpOp2.PLUS);
 
@@ -29888,6 +30049,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: *(A,colSums($1:rev(A))) => *(A,colSums(A))");
+		DMLExecutor.println("Applying rewrite: *(A,colSums($1:rev(A))) => *(A,colSums(A))");
 		AggUnaryOp v1 = HopRewriteUtils.createAggUnaryOp(hi_0, Types.AggOp.SUM, Types.Direction.Col);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0, v1, Types.OpOp2.MULT);
 
@@ -29954,12 +30116,12 @@ public class GeneratedRewriteClass implements Function {
 			return hi;
 
 
-		if ( hi_0_1.getDim2() == -1 || hi_1_1.getDim2() == -1 || hi_0_1.getNnz() == -1 || hi_0_1.getDim1() == -1 || hi_1_1.getNnz() == -1 )
+		if ( hi_1_1.getDim2() == -1 || hi_0_1.getNnz() == -1 || hi_1_1.getDim1() == -1 || hi_0_1.getDim1() == -1 || hi_1_1.getNnz() == -1 )
 			return hi;
 
 
-		double costFrom = ((2.0 * hi_0_1.getNnz()) + (2.0 * hi_1_1.getNnz()) + (Math.min(hi_0_1.getNnz(), hi_1_1.getNnz()) * hi_0_1.getDim2() * 3.0) + 30030.0);
-		double costTo = ((Math.min(hi_0_1.getNnz(), hi_1_1.getNnz()) * hi_0_1.getDim2() * 3.0) + (2.0 * (Math.min((hi_0_1.getNnz() * (1.0 / hi_0_1.getDim1())), 1.0) * Math.min((hi_1_1.getNnz() * (1.0 / hi_1_1.getDim2())), 1.0) * hi_0_1.getDim1() * hi_1_1.getDim2())) + 20032.0);
+		double costFrom = ((2.0 * hi_0_1.getNnz()) + (2.0 * hi_1_1.getNnz()) + (Math.min(hi_0_1.getNnz(), hi_1_1.getNnz()) * hi_1_1.getDim1() * 3.0) + 30030.0);
+		double costTo = ((Math.min(hi_0_1.getNnz(), hi_1_1.getNnz()) * hi_1_1.getDim1() * 3.0) + (2.0 * (Math.min((hi_0_1.getNnz() * (1.0 / hi_0_1.getDim1())), 1.0) * Math.min((hi_1_1.getNnz() * (1.0 / hi_1_1.getDim2())), 1.0) * hi_0_1.getDim1() * hi_1_1.getDim2())) + 20032.0);
 
 		if ( costFrom <= costTo )
 			return hi;
@@ -29967,6 +30129,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: %*%(*(a,C),*(b,D)) => *(*(a,b),%*%(C,D))");
+		DMLExecutor.println("Applying rewrite: %*%(*(a,C),*(b,D)) => *(*(a,b),%*%(C,D))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0, hi_1_0, Types.OpOp2.MULT);
 		AggBinaryOp v2 = HopRewriteUtils.createMatrixMultiply(hi_0_1, hi_1_1);
 		BinaryOp v3 = HopRewriteUtils.createBinary(v1, v2, Types.OpOp2.MULT);
@@ -30047,6 +30210,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: %*%(*(a,C),*(D,b)) => *(*(a,b),%*%(C,D))");
+		DMLExecutor.println("Applying rewrite: %*%(*(a,C),*(D,b)) => *(*(a,b),%*%(C,D))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0, hi_1_1, Types.OpOp2.MULT);
 		AggBinaryOp v2 = HopRewriteUtils.createMatrixMultiply(hi_0_1, hi_1_0);
 		BinaryOp v3 = HopRewriteUtils.createBinary(v1, v2, Types.OpOp2.MULT);
@@ -30127,6 +30291,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: %*%(*(C,a),*(b,D)) => *(*(a,b),%*%(C,D))");
+		DMLExecutor.println("Applying rewrite: %*%(*(C,a),*(b,D)) => *(*(a,b),%*%(C,D))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_1, hi_1_0, Types.OpOp2.MULT);
 		AggBinaryOp v2 = HopRewriteUtils.createMatrixMultiply(hi_0_0, hi_1_1);
 		BinaryOp v3 = HopRewriteUtils.createBinary(v1, v2, Types.OpOp2.MULT);
@@ -30194,12 +30359,12 @@ public class GeneratedRewriteClass implements Function {
 			return hi;
 
 
-		if ( hi_1_0.getNnz() == -1 || hi_0_0.getDim1() == -1 || hi_1_0.getDim2() == -1 || hi_0_0.getNnz() == -1 || hi_0_0.getDim2() == -1 )
+		if ( hi_1_0.getNnz() == -1 || hi_0_0.getDim1() == -1 || hi_1_0.getDim1() == -1 || hi_1_0.getDim2() == -1 || hi_0_0.getNnz() == -1 )
 			return hi;
 
 
-		double costFrom = ((2.0 * hi_0_0.getNnz()) + (2.0 * hi_1_0.getNnz()) + (Math.min(hi_0_0.getNnz(), hi_1_0.getNnz()) * hi_0_0.getDim2() * 3.0) + 30030.0);
-		double costTo = ((Math.min(hi_0_0.getNnz(), hi_1_0.getNnz()) * hi_0_0.getDim2() * 3.0) + (2.0 * (Math.min((hi_0_0.getNnz() * (1.0 / hi_0_0.getDim1())), 1.0) * Math.min((hi_1_0.getNnz() * (1.0 / hi_1_0.getDim2())), 1.0) * hi_0_0.getDim1() * hi_1_0.getDim2())) + 20032.0);
+		double costFrom = ((2.0 * hi_0_0.getNnz()) + (2.0 * hi_1_0.getNnz()) + (Math.min(hi_0_0.getNnz(), hi_1_0.getNnz()) * hi_1_0.getDim1() * 3.0) + 30030.0);
+		double costTo = ((Math.min(hi_0_0.getNnz(), hi_1_0.getNnz()) * hi_1_0.getDim1() * 3.0) + (2.0 * (Math.min((hi_0_0.getNnz() * (1.0 / hi_0_0.getDim1())), 1.0) * Math.min((hi_1_0.getNnz() * (1.0 / hi_1_0.getDim2())), 1.0) * hi_0_0.getDim1() * hi_1_0.getDim2())) + 20032.0);
 
 		if ( costFrom <= costTo )
 			return hi;
@@ -30207,6 +30372,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: %*%(*(C,a),*(D,b)) => *(*(a,b),%*%(C,D))");
+		DMLExecutor.println("Applying rewrite: %*%(*(C,a),*(D,b)) => *(*(a,b),%*%(C,D))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_1, hi_1_1, Types.OpOp2.MULT);
 		AggBinaryOp v2 = HopRewriteUtils.createMatrixMultiply(hi_0_0, hi_1_0);
 		BinaryOp v3 = HopRewriteUtils.createBinary(v1, v2, Types.OpOp2.MULT);
@@ -30276,6 +30442,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: *(%*%($1:*(a,C),D),b) => *(*(a,b),%*%(C,D))");
+		DMLExecutor.println("Applying rewrite: *(%*%($1:*(a,C),D),b) => *(*(a,b),%*%(C,D))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0_0, hi_1, Types.OpOp2.MULT);
 		AggBinaryOp v2 = HopRewriteUtils.createMatrixMultiply(hi_0_0_1, hi_0_1);
 		BinaryOp v3 = HopRewriteUtils.createBinary(v1, v2, Types.OpOp2.MULT);
@@ -30345,6 +30512,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: *(%*%($1:*(C,a),D),b) => *(*(a,b),%*%(C,D))");
+		DMLExecutor.println("Applying rewrite: *(%*%($1:*(C,a),D),b) => *(*(a,b),%*%(C,D))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0_1, hi_1, Types.OpOp2.MULT);
 		AggBinaryOp v2 = HopRewriteUtils.createMatrixMultiply(hi_0_0_0, hi_0_1);
 		BinaryOp v3 = HopRewriteUtils.createBinary(v1, v2, Types.OpOp2.MULT);
@@ -30414,6 +30582,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: *(%*%(C,$1:*(D,a)),b) => *(*(a,b),%*%(C,D))");
+		DMLExecutor.println("Applying rewrite: *(%*%(C,$1:*(D,a)),b) => *(*(a,b),%*%(C,D))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_1_1, hi_1, Types.OpOp2.MULT);
 		AggBinaryOp v2 = HopRewriteUtils.createMatrixMultiply(hi_0_0, hi_0_1_0);
 		BinaryOp v3 = HopRewriteUtils.createBinary(v1, v2, Types.OpOp2.MULT);
@@ -30483,6 +30652,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: *(a,%*%($1:*(b,C),D)) => *(*(a,b),%*%(C,D))");
+		DMLExecutor.println("Applying rewrite: *(a,%*%($1:*(b,C),D)) => *(*(a,b),%*%(C,D))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0, hi_1_0_0, Types.OpOp2.MULT);
 		AggBinaryOp v2 = HopRewriteUtils.createMatrixMultiply(hi_1_0_1, hi_1_1);
 		BinaryOp v3 = HopRewriteUtils.createBinary(v1, v2, Types.OpOp2.MULT);
@@ -30552,6 +30722,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: *(a,%*%($1:*(C,b),D)) => *(*(a,b),%*%(C,D))");
+		DMLExecutor.println("Applying rewrite: *(a,%*%($1:*(C,b),D)) => *(*(a,b),%*%(C,D))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0, hi_1_0_1, Types.OpOp2.MULT);
 		AggBinaryOp v2 = HopRewriteUtils.createMatrixMultiply(hi_1_0_0, hi_1_1);
 		BinaryOp v3 = HopRewriteUtils.createBinary(v1, v2, Types.OpOp2.MULT);
@@ -30621,6 +30792,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: *(a,%*%(C,$1:*(b,D))) => *(*(a,b),%*%(C,D))");
+		DMLExecutor.println("Applying rewrite: *(a,%*%(C,$1:*(b,D))) => *(*(a,b),%*%(C,D))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0, hi_1_1_0, Types.OpOp2.MULT);
 		AggBinaryOp v2 = HopRewriteUtils.createMatrixMultiply(hi_1_0, hi_1_1_1);
 		BinaryOp v3 = HopRewriteUtils.createBinary(v1, v2, Types.OpOp2.MULT);
@@ -30690,6 +30862,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: %*%(/(a,C),*(b,D)) => %*%(/(*(a,b),C),D)");
+		DMLExecutor.println("Applying rewrite: %*%(/(a,C),*(b,D)) => %*%(/(*(a,b),C),D)");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0, hi_1_0, Types.OpOp2.MULT);
 		BinaryOp v2 = HopRewriteUtils.createBinary(v1, hi_0_1, Types.OpOp2.DIV);
 		AggBinaryOp v3 = HopRewriteUtils.createMatrixMultiply(v2, hi_1_1);
@@ -30759,6 +30932,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: %*%(/(a,C),*(D,b)) => %*%(/(*(a,b),C),D)");
+		DMLExecutor.println("Applying rewrite: %*%(/(a,C),*(D,b)) => %*%(/(*(a,b),C),D)");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0, hi_1_1, Types.OpOp2.MULT);
 		BinaryOp v2 = HopRewriteUtils.createBinary(v1, hi_0_1, Types.OpOp2.DIV);
 		AggBinaryOp v3 = HopRewriteUtils.createMatrixMultiply(v2, hi_1_0);
@@ -30828,6 +31002,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: *(%*%($1:/(a,C),D),b) => %*%(/(*(a,b),C),D)");
+		DMLExecutor.println("Applying rewrite: *(%*%($1:/(a,C),D),b) => %*%(/(*(a,b),C),D)");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0_0, hi_1, Types.OpOp2.MULT);
 		BinaryOp v2 = HopRewriteUtils.createBinary(v1, hi_0_0_1, Types.OpOp2.DIV);
 		AggBinaryOp v3 = HopRewriteUtils.createMatrixMultiply(v2, hi_0_1);
@@ -30897,6 +31072,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: *(a,%*%($1:/(b,C),D)) => %*%(/(*(a,b),C),D)");
+		DMLExecutor.println("Applying rewrite: *(a,%*%($1:/(b,C),D)) => %*%(/(*(a,b),C),D)");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0, hi_1_0_0, Types.OpOp2.MULT);
 		BinaryOp v2 = HopRewriteUtils.createBinary(v1, hi_1_0_1, Types.OpOp2.DIV);
 		AggBinaryOp v3 = HopRewriteUtils.createMatrixMultiply(v2, hi_1_1);
@@ -30966,6 +31142,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: %*%(*(b,A),/(c,D)) => %*%(A,/(*(b,c),D))");
+		DMLExecutor.println("Applying rewrite: %*%(*(b,A),/(c,D)) => %*%(A,/(*(b,c),D))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0, hi_1_0, Types.OpOp2.MULT);
 		BinaryOp v2 = HopRewriteUtils.createBinary(v1, hi_1_1, Types.OpOp2.DIV);
 		AggBinaryOp v3 = HopRewriteUtils.createMatrixMultiply(hi_0_1, v2);
@@ -31035,6 +31212,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: %*%(*(A,b),/(c,D)) => %*%(A,/(*(b,c),D))");
+		DMLExecutor.println("Applying rewrite: %*%(*(A,b),/(c,D)) => %*%(A,/(*(b,c),D))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_1, hi_1_0, Types.OpOp2.MULT);
 		BinaryOp v2 = HopRewriteUtils.createBinary(v1, hi_1_1, Types.OpOp2.DIV);
 		AggBinaryOp v3 = HopRewriteUtils.createMatrixMultiply(hi_0_0, v2);
@@ -31104,6 +31282,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: *(%*%(A,$1:/(b,D)),c) => %*%(A,/(*(b,c),D))");
+		DMLExecutor.println("Applying rewrite: *(%*%(A,$1:/(b,D)),c) => %*%(A,/(*(b,c),D))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_1_0, hi_1, Types.OpOp2.MULT);
 		BinaryOp v2 = HopRewriteUtils.createBinary(v1, hi_0_1_1, Types.OpOp2.DIV);
 		AggBinaryOp v3 = HopRewriteUtils.createMatrixMultiply(hi_0_0, v2);
@@ -31173,6 +31352,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: *(b,%*%(A,$1:/(c,D))) => %*%(A,/(*(b,c),D))");
+		DMLExecutor.println("Applying rewrite: *(b,%*%(A,$1:/(c,D))) => %*%(A,/(*(b,c),D))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0, hi_1_1_0, Types.OpOp2.MULT);
 		BinaryOp v2 = HopRewriteUtils.createBinary(v1, hi_1_1_1, Types.OpOp2.DIV);
 		AggBinaryOp v3 = HopRewriteUtils.createMatrixMultiply(hi_1_0, v2);
@@ -31234,8 +31414,8 @@ public class GeneratedRewriteClass implements Function {
 			return hi;
 
 
-		double costFrom = (hi_0_0_0.getNnz() + (Math.min((hi_0_0_0.getDim2() * hi_0_0_0.getDim1()), hi_0_1.getNnz()) * hi_0_0_0.getDim1() * 3.0) + (Math.min(((hi_0_0_0.getDim2() * hi_0_0_0.getDim1()) * (1.0 / hi_0_0_0.getDim2())), 1.0) * Math.min((hi_0_1.getNnz() * (1.0 / hi_0_1.getDim2())), 1.0) * hi_0_0_0.getDim2() * hi_0_1.getDim2()) + 30030.0);
-		double costTo = (hi_0_1.getNnz() + (Math.min((hi_0_1.getDim2() * hi_0_1.getDim1()), hi_0_0_0.getNnz()) * hi_0_0_0.getDim1() * 3.0) + 20020.0);
+		double costFrom = (hi_0_0_0.getNnz() + (Math.min((hi_0_0_0.getDim2() * hi_0_0_0.getDim1()), hi_0_1.getNnz()) * hi_0_1.getDim1() * 3.0) + (Math.min(((hi_0_0_0.getDim2() * hi_0_0_0.getDim1()) * (1.0 / hi_0_0_0.getDim2())), 1.0) * Math.min((hi_0_1.getNnz() * (1.0 / hi_0_1.getDim2())), 1.0) * hi_0_0_0.getDim2() * hi_0_1.getDim2()) + 30030.0);
+		double costTo = (hi_0_1.getNnz() + (Math.min((hi_0_1.getDim2() * hi_0_1.getDim1()), hi_0_0_0.getNnz()) * hi_0_1.getDim1() * 3.0) + 20020.0);
 
 		if ( costFrom <= costTo )
 			return hi;
@@ -31243,6 +31423,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: t(%*%($1:t(B),A)) => %*%(t(A),B)");
+		DMLExecutor.println("Applying rewrite: t(%*%($1:t(B),A)) => %*%(t(A),B)");
 		ReorgOp v1 = HopRewriteUtils.createTranspose(hi_0_1);
 		AggBinaryOp v2 = HopRewriteUtils.createMatrixMultiply(v1, hi_0_0_0);
 
@@ -31312,6 +31493,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: t(%*%(B,$1:t(A))) => %*%(A,t(B))");
+		DMLExecutor.println("Applying rewrite: t(%*%(B,$1:t(A))) => %*%(A,t(B))");
 		ReorgOp v1 = HopRewriteUtils.createTranspose(hi_0_0);
 		AggBinaryOp v2 = HopRewriteUtils.createMatrixMultiply(hi_0_1_0, v1);
 
@@ -31381,6 +31563,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: %*%(t(B),t(A)) => t(%*%(A,B))");
+		DMLExecutor.println("Applying rewrite: %*%(t(B),t(A)) => t(%*%(A,B))");
 		AggBinaryOp v1 = HopRewriteUtils.createMatrixMultiply(hi_1_0, hi_0_0);
 		ReorgOp v2 = HopRewriteUtils.createTranspose(v1);
 
@@ -31444,6 +31627,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: !=(%*%(B,rev(A)),A) => !=(A,%*%(B,A))");
+		DMLExecutor.println("Applying rewrite: !=(%*%(B,rev(A)),A) => !=(A,%*%(B,A))");
 		AggBinaryOp v1 = HopRewriteUtils.createMatrixMultiply(hi_0_0, hi_0_1_0);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0_1_0, v1, Types.OpOp2.NOTEQUAL);
 
@@ -31507,6 +31691,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: !=(A,%*%(B,rev(A))) => !=(A,%*%(B,A))");
+		DMLExecutor.println("Applying rewrite: !=(A,%*%(B,rev(A))) => !=(A,%*%(B,A))");
 		AggBinaryOp v1 = HopRewriteUtils.createMatrixMultiply(hi_1_0, hi_0);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0, v1, Types.OpOp2.NOTEQUAL);
 
@@ -31570,6 +31755,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: !=(rev(%*%(A,C)),A) => !=(A,%*%(A,C))");
+		DMLExecutor.println("Applying rewrite: !=(rev(%*%(A,C)),A) => !=(A,%*%(A,C))");
 		AggBinaryOp v1 = HopRewriteUtils.createMatrixMultiply(hi_0_0_0, hi_0_0_1);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0_0_0, v1, Types.OpOp2.NOTEQUAL);
 
@@ -31633,6 +31819,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: !=(A,rev(%*%(A,C))) => !=(A,%*%(A,C))");
+		DMLExecutor.println("Applying rewrite: !=(A,rev(%*%(A,C))) => !=(A,%*%(A,C))");
 		AggBinaryOp v1 = HopRewriteUtils.createMatrixMultiply(hi_0, hi_1_0_1);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0, v1, Types.OpOp2.NOTEQUAL);
 
@@ -31696,6 +31883,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: !=(%*%(rev(A),C),A) => !=(A,%*%(A,C))");
+		DMLExecutor.println("Applying rewrite: !=(%*%(rev(A),C),A) => !=(A,%*%(A,C))");
 		AggBinaryOp v1 = HopRewriteUtils.createMatrixMultiply(hi_0_0_0, hi_0_1);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0_0_0, v1, Types.OpOp2.NOTEQUAL);
 
@@ -31759,6 +31947,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: !=(A,%*%(rev(A),C)) => !=(A,%*%(A,C))");
+		DMLExecutor.println("Applying rewrite: !=(A,%*%(rev(A),C)) => !=(A,%*%(A,C))");
 		AggBinaryOp v1 = HopRewriteUtils.createMatrixMultiply(hi_0, hi_1_1);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0, v1, Types.OpOp2.NOTEQUAL);
 
@@ -31822,6 +32011,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: rev(%*%($1:!=(b,A),A)) => %*%(!=(A,b),A)");
+		DMLExecutor.println("Applying rewrite: rev(%*%($1:!=(b,A),A)) => %*%(!=(A,b),A)");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0_1, hi_0_0_0, Types.OpOp2.NOTEQUAL);
 		AggBinaryOp v2 = HopRewriteUtils.createMatrixMultiply(v1, hi_0_0_1);
 
@@ -31885,6 +32075,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: rev(%*%($1:!=(A,b),A)) => %*%(!=(A,b),A)");
+		DMLExecutor.println("Applying rewrite: rev(%*%($1:!=(A,b),A)) => %*%(!=(A,b),A)");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0_0, hi_0_0_1, Types.OpOp2.NOTEQUAL);
 		AggBinaryOp v2 = HopRewriteUtils.createMatrixMultiply(v1, hi_0_0_0);
 
@@ -31948,6 +32139,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: %*%(!=(rev(A),b),A) => %*%(!=(A,b),A)");
+		DMLExecutor.println("Applying rewrite: %*%(!=(rev(A),b),A) => %*%(!=(A,b),A)");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0_0, hi_0_1, Types.OpOp2.NOTEQUAL);
 		AggBinaryOp v2 = HopRewriteUtils.createMatrixMultiply(v1, hi_0_0_0);
 
@@ -32011,6 +32203,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: %*%(!=(b,rev(A)),A) => %*%(!=(A,b),A)");
+		DMLExecutor.println("Applying rewrite: %*%(!=(b,rev(A)),A) => %*%(!=(A,b),A)");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_1_0, hi_0_0, Types.OpOp2.NOTEQUAL);
 		AggBinaryOp v2 = HopRewriteUtils.createMatrixMultiply(v1, hi_0_1_0);
 
@@ -32074,6 +32267,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: %*%(rev($1:!=(b,A)),A) => %*%(!=(A,b),A)");
+		DMLExecutor.println("Applying rewrite: %*%(rev($1:!=(b,A)),A) => %*%(!=(A,b),A)");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0_1, hi_0_0_0, Types.OpOp2.NOTEQUAL);
 		AggBinaryOp v2 = HopRewriteUtils.createMatrixMultiply(v1, hi_0_0_1);
 
@@ -32137,6 +32331,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: %*%(rev($1:!=(A,b)),A) => %*%(!=(A,b),A)");
+		DMLExecutor.println("Applying rewrite: %*%(rev($1:!=(A,b)),A) => %*%(!=(A,b),A)");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0_0, hi_0_0_1, Types.OpOp2.NOTEQUAL);
 		AggBinaryOp v2 = HopRewriteUtils.createMatrixMultiply(v1, hi_0_0_0);
 
@@ -32200,6 +32395,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: %*%(!=(rev(A),B),A) => %*%(!=(A,B),A)");
+		DMLExecutor.println("Applying rewrite: %*%(!=(rev(A),B),A) => %*%(!=(A,B),A)");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0_0, hi_0_1, Types.OpOp2.NOTEQUAL);
 		AggBinaryOp v2 = HopRewriteUtils.createMatrixMultiply(v1, hi_0_0_0);
 
@@ -32263,6 +32459,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: %*%(!=(B,rev(A)),A) => %*%(!=(A,B),A)");
+		DMLExecutor.println("Applying rewrite: %*%(!=(B,rev(A)),A) => %*%(!=(A,B),A)");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_1_0, hi_0_0, Types.OpOp2.NOTEQUAL);
 		AggBinaryOp v2 = HopRewriteUtils.createMatrixMultiply(v1, hi_0_1_0);
 
@@ -32326,6 +32523,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: %*%(A,!=(rev(A),c)) => %*%(A,!=(A,c))");
+		DMLExecutor.println("Applying rewrite: %*%(A,!=(rev(A),c)) => %*%(A,!=(A,c))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0, hi_1_1, Types.OpOp2.NOTEQUAL);
 		AggBinaryOp v2 = HopRewriteUtils.createMatrixMultiply(hi_0, v1);
 
@@ -32389,6 +32587,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: %*%(A,!=(c,rev(A))) => %*%(A,!=(A,c))");
+		DMLExecutor.println("Applying rewrite: %*%(A,!=(c,rev(A))) => %*%(A,!=(A,c))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0, hi_1_0, Types.OpOp2.NOTEQUAL);
 		AggBinaryOp v2 = HopRewriteUtils.createMatrixMultiply(hi_0, v1);
 
@@ -32452,6 +32651,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: %*%(A,rev($1:!=(c,A))) => %*%(A,!=(A,c))");
+		DMLExecutor.println("Applying rewrite: %*%(A,rev($1:!=(c,A))) => %*%(A,!=(A,c))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0, hi_1_0_0, Types.OpOp2.NOTEQUAL);
 		AggBinaryOp v2 = HopRewriteUtils.createMatrixMultiply(hi_0, v1);
 
@@ -32515,6 +32715,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: %*%(A,rev($1:!=(A,c))) => %*%(A,!=(A,c))");
+		DMLExecutor.println("Applying rewrite: %*%(A,rev($1:!=(A,c))) => %*%(A,!=(A,c))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0, hi_1_0_1, Types.OpOp2.NOTEQUAL);
 		AggBinaryOp v2 = HopRewriteUtils.createMatrixMultiply(hi_0, v1);
 
@@ -32578,6 +32779,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: %*%(A,!=(rev(A),C)) => %*%(A,!=(A,C))");
+		DMLExecutor.println("Applying rewrite: %*%(A,!=(rev(A),C)) => %*%(A,!=(A,C))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0, hi_1_1, Types.OpOp2.NOTEQUAL);
 		AggBinaryOp v2 = HopRewriteUtils.createMatrixMultiply(hi_0, v1);
 
@@ -32641,6 +32843,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: %*%(A,!=(C,rev(A))) => %*%(A,!=(A,C))");
+		DMLExecutor.println("Applying rewrite: %*%(A,!=(C,rev(A))) => %*%(A,!=(A,C))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0, hi_1_0, Types.OpOp2.NOTEQUAL);
 		AggBinaryOp v2 = HopRewriteUtils.createMatrixMultiply(hi_0, v1);
 
@@ -32707,6 +32910,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: rev(-($1:colSums(A),b)) => -(colSums(A),b)");
+		DMLExecutor.println("Applying rewrite: rev(-($1:colSums(A),b)) => -(colSums(A),b)");
 		AggUnaryOp v1 = HopRewriteUtils.createAggUnaryOp(hi_0_0_0, Types.AggOp.SUM, Types.Direction.Col);
 		BinaryOp v2 = HopRewriteUtils.createBinary(v1, hi_0_1, Types.OpOp2.MINUS);
 
@@ -32773,6 +32977,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: rev(-(a,$1:colSums(B))) => -(a,colSums(B))");
+		DMLExecutor.println("Applying rewrite: rev(-(a,$1:colSums(B))) => -(a,colSums(B))");
 		AggUnaryOp v1 = HopRewriteUtils.createAggUnaryOp(hi_0_1_0, Types.AggOp.SUM, Types.Direction.Col);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0_0, v1, Types.OpOp2.MINUS);
 
@@ -32839,6 +33044,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: rev(!=(colSums(B),a)) => !=(a,colSums(B))");
+		DMLExecutor.println("Applying rewrite: rev(!=(colSums(B),a)) => !=(a,colSums(B))");
 		AggUnaryOp v1 = HopRewriteUtils.createAggUnaryOp(hi_0_0_0, Types.AggOp.SUM, Types.Direction.Col);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0_1, v1, Types.OpOp2.NOTEQUAL);
 
@@ -32905,6 +33111,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: rev(!=(a,colSums(B))) => !=(a,colSums(B))");
+		DMLExecutor.println("Applying rewrite: rev(!=(a,colSums(B))) => !=(a,colSums(B))");
 		AggUnaryOp v1 = HopRewriteUtils.createAggUnaryOp(hi_0_1_0, Types.AggOp.SUM, Types.Direction.Col);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0_0, v1, Types.OpOp2.NOTEQUAL);
 
@@ -32966,6 +33173,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: rev(t($1:rowSums(A))) => t(rowSums(A))");
+		DMLExecutor.println("Applying rewrite: rev(t($1:rowSums(A))) => t(rowSums(A))");
 		AggUnaryOp v1 = HopRewriteUtils.createAggUnaryOp(hi_0_0_0, Types.AggOp.SUM, Types.Direction.Row);
 		ReorgOp v2 = HopRewriteUtils.createTranspose(v1);
 
@@ -33032,6 +33240,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: rev(+($1:colSums(B),a)) => +(a,colSums(B))");
+		DMLExecutor.println("Applying rewrite: rev(+($1:colSums(B),a)) => +(a,colSums(B))");
 		AggUnaryOp v1 = HopRewriteUtils.createAggUnaryOp(hi_0_0_0, Types.AggOp.SUM, Types.Direction.Col);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0_1, v1, Types.OpOp2.PLUS);
 
@@ -33098,6 +33307,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: rev(+(a,$1:colSums(B))) => +(a,colSums(B))");
+		DMLExecutor.println("Applying rewrite: rev(+(a,$1:colSums(B))) => +(a,colSums(B))");
 		AggUnaryOp v1 = HopRewriteUtils.createAggUnaryOp(hi_0_1_0, Types.AggOp.SUM, Types.Direction.Col);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0_0, v1, Types.OpOp2.PLUS);
 
@@ -33164,6 +33374,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: rev(*($1:colSums(B),a)) => *(a,colSums(B))");
+		DMLExecutor.println("Applying rewrite: rev(*($1:colSums(B),a)) => *(a,colSums(B))");
 		AggUnaryOp v1 = HopRewriteUtils.createAggUnaryOp(hi_0_0_0, Types.AggOp.SUM, Types.Direction.Col);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0_1, v1, Types.OpOp2.MULT);
 
@@ -33230,6 +33441,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: rev(*(a,$1:colSums(B))) => *(a,colSums(B))");
+		DMLExecutor.println("Applying rewrite: rev(*(a,$1:colSums(B))) => *(a,colSums(B))");
 		AggUnaryOp v1 = HopRewriteUtils.createAggUnaryOp(hi_0_1_0, Types.AggOp.SUM, Types.Direction.Col);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0_0, v1, Types.OpOp2.MULT);
 
@@ -33296,6 +33508,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: rev(/(a,colSums(B))) => /(a,colSums(B))");
+		DMLExecutor.println("Applying rewrite: rev(/(a,colSums(B))) => /(a,colSums(B))");
 		AggUnaryOp v1 = HopRewriteUtils.createAggUnaryOp(hi_0_1_0, Types.AggOp.SUM, Types.Direction.Col);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0_0, v1, Types.OpOp2.DIV);
 
@@ -33367,6 +33580,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: *(colSums($1:/(a,C)),b) => colSums(/(*(a,b),C))");
+		DMLExecutor.println("Applying rewrite: *(colSums($1:/(a,C)),b) => colSums(/(*(a,b),C))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0_0, hi_1, Types.OpOp2.MULT);
 		BinaryOp v2 = HopRewriteUtils.createBinary(v1, hi_0_0_1, Types.OpOp2.DIV);
 		AggUnaryOp v3 = HopRewriteUtils.createAggUnaryOp(v2, Types.AggOp.SUM, Types.Direction.Col);
@@ -33439,6 +33653,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: *(a,colSums($1:/(b,C))) => colSums(/(*(a,b),C))");
+		DMLExecutor.println("Applying rewrite: *(a,colSums($1:/(b,C))) => colSums(/(*(a,b),C))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0, hi_1_0_0, Types.OpOp2.MULT);
 		BinaryOp v2 = HopRewriteUtils.createBinary(v1, hi_1_0_1, Types.OpOp2.DIV);
 		AggUnaryOp v3 = HopRewriteUtils.createAggUnaryOp(v2, Types.AggOp.SUM, Types.Direction.Col);
@@ -33511,6 +33726,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: *(rowSums($1:/(a,C)),b) => rowSums(/(*(a,b),C))");
+		DMLExecutor.println("Applying rewrite: *(rowSums($1:/(a,C)),b) => rowSums(/(*(a,b),C))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0_0, hi_1, Types.OpOp2.MULT);
 		BinaryOp v2 = HopRewriteUtils.createBinary(v1, hi_0_0_1, Types.OpOp2.DIV);
 		AggUnaryOp v3 = HopRewriteUtils.createAggUnaryOp(v2, Types.AggOp.SUM, Types.Direction.Row);
@@ -33583,6 +33799,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: *(a,rowSums($1:/(b,C))) => rowSums(/(*(a,b),C))");
+		DMLExecutor.println("Applying rewrite: *(a,rowSums($1:/(b,C))) => rowSums(/(*(a,b),C))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0, hi_1_0_0, Types.OpOp2.MULT);
 		BinaryOp v2 = HopRewriteUtils.createBinary(v1, hi_1_0_1, Types.OpOp2.DIV);
 		AggUnaryOp v3 = HopRewriteUtils.createAggUnaryOp(v2, Types.AggOp.SUM, Types.Direction.Row);
@@ -33645,6 +33862,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: rev(%*%($1:colSums(A),B)) => %*%(colSums(A),B)");
+		DMLExecutor.println("Applying rewrite: rev(%*%($1:colSums(A),B)) => %*%(colSums(A),B)");
 		AggUnaryOp v1 = HopRewriteUtils.createAggUnaryOp(hi_0_0_0, Types.AggOp.SUM, Types.Direction.Col);
 		AggBinaryOp v2 = HopRewriteUtils.createMatrixMultiply(v1, hi_0_1);
 
@@ -33724,6 +33942,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: -(A,rev($1:*(b,C))) => -*(A,b,rev(C))");
+		DMLExecutor.println("Applying rewrite: -(A,rev($1:*(b,C))) => -*(A,b,rev(C))");
 		ReorgOp v1 = HopRewriteUtils.createReorg(hi_1_0_1, Types.ReOrgOp.REV);
 		TernaryOp v2 = HopRewriteUtils.createTernary(hi_0, hi_1_0_0, v1,Types.OpOp3.MINUS_MULT);
 
@@ -33803,6 +34022,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: -(A,rev($1:*(C,b))) => -*(A,b,rev(C))");
+		DMLExecutor.println("Applying rewrite: -(A,rev($1:*(C,b))) => -*(A,b,rev(C))");
 		ReorgOp v1 = HopRewriteUtils.createReorg(hi_1_0_0, Types.ReOrgOp.REV);
 		TernaryOp v2 = HopRewriteUtils.createTernary(hi_0, hi_1_0_1, v1,Types.OpOp3.MINUS_MULT);
 
@@ -33882,6 +34102,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: -(A,t($1:*(b,C))) => -*(A,b,t(C))");
+		DMLExecutor.println("Applying rewrite: -(A,t($1:*(b,C))) => -*(A,b,t(C))");
 		ReorgOp v1 = HopRewriteUtils.createTranspose(hi_1_0_1);
 		TernaryOp v2 = HopRewriteUtils.createTernary(hi_0, hi_1_0_0, v1,Types.OpOp3.MINUS_MULT);
 
@@ -33961,6 +34182,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: -(A,t($1:*(C,b))) => -*(A,b,t(C))");
+		DMLExecutor.println("Applying rewrite: -(A,t($1:*(C,b))) => -*(A,b,t(C))");
 		ReorgOp v1 = HopRewriteUtils.createTranspose(hi_1_0_0);
 		TernaryOp v2 = HopRewriteUtils.createTernary(hi_0, hi_1_0_1, v1,Types.OpOp3.MINUS_MULT);
 
@@ -34040,6 +34262,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: +(rev($1:*(b,C)),A) => +*(A,b,rev(C))");
+		DMLExecutor.println("Applying rewrite: +(rev($1:*(b,C)),A) => +*(A,b,rev(C))");
 		ReorgOp v1 = HopRewriteUtils.createReorg(hi_0_0_1, Types.ReOrgOp.REV);
 		TernaryOp v2 = HopRewriteUtils.createTernary(hi_1, hi_0_0_0, v1,Types.OpOp3.PLUS_MULT);
 
@@ -34119,6 +34342,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: +(rev($1:*(C,b)),A) => +*(A,b,rev(C))");
+		DMLExecutor.println("Applying rewrite: +(rev($1:*(C,b)),A) => +*(A,b,rev(C))");
 		ReorgOp v1 = HopRewriteUtils.createReorg(hi_0_0_0, Types.ReOrgOp.REV);
 		TernaryOp v2 = HopRewriteUtils.createTernary(hi_1, hi_0_0_1, v1,Types.OpOp3.PLUS_MULT);
 
@@ -34198,6 +34422,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: +(A,rev($1:*(C,b))) => +*(A,b,rev(C))");
+		DMLExecutor.println("Applying rewrite: +(A,rev($1:*(C,b))) => +*(A,b,rev(C))");
 		ReorgOp v1 = HopRewriteUtils.createReorg(hi_1_0_0, Types.ReOrgOp.REV);
 		TernaryOp v2 = HopRewriteUtils.createTernary(hi_0, hi_1_0_1, v1,Types.OpOp3.PLUS_MULT);
 
@@ -34271,6 +34496,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: -(-(a,$1:*(c,D)),B) => -(a,+*(B,c,D))");
+		DMLExecutor.println("Applying rewrite: -(-(a,$1:*(c,D)),B) => -(a,+*(B,c,D))");
 		TernaryOp v1 = HopRewriteUtils.createTernary(hi_1, hi_0_1_0, hi_0_1_1,Types.OpOp3.PLUS_MULT);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0_0, v1, Types.OpOp2.MINUS);
 
@@ -34344,6 +34570,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: -(-(a,$1:*(D,c)),B) => -(a,+*(B,c,D))");
+		DMLExecutor.println("Applying rewrite: -(-(a,$1:*(D,c)),B) => -(a,+*(B,c,D))");
 		TernaryOp v1 = HopRewriteUtils.createTernary(hi_1, hi_0_1_1, hi_0_1_0,Types.OpOp3.PLUS_MULT);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0_0, v1, Types.OpOp2.MINUS);
 
@@ -34417,6 +34644,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: -(A,+($1:*(b,C),d)) => -(-*(A,b,C),d)");
+		DMLExecutor.println("Applying rewrite: -(A,+($1:*(b,C),d)) => -(-*(A,b,C),d)");
 		TernaryOp v1 = HopRewriteUtils.createTernary(hi_0, hi_1_0_0, hi_1_0_1,Types.OpOp3.MINUS_MULT);
 		BinaryOp v2 = HopRewriteUtils.createBinary(v1, hi_1_1, Types.OpOp2.MINUS);
 
@@ -34490,6 +34718,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: -(A,+($1:*(C,b),d)) => -(-*(A,b,C),d)");
+		DMLExecutor.println("Applying rewrite: -(A,+($1:*(C,b),d)) => -(-*(A,b,C),d)");
 		TernaryOp v1 = HopRewriteUtils.createTernary(hi_0, hi_1_0_1, hi_1_0_0,Types.OpOp3.MINUS_MULT);
 		BinaryOp v2 = HopRewriteUtils.createBinary(v1, hi_1_1, Types.OpOp2.MINUS);
 
@@ -34563,6 +34792,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: -(A,+(d,$1:*(b,C))) => -(-*(A,b,C),d)");
+		DMLExecutor.println("Applying rewrite: -(A,+(d,$1:*(b,C))) => -(-*(A,b,C),d)");
 		TernaryOp v1 = HopRewriteUtils.createTernary(hi_0, hi_1_1_0, hi_1_1_1,Types.OpOp3.MINUS_MULT);
 		BinaryOp v2 = HopRewriteUtils.createBinary(v1, hi_1_0, Types.OpOp2.MINUS);
 
@@ -34636,6 +34866,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: -(A,+(d,$1:*(C,b))) => -(-*(A,b,C),d)");
+		DMLExecutor.println("Applying rewrite: -(A,+(d,$1:*(C,b))) => -(-*(A,b,C),d)");
 		TernaryOp v1 = HopRewriteUtils.createTernary(hi_0, hi_1_1_1, hi_1_1_0,Types.OpOp3.MINUS_MULT);
 		BinaryOp v2 = HopRewriteUtils.createBinary(v1, hi_1_0, Types.OpOp2.MINUS);
 
@@ -34715,6 +34946,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: +(t($1:*(b,C)),A) => +*(A,b,t(C))");
+		DMLExecutor.println("Applying rewrite: +(t($1:*(b,C)),A) => +*(A,b,t(C))");
 		ReorgOp v1 = HopRewriteUtils.createTranspose(hi_0_0_1);
 		TernaryOp v2 = HopRewriteUtils.createTernary(hi_1, hi_0_0_0, v1,Types.OpOp3.PLUS_MULT);
 
@@ -34794,6 +35026,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: +(t($1:*(C,b)),A) => +*(A,b,t(C))");
+		DMLExecutor.println("Applying rewrite: +(t($1:*(C,b)),A) => +*(A,b,t(C))");
 		ReorgOp v1 = HopRewriteUtils.createTranspose(hi_0_0_0);
 		TernaryOp v2 = HopRewriteUtils.createTernary(hi_1, hi_0_0_1, v1,Types.OpOp3.PLUS_MULT);
 
@@ -34873,6 +35106,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: +(A,t($1:*(b,C))) => +*(A,b,t(C))");
+		DMLExecutor.println("Applying rewrite: +(A,t($1:*(b,C))) => +*(A,b,t(C))");
 		ReorgOp v1 = HopRewriteUtils.createTranspose(hi_1_0_1);
 		TernaryOp v2 = HopRewriteUtils.createTernary(hi_0, hi_1_0_0, v1,Types.OpOp3.PLUS_MULT);
 
@@ -34952,6 +35186,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: +(A,t($1:*(C,b))) => +*(A,b,t(C))");
+		DMLExecutor.println("Applying rewrite: +(A,t($1:*(C,b))) => +*(A,b,t(C))");
 		ReorgOp v1 = HopRewriteUtils.createTranspose(hi_1_0_0);
 		TernaryOp v2 = HopRewriteUtils.createTernary(hi_0, hi_1_0_1, v1,Types.OpOp3.PLUS_MULT);
 
@@ -35025,6 +35260,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: -(+($1:*(c,D),a),B) => -(a,-*(B,c,D))");
+		DMLExecutor.println("Applying rewrite: -(+($1:*(c,D),a),B) => -(a,-*(B,c,D))");
 		TernaryOp v1 = HopRewriteUtils.createTernary(hi_1, hi_0_0_0, hi_0_0_1,Types.OpOp3.MINUS_MULT);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0_1, v1, Types.OpOp2.MINUS);
 
@@ -35098,6 +35334,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: -(+($1:*(D,c),a),B) => -(a,-*(B,c,D))");
+		DMLExecutor.println("Applying rewrite: -(+($1:*(D,c),a),B) => -(a,-*(B,c,D))");
 		TernaryOp v1 = HopRewriteUtils.createTernary(hi_1, hi_0_0_1, hi_0_0_0,Types.OpOp3.MINUS_MULT);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0_1, v1, Types.OpOp2.MINUS);
 
@@ -35171,6 +35408,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: -(+(a,$1:*(c,D)),B) => -(a,-*(B,c,D))");
+		DMLExecutor.println("Applying rewrite: -(+(a,$1:*(c,D)),B) => -(a,-*(B,c,D))");
 		TernaryOp v1 = HopRewriteUtils.createTernary(hi_1, hi_0_1_0, hi_0_1_1,Types.OpOp3.MINUS_MULT);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0_0, v1, Types.OpOp2.MINUS);
 
@@ -35244,6 +35482,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: -(+(a,$1:*(D,c)),B) => -(a,-*(B,c,D))");
+		DMLExecutor.println("Applying rewrite: -(+(a,$1:*(D,c)),B) => -(a,-*(B,c,D))");
 		TernaryOp v1 = HopRewriteUtils.createTernary(hi_1, hi_0_1_1, hi_0_1_0,Types.OpOp3.MINUS_MULT);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0_0, v1, Types.OpOp2.MINUS);
 
@@ -35317,6 +35556,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: -(*(c,D),-(B,a)) => -(a,-*(B,c,D))");
+		DMLExecutor.println("Applying rewrite: -(*(c,D),-(B,a)) => -(a,-*(B,c,D))");
 		TernaryOp v1 = HopRewriteUtils.createTernary(hi_1_0, hi_0_0, hi_0_1,Types.OpOp3.MINUS_MULT);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_1_1, v1, Types.OpOp2.MINUS);
 
@@ -35390,6 +35630,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: -(*(D,c),-(B,a)) => -(a,-*(B,c,D))");
+		DMLExecutor.println("Applying rewrite: -(*(D,c),-(B,a)) => -(a,-*(B,c,D))");
 		TernaryOp v1 = HopRewriteUtils.createTernary(hi_1_0, hi_0_1, hi_0_0,Types.OpOp3.MINUS_MULT);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_1_1, v1, Types.OpOp2.MINUS);
 
@@ -35463,6 +35704,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: +(-($1:*(c,D),B),a) => -(a,-*(B,c,D))");
+		DMLExecutor.println("Applying rewrite: +(-($1:*(c,D),B),a) => -(a,-*(B,c,D))");
 		TernaryOp v1 = HopRewriteUtils.createTernary(hi_0_1, hi_0_0_0, hi_0_0_1,Types.OpOp3.MINUS_MULT);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_1, v1, Types.OpOp2.MINUS);
 
@@ -35536,6 +35778,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: +(-($1:*(D,c),B),a) => -(a,-*(B,c,D))");
+		DMLExecutor.println("Applying rewrite: +(-($1:*(D,c),B),a) => -(a,-*(B,c,D))");
 		TernaryOp v1 = HopRewriteUtils.createTernary(hi_0_1, hi_0_0_1, hi_0_0_0,Types.OpOp3.MINUS_MULT);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_1, v1, Types.OpOp2.MINUS);
 
@@ -35609,6 +35852,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: +(a,-($1:*(c,D),B)) => -(a,-*(B,c,D))");
+		DMLExecutor.println("Applying rewrite: +(a,-($1:*(c,D),B)) => -(a,-*(B,c,D))");
 		TernaryOp v1 = HopRewriteUtils.createTernary(hi_1_1, hi_1_0_0, hi_1_0_1,Types.OpOp3.MINUS_MULT);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0, v1, Types.OpOp2.MINUS);
 
@@ -35682,6 +35926,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: +(a,-($1:*(D,c),B)) => -(a,-*(B,c,D))");
+		DMLExecutor.println("Applying rewrite: +(a,-($1:*(D,c),B)) => -(a,-*(B,c,D))");
 		TernaryOp v1 = HopRewriteUtils.createTernary(hi_1_1, hi_1_0_1, hi_1_0_0,Types.OpOp3.MINUS_MULT);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0, v1, Types.OpOp2.MINUS);
 
@@ -35755,6 +36000,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: -(A,-(d,$1:*(b,C))) => -(+*(A,b,C),d)");
+		DMLExecutor.println("Applying rewrite: -(A,-(d,$1:*(b,C))) => -(+*(A,b,C),d)");
 		TernaryOp v1 = HopRewriteUtils.createTernary(hi_0, hi_1_1_0, hi_1_1_1,Types.OpOp3.PLUS_MULT);
 		BinaryOp v2 = HopRewriteUtils.createBinary(v1, hi_1_0, Types.OpOp2.MINUS);
 
@@ -35828,6 +36074,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: -(A,-(d,$1:*(C,b))) => -(+*(A,b,C),d)");
+		DMLExecutor.println("Applying rewrite: -(A,-(d,$1:*(C,b))) => -(+*(A,b,C),d)");
 		TernaryOp v1 = HopRewriteUtils.createTernary(hi_0, hi_1_1_1, hi_1_1_0,Types.OpOp3.PLUS_MULT);
 		BinaryOp v2 = HopRewriteUtils.createBinary(v1, hi_1_0, Types.OpOp2.MINUS);
 
@@ -35901,6 +36148,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: -(*(b,C),-(d,A)) => -(+*(A,b,C),d)");
+		DMLExecutor.println("Applying rewrite: -(*(b,C),-(d,A)) => -(+*(A,b,C),d)");
 		TernaryOp v1 = HopRewriteUtils.createTernary(hi_1_1, hi_0_0, hi_0_1,Types.OpOp3.PLUS_MULT);
 		BinaryOp v2 = HopRewriteUtils.createBinary(v1, hi_1_0, Types.OpOp2.MINUS);
 
@@ -35974,6 +36222,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: -(*(C,b),-(d,A)) => -(+*(A,b,C),d)");
+		DMLExecutor.println("Applying rewrite: -(*(C,b),-(d,A)) => -(+*(A,b,C),d)");
 		TernaryOp v1 = HopRewriteUtils.createTernary(hi_1_1, hi_0_1, hi_0_0,Types.OpOp3.PLUS_MULT);
 		BinaryOp v2 = HopRewriteUtils.createBinary(v1, hi_1_0, Types.OpOp2.MINUS);
 
@@ -36047,6 +36296,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: +(-($1:*(b,C),d),A) => -(+*(A,b,C),d)");
+		DMLExecutor.println("Applying rewrite: +(-($1:*(b,C),d),A) => -(+*(A,b,C),d)");
 		TernaryOp v1 = HopRewriteUtils.createTernary(hi_1, hi_0_0_0, hi_0_0_1,Types.OpOp3.PLUS_MULT);
 		BinaryOp v2 = HopRewriteUtils.createBinary(v1, hi_0_1, Types.OpOp2.MINUS);
 
@@ -36120,6 +36370,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: +(-($1:*(C,b),d),A) => -(+*(A,b,C),d)");
+		DMLExecutor.println("Applying rewrite: +(-($1:*(C,b),d),A) => -(+*(A,b,C),d)");
 		TernaryOp v1 = HopRewriteUtils.createTernary(hi_1, hi_0_0_1, hi_0_0_0,Types.OpOp3.PLUS_MULT);
 		BinaryOp v2 = HopRewriteUtils.createBinary(v1, hi_0_1, Types.OpOp2.MINUS);
 
@@ -36193,6 +36444,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: +(A,-($1:*(b,C),d)) => -(+*(A,b,C),d)");
+		DMLExecutor.println("Applying rewrite: +(A,-($1:*(b,C),d)) => -(+*(A,b,C),d)");
 		TernaryOp v1 = HopRewriteUtils.createTernary(hi_0, hi_1_0_0, hi_1_0_1,Types.OpOp3.PLUS_MULT);
 		BinaryOp v2 = HopRewriteUtils.createBinary(v1, hi_1_1, Types.OpOp2.MINUS);
 
@@ -36266,6 +36518,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: +(A,-($1:*(C,b),d)) => -(+*(A,b,C),d)");
+		DMLExecutor.println("Applying rewrite: +(A,-($1:*(C,b),d)) => -(+*(A,b,C),d)");
 		TernaryOp v1 = HopRewriteUtils.createTernary(hi_0, hi_1_0_1, hi_1_0_0,Types.OpOp3.PLUS_MULT);
 		BinaryOp v2 = HopRewriteUtils.createBinary(v1, hi_1_1, Types.OpOp2.MINUS);
 
@@ -36339,6 +36592,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: -(a,-($1:*(c,D),B)) => +(a,-*(B,c,D))");
+		DMLExecutor.println("Applying rewrite: -(a,-($1:*(c,D),B)) => +(a,-*(B,c,D))");
 		TernaryOp v1 = HopRewriteUtils.createTernary(hi_1_1, hi_1_0_0, hi_1_0_1,Types.OpOp3.MINUS_MULT);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0, v1, Types.OpOp2.PLUS);
 
@@ -36412,6 +36666,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: -(a,-($1:*(D,c),B)) => +(a,-*(B,c,D))");
+		DMLExecutor.println("Applying rewrite: -(a,-($1:*(D,c),B)) => +(a,-*(B,c,D))");
 		TernaryOp v1 = HopRewriteUtils.createTernary(hi_1_1, hi_1_0_1, hi_1_0_0,Types.OpOp3.MINUS_MULT);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0, v1, Types.OpOp2.PLUS);
 
@@ -36485,6 +36740,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: -(B,-($1:*(c,D),a)) => +(a,-*(B,c,D))");
+		DMLExecutor.println("Applying rewrite: -(B,-($1:*(c,D),a)) => +(a,-*(B,c,D))");
 		TernaryOp v1 = HopRewriteUtils.createTernary(hi_0, hi_1_0_0, hi_1_0_1,Types.OpOp3.MINUS_MULT);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_1_1, v1, Types.OpOp2.PLUS);
 
@@ -36558,6 +36814,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: -(B,-($1:*(D,c),a)) => +(a,-*(B,c,D))");
+		DMLExecutor.println("Applying rewrite: -(B,-($1:*(D,c),a)) => +(a,-*(B,c,D))");
 		TernaryOp v1 = HopRewriteUtils.createTernary(hi_0, hi_1_0_1, hi_1_0_0,Types.OpOp3.MINUS_MULT);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_1_1, v1, Types.OpOp2.PLUS);
 
@@ -36631,6 +36888,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: +(-(a,$1:*(c,D)),B) => +(a,-*(B,c,D))");
+		DMLExecutor.println("Applying rewrite: +(-(a,$1:*(c,D)),B) => +(a,-*(B,c,D))");
 		TernaryOp v1 = HopRewriteUtils.createTernary(hi_1, hi_0_1_0, hi_0_1_1,Types.OpOp3.MINUS_MULT);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0_0, v1, Types.OpOp2.PLUS);
 
@@ -36704,6 +36962,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: +(-(a,$1:*(D,c)),B) => +(a,-*(B,c,D))");
+		DMLExecutor.println("Applying rewrite: +(-(a,$1:*(D,c)),B) => +(a,-*(B,c,D))");
 		TernaryOp v1 = HopRewriteUtils.createTernary(hi_1, hi_0_1_1, hi_0_1_0,Types.OpOp3.MINUS_MULT);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0_0, v1, Types.OpOp2.PLUS);
 
@@ -36777,6 +37036,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: +(B,-(a,$1:*(c,D))) => +(a,-*(B,c,D))");
+		DMLExecutor.println("Applying rewrite: +(B,-(a,$1:*(c,D))) => +(a,-*(B,c,D))");
 		TernaryOp v1 = HopRewriteUtils.createTernary(hi_0, hi_1_1_0, hi_1_1_1,Types.OpOp3.MINUS_MULT);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_1_0, v1, Types.OpOp2.PLUS);
 
@@ -36850,6 +37110,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: +(B,-(a,$1:*(D,c))) => +(a,-*(B,c,D))");
+		DMLExecutor.println("Applying rewrite: +(B,-(a,$1:*(D,c))) => +(a,-*(B,c,D))");
 		TernaryOp v1 = HopRewriteUtils.createTernary(hi_0, hi_1_1_1, hi_1_1_0,Types.OpOp3.MINUS_MULT);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_1_0, v1, Types.OpOp2.PLUS);
 
@@ -36923,6 +37184,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: -(B,-($1:*(c,D),A)) => +(A,-*(B,c,D))");
+		DMLExecutor.println("Applying rewrite: -(B,-($1:*(c,D),A)) => +(A,-*(B,c,D))");
 		TernaryOp v1 = HopRewriteUtils.createTernary(hi_0, hi_1_0_0, hi_1_0_1,Types.OpOp3.MINUS_MULT);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_1_1, v1, Types.OpOp2.PLUS);
 
@@ -36996,6 +37258,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: -(B,-($1:*(D,c),A)) => +(A,-*(B,c,D))");
+		DMLExecutor.println("Applying rewrite: -(B,-($1:*(D,c),A)) => +(A,-*(B,c,D))");
 		TernaryOp v1 = HopRewriteUtils.createTernary(hi_0, hi_1_0_1, hi_1_0_0,Types.OpOp3.MINUS_MULT);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_1_1, v1, Types.OpOp2.PLUS);
 
@@ -37069,6 +37332,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: -(*(c,D),-(B,A)) => -(A,-*(B,c,D))");
+		DMLExecutor.println("Applying rewrite: -(*(c,D),-(B,A)) => -(A,-*(B,c,D))");
 		TernaryOp v1 = HopRewriteUtils.createTernary(hi_1_0, hi_0_0, hi_0_1,Types.OpOp3.MINUS_MULT);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_1_1, v1, Types.OpOp2.MINUS);
 
@@ -37142,6 +37406,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: -(*(D,c),-(B,A)) => -(A,-*(B,c,D))");
+		DMLExecutor.println("Applying rewrite: -(*(D,c),-(B,A)) => -(A,-*(B,c,D))");
 		TernaryOp v1 = HopRewriteUtils.createTernary(hi_1_0, hi_0_1, hi_0_0,Types.OpOp3.MINUS_MULT);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_1_1, v1, Types.OpOp2.MINUS);
 
@@ -37215,6 +37480,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: +(-($1:*(c,D),B),A) => -(A,-*(B,c,D))");
+		DMLExecutor.println("Applying rewrite: +(-($1:*(c,D),B),A) => -(A,-*(B,c,D))");
 		TernaryOp v1 = HopRewriteUtils.createTernary(hi_0_1, hi_0_0_0, hi_0_0_1,Types.OpOp3.MINUS_MULT);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_1, v1, Types.OpOp2.MINUS);
 
@@ -37288,6 +37554,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: +(-($1:*(D,c),B),A) => -(A,-*(B,c,D))");
+		DMLExecutor.println("Applying rewrite: +(-($1:*(D,c),B),A) => -(A,-*(B,c,D))");
 		TernaryOp v1 = HopRewriteUtils.createTernary(hi_0_1, hi_0_0_1, hi_0_0_0,Types.OpOp3.MINUS_MULT);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_1, v1, Types.OpOp2.MINUS);
 
@@ -37361,6 +37628,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: +(A,-($1:*(c,D),B)) => -(A,-*(B,c,D))");
+		DMLExecutor.println("Applying rewrite: +(A,-($1:*(c,D),B)) => -(A,-*(B,c,D))");
 		TernaryOp v1 = HopRewriteUtils.createTernary(hi_1_1, hi_1_0_0, hi_1_0_1,Types.OpOp3.MINUS_MULT);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0, v1, Types.OpOp2.MINUS);
 
@@ -37434,6 +37702,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: +(A,-($1:*(D,c),B)) => -(A,-*(B,c,D))");
+		DMLExecutor.println("Applying rewrite: +(A,-($1:*(D,c),B)) => -(A,-*(B,c,D))");
 		TernaryOp v1 = HopRewriteUtils.createTernary(hi_1_1, hi_1_0_1, hi_1_0_0,Types.OpOp3.MINUS_MULT);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0, v1, Types.OpOp2.MINUS);
 
@@ -37507,6 +37776,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: -(A,*($1:/(b,D),C)) => -*(A,b,/(C,D))");
+		DMLExecutor.println("Applying rewrite: -(A,*($1:/(b,D),C)) => -*(A,b,/(C,D))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_1_1, hi_1_0_1, Types.OpOp2.DIV);
 		TernaryOp v2 = HopRewriteUtils.createTernary(hi_0, hi_1_0_0, v1,Types.OpOp3.MINUS_MULT);
 
@@ -37580,6 +37850,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: -(A,*(C,$1:/(b,D))) => -*(A,b,/(C,D))");
+		DMLExecutor.println("Applying rewrite: -(A,*(C,$1:/(b,D))) => -*(A,b,/(C,D))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_1_0, hi_1_1_1, Types.OpOp2.DIV);
 		TernaryOp v2 = HopRewriteUtils.createTernary(hi_0, hi_1_1_0, v1,Types.OpOp3.MINUS_MULT);
 
@@ -37653,6 +37924,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: -(A,/($1:*(b,C),D)) => -*(A,b,/(C,D))");
+		DMLExecutor.println("Applying rewrite: -(A,/($1:*(b,C),D)) => -*(A,b,/(C,D))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_1_0_1, hi_1_1, Types.OpOp2.DIV);
 		TernaryOp v2 = HopRewriteUtils.createTernary(hi_0, hi_1_0_0, v1,Types.OpOp3.MINUS_MULT);
 
@@ -37726,6 +37998,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: -(A,/($1:*(C,b),D)) => -*(A,b,/(C,D))");
+		DMLExecutor.println("Applying rewrite: -(A,/($1:*(C,b),D)) => -*(A,b,/(C,D))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_1_0_0, hi_1_1, Types.OpOp2.DIV);
 		TernaryOp v2 = HopRewriteUtils.createTernary(hi_0, hi_1_0_1, v1,Types.OpOp3.MINUS_MULT);
 
@@ -37799,6 +38072,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: +(*($1:/(b,D),C),A) => +*(A,b,/(C,D))");
+		DMLExecutor.println("Applying rewrite: +(*($1:/(b,D),C),A) => +*(A,b,/(C,D))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_1, hi_0_0_1, Types.OpOp2.DIV);
 		TernaryOp v2 = HopRewriteUtils.createTernary(hi_1, hi_0_0_0, v1,Types.OpOp3.PLUS_MULT);
 
@@ -37872,6 +38146,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: +(/($1:*(b,C),D),A) => +*(A,b,/(C,D))");
+		DMLExecutor.println("Applying rewrite: +(/($1:*(b,C),D),A) => +*(A,b,/(C,D))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0_1, hi_0_1, Types.OpOp2.DIV);
 		TernaryOp v2 = HopRewriteUtils.createTernary(hi_1, hi_0_0_0, v1,Types.OpOp3.PLUS_MULT);
 
@@ -37945,6 +38220,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: +(/($1:*(C,b),D),A) => +*(A,b,/(C,D))");
+		DMLExecutor.println("Applying rewrite: +(/($1:*(C,b),D),A) => +*(A,b,/(C,D))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0_0, hi_0_1, Types.OpOp2.DIV);
 		TernaryOp v2 = HopRewriteUtils.createTernary(hi_1, hi_0_0_1, v1,Types.OpOp3.PLUS_MULT);
 
@@ -38018,6 +38294,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: +(*(C,$1:/(b,D)),A) => +*(A,b,/(C,D))");
+		DMLExecutor.println("Applying rewrite: +(*(C,$1:/(b,D)),A) => +*(A,b,/(C,D))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0, hi_0_1_1, Types.OpOp2.DIV);
 		TernaryOp v2 = HopRewriteUtils.createTernary(hi_1, hi_0_1_0, v1,Types.OpOp3.PLUS_MULT);
 
@@ -38091,6 +38368,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: +(A,/($1:*(b,C),D)) => +*(A,b,/(C,D))");
+		DMLExecutor.println("Applying rewrite: +(A,/($1:*(b,C),D)) => +*(A,b,/(C,D))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_1_0_1, hi_1_1, Types.OpOp2.DIV);
 		TernaryOp v2 = HopRewriteUtils.createTernary(hi_0, hi_1_0_0, v1,Types.OpOp3.PLUS_MULT);
 
@@ -38164,6 +38442,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: +(A,*($1:/(b,D),C)) => +*(A,b,/(C,D))");
+		DMLExecutor.println("Applying rewrite: +(A,*($1:/(b,D),C)) => +*(A,b,/(C,D))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_1_1, hi_1_0_1, Types.OpOp2.DIV);
 		TernaryOp v2 = HopRewriteUtils.createTernary(hi_0, hi_1_0_0, v1,Types.OpOp3.PLUS_MULT);
 
@@ -38237,6 +38516,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: +(A,/($1:*(C,b),D)) => +*(A,b,/(C,D))");
+		DMLExecutor.println("Applying rewrite: +(A,/($1:*(C,b),D)) => +*(A,b,/(C,D))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_1_0_0, hi_1_1, Types.OpOp2.DIV);
 		TernaryOp v2 = HopRewriteUtils.createTernary(hi_0, hi_1_0_1, v1,Types.OpOp3.PLUS_MULT);
 
@@ -38310,6 +38590,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: +(A,*(C,$1:/(b,D))) => +*(A,b,/(C,D))");
+		DMLExecutor.println("Applying rewrite: +(A,*(C,$1:/(b,D))) => +*(A,b,/(C,D))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_1_0, hi_1_1_1, Types.OpOp2.DIV);
 		TernaryOp v2 = HopRewriteUtils.createTernary(hi_0, hi_1_1_0, v1,Types.OpOp3.PLUS_MULT);
 
@@ -38389,6 +38670,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: -(A,%*%($1:*(b,C),D)) => -*(A,b,%*%(C,D))");
+		DMLExecutor.println("Applying rewrite: -(A,%*%($1:*(b,C),D)) => -*(A,b,%*%(C,D))");
 		AggBinaryOp v1 = HopRewriteUtils.createMatrixMultiply(hi_1_0_1, hi_1_1);
 		TernaryOp v2 = HopRewriteUtils.createTernary(hi_0, hi_1_0_0, v1,Types.OpOp3.MINUS_MULT);
 
@@ -38468,6 +38750,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: -(A,%*%($1:*(C,b),D)) => -*(A,b,%*%(C,D))");
+		DMLExecutor.println("Applying rewrite: -(A,%*%($1:*(C,b),D)) => -*(A,b,%*%(C,D))");
 		AggBinaryOp v1 = HopRewriteUtils.createMatrixMultiply(hi_1_0_0, hi_1_1);
 		TernaryOp v2 = HopRewriteUtils.createTernary(hi_0, hi_1_0_1, v1,Types.OpOp3.MINUS_MULT);
 
@@ -38534,12 +38817,12 @@ public class GeneratedRewriteClass implements Function {
 			return hi;
 
 
-		if ( hi_1_0.getNnz() == -1 || hi_1_1_1.getNnz() == -1 || hi_1_0.getDim1() == -1 || hi_1_0.getDim2() == -1 || hi_1_1_1.getDim2() == -1 || hi_0.getNnz() == -1 )
+		if ( hi_1_0.getNnz() == -1 || hi_1_1_1.getNnz() == -1 || hi_1_1_1.getDim1() == -1 || hi_1_0.getDim1() == -1 || hi_1_1_1.getDim2() == -1 || hi_0.getNnz() == -1 )
 			return hi;
 
 
-		double costFrom = ((2.0 * hi_1_1_1.getNnz()) + (Math.min(hi_1_0.getNnz(), hi_1_1_1.getNnz()) * hi_1_0.getDim2() * 3.0) + (hi_0.getNnz() + (Math.min((hi_1_0.getNnz() * (1.0 / hi_1_0.getDim1())), 1.0) * Math.min((hi_1_1_1.getNnz() * (1.0 / hi_1_1_1.getDim2())), 1.0) * hi_1_0.getDim1() * hi_1_1_1.getDim2())) + 30030.0);
-		double costTo = ((Math.min(hi_1_0.getNnz(), hi_1_1_1.getNnz()) * hi_1_0.getDim2() * 3.0) + (3.0 * Math.min(hi_0.getNnz(), (Math.min((hi_1_0.getNnz() * (1.0 / hi_1_0.getDim1())), 1.0) * Math.min((hi_1_1_1.getNnz() * (1.0 / hi_1_1_1.getDim2())), 1.0) * hi_1_0.getDim1() * hi_1_1_1.getDim2()))) + 20070.0);
+		double costFrom = ((2.0 * hi_1_1_1.getNnz()) + (Math.min(hi_1_0.getNnz(), hi_1_1_1.getNnz()) * hi_1_1_1.getDim1() * 3.0) + (hi_0.getNnz() + (Math.min((hi_1_0.getNnz() * (1.0 / hi_1_0.getDim1())), 1.0) * Math.min((hi_1_1_1.getNnz() * (1.0 / hi_1_1_1.getDim2())), 1.0) * hi_1_0.getDim1() * hi_1_1_1.getDim2())) + 30030.0);
+		double costTo = ((Math.min(hi_1_0.getNnz(), hi_1_1_1.getNnz()) * hi_1_1_1.getDim1() * 3.0) + (3.0 * Math.min(hi_0.getNnz(), (Math.min((hi_1_0.getNnz() * (1.0 / hi_1_0.getDim1())), 1.0) * Math.min((hi_1_1_1.getNnz() * (1.0 / hi_1_1_1.getDim2())), 1.0) * hi_1_0.getDim1() * hi_1_1_1.getDim2()))) + 20070.0);
 
 		if ( costFrom <= costTo )
 			return hi;
@@ -38547,6 +38830,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: -(A,%*%(C,$1:*(b,D))) => -*(A,b,%*%(C,D))");
+		DMLExecutor.println("Applying rewrite: -(A,%*%(C,$1:*(b,D))) => -*(A,b,%*%(C,D))");
 		AggBinaryOp v1 = HopRewriteUtils.createMatrixMultiply(hi_1_0, hi_1_1_1);
 		TernaryOp v2 = HopRewriteUtils.createTernary(hi_0, hi_1_1_0, v1,Types.OpOp3.MINUS_MULT);
 
@@ -38613,12 +38897,12 @@ public class GeneratedRewriteClass implements Function {
 			return hi;
 
 
-		if ( hi_1_0.getNnz() == -1 || hi_1_0.getDim1() == -1 || hi_1_0.getDim2() == -1 || hi_0.getNnz() == -1 || hi_1_1_0.getNnz() == -1 || hi_1_1_0.getDim2() == -1 )
+		if ( hi_1_0.getNnz() == -1 || hi_1_1_0.getDim1() == -1 || hi_1_0.getDim1() == -1 || hi_0.getNnz() == -1 || hi_1_1_0.getNnz() == -1 || hi_1_1_0.getDim2() == -1 )
 			return hi;
 
 
-		double costFrom = ((2.0 * hi_1_1_0.getNnz()) + (Math.min(hi_1_0.getNnz(), hi_1_1_0.getNnz()) * hi_1_0.getDim2() * 3.0) + (hi_0.getNnz() + (Math.min((hi_1_0.getNnz() * (1.0 / hi_1_0.getDim1())), 1.0) * Math.min((hi_1_1_0.getNnz() * (1.0 / hi_1_1_0.getDim2())), 1.0) * hi_1_0.getDim1() * hi_1_1_0.getDim2())) + 30030.0);
-		double costTo = ((Math.min(hi_1_0.getNnz(), hi_1_1_0.getNnz()) * hi_1_0.getDim2() * 3.0) + (3.0 * Math.min(hi_0.getNnz(), (Math.min((hi_1_0.getNnz() * (1.0 / hi_1_0.getDim1())), 1.0) * Math.min((hi_1_1_0.getNnz() * (1.0 / hi_1_1_0.getDim2())), 1.0) * hi_1_0.getDim1() * hi_1_1_0.getDim2()))) + 20070.0);
+		double costFrom = ((2.0 * hi_1_1_0.getNnz()) + (Math.min(hi_1_0.getNnz(), hi_1_1_0.getNnz()) * hi_1_1_0.getDim1() * 3.0) + (hi_0.getNnz() + (Math.min((hi_1_0.getNnz() * (1.0 / hi_1_0.getDim1())), 1.0) * Math.min((hi_1_1_0.getNnz() * (1.0 / hi_1_1_0.getDim2())), 1.0) * hi_1_0.getDim1() * hi_1_1_0.getDim2())) + 30030.0);
+		double costTo = ((Math.min(hi_1_0.getNnz(), hi_1_1_0.getNnz()) * hi_1_1_0.getDim1() * 3.0) + (3.0 * Math.min(hi_0.getNnz(), (Math.min((hi_1_0.getNnz() * (1.0 / hi_1_0.getDim1())), 1.0) * Math.min((hi_1_1_0.getNnz() * (1.0 / hi_1_1_0.getDim2())), 1.0) * hi_1_0.getDim1() * hi_1_1_0.getDim2()))) + 20070.0);
 
 		if ( costFrom <= costTo )
 			return hi;
@@ -38626,6 +38910,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: -(A,%*%(C,$1:*(D,b))) => -*(A,b,%*%(C,D))");
+		DMLExecutor.println("Applying rewrite: -(A,%*%(C,$1:*(D,b))) => -*(A,b,%*%(C,D))");
 		AggBinaryOp v1 = HopRewriteUtils.createMatrixMultiply(hi_1_0, hi_1_1_0);
 		TernaryOp v2 = HopRewriteUtils.createTernary(hi_0, hi_1_1_1, v1,Types.OpOp3.MINUS_MULT);
 
@@ -38705,6 +38990,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: +(%*%($1:*(b,C),D),A) => +*(A,b,%*%(C,D))");
+		DMLExecutor.println("Applying rewrite: +(%*%($1:*(b,C),D),A) => +*(A,b,%*%(C,D))");
 		AggBinaryOp v1 = HopRewriteUtils.createMatrixMultiply(hi_0_0_1, hi_0_1);
 		TernaryOp v2 = HopRewriteUtils.createTernary(hi_1, hi_0_0_0, v1,Types.OpOp3.PLUS_MULT);
 
@@ -38784,6 +39070,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: +(%*%($1:*(C,b),D),A) => +*(A,b,%*%(C,D))");
+		DMLExecutor.println("Applying rewrite: +(%*%($1:*(C,b),D),A) => +*(A,b,%*%(C,D))");
 		AggBinaryOp v1 = HopRewriteUtils.createMatrixMultiply(hi_0_0_0, hi_0_1);
 		TernaryOp v2 = HopRewriteUtils.createTernary(hi_1, hi_0_0_1, v1,Types.OpOp3.PLUS_MULT);
 
@@ -38863,6 +39150,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: +(%*%(C,$1:*(b,D)),A) => +*(A,b,%*%(C,D))");
+		DMLExecutor.println("Applying rewrite: +(%*%(C,$1:*(b,D)),A) => +*(A,b,%*%(C,D))");
 		AggBinaryOp v1 = HopRewriteUtils.createMatrixMultiply(hi_0_0, hi_0_1_1);
 		TernaryOp v2 = HopRewriteUtils.createTernary(hi_1, hi_0_1_0, v1,Types.OpOp3.PLUS_MULT);
 
@@ -38929,12 +39217,12 @@ public class GeneratedRewriteClass implements Function {
 			return hi;
 
 
-		if ( hi_0_0.getDim1() == -1 || hi_1.getNnz() == -1 || hi_0_0.getNnz() == -1 || hi_0_0.getDim2() == -1 || hi_0_1_0.getDim2() == -1 || hi_0_1_0.getNnz() == -1 )
+		if ( hi_0_0.getDim1() == -1 || hi_1.getNnz() == -1 || hi_0_1_0.getDim1() == -1 || hi_0_0.getNnz() == -1 || hi_0_1_0.getDim2() == -1 || hi_0_1_0.getNnz() == -1 )
 			return hi;
 
 
-		double costFrom = ((2.0 * hi_0_1_0.getNnz()) + (Math.min(hi_0_0.getNnz(), hi_0_1_0.getNnz()) * hi_0_0.getDim2() * 3.0) + ((Math.min((hi_0_0.getNnz() * (1.0 / hi_0_0.getDim1())), 1.0) * Math.min((hi_0_1_0.getNnz() * (1.0 / hi_0_1_0.getDim2())), 1.0) * hi_0_0.getDim1() * hi_0_1_0.getDim2()) + hi_1.getNnz()) + 30030.0);
-		double costTo = ((Math.min(hi_0_0.getNnz(), hi_0_1_0.getNnz()) * hi_0_0.getDim2() * 3.0) + (3.0 * Math.min(hi_1.getNnz(), (Math.min((hi_0_0.getNnz() * (1.0 / hi_0_0.getDim1())), 1.0) * Math.min((hi_0_1_0.getNnz() * (1.0 / hi_0_1_0.getDim2())), 1.0) * hi_0_0.getDim1() * hi_0_1_0.getDim2()))) + 20070.0);
+		double costFrom = ((2.0 * hi_0_1_0.getNnz()) + (Math.min(hi_0_0.getNnz(), hi_0_1_0.getNnz()) * hi_0_1_0.getDim1() * 3.0) + ((Math.min((hi_0_0.getNnz() * (1.0 / hi_0_0.getDim1())), 1.0) * Math.min((hi_0_1_0.getNnz() * (1.0 / hi_0_1_0.getDim2())), 1.0) * hi_0_0.getDim1() * hi_0_1_0.getDim2()) + hi_1.getNnz()) + 30030.0);
+		double costTo = ((Math.min(hi_0_0.getNnz(), hi_0_1_0.getNnz()) * hi_0_1_0.getDim1() * 3.0) + (3.0 * Math.min(hi_1.getNnz(), (Math.min((hi_0_0.getNnz() * (1.0 / hi_0_0.getDim1())), 1.0) * Math.min((hi_0_1_0.getNnz() * (1.0 / hi_0_1_0.getDim2())), 1.0) * hi_0_0.getDim1() * hi_0_1_0.getDim2()))) + 20070.0);
 
 		if ( costFrom <= costTo )
 			return hi;
@@ -38942,6 +39230,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: +(%*%(C,$1:*(D,b)),A) => +*(A,b,%*%(C,D))");
+		DMLExecutor.println("Applying rewrite: +(%*%(C,$1:*(D,b)),A) => +*(A,b,%*%(C,D))");
 		AggBinaryOp v1 = HopRewriteUtils.createMatrixMultiply(hi_0_0, hi_0_1_0);
 		TernaryOp v2 = HopRewriteUtils.createTernary(hi_1, hi_0_1_1, v1,Types.OpOp3.PLUS_MULT);
 
@@ -39021,6 +39310,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: +(A,%*%($1:*(b,C),D)) => +*(A,b,%*%(C,D))");
+		DMLExecutor.println("Applying rewrite: +(A,%*%($1:*(b,C),D)) => +*(A,b,%*%(C,D))");
 		AggBinaryOp v1 = HopRewriteUtils.createMatrixMultiply(hi_1_0_1, hi_1_1);
 		TernaryOp v2 = HopRewriteUtils.createTernary(hi_0, hi_1_0_0, v1,Types.OpOp3.PLUS_MULT);
 
@@ -39087,12 +39377,12 @@ public class GeneratedRewriteClass implements Function {
 			return hi;
 
 
-		if ( hi_1_0_0.getDim1() == -1 || hi_1_1.getDim2() == -1 || hi_1_0_0.getNnz() == -1 || hi_1_1.getDim1() == -1 || hi_0.getNnz() == -1 || hi_1_1.getNnz() == -1 )
+		if ( hi_1_0_0.getDim2() == -1 || hi_1_0_0.getDim1() == -1 || hi_1_1.getDim2() == -1 || hi_1_0_0.getNnz() == -1 || hi_0.getNnz() == -1 || hi_1_1.getNnz() == -1 )
 			return hi;
 
 
-		double costFrom = ((2.0 * hi_1_0_0.getNnz()) + (Math.min(hi_1_0_0.getNnz(), hi_1_1.getNnz()) * hi_1_1.getDim1() * 3.0) + (hi_0.getNnz() + (Math.min((hi_1_0_0.getNnz() * (1.0 / hi_1_0_0.getDim1())), 1.0) * Math.min((hi_1_1.getNnz() * (1.0 / hi_1_1.getDim2())), 1.0) * hi_1_0_0.getDim1() * hi_1_1.getDim2())) + 30030.0);
-		double costTo = ((Math.min(hi_1_0_0.getNnz(), hi_1_1.getNnz()) * hi_1_1.getDim1() * 3.0) + (3.0 * Math.min(hi_0.getNnz(), (Math.min((hi_1_0_0.getNnz() * (1.0 / hi_1_0_0.getDim1())), 1.0) * Math.min((hi_1_1.getNnz() * (1.0 / hi_1_1.getDim2())), 1.0) * hi_1_0_0.getDim1() * hi_1_1.getDim2()))) + 20070.0);
+		double costFrom = ((2.0 * hi_1_0_0.getNnz()) + (Math.min(hi_1_0_0.getNnz(), hi_1_1.getNnz()) * hi_1_0_0.getDim2() * 3.0) + (hi_0.getNnz() + (Math.min((hi_1_0_0.getNnz() * (1.0 / hi_1_0_0.getDim1())), 1.0) * Math.min((hi_1_1.getNnz() * (1.0 / hi_1_1.getDim2())), 1.0) * hi_1_0_0.getDim1() * hi_1_1.getDim2())) + 30030.0);
+		double costTo = ((Math.min(hi_1_0_0.getNnz(), hi_1_1.getNnz()) * hi_1_0_0.getDim2() * 3.0) + (3.0 * Math.min(hi_0.getNnz(), (Math.min((hi_1_0_0.getNnz() * (1.0 / hi_1_0_0.getDim1())), 1.0) * Math.min((hi_1_1.getNnz() * (1.0 / hi_1_1.getDim2())), 1.0) * hi_1_0_0.getDim1() * hi_1_1.getDim2()))) + 20070.0);
 
 		if ( costFrom <= costTo )
 			return hi;
@@ -39100,6 +39390,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: +(A,%*%($1:*(C,b),D)) => +*(A,b,%*%(C,D))");
+		DMLExecutor.println("Applying rewrite: +(A,%*%($1:*(C,b),D)) => +*(A,b,%*%(C,D))");
 		AggBinaryOp v1 = HopRewriteUtils.createMatrixMultiply(hi_1_0_0, hi_1_1);
 		TernaryOp v2 = HopRewriteUtils.createTernary(hi_0, hi_1_0_1, v1,Types.OpOp3.PLUS_MULT);
 
@@ -39166,12 +39457,12 @@ public class GeneratedRewriteClass implements Function {
 			return hi;
 
 
-		if ( hi_1_0.getNnz() == -1 || hi_1_1_1.getNnz() == -1 || hi_1_0.getDim1() == -1 || hi_1_0.getDim2() == -1 || hi_1_1_1.getDim2() == -1 || hi_0.getNnz() == -1 )
+		if ( hi_1_0.getNnz() == -1 || hi_1_1_1.getNnz() == -1 || hi_1_1_1.getDim1() == -1 || hi_1_0.getDim1() == -1 || hi_1_1_1.getDim2() == -1 || hi_0.getNnz() == -1 )
 			return hi;
 
 
-		double costFrom = ((2.0 * hi_1_1_1.getNnz()) + (Math.min(hi_1_0.getNnz(), hi_1_1_1.getNnz()) * hi_1_0.getDim2() * 3.0) + (hi_0.getNnz() + (Math.min((hi_1_0.getNnz() * (1.0 / hi_1_0.getDim1())), 1.0) * Math.min((hi_1_1_1.getNnz() * (1.0 / hi_1_1_1.getDim2())), 1.0) * hi_1_0.getDim1() * hi_1_1_1.getDim2())) + 30030.0);
-		double costTo = ((Math.min(hi_1_0.getNnz(), hi_1_1_1.getNnz()) * hi_1_0.getDim2() * 3.0) + (3.0 * Math.min(hi_0.getNnz(), (Math.min((hi_1_0.getNnz() * (1.0 / hi_1_0.getDim1())), 1.0) * Math.min((hi_1_1_1.getNnz() * (1.0 / hi_1_1_1.getDim2())), 1.0) * hi_1_0.getDim1() * hi_1_1_1.getDim2()))) + 20070.0);
+		double costFrom = ((2.0 * hi_1_1_1.getNnz()) + (Math.min(hi_1_0.getNnz(), hi_1_1_1.getNnz()) * hi_1_1_1.getDim1() * 3.0) + (hi_0.getNnz() + (Math.min((hi_1_0.getNnz() * (1.0 / hi_1_0.getDim1())), 1.0) * Math.min((hi_1_1_1.getNnz() * (1.0 / hi_1_1_1.getDim2())), 1.0) * hi_1_0.getDim1() * hi_1_1_1.getDim2())) + 30030.0);
+		double costTo = ((Math.min(hi_1_0.getNnz(), hi_1_1_1.getNnz()) * hi_1_1_1.getDim1() * 3.0) + (3.0 * Math.min(hi_0.getNnz(), (Math.min((hi_1_0.getNnz() * (1.0 / hi_1_0.getDim1())), 1.0) * Math.min((hi_1_1_1.getNnz() * (1.0 / hi_1_1_1.getDim2())), 1.0) * hi_1_0.getDim1() * hi_1_1_1.getDim2()))) + 20070.0);
 
 		if ( costFrom <= costTo )
 			return hi;
@@ -39179,6 +39470,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: +(A,%*%(C,$1:*(b,D))) => +*(A,b,%*%(C,D))");
+		DMLExecutor.println("Applying rewrite: +(A,%*%(C,$1:*(b,D))) => +*(A,b,%*%(C,D))");
 		AggBinaryOp v1 = HopRewriteUtils.createMatrixMultiply(hi_1_0, hi_1_1_1);
 		TernaryOp v2 = HopRewriteUtils.createTernary(hi_0, hi_1_1_0, v1,Types.OpOp3.PLUS_MULT);
 
@@ -39245,12 +39537,12 @@ public class GeneratedRewriteClass implements Function {
 			return hi;
 
 
-		if ( hi_1_0.getNnz() == -1 || hi_1_1_0.getDim1() == -1 || hi_1_0.getDim1() == -1 || hi_0.getNnz() == -1 || hi_1_1_0.getNnz() == -1 || hi_1_1_0.getDim2() == -1 )
+		if ( hi_1_0.getNnz() == -1 || hi_1_0.getDim1() == -1 || hi_1_0.getDim2() == -1 || hi_0.getNnz() == -1 || hi_1_1_0.getNnz() == -1 || hi_1_1_0.getDim2() == -1 )
 			return hi;
 
 
-		double costFrom = ((2.0 * hi_1_1_0.getNnz()) + (Math.min(hi_1_0.getNnz(), hi_1_1_0.getNnz()) * hi_1_1_0.getDim1() * 3.0) + (hi_0.getNnz() + (Math.min((hi_1_0.getNnz() * (1.0 / hi_1_0.getDim1())), 1.0) * Math.min((hi_1_1_0.getNnz() * (1.0 / hi_1_1_0.getDim2())), 1.0) * hi_1_0.getDim1() * hi_1_1_0.getDim2())) + 30030.0);
-		double costTo = ((Math.min(hi_1_0.getNnz(), hi_1_1_0.getNnz()) * hi_1_1_0.getDim1() * 3.0) + (3.0 * Math.min(hi_0.getNnz(), (Math.min((hi_1_0.getNnz() * (1.0 / hi_1_0.getDim1())), 1.0) * Math.min((hi_1_1_0.getNnz() * (1.0 / hi_1_1_0.getDim2())), 1.0) * hi_1_0.getDim1() * hi_1_1_0.getDim2()))) + 20070.0);
+		double costFrom = ((2.0 * hi_1_1_0.getNnz()) + (Math.min(hi_1_0.getNnz(), hi_1_1_0.getNnz()) * hi_1_0.getDim2() * 3.0) + (hi_0.getNnz() + (Math.min((hi_1_0.getNnz() * (1.0 / hi_1_0.getDim1())), 1.0) * Math.min((hi_1_1_0.getNnz() * (1.0 / hi_1_1_0.getDim2())), 1.0) * hi_1_0.getDim1() * hi_1_1_0.getDim2())) + 30030.0);
+		double costTo = ((Math.min(hi_1_0.getNnz(), hi_1_1_0.getNnz()) * hi_1_0.getDim2() * 3.0) + (3.0 * Math.min(hi_0.getNnz(), (Math.min((hi_1_0.getNnz() * (1.0 / hi_1_0.getDim1())), 1.0) * Math.min((hi_1_1_0.getNnz() * (1.0 / hi_1_1_0.getDim2())), 1.0) * hi_1_0.getDim1() * hi_1_1_0.getDim2()))) + 20070.0);
 
 		if ( costFrom <= costTo )
 			return hi;
@@ -39258,6 +39550,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: +(A,%*%(C,$1:*(D,b))) => +*(A,b,%*%(C,D))");
+		DMLExecutor.println("Applying rewrite: +(A,%*%(C,$1:*(D,b))) => +*(A,b,%*%(C,D))");
 		AggBinaryOp v1 = HopRewriteUtils.createMatrixMultiply(hi_1_0, hi_1_1_0);
 		TernaryOp v2 = HopRewriteUtils.createTernary(hi_0, hi_1_1_1, v1,Types.OpOp3.PLUS_MULT);
 

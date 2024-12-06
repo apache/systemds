@@ -8,12 +8,14 @@ import org.apache.sysds.hops.rewriter.dml.DMLExecutor;
 import org.apache.sysds.hops.rewriter.estimators.RewriterCostEstimator;
 import org.apache.sysds.hops.rewriter.utils.RewriterUtils;
 
+import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
 import java.util.function.Consumer;
@@ -219,13 +221,16 @@ public class RewriterRuleCreator {
 	}
 
 	public static boolean validateRuleApplicability(RewriterRule rule, final RuleContext ctx) {
-		return validateRuleApplicability(rule, ctx, false);
+		return validateRuleApplicability(rule, ctx, false, null);
 	}
 
-	public static boolean validateRuleApplicability(RewriterRule rule, final RuleContext ctx, boolean print) {
+	public static boolean validateRuleApplicability(RewriterRule rule, final RuleContext ctx, boolean print, @Nullable Function<Hop, Hop> injectedRewriteClass) {
 		RewriterStatement _mstmt = rule.getStmt1();
-		if (ctx.metaPropagator != null)
+		RewriterStatement _mstmt2 = rule.getStmt2();
+		if (ctx.metaPropagator != null) {
 			ctx.metaPropagator.apply(_mstmt);
+			ctx.metaPropagator.apply(_mstmt2);
+		}
 
 		final RewriterStatement stmt1 = RewriterUtils.unfuseOperators(_mstmt, ctx);
 
@@ -242,6 +247,8 @@ public class RewriterRuleCreator {
 			code2 += "\nprint(lineage(as.matrix(result)))";
 
 		MutableBoolean isRelevant = new MutableBoolean(false);
+
+		final RewriterStatement expectedStmt = injectedRewriteClass != null ? _mstmt2 : _mstmt;
 
 		RewriterRuntimeUtils.attachHopInterceptor(prog -> {
 			Hop hop;
@@ -301,7 +308,7 @@ public class RewriterRuleCreator {
 
 			Map<RewriterStatement, RewriterStatement> createdObjects = new HashMap<>();
 
-			RewriterStatement stmt1ReplaceNCols = _mstmt.nestedCopyOrInject(createdObjects, mstmt -> {
+			RewriterStatement stmt1ReplaceNCols = expectedStmt.nestedCopyOrInject(createdObjects, mstmt -> {
 				if (mstmt.isInstruction() && (mstmt.trueInstruction().equals("ncol") || mstmt.trueInstruction().equals("nrow")))
 					return RewriterStatement.literal(ctx, DMLCodeGenerator.MATRIX_DIMS);
 				return null;
@@ -310,7 +317,7 @@ public class RewriterRuleCreator {
 			stmt1ReplaceNCols.prepareForHashing();
 			stmt1ReplaceNCols.recomputeHashCodes(ctx);
 
-			Set<RewriterStatement> mVars = vars.stream().map(createdObjects::get).collect(Collectors.toSet());
+			Set<RewriterStatement> mVars = vars.stream().map(createdObjects::get).filter(Objects::nonNull).collect(Collectors.toSet());
 
 			if (print) {
 				DMLExecutor.println("Observed statement: " + stmt.toParsableString(ctx));
@@ -322,34 +329,51 @@ public class RewriterRuleCreator {
 				// Check if also the right variables are associated
 				boolean assocsMatching = true;
 				//DMLExecutor.println(mCtx.getDependencyMap());
-				for (RewriterStatement var : mVars) {
-					RewriterStatement assoc = mCtx.getDependencyMap().get(var.isInstruction() && !var.trueInstruction().equals("const") ? var.getChild(0) : var);
+				if (mCtx.getDependencyMap() != null) {
+					for (RewriterStatement var : mVars) {
+						//DMLExecutor.println("Var: " + var);
+						RewriterStatement assoc = mCtx.getDependencyMap().get(var.isInstruction() && !var.trueInstruction().equals("const") ? var.getChild(0) : var);
 
-					if (assoc == null)
-						throw new IllegalArgumentException("Association is null!");
+						if (assoc == null)
+							throw new IllegalArgumentException("Association is null!");
 
-					if (!assoc.getId().equals(var.getId())) {
-						assocsMatching = false;
-						break;
+						if (!assoc.getId().equals(var.getId())) {
+							assocsMatching = false;
+							break;
+						}
 					}
 				}
 
 				if (assocsMatching) {
 					// Then the rule matches, meaning that the statement is not rewritten by SystemDS
 					isRelevant.setValue(true);
+					//DMLExecutor.println("MATCH");
 				}
 			}
 
 			// TODO: Maybe we can still rewrite the new graph if it still has less cost
 
 			// TODO: Evaluate cost and if our rule can still be applied
-			return false; // The program should not be executed as we just want to extract any rewrites that are applied to the current statement
+			return injectedRewriteClass != null; // The program should not be executed as we just want to extract any rewrites that are applied to the current statement
 		});
 
-		DMLExecutor.executeCode(code2, true);
+		MutableBoolean wasApplied = new MutableBoolean(true);
+
+		if (injectedRewriteClass != null) {
+			String ruleStr = rule.toString();
+			wasApplied.setValue(false);
+			DMLExecutor.executeCode(code2, s -> {
+				if (s.equals("Applying rewrite: " + ruleStr)) {
+					wasApplied.setValue(true);
+				}
+			}, injectedRewriteClass);
+		} else {
+			DMLExecutor.executeCode(code2, true);
+		}
+
 		RewriterRuntimeUtils.detachHopInterceptor();
 
-		return isRelevant.booleanValue();
+		return isRelevant.booleanValue() && wasApplied.booleanValue();
 	}
 
 	public static RewriterRule createRule(RewriterStatement from, RewriterStatement to, RewriterStatement canonicalForm1, RewriterStatement canonicalForm2, final RuleContext ctx) {

@@ -240,13 +240,13 @@ public class DMLCodeGenerator {
 							continue;
 						}
 					}
-					sb.append(mId + " = (rand(rows=" + nrow + ", cols=" + ncol + ") * rand(rows=" + nrow + ", cols=" + ncol + ", min=(as.scalar(rand())+1.0), max=(as.scalar(rand())+2.0), seed=" + rd.nextInt(1000) + "))^as.scalar(rand())\n");
+					sb.append(mId + " = cos((rand(rows=" + nrow + ", cols=" + ncol + ") * rand(rows=" + nrow + ", cols=" + ncol + ", min=(as.scalar(rand())+1.0), max=(as.scalar(rand())+2.0), seed=" + rd.nextInt(1000) + "))^as.scalar(rand()))\n");
 					break;
 				case "FLOAT":
-					sb.append(var.getId() + " = as.scalar(rand(min=(as.scalar(rand())+1.0), max=(as.scalar(rand())+2.0), seed=" + rd.nextInt(1000) + "))^as.scalar(rand())\n");
+					sb.append(var.getId() + " = cos(as.scalar(rand(min=(as.scalar(rand())+1.0), max=(as.scalar(rand())+2.0), seed=" + rd.nextInt(1000) + "))^as.scalar(rand()))\n");
 					break;
 				case "INT":
-					sb.append(var.getId() + " = as.integer(as.scalar(rand(min=(as.scalar(rand())+1.0), max=(as.scalar(rand()+200000.0)), seed=" + rd.nextInt(1000) + "))^as.scalar(rand()))\n");
+					sb.append(var.getId() + " = as.integer(cos(as.scalar(rand(min=(as.scalar(rand())+1.0), max=(as.scalar(rand()+200000.0)), seed=" + rd.nextInt(1000) + "))^as.scalar(rand())))\n");
 					break;
 				case "BOOL":
 					sb.append(var.getId() + " = as.scalar(rand()) < 0.5\n");

@@ -201,7 +201,7 @@ public class DMLCodeGenTest {
 
 		assert RewriterRuleCreator.validateRuleCorrectness(rule, ctx);
 
-		assert RewriterRuleCreator.validateRuleApplicability(rule, ctx, true);
+		assert RewriterRuleCreator.validateRuleApplicability(rule, ctx, true, null);
 	}
 
 	@Test
@@ -224,6 +224,6 @@ public class DMLCodeGenTest {
 
 		assert RewriterRuleCreator.validateRuleCorrectness(rule, ctx);
 
-		assert RewriterRuleCreator.validateRuleApplicability(rule, ctx, true);
+		assert RewriterRuleCreator.validateRuleApplicability(rule, ctx, true, null);
 	}
 }

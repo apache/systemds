@@ -29,6 +29,7 @@ import org.apache.sysds.hops.Hop;
 import org.apache.sysds.hops.OptimizerUtils;
 import org.apache.sysds.hops.rewriter.GeneratedRewriteClass;
 import org.apache.sysds.hops.rewriter.RewriteAutomaticallyGenerated;
+import org.apache.sysds.hops.rewriter.dml.DMLExecutor;
 import org.apache.sysds.parser.DMLProgram;
 import org.apache.sysds.parser.ForStatement;
 import org.apache.sysds.parser.ForStatementBlock;
@@ -143,6 +144,9 @@ public class ProgramRewriter{
 					_dagRuleSet.add(new RewriteAutomaticallyGenerated(new GeneratedRewriteClass()));
 				}
 			}
+
+			if (DMLExecutor.APPLY_INJECTED_REWRITES)
+				_dagRuleSet.add(new RewriteAutomaticallyGenerated(DMLExecutor.REWRITE_FUNCTION));
 		}
 		
 		// cleanup after all rewrites applied 

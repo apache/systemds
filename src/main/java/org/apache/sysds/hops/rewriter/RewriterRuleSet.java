@@ -274,6 +274,29 @@ public class RewriterRuleSet {
 		return sb.toString();
 	}
 
+	public boolean generateCodeAndTest(boolean optimize, boolean print) {
+		String javaCode = toJavaCode("MGeneratedRewriteClass", optimize, false, true);
+		Function<Hop, Hop> f = RewriterCodeGen.compile(javaCode, "MGeneratedRewriteClass");
+
+		if (f == null)
+			return false; // Then, the code could not compile
+
+		int origSize = rules.size();
+
+		for (int i = 0; i < rules.size(); i++) {
+			if (!RewriterRuleCreator.validateRuleApplicability(rules.get(i), ctx, print, f)) {
+				System.out.println("Faulty rule: " + rules.get(i));
+				rules.remove(i);
+				i--;
+			}
+		}
+
+		if (rules.size() != origSize)
+			accelerate();
+
+		return true;
+	}
+
 	public static RewriterRuleSet deserialize(String data, final RuleContext ctx) {
 		return deserialize(data.split("\n"), ctx);
 	}

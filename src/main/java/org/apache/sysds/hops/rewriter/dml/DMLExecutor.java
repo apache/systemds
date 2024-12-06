@@ -1,21 +1,30 @@
 package org.apache.sysds.hops.rewriter.dml;
 
 import org.apache.sysds.api.DMLScript;
+import org.apache.sysds.hops.Hop;
 
 import java.io.OutputStream;
 import java.io.PrintStream;
 import java.util.function.Consumer;
+import java.util.function.Function;
 
 public class DMLExecutor {
 	private static PrintStream origPrintStream = System.out;
 
-	public static synchronized void executeCode(String code, boolean intercept, String... additionalArgs) {
+	public static boolean APPLY_INJECTED_REWRITES = false;
+	public static Function<Hop, Hop> REWRITE_FUNCTION = null;
+
+	public static void executeCode(String code, boolean intercept, String... additionalArgs) {
 		executeCode(code, intercept ? s -> {} : null, additionalArgs);
+	}
+
+	public static void executeCode(String code, Consumer<String> consoleInterceptor, String... additionalArgs) {
+		executeCode(code, consoleInterceptor, null, additionalArgs);
 	}
 
 	// TODO: We will probably need some kind of watchdog
 	// This cannot run in parallel
-	public static synchronized void executeCode(String code, Consumer<String> consoleInterceptor, String... additionalArgs) {
+	public static synchronized void executeCode(String code, Consumer<String> consoleInterceptor, Function<Hop, Hop> injectedRewriteClass, String... additionalArgs) {
 		try {
 			if (consoleInterceptor != null)
 				System.setOut(new PrintStream(new CustomOutputStream(System.out, consoleInterceptor)));
@@ -27,11 +36,20 @@ public class DMLExecutor {
 
 			args[additionalArgs.length] = "-s";
 			args[additionalArgs.length + 1] = code;
+
+			if (injectedRewriteClass != null) {
+				APPLY_INJECTED_REWRITES = true;
+				REWRITE_FUNCTION = injectedRewriteClass;
+			}
+
 			DMLScript.executeScript(args);
 
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
+
+		APPLY_INJECTED_REWRITES = false;
+		REWRITE_FUNCTION = null;
 
 		if (consoleInterceptor != null)
 			System.setOut(origPrintStream);

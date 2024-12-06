@@ -9,6 +9,7 @@ import org.apache.sysds.hops.LiteralOp;
 import org.apache.sysds.hops.ReorgOp;
 import org.apache.sysds.hops.rewrite.HopRewriteUtils;
 import org.apache.sysds.hops.rewriter.RewriteAutomaticallyGenerated;
+import org.apache.sysds.hops.rewriter.RewriterRuntimeUtils;
 import org.apache.sysds.hops.rewriter.codegen.RewriterCodeGen;
 import org.apache.sysds.hops.rewriter.RewriterRule;
 import org.apache.sysds.hops.rewriter.RewriterRuleBuilder;
@@ -213,6 +214,10 @@ public class CodeGenTests {
 		try {
 			List<String> lines = Files.readAllLines(Paths.get(RewriteAutomaticallyGenerated.FILE_PATH));
 			RewriterRuleSet ruleSet = RewriterRuleSet.deserialize(lines, ctx);
+
+			RewriterRuntimeUtils.printUnknowns = false;
+			ruleSet.generateCodeAndTest(true, false);
+
 			RewriterCodeGen.DEBUG = true;
 			String javaCode = ruleSet.toJavaCode("GeneratedRewriteClass", true, true, true);
 			String filePath = "/Users/janniklindemann/Dev/MScThesis/other/GeneratedRewriteClass.java";

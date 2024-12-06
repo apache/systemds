@@ -34,6 +34,19 @@ public class RewriterCodeGen {
 		return (Function<Hop, Hop>) instance;
 	}
 
+	public static Function<Hop, Hop> compile(String javaCode, String className) {
+		try {
+			SimpleCompiler compiler = new SimpleCompiler();
+			compiler.cook(javaCode);
+			Class<?> mClass = compiler.getClassLoader().loadClass(className);
+			Object instance = mClass.getDeclaredConstructor().newInstance();
+			return (Function<Hop, Hop>) instance;
+		} catch (Exception e) {
+			e.printStackTrace();
+			return null;
+		}
+	}
+
 	public static String generateClass(String className, List<Tuple2<String, RewriterRule>> rewrites, boolean optimize, boolean includePackageInfo, final RuleContext ctx, boolean ignoreErrors, boolean printErrors) {
 		StringBuilder msb = new StringBuilder();
 
@@ -54,6 +67,7 @@ public class RewriterCodeGen {
 		msb.append("import org.apache.sysds.hops.TernaryOp;\n");
 		msb.append("import org.apache.sysds.common.Types;\n");
 		msb.append("import org.apache.sysds.hops.rewrite.HopRewriteUtils;\n");
+		msb.append("import org.apache.sysds.hops.rewriter.dml.DMLExecutor;\n");
 		msb.append("\n");
 		msb.append("public class " + className + " implements Function {\n\n");
 
@@ -165,8 +179,8 @@ public class RewriterCodeGen {
 		recursivelyBuildMatchingSequence(from, sb, "hi", ctx, indentation, vars, allowedMultiRefs, allowCombinations);
 
 		if (fromCost != null && toCost != null) {
-			System.out.println("FromCost: " + fromCost.toParsableString(ctx));
-			System.out.println("ToCost: " + toCost.toParsableString(ctx));
+			//System.out.println("FromCost: " + fromCost.toParsableString(ctx));
+			//System.out.println("ToCost: " + toCost.toParsableString(ctx));
 
 			StringBuilder msb = new StringBuilder();
 			StringBuilder msb2 = new StringBuilder();
@@ -232,6 +246,8 @@ public class RewriterCodeGen {
 		if (DEBUG) {
 			indent(indentation, sb);
 			sb.append("System.out.println(\"Applying rewrite: " + name + "\");\n");
+			//indent(indentation, sb);
+			//sb.append("DMLExecutor.println(\"Applying rewrite: " + name + "\");\n");
 		}
 
 		Set<RewriterStatement> activeStatements = buildRewrite(to, sb, combinedAssertions, vars, ctx, indentation);

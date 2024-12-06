@@ -48,7 +48,7 @@ import java.util.stream.Collectors;
 
 public class RewriterRuntimeUtils {
 	public static final boolean interceptAll = false;
-	public static final boolean printUnknowns = true;
+	public static boolean printUnknowns = true;
 	public static final String dbFile = "/Users/janniklindemann/Dev/MScThesis/expressions.db";
 	public static final boolean readDB = true;
 	public static final boolean writeDB = true;

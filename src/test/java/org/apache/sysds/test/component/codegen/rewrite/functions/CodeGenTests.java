@@ -216,7 +216,7 @@ public class CodeGenTests {
 			RewriterRuleSet ruleSet = RewriterRuleSet.deserialize(lines, ctx);
 
 			RewriterRuntimeUtils.printUnknowns = false;
-			ruleSet.generateCodeAndTest(true, true);
+			ruleSet.generateCodeAndTest(false, true);
 
 			RewriterCodeGen.DEBUG = true;
 			String javaCode = ruleSet.toJavaCode("GeneratedRewriteClass", true, true, true);

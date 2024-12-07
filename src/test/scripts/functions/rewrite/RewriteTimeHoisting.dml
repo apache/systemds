@@ -22,5 +22,5 @@
 t1 = time();
 X = rand(rows=$1, cols=$2);
 
-print("time = "+(time()-t1)/1e9+"s"+" "+sum(X));
+print(";"+(time()-t1)/1e9+";"+" "+sum(X));
 

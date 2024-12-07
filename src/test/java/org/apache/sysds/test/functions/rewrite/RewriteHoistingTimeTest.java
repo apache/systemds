@@ -19,6 +19,7 @@
 
 package org.apache.sysds.test.functions.rewrite;
 
+import org.junit.Assert;
 import org.junit.Test;
 import org.apache.sysds.common.Types.ExecMode;
 import org.apache.sysds.common.Types.ExecType;
@@ -43,8 +44,13 @@ public class RewriteHoistingTimeTest extends AutomatedTestBase
 	}
 
 	@Test
-	public void testTimeHoisting() {
+	public void testTimeHoistingCP() {
 		test(TEST_NAME1, ExecType.CP);
+	}
+	
+	@Test
+	public void testTimeHoistingSpark() {
+		test(TEST_NAME1, ExecType.SPARK);
 	}
 
 	private void test(String testname, ExecType et)
@@ -58,11 +64,15 @@ public class RewriteHoistingTimeTest extends AutomatedTestBase
 			
 			String HOME = SCRIPT_DIR + TEST_DIR;
 			fullDMLScriptName = HOME + testname + ".dml";
-			programArgs = new String[] { "-explain", "-args",
+			programArgs = new String[] {"-args",
 				String.valueOf(rows), String.valueOf(cols) };
-			
-			//FIXME need to hoist time() out of expression similar to function calls
-			runTest(true, false, null, -1); 
+
+			//test that time is not executed before 1k-by-1k rand
+			setOutputBuffering(true);
+			String out = runTest(true, false, null, -1).toString();
+			double time = Double.parseDouble(out.split(";")[1]);
+			System.out.println("Time = "+time+"s");
+			Assert.assertTrue(time>0.001);
 		}
 		finally {
 			resetExecMode(platformOld);

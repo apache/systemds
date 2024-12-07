@@ -316,11 +316,11 @@ public class LinearizerResourceAwareFast extends IDagLinearizer {
 
 		List<MemoryUsageLop> newNextSteps = new ArrayList<>();
 
-		for(int i = 0; i < nextSteps.size(); i++) {
-			MemoryUsageEntry nextStep = nextSteps.get(i).getMemoryEntry();
+		for(MemoryUsageLop step : nextSteps) {
+			MemoryUsageEntry nextStep = step.getMemoryEntry();
 			boolean nextStepIsPossible = true;
 
-			for (Dependency dependency : dependencies) {
+			for(Dependency dependency : dependencies) {
 				int sequenceIndex = dependency.getSequenceIndex();
 				int nodeIndex = dependency.getNodeIndex();
 				List<Integer> nextStepIndecies = nextStep.getIndecies();
@@ -334,11 +334,12 @@ public class LinearizerResourceAwareFast extends IDagLinearizer {
 					}
 				}
 
-				if(!nextStepIsPossible) break;
+				if(!nextStepIsPossible)
+					break;
 			}
 
 			if(nextStepIsPossible) {
-				newNextSteps.add(nextSteps.get(i));
+				newNextSteps.add(step);
 			}
 		}
 
@@ -351,9 +352,9 @@ public class LinearizerResourceAwareFast extends IDagLinearizer {
 
 		Path bestPath = new Path(new ArrayList<>(), -1);
 
-		for(int j = 0; j < newNextSteps.size(); j++) {
-			MemoryUsageEntry entry = newNextSteps.get(j).getMemoryEntry();
-			Lop entryLop = newNextSteps.get(j).getLop();
+		for(MemoryUsageLop newNextStep : newNextSteps) {
+			MemoryUsageEntry entry = newNextStep.getMemoryEntry();
+			Lop entryLop = newNextStep.getLop();
 
 			if(bestPath.getMaxMemoryUsage() == -1 || entry.getEstimatedMemoryUsage() < bestPath.getMaxMemoryUsage()) {
 				List<Lop> newSequence = new ArrayList<>(sequence);

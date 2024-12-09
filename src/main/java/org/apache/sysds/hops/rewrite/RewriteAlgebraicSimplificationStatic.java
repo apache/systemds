@@ -153,8 +153,9 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 			hi = canonicalizeMatrixMultScalarAdd(hi);            //e.g., eps+U%*%t(V) -> U%*%t(V)+eps, U%*%t(V)-eps -> U%*%t(V)+(-eps) 
 			hi = simplifyCTableWithConstMatrixInputs(hi);        //e.g., table(X, matrix(1,...)) -> table(X, 1)
 			hi = removeUnnecessaryCTable(hop, hi, i);            //e.g., sum(table(X, 1)) -> nrow(X) and sum(table(1, Y)) -> nrow(Y) and sum(table(X, Y)) -> nrow(X)
-			hi = simplifyConstantConjunction(hop, hi, i);       //e.g., a & !a -> FALSE 
+			hi = simplifyConstantConjunction(hop, hi, i);        //e.g., a & !a -> FALSE 
 			hi = simplifyReverseOperation(hop, hi, i);           //e.g., table(seq(1,nrow(X),1),seq(nrow(X),1,-1)) %*% X -> rev(X)
+			hi = simplifyReverseSequence(hop, hi, i);            //e.g., rev(seq(1,n)) -> seq(n,1)
 			if(OptimizerUtils.ALLOW_OPERATOR_FUSION)
 				hi = simplifyMultiBinaryToBinaryOperation(hi);       //e.g., 1-X*Y -> X 1-* Y
 			hi = simplifyDistributiveBinaryOperation(hop, hi, i);//e.g., (X-Y*X) -> (1-Y)*X
@@ -794,6 +795,28 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 
 				LOG.debug("Applied simplifyReverseOperation.");
 			}
+		}
+
+		return hi;
+	}
+	
+	private static Hop simplifyReverseSequence( Hop parent, Hop hi, int pos )
+	{
+		if( HopRewriteUtils.isReorg(hi, ReOrgOp.REV) 
+			&& HopRewriteUtils.isBasic1NSequence(hi.getInput(0))
+			&& hi.getInput(0).getParent().size() == 1) //only consumer
+		{
+			DataGenOp seq = (DataGenOp) hi.getInput(0);
+			Hop from = seq.getInput().get(seq.getParamIndex(Statement.SEQ_FROM));
+			Hop to = seq.getInput().get(seq.getParamIndex(Statement.SEQ_TO));
+			seq.getInput().set(seq.getParamIndex(Statement.SEQ_FROM), to);
+			seq.getInput().set(seq.getParamIndex(Statement.SEQ_TO), from);
+			seq.getInput().set(seq.getParamIndex(Statement.SEQ_INCR), new LiteralOp(-1));
+			
+			HopRewriteUtils.replaceChildReference(parent, hi, seq, pos);
+			HopRewriteUtils.cleanupUnreferenced(hi, seq);
+			hi = seq;
+			LOG.debug("Applied simplifyReverseSequence (line "+hi.getBeginLine()+").");
 		}
 
 		return hi;

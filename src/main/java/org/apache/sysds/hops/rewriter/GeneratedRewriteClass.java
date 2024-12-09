@@ -180,10 +180,13 @@ public class GeneratedRewriteClass implements Function {
 								hi = _applyRewrite89(hi); // +(-(0.0,b),A) => -(A,b)
 							} else {
 								if ( hi_1.getDataType() == Types.DataType.MATRIX ) {
+									System.out.println("HERE0");
 									if ( hi_1 instanceof UnaryOp ) {
+										System.out.println("a");
 										hi = _applyRewrite30(hi); // +(a,cast.MATRIX(0.0)) => cast.MATRIX(a)
 										hi = _applyRewrite72(hi); // +(a,cast.MATRIX(b)) => cast.MATRIX(+(a,b))
 									} else if ( hi_1 instanceof BinaryOp ) {
+										System.out.println("b");
 										if ( (( BinaryOp ) hi_1 ).getOp() == Types.OpOp2.MINUS ) {
 											if ( hi_1.getInput().size() == 2 ) {
 												Hop hi_1_0 = hi_1.getInput(0);
@@ -214,6 +217,7 @@ public class GeneratedRewriteClass implements Function {
 											}
 										}
 									} else if ( hi_1 instanceof ReorgOp ) {
+										System.out.println("c");
 										if ( (( ReorgOp ) hi_1 ).getOp() == Types.ReOrgOp.REV ) {
 											hi = _applyRewrite283(hi); // +(a,rev($1:-(b,C))) => -(+(a,b),rev(C))
 											hi = _applyRewrite288(hi); // +(a,rev($1:-(C,b))) => +(-(a,b),rev(C))
@@ -226,6 +230,7 @@ public class GeneratedRewriteClass implements Function {
 											hi = _applyRewrite356(hi); // +(a,t($1:+(C,b))) => +(+(a,b),t(C))
 										}
 									} else {
+										System.out.println("HERE1");
 										hi = _applyRewrite5(hi); // +(0.0,A) => A
 									}
 								}

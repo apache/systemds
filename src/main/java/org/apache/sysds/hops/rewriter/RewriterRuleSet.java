@@ -11,6 +11,7 @@ import scala.Tuple3;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -274,27 +275,29 @@ public class RewriterRuleSet {
 		return sb.toString();
 	}
 
-	public boolean generateCodeAndTest(boolean optimize, boolean print) {
+	public Set<RewriterRule> generateCodeAndTest(boolean optimize, boolean print) {
 		String javaCode = toJavaCode("MGeneratedRewriteClass", optimize, false, true);
 		Function<Hop, Hop> f = RewriterCodeGen.compile(javaCode, "MGeneratedRewriteClass");
 
 		if (f == null)
-			return false; // Then, the code could not compile
+			return null; // Then, the code could not compile
 
-		int origSize = rules.size();
+		//int origSize = rules.size();
+		Set<RewriterRule> removed = new HashSet<>();
 
 		for (int i = 0; i < rules.size(); i++) {
 			if (!RewriterRuleCreator.validateRuleApplicability(rules.get(i), ctx, print, f)) {
 				System.out.println("Faulty rule: " + rules.get(i));
-				rules.remove(i);
-				i--;
+				removed.add(rules.get(i));
+				//rules.remove(i);
+				//i--;
 			}
 		}
 
-		if (rules.size() != origSize)
-			accelerate();
+		//if (rules.size() != origSize)
+		//	accelerate();
 
-		return true;
+		return removed;
 	}
 
 	public static RewriterRuleSet deserialize(String data, final RuleContext ctx) {

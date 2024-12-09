@@ -1,7 +1,9 @@
 package org.apache.sysds.hops.rewriter.codegen;
 
 
+import org.apache.sysds.common.Types;
 import org.apache.sysds.hops.Hop;
+import org.apache.sysds.hops.LiteralOp;
 import org.apache.sysds.hops.rewriter.assertions.RewriterAssertions;
 import org.apache.sysds.hops.rewriter.estimators.RewriterCostEstimator;
 import org.apache.sysds.hops.rewriter.RewriterDataType;
@@ -115,7 +117,7 @@ public class RewriterCodeGen {
 			for (Tuple2<String, RewriterRule> t : implementedRewrites)
 				ruleNames.put(t._2, t._1);
 
-			List<CodeGenCondition> conditions = CodeGenCondition.buildCondition(rules, 5, ctx);
+			List<CodeGenCondition> conditions = CodeGenCondition.buildCondition(rules, 20, ctx);
 			CodeGenCondition.buildSelection(msb, conditions, 2, ruleNames, ctx);
 		} else {
 			for (Tuple2<String, RewriterRule> appliedRewrites : rewrites) {
@@ -369,7 +371,7 @@ public class RewriterCodeGen {
 	// Returns the set of all active statements after the rewrite
 	private static Set<RewriterStatement> buildRewrite(RewriterStatement newRoot, StringBuilder sb, RewriterAssertions assertions, Map<RewriterStatement, String> vars, final RuleContext ctx, int indentation) {
 		Set<RewriterStatement> visited = new HashSet<>();
-		recursivelyBuildNewHop(sb, newRoot, assertions, vars, ctx, indentation, 1, visited);
+		recursivelyBuildNewHop(sb, newRoot, assertions, vars, ctx, indentation, 1, visited, newRoot.getResultingDataType(ctx).equals("FLOAT"));
 		//indent(indentation, sb);
 		//sb.append("hi = " + vars.get(newRoot) + ";\n");
 
@@ -387,19 +389,50 @@ public class RewriterCodeGen {
 		}, false);
 	}
 
-	private static int recursivelyBuildNewHop(StringBuilder sb, RewriterStatement cur, RewriterAssertions assertions, Map<RewriterStatement, String> vars, final RuleContext ctx, int indentation, int varCtr, Set<RewriterStatement> visited) {
+	private static int recursivelyBuildNewHop(StringBuilder sb, RewriterStatement cur, RewriterAssertions assertions, Map<RewriterStatement, String> vars, final RuleContext ctx, int indentation, int varCtr, Set<RewriterStatement> visited, boolean enforceRootDataType) {
 		visited.add(cur);
 		if (vars.containsKey(cur))
 			return varCtr;
 
 		for (RewriterStatement child : cur.getOperands())
-			varCtr = recursivelyBuildNewHop(sb, child, assertions, vars, ctx, indentation, varCtr, visited);
+			varCtr = recursivelyBuildNewHop(sb, child, assertions, vars, ctx, indentation, varCtr, visited, false);
 
 		if (cur instanceof RewriterDataType) {
 			if (cur.isLiteral()) {
 				indent(indentation, sb);
 				String name = "l" + (varCtr++);
-				sb.append("LiteralOp " + name + " = new LiteralOp( " + cur.getLiteral() + " );\n");
+				String literalStr = cur.getLiteral().toString();
+
+				if (enforceRootDataType) {
+					sb.append("LiteralOp " + name + ";");
+					indent(indentation, sb);
+					sb.append("switch (hi.getValueType()) {\n");
+					indent(indentation+1, sb);
+					sb.append("case Types.ValueType.FP64:\n");
+					indent(indentation+2, sb);
+					sb.append(name);
+					sb.append(" = new LiteralOp( " + cur.floatLiteral() + " );\n");
+					indent(indentation+2, sb);
+					sb.append("break;\n");
+					indent(indentation+1, sb);
+					sb.append("case Types.ValueType.INT64:\n");
+					indent(indentation+2, sb);
+					sb.append(name);
+					sb.append(" = new LiteralOp( " + cur.intLiteral(true) + " );\n");
+					indent(indentation+2, sb);
+					sb.append("break;\n");
+					indent(indentation+1, sb);
+					sb.append("case Types.ValueType.BOOLEAN:\n");
+					indent(indentation+2, sb);
+					sb.append(name);
+					sb.append(" = new LiteralOp( " + cur.boolLiteral() + " );\n");
+					indent(indentation+2, sb);
+					sb.append("break;\n");
+					indent(indentation, sb);
+					sb.append("}\n");
+				} else {
+					sb.append("LiteralOp " + name + " = new LiteralOp( " + literalStr + " );\n");
+				}
 				vars.put(cur, name);
 			}
 

@@ -1,10 +1,12 @@
 package org.apache.sysds.hops.rewriter.codegen;
 
 import org.apache.commons.lang3.NotImplementedException;
+import org.apache.sysds.hops.rewrite.HopRewriteUtils;
 import org.apache.sysds.hops.rewriter.assertions.RewriterAssertions;
 import org.apache.sysds.hops.rewriter.RewriterStatement;
 import org.apache.sysds.hops.rewriter.RuleContext;
 
+import javax.annotation.Nullable;
 import java.util.Map;
 import java.util.Optional;
 

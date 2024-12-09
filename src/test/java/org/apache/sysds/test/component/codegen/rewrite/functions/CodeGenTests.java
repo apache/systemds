@@ -29,6 +29,7 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Set;
 import java.util.function.Function;
 
 public class CodeGenTests {
@@ -216,7 +217,13 @@ public class CodeGenTests {
 			RewriterRuleSet ruleSet = RewriterRuleSet.deserialize(lines, ctx);
 
 			RewriterRuntimeUtils.printUnknowns = false;
-			ruleSet.generateCodeAndTest(false, true);
+			Set<RewriterRule> invalid_unoptimized = ruleSet.generateCodeAndTest(false, true);
+			Set<RewriterRule> invalid_optimized = ruleSet.generateCodeAndTest(true, true);
+			System.out.println("========== DIFF ===========");
+			invalid_optimized.removeAll(invalid_unoptimized);
+			for (RewriterRule rule : invalid_optimized) {
+				System.out.println(rule);
+			}
 
 			RewriterCodeGen.DEBUG = true;
 			String javaCode = ruleSet.toJavaCode("GeneratedRewriteClass", true, true, true);

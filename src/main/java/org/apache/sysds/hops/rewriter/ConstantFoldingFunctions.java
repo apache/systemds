@@ -30,13 +30,13 @@ public class ConstantFoldingFunctions {
 				if (type.equals("FLOAT"))
 					return (num, stmt) -> num == null ? stmt.floatLiteral() : foldMinFloat((double)num, stmt);
 				else if (type.equals("INT"))
-					return (num, stmt) -> num == null ? stmt.intLiteral() : foldMinInt((long)num, stmt);
+					return (num, stmt) -> num == null ? stmt.intLiteral(false) : foldMinInt((long)num, stmt);
 				break;
 			case "max":
 				if (type.equals("FLOAT"))
 					return (num, stmt) -> num == null ? stmt.floatLiteral() : foldMaxFloat((double)num, stmt);
 				else if (type.equals("INT"))
-					return (num, stmt) -> num == null ? stmt.intLiteral() : foldMaxInt((long)num, stmt);
+					return (num, stmt) -> num == null ? stmt.intLiteral(false) : foldMaxInt((long)num, stmt);
 				break;
 		}
 
@@ -122,7 +122,7 @@ public class ConstantFoldingFunctions {
 	}
 
 	public static long foldSumInt(long num, RewriterStatement next) {
-		return num + next.intLiteral();
+		return num + next.intLiteral(false);
 	}
 
 	public static double foldMulFloat(double num, RewriterStatement next) {
@@ -130,7 +130,7 @@ public class ConstantFoldingFunctions {
 	}
 
 	public static long foldMulInt(long num, RewriterStatement next) {
-		return num * next.intLiteral();
+		return num * next.intLiteral(false);
 	}
 
 	public static double foldMinFloat(double num, RewriterStatement next) {
@@ -138,7 +138,7 @@ public class ConstantFoldingFunctions {
 	}
 
 	public static long foldMinInt(long num, RewriterStatement next) {
-		return Math.min(num, next.intLiteral());
+		return Math.min(num, next.intLiteral(false));
 	}
 
 	public static double foldMaxFloat(double num, RewriterStatement next) {
@@ -146,6 +146,6 @@ public class ConstantFoldingFunctions {
 	}
 
 	public static long foldMaxInt(long num, RewriterStatement next) {
-		return Math.max(num, next.intLiteral());
+		return Math.max(num, next.intLiteral(false));
 	}
 }

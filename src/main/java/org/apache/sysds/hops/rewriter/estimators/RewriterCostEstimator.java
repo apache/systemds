@@ -434,7 +434,7 @@ public class RewriterCostEstimator {
 						}
 					}
 
-					mNew = RewriterStatement.literal(ctx, nnzGenerator.apply(op, new Tuple2<>(nrowLiteral.intLiteral(), ncolLiteral.intLiteral())));
+					mNew = RewriterStatement.literal(ctx, nnzGenerator.apply(op, new Tuple2<>(nrowLiteral.intLiteral(false), ncolLiteral.intLiteral(false))));
 					map.put(op, mNew);
 					cur.getOperands().set(i, mNew);
 				}

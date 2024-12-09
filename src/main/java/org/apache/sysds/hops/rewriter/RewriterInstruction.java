@@ -111,7 +111,7 @@ public class RewriterInstruction extends RewriterStatement {
 	}
 
 	@Override
-	public long intLiteral() {
+	public long intLiteral(boolean cast) {
 		throw new UnsupportedOperationException();
 	}
 

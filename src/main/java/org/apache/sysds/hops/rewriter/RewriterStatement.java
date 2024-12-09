@@ -479,7 +479,10 @@ public abstract class RewriterStatement {
 	public abstract boolean isLiteral();
 	public abstract Object getLiteral();
 	public abstract RewriterStatement getLiteralStatement();
-	public abstract long intLiteral();
+	public long intLiteral() {
+		return intLiteral(false);
+	}
+	public abstract long intLiteral(boolean cast);
 	public abstract double floatLiteral();
 	public abstract boolean boolLiteral();
 

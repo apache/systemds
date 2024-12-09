@@ -92,9 +92,15 @@ public class RewriterDataType extends RewriterStatement {
 	}
 
 	@Override
-	public long intLiteral() {
+	public long intLiteral(boolean cast) {
 		if (getLiteral() instanceof Boolean)
 			return (boolean)getLiteral() ? 1 : 0;
+
+		if (cast && getLiteral() instanceof Double) {
+			double val = floatLiteral();
+			return (long)val;
+		}
+
 		return (long)getLiteral();
 	}
 
@@ -113,7 +119,7 @@ public class RewriterDataType extends RewriterStatement {
 			return (boolean)getLiteral();
 		if (getLiteral() instanceof Long)
 			return (long)getLiteral() == 0L;
-		return (double)getLiteral() == 0.0;
+		return (double)getLiteral() == 0.0D;
 	}
 
 	@Override

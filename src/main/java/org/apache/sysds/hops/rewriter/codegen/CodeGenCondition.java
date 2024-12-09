@@ -1,6 +1,7 @@
 package org.apache.sysds.hops.rewriter.codegen;
 
 import javassist.compiler.CodeGen;
+import org.apache.sysds.hops.rewriter.RewriterDataType;
 import org.apache.sysds.hops.rewriter.RewriterRule;
 import org.apache.sysds.hops.rewriter.RewriterStatement;
 import org.apache.sysds.hops.rewriter.RuleContext;
@@ -28,6 +29,7 @@ public class CodeGenCondition {
 	private ConditionType conditionType;
 	private Object conditionValue;
 	private List<Object> rulesIf;
+	private List<RewriterStatement> applyAnyway;
 	private List<Integer> relativeChildPath;
 	private RewriterStatement representant;
 
@@ -35,6 +37,7 @@ public class CodeGenCondition {
 		conditionType = cType;
 		conditionValue = cValue;
 		rulesIf = new ArrayList<>();
+		applyAnyway = new ArrayList<>();
 		this.relativeChildPath = relativeChildPath;
 		this.representant = representant;
 
@@ -85,6 +88,11 @@ public class CodeGenCondition {
 
 					for (int l = 0; l < c3.rulesIf.size(); l++) {
 						CodeGenCondition c4 = (CodeGenCondition) c3.rulesIf.get(l);
+
+						if (((Tuple2<RewriterRule, RewriterStatement>) c4.rulesIf.get(0))._2 == null) {
+							continue; // TODO: Is that correct?
+						}
+
 						final int maxIndex = ((Tuple2<RewriterRule, RewriterStatement>) c4.rulesIf.get(0))._2.getOperands().size();
 						Set<RewriterRule> activeRules = c4.rulesIf.stream().map(o -> ((Tuple2<RewriterRule, RewriterStatement>) o)._1).collect(Collectors.toSet());
 						Queue<Tuple2<List<Object>, List<Integer>>> mQueue = new LinkedList<>();
@@ -109,7 +117,7 @@ public class CodeGenCondition {
 
 							c4.rulesIf.forEach(o -> {
 								Tuple2<RewriterRule, RewriterStatement> t = (Tuple2<RewriterRule, RewriterStatement>) o;
-								mList.add(new Tuple2<RewriterRule, RewriterStatement>(t._1, t._2.getChild(mIdx)));
+								mList.add(new Tuple2<RewriterRule, RewriterStatement>(t._1, (t._2 == null ? null : (t._2.getOperands().isEmpty() ? null : t._2.getChild(mIdx)))));
 							});
 						}
 
@@ -135,16 +143,23 @@ public class CodeGenCondition {
 	private static boolean validateSizeMaintenance(List<Object> rules, List<Object> generatedConditions) {
 		int origSize = rules.size();
 		int newSize = generatedConditions.stream().mapToInt(o -> ((CodeGenCondition)o).rulesIf.size()).sum();
-		return origSize == newSize;
+		return origSize <= newSize;
 	}
 
 	private static List<Object> populateDataTypeLayer(List<Object> rules, List<Integer> relativeChildPath, final RuleContext ctx) {
 		List<Object> conds = new ArrayList<>();
+		List<Tuple2<RewriterRule, RewriterStatement>> defer = new ArrayList<>();
 
 		//System.out.println("=====");
 
 		for (Object o : rules) {
 			Tuple2<RewriterRule, RewriterStatement> t = (Tuple2<RewriterRule, RewriterStatement>) o;
+
+			if (t._2 == null) {
+				defer.add(t);
+				continue;
+			}
+
 			if (!conds.stream().anyMatch(cond -> ((CodeGenCondition) cond).insertIfMatches(t, ctx))) {
 				CodeGenCondition cond = CodeGenCondition.conditionalDataType(t._2, relativeChildPath, t._2, ctx);
 				cond.insertIfMatches(t, ctx);
@@ -162,6 +177,21 @@ public class CodeGenCondition {
 			}
 		}
 
+		if (!defer.isEmpty()) {
+			conds.add(CodeGenCondition.conditionalElse(new ArrayList<>(defer), relativeChildPath, null, ctx));
+		}
+
+		for (Tuple2<RewriterRule, RewriterStatement> deferred : defer) {
+			for (Object obj : conds)
+				((CodeGenCondition) obj).rulesIf.add(deferred);
+		}
+
+		// Validate
+		/*conds.stream().map(cond -> ((CodeGenCondition)cond)).forEach(cond -> {
+			if (cond.rulesIf.isEmpty())
+				throw new IllegalArgumentException();
+		});*/
+
 		if (!validateSizeMaintenance(rules, conds))
 			throw new IllegalArgumentException();
 
@@ -171,10 +201,17 @@ public class CodeGenCondition {
 	private static List<Object> populateOpClassLayer(List<Object> l, List<Integer> relativeChildPath, final RuleContext ctx) {
 		List<Object> conds = new ArrayList<>();
 		List<Object> remaining = new ArrayList<>();
+		List<Tuple2<RewriterRule, RewriterStatement>> defer = new ArrayList<>();
 
 		for (Object o : l) {
 			try {
 				Tuple2<RewriterRule, RewriterStatement> t = (Tuple2<RewriterRule, RewriterStatement>) o;
+
+				if (t._2 == null || (t._2 instanceof RewriterDataType && !t._2.isLiteral())) {
+					defer.add(t);
+					continue;
+				}
+
 				if (canGenerateOpClassCheck(t._2, ctx)) {
 					if (!conds.stream().anyMatch(cond -> ((CodeGenCondition) cond).insertIfMatches(t, ctx))) {
 						CodeGenCondition cond = CodeGenCondition.conditionalOpClass(t._2, relativeChildPath, t._2, ctx);
@@ -189,12 +226,19 @@ public class CodeGenCondition {
 			}
 		}
 
+		remaining.addAll(defer);
+
+		for (Tuple2<RewriterRule, RewriterStatement> deferred : defer) {
+			for (Object obj : conds)
+				((CodeGenCondition) obj).rulesIf.add(deferred);
+		}
+
 		if (!remaining.isEmpty()) {
 			conds.add(CodeGenCondition.conditionalElse(remaining, relativeChildPath, ((Tuple2<RewriterRule, RewriterStatement>) remaining.get(0))._2, ctx));
 		}
 
-		//if (!validateSizeMaintenance(l, conds))
-		//	throw new IllegalArgumentException();
+		if (!validateSizeMaintenance(l, conds))
+			throw new IllegalArgumentException();
 
 		return conds;
 	}
@@ -202,18 +246,36 @@ public class CodeGenCondition {
 	private static List<Object> populateOpCodeLayer(List<Object> l, List<Integer> relativeChildPath, final RuleContext ctx) {
 		List<Object> conds = new ArrayList<>();
 		List<Object> remaining = new ArrayList<>();
+		List<Tuple2<RewriterRule, RewriterStatement>> defer = new ArrayList<>();
 
 		for (Object o : l) {
 			Tuple2<RewriterRule, RewriterStatement> t = (Tuple2<RewriterRule, RewriterStatement>) o;
+
+			if (t._2 == null || (t._2 instanceof RewriterDataType && !t._2.isLiteral())) {
+				defer.add(t);
+				continue;
+			}
+
 			if (canGenerateOpCodeCheck(t._2, ctx)) {
 				if (!conds.stream().anyMatch(cond -> ((CodeGenCondition) cond).insertIfMatches(t, ctx))) {
 					CodeGenCondition cond = CodeGenCondition.conditionalOpCode(t._2, relativeChildPath, t._2, ctx);
 					cond.insertIfMatches(t, ctx);
 					conds.add(cond);
 				}
+			} else if (t._2 instanceof RewriterDataType && !t._2.isLiteral()) {
+				// Then we must add it to all conditions
+				for (Object obj : conds)
+					((CodeGenCondition) obj).rulesIf.add(t);
 			} else {
 				remaining.add(t);
 			}
+		}
+
+		remaining.addAll(defer);
+
+		for (Tuple2<RewriterRule, RewriterStatement> deferred : defer) {
+			for (Object obj : conds)
+				((CodeGenCondition) obj).rulesIf.add(deferred);
 		}
 
 		if (!remaining.isEmpty()) {
@@ -229,18 +291,36 @@ public class CodeGenCondition {
 	private static List<Object> populateInputSizeLayer(List<Object> l, List<Integer> relativeChildPath, final RuleContext ctx) {
 		List<Object> conds = new ArrayList<>();
 		List<Object> remaining = new ArrayList<>();
+		List<Tuple2<RewriterRule, RewriterStatement>> defer = new ArrayList<>();
 
 		for (Object o : l) {
 			Tuple2<RewriterRule, RewriterStatement> t = (Tuple2<RewriterRule, RewriterStatement>) o;
+
+			if (t._2 == null || (t._2 instanceof RewriterDataType && !t._2.isLiteral())) {
+				defer.add(t);
+				continue;
+			}
+
 			if (canGenerateInputSizeCheck(t._2, ctx)) {
 				if (!conds.stream().anyMatch(cond -> ((CodeGenCondition) cond).insertIfMatches(t, ctx))) {
 					CodeGenCondition cond = CodeGenCondition.conditionalInputSize(t._2.getOperands().size(), relativeChildPath, t._2, ctx);
 					cond.insertIfMatches(t, ctx);
 					conds.add(cond);
 				}
+			} else if (t._2 instanceof RewriterDataType && !t._2.isLiteral()) {
+				// Then we must add it to all conditions
+				for (Object obj : conds)
+					((CodeGenCondition) obj).rulesIf.add(t);
 			} else {
 				remaining.add(t);
 			}
+		}
+
+		remaining.addAll(defer);
+
+		for (Tuple2<RewriterRule, RewriterStatement> deferred : defer) {
+			for (Object obj : conds)
+				((CodeGenCondition) obj).rulesIf.add(deferred);
 		}
 
 		if (!remaining.isEmpty()) {
@@ -467,6 +547,9 @@ public class CodeGenCondition {
 		if (nestedCondition.isEmpty()) {
 			List<Tuple2<RewriterRule, RewriterStatement>> cur = firstCond.rulesIf.stream().map(o -> (Tuple2<RewriterRule, RewriterStatement>)o).collect(Collectors.toList());
 
+			if (cur.isEmpty())
+				throw new IllegalArgumentException(firstCond.rulesIf.toString());
+
 			for (Tuple2<RewriterRule, RewriterStatement> t : cur) {
 				String fMapping = ruleFunctionMappings.get(t._1);
 				if (fMapping != null) {
@@ -514,6 +597,9 @@ public class CodeGenCondition {
 
 			if (mNestedCondition.isEmpty()) {
 				List<Tuple2<RewriterRule, RewriterStatement>> cur = cond.rulesIf.stream().map(o -> (Tuple2<RewriterRule, RewriterStatement>)o).collect(Collectors.toList());
+
+				if (cur.isEmpty())
+					throw new IllegalArgumentException(cond.rulesIf.toString());
 
 				for (Tuple2<RewriterRule, RewriterStatement> t : cur) {
 					String fMapping = ruleFunctionMappings.get(t._1);

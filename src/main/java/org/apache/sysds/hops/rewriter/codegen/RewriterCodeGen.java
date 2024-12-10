@@ -4,6 +4,7 @@ package org.apache.sysds.hops.rewriter.codegen;
 import org.apache.sysds.common.Types;
 import org.apache.sysds.hops.Hop;
 import org.apache.sysds.hops.LiteralOp;
+import org.apache.sysds.hops.rewrite.HopRewriteUtils;
 import org.apache.sysds.hops.rewriter.assertions.RewriterAssertions;
 import org.apache.sysds.hops.rewriter.estimators.RewriterCostEstimator;
 import org.apache.sysds.hops.rewriter.RewriterDataType;
@@ -138,6 +139,9 @@ public class RewriterCodeGen {
 
 		msb.append(implSb);
 
+		msb.append('\n');
+		buildTypeCastFunction(msb, 1);
+
 		msb.append("}");
 		return msb.toString();
 	}
@@ -254,6 +258,23 @@ public class RewriterCodeGen {
 
 		Set<RewriterStatement> activeStatements = buildRewrite(to, sb, combinedAssertions, vars, ctx, indentation);
 
+		String newRoot = vars.get(to);
+
+		sb.append('\n');
+		indent(indentation, sb);
+		sb.append("Hop newRoot = " + newRoot + ";\n");
+		indent(indentation, sb);
+		sb.append("if ( " + newRoot + ".getValueType() != hi.getValueType() ) {\n");
+		indent(indentation + 1, sb);
+		sb.append("newRoot = castIfNecessary(newRoot);\n");
+		indent(indentation + 1, sb);
+		sb.append("if ( newRoot == null )\n");
+		indent(indentation + 2, sb);
+		sb.append("return hi;\n");
+		indent(indentation, sb);
+		sb.append("}\n");
+
+
 		sb.append('\n');
 		indent(indentation, sb);
 		sb.append("ArrayList<Hop> parents = new ArrayList<>(hi.getParent());\n\n");
@@ -269,6 +290,43 @@ public class RewriterCodeGen {
 
 		indent(indentation, sb);
 		sb.append("return " + vars.get(to) + ";\n");
+	}
+
+	private static void buildTypeCastFunction(StringBuilder sb, int indentation) {
+		indent(indentation, sb);
+		sb.append("private static Hop castIfNecessary(Hop newRoot) {\n");
+		indent(indentation + 1, sb);
+		sb.append("Types.OpOp1 cast = null;\n");
+		indent(indentation + 1, sb);
+		sb.append("switch ( newRoot.getValueType().toExternalString() ) {\n");
+		indent(indentation + 2, sb);
+		sb.append("case \"DOUBLE\":\n"); //Types.ValueType.FP64.toExternalString()
+		indent(indentation + 3, sb);
+		sb.append("cast = Types.OpOp1.CAST_AS_DOUBLE;\n");
+		indent(indentation + 3, sb);
+		sb.append("break;\n");
+		indent(indentation + 2, sb);
+		sb.append("case \"INT\":\n"); //Types.ValueType.FP64.toExternalString()
+		indent(indentation + 3, sb);
+		sb.append("cast = Types.OpOp1.CAST_AS_INT;\n");
+		indent(indentation + 3, sb);
+		sb.append("break;\n");
+		indent(indentation + 2, sb);
+		sb.append("case \"BOOLEAN\":\n"); //Types.ValueType.FP64.toExternalString()
+		indent(indentation + 3, sb);
+		sb.append("cast = Types.OpOp1.CAST_AS_BOOLEAN;\n");
+		indent(indentation + 3, sb);
+		sb.append("break;\n");
+		indent(indentation + 2, sb);
+		sb.append("default:\n");
+		indent(indentation + 3, sb);
+		sb.append("return null;\n");
+		indent(indentation + 1, sb);
+		sb.append("}\n\n");
+		indent(indentation + 1, sb);
+		sb.append("return HopRewriteUtils.createUnary(newRoot" + ", cast);\n");
+		indent(indentation, sb);
+		sb.append("}\n");
 	}
 
 	private static void buildCostFnRecursively(RewriterStatement costFn, Map<RewriterStatement, String> vars, final RuleContext ctx, StringBuilder sb, Set<Tuple2<String, String>> requirements) {

@@ -1262,7 +1262,7 @@ public class GeneratedRewriteClass implements Function {
 					}
 				} else if ( (( BinaryOp ) hi ).getOp() == Types.OpOp2.DIV ) {
 					hi = _applyRewrite10(hi); // /(0.0,A) => const(A,0.0)
-					//hi = _applyRewrite13(hi); // /(A,c) => *(A,/(1.0,c))
+					hi = _applyRewrite13(hi); // /(A,c) => *(A,/(1.0,c))
 					hi = _applyRewrite75(hi); // /(a,cast.MATRIX(b)) => cast.MATRIX(/(a,b))
 					hi = _applyRewrite93(hi); // /(-(a,0.0),B) => /(a,B)
 					hi = _applyRewrite409(hi); // /(t(A),t(B)) => t(/(A,B))
@@ -4019,6 +4019,13 @@ public class GeneratedRewriteClass implements Function {
 		System.out.println("Applying rewrite: *(1.0,a) => a");
 		DMLExecutor.println("Applying rewrite: *(1.0,a) => a");
 
+		Hop newRoot = hi_1;
+		if ( hi_1.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
+
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
@@ -4063,6 +4070,13 @@ public class GeneratedRewriteClass implements Function {
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: *(a,1.0) => a");
 		DMLExecutor.println("Applying rewrite: *(a,1.0) => a");
+
+		Hop newRoot = hi_0;
+		if ( hi_0.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
 
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
@@ -4109,6 +4123,13 @@ public class GeneratedRewriteClass implements Function {
 		System.out.println("Applying rewrite: /(a,1.0) => a");
 		DMLExecutor.println("Applying rewrite: /(a,1.0) => a");
 
+		Hop newRoot = hi_0;
+		if ( hi_0.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
+
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
@@ -4153,6 +4174,13 @@ public class GeneratedRewriteClass implements Function {
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: +(0.0,a) => a");
 		DMLExecutor.println("Applying rewrite: +(0.0,a) => a");
+
+		Hop newRoot = hi_1;
+		if ( hi_1.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
 
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
@@ -4199,6 +4227,13 @@ public class GeneratedRewriteClass implements Function {
 		System.out.println("Applying rewrite: +(a,0.0) => a");
 		DMLExecutor.println("Applying rewrite: +(a,0.0) => a");
 
+		Hop newRoot = hi_0;
+		if ( hi_0.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
+
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
@@ -4243,6 +4278,13 @@ public class GeneratedRewriteClass implements Function {
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: +(0.0,A) => A");
 		DMLExecutor.println("Applying rewrite: +(0.0,A) => A");
+
+		Hop newRoot = hi_1;
+		if ( hi_1.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
 
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
@@ -4289,6 +4331,13 @@ public class GeneratedRewriteClass implements Function {
 		System.out.println("Applying rewrite: +(A,0.0) => A");
 		DMLExecutor.println("Applying rewrite: +(A,0.0) => A");
 
+		Hop newRoot = hi_0;
+		if ( hi_0.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
+
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
@@ -4333,6 +4382,13 @@ public class GeneratedRewriteClass implements Function {
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: *(0.0,a) => 0.0");
 		DMLExecutor.println("Applying rewrite: *(0.0,a) => 0.0");
+
+		Hop newRoot = hi_0;
+		if ( hi_0.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
 
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
@@ -4379,6 +4435,13 @@ public class GeneratedRewriteClass implements Function {
 		System.out.println("Applying rewrite: *(a,0.0) => 0.0");
 		DMLExecutor.println("Applying rewrite: *(a,0.0) => 0.0");
 
+		Hop newRoot = hi_1;
+		if ( hi_1.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
+
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
@@ -4423,6 +4486,13 @@ public class GeneratedRewriteClass implements Function {
 		// Now, we start building the new Hop
 		System.out.println("Applying rewrite: /(0.0,a) => 0.0");
 		DMLExecutor.println("Applying rewrite: /(0.0,a) => 0.0");
+
+		Hop newRoot = hi_0;
+		if ( hi_0.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
 
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
@@ -4470,6 +4540,13 @@ public class GeneratedRewriteClass implements Function {
 		DMLExecutor.println("Applying rewrite: /(0.0,A) => const(A,0.0)");
 		DataGenOp v1 = ((DataGenOp) HopRewriteUtils.createDataGenOpFomDims(HopRewriteUtils.createUnary(hi_1, Types.OpOp1.NROW),HopRewriteUtils.createUnary(hi_1, Types.OpOp1.NCOL),0.0D));
 
+		Hop newRoot = v1;
+		if ( v1.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
+
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
@@ -4514,6 +4591,13 @@ public class GeneratedRewriteClass implements Function {
 		System.out.println("Applying rewrite: *(0.0,A) => const(A,0.0)");
 		DMLExecutor.println("Applying rewrite: *(0.0,A) => const(A,0.0)");
 		DataGenOp v1 = ((DataGenOp) HopRewriteUtils.createDataGenOpFomDims(HopRewriteUtils.createUnary(hi_1, Types.OpOp1.NROW),HopRewriteUtils.createUnary(hi_1, Types.OpOp1.NCOL),0.0D));
+
+		Hop newRoot = v1;
+		if ( v1.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
 
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
@@ -4560,6 +4644,13 @@ public class GeneratedRewriteClass implements Function {
 		DMLExecutor.println("Applying rewrite: *(A,0.0) => const(A,0.0)");
 		DataGenOp v1 = ((DataGenOp) HopRewriteUtils.createDataGenOpFomDims(HopRewriteUtils.createUnary(hi_0, Types.OpOp1.NROW),HopRewriteUtils.createUnary(hi_0, Types.OpOp1.NCOL),0.0D));
 
+		Hop newRoot = v1;
+		if ( v1.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
+
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
@@ -4598,6 +4689,13 @@ public class GeneratedRewriteClass implements Function {
 		LiteralOp l1 = new LiteralOp( 1.0 );
 		BinaryOp v2 = HopRewriteUtils.createBinary(l1, hi_1, Types.OpOp2.DIV);
 		BinaryOp v3 = HopRewriteUtils.createBinary(hi_0, v2, Types.OpOp2.MULT);
+
+		Hop newRoot = v3;
+		if ( v3.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
 
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
@@ -4649,6 +4747,13 @@ public class GeneratedRewriteClass implements Function {
 		AggUnaryOp v1 = HopRewriteUtils.createAggUnaryOp(hi_0_1, Types.AggOp.TRACE, Types.Direction.RowCol);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0_0, v1, Types.OpOp2.MULT);
 
+		Hop newRoot = v2;
+		if ( v2.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
+
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
@@ -4699,6 +4804,13 @@ public class GeneratedRewriteClass implements Function {
 		DMLExecutor.println("Applying rewrite: trace(*(B,a)) => *(a,trace(B))");
 		AggUnaryOp v1 = HopRewriteUtils.createAggUnaryOp(hi_0_0, Types.AggOp.TRACE, Types.Direction.RowCol);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0_1, v1, Types.OpOp2.MULT);
+
+		Hop newRoot = v2;
+		if ( v2.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
 
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
@@ -4765,6 +4877,13 @@ public class GeneratedRewriteClass implements Function {
 		AggUnaryOp v1 = HopRewriteUtils.createAggUnaryOp(hi_0_1, Types.AggOp.SUM, Types.Direction.Col);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0_0, v1, Types.OpOp2.MULT);
 
+		Hop newRoot = v2;
+		if ( v2.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
+
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
@@ -4829,6 +4948,13 @@ public class GeneratedRewriteClass implements Function {
 		DMLExecutor.println("Applying rewrite: colSums(*(B,a)) => *(a,colSums(B))");
 		AggUnaryOp v1 = HopRewriteUtils.createAggUnaryOp(hi_0_0, Types.AggOp.SUM, Types.Direction.Col);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0_1, v1, Types.OpOp2.MULT);
+
+		Hop newRoot = v2;
+		if ( v2.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
 
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
@@ -4895,6 +5021,13 @@ public class GeneratedRewriteClass implements Function {
 		AggUnaryOp v1 = HopRewriteUtils.createAggUnaryOp(hi_0_1, Types.AggOp.SUM, Types.Direction.Row);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0_0, v1, Types.OpOp2.MULT);
 
+		Hop newRoot = v2;
+		if ( v2.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
+
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
@@ -4960,6 +5093,13 @@ public class GeneratedRewriteClass implements Function {
 		AggUnaryOp v1 = HopRewriteUtils.createAggUnaryOp(hi_0_0, Types.AggOp.SUM, Types.Direction.Row);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0_1, v1, Types.OpOp2.MULT);
 
+		Hop newRoot = v2;
+		if ( v2.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
+
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
@@ -5017,6 +5157,13 @@ public class GeneratedRewriteClass implements Function {
 		System.out.println("Applying rewrite: *(cast.MATRIX(0.0),a) => cast.MATRIX(0.0)");
 		DMLExecutor.println("Applying rewrite: *(cast.MATRIX(0.0),a) => cast.MATRIX(0.0)");
 		UnaryOp v1 = HopRewriteUtils.createUnary(hi_0_0, Types.OpOp1.CAST_AS_MATRIX);
+
+		Hop newRoot = v1;
+		if ( v1.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
 
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
@@ -5077,6 +5224,13 @@ public class GeneratedRewriteClass implements Function {
 		DMLExecutor.println("Applying rewrite: *(a,cast.MATRIX(0.0)) => cast.MATRIX(0.0)");
 		UnaryOp v1 = HopRewriteUtils.createUnary(hi_1_0, Types.OpOp1.CAST_AS_MATRIX);
 
+		Hop newRoot = v1;
+		if ( v1.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
+
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
@@ -5135,6 +5289,13 @@ public class GeneratedRewriteClass implements Function {
 		System.out.println("Applying rewrite: *(cast.MATRIX(1.0),a) => cast.MATRIX(a)");
 		DMLExecutor.println("Applying rewrite: *(cast.MATRIX(1.0),a) => cast.MATRIX(a)");
 		UnaryOp v1 = HopRewriteUtils.createUnary(hi_1, Types.OpOp1.CAST_AS_MATRIX);
+
+		Hop newRoot = v1;
+		if ( v1.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
 
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
@@ -5195,6 +5356,13 @@ public class GeneratedRewriteClass implements Function {
 		DMLExecutor.println("Applying rewrite: *(a,cast.MATRIX(1.0)) => cast.MATRIX(a)");
 		UnaryOp v1 = HopRewriteUtils.createUnary(hi_0, Types.OpOp1.CAST_AS_MATRIX);
 
+		Hop newRoot = v1;
+		if ( v1.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
+
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
@@ -5253,6 +5421,13 @@ public class GeneratedRewriteClass implements Function {
 		System.out.println("Applying rewrite: +(cast.MATRIX(0.0),a) => cast.MATRIX(a)");
 		DMLExecutor.println("Applying rewrite: +(cast.MATRIX(0.0),a) => cast.MATRIX(a)");
 		UnaryOp v1 = HopRewriteUtils.createUnary(hi_1, Types.OpOp1.CAST_AS_MATRIX);
+
+		Hop newRoot = v1;
+		if ( v1.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
 
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
@@ -5313,6 +5488,13 @@ public class GeneratedRewriteClass implements Function {
 		DMLExecutor.println("Applying rewrite: +(a,cast.MATRIX(0.0)) => cast.MATRIX(a)");
 		UnaryOp v1 = HopRewriteUtils.createUnary(hi_0, Types.OpOp1.CAST_AS_MATRIX);
 
+		Hop newRoot = v1;
+		if ( v1.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
+
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
@@ -5358,6 +5540,13 @@ public class GeneratedRewriteClass implements Function {
 		System.out.println("Applying rewrite: rev(cast.MATRIX(a)) => cast.MATRIX(a)");
 		DMLExecutor.println("Applying rewrite: rev(cast.MATRIX(a)) => cast.MATRIX(a)");
 		UnaryOp v1 = HopRewriteUtils.createUnary(hi_0_0, Types.OpOp1.CAST_AS_MATRIX);
+
+		Hop newRoot = v1;
+		if ( v1.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
 
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
@@ -5421,6 +5610,13 @@ public class GeneratedRewriteClass implements Function {
 		System.out.println("Applying rewrite: *(/(1.0,B),a) => /(a,B)");
 		DMLExecutor.println("Applying rewrite: *(/(1.0,B),a) => /(a,B)");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_1, hi_0_1, Types.OpOp2.DIV);
+
+		Hop newRoot = v1;
+		if ( v1.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
 
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
@@ -5486,6 +5682,13 @@ public class GeneratedRewriteClass implements Function {
 		DMLExecutor.println("Applying rewrite: *(a,/(1.0,B)) => /(a,B)");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0, hi_1_1, Types.OpOp2.DIV);
 
+		Hop newRoot = v1;
+		if ( v1.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
+
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
@@ -5549,6 +5752,13 @@ public class GeneratedRewriteClass implements Function {
 		System.out.println("Applying rewrite: *(/(1.0,B),A) => /(A,B)");
 		DMLExecutor.println("Applying rewrite: *(/(1.0,B),A) => /(A,B)");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_1, hi_0_1, Types.OpOp2.DIV);
+
+		Hop newRoot = v1;
+		if ( v1.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
 
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
@@ -5614,6 +5824,13 @@ public class GeneratedRewriteClass implements Function {
 		DMLExecutor.println("Applying rewrite: *(A,/(1.0,B)) => /(A,B)");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0, hi_1_1, Types.OpOp2.DIV);
 
+		Hop newRoot = v1;
+		if ( v1.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
+
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
@@ -5671,6 +5888,13 @@ public class GeneratedRewriteClass implements Function {
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0, hi_1, Types.OpOp2.MULT);
 		BinaryOp v2 = HopRewriteUtils.createBinary(v1, hi_0_1, Types.OpOp2.DIV);
 
+		Hop newRoot = v2;
+		if ( v2.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
+
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
@@ -5726,6 +5950,13 @@ public class GeneratedRewriteClass implements Function {
 		DMLExecutor.println("Applying rewrite: *(a,/(b,C)) => /(*(a,b),C)");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0, hi_1_0, Types.OpOp2.MULT);
 		BinaryOp v2 = HopRewriteUtils.createBinary(v1, hi_1_1, Types.OpOp2.DIV);
+
+		Hop newRoot = v2;
+		if ( v2.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
 
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
@@ -5789,6 +6020,13 @@ public class GeneratedRewriteClass implements Function {
 		AggUnaryOp v1 = HopRewriteUtils.createAggUnaryOp(hi_0_1, Types.AggOp.SUM, Types.Direction.RowCol);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0_0, v1, Types.OpOp2.MINUS);
 
+		Hop newRoot = v2;
+		if ( v2.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
+
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
@@ -5851,6 +6089,13 @@ public class GeneratedRewriteClass implements Function {
 		System.out.println("Applying rewrite: -(0.0,-(B,a)) => -(a,B)");
 		DMLExecutor.println("Applying rewrite: -(0.0,-(B,a)) => -(a,B)");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_1_1, hi_1_0, Types.OpOp2.MINUS);
+
+		Hop newRoot = v1;
+		if ( v1.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
 
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
@@ -5916,6 +6161,13 @@ public class GeneratedRewriteClass implements Function {
 		DMLExecutor.println("Applying rewrite: +(-(0.0,B),a) => -(a,B)");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_1, hi_0_1, Types.OpOp2.MINUS);
 
+		Hop newRoot = v1;
+		if ( v1.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
+
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
@@ -5979,6 +6231,13 @@ public class GeneratedRewriteClass implements Function {
 		System.out.println("Applying rewrite: +(a,-(0.0,B)) => -(a,B)");
 		DMLExecutor.println("Applying rewrite: +(a,-(0.0,B)) => -(a,B)");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0, hi_1_1, Types.OpOp2.MINUS);
+
+		Hop newRoot = v1;
+		if ( v1.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
 
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
@@ -6044,6 +6303,13 @@ public class GeneratedRewriteClass implements Function {
 		DMLExecutor.println("Applying rewrite: -(0.0,-(b,A)) => -(A,b)");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_1_1, hi_1_0, Types.OpOp2.MINUS);
 
+		Hop newRoot = v1;
+		if ( v1.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
+
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
@@ -6107,6 +6373,13 @@ public class GeneratedRewriteClass implements Function {
 		System.out.println("Applying rewrite: -(0.0,-(B,A)) => -(A,B)");
 		DMLExecutor.println("Applying rewrite: -(0.0,-(B,A)) => -(A,B)");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_1_1, hi_1_0, Types.OpOp2.MINUS);
+
+		Hop newRoot = v1;
+		if ( v1.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
 
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
@@ -6172,6 +6445,13 @@ public class GeneratedRewriteClass implements Function {
 		DMLExecutor.println("Applying rewrite: +(-(0.0,B),A) => -(A,B)");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_1, hi_0_1, Types.OpOp2.MINUS);
 
+		Hop newRoot = v1;
+		if ( v1.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
+
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
@@ -6236,6 +6516,13 @@ public class GeneratedRewriteClass implements Function {
 		DMLExecutor.println("Applying rewrite: +(A,-(0.0,B)) => -(A,B)");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0, hi_1_1, Types.OpOp2.MINUS);
 
+		Hop newRoot = v1;
+		if ( v1.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
+
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
@@ -6293,6 +6580,13 @@ public class GeneratedRewriteClass implements Function {
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_1, hi_1, Types.OpOp2.PLUS);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0_0, v1, Types.OpOp2.MINUS);
 
+		Hop newRoot = v2;
+		if ( v2.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
+
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
@@ -6348,6 +6642,13 @@ public class GeneratedRewriteClass implements Function {
 		DMLExecutor.println("Applying rewrite: -(a,+(b,C)) => -(-(a,b),C)");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0, hi_1_0, Types.OpOp2.MINUS);
 		BinaryOp v2 = HopRewriteUtils.createBinary(v1, hi_1_1, Types.OpOp2.MINUS);
+
+		Hop newRoot = v2;
+		if ( v2.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
 
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
@@ -6405,6 +6706,13 @@ public class GeneratedRewriteClass implements Function {
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0, hi_1_1, Types.OpOp2.MINUS);
 		BinaryOp v2 = HopRewriteUtils.createBinary(v1, hi_1_0, Types.OpOp2.MINUS);
 
+		Hop newRoot = v2;
+		if ( v2.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
+
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
@@ -6460,6 +6768,13 @@ public class GeneratedRewriteClass implements Function {
 		DMLExecutor.println("Applying rewrite: -(-(a,C),b) => -(-(a,b),C)");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0, hi_1, Types.OpOp2.MINUS);
 		BinaryOp v2 = HopRewriteUtils.createBinary(v1, hi_0_1, Types.OpOp2.MINUS);
+
+		Hop newRoot = v2;
+		if ( v2.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
 
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
@@ -6517,6 +6832,13 @@ public class GeneratedRewriteClass implements Function {
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0, hi_1_1, Types.OpOp2.PLUS);
 		BinaryOp v2 = HopRewriteUtils.createBinary(v1, hi_1_0, Types.OpOp2.MINUS);
 
+		Hop newRoot = v2;
+		if ( v2.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
+
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
@@ -6572,6 +6894,13 @@ public class GeneratedRewriteClass implements Function {
 		DMLExecutor.println("Applying rewrite: +(-(a,C),b) => -(+(a,b),C)");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0, hi_1, Types.OpOp2.PLUS);
 		BinaryOp v2 = HopRewriteUtils.createBinary(v1, hi_0_1, Types.OpOp2.MINUS);
+
+		Hop newRoot = v2;
+		if ( v2.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
 
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
@@ -6629,6 +6958,13 @@ public class GeneratedRewriteClass implements Function {
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0, hi_1_0, Types.OpOp2.PLUS);
 		BinaryOp v2 = HopRewriteUtils.createBinary(v1, hi_1_1, Types.OpOp2.MINUS);
 
+		Hop newRoot = v2;
+		if ( v2.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
+
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
@@ -6684,6 +7020,13 @@ public class GeneratedRewriteClass implements Function {
 		DMLExecutor.println("Applying rewrite: -(+(b,A),c) => +(A,-(b,c))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0, hi_1, Types.OpOp2.MINUS);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0_1, v1, Types.OpOp2.PLUS);
+
+		Hop newRoot = v2;
+		if ( v2.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
 
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
@@ -6741,6 +7084,13 @@ public class GeneratedRewriteClass implements Function {
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_1, hi_1, Types.OpOp2.MINUS);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0_0, v1, Types.OpOp2.PLUS);
 
+		Hop newRoot = v2;
+		if ( v2.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
+
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
@@ -6796,6 +7146,13 @@ public class GeneratedRewriteClass implements Function {
 		DMLExecutor.println("Applying rewrite: -(b,-(c,A)) => +(A,-(b,c))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0, hi_1_0, Types.OpOp2.MINUS);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_1_1, v1, Types.OpOp2.PLUS);
+
+		Hop newRoot = v2;
+		if ( v2.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
 
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
@@ -6853,6 +7210,13 @@ public class GeneratedRewriteClass implements Function {
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_1, hi_0_1, Types.OpOp2.MINUS);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0_0, v1, Types.OpOp2.PLUS);
 
+		Hop newRoot = v2;
+		if ( v2.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
+
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
@@ -6908,6 +7272,13 @@ public class GeneratedRewriteClass implements Function {
 		DMLExecutor.println("Applying rewrite: +(b,-(A,c)) => +(A,-(b,c))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0, hi_1_1, Types.OpOp2.MINUS);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_1_0, v1, Types.OpOp2.PLUS);
+
+		Hop newRoot = v2;
+		if ( v2.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
 
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
@@ -6982,6 +7353,13 @@ public class GeneratedRewriteClass implements Function {
 		AggUnaryOp v1 = HopRewriteUtils.createAggUnaryOp(hi_0_1, Types.AggOp.SUM, Types.Direction.Col);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0_0, v1, Types.OpOp2.MINUS);
 
+		Hop newRoot = v2;
+		if ( v2.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
+
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
@@ -7055,6 +7433,13 @@ public class GeneratedRewriteClass implements Function {
 		AggUnaryOp v1 = HopRewriteUtils.createAggUnaryOp(hi_0_1, Types.AggOp.SUM, Types.Direction.Row);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0_0, v1, Types.OpOp2.MINUS);
 
+		Hop newRoot = v2;
+		if ( v2.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
+
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
@@ -7105,6 +7490,13 @@ public class GeneratedRewriteClass implements Function {
 		DMLExecutor.println("Applying rewrite: -(cast.MATRIX(a),b) => cast.MATRIX(-(a,b))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0, hi_1, Types.OpOp2.MINUS);
 		UnaryOp v2 = HopRewriteUtils.createUnary(v1, Types.OpOp1.CAST_AS_MATRIX);
+
+		Hop newRoot = v2;
+		if ( v2.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
 
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
@@ -7157,6 +7549,13 @@ public class GeneratedRewriteClass implements Function {
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0, hi_1_0, Types.OpOp2.MINUS);
 		UnaryOp v2 = HopRewriteUtils.createUnary(v1, Types.OpOp1.CAST_AS_MATRIX);
 
+		Hop newRoot = v2;
+		if ( v2.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
+
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
@@ -7207,6 +7606,13 @@ public class GeneratedRewriteClass implements Function {
 		DMLExecutor.println("Applying rewrite: +(cast.MATRIX(a),b) => cast.MATRIX(+(a,b))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0, hi_1, Types.OpOp2.PLUS);
 		UnaryOp v2 = HopRewriteUtils.createUnary(v1, Types.OpOp1.CAST_AS_MATRIX);
+
+		Hop newRoot = v2;
+		if ( v2.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
 
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
@@ -7259,6 +7665,13 @@ public class GeneratedRewriteClass implements Function {
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0, hi_1_0, Types.OpOp2.PLUS);
 		UnaryOp v2 = HopRewriteUtils.createUnary(v1, Types.OpOp1.CAST_AS_MATRIX);
 
+		Hop newRoot = v2;
+		if ( v2.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
+
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
@@ -7309,6 +7722,13 @@ public class GeneratedRewriteClass implements Function {
 		DMLExecutor.println("Applying rewrite: *(cast.MATRIX(a),b) => cast.MATRIX(*(a,b))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0, hi_1, Types.OpOp2.MULT);
 		UnaryOp v2 = HopRewriteUtils.createUnary(v1, Types.OpOp1.CAST_AS_MATRIX);
+
+		Hop newRoot = v2;
+		if ( v2.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
 
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
@@ -7361,6 +7781,13 @@ public class GeneratedRewriteClass implements Function {
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0, hi_1_0, Types.OpOp2.MULT);
 		UnaryOp v2 = HopRewriteUtils.createUnary(v1, Types.OpOp1.CAST_AS_MATRIX);
 
+		Hop newRoot = v2;
+		if ( v2.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
+
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
@@ -7412,6 +7839,13 @@ public class GeneratedRewriteClass implements Function {
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0, hi_1_0, Types.OpOp2.DIV);
 		UnaryOp v2 = HopRewriteUtils.createUnary(v1, Types.OpOp1.CAST_AS_MATRIX);
 
+		Hop newRoot = v2;
+		if ( v2.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
+
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
@@ -7459,6 +7893,13 @@ public class GeneratedRewriteClass implements Function {
 		System.out.println("Applying rewrite: rev(colSums(A)) => colSums(A)");
 		DMLExecutor.println("Applying rewrite: rev(colSums(A)) => colSums(A)");
 		AggUnaryOp v1 = HopRewriteUtils.createAggUnaryOp(hi_0_0, Types.AggOp.SUM, Types.Direction.Col);
+
+		Hop newRoot = v1;
+		if ( v1.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
 
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
@@ -7522,6 +7963,13 @@ public class GeneratedRewriteClass implements Function {
 		System.out.println("Applying rewrite: *(/(1.0,b),a) => /(a,b)");
 		DMLExecutor.println("Applying rewrite: *(/(1.0,b),a) => /(a,b)");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_1, hi_0_1, Types.OpOp2.DIV);
+
+		Hop newRoot = v1;
+		if ( v1.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
 
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
@@ -7587,6 +8035,13 @@ public class GeneratedRewriteClass implements Function {
 		DMLExecutor.println("Applying rewrite: *(a,/(1.0,b)) => /(a,b)");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0, hi_1_1, Types.OpOp2.DIV);
 
+		Hop newRoot = v1;
+		if ( v1.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
+
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
@@ -7650,6 +8105,13 @@ public class GeneratedRewriteClass implements Function {
 		System.out.println("Applying rewrite: -(0.0,-(b,a)) => -(a,b)");
 		DMLExecutor.println("Applying rewrite: -(0.0,-(b,a)) => -(a,b)");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_1_1, hi_1_0, Types.OpOp2.MINUS);
+
+		Hop newRoot = v1;
+		if ( v1.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
 
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
@@ -7715,6 +8177,13 @@ public class GeneratedRewriteClass implements Function {
 		DMLExecutor.println("Applying rewrite: -(a,-(b,0.0)) => -(a,b)");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0, hi_1_0, Types.OpOp2.MINUS);
 
+		Hop newRoot = v1;
+		if ( v1.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
+
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
@@ -7778,6 +8247,13 @@ public class GeneratedRewriteClass implements Function {
 		System.out.println("Applying rewrite: +(-(0.0,b),a) => -(a,b)");
 		DMLExecutor.println("Applying rewrite: +(-(0.0,b),a) => -(a,b)");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_1, hi_0_1, Types.OpOp2.MINUS);
+
+		Hop newRoot = v1;
+		if ( v1.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
 
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
@@ -7843,6 +8319,13 @@ public class GeneratedRewriteClass implements Function {
 		DMLExecutor.println("Applying rewrite: +(a,-(0.0,b)) => -(a,b)");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0, hi_1_1, Types.OpOp2.MINUS);
 
+		Hop newRoot = v1;
+		if ( v1.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
+
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
@@ -7906,6 +8389,13 @@ public class GeneratedRewriteClass implements Function {
 		System.out.println("Applying rewrite: *(-(a,0.0),b) => *(a,b)");
 		DMLExecutor.println("Applying rewrite: *(-(a,0.0),b) => *(a,b)");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0, hi_1, Types.OpOp2.MULT);
+
+		Hop newRoot = v1;
+		if ( v1.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
 
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
@@ -7971,6 +8461,13 @@ public class GeneratedRewriteClass implements Function {
 		DMLExecutor.println("Applying rewrite: *(a,-(b,0.0)) => *(a,b)");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0, hi_1_0, Types.OpOp2.MULT);
 
+		Hop newRoot = v1;
+		if ( v1.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
+
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
@@ -8034,6 +8531,13 @@ public class GeneratedRewriteClass implements Function {
 		System.out.println("Applying rewrite: /(-(a,0.0),b) => /(a,b)");
 		DMLExecutor.println("Applying rewrite: /(-(a,0.0),b) => /(a,b)");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0, hi_1, Types.OpOp2.DIV);
+
+		Hop newRoot = v1;
+		if ( v1.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
 
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
@@ -8100,6 +8604,13 @@ public class GeneratedRewriteClass implements Function {
 		DataGenOp v1 = ((DataGenOp) HopRewriteUtils.createDataGenOpFomDims(HopRewriteUtils.createUnary(hi_1_1, Types.OpOp1.NROW),HopRewriteUtils.createUnary(hi_1_1, Types.OpOp1.NCOL),0.0D));
 		TernaryOp v2 = HopRewriteUtils.createTernary(v1, hi_1_0, hi_1_1,Types.OpOp3.MINUS_MULT);
 
+		Hop newRoot = v2;
+		if ( v2.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
+
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
@@ -8164,6 +8675,13 @@ public class GeneratedRewriteClass implements Function {
 		DataGenOp v1 = ((DataGenOp) HopRewriteUtils.createDataGenOpFomDims(HopRewriteUtils.createUnary(hi_1_0, Types.OpOp1.NROW),HopRewriteUtils.createUnary(hi_1_0, Types.OpOp1.NCOL),0.0D));
 		TernaryOp v2 = HopRewriteUtils.createTernary(v1, hi_1_1, hi_1_0,Types.OpOp3.MINUS_MULT);
 
+		Hop newRoot = v2;
+		if ( v2.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
+
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
@@ -8226,6 +8744,13 @@ public class GeneratedRewriteClass implements Function {
 		System.out.println("Applying rewrite: -(A,-(b,0.0)) => -(A,b)");
 		DMLExecutor.println("Applying rewrite: -(A,-(b,0.0)) => -(A,b)");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0, hi_1_0, Types.OpOp2.MINUS);
+
+		Hop newRoot = v1;
+		if ( v1.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
 
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
@@ -8291,6 +8816,13 @@ public class GeneratedRewriteClass implements Function {
 		DMLExecutor.println("Applying rewrite: +(-(0.0,b),A) => -(A,b)");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_1, hi_0_1, Types.OpOp2.MINUS);
 
+		Hop newRoot = v1;
+		if ( v1.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
+
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
@@ -8354,6 +8886,13 @@ public class GeneratedRewriteClass implements Function {
 		System.out.println("Applying rewrite: +(A,-(0.0,b)) => -(A,b)");
 		DMLExecutor.println("Applying rewrite: +(A,-(0.0,b)) => -(A,b)");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0, hi_1_1, Types.OpOp2.MINUS);
+
+		Hop newRoot = v1;
+		if ( v1.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
 
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
@@ -8419,6 +8958,13 @@ public class GeneratedRewriteClass implements Function {
 		DMLExecutor.println("Applying rewrite: *(-(b,0.0),A) => *(A,b)");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_1, hi_0_0, Types.OpOp2.MULT);
 
+		Hop newRoot = v1;
+		if ( v1.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
+
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
@@ -8482,6 +9028,13 @@ public class GeneratedRewriteClass implements Function {
 		System.out.println("Applying rewrite: *(A,-(b,0.0)) => *(A,b)");
 		DMLExecutor.println("Applying rewrite: *(A,-(b,0.0)) => *(A,b)");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0, hi_1_0, Types.OpOp2.MULT);
+
+		Hop newRoot = v1;
+		if ( v1.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
 
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
@@ -8547,6 +9100,13 @@ public class GeneratedRewriteClass implements Function {
 		DMLExecutor.println("Applying rewrite: /(-(a,0.0),B) => /(a,B)");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0, hi_1, Types.OpOp2.DIV);
 
+		Hop newRoot = v1;
+		if ( v1.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
+
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
@@ -8605,12 +9165,12 @@ public class GeneratedRewriteClass implements Function {
 			return hi;
 
 
-		if ( hi_1_0.getNnz() == -1 || hi_0_0.getDim1() == -1 || hi_0_1.getDim2() == -1 || hi_0_1.getNnz() == -1 || hi_1_0.getDim1() == -1 || hi_1_0.getDim2() == -1 || hi_0_0.getNnz() == -1 || hi_0_1.getDim1() == -1 )
+		if ( hi_1_0.getNnz() == -1 || hi_0_0.getDim1() == -1 || hi_0_1.getDim2() == -1 || hi_0_1.getNnz() == -1 || hi_1_0.getDim1() == -1 || hi_1_0.getDim2() == -1 || hi_0_0.getNnz() == -1 )
 			return hi;
 
 
-		double costFrom = ((Math.min(hi_0_0.getNnz(), hi_0_1.getNnz()) * hi_0_1.getDim1() * 3.0) + (Math.min(hi_1_0.getNnz(), hi_0_1.getNnz()) * hi_0_1.getDim1() * 3.0) + ((Math.min((hi_0_0.getNnz() * (1.0 / hi_0_0.getDim1())), 1.0) * Math.min((hi_0_1.getNnz() * (1.0 / hi_0_1.getDim2())), 1.0) * hi_0_0.getDim1() * hi_0_1.getDim2()) + (Math.min((hi_1_0.getNnz() * (1.0 / hi_1_0.getDim1())), 1.0) * Math.min((hi_0_1.getNnz() * (1.0 / hi_0_1.getDim2())), 1.0) * hi_1_0.getDim1() * hi_0_1.getDim2())) + 30030.0);
-		double costTo = ((hi_1_0.getNnz() + hi_0_0.getNnz()) + (Math.min(Math.min((hi_1_0.getNnz() + hi_0_0.getNnz()), (hi_1_0.getDim1() * hi_1_0.getDim2())), hi_0_1.getNnz()) * hi_0_1.getDim1() * 3.0) + 20020.0);
+		double costFrom = ((Math.min(hi_0_0.getNnz(), hi_0_1.getNnz()) * hi_1_0.getDim2() * 3.0) + (Math.min(hi_1_0.getNnz(), hi_0_1.getNnz()) * hi_1_0.getDim2() * 3.0) + ((Math.min((hi_0_0.getNnz() * (1.0 / hi_0_0.getDim1())), 1.0) * Math.min((hi_0_1.getNnz() * (1.0 / hi_0_1.getDim2())), 1.0) * hi_0_0.getDim1() * hi_0_1.getDim2()) + (Math.min((hi_1_0.getNnz() * (1.0 / hi_1_0.getDim1())), 1.0) * Math.min((hi_0_1.getNnz() * (1.0 / hi_0_1.getDim2())), 1.0) * hi_1_0.getDim1() * hi_0_1.getDim2())) + 30030.0);
+		double costTo = ((hi_1_0.getNnz() + hi_0_0.getNnz()) + (Math.min(Math.min((hi_1_0.getNnz() + hi_0_0.getNnz()), (hi_1_0.getDim1() * hi_1_0.getDim2())), hi_0_1.getNnz()) * hi_1_0.getDim2() * 3.0) + 20020.0);
 
 		if ( costFrom <= costTo )
 			return hi;
@@ -8621,6 +9181,13 @@ public class GeneratedRewriteClass implements Function {
 		DMLExecutor.println("Applying rewrite: +(%*%(B,C),%*%(A,C)) => %*%(+(A,B),C)");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_1_0, hi_0_0, Types.OpOp2.PLUS);
 		AggBinaryOp v2 = HopRewriteUtils.createMatrixMultiply(v1, hi_0_1);
+
+		Hop newRoot = v2;
+		if ( v2.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
 
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
@@ -8680,12 +9247,12 @@ public class GeneratedRewriteClass implements Function {
 			return hi;
 
 
-		if ( hi_0_0.getDim1() == -1 || hi_0_1.getDim2() == -1 || hi_1_1.getDim2() == -1 || hi_0_1.getNnz() == -1 || hi_0_0.getNnz() == -1 || hi_1_1.getDim1() == -1 || hi_0_0.getDim2() == -1 || hi_1_1.getNnz() == -1 )
+		if ( hi_0_0.getDim1() == -1 || hi_0_1.getDim2() == -1 || hi_1_1.getDim2() == -1 || hi_0_1.getNnz() == -1 || hi_0_0.getNnz() == -1 || hi_1_1.getDim1() == -1 || hi_1_1.getNnz() == -1 )
 			return hi;
 
 
-		double costFrom = ((Math.min(hi_0_0.getNnz(), hi_0_1.getNnz()) * hi_0_0.getDim2() * 3.0) + (Math.min(hi_0_0.getNnz(), hi_1_1.getNnz()) * hi_0_0.getDim2() * 3.0) + ((Math.min((hi_0_0.getNnz() * (1.0 / hi_0_0.getDim1())), 1.0) * Math.min((hi_0_1.getNnz() * (1.0 / hi_0_1.getDim2())), 1.0) * hi_0_0.getDim1() * hi_0_1.getDim2()) + (Math.min((hi_0_0.getNnz() * (1.0 / hi_0_0.getDim1())), 1.0) * Math.min((hi_1_1.getNnz() * (1.0 / hi_1_1.getDim2())), 1.0) * hi_0_0.getDim1() * hi_1_1.getDim2())) + 30030.0);
-		double costTo = ((hi_1_1.getNnz() + hi_0_1.getNnz()) + (Math.min(hi_0_0.getNnz(), Math.min((hi_1_1.getNnz() + hi_0_1.getNnz()), (hi_1_1.getDim1() * hi_1_1.getDim2()))) * hi_0_0.getDim2() * 3.0) + 20020.0);
+		double costFrom = ((Math.min(hi_0_0.getNnz(), hi_0_1.getNnz()) * hi_1_1.getDim1() * 3.0) + (Math.min(hi_0_0.getNnz(), hi_1_1.getNnz()) * hi_1_1.getDim1() * 3.0) + ((Math.min((hi_0_0.getNnz() * (1.0 / hi_0_0.getDim1())), 1.0) * Math.min((hi_0_1.getNnz() * (1.0 / hi_0_1.getDim2())), 1.0) * hi_0_0.getDim1() * hi_0_1.getDim2()) + (Math.min((hi_0_0.getNnz() * (1.0 / hi_0_0.getDim1())), 1.0) * Math.min((hi_1_1.getNnz() * (1.0 / hi_1_1.getDim2())), 1.0) * hi_0_0.getDim1() * hi_1_1.getDim2())) + 30030.0);
+		double costTo = ((hi_1_1.getNnz() + hi_0_1.getNnz()) + (Math.min(hi_0_0.getNnz(), Math.min((hi_1_1.getNnz() + hi_0_1.getNnz()), (hi_1_1.getDim1() * hi_1_1.getDim2()))) * hi_1_1.getDim1() * 3.0) + 20020.0);
 
 		if ( costFrom <= costTo )
 			return hi;
@@ -8696,6 +9263,13 @@ public class GeneratedRewriteClass implements Function {
 		DMLExecutor.println("Applying rewrite: +(%*%(A,C),%*%(A,B)) => %*%(A,+(B,C))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_1_1, hi_0_1, Types.OpOp2.PLUS);
 		AggBinaryOp v2 = HopRewriteUtils.createMatrixMultiply(hi_0_0, v1);
+
+		Hop newRoot = v2;
+		if ( v2.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
 
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
@@ -8762,6 +9336,13 @@ public class GeneratedRewriteClass implements Function {
 		AggUnaryOp v2 = HopRewriteUtils.createAggUnaryOp(hi_0_0_0, Types.AggOp.TRACE, Types.Direction.RowCol);
 		BinaryOp v3 = HopRewriteUtils.createBinary(v1, v2, Types.OpOp2.PLUS);
 
+		Hop newRoot = v3;
+		if ( v3.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
+
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
@@ -8827,6 +9408,13 @@ public class GeneratedRewriteClass implements Function {
 		AggUnaryOp v2 = HopRewriteUtils.createAggUnaryOp(hi_0_0, Types.AggOp.TRACE, Types.Direction.RowCol);
 		BinaryOp v3 = HopRewriteUtils.createBinary(v1, v2, Types.OpOp2.PLUS);
 
+		Hop newRoot = v3;
+		if ( v3.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
+
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
@@ -8889,6 +9477,13 @@ public class GeneratedRewriteClass implements Function {
 		System.out.println("Applying rewrite: rev(-(a,$1:rev(B))) => -(a,B)");
 		DMLExecutor.println("Applying rewrite: rev(-(a,$1:rev(B))) => -(a,B)");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0, hi_0_1_0, Types.OpOp2.MINUS);
+
+		Hop newRoot = v1;
+		if ( v1.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
 
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
@@ -8953,6 +9548,13 @@ public class GeneratedRewriteClass implements Function {
 		DMLExecutor.println("Applying rewrite: t(-(a,$1:t(B))) => -(a,B)");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0, hi_0_1_0, Types.OpOp2.MINUS);
 
+		Hop newRoot = v1;
+		if ( v1.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
+
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
@@ -9015,6 +9617,13 @@ public class GeneratedRewriteClass implements Function {
 		System.out.println("Applying rewrite: rev(-($1:rev(A),b)) => -(A,b)");
 		DMLExecutor.println("Applying rewrite: rev(-($1:rev(A),b)) => -(A,b)");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0_0, hi_0_1, Types.OpOp2.MINUS);
+
+		Hop newRoot = v1;
+		if ( v1.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
 
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
@@ -9079,6 +9688,13 @@ public class GeneratedRewriteClass implements Function {
 		DMLExecutor.println("Applying rewrite: t(-($1:t(A),b)) => -(A,b)");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0_0, hi_0_1, Types.OpOp2.MINUS);
 
+		Hop newRoot = v1;
+		if ( v1.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
+
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
@@ -9141,6 +9757,13 @@ public class GeneratedRewriteClass implements Function {
 		System.out.println("Applying rewrite: rev(!=(rev(A),b)) => !=(A,b)");
 		DMLExecutor.println("Applying rewrite: rev(!=(rev(A),b)) => !=(A,b)");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0_0, hi_0_1, Types.OpOp2.NOTEQUAL);
+
+		Hop newRoot = v1;
+		if ( v1.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
 
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
@@ -9205,6 +9828,13 @@ public class GeneratedRewriteClass implements Function {
 		DMLExecutor.println("Applying rewrite: rev(!=(b,rev(A))) => !=(A,b)");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_1_0, hi_0_0, Types.OpOp2.NOTEQUAL);
 
+		Hop newRoot = v1;
+		if ( v1.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
+
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
@@ -9267,6 +9897,13 @@ public class GeneratedRewriteClass implements Function {
 		System.out.println("Applying rewrite: t(!=(t(A),b)) => !=(A,b)");
 		DMLExecutor.println("Applying rewrite: t(!=(t(A),b)) => !=(A,b)");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0_0, hi_0_1, Types.OpOp2.NOTEQUAL);
+
+		Hop newRoot = v1;
+		if ( v1.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
 
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
@@ -9331,6 +9968,13 @@ public class GeneratedRewriteClass implements Function {
 		DMLExecutor.println("Applying rewrite: t(!=(b,t(A))) => !=(A,b)");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_1_0, hi_0_0, Types.OpOp2.NOTEQUAL);
 
+		Hop newRoot = v1;
+		if ( v1.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
+
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
@@ -9393,6 +10037,13 @@ public class GeneratedRewriteClass implements Function {
 		System.out.println("Applying rewrite: rev(+($1:rev(A),b)) => +(A,b)");
 		DMLExecutor.println("Applying rewrite: rev(+($1:rev(A),b)) => +(A,b)");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0_0, hi_0_1, Types.OpOp2.PLUS);
+
+		Hop newRoot = v1;
+		if ( v1.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
 
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
@@ -9457,6 +10108,13 @@ public class GeneratedRewriteClass implements Function {
 		DMLExecutor.println("Applying rewrite: rev(+(b,$1:rev(A))) => +(A,b)");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_1_0, hi_0_0, Types.OpOp2.PLUS);
 
+		Hop newRoot = v1;
+		if ( v1.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
+
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
@@ -9519,6 +10177,13 @@ public class GeneratedRewriteClass implements Function {
 		System.out.println("Applying rewrite: t(+($1:t(A),b)) => +(A,b)");
 		DMLExecutor.println("Applying rewrite: t(+($1:t(A),b)) => +(A,b)");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0_0, hi_0_1, Types.OpOp2.PLUS);
+
+		Hop newRoot = v1;
+		if ( v1.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
 
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
@@ -9583,6 +10248,13 @@ public class GeneratedRewriteClass implements Function {
 		DMLExecutor.println("Applying rewrite: t(+(b,$1:t(A))) => +(A,b)");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_1_0, hi_0_0, Types.OpOp2.PLUS);
 
+		Hop newRoot = v1;
+		if ( v1.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
+
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
@@ -9645,6 +10317,13 @@ public class GeneratedRewriteClass implements Function {
 		System.out.println("Applying rewrite: rev(*($1:rev(A),b)) => *(A,b)");
 		DMLExecutor.println("Applying rewrite: rev(*($1:rev(A),b)) => *(A,b)");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0_0, hi_0_1, Types.OpOp2.MULT);
+
+		Hop newRoot = v1;
+		if ( v1.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
 
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
@@ -9709,6 +10388,13 @@ public class GeneratedRewriteClass implements Function {
 		DMLExecutor.println("Applying rewrite: rev(*(b,$1:rev(A))) => *(A,b)");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_1_0, hi_0_0, Types.OpOp2.MULT);
 
+		Hop newRoot = v1;
+		if ( v1.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
+
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
@@ -9772,6 +10458,13 @@ public class GeneratedRewriteClass implements Function {
 		DMLExecutor.println("Applying rewrite: t(*($1:t(A),b)) => *(A,b)");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0_0, hi_0_1, Types.OpOp2.MULT);
 
+		Hop newRoot = v1;
+		if ( v1.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
+
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
@@ -9834,6 +10527,13 @@ public class GeneratedRewriteClass implements Function {
 		System.out.println("Applying rewrite: t(*(b,$1:t(A))) => *(A,b)");
 		DMLExecutor.println("Applying rewrite: t(*(b,$1:t(A))) => *(A,b)");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_1_0, hi_0_0, Types.OpOp2.MULT);
+
+		Hop newRoot = v1;
+		if ( v1.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
 
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
@@ -9914,6 +10614,13 @@ public class GeneratedRewriteClass implements Function {
 		AggUnaryOp v2 = HopRewriteUtils.createAggUnaryOp(v1, Types.AggOp.SUM, Types.Direction.Row);
 		BinaryOp v3 = HopRewriteUtils.createBinary(hi_0_0_0, v2, Types.OpOp2.MULT);
 
+		Hop newRoot = v3;
+		if ( v3.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
+
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
@@ -9992,6 +10699,13 @@ public class GeneratedRewriteClass implements Function {
 		ReorgOp v1 = HopRewriteUtils.createReorg(hi_0_0_0, Types.ReOrgOp.REV);
 		AggUnaryOp v2 = HopRewriteUtils.createAggUnaryOp(v1, Types.AggOp.SUM, Types.Direction.Row);
 		BinaryOp v3 = HopRewriteUtils.createBinary(hi_0_0_1, v2, Types.OpOp2.MULT);
+
+		Hop newRoot = v3;
+		if ( v3.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
 
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
@@ -10072,6 +10786,13 @@ public class GeneratedRewriteClass implements Function {
 		AggUnaryOp v2 = HopRewriteUtils.createAggUnaryOp(v1, Types.AggOp.SUM, Types.Direction.Col);
 		BinaryOp v3 = HopRewriteUtils.createBinary(hi_0_0_0, v2, Types.OpOp2.MULT);
 
+		Hop newRoot = v3;
+		if ( v3.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
+
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
@@ -10151,6 +10872,13 @@ public class GeneratedRewriteClass implements Function {
 		AggUnaryOp v2 = HopRewriteUtils.createAggUnaryOp(v1, Types.AggOp.SUM, Types.Direction.Col);
 		BinaryOp v3 = HopRewriteUtils.createBinary(hi_0_0_1, v2, Types.OpOp2.MULT);
 
+		Hop newRoot = v3;
+		if ( v3.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
+
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
@@ -10214,6 +10942,13 @@ public class GeneratedRewriteClass implements Function {
 		DMLExecutor.println("Applying rewrite: rev(/(a,rev(B))) => /(a,B)");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0, hi_0_1_0, Types.OpOp2.DIV);
 
+		Hop newRoot = v1;
+		if ( v1.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
+
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
@@ -10276,6 +11011,13 @@ public class GeneratedRewriteClass implements Function {
 		System.out.println("Applying rewrite: t(/(a,t(B))) => /(a,B)");
 		DMLExecutor.println("Applying rewrite: t(/(a,t(B))) => /(a,B)");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0, hi_0_1_0, Types.OpOp2.DIV);
+
+		Hop newRoot = v1;
+		if ( v1.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
 
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
@@ -10347,6 +11089,13 @@ public class GeneratedRewriteClass implements Function {
 		AggUnaryOp v2 = HopRewriteUtils.createAggUnaryOp(v1, Types.AggOp.TRACE, Types.Direction.RowCol);
 		BinaryOp v3 = HopRewriteUtils.createBinary(hi_0_0_0, v2, Types.OpOp2.MULT);
 
+		Hop newRoot = v3;
+		if ( v3.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
+
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
@@ -10416,6 +11165,13 @@ public class GeneratedRewriteClass implements Function {
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0, hi_0_1_1, Types.OpOp2.DIV);
 		AggUnaryOp v2 = HopRewriteUtils.createAggUnaryOp(v1, Types.AggOp.TRACE, Types.Direction.RowCol);
 		BinaryOp v3 = HopRewriteUtils.createBinary(hi_0_1_0, v2, Types.OpOp2.MULT);
+
+		Hop newRoot = v3;
+		if ( v3.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
 
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
@@ -10487,6 +11243,13 @@ public class GeneratedRewriteClass implements Function {
 		AggUnaryOp v2 = HopRewriteUtils.createAggUnaryOp(v1, Types.AggOp.TRACE, Types.Direction.RowCol);
 		BinaryOp v3 = HopRewriteUtils.createBinary(hi_0_0_0, v2, Types.OpOp2.MULT);
 
+		Hop newRoot = v3;
+		if ( v3.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
+
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
@@ -10556,6 +11319,13 @@ public class GeneratedRewriteClass implements Function {
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0_0, hi_0_1, Types.OpOp2.DIV);
 		AggUnaryOp v2 = HopRewriteUtils.createAggUnaryOp(v1, Types.AggOp.TRACE, Types.Direction.RowCol);
 		BinaryOp v3 = HopRewriteUtils.createBinary(hi_0_0_1, v2, Types.OpOp2.MULT);
+
+		Hop newRoot = v3;
+		if ( v3.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
 
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
@@ -10642,6 +11412,13 @@ public class GeneratedRewriteClass implements Function {
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_1_0, hi_0_0, Types.OpOp2.PLUS);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0_1, v1, Types.OpOp2.MULT);
 
+		Hop newRoot = v2;
+		if ( v2.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
+
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
@@ -10726,6 +11503,13 @@ public class GeneratedRewriteClass implements Function {
 		DMLExecutor.println("Applying rewrite: +(*(B,A),*(A,C)) => *(A,+(B,C))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0, hi_1_1, Types.OpOp2.PLUS);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0_1, v1, Types.OpOp2.MULT);
+
+		Hop newRoot = v2;
+		if ( v2.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
 
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
@@ -10812,6 +11596,13 @@ public class GeneratedRewriteClass implements Function {
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_1_0, hi_0_1, Types.OpOp2.PLUS);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0_0, v1, Types.OpOp2.MULT);
 
+		Hop newRoot = v2;
+		if ( v2.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
+
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
@@ -10897,6 +11688,13 @@ public class GeneratedRewriteClass implements Function {
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_1_1, hi_0_1, Types.OpOp2.PLUS);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0_0, v1, Types.OpOp2.MULT);
 
+		Hop newRoot = v2;
+		if ( v2.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
+
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
@@ -10966,6 +11764,13 @@ public class GeneratedRewriteClass implements Function {
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0_0, hi_1, Types.OpOp2.MULT);
 		ReorgOp v2 = HopRewriteUtils.createTranspose(hi_0_0_1);
 		BinaryOp v3 = HopRewriteUtils.createBinary(v1, v2, Types.OpOp2.MULT);
+
+		Hop newRoot = v3;
+		if ( v3.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
 
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
@@ -11037,6 +11842,13 @@ public class GeneratedRewriteClass implements Function {
 		ReorgOp v2 = HopRewriteUtils.createTranspose(hi_0_0_0);
 		BinaryOp v3 = HopRewriteUtils.createBinary(v1, v2, Types.OpOp2.MULT);
 
+		Hop newRoot = v3;
+		if ( v3.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
+
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
@@ -11106,6 +11918,13 @@ public class GeneratedRewriteClass implements Function {
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0, hi_1_0_0, Types.OpOp2.MULT);
 		ReorgOp v2 = HopRewriteUtils.createTranspose(hi_1_0_1);
 		BinaryOp v3 = HopRewriteUtils.createBinary(v1, v2, Types.OpOp2.MULT);
+
+		Hop newRoot = v3;
+		if ( v3.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
 
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
@@ -11177,6 +11996,13 @@ public class GeneratedRewriteClass implements Function {
 		ReorgOp v2 = HopRewriteUtils.createTranspose(hi_1_0_0);
 		BinaryOp v3 = HopRewriteUtils.createBinary(v1, v2, Types.OpOp2.MULT);
 
+		Hop newRoot = v3;
+		if ( v3.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
+
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
@@ -11246,6 +12072,13 @@ public class GeneratedRewriteClass implements Function {
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0_0, hi_1, Types.OpOp2.MULT);
 		ReorgOp v2 = HopRewriteUtils.createReorg(hi_0_0_1, Types.ReOrgOp.REV);
 		BinaryOp v3 = HopRewriteUtils.createBinary(v1, v2, Types.OpOp2.MULT);
+
+		Hop newRoot = v3;
+		if ( v3.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
 
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
@@ -11317,6 +12150,13 @@ public class GeneratedRewriteClass implements Function {
 		ReorgOp v2 = HopRewriteUtils.createReorg(hi_0_0_0, Types.ReOrgOp.REV);
 		BinaryOp v3 = HopRewriteUtils.createBinary(v1, v2, Types.OpOp2.MULT);
 
+		Hop newRoot = v3;
+		if ( v3.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
+
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
@@ -11386,6 +12226,13 @@ public class GeneratedRewriteClass implements Function {
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0, hi_1_0_0, Types.OpOp2.MULT);
 		ReorgOp v2 = HopRewriteUtils.createReorg(hi_1_0_1, Types.ReOrgOp.REV);
 		BinaryOp v3 = HopRewriteUtils.createBinary(v1, v2, Types.OpOp2.MULT);
+
+		Hop newRoot = v3;
+		if ( v3.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
 
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
@@ -11457,6 +12304,13 @@ public class GeneratedRewriteClass implements Function {
 		ReorgOp v2 = HopRewriteUtils.createReorg(hi_1_0_0, Types.ReOrgOp.REV);
 		BinaryOp v3 = HopRewriteUtils.createBinary(v1, v2, Types.OpOp2.MULT);
 
+		Hop newRoot = v3;
+		if ( v3.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
+
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
@@ -11520,6 +12374,13 @@ public class GeneratedRewriteClass implements Function {
 		DMLExecutor.println("Applying rewrite: trace(!=(t(B),A)) => trace(!=(A,B))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_1, hi_0_0_0, Types.OpOp2.NOTEQUAL);
 		AggUnaryOp v2 = HopRewriteUtils.createAggUnaryOp(v1, Types.AggOp.TRACE, Types.Direction.RowCol);
+
+		Hop newRoot = v2;
+		if ( v2.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
 
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
@@ -11585,6 +12446,13 @@ public class GeneratedRewriteClass implements Function {
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0, hi_0_1_0, Types.OpOp2.NOTEQUAL);
 		AggUnaryOp v2 = HopRewriteUtils.createAggUnaryOp(v1, Types.AggOp.TRACE, Types.Direction.RowCol);
 
+		Hop newRoot = v2;
+		if ( v2.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
+
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
@@ -11648,6 +12516,13 @@ public class GeneratedRewriteClass implements Function {
 		DMLExecutor.println("Applying rewrite: trace(-($1:t(A),b)) => trace(-(A,b))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0_0, hi_0_1, Types.OpOp2.MINUS);
 		AggUnaryOp v2 = HopRewriteUtils.createAggUnaryOp(v1, Types.AggOp.TRACE, Types.Direction.RowCol);
+
+		Hop newRoot = v2;
+		if ( v2.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
 
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
@@ -11713,6 +12588,13 @@ public class GeneratedRewriteClass implements Function {
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0, hi_0_1_0, Types.OpOp2.MINUS);
 		AggUnaryOp v2 = HopRewriteUtils.createAggUnaryOp(v1, Types.AggOp.TRACE, Types.Direction.RowCol);
 
+		Hop newRoot = v2;
+		if ( v2.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
+
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
@@ -11776,6 +12658,13 @@ public class GeneratedRewriteClass implements Function {
 		DMLExecutor.println("Applying rewrite: trace(-($1:t(A),B)) => trace(-(A,B))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0_0, hi_0_1, Types.OpOp2.MINUS);
 		AggUnaryOp v2 = HopRewriteUtils.createAggUnaryOp(v1, Types.AggOp.TRACE, Types.Direction.RowCol);
+
+		Hop newRoot = v2;
+		if ( v2.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
 
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
@@ -11841,6 +12730,13 @@ public class GeneratedRewriteClass implements Function {
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0, hi_0_1_0, Types.OpOp2.MINUS);
 		AggUnaryOp v2 = HopRewriteUtils.createAggUnaryOp(v1, Types.AggOp.TRACE, Types.Direction.RowCol);
 
+		Hop newRoot = v2;
+		if ( v2.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
+
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
@@ -11904,6 +12800,13 @@ public class GeneratedRewriteClass implements Function {
 		DMLExecutor.println("Applying rewrite: trace(+($1:t(B),A)) => trace(+(A,B))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_1, hi_0_0_0, Types.OpOp2.PLUS);
 		AggUnaryOp v2 = HopRewriteUtils.createAggUnaryOp(v1, Types.AggOp.TRACE, Types.Direction.RowCol);
+
+		Hop newRoot = v2;
+		if ( v2.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
 
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
@@ -11969,6 +12872,13 @@ public class GeneratedRewriteClass implements Function {
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_1_0, hi_0_0, Types.OpOp2.PLUS);
 		AggUnaryOp v2 = HopRewriteUtils.createAggUnaryOp(v1, Types.AggOp.TRACE, Types.Direction.RowCol);
 
+		Hop newRoot = v2;
+		if ( v2.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
+
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
@@ -12032,6 +12942,13 @@ public class GeneratedRewriteClass implements Function {
 		DMLExecutor.println("Applying rewrite: trace(+($1:t(A),b)) => trace(+(A,b))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0_0, hi_0_1, Types.OpOp2.PLUS);
 		AggUnaryOp v2 = HopRewriteUtils.createAggUnaryOp(v1, Types.AggOp.TRACE, Types.Direction.RowCol);
+
+		Hop newRoot = v2;
+		if ( v2.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
 
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
@@ -12097,6 +13014,13 @@ public class GeneratedRewriteClass implements Function {
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_1_0, hi_0_0, Types.OpOp2.PLUS);
 		AggUnaryOp v2 = HopRewriteUtils.createAggUnaryOp(v1, Types.AggOp.TRACE, Types.Direction.RowCol);
 
+		Hop newRoot = v2;
+		if ( v2.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
+
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
@@ -12161,6 +13085,13 @@ public class GeneratedRewriteClass implements Function {
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0_0, hi_0_1, Types.OpOp2.NOTEQUAL);
 		AggUnaryOp v2 = HopRewriteUtils.createAggUnaryOp(v1, Types.AggOp.TRACE, Types.Direction.RowCol);
 
+		Hop newRoot = v2;
+		if ( v2.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
+
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
@@ -12224,6 +13155,13 @@ public class GeneratedRewriteClass implements Function {
 		DMLExecutor.println("Applying rewrite: trace(!=(b,t(A))) => trace(!=(A,b))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_1_0, hi_0_0, Types.OpOp2.NOTEQUAL);
 		AggUnaryOp v2 = HopRewriteUtils.createAggUnaryOp(v1, Types.AggOp.TRACE, Types.Direction.RowCol);
+
+		Hop newRoot = v2;
+		if ( v2.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
 
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
@@ -12298,6 +13236,13 @@ public class GeneratedRewriteClass implements Function {
 		AggUnaryOp v2 = HopRewriteUtils.createAggUnaryOp(v1, Types.AggOp.SUM, Types.Direction.RowCol);
 		BinaryOp v3 = HopRewriteUtils.createBinary(hi_0_0_0, v2, Types.OpOp2.MULT);
 
+		Hop newRoot = v3;
+		if ( v3.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
+
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
@@ -12370,6 +13315,13 @@ public class GeneratedRewriteClass implements Function {
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0_0, hi_0_1, Types.OpOp2.DIV);
 		AggUnaryOp v2 = HopRewriteUtils.createAggUnaryOp(v1, Types.AggOp.SUM, Types.Direction.RowCol);
 		BinaryOp v3 = HopRewriteUtils.createBinary(hi_0_0_1, v2, Types.OpOp2.MULT);
+
+		Hop newRoot = v3;
+		if ( v3.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
 
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
@@ -12444,6 +13396,13 @@ public class GeneratedRewriteClass implements Function {
 		AggUnaryOp v2 = HopRewriteUtils.createAggUnaryOp(v1, Types.AggOp.SUM, Types.Direction.RowCol);
 		BinaryOp v3 = HopRewriteUtils.createBinary(hi_0_0_0, v2, Types.OpOp2.MULT);
 
+		Hop newRoot = v3;
+		if ( v3.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
+
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
@@ -12517,6 +13476,13 @@ public class GeneratedRewriteClass implements Function {
 		AggUnaryOp v2 = HopRewriteUtils.createAggUnaryOp(v1, Types.AggOp.SUM, Types.Direction.RowCol);
 		BinaryOp v3 = HopRewriteUtils.createBinary(hi_0_1_0, v2, Types.OpOp2.MULT);
 
+		Hop newRoot = v3;
+		if ( v3.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
+
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
@@ -12586,6 +13552,13 @@ public class GeneratedRewriteClass implements Function {
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0_0, hi_1, Types.OpOp2.MULT);
 		ReorgOp v2 = HopRewriteUtils.createTranspose(hi_0_0_1);
 		BinaryOp v3 = HopRewriteUtils.createBinary(v1, v2, Types.OpOp2.DIV);
+
+		Hop newRoot = v3;
+		if ( v3.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
 
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
@@ -12657,6 +13630,13 @@ public class GeneratedRewriteClass implements Function {
 		ReorgOp v2 = HopRewriteUtils.createTranspose(hi_1_0_1);
 		BinaryOp v3 = HopRewriteUtils.createBinary(v1, v2, Types.OpOp2.DIV);
 
+		Hop newRoot = v3;
+		if ( v3.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
+
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
@@ -12726,6 +13706,13 @@ public class GeneratedRewriteClass implements Function {
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0_0, hi_1, Types.OpOp2.MULT);
 		ReorgOp v2 = HopRewriteUtils.createReorg(hi_0_0_1, Types.ReOrgOp.REV);
 		BinaryOp v3 = HopRewriteUtils.createBinary(v1, v2, Types.OpOp2.DIV);
+
+		Hop newRoot = v3;
+		if ( v3.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
 
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
@@ -12797,6 +13784,13 @@ public class GeneratedRewriteClass implements Function {
 		ReorgOp v2 = HopRewriteUtils.createReorg(hi_1_0_1, Types.ReOrgOp.REV);
 		BinaryOp v3 = HopRewriteUtils.createBinary(v1, v2, Types.OpOp2.DIV);
 
+		Hop newRoot = v3;
+		if ( v3.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
+
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
@@ -12864,6 +13858,13 @@ public class GeneratedRewriteClass implements Function {
 		AggUnaryOp v1 = HopRewriteUtils.createAggUnaryOp(hi_0_0, Types.AggOp.SUM, Types.Direction.Col);
 		AggBinaryOp v2 = HopRewriteUtils.createMatrixMultiply(v1, hi_1_1);
 		BinaryOp v3 = HopRewriteUtils.createBinary(hi_1_0, v2, Types.OpOp2.MULT);
+
+		Hop newRoot = v3;
+		if ( v3.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
 
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
@@ -12933,6 +13934,13 @@ public class GeneratedRewriteClass implements Function {
 		AggBinaryOp v2 = HopRewriteUtils.createMatrixMultiply(v1, hi_1_0);
 		BinaryOp v3 = HopRewriteUtils.createBinary(hi_1_1, v2, Types.OpOp2.MULT);
 
+		Hop newRoot = v3;
+		if ( v3.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
+
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
@@ -13001,6 +14009,13 @@ public class GeneratedRewriteClass implements Function {
 		AggBinaryOp v2 = HopRewriteUtils.createMatrixMultiply(hi_0_1, v1);
 		BinaryOp v3 = HopRewriteUtils.createBinary(hi_0_0, v2, Types.OpOp2.MULT);
 
+		Hop newRoot = v3;
+		if ( v3.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
+
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
@@ -13068,6 +14083,13 @@ public class GeneratedRewriteClass implements Function {
 		AggUnaryOp v1 = HopRewriteUtils.createAggUnaryOp(hi_1_0, Types.AggOp.SUM, Types.Direction.Row);
 		AggBinaryOp v2 = HopRewriteUtils.createMatrixMultiply(hi_0_0, v1);
 		BinaryOp v3 = HopRewriteUtils.createBinary(hi_0_1, v2, Types.OpOp2.MULT);
+
+		Hop newRoot = v3;
+		if ( v3.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
 
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
@@ -13153,6 +14175,13 @@ public class GeneratedRewriteClass implements Function {
 		AggUnaryOp v2 = HopRewriteUtils.createAggUnaryOp(v1, Types.AggOp.SUM, Types.Direction.Col);
 		BinaryOp v3 = HopRewriteUtils.createBinary(hi_0_0_0, v2, Types.OpOp2.MULT);
 
+		Hop newRoot = v3;
+		if ( v3.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
+
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
@@ -13237,6 +14266,13 @@ public class GeneratedRewriteClass implements Function {
 		AggUnaryOp v2 = HopRewriteUtils.createAggUnaryOp(v1, Types.AggOp.SUM, Types.Direction.Col);
 		BinaryOp v3 = HopRewriteUtils.createBinary(hi_0_0_1, v2, Types.OpOp2.MULT);
 
+		Hop newRoot = v3;
+		if ( v3.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
+
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
@@ -13309,6 +14345,13 @@ public class GeneratedRewriteClass implements Function {
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_1, hi_0_0_1, Types.OpOp2.DIV);
 		AggUnaryOp v2 = HopRewriteUtils.createAggUnaryOp(v1, Types.AggOp.SUM, Types.Direction.Col);
 		BinaryOp v3 = HopRewriteUtils.createBinary(hi_0_0_0, v2, Types.OpOp2.MULT);
+
+		Hop newRoot = v3;
+		if ( v3.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
 
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
@@ -13383,6 +14426,13 @@ public class GeneratedRewriteClass implements Function {
 		AggUnaryOp v2 = HopRewriteUtils.createAggUnaryOp(v1, Types.AggOp.SUM, Types.Direction.Col);
 		BinaryOp v3 = HopRewriteUtils.createBinary(hi_0_1_0, v2, Types.OpOp2.MULT);
 
+		Hop newRoot = v3;
+		if ( v3.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
+
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
@@ -13456,6 +14506,13 @@ public class GeneratedRewriteClass implements Function {
 		AggUnaryOp v2 = HopRewriteUtils.createAggUnaryOp(v1, Types.AggOp.SUM, Types.Direction.Row);
 		BinaryOp v3 = HopRewriteUtils.createBinary(hi_0_0_0, v2, Types.OpOp2.MULT);
 
+		Hop newRoot = v3;
+		if ( v3.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
+
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
@@ -13528,6 +14585,13 @@ public class GeneratedRewriteClass implements Function {
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0, hi_0_1_1, Types.OpOp2.DIV);
 		AggUnaryOp v2 = HopRewriteUtils.createAggUnaryOp(v1, Types.AggOp.SUM, Types.Direction.Row);
 		BinaryOp v3 = HopRewriteUtils.createBinary(hi_0_1_0, v2, Types.OpOp2.MULT);
+
+		Hop newRoot = v3;
+		if ( v3.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
 
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
@@ -13613,6 +14677,13 @@ public class GeneratedRewriteClass implements Function {
 		AggUnaryOp v2 = HopRewriteUtils.createAggUnaryOp(v1, Types.AggOp.SUM, Types.Direction.Row);
 		BinaryOp v3 = HopRewriteUtils.createBinary(hi_0_0_0, v2, Types.OpOp2.MULT);
 
+		Hop newRoot = v3;
+		if ( v3.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
+
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
@@ -13697,6 +14768,13 @@ public class GeneratedRewriteClass implements Function {
 		AggUnaryOp v2 = HopRewriteUtils.createAggUnaryOp(v1, Types.AggOp.SUM, Types.Direction.Row);
 		BinaryOp v3 = HopRewriteUtils.createBinary(hi_0_0_1, v2, Types.OpOp2.MULT);
 
+		Hop newRoot = v3;
+		if ( v3.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
+
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
@@ -13765,6 +14843,13 @@ public class GeneratedRewriteClass implements Function {
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0_0_0, v1, Types.OpOp2.NOTEQUAL);
 		AggUnaryOp v3 = HopRewriteUtils.createAggUnaryOp(v2, Types.AggOp.TRACE, Types.Direction.RowCol);
 
+		Hop newRoot = v3;
+		if ( v3.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
+
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
@@ -13832,6 +14917,13 @@ public class GeneratedRewriteClass implements Function {
 		AggUnaryOp v1 = HopRewriteUtils.createAggUnaryOp(hi_0_0, Types.AggOp.TRACE, Types.Direction.RowCol);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0_0, v1, Types.OpOp2.NOTEQUAL);
 		AggUnaryOp v3 = HopRewriteUtils.createAggUnaryOp(v2, Types.AggOp.TRACE, Types.Direction.RowCol);
+
+		Hop newRoot = v3;
+		if ( v3.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
 
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
@@ -13908,6 +15000,13 @@ public class GeneratedRewriteClass implements Function {
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0_0_1, hi_0_1, Types.OpOp2.DIV);
 		BinaryOp v3 = HopRewriteUtils.createBinary(v1, v2, Types.OpOp2.MULT);
 
+		Hop newRoot = v3;
+		if ( v3.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
+
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
@@ -13982,6 +15081,13 @@ public class GeneratedRewriteClass implements Function {
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0_1, hi_1, Types.OpOp2.MULT);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0_0_0, hi_0_1, Types.OpOp2.DIV);
 		BinaryOp v3 = HopRewriteUtils.createBinary(v1, v2, Types.OpOp2.MULT);
+
+		Hop newRoot = v3;
+		if ( v3.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
 
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
@@ -14058,6 +15164,13 @@ public class GeneratedRewriteClass implements Function {
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_1_0_1, hi_1_1, Types.OpOp2.DIV);
 		BinaryOp v3 = HopRewriteUtils.createBinary(v1, v2, Types.OpOp2.MULT);
 
+		Hop newRoot = v3;
+		if ( v3.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
+
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
@@ -14132,6 +15245,13 @@ public class GeneratedRewriteClass implements Function {
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0, hi_1_0_1, Types.OpOp2.MULT);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_1_0_0, hi_1_1, Types.OpOp2.DIV);
 		BinaryOp v3 = HopRewriteUtils.createBinary(v1, v2, Types.OpOp2.MULT);
+
+		Hop newRoot = v3;
+		if ( v3.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
 
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
@@ -14208,6 +15328,13 @@ public class GeneratedRewriteClass implements Function {
 		BinaryOp v2 = HopRewriteUtils.createBinary(v1, hi_0_0_1, Types.OpOp2.DIV);
 		BinaryOp v3 = HopRewriteUtils.createBinary(v2, hi_0_1, Types.OpOp2.DIV);
 
+		Hop newRoot = v3;
+		if ( v3.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
+
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
@@ -14282,6 +15409,13 @@ public class GeneratedRewriteClass implements Function {
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0, hi_1_0, Types.OpOp2.MULT);
 		BinaryOp v2 = HopRewriteUtils.createBinary(v1, hi_0_1, Types.OpOp2.DIV);
 		BinaryOp v3 = HopRewriteUtils.createBinary(v2, hi_1_1, Types.OpOp2.DIV);
+
+		Hop newRoot = v3;
+		if ( v3.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
 
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
@@ -14358,6 +15492,13 @@ public class GeneratedRewriteClass implements Function {
 		BinaryOp v2 = HopRewriteUtils.createBinary(v1, hi_1_0_1, Types.OpOp2.DIV);
 		BinaryOp v3 = HopRewriteUtils.createBinary(v2, hi_1_1, Types.OpOp2.DIV);
 
+		Hop newRoot = v3;
+		if ( v3.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
+
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
@@ -14424,6 +15565,13 @@ public class GeneratedRewriteClass implements Function {
 		DMLExecutor.println("Applying rewrite: sum(-($1:t(A),b)) => sum(-(A,b))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0_0, hi_0_1, Types.OpOp2.MINUS);
 		AggUnaryOp v2 = HopRewriteUtils.createAggUnaryOp(v1, Types.AggOp.SUM, Types.Direction.RowCol);
+
+		Hop newRoot = v2;
+		if ( v2.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
 
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
@@ -14492,6 +15640,13 @@ public class GeneratedRewriteClass implements Function {
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0, hi_0_1_0, Types.OpOp2.MINUS);
 		AggUnaryOp v2 = HopRewriteUtils.createAggUnaryOp(v1, Types.AggOp.SUM, Types.Direction.RowCol);
 
+		Hop newRoot = v2;
+		if ( v2.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
+
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
@@ -14558,6 +15713,13 @@ public class GeneratedRewriteClass implements Function {
 		DMLExecutor.println("Applying rewrite: sum(!=(t(A),b)) => sum(!=(A,b))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0_0, hi_0_1, Types.OpOp2.NOTEQUAL);
 		AggUnaryOp v2 = HopRewriteUtils.createAggUnaryOp(v1, Types.AggOp.SUM, Types.Direction.RowCol);
+
+		Hop newRoot = v2;
+		if ( v2.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
 
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
@@ -14626,6 +15788,13 @@ public class GeneratedRewriteClass implements Function {
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_1_0, hi_0_0, Types.OpOp2.NOTEQUAL);
 		AggUnaryOp v2 = HopRewriteUtils.createAggUnaryOp(v1, Types.AggOp.SUM, Types.Direction.RowCol);
 
+		Hop newRoot = v2;
+		if ( v2.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
+
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
@@ -14692,6 +15861,13 @@ public class GeneratedRewriteClass implements Function {
 		DMLExecutor.println("Applying rewrite: sum(+($1:t(A),b)) => sum(+(A,b))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0_0, hi_0_1, Types.OpOp2.PLUS);
 		AggUnaryOp v2 = HopRewriteUtils.createAggUnaryOp(v1, Types.AggOp.SUM, Types.Direction.RowCol);
+
+		Hop newRoot = v2;
+		if ( v2.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
 
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
@@ -14760,6 +15936,13 @@ public class GeneratedRewriteClass implements Function {
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_1_0, hi_0_0, Types.OpOp2.PLUS);
 		AggUnaryOp v2 = HopRewriteUtils.createAggUnaryOp(v1, Types.AggOp.SUM, Types.Direction.RowCol);
 
+		Hop newRoot = v2;
+		if ( v2.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
+
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
@@ -14824,6 +16007,13 @@ public class GeneratedRewriteClass implements Function {
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_1, hi_0_0_0, Types.OpOp2.MULT);
 		AggUnaryOp v2 = HopRewriteUtils.createAggUnaryOp(v1, Types.AggOp.TRACE, Types.Direction.RowCol);
 
+		Hop newRoot = v2;
+		if ( v2.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
+
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
@@ -14887,6 +16077,13 @@ public class GeneratedRewriteClass implements Function {
 		DMLExecutor.println("Applying rewrite: trace(*(B,$1:t(A))) => trace(*(A,B))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_1_0, hi_0_0, Types.OpOp2.MULT);
 		AggUnaryOp v2 = HopRewriteUtils.createAggUnaryOp(v1, Types.AggOp.TRACE, Types.Direction.RowCol);
+
+		Hop newRoot = v2;
+		if ( v2.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
 
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
@@ -14963,6 +16160,13 @@ public class GeneratedRewriteClass implements Function {
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0, hi_1_0, Types.OpOp2.NOTEQUAL);
 		ReorgOp v2 = HopRewriteUtils.createTranspose(v1);
 
+		Hop newRoot = v2;
+		if ( v2.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
+
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
@@ -15026,6 +16230,13 @@ public class GeneratedRewriteClass implements Function {
 		DMLExecutor.println("Applying rewrite: !=(rev(A),rev(A)) => rev(!=(A,A))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0, hi_0_0, Types.OpOp2.NOTEQUAL);
 		ReorgOp v2 = HopRewriteUtils.createReorg(v1, Types.ReOrgOp.REV);
+
+		Hop newRoot = v2;
+		if ( v2.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
 
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
@@ -15091,6 +16302,13 @@ public class GeneratedRewriteClass implements Function {
 		ReorgOp v1 = HopRewriteUtils.createReorg(hi_0_1, Types.ReOrgOp.REV);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0_0_0, v1, Types.OpOp2.MINUS);
 
+		Hop newRoot = v2;
+		if ( v2.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
+
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
@@ -15154,6 +16372,13 @@ public class GeneratedRewriteClass implements Function {
 		DMLExecutor.println("Applying rewrite: rev(-(A,$1:rev(B))) => -(rev(A),B)");
 		ReorgOp v1 = HopRewriteUtils.createReorg(hi_0_0, Types.ReOrgOp.REV);
 		BinaryOp v2 = HopRewriteUtils.createBinary(v1, hi_0_1_0, Types.OpOp2.MINUS);
+
+		Hop newRoot = v2;
+		if ( v2.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
 
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
@@ -15219,6 +16444,13 @@ public class GeneratedRewriteClass implements Function {
 		ReorgOp v1 = HopRewriteUtils.createTranspose(hi_0_1);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0_0_0, v1, Types.OpOp2.MINUS);
 
+		Hop newRoot = v2;
+		if ( v2.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
+
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
@@ -15282,6 +16514,13 @@ public class GeneratedRewriteClass implements Function {
 		DMLExecutor.println("Applying rewrite: t(-(A,$1:t(B))) => -(t(A),B)");
 		ReorgOp v1 = HopRewriteUtils.createTranspose(hi_0_0);
 		BinaryOp v2 = HopRewriteUtils.createBinary(v1, hi_0_1_0, Types.OpOp2.MINUS);
+
+		Hop newRoot = v2;
+		if ( v2.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
 
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
@@ -15347,6 +16586,13 @@ public class GeneratedRewriteClass implements Function {
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0, hi_1_0, Types.OpOp2.MINUS);
 		ReorgOp v2 = HopRewriteUtils.createTranspose(v1);
 
+		Hop newRoot = v2;
+		if ( v2.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
+
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
@@ -15410,6 +16656,13 @@ public class GeneratedRewriteClass implements Function {
 		DMLExecutor.println("Applying rewrite: +(t(B),t(A)) => t(+(A,B))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_1_0, hi_0_0, Types.OpOp2.PLUS);
 		ReorgOp v2 = HopRewriteUtils.createTranspose(v1);
+
+		Hop newRoot = v2;
+		if ( v2.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
 
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
@@ -15480,6 +16733,13 @@ public class GeneratedRewriteClass implements Function {
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0_0, hi_0_0_1, Types.OpOp2.MINUS);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0_0_1, v1, Types.OpOp2.NOTEQUAL);
 
+		Hop newRoot = v2;
+		if ( v2.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
+
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
@@ -15548,6 +16808,13 @@ public class GeneratedRewriteClass implements Function {
 		DMLExecutor.println("Applying rewrite: !=(A,rev(-(b,A))) => !=(A,-(b,A))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_1_0_0, hi_0, Types.OpOp2.MINUS);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0, v1, Types.OpOp2.NOTEQUAL);
+
+		Hop newRoot = v2;
+		if ( v2.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
 
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
@@ -15618,6 +16885,13 @@ public class GeneratedRewriteClass implements Function {
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0, hi_0_1_0, Types.OpOp2.MINUS);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0_1_0, v1, Types.OpOp2.NOTEQUAL);
 
+		Hop newRoot = v2;
+		if ( v2.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
+
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
@@ -15686,6 +16960,13 @@ public class GeneratedRewriteClass implements Function {
 		DMLExecutor.println("Applying rewrite: !=(-(b,A),rev(A)) => !=(A,-(b,A))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0, hi_0_1, Types.OpOp2.MINUS);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0_1, v1, Types.OpOp2.NOTEQUAL);
+
+		Hop newRoot = v2;
+		if ( v2.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
 
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
@@ -15756,6 +17037,13 @@ public class GeneratedRewriteClass implements Function {
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_1_0, hi_0, Types.OpOp2.MINUS);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0, v1, Types.OpOp2.NOTEQUAL);
 
+		Hop newRoot = v2;
+		if ( v2.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
+
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
@@ -15824,6 +17112,13 @@ public class GeneratedRewriteClass implements Function {
 		DMLExecutor.println("Applying rewrite: !=(rev(-(A,c)),A) => !=(A,-(A,c))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0_0, hi_0_0_1, Types.OpOp2.MINUS);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0_0_0, v1, Types.OpOp2.NOTEQUAL);
+
+		Hop newRoot = v2;
+		if ( v2.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
 
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
@@ -15894,6 +17189,13 @@ public class GeneratedRewriteClass implements Function {
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0, hi_1_0_1, Types.OpOp2.MINUS);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0, v1, Types.OpOp2.NOTEQUAL);
 
+		Hop newRoot = v2;
+		if ( v2.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
+
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
@@ -15962,6 +17264,13 @@ public class GeneratedRewriteClass implements Function {
 		DMLExecutor.println("Applying rewrite: !=(-(rev(A),c),A) => !=(A,-(A,c))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0_0, hi_0_1, Types.OpOp2.MINUS);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0_0_0, v1, Types.OpOp2.NOTEQUAL);
+
+		Hop newRoot = v2;
+		if ( v2.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
 
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
@@ -16032,6 +17341,13 @@ public class GeneratedRewriteClass implements Function {
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0, hi_1_1, Types.OpOp2.MINUS);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0, v1, Types.OpOp2.NOTEQUAL);
 
+		Hop newRoot = v2;
+		if ( v2.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
+
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
@@ -16100,6 +17416,13 @@ public class GeneratedRewriteClass implements Function {
 		DMLExecutor.println("Applying rewrite: !=(-(B,rev(A)),A) => !=(A,-(B,A))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0, hi_0_1_0, Types.OpOp2.MINUS);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0_1_0, v1, Types.OpOp2.NOTEQUAL);
+
+		Hop newRoot = v2;
+		if ( v2.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
 
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
@@ -16170,6 +17493,13 @@ public class GeneratedRewriteClass implements Function {
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0, hi_0_1, Types.OpOp2.MINUS);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0_1, v1, Types.OpOp2.NOTEQUAL);
 
+		Hop newRoot = v2;
+		if ( v2.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
+
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
@@ -16238,6 +17568,13 @@ public class GeneratedRewriteClass implements Function {
 		DMLExecutor.println("Applying rewrite: !=(A,-(B,rev(A))) => !=(A,-(B,A))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_1_0, hi_0, Types.OpOp2.MINUS);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0, v1, Types.OpOp2.NOTEQUAL);
+
+		Hop newRoot = v2;
+		if ( v2.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
 
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
@@ -16308,6 +17645,13 @@ public class GeneratedRewriteClass implements Function {
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0_0, hi_0_1, Types.OpOp2.MINUS);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0_0_0, v1, Types.OpOp2.NOTEQUAL);
 
+		Hop newRoot = v2;
+		if ( v2.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
+
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
@@ -16376,6 +17720,13 @@ public class GeneratedRewriteClass implements Function {
 		DMLExecutor.println("Applying rewrite: !=(-(A,C),rev(A)) => !=(A,-(A,C))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0, hi_0_1, Types.OpOp2.MINUS);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0_0, v1, Types.OpOp2.NOTEQUAL);
+
+		Hop newRoot = v2;
+		if ( v2.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
 
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
@@ -16446,6 +17797,13 @@ public class GeneratedRewriteClass implements Function {
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0, hi_1_1, Types.OpOp2.MINUS);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0, v1, Types.OpOp2.NOTEQUAL);
 
+		Hop newRoot = v2;
+		if ( v2.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
+
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
@@ -16509,6 +17867,13 @@ public class GeneratedRewriteClass implements Function {
 		DMLExecutor.println("Applying rewrite: rev(!=(rev(A),B)) => !=(A,rev(B))");
 		ReorgOp v1 = HopRewriteUtils.createReorg(hi_0_1, Types.ReOrgOp.REV);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0_0_0, v1, Types.OpOp2.NOTEQUAL);
+
+		Hop newRoot = v2;
+		if ( v2.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
 
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
@@ -16574,6 +17939,13 @@ public class GeneratedRewriteClass implements Function {
 		ReorgOp v1 = HopRewriteUtils.createReorg(hi_0_0, Types.ReOrgOp.REV);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0_1_0, v1, Types.OpOp2.NOTEQUAL);
 
+		Hop newRoot = v2;
+		if ( v2.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
+
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
@@ -16638,6 +18010,13 @@ public class GeneratedRewriteClass implements Function {
 		ReorgOp v1 = HopRewriteUtils.createTranspose(hi_0_1);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0_0_0, v1, Types.OpOp2.NOTEQUAL);
 
+		Hop newRoot = v2;
+		if ( v2.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
+
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
@@ -16701,6 +18080,13 @@ public class GeneratedRewriteClass implements Function {
 		DMLExecutor.println("Applying rewrite: t(!=(B,t(A))) => !=(A,t(B))");
 		ReorgOp v1 = HopRewriteUtils.createTranspose(hi_0_0);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0_1_0, v1, Types.OpOp2.NOTEQUAL);
+
+		Hop newRoot = v2;
+		if ( v2.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
 
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
@@ -16771,6 +18157,13 @@ public class GeneratedRewriteClass implements Function {
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0_1, hi_0_0_0, Types.OpOp2.PLUS);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0_0_1, v1, Types.OpOp2.NOTEQUAL);
 
+		Hop newRoot = v2;
+		if ( v2.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
+
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
@@ -16839,6 +18232,13 @@ public class GeneratedRewriteClass implements Function {
 		DMLExecutor.println("Applying rewrite: !=(rev(+(A,c)),A) => !=(A,+(A,c))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0_0, hi_0_0_1, Types.OpOp2.PLUS);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0_0_0, v1, Types.OpOp2.NOTEQUAL);
+
+		Hop newRoot = v2;
+		if ( v2.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
 
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
@@ -16909,6 +18309,13 @@ public class GeneratedRewriteClass implements Function {
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0, hi_1_0_0, Types.OpOp2.PLUS);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0, v1, Types.OpOp2.NOTEQUAL);
 
+		Hop newRoot = v2;
+		if ( v2.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
+
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
@@ -16977,6 +18384,13 @@ public class GeneratedRewriteClass implements Function {
 		DMLExecutor.println("Applying rewrite: !=(A,rev(+(A,c))) => !=(A,+(A,c))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0, hi_1_0_1, Types.OpOp2.PLUS);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0, v1, Types.OpOp2.NOTEQUAL);
+
+		Hop newRoot = v2;
+		if ( v2.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
 
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
@@ -17047,6 +18461,13 @@ public class GeneratedRewriteClass implements Function {
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0_0, hi_0_1, Types.OpOp2.PLUS);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0_0_0, v1, Types.OpOp2.NOTEQUAL);
 
+		Hop newRoot = v2;
+		if ( v2.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
+
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
@@ -17115,6 +18536,13 @@ public class GeneratedRewriteClass implements Function {
 		DMLExecutor.println("Applying rewrite: !=(+(c,rev(A)),A) => !=(A,+(A,c))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_1_0, hi_0_0, Types.OpOp2.PLUS);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0_1_0, v1, Types.OpOp2.NOTEQUAL);
+
+		Hop newRoot = v2;
+		if ( v2.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
 
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
@@ -17185,6 +18613,13 @@ public class GeneratedRewriteClass implements Function {
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_1, hi_0_0, Types.OpOp2.PLUS);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0_1, v1, Types.OpOp2.NOTEQUAL);
 
+		Hop newRoot = v2;
+		if ( v2.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
+
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
@@ -17253,6 +18688,13 @@ public class GeneratedRewriteClass implements Function {
 		DMLExecutor.println("Applying rewrite: !=(A,+(rev(A),c)) => !=(A,+(A,c))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0, hi_1_1, Types.OpOp2.PLUS);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0, v1, Types.OpOp2.NOTEQUAL);
+
+		Hop newRoot = v2;
+		if ( v2.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
 
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
@@ -17323,6 +18765,13 @@ public class GeneratedRewriteClass implements Function {
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0, hi_1_0, Types.OpOp2.PLUS);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0, v1, Types.OpOp2.NOTEQUAL);
 
+		Hop newRoot = v2;
+		if ( v2.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
+
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
@@ -17391,6 +18840,13 @@ public class GeneratedRewriteClass implements Function {
 		DMLExecutor.println("Applying rewrite: !=(+(rev(A),C),A) => !=(A,+(A,C))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0_0, hi_0_1, Types.OpOp2.PLUS);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0_0_0, v1, Types.OpOp2.NOTEQUAL);
+
+		Hop newRoot = v2;
+		if ( v2.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
 
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
@@ -17461,6 +18917,13 @@ public class GeneratedRewriteClass implements Function {
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_1_0, hi_0_0, Types.OpOp2.PLUS);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0_1_0, v1, Types.OpOp2.NOTEQUAL);
 
+		Hop newRoot = v2;
+		if ( v2.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
+
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
@@ -17529,6 +18992,13 @@ public class GeneratedRewriteClass implements Function {
 		DMLExecutor.println("Applying rewrite: !=(+(C,A),rev(A)) => !=(A,+(A,C))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_1, hi_0_0, Types.OpOp2.PLUS);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0_1, v1, Types.OpOp2.NOTEQUAL);
+
+		Hop newRoot = v2;
+		if ( v2.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
 
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
@@ -17599,6 +19069,13 @@ public class GeneratedRewriteClass implements Function {
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0, hi_0_1, Types.OpOp2.PLUS);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0_0, v1, Types.OpOp2.NOTEQUAL);
 
+		Hop newRoot = v2;
+		if ( v2.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
+
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
@@ -17667,6 +19144,13 @@ public class GeneratedRewriteClass implements Function {
 		DMLExecutor.println("Applying rewrite: !=(A,+(rev(A),C)) => !=(A,+(A,C))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0, hi_1_1, Types.OpOp2.PLUS);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0, v1, Types.OpOp2.NOTEQUAL);
+
+		Hop newRoot = v2;
+		if ( v2.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
 
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
@@ -17737,6 +19221,13 @@ public class GeneratedRewriteClass implements Function {
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0, hi_1_0, Types.OpOp2.PLUS);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0, v1, Types.OpOp2.NOTEQUAL);
 
+		Hop newRoot = v2;
+		if ( v2.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
+
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
@@ -17805,6 +19296,13 @@ public class GeneratedRewriteClass implements Function {
 		DMLExecutor.println("Applying rewrite: !=(!=(rev(A),c),A) => !=(A,!=(A,c))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0_0, hi_0_1, Types.OpOp2.NOTEQUAL);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0_0_0, v1, Types.OpOp2.NOTEQUAL);
+
+		Hop newRoot = v2;
+		if ( v2.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
 
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
@@ -17875,6 +19373,13 @@ public class GeneratedRewriteClass implements Function {
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_1_0, hi_0_0, Types.OpOp2.NOTEQUAL);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0_1_0, v1, Types.OpOp2.NOTEQUAL);
 
+		Hop newRoot = v2;
+		if ( v2.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
+
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
@@ -17943,6 +19448,13 @@ public class GeneratedRewriteClass implements Function {
 		DMLExecutor.println("Applying rewrite: !=(!=(c,A),rev(A)) => !=(A,!=(A,c))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_1, hi_0_0, Types.OpOp2.NOTEQUAL);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0_1, v1, Types.OpOp2.NOTEQUAL);
+
+		Hop newRoot = v2;
+		if ( v2.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
 
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
@@ -18013,6 +19525,13 @@ public class GeneratedRewriteClass implements Function {
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0, hi_1_1, Types.OpOp2.NOTEQUAL);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0, v1, Types.OpOp2.NOTEQUAL);
 
+		Hop newRoot = v2;
+		if ( v2.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
+
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
@@ -18081,6 +19600,13 @@ public class GeneratedRewriteClass implements Function {
 		DMLExecutor.println("Applying rewrite: !=(A,!=(c,rev(A))) => !=(A,!=(A,c))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0, hi_1_0, Types.OpOp2.NOTEQUAL);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0, v1, Types.OpOp2.NOTEQUAL);
+
+		Hop newRoot = v2;
+		if ( v2.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
 
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
@@ -18151,6 +19677,13 @@ public class GeneratedRewriteClass implements Function {
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0_1, hi_0_0_0, Types.OpOp2.NOTEQUAL);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0_0_1, v1, Types.OpOp2.NOTEQUAL);
 
+		Hop newRoot = v2;
+		if ( v2.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
+
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
@@ -18219,6 +19752,13 @@ public class GeneratedRewriteClass implements Function {
 		DMLExecutor.println("Applying rewrite: !=(rev(!=(A,c)),A) => !=(A,!=(A,c))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0_0, hi_0_0_1, Types.OpOp2.NOTEQUAL);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0_0_0, v1, Types.OpOp2.NOTEQUAL);
+
+		Hop newRoot = v2;
+		if ( v2.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
 
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
@@ -18289,6 +19829,13 @@ public class GeneratedRewriteClass implements Function {
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0, hi_1_0_0, Types.OpOp2.NOTEQUAL);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0, v1, Types.OpOp2.NOTEQUAL);
 
+		Hop newRoot = v2;
+		if ( v2.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
+
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
@@ -18357,6 +19904,13 @@ public class GeneratedRewriteClass implements Function {
 		DMLExecutor.println("Applying rewrite: !=(A,rev(!=(A,c))) => !=(A,!=(A,c))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0, hi_1_0_1, Types.OpOp2.NOTEQUAL);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0, v1, Types.OpOp2.NOTEQUAL);
+
+		Hop newRoot = v2;
+		if ( v2.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
 
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
@@ -18427,6 +19981,13 @@ public class GeneratedRewriteClass implements Function {
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0_0, hi_0_1, Types.OpOp2.NOTEQUAL);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0_0_0, v1, Types.OpOp2.NOTEQUAL);
 
+		Hop newRoot = v2;
+		if ( v2.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
+
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
@@ -18495,6 +20056,13 @@ public class GeneratedRewriteClass implements Function {
 		DMLExecutor.println("Applying rewrite: !=(!=(C,rev(A)),A) => !=(A,!=(A,C))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_1_0, hi_0_0, Types.OpOp2.NOTEQUAL);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0_1_0, v1, Types.OpOp2.NOTEQUAL);
+
+		Hop newRoot = v2;
+		if ( v2.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
 
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
@@ -18565,6 +20133,13 @@ public class GeneratedRewriteClass implements Function {
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_1, hi_0_0, Types.OpOp2.NOTEQUAL);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0_1, v1, Types.OpOp2.NOTEQUAL);
 
+		Hop newRoot = v2;
+		if ( v2.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
+
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
@@ -18633,6 +20208,13 @@ public class GeneratedRewriteClass implements Function {
 		DMLExecutor.println("Applying rewrite: !=(!=(A,C),rev(A)) => !=(A,!=(A,C))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0, hi_0_1, Types.OpOp2.NOTEQUAL);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0_0, v1, Types.OpOp2.NOTEQUAL);
+
+		Hop newRoot = v2;
+		if ( v2.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
 
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
@@ -18703,6 +20285,13 @@ public class GeneratedRewriteClass implements Function {
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0, hi_1_1, Types.OpOp2.NOTEQUAL);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0, v1, Types.OpOp2.NOTEQUAL);
 
+		Hop newRoot = v2;
+		if ( v2.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
+
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
@@ -18772,6 +20361,13 @@ public class GeneratedRewriteClass implements Function {
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0, hi_1_0, Types.OpOp2.NOTEQUAL);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0, v1, Types.OpOp2.NOTEQUAL);
 
+		Hop newRoot = v2;
+		if ( v2.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
+
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
@@ -18835,6 +20431,13 @@ public class GeneratedRewriteClass implements Function {
 		DMLExecutor.println("Applying rewrite: rev(+($1:rev(A),B)) => +(A,rev(B))");
 		ReorgOp v1 = HopRewriteUtils.createReorg(hi_0_1, Types.ReOrgOp.REV);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0_0_0, v1, Types.OpOp2.PLUS);
+
+		Hop newRoot = v2;
+		if ( v2.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
 
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
@@ -18900,6 +20503,13 @@ public class GeneratedRewriteClass implements Function {
 		ReorgOp v1 = HopRewriteUtils.createReorg(hi_0_0, Types.ReOrgOp.REV);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0_1_0, v1, Types.OpOp2.PLUS);
 
+		Hop newRoot = v2;
+		if ( v2.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
+
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
@@ -18964,6 +20574,13 @@ public class GeneratedRewriteClass implements Function {
 		ReorgOp v1 = HopRewriteUtils.createTranspose(hi_0_1);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0_0_0, v1, Types.OpOp2.PLUS);
 
+		Hop newRoot = v2;
+		if ( v2.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
+
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
@@ -19027,6 +20644,13 @@ public class GeneratedRewriteClass implements Function {
 		DMLExecutor.println("Applying rewrite: t(+(B,$1:t(A))) => +(A,t(B))");
 		ReorgOp v1 = HopRewriteUtils.createTranspose(hi_0_0);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0_1_0, v1, Types.OpOp2.PLUS);
+
+		Hop newRoot = v2;
+		if ( v2.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
 
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
@@ -19097,6 +20721,13 @@ public class GeneratedRewriteClass implements Function {
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0_0, hi_0_1, Types.OpOp2.NOTEQUAL);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0_0_0, v1, Types.OpOp2.PLUS);
 
+		Hop newRoot = v2;
+		if ( v2.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
+
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
@@ -19165,6 +20796,13 @@ public class GeneratedRewriteClass implements Function {
 		DMLExecutor.println("Applying rewrite: +(!=(c,rev(A)),A) => +(A,!=(A,c))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_1_0, hi_0_0, Types.OpOp2.NOTEQUAL);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0_1_0, v1, Types.OpOp2.PLUS);
+
+		Hop newRoot = v2;
+		if ( v2.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
 
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
@@ -19235,6 +20873,13 @@ public class GeneratedRewriteClass implements Function {
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0, hi_1_1, Types.OpOp2.NOTEQUAL);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0, v1, Types.OpOp2.PLUS);
 
+		Hop newRoot = v2;
+		if ( v2.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
+
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
@@ -19303,6 +20948,13 @@ public class GeneratedRewriteClass implements Function {
 		DMLExecutor.println("Applying rewrite: +(A,!=(c,rev(A))) => +(A,!=(A,c))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0, hi_1_0, Types.OpOp2.NOTEQUAL);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0, v1, Types.OpOp2.PLUS);
+
+		Hop newRoot = v2;
+		if ( v2.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
 
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
@@ -19373,6 +21025,13 @@ public class GeneratedRewriteClass implements Function {
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0_1, hi_0_0_0, Types.OpOp2.NOTEQUAL);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0_0_1, v1, Types.OpOp2.PLUS);
 
+		Hop newRoot = v2;
+		if ( v2.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
+
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
@@ -19441,6 +21100,13 @@ public class GeneratedRewriteClass implements Function {
 		DMLExecutor.println("Applying rewrite: +(rev($1:!=(A,c)),A) => +(A,!=(A,c))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0_0, hi_0_0_1, Types.OpOp2.NOTEQUAL);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0_0_0, v1, Types.OpOp2.PLUS);
+
+		Hop newRoot = v2;
+		if ( v2.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
 
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
@@ -19511,6 +21177,13 @@ public class GeneratedRewriteClass implements Function {
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0, hi_1_0_0, Types.OpOp2.NOTEQUAL);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0, v1, Types.OpOp2.PLUS);
 
+		Hop newRoot = v2;
+		if ( v2.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
+
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
@@ -19579,6 +21252,13 @@ public class GeneratedRewriteClass implements Function {
 		DMLExecutor.println("Applying rewrite: +(A,rev($1:!=(A,c))) => +(A,!=(A,c))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0, hi_1_0_1, Types.OpOp2.NOTEQUAL);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0, v1, Types.OpOp2.PLUS);
+
+		Hop newRoot = v2;
+		if ( v2.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
 
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
@@ -19649,6 +21329,13 @@ public class GeneratedRewriteClass implements Function {
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0_0, hi_0_1, Types.OpOp2.NOTEQUAL);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0_0_0, v1, Types.OpOp2.PLUS);
 
+		Hop newRoot = v2;
+		if ( v2.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
+
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
@@ -19717,6 +21404,13 @@ public class GeneratedRewriteClass implements Function {
 		DMLExecutor.println("Applying rewrite: +(!=(C,rev(A)),A) => +(A,!=(A,C))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_1_0, hi_0_0, Types.OpOp2.NOTEQUAL);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0_1_0, v1, Types.OpOp2.PLUS);
+
+		Hop newRoot = v2;
+		if ( v2.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
 
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
@@ -19787,6 +21481,13 @@ public class GeneratedRewriteClass implements Function {
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0, hi_1_1, Types.OpOp2.NOTEQUAL);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0, v1, Types.OpOp2.PLUS);
 
+		Hop newRoot = v2;
+		if ( v2.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
+
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
@@ -19855,6 +21556,13 @@ public class GeneratedRewriteClass implements Function {
 		DMLExecutor.println("Applying rewrite: +(A,!=(C,rev(A))) => +(A,!=(A,C))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0, hi_1_0, Types.OpOp2.NOTEQUAL);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0, v1, Types.OpOp2.PLUS);
+
+		Hop newRoot = v2;
+		if ( v2.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
 
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
@@ -19925,6 +21633,13 @@ public class GeneratedRewriteClass implements Function {
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0_0, hi_0_0_1, Types.OpOp2.NOTEQUAL);
 		BinaryOp v2 = HopRewriteUtils.createBinary(v1, hi_0_0_0, Types.OpOp2.MINUS);
 
+		Hop newRoot = v2;
+		if ( v2.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
+
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
@@ -19993,6 +21708,13 @@ public class GeneratedRewriteClass implements Function {
 		DMLExecutor.println("Applying rewrite: -(A,!=(rev(A),c)) => -(A,!=(A,c))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0, hi_1_1, Types.OpOp2.NOTEQUAL);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0, v1, Types.OpOp2.MINUS);
+
+		Hop newRoot = v2;
+		if ( v2.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
 
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
@@ -20063,6 +21785,13 @@ public class GeneratedRewriteClass implements Function {
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0, hi_1_0, Types.OpOp2.NOTEQUAL);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0, v1, Types.OpOp2.MINUS);
 
+		Hop newRoot = v2;
+		if ( v2.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
+
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
@@ -20131,6 +21860,13 @@ public class GeneratedRewriteClass implements Function {
 		DMLExecutor.println("Applying rewrite: -(A,rev($1:!=(c,A))) => -(A,!=(A,c))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0, hi_1_0_0, Types.OpOp2.NOTEQUAL);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0, v1, Types.OpOp2.MINUS);
+
+		Hop newRoot = v2;
+		if ( v2.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
 
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
@@ -20201,6 +21937,13 @@ public class GeneratedRewriteClass implements Function {
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0, hi_1_0_1, Types.OpOp2.NOTEQUAL);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0, v1, Types.OpOp2.MINUS);
 
+		Hop newRoot = v2;
+		if ( v2.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
+
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
@@ -20270,6 +22013,13 @@ public class GeneratedRewriteClass implements Function {
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0, hi_1_1, Types.OpOp2.NOTEQUAL);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0, v1, Types.OpOp2.MINUS);
 
+		Hop newRoot = v2;
+		if ( v2.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
+
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
@@ -20338,6 +22088,13 @@ public class GeneratedRewriteClass implements Function {
 		DMLExecutor.println("Applying rewrite: -(A,!=(C,rev(A))) => -(A,!=(A,C))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0, hi_1_0, Types.OpOp2.NOTEQUAL);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0, v1, Types.OpOp2.MINUS);
+
+		Hop newRoot = v2;
+		if ( v2.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
 
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
@@ -20409,6 +22166,13 @@ public class GeneratedRewriteClass implements Function {
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0_0_1, hi_1, Types.OpOp2.PLUS);
 		BinaryOp v3 = HopRewriteUtils.createBinary(v1, v2, Types.OpOp2.MINUS);
 
+		Hop newRoot = v3;
+		if ( v3.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
+
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
@@ -20478,6 +22242,13 @@ public class GeneratedRewriteClass implements Function {
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0_0, hi_1, Types.OpOp2.MINUS);
 		ReorgOp v2 = HopRewriteUtils.createTranspose(hi_0_0_1);
 		BinaryOp v3 = HopRewriteUtils.createBinary(v1, v2, Types.OpOp2.MINUS);
+
+		Hop newRoot = v3;
+		if ( v3.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
 
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
@@ -20549,6 +22320,13 @@ public class GeneratedRewriteClass implements Function {
 		ReorgOp v2 = HopRewriteUtils.createTranspose(hi_1_0_1);
 		BinaryOp v3 = HopRewriteUtils.createBinary(v1, v2, Types.OpOp2.MINUS);
 
+		Hop newRoot = v3;
+		if ( v3.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
+
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
@@ -20618,6 +22396,13 @@ public class GeneratedRewriteClass implements Function {
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0, hi_1_0_1, Types.OpOp2.MINUS);
 		ReorgOp v2 = HopRewriteUtils.createTranspose(hi_1_0_0);
 		BinaryOp v3 = HopRewriteUtils.createBinary(v1, v2, Types.OpOp2.MINUS);
+
+		Hop newRoot = v3;
+		if ( v3.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
 
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
@@ -20689,6 +22474,13 @@ public class GeneratedRewriteClass implements Function {
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0_0_1, hi_1, Types.OpOp2.PLUS);
 		BinaryOp v3 = HopRewriteUtils.createBinary(v1, v2, Types.OpOp2.MINUS);
 
+		Hop newRoot = v3;
+		if ( v3.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
+
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
@@ -20758,6 +22550,13 @@ public class GeneratedRewriteClass implements Function {
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0_0, hi_1, Types.OpOp2.MINUS);
 		ReorgOp v2 = HopRewriteUtils.createReorg(hi_0_0_1, Types.ReOrgOp.REV);
 		BinaryOp v3 = HopRewriteUtils.createBinary(v1, v2, Types.OpOp2.MINUS);
+
+		Hop newRoot = v3;
+		if ( v3.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
 
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
@@ -20829,6 +22628,13 @@ public class GeneratedRewriteClass implements Function {
 		ReorgOp v2 = HopRewriteUtils.createReorg(hi_1_0_1, Types.ReOrgOp.REV);
 		BinaryOp v3 = HopRewriteUtils.createBinary(v1, v2, Types.OpOp2.MINUS);
 
+		Hop newRoot = v3;
+		if ( v3.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
+
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
@@ -20898,6 +22704,13 @@ public class GeneratedRewriteClass implements Function {
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0, hi_1_0_1, Types.OpOp2.MINUS);
 		ReorgOp v2 = HopRewriteUtils.createReorg(hi_1_0_0, Types.ReOrgOp.REV);
 		BinaryOp v3 = HopRewriteUtils.createBinary(v1, v2, Types.OpOp2.MINUS);
+
+		Hop newRoot = v3;
+		if ( v3.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
 
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
@@ -20974,6 +22787,13 @@ public class GeneratedRewriteClass implements Function {
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0_1, hi_0_0_1, Types.OpOp2.PLUS);
 		BinaryOp v3 = HopRewriteUtils.createBinary(v1, v2, Types.OpOp2.MINUS);
 
+		Hop newRoot = v3;
+		if ( v3.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
+
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
@@ -21048,6 +22868,13 @@ public class GeneratedRewriteClass implements Function {
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0, hi_1_0, Types.OpOp2.MINUS);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0_1, hi_1_1, Types.OpOp2.PLUS);
 		BinaryOp v3 = HopRewriteUtils.createBinary(v1, v2, Types.OpOp2.MINUS);
+
+		Hop newRoot = v3;
+		if ( v3.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
 
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
@@ -21124,6 +22951,13 @@ public class GeneratedRewriteClass implements Function {
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_1_0, hi_0_1, Types.OpOp2.PLUS);
 		BinaryOp v3 = HopRewriteUtils.createBinary(v1, v2, Types.OpOp2.MINUS);
 
+		Hop newRoot = v3;
+		if ( v3.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
+
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
@@ -21198,6 +23032,13 @@ public class GeneratedRewriteClass implements Function {
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0_1, hi_1, Types.OpOp2.PLUS);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0_1, v1, Types.OpOp2.PLUS);
 		BinaryOp v3 = HopRewriteUtils.createBinary(hi_0_0_0, v2, Types.OpOp2.MINUS);
+
+		Hop newRoot = v3;
+		if ( v3.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
 
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
@@ -21274,6 +23115,13 @@ public class GeneratedRewriteClass implements Function {
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0_1_1, v1, Types.OpOp2.PLUS);
 		BinaryOp v3 = HopRewriteUtils.createBinary(hi_0_0, v2, Types.OpOp2.MINUS);
 
+		Hop newRoot = v3;
+		if ( v3.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
+
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
@@ -21348,6 +23196,13 @@ public class GeneratedRewriteClass implements Function {
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_1_1, hi_1, Types.OpOp2.PLUS);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0_1_0, v1, Types.OpOp2.PLUS);
 		BinaryOp v3 = HopRewriteUtils.createBinary(hi_0_0, v2, Types.OpOp2.MINUS);
+
+		Hop newRoot = v3;
+		if ( v3.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
 
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
@@ -21424,6 +23279,13 @@ public class GeneratedRewriteClass implements Function {
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_1_1, v1, Types.OpOp2.PLUS);
 		BinaryOp v3 = HopRewriteUtils.createBinary(hi_0_0, v2, Types.OpOp2.MINUS);
 
+		Hop newRoot = v3;
+		if ( v3.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
+
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
@@ -21499,6 +23361,13 @@ public class GeneratedRewriteClass implements Function {
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_1_0, v1, Types.OpOp2.PLUS);
 		BinaryOp v3 = HopRewriteUtils.createBinary(hi_0_0, v2, Types.OpOp2.MINUS);
 
+		Hop newRoot = v3;
+		if ( v3.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
+
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
@@ -21568,6 +23437,13 @@ public class GeneratedRewriteClass implements Function {
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0, hi_1_0_1, Types.OpOp2.PLUS);
 		ReorgOp v2 = HopRewriteUtils.createReorg(hi_1_0_0, Types.ReOrgOp.REV);
 		BinaryOp v3 = HopRewriteUtils.createBinary(v1, v2, Types.OpOp2.MINUS);
+
+		Hop newRoot = v3;
+		if ( v3.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
 
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
@@ -21639,6 +23515,13 @@ public class GeneratedRewriteClass implements Function {
 		ReorgOp v2 = HopRewriteUtils.createReorg(hi_0_0_1, Types.ReOrgOp.REV);
 		BinaryOp v3 = HopRewriteUtils.createBinary(v1, v2, Types.OpOp2.MINUS);
 
+		Hop newRoot = v3;
+		if ( v3.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
+
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
@@ -21708,6 +23591,13 @@ public class GeneratedRewriteClass implements Function {
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0, hi_1_0_0, Types.OpOp2.PLUS);
 		ReorgOp v2 = HopRewriteUtils.createReorg(hi_1_0_1, Types.ReOrgOp.REV);
 		BinaryOp v3 = HopRewriteUtils.createBinary(v1, v2, Types.OpOp2.MINUS);
+
+		Hop newRoot = v3;
+		if ( v3.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
 
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
@@ -21779,6 +23669,13 @@ public class GeneratedRewriteClass implements Function {
 		ReorgOp v2 = HopRewriteUtils.createReorg(hi_1_0_1, Types.ReOrgOp.REV);
 		BinaryOp v3 = HopRewriteUtils.createBinary(v1, v2, Types.OpOp2.PLUS);
 
+		Hop newRoot = v3;
+		if ( v3.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
+
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
@@ -21848,6 +23745,13 @@ public class GeneratedRewriteClass implements Function {
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0_0, hi_1, Types.OpOp2.MINUS);
 		ReorgOp v2 = HopRewriteUtils.createReorg(hi_0_0_1, Types.ReOrgOp.REV);
 		BinaryOp v3 = HopRewriteUtils.createBinary(v1, v2, Types.OpOp2.PLUS);
+
+		Hop newRoot = v3;
+		if ( v3.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
 
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
@@ -21919,6 +23823,13 @@ public class GeneratedRewriteClass implements Function {
 		ReorgOp v2 = HopRewriteUtils.createReorg(hi_0_0_0, Types.ReOrgOp.REV);
 		BinaryOp v3 = HopRewriteUtils.createBinary(v1, v2, Types.OpOp2.PLUS);
 
+		Hop newRoot = v3;
+		if ( v3.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
+
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
@@ -21988,6 +23899,13 @@ public class GeneratedRewriteClass implements Function {
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_1, hi_0_0_1, Types.OpOp2.MINUS);
 		ReorgOp v2 = HopRewriteUtils.createReorg(hi_0_0_0, Types.ReOrgOp.REV);
 		BinaryOp v3 = HopRewriteUtils.createBinary(v1, v2, Types.OpOp2.PLUS);
+
+		Hop newRoot = v3;
+		if ( v3.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
 
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
@@ -22059,6 +23977,13 @@ public class GeneratedRewriteClass implements Function {
 		ReorgOp v2 = HopRewriteUtils.createReorg(hi_1_0_0, Types.ReOrgOp.REV);
 		BinaryOp v3 = HopRewriteUtils.createBinary(v1, v2, Types.OpOp2.PLUS);
 
+		Hop newRoot = v3;
+		if ( v3.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
+
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
@@ -22128,6 +24053,13 @@ public class GeneratedRewriteClass implements Function {
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0_0, hi_1, Types.OpOp2.PLUS);
 		ReorgOp v2 = HopRewriteUtils.createReorg(hi_0_0_1, Types.ReOrgOp.REV);
 		BinaryOp v3 = HopRewriteUtils.createBinary(v1, v2, Types.OpOp2.PLUS);
+
+		Hop newRoot = v3;
+		if ( v3.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
 
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
@@ -22199,6 +24131,13 @@ public class GeneratedRewriteClass implements Function {
 		ReorgOp v2 = HopRewriteUtils.createReorg(hi_0_0_0, Types.ReOrgOp.REV);
 		BinaryOp v3 = HopRewriteUtils.createBinary(v1, v2, Types.OpOp2.PLUS);
 
+		Hop newRoot = v3;
+		if ( v3.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
+
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
@@ -22269,6 +24208,13 @@ public class GeneratedRewriteClass implements Function {
 		ReorgOp v2 = HopRewriteUtils.createReorg(hi_1_0_1, Types.ReOrgOp.REV);
 		BinaryOp v3 = HopRewriteUtils.createBinary(v1, v2, Types.OpOp2.PLUS);
 
+		Hop newRoot = v3;
+		if ( v3.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
+
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
@@ -22338,6 +24284,13 @@ public class GeneratedRewriteClass implements Function {
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0, hi_1_0_1, Types.OpOp2.PLUS);
 		ReorgOp v2 = HopRewriteUtils.createReorg(hi_1_0_0, Types.ReOrgOp.REV);
 		BinaryOp v3 = HopRewriteUtils.createBinary(v1, v2, Types.OpOp2.PLUS);
+
+		Hop newRoot = v3;
+		if ( v3.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
 
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
@@ -22414,6 +24367,13 @@ public class GeneratedRewriteClass implements Function {
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0_1, hi_1_0, Types.OpOp2.PLUS);
 		BinaryOp v3 = HopRewriteUtils.createBinary(v1, v2, Types.OpOp2.MINUS);
 
+		Hop newRoot = v3;
+		if ( v3.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
+
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
@@ -22488,6 +24448,13 @@ public class GeneratedRewriteClass implements Function {
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0, hi_1_1_0, Types.OpOp2.PLUS);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_1_0, hi_1_1_1, Types.OpOp2.PLUS);
 		BinaryOp v3 = HopRewriteUtils.createBinary(v1, v2, Types.OpOp2.MINUS);
+
+		Hop newRoot = v3;
+		if ( v3.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
 
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
@@ -22564,6 +24531,13 @@ public class GeneratedRewriteClass implements Function {
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_1_1, hi_1_0_0, Types.OpOp2.PLUS);
 		BinaryOp v3 = HopRewriteUtils.createBinary(v1, v2, Types.OpOp2.MINUS);
 
+		Hop newRoot = v3;
+		if ( v3.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
+
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
@@ -22638,6 +24612,13 @@ public class GeneratedRewriteClass implements Function {
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0, hi_1_1_1, Types.OpOp2.PLUS);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_1_1_0, hi_1_0, Types.OpOp2.PLUS);
 		BinaryOp v3 = HopRewriteUtils.createBinary(v1, v2, Types.OpOp2.MINUS);
+
+		Hop newRoot = v3;
+		if ( v3.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
 
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
@@ -22714,6 +24695,13 @@ public class GeneratedRewriteClass implements Function {
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0_0_1, hi_0_1, Types.OpOp2.PLUS);
 		BinaryOp v3 = HopRewriteUtils.createBinary(v1, v2, Types.OpOp2.MINUS);
 
+		Hop newRoot = v3;
+		if ( v3.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
+
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
@@ -22788,6 +24776,13 @@ public class GeneratedRewriteClass implements Function {
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0, hi_1_0, Types.OpOp2.PLUS);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_1_1, hi_0_1, Types.OpOp2.PLUS);
 		BinaryOp v3 = HopRewriteUtils.createBinary(v1, v2, Types.OpOp2.MINUS);
+
+		Hop newRoot = v3;
+		if ( v3.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
 
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
@@ -22864,6 +24859,13 @@ public class GeneratedRewriteClass implements Function {
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_1_1, hi_1_0_1, Types.OpOp2.PLUS);
 		BinaryOp v3 = HopRewriteUtils.createBinary(v1, v2, Types.OpOp2.MINUS);
 
+		Hop newRoot = v3;
+		if ( v3.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
+
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
@@ -22938,6 +24940,13 @@ public class GeneratedRewriteClass implements Function {
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_1_0, hi_1, Types.OpOp2.PLUS);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0_1_1, v1, Types.OpOp2.MINUS);
 		BinaryOp v3 = HopRewriteUtils.createBinary(hi_0_0, v2, Types.OpOp2.PLUS);
+
+		Hop newRoot = v3;
+		if ( v3.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
 
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
@@ -23014,6 +25023,13 @@ public class GeneratedRewriteClass implements Function {
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0_0, v1, Types.OpOp2.MINUS);
 		BinaryOp v3 = HopRewriteUtils.createBinary(hi_1_1, v2, Types.OpOp2.PLUS);
 
+		Hop newRoot = v3;
+		if ( v3.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
+
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
@@ -23088,6 +25104,13 @@ public class GeneratedRewriteClass implements Function {
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0_1, hi_1, Types.OpOp2.PLUS);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0_0_0, v1, Types.OpOp2.MINUS);
 		BinaryOp v3 = HopRewriteUtils.createBinary(hi_0_1, v2, Types.OpOp2.PLUS);
+
+		Hop newRoot = v3;
+		if ( v3.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
 
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
@@ -23164,6 +25187,13 @@ public class GeneratedRewriteClass implements Function {
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0_1_0, v1, Types.OpOp2.MINUS);
 		BinaryOp v3 = HopRewriteUtils.createBinary(hi_0_0, v2, Types.OpOp2.PLUS);
 
+		Hop newRoot = v3;
+		if ( v3.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
+
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
@@ -23238,6 +25268,13 @@ public class GeneratedRewriteClass implements Function {
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_1, hi_1_1, Types.OpOp2.PLUS);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0_0, v1, Types.OpOp2.MINUS);
 		BinaryOp v3 = HopRewriteUtils.createBinary(hi_1_0, v2, Types.OpOp2.PLUS);
+
+		Hop newRoot = v3;
+		if ( v3.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
 
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
@@ -23314,6 +25351,13 @@ public class GeneratedRewriteClass implements Function {
 		BinaryOp v2 = HopRewriteUtils.createBinary(v1, hi_1_0_0, Types.OpOp2.MINUS);
 		BinaryOp v3 = HopRewriteUtils.createBinary(hi_1_1, v2, Types.OpOp2.PLUS);
 
+		Hop newRoot = v3;
+		if ( v3.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
+
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
@@ -23388,6 +25432,13 @@ public class GeneratedRewriteClass implements Function {
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0, hi_1_1_0, Types.OpOp2.PLUS);
 		BinaryOp v2 = HopRewriteUtils.createBinary(v1, hi_1_0, Types.OpOp2.MINUS);
 		BinaryOp v3 = HopRewriteUtils.createBinary(hi_1_1_1, v2, Types.OpOp2.PLUS);
+
+		Hop newRoot = v3;
+		if ( v3.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
 
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
@@ -23464,6 +25515,13 @@ public class GeneratedRewriteClass implements Function {
 		BinaryOp v2 = HopRewriteUtils.createBinary(v1, hi_1_0, Types.OpOp2.MINUS);
 		BinaryOp v3 = HopRewriteUtils.createBinary(hi_1_1_0, v2, Types.OpOp2.PLUS);
 
+		Hop newRoot = v3;
+		if ( v3.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
+
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
@@ -23538,6 +25596,13 @@ public class GeneratedRewriteClass implements Function {
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0, hi_1_1, Types.OpOp2.PLUS);
 		BinaryOp v2 = HopRewriteUtils.createBinary(v1, hi_1_0, Types.OpOp2.MINUS);
 		BinaryOp v3 = HopRewriteUtils.createBinary(hi_0_1, v2, Types.OpOp2.PLUS);
+
+		Hop newRoot = v3;
+		if ( v3.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
 
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
@@ -23614,6 +25679,13 @@ public class GeneratedRewriteClass implements Function {
 		BinaryOp v2 = HopRewriteUtils.createBinary(v1, hi_1_0, Types.OpOp2.MINUS);
 		BinaryOp v3 = HopRewriteUtils.createBinary(hi_0_0, v2, Types.OpOp2.PLUS);
 
+		Hop newRoot = v3;
+		if ( v3.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
+
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
@@ -23688,6 +25760,13 @@ public class GeneratedRewriteClass implements Function {
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_1_1, hi_1, Types.OpOp2.PLUS);
 		BinaryOp v2 = HopRewriteUtils.createBinary(v1, hi_0_1_0, Types.OpOp2.MINUS);
 		BinaryOp v3 = HopRewriteUtils.createBinary(hi_0_0, v2, Types.OpOp2.PLUS);
+
+		Hop newRoot = v3;
+		if ( v3.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
 
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
@@ -23764,6 +25843,13 @@ public class GeneratedRewriteClass implements Function {
 		BinaryOp v2 = HopRewriteUtils.createBinary(v1, hi_1_1_0, Types.OpOp2.MINUS);
 		BinaryOp v3 = HopRewriteUtils.createBinary(hi_1_0, v2, Types.OpOp2.PLUS);
 
+		Hop newRoot = v3;
+		if ( v3.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
+
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
@@ -23838,6 +25924,13 @@ public class GeneratedRewriteClass implements Function {
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0_0, hi_1, Types.OpOp2.PLUS);
 		BinaryOp v2 = HopRewriteUtils.createBinary(v1, hi_0_1, Types.OpOp2.MINUS);
 		BinaryOp v3 = HopRewriteUtils.createBinary(hi_0_0_1, v2, Types.OpOp2.PLUS);
+
+		Hop newRoot = v3;
+		if ( v3.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
 
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
@@ -23914,6 +26007,13 @@ public class GeneratedRewriteClass implements Function {
 		BinaryOp v2 = HopRewriteUtils.createBinary(v1, hi_0_1, Types.OpOp2.MINUS);
 		BinaryOp v3 = HopRewriteUtils.createBinary(hi_0_0_0, v2, Types.OpOp2.PLUS);
 
+		Hop newRoot = v3;
+		if ( v3.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
+
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
@@ -23988,6 +26088,13 @@ public class GeneratedRewriteClass implements Function {
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0, hi_1_0_0, Types.OpOp2.PLUS);
 		BinaryOp v2 = HopRewriteUtils.createBinary(v1, hi_1_1, Types.OpOp2.MINUS);
 		BinaryOp v3 = HopRewriteUtils.createBinary(hi_1_0_1, v2, Types.OpOp2.PLUS);
+
+		Hop newRoot = v3;
+		if ( v3.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
 
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
@@ -24064,6 +26171,13 @@ public class GeneratedRewriteClass implements Function {
 		BinaryOp v2 = HopRewriteUtils.createBinary(v1, hi_1_1, Types.OpOp2.MINUS);
 		BinaryOp v3 = HopRewriteUtils.createBinary(hi_1_0_0, v2, Types.OpOp2.PLUS);
 
+		Hop newRoot = v3;
+		if ( v3.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
+
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
@@ -24138,6 +26252,13 @@ public class GeneratedRewriteClass implements Function {
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0, hi_1_0_0, Types.OpOp2.MINUS);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_1_0_1, v1, Types.OpOp2.PLUS);
 		BinaryOp v3 = HopRewriteUtils.createBinary(hi_1_1, v2, Types.OpOp2.PLUS);
+
+		Hop newRoot = v3;
+		if ( v3.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
 
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
@@ -24214,6 +26335,13 @@ public class GeneratedRewriteClass implements Function {
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0_1, v1, Types.OpOp2.PLUS);
 		BinaryOp v3 = HopRewriteUtils.createBinary(hi_1_1, v2, Types.OpOp2.PLUS);
 
+		Hop newRoot = v3;
+		if ( v3.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
+
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
@@ -24288,6 +26416,13 @@ public class GeneratedRewriteClass implements Function {
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_1, hi_1_0, Types.OpOp2.MINUS);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0_0, v1, Types.OpOp2.PLUS);
 		BinaryOp v3 = HopRewriteUtils.createBinary(hi_1_1, v2, Types.OpOp2.PLUS);
+
+		Hop newRoot = v3;
+		if ( v3.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
 
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
@@ -24364,6 +26499,13 @@ public class GeneratedRewriteClass implements Function {
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0_1_1, v1, Types.OpOp2.PLUS);
 		BinaryOp v3 = HopRewriteUtils.createBinary(hi_0_0, v2, Types.OpOp2.PLUS);
 
+		Hop newRoot = v3;
+		if ( v3.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
+
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
@@ -24438,6 +26580,13 @@ public class GeneratedRewriteClass implements Function {
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0, hi_1_1_0, Types.OpOp2.MINUS);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_1_1_1, v1, Types.OpOp2.PLUS);
 		BinaryOp v3 = HopRewriteUtils.createBinary(hi_1_0, v2, Types.OpOp2.PLUS);
+
+		Hop newRoot = v3;
+		if ( v3.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
 
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
@@ -24514,6 +26663,13 @@ public class GeneratedRewriteClass implements Function {
 		BinaryOp v2 = HopRewriteUtils.createBinary(v1, hi_0_1_0, Types.OpOp2.MINUS);
 		BinaryOp v3 = HopRewriteUtils.createBinary(hi_0_0, v2, Types.OpOp2.PLUS);
 
+		Hop newRoot = v3;
+		if ( v3.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
+
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
@@ -24588,6 +26744,13 @@ public class GeneratedRewriteClass implements Function {
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0, hi_1_0, Types.OpOp2.MINUS);
 		BinaryOp v2 = HopRewriteUtils.createBinary(v1, hi_0_1, Types.OpOp2.MINUS);
 		BinaryOp v3 = HopRewriteUtils.createBinary(hi_1_1, v2, Types.OpOp2.PLUS);
+
+		Hop newRoot = v3;
+		if ( v3.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
 
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
@@ -24664,6 +26827,13 @@ public class GeneratedRewriteClass implements Function {
 		BinaryOp v2 = HopRewriteUtils.createBinary(v1, hi_1_0, Types.OpOp2.MINUS);
 		BinaryOp v3 = HopRewriteUtils.createBinary(hi_0_0, v2, Types.OpOp2.PLUS);
 
+		Hop newRoot = v3;
+		if ( v3.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
+
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
@@ -24738,6 +26908,13 @@ public class GeneratedRewriteClass implements Function {
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0, hi_1_1_1, Types.OpOp2.MINUS);
 		BinaryOp v2 = HopRewriteUtils.createBinary(v1, hi_1_0, Types.OpOp2.MINUS);
 		BinaryOp v3 = HopRewriteUtils.createBinary(hi_1_1_0, v2, Types.OpOp2.PLUS);
+
+		Hop newRoot = v3;
+		if ( v3.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
 
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
@@ -24814,6 +26991,13 @@ public class GeneratedRewriteClass implements Function {
 		BinaryOp v2 = HopRewriteUtils.createBinary(v1, hi_0_1, Types.OpOp2.MINUS);
 		BinaryOp v3 = HopRewriteUtils.createBinary(hi_0_0_1, v2, Types.OpOp2.PLUS);
 
+		Hop newRoot = v3;
+		if ( v3.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
+
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
@@ -24888,6 +27072,13 @@ public class GeneratedRewriteClass implements Function {
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0_1, hi_1, Types.OpOp2.MINUS);
 		BinaryOp v2 = HopRewriteUtils.createBinary(v1, hi_0_1, Types.OpOp2.MINUS);
 		BinaryOp v3 = HopRewriteUtils.createBinary(hi_0_0_0, v2, Types.OpOp2.PLUS);
+
+		Hop newRoot = v3;
+		if ( v3.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
 
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
@@ -24964,6 +27155,13 @@ public class GeneratedRewriteClass implements Function {
 		BinaryOp v2 = HopRewriteUtils.createBinary(v1, hi_1_0_1, Types.OpOp2.MINUS);
 		BinaryOp v3 = HopRewriteUtils.createBinary(hi_1_1, v2, Types.OpOp2.PLUS);
 
+		Hop newRoot = v3;
+		if ( v3.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
+
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
@@ -25038,6 +27236,13 @@ public class GeneratedRewriteClass implements Function {
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0, hi_1_0_1, Types.OpOp2.MINUS);
 		BinaryOp v2 = HopRewriteUtils.createBinary(v1, hi_1_0_0, Types.OpOp2.MINUS);
 		BinaryOp v3 = HopRewriteUtils.createBinary(hi_1_1, v2, Types.OpOp2.PLUS);
+
+		Hop newRoot = v3;
+		if ( v3.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
 
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
@@ -25114,6 +27319,13 @@ public class GeneratedRewriteClass implements Function {
 		BinaryOp v2 = HopRewriteUtils.createBinary(v1, hi_0_0_1, Types.OpOp2.MINUS);
 		BinaryOp v3 = HopRewriteUtils.createBinary(hi_0_1, v2, Types.OpOp2.PLUS);
 
+		Hop newRoot = v3;
+		if ( v3.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
+
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
@@ -25188,6 +27400,13 @@ public class GeneratedRewriteClass implements Function {
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0, hi_1_0, Types.OpOp2.MINUS);
 		BinaryOp v2 = HopRewriteUtils.createBinary(v1, hi_1_1, Types.OpOp2.MINUS);
 		BinaryOp v3 = HopRewriteUtils.createBinary(hi_0_1, v2, Types.OpOp2.PLUS);
+
+		Hop newRoot = v3;
+		if ( v3.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
 
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
@@ -25264,6 +27483,13 @@ public class GeneratedRewriteClass implements Function {
 		BinaryOp v2 = HopRewriteUtils.createBinary(v1, hi_1_0, Types.OpOp2.MINUS);
 		BinaryOp v3 = HopRewriteUtils.createBinary(hi_0_1, v2, Types.OpOp2.PLUS);
 
+		Hop newRoot = v3;
+		if ( v3.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
+
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
@@ -25338,6 +27564,13 @@ public class GeneratedRewriteClass implements Function {
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_1, hi_1_0, Types.OpOp2.MINUS);
 		BinaryOp v2 = HopRewriteUtils.createBinary(v1, hi_1_1, Types.OpOp2.MINUS);
 		BinaryOp v3 = HopRewriteUtils.createBinary(hi_0_0, v2, Types.OpOp2.PLUS);
+
+		Hop newRoot = v3;
+		if ( v3.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
 
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
@@ -25414,6 +27647,13 @@ public class GeneratedRewriteClass implements Function {
 		BinaryOp v2 = HopRewriteUtils.createBinary(v1, hi_1_0, Types.OpOp2.MINUS);
 		BinaryOp v3 = HopRewriteUtils.createBinary(hi_0_0, v2, Types.OpOp2.PLUS);
 
+		Hop newRoot = v3;
+		if ( v3.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
+
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
@@ -25488,6 +27728,13 @@ public class GeneratedRewriteClass implements Function {
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_1_0, hi_1, Types.OpOp2.MINUS);
 		BinaryOp v2 = HopRewriteUtils.createBinary(v1, hi_0_1_1, Types.OpOp2.MINUS);
 		BinaryOp v3 = HopRewriteUtils.createBinary(hi_0_0, v2, Types.OpOp2.PLUS);
+
+		Hop newRoot = v3;
+		if ( v3.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
 
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
@@ -25564,6 +27811,13 @@ public class GeneratedRewriteClass implements Function {
 		BinaryOp v2 = HopRewriteUtils.createBinary(v1, hi_1_1, Types.OpOp2.MINUS);
 		BinaryOp v3 = HopRewriteUtils.createBinary(hi_1_0_1, v2, Types.OpOp2.PLUS);
 
+		Hop newRoot = v3;
+		if ( v3.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
+
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
@@ -25638,6 +27892,13 @@ public class GeneratedRewriteClass implements Function {
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0, hi_1_1_0, Types.OpOp2.MINUS);
 		BinaryOp v2 = HopRewriteUtils.createBinary(v1, hi_1_0, Types.OpOp2.MINUS);
 		BinaryOp v3 = HopRewriteUtils.createBinary(hi_1_1_1, v2, Types.OpOp2.PLUS);
+
+		Hop newRoot = v3;
+		if ( v3.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
 
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
@@ -25714,6 +27975,13 @@ public class GeneratedRewriteClass implements Function {
 		BinaryOp v2 = HopRewriteUtils.createBinary(v1, hi_0_1, Types.OpOp2.MINUS);
 		BinaryOp v3 = HopRewriteUtils.createBinary(hi_0_0_0, v2, Types.OpOp2.PLUS);
 
+		Hop newRoot = v3;
+		if ( v3.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
+
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
@@ -25788,6 +28056,13 @@ public class GeneratedRewriteClass implements Function {
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0, hi_1_1, Types.OpOp2.MINUS);
 		BinaryOp v2 = HopRewriteUtils.createBinary(v1, hi_0_1, Types.OpOp2.MINUS);
 		BinaryOp v3 = HopRewriteUtils.createBinary(hi_1_0, v2, Types.OpOp2.PLUS);
+
+		Hop newRoot = v3;
+		if ( v3.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
 
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
@@ -25864,6 +28139,13 @@ public class GeneratedRewriteClass implements Function {
 		BinaryOp v2 = HopRewriteUtils.createBinary(v1, hi_1_1, Types.OpOp2.MINUS);
 		BinaryOp v3 = HopRewriteUtils.createBinary(hi_0_0, v2, Types.OpOp2.PLUS);
 
+		Hop newRoot = v3;
+		if ( v3.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
+
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
@@ -25938,6 +28220,13 @@ public class GeneratedRewriteClass implements Function {
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0, hi_1_0_1, Types.OpOp2.MINUS);
 		BinaryOp v2 = HopRewriteUtils.createBinary(v1, hi_1_1, Types.OpOp2.MINUS);
 		BinaryOp v3 = HopRewriteUtils.createBinary(hi_1_0_0, v2, Types.OpOp2.PLUS);
+
+		Hop newRoot = v3;
+		if ( v3.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
 
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
@@ -26014,6 +28303,13 @@ public class GeneratedRewriteClass implements Function {
 		BinaryOp v2 = HopRewriteUtils.createBinary(v1, hi_0_1_1, Types.OpOp2.MINUS);
 		BinaryOp v3 = HopRewriteUtils.createBinary(hi_0_0, v2, Types.OpOp2.PLUS);
 
+		Hop newRoot = v3;
+		if ( v3.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
+
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
@@ -26088,6 +28384,13 @@ public class GeneratedRewriteClass implements Function {
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_1, hi_0_1_1, Types.OpOp2.MINUS);
 		BinaryOp v2 = HopRewriteUtils.createBinary(v1, hi_0_1_0, Types.OpOp2.MINUS);
 		BinaryOp v3 = HopRewriteUtils.createBinary(hi_0_0, v2, Types.OpOp2.PLUS);
+
+		Hop newRoot = v3;
+		if ( v3.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
 
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
@@ -26164,6 +28467,13 @@ public class GeneratedRewriteClass implements Function {
 		BinaryOp v2 = HopRewriteUtils.createBinary(v1, hi_1_1_1, Types.OpOp2.MINUS);
 		BinaryOp v3 = HopRewriteUtils.createBinary(hi_1_0, v2, Types.OpOp2.PLUS);
 
+		Hop newRoot = v3;
+		if ( v3.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
+
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
@@ -26239,6 +28549,13 @@ public class GeneratedRewriteClass implements Function {
 		BinaryOp v2 = HopRewriteUtils.createBinary(v1, hi_1_1_0, Types.OpOp2.MINUS);
 		BinaryOp v3 = HopRewriteUtils.createBinary(hi_1_0, v2, Types.OpOp2.PLUS);
 
+		Hop newRoot = v3;
+		if ( v3.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
+
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
@@ -26308,6 +28625,13 @@ public class GeneratedRewriteClass implements Function {
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0, hi_1_0_1, Types.OpOp2.PLUS);
 		ReorgOp v2 = HopRewriteUtils.createTranspose(hi_1_0_0);
 		BinaryOp v3 = HopRewriteUtils.createBinary(v1, v2, Types.OpOp2.MINUS);
+
+		Hop newRoot = v3;
+		if ( v3.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
 
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
@@ -26379,6 +28703,13 @@ public class GeneratedRewriteClass implements Function {
 		ReorgOp v2 = HopRewriteUtils.createTranspose(hi_0_0_1);
 		BinaryOp v3 = HopRewriteUtils.createBinary(v1, v2, Types.OpOp2.MINUS);
 
+		Hop newRoot = v3;
+		if ( v3.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
+
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
@@ -26448,6 +28779,13 @@ public class GeneratedRewriteClass implements Function {
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0, hi_1_0_0, Types.OpOp2.PLUS);
 		ReorgOp v2 = HopRewriteUtils.createTranspose(hi_1_0_1);
 		BinaryOp v3 = HopRewriteUtils.createBinary(v1, v2, Types.OpOp2.MINUS);
+
+		Hop newRoot = v3;
+		if ( v3.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
 
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
@@ -26519,6 +28857,13 @@ public class GeneratedRewriteClass implements Function {
 		ReorgOp v2 = HopRewriteUtils.createTranspose(hi_0_0_1);
 		BinaryOp v3 = HopRewriteUtils.createBinary(v1, v2, Types.OpOp2.PLUS);
 
+		Hop newRoot = v3;
+		if ( v3.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
+
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
@@ -26588,6 +28933,13 @@ public class GeneratedRewriteClass implements Function {
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0_1, hi_1, Types.OpOp2.MINUS);
 		ReorgOp v2 = HopRewriteUtils.createTranspose(hi_0_0_0);
 		BinaryOp v3 = HopRewriteUtils.createBinary(v1, v2, Types.OpOp2.PLUS);
+
+		Hop newRoot = v3;
+		if ( v3.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
 
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
@@ -26659,6 +29011,13 @@ public class GeneratedRewriteClass implements Function {
 		ReorgOp v2 = HopRewriteUtils.createTranspose(hi_1_0_1);
 		BinaryOp v3 = HopRewriteUtils.createBinary(v1, v2, Types.OpOp2.PLUS);
 
+		Hop newRoot = v3;
+		if ( v3.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
+
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
@@ -26728,6 +29087,13 @@ public class GeneratedRewriteClass implements Function {
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_1, hi_0_0_1, Types.OpOp2.MINUS);
 		ReorgOp v2 = HopRewriteUtils.createTranspose(hi_0_0_0);
 		BinaryOp v3 = HopRewriteUtils.createBinary(v1, v2, Types.OpOp2.PLUS);
+
+		Hop newRoot = v3;
+		if ( v3.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
 
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
@@ -26799,6 +29165,13 @@ public class GeneratedRewriteClass implements Function {
 		ReorgOp v2 = HopRewriteUtils.createTranspose(hi_1_0_0);
 		BinaryOp v3 = HopRewriteUtils.createBinary(v1, v2, Types.OpOp2.PLUS);
 
+		Hop newRoot = v3;
+		if ( v3.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
+
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
@@ -26868,6 +29241,13 @@ public class GeneratedRewriteClass implements Function {
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0_0, hi_1, Types.OpOp2.PLUS);
 		ReorgOp v2 = HopRewriteUtils.createTranspose(hi_0_0_1);
 		BinaryOp v3 = HopRewriteUtils.createBinary(v1, v2, Types.OpOp2.PLUS);
+
+		Hop newRoot = v3;
+		if ( v3.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
 
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
@@ -26939,6 +29319,13 @@ public class GeneratedRewriteClass implements Function {
 		ReorgOp v2 = HopRewriteUtils.createTranspose(hi_0_0_0);
 		BinaryOp v3 = HopRewriteUtils.createBinary(v1, v2, Types.OpOp2.PLUS);
 
+		Hop newRoot = v3;
+		if ( v3.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
+
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
@@ -27008,6 +29395,13 @@ public class GeneratedRewriteClass implements Function {
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0, hi_1_0_0, Types.OpOp2.PLUS);
 		ReorgOp v2 = HopRewriteUtils.createTranspose(hi_1_0_1);
 		BinaryOp v3 = HopRewriteUtils.createBinary(v1, v2, Types.OpOp2.PLUS);
+
+		Hop newRoot = v3;
+		if ( v3.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
 
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
@@ -27079,6 +29473,13 @@ public class GeneratedRewriteClass implements Function {
 		ReorgOp v2 = HopRewriteUtils.createTranspose(hi_1_0_0);
 		BinaryOp v3 = HopRewriteUtils.createBinary(v1, v2, Types.OpOp2.PLUS);
 
+		Hop newRoot = v3;
+		if ( v3.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
+
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
@@ -27146,6 +29547,13 @@ public class GeneratedRewriteClass implements Function {
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0_0, hi_0_1, Types.OpOp2.MINUS);
 		AggUnaryOp v2 = HopRewriteUtils.createAggUnaryOp(v1, Types.AggOp.SUM, Types.Direction.Row);
 		ReorgOp v3 = HopRewriteUtils.createTranspose(v2);
+
+		Hop newRoot = v3;
+		if ( v3.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
 
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
@@ -27215,6 +29623,13 @@ public class GeneratedRewriteClass implements Function {
 		AggUnaryOp v2 = HopRewriteUtils.createAggUnaryOp(v1, Types.AggOp.SUM, Types.Direction.Row);
 		ReorgOp v3 = HopRewriteUtils.createTranspose(v2);
 
+		Hop newRoot = v3;
+		if ( v3.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
+
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
@@ -27283,6 +29698,13 @@ public class GeneratedRewriteClass implements Function {
 		AggUnaryOp v2 = HopRewriteUtils.createAggUnaryOp(v1, Types.AggOp.SUM, Types.Direction.Col);
 		ReorgOp v3 = HopRewriteUtils.createTranspose(v2);
 
+		Hop newRoot = v3;
+		if ( v3.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
+
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
@@ -27350,6 +29772,13 @@ public class GeneratedRewriteClass implements Function {
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0, hi_0_1_0, Types.OpOp2.MINUS);
 		AggUnaryOp v2 = HopRewriteUtils.createAggUnaryOp(v1, Types.AggOp.SUM, Types.Direction.Col);
 		ReorgOp v3 = HopRewriteUtils.createTranspose(v2);
+
+		Hop newRoot = v3;
+		if ( v3.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
 
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
@@ -27430,6 +29859,13 @@ public class GeneratedRewriteClass implements Function {
 		AggUnaryOp v2 = HopRewriteUtils.createAggUnaryOp(v1, Types.AggOp.SUM, Types.Direction.Row);
 		ReorgOp v3 = HopRewriteUtils.createTranspose(v2);
 
+		Hop newRoot = v3;
+		if ( v3.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
+
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
@@ -27508,6 +29944,13 @@ public class GeneratedRewriteClass implements Function {
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_1_0, hi_0_0, Types.OpOp2.NOTEQUAL);
 		AggUnaryOp v2 = HopRewriteUtils.createAggUnaryOp(v1, Types.AggOp.SUM, Types.Direction.Row);
 		ReorgOp v3 = HopRewriteUtils.createTranspose(v2);
+
+		Hop newRoot = v3;
+		if ( v3.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
 
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
@@ -27588,6 +30031,13 @@ public class GeneratedRewriteClass implements Function {
 		AggUnaryOp v2 = HopRewriteUtils.createAggUnaryOp(v1, Types.AggOp.SUM, Types.Direction.Col);
 		ReorgOp v3 = HopRewriteUtils.createTranspose(v2);
 
+		Hop newRoot = v3;
+		if ( v3.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
+
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
@@ -27667,6 +30117,13 @@ public class GeneratedRewriteClass implements Function {
 		AggUnaryOp v2 = HopRewriteUtils.createAggUnaryOp(v1, Types.AggOp.SUM, Types.Direction.Col);
 		ReorgOp v3 = HopRewriteUtils.createTranspose(v2);
 
+		Hop newRoot = v3;
+		if ( v3.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
+
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
@@ -27734,6 +30191,13 @@ public class GeneratedRewriteClass implements Function {
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0_0, hi_0_1, Types.OpOp2.PLUS);
 		AggUnaryOp v2 = HopRewriteUtils.createAggUnaryOp(v1, Types.AggOp.SUM, Types.Direction.Row);
 		ReorgOp v3 = HopRewriteUtils.createTranspose(v2);
+
+		Hop newRoot = v3;
+		if ( v3.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
 
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
@@ -27803,6 +30267,13 @@ public class GeneratedRewriteClass implements Function {
 		AggUnaryOp v2 = HopRewriteUtils.createAggUnaryOp(v1, Types.AggOp.SUM, Types.Direction.Row);
 		ReorgOp v3 = HopRewriteUtils.createTranspose(v2);
 
+		Hop newRoot = v3;
+		if ( v3.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
+
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
@@ -27870,6 +30341,13 @@ public class GeneratedRewriteClass implements Function {
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0_0, hi_0_1, Types.OpOp2.PLUS);
 		AggUnaryOp v2 = HopRewriteUtils.createAggUnaryOp(v1, Types.AggOp.SUM, Types.Direction.Col);
 		ReorgOp v3 = HopRewriteUtils.createTranspose(v2);
+
+		Hop newRoot = v3;
+		if ( v3.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
 
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
@@ -27939,6 +30417,13 @@ public class GeneratedRewriteClass implements Function {
 		AggUnaryOp v2 = HopRewriteUtils.createAggUnaryOp(v1, Types.AggOp.SUM, Types.Direction.Col);
 		ReorgOp v3 = HopRewriteUtils.createTranspose(v2);
 
+		Hop newRoot = v3;
+		if ( v3.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
+
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
@@ -28002,6 +30487,13 @@ public class GeneratedRewriteClass implements Function {
 		DMLExecutor.println("Applying rewrite: trace(/(a,t(B))) => trace(/(a,B))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0, hi_0_1_0, Types.OpOp2.DIV);
 		AggUnaryOp v2 = HopRewriteUtils.createAggUnaryOp(v1, Types.AggOp.TRACE, Types.Direction.RowCol);
+
+		Hop newRoot = v2;
+		if ( v2.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
 
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
@@ -28067,6 +30559,13 @@ public class GeneratedRewriteClass implements Function {
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0_0, hi_0_1, Types.OpOp2.DIV);
 		AggUnaryOp v2 = HopRewriteUtils.createAggUnaryOp(v1, Types.AggOp.TRACE, Types.Direction.RowCol);
 
+		Hop newRoot = v2;
+		if ( v2.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
+
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
@@ -28131,6 +30630,13 @@ public class GeneratedRewriteClass implements Function {
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0, hi_0_1_0, Types.OpOp2.DIV);
 		AggUnaryOp v2 = HopRewriteUtils.createAggUnaryOp(v1, Types.AggOp.TRACE, Types.Direction.RowCol);
 
+		Hop newRoot = v2;
+		if ( v2.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
+
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
@@ -28194,6 +30700,13 @@ public class GeneratedRewriteClass implements Function {
 		DMLExecutor.println("Applying rewrite: *(t(A),t(B)) => t(*(A,B))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0, hi_1_0, Types.OpOp2.MULT);
 		ReorgOp v2 = HopRewriteUtils.createTranspose(v1);
+
+		Hop newRoot = v2;
+		if ( v2.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
 
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
@@ -28264,6 +30777,13 @@ public class GeneratedRewriteClass implements Function {
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0_0, hi_0_1, Types.OpOp2.MULT);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0_0_0, v1, Types.OpOp2.NOTEQUAL);
 
+		Hop newRoot = v2;
+		if ( v2.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
+
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
@@ -28332,6 +30852,13 @@ public class GeneratedRewriteClass implements Function {
 		DMLExecutor.println("Applying rewrite: !=(*(c,rev(A)),A) => !=(A,*(A,c))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_1_0, hi_0_0, Types.OpOp2.MULT);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0_1_0, v1, Types.OpOp2.NOTEQUAL);
+
+		Hop newRoot = v2;
+		if ( v2.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
 
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
@@ -28402,6 +30929,13 @@ public class GeneratedRewriteClass implements Function {
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_1, hi_0_0, Types.OpOp2.MULT);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0_1, v1, Types.OpOp2.NOTEQUAL);
 
+		Hop newRoot = v2;
+		if ( v2.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
+
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
@@ -28470,6 +31004,13 @@ public class GeneratedRewriteClass implements Function {
 		DMLExecutor.println("Applying rewrite: !=(A,*(rev(A),c)) => !=(A,*(A,c))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0, hi_1_1, Types.OpOp2.MULT);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0, v1, Types.OpOp2.NOTEQUAL);
+
+		Hop newRoot = v2;
+		if ( v2.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
 
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
@@ -28540,6 +31081,13 @@ public class GeneratedRewriteClass implements Function {
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0, hi_1_0, Types.OpOp2.MULT);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0, v1, Types.OpOp2.NOTEQUAL);
 
+		Hop newRoot = v2;
+		if ( v2.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
+
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
@@ -28608,6 +31156,13 @@ public class GeneratedRewriteClass implements Function {
 		DMLExecutor.println("Applying rewrite: !=(rev(*(c,A)),A) => !=(A,*(A,c))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0_1, hi_0_0_0, Types.OpOp2.MULT);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0_0_1, v1, Types.OpOp2.NOTEQUAL);
+
+		Hop newRoot = v2;
+		if ( v2.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
 
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
@@ -28678,6 +31233,13 @@ public class GeneratedRewriteClass implements Function {
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0_0, hi_0_0_1, Types.OpOp2.MULT);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0_0_0, v1, Types.OpOp2.NOTEQUAL);
 
+		Hop newRoot = v2;
+		if ( v2.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
+
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
@@ -28746,6 +31308,13 @@ public class GeneratedRewriteClass implements Function {
 		DMLExecutor.println("Applying rewrite: !=(A,rev(*(c,A))) => !=(A,*(A,c))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0, hi_1_0_0, Types.OpOp2.MULT);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0, v1, Types.OpOp2.NOTEQUAL);
+
+		Hop newRoot = v2;
+		if ( v2.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
 
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
@@ -28816,6 +31385,13 @@ public class GeneratedRewriteClass implements Function {
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0, hi_1_0_1, Types.OpOp2.MULT);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0, v1, Types.OpOp2.NOTEQUAL);
 
+		Hop newRoot = v2;
+		if ( v2.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
+
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
@@ -28884,6 +31460,13 @@ public class GeneratedRewriteClass implements Function {
 		DMLExecutor.println("Applying rewrite: !=(*(rev(A),C),A) => !=(A,*(A,C))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0_0, hi_0_1, Types.OpOp2.MULT);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0_0_0, v1, Types.OpOp2.NOTEQUAL);
+
+		Hop newRoot = v2;
+		if ( v2.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
 
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
@@ -28954,6 +31537,13 @@ public class GeneratedRewriteClass implements Function {
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_1_0, hi_0_0, Types.OpOp2.MULT);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0_1_0, v1, Types.OpOp2.NOTEQUAL);
 
+		Hop newRoot = v2;
+		if ( v2.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
+
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
@@ -29022,6 +31612,13 @@ public class GeneratedRewriteClass implements Function {
 		DMLExecutor.println("Applying rewrite: !=(*(C,A),rev(A)) => !=(A,*(A,C))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_1, hi_0_0, Types.OpOp2.MULT);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0_1, v1, Types.OpOp2.NOTEQUAL);
+
+		Hop newRoot = v2;
+		if ( v2.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
 
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
@@ -29092,6 +31689,13 @@ public class GeneratedRewriteClass implements Function {
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0, hi_0_1, Types.OpOp2.MULT);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0_0, v1, Types.OpOp2.NOTEQUAL);
 
+		Hop newRoot = v2;
+		if ( v2.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
+
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
@@ -29161,6 +31765,13 @@ public class GeneratedRewriteClass implements Function {
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0, hi_1_1, Types.OpOp2.MULT);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0, v1, Types.OpOp2.NOTEQUAL);
 
+		Hop newRoot = v2;
+		if ( v2.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
+
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
@@ -29229,6 +31840,13 @@ public class GeneratedRewriteClass implements Function {
 		DMLExecutor.println("Applying rewrite: !=(A,*(C,rev(A))) => !=(A,*(A,C))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0, hi_1_0, Types.OpOp2.MULT);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0, v1, Types.OpOp2.NOTEQUAL);
+
+		Hop newRoot = v2;
+		if ( v2.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
 
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
@@ -29305,6 +31923,13 @@ public class GeneratedRewriteClass implements Function {
 		ReorgOp v1 = HopRewriteUtils.createReorg(hi_0_1, Types.ReOrgOp.REV);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0_0_0, v1, Types.OpOp2.MULT);
 
+		Hop newRoot = v2;
+		if ( v2.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
+
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
@@ -29379,6 +32004,13 @@ public class GeneratedRewriteClass implements Function {
 		DMLExecutor.println("Applying rewrite: rev(*(B,$1:rev(A))) => *(A,rev(B))");
 		ReorgOp v1 = HopRewriteUtils.createReorg(hi_0_0, Types.ReOrgOp.REV);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0_1_0, v1, Types.OpOp2.MULT);
+
+		Hop newRoot = v2;
+		if ( v2.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
 
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
@@ -29455,6 +32087,13 @@ public class GeneratedRewriteClass implements Function {
 		ReorgOp v1 = HopRewriteUtils.createTranspose(hi_0_1);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0_0_0, v1, Types.OpOp2.MULT);
 
+		Hop newRoot = v2;
+		if ( v2.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
+
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
@@ -29530,6 +32169,13 @@ public class GeneratedRewriteClass implements Function {
 		ReorgOp v1 = HopRewriteUtils.createTranspose(hi_0_0);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0_1_0, v1, Types.OpOp2.MULT);
 
+		Hop newRoot = v2;
+		if ( v2.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
+
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
@@ -29598,6 +32244,13 @@ public class GeneratedRewriteClass implements Function {
 		DMLExecutor.println("Applying rewrite: *(!=(rev(A),c),A) => *(A,!=(A,c))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0_0, hi_0_1, Types.OpOp2.NOTEQUAL);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0_0_0, v1, Types.OpOp2.MULT);
+
+		Hop newRoot = v2;
+		if ( v2.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
 
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
@@ -29668,6 +32321,13 @@ public class GeneratedRewriteClass implements Function {
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_1_0, hi_0_0, Types.OpOp2.NOTEQUAL);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0_1_0, v1, Types.OpOp2.MULT);
 
+		Hop newRoot = v2;
+		if ( v2.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
+
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
@@ -29736,6 +32396,13 @@ public class GeneratedRewriteClass implements Function {
 		DMLExecutor.println("Applying rewrite: *(A,!=(rev(A),c)) => *(A,!=(A,c))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0, hi_1_1, Types.OpOp2.NOTEQUAL);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0, v1, Types.OpOp2.MULT);
+
+		Hop newRoot = v2;
+		if ( v2.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
 
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
@@ -29806,6 +32473,13 @@ public class GeneratedRewriteClass implements Function {
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0, hi_1_0, Types.OpOp2.NOTEQUAL);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0, v1, Types.OpOp2.MULT);
 
+		Hop newRoot = v2;
+		if ( v2.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
+
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
@@ -29874,6 +32548,13 @@ public class GeneratedRewriteClass implements Function {
 		DMLExecutor.println("Applying rewrite: *(rev($1:!=(c,A)),A) => *(A,!=(A,c))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0_1, hi_0_0_0, Types.OpOp2.NOTEQUAL);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0_0_1, v1, Types.OpOp2.MULT);
+
+		Hop newRoot = v2;
+		if ( v2.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
 
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
@@ -29944,6 +32625,13 @@ public class GeneratedRewriteClass implements Function {
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0_0, hi_0_0_1, Types.OpOp2.NOTEQUAL);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0_0_0, v1, Types.OpOp2.MULT);
 
+		Hop newRoot = v2;
+		if ( v2.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
+
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
@@ -30012,6 +32700,13 @@ public class GeneratedRewriteClass implements Function {
 		DMLExecutor.println("Applying rewrite: *(A,rev($1:!=(c,A))) => *(A,!=(A,c))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0, hi_1_0_0, Types.OpOp2.NOTEQUAL);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0, v1, Types.OpOp2.MULT);
+
+		Hop newRoot = v2;
+		if ( v2.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
 
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
@@ -30082,6 +32777,13 @@ public class GeneratedRewriteClass implements Function {
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0, hi_1_0_1, Types.OpOp2.NOTEQUAL);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0, v1, Types.OpOp2.MULT);
 
+		Hop newRoot = v2;
+		if ( v2.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
+
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
@@ -30150,6 +32852,13 @@ public class GeneratedRewriteClass implements Function {
 		DMLExecutor.println("Applying rewrite: *(!=(rev(A),C),A) => *(A,!=(A,C))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0_0, hi_0_1, Types.OpOp2.NOTEQUAL);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0_0_0, v1, Types.OpOp2.MULT);
+
+		Hop newRoot = v2;
+		if ( v2.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
 
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
@@ -30220,6 +32929,13 @@ public class GeneratedRewriteClass implements Function {
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_1_0, hi_0_0, Types.OpOp2.NOTEQUAL);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0_1_0, v1, Types.OpOp2.MULT);
 
+		Hop newRoot = v2;
+		if ( v2.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
+
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
@@ -30288,6 +33004,13 @@ public class GeneratedRewriteClass implements Function {
 		DMLExecutor.println("Applying rewrite: *(A,!=(rev(A),C)) => *(A,!=(A,C))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0, hi_1_1, Types.OpOp2.NOTEQUAL);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0, v1, Types.OpOp2.MULT);
+
+		Hop newRoot = v2;
+		if ( v2.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
 
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
@@ -30358,6 +33081,13 @@ public class GeneratedRewriteClass implements Function {
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0, hi_1_0, Types.OpOp2.NOTEQUAL);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0, v1, Types.OpOp2.MULT);
 
+		Hop newRoot = v2;
+		if ( v2.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
+
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
@@ -30425,6 +33155,13 @@ public class GeneratedRewriteClass implements Function {
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0, hi_0_1_0, Types.OpOp2.DIV);
 		AggUnaryOp v2 = HopRewriteUtils.createAggUnaryOp(v1, Types.AggOp.SUM, Types.Direction.RowCol);
 
+		Hop newRoot = v2;
+		if ( v2.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
+
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
@@ -30488,6 +33225,13 @@ public class GeneratedRewriteClass implements Function {
 		DMLExecutor.println("Applying rewrite: rev(/($1:rev(A),B)) => /(A,rev(B))");
 		ReorgOp v1 = HopRewriteUtils.createReorg(hi_0_1, Types.ReOrgOp.REV);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0_0_0, v1, Types.OpOp2.DIV);
+
+		Hop newRoot = v2;
+		if ( v2.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
 
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
@@ -30564,6 +33308,13 @@ public class GeneratedRewriteClass implements Function {
 		ReorgOp v1 = HopRewriteUtils.createReorg(hi_0_0, Types.ReOrgOp.REV);
 		BinaryOp v2 = HopRewriteUtils.createBinary(v1, hi_0_1_0, Types.OpOp2.DIV);
 
+		Hop newRoot = v2;
+		if ( v2.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
+
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
@@ -30627,6 +33378,13 @@ public class GeneratedRewriteClass implements Function {
 		DMLExecutor.println("Applying rewrite: t(/($1:t(A),B)) => /(A,t(B))");
 		ReorgOp v1 = HopRewriteUtils.createTranspose(hi_0_1);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0_0_0, v1, Types.OpOp2.DIV);
+
+		Hop newRoot = v2;
+		if ( v2.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
 
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
@@ -30703,6 +33461,13 @@ public class GeneratedRewriteClass implements Function {
 		ReorgOp v1 = HopRewriteUtils.createTranspose(hi_0_0);
 		BinaryOp v2 = HopRewriteUtils.createBinary(v1, hi_0_1_0, Types.OpOp2.DIV);
 
+		Hop newRoot = v2;
+		if ( v2.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
+
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
@@ -30766,6 +33531,13 @@ public class GeneratedRewriteClass implements Function {
 		DMLExecutor.println("Applying rewrite: /(t(A),t(B)) => t(/(A,B))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0, hi_1_0, Types.OpOp2.DIV);
 		ReorgOp v2 = HopRewriteUtils.createTranspose(v1);
+
+		Hop newRoot = v2;
+		if ( v2.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
 
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
@@ -30836,6 +33608,13 @@ public class GeneratedRewriteClass implements Function {
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0, hi_0_1_0, Types.OpOp2.DIV);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0_1_0, v1, Types.OpOp2.NOTEQUAL);
 
+		Hop newRoot = v2;
+		if ( v2.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
+
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
@@ -30904,6 +33683,13 @@ public class GeneratedRewriteClass implements Function {
 		DMLExecutor.println("Applying rewrite: !=(/(b,A),rev(A)) => !=(A,/(b,A))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0, hi_0_1, Types.OpOp2.DIV);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0_1, v1, Types.OpOp2.NOTEQUAL);
+
+		Hop newRoot = v2;
+		if ( v2.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
 
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
@@ -30974,6 +33760,13 @@ public class GeneratedRewriteClass implements Function {
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_1_0, hi_0, Types.OpOp2.DIV);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0, v1, Types.OpOp2.NOTEQUAL);
 
+		Hop newRoot = v2;
+		if ( v2.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
+
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
@@ -31042,6 +33835,13 @@ public class GeneratedRewriteClass implements Function {
 		DMLExecutor.println("Applying rewrite: !=(rev(/(b,A)),A) => !=(A,/(b,A))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0_0, hi_0_0_1, Types.OpOp2.DIV);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0_0_1, v1, Types.OpOp2.NOTEQUAL);
+
+		Hop newRoot = v2;
+		if ( v2.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
 
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
@@ -31112,6 +33912,13 @@ public class GeneratedRewriteClass implements Function {
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_1_0_0, hi_0, Types.OpOp2.DIV);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0, v1, Types.OpOp2.NOTEQUAL);
 
+		Hop newRoot = v2;
+		if ( v2.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
+
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
@@ -31180,6 +33987,13 @@ public class GeneratedRewriteClass implements Function {
 		DMLExecutor.println("Applying rewrite: !=(/(B,rev(A)),A) => !=(A,/(B,A))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0, hi_0_1_0, Types.OpOp2.DIV);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0_1_0, v1, Types.OpOp2.NOTEQUAL);
+
+		Hop newRoot = v2;
+		if ( v2.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
 
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
@@ -31250,6 +34064,13 @@ public class GeneratedRewriteClass implements Function {
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0, hi_0_1, Types.OpOp2.DIV);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0_1, v1, Types.OpOp2.NOTEQUAL);
 
+		Hop newRoot = v2;
+		if ( v2.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
+
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
@@ -31318,6 +34139,13 @@ public class GeneratedRewriteClass implements Function {
 		DMLExecutor.println("Applying rewrite: !=(A,/(B,rev(A))) => !=(A,/(B,A))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_1_0, hi_0, Types.OpOp2.DIV);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0, v1, Types.OpOp2.NOTEQUAL);
+
+		Hop newRoot = v2;
+		if ( v2.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
 
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
@@ -31388,6 +34216,13 @@ public class GeneratedRewriteClass implements Function {
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0_0, hi_0_1, Types.OpOp2.DIV);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0_0_0, v1, Types.OpOp2.NOTEQUAL);
 
+		Hop newRoot = v2;
+		if ( v2.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
+
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
@@ -31456,6 +34291,13 @@ public class GeneratedRewriteClass implements Function {
 		DMLExecutor.println("Applying rewrite: !=(/(A,C),rev(A)) => !=(A,/(A,C))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0, hi_0_1, Types.OpOp2.DIV);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0_0, v1, Types.OpOp2.NOTEQUAL);
+
+		Hop newRoot = v2;
+		if ( v2.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
 
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
@@ -31526,6 +34368,13 @@ public class GeneratedRewriteClass implements Function {
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0, hi_1_1, Types.OpOp2.DIV);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0, v1, Types.OpOp2.NOTEQUAL);
 
+		Hop newRoot = v2;
+		if ( v2.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
+
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
@@ -31594,6 +34443,13 @@ public class GeneratedRewriteClass implements Function {
 		DMLExecutor.println("Applying rewrite: /(rev($1:!=(A,b)),A) => /(!=(A,b),A)");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0_0, hi_0_0_1, Types.OpOp2.NOTEQUAL);
 		BinaryOp v2 = HopRewriteUtils.createBinary(v1, hi_0_0_0, Types.OpOp2.DIV);
+
+		Hop newRoot = v2;
+		if ( v2.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
 
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
@@ -31664,6 +34520,13 @@ public class GeneratedRewriteClass implements Function {
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0, hi_1_0_0, Types.OpOp2.NOTEQUAL);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0, v1, Types.OpOp2.DIV);
 
+		Hop newRoot = v2;
+		if ( v2.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
+
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
@@ -31732,6 +34595,13 @@ public class GeneratedRewriteClass implements Function {
 		DMLExecutor.println("Applying rewrite: /(A,rev(!=(A,c))) => /(A,!=(A,c))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0, hi_1_0_1, Types.OpOp2.NOTEQUAL);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0, v1, Types.OpOp2.DIV);
+
+		Hop newRoot = v2;
+		if ( v2.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
 
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
@@ -31802,6 +34672,13 @@ public class GeneratedRewriteClass implements Function {
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0, hi_1_1, Types.OpOp2.NOTEQUAL);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0, v1, Types.OpOp2.DIV);
 
+		Hop newRoot = v2;
+		if ( v2.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
+
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
@@ -31870,6 +34747,13 @@ public class GeneratedRewriteClass implements Function {
 		DMLExecutor.println("Applying rewrite: /(A,!=(c,rev(A))) => /(A,!=(A,c))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0, hi_1_0, Types.OpOp2.NOTEQUAL);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0, v1, Types.OpOp2.DIV);
+
+		Hop newRoot = v2;
+		if ( v2.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
 
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
@@ -31940,6 +34824,13 @@ public class GeneratedRewriteClass implements Function {
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0, hi_1_1, Types.OpOp2.NOTEQUAL);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0, v1, Types.OpOp2.DIV);
 
+		Hop newRoot = v2;
+		if ( v2.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
+
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
@@ -32008,6 +34899,13 @@ public class GeneratedRewriteClass implements Function {
 		DMLExecutor.println("Applying rewrite: /(A,!=(C,rev(A))) => /(A,!=(A,C))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0, hi_1_0, Types.OpOp2.NOTEQUAL);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0, v1, Types.OpOp2.DIV);
+
+		Hop newRoot = v2;
+		if ( v2.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
 
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
@@ -32088,6 +34986,13 @@ public class GeneratedRewriteClass implements Function {
 		AggUnaryOp v2 = HopRewriteUtils.createAggUnaryOp(v1, Types.AggOp.SUM, Types.Direction.Row);
 		ReorgOp v3 = HopRewriteUtils.createTranspose(v2);
 
+		Hop newRoot = v3;
+		if ( v3.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
+
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
@@ -32167,6 +35072,13 @@ public class GeneratedRewriteClass implements Function {
 		AggUnaryOp v2 = HopRewriteUtils.createAggUnaryOp(v1, Types.AggOp.SUM, Types.Direction.Col);
 		ReorgOp v3 = HopRewriteUtils.createTranspose(v2);
 
+		Hop newRoot = v3;
+		if ( v3.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
+
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
@@ -32234,6 +35146,13 @@ public class GeneratedRewriteClass implements Function {
 		AggUnaryOp v1 = HopRewriteUtils.createAggUnaryOp(hi_0_0, Types.AggOp.SUM, Types.Direction.RowCol);
 		UnaryOp v2 = HopRewriteUtils.createUnary(v1, Types.OpOp1.CAST_AS_MATRIX);
 		BinaryOp v3 = HopRewriteUtils.createBinary(hi_0_0, v2, Types.OpOp2.NOTEQUAL);
+
+		Hop newRoot = v3;
+		if ( v3.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
 
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
@@ -32303,6 +35222,13 @@ public class GeneratedRewriteClass implements Function {
 		UnaryOp v2 = HopRewriteUtils.createUnary(v1, Types.OpOp1.CAST_AS_MATRIX);
 		BinaryOp v3 = HopRewriteUtils.createBinary(hi_0, v2, Types.OpOp2.NOTEQUAL);
 
+		Hop newRoot = v3;
+		if ( v3.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
+
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
@@ -32367,6 +35293,13 @@ public class GeneratedRewriteClass implements Function {
 		UnaryOp v1 = HopRewriteUtils.createUnary(hi_0_1, Types.OpOp1.CAST_AS_MATRIX);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0_0_0, v1, Types.OpOp2.NOTEQUAL);
 
+		Hop newRoot = v2;
+		if ( v2.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
+
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
@@ -32430,6 +35363,13 @@ public class GeneratedRewriteClass implements Function {
 		DMLExecutor.println("Applying rewrite: rev(!=(a,cast.MATRIX(b))) => !=(a,cast.MATRIX(b))");
 		UnaryOp v1 = HopRewriteUtils.createUnary(hi_0_1_0, Types.OpOp1.CAST_AS_MATRIX);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0_0, v1, Types.OpOp2.NOTEQUAL);
+
+		Hop newRoot = v2;
+		if ( v2.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
 
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
@@ -32499,6 +35439,13 @@ public class GeneratedRewriteClass implements Function {
 		AggUnaryOp v2 = HopRewriteUtils.createAggUnaryOp(v1, Types.AggOp.TRACE, Types.Direction.RowCol);
 		BinaryOp v3 = HopRewriteUtils.createBinary(v2, hi_0_1, Types.OpOp2.MINUS);
 
+		Hop newRoot = v3;
+		if ( v3.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
+
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
@@ -32566,6 +35513,13 @@ public class GeneratedRewriteClass implements Function {
 		AggUnaryOp v1 = HopRewriteUtils.createAggUnaryOp(hi_0_1_0, Types.AggOp.SUM, Types.Direction.Col);
 		AggUnaryOp v2 = HopRewriteUtils.createAggUnaryOp(v1, Types.AggOp.TRACE, Types.Direction.RowCol);
 		BinaryOp v3 = HopRewriteUtils.createBinary(hi_0_0, v2, Types.OpOp2.MINUS);
+
+		Hop newRoot = v3;
+		if ( v3.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
 
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
@@ -32635,6 +35589,13 @@ public class GeneratedRewriteClass implements Function {
 		AggUnaryOp v2 = HopRewriteUtils.createAggUnaryOp(v1, Types.AggOp.TRACE, Types.Direction.RowCol);
 		BinaryOp v3 = HopRewriteUtils.createBinary(v2, hi_0_1, Types.OpOp2.PLUS);
 
+		Hop newRoot = v3;
+		if ( v3.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
+
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
@@ -32703,6 +35664,13 @@ public class GeneratedRewriteClass implements Function {
 		AggUnaryOp v2 = HopRewriteUtils.createAggUnaryOp(v1, Types.AggOp.TRACE, Types.Direction.RowCol);
 		BinaryOp v3 = HopRewriteUtils.createBinary(v2, hi_0_0, Types.OpOp2.PLUS);
 
+		Hop newRoot = v3;
+		if ( v3.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
+
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
@@ -32769,6 +35737,13 @@ public class GeneratedRewriteClass implements Function {
 		DMLExecutor.println("Applying rewrite: !=(A,rev(rowSums(A))) => !=(A,rowSums(A))");
 		AggUnaryOp v1 = HopRewriteUtils.createAggUnaryOp(hi_0, Types.AggOp.SUM, Types.Direction.Row);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0, v1, Types.OpOp2.NOTEQUAL);
+
+		Hop newRoot = v2;
+		if ( v2.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
 
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
@@ -32837,6 +35812,13 @@ public class GeneratedRewriteClass implements Function {
 		AggUnaryOp v1 = HopRewriteUtils.createAggUnaryOp(hi_0, Types.AggOp.SUM, Types.Direction.Row);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0, v1, Types.OpOp2.NOTEQUAL);
 
+		Hop newRoot = v2;
+		if ( v2.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
+
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
@@ -32903,6 +35885,13 @@ public class GeneratedRewriteClass implements Function {
 		DMLExecutor.println("Applying rewrite: !=(A,colSums(rev(A))) => !=(A,colSums(A))");
 		AggUnaryOp v1 = HopRewriteUtils.createAggUnaryOp(hi_0, Types.AggOp.SUM, Types.Direction.Col);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0, v1, Types.OpOp2.NOTEQUAL);
+
+		Hop newRoot = v2;
+		if ( v2.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
 
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
@@ -32971,6 +35960,13 @@ public class GeneratedRewriteClass implements Function {
 		AggUnaryOp v1 = HopRewriteUtils.createAggUnaryOp(hi_0, Types.AggOp.SUM, Types.Direction.Col);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0, v1, Types.OpOp2.PLUS);
 
+		Hop newRoot = v2;
+		if ( v2.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
+
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
@@ -33038,6 +36034,13 @@ public class GeneratedRewriteClass implements Function {
 		AggUnaryOp v1 = HopRewriteUtils.createAggUnaryOp(hi_0, Types.AggOp.SUM, Types.Direction.Col);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0, v1, Types.OpOp2.MULT);
 
+		Hop newRoot = v2;
+		if ( v2.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
+
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
@@ -33101,12 +36104,12 @@ public class GeneratedRewriteClass implements Function {
 			return hi;
 
 
-		if ( hi_1_1.getDim2() == -1 || hi_0_1.getNnz() == -1 || hi_1_1.getDim1() == -1 || hi_0_1.getDim1() == -1 || hi_1_1.getNnz() == -1 )
+		if ( hi_0_1.getDim2() == -1 || hi_1_1.getDim2() == -1 || hi_0_1.getNnz() == -1 || hi_0_1.getDim1() == -1 || hi_1_1.getNnz() == -1 )
 			return hi;
 
 
-		double costFrom = ((2.0 * hi_0_1.getNnz()) + (2.0 * hi_1_1.getNnz()) + (Math.min(hi_0_1.getNnz(), hi_1_1.getNnz()) * hi_1_1.getDim1() * 3.0) + 30030.0);
-		double costTo = ((Math.min(hi_0_1.getNnz(), hi_1_1.getNnz()) * hi_1_1.getDim1() * 3.0) + (2.0 * (Math.min((hi_0_1.getNnz() * (1.0 / hi_0_1.getDim1())), 1.0) * Math.min((hi_1_1.getNnz() * (1.0 / hi_1_1.getDim2())), 1.0) * hi_0_1.getDim1() * hi_1_1.getDim2())) + 20032.0);
+		double costFrom = ((2.0 * hi_0_1.getNnz()) + (2.0 * hi_1_1.getNnz()) + (Math.min(hi_0_1.getNnz(), hi_1_1.getNnz()) * hi_0_1.getDim2() * 3.0) + 30030.0);
+		double costTo = ((Math.min(hi_0_1.getNnz(), hi_1_1.getNnz()) * hi_0_1.getDim2() * 3.0) + (2.0 * (Math.min((hi_0_1.getNnz() * (1.0 / hi_0_1.getDim1())), 1.0) * Math.min((hi_1_1.getNnz() * (1.0 / hi_1_1.getDim2())), 1.0) * hi_0_1.getDim1() * hi_1_1.getDim2())) + 20032.0);
 
 		if ( costFrom <= costTo )
 			return hi;
@@ -33118,6 +36121,13 @@ public class GeneratedRewriteClass implements Function {
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0, hi_1_0, Types.OpOp2.MULT);
 		AggBinaryOp v2 = HopRewriteUtils.createMatrixMultiply(hi_0_1, hi_1_1);
 		BinaryOp v3 = HopRewriteUtils.createBinary(v1, v2, Types.OpOp2.MULT);
+
+		Hop newRoot = v3;
+		if ( v3.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
 
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
@@ -33200,6 +36210,13 @@ public class GeneratedRewriteClass implements Function {
 		AggBinaryOp v2 = HopRewriteUtils.createMatrixMultiply(hi_0_1, hi_1_0);
 		BinaryOp v3 = HopRewriteUtils.createBinary(v1, v2, Types.OpOp2.MULT);
 
+		Hop newRoot = v3;
+		if ( v3.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
+
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
@@ -33280,6 +36297,13 @@ public class GeneratedRewriteClass implements Function {
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_1, hi_1_0, Types.OpOp2.MULT);
 		AggBinaryOp v2 = HopRewriteUtils.createMatrixMultiply(hi_0_0, hi_1_1);
 		BinaryOp v3 = HopRewriteUtils.createBinary(v1, v2, Types.OpOp2.MULT);
+
+		Hop newRoot = v3;
+		if ( v3.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
 
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
@@ -33362,6 +36386,13 @@ public class GeneratedRewriteClass implements Function {
 		AggBinaryOp v2 = HopRewriteUtils.createMatrixMultiply(hi_0_0, hi_1_0);
 		BinaryOp v3 = HopRewriteUtils.createBinary(v1, v2, Types.OpOp2.MULT);
 
+		Hop newRoot = v3;
+		if ( v3.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
+
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
@@ -33431,6 +36462,13 @@ public class GeneratedRewriteClass implements Function {
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0_0, hi_1, Types.OpOp2.MULT);
 		AggBinaryOp v2 = HopRewriteUtils.createMatrixMultiply(hi_0_0_1, hi_0_1);
 		BinaryOp v3 = HopRewriteUtils.createBinary(v1, v2, Types.OpOp2.MULT);
+
+		Hop newRoot = v3;
+		if ( v3.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
 
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
@@ -33502,6 +36540,13 @@ public class GeneratedRewriteClass implements Function {
 		AggBinaryOp v2 = HopRewriteUtils.createMatrixMultiply(hi_0_0_0, hi_0_1);
 		BinaryOp v3 = HopRewriteUtils.createBinary(v1, v2, Types.OpOp2.MULT);
 
+		Hop newRoot = v3;
+		if ( v3.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
+
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
@@ -33571,6 +36616,13 @@ public class GeneratedRewriteClass implements Function {
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_1_1, hi_1, Types.OpOp2.MULT);
 		AggBinaryOp v2 = HopRewriteUtils.createMatrixMultiply(hi_0_0, hi_0_1_0);
 		BinaryOp v3 = HopRewriteUtils.createBinary(v1, v2, Types.OpOp2.MULT);
+
+		Hop newRoot = v3;
+		if ( v3.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
 
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
@@ -33642,6 +36694,13 @@ public class GeneratedRewriteClass implements Function {
 		AggBinaryOp v2 = HopRewriteUtils.createMatrixMultiply(hi_1_0_1, hi_1_1);
 		BinaryOp v3 = HopRewriteUtils.createBinary(v1, v2, Types.OpOp2.MULT);
 
+		Hop newRoot = v3;
+		if ( v3.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
+
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
@@ -33711,6 +36770,13 @@ public class GeneratedRewriteClass implements Function {
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0, hi_1_0_1, Types.OpOp2.MULT);
 		AggBinaryOp v2 = HopRewriteUtils.createMatrixMultiply(hi_1_0_0, hi_1_1);
 		BinaryOp v3 = HopRewriteUtils.createBinary(v1, v2, Types.OpOp2.MULT);
+
+		Hop newRoot = v3;
+		if ( v3.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
 
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
@@ -33782,6 +36848,13 @@ public class GeneratedRewriteClass implements Function {
 		AggBinaryOp v2 = HopRewriteUtils.createMatrixMultiply(hi_1_0, hi_1_1_1);
 		BinaryOp v3 = HopRewriteUtils.createBinary(v1, v2, Types.OpOp2.MULT);
 
+		Hop newRoot = v3;
+		if ( v3.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
+
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
@@ -33851,6 +36924,13 @@ public class GeneratedRewriteClass implements Function {
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0, hi_1_0, Types.OpOp2.MULT);
 		BinaryOp v2 = HopRewriteUtils.createBinary(v1, hi_0_1, Types.OpOp2.DIV);
 		AggBinaryOp v3 = HopRewriteUtils.createMatrixMultiply(v2, hi_1_1);
+
+		Hop newRoot = v3;
+		if ( v3.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
 
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
@@ -33922,6 +37002,13 @@ public class GeneratedRewriteClass implements Function {
 		BinaryOp v2 = HopRewriteUtils.createBinary(v1, hi_0_1, Types.OpOp2.DIV);
 		AggBinaryOp v3 = HopRewriteUtils.createMatrixMultiply(v2, hi_1_0);
 
+		Hop newRoot = v3;
+		if ( v3.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
+
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
@@ -33991,6 +37078,13 @@ public class GeneratedRewriteClass implements Function {
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0_0, hi_1, Types.OpOp2.MULT);
 		BinaryOp v2 = HopRewriteUtils.createBinary(v1, hi_0_0_1, Types.OpOp2.DIV);
 		AggBinaryOp v3 = HopRewriteUtils.createMatrixMultiply(v2, hi_0_1);
+
+		Hop newRoot = v3;
+		if ( v3.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
 
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
@@ -34062,6 +37156,13 @@ public class GeneratedRewriteClass implements Function {
 		BinaryOp v2 = HopRewriteUtils.createBinary(v1, hi_1_0_1, Types.OpOp2.DIV);
 		AggBinaryOp v3 = HopRewriteUtils.createMatrixMultiply(v2, hi_1_1);
 
+		Hop newRoot = v3;
+		if ( v3.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
+
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
@@ -34131,6 +37232,13 @@ public class GeneratedRewriteClass implements Function {
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0, hi_1_0, Types.OpOp2.MULT);
 		BinaryOp v2 = HopRewriteUtils.createBinary(v1, hi_1_1, Types.OpOp2.DIV);
 		AggBinaryOp v3 = HopRewriteUtils.createMatrixMultiply(hi_0_1, v2);
+
+		Hop newRoot = v3;
+		if ( v3.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
 
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
@@ -34202,6 +37310,13 @@ public class GeneratedRewriteClass implements Function {
 		BinaryOp v2 = HopRewriteUtils.createBinary(v1, hi_1_1, Types.OpOp2.DIV);
 		AggBinaryOp v3 = HopRewriteUtils.createMatrixMultiply(hi_0_0, v2);
 
+		Hop newRoot = v3;
+		if ( v3.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
+
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
@@ -34271,6 +37386,13 @@ public class GeneratedRewriteClass implements Function {
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_1_0, hi_1, Types.OpOp2.MULT);
 		BinaryOp v2 = HopRewriteUtils.createBinary(v1, hi_0_1_1, Types.OpOp2.DIV);
 		AggBinaryOp v3 = HopRewriteUtils.createMatrixMultiply(hi_0_0, v2);
+
+		Hop newRoot = v3;
+		if ( v3.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
 
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
@@ -34342,6 +37464,13 @@ public class GeneratedRewriteClass implements Function {
 		BinaryOp v2 = HopRewriteUtils.createBinary(v1, hi_1_1_1, Types.OpOp2.DIV);
 		AggBinaryOp v3 = HopRewriteUtils.createMatrixMultiply(hi_1_0, v2);
 
+		Hop newRoot = v3;
+		if ( v3.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
+
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
@@ -34399,8 +37528,8 @@ public class GeneratedRewriteClass implements Function {
 			return hi;
 
 
-		double costFrom = (hi_0_0_0.getNnz() + (Math.min((hi_0_0_0.getDim2() * hi_0_0_0.getDim1()), hi_0_1.getNnz()) * hi_0_1.getDim1() * 3.0) + (Math.min(((hi_0_0_0.getDim2() * hi_0_0_0.getDim1()) * (1.0 / hi_0_0_0.getDim2())), 1.0) * Math.min((hi_0_1.getNnz() * (1.0 / hi_0_1.getDim2())), 1.0) * hi_0_0_0.getDim2() * hi_0_1.getDim2()) + 30030.0);
-		double costTo = (hi_0_1.getNnz() + (Math.min((hi_0_1.getDim2() * hi_0_1.getDim1()), hi_0_0_0.getNnz()) * hi_0_1.getDim1() * 3.0) + 20020.0);
+		double costFrom = (hi_0_0_0.getNnz() + (Math.min((hi_0_0_0.getDim2() * hi_0_0_0.getDim1()), hi_0_1.getNnz()) * hi_0_0_0.getDim1() * 3.0) + (Math.min(((hi_0_0_0.getDim2() * hi_0_0_0.getDim1()) * (1.0 / hi_0_0_0.getDim2())), 1.0) * Math.min((hi_0_1.getNnz() * (1.0 / hi_0_1.getDim2())), 1.0) * hi_0_0_0.getDim2() * hi_0_1.getDim2()) + 30030.0);
+		double costTo = (hi_0_1.getNnz() + (Math.min((hi_0_1.getDim2() * hi_0_1.getDim1()), hi_0_0_0.getNnz()) * hi_0_0_0.getDim1() * 3.0) + 20020.0);
 
 		if ( costFrom <= costTo )
 			return hi;
@@ -34411,6 +37540,13 @@ public class GeneratedRewriteClass implements Function {
 		DMLExecutor.println("Applying rewrite: t(%*%($1:t(B),A)) => %*%(t(A),B)");
 		ReorgOp v1 = HopRewriteUtils.createTranspose(hi_0_1);
 		AggBinaryOp v2 = HopRewriteUtils.createMatrixMultiply(v1, hi_0_0_0);
+
+		Hop newRoot = v2;
+		if ( v2.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
 
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
@@ -34482,6 +37618,13 @@ public class GeneratedRewriteClass implements Function {
 		ReorgOp v1 = HopRewriteUtils.createTranspose(hi_0_0);
 		AggBinaryOp v2 = HopRewriteUtils.createMatrixMultiply(hi_0_1_0, v1);
 
+		Hop newRoot = v2;
+		if ( v2.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
+
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
@@ -34539,8 +37682,8 @@ public class GeneratedRewriteClass implements Function {
 			return hi;
 
 
-		double costFrom = (hi_0_0.getNnz() + hi_1_0.getNnz() + (Math.min((hi_0_0.getDim2() * hi_0_0.getDim1()), (hi_1_0.getDim2() * hi_1_0.getDim1())) * hi_1_0.getDim2() * 3.0) + 30030.0);
-		double costTo = ((Math.min(hi_1_0.getNnz(), hi_0_0.getNnz()) * hi_1_0.getDim2() * 3.0) + (Math.min((hi_1_0.getNnz() * (1.0 / hi_1_0.getDim1())), 1.0) * Math.min((hi_0_0.getNnz() * (1.0 / hi_0_0.getDim2())), 1.0) * hi_1_0.getDim1() * hi_0_0.getDim2()) + 20020.0);
+		double costFrom = (hi_0_0.getNnz() + hi_1_0.getNnz() + (Math.min((hi_0_0.getDim2() * hi_0_0.getDim1()), (hi_1_0.getDim2() * hi_1_0.getDim1())) * hi_0_0.getDim1() * 3.0) + 30030.0);
+		double costTo = ((Math.min(hi_1_0.getNnz(), hi_0_0.getNnz()) * hi_0_0.getDim1() * 3.0) + (Math.min((hi_1_0.getNnz() * (1.0 / hi_1_0.getDim1())), 1.0) * Math.min((hi_0_0.getNnz() * (1.0 / hi_0_0.getDim2())), 1.0) * hi_1_0.getDim1() * hi_0_0.getDim2()) + 20020.0);
 
 		if ( costFrom <= costTo )
 			return hi;
@@ -34551,6 +37694,13 @@ public class GeneratedRewriteClass implements Function {
 		DMLExecutor.println("Applying rewrite: %*%(t(B),t(A)) => t(%*%(A,B))");
 		AggBinaryOp v1 = HopRewriteUtils.createMatrixMultiply(hi_1_0, hi_0_0);
 		ReorgOp v2 = HopRewriteUtils.createTranspose(v1);
+
+		Hop newRoot = v2;
+		if ( v2.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
 
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
@@ -34616,6 +37766,13 @@ public class GeneratedRewriteClass implements Function {
 		AggBinaryOp v1 = HopRewriteUtils.createMatrixMultiply(hi_0_0, hi_0_1_0);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0_1_0, v1, Types.OpOp2.NOTEQUAL);
 
+		Hop newRoot = v2;
+		if ( v2.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
+
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
@@ -34679,6 +37836,13 @@ public class GeneratedRewriteClass implements Function {
 		DMLExecutor.println("Applying rewrite: !=(A,%*%(B,rev(A))) => !=(A,%*%(B,A))");
 		AggBinaryOp v1 = HopRewriteUtils.createMatrixMultiply(hi_1_0, hi_0);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0, v1, Types.OpOp2.NOTEQUAL);
+
+		Hop newRoot = v2;
+		if ( v2.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
 
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
@@ -34744,6 +37908,13 @@ public class GeneratedRewriteClass implements Function {
 		AggBinaryOp v1 = HopRewriteUtils.createMatrixMultiply(hi_0_0_0, hi_0_0_1);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0_0_0, v1, Types.OpOp2.NOTEQUAL);
 
+		Hop newRoot = v2;
+		if ( v2.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
+
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
@@ -34807,6 +37978,13 @@ public class GeneratedRewriteClass implements Function {
 		DMLExecutor.println("Applying rewrite: !=(A,rev(%*%(A,C))) => !=(A,%*%(A,C))");
 		AggBinaryOp v1 = HopRewriteUtils.createMatrixMultiply(hi_0, hi_1_0_1);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0, v1, Types.OpOp2.NOTEQUAL);
+
+		Hop newRoot = v2;
+		if ( v2.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
 
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
@@ -34872,6 +38050,13 @@ public class GeneratedRewriteClass implements Function {
 		AggBinaryOp v1 = HopRewriteUtils.createMatrixMultiply(hi_0_0_0, hi_0_1);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0_0_0, v1, Types.OpOp2.NOTEQUAL);
 
+		Hop newRoot = v2;
+		if ( v2.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
+
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
@@ -34935,6 +38120,13 @@ public class GeneratedRewriteClass implements Function {
 		DMLExecutor.println("Applying rewrite: !=(A,%*%(rev(A),C)) => !=(A,%*%(A,C))");
 		AggBinaryOp v1 = HopRewriteUtils.createMatrixMultiply(hi_0, hi_1_1);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0, v1, Types.OpOp2.NOTEQUAL);
+
+		Hop newRoot = v2;
+		if ( v2.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
 
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
@@ -35000,6 +38192,13 @@ public class GeneratedRewriteClass implements Function {
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0_1, hi_0_0_0, Types.OpOp2.NOTEQUAL);
 		AggBinaryOp v2 = HopRewriteUtils.createMatrixMultiply(v1, hi_0_0_1);
 
+		Hop newRoot = v2;
+		if ( v2.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
+
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
@@ -35063,6 +38262,13 @@ public class GeneratedRewriteClass implements Function {
 		DMLExecutor.println("Applying rewrite: rev(%*%($1:!=(A,b),A)) => %*%(!=(A,b),A)");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0_0, hi_0_0_1, Types.OpOp2.NOTEQUAL);
 		AggBinaryOp v2 = HopRewriteUtils.createMatrixMultiply(v1, hi_0_0_0);
+
+		Hop newRoot = v2;
+		if ( v2.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
 
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
@@ -35128,6 +38334,13 @@ public class GeneratedRewriteClass implements Function {
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0_0, hi_0_1, Types.OpOp2.NOTEQUAL);
 		AggBinaryOp v2 = HopRewriteUtils.createMatrixMultiply(v1, hi_0_0_0);
 
+		Hop newRoot = v2;
+		if ( v2.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
+
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
@@ -35191,6 +38404,13 @@ public class GeneratedRewriteClass implements Function {
 		DMLExecutor.println("Applying rewrite: %*%(!=(b,rev(A)),A) => %*%(!=(A,b),A)");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_1_0, hi_0_0, Types.OpOp2.NOTEQUAL);
 		AggBinaryOp v2 = HopRewriteUtils.createMatrixMultiply(v1, hi_0_1_0);
+
+		Hop newRoot = v2;
+		if ( v2.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
 
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
@@ -35256,6 +38476,13 @@ public class GeneratedRewriteClass implements Function {
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0_1, hi_0_0_0, Types.OpOp2.NOTEQUAL);
 		AggBinaryOp v2 = HopRewriteUtils.createMatrixMultiply(v1, hi_0_0_1);
 
+		Hop newRoot = v2;
+		if ( v2.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
+
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
@@ -35319,6 +38546,13 @@ public class GeneratedRewriteClass implements Function {
 		DMLExecutor.println("Applying rewrite: %*%(rev($1:!=(A,b)),A) => %*%(!=(A,b),A)");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0_0, hi_0_0_1, Types.OpOp2.NOTEQUAL);
 		AggBinaryOp v2 = HopRewriteUtils.createMatrixMultiply(v1, hi_0_0_0);
+
+		Hop newRoot = v2;
+		if ( v2.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
 
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
@@ -35384,6 +38618,13 @@ public class GeneratedRewriteClass implements Function {
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0_0, hi_0_1, Types.OpOp2.NOTEQUAL);
 		AggBinaryOp v2 = HopRewriteUtils.createMatrixMultiply(v1, hi_0_0_0);
 
+		Hop newRoot = v2;
+		if ( v2.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
+
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
@@ -35447,6 +38688,13 @@ public class GeneratedRewriteClass implements Function {
 		DMLExecutor.println("Applying rewrite: %*%(!=(B,rev(A)),A) => %*%(!=(A,B),A)");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_1_0, hi_0_0, Types.OpOp2.NOTEQUAL);
 		AggBinaryOp v2 = HopRewriteUtils.createMatrixMultiply(v1, hi_0_1_0);
+
+		Hop newRoot = v2;
+		if ( v2.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
 
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
@@ -35512,6 +38760,13 @@ public class GeneratedRewriteClass implements Function {
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0, hi_1_1, Types.OpOp2.NOTEQUAL);
 		AggBinaryOp v2 = HopRewriteUtils.createMatrixMultiply(hi_0, v1);
 
+		Hop newRoot = v2;
+		if ( v2.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
+
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
@@ -35575,6 +38830,13 @@ public class GeneratedRewriteClass implements Function {
 		DMLExecutor.println("Applying rewrite: %*%(A,!=(c,rev(A))) => %*%(A,!=(A,c))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0, hi_1_0, Types.OpOp2.NOTEQUAL);
 		AggBinaryOp v2 = HopRewriteUtils.createMatrixMultiply(hi_0, v1);
+
+		Hop newRoot = v2;
+		if ( v2.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
 
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
@@ -35640,6 +38902,13 @@ public class GeneratedRewriteClass implements Function {
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0, hi_1_0_0, Types.OpOp2.NOTEQUAL);
 		AggBinaryOp v2 = HopRewriteUtils.createMatrixMultiply(hi_0, v1);
 
+		Hop newRoot = v2;
+		if ( v2.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
+
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
@@ -35703,6 +38972,13 @@ public class GeneratedRewriteClass implements Function {
 		DMLExecutor.println("Applying rewrite: %*%(A,rev($1:!=(A,c))) => %*%(A,!=(A,c))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0, hi_1_0_1, Types.OpOp2.NOTEQUAL);
 		AggBinaryOp v2 = HopRewriteUtils.createMatrixMultiply(hi_0, v1);
+
+		Hop newRoot = v2;
+		if ( v2.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
 
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
@@ -35768,6 +39044,13 @@ public class GeneratedRewriteClass implements Function {
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0, hi_1_1, Types.OpOp2.NOTEQUAL);
 		AggBinaryOp v2 = HopRewriteUtils.createMatrixMultiply(hi_0, v1);
 
+		Hop newRoot = v2;
+		if ( v2.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
+
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
@@ -35831,6 +39114,13 @@ public class GeneratedRewriteClass implements Function {
 		DMLExecutor.println("Applying rewrite: %*%(A,!=(C,rev(A))) => %*%(A,!=(A,C))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0, hi_1_0, Types.OpOp2.NOTEQUAL);
 		AggBinaryOp v2 = HopRewriteUtils.createMatrixMultiply(hi_0, v1);
+
+		Hop newRoot = v2;
+		if ( v2.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
 
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
@@ -35899,6 +39189,13 @@ public class GeneratedRewriteClass implements Function {
 		AggUnaryOp v1 = HopRewriteUtils.createAggUnaryOp(hi_0_0_0, Types.AggOp.SUM, Types.Direction.Col);
 		BinaryOp v2 = HopRewriteUtils.createBinary(v1, hi_0_1, Types.OpOp2.MINUS);
 
+		Hop newRoot = v2;
+		if ( v2.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
+
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
@@ -35965,6 +39262,13 @@ public class GeneratedRewriteClass implements Function {
 		DMLExecutor.println("Applying rewrite: rev(-(a,$1:colSums(B))) => -(a,colSums(B))");
 		AggUnaryOp v1 = HopRewriteUtils.createAggUnaryOp(hi_0_1_0, Types.AggOp.SUM, Types.Direction.Col);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0_0, v1, Types.OpOp2.MINUS);
+
+		Hop newRoot = v2;
+		if ( v2.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
 
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
@@ -36033,6 +39337,13 @@ public class GeneratedRewriteClass implements Function {
 		AggUnaryOp v1 = HopRewriteUtils.createAggUnaryOp(hi_0_0_0, Types.AggOp.SUM, Types.Direction.Col);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0_1, v1, Types.OpOp2.NOTEQUAL);
 
+		Hop newRoot = v2;
+		if ( v2.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
+
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
@@ -36100,6 +39411,13 @@ public class GeneratedRewriteClass implements Function {
 		AggUnaryOp v1 = HopRewriteUtils.createAggUnaryOp(hi_0_1_0, Types.AggOp.SUM, Types.Direction.Col);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0_0, v1, Types.OpOp2.NOTEQUAL);
 
+		Hop newRoot = v2;
+		if ( v2.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
+
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
@@ -36161,6 +39479,13 @@ public class GeneratedRewriteClass implements Function {
 		DMLExecutor.println("Applying rewrite: rev(t($1:rowSums(A))) => t(rowSums(A))");
 		AggUnaryOp v1 = HopRewriteUtils.createAggUnaryOp(hi_0_0_0, Types.AggOp.SUM, Types.Direction.Row);
 		ReorgOp v2 = HopRewriteUtils.createTranspose(v1);
+
+		Hop newRoot = v2;
+		if ( v2.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
 
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
@@ -36229,6 +39554,13 @@ public class GeneratedRewriteClass implements Function {
 		AggUnaryOp v1 = HopRewriteUtils.createAggUnaryOp(hi_0_0_0, Types.AggOp.SUM, Types.Direction.Col);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0_1, v1, Types.OpOp2.PLUS);
 
+		Hop newRoot = v2;
+		if ( v2.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
+
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
@@ -36295,6 +39627,13 @@ public class GeneratedRewriteClass implements Function {
 		DMLExecutor.println("Applying rewrite: rev(+(a,$1:colSums(B))) => +(a,colSums(B))");
 		AggUnaryOp v1 = HopRewriteUtils.createAggUnaryOp(hi_0_1_0, Types.AggOp.SUM, Types.Direction.Col);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0_0, v1, Types.OpOp2.PLUS);
+
+		Hop newRoot = v2;
+		if ( v2.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
 
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
@@ -36363,6 +39702,13 @@ public class GeneratedRewriteClass implements Function {
 		AggUnaryOp v1 = HopRewriteUtils.createAggUnaryOp(hi_0_0_0, Types.AggOp.SUM, Types.Direction.Col);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0_1, v1, Types.OpOp2.MULT);
 
+		Hop newRoot = v2;
+		if ( v2.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
+
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
@@ -36430,6 +39776,13 @@ public class GeneratedRewriteClass implements Function {
 		AggUnaryOp v1 = HopRewriteUtils.createAggUnaryOp(hi_0_1_0, Types.AggOp.SUM, Types.Direction.Col);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0_0, v1, Types.OpOp2.MULT);
 
+		Hop newRoot = v2;
+		if ( v2.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
+
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
@@ -36496,6 +39849,13 @@ public class GeneratedRewriteClass implements Function {
 		DMLExecutor.println("Applying rewrite: rev(/(a,colSums(B))) => /(a,colSums(B))");
 		AggUnaryOp v1 = HopRewriteUtils.createAggUnaryOp(hi_0_1_0, Types.AggOp.SUM, Types.Direction.Col);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0_0, v1, Types.OpOp2.DIV);
+
+		Hop newRoot = v2;
+		if ( v2.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
 
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
@@ -36570,6 +39930,13 @@ public class GeneratedRewriteClass implements Function {
 		BinaryOp v2 = HopRewriteUtils.createBinary(v1, hi_0_0_1, Types.OpOp2.DIV);
 		AggUnaryOp v3 = HopRewriteUtils.createAggUnaryOp(v2, Types.AggOp.SUM, Types.Direction.Col);
 
+		Hop newRoot = v3;
+		if ( v3.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
+
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
@@ -36642,6 +40009,13 @@ public class GeneratedRewriteClass implements Function {
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0, hi_1_0_0, Types.OpOp2.MULT);
 		BinaryOp v2 = HopRewriteUtils.createBinary(v1, hi_1_0_1, Types.OpOp2.DIV);
 		AggUnaryOp v3 = HopRewriteUtils.createAggUnaryOp(v2, Types.AggOp.SUM, Types.Direction.Col);
+
+		Hop newRoot = v3;
+		if ( v3.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
 
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
@@ -36716,6 +40090,13 @@ public class GeneratedRewriteClass implements Function {
 		BinaryOp v2 = HopRewriteUtils.createBinary(v1, hi_0_0_1, Types.OpOp2.DIV);
 		AggUnaryOp v3 = HopRewriteUtils.createAggUnaryOp(v2, Types.AggOp.SUM, Types.Direction.Row);
 
+		Hop newRoot = v3;
+		if ( v3.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
+
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
@@ -36789,6 +40170,13 @@ public class GeneratedRewriteClass implements Function {
 		BinaryOp v2 = HopRewriteUtils.createBinary(v1, hi_1_0_1, Types.OpOp2.DIV);
 		AggUnaryOp v3 = HopRewriteUtils.createAggUnaryOp(v2, Types.AggOp.SUM, Types.Direction.Row);
 
+		Hop newRoot = v3;
+		if ( v3.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
+
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
@@ -36850,6 +40238,13 @@ public class GeneratedRewriteClass implements Function {
 		DMLExecutor.println("Applying rewrite: rev(%*%($1:colSums(A),B)) => %*%(colSums(A),B)");
 		AggUnaryOp v1 = HopRewriteUtils.createAggUnaryOp(hi_0_0_0, Types.AggOp.SUM, Types.Direction.Col);
 		AggBinaryOp v2 = HopRewriteUtils.createMatrixMultiply(v1, hi_0_1);
+
+		Hop newRoot = v2;
+		if ( v2.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
 
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
@@ -36931,6 +40326,13 @@ public class GeneratedRewriteClass implements Function {
 		ReorgOp v1 = HopRewriteUtils.createReorg(hi_1_0_1, Types.ReOrgOp.REV);
 		TernaryOp v2 = HopRewriteUtils.createTernary(hi_0, hi_1_0_0, v1,Types.OpOp3.MINUS_MULT);
 
+		Hop newRoot = v2;
+		if ( v2.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
+
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
@@ -37010,6 +40412,13 @@ public class GeneratedRewriteClass implements Function {
 		DMLExecutor.println("Applying rewrite: -(A,rev($1:*(C,b))) => -*(A,b,rev(C))");
 		ReorgOp v1 = HopRewriteUtils.createReorg(hi_1_0_0, Types.ReOrgOp.REV);
 		TernaryOp v2 = HopRewriteUtils.createTernary(hi_0, hi_1_0_1, v1,Types.OpOp3.MINUS_MULT);
+
+		Hop newRoot = v2;
+		if ( v2.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
 
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
@@ -37091,6 +40500,13 @@ public class GeneratedRewriteClass implements Function {
 		ReorgOp v1 = HopRewriteUtils.createTranspose(hi_1_0_1);
 		TernaryOp v2 = HopRewriteUtils.createTernary(hi_0, hi_1_0_0, v1,Types.OpOp3.MINUS_MULT);
 
+		Hop newRoot = v2;
+		if ( v2.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
+
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
@@ -37170,6 +40586,13 @@ public class GeneratedRewriteClass implements Function {
 		DMLExecutor.println("Applying rewrite: -(A,t($1:*(C,b))) => -*(A,b,t(C))");
 		ReorgOp v1 = HopRewriteUtils.createTranspose(hi_1_0_0);
 		TernaryOp v2 = HopRewriteUtils.createTernary(hi_0, hi_1_0_1, v1,Types.OpOp3.MINUS_MULT);
+
+		Hop newRoot = v2;
+		if ( v2.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
 
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
@@ -37251,6 +40674,13 @@ public class GeneratedRewriteClass implements Function {
 		ReorgOp v1 = HopRewriteUtils.createReorg(hi_0_0_1, Types.ReOrgOp.REV);
 		TernaryOp v2 = HopRewriteUtils.createTernary(hi_1, hi_0_0_0, v1,Types.OpOp3.PLUS_MULT);
 
+		Hop newRoot = v2;
+		if ( v2.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
+
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
@@ -37330,6 +40760,13 @@ public class GeneratedRewriteClass implements Function {
 		DMLExecutor.println("Applying rewrite: +(rev($1:*(C,b)),A) => +*(A,b,rev(C))");
 		ReorgOp v1 = HopRewriteUtils.createReorg(hi_0_0_0, Types.ReOrgOp.REV);
 		TernaryOp v2 = HopRewriteUtils.createTernary(hi_1, hi_0_0_1, v1,Types.OpOp3.PLUS_MULT);
+
+		Hop newRoot = v2;
+		if ( v2.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
 
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
@@ -37411,6 +40848,13 @@ public class GeneratedRewriteClass implements Function {
 		ReorgOp v1 = HopRewriteUtils.createReorg(hi_1_0_0, Types.ReOrgOp.REV);
 		TernaryOp v2 = HopRewriteUtils.createTernary(hi_0, hi_1_0_1, v1,Types.OpOp3.PLUS_MULT);
 
+		Hop newRoot = v2;
+		if ( v2.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
+
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
@@ -37484,6 +40928,13 @@ public class GeneratedRewriteClass implements Function {
 		DMLExecutor.println("Applying rewrite: -(-(a,$1:*(c,D)),B) => -(a,+*(B,c,D))");
 		TernaryOp v1 = HopRewriteUtils.createTernary(hi_1, hi_0_1_0, hi_0_1_1,Types.OpOp3.PLUS_MULT);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0_0, v1, Types.OpOp2.MINUS);
+
+		Hop newRoot = v2;
+		if ( v2.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
 
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
@@ -37559,6 +41010,13 @@ public class GeneratedRewriteClass implements Function {
 		TernaryOp v1 = HopRewriteUtils.createTernary(hi_1, hi_0_1_1, hi_0_1_0,Types.OpOp3.PLUS_MULT);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0_0, v1, Types.OpOp2.MINUS);
 
+		Hop newRoot = v2;
+		if ( v2.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
+
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
@@ -37632,6 +41090,13 @@ public class GeneratedRewriteClass implements Function {
 		DMLExecutor.println("Applying rewrite: -(A,+($1:*(b,C),d)) => -(-*(A,b,C),d)");
 		TernaryOp v1 = HopRewriteUtils.createTernary(hi_0, hi_1_0_0, hi_1_0_1,Types.OpOp3.MINUS_MULT);
 		BinaryOp v2 = HopRewriteUtils.createBinary(v1, hi_1_1, Types.OpOp2.MINUS);
+
+		Hop newRoot = v2;
+		if ( v2.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
 
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
@@ -37707,6 +41172,13 @@ public class GeneratedRewriteClass implements Function {
 		TernaryOp v1 = HopRewriteUtils.createTernary(hi_0, hi_1_0_1, hi_1_0_0,Types.OpOp3.MINUS_MULT);
 		BinaryOp v2 = HopRewriteUtils.createBinary(v1, hi_1_1, Types.OpOp2.MINUS);
 
+		Hop newRoot = v2;
+		if ( v2.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
+
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
@@ -37781,6 +41253,13 @@ public class GeneratedRewriteClass implements Function {
 		TernaryOp v1 = HopRewriteUtils.createTernary(hi_0, hi_1_1_0, hi_1_1_1,Types.OpOp3.MINUS_MULT);
 		BinaryOp v2 = HopRewriteUtils.createBinary(v1, hi_1_0, Types.OpOp2.MINUS);
 
+		Hop newRoot = v2;
+		if ( v2.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
+
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
@@ -37854,6 +41333,13 @@ public class GeneratedRewriteClass implements Function {
 		DMLExecutor.println("Applying rewrite: -(A,+(d,$1:*(C,b))) => -(-*(A,b,C),d)");
 		TernaryOp v1 = HopRewriteUtils.createTernary(hi_0, hi_1_1_1, hi_1_1_0,Types.OpOp3.MINUS_MULT);
 		BinaryOp v2 = HopRewriteUtils.createBinary(v1, hi_1_0, Types.OpOp2.MINUS);
+
+		Hop newRoot = v2;
+		if ( v2.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
 
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
@@ -37935,6 +41421,13 @@ public class GeneratedRewriteClass implements Function {
 		ReorgOp v1 = HopRewriteUtils.createTranspose(hi_0_0_1);
 		TernaryOp v2 = HopRewriteUtils.createTernary(hi_1, hi_0_0_0, v1,Types.OpOp3.PLUS_MULT);
 
+		Hop newRoot = v2;
+		if ( v2.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
+
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
@@ -38014,6 +41507,13 @@ public class GeneratedRewriteClass implements Function {
 		DMLExecutor.println("Applying rewrite: +(t($1:*(C,b)),A) => +*(A,b,t(C))");
 		ReorgOp v1 = HopRewriteUtils.createTranspose(hi_0_0_0);
 		TernaryOp v2 = HopRewriteUtils.createTernary(hi_1, hi_0_0_1, v1,Types.OpOp3.PLUS_MULT);
+
+		Hop newRoot = v2;
+		if ( v2.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
 
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
@@ -38095,6 +41595,13 @@ public class GeneratedRewriteClass implements Function {
 		ReorgOp v1 = HopRewriteUtils.createTranspose(hi_1_0_1);
 		TernaryOp v2 = HopRewriteUtils.createTernary(hi_0, hi_1_0_0, v1,Types.OpOp3.PLUS_MULT);
 
+		Hop newRoot = v2;
+		if ( v2.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
+
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
@@ -38175,6 +41682,13 @@ public class GeneratedRewriteClass implements Function {
 		ReorgOp v1 = HopRewriteUtils.createTranspose(hi_1_0_0);
 		TernaryOp v2 = HopRewriteUtils.createTernary(hi_0, hi_1_0_1, v1,Types.OpOp3.PLUS_MULT);
 
+		Hop newRoot = v2;
+		if ( v2.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
+
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
@@ -38248,6 +41762,13 @@ public class GeneratedRewriteClass implements Function {
 		DMLExecutor.println("Applying rewrite: -(+($1:*(c,D),a),B) => -(a,-*(B,c,D))");
 		TernaryOp v1 = HopRewriteUtils.createTernary(hi_1, hi_0_0_0, hi_0_0_1,Types.OpOp3.MINUS_MULT);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0_1, v1, Types.OpOp2.MINUS);
+
+		Hop newRoot = v2;
+		if ( v2.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
 
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
@@ -38323,6 +41844,13 @@ public class GeneratedRewriteClass implements Function {
 		TernaryOp v1 = HopRewriteUtils.createTernary(hi_1, hi_0_0_1, hi_0_0_0,Types.OpOp3.MINUS_MULT);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0_1, v1, Types.OpOp2.MINUS);
 
+		Hop newRoot = v2;
+		if ( v2.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
+
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
@@ -38396,6 +41924,13 @@ public class GeneratedRewriteClass implements Function {
 		DMLExecutor.println("Applying rewrite: -(+(a,$1:*(c,D)),B) => -(a,-*(B,c,D))");
 		TernaryOp v1 = HopRewriteUtils.createTernary(hi_1, hi_0_1_0, hi_0_1_1,Types.OpOp3.MINUS_MULT);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0_0, v1, Types.OpOp2.MINUS);
+
+		Hop newRoot = v2;
+		if ( v2.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
 
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
@@ -38471,6 +42006,13 @@ public class GeneratedRewriteClass implements Function {
 		TernaryOp v1 = HopRewriteUtils.createTernary(hi_1, hi_0_1_1, hi_0_1_0,Types.OpOp3.MINUS_MULT);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0_0, v1, Types.OpOp2.MINUS);
 
+		Hop newRoot = v2;
+		if ( v2.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
+
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
@@ -38544,6 +42086,13 @@ public class GeneratedRewriteClass implements Function {
 		DMLExecutor.println("Applying rewrite: -(*(c,D),-(B,a)) => -(a,-*(B,c,D))");
 		TernaryOp v1 = HopRewriteUtils.createTernary(hi_1_0, hi_0_0, hi_0_1,Types.OpOp3.MINUS_MULT);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_1_1, v1, Types.OpOp2.MINUS);
+
+		Hop newRoot = v2;
+		if ( v2.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
 
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
@@ -38619,6 +42168,13 @@ public class GeneratedRewriteClass implements Function {
 		TernaryOp v1 = HopRewriteUtils.createTernary(hi_1_0, hi_0_1, hi_0_0,Types.OpOp3.MINUS_MULT);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_1_1, v1, Types.OpOp2.MINUS);
 
+		Hop newRoot = v2;
+		if ( v2.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
+
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
@@ -38692,6 +42248,13 @@ public class GeneratedRewriteClass implements Function {
 		DMLExecutor.println("Applying rewrite: +(-($1:*(c,D),B),a) => -(a,-*(B,c,D))");
 		TernaryOp v1 = HopRewriteUtils.createTernary(hi_0_1, hi_0_0_0, hi_0_0_1,Types.OpOp3.MINUS_MULT);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_1, v1, Types.OpOp2.MINUS);
+
+		Hop newRoot = v2;
+		if ( v2.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
 
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
@@ -38767,6 +42330,13 @@ public class GeneratedRewriteClass implements Function {
 		TernaryOp v1 = HopRewriteUtils.createTernary(hi_0_1, hi_0_0_1, hi_0_0_0,Types.OpOp3.MINUS_MULT);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_1, v1, Types.OpOp2.MINUS);
 
+		Hop newRoot = v2;
+		if ( v2.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
+
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
@@ -38840,6 +42410,13 @@ public class GeneratedRewriteClass implements Function {
 		DMLExecutor.println("Applying rewrite: +(a,-($1:*(c,D),B)) => -(a,-*(B,c,D))");
 		TernaryOp v1 = HopRewriteUtils.createTernary(hi_1_1, hi_1_0_0, hi_1_0_1,Types.OpOp3.MINUS_MULT);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0, v1, Types.OpOp2.MINUS);
+
+		Hop newRoot = v2;
+		if ( v2.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
 
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
@@ -38915,6 +42492,13 @@ public class GeneratedRewriteClass implements Function {
 		TernaryOp v1 = HopRewriteUtils.createTernary(hi_1_1, hi_1_0_1, hi_1_0_0,Types.OpOp3.MINUS_MULT);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0, v1, Types.OpOp2.MINUS);
 
+		Hop newRoot = v2;
+		if ( v2.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
+
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
@@ -38988,6 +42572,13 @@ public class GeneratedRewriteClass implements Function {
 		DMLExecutor.println("Applying rewrite: -(A,-(d,$1:*(b,C))) => -(+*(A,b,C),d)");
 		TernaryOp v1 = HopRewriteUtils.createTernary(hi_0, hi_1_1_0, hi_1_1_1,Types.OpOp3.PLUS_MULT);
 		BinaryOp v2 = HopRewriteUtils.createBinary(v1, hi_1_0, Types.OpOp2.MINUS);
+
+		Hop newRoot = v2;
+		if ( v2.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
 
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
@@ -39063,6 +42654,13 @@ public class GeneratedRewriteClass implements Function {
 		TernaryOp v1 = HopRewriteUtils.createTernary(hi_0, hi_1_1_1, hi_1_1_0,Types.OpOp3.PLUS_MULT);
 		BinaryOp v2 = HopRewriteUtils.createBinary(v1, hi_1_0, Types.OpOp2.MINUS);
 
+		Hop newRoot = v2;
+		if ( v2.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
+
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
@@ -39136,6 +42734,13 @@ public class GeneratedRewriteClass implements Function {
 		DMLExecutor.println("Applying rewrite: -(*(b,C),-(d,A)) => -(+*(A,b,C),d)");
 		TernaryOp v1 = HopRewriteUtils.createTernary(hi_1_1, hi_0_0, hi_0_1,Types.OpOp3.PLUS_MULT);
 		BinaryOp v2 = HopRewriteUtils.createBinary(v1, hi_1_0, Types.OpOp2.MINUS);
+
+		Hop newRoot = v2;
+		if ( v2.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
 
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
@@ -39211,6 +42816,13 @@ public class GeneratedRewriteClass implements Function {
 		TernaryOp v1 = HopRewriteUtils.createTernary(hi_1_1, hi_0_1, hi_0_0,Types.OpOp3.PLUS_MULT);
 		BinaryOp v2 = HopRewriteUtils.createBinary(v1, hi_1_0, Types.OpOp2.MINUS);
 
+		Hop newRoot = v2;
+		if ( v2.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
+
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
@@ -39284,6 +42896,13 @@ public class GeneratedRewriteClass implements Function {
 		DMLExecutor.println("Applying rewrite: +(-($1:*(b,C),d),A) => -(+*(A,b,C),d)");
 		TernaryOp v1 = HopRewriteUtils.createTernary(hi_1, hi_0_0_0, hi_0_0_1,Types.OpOp3.PLUS_MULT);
 		BinaryOp v2 = HopRewriteUtils.createBinary(v1, hi_0_1, Types.OpOp2.MINUS);
+
+		Hop newRoot = v2;
+		if ( v2.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
 
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
@@ -39359,6 +42978,13 @@ public class GeneratedRewriteClass implements Function {
 		TernaryOp v1 = HopRewriteUtils.createTernary(hi_1, hi_0_0_1, hi_0_0_0,Types.OpOp3.PLUS_MULT);
 		BinaryOp v2 = HopRewriteUtils.createBinary(v1, hi_0_1, Types.OpOp2.MINUS);
 
+		Hop newRoot = v2;
+		if ( v2.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
+
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
@@ -39432,6 +43058,13 @@ public class GeneratedRewriteClass implements Function {
 		DMLExecutor.println("Applying rewrite: +(A,-($1:*(b,C),d)) => -(+*(A,b,C),d)");
 		TernaryOp v1 = HopRewriteUtils.createTernary(hi_0, hi_1_0_0, hi_1_0_1,Types.OpOp3.PLUS_MULT);
 		BinaryOp v2 = HopRewriteUtils.createBinary(v1, hi_1_1, Types.OpOp2.MINUS);
+
+		Hop newRoot = v2;
+		if ( v2.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
 
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
@@ -39507,6 +43140,13 @@ public class GeneratedRewriteClass implements Function {
 		TernaryOp v1 = HopRewriteUtils.createTernary(hi_0, hi_1_0_1, hi_1_0_0,Types.OpOp3.PLUS_MULT);
 		BinaryOp v2 = HopRewriteUtils.createBinary(v1, hi_1_1, Types.OpOp2.MINUS);
 
+		Hop newRoot = v2;
+		if ( v2.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
+
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
@@ -39580,6 +43220,13 @@ public class GeneratedRewriteClass implements Function {
 		DMLExecutor.println("Applying rewrite: -(a,-($1:*(c,D),B)) => +(a,-*(B,c,D))");
 		TernaryOp v1 = HopRewriteUtils.createTernary(hi_1_1, hi_1_0_0, hi_1_0_1,Types.OpOp3.MINUS_MULT);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0, v1, Types.OpOp2.PLUS);
+
+		Hop newRoot = v2;
+		if ( v2.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
 
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
@@ -39655,6 +43302,13 @@ public class GeneratedRewriteClass implements Function {
 		TernaryOp v1 = HopRewriteUtils.createTernary(hi_1_1, hi_1_0_1, hi_1_0_0,Types.OpOp3.MINUS_MULT);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0, v1, Types.OpOp2.PLUS);
 
+		Hop newRoot = v2;
+		if ( v2.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
+
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
@@ -39728,6 +43382,13 @@ public class GeneratedRewriteClass implements Function {
 		DMLExecutor.println("Applying rewrite: -(B,-($1:*(c,D),a)) => +(a,-*(B,c,D))");
 		TernaryOp v1 = HopRewriteUtils.createTernary(hi_0, hi_1_0_0, hi_1_0_1,Types.OpOp3.MINUS_MULT);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_1_1, v1, Types.OpOp2.PLUS);
+
+		Hop newRoot = v2;
+		if ( v2.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
 
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
@@ -39803,6 +43464,13 @@ public class GeneratedRewriteClass implements Function {
 		TernaryOp v1 = HopRewriteUtils.createTernary(hi_0, hi_1_0_1, hi_1_0_0,Types.OpOp3.MINUS_MULT);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_1_1, v1, Types.OpOp2.PLUS);
 
+		Hop newRoot = v2;
+		if ( v2.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
+
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
@@ -39876,6 +43544,13 @@ public class GeneratedRewriteClass implements Function {
 		DMLExecutor.println("Applying rewrite: +(-(a,$1:*(c,D)),B) => +(a,-*(B,c,D))");
 		TernaryOp v1 = HopRewriteUtils.createTernary(hi_1, hi_0_1_0, hi_0_1_1,Types.OpOp3.MINUS_MULT);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0_0, v1, Types.OpOp2.PLUS);
+
+		Hop newRoot = v2;
+		if ( v2.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
 
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
@@ -39951,6 +43626,13 @@ public class GeneratedRewriteClass implements Function {
 		TernaryOp v1 = HopRewriteUtils.createTernary(hi_1, hi_0_1_1, hi_0_1_0,Types.OpOp3.MINUS_MULT);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0_0, v1, Types.OpOp2.PLUS);
 
+		Hop newRoot = v2;
+		if ( v2.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
+
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
@@ -40024,6 +43706,13 @@ public class GeneratedRewriteClass implements Function {
 		DMLExecutor.println("Applying rewrite: +(B,-(a,$1:*(c,D))) => +(a,-*(B,c,D))");
 		TernaryOp v1 = HopRewriteUtils.createTernary(hi_0, hi_1_1_0, hi_1_1_1,Types.OpOp3.MINUS_MULT);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_1_0, v1, Types.OpOp2.PLUS);
+
+		Hop newRoot = v2;
+		if ( v2.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
 
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
@@ -40099,6 +43788,13 @@ public class GeneratedRewriteClass implements Function {
 		TernaryOp v1 = HopRewriteUtils.createTernary(hi_0, hi_1_1_1, hi_1_1_0,Types.OpOp3.MINUS_MULT);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_1_0, v1, Types.OpOp2.PLUS);
 
+		Hop newRoot = v2;
+		if ( v2.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
+
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
@@ -40172,6 +43868,13 @@ public class GeneratedRewriteClass implements Function {
 		DMLExecutor.println("Applying rewrite: -(B,-($1:*(c,D),A)) => +(A,-*(B,c,D))");
 		TernaryOp v1 = HopRewriteUtils.createTernary(hi_0, hi_1_0_0, hi_1_0_1,Types.OpOp3.MINUS_MULT);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_1_1, v1, Types.OpOp2.PLUS);
+
+		Hop newRoot = v2;
+		if ( v2.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
 
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
@@ -40247,6 +43950,13 @@ public class GeneratedRewriteClass implements Function {
 		TernaryOp v1 = HopRewriteUtils.createTernary(hi_0, hi_1_0_1, hi_1_0_0,Types.OpOp3.MINUS_MULT);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_1_1, v1, Types.OpOp2.PLUS);
 
+		Hop newRoot = v2;
+		if ( v2.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
+
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
@@ -40320,6 +44030,13 @@ public class GeneratedRewriteClass implements Function {
 		DMLExecutor.println("Applying rewrite: -(*(c,D),-(B,A)) => -(A,-*(B,c,D))");
 		TernaryOp v1 = HopRewriteUtils.createTernary(hi_1_0, hi_0_0, hi_0_1,Types.OpOp3.MINUS_MULT);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_1_1, v1, Types.OpOp2.MINUS);
+
+		Hop newRoot = v2;
+		if ( v2.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
 
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
@@ -40395,6 +44112,13 @@ public class GeneratedRewriteClass implements Function {
 		TernaryOp v1 = HopRewriteUtils.createTernary(hi_1_0, hi_0_1, hi_0_0,Types.OpOp3.MINUS_MULT);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_1_1, v1, Types.OpOp2.MINUS);
 
+		Hop newRoot = v2;
+		if ( v2.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
+
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
@@ -40468,6 +44192,13 @@ public class GeneratedRewriteClass implements Function {
 		DMLExecutor.println("Applying rewrite: +(-($1:*(c,D),B),A) => -(A,-*(B,c,D))");
 		TernaryOp v1 = HopRewriteUtils.createTernary(hi_0_1, hi_0_0_0, hi_0_0_1,Types.OpOp3.MINUS_MULT);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_1, v1, Types.OpOp2.MINUS);
+
+		Hop newRoot = v2;
+		if ( v2.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
 
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
@@ -40543,6 +44274,13 @@ public class GeneratedRewriteClass implements Function {
 		TernaryOp v1 = HopRewriteUtils.createTernary(hi_0_1, hi_0_0_1, hi_0_0_0,Types.OpOp3.MINUS_MULT);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_1, v1, Types.OpOp2.MINUS);
 
+		Hop newRoot = v2;
+		if ( v2.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
+
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
@@ -40616,6 +44354,13 @@ public class GeneratedRewriteClass implements Function {
 		DMLExecutor.println("Applying rewrite: +(A,-($1:*(c,D),B)) => -(A,-*(B,c,D))");
 		TernaryOp v1 = HopRewriteUtils.createTernary(hi_1_1, hi_1_0_0, hi_1_0_1,Types.OpOp3.MINUS_MULT);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0, v1, Types.OpOp2.MINUS);
+
+		Hop newRoot = v2;
+		if ( v2.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
 
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
@@ -40691,6 +44436,13 @@ public class GeneratedRewriteClass implements Function {
 		TernaryOp v1 = HopRewriteUtils.createTernary(hi_1_1, hi_1_0_1, hi_1_0_0,Types.OpOp3.MINUS_MULT);
 		BinaryOp v2 = HopRewriteUtils.createBinary(hi_0, v1, Types.OpOp2.MINUS);
 
+		Hop newRoot = v2;
+		if ( v2.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
+
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
@@ -40764,6 +44516,13 @@ public class GeneratedRewriteClass implements Function {
 		DMLExecutor.println("Applying rewrite: -(A,*($1:/(b,D),C)) => -*(A,b,/(C,D))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_1_1, hi_1_0_1, Types.OpOp2.DIV);
 		TernaryOp v2 = HopRewriteUtils.createTernary(hi_0, hi_1_0_0, v1,Types.OpOp3.MINUS_MULT);
+
+		Hop newRoot = v2;
+		if ( v2.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
 
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
@@ -40839,6 +44598,13 @@ public class GeneratedRewriteClass implements Function {
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_1_0, hi_1_1_1, Types.OpOp2.DIV);
 		TernaryOp v2 = HopRewriteUtils.createTernary(hi_0, hi_1_1_0, v1,Types.OpOp3.MINUS_MULT);
 
+		Hop newRoot = v2;
+		if ( v2.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
+
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
@@ -40912,6 +44678,13 @@ public class GeneratedRewriteClass implements Function {
 		DMLExecutor.println("Applying rewrite: -(A,/($1:*(b,C),D)) => -*(A,b,/(C,D))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_1_0_1, hi_1_1, Types.OpOp2.DIV);
 		TernaryOp v2 = HopRewriteUtils.createTernary(hi_0, hi_1_0_0, v1,Types.OpOp3.MINUS_MULT);
+
+		Hop newRoot = v2;
+		if ( v2.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
 
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
@@ -40987,6 +44760,13 @@ public class GeneratedRewriteClass implements Function {
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_1_0_0, hi_1_1, Types.OpOp2.DIV);
 		TernaryOp v2 = HopRewriteUtils.createTernary(hi_0, hi_1_0_1, v1,Types.OpOp3.MINUS_MULT);
 
+		Hop newRoot = v2;
+		if ( v2.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
+
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
@@ -41060,6 +44840,13 @@ public class GeneratedRewriteClass implements Function {
 		DMLExecutor.println("Applying rewrite: +(*($1:/(b,D),C),A) => +*(A,b,/(C,D))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_1, hi_0_0_1, Types.OpOp2.DIV);
 		TernaryOp v2 = HopRewriteUtils.createTernary(hi_1, hi_0_0_0, v1,Types.OpOp3.PLUS_MULT);
+
+		Hop newRoot = v2;
+		if ( v2.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
 
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
@@ -41135,6 +44922,13 @@ public class GeneratedRewriteClass implements Function {
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0_1, hi_0_1, Types.OpOp2.DIV);
 		TernaryOp v2 = HopRewriteUtils.createTernary(hi_1, hi_0_0_0, v1,Types.OpOp3.PLUS_MULT);
 
+		Hop newRoot = v2;
+		if ( v2.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
+
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
@@ -41208,6 +45002,13 @@ public class GeneratedRewriteClass implements Function {
 		DMLExecutor.println("Applying rewrite: +(/($1:*(C,b),D),A) => +*(A,b,/(C,D))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0_0, hi_0_1, Types.OpOp2.DIV);
 		TernaryOp v2 = HopRewriteUtils.createTernary(hi_1, hi_0_0_1, v1,Types.OpOp3.PLUS_MULT);
+
+		Hop newRoot = v2;
+		if ( v2.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
 
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
@@ -41283,6 +45084,13 @@ public class GeneratedRewriteClass implements Function {
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_0_0, hi_0_1_1, Types.OpOp2.DIV);
 		TernaryOp v2 = HopRewriteUtils.createTernary(hi_1, hi_0_1_0, v1,Types.OpOp3.PLUS_MULT);
 
+		Hop newRoot = v2;
+		if ( v2.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
+
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
@@ -41356,6 +45164,13 @@ public class GeneratedRewriteClass implements Function {
 		DMLExecutor.println("Applying rewrite: +(A,/($1:*(b,C),D)) => +*(A,b,/(C,D))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_1_0_1, hi_1_1, Types.OpOp2.DIV);
 		TernaryOp v2 = HopRewriteUtils.createTernary(hi_0, hi_1_0_0, v1,Types.OpOp3.PLUS_MULT);
+
+		Hop newRoot = v2;
+		if ( v2.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
 
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
@@ -41431,6 +45246,13 @@ public class GeneratedRewriteClass implements Function {
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_1_1, hi_1_0_1, Types.OpOp2.DIV);
 		TernaryOp v2 = HopRewriteUtils.createTernary(hi_0, hi_1_0_0, v1,Types.OpOp3.PLUS_MULT);
 
+		Hop newRoot = v2;
+		if ( v2.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
+
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
@@ -41504,6 +45326,13 @@ public class GeneratedRewriteClass implements Function {
 		DMLExecutor.println("Applying rewrite: +(A,/($1:*(C,b),D)) => +*(A,b,/(C,D))");
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_1_0_0, hi_1_1, Types.OpOp2.DIV);
 		TernaryOp v2 = HopRewriteUtils.createTernary(hi_0, hi_1_0_1, v1,Types.OpOp3.PLUS_MULT);
+
+		Hop newRoot = v2;
+		if ( v2.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
 
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
@@ -41579,6 +45408,13 @@ public class GeneratedRewriteClass implements Function {
 		BinaryOp v1 = HopRewriteUtils.createBinary(hi_1_0, hi_1_1_1, Types.OpOp2.DIV);
 		TernaryOp v2 = HopRewriteUtils.createTernary(hi_0, hi_1_1_0, v1,Types.OpOp3.PLUS_MULT);
 
+		Hop newRoot = v2;
+		if ( v2.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
+
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
@@ -41642,12 +45478,12 @@ public class GeneratedRewriteClass implements Function {
 			return hi;
 
 
-		if ( hi_1_0_1.getDim1() == -1 || hi_1_1.getDim2() == -1 || hi_1_0_1.getDim2() == -1 || hi_1_0_1.getNnz() == -1 || hi_0.getNnz() == -1 || hi_1_1.getNnz() == -1 )
+		if ( hi_1_0_1.getDim1() == -1 || hi_1_1.getDim2() == -1 || hi_1_0_1.getNnz() == -1 || hi_1_1.getDim1() == -1 || hi_0.getNnz() == -1 || hi_1_1.getNnz() == -1 )
 			return hi;
 
 
-		double costFrom = ((2.0 * hi_1_0_1.getNnz()) + (Math.min(hi_1_0_1.getNnz(), hi_1_1.getNnz()) * hi_1_0_1.getDim2() * 3.0) + (hi_0.getNnz() + (Math.min((hi_1_0_1.getNnz() * (1.0 / hi_1_0_1.getDim1())), 1.0) * Math.min((hi_1_1.getNnz() * (1.0 / hi_1_1.getDim2())), 1.0) * hi_1_0_1.getDim1() * hi_1_1.getDim2())) + 30030.0);
-		double costTo = ((Math.min(hi_1_0_1.getNnz(), hi_1_1.getNnz()) * hi_1_0_1.getDim2() * 3.0) + (3.0 * Math.min(hi_0.getNnz(), (Math.min((hi_1_0_1.getNnz() * (1.0 / hi_1_0_1.getDim1())), 1.0) * Math.min((hi_1_1.getNnz() * (1.0 / hi_1_1.getDim2())), 1.0) * hi_1_0_1.getDim1() * hi_1_1.getDim2()))) + 20070.0);
+		double costFrom = ((2.0 * hi_1_0_1.getNnz()) + (Math.min(hi_1_0_1.getNnz(), hi_1_1.getNnz()) * hi_1_1.getDim1() * 3.0) + (hi_0.getNnz() + (Math.min((hi_1_0_1.getNnz() * (1.0 / hi_1_0_1.getDim1())), 1.0) * Math.min((hi_1_1.getNnz() * (1.0 / hi_1_1.getDim2())), 1.0) * hi_1_0_1.getDim1() * hi_1_1.getDim2())) + 30030.0);
+		double costTo = ((Math.min(hi_1_0_1.getNnz(), hi_1_1.getNnz()) * hi_1_1.getDim1() * 3.0) + (3.0 * Math.min(hi_0.getNnz(), (Math.min((hi_1_0_1.getNnz() * (1.0 / hi_1_0_1.getDim1())), 1.0) * Math.min((hi_1_1.getNnz() * (1.0 / hi_1_1.getDim2())), 1.0) * hi_1_0_1.getDim1() * hi_1_1.getDim2()))) + 20070.0);
 
 		if ( costFrom <= costTo )
 			return hi;
@@ -41658,6 +45494,13 @@ public class GeneratedRewriteClass implements Function {
 		DMLExecutor.println("Applying rewrite: -(A,%*%($1:*(b,C),D)) => -*(A,b,%*%(C,D))");
 		AggBinaryOp v1 = HopRewriteUtils.createMatrixMultiply(hi_1_0_1, hi_1_1);
 		TernaryOp v2 = HopRewriteUtils.createTernary(hi_0, hi_1_0_0, v1,Types.OpOp3.MINUS_MULT);
+
+		Hop newRoot = v2;
+		if ( v2.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
 
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
@@ -41739,6 +45582,13 @@ public class GeneratedRewriteClass implements Function {
 		AggBinaryOp v1 = HopRewriteUtils.createMatrixMultiply(hi_1_0_0, hi_1_1);
 		TernaryOp v2 = HopRewriteUtils.createTernary(hi_0, hi_1_0_1, v1,Types.OpOp3.MINUS_MULT);
 
+		Hop newRoot = v2;
+		if ( v2.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
+
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
@@ -41802,12 +45652,12 @@ public class GeneratedRewriteClass implements Function {
 			return hi;
 
 
-		if ( hi_1_0.getNnz() == -1 || hi_1_1_1.getNnz() == -1 || hi_1_1_1.getDim1() == -1 || hi_1_0.getDim1() == -1 || hi_1_1_1.getDim2() == -1 || hi_0.getNnz() == -1 )
+		if ( hi_1_0.getNnz() == -1 || hi_1_1_1.getNnz() == -1 || hi_1_0.getDim1() == -1 || hi_1_0.getDim2() == -1 || hi_1_1_1.getDim2() == -1 || hi_0.getNnz() == -1 )
 			return hi;
 
 
-		double costFrom = ((2.0 * hi_1_1_1.getNnz()) + (Math.min(hi_1_0.getNnz(), hi_1_1_1.getNnz()) * hi_1_1_1.getDim1() * 3.0) + (hi_0.getNnz() + (Math.min((hi_1_0.getNnz() * (1.0 / hi_1_0.getDim1())), 1.0) * Math.min((hi_1_1_1.getNnz() * (1.0 / hi_1_1_1.getDim2())), 1.0) * hi_1_0.getDim1() * hi_1_1_1.getDim2())) + 30030.0);
-		double costTo = ((Math.min(hi_1_0.getNnz(), hi_1_1_1.getNnz()) * hi_1_1_1.getDim1() * 3.0) + (3.0 * Math.min(hi_0.getNnz(), (Math.min((hi_1_0.getNnz() * (1.0 / hi_1_0.getDim1())), 1.0) * Math.min((hi_1_1_1.getNnz() * (1.0 / hi_1_1_1.getDim2())), 1.0) * hi_1_0.getDim1() * hi_1_1_1.getDim2()))) + 20070.0);
+		double costFrom = ((2.0 * hi_1_1_1.getNnz()) + (Math.min(hi_1_0.getNnz(), hi_1_1_1.getNnz()) * hi_1_0.getDim2() * 3.0) + (hi_0.getNnz() + (Math.min((hi_1_0.getNnz() * (1.0 / hi_1_0.getDim1())), 1.0) * Math.min((hi_1_1_1.getNnz() * (1.0 / hi_1_1_1.getDim2())), 1.0) * hi_1_0.getDim1() * hi_1_1_1.getDim2())) + 30030.0);
+		double costTo = ((Math.min(hi_1_0.getNnz(), hi_1_1_1.getNnz()) * hi_1_0.getDim2() * 3.0) + (3.0 * Math.min(hi_0.getNnz(), (Math.min((hi_1_0.getNnz() * (1.0 / hi_1_0.getDim1())), 1.0) * Math.min((hi_1_1_1.getNnz() * (1.0 / hi_1_1_1.getDim2())), 1.0) * hi_1_0.getDim1() * hi_1_1_1.getDim2()))) + 20070.0);
 
 		if ( costFrom <= costTo )
 			return hi;
@@ -41818,6 +45668,13 @@ public class GeneratedRewriteClass implements Function {
 		DMLExecutor.println("Applying rewrite: -(A,%*%(C,$1:*(b,D))) => -*(A,b,%*%(C,D))");
 		AggBinaryOp v1 = HopRewriteUtils.createMatrixMultiply(hi_1_0, hi_1_1_1);
 		TernaryOp v2 = HopRewriteUtils.createTernary(hi_0, hi_1_1_0, v1,Types.OpOp3.MINUS_MULT);
+
+		Hop newRoot = v2;
+		if ( v2.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
 
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
@@ -41882,12 +45739,12 @@ public class GeneratedRewriteClass implements Function {
 			return hi;
 
 
-		if ( hi_1_0.getNnz() == -1 || hi_1_1_0.getDim1() == -1 || hi_1_0.getDim1() == -1 || hi_0.getNnz() == -1 || hi_1_1_0.getNnz() == -1 || hi_1_1_0.getDim2() == -1 )
+		if ( hi_1_0.getNnz() == -1 || hi_1_0.getDim1() == -1 || hi_1_0.getDim2() == -1 || hi_0.getNnz() == -1 || hi_1_1_0.getNnz() == -1 || hi_1_1_0.getDim2() == -1 )
 			return hi;
 
 
-		double costFrom = ((2.0 * hi_1_1_0.getNnz()) + (Math.min(hi_1_0.getNnz(), hi_1_1_0.getNnz()) * hi_1_1_0.getDim1() * 3.0) + (hi_0.getNnz() + (Math.min((hi_1_0.getNnz() * (1.0 / hi_1_0.getDim1())), 1.0) * Math.min((hi_1_1_0.getNnz() * (1.0 / hi_1_1_0.getDim2())), 1.0) * hi_1_0.getDim1() * hi_1_1_0.getDim2())) + 30030.0);
-		double costTo = ((Math.min(hi_1_0.getNnz(), hi_1_1_0.getNnz()) * hi_1_1_0.getDim1() * 3.0) + (3.0 * Math.min(hi_0.getNnz(), (Math.min((hi_1_0.getNnz() * (1.0 / hi_1_0.getDim1())), 1.0) * Math.min((hi_1_1_0.getNnz() * (1.0 / hi_1_1_0.getDim2())), 1.0) * hi_1_0.getDim1() * hi_1_1_0.getDim2()))) + 20070.0);
+		double costFrom = ((2.0 * hi_1_1_0.getNnz()) + (Math.min(hi_1_0.getNnz(), hi_1_1_0.getNnz()) * hi_1_0.getDim2() * 3.0) + (hi_0.getNnz() + (Math.min((hi_1_0.getNnz() * (1.0 / hi_1_0.getDim1())), 1.0) * Math.min((hi_1_1_0.getNnz() * (1.0 / hi_1_1_0.getDim2())), 1.0) * hi_1_0.getDim1() * hi_1_1_0.getDim2())) + 30030.0);
+		double costTo = ((Math.min(hi_1_0.getNnz(), hi_1_1_0.getNnz()) * hi_1_0.getDim2() * 3.0) + (3.0 * Math.min(hi_0.getNnz(), (Math.min((hi_1_0.getNnz() * (1.0 / hi_1_0.getDim1())), 1.0) * Math.min((hi_1_1_0.getNnz() * (1.0 / hi_1_1_0.getDim2())), 1.0) * hi_1_0.getDim1() * hi_1_1_0.getDim2()))) + 20070.0);
 
 		if ( costFrom <= costTo )
 			return hi;
@@ -41898,6 +45755,13 @@ public class GeneratedRewriteClass implements Function {
 		DMLExecutor.println("Applying rewrite: -(A,%*%(C,$1:*(D,b))) => -*(A,b,%*%(C,D))");
 		AggBinaryOp v1 = HopRewriteUtils.createMatrixMultiply(hi_1_0, hi_1_1_0);
 		TernaryOp v2 = HopRewriteUtils.createTernary(hi_0, hi_1_1_1, v1,Types.OpOp3.MINUS_MULT);
+
+		Hop newRoot = v2;
+		if ( v2.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
 
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
@@ -41962,12 +45826,12 @@ public class GeneratedRewriteClass implements Function {
 			return hi;
 
 
-		if ( hi_0_0_1.getDim2() == -1 || hi_1.getNnz() == -1 || hi_0_1.getDim2() == -1 || hi_0_0_1.getDim1() == -1 || hi_0_1.getNnz() == -1 || hi_0_0_1.getNnz() == -1 )
+		if ( hi_1.getNnz() == -1 || hi_0_1.getDim2() == -1 || hi_0_0_1.getDim1() == -1 || hi_0_1.getNnz() == -1 || hi_0_1.getDim1() == -1 || hi_0_0_1.getNnz() == -1 )
 			return hi;
 
 
-		double costFrom = ((2.0 * hi_0_0_1.getNnz()) + (Math.min(hi_0_0_1.getNnz(), hi_0_1.getNnz()) * hi_0_0_1.getDim2() * 3.0) + ((Math.min((hi_0_0_1.getNnz() * (1.0 / hi_0_0_1.getDim1())), 1.0) * Math.min((hi_0_1.getNnz() * (1.0 / hi_0_1.getDim2())), 1.0) * hi_0_0_1.getDim1() * hi_0_1.getDim2()) + hi_1.getNnz()) + 30030.0);
-		double costTo = ((Math.min(hi_0_0_1.getNnz(), hi_0_1.getNnz()) * hi_0_0_1.getDim2() * 3.0) + (3.0 * Math.min(hi_1.getNnz(), (Math.min((hi_0_0_1.getNnz() * (1.0 / hi_0_0_1.getDim1())), 1.0) * Math.min((hi_0_1.getNnz() * (1.0 / hi_0_1.getDim2())), 1.0) * hi_0_0_1.getDim1() * hi_0_1.getDim2()))) + 20070.0);
+		double costFrom = ((2.0 * hi_0_0_1.getNnz()) + (Math.min(hi_0_0_1.getNnz(), hi_0_1.getNnz()) * hi_0_1.getDim1() * 3.0) + ((Math.min((hi_0_0_1.getNnz() * (1.0 / hi_0_0_1.getDim1())), 1.0) * Math.min((hi_0_1.getNnz() * (1.0 / hi_0_1.getDim2())), 1.0) * hi_0_0_1.getDim1() * hi_0_1.getDim2()) + hi_1.getNnz()) + 30030.0);
+		double costTo = ((Math.min(hi_0_0_1.getNnz(), hi_0_1.getNnz()) * hi_0_1.getDim1() * 3.0) + (3.0 * Math.min(hi_1.getNnz(), (Math.min((hi_0_0_1.getNnz() * (1.0 / hi_0_0_1.getDim1())), 1.0) * Math.min((hi_0_1.getNnz() * (1.0 / hi_0_1.getDim2())), 1.0) * hi_0_0_1.getDim1() * hi_0_1.getDim2()))) + 20070.0);
 
 		if ( costFrom <= costTo )
 			return hi;
@@ -41978,6 +45842,13 @@ public class GeneratedRewriteClass implements Function {
 		DMLExecutor.println("Applying rewrite: +(%*%($1:*(b,C),D),A) => +*(A,b,%*%(C,D))");
 		AggBinaryOp v1 = HopRewriteUtils.createMatrixMultiply(hi_0_0_1, hi_0_1);
 		TernaryOp v2 = HopRewriteUtils.createTernary(hi_1, hi_0_0_0, v1,Types.OpOp3.PLUS_MULT);
+
+		Hop newRoot = v2;
+		if ( v2.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
 
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
@@ -42042,12 +45913,12 @@ public class GeneratedRewriteClass implements Function {
 			return hi;
 
 
-		if ( hi_1.getNnz() == -1 || hi_0_1.getDim2() == -1 || hi_0_0_0.getNnz() == -1 || hi_0_1.getNnz() == -1 || hi_0_0_0.getDim1() == -1 || hi_0_1.getDim1() == -1 )
+		if ( hi_0_0_0.getDim2() == -1 || hi_1.getNnz() == -1 || hi_0_1.getDim2() == -1 || hi_0_0_0.getNnz() == -1 || hi_0_1.getNnz() == -1 || hi_0_0_0.getDim1() == -1 )
 			return hi;
 
 
-		double costFrom = ((2.0 * hi_0_0_0.getNnz()) + (Math.min(hi_0_0_0.getNnz(), hi_0_1.getNnz()) * hi_0_1.getDim1() * 3.0) + ((Math.min((hi_0_0_0.getNnz() * (1.0 / hi_0_0_0.getDim1())), 1.0) * Math.min((hi_0_1.getNnz() * (1.0 / hi_0_1.getDim2())), 1.0) * hi_0_0_0.getDim1() * hi_0_1.getDim2()) + hi_1.getNnz()) + 30030.0);
-		double costTo = ((Math.min(hi_0_0_0.getNnz(), hi_0_1.getNnz()) * hi_0_1.getDim1() * 3.0) + (3.0 * Math.min(hi_1.getNnz(), (Math.min((hi_0_0_0.getNnz() * (1.0 / hi_0_0_0.getDim1())), 1.0) * Math.min((hi_0_1.getNnz() * (1.0 / hi_0_1.getDim2())), 1.0) * hi_0_0_0.getDim1() * hi_0_1.getDim2()))) + 20070.0);
+		double costFrom = ((2.0 * hi_0_0_0.getNnz()) + (Math.min(hi_0_0_0.getNnz(), hi_0_1.getNnz()) * hi_0_0_0.getDim2() * 3.0) + ((Math.min((hi_0_0_0.getNnz() * (1.0 / hi_0_0_0.getDim1())), 1.0) * Math.min((hi_0_1.getNnz() * (1.0 / hi_0_1.getDim2())), 1.0) * hi_0_0_0.getDim1() * hi_0_1.getDim2()) + hi_1.getNnz()) + 30030.0);
+		double costTo = ((Math.min(hi_0_0_0.getNnz(), hi_0_1.getNnz()) * hi_0_0_0.getDim2() * 3.0) + (3.0 * Math.min(hi_1.getNnz(), (Math.min((hi_0_0_0.getNnz() * (1.0 / hi_0_0_0.getDim1())), 1.0) * Math.min((hi_0_1.getNnz() * (1.0 / hi_0_1.getDim2())), 1.0) * hi_0_0_0.getDim1() * hi_0_1.getDim2()))) + 20070.0);
 
 		if ( costFrom <= costTo )
 			return hi;
@@ -42058,6 +45929,13 @@ public class GeneratedRewriteClass implements Function {
 		DMLExecutor.println("Applying rewrite: +(%*%($1:*(C,b),D),A) => +*(A,b,%*%(C,D))");
 		AggBinaryOp v1 = HopRewriteUtils.createMatrixMultiply(hi_0_0_0, hi_0_1);
 		TernaryOp v2 = HopRewriteUtils.createTernary(hi_1, hi_0_0_1, v1,Types.OpOp3.PLUS_MULT);
+
+		Hop newRoot = v2;
+		if ( v2.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
 
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
@@ -42122,12 +46000,12 @@ public class GeneratedRewriteClass implements Function {
 			return hi;
 
 
-		if ( hi_0_0.getDim1() == -1 || hi_1.getNnz() == -1 || hi_0_1_1.getNnz() == -1 || hi_0_1_1.getDim2() == -1 || hi_0_0.getNnz() == -1 || hi_0_0.getDim2() == -1 )
+		if ( hi_0_0.getDim1() == -1 || hi_1.getNnz() == -1 || hi_0_1_1.getDim1() == -1 || hi_0_1_1.getNnz() == -1 || hi_0_1_1.getDim2() == -1 || hi_0_0.getNnz() == -1 )
 			return hi;
 
 
-		double costFrom = ((2.0 * hi_0_1_1.getNnz()) + (Math.min(hi_0_0.getNnz(), hi_0_1_1.getNnz()) * hi_0_0.getDim2() * 3.0) + ((Math.min((hi_0_0.getNnz() * (1.0 / hi_0_0.getDim1())), 1.0) * Math.min((hi_0_1_1.getNnz() * (1.0 / hi_0_1_1.getDim2())), 1.0) * hi_0_0.getDim1() * hi_0_1_1.getDim2()) + hi_1.getNnz()) + 30030.0);
-		double costTo = ((Math.min(hi_0_0.getNnz(), hi_0_1_1.getNnz()) * hi_0_0.getDim2() * 3.0) + (3.0 * Math.min(hi_1.getNnz(), (Math.min((hi_0_0.getNnz() * (1.0 / hi_0_0.getDim1())), 1.0) * Math.min((hi_0_1_1.getNnz() * (1.0 / hi_0_1_1.getDim2())), 1.0) * hi_0_0.getDim1() * hi_0_1_1.getDim2()))) + 20070.0);
+		double costFrom = ((2.0 * hi_0_1_1.getNnz()) + (Math.min(hi_0_0.getNnz(), hi_0_1_1.getNnz()) * hi_0_1_1.getDim1() * 3.0) + ((Math.min((hi_0_0.getNnz() * (1.0 / hi_0_0.getDim1())), 1.0) * Math.min((hi_0_1_1.getNnz() * (1.0 / hi_0_1_1.getDim2())), 1.0) * hi_0_0.getDim1() * hi_0_1_1.getDim2()) + hi_1.getNnz()) + 30030.0);
+		double costTo = ((Math.min(hi_0_0.getNnz(), hi_0_1_1.getNnz()) * hi_0_1_1.getDim1() * 3.0) + (3.0 * Math.min(hi_1.getNnz(), (Math.min((hi_0_0.getNnz() * (1.0 / hi_0_0.getDim1())), 1.0) * Math.min((hi_0_1_1.getNnz() * (1.0 / hi_0_1_1.getDim2())), 1.0) * hi_0_0.getDim1() * hi_0_1_1.getDim2()))) + 20070.0);
 
 		if ( costFrom <= costTo )
 			return hi;
@@ -42138,6 +46016,13 @@ public class GeneratedRewriteClass implements Function {
 		DMLExecutor.println("Applying rewrite: +(%*%(C,$1:*(b,D)),A) => +*(A,b,%*%(C,D))");
 		AggBinaryOp v1 = HopRewriteUtils.createMatrixMultiply(hi_0_0, hi_0_1_1);
 		TernaryOp v2 = HopRewriteUtils.createTernary(hi_1, hi_0_1_0, v1,Types.OpOp3.PLUS_MULT);
+
+		Hop newRoot = v2;
+		if ( v2.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
 
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
@@ -42202,12 +46087,12 @@ public class GeneratedRewriteClass implements Function {
 			return hi;
 
 
-		if ( hi_0_0.getDim1() == -1 || hi_1.getNnz() == -1 || hi_0_1_0.getDim1() == -1 || hi_0_0.getNnz() == -1 || hi_0_1_0.getDim2() == -1 || hi_0_1_0.getNnz() == -1 )
+		if ( hi_0_0.getDim1() == -1 || hi_1.getNnz() == -1 || hi_0_0.getNnz() == -1 || hi_0_0.getDim2() == -1 || hi_0_1_0.getDim2() == -1 || hi_0_1_0.getNnz() == -1 )
 			return hi;
 
 
-		double costFrom = ((2.0 * hi_0_1_0.getNnz()) + (Math.min(hi_0_0.getNnz(), hi_0_1_0.getNnz()) * hi_0_1_0.getDim1() * 3.0) + ((Math.min((hi_0_0.getNnz() * (1.0 / hi_0_0.getDim1())), 1.0) * Math.min((hi_0_1_0.getNnz() * (1.0 / hi_0_1_0.getDim2())), 1.0) * hi_0_0.getDim1() * hi_0_1_0.getDim2()) + hi_1.getNnz()) + 30030.0);
-		double costTo = ((Math.min(hi_0_0.getNnz(), hi_0_1_0.getNnz()) * hi_0_1_0.getDim1() * 3.0) + (3.0 * Math.min(hi_1.getNnz(), (Math.min((hi_0_0.getNnz() * (1.0 / hi_0_0.getDim1())), 1.0) * Math.min((hi_0_1_0.getNnz() * (1.0 / hi_0_1_0.getDim2())), 1.0) * hi_0_0.getDim1() * hi_0_1_0.getDim2()))) + 20070.0);
+		double costFrom = ((2.0 * hi_0_1_0.getNnz()) + (Math.min(hi_0_0.getNnz(), hi_0_1_0.getNnz()) * hi_0_0.getDim2() * 3.0) + ((Math.min((hi_0_0.getNnz() * (1.0 / hi_0_0.getDim1())), 1.0) * Math.min((hi_0_1_0.getNnz() * (1.0 / hi_0_1_0.getDim2())), 1.0) * hi_0_0.getDim1() * hi_0_1_0.getDim2()) + hi_1.getNnz()) + 30030.0);
+		double costTo = ((Math.min(hi_0_0.getNnz(), hi_0_1_0.getNnz()) * hi_0_0.getDim2() * 3.0) + (3.0 * Math.min(hi_1.getNnz(), (Math.min((hi_0_0.getNnz() * (1.0 / hi_0_0.getDim1())), 1.0) * Math.min((hi_0_1_0.getNnz() * (1.0 / hi_0_1_0.getDim2())), 1.0) * hi_0_0.getDim1() * hi_0_1_0.getDim2()))) + 20070.0);
 
 		if ( costFrom <= costTo )
 			return hi;
@@ -42218,6 +46103,13 @@ public class GeneratedRewriteClass implements Function {
 		DMLExecutor.println("Applying rewrite: +(%*%(C,$1:*(D,b)),A) => +*(A,b,%*%(C,D))");
 		AggBinaryOp v1 = HopRewriteUtils.createMatrixMultiply(hi_0_0, hi_0_1_0);
 		TernaryOp v2 = HopRewriteUtils.createTernary(hi_1, hi_0_1_1, v1,Types.OpOp3.PLUS_MULT);
+
+		Hop newRoot = v2;
+		if ( v2.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
 
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
@@ -42282,12 +46174,12 @@ public class GeneratedRewriteClass implements Function {
 			return hi;
 
 
-		if ( hi_1_0_1.getDim1() == -1 || hi_1_1.getDim2() == -1 || hi_1_0_1.getNnz() == -1 || hi_1_1.getDim1() == -1 || hi_0.getNnz() == -1 || hi_1_1.getNnz() == -1 )
+		if ( hi_1_0_1.getDim1() == -1 || hi_1_1.getDim2() == -1 || hi_1_0_1.getDim2() == -1 || hi_1_0_1.getNnz() == -1 || hi_0.getNnz() == -1 || hi_1_1.getNnz() == -1 )
 			return hi;
 
 
-		double costFrom = ((2.0 * hi_1_0_1.getNnz()) + (Math.min(hi_1_0_1.getNnz(), hi_1_1.getNnz()) * hi_1_1.getDim1() * 3.0) + (hi_0.getNnz() + (Math.min((hi_1_0_1.getNnz() * (1.0 / hi_1_0_1.getDim1())), 1.0) * Math.min((hi_1_1.getNnz() * (1.0 / hi_1_1.getDim2())), 1.0) * hi_1_0_1.getDim1() * hi_1_1.getDim2())) + 30030.0);
-		double costTo = ((Math.min(hi_1_0_1.getNnz(), hi_1_1.getNnz()) * hi_1_1.getDim1() * 3.0) + (3.0 * Math.min(hi_0.getNnz(), (Math.min((hi_1_0_1.getNnz() * (1.0 / hi_1_0_1.getDim1())), 1.0) * Math.min((hi_1_1.getNnz() * (1.0 / hi_1_1.getDim2())), 1.0) * hi_1_0_1.getDim1() * hi_1_1.getDim2()))) + 20070.0);
+		double costFrom = ((2.0 * hi_1_0_1.getNnz()) + (Math.min(hi_1_0_1.getNnz(), hi_1_1.getNnz()) * hi_1_0_1.getDim2() * 3.0) + (hi_0.getNnz() + (Math.min((hi_1_0_1.getNnz() * (1.0 / hi_1_0_1.getDim1())), 1.0) * Math.min((hi_1_1.getNnz() * (1.0 / hi_1_1.getDim2())), 1.0) * hi_1_0_1.getDim1() * hi_1_1.getDim2())) + 30030.0);
+		double costTo = ((Math.min(hi_1_0_1.getNnz(), hi_1_1.getNnz()) * hi_1_0_1.getDim2() * 3.0) + (3.0 * Math.min(hi_0.getNnz(), (Math.min((hi_1_0_1.getNnz() * (1.0 / hi_1_0_1.getDim1())), 1.0) * Math.min((hi_1_1.getNnz() * (1.0 / hi_1_1.getDim2())), 1.0) * hi_1_0_1.getDim1() * hi_1_1.getDim2()))) + 20070.0);
 
 		if ( costFrom <= costTo )
 			return hi;
@@ -42298,6 +46190,13 @@ public class GeneratedRewriteClass implements Function {
 		DMLExecutor.println("Applying rewrite: +(A,%*%($1:*(b,C),D)) => +*(A,b,%*%(C,D))");
 		AggBinaryOp v1 = HopRewriteUtils.createMatrixMultiply(hi_1_0_1, hi_1_1);
 		TernaryOp v2 = HopRewriteUtils.createTernary(hi_0, hi_1_0_0, v1,Types.OpOp3.PLUS_MULT);
+
+		Hop newRoot = v2;
+		if ( v2.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
 
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
@@ -42379,6 +46278,13 @@ public class GeneratedRewriteClass implements Function {
 		AggBinaryOp v1 = HopRewriteUtils.createMatrixMultiply(hi_1_0_0, hi_1_1);
 		TernaryOp v2 = HopRewriteUtils.createTernary(hi_0, hi_1_0_1, v1,Types.OpOp3.PLUS_MULT);
 
+		Hop newRoot = v2;
+		if ( v2.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
+
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
@@ -42442,12 +46348,12 @@ public class GeneratedRewriteClass implements Function {
 			return hi;
 
 
-		if ( hi_1_0.getNnz() == -1 || hi_1_1_1.getNnz() == -1 || hi_1_1_1.getDim1() == -1 || hi_1_0.getDim1() == -1 || hi_1_1_1.getDim2() == -1 || hi_0.getNnz() == -1 )
+		if ( hi_1_0.getNnz() == -1 || hi_1_1_1.getNnz() == -1 || hi_1_0.getDim1() == -1 || hi_1_0.getDim2() == -1 || hi_1_1_1.getDim2() == -1 || hi_0.getNnz() == -1 )
 			return hi;
 
 
-		double costFrom = ((2.0 * hi_1_1_1.getNnz()) + (Math.min(hi_1_0.getNnz(), hi_1_1_1.getNnz()) * hi_1_1_1.getDim1() * 3.0) + (hi_0.getNnz() + (Math.min((hi_1_0.getNnz() * (1.0 / hi_1_0.getDim1())), 1.0) * Math.min((hi_1_1_1.getNnz() * (1.0 / hi_1_1_1.getDim2())), 1.0) * hi_1_0.getDim1() * hi_1_1_1.getDim2())) + 30030.0);
-		double costTo = ((Math.min(hi_1_0.getNnz(), hi_1_1_1.getNnz()) * hi_1_1_1.getDim1() * 3.0) + (3.0 * Math.min(hi_0.getNnz(), (Math.min((hi_1_0.getNnz() * (1.0 / hi_1_0.getDim1())), 1.0) * Math.min((hi_1_1_1.getNnz() * (1.0 / hi_1_1_1.getDim2())), 1.0) * hi_1_0.getDim1() * hi_1_1_1.getDim2()))) + 20070.0);
+		double costFrom = ((2.0 * hi_1_1_1.getNnz()) + (Math.min(hi_1_0.getNnz(), hi_1_1_1.getNnz()) * hi_1_0.getDim2() * 3.0) + (hi_0.getNnz() + (Math.min((hi_1_0.getNnz() * (1.0 / hi_1_0.getDim1())), 1.0) * Math.min((hi_1_1_1.getNnz() * (1.0 / hi_1_1_1.getDim2())), 1.0) * hi_1_0.getDim1() * hi_1_1_1.getDim2())) + 30030.0);
+		double costTo = ((Math.min(hi_1_0.getNnz(), hi_1_1_1.getNnz()) * hi_1_0.getDim2() * 3.0) + (3.0 * Math.min(hi_0.getNnz(), (Math.min((hi_1_0.getNnz() * (1.0 / hi_1_0.getDim1())), 1.0) * Math.min((hi_1_1_1.getNnz() * (1.0 / hi_1_1_1.getDim2())), 1.0) * hi_1_0.getDim1() * hi_1_1_1.getDim2()))) + 20070.0);
 
 		if ( costFrom <= costTo )
 			return hi;
@@ -42458,6 +46364,13 @@ public class GeneratedRewriteClass implements Function {
 		DMLExecutor.println("Applying rewrite: +(A,%*%(C,$1:*(b,D))) => +*(A,b,%*%(C,D))");
 		AggBinaryOp v1 = HopRewriteUtils.createMatrixMultiply(hi_1_0, hi_1_1_1);
 		TernaryOp v2 = HopRewriteUtils.createTernary(hi_0, hi_1_1_0, v1,Types.OpOp3.PLUS_MULT);
+
+		Hop newRoot = v2;
+		if ( v2.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
 
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
@@ -42539,6 +46452,13 @@ public class GeneratedRewriteClass implements Function {
 		AggBinaryOp v1 = HopRewriteUtils.createMatrixMultiply(hi_1_0, hi_1_1_0);
 		TernaryOp v2 = HopRewriteUtils.createTernary(hi_0, hi_1_1_1, v1,Types.OpOp3.PLUS_MULT);
 
+		Hop newRoot = v2;
+		if ( v2.getValueType() != hi.getValueType() ) {
+			newRoot = castIfNecessary(newRoot);
+			if ( newRoot == null )
+				return hi;
+		}
+
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
@@ -42550,5 +46470,24 @@ public class GeneratedRewriteClass implements Function {
 		HopRewriteUtils.cleanupUnreferenced(hi_1_1);
 
 		return v2;
+	}
+
+	private static Hop castIfNecessary(Hop newRoot) {
+		Types.OpOp1 cast = null;
+		switch ( newRoot.getValueType().toExternalString() ) {
+			case "DOUBLE":
+				cast = Types.OpOp1.CAST_AS_DOUBLE;
+				break;
+			case "INT":
+				cast = Types.OpOp1.CAST_AS_INT;
+				break;
+			case "BOOLEAN":
+				cast = Types.OpOp1.CAST_AS_BOOLEAN;
+				break;
+			default:
+				return null;
+		}
+
+		return HopRewriteUtils.createUnary(newRoot, cast);
 	}
 }

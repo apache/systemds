@@ -68,6 +68,11 @@ public class MatrixReaderFactory {
 					new FileFormatPropertiesHDF5()) : new ReaderHDF5(new FileFormatPropertiesHDF5());
 				break;
 
+			case COG:
+				// TODO: Add parallel reader
+				reader = new ReaderCOG(new FileFormatPropertiesCOG());
+				break;
+
 			case COMPRESSED:
 				reader = ReaderCompressed.create();
 				break;
@@ -122,6 +127,12 @@ public class MatrixReaderFactory {
 				FileFormatPropertiesHDF5 fileFormatPropertiesHDF5 = props.formatProperties != null ? (FileFormatPropertiesHDF5) props.formatProperties : new FileFormatPropertiesHDF5();
 				reader = (par & mcsr) ? new ReaderHDF5Parallel(fileFormatPropertiesHDF5) : new ReaderHDF5(
 					fileFormatPropertiesHDF5);
+				break;
+
+			case COG:
+				FileFormatPropertiesCOG fileFormatPropertiesCOG = props.formatProperties != null ? (FileFormatPropertiesCOG) props.formatProperties : new FileFormatPropertiesCOG();
+				// TODO: Implement parallel reader
+				reader = new ReaderCOG(fileFormatPropertiesCOG);
 				break;
 
 			case COMPRESSED:

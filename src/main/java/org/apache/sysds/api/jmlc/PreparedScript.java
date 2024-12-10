@@ -83,7 +83,7 @@ public class PreparedScript implements ConfigurableAPI
 	private PreparedScript(PreparedScript that) {
 		//shallow copy, except for a separate symbol table
 		//and related meta data of reused inputs
-		_prog = that._prog.clone(false);
+		_prog = (Program)that._prog.clone();
 		_vars = new LocalVariableMap();
 		for(Entry<String, Data> e : that._vars.entrySet())
 			_vars.put(e.getKey(), e.getValue());

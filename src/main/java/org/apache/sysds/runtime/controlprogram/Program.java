@@ -23,7 +23,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map.Entry;
 
-import org.apache.commons.lang3.NotImplementedException;
 import org.apache.sysds.parser.DMLProgram;
 import org.apache.sysds.parser.FunctionDictionary;
 import org.apache.sysds.runtime.DMLRuntimeException;
@@ -165,9 +164,8 @@ public class Program
 		}
 	}
 
-	public Program clone(boolean deep) {
-		if( deep )
-			throw new NotImplementedException();
+	@Override
+	public Object clone() {
 		Program ret = new Program(_prog);
 		//shallow copy of all program blocks
 		ret._programBlocks.addAll(_programBlocks);
@@ -177,11 +175,6 @@ public class Program
 			for( Entry<String, FunctionProgramBlock> e2 : e1.getValue().getFunctions().entrySet() )
 				ret.addFunctionProgramBlock(e1.getKey(), e2.getKey(), e2.getValue());
 		return ret;
-	}
-	
-	@Override
-	public Object clone() {
-		return clone(true);
 	}
 	
 	private static String getSafeNamespace(String namespace) {

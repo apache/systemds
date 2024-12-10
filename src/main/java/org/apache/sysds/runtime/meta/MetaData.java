@@ -27,6 +27,10 @@ public class MetaData
 {
 	protected final DataCharacteristics _dc;
 	
+	public MetaData() {
+		this(new MatrixCharacteristics());
+	}
+	
 	public MetaData(DataCharacteristics dc) {
 		_dc = dc;
 	}

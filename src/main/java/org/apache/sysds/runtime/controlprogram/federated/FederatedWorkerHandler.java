@@ -619,9 +619,9 @@ public class FederatedWorkerHandler extends ChannelInboundHandlerAdapter {
 			pb.execute(ec);
 		}
 		catch(Exception ex) {
-			// ensure all variables are properly unpinned, even in case
+			// ensure all variables are properly released, even in case
 			// of failures because federated workers are stateful servers
-			ec.getVariables().releasePinnedData();
+			ec.getVariables().releaseAcquiredData();
 			throw ex;
 		}
 	}

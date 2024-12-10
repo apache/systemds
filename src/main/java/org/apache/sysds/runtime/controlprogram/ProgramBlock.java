@@ -41,12 +41,9 @@ import org.apache.sysds.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysds.runtime.controlprogram.caching.MatrixObject.UpdateType;
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysds.runtime.instructions.Instruction;
-import org.apache.sysds.runtime.instructions.cp.BooleanObject;
 import org.apache.sysds.runtime.instructions.cp.Data;
-import org.apache.sysds.runtime.instructions.cp.DoubleObject;
-import org.apache.sysds.runtime.instructions.cp.IntObject;
 import org.apache.sysds.runtime.instructions.cp.ScalarObject;
-import org.apache.sysds.runtime.instructions.cp.StringObject;
+import org.apache.sysds.runtime.instructions.cp.ScalarObjectFactory;
 import org.apache.sysds.runtime.instructions.spark.utils.SparkUtils;
 import org.apache.sysds.runtime.lineage.LineageCache;
 import org.apache.sysds.runtime.lineage.LineageCacheConfig.ReuseCacheType;
@@ -60,7 +57,7 @@ public abstract class ProgramBlock implements ParseInfo {
 	public static final String PRED_VAR = "__pred";
 
 	protected static final Log LOG = LogFactory.getLog(ProgramBlock.class.getName());
-	private static final boolean CHECK_MATRIX_PROPERTIES = false;
+	public static boolean CHECK_MATRIX_PROPERTIES = false;
 
 	protected Program _prog; // pointer to Program this ProgramBlock is part of
 
@@ -82,10 +79,6 @@ public abstract class ProgramBlock implements ParseInfo {
 
 	public Program getProgram() {
 		return _prog;
-	}
-
-	public void setProgram(Program prog) {
-		_prog = prog;
 	}
 
 	public StatementBlock getStatementBlock() {
@@ -216,22 +209,7 @@ public abstract class ProgramBlock implements ParseInfo {
 
 		// check and correct scalar ret type (incl save double to int)
 		if(retType != null && retType != ret.getValueType())
-			switch(retType) {
-				case BOOLEAN:
-					ret = new BooleanObject(ret.getBooleanValue());
-					break;
-				case INT64:
-					ret = new IntObject(ret.getLongValue());
-					break;
-				case FP64:
-					ret = new DoubleObject(ret.getDoubleValue());
-					break;
-				case STRING:
-					ret = new StringObject(ret.getStringValue());
-					break;
-				default:
-					// do nothing
-			}
+			ret = ScalarObjectFactory.createScalarObject(retType, ret);
 
 		// remove predicate variable
 		ec.removeVariable(PRED_VAR);
@@ -350,12 +328,10 @@ public abstract class ProgramBlock implements ParseInfo {
 					synchronized(mb) { // potential state change
 						mb.recomputeNonZeros();
 						mb.examSparsity();
-
 					}
 					if(mb.isInSparseFormat() && mb.isAllocated()) {
 						mb.getSparseBlock().checkValidity(mb.getNumRows(), mb.getNumColumns(), mb.getNonZeros(), true);
 					}
-
 					boolean sparse2 = mb.isInSparseFormat();
 					long nnz2 = mb.getNonZeros();
 					mo.release();
@@ -473,11 +449,11 @@ public abstract class ProgramBlock implements ParseInfo {
 	 *                  position, ending column position, text, and filename
 	 */
 	public void setParseInfo(ParseInfo parseInfo) {
-		_beginLine = parseInfo.getBeginLine();
-		_beginColumn = parseInfo.getBeginColumn();
-		_endLine = parseInfo.getEndLine();
-		_endColumn = parseInfo.getEndColumn();
-		_text = parseInfo.getText();
-		_filename = parseInfo.getFilename();
+		setBeginLine(parseInfo.getBeginLine());
+		setBeginColumn(parseInfo.getBeginColumn());
+		setEndLine(parseInfo.getEndLine());
+		setEndColumn(parseInfo.getEndColumn());
+		setText(parseInfo.getText());
+		setFilename(parseInfo.getFilename());
 	}
 }

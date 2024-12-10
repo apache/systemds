@@ -47,7 +47,7 @@ public class LocalVariableMap implements Cloneable
 	
 	//variable map data and id
 	private final ConcurrentHashMap<String, Data> localMap;
-	private final long localID;
+	private long localID;
 	
 	//optional set of registered outputs
 	private HashSet<String> outputs = null;
@@ -60,6 +60,10 @@ public class LocalVariableMap implements Cloneable
 	public LocalVariableMap(LocalVariableMap vars) {
 		localMap = new ConcurrentHashMap<>(vars.localMap);
 		localID = _seq.getNextID();
+	}
+	
+	public void setID(long ID) {
+		localID = ID;
 	}
 
 	public Set<String> keySet() {
@@ -154,12 +158,7 @@ public class LocalVariableMap implements Cloneable
 		return total;
 	}
 	
-	public long countPinnedData() {
-		return localMap.values().stream()
-			.filter(d -> (d instanceof CacheableData)).count();
-	}
-	
-	public void releasePinnedData() {
+	public void releaseAcquiredData() {
 		localMap.values().stream()
 			.filter(d -> (d instanceof CacheableData))
 			.map(d -> (CacheableData<?>) d)

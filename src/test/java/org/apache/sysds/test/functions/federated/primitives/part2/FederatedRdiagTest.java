@@ -25,6 +25,7 @@ import java.util.Collection;
 import org.apache.sysds.api.DMLScript;
 import org.apache.sysds.common.Types;
 import org.apache.sysds.hops.OptimizerUtils;
+import org.apache.sysds.runtime.controlprogram.ProgramBlock;
 import org.apache.sysds.runtime.meta.MatrixCharacteristics;
 import org.apache.sysds.runtime.util.HDFSTool;
 import org.apache.sysds.test.AutomatedTestBase;
@@ -116,7 +117,7 @@ public class FederatedRdiagTest extends AutomatedTestBase {
 		Process t3 = startLocalFedWorker(port3, FED_WORKER_WAIT_S);
 		Process t4 = startLocalFedWorker(port4);
 
-		
+		ProgramBlock.CHECK_MATRIX_PROPERTIES = true;
 		try {
 			if(!isAlive(t1, t2, t3, t4))
 				throw new RuntimeException("Failed starting federated worker");
@@ -162,6 +163,7 @@ public class FederatedRdiagTest extends AutomatedTestBase {
 			rtplatform = platformOld;
 			DMLScript.USE_LOCAL_SPARK_CONFIG = sparkConfigOld;
 			OptimizerUtils.FEDERATED_COMPILATION = false;
+			ProgramBlock.CHECK_MATRIX_PROPERTIES = false;
 		}
 	}
 }

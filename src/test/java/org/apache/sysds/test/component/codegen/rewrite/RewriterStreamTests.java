@@ -501,8 +501,8 @@ public class RewriterStreamTests {
 		vars.put("X", matX);
 		vars.put("Y", matY);
 		RewriterStatement stmt2 = RewriterUtils.parse("-(+(sum(+(X, 7)), sum(Y)))", ctx, vars, "LITERAL_INT:7");
-		stmt2.givenThatEqual(vars.get("X").getNCol(), vars.get("Y").getNCol(), ctx);
-		stmt2.givenThatEqual(vars.get("X").getNRow(), vars.get("Y").getNRow(), ctx);
+		stmt2.givenThatEqual(vars.get("X").getNCol(), vars.get("Y").getNCol(), stmt2, ctx);
+		stmt2.givenThatEqual(vars.get("X").getNRow(), vars.get("Y").getNRow(), stmt2, ctx);
 		stmt2 = stmt2.recomputeAssertions();
 
 		stmt1 = canonicalConverter.apply(stmt1);
@@ -1413,5 +1413,24 @@ public class RewriterStreamTests {
 		System.out.println(stmt2.toParsableString(ctx, true));
 
 		assert !stmt1.match(RewriterStatement.MatcherContext.exactMatch(ctx, stmt2, stmt1));
+	}
+
+	@Test
+	public void testDiag1() {
+		RewriterStatement stmt1 = RewriterUtils.parse("diag(+(A, B))", ctx, "MATRIX:A,B");
+		RewriterStatement stmt2 = RewriterUtils.parse("+(diag(A), diag(B))", ctx, "MATRIX:A,B");
+
+		System.out.println("Cost1: " + RewriterCostEstimator.estimateCost(stmt1, ctx));
+		System.out.println("Cost2: " + RewriterCostEstimator.estimateCost(stmt2, ctx));
+
+		stmt1 = canonicalConverter.apply(stmt1);
+		stmt2 = canonicalConverter.apply(stmt2);
+
+		System.out.println("==========");
+		System.out.println(stmt1.toParsableString(ctx, true));
+		System.out.println("==========");
+		System.out.println(stmt2.toParsableString(ctx, true));
+
+		assert stmt1.match(RewriterStatement.MatcherContext.exactMatch(ctx, stmt2, stmt1));
 	}
 }

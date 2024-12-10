@@ -67,8 +67,8 @@ public class RewriterRule extends AbstractRewriterRule {
 	// Determine if this rule can universally be applied or only in some conditions (e.g. certain dimensions / sparsity)
 	public boolean determineConditionalApplicability() {
 		RewriterAssertions assertions = new RewriterAssertions(ctx);
-		RewriterAssertionUtils.buildImplicitAssertion(fromRoot, assertions, ctx);
-		RewriterAssertionUtils.buildImplicitAssertion(toRoot, assertions, ctx);
+		RewriterAssertionUtils.buildImplicitAssertion(fromRoot, assertions, fromRoot, ctx);
+		RewriterAssertionUtils.buildImplicitAssertion(toRoot, assertions, toRoot, ctx);
 
 		List<Tuple3<List<Number>, Long, Long>> costs = RewriterCostEstimator.compareCosts(fromRoot, toRoot, assertions, ctx, false, -1, false);
 

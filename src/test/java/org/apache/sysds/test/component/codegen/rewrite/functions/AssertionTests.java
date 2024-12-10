@@ -25,13 +25,13 @@ public class AssertionTests {
 		RewriterStatement nrowC = stmt1.getOperands().get(1).getOperands().get(0);
 		RewriterStatement nrowA2 = stmt1.getOperands().get(1).getOperands().get(1);
 
-		System.out.println(assertion.addEqualityAssertion(nrowA, nrowC));
+		System.out.println(assertion.addEqualityAssertion(nrowA, nrowC, stmt1));
 		System.out.println(assertion.getAssertions(nrowA));
 
-		System.out.println(assertion.addEqualityAssertion(nrowA, nrowC));
+		System.out.println(assertion.addEqualityAssertion(nrowA, nrowC, stmt1));
 		System.out.println(assertion.getAssertions(nrowC));
 
-		System.out.println(assertion.addEqualityAssertion(nrowC, nrowB));
+		System.out.println(assertion.addEqualityAssertion(nrowC, nrowB, stmt1));
 		System.out.println(assertion.getAssertions(nrowC));
 
 		System.out.println(assertion.getAssertions(nrowA2));

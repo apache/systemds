@@ -471,7 +471,7 @@ public class RewriterCostEstimator {
 			if (!(cur instanceof RewriterInstruction))
 				return;
 
-			computeCostOf((RewriterInstruction) cur, ctx, includedCosts, assertions, instructionOverhead, treatAsDense);
+			computeCostOf((RewriterInstruction) cur, ctx, includedCosts, assertions, instructionOverhead, treatAsDense, stmt);
 			instructionOverhead.add(INSTRUCTION_OVERHEAD);
 		}, false);
 
@@ -489,15 +489,15 @@ public class RewriterCostEstimator {
 		return add;
 	}
 
-	private static RewriterStatement computeCostOf(RewriterInstruction instr, final RuleContext ctx, List<RewriterStatement> uniqueCosts, RewriterAssertions assertions, MutableLong instructionOverhead, boolean treatAsDense) {
+	private static RewriterStatement computeCostOf(RewriterInstruction instr, final RuleContext ctx, List<RewriterStatement> uniqueCosts, RewriterAssertions assertions, MutableLong instructionOverhead, boolean treatAsDense, RewriterStatement exprRoot) {
 		if (instr.getResultingDataType(ctx).equals("MATRIX"))
-			return computeMatrixOpCost(instr, ctx, uniqueCosts, assertions, instructionOverhead, treatAsDense);
+			return computeMatrixOpCost(instr, ctx, uniqueCosts, assertions, instructionOverhead, treatAsDense, exprRoot);
 		else
-			return computeScalarOpCost(instr, ctx, uniqueCosts, assertions, instructionOverhead, treatAsDense);
+			return computeScalarOpCost(instr, ctx, uniqueCosts, assertions, instructionOverhead, treatAsDense, exprRoot);
 	}
 
-	private static RewriterStatement computeMatrixOpCost(RewriterInstruction instr, final RuleContext ctx, List<RewriterStatement> uniqueCosts, RewriterAssertions assertions, MutableLong overhead, boolean treatAsDense) {
-		RewriterAssertionUtils.buildImplicitAssertion(instr, assertions, ctx);
+	private static RewriterStatement computeMatrixOpCost(RewriterInstruction instr, final RuleContext ctx, List<RewriterStatement> uniqueCosts, RewriterAssertions assertions, MutableLong overhead, boolean treatAsDense, RewriterStatement exprRoot) {
+		RewriterAssertionUtils.buildImplicitAssertion(instr, assertions, exprRoot, ctx);
 
 		RewriterStatement cost = null;
 		Map<String, RewriterStatement> map = new HashMap<>();
@@ -695,8 +695,8 @@ public class RewriterCostEstimator {
 		return cost;
 	}
 
-	private static RewriterStatement computeScalarOpCost(RewriterInstruction instr, final RuleContext ctx, List<RewriterStatement> uniqueCosts, RewriterAssertions assertions, MutableLong overhead, boolean treatAsDense) {
-		RewriterAssertionUtils.buildImplicitAssertion(instr, assertions, ctx);
+	private static RewriterStatement computeScalarOpCost(RewriterInstruction instr, final RuleContext ctx, List<RewriterStatement> uniqueCosts, RewriterAssertions assertions, MutableLong overhead, boolean treatAsDense, RewriterStatement exprRoot) {
+		RewriterAssertionUtils.buildImplicitAssertion(instr, assertions, exprRoot, ctx);
 		Map<String, RewriterStatement> map = new HashMap<>();
 		switch (instr.trueTypedInstruction(ctx)) {
 			case "sum(MATRIX)":

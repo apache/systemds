@@ -228,7 +228,7 @@ public class MetaPropagator implements Function<RewriterStatement, RewriterState
 					return null;
 				case "diag(MATRIX)":
 					root.unsafePutMeta("nrow", root.getOperands().get(0).getMeta("nrow"));
-					root.unsafePutMeta("ncol", new RewriterDataType().ofType("INT").as("1").asLiteral(1L).consolidate(ctx));
+					root.unsafePutMeta("ncol", root.getOperands().get(0).getMeta("ncol"));
 					return null;
 				case "[](MATRIX,INT,INT,INT,INT)":
 					Long[] ints = new Long[4];

@@ -758,6 +758,30 @@ public class RewriterRuleCollection {
 	public static void expandStreamingExpressions(final List<RewriterRule> rules, final RuleContext ctx) {
 		HashMap<Integer, RewriterStatement> hooks = new HashMap<>();
 
+		// Diag
+		rules.add(new RewriterRuleBuilder(ctx, "Expand diag matrix")
+				.setUnidirectional(true)
+				.parseGlobalVars("MATRIX:A")
+				.parseGlobalVars("LITERAL_INT:1")
+				.parseGlobalVars("LITERAL_FLOAT:0.0")
+				.withParsedStatement("diag(A)", hooks)
+				.toParsedStatement("$4:_m($1:_idx(1, nrow(A)), $2:_idx(1, ncol(A)), [](A, $1, $1))", hooks)
+				.apply(hooks.get(1).getId(), stmt -> stmt.unsafePutMeta("idxId", UUID.randomUUID()), true) // Assumes it will never collide
+				.apply(hooks.get(2).getId(), stmt -> stmt.unsafePutMeta("idxId", UUID.randomUUID()), true) // Assumes it will never collide
+				.apply(hooks.get(4).getId(), (stmt, match) -> {
+					UUID id = UUID.randomUUID();
+					stmt.unsafePutMeta("ownerId", id);
+					stmt.getChild(0).unsafePutMeta("ownerId", id);
+
+					RewriterStatement aRef = stmt.getChild(0, 1, 0);
+
+					System.out.println("GETTING: ");
+					System.out.println(match.getNewExprRoot().getAssertions(ctx).getAssertionStatement(aRef.getNCol(), null));
+					match.getNewExprRoot().getAssertions(ctx).addEqualityAssertion(aRef.getNCol(), aRef.getNRow(), match.getNewExprRoot());
+				}, true) // Assumes it will never collide
+				.build()
+		);
+
 		// Const
 		rules.add(new RewriterRuleBuilder(ctx, "Expand const matrix")
 				.setUnidirectional(true)
@@ -796,7 +820,7 @@ public class RewriterRuleCollection {
 
 					RewriterStatement aRef = stmt.getChild(0, 1, 0);
 					RewriterStatement bRef = stmt.getChild(1, 1, 0);
-					match.getNewExprRoot().getAssertions(ctx).addEqualityAssertion(aRef.getNCol(), bRef.getNRow());
+					match.getNewExprRoot().getAssertions(ctx).addEqualityAssertion(aRef.getNCol(), bRef.getNRow(), match.getNewExprRoot());
 				}, true) // Assumes it will never collide
 				.apply(hooks.get(5).getId(), stmt -> {
 					UUID id = UUID.randomUUID();
@@ -831,8 +855,8 @@ public class RewriterRuleCollection {
 					/*System.out.println("aNRow: " + aRef.getNRow());
 					System.out.println("bNRow: " + bRef.getNRow());
 					System.out.println("HERE1: " + match.getNewExprRoot().toParsableString(ctx));*/
-					match.getNewExprRoot().getAssertions(ctx).addEqualityAssertion(aRef.getNRow(), bRef.getNRow());
-					match.getNewExprRoot().getAssertions(ctx).addEqualityAssertion(aRef.getNCol(), bRef.getNCol());
+					match.getNewExprRoot().getAssertions(ctx).addEqualityAssertion(aRef.getNRow(), bRef.getNRow(), match.getNewExprRoot());
+					match.getNewExprRoot().getAssertions(ctx).addEqualityAssertion(aRef.getNCol(), bRef.getNCol(), match.getNewExprRoot());
 					/*System.out.println(match.getNewExprRoot().getAssertions(ctx).getAssertions(aRef.getNRow()));
 					System.out.println(match.getMatchRoot());
 					System.out.println("HERE2: " + match.getNewExprRoot().toParsableString(ctx));*/
@@ -878,7 +902,7 @@ public class RewriterRuleCollection {
 					System.out.println("aRef: " + aRef);
 					System.out.println("nRow: " + aRef.getNRow());
 					System.out.println("nCol: " + aRef.getNCol());*/
-					match.getNewExprRoot().getAssertions(ctx).addEqualityAssertion(aRef.getNRow(), aRef.getNCol());
+					match.getNewExprRoot().getAssertions(ctx).addEqualityAssertion(aRef.getNRow(), aRef.getNCol(), match.getNewExprRoot());
 				}, true)
 				.build()
 		);
@@ -1074,7 +1098,7 @@ public class RewriterRuleCollection {
 					stmt.getOperands().get(0).unsafePutMeta("ownerId", id);
 
 					RewriterStatement aRef = stmt.getChild(0, 1, 0);
-					match.getNewExprRoot().getAssertions(ctx).addEqualityAssertion(aRef.getNRow(), aRef.getNCol());
+					match.getNewExprRoot().getAssertions(ctx).addEqualityAssertion(aRef.getNRow(), aRef.getNCol(), match.getNewExprRoot());
 				}, true)
 				.build()
 		);
@@ -1421,8 +1445,8 @@ public class RewriterRuleCollection {
 						.link(hooks.get(2).getId(), hooks.get(3).getId(), RewriterStatement::transferMeta)
 						.apply(hooks.get(3).getId(), (stmt, match) -> {
 							// Then we an infer that the two matrices have the same dimensions
-							match.getNewExprRoot().getAssertions(ctx).addEqualityAssertion(stmt.getNCol(), stmt.getChild(2, 1, 0).getNCol());
-							match.getNewExprRoot().getAssertions(ctx).addEqualityAssertion(stmt.getNRow(), stmt.getChild(2, 1, 0).getNRow());
+							match.getNewExprRoot().getAssertions(ctx).addEqualityAssertion(stmt.getNCol(), stmt.getChild(2, 1, 0).getNCol(), match.getNewExprRoot());
+							match.getNewExprRoot().getAssertions(ctx).addEqualityAssertion(stmt.getNRow(), stmt.getChild(2, 1, 0).getNRow(), match.getNewExprRoot());
 						}, true)
 						.build()
 				);

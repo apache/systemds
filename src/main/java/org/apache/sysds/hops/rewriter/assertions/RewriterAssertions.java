@@ -374,7 +374,7 @@ public class RewriterAssertions {
 	}
 
 	// TODO: What happens if the rewriter statement has already been instantiated? Updates will not occur
-	public boolean addEqualityAssertion(RewriterStatement stmt1, RewriterStatement stmt2) {
+	public boolean addEqualityAssertion(RewriterStatement stmt1, RewriterStatement stmt2, RewriterStatement exprRoot) {
 		if (stmt1 == null || stmt2 == null)
 			throw new IllegalArgumentException("Cannot add an equality assertion to a null reference!");
 
@@ -466,10 +466,11 @@ public class RewriterAssertions {
 
 				//System.out.println("MNew parts: " + partOfAssertion);
 
-				//System.out.println("New assertion1: " + newAssertion);
+				System.out.println("New assertion1: " + newAssertion);
 				return true;
 			}
 
+			System.out.println("Assertion already exists");
 			return false; // The assertion already exists
 		}
 
@@ -496,7 +497,7 @@ public class RewriterAssertions {
 				return true;
 			}, false);
 
-			//System.out.println("New assertion2: " + existingAssertion);
+			System.out.println("New assertion2: " + existingAssertion);
 			return true;
 		}
 
@@ -520,7 +521,7 @@ public class RewriterAssertions {
 		if (stmt1Assertions.stmt != null)
 			assertionMatcher.put(stmt1Assertions.stmt, stmt2Assertions); // Only temporary
 
-		//System.out.println("New assertion3: " + stmt2Assertions);
+		System.out.println("New assertion3: " + stmt2Assertions);
 		resolveCyclicAssertions(stmt2Assertions);
 		stmt2Assertions.deduplicate();
 
@@ -536,7 +537,40 @@ public class RewriterAssertions {
 			v.add(assertionToExtend);
 		});
 
+		if (assertionToRemove.stmt != null) {
+			exprRoot.forEachPreOrder(cur -> {
+				for (int i = 0; i < cur.getOperands().size(); i++) {
+					RewriterStatement child = cur.getChild(i);
+					if (child == assertionToRemove.stmt)
+						cur.getOperands().set(i, assertionToExtend.getEClassStmt(ctx, this));
+				}
+				return true;
+			}, false);
+		}
+
 		return true;
+	}
+
+	public static RewriterStatement updateMergedEClasses(RewriterStatement exprRoot, Map<RewriterStatement, RewriterStatement> legacyEClasses) {
+		exprRoot.forEachPreOrder(cur -> {
+			for (int i = 0; i < cur.getOperands().size(); i++) {
+				RewriterStatement child = cur.getChild(i);
+				if (child.isEClass()) {
+					RewriterStatement mapped = legacyEClasses.get(child);
+					if (mapped != null)
+						cur.getOperands().set(i, mapped);
+				}
+			}
+			return true;
+		}, false);
+
+		if (exprRoot.isEClass()) {
+			RewriterStatement mapped = legacyEClasses.get(exprRoot);
+			if (mapped != null)
+				return mapped;
+		}
+
+		return exprRoot;
 	}
 
 	private void forEachUniqueElementInAssertion(RewriterAssertion assertion, Consumer<RewriterStatement> consumer) {

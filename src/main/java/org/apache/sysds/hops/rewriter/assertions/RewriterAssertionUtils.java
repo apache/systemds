@@ -13,54 +13,54 @@ public class RewriterAssertionUtils {
 
 	public static void buildImplicitAssertions(RewriterStatement root, RewriterAssertions assertions, final RuleContext ctx) {
 		root.forEachPreOrder(cur -> {
-			buildImplicitAssertion(cur, assertions, ctx);
+			buildImplicitAssertion(cur, assertions, root, ctx);
 			return true;
 		}, false);
 	}
 
-	public static boolean buildImplicitAssertion(RewriterStatement stmt, RewriterAssertions assertions, final RuleContext ctx) {
+	public static boolean buildImplicitAssertion(RewriterStatement stmt, RewriterAssertions assertions, RewriterStatement exprRoot, final RuleContext ctx) {
 		if (!stmt.isInstruction())
 			return false;
 
 		switch (stmt.trueInstruction()) {
 			case "%*%":
-				assertions.addEqualityAssertion(stmt.getChild(0).getNCol(), stmt.getChild(1).getNRow());
+				assertions.addEqualityAssertion(stmt.getChild(0).getNCol(), stmt.getChild(1).getNRow(), exprRoot);
 				return true;
 			case "diag":
-				assertions.addEqualityAssertion(stmt.getChild(0).getNCol(), stmt.getChild(0).getNRow());
+				assertions.addEqualityAssertion(stmt.getChild(0).getNCol(), stmt.getChild(0).getNRow(), exprRoot);
 				return true;
 			case "RBind":
-				assertions.addEqualityAssertion(stmt.getChild(0).getNCol(), stmt.getChild(1).getNCol());
+				assertions.addEqualityAssertion(stmt.getChild(0).getNCol(), stmt.getChild(1).getNCol(), exprRoot);
 				return true;
 			case "CBind":
-				assertions.addEqualityAssertion(stmt.getChild(0).getNRow(), stmt.getChild(1).getNRow());
+				assertions.addEqualityAssertion(stmt.getChild(0).getNRow(), stmt.getChild(1).getNRow(), exprRoot);
 				return true;
 			case "1-*":
-				assertions.addEqualityAssertion(stmt.getChild(0).getNCol(), stmt.getChild(1).getNCol());
-				assertions.addEqualityAssertion(stmt.getChild(0).getNRow(), stmt.getChild(1).getNRow());
+				assertions.addEqualityAssertion(stmt.getChild(0).getNCol(), stmt.getChild(1).getNCol(), exprRoot);
+				assertions.addEqualityAssertion(stmt.getChild(0).getNRow(), stmt.getChild(1).getNRow(), exprRoot);
 				return true;
 			case "+*":
 			case "-*":
-				assertions.addEqualityAssertion(stmt.getChild(0).getNCol(), stmt.getChild(2).getNCol());
-				assertions.addEqualityAssertion(stmt.getChild(0).getNRow(), stmt.getChild(2).getNRow());
+				assertions.addEqualityAssertion(stmt.getChild(0).getNCol(), stmt.getChild(2).getNCol(), exprRoot);
+				assertions.addEqualityAssertion(stmt.getChild(0).getNRow(), stmt.getChild(2).getNRow(), exprRoot);
 				return true;
 		}
 
 		switch (stmt.trueTypedInstruction(ctx)) {
 			case "trace(MATRIX)":
-				assertions.addEqualityAssertion(stmt.getChild(0).getNRow(), stmt.getChild(0).getNCol());
+				assertions.addEqualityAssertion(stmt.getChild(0).getNRow(), stmt.getChild(0).getNCol(), exprRoot);
 				return true;
 			case "cast.FLOAT(MATRIX)":
-				assertions.addEqualityAssertion(stmt.getChild(0).getNRow(), stmt.getChild(0).getNCol());
-				assertions.addEqualityAssertion(stmt.getChild(0).getNRow(), RewriterStatement.literal(ctx, 1L));
+				assertions.addEqualityAssertion(stmt.getChild(0).getNRow(), stmt.getChild(0).getNCol(), exprRoot);
+				assertions.addEqualityAssertion(stmt.getChild(0).getNRow(), RewriterStatement.literal(ctx, 1L), exprRoot);
 				return true;
 		}
 
 		if (((RewriterInstruction) stmt).hasProperty("ElementWiseInstruction", ctx)) {
 			if (stmt.getChild(0).getResultingDataType(ctx).equals("MATRIX")
 				&& stmt.getChild(1).getResultingDataType(ctx).equals("MATRIX")) {
-				assertions.addEqualityAssertion(stmt.getChild(0).getNCol(), stmt.getChild(1).getNCol());
-				assertions.addEqualityAssertion(stmt.getChild(0).getNRow(), stmt.getChild(1).getNRow());
+				assertions.addEqualityAssertion(stmt.getChild(0).getNCol(), stmt.getChild(1).getNCol(), exprRoot);
+				assertions.addEqualityAssertion(stmt.getChild(0).getNRow(), stmt.getChild(1).getNRow(), exprRoot);
 				return true;
 			}
 		}

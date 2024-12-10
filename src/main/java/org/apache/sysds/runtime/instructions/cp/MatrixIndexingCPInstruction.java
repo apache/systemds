@@ -62,11 +62,16 @@ public final class MatrixIndexingCPInstruction extends IndexingCPInstruction {
 			
 			if( mo.isPartitioned() ) //via data partitioning
 				resultBlock = mo.readMatrixPartition(ixrange.add(1));
+			else if( ixrange.isScalar() ){
+				MatrixBlock matBlock = mo.acquireReadAndRelease();
+				resultBlock = new MatrixBlock(
+					matBlock.get((int)ixrange.rowStart, (int)ixrange.colStart));
+			}
 			else //via slicing the in-memory matrix
 			{
 				//execute right indexing operation (with shallow row copies for range
 				//of entire sparse rows, which is safe due to copy on update)
-				MatrixBlock matBlock = ec.getMatrixInput(input1.getName());
+				MatrixBlock matBlock = mo.acquireRead();
 				resultBlock = matBlock.slice((int)ixrange.rowStart, (int)ixrange.rowEnd, 
 					(int)ixrange.colStart, (int)ixrange.colEnd, false, new MatrixBlock());
 				

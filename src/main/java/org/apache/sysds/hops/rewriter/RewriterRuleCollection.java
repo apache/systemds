@@ -765,7 +765,7 @@ public class RewriterRuleCollection {
 				.parseGlobalVars("LITERAL_INT:1")
 				.parseGlobalVars("LITERAL_FLOAT:0.0")
 				.withParsedStatement("diag(A)", hooks)
-				.toParsedStatement("$4:_m($1:_idx(1, nrow(A)), $2:_idx(1, ncol(A)), [](A, $1, $1))", hooks)
+				.toParsedStatement("$4:_m($1:_idx(1, nrow(A)), $2:_idx(1, ncol(A)), ifelse(==($1,$2), [](A, $1, $2), 0.0))", hooks)
 				.apply(hooks.get(1).getId(), stmt -> stmt.unsafePutMeta("idxId", UUID.randomUUID()), true) // Assumes it will never collide
 				.apply(hooks.get(2).getId(), stmt -> stmt.unsafePutMeta("idxId", UUID.randomUUID()), true) // Assumes it will never collide
 				.apply(hooks.get(4).getId(), (stmt, match) -> {
@@ -775,8 +775,8 @@ public class RewriterRuleCollection {
 
 					RewriterStatement aRef = stmt.getChild(0, 1, 0);
 
-					System.out.println("GETTING: ");
-					System.out.println(match.getNewExprRoot().getAssertions(ctx).getAssertionStatement(aRef.getNCol(), null));
+					//System.out.println("GETTING: ");
+					//System.out.println(match.getNewExprRoot().getAssertions(ctx).getAssertionStatement(aRef.getNCol(), null));
 					match.getNewExprRoot().getAssertions(ctx).addEqualityAssertion(aRef.getNCol(), aRef.getNRow(), match.getNewExprRoot());
 				}, true) // Assumes it will never collide
 				.build()
@@ -1162,6 +1162,18 @@ public class RewriterRuleCollection {
 	// TODO: Big issue when having multiple references to the same sub-dag
 	public static void pushdownStreamSelections(final List<RewriterRule> rules, final RuleContext ctx) {
 		HashMap<Integer, RewriterStatement> hooks = new HashMap<>();
+
+		// ifelse merging
+		// TODO: Permutations e.g. ==(l2, l1) etc.
+		rules.add(new RewriterRuleBuilder(ctx)
+				.setUnidirectional(true)
+				.parseGlobalVars("FLOAT:a,b,c,d")
+				.parseGlobalVars("INT:l1,l2")
+				.withParsedStatement("$1:ElementWiseInstruction(ifelse(==(l1, l2), a, b), ifelse(==(l1, l2), c, d))", hooks)
+				.toParsedStatement("ifelse(==(l1, l2), $2:ElementWiseInstruction(a, c), $3:ElementWiseInstruction(b, d))", hooks)
+				.linkManyUnidirectional(hooks.get(1).getId(), List.of(hooks.get(2).getId(), hooks.get(3).getId()), RewriterStatement::transferMeta, true)
+				.build()
+		);
 
 		rules.add(new RewriterRuleBuilder(ctx)
 				.setUnidirectional(true)

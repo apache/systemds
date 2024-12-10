@@ -1432,5 +1432,6 @@ public class RewriterStreamTests {
 		System.out.println(stmt2.toParsableString(ctx, true));
 
 		assert stmt1.match(RewriterStatement.MatcherContext.exactMatch(ctx, stmt2, stmt1));
+		assert RewriterCostEstimator.estimateCost(stmt1, ctx) > RewriterCostEstimator.estimateCost(stmt2, ctx);
 	}
 }

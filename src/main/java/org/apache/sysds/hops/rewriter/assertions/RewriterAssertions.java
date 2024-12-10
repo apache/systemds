@@ -466,11 +466,11 @@ public class RewriterAssertions {
 
 				//System.out.println("MNew parts: " + partOfAssertion);
 
-				System.out.println("New assertion1: " + newAssertion);
+				//System.out.println("New assertion1: " + newAssertion);
 				return true;
 			}
 
-			System.out.println("Assertion already exists");
+			//System.out.println("Assertion already exists");
 			return false; // The assertion already exists
 		}
 
@@ -497,7 +497,7 @@ public class RewriterAssertions {
 				return true;
 			}, false);
 
-			System.out.println("New assertion2: " + existingAssertion);
+			//System.out.println("New assertion2: " + existingAssertion);
 			return true;
 		}
 
@@ -521,7 +521,7 @@ public class RewriterAssertions {
 		if (stmt1Assertions.stmt != null)
 			assertionMatcher.put(stmt1Assertions.stmt, stmt2Assertions); // Only temporary
 
-		System.out.println("New assertion3: " + stmt2Assertions);
+		//System.out.println("New assertion3: " + stmt2Assertions);
 		resolveCyclicAssertions(stmt2Assertions);
 		stmt2Assertions.deduplicate();
 

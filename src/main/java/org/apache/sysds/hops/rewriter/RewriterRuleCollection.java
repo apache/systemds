@@ -1195,25 +1195,27 @@ public class RewriterRuleCollection {
 			);
 		});
 
-		// ifelse expression pullup
-		rules.add(new RewriterRuleBuilder(ctx, "Ifelse expression pullup")
-				.setUnidirectional(true)
-				.parseGlobalVars("FLOAT:a,c,d")
-				.parseGlobalVars("BOOL:b")
-				.withParsedStatement("$1:ElementWiseInstruction(ifelse(b, a, c), d)", hooks)
-				.toParsedStatement("ifelse(b, $2:ElementWiseInstruction(a, d), $3:ElementWiseInstruction(c, d))", hooks)
-				.linkManyUnidirectional(hooks.get(1).getId(), List.of(hooks.get(2).getId(), hooks.get(3).getId()), RewriterStatement::transferMeta, true)
-				.build()
-		);
-		rules.add(new RewriterRuleBuilder(ctx, "Ifelse expression pullup")
-				.setUnidirectional(true)
-				.parseGlobalVars("FLOAT:a,c,d")
-				.parseGlobalVars("BOOL:b")
-				.withParsedStatement("$1:ElementWiseInstruction(d, ifelse(b, a, c))", hooks)
-				.toParsedStatement("ifelse(b, $2:ElementWiseInstruction(d, a), $3:ElementWiseInstruction(d, c))", hooks)
-				.linkManyUnidirectional(hooks.get(1).getId(), List.of(hooks.get(2).getId(), hooks.get(3).getId()), RewriterStatement::transferMeta, true)
-				.build()
-		);
+		RewriterUtils.buildBinaryPermutations(SCALARS, (t1, t2) -> {
+			// ifelse expression pullup
+			rules.add(new RewriterRuleBuilder(ctx, "Ifelse expression pullup")
+					.setUnidirectional(true)
+					.parseGlobalVars("FLOAT:a,c,d")
+					.parseGlobalVars("BOOL:b")
+					.withParsedStatement("$1:ElementWiseInstruction(ifelse(b, a, c), d)", hooks)
+					.toParsedStatement("ifelse(b, $2:ElementWiseInstruction(a, d), $3:ElementWiseInstruction(c, d))", hooks)
+					.linkManyUnidirectional(hooks.get(1).getId(), List.of(hooks.get(2).getId(), hooks.get(3).getId()), RewriterStatement::transferMeta, true)
+					.build()
+			);
+			rules.add(new RewriterRuleBuilder(ctx, "Ifelse expression pullup")
+					.setUnidirectional(true)
+					.parseGlobalVars("FLOAT:a,c,d")
+					.parseGlobalVars("BOOL:b")
+					.withParsedStatement("$1:ElementWiseInstruction(d, ifelse(b, a, c))", hooks)
+					.toParsedStatement("ifelse(b, $2:ElementWiseInstruction(d, a), $3:ElementWiseInstruction(d, c))", hooks)
+					.linkManyUnidirectional(hooks.get(1).getId(), List.of(hooks.get(2).getId(), hooks.get(3).getId()), RewriterStatement::transferMeta, true)
+					.build()
+			);
+		});
 
 		rules.add(new RewriterRuleBuilder(ctx, "Ifelse branch merge")
 				.setUnidirectional(true)
@@ -1223,6 +1225,8 @@ public class RewriterRuleCollection {
 				.toParsedStatement("a", hooks)
 				.build()
 		);
+
+		// Pushdown successive
 
 		rules.add(new RewriterRuleBuilder(ctx)
 				.setUnidirectional(true)

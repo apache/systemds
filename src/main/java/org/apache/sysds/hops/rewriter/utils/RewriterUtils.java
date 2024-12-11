@@ -1365,6 +1365,7 @@ public class RewriterUtils {
 			}
 			RewriterUtils.mergeArgLists(stmt, ctx);
 			stmt = RewriterUtils.pullOutConstants(stmt, ctx);
+			cleanupUnecessaryIndexExpressions(stmt, ctx);
 			stmt.prepareForHashing();
 			stmt.recomputeHashCodes(ctx);
 
@@ -1442,7 +1443,7 @@ public class RewriterUtils {
 	}
 
 	private static RewriterStatement tryPullOutSum(RewriterStatement sum, final RuleContext ctx) {
-		// TODO: What happens on multi-index? Then, some unnecessary indices wil currently not be pulled out
+		// TODO: What happens on multi-index? Then, some unnecessary indices will currently not be pulled out
 		RewriterStatement idxExpr = sum.getChild(0);
 		UUID ownerId = (UUID) idxExpr.getMeta("ownerId");
 		RewriterStatement sumBody = idxExpr.getChild(1);
@@ -1704,6 +1705,47 @@ public class RewriterUtils {
 
 		// Not implemented yet
 		return stmt;
+	}
+
+	public static void cleanupUnecessaryIndexExpressions(RewriterStatement stmt, final RuleContext ctx) {
+		stmt.forEachPostOrder((cur, pred) -> {
+			if (!cur.isInstruction() || !cur.trueInstruction().equals("sum"))
+				return;
+
+			cur = cur.getChild(0);
+
+			if (!cur.isInstruction() || !cur.trueInstruction().equals("_idxExpr"))
+				return;
+
+			if (!cur.getChild(1).isInstruction() || !cur.getChild(1).trueInstruction().equals("ifelse") || !cur.getChild(1,2).isLiteral() || cur.getChild(1,2).floatLiteral() != 0.0D)
+				return;
+
+			RewriterStatement query = cur.getChild(1, 0);
+
+			if (query.isInstruction() && query.trueInstruction().equals("==")) {
+				RewriterStatement idx1 = query.getChild(0);
+				RewriterStatement idx2 = query.getChild(1);
+
+				if (idx1.isInstruction() && idx2.isInstruction() && idx1.trueInstruction().equals("_idx") && idx2.trueInstruction().equals("_idx")) {
+					List<RewriterStatement> indices = cur.getChild(0).getOperands();
+					if (indices.contains(idx1)) {
+						boolean removed = indices.remove(idx2);
+
+						if (removed) {
+							cur.getOperands().set(1, cur.getChild(1, 1));
+							cur.getChild(1).forEachPreOrder(cur2 -> {
+								for (int i = 0; i < cur2.getOperands().size(); i++) {
+									if (cur2.getChild(i).equals(idx2))
+										cur2.getOperands().set(i, idx1);
+								}
+
+								return true;
+							}, true);
+						}
+					}
+				}
+			}
+		}, false);
 	}
 
 	public static RewriterStatement doCSE(RewriterStatement stmt, final RuleContext ctx) {

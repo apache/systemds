@@ -1,8 +1,17 @@
 package org.apache.sysds.runtime.io;
 
+import org.apache.hadoop.fs.FileSystem;
+import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.mapred.JobConf;
+import org.apache.sysds.conf.ConfigurationManager;
 import org.apache.sysds.runtime.DMLRuntimeException;
+import org.apache.sysds.runtime.io.cog.COGHeader;
+import org.apache.sysds.runtime.io.cog.IFDTag;
+import org.apache.sysds.runtime.io.cog.IFDTagDictionary;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 
+import java.io.BufferedInputStream;
+import java.io.DataInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 
@@ -14,8 +23,95 @@ public class ReaderCOG extends MatrixReader{
     }
     @Override
     public MatrixBlock readMatrixFromHDFS(String fname, long rlen, long clen, int blen, long estnnz) throws IOException, DMLRuntimeException {
-        // Dummy data, the sum of this should be 100 (as is returned by the CSV test which
-        // then has an assertion error of course)
+        JobConf job = new JobConf(ConfigurationManager.getCachedJobConf());
+        Path path = new Path(fname);
+        FileSystem fs = IOUtilFunctions.getFileSystem(path, job);
+
+        BufferedInputStream bis = new BufferedInputStream(fs.open(path));
+        return readCOG(bis, rlen, clen, blen, estnnz);
+    }
+
+    @Override
+    public MatrixBlock readMatrixFromInputStream(InputStream is, long rlen, long clen, int blen, long estnnz) throws IOException, DMLRuntimeException {
+        BufferedInputStream bis = new BufferedInputStream(is);
+        return readCOG(bis, rlen, clen, blen, estnnz);
+    }
+
+    private static MatrixBlock readCOG(BufferedInputStream bis, long rlen, long clen, int blen, long estnnz) {
+        // Read first 4 bytes to determine byte order and make sure it is a valid TIFF
+        byte[] header = readBytes(bis, 4);
+
+
+        // TODO: Make this nicer, maybe in the COGHeader class as a static method?
+        boolean littleEndian = false;
+        if ((header[0] & 0xFF) == 0x4D && (header[1] & 0xFF) == 0x4D) {
+            // TODO: Remove this
+            System.out.println("Big-Endian detected (MM)");
+        } else if ((header[0] & 0xFF) == 0x49 && (header[1] & 0xFF) == 0x49) {
+            // TODO: Remove this
+            System.out.println("Little-Endian detected (II)");
+            littleEndian = true;
+        } else {
+            throw new RuntimeException("Invalid Byte-Order");
+        }
+
+        // Create COGHeader object, initialize with the correct byte order
+        COGHeader cogHeader = new COGHeader(littleEndian);
+
+        // Check magic number (42)
+        int magic = cogHeader.parseBytes(header, 2, 2);
+        if (magic != 42) {
+            throw new RuntimeException("Invalid Magic Number");
+        }
+        // Read IFD Offset
+        // Usually this is 8 (right after the header) we are at right now
+        // With COG, GDAL usually writes some metadata before the IFD
+        byte[] ifdOffsetRaw = readBytes(bis, 4);
+        int ifdOffset = cogHeader.parseBytes(ifdOffsetRaw, 4);
+
+        // If the IFD offset is larger than 8, read that and store it in the COGHeader
+        if (ifdOffset > 8) {
+            // Read the metadata from the current position to the IFD offset
+            // -8 because the offset is calculated from the beginning of the file
+            byte[] metadata = readBytes(bis, ifdOffset - 8);
+            cogHeader.setGDALMetadata(new String(metadata));
+        }
+
+        byte[] numberOfTagsRaw = readBytes(bis, 2);
+        int numberOfTags = cogHeader.parseBytes(numberOfTagsRaw, 2);
+        IFDTag[] ifdTags = new IFDTag[numberOfTags];
+
+        for (int i = 0; i < numberOfTags; i++) {
+            byte[] tag = readBytes(bis, 12);
+            int tagId = cogHeader.parseBytes(tag, 2);
+            int tagType = cogHeader.parseBytes(tag, 2, 2);
+            int tagCount = cogHeader.parseBytes(tag, 4, 4);
+            // TODO: Implement that this can also be an offset to the data
+            int tagValue = cogHeader.parseBytes(tag, 4, 8);
+            // TODO: Implement multiple tagCount, currently only count = 1 is supported
+            IFDTagDictionary tagDictionary = IFDTagDictionary.valueOf(tagId);
+            // For now: throw an exception if the tag is unknown
+            // TODO: Maybe good to fail silently here?
+            // Currently we'll just throw away any tag that doesn't fit here
+            if (tagDictionary == null) {
+                String doSomethng = "";
+                //throw new RuntimeException("Unknown Tag ID: " + tagId);
+            }
+            // For the bits per sample the actual data is encoded in the length
+            //if (tagId == IFDTagDictionary.BitsPerSample.getValue()) {
+                // Do something
+            //}
+            IFDTag ifdTag = new IFDTag(tagDictionary, (short)tagType, tagCount, tagValue);
+            ifdTags[i] = ifdTag;
+        }
+
+        // TODO: Do we need to do something with that? Not quite sure
+        // According to the spec not necessarily but that could mean that there are multiple images
+        // We'll have to see... Let's just ignore it for now
+        byte[] nextIFDOffsetRaw = readBytes(bis, 4);
+        int nextIFDOffset = cogHeader.parseBytes(nextIFDOffsetRaw, 4);
+        
+
         int rows = 10;
         int cols = 10;
         MatrixBlock dummyMatrix = new MatrixBlock(rows, cols, false);
@@ -31,22 +127,13 @@ public class ReaderCOG extends MatrixReader{
         return dummyMatrix;
     }
 
-    @Override
-    public MatrixBlock readMatrixFromInputStream(InputStream is, long rlen, long clen, int blen, long estnnz) throws IOException, DMLRuntimeException {
-        // Dummy data, the sum of this should be 100 (as is returned by the CSV test which
-        // then has an assertion error of course)
-        int rows = 10;
-        int cols = 10;
-        MatrixBlock dummyMatrix = new MatrixBlock(rows, cols, false);
-        dummyMatrix.allocateDenseBlock();
-        for (int i = 0; i < rows; i++) {
-            for (int j = 0; j < cols; j++) {
-                dummyMatrix.set(i, j, 1.0);
-            }
+    private static byte[] readBytes(BufferedInputStream bis, int length) {
+        byte[] header = new byte[length];
+        try {
+            bis.read(header);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
         }
-        // Isn't printed when debugging (or running) the tests
-        // I'll leave it for now
-        System.out.println("We done something!");
-        return dummyMatrix;
+        return header;
     }
 }

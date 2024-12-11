@@ -1,9 +1,12 @@
 package org.apache.sysds.runtime.io;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+
 import java.io.Serializable;
 
 public class FileFormatPropertiesCOG extends FileFormatProperties implements Serializable {
-
+    protected static final Log LOG = LogFactory.getLog(FileFormatPropertiesCOG.class.getName());
     private static final long serialVersionUID = 1038419221722594985L;
 
     private String datasetName;

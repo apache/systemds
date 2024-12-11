@@ -1459,4 +1459,26 @@ public class RewriterStreamTests {
 
 		assert stmt1.match(RewriterStatement.MatcherContext.exactMatch(ctx, stmt2, stmt1));
 	}
+
+	@Test
+	public void testDiag3() {
+		RewriterStatement stmt1 = RewriterUtils.parse("%*%(diag(A), diag(B))", ctx, "MATRIX:A,B");
+		RewriterStatement stmt2 = RewriterUtils.parse("*(diag(A), diag(B))", ctx, "MATRIX:A,B");
+
+		long cost1 = RewriterCostEstimator.estimateCost(stmt1, ctx);
+		long cost2 = RewriterCostEstimator.estimateCost(stmt2, ctx);
+
+		System.out.println("Cost1: " + cost1);
+		System.out.println("Cost2: " + cost2);
+
+		stmt1 = canonicalConverter.apply(stmt1);
+		stmt2 = canonicalConverter.apply(stmt2);
+
+		System.out.println("==========");
+		System.out.println(stmt1.toParsableString(ctx, true));
+		System.out.println("==========");
+		System.out.println(stmt2.toParsableString(ctx, true));
+
+		assert stmt1.match(RewriterStatement.MatcherContext.exactMatch(ctx, stmt2, stmt1));
+	}
 }

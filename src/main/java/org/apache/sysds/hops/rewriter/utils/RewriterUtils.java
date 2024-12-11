@@ -1707,49 +1707,124 @@ public class RewriterUtils {
 		return stmt;
 	}
 
-	public static void cleanupUnecessaryIndexExpressions(RewriterStatement stmt, final RuleContext ctx) {
-		stmt.forEachPostOrder((cur, pred) -> {
-			if (!cur.isInstruction() || !cur.trueInstruction().equals("sum"))
-				return;
+	public static RewriterStatement cleanupUnecessaryIndexExpressions(RewriterStatement stmt, final RuleContext ctx) {
+		RewriterStatement mNew = cleanupIndexExprRecursively(stmt, ctx);
 
-			cur = cur.getChild(0);
+		if (mNew != null)
+			stmt.moveRootTo(mNew);
 
-			if (!cur.isInstruction() || !cur.trueInstruction().equals("_idxExpr"))
-				return;
+		recursivePostCleanup(mNew != null ? mNew : stmt);
 
-			if (!cur.getChild(1).isInstruction() || !cur.getChild(1).trueInstruction().equals("ifelse") || !cur.getChild(1,2).isLiteral() || cur.getChild(1,2).floatLiteral() != 0.0D)
-				return;
+		return mNew;
+	}
 
-			RewriterStatement query = cur.getChild(1, 0);
+	private static RewriterStatement cleanupIndexExprRecursively(RewriterStatement cur, final RuleContext ctx) {
+		for (int i = 0; i < cur.getOperands().size(); i++) {
+			RewriterStatement mNew = cleanupIndexExprRecursively(cur.getChild(i), ctx);
 
-			if (query.isInstruction() && query.trueInstruction().equals("==")) {
-				RewriterStatement idx1 = query.getChild(0);
-				RewriterStatement idx2 = query.getChild(1);
+			if (mNew != null)
+				cur.getOperands().set(i, mNew);
+		}
 
-				if (idx1.isInstruction() && idx2.isInstruction() && idx1.trueInstruction().equals("_idx") && idx2.trueInstruction().equals("_idx")) {
-					List<RewriterStatement> indices = cur.getChild(0).getOperands();
-					if (indices.contains(idx1)) {
-						if (idx1 == idx2) {
-							cur.getOperands().set(1, cur.getChild(1, 1));
-						} else {
-							boolean removed = indices.remove(idx2);
+		return cleanupIndexExpr(cur);
+	}
 
-							if (removed) {
-								cur.getOperands().set(1, cur.getChild(1, 1));
-								cur.getChild(1).forEachPreOrder(cur2 -> {
-									for (int i = 0; i < cur2.getOperands().size(); i++) {
-										if (cur2.getChild(i).equals(idx2))
-											cur2.getOperands().set(i, idx1);
-									}
+	private static void recursivePostCleanup(RewriterStatement cur) {
+		for (RewriterStatement child : cur.getOperands())
+			recursivePostCleanup(child);
 
-									return true;
-								}, true);
+		postCleanupIndexExpr(cur);
+	}
+
+	private static RewriterStatement cleanupIndexExpr(RewriterStatement cur) {
+		if (!cur.isInstruction() || !cur.trueInstruction().equals("sum"))
+			return null;
+
+		RewriterStatement base = cur;
+		cur = cur.getChild(0);
+
+		if (!cur.isInstruction() || !cur.trueInstruction().equals("_idxExpr"))
+			return null;
+
+		if (!cur.getChild(1).isInstruction() || !cur.getChild(1).trueInstruction().equals("ifelse") || !cur.getChild(1,2).isLiteral() || cur.getChild(1,2).floatLiteral() != 0.0D)
+			return null;
+
+		RewriterStatement query = cur.getChild(1, 0);
+
+		if (query.isInstruction() && query.trueInstruction().equals("==")) {
+			RewriterStatement idx1 = query.getChild(0);
+			RewriterStatement idx2 = query.getChild(1);
+
+			if (idx1.isInstruction() && idx2.isInstruction() && idx1.trueInstruction().equals("_idx") && idx2.trueInstruction().equals("_idx")) {
+				List<RewriterStatement> indices = cur.getChild(0).getOperands();
+				RewriterStatement indexFromUpperLevel = null;
+				if (idx1 == idx2) {
+					cur.getOperands().set(1, cur.getChild(1, 1));
+				} else if (indices.contains(idx1)) {
+					boolean removed = indices.remove(idx2);
+					indexFromUpperLevel = removed ? null : idx2;
+
+					if (removed) {
+						cur.getOperands().set(1, cur.getChild(1, 1));
+						cur.getChild(1).forEachPreOrder(cur2 -> {
+							for (int i = 0; i < cur2.getOperands().size(); i++) {
+								if (cur2.getChild(i).equals(idx2))
+									cur2.getOperands().set(i, idx1);
 							}
-						}
+
+							return true;
+						}, true);
 					}
+				} else if (indices.contains(idx2)) {
+					indexFromUpperLevel = idx1;
 				}
+
+				if (indexFromUpperLevel != null) {
+					cur.getOperands().set(1, cur.getChild(1, 1));
+					final RewriterStatement fIdxUpperLevel = indexFromUpperLevel;
+					final RewriterStatement fIdxLowerLevel = idx1 == indexFromUpperLevel ? idx2 : idx1;
+					cur.getChild(1).forEachPreOrder(cur2 -> {
+						for (int i = 0; i < cur2.getOperands().size(); i++) {
+							if (cur2.getChild(i).equals(fIdxLowerLevel))
+								cur2.getOperands().set(i, fIdxUpperLevel);
+						}
+
+						return true;
+					}, true);
+					indices.remove(idx2);
+				}
+
+				if (indices.isEmpty())
+					return cur.getChild(1);
 			}
-		}, false);
+		}
+
+		return base;
+	}
+
+	// To unify ifelse (e.g. ifelse(a == b, a+b, a-b) => ifelse(a == b, a+a, a-b)
+	private static void postCleanupIndexExpr(RewriterStatement cur) {
+		if (!cur.isInstruction() || !cur.trueInstruction().equals("ifelse") || !cur.getChild(2).isLiteral() || cur.getChild(2).floatLiteral() != 0.0D)
+			return;
+
+		RewriterStatement query = cur.getChild(0);
+
+		if (query.isInstruction() && query.trueInstruction().equals("==")) {
+			RewriterStatement idx1 = query.getChild(0);
+			RewriterStatement idx2 = query.getChild(1);
+
+			if (idx1.isInstruction() && idx2.isInstruction() && idx1.trueInstruction().equals("_idx") && idx2.trueInstruction().equals("_idx")) {
+				// Then we just choose the first index
+				cur.forEachPreOrder(cur2 -> {
+					for (int i = 0; i < cur2.getOperands().size(); i++) {
+						if (cur2.getChild(i).equals(idx2))
+							cur2.getOperands().set(i, idx1);
+					}
+
+					return true;
+				}, true);
+			}
+		}
 	}
 
 	public static RewriterStatement doCSE(RewriterStatement stmt, final RuleContext ctx) {

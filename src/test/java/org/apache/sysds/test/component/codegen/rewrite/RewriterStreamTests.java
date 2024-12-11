@@ -1420,8 +1420,11 @@ public class RewriterStreamTests {
 		RewriterStatement stmt1 = RewriterUtils.parse("diag(+(A, B))", ctx, "MATRIX:A,B");
 		RewriterStatement stmt2 = RewriterUtils.parse("+(diag(A), diag(B))", ctx, "MATRIX:A,B");
 
-		System.out.println("Cost1: " + RewriterCostEstimator.estimateCost(stmt1, ctx));
-		System.out.println("Cost2: " + RewriterCostEstimator.estimateCost(stmt2, ctx));
+		long cost1 = RewriterCostEstimator.estimateCost(stmt1, ctx);
+		long cost2 = RewriterCostEstimator.estimateCost(stmt2, ctx);
+
+		System.out.println("Cost1: " + cost1);
+		System.out.println("Cost2: " + cost2);
 
 		stmt1 = canonicalConverter.apply(stmt1);
 		stmt2 = canonicalConverter.apply(stmt2);
@@ -1432,6 +1435,6 @@ public class RewriterStreamTests {
 		System.out.println(stmt2.toParsableString(ctx, true));
 
 		assert stmt1.match(RewriterStatement.MatcherContext.exactMatch(ctx, stmt2, stmt1));
-		assert RewriterCostEstimator.estimateCost(stmt1, ctx) > RewriterCostEstimator.estimateCost(stmt2, ctx);
+		assert cost1 > cost2;
 	}
 }

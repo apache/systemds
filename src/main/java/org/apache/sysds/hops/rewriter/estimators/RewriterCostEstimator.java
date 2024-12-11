@@ -333,7 +333,7 @@ public class RewriterCostEstimator {
 		if (assertionRef == null)
 			assertionRef = new MutableObject<>();
 
-		RewriterStatement costFn = getRawCostFunction(stmt, ctx, assertionRef, true);
+		RewriterStatement costFn = getRawCostFunction(stmt, ctx, assertionRef, false);
 		return computeCostFunction(costFn, propertyGenerator, nnzGenerator, assertionRef.getValue(), ctx);
 	}
 
@@ -345,6 +345,8 @@ public class RewriterCostEstimator {
 
 		RewriterStatement costFn = propagateCostFunction(stmt, ctx, assertions, treatAsDense);
 		costFn = assertions.update(costFn);
+		Map<RewriterStatement, RewriterStatement> estimations = RewriterSparsityEstimator.estimateAllNNZ(costFn, ctx);
+		RewriterSparsityEstimator.rollupSparsities(costFn, estimations, ctx);
 		// TODO: Something makes this necessary
 		costFn = RewriterUtils.foldConstants(costFn, ctx);
 

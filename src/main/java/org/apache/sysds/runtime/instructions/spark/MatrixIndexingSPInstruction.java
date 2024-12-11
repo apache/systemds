@@ -35,6 +35,7 @@ import org.apache.sysds.runtime.controlprogram.caching.MatrixObject.UpdateType;
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysds.runtime.controlprogram.context.SparkExecutionContext;
 import org.apache.sysds.runtime.instructions.cp.CPOperand;
+import org.apache.sysds.runtime.instructions.cp.DoubleObject;
 import org.apache.sysds.runtime.instructions.spark.data.IndexedMatrixValue;
 import org.apache.sysds.runtime.instructions.spark.data.LazyIterableIterator;
 import org.apache.sysds.runtime.instructions.spark.data.PartitionedBroadcast;
@@ -47,6 +48,7 @@ import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.matrix.data.MatrixIndexes;
 import org.apache.sysds.runtime.matrix.data.OperationsOnMatrixValues;
 import org.apache.sysds.runtime.meta.DataCharacteristics;
+import org.apache.sysds.runtime.meta.MatrixCharacteristics;
 import org.apache.sysds.runtime.util.IndexRange;
 import org.apache.sysds.runtime.util.UtilFunctions;
 import scala.Function1;
@@ -103,26 +105,35 @@ public class MatrixIndexingSPInstruction extends IndexingSPInstruction {
 		if( opcode.equalsIgnoreCase(RightIndex.OPCODE) )
 		{
 			//update and check output dimensions
-			DataCharacteristics mcOut = sec.getDataCharacteristics(output.getName());
+			DataCharacteristics mcOut = output.isScalar() ? 
+				new MatrixCharacteristics(1,1) :
+				ec.getDataCharacteristics(output.getName());
 			mcOut.set(ru-rl+1, cu-cl+1, mcIn.getBlocksize(), mcIn.getBlocksize());
 			mcOut.setNonZerosBound(Math.min(mcOut.getLength(), mcIn.getNonZerosBound()));
 			checkValidOutputDimensions(mcOut);
 			
 			//execute right indexing operation (partitioning-preserving if possible)
 			JavaPairRDD<MatrixIndexes,MatrixBlock> in1 = sec.getBinaryMatrixBlockRDDHandleForVariable( input1.getName() );
-			
-			if( isSingleBlockLookup(mcIn, ixrange) ) {
-				sec.setMatrixOutput(output.getName(), singleBlockIndexing(in1, mcIn, mcOut, ixrange));
+		
+			if( output.isScalar() ) { //SCALAR output
+				MatrixBlock ret = singleBlockIndexing(in1, mcIn, mcOut, ixrange);
+				sec.setScalarOutput(output.getName(), new DoubleObject(ret.get(0, 0)));
 			}
-			else if( isMultiBlockLookup(in1, mcIn, mcOut, ixrange) ) {
-				sec.setMatrixOutput(output.getName(), multiBlockIndexing(in1, mcIn, mcOut, ixrange));
-			}
-			else { //rdd output for general case
-				JavaPairRDD<MatrixIndexes,MatrixBlock> out = generalCaseRightIndexing(in1, mcIn, mcOut, ixrange, _aggType);
+			else { //MATRIX output
 				
-				//put output RDD handle into symbol table
-				sec.setRDDHandleForVariable(output.getName(), out);
-				sec.addLineageRDD(output.getName(), input1.getName());
+				if( isSingleBlockLookup(mcIn, ixrange) ) {
+					sec.setMatrixOutput(output.getName(), singleBlockIndexing(in1, mcIn, mcOut, ixrange));
+				}
+				else if( isMultiBlockLookup(in1, mcIn, mcOut, ixrange) ) {
+					sec.setMatrixOutput(output.getName(), multiBlockIndexing(in1, mcIn, mcOut, ixrange));
+				}
+				else { //rdd output for general case
+					JavaPairRDD<MatrixIndexes,MatrixBlock> out = generalCaseRightIndexing(in1, mcIn, mcOut, ixrange, _aggType);
+					
+					//put output RDD handle into symbol table
+					sec.setRDDHandleForVariable(output.getName(), out);
+					sec.addLineageRDD(output.getName(), input1.getName());
+				}
 			}
 		}
 		//left indexing
@@ -178,12 +189,13 @@ public class MatrixIndexingSPInstruction extends IndexingSPInstruction {
 				sec.addLineageRDD(output.getName(), input2.getName());
 		}
 		else
-			throw new DMLRuntimeException("Invalid opcode (" + opcode +") encountered in MatrixIndexingSPInstruction.");		
+			throw new DMLRuntimeException("Invalid opcode (" + opcode +") encountered in MatrixIndexingSPInstruction.");
 	}
 
 
 	public static MatrixBlock inmemoryIndexing(JavaPairRDD<MatrixIndexes,MatrixBlock> in1,
-	                                           DataCharacteristics mcIn, DataCharacteristics mcOut, IndexRange ixrange) {
+		DataCharacteristics mcIn, DataCharacteristics mcOut, IndexRange ixrange)
+	{
 		if( isSingleBlockLookup(mcIn, ixrange) ) {
 			return singleBlockIndexing(in1, mcIn, mcOut, ixrange);
 		}

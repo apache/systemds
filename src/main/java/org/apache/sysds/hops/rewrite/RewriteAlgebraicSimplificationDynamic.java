@@ -241,7 +241,7 @@ public class RewriteAlgebraicSimplificationDynamic extends HopRewriteRule
 	
 	private static Hop removeUnnecessaryRightIndexing(Hop parent, Hop hi, int pos)
 	{
-		if( HopRewriteUtils.isUnnecessaryRightIndexing(hi) ) {
+		if( HopRewriteUtils.isUnnecessaryRightIndexing(hi) && !hi.isScalar() ) {
 			//remove unnecessary right indexing
 			Hop input = hi.getInput().get(0);
 			HopRewriteUtils.replaceChildReference(parent, hi, input, pos);

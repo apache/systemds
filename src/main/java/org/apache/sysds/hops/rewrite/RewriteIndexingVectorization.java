@@ -186,8 +186,8 @@ public class RewriteIndexingVectorization extends HopRewriteRule
 				ihops.add(ihop0);
 				for( Hop c : input.getParent() ){
 					if( c != ihop0 && c instanceof IndexingOp && c.getInput().get(0) == input
-					   && ((IndexingOp) c).isRowLowerEqualsUpper() 
-					   && c.getInput().get(1)==ihop0.getInput().get(1) )
+						&& ((IndexingOp) c).isRowLowerEqualsUpper() && !c.isScalar()
+						&& c.getInput().get(1)==ihop0.getInput().get(1) )
 					{
 						ihops.add( c );
 					}
@@ -225,7 +225,7 @@ public class RewriteIndexingVectorization extends HopRewriteRule
 				ihops.add(ihop0);
 				for( Hop c : input.getParent() ){
 					if( c != ihop0 && c instanceof IndexingOp && c.getInput().get(0) == input
-					   && ((IndexingOp) c).isColLowerEqualsUpper() 
+					   && ((IndexingOp) c).isColLowerEqualsUpper() && !c.isScalar()
 					   && c.getInput().get(3)==ihop0.getInput().get(3) )
 					{
 						ihops.add( c );

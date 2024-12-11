@@ -1729,18 +1729,22 @@ public class RewriterUtils {
 				if (idx1.isInstruction() && idx2.isInstruction() && idx1.trueInstruction().equals("_idx") && idx2.trueInstruction().equals("_idx")) {
 					List<RewriterStatement> indices = cur.getChild(0).getOperands();
 					if (indices.contains(idx1)) {
-						boolean removed = indices.remove(idx2);
-
-						if (removed) {
+						if (idx1 == idx2) {
 							cur.getOperands().set(1, cur.getChild(1, 1));
-							cur.getChild(1).forEachPreOrder(cur2 -> {
-								for (int i = 0; i < cur2.getOperands().size(); i++) {
-									if (cur2.getChild(i).equals(idx2))
-										cur2.getOperands().set(i, idx1);
-								}
+						} else {
+							boolean removed = indices.remove(idx2);
 
-								return true;
-							}, true);
+							if (removed) {
+								cur.getOperands().set(1, cur.getChild(1, 1));
+								cur.getChild(1).forEachPreOrder(cur2 -> {
+									for (int i = 0; i < cur2.getOperands().size(); i++) {
+										if (cur2.getChild(i).equals(idx2))
+											cur2.getOperands().set(i, idx1);
+									}
+
+									return true;
+								}, true);
+							}
 						}
 					}
 				}

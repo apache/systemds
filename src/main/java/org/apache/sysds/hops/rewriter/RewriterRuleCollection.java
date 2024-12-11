@@ -1195,7 +1195,7 @@ public class RewriterRuleCollection {
 			);
 		});
 
-		RewriterUtils.buildBinaryPermutations(SCALARS, (t1, t2) -> {
+		//RewriterUtils.buildBinaryPermutations(SCALARS, (t1, t2) -> {
 			// ifelse expression pullup
 			rules.add(new RewriterRuleBuilder(ctx, "Ifelse expression pullup")
 					.setUnidirectional(true)
@@ -1215,7 +1215,7 @@ public class RewriterRuleCollection {
 					.linkManyUnidirectional(hooks.get(1).getId(), List.of(hooks.get(2).getId(), hooks.get(3).getId()), RewriterStatement::transferMeta, true)
 					.build()
 			);
-		});
+		//});
 
 		rules.add(new RewriterRuleBuilder(ctx, "Ifelse branch merge")
 				.setUnidirectional(true)
@@ -1226,7 +1226,33 @@ public class RewriterRuleCollection {
 				.build()
 		);
 
-		// Pushdown successive
+		SCALARS.forEach(t -> {
+			rules.add(new RewriterRuleBuilder(ctx, "Fold true statement")
+					.setUnidirectional(true)
+					.parseGlobalVars(t  + ":a")
+					.parseGlobalVars("LITERAL_BOOL:TRUE")
+					.withParsedStatement("==(a,a)", hooks)
+					.toParsedStatement("TRUE", hooks)
+					.build()
+			);
+		});
+
+		rules.add(new RewriterRuleBuilder(ctx, "Eliminate unnecessary branches")
+				.setUnidirectional(true)
+				.parseGlobalVars("FLOAT:a,b")
+				.parseGlobalVars("LITERAL_BOOL:TRUE")
+				.withParsedStatement("ifelse(TRUE, a, b)", hooks)
+				.toParsedStatement("a", hooks)
+				.build()
+		);
+		rules.add(new RewriterRuleBuilder(ctx, "Eliminate unnecessary branches")
+				.setUnidirectional(true)
+				.parseGlobalVars("FLOAT:a,b")
+				.parseGlobalVars("LITERAL_BOOL:FALSE")
+				.withParsedStatement("ifelse(FALSE, a, b)", hooks)
+				.toParsedStatement("b", hooks)
+				.build()
+		);
 
 		rules.add(new RewriterRuleBuilder(ctx)
 				.setUnidirectional(true)

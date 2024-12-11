@@ -73,6 +73,10 @@ public class IndexingOp extends Hop
 		setRowLowerEqualsUpper(passedRowsLEU);
 		setColLowerEqualsUpper(passedColsLEU);
 	}
+	
+	public boolean isScalarOutput() {
+		return isRowLowerEqualsUpper() && isColLowerEqualsUpper();
+	}
 
 	public boolean isRowLowerEqualsUpper(){
 		return _rowLowerEqualsUpper;

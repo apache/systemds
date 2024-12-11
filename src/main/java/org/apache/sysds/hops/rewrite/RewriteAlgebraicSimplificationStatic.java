@@ -174,6 +174,7 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 			hi = simplifyTraceMatrixMult(hop, hi, i);            //e.g., trace(X%*%Y)->sum(X*t(Y));
 			hi = simplifySlicedMatrixMult(hop, hi, i);           //e.g., (X%*%Y)[1,1] -> X[1,] %*% Y[,1];
 			hi = simplifyListIndexing(hi);                       //e.g., L[i:i, 1:ncol(L)] -> L[i:i, 1:1]
+			hi = simplifyScalarIndexing(hop, hi, i);             //e.g., as.scalar(X[i,1])->X[i,1] w/ scalar output
 			hi = simplifyConstantSort(hop, hi, i);               //e.g., order(matrix())->matrix/seq;
 			hi = simplifyOrderedSort(hop, hi, i);                //e.g., order(matrix())->seq;
 			hi = fuseOrderOperationChain(hi);                    //e.g., order(order(X,2),1) -> order(X,(12))
@@ -1508,6 +1509,27 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 		return hi;
 	}
 
+	private static Hop simplifyScalarIndexing(Hop parent, Hop hi, int pos)
+	{
+		//as.scalar(X[i,1]) -> X[i,1] w/ scalar output
+		if( HopRewriteUtils.isUnary(hi, OpOp1.CAST_AS_SCALAR) 
+			&& hi.getInput(0).getParent().size() == 1 // only consumer
+			&& hi.getInput(0) instanceof IndexingOp 
+			&& ((IndexingOp)hi.getInput(0)).isScalarOutput() 
+			&& hi.getInput(0).isMatrix() //no frame support yet 
+			&& !HopRewriteUtils.isData(parent, OpOpData.TRANSIENTWRITE)) 
+		{
+			Hop hi2 = hi.getInput().get(0);
+			hi2.setDataType(DataType.SCALAR); 
+			hi2.setDim1(0); hi2.setDim2(0);
+			HopRewriteUtils.replaceChildReference(parent, hi, hi2, pos);
+			HopRewriteUtils.cleanupUnreferenced(hi);
+			hi = hi2;
+			LOG.debug("Applied simplifyScalarIndexing (line "+hi.getBeginLine()+").");
+		}
+		return hi;
+	}
+	
 	private static Hop simplifyConstantSort(Hop parent, Hop hi, int pos)
 	{
 		//order(matrix(7), indexreturn=FALSE) -> matrix(7)

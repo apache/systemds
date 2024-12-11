@@ -52,39 +52,46 @@ public final class MatrixIndexingCPInstruction extends IndexingCPInstruction {
 		String opcode = getOpcode();
 		IndexRange ix = getIndexRange(ec);
 		
-		//get original matrix
 		MatrixObject mo = ec.getMatrixObject(input1.getName());
+		boolean inRange = ix.rowStart < mo.getNumRows() && ix.colStart < mo.getNumColumns();
 		
 		//right indexing
 		if( opcode.equalsIgnoreCase(RightIndex.OPCODE) )
 		{
-			MatrixBlock resultBlock = null;
-			
-			if( mo.isPartitioned() ) //via data partitioning
-				resultBlock = mo.readMatrixPartition(ix.add(1));
-			else if( ix.isScalar() && ix.rowStart < mo.getNumRows() && ix.colStart < mo.getNumColumns() ) {
+			if( output.isScalar() && inRange ) { //SCALAR out
 				MatrixBlock matBlock = mo.acquireReadAndRelease();
-				resultBlock = new MatrixBlock(
-					matBlock.get((int)ix.rowStart, (int)ix.colStart));
+				ec.setScalarOutput(output.getName(),
+					new DoubleObject(matBlock.get((int)ix.rowStart, (int)ix.colStart)));
 			}
-			else //via slicing the in-memory matrix
-			{
-				//execute right indexing operation (with shallow row copies for range
-				//of entire sparse rows, which is safe due to copy on update)
-				MatrixBlock matBlock = mo.acquireRead();
-				resultBlock = matBlock.slice((int)ix.rowStart, (int)ix.rowEnd, 
-					(int)ix.colStart, (int)ix.colEnd, false, new MatrixBlock());
+			else { //MATRIX out
+				MatrixBlock resultBlock = null;
 				
-				//unpin rhs input
-				ec.releaseMatrixInput(input1.getName());
+				if( mo.isPartitioned() ) //via data partitioning
+					resultBlock = mo.readMatrixPartition(ix.add(1));
+				else if( ix.isScalar() && inRange ) {
+					MatrixBlock matBlock = mo.acquireReadAndRelease();
+					resultBlock = new MatrixBlock(
+						matBlock.get((int)ix.rowStart, (int)ix.colStart));
+				}
+				else //via slicing the in-memory matrix
+				{
+					//execute right indexing operation (with shallow row copies for range
+					//of entire sparse rows, which is safe due to copy on update)
+					MatrixBlock matBlock = mo.acquireRead();
+					resultBlock = matBlock.slice((int)ix.rowStart, (int)ix.rowEnd, 
+						(int)ix.colStart, (int)ix.colEnd, false, new MatrixBlock());
+					
+					//unpin rhs input
+					ec.releaseMatrixInput(input1.getName());
+					
+					//ensure correct sparse/dense output representation
+					if( checkGuardedRepresentationChange(matBlock, resultBlock) )
+						resultBlock.examSparsity();
+				}
 				
-				//ensure correct sparse/dense output representation
-				if( checkGuardedRepresentationChange(matBlock, resultBlock) )
-					resultBlock.examSparsity();
+				//unpin output
+				ec.setMatrixOutput(output.getName(), resultBlock);
 			}
-			
-			//unpin output
-			ec.setMatrixOutput(output.getName(), resultBlock);
 		}
 		//left indexing
 		else if ( opcode.equalsIgnoreCase(LeftIndex.OPCODE))

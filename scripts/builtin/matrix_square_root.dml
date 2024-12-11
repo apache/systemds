@@ -1,0 +1,15 @@
+sqrt = function(
+    Matrix[Double] X
+)return(
+    Matrix[Double] sqrt_x
+){
+    N = nrow(X);
+    D = ncol(X);
+
+    sqrt_x = X %*% X
+}
+
+A = matrix(1, rows=2,cols=2)
+B = matrix(3, rows=2,cols=2)
+C = sqrt(B)
+print( "D[1,1]:" + as.scalar(C[1,1]))

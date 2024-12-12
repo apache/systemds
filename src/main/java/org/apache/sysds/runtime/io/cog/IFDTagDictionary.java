@@ -36,7 +36,13 @@ public enum IFDTagDictionary {
     Artist(315),
     HostComputer(316),
     ColorMap(320),
-    ExtraSamples(338);
+    ExtraSamples(338),
+
+    // Extended tags we need (COG specifically)
+    TileWidth(322),
+    TileLength(323),
+    TileOffsets(324),
+    TileByteCounts(325);
 
 
 

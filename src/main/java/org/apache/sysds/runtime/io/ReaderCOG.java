@@ -11,12 +11,12 @@ import org.apache.sysds.runtime.io.cog.IFDTagDictionary;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 
 import java.io.BufferedInputStream;
-import java.io.DataInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 
 public class ReaderCOG extends MatrixReader{
     protected final FileFormatPropertiesCOG _props;
+    private int totalBytesRead = 0;
 
     public ReaderCOG(FileFormatPropertiesCOG props) {
         _props = props;
@@ -37,7 +37,7 @@ public class ReaderCOG extends MatrixReader{
         return readCOG(bis, rlen, clen, blen, estnnz);
     }
 
-    private static MatrixBlock readCOG(BufferedInputStream bis, long rlen, long clen, int blen, long estnnz) {
+    private MatrixBlock readCOG(BufferedInputStream bis, long rlen, long clen, int blen, long estnnz) {
         // Read first 4 bytes to determine byte order and make sure it is a valid TIFF
         byte[] header = readBytes(bis, 4);
 
@@ -105,11 +105,54 @@ public class ReaderCOG extends MatrixReader{
             ifdTags[i] = ifdTag;
         }
 
+        cogHeader.setIFD(ifdTags.clone());
+
         // TODO: Do we need to do something with that? Not quite sure
-        // According to the spec not necessarily but that could mean that there are multiple images
+        // According to the spec not necessarily but that could mean that there are multiple images (e.g. lower resolution overview images)
         // We'll have to see... Let's just ignore it for now
         byte[] nextIFDOffsetRaw = readBytes(bis, 4);
         int nextIFDOffset = cogHeader.parseBytes(nextIFDOffsetRaw, 4);
+
+
+        // If there is another IFD, read it
+        // The nextIFDOffset ist 0 if there is no next IFD
+        while (nextIFDOffset != 0) {
+            // TODO: Find out what data this is
+            // For some reason there is data between the IFDs. And I don't know what data or why.
+            // Let's ignore it for now and find out later
+            readBytes(bis, nextIFDOffset - totalBytesRead);
+
+            // Read the next IFD
+            numberOfTagsRaw = readBytes(bis, 2);
+            numberOfTags = cogHeader.parseBytes(numberOfTagsRaw, 2);
+            ifdTags = new IFDTag[numberOfTags];
+            for (int i = 0; i < numberOfTags; i++) {
+                byte[] tag = readBytes(bis, 12);
+                int tagId = cogHeader.parseBytes(tag, 2);
+                int tagType = cogHeader.parseBytes(tag, 2, 2);
+                int tagCount = cogHeader.parseBytes(tag, 4, 4);
+                // TODO: Implement that this can also be an offset to the data
+                int tagValue = cogHeader.parseBytes(tag, 4, 8);
+                // TODO: Implement multiple tagCount, currently only count = 1 is supported
+                IFDTagDictionary tagDictionary = IFDTagDictionary.valueOf(tagId);
+                // For now: throw an exception if the tag is unknown
+                // TODO: Maybe good to fail silently here?
+                // Currently we'll just throw away any tag that doesn't fit here
+                if (tagDictionary == null) {
+                    String doSomethng = "";
+                    //throw new RuntimeException("Unknown Tag ID: " + tagId);
+                }
+                // For the bits per sample the actual data is encoded in the length
+                //if (tagId == IFDTagDictionary.BitsPerSample.getValue()) {
+                // Do something
+                //}
+                IFDTag ifdTag = new IFDTag(tagDictionary, (short) tagType, tagCount, tagValue);
+                ifdTags[i] = ifdTag;
+            }
+            cogHeader.addAdditionalIFD(ifdTags.clone());
+            nextIFDOffsetRaw = readBytes(bis, 4);
+            nextIFDOffset = cogHeader.parseBytes(nextIFDOffsetRaw, 4);
+        }
         
 
         int rows = 10;
@@ -127,10 +170,11 @@ public class ReaderCOG extends MatrixReader{
         return dummyMatrix;
     }
 
-    private static byte[] readBytes(BufferedInputStream bis, int length) {
+    private byte[] readBytes(BufferedInputStream bis, int length) {
         byte[] header = new byte[length];
         try {
             bis.read(header);
+            totalBytesRead += length;
         } catch (IOException e) {
             throw new RuntimeException(e);
         }

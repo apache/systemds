@@ -1,13 +1,20 @@
 package org.apache.sysds.runtime.io.cog;
 
+import java.util.ArrayList;
+
 public class COGHeader {
     private boolean isLittleEndian;
     private String GDALMetadata;
     private IFDTag[] IFD;
+    // Do we even need this or will we throw it away?
+    // If we keep this and write it again, we also need to write the additional images
+    // So this will probably not make the cut
+    private ArrayList<IFDTag[]> additionalIFDs;
 
     public COGHeader(boolean isLittleEndian) {
         this.isLittleEndian = isLittleEndian;
         GDALMetadata = "";
+        additionalIFDs = new ArrayList<IFDTag[]>();
     }
 
     public void setIFD(IFDTag[] IFD) {
@@ -16,6 +23,26 @@ public class COGHeader {
 
     public IFDTag[] getIFD() {
         return IFD;
+    }
+
+    public void addAdditionalIFD(IFDTag[] IFD) {
+        additionalIFDs.add(IFD);
+    }
+
+    public ArrayList<IFDTag[]> getAdditionalIFDs() {
+        return additionalIFDs;
+    }
+
+    public IFDTag[] getSingleAdditionalIFD(int index) {
+        return additionalIFDs.get(index);
+    }
+
+    public void setSingleAdditionalIFD(int index, IFDTag[] IFD) {
+        additionalIFDs.set(index, IFD);
+    }
+
+    public void removeSingleAdditionalIFD(int index) {
+        additionalIFDs.remove(index);
     }
 
     public void setLittleEndian(boolean isLittleEndian) {

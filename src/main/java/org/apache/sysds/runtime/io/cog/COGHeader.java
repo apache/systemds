@@ -8,7 +8,7 @@ public class COGHeader {
     private IFDTag[] IFD;
     // Do we even need this or will we throw it away?
     // If we keep this and write it again, we also need to write the additional images
-    // So this will probably not make the cut
+    // So this could very likely not make the cut
     private ArrayList<IFDTag[]> additionalIFDs;
 
     public COGHeader(boolean isLittleEndian) {
@@ -61,14 +61,32 @@ public class COGHeader {
         return GDALMetadata;
     }
 
+    /**
+     * Parse a byte array into an integer and respects the endianness of the header
+     * @param bytes
+     * @return
+     */
     public int parseBytes(byte[] bytes) {
         return parseBytes(bytes, bytes.length, 0);
     }
 
+    /**
+     * Parse a byte array into an integer and respects the endianness of the header
+     * @param bytes
+     * @param length number of bytes that should be read from the byte array
+     * @return
+     */
     public int parseBytes(byte[] bytes, int length) {
         return parseBytes(bytes, length, 0);
     }
 
+    /**
+     * Parse a byte array into an integer and respects the endianness of the header
+     * @param bytes
+     * @param length number of bytes that should be read
+     * @param offset from the start of the byte array
+     * @return
+     */
     public int parseBytes(byte[] bytes, int length, int offset) {
         int sum = 0;
         if (isLittleEndian) {

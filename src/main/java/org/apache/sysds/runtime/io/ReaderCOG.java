@@ -43,6 +43,7 @@ public class ReaderCOG extends MatrixReader{
         byte[] header = readBytes(bis, 4);
 
 
+        // First read the byte order
         // TODO: Make this nicer, maybe in the COGHeader class as a static method?
         boolean littleEndian = false;
         if ((header[0] & 0xFF) == 0x4D && (header[1] & 0xFF) == 0x4D) {
@@ -59,44 +60,61 @@ public class ReaderCOG extends MatrixReader{
         // Create COGHeader object, initialize with the correct byte order
         COGHeader cogHeader = new COGHeader(littleEndian);
 
-        // Check magic number (42)
+        // Check magic number (42), otherwise this is not a valid TIFF
         int magic = cogHeader.parseBytes(header, 2, 2);
         if (magic != 42) {
             throw new RuntimeException("Invalid Magic Number");
         }
-        // Read IFD Offset
+
+        // Read offset of the first IFD
         // Usually this is 8 (right after the header) we are at right now
         // With COG, GDAL usually writes some metadata before the IFD
         byte[] ifdOffsetRaw = readBytes(bis, 4);
         int ifdOffset = cogHeader.parseBytes(ifdOffsetRaw, 4);
 
         // If the IFD offset is larger than 8, read that and store it in the COGHeader
+        // This is the GDAL metadata
         if (ifdOffset > 8) {
             // Read the metadata from the current position to the IFD offset
             // -8 because the offset is calculated from the beginning of the file
             byte[] metadata = readBytes(bis, ifdOffset - 8);
             cogHeader.setGDALMetadata(new String(metadata));
         }
+
+        // If we read the first IFD, we handle it somewhat differently
+        // See the if-statement below
         boolean firstIFD = true;
+        // Is used at the end of the while loop to determine if there is another IFD
         byte[] nextIFDOffsetRaw;
         int nextIFDOffset = 0;
+
+        // Used in the beginning of the while loop to read the number of tags in the IFD
         byte[] numberOfTagsRaw;
         int numberOfTags;
+        // Array to store the IFD tags, initialized after the number of tags were read
         IFDTag[] ifdTags;
 
-        // If there is another IFD, read it
+        // Read the IFDs, always read the first one
         // The nextIFDOffset ist 0 if there is no next IFD
         while (nextIFDOffset != 0 || firstIFD) {
             // TODO: Find out what data this is
             // For some reason there is data between the IFDs. And I don't know what data or why.
             // Let's ignore it for now and find out later
+            // Read until the next IFD, discard any data until then
             readBytes(bis, nextIFDOffset - (firstIFD ? 0 : totalBytesRead));
 
-            // Read the next IFD
+            // Read the number of tags in the IFD and initialize the array
             numberOfTagsRaw = readBytes(bis, 2);
             numberOfTags = cogHeader.parseBytes(numberOfTagsRaw, 2);
             ifdTags = new IFDTag[numberOfTags];
+
+            // Read the tags
             for (int i = 0; i < numberOfTags; i++) {
+                // Read the tag fully (12 bytes long)
+                // 2 bytes tag ID
+                // 2 bytes data type
+                // 4 bytes data count
+                // 4 bytes data value (can also be offset)
                 byte[] tag = readBytes(bis, 12);
                 int tagId = cogHeader.parseBytes(tag, 2);
 
@@ -105,15 +123,13 @@ public class ReaderCOG extends MatrixReader{
 
                 int tagCount = cogHeader.parseBytes(tag, 4, 4);
 
-                // TODO: Implement that this can also be an offset to the data
                 int tagValue = cogHeader.parseBytes(tag, 4, 8);
                 int[] tagData = new int[tagCount];
 
-                // TODO: Implement multiple tagCount, currently only count = 1 is supported
-                // If the tagCount * the data type size is larger than 4, the data is stored in the offset
+                // If the data in total is larger than 4 bytes it is an offset to the actual data
                 if (dataType.getSize() * tagCount > 4) {
                     // Read the data from the offset
-                    // tagValue = offset
+                    // tagValue = offset, just assigning this for better readability
                     int offset = tagValue;
                     // data length = tagCount * data type size
                     int totalSize = tagCount * dataType.getSize();
@@ -121,9 +137,14 @@ public class ReaderCOG extends MatrixReader{
                     // Calculate the number of bytes to read in order to reset our reader
                     // after going to that offset
                     int bytesToRead = (offset - totalBytesRead) + totalSize;
+
+                    // Mark the current position in the stream
+                    // This is used to reset the stream to this position after reading the data
+                    // Valid until bytesToRead + 1 bytes are read
                     bis.mark(bytesToRead + 1);
                     // Read until offset is reached
                     readBytes(bis, offset - totalBytesRead);
+                    // Read actual data
                     byte[] data = readBytes(bis, totalSize);
 
                     // Read the data with the given size of the data type
@@ -138,30 +159,36 @@ public class ReaderCOG extends MatrixReader{
                     } catch (IOException e) {
                         throw new RuntimeException(e);
                     }
-                } else {
+                } else { // If the data fits in the 4 bytes
                     tagData[0] = tagValue;
                 }
+                // Read the tag ID and get the corresponding tag from the dictionary (enum)
                 IFDTagDictionary tagDictionary = IFDTagDictionary.valueOf(tagId);
-                // For now: throw an exception if the tag is unknown
-                // TODO: Maybe good to fail silently here?
+
                 // Currently we'll just throw away any tag that doesn't fit here
                 if (tagDictionary == null) {
-                    String doSomethng = "";
-                    //throw new RuntimeException("Unknown Tag ID: " + tagId);
+                    String doSomething = "?????";
                 }
-                // For the bits per sample the actual data is encoded in the length
+
+                // For the bits per sample the actual data can be encoded in the length
+                // but for now what also works is the offset, there we then have [8,8,8] e.g.
+                // not sure how to handle that perfectly
                 //if (tagId == IFDTagDictionary.BitsPerSample.getValue()) {
                 // Do something
                 //}
+                // Create the constructed IFDTag object and store it in the array
                 IFDTag ifdTag = new IFDTag(tagDictionary, (short) tagType, tagCount, tagData);
                 ifdTags[i] = ifdTag;
             }
             if (firstIFD) {
+                // If this is the first IFD, set it as the main IFD in the COGHeader
                 cogHeader.setIFD(ifdTags.clone());
                 firstIFD = false;
             } else {
+                // If this is not the first IFD, add it as an additional IFD
                 cogHeader.addAdditionalIFD(ifdTags.clone());
             }
+            // Read the offset to the next IFD. If it is 0, there is no next IFD
             nextIFDOffsetRaw = readBytes(bis, 4);
             nextIFDOffset = cogHeader.parseBytes(nextIFDOffsetRaw, 4);
         }
@@ -185,6 +212,13 @@ public class ReaderCOG extends MatrixReader{
         return dummyMatrix;
     }
 
+    /**
+     * Reads a given number of bytes from the BufferedInputStream.
+     * Increments the totalBytesRead counter by the number of bytes read.
+     * @param bis
+     * @param length
+     * @return
+     */
     private byte[] readBytes(BufferedInputStream bis, int length) {
         byte[] header = new byte[length];
         try {

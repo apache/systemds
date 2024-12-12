@@ -31,6 +31,8 @@ import java.io.PrintStream;
 import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.nio.charset.Charset;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -39,6 +41,7 @@ import java.util.Properties;
 import java.util.Set;
 import java.util.concurrent.TimeoutException;
 
+import org.apache.commons.collections.ArrayStack;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.ArrayUtils;
@@ -91,6 +94,7 @@ import org.apache.sysds.utils.Statistics;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
+import scala.Tuple4;
 
 /**
  * <p>
@@ -106,9 +110,49 @@ import org.junit.Before;
  *
  */
 public abstract class AutomatedTestBase {
+	protected static final boolean BENCHMARK = true;
+	protected static final int BENCHMARK_WARMUP_RUNS = 1;
+	protected static final int BENCHMARK_REPETITIONS = 1;
+	protected static final boolean ALLOW_GENERATED_REWRITES = true;
+	protected static final String BASE_DATA_DIR = "/Users/janniklindemann/Dev/MScThesis/NGramAnalysis/";
+	private static String currentTestName = "";
+	private static int currentTestRun = -1;
+	private static boolean benchmark_run = false;
+
 
 	static {
 		RewriterRuntimeUtils.setupIfNecessary();
+
+		if (BENCHMARK) {
+			final List<Tuple4<String, Integer, Long, Long>> runTimes = new ArrayList<>();
+
+			DMLScript.runtimeMetricsInterceptor = (runTime, executionTime) -> {
+				if (benchmark_run)
+					runTimes.add(new Tuple4<>(currentTestName, currentTestRun, runTime, executionTime));
+			};
+
+			Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+				StringBuilder csvBuilder = new StringBuilder();
+				csvBuilder.append("TestName,TestRun,RunTimeMS,ExecTimeMS\n");
+
+				for (Tuple4<String, Integer, Long, Long> entry : runTimes) {
+					csvBuilder.append(entry._1());
+					csvBuilder.append(',');
+					csvBuilder.append(entry._2());
+					csvBuilder.append(',');
+					csvBuilder.append(entry._3());
+					csvBuilder.append(',');
+					csvBuilder.append(entry._4());
+					csvBuilder.append('\n');
+				}
+
+				try {
+					Files.writeString(Paths.get(BASE_DATA_DIR + "runtimes.csv"), csvBuilder.toString());
+				} catch (IOException e) {
+					e.printStackTrace();
+				}
+			}));
+		}
 	}
 
 	private static final Log LOG = LogFactory.getLog(AutomatedTestBase.class.getName());
@@ -196,7 +240,6 @@ public abstract class AutomatedTestBase {
 	protected static ExecMode rtplatform = ExecMode.HYBRID;
 
 	protected static final boolean DEBUG = false;
-	protected static final boolean ALLOW_GENERATED_REWRITES = true;
 
 	public static boolean VERBOSE_STATS = false;
 
@@ -1397,23 +1440,40 @@ public abstract class AutomatedTestBase {
 		String errMessage, int maxSparkInst) {
 		try{
 			final List<ByteArrayOutputStream> out = new ArrayList<>();
-			Thread t = new Thread(
-				() -> out.add(runTestWithTimeout(newWay, exceptionExpected, expectedException, errMessage, maxSparkInst)),
-				"TestRunner_main");
-			Thread.UncaughtExceptionHandler h = new Thread.UncaughtExceptionHandler() {
-				@Override
-				public void uncaughtException(Thread th, Throwable ex) {
-					fail("Thread Failed test with message: " +ex.getMessage());
-				}
-			};
-			t.setUncaughtExceptionHandler(h);
-			t.start();
 
-			t.join(TEST_TIMEOUT * 1000);
-			if(t.isAlive())
-				throw new TimeoutException("Test failed to finish in time");
-			if(out.size() <= 0) // hack in case the test failed return empty string.
-				fail("test failed");
+			if (currentTestName == null || !currentTestName.equals(this.getClass().getSimpleName())) {
+				currentTestRun = 1;
+				currentTestName = this.getClass().getSimpleName();
+			} else {
+				currentTestRun++;
+			}
+
+			int totalReps = BENCHMARK_WARMUP_RUNS + BENCHMARK_REPETITIONS;
+			
+			for (int i = 0; i < totalReps; i++) {
+				out.clear();
+				Statistics.reset();
+
+				benchmark_run = BENCHMARK && i >= BENCHMARK_WARMUP_RUNS;
+
+				Thread t = new Thread(
+						() -> out.add(runTestWithTimeout(newWay, exceptionExpected, expectedException, errMessage, maxSparkInst)),
+						"TestRunner_main");
+				Thread.UncaughtExceptionHandler h = new Thread.UncaughtExceptionHandler() {
+					@Override
+					public void uncaughtException(Thread th, Throwable ex) {
+						fail("Thread Failed test with message: " + ex.getMessage());
+					}
+				};
+				t.setUncaughtExceptionHandler(h);
+				t.start();
+
+				t.join(TEST_TIMEOUT * 1000);
+				if (t.isAlive())
+					throw new TimeoutException("Test failed to finish in time");
+				if (out.size() <= 0) // hack in case the test failed return empty string.
+					fail("test failed");
+			}
 
 			return out.get(0);
 		}

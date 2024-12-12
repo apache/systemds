@@ -35,6 +35,7 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Map;
 import java.util.Scanner;
+import java.util.function.BiConsumer;
 import java.util.function.Function;
 
 import org.apache.commons.cli.AlreadySelectedException;
@@ -422,6 +423,7 @@ public class DMLScript
 	}
 
 	public static Function<DMLProgram, Boolean> hopInterceptor = null;
+	public static BiConsumer<Long, Long> runtimeMetricsInterceptor = null;
 	/**
 	 * The running body of DMLScript execution. This method should be called after execution properties have been correctly set,
 	 * and customized parameters have been put into _argVals
@@ -460,11 +462,10 @@ public class DMLScript
 		
 		//init working directories (before usage by following compilation steps)
 		initHadoopExecution( ConfigurationManager.getDMLConfig() );
-	
+
+		long startMillis1 = System.currentTimeMillis();
 		//Step 5: rewrite HOP DAGs (incl IPA and memory estimates)
-		long startMillis = System.currentTimeMillis();
 		dmlt.rewriteHopsDAG(prog);
-		System.out.println("Rewrite procedure took: " + (System.currentTimeMillis() - startMillis) + "ms");
 
 		if (hopInterceptor != null && !hopInterceptor.apply(prog))
 			return;
@@ -496,7 +497,13 @@ public class DMLScript
 		ExecutionContext ec = null;
 		try {
 			ec = ExecutionContextFactory.createContext(rtprog);
+			long startMillis2 = System.currentTimeMillis();
 			ScriptExecutorUtils.executeRuntimeProgram(rtprog, ec, ConfigurationManager.getDMLConfig(), STATISTICS ? STATISTICS_COUNT : 0, null);
+
+			if (runtimeMetricsInterceptor != null) {
+				long endMillis = System.currentTimeMillis();
+				runtimeMetricsInterceptor.accept(endMillis - startMillis1, endMillis - startMillis2);
+			}
 		}
 		finally {
 			//cleanup scratch_space and all working dirs

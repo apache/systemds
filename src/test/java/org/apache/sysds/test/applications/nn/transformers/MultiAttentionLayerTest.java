@@ -1,16 +1,81 @@
 package org.apache.sysds.test.applications.nn.transformers;
 
+import org.apache.sysds.common.Types;
 import org.apache.sysds.test.AutomatedTestBase;
 import org.apache.sysds.test.TestConfiguration;
 import org.apache.sysds.test.TestUtils;
+import org.junit.Test;
 
 public class MultiAttentionLayerTest extends AutomatedTestBase {
-    String TEST_NAME1 = "MultiAttentionForwardTest";
-    private final static String TEST_DIR = "applications/nn/component/";
-    
-    @Override
+	private static final String TEST_NAME_FORWARD = "multi_attention_forward";
+	private static final String TEST_DIR = "applications/nn/component/";
+	private static final String RESOURCE_DIR = "src/test/resources/component/transformers/multi_attention_layer/";
+
+	@Override
 	public void setUp() {
 		TestUtils.clearAssertionInformation();
-		addTestConfiguration(TEST_NAME1, new TestConfiguration(TEST_DIR, TEST_NAME1));
+		addTestConfiguration(TEST_NAME_FORWARD, new TestConfiguration(TEST_DIR, TEST_NAME_FORWARD));
+	}
+
+	@Test
+	public void testMultiAttentionForwardSimple() {
+		runMultiAttentionTest("test1", 2, 3, 4, 5, 0, TEST_NAME_FORWARD, 1e-5, true);
+	}
+
+	@Test
+	public void testMultiAttentionForwardLarge() {
+		runMultiAttentionTest("test2", 8, 12, 10, 4, 0, TEST_NAME_FORWARD, 1e-5, true);
+	}
+
+	@Test
+	public void testMultiAttentionForwardSmall() {
+		runMultiAttentionTest("test3", 1, 1, 1, 1, 0, TEST_NAME_FORWARD, 1e-5, true);
+	}
+
+	private void runMultiAttentionTest(String testSuffix, int batchSize, int seqLength, int numHeads, int embeddingDim,
+			int debug, String testname, double precision, boolean isForward) {
+		// Set execution platform
+		Types.ExecMode platformOld = setExecMode(Types.ExecMode.SINGLE_NODE);
+
+		try {
+			// Load test configuration
+			getAndLoadTestConfiguration(testname);
+			fullDMLScriptName = getScript();
+
+			// Program arguments
+			if (isForward) {
+				programArgs = new String[] { 
+					"-stats", "-args",
+					String.valueOf(batchSize), String.valueOf(seqLength),
+					String.valueOf(numHeads), String.valueOf(embeddingDim),
+					String.valueOf(debug),
+					RESOURCE_DIR + "input_query_" + testSuffix + ".csv",
+					RESOURCE_DIR + "input_key_" + testSuffix + ".csv",
+					RESOURCE_DIR + "input_value_" + testSuffix + ".csv",
+					RESOURCE_DIR + "output_context_" + testSuffix + ".csv",
+					RESOURCE_DIR + "output_attention_" + testSuffix + ".csv",
+					output("context_error"),
+					output("attention_error"), 
+				};
+			}
+
+			// Run the test
+			runTest(true, EXCEPTION_NOT_EXPECTED, null, -1);
+
+			// Compare results
+			if (isForward) {
+				double contextMaxError = (Double) readDMLScalarFromOutputDir("context_error").values().toArray()[0];
+				assert contextMaxError < precision;
+				double attentionMaxError = (Double) readDMLScalarFromOutputDir("context_error").values().toArray()[0];
+				assert attentionMaxError < precision;
+			} else {
+
+			}
+		} catch (Throwable ex) {
+			ex.printStackTrace(System.out); // Log or debug all exceptions or errors
+			throw new RuntimeException(ex);
+		} finally {
+			resetExecMode(platformOld);
+		}
 	}
 }

@@ -75,7 +75,9 @@ forward = function(matrix[double] Q, matrix[double] K,
       # Column-wise softmax
       attention_probs_h = softmax::forward(attention_scores)
 
-      [attention_probs_h, dropout_mask] = dropout::forward(attention_probs_h, dropout_p, -1)
+      if (dropout_p > 0.0) {
+        [attention_probs_h, dropout_mask] = dropout::forward(attention_probs_h, dropout_p, -1)
+      }
 
       context_h = attention_probs_h %*% V_h  # Shape (T, D)
 
@@ -90,17 +92,3 @@ forward = function(matrix[double] Q, matrix[double] K,
   # Swap head and token dimension for original shape
   context = util::transpose_ABCD_to_ACBD(context, H, T)
 }
-
-B = 2
-H = 3
-T = 4
-D = 5
-
-Q = matrix(seq(1, B*H*T*D), rows=B, cols=H*T*D)
-K = matrix(seq(1, B*H*T*D), rows=B, cols=H*T*D)
-V = matrix(seq(1, B*H*T*D), rows=B, cols=H*T*D)
-dropout_p = 0.1
-
-[context, attention] = forward(Q, K, V, H, T, D, dropout_p)
-print(toString(context))
-print(toString(attention))

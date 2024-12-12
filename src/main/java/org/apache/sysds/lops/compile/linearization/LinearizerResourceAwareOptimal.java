@@ -21,10 +21,7 @@ package org.apache.sysds.lops.compile.linearization;
 
 import org.apache.sysds.lops.Lop;
 
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 
 public class LinearizerResourceAwareOptimal extends IDagLinearizer {
@@ -71,16 +68,20 @@ public class LinearizerResourceAwareOptimal extends IDagLinearizer {
 	}
 
 	static class MemoryEntry {
-		Lop target;
+		Set<Long> targets;
 		double requiredMemory;
 
-		public MemoryEntry(Lop target, double requiredMemory) {
-			this.target = target;
+		public MemoryEntry(Set<Long> targets, double requiredMemory) {
+			this.targets = targets;
 			this.requiredMemory = requiredMemory;
 		}
 
-		public Lop getTarget() {
-			return target;
+		public Set<Long> getTargets() {
+			return targets;
+		}
+
+		public void removeTarget(long target) {
+			targets.remove(target);
 		}
 
 		public double getRequiredMemory() {
@@ -165,19 +166,29 @@ public class LinearizerResourceAwareOptimal extends IDagLinearizer {
 	}
 
 	double getMemoryUsage(List<Lop> list) {
-		List<MemoryEntry> intermediates = new ArrayList<>();
+		Set<MemoryEntry> intermediates = new HashSet<>();
 		double memoryEstimate = 0;
 
 		for(Lop lop : list) {
-			intermediates.removeIf(entry -> entry.target.getID() == lop.getID());
+			Iterator<MemoryEntry> intermediateIter = intermediates.iterator();
 
-			lop.getOutputs()
-				.forEach(outputNode -> intermediates.add(new MemoryEntry(outputNode, lop.getOutputMemoryEstimate())));
+			while(intermediateIter.hasNext()) {
+				MemoryEntry entry = intermediateIter.next();
+				entry.removeTarget(lop.getID());
+				if (entry.getTargets().isEmpty()) intermediateIter.remove();
+			}
+
+			Set<Long> outputIDs = lop.getOutputs().stream().map(Lop::getID).collect(Collectors.toSet());
+			intermediates.add(new MemoryEntry(outputIDs, lop.getOutputMemoryEstimate()));
 
 			double requiredMemory = intermediates.stream().map(MemoryEntry::getRequiredMemory)
 				.reduce((double) 0, Double::sum);
 
 			memoryEstimate = Math.max(requiredMemory, memoryEstimate);
+
+			if(optimalList.getMaxMemoryUsage() != -1 && memoryEstimate > optimalList.getMaxMemoryUsage()) {
+				return memoryEstimate;
+			}
 		}
 
 		return memoryEstimate;

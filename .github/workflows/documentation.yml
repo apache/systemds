@@ -55,7 +55,7 @@ jobs:
         distribution: ${{ matrix.javadist }}
         java-version: ${{ matrix.java }}
         cache: 'maven'
-  
+
     - name: Make Documentation SystemDS Java
       run: mvn -ntp -P distribution package
 
@@ -69,7 +69,7 @@ jobs:
     - name: Setup Python
       uses: actions/setup-python@v5
       with:
-        python-version: 3.7
+        python-version: 3.8
         architecture: 'x64'
 
     - name: Cache Pip Dependencies

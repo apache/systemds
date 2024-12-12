@@ -698,7 +698,7 @@ public class RewriteAlgebraicSimplificationDynamic extends HopRewriteRule
 							HopRewriteUtils.cleanupUnreferenced(hi);
 							hi = input;
 
-							LOG.debug("Applied simplifyRowwiseAggregate1");
+							LOG.debug("Applied simplifyRowwiseAggregate1 (line "+hi.getBeginLine()+")");
 						}
 					}
 					else if( input.getDim1() == 1 )
@@ -1371,7 +1371,7 @@ public class RewriteAlgebraicSimplificationDynamic extends HopRewriteRule
 			
 			if( HopRewriteUtils.isEqualSize(left, right)  //dims(A) == dims(B)
 				&& left.getDataType() == DataType.MATRIX
-				&& right.getDataType() == DataType.MATRIX )			
+				&& right.getDataType() == DataType.MATRIX )
 			{
 				OpOp2 applyOp = ( bop.getOp() == OpOp2.PLUS //pattern a: sum(A+B)->sum(A)+sum(B)
 						|| bop.getOp() == OpOp2.MINUS )     //pattern b: sum(A-B)->sum(A)-sum(B)
@@ -1380,7 +1380,7 @@ public class RewriteAlgebraicSimplificationDynamic extends HopRewriteRule
 				if( applyOp != null ) {
 					//create new subdag sum(A) bop sum(B)
 					AggUnaryOp sum1 = HopRewriteUtils.createSum(left);
-					AggUnaryOp sum2 = HopRewriteUtils.createSum(right);					
+					AggUnaryOp sum2 = HopRewriteUtils.createSum(right);
 					BinaryOp newBin = HopRewriteUtils.createBinary(sum1, sum2, applyOp);
 
 					//rewire new subdag
@@ -1389,8 +1389,8 @@ public class RewriteAlgebraicSimplificationDynamic extends HopRewriteRule
 					
 					hi = newBin;
 					
-					LOG.debug("Applied pushdownSumOnAdditiveBinary.");
-				}				
+					LOG.debug("Applied pushdownSumOnAdditiveBinary (line "+hi.getBeginLine()+").");
+				}
 			}
 		}
 	
@@ -2292,7 +2292,7 @@ public class RewriteAlgebraicSimplificationDynamic extends HopRewriteRule
 		//sum(v^2)/sum(v1*v2) --> as.scalar(t(v)%*%v) in order to exploit tsmm vector dotproduct 
 		//w/o materialization of intermediates
 		if( hi instanceof AggUnaryOp && ((AggUnaryOp)hi).getOp()==AggOp.SUM //sum
-			&& ((AggUnaryOp)hi).getDirection()==Direction.RowCol //full aggregate	
+			&& ((AggUnaryOp)hi).getDirection()==Direction.RowCol //full aggregate
 			&& hi.getInput().get(0).getDim2() == 1 ) //vector (for correctness)
 		{
 			Hop baLeft = null;
@@ -2337,12 +2337,12 @@ public class RewriteAlgebraicSimplificationDynamic extends HopRewriteRule
 				UnaryOp cast = HopRewriteUtils.createUnary(mmult, OpOp1.CAST_AS_SCALAR);
 				
 				//rehang new subdag under parent node
-				HopRewriteUtils.replaceChildReference(parent, hi, cast, pos);				
+				HopRewriteUtils.replaceChildReference(parent, hi, cast, pos);
 				HopRewriteUtils.cleanupUnreferenced(hi, hi2);
 				
 				hi = cast;
 				
-				LOG.debug("Applied simplifyDotProductSum.");
+				LOG.debug("Applied simplifyDotProductSum (line "+hi.getBeginLine()+").");
 			}
 		}
 		

@@ -1184,7 +1184,7 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 
 			HopRewriteUtils.replaceChildReference(parent, hi, bop, pos);
 
-			LOG.debug("Applied pushdownSumBinaryMult.");
+			LOG.debug("Applied pushdownSumBinaryMult (line "+hi.getBeginLine()+").");
 			return bop;
 		}
 		return hi;
@@ -1514,6 +1514,7 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 		//as.scalar(X[i,1]) -> X[i,1] w/ scalar output
 		if( HopRewriteUtils.isUnary(hi, OpOp1.CAST_AS_SCALAR) 
 			&& hi.getInput(0).getParent().size() == 1 // only consumer
+			&& hi.getParent().size() == 1 //avoid temp inconsistency
 			&& hi.getInput(0) instanceof IndexingOp 
 			&& ((IndexingOp)hi.getInput(0)).isScalarOutput() 
 			&& hi.getInput(0).isMatrix() //no frame support yet 

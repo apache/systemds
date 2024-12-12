@@ -85,7 +85,8 @@ public class TemplateCell extends TemplateBase
 		return hop.dimsKnown() && isValidOperation(hop)
 				&& !(hop.getDim1()==1 && hop.getDim2()==1) 
 			|| (hop instanceof IndexingOp && hop.getInput().get(0).getDim2() >= 0
-				&& (((IndexingOp)hop).isColLowerEqualsUpper() || hop.getDim2()==1))
+				&& (((IndexingOp)hop).isColLowerEqualsUpper() || hop.getDim2()==1)
+				&& !((IndexingOp)hop).isScalarOutput())
 			|| (HopRewriteUtils.isDataGenOpWithLiteralInputs(hop, OpOpDG.SEQ)
 				&& HopRewriteUtils.hasOnlyUnaryBinaryParents(hop, true))
 			|| (HopRewriteUtils.isNary(hop, OpOpN.MIN, OpOpN.MAX, OpOpN.PLUS) && hop.isMatrix())

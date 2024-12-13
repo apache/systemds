@@ -23,27 +23,10 @@ import org.apache.sysds.lops.Lop;
 
 import java.util.*;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 public class LinearizerResourceAwareFast extends IDagLinearizer {
-
-	static class MemoryUsageLop {
-		Lop lop;
-		MemoryUsageEntry memoryEntry;
-
-		MemoryUsageLop(Lop lop, MemoryUsageEntry memoryEntry) {
-			this.lop = lop;
-			this.memoryEntry = memoryEntry;
-		}
-
-		public Lop getLop() {
-			return lop;
-		}
-
-		public MemoryUsageEntry getMemoryEntry() {
-			return memoryEntry;
-		}
-	}
 
 	static class MemoryUsageEntry {
 		List<Integer> indecies;
@@ -54,78 +37,13 @@ public class LinearizerResourceAwareFast extends IDagLinearizer {
 			this.estimatedMemoryUsage = estimatedMemoryUsage;
 		}
 
-		List<Integer> getIndecies() {
-			return indecies;
-		}
-
 		double getEstimatedMemoryUsage() {
 			return estimatedMemoryUsage;
 		}
 
 		boolean IndeciesAreTheSame(List<Integer> indecies) {
-			for(int i = 0; i < indecies.size(); i++) {
-				if(!indecies.get(i).equals(this.getIndecies().get(i)))
-					return false;
-			}
-			return true;
-		}
-	}
 
-	static class Path {
-		List<Lop> sequence;
-		double maxMemoryUsage;
-
-		Path(List<Lop> sequence, double maxMemoryUsage) {
-			this.sequence = sequence;
-			this.maxMemoryUsage = maxMemoryUsage;
-		}
-
-		void addLop(Lop lop) {
-			sequence.add(lop);
-		}
-
-		void resetSequence() {
-			sequence.clear();
-		}
-
-		List<Lop> getSequence() {
-			return sequence;
-		}
-
-		double getMaxMemoryUsage() {
-			return maxMemoryUsage;
-		}
-	}
-
-	static class VisitedNode {
-		List<Integer> indecies;
-		List<Lop> bestPath;
-		double maxMemoryUsage;
-
-		VisitedNode(List<Integer> indecies, List<Lop> bestPath, double maxMemoryUsage) {
-			this.indecies = indecies;
-			this.bestPath = bestPath;
-			this.maxMemoryUsage = maxMemoryUsage;
-		}
-
-		public List<Integer> getIndecies() {
-			return indecies;
-		}
-
-		public List<Lop> getBestPath() {
-			return bestPath;
-		}
-
-		public double getMaxMemoryUsage() {
-			return maxMemoryUsage;
-		}
-
-		boolean IndeciesAreTheSame(List<Integer> indecies) {
-			for(int i = 0; i < indecies.size(); i++) {
-				if(!indecies.get(i).equals(this.getIndecies().get(i)))
-					return false;
-			}
-			return true;
+			return this.indecies.equals(indecies);
 		}
 	}
 
@@ -153,49 +71,182 @@ public class LinearizerResourceAwareFast extends IDagLinearizer {
 		}
 	}
 
-	List<MemoryUsageEntry> memory = new ArrayList<>();
-	List<VisitedNode> visited = new ArrayList<>();
+	static class Item {
+		List<Integer> steps;
+		List<Integer> current;
+		Set<Intermediate> intermediates;
+		double maxMemoryUsage;
+
+		Item(List<Integer> steps, List<Integer> current, Set<Intermediate> intermediates, double maxMemoryUsage) {
+			this.steps = steps;
+			this.current = current;
+			this.intermediates = intermediates;
+			this.maxMemoryUsage = maxMemoryUsage;
+		}
+
+		public List<Integer> getSteps() {
+			return steps;
+		}
+
+		public List<Integer> getCurrent() {
+			return current;
+		}
+
+		public double getMaxMemoryUsage() {
+			return maxMemoryUsage;
+		}
+
+		public Set<Intermediate> getIntermediates() {
+			return intermediates;
+		}
+	}
+
+	static class Intermediate {
+		List<Long> lopIDs;
+		double memoryUsage;
+
+		Intermediate(List<Long> lopIDs, double memoryUsage) {
+			this.lopIDs = lopIDs;
+			this.memoryUsage = memoryUsage;
+		}
+
+		void remove(long ID) {
+			lopIDs.remove(ID);
+		}
+
+		public List<Long> getLopIDs() {
+			return lopIDs;
+		}
+
+		public double getMemoryUsage() {
+			return memoryUsage;
+		}
+	}
+
+	List<Lop> remainingLops;
+	Set<MemoryUsageEntry> memory = new HashSet<>();
 
 	@Override
 	public List<Lop> linearize(List<Lop> dag) {
-		ArrayList<List<Lop>> sequences = new ArrayList<>();
+		List<List<Lop>> sequences = new ArrayList<>();
+		remainingLops = new ArrayList<>(dag);
 
-		List<Lop> outputNodes = dag.stream().filter(node -> node.getOutputs().isEmpty()).collect(Collectors.toList());
+		List<Lop> outputNodes = remainingLops.stream().filter(node -> node.getOutputs().isEmpty())
+			.collect(Collectors.toList());
 
 		for(Lop outputNode : outputNodes) {
-			sequences.add(findSequence(outputNode, dag));
+			sequences.add(findSequence(outputNode));
 		}
 
-		while(!dag.isEmpty()) {
-			int maxLevel = dag.stream().mapToInt(Lop::getLevel).max().getAsInt();
-			Lop node = dag.stream().filter(n -> n.getLevel() == maxLevel).findFirst().orElseThrow();
-			sequences.add(findSequence(node, dag));
+		while(!remainingLops.isEmpty()) {
+			int maxLevel = remainingLops.stream().mapToInt(Lop::getLevel).max().getAsInt();
+			Lop node = remainingLops.stream().filter(n -> n.getLevel() == maxLevel).findFirst().orElseThrow();
+			sequences.add(findSequence(node));
 		}
 
 		return scheduleSequences(sequences);
 	}
 
-	void clearMemoryEntries() {
-		memory.clear();
-		visited.clear();
-	}
+	List<Lop> scheduleSequences(List<List<Lop>> sequences) {
+		Set<Dependency> dependencies = getDependencies(sequences);
+		Set<List<Integer>> alreadyVisited = new HashSet<>();
+		List<Item> scheduledItems = new ArrayList<>();
 
-	List<Lop> findSequence(Lop startNode, List<Lop> remaining) {
-		ArrayList<Lop> sequence = new ArrayList<>();
+		List<Integer> sequencesMaxIndex = sequences.stream().map(entry -> entry.size() - 1)
+			.collect(Collectors.toList());
+		Item currentItem = new Item(new ArrayList<>(), Collections.nCopies(sequences.size(), -1), new HashSet<>(), 0.0);
 
-		if(!remaining.contains(startNode)) {
-			throw new RuntimeException();
+		while(!currentItem.getCurrent().equals(sequencesMaxIndex)) {
+
+			for(int i = 0; i < sequences.size(); i++) {
+
+				List<Lop> sequence = sequences.get(i);
+
+				if(currentItem.getCurrent().get(i) + 1 < sequence.size()) {
+					List<Integer> newCurrent = new ArrayList<>(currentItem.getCurrent());
+					newCurrent.set(i, newCurrent.get(i) + 1);
+
+					if(!alreadyVisited.contains(newCurrent)) {
+						Set<Dependency> filteredDependencies = dependencies.stream()
+							.filter(entry -> entry.getNodeIndex() == newCurrent.get(entry.getSequenceIndex()))
+							.collect(Collectors.toSet());
+
+						boolean dependencyIssue = filteredDependencies.parallelStream().anyMatch(
+							dependency -> IntStream.range(0, newCurrent.size()).anyMatch(
+								j -> j != dependency.getSequenceIndex() &&
+									newCurrent.get(j) < dependency.getDependencies().get(j)));
+
+						if(!dependencyIssue) {
+							Set<Intermediate> newIntermediates = new HashSet<>(currentItem.getIntermediates());
+
+							Lop test = sequence.get(newCurrent.get(i));
+
+							Iterator<Intermediate> intermediateIter = newIntermediates.iterator();
+
+							while(intermediateIter.hasNext()) {
+								Intermediate entry = intermediateIter.next();
+								entry.remove(test.getID());
+								if(entry.getLopIDs().isEmpty())
+									intermediateIter.remove();
+							}
+
+							newIntermediates.add(new Intermediate(
+								test.getOutputs().stream().map(Lop::getID).collect(Collectors.toList()),
+								test.getOutputMemoryEstimate()));
+
+							List<Integer> newSteps = new ArrayList<>(currentItem.getSteps());
+							newSteps.add(i);
+
+							double mem = newIntermediates.stream().map(Intermediate::getMemoryUsage)
+								.reduce((double) 0, Double::sum);
+
+							Item newItem = new Item(newSteps, newCurrent, newIntermediates,
+								Math.max(mem, currentItem.getMaxMemoryUsage()));
+
+							int index = Collections.binarySearch(scheduledItems, newItem,
+								Comparator.comparing(Item::getMaxMemoryUsage));
+
+							if(index < 0) {
+								index = -index - 1;
+							}
+
+							scheduledItems.add(index, newItem);
+						}
+						alreadyVisited.add(newCurrent);
+					}
+				}
+			}
+
+			currentItem = scheduledItems.remove(0);
 		}
 
+		memory.clear();
+
+		return walkPath(sequences, currentItem.getSteps());
+	}
+
+	List<Lop> walkPath(List<List<Lop>> sequences, List<Integer> path) {
+		Iterator<Integer> iterator = path.iterator();
+		List<Lop> sequence = new ArrayList<>();
+
+		while(iterator.hasNext()) {
+			sequence.add(sequences.get(iterator.next()).remove(0));
+		}
+
+		return sequence;
+	}
+
+	List<Lop> findSequence(Lop startNode) {
+		List<Lop> sequence = new ArrayList<>();
 		Lop currentNode = startNode;
 		sequence.add(currentNode);
-		remaining.remove(currentNode);
+		remainingLops.remove(currentNode);
 
 		while(currentNode.getInputs().size() == 1) {
-			if(remaining.contains(currentNode.getInput(0))) {
+			if(remainingLops.contains(currentNode.getInput(0))) {
 				currentNode = currentNode.getInput(0);
 				sequence.add(currentNode);
-				remaining.remove(currentNode);
+				remainingLops.remove(currentNode);
 			}
 			else {
 				Collections.reverse(sequence);
@@ -214,8 +265,8 @@ public class LinearizerResourceAwareFast extends IDagLinearizer {
 		List<List<Lop>> childSequences = new ArrayList<>();
 
 		for(Lop child : children) {
-			if(remaining.contains(child)) {
-				childSequences.add(findSequence(child, remaining));
+			if(remainingLops.contains(child)) {
+				childSequences.add(findSequence(child));
 			}
 		}
 
@@ -224,194 +275,55 @@ public class LinearizerResourceAwareFast extends IDagLinearizer {
 		return Stream.concat(finalSequence.stream(), sequence.stream()).collect(Collectors.toList());
 	}
 
-	List<Lop> scheduleSequences(List<List<Lop>> sequences) {
+	Set<Dependency> getDependencies(List<List<Lop>> sequences) {
+		Set<Dependency> dependencies = new HashSet<>();
 
-		List<Dependency> dependencies = checkDependencies(sequences);
+		List<List<Long>> ids = sequences.stream()
+			.map(sequence -> sequence.stream().map(Lop::getID).collect(Collectors.toList()))
+			.collect(Collectors.toList());
 
 		int lastSequenceWithOutputNodeIndex = -1;
-		for (int i = 0; i < sequences.size(); i++) {
-			List<Lop> sequence = sequences.get(i);
-			if (sequence.get(sequence.size() - 1).getOutputs().isEmpty()) {
-				if (lastSequenceWithOutputNodeIndex == -1) {
-					lastSequenceWithOutputNodeIndex = i;
-				}else{
-					List<Integer> dependencyList = new ArrayList<>(Collections.nCopies(sequences.size(), -1));
-					dependencyList.set(lastSequenceWithOutputNodeIndex, sequences.get(lastSequenceWithOutputNodeIndex).size() - 1);
-					dependencies.add(new Dependency(i, sequence.size() - 1, dependencyList));
-				}
-			}
-		}
-
-		List<Integer> indecies = new ArrayList<>(Collections.nCopies(sequences.size(), -1));
-
-		Path bestPath = walkPath(sequences, indecies, dependencies, new ArrayList<>(), 0);
-
-		clearMemoryEntries();
-
-		return bestPath.getSequence();
-	}
-
-	MemoryUsageEntry getMemoryEntry(List<List<Lop>> sequences, List<Integer> indecies) {
-		Optional<MemoryUsageEntry> optionalMemoryEntry = memory.stream().filter(entry -> entry.IndeciesAreTheSame(indecies))
-			.findFirst();
-
-		if(optionalMemoryEntry.isPresent()) {
-			return optionalMemoryEntry.get();
-		}
-		else {
-			MemoryUsageEntry newEntry = getMemoryRequirement(sequences, indecies);
-			memory.add(newEntry);
-			return newEntry;
-		}
-	}
-
-	MemoryUsageEntry getMemoryRequirement(List<List<Lop>> sequences, List<Integer> indecies) {
-		if(sequences.size() != indecies.size())
-			throw new RuntimeException();
-
-		double memory = 0;
-
-		for(int i = 0; i < sequences.size(); i++) {
-			int sequenceIndex = indecies.get(i);
-
-			if(sequenceIndex >= 0) {
-				memory += sequences.get(i).get(sequenceIndex).getOutputMemoryEstimate();
-			}
-		}
-
-		return new MemoryUsageEntry(indecies, memory);
-	}
-
-	Path walkPath(List<List<Lop>> sequences, List<Integer> indecies, List<Dependency> dependencies, List<Lop> sequence,
-		double maxMemoryUsage) {
-
-		//checks if an indecies is out of bounce
-		if(isAtTheEnd(sequences, indecies)) {
-			return new Path(sequence, maxMemoryUsage);
-		}
-
-		//checks if this position was already visited. If then return the saved value.
-		Optional<VisitedNode> optVisitedPath = visited.parallelStream()
-			.filter(entry -> entry.IndeciesAreTheSame(indecies)).findFirst();
-
-		if(optVisitedPath.isPresent()) {
-			VisitedNode path = optVisitedPath.get();
-			return new Path(path.getBestPath(), path.getMaxMemoryUsage());
-		}
-
-		//position was not already visited
-		List<MemoryUsageLop> nextSteps = new ArrayList<>();
-
-		//gather next possible steps
-		for(int i = 0; i < indecies.size(); i++) {
-			if(indecies.get(i) + 1 < sequences.get(i).size()) {
-				List<Integer> newIndecies = new ArrayList<>(indecies);
-				newIndecies.set(i, indecies.get(i) + 1);
-
-				MemoryUsageEntry entry = getMemoryEntry(sequences, newIndecies);
-
-				nextSteps.add(new MemoryUsageLop(sequences.get(i).get(newIndecies.get(i)), entry));
-			}
-		}
-
-		List<MemoryUsageLop> newNextSteps = new ArrayList<>();
-
-		for(MemoryUsageLop step : nextSteps) {
-			MemoryUsageEntry nextStep = step.getMemoryEntry();
-			boolean nextStepIsPossible = true;
-
-			for(Dependency dependency : dependencies) {
-				int sequenceIndex = dependency.getSequenceIndex();
-				int nodeIndex = dependency.getNodeIndex();
-				List<Integer> nextStepIndecies = nextStep.getIndecies();
-
-				if(nextStepIndecies.get(sequenceIndex) == nodeIndex) {
-					for(int j = 0; j < nextStepIndecies.size(); j++) {
-						if(j != sequenceIndex && nextStepIndecies.get(j) < dependency.getDependencies().get(j)) {
-							nextStepIsPossible = false;
-							break;
-						}
-					}
-				}
-
-				if(!nextStepIsPossible)
-					break;
-			}
-
-			if(nextStepIsPossible) {
-				newNextSteps.add(step);
-			}
-		}
-
-		if(newNextSteps.isEmpty()) {
-			throw new RuntimeException();
-		}
-
-		//sort next possible steps so it starts with the entry with the smallest memory usage
-		newNextSteps.sort(Comparator.comparing(item -> item.getMemoryEntry().getEstimatedMemoryUsage()));
-
-		Path bestPath = new Path(new ArrayList<>(), -1);
-
-		for(MemoryUsageLop newNextStep : newNextSteps) {
-			MemoryUsageEntry entry = newNextStep.getMemoryEntry();
-			Lop entryLop = newNextStep.getLop();
-
-			if(bestPath.getMaxMemoryUsage() == -1 || entry.getEstimatedMemoryUsage() < bestPath.getMaxMemoryUsage()) {
-				List<Lop> newSequence = new ArrayList<>(sequence);
-				newSequence.add(entryLop);
-				double entryMaxMemory = maxMemoryUsage;
-				if(entry.getEstimatedMemoryUsage() > entryMaxMemory) {
-					entryMaxMemory = entry.getEstimatedMemoryUsage();
-				}
-
-				Path test = walkPath(sequences, entry.getIndecies(), dependencies, newSequence, entryMaxMemory);
-				if(bestPath.getMaxMemoryUsage() == -1 || test.getMaxMemoryUsage() < bestPath.getMaxMemoryUsage()) {
-					bestPath = test;
-				}
-			}
-		}
-
-		visited.add(new VisitedNode(indecies, bestPath.getSequence(), bestPath.getMaxMemoryUsage()));
-
-		return bestPath;
-	}
-
-	boolean isAtTheEnd(List<List<Lop>> sequences, List<Integer> indecies) {
-		for(int a = 0; a < indecies.size(); a++) {
-			if(indecies.get(a) < sequences.get(a).size() - 1) {
-				return false;
-			}
-		}
-
-		return true;
-	}
-
-	List<Dependency> checkDependencies(List<List<Lop>> sequences) {
-		List<Dependency> dependencies = new ArrayList<>();
 
 		for(int j = 0; j < sequences.size(); j++) {
 			List<Lop> sequence = sequences.get(j);
+			int sequenceIndex = j;
 
-			if(!sequence.get(0).getInputs().isEmpty()) {
-				int sequenceIndex = j;
+			// Sequence dependencies
+			sequence.get(0).getInputs().forEach(input -> {
+				long inputID = input.getID();
+				List<Integer> dependencyIndecies = ids.stream()
+					.map(list -> list.contains(inputID) ? list.indexOf(inputID) : -1).collect(Collectors.toList());
 
-				sequence.get(0).getInputs().forEach(input -> {
-					long id = input.getID();
-					List<Integer> dependencyIndecies = new ArrayList<>();
+				dependencies.add(new Dependency(sequenceIndex, 0, dependencyIndecies));
+			});
 
-					sequences.forEach(seq -> {
-						int index = -1;
-						for(int i = 0; i < seq.size(); i++) {
-							if(seq.get(i).getID() == id) {
-								index = i;
-								break;
-							}
-						}
-						dependencyIndecies.add(index);
-					});
+			// Cross dependencies
+			for(int k = 0; k < sequence.size(); k++) {
+				int finalK = k;
+				int finalJ = j;
+				List<Lop> inputs = sequence.get(k).getInputs();
+				inputs.forEach(input -> {
+					long inputID = input.getID();
+					if(!ids.get(finalJ).contains(inputID)) {
+						List<Integer> dependencyIndecies = ids.stream()
+							.map(list -> list.contains(inputID) ? list.indexOf(inputID) : -1)
+							.collect(Collectors.toList());
 
-					dependencies.add(new Dependency(sequenceIndex, 0, dependencyIndecies));
+						dependencies.add(new Dependency(finalJ, finalK, dependencyIndecies));
+					}
 				});
+			}
+
+			// Dependency chain between output Lops
+			int sequenceSize = sequence.size();
+			if(sequence.get(sequenceSize - 1).getOutputs().isEmpty()) {
+				if(lastSequenceWithOutputNodeIndex != -1) {
+					List<Integer> dependencyList = new ArrayList<>(Collections.nCopies(sequences.size(), -1));
+					dependencyList.set(lastSequenceWithOutputNodeIndex,
+						sequences.get(lastSequenceWithOutputNodeIndex).size() - 1);
+					dependencies.add(new Dependency(j, sequenceSize - 1, dependencyList));
+				}
+				lastSequenceWithOutputNodeIndex = j;
 			}
 		}
 

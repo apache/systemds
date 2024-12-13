@@ -134,17 +134,8 @@ public class RewriteIfElseTest extends AutomatedTestBase
 	}
 
 	private void testRewriteIfElse(String testname, boolean pred, boolean rewrites, ExecType et)
-	{	
-		ExecMode platformOld = rtplatform;
-		switch( et ){
-			case SPARK: rtplatform = ExecMode.SPARK; break;
-			default: rtplatform = ExecMode.HYBRID; break;
-		}
-		
-		boolean sparkConfigOld = DMLScript.USE_LOCAL_SPARK_CONFIG;
-		if( rtplatform == ExecMode.SPARK || rtplatform == ExecMode.HYBRID )
-			DMLScript.USE_LOCAL_SPARK_CONFIG = true;
-		
+	{
+		ExecMode platformOld = setExecMode(et);
 		boolean rewritesOld = OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION;
 		OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION = rewrites;
 		
@@ -184,8 +175,7 @@ public class RewriteIfElseTest extends AutomatedTestBase
 		}
 		finally {
 			OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION = rewritesOld;
-			rtplatform = platformOld;
-			DMLScript.USE_LOCAL_SPARK_CONFIG = sparkConfigOld;
+			resetExecMode(platformOld);
 		}
 	}
 }

@@ -4,6 +4,7 @@ package org.apache.sysds.hops.rewriter.codegen;
 import org.apache.sysds.common.Types;
 import org.apache.sysds.hops.Hop;
 import org.apache.sysds.hops.LiteralOp;
+import org.apache.sysds.hops.UnaryOp;
 import org.apache.sysds.hops.rewrite.HopRewriteUtils;
 import org.apache.sysds.hops.rewriter.assertions.RewriterAssertions;
 import org.apache.sysds.hops.rewriter.estimators.RewriterCostEstimator;
@@ -276,7 +277,7 @@ public class RewriterCodeGen {
 		indent(indentation, sb);
 		sb.append("if ( " + newRoot + ".getValueType() != hi.getValueType() ) {\n");
 		indent(indentation + 1, sb);
-		sb.append("newRoot = castIfNecessary(newRoot);\n");
+		sb.append("newRoot = castIfNecessary(newRoot, hi);\n");
 		indent(indentation + 1, sb);
 		sb.append("if ( newRoot == null )\n");
 		indent(indentation + 2, sb);
@@ -291,7 +292,7 @@ public class RewriterCodeGen {
 		indent(indentation, sb);
 		sb.append("for ( Hop p : parents )\n");
 		indent(indentation + 1, sb);
-		sb.append("HopRewriteUtils.replaceChildReference(p, hi, " + vars.get(to) + ");\n\n");
+		sb.append("HopRewriteUtils.replaceChildReference(p, hi, newRoot);\n\n");
 
 		indent(indentation, sb);
 		sb.append("// Remove old unreferenced Hops\n");
@@ -299,16 +300,16 @@ public class RewriterCodeGen {
 		sb.append('\n');
 
 		indent(indentation, sb);
-		sb.append("return " + vars.get(to) + ";\n");
+		sb.append("return newRoot;\n");
 	}
 
 	private static void buildTypeCastFunction(StringBuilder sb, int indentation) {
 		indent(indentation, sb);
-		sb.append("private static Hop castIfNecessary(Hop newRoot) {\n");
+		sb.append("private static Hop castIfNecessary(Hop newRoot, Hop oldRoot) {\n");
 		indent(indentation + 1, sb);
 		sb.append("Types.OpOp1 cast = null;\n");
 		indent(indentation + 1, sb);
-		sb.append("switch ( newRoot.getValueType().toExternalString() ) {\n");
+		sb.append("switch ( oldRoot.getValueType().toExternalString() ) {\n");
 		indent(indentation + 2, sb);
 		sb.append("case \"DOUBLE\":\n"); //Types.ValueType.FP64.toExternalString()
 		indent(indentation + 3, sb);
@@ -334,7 +335,8 @@ public class RewriterCodeGen {
 		indent(indentation + 1, sb);
 		sb.append("}\n\n");
 		indent(indentation + 1, sb);
-		sb.append("return HopRewriteUtils.createUnary(newRoot" + ", cast);\n");
+		//sb.append("return HopRewriteUtils.createUnary(newRoot" + ", cast);\n");
+		sb.append("return new UnaryOp(\"tmp\", oldRoot.getDataType(), oldRoot.getValueType(), cast, newRoot);\n");
 		indent(indentation, sb);
 		sb.append("}\n");
 	}

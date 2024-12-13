@@ -41,6 +41,7 @@ public class RewriterAlphabetEncoder {
 			new Operand("*sum", 2, ALL_TYPES, ALL_TYPES), // To have a bigger search space for this instruction combination
 			new Operand("t", 1, MATRIX),
 			new Operand("rev", 1, MATRIX),
+			new Operand("diag", 1, MATRIX),
 			new Operand("trace", 1, MATRIX),
 			new Operand("rowSums", 1, MATRIX),
 			new Operand("colSums", 1, MATRIX),
@@ -68,8 +69,17 @@ public class RewriterAlphabetEncoder {
 			new Operand("sq", 1, MATRIX),
 			//new Operand("log", 1, MATRIX),
 
-			// Fused operators
-			//new Operand("1-*", 2, MATRIX), 			// TODO: We have to include literals in the search
+			// constant stuff
+			new Operand("c_1+", 1, ALL_TYPES),
+			new Operand("c_+1", 1, ALL_TYPES),
+			new Operand("c_1-", 1, ALL_TYPES),
+			new Operand("c_-1", 1, ALL_TYPES),
+
+			// ncol / nrow / length stuff
+			new Operand("c_flength*", 1, ALL_TYPES),
+			new Operand("c_fncol*", 1, ALL_TYPES),
+			new Operand("c_fnrow*", 1, ALL_TYPES),
+
 			//new Operand("log_nz", 1, MATRIX),			// TODO: We have to include literals in the search
 
 			// Placeholder operators
@@ -346,7 +356,34 @@ public class RewriterAlphabetEncoder {
 
 	private static RewriterStatement buildStmt(Operand op, RewriterStatement[] stack) {
 		RewriterInstruction stmt = new RewriterInstruction().as(UUID.randomUUID().toString());
-		if (op.op.equals("!=0")) {
+		switch (op.op) {
+			case "!=0": {
+				stmt.withInstruction("!=").addOp(stack[0]).addOp(RewriterStatement.literal(ctx, 0.0D));
+				break;
+			}
+			case "0!=": {
+				stmt.withInstruction("!=").addOp(RewriterStatement.literal(ctx, 0.0D)).addOp(stack[0]);
+				break;
+			}
+			case "fncol":
+			case "fnrow":
+			case "flength": {
+				String actualOp = op.op.substring(1);
+				stmt.withInstruction(actualOp).withOps(stack).consolidate(ctx);
+				stmt = (RewriterInstruction) RewriterStatement.castFloat(ctx, stmt);
+				break;
+			}
+			case "*sum": {
+				RewriterStatement old = stmt.withInstruction("sum").withOps(stack[0]).consolidate(ctx);
+				stmt = new RewriterInstruction("*", ctx, old, stack[1]);
+				break;
+			}
+			default: {
+				stmt.withInstruction(op.op).withOps(stack);
+			}
+		}
+
+		/*if (op.op.equals("!=0")) {
 			stmt.withInstruction("!=").addOp(stack[0]).addOp(RewriterStatement.literal(ctx, 0.0D));
 		} else if (op.op.equals("0!=")) {
 			stmt.withInstruction("!=").addOp(RewriterStatement.literal(ctx, 0.0D)).addOp(stack[0]);
@@ -359,7 +396,7 @@ public class RewriterAlphabetEncoder {
 			stmt = new RewriterInstruction("*", ctx, old, stack[1]);
 		} else {
 			stmt.withInstruction(op.op).withOps(stack);
-		}
+		}*/
 
 		stmt.consolidate(ctx);
 		return stmt;

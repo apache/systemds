@@ -1263,7 +1263,7 @@ public class GeneratedRewriteClass implements Function {
 					}
 				} else if ( (( BinaryOp ) hi ).getOp() == Types.OpOp2.DIV ) {
 					hi = _applyRewrite10(hi); // /(0.0,A) => const(A,0.0)
-					hi = _applyRewrite13(hi); // /(A,c) => *(A,/(1.0,c))
+					//hi = _applyRewrite13(hi); // /(A,c) => *(A,/(1.0,c))
 					hi = _applyRewrite75(hi); // /(a,cast.MATRIX(b)) => cast.MATRIX(/(a,b))
 					hi = _applyRewrite93(hi); // /(-(a,0.0),B) => /(a,B)
 					hi = _applyRewrite409(hi); // /(t(A),t(B)) => t(/(A,B))
@@ -4023,21 +4023,29 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = hi_1;
 		if ( hi_1.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
 
+		System.out.println("NewRoot: " + newRoot);
+		System.out.println("Child: " + newRoot.getInput(0));
+		System.out.println("Parents: " + hi.getParent());
+
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
-		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, hi_1);
+		for ( Hop p : parents ) {
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
+			System.out.println(p.getInput());
+		}
+
+		System.out.println("NewParents: " + newRoot.getParent());
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_0);
 
-		return hi_1;
+		return newRoot;
 	}
 
 	// Implementation of the rule *(a,1.0) => a
@@ -4076,7 +4084,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = hi_0;
 		if ( hi_0.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -4084,13 +4092,13 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, hi_0);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_1);
 
-		return hi_0;
+		return newRoot;
 	}
 
 	// Implementation of the rule /(a,1.0) => a
@@ -4129,7 +4137,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = hi_0;
 		if ( hi_0.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -4137,13 +4145,13 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, hi_0);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_1);
 
-		return hi_0;
+		return newRoot;
 	}
 
 	// Implementation of the rule +(0.0,a) => a
@@ -4182,7 +4190,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = hi_1;
 		if ( hi_1.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -4190,13 +4198,13 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, hi_1);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_0);
 
-		return hi_1;
+		return newRoot;
 	}
 
 	// Implementation of the rule +(a,0.0) => a
@@ -4235,7 +4243,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = hi_0;
 		if ( hi_0.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -4243,13 +4251,13 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, hi_0);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_1);
 
-		return hi_0;
+		return newRoot;
 	}
 
 	// Implementation of the rule +(0.0,A) => A
@@ -4288,7 +4296,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = hi_1;
 		if ( hi_1.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -4296,13 +4304,13 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, hi_1);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_0);
 
-		return hi_1;
+		return newRoot;
 	}
 
 	// Implementation of the rule +(A,0.0) => A
@@ -4341,7 +4349,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = hi_0;
 		if ( hi_0.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -4349,13 +4357,13 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, hi_0);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_1);
 
-		return hi_0;
+		return newRoot;
 	}
 
 	// Implementation of the rule *(0.0,a) => 0.0
@@ -4394,7 +4402,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = hi_0;
 		if ( hi_0.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -4402,13 +4410,13 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, hi_0);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_1);
 
-		return hi_0;
+		return newRoot;
 	}
 
 	// Implementation of the rule *(a,0.0) => 0.0
@@ -4447,7 +4455,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = hi_1;
 		if ( hi_1.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -4455,13 +4463,13 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, hi_1);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_0);
 
-		return hi_1;
+		return newRoot;
 	}
 
 	// Implementation of the rule /(0.0,a) => 0.0
@@ -4500,7 +4508,8 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = hi_0;
 		if ( hi_0.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
+			System.out.println("Cast necessary: " + newRoot);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -4508,13 +4517,13 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, hi_0);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_1);
 
-		return hi_0;
+		return newRoot;
 	}
 
 	// Implementation of the rule /(0.0,A) => const(A,0.0)
@@ -4554,7 +4563,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v1;
 		if ( v1.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -4562,12 +4571,12 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v1);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 
-		return v1;
+		return newRoot;
 	}
 
 	// Implementation of the rule *(0.0,A) => const(A,0.0)
@@ -4607,7 +4616,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v1;
 		if ( v1.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -4615,12 +4624,12 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v1);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 
-		return v1;
+		return newRoot;
 	}
 
 	// Implementation of the rule *(A,0.0) => const(A,0.0)
@@ -4660,7 +4669,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v1;
 		if ( v1.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -4668,12 +4677,12 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v1);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 
-		return v1;
+		return newRoot;
 	}
 
 	// Implementation of the rule /(A,c) => *(A,/(1.0,c))
@@ -4707,7 +4716,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v3;
 		if ( v3.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -4715,12 +4724,12 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v3);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 
-		return v3;
+		return newRoot;
 	}
 
 	// Implementation of the rule trace(*(a,B)) => *(a,trace(B))
@@ -4765,7 +4774,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v2;
 		if ( v2.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -4773,13 +4782,13 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v2);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_0);
 
-		return v2;
+		return newRoot;
 	}
 
 	// Implementation of the rule trace(*(B,a)) => *(a,trace(B))
@@ -4824,7 +4833,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v2;
 		if ( v2.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -4832,13 +4841,13 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v2);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_0);
 
-		return v2;
+		return newRoot;
 	}
 
 	// Implementation of the rule colSums(*(a,B)) => *(a,colSums(B))
@@ -4897,7 +4906,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v2;
 		if ( v2.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -4905,13 +4914,13 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v2);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_0);
 
-		return v2;
+		return newRoot;
 	}
 
 	// Implementation of the rule colSums(*(B,a)) => *(a,colSums(B))
@@ -4970,7 +4979,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v2;
 		if ( v2.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -4978,13 +4987,13 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v2);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_0);
 
-		return v2;
+		return newRoot;
 	}
 
 	// Implementation of the rule rowSums(*(a,B)) => *(a,rowSums(B))
@@ -5043,7 +5052,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v2;
 		if ( v2.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -5051,13 +5060,13 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v2);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_0);
 
-		return v2;
+		return newRoot;
 	}
 
 	// Implementation of the rule rowSums(*(B,a)) => *(a,rowSums(B))
@@ -5116,7 +5125,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v2;
 		if ( v2.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -5124,13 +5133,13 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v2);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_0);
 
-		return v2;
+		return newRoot;
 	}
 
 	// Implementation of the rule *(cast.MATRIX(0.0),a) => cast.MATRIX(0.0)
@@ -5182,7 +5191,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v1;
 		if ( v1.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -5190,14 +5199,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v1);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_0);
 		HopRewriteUtils.cleanupUnreferenced(hi_1);
 
-		return v1;
+		return newRoot;
 	}
 
 	// Implementation of the rule *(a,cast.MATRIX(0.0)) => cast.MATRIX(0.0)
@@ -5249,7 +5258,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v1;
 		if ( v1.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -5257,14 +5266,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v1);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_0);
 		HopRewriteUtils.cleanupUnreferenced(hi_1);
 
-		return v1;
+		return newRoot;
 	}
 
 	// Implementation of the rule *(cast.MATRIX(1.0),a) => cast.MATRIX(a)
@@ -5316,7 +5325,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v1;
 		if ( v1.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -5324,14 +5333,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v1);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_0);
 		HopRewriteUtils.cleanupUnreferenced(hi_0_0);
 
-		return v1;
+		return newRoot;
 	}
 
 	// Implementation of the rule *(a,cast.MATRIX(1.0)) => cast.MATRIX(a)
@@ -5383,7 +5392,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v1;
 		if ( v1.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -5391,14 +5400,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v1);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_1);
 		HopRewriteUtils.cleanupUnreferenced(hi_1_0);
 
-		return v1;
+		return newRoot;
 	}
 
 	// Implementation of the rule +(cast.MATRIX(0.0),a) => cast.MATRIX(a)
@@ -5450,7 +5459,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v1;
 		if ( v1.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -5458,14 +5467,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v1);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_0);
 		HopRewriteUtils.cleanupUnreferenced(hi_0_0);
 
-		return v1;
+		return newRoot;
 	}
 
 	// Implementation of the rule +(a,cast.MATRIX(0.0)) => cast.MATRIX(a)
@@ -5517,7 +5526,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v1;
 		if ( v1.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -5525,14 +5534,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v1);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_1);
 		HopRewriteUtils.cleanupUnreferenced(hi_1_0);
 
-		return v1;
+		return newRoot;
 	}
 
 	// Implementation of the rule rev(cast.MATRIX(a)) => cast.MATRIX(a)
@@ -5571,7 +5580,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v1;
 		if ( v1.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -5579,13 +5588,13 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v1);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_0);
 
-		return v1;
+		return newRoot;
 	}
 
 	// Implementation of the rule *(/(1.0,B),a) => /(a,B)
@@ -5642,7 +5651,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v1;
 		if ( v1.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -5650,14 +5659,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v1);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_0);
 		HopRewriteUtils.cleanupUnreferenced(hi_0_0);
 
-		return v1;
+		return newRoot;
 	}
 
 	// Implementation of the rule *(a,/(1.0,B)) => /(a,B)
@@ -5714,7 +5723,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v1;
 		if ( v1.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -5722,14 +5731,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v1);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_1);
 		HopRewriteUtils.cleanupUnreferenced(hi_1_0);
 
-		return v1;
+		return newRoot;
 	}
 
 	// Implementation of the rule *(/(1.0,B),A) => /(A,B)
@@ -5786,7 +5795,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v1;
 		if ( v1.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -5794,14 +5803,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v1);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_0);
 		HopRewriteUtils.cleanupUnreferenced(hi_0_0);
 
-		return v1;
+		return newRoot;
 	}
 
 	// Implementation of the rule *(A,/(1.0,B)) => /(A,B)
@@ -5858,7 +5867,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v1;
 		if ( v1.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -5866,14 +5875,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v1);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_1);
 		HopRewriteUtils.cleanupUnreferenced(hi_1_0);
 
-		return v1;
+		return newRoot;
 	}
 
 	// Implementation of the rule *(/(a,C),b) => /(*(a,b),C)
@@ -5923,7 +5932,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v2;
 		if ( v2.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -5931,13 +5940,13 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v2);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_0);
 
-		return v2;
+		return newRoot;
 	}
 
 	// Implementation of the rule *(a,/(b,C)) => /(*(a,b),C)
@@ -5987,7 +5996,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v2;
 		if ( v2.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -5995,13 +6004,13 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v2);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_1);
 
-		return v2;
+		return newRoot;
 	}
 
 	// Implementation of the rule sum(-(0.0,B)) => -(0.0,sum(B))
@@ -6057,7 +6066,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v2;
 		if ( v2.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -6065,13 +6074,13 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v2);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_0);
 
-		return v2;
+		return newRoot;
 	}
 
 	// Implementation of the rule -(0.0,-(B,a)) => -(a,B)
@@ -6128,7 +6137,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v1;
 		if ( v1.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -6136,14 +6145,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v1);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_0);
 		HopRewriteUtils.cleanupUnreferenced(hi_1);
 
-		return v1;
+		return newRoot;
 	}
 
 	// Implementation of the rule +(-(0.0,B),a) => -(a,B)
@@ -6200,7 +6209,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v1;
 		if ( v1.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -6208,14 +6217,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v1);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_0);
 		HopRewriteUtils.cleanupUnreferenced(hi_0_0);
 
-		return v1;
+		return newRoot;
 	}
 
 	// Implementation of the rule +(a,-(0.0,B)) => -(a,B)
@@ -6272,7 +6281,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v1;
 		if ( v1.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -6280,14 +6289,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v1);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_1);
 		HopRewriteUtils.cleanupUnreferenced(hi_1_0);
 
-		return v1;
+		return newRoot;
 	}
 
 	// Implementation of the rule -(0.0,-(b,A)) => -(A,b)
@@ -6344,7 +6353,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v1;
 		if ( v1.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -6352,14 +6361,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v1);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_0);
 		HopRewriteUtils.cleanupUnreferenced(hi_1);
 
-		return v1;
+		return newRoot;
 	}
 
 	// Implementation of the rule -(0.0,-(B,A)) => -(A,B)
@@ -6416,7 +6425,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v1;
 		if ( v1.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -6424,14 +6433,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v1);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_0);
 		HopRewriteUtils.cleanupUnreferenced(hi_1);
 
-		return v1;
+		return newRoot;
 	}
 
 	// Implementation of the rule +(-(0.0,B),A) => -(A,B)
@@ -6488,7 +6497,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v1;
 		if ( v1.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -6496,14 +6505,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v1);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_0);
 		HopRewriteUtils.cleanupUnreferenced(hi_0_0);
 
-		return v1;
+		return newRoot;
 	}
 
 	// Implementation of the rule +(A,-(0.0,B)) => -(A,B)
@@ -6560,7 +6569,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v1;
 		if ( v1.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -6568,14 +6577,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v1);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_1);
 		HopRewriteUtils.cleanupUnreferenced(hi_1_0);
 
-		return v1;
+		return newRoot;
 	}
 
 	// Implementation of the rule -(-(A,b),c) => -(A,+(b,c))
@@ -6625,7 +6634,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v2;
 		if ( v2.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -6633,13 +6642,13 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v2);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_0);
 
-		return v2;
+		return newRoot;
 	}
 
 	// Implementation of the rule -(a,+(b,C)) => -(-(a,b),C)
@@ -6689,7 +6698,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v2;
 		if ( v2.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -6697,13 +6706,13 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v2);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_1);
 
-		return v2;
+		return newRoot;
 	}
 
 	// Implementation of the rule -(a,+(C,b)) => -(-(a,b),C)
@@ -6753,7 +6762,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v2;
 		if ( v2.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -6761,13 +6770,13 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v2);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_1);
 
-		return v2;
+		return newRoot;
 	}
 
 	// Implementation of the rule -(-(a,C),b) => -(-(a,b),C)
@@ -6817,7 +6826,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v2;
 		if ( v2.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -6825,13 +6834,13 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v2);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_0);
 
-		return v2;
+		return newRoot;
 	}
 
 	// Implementation of the rule -(a,-(C,b)) => -(+(a,b),C)
@@ -6881,7 +6890,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v2;
 		if ( v2.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -6889,13 +6898,13 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v2);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_1);
 
-		return v2;
+		return newRoot;
 	}
 
 	// Implementation of the rule +(-(a,C),b) => -(+(a,b),C)
@@ -6945,7 +6954,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v2;
 		if ( v2.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -6953,13 +6962,13 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v2);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_0);
 
-		return v2;
+		return newRoot;
 	}
 
 	// Implementation of the rule +(a,-(b,C)) => -(+(a,b),C)
@@ -7009,7 +7018,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v2;
 		if ( v2.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -7017,13 +7026,13 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v2);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_1);
 
-		return v2;
+		return newRoot;
 	}
 
 	// Implementation of the rule -(+(b,A),c) => +(A,-(b,c))
@@ -7073,7 +7082,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v2;
 		if ( v2.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -7081,13 +7090,13 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v2);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_0);
 
-		return v2;
+		return newRoot;
 	}
 
 	// Implementation of the rule -(+(A,b),c) => +(A,-(b,c))
@@ -7137,7 +7146,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v2;
 		if ( v2.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -7145,13 +7154,13 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v2);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_0);
 
-		return v2;
+		return newRoot;
 	}
 
 	// Implementation of the rule -(b,-(c,A)) => +(A,-(b,c))
@@ -7201,7 +7210,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v2;
 		if ( v2.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -7209,13 +7218,13 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v2);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_1);
 
-		return v2;
+		return newRoot;
 	}
 
 	// Implementation of the rule +(-(A,c),b) => +(A,-(b,c))
@@ -7265,7 +7274,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v2;
 		if ( v2.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -7273,13 +7282,13 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v2);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_0);
 
-		return v2;
+		return newRoot;
 	}
 
 	// Implementation of the rule +(b,-(A,c)) => +(A,-(b,c))
@@ -7329,7 +7338,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v2;
 		if ( v2.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -7337,13 +7346,13 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v2);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_1);
 
-		return v2;
+		return newRoot;
 	}
 
 	// Implementation of the rule colSums(-(0.0,B)) => -(0.0,colSums(B))
@@ -7410,7 +7419,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v2;
 		if ( v2.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -7418,13 +7427,13 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v2);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_0);
 
-		return v2;
+		return newRoot;
 	}
 
 	// Implementation of the rule rowSums(-(0.0,B)) => -(0.0,rowSums(B))
@@ -7491,7 +7500,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v2;
 		if ( v2.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -7499,13 +7508,13 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v2);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_0);
 
-		return v2;
+		return newRoot;
 	}
 
 	// Implementation of the rule -(cast.MATRIX(a),b) => cast.MATRIX(-(a,b))
@@ -7550,7 +7559,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v2;
 		if ( v2.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -7558,13 +7567,13 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v2);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_0);
 
-		return v2;
+		return newRoot;
 	}
 
 	// Implementation of the rule -(a,cast.MATRIX(b)) => cast.MATRIX(-(a,b))
@@ -7609,7 +7618,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v2;
 		if ( v2.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -7617,13 +7626,13 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v2);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_1);
 
-		return v2;
+		return newRoot;
 	}
 
 	// Implementation of the rule +(cast.MATRIX(a),b) => cast.MATRIX(+(a,b))
@@ -7668,7 +7677,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v2;
 		if ( v2.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -7676,13 +7685,13 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v2);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_0);
 
-		return v2;
+		return newRoot;
 	}
 
 	// Implementation of the rule +(a,cast.MATRIX(b)) => cast.MATRIX(+(a,b))
@@ -7727,7 +7736,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v2;
 		if ( v2.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -7735,13 +7744,13 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v2);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_1);
 
-		return v2;
+		return newRoot;
 	}
 
 	// Implementation of the rule *(cast.MATRIX(a),b) => cast.MATRIX(*(a,b))
@@ -7786,7 +7795,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v2;
 		if ( v2.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -7794,13 +7803,13 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v2);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_0);
 
-		return v2;
+		return newRoot;
 	}
 
 	// Implementation of the rule *(a,cast.MATRIX(b)) => cast.MATRIX(*(a,b))
@@ -7845,7 +7854,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v2;
 		if ( v2.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -7853,13 +7862,13 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v2);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_1);
 
-		return v2;
+		return newRoot;
 	}
 
 	// Implementation of the rule /(a,cast.MATRIX(b)) => cast.MATRIX(/(a,b))
@@ -7904,7 +7913,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v2;
 		if ( v2.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -7912,13 +7921,13 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v2);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_1);
 
-		return v2;
+		return newRoot;
 	}
 
 	// Implementation of the rule rev(colSums(A)) => colSums(A)
@@ -7960,7 +7969,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v1;
 		if ( v1.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -7968,13 +7977,13 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v1);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_0);
 
-		return v1;
+		return newRoot;
 	}
 
 	// Implementation of the rule *(/(1.0,b),a) => /(a,b)
@@ -8031,7 +8040,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v1;
 		if ( v1.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -8039,14 +8048,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v1);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_0);
 		HopRewriteUtils.cleanupUnreferenced(hi_0_0);
 
-		return v1;
+		return newRoot;
 	}
 
 	// Implementation of the rule *(a,/(1.0,b)) => /(a,b)
@@ -8103,7 +8112,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v1;
 		if ( v1.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -8111,14 +8120,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v1);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_1);
 		HopRewriteUtils.cleanupUnreferenced(hi_1_0);
 
-		return v1;
+		return newRoot;
 	}
 
 	// Implementation of the rule -(0.0,-(b,a)) => -(a,b)
@@ -8175,7 +8184,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v1;
 		if ( v1.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -8183,14 +8192,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v1);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_0);
 		HopRewriteUtils.cleanupUnreferenced(hi_1);
 
-		return v1;
+		return newRoot;
 	}
 
 	// Implementation of the rule -(a,-(b,0.0)) => -(a,b)
@@ -8247,7 +8256,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v1;
 		if ( v1.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -8255,14 +8264,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v1);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_1);
 		HopRewriteUtils.cleanupUnreferenced(hi_1_1);
 
-		return v1;
+		return newRoot;
 	}
 
 	// Implementation of the rule +(-(0.0,b),a) => -(a,b)
@@ -8319,7 +8328,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v1;
 		if ( v1.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -8327,14 +8336,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v1);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_0);
 		HopRewriteUtils.cleanupUnreferenced(hi_0_0);
 
-		return v1;
+		return newRoot;
 	}
 
 	// Implementation of the rule +(a,-(0.0,b)) => -(a,b)
@@ -8391,7 +8400,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v1;
 		if ( v1.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -8399,14 +8408,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v1);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_1);
 		HopRewriteUtils.cleanupUnreferenced(hi_1_0);
 
-		return v1;
+		return newRoot;
 	}
 
 	// Implementation of the rule *(-(a,0.0),b) => *(a,b)
@@ -8463,7 +8472,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v1;
 		if ( v1.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -8471,14 +8480,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v1);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_0);
 		HopRewriteUtils.cleanupUnreferenced(hi_0_1);
 
-		return v1;
+		return newRoot;
 	}
 
 	// Implementation of the rule *(a,-(b,0.0)) => *(a,b)
@@ -8535,7 +8544,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v1;
 		if ( v1.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -8543,14 +8552,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v1);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_1);
 		HopRewriteUtils.cleanupUnreferenced(hi_1_1);
 
-		return v1;
+		return newRoot;
 	}
 
 	// Implementation of the rule /(-(a,0.0),b) => /(a,b)
@@ -8607,7 +8616,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v1;
 		if ( v1.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -8615,14 +8624,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v1);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_0);
 		HopRewriteUtils.cleanupUnreferenced(hi_0_1);
 
-		return v1;
+		return newRoot;
 	}
 
 	// Implementation of the rule -(0.0,*(b,A)) => -*(const(A,0.0),b,A)
@@ -8680,7 +8689,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v2;
 		if ( v2.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -8688,13 +8697,13 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v2);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_1);
 
-		return v2;
+		return newRoot;
 	}
 
 	// Implementation of the rule -(0.0,*(A,b)) => -*(const(A,0.0),b,A)
@@ -8752,7 +8761,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v2;
 		if ( v2.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -8760,13 +8769,13 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v2);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_1);
 
-		return v2;
+		return newRoot;
 	}
 
 	// Implementation of the rule -(A,-(b,0.0)) => -(A,b)
@@ -8823,7 +8832,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v1;
 		if ( v1.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -8831,14 +8840,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v1);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_1);
 		HopRewriteUtils.cleanupUnreferenced(hi_1_1);
 
-		return v1;
+		return newRoot;
 	}
 
 	// Implementation of the rule +(-(0.0,b),A) => -(A,b)
@@ -8895,7 +8904,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v1;
 		if ( v1.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -8903,14 +8912,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v1);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_0);
 		HopRewriteUtils.cleanupUnreferenced(hi_0_0);
 
-		return v1;
+		return newRoot;
 	}
 
 	// Implementation of the rule +(A,-(0.0,b)) => -(A,b)
@@ -8967,7 +8976,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v1;
 		if ( v1.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -8975,14 +8984,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v1);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_1);
 		HopRewriteUtils.cleanupUnreferenced(hi_1_0);
 
-		return v1;
+		return newRoot;
 	}
 
 	// Implementation of the rule *(-(b,0.0),A) => *(A,b)
@@ -9039,7 +9048,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v1;
 		if ( v1.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -9047,14 +9056,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v1);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_0);
 		HopRewriteUtils.cleanupUnreferenced(hi_0_1);
 
-		return v1;
+		return newRoot;
 	}
 
 	// Implementation of the rule *(A,-(b,0.0)) => *(A,b)
@@ -9111,7 +9120,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v1;
 		if ( v1.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -9119,14 +9128,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v1);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_1);
 		HopRewriteUtils.cleanupUnreferenced(hi_1_1);
 
-		return v1;
+		return newRoot;
 	}
 
 	// Implementation of the rule /(-(a,0.0),B) => /(a,B)
@@ -9183,7 +9192,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v1;
 		if ( v1.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -9191,14 +9200,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v1);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_0);
 		HopRewriteUtils.cleanupUnreferenced(hi_0_1);
 
-		return v1;
+		return newRoot;
 	}
 
 	// Implementation of the rule +(%*%(B,C),%*%(A,C)) => %*%(+(A,B),C)
@@ -9266,7 +9275,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v2;
 		if ( v2.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -9274,14 +9283,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v2);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_0);
 		HopRewriteUtils.cleanupUnreferenced(hi_1);
 
-		return v2;
+		return newRoot;
 	}
 
 	// Implementation of the rule +(%*%(A,C),%*%(A,B)) => %*%(A,+(B,C))
@@ -9349,7 +9358,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v2;
 		if ( v2.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -9357,14 +9366,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v2);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_0);
 		HopRewriteUtils.cleanupUnreferenced(hi_1);
 
-		return v2;
+		return newRoot;
 	}
 
 	// Implementation of the rule trace(+(t(A),A)) => +(trace(A),trace(A))
@@ -9422,7 +9431,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v3;
 		if ( v3.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -9430,14 +9439,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v3);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_0);
 		HopRewriteUtils.cleanupUnreferenced(hi_0_0);
 
-		return v3;
+		return newRoot;
 	}
 
 	// Implementation of the rule trace(+(A,t(A))) => +(trace(A),trace(A))
@@ -9495,7 +9504,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v3;
 		if ( v3.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -9503,14 +9512,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v3);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_0);
 		HopRewriteUtils.cleanupUnreferenced(hi_0_1);
 
-		return v3;
+		return newRoot;
 	}
 
 	// Implementation of the rule rev(-(a,rev(B))) => -(a,B)
@@ -9566,7 +9575,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v1;
 		if ( v1.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -9574,14 +9583,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v1);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_0);
 		HopRewriteUtils.cleanupUnreferenced(hi_0_1);
 
-		return v1;
+		return newRoot;
 	}
 
 	// Implementation of the rule t(-(a,t(B))) => -(a,B)
@@ -9637,7 +9646,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v1;
 		if ( v1.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -9645,14 +9654,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v1);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_0);
 		HopRewriteUtils.cleanupUnreferenced(hi_0_1);
 
-		return v1;
+		return newRoot;
 	}
 
 	// Implementation of the rule rev(-(rev(A),b)) => -(A,b)
@@ -9708,7 +9717,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v1;
 		if ( v1.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -9716,14 +9725,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v1);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_0);
 		HopRewriteUtils.cleanupUnreferenced(hi_0_0);
 
-		return v1;
+		return newRoot;
 	}
 
 	// Implementation of the rule t(-(t(A),b)) => -(A,b)
@@ -9779,7 +9788,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v1;
 		if ( v1.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -9787,14 +9796,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v1);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_0);
 		HopRewriteUtils.cleanupUnreferenced(hi_0_0);
 
-		return v1;
+		return newRoot;
 	}
 
 	// Implementation of the rule rev(!=(rev(A),b)) => !=(A,b)
@@ -9850,7 +9859,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v1;
 		if ( v1.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -9858,14 +9867,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v1);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_0);
 		HopRewriteUtils.cleanupUnreferenced(hi_0_0);
 
-		return v1;
+		return newRoot;
 	}
 
 	// Implementation of the rule rev(!=(b,rev(A))) => !=(A,b)
@@ -9921,7 +9930,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v1;
 		if ( v1.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -9929,14 +9938,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v1);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_0);
 		HopRewriteUtils.cleanupUnreferenced(hi_0_1);
 
-		return v1;
+		return newRoot;
 	}
 
 	// Implementation of the rule t(!=(t(A),b)) => !=(A,b)
@@ -9992,7 +10001,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v1;
 		if ( v1.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -10000,14 +10009,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v1);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_0);
 		HopRewriteUtils.cleanupUnreferenced(hi_0_0);
 
-		return v1;
+		return newRoot;
 	}
 
 	// Implementation of the rule t(!=(b,t(A))) => !=(A,b)
@@ -10063,7 +10072,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v1;
 		if ( v1.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -10071,14 +10080,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v1);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_0);
 		HopRewriteUtils.cleanupUnreferenced(hi_0_1);
 
-		return v1;
+		return newRoot;
 	}
 
 	// Implementation of the rule rev(+(rev(A),b)) => +(A,b)
@@ -10134,7 +10143,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v1;
 		if ( v1.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -10142,14 +10151,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v1);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_0);
 		HopRewriteUtils.cleanupUnreferenced(hi_0_0);
 
-		return v1;
+		return newRoot;
 	}
 
 	// Implementation of the rule rev(+(b,rev(A))) => +(A,b)
@@ -10205,7 +10214,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v1;
 		if ( v1.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -10213,14 +10222,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v1);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_0);
 		HopRewriteUtils.cleanupUnreferenced(hi_0_1);
 
-		return v1;
+		return newRoot;
 	}
 
 	// Implementation of the rule t(+(t(A),b)) => +(A,b)
@@ -10276,7 +10285,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v1;
 		if ( v1.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -10284,14 +10293,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v1);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_0);
 		HopRewriteUtils.cleanupUnreferenced(hi_0_0);
 
-		return v1;
+		return newRoot;
 	}
 
 	// Implementation of the rule t(+(b,t(A))) => +(A,b)
@@ -10347,7 +10356,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v1;
 		if ( v1.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -10355,14 +10364,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v1);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_0);
 		HopRewriteUtils.cleanupUnreferenced(hi_0_1);
 
-		return v1;
+		return newRoot;
 	}
 
 	// Implementation of the rule rev(*(rev(A),b)) => *(A,b)
@@ -10418,7 +10427,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v1;
 		if ( v1.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -10426,14 +10435,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v1);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_0);
 		HopRewriteUtils.cleanupUnreferenced(hi_0_0);
 
-		return v1;
+		return newRoot;
 	}
 
 	// Implementation of the rule rev(*(b,rev(A))) => *(A,b)
@@ -10489,7 +10498,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v1;
 		if ( v1.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -10497,14 +10506,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v1);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_0);
 		HopRewriteUtils.cleanupUnreferenced(hi_0_1);
 
-		return v1;
+		return newRoot;
 	}
 
 	// Implementation of the rule t(*(t(A),b)) => *(A,b)
@@ -10560,7 +10569,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v1;
 		if ( v1.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -10568,14 +10577,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v1);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_0);
 		HopRewriteUtils.cleanupUnreferenced(hi_0_0);
 
-		return v1;
+		return newRoot;
 	}
 
 	// Implementation of the rule t(*(b,t(A))) => *(A,b)
@@ -10631,7 +10640,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v1;
 		if ( v1.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -10639,14 +10648,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v1);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_0);
 		HopRewriteUtils.cleanupUnreferenced(hi_0_1);
 
-		return v1;
+		return newRoot;
 	}
 
 	// Implementation of the rule rowSums(rev(*(a,B))) => *(a,rowSums(rev(B)))
@@ -10718,7 +10727,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v3;
 		if ( v3.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -10726,14 +10735,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v3);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_0);
 		HopRewriteUtils.cleanupUnreferenced(hi_0_0);
 
-		return v3;
+		return newRoot;
 	}
 
 	// Implementation of the rule rowSums(rev(*(B,a))) => *(a,rowSums(rev(B)))
@@ -10805,7 +10814,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v3;
 		if ( v3.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -10813,14 +10822,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v3);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_0);
 		HopRewriteUtils.cleanupUnreferenced(hi_0_0);
 
-		return v3;
+		return newRoot;
 	}
 
 	// Implementation of the rule colSums(rev(*(a,B))) => *(a,colSums(rev(B)))
@@ -10892,7 +10901,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v3;
 		if ( v3.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -10900,14 +10909,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v3);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_0);
 		HopRewriteUtils.cleanupUnreferenced(hi_0_0);
 
-		return v3;
+		return newRoot;
 	}
 
 	// Implementation of the rule colSums(rev(*(B,a))) => *(a,colSums(rev(B)))
@@ -10979,7 +10988,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v3;
 		if ( v3.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -10987,14 +10996,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v3);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_0);
 		HopRewriteUtils.cleanupUnreferenced(hi_0_0);
 
-		return v3;
+		return newRoot;
 	}
 
 	// Implementation of the rule rev(/(a,rev(B))) => /(a,B)
@@ -11050,7 +11059,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v1;
 		if ( v1.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -11058,14 +11067,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v1);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_0);
 		HopRewriteUtils.cleanupUnreferenced(hi_0_1);
 
-		return v1;
+		return newRoot;
 	}
 
 	// Implementation of the rule t(/(a,t(B))) => /(a,B)
@@ -11121,7 +11130,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v1;
 		if ( v1.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -11129,14 +11138,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v1);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_0);
 		HopRewriteUtils.cleanupUnreferenced(hi_0_1);
 
-		return v1;
+		return newRoot;
 	}
 
 	// Implementation of the rule trace(*(/(a,C),B)) => *(a,trace(/(B,C)))
@@ -11199,7 +11208,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v3;
 		if ( v3.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -11207,14 +11216,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v3);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_0);
 		HopRewriteUtils.cleanupUnreferenced(hi_0_0);
 
-		return v3;
+		return newRoot;
 	}
 
 	// Implementation of the rule trace(*(B,/(a,C))) => *(a,trace(/(B,C)))
@@ -11277,7 +11286,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v3;
 		if ( v3.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -11285,14 +11294,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v3);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_0);
 		HopRewriteUtils.cleanupUnreferenced(hi_0_1);
 
-		return v3;
+		return newRoot;
 	}
 
 	// Implementation of the rule trace(/(*(a,B),C)) => *(a,trace(/(B,C)))
@@ -11355,7 +11364,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v3;
 		if ( v3.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -11363,14 +11372,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v3);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_0);
 		HopRewriteUtils.cleanupUnreferenced(hi_0_0);
 
-		return v3;
+		return newRoot;
 	}
 
 	// Implementation of the rule trace(/(*(B,a),C)) => *(a,trace(/(B,C)))
@@ -11433,7 +11442,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v3;
 		if ( v3.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -11441,14 +11450,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v3);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_0);
 		HopRewriteUtils.cleanupUnreferenced(hi_0_0);
 
-		return v3;
+		return newRoot;
 	}
 
 	// Implementation of the rule +(*(C,A),*(B,A)) => *(A,+(B,C))
@@ -11526,7 +11535,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v2;
 		if ( v2.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -11534,14 +11543,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v2);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_0);
 		HopRewriteUtils.cleanupUnreferenced(hi_1);
 
-		return v2;
+		return newRoot;
 	}
 
 	// Implementation of the rule +(*(B,A),*(A,C)) => *(A,+(B,C))
@@ -11619,7 +11628,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v2;
 		if ( v2.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -11627,14 +11636,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v2);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_0);
 		HopRewriteUtils.cleanupUnreferenced(hi_1);
 
-		return v2;
+		return newRoot;
 	}
 
 	// Implementation of the rule +(*(A,C),*(B,A)) => *(A,+(B,C))
@@ -11712,7 +11721,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v2;
 		if ( v2.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -11720,14 +11729,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v2);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_0);
 		HopRewriteUtils.cleanupUnreferenced(hi_1);
 
-		return v2;
+		return newRoot;
 	}
 
 	// Implementation of the rule +(*(A,C),*(A,B)) => *(A,+(B,C))
@@ -11805,7 +11814,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v2;
 		if ( v2.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -11813,14 +11822,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v2);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_0);
 		HopRewriteUtils.cleanupUnreferenced(hi_1);
 
-		return v2;
+		return newRoot;
 	}
 
 	// Implementation of the rule *(t(*(a,C)),b) => *(*(a,b),t(C))
@@ -11883,7 +11892,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v3;
 		if ( v3.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -11891,14 +11900,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v3);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_0);
 		HopRewriteUtils.cleanupUnreferenced(hi_0_0);
 
-		return v3;
+		return newRoot;
 	}
 
 	// Implementation of the rule *(t(*(C,a)),b) => *(*(a,b),t(C))
@@ -11961,7 +11970,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v3;
 		if ( v3.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -11969,14 +11978,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v3);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_0);
 		HopRewriteUtils.cleanupUnreferenced(hi_0_0);
 
-		return v3;
+		return newRoot;
 	}
 
 	// Implementation of the rule *(a,t(*(b,C))) => *(*(a,b),t(C))
@@ -12039,7 +12048,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v3;
 		if ( v3.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -12047,14 +12056,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v3);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_1);
 		HopRewriteUtils.cleanupUnreferenced(hi_1_0);
 
-		return v3;
+		return newRoot;
 	}
 
 	// Implementation of the rule *(a,t(*(C,b))) => *(*(a,b),t(C))
@@ -12117,7 +12126,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v3;
 		if ( v3.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -12125,14 +12134,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v3);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_1);
 		HopRewriteUtils.cleanupUnreferenced(hi_1_0);
 
-		return v3;
+		return newRoot;
 	}
 
 	// Implementation of the rule *(rev(*(a,C)),b) => *(*(a,b),rev(C))
@@ -12195,7 +12204,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v3;
 		if ( v3.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -12203,14 +12212,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v3);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_0);
 		HopRewriteUtils.cleanupUnreferenced(hi_0_0);
 
-		return v3;
+		return newRoot;
 	}
 
 	// Implementation of the rule *(rev(*(C,a)),b) => *(*(a,b),rev(C))
@@ -12273,7 +12282,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v3;
 		if ( v3.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -12281,14 +12290,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v3);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_0);
 		HopRewriteUtils.cleanupUnreferenced(hi_0_0);
 
-		return v3;
+		return newRoot;
 	}
 
 	// Implementation of the rule *(a,rev(*(b,C))) => *(*(a,b),rev(C))
@@ -12351,7 +12360,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v3;
 		if ( v3.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -12359,14 +12368,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v3);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_1);
 		HopRewriteUtils.cleanupUnreferenced(hi_1_0);
 
-		return v3;
+		return newRoot;
 	}
 
 	// Implementation of the rule *(a,rev(*(C,b))) => *(*(a,b),rev(C))
@@ -12429,7 +12438,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v3;
 		if ( v3.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -12437,14 +12446,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v3);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_1);
 		HopRewriteUtils.cleanupUnreferenced(hi_1_0);
 
-		return v3;
+		return newRoot;
 	}
 
 	// Implementation of the rule trace(!=(t(B),A)) => trace(!=(A,B))
@@ -12501,7 +12510,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v2;
 		if ( v2.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -12509,14 +12518,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v2);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_0);
 		HopRewriteUtils.cleanupUnreferenced(hi_0_0);
 
-		return v2;
+		return newRoot;
 	}
 
 	// Implementation of the rule trace(!=(A,t(B))) => trace(!=(A,B))
@@ -12573,7 +12582,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v2;
 		if ( v2.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -12581,14 +12590,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v2);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_0);
 		HopRewriteUtils.cleanupUnreferenced(hi_0_1);
 
-		return v2;
+		return newRoot;
 	}
 
 	// Implementation of the rule trace(-(t(A),b)) => trace(-(A,b))
@@ -12645,7 +12654,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v2;
 		if ( v2.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -12653,14 +12662,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v2);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_0);
 		HopRewriteUtils.cleanupUnreferenced(hi_0_0);
 
-		return v2;
+		return newRoot;
 	}
 
 	// Implementation of the rule trace(-(a,t(B))) => trace(-(a,B))
@@ -12717,7 +12726,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v2;
 		if ( v2.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -12725,14 +12734,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v2);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_0);
 		HopRewriteUtils.cleanupUnreferenced(hi_0_1);
 
-		return v2;
+		return newRoot;
 	}
 
 	// Implementation of the rule trace(-(t(A),B)) => trace(-(A,B))
@@ -12789,7 +12798,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v2;
 		if ( v2.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -12797,14 +12806,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v2);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_0);
 		HopRewriteUtils.cleanupUnreferenced(hi_0_0);
 
-		return v2;
+		return newRoot;
 	}
 
 	// Implementation of the rule trace(-(A,t(B))) => trace(-(A,B))
@@ -12861,7 +12870,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v2;
 		if ( v2.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -12869,14 +12878,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v2);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_0);
 		HopRewriteUtils.cleanupUnreferenced(hi_0_1);
 
-		return v2;
+		return newRoot;
 	}
 
 	// Implementation of the rule trace(+(t(B),A)) => trace(+(A,B))
@@ -12933,7 +12942,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v2;
 		if ( v2.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -12941,14 +12950,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v2);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_0);
 		HopRewriteUtils.cleanupUnreferenced(hi_0_0);
 
-		return v2;
+		return newRoot;
 	}
 
 	// Implementation of the rule trace(+(B,t(A))) => trace(+(A,B))
@@ -13005,7 +13014,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v2;
 		if ( v2.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -13013,14 +13022,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v2);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_0);
 		HopRewriteUtils.cleanupUnreferenced(hi_0_1);
 
-		return v2;
+		return newRoot;
 	}
 
 	// Implementation of the rule trace(+(t(A),b)) => trace(+(A,b))
@@ -13077,7 +13086,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v2;
 		if ( v2.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -13085,14 +13094,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v2);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_0);
 		HopRewriteUtils.cleanupUnreferenced(hi_0_0);
 
-		return v2;
+		return newRoot;
 	}
 
 	// Implementation of the rule trace(+(b,t(A))) => trace(+(A,b))
@@ -13149,7 +13158,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v2;
 		if ( v2.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -13157,14 +13166,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v2);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_0);
 		HopRewriteUtils.cleanupUnreferenced(hi_0_1);
 
-		return v2;
+		return newRoot;
 	}
 
 	// Implementation of the rule trace(!=(t(A),b)) => trace(!=(A,b))
@@ -13221,7 +13230,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v2;
 		if ( v2.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -13229,14 +13238,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v2);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_0);
 		HopRewriteUtils.cleanupUnreferenced(hi_0_0);
 
-		return v2;
+		return newRoot;
 	}
 
 	// Implementation of the rule trace(!=(b,t(A))) => trace(!=(A,b))
@@ -13293,7 +13302,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v2;
 		if ( v2.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -13301,14 +13310,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v2);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_0);
 		HopRewriteUtils.cleanupUnreferenced(hi_0_1);
 
-		return v2;
+		return newRoot;
 	}
 
 	// Implementation of the rule sum(/(*(a,B),C)) => *(a,sum(/(B,C)))
@@ -13374,7 +13383,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v3;
 		if ( v3.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -13382,14 +13391,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v3);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_0);
 		HopRewriteUtils.cleanupUnreferenced(hi_0_0);
 
-		return v3;
+		return newRoot;
 	}
 
 	// Implementation of the rule sum(/(*(B,a),C)) => *(a,sum(/(B,C)))
@@ -13455,7 +13464,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v3;
 		if ( v3.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -13463,14 +13472,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v3);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_0);
 		HopRewriteUtils.cleanupUnreferenced(hi_0_0);
 
-		return v3;
+		return newRoot;
 	}
 
 	// Implementation of the rule sum(*(/(a,C),B)) => *(a,sum(/(B,C)))
@@ -13536,7 +13545,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v3;
 		if ( v3.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -13544,14 +13553,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v3);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_0);
 		HopRewriteUtils.cleanupUnreferenced(hi_0_0);
 
-		return v3;
+		return newRoot;
 	}
 
 	// Implementation of the rule sum(*(B,/(a,C))) => *(a,sum(/(B,C)))
@@ -13617,7 +13626,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v3;
 		if ( v3.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -13625,14 +13634,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v3);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_0);
 		HopRewriteUtils.cleanupUnreferenced(hi_0_1);
 
-		return v3;
+		return newRoot;
 	}
 
 	// Implementation of the rule *(t(/(a,C)),b) => /(*(a,b),t(C))
@@ -13695,7 +13704,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v3;
 		if ( v3.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -13703,14 +13712,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v3);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_0);
 		HopRewriteUtils.cleanupUnreferenced(hi_0_0);
 
-		return v3;
+		return newRoot;
 	}
 
 	// Implementation of the rule *(a,t(/(b,C))) => /(*(a,b),t(C))
@@ -13773,7 +13782,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v3;
 		if ( v3.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -13781,14 +13790,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v3);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_1);
 		HopRewriteUtils.cleanupUnreferenced(hi_1_0);
 
-		return v3;
+		return newRoot;
 	}
 
 	// Implementation of the rule *(rev(/(a,C)),b) => /(*(a,b),rev(C))
@@ -13851,7 +13860,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v3;
 		if ( v3.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -13859,14 +13868,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v3);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_0);
 		HopRewriteUtils.cleanupUnreferenced(hi_0_0);
 
-		return v3;
+		return newRoot;
 	}
 
 	// Implementation of the rule *(a,rev(/(b,C))) => /(*(a,b),rev(C))
@@ -13929,7 +13938,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v3;
 		if ( v3.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -13937,14 +13946,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v3);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_1);
 		HopRewriteUtils.cleanupUnreferenced(hi_1_0);
 
-		return v3;
+		return newRoot;
 	}
 
 	// Implementation of the rule %*%(colSums(B),*(a,C)) => *(a,%*%(colSums(B),C))
@@ -14005,7 +14014,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v3;
 		if ( v3.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -14013,14 +14022,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v3);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_0);
 		HopRewriteUtils.cleanupUnreferenced(hi_1);
 
-		return v3;
+		return newRoot;
 	}
 
 	// Implementation of the rule %*%(colSums(B),*(C,a)) => *(a,%*%(colSums(B),C))
@@ -14081,7 +14090,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v3;
 		if ( v3.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -14089,14 +14098,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v3);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_0);
 		HopRewriteUtils.cleanupUnreferenced(hi_1);
 
-		return v3;
+		return newRoot;
 	}
 
 	// Implementation of the rule %*%(*(a,B),rowSums(C)) => *(a,%*%(B,rowSums(C)))
@@ -14157,7 +14166,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v3;
 		if ( v3.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -14165,14 +14174,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v3);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_0);
 		HopRewriteUtils.cleanupUnreferenced(hi_1);
 
-		return v3;
+		return newRoot;
 	}
 
 	// Implementation of the rule %*%(*(B,a),rowSums(C)) => *(a,%*%(B,rowSums(C)))
@@ -14233,7 +14242,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v3;
 		if ( v3.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -14241,14 +14250,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v3);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_0);
 		HopRewriteUtils.cleanupUnreferenced(hi_1);
 
-		return v3;
+		return newRoot;
 	}
 
 	// Implementation of the rule colSums(/(*(a,B),C)) => *(a,colSums(/(B,C)))
@@ -14325,7 +14334,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v3;
 		if ( v3.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -14333,14 +14342,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v3);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_0);
 		HopRewriteUtils.cleanupUnreferenced(hi_0_0);
 
-		return v3;
+		return newRoot;
 	}
 
 	// Implementation of the rule colSums(/(*(B,a),C)) => *(a,colSums(/(B,C)))
@@ -14417,7 +14426,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v3;
 		if ( v3.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -14425,14 +14434,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v3);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_0);
 		HopRewriteUtils.cleanupUnreferenced(hi_0_0);
 
-		return v3;
+		return newRoot;
 	}
 
 	// Implementation of the rule colSums(*(/(a,C),B)) => *(a,colSums(/(B,C)))
@@ -14498,7 +14507,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v3;
 		if ( v3.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -14506,14 +14515,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v3);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_0);
 		HopRewriteUtils.cleanupUnreferenced(hi_0_0);
 
-		return v3;
+		return newRoot;
 	}
 
 	// Implementation of the rule colSums(*(B,/(a,C))) => *(a,colSums(/(B,C)))
@@ -14579,7 +14588,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v3;
 		if ( v3.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -14587,14 +14596,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v3);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_0);
 		HopRewriteUtils.cleanupUnreferenced(hi_0_1);
 
-		return v3;
+		return newRoot;
 	}
 
 	// Implementation of the rule rowSums(*(/(a,C),B)) => *(a,rowSums(/(B,C)))
@@ -14660,7 +14669,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v3;
 		if ( v3.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -14668,14 +14677,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v3);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_0);
 		HopRewriteUtils.cleanupUnreferenced(hi_0_0);
 
-		return v3;
+		return newRoot;
 	}
 
 	// Implementation of the rule rowSums(*(B,/(a,C))) => *(a,rowSums(/(B,C)))
@@ -14741,7 +14750,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v3;
 		if ( v3.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -14749,14 +14758,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v3);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_0);
 		HopRewriteUtils.cleanupUnreferenced(hi_0_1);
 
-		return v3;
+		return newRoot;
 	}
 
 	// Implementation of the rule rowSums(/(*(a,B),C)) => *(a,rowSums(/(B,C)))
@@ -14833,7 +14842,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v3;
 		if ( v3.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -14841,14 +14850,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v3);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_0);
 		HopRewriteUtils.cleanupUnreferenced(hi_0_0);
 
-		return v3;
+		return newRoot;
 	}
 
 	// Implementation of the rule rowSums(/(*(B,a),C)) => *(a,rowSums(/(B,C)))
@@ -14925,7 +14934,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v3;
 		if ( v3.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -14933,14 +14942,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v3);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_0);
 		HopRewriteUtils.cleanupUnreferenced(hi_0_0);
 
-		return v3;
+		return newRoot;
 	}
 
 	// Implementation of the rule trace(!=(sum(A),A)) => trace(!=(A,trace(A)))
@@ -15001,7 +15010,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v3;
 		if ( v3.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -15009,14 +15018,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v3);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_0);
 		HopRewriteUtils.cleanupUnreferenced(hi_0_0);
 
-		return v3;
+		return newRoot;
 	}
 
 	// Implementation of the rule trace(!=(A,sum(A))) => trace(!=(A,trace(A)))
@@ -15077,7 +15086,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v3;
 		if ( v3.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -15085,14 +15094,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v3);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_0);
 		HopRewriteUtils.cleanupUnreferenced(hi_0_1);
 
-		return v3;
+		return newRoot;
 	}
 
 	// Implementation of the rule *(/(*(a,C),D),b) => *(*(a,b),/(C,D))
@@ -15160,7 +15169,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v3;
 		if ( v3.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -15168,14 +15177,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v3);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_0);
 		HopRewriteUtils.cleanupUnreferenced(hi_0_0);
 
-		return v3;
+		return newRoot;
 	}
 
 	// Implementation of the rule *(/(*(C,a),D),b) => *(*(a,b),/(C,D))
@@ -15243,7 +15252,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v3;
 		if ( v3.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -15251,14 +15260,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v3);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_0);
 		HopRewriteUtils.cleanupUnreferenced(hi_0_0);
 
-		return v3;
+		return newRoot;
 	}
 
 	// Implementation of the rule *(a,/(*(b,C),D)) => *(*(a,b),/(C,D))
@@ -15326,7 +15335,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v3;
 		if ( v3.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -15334,14 +15343,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v3);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_1);
 		HopRewriteUtils.cleanupUnreferenced(hi_1_0);
 
-		return v3;
+		return newRoot;
 	}
 
 	// Implementation of the rule *(a,/(*(C,b),D)) => *(*(a,b),/(C,D))
@@ -15409,7 +15418,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v3;
 		if ( v3.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -15417,14 +15426,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v3);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_1);
 		HopRewriteUtils.cleanupUnreferenced(hi_1_0);
 
-		return v3;
+		return newRoot;
 	}
 
 	// Implementation of the rule *(/(/(a,C),D),b) => /(/(*(a,b),C),D)
@@ -15492,7 +15501,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v3;
 		if ( v3.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -15500,14 +15509,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v3);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_0);
 		HopRewriteUtils.cleanupUnreferenced(hi_0_0);
 
-		return v3;
+		return newRoot;
 	}
 
 	// Implementation of the rule *(/(a,C),/(b,D)) => /(/(*(a,b),C),D)
@@ -15575,7 +15584,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v3;
 		if ( v3.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -15583,14 +15592,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v3);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_0);
 		HopRewriteUtils.cleanupUnreferenced(hi_1);
 
-		return v3;
+		return newRoot;
 	}
 
 	// Implementation of the rule *(a,/(/(b,C),D)) => /(/(*(a,b),C),D)
@@ -15658,7 +15667,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v3;
 		if ( v3.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -15666,14 +15675,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v3);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_1);
 		HopRewriteUtils.cleanupUnreferenced(hi_1_0);
 
-		return v3;
+		return newRoot;
 	}
 
 	// Implementation of the rule sum(-(t(A),b)) => sum(-(A,b))
@@ -15733,7 +15742,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v2;
 		if ( v2.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -15741,14 +15750,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v2);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_0);
 		HopRewriteUtils.cleanupUnreferenced(hi_0_0);
 
-		return v2;
+		return newRoot;
 	}
 
 	// Implementation of the rule sum(-(a,t(B))) => sum(-(a,B))
@@ -15808,7 +15817,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v2;
 		if ( v2.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -15816,14 +15825,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v2);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_0);
 		HopRewriteUtils.cleanupUnreferenced(hi_0_1);
 
-		return v2;
+		return newRoot;
 	}
 
 	// Implementation of the rule sum(!=(t(A),b)) => sum(!=(A,b))
@@ -15883,7 +15892,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v2;
 		if ( v2.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -15891,14 +15900,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v2);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_0);
 		HopRewriteUtils.cleanupUnreferenced(hi_0_0);
 
-		return v2;
+		return newRoot;
 	}
 
 	// Implementation of the rule sum(!=(b,t(A))) => sum(!=(A,b))
@@ -15958,7 +15967,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v2;
 		if ( v2.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -15966,14 +15975,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v2);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_0);
 		HopRewriteUtils.cleanupUnreferenced(hi_0_1);
 
-		return v2;
+		return newRoot;
 	}
 
 	// Implementation of the rule sum(+(t(A),b)) => sum(+(A,b))
@@ -16033,7 +16042,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v2;
 		if ( v2.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -16041,14 +16050,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v2);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_0);
 		HopRewriteUtils.cleanupUnreferenced(hi_0_0);
 
-		return v2;
+		return newRoot;
 	}
 
 	// Implementation of the rule sum(+(b,t(A))) => sum(+(A,b))
@@ -16108,7 +16117,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v2;
 		if ( v2.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -16116,14 +16125,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v2);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_0);
 		HopRewriteUtils.cleanupUnreferenced(hi_0_1);
 
-		return v2;
+		return newRoot;
 	}
 
 	// Implementation of the rule trace(*(t(B),A)) => trace(*(A,B))
@@ -16180,7 +16189,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v2;
 		if ( v2.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -16188,14 +16197,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v2);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_0);
 		HopRewriteUtils.cleanupUnreferenced(hi_0_0);
 
-		return v2;
+		return newRoot;
 	}
 
 	// Implementation of the rule trace(*(B,t(A))) => trace(*(A,B))
@@ -16252,7 +16261,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v2;
 		if ( v2.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -16260,14 +16269,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v2);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_0);
 		HopRewriteUtils.cleanupUnreferenced(hi_0_1);
 
-		return v2;
+		return newRoot;
 	}
 
 	// Implementation of the rule !=(t(A),t(B)) => t(!=(A,B))
@@ -16315,12 +16324,12 @@ public class GeneratedRewriteClass implements Function {
 			return hi;
 
 
-		if ( hi_1_0.getNnz() == -1 || hi_0_0.getDim1() == -1 || hi_1_0.getDim1() == -1 || hi_1_0.getDim2() == -1 || hi_0_0.getNnz() == -1 || hi_0_0.getDim2() == -1 )
+		if ( hi_1_0.getNnz() == -1 || hi_0_0.getDim1() == -1 || hi_1_0.getDim2() == -1 || hi_0_0.getNnz() == -1 || hi_0_0.getDim2() == -1 )
 			return hi;
 
 
-		double costFrom = (hi_0_0.getNnz() + hi_1_0.getNnz() + (hi_1_0.getDim2() * hi_1_0.getDim1()) + 30030.0);
-		double costTo = ((hi_1_0.getDim1() * hi_1_0.getDim2()) + (hi_0_0.getDim1() * hi_0_0.getDim2()) + 20020.0);
+		double costFrom = (hi_0_0.getNnz() + hi_1_0.getNnz() + (hi_1_0.getDim2() * hi_0_0.getDim1()) + 30030.0);
+		double costTo = ((hi_0_0.getDim1() * hi_1_0.getDim2()) + (hi_0_0.getDim1() * hi_0_0.getDim2()) + 20020.0);
 
 		if ( costFrom <= costTo )
 			return hi;
@@ -16335,7 +16344,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v2;
 		if ( v2.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -16343,14 +16352,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v2);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_0);
 		HopRewriteUtils.cleanupUnreferenced(hi_1);
 
-		return v2;
+		return newRoot;
 	}
 
 	// Implementation of the rule !=(rev(A),rev(A)) => rev(!=(A,A))
@@ -16407,7 +16416,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v2;
 		if ( v2.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -16415,14 +16424,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v2);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_0);
 		HopRewriteUtils.cleanupUnreferenced(hi_1);
 
-		return v2;
+		return newRoot;
 	}
 
 	// Implementation of the rule rev(-(rev(A),B)) => -(A,rev(B))
@@ -16479,7 +16488,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v2;
 		if ( v2.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -16487,14 +16496,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v2);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_0);
 		HopRewriteUtils.cleanupUnreferenced(hi_0_0);
 
-		return v2;
+		return newRoot;
 	}
 
 	// Implementation of the rule rev(-(A,rev(B))) => -(rev(A),B)
@@ -16551,7 +16560,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v2;
 		if ( v2.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -16559,14 +16568,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v2);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_0);
 		HopRewriteUtils.cleanupUnreferenced(hi_0_1);
 
-		return v2;
+		return newRoot;
 	}
 
 	// Implementation of the rule t(-(t(A),B)) => -(A,t(B))
@@ -16623,7 +16632,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v2;
 		if ( v2.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -16631,14 +16640,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v2);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_0);
 		HopRewriteUtils.cleanupUnreferenced(hi_0_0);
 
-		return v2;
+		return newRoot;
 	}
 
 	// Implementation of the rule t(-(A,t(B))) => -(t(A),B)
@@ -16695,7 +16704,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v2;
 		if ( v2.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -16703,14 +16712,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v2);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_0);
 		HopRewriteUtils.cleanupUnreferenced(hi_0_1);
 
-		return v2;
+		return newRoot;
 	}
 
 	// Implementation of the rule -(t(A),t(B)) => t(-(A,B))
@@ -16767,7 +16776,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v2;
 		if ( v2.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -16775,14 +16784,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v2);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_0);
 		HopRewriteUtils.cleanupUnreferenced(hi_1);
 
-		return v2;
+		return newRoot;
 	}
 
 	// Implementation of the rule +(t(B),t(A)) => t(+(A,B))
@@ -16839,7 +16848,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v2;
 		if ( v2.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -16847,14 +16856,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v2);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_0);
 		HopRewriteUtils.cleanupUnreferenced(hi_1);
 
-		return v2;
+		return newRoot;
 	}
 
 	// Implementation of the rule !=(rev(-(b,A)),A) => !=(A,-(b,A))
@@ -16916,7 +16925,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v2;
 		if ( v2.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -16924,14 +16933,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v2);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_0);
 		HopRewriteUtils.cleanupUnreferenced(hi_0_0);
 
-		return v2;
+		return newRoot;
 	}
 
 	// Implementation of the rule !=(A,rev(-(b,A))) => !=(A,-(b,A))
@@ -16993,7 +17002,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v2;
 		if ( v2.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -17001,14 +17010,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v2);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_1);
 		HopRewriteUtils.cleanupUnreferenced(hi_1_0);
 
-		return v2;
+		return newRoot;
 	}
 
 	// Implementation of the rule !=(-(b,rev(A)),A) => !=(A,-(b,A))
@@ -17070,7 +17079,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v2;
 		if ( v2.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -17078,14 +17087,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v2);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_0);
 		HopRewriteUtils.cleanupUnreferenced(hi_0_1);
 
-		return v2;
+		return newRoot;
 	}
 
 	// Implementation of the rule !=(-(b,A),rev(A)) => !=(A,-(b,A))
@@ -17147,7 +17156,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v2;
 		if ( v2.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -17155,14 +17164,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v2);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_0);
 		HopRewriteUtils.cleanupUnreferenced(hi_1);
 
-		return v2;
+		return newRoot;
 	}
 
 	// Implementation of the rule !=(A,-(b,rev(A))) => !=(A,-(b,A))
@@ -17224,7 +17233,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v2;
 		if ( v2.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -17232,14 +17241,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v2);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_1);
 		HopRewriteUtils.cleanupUnreferenced(hi_1_1);
 
-		return v2;
+		return newRoot;
 	}
 
 	// Implementation of the rule !=(rev(-(A,c)),A) => !=(A,-(A,c))
@@ -17301,7 +17310,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v2;
 		if ( v2.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -17309,14 +17318,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v2);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_0);
 		HopRewriteUtils.cleanupUnreferenced(hi_0_0);
 
-		return v2;
+		return newRoot;
 	}
 
 	// Implementation of the rule !=(A,rev(-(A,c))) => !=(A,-(A,c))
@@ -17378,7 +17387,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v2;
 		if ( v2.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -17386,14 +17395,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v2);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_1);
 		HopRewriteUtils.cleanupUnreferenced(hi_1_0);
 
-		return v2;
+		return newRoot;
 	}
 
 	// Implementation of the rule !=(-(rev(A),c),A) => !=(A,-(A,c))
@@ -17455,7 +17464,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v2;
 		if ( v2.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -17463,14 +17472,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v2);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_0);
 		HopRewriteUtils.cleanupUnreferenced(hi_0_0);
 
-		return v2;
+		return newRoot;
 	}
 
 	// Implementation of the rule !=(A,-(rev(A),c)) => !=(A,-(A,c))
@@ -17532,7 +17541,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v2;
 		if ( v2.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -17540,14 +17549,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v2);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_1);
 		HopRewriteUtils.cleanupUnreferenced(hi_1_0);
 
-		return v2;
+		return newRoot;
 	}
 
 	// Implementation of the rule !=(-(B,rev(A)),A) => !=(A,-(B,A))
@@ -17609,7 +17618,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v2;
 		if ( v2.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -17617,14 +17626,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v2);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_0);
 		HopRewriteUtils.cleanupUnreferenced(hi_0_1);
 
-		return v2;
+		return newRoot;
 	}
 
 	// Implementation of the rule !=(-(B,A),rev(A)) => !=(A,-(B,A))
@@ -17686,7 +17695,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v2;
 		if ( v2.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -17694,14 +17703,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v2);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_0);
 		HopRewriteUtils.cleanupUnreferenced(hi_1);
 
-		return v2;
+		return newRoot;
 	}
 
 	// Implementation of the rule !=(A,-(B,rev(A))) => !=(A,-(B,A))
@@ -17763,7 +17772,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v2;
 		if ( v2.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -17771,14 +17780,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v2);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_1);
 		HopRewriteUtils.cleanupUnreferenced(hi_1_1);
 
-		return v2;
+		return newRoot;
 	}
 
 	// Implementation of the rule !=(-(rev(A),C),A) => !=(A,-(A,C))
@@ -17840,7 +17849,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v2;
 		if ( v2.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -17848,14 +17857,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v2);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_0);
 		HopRewriteUtils.cleanupUnreferenced(hi_0_0);
 
-		return v2;
+		return newRoot;
 	}
 
 	// Implementation of the rule !=(-(A,C),rev(A)) => !=(A,-(A,C))
@@ -17917,7 +17926,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v2;
 		if ( v2.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -17925,14 +17934,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v2);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_0);
 		HopRewriteUtils.cleanupUnreferenced(hi_1);
 
-		return v2;
+		return newRoot;
 	}
 
 	// Implementation of the rule !=(A,-(rev(A),C)) => !=(A,-(A,C))
@@ -17994,7 +18003,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v2;
 		if ( v2.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -18002,14 +18011,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v2);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_1);
 		HopRewriteUtils.cleanupUnreferenced(hi_1_0);
 
-		return v2;
+		return newRoot;
 	}
 
 	// Implementation of the rule rev(!=(rev(A),B)) => !=(A,rev(B))
@@ -18066,7 +18075,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v2;
 		if ( v2.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -18074,14 +18083,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v2);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_0);
 		HopRewriteUtils.cleanupUnreferenced(hi_0_0);
 
-		return v2;
+		return newRoot;
 	}
 
 	// Implementation of the rule rev(!=(B,rev(A))) => !=(A,rev(B))
@@ -18138,7 +18147,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v2;
 		if ( v2.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -18146,14 +18155,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v2);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_0);
 		HopRewriteUtils.cleanupUnreferenced(hi_0_1);
 
-		return v2;
+		return newRoot;
 	}
 
 	// Implementation of the rule t(!=(t(A),B)) => !=(A,t(B))
@@ -18210,7 +18219,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v2;
 		if ( v2.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -18218,14 +18227,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v2);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_0);
 		HopRewriteUtils.cleanupUnreferenced(hi_0_0);
 
-		return v2;
+		return newRoot;
 	}
 
 	// Implementation of the rule t(!=(B,t(A))) => !=(A,t(B))
@@ -18282,7 +18291,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v2;
 		if ( v2.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -18290,14 +18299,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v2);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_0);
 		HopRewriteUtils.cleanupUnreferenced(hi_0_1);
 
-		return v2;
+		return newRoot;
 	}
 
 	// Implementation of the rule !=(rev(+(c,A)),A) => !=(A,+(A,c))
@@ -18359,7 +18368,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v2;
 		if ( v2.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -18367,14 +18376,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v2);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_0);
 		HopRewriteUtils.cleanupUnreferenced(hi_0_0);
 
-		return v2;
+		return newRoot;
 	}
 
 	// Implementation of the rule !=(rev(+(A,c)),A) => !=(A,+(A,c))
@@ -18436,7 +18445,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v2;
 		if ( v2.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -18444,14 +18453,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v2);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_0);
 		HopRewriteUtils.cleanupUnreferenced(hi_0_0);
 
-		return v2;
+		return newRoot;
 	}
 
 	// Implementation of the rule !=(A,rev(+(c,A))) => !=(A,+(A,c))
@@ -18513,7 +18522,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v2;
 		if ( v2.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -18521,14 +18530,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v2);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_1);
 		HopRewriteUtils.cleanupUnreferenced(hi_1_0);
 
-		return v2;
+		return newRoot;
 	}
 
 	// Implementation of the rule !=(A,rev(+(A,c))) => !=(A,+(A,c))
@@ -18590,7 +18599,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v2;
 		if ( v2.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -18598,14 +18607,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v2);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_1);
 		HopRewriteUtils.cleanupUnreferenced(hi_1_0);
 
-		return v2;
+		return newRoot;
 	}
 
 	// Implementation of the rule !=(+(rev(A),c),A) => !=(A,+(A,c))
@@ -18667,7 +18676,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v2;
 		if ( v2.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -18675,14 +18684,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v2);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_0);
 		HopRewriteUtils.cleanupUnreferenced(hi_0_0);
 
-		return v2;
+		return newRoot;
 	}
 
 	// Implementation of the rule !=(+(c,rev(A)),A) => !=(A,+(A,c))
@@ -18744,7 +18753,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v2;
 		if ( v2.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -18752,14 +18761,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v2);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_0);
 		HopRewriteUtils.cleanupUnreferenced(hi_0_1);
 
-		return v2;
+		return newRoot;
 	}
 
 	// Implementation of the rule !=(+(c,A),rev(A)) => !=(A,+(A,c))
@@ -18821,7 +18830,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v2;
 		if ( v2.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -18829,14 +18838,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v2);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_0);
 		HopRewriteUtils.cleanupUnreferenced(hi_1);
 
-		return v2;
+		return newRoot;
 	}
 
 	// Implementation of the rule !=(A,+(rev(A),c)) => !=(A,+(A,c))
@@ -18898,7 +18907,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v2;
 		if ( v2.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -18906,14 +18915,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v2);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_1);
 		HopRewriteUtils.cleanupUnreferenced(hi_1_0);
 
-		return v2;
+		return newRoot;
 	}
 
 	// Implementation of the rule !=(A,+(c,rev(A))) => !=(A,+(A,c))
@@ -18975,7 +18984,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v2;
 		if ( v2.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -18983,14 +18992,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v2);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_1);
 		HopRewriteUtils.cleanupUnreferenced(hi_1_1);
 
-		return v2;
+		return newRoot;
 	}
 
 	// Implementation of the rule !=(+(rev(A),C),A) => !=(A,+(A,C))
@@ -19052,7 +19061,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v2;
 		if ( v2.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -19060,14 +19069,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v2);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_0);
 		HopRewriteUtils.cleanupUnreferenced(hi_0_0);
 
-		return v2;
+		return newRoot;
 	}
 
 	// Implementation of the rule !=(+(C,rev(A)),A) => !=(A,+(A,C))
@@ -19129,7 +19138,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v2;
 		if ( v2.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -19137,14 +19146,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v2);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_0);
 		HopRewriteUtils.cleanupUnreferenced(hi_0_1);
 
-		return v2;
+		return newRoot;
 	}
 
 	// Implementation of the rule !=(+(C,A),rev(A)) => !=(A,+(A,C))
@@ -19206,7 +19215,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v2;
 		if ( v2.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -19214,14 +19223,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v2);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_0);
 		HopRewriteUtils.cleanupUnreferenced(hi_1);
 
-		return v2;
+		return newRoot;
 	}
 
 	// Implementation of the rule !=(+(A,C),rev(A)) => !=(A,+(A,C))
@@ -19283,7 +19292,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v2;
 		if ( v2.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -19291,14 +19300,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v2);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_0);
 		HopRewriteUtils.cleanupUnreferenced(hi_1);
 
-		return v2;
+		return newRoot;
 	}
 
 	// Implementation of the rule !=(A,+(rev(A),C)) => !=(A,+(A,C))
@@ -19360,7 +19369,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v2;
 		if ( v2.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -19368,14 +19377,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v2);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_1);
 		HopRewriteUtils.cleanupUnreferenced(hi_1_0);
 
-		return v2;
+		return newRoot;
 	}
 
 	// Implementation of the rule !=(A,+(C,rev(A))) => !=(A,+(A,C))
@@ -19437,7 +19446,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v2;
 		if ( v2.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -19445,14 +19454,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v2);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_1);
 		HopRewriteUtils.cleanupUnreferenced(hi_1_1);
 
-		return v2;
+		return newRoot;
 	}
 
 	// Implementation of the rule !=(!=(rev(A),c),A) => !=(A,!=(A,c))
@@ -19514,7 +19523,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v2;
 		if ( v2.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -19522,14 +19531,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v2);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_0);
 		HopRewriteUtils.cleanupUnreferenced(hi_0_0);
 
-		return v2;
+		return newRoot;
 	}
 
 	// Implementation of the rule !=(!=(c,rev(A)),A) => !=(A,!=(A,c))
@@ -19591,7 +19600,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v2;
 		if ( v2.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -19599,14 +19608,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v2);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_0);
 		HopRewriteUtils.cleanupUnreferenced(hi_0_1);
 
-		return v2;
+		return newRoot;
 	}
 
 	// Implementation of the rule !=(!=(c,A),rev(A)) => !=(A,!=(A,c))
@@ -19668,7 +19677,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v2;
 		if ( v2.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -19676,14 +19685,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v2);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_0);
 		HopRewriteUtils.cleanupUnreferenced(hi_1);
 
-		return v2;
+		return newRoot;
 	}
 
 	// Implementation of the rule !=(A,!=(rev(A),c)) => !=(A,!=(A,c))
@@ -19745,7 +19754,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v2;
 		if ( v2.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -19753,14 +19762,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v2);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_1);
 		HopRewriteUtils.cleanupUnreferenced(hi_1_0);
 
-		return v2;
+		return newRoot;
 	}
 
 	// Implementation of the rule !=(A,!=(c,rev(A))) => !=(A,!=(A,c))
@@ -19822,7 +19831,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v2;
 		if ( v2.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -19830,14 +19839,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v2);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_1);
 		HopRewriteUtils.cleanupUnreferenced(hi_1_1);
 
-		return v2;
+		return newRoot;
 	}
 
 	// Implementation of the rule !=(rev(!=(c,A)),A) => !=(A,!=(A,c))
@@ -19899,7 +19908,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v2;
 		if ( v2.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -19907,14 +19916,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v2);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_0);
 		HopRewriteUtils.cleanupUnreferenced(hi_0_0);
 
-		return v2;
+		return newRoot;
 	}
 
 	// Implementation of the rule !=(rev(!=(A,c)),A) => !=(A,!=(A,c))
@@ -19976,7 +19985,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v2;
 		if ( v2.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -19984,14 +19993,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v2);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_0);
 		HopRewriteUtils.cleanupUnreferenced(hi_0_0);
 
-		return v2;
+		return newRoot;
 	}
 
 	// Implementation of the rule !=(A,rev(!=(c,A))) => !=(A,!=(A,c))
@@ -20053,7 +20062,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v2;
 		if ( v2.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -20061,14 +20070,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v2);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_1);
 		HopRewriteUtils.cleanupUnreferenced(hi_1_0);
 
-		return v2;
+		return newRoot;
 	}
 
 	// Implementation of the rule !=(A,rev(!=(A,c))) => !=(A,!=(A,c))
@@ -20130,7 +20139,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v2;
 		if ( v2.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -20138,14 +20147,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v2);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_1);
 		HopRewriteUtils.cleanupUnreferenced(hi_1_0);
 
-		return v2;
+		return newRoot;
 	}
 
 	// Implementation of the rule !=(!=(rev(A),C),A) => !=(A,!=(A,C))
@@ -20207,7 +20216,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v2;
 		if ( v2.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -20215,14 +20224,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v2);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_0);
 		HopRewriteUtils.cleanupUnreferenced(hi_0_0);
 
-		return v2;
+		return newRoot;
 	}
 
 	// Implementation of the rule !=(!=(C,rev(A)),A) => !=(A,!=(A,C))
@@ -20284,7 +20293,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v2;
 		if ( v2.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -20292,14 +20301,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v2);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_0);
 		HopRewriteUtils.cleanupUnreferenced(hi_0_1);
 
-		return v2;
+		return newRoot;
 	}
 
 	// Implementation of the rule !=(!=(C,A),rev(A)) => !=(A,!=(A,C))
@@ -20361,7 +20370,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v2;
 		if ( v2.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -20369,14 +20378,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v2);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_0);
 		HopRewriteUtils.cleanupUnreferenced(hi_1);
 
-		return v2;
+		return newRoot;
 	}
 
 	// Implementation of the rule !=(!=(A,C),rev(A)) => !=(A,!=(A,C))
@@ -20438,7 +20447,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v2;
 		if ( v2.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -20446,14 +20455,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v2);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_0);
 		HopRewriteUtils.cleanupUnreferenced(hi_1);
 
-		return v2;
+		return newRoot;
 	}
 
 	// Implementation of the rule !=(A,!=(rev(A),C)) => !=(A,!=(A,C))
@@ -20515,7 +20524,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v2;
 		if ( v2.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -20523,14 +20532,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v2);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_1);
 		HopRewriteUtils.cleanupUnreferenced(hi_1_0);
 
-		return v2;
+		return newRoot;
 	}
 
 	// Implementation of the rule !=(A,!=(C,rev(A))) => !=(A,!=(A,C))
@@ -20592,7 +20601,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v2;
 		if ( v2.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -20600,14 +20609,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v2);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_1);
 		HopRewriteUtils.cleanupUnreferenced(hi_1_1);
 
-		return v2;
+		return newRoot;
 	}
 
 	// Implementation of the rule rev(+(rev(A),B)) => +(A,rev(B))
@@ -20664,7 +20673,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v2;
 		if ( v2.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -20672,14 +20681,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v2);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_0);
 		HopRewriteUtils.cleanupUnreferenced(hi_0_0);
 
-		return v2;
+		return newRoot;
 	}
 
 	// Implementation of the rule rev(+(B,rev(A))) => +(A,rev(B))
@@ -20736,7 +20745,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v2;
 		if ( v2.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -20744,14 +20753,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v2);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_0);
 		HopRewriteUtils.cleanupUnreferenced(hi_0_1);
 
-		return v2;
+		return newRoot;
 	}
 
 	// Implementation of the rule t(+(t(A),B)) => +(A,t(B))
@@ -20808,7 +20817,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v2;
 		if ( v2.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -20816,14 +20825,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v2);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_0);
 		HopRewriteUtils.cleanupUnreferenced(hi_0_0);
 
-		return v2;
+		return newRoot;
 	}
 
 	// Implementation of the rule t(+(B,t(A))) => +(A,t(B))
@@ -20880,7 +20889,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v2;
 		if ( v2.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -20888,14 +20897,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v2);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_0);
 		HopRewriteUtils.cleanupUnreferenced(hi_0_1);
 
-		return v2;
+		return newRoot;
 	}
 
 	// Implementation of the rule +(!=(rev(A),c),A) => +(A,!=(A,c))
@@ -20957,7 +20966,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v2;
 		if ( v2.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -20965,14 +20974,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v2);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_0);
 		HopRewriteUtils.cleanupUnreferenced(hi_0_0);
 
-		return v2;
+		return newRoot;
 	}
 
 	// Implementation of the rule +(!=(c,rev(A)),A) => +(A,!=(A,c))
@@ -21034,7 +21043,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v2;
 		if ( v2.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -21042,14 +21051,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v2);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_0);
 		HopRewriteUtils.cleanupUnreferenced(hi_0_1);
 
-		return v2;
+		return newRoot;
 	}
 
 	// Implementation of the rule +(A,!=(rev(A),c)) => +(A,!=(A,c))
@@ -21111,7 +21120,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v2;
 		if ( v2.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -21119,14 +21128,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v2);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_1);
 		HopRewriteUtils.cleanupUnreferenced(hi_1_0);
 
-		return v2;
+		return newRoot;
 	}
 
 	// Implementation of the rule +(A,!=(c,rev(A))) => +(A,!=(A,c))
@@ -21188,7 +21197,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v2;
 		if ( v2.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -21196,14 +21205,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v2);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_1);
 		HopRewriteUtils.cleanupUnreferenced(hi_1_1);
 
-		return v2;
+		return newRoot;
 	}
 
 	// Implementation of the rule +(rev(!=(c,A)),A) => +(A,!=(A,c))
@@ -21265,7 +21274,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v2;
 		if ( v2.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -21273,14 +21282,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v2);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_0);
 		HopRewriteUtils.cleanupUnreferenced(hi_0_0);
 
-		return v2;
+		return newRoot;
 	}
 
 	// Implementation of the rule +(rev(!=(A,c)),A) => +(A,!=(A,c))
@@ -21342,7 +21351,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v2;
 		if ( v2.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -21350,14 +21359,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v2);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_0);
 		HopRewriteUtils.cleanupUnreferenced(hi_0_0);
 
-		return v2;
+		return newRoot;
 	}
 
 	// Implementation of the rule +(A,rev(!=(c,A))) => +(A,!=(A,c))
@@ -21419,7 +21428,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v2;
 		if ( v2.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -21427,14 +21436,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v2);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_1);
 		HopRewriteUtils.cleanupUnreferenced(hi_1_0);
 
-		return v2;
+		return newRoot;
 	}
 
 	// Implementation of the rule +(A,rev(!=(A,c))) => +(A,!=(A,c))
@@ -21496,7 +21505,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v2;
 		if ( v2.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -21504,14 +21513,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v2);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_1);
 		HopRewriteUtils.cleanupUnreferenced(hi_1_0);
 
-		return v2;
+		return newRoot;
 	}
 
 	// Implementation of the rule +(!=(rev(A),C),A) => +(A,!=(A,C))
@@ -21573,7 +21582,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v2;
 		if ( v2.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -21581,14 +21590,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v2);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_0);
 		HopRewriteUtils.cleanupUnreferenced(hi_0_0);
 
-		return v2;
+		return newRoot;
 	}
 
 	// Implementation of the rule +(!=(C,rev(A)),A) => +(A,!=(A,C))
@@ -21650,7 +21659,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v2;
 		if ( v2.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -21658,14 +21667,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v2);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_0);
 		HopRewriteUtils.cleanupUnreferenced(hi_0_1);
 
-		return v2;
+		return newRoot;
 	}
 
 	// Implementation of the rule +(A,!=(rev(A),C)) => +(A,!=(A,C))
@@ -21727,7 +21736,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v2;
 		if ( v2.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -21735,14 +21744,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v2);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_1);
 		HopRewriteUtils.cleanupUnreferenced(hi_1_0);
 
-		return v2;
+		return newRoot;
 	}
 
 	// Implementation of the rule +(A,!=(C,rev(A))) => +(A,!=(A,C))
@@ -21804,7 +21813,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v2;
 		if ( v2.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -21812,14 +21821,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v2);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_1);
 		HopRewriteUtils.cleanupUnreferenced(hi_1_1);
 
-		return v2;
+		return newRoot;
 	}
 
 	// Implementation of the rule -(rev(!=(A,b)),A) => -(!=(A,b),A)
@@ -21881,7 +21890,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v2;
 		if ( v2.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -21889,14 +21898,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v2);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_0);
 		HopRewriteUtils.cleanupUnreferenced(hi_0_0);
 
-		return v2;
+		return newRoot;
 	}
 
 	// Implementation of the rule -(A,!=(rev(A),c)) => -(A,!=(A,c))
@@ -21958,7 +21967,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v2;
 		if ( v2.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -21966,14 +21975,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v2);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_1);
 		HopRewriteUtils.cleanupUnreferenced(hi_1_0);
 
-		return v2;
+		return newRoot;
 	}
 
 	// Implementation of the rule -(A,!=(c,rev(A))) => -(A,!=(A,c))
@@ -22035,7 +22044,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v2;
 		if ( v2.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -22043,14 +22052,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v2);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_1);
 		HopRewriteUtils.cleanupUnreferenced(hi_1_1);
 
-		return v2;
+		return newRoot;
 	}
 
 	// Implementation of the rule -(A,rev(!=(c,A))) => -(A,!=(A,c))
@@ -22112,7 +22121,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v2;
 		if ( v2.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -22120,14 +22129,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v2);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_1);
 		HopRewriteUtils.cleanupUnreferenced(hi_1_0);
 
-		return v2;
+		return newRoot;
 	}
 
 	// Implementation of the rule -(A,rev(!=(A,c))) => -(A,!=(A,c))
@@ -22189,7 +22198,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v2;
 		if ( v2.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -22197,14 +22206,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v2);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_1);
 		HopRewriteUtils.cleanupUnreferenced(hi_1_0);
 
-		return v2;
+		return newRoot;
 	}
 
 	// Implementation of the rule -(A,!=(rev(A),C)) => -(A,!=(A,C))
@@ -22266,7 +22275,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v2;
 		if ( v2.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -22274,14 +22283,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v2);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_1);
 		HopRewriteUtils.cleanupUnreferenced(hi_1_0);
 
-		return v2;
+		return newRoot;
 	}
 
 	// Implementation of the rule -(A,!=(C,rev(A))) => -(A,!=(A,C))
@@ -22343,7 +22352,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v2;
 		if ( v2.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -22351,14 +22360,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v2);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_1);
 		HopRewriteUtils.cleanupUnreferenced(hi_1_1);
 
-		return v2;
+		return newRoot;
 	}
 
 	// Implementation of the rule -(t(-(A,b)),c) => -(t(A),+(b,c))
@@ -22421,7 +22430,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v3;
 		if ( v3.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -22429,14 +22438,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v3);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_0);
 		HopRewriteUtils.cleanupUnreferenced(hi_0_0);
 
-		return v3;
+		return newRoot;
 	}
 
 	// Implementation of the rule -(t(-(a,C)),b) => -(-(a,b),t(C))
@@ -22499,7 +22508,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v3;
 		if ( v3.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -22507,14 +22516,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v3);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_0);
 		HopRewriteUtils.cleanupUnreferenced(hi_0_0);
 
-		return v3;
+		return newRoot;
 	}
 
 	// Implementation of the rule -(a,t(+(b,C))) => -(-(a,b),t(C))
@@ -22577,7 +22586,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v3;
 		if ( v3.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -22585,14 +22594,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v3);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_1);
 		HopRewriteUtils.cleanupUnreferenced(hi_1_0);
 
-		return v3;
+		return newRoot;
 	}
 
 	// Implementation of the rule -(a,t(+(C,b))) => -(-(a,b),t(C))
@@ -22655,7 +22664,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v3;
 		if ( v3.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -22663,14 +22672,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v3);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_1);
 		HopRewriteUtils.cleanupUnreferenced(hi_1_0);
 
-		return v3;
+		return newRoot;
 	}
 
 	// Implementation of the rule -(rev(-(A,b)),c) => -(rev(A),+(b,c))
@@ -22733,7 +22742,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v3;
 		if ( v3.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -22741,14 +22750,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v3);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_0);
 		HopRewriteUtils.cleanupUnreferenced(hi_0_0);
 
-		return v3;
+		return newRoot;
 	}
 
 	// Implementation of the rule -(rev(-(a,C)),b) => -(-(a,b),rev(C))
@@ -22811,7 +22820,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v3;
 		if ( v3.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -22819,14 +22828,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v3);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_0);
 		HopRewriteUtils.cleanupUnreferenced(hi_0_0);
 
-		return v3;
+		return newRoot;
 	}
 
 	// Implementation of the rule -(a,rev(+(b,C))) => -(-(a,b),rev(C))
@@ -22889,7 +22898,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v3;
 		if ( v3.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -22897,14 +22906,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v3);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_1);
 		HopRewriteUtils.cleanupUnreferenced(hi_1_0);
 
-		return v3;
+		return newRoot;
 	}
 
 	// Implementation of the rule -(a,rev(+(C,b))) => -(-(a,b),rev(C))
@@ -22967,7 +22976,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v3;
 		if ( v3.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -22975,14 +22984,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v3);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_1);
 		HopRewriteUtils.cleanupUnreferenced(hi_1_0);
 
-		return v3;
+		return newRoot;
 	}
 
 	// Implementation of the rule -(-(-(a,D),C),b) => -(-(a,b),+(C,D))
@@ -23050,7 +23059,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v3;
 		if ( v3.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -23058,14 +23067,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v3);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_0);
 		HopRewriteUtils.cleanupUnreferenced(hi_0_0);
 
-		return v3;
+		return newRoot;
 	}
 
 	// Implementation of the rule -(-(a,C),+(b,D)) => -(-(a,b),+(C,D))
@@ -23133,7 +23142,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v3;
 		if ( v3.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -23141,14 +23150,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v3);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_0);
 		HopRewriteUtils.cleanupUnreferenced(hi_1);
 
-		return v3;
+		return newRoot;
 	}
 
 	// Implementation of the rule -(-(a,D),+(C,b)) => -(-(a,b),+(C,D))
@@ -23216,7 +23225,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v3;
 		if ( v3.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -23224,14 +23233,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v3);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_0);
 		HopRewriteUtils.cleanupUnreferenced(hi_1);
 
-		return v3;
+		return newRoot;
 	}
 
 	// Implementation of the rule -(-(-(A,c),B),d) => -(A,+(B,+(c,d)))
@@ -23299,7 +23308,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v3;
 		if ( v3.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -23307,14 +23316,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v3);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_0);
 		HopRewriteUtils.cleanupUnreferenced(hi_0_0);
 
-		return v3;
+		return newRoot;
 	}
 
 	// Implementation of the rule -(-(A,+(c,B)),d) => -(A,+(B,+(c,d)))
@@ -23382,7 +23391,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v3;
 		if ( v3.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -23390,14 +23399,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v3);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_0);
 		HopRewriteUtils.cleanupUnreferenced(hi_0_1);
 
-		return v3;
+		return newRoot;
 	}
 
 	// Implementation of the rule -(-(A,+(B,c)),d) => -(A,+(B,+(c,d)))
@@ -23465,7 +23474,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v3;
 		if ( v3.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -23473,14 +23482,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v3);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_0);
 		HopRewriteUtils.cleanupUnreferenced(hi_0_1);
 
-		return v3;
+		return newRoot;
 	}
 
 	// Implementation of the rule -(-(A,c),+(d,B)) => -(A,+(B,+(c,d)))
@@ -23548,7 +23557,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v3;
 		if ( v3.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -23556,14 +23565,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v3);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_0);
 		HopRewriteUtils.cleanupUnreferenced(hi_1);
 
-		return v3;
+		return newRoot;
 	}
 
 	// Implementation of the rule -(-(A,c),+(B,d)) => -(A,+(B,+(c,d)))
@@ -23631,7 +23640,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v3;
 		if ( v3.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -23639,14 +23648,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v3);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_0);
 		HopRewriteUtils.cleanupUnreferenced(hi_1);
 
-		return v3;
+		return newRoot;
 	}
 
 	// Implementation of the rule -(a,rev(-(C,b))) => -(+(a,b),rev(C))
@@ -23709,7 +23718,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v3;
 		if ( v3.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -23717,14 +23726,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v3);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_1);
 		HopRewriteUtils.cleanupUnreferenced(hi_1_0);
 
-		return v3;
+		return newRoot;
 	}
 
 	// Implementation of the rule +(rev(-(a,C)),b) => -(+(a,b),rev(C))
@@ -23787,7 +23796,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v3;
 		if ( v3.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -23795,14 +23804,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v3);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_0);
 		HopRewriteUtils.cleanupUnreferenced(hi_0_0);
 
-		return v3;
+		return newRoot;
 	}
 
 	// Implementation of the rule +(a,rev(-(b,C))) => -(+(a,b),rev(C))
@@ -23865,7 +23874,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v3;
 		if ( v3.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -23873,14 +23882,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v3);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_1);
 		HopRewriteUtils.cleanupUnreferenced(hi_1_0);
 
-		return v3;
+		return newRoot;
 	}
 
 	// Implementation of the rule -(a,rev(-(b,C))) => +(-(a,b),rev(C))
@@ -23943,7 +23952,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v3;
 		if ( v3.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -23951,14 +23960,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v3);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_1);
 		HopRewriteUtils.cleanupUnreferenced(hi_1_0);
 
-		return v3;
+		return newRoot;
 	}
 
 	// Implementation of the rule -(rev(+(a,C)),b) => +(-(a,b),rev(C))
@@ -24021,7 +24030,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v3;
 		if ( v3.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -24029,14 +24038,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v3);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_0);
 		HopRewriteUtils.cleanupUnreferenced(hi_0_0);
 
-		return v3;
+		return newRoot;
 	}
 
 	// Implementation of the rule -(rev(+(C,a)),b) => +(-(a,b),rev(C))
@@ -24099,7 +24108,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v3;
 		if ( v3.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -24107,14 +24116,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v3);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_0);
 		HopRewriteUtils.cleanupUnreferenced(hi_0_0);
 
-		return v3;
+		return newRoot;
 	}
 
 	// Implementation of the rule +(rev(-(C,b)),a) => +(-(a,b),rev(C))
@@ -24177,7 +24186,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v3;
 		if ( v3.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -24185,14 +24194,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v3);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_0);
 		HopRewriteUtils.cleanupUnreferenced(hi_0_0);
 
-		return v3;
+		return newRoot;
 	}
 
 	// Implementation of the rule +(a,rev(-(C,b))) => +(-(a,b),rev(C))
@@ -24255,7 +24264,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v3;
 		if ( v3.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -24263,14 +24272,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v3);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_1);
 		HopRewriteUtils.cleanupUnreferenced(hi_1_0);
 
-		return v3;
+		return newRoot;
 	}
 
 	// Implementation of the rule +(rev(+(a,C)),b) => +(+(a,b),rev(C))
@@ -24333,7 +24342,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v3;
 		if ( v3.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -24341,14 +24350,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v3);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_0);
 		HopRewriteUtils.cleanupUnreferenced(hi_0_0);
 
-		return v3;
+		return newRoot;
 	}
 
 	// Implementation of the rule +(rev(+(C,a)),b) => +(+(a,b),rev(C))
@@ -24411,7 +24420,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v3;
 		if ( v3.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -24419,14 +24428,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v3);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_0);
 		HopRewriteUtils.cleanupUnreferenced(hi_0_0);
 
-		return v3;
+		return newRoot;
 	}
 
 	// Implementation of the rule +(a,rev(+(b,C))) => +(+(a,b),rev(C))
@@ -24489,7 +24498,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v3;
 		if ( v3.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -24497,14 +24506,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v3);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_1);
 		HopRewriteUtils.cleanupUnreferenced(hi_1_0);
 
-		return v3;
+		return newRoot;
 	}
 
 	// Implementation of the rule +(a,rev(+(C,b))) => +(+(a,b),rev(C))
@@ -24567,7 +24576,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v3;
 		if ( v3.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -24575,14 +24584,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v3);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_1);
 		HopRewriteUtils.cleanupUnreferenced(hi_1_0);
 
-		return v3;
+		return newRoot;
 	}
 
 	// Implementation of the rule -(-(a,C),-(D,b)) => -(+(a,b),+(C,D))
@@ -24650,7 +24659,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v3;
 		if ( v3.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -24658,14 +24667,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v3);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_0);
 		HopRewriteUtils.cleanupUnreferenced(hi_1);
 
-		return v3;
+		return newRoot;
 	}
 
 	// Implementation of the rule -(a,-(C,-(b,D))) => -(+(a,b),+(C,D))
@@ -24733,7 +24742,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v3;
 		if ( v3.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -24741,14 +24750,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v3);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_1);
 		HopRewriteUtils.cleanupUnreferenced(hi_1_1);
 
-		return v3;
+		return newRoot;
 	}
 
 	// Implementation of the rule -(a,+(-(D,b),C)) => -(+(a,b),+(C,D))
@@ -24816,7 +24825,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v3;
 		if ( v3.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -24824,14 +24833,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v3);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_1);
 		HopRewriteUtils.cleanupUnreferenced(hi_1_0);
 
-		return v3;
+		return newRoot;
 	}
 
 	// Implementation of the rule -(a,+(D,-(C,b))) => -(+(a,b),+(C,D))
@@ -24899,7 +24908,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v3;
 		if ( v3.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -24907,14 +24916,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v3);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_1);
 		HopRewriteUtils.cleanupUnreferenced(hi_1_1);
 
-		return v3;
+		return newRoot;
 	}
 
 	// Implementation of the rule +(-(-(a,C),D),b) => -(+(a,b),+(C,D))
@@ -24982,7 +24991,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v3;
 		if ( v3.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -24990,14 +24999,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v3);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_0);
 		HopRewriteUtils.cleanupUnreferenced(hi_0_0);
 
-		return v3;
+		return newRoot;
 	}
 
 	// Implementation of the rule +(-(a,D),-(b,C)) => -(+(a,b),+(C,D))
@@ -25065,7 +25074,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v3;
 		if ( v3.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -25073,14 +25082,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v3);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_0);
 		HopRewriteUtils.cleanupUnreferenced(hi_1);
 
-		return v3;
+		return newRoot;
 	}
 
 	// Implementation of the rule +(a,-(-(b,D),C)) => -(+(a,b),+(C,D))
@@ -25148,7 +25157,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v3;
 		if ( v3.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -25156,14 +25165,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v3);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_1);
 		HopRewriteUtils.cleanupUnreferenced(hi_1_0);
 
-		return v3;
+		return newRoot;
 	}
 
 	// Implementation of the rule -(-(A,-(c,B)),d) => +(A,-(B,+(c,d)))
@@ -25231,7 +25240,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v3;
 		if ( v3.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -25239,14 +25248,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v3);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_0);
 		HopRewriteUtils.cleanupUnreferenced(hi_0_1);
 
-		return v3;
+		return newRoot;
 	}
 
 	// Implementation of the rule -(-(B,c),-(d,A)) => +(A,-(B,+(c,d)))
@@ -25314,7 +25323,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v3;
 		if ( v3.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -25322,14 +25331,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v3);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_0);
 		HopRewriteUtils.cleanupUnreferenced(hi_1);
 
-		return v3;
+		return newRoot;
 	}
 
 	// Implementation of the rule -(+(-(B,c),A),d) => +(A,-(B,+(c,d)))
@@ -25397,7 +25406,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v3;
 		if ( v3.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -25405,14 +25414,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v3);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_0);
 		HopRewriteUtils.cleanupUnreferenced(hi_0_0);
 
-		return v3;
+		return newRoot;
 	}
 
 	// Implementation of the rule -(+(A,-(B,c)),d) => +(A,-(B,+(c,d)))
@@ -25480,7 +25489,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v3;
 		if ( v3.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -25488,14 +25497,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v3);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_0);
 		HopRewriteUtils.cleanupUnreferenced(hi_0_1);
 
-		return v3;
+		return newRoot;
 	}
 
 	// Implementation of the rule +(-(B,c),-(A,d)) => +(A,-(B,+(c,d)))
@@ -25563,7 +25572,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v3;
 		if ( v3.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -25571,14 +25580,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v3);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_0);
 		HopRewriteUtils.cleanupUnreferenced(hi_1);
 
-		return v3;
+		return newRoot;
 	}
 
 	// Implementation of the rule -(b,-(-(D,c),A)) => +(A,-(+(b,c),D))
@@ -25646,7 +25655,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v3;
 		if ( v3.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -25654,14 +25663,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v3);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_1);
 		HopRewriteUtils.cleanupUnreferenced(hi_1_0);
 
-		return v3;
+		return newRoot;
 	}
 
 	// Implementation of the rule -(b,-(D,+(c,A))) => +(A,-(+(b,c),D))
@@ -25729,7 +25738,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v3;
 		if ( v3.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -25737,14 +25746,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v3);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_1);
 		HopRewriteUtils.cleanupUnreferenced(hi_1_1);
 
-		return v3;
+		return newRoot;
 	}
 
 	// Implementation of the rule -(b,-(D,+(A,c))) => +(A,-(+(b,c),D))
@@ -25812,7 +25821,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v3;
 		if ( v3.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -25820,14 +25829,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v3);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_1);
 		HopRewriteUtils.cleanupUnreferenced(hi_1_1);
 
-		return v3;
+		return newRoot;
 	}
 
 	// Implementation of the rule -(+(b,A),-(D,c)) => +(A,-(+(b,c),D))
@@ -25895,7 +25904,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v3;
 		if ( v3.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -25903,14 +25912,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v3);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_0);
 		HopRewriteUtils.cleanupUnreferenced(hi_1);
 
-		return v3;
+		return newRoot;
 	}
 
 	// Implementation of the rule -(+(A,b),-(D,c)) => +(A,-(+(b,c),D))
@@ -25978,7 +25987,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v3;
 		if ( v3.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -25986,14 +25995,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v3);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_0);
 		HopRewriteUtils.cleanupUnreferenced(hi_1);
 
-		return v3;
+		return newRoot;
 	}
 
 	// Implementation of the rule +(-(A,-(D,b)),c) => +(A,-(+(b,c),D))
@@ -26061,7 +26070,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v3;
 		if ( v3.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -26069,14 +26078,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v3);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_0);
 		HopRewriteUtils.cleanupUnreferenced(hi_0_1);
 
-		return v3;
+		return newRoot;
 	}
 
 	// Implementation of the rule +(b,-(A,-(D,c))) => +(A,-(+(b,c),D))
@@ -26144,7 +26153,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v3;
 		if ( v3.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -26152,14 +26161,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v3);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_1);
 		HopRewriteUtils.cleanupUnreferenced(hi_1_1);
 
-		return v3;
+		return newRoot;
 	}
 
 	// Implementation of the rule +(-(+(b,A),D),c) => +(A,-(+(b,c),D))
@@ -26227,7 +26236,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v3;
 		if ( v3.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -26235,14 +26244,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v3);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_0);
 		HopRewriteUtils.cleanupUnreferenced(hi_0_0);
 
-		return v3;
+		return newRoot;
 	}
 
 	// Implementation of the rule +(-(+(A,b),D),c) => +(A,-(+(b,c),D))
@@ -26310,7 +26319,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v3;
 		if ( v3.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -26318,14 +26327,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v3);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_0);
 		HopRewriteUtils.cleanupUnreferenced(hi_0_0);
 
-		return v3;
+		return newRoot;
 	}
 
 	// Implementation of the rule +(b,-(+(c,A),D)) => +(A,-(+(b,c),D))
@@ -26393,7 +26402,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v3;
 		if ( v3.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -26401,14 +26410,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v3);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_1);
 		HopRewriteUtils.cleanupUnreferenced(hi_1_0);
 
-		return v3;
+		return newRoot;
 	}
 
 	// Implementation of the rule +(b,-(+(A,c),D)) => +(A,-(+(b,c),D))
@@ -26476,7 +26485,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v3;
 		if ( v3.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -26484,14 +26493,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v3);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_1);
 		HopRewriteUtils.cleanupUnreferenced(hi_1_0);
 
-		return v3;
+		return newRoot;
 	}
 
 	// Implementation of the rule -(c,-(-(d,B),A)) => +(A,+(B,-(c,d)))
@@ -26559,7 +26568,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v3;
 		if ( v3.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -26567,14 +26576,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v3);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_1);
 		HopRewriteUtils.cleanupUnreferenced(hi_1_0);
 
-		return v3;
+		return newRoot;
 	}
 
 	// Implementation of the rule -(+(c,B),-(d,A)) => +(A,+(B,-(c,d)))
@@ -26642,7 +26651,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v3;
 		if ( v3.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -26650,14 +26659,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v3);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_0);
 		HopRewriteUtils.cleanupUnreferenced(hi_1);
 
-		return v3;
+		return newRoot;
 	}
 
 	// Implementation of the rule -(+(B,c),-(d,A)) => +(A,+(B,-(c,d)))
@@ -26725,7 +26734,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v3;
 		if ( v3.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -26733,14 +26742,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v3);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_0);
 		HopRewriteUtils.cleanupUnreferenced(hi_1);
 
-		return v3;
+		return newRoot;
 	}
 
 	// Implementation of the rule +(-(A,-(d,B)),c) => +(A,+(B,-(c,d)))
@@ -26808,7 +26817,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v3;
 		if ( v3.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -26816,14 +26825,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v3);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_0);
 		HopRewriteUtils.cleanupUnreferenced(hi_0_1);
 
-		return v3;
+		return newRoot;
 	}
 
 	// Implementation of the rule +(c,-(A,-(d,B))) => +(A,+(B,-(c,d)))
@@ -26891,7 +26900,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v3;
 		if ( v3.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -26899,14 +26908,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v3);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_1);
 		HopRewriteUtils.cleanupUnreferenced(hi_1_1);
 
-		return v3;
+		return newRoot;
 	}
 
 	// Implementation of the rule -(-(A,-(D,b)),c) => +(A,-(-(b,c),D))
@@ -26974,7 +26983,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v3;
 		if ( v3.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -26982,14 +26991,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v3);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_0);
 		HopRewriteUtils.cleanupUnreferenced(hi_0_1);
 
-		return v3;
+		return newRoot;
 	}
 
 	// Implementation of the rule -(-(b,D),-(c,A)) => +(A,-(-(b,c),D))
@@ -27057,7 +27066,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v3;
 		if ( v3.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -27065,14 +27074,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v3);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_0);
 		HopRewriteUtils.cleanupUnreferenced(hi_1);
 
-		return v3;
+		return newRoot;
 	}
 
 	// Implementation of the rule -(-(A,c),-(D,b)) => +(A,-(-(b,c),D))
@@ -27140,7 +27149,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v3;
 		if ( v3.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -27148,14 +27157,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v3);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_0);
 		HopRewriteUtils.cleanupUnreferenced(hi_1);
 
-		return v3;
+		return newRoot;
 	}
 
 	// Implementation of the rule -(b,-(D,-(A,c))) => +(A,-(-(b,c),D))
@@ -27223,7 +27232,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v3;
 		if ( v3.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -27231,14 +27240,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v3);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_1);
 		HopRewriteUtils.cleanupUnreferenced(hi_1_1);
 
-		return v3;
+		return newRoot;
 	}
 
 	// Implementation of the rule -(-(+(b,A),D),c) => +(A,-(-(b,c),D))
@@ -27306,7 +27315,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v3;
 		if ( v3.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -27314,14 +27323,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v3);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_0);
 		HopRewriteUtils.cleanupUnreferenced(hi_0_0);
 
-		return v3;
+		return newRoot;
 	}
 
 	// Implementation of the rule -(-(+(A,b),D),c) => +(A,-(-(b,c),D))
@@ -27389,7 +27398,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v3;
 		if ( v3.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -27397,14 +27406,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v3);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_0);
 		HopRewriteUtils.cleanupUnreferenced(hi_0_0);
 
-		return v3;
+		return newRoot;
 	}
 
 	// Implementation of the rule -(b,-(+(c,D),A)) => +(A,-(-(b,c),D))
@@ -27472,7 +27481,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v3;
 		if ( v3.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -27480,14 +27489,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v3);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_1);
 		HopRewriteUtils.cleanupUnreferenced(hi_1_0);
 
-		return v3;
+		return newRoot;
 	}
 
 	// Implementation of the rule -(b,-(+(D,c),A)) => +(A,-(-(b,c),D))
@@ -27555,7 +27564,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v3;
 		if ( v3.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -27563,14 +27572,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v3);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_1);
 		HopRewriteUtils.cleanupUnreferenced(hi_1_0);
 
-		return v3;
+		return newRoot;
 	}
 
 	// Implementation of the rule -(+(-(b,D),A),c) => +(A,-(-(b,c),D))
@@ -27638,7 +27647,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v3;
 		if ( v3.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -27646,14 +27655,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v3);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_0);
 		HopRewriteUtils.cleanupUnreferenced(hi_0_0);
 
-		return v3;
+		return newRoot;
 	}
 
 	// Implementation of the rule -(+(b,A),+(c,D)) => +(A,-(-(b,c),D))
@@ -27721,7 +27730,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v3;
 		if ( v3.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -27729,14 +27738,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v3);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_0);
 		HopRewriteUtils.cleanupUnreferenced(hi_1);
 
-		return v3;
+		return newRoot;
 	}
 
 	// Implementation of the rule -(+(b,A),+(D,c)) => +(A,-(-(b,c),D))
@@ -27804,7 +27813,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v3;
 		if ( v3.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -27812,14 +27821,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v3);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_0);
 		HopRewriteUtils.cleanupUnreferenced(hi_1);
 
-		return v3;
+		return newRoot;
 	}
 
 	// Implementation of the rule -(+(A,b),+(c,D)) => +(A,-(-(b,c),D))
@@ -27887,7 +27896,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v3;
 		if ( v3.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -27895,14 +27904,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v3);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_0);
 		HopRewriteUtils.cleanupUnreferenced(hi_1);
 
-		return v3;
+		return newRoot;
 	}
 
 	// Implementation of the rule -(+(A,b),+(D,c)) => +(A,-(-(b,c),D))
@@ -27970,7 +27979,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v3;
 		if ( v3.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -27978,14 +27987,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v3);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_0);
 		HopRewriteUtils.cleanupUnreferenced(hi_1);
 
-		return v3;
+		return newRoot;
 	}
 
 	// Implementation of the rule -(+(A,-(b,D)),c) => +(A,-(-(b,c),D))
@@ -28053,7 +28062,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v3;
 		if ( v3.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -28061,14 +28070,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v3);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_0);
 		HopRewriteUtils.cleanupUnreferenced(hi_0_1);
 
-		return v3;
+		return newRoot;
 	}
 
 	// Implementation of the rule -(b,+(-(c,A),D)) => +(A,-(-(b,c),D))
@@ -28136,7 +28145,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v3;
 		if ( v3.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -28144,14 +28153,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v3);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_1);
 		HopRewriteUtils.cleanupUnreferenced(hi_1_0);
 
-		return v3;
+		return newRoot;
 	}
 
 	// Implementation of the rule -(b,+(D,-(c,A))) => +(A,-(-(b,c),D))
@@ -28219,7 +28228,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v3;
 		if ( v3.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -28227,14 +28236,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v3);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_1);
 		HopRewriteUtils.cleanupUnreferenced(hi_1_1);
 
-		return v3;
+		return newRoot;
 	}
 
 	// Implementation of the rule +(-(-(A,c),D),b) => +(A,-(-(b,c),D))
@@ -28302,7 +28311,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v3;
 		if ( v3.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -28310,14 +28319,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v3);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_0);
 		HopRewriteUtils.cleanupUnreferenced(hi_0_0);
 
-		return v3;
+		return newRoot;
 	}
 
 	// Implementation of the rule +(-(b,D),-(A,c)) => +(A,-(-(b,c),D))
@@ -28385,7 +28394,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v3;
 		if ( v3.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -28393,14 +28402,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v3);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_0);
 		HopRewriteUtils.cleanupUnreferenced(hi_1);
 
-		return v3;
+		return newRoot;
 	}
 
 	// Implementation of the rule +(-(A,c),-(b,D)) => +(A,-(-(b,c),D))
@@ -28468,7 +28477,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v3;
 		if ( v3.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -28476,14 +28485,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v3);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_0);
 		HopRewriteUtils.cleanupUnreferenced(hi_1);
 
-		return v3;
+		return newRoot;
 	}
 
 	// Implementation of the rule +(b,-(-(A,c),D)) => +(A,-(-(b,c),D))
@@ -28551,7 +28560,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v3;
 		if ( v3.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -28559,14 +28568,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v3);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_1);
 		HopRewriteUtils.cleanupUnreferenced(hi_1_0);
 
-		return v3;
+		return newRoot;
 	}
 
 	// Implementation of the rule +(-(A,+(c,D)),b) => +(A,-(-(b,c),D))
@@ -28634,7 +28643,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v3;
 		if ( v3.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -28642,14 +28651,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v3);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_0);
 		HopRewriteUtils.cleanupUnreferenced(hi_0_1);
 
-		return v3;
+		return newRoot;
 	}
 
 	// Implementation of the rule +(-(A,+(D,c)),b) => +(A,-(-(b,c),D))
@@ -28717,7 +28726,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v3;
 		if ( v3.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -28725,14 +28734,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v3);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_0);
 		HopRewriteUtils.cleanupUnreferenced(hi_0_1);
 
-		return v3;
+		return newRoot;
 	}
 
 	// Implementation of the rule +(b,-(A,+(c,D))) => +(A,-(-(b,c),D))
@@ -28800,7 +28809,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v3;
 		if ( v3.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -28808,14 +28817,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v3);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_1);
 		HopRewriteUtils.cleanupUnreferenced(hi_1_1);
 
-		return v3;
+		return newRoot;
 	}
 
 	// Implementation of the rule +(b,-(A,+(D,c))) => +(A,-(-(b,c),D))
@@ -28883,7 +28892,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v3;
 		if ( v3.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -28891,14 +28900,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v3);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_1);
 		HopRewriteUtils.cleanupUnreferenced(hi_1_1);
 
-		return v3;
+		return newRoot;
 	}
 
 	// Implementation of the rule -(a,t(-(C,b))) => -(+(a,b),t(C))
@@ -28961,7 +28970,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v3;
 		if ( v3.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -28969,14 +28978,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v3);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_1);
 		HopRewriteUtils.cleanupUnreferenced(hi_1_0);
 
-		return v3;
+		return newRoot;
 	}
 
 	// Implementation of the rule +(t(-(a,C)),b) => -(+(a,b),t(C))
@@ -29039,7 +29048,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v3;
 		if ( v3.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -29047,14 +29056,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v3);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_0);
 		HopRewriteUtils.cleanupUnreferenced(hi_0_0);
 
-		return v3;
+		return newRoot;
 	}
 
 	// Implementation of the rule +(a,t(-(b,C))) => -(+(a,b),t(C))
@@ -29117,7 +29126,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v3;
 		if ( v3.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -29125,14 +29134,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v3);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_1);
 		HopRewriteUtils.cleanupUnreferenced(hi_1_0);
 
-		return v3;
+		return newRoot;
 	}
 
 	// Implementation of the rule -(t(+(a,C)),b) => +(-(a,b),t(C))
@@ -29195,7 +29204,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v3;
 		if ( v3.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -29203,14 +29212,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v3);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_0);
 		HopRewriteUtils.cleanupUnreferenced(hi_0_0);
 
-		return v3;
+		return newRoot;
 	}
 
 	// Implementation of the rule -(t(+(C,a)),b) => +(-(a,b),t(C))
@@ -29273,7 +29282,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v3;
 		if ( v3.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -29281,14 +29290,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v3);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_0);
 		HopRewriteUtils.cleanupUnreferenced(hi_0_0);
 
-		return v3;
+		return newRoot;
 	}
 
 	// Implementation of the rule -(a,t(-(b,C))) => +(-(a,b),t(C))
@@ -29351,7 +29360,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v3;
 		if ( v3.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -29359,14 +29368,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v3);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_1);
 		HopRewriteUtils.cleanupUnreferenced(hi_1_0);
 
-		return v3;
+		return newRoot;
 	}
 
 	// Implementation of the rule +(t(-(C,b)),a) => +(-(a,b),t(C))
@@ -29429,7 +29438,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v3;
 		if ( v3.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -29437,14 +29446,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v3);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_0);
 		HopRewriteUtils.cleanupUnreferenced(hi_0_0);
 
-		return v3;
+		return newRoot;
 	}
 
 	// Implementation of the rule +(a,t(-(C,b))) => +(-(a,b),t(C))
@@ -29507,7 +29516,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v3;
 		if ( v3.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -29515,14 +29524,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v3);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_1);
 		HopRewriteUtils.cleanupUnreferenced(hi_1_0);
 
-		return v3;
+		return newRoot;
 	}
 
 	// Implementation of the rule +(t(+(a,C)),b) => +(+(a,b),t(C))
@@ -29585,7 +29594,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v3;
 		if ( v3.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -29593,14 +29602,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v3);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_0);
 		HopRewriteUtils.cleanupUnreferenced(hi_0_0);
 
-		return v3;
+		return newRoot;
 	}
 
 	// Implementation of the rule +(t(+(C,a)),b) => +(+(a,b),t(C))
@@ -29663,7 +29672,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v3;
 		if ( v3.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -29671,14 +29680,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v3);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_0);
 		HopRewriteUtils.cleanupUnreferenced(hi_0_0);
 
-		return v3;
+		return newRoot;
 	}
 
 	// Implementation of the rule +(a,t(+(b,C))) => +(+(a,b),t(C))
@@ -29741,7 +29750,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v3;
 		if ( v3.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -29749,14 +29758,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v3);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_1);
 		HopRewriteUtils.cleanupUnreferenced(hi_1_0);
 
-		return v3;
+		return newRoot;
 	}
 
 	// Implementation of the rule +(a,t(+(C,b))) => +(+(a,b),t(C))
@@ -29819,7 +29828,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v3;
 		if ( v3.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -29827,14 +29836,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v3);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_1);
 		HopRewriteUtils.cleanupUnreferenced(hi_1_0);
 
-		return v3;
+		return newRoot;
 	}
 
 	// Implementation of the rule colSums(-(t(A),b)) => t(rowSums(-(A,b)))
@@ -29895,7 +29904,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v3;
 		if ( v3.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -29903,14 +29912,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v3);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_0);
 		HopRewriteUtils.cleanupUnreferenced(hi_0_0);
 
-		return v3;
+		return newRoot;
 	}
 
 	// Implementation of the rule colSums(-(a,t(B))) => t(rowSums(-(a,B)))
@@ -29971,7 +29980,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v3;
 		if ( v3.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -29979,14 +29988,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v3);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_0);
 		HopRewriteUtils.cleanupUnreferenced(hi_0_1);
 
-		return v3;
+		return newRoot;
 	}
 
 	// Implementation of the rule rowSums(-(t(A),b)) => t(colSums(-(A,b)))
@@ -30047,7 +30056,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v3;
 		if ( v3.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -30055,14 +30064,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v3);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_0);
 		HopRewriteUtils.cleanupUnreferenced(hi_0_0);
 
-		return v3;
+		return newRoot;
 	}
 
 	// Implementation of the rule rowSums(-(a,t(B))) => t(colSums(-(a,B)))
@@ -30123,7 +30132,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v3;
 		if ( v3.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -30131,14 +30140,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v3);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_0);
 		HopRewriteUtils.cleanupUnreferenced(hi_0_1);
 
-		return v3;
+		return newRoot;
 	}
 
 	// Implementation of the rule colSums(!=(t(A),b)) => t(rowSums(!=(A,b)))
@@ -30210,7 +30219,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v3;
 		if ( v3.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -30218,14 +30227,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v3);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_0);
 		HopRewriteUtils.cleanupUnreferenced(hi_0_0);
 
-		return v3;
+		return newRoot;
 	}
 
 	// Implementation of the rule colSums(!=(b,t(A))) => t(rowSums(!=(A,b)))
@@ -30297,7 +30306,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v3;
 		if ( v3.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -30305,14 +30314,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v3);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_0);
 		HopRewriteUtils.cleanupUnreferenced(hi_0_1);
 
-		return v3;
+		return newRoot;
 	}
 
 	// Implementation of the rule rowSums(!=(t(A),b)) => t(colSums(!=(A,b)))
@@ -30384,7 +30393,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v3;
 		if ( v3.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -30392,14 +30401,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v3);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_0);
 		HopRewriteUtils.cleanupUnreferenced(hi_0_0);
 
-		return v3;
+		return newRoot;
 	}
 
 	// Implementation of the rule rowSums(!=(b,t(A))) => t(colSums(!=(A,b)))
@@ -30471,7 +30480,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v3;
 		if ( v3.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -30479,14 +30488,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v3);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_0);
 		HopRewriteUtils.cleanupUnreferenced(hi_0_1);
 
-		return v3;
+		return newRoot;
 	}
 
 	// Implementation of the rule colSums(+(t(A),b)) => t(rowSums(+(A,b)))
@@ -30547,7 +30556,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v3;
 		if ( v3.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -30555,14 +30564,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v3);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_0);
 		HopRewriteUtils.cleanupUnreferenced(hi_0_0);
 
-		return v3;
+		return newRoot;
 	}
 
 	// Implementation of the rule colSums(+(b,t(A))) => t(rowSums(+(A,b)))
@@ -30623,7 +30632,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v3;
 		if ( v3.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -30631,14 +30640,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v3);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_0);
 		HopRewriteUtils.cleanupUnreferenced(hi_0_1);
 
-		return v3;
+		return newRoot;
 	}
 
 	// Implementation of the rule rowSums(+(t(A),b)) => t(colSums(+(A,b)))
@@ -30699,7 +30708,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v3;
 		if ( v3.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -30707,14 +30716,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v3);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_0);
 		HopRewriteUtils.cleanupUnreferenced(hi_0_0);
 
-		return v3;
+		return newRoot;
 	}
 
 	// Implementation of the rule rowSums(+(b,t(A))) => t(colSums(+(A,b)))
@@ -30775,7 +30784,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v3;
 		if ( v3.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -30783,14 +30792,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v3);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_0);
 		HopRewriteUtils.cleanupUnreferenced(hi_0_1);
 
-		return v3;
+		return newRoot;
 	}
 
 	// Implementation of the rule trace(/(a,t(B))) => trace(/(a,B))
@@ -30847,7 +30856,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v2;
 		if ( v2.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -30855,14 +30864,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v2);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_0);
 		HopRewriteUtils.cleanupUnreferenced(hi_0_1);
 
-		return v2;
+		return newRoot;
 	}
 
 	// Implementation of the rule trace(/(t(A),B)) => trace(/(A,B))
@@ -30919,7 +30928,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v2;
 		if ( v2.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -30927,14 +30936,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v2);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_0);
 		HopRewriteUtils.cleanupUnreferenced(hi_0_0);
 
-		return v2;
+		return newRoot;
 	}
 
 	// Implementation of the rule trace(/(A,t(B))) => trace(/(A,B))
@@ -30991,7 +31000,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v2;
 		if ( v2.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -30999,14 +31008,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v2);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_0);
 		HopRewriteUtils.cleanupUnreferenced(hi_0_1);
 
-		return v2;
+		return newRoot;
 	}
 
 	// Implementation of the rule *(t(A),t(B)) => t(*(A,B))
@@ -31063,7 +31072,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v2;
 		if ( v2.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -31071,14 +31080,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v2);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_0);
 		HopRewriteUtils.cleanupUnreferenced(hi_1);
 
-		return v2;
+		return newRoot;
 	}
 
 	// Implementation of the rule !=(*(rev(A),c),A) => !=(A,*(A,c))
@@ -31140,7 +31149,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v2;
 		if ( v2.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -31148,14 +31157,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v2);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_0);
 		HopRewriteUtils.cleanupUnreferenced(hi_0_0);
 
-		return v2;
+		return newRoot;
 	}
 
 	// Implementation of the rule !=(*(c,rev(A)),A) => !=(A,*(A,c))
@@ -31217,7 +31226,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v2;
 		if ( v2.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -31225,14 +31234,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v2);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_0);
 		HopRewriteUtils.cleanupUnreferenced(hi_0_1);
 
-		return v2;
+		return newRoot;
 	}
 
 	// Implementation of the rule !=(*(c,A),rev(A)) => !=(A,*(A,c))
@@ -31294,7 +31303,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v2;
 		if ( v2.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -31302,14 +31311,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v2);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_0);
 		HopRewriteUtils.cleanupUnreferenced(hi_1);
 
-		return v2;
+		return newRoot;
 	}
 
 	// Implementation of the rule !=(A,*(rev(A),c)) => !=(A,*(A,c))
@@ -31371,7 +31380,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v2;
 		if ( v2.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -31379,14 +31388,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v2);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_1);
 		HopRewriteUtils.cleanupUnreferenced(hi_1_0);
 
-		return v2;
+		return newRoot;
 	}
 
 	// Implementation of the rule !=(A,*(c,rev(A))) => !=(A,*(A,c))
@@ -31448,7 +31457,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v2;
 		if ( v2.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -31456,14 +31465,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v2);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_1);
 		HopRewriteUtils.cleanupUnreferenced(hi_1_1);
 
-		return v2;
+		return newRoot;
 	}
 
 	// Implementation of the rule !=(rev(*(c,A)),A) => !=(A,*(A,c))
@@ -31525,7 +31534,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v2;
 		if ( v2.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -31533,14 +31542,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v2);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_0);
 		HopRewriteUtils.cleanupUnreferenced(hi_0_0);
 
-		return v2;
+		return newRoot;
 	}
 
 	// Implementation of the rule !=(rev(*(A,c)),A) => !=(A,*(A,c))
@@ -31602,7 +31611,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v2;
 		if ( v2.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -31610,14 +31619,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v2);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_0);
 		HopRewriteUtils.cleanupUnreferenced(hi_0_0);
 
-		return v2;
+		return newRoot;
 	}
 
 	// Implementation of the rule !=(A,rev(*(c,A))) => !=(A,*(A,c))
@@ -31679,7 +31688,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v2;
 		if ( v2.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -31687,14 +31696,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v2);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_1);
 		HopRewriteUtils.cleanupUnreferenced(hi_1_0);
 
-		return v2;
+		return newRoot;
 	}
 
 	// Implementation of the rule !=(A,rev(*(A,c))) => !=(A,*(A,c))
@@ -31756,7 +31765,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v2;
 		if ( v2.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -31764,14 +31773,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v2);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_1);
 		HopRewriteUtils.cleanupUnreferenced(hi_1_0);
 
-		return v2;
+		return newRoot;
 	}
 
 	// Implementation of the rule !=(*(rev(A),C),A) => !=(A,*(A,C))
@@ -31833,7 +31842,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v2;
 		if ( v2.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -31841,14 +31850,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v2);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_0);
 		HopRewriteUtils.cleanupUnreferenced(hi_0_0);
 
-		return v2;
+		return newRoot;
 	}
 
 	// Implementation of the rule !=(*(C,rev(A)),A) => !=(A,*(A,C))
@@ -31910,7 +31919,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v2;
 		if ( v2.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -31918,14 +31927,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v2);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_0);
 		HopRewriteUtils.cleanupUnreferenced(hi_0_1);
 
-		return v2;
+		return newRoot;
 	}
 
 	// Implementation of the rule !=(*(C,A),rev(A)) => !=(A,*(A,C))
@@ -31987,7 +31996,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v2;
 		if ( v2.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -31995,14 +32004,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v2);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_0);
 		HopRewriteUtils.cleanupUnreferenced(hi_1);
 
-		return v2;
+		return newRoot;
 	}
 
 	// Implementation of the rule !=(*(A,C),rev(A)) => !=(A,*(A,C))
@@ -32064,7 +32073,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v2;
 		if ( v2.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -32072,14 +32081,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v2);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_0);
 		HopRewriteUtils.cleanupUnreferenced(hi_1);
 
-		return v2;
+		return newRoot;
 	}
 
 	// Implementation of the rule !=(A,*(rev(A),C)) => !=(A,*(A,C))
@@ -32141,7 +32150,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v2;
 		if ( v2.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -32149,14 +32158,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v2);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_1);
 		HopRewriteUtils.cleanupUnreferenced(hi_1_0);
 
-		return v2;
+		return newRoot;
 	}
 
 	// Implementation of the rule !=(A,*(C,rev(A))) => !=(A,*(A,C))
@@ -32218,7 +32227,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v2;
 		if ( v2.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -32226,14 +32235,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v2);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_1);
 		HopRewriteUtils.cleanupUnreferenced(hi_1_1);
 
-		return v2;
+		return newRoot;
 	}
 
 	// Implementation of the rule rev(*(rev(A),B)) => *(A,rev(B))
@@ -32301,7 +32310,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v2;
 		if ( v2.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -32309,14 +32318,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v2);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_0);
 		HopRewriteUtils.cleanupUnreferenced(hi_0_0);
 
-		return v2;
+		return newRoot;
 	}
 
 	// Implementation of the rule rev(*(B,rev(A))) => *(A,rev(B))
@@ -32384,7 +32393,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v2;
 		if ( v2.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -32392,14 +32401,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v2);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_0);
 		HopRewriteUtils.cleanupUnreferenced(hi_0_1);
 
-		return v2;
+		return newRoot;
 	}
 
 	// Implementation of the rule t(*(t(A),B)) => *(A,t(B))
@@ -32467,7 +32476,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v2;
 		if ( v2.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -32475,14 +32484,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v2);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_0);
 		HopRewriteUtils.cleanupUnreferenced(hi_0_0);
 
-		return v2;
+		return newRoot;
 	}
 
 	// Implementation of the rule t(*(B,t(A))) => *(A,t(B))
@@ -32550,7 +32559,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v2;
 		if ( v2.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -32558,14 +32567,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v2);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_0);
 		HopRewriteUtils.cleanupUnreferenced(hi_0_1);
 
-		return v2;
+		return newRoot;
 	}
 
 	// Implementation of the rule *(!=(rev(A),c),A) => *(A,!=(A,c))
@@ -32627,7 +32636,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v2;
 		if ( v2.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -32635,14 +32644,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v2);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_0);
 		HopRewriteUtils.cleanupUnreferenced(hi_0_0);
 
-		return v2;
+		return newRoot;
 	}
 
 	// Implementation of the rule *(!=(c,rev(A)),A) => *(A,!=(A,c))
@@ -32704,7 +32713,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v2;
 		if ( v2.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -32712,14 +32721,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v2);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_0);
 		HopRewriteUtils.cleanupUnreferenced(hi_0_1);
 
-		return v2;
+		return newRoot;
 	}
 
 	// Implementation of the rule *(A,!=(rev(A),c)) => *(A,!=(A,c))
@@ -32781,7 +32790,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v2;
 		if ( v2.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -32789,14 +32798,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v2);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_1);
 		HopRewriteUtils.cleanupUnreferenced(hi_1_0);
 
-		return v2;
+		return newRoot;
 	}
 
 	// Implementation of the rule *(A,!=(c,rev(A))) => *(A,!=(A,c))
@@ -32858,7 +32867,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v2;
 		if ( v2.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -32866,14 +32875,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v2);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_1);
 		HopRewriteUtils.cleanupUnreferenced(hi_1_1);
 
-		return v2;
+		return newRoot;
 	}
 
 	// Implementation of the rule *(rev(!=(c,A)),A) => *(A,!=(A,c))
@@ -32935,7 +32944,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v2;
 		if ( v2.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -32943,14 +32952,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v2);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_0);
 		HopRewriteUtils.cleanupUnreferenced(hi_0_0);
 
-		return v2;
+		return newRoot;
 	}
 
 	// Implementation of the rule *(rev(!=(A,c)),A) => *(A,!=(A,c))
@@ -33012,7 +33021,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v2;
 		if ( v2.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -33020,14 +33029,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v2);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_0);
 		HopRewriteUtils.cleanupUnreferenced(hi_0_0);
 
-		return v2;
+		return newRoot;
 	}
 
 	// Implementation of the rule *(A,rev(!=(c,A))) => *(A,!=(A,c))
@@ -33089,7 +33098,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v2;
 		if ( v2.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -33097,14 +33106,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v2);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_1);
 		HopRewriteUtils.cleanupUnreferenced(hi_1_0);
 
-		return v2;
+		return newRoot;
 	}
 
 	// Implementation of the rule *(A,rev(!=(A,c))) => *(A,!=(A,c))
@@ -33166,7 +33175,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v2;
 		if ( v2.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -33174,14 +33183,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v2);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_1);
 		HopRewriteUtils.cleanupUnreferenced(hi_1_0);
 
-		return v2;
+		return newRoot;
 	}
 
 	// Implementation of the rule *(!=(rev(A),C),A) => *(A,!=(A,C))
@@ -33243,7 +33252,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v2;
 		if ( v2.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -33251,14 +33260,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v2);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_0);
 		HopRewriteUtils.cleanupUnreferenced(hi_0_0);
 
-		return v2;
+		return newRoot;
 	}
 
 	// Implementation of the rule *(!=(C,rev(A)),A) => *(A,!=(A,C))
@@ -33320,7 +33329,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v2;
 		if ( v2.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -33328,14 +33337,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v2);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_0);
 		HopRewriteUtils.cleanupUnreferenced(hi_0_1);
 
-		return v2;
+		return newRoot;
 	}
 
 	// Implementation of the rule *(A,!=(rev(A),C)) => *(A,!=(A,C))
@@ -33397,7 +33406,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v2;
 		if ( v2.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -33405,14 +33414,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v2);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_1);
 		HopRewriteUtils.cleanupUnreferenced(hi_1_0);
 
-		return v2;
+		return newRoot;
 	}
 
 	// Implementation of the rule *(A,!=(C,rev(A))) => *(A,!=(A,C))
@@ -33474,7 +33483,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v2;
 		if ( v2.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -33482,14 +33491,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v2);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_1);
 		HopRewriteUtils.cleanupUnreferenced(hi_1_1);
 
-		return v2;
+		return newRoot;
 	}
 
 	// Implementation of the rule sum(/(a,t(B))) => sum(/(a,B))
@@ -33549,7 +33558,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v2;
 		if ( v2.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -33557,14 +33566,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v2);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_0);
 		HopRewriteUtils.cleanupUnreferenced(hi_0_1);
 
-		return v2;
+		return newRoot;
 	}
 
 	// Implementation of the rule rev(/(rev(A),B)) => /(A,rev(B))
@@ -33621,7 +33630,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v2;
 		if ( v2.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -33629,14 +33638,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v2);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_0);
 		HopRewriteUtils.cleanupUnreferenced(hi_0_0);
 
-		return v2;
+		return newRoot;
 	}
 
 	// Implementation of the rule rev(/(A,rev(B))) => /(rev(A),B)
@@ -33704,7 +33713,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v2;
 		if ( v2.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -33712,14 +33721,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v2);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_0);
 		HopRewriteUtils.cleanupUnreferenced(hi_0_1);
 
-		return v2;
+		return newRoot;
 	}
 
 	// Implementation of the rule t(/(t(A),B)) => /(A,t(B))
@@ -33776,7 +33785,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v2;
 		if ( v2.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -33784,14 +33793,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v2);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_0);
 		HopRewriteUtils.cleanupUnreferenced(hi_0_0);
 
-		return v2;
+		return newRoot;
 	}
 
 	// Implementation of the rule t(/(A,t(B))) => /(t(A),B)
@@ -33859,7 +33868,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v2;
 		if ( v2.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -33867,14 +33876,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v2);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_0);
 		HopRewriteUtils.cleanupUnreferenced(hi_0_1);
 
-		return v2;
+		return newRoot;
 	}
 
 	// Implementation of the rule /(t(A),t(B)) => t(/(A,B))
@@ -33931,7 +33940,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v2;
 		if ( v2.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -33939,14 +33948,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v2);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_0);
 		HopRewriteUtils.cleanupUnreferenced(hi_1);
 
-		return v2;
+		return newRoot;
 	}
 
 	// Implementation of the rule !=(/(b,rev(A)),A) => !=(A,/(b,A))
@@ -34008,7 +34017,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v2;
 		if ( v2.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -34016,14 +34025,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v2);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_0);
 		HopRewriteUtils.cleanupUnreferenced(hi_0_1);
 
-		return v2;
+		return newRoot;
 	}
 
 	// Implementation of the rule !=(/(b,A),rev(A)) => !=(A,/(b,A))
@@ -34085,7 +34094,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v2;
 		if ( v2.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -34093,14 +34102,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v2);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_0);
 		HopRewriteUtils.cleanupUnreferenced(hi_1);
 
-		return v2;
+		return newRoot;
 	}
 
 	// Implementation of the rule !=(A,/(b,rev(A))) => !=(A,/(b,A))
@@ -34162,7 +34171,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v2;
 		if ( v2.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -34170,14 +34179,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v2);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_1);
 		HopRewriteUtils.cleanupUnreferenced(hi_1_1);
 
-		return v2;
+		return newRoot;
 	}
 
 	// Implementation of the rule !=(rev(/(b,A)),A) => !=(A,/(b,A))
@@ -34239,7 +34248,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v2;
 		if ( v2.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -34247,14 +34256,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v2);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_0);
 		HopRewriteUtils.cleanupUnreferenced(hi_0_0);
 
-		return v2;
+		return newRoot;
 	}
 
 	// Implementation of the rule !=(A,rev(/(b,A))) => !=(A,/(b,A))
@@ -34316,7 +34325,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v2;
 		if ( v2.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -34324,14 +34333,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v2);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_1);
 		HopRewriteUtils.cleanupUnreferenced(hi_1_0);
 
-		return v2;
+		return newRoot;
 	}
 
 	// Implementation of the rule !=(/(B,rev(A)),A) => !=(A,/(B,A))
@@ -34393,7 +34402,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v2;
 		if ( v2.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -34401,14 +34410,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v2);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_0);
 		HopRewriteUtils.cleanupUnreferenced(hi_0_1);
 
-		return v2;
+		return newRoot;
 	}
 
 	// Implementation of the rule !=(/(B,A),rev(A)) => !=(A,/(B,A))
@@ -34470,7 +34479,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v2;
 		if ( v2.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -34478,14 +34487,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v2);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_0);
 		HopRewriteUtils.cleanupUnreferenced(hi_1);
 
-		return v2;
+		return newRoot;
 	}
 
 	// Implementation of the rule !=(A,/(B,rev(A))) => !=(A,/(B,A))
@@ -34547,7 +34556,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v2;
 		if ( v2.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -34555,14 +34564,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v2);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_1);
 		HopRewriteUtils.cleanupUnreferenced(hi_1_1);
 
-		return v2;
+		return newRoot;
 	}
 
 	// Implementation of the rule !=(/(rev(A),C),A) => !=(A,/(A,C))
@@ -34624,7 +34633,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v2;
 		if ( v2.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -34632,14 +34641,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v2);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_0);
 		HopRewriteUtils.cleanupUnreferenced(hi_0_0);
 
-		return v2;
+		return newRoot;
 	}
 
 	// Implementation of the rule !=(/(A,C),rev(A)) => !=(A,/(A,C))
@@ -34701,7 +34710,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v2;
 		if ( v2.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -34709,14 +34718,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v2);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_0);
 		HopRewriteUtils.cleanupUnreferenced(hi_1);
 
-		return v2;
+		return newRoot;
 	}
 
 	// Implementation of the rule !=(A,/(rev(A),C)) => !=(A,/(A,C))
@@ -34778,7 +34787,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v2;
 		if ( v2.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -34786,14 +34795,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v2);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_1);
 		HopRewriteUtils.cleanupUnreferenced(hi_1_0);
 
-		return v2;
+		return newRoot;
 	}
 
 	// Implementation of the rule /(rev(!=(A,b)),A) => /(!=(A,b),A)
@@ -34855,7 +34864,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v2;
 		if ( v2.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -34863,14 +34872,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v2);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_0);
 		HopRewriteUtils.cleanupUnreferenced(hi_0_0);
 
-		return v2;
+		return newRoot;
 	}
 
 	// Implementation of the rule /(A,rev(!=(c,A))) => /(A,!=(A,c))
@@ -34932,7 +34941,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v2;
 		if ( v2.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -34940,14 +34949,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v2);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_1);
 		HopRewriteUtils.cleanupUnreferenced(hi_1_0);
 
-		return v2;
+		return newRoot;
 	}
 
 	// Implementation of the rule /(A,rev(!=(A,c))) => /(A,!=(A,c))
@@ -35009,7 +35018,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v2;
 		if ( v2.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -35017,14 +35026,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v2);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_1);
 		HopRewriteUtils.cleanupUnreferenced(hi_1_0);
 
-		return v2;
+		return newRoot;
 	}
 
 	// Implementation of the rule /(A,!=(rev(A),c)) => /(A,!=(A,c))
@@ -35086,7 +35095,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v2;
 		if ( v2.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -35094,14 +35103,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v2);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_1);
 		HopRewriteUtils.cleanupUnreferenced(hi_1_0);
 
-		return v2;
+		return newRoot;
 	}
 
 	// Implementation of the rule /(A,!=(c,rev(A))) => /(A,!=(A,c))
@@ -35163,7 +35172,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v2;
 		if ( v2.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -35171,14 +35180,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v2);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_1);
 		HopRewriteUtils.cleanupUnreferenced(hi_1_1);
 
-		return v2;
+		return newRoot;
 	}
 
 	// Implementation of the rule /(A,!=(rev(A),C)) => /(A,!=(A,C))
@@ -35240,7 +35249,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v2;
 		if ( v2.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -35248,14 +35257,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v2);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_1);
 		HopRewriteUtils.cleanupUnreferenced(hi_1_0);
 
-		return v2;
+		return newRoot;
 	}
 
 	// Implementation of the rule /(A,!=(C,rev(A))) => /(A,!=(A,C))
@@ -35317,7 +35326,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v2;
 		if ( v2.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -35325,14 +35334,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v2);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_1);
 		HopRewriteUtils.cleanupUnreferenced(hi_1_1);
 
-		return v2;
+		return newRoot;
 	}
 
 	// Implementation of the rule colSums(/(a,t(B))) => t(rowSums(/(a,B)))
@@ -35404,7 +35413,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v3;
 		if ( v3.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -35412,14 +35421,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v3);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_0);
 		HopRewriteUtils.cleanupUnreferenced(hi_0_1);
 
-		return v3;
+		return newRoot;
 	}
 
 	// Implementation of the rule rowSums(/(a,t(B))) => t(colSums(/(a,B)))
@@ -35491,7 +35500,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v3;
 		if ( v3.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -35499,14 +35508,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v3);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_0);
 		HopRewriteUtils.cleanupUnreferenced(hi_0_1);
 
-		return v3;
+		return newRoot;
 	}
 
 	// Implementation of the rule !=(t(A),colSums(A)) => !=(A,cast.MATRIX(sum(A)))
@@ -35567,7 +35576,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v3;
 		if ( v3.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -35575,14 +35584,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v3);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_0);
 		HopRewriteUtils.cleanupUnreferenced(hi_1);
 
-		return v3;
+		return newRoot;
 	}
 
 	// Implementation of the rule !=(A,t(colSums(A))) => !=(A,cast.MATRIX(sum(A)))
@@ -35643,7 +35652,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v3;
 		if ( v3.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -35651,14 +35660,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v3);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_1);
 		HopRewriteUtils.cleanupUnreferenced(hi_1_0);
 
-		return v3;
+		return newRoot;
 	}
 
 	// Implementation of the rule rev(!=(cast.MATRIX(a),b)) => !=(a,cast.MATRIX(b))
@@ -35715,7 +35724,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v2;
 		if ( v2.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -35723,14 +35732,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v2);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_0);
 		HopRewriteUtils.cleanupUnreferenced(hi_0_0);
 
-		return v2;
+		return newRoot;
 	}
 
 	// Implementation of the rule rev(!=(a,cast.MATRIX(b))) => !=(a,cast.MATRIX(b))
@@ -35787,7 +35796,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v2;
 		if ( v2.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -35795,14 +35804,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v2);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_0);
 		HopRewriteUtils.cleanupUnreferenced(hi_0_1);
 
-		return v2;
+		return newRoot;
 	}
 
 	// Implementation of the rule trace(-(colSums(A),b)) => -(trace(colSums(A)),b)
@@ -35863,7 +35872,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v3;
 		if ( v3.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -35871,14 +35880,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v3);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_0);
 		HopRewriteUtils.cleanupUnreferenced(hi_0_0);
 
-		return v3;
+		return newRoot;
 	}
 
 	// Implementation of the rule trace(-(a,colSums(B))) => -(a,trace(colSums(B)))
@@ -35939,7 +35948,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v3;
 		if ( v3.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -35947,14 +35956,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v3);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_0);
 		HopRewriteUtils.cleanupUnreferenced(hi_0_1);
 
-		return v3;
+		return newRoot;
 	}
 
 	// Implementation of the rule trace(+(colSums(A),b)) => +(trace(colSums(A)),b)
@@ -36015,7 +36024,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v3;
 		if ( v3.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -36023,14 +36032,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v3);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_0);
 		HopRewriteUtils.cleanupUnreferenced(hi_0_0);
 
-		return v3;
+		return newRoot;
 	}
 
 	// Implementation of the rule trace(+(b,colSums(A))) => +(trace(colSums(A)),b)
@@ -36091,7 +36100,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v3;
 		if ( v3.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -36099,14 +36108,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v3);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_0);
 		HopRewriteUtils.cleanupUnreferenced(hi_0_1);
 
-		return v3;
+		return newRoot;
 	}
 
 	// Implementation of the rule !=(A,rev(rowSums(A))) => !=(A,rowSums(A))
@@ -36166,7 +36175,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v2;
 		if ( v2.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -36174,14 +36183,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v2);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_1);
 		HopRewriteUtils.cleanupUnreferenced(hi_1_0);
 
-		return v2;
+		return newRoot;
 	}
 
 	// Implementation of the rule !=(A,rowSums(rev(A))) => !=(A,rowSums(A))
@@ -36241,7 +36250,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v2;
 		if ( v2.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -36249,14 +36258,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v2);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_1);
 		HopRewriteUtils.cleanupUnreferenced(hi_1_0);
 
-		return v2;
+		return newRoot;
 	}
 
 	// Implementation of the rule !=(A,colSums(rev(A))) => !=(A,colSums(A))
@@ -36316,7 +36325,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v2;
 		if ( v2.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -36324,14 +36333,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v2);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_1);
 		HopRewriteUtils.cleanupUnreferenced(hi_1_0);
 
-		return v2;
+		return newRoot;
 	}
 
 	// Implementation of the rule +(A,colSums(rev(A))) => +(A,colSums(A))
@@ -36391,7 +36400,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v2;
 		if ( v2.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -36399,14 +36408,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v2);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_1);
 		HopRewriteUtils.cleanupUnreferenced(hi_1_0);
 
-		return v2;
+		return newRoot;
 	}
 
 	// Implementation of the rule *(A,colSums(rev(A))) => *(A,colSums(A))
@@ -36466,7 +36475,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v2;
 		if ( v2.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -36474,14 +36483,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v2);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_1);
 		HopRewriteUtils.cleanupUnreferenced(hi_1_0);
 
-		return v2;
+		return newRoot;
 	}
 
 	// Implementation of the rule %*%(*(a,C),*(b,D)) => *(*(a,b),%*%(C,D))
@@ -36534,12 +36543,12 @@ public class GeneratedRewriteClass implements Function {
 			return hi;
 
 
-		if ( hi_1_1.getDim2() == -1 || hi_0_1.getNnz() == -1 || hi_1_1.getDim1() == -1 || hi_0_1.getDim1() == -1 || hi_1_1.getNnz() == -1 )
+		if ( hi_0_1.getDim2() == -1 || hi_1_1.getDim2() == -1 || hi_0_1.getNnz() == -1 || hi_0_1.getDim1() == -1 || hi_1_1.getNnz() == -1 )
 			return hi;
 
 
-		double costFrom = ((2.0 * hi_0_1.getNnz()) + (2.0 * hi_1_1.getNnz()) + (Math.min(hi_0_1.getNnz(), hi_1_1.getNnz()) * hi_1_1.getDim1() * 3.0) + 30030.0);
-		double costTo = ((Math.min(hi_0_1.getNnz(), hi_1_1.getNnz()) * hi_1_1.getDim1() * 3.0) + (2.0 * (Math.min((hi_0_1.getNnz() * (1.0 / hi_0_1.getDim1())), 1.0) * Math.min((hi_1_1.getNnz() * (1.0 / hi_1_1.getDim2())), 1.0) * hi_0_1.getDim1() * hi_1_1.getDim2())) + 20032.0);
+		double costFrom = ((2.0 * hi_0_1.getNnz()) + (2.0 * hi_1_1.getNnz()) + (Math.min(hi_0_1.getNnz(), hi_1_1.getNnz()) * hi_0_1.getDim2() * 3.0) + 30030.0);
+		double costTo = ((Math.min(hi_0_1.getNnz(), hi_1_1.getNnz()) * hi_0_1.getDim2() * 3.0) + (2.0 * (Math.min((hi_0_1.getNnz() * (1.0 / hi_0_1.getDim1())), 1.0) * Math.min((hi_1_1.getNnz() * (1.0 / hi_1_1.getDim2())), 1.0) * hi_0_1.getDim1() * hi_1_1.getDim2())) + 20032.0);
 
 		if ( costFrom <= costTo )
 			return hi;
@@ -36555,7 +36564,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v3;
 		if ( v3.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -36563,14 +36572,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v3);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_0);
 		HopRewriteUtils.cleanupUnreferenced(hi_1);
 
-		return v3;
+		return newRoot;
 	}
 
 	// Implementation of the rule %*%(*(a,C),*(D,b)) => *(*(a,b),%*%(C,D))
@@ -36623,12 +36632,12 @@ public class GeneratedRewriteClass implements Function {
 			return hi;
 
 
-		if ( hi_1_0.getNnz() == -1 || hi_0_1.getDim2() == -1 || hi_0_1.getNnz() == -1 || hi_1_0.getDim2() == -1 || hi_0_1.getDim1() == -1 )
+		if ( hi_1_0.getNnz() == -1 || hi_0_1.getNnz() == -1 || hi_1_0.getDim1() == -1 || hi_1_0.getDim2() == -1 || hi_0_1.getDim1() == -1 )
 			return hi;
 
 
-		double costFrom = ((2.0 * hi_0_1.getNnz()) + (2.0 * hi_1_0.getNnz()) + (Math.min(hi_0_1.getNnz(), hi_1_0.getNnz()) * hi_0_1.getDim2() * 3.0) + 30030.0);
-		double costTo = ((Math.min(hi_0_1.getNnz(), hi_1_0.getNnz()) * hi_0_1.getDim2() * 3.0) + (2.0 * (Math.min((hi_0_1.getNnz() * (1.0 / hi_0_1.getDim1())), 1.0) * Math.min((hi_1_0.getNnz() * (1.0 / hi_1_0.getDim2())), 1.0) * hi_0_1.getDim1() * hi_1_0.getDim2())) + 20032.0);
+		double costFrom = ((2.0 * hi_0_1.getNnz()) + (2.0 * hi_1_0.getNnz()) + (Math.min(hi_0_1.getNnz(), hi_1_0.getNnz()) * hi_1_0.getDim1() * 3.0) + 30030.0);
+		double costTo = ((Math.min(hi_0_1.getNnz(), hi_1_0.getNnz()) * hi_1_0.getDim1() * 3.0) + (2.0 * (Math.min((hi_0_1.getNnz() * (1.0 / hi_0_1.getDim1())), 1.0) * Math.min((hi_1_0.getNnz() * (1.0 / hi_1_0.getDim2())), 1.0) * hi_0_1.getDim1() * hi_1_0.getDim2())) + 20032.0);
 
 		if ( costFrom <= costTo )
 			return hi;
@@ -36644,7 +36653,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v3;
 		if ( v3.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -36652,14 +36661,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v3);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_0);
 		HopRewriteUtils.cleanupUnreferenced(hi_1);
 
-		return v3;
+		return newRoot;
 	}
 
 	// Implementation of the rule %*%(*(C,a),*(b,D)) => *(*(a,b),%*%(C,D))
@@ -36712,12 +36721,12 @@ public class GeneratedRewriteClass implements Function {
 			return hi;
 
 
-		if ( hi_0_0.getDim1() == -1 || hi_1_1.getDim2() == -1 || hi_0_0.getNnz() == -1 || hi_1_1.getDim1() == -1 || hi_1_1.getNnz() == -1 )
+		if ( hi_0_0.getDim1() == -1 || hi_1_1.getDim2() == -1 || hi_0_0.getNnz() == -1 || hi_0_0.getDim2() == -1 || hi_1_1.getNnz() == -1 )
 			return hi;
 
 
-		double costFrom = ((2.0 * hi_0_0.getNnz()) + (2.0 * hi_1_1.getNnz()) + (Math.min(hi_0_0.getNnz(), hi_1_1.getNnz()) * hi_1_1.getDim1() * 3.0) + 30030.0);
-		double costTo = ((Math.min(hi_0_0.getNnz(), hi_1_1.getNnz()) * hi_1_1.getDim1() * 3.0) + (2.0 * (Math.min((hi_0_0.getNnz() * (1.0 / hi_0_0.getDim1())), 1.0) * Math.min((hi_1_1.getNnz() * (1.0 / hi_1_1.getDim2())), 1.0) * hi_0_0.getDim1() * hi_1_1.getDim2())) + 20032.0);
+		double costFrom = ((2.0 * hi_0_0.getNnz()) + (2.0 * hi_1_1.getNnz()) + (Math.min(hi_0_0.getNnz(), hi_1_1.getNnz()) * hi_0_0.getDim2() * 3.0) + 30030.0);
+		double costTo = ((Math.min(hi_0_0.getNnz(), hi_1_1.getNnz()) * hi_0_0.getDim2() * 3.0) + (2.0 * (Math.min((hi_0_0.getNnz() * (1.0 / hi_0_0.getDim1())), 1.0) * Math.min((hi_1_1.getNnz() * (1.0 / hi_1_1.getDim2())), 1.0) * hi_0_0.getDim1() * hi_1_1.getDim2())) + 20032.0);
 
 		if ( costFrom <= costTo )
 			return hi;
@@ -36733,7 +36742,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v3;
 		if ( v3.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -36741,14 +36750,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v3);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_0);
 		HopRewriteUtils.cleanupUnreferenced(hi_1);
 
-		return v3;
+		return newRoot;
 	}
 
 	// Implementation of the rule %*%(*(C,a),*(D,b)) => *(*(a,b),%*%(C,D))
@@ -36822,7 +36831,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v3;
 		if ( v3.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -36830,14 +36839,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v3);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_0);
 		HopRewriteUtils.cleanupUnreferenced(hi_1);
 
-		return v3;
+		return newRoot;
 	}
 
 	// Implementation of the rule *(%*%(*(a,C),D),b) => *(*(a,b),%*%(C,D))
@@ -36900,7 +36909,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v3;
 		if ( v3.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -36908,14 +36917,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v3);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_0);
 		HopRewriteUtils.cleanupUnreferenced(hi_0_0);
 
-		return v3;
+		return newRoot;
 	}
 
 	// Implementation of the rule *(%*%(*(C,a),D),b) => *(*(a,b),%*%(C,D))
@@ -36978,7 +36987,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v3;
 		if ( v3.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -36986,14 +36995,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v3);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_0);
 		HopRewriteUtils.cleanupUnreferenced(hi_0_0);
 
-		return v3;
+		return newRoot;
 	}
 
 	// Implementation of the rule *(%*%(C,*(D,a)),b) => *(*(a,b),%*%(C,D))
@@ -37056,7 +37065,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v3;
 		if ( v3.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -37064,14 +37073,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v3);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_0);
 		HopRewriteUtils.cleanupUnreferenced(hi_0_1);
 
-		return v3;
+		return newRoot;
 	}
 
 	// Implementation of the rule *(a,%*%(*(b,C),D)) => *(*(a,b),%*%(C,D))
@@ -37134,7 +37143,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v3;
 		if ( v3.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -37142,14 +37151,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v3);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_1);
 		HopRewriteUtils.cleanupUnreferenced(hi_1_0);
 
-		return v3;
+		return newRoot;
 	}
 
 	// Implementation of the rule *(a,%*%(*(C,b),D)) => *(*(a,b),%*%(C,D))
@@ -37212,7 +37221,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v3;
 		if ( v3.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -37220,14 +37229,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v3);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_1);
 		HopRewriteUtils.cleanupUnreferenced(hi_1_0);
 
-		return v3;
+		return newRoot;
 	}
 
 	// Implementation of the rule *(a,%*%(C,*(b,D))) => *(*(a,b),%*%(C,D))
@@ -37290,7 +37299,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v3;
 		if ( v3.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -37298,14 +37307,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v3);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_1);
 		HopRewriteUtils.cleanupUnreferenced(hi_1_1);
 
-		return v3;
+		return newRoot;
 	}
 
 	// Implementation of the rule %*%(/(a,C),*(b,D)) => %*%(/(*(a,b),C),D)
@@ -37368,7 +37377,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v3;
 		if ( v3.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -37376,14 +37385,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v3);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_0);
 		HopRewriteUtils.cleanupUnreferenced(hi_1);
 
-		return v3;
+		return newRoot;
 	}
 
 	// Implementation of the rule %*%(/(a,C),*(D,b)) => %*%(/(*(a,b),C),D)
@@ -37446,7 +37455,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v3;
 		if ( v3.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -37454,14 +37463,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v3);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_0);
 		HopRewriteUtils.cleanupUnreferenced(hi_1);
 
-		return v3;
+		return newRoot;
 	}
 
 	// Implementation of the rule *(%*%(/(a,C),D),b) => %*%(/(*(a,b),C),D)
@@ -37524,7 +37533,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v3;
 		if ( v3.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -37532,14 +37541,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v3);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_0);
 		HopRewriteUtils.cleanupUnreferenced(hi_0_0);
 
-		return v3;
+		return newRoot;
 	}
 
 	// Implementation of the rule *(a,%*%(/(b,C),D)) => %*%(/(*(a,b),C),D)
@@ -37602,7 +37611,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v3;
 		if ( v3.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -37610,14 +37619,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v3);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_1);
 		HopRewriteUtils.cleanupUnreferenced(hi_1_0);
 
-		return v3;
+		return newRoot;
 	}
 
 	// Implementation of the rule %*%(*(b,A),/(c,D)) => %*%(A,/(*(b,c),D))
@@ -37680,7 +37689,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v3;
 		if ( v3.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -37688,14 +37697,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v3);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_0);
 		HopRewriteUtils.cleanupUnreferenced(hi_1);
 
-		return v3;
+		return newRoot;
 	}
 
 	// Implementation of the rule %*%(*(A,b),/(c,D)) => %*%(A,/(*(b,c),D))
@@ -37758,7 +37767,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v3;
 		if ( v3.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -37766,14 +37775,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v3);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_0);
 		HopRewriteUtils.cleanupUnreferenced(hi_1);
 
-		return v3;
+		return newRoot;
 	}
 
 	// Implementation of the rule *(%*%(A,/(b,D)),c) => %*%(A,/(*(b,c),D))
@@ -37836,7 +37845,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v3;
 		if ( v3.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -37844,14 +37853,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v3);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_0);
 		HopRewriteUtils.cleanupUnreferenced(hi_0_1);
 
-		return v3;
+		return newRoot;
 	}
 
 	// Implementation of the rule *(b,%*%(A,/(c,D))) => %*%(A,/(*(b,c),D))
@@ -37914,7 +37923,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v3;
 		if ( v3.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -37922,14 +37931,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v3);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_1);
 		HopRewriteUtils.cleanupUnreferenced(hi_1_1);
 
-		return v3;
+		return newRoot;
 	}
 
 	// Implementation of the rule t(%*%(t(B),A)) => %*%(t(A),B)
@@ -37976,8 +37985,8 @@ public class GeneratedRewriteClass implements Function {
 			return hi;
 
 
-		double costFrom = (hi_0_0_0.getNnz() + (Math.min((hi_0_0_0.getDim2() * hi_0_0_0.getDim1()), hi_0_1.getNnz()) * hi_0_1.getDim1() * 3.0) + (Math.min(((hi_0_0_0.getDim2() * hi_0_0_0.getDim1()) * (1.0 / hi_0_0_0.getDim2())), 1.0) * Math.min((hi_0_1.getNnz() * (1.0 / hi_0_1.getDim2())), 1.0) * hi_0_0_0.getDim2() * hi_0_1.getDim2()) + 30030.0);
-		double costTo = (hi_0_1.getNnz() + (Math.min((hi_0_1.getDim2() * hi_0_1.getDim1()), hi_0_0_0.getNnz()) * hi_0_1.getDim1() * 3.0) + 20020.0);
+		double costFrom = (hi_0_0_0.getNnz() + (Math.min((hi_0_0_0.getDim2() * hi_0_0_0.getDim1()), hi_0_1.getNnz()) * hi_0_0_0.getDim1() * 3.0) + (Math.min(((hi_0_0_0.getDim2() * hi_0_0_0.getDim1()) * (1.0 / hi_0_0_0.getDim2())), 1.0) * Math.min((hi_0_1.getNnz() * (1.0 / hi_0_1.getDim2())), 1.0) * hi_0_0_0.getDim2() * hi_0_1.getDim2()) + 30030.0);
+		double costTo = (hi_0_1.getNnz() + (Math.min((hi_0_1.getDim2() * hi_0_1.getDim1()), hi_0_0_0.getNnz()) * hi_0_0_0.getDim1() * 3.0) + 20020.0);
 
 		if ( costFrom <= costTo )
 			return hi;
@@ -37992,7 +38001,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v2;
 		if ( v2.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -38000,14 +38009,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v2);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_0);
 		HopRewriteUtils.cleanupUnreferenced(hi_0_0);
 
-		return v2;
+		return newRoot;
 	}
 
 	// Implementation of the rule t(%*%(B,t(A))) => %*%(A,t(B))
@@ -38054,8 +38063,8 @@ public class GeneratedRewriteClass implements Function {
 			return hi;
 
 
-		double costFrom = (hi_0_1_0.getNnz() + (Math.min(hi_0_0.getNnz(), (hi_0_1_0.getDim2() * hi_0_1_0.getDim1())) * hi_0_1_0.getDim2() * 3.0) + (Math.min((hi_0_0.getNnz() * (1.0 / hi_0_0.getDim1())), 1.0) * Math.min(((hi_0_1_0.getDim2() * hi_0_1_0.getDim1()) * (1.0 / hi_0_1_0.getDim1())), 1.0) * hi_0_0.getDim1() * hi_0_1_0.getDim1()) + 30030.0);
-		double costTo = (hi_0_0.getNnz() + (Math.min(hi_0_1_0.getNnz(), (hi_0_0.getDim2() * hi_0_0.getDim1())) * hi_0_1_0.getDim2() * 3.0) + 20020.0);
+		double costFrom = (hi_0_1_0.getNnz() + (Math.min(hi_0_0.getNnz(), (hi_0_1_0.getDim2() * hi_0_1_0.getDim1())) * hi_0_0.getDim2() * 3.0) + (Math.min((hi_0_0.getNnz() * (1.0 / hi_0_0.getDim1())), 1.0) * Math.min(((hi_0_1_0.getDim2() * hi_0_1_0.getDim1()) * (1.0 / hi_0_1_0.getDim1())), 1.0) * hi_0_0.getDim1() * hi_0_1_0.getDim1()) + 30030.0);
+		double costTo = (hi_0_0.getNnz() + (Math.min(hi_0_1_0.getNnz(), (hi_0_0.getDim2() * hi_0_0.getDim1())) * hi_0_0.getDim2() * 3.0) + 20020.0);
 
 		if ( costFrom <= costTo )
 			return hi;
@@ -38070,7 +38079,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v2;
 		if ( v2.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -38078,14 +38087,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v2);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_0);
 		HopRewriteUtils.cleanupUnreferenced(hi_0_1);
 
-		return v2;
+		return newRoot;
 	}
 
 	// Implementation of the rule %*%(t(B),t(A)) => t(%*%(A,B))
@@ -38132,8 +38141,8 @@ public class GeneratedRewriteClass implements Function {
 			return hi;
 
 
-		double costFrom = (hi_0_0.getNnz() + hi_1_0.getNnz() + (Math.min((hi_0_0.getDim2() * hi_0_0.getDim1()), (hi_1_0.getDim2() * hi_1_0.getDim1())) * hi_1_0.getDim2() * 3.0) + 30030.0);
-		double costTo = ((Math.min(hi_1_0.getNnz(), hi_0_0.getNnz()) * hi_1_0.getDim2() * 3.0) + (Math.min((hi_1_0.getNnz() * (1.0 / hi_1_0.getDim1())), 1.0) * Math.min((hi_0_0.getNnz() * (1.0 / hi_0_0.getDim2())), 1.0) * hi_1_0.getDim1() * hi_0_0.getDim2()) + 20020.0);
+		double costFrom = (hi_0_0.getNnz() + hi_1_0.getNnz() + (Math.min((hi_0_0.getDim2() * hi_0_0.getDim1()), (hi_1_0.getDim2() * hi_1_0.getDim1())) * hi_0_0.getDim1() * 3.0) + 30030.0);
+		double costTo = ((Math.min(hi_1_0.getNnz(), hi_0_0.getNnz()) * hi_0_0.getDim1() * 3.0) + (Math.min((hi_1_0.getNnz() * (1.0 / hi_1_0.getDim1())), 1.0) * Math.min((hi_0_0.getNnz() * (1.0 / hi_0_0.getDim2())), 1.0) * hi_1_0.getDim1() * hi_0_0.getDim2()) + 20020.0);
 
 		if ( costFrom <= costTo )
 			return hi;
@@ -38148,7 +38157,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v2;
 		if ( v2.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -38156,14 +38165,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v2);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_0);
 		HopRewriteUtils.cleanupUnreferenced(hi_1);
 
-		return v2;
+		return newRoot;
 	}
 
 	// Implementation of the rule !=(%*%(B,rev(A)),A) => !=(A,%*%(B,A))
@@ -38220,7 +38229,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v2;
 		if ( v2.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -38228,14 +38237,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v2);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_0);
 		HopRewriteUtils.cleanupUnreferenced(hi_0_1);
 
-		return v2;
+		return newRoot;
 	}
 
 	// Implementation of the rule !=(A,%*%(B,rev(A))) => !=(A,%*%(B,A))
@@ -38292,7 +38301,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v2;
 		if ( v2.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -38300,14 +38309,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v2);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_1);
 		HopRewriteUtils.cleanupUnreferenced(hi_1_1);
 
-		return v2;
+		return newRoot;
 	}
 
 	// Implementation of the rule !=(rev(%*%(A,C)),A) => !=(A,%*%(A,C))
@@ -38364,7 +38373,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v2;
 		if ( v2.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -38372,14 +38381,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v2);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_0);
 		HopRewriteUtils.cleanupUnreferenced(hi_0_0);
 
-		return v2;
+		return newRoot;
 	}
 
 	// Implementation of the rule !=(A,rev(%*%(A,C))) => !=(A,%*%(A,C))
@@ -38436,7 +38445,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v2;
 		if ( v2.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -38444,14 +38453,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v2);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_1);
 		HopRewriteUtils.cleanupUnreferenced(hi_1_0);
 
-		return v2;
+		return newRoot;
 	}
 
 	// Implementation of the rule !=(%*%(rev(A),C),A) => !=(A,%*%(A,C))
@@ -38508,7 +38517,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v2;
 		if ( v2.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -38516,14 +38525,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v2);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_0);
 		HopRewriteUtils.cleanupUnreferenced(hi_0_0);
 
-		return v2;
+		return newRoot;
 	}
 
 	// Implementation of the rule !=(A,%*%(rev(A),C)) => !=(A,%*%(A,C))
@@ -38580,7 +38589,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v2;
 		if ( v2.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -38588,14 +38597,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v2);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_1);
 		HopRewriteUtils.cleanupUnreferenced(hi_1_0);
 
-		return v2;
+		return newRoot;
 	}
 
 	// Implementation of the rule rev(%*%(!=(b,A),A)) => %*%(!=(A,b),A)
@@ -38652,7 +38661,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v2;
 		if ( v2.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -38660,14 +38669,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v2);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_0);
 		HopRewriteUtils.cleanupUnreferenced(hi_0_0);
 
-		return v2;
+		return newRoot;
 	}
 
 	// Implementation of the rule rev(%*%(!=(A,b),A)) => %*%(!=(A,b),A)
@@ -38724,7 +38733,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v2;
 		if ( v2.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -38732,14 +38741,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v2);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_0);
 		HopRewriteUtils.cleanupUnreferenced(hi_0_0);
 
-		return v2;
+		return newRoot;
 	}
 
 	// Implementation of the rule %*%(!=(rev(A),b),A) => %*%(!=(A,b),A)
@@ -38796,7 +38805,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v2;
 		if ( v2.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -38804,14 +38813,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v2);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_0);
 		HopRewriteUtils.cleanupUnreferenced(hi_0_0);
 
-		return v2;
+		return newRoot;
 	}
 
 	// Implementation of the rule %*%(!=(b,rev(A)),A) => %*%(!=(A,b),A)
@@ -38868,7 +38877,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v2;
 		if ( v2.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -38876,14 +38885,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v2);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_0);
 		HopRewriteUtils.cleanupUnreferenced(hi_0_1);
 
-		return v2;
+		return newRoot;
 	}
 
 	// Implementation of the rule %*%(rev(!=(b,A)),A) => %*%(!=(A,b),A)
@@ -38940,7 +38949,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v2;
 		if ( v2.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -38948,14 +38957,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v2);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_0);
 		HopRewriteUtils.cleanupUnreferenced(hi_0_0);
 
-		return v2;
+		return newRoot;
 	}
 
 	// Implementation of the rule %*%(rev(!=(A,b)),A) => %*%(!=(A,b),A)
@@ -39012,7 +39021,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v2;
 		if ( v2.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -39020,14 +39029,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v2);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_0);
 		HopRewriteUtils.cleanupUnreferenced(hi_0_0);
 
-		return v2;
+		return newRoot;
 	}
 
 	// Implementation of the rule %*%(!=(rev(A),B),A) => %*%(!=(A,B),A)
@@ -39084,7 +39093,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v2;
 		if ( v2.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -39092,14 +39101,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v2);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_0);
 		HopRewriteUtils.cleanupUnreferenced(hi_0_0);
 
-		return v2;
+		return newRoot;
 	}
 
 	// Implementation of the rule %*%(!=(B,rev(A)),A) => %*%(!=(A,B),A)
@@ -39156,7 +39165,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v2;
 		if ( v2.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -39164,14 +39173,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v2);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_0);
 		HopRewriteUtils.cleanupUnreferenced(hi_0_1);
 
-		return v2;
+		return newRoot;
 	}
 
 	// Implementation of the rule %*%(A,!=(rev(A),c)) => %*%(A,!=(A,c))
@@ -39228,7 +39237,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v2;
 		if ( v2.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -39236,14 +39245,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v2);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_1);
 		HopRewriteUtils.cleanupUnreferenced(hi_1_0);
 
-		return v2;
+		return newRoot;
 	}
 
 	// Implementation of the rule %*%(A,!=(c,rev(A))) => %*%(A,!=(A,c))
@@ -39300,7 +39309,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v2;
 		if ( v2.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -39308,14 +39317,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v2);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_1);
 		HopRewriteUtils.cleanupUnreferenced(hi_1_1);
 
-		return v2;
+		return newRoot;
 	}
 
 	// Implementation of the rule %*%(A,rev(!=(c,A))) => %*%(A,!=(A,c))
@@ -39372,7 +39381,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v2;
 		if ( v2.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -39380,14 +39389,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v2);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_1);
 		HopRewriteUtils.cleanupUnreferenced(hi_1_0);
 
-		return v2;
+		return newRoot;
 	}
 
 	// Implementation of the rule %*%(A,rev(!=(A,c))) => %*%(A,!=(A,c))
@@ -39444,7 +39453,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v2;
 		if ( v2.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -39452,14 +39461,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v2);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_1);
 		HopRewriteUtils.cleanupUnreferenced(hi_1_0);
 
-		return v2;
+		return newRoot;
 	}
 
 	// Implementation of the rule %*%(A,!=(rev(A),C)) => %*%(A,!=(A,C))
@@ -39516,7 +39525,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v2;
 		if ( v2.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -39524,14 +39533,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v2);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_1);
 		HopRewriteUtils.cleanupUnreferenced(hi_1_0);
 
-		return v2;
+		return newRoot;
 	}
 
 	// Implementation of the rule %*%(A,!=(C,rev(A))) => %*%(A,!=(A,C))
@@ -39588,7 +39597,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v2;
 		if ( v2.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -39596,14 +39605,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v2);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_1);
 		HopRewriteUtils.cleanupUnreferenced(hi_1_1);
 
-		return v2;
+		return newRoot;
 	}
 
 	// Implementation of the rule rev(-(colSums(A),b)) => -(colSums(A),b)
@@ -39663,7 +39672,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v2;
 		if ( v2.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -39671,14 +39680,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v2);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_0);
 		HopRewriteUtils.cleanupUnreferenced(hi_0_0);
 
-		return v2;
+		return newRoot;
 	}
 
 	// Implementation of the rule rev(-(a,colSums(B))) => -(a,colSums(B))
@@ -39738,7 +39747,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v2;
 		if ( v2.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -39746,14 +39755,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v2);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_0);
 		HopRewriteUtils.cleanupUnreferenced(hi_0_1);
 
-		return v2;
+		return newRoot;
 	}
 
 	// Implementation of the rule rev(!=(colSums(B),a)) => !=(a,colSums(B))
@@ -39813,7 +39822,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v2;
 		if ( v2.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -39821,14 +39830,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v2);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_0);
 		HopRewriteUtils.cleanupUnreferenced(hi_0_0);
 
-		return v2;
+		return newRoot;
 	}
 
 	// Implementation of the rule rev(!=(a,colSums(B))) => !=(a,colSums(B))
@@ -39888,7 +39897,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v2;
 		if ( v2.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -39896,14 +39905,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v2);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_0);
 		HopRewriteUtils.cleanupUnreferenced(hi_0_1);
 
-		return v2;
+		return newRoot;
 	}
 
 	// Implementation of the rule rev(t(rowSums(A))) => t(rowSums(A))
@@ -39958,7 +39967,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v2;
 		if ( v2.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -39966,14 +39975,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v2);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_0);
 		HopRewriteUtils.cleanupUnreferenced(hi_0_0);
 
-		return v2;
+		return newRoot;
 	}
 
 	// Implementation of the rule rev(+(colSums(B),a)) => +(a,colSums(B))
@@ -40033,7 +40042,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v2;
 		if ( v2.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -40041,14 +40050,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v2);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_0);
 		HopRewriteUtils.cleanupUnreferenced(hi_0_0);
 
-		return v2;
+		return newRoot;
 	}
 
 	// Implementation of the rule rev(+(a,colSums(B))) => +(a,colSums(B))
@@ -40108,7 +40117,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v2;
 		if ( v2.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -40116,14 +40125,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v2);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_0);
 		HopRewriteUtils.cleanupUnreferenced(hi_0_1);
 
-		return v2;
+		return newRoot;
 	}
 
 	// Implementation of the rule rev(*(colSums(B),a)) => *(a,colSums(B))
@@ -40183,7 +40192,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v2;
 		if ( v2.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -40191,14 +40200,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v2);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_0);
 		HopRewriteUtils.cleanupUnreferenced(hi_0_0);
 
-		return v2;
+		return newRoot;
 	}
 
 	// Implementation of the rule rev(*(a,colSums(B))) => *(a,colSums(B))
@@ -40258,7 +40267,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v2;
 		if ( v2.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -40266,14 +40275,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v2);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_0);
 		HopRewriteUtils.cleanupUnreferenced(hi_0_1);
 
-		return v2;
+		return newRoot;
 	}
 
 	// Implementation of the rule rev(/(a,colSums(B))) => /(a,colSums(B))
@@ -40333,7 +40342,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v2;
 		if ( v2.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -40341,14 +40350,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v2);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_0);
 		HopRewriteUtils.cleanupUnreferenced(hi_0_1);
 
-		return v2;
+		return newRoot;
 	}
 
 	// Implementation of the rule *(colSums(/(a,C)),b) => colSums(/(*(a,b),C))
@@ -40414,7 +40423,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v3;
 		if ( v3.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -40422,14 +40431,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v3);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_0);
 		HopRewriteUtils.cleanupUnreferenced(hi_0_0);
 
-		return v3;
+		return newRoot;
 	}
 
 	// Implementation of the rule *(a,colSums(/(b,C))) => colSums(/(*(a,b),C))
@@ -40495,7 +40504,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v3;
 		if ( v3.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -40503,14 +40512,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v3);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_1);
 		HopRewriteUtils.cleanupUnreferenced(hi_1_0);
 
-		return v3;
+		return newRoot;
 	}
 
 	// Implementation of the rule *(rowSums(/(a,C)),b) => rowSums(/(*(a,b),C))
@@ -40576,7 +40585,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v3;
 		if ( v3.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -40584,14 +40593,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v3);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_0);
 		HopRewriteUtils.cleanupUnreferenced(hi_0_0);
 
-		return v3;
+		return newRoot;
 	}
 
 	// Implementation of the rule *(a,rowSums(/(b,C))) => rowSums(/(*(a,b),C))
@@ -40657,7 +40666,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v3;
 		if ( v3.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -40665,14 +40674,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v3);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_1);
 		HopRewriteUtils.cleanupUnreferenced(hi_1_0);
 
-		return v3;
+		return newRoot;
 	}
 
 	// Implementation of the rule rev(%*%(colSums(A),B)) => %*%(colSums(A),B)
@@ -40727,7 +40736,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v2;
 		if ( v2.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -40735,14 +40744,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v2);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_0);
 		HopRewriteUtils.cleanupUnreferenced(hi_0_0);
 
-		return v2;
+		return newRoot;
 	}
 
 	// Implementation of the rule -(A,rev(*(b,C))) => -*(A,b,rev(C))
@@ -40815,7 +40824,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v2;
 		if ( v2.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -40823,14 +40832,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v2);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_1);
 		HopRewriteUtils.cleanupUnreferenced(hi_1_0);
 
-		return v2;
+		return newRoot;
 	}
 
 	// Implementation of the rule -(A,rev(*(C,b))) => -*(A,b,rev(C))
@@ -40903,7 +40912,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v2;
 		if ( v2.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -40911,14 +40920,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v2);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_1);
 		HopRewriteUtils.cleanupUnreferenced(hi_1_0);
 
-		return v2;
+		return newRoot;
 	}
 
 	// Implementation of the rule -(A,t(*(b,C))) => -*(A,b,t(C))
@@ -40991,7 +41000,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v2;
 		if ( v2.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -40999,14 +41008,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v2);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_1);
 		HopRewriteUtils.cleanupUnreferenced(hi_1_0);
 
-		return v2;
+		return newRoot;
 	}
 
 	// Implementation of the rule -(A,t(*(C,b))) => -*(A,b,t(C))
@@ -41079,7 +41088,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v2;
 		if ( v2.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -41087,14 +41096,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v2);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_1);
 		HopRewriteUtils.cleanupUnreferenced(hi_1_0);
 
-		return v2;
+		return newRoot;
 	}
 
 	// Implementation of the rule +(rev(*(b,C)),A) => +*(A,b,rev(C))
@@ -41167,7 +41176,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v2;
 		if ( v2.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -41175,14 +41184,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v2);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_0);
 		HopRewriteUtils.cleanupUnreferenced(hi_0_0);
 
-		return v2;
+		return newRoot;
 	}
 
 	// Implementation of the rule +(rev(*(C,b)),A) => +*(A,b,rev(C))
@@ -41255,7 +41264,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v2;
 		if ( v2.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -41263,14 +41272,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v2);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_0);
 		HopRewriteUtils.cleanupUnreferenced(hi_0_0);
 
-		return v2;
+		return newRoot;
 	}
 
 	// Implementation of the rule +(A,rev(*(C,b))) => +*(A,b,rev(C))
@@ -41343,7 +41352,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v2;
 		if ( v2.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -41351,14 +41360,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v2);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_1);
 		HopRewriteUtils.cleanupUnreferenced(hi_1_0);
 
-		return v2;
+		return newRoot;
 	}
 
 	// Implementation of the rule -(-(a,*(c,D)),B) => -(a,+*(B,c,D))
@@ -41425,7 +41434,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v2;
 		if ( v2.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -41433,14 +41442,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v2);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_0);
 		HopRewriteUtils.cleanupUnreferenced(hi_0_1);
 
-		return v2;
+		return newRoot;
 	}
 
 	// Implementation of the rule -(-(a,*(D,c)),B) => -(a,+*(B,c,D))
@@ -41507,7 +41516,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v2;
 		if ( v2.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -41515,14 +41524,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v2);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_0);
 		HopRewriteUtils.cleanupUnreferenced(hi_0_1);
 
-		return v2;
+		return newRoot;
 	}
 
 	// Implementation of the rule -(A,+(*(b,C),d)) => -(-*(A,b,C),d)
@@ -41589,7 +41598,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v2;
 		if ( v2.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -41597,14 +41606,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v2);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_1);
 		HopRewriteUtils.cleanupUnreferenced(hi_1_0);
 
-		return v2;
+		return newRoot;
 	}
 
 	// Implementation of the rule -(A,+(*(C,b),d)) => -(-*(A,b,C),d)
@@ -41671,7 +41680,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v2;
 		if ( v2.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -41679,14 +41688,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v2);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_1);
 		HopRewriteUtils.cleanupUnreferenced(hi_1_0);
 
-		return v2;
+		return newRoot;
 	}
 
 	// Implementation of the rule -(A,+(d,*(b,C))) => -(-*(A,b,C),d)
@@ -41753,7 +41762,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v2;
 		if ( v2.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -41761,14 +41770,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v2);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_1);
 		HopRewriteUtils.cleanupUnreferenced(hi_1_1);
 
-		return v2;
+		return newRoot;
 	}
 
 	// Implementation of the rule -(A,+(d,*(C,b))) => -(-*(A,b,C),d)
@@ -41835,7 +41844,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v2;
 		if ( v2.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -41843,14 +41852,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v2);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_1);
 		HopRewriteUtils.cleanupUnreferenced(hi_1_1);
 
-		return v2;
+		return newRoot;
 	}
 
 	// Implementation of the rule +(t(*(b,C)),A) => +*(A,b,t(C))
@@ -41923,7 +41932,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v2;
 		if ( v2.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -41931,14 +41940,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v2);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_0);
 		HopRewriteUtils.cleanupUnreferenced(hi_0_0);
 
-		return v2;
+		return newRoot;
 	}
 
 	// Implementation of the rule +(t(*(C,b)),A) => +*(A,b,t(C))
@@ -42011,7 +42020,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v2;
 		if ( v2.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -42019,14 +42028,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v2);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_0);
 		HopRewriteUtils.cleanupUnreferenced(hi_0_0);
 
-		return v2;
+		return newRoot;
 	}
 
 	// Implementation of the rule +(A,t(*(b,C))) => +*(A,b,t(C))
@@ -42099,7 +42108,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v2;
 		if ( v2.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -42107,14 +42116,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v2);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_1);
 		HopRewriteUtils.cleanupUnreferenced(hi_1_0);
 
-		return v2;
+		return newRoot;
 	}
 
 	// Implementation of the rule +(A,t(*(C,b))) => +*(A,b,t(C))
@@ -42187,7 +42196,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v2;
 		if ( v2.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -42195,14 +42204,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v2);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_1);
 		HopRewriteUtils.cleanupUnreferenced(hi_1_0);
 
-		return v2;
+		return newRoot;
 	}
 
 	// Implementation of the rule -(+(*(c,D),a),B) => -(a,-*(B,c,D))
@@ -42269,7 +42278,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v2;
 		if ( v2.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -42277,14 +42286,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v2);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_0);
 		HopRewriteUtils.cleanupUnreferenced(hi_0_0);
 
-		return v2;
+		return newRoot;
 	}
 
 	// Implementation of the rule -(+(*(D,c),a),B) => -(a,-*(B,c,D))
@@ -42351,7 +42360,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v2;
 		if ( v2.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -42359,14 +42368,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v2);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_0);
 		HopRewriteUtils.cleanupUnreferenced(hi_0_0);
 
-		return v2;
+		return newRoot;
 	}
 
 	// Implementation of the rule -(+(a,*(c,D)),B) => -(a,-*(B,c,D))
@@ -42433,7 +42442,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v2;
 		if ( v2.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -42441,14 +42450,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v2);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_0);
 		HopRewriteUtils.cleanupUnreferenced(hi_0_1);
 
-		return v2;
+		return newRoot;
 	}
 
 	// Implementation of the rule -(+(a,*(D,c)),B) => -(a,-*(B,c,D))
@@ -42515,7 +42524,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v2;
 		if ( v2.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -42523,14 +42532,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v2);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_0);
 		HopRewriteUtils.cleanupUnreferenced(hi_0_1);
 
-		return v2;
+		return newRoot;
 	}
 
 	// Implementation of the rule -(*(c,D),-(B,a)) => -(a,-*(B,c,D))
@@ -42597,7 +42606,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v2;
 		if ( v2.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -42605,14 +42614,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v2);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_0);
 		HopRewriteUtils.cleanupUnreferenced(hi_1);
 
-		return v2;
+		return newRoot;
 	}
 
 	// Implementation of the rule -(*(D,c),-(B,a)) => -(a,-*(B,c,D))
@@ -42679,7 +42688,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v2;
 		if ( v2.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -42687,14 +42696,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v2);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_0);
 		HopRewriteUtils.cleanupUnreferenced(hi_1);
 
-		return v2;
+		return newRoot;
 	}
 
 	// Implementation of the rule +(-(*(c,D),B),a) => -(a,-*(B,c,D))
@@ -42761,7 +42770,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v2;
 		if ( v2.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -42769,14 +42778,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v2);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_0);
 		HopRewriteUtils.cleanupUnreferenced(hi_0_0);
 
-		return v2;
+		return newRoot;
 	}
 
 	// Implementation of the rule +(-(*(D,c),B),a) => -(a,-*(B,c,D))
@@ -42843,7 +42852,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v2;
 		if ( v2.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -42851,14 +42860,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v2);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_0);
 		HopRewriteUtils.cleanupUnreferenced(hi_0_0);
 
-		return v2;
+		return newRoot;
 	}
 
 	// Implementation of the rule +(a,-(*(c,D),B)) => -(a,-*(B,c,D))
@@ -42925,7 +42934,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v2;
 		if ( v2.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -42933,14 +42942,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v2);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_1);
 		HopRewriteUtils.cleanupUnreferenced(hi_1_0);
 
-		return v2;
+		return newRoot;
 	}
 
 	// Implementation of the rule +(a,-(*(D,c),B)) => -(a,-*(B,c,D))
@@ -43007,7 +43016,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v2;
 		if ( v2.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -43015,14 +43024,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v2);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_1);
 		HopRewriteUtils.cleanupUnreferenced(hi_1_0);
 
-		return v2;
+		return newRoot;
 	}
 
 	// Implementation of the rule -(A,-(d,*(b,C))) => -(+*(A,b,C),d)
@@ -43089,7 +43098,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v2;
 		if ( v2.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -43097,14 +43106,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v2);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_1);
 		HopRewriteUtils.cleanupUnreferenced(hi_1_1);
 
-		return v2;
+		return newRoot;
 	}
 
 	// Implementation of the rule -(A,-(d,*(C,b))) => -(+*(A,b,C),d)
@@ -43171,7 +43180,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v2;
 		if ( v2.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -43179,14 +43188,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v2);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_1);
 		HopRewriteUtils.cleanupUnreferenced(hi_1_1);
 
-		return v2;
+		return newRoot;
 	}
 
 	// Implementation of the rule -(*(b,C),-(d,A)) => -(+*(A,b,C),d)
@@ -43253,7 +43262,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v2;
 		if ( v2.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -43261,14 +43270,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v2);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_0);
 		HopRewriteUtils.cleanupUnreferenced(hi_1);
 
-		return v2;
+		return newRoot;
 	}
 
 	// Implementation of the rule -(*(C,b),-(d,A)) => -(+*(A,b,C),d)
@@ -43335,7 +43344,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v2;
 		if ( v2.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -43343,14 +43352,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v2);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_0);
 		HopRewriteUtils.cleanupUnreferenced(hi_1);
 
-		return v2;
+		return newRoot;
 	}
 
 	// Implementation of the rule +(-(*(b,C),d),A) => -(+*(A,b,C),d)
@@ -43417,7 +43426,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v2;
 		if ( v2.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -43425,14 +43434,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v2);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_0);
 		HopRewriteUtils.cleanupUnreferenced(hi_0_0);
 
-		return v2;
+		return newRoot;
 	}
 
 	// Implementation of the rule +(-(*(C,b),d),A) => -(+*(A,b,C),d)
@@ -43499,7 +43508,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v2;
 		if ( v2.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -43507,14 +43516,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v2);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_0);
 		HopRewriteUtils.cleanupUnreferenced(hi_0_0);
 
-		return v2;
+		return newRoot;
 	}
 
 	// Implementation of the rule +(A,-(*(b,C),d)) => -(+*(A,b,C),d)
@@ -43581,7 +43590,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v2;
 		if ( v2.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -43589,14 +43598,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v2);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_1);
 		HopRewriteUtils.cleanupUnreferenced(hi_1_0);
 
-		return v2;
+		return newRoot;
 	}
 
 	// Implementation of the rule +(A,-(*(C,b),d)) => -(+*(A,b,C),d)
@@ -43663,7 +43672,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v2;
 		if ( v2.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -43671,14 +43680,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v2);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_1);
 		HopRewriteUtils.cleanupUnreferenced(hi_1_0);
 
-		return v2;
+		return newRoot;
 	}
 
 	// Implementation of the rule -(a,-(*(c,D),B)) => +(a,-*(B,c,D))
@@ -43745,7 +43754,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v2;
 		if ( v2.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -43753,14 +43762,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v2);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_1);
 		HopRewriteUtils.cleanupUnreferenced(hi_1_0);
 
-		return v2;
+		return newRoot;
 	}
 
 	// Implementation of the rule -(a,-(*(D,c),B)) => +(a,-*(B,c,D))
@@ -43827,7 +43836,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v2;
 		if ( v2.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -43835,14 +43844,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v2);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_1);
 		HopRewriteUtils.cleanupUnreferenced(hi_1_0);
 
-		return v2;
+		return newRoot;
 	}
 
 	// Implementation of the rule -(B,-(*(c,D),a)) => +(a,-*(B,c,D))
@@ -43909,7 +43918,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v2;
 		if ( v2.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -43917,14 +43926,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v2);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_1);
 		HopRewriteUtils.cleanupUnreferenced(hi_1_0);
 
-		return v2;
+		return newRoot;
 	}
 
 	// Implementation of the rule -(B,-(*(D,c),a)) => +(a,-*(B,c,D))
@@ -43991,7 +44000,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v2;
 		if ( v2.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -43999,14 +44008,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v2);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_1);
 		HopRewriteUtils.cleanupUnreferenced(hi_1_0);
 
-		return v2;
+		return newRoot;
 	}
 
 	// Implementation of the rule +(-(a,*(c,D)),B) => +(a,-*(B,c,D))
@@ -44073,7 +44082,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v2;
 		if ( v2.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -44081,14 +44090,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v2);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_0);
 		HopRewriteUtils.cleanupUnreferenced(hi_0_1);
 
-		return v2;
+		return newRoot;
 	}
 
 	// Implementation of the rule +(-(a,*(D,c)),B) => +(a,-*(B,c,D))
@@ -44155,7 +44164,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v2;
 		if ( v2.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -44163,14 +44172,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v2);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_0);
 		HopRewriteUtils.cleanupUnreferenced(hi_0_1);
 
-		return v2;
+		return newRoot;
 	}
 
 	// Implementation of the rule +(B,-(a,*(c,D))) => +(a,-*(B,c,D))
@@ -44237,7 +44246,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v2;
 		if ( v2.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -44245,14 +44254,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v2);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_1);
 		HopRewriteUtils.cleanupUnreferenced(hi_1_1);
 
-		return v2;
+		return newRoot;
 	}
 
 	// Implementation of the rule +(B,-(a,*(D,c))) => +(a,-*(B,c,D))
@@ -44319,7 +44328,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v2;
 		if ( v2.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -44327,14 +44336,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v2);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_1);
 		HopRewriteUtils.cleanupUnreferenced(hi_1_1);
 
-		return v2;
+		return newRoot;
 	}
 
 	// Implementation of the rule -(B,-(*(c,D),A)) => +(A,-*(B,c,D))
@@ -44401,7 +44410,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v2;
 		if ( v2.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -44409,14 +44418,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v2);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_1);
 		HopRewriteUtils.cleanupUnreferenced(hi_1_0);
 
-		return v2;
+		return newRoot;
 	}
 
 	// Implementation of the rule -(B,-(*(D,c),A)) => +(A,-*(B,c,D))
@@ -44483,7 +44492,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v2;
 		if ( v2.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -44491,14 +44500,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v2);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_1);
 		HopRewriteUtils.cleanupUnreferenced(hi_1_0);
 
-		return v2;
+		return newRoot;
 	}
 
 	// Implementation of the rule -(*(c,D),-(B,A)) => -(A,-*(B,c,D))
@@ -44565,7 +44574,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v2;
 		if ( v2.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -44573,14 +44582,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v2);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_0);
 		HopRewriteUtils.cleanupUnreferenced(hi_1);
 
-		return v2;
+		return newRoot;
 	}
 
 	// Implementation of the rule -(*(D,c),-(B,A)) => -(A,-*(B,c,D))
@@ -44647,7 +44656,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v2;
 		if ( v2.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -44655,14 +44664,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v2);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_0);
 		HopRewriteUtils.cleanupUnreferenced(hi_1);
 
-		return v2;
+		return newRoot;
 	}
 
 	// Implementation of the rule +(-(*(c,D),B),A) => -(A,-*(B,c,D))
@@ -44729,7 +44738,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v2;
 		if ( v2.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -44737,14 +44746,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v2);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_0);
 		HopRewriteUtils.cleanupUnreferenced(hi_0_0);
 
-		return v2;
+		return newRoot;
 	}
 
 	// Implementation of the rule +(-(*(D,c),B),A) => -(A,-*(B,c,D))
@@ -44811,7 +44820,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v2;
 		if ( v2.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -44819,14 +44828,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v2);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_0);
 		HopRewriteUtils.cleanupUnreferenced(hi_0_0);
 
-		return v2;
+		return newRoot;
 	}
 
 	// Implementation of the rule +(A,-(*(c,D),B)) => -(A,-*(B,c,D))
@@ -44893,7 +44902,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v2;
 		if ( v2.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -44901,14 +44910,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v2);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_1);
 		HopRewriteUtils.cleanupUnreferenced(hi_1_0);
 
-		return v2;
+		return newRoot;
 	}
 
 	// Implementation of the rule +(A,-(*(D,c),B)) => -(A,-*(B,c,D))
@@ -44975,7 +44984,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v2;
 		if ( v2.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -44983,14 +44992,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v2);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_1);
 		HopRewriteUtils.cleanupUnreferenced(hi_1_0);
 
-		return v2;
+		return newRoot;
 	}
 
 	// Implementation of the rule -(A,*(/(b,D),C)) => -*(A,b,/(C,D))
@@ -45057,7 +45066,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v2;
 		if ( v2.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -45065,14 +45074,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v2);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_1);
 		HopRewriteUtils.cleanupUnreferenced(hi_1_0);
 
-		return v2;
+		return newRoot;
 	}
 
 	// Implementation of the rule -(A,*(C,/(b,D))) => -*(A,b,/(C,D))
@@ -45139,7 +45148,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v2;
 		if ( v2.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -45147,14 +45156,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v2);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_1);
 		HopRewriteUtils.cleanupUnreferenced(hi_1_1);
 
-		return v2;
+		return newRoot;
 	}
 
 	// Implementation of the rule -(A,/(*(b,C),D)) => -*(A,b,/(C,D))
@@ -45221,7 +45230,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v2;
 		if ( v2.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -45229,14 +45238,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v2);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_1);
 		HopRewriteUtils.cleanupUnreferenced(hi_1_0);
 
-		return v2;
+		return newRoot;
 	}
 
 	// Implementation of the rule -(A,/(*(C,b),D)) => -*(A,b,/(C,D))
@@ -45303,7 +45312,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v2;
 		if ( v2.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -45311,14 +45320,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v2);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_1);
 		HopRewriteUtils.cleanupUnreferenced(hi_1_0);
 
-		return v2;
+		return newRoot;
 	}
 
 	// Implementation of the rule +(*(/(b,D),C),A) => +*(A,b,/(C,D))
@@ -45385,7 +45394,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v2;
 		if ( v2.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -45393,14 +45402,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v2);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_0);
 		HopRewriteUtils.cleanupUnreferenced(hi_0_0);
 
-		return v2;
+		return newRoot;
 	}
 
 	// Implementation of the rule +(/(*(b,C),D),A) => +*(A,b,/(C,D))
@@ -45467,7 +45476,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v2;
 		if ( v2.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -45475,14 +45484,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v2);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_0);
 		HopRewriteUtils.cleanupUnreferenced(hi_0_0);
 
-		return v2;
+		return newRoot;
 	}
 
 	// Implementation of the rule +(/(*(C,b),D),A) => +*(A,b,/(C,D))
@@ -45549,7 +45558,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v2;
 		if ( v2.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -45557,14 +45566,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v2);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_0);
 		HopRewriteUtils.cleanupUnreferenced(hi_0_0);
 
-		return v2;
+		return newRoot;
 	}
 
 	// Implementation of the rule +(*(C,/(b,D)),A) => +*(A,b,/(C,D))
@@ -45631,7 +45640,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v2;
 		if ( v2.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -45639,14 +45648,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v2);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_0);
 		HopRewriteUtils.cleanupUnreferenced(hi_0_1);
 
-		return v2;
+		return newRoot;
 	}
 
 	// Implementation of the rule +(A,/(*(b,C),D)) => +*(A,b,/(C,D))
@@ -45713,7 +45722,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v2;
 		if ( v2.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -45721,14 +45730,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v2);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_1);
 		HopRewriteUtils.cleanupUnreferenced(hi_1_0);
 
-		return v2;
+		return newRoot;
 	}
 
 	// Implementation of the rule +(A,*(/(b,D),C)) => +*(A,b,/(C,D))
@@ -45795,7 +45804,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v2;
 		if ( v2.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -45803,14 +45812,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v2);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_1);
 		HopRewriteUtils.cleanupUnreferenced(hi_1_0);
 
-		return v2;
+		return newRoot;
 	}
 
 	// Implementation of the rule +(A,/(*(C,b),D)) => +*(A,b,/(C,D))
@@ -45877,7 +45886,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v2;
 		if ( v2.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -45885,14 +45894,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v2);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_1);
 		HopRewriteUtils.cleanupUnreferenced(hi_1_0);
 
-		return v2;
+		return newRoot;
 	}
 
 	// Implementation of the rule +(A,*(C,/(b,D))) => +*(A,b,/(C,D))
@@ -45959,7 +45968,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v2;
 		if ( v2.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -45967,14 +45976,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v2);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_1);
 		HopRewriteUtils.cleanupUnreferenced(hi_1_1);
 
-		return v2;
+		return newRoot;
 	}
 
 	// Implementation of the rule -(A,%*%(*(b,C),D)) => -*(A,b,%*%(C,D))
@@ -46047,7 +46056,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v2;
 		if ( v2.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -46055,14 +46064,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v2);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_1);
 		HopRewriteUtils.cleanupUnreferenced(hi_1_0);
 
-		return v2;
+		return newRoot;
 	}
 
 	// Implementation of the rule -(A,%*%(*(C,b),D)) => -*(A,b,%*%(C,D))
@@ -46115,12 +46124,12 @@ public class GeneratedRewriteClass implements Function {
 			return hi;
 
 
-		if ( hi_1_0_0.getDim2() == -1 || hi_1_0_0.getDim1() == -1 || hi_1_1.getDim2() == -1 || hi_1_0_0.getNnz() == -1 || hi_0.getNnz() == -1 || hi_1_1.getNnz() == -1 )
+		if ( hi_1_0_0.getDim1() == -1 || hi_1_1.getDim2() == -1 || hi_1_0_0.getNnz() == -1 || hi_1_1.getDim1() == -1 || hi_0.getNnz() == -1 || hi_1_1.getNnz() == -1 )
 			return hi;
 
 
-		double costFrom = ((2.0 * hi_1_0_0.getNnz()) + (Math.min(hi_1_0_0.getNnz(), hi_1_1.getNnz()) * hi_1_0_0.getDim2() * 3.0) + (hi_0.getNnz() + (Math.min((hi_1_0_0.getNnz() * (1.0 / hi_1_0_0.getDim1())), 1.0) * Math.min((hi_1_1.getNnz() * (1.0 / hi_1_1.getDim2())), 1.0) * hi_1_0_0.getDim1() * hi_1_1.getDim2())) + 30030.0);
-		double costTo = ((Math.min(hi_1_0_0.getNnz(), hi_1_1.getNnz()) * hi_1_0_0.getDim2() * 3.0) + (3.0 * Math.min(hi_0.getNnz(), (Math.min((hi_1_0_0.getNnz() * (1.0 / hi_1_0_0.getDim1())), 1.0) * Math.min((hi_1_1.getNnz() * (1.0 / hi_1_1.getDim2())), 1.0) * hi_1_0_0.getDim1() * hi_1_1.getDim2()))) + 20070.0);
+		double costFrom = ((2.0 * hi_1_0_0.getNnz()) + (Math.min(hi_1_0_0.getNnz(), hi_1_1.getNnz()) * hi_1_1.getDim1() * 3.0) + (hi_0.getNnz() + (Math.min((hi_1_0_0.getNnz() * (1.0 / hi_1_0_0.getDim1())), 1.0) * Math.min((hi_1_1.getNnz() * (1.0 / hi_1_1.getDim2())), 1.0) * hi_1_0_0.getDim1() * hi_1_1.getDim2())) + 30030.0);
+		double costTo = ((Math.min(hi_1_0_0.getNnz(), hi_1_1.getNnz()) * hi_1_1.getDim1() * 3.0) + (3.0 * Math.min(hi_0.getNnz(), (Math.min((hi_1_0_0.getNnz() * (1.0 / hi_1_0_0.getDim1())), 1.0) * Math.min((hi_1_1.getNnz() * (1.0 / hi_1_1.getDim2())), 1.0) * hi_1_0_0.getDim1() * hi_1_1.getDim2()))) + 20070.0);
 
 		if ( costFrom <= costTo )
 			return hi;
@@ -46135,7 +46144,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v2;
 		if ( v2.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -46143,14 +46152,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v2);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_1);
 		HopRewriteUtils.cleanupUnreferenced(hi_1_0);
 
-		return v2;
+		return newRoot;
 	}
 
 	// Implementation of the rule -(A,%*%(C,*(b,D))) => -*(A,b,%*%(C,D))
@@ -46203,12 +46212,12 @@ public class GeneratedRewriteClass implements Function {
 			return hi;
 
 
-		if ( hi_1_0.getNnz() == -1 || hi_1_1_1.getNnz() == -1 || hi_1_1_1.getDim1() == -1 || hi_1_0.getDim1() == -1 || hi_1_1_1.getDim2() == -1 || hi_0.getNnz() == -1 )
+		if ( hi_1_0.getNnz() == -1 || hi_1_1_1.getNnz() == -1 || hi_1_0.getDim1() == -1 || hi_1_0.getDim2() == -1 || hi_1_1_1.getDim2() == -1 || hi_0.getNnz() == -1 )
 			return hi;
 
 
-		double costFrom = ((2.0 * hi_1_1_1.getNnz()) + (Math.min(hi_1_0.getNnz(), hi_1_1_1.getNnz()) * hi_1_1_1.getDim1() * 3.0) + (hi_0.getNnz() + (Math.min((hi_1_0.getNnz() * (1.0 / hi_1_0.getDim1())), 1.0) * Math.min((hi_1_1_1.getNnz() * (1.0 / hi_1_1_1.getDim2())), 1.0) * hi_1_0.getDim1() * hi_1_1_1.getDim2())) + 30030.0);
-		double costTo = ((Math.min(hi_1_0.getNnz(), hi_1_1_1.getNnz()) * hi_1_1_1.getDim1() * 3.0) + (3.0 * Math.min(hi_0.getNnz(), (Math.min((hi_1_0.getNnz() * (1.0 / hi_1_0.getDim1())), 1.0) * Math.min((hi_1_1_1.getNnz() * (1.0 / hi_1_1_1.getDim2())), 1.0) * hi_1_0.getDim1() * hi_1_1_1.getDim2()))) + 20070.0);
+		double costFrom = ((2.0 * hi_1_1_1.getNnz()) + (Math.min(hi_1_0.getNnz(), hi_1_1_1.getNnz()) * hi_1_0.getDim2() * 3.0) + (hi_0.getNnz() + (Math.min((hi_1_0.getNnz() * (1.0 / hi_1_0.getDim1())), 1.0) * Math.min((hi_1_1_1.getNnz() * (1.0 / hi_1_1_1.getDim2())), 1.0) * hi_1_0.getDim1() * hi_1_1_1.getDim2())) + 30030.0);
+		double costTo = ((Math.min(hi_1_0.getNnz(), hi_1_1_1.getNnz()) * hi_1_0.getDim2() * 3.0) + (3.0 * Math.min(hi_0.getNnz(), (Math.min((hi_1_0.getNnz() * (1.0 / hi_1_0.getDim1())), 1.0) * Math.min((hi_1_1_1.getNnz() * (1.0 / hi_1_1_1.getDim2())), 1.0) * hi_1_0.getDim1() * hi_1_1_1.getDim2()))) + 20070.0);
 
 		if ( costFrom <= costTo )
 			return hi;
@@ -46223,7 +46232,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v2;
 		if ( v2.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -46231,14 +46240,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v2);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_1);
 		HopRewriteUtils.cleanupUnreferenced(hi_1_1);
 
-		return v2;
+		return newRoot;
 	}
 
 	// Implementation of the rule -(A,%*%(C,*(D,b))) => -*(A,b,%*%(C,D))
@@ -46311,7 +46320,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v2;
 		if ( v2.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -46319,14 +46328,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v2);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_1);
 		HopRewriteUtils.cleanupUnreferenced(hi_1_1);
 
-		return v2;
+		return newRoot;
 	}
 
 	// Implementation of the rule +(%*%(*(b,C),D),A) => +*(A,b,%*%(C,D))
@@ -46399,7 +46408,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v2;
 		if ( v2.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -46407,14 +46416,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v2);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_0);
 		HopRewriteUtils.cleanupUnreferenced(hi_0_0);
 
-		return v2;
+		return newRoot;
 	}
 
 	// Implementation of the rule +(%*%(*(C,b),D),A) => +*(A,b,%*%(C,D))
@@ -46487,7 +46496,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v2;
 		if ( v2.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -46495,14 +46504,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v2);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_0);
 		HopRewriteUtils.cleanupUnreferenced(hi_0_0);
 
-		return v2;
+		return newRoot;
 	}
 
 	// Implementation of the rule +(%*%(C,*(b,D)),A) => +*(A,b,%*%(C,D))
@@ -46575,7 +46584,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v2;
 		if ( v2.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -46583,14 +46592,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v2);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_0);
 		HopRewriteUtils.cleanupUnreferenced(hi_0_1);
 
-		return v2;
+		return newRoot;
 	}
 
 	// Implementation of the rule +(%*%(C,*(D,b)),A) => +*(A,b,%*%(C,D))
@@ -46643,12 +46652,12 @@ public class GeneratedRewriteClass implements Function {
 			return hi;
 
 
-		if ( hi_0_0.getDim1() == -1 || hi_1.getNnz() == -1 || hi_0_1_0.getDim1() == -1 || hi_0_0.getNnz() == -1 || hi_0_1_0.getDim2() == -1 || hi_0_1_0.getNnz() == -1 )
+		if ( hi_0_0.getDim1() == -1 || hi_1.getNnz() == -1 || hi_0_0.getNnz() == -1 || hi_0_0.getDim2() == -1 || hi_0_1_0.getDim2() == -1 || hi_0_1_0.getNnz() == -1 )
 			return hi;
 
 
-		double costFrom = ((2.0 * hi_0_1_0.getNnz()) + (Math.min(hi_0_0.getNnz(), hi_0_1_0.getNnz()) * hi_0_1_0.getDim1() * 3.0) + ((Math.min((hi_0_0.getNnz() * (1.0 / hi_0_0.getDim1())), 1.0) * Math.min((hi_0_1_0.getNnz() * (1.0 / hi_0_1_0.getDim2())), 1.0) * hi_0_0.getDim1() * hi_0_1_0.getDim2()) + hi_1.getNnz()) + 30030.0);
-		double costTo = ((Math.min(hi_0_0.getNnz(), hi_0_1_0.getNnz()) * hi_0_1_0.getDim1() * 3.0) + (3.0 * Math.min(hi_1.getNnz(), (Math.min((hi_0_0.getNnz() * (1.0 / hi_0_0.getDim1())), 1.0) * Math.min((hi_0_1_0.getNnz() * (1.0 / hi_0_1_0.getDim2())), 1.0) * hi_0_0.getDim1() * hi_0_1_0.getDim2()))) + 20070.0);
+		double costFrom = ((2.0 * hi_0_1_0.getNnz()) + (Math.min(hi_0_0.getNnz(), hi_0_1_0.getNnz()) * hi_0_0.getDim2() * 3.0) + ((Math.min((hi_0_0.getNnz() * (1.0 / hi_0_0.getDim1())), 1.0) * Math.min((hi_0_1_0.getNnz() * (1.0 / hi_0_1_0.getDim2())), 1.0) * hi_0_0.getDim1() * hi_0_1_0.getDim2()) + hi_1.getNnz()) + 30030.0);
+		double costTo = ((Math.min(hi_0_0.getNnz(), hi_0_1_0.getNnz()) * hi_0_0.getDim2() * 3.0) + (3.0 * Math.min(hi_1.getNnz(), (Math.min((hi_0_0.getNnz() * (1.0 / hi_0_0.getDim1())), 1.0) * Math.min((hi_0_1_0.getNnz() * (1.0 / hi_0_1_0.getDim2())), 1.0) * hi_0_0.getDim1() * hi_0_1_0.getDim2()))) + 20070.0);
 
 		if ( costFrom <= costTo )
 			return hi;
@@ -46663,7 +46672,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v2;
 		if ( v2.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -46671,14 +46680,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v2);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_0);
 		HopRewriteUtils.cleanupUnreferenced(hi_0_1);
 
-		return v2;
+		return newRoot;
 	}
 
 	// Implementation of the rule +(A,%*%(*(b,C),D)) => +*(A,b,%*%(C,D))
@@ -46751,7 +46760,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v2;
 		if ( v2.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -46759,14 +46768,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v2);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_1);
 		HopRewriteUtils.cleanupUnreferenced(hi_1_0);
 
-		return v2;
+		return newRoot;
 	}
 
 	// Implementation of the rule +(A,%*%(*(C,b),D)) => +*(A,b,%*%(C,D))
@@ -46839,7 +46848,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v2;
 		if ( v2.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -46847,14 +46856,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v2);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_1);
 		HopRewriteUtils.cleanupUnreferenced(hi_1_0);
 
-		return v2;
+		return newRoot;
 	}
 
 	// Implementation of the rule +(A,%*%(C,*(b,D))) => +*(A,b,%*%(C,D))
@@ -46927,7 +46936,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v2;
 		if ( v2.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -46935,14 +46944,14 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v2);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_1);
 		HopRewriteUtils.cleanupUnreferenced(hi_1_1);
 
-		return v2;
+		return newRoot;
 	}
 
 	// Implementation of the rule +(A,%*%(C,*(D,b))) => +*(A,b,%*%(C,D))
@@ -47015,7 +47024,7 @@ public class GeneratedRewriteClass implements Function {
 
 		Hop newRoot = v2;
 		if ( v2.getValueType() != hi.getValueType() ) {
-			newRoot = castIfNecessary(newRoot);
+			newRoot = castIfNecessary(newRoot, hi);
 			if ( newRoot == null )
 				return hi;
 		}
@@ -47023,19 +47032,19 @@ public class GeneratedRewriteClass implements Function {
 		ArrayList<Hop> parents = new ArrayList<>(hi.getParent());
 
 		for ( Hop p : parents )
-			HopRewriteUtils.replaceChildReference(p, hi, v2);
+			HopRewriteUtils.replaceChildReference(p, hi, newRoot);
 
 		// Remove old unreferenced Hops
 		HopRewriteUtils.cleanupUnreferenced(hi);
 		HopRewriteUtils.cleanupUnreferenced(hi_1);
 		HopRewriteUtils.cleanupUnreferenced(hi_1_1);
 
-		return v2;
+		return newRoot;
 	}
 
-	private static Hop castIfNecessary(Hop newRoot) {
+	private static Hop castIfNecessary(Hop newRoot, Hop oldRoot) {
 		Types.OpOp1 cast = null;
-		switch ( newRoot.getValueType().toExternalString() ) {
+		switch ( oldRoot.getValueType().toExternalString() ) {
 			case "DOUBLE":
 				cast = Types.OpOp1.CAST_AS_DOUBLE;
 				break;
@@ -47049,6 +47058,6 @@ public class GeneratedRewriteClass implements Function {
 				return null;
 		}
 
-		return HopRewriteUtils.createUnary(newRoot, cast);
+		return new UnaryOp("tmp", oldRoot.getDataType(), oldRoot.getValueType(), cast, newRoot);
 	}
 }

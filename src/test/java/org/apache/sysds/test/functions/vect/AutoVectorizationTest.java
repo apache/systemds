@@ -213,42 +213,36 @@ public class AutoVectorizationTest extends AutomatedTestBase
 		runVectorizationTest( TEST_NAME24 ); 
 	}
 	
-	/**
-	 * 
-	 * @param cfc
-	 * @param vt
-	 */
 	private void runVectorizationTest( String testName ) 
 	{
 		String TEST_NAME = testName;
 		
 		try
-		{		
+		{
 			TestConfiguration config = getTestConfiguration(TEST_NAME);
 			loadTestConfiguration(config);
 
-		    String HOME = SCRIPT_DIR + TEST_DIR;
+			String HOME = SCRIPT_DIR + TEST_DIR;
 			fullDMLScriptName = HOME + TEST_NAME + ".dml";
 			programArgs = new String[]{"-explain","-args", input("A"), output("R") };
 			
 			fullRScriptName = HOME + TEST_NAME + ".R";
-			rCmd = getRCmd(inputDir(), expectedDir());		
+			rCmd = getRCmd(inputDir(), expectedDir());
 			
 			//generate input
 			double[][] A = getRandomMatrix(rows, cols, 0, 1, 1.0, 7);
 			writeInputMatrixWithMTD("A", A, true);	
 			
 			//run tests
-	        runTest(true, false, null, -1);
-	        runRScript(true);
-	        
-	        //compare results
-	        HashMap<CellIndex, Double> dmlfile = readDMLMatrixFromOutputDir("R");
+			runTest(true, false, null, -1);
+			runRScript(true);
+			
+			//compare results
+			HashMap<CellIndex, Double> dmlfile = readDMLMatrixFromOutputDir("R");
 			HashMap<CellIndex, Double> rfile  = readRMatrixFromExpectedDir("R");
 			TestUtils.compareMatrices(dmlfile, rfile, 1e-14, "DML", "R");		
 		}
-		catch(Exception ex)
-		{
+		catch(Exception ex) {
 			throw new RuntimeException(ex);
 		}
 	}

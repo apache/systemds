@@ -86,7 +86,8 @@ jobs:
           "**.functions.transform.**","**.functions.unique.**",
           "**.functions.unary.matrix.**,**.functions.linearization.**,**.functions.jmlc.**"
         ]
-        java: [11]
+        java: ['11']
+        javadist: ['adopt']
     name: ${{ matrix.tests }}
     steps:
     - name: Checkout Repository

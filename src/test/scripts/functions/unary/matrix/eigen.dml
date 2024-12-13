@@ -33,9 +33,7 @@ numEval = $2;
 D = matrix(1, numEval, 1);
 for ( i in 1:numEval ) {
     Av = A %*% evec[,i];
-    while(FALSE){} #fix incorrect rewrite sequence
     rhs = as.scalar(eval[i,1]) * evec[,i];
-    while(FALSE){} #fix incorrect rewrite sequence
     diff = sum(Av-rhs);
     D[i,1] = diff;
 }

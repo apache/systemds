@@ -196,9 +196,90 @@ public class ReaderCOG extends MatrixReader{
         // TODO: Actually read image data
         // We can get this from the tile offsets and tile byte counts
 
+        int rows = -1;
+        int cols = -1;
+        int bands = -1;
+        // TODO: What if the bits per sample is different for each band?
+        // TODO: What if the bits are not divisible by 8? (e.g. 12 bit)
+        int bitsPerSample = -1;
+        int tileWidth = -1;
+        int tileLength = -1;
+        int[] tileOffsets = null;
+        int[] tileByteCounts = null;
 
-        int rows = 10;
-        int cols = 10;
+        for (IFDTag ifd : cogHeader.getIFD()) {
+            IFDTagDictionary tag = ifd.getTagId();
+            if (tag == IFDTagDictionary.ImageWidth) {
+                cols = ifd.getData()[0];
+            }
+            else if(tag == IFDTagDictionary.ImageLength) {
+                rows = ifd.getData()[0];
+            }
+            // = Number of bands effectively
+            else if(tag == IFDTagDictionary.SamplesPerPixel){
+                bands = ifd.getData()[0];
+            }
+            else if(tag == IFDTagDictionary.BitsPerSample) {
+                bitsPerSample = ifd.getData()[0];
+            }
+            else if(tag == IFDTagDictionary.TileWidth) {
+                tileWidth = ifd.getData()[0];
+            }
+            else if(tag == IFDTagDictionary.TileLength) {
+                tileLength = ifd.getData()[0];
+            }
+            else if(tag == IFDTagDictionary.TileOffsets) {
+                tileOffsets = ifd.getData();
+            }
+            else if(tag == IFDTagDictionary.TileByteCounts) {
+                tileByteCounts = ifd.getData();
+            }
+        }
+
+        MatrixBlock[] dmatrix = new MatrixBlock[bands];
+
+        for (int i = 0; i < bands; i++) {
+            dmatrix[i] = new MatrixBlock(rows, cols, false);
+        }
+
+        int bytesToRead = (tileOffsets[0] - totalBytesRead) + tileByteCounts[0];
+
+        // Mark the current position in the stream
+        // This is used to reset the stream to this position after reading the data
+        // Valid until bytesToRead + 1 bytes are read
+        bis.mark(bytesToRead + 1);
+        // Read until offset is reached
+        readBytes(bis, tileOffsets[0] - totalBytesRead);
+        byte[] firstTileData = readBytes(bis, tileByteCounts[0]);
+
+        // Reset the stream to the beginning of the next tag
+        try {
+            bis.reset();
+            totalBytesRead -= bytesToRead;
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+
+        int pixelsRead = 0;
+        int currentRow = 0;
+        // TODO: Use BitsPerSample to determine the bytes
+        while (pixelsRead*bands + currentRow*tileWidth*bands < firstTileData.length){
+            for (int i = 0; i < bands; i++) {
+                int index = (pixelsRead*bands + currentRow*tileWidth*bands)+i;
+                double value = (double)firstTileData[index];
+                dmatrix[i].set(currentRow, pixelsRead, value);
+                // pixelsRead, currentRow
+
+            }
+
+            pixelsRead++;
+            if (pixelsRead >= tileWidth) {
+                pixelsRead = 0;
+                currentRow++;
+            }
+        }
+
+
         MatrixBlock dummyMatrix = new MatrixBlock(rows, cols, false);
         dummyMatrix.allocateDenseBlock();
         for (int i = 0; i < rows; i++) {

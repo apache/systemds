@@ -88,6 +88,9 @@ public class RewriteForLoopVectorization extends StatementBlockRewriteRule
 					//e.g., for(i in a:b){s = s + as.scalar(X[i,2])} -> s = sum(X[a:b,2])
 					sb = vectorizeScalarAggregate(sb, csb, from, to, incr, iterVar);
 					
+					//e.g., for(i in a:b){s = s + X[i,2]} -> s = sum(X[a:b,2])
+					sb = vectorizeScalarAggregate2(sb, csb, from, to, incr, iterVar);
+					
 					//e.g., for(i in a:b){X[i,2] = Y[i,1] + Z[i,3]} -> X[a:b,2] = Y[a:b,1] + Z[a:b,3];
 					sb = vectorizeElementwiseBinary(sb, csb, from, to, incr, iterVar);
 					
@@ -200,6 +203,80 @@ public class RewriteForLoopVectorization extends StatementBlockRewriteRule
 			
 			ret = csb;
 			LOG.debug("Applied vectorizeScalarSumForLoop.");
+		}
+		
+		return ret;
+	}
+	
+	private static StatementBlock vectorizeScalarAggregate2( StatementBlock sb, StatementBlock csb, Hop from, Hop to, Hop increment, String itervar ) 
+	{
+		StatementBlock ret = sb;
+		
+		//check for applicability
+		boolean leftScalar = false;
+		boolean rightScalar = false;
+		boolean rowIx = false; //row or col
+		
+		if( csb.getHops()!=null && csb.getHops().size()==1 ) {
+			Hop root = csb.getHops().get(0);
+			
+			if( root.getDataType()==DataType.SCALAR && root.getInput(0) instanceof BinaryOp ) {
+				BinaryOp bop = (BinaryOp) root.getInput(0);
+				Hop left = bop.getInput(0);
+				Hop right = bop.getInput(1);
+				
+				//check for left scalar plus
+				if( HopRewriteUtils.isValidOp(bop.getOp(), MAP_SCALAR_AGGREGATE_SOURCE_OPS) 
+					&& left instanceof DataOp && left.getDataType() == DataType.SCALAR
+					&& root.getName().equals(left.getName())
+					&& right instanceof IndexingOp && right.isScalar())
+				{
+					leftScalar = true;
+					rowIx = true; //row and col
+				}
+				//check for right scalar plus
+				else if( HopRewriteUtils.isValidOp(bop.getOp(), MAP_SCALAR_AGGREGATE_SOURCE_OPS)  
+					&& right instanceof DataOp && right.getDataType() == DataType.SCALAR
+					&& root.getName().equals(right.getName()) 
+					&& left instanceof IndexingOp && left.isScalar())
+				{
+					rightScalar = true;
+					rowIx = true; //row and col
+				}
+			}
+		}
+		
+		//apply rewrite if possible
+		if( leftScalar || rightScalar ) {
+			Hop root = csb.getHops().get(0);
+			BinaryOp bop = (BinaryOp) root.getInput(0);
+			Hop ix = bop.getInput().get( leftScalar?1:0 );
+			int aggOpPos = HopRewriteUtils.getValidOpPos(bop.getOp(), MAP_SCALAR_AGGREGATE_SOURCE_OPS);
+			AggOp aggOp = MAP_SCALAR_AGGREGATE_TARGET_OPS[aggOpPos];
+			
+			//replace cast with sum
+			AggUnaryOp newSum = HopRewriteUtils.createAggUnaryOp(ix, aggOp, Direction.RowCol);
+			HopRewriteUtils.removeChildReference(bop, ix);
+			HopRewriteUtils.addChildReference(bop, newSum, leftScalar?1:0 );
+			
+			//modify indexing expression according to loop predicate from-to
+			//NOTE: any redundant index operations are removed via dynamic algebraic simplification rewrites
+			int index1 = rowIx ? 1 : 3;
+			int index2 = rowIx ? 2 : 4;
+			HopRewriteUtils.replaceChildReference(ix, ix.getInput().get(index1), from, index1);
+			HopRewriteUtils.replaceChildReference(ix, ix.getInput().get(index2), to, index2);
+			
+			//update indexing size information
+			if( rowIx )
+				((IndexingOp)ix).setRowLowerEqualsUpper(false);
+			else
+				((IndexingOp)ix).setColLowerEqualsUpper(false);
+			ix.setDataType(DataType.MATRIX);
+			ix.refreshSizeInformation();
+			Hop.resetVisitStatus(csb.getHops(), true);
+			
+			ret = csb;
+			LOG.debug("Applied vectorizeScalarSumForLoop2.");
 		}
 		
 		return ret;

@@ -338,6 +338,22 @@ public class Statistics
 	public static long getRunTime() {
 		return execEndTime - execStartTime;
 	}
+
+	private static HashMap<String, Integer> appliedGeneratedRewrites = new HashMap<>();
+	private static boolean recordGeneratedRewrites = false;
+
+	public static void recordAppliedGeneratedRewrites(boolean record) {
+		recordGeneratedRewrites = record;
+	}
+
+	public static void applyGeneratedRewrite(String rewrite) {
+		if (recordGeneratedRewrites)
+			appliedGeneratedRewrites.compute(rewrite, (k, v) -> v == null ? 1 : v + 1);
+	}
+
+	public static Map<String, Integer> getAppliedRewrites() {
+		return appliedGeneratedRewrites;
+	}
 	
 	public static void reset()
 	{

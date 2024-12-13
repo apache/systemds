@@ -51,6 +51,10 @@ public class RewriterCodeGen {
 	}
 
 	public static String generateClass(String className, List<Tuple2<String, RewriterRule>> rewrites, boolean optimize, boolean includePackageInfo, final RuleContext ctx, boolean ignoreErrors, boolean printErrors) {
+		return generateClass(className, rewrites, optimize, includePackageInfo, ctx, ignoreErrors, printErrors, false);
+	}
+
+	public static String generateClass(String className, List<Tuple2<String, RewriterRule>> rewrites, boolean optimize, boolean includePackageInfo, final RuleContext ctx, boolean ignoreErrors, boolean printErrors, boolean maintainRewriteStats) {
 		StringBuilder msb = new StringBuilder();
 
 		if (includePackageInfo)
@@ -59,6 +63,7 @@ public class RewriterCodeGen {
 		msb.append("import java.util.ArrayList;\n");
 		msb.append("import java.util.function.Function;\n");
 		msb.append("\n");
+		msb.append("import org.apache.sysds.utils.Statistics;\n");
 		msb.append("import org.apache.sysds.hops.Hop;\n");
 		msb.append("import org.apache.sysds.hops.LiteralOp;\n");
 		msb.append("import org.apache.sysds.hops.UnaryOp;\n");
@@ -80,7 +85,7 @@ public class RewriterCodeGen {
 			String mRewriteFn;
 			if (ignoreErrors) {
 				try {
-					mRewriteFn = generateRewriteFunction(appliedRewrites._2, appliedRewrites._1, 1, ctx);
+					mRewriteFn = generateRewriteFunction(appliedRewrites._2, appliedRewrites._1, 1, maintainRewriteStats, ctx);
 				} catch (Exception e) {
 					if (printErrors)
 						e.printStackTrace();
@@ -88,7 +93,7 @@ public class RewriterCodeGen {
 					continue;
 				}
 			} else {
-				mRewriteFn = generateRewriteFunction(appliedRewrites._2, appliedRewrites._1, 1, ctx);
+				mRewriteFn = generateRewriteFunction(appliedRewrites._2, appliedRewrites._1, 1, maintainRewriteStats, ctx);
 			}
 
 			implSb.append('\n');
@@ -146,7 +151,7 @@ public class RewriterCodeGen {
 		return msb.toString();
 	}
 
-	private static String generateRewriteFunction(RewriterRule rule, String fName, int indentation, final RuleContext ctx) {
+	private static String generateRewriteFunction(RewriterRule rule, String fName, int indentation, boolean maintainRewriteStats, final RuleContext ctx) {
 		try {
 			Tuple2<Set<RewriterStatement>, Boolean> t = RewriterCostEstimator.determineSingleReferenceRequirement(rule, ctx);
 			Set<RewriterStatement> mSet = t._1;
@@ -167,7 +172,7 @@ public class RewriterCodeGen {
 			}
 
 			// Build the function body
-			buildMatchingSequence(rule.toString(), rule.getStmt1(), rule.getStmt2(), rule.getStmt1Cost(), rule.getStmt2Cost(), rule.getCombinedAssertions(), sb, ctx, indentation + 1, mSet, allowCombinedMultiRefs);
+			buildMatchingSequence(rule.toString(), rule.getStmt1(), rule.getStmt2(), rule.getStmt1Cost(), rule.getStmt2Cost(), rule.getCombinedAssertions(), sb, ctx, indentation + 1, mSet, allowCombinedMultiRefs, maintainRewriteStats);
 			indent(indentation, sb);
 
 			sb.append("}\n");
@@ -179,7 +184,7 @@ public class RewriterCodeGen {
 		}
 	}
 
-	private static void buildMatchingSequence(String name, RewriterStatement from, RewriterStatement to, RewriterStatement fromCost, RewriterStatement toCost, RewriterAssertions combinedAssertions, StringBuilder sb, final RuleContext ctx, int indentation, Set<RewriterStatement> allowedMultiRefs, boolean allowCombinations) {
+	private static void buildMatchingSequence(String name, RewriterStatement from, RewriterStatement to, RewriterStatement fromCost, RewriterStatement toCost, RewriterAssertions combinedAssertions, StringBuilder sb, final RuleContext ctx, int indentation, Set<RewriterStatement> allowedMultiRefs, boolean allowCombinations, boolean maintainRewriteStats) {
 		Map<RewriterStatement, String> vars = new HashMap<>();
 		vars.put(from, "hi");
 		recursivelyBuildMatchingSequence(from, sb, "hi", ctx, indentation, vars, allowedMultiRefs, allowCombinations);
@@ -254,6 +259,11 @@ public class RewriterCodeGen {
 			sb.append("System.out.println(\"Applying rewrite: " + name + "\");\n");
 			indent(indentation, sb);
 			sb.append("DMLExecutor.println(\"Applying rewrite: " + name + "\");\n");
+		}
+
+		if (maintainRewriteStats) {
+			indent(indentation, sb);
+			sb.append("Statistics.applyGeneratedRewrite(\"" + name + "\");\n");
 		}
 
 		Set<RewriterStatement> activeStatements = buildRewrite(to, sb, combinedAssertions, vars, ctx, indentation);

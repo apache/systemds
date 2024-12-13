@@ -37,6 +37,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
 import java.util.concurrent.TimeoutException;
@@ -48,6 +49,7 @@ import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.hadoop.fs.Stat;
 import org.apache.spark.sql.SparkSession;
 import org.apache.spark.sql.SparkSession.Builder;
 import org.apache.sysds.api.DMLScript;
@@ -133,21 +135,32 @@ public abstract class AutomatedTestBase {
 
 			Runtime.getRuntime().addShutdownHook(new Thread(() -> {
 				StringBuilder csvBuilder = new StringBuilder();
-				csvBuilder.append("TestName,TestRun,RunTimeMS,ExecTimeMS\n");
+				csvBuilder.append("TestName;TestRun;RunTimeMS;ExecTimeMS\n");
 
 				for (Tuple4<String, Integer, Long, Long> entry : runTimes) {
 					csvBuilder.append(entry._1());
-					csvBuilder.append(',');
+					csvBuilder.append(';');
 					csvBuilder.append(entry._2());
-					csvBuilder.append(',');
+					csvBuilder.append(';');
 					csvBuilder.append(entry._3());
-					csvBuilder.append(',');
+					csvBuilder.append(';');
 					csvBuilder.append(entry._4());
 					csvBuilder.append('\n');
 				}
 
+				StringBuilder csvBuilder2 = new StringBuilder();
+				csvBuilder2.append("Rewrite;Count\n");
+
+				Statistics.getAppliedRewrites().forEach((k, v) -> {
+					csvBuilder2.append(k);
+					csvBuilder2.append(';');
+					csvBuilder2.append(v);
+					csvBuilder2.append('\n');
+				});
+
 				try {
 					Files.writeString(Paths.get(BASE_DATA_DIR + "runtimes.csv"), csvBuilder.toString());
+					Files.writeString(Paths.get(BASE_DATA_DIR + "applied_rewrites.csv"), csvBuilder2.toString());
 				} catch (IOException e) {
 					e.printStackTrace();
 				}
@@ -1455,6 +1468,7 @@ public abstract class AutomatedTestBase {
 				Statistics.reset();
 
 				benchmark_run = BENCHMARK && i >= BENCHMARK_WARMUP_RUNS;
+				Statistics.recordAppliedGeneratedRewrites(benchmark_run);
 
 				Thread t = new Thread(
 						() -> out.add(runTestWithTimeout(newWay, exceptionExpected, expectedException, errMessage, maxSparkInst)),

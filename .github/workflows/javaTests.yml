@@ -116,12 +116,16 @@ jobs:
 
   determine_test_coverage:
     name: Determine Test Coverage
-    needs: [java_tests]
+    runs-on: ${{ matrix.os }}
+    needs: [
+      java_tests
+      ]
     strategy:
+      fail-fast: false
       matrix:
         os: [ubuntu-latest]
-        java: [11]
-
+        java: ['11']
+        javadist: ['adopt']
     steps:
     - name: Checkout Repository
       uses: actions/checkout@v4

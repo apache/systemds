@@ -28,25 +28,6 @@ import java.util.stream.Stream;
 
 public class LinearizerResourceAwareFast extends IDagLinearizer {
 
-	static class MemoryUsageEntry {
-		List<Integer> indecies;
-		double estimatedMemoryUsage;
-
-		MemoryUsageEntry(List<Integer> indecies, double estimatedMemoryUsage) {
-			this.indecies = indecies;
-			this.estimatedMemoryUsage = estimatedMemoryUsage;
-		}
-
-		double getEstimatedMemoryUsage() {
-			return estimatedMemoryUsage;
-		}
-
-		boolean IndeciesAreTheSame(List<Integer> indecies) {
-
-			return this.indecies.equals(indecies);
-		}
-	}
-
 	static class Dependency {
 		int nodeIndex;
 		int sequenceIndex;
@@ -124,7 +105,6 @@ public class LinearizerResourceAwareFast extends IDagLinearizer {
 	}
 
 	List<Lop> remainingLops;
-	Set<MemoryUsageEntry> memory = new HashSet<>();
 
 	@Override
 	public List<Lop> linearize(List<Lop> dag) {
@@ -219,8 +199,6 @@ public class LinearizerResourceAwareFast extends IDagLinearizer {
 
 			currentItem = scheduledItems.remove(0);
 		}
-
-		memory.clear();
 
 		return walkPath(sequences, currentItem.getSteps());
 	}

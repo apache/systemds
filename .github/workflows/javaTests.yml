@@ -116,10 +116,12 @@ jobs:
 
   determine_test_coverage:
     name: Determine Test Coverage
-    runs-on: ubuntu-latest
-    needs: [
-      java_tests
-      ]
+    needs: [java_tests]
+    strategy:
+      matrix:
+        os: [ubuntu-latest]
+        java: [11]
+
     steps:
     - name: Checkout Repository
       uses: actions/checkout@v4

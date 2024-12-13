@@ -2751,6 +2751,7 @@ public class DMLTranslator
 		case INVERSE:
 		case CHOLESKY:
 		case TYPEOF:
+		case DET:
 		case DETECTSCHEMA:
 		case COLNAMES:
 			currBuiltinOp = new UnaryOp(target.getName(), target.getDataType(),

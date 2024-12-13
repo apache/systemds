@@ -370,6 +370,14 @@ public class IndexingOp extends Hop
 	@Override
 	public void refreshSizeInformation()
 	{
+		// early abort for scalar right indexing
+		// (important to prevent incorrect dynamic rewrites)
+		if( isScalar() ) {
+			setDim1(0); 
+			setDim2(0);
+			return;
+		}
+		
 		Hop input1 = getInput().get(0); //matrix
 		Hop input2 = getInput().get(1); //inpRowL
 		Hop input3 = getInput().get(2); //inpRowU

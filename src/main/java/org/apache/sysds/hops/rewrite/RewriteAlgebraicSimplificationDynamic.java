@@ -2312,6 +2312,7 @@ public class RewriteAlgebraicSimplificationDynamic extends HopRewriteRule
 			//check for sum(v1*v2), but prevent to rewrite sum(v1*v2*v3) which is later compiled into a ta+* lop
 			else if( HopRewriteUtils.isBinary(hi2, OpOp2.MULT, 1) //no other consumer than sum
 					&& hi2.getInput().get(0).getDim2()==1 && hi2.getInput().get(1).getDim2()==1
+					&& hi2.getInput().get(0).isMatrix() && hi2.getInput().get(1).isMatrix()
 					&& !HopRewriteUtils.isBinary(hi2.getInput().get(0), OpOp2.MULT)
 					&& !HopRewriteUtils.isBinary(hi2.getInput().get(1), OpOp2.MULT)
 					&& ( !ALLOW_SUM_PRODUCT_REWRITES

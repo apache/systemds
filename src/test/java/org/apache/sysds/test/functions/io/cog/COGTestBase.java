@@ -14,6 +14,8 @@ public abstract class COGTestBase extends AutomatedTestBase {
 
     protected abstract String getTestName();
 
+    protected abstract int getScriptId();
+
     @Override
     public void setUp() {
         addTestConfiguration(getTestName(),

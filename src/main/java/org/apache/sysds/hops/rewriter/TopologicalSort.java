@@ -37,8 +37,10 @@ public class TopologicalSort {
 		//setupAddresses(lowestUncertainties);
 		buildAddresses(root, ctx);
 		resolveAmbiguities(root, ctx, uncertainParents);
+		System.out.println("After resolving: " + root.toParsableString(ctx));
 		// TODO: Propagate address priorities and thus implicit orderings up the DAG
 		resetAddresses(uncertainParents);
+		System.out.println("After resetting: " + root.toParsableString(ctx));
 
 		int factCtr = 0;
 
@@ -78,7 +80,11 @@ public class TopologicalSort {
 		}
 
 		// At the end
+		if (DEBUG)
+			System.out.println("Before construction: " + root.toParsableString(ctx));
 		constructNewDAG(root, ctx);
+		if (DEBUG)
+			System.out.println("After construction: " + root.toParsableString(ctx));
 	}
 
 	// Returns all uncertain parents ordered in post order (elements without uncertain sub-DAGs come first in the list)
@@ -135,6 +141,7 @@ public class TopologicalSort {
 							if (currSet.stream().allMatch(mEl -> first == mEl)) {
 								// Then this is not an unordered set as it only contains one instance and the order doesn't matter
 								knownOrder.addAll(currSet);
+								currSet.clear();
 							} else {
 								containsUnorderedSet = true;
 								currSet.forEach(cur -> {
@@ -171,6 +178,8 @@ public class TopologicalSort {
 			} else {
 				knownOrder.addAll(el.getOperands());
 			}
+
+			System.out.println("Initial known order of " + el.toParsableString(ctx) + ": " + knownOrder);
 		}, false);
 
 		return uncertainParents;
@@ -257,6 +266,8 @@ public class TopologicalSort {
 	public static void constructNewDAG(RewriterStatement root, final RuleContext ctx) {
 		root.forEachPostOrder((cur, pred) -> {
 			List<Object> knownOrder = (List<Object>) cur.getMeta("_knownOrder");
+			if (DEBUG)
+				System.out.println("KnownOrder of " + cur.toParsableString(ctx) + ": " + knownOrder);
 
 			for (int i = 0; i < cur.getOperands().size(); i++)
 				cur.getOperands().set(i, (RewriterStatement) knownOrder.get(i));

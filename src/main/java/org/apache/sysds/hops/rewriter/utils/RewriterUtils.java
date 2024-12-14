@@ -1392,7 +1392,7 @@ public class RewriterUtils {
 			// TODO: After this, stuff like CSE, A-A = 0, etc. must still be applied
 
 			if (debug)
-				System.out.println("PRE1: " + stmt.toParsableString(ctx, false));
+				System.out.println("PRE1:   " + stmt.toParsableString(ctx, false));
 
 			//RewriterUtils.topologicalSort(stmt, ctx, (el, parent) -> el.isArgumentList() && parent != null && Set.of("+", "-", "*", "_idxExpr").contains(parent.trueInstruction()));
 			//stmt = stmt.getAssertions(ctx).buildEquivalences(stmt);

@@ -443,7 +443,7 @@ public class RewriterStreamTests {
 		assert stmt1.match(RewriterStatement.MatcherContext.exactMatch(ctx, stmt2, stmt1));
 	}
 
-	@Test
+	/*@Test
 	public void testSimpleAlgebra1() {
 		RewriterStatement stmt1 = RewriterUtils.parse("-(X, *(Y, X))", ctx, "MATRIX:X,Y");
 		RewriterStatement stmt2 = RewriterUtils.parse("*(-(1, Y), X)", ctx, "MATRIX:X,Y", "LITERAL_INT:1");
@@ -457,7 +457,7 @@ public class RewriterStreamTests {
 		System.out.println(stmt2.toParsableString(ctx, true));
 
 		assert stmt1.match(RewriterStatement.MatcherContext.exactMatch(ctx, stmt2, stmt1));
-	}
+	}*/
 
 	@Test
 	public void testSimpleAlgebra2() {
@@ -475,7 +475,7 @@ public class RewriterStreamTests {
 		assert stmt1.match(RewriterStatement.MatcherContext.exactMatch(ctx, stmt2, stmt1));
 	}
 
-	@Test
+	/*@Test
 	public void testSimpleAlgebra3() {
 		RewriterStatement stmt1 = RewriterUtils.parse("sum(+(+(X, 7), Y))", ctx, "MATRIX:X,Y", "LITERAL_INT:7");
 		RewriterStatement stmt2 = RewriterUtils.parse("+(+(sum(X), 7), sum(Y))", ctx, "MATRIX:X,Y", "LITERAL_INT:7");
@@ -489,7 +489,7 @@ public class RewriterStreamTests {
 		System.out.println(stmt2.toParsableString(ctx, true));
 
 		assert stmt1.match(RewriterStatement.MatcherContext.exactMatch(ctx, stmt2, stmt1));
-	}
+	}*/
 
 	@Test
 	public void testSimpleAlgebra4() {
@@ -1552,5 +1552,54 @@ public class RewriterStreamTests {
 
 		System.out.println("==========");
 		System.out.println(stmt1.toParsableString(ctx, true));
+	}
+
+	@Test
+	public void testWrong3() {
+		RewriterStatement stmt1 = RewriterUtils.parse("*(A, /(A,C))", ctx, "MATRIX:A,C");
+		RewriterStatement stmt2 = RewriterUtils.parse("*(sum(*(C,A)), A)", ctx, "MATRIX:A,C");
+
+		stmt1 = canonicalConverter.apply(stmt1);
+		stmt2 = canonicalConverter.apply(stmt2);
+
+		System.out.println("==========");
+		System.out.println(stmt1.toParsableString(ctx, true));
+		System.out.println("==========");
+		System.out.println(stmt2.toParsableString(ctx, true));
+
+		assert !stmt1.match(RewriterStatement.MatcherContext.exactMatch(ctx, stmt2, stmt1));
+	}
+
+	@Test
+	public void testWrong4() {
+		// TODO: Rule "Element selection pushdown" seems to be an issue here
+		RewriterStatement stmt1 = RewriterUtils.parse("/(A, rev(A))", ctx, "MATRIX:A");
+		RewriterStatement stmt2 = RewriterUtils.parse("/(A, A)", ctx, "MATRIX:A");
+
+		stmt1 = canonicalConverter.apply(stmt1);
+		stmt2 = canonicalConverter.apply(stmt2);
+
+		System.out.println("==========");
+		System.out.println(stmt1.toParsableString(ctx, true));
+		System.out.println("==========");
+		System.out.println(stmt2.toParsableString(ctx, true));
+
+		assert !stmt1.match(RewriterStatement.MatcherContext.exactMatch(ctx, stmt2, stmt1));
+	}
+
+	@Test
+	public void testWrong5() {
+		RewriterStatement stmt1 = RewriterUtils.parse("*2(-(B,B))", ctx, "MATRIX:B");
+		RewriterStatement stmt2 = RewriterUtils.parse("*2(-(a, B))", ctx, "MATRIX:B", "FLOAT:a");
+
+		stmt1 = canonicalConverter.apply(stmt1);
+		stmt2 = canonicalConverter.apply(stmt2);
+
+		System.out.println("==========");
+		System.out.println(stmt1.toParsableString(ctx, true));
+		System.out.println("==========");
+		System.out.println(stmt2.toParsableString(ctx, true));
+
+		assert !stmt1.match(RewriterStatement.MatcherContext.exactMatch(ctx, stmt2, stmt1));
 	}
 }

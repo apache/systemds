@@ -215,4 +215,14 @@ public class RewriterTopologySortTests {
 		assert stmt1.match(RewriterStatement.MatcherContext.exactMatch(ctx, stmt2, stmt1));
 	}
 
+	@Test
+	public void testSimple() {
+		RewriterStatement stmt = RewriterUtils.parse("*(argList(a, sum(b), a))", ctx, "FLOAT:a,b");
+		TopologicalSort.sort(stmt, ctx);
+
+		String parsableString = stmt.toParsableString(ctx);
+		System.out.println(parsableString);
+		assert "*(argList(a,a,sum(b)))".equals(parsableString);
+	}
+
 }

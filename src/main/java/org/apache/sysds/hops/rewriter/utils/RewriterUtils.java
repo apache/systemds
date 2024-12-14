@@ -1627,6 +1627,9 @@ public class RewriterUtils {
 		if (argList.isEmpty())
 			throw new IllegalArgumentException(stmt.toString(ctx));
 
+		if (stmt.isInstruction() && (stmt.trueInstruction().equals("min") || stmt.trueInstruction().equals("max")) && argList.size() == 1 && !List.of("FLOAT", "INT", "BOOL").contains(argList.get(0).getResultingDataType(ctx)))
+			return stmt;
+
 		if (argList.size() < 2)
 			return argList.get(0);
 

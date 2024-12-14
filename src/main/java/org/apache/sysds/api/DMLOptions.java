@@ -201,6 +201,8 @@ public class DMLOptions {
 				else if (explainType.equalsIgnoreCase("runtime")) dmlOptions.explainType = ExplainType.RUNTIME;
 				else if (explainType.equalsIgnoreCase("recompile_hops")) dmlOptions.explainType = ExplainType.RECOMPILE_HOPS;
 				else if (explainType.equalsIgnoreCase("recompile_runtime")) dmlOptions.explainType = ExplainType.RECOMPILE_RUNTIME;
+				else if (explainType.equalsIgnoreCase("codegen_hops")) dmlOptions.explainType = ExplainType.CODEGEN_HOPS;
+				else if (explainType.equalsIgnoreCase("codegen_runtime")) dmlOptions.explainType = ExplainType.CODEGEN_RUNTIME;
 				else throw new org.apache.commons.cli.ParseException("Invalid argument specified for -hops option, must be one of [hops, runtime, recompile_hops, recompile_runtime]");
 			}
 		}

@@ -420,14 +420,7 @@ public class ParameterizedBuiltinCPInstruction extends ComputationCPInstruction 
 			}
 			else if(cacheData instanceof ListObject) {
 				out = DataConverter.toString((ListObject) cacheData,
-					rows,
-					cols,
-					sparse,
-					separator,
-					lineSeparator,
-					rows,
-					cols,
-					decimal);
+					rows, cols, sparse, separator, lineSeparator, rows, cols, decimal);
 			}
 			else {
 				throw new DMLRuntimeException("toString only converts "
@@ -549,9 +542,7 @@ public class ParameterizedBuiltinCPInstruction extends ComputationCPInstruction 
 		else if(opcode.equalsIgnoreCase("transformdecode") || opcode.equalsIgnoreCase("transformapply")) {
 			CPOperand target = new CPOperand(params.get("target"), ValueType.FP64, DataType.FRAME);
 			CPOperand meta = getLiteral("meta", ValueType.UNKNOWN, DataType.FRAME);
-			CPOperand spec = getStringLiteral("spec");
-			//FIXME: Taking only spec file name as a literal leads to wrong reuse
-			//TODO: Add Embedding to the lineage item
+			CPOperand spec = new CPOperand(params.get("spec"), ValueType.STRING, DataType.SCALAR);
 			return Pair.of(output.getName(),
 				new LineageItem(getOpcode(), LineageItemUtils.getLineage(ec, target, meta, spec)));
 		}

@@ -104,23 +104,23 @@ public class LinearizerResourceAwareFast extends IDagLinearizer {
 		}
 	}
 
-	List<Lop> remainingLops;
+	List<Lop> remaining;
 
 	@Override
 	public List<Lop> linearize(List<Lop> dag) {
 		List<List<Lop>> sequences = new ArrayList<>();
-		remainingLops = new ArrayList<>(dag);
+		remaining = new ArrayList<>(dag);
 
-		List<Lop> outputNodes = remainingLops.stream().filter(node -> node.getOutputs().isEmpty())
+		List<Lop> outputNodes = remaining.stream().filter(node -> node.getOutputs().isEmpty())
 			.collect(Collectors.toList());
 
 		for(Lop outputNode : outputNodes) {
 			sequences.add(findSequence(outputNode));
 		}
 
-		while(!remainingLops.isEmpty()) {
-			int maxLevel = remainingLops.stream().mapToInt(Lop::getLevel).max().getAsInt();
-			Lop node = remainingLops.stream().filter(n -> n.getLevel() == maxLevel).findFirst().orElseThrow();
+		while(!remaining.isEmpty()) {
+			int maxLevel = remaining.stream().mapToInt(Lop::getLevel).max().getAsInt();
+			Lop node = remaining.stream().filter(n -> n.getLevel() == maxLevel).findFirst().orElseThrow();
 			sequences.add(findSequence(node));
 		}
 
@@ -128,12 +128,13 @@ public class LinearizerResourceAwareFast extends IDagLinearizer {
 	}
 
 	List<Lop> scheduleSequences(List<List<Lop>> sequences) {
-		Set<Dependency> dependencies = getDependencies(sequences);
-		Set<List<Integer>> alreadyVisited = new HashSet<>();
+		Set<List<Integer>> visited = new HashSet<>();
 		List<Item> scheduledItems = new ArrayList<>();
 
+		Set<Dependency> dependencies = getDependencies(sequences);
 		List<Integer> sequencesMaxIndex = sequences.stream().map(entry -> entry.size() - 1)
 			.collect(Collectors.toList());
+		
 		Item currentItem = new Item(new ArrayList<>(), Collections.nCopies(sequences.size(), -1), new HashSet<>(), 0.0);
 
 		while(!currentItem.getCurrent().equals(sequencesMaxIndex)) {
@@ -146,7 +147,7 @@ public class LinearizerResourceAwareFast extends IDagLinearizer {
 					List<Integer> newCurrent = new ArrayList<>(currentItem.getCurrent());
 					newCurrent.set(i, newCurrent.get(i) + 1);
 
-					if(!alreadyVisited.contains(newCurrent)) {
+					if(!visited.contains(newCurrent)) {
 						Set<Dependency> filteredDependencies = dependencies.stream()
 							.filter(entry -> entry.getNodeIndex() == newCurrent.get(entry.getSequenceIndex()))
 							.collect(Collectors.toSet());
@@ -159,20 +160,20 @@ public class LinearizerResourceAwareFast extends IDagLinearizer {
 						if(!dependencyIssue) {
 							Set<Intermediate> newIntermediates = new HashSet<>(currentItem.getIntermediates());
 
-							Lop test = sequence.get(newCurrent.get(i));
+							Lop nextLop = sequence.get(newCurrent.get(i));
 
 							Iterator<Intermediate> intermediateIter = newIntermediates.iterator();
 
 							while(intermediateIter.hasNext()) {
 								Intermediate entry = intermediateIter.next();
-								entry.remove(test.getID());
+								entry.remove(nextLop.getID());
 								if(entry.getLopIDs().isEmpty())
 									intermediateIter.remove();
 							}
 
 							newIntermediates.add(new Intermediate(
-								test.getOutputs().stream().map(Lop::getID).collect(Collectors.toList()),
-								test.getOutputMemoryEstimate()));
+								nextLop.getOutputs().stream().map(Lop::getID).collect(Collectors.toList()),
+								nextLop.getOutputMemoryEstimate()));
 
 							List<Integer> newSteps = new ArrayList<>(currentItem.getSteps());
 							newSteps.add(i);
@@ -192,7 +193,7 @@ public class LinearizerResourceAwareFast extends IDagLinearizer {
 
 							scheduledItems.add(index, newItem);
 						}
-						alreadyVisited.add(newCurrent);
+						visited.add(newCurrent);
 					}
 				}
 			}
@@ -218,13 +219,13 @@ public class LinearizerResourceAwareFast extends IDagLinearizer {
 		List<Lop> sequence = new ArrayList<>();
 		Lop currentNode = startNode;
 		sequence.add(currentNode);
-		remainingLops.remove(currentNode);
+		remaining.remove(currentNode);
 
 		while(currentNode.getInputs().size() == 1) {
-			if(remainingLops.contains(currentNode.getInput(0))) {
+			if(remaining.contains(currentNode.getInput(0))) {
 				currentNode = currentNode.getInput(0);
 				sequence.add(currentNode);
-				remainingLops.remove(currentNode);
+				remaining.remove(currentNode);
 			}
 			else {
 				Collections.reverse(sequence);
@@ -243,7 +244,7 @@ public class LinearizerResourceAwareFast extends IDagLinearizer {
 		List<List<Lop>> childSequences = new ArrayList<>();
 
 		for(Lop child : children) {
-			if(remainingLops.contains(child)) {
+			if(remaining.contains(child)) {
 				childSequences.add(findSequence(child));
 			}
 		}
@@ -256,52 +257,53 @@ public class LinearizerResourceAwareFast extends IDagLinearizer {
 	Set<Dependency> getDependencies(List<List<Lop>> sequences) {
 		Set<Dependency> dependencies = new HashSet<>();
 
-		List<List<Long>> ids = sequences.stream()
+		// Get IDs of each Lop in each sequence for faster lookup
+		List<List<Long>> sequencesLopIDs = sequences.stream()
 			.map(sequence -> sequence.stream().map(Lop::getID).collect(Collectors.toList()))
 			.collect(Collectors.toList());
 
-		int lastSequenceWithOutputNodeIndex = -1;
+		int lastSequenceWithOutput = -1;
 
+		// Go through each sequence and check for dependencies
 		for(int j = 0; j < sequences.size(); j++) {
 			List<Lop> sequence = sequences.get(j);
+			int sequenceSize = sequence.size();
 			int sequenceIndex = j;
 
-			// Sequence dependencies
+			// Check if the current sequence depends on other sequences
 			sequence.get(0).getInputs().forEach(input -> {
 				long inputID = input.getID();
-				List<Integer> dependencyIndecies = ids.stream()
+				List<Integer> dependencyIndices = sequencesLopIDs.stream()
 					.map(list -> list.contains(inputID) ? list.indexOf(inputID) : -1).collect(Collectors.toList());
 
-				dependencies.add(new Dependency(sequenceIndex, 0, dependencyIndecies));
+				dependencies.add(new Dependency(sequenceIndex, 0, dependencyIndices));
 			});
 
-			// Cross dependencies
-			for(int k = 0; k < sequence.size(); k++) {
+			// Check for Lops that depends on Lops from other sequences
+			for(int k = 0; k < sequenceSize; k++) {
 				int finalK = k;
 				int finalJ = j;
-				List<Lop> inputs = sequence.get(k).getInputs();
-				inputs.forEach(input -> {
+				sequence.get(k).getInputs().forEach(input -> {
 					long inputID = input.getID();
-					if(!ids.get(finalJ).contains(inputID)) {
-						List<Integer> dependencyIndecies = ids.stream()
+					if(!sequencesLopIDs.get(finalJ).contains(inputID)) {
+						List<Integer> dependencyIndices = sequencesLopIDs.stream()
 							.map(list -> list.contains(inputID) ? list.indexOf(inputID) : -1)
 							.collect(Collectors.toList());
 
-						dependencies.add(new Dependency(finalJ, finalK, dependencyIndecies));
+						dependencies.add(new Dependency(finalJ, finalK, dependencyIndices));
 					}
 				});
 			}
 
-			// Dependency chain between output Lops
-			int sequenceSize = sequence.size();
+			// Dependency chain between output Lops so that the outputs are in the correct order
 			if(sequence.get(sequenceSize - 1).getOutputs().isEmpty()) {
-				if(lastSequenceWithOutputNodeIndex != -1) {
+				if(lastSequenceWithOutput != -1) {
 					List<Integer> dependencyList = new ArrayList<>(Collections.nCopies(sequences.size(), -1));
-					dependencyList.set(lastSequenceWithOutputNodeIndex,
-						sequences.get(lastSequenceWithOutputNodeIndex).size() - 1);
+					dependencyList.set(lastSequenceWithOutput,
+						sequences.get(lastSequenceWithOutput).size() - 1);
 					dependencies.add(new Dependency(j, sequenceSize - 1, dependencyList));
 				}
-				lastSequenceWithOutputNodeIndex = j;
+				lastSequenceWithOutput = j;
 			}
 		}
 

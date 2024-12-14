@@ -330,7 +330,10 @@ public class RewriterContextSettings {
 		builder.append("+*(MATRIX,FLOAT,MATRIX)::MATRIX\n");
 		builder.append("-*(MATRIX,FLOAT,MATRIX)::MATRIX\n");
 		builder.append("*2(MATRIX)::MATRIX\n");
-		builder.append("ifelse(BOOL,FLOAT,FLOAT)::FLOAT\n");
+		for (String t : SCALARS) {
+			builder.append("ifelse(BOOL," + t + "," + t + ")::" + t + "\n");
+		}
+
 
 		List.of("INT", "FLOAT", "BOOL").forEach(t -> {
 			String newType = t.equals("BOOL") ? "INT" : t;

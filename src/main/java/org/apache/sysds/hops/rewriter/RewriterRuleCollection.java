@@ -1196,55 +1196,57 @@ public class RewriterRuleCollection {
 		);
 
 		SCALARS.forEach(t -> {
-			// redundant ifelse elimination
-			rules.add(new RewriterRuleBuilder(ctx, "Remove redundant ifelse")
+			SCALARS.forEach(t2 -> {
+				// redundant ifelse elimination
+				rules.add(new RewriterRuleBuilder(ctx, "Remove redundant ifelse")
+						.setUnidirectional(true)
+						.parseGlobalVars(t2 + ":c,d,e")
+						.parseGlobalVars(t + ":a,b")
+						.withParsedStatement("ifelse(==(a, b), ifelse(==(a, b), c, e), d)", hooks)
+						.toParsedStatement("ifelse(==(a, b), c, d)", hooks)
+						.build()
+				);
+				rules.add(new RewriterRuleBuilder(ctx, "Remove redundant ifelse")
+						.setUnidirectional(true)
+						.parseGlobalVars(t2 + ":c,d,e")
+						.parseGlobalVars(t + ":a,b")
+						.withParsedStatement("ifelse(==(a, b), d, ifelse(==(a, b), c, e))", hooks)
+						.toParsedStatement("ifelse(==(a, b), d, e)", hooks)
+						.build()
+				);
+
+				// ifelse expression pullup
+				rules.add(new RewriterRuleBuilder(ctx, "Ifelse expression pullup")
+						.setUnidirectional(true)
+						.parseGlobalVars(t + ":a,c")
+						.parseGlobalVars(t2 + ":d")
+						.parseGlobalVars("BOOL:b")
+						.withParsedStatement("$1:ElementWiseInstruction(ifelse(b, a, c), d)", hooks)
+						.toParsedStatement("ifelse(b, $2:ElementWiseInstruction(a, d), $3:ElementWiseInstruction(c, d))", hooks)
+						.linkManyUnidirectional(hooks.get(1).getId(), List.of(hooks.get(2).getId(), hooks.get(3).getId()), RewriterStatement::transferMeta, true)
+						.build()
+				);
+				rules.add(new RewriterRuleBuilder(ctx, "Ifelse expression pullup")
+						.setUnidirectional(true)
+						.parseGlobalVars(t + ":a,c")
+						.parseGlobalVars(t2 + ":d")
+						.parseGlobalVars("BOOL:b")
+						.withParsedStatement("$1:ElementWiseInstruction(d, ifelse(b, a, c))", hooks)
+						.toParsedStatement("ifelse(b, $2:ElementWiseInstruction(d, a), $3:ElementWiseInstruction(d, c))", hooks)
+						.linkManyUnidirectional(hooks.get(1).getId(), List.of(hooks.get(2).getId(), hooks.get(3).getId()), RewriterStatement::transferMeta, true)
+						.build()
+				);
+			});
+
+			rules.add(new RewriterRuleBuilder(ctx, "Ifelse branch merge")
 					.setUnidirectional(true)
-					.parseGlobalVars("FLOAT:c,d,e")
-					.parseGlobalVars(t + ":a,b")
-					.withParsedStatement("ifelse(==(a, b), ifelse(==(a, b), c, e), d)", hooks)
-					.toParsedStatement("ifelse(==(a, b), c, d)", hooks)
-					.build()
-			);
-			rules.add(new RewriterRuleBuilder(ctx, "Remove redundant ifelse")
-					.setUnidirectional(true)
-					.parseGlobalVars("FLOAT:c,d,e")
-					.parseGlobalVars(t + ":a,b")
-					.withParsedStatement("ifelse(==(a, b), d, ifelse(==(a, b), c, e))", hooks)
-					.toParsedStatement("ifelse(==(a, b), d, e)", hooks)
+					.parseGlobalVars(t + ":a,c,d")
+					.parseGlobalVars("BOOL:b")
+					.withParsedStatement("ifelse(b, a, a)", hooks)
+					.toParsedStatement("a", hooks)
 					.build()
 			);
 		});
-
-		//RewriterUtils.buildBinaryPermutations(SCALARS, (t1, t2) -> {
-			// ifelse expression pullup
-			rules.add(new RewriterRuleBuilder(ctx, "Ifelse expression pullup")
-					.setUnidirectional(true)
-					.parseGlobalVars("FLOAT:a,c,d")
-					.parseGlobalVars("BOOL:b")
-					.withParsedStatement("$1:ElementWiseInstruction(ifelse(b, a, c), d)", hooks)
-					.toParsedStatement("ifelse(b, $2:ElementWiseInstruction(a, d), $3:ElementWiseInstruction(c, d))", hooks)
-					.linkManyUnidirectional(hooks.get(1).getId(), List.of(hooks.get(2).getId(), hooks.get(3).getId()), RewriterStatement::transferMeta, true)
-					.build()
-			);
-			rules.add(new RewriterRuleBuilder(ctx, "Ifelse expression pullup")
-					.setUnidirectional(true)
-					.parseGlobalVars("FLOAT:a,c,d")
-					.parseGlobalVars("BOOL:b")
-					.withParsedStatement("$1:ElementWiseInstruction(d, ifelse(b, a, c))", hooks)
-					.toParsedStatement("ifelse(b, $2:ElementWiseInstruction(d, a), $3:ElementWiseInstruction(d, c))", hooks)
-					.linkManyUnidirectional(hooks.get(1).getId(), List.of(hooks.get(2).getId(), hooks.get(3).getId()), RewriterStatement::transferMeta, true)
-					.build()
-			);
-		//});
-
-		rules.add(new RewriterRuleBuilder(ctx, "Ifelse branch merge")
-				.setUnidirectional(true)
-				.parseGlobalVars("FLOAT:a,c,d")
-				.parseGlobalVars("BOOL:b")
-				.withParsedStatement("ifelse(b, a, a)", hooks)
-				.toParsedStatement("a", hooks)
-				.build()
-		);
 
 		SCALARS.forEach(t -> {
 			rules.add(new RewriterRuleBuilder(ctx, "Fold true statement")

@@ -1539,4 +1539,18 @@ public class RewriterStreamTests {
 		System.out.println("==========");
 		System.out.println(stmt1.toParsableString(ctx, true));
 	}
+
+	@Test
+	public void testBoolDiag() {
+		RewriterStatement stmt1 = RewriterUtils.parse("diag(!=(A,A))", ctx, "MATRIX:A,B");
+
+		long cost1 = RewriterCostEstimator.estimateCost(stmt1, ctx);
+
+		System.out.println("Cost1: " + cost1);
+
+		stmt1 = canonicalConverter.apply(stmt1);
+
+		System.out.println("==========");
+		System.out.println(stmt1.toParsableString(ctx, true));
+	}
 }

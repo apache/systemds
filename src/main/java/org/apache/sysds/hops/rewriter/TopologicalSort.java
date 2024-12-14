@@ -37,10 +37,8 @@ public class TopologicalSort {
 		//setupAddresses(lowestUncertainties);
 		buildAddresses(root, ctx);
 		resolveAmbiguities(root, ctx, uncertainParents);
-		System.out.println("After resolving: " + root.toParsableString(ctx));
 		// TODO: Propagate address priorities and thus implicit orderings up the DAG
 		resetAddresses(uncertainParents);
-		System.out.println("After resetting: " + root.toParsableString(ctx));
 
 		int factCtr = 0;
 
@@ -179,7 +177,8 @@ public class TopologicalSort {
 				knownOrder.addAll(el.getOperands());
 			}
 
-			System.out.println("Initial known order of " + el.toParsableString(ctx) + ": " + knownOrder);
+			if (DEBUG)
+				System.out.println("Initial known order of " + el.toParsableString(ctx) + ": " + knownOrder);
 		}, false);
 
 		return uncertainParents;

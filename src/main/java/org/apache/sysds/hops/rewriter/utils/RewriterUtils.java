@@ -1278,6 +1278,7 @@ public class RewriterUtils {
 	private static RuleContext lastSparsityCtx;
 	private static Function<RewriterStatement, RewriterStatement> lastPrepareForSparsity;
 
+	@Deprecated
 	public static Function<RewriterStatement, RewriterStatement> prepareForSparsityEstimation(final RuleContext ctx) {
 		if (lastSparsityCtx == ctx)
 			return lastPrepareForSparsity;
@@ -1455,8 +1456,8 @@ public class RewriterUtils {
 
 		if (!checkSubgraphDependency(sumBody, ownerId, checked)) {
 			// Then we have to remove the sum entirely
-			RewriterStatement negation = new RewriterInstruction().as(UUID.randomUUID().toString()).withInstruction("-").withOps(RewriterStatement.ensureFloat(ctx, idxFrom)).consolidate(ctx);
-			RewriterStatement add = RewriterStatement.multiArgInstr(ctx, "+", RewriterStatement.ensureFloat(ctx, idxTo), negation);
+			RewriterStatement negation = new RewriterInstruction().as(UUID.randomUUID().toString()).withInstruction("-").withOps(/*RewriterStatement.ensureFloat(ctx, idxFrom)*/idxFrom).consolidate(ctx);
+			RewriterStatement add = RewriterStatement.multiArgInstr(ctx, "+", /*RewriterStatement.ensureFloat(ctx, idxTo)*/idxTo, negation);
 			add = foldConstants(add, ctx);
 			return RewriterStatement.multiArgInstr(ctx, "*", sumBody, add);
 		}
@@ -1510,8 +1511,8 @@ public class RewriterUtils {
 				List<RewriterStatement> mul = new ArrayList<>();
 
 				for (RewriterStatement idx : idxExpr.getChild(0).getOperands()) {
-					RewriterStatement neg = new RewriterInstruction().as(UUID.randomUUID().toString()).withInstruction("-").withOps(RewriterStatement.ensureFloat(ctx, idx.getChild(0))).consolidate(ctx);
-					RewriterStatement msum = RewriterStatement.multiArgInstr(ctx, "+", RewriterStatement.ensureFloat(ctx, idx.getChild(1)), neg, RewriterStatement.literal(ctx, 1.0));
+					RewriterStatement neg = new RewriterInstruction().as(UUID.randomUUID().toString()).withInstruction("-").withOps(/*RewriterStatement.ensureFloat(ctx, idx.getChild(0))*/idx.getChild(0)).consolidate(ctx);
+					RewriterStatement msum = RewriterStatement.multiArgInstr(ctx, "+", /*RewriterStatement.ensureFloat(ctx, idx.getChild(1))*/idx.getChild(1), neg, RewriterStatement.literal(ctx, 1.0));
 					mul.add(msum);
 				}
 

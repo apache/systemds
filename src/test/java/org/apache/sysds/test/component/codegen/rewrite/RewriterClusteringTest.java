@@ -69,7 +69,8 @@ public class RewriterClusteringTest {
 
 	public static void testExpressionClustering() {
 		boolean useData = false;
-		boolean useRandomized = true;
+		boolean useSystematic = true;
+		int systematicSearchDepth = 2;
 		boolean useRandomLarge = false;
 
 		long startTime = System.currentTimeMillis();
@@ -159,10 +160,10 @@ public class RewriterClusteringTest {
 		db = null;
 		Object lock = new Object();
 
-		if (useRandomized) {
+		if (useSystematic) {
 			long MAX_MILLIS = 1200000; // Should be bound by number of ops
 			int BATCH_SIZE = 400;
-			int maxN = RewriterAlphabetEncoder.getMaxSearchNumberForNumOps(2);
+			int maxN = RewriterAlphabetEncoder.getMaxSearchNumberForNumOps(systematicSearchDepth);
 			System.out.println("MaxN: " + maxN);
 			long startMillis = System.currentTimeMillis();
 
@@ -197,6 +198,12 @@ public class RewriterClusteringTest {
 								//stmt.compress();
 								synchronized (lock) {
 									RewriterEquivalenceDatabase.DBEntry entry = canonicalExprDB.insert(ctx, canonicalForm, stmt);
+
+									// Now, we use common variables
+									if (entry.equivalences.size() > 1) {
+										RewriterStatement commonForm = RewriterRuleCreator.createCommonForm(entry.equivalences.get(0), stmt, entry.canonicalForm, canonicalForm, ctx)._2;
+										entry.equivalences.set(entry.equivalences.size()-1, commonForm);
+									}
 
 									if (entry.equivalences.size() == 2)
 										foundEquivalences.add(entry);
@@ -248,6 +255,12 @@ public class RewriterClusteringTest {
 									synchronized (lock) {
 										RewriterEquivalenceDatabase.DBEntry entry = canonicalExprDB.insert(ctx, canonicalForm, stmt);
 
+										// Now, we use common variables
+										if (entry.equivalences.size() > 1) {
+											RewriterStatement commonForm = RewriterRuleCreator.createCommonForm(entry.equivalences.get(0), stmt, entry.canonicalForm, canonicalForm, ctx)._2;
+											entry.equivalences.set(entry.equivalences.size()-1, commonForm);
+										}
+
 										if (entry.equivalences.size() == 2)
 											foundEquivalences.add(entry);
 									}
@@ -279,15 +292,10 @@ public class RewriterClusteringTest {
 			if (++mCtr % 100 == 0)
 				System.out.println("Creating rule: " + mCtr + " / " + rewrites.size());
 
-			ctx.metaPropagator.apply(rewrite._4());
-			ctx.metaPropagator.apply(rewrite._5());
-			RewriterStatement canonicalFormFrom = converter.apply(rewrite._4());
-			RewriterStatement canonicalFormTo = converter.apply(rewrite._5());
 			try {
-				RewriterRule rule = RewriterRuleCreator.createRule(rewrite._4(), rewrite._5(), canonicalFormFrom, canonicalFormTo, ctx);
+				RewriterRule rule = RewriterRuleCreator.createRuleFromCommonStatements(rewrite._4(), rewrite._5(), ctx);
 
 				allRules.add(new Tuple4<>(rule, rewrite._2(), rewrite._3(), rule.getStmt1().countInstructions()));
-				//ruleCreator.registerRule(rule, rewrite._2(), rewrite._3());
 			} catch (Exception e) {
 				System.err.println("An error occurred while trying to create a rule:");
 				System.err.println(rewrite._4().toParsableString(ctx, true));

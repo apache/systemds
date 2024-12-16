@@ -1603,7 +1603,6 @@ public class RewriterRuleCollection {
 	}
 
 	// This expands the statements to a common canonical form
-	// It is important, however, that
 	public static void canonicalExpandAfterFlattening(final List<RewriterRule> rules, final RuleContext ctx) {
 		HashMap<Integer, RewriterStatement> hooks = new HashMap<>();
 

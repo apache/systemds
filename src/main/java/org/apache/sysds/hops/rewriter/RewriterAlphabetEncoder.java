@@ -47,9 +47,12 @@ public class RewriterAlphabetEncoder {
 			new Operand("colSums", 1, MATRIX),
 			new Operand("max", 1, MATRIX),
 			new Operand("min", 1, MATRIX),
-			new Operand("fncol", 1, true, MATRIX),
+			new Operand("ncol", 1, true, MATRIX),
+			new Operand("nrow", 1, true, MATRIX),
+			new Operand("length", 1, true, MATRIX),
+			/*new Operand("fncol", 1, true, MATRIX),
 			new Operand("fnrow", 1, true, MATRIX),
-			new Operand("flength", 1, true, MATRIX),
+			new Operand("flength", 1, true, MATRIX),*/
 
 			new Operand("!=", 2, ALL_TYPES, ALL_TYPES),
 			new Operand("!=0", 1, MATRIX),
@@ -76,9 +79,9 @@ public class RewriterAlphabetEncoder {
 			new Operand("c_-1", 1, ALL_TYPES),
 
 			// ncol / nrow / length stuff
-			new Operand("c_flength*", 1, ALL_TYPES),
-			new Operand("c_fncol*", 1, ALL_TYPES),
-			new Operand("c_fnrow*", 1, ALL_TYPES),
+			new Operand("c_length*", 2, MATRIX, ALL_TYPES),
+			new Operand("c_ncol*", 2, MATRIX, ALL_TYPES),
+			new Operand("c_nrow*", 2, MATRIX, ALL_TYPES),
 
 			//new Operand("log_nz", 1, MATRIX),			// TODO: We have to include literals in the search
 
@@ -365,6 +368,13 @@ public class RewriterAlphabetEncoder {
 				stmt.withInstruction("!=").addOp(RewriterStatement.literal(ctx, 0.0D)).addOp(stack[0]);
 				break;
 			}
+			case "ncol":
+			case "nrow":
+			case "length": {
+				String actualOp = op.op.substring(1);
+				stmt.withInstruction(actualOp).withOps(stack).consolidate(ctx);
+				break;
+			}
 			case "fncol":
 			case "fnrow":
 			case "flength": {
@@ -378,8 +388,37 @@ public class RewriterAlphabetEncoder {
 				stmt = new RewriterInstruction("*", ctx, old, stack[1]);
 				break;
 			}
+			case "c_1+": {
+				stmt = new RewriterInstruction("+", ctx, RewriterStatement.literal(ctx, 1.0D), stack[0]);
+				break;
+			}
+			case "c_+1": {
+				stmt = new RewriterInstruction("+", ctx, stack[0], RewriterStatement.literal(ctx, 1.0D));
+				break;
+			}
+			case "c_1-": {
+				stmt = new RewriterInstruction("-", ctx, RewriterStatement.literal(ctx, 1.0D), stack[0]);
+				break;
+			}
+			case "c_-1": {
+				stmt = new RewriterInstruction("-", ctx, stack[0], RewriterStatement.literal(ctx, 1.0D));
+				break;
+			}
+			case "c_length*": {
+				stmt = new RewriterInstruction("*", ctx, new RewriterInstruction("length", ctx, stack[0]), stack[1]);
+				break;
+			}
+			case "c_nrow*": {
+				stmt = new RewriterInstruction("*", ctx, new RewriterInstruction("nrow", ctx, stack[0]), stack[1]);
+				break;
+			}
+			case "c_col*": {
+				stmt = new RewriterInstruction("*", ctx, new RewriterInstruction("ncol", ctx, stack[0]), stack[1]);
+				break;
+			}
 			default: {
 				stmt.withInstruction(op.op).withOps(stack);
+				break;
 			}
 		}
 

@@ -79,6 +79,7 @@ public class RewriterRuleCreator {
 			}
 
 			toTest = applicableRule.rule.apply(applicableRule.matches.get(0), toTest, applicableRule.forward, false);
+
 			RewriterUtils.mergeArgLists(toTest, ctx);
 			toTest = RewriterUtils.foldConstants(toTest, ctx);
 			appliedRules.add(applicableRule.rule);

@@ -144,6 +144,7 @@ public abstract class RewriterStatement {
 		final boolean terminateOnFirstMatch;
 		final boolean findMinimalMismatchRoot;
 		final boolean traceVariableEliminations;
+		final boolean allowImplicitTypeConversions;
 		final Map<RewriterStatement, RewriterRule.LinkObject> ruleLinks;
 		final RewriterStatement expressionRoot;
 		final RewriterStatement thisExpressionRoot;
@@ -185,10 +186,11 @@ public abstract class RewriterStatement {
 			this.ruleLinks = ruleLinks;
 			this.findMinimalMismatchRoot = findMinimalMismatchRoot;
 			this.traceVariableEliminations = traceVariableEliminations;
+			this.allowImplicitTypeConversions = false;
 			this.debug = false;
 		}
 
-		public MatcherContext(final RuleContext ctx, RewriterStatement matchRoot, RewriterPredecessor pred, RewriterStatement expressionRoot, RewriterStatement thisExprRoot, final boolean statementsCanBeVariables, final boolean literalsCanBeVariables, final boolean ignoreLiteralValues, final boolean allowDuplicatePointers, final boolean allowPropertyScan, final boolean allowTypeHierarchy, final boolean terminateOnFirstMatch, final boolean findMinimalMismatchRoot, boolean traceVariableEliminations, final Map<RewriterStatement, RewriterRule.LinkObject> ruleLinks) {
+		public MatcherContext(final RuleContext ctx, RewriterStatement matchRoot, RewriterPredecessor pred, RewriterStatement expressionRoot, RewriterStatement thisExprRoot, final boolean statementsCanBeVariables, final boolean literalsCanBeVariables, final boolean ignoreLiteralValues, final boolean allowDuplicatePointers, final boolean allowPropertyScan, final boolean allowTypeHierarchy, final boolean terminateOnFirstMatch, final boolean findMinimalMismatchRoot, boolean traceVariableEliminations, boolean allowImplicitTypeConversions, final Map<RewriterStatement, RewriterRule.LinkObject> ruleLinks) {
 			this.ctx = ctx;
 			this.matchRoot = matchRoot;
 			this.pred = pred;
@@ -205,6 +207,7 @@ public abstract class RewriterStatement {
 			this.ruleLinks = ruleLinks;
 			this.findMinimalMismatchRoot = findMinimalMismatchRoot;
 			this.traceVariableEliminations = traceVariableEliminations;
+			this.allowImplicitTypeConversions = allowImplicitTypeConversions;
 			this.debug = false;
 		}
 
@@ -214,6 +217,10 @@ public abstract class RewriterStatement {
 				assertionsThis = (RewriterAssertions) thisExpressionRoot.getMeta("_assertions");
 				assertionsFetched = true;
 			}
+		}
+
+		public boolean allowsImplicitTypeConversions() {
+			return allowImplicitTypeConversions;
 		}
 
 		public void dontVisitAgain(RewriterStatement stmt) {

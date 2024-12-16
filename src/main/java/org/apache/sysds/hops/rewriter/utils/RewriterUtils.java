@@ -1101,6 +1101,16 @@ public class RewriterUtils {
 		return ranges;*/
 	}
 
+	public static boolean isImplicitlyConvertible(String typeFrom, String typeTo) {
+		if (typeFrom.equals(typeTo))
+			return true;
+
+		if (typeFrom.equals("INT") && typeTo.equals("FLOAT"))
+			return true;
+
+		return false;
+	}
+
 	public static int compare(RewriterStatement stmt1, RewriterStatement stmt2, /*RewriterStatement p1, RewriterStatement p2, Map<Tuple2<RewriterRule.IdentityRewriterStatement, RewriterRule.IdentityRewriterStatement>, Integer> globalOrders, BiFunction<RewriterStatement, RewriterStatement, Boolean> arrangable,*/ final RuleContext ctx) {
 		/*boolean arrangable1 = arrangable.apply(stmt1, p1);
 		boolean arrangable2 = arrangable.apply(stmt2, p2);

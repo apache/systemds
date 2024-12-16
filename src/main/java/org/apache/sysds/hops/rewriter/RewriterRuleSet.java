@@ -119,14 +119,18 @@ public class RewriterRuleSet {
 	}*/
 
 	public ApplicableRule acceleratedFindFirst(RewriterStatement root) {
-		List<ApplicableRule> match = acceleratedRecursiveMatch(root, true);
+		return acceleratedFindFirst(root, false);
+	}
+
+	public ApplicableRule acceleratedFindFirst(RewriterStatement root, boolean allowImplicitTypeConversions) {
+		List<ApplicableRule> match = acceleratedRecursiveMatch(root, true, allowImplicitTypeConversions);
 		if (match.isEmpty())
 			return null;
 		else
 			return match.get(0);
 	}
 
-	public List<ApplicableRule> acceleratedRecursiveMatch(RewriterStatement root, boolean findFirst) {
+	public List<ApplicableRule> acceleratedRecursiveMatch(RewriterStatement root, boolean findFirst, boolean allowImplicitTypeConversions) {
 		List<Tuple3<RewriterRule, Boolean, RewriterStatement.MatchingSubexpression>> matches = new ArrayList<>();
 		MutableObject<HashMap<RewriterStatement, RewriterStatement>> dependencyMap = new MutableObject<>(new HashMap<>());
 		MutableObject<List<RewriterRule.ExplicitLink>> links = new MutableObject<>(new ArrayList<>());
@@ -135,7 +139,7 @@ public class RewriterRuleSet {
 		root.forEachPreOrder((el, pred) -> {
 			String typedStr = el.isInstruction() ? el.trueTypedInstruction(ctx) : el.getResultingDataType(ctx);
 			Set<String> props = el instanceof RewriterInstruction ? ((RewriterInstruction)el).getProperties(ctx) : Collections.emptySet();
-			boolean found = acceleratedMatch(root, el, matches, typedStr, el.getResultingDataType(ctx), props, pred, dependencyMap, links, linkObjects, findFirst);
+			boolean found = acceleratedMatch(root, el, matches, typedStr, el.getResultingDataType(ctx), props, pred, dependencyMap, links, linkObjects, findFirst, allowImplicitTypeConversions);
 			return !findFirst || !found;
 		}, true);
 
@@ -156,7 +160,7 @@ public class RewriterRuleSet {
 		return new ArrayList<>(uniqueRules.values());
 	}
 
-	public boolean acceleratedMatch(RewriterStatement exprRoot, RewriterStatement stmt, List<Tuple3<RewriterRule, Boolean, RewriterStatement.MatchingSubexpression>> appRules, String realTypedInstr, String realType, Set<String> properties, RewriterStatement.RewriterPredecessor pred, MutableObject<HashMap<RewriterStatement, RewriterStatement>> dependencyMap, MutableObject<List<RewriterRule.ExplicitLink>> links, MutableObject<Map<RewriterStatement, RewriterRule.LinkObject>> linkObjects, boolean findFirst) {
+	public boolean acceleratedMatch(RewriterStatement exprRoot, RewriterStatement stmt, List<Tuple3<RewriterRule, Boolean, RewriterStatement.MatchingSubexpression>> appRules, String realTypedInstr, String realType, Set<String> properties, RewriterStatement.RewriterPredecessor pred, MutableObject<HashMap<RewriterStatement, RewriterStatement>> dependencyMap, MutableObject<List<RewriterRule.ExplicitLink>> links, MutableObject<Map<RewriterStatement, RewriterRule.LinkObject>> linkObjects, boolean findFirst, boolean allowImplicitTypeConversions) {
 		//System.out.println("AccMatch: " + stmt);
 		List<Tuple2<RewriterRule, Boolean>> potentialMatches;
 		boolean foundMatch = false;
@@ -166,7 +170,7 @@ public class RewriterRuleSet {
 			potentialMatches = accelerator.get(realTypedInstr);
 			if (potentialMatches != null) {
 				//System.out.println("PotentialMatche");
-				foundMatch |= checkPotentialMatches(stmt, potentialMatches, appRules, pred, dependencyMap, links, linkObjects, exprRoot, findFirst);
+				foundMatch |= checkPotentialMatches(stmt, potentialMatches, appRules, pred, dependencyMap, links, linkObjects, exprRoot, findFirst, allowImplicitTypeConversions);
 
 				if (foundMatch && findFirst)
 					return true;
@@ -175,7 +179,7 @@ public class RewriterRuleSet {
 
 		potentialMatches = accelerator.get(realType);
 		if (potentialMatches != null) {
-			foundMatch |= checkPotentialMatches(stmt, potentialMatches, appRules, pred, dependencyMap, links, linkObjects, exprRoot, findFirst);
+			foundMatch |= checkPotentialMatches(stmt, potentialMatches, appRules, pred, dependencyMap, links, linkObjects, exprRoot, findFirst, allowImplicitTypeConversions);
 
 			if (foundMatch && findFirst)
 				return true;
@@ -185,7 +189,7 @@ public class RewriterRuleSet {
 			for (String props : properties) {
 				potentialMatches = accelerator.get(props);
 				if (potentialMatches != null) {
-					foundMatch |= checkPotentialMatches(stmt, potentialMatches, appRules, pred, dependencyMap, links, linkObjects, exprRoot, findFirst);
+					foundMatch |= checkPotentialMatches(stmt, potentialMatches, appRules, pred, dependencyMap, links, linkObjects, exprRoot, findFirst, allowImplicitTypeConversions);
 
 					if (foundMatch && findFirst)
 						return true;
@@ -196,15 +200,15 @@ public class RewriterRuleSet {
 		return foundMatch;
 	}
 
-	private boolean checkPotentialMatches(RewriterStatement stmt, List<Tuple2<RewriterRule, Boolean>> potentialMatches, List<Tuple3<RewriterRule, Boolean, RewriterStatement.MatchingSubexpression>> appRules, RewriterStatement.RewriterPredecessor pred, MutableObject<HashMap<RewriterStatement, RewriterStatement>> dependencyMap, MutableObject<List<RewriterRule.ExplicitLink>> links, MutableObject<Map<RewriterStatement, RewriterRule.LinkObject>> linkObjects, RewriterStatement exprRoot, boolean findFirst) {
+	private boolean checkPotentialMatches(RewriterStatement stmt, List<Tuple2<RewriterRule, Boolean>> potentialMatches, List<Tuple3<RewriterRule, Boolean, RewriterStatement.MatchingSubexpression>> appRules, RewriterStatement.RewriterPredecessor pred, MutableObject<HashMap<RewriterStatement, RewriterStatement>> dependencyMap, MutableObject<List<RewriterRule.ExplicitLink>> links, MutableObject<Map<RewriterStatement, RewriterRule.LinkObject>> linkObjects, RewriterStatement exprRoot, boolean findFirst, boolean allowImplicitTypeConversions) {
 		boolean anyMatch = false;
 		for (Tuple2<RewriterRule, Boolean> m : potentialMatches) {
 			RewriterStatement.MatchingSubexpression match;
 
 			if (m._2()) {
-				match = m._1().matchSingleStmt1(exprRoot, pred, stmt, dependencyMap.getValue(), links.getValue(), linkObjects.getValue());
+				match = m._1().matchSingleStmt1(exprRoot, pred, stmt, allowImplicitTypeConversions);
 			} else {
-				match = m._1().matchSingleStmt2(exprRoot, pred, stmt, dependencyMap.getValue(), links.getValue(), linkObjects.getValue());
+				match = m._1().matchSingleStmt2(exprRoot, pred, stmt, allowImplicitTypeConversions);
 			}
 
 			if (match != null) {

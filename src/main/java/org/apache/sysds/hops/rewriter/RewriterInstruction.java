@@ -202,7 +202,7 @@ public class RewriterInstruction extends RewriterStatement {
 			}
 		}
 
-		if (stmt instanceof RewriterInstruction && getResultingDataType(ctx).equals(stmt.getResultingDataType(ctx))) {
+		if (stmt instanceof RewriterInstruction && (getResultingDataType(ctx).equals(stmt.getResultingDataType(ctx)) || (mCtx.allowImplicitTypeConversions && RewriterUtils.isImplicitlyConvertible(getResultingDataType(ctx), stmt.getResultingDataType(ctx))))) {
 			RewriterInstruction inst = (RewriterInstruction)stmt;
 
 			if(!inst.instr.equals(this.instr)) {

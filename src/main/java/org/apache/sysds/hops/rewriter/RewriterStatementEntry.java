@@ -25,7 +25,7 @@ public class RewriterStatementEntry {
 				return true;
 			if (instr.structuralHashCode() != ((RewriterStatement)o).structuralHashCode())
 				return false;
-			return instr.match(new RewriterStatement.MatcherContext(ctx, (RewriterStatement) o, new RewriterStatement.RewriterPredecessor(), (RewriterStatement) o, instr, false, false, false, false, false, false, true, false, false, new HashMap<>()));
+			return instr.match(new RewriterStatement.MatcherContext(ctx, (RewriterStatement) o, new RewriterStatement.RewriterPredecessor(), (RewriterStatement) o, instr, false, false, false, false, false, false, true, false, false, false, new HashMap<>()));
 		}
 
 		if (o.hashCode() != hashCode())
@@ -34,7 +34,7 @@ public class RewriterStatementEntry {
 		if (o instanceof RewriterStatementEntry) {
 			if (instr == ((RewriterStatementEntry) o).instr)
 				return true;
-			return instr.match(new RewriterStatement.MatcherContext(ctx, ((RewriterStatementEntry) o).instr, new RewriterStatement.RewriterPredecessor(), ((RewriterStatementEntry) o).instr, instr, false, false, false, false, false, false, true, false, false, new HashMap<>()));
+			return instr.match(new RewriterStatement.MatcherContext(ctx, ((RewriterStatementEntry) o).instr, new RewriterStatement.RewriterPredecessor(), ((RewriterStatementEntry) o).instr, instr, false, false, false, false, false, false, true, false, false, false, new HashMap<>()));
 		}
 		return false;
 	}

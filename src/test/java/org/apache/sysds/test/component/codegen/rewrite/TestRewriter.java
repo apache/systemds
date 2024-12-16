@@ -448,7 +448,7 @@ public class TestRewriter {
 		//RewriterRuleSet.ApplicableRule match = ruleSet.findFirstApplicableRule(stmt);
 		long millis = System.currentTimeMillis();
 		//ArrayList<RewriterRuleSet.ApplicableRule> applicableRules = ruleSet.findApplicableRules(stmt);
-		List<RewriterRuleSet.ApplicableRule> applicableRules = ruleSet.acceleratedRecursiveMatch(stmt, false);
+		List<RewriterRuleSet.ApplicableRule> applicableRules = ruleSet.acceleratedRecursiveMatch(stmt, false, false);
 
 		RewriterStatement newStmt = stmt;
 
@@ -472,7 +472,7 @@ public class TestRewriter {
 			applicableRules = investigatedStatements.get(rdInvestigation)._2;
 
 			if (applicableRules == null) {
-				applicableRules = ruleSet.acceleratedRecursiveMatch(initialRecord.stmt, false);
+				applicableRules = ruleSet.acceleratedRecursiveMatch(initialRecord.stmt, false, false);
 				if (applicableRules.isEmpty()) {
 					replaceInvestigationList(investigatedStatements, queue, rdInvestigation);
 					continue;
@@ -486,9 +486,9 @@ public class TestRewriter {
 			RewriterStatement.MatchingSubexpression match = next.matches.remove(matchIdx);
 
 			if (next.forward)
-				newStmt = next.rule.applyForward(match, stmt, false, modificationHandle);
+				newStmt = next.rule.applyForward(match, stmt, false, false, modificationHandle);
 			else
-				newStmt = next.rule.applyBackward(match, stmt, false, modificationHandle);
+				newStmt = next.rule.applyBackward(match, stmt, false, false, modificationHandle);
 
 			ExecutionRecord newRcrd = new ExecutionRecord(newStmt);
 

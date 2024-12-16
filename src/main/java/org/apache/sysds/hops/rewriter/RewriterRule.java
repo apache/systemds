@@ -145,27 +145,37 @@ public class RewriterRule extends AbstractRewriterRule {
 	}
 
 	public RewriterStatement apply(RewriterStatement.MatchingSubexpression match, RewriterStatement rootNode, boolean forward, boolean inplace) {
-		return forward ? applyForward(match, rootNode, inplace) : applyBackward(match, rootNode, inplace);
+		return apply(match, rootNode, forward, inplace, false);
 	}
 
-	public RewriterStatement applyForward(RewriterStatement.MatchingSubexpression match, RewriterStatement rootNode, boolean inplace) {
-		return applyForward(match, rootNode, inplace, new MutableObject<>(null));
+	public RewriterStatement apply(RewriterStatement.MatchingSubexpression match, RewriterStatement rootNode, boolean forward, boolean inplace, boolean updateTypes) {
+		return forward ? applyForward(match, rootNode, inplace, updateTypes) : applyBackward(match, rootNode, inplace, updateTypes);
 	}
 
-	public RewriterStatement applyForward(RewriterStatement.MatchingSubexpression match, RewriterStatement rootNode, boolean inplace, MutableObject<Tuple3<RewriterStatement, RewriterStatement, Integer>> modificationHandle) {
+	public RewriterStatement applyForward(RewriterStatement.MatchingSubexpression match, RewriterStatement rootNode, boolean inplace, boolean updateTypes) {
+		return applyForward(match, rootNode, inplace, updateTypes, new MutableObject<>(null));
+	}
+
+	public RewriterStatement applyForward(RewriterStatement.MatchingSubexpression match, RewriterStatement rootNode, boolean inplace, boolean updateTypes, MutableObject<Tuple3<RewriterStatement, RewriterStatement, Integer>> modificationHandle) {
 		if (inplace)
 			throw new NotImplementedException("Inplace operations are currently not working");
-		return inplace ? applyInplace(match, rootNode, toRoot, applyStmt1ToStmt2 == null ? Collections.emptyList() : applyStmt1ToStmt2) : apply(match, rootNode, toRoot, modificationHandle, applyStmt1ToStmt2 == null ? Collections.emptyList() : applyStmt1ToStmt2);
+		RewriterStatement out = inplace ? applyInplace(match, rootNode, toRoot, applyStmt1ToStmt2 == null ? Collections.emptyList() : applyStmt1ToStmt2) : apply(match, rootNode, toRoot, modificationHandle, applyStmt1ToStmt2 == null ? Collections.emptyList() : applyStmt1ToStmt2);
+		if (updateTypes)
+			updateTypes(out, ctx);
+		return out;
 	}
 
-	public RewriterStatement applyBackward(RewriterStatement.MatchingSubexpression match, RewriterStatement rootNode, boolean inplace) {
-		return applyBackward(match, rootNode, inplace, new MutableObject<>(null));
+	public RewriterStatement applyBackward(RewriterStatement.MatchingSubexpression match, RewriterStatement rootNode, boolean inplace, boolean updateTypes) {
+		return applyBackward(match, rootNode, inplace, updateTypes, new MutableObject<>(null));
 	}
 
-	public RewriterStatement applyBackward(RewriterStatement.MatchingSubexpression match, RewriterStatement rootNode, boolean inplace, MutableObject<Tuple3<RewriterStatement, RewriterStatement, Integer>> modificationHandle) {
+	public RewriterStatement applyBackward(RewriterStatement.MatchingSubexpression match, RewriterStatement rootNode, boolean inplace, boolean updateTypes, MutableObject<Tuple3<RewriterStatement, RewriterStatement, Integer>> modificationHandle) {
 		if (inplace)
 			throw new NotImplementedException("Inplace operations are currently not working");
-		return inplace ? applyInplace(match, rootNode, fromRoot, applyStmt2ToStmt1 == null ? Collections.emptyList() : applyStmt2ToStmt1) : apply(match, rootNode, fromRoot, modificationHandle, applyStmt2ToStmt1 == null ? Collections.emptyList() : applyStmt2ToStmt1);
+		RewriterStatement out = inplace ? applyInplace(match, rootNode, fromRoot, applyStmt2ToStmt1 == null ? Collections.emptyList() : applyStmt2ToStmt1) : apply(match, rootNode, fromRoot, modificationHandle, applyStmt2ToStmt1 == null ? Collections.emptyList() : applyStmt2ToStmt1);
+		if (updateTypes)
+			updateTypes(out, ctx);
+		return out;
 	}
 
 	/*@Override
@@ -173,8 +183,8 @@ public class RewriterRule extends AbstractRewriterRule {
 		return getStmt1().matchSubexpr(ctx, stmt, null, -1, arr, new HashMap<>(), true, false, findFirst, null, linksStmt1ToStmt2, true, true, false, iff1to2);
 	}*/
 
-	public RewriterStatement.MatchingSubexpression matchSingleStmt1(RewriterStatement exprRoot, RewriterStatement.RewriterPredecessor pred, RewriterStatement stmt, HashMap<RewriterStatement, RewriterStatement> dependencyMap, List<ExplicitLink> links, Map<RewriterStatement, LinkObject> ruleLinks) {
-		RewriterStatement.MatcherContext mCtx = new RewriterStatement.MatcherContext(ctx, stmt, pred, exprRoot, getStmt1(), true, true, false, true, true, false, true, false, false, linksStmt1ToStmt2);
+	public RewriterStatement.MatchingSubexpression matchSingleStmt1(RewriterStatement exprRoot, RewriterStatement.RewriterPredecessor pred, RewriterStatement stmt, boolean allowImplicitTypeConversions) {
+		RewriterStatement.MatcherContext mCtx = new RewriterStatement.MatcherContext(ctx, stmt, pred, exprRoot, getStmt1(), true, true, false, true, true, false, true, false, false, allowImplicitTypeConversions, linksStmt1ToStmt2);
 		mCtx.currentStatement = stmt;
 		boolean match = getStmt1().match(mCtx);
 
@@ -193,8 +203,8 @@ public class RewriterRule extends AbstractRewriterRule {
 		return getStmt2().matchSubexpr(ctx, stmt, null, -1, arr, new HashMap<>(), true, false, findFirst, null, linksStmt2ToStmt1, true, true, false, iff2to1);
 	}*/
 
-	public RewriterStatement.MatchingSubexpression matchSingleStmt2(RewriterStatement exprRoot, RewriterStatement.RewriterPredecessor pred, RewriterStatement stmt, HashMap<RewriterStatement, RewriterStatement> dependencyMap, List<ExplicitLink> links, Map<RewriterStatement, LinkObject> ruleLinks) {
-		RewriterStatement.MatcherContext mCtx = new RewriterStatement.MatcherContext(ctx, stmt, pred, exprRoot, getStmt2(), true, true, false, true, true, false, true, false, false, linksStmt2ToStmt1);
+	public RewriterStatement.MatchingSubexpression matchSingleStmt2(RewriterStatement exprRoot, RewriterStatement.RewriterPredecessor pred, RewriterStatement stmt, boolean allowImplicitTypeConversions) {
+		RewriterStatement.MatcherContext mCtx = new RewriterStatement.MatcherContext(ctx, stmt, pred, exprRoot, getStmt2(), true, true, false, true, true, false, true, false, false, allowImplicitTypeConversions, linksStmt2ToStmt1);
 		mCtx.currentStatement = stmt;
 		boolean match = getStmt2().match(mCtx);
 
@@ -206,6 +216,12 @@ public class RewriterRule extends AbstractRewriterRule {
 		}
 
 		return null;
+	}
+
+	public void updateTypes(RewriterStatement root, final RuleContext ctx) {
+		root.forEachPostOrder((cur, pred) -> {
+			cur.refreshReturnType(ctx);
+		}, true);
 	}
 
 	private RewriterStatement apply(RewriterStatement.MatchingSubexpression match, RewriterStatement rootInstruction, RewriterStatement dest, MutableObject<Tuple3<RewriterStatement, RewriterStatement, Integer>> modificationHandle, List<Tuple2<RewriterStatement, BiConsumer<RewriterStatement, RewriterStatement.MatchingSubexpression>>> applyFunction) {

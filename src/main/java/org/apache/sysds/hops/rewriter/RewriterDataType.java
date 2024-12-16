@@ -2,6 +2,7 @@ package org.apache.sysds.hops.rewriter;
 
 import org.apache.commons.lang3.function.TriFunction;
 import org.apache.sysds.hops.rewriter.assertions.RewriterAssertions;
+import org.apache.sysds.hops.rewriter.utils.RewriterUtils;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -248,15 +249,17 @@ public class RewriterDataType extends RewriterStatement {
 		}
 
 		if (!dType.equals(type)) {
-			if (!mCtx.allowTypeHierarchy) {
-				mCtx.setFirstMismatch(this, stmt);
-				return false;
-			}
+			if (!mCtx.allowImplicitTypeConversions && !RewriterUtils.isImplicitlyConvertible(dType, type)) {
+				if (!mCtx.allowTypeHierarchy) {
+					mCtx.setFirstMismatch(this, stmt);
+					return false;
+				}
 
-			Set<String> types = ctx.typeHierarchy.get(dType);
-			if (types == null || !types.contains(type)) {
-				mCtx.setFirstMismatch(this, stmt);
-				return false;
+				Set<String> types = ctx.typeHierarchy.get(dType);
+				if (types == null || !types.contains(type)) {
+					mCtx.setFirstMismatch(this, stmt);
+					return false;
+				}
 			}
 		}
 

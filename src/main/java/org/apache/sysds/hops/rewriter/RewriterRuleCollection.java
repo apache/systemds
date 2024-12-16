@@ -773,7 +773,7 @@ public class RewriterRuleCollection {
 					stmt.unsafePutMeta("ownerId", id);
 					stmt.getChild(0).unsafePutMeta("ownerId", id);
 
-					RewriterStatement aRef = stmt.getChild(0, 1, 0);
+					//RewriterStatement aRef = stmt.getChild(0, 1, 0);
 				}, true) // Assumes it will never collide
 				.build()
 		);
@@ -803,7 +803,7 @@ public class RewriterRuleCollection {
 		);
 
 		// Const
-		rules.add(new RewriterRuleBuilder(ctx, "Expand const matrix")
+		/*rules.add(new RewriterRuleBuilder(ctx, "Expand const matrix")
 				.setUnidirectional(true)
 				.parseGlobalVars("MATRIX:A")
 				.parseGlobalVars("FLOAT:a")
@@ -819,7 +819,7 @@ public class RewriterRuleCollection {
 					stmt.getChild(1).unsafePutMeta("ownerId", id);
 				}, true) // Assumes it will never collide
 				.build()
-		);
+		);*/
 
 
 		// Matrix Multiplication

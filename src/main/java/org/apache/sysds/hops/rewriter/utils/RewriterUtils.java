@@ -1451,15 +1451,24 @@ public class RewriterUtils {
 
 		Map<RewriterStatement, Boolean> checked = new HashMap<>();
 
-		RewriterStatement idxFrom = idxExpr.getChild(0, 0, 0);
-		RewriterStatement idxTo = idxExpr.getChild(0, 0, 1);
 
 		if (!checkSubgraphDependency(sumBody, ownerId, checked)) {
 			// Then we have to remove the sum entirely
-			RewriterStatement negation = new RewriterInstruction().as(UUID.randomUUID().toString()).withInstruction("-").withOps(/*RewriterStatement.ensureFloat(ctx, idxFrom)*/idxFrom).consolidate(ctx);
-			RewriterStatement add = RewriterStatement.multiArgInstr(ctx, "+", /*RewriterStatement.ensureFloat(ctx, idxTo)*/idxTo, negation);
-			add = foldConstants(add, ctx);
-			return RewriterStatement.multiArgInstr(ctx, "*", sumBody, add);
+			List<RewriterStatement> indices = idxExpr.getChild(0).getOperands();
+			List<RewriterStatement> components = new ArrayList<>();
+
+			for (RewriterStatement idx : indices) {
+				RewriterStatement idxFrom = idx.getChild(0);
+				RewriterStatement idxTo = idx.getChild(1);
+				RewriterStatement negation = new RewriterInstruction().as(UUID.randomUUID().toString()).withInstruction("-").withOps(/*RewriterStatement.ensureFloat(ctx, idxFrom)*/idxFrom).consolidate(ctx);
+				RewriterStatement add = RewriterStatement.multiArgInstr(ctx, "+", /*RewriterStatement.ensureFloat(ctx, idxTo)*/idxTo, RewriterStatement.literal(ctx, 1.0D), negation);
+				components.add(add);
+			}
+
+			//add = foldConstants(add, ctx);
+			RewriterStatement out = RewriterStatement.multiArgInstr(ctx, "*", sumBody);
+			out.getChild(0).getOperands().addAll(components);
+			return foldConstants(out, ctx);
 		}
 
 		if (isDirectlyDependent(sumBody, ownerId))
@@ -1529,7 +1538,6 @@ public class RewriterUtils {
 
 	// Returns true if the subgraph is dependent on the corresponding owner
 	private static boolean checkSubgraphDependency(RewriterStatement expr, UUID id, Map<RewriterStatement, Boolean> checked) {
-		// TODO: What happens on multi-index?
 		Boolean b = checked.get(expr);
 
 		if (b != null)

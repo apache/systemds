@@ -913,7 +913,7 @@ public abstract class RewriterStatement {
 	public void moveRootTo(RewriterStatement newRoot) {
 		RewriterAssertions assertions = (RewriterAssertions) getMeta("_assertions");
 
-		if (assertions != null)
+		if (assertions != null && !newRoot.isLiteral())
 			newRoot.unsafePutMeta("_assertions", assertions);
 	}
 

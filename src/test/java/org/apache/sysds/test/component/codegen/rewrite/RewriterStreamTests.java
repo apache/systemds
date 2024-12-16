@@ -1634,4 +1634,20 @@ public class RewriterStreamTests {
 
 		assert stmt1.match(RewriterStatement.MatcherContext.exactMatch(ctx, stmt2, stmt1));
 	}
+
+	@Test
+	public void testSumEquality8() {
+		RewriterStatement stmt1 = RewriterUtils.parse("sum(const(A,1.0))", ctx, "MATRIX:A", "LITERAL_FLOAT:1.0");
+		RewriterStatement stmt2 = RewriterUtils.parse("length(A)", ctx, "MATRIX:A", "FLOAT:a");
+
+		stmt1 = canonicalConverter.apply(stmt1);
+		stmt2 = canonicalConverter.apply(stmt2);
+
+		System.out.println("==========");
+		System.out.println(stmt1.toParsableString(ctx, true));
+		System.out.println("==========");
+		System.out.println(stmt2.toParsableString(ctx, true));
+
+		assert stmt1.match(RewriterStatement.MatcherContext.exactMatch(ctx, stmt2, stmt1));
+	}
 }

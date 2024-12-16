@@ -124,7 +124,7 @@ public class RewriterCodeGen {
 			for (Tuple2<String, RewriterRule> t : implementedRewrites)
 				ruleNames.put(t._2, t._1);
 
-			List<CodeGenCondition> conditions = CodeGenCondition.buildCondition(rules, 20, ctx);
+			List<CodeGenCondition> conditions = CodeGenCondition.buildCondition(rules, 5, ctx);
 			CodeGenCondition.buildSelection(msb, conditions, 2, ruleNames, ctx);
 		} else {
 			for (Tuple2<String, RewriterRule> appliedRewrites : rewrites) {

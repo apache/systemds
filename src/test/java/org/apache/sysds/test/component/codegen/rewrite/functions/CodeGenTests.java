@@ -225,7 +225,7 @@ public class CodeGenTests {
 				System.out.println(rule);
 			}*/
 
-			RewriterCodeGen.DEBUG = true;
+			RewriterCodeGen.DEBUG = false;
 			String javaCode = ruleSet.toJavaCode("GeneratedRewriteClass", true, true, true, true);
 			String filePath = "/Users/janniklindemann/Dev/MScThesis/other/GeneratedRewriteClass.java";
 

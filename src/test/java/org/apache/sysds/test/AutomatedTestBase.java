@@ -158,9 +158,22 @@ public abstract class AutomatedTestBase {
 					csvBuilder2.append('\n');
 				});
 
+				StringBuilder csvBuilder3 = new StringBuilder();
+				csvBuilder3.append("Rewrite;TestName;Count\n");
+
+				Statistics.getAdvancedAppliedRewrites().forEach((k, v) -> {
+					csvBuilder3.append(k._1);
+					csvBuilder3.append(';');
+					csvBuilder3.append(k._2);
+					csvBuilder3.append(';');
+					csvBuilder3.append(v);
+					csvBuilder3.append('\n');
+				});
+
 				try {
 					Files.writeString(Paths.get(BASE_DATA_DIR + "runtimes.csv"), csvBuilder.toString());
 					Files.writeString(Paths.get(BASE_DATA_DIR + "applied_rewrites.csv"), csvBuilder2.toString());
+					Files.writeString(Paths.get(BASE_DATA_DIR + "rewrite_info.csv"), csvBuilder3.toString());
 				} catch (IOException e) {
 					e.printStackTrace();
 				}
@@ -1469,6 +1482,10 @@ public abstract class AutomatedTestBase {
 
 				benchmark_run = BENCHMARK && i >= BENCHMARK_WARMUP_RUNS;
 				Statistics.recordAppliedGeneratedRewrites(benchmark_run);
+				if (benchmark_run)
+					Statistics.setCurrentTestName(currentTestName);
+				else
+					Statistics.setCurrentTestName("");
 
 				Thread t = new Thread(
 						() -> out.add(runTestWithTimeout(newWay, exceptionExpected, expectedException, errMessage, maxSparkInst)),

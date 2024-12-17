@@ -32,7 +32,7 @@ class Fusion(Representation):
         """
         super().__init__(name)
 
-    def fuse(self, modalities: List[Modality]):
+    def transform(self, modalities: List[Modality]):
         """
         Implemented for every child class and creates a fused representation out of
         multiple modalities

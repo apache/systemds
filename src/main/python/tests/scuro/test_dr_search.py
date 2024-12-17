@@ -28,11 +28,15 @@ from sklearn.metrics import classification_report
 from sklearn.model_selection import train_test_split, KFold
 from sklearn.preprocessing import MinMaxScaler
 
+from systemds.scuro import (
+    UnimodalModality,
+    VideoLoader,
+    AudioLoader,
+    TextLoader,
+    ModalityType,
+)
 from systemds.scuro.aligner.dr_search import DRSearch
 from systemds.scuro.aligner.task import Task
-from systemds.scuro.modality.audio_modality import AudioModality
-from systemds.scuro.modality.text_modality import TextModality
-from systemds.scuro.modality.video_modality import VideoModality
 from systemds.scuro.models.model import Model
 from systemds.scuro.representations.average import Average
 from systemds.scuro.representations.bert import Bert
@@ -101,29 +105,21 @@ class TestDataLoaders(unittest.TestCase):
 
         cls.num_instances = 8
         cls.indizes = [str(i) for i in range(0, cls.num_instances)]
-        cls.video = VideoModality(
-            "", ResNet(f"{cls.test_file_path}/embeddings/resnet_embeddings.hdf5")
-        )
-        cls.audio = AudioModality(
-            "",
-            MelSpectrogram(
-                output_file=f"{cls.test_file_path}/embeddings/mel_sp_embeddings.npy"
-            ),
-        )
-        cls.text = TextModality(
-            "",
-            Bert(
-                avg_layers=4,
-                output_file=f"{cls.test_file_path}/embeddings/bert_embeddings.pkl",
-            ),
-        )
-        cls.mods = [cls.video, cls.audio, cls.text]
-        cls.data_generator = TestDataGenerator(cls.mods, cls.test_file_path)
+        video_data_loader = VideoLoader(cls.test_file_path + "/video/", cls.indizes)
+        audio_data_loader = AudioLoader(cls.test_file_path + "/audio/", cls.indizes)
+        text_data_loader = TextLoader(cls.test_file_path + "/text/", cls.indizes)
+        video = UnimodalModality(video_data_loader, ModalityType.VIDEO)
+        audio = UnimodalModality(audio_data_loader, ModalityType.AUDIO)
+        text = UnimodalModality(text_data_loader, ModalityType.TEXT)
+        cls.data_generator = TestDataGenerator([video, audio, text], cls.test_file_path)
         cls.data_generator.create_multimodal_data(cls.num_instances)
-        cls.text.read_all(cls.indizes)
-        cls.audio.read_all(cls.indizes)
-        cls.video.read_all([i for i in range(0, cls.num_instances)])
-
+        
+        cls.bert = text.apply_representation(Bert())
+        cls.mel_spe = audio.apply_representation(MelSpectrogram())
+        cls.resnet = video.apply_representation(ResNet())
+        
+        cls.mods = [cls.bert, cls.mel_spe, cls.resnet]
+        
         split = train_test_split(
             cls.indizes, cls.data_generator.labels, test_size=0.2, random_state=42
         )

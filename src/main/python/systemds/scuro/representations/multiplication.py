@@ -36,7 +36,7 @@ class Multiplication(Fusion):
         """
         super().__init__("Multiplication")
 
-    def fuse(self, modalities: List[Modality], train_indices=None):
+    def transform(self, modalities: List[Modality], train_indices=None):
         max_emb_size = self.get_max_embedding_size(modalities)
 
         data = pad_sequences(modalities[0].data, maxlen=max_emb_size, dtype="float32")

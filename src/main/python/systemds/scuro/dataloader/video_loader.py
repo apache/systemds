@@ -18,31 +18,35 @@
 # under the License.
 #
 # -------------------------------------------------------------
+from typing import List, Optional
 
-from typing import List
+import numpy as np
 
-
-from systemds.scuro.modality.modality import Modality
-from systemds.scuro.representations.utils import pad_sequences
-
-from systemds.scuro.representations.fusion import Fusion
+from systemds.scuro.dataloader.base_loader import BaseLoader
+import cv2
 
 
-class Sum(Fusion):
-    def __init__(self):
-        """
-        Combines modalities using colum-wise sum
-        """
-        super().__init__("Sum")
+class VideoLoader(BaseLoader):
+    def __init__(
+        self,
+        source_path: str,
+        indices: List[str],
+        chunk_size: Optional[int] = None,
+    ):
+        super().__init__(source_path, indices, chunk_size)
 
-    def transform(self, modalities: List[Modality]):
-        max_emb_size = self.get_max_embedding_size(modalities)
+    def extract(self, file: str):
+        self.file_sanity_check(file)
+        cap = cv2.VideoCapture(file)
+        frames = []
+        while cap.isOpened():
+            ret, frame = cap.read()
 
-        data = pad_sequences(modalities[0].data, maxlen=max_emb_size, dtype="float32")
+            if not ret:
+                break
+            frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+            frame = frame.astype(np.float32) / 255.0
 
-        for m in range(1, len(modalities)):
-            data += pad_sequences(
-                modalities[m].data, maxlen=max_emb_size, dtype="float32"
-            )
+            frames.append(frame)
 
-        return data
+        self.data.append(frames)

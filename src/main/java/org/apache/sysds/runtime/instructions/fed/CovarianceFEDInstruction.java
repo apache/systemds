@@ -28,6 +28,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import org.apache.commons.lang3.tuple.Pair;
+import org.apache.sysds.lops.Lop;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
@@ -113,27 +114,20 @@ public class CovarianceFEDInstruction extends BinaryFEDInstruction {
 				new CPOperand[]{input1, input2, input3}, new long[]{mo1.getFedMapping().getID(),
 					mo2.getFedMapping().getID(), moLin3.getFedMapping().getID()});
 		}
-			
+
 		FederatedRequest fr2 = new FederatedRequest(FederatedRequest.RequestType.GET_VAR, fr1.getID());
 		FederatedRequest fr3 = mo1.getFedMapping().cleanup(getTID(), fr1.getID());
-		Future<FederatedResponse>[] covTmp = mo1.getFedMapping().execute(getTID(), fr1, fr2, fr3);
-
-		//means
-		Future<FederatedResponse>[] meanTmp1 = processMean(mo1, moLin3, 0);
-		Future<FederatedResponse>[] meanTmp2 = processMean(mo2, moLin3, 1);
-
-		Double[] cov = getResponses(covTmp);
-		Double[] mean1 = getResponses(meanTmp1);
-		Double[] mean2 = getResponses(meanTmp2);
+		Double[] cov = getResponses(mo1.getFedMapping().execute(getTID(), fr1, fr2, fr3));
+		Double[] mean1 = getResponses(processMean(mo1, moLin3, 0));
+		Double[] mean2 = getResponses(processMean(mo2, moLin3, 1));
 
 		if (moLin3 == null) {
 			double result = aggCov(cov, mean1, mean2, mo1.getFedMapping().getFederatedRanges());
 			ec.setVariable(output.getName(), new DoubleObject(result));
 		}
 		else {
-			Future<FederatedResponse>[] weightsSumTmp = getWeightsSum(moLin3, moLin3.getFedMapping().getID(), instString, moLin3.getFedMapping());
-			Double[] weights = getResponses(weightsSumTmp);
-			
+			Double[] weights = getResponses(
+				getWeightsSum(moLin3, moLin3.getFedMapping().getID(), instString, moLin3.getFedMapping()));
 			double result = aggWeightedCov(cov, mean1, mean2, weights);
 			ec.setVariable(output.getName(), new DoubleObject(result));
 		}
@@ -145,7 +139,7 @@ public class CovarianceFEDInstruction extends BinaryFEDInstruction {
 		FederatedRequest[] fr1 = mo1.getFedMapping().broadcastSliced(moLin3, false);
 
 		// the original instruction encodes weights as "pREADW", change to the new ID
-		String[] parts = instString.split("°");
+		String[] parts = instString.split(Lop.OPERAND_DELIMITOR);
 		String covInstr = instString.replace(parts[4], String.valueOf(fr1[0].getID()) + "·MATRIX·FP64");
 
 		FederatedRequest fr2 = FederationUtils.callInstruction(
@@ -153,21 +147,13 @@ public class CovarianceFEDInstruction extends BinaryFEDInstruction {
 			new CPOperand[]{input1, input2, input3},
 			new long[]{mo1.getFedMapping().getID(), mo2.getFedMapping().getID(), fr1[0].getID()}
 		);
+		//sequential execution of cov and means for robustness
 		FederatedRequest fr3 = new FederatedRequest(FederatedRequest.RequestType.GET_VAR, fr2.getID());
 		FederatedRequest fr4 = mo1.getFedMapping().cleanup(getTID(), fr2.getID());
-		Future<FederatedResponse>[] covTmp = mo1.getFedMapping().execute(getTID(), fr1, fr2, fr3, fr4);
-
-		//means
-		Future<FederatedResponse>[] meanTmp1 = processMean(mo1, 0, fr1[0].getID());
-		Future<FederatedResponse>[] meanTmp2 = processMean(mo2, 1, fr1[0].getID());
-
-		Double[] cov = getResponses(covTmp);
-		Double[] mean1 = getResponses(meanTmp1);
-		Double[] mean2 = getResponses(meanTmp2);
-
-		Future<FederatedResponse>[] weightsSumTmp = getWeightsSum(moLin3, fr1[0].getID(), instString, mo1.getFedMapping());
-		Double[] weights = getResponses(weightsSumTmp);
-		
+		Double[] cov = getResponses(mo1.getFedMapping().execute(getTID(), true, fr1, fr2, fr3, fr4));
+		Double[] mean1 = getResponses(processMean(mo1, 0, fr1[0].getID()));
+		Double[] mean2 = getResponses(processMean(mo2, 1, fr1[0].getID()));
+		Double[] weights = getResponses(getWeightsSum(moLin3, fr1[0].getID(), instString, mo1.getFedMapping()));
 		double result = aggWeightedCov(cov, mean1, mean2, weights);
 		ec.setVariable(output.getName(), new DoubleObject(result));
 	}
@@ -242,7 +228,7 @@ public class CovarianceFEDInstruction extends BinaryFEDInstruction {
 				fr[i] = ((ScalarObject) ffr[i].get().getData()[0]).getDoubleValue();
 			}
 			catch(Exception e) {
-				throw new DMLRuntimeException("CovarianceFEDInstruction: incorrect means or cov.");
+				throw new DMLRuntimeException("CovarianceFEDInstruction: incorrect means or cov.", e);
 			}
 		});
 
@@ -301,11 +287,11 @@ public class CovarianceFEDInstruction extends BinaryFEDInstruction {
 	}
 
 	private Future<FederatedResponse>[] processMean(MatrixObject mo1, MatrixLineagePair moLin3, int var){
-		String[] parts = instString.split("°");
+		String[] parts = instString.split(Lop.OPERAND_DELIMITOR);
 		Future<FederatedResponse>[] meanTmp = null;
 		if (moLin3 == null) {
 			String meanInstr = instString.replace(getOpcode(), getOpcode().replace("cov", "uamean"));
-			meanInstr = meanInstr.replace((var == 0 ? parts[2] : parts[3]) + "°", "");
+			meanInstr = meanInstr.replace((var == 0 ? parts[2] : parts[3]) + Lop.OPERAND_DELIMITOR, "");
 			meanInstr = meanInstr.replace(parts[4], parts[4].replace("FP64", "STRING°16"));
 
 			//create federated commands for aggregation
@@ -321,7 +307,7 @@ public class CovarianceFEDInstruction extends BinaryFEDInstruction {
 			String multOutput = incrementVar(parts[4], 1);
 			String multInstr = instString
 				.replace(getOpcode(), getOpcode().replace("cov", "*"))
-				.replace((var == 0 ? parts[2] : parts[3]) + "°", "")
+				.replace((var == 0 ? parts[2] : parts[3]) + Lop.OPERAND_DELIMITOR, "")
 				.replace(parts[5], multOutput);
 
 			CPOperand multOutputCPOp = new CPOperand(
@@ -337,13 +323,13 @@ public class CovarianceFEDInstruction extends BinaryFEDInstruction {
 			);
 
 			// calculate the sum of the obtained vector
-			String[] partsMult = multInstr.split("°");
+			String[] partsMult = multInstr.split(Lop.OPERAND_DELIMITOR);
 			String sumInstr1Output = incrementVar(multOutput, 1)
 				.replace("m", "")
 				.replace("MATRIX", "SCALAR");
 			String sumInstr1 = multInstr
 				.replace(partsMult[1], "uak+")
-				.replace(partsMult[3] + "°", "")
+				.replace(partsMult[3] + Lop.OPERAND_DELIMITOR, "")
 				.replace(partsMult[4], sumInstr1Output)
 				.replace(partsMult[2], multOutput);
 
@@ -358,7 +344,7 @@ public class CovarianceFEDInstruction extends BinaryFEDInstruction {
 			);
 
 			// calculate the sum of weights
-			String[] partsSum1 = sumInstr1.split("°");
+			String[] partsSum1 = sumInstr1.split(Lop.OPERAND_DELIMITOR);
 			String sumInstr2Output = incrementVar(sumInstr1Output, 1);
 			String sumInstr2 = sumInstr1
 				.replace(partsSum1[2], parts[4])
@@ -367,7 +353,7 @@ public class CovarianceFEDInstruction extends BinaryFEDInstruction {
 			FederatedRequest sumFr2 = FederationUtils.callInstruction(
 				sumInstr2,
 				new CPOperand(
-					sumInstr2Output.substring(0, sumInstr2Output.indexOf("·")),
+					sumInstr2Output.substring(0, sumInstr2Output.indexOf(Lop.DATATYPE_PREFIX)),
 					output.getValueType(), output.getDataType()
 				),
 				new CPOperand[]{input3},
@@ -375,12 +361,13 @@ public class CovarianceFEDInstruction extends BinaryFEDInstruction {
 			);
 
 			// divide sum(X*W) by sum(W)
-			String[] partsSum2 = sumInstr2.split("°");
+			String[] partsSum2 = sumInstr2.split(Lop.OPERAND_DELIMITOR);
 			String divInstrOutput = incrementVar(sumInstr2Output, 1);
-			String divInstrInput1 = partsSum2[2].replace(partsSum2[2], sumInstr1Output + "·false");
-			String divInstrInput2 = partsSum2[3].replace(partsSum2[3], sumInstr2Output + "·false");
-			String divInstr = partsSum2[0] + "°" + partsSum2[1].replace("uak+", "/") + "°" +
-					divInstrInput1 + "°" + divInstrInput2 + "°" + divInstrOutput + "°" + partsSum2[4];
+			String divInstrInput1 = partsSum2[2].replace(partsSum2[2], sumInstr1Output + Lop.DATATYPE_PREFIX + "false");
+			String divInstrInput2 = partsSum2[3].replace(partsSum2[3], sumInstr2Output + Lop.DATATYPE_PREFIX + "false");
+			String divInstr = partsSum2[0] + Lop.OPERAND_DELIMITOR + partsSum2[1].replace("uak+", "/") 
+				+ Lop.OPERAND_DELIMITOR + divInstrInput1 + Lop.OPERAND_DELIMITOR + divInstrInput2 
+				+ Lop.OPERAND_DELIMITOR + divInstrOutput + Lop.OPERAND_DELIMITOR + partsSum2[4];
 
 			FederatedRequest divFr1 = FederationUtils.callInstruction(
 				divInstr,
@@ -390,11 +377,11 @@ public class CovarianceFEDInstruction extends BinaryFEDInstruction {
 				),
 				new CPOperand[]{
 					new CPOperand(
-						sumInstr1Output.substring(0, sumInstr1Output.indexOf("·")),
+						sumInstr1Output.substring(0, sumInstr1Output.indexOf(Lop.DATATYPE_PREFIX)),
 						output.getValueType(), output.getDataType(), output.isLiteral()
 					),
 					new CPOperand(
-						sumInstr2Output.substring(0, sumInstr2Output.indexOf("·")),
+						sumInstr2Output.substring(0, sumInstr2Output.indexOf(Lop.DATATYPE_PREFIX)),
 						output.getValueType(), output.getDataType(), output.isLiteral()
 					)
 				},
@@ -409,19 +396,19 @@ public class CovarianceFEDInstruction extends BinaryFEDInstruction {
 	}
 
 	private Future<FederatedResponse>[] processMean(MatrixObject mo1, int var, long weightsID){
-		String[] parts = instString.split("°");
+		String[] parts = instString.split(Lop.OPERAND_DELIMITOR);
 		Future<FederatedResponse>[] meanTmp = null;
 
 		// multiply input X by weights W element-wise
 		String multOutput = (var == 0 ? incrementVar(parts[2], 5) : incrementVar(parts[3], 3));
 		String multInstr = instString
 			.replace(getOpcode(), getOpcode().replace("cov", "*"))
-			.replace((var == 0 ? parts[2] : parts[3]) + "°", "")
+			.replace((var == 0 ? parts[2] : parts[3]) + Lop.OPERAND_DELIMITOR, "")
 			.replace(parts[4], String.valueOf(weightsID) + "·MATRIX·FP64")
 			.replace(parts[5], multOutput);
 
 		CPOperand multOutputCPOp = new CPOperand(
-			multOutput.substring(0, multOutput.indexOf("·")),
+			multOutput.substring(0, multOutput.indexOf(Lop.DATATYPE_PREFIX)),
 			mo1.getValueType(), mo1.getDataType()
 		);
 
@@ -433,20 +420,20 @@ public class CovarianceFEDInstruction extends BinaryFEDInstruction {
 		);
 
 		// calculate the sum of the obtained vector
-		String[] partsMult = multInstr.split("°");
+		String[] partsMult = multInstr.split(Lop.OPERAND_DELIMITOR);
 		String sumInstr1Output = incrementVar(multOutput, 1)
 			.replace("m", "")
 			.replace("MATRIX", "SCALAR");
 		String sumInstr1 = multInstr
 			.replace(partsMult[1], "uak+")
-			.replace(partsMult[3] + "°", "")
+			.replace(partsMult[3] + Lop.OPERAND_DELIMITOR, "")
 			.replace(partsMult[4], sumInstr1Output)
 			.replace(partsMult[2], multOutput);
 
 		FederatedRequest sumFr1 = FederationUtils.callInstruction(
 			sumInstr1,
 			new CPOperand(
-				sumInstr1Output.substring(0, sumInstr1Output.indexOf("·")),
+				sumInstr1Output.substring(0, sumInstr1Output.indexOf(Lop.DATATYPE_PREFIX)),
 				output.getValueType(), output.getDataType()
 			),
 			new CPOperand[]{multOutputCPOp},
@@ -454,7 +441,7 @@ public class CovarianceFEDInstruction extends BinaryFEDInstruction {
 		);
 
 		// calculate the sum of weights
-		String[] partsSum1 = sumInstr1.split("°");
+		String[] partsSum1 = sumInstr1.split(Lop.OPERAND_DELIMITOR);
 		String sumInstr2Output = incrementVar(sumInstr1Output, 1);
 		String sumInstr2 = sumInstr1
 			.replace(partsSum1[2], String.valueOf(weightsID) + "·MATRIX·FP64")
@@ -463,7 +450,7 @@ public class CovarianceFEDInstruction extends BinaryFEDInstruction {
 		FederatedRequest sumFr2 = FederationUtils.callInstruction(
 			sumInstr2,
 			new CPOperand(
-				sumInstr2Output.substring(0, sumInstr2Output.indexOf("·")),
+				sumInstr2Output.substring(0, sumInstr2Output.indexOf(Lop.DATATYPE_PREFIX)),
 				output.getValueType(), output.getDataType()
 			),
 			new CPOperand[]{input3},
@@ -471,26 +458,27 @@ public class CovarianceFEDInstruction extends BinaryFEDInstruction {
 		);
 
 		// divide sum(X*W) by sum(W)
-		String[] partsSum2 = sumInstr2.split("°");
+		String[] partsSum2 = sumInstr2.split(Lop.OPERAND_DELIMITOR);
 		String divInstrOutput = incrementVar(sumInstr2Output, 1);
-		String divInstrInput1 = partsSum2[2].replace(partsSum2[2], sumInstr1Output + "·false");
-		String divInstrInput2 = partsSum2[3].replace(partsSum2[3], sumInstr2Output + "·false");
-		String divInstr = partsSum2[0] + "°" + partsSum2[1].replace("uak+", "/") + "°" +
-				divInstrInput1 + "°" + divInstrInput2 + "°" + divInstrOutput + "°" + partsSum2[4];
+		String divInstrInput1 = partsSum2[2].replace(partsSum2[2], sumInstr1Output + Lop.DATATYPE_PREFIX + "false");
+		String divInstrInput2 = partsSum2[3].replace(partsSum2[3], sumInstr2Output + Lop.DATATYPE_PREFIX + "false");
+		String divInstr = partsSum2[0] + Lop.OPERAND_DELIMITOR + partsSum2[1].replace("uak+", "/") + Lop.OPERAND_DELIMITOR 
+				+ divInstrInput1 + Lop.OPERAND_DELIMITOR + divInstrInput2 + Lop.OPERAND_DELIMITOR 
+				+ divInstrOutput + Lop.OPERAND_DELIMITOR + partsSum2[4];
 
 		FederatedRequest divFr1 = FederationUtils.callInstruction(
 			divInstr,
 			new CPOperand(
-				divInstrOutput.substring(0, divInstrOutput.indexOf("·")),
+				divInstrOutput.substring(0, divInstrOutput.indexOf(Lop.DATATYPE_PREFIX)),
 				output.getValueType(), output.getDataType()
 			),
 			new CPOperand[]{
 				new CPOperand(
-					sumInstr1Output.substring(0, sumInstr1Output.indexOf("·")),
+					sumInstr1Output.substring(0, sumInstr1Output.indexOf(Lop.DATATYPE_PREFIX)),
 					output.getValueType(), output.getDataType(), output.isLiteral()
 				),
 				new CPOperand(
-					sumInstr2Output.substring(0, sumInstr2Output.indexOf("·")),
+					sumInstr2Output.substring(0, sumInstr2Output.indexOf(Lop.DATATYPE_PREFIX)),
 					output.getValueType(), output.getDataType(), output.isLiteral()
 				)
 			},
@@ -506,14 +494,15 @@ public class CovarianceFEDInstruction extends BinaryFEDInstruction {
 	private Future<FederatedResponse>[] getWeightsSum(MatrixLineagePair moLin3, long weightsID, String instString, FederationMap fedMap) {
 		Future<FederatedResponse>[] weightsSumTmp = null;
 
-		String[] parts = instString.split("°");
+		String[] parts = instString.split(Lop.OPERAND_DELIMITOR);
 		if (!instString.contains("pREADW")) {
-			String sumInstr = "CP°uak+°" + parts[4] + "°" + parts[5] + "°" + parts[6];
+			String sumInstr = "CP"+Lop.OPERAND_DELIMITOR+"uak+" + Lop.OPERAND_DELIMITOR 
+				+ parts[4] + Lop.OPERAND_DELIMITOR + parts[5] + Lop.OPERAND_DELIMITOR + parts[6];
 
 			FederatedRequest sumFr = FederationUtils.callInstruction(
 				sumInstr,
 				new CPOperand(
-					parts[5].substring(0, parts[5].indexOf("·")),
+					parts[5].substring(0, parts[5].indexOf(Lop.DATATYPE_PREFIX)),
 					output.getValueType(),
 					output.getDataType()
 				),
@@ -526,11 +515,13 @@ public class CovarianceFEDInstruction extends BinaryFEDInstruction {
 			weightsSumTmp = fedMap.execute(getTID(), sumFr, sumFr2, sumFr3);
 		}
 		else {
-			String sumInstr = "CP°uak+°" + String.valueOf(weightsID) + "·MATRIX·FP64" + "°" + parts[5] + "°" + parts[6];
+			String sumInstr = "CP"+Lop.OPERAND_DELIMITOR+"uak+"+Lop.OPERAND_DELIMITOR
+				+ String.valueOf(weightsID) + "·MATRIX·FP64" + Lop.OPERAND_DELIMITOR + parts[5] 
+				+ Lop.OPERAND_DELIMITOR + parts[6];
 			FederatedRequest sumFr = FederationUtils.callInstruction(
 				sumInstr,
 				new CPOperand(
-					parts[5].substring(0, parts[5].indexOf("·")),
+					parts[5].substring(0, parts[5].indexOf(Lop.DATATYPE_PREFIX)),
 					output.getValueType(),
 					output.getDataType()
 				),
@@ -576,7 +567,8 @@ public class CovarianceFEDInstruction extends BinaryFEDInstruction {
 			return new FederatedResponse(FederatedResponse.ResponseType.SUCCESS, mb.covOperations(_op, _mo2));
 		}
 
-		@Override public Pair<String, LineageItem> getLineageItem(ExecutionContext ec) {
+		@Override 
+		public Pair<String, LineageItem> getLineageItem(ExecutionContext ec) {
 			return null;
 		}
 	}
@@ -600,7 +592,8 @@ public class CovarianceFEDInstruction extends BinaryFEDInstruction {
 			return new FederatedResponse(FederatedResponse.ResponseType.SUCCESS, mb.covOperations(_op, _mo2, _weights));
 		}
 
-		@Override public Pair<String, LineageItem> getLineageItem(ExecutionContext ec) {
+		@Override 
+		public Pair<String, LineageItem> getLineageItem(ExecutionContext ec) {
 			return null;
 		}
 	}

@@ -25,6 +25,7 @@ import org.apache.hadoop.mapred.JobConf;
 import org.apache.sysds.conf.ConfigurationManager;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.data.DenseBlock;
+import org.apache.sysds.runtime.data.SparseBlock;
 import org.apache.sysds.runtime.io.hdf5.H5;
 import org.apache.sysds.runtime.io.hdf5.H5RootObject;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
@@ -32,6 +33,7 @@ import org.apache.sysds.runtime.util.HDFSTool;
 
 import java.io.BufferedOutputStream;
 import java.io.IOException;
+import java.util.Arrays;
 
 public class WriterHDF5 extends MatrixWriter {
 
@@ -42,9 +44,9 @@ public class WriterHDF5 extends MatrixWriter {
 	}
 
 	@Override
-	public void writeMatrixToHDFS(MatrixBlock src, String fname, long rlen, long clen, int blen, long nnz,
-		boolean diag) throws IOException, DMLRuntimeException {
-
+	public void writeMatrixToHDFS(MatrixBlock src, String fname, long rlen, long clen, int blen, long nnz, boolean diag)
+		throws IOException, DMLRuntimeException
+	{
 		//validity check matrix dimensions
 		if(src.getNumRows() != rlen || src.getNumColumns() != clen)
 			throw new IOException("Matrix dimensions mismatch with metadata: " + src.getNumRows() + "x" + src
@@ -65,23 +67,24 @@ public class WriterHDF5 extends MatrixWriter {
 		writeHDF5MatrixToHDFS(path, job, fs, src);
 
 		IOUtilFunctions.deleteCrcFilesFromLocalFileSystem(fs, path);
-
 	}
 
 	@Override
 	public final void writeEmptyMatrixToHDFS(String fname, long rlen, long clen, int blen)
-		throws IOException, DMLRuntimeException {
-
+		throws IOException, DMLRuntimeException 
+	{
+		throw new DMLRuntimeException("writing empty HDF5 matrices not supported yet");
 	}
 
-	protected void writeHDF5MatrixToHDFS(Path path, JobConf job, FileSystem fs, MatrixBlock src) throws IOException {
-		//sequential write HDF5 file
+	protected void writeHDF5MatrixToHDFS(Path path, JobConf job, FileSystem fs, MatrixBlock src) 
+		throws IOException
+	{
 		writeHDF5MatrixToFile(path, job, fs, src, 0, src.getNumRows());
 	}
 
-	protected static void writeHDF5MatrixToFile(Path path, JobConf job, FileSystem fs, MatrixBlock src, int rl,
-		int rlen) throws IOException {
-
+	protected static void writeHDF5MatrixToFile(Path path, JobConf job, FileSystem fs, MatrixBlock src, int rl, int rlen) 
+		throws IOException 
+	{
 		int clen = src.getNumColumns();
 		BufferedOutputStream bos = new BufferedOutputStream(fs.create(path, true));
 		String datasetName = _props.getDatasetName();
@@ -94,23 +97,36 @@ public class WriterHDF5 extends MatrixWriter {
 		}
 
 		try {
-			//TODO: HDF5 format don't support spars matrix
-			// How to store spars matrix in HDF5 format?
-
 			// Write the data to the datasets.
-			double[] data = new double[clen];
-			DenseBlock d = src.getDenseBlock();
-			for(int i = rl; i < rlen; i++) {
-				for(int j = 0; j < clen;j++) {
-					double lvalue = d!=null ? d.get(i, j) : 0;
-					data[j] = lvalue;
+			double[] row = new double[clen];
+			if( src.isInSparseFormat() ) {
+				SparseBlock sb = src.getSparseBlock();
+				for(int i = rl; i < rlen; i++) {
+					Arrays.fill(row, 0);
+					if( !sb.isEmpty(i) ) {
+						int apos = sb.pos(i);
+						int alen = sb.size(i);
+						double[] avals = sb.values(i);
+						int[] aix = sb.indexes(i);
+						for(int j = apos; j < apos+alen; j++)
+							row[aix[j]] = avals[j];
+					}
+					H5.H5Dwrite(rootObject, row);
 				}
-				H5.H5Dwrite(rootObject, data);
+			}
+			else {
+				DenseBlock db = src.getDenseBlock();
+				for(int i = rl; i < rlen; i++) {
+					for(int j = 0; j < clen;j++) {
+						double lvalue = db!=null ? db.get(i, j) : 0;
+						row[j] = lvalue;
+					}
+					H5.H5Dwrite(rootObject, row);
+				}
 			}
 		}
 		finally {
 			IOUtilFunctions.closeSilently(bos);
 		}
-
 	}
 }

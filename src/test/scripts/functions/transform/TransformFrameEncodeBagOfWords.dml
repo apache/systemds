@@ -21,15 +21,15 @@
 
 # Read the token sequence (1K) w/ 100 distinct tokens
 Data = read($1, data_type="frame", format="csv");
+#print(toString(Data))
 
 if(!as.boolean($4) & as.boolean($6)){
   Data = Data[,1]
 }
+while(FALSE){}
 if(as.boolean($5) & as.boolean($6)){
   Data = cbind(Data,Data)
 }
-while(FALSE){}
-
 if (as.boolean($4)) {
   if (as.boolean($5)) {
     jspec = "{ids: true, bag_of_words: [1,3], recode : [2,4]}";
@@ -54,7 +54,7 @@ if(as.integer($7) == 3){
   Data = cbind(Data, ones)
   jspec = "{ids: true, bag_of_words: [1]}";
 }
-
+while(FALSE){}
 i = 0
 total = 0
 j = 0

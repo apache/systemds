@@ -1,0 +1,84 @@
+#-------------------------------------------------------------
+#
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+#
+#-------------------------------------------------------------
+
+# Read the token sequence (1K) w/ 100 distinct tokens
+Data = read($1, data_type="frame", format="csv");
+
+if(!as.boolean($4) & as.boolean($6)){
+  Data = Data[,1]
+}
+if(as.boolean($5) & as.boolean($6)){
+  Data = cbind(Data,Data)
+}
+while(FALSE){}
+
+if (as.boolean($4)) {
+  if (as.boolean($5)) {
+    jspec = "{ids: true, bag_of_words: [1,3], recode : [2,4]}";
+  } else {
+    jspec = "{ids: true, bag_of_words: [1], recode : [2]}";
+  }
+} else {
+  if (as.boolean($5)) {
+    jspec = "{ids: true, bag_of_words: [1,2]}";
+  } else {
+    jspec = "{ids: true, bag_of_words: [1]}";
+  }
+}
+if(as.integer($7) == 1){
+  jspec = "{ids: true, bag_of_words: [1], recode : [1]}";
+}
+if(as.integer($7) == 2){
+  jspec = "{ids: true, bag_of_words: [1], dummycode : [2]}";
+}
+if(as.integer($7) == 3){
+  ones = as.frame(matrix(1, nrow(Data), 1))
+  Data = cbind(Data, ones)
+  jspec = "{ids: true, bag_of_words: [1]}";
+}
+
+[Data_enc, Meta] = transformencode(target=Data, spec=jspec);
+while(FALSE){}
+
+i = 0
+total = 0
+j = 0
+# set to 20 for benchmarking
+while(i < 30){
+  t0 = time()
+  Data_enc2 = transformapply(target=Data, spec=jspec, meta=Meta)
+  if(i > 10){
+    total = total + time() - t0
+    j = j + 1
+  }
+  i = i + 1
+}
+print(total/1000000000 / j)
+
+i = 0
+
+Error = sign(Data_enc2 - Data_enc)
+Error_agg = sum(Error * Error)
+#print(sum(sign(Data_enc2)))
+#print(sum(sign(Data_enc)))
+#print(Error_agg)
+write(Error_agg, $2, format="text");
+

@@ -897,6 +897,11 @@ public class VariableCPInstruction extends CPInstruction implements LineageTrace
 				ec.setVariable(output.getName(), list.slice(0));
 				break;
 			}
+			case SCALAR: {
+				//for robustness in case rewrites added unnecessary as.scalars
+				ec.setScalarOutput(output.getName(), ec.getScalarInput(getInput1()));
+				break;
+			}
 			default:
 				throw new DMLRuntimeException("Unsupported data type "
 					+ "in as.scalar(): "+getInput1().getDataType().name());

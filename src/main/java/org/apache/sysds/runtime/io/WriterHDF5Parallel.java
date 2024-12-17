@@ -26,7 +26,6 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 
 import org.apache.hadoop.fs.FileSystem;
-import org.apache.hadoop.fs.LocalFileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.mapred.JobConf;
 import org.apache.sysds.common.Types;
@@ -59,7 +58,7 @@ public class WriterHDF5Parallel extends WriterHDF5 {
 		numThreads = Math.min(numThreads, numPartFiles);
 
 		//fall back to sequential write if dop is 1 (e.g., <128MB) in order to create single file
-		if(numThreads <= 1) {
+		if( !_forcedParallel && numThreads <= 1 ) {
 			super.writeHDF5MatrixToHDFS(path, job, fs, src);
 			return;
 		}
@@ -80,13 +79,6 @@ public class WriterHDF5Parallel extends WriterHDF5 {
 
 			for(Future<Object> task : pool.invokeAll(tasks))
 				task.get();
-
-			// delete crc files if written to local file system
-			if(fs instanceof LocalFileSystem) {
-				for(int i = 0; i < numThreads & i * blklen < rlen; i++)
-					IOUtilFunctions
-						.deleteCrcFilesFromLocalFileSystem(fs, new Path(path, IOUtilFunctions.getPartFileName(i)));
-			}
 		}
 		catch(Exception e) {
 			throw new IOException("Failed parallel write of HDF5 output.", e);
@@ -115,6 +107,7 @@ public class WriterHDF5Parallel extends WriterHDF5 {
 		@Override
 		public Object call() throws IOException {
 			writeHDF5MatrixToFile(_path, _job, _fs, _src, _rl, _ru);
+			IOUtilFunctions.deleteCrcFilesFromLocalFileSystem(_job, _path);
 			return null;
 		}
 	}

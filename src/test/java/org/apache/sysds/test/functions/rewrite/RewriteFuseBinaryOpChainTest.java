@@ -23,7 +23,6 @@ import java.util.HashMap;
 
 import org.junit.Assert;
 import org.junit.Test;
-import org.apache.sysds.api.DMLScript;
 import org.apache.sysds.common.Types.ExecMode;
 import org.apache.sysds.hops.OptimizerUtils;
 import org.apache.sysds.common.Types.ExecType;
@@ -143,17 +142,8 @@ public class RewriteFuseBinaryOpChainTest extends AutomatedTestBase
 	}
 	
 	private void testFuseBinaryChain( String testname, boolean rewrites, ExecType instType )
-	{	
-		ExecMode platformOld = rtplatform;
-		switch( instType ){
-			case SPARK: rtplatform = ExecMode.SPARK; break;
-			default: rtplatform = ExecMode.HYBRID; break;
-		}
-		
-		boolean sparkConfigOld = DMLScript.USE_LOCAL_SPARK_CONFIG;
-		if( rtplatform == ExecMode.SPARK )
-			DMLScript.USE_LOCAL_SPARK_CONFIG = true;
-		
+	{
+		ExecMode platformOld = setExecMode(instType);
 		boolean rewritesOld = OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION;
 		OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION = rewrites;
 		
@@ -184,8 +174,7 @@ public class RewriteFuseBinaryOpChainTest extends AutomatedTestBase
 		}
 		finally {
 			OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION = rewritesOld;
-			rtplatform = platformOld;
-			DMLScript.USE_LOCAL_SPARK_CONFIG = sparkConfigOld;
+			resetExecMode(platformOld);
 		}
 	}
 }

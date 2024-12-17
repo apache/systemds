@@ -1610,7 +1610,7 @@ public class DMLTranslator
 				return currBuiltinOp;
 			}
 			else{
-				throw new ParseException("Unhandled instance of source type: " + source.getClass());
+				throw new ParseException("Unhandled instance of source type: " + source);
 			}
 		} 
 		catch(ParseException e ){

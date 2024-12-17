@@ -1332,7 +1332,7 @@ public class HopRewriteUtils {
 	}
 	
 	public static boolean isUnnecessaryRightIndexing(Hop hop) {
-		if( !(hop instanceof IndexingOp) )
+		if( !(hop instanceof IndexingOp) || hop.isScalar() )
 			return false;
 		//note: in addition to equal sizes, we also check a valid
 		//starting row and column ranges of 1 in order to guard against

@@ -19,10 +19,6 @@
 
 package org.apache.sysds.runtime.meta;
 
-import org.apache.sysds.runtime.matrix.operators.AggregateBinaryOperator;
-import org.apache.sysds.runtime.matrix.operators.AggregateUnaryOperator;
-import org.apache.sysds.runtime.matrix.operators.ReorgOperator;
-
 import java.io.Serializable;
 
 public abstract class DataCharacteristics implements Serializable {
@@ -121,18 +117,6 @@ public abstract class DataCharacteristics implements Serializable {
 	public abstract boolean isUltraSparse();
 
 	public abstract boolean mightHaveEmptyBlocks();
-
-	public static void reorg(DataCharacteristics dim, ReorgOperator op, DataCharacteristics dimOut) {
-		op.fn.computeDimension(dim, dimOut);
-	}
-
-	public static void aggregateUnary(DataCharacteristics dim, AggregateUnaryOperator op, DataCharacteristics dimOut) {
-		op.indexFn.computeDimension(dim, dimOut);
-	}
-
-	public static void aggregateBinary(DataCharacteristics dim1, DataCharacteristics dim2, AggregateBinaryOperator op, DataCharacteristics dimOut) {
-		dimOut.set(dim1.getRows(), dim2.getCols(), dim1.getBlocksize());
-	}
 
 	public abstract boolean equalDims(Object anObject);
 

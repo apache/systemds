@@ -2,14 +2,11 @@ package org.apache.sysds.runtime.io.cog;
 
 public class IFDTag {
     private IFDTagDictionary tagId;
-    // TODO: Implement enum for the data type (or now connect to the TIFFDataTypes class)
-    // See TIFF specification for the different meanings
     private short dataType;
     private int dataCount;
-    // TODO: Implement different data types
-    private int[] data;
+    private Number[] data;
 
-    public IFDTag(IFDTagDictionary tagId, short dataType, int dataCount, int[] data) {
+    public IFDTag(IFDTagDictionary tagId, short dataType, int dataCount, Number[] data) {
         this.tagId = tagId;
         this.dataType = dataType;
         this.dataCount = dataCount;
@@ -40,11 +37,11 @@ public class IFDTag {
         this.dataCount = dataCount;
     }
 
-    public int[] getData() {
+    public Number[] getData() {
         return data;
     }
 
-    public void setData(int[] data) {
+    public void setData(Number[] data) {
         this.data = data;
     }
 }

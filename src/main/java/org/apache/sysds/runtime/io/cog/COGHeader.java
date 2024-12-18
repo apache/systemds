@@ -64,46 +64,6 @@ public class COGHeader {
     }
 
     /**
-     * Parse a byte array into an integer and respects the endianness of the header
-     * @param bytes
-     * @return
-     */
-    public int parseBytes(byte[] bytes) {
-        return parseBytes(bytes, bytes.length, 0);
-    }
-
-    /**
-     * Parse a byte array into an integer and respects the endianness of the header
-     * @param bytes
-     * @param length number of bytes that should be read from the byte array
-     * @return
-     */
-    public int parseBytes(byte[] bytes, int length) {
-        return parseBytes(bytes, length, 0);
-    }
-
-    /**
-     * Parse a byte array into an integer and respects the endianness of the header
-     * @param bytes
-     * @param length number of bytes that should be read
-     * @param offset from the start of the byte array
-     * @return
-     */
-    public int parseBytes(byte[] bytes, int length, int offset) {
-        int sum = 0;
-        if (isLittleEndian) {
-            for (int i = 0; i < length; i++) {
-                sum |= (bytes[offset + i] & 0xFF) << (8 * i);
-            }
-        } else {
-            for (int i = 0; i < length; i++) {
-                sum |= (bytes[offset + i] & 0xFF) << (8 * (length - i - 1));
-            }
-        }
-        return sum;
-    }
-
-    /**
      * Parses a byte array into a generic number. Can be byte, short, int, float or double
      * depending on the options given. E.g.: Use .doubleValue() on the result to get a double value easily
      *
@@ -130,9 +90,14 @@ public class COGHeader {
         buffer.order(isLittleEndian ? ByteOrder.LITTLE_ENDIAN : ByteOrder.BIG_ENDIAN);
         buffer.position(offset);
 
-        if (isRational) {
+        if (isRational && !isSigned) {
             long numerator = Integer.toUnsignedLong(buffer.getInt());
             long denominator = Integer.toUnsignedLong(buffer.getInt());
+            return (double)numerator / denominator;
+        }
+        if (isRational && isSigned) {
+            long numerator = buffer.getInt();
+            long denominator = buffer.getInt();
             return (double)numerator / denominator;
         }
         if (isDecimal) {
@@ -168,9 +133,9 @@ public class COGHeader {
             // This is common practice in TIFF readers
             // 12 bit values e.g. should instead be scaled to 16 bit
             if (tag.getTagId() == IFDTagDictionary.BitsPerSample) {
-                int[] data = tag.getData();
+                Number[] data = tag.getData();
                 for (int i = 0; i < data.length; i++) {
-                    if (data[i] != 8 && data[i] != 16 && data[i] != 32) {
+                    if (data[i].intValue() != 8 && data[i].intValue() != 16 && data[i].intValue() != 32) {
                         return "Unsupported bit depth: " + data[i];
                     }
                 }

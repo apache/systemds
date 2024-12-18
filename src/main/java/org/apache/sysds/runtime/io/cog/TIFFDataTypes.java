@@ -48,9 +48,9 @@ public enum TIFFDataTypes {
     }
 
     public static TIFFDataTypes valueOf(int value) {
-        for (TIFFDataTypes tag : TIFFDataTypes.values()) {
-            if (tag.getValue() == value) {
-                return tag;
+        for (TIFFDataTypes dataType : TIFFDataTypes.values()) {
+            if (dataType.getValue() == value) {
+                return dataType;
             }
         }
         return null;

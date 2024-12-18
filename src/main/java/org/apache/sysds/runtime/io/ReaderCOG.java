@@ -5,15 +5,13 @@ import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.mapred.JobConf;
 import org.apache.sysds.conf.ConfigurationManager;
 import org.apache.sysds.runtime.DMLRuntimeException;
-import org.apache.sysds.runtime.io.cog.COGHeader;
-import org.apache.sysds.runtime.io.cog.IFDTag;
-import org.apache.sysds.runtime.io.cog.IFDTagDictionary;
-import org.apache.sysds.runtime.io.cog.TIFFDataTypes;
+import org.apache.sysds.runtime.io.cog.*;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 
 import java.io.BufferedInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.Arrays;
 
 public class ReaderCOG extends MatrixReader{
     protected final FileFormatPropertiesCOG _props;
@@ -61,7 +59,7 @@ public class ReaderCOG extends MatrixReader{
         COGHeader cogHeader = new COGHeader(littleEndian);
 
         // Check magic number (42), otherwise this is not a valid TIFF
-        int magic = cogHeader.parseBytes(header, 2, 2);
+        int magic = cogHeader.parseByteArray(header, 2, 2, false, false, false).intValue();
         if (magic != 42) {
             throw new RuntimeException("Invalid Magic Number");
         }
@@ -70,7 +68,7 @@ public class ReaderCOG extends MatrixReader{
         // Usually this is 8 (right after the header) we are at right now
         // With COG, GDAL usually writes some metadata before the IFD
         byte[] ifdOffsetRaw = readBytes(bis, 4);
-        int ifdOffset = cogHeader.parseBytes(ifdOffsetRaw, 4);
+        int ifdOffset = cogHeader.parseByteArray(ifdOffsetRaw, 4, 0, false, false, false).intValue();
 
         // If the IFD offset is larger than 8, read that and store it in the COGHeader
         // This is the GDAL metadata
@@ -105,7 +103,7 @@ public class ReaderCOG extends MatrixReader{
 
             // Read the number of tags in the IFD and initialize the array
             numberOfTagsRaw = readBytes(bis, 2);
-            numberOfTags = cogHeader.parseBytes(numberOfTagsRaw, 2);
+            numberOfTags = cogHeader.parseByteArray(numberOfTagsRaw, 2, 0, false, false, false).intValue();
             ifdTags = new IFDTag[numberOfTags];
 
             // Read the tags
@@ -116,15 +114,15 @@ public class ReaderCOG extends MatrixReader{
                 // 4 bytes data count
                 // 4 bytes data value (can also be offset)
                 byte[] tag = readBytes(bis, 12);
-                int tagId = cogHeader.parseBytes(tag, 2);
+                int tagId = cogHeader.parseByteArray(tag, 2, 0, false, false, false).intValue();
 
-                int tagType = cogHeader.parseBytes(tag, 2, 2);
+                int tagType = cogHeader.parseByteArray(tag, 2, 2, false, false, false).intValue();
                 TIFFDataTypes dataType = TIFFDataTypes.valueOf(tagType);
 
-                int tagCount = cogHeader.parseBytes(tag, 4, 4);
+                int tagCount = cogHeader.parseByteArray(tag, 4, 4, false, false, false).intValue();
 
-                int tagValue = cogHeader.parseBytes(tag, 4, 8);
-                int[] tagData = new int[tagCount];
+                int tagValue = cogHeader.parseByteArray(tag, 4, 8, false, false, false).intValue();
+                Number[] tagData = new Number[tagCount];
 
                 // If the data in total is larger than 4 bytes it is an offset to the actual data
                 if (dataType.getSize() * tagCount > 4) {
@@ -149,7 +147,31 @@ public class ReaderCOG extends MatrixReader{
 
                     // Read the data with the given size of the data type
                     for (int j = 0; j < tagCount; j++) {
-                        tagData[j] = cogHeader.parseBytes(data, dataType.getSize(), j * dataType.getSize());
+                        switch (dataType) {
+                            // All unsigned non-floating point values
+                            case BYTE:
+                            case ASCII:
+                            case SHORT:
+                            case LONG:
+                            case UNDEFINED:
+                                tagData[j] = cogHeader.parseByteArray(data, dataType.getSize(), j * dataType.getSize(), false, false, false);
+                                break;
+                            case RATIONAL:
+                                tagData[j] = cogHeader.parseByteArray(data, dataType.getSize(), j * dataType.getSize(), false, false, true);
+                                break;
+                            case SBYTE:
+                            case SSHORT:
+                            case SLONG:
+                                tagData[j] = cogHeader.parseByteArray(data, dataType.getSize(), j * dataType.getSize(), false, true, false);
+                                break;
+                            case SRATIONAL:
+                                tagData[j] = cogHeader.parseByteArray(data, dataType.getSize(), j * dataType.getSize(), false, true, true);
+                                break;
+                            case FLOAT:
+                            case DOUBLE:
+                                tagData[j] = cogHeader.parseByteArray(data, dataType.getSize(), j * dataType.getSize(), true, false, false);
+                                break;
+                        }
                     }
 
                     // Reset the stream to the beginning of the next tag
@@ -170,12 +192,6 @@ public class ReaderCOG extends MatrixReader{
                     String doSomething = "?????";
                 }
 
-                // For the bits per sample the actual data can be encoded in the length
-                // but for now what also works is the offset, there we then have [8,8,8] e.g.
-                // not sure how to handle that perfectly
-                //if (tagId == IFDTagDictionary.BitsPerSample.getValue()) {
-                // Do something
-                //}
                 // Create the constructed IFDTag object and store it in the array
                 IFDTag ifdTag = new IFDTag(tagDictionary, (short) tagType, tagCount, tagData);
                 ifdTags[i] = ifdTag;
@@ -190,7 +206,14 @@ public class ReaderCOG extends MatrixReader{
             }
             // Read the offset to the next IFD. If it is 0, there is no next IFD
             nextIFDOffsetRaw = readBytes(bis, 4);
-            nextIFDOffset = cogHeader.parseBytes(nextIFDOffsetRaw, 4);
+            nextIFDOffset = cogHeader.parseByteArray(nextIFDOffsetRaw, 4, 0, false, false, false).intValue();
+        }
+
+        // Check compatibility of the file with our reader
+        // Certain options are not supported, and we need to filter out some non-standard options
+        String isCompatible = COGHeader.isCompatible(cogHeader.getIFD());
+        if (!isCompatible.equals("")) {
+            throw new RuntimeException("Incompatible COG file: " + isCompatible);
         }
 
         // TODO: Actually read image data
@@ -199,9 +222,8 @@ public class ReaderCOG extends MatrixReader{
         int rows = -1;
         int cols = -1;
         int bands = -1;
-        // TODO: What if the bits per sample is different for each band?
-        // TODO: What if the bits are not divisible by 8? (e.g. 12 bit)
-        int bitsPerSample = -1;
+        int[] bitsPerSample = null;
+        SampleFormatDataTypes[] sampleFormat = null;
         int tileWidth = -1;
         int tileLength = -1;
         int[] tileOffsets = null;
@@ -210,34 +232,34 @@ public class ReaderCOG extends MatrixReader{
         for (IFDTag ifd : cogHeader.getIFD()) {
             IFDTagDictionary tag = ifd.getTagId();
             if (tag == IFDTagDictionary.ImageWidth) {
-                cols = ifd.getData()[0];
-            }
-            else if(tag == IFDTagDictionary.ImageLength) {
-                rows = ifd.getData()[0];
+                cols = ifd.getData()[0].intValue();
+            } else if (tag == IFDTagDictionary.ImageLength) {
+                rows = ifd.getData()[0].intValue();
             }
             // = Number of bands effectively
-            else if(tag == IFDTagDictionary.SamplesPerPixel){
-                bands = ifd.getData()[0];
-            }
-            else if(tag == IFDTagDictionary.BitsPerSample) {
-                bitsPerSample = ifd.getData()[0];
-            }
-            else if(tag == IFDTagDictionary.TileWidth) {
-                tileWidth = ifd.getData()[0];
-            }
-            else if(tag == IFDTagDictionary.TileLength) {
-                tileLength = ifd.getData()[0];
-            }
-            else if(tag == IFDTagDictionary.TileOffsets) {
-                tileOffsets = ifd.getData();
-            }
-            else if(tag == IFDTagDictionary.TileByteCounts) {
-                bytesPerTile = ifd.getData();
+            else if (tag == IFDTagDictionary.SamplesPerPixel) {
+                bands = ifd.getData()[0].intValue();
+            } else if (tag == IFDTagDictionary.BitsPerSample) {
+                bitsPerSample = Arrays.stream(ifd.getData()).mapToInt(Number::intValue).toArray();
+            } else if (tag == IFDTagDictionary.TileWidth) {
+                tileWidth = ifd.getData()[0].intValue();
+            } else if (tag == IFDTagDictionary.TileLength) {
+                tileLength = ifd.getData()[0].intValue();
+            } else if (tag == IFDTagDictionary.TileOffsets) {
+                tileOffsets = Arrays.stream(ifd.getData()).mapToInt(Number::intValue).toArray();
+            } else if (tag == IFDTagDictionary.TileByteCounts) {
+                bytesPerTile = Arrays.stream(ifd.getData()).mapToInt(Number::intValue).toArray();
+            } else if (tag == IFDTagDictionary.SampleFormat) {
+                int dataCount = ifd.getDataCount();
+                sampleFormat = new SampleFormatDataTypes[dataCount];
+                for (int i = 0; i < dataCount; i++) {
+                    sampleFormat[i] = SampleFormatDataTypes.valueOf(ifd.getData()[i].intValue());
+                }
             }
         }
         // ensure correctness
-        assert(rows % tileLength == 0);
-        assert(cols % tileWidth == 0);
+        assert (rows % tileLength == 0);
+        assert (cols % tileWidth == 0);
         double sum = 0;
 
         // number of tiles for Width and Length
@@ -252,7 +274,7 @@ public class ReaderCOG extends MatrixReader{
 
         MatrixBlock outputMatrix = new MatrixBlock(rows, cols * bands, false);
 
-        for (int currenTileIdx = 0; currenTileIdx < amountTiles; currenTileIdx++){
+        for (int currenTileIdx = 0; currenTileIdx < amountTiles; currenTileIdx++) {
             int bytesToRead = (tileOffsets[currenTileIdx] - totalBytesRead) + bytesPerTile[currenTileIdx];
             // Mark the current position in the stream
             // This is used to reset the stream to this position after reading the data
@@ -262,7 +284,7 @@ public class ReaderCOG extends MatrixReader{
             readBytes(bis, tileOffsets[currenTileIdx] - totalBytesRead);
             byte[] currentTileData = readBytes(bis, bytesPerTile[currenTileIdx]);
 
-            // Reset the stream to the beginning of the next tag
+            // Reset the stream to the beginning of the next tile
             try {
                 bis.reset();
                 totalBytesRead -= bytesToRead;
@@ -271,16 +293,37 @@ public class ReaderCOG extends MatrixReader{
             }
 
             int pixelsRead = 0;
+            int bytesRead = 0;
             int currentRow = 0;
-            // TODO: Use BitsPerSample to determine the bytes
-            while (currentRow < tileLength && pixelsRead < tileWidth){
+            while (currentRow < tileLength && pixelsRead < tileWidth) {
                 for (int bandIdx = 0; bandIdx < bands; bandIdx++) {
+                    double value = 0;
+                    int sampleLength = bitsPerSample[bandIdx] / 8;
+
+                    switch (sampleFormat[bandIdx]) {
+                        case UNSIGNED_INTEGER:
+                        case UNDEFINED:
+                            // According to the standard, this should be handled as not being there -> 1 (unsigned integer)
+                            value = cogHeader.parseByteArray(currentTileData, sampleLength, bytesRead, false, false, false).doubleValue();
+                            break;
+                        case SIGNED_INTEGER:
+                            value = cogHeader.parseByteArray(currentTileData, sampleLength, bytesRead, false, true, false).doubleValue();
+                            break;
+                        case FLOATING_POINT:
+                            value = cogHeader.parseByteArray(currentTileData, sampleLength, bytesRead, true, false, false).doubleValue();
+                            break;
+                    }
+                    bytesRead += sampleLength;
                     int readIdx = ((currentRow * tileWidth * bands) + (pixelsRead * bands)) + bandIdx;
-                    double value = (double) currentTileData[readIdx];
+                    int index = (pixelsRead * bands + currentRow * tileWidth * bands) + bandIdx;
+                    int test = ((currentTileRow * tileLength) + currentRow + (currentTileCol * tileWidth * bands)) * 1024  + (pixelsRead * bands) + bandIdx;
                     outputMatrix.set((currentTileRow * tileLength) + currentRow,
-                                     (currentTileCol * tileWidth * bands) + (pixelsRead * bands) + bandIdx,
-                                         value);
+                            (currentTileCol * tileWidth * bands) + (pixelsRead * bands) + bandIdx,
+                            value);
+                    // pixelsRead, currentRow
+
                 }
+
                 pixelsRead++;
                 if (pixelsRead >= tileWidth) {
                     pixelsRead = 0;
@@ -288,18 +331,17 @@ public class ReaderCOG extends MatrixReader{
                 }
             }
             currentTileCol++;
-            if (currentTileCol >= tileCols){
+            if (currentTileCol >= tileCols) {
                 currentTileCol = 0;
                 currentTileRow++;
             }
-            for (byte value: currentTileData){
+            for (byte value : currentTileData) {
                 sum += value;
             }
-
         }
         MatrixBlock cops = outputMatrix.slice(999, 1023, 5999, 6143);
         double eps = 1e-9;
-        assert(Math.abs(outputMatrix.sum() - sum) <= eps);
+        assert (Math.abs(outputMatrix.sum() - sum) <= eps);
 
         return outputMatrix;
     }

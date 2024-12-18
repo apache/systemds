@@ -101,10 +101,8 @@ def convert_column(jvm, rows, j, col_type, pd_col):
         col_data = pd_col.fillna("").to_numpy()
         byte_data = bytearray(col_data.tobytes())
 
-    converted_array = (
-        jvm.org.apache.sysds.runtime.util.Py4jConverterUtils.convert(
-            byte_data, rows, col_type
-        )
+    converted_array = jvm.org.apache.sysds.runtime.util.Py4jConverterUtils.convert(
+        byte_data, rows, col_type
     )
     return j, converted_array
 
@@ -161,7 +159,9 @@ def pandas_to_frame_block(sds, pd_df: pd.DataFrame):
 
             with concurrent.futures.ThreadPoolExecutor() as executor:
                 futures = [
-                    executor.submit(convert_column, jvm, rows, j, schema[j], pd_df[col_name])
+                    executor.submit(
+                        convert_column, jvm, rows, j, schema[j], pd_df[col_name]
+                    )
                     for j, col_name in enumerate(col_names)
                 ]
                 for future in concurrent.futures.as_completed(futures):

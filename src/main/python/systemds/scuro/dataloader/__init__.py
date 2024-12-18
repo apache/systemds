@@ -18,31 +18,3 @@
 # under the License.
 #
 # -------------------------------------------------------------
-
-from typing import List
-
-
-from systemds.scuro.modality.modality import Modality
-from systemds.scuro.representations.utils import pad_sequences
-
-from systemds.scuro.representations.fusion import Fusion
-
-
-class Sum(Fusion):
-    def __init__(self):
-        """
-        Combines modalities using colum-wise sum
-        """
-        super().__init__("Sum")
-
-    def transform(self, modalities: List[Modality]):
-        max_emb_size = self.get_max_embedding_size(modalities)
-
-        data = pad_sequences(modalities[0].data, maxlen=max_emb_size, dtype="float32")
-
-        for m in range(1, len(modalities)):
-            data += pad_sequences(
-                modalities[m].data, maxlen=max_emb_size, dtype="float32"
-            )
-
-        return data

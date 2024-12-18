@@ -19,11 +19,10 @@
 #
 # -------------------------------------------------------------
 
-import pandas as pd
 from sklearn.feature_extraction.text import CountVectorizer
 
 from systemds.scuro.representations.unimodal import UnimodalRepresentation
-from systemds.scuro.representations.utils import read_data_from_file, save_embeddings
+from systemds.scuro.representations.utils import save_embeddings
 
 
 class BoW(UnimodalRepresentation):
@@ -33,19 +32,14 @@ class BoW(UnimodalRepresentation):
         self.min_df = min_df
         self.output_file = output_file
 
-    def parse_all(self, filepath, indices):
+    def transform(self, data):
         vectorizer = CountVectorizer(
             ngram_range=(1, self.ngram_range), min_df=self.min_df
         )
 
-        segments = read_data_from_file(filepath, indices)
-        X = vectorizer.fit_transform(segments.values())
-        X = X.toarray()
+        X = vectorizer.fit_transform(data).toarray()
 
         if self.output_file is not None:
-            df = pd.DataFrame(X)
-            df.index = segments.keys()
-
-            save_embeddings(df, self.output_file)
+            save_embeddings(X, self.output_file)
 
         return X

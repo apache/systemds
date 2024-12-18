@@ -19,7 +19,6 @@
 #
 # -------------------------------------------------------------
 from aligner.alignment_strategy import AlignmentStrategy
-from modality.aligned_modality import AlignedModality
 from modality.modality import Modality
 from modality.representation import Representation
 from aligner.similarity_measures import Measure
@@ -46,4 +45,4 @@ class Alignment:
         self.similarity_measure = similarity_measure
 
     def align_modalities(self) -> Modality:
-        return AlignedModality(Representation())
+        return Modality(Representation())

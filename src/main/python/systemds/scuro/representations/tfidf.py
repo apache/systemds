@@ -19,7 +19,6 @@
 #
 # -------------------------------------------------------------
 
-import pandas as pd
 from sklearn.feature_extraction.text import TfidfVectorizer
 
 from systemds.scuro.representations.unimodal import UnimodalRepresentation
@@ -32,17 +31,13 @@ class TfIdf(UnimodalRepresentation):
         self.min_df = min_df
         self.output_file = output_file
 
-    def parse_all(self, filepath, indices):
+    def transform(self, data):
         vectorizer = TfidfVectorizer(min_df=self.min_df)
 
-        segments = read_data_from_file(filepath, indices)
-        X = vectorizer.fit_transform(segments.values())
+        X = vectorizer.fit_transform(data)
         X = X.toarray()
 
         if self.output_file is not None:
-            df = pd.DataFrame(X)
-            df.index = segments.keys()
-
-            save_embeddings(df, self.output_file)
+            save_embeddings(X, self.output_file)
 
         return X

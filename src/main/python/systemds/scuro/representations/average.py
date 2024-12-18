@@ -36,7 +36,7 @@ class Average(Fusion):
         """
         super().__init__("Average")
 
-    def fuse(self, modalities: List[Modality]):
+    def transform(self, modalities: List[Modality]):
         max_emb_size = self.get_max_embedding_size(modalities)
 
         padded_modalities = []

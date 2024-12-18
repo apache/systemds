@@ -1,4 +1,4 @@
-sqrt = function(
+matrixSqrt = function(
     Matrix[Double] X
 )return(
     Matrix[Double] sqrt_x
@@ -6,10 +6,62 @@ sqrt = function(
     N = nrow(X);
     D = ncol(X);
 
-    sqrt_x = X %*% X
+    if( D == N ){
+        isDiag = isDiagonal(X)
+        if(isDiag) {
+            sqrt_x = sqrtDiagMatrix(X);
+        }
+        #[eValues, eVectors] = eigen(X)
+
+    } else {
+        sqrt_x = matrix (0, rows=N, cols=D);
+    }
+}
+
+# assumes square and diagonal matrix
+sqrtDiagMatrix = function(
+        Matrix[Double] X
+)return(
+        Matrix[Double] sqrt_x
+){
+    N = nrow(X);
+
+    sqrt_x = matrix (0, rows=N, cols=N);
+    for (i in 1:N) {
+        value = X[i, i];
+        sqrt_x[i, i] = sqrt(value);
+    }
+}
+
+isDiagonal = function (
+    Matrix[Double] X
+)return(
+    boolean diagonal
+){
+    N = nrow(X);
+    D = ncol(X);
+    noCells = N * D;
+
+    diag = diag(diag(X));
+    compare = X == diag;
+    sameCells = sum(compare);
+
+    #all cells should be the same to be diagonal
+    diagonal = noCells == sameCells;
 }
 
 A = matrix(1, rows=2,cols=2)
-B = matrix(3, rows=2,cols=2)
-C = sqrt(B)
-print( "D[1,1]:" + as.scalar(C[1,1]))
+B = matrix(4, rows=2,cols=2)
+
+B[1,2] = 0.0
+B[2,1] = 0.0
+
+#matrixSqrt(A)
+#res = isDiagonal(A)
+#print(isDiagonal(A))
+res = matrixSqrt(B)
+print(as.scalar(res[1,1]))
+
+#test sqrt
+#C = sqrt(2)
+#print(C)

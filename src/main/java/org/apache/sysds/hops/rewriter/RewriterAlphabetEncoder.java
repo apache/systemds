@@ -38,7 +38,7 @@ public class RewriterAlphabetEncoder {
 			new Operand("%*%", 2, MATRIX, MATRIX),
 
 			new Operand("sum", 1, MATRIX),
-			new Operand("*sum", 2, ALL_TYPES, ALL_TYPES), // To have a bigger search space for this instruction combination
+			new Operand("*sum", 2, MATRIX, ALL_TYPES), // To have a bigger search space for this instruction combination
 			new Operand("t", 1, MATRIX),
 			new Operand("rev", 1, MATRIX),
 			new Operand("diag", 1, MATRIX),

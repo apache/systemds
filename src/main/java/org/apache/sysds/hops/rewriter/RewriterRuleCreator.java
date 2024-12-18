@@ -17,6 +17,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Random;
 import java.util.Set;
 import java.util.UUID;
 import java.util.function.Consumer;
@@ -37,6 +38,10 @@ public class RewriterRuleCreator {
 
 	public synchronized void forEachRule(Consumer<RewriterRule> consumer) {
 		activeRules.forEach(consumer);
+	}
+
+	public boolean registerRule(RewriterRule rule, Function<RewriterStatement, RewriterStatement> canonicalFormConverter, final RuleContext ctx) {
+		return registerRule(rule, RewriterCostEstimator.estimateCost(rule.getStmt1(), ctx), RewriterCostEstimator.estimateCost(rule.getStmt2(), ctx), false, canonicalFormConverter);
 	}
 
 	public synchronized boolean registerRule(RewriterRule rule, long preCost, long postCost, boolean validateCorrectness, Function<RewriterStatement, RewriterStatement> canonicalFormCreator) {
@@ -92,7 +97,7 @@ public class RewriterRuleCreator {
 		if (newStmt != rule.getStmt2()) {
 			// Then the mapping has changed, and we need to
 			try {
-				postCost = RewriterCostEstimator.estimateCost(newStmt, el -> 2000L, ctx);
+				postCost = RewriterCostEstimator.estimateCost(newStmt, ctx);
 			} catch (Exception e) {
 				System.err.println("Err in cost from orig: " + rule.getStmt2().toParsableString(ctx));
 				System.err.println("NewStmt: " + newStmt.toParsableString(ctx));
@@ -105,7 +110,7 @@ public class RewriterRuleCreator {
 			long existingPostCost;
 
 			try {
-				existingPostCost = RewriterCostEstimator.estimateCost(toTest, el -> 2000L, ctx);
+				existingPostCost = RewriterCostEstimator.estimateCost(toTest, ctx);
 			} catch (Exception e) {
 				System.err.println("Err in cost from orig: " + rule.getStmt1().toParsableString(ctx));
 				System.err.println("ToTest: " + toTest.toParsableString(ctx));
@@ -394,7 +399,6 @@ public class RewriterRuleCreator {
 		from = from.nestedCopy(true);
 		//to = to.nestedCopy(true);
 		Map<RewriterStatement, RewriterStatement> assocs = getAssociations(from, to, canonicalForm1, canonicalForm2, ctx);
-
 		// Now, we replace all variables with a common element
 		from.forEachPreOrder((cur, pred) -> {
 			for (int i = 0; i < cur.getOperands().size(); i++) {
@@ -443,6 +447,7 @@ public class RewriterRuleCreator {
 		return assocs;
 	}
 
+	private static Random rd = new Random();
 	private static Map<RewriterStatement, RewriterStatement> getAssociationToCanonicalForm(RewriterStatement stmt, RewriterStatement canonicalForm, boolean reversed, final RuleContext ctx) {
 		// We identify all associations by their names
 		// If there are name collisions, this does not work
@@ -463,8 +468,10 @@ public class RewriterRuleCreator {
 
 			RewriterStatement ref = namedVariables.get(cur.getId());
 
-			if (ref == null)
-				throw new IllegalArgumentException("Unknown variable reference name '" + cur.getId() + "' in: " + cur.toParsableString(RuleContext.currentContext));
+			if (ref == null) {
+				assoc.put(ref, ref);
+				//throw new IllegalArgumentException("Unknown variable reference name '" + cur.getId() + "' in: " + cur.toParsableString(RuleContext.currentContext));
+			}
 
 			if (reversed)
 				assoc.put(cur, ref);
@@ -475,10 +482,10 @@ public class RewriterRuleCreator {
 		namedVariables.values().forEach(ref -> {
 			if (reversed) {
 				if (!assoc.containsValue(ref))
-					ref.rename("?");
+					ref.rename("?" + rd.nextInt(100000));
 			} else {
 				if (!assoc.containsKey(ref))
-					ref.rename("?");
+					ref.rename("?" + rd.nextInt(100000));
 			}
 		});
 

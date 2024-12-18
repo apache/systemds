@@ -5,6 +5,7 @@ import org.apache.commons.lang3.mutable.MutableBoolean;
 import org.apache.commons.lang3.mutable.MutableInt;
 import org.apache.commons.lang3.mutable.MutableObject;
 import org.apache.logging.log4j.util.TriConsumer;
+import org.apache.spark.internal.config.R;
 import org.apache.sysds.hops.rewriter.ConstantFoldingFunctions;
 import org.apache.sysds.hops.rewriter.MetaPropagator;
 import org.apache.sysds.hops.rewriter.RewriterContextSettings;
@@ -1204,6 +1205,8 @@ public class RewriterUtils {
 		}).collect(Collectors.toList());
 	}
 
+	private static Random rd = new Random();
+
 	private static List<RewriterStatement> generateSubtrees(RewriterStatement stmt, Map<RewriterStatement, List<RewriterStatement>> visited, final RuleContext ctx, int maxCombinations) {
 		if (stmt == null)
 			return Collections.emptyList();
@@ -1245,7 +1248,7 @@ public class RewriterUtils {
 			for (int i = 0; i < n; i++) {
 				// Check if the i-th child is included in the current subset
 				if ((subsetMask & (1 << i)) == 0) {
-					RewriterDataType mT = new RewriterDataType().as(UUID.randomUUID().toString()).ofType(stmt.getOperands().get(indices.get(i)).getResultingDataType(ctx));
+					RewriterDataType mT = new RewriterDataType().as("tmp" + rd.nextInt(100000)).ofType(stmt.getOperands().get(indices.get(i)).getResultingDataType(ctx));
 					mT.consolidate(ctx);
 					mOptionCpy.set(i, List.of(mT));
 				}

@@ -95,6 +95,247 @@ public class RewriterCostEstimator {
 		});
 	}
 
+	public static Set<Tuple2<Integer, Integer>> findOptima(List<Tuple2<List<Number>, List<Long>>> data) {
+		Set<Tuple2<Integer, Integer>> outSet = new HashSet<>();
+		data.stream().forEach(t -> {
+			int minIdx = -1;
+			long minValue = Long.MAX_VALUE;
+			for (int i = 0; i < t._2.size(); i++) {
+				if (t._2.get(i) < minValue) {
+					minValue = t._2.get(i);
+					minIdx = i;
+				}
+			}
+
+			for (int i = 0; i < t._2.size(); i++) {
+				if (t._2.get(i) > minValue)
+					outSet.add(new Tuple2<>(i, minIdx));
+			}
+		});
+
+		return outSet;
+	}
+
+	public static List<Tuple2<List<Number>, List<Long>>> compareCosts(List<RewriterStatement> statements, RewriterAssertions jointAssertions, final RuleContext ctx, boolean sample, int sampleSize) {
+		List<Map<RewriterStatement, RewriterStatement>> estimates = statements.stream().map(stmt -> RewriterSparsityEstimator.estimateAllNNZ(stmt, ctx)).collect(Collectors.toList());
+		//Map<RewriterStatement, RewriterStatement> estimates2 = RewriterSparsityEstimator.estimateAllNNZ(stmt2, ctx);
+
+		MutableObject<RewriterAssertions> assertionRef = new MutableObject<>(jointAssertions);
+		List<RewriterStatement> costFns = statements.stream().map(stmt -> getRawCostFunction(stmt, ctx, assertionRef, false)).collect(Collectors.toList());
+		//RewriterStatement costFn2 = getRawCostFunction(stmt2, ctx, assertionRef, false);
+
+		for (int i = 0; i < estimates.size(); i++) {
+			costFns.set(i, RewriterSparsityEstimator.rollupSparsities(costFns.get(i), estimates.get(i), ctx));
+		}
+
+		//costFn1 = RewriterSparsityEstimator.rollupSparsities(costFn1, estimates1, ctx);
+		//costFn2 = RewriterSparsityEstimator.rollupSparsities(costFn2, estimates2, ctx);
+
+		//final RewriterStatement fCostFn1 = costFn1;
+		//final RewriterStatement fCostFn2 = costFn2;
+
+		long[] dimVals = new long[] {10, 5000};
+		double[] sparsities = new double[] {1.0D, 0.000001D};
+
+
+		//costFn1.unsafePutMeta("_assertions", jointAssertions);
+		Map<RewriterStatement, RewriterStatement> createdObjects = new HashMap<>();
+		List<RewriterStatement> costFnCpys = costFns.stream().map(fn -> fn.nestedCopy(false, createdObjects)).collect(Collectors.toList());
+		//RewriterStatement costFn1Cpy = costFn1.nestedCopy(true, createdObjects);
+		//RewriterStatement costFn2Cpy = costFn2.nestedCopy(false, createdObjects);
+		RewriterAssertions jointAssertionsCpy = RewriterAssertions.copy(jointAssertions, createdObjects, false);
+		//costFn2Cpy.unsafePutMeta("_assertions", costFn1Cpy.getAssertions(ctx));
+
+		Set<RewriterStatement> dimsToPopulate = new HashSet<>();
+		Set<RewriterStatement> nnzsToPopulate = new HashSet<>();
+
+		List<Long> costs = costFnCpys.stream().map(costFnCpy -> {
+			return computeCostFunction(costFnCpy, el -> {
+				dimsToPopulate.add(el);
+				return 2000L;
+			}, (nnz, tpl) -> {
+				nnzsToPopulate.add(nnz.getChild(0));
+				return tpl._1 * tpl._2;
+			}, jointAssertionsCpy, ctx);
+		}).collect(Collectors.toList());
+
+		/*long cost1 = computeCostFunction(costFn1Cpy, el -> {
+			dimsToPopulate.add(el);
+			return 2000L;
+		}, (nnz, tpl) -> {
+			nnzsToPopulate.add(nnz.getChild(0));
+			return tpl._1 * tpl._2;
+		}, jointAssertionsCpy, ctx);
+		long cost2 = computeCostFunction(costFn2Cpy, el -> {
+			dimsToPopulate.add(el);
+			return 2000L;
+		}, (nnz, tpl) -> {
+			nnzsToPopulate.add(nnz.getChild(0));
+			return tpl._1 * tpl._2;
+		}, jointAssertionsCpy, ctx);*/
+
+		int nDimsToPopulate = dimsToPopulate.size();
+		int nNNZsToPopulate = nnzsToPopulate.size();
+
+		List<Number> firstList = new ArrayList<>();
+		for (int i = 0; i < nDimsToPopulate; i++)
+			firstList.add(2000L);
+		for (int i = 0; i < nNNZsToPopulate; i++)
+			firstList.add(1.0D);
+
+		List<Tuple2<List<Number>, List<Long>>> out = new ArrayList<>();
+		out.add(new Tuple2<>(firstList, costs));
+
+		//if (returnOnDifference && cost1 != cost2)
+		//	return out;
+
+		List<List<Number>> nums = new ArrayList<>();
+		List<Number> dimList = Arrays.stream(dimVals).mapToObj(dim -> ((Number)dim)).collect(Collectors.toList());
+		List<Number> sparsityList = Arrays.stream(sparsities).mapToObj(s -> ((Number)s)).collect(Collectors.toList());
+
+		int numCombinations = 1;
+
+		for (int i = 0; i < nDimsToPopulate; i++) {
+			nums.add(dimList);
+			numCombinations *= dimList.size();
+		}
+
+		for (int i = 0; i < nNNZsToPopulate; i++) {
+			nums.add(sparsityList);
+			numCombinations *= sparsityList.size();
+		}
+
+		Set<Integer> samples = new HashSet<>();
+
+		if (sample) {
+			if (sampleSize < numCombinations) {
+				Random rd = new Random();
+
+				while (samples.size() < sampleSize)
+					samples.add(rd.nextInt(numCombinations));
+			} else {
+				sample = false;
+			}
+		}
+
+		final boolean doSample = sample;
+
+		MutableInt ctr = new MutableInt();
+
+		if (nums.size() > 16) {
+			System.err.println("Could not properly sample!");
+			return out;
+		}
+
+		RewriterUtils.cartesianProduct(nums, new Number[nums.size()], stack -> {
+			if (doSample && !samples.contains(ctr.getAndIncrement()))
+				return true;
+
+			int sparsityStart = 0;
+
+			for (Number num : stack) {
+				if (num instanceof Double)
+					break;
+
+				sparsityStart++;
+			}
+
+			final int fSparsityStart = sparsityStart;
+
+			Map<RewriterStatement, Long> replace = new HashMap<>();
+
+			MutableInt dimCtr = new MutableInt();
+			MutableInt sCtr = new MutableInt();
+
+			Map<RewriterStatement, RewriterStatement> mCreatedObjects = new HashMap<>();
+			List<RewriterStatement> mCostFnCpys = costFns.stream().map(cpy -> cpy.nestedCopy(false, mCreatedObjects)).collect(Collectors.toList());
+			//System.out.println("CostFnCpy: " + mCostFnCpys);
+			//RewriterStatement mCpy1 = fCostFn1.nestedCopy(false, mCreatedObjects);
+			//RewriterStatement mCpy2 = fCostFn2.nestedCopy(false, mCreatedObjects);
+			RewriterAssertions mAssertionsCpy = RewriterAssertions.copy(jointAssertions, mCreatedObjects, false);
+			//mCpy2.unsafePutMeta("_assertions", mCpy1.getAssertions(ctx));
+
+			List<Long> mCosts = mCostFnCpys.stream().map(mCpy -> {
+				return computeCostFunction(mCpy, el -> {
+					Long literal = replace.get(el);
+
+					if (literal == null) {
+						literal = (Long) stack[dimCtr.getAndIncrement()];
+						//System.out.println("populated size with: " + literal);
+						replace.put(el, literal);
+					}
+
+					return literal;
+				}, (nnz, tpl) -> {
+					Long literal = replace.get(nnz.getChild(0));
+
+					if (literal == null) {
+						double sparsity = (double) stack[fSparsityStart + sCtr.getAndIncrement()];
+						literal = (long)Math.ceil(sparsity * tpl._1 * tpl._2);
+						//System.out.println("populated nnz with: " + literal);
+						replace.put(nnz.getChild(0), literal);
+					}
+
+					return literal;
+				}, mAssertionsCpy, ctx);
+			}).collect(Collectors.toList());
+
+			/*long mCost1 = computeCostFunction(mCpy1, el -> {
+				Long literal = replace.get(el);
+
+				if (literal == null) {
+					literal = (Long) stack[dimCtr.getAndIncrement()];
+					//System.out.println("populated size with: " + literal);
+					replace.put(el, literal);
+				}
+
+				return literal;
+			}, (nnz, tpl) -> {
+				Long literal = replace.get(nnz.getChild(0));
+
+				if (literal == null) {
+					double sparsity = (double) stack[fSparsityStart + sCtr.getAndIncrement()];
+					literal = (long)Math.ceil(sparsity * tpl._1 * tpl._2);
+					//System.out.println("populated nnz with: " + literal);
+					replace.put(nnz.getChild(0), literal);
+				}
+
+				return literal;
+			}, mAssertionsCpy, ctx);
+			long mCost2 = computeCostFunction(mCpy2, el -> {
+				Long literal = replace.get(el);
+
+				if (literal == null) {
+					literal = (Long) stack[dimCtr.getAndIncrement()];
+					//System.out.println("populated size with: " + literal);
+					replace.put(el, literal);
+				}
+
+				return literal;
+			}, (nnz, tpl) -> {
+				Long literal = replace.get(nnz.getChild(0));
+
+				if (literal == null) {
+					double sparsity = (double) stack[fSparsityStart + sCtr.getAndIncrement()];
+					literal = (long)Math.ceil(sparsity * tpl._1 * tpl._2);
+					//System.out.println("populated nnz with: " + literal);
+					replace.put(nnz.getChild(0), literal);
+				}
+
+				return literal;
+			}, mAssertionsCpy, ctx);*/
+
+			out.add(new Tuple2<>(new ArrayList<>(Arrays.asList(stack)), mCosts));
+
+			//System.out.println(Arrays.toString(stack) + " cost1: " + mCost1);
+			//System.out.println(Arrays.toString(stack) + " cost2: " + mCost2);
+
+			return true;
+		});
+
+		return out;
+	}
+
 	// Computes the cost of an expression using different matrix dimensions and sparsities
 	public static List<Tuple3<List<Number>, Long, Long>> compareCosts(RewriterStatement stmt1, RewriterStatement stmt2, RewriterAssertions jointAssertions, final RuleContext ctx, boolean sample, int sampleSize, boolean returnOnDifference) {
 		Map<RewriterStatement, RewriterStatement> estimates1 = RewriterSparsityEstimator.estimateAllNNZ(stmt1, ctx);
@@ -706,6 +947,10 @@ public class RewriterCostEstimator {
 			case "max(MATRIX)":
 				map.put("nnzA", RewriterStatement.nnz(instr.getChild(0), ctx, treatAsDense));
 				uniqueCosts.add(RewriterUtils.parse("nnzA", ctx, map));
+				return uniqueCosts.get(uniqueCosts.size()-1);
+			case "sumSq(MATRIX)":
+				map.put("nnzA", RewriterStatement.nnz(instr.getChild(0), ctx, treatAsDense));
+				uniqueCosts.add(RewriterStatement.multiArgInstr(ctx, "*", RewriterStatement.nnz(instr.getChild(0), ctx, treatAsDense), RewriterStatement.literal(ctx, 2L)));
 				return uniqueCosts.get(uniqueCosts.size()-1);
 			case "trace(MATRIX)":
 				uniqueCosts.add(StatementUtils.min(ctx, RewriterStatement.nnz(instr.getChild(0), ctx, treatAsDense), instr.getChild(0).getNRow()));

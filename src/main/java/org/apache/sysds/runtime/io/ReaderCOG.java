@@ -193,6 +193,13 @@ public class ReaderCOG extends MatrixReader{
             nextIFDOffset = cogHeader.parseBytes(nextIFDOffsetRaw, 4);
         }
 
+        // Check compatibility of the file with our reader
+        // Certain options are not supported and we need to filter out some non-standard options
+        String isCompatible = COGHeader.isCompatible(cogHeader.getIFD());
+        if (!isCompatible.equals("")) {
+            throw new RuntimeException("Incompatible COG file: " + isCompatible);
+        }
+
         // TODO: Actually read image data
         // We can get this from the tile offsets and tile byte counts
 
@@ -266,7 +273,8 @@ public class ReaderCOG extends MatrixReader{
         while (pixelsRead*bands + currentRow*tileWidth*bands < firstTileData.length){
             for (int i = 0; i < bands; i++) {
                 int index = (pixelsRead*bands + currentRow*tileWidth*bands)+i;
-                double value = (double)firstTileData[index];
+                // TODO: Handle the sample format here (Tag 339)
+                double value = cogHeader.parseByteArray(firstTileData, bitsPerSample / 8, index, false, false, false).doubleValue();
                 dmatrix[i].set(currentRow, pixelsRead, value);
                 // pixelsRead, currentRow
 

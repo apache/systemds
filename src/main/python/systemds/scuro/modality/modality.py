@@ -18,9 +18,6 @@
 # under the License.
 #
 # -------------------------------------------------------------
-from enum import property
-from typing import Type, List
-
 from systemds.scuro.modality.type import ModalityType
 
 

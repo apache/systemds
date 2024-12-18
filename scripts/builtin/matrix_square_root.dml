@@ -10,8 +10,12 @@ matrixSqrt = function(
         isDiag = isDiagonal(X)
         if(isDiag) {
             sqrt_x = sqrtDiagMatrix(X);
+        } else {
+            [eValues, eVectors] = eigen(X);
+            # calculate X = VDV^(-1) -> S = sqrt(D) -> sqrt_x = VSV^(-1)
+            sqrtD = sqrtDiagMatrix(diag(eValues));
+            sqrt_x = eVectors %*% sqrtD %*% t(eVectors);
         }
-        #[eValues, eVectors] = eigen(X)
 
     } else {
         sqrt_x = matrix (0, rows=N, cols=D);
@@ -53,14 +57,15 @@ isDiagonal = function (
 A = matrix(1, rows=2,cols=2)
 B = matrix(4, rows=2,cols=2)
 
-B[1,2] = 0.0
-B[2,1] = 0.0
+# with this test for diag sqrt
+#B[1,2] = 0.0
+#B[2,1] = 0.0
 
 #matrixSqrt(A)
 #res = isDiagonal(A)
 #print(isDiagonal(A))
 res = matrixSqrt(B)
-print(as.scalar(res[1,1]))
+print(as.scalar(res[2,1]))
 
 #test sqrt
 #C = sqrt(2)

@@ -47,9 +47,9 @@ public class RewriterAlphabetEncoder {
 			new Operand("colSums", 1, MATRIX),
 			new Operand("max", 1, MATRIX),
 			new Operand("min", 1, MATRIX),
-			new Operand("ncol", 1, true, MATRIX),
-			new Operand("nrow", 1, true, MATRIX),
-			new Operand("length", 1, true, MATRIX),
+			new Operand("ncol", 0, true, MATRIX),
+			new Operand("nrow", 0, true, MATRIX),
+			new Operand("length", 0, true, MATRIX),
 			/*new Operand("fncol", 1, true, MATRIX),
 			new Operand("fnrow", 1, true, MATRIX),
 			new Operand("flength", 1, true, MATRIX),*/
@@ -312,7 +312,12 @@ public class RewriterAlphabetEncoder {
 		}
 
 		int nOps = operands.get(0).numArgs;
-		int[] slices = new int[nOps-1];
+
+		if (nOps == 0) {
+			return List.of(buildStmt(op, null));
+		}
+
+		int[] slices = new int[Math.max(nOps-1, 0)];
 
 		List<RewriterStatement> possibleStmts = new ArrayList<>();
 
@@ -371,8 +376,8 @@ public class RewriterAlphabetEncoder {
 			case "ncol":
 			case "nrow":
 			case "length": {
-				String actualOp = op.op.substring(1);
-				stmt.withInstruction(actualOp).withOps(stack).consolidate(ctx);
+				String actualOp = op.op;
+				stmt.withInstruction(actualOp).withOps(new RewriterDataType().as(UUID.randomUUID().toString()).ofType("MATRIX").consolidate(ctx)).consolidate(ctx);
 				break;
 			}
 			case "fncol":

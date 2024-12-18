@@ -205,7 +205,7 @@ public class ReaderCOG extends MatrixReader{
         int tileWidth = -1;
         int tileLength = -1;
         int[] tileOffsets = null;
-        int[] tileByteCounts = null;
+        int[] bytesPerTile = null;
 
         for (IFDTag ifd : cogHeader.getIFD()) {
             IFDTagDictionary tag = ifd.getTagId();
@@ -232,65 +232,76 @@ public class ReaderCOG extends MatrixReader{
                 tileOffsets = ifd.getData();
             }
             else if(tag == IFDTagDictionary.TileByteCounts) {
-                tileByteCounts = ifd.getData();
+                bytesPerTile = ifd.getData();
             }
         }
+        // ensure correctness
+        assert(rows % tileLength == 0);
+        assert(cols % tileWidth == 0);
+        double sum = 0;
 
-        MatrixBlock[] dmatrix = new MatrixBlock[bands];
+        // number of tiles for Width and Length
+        int tileCols = cols / tileWidth;
+        int tileRows = rows / tileLength;
 
-        for (int i = 0; i < bands; i++) {
-            dmatrix[i] = new MatrixBlock(rows, cols, false);
-        }
+        // total number of tiles for COG in overview
+        int amountTiles = tileCols * tileRows;
 
-        int bytesToRead = (tileOffsets[0] - totalBytesRead) + tileByteCounts[0];
+        int currentTileCol = 0;
+        int currentTileRow = 0;
 
-        // Mark the current position in the stream
-        // This is used to reset the stream to this position after reading the data
-        // Valid until bytesToRead + 1 bytes are read
-        bis.mark(bytesToRead + 1);
-        // Read until offset is reached
-        readBytes(bis, tileOffsets[0] - totalBytesRead);
-        byte[] firstTileData = readBytes(bis, tileByteCounts[0]);
+        MatrixBlock outputMatrix = new MatrixBlock(rows, cols * bands, false);
 
-        // Reset the stream to the beginning of the next tag
-        try {
-            bis.reset();
-            totalBytesRead -= bytesToRead;
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
+        for (int currenTileIdx = 0; currenTileIdx < amountTiles; currenTileIdx++){
+            int bytesToRead = (tileOffsets[currenTileIdx] - totalBytesRead) + bytesPerTile[currenTileIdx];
+            // Mark the current position in the stream
+            // This is used to reset the stream to this position after reading the data
+            // Valid until bytesToRead + 1 bytes are read
+            bis.mark(bytesToRead + 1);
+            // Read until offset is reached
+            readBytes(bis, tileOffsets[currenTileIdx] - totalBytesRead);
+            byte[] currentTileData = readBytes(bis, bytesPerTile[currenTileIdx]);
 
-        int pixelsRead = 0;
-        int currentRow = 0;
-        // TODO: Use BitsPerSample to determine the bytes
-        while (pixelsRead*bands + currentRow*tileWidth*bands < firstTileData.length){
-            for (int i = 0; i < bands; i++) {
-                int index = (pixelsRead*bands + currentRow*tileWidth*bands)+i;
-                double value = (double)firstTileData[index];
-                dmatrix[i].set(currentRow, pixelsRead, value);
-                // pixelsRead, currentRow
-
+            // Reset the stream to the beginning of the next tag
+            try {
+                bis.reset();
+                totalBytesRead -= bytesToRead;
+            } catch (IOException e) {
+                throw new RuntimeException(e);
             }
 
-            pixelsRead++;
-            if (pixelsRead >= tileWidth) {
-                pixelsRead = 0;
-                currentRow++;
+            int pixelsRead = 0;
+            int currentRow = 0;
+            // TODO: Use BitsPerSample to determine the bytes
+            while (currentRow < tileLength && pixelsRead < tileWidth){
+                for (int bandIdx = 0; bandIdx < bands; bandIdx++) {
+                    int readIdx = ((currentRow * tileWidth * bands) + (pixelsRead * bands)) + bandIdx;
+                    double value = (double) currentTileData[readIdx];
+                    outputMatrix.set((currentTileRow * tileLength) + currentRow,
+                                     (currentTileCol * tileWidth * bands) + (pixelsRead * bands) + bandIdx,
+                                         value);
+                }
+                pixelsRead++;
+                if (pixelsRead >= tileWidth) {
+                    pixelsRead = 0;
+                    currentRow++;
+                }
             }
-        }
-
-
-        MatrixBlock dummyMatrix = new MatrixBlock(rows, cols, false);
-        dummyMatrix.allocateDenseBlock();
-        for (int i = 0; i < rows; i++) {
-            for (int j = 0; j < cols; j++) {
-                dummyMatrix.set(i, j, 1.0);
+            currentTileCol++;
+            if (currentTileCol >= tileCols){
+                currentTileCol = 0;
+                currentTileRow++;
             }
+            for (byte value: currentTileData){
+                sum += value;
+            }
+
         }
-        // Isn't printed when debugging (or running) the tests
-        // I'll leave it for now
-        System.out.println("We done something!");
-        return dummyMatrix;
+        MatrixBlock cops = outputMatrix.slice(999, 1023, 5999, 6143);
+        double eps = 1e-9;
+        assert(Math.abs(outputMatrix.sum() - sum) <= eps);
+
+        return outputMatrix;
     }
 
     /**

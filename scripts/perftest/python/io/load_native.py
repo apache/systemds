@@ -37,7 +37,6 @@ run = "\n".join(
         "script = DMLScript(ctx)",
         "script.build_code(node)",
         "script.execute()",
-        "ctx.close()",
     ]
 )
 

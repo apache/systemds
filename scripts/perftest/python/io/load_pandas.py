@@ -40,7 +40,6 @@ run = "\n".join(
         "script = DMLScript(ctx)",
         "script.add_input_from_python('test', frame_from_pandas)",
         "script.execute()",
-        "ctx.close()",
     ]
 )
 

@@ -224,6 +224,7 @@ public class ReaderCOG extends MatrixReader{
         int bands = -1;
         int[] bitsPerSample = null;
         SampleFormatDataTypes[] sampleFormat = null;
+        int planarConfiguration = -1;
         int tileWidth = -1;
         int tileLength = -1;
         int[] tileOffsets = null;
@@ -255,6 +256,8 @@ public class ReaderCOG extends MatrixReader{
                 for (int i = 0; i < dataCount; i++) {
                     sampleFormat[i] = SampleFormatDataTypes.valueOf(ifd.getData()[i].intValue());
                 }
+            } else if (tag == IFDTagDictionary.PlanarConfiguration) {
+                planarConfiguration = ifd.getData()[0].intValue();
             }
         }
         // ensure correctness
@@ -267,14 +270,16 @@ public class ReaderCOG extends MatrixReader{
         int tileRows = rows / tileLength;
 
         // total number of tiles for COG in overview
-        int amountTiles = tileCols * tileRows;
+        int calculatedAmountTiles = tileCols * tileRows;
+        int actualAmountTiles = tileOffsets.length;
 
         int currentTileCol = 0;
         int currentTileRow = 0;
+        int currentBand = 0;
 
         MatrixBlock outputMatrix = new MatrixBlock(rows, cols * bands, false);
 
-        for (int currenTileIdx = 0; currenTileIdx < amountTiles; currenTileIdx++) {
+        for (int currenTileIdx = 0; currenTileIdx < actualAmountTiles; currenTileIdx++) {
             int bytesToRead = (tileOffsets[currenTileIdx] - totalBytesRead) + bytesPerTile[currenTileIdx];
             // Mark the current position in the stream
             // This is used to reset the stream to this position after reading the data
@@ -295,12 +300,94 @@ public class ReaderCOG extends MatrixReader{
             int pixelsRead = 0;
             int bytesRead = 0;
             int currentRow = 0;
-            while (currentRow < tileLength && pixelsRead < tileWidth) {
-                for (int bandIdx = 0; bandIdx < bands; bandIdx++) {
-                    double value = 0;
-                    int sampleLength = bitsPerSample[bandIdx] / 8;
+            if (planarConfiguration == 1) {
+                // Interleaved
+                // RGBRGBRGB
+                while (currentRow < tileLength && pixelsRead < tileWidth) {
+                    for (int bandIdx = 0; bandIdx < bands; bandIdx++) {
+                        double value = 0;
+                        int sampleLength = bitsPerSample[bandIdx] / 8;
 
-                    switch (sampleFormat[bandIdx]) {
+                        switch (sampleFormat[bandIdx]) {
+                            case UNSIGNED_INTEGER:
+                            case UNDEFINED:
+                                // According to the standard, this should be handled as not being there -> 1 (unsigned integer)
+                                value = cogHeader.parseByteArray(currentTileData, sampleLength, bytesRead, false, false, false).doubleValue();
+                                break;
+                            case SIGNED_INTEGER:
+                                value = cogHeader.parseByteArray(currentTileData, sampleLength, bytesRead, false, true, false).doubleValue();
+                                break;
+                            case FLOATING_POINT:
+                                value = cogHeader.parseByteArray(currentTileData, sampleLength, bytesRead, true, false, false).doubleValue();
+                                break;
+                        }
+                        bytesRead += sampleLength;
+                        outputMatrix.set((currentTileRow * tileLength) + currentRow,
+                                (currentTileCol * tileWidth * bands) + (pixelsRead * bands) + bandIdx,
+                                value);
+                        // pixelsRead, currentRow
+
+                    }
+
+                    pixelsRead++;
+                    if (pixelsRead >= tileWidth) {
+                        pixelsRead = 0;
+                        currentRow++;
+                    }
+                }
+            } else if (planarConfiguration == 2 && calculatedAmountTiles == tileOffsets.length) {
+                // If all bands are stored within a single tile
+                // The other case would be that a single tile only has a single band
+                while (currentRow < tileLength && pixelsRead < tileWidth) {
+                    for (int bandIdx = 0; bandIdx < bands; bandIdx++) {
+                        double value = 0;
+                        int sampleLength = bitsPerSample[bandIdx] / 8;
+
+                        switch (sampleFormat[bandIdx]) {
+                            case UNSIGNED_INTEGER:
+                            case UNDEFINED:
+                                // According to the standard, this should be handled as not being there -> 1 (unsigned integer)
+                                value = cogHeader.parseByteArray(currentTileData, sampleLength, bytesRead, false, false, false).doubleValue();
+                                break;
+                            case SIGNED_INTEGER:
+                                value = cogHeader.parseByteArray(currentTileData, sampleLength, bytesRead, false, true, false).doubleValue();
+                                break;
+                            case FLOATING_POINT:
+                                value = cogHeader.parseByteArray(currentTileData, sampleLength, bytesRead, true, false, false).doubleValue();
+                                break;
+                        }
+                        bytesRead += sampleLength;
+                        outputMatrix.set((currentTileRow * tileLength) + currentRow,
+                                (currentTileCol * tileWidth * bands) + (pixelsRead * bands) + bandIdx,
+                                value);
+                        // pixelsRead, currentRow
+
+                    }
+
+                    pixelsRead++;
+                    if (pixelsRead >= tileWidth) {
+                        pixelsRead = 0;
+                        currentRow++;
+                    }
+                }
+            } else if (planarConfiguration == 2 && calculatedAmountTiles * bands == tileOffsets.length) {
+                // If every band is stored in different tiles, so first one R, second one G and so on
+                // The other case would be that a single tile has all bands
+                // I am not sure which one is actually anticipated by COG, so both will be supported
+                if (currenTileIdx - (currentBand * calculatedAmountTiles) >= calculatedAmountTiles) {
+                    currentTileCol = 0;
+                    currentTileRow = 0;
+                    currentBand++;
+                }
+
+                int sampleLength = bitsPerSample[currentBand] / 8;
+                pixelsRead = 0;
+                currentRow = 0;
+
+                while (currentRow < tileLength && pixelsRead < tileWidth) {
+                    double value = 0;
+
+                    switch (sampleFormat[currentBand]) {
                         case UNSIGNED_INTEGER:
                         case UNDEFINED:
                             // According to the standard, this should be handled as not being there -> 1 (unsigned integer)
@@ -314,34 +401,26 @@ public class ReaderCOG extends MatrixReader{
                             break;
                     }
                     bytesRead += sampleLength;
-                    int readIdx = ((currentRow * tileWidth * bands) + (pixelsRead * bands)) + bandIdx;
-                    int index = (pixelsRead * bands + currentRow * tileWidth * bands) + bandIdx;
-                    int test = ((currentTileRow * tileLength) + currentRow + (currentTileCol * tileWidth * bands)) * 1024  + (pixelsRead * bands) + bandIdx;
                     outputMatrix.set((currentTileRow * tileLength) + currentRow,
-                            (currentTileCol * tileWidth * bands) + (pixelsRead * bands) + bandIdx,
+                            (currentTileCol * tileWidth * bands) + (pixelsRead * bands) + currentBand,
                             value);
-                    // pixelsRead, currentRow
-
+                    pixelsRead++;
+                    if (pixelsRead >= tileWidth) {
+                        pixelsRead = 0;
+                        currentRow++;
+                    }
                 }
-
-                pixelsRead++;
-                if (pixelsRead >= tileWidth) {
-                    pixelsRead = 0;
-                    currentRow++;
-                }
+            } else {
+                throw new RuntimeException("Unsupported Planar Configuration: " + planarConfiguration);
             }
+
             currentTileCol++;
             if (currentTileCol >= tileCols) {
                 currentTileCol = 0;
                 currentTileRow++;
             }
-            for (byte value : currentTileData) {
-                sum += value;
-            }
+
         }
-        MatrixBlock cops = outputMatrix.slice(999, 1023, 5999, 6143);
-        double eps = 1e-9;
-        assert (Math.abs(outputMatrix.sum() - sum) <= eps);
 
         return outputMatrix;
     }

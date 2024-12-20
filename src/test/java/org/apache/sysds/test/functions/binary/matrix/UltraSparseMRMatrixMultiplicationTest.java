@@ -27,6 +27,7 @@ import org.apache.sysds.common.Types.ExecMode;
 import org.apache.sysds.hops.AggBinaryOp;
 import org.apache.sysds.hops.AggBinaryOp.MMultMethod;
 import org.apache.sysds.common.Types.ExecType;
+import org.apache.sysds.runtime.controlprogram.ProgramBlock;
 import org.apache.sysds.runtime.matrix.data.MatrixValue.CellIndex;
 import org.apache.sysds.test.AutomatedTestBase;
 import org.apache.sysds.test.TestConfiguration;
@@ -116,12 +117,13 @@ public class UltraSparseMRMatrixMultiplicationTest extends AutomatedTestBase
 		if( rtplatform == ExecMode.SPARK )
 			DMLScript.USE_LOCAL_SPARK_CONFIG = true;
 
+		ProgramBlock.CHECK_MATRIX_PROPERTIES = true;
+		
 		if(forcePMMJ)
 			AggBinaryOp.FORCED_MMULT_METHOD = MMultMethod.PMM;
 			
 		try
 		{
-			setOutputBuffering(true);
 			String TEST_NAME = (rowwise) ? TEST_NAME1 : TEST_NAME2;
 			getAndLoadTestConfiguration(TEST_NAME);
 			
@@ -154,6 +156,7 @@ public class UltraSparseMRMatrixMultiplicationTest extends AutomatedTestBase
 			rtplatform = platformOld;
 			DMLScript.USE_LOCAL_SPARK_CONFIG = sparkConfigOld;
 			AggBinaryOp.FORCED_MMULT_METHOD = null;
+			ProgramBlock.CHECK_MATRIX_PROPERTIES = false;
 		}
 	}
 }

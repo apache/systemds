@@ -19,20 +19,12 @@
 #
 # -------------------------------------------------------------
 
-import pickle
-
 import numpy as np
 
 from systemds.scuro.representations.unimodal import UnimodalRepresentation
 import torch
 from transformers import BertTokenizer, BertModel
-import os
-
-
-def read_text_file(file_path):
-    with open(file_path, "r", encoding="utf-8") as file:
-        text = file.read()
-    return text
+from systemds.scuro.representations.utils import read_data_from_file, save_embeddings
 
 
 class Bert(UnimodalRepresentation):
@@ -42,18 +34,8 @@ class Bert(UnimodalRepresentation):
         self.avg_layers = avg_layers
         self.output_file = output_file
 
-    def parse_all(self, filepath, indices, get_sequences=False):
-        # Assumes text is stored in .txt files
-        data = []
-        if os.path.isdir(filepath):
-            for filename in os.listdir(filepath):
-                f = os.path.join(filepath, filename)
-                if os.path.isfile(f):
-                    with open(f, "r") as file:
-                        data.append(file.readlines()[0])
-        else:
-            with open(filepath, "r") as file:
-                data = file.readlines()
+    def parse_all(self, filepath, indices):
+        data = read_data_from_file(filepath, indices)
 
         model_name = "bert-base-uncased"
         tokenizer = BertTokenizer.from_pretrained(
@@ -65,13 +47,13 @@ class Bert(UnimodalRepresentation):
         else:
             model = BertModel.from_pretrained(model_name)
 
-        embeddings = self.create_embeddings(data, model, tokenizer)
+        embeddings = self.create_embeddings(list(data.values()), model, tokenizer)
 
         if self.output_file is not None:
             data = {}
             for i in range(0, embeddings.shape[0]):
                 data[indices[i]] = embeddings[i]
-            self.save_embeddings(data)
+            save_embeddings(data, self.output_file)
 
         return embeddings
 
@@ -88,14 +70,13 @@ class Bert(UnimodalRepresentation):
                     outputs.hidden_states[i][:, 0, :]
                     for i in range(-self.avg_layers, 0)
                 ]
-                cls_embedding = torch.mean(torch.stack(cls_embedding), dim=0)
+                cls_embedding = torch.mean(torch.stack(cls_embedding), dim=0).numpy()
             else:
                 cls_embedding = outputs.last_hidden_state[:, 0, :].squeeze().numpy()
-            embeddings.append(cls_embedding.numpy())
+            embeddings.append(cls_embedding)
+
+        if self.output_file is not None:
+            save_embeddings(embeddings, self.output_file)
 
         embeddings = np.array(embeddings)
         return embeddings.reshape((embeddings.shape[0], embeddings.shape[-1]))
-
-    def save_embeddings(self, data):
-        with open(self.output_file, "wb") as file:
-            pickle.dump(data, file)

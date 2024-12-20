@@ -111,6 +111,7 @@ public class TemplateRow extends TemplateBase
 				&& HopRewriteUtils.isAggUnaryOp(hop, SUPPORTED_ROW_AGG))
 			|| (hop instanceof IndexingOp && hop.getInput().get(0).getDim1() > 1
 				&& hop.getInput().get(0).getDim2() >= 0
+				&& !((IndexingOp)hop).isScalarOutput()
 				&& HopRewriteUtils.isColumnRangeIndexing((IndexingOp)hop))
 			|| (HopRewriteUtils.isDnn(hop, OpOpDnn.BIASADD, OpOpDnn.BIASMULT)
 				&& hop.getInput().get(0).dimsKnown() && hop.getInput().get(1).dimsKnown()

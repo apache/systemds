@@ -836,7 +836,7 @@ public class ColGroupSDCZeros extends ASDCZero implements IMapToDataGroup {
 
 		while(of < last && c < points.length) {
 			if(points[c].o == of) {
-				c = processRow(points, sr, nCol, c, of, _data.getIndex(it.getDataIndex()));
+				c = processRowSparse(points, sr, nCol, c, of, _data.getIndex(it.getDataIndex()));
 				of = it.next();
 			}
 			else if(points[c].o < of)
@@ -848,18 +848,46 @@ public class ColGroupSDCZeros extends ASDCZero implements IMapToDataGroup {
 		while(c < points.length && points[c].o < last)
 			c++;
 
-		c = processRow(points, sr, nCol, c, of, _data.getIndex(it.getDataIndex()));
+		c = processRowSparse(points, sr, nCol, c, of, _data.getIndex(it.getDataIndex()));
 
 	}
 
 	@Override
 	protected void denseSelection(MatrixBlock selection, P[] points, MatrixBlock ret, int rl, int ru) {
-		throw new NotImplementedException();
+		final DenseBlock dr = ret.getDenseBlock();
+		final int nCol = _colIndexes.size();
+		final AIterator it = _indexes.getIterator();
+		final int last = _indexes.getOffsetToLast();
+		int c = 0;
+		int of = it.value();
+
+		while(of < last && c < points.length) {
+			if(points[c].o == of) {
+				c = processRowDense(points, dr, nCol, c, of, _data.getIndex(it.getDataIndex()));
+				of = it.next();
+			}
+			else if(points[c].o < of)
+					c++;
+			else
+				of = it.next();
+			}
+			// increment the c pointer until it is pointing at least to last point or is done.
+			while(c < points.length && points[c].o < last)
+				c++;
+			c = processRowDense(points, dr, nCol, c, of, _data.getIndex(it.getDataIndex()));
 	}
 
-	private int processRow(P[] points, final SparseBlock sr, final int nCol, int c, int of, final int did) {
+	private int processRowSparse(P[] points, final SparseBlock sr, final int nCol, int c, int of, final int did) {
 		while(c < points.length && points[c].o == of) {
-			_dict.put(sr, did, points[c].r, nCol, _colIndexes);
+			_dict.putSparse(sr, did, points[c].r, nCol, _colIndexes);
+			c++;
+		}
+		return c;
+	}
+
+	private int processRowDense(P[] points, final DenseBlock dr, final int nCol, int c, int of, final int did) {
+		while(c < points.length && points[c].o == of) {
+			_dict.putDense(dr, did, points[c].r, nCol, _colIndexes);
 			c++;
 		}
 		return c;

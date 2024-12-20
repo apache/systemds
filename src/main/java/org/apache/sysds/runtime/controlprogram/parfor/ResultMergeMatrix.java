@@ -22,7 +22,6 @@ package org.apache.sysds.runtime.controlprogram.parfor;
 import java.util.List;
 
 import org.apache.sysds.runtime.DMLRuntimeException;
-import org.apache.sysds.runtime.compress.utils.Util;
 import org.apache.sysds.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysds.runtime.data.DenseBlock;
 import org.apache.sysds.runtime.data.SparseBlock;
@@ -58,17 +57,21 @@ public abstract class ResultMergeMatrix extends ResultMerge<MatrixObject> {
 		super(out, in, outputFilename, accum);
 	}
 
-	protected void mergeWithoutComp(MatrixBlock out, MatrixBlock in, boolean appendOnly) {
-		mergeWithoutComp(out, in, appendOnly, false);
+	protected void mergeWithoutComp(MatrixBlock out, MatrixBlock in, DenseBlock compare, boolean appendOnly) {
+		mergeWithoutComp(out, in, compare, appendOnly, false);
 	}
 
-	protected void mergeWithoutComp(MatrixBlock out, MatrixBlock in, boolean appendOnly, boolean par) {
+	protected void mergeWithoutComp(MatrixBlock out, MatrixBlock in, DenseBlock compare, boolean appendOnly, boolean par) {
 		// pass through to matrix block operations
-		if(_isAccum)
+		if(_isAccum) {
 			out.binaryOperationsInPlace(PLUS, in);
+			//compare block used for compensation here
+			if( compare != null )
+				out.binaryOperationsInPlace(MINUS, 
+					new MatrixBlock(out.getNumRows(),out.getNumColumns(), compare));
+		}
 		else {
 			MatrixBlock out2 = out.merge(in, appendOnly, par);
-
 			if(out2 != out)
 				throw new DMLRuntimeException("Failed merge need to allow returned MatrixBlock to be used");
 		}
@@ -90,18 +93,13 @@ public abstract class ResultMergeMatrix extends ResultMerge<MatrixObject> {
 		// NaNs, since NaN != NaN, otherwise we would potentially overwrite results
 		// * For the case of accumulation, we add out += (new-old) to ensure correct results
 		// because all inputs have the old values replicated
-		final int rows = in.getNumRows();
-		final int cols = in.getNumColumns();
-		if(in.isEmptyBlock(false)) {
-			if(_isAccum)
-				return; // nothing to do
+		int rows = in.getNumRows();
+		int cols = in.getNumColumns();
+		if(in.isEmptyBlock(false))
 			mergeWithCompEmpty(out, rows, cols, compare);
-		}
-		else if(in.isInSparseFormat() && _isAccum)
-			mergeSparseAccumulative(out, in, rows, cols, compare);
 		else if(in.isInSparseFormat())
 			mergeSparse(out, in, rows, cols, compare);
-		else // SPARSE/DENSE
+		else // DENSE
 			mergeGeneric(out, in, rows, cols, compare);
 	}
 
@@ -111,36 +109,10 @@ public abstract class ResultMergeMatrix extends ResultMerge<MatrixObject> {
 	}
 
 	private void mergeWithCompEmptyRow(MatrixBlock out, int m, int n, DenseBlock compare, int i) {
-
 		for(int j = 0; j < n; j++) {
 			final double valOld = compare.get(i, j);
-			if(!Util.eq(0.0, valOld)) // NaN awareness
+			if(!equals(0.0, valOld)) // NaN awareness
 				out.set(i, j, 0);
-		}
-	}
-
-	private void mergeSparseAccumulative(MatrixBlock out, MatrixBlock in, int m, int n, DenseBlock compare) {
-		final SparseBlock a = in.getSparseBlock();
-		for(int i = 0; i < m; i++) {
-			if(a.isEmpty(i))
-				continue;
-			final int apos = a.pos(i);
-			final int alen = a.size(i) + apos;
-			final int[] aix = a.indexes(i);
-			final double[] aval = a.values(i);
-			mergeSparseRowAccumulative(out, apos, alen, aix, aval, compare, n, i);
-		}
-	}
-
-	private void mergeSparseRowAccumulative(MatrixBlock out, int apos, int alen, int[] aix, double[] aval,
-		DenseBlock compare, int n, int i) {
-		for(; apos < alen; apos++) { // inside
-			final double valOld = compare.get(i, aix[apos]);
-			final double valNew = aval[apos];
-			if(!Util.eq(valNew, valOld)) { // NaN awareness
-				double value = out.get(i, aix[apos]) + (valNew - valOld);
-				out.set(i, aix[apos], value);
-			}
 		}
 	}
 
@@ -150,37 +122,31 @@ public abstract class ResultMergeMatrix extends ResultMerge<MatrixObject> {
 			if(a.isEmpty(i))
 				mergeWithCompEmptyRow(out, m, n, compare, i);
 			else {
-				final int apos = a.pos(i);
-				final int alen = a.size(i) + apos;
-				final int[] aix = a.indexes(i);
-				final double[] aval = a.values(i);
-				mergeSparseRow(out, apos, alen, aix, aval, compare, n, i);
+				int apos = a.pos(i);
+				int alen = a.size(i) + apos;
+				int[] aix = a.indexes(i);
+				double[] avals = a.values(i);
+				int j = 0;
+				for(; j < n && apos < alen; j++) { // inside
+					boolean aposValid = (aix[apos] == j);
+					double valOld = compare.get(i, j);
+					double valNew = aposValid ? avals[apos] : 0.0;
+					if(!equals(valNew, valOld)) { // NaN awareness
+						double value = !_isAccum ? valNew : (out.get(i, j) + (valNew - valOld));
+						out.set(i, j, value);
+					}
+					if(aposValid)
+						apos++;
+				}
+				for(; j < n; j++) {
+					double valOld = compare.get(i, j);
+					if(valOld != 0) {
+						double value = (out.get(i, j) - valOld);
+						out.set(i, j, value);
+					}
+				}
 			}
 		}
-	}
-
-	private void mergeSparseRow(MatrixBlock out, int apos, int alen, int[] aix, double[] aval, DenseBlock compare, int n,
-		int i) {
-		int j = 0;
-		for(; j < n && apos < alen; j++) { // inside
-			final boolean aposValid = aix[apos] == j;
-			final double valOld = compare.get(i, j);
-			final double valNew = aix[apos] == j ? aval[apos] : 0.0;
-			if(!Util.eq(valNew, valOld)) { // NaN awareness
-				double value = !_isAccum ? valNew : (out.get(i, j) + (valNew - valOld));
-				out.set(i, j, value);
-			}
-			if(aposValid)
-				apos++;
-		}
-		for(; j < n; j++) {
-			final double valOld = compare.get(i, j);
-			if(valOld != 0) {
-				double value = (out.get(i, j) - valOld);
-				out.set(i, j, value);
-			}
-		}
-
 	}
 
 	private void mergeGeneric(MatrixBlock out, MatrixBlock in, int m, int n, DenseBlock compare) {
@@ -188,12 +154,16 @@ public abstract class ResultMergeMatrix extends ResultMerge<MatrixObject> {
 			for(int j = 0; j < n; j++) {
 				final double valOld = compare.get(i, j);
 				final double valNew = in.get(i, j); // input value
-				if(!Util.eq(valNew, valOld)) { // NaN awareness
-					double value = !_isAccum ? valNew : (out.get(i, j) + (valNew - valOld));
-					out.set(i, j, value);
+				if(!equals(valNew, valOld)) { // NaN awareness
+					out.set(i, j, valNew);
 				}
 			}
 		}
+	}
+	
+	private boolean equals(double valNew, double valOld) {
+		return (valNew == valOld && !Double.isNaN(valNew))     //for changed values 
+			|| (Double.isNaN(valNew) && Double.isNaN(valOld)); //NaN awareness 
 	}
 
 	protected long computeNonZeros(MatrixObject out, List<MatrixObject> in) {

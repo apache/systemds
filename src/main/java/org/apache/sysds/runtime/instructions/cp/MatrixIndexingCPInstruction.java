@@ -50,36 +50,48 @@ public final class MatrixIndexingCPInstruction extends IndexingCPInstruction {
 	@Override
 	public void processInstruction(ExecutionContext ec) {
 		String opcode = getOpcode();
-		IndexRange ixrange = getIndexRange(ec);
+		IndexRange ix = getIndexRange(ec);
 		
-		//get original matrix
 		MatrixObject mo = ec.getMatrixObject(input1.getName());
+		boolean inRange = ix.rowStart < mo.getNumRows() && ix.colStart < mo.getNumColumns();
 		
 		//right indexing
 		if( opcode.equalsIgnoreCase(RightIndex.OPCODE) )
 		{
-			MatrixBlock resultBlock = null;
-			
-			if( mo.isPartitioned() ) //via data partitioning
-				resultBlock = mo.readMatrixPartition(ixrange.add(1));
-			else //via slicing the in-memory matrix
-			{
-				//execute right indexing operation (with shallow row copies for range
-				//of entire sparse rows, which is safe due to copy on update)
-				MatrixBlock matBlock = ec.getMatrixInput(input1.getName());
-				resultBlock = matBlock.slice((int)ixrange.rowStart, (int)ixrange.rowEnd, 
-					(int)ixrange.colStart, (int)ixrange.colEnd, false, new MatrixBlock());
-				
-				//unpin rhs input
-				ec.releaseMatrixInput(input1.getName());
-				
-				//ensure correct sparse/dense output representation
-				if( checkGuardedRepresentationChange(matBlock, resultBlock) )
-					resultBlock.examSparsity();
+			if( output.isScalar() && inRange ) { //SCALAR out
+				MatrixBlock matBlock = mo.acquireReadAndRelease();
+				ec.setScalarOutput(output.getName(),
+					new DoubleObject(matBlock.get((int)ix.rowStart, (int)ix.colStart)));
 			}
-			
-			//unpin output
-			ec.setMatrixOutput(output.getName(), resultBlock);
+			else { //MATRIX out
+				MatrixBlock resultBlock = null;
+				
+				if( mo.isPartitioned() ) //via data partitioning
+					resultBlock = mo.readMatrixPartition(ix.add(1));
+				else if( ix.isScalar() && inRange ) {
+					MatrixBlock matBlock = mo.acquireReadAndRelease();
+					resultBlock = new MatrixBlock(
+						matBlock.get((int)ix.rowStart, (int)ix.colStart));
+				}
+				else //via slicing the in-memory matrix
+				{
+					//execute right indexing operation (with shallow row copies for range
+					//of entire sparse rows, which is safe due to copy on update)
+					MatrixBlock matBlock = mo.acquireRead();
+					resultBlock = matBlock.slice((int)ix.rowStart, (int)ix.rowEnd, 
+						(int)ix.colStart, (int)ix.colEnd, false, new MatrixBlock());
+					
+					//unpin rhs input
+					ec.releaseMatrixInput(input1.getName());
+					
+					//ensure correct sparse/dense output representation
+					if( checkGuardedRepresentationChange(matBlock, resultBlock) )
+						resultBlock.examSparsity();
+				}
+				
+				//unpin output
+				ec.setMatrixOutput(output.getName(), resultBlock);
+			}
 		}
 		//left indexing
 		else if ( opcode.equalsIgnoreCase(LeftIndex.OPCODE))
@@ -96,15 +108,15 @@ public final class MatrixIndexingCPInstruction extends IndexingCPInstruction {
 			
 			if(input2.getDataType() == DataType.MATRIX) { //MATRIX<-MATRIX
 				MatrixBlock rhsMatBlock = ec.getMatrixInput(input2.getName());
-				resultBlock = matBlock.leftIndexingOperations(rhsMatBlock, ixrange, new MatrixBlock(), updateType);
+				resultBlock = matBlock.leftIndexingOperations(rhsMatBlock, ix, new MatrixBlock(), updateType);
 				ec.releaseMatrixInput(input2.getName());
 			}
 			else { //MATRIX<-SCALAR 
-				if(!ixrange.isScalar())
-					throw new DMLRuntimeException("Invalid index range of scalar leftindexing: "+ixrange.toString()+"." );
+				if(!ix.isScalar())
+					throw new DMLRuntimeException("Invalid index range of scalar leftindexing: "+ix.toString()+"." );
 				ScalarObject scalar = ec.getScalarInput(input2.getName(), ValueType.FP64, input2.isLiteral());
 				resultBlock = matBlock.leftIndexingOperations(scalar, 
-					(int)ixrange.rowStart, (int)ixrange.colStart, new MatrixBlock(), updateType);
+					(int)ix.rowStart, (int)ix.colStart, new MatrixBlock(), updateType);
 			}
 
 			//unpin lhs input

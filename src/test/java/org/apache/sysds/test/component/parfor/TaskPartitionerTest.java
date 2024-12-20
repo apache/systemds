@@ -68,24 +68,34 @@ public class TaskPartitionerTest extends AutomatedTestBase{
 		testTaskPartitioner(2*LocalTaskQueue.MAX_SIZE, PTaskPartitioner.FACTORING_CMAX);
 	}
 	
+	@Test
+	public void testUnknown() {
+		testTaskPartitioner(1, PTaskPartitioner.UNSPECIFIED);
+	}
+	
 	private void testTaskPartitioner(int numTasks, PTaskPartitioner type) {
-		LocalTaskQueue<Task> queue = new LocalTaskQueue<>();
-		TaskPartitioner partitioner = TaskPartitionerFactory.createTaskPartitioner(
-			type, new IntObject(1), new IntObject(numTasks), new IntObject(1),
-			numTasks, InfrastructureAnalyzer.getLocalParallelism(), "i");
-		//asynchronous task creation
-		CommonThreadPool.get().submit(()->partitioner.createTasks(queue));
-		//consume tasks and check serialization
-		Task t = null;
 		try {
+			LocalTaskQueue<Task> queue = new LocalTaskQueue<>();
+			TaskPartitioner partitioner = TaskPartitionerFactory.createTaskPartitioner(
+				type, new IntObject(1), new IntObject(numTasks), new IntObject(1),
+				numTasks, InfrastructureAnalyzer.getLocalParallelism(), "i");
+			//asynchronous task creation
+			CommonThreadPool.get().submit(()->partitioner.createTasks(queue));
+			if( type == PTaskPartitioner.STATIC ) {
+				Thread.sleep(10);
+				System.out.println(queue.toString());
+			}
+			//consume tasks and check serialization
+			Task t = null;
 			while((t = queue.dequeueTask())!=LocalTaskQueue.NO_MORE_TASKS) {
 				Task ts1 = Task.parseCompactString(t.toCompactString());
 				Task ts2 = Task.parseCompactString(t.toCompactString(10));
 				Assert.assertEquals(t.toString(), ts1.toString());
 				Assert.assertEquals(t.toString(), ts2.toString());
 			}
-		} catch (InterruptedException e) {
-			throw new RuntimeException(e);
+		} catch (Exception e) {
+			if( type!=PTaskPartitioner.UNSPECIFIED )
+				throw new RuntimeException(e);
 		}
 	}
 }

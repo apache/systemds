@@ -683,7 +683,7 @@ public class ColGroupSDC extends ASDC implements IMapToDataGroup {
 			}
 			else {
 				while(c < points.length && points[c].o == of) {
-					_dict.put(sr, _data.getIndex(it.getDataIndex()), points[c].r, nCol, _colIndexes);
+					_dict.putSparse(sr, _data.getIndex(it.getDataIndex()), points[c].r, nCol, _colIndexes);
 					c++;
 				}
 				of = it.next();
@@ -696,7 +696,7 @@ public class ColGroupSDC extends ASDC implements IMapToDataGroup {
 		}
 
 		while(of == last && c < points.length && points[c].o == of) {
-			_dict.put(sr, _data.getIndex(it.getDataIndex()), points[c].r, nCol, _colIndexes);
+			_dict.putSparse(sr, _data.getIndex(it.getDataIndex()), points[c].r, nCol, _colIndexes);
 			c++;
 		}
 

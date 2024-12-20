@@ -28,9 +28,12 @@ if ($rP) {
             ranges=list(list(0, 0), list($rows, $cols/4), list(0,$cols/4), list($rows, $cols/2),
             	list(0,$cols/2), list($rows, 3*($cols/4)), list(0, 3*($cols/4)), list($rows, $cols)));
 }
-c1 = ifelse(A>0, A + matrix(1, $rows, $cols), A*2);
-c2 = ifelse(A-3>0, A + matrix(1, $rows, $cols), 3);
-c3 = ifelse(1, matrix(1, $rows, $cols), 3);
-s = c2 + c3;
-s = s + 10*c1;
+x = as.integer(as.scalar(read($x)));
+y = as.integer(as.scalar(read($y)));
+
+c1 = ifelse(x, A + matrix(1, $rows, $cols), A*2);
+c2 = ifelse(A-3>0, A + matrix(1, $rows, $cols), x);
+
+s = c2 + 1;
+s = s + x*c1;
 write(s, $out_S);

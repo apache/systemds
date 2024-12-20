@@ -20,7 +20,6 @@
 package org.apache.sysds.test.functions.unary.matrix;
 
 import org.junit.Test;
-import org.apache.sysds.api.DMLScript;
 import org.apache.sysds.common.Types.ExecMode;
 import org.apache.sysds.runtime.meta.MatrixCharacteristics;
 import org.apache.sysds.test.AutomatedTestBase;
@@ -74,13 +73,8 @@ public class EigenFactorizeTest extends AutomatedTestBase
 	}
 	
 	private void runTestEigenFactorize( int rows, ExecMode rt)
-	{		
-		ExecMode rtold = rtplatform;
-		rtplatform = rt;
-		
-		boolean sparkConfigOld = DMLScript.USE_LOCAL_SPARK_CONFIG;
-		if( rtplatform == ExecMode.SPARK )
-			DMLScript.USE_LOCAL_SPARK_CONFIG = true;
+	{
+		ExecMode rtold = setExecMode(rt);
 		
 		try
 		{
@@ -100,16 +94,14 @@ public class EigenFactorizeTest extends AutomatedTestBase
 			for(int i=0; i < numEigenValuesToEvaluate; i++) {
 				D[i][0] = 0.0;
 			}
-			writeExpectedMatrix("D", D);		
+			writeExpectedMatrix("D", D);
 			
 			boolean exceptionExpected = false;
 			runTest(true, exceptionExpected, null, -1);
 			compareResults(1e-8);
 		}
 		finally {
-			DMLScript.USE_LOCAL_SPARK_CONFIG = sparkConfigOld;
-			rtplatform = rtold;
+			resetExecMode(rtold);
 		}
 	}
-	
 }

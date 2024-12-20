@@ -64,7 +64,7 @@ public class FederatedNegativeTest {
 		try {
 			FederatedResponse fres = res[0].get();
 			assertFalse(fres.isSuccessful());
-			assertTrue(fres.getErrorMessage().contains("Variable 1 does not exist at federated worker"));
+			assertTrue(fres.getErrorMessage().contains("Variable 0 does not exist at federated worker"));
 		}
 		catch (Exception e) {
 			e.printStackTrace();

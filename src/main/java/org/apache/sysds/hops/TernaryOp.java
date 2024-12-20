@@ -107,17 +107,6 @@ public class TernaryOp extends MultiThreadedHop
 		_dimInputsPresent = true;
 	}
 
-	@Override
-	public void checkArity() {
-		int sz = _input.size();
-		if (_dimInputsPresent) {
-			// only CTABLE
-			HopsException.check(sz == 5, this, "should have arity 5 for op %s but has arity %d", _op, sz);
-		} else {
-			HopsException.check(sz == 3, this, "should have arity 3 for op %s but has arity %d", _op, sz);
-		}
-	}
-
 	public OpOp3 getOp(){
 		return _op;
 	}

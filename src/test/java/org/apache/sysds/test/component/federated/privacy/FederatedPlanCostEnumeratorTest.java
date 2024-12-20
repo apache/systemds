@@ -39,7 +39,7 @@ import org.apache.sysds.hops.fedplanner.FederatedPlanCostEnumerator;
 
 public class FederatedPlanCostEnumeratorTest extends AutomatedTestBase
 {
-	private static final String TEST_DIR = "component/parfor/";
+	private static final String TEST_DIR = "functions/federated/privacy/";
 	private static final String HOME = SCRIPT_DIR + TEST_DIR;
 	private static final String TEST_CLASS_DIR = TEST_DIR + FederatedPlanCostEnumeratorTest.class.getSimpleName() + "/";
 	
@@ -47,20 +47,7 @@ public class FederatedPlanCostEnumeratorTest extends AutomatedTestBase
 	public void setUp() {}
 	
 	@Test
-	public void testDependencyAnalysis1() { runTest("parfor1.dml"); }
-	
-	@Test
-	public void testDependencyAnalysis3() { runTest("parfor3.dml"); }
-
-	@Test
-	public void testDependencyAnalysis4() { runTest("parfor4.dml"); }
-
-	@Test
-	public void testDependencyAnalysis6() { runTest("parfor6.dml"); }
-
-	@Test
-	public void testDependencyAnalysis7() { runTest("parfor7.dml"); }
-
+	public void testDependencyAnalysis1() { runTest("cost.dml"); }
 	
 	private void runTest( String scriptFilename ) {
 		int index = scriptFilename.lastIndexOf(".dml");
@@ -83,7 +70,8 @@ public class FederatedPlanCostEnumeratorTest extends AutomatedTestBase
 			dmlt.liveVariableAnalysis(prog);
 			dmlt.validateParseTree(prog);
 			dmlt.constructHops(prog);
-
+			dmlt.rewriteHopsDAG(prog);
+			dmlt.constructLops(prog);
 			/* TODO) In the current DAG, Hop's _outputMemEstimate is not initialized
 			// This leads to incorrect fedplan generation, so test code needs to be modified
 			// If needed, modify costEstimator to handle cases where _outputMemEstimate is not initialized

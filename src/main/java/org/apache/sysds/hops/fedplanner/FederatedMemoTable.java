@@ -20,10 +20,10 @@
 package org.apache.sysds.hops.fedplanner;
 
 import org.apache.sysds.hops.Hop;
+import org.apache.sysds.hops.OptimizerUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.sysds.runtime.instructions.fed.FEDInstruction.FederatedOutput;
-
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
@@ -139,19 +139,68 @@ public class FederatedMemoTable {
 
         visited.add(plan);
 
-        // Create indentation and connectors for tree visualization
-        String indent = "       ".repeat(depth);
-        String prefix = depth == 0 ? "└──" : 
-                       isLast ? "└─" : "├─";
-        
-        // Print plan information
-        System.out.printf("%s%sHop %d [%s] (Total: %.3f, Self: %.3f, Net: %.3f)%n",
-            indent, prefix, 
-            plan.getHopRef().getHopID(), 
-            plan.getFedOutType(),
-            plan.getTotalCost(),
-            plan.getSelfCost(),
-            plan.getNetTransferCost());
+        Hop hop = plan.getHopRef();
+        StringBuilder sb = new StringBuilder();
+
+        // Add FedPlan information
+        sb.append(String.format("(%d) ", plan.getHopRef().getHopID()))
+                .append(plan.getHopRef().getOpString())
+                .append(" [")
+                .append(plan.getFedOutType())
+                .append("]");
+
+        StringBuilder childs = new StringBuilder();
+        childs.append(" (");
+        boolean childAdded = false;
+        for( Hop input : hop.getInput()){
+            childs.append(childAdded?",":"");
+            childs.append(input.getHopID());
+            childAdded = true;
+        }
+        childs.append(")");
+        if( childAdded )
+            sb.append(childs.toString());
+         
+         
+        sb.append(String.format(" {Total: %.1f, Self: %.1f, Net: %.1f}",
+                plan.getTotalCost(),
+                plan.getSelfCost(),
+                plan.getNetTransferCost()));
+
+        // Add matrix characteristics
+        sb.append(" [")
+            .append(hop.getDim1()).append(", ")
+            .append(hop.getDim2()).append(", ")
+            .append(hop.getBlocksize()).append(", ")
+            .append(hop.getNnz());
+
+        if (hop.getUpdateType().isInPlace()) {
+            sb.append(", ").append(hop.getUpdateType().toString().toLowerCase());
+        }
+        sb.append("]");
+
+        // Add memory estimates
+        sb.append(" [")
+            .append(OptimizerUtils.toMB(hop.getInputMemEstimate())).append(", ")
+            .append(OptimizerUtils.toMB(hop.getIntermediateMemEstimate())).append(", ")
+            .append(OptimizerUtils.toMB(hop.getOutputMemEstimate())).append(" -> ")
+            .append(OptimizerUtils.toMB(hop.getMemEstimate())).append("MB]");
+
+        // Add reblock and checkpoint requirements
+        if (hop.requiresReblock() && hop.requiresCheckpoint()) {
+            sb.append(" [rblk, chkpt]");
+        } else if (hop.requiresReblock()) {
+            sb.append(" [rblk]");
+        } else if (hop.requiresCheckpoint()) {
+            sb.append(" [chkpt]");
+        }
+
+        // Add execution type
+        if (hop.getExecType() != null) {
+            sb.append(", ").append(hop.getExecType());
+        }
+
+        System.out.println(sb);
 
         // Process child nodes
         List<Pair<Long, FederatedOutput>> childRefs = plan.getChildFedPlans();

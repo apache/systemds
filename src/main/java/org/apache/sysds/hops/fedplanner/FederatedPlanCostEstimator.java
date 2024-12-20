@@ -28,39 +28,33 @@ public class FederatedPlanCostEstimator {
      * @param memoTable Table containing all plan variants
      */
     public static void computeFederatedPlanCost(FedPlan currentPlan, FederatedMemoTable memoTable) {
-        double cumulativeCost = 0;
+        double totalCost = 0;
         Hop currentHop = currentPlan.getHopRef();
 
         // Step 1: Calculate current node costs if not already computed
-        if (currentPlan.getCurrentCost() == 0) {
+        if (currentPlan.getSelfCost() == 0) {
             // Compute cost for current node (computation + memory access)
-            cumulativeCost = computeCurrentCost(currentHop);
-            currentPlan.setCurrentCost(cumulativeCost);
+            totalCost = computeCurrentCost(currentHop);
+            currentPlan.setSelfCost(totalCost);
             // Calculate potential network transfer cost if federation type changes
             currentPlan.setNetTransferCost(computeHopNetworkAccessCost(currentHop.getOutputMemEstimate()));
         } else {
-            cumulativeCost = currentPlan.getCurrentCost();
+            totalCost = currentPlan.getSelfCost();
         }
         
         // Step 2: Process each child plan and add their costs
-        for (Pair<Long, FederatedOutput> planRefMeta : currentPlan.getMetaChildFedPlans()) {
+        for (Pair<Long, FederatedOutput> planRefMeta : currentPlan.getChildFedPlans()) {
             // Find minimum cost child plan considering federation type compatibility
             // Note: This approach might lead to suboptimal or wrong solutions when a child has multiple parents
             // because we're selecting child plans independently for each parent
-            FedPlan planRef = memoTable.getMinCostChildFedPlan(
-                    planRefMeta.getLeft(), planRefMeta.getRight(), currentPlan.getFedOutType());
+            FedPlan planRef = memoTable.getMinCostChildFedPlan(planRefMeta.getLeft(), planRefMeta.getRight());
 
             // Add child plan cost (includes network transfer cost if federation types differ)
-            cumulativeCost += planRef.getParentViewCost(currentPlan.getFedOutType());
-            
-            // Store selected child plan
-            // Note: Selected plan has minimum parent view cost, not minimum cumulative cost,
-            // which means it highly unlikely to be found through simple pruning after enumeration
-            currentPlan.putChildFedPlan(planRef);
+            totalCost += planRef.getTotalCost() + planRef.getCondNetTransferCost(currentPlan.getFedOutType());
         }
         
         // Step 3: Set final cumulative cost including current node
-        currentPlan.setCumulativeCost(cumulativeCost);
+        currentPlan.setTotalCost(totalCost);
     }
 
     /**

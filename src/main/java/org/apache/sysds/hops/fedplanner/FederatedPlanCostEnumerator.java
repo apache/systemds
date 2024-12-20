@@ -20,7 +20,7 @@ public class FederatedPlanCostEnumerator {
      * Entry point for federated plan enumeration. Creates a memo table and returns
      * the minimum cost plan for the entire DAG.
      */
-    public static FedPlan enumerateFederatedPlanCost(Hop rootHop) {              
+    public static FedPlan enumerateFederatedPlanCost(Hop rootHop, boolean printTree) {              
         // Create new memo table to store all plan variants
         FederatedMemoTable memoTable = new FederatedMemoTable();
 
@@ -28,8 +28,11 @@ public class FederatedPlanCostEnumerator {
         enumerateFederatedPlanCost(rootHop, memoTable);
 
         // Return the minimum cost plan for the root node
+        FedPlan optimalPlan = getMinCostRootFedPlan(rootHop.getHopID(), memoTable);
+        memoTable.pruneMemoTable();
+        if (printTree) memoTable.printFedPlanTree(optimalPlan);
 
-        return getMinCostRootFedPlan(rootHop.getHopID(), memoTable);
+        return optimalPlan;
     }
 
     /**
@@ -84,18 +87,18 @@ public class FederatedPlanCostEnumerator {
      * Used to select the final execution plan after enumeration.
      */
     private static FedPlan getMinCostRootFedPlan(long HopID, FederatedMemoTable memoTable) {
-        FedPlanVariants fOutFedPlanVariantList = memoTable.getFedPlanVariantList(HopID, FederatedOutput.FOUT);
-        FedPlanVariants lOutFedPlanVariantList = memoTable.getFedPlanVariantList(HopID, FederatedOutput.LOUT);
+        FedPlanVariants fOutFedPlanVariants = memoTable.getFedPlanVariants(HopID, FederatedOutput.FOUT);
+        FedPlanVariants lOutFedPlanVariants = memoTable.getFedPlanVariants(HopID, FederatedOutput.LOUT);
 
-        FedPlan minFOutFedPlan = fOutFedPlanVariantList._fedPlanVariants.stream()
-                                    .min(Comparator.comparingDouble(FedPlan::getCumulativeCost))
+        FedPlan minFOutFedPlan = fOutFedPlanVariants._fedPlanVariants.stream()
+                                    .min(Comparator.comparingDouble(FedPlan::getTotalCost))
                                     .orElse(null);
-        FedPlan minlOutFedPlan = lOutFedPlanVariantList._fedPlanVariants.stream()
-                                    .min(Comparator.comparingDouble(FedPlan::getCumulativeCost))
+        FedPlan minlOutFedPlan = lOutFedPlanVariants._fedPlanVariants.stream()
+                                    .min(Comparator.comparingDouble(FedPlan::getTotalCost))
                                     .orElse(null);
 
-        if (Objects.requireNonNull(minFOutFedPlan).getCumulativeCost()
-                < Objects.requireNonNull(minlOutFedPlan).getCumulativeCost()) {
+        if (Objects.requireNonNull(minFOutFedPlan).getTotalCost()
+                < Objects.requireNonNull(minlOutFedPlan).getTotalCost()) {
             return minFOutFedPlan;
         }
         return minlOutFedPlan;

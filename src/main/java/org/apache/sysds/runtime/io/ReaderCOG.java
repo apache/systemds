@@ -229,6 +229,7 @@ public class ReaderCOG extends MatrixReader{
         int tileLength = -1;
         int[] tileOffsets = null;
         int[] bytesPerTile = null;
+        int compression = -1;
 
         for (IFDTag ifd : cogHeader.getIFD()) {
             IFDTagDictionary tag = ifd.getTagId();
@@ -258,6 +259,8 @@ public class ReaderCOG extends MatrixReader{
                 }
             } else if (tag == IFDTagDictionary.PlanarConfiguration) {
                 planarConfiguration = ifd.getData()[0].intValue();
+            } else if (tag == IFDTagDictionary.Compression) {
+                compression = ifd.getData()[0].intValue();
             }
         }
         // ensure correctness
@@ -296,6 +299,8 @@ public class ReaderCOG extends MatrixReader{
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }
+
+            // TODO: If the tile is compressed, decompress the currentTileData here
 
             int pixelsRead = 0;
             int bytesRead = 0;

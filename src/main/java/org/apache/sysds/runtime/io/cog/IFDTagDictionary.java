@@ -6,7 +6,6 @@ public enum IFDTagDictionary {
     NewSubfileType(254),
     ImageWidth(256),
     ImageLength(257),
-    // TODO: Implement different bits per sample
     BitsPerSample(258),
     // TODO: LZW Compression
     Compression(259),
@@ -27,8 +26,6 @@ public enum IFDTagDictionary {
     MaxSampleValue(281),
     XResolution(282),
     YResolution(283),
-    // TODO: Find out if this is necessary
-    // TODO: Distinguish between R G B R G B and R R R G G G B B B
     PlanarConfiguration(284),
     FreeOffsets(288),
     FreeByteCounts(289),

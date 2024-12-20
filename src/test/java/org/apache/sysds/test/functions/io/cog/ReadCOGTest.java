@@ -46,7 +46,7 @@ public abstract class ReadCOGTest extends COGTestBase {
             loadTestConfiguration(config);
 
             String HOME = SCRIPT_DIR + TEST_DIR;
-            String inputMatrixName = DATASET_DIR + "cog/" + getInputCOGFileName();
+            String inputMatrixName = DATASET_DIR + "cog/" + getInputCOGFileName() + ".tif";
 
             String dmlOutput = output("dml.scalar");
 

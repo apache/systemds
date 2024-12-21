@@ -519,6 +519,12 @@ public class SpoofCompiler {
 				if( cla == null ) {
 					String src_cuda = "";
 					String src = tmp.getValue().codegen(false, GeneratorAPI.JAVA);
+					if(DMLScript.EXPLAIN.isCodegenType()) {
+						System.out.println("# SHOW GENERATED CODE");
+						System.out.println("-----------------------------");
+						System.out.println(src);
+						System.out.println("-----------------------------");
+					}
 					cla = CodegenUtils.compileClass("codegen." + tmp.getValue().getClassname(), src);
 
 					if(API == GeneratorAPI.CUDA) {

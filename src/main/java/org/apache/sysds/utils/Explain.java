@@ -86,13 +86,18 @@ public class Explain
 		HOPS,     // explain program and hops
 		RUNTIME,  // explain runtime program (default)
 		RECOMPILE_HOPS, // explain hops, incl recompile
-		RECOMPILE_RUNTIME;  // explain runtime program, incl recompile 
+		RECOMPILE_RUNTIME,  // explain runtime program, incl recompile
+		CODEGEN_HOPS,	// show generated code, incl hops explanation
+		CODEGEN_RUNTIME;	// show generated code, incl runtime explanation
 
 		public boolean isHopsType(boolean recompile) {
-			return (this==RECOMPILE_HOPS || (!recompile && this==HOPS));
+			return (this==RECOMPILE_HOPS || (!recompile && this==HOPS) || (this==CODEGEN_HOPS));
 		}
 		public boolean isRuntimeType(boolean recompile) {
-			return (this==RECOMPILE_RUNTIME || (!recompile && this==RUNTIME));
+			return (this==RECOMPILE_RUNTIME || (!recompile && this==RUNTIME) || (this==CODEGEN_RUNTIME));
+		}
+		public boolean isCodegenType() {
+			return (this == CODEGEN_HOPS || this == CODEGEN_RUNTIME);
 		}
 	}
 

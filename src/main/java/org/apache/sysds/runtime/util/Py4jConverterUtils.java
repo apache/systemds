@@ -27,6 +27,7 @@ import org.apache.sysds.common.Types;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.frame.data.columns.Array;
 import org.apache.sysds.runtime.frame.data.columns.ArrayFactory;
+import org.apache.sysds.runtime.frame.data.columns.BitSetArray;
 import org.apache.sysds.runtime.frame.data.columns.BooleanArray;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 
@@ -157,7 +158,13 @@ public class Py4jConverterUtils {
 				break;
 			case BOOLEAN:
 				for(int i = 0; i < numElements; i++) {
-					((BooleanArray) array).set(i, buffer.get() != 0);
+					if (array instanceof BooleanArray) {
+						((BooleanArray) array).set(i, buffer.get() != 0);
+					} else if (array instanceof BitSetArray) {
+						((BitSetArray) array).set(i, buffer.get() != 0);
+					} else {
+						throw new DMLRuntimeException("Array factory returned invalid array type for boolean values.");
+					}
 				}
 				break;
 			case STRING:

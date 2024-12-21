@@ -13,6 +13,7 @@ import java.util.List;
 import java.util.function.Function;
 
 public class RewriteAutomaticallyGenerated extends HopRewriteRule {
+	public static final String FILE_PATH_CONDITIONAL = "/Users/janniklindemann/Dev/MScThesis/rules_conditional.rl";
 	public static final String FILE_PATH = "/Users/janniklindemann/Dev/MScThesis/rules.rl";
 	public static final String VALIDATED_FILE_PATH = "/Users/janniklindemann/Dev/MScThesis/rules_validated.rl";
 	public static final String RAW_FILE_PATH = "/Users/janniklindemann/Dev/MScThesis/raw_rules.rl";

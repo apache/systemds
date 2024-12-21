@@ -1610,6 +1610,32 @@ public class RewriterStreamTests {
 	}
 
 	@Test
+	public void testWrong6() {
+		RewriterStatement stmt1 = RewriterUtils.parse("%*%(t(+(A,A)), B)", ctx, "MATRIX:A,B,C", "LITERAL_FLOAT:1.0");
+		RewriterStatement stmt2 = RewriterUtils.parse("%*%(t(A), +(B, B))", ctx, "MATRIX:A,B,C", "FLOAT:a");
+
+		RewriterStatement can1 = canonicalConverter.apply(stmt1);
+		RewriterStatement can2 = canonicalConverter.apply(stmt2);
+
+		stmt1 = RewriterRuleCreator.createCommonForm(stmt1, stmt2, can1, can2, ctx)._1;
+		RewriterAssertions assertions = RewriterAssertionUtils.buildImplicitAssertions(stmt1, ctx);
+		RewriterAssertionUtils.buildImplicitAssertion(stmt2, assertions, stmt1, ctx);
+
+		System.out.println("==========");
+		System.out.println(stmt1.toParsableString(ctx, true));
+		System.out.println("==========");
+		System.out.println(stmt2.toParsableString(ctx, true));
+
+		System.out.println(RewriterCostEstimator.getRawCostFunction(stmt1, ctx, new MutableObject<>(assertions), false).toParsableString(ctx));
+		System.out.println(RewriterCostEstimator.getRawCostFunction(stmt2, ctx, new MutableObject<>(assertions), false).toParsableString(ctx));
+		System.out.println(RewriterCostEstimator.compareCosts(List.of(stmt1, stmt2), assertions, ctx, false, 5));
+		Set<Tuple2<Integer, Integer>> t = RewriterCostEstimator.findOptima(RewriterCostEstimator.compareCosts(List.of(stmt1, stmt2), assertions, ctx, true, 5));
+		System.out.println(t);
+
+		assert !stmt1.match(RewriterStatement.MatcherContext.exactMatch(ctx, can1, can2));
+	}
+
+	@Test
 	public void testConstInequivality() {
 		RewriterStatement stmt1 = RewriterUtils.parse("%*%(const(A, 0.0), A)", ctx, "MATRIX:A", "LITERAL_FLOAT:0.0");
 		RewriterStatement stmt2 = RewriterUtils.parse("const(A, 0.0)", ctx, "MATRIX:A", "LITERAL_FLOAT:0.0");

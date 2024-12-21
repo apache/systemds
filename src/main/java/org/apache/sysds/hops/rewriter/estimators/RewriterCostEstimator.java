@@ -150,13 +150,18 @@ public class RewriterCostEstimator {
 		Set<RewriterStatement> nnzsToPopulate = new HashSet<>();
 
 		List<Long> costs = costFnCpys.stream().map(costFnCpy -> {
-			return computeCostFunction(costFnCpy, el -> {
-				dimsToPopulate.add(el);
-				return 2000L;
-			}, (nnz, tpl) -> {
-				nnzsToPopulate.add(nnz.getChild(0));
-				return tpl._1 * tpl._2;
-			}, jointAssertionsCpy, ctx);
+			try {
+				return computeCostFunction(costFnCpy, el -> {
+					dimsToPopulate.add(el);
+					return 2000L;
+				}, (nnz, tpl) -> {
+					nnzsToPopulate.add(nnz.getChild(0));
+					return tpl._1 * tpl._2;
+				}, jointAssertionsCpy, ctx);
+			} catch (Exception e) {
+				e.printStackTrace();
+				return null;
+			}
 		}).collect(Collectors.toList());
 
 		/*long cost1 = computeCostFunction(costFn1Cpy, el -> {
@@ -256,28 +261,33 @@ public class RewriterCostEstimator {
 			//mCpy2.unsafePutMeta("_assertions", mCpy1.getAssertions(ctx));
 
 			List<Long> mCosts = mCostFnCpys.stream().map(mCpy -> {
-				return computeCostFunction(mCpy, el -> {
-					Long literal = replace.get(el);
+				try {
+					return computeCostFunction(mCpy, el -> {
+						Long literal = replace.get(el);
 
-					if (literal == null) {
-						literal = (Long) stack[dimCtr.getAndIncrement()];
-						//System.out.println("populated size with: " + literal);
-						replace.put(el, literal);
-					}
+						if (literal == null) {
+							literal = (Long) stack[dimCtr.getAndIncrement()];
+							//System.out.println("populated size with: " + literal);
+							replace.put(el, literal);
+						}
 
-					return literal;
-				}, (nnz, tpl) -> {
-					Long literal = replace.get(nnz.getChild(0));
+						return literal;
+					}, (nnz, tpl) -> {
+						Long literal = replace.get(nnz.getChild(0));
 
-					if (literal == null) {
-						double sparsity = (double) stack[fSparsityStart + sCtr.getAndIncrement()];
-						literal = (long)Math.ceil(sparsity * tpl._1 * tpl._2);
-						//System.out.println("populated nnz with: " + literal);
-						replace.put(nnz.getChild(0), literal);
-					}
+						if (literal == null) {
+							double sparsity = (double) stack[fSparsityStart + sCtr.getAndIncrement()];
+							literal = (long) Math.ceil(sparsity * tpl._1 * tpl._2);
+							//System.out.println("populated nnz with: " + literal);
+							replace.put(nnz.getChild(0), literal);
+						}
 
-					return literal;
-				}, mAssertionsCpy, ctx);
+						return literal;
+					}, mAssertionsCpy, ctx);
+				} catch (Exception e) {
+					e.printStackTrace();
+					return null;
+				}
 			}).collect(Collectors.toList());
 
 			/*long mCost1 = computeCostFunction(mCpy1, el -> {

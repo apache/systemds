@@ -92,3 +92,12 @@ forward = function(matrix[double] Q, matrix[double] K,
   # Swap head and token dimension for original shape
   context = util::transpose_ABCD_to_ACBD(context, H, T)
 }
+
+
+backward = function(matrix[double] dcontext, matrix[double] Q, 
+      matrix[double] K, matrix[double] V, int H, int T, int D, 
+      double dropout_p)
+    return (matrix[double] dQ, matrix[double] dK, matrix[double] dV) {
+
+
+}

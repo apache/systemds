@@ -106,15 +106,17 @@ forward = function(matrix[double] Q, matrix[double] K,
 }
 
 
-backward = function(matrix[double] dcontext, matrix[double] Q, 
-      matrix[double] K, matrix[double] V, int H, int T, int D, 
-      double dropout_p)
+backward = function(matrix[double] dcontext, 
+      matrix[double] dropout_mask, matrix[double] Q, 
+      matrix[double] K, matrix[double] V, int H, int T, 
+      int D, double dropout_p)
     return (matrix[double] dQ, matrix[double] dK, matrix[double] dV) {
   /*
    * Computes the backward pass for a multi-head attention layer.
    *
    * Inputs (B: Batch size, T: Sequence length, D: Embedding length, H: Heads):
    * - dcontext: Gradient w.r.t. the context matrix of shape (B, T*H*D)
+   * - dropout_mask: Dropout mask from forward pass of shape (B, H*T*T)
    * - Q: Input querys, of shape (B,T*H*D).
    * - K: Input keys, of shape (B,T*H*D).
    * - V: Input values, of shape (B,T*H*D).

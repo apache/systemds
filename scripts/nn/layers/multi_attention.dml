@@ -32,13 +32,14 @@ forward = function(matrix[double] Q, matrix[double] K,
    * Computes the forward pass for a multi-head attention layer.
    *
    * Inputs (B: Batch size, T: Sequence length, D: Embedding length, H: Heads):
-   * - query: Input querys of shape (B,T*H*D).
-   * - key: Input keys of shape (B,T*H*D).
-   * - value: Input values of shape (B,T*H*D).
+   * - Q: Input querys of shape (B,T*H*D).
+   * - K: Input keys of shape (B,T*H*D).
+   * - V: Input values of shape (B,T*H*D).
    * - H: Head count.
    * - T: Sequence length.
    * - D: Embedding length of single query, value, key,
-   * -
+   * - dropout_p: Dropout probability.
+   *
    * Outputs:
    * - context: Token context embeddings, of shape (B, T*H*D)
    * - attention: Attention on value(s) for given query(s), of shape (B, H*T*T).

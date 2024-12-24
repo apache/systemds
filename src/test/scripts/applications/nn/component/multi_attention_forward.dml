@@ -34,7 +34,7 @@ value = matrix(read($8, format="csv"), rows=batch_size, cols=seq_length*heads*em
 expected_context = read($9, format="csv")
 expected_attention = read($10, format="csv")
 
-[context, attention] = multi_attention::forward(query, key, value, heads, seq_length, embedding_dim, 0.0)
+[context, attention, dropout_mask] = multi_attention::forward(query, key, value, heads, seq_length, embedding_dim, 0.0)
 
 if (debug) {
     print(toString(context))

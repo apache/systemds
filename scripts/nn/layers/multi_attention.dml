@@ -27,14 +27,14 @@ source("scripts/nn/util.dml") as util
 
 forward = function(matrix[double] Q, matrix[double] K,
       matrix[double] V, int H, int T, int D, double dropout_p)
-    return (matrix[double] context, matrix[double] attention) {
+    return (matrix[double] context, matrix[double] attention, matrix[double] dropout_mask) {
   /*
    * Computes the forward pass for a multi-head attention layer.
    *
    * Inputs (B: Batch size, T: Sequence length, D: Embedding length, H: Heads):
-   * - Q: Input querys of shape (B,T*H*D).
-   * - K: Input keys of shape (B,T*H*D).
-   * - V: Input values of shape (B,T*H*D).
+   * - Q: Input querys, of shape (B,T*H*D).
+   * - K: Input keys, of shape (B,T*H*D).
+   * - V: Input values, of shape (B,T*H*D).
    * - H: Head count.
    * - T: Sequence length.
    * - D: Embedding length of single query, value, key,
@@ -42,7 +42,8 @@ forward = function(matrix[double] Q, matrix[double] K,
    *
    * Outputs:
    * - context: Token context embeddings, of shape (B, T*H*D)
-   * - attention: Attention on value(s) for given query(s), of shape (B, H*T*T).
+   * - attention: Attention on value(s) for given query(s), of shape (B, H*T*T)
+   * - dropout_mask: Dropout mask used on attention, of shape (B, H*T*T)
    */
   B = nrow(Q)
 
@@ -52,6 +53,7 @@ forward = function(matrix[double] Q, matrix[double] K,
   V = util::transpose_ABCD_to_ACBD(V, T, H)  # Shape (B, H*T*D)
 
   attention = matrix(0, rows=B, cols=H*T*T)
+  dropout_mask = matrix(0, rows=B, cols=H*T*T)
   context = matrix(0, rows=B, cols=H*T*D)
   norm = 1/sqrt(D)
   K_norm = K / sqrt(D)
@@ -59,6 +61,9 @@ forward = function(matrix[double] Q, matrix[double] K,
   # For loops for tensor operations
   for (batch in 1:B) {
     attention_probs_b = matrix(0, rows=H, cols=T*T)
+    if (dropout_p > 0.0) {
+      dropout_mask_b = matrix(0, rows=H, cols=T*T)
+    }
     context_b = matrix(0, rows=H, cols=T*D)
     Q_b = matrix(Q[batch], rows=H, cols=T*D)
     K_norm_b = matrix(K_norm[batch], rows=H, cols=T*D)
@@ -77,16 +82,22 @@ forward = function(matrix[double] Q, matrix[double] K,
       attention_probs_h = softmax::forward(attention_scores)
 
       if (dropout_p > 0.0) {
-        [attention_probs_h, dropout_mask] = dropout::forward(attention_probs_h, dropout_p, -1)
+        [attention_probs_h, dropout_mask_h] = dropout::forward(attention_probs_h, dropout_p, -1)
       }
 
       context_h = attention_probs_h %*% V_h  # Shape (T, D)
 
       attention_probs_b[head] = matrix(attention_probs_h, rows=1, cols=T*T)
+      if (dropout_p > 0.0) {
+        dropout_mask_b[head] = matrix(dropout_mask_h, rows=1, cols=T*T)
+      }
       context_b[head] = matrix(context_h, rows=1, cols=T*D)
     }
 
     attention[batch] = matrix(attention_probs_b, rows=1, cols=H*T*T)
+    if (dropout_p > 0.0) {
+      dropout_mask[batch] = matrix(dropout_mask_b, rows=1, cols=H*T*T)
+    }
     context[batch] = matrix(context_b, rows=1, cols=H*T*D)
   }
 
@@ -104,19 +115,20 @@ backward = function(matrix[double] dcontext, matrix[double] Q,
    *
    * Inputs (B: Batch size, T: Sequence length, D: Embedding length, H: Heads):
    * - dcontext: Gradient w.r.t. the context matrix of shape (B, T*H*D)
-   * - Q: Input querys of shape (B,T*H*D).
-   * - K: Input keys of shape (B,T*H*D).
-   * - V: Input values of shape (B,T*H*D).
+   * - Q: Input querys, of shape (B,T*H*D).
+   * - K: Input keys, of shape (B,T*H*D).
+   * - V: Input values, of shape (B,T*H*D).
    * - H: Head count.
    * - T: Sequence length.
    * - D: Embedding length of single query, value, key,
    * - dropout_p: Dropout probability.
    *
    * Outputs:
-   * - dQ: Gradient w.r.t. input querys of shape (B,T*H*D).
-   * - dK: Gradient w.r.t. input keys of shape (B,T*H*D).
-   * - dV: Gradient w.r.t. input values of shape (B,T*H*D).
+   * - dQ: Gradient w.r.t. input querys, of shape (B,T*H*D).
+   * - dK: Gradient w.r.t. input keys, of shape (B,T*H*D).
+   * - dV: Gradient w.r.t. input values, of shape (B,T*H*D).
    */
+  B = nrow(Q)
 
     # For loops for tensor operations
   for (batch in 1:B) {
@@ -126,4 +138,8 @@ backward = function(matrix[double] dcontext, matrix[double] Q,
     }
 
   }
+
+  dQ = matrix(0, rows=1, cols=1)
+  dK = matrix(0, rows=1, cols=1)
+  dV = matrix(0, rows=1, cols=1)
 }

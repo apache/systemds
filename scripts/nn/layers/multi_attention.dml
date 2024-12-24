@@ -118,4 +118,12 @@ backward = function(matrix[double] dcontext, matrix[double] Q,
    * - dV: Gradient w.r.t. input values of shape (B,T*H*D).
    */
 
+    # For loops for tensor operations
+  for (batch in 1:B) {
+
+    for (head in 1:H) {
+
+    }
+
+  }
 }

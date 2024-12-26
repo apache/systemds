@@ -95,7 +95,7 @@ public class Explain
 			return (this==RECOMPILE_HOPS || (!recompile && this==HOPS));
 		}
 		public boolean isRuntimeType(boolean recompile) {
-			return (this==RECOMPILE_RUNTIME || (!recompile && this==RUNTIME) || (this==CODEGEN) ||(this==CODEGEN_RECOMPILE));
+			return (this==RECOMPILE_RUNTIME || (!recompile && this==RUNTIME) || (this==CODEGEN_RECOMPILE) ||(!recompile && this==CODEGEN));
 		}
 		public boolean isCodegenType() {
 			return (this == CODEGEN || this == CODEGEN_RECOMPILE);

@@ -519,12 +519,6 @@ public class SpoofCompiler {
 				if( cla == null ) {
 					String src_cuda = "";
 					String src = tmp.getValue().codegen(false, GeneratorAPI.JAVA);
-					if(DMLScript.EXPLAIN.isCodegenType()) {
-						System.out.println("# SHOW GENERATED CODE");
-						System.out.println("-----------------------------");
-						System.out.println(src);
-						System.out.println("-----------------------------");
-					}
 					cla = CodegenUtils.compileClass("codegen." + tmp.getValue().getClassname(), src);
 
 					if(API == GeneratorAPI.CUDA) {
@@ -562,6 +556,11 @@ public class SpoofCompiler {
 
 							LOG.info(CodegenUtils.printWithLineNumber(src_cuda));
 						}
+					}
+					if(DMLScript.EXPLAIN.isCodegenType()) {
+						System.out.print("JAVA Codegen EXPLAIN (generated code for HopID: " + cplan.getKey() +
+							", line m" + tmp.getValue().getBeginLine() + ", hash=" + tmp.getValue().hashCode() + "):");
+						System.out.println(CodegenUtils.printWithLineNumber(src));
 					}
 
 					//maintain plan cache

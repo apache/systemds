@@ -29,6 +29,7 @@ import java.util.Map.Entry;
 import java.util.Set;
 import java.util.Stack;
 
+import javassist.compiler.CodeGen;
 import org.apache.commons.lang3.mutable.MutableInt;
 import org.apache.sysds.hops.Hop;
 import org.apache.sysds.hops.LiteralOp;
@@ -87,17 +88,17 @@ public class Explain
 		RUNTIME,  // explain runtime program (default)
 		RECOMPILE_HOPS, // explain hops, incl recompile
 		RECOMPILE_RUNTIME,  // explain runtime program, incl recompile
-		CODEGEN_HOPS,	// show generated code, incl hops explanation
-		CODEGEN_RUNTIME;	// show generated code, incl runtime explanation
+		CODEGEN,	// show generated code, incl runtime explanation
+		CODEGEN_RECOMPILE;	// show generated code, incl runtime explanation and recompilation
 
 		public boolean isHopsType(boolean recompile) {
-			return (this==RECOMPILE_HOPS || (!recompile && this==HOPS) || (this==CODEGEN_HOPS));
+			return (this==RECOMPILE_HOPS || (!recompile && this==HOPS));
 		}
 		public boolean isRuntimeType(boolean recompile) {
-			return (this==RECOMPILE_RUNTIME || (!recompile && this==RUNTIME) || (this==CODEGEN_RUNTIME));
+			return (this==RECOMPILE_RUNTIME || (!recompile && this==RUNTIME) || (this==CODEGEN) ||(this==CODEGEN_RECOMPILE));
 		}
 		public boolean isCodegenType() {
-			return (this == CODEGEN_HOPS || this == CODEGEN_RUNTIME);
+			return (this == CODEGEN || this == CODEGEN_RECOMPILE);
 		}
 	}
 

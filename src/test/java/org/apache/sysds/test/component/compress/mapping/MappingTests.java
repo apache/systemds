@@ -391,7 +391,6 @@ public class MappingTests {
 	}
 
 	@Test 
-
 	public void getCounts(){
 		int[] counts = m.getCounts();
 		int countZeros = 0;

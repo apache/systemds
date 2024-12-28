@@ -87,7 +87,6 @@ public class MemoryEstimateTest {
 				assertEquals(MemoryEstimates.doubleArrayCost(length), measure(arrayDouble), 0.2);
 				break;
 			default:
-				System.out.println(arrayToMeasure.getClass().getSimpleName());
 				throw new NotImplementedException(arrayToMeasure + " not implemented");
 		}
 	}

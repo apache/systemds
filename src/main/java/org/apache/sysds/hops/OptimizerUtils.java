@@ -792,6 +792,9 @@ public class OptimizerUtils
 
 
 	public static long estimateSizeExactFrame(long nRows, long nCols){
+		// Currently we do not support frames larger than INT. 
+		// Therefore, we estimate their size to be extremely large.
+		// The large size force spark operations.
 		if(nRows > Integer.MAX_VALUE)
 			return Long.MAX_VALUE;
 		

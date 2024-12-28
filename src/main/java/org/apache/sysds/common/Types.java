@@ -322,10 +322,12 @@ public interface Types {
 					}
 				case FP64:
 					switch(b) {
-						case UNKNOWN:
-							return a;
+						case HASH64:
+						case HASH32:
 						case CHARACTER:
 							return STRING;
+						case UNKNOWN:
+							return a;
 						case STRING:
 							return b;
 						default:
@@ -333,6 +335,8 @@ public interface Types {
 					}
 				case FP32:
 					switch(b) {
+						case HASH64:
+						case HASH32:
 						case CHARACTER:
 							return STRING;
 						case STRING:
@@ -344,6 +348,9 @@ public interface Types {
 					}
 				case INT64:
 					switch(b) {
+						case HASH64:
+						case HASH32:
+							return b;
 						case CHARACTER:
 							return STRING;
 						case STRING:
@@ -356,6 +363,9 @@ public interface Types {
 					}
 				case INT32:
 					switch(b) {
+						case HASH64:
+						case HASH32:
+							return b;
 						case CHARACTER:
 							return STRING;
 						case STRING:
@@ -369,6 +379,9 @@ public interface Types {
 					}
 				case UINT4:
 					switch(b) {
+						case HASH64:
+						case HASH32:
+							return b;
 						case CHARACTER:
 							return STRING;
 						case STRING:
@@ -384,6 +397,9 @@ public interface Types {
 					}
 				case UINT8:
 					switch(b) {
+						case HASH64:
+						case HASH32:
+							return b;
 						case CHARACTER:
 							return STRING;
 						case STRING:

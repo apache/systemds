@@ -650,6 +650,11 @@ public class ColGroupConst extends ADictBasedColGroup implements IContainDefault
 	}
 
 	@Override
+	public double getSparsity() {
+		return 1.0;
+	}
+
+	@Override
 	protected void sparseSelection(MatrixBlock selection, P[] points, MatrixBlock ret, int rl, int ru) {
 		throw new NotImplementedException();
 	}

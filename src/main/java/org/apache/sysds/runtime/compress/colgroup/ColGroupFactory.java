@@ -151,7 +151,7 @@ public class ColGroupFactory {
 	private List<AColGroup> compress() {
 		try {
 			if(in instanceof CompressedMatrixBlock)
-				return CLALibCombineGroups.combine((CompressedMatrixBlock) in, csi, pool);
+				return CLALibCombineGroups.combine((CompressedMatrixBlock) in, csi, pool, k);
 			else
 				return compressExecute();
 		}

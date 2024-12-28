@@ -49,6 +49,7 @@ import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.test.TestUtils;
 import org.junit.Test;
 
+
 public class CombineTest {
 
 	protected static final Log LOG = LogFactory.getLog(CombineTest.class.getName());

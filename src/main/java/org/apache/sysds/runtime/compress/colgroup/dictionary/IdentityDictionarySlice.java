@@ -27,7 +27,6 @@ import java.util.Arrays;
 
 import org.apache.commons.lang3.NotImplementedException;
 import org.apache.sysds.runtime.DMLRuntimeException;
-import org.apache.sysds.runtime.compress.DMLCompressionException;
 import org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex;
 import org.apache.sysds.runtime.data.SparseBlock;
 import org.apache.sysds.runtime.functionobjects.Builtin;
@@ -177,18 +176,20 @@ public class IdentityDictionarySlice extends IdentityDictionary {
 
 	@Override
 	public void colProduct(double[] res, int[] counts, IColIndex colIndexes) {
-		for(int i = 0; i < colIndexes.size(); i++) {
-			res[colIndexes.get(i)] = 0;
-		}
+		throw new NotImplementedException();
+		// for(int i = 0; i < colIndexes.size(); i++) {
+		// 	res[colIndexes.get(i)] = 0;
+		// }
 	}
 
 	@Override
 	public double sum(int[] counts, int ncol) {
-		// number of rows, change this.
-		double s = 0.0;
-		for(int i = l; i < u; i++)
-			s += counts[i];
-		return s;
+		throw new NotImplementedException();
+		// // number of rows, change this.
+		// double s = 0.0;
+		// for(int i = l; i < u; i++)
+		// 	s += counts[i];
+		// return s;
 	}
 
 	@Override
@@ -202,13 +203,6 @@ public class IdentityDictionarySlice extends IdentityDictionary {
 	}
 
 	@Override
-	public int getNumberOfValues(int ncol) {
-		if(ncol != u - l)
-			throw new DMLCompressionException("Invalid call to get Number of values assuming wrong number of columns");
-		return nRowCol + (withEmpty ? 1 : 0);
-	}
-
-	@Override
 	public boolean containsValue(double pattern) {
 		return pattern == 0.0 || pattern == 1.0;
 	}
@@ -216,6 +210,11 @@ public class IdentityDictionarySlice extends IdentityDictionary {
 	@Override
 	public long getNumberNonZeros(int[] counts, int nCol) {
 		return (long) sum(counts, nCol);
+	}
+
+	@Override
+	public int getNumberOfValues(int ncol) {
+		return nRowCol + (withEmpty ? 1 : 0);
 	}
 
 	@Override
@@ -345,6 +344,11 @@ public class IdentityDictionarySlice extends IdentityDictionary {
 
 		mb.setNonZeros(nCol);
 		return new MatrixBlockDictionary(mb);
+	}
+
+	@Override
+	public void multiplyScalar(double v, double[] ret, int off, int dictIdx, IColIndex cols) {
+		getMBDict().multiplyScalar(v, ret, off, dictIdx, cols);
 	}
 
 }

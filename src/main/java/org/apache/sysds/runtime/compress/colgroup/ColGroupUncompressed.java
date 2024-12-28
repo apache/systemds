@@ -907,6 +907,11 @@ public class ColGroupUncompressed extends AColGroup {
 				ret.set(r, c, _data.get(r, reordering[c]));
 		return create(newColIndex, ret, false);
 	}
+	
+	@Override
+	public double getSparsity() {
+		return _data.getSparsity();
+	}
 
 	@Override
 	public void sparseSelection(MatrixBlock selection, P[] points, MatrixBlock ret, int rl, int ru) {

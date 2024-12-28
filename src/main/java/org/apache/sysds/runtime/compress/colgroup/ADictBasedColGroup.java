@@ -324,5 +324,9 @@ public abstract class ADictBasedColGroup extends AColGroupCompressed implements 
 			return null;
 		return copyAndSet(outCols, newDict);
 	}
-
+	
+	@Override
+	public double getSparsity() {
+		return _dict.getSparsity();
+	}
 }

@@ -411,6 +411,11 @@ public class ColGroupEmpty extends AColGroupCompressed
 	}
 
 	@Override
+	public double getSparsity() {
+		return 0.0;
+	}
+
+	@Override
 	protected void sparseSelection(MatrixBlock selection, P[] points, MatrixBlock ret, int rl, int ru) {
 		throw new NotImplementedException();
 	}

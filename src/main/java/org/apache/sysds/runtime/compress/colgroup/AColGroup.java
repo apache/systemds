@@ -28,6 +28,7 @@ import org.apache.commons.lang3.NotImplementedException;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.runtime.compress.colgroup.ColGroupUtils.P;
+import org.apache.sysds.runtime.compress.colgroup.indexes.ColIndexFactory;
 import org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex;
 import org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex.SliceResult;
 import org.apache.sysds.runtime.compress.colgroup.scheme.ICLAScheme;
@@ -671,11 +672,31 @@ public abstract class AColGroup implements Serializable {
 	/**
 	 * Recompress this column group into a new column group of the given type.
 	 * 
-	 * @param ct The compressionType that the column group should morph into
+	 * @param ct   The compressionType that the column group should morph into
+	 * @param nRow The number of rows in this columngroup.
 	 * @return A new column group
 	 */
-	public AColGroup morph(CompressionType ct) {
-		throw new NotImplementedException();
+	public AColGroup morph(CompressionType ct, int nRow) {
+		if(ct == getCompType())
+			return this;
+		else if(ct == CompressionType.DDCFOR)
+			return this; // it does not make sense to change to FOR.
+		else if(ct == CompressionType.UNCOMPRESSED) {
+			AColGroup cgMoved = this.copyAndSet(ColIndexFactory.create(_colIndexes.size()));
+			final long nnz = getNumberNonZeros(nRow);
+			MatrixBlock newDict = new MatrixBlock(nRow, _colIndexes.size(), nnz);
+			newDict.allocateBlock();
+			if(newDict.isInSparseFormat())
+				cgMoved.decompressToSparseBlock(newDict.getSparseBlock(), 0, nRow);
+			else
+				cgMoved.decompressToDenseBlock(newDict.getDenseBlock(), 0, nRow);
+			newDict.setNonZeros(nnz);
+			AColGroup cgUC = ColGroupUncompressed.create(newDict);
+			return cgUC.copyAndSet(_colIndexes);
+		}
+		else {
+			throw new NotImplementedException("Morphing from : " + getCompType() + " to " + ct + " is not implemented");
+		}
 	}
 
 	/**
@@ -690,10 +711,11 @@ public abstract class AColGroup implements Serializable {
 	 * Combine this column group with another
 	 * 
 	 * @param other The other column group to combine with.
+	 * @param nRow  The number of rows in both column groups.
 	 * @return A combined representation as a column group.
 	 */
-	public AColGroup combine(AColGroup other) {
-		return CLALibCombineGroups.combine(this, other);
+	public AColGroup combine(AColGroup other, int nRow) {
+		return CLALibCombineGroups.combine(this, other, nRow);
 	}
 
 	/**
@@ -744,6 +766,13 @@ public abstract class AColGroup implements Serializable {
 		else
 			denseSelection(selection, points, ret, rl, ru);
 	}
+
+	/**
+	 * Get an approximate sparsity of this column group
+	 * 
+	 * @return the approximate sparsity of this columngroup
+	 */
+	public abstract double getSparsity();
 
 	/**
 	 * Sparse selection (left matrix multiply)

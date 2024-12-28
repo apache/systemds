@@ -710,6 +710,11 @@ public class ColGroupLinearFunctional extends AColGroupCompressed {
 	}
 
 	@Override
+	public double getSparsity() {
+		return 1.0;
+	}
+
+	@Override
 	public void sparseSelection(MatrixBlock selection, P[] points, MatrixBlock ret, int rl, int ru) {
 		throw new NotImplementedException();
 	}

@@ -369,6 +369,91 @@ public class TypeTest {
 	}
 
 	@Test
+	public void getHighestCommonTypeSTRING_HASH32() {
+		assertEquals(ValueType.STRING, hct(ValueType.STRING, ValueType.HASH32));
+	}
+
+	@Test
+	public void getHighestCommonTypeSTRING_HASH64() {
+		assertEquals(ValueType.STRING, hct(ValueType.STRING, ValueType.HASH64));
+	}
+
+	@Test
+	public void getHighestCommonTypeUINT8_HASH64() {
+		assertEquals(ValueType.HASH64, hct(ValueType.UINT8, ValueType.HASH64));
+	}
+
+	@Test
+	public void getHighestCommonTypeUINT4_HASH64() {
+		assertEquals(ValueType.HASH64, hct(ValueType.UINT4, ValueType.HASH64));
+	}
+
+	@Test
+	public void getHighestCommonTypeINT_HASH64() {
+		assertEquals(ValueType.HASH64, hct(ValueType.INT32, ValueType.HASH64));
+	}
+
+	@Test
+	public void getHighestCommonTypeINT64_HASH64() {
+		assertEquals(ValueType.HASH64, hct(ValueType.INT64, ValueType.HASH64));
+	}
+
+	@Test
+	public void getHighestCommonTypeFP32_HASH64() {
+		assertEquals(ValueType.STRING, hct(ValueType.FP32, ValueType.HASH64));
+	}
+
+	@Test
+	public void getHighestCommonTypeFP64_HASH64() {
+		assertEquals(ValueType.STRING, hct(ValueType.FP64, ValueType.HASH64));
+	}
+
+	@Test
+	public void getHighestCommonTypeHASH32_HASH64() {
+		assertEquals(ValueType.HASH64, hct(ValueType.HASH32, ValueType.HASH64));
+	}
+
+	@Test
+	public void getHighestCommonTypeUINT8_HASH32() {
+		assertEquals(ValueType.HASH32, hct(ValueType.UINT8, ValueType.HASH32));
+	}
+
+	@Test
+	public void getHighestCommonTypeUINT4_HASH32() {
+		assertEquals(ValueType.HASH32, hct(ValueType.UINT4, ValueType.HASH32));
+	}
+
+	@Test
+	public void getHighestCommonTypeINT_HASH32() {
+		assertEquals(ValueType.HASH32, hct(ValueType.INT32, ValueType.HASH32));
+	}
+
+	@Test
+	public void getHighestCommonTypeINT64_HASH32() {
+		assertEquals(ValueType.HASH32, hct(ValueType.INT64, ValueType.HASH32));
+	}
+
+	@Test
+	public void getHighestCommonTypeFP32_HASH32() {
+		assertEquals(ValueType.STRING, hct(ValueType.FP32, ValueType.HASH32));
+	}
+
+	@Test
+	public void getHighestCommonTypeFP64_HASH32() {
+		assertEquals(ValueType.STRING, hct(ValueType.FP64, ValueType.HASH32));
+	}
+
+	@Test
+	public void getHighestCommonTypeHASH32_HASH32() {
+		assertEquals(ValueType.HASH32, hct(ValueType.HASH32, ValueType.HASH32));
+	}
+
+	@Test
+	public void getHighestCommonTypeHASH64_HASH64() {
+		assertEquals(ValueType.HASH64, hct(ValueType.HASH64, ValueType.HASH64));
+	}
+
+	@Test
 	public void isUnknownNot() {
 		assertFalse(ValueType.STRING.isUnknown());
 	}

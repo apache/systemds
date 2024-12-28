@@ -31,11 +31,11 @@ public class MapToUByte extends MapToByte {
 	private static final long serialVersionUID = -2498505439667351828L;
 
 	protected MapToUByte(int size) {
-		this(127, size);
+		this(128, size);
 	}
 
 	public MapToUByte(int unique, int size) {
-		super(Math.min(unique, 127), new byte[size]);
+		super(Math.min(unique, 128), new byte[size]);
 	}
 
 	protected MapToUByte(int unique, byte[] data) {
@@ -60,10 +60,6 @@ public class MapToUByte extends MapToByte {
 	@Override
 	public void fill(int v) {
 		Arrays.fill(_data, (byte) (v % 128));
-	}
-
-	public static long getInMemorySize(int dataLength) {
-		return MapToByte.getInMemorySize(dataLength);
 	}
 
 	@Override
@@ -122,11 +118,6 @@ public class MapToUByte extends MapToByte {
 		for(int i = 0; i < _data.length; i++)
 			ret[_data[i]]++;
 		return ret;
-	}
-
-	@Override
-	public int getMaxPossible() {
-		return 128;
 	}
 
 	@Override

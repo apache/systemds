@@ -23,7 +23,6 @@ import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
 import java.util.Arrays;
-import java.util.BitSet;
 
 import org.apache.commons.lang3.NotImplementedException;
 import org.apache.sysds.runtime.compress.colgroup.IMapToDataGroup;
@@ -38,8 +37,7 @@ public class MapToCharPByte extends AMapToData {
 
 	private static final long serialVersionUID = 6315708056775476541L;
 
-	// 8323073
-	public static final int max = 0xFFFF * 127;
+	public static final int max = (0xFFFF + 1) * 128 -1;
 	private final char[] _data_c;
 	private final byte[] _data_b; // next byte after the char
 
@@ -102,6 +100,13 @@ public class MapToCharPByte extends AMapToData {
 	}
 
 	@Override
+	public void set(int l, int u, int off, AMapToData tm){
+		for(int i = l; i < u; i++, off++) {
+			set(i, tm.getIndex(off));
+		}
+	}
+
+	@Override
 	public int setAndGet(int n, int v) {
 		int m = v & 0xffffff;
 		_data_c[n] = (char) m;
@@ -153,30 +158,17 @@ public class MapToCharPByte extends AMapToData {
 		return new MapToCharPByte(unique, data_c, data_b);
 	}
 
-	protected char[] getChars() {
-		return _data_c;
-	}
-
-	protected byte[] getBytes() {
-		return _data_b;
-	}
-
 	@Override
 	public int getUpperBoundValue() {
 		return max;
 	}
 
 	@Override
-	public void copyInt(int[] d) {
-		for(int i = 0; i < d.length; i++)
+	public void copyInt(int[] d, int start, int end) {
+		for(int i = start; i < end; i++)
 			set(i, d[i]);
 	}
 
-	@Override
-	public void copyBit(BitSet d) {
-		for(int i = d.nextSetBit(0); i >= 0; i = d.nextSetBit(i + 1))
-			_data_c[i] = 1;
-	}
 
 	@Override
 	public int[] getCounts(int[] ret) {
@@ -271,10 +263,6 @@ public class MapToCharPByte extends AMapToData {
 
 	}
 
-	@Override
-	public int getMaxPossible() {
-		return Character.MAX_VALUE * 256;
-	}
 
 	@Override
 	public boolean equals(AMapToData e) {

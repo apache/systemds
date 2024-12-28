@@ -75,6 +75,10 @@ public class PreAggregateSDCZ_SDCZTest {
 		create(tests, 10000, 150, 13, 1, 1000, 100, r.nextInt(sm));
 		create(tests, 10000, 150, 149, 1, 1000, 100, r.nextInt(sm));
 
+		create(tests, 10000, 32, 200, 1, 100, 1000, r.nextInt(sm));
+		create(tests, 10000, 150, 13, 1, 100, 1000, r.nextInt(sm));
+		create(tests, 10000, 150, 149, 1, 100, 1000, r.nextInt(sm));
+
 		return tests;
 	}
 

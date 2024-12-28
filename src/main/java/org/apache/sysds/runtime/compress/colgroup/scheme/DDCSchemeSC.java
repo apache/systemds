@@ -174,7 +174,7 @@ public class DDCSchemeSC extends DDCScheme {
 	}
 
 	private void encodeAndUpdate(MatrixBlock data, AMapToData d, int col) {
-		final int max = d.getMaxPossible();
+		final int max = d.getUpperBoundValue();
 		if(data.isInSparseFormat())
 			encodeAndUpdateSparse(data, d, col, max);
 		else if(data.getDenseBlock().isContiguous())
@@ -189,7 +189,7 @@ public class DDCSchemeSC extends DDCScheme {
 
 		for(int i = 0; i < nRow; i++) {
 			int id = map.increment(sb.get(i, col));
-			if(id >= max)
+			if(id > max)
 				throw new DMLCompressionException("Failed update and encode with " + max + " possible values");
 			d.set(i, id);
 		}
@@ -203,7 +203,7 @@ public class DDCSchemeSC extends DDCScheme {
 		final int end = nRow * nCol; // guaranteed lower than intend.
 		for(int i = 0, off = col; off < end; i++, off += nCol) {
 			int id = map.increment(vals[off]);
-			if(id >= max)
+			if(id > max)
 				throw new DMLCompressionException("Failed update and encode with " + max + " possible values");
 			d.set(i, id);
 		}
@@ -216,7 +216,7 @@ public class DDCSchemeSC extends DDCScheme {
 			final double[] c = db.values(i);
 			final int off = db.pos(i) + col;
 			int id = map.increment(c[off]);
-			if(id >= max)
+			if(id > max)
 				throw new DMLCompressionException("Failed update and encode with " + max + " possible values");
 			d.set(i, id);
 		}

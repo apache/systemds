@@ -57,6 +57,26 @@ public class PreAggregateDDC_DDCTest {
 		final Random r = new Random(2321522);
 		final int sm = Integer.MAX_VALUE;
 
+		create(tests, 10, 1, 1, 1, r.nextInt(sm));
+		create(tests, 10, 1, 10, 1, r.nextInt(sm));
+		create(tests, 10, 10, 1, 1, r.nextInt(sm));
+		create(tests, 10, 1, 1, 2, r.nextInt(sm));
+		create(tests, 10, 1, 10, 2, r.nextInt(sm));
+
+		create(tests, 10, 1, 1, 1, r.nextInt(sm));
+		create(tests, 10, 1, 2, 1, r.nextInt(sm));
+		create(tests, 10, 2, 1, 1, r.nextInt(sm));
+		create(tests, 10, 1, 1, 2, r.nextInt(sm));
+		create(tests, 10, 1, 2, 2, r.nextInt(sm));
+
+		create(tests, 66, 1, 1, 1, r.nextInt(sm));
+		create(tests, 66, 1, 2, 1, r.nextInt(sm));
+		create(tests, 66, 2, 1, 1, r.nextInt(sm));
+		create(tests, 66, 1, 1, 2, r.nextInt(sm));
+		create(tests, 66, 1, 2, 2, r.nextInt(sm));
+		
+		
+		create(tests, 10, 10, 1, 2, r.nextInt(sm));
 		create(tests, 10, 10, 5, 1, r.nextInt(sm));
 		create(tests, 10, 10, 5, 1, r.nextInt(sm));
 		create(tests, 100, 10, 5, 1, r.nextInt(sm));
@@ -76,6 +96,8 @@ public class PreAggregateDDC_DDCTest {
 		create(tests, 10000, 32, 2, 1, r.nextInt(sm));
 		create(tests, 10000, 2, 2, 1, r.nextInt(sm));
 		create(tests, 10000, 2, 2, 10, r.nextInt(sm));
+		create(tests, 10005, 2, 2, 1, r.nextInt(sm));
+		create(tests, 10005, 2, 2, 10, r.nextInt(sm));
 
 		createSkewed(tests, 10000, 2, 2, 10, r.nextInt(sm), 0.1);
 		createSkewed(tests, 10000, 2, 2, 10, r.nextInt(sm), 0.01);

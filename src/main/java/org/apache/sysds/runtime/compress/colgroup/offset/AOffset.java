@@ -569,6 +569,8 @@ public abstract class AOffset implements Serializable {
 			else
 				return new OffsetSliceInfo(0, s, moveIndex(l));
 		}
+		else if (u < first)
+			return EMPTY_SLICE;
 
 		final AIterator it = getIteratorSkipCache(l);
 
@@ -587,6 +589,7 @@ public abstract class AOffset implements Serializable {
 		final int low = it.getDataIndex();
 		final int lowOff = it.getOffsetsIndex();
 		final int lowValue = it.value();
+
 		// set c
 		int high = low;
 		int highOff = lowOff;
@@ -607,7 +610,7 @@ public abstract class AOffset implements Serializable {
 
 	private final OffsetSliceInfo constructSliceReturn(int l, int u, int low, int high, int lowOff, int highOff,
 		int lowValue, int highValue) {
-		if(low == high)
+		if(low == high) // Implicit lowValue == highValue
 			return new OffsetSliceInfo(low, high + 1, new OffsetSingle(lowValue - l));
 		else if(low + 1 == high)
 			return new OffsetSliceInfo(low, high + 1, new OffsetTwo(lowValue - l, highValue - l));

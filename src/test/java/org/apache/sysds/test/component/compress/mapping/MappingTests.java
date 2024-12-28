@@ -31,6 +31,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Random;
+import java.util.concurrent.ExecutorService;
 
 import org.apache.commons.lang3.NotImplementedException;
 import org.apache.commons.logging.Log;
@@ -41,6 +42,7 @@ import org.apache.sysds.runtime.compress.colgroup.mapping.AMapToData;
 import org.apache.sysds.runtime.compress.colgroup.mapping.MapToCharPByte;
 import org.apache.sysds.runtime.compress.colgroup.mapping.MapToFactory;
 import org.apache.sysds.runtime.compress.colgroup.mapping.MapToFactory.MAP_TYPE;
+import org.apache.sysds.runtime.util.CommonThreadPool;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
@@ -349,6 +351,58 @@ public class MappingTests {
 		}
 		LOG.error("Did not throw exception with: " + m);
 	}
+
+	@Test 
+	public void splitReshapeParallel() throws Exception {
+		if(m.size() % 2 == 0){
+
+			ExecutorService pool = CommonThreadPool.get();
+			AMapToData[] ret = m.splitReshapeDDCPushDown(2, pool);
+	
+			for(int i = 0; i < m.size(); i++){
+				assertEquals(m.getIndex(i), ret[i % 2].getIndex(i/2));
+			}
+		}
+	}
+
+
+	@Test 
+	public void splitReshape2() throws Exception {
+		if(m.size() % 2 == 0){
+
+			AMapToData[] ret = m.splitReshapeDDC(2);
+	
+			for(int i = 0; i < m.size(); i++){
+				assertEquals(m.getIndex(i), ret[i % 2].getIndex(i/2));
+			}
+		}
+	}
+
+	@Test 
+	public void splitReshape4() throws Exception {
+		if(m.size() % 4 == 0){
+
+			AMapToData[] ret = m.splitReshapeDDC(4);
+	
+			for(int i = 0; i < m.size(); i++){
+				assertEquals(m.getIndex(i), ret[i % 4].getIndex(i/4));
+			}
+		}
+	}
+
+	@Test 
+
+	public void getCounts(){
+		int[] counts = m.getCounts();
+		int countZeros = 0;
+		for(int i= 0; i < m.size(); i++){
+			if(m.getIndex(i) == 0)
+				countZeros++;
+		}
+		assertEquals(counts[0], countZeros);
+	}
+
+
 
 	private static class Holder implements IMapToDataGroup {
 

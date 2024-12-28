@@ -76,6 +76,8 @@ public class PreAggregateDDC_DDCTest {
 		create(tests, 10000, 32, 2, 1, r.nextInt(sm));
 		create(tests, 10000, 2, 2, 1, r.nextInt(sm));
 		create(tests, 10000, 2, 2, 10, r.nextInt(sm));
+		create(tests, 10005, 2, 2, 1, r.nextInt(sm));
+		create(tests, 10005, 2, 2, 10, r.nextInt(sm));
 
 		createSkewed(tests, 10000, 2, 2, 10, r.nextInt(sm), 0.1);
 		createSkewed(tests, 10000, 2, 2, 10, r.nextInt(sm), 0.01);

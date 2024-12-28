@@ -609,8 +609,12 @@ public abstract class AOffset implements Serializable {
 		int lowValue, int highValue) {
 		if(low == high)
 			return new OffsetSliceInfo(low, high + 1, new OffsetSingle(lowValue - l));
-		else if(low + 1 == high)
-			return new OffsetSliceInfo(low, high + 1, new OffsetTwo(lowValue - l, highValue - l));
+		else if(low + 1 == high) {
+			if(lowValue == highValue)
+				return new OffsetSliceInfo(low, high, new OffsetSingle(lowValue - l));
+			else
+				return new OffsetSliceInfo(low, high + 1, new OffsetTwo(lowValue - l, highValue - l));
+		}
 		else
 			return ((ISliceOffset) this).slice(lowOff, highOff, lowValue - l, highValue - l, low, high);
 	}

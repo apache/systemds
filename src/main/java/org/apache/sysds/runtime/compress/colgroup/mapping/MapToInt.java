@@ -92,6 +92,13 @@ public class MapToInt extends AMapToData {
 	}
 
 	@Override
+	public void set(int l, int u, int off, AMapToData tm){
+		for(int i = l; i < u; i++, off++) {
+			set(i, tm.getIndex(off));
+		}
+	}
+
+	@Override
 	public int setAndGet(int n, int v) {
 		return _data[n] = v;
 	}
@@ -182,8 +189,8 @@ public class MapToInt extends AMapToData {
 	}
 
 	@Override
-	public void copyInt(int[] d) {
-		for(int i = 0; i < _data.length; i++)
+	public void copyInt(int[] d, int start, int end) {
+		for(int i = start; i < end; i++)
 			_data[i] = d[i];
 	}
 

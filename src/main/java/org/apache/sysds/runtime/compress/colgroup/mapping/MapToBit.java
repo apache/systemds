@@ -146,6 +146,13 @@ public class MapToBit extends AMapToData {
 	}
 
 	@Override
+	public void set(int l, int u, int off, AMapToData tm){
+		for(int i = l; i < u; i++, off++) {
+			set(i, tm.getIndex(off));
+		}
+	}
+
+	@Override
 	public int setAndGet(int n, int v) {
 		set(n, v);
 		return 1;
@@ -267,8 +274,8 @@ public class MapToBit extends AMapToData {
 	}
 
 	@Override
-	public void copyInt(int[] d) {
-		for(int i = 0; i < _size; i++)
+	public void copyInt(int[] d, int start, int end) {
+		for(int i = start; i < end; i++)
 			set(i, d[i]);
 	}
 

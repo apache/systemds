@@ -102,6 +102,13 @@ public class MapToCharPByte extends AMapToData {
 	}
 
 	@Override
+	public void set(int l, int u, int off, AMapToData tm){
+		for(int i = l; i < u; i++, off++) {
+			set(i, tm.getIndex(off));
+		}
+	}
+
+	@Override
 	public int setAndGet(int n, int v) {
 		int m = v & 0xffffff;
 		_data_c[n] = (char) m;
@@ -167,8 +174,8 @@ public class MapToCharPByte extends AMapToData {
 	}
 
 	@Override
-	public void copyInt(int[] d) {
-		for(int i = 0; i < d.length; i++)
+	public void copyInt(int[] d, int start, int end) {
+		for(int i = start; i < end; i++)
 			set(i, d[i]);
 	}
 

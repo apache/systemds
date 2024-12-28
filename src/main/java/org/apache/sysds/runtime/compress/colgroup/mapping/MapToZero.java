@@ -75,6 +75,11 @@ public class MapToZero extends AMapToData {
 	}
 
 	@Override
+	public void set(int l, int u, int off, AMapToData tm){
+		// do nothing
+	}
+
+	@Override
 	public int setAndGet(int n, int v) {
 		return 0;
 	}
@@ -127,7 +132,7 @@ public class MapToZero extends AMapToData {
 	}
 
 	@Override
-	public void copyInt(int[] d) {
+	public void copyInt(int[] d, int start, int end) {
 		// do nothing
 	}
 

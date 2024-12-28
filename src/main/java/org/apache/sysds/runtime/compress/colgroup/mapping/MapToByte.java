@@ -23,7 +23,6 @@ import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
 import java.util.Arrays;
-import java.util.BitSet;
 
 import org.apache.commons.lang3.NotImplementedException;
 import org.apache.sysds.runtime.compress.colgroup.IMapToDataGroup;
@@ -96,6 +95,23 @@ public class MapToByte extends AMapToData {
 	}
 
 	@Override
+	public void set(int l, int u, int off, AMapToData tm){
+		if(tm instanceof MapToByte){
+			MapToByte tbm = (MapToByte)tm;
+			byte[] tbv = tbm._data;
+			for(int i = l; i < u; i++, off++) {
+				_data[i]  =  tbv[off];
+			}
+		}
+		else{
+
+			for(int i = l; i < u; i++, off++) {
+				_data[i]  =   (byte)tm.getIndex(off);
+			}
+		}
+	}
+
+	@Override
 	public int setAndGet(int n, int v) {
 		_data[n] = (byte) v;
 		return _data[n] & 0xFF;
@@ -136,13 +152,14 @@ public class MapToByte extends AMapToData {
 	}
 
 	@Override
-	public void copyInt(int[] d) {
-		for(int i = 0; i < _data.length; i++)
+	public void copyInt(int[] d, int start, int end) {
+		for(int i = start; i < end; i++)
 			_data[i] = (byte) d[i];
 	}
 
 	@Override
-	public void copyBit(BitSet d) {
+	public void copyBit(MapToBit d) {
+		fill(0);
 		for(int i = d.nextSetBit(0); i >= 0; i = d.nextSetBit(i + 1)) {
 			_data[i] = 1;
 		}
@@ -201,7 +218,7 @@ public class MapToByte extends AMapToData {
 			return new MapToZero(size);
 		else if(unique == 2 && size > 32)
 			ret = new MapToBit(unique, size);
-		else if(unique <= 127) {
+		else if(unique <= 128) {
 			ret = toUByte();
 			ret.setUnique(unique);
 			return ret;
@@ -232,7 +249,7 @@ public class MapToByte extends AMapToData {
 			System.arraycopy(tbb, 0, ret, _data.length, t.size());
 
 			// return
-			if(newDistinct < 127)
+			if(newDistinct < 128)
 				return new MapToUByte(newDistinct, ret);
 			else
 				return new MapToByte(newDistinct, ret);
@@ -259,15 +276,10 @@ public class MapToByte extends AMapToData {
 			}
 		}
 
-		if(getUnique() < 127)
+		if(getUnique() < 128)
 			return new MapToUByte(getUnique(), ret);
 		else
 			return new MapToByte(getUnique(), ret);
-	}
-
-	@Override
-	public int getMaxPossible() {
-		return 256;
 	}
 
 	@Override
@@ -320,13 +332,13 @@ public class MapToByte extends AMapToData {
 	}
 
 	@Override
-	public void decompressToRangeOff(double[] c, int rl, int ru, int offR, double[] values) {
+	protected void decompressToRangeOff(double[] c, int rl, int ru, int offR, double[] values) {
 		for(int i = rl, offT = rl + offR; i < ru; i++, offT++)
 			c[offT] += values[getIndex(i)];
 	}
 
 	@Override
-	public void decompressToRangeNoOff(double[] c, int rl, int ru, double[] values) {
+	protected void decompressToRangeNoOff(double[] c, int rl, int ru, double[] values) {
 		// OVERWRITTEN FOR JIT COMPILE!
 		final int h = (ru - rl) % 8;
 		for(int rc = rl; rc < rl + h; rc++)

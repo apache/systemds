@@ -38,6 +38,10 @@ import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.runtime.compress.CompressedMatrixBlock;
 import org.apache.sysds.runtime.compress.DMLCompressionException;
 import org.apache.sysds.runtime.compress.colgroup.IMapToDataGroup;
+import org.apache.sysds.runtime.compress.colgroup.dictionary.Dictionary;
+import org.apache.sysds.runtime.compress.colgroup.dictionary.IDictionary;
+import org.apache.sysds.runtime.compress.colgroup.indexes.ColIndexFactory;
+import org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex;
 import org.apache.sysds.runtime.compress.colgroup.mapping.AMapToData;
 import org.apache.sysds.runtime.compress.colgroup.mapping.MapToBit;
 import org.apache.sysds.runtime.compress.colgroup.mapping.MapToByte;
@@ -52,6 +56,9 @@ import org.apache.sysds.runtime.compress.colgroup.offset.AOffset;
 import org.apache.sysds.runtime.compress.colgroup.offset.OffsetFactory;
 import org.apache.sysds.runtime.compress.utils.IntArrayList;
 import org.apache.sysds.runtime.data.DenseBlock;
+import org.apache.sysds.runtime.data.DenseBlockFactory;
+import org.apache.sysds.runtime.data.SparseBlock;
+import org.apache.sysds.runtime.data.SparseBlockFactory;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.junit.Test;
 
@@ -475,5 +482,42 @@ public class CustomMappingTest {
 		MapToZero m = new MapToZero(10);
 		assertNotEquals(MapToFactory.create(10, MAP_TYPE.BYTE),m);
 		
+	}
+
+
+	@Test 
+	public void sparseMM(){
+		for(MAP_TYPE t : MAP_TYPE.values()){
+			if(t == MAP_TYPE.ZERO)
+				continue;
+			AMapToData map = MapToFactory.create(new int[] {0,1,1}, t);
+			SparseBlock sb = SparseBlockFactory.createIdentityMatrix(3);
+			DenseBlock ret = DenseBlockFactory.createDenseBlock(new double[3 * 10], 3, 10);
+			IDictionary dict = Dictionary.create(new double[]{1,1,1,2,2,2,3,3});
+			IColIndex cols = ColIndexFactory.create(new int[]{1,4,8});
+	
+			map.lmSparseMatrixRow(sb, 0, ret, cols, dict);
+	
+			for(int i = 0; i < cols.size(); i++){
+				assertEquals(1, ret.get(0, cols.get(i)), 0);
+			}
+	
+			map.lmSparseMatrixRow(sb, 1, ret, cols, dict);
+			for(int i = 0; i < cols.size(); i++){
+				assertEquals(2, ret.get(1, cols.get(i)), 0);
+			}
+	
+			map.lmSparseMatrixRow(SparseBlockFactory.createSparseBlock(10), 1, ret, cols, dict);
+			for(int i = 0; i < cols.size(); i++){
+				assertEquals(2, ret.get(1, cols.get(i)), 0);
+			}
+	
+			for(int i = 0; i < 10; i++){
+				assertEquals(0, ret.get(2, i), 0);
+			}
+	
+			assertEquals(6, ret.countNonZeros());
+		}
+
 	}
 }

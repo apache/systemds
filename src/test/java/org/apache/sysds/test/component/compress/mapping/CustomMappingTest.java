@@ -233,8 +233,8 @@ public class CustomMappingTest {
 		int s = 10;
 		for(MAP_TYPE m : MapToFactory.MAP_TYPE.values()) {
 			AMapToData a = MapToFactory.create(s, m);
-			a.getMaxPossible();
-			for(int i = 1; i < Integer.MAX_VALUE / 2 && i < a.getMaxPossible(); i = i * 2) {
+			a.getUpperBoundValue();
+			for(int i = 1; i < Integer.MAX_VALUE / 2 && i < a.getUpperBoundValue(); i = i * 2) {
 				for(int j = 0; j < s; j++) {
 					a.set(j, (int) Math.max(0L, (long) i - j - 1));
 				}
@@ -253,8 +253,8 @@ public class CustomMappingTest {
 		int s = 42;
 		for(MAP_TYPE m : MapToFactory.MAP_TYPE.values()) {
 			AMapToData a = MapToFactory.create(s, m);
-			a.getMaxPossible();
-			for(int i = 1; i < Integer.MAX_VALUE / 2 && i < a.getMaxPossible(); i = i * 2) {
+			a.getUpperBoundValue();
+			for(int i = 1; i < Integer.MAX_VALUE / 2 && i < a.getUpperBoundValue(); i = i * 2) {
 				for(int j = 0; j < s; j++) {
 					a.set(j, (int) Math.max(0L, (long) i - j - 1));
 				}
@@ -478,6 +478,15 @@ public class CustomMappingTest {
 		
 	}
 
+
+	@Test 
+	public void mapToBitEmptySlice(){
+		MapToBit m = new MapToBit(2, 20);
+		AMapToData m2 = m.slice(3,8); // return new.
+		assertEquals(new MapToZero(8-3),m2);
+		
+	}
+
 	@Test 
 	public void mapToZeroEquals(){
 		MapToZero m = new MapToZero(10);
@@ -557,5 +566,32 @@ public class CustomMappingTest {
 
 	}
 
+
+	@Test 
+	public void bitToZero(){
+		MapToBit m = new MapToBit(2, 10);
+		m.fill(1);
+		AMapToData a = m.resize(1);
+		for(int i = 0; i < 10; i++)
+			assertEquals(0, a.getIndex(i));
+	}
+
+	@Test(expected = RuntimeException.class) 
+	public void invalidJoin(){
+		MapToBit a = new MapToBit(2, 100);
+		MapToBit b = new MapToBit(2, 200);
+
+		a.preAggregateDDC_DDCSingleCol(b, null,null);
+	}
+
+	@Test 
+	public void equalsMapToZZero(){
+		MapToZero m = new MapToZero(10);
+		assertEquals(m, new MapToZero(10));
+		assertNotEquals(m, new MapToZero(11));
+		assertNotEquals(m, new MapToZero(1));
+		assertNotEquals(m, new MapToBit(2, 1));
+		assertNotEquals(m, new MapToBit(2, 10));
+	}
 
 }

@@ -167,10 +167,6 @@ public class MapToChar extends AMapToData {
 		return new MapToChar(unique, data);
 	}
 
-	protected char[] getChars() {
-		return _data;
-	}
-
 	@Override
 	protected void preAggregateDenseToRowBy8(double[] mV, double[] preAV, int cl, int cu, int off) {
 		final int h = (cu - cl) % 8;
@@ -314,10 +310,6 @@ public class MapToChar extends AMapToData {
 		return new MapToChar(getUnique(), ret);
 	}
 
-	@Override
-	public int getMaxPossible() {
-		return Character.MAX_VALUE;
-	}
 
 	@Override
 	public boolean equals(AMapToData e) {

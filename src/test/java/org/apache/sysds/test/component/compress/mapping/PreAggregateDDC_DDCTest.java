@@ -62,6 +62,20 @@ public class PreAggregateDDC_DDCTest {
 		create(tests, 10, 10, 1, 1, r.nextInt(sm));
 		create(tests, 10, 1, 1, 2, r.nextInt(sm));
 		create(tests, 10, 1, 10, 2, r.nextInt(sm));
+
+		create(tests, 10, 1, 1, 1, r.nextInt(sm));
+		create(tests, 10, 1, 2, 1, r.nextInt(sm));
+		create(tests, 10, 2, 1, 1, r.nextInt(sm));
+		create(tests, 10, 1, 1, 2, r.nextInt(sm));
+		create(tests, 10, 1, 2, 2, r.nextInt(sm));
+
+		create(tests, 66, 1, 1, 1, r.nextInt(sm));
+		create(tests, 66, 1, 2, 1, r.nextInt(sm));
+		create(tests, 66, 2, 1, 1, r.nextInt(sm));
+		create(tests, 66, 1, 1, 2, r.nextInt(sm));
+		create(tests, 66, 1, 2, 2, r.nextInt(sm));
+		
+		
 		create(tests, 10, 10, 1, 2, r.nextInt(sm));
 		create(tests, 10, 10, 5, 1, r.nextInt(sm));
 		create(tests, 10, 10, 5, 1, r.nextInt(sm));

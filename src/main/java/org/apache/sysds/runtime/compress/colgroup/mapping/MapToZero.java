@@ -183,11 +183,6 @@ public class MapToZero extends AMapToData {
 	}
 
 	@Override
-	public int getMaxPossible() {
-		return 0;
-	}
-
-	@Override
 	public boolean equals(AMapToData e) {
 		return e instanceof MapToZero && //
 			_size == ((MapToZero) e)._size;

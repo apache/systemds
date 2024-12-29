@@ -425,8 +425,6 @@ public abstract class AMapToData implements Serializable {
 	 * @param nCol The number of columns
 	 */
 	public final void preAggregateDDC_DDC(AMapToData tm, IDictionary td, Dictionary ret, int nCol) {
-		if(td.getNumberOfValues(nCol) != tm.nUnique)
-			throw new DMLCompressionException("Invalid map and dict combination");
 		if(nCol == 1)
 			preAggregateDDC_DDCSingleCol(tm, td.getValues(), ret.getValues());
 		else
@@ -848,14 +846,6 @@ public abstract class AMapToData implements Serializable {
 		}
 		return m;
 	}
-
-	/**
-	 * Get the maximum possible value to encode in this encoding. For instance in a bit you can encode 2 values therefore
-	 * max is 1
-	 * 
-	 * @return The maximum number of distinct values to encode
-	 */
-	public abstract int getMaxPossible();
 
 	/**
 	 * Reallocate the map, to a smaller instance if applicable. Note it does not change the length of the array, just the

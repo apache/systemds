@@ -280,11 +280,6 @@ public class MapToInt extends AMapToData {
 	}
 
 	@Override
-	public int getMaxPossible() {
-		return Integer.MAX_VALUE;
-	}
-
-	@Override
 	public boolean equals(AMapToData e) {
 		return e instanceof MapToInt && //
 			e.getUnique() == getUnique() && //

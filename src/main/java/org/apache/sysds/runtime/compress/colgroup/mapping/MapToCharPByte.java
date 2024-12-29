@@ -158,14 +158,6 @@ public class MapToCharPByte extends AMapToData {
 		return new MapToCharPByte(unique, data_c, data_b);
 	}
 
-	protected char[] getChars() {
-		return _data_c;
-	}
-
-	protected byte[] getBytes() {
-		return _data_b;
-	}
-
 	@Override
 	public int getUpperBoundValue() {
 		return max;

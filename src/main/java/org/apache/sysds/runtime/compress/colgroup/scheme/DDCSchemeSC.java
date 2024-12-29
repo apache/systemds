@@ -174,7 +174,7 @@ public class DDCSchemeSC extends DDCScheme {
 	}
 
 	private void encodeAndUpdate(MatrixBlock data, AMapToData d, int col) {
-		final int max = d.getMaxPossible();
+		final int max = d.getUpperBoundValue();
 		if(data.isInSparseFormat())
 			encodeAndUpdateSparse(data, d, col, max);
 		else if(data.getDenseBlock().isContiguous())

@@ -298,30 +298,16 @@ public class MapToBit extends AMapToData {
 			final long[] t_longs = t_data._data;
 			final long[] _longs = o_data._data;
 
-			final int common = Math.min(t_longs.length, _longs.length);
+			if(t_longs.length != _longs.length)
+				throw new RuntimeException("Invalid to join bit sets not same length");
 
-			for(int i = 0; i < common; i++) {
+			for(int i = 0; i < _longs.length; i++) {
 				long t = t_longs[i];
 				long v = _longs[i];
 				tt += Long.bitCount(t & v);
 				ft += Long.bitCount(t & ~v);
 				tf += Long.bitCount(~t & v);
 				ff += Long.bitCount(~t & ~v);
-			}
-
-			if(t_longs.length > common) {
-				for(int i = common; i < t_longs.length; i++) {
-					int v = Long.bitCount(t_longs[i]);
-					ft += v;
-					ff += 64 - v;
-				}
-			}
-			else if(_longs.length > common) {
-				for(int i = common; i < _longs.length; i++) {
-					int v = Long.bitCount(_longs[i]);
-					tf += v;
-					ff += 64 - v;
-				}
 			}
 
 			final int longest = Math.max(t_longs.length, _longs.length);
@@ -443,10 +429,6 @@ public class MapToBit extends AMapToData {
 
 	private static int longSize(int size) {
 		return Math.max(size >> 6, 0) + 1;
-	}
-
-	public int getMaxPossible() {
-		return 1;
 	}
 
 	@Override

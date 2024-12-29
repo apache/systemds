@@ -218,7 +218,7 @@ public class MapToByte extends AMapToData {
 			return new MapToZero(size);
 		else if(unique == 2 && size > 32)
 			ret = new MapToBit(unique, size);
-		else if(unique <= 127) {
+		else if(unique <= 128) {
 			ret = toUByte();
 			ret.setUnique(unique);
 			return ret;
@@ -249,7 +249,7 @@ public class MapToByte extends AMapToData {
 			System.arraycopy(tbb, 0, ret, _data.length, t.size());
 
 			// return
-			if(newDistinct < 127)
+			if(newDistinct < 128)
 				return new MapToUByte(newDistinct, ret);
 			else
 				return new MapToByte(newDistinct, ret);
@@ -276,15 +276,10 @@ public class MapToByte extends AMapToData {
 			}
 		}
 
-		if(getUnique() < 127)
+		if(getUnique() < 128)
 			return new MapToUByte(getUnique(), ret);
 		else
 			return new MapToByte(getUnique(), ret);
-	}
-
-	@Override
-	public int getMaxPossible() {
-		return 255;
 	}
 
 	@Override

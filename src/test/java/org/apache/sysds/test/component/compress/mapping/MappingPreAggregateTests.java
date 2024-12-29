@@ -35,6 +35,7 @@ import org.apache.sysds.runtime.compress.colgroup.mapping.MapToFactory;
 import org.apache.sysds.runtime.compress.colgroup.mapping.MapToFactory.MAP_TYPE;
 import org.apache.sysds.runtime.compress.colgroup.offset.AOffset;
 import org.apache.sysds.runtime.compress.colgroup.offset.OffsetByte;
+import org.apache.sysds.runtime.data.SparseBlockFactory;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.test.TestUtils;
 import org.junit.Test;
@@ -312,6 +313,38 @@ public class MappingPreAggregateTests {
 			double[] pre = new double[m.getUnique() * sb.getNumRows()];
 			m.preAggregateSparse(sb.getSparseBlock(), pre, 0, sb.getNumRows());
 			verifyPreaggregate(m, sb, 0, sb.getNumRows(), pre);
+		}
+		catch(Exception e) {
+			e.printStackTrace();
+			fail(e.toString());
+		}
+	}
+
+	@Test
+	public void testPreAggregateSparseEmptySingleRow() {
+		try {
+			if(!sb.isInSparseFormat())
+				return;
+			double[] pre = new double[m.getUnique()];
+			MatrixBlock sb2 = new MatrixBlock(sb.getNumRows(), sb.getNumColumns(), 0,  SparseBlockFactory.createSparseBlock(sb.getNumRows()));
+			m.preAggregateSparse(sb2.getSparseBlock(), pre, 0, 1);
+			verifyPreaggregate(m, sb2, 0, 1, pre);
+		}
+		catch(Exception e) {
+			e.printStackTrace();
+			fail(e.toString());
+		}
+	}
+
+	@Test
+	public void testPreAggregateSparseEmptyMultiRow() {
+		try {
+			if(!sb.isInSparseFormat())
+				return;
+			double[] pre = new double[m.getUnique() * sb.getNumRows()];
+			MatrixBlock sb2 = new MatrixBlock(sb.getNumRows(), sb.getNumColumns(), 0,  SparseBlockFactory.createSparseBlock(sb.getNumRows()));
+			m.preAggregateSparse(sb2.getSparseBlock(), pre, 0, sb.getNumRows());
+			verifyPreaggregate(m, sb2, 0, sb.getNumRows(), pre);
 		}
 		catch(Exception e) {
 			e.printStackTrace();

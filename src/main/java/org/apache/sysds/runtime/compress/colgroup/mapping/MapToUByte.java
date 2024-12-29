@@ -121,11 +121,6 @@ public class MapToUByte extends MapToByte {
 	}
 
 	@Override
-	public int getMaxPossible() {
-		return 127;
-	}
-
-	@Override
 	protected void decompressToRangeNoOffBy8(double[] c, int r, double[] values) {
 		c[r] += values[_data[r]];
 		c[r+1] += values[_data[r+1]];

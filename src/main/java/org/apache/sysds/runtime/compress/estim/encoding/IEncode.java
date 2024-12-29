@@ -19,13 +19,12 @@
 
 package org.apache.sysds.runtime.compress.estim.encoding;
 
-import java.util.Map;
-
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.runtime.compress.CompressionSettings;
 import org.apache.sysds.runtime.compress.estim.EstimationFactors;
+import org.apache.sysds.runtime.compress.utils.HashMapLongInt;
 
 /**
  * This interface covers an intermediate encoding for the samples to improve the efficiency of the joining of sample
@@ -47,11 +46,15 @@ public interface IEncode {
 	/**
 	 * Combine two encodings without resizing the output. meaning the mapping of the indexes should be consistent with
 	 * left hand side Dictionary indexes and right hand side indexes.
+	 * <p>
+	 * 
+	 * 
+	 * NOTE: Require both encodings to contain the correct metadata for number of unique values.
 	 * 
 	 * @param e The other side to combine with
 	 * @return The combined encoding
 	 */
-	public Pair<IEncode, Map<Integer, Integer>> combineWithMap(IEncode e);
+	public Pair<IEncode, HashMapLongInt> combineWithMap(IEncode e);
 
 	/**
 	 * Get the number of unique values in this encoding

@@ -50,6 +50,7 @@ import org.apache.sysds.runtime.compress.estim.encoding.DenseEncoding;
 import org.apache.sysds.runtime.compress.estim.encoding.EmptyEncoding;
 import org.apache.sysds.runtime.compress.estim.encoding.IEncode;
 import org.apache.sysds.runtime.compress.estim.encoding.SparseEncoding;
+import org.apache.sysds.runtime.compress.utils.HashMapLongInt;
 import org.apache.sysds.runtime.data.DenseBlock;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.util.CommonThreadPool;
@@ -177,24 +178,25 @@ public final class CLALibCombineGroups {
 		}
 		// add if encodings are equal make shortcut.
 
-		Pair<IEncode, Map<Integer, Integer>> cec = ae.combineWithMap(be);
-		IEncode ce = cec.getLeft();
-		Map<Integer, Integer> filter = cec.getRight();
-		if(ce instanceof DenseEncoding) {
-			DenseEncoding ced = (DenseEncoding) (ce);
-			IDictionary cd = DictionaryFactory.combineDictionaries(ac, bc, filter);
-			return ColGroupDDC.create(combinedColumns, cd, ced.getMap(), null);
-		}
-		else if(ce instanceof EmptyEncoding) {
+		final Pair<IEncode, HashMapLongInt> cec = ae.combineWithMap(be);
+		final IEncode ce = cec.getLeft();
+		final HashMapLongInt filter = cec.getRight();
+
+		if(ce instanceof EmptyEncoding) {
 			return new ColGroupEmpty(combinedColumns);
 		}
 		else if(ce instanceof ConstEncoding) {
 			IDictionary cd = DictionaryFactory.combineDictionaries(ac, bc, filter);
 			return ColGroupConst.create(combinedColumns, cd);
 		}
+		else if(ce instanceof DenseEncoding) {
+			DenseEncoding ced = (DenseEncoding) (ce);
+			IDictionary cd = DictionaryFactory.combineDictionaries(ac, bc, filter);
+			return ColGroupDDC.create(combinedColumns, cd, ced.getMap(), null);
+		}
 		else if(ce instanceof SparseEncoding) {
 			SparseEncoding sed = (SparseEncoding) ce;
-			IDictionary cd = DictionaryFactory.combineDictionariesSparse(ac, bc);
+			IDictionary cd = DictionaryFactory.combineDictionariesSparse(ac, bc, filter);
 			double[] defaultTuple = constructDefaultTuple(ac, bc);
 			return ColGroupSDC.create(combinedColumns, sed.getNumRows(), cd, defaultTuple, sed.getOffsets(), sed.getMap(),
 				null);

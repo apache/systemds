@@ -26,7 +26,6 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Random;
 import java.util.Set;
 
@@ -42,6 +41,7 @@ import org.apache.sysds.runtime.compress.estim.encoding.DenseEncoding;
 import org.apache.sysds.runtime.compress.estim.encoding.EncodingFactory;
 import org.apache.sysds.runtime.compress.estim.encoding.IEncode;
 import org.apache.sysds.runtime.compress.estim.encoding.SparseEncoding;
+import org.apache.sysds.runtime.compress.utils.HashMapLongInt;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
@@ -99,10 +99,9 @@ public class CombineEncodingsUnique {
 	public void combineUnique() {
 		try {
 
-			Pair<IEncode, Map<Integer, Integer>> cec = ae.combineWithMap(be);
+			Pair<IEncode, HashMapLongInt> cec = ae.combineWithMap(be);
 			IEncode ce = cec.getLeft();
-			Map<Integer, Integer> cem = cec.getRight();
-			// LOG.error(ae + "\n" + be + "\n" + ce + "\n" + cem);
+			HashMapLongInt cem = cec.getRight();
 			assertEquals(cem.size(), ce.getUnique());
 			// check all unique values are contained.
 			checkContainsAllUnique(ce);

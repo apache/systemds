@@ -229,8 +229,16 @@ public interface EncodingFactory {
 
 			// Iteration 3 of non zero indexes, make a Offset Encoding to know what cells are zero and not.
 			// not done yet
-			final AOffset o = OffsetFactory.createOffset(aix, apos, alen);
-			return new SparseEncoding(d, o, m.getNumColumns());
+			try{
+
+				final AOffset o = OffsetFactory.createOffset(aix, apos, alen);
+				return new SparseEncoding(d, o, m.getNumColumns());
+			}
+			catch(Exception e){
+				String mes = Arrays.toString(Arrays.copyOfRange(aix, apos, alen))  +  "\n" + apos  + "  " + alen;
+				mes += Arrays.toString(Arrays.copyOfRange(avals, apos, alen));
+				throw new DMLRuntimeException(mes, e);
+			}
 		}
 	}
 

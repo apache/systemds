@@ -41,6 +41,7 @@ import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.runtime.compress.CompressedMatrixBlock;
 import org.apache.sysds.runtime.compress.colgroup.IMapToDataGroup;
 import org.apache.sysds.runtime.compress.colgroup.mapping.AMapToData;
+import org.apache.sysds.runtime.compress.colgroup.mapping.MapToBit;
 import org.apache.sysds.runtime.compress.colgroup.mapping.MapToCharPByte;
 import org.apache.sysds.runtime.compress.colgroup.mapping.MapToFactory;
 import org.apache.sysds.runtime.compress.colgroup.mapping.MapToFactory.MAP_TYPE;
@@ -454,14 +455,58 @@ public class MappingTests {
 
 	}
 
+	@Test
+	public void slice() {
+		if(m.size() > 2) {
+			AMapToData s = m.slice(1, m.size() - 1);
+			for(int i = 0; i < m.size() - 2; i++) {
+				assertEquals(m.getIndex(i + 1), s.getIndex(i));
+			}
+		}
+	}
 
+	@Test
+	public void setRange() {
+		AMapToData tmp = MapToFactory.create(m.size(), m.getUnique());
+		tmp.copy(m);
 
-	@Test 
-	public void slice(){
-		if(m.size() > 2){
-			AMapToData s = m.slice(1, m.size()-1);
-			for(int i = 0; i < m.size() -2; i++){
-				assertEquals(m.getIndex(i+1), s.getIndex(i));
+		tmp.set(0, m.size(), 0, new MapToZero(size));
+		for(int i = 0; i < m.size(); i++)
+			assertEquals(0, tmp.getIndex(i));
+
+		if(m.size() > 11) {
+			tmp.copy(m);
+
+			tmp.set(10, m.size(), 0, new MapToZero(size));
+			for(int i = 0; i < 10; i++)
+				assertEquals(m.getIndex(i), tmp.getIndex(i));
+			for(int i = 10; i < m.size(); i++)
+				assertEquals(0, tmp.getIndex(i));
+
+			if(m instanceof MapToZero)
+				return;
+			tmp.copy(m);
+			AMapToData tmp2 = new MapToBit(2, size - 10);
+			tmp2.fill(1);
+			tmp2.set(0, 0);
+			tmp.set(10, m.size(), 0, tmp2);
+			for(int i = 0; i < 10; i++)
+				assertEquals(m.getIndex(i), tmp.getIndex(i));
+			assertEquals(0, tmp.getIndex(10));
+			for(int i = 11; i < m.size(); i++)
+				assertEquals(1, tmp.getIndex(i));
+
+			for(MAP_TYPE t : MAP_TYPE.values()) {
+				if(t == MAP_TYPE.ZERO)
+					continue;
+				tmp.copy(m);
+				tmp2 = MapToFactory.resizeForce(tmp2, t);
+				tmp.set(10, m.size(), 0, tmp2);
+				for(int i = 0; i < 10; i++)
+					assertEquals(m.getIndex(i), tmp.getIndex(i));
+				assertEquals(0, tmp.getIndex(10));
+				for(int i = 11; i < m.size(); i++)
+					assertEquals(1, tmp.getIndex(i));
 			}
 		}
 	}

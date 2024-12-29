@@ -82,7 +82,7 @@ def matrix_block_to_numpy(jvm: JVMView, mb: JavaObject):
     )
 
 
-def convert_column(jvm, rows, j, col_type, pd_col):
+def convert_column(jvm, rows, j, col_type, pd_col, fb, col_name):
     """Converts a given pandas column to a FrameBlock representation.
 
     :param jvm: The JVMView of the current SystemDS context.
@@ -104,7 +104,9 @@ def convert_column(jvm, rows, j, col_type, pd_col):
     converted_array = jvm.org.apache.sysds.runtime.util.Py4jConverterUtils.convert(
         byte_data, rows, col_type
     )
-    return j, converted_array
+
+    fb.setColumnName(j, str(col_name))
+    fb.setColumn(j, converted_array)
 
 
 def pandas_to_frame_block(sds, pd_df: pd.DataFrame):
@@ -146,41 +148,37 @@ def pandas_to_frame_block(sds, pd_df: pd.DataFrame):
         jc_String = jvm.java.lang.String
         jc_FrameBlock = jvm.org.apache.sysds.runtime.frame.data.FrameBlock
         j_valueTypeArray = java_gate.new_array(jc_ValueType, len(schema))
-        j_colNameArray = java_gate.new_array(jc_String, len(col_names))
 
         # execution speed increases with optimized code when the number of rows exceeds 4
         if rows > 4:
             for i in range(len(schema)):
                 j_valueTypeArray[i] = schema[i]
-            for i in range(len(col_names)):
-                j_colNameArray[i] = str(col_names[i])
 
-            fb = jc_FrameBlock(j_valueTypeArray, j_colNameArray, rows)
+            fb = jc_FrameBlock(j_valueTypeArray, rows)
 
             with concurrent.futures.ThreadPoolExecutor() as executor:
-                futures = [
-                    executor.submit(
-                        convert_column, jvm, rows, j, schema[j], pd_df[col_name]
-                    )
-                    for j, col_name in enumerate(col_names)
-                ]
-                for future in concurrent.futures.as_completed(futures):
-                    j, converted_array = future.result()
-                    fb.setColumn(j, converted_array)
+                executor.map(
+                    lambda j, col_name: convert_column(
+                        jvm, rows, j, schema[j], pd_df[col_name], fb, col_name
+                    ),
+                    range(len(col_names)),
+                    col_names,
+                )
 
             return fb
         else:
             j_dataArray = java_gate.new_array(jc_String, rows, cols)
-            for i in range(len(schema)):
-                j_valueTypeArray[i] = schema[i]
-            for i in range(len(col_names)):
-                j_colNameArray[i] = str(col_names[i])
-            j = 0
+            j_colNameArray = java_gate.new_array(jc_String, len(col_names))
+
             for j, col_name in enumerate(col_names):
+                j_valueTypeArray[j] = schema[j]
+                j_colNameArray[j] = str(col_names[j])
                 col_data = pd_df[col_name].fillna("").to_numpy(dtype=str)
+
                 for i in range(col_data.shape[0]):
                     if col_data[i]:
                         j_dataArray[i][j] = col_data[i]
+
             fb = jc_FrameBlock(j_valueTypeArray, j_colNameArray, j_dataArray)
             return fb
 

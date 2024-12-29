@@ -833,7 +833,6 @@ public abstract class AMapToData implements Serializable {
 
 	public abstract void copyInt(int[] d, int start, int end);
 
-
 	public void copyBit(MapToBit d) {
 		fill(0);
 		for(int i = d.nextSetBit(0); i >= 0; i = d.nextSetBit(i + 1)) {
@@ -997,9 +996,6 @@ public abstract class AMapToData implements Serializable {
 		final int eachSize = s / multiplier;
 		for(int i = 0; i < multiplier; i++)
 			ret[i] = MapToFactory.create(eachSize, getUnique());
-
-		// for(int i = 0; i < s; i += multiplier)
-		// splitReshapeDDCRow(ret, multiplier, i);
 
 		final int blkz = Math.max(eachSize / 8, 2048) * multiplier;
 		for(int i = 0; i < s; i += blkz)

@@ -45,7 +45,7 @@ public class MapToChar extends AMapToData {
 	private final char[] _data;
 
 	protected MapToChar(int size) {
-		this(Character.MAX_VALUE+1, size);
+		this(Character.MAX_VALUE + 1, size);
 	}
 
 	public MapToChar(int unique, int size) {
@@ -93,10 +93,6 @@ public class MapToChar extends AMapToData {
 	@Override
 	public void set(int n, int v) {
 		_data[n] = (char) v;
-	}
-
-	public void set(int n, char v) {
-		_data[n] = v;
 	}
 
 	@Override
@@ -167,7 +163,7 @@ public class MapToChar extends AMapToData {
 		final int length = in.readInt();
 		final char[] data = new char[length];
 		for(int i = 0; i < length; i++)
-			data[i] = (char)in.readUnsignedShort();
+			data[i] = (char) in.readUnsignedShort();
 		return new MapToChar(unique, data);
 	}
 
@@ -235,8 +231,6 @@ public class MapToChar extends AMapToData {
 		for(int i = start; i < end; i++)
 			_data[i] = (char) d[i];
 	}
-
-	
 
 	@Override
 	public int[] getCounts(int[] ret) {
@@ -322,7 +316,7 @@ public class MapToChar extends AMapToData {
 
 	@Override
 	public int getMaxPossible() {
-		return Character.MAX_VALUE ;
+		return Character.MAX_VALUE;
 	}
 
 	@Override

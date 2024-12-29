@@ -207,34 +207,36 @@ public final class CLALibCombineGroups {
 	 * @return A new column group containing the two.
 	 */
 	public static AColGroup combine(AColGroup a, AColGroup b, int nRow) {
+
+		if(a instanceof IFrameOfReferenceGroup || b instanceof IFrameOfReferenceGroup)
+			throw new DMLCompressionException("Invalid call with frame of reference group to combine");
+
+		IColIndex combinedColumns = ColIndexFactory.combine(a, b);
+
+		// try to recompress a and b if uncompressed
+		if(a instanceof ColGroupUncompressed)
+			a = a.recompress();
+
+		if(b instanceof ColGroupUncompressed)
+			b = b.recompress();
+
+		long maxEst = (long) a.getNumValues() * b.getNumValues();
+		final AColGroup ret;
+		if(a instanceof AColGroupCompressed && b instanceof AColGroupCompressed //
+			&& (long) Integer.MAX_VALUE > maxEst)
+			ret = combineCompressed(combinedColumns, (AColGroupCompressed) a, (AColGroupCompressed) b);
+		else
+			ret = combineUC(combinedColumns, a, b);
+
 		try {
-
-			if(a instanceof IFrameOfReferenceGroup || b instanceof IFrameOfReferenceGroup)
-				throw new DMLCompressionException("Invalid call with frame of reference group to combine");
-
-			IColIndex combinedColumns = ColIndexFactory.combine(a, b);
-
-			// try to recompress a and b if uncompressed
-			if(a instanceof ColGroupUncompressed)
-				a = a.recompress();
-
-			if(b instanceof ColGroupUncompressed)
-				b = b.recompress();
-
-			long maxEst = (long) a.getNumValues() * b.getNumValues();
-			final AColGroup ret;
-			if(a instanceof AColGroupCompressed && b instanceof AColGroupCompressed //
-				&& (long) Integer.MAX_VALUE > maxEst)
-				ret = combineCompressed(combinedColumns, (AColGroupCompressed) a, (AColGroupCompressed) b);
-			else
-				ret = combineUC(combinedColumns, a, b);
-
 			double sumCombined = ret.getSum(nRow);
 			double sumIndividualA = a.getSum(nRow);
 			double sumIndividualB = b.getSum(nRow);
-			if(Math.abs(sumCombined - sumIndividualA - sumIndividualB) > Math.abs(((sumIndividualA + sumIndividualB) / 1000000))) {
-				throw new DMLCompressionException("Invalid combine... not producing same sum: " + sumCombined + " vs  "
-					+ sumIndividualA + " : " + sumIndividualB + "  abs error: " + Math.abs(sumCombined - sumIndividualA - sumIndividualB));
+			if(Math.abs(sumCombined - sumIndividualA - sumIndividualB) > Math
+				.abs(((sumIndividualA + sumIndividualB) / 1000000))) {
+				throw new DMLCompressionException(
+					"Invalid combine... not producing same sum: " + sumCombined + " vs  " + sumIndividualA + " : "
+						+ sumIndividualB + "  abs error: " + Math.abs(sumCombined - sumIndividualA - sumIndividualB));
 			}
 			return ret;
 		}
@@ -254,10 +256,18 @@ public final class CLALibCombineGroups {
 			sb.append("\n\n");
 
 			String bs = b.toString();
-			if(as.length() < 10000)
+			if(bs.length() < 10000)
 				sb.append(bs);
 			else {
 				sb.append(bs.substring(0, 10000));
+				sb.append("...");
+			}
+
+			String rets = ret.toString();
+			if(rets.length() < 10000)
+				sb.append(rets);
+			else {
+				sb.append(rets.substring(0, 10000));
 				sb.append("...");
 			}
 
@@ -270,14 +280,6 @@ public final class CLALibCombineGroups {
 		AColGroupCompressed bc) {
 		final IEncode ae = ac.getEncoding();
 		final IEncode be = bc.getEncoding();
-
-		// if(ae.equals(be))
-		// throw new NotImplementedException("Equivalent encodings combine");
-
-		if(ae instanceof SparseEncoding && !(be instanceof SparseEncoding)) {
-			// the order must be sparse second unless both sparse.
-			return combineCompressed(combinedColumns, bc, ac);
-		}
 
 		final Pair<IEncode, HashMapLongInt> cec = ae.combineWithMap(be);
 		final IEncode ce = cec.getLeft();

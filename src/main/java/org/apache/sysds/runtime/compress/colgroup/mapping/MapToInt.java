@@ -23,7 +23,6 @@ import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
 import java.util.Arrays;
-import java.util.BitSet;
 
 import org.apache.commons.lang3.NotImplementedException;
 import org.apache.sysds.runtime.compress.colgroup.IMapToDataGroup;
@@ -92,7 +91,7 @@ public class MapToInt extends AMapToData {
 	}
 
 	@Override
-	public void set(int l, int u, int off, AMapToData tm){
+	public void set(int l, int u, int off, AMapToData tm) {
 		for(int i = l; i < u; i++, off++) {
 			set(i, tm.getIndex(off));
 		}
@@ -195,12 +194,6 @@ public class MapToInt extends AMapToData {
 	}
 
 	@Override
-	public void copyBit(BitSet d) {
-		for(int i = d.nextSetBit(0); i >= 0; i = d.nextSetBit(i + 1))
-			_data[i] = 1;
-	}
-
-	@Override
 	public int[] getCounts(int[] ret) {
 		for(int i = 0; i < _data.length; i++)
 			ret[_data[i]]++;
@@ -230,7 +223,7 @@ public class MapToInt extends AMapToData {
 			ret = new MapToUByte(unique, size);
 		else if(unique < 256)
 			ret = new MapToByte(unique, size);
-		else if(unique < Character.MAX_VALUE )
+		else if(unique < Character.MAX_VALUE)
 			ret = new MapToChar(unique, size);
 		else if(unique < MapToCharPByte.max)
 			ret = new MapToCharPByte(unique, size);

@@ -62,10 +62,6 @@ public class MapToUByte extends MapToByte {
 		Arrays.fill(_data, (byte) (v % 128));
 	}
 
-	public static long getInMemorySize(int dataLength) {
-		return MapToByte.getInMemorySize(dataLength);
-	}
-
 	@Override
 	public void write(DataOutput out) throws IOException {
 		out.writeByte(MAP_TYPE.UBYTE.ordinal());

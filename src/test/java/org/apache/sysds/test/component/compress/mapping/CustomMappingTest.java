@@ -21,6 +21,7 @@ package org.apache.sysds.test.component.compress.mapping;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
@@ -28,6 +29,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.when;
 
+import java.util.Arrays;
 import java.util.Random;
 
 import org.apache.commons.lang3.NotImplementedException;
@@ -35,6 +37,7 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.runtime.compress.CompressedMatrixBlock;
 import org.apache.sysds.runtime.compress.DMLCompressionException;
+import org.apache.sysds.runtime.compress.colgroup.IMapToDataGroup;
 import org.apache.sysds.runtime.compress.colgroup.mapping.AMapToData;
 import org.apache.sysds.runtime.compress.colgroup.mapping.MapToBit;
 import org.apache.sysds.runtime.compress.colgroup.mapping.MapToByte;
@@ -55,7 +58,6 @@ import org.junit.Test;
 public class CustomMappingTest {
 
 	protected static final Log LOG = LogFactory.getLog(CustomMappingTest.class.getName());
-
 
 	int[] data = new int[] {0, 1, 0, 0, 0, 0, 1, 1, 0, 1, 1, 0, 0, 1, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 1, 0, 0,
 		0, 1, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 1, 0, 1, 1, 1, 1, 1, 0, 0, 0, 1, 0, 1, 0, 0, 0, 1, 1, 1, 0, 0, 1, 1, 0, 1, 1,
@@ -224,14 +226,14 @@ public class CustomMappingTest {
 		for(MAP_TYPE m : MapToFactory.MAP_TYPE.values()) {
 			AMapToData a = MapToFactory.create(s, m);
 			a.getMaxPossible();
-			for(int i = 1; i < Integer.MAX_VALUE/2 && i < a.getMaxPossible(); i = i * 2) {
-				for(int j = 0; j < s; j ++){
-					a.set(j, (int)Math.max(0L, (long)i-j-1));
+			for(int i = 1; i < Integer.MAX_VALUE / 2 && i < a.getMaxPossible(); i = i * 2) {
+				for(int j = 0; j < s; j++) {
+					a.set(j, (int) Math.max(0L, (long) i - j - 1));
 				}
 				AMapToData b = a.resize(i);
 				String mm = a.toString() + " vs " + b.toString();
-				for(int j = 0; j < s; j++){
-					assertEquals(mm,a.getIndex(j), b.getIndex(j));
+				for(int j = 0; j < s; j++) {
+					assertEquals(mm, a.getIndex(j), b.getIndex(j));
 				}
 			}
 
@@ -244,17 +246,234 @@ public class CustomMappingTest {
 		for(MAP_TYPE m : MapToFactory.MAP_TYPE.values()) {
 			AMapToData a = MapToFactory.create(s, m);
 			a.getMaxPossible();
-			for(int i = 1; i < Integer.MAX_VALUE/2 && i < a.getMaxPossible(); i = i * 2) {
-				for(int j = 0; j < s; j ++){
-					a.set(j, (int)Math.max(0L, (long)i-j-1));
+			for(int i = 1; i < Integer.MAX_VALUE / 2 && i < a.getMaxPossible(); i = i * 2) {
+				for(int j = 0; j < s; j++) {
+					a.set(j, (int) Math.max(0L, (long) i - j - 1));
 				}
 				AMapToData b = a.resize(i);
 				String mm = a.toString() + " vs " + b.toString();
-				for(int j = 0; j < s; j++){
-					assertEquals(mm,a.getIndex(j), b.getIndex(j));
+				for(int j = 0; j < s; j++) {
+					assertEquals(mm, a.getIndex(j), b.getIndex(j));
 				}
 			}
 
 		}
+	}
+
+	@Test
+	public void testBitSetFill() {
+		AMapToData a = MapToFactory.create(100, MAP_TYPE.BIT);
+		testFill(100, a);
+	}
+
+	@Test
+	public void testBitSetFill64() {
+		int length = 64 * 3;
+		AMapToData a = MapToFactory.create(length, MAP_TYPE.BIT);
+		testFill(length, a);
+	}
+
+	private void testFill(int length, AMapToData a) {
+		for(int i = 0; i < length; i++) {
+			assertEquals(0, a.getIndex(i));
+		}
+
+		a.fill(1);
+		for(int i = 0; i < length; i++) {
+			assertEquals(1, a.getIndex(i));
+		}
+
+		a.fill(0);
+		for(int i = 0; i < length; i++) {
+			assertEquals(0, a.getIndex(i));
+		}
+	}
+
+	@Test
+	public void testBitSetNextBitOutOfRange() {
+		MapToBit m = new MapToBit(2, 100);
+		assertEquals(-1, m.nextSetBit(0));
+		assertEquals(-1, m.nextSetBit(1000));
+		m.fill(1);
+		assertEquals(-1, m.nextSetBit(1000));
+		assertEquals(-1, m.nextSetBit(100));
+		assertEquals(99, m.nextSetBit(99));
+		assertEquals(98, m.nextSetBit(98));
+
+	}
+
+	@Test
+	public void testBitSetNextBit() {
+		MapToBit m = new MapToBit(2, 100);
+		m.set(1,1);
+		m.set(98,1);
+		assertEquals(1, m.nextSetBit(0));
+		assertEquals(98, m.nextSetBit(2));
+		m.fill(1);
+		for(int i = 0; i < 100; i++){
+			m.set(i, 0);
+		}
+
+		assertEquals(-1, m.nextSetBit(0));
+		
+
+	}
+
+
+	@Test
+	public void decompressToRange() {
+		double[] values = new double[] {1, 2, 3, 4, 5, 6};
+
+		for(MAP_TYPE m : MapToFactory.MAP_TYPE.values()) {
+			AMapToData map = MapToFactory.create(new int[] {0, 1, 2, 3, 4, 5, 1, 2, 3}, m);
+			int rl = 0;
+			int ru = map.size();
+			int off = 0;
+
+			evalDecompressRange(values, map, rl, ru, off);
+		}
+	}
+
+	@Test
+	public void decompressToRange2() {
+		double[] values = new double[] {1, 2, 3, 4, 5, 6.3};
+
+		for(MAP_TYPE m : MapToFactory.MAP_TYPE.values()) {
+			AMapToData map = MapToFactory.create(new int[] {0, 1, 2, 3, 4, 5, 1, 2, 3}, m);
+			int rl = 3;
+			int ru = map.size();
+			int off = 0;
+
+			evalDecompressRange(values, map, rl, ru, off);
+		}
+	}
+
+	@Test
+	public void decompressToRange3() {
+		double[] values = new double[] {1, 2, 3, 4, 5, 6.3};
+
+		for(MAP_TYPE m : MapToFactory.MAP_TYPE.values()) {
+			AMapToData map = MapToFactory.create(new int[] {0, 1, 2, 3, 4, 5, 1, 2, 3}, m);
+			int rl = 1;
+			int ru = map.size() - 2;
+			int off = 0;
+
+			evalDecompressRange(values, map, rl, ru, off);
+		}
+	}
+
+	@Test
+	public void decompressToRangeOffset1() {
+		double[] values = new double[] {1, 2, 3, 4, 5, 6.3};
+
+		for(MAP_TYPE m : MapToFactory.MAP_TYPE.values()) {
+			AMapToData map = MapToFactory.create(new int[] {0, 1, 2, 3, 4, 5, 1, 2, 3}, m);
+			int rl = 1;
+			int ru = map.size() - 2;
+			int off = -1;
+
+			evalDecompressRange(values, map, rl, ru, off);
+		}
+	}
+
+	@Test
+	public void decompressToRangeOffset2() {
+		double[] values = new double[] {1, 2, 3, 4, 5, 6.3};
+
+		for(MAP_TYPE m : MapToFactory.MAP_TYPE.values()) {
+			AMapToData map = MapToFactory.create(new int[] {0, 1, 2, 3, 4, 5, 1, 2, 3}, m);
+			int rl = 1;
+			int ru = map.size() - 2;
+			int off = 1;
+
+			evalDecompressRange(values, map, rl, ru, off);
+		}
+	}
+
+	private void evalDecompressRange(double[] values, AMapToData map, int rl, int ru, int off) {
+		double[] ret = new double[map.size() + off];
+		map.decompressToRange(ret, rl, ru, off, values);
+		String r = Arrays.toString(ret);
+		for(int i = 0; i < ret.length; i++) {
+			if(i < rl + off || i >= ru + off)
+				assertEquals(r + "index : " + i, 0, ret[i], 0);
+			else
+				assertEquals(r + "index : " + i, values[map.getIndex(i - off)], ret[i], 0);
+		}
+	}
+
+	@Test
+	public void isEmptyBitSet() {
+		MapToBit m = new MapToBit(2, 1000);
+		assertTrue(m.isEmpty());
+		m.set(134, 1);
+		assertFalse(m.isEmpty());
+		m.set(134, 0);
+		assertTrue(m.isEmpty());
+		m.fill(1);
+		assertFalse(m.isEmpty());
+		m.fill(0);
+		assertTrue(m.isEmpty());
+	}
+
+	@Test(expected = RuntimeException.class)
+	public void appendNonZero() {
+		MapToZero m = new MapToZero(10);
+		IMapToDataGroup g = mock(IMapToDataGroup.class);
+		when(g.getMapToData()).thenReturn(new MapToBit(2, 10));
+		m.appendN(new IMapToDataGroup[] {g});
+	}
+
+	@Test
+	public void getType() {
+
+		for(MAP_TYPE m : MapToFactory.MAP_TYPE.values()) {
+			assertEquals(m, MapToFactory.create(10, m).getType());
+		}
+	}
+
+	@Test
+	public void setAndGet() {
+		Random r = new Random(324);
+		for(MAP_TYPE m : MapToFactory.MAP_TYPE.values()) {
+			AMapToData mm = MapToFactory.create(10, m);
+			int v = MapToFactory.getMaxPossible(m);
+
+			assertEquals(v, mm.setAndGet(1, v));
+			if(v != 0){
+				for(int i = 0; i < 100; i++){
+					int rv = r.nextInt(v);
+					int ri = r.nextInt(mm.size());
+					assertEquals(rv, mm.setAndGet(ri, rv));
+				}
+			}
+		}
+	}
+
+
+	@Test 
+	public void nothingTestsForMapToZero(){
+		MapToZero m = new MapToZero(10);
+		m.copyBit(null); // do nothing
+		m.replace(-1,10);// do nothing
+		m.set(1,1,1,null); // do nothing
+		assertEquals(0, m.getUpperBoundValue());
+		assertEquals(m, new MapToZero(10));
+		
+	}
+
+	@Test 
+	public void mapToZeroSlice(){
+		MapToZero m = new MapToZero(10);
+		AMapToData m2 = m.slice(3,8); // return new.
+		assertEquals(new MapToZero(8-3),m2);
+		
+	}
+
+	@Test 
+	public void mapToZeroEquals(){
+		MapToZero m = new MapToZero(10);
+		assertNotEquals(MapToFactory.create(10, MAP_TYPE.BYTE),m);
+		
 	}
 }

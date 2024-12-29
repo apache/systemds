@@ -23,7 +23,6 @@ import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
 import java.util.Arrays;
-import java.util.BitSet;
 
 import org.apache.commons.lang3.NotImplementedException;
 import org.apache.sysds.runtime.compress.colgroup.IMapToDataGroup;
@@ -178,11 +177,6 @@ public class MapToCharPByte extends AMapToData {
 			set(i, d[i]);
 	}
 
-	@Override
-	public void copyBit(BitSet d) {
-		for(int i = d.nextSetBit(0); i >= 0; i = d.nextSetBit(i + 1))
-			_data_c[i] = 1;
-	}
 
 	@Override
 	public int[] getCounts(int[] ret) {

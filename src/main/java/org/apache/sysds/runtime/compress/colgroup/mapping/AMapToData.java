@@ -23,7 +23,6 @@ import java.io.DataOutput;
 import java.io.IOException;
 import java.io.Serializable;
 import java.util.ArrayList;
-import java.util.BitSet;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
@@ -803,9 +802,9 @@ public abstract class AMapToData implements Serializable {
 	 */
 	public void copy(AMapToData d) {
 		if(d.nUnique == 1)
-			return;
-		// else if(d instanceof MapToBit)
-		// copyBit((MapToBit) d);
+			fill(0);
+		else if(d instanceof MapToBit)
+			copyBit((MapToBit) d);
 		else if(d instanceof MapToInt)
 			copyInt((MapToInt) d);
 		else {
@@ -834,7 +833,13 @@ public abstract class AMapToData implements Serializable {
 
 	public abstract void copyInt(int[] d, int start, int end);
 
-	public abstract void copyBit(BitSet d);
+
+	public void copyBit(MapToBit d) {
+		fill(0);
+		for(int i = d.nextSetBit(0); i >= 0; i = d.nextSetBit(i + 1)) {
+			set(i, 1);
+		}
+	}
 
 	public int getMax() {
 		int m = -1;
@@ -846,7 +851,8 @@ public abstract class AMapToData implements Serializable {
 	}
 
 	/**
-	 * Get the maximum possible value to encode in this encoding. For instance in a bit you can encode 2 values therefore max is 1
+	 * Get the maximum possible value to encode in this encoding. For instance in a bit you can encode 2 values therefore
+	 * max is 1
 	 * 
 	 * @return The maximum number of distinct values to encode
 	 */

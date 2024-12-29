@@ -22,7 +22,6 @@ package org.apache.sysds.runtime.compress.colgroup.mapping;
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
-import java.util.BitSet;
 
 import org.apache.commons.lang3.NotImplementedException;
 import org.apache.sysds.runtime.compress.colgroup.IMapToDataGroup;
@@ -137,7 +136,7 @@ public class MapToZero extends AMapToData {
 	}
 
 	@Override
-	public void copyBit(BitSet d) {
+	public void copyBit(MapToBit d) {
 		// do nothing
 	}
 
@@ -191,7 +190,6 @@ public class MapToZero extends AMapToData {
 	@Override
 	public boolean equals(AMapToData e) {
 		return e instanceof MapToZero && //
-			e.getUnique() == getUnique() && //
 			_size == ((MapToZero) e)._size;
 	}
 }

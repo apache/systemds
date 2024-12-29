@@ -144,6 +144,20 @@ public interface MapToFactory {
 	}
 
 	/**
+	 * Create a specific mapping based on the integer values given. This constructor does not guarantee the values in the
+	 * int array is encode-able in the given mapping.
+	 * 
+	 * @param values The values to encode into the mapping
+	 * @param t      The mapping type to use
+	 * @return The filled mapping with the values
+	 */
+	public static AMapToData create(final int[] values, final MAP_TYPE t) {
+		AMapToData map = create(values.length, t);
+		map.copyInt(values);
+		return map;
+	}
+
+	/**
 	 * Force the mapping into an other mapping type. This method is unsafe since if there is overflows in the
 	 * conversions, they are not handled. Also if the change is into the same type a new map is allocated anyway.
 	 * 
@@ -228,6 +242,32 @@ public interface MapToFactory {
 			case INT:
 			default:
 				return MapToInt.readFields(in);
+		}
+	}
+
+	/**
+	 * Get the maximum value possible to encode in a specific mapping type.
+	 * 
+	 * @param t The mapping type to analyze
+	 * @return The maximum value to encode.
+	 */
+	public static int getMaxPossible(MAP_TYPE t) {
+		switch(t) {
+			case ZERO:
+				return 0;
+			case BIT:
+				return 1;
+			case UBYTE:
+				return 127;
+			case BYTE:
+				return 255;
+			case CHAR:
+				return Character.MAX_VALUE;
+			case CHAR_BYTE:
+				return MapToCharPByte.max;
+			case INT:
+			default:
+				return Integer.MAX_VALUE;
 		}
 	}
 }

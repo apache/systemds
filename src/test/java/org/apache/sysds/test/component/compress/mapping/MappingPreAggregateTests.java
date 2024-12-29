@@ -19,6 +19,7 @@
 
 package org.apache.sysds.test.component.compress.mapping;
 
+import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
 
@@ -258,7 +259,6 @@ public class MappingPreAggregateTests {
 	@Test
 	public void testPreAggregateDenseSingleRowWithIndexes() {
 		switch(type) {
-			case BIT:
 			case INT:
 				return;
 			default:
@@ -288,6 +288,49 @@ public class MappingPreAggregateTests {
 			fail(e.toString());
 		}
 	}
+
+	@Test
+	public void testPreAggregateSparseSingleRow() {
+		try {
+			if(!sb.isInSparseFormat())
+				return;
+			double[] pre = new double[m.getUnique()];
+			m.preAggregateSparse(sb.getSparseBlock(), pre, 0, 1);
+			verifyPreaggregate(m, sb, 0, 1, pre);
+		}
+		catch(Exception e) {
+			e.printStackTrace();
+			fail(e.toString());
+		}
+	}
+
+	@Test
+	public void testPreAggregateSparseMultiRow() {
+		try {
+			if(!sb.isInSparseFormat())
+				return;
+			double[] pre = new double[m.getUnique() * sb.getNumRows()];
+			m.preAggregateSparse(sb.getSparseBlock(), pre, 0, sb.getNumRows());
+			verifyPreaggregate(m, sb, 0, sb.getNumRows(), pre);
+		}
+		catch(Exception e) {
+			e.printStackTrace();
+			fail(e.toString());
+		}
+	}
+
+
+	private void verifyPreaggregate(AMapToData m, MatrixBlock mb, int rl, int ru, double[] ret){
+
+		double[] verification = new double[ret.length];
+		for(int i = rl; i < ru; i++){
+			for(int j = 0; j < mb.getNumColumns(); j++){
+				verification[m.getIndex(j) + i * m.getUnique()] += mb.get(i,j);
+			}
+		}
+		assertArrayEquals(verification, ret, 0);
+	}
+
 
 	private void compareRes(double[] expectedFull, double[] actual, int row) {
 		String error = "\nNot equal elements with " + type + "  " + m.getUnique();

@@ -30,6 +30,7 @@ import org.apache.sysds.runtime.compress.colgroup.dictionary.DictionaryFactory;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.IDictionary;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.IdentityDictionary;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.MatrixBlockDictionary;
+import org.apache.sysds.runtime.compress.colgroup.dictionary.PlaceHolderDict;
 import org.apache.sysds.runtime.compress.colgroup.indexes.ColIndexFactory;
 import org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex;
 import org.apache.sysds.runtime.compress.colgroup.mapping.AMapToData;
@@ -79,7 +80,7 @@ public class ColGroupConst extends ADictBasedColGroup implements IContainDefault
 	public static AColGroup create(IColIndex colIndices, IDictionary dict) {
 		if(dict == null)
 			return new ColGroupEmpty(colIndices);
-		else if(dict.getNumberOfValues(colIndices.size()) > 1) {
+		else if(dict.getNumberOfValues(colIndices.size()) > 1 && !(dict instanceof PlaceHolderDict)) {
 			// extract dict first row
 			final double[] nd = new double[colIndices.size()];
 			for(int i = 0; i < colIndices.size(); i++)

@@ -19,6 +19,7 @@
 
 package org.apache.sysds.test.component.compress.mapping;
 
+import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
@@ -520,4 +521,41 @@ public class CustomMappingTest {
 		}
 
 	}
+
+
+	@Test 
+	public void counts(){
+		MapToBit m = new MapToBit(2, 134);
+		m.set(3,1);
+		m.set(10,1);
+		m.set(110,1);
+		int[] counts = m.getCounts();
+		for(MAP_TYPE t : MAP_TYPE.values()){
+			if(t == MAP_TYPE.ZERO)
+				continue;
+			AMapToData d = MapToFactory.resizeForce(m, t);
+			assertArrayEquals(counts, d.getCounts());
+		}
+
+
+	}
+
+	@Test 
+	public void countRunsAlternative(){
+		MapToBit m = new MapToBit(2, 134);
+		m.set(3,1);
+		m.set(10,1);
+		m.set(110,1);
+		int counts = m.countRuns();
+		for(MAP_TYPE t : MAP_TYPE.values()){
+			if(t == MAP_TYPE.ZERO)
+				continue;
+			AMapToData d = MapToFactory.resizeForce(m, t);
+			assertEquals(counts, d.countRuns());
+		}
+
+
+	}
+
+
 }

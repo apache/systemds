@@ -187,10 +187,7 @@ public class MappingTests {
 
 	@Test
 	public void countRuns() {
-		if(m.getUnique() > m.size())
-			return;
 		int runs = m.countRuns();
-
 		assertTrue(runs <= m.size());
 	}
 

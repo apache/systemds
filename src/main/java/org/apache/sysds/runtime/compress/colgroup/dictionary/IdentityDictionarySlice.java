@@ -170,26 +170,12 @@ public class IdentityDictionarySlice extends IdentityDictionary {
 	}
 
 	@Override
-	public void colSumSq(double[] c, int[] counts, IColIndex colIndexes) {
-		colSum(c, counts, colIndexes);
-	}
-
-	@Override
-	public void colProduct(double[] res, int[] counts, IColIndex colIndexes) {
-		throw new NotImplementedException();
-		// for(int i = 0; i < colIndexes.size(); i++) {
-		// 	res[colIndexes.get(i)] = 0;
-		// }
-	}
-
-	@Override
 	public double sum(int[] counts, int ncol) {
-		throw new NotImplementedException();
-		// // number of rows, change this.
-		// double s = 0.0;
-		// for(int i = l; i < u; i++)
-		// 	s += counts[i];
-		// return s;
+		int end = withEmpty && u == ncol ? u - 1 : u;
+		double s = 0.0;
+		for(int i = l; i < end; i++)
+			s += counts[i];
+		return s;
 	}
 
 	@Override

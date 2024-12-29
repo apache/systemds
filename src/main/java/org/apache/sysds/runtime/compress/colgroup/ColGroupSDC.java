@@ -86,9 +86,8 @@ public class ColGroupSDC extends ASDC implements IMapToDataGroup {
 				throw new DMLCompressionException("Invalid construction of SDC group: number uniques: " + data.getUnique()
 					+ " vs." + dict.getNumberOfValues(colIndices.size()));
 			}
-			if(_indexes.getSize() == numRows) {
-				throw new DMLCompressionException("Invalid SDC group that contains index with size == numRows");
-			}
+			if(_indexes.getSize() == numRows)
+				LOG.warn("Invalid SDC group that contains index with size == numRows");
 			if(defaultTuple.length != colIndices.size())
 				throw new DMLCompressionException("Invalid construction of SDC group");
 

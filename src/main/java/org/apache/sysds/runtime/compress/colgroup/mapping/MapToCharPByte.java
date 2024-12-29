@@ -38,8 +38,7 @@ public class MapToCharPByte extends AMapToData {
 
 	private static final long serialVersionUID = 6315708056775476541L;
 
-	// 8323073
-	public static final int max = 0xFFFF * 127;
+	public static final int max = (0xFFFF + 1) * 128 -1;
 	private final char[] _data_c;
 	private final byte[] _data_b; // next byte after the char
 
@@ -280,7 +279,7 @@ public class MapToCharPByte extends AMapToData {
 
 	@Override
 	public int getMaxPossible() {
-		return Character.MAX_VALUE * 256;
+		return (Character.MAX_VALUE+1) * 256 -1;
 	}
 
 	@Override

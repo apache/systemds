@@ -185,7 +185,7 @@ public class MapToZero extends AMapToData {
 
 	@Override
 	public int getMaxPossible() {
-		return 1;
+		return 0;
 	}
 
 	@Override

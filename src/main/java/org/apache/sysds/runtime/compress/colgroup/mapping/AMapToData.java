@@ -829,7 +829,7 @@ public abstract class AMapToData implements Serializable {
 	 * @param d The array to copy
 	 */
 	public void copyInt(int[] d) {
-		copyInt(d, 0, size());
+		copyInt(d, 0, Math.min(d.length, size()));
 	}
 
 	public abstract void copyInt(int[] d, int start, int end);
@@ -846,7 +846,7 @@ public abstract class AMapToData implements Serializable {
 	}
 
 	/**
-	 * Get the maximum possible value to encode in this encoding. For instance in a bit you can encode 2 values
+	 * Get the maximum possible value to encode in this encoding. For instance in a bit you can encode 2 values therefore max is 1
 	 * 
 	 * @return The maximum number of distinct values to encode
 	 */

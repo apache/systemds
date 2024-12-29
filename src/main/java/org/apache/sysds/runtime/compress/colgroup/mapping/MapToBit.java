@@ -442,7 +442,7 @@ public class MapToBit extends AMapToData {
 	}
 
 	public int getMaxPossible() {
-		return 2;
+		return 1;
 	}
 
 	@Override

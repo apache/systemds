@@ -46,7 +46,7 @@ public class MapToChar extends AMapToData {
 	private final char[] _data;
 
 	protected MapToChar(int size) {
-		this(Character.MAX_VALUE, size);
+		this(Character.MAX_VALUE+1, size);
 	}
 
 	public MapToChar(int unique, int size) {
@@ -328,7 +328,7 @@ public class MapToChar extends AMapToData {
 
 	@Override
 	public int getMaxPossible() {
-		return Character.MAX_VALUE;
+		return Character.MAX_VALUE ;
 	}
 
 	@Override

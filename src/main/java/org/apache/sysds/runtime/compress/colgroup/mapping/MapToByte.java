@@ -284,7 +284,7 @@ public class MapToByte extends AMapToData {
 
 	@Override
 	public int getMaxPossible() {
-		return 256;
+		return 255;
 	}
 
 	@Override

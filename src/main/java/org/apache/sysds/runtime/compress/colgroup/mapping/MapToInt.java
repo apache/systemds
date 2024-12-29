@@ -37,7 +37,7 @@ public class MapToInt extends AMapToData {
 	private final int[] _data;
 
 	protected MapToInt(int size) {
-		this(Character.MAX_VALUE + 1, size);
+		this(Integer.MAX_VALUE, size);
 	}
 
 	public MapToInt(int unique, int size) {
@@ -226,11 +226,11 @@ public class MapToInt extends AMapToData {
 			return new MapToZero(size);
 		else if(unique == 2 && size > 32)
 			ret = new MapToBit(unique, size);
-		else if(unique <= 127)
+		else if(unique < 128)
 			ret = new MapToUByte(unique, size);
 		else if(unique < 256)
 			ret = new MapToByte(unique, size);
-		else if(unique < Character.MAX_VALUE - 1)
+		else if(unique < Character.MAX_VALUE )
 			ret = new MapToChar(unique, size);
 		else if(unique < MapToCharPByte.max)
 			ret = new MapToCharPByte(unique, size);

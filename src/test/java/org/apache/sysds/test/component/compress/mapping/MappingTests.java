@@ -457,4 +457,15 @@ public class MappingTests {
 
 	}
 
+
+
+	@Test 
+	public void slice(){
+		if(m.size() > 2){
+			AMapToData s = m.slice(1, m.size()-1);
+			for(int i = 0; i < m.size() -2; i++){
+				assertEquals(m.getIndex(i+1), s.getIndex(i));
+			}
+		}
+	}
 }

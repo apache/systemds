@@ -23,6 +23,7 @@ import java.util.Arrays;
 import java.util.Random;
 
 import org.apache.sysds.runtime.compress.CompressionSettings;
+import org.apache.sysds.runtime.compress.DMLCompressionException;
 import org.apache.sysds.runtime.compress.colgroup.AColGroup.CompressionType;
 import org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex;
 import org.apache.sysds.runtime.compress.estim.encoding.EncodingFactory;
@@ -42,13 +43,22 @@ import org.apache.sysds.utils.stats.Timing;
 public class ComEstSample extends AComEst {
 
 	/** Sample extracted from the input data */
-	private final MatrixBlock _sample;
+	protected final MatrixBlock _sample;
 	/** Parallelization degree */
-	private final int _k;
+	protected final int _k;
 	/** Sample size */
-	private final int _sampleSize;
+	protected final int _sampleSize;
 	/** Boolean specifying if the sample is in transposed format. */
-	private boolean _transposed;
+	protected boolean _transposed;
+
+	public ComEstSample(MatrixBlock sample, CompressionSettings cs, MatrixBlock full, int k) {
+		super(full, cs);
+		_k = k;
+		_transposed = cs.transposed;
+		_sample = sample;
+		_sampleSize = sample.getNumRows();
+
+	}
 
 	/**
 	 * CompressedSizeEstimatorSample, samples from the input data and estimates the size of the compressed matrix.
@@ -95,22 +105,44 @@ public class ComEstSample extends AComEst {
 	@Override
 	protected int worstCaseUpperBound(IColIndex columns) {
 		if(getNumColumns() == columns.size())
-			return Math.min(getNumRows(), (int) _data.getNonZeros());
+			return Math.min(getNumRows(), (int) Math.min(_data.getNonZeros(), Integer.MAX_VALUE));
 		return getNumRows();
 	}
 
 	@Override
 	protected CompressedSizeInfoColGroup combine(IColIndex combinedColumns, CompressedSizeInfoColGroup g1,
 		CompressedSizeInfoColGroup g2, int maxDistinct) {
-		final IEncode map = g1.getMap().combine(g2.getMap());
-		return extractInfo(map, combinedColumns, maxDistinct);
+		try {
+			final IEncode map = g1.getMap().combine(g2.getMap());
+			return extractInfo(map, combinedColumns, maxDistinct);
+		}
+		catch(Exception e) {
+
+			String s1 = g1.toString();
+			if(s1.length() > 1000)
+				s1 = s1.substring(0, 1000);
+
+			String s2 = g2.toString();
+			if(s2.length() > 1000)
+				s2 = s2.substring(0, 1000);
+
+			throw new DMLCompressionException("Failed to combine :\n" + s1 + "\n\n" + s2, e);
+		}
 	}
 
 	private CompressedSizeInfoColGroup extractInfo(IEncode map, IColIndex colIndexes, int maxDistinct) {
-		final double spar = _data.getSparsity();
-		final EstimationFactors sampleFacts = map.extractFacts(_sampleSize, spar, spar, _cs);
-		final EstimationFactors em = scaleFactors(sampleFacts, colIndexes, maxDistinct, map.isDense());
-		return new CompressedSizeInfoColGroup(colIndexes, em, _cs.validCompressions, map);
+		try {
+			final double spar = _data.getSparsity();
+			final EstimationFactors sampleFacts = map.extractFacts(_sampleSize, spar, spar, _cs);
+			final EstimationFactors em = scaleFactors(sampleFacts, colIndexes, maxDistinct, map.isDense());
+			return new CompressedSizeInfoColGroup(colIndexes, em, _cs.validCompressions, map);
+		}
+		catch(Exception e) {
+			String ms = map.toString();
+			if(ms.length() > 1000)
+				ms = ms.substring(0, 1000);
+			throw new DMLCompressionException("Failed to extract info: \n" + ms, e);
+		}
 	}
 
 	private EstimationFactors scaleFactors(EstimationFactors sampleFacts, IColIndex colIndexes, int maxDistinct,
@@ -125,6 +157,9 @@ public class ComEstSample extends AComEst {
 			final long nnz = calculateNNZ(colIndexes, scalingFactor);
 			final int numOffs = calculateOffs(sampleFacts, numRows, scalingFactor, colIndexes, (int) nnz);
 			final int estDistinct = distinctCountScale(sampleFacts, numOffs, numRows, maxDistinct, dense, nCol);
+			// if(estDistinct < sampleFacts.numVals)
+			// throw new DMLCompressionException("Failed estimating distinct: " + estDistinct + " should have been above "
+			// + sampleFacts.numVals + "\n" + Arrays.toString(sampleFacts.frequencies));
 
 			// calculate the largest instance count.
 			final int maxLargestInstanceCount = numRows - estDistinct + 1;
@@ -133,11 +168,9 @@ public class ComEstSample extends AComEst {
 			final int mostFrequentOffsetCount = Math.max(Math.min(maxLargestInstanceCount, scaledLargestInstanceCount),
 				numRows - numOffs);
 
-			final double overallSparsity = calculateSparsity(colIndexes, nnz, scalingFactor,
-				sampleFacts.overAllSparsity);
+			final double overallSparsity = calculateSparsity(colIndexes, nnz, scalingFactor, sampleFacts.overAllSparsity);
 			// For robustness safety add 10 percent more tuple sparsity
 			final double tupleSparsity = Math.min(overallSparsity * 1.3, 1.0); // increase sparsity by 30%.
-
 			if(_cs.isRLEAllowed()) {
 				final int scaledRuns = Math.max(estDistinct,
 					calculateRuns(sampleFacts, scalingFactor, numOffs, estDistinct));
@@ -161,14 +194,14 @@ public class ComEstSample extends AComEst {
 		final int[] freq = sampleFacts.frequencies;
 		if(freq == null || freq.length == 0)
 			return numOffs; // very aggressive number of distinct
+		maxDistinct = Math.max(maxDistinct, sampleFacts.numVals);
 		// sampled size is smaller than actual if there was empty rows.
 		// and the more we can reduce this value the more accurate the estimation will become.
 		final int sampledSize = sampleFacts.numOffs;
-		int est = SampleEstimatorFactory.distinctCount(freq, dense ? numRows : numOffs, sampledSize,
-			_cs.estimationType);
+		int est = SampleEstimatorFactory.distinctCount(freq, dense ? numRows : numOffs, sampledSize, _cs.estimationType);
 		if(est > 10000)
 			est += est * 0.5;
-		if(nCol > 4) // Increase estimate if we get into many columns cocoding to be safe
+		if(nCol > 4 && est > 100) // Increase estimate if we get into many columns cocoding to be safe
 			est += ((double) est) * ((double) nCol) / 10;
 		// Bound the estimate with the maxDistinct.
 		return Math.max(Math.min(est, Math.min(maxDistinct, numOffs)), 1);

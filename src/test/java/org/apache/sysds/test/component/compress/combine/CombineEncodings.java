@@ -75,8 +75,9 @@ public class CombineEncodings {
 
 	@Test
 	public void combineCustom4() {
-		IEncode ae = new DenseEncoding(MapToFactory.create(new int[] {0, 1, 2, 3, 4, 5, 6, 7, 7, 0}, 10));
-		IEncode be = new DenseEncoding(MapToFactory.create(new int[] {0, 1, 2, 3, 4, 5, 6, 7, 7, 0}, 10));
+		// same mapping require the unique to be correct!!
+		IEncode ae = new DenseEncoding(MapToFactory.create(new int[] {0, 1, 2, 3, 4, 5, 6, 7, 7, 0}, 8));
+		IEncode be = new DenseEncoding(MapToFactory.create(new int[] {0, 1, 2, 3, 4, 5, 6, 7, 7, 0}, 8));
 		Pair<IEncode, HashMapLongInt> cec = ae.combineWithMap(be);
 		IEncode ce = cec.getLeft();
 		HashMapLongInt cem = cec.getRight();

@@ -49,7 +49,6 @@ import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.test.TestUtils;
 import org.junit.Test;
 
-
 public class CombineTest {
 
 	protected static final Log LOG = LogFactory.getLog(CombineTest.class.getName());
@@ -98,7 +97,6 @@ public class CombineTest {
 			IDictionary a = Dictionary.create(new double[] {1.2});
 			IDictionary b = Dictionary.create(new double[] {1.4});
 			HashMapLongInt filter = new HashMapLongInt(3);
-			// filter.put(0, 0);
 			IDictionary c = DictionaryFactory.combineFullDictionaries(a, 1, b, 1, filter);
 
 			assertEquals(c, null);
@@ -176,7 +174,7 @@ public class CombineTest {
 			IDictionary a = Dictionary.create(new double[] {1.2, 1.3});
 			IDictionary b = Dictionary.create(new double[] {1.4, 1.5});
 			HashMapLongInt filter = new HashMapLongInt(3);
-			filter.putIfAbsent(0,0);
+			filter.putIfAbsent(0, 0);
 
 			IDictionary c = DictionaryFactory.combineFullDictionaries(a, 1, b, 1, filter);
 
@@ -196,14 +194,13 @@ public class CombineTest {
 		}
 	}
 
-
 	@Test
 	public void twoBothSidesFilter2() {
 		try {
 			IDictionary a = Dictionary.create(new double[] {1.2, 1.3});
 			IDictionary b = Dictionary.create(new double[] {1.4, 1.5});
 			HashMapLongInt filter = new HashMapLongInt(3);
-			filter.putIfAbsent(3,0);
+			filter.putIfAbsent(3, 0);
 
 			IDictionary c = DictionaryFactory.combineFullDictionaries(a, 1, b, 1, filter);
 
@@ -223,15 +220,14 @@ public class CombineTest {
 		}
 	}
 
-
 	@Test
 	public void twoBothSidesFilter3() {
 		try {
 			IDictionary a = Dictionary.create(new double[] {1.2, 1.3});
 			IDictionary b = Dictionary.create(new double[] {1.4, 1.5});
 			HashMapLongInt filter = new HashMapLongInt(3);
-			filter.putIfAbsent(3,0);
-			filter.putIfAbsent(1,1);
+			filter.putIfAbsent(3, 0);
+			filter.putIfAbsent(1, 1);
 
 			IDictionary c = DictionaryFactory.combineFullDictionaries(a, 1, b, 1, filter);
 
@@ -531,52 +527,6 @@ public class CombineTest {
 		when(s.getCompType()).thenReturn(CompressionType.DDC);
 		DictionaryFactory.combineDictionariesSparse(m, s);
 	}
-
-	// @Test
-	// public void sparseSparseConst1() {
-	// 	try {
-	// 		IDictionary a = Dictionary.create(new double[] {3, 2, 7, 8});
-	// 		// IDictionary b = Dictionary.create(new double[] {4, 4, 9, 5});
-
-	// 		double[] bd = new double[] {0, 2};
-
-	// 		IDictionary c = DictionaryFactory.combineSparseConstSparseRet(a, 2, bd);
-	// 		MatrixBlock ret = c.getMBDict(2).getMatrixBlock();
-
-	// 		MatrixBlock exp = new MatrixBlock(2, 4, new double[] {//
-	// 			3, 2, 0, 2, //
-	// 			7, 8, 0, 2,});
-	// 		TestUtils.compareMatricesBitAvgDistance(ret, exp, 0, 0);
-	// 	}
-	// 	catch(Exception e) {
-	// 		e.printStackTrace();
-	// 		fail(e.getMessage());
-	// 	}
-	// }
-
-	// @Test
-	// public void sparseSparseConst2() {
-	// 	try {
-	// 		IDictionary a = Dictionary.create(new double[] {3, 2, 7, 8});
-	// 		// IDictionary b = Dictionary.create(new double[] {4, 4, 9, 5});
-
-	// 		double[] bd = new double[] {0, 2};
-
-	// 		IDictionary c = DictionaryFactory.combineSparseConstSparseRet(a, 1, bd);
-	// 		MatrixBlock ret = c.getMBDict(2).getMatrixBlock();
-
-	// 		MatrixBlock exp = new MatrixBlock(4, 3, new double[] {//
-	// 			3, 0, 2, //
-	// 			2, 0, 2, //
-	// 			7, 0, 2, //
-	// 			8, 0, 2,});
-	// 		TestUtils.compareMatricesBitAvgDistance(exp, ret, 0, 0);
-	// 	}
-	// 	catch(Exception e) {
-	// 		e.printStackTrace();
-	// 		fail(e.getMessage());
-	// 	}
-	// }
 
 	@Test
 	public void testEmpty() {
@@ -1002,16 +952,6 @@ public class CombineTest {
 			}), red);
 	}
 
-	// private ASDC mockSDC(IDictionary ad, double[] def) {
-	// ASDC a = mock(ASDC.class);
-	// when(a.getCompType()).thenReturn(CompressionType.SDC);
-	// when(a.getDictionary()).thenReturn(ad);
-	// when(a.getDefaultTuple()).thenReturn(def);
-	// when(a.getNumCols()).thenReturn(def.length);
-	// when(a.getColIndices()).thenReturn(ColIndexFactory.create(def.length));
-	// return a;
-	// }
-
 	private ASDC mockSDC(IDictionary ad, double[] def, IColIndex c) {
 		ASDC a = mock(ASDC.class);
 		when(a.getCompType()).thenReturn(CompressionType.SDC);
@@ -1021,15 +961,6 @@ public class CombineTest {
 		when(a.getColIndices()).thenReturn(c);
 		return a;
 	}
-
-	// private ColGroupDDC mockDDC(IDictionary ad, int nCol) {
-	// ColGroupDDC a = mock(ColGroupDDC.class);
-	// when(a.getCompType()).thenReturn(CompressionType.DDC);
-	// when(a.getDictionary()).thenReturn(ad);
-	// when(a.getNumCols()).thenReturn(nCol);
-	// when(a.getColIndices()).thenReturn(ColIndexFactory.create(nCol));
-	// return a;
-	// }
 
 	private ColGroupDDC mockDDC(IDictionary ad, IColIndex c) {
 		ColGroupDDC a = mock(ColGroupDDC.class);

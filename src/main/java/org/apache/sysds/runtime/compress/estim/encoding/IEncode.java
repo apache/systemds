@@ -46,6 +46,10 @@ public interface IEncode {
 	/**
 	 * Combine two encodings without resizing the output. meaning the mapping of the indexes should be consistent with
 	 * left hand side Dictionary indexes and right hand side indexes.
+	 * <p>
+	 * 
+	 * 
+	 * NOTE: Require both encodings to contain the correct metadata for number of unique values.
 	 * 
 	 * @param e The other side to combine with
 	 * @return The combined encoding

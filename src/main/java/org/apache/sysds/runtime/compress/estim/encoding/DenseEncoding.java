@@ -189,11 +189,7 @@ public class DenseEncoding extends AEncode {
 
 	private Pair<IEncode, HashMapLongInt> combineDenseNoResize(final DenseEncoding other) {
 		if(map.equals(other.map)) {
-			LOG.warn("Constructing perfect mapping, this could be optimized to skip hashmap");
-			final HashMapLongInt m = new HashMapLongInt(Math.max(100, map.size() / 100));
-			for(int i = 0; i < map.getUnique(); i++)
-				m.putIfAbsent(i * (map.getUnique() + 1), i);
-			return new ImmutablePair<>(this, m); // same object
+			return combineSameMapping();
 		}
 
 		final AMapToData lm = map;
@@ -208,6 +204,14 @@ public class DenseEncoding extends AEncode {
 
 		final HashMapLongInt m = new HashMapLongInt(Math.max(100, maxUnique / 1000));
 		return new ImmutablePair<>(combineDenseWithHashMap(lm, rm, size, nVL, ret, m), m);
+	}
+
+	private Pair<IEncode, HashMapLongInt> combineSameMapping() {
+		LOG.warn("Constructing perfect mapping, this could be optimized to skip hashmap");
+		final HashMapLongInt m = new HashMapLongInt(Math.max(100, map.size() / 100));
+		for(int i = 0; i < map.getUnique(); i++)
+			m.putIfAbsent(i * (map.getUnique() + 1), i);
+		return new ImmutablePair<>(this, m); // same object
 	}
 
 	private Pair<IEncode, HashMapLongInt> combineSparseNoResize(final SparseEncoding other) {

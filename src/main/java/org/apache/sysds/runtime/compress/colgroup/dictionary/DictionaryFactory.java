@@ -413,12 +413,16 @@ public interface DictionaryFactory {
 
 	public static IDictionary combineFullDictionaries(IDictionary a, IColIndex ai, int nca, IDictionary b, IColIndex bi,
 		int ncb, HashMapLongInt filter) {
+
 		final int ra = a.getNumberOfValues(nca);
 		final int rb = b.getNumberOfValues(ncb);
 
 		final MatrixBlock ma = a.getMBDict(nca).getMatrixBlock();
 		final MatrixBlock mb = b.getMBDict(ncb).getMatrixBlock();
-		final MatrixBlock out = new MatrixBlock(filter != null ? filter.size() : ra * rb, nca + ncb, false);
+		final int filterSize = filter != null ? filter.size() : ra * rb;
+		if(filterSize == 0)
+			return null;
+		final MatrixBlock out = new MatrixBlock(filterSize, nca + ncb, false);
 		out.allocateBlock();
 
 		if(ai != null && bi != null && !IColIndex.inOrder(ai, bi)) {
@@ -447,6 +451,7 @@ public interface DictionaryFactory {
 
 	private static void combineFullDictionariesFilter(MatrixBlock out, HashMapLongInt filter, int ra, int rb, int nca,
 		int ncb, MatrixBlock ma, MatrixBlock mb) {
+
 		for(KV k : filter) {
 			final int r = (int) (k.k);
 			final int o = k.v;
@@ -823,7 +828,6 @@ public interface DictionaryFactory {
 		}
 	}
 
-
 	private static IDictionary combineSparseConstSparseRet(IDictionary a, int nca, double[] tub, int[] ai, int[] bi) {
 		final int ncb = tub.length;
 		final int ra = a.getNumberOfValues(nca);
@@ -937,24 +941,23 @@ public interface DictionaryFactory {
 	}
 
 	// public static IDictionary cBindDictionaries(List<Pair<Integer, IDictionary>> dicts) {
-	// 	MatrixBlock base = dicts.get(0).getValue().getMBDict(dicts.get(0).getKey()).getMatrixBlock();
-	// 	MatrixBlock[] others = new MatrixBlock[dicts.size() - 1];
-	// 	for(int i = 1; i < dicts.size(); i++) {
-	// 		Pair<Integer, IDictionary> p = dicts.get(i);
-	// 		others[i - 1] = p.getValue().getMBDict(p.getKey()).getMatrixBlock();
-	// 	}
-	// 	MatrixBlock ret = base.append(others, null, true);
-	// 	return new MatrixBlockDictionary(ret);
+	// MatrixBlock base = dicts.get(0).getValue().getMBDict(dicts.get(0).getKey()).getMatrixBlock();
+	// MatrixBlock[] others = new MatrixBlock[dicts.size() - 1];
+	// for(int i = 1; i < dicts.size(); i++) {
+	// Pair<Integer, IDictionary> p = dicts.get(i);
+	// others[i - 1] = p.getValue().getMBDict(p.getKey()).getMatrixBlock();
+	// }
+	// MatrixBlock ret = base.append(others, null, true);
+	// return new MatrixBlockDictionary(ret);
 	// }
 
 	public static IDictionary cBindDictionaries(IDictionary left, IDictionary right, int nColLeft, int nColRight) {
-		MatrixBlockDictionary base =left.getMBDict(nColLeft);
+		MatrixBlockDictionary base = left.getMBDict(nColLeft);
 		MatrixBlockDictionary add = right.getMBDict(nColRight);
 
-		MatrixBlock a = base == null ? (add != null ? 
-			new MatrixBlock(add.getNumberOfValues(nColRight), nColLeft, true) :
-			new MatrixBlock(1, nColLeft, true) ) : base.getMatrixBlock();
-		MatrixBlock b = add == null  ? new MatrixBlock(a.getNumRows(), nColRight, true)   :add.getMatrixBlock();
+		MatrixBlock a = base == null ? (add != null ? new MatrixBlock(add.getNumberOfValues(nColRight), nColLeft,
+			true) : new MatrixBlock(1, nColLeft, true)) : base.getMatrixBlock();
+		MatrixBlock b = add == null ? new MatrixBlock(a.getNumRows(), nColRight, true) : add.getMatrixBlock();
 		MatrixBlock ret = a.append(b, null, true);
 		return MatrixBlockDictionary.create(ret, true);
 	}

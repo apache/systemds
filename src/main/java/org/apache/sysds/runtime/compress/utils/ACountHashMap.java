@@ -54,7 +54,7 @@ public abstract class ACountHashMap<T> implements Cloneable {
 	}
 
 	/**
-	 * Increment and return the id of the incremeted index.
+	 * Increment and return the id of the incremented index.
 	 * 
 	 * @param key The key to increment
 	 * @return The id of the incremented entry.

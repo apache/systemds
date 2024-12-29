@@ -26,40 +26,53 @@ import org.apache.sysds.runtime.compress.CompressedMatrixBlock;
 import org.apache.sysds.runtime.compress.CompressionSettings;
 import org.apache.sysds.runtime.compress.colgroup.AColGroup;
 import org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex;
-import org.apache.sysds.runtime.compress.estim.encoding.IEncode;
 import org.apache.sysds.runtime.compress.lib.CLALibCombineGroups;
 
-public class ComEstCompressed extends AComEst {
+public class ComEstCompressedSample extends ComEstSample {
 
-	final CompressedMatrixBlock cData;
+	private static boolean loggedWarning = false;
 
-	protected ComEstCompressed(CompressedMatrixBlock data, CompressionSettings compSettings) {
-		super(data, compSettings);
-		cData = data;
+
+	public ComEstCompressedSample(CompressedMatrixBlock sample, CompressionSettings cs, CompressedMatrixBlock full,
+		int k) {
+		super(sample, cs, full, k);
+		// cData = sample;
 	}
 
 	@Override
 	protected List<CompressedSizeInfoColGroup> CompressedSizeInfoColGroup(int clen, int k) {
 		List<CompressedSizeInfoColGroup> ret = new ArrayList<>();
-		final int nRow = cData.getNumRows();
-		for(AColGroup g : cData.getColGroups()) {
-			ret.add(g.getCompressionInfo(nRow));
+		final int nRow = _data.getNumRows();
+		final List<AColGroup> fg = ((CompressedMatrixBlock) _data).getColGroups();
+		final List<AColGroup> sg = ((CompressedMatrixBlock) _sample).getColGroups();
+
+		for(int i = 0; i < fg.size(); i++) {
+			CompressedSizeInfoColGroup r = fg.get(i).getCompressionInfo(nRow);
+			r.setMap(sg.get(i).getCompressionInfo(_sampleSize).getMap());
+			ret.add(r);
 		}
+
 		return ret;
 	}
 
 	@Override
 	public CompressedSizeInfoColGroup getColGroupInfo(IColIndex colIndexes, int estimate, int nrUniqueUpperBound) {
+		if(!loggedWarning)
+			LOG.warn("Compressed input cannot fallback to resampling " + colIndexes);
+		loggedWarning = true;
 		return null;
 	}
 
 	@Override
 	public CompressedSizeInfoColGroup getDeltaColGroupInfo(IColIndex colIndexes, int estimate, int nrUniqueUpperBound) {
+		if(!loggedWarning)
+			LOG.warn("Compressed input cannot fallback to resampling " + colIndexes);
 		return null;
 	}
 
 	@Override
 	protected int worstCaseUpperBound(IColIndex columns) {
+		CompressedMatrixBlock cData = ((CompressedMatrixBlock) _data);
 		if(columns.size() == 1) {
 			int id = columns.get(0);
 			AColGroup g = cData.getColGroupForColumn(id);
@@ -75,16 +88,4 @@ public class ComEstCompressed extends AComEst {
 		}
 	}
 
-	@Override
-	protected CompressedSizeInfoColGroup combine(IColIndex combinedColumns, CompressedSizeInfoColGroup g1,
-		CompressedSizeInfoColGroup g2, int maxDistinct) {
-		final IEncode map = g1.getMap().combine(g2.getMap());
-		return getFacts(map, combinedColumns);
-	}
-
-	protected CompressedSizeInfoColGroup getFacts(IEncode map, IColIndex colIndexes) {
-		final int _numRows = getNumRows();
-		final EstimationFactors em = map.extractFacts(_numRows, _data.getSparsity(), _data.getSparsity(), _cs);
-		return new CompressedSizeInfoColGroup(colIndexes, em, _cs.validCompressions, map);
-	}
 }

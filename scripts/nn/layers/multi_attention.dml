@@ -188,9 +188,21 @@ backward = function(matrix[double] dcontext,
 
       dQ_h = dattention_scores %*% K_norm_h
       dK_h = t(dattention_scores) %*% Q_norm_h
-    }
 
+      # Append to batch matrices
+      dK_b[head] = matrix(dK_h, rows=1, cols=T*D)
+      dQ_b[head] = matrix(dQ_h, rows=1, cols=T*D)
+      dV_b[head] = matrix(dV_h, rows=1, cols=T*D)
+    }
+    
+    # Append to output matrices
+    dK[batch] = matrix(dK_b, rows=1, cols=H*T*D)
+    dQ[batch] = matrix(dQ_b, rows=1, cols=H*T*D)
+    dV[batch] = matrix(dV_b, rows=1, cols=H*T*D)
   }
 
-  # TODO: Transpose output matrices
+  # Swap head and token dimensions
+  dK = util::transpose_ABCD_to_ACBD(dK, H, T)
+  dQ = util::transpose_ABCD_to_ACBD(dQ, H, T)
+  dV = util::transpose_ABCD_to_ACBD(dV, H, T)
 }

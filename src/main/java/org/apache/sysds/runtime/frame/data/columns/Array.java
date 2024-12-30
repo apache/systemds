@@ -93,6 +93,14 @@ public abstract class Array<T> implements Writable {
 		return getRecodeMap(4);
 	}
 
+	/**
+	 * Get a recode map that maps each unique value in the array, to a long ID. Null values are ignored, and not included
+	 * in the mapping. The resulting recode map in stored in a soft reference to speed up repeated calls to the same
+	 * column.
+	 * 
+	 * @param estimate The estimated number of unique values in this Array to start the initial hashmap size at
+	 * @return A recode map
+	 */
 	public synchronized final Map<T, Integer> getRecodeMap(int estimate) {
 		return getRecodeMap(estimate, null);
 	}
@@ -102,7 +110,7 @@ public abstract class Array<T> implements Writable {
 	 * in the mapping. The resulting recode map in stored in a soft reference to speed up repeated calls to the same
 	 * column.
 	 * 
-	 * @param estimate the estimated number of unique.
+	 * @param estimate the estimated number of unique values in this array.
 	 * @param pool     An executor pool to be used for parallel execution
 	 * @return A recode map
 	 */
@@ -123,6 +131,15 @@ public abstract class Array<T> implements Writable {
 		return map;
 	}
 
+	/**
+	 * Get a recode map that maps each unique value in the array, to a long ID. Null values are ignored, and not included
+	 * in the mapping. The resulting recode map in stored in a soft reference to speed up repeated calls to the same
+	 * column.
+	 * 
+	 * @param estimate The estimate number of unique values inside this array.
+	 * @param pool     The thread pool to use for parallel creation of recode map (can be null).
+	 * @return The recode map created.
+	 */
 	protected Map<T, Integer> createRecodeMap(int estimate, ExecutorService pool) {
 		Timing t = new Timing();
 		final int s = size();
@@ -167,6 +184,15 @@ public abstract class Array<T> implements Writable {
 		}
 	}
 
+	/**
+	 * Merge Recode maps, most likely from parallel threads.
+	 * 
+	 * If the unique value is present in the target, use that ID, otherwise this method map to new ID's based on the
+	 * target mapping's size.
+	 * 
+	 * @param target The target object to merge the two maps into
+	 * @param from   The Map to take entries from.
+	 */
 	protected abstract void mergeRecodeMaps(Map<T, Integer> target, Map<T, Integer> from);
 
 	private Map<T, Integer> createRecodeMap(final int estimate, final int s, final int e) {
@@ -990,8 +1016,8 @@ public abstract class Array<T> implements Writable {
 	 * Set the index i in the map given based on the mapping provided. The map should be guaranteed to contain all unique
 	 * values.
 	 * 
-	 * @param map Map containing all unique values of this array
-	 * @param m   The array mapping to set the value part of the Map<T,Integer> from
+	 * @param map A map containing all unique values of this array
+	 * @param m   The MapToData to set the value part of the Map from
 	 * @param i   The index to set in m
 	 */
 	public void setM(Map<T, Integer> map, AMapToData m, int i) {
@@ -1002,9 +1028,9 @@ public abstract class Array<T> implements Writable {
 	 * Set the index i in the map given based on the mapping provided. The map should be guaranteed to contain all unique
 	 * values except null. Therefore in case of null we set the provided si value.
 	 * 
-	 * @param map Map containing all unique values of this array
+	 * @param map A map containing all unique values of this array
 	 * @param si  The default value to use in m if this Array contains null at index i
-	 * @param m   The array mapping to set the value part of the Map<T,Integer> from
+	 * @param m   The MapToData to set the value part of the Map from
 	 * @param i   The index to set in m
 	 */
 	public void setM(Map<T, Integer> map, int si, AMapToData m, int i) {

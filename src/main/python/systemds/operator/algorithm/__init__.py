@@ -24,6 +24,7 @@
 from .builtin.WoE import WoE 
 from .builtin.WoEApply import WoEApply 
 from .builtin.abstain import abstain 
+from .builtin.adasyn import adasyn 
 from .builtin.als import als 
 from .builtin.alsCG import alsCG 
 from .builtin.alsDS import alsDS 
@@ -199,6 +200,7 @@ from .builtin.xgboostPredictRegression import xgboostPredictRegression
 __all__ = ['WoE',
  'WoEApply',
  'abstain',
+ 'adasyn',
  'als',
  'alsCG',
  'alsDS',

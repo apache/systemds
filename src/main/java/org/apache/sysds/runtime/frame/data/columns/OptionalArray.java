@@ -472,43 +472,6 @@ public class OptionalArray<T> extends Array<T> {
 		return true;
 	}
 
-	// @Override
-	// @SuppressWarnings("unchecked")
-	// protected Map<T, Long> createRecodeMap(int estimate) {
-	// if(getValueType() == ValueType.BOOLEAN) {
-	// // shortcut for boolean arrays, since we only
-	// // need to encounter the first two false and true values.
-	// Map<T, Long> map = new HashMap<>(estimate);
-	// long id = 1;
-	// for(int i = 0; i < size() && id <= 2; i++)
-	// id = addValRecodeMap(map, id, i);
-
-	// return map;
-	// }
-	// else if(getValueType() == ValueType.HASH32){
-	// Map<Object, Long> map = new HashMap<>(estimate);
-	// HashIntegerArray b = (HashIntegerArray)_a;
-	// long id = 1;
-	// for(int i = 0; i < size(); i++){
-	// if(_n.get(i))
-	// id = b.addValRecodeMap(map, id, i);
-	// }
-	// return (Map<T, Long>)map;
-	// }
-	// else if(getValueType() == ValueType.HASH64){
-	// Map<Object, Long> map = new HashMap<>(estimate);
-	// HashLongArray b = (HashLongArray)_a;
-	// long id = 1;
-	// for(int i = 0; i < size(); i++){
-	// if(_n.get(i))
-	// id = b.addValRecodeMap(map, id, i);
-	// }
-	// return (Map<T, Long>)map;
-	// }
-	// else
-	// return super.createRecodeMap(estimate);
-	// }
-
 	@Override
 	public void setM(Map<T, Integer> map, AMapToData m, int i) {
 		_a.setM(map, m, i);

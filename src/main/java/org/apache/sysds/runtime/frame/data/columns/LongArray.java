@@ -37,7 +37,6 @@ import org.apache.sysds.utils.MemoryEstimates;
 public class LongArray extends Array<Long> {
 	private long[] _data;
 
-
 	private LongArray(int nRow) {
 		this(new long[nRow]);
 	}
@@ -156,7 +155,6 @@ public class LongArray extends Array<Long> {
 		arr.readFields(in);
 		return arr;
 	}
-
 
 	@Override
 	public Array<Long> clone() {
@@ -323,7 +321,7 @@ public class LongArray extends Array<Long> {
 		if(s == null || s.isEmpty())
 			return 0;
 		try {
-			Long v =  Long.parseLong(s);
+			Long v = Long.parseLong(s);
 			return v;
 		}
 		catch(NumberFormatException e) {
@@ -388,12 +386,11 @@ public class LongArray extends Array<Long> {
 		return false;
 	}
 
-
 	@Override
 	protected void mergeRecodeMaps(Map<Long, Integer> target, Map<Long, Integer> from) {
 		final long[] fromEntriesOrdered = new long[from.size()];
 		for(Map.Entry<Long, Integer> e : from.entrySet())
-			fromEntriesOrdered[e.getValue() - 1] =  e.getKey();
+			fromEntriesOrdered[e.getValue() - 1] = e.getKey();
 		int id = target.size();
 		for(long e : fromEntriesOrdered) {
 			if(target.putIfAbsent(e, id) == null)

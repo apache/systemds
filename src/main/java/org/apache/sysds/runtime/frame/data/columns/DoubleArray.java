@@ -467,7 +467,7 @@ public class DoubleArray extends Array<Double> {
 	protected void mergeRecodeMaps(Map<Double, Integer> target, Map<Double, Integer> from) {
 		final double[] fromEntriesOrdered = new double[from.size()];
 		for(Map.Entry<Double, Integer> e : from.entrySet())
-			fromEntriesOrdered[e.getValue() - 1] =  e.getKey();
+			fromEntriesOrdered[e.getValue() - 1] = e.getKey();
 		int id = target.size();
 		for(double e : fromEntriesOrdered) {
 			if(target.putIfAbsent(e, id) == null)

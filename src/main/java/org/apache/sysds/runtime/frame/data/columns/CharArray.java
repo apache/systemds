@@ -381,7 +381,6 @@ public class CharArray extends Array<Character> {
 		return false;
 	}
 
-
 	@Override
 	protected void mergeRecodeMaps(Map<Character, Integer> target, Map<Character, Integer> from) {
 		final List<Character> fromEntriesOrdered = new ArrayList<>(Collections.nCopies(from.size(), null));

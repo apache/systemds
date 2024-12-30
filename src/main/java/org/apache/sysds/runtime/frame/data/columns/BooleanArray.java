@@ -36,7 +36,7 @@ import org.apache.sysds.utils.MemoryEstimates;
 public class BooleanArray extends ABooleanArray {
 	protected boolean[] _data;
 
-	private BooleanArray(int nRow){
+	private BooleanArray(int nRow) {
 		this(new boolean[nRow]);
 	}
 

@@ -434,26 +434,25 @@ public class HashLongArray extends Array<Object> implements IHashArray {
 		return false;
 	}
 
-	@Override 
+	@Override
 	protected int addValRecodeMap(Map<Object, Integer> map, int id, int i) {
 		Long val = Long.valueOf(getLong(i));
 		Integer v = map.putIfAbsent(val, id);
 		if(v == null)
 			id++;
-		
+
 		return id;
 	}
 
-	@Override 
-	public void setM(Map<Object, Integer> map, AMapToData m, int i){
+	@Override
+	public void setM(Map<Object, Integer> map, AMapToData m, int i) {
 		m.set(i, map.get(Long.valueOf(getLong(i))) - 1);
 	}
 
-	@Override 
+	@Override
 	public void setM(Map<Object, Integer> map, int si, AMapToData m, int i) {
 		m.set(i, map.get(Long.valueOf(getLong(i))) - 1);
 	}
-
 
 	@Override
 	protected void mergeRecodeMaps(Map<Object, Integer> target, Map<Object, Integer> from) {

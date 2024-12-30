@@ -412,12 +412,11 @@ public class FloatArray extends Array<Float> {
 		return id;
 	}
 
-
 	@Override
 	protected void mergeRecodeMaps(Map<Float, Integer> target, Map<Float, Integer> from) {
 		final float[] fromEntriesOrdered = new float[from.size()];
 		for(Map.Entry<Float, Integer> e : from.entrySet())
-			fromEntriesOrdered[e.getValue() - 1] =  e.getKey();
+			fromEntriesOrdered[e.getValue() - 1] = e.getKey();
 		int id = target.size();
 		for(float e : fromEntriesOrdered) {
 			if(target.putIfAbsent(e, id) == null)

@@ -114,8 +114,8 @@ public class SumProductChainTest extends AutomatedTestBase
 			
 			String HOME = SCRIPT_DIR + TEST_DIR;
 			fullDMLScriptName = HOME + testname + ".dml";
-			programArgs = new String[]{"hops", "-stats", 
-					"-args", input("X"), output("R") };
+			programArgs = new String[]{"-explain", "codegen",
+				"-stats", "-args", input("X"), output("R") };
 			
 			fullRScriptName = HOME + testname + ".R";
 			rCmd = getRCmd(inputDir(), expectedDir());

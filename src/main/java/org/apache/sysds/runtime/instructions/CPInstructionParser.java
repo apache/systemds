@@ -168,6 +168,7 @@ public class CPInstructionParser extends InstructionParser {
 		String2CPInstructionType.put( "log_nz"  , CPType.Builtin);
 
 		String2CPInstructionType.put( "solve"  , CPType.Binary);
+		String2CPInstructionType.put( "sqrtMatrix", CPType.Binary);
 		String2CPInstructionType.put( "max"  , CPType.Binary);
 		String2CPInstructionType.put( "min"  , CPType.Binary);
 		String2CPInstructionType.put( "dropInvalidType"  , CPType.Binary);

@@ -80,7 +80,7 @@ public class LibCommonsMath
 	}
 	
 	public static boolean isSupportedUnaryOperation( String opcode ) {
-		return ( opcode.equals("inverse") || opcode.equals("cholesky") );
+		return ( opcode.equals("inverse") || opcode.equals("cholesky") || opcode.equals("sqrtMatrix") );
 	}
 	
 	public static boolean isSupportedMultiReturnOperation( String opcode ) {
@@ -95,7 +95,8 @@ public class LibCommonsMath
 			case "qr":
 			case "rcm":
 			case "stft":
-			case "svd": return true;
+			case "svd":
+				return true;
 			default: return false;
 		}
 
@@ -111,6 +112,8 @@ public class LibCommonsMath
 			return computeMatrixInverse(matrixInput);
 		else if (opcode.equals("cholesky"))
 			return computeCholesky(matrixInput);
+		else if (opcode.equals("sqrtMatrix"))
+			return computeSqrt(inj);
 		return null;
 	}
 
@@ -511,6 +514,18 @@ public class LibCommonsMath
 		MatrixBlock V = DataConverter.convertToMatrixBlock(v.getData());
 
 		return new MatrixBlock[] { U, Sigma, V };
+	}
+
+	/**
+	 * Computes the square root of a matrix Calls Apache Commons Math EigenDecomposition.
+	 *
+	 * @param in Input matrix
+	 * @return matrix block
+	 */
+	private static MatrixBlock computeSqrt(MatrixBlock in) {
+		Array2DRowRealMatrix matrixInput = DataConverter.convertToArray2DRowRealMatrix(in);
+		EigenDecomposition ed = new EigenDecomposition(matrixInput);
+		return DataConverter.convertToMatrixBlock(ed.getSquareRoot());
 	}
 	
 	/**

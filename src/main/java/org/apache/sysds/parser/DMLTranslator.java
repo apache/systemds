@@ -2748,6 +2748,7 @@ public class DMLTranslator
 			currBuiltinOp = new BinaryOp(target.getName(), target.getDataType(), target.getValueType(), OpOp2.SOLVE, expr, expr2);
 			break;
 
+		case SQRT_MATRIX:
 		case INVERSE:
 		case CHOLESKY:
 		case TYPEOF:

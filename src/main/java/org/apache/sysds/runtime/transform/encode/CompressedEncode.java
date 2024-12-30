@@ -448,7 +448,7 @@ public class CompressedEncode {
 				if(containsNull)
 					return createMappingAMapToDataWithNull(a, map, si, m, start, end);
 				else
-					return createMappingAMapToDataNoNull(a, map, si, m, start, end);
+					return createMappingAMapToDataNoNull(a, map,  m, start, end);
 
 			}));
 
@@ -459,7 +459,7 @@ public class CompressedEncode {
 		return m;
 	}
 
-	private static <T> AMapToData createMappingAMapToDataNoNull(Array<T> a, Map<T, Integer> map, int si, AMapToData m,
+	private static <T> AMapToData createMappingAMapToDataNoNull(Array<T> a, Map<T, Integer> map, AMapToData m,
 		int start, int end) {
 		for(int i = start; i < end; i++)
 			a.setM(map, m, i);

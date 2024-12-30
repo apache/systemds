@@ -160,6 +160,11 @@ public abstract class ACompressedArray<T> extends Array<T> {
 	}
 
 	@Override
+	public void setM(Map<T, Integer> map, int si, AMapToData m, int i) {
+		throw new NotImplementedException();
+	}
+
+	@Override
 	protected void mergeRecodeMaps(Map<T, Integer> target, Map<T, Integer> from) {
 		throw new DMLCompressionException("Invalid to change sub compressed array");
 	}

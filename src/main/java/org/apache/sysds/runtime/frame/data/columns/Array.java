@@ -103,7 +103,7 @@ public abstract class Array<T> implements Writable {
 	 * column.
 	 * 
 	 * @param estimate the estimated number of unique.
-	 * @param pool An executor pool to be used for parallel execution
+	 * @param pool     An executor pool to be used for parallel execution
 	 * @return A recode map
 	 */
 	public synchronized final Map<T, Integer> getRecodeMap(int estimate, ExecutorService pool) {
@@ -986,10 +986,27 @@ public abstract class Array<T> implements Writable {
 		return new double[] {min, max};
 	}
 
+	/**
+	 * Set the index i in the map given based on the mapping provided. The map should be guaranteed to contain all unique
+	 * values.
+	 * 
+	 * @param map Map containing all unique values of this array
+	 * @param m   The array mapping to set the value part of the Map<T,Integer> from
+	 * @param i   The index to set in m
+	 */
 	public void setM(Map<T, Integer> map, AMapToData m, int i) {
 		m.set(i, map.get(getInternal(i)).intValue() - 1);
 	}
 
+	/**
+	 * Set the index i in the map given based on the mapping provided. The map should be guaranteed to contain all unique
+	 * values except null. Therefore in case of null we set the provided si value.
+	 * 
+	 * @param map Map containing all unique values of this array
+	 * @param si  The default value to use in m if this Array contains null at index i
+	 * @param m   The array mapping to set the value part of the Map<T,Integer> from
+	 * @param i   The index to set in m
+	 */
 	public void setM(Map<T, Integer> map, int si, AMapToData m, int i) {
 		try {
 			final T v = getInternal(i);

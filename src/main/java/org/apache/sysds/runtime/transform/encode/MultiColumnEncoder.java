@@ -714,7 +714,6 @@ public class MultiColumnEncoder implements Encoder {
 				}
 			}
 			else { // csr
-				final int size = (int) nnz;
 				// Manually fill the row pointers based on nnzs/row (= #cols in the input)
 				// Not using the set() methods to 1) avoid binary search and shifting,
 				// 2) reduce thread contentions on the arrays

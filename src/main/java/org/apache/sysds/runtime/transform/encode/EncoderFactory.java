@@ -126,13 +126,16 @@ public interface EncoderFactory {
 			rcIDs = unionDistinct(rcIDs, except(except(dcIDs, binIDs), haIDs));
 			// Error out if the first level encoders have overlaps
 			if (intersect(rcIDs, binIDs, haIDs, weIDs, bowIDs))
-				throw new DMLRuntimeException("More than one encoders (recode, binning, hashing, word_embedding, bag_of_words) on one column is not allowed");
-			
+				throw new DMLRuntimeException("More than one encoders (recode, binning, hashing, word_embedding) on one column is not allowed:\n" + spec);
+
 			List<Integer> ptIDs = except(UtilFunctions.getSeqList(1, clen, 1), naryUnionDistinct(rcIDs, haIDs, binIDs, weIDs, bowIDs));
-			List<Integer> oIDs = new ArrayList<>(Arrays.asList(ArrayUtils
-				.toObject(TfMetaUtils.parseJsonIDList(jSpec, colnames, TfMethod.OMIT.toString(), minCol, maxCol))));
-			List<Integer> mvIDs = new ArrayList<>(Arrays.asList(ArrayUtils.toObject(
-				TfMetaUtils.parseJsonObjectIDList(jSpec, colnames, TfMethod.IMPUTE.toString(), minCol, maxCol))));
+
+			// List<Integer> ptIDs = except(except(except(UtilFunctions.getSeqList(1, clen, 1), unionDistinct(rcIDs, haIDs)), binIDs), weIDs);
+				
+			List<Integer> oIDs = Arrays.asList(ArrayUtils
+					.toObject(TfMetaUtils.parseJsonIDList(jSpec, colnames, TfMethod.OMIT.toString(), minCol, maxCol)));
+			List<Integer> mvIDs = Arrays.asList(ArrayUtils.toObject(
+					TfMetaUtils.parseJsonObjectIDList(jSpec, colnames, TfMethod.IMPUTE.toString(), minCol, maxCol)));
 			List<Integer> udfIDs = TfMetaUtils.parseUDFColIDs(jSpec, colnames, minCol, maxCol);
 
 			// robustness for transformencode specs w/ non-existing columns (so far, endless loops)

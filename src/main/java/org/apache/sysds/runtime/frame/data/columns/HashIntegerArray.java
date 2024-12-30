@@ -23,10 +23,12 @@ import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
 import java.util.Arrays;
+import java.util.Map;
 
 import org.apache.commons.lang3.NotImplementedException;
 import org.apache.sysds.common.Types.ValueType;
 import org.apache.sysds.runtime.DMLRuntimeException;
+import org.apache.sysds.runtime.compress.colgroup.mapping.AMapToData;
 import org.apache.sysds.runtime.frame.data.columns.ArrayFactory.FrameArrayType;
 import org.apache.sysds.runtime.matrix.data.Pair;
 import org.apache.sysds.runtime.util.UtilFunctions;
@@ -370,7 +372,8 @@ public class HashIntegerArray extends Array<Object> implements IHashArray {
 		else if(s instanceof Integer)
 			return (Integer) s;
 		else
-			throw new NotImplementedException("not supported parsing: " + s + " of class: " + s.getClass().getSimpleName());
+			throw new NotImplementedException(
+				"not supported parsing: " + s + " of class: " + s.getClass().getSimpleName());
 	}
 
 	public static int parseHashInt(String s) {
@@ -433,6 +436,38 @@ public class HashIntegerArray extends Array<Object> implements IHashArray {
 	@Override
 	public boolean possiblyContainsNaN() {
 		return false;
+	}
+
+	@Override
+	protected int addValRecodeMap(Map<Object, Integer> map, int id, int i) {
+		Integer val = Integer.valueOf(getInt(i));
+		Integer v = map.putIfAbsent(val, id);
+		if(v == null)
+			id++;
+		return id;
+	}
+
+	@Override
+	public void setM(Map<Object, Integer> map, AMapToData m, int i) {
+		m.set(i, map.get(Integer.valueOf(getInt(i))).intValue() - 1);
+	}
+
+	@Override
+	public void setM(Map<Object, Integer> map, int si, AMapToData m, int i) {
+		final Integer v = Integer.valueOf(getInt(i));
+		m.set(i, map.get(v).intValue() - 1);
+	}
+
+	@Override
+	protected void mergeRecodeMaps(Map<Object, Integer> target, Map<Object, Integer> from) {
+		final int[] fromEntriesOrdered = new int[from.size()];
+		for(Map.Entry<Object, Integer> e : from.entrySet())
+			fromEntriesOrdered[e.getValue() - 1] = (Integer) e.getKey();
+		int id = target.size();
+		for(int e : fromEntriesOrdered) {
+			if(target.putIfAbsent(e, id) == null)
+				id++;
+		}
 	}
 
 	@Override

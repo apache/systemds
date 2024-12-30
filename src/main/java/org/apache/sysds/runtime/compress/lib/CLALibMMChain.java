@@ -34,9 +34,11 @@ import org.apache.sysds.runtime.matrix.data.LibMatrixBincell;
 import org.apache.sysds.runtime.matrix.data.LibMatrixReorg;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.matrix.operators.BinaryOperator;
+import org.apache.sysds.utils.stats.Timing;
 
 /**
- * Support compressed MM chain operation to fuse the following cases :
+ * Support compressed MM chain operation to fuse the followin
+import org.apache.sysds.utils.stats.Timing;g cases :
  * 
  * <p>
  * XtXv == (t(X) %*% (X %*% v))
@@ -52,6 +54,9 @@ import org.apache.sysds.runtime.matrix.operators.BinaryOperator;
  */
 public final class CLALibMMChain {
 	static final Log LOG = LogFactory.getLog(CLALibMMChain.class.getName());
+
+	/** Reusable cache intermediate double array for temporary decompression */
+	private static ThreadLocal<double[]> cacheIntermediate = null;
 
 	private CLALibMMChain() {
 		// private constructor
@@ -87,32 +92,81 @@ public final class CLALibMMChain {
 	public static MatrixBlock mmChain(CompressedMatrixBlock x, MatrixBlock v, MatrixBlock w, MatrixBlock out,
 		ChainType ctype, int k) {
 
+		Timing t = new Timing();
 		if(x.isEmpty())
 			return returnEmpty(x, out);
 
 		// Morph the columns to efficient types for the operation.
 		x = filterColGroups(x);
+		double preFilterTime = t.stop();
 
 		// Allow overlapping intermediate if the intermediate is guaranteed not to be overlapping.
 		final boolean allowOverlap = x.getColGroups().size() == 1 && isOverlappingAllowed();
-
+		
 		// Right hand side multiplication
-		MatrixBlock tmp = CLALibRightMultBy.rightMultByMatrix(x, v, null, k, allowOverlap);
+		MatrixBlock tmp = CLALibRightMultBy.rightMultByMatrix(x, v, null, k, true);
 
-		if(ctype == ChainType.XtwXv) // Multiply intermediate with vector if needed
+		double rmmTime = t.stop();
+
+		if(ctype == ChainType.XtwXv) { // Multiply intermediate with vector if needed
 			tmp = binaryMultW(tmp, w, k);
+		}
 
-		if(tmp instanceof CompressedMatrixBlock)
+		if(!allowOverlap && tmp instanceof CompressedMatrixBlock) {
+			tmp = decompressIntermediate((CompressedMatrixBlock) tmp, k);
+		}
+
+		double decompressTime = t.stop();
+
+		if(tmp instanceof CompressedMatrixBlock) 
 			// Compressed Compressed Matrix Multiplication
 			CLALibLeftMultBy.leftMultByMatrixTransposed(x, (CompressedMatrixBlock) tmp, out, k);
 		else
 			// LMM with Compressed - uncompressed multiplication.
 			CLALibLeftMultBy.leftMultByMatrixTransposed(x, tmp, out, k);
 
+		double lmmTime = t.stop();
 		if(out.getNumColumns() != 1) // transpose the output to make it a row output if needed
 			out = LibMatrixReorg.transposeInPlace(out, k);
 
+		if(LOG.isDebugEnabled()) {
+			StringBuilder sb = new StringBuilder("\n");
+			sb.append("\nPreFilter Time      : " + preFilterTime);
+			sb.append("\nChain RMM           : " + rmmTime);
+			sb.append("\nChain RMM Decompress: " + decompressTime);
+			sb.append("\nChain LMM           : " + lmmTime);
+			sb.append("\nChain Transpose     : " + t.stop());
+			LOG.debug(sb.toString());
+		}
+
 		return out;
+	}
+
+	private static MatrixBlock decompressIntermediate(CompressedMatrixBlock tmp, int k) {
+		// cacheIntermediate
+		final int rows = tmp.getNumRows();
+		final int cols = tmp.getNumColumns();
+		final int nCells = rows * cols;
+		final double[] tmpArr;
+		if(cacheIntermediate == null) {
+			tmpArr = new double[nCells];
+			cacheIntermediate = new ThreadLocal<>();
+			cacheIntermediate.set(tmpArr);
+		}
+		else {
+			double[] cachedArr = cacheIntermediate.get();
+			if(cachedArr == null || cachedArr.length < nCells) {
+				tmpArr = new double[nCells];
+				cacheIntermediate.set(tmpArr);
+			}
+			else {
+				tmpArr = cachedArr;
+			}
+		}
+
+		final MatrixBlock tmpV = new MatrixBlock(tmp.getNumRows(), tmp.getNumColumns(), tmpArr);
+		CLALibDecompress.decompressTo((CompressedMatrixBlock) tmp, tmpV, 0, 0, k, false, true);
+		return tmpV;
 	}
 
 	private static boolean isOverlappingAllowed() {
@@ -146,6 +200,8 @@ public final class CLALibMMChain {
 		final List<AColGroup> groups = x.getColGroups();
 		final boolean shouldFilter = CLALibUtils.shouldPreFilter(groups);
 		if(shouldFilter) {
+			if(CLALibUtils.alreadyPreFiltered(groups, x.getNumColumns()))
+				return x;
 			final int nCol = x.getNumColumns();
 			final double[] constV = new double[nCol];
 			final List<AColGroup> filteredGroups = CLALibUtils.filterGroups(groups, constV);

@@ -23,7 +23,11 @@ import java.io.DataOutput;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
 
 import org.apache.sysds.common.Types.ValueType;
 import org.apache.sysds.runtime.DMLRuntimeException;
@@ -375,6 +379,19 @@ public class CharArray extends Array<Character> {
 	@Override
 	public boolean possiblyContainsNaN() {
 		return false;
+	}
+
+
+	@Override
+	protected void mergeRecodeMaps(Map<Character, Integer> target, Map<Character, Integer> from) {
+		final List<Character> fromEntriesOrdered = new ArrayList<>(Collections.nCopies(from.size(), null));
+		for(Map.Entry<Character, Integer> e : from.entrySet())
+			fromEntriesOrdered.set(e.getValue() - 1, e.getKey());
+		int id = target.size();
+		for(Character e : fromEntriesOrdered) {
+			if(target.putIfAbsent(e, id) == null)
+				id++;
+		}
 	}
 
 	@Override

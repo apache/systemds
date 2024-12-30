@@ -28,6 +28,7 @@ import org.apache.sysds.runtime.compress.CompressedMatrixBlock;
 import org.apache.sysds.runtime.compress.CompressionSettings;
 import org.apache.sysds.runtime.compress.CompressionSettingsBuilder;
 import org.apache.sysds.runtime.compress.colgroup.AColGroup.CompressionType;
+import org.apache.sysds.runtime.compress.lib.CLALibReshape;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.test.TestUtils;
 import org.apache.sysds.test.component.compress.TestConstants.MatrixTypology;
@@ -56,6 +57,10 @@ public class TestBase {
 
 	// Input
 	protected MatrixBlock mb;
+
+	static {
+		CLALibReshape.COMPRESSED_RESHAPE_THRESHOLD = 10;
+	}
 
 	public TestBase(SparsityType sparType, ValueType valType, ValueRange valueRange,
 		CompressionSettingsBuilder compressionSettings, MatrixTypology MatrixTypology, OverLapping ov,
@@ -98,8 +103,8 @@ public class TestBase {
 						Math.min((max - min), 10), max, min, sparsity, seed, false);
 					break;
 				case UNBALANCED_SPARSE:
-					mb = CompressibleInputGenerator.getUnbalancedSparseMatrix(rows, cols, Math.min((max - min), 10),
-						max, min, seed);
+					mb = CompressibleInputGenerator.getUnbalancedSparseMatrix(rows, cols, Math.min((max - min), 10), max,
+						min, seed);
 					cols = mb.getNumColumns();
 					break;
 				case ONE_HOT:

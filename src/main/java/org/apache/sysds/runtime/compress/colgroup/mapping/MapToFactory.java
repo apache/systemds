@@ -75,21 +75,30 @@ public interface MapToFactory {
 		return _data;
 	}
 
-	public static AMapToData create(int size, int[] values, int nUnique, int k) throws Exception {
-		AMapToData _data = create(size, nUnique);
+	public static AMapToData create(int size, int[] values, int nUnique, int k) {
 		final ExecutorService pool = CommonThreadPool.get(k);
-		int blk = Math.max((values.length / k), 1024);
-		blk -= blk % 64; // ensure long size
-		List<Future<?>> tasks = new ArrayList<>();
-		for(int i = 0; i < values.length; i += blk) {
-			int start = i;
-			int end = Math.min(i + blk, values.length);
-			tasks.add(pool.submit(() -> _data.copyInt(values, start, end)));
-		}
+		try{
 
-		for(Future<?> t : tasks)
-			t.get();
-		return _data;
+			AMapToData _data = create(size, nUnique);
+			int blk = Math.max((values.length / k), 1024);
+			blk -= blk % 64; // ensure long size
+			List<Future<?>> tasks = new ArrayList<>();
+			for(int i = 0; i < values.length; i += blk) {
+				int start = i;
+				int end = Math.min(i + blk, values.length);
+				tasks.add(pool.submit(() -> _data.copyInt(values, start, end)));
+			}
+	
+			for(Future<?> t : tasks)
+				t.get();
+			return _data;
+		}
+		catch(Exception e){
+			throw new RuntimeException();
+		}
+		finally{
+			pool.shutdown();
+		}
 	}
 
 	/**

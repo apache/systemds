@@ -22,11 +22,11 @@ package org.apache.sysds.runtime.frame.data.columns;
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
-import java.util.HashMap;
 import java.util.Map;
 
 import org.apache.sysds.common.Types.ValueType;
 import org.apache.sysds.runtime.DMLRuntimeException;
+import org.apache.sysds.runtime.compress.colgroup.mapping.AMapToData;
 import org.apache.sysds.runtime.frame.data.columns.ArrayFactory.FrameArrayType;
 import org.apache.sysds.runtime.matrix.data.Pair;
 import org.apache.sysds.runtime.util.UtilFunctions;
@@ -472,25 +472,66 @@ public class OptionalArray<T> extends Array<T> {
 		return true;
 	}
 
+	// @Override
+	// @SuppressWarnings("unchecked")
+	// protected Map<T, Long> createRecodeMap(int estimate) {
+	// if(getValueType() == ValueType.BOOLEAN) {
+	// // shortcut for boolean arrays, since we only
+	// // need to encounter the first two false and true values.
+	// Map<T, Long> map = new HashMap<>(estimate);
+	// long id = 1;
+	// for(int i = 0; i < size() && id <= 2; i++)
+	// id = addValRecodeMap(map, id, i);
+
+	// return map;
+	// }
+	// else if(getValueType() == ValueType.HASH32){
+	// Map<Object, Long> map = new HashMap<>(estimate);
+	// HashIntegerArray b = (HashIntegerArray)_a;
+	// long id = 1;
+	// for(int i = 0; i < size(); i++){
+	// if(_n.get(i))
+	// id = b.addValRecodeMap(map, id, i);
+	// }
+	// return (Map<T, Long>)map;
+	// }
+	// else if(getValueType() == ValueType.HASH64){
+	// Map<Object, Long> map = new HashMap<>(estimate);
+	// HashLongArray b = (HashLongArray)_a;
+	// long id = 1;
+	// for(int i = 0; i < size(); i++){
+	// if(_n.get(i))
+	// id = b.addValRecodeMap(map, id, i);
+	// }
+	// return (Map<T, Long>)map;
+	// }
+	// else
+	// return super.createRecodeMap(estimate);
+	// }
+
 	@Override
-	protected Map<T, Long> createRecodeMap() {
-		if(getValueType() == ValueType.BOOLEAN) {
-			// shortcut for boolean arrays, since we only
-			// need to encounter the first two false and true values.
-			Map<T, Long> map = new HashMap<>();
-			long id = 1;
-			for(int i = 0; i < size() && id <= 2; i++) {
-				T val = get(i);
-				if(val != null) {
-					Long v = map.putIfAbsent(val, id);
-					if(v == null)
-						id++;
-				}
-			}
-			return map;
-		}
+	public void setM(Map<T, Integer> map, AMapToData m, int i) {
+		_a.setM(map, m, i);
+	}
+
+	@Override
+	public void setM(Map<T, Integer> map, int si, AMapToData m, int i) {
+		if(_n.get(i))
+			_a.setM(map, si, m, i);
 		else
-			return super.createRecodeMap();
+			m.set(i, si);
+	}
+
+	@Override
+	protected int addValRecodeMap(Map<T, Integer> map, int id, int i) {
+		if(_n.get(i))
+			id = _a.addValRecodeMap(map, id, i);
+		return id;
+	}
+
+	@Override
+	protected void mergeRecodeMaps(Map<T, Integer> target, Map<T, Integer> from) {
+		_a.mergeRecodeMaps(target, from);
 	}
 
 	@Override

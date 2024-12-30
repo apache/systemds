@@ -25,6 +25,7 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.util.Arrays;
+import java.util.Map;
 
 import org.apache.sysds.common.Types.ValueType;
 import org.apache.sysds.runtime.DMLRuntimeException;
@@ -385,6 +386,19 @@ public class LongArray extends Array<Long> {
 	@Override
 	public boolean possiblyContainsNaN() {
 		return false;
+	}
+
+
+	@Override
+	protected void mergeRecodeMaps(Map<Long, Integer> target, Map<Long, Integer> from) {
+		final long[] fromEntriesOrdered = new long[from.size()];
+		for(Map.Entry<Long, Integer> e : from.entrySet())
+			fromEntriesOrdered[e.getValue() - 1] =  e.getKey();
+		int id = target.size();
+		for(long e : fromEntriesOrdered) {
+			if(target.putIfAbsent(e, id) == null)
+				id++;
+		}
 	}
 
 	@Override

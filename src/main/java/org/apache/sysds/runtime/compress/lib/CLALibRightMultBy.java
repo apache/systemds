@@ -215,7 +215,7 @@ public final class CLALibRightMultBy {
 		boolean containsNull = false;
 		final IColIndex allCols = ColIndexFactory.create(that.getNumColumns());
 		for(AColGroup g : filteredGroups) {
-			AColGroup retG = g.rightMultByMatrix(that, allCols);
+			AColGroup retG = g.rightMultByMatrix(that, allCols, 1);
 			if(retG != null)
 				retCg.add(retG);
 			else
@@ -231,7 +231,7 @@ public final class CLALibRightMultBy {
 			final IColIndex allCols = ColIndexFactory.create(that.getNumColumns());
 			List<Callable<AColGroup>> tasks = new ArrayList<>(filteredGroups.size());
 			for(AColGroup g : filteredGroups)
-				tasks.add(new RightMatrixMultTask(g, that, allCols));
+				tasks.add(new RightMatrixMultTask(g, that, allCols, k));
 			for(Future<AColGroup> fg : pool.invokeAll(tasks)) {
 				AColGroup g = fg.get();
 				if(g != null)
@@ -253,17 +253,19 @@ public final class CLALibRightMultBy {
 		private final AColGroup _colGroup;
 		private final MatrixBlock _b;
 		private final IColIndex _allCols;
+		private final int _k;
 
-		protected RightMatrixMultTask(AColGroup colGroup, MatrixBlock b, IColIndex allCols) {
+		protected RightMatrixMultTask(AColGroup colGroup, MatrixBlock b, IColIndex allCols, int k) {
 			_colGroup = colGroup;
 			_b = b;
 			_allCols = allCols;
+			_k = k;
 		}
 
 		@Override
 		public AColGroup call() {
 			try {
-				return _colGroup.rightMultByMatrix(_b, _allCols);
+				return _colGroup.rightMultByMatrix(_b, _allCols, _k);
 			}
 			catch(Exception e) {
 				throw new DMLRuntimeException(e);

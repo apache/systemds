@@ -382,6 +382,22 @@ public class QDictionary extends ADictionary {
 	}
 
 	@Override
+	public int[] countNNZZeroColumns(int[] counts) {
+		final int nRow = counts.length;
+		final int nCol = _values.length / nRow;
+
+		final int[] ret = new int[nCol];
+		for(int i = 0; i < nRow; i++) {
+			for(int j = 0; j < nCol; j++) {
+				final int off = i * nCol + j;
+				if(_values[off] != 0)
+					ret[j] += counts[i];
+			}
+		}
+		return ret;
+	}
+
+	@Override
 	public long getNumberNonZerosWithReference(int[] counts, double[] reference, int nRows) {
 		throw new NotImplementedException("not implemented yet");
 	}
@@ -629,6 +645,11 @@ public class QDictionary extends ADictionary {
 	@Override
 	public void MMDictScalingSparse(SparseBlock left, IColIndex rowsLeft, IColIndex colsRight, MatrixBlock result,
 		int[] scaling) {
+		throw new NotImplementedException();
+	}
+
+	@Override
+	public IDictionary append(double[] row) {
 		throw new NotImplementedException();
 	}
 }

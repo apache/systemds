@@ -41,7 +41,10 @@ public class ConstEncoding extends AEncode {
 
 	@Override
 	public Pair<IEncode, HashMapLongInt> combineWithMap(IEncode e) {
-		return new ImmutablePair<>(e, null);
+		if(e instanceof EmptyEncoding)
+			return new ImmutablePair<>(this, null);
+		else
+			return new ImmutablePair<>(e, null);
 	}
 
 	@Override

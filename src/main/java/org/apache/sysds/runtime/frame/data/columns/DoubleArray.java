@@ -25,6 +25,7 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.util.Arrays;
+import java.util.Map;
 
 import org.apache.sysds.common.Types.ValueType;
 import org.apache.sysds.runtime.DMLRuntimeException;
@@ -460,6 +461,18 @@ public class DoubleArray extends Array<Double> {
 			}
 		}
 		return new double[] {min, max};
+	}
+
+	@Override
+	protected void mergeRecodeMaps(Map<Double, Integer> target, Map<Double, Integer> from) {
+		final double[] fromEntriesOrdered = new double[from.size()];
+		for(Map.Entry<Double, Integer> e : from.entrySet())
+			fromEntriesOrdered[e.getValue() - 1] =  e.getKey();
+		int id = target.size();
+		for(double e : fromEntriesOrdered) {
+			if(target.putIfAbsent(e, id) == null)
+				id++;
+		}
 	}
 
 	@Override

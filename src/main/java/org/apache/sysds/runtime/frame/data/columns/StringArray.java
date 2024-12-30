@@ -25,6 +25,7 @@ import java.io.IOException;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.ExecutorService;
 
 import org.apache.commons.lang3.NotImplementedException;
 import org.apache.sysds.common.Types.ValueType;
@@ -496,13 +497,13 @@ public class StringArray extends Array<String> {
 	}
 
 	protected void changeTypeIntegerNormal(Array<Integer> ret, int l, int u) {
-	
-			for(int i = l; i < u; i++) {
-				final String s = _data[i];
-				if(s != null)
-					ret.set(i, parseInt(s));
-			}
-		
+
+		for(int i = l; i < u; i++) {
+			final String s = _data[i];
+			if(s != null)
+				ret.set(i, parseInt(s));
+		}
+
 	}
 
 	protected int parseInt(String s) {
@@ -674,21 +675,20 @@ public class StringArray extends Array<String> {
 	}
 
 	@Override
-	protected Map<String, Long> createRecodeMap() {
+	protected Map<String, Integer> createRecodeMap(int estimate, ExecutorService pool) {
 		try {
-
-			Map<String, Long> map = new HashMap<>();
+			Map<String, Integer> map = new HashMap<>((int) Math.min((long) estimate * 2, size()));
 			for(int i = 0; i < size(); i++) {
 				Object val = get(i);
 				if(val != null) {
 					String[] tmp = ColumnEncoderRecode.splitRecodeMapEntry(val.toString());
-					map.put(tmp[0], Long.parseLong(tmp[1]));
+					map.put(tmp[0], Integer.parseInt(tmp[1]));
 				}
 			}
 			return map;
 		}
 		catch(Exception e) {
-			return super.createRecodeMap();
+			return super.createRecodeMap(estimate, pool);
 		}
 	}
 
@@ -711,6 +711,18 @@ public class StringArray extends Array<String> {
 	@Override
 	public boolean possiblyContainsNaN() {
 		return true;
+	}
+
+	@Override
+	protected void mergeRecodeMaps(Map<String, Integer> target, Map<String, Integer> from) {
+		final String[] fromEntriesOrdered = new String[from.size()];
+		for(Map.Entry<String, Integer> e : from.entrySet())
+			fromEntriesOrdered[e.getValue() - 1] = e.getKey();
+		int id = target.size();
+		for(String e : fromEntriesOrdered) {
+			if(target.putIfAbsent(e, id) == null)
+				id++;
+		}
 	}
 
 	@Override

@@ -25,6 +25,7 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.util.Arrays;
+import java.util.Map;
 
 import org.apache.sysds.common.Types.ValueType;
 import org.apache.sysds.runtime.DMLRuntimeException;
@@ -381,6 +382,18 @@ public class IntegerArray extends Array<Integer> {
 	@Override
 	public boolean possiblyContainsNaN() {
 		return false;
+	}
+
+	@Override
+	protected void mergeRecodeMaps(Map<Integer, Integer> target, Map<Integer, Integer> from) {
+		final int[] fromEntriesOrdered = new int[from.size()];
+		for(Map.Entry<Integer, Integer> e : from.entrySet())
+			fromEntriesOrdered[e.getValue() - 1] = e.getKey();
+		int id = target.size();
+		for(int e : fromEntriesOrdered) {
+			if(target.putIfAbsent(e, id) == null)
+				id++;
+		}
 	}
 
 	@Override

@@ -19,8 +19,12 @@
 
 package org.apache.sysds.runtime.frame.data.columns;
 
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ExecutorService;
 
 public abstract class ABooleanArray extends Array<Boolean> {
 
@@ -55,13 +59,25 @@ public abstract class ABooleanArray extends Array<Boolean> {
 	 * @param value The string array to set from.
 	 */
 	public abstract void setNullsFromString(int rl, int ru, Array<String> value);
-	
+
 	@Override
-	protected Map<Boolean, Long> createRecodeMap() {
-		Map<Boolean, Long> map = new HashMap<>();
-		long id = 1;
+	protected void mergeRecodeMaps(Map<Boolean, Integer> target, Map<Boolean, Integer> from) {
+		final List<Boolean> fromEntriesOrdered = new ArrayList<>(Collections.nCopies(from.size(), null));
+		for(Map.Entry<Boolean, Integer> e : from.entrySet())
+			fromEntriesOrdered.set(e.getValue() - 1, e.getKey());
+		int id = target.size();
+		for(Boolean e : fromEntriesOrdered) {
+			if(target.putIfAbsent(e, id) == null)
+				id++;
+		}
+	}
+
+	@Override
+	protected Map<Boolean, Integer> createRecodeMap(int estimate, ExecutorService pool) {
+		Map<Boolean, Integer> map = new HashMap<>();
+		int id = 1;
 		for(int i = 0; i < size() && id <= 2; i++) {
-			Long v = map.putIfAbsent(get(i), id);
+			Integer v = map.putIfAbsent(get(i), id);
 			if(v == null)
 				id++;
 		}

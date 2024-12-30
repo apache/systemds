@@ -1204,13 +1204,13 @@ public class CustomArrayTests {
 	public void mappingCache() {
 		Array<String> a = new StringArray(new String[] {"1", null});
 		assertEquals(null, a.getCache());
-		a.setCache(new SoftReference<Map<String, Long>>(null));
+		a.setCache(new SoftReference<Map<String, Integer>>(null));
 		assertTrue(null != a.getCache());
-		a.setCache(new SoftReference<Map<String, Long>>(new HashMap<>()));
+		a.setCache(new SoftReference<Map<String, Integer>>(new HashMap<>()));
 		assertTrue(null != a.getCache());
-		Map<String, Long> hm = a.getCache().get();
-		hm.put("1", 0L);
-		hm.put(null, 2L);
+		Map<String, Integer> hm = a.getCache().get();
+		hm.put("1", 0);
+		hm.put(null, 2);
 		assertEquals(Long.valueOf(0L), a.getCache().get().get("1"));
 	}
 
@@ -1727,7 +1727,7 @@ public class CustomArrayTests {
 	@Test
 	public void createRecodeMap() {
 		Array<Integer> a = ArrayFactory.create(new int[] {1, 1, 1, 1, 3, 3, 1, 2});
-		Map<Integer, Long> m = a.getRecodeMap();
+		Map<Integer, Integer> m = a.getRecodeMap();
 		assertTrue(3 == m.size());
 		assertTrue(1L == m.get(1));
 		assertTrue(2L == m.get(3));
@@ -1738,7 +1738,7 @@ public class CustomArrayTests {
 	@Test
 	public void createRecodeMapWithNull() {
 		Array<Integer> a = ArrayFactory.create(new Integer[] {1, 1, 1, null, 3, 3, 1, 2});
-		Map<Integer, Long> m = a.getRecodeMap();
+		Map<Integer, Integer> m = a.getRecodeMap();
 		assertTrue(3 == m.size());
 		assertTrue(1L == m.get(1));
 		assertTrue(2L == m.get(3));
@@ -1749,7 +1749,7 @@ public class CustomArrayTests {
 	@Test
 	public void createRecodeMapBoolean() {
 		Array<Boolean> a = ArrayFactory.create(new boolean[] {true, true, false, false, true});
-		Map<Boolean, Long> m = a.getRecodeMap();
+		Map<Boolean, Integer> m = a.getRecodeMap();
 		assertTrue(2 == m.size());
 		assertTrue(1 == m.get(true));
 		assertTrue(2 == m.get(false));
@@ -1758,7 +1758,7 @@ public class CustomArrayTests {
 	@Test
 	public void createRecodeMapBoolean2() {
 		Array<Boolean> a = ArrayFactory.create(new boolean[] {false, true, false, false, true});
-		Map<Boolean, Long> m = a.getRecodeMap();
+		Map<Boolean, Integer> m = a.getRecodeMap();
 		assertTrue(2 == m.size());
 		assertTrue(2 == m.get(true));
 		assertTrue(1 == m.get(false));
@@ -1767,7 +1767,7 @@ public class CustomArrayTests {
 	@Test
 	public void createRecodeMapBoolean3() {
 		Array<Boolean> a = ArrayFactory.create(new boolean[] {true, true});
-		Map<Boolean, Long> m = a.getRecodeMap();
+		Map<Boolean, Integer> m = a.getRecodeMap();
 		assertTrue(1 == m.size());
 		assertTrue(1 == m.get(true));
 		assertTrue(null == m.get(false));
@@ -1776,7 +1776,7 @@ public class CustomArrayTests {
 	@Test
 	public void createRecodeMapBooleanWithNull() {
 		Array<Boolean> a = ArrayFactory.create(new Boolean[] {true, null, true});
-		Map<Boolean, Long> m = a.getRecodeMap();
+		Map<Boolean, Integer> m = a.getRecodeMap();
 		assertTrue(1 == m.size());
 		assertTrue(1 == m.get(true));
 		assertTrue(null == m.get(false));
@@ -1785,8 +1785,8 @@ public class CustomArrayTests {
 	@Test
 	public void createRecodeMapCached() {
 		Array<Integer> a = ArrayFactory.create(new int[] {1, 1, 1, 1, 3, 3, 1, 2});
-		Map<Integer, Long> m = a.getRecodeMap();
-		Map<Integer, Long> m2 = a.getRecodeMap();
+		Map<Integer, Integer> m = a.getRecodeMap();
+		Map<Integer, Integer> m2 = a.getRecodeMap();
 		assertEquals(m, m2);
 	}
 

@@ -384,7 +384,7 @@ public class ColumnEncoderBagOfWords extends ColumnEncoder {
 		if(_tokenDictionary != null)
 			for(Map.Entry<Object, Integer> e : _tokenDictionary.entrySet()) {
 				out.writeUTF((String) e.getKey());
-				out.writeLong(e.getValue());
+				out.writeInt(e.getValue());
 			}
 	}
 

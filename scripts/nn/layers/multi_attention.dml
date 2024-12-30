@@ -55,7 +55,6 @@ forward = function(matrix[double] Q, matrix[double] K,
   attention = matrix(0, rows=B, cols=H*T*T)
   dropout_mask = matrix(0, rows=B, cols=H*T*T)
   context = matrix(0, rows=B, cols=H*T*D)
-  norm = 1/sqrt(D)
   K_norm = K / sqrt(D)
 
   # For loops for tensor operations

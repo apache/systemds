@@ -70,11 +70,6 @@ public class BooleanArray extends ABooleanArray {
 	}
 
 	@Override
-	public void set(int rl, int ru, Array<Boolean> value) {
-		set(rl, ru, value, 0);
-	}
-
-	@Override
 	public void setFromOtherType(int rl, int ru, Array<?> value) {
 		final ValueType vt = value.getValueType();
 		for(int i = rl; i <= ru; i++)

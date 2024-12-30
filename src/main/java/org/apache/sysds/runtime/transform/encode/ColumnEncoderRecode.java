@@ -47,7 +47,7 @@ public class ColumnEncoderRecode extends ColumnEncoder {
 	public static boolean SORT_RECODE_MAP = false;
 
 	// recode maps and custom map for partial recode maps
-	private Map<Object, Long> _rcdMap;
+	private Map<Object, Integer> _rcdMap;
 	private HashSet<Object> _rcdMapPart = null;
 
 	public ColumnEncoderRecode(int colID) {
@@ -59,7 +59,7 @@ public class ColumnEncoderRecode extends ColumnEncoder {
 		this(-1);
 	}
 
-	protected ColumnEncoderRecode(int colID, HashMap<Object, Long> rcdMap) {
+	protected ColumnEncoderRecode(int colID, HashMap<Object, Integer> rcdMap) {
 		super(colID);
 		_rcdMap = rcdMap;
 	}
@@ -71,12 +71,12 @@ public class ColumnEncoderRecode extends ColumnEncoder {
 	 * @param code  is code for token
 	 * @return the concatenation of token and code with delimiter in between
 	 */
-	public static String constructRecodeMapEntry(String token, Long code) {
+	public static String constructRecodeMapEntry(String token, Integer code) {
 		StringBuilder sb = new StringBuilder(token.length() + 16);
 		return constructRecodeMapEntry(token, code, sb);
 	}
 
-	public static String constructRecodeMapEntry(Object token, Long code, StringBuilder sb) {
+	public static String constructRecodeMapEntry(Object token, Integer code, StringBuilder sb) {
 		sb.setLength(0); // reset reused string builder
 		return sb.append(token).append(Lop.DATATYPE_PREFIX).append(code.longValue()).toString();
 	}
@@ -94,7 +94,7 @@ public class ColumnEncoderRecode extends ColumnEncoder {
 		return new String[] {value.substring(0, pos), value.substring(pos + 1)};
 	}
 
-	public Map<Object, Long> getCPRecodeMaps() {
+	public Map<Object, Integer> getCPRecodeMaps() {
 		return _rcdMap;
 	}
 
@@ -106,7 +106,7 @@ public class ColumnEncoderRecode extends ColumnEncoder {
 		sortCPRecodeMaps(_rcdMap);
 	}
 
-	private static void sortCPRecodeMaps(Map<Object, Long> map) {
+	private static void sortCPRecodeMaps(Map<Object, Integer> map) {
 		Object[] keys = map.keySet().toArray(new Object[0]);
 		Arrays.sort(keys);
 		map.clear();
@@ -114,7 +114,7 @@ public class ColumnEncoderRecode extends ColumnEncoder {
 			putCode(map, key);
 	}
 
-	private static void makeRcdMap(CacheBlock<?> in, Map<Object, Long> map, int colID, int startRow, int blk) {
+	private static void makeRcdMap(CacheBlock<?> in, Map<Object, Integer> map, int colID, int startRow, int blk) {
 		for(int row = startRow; row < getEndIndex(in.getNumRows(), startRow, blk); row++){
 			String key = in.getString(row, colID - 1);
 			if(key != null && !key.isEmpty() && !map.containsKey(key))
@@ -126,7 +126,7 @@ public class ColumnEncoderRecode extends ColumnEncoder {
 	}
 
 	private long lookupRCDMap(Object key) {
-		return _rcdMap.getOrDefault(key, -1L);
+		return _rcdMap.getOrDefault(key, -1);
 	}
 
 	public void computeMapSizeEstimate(CacheBlock<?> in, int[] sampleIndices) {
@@ -203,8 +203,8 @@ public class ColumnEncoderRecode extends ColumnEncoder {
 	 * @param map column map
 	 * @param key key for the new entry
 	 */
-	protected static void putCode(Map<Object, Long> map, Object key) {
-		map.put(key, (long) (map.size() + 1));
+	protected static void putCode(Map<Object, Integer> map, Object key) {
+		map.put(key, (map.size() + 1));
 	}
 
 	protected double getCode(CacheBlock<?> in, int r){
@@ -270,10 +270,10 @@ public class ColumnEncoderRecode extends ColumnEncoder {
 		assert other._colID == _colID;
 		// merge together overlapping columns
 		ColumnEncoderRecode otherRec = (ColumnEncoderRecode) other;
-		Map<Object, Long> otherMap = otherRec._rcdMap;
+		Map<Object, Integer> otherMap = otherRec._rcdMap;
 		if(otherMap != null) {
 			// for each column, add all non present recode values
-			for(Map.Entry<Object, Long> entry : otherMap.entrySet()) {
+			for(Map.Entry<Object, Integer> entry : otherMap.entrySet()) {
 				if(lookupRCDMap(entry.getKey()) == -1) {
 					// key does not yet exist
 					putCode(_rcdMap, entry.getKey());
@@ -305,7 +305,7 @@ public class ColumnEncoderRecode extends ColumnEncoder {
 		// create compact meta data representation
 		StringBuilder sb = new StringBuilder(); // for reuse
 		int rowID = 0;
-		for(Entry<Object, Long> e : _rcdMap.entrySet()) {
+		for(Entry<Object, Integer> e : _rcdMap.entrySet()) {
 			meta.set(rowID++, _colID - 1, // 1-based
 				constructRecodeMapEntry(e.getKey(), e.getValue(), sb));
 		}
@@ -331,9 +331,9 @@ public class ColumnEncoderRecode extends ColumnEncoder {
 		super.writeExternal(out);
 		out.writeInt(_rcdMap.size());
 		
-		for(Entry<Object, Long> e : _rcdMap.entrySet()) {
+		for(Entry<Object, Integer> e : _rcdMap.entrySet()) {
 			out.writeUTF(e.getKey().toString());
-			out.writeLong(e.getValue());
+			out.writeInt(e.getValue());
 		}
 	}
 
@@ -343,7 +343,7 @@ public class ColumnEncoderRecode extends ColumnEncoder {
 		int size = in.readInt();
 		for(int j = 0; j < size; j++) {
 			String key = in.readUTF();
-			Long value = in.readLong();
+			Integer value = in.readInt();
 			_rcdMap.put(key, value);
 		}
 	}
@@ -363,7 +363,7 @@ public class ColumnEncoderRecode extends ColumnEncoder {
 		return Objects.hash(_rcdMap);
 	}
 
-	public Map<Object, Long> getRcdMap() {
+	public Map<Object, Integer> getRcdMap() {
 		return _rcdMap;
 	}
 
@@ -374,7 +374,12 @@ public class ColumnEncoderRecode extends ColumnEncoder {
 		sb.append(": ");
 		sb.append(_colID);
 		sb.append(" --- map: ");
-		sb.append(_rcdMap);
+		if(_rcdMap.size() < 1000){
+			sb.append(_rcdMap);
+		}
+		else{
+			sb.append("Map to big to print but size is : " + _rcdMap.size());
+		}
 		return sb.toString();
 	}
 
@@ -425,7 +430,7 @@ public class ColumnEncoderRecode extends ColumnEncoder {
 		@Override
 		public Object call() throws Exception {
 			long t0 = DMLScript.STATISTICS ? System.nanoTime() : 0;
-			HashMap<Object, Long> partialMap = new HashMap<>();
+			HashMap<Object, Integer> partialMap = new HashMap<>();
 			makeRcdMap(_input, partialMap, _colID, _startRow, _blockSize);
 			synchronized(_partialMaps) {
 				_partialMaps.put(_startRow, partialMap);
@@ -455,7 +460,7 @@ public class ColumnEncoderRecode extends ColumnEncoder {
 		@Override
 		public Object call() throws Exception {
 			long t0 = DMLScript.STATISTICS ? System.nanoTime() : 0;
-			Map<Object, Long> rcdMap = _encoder.getRcdMap();
+			Map<Object, Integer> rcdMap = _encoder.getRcdMap();
 			_partialMaps.forEach((start_row, map) -> {
 				((HashMap<?, ?>) map).forEach((k, v) -> {
 					if(!rcdMap.containsKey(k))

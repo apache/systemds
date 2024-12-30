@@ -20,20 +20,28 @@
 package org.apache.sysds.runtime.frame.data.columns;
 
 import java.lang.ref.SoftReference;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Future;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.io.Writable;
 import org.apache.sysds.common.Types.ValueType;
+import org.apache.sysds.hops.OptimizerUtils;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.compress.colgroup.mapping.AMapToData;
 import org.apache.sysds.runtime.compress.estim.sample.SampleEstimatorFactory;
 import org.apache.sysds.runtime.frame.data.columns.ArrayFactory.FrameArrayType;
 import org.apache.sysds.runtime.frame.data.compress.ArrayCompressionStatistics;
 import org.apache.sysds.runtime.matrix.data.Pair;
+import org.apache.sysds.utils.stats.Timing;
 
 /**
  * Generic, resizable native arrays for the internal representation of the columns in the FrameBlock. We use this custom
@@ -42,8 +50,11 @@ import org.apache.sysds.runtime.matrix.data.Pair;
 public abstract class Array<T> implements Writable {
 	protected static final Log LOG = LogFactory.getLog(Array.class.getName());
 
+	/** Parallelization threshold for parallelizing vector operations */
+	public static int ROW_PARALLELIZATION_THRESHOLD = 10000;
+
 	/** A soft reference to a memorization of this arrays mapping, used in transformEncode */
-	protected SoftReference<Map<T, Long>> _rcdMapCache = null;
+	protected SoftReference<Map<T, Integer>> _rcdMapCache = null;
 
 	/** The current allocated number of elements in this Array */
 	protected int _size;
@@ -63,7 +74,7 @@ public abstract class Array<T> implements Writable {
 	 * 
 	 * @return The cached recode map
 	 */
-	public final SoftReference<Map<T, Long>> getCache() {
+	public final SoftReference<Map<T, Integer>> getCache() {
 		return _rcdMapCache;
 	}
 
@@ -72,7 +83,7 @@ public abstract class Array<T> implements Writable {
 	 * 
 	 * @param m The element to cache.
 	 */
-	public final void setCache(SoftReference<Map<T, Long>> m) {
+	public final void setCache(SoftReference<Map<T, Integer>> m) {
 		_rcdMapCache = m;
 	}
 
@@ -83,16 +94,49 @@ public abstract class Array<T> implements Writable {
 	 * 
 	 * @return A recode map
 	 */
-	public synchronized final Map<T, Long> getRecodeMap() {
+	public synchronized final Map<T, Integer> getRecodeMap() {
+		return getRecodeMap(4);
+	}
+
+	/**
+	 * Get a recode map that maps each unique value in the array, to a long ID. Null values are ignored, and not included
+	 * in the mapping. The resulting recode map in stored in a soft reference to speed up repeated calls to the same
+	 * column.
+	 * 
+	 * @param estimate The estimated number of unique values in this Array to start the initial hashmap size at
+	 * @return A recode map
+	 */
+	public synchronized final Map<T, Integer> getRecodeMap(int estimate) {
+		try {
+			return getRecodeMap(estimate, null);
+		}
+		catch(Exception e) {
+			throw new RuntimeException(e);
+		}
+	}
+
+	/**
+	 * Get a recode map that maps each unique value in the array, to a long ID. Null values are ignored, and not included
+	 * in the mapping. The resulting recode map in stored in a soft reference to speed up repeated calls to the same
+	 * column.
+	 * 
+	 * @param estimate the estimated number of unique values in this array.
+	 * @param pool     An executor pool to be used for parallel execution (Note this method does not shutdown the pool)
+	 * @return A recode map
+	 * @throws ExecutionException   if the parallel execution fails
+	 * @throws InterruptedException if the parallel execution fails
+	 */
+	public synchronized final Map<T, Integer> getRecodeMap(int estimate, ExecutorService pool)
+		throws InterruptedException, ExecutionException {
 		// probe cache for existing map
-		Map<T, Long> map;
-		SoftReference<Map<T, Long>> tmp = getCache();
+		Map<T, Integer> map;
+		SoftReference<Map<T, Integer>> tmp = getCache();
 		map = (tmp != null) ? tmp.get() : null;
 		if(map != null)
 			return map;
 
 		// construct recode map
-		map = createRecodeMap();
+		map = createRecodeMap(estimate, pool);
 
 		// put created map into cache
 		setCache(new SoftReference<>(map));
@@ -101,23 +145,97 @@ public abstract class Array<T> implements Writable {
 	}
 
 	/**
-	 * Recreate the recode map from what is inside array. This is an internal method for arrays, and the result is cached
-	 * in the main class of the arrays.
+	 * Get a recode map that maps each unique value in the array, to a long ID. Null values are ignored, and not included
+	 * in the mapping. The resulting recode map in stored in a soft reference to speed up repeated calls to the same
+	 * column.
 	 * 
-	 * @return The recode map
+	 * @param estimate The estimate number of unique values inside this array.
+	 * @param pool     The thread pool to use for parallel creation of recode map (can be null). (Note this method does
+	 *                 not shutdown the pool)
+	 * @return The recode map created.
+	 * @throws ExecutionException   if the parallel execution fails
+	 * @throws InterruptedException if the parallel execution fails
 	 */
-	protected Map<T, Long> createRecodeMap() {
-		Map<T, Long> map = new HashMap<>();
-		long id = 1;
-		for(int i = 0; i < size(); i++) {
-			T val = get(i);
-			if(val != null) {
-				Long v = map.putIfAbsent(val, id);
-				if(v == null)
-					id++;
-			}
+	protected Map<T, Integer> createRecodeMap(int estimate, ExecutorService pool)
+		throws InterruptedException, ExecutionException {
+		Timing t = new Timing();
+		final int s = size();
+		int k = OptimizerUtils.getTransformNumThreads();
+		Map<T, Integer> ret;
+		if(pool == null || s < ROW_PARALLELIZATION_THRESHOLD)
+			ret = createRecodeMap(estimate, 0, s);
+		else
+			ret = parallelCreateRecodeMap(estimate, pool, s, k);
+
+		if(LOG.isDebugEnabled()) {
+			String base = "CreateRecodeMap estimate: %10d actual %10d time: %10.5f";
+			LOG.debug(String.format(base, estimate, ret.size(), t.stop()));
+		}
+		return ret;
+	}
+
+	private Map<T, Integer> parallelCreateRecodeMap(int estimate, ExecutorService pool, final int s, int k)
+		throws InterruptedException, ExecutionException {
+
+		final int blk = Math.max(ROW_PARALLELIZATION_THRESHOLD / 2, (s + k) / k);
+		final List<Future<Map<T, Integer>>> tasks = new ArrayList<>();
+		for(int i = blk; i < s; i += blk) { // start at blk for the other threads
+			final int start = i;
+			final int end = Math.min(i + blk, s);
+			tasks.add(pool.submit(() -> createRecodeMap(estimate, start, end)));
+		}
+		// make the initial map thread local allocation.
+		final Map<T, Integer> map = new HashMap<>((int) (estimate * 1.3));
+		createRecodeMap(map, 0, blk);
+		for(int i = 0; i < tasks.size(); i++) { // merge with other threads work.
+			final Map<T, Integer> map2 = tasks.get(i).get();
+			mergeRecodeMaps(map, map2);
 		}
 		return map;
+
+	}
+
+	/**
+	 * Merge Recode maps, most likely from parallel threads.
+	 * 
+	 * If the unique value is present in the target, use that ID, otherwise this method map to new ID's based on the
+	 * target mapping's size.
+	 * 
+	 * @param target The target object to merge the two maps into
+	 * @param from   The Map to take entries from.
+	 */
+	protected static <T> void mergeRecodeMaps(Map<T, Integer> target, Map<T, Integer> from) {
+		final List<T> fromEntriesOrdered = new ArrayList<>(Collections.nCopies(from.size(), null));
+		for(Map.Entry<T, Integer> e : from.entrySet())
+			fromEntriesOrdered.set(e.getValue() - 1, e.getKey());
+		int id = target.size();
+		for(T e : fromEntriesOrdered) {
+			if(target.putIfAbsent(e, id) == null)
+				id++;
+		}
+	}
+
+	private Map<T, Integer> createRecodeMap(final int estimate, final int s, final int e) {
+		// * 1.3 because we hashMap has a load factor of 1.75
+		final Map<T, Integer> map = new HashMap<>((int) (Math.min((long) estimate, (e - s)) * 1.3));
+		return createRecodeMap(map, s, e);
+	}
+
+	private Map<T, Integer> createRecodeMap(Map<T, Integer> map, final int s, final int e) {
+		int id = 1;
+		for(int i = s; i < e; i++)
+			id = addValRecodeMap(map, id, i);
+		return map;
+	}
+
+	protected int addValRecodeMap(Map<T, Integer> map, int id, int i) {
+		T val = getInternal(i);
+		if(val != null) {
+			Integer v = map.putIfAbsent(val, id);
+			if(v == null)
+				id++;
+		}
+		return id;
 	}
 
 	/**
@@ -224,14 +342,11 @@ public abstract class Array<T> implements Writable {
 	 * 
 	 * @param rl    row lower
 	 * @param ru    row upper (inclusive)
-	 * @param value value array to take values from (same type)
+	 * @param value value array to take values from (same type) offset by rl.
 	 */
-	public abstract void set(int rl, int ru, Array<T> value);
-
-	// {
-	// for(int i = rl; i <= ru; i++)
-	// set(i, value.get(i));
-	// }
+	public final void set(int rl, int ru, Array<T> value) {
+		set(rl, ru, value, 0);
+	}
 
 	/**
 	 * Set range to given arrays value with an offset into other array
@@ -243,7 +358,7 @@ public abstract class Array<T> implements Writable {
 	 */
 	public void set(int rl, int ru, Array<T> value, int rlSrc) {
 		for(int i = rl, off = rlSrc; i <= ru; i++, off++)
-			set(i, value.get(off));
+			set(i, value.getInternal(off));
 	}
 
 	/**
@@ -917,5 +1032,40 @@ public abstract class Array<T> implements Writable {
 			}
 		}
 		return new double[] {min, max};
+	}
+
+	/**
+	 * Set the index i in the map given based on the mapping provided. The map should be guaranteed to contain all unique
+	 * values.
+	 * 
+	 * @param map A map containing all unique values of this array
+	 * @param m   The MapToData to set the value part of the Map from
+	 * @param i   The index to set in m
+	 */
+	public void setM(Map<T, Integer> map, AMapToData m, int i) {
+		m.set(i, map.get(getInternal(i)).intValue() - 1);
+	}
+
+	/**
+	 * Set the index i in the map given based on the mapping provided. The map should be guaranteed to contain all unique
+	 * values except null. Therefore in case of null we set the provided si value.
+	 * 
+	 * @param map A map containing all unique values of this array
+	 * @param si  The default value to use in m if this Array contains null at index i
+	 * @param m   The MapToData to set the value part of the Map from
+	 * @param i   The index to set in m
+	 */
+	public void setM(Map<T, Integer> map, int si, AMapToData m, int i) {
+		try {
+			final T v = getInternal(i);
+			if(v != null)
+				m.set(i, map.get(v).intValue() - 1);
+			else
+				m.set(i, si);
+		}
+		catch(Exception e) {
+			String error = "expected: " + getInternal(i) + " to be in map: " + map;
+			throw new RuntimeException(error, e);
+		}
 	}
 }

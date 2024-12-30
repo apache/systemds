@@ -25,6 +25,8 @@ import java.io.IOException;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
 
 import org.apache.commons.lang3.NotImplementedException;
 import org.apache.sysds.common.Types.ValueType;
@@ -74,11 +76,6 @@ public class StringArray extends Array<String> {
 	public void set(int index, double value) {
 		_data[index] = Double.toString(value);
 		materializedSize = -1;
-	}
-
-	@Override
-	public void set(int rl, int ru, Array<String> value) {
-		set(rl, ru, value, 0);
 	}
 
 	@Override
@@ -672,21 +669,20 @@ public class StringArray extends Array<String> {
 	}
 
 	@Override
-	protected Map<String, Long> createRecodeMap() {
+	protected Map<String, Integer> createRecodeMap(int estimate, ExecutorService pool) throws InterruptedException, ExecutionException {
 		try {
-
-			Map<String, Long> map = new HashMap<>();
+			Map<String, Integer> map = new HashMap<>((int) Math.min((long) estimate * 2, size()));
 			for(int i = 0; i < size(); i++) {
 				Object val = get(i);
 				if(val != null) {
 					String[] tmp = ColumnEncoderRecode.splitRecodeMapEntry(val.toString());
-					map.put(tmp[0], Long.parseLong(tmp[1]));
+					map.put(tmp[0], Integer.parseInt(tmp[1]));
 				}
 			}
 			return map;
 		}
 		catch(Exception e) {
-			return super.createRecodeMap();
+			return super.createRecodeMap(estimate, pool);
 		}
 	}
 

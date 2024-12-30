@@ -101,11 +101,6 @@ public class CharArray extends Array<Character> {
 	}
 
 	@Override
-	public void set(int rl, int ru, Array<Character> value) {
-		set(rl, ru, value, 0);
-	}
-
-	@Override
 	public void set(int rl, int ru, Array<Character> value, int rlSrc) {
 		try {
 			// try system array copy.

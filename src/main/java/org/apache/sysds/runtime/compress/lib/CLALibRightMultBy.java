@@ -189,15 +189,8 @@ public final class CLALibRightMultBy {
 			constV = mmTemp.isEmpty() ? null : mmTemp.getDenseBlockValues();
 		}
 
-		final Timing time = new Timing(true);
-
 		ret = asyncRet(f);
-		CLALibDecompress.decompressDenseMultiThread(ret, retCg, constV, 0, k, true);
-
-		if(DMLScript.STATISTICS) {
-			final double t = time.stop();
-			DMLCompressionStatistics.addDecompressTime(t, k);
-		}
+		CLALibDecompress.decompressDense(ret, retCg, constV, 0, k, true);
 
 		return ret;
 	}

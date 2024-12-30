@@ -68,12 +68,7 @@ public class IntegerArray extends Array<Integer> {
 	public void set(int index, String value) {
 		set(index, parseInt(value));
 	}
-
-	@Override
-	public void set(int rl, int ru, Array<Integer> value) {
-		set(rl, ru, value, 0);
-	}
-
+	
 	@Override
 	public void setFromOtherType(int rl, int ru, Array<?> value) {
 		final ValueType vt = value.getValueType();

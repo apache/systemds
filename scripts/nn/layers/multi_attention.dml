@@ -107,7 +107,7 @@ forward = function(matrix[double] Q, matrix[double] K,
 
 
 backward = function(matrix[double] dcontext, 
-      matrix[double] dropout_mask, matrix[double] Q, 
+      matrix[double] dropout_mask, matrixp[double] attention, matrix[double] Q, 
       matrix[double] K, matrix[double] V, int H, int T, 
       int D, double dropout_p)
     return (matrix[double] dQ, matrix[double] dK, matrix[double] dV) {
@@ -117,6 +117,7 @@ backward = function(matrix[double] dcontext,
    * Inputs (B: Batch size, T: Sequence length, D: Embedding length, H: Heads):
    * - dcontext: Gradient w.r.t. the context matrix of shape (B, T*H*D)
    * - dropout_mask: Dropout mask from forward pass of shape (B, H*T*T)
+   * - attention: Attention output from forward pass of shape (B, H*T*T)
    * - Q: Input querys, of shape (B,T*H*D).
    * - K: Input keys, of shape (B,T*H*D).
    * - V: Input values, of shape (B,T*H*D).
@@ -140,6 +141,7 @@ backward = function(matrix[double] dcontext,
   dV = matrix(0, rows=B, cols=H*T*D)  # Shape (B, H*T*D)
 
   K_norm = K / sqrt(D)
+  Q_norm = Q /sqrt(D)
 
   # For loops for tensor operations
   for (batch in 1:B) {
@@ -147,8 +149,9 @@ backward = function(matrix[double] dcontext,
     if (dropout_p > 0.0) {
       dropout_mask_b = matrix(dropout_mask[batch], rows=H, cols=T*T) 
     }
+    attention_b = matrix(attention[batch], rows=H, cols=T*T) 
 
-    Q_b = matrix(Q[batch], rows=H, cols=T*D)
+    Q_norm_b = matrix(Q_norm[batch], rows=H, cols=T*D)
     K_norm_b = matrix(K_norm[batch], rows=H, cols=T*D)
     V_b = matrix(V[batch], rows=H, cols=T*D)
 
@@ -159,9 +162,14 @@ backward = function(matrix[double] dcontext,
     for (head in 1:H) {
       dcontext_h = matrix(dcontext_b[head], rows=T, cols=D)
       if (dropout_p > 0.0) {
-        dropout_mask_h = matrix(dropout_mask_b[head], rows=T, cols=T) 
+        dropout_mask_h = matrix(dropout_mask_b[head], rows=T, cols=T)
       }
-      Q_h = matrix(Q_b[head], rows=T, cols=D)
+      attention_h = matrix(attention_b[head], rows=T, cols=T)
+
+      # Compute dV early to release attention_h
+      dV_h = t(attention_h) %*% dcontext_h
+
+      Q_norm_h = matrix(Q_norm_b[head], rows=T, cols=D)
       K_norm_h = matrix(K_norm_b[head], rows=T, cols=D)
       V_h = matrix(V_b[head], rows=T, cols=D)
 
@@ -170,8 +178,17 @@ backward = function(matrix[double] dcontext,
       if (dropout_p > 0.0) {
         # Provide unnecessary required X input matrix via empty matrix
         dattention_probs = dropout::backward(dattention_probs, matrix(0, rows=1, cols=1), dropout_p, dropout_mask_h)
+
+        # Get pre-dropout attention (this is the same as attention_h if dropout_p == 0)
+        attention_scores = Q_h %*% t(K_norm_h)  # Shape (T, T)
+        # TODO: Add support for attention mask here
+        # Column-wise softmax (overwrite old attention_h)
+        attention_h = softmax::forward(attention_scores)
       }
-      dattention_scores = softmax::backward()
+      dattention_scores = softmax::backward(dattention_probs, attention_h)
+
+      dQ_h = dattention_scores %*% K_norm_h
+      dK_h = t(dattention_scores) %*% Q_norm_h
     }
 
   }

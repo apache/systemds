@@ -132,16 +132,49 @@ backward = function(matrix[double] dcontext,
    */
   B = nrow(Q)
 
-    # For loops for tensor operations
+  # Transpose head and token dimension for per-head computation
+  dcontext = util::transpose_ABCD_to_ACBD(dcontext, T, H)  # Shape (B, H*T*D)
+
+  dQ = matrix(0, rows=B, cols=H*T*D)  # Shape (B, H*T*D)
+  dK = matrix(0, rows=B, cols=H*T*D)  # Shape (B, H*T*D)
+  dV = matrix(0, rows=B, cols=H*T*D)  # Shape (B, H*T*D)
+
+  K_norm = K / sqrt(D)
+
+  # For loops for tensor operations
   for (batch in 1:B) {
+    dcontext_b = matrix(dcontext[batch], rows=H, cols=T*D)
+    if (dropout_p > 0.0) {
+      dropout_mask_b = matrix(dropout_mask[batch], rows=H, cols=T*T) 
+    }
+
+    Q_b = matrix(Q[batch], rows=H, cols=T*D)
+    K_norm_b = matrix(K_norm[batch], rows=H, cols=T*D)
+    V_b = matrix(V[batch], rows=H, cols=T*D)
+
+    dQ_b = matrix(0, rows=H, cols=T*D)
+    dK_b = matrix(0, rows=H, cols=T*D)
+    dV_b = matrix(0, rows=H, cols=T*D)
 
     for (head in 1:H) {
+      dcontext_h = matrix(dcontext_b[head], rows=T, cols=D)
+      if (dropout_p > 0.0) {
+        dropout_mask_h = matrix(dropout_mask_b[head], rows=T, cols=T) 
+      }
+      Q_h = matrix(Q_b[head], rows=T, cols=D)
+      K_norm_h = matrix(K_norm_b[head], rows=T, cols=D)
+      V_h = matrix(V_b[head], rows=T, cols=D)
 
+      dattention_probs = d_context_h %*% t(V_h)
+
+      if (dropout_p > 0.0) {
+        # Provide unnecessary required X input matrix via empty matrix
+        dattention_probs = dropout::backward(dattention_probs, matrix(0, rows=1, cols=1), dropout_p, dropout_mask_h)
+      }
+      dattention_scores = softmax::backward()
     }
 
   }
 
-  dQ = matrix(0, rows=1, cols=1)
-  dK = matrix(0, rows=1, cols=1)
-  dV = matrix(0, rows=1, cols=1)
+  # TODO: Transpose output matrices
 }

@@ -557,6 +557,11 @@ public class SpoofCompiler {
 							LOG.info(CodegenUtils.printWithLineNumber(src_cuda));
 						}
 					}
+					if(DMLScript.EXPLAIN.isCodegenType()) {
+						System.out.print("JAVA Codegen EXPLAIN (generated code for HopID: " + cplan.getKey() +
+							", line m" + tmp.getValue().getBeginLine() + ", hash=" + tmp.getValue().hashCode() + "):");
+						System.out.println(CodegenUtils.printWithLineNumber(src));
+					}
 
 					//maintain plan cache
 					if( PLAN_CACHE_POLICY!=PlanCachePolicy.NONE )

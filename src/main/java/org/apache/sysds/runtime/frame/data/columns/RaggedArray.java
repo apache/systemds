@@ -22,6 +22,7 @@ package org.apache.sysds.runtime.frame.data.columns;
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
+import java.util.Map;
 
 import org.apache.commons.lang3.NotImplementedException;
 import org.apache.sysds.common.Types.ValueType;
@@ -267,11 +268,6 @@ public class RaggedArray<T> extends Array<T> {
 		return _a.changeTypeBoolean(retA, l, u);
 	}
 
-	// @Override
-	// protected Array<Double> changeTypeDouble() {
-	// 	return _a.changeTypeDouble();
-	// }
-
 	@Override
 	protected Array<Double> changeTypeDouble(Array<Double> retA, int l, int u) {
 		return _a.changeTypeDouble(retA, l, u);
@@ -312,7 +308,7 @@ public class RaggedArray<T> extends Array<T> {
 		return _a.changeTypeCharacter(retA, l, u);
 	}
 
-	@Override 
+	@Override
 	public Array<?> changeTypeWithNulls(ValueType t) {
 		throw new NotImplementedException("Not Implemented ragged array with nulls");
 	}
@@ -412,6 +408,11 @@ public class RaggedArray<T> extends Array<T> {
 	@Override
 	public boolean possiblyContainsNaN() {
 		return true;
+	}
+
+	@Override
+	protected void mergeRecodeMaps(Map<T, Integer> target, Map<T, Integer> from) {
+		_a.mergeRecodeMaps(target, from);
 	}
 
 	@Override

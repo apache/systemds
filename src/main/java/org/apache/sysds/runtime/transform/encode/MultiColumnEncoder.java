@@ -174,10 +174,6 @@ public class MultiColumnEncoder implements Encoder {
 				LOG.debug(String.format("Transform Encode output nnz      : %10d", out.getNonZeros()));
 			}
 
-			if(out.getNonZeros() > (long)in.getNumRows() * in.getNumColumns()){
-				throw new DMLRuntimeException("Invalid transform output, contains to many non zeros" + out.getNonZeros()
-					+ " Max:  " + ((long) in.getNumRows() * in.getNumColumns()));
-			}
 			return out;
 		}
 		catch(Exception ex) {

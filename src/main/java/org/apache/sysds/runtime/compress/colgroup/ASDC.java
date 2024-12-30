@@ -69,4 +69,19 @@ public abstract class ASDC extends AMorphingMMColGroup implements AOffsetsGroup 
 	public ICLAScheme getCompressionScheme() {
 		return SDCScheme.create(this);
 	}
+
+	@Override
+	public AColGroup morph(CompressionType ct, int nRow) {
+		if(ct == getCompType())
+			return this;
+		else if (ct == CompressionType.SDCFOR)
+			return this; // it does not make sense to change to FOR.
+		else
+			return super.morph(ct, nRow);
+	}
+	
+	@Override
+	protected boolean allowShallowIdentityRightMult() {
+		return false;
+	}
 }

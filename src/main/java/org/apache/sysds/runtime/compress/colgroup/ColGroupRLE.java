@@ -41,6 +41,7 @@ import org.apache.sysds.runtime.compress.cost.ComputationCostEstimator;
 import org.apache.sysds.runtime.compress.estim.CompressedSizeInfoColGroup;
 import org.apache.sysds.runtime.data.DenseBlock;
 import org.apache.sysds.runtime.data.SparseBlock;
+import org.apache.sysds.runtime.data.SparseBlockMCSR;
 import org.apache.sysds.runtime.functionobjects.Builtin;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.matrix.operators.BinaryOperator;
@@ -757,10 +758,6 @@ public class ColGroupRLE extends AColGroupOffset {
 	public void preAggregateDense(MatrixBlock m, double[] preAgg, final int rl, final int ru, final int cl,
 		final int cu) {
 		final DenseBlock db = m.getDenseBlock();
-		if(!db.isContiguous())
-			throw new NotImplementedException("Not implemented support for preAggregate non contiguous dense matrix");
-		final double[] mV = m.getDenseBlockValues();
-		final int nCol = m.getNumColumns();
 		final int nv = getNumValues();
 
 		for(int k = 0; k < nv; k++) { // for each run in RLE
@@ -775,8 +772,9 @@ public class ColGroupRLE extends AColGroupOffset {
 
 				if(re >= cu) {
 					for(int r = rl; r < ru; r++) {
+						final double[] mV = db.values(r);
+						final int offI = db.pos(r);
 						final int off = (r - rl) * nv + k;
-						final int offI = nCol * r;
 						for(int rix = rsc + offI; rix < cu + offI; rix++) {
 							preAgg[off] += mV[rix];
 						}
@@ -785,8 +783,9 @@ public class ColGroupRLE extends AColGroupOffset {
 				}
 				else {
 					for(int r = rl; r < ru; r++) {
+						final double[] mV = db.values(r);
+						final int offI = db.pos(r);
 						final int off = (r - rl) * nv + k;
-						final int offI = nCol * r;
 						for(int rix = rsc + offI; rix < re + offI; rix++)
 							preAgg[off] += mV[rix];
 					}
@@ -1165,4 +1164,30 @@ public class ColGroupRLE extends AColGroupOffset {
 	protected void denseSelection(MatrixBlock selection, P[] points, MatrixBlock ret, int rl, int ru) {
 		throw new NotImplementedException();
 	}
+
+	@Override
+	protected void decompressToDenseBlockTransposedSparseDictionary(DenseBlock db, int rl, int ru, SparseBlock sb) {
+		throw new NotImplementedException();
+	}
+
+	@Override
+	protected void decompressToDenseBlockTransposedDenseDictionary(DenseBlock db, int rl, int ru, double[] dict) {
+		throw new NotImplementedException();
+	}
+
+	@Override
+	protected void decompressToSparseBlockTransposedSparseDictionary(SparseBlockMCSR db, SparseBlock sb, int nColOut) {
+		throw new NotImplementedException();
+	}
+
+	@Override
+	protected void decompressToSparseBlockTransposedDenseDictionary(SparseBlockMCSR db, double[] dict, int nColOut) {
+		throw new NotImplementedException();
+	}
+
+	@Override
+	public AColGroup[] splitReshape(int multiplier, int nRow, int nColOrg) {
+		throw new NotImplementedException("Unimplemented method 'splitReshape'");
+	}
+
 }

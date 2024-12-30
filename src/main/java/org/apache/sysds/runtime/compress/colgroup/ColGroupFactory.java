@@ -151,7 +151,7 @@ public class ColGroupFactory {
 	private List<AColGroup> compress() {
 		try {
 			if(in instanceof CompressedMatrixBlock)
-				return CLALibCombineGroups.combine((CompressedMatrixBlock) in, csi, pool);
+				return CLALibCombineGroups.combine((CompressedMatrixBlock) in, csi, pool, k);
 			else
 				return compressExecute();
 		}
@@ -258,7 +258,9 @@ public class ColGroupFactory {
 		final boolean t = cs.transposed;
 
 		// Fast path compressions
-		if(ct == CompressionType.EMPTY && !t)
+		if((ct == CompressionType.EMPTY && !t) || //
+			(t && colIndexes.size() == 1 && in.isInSparseFormat() // Empty Column
+				&& in.getSparseBlock().isEmpty(colIndexes.get(0))))
 			return new ColGroupEmpty(colIndexes);
 		else if(ct == CompressionType.UNCOMPRESSED) // don't construct mapping if uncompressed
 			return ColGroupUncompressed.create(colIndexes, in, t);
@@ -470,6 +472,7 @@ public class ColGroupFactory {
 		if(map.size() == 0)
 			return new ColGroupEmpty(colIndexes);
 		IDictionary dict = DictionaryFactory.create(map);
+
 		final int nUnique = map.size();
 		final AMapToData resData = d.resize( nUnique);
 		return ColGroupDDC.create(colIndexes, dict, resData, null);
@@ -569,15 +572,14 @@ public class ColGroupFactory {
 		if(in.isInSparseFormat()) {
 			final SparseBlock sb = in.getSparseBlock();
 			if(sb.isEmpty(col))
-				// It should never be empty here.
-				return;
+				throw new DMLCompressionException("Empty column in DDC compression");
 
 			final int apos = sb.pos(col);
 			final int alen = sb.size(col) + apos;
 			final int[] aix = sb.indexes(col);
 			final double[] aval = sb.values(col);
 			// count zeros
-			if(nRow - apos - alen > 0)
+			if(nRow > alen - apos)
 				map.increment(0.0, nRow - apos - alen);
 			// insert all other counts
 			for(int j = apos; j < alen; j++) {

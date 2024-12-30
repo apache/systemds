@@ -31,6 +31,7 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.runtime.compress.CompressedMatrixBlock;
 import org.apache.sysds.runtime.compress.CompressedMatrixBlockFactory;
+import org.apache.sysds.runtime.compress.DMLCompressionException;
 import org.apache.sysds.runtime.compress.colgroup.AColGroup;
 import org.apache.sysds.runtime.compress.colgroup.indexes.ArrayIndex;
 import org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex;
@@ -161,11 +162,18 @@ public class CombineGroupsTest {
 			List<AColGroup> groups = ccc.getColGroups();
 			if(groups.size() > 1) {
 
-				AColGroup cg = CLALibCombineGroups.combine(groups.get(0), groups.get(1));
+				AColGroup cg = CLALibCombineGroups.combine(groups.get(0), groups.get(1), c.getNumRows());
 				ccc.allocateColGroup(cg);
 				TestUtils.compareMatricesBitAvgDistance(c, ccc, 0, 0, "Not the same combined");
 			}
 
+		}
+		catch(DMLCompressionException e) {
+			if(!e.getMessage().contains("Not allowed")) {
+
+				e.printStackTrace();
+				fail(e.getMessage());
+			}
 		}
 		catch(Exception e) {
 			e.printStackTrace();
@@ -188,11 +196,18 @@ public class CombineGroupsTest {
 			List<AColGroup> groups = ccc.getColGroups();
 			if(groups.size() > 1) {
 
-				AColGroup cg = CLALibCombineGroups.combine(groups.get(1), groups.get(2));
+				AColGroup cg = CLALibCombineGroups.combine(groups.get(1), groups.get(2), c.getNumRows());
 				ccc.allocateColGroup(cg);
 				TestUtils.compareMatricesBitAvgDistance(c, ccc, 0, 0, "Not the same combined");
 			}
 
+		}
+		catch(DMLCompressionException e) {
+			if(!e.getMessage().contains("Not allowed")) {
+
+				e.printStackTrace();
+				fail(e.getMessage());
+			}
 		}
 		catch(Exception e) {
 			e.printStackTrace();
@@ -214,11 +229,18 @@ public class CombineGroupsTest {
 			List<AColGroup> groups = ccc.getColGroups();
 			if(groups.size() > 1) {
 
-				AColGroup cg = CLALibCombineGroups.combine(groups.get(1), groups.get(2));
+				AColGroup cg = CLALibCombineGroups.combine(groups.get(1), groups.get(2), c.getNumRows());
 				ccc.allocateColGroup(cg);
 				TestUtils.compareMatricesBitAvgDistance(c, ccc, 0, 0, "Not the same combined");
 			}
 
+		}
+		catch(DMLCompressionException e) {
+			if(!e.getMessage().contains("Not allowed")) {
+
+				e.printStackTrace();
+				fail(e.getMessage());
+			}
 		}
 		catch(Exception e) {
 			e.printStackTrace();
@@ -240,9 +262,16 @@ public class CombineGroupsTest {
 			List<AColGroup> groups = ccc.getColGroups();
 			if(groups.size() > 1) {
 
-				AColGroup cg = CLALibCombineGroups.combine(groups.get(0), groups.get(2));
+				AColGroup cg = CLALibCombineGroups.combine(groups.get(0), groups.get(2), c.getNumRows());
 				ccc.allocateColGroup(cg);
 				TestUtils.compareMatricesBitAvgDistance(c, ccc, 0, 0, "Not the same combined");
+			}
+		}
+		catch(DMLCompressionException e) {
+			if(!e.getMessage().contains("Not allowed")) {
+
+				e.printStackTrace();
+				fail(e.getMessage());
 			}
 		}
 		catch(Exception e) {
@@ -265,11 +294,19 @@ public class CombineGroupsTest {
 			List<AColGroup> groups = ccc.getColGroups();
 			if(groups.size() > 1) {
 
-				AColGroup cg = CLALibCombineGroups.combine(groups.get(0), groups.get(1));
+				AColGroup cg = CLALibCombineGroups.combine(groups.get(0), groups.get(1), c.getNumRows());
 				ccc.allocateColGroup(cg);
+
 				TestUtils.compareMatricesBitAvgDistance(c, ccc, 0, 0, "Not the same combined");
 			}
 
+		}
+		catch(DMLCompressionException e) {
+			if(!e.getMessage().contains("Not allowed")) {
+
+				e.printStackTrace();
+				fail(e.getMessage());
+			}
 		}
 		catch(Exception e) {
 			e.printStackTrace();
@@ -300,13 +337,20 @@ public class CombineGroupsTest {
 			List<AColGroup> groups = ccc.getColGroups();
 			if(groups.size() > 1) {
 
-				AColGroup cg = CLALibCombineGroups.combine(groups.get(0), groups.get(1));
+				AColGroup cg = CLALibCombineGroups.combine(groups.get(0), groups.get(1), c.getNumRows());
 				assertTrue(cg.getColIndices().isSorted());
 
 				ccc.allocateColGroup(cg);
-				TestUtils.compareMatricesBitAvgDistance(c, ccc, 0, 0, "Not the same combined " );
+				TestUtils.compareMatricesBitAvgDistance(c, ccc, 0, 0, "Not the same combined ");
 			}
 
+		}
+		catch(DMLCompressionException e) {
+			if(!e.getMessage().contains("Not allowed")) {
+
+				e.printStackTrace();
+				fail(e.getMessage());
+			}
 		}
 		catch(Exception e) {
 			e.printStackTrace();

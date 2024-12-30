@@ -86,6 +86,14 @@ public abstract class AColGroupCompressed extends AColGroup {
 
 	protected abstract double[] preAggBuiltinRows(Builtin builtin);
 
+	@Override
+	public boolean sameIndexStructure(AColGroup that) {
+		if(that instanceof AColGroupCompressed)
+			return sameIndexStructure((AColGroupCompressed) that);
+		else
+			return false;
+	}
+
 	public abstract boolean sameIndexStructure(AColGroupCompressed that);
 
 	public double[] preAggRows(ValueFunction fn) {
@@ -215,7 +223,8 @@ public abstract class AColGroupCompressed extends AColGroup {
 
 	}
 
-	protected static void tsmmDense(double[] result, int numColumns, double[] values, int[] counts, IColIndex colIndexes) {
+	protected static void tsmmDense(double[] result, int numColumns, double[] values, int[] counts,
+		IColIndex colIndexes) {
 		final int nCol = colIndexes.size();
 		final int nRow = counts.length;
 		for(int k = 0; k < nRow; k++) {
@@ -231,7 +240,8 @@ public abstract class AColGroupCompressed extends AColGroup {
 		}
 	}
 
-	protected static void tsmmSparse(double[] result, int numColumns, SparseBlock sb, int[] counts, IColIndex colIndexes) {
+	protected static void tsmmSparse(double[] result, int numColumns, SparseBlock sb, int[] counts,
+		IColIndex colIndexes) {
 		for(int row = 0; row < counts.length; row++) {
 			if(sb.isEmpty(row))
 				continue;

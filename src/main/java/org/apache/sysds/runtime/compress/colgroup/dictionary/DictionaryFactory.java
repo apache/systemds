@@ -413,7 +413,6 @@ public interface DictionaryFactory {
 
 	public static IDictionary combineFullDictionaries(IDictionary a, IColIndex ai, int nca, IDictionary b, IColIndex bi,
 		int ncb, HashMapLongInt filter) {
-
 		final int ra = a.getNumberOfValues(nca);
 		final int rb = b.getNumberOfValues(ncb);
 
@@ -451,7 +450,6 @@ public interface DictionaryFactory {
 
 	private static void combineFullDictionariesFilter(MatrixBlock out, HashMapLongInt filter, int ra, int rb, int nca,
 		int ncb, MatrixBlock ma, MatrixBlock mb) {
-
 		for(KV k : filter) {
 			final int r = (int) (k.k);
 			final int o = k.v;

@@ -88,7 +88,7 @@ public class SparseEncoding extends AEncode {
 			return combineSparseNoResizeDense(es);
 		}
 		else
-			throw new DMLCompressionException("Not allowed other to be dense");
+			throw new DMLCompressionException("Not allowed other to be dense. We should instead combine other way with sparse");
 	}
 
 	protected IEncode combineSparse(SparseEncoding e) {
@@ -167,6 +167,7 @@ public class SparseEncoding extends AEncode {
 		return new ImmutablePair<>(new DenseEncoding(retMap.resize(m.size())), m);
 
 	}
+
 
 	protected static void addValHashMap(final int nv, final int r, final HashMapLongInt map,
 		final AMapToData d) {

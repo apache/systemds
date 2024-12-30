@@ -8,6 +8,7 @@ import org.junit.Test;
 
 public class MultiAttentionLayerTest extends AutomatedTestBase {
 	private static final String TEST_NAME_FORWARD = "multi_attention_forward";
+	private static final String TEST_NAME_BACKWARD = "multi_attention_backward";
 	private static final String TEST_DIR = "applications/nn/component/";
 	private static final String RESOURCE_DIR = "src/test/resources/component/transformers/multi_attention_layer/";
 
@@ -15,6 +16,7 @@ public class MultiAttentionLayerTest extends AutomatedTestBase {
 	public void setUp() {
 		TestUtils.clearAssertionInformation();
 		addTestConfiguration(TEST_NAME_FORWARD, new TestConfiguration(TEST_DIR, TEST_NAME_FORWARD));
+		addTestConfiguration(TEST_NAME_BACKWARD, new TestConfiguration(TEST_DIR, TEST_NAME_BACKWARD));
 	}
 
 	@Test
@@ -57,6 +59,24 @@ public class MultiAttentionLayerTest extends AutomatedTestBase {
 					output("context_error"),
 					output("attention_error"), 
 				};
+			} else {
+				programArgs = new String[] { 
+					"-stats", "-args",
+					String.valueOf(batchSize), String.valueOf(seqLength),
+					String.valueOf(numHeads), String.valueOf(embeddingDim),
+					String.valueOf(debug),
+					RESOURCE_DIR + "input_query_" + testSuffix + ".csv",
+					RESOURCE_DIR + "input_key_" + testSuffix + ".csv",
+					RESOURCE_DIR + "input_value_" + testSuffix + ".csv",
+					RESOURCE_DIR + "input_dcontext_" + testSuffix + ".csv",
+					RESOURCE_DIR + "input_attention_" + testSuffix + ".csv",
+					RESOURCE_DIR + "output_dquery_" + testSuffix + ".csv",
+					RESOURCE_DIR + "output_dkey_" + testSuffix + ".csv",
+					RESOURCE_DIR + "output_dvalue_" + testSuffix + ".csv",
+					output("dquery_error"),
+					output("dkey_error"), 
+					output("dvalue_error"), 
+				};
 			}
 
 			// Run the test
@@ -69,7 +89,12 @@ public class MultiAttentionLayerTest extends AutomatedTestBase {
 				double attentionMaxError = (Double) readDMLScalarFromOutputDir("context_error").values().toArray()[0];
 				assert attentionMaxError < precision;
 			} else {
-
+				double dqueryMaxError = (Double) readDMLScalarFromOutputDir("dquery_error").values().toArray()[0];
+				assert dqueryMaxError < precision;
+				double dkeyMaxError = (Double) readDMLScalarFromOutputDir("dkey_error").values().toArray()[0];
+				assert dkeyMaxError < precision;
+				double dvalueMaxError = (Double) readDMLScalarFromOutputDir("dvalue_error").values().toArray()[0];
+				assert dvalueMaxError < precision;
 			}
 		} catch (Throwable ex) {
 			ex.printStackTrace(System.out); // Log or debug all exceptions or errors

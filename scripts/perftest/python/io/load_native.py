@@ -21,11 +21,11 @@
 
 import argparse
 import timeit
+from systemds.context import SystemDSContext
 
 
 setup = "\n".join(
     [
-        "from systemds.context import SystemDSContext",
         "from systemds.script_building.script import DMLScript",
     ]
 )
@@ -33,18 +33,18 @@ setup = "\n".join(
 
 run = "\n".join(
     [
-        "with SystemDSContext(logging_level=10, py4j_logging_level=50) as ctx:",
-        "    node = ctx.read(src)",
-        "    script = DMLScript(ctx)",
-        "    script.build_code(node)",
-        "    script.execute()",
+        "node = ctx.read(src)",
+        "script = DMLScript(ctx)",
+        "script.build_code(node)",
+        "script.execute()",
     ]
 )
 
 
 def main(args):
-    gvars = {"src": args.src}
+    gvars = {"src": args.src, "ctx": SystemDSContext(logging_level=10, py4j_logging_level=50)}
     print(timeit.timeit(run, setup, globals=gvars, number=args.number))
+    gvars["ctx"].close()
 
 
 if __name__ == "__main__":

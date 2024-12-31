@@ -38,14 +38,17 @@ expected_dquery = matrix(read($11, format="csv"), rows=batch_size, cols=seq_leng
 expected_dkey = matrix(read($12, format="csv"), rows=batch_size, cols=seq_length*heads*embedding_dim)
 expected_dvalue = matrix(read($13, format="csv"), rows=batch_size, cols=seq_length*heads*embedding_dim)
 
-droupout_mask = matrix(0, rows=1, cols=1)
+dropout_mask = matrix(0, rows=1, cols=1)
 
 [dquery, dkey, dvalue] = multi_attention::backward(dcontext, dropout_mask, attention, query, key, value, heads, seq_length, embedding_dim, 0.0)
 
 if (debug) {
     print(toString(dquery))
+    print(toString(expected_dquery))
     print(toString(dkey))
+    print(toString(expected_dkey))
     print(toString(dvalue))
+    print(toString(expected_dvalue))
 }
 
 dquery_error = max(abs(expected_dquery - dquery))

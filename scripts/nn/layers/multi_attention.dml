@@ -176,14 +176,9 @@ backward = function(matrix[double] dcontext,
       if (dropout_p > 0.0) {
         # Provide unnecessary required X input matrix via empty matrix
         dattention_probs = dropout::backward(dattention_probs, matrix(0, rows=1, cols=1), dropout_p, dropout_mask_h)
-
-        # Get pre-dropout attention (this is the same as attention_h if dropout_p == 0)
-        attention_scores = Q_h %*% t(K_norm_h)  # Shape (T, T)
-        # TODO: Add support for attention mask here
-        # Column-wise softmax (overwrite old attention_h)
-        attention_h = softmax::forward(attention_scores)
       }
-      dattention_scores = softmax::backward(dattention_probs, attention_h)
+      attention_scores = Q_h %*% t(K_norm_h)  # Shape (T, T)
+      dattention_scores = softmax::backward(dattention_probs, attention_scores)
 
       dQ_h = dattention_scores %*% K_norm_h
       dK_h = t(dattention_scores) %*% (Q_h / sqrt(D))

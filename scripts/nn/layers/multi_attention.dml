@@ -134,6 +134,9 @@ backward = function(matrix[double] dcontext,
 
   # Transpose head and token dimension for per-head computation
   dcontext = util::transpose_ABCD_to_ACBD(dcontext, T, H)  # Shape (B, H*T*D)
+  Q = util::transpose_ABCD_to_ACBD(Q, T, H)  # Shape (B, H*T*D)
+  K = util::transpose_ABCD_to_ACBD(K, T, H)  # Shape (B, H*T*D)
+  V = util::transpose_ABCD_to_ACBD(V, T, H)  # Shape (B, H*T*D)
 
   dQ = matrix(0, rows=B, cols=H*T*D)  # Shape (B, H*T*D)
   dK = matrix(0, rows=B, cols=H*T*D)  # Shape (B, H*T*D)

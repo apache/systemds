@@ -39,6 +39,11 @@ public class MultiAttentionLayerTest extends AutomatedTestBase {
 		runMultiAttentionTest("test4", 2, 3, 4, 5, 0, TEST_NAME_BACKWARD, 1e-5, false);
 	}
 
+	@Test
+	public void testMultiAttentionBackwardLarge() {
+		runMultiAttentionTest("test5", 8, 12, 10, 5, 0, TEST_NAME_BACKWARD, 1e-5, false);
+	}
+
 	private void runMultiAttentionTest(String testSuffix, int batchSize, int seqLength, int numHeads, int embeddingDim,
 			int debug, String testname, double precision, boolean isForward) {
 		// Set execution platform

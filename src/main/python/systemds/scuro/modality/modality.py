@@ -18,6 +18,8 @@
 # under the License.
 #
 # -------------------------------------------------------------
+from typing import List
+
 from systemds.scuro.modality.type import ModalityType
 
 
@@ -35,7 +37,7 @@ class Modality:
         self.shape = None
         self.schema = {}
 
-    def get_modality_names(self) -> list[str]:
+    def get_modality_names(self) -> List[str]:
         """
         Extracts the individual unimodal modalities for a given transformed modality.
         """

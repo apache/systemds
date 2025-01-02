@@ -28,13 +28,11 @@ from sklearn.metrics import classification_report
 from sklearn.model_selection import train_test_split, KFold
 from sklearn.preprocessing import MinMaxScaler
 
-from systemds.scuro import (
-    UnimodalModality,
-    VideoLoader,
-    AudioLoader,
-    TextLoader,
-    ModalityType,
-)
+from systemds.scuro.modality.unimodal_modality import UnimodalModality
+from systemds.scuro.modality.type import ModalityType
+from systemds.scuro.dataloader.text_loader import TextLoader
+from systemds.scuro.dataloader.audio_loader import AudioLoader
+from systemds.scuro.dataloader.video_loader import VideoLoader
 from systemds.scuro.aligner.dr_search import DRSearch
 from systemds.scuro.aligner.task import Task
 from systemds.scuro.models.model import Model
@@ -113,13 +111,13 @@ class TestDataLoaders(unittest.TestCase):
         text = UnimodalModality(text_data_loader, ModalityType.TEXT)
         cls.data_generator = TestDataGenerator([video, audio, text], cls.test_file_path)
         cls.data_generator.create_multimodal_data(cls.num_instances)
-        
+
         cls.bert = text.apply_representation(Bert())
         cls.mel_spe = audio.apply_representation(MelSpectrogram())
         cls.resnet = video.apply_representation(ResNet())
-        
+
         cls.mods = [cls.bert, cls.mel_spe, cls.resnet]
-        
+
         split = train_test_split(
             cls.indizes, cls.data_generator.labels, test_size=0.2, random_state=42
         )

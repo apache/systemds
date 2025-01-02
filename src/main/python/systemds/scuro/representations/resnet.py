@@ -43,7 +43,6 @@ class ResNet(UnimodalRepresentation):
     def transform(self, data):
 
         resnet = models.resnet152(weights=models.ResNet152_Weights.DEFAULT).to(DEVICE)
-        # resnet = models.resnet50(weights=models.ResNet50_Weights.DEFAULT).to(DEVICE)
         resnet.eval()
 
         for param in resnet.parameters():
@@ -102,12 +101,16 @@ class ResNet(UnimodalRepresentation):
                 values = res5c_output
 
                 if self.layer_name == "avgpool" or self.layer_name == "maxpool":
-                    embeddings[video_id].extend(torch.flatten(values, 1).detach().cpu())
+                    embeddings[video_id].extend(
+                        torch.flatten(values, 1).detach().cpu().numpy()
+                    )
 
                 else:
                     pooled = torch.nn.functional.adaptive_avg_pool2d(values, (1, 1))
 
-                    embeddings[video_id].extend(torch.flatten(pooled, 1).detach().cpu())
+                    embeddings[video_id].extend(
+                        torch.flatten(pooled, 1).detach().cpu().numpy()
+                    )
 
         if self.output_file is not None:
             with h5py.File(self.output_file, "w") as hdf:

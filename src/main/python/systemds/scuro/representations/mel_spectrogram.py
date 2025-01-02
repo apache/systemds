@@ -19,7 +19,6 @@
 #
 # -------------------------------------------------------------
 
-import os
 import pickle
 
 import librosa
@@ -35,19 +34,15 @@ class MelSpectrogram(UnimodalRepresentation):
         self.avg = avg
         self.output_file = output_file
 
-    def parse_all(self, file_path, indices, get_sequences=False):
+    def transform(self, data):
         result = []
         max_length = 0
-        if os.path.isdir(file_path):
-            for filename in os.listdir(file_path):
-                f = os.path.join(file_path, filename)
-                if os.path.isfile(f):
-                    y, sr = librosa.load(f)
-                    S = librosa.feature.melspectrogram(y=y, sr=sr)
-                    S_dB = librosa.power_to_db(S, ref=np.max)
-                    if S_dB.shape[-1] > max_length:
-                        max_length = S_dB.shape[-1]
-                    result.append(S_dB)
+        for sample in data:
+            S = librosa.feature.melspectrogram(y=sample)
+            S_dB = librosa.power_to_db(S, ref=np.max)
+            if S_dB.shape[-1] > max_length:
+                max_length = S_dB.shape[-1]
+            result.append(S_dB)
 
         r = []
         for elem in result:
@@ -57,9 +52,9 @@ class MelSpectrogram(UnimodalRepresentation):
         np_array_r = np.array(r) if not self.avg else np.mean(np.array(r), axis=1)
 
         if self.output_file is not None:
-            data = {}
+            data = []
             for i in range(0, np_array_r.shape[0]):
-                data[indices[i]] = np_array_r[i]
+                data.append(np_array_r[i])
             with open(self.output_file, "wb") as file:
                 pickle.dump(data, file)
 

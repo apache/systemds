@@ -23,7 +23,6 @@ import random
 from typing import List
 
 from systemds.scuro.aligner.task import Task
-from systemds.scuro.modality.aligned_modality import AlignedModality
 from systemds.scuro.modality.modality import Modality
 from systemds.scuro.representations.representation import Representation
 
@@ -64,27 +63,25 @@ class DRSearch:
 
     def set_best_params(
         self,
-        modality_name: str,
         representation: Representation,
         scores: List[float],
         modality_names: List[str],
     ):
         """
         Updates the best parameters for given modalities, representation, and score
-        :param modality_name: The name of the aligned modality
         :param representation: The representation used to retrieve the current score
-        :param score: achieved score for the set of modalities and representation
+        :param scores: achieved train/test scores for the set of modalities and representation
         :param modality_names: List of modality names used in this setting
         :return:
         """
 
         # check if modality name is already in dictionary
-        if modality_name not in self.scores.keys():
+        if "_".join(modality_names) not in self.scores.keys():
             # if not add it to dictionary
-            self.scores[modality_name] = {}
+            self.scores["_".join(modality_names)] = {}
 
         # set score for representation
-        self.scores[modality_name][representation] = scores
+        self.scores["_".join(modality_names)][representation] = scores
 
         # compare current score with best score
         if scores[1] > self.best_score:
@@ -113,13 +110,12 @@ class DRSearch:
         modality_combination = random.choice(modalities)
         representation = random.choice(self.representations)
 
-        modality = AlignedModality(representation, list(modality_combination))  # noqa
-        modality.combine()
+        modality = modality_combination[0].combine(
+            modality_combination[1:], representation
+        )
 
         scores = self.task.run(modality.data)
-        self.set_best_params(
-            modality.name, representation, scores, modality.get_modality_names()
-        )
+        self.set_best_params(representation, scores, modality.get_modality_names())
 
         return self.best_representation, self.best_score, self.best_modalities
 
@@ -133,14 +129,14 @@ class DRSearch:
         for M in range(1, len(self.modalities) + 1):
             for combination in itertools.combinations(self.modalities, M):
                 for representation in self.representations:
-                    modality = AlignedModality(
-                        representation, list(combination)
-                    )  # noqa
-                    modality.combine()
+                    modality = combination[0]
+                    if len(combination) > 1:
+                        modality = combination[0].combine(
+                            list(combination[1:]), representation
+                        )
 
                     scores = self.task.run(modality.data)
                     self.set_best_params(
-                        modality.name,
                         representation,
                         scores,
                         modality.get_modality_names(),
@@ -164,7 +160,8 @@ class DRSearch:
         for modality_name in self.best_modalities:
             used_modalities.append(get_modalities_by_name(modalities, modality_name))
 
-        modality = AlignedModality(self.best_representation, used_modalities)  # noqa
-        modality.combine(self.task.train_indices)
+        modality = used_modalities[0].combine(
+            used_modalities[1:], self.best_representation
+        )
 
         return modality.data

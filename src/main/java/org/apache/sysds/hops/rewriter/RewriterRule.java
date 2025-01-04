@@ -359,6 +359,7 @@ public class RewriterRule extends AbstractRewriterRule {
 		}*/
 
 		match.getLinks().forEach(lnk -> lnk.newStmt.replaceAll(createdObjects::get));
+		cpy2.prepareForHashing();
 		match.getLinks().forEach(lnk -> lnk.transferFunction.accept(lnk));
 		//RewriterAssertions assertions = RewriterAssertions.ofExpression(cpy2, ctx);
 		//cpy2.unsafePutMeta("_assertions", assertions);

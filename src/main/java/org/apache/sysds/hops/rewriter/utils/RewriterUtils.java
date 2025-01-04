@@ -829,8 +829,12 @@ public class RewriterUtils {
 				RewriterStatement newSub = replaceReferenceAware(root.getOperands().get(i), duplicateReferences, comparer, visited);
 
 				if (newSub != null) {
-					if (duplicateReferences && newOne == null)
+					System.out.println("NewSub: " + newSub);
+					if (duplicateReferences && newOne == null) {
 						root = root.copyNode();
+						newOne = root;
+						System.out.println("Duplication required: " + root);
+					}
 
 					root.getOperands().set(i, newSub);
 				}

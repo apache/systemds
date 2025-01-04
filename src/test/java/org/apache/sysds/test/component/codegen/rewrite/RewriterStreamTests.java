@@ -524,8 +524,8 @@ public class RewriterStreamTests {
 
 	@Test
 	public void testSimpleSumPullOut() {
-		RewriterStatement stmt1 = RewriterUtils.parse("-(sum(+(A, 7)))", ctx, "MATRIX:A", "LITERAL_INT:7");
-		RewriterStatement stmt2 = RewriterUtils.parse("sum(+(-(A), -7))", ctx, "MATRIX:A", "LITERAL_INT:-7");
+		RewriterStatement stmt1 = RewriterUtils.parse("-(sum(+(A, 7)))", ctx, "MATRIX:A", "LITERAL_FLOAT:7");
+		RewriterStatement stmt2 = RewriterUtils.parse("sum(+(-(A), -7))", ctx, "MATRIX:A", "LITERAL_FLOAT:-7");
 
 		stmt1 = canonicalConverter.apply(stmt1);
 		stmt2 = canonicalConverter.apply(stmt2);
@@ -1310,7 +1310,7 @@ public class RewriterStreamTests {
 	@Test
 	public void testSum() {
 		RewriterStatement stmt1 = RewriterUtils.parse("sum(+(a,A))", ctx, "MATRIX:A,B", "FLOAT:a");
-		RewriterStatement stmt2 = RewriterUtils.parse("+(*(a, cast.FLOAT(length(A))), sum(A))", ctx, "MATRIX:A,B", "FLOAT:a", "LITERAL_FLOAT:0.0");
+		RewriterStatement stmt2 = RewriterUtils.parse("+(*(a, length(A)), sum(A))", ctx, "MATRIX:A,B", "FLOAT:a", "LITERAL_FLOAT:0.0");
 
 		System.out.println("Cost1: " + RewriterCostEstimator.estimateCost(stmt1, ctx));
 		System.out.println("Cost2: " + RewriterCostEstimator.estimateCost(stmt2, ctx));

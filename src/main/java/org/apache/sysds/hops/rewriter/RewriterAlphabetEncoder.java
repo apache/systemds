@@ -67,6 +67,7 @@ public class RewriterAlphabetEncoder {
 			new Operand("+*", 3, MATRIX, SCALAR, MATRIX),
 			new Operand("-*", 3, MATRIX, SCALAR, MATRIX),
 			new Operand("*2", 1, MATRIX),
+			//new Operand("^2", 1, MATRIX),
 			new Operand("_nnz", 1, MATRIX),
 			new Operand("sumSq", 1, MATRIX),
 			new Operand("sq", 1, MATRIX),
@@ -83,7 +84,7 @@ public class RewriterAlphabetEncoder {
 			new Operand("c_ncol*", 2, MATRIX, ALL_TYPES),
 			new Operand("c_nrow*", 2, MATRIX, ALL_TYPES),
 
-			//new Operand("log_nz", 1, MATRIX),			// TODO: We have to include literals in the search
+			new Operand("log_nz", 1, MATRIX),
 
 			// Placeholder operators
 			new Operand("zero", 0, true),

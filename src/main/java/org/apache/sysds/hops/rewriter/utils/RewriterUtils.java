@@ -829,11 +829,11 @@ public class RewriterUtils {
 				RewriterStatement newSub = replaceReferenceAware(root.getOperands().get(i), duplicateReferences, comparer, visited);
 
 				if (newSub != null) {
-					System.out.println("NewSub: " + newSub);
+					//System.out.println("NewSub: " + newSub);
 					if (duplicateReferences && newOne == null) {
 						root = root.copyNode();
 						newOne = root;
-						System.out.println("Duplication required: " + root);
+						//System.out.println("Duplication required: " + root);
 					}
 
 					root.getOperands().set(i, newSub);
@@ -842,6 +842,27 @@ public class RewriterUtils {
 		}
 
 		return newOne;
+	}
+
+	public static void unfoldExpressions(RewriterStatement root, RuleContext ctx) {
+		for (int i = 0; i < root.getOperands().size(); i++) {
+			RewriterStatement child = root.getChild(i);
+			if (child.isInstruction() && child.refCtr > 1) {
+				if (!child.trueInstruction().equals("_idx")
+						&& !child.trueInstruction().equals("_m")
+						&& !child.trueInstruction().equals("idxExpr")
+						//&& !child.trueInstruction().equals("argList")
+						&& !child.trueInstruction().equals("_EClass")) {
+					RewriterStatement cpy = child.copyNode();
+					root.getOperands().set(i, cpy);
+					child.refCtr--;
+					cpy.getOperands().forEach(op -> op.refCtr++);
+					//System.out.println("Copied: " + child.trueInstruction());
+				}
+			}
+
+			unfoldExpressions(child, ctx);
+		}
 	}
 
 	// Function to check if two lists match
@@ -1406,6 +1427,8 @@ public class RewriterUtils {
 			RewriterUtils.mergeArgLists(stmt, ctx);
 
 			stmt = stmt.getAssertions(ctx).cleanupEClasses(stmt);
+			unfoldExpressions(stmt, ctx);
+			stmt.prepareForHashing();
 
 			// TODO: After this, stuff like CSE, A-A = 0, etc. must still be applied
 
@@ -1844,7 +1867,15 @@ public class RewriterUtils {
 
 			if (idx1.isInstruction() && idx2.isInstruction() && idx1.trueInstruction().equals("_idx") && idx2.trueInstruction().equals("_idx")) {
 				// Then we just choose the first index
-				cur.forEachPreOrder(cur2 -> {
+				cur.getChild(1).forEachPreOrder(cur2 -> {
+					for (int i = 0; i < cur2.getOperands().size(); i++) {
+						if (cur2.getChild(i).equals(idx2))
+							cur2.getOperands().set(i, idx1);
+					}
+
+					return true;
+				}, true);
+				cur.getChild(2).forEachPreOrder(cur2 -> {
 					for (int i = 0; i < cur2.getOperands().size(); i++) {
 						if (cur2.getChild(i).equals(idx2))
 							cur2.getOperands().set(i, idx1);

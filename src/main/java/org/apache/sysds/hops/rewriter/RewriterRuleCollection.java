@@ -1312,9 +1312,7 @@ public class RewriterRuleCollection {
 				}, true)
 				.linkUnidirectional(hooks.get(1).getId(), hooks.get(2).getId(), lnk -> {
 					RewriterStatement.transferMeta(lnk);
-					System.out.println("HERE");
 
-					// TODO: Big issue when having multiple references to the same sub-dag
 					for (int idx = 0; idx < 2; idx++) {
 						RewriterStatement oldRef = lnk.oldStmt.getChild(idx);
 
@@ -1340,10 +1338,7 @@ public class RewriterRuleCollection {
 					}
 				}, true)
 				.apply(hooks.get(3).getId(), stmt -> {
-					System.out.println("BEFORE: " + stmt.toParsableString(ctx));
 					stmt.getOperands().set(0, stmt.getChild(0, 2));
-					System.out.println("AFTER: " + stmt.toParsableString(ctx));
-					System.out.println("Cnt: " + stmt.getChild(0).refCtr);
 				}, true)
 				.build()
 		);
@@ -1378,6 +1373,21 @@ public class RewriterRuleCollection {
 						RewriterStatement mStmtC = new RewriterInstruction().as(UUID.randomUUID().toString()).withInstruction("+").withOps(newRef.getChild(1, 1, 0), RewriterStatement.literal(ctx, -1L)).consolidate(ctx);
 						RewriterStatement mStmt = new RewriterInstruction().as(UUID.randomUUID().toString()).withInstruction("+").withOps(newRef, mStmtC).consolidate(ctx);
 						final RewriterStatement newStmt = RewriterUtils.foldConstants(mStmt, ctx);
+
+						/*UUID oldRefId = (UUID)oldRef.getMeta("idxId");
+
+						RewriterStatement newOne = RewriterUtils.replaceReferenceAware(lnk.newStmt.get(0).getChild(2), stmt -> {
+							UUID idxId = (UUID) stmt.getMeta("idxId");
+							if (idxId != null) {
+								if (idxId.equals(oldRefId))
+									return newStmt;
+							}
+
+							return null;
+						});
+
+						if (newOne != null)
+							lnk.newStmt.get(0).getOperands().set(2, newOne);*/
 
 						// Replace all references to h with
 						lnk.newStmt.get(0).getOperands().get(2).forEachPostOrder((el, pred) -> {

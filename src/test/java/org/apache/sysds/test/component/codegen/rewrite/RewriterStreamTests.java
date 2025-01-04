@@ -413,8 +413,8 @@ public class RewriterStreamTests {
 		System.out.println("==========");
 		System.out.println(stmt2.toParsableString(ctx, true));
 
-		assert !stmt1.match(RewriterStatement.MatcherContext.exactMatch(ctx, stmt2, stmt1));
-		assert !stmt2.match(RewriterStatement.MatcherContext.exactMatch(ctx, stmt1, stmt2));
+		assert stmt1.match(RewriterStatement.MatcherContext.exactMatch(ctx, stmt2, stmt1));
+		assert stmt2.match(RewriterStatement.MatcherContext.exactMatch(ctx, stmt1, stmt2));
 	}
 
 	@Test

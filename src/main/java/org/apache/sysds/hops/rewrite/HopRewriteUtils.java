@@ -394,7 +394,7 @@ public class HopRewriteUtils {
 		return datagen;
 	}
 
-	public static Hop createDataGenOpFomDims( Hop rows, Hop cols, double value ) {
+	public static Hop createDataGenOpFromDims( Hop rows, Hop cols, double value ) {
 		Hop val = new LiteralOp(value);
 
 		HashMap<String, Hop> params = new HashMap<>();

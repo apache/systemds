@@ -256,8 +256,8 @@ public class RewriterCodeGen {
 		sb.append("// Now, we start building the new Hop\n");
 
 		if (DEBUG) {
-			indent(indentation, sb);
-			sb.append("System.out.println(\"Applying rewrite: " + name + "\");\n");
+			//indent(indentation, sb);
+			//sb.append("System.out.println(\"Applying rewrite: " + name + "\");\n");
 			indent(indentation, sb);
 			sb.append("DMLExecutor.println(\"Applying rewrite: " + name + "\");\n");
 		}

@@ -76,8 +76,8 @@ public class RewriterClusteringTest {
 		boolean useData = false;
 		boolean useSystematic = true;
 		boolean pruneNovelExpressions = false; // To drop all "irrelevant" statements (those that don't appear in the data set)
-		int systematicSearchDepth = 2;
-		int BATCH_SIZE = 200;
+		int systematicSearchDepth = 3;
+		int BATCH_SIZE = 500;
 		boolean useRandomLarge = false;
 
 		long startTime = System.currentTimeMillis();
@@ -211,7 +211,7 @@ public class RewriterClusteringTest {
 					for (RewriterStatement dag : stmts) {
 						List<RewriterStatement> expanded = new ArrayList<>();
 						expanded.add(dag);
-						expanded.addAll(RewriterAlphabetEncoder.buildAssertionVariations(dag, ctx, false));
+						//expanded.addAll(RewriterAlphabetEncoder.buildAssertionVariations(dag, ctx, false));
 						expanded.addAll(RewriterAlphabetEncoder.buildVariations(dag, ctx));
 						actualCtr += expanded.size();
 						for (RewriterStatement stmt : expanded) {
@@ -221,8 +221,6 @@ public class RewriterClusteringTest {
 								ctx.metaPropagator.apply(stmt);
 								RewriterStatement canonicalForm = converter.apply(stmt);
 
-								//canonicalForm.compress();
-								//stmt.compress();
 								synchronized (lock) {
 									if (pruneNovelExpressions && !canonicalExprDB.containsEntry(canonicalForm))
 										return;

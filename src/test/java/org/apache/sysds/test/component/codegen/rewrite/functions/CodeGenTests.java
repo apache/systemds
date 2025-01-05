@@ -22,6 +22,7 @@ import org.apache.sysds.parser.DataIdentifier;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import scala.Tuple2;
+import scala.xml.transform.RewriteRule;
 
 import java.io.FileWriter;
 import java.io.IOException;
@@ -211,6 +212,26 @@ public class CodeGenTests {
 	}
 
 	@Test
+	public void generateExample() {
+		String ruleStr = "MATRIX:B\nFLOAT:a,c\n+(a,-(B,c))\n=>\n+(-(a,c),B)";
+		RewriterRule rule = RewriterUtils.parseRule(ruleStr, ctx);
+		RewriterRuleSet rs = new RewriterRuleSet(ctx, List.of(rule));
+		RewriterCodeGen.DEBUG = false;
+		String code = rs.toJavaCode("Test", false, false, true, false);
+		System.out.println(code);
+	}
+
+	@Test
+	public void generateExample2() {
+		String ruleStr = "MATRIX:A\n+(A,A)\n=>\n*2(A)";
+		RewriterRule rule = RewriterUtils.parseRule(ruleStr, ctx);
+		RewriterRuleSet rs = new RewriterRuleSet(ctx, List.of(rule));
+		RewriterCodeGen.DEBUG = false;
+		String code = rs.toJavaCode("Test", false, false, true, false);
+		System.out.println(code);
+	}
+
+	//@Test
 	public void codeGen() {
 		try {
 			List<String> lines = Files.readAllLines(Paths.get(RewriteAutomaticallyGenerated.FILE_PATH));

@@ -96,7 +96,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		Statistics.applyGeneratedRewrite("*(0.0,A) => const(A,0.0)");
-		DataGenOp v1 = ((DataGenOp) HopRewriteUtils.createDataGenOpFomDims(HopRewriteUtils.createUnary(hi_1, Types.OpOp1.NROW),HopRewriteUtils.createUnary(hi_1, Types.OpOp1.NCOL),0.0D));
+		DataGenOp v1 = ((DataGenOp) HopRewriteUtils.createDataGenOpFromDims(HopRewriteUtils.createUnary(hi_1, Types.OpOp1.NROW),HopRewriteUtils.createUnary(hi_1, Types.OpOp1.NCOL),0.0D));
 
 		Hop newRoot = v1;
 		if ( v1.getValueType() != hi.getValueType() ) {
@@ -552,7 +552,7 @@ public class GeneratedRewriteClass implements Function {
 
 		// Now, we start building the new Hop
 		Statistics.applyGeneratedRewrite("*(A,0.0) => const(A,0.0)");
-		DataGenOp v1 = ((DataGenOp) HopRewriteUtils.createDataGenOpFomDims(HopRewriteUtils.createUnary(hi_0, Types.OpOp1.NROW),HopRewriteUtils.createUnary(hi_0, Types.OpOp1.NCOL),0.0D));
+		DataGenOp v1 = ((DataGenOp) HopRewriteUtils.createDataGenOpFromDims(HopRewriteUtils.createUnary(hi_0, Types.OpOp1.NROW),HopRewriteUtils.createUnary(hi_0, Types.OpOp1.NCOL),0.0D));
 
 		Hop newRoot = v1;
 		if ( v1.getValueType() != hi.getValueType() ) {

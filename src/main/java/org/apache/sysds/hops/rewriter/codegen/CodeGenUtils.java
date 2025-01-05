@@ -409,7 +409,7 @@ public class CodeGenUtils {
 					ncolContent = getHopConstructor(cur.getChild(0).getNCol(), assertions, varNameMapping, ctx, referredVarName);
 				}
 
-				return "((DataGenOp) HopRewriteUtils.createDataGenOpFomDims(" + nrowContent + "," + ncolContent + "," + cur.getChild(1).getLiteral() + "D))";
+				return "((DataGenOp) HopRewriteUtils.createDataGenOpFromDims(" + nrowContent + "," + ncolContent + "," + cur.getChild(1).getLiteral() + "D))";
 		}
 
 		switch (opClass) {

@@ -65,6 +65,8 @@ public class RewriterRuntimeUtils {
 	private static long totalCPUTime = 0L;
 	private static long evaluatedExpressions = 0L;
 	private static long failures = 0L;
+	private static boolean ENFORCE_FLOAT_OBSERVATIONS = true; // To force every data type to float
+	private static boolean OBSERVE_SELECTIONS = false;
 
 	public static void setupIfNecessary() {
 		if (setupComplete)
@@ -73,6 +75,8 @@ public class RewriterRuntimeUtils {
 		setupComplete = true;
 		System.out.println("INTERCEPTOR");
 		if (interceptAll) {
+			OptimizerUtils.ALLOW_SUM_PRODUCT_REWRITES = false;
+			OptimizerUtils.ALLOW_OPERATOR_FUSION = false;
 			System.out.println("OptLevel:" + OptimizerUtils.getOptLevel().toString());
 			System.out.println("AllowOpFusion: " + OptimizerUtils.ALLOW_OPERATOR_FUSION);
 			System.out.println("AllowSumProductRewrites: " + OptimizerUtils.ALLOW_SUM_PRODUCT_REWRITES);
@@ -97,7 +101,7 @@ public class RewriterRuntimeUtils {
 
 			RewriterRuntimeUtils.attachHopInterceptor(prog -> {
 				long startMillis = System.currentTimeMillis();
-				RewriterRuntimeUtils.forAllUniqueTranslatableStatements(prog, 5, mstmt -> {
+				RewriterRuntimeUtils.forAllUniqueTranslatableStatements(prog, 4, mstmt -> {
 					//List<RewriterStatement> subtrees = RewriterUtils.generateSubtrees(mstmt, new HashMap<>(), ctx);
 					/*List<RewriterStatement> subtrees = List.of(mstmt);
 					for (RewriterStatement stmt : subtrees) {
@@ -164,7 +168,7 @@ public class RewriterRuntimeUtils {
 				System.out.println("Top 100 unknown ops:");
 
 				List<Map.Entry<String, Integer>> list = unknownOps.entrySet().stream().sorted(Map.Entry.comparingByValue(Comparator.reverseOrder())).collect(Collectors.toList());
-				for (int i = 0; i < 100; i++)
+				for (int i = 0; i < 100 && i < list.size(); i++)
 					System.out.println(list.get(i).getKey() + "\t>> " + list.get(i).getValue());
 
 				if (writeDB) {
@@ -394,13 +398,19 @@ public class RewriterRuntimeUtils {
 		visited.add(currentHop);
 		RewriterStatement stmt = buildDAGRecursively(currentHop, null, new HashMap<>(), 0, maxDepth, ctx);
 
-		if (stmt != null && stmt instanceof RewriterInstruction)
+		if (stmt instanceof RewriterInstruction)
 			stmt = ctx.metaPropagator.apply(stmt);
-		else {
+
+		if (stmt == null) {
 			// TODO: What to do about TWrite and PWrite?
 			// Just ignore these ops?
-			if (!currentHop.getOpString().startsWith("TWrite") && !currentHop.getOpString().startsWith("PWrite") && !currentHop.getValueType().toString().equals("STRING") && !currentHop.getOpString().startsWith("LiteralOp") && !currentHop.getOpString().startsWith("fcall") && !currentHop.getOpString().startsWith("TRead"))
+			if (!currentHop.getOpString().startsWith("TWrite") && !currentHop.getOpString().startsWith("PWrite") && !currentHop.getValueType().toString().equals("STRING") && !currentHop.getOpString().startsWith("LiteralOp") && !currentHop.getOpString().startsWith("fcall") && !currentHop.getOpString().startsWith("TRead") && !currentHop.getOpString().startsWith("PRead"))
 				unknownOps.compute(currentHop.getOpString() + "::" + currentHop.getDataType() + "::" + currentHop.getValueType(), (k, v) -> v == null ? 1 : v + 1);
+		}
+
+		if (stmt != null) {
+			stmt.prepareForHashing();
+			stmt.recomputeHashCodes(ctx);
 		}
 
 		if (stmt != null && db.insertEntry(ctx, stmt)) {
@@ -561,7 +571,6 @@ public class RewriterRuntimeUtils {
 		}
 	}
 
-	// TODO: Maybe introduce other implicit conversions if types mismatch
 	private static RewriterStatement checkForCorrectTypes(RewriterStatement stmt, @Nullable String expectedType, Hop hop, final RuleContext ctx) {
 		if (stmt == null)
 			return null;
@@ -621,14 +630,19 @@ public class RewriterRuntimeUtils {
 	private static RewriterStatement buildScalarLeaf(Hop hop, @Nullable String newName, final RuleContext ctx) {
 		if (newName == null)
 			newName = hop.getName();
+
 		switch (hop.getValueType()) {
 			case FP64:
 			case FP32:
 				return RewriterUtils.parse(newName, ctx, "FLOAT:" + newName);
 			case INT64:
 			case INT32:
+				if (ENFORCE_FLOAT_OBSERVATIONS)
+					return RewriterUtils.parse(newName, ctx, "FLOAT:" + newName);
 				return RewriterUtils.parse(newName, ctx, "INT:" + newName);
 			case BOOLEAN:
+				if (ENFORCE_FLOAT_OBSERVATIONS)
+					return RewriterUtils.parse(newName, ctx, "FLOAT:" + newName);
 				return RewriterUtils.parse(newName, ctx, "BOOL:" + newName);
 		}
 
@@ -668,6 +682,9 @@ public class RewriterRuntimeUtils {
 	}
 
 	private static RewriterStatement buildIndexingOp(IndexingOp op, @Nullable String expectedType, final RuleContext ctx) {
+		if (!OBSERVE_SELECTIONS)
+			return null;
+
 		if (expectedType == null) {
 			expectedType = resolveExactDataType(op);
 
@@ -795,18 +812,6 @@ public class RewriterRuntimeUtils {
 		if (t1 == null || t2 == null)
 			return null;
 
-		/*System.out.println(t1 + " :: " + t2);
-
-		if (expectedType != null) {
-			t1 = RewriterUtils.convertibleType(t1, expectedType);
-			t2 = RewriterUtils.convertibleType(t2, expectedType);
-
-			System.out.println(t1 + " :: " + t2);
-
-			if (t1 == null || t2 == null)
-				return null;
-		}*/
-
 		t1 += ":a";
 		t2 += ":b";
 
@@ -882,8 +887,12 @@ public class RewriterRuntimeUtils {
 				return "FLOAT";
 			case INT64:
 			case INT32:
+				if (ENFORCE_FLOAT_OBSERVATIONS)
+					return "FLOAT";
 				return "INT";
 			case BOOLEAN:
+				if (ENFORCE_FLOAT_OBSERVATIONS)
+					return "FLOAT";
 				return "BOOL";
 		}
 

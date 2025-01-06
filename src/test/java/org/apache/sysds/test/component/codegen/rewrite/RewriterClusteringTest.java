@@ -53,13 +53,13 @@ public class RewriterClusteringTest {
 	public static void setup() {
 		ctx = RewriterUtils.buildDefaultContext();
 		converter = RewriterUtils.buildCanonicalFormConverter(ctx, false);
-		/*db = new RewriterDatabase();
+		db = new RewriterDatabase();
 
 		try(BufferedReader reader = new BufferedReader(new FileReader(RewriterRuntimeUtils.dbFile))) {
 			db.deserialize(reader, ctx);
 		} catch (IOException e) {
 			e.printStackTrace();
-		}*/
+		}
 
 		ArrayList<RewriterRule> flatten = new ArrayList<>();
 		RewriterRuleCollection.flattenOperations(flatten, ctx);
@@ -73,11 +73,11 @@ public class RewriterClusteringTest {
 	}
 
 	public static void testExpressionClustering() {
-		boolean useData = false;
+		boolean useData = true;
 		boolean useSystematic = true;
-		boolean pruneNovelExpressions = false; // To drop all "irrelevant" statements (those that don't appear in the data set)
-		int systematicSearchDepth = 2;
-		int BATCH_SIZE = 500;
+		boolean pruneNovelExpressions = true; // To drop all "irrelevant" statements (those that don't appear in the data set)
+		int systematicSearchDepth = 3;
+		int BATCH_SIZE = 1000;
 		boolean useRandomLarge = false;
 
 		long startTime = System.currentTimeMillis();
@@ -106,10 +106,10 @@ public class RewriterClusteringTest {
 				//	return; // Skip
 				// First, build all possible subtrees
 				//System.out.println("Eval:\n" + expr.toParsableString(ctx, true));
-				List<RewriterStatement> subExprs = RewriterUtils.generateSubtrees(expr, ctx, 100);
-				if (subExprs.size() > 300)
+				List<RewriterStatement> subExprs = RewriterUtils.generateSubtrees(expr, ctx, 1000);
+				if (subExprs.size() > 1000)
 					System.out.println("Critical number of subtrees: " + subExprs.size());
-				if (subExprs.size() > 500) {
+				if (subExprs.size() > 2000) {
 					System.out.println("Skipping subtrees...");
 					subExprs = List.of(expr);
 				}
@@ -312,7 +312,7 @@ public class RewriterClusteringTest {
 
 		System.out.println("===== SUGGESTED REWRITES =====");
 		//List<Tuple5<Double, Long, Long, RewriterStatement, RewriterStatement>> rewrites = findSuggestedRewrites(foundEquivalences);
-		List<Tuple4<RewriterStatement, RewriterStatement, Long, Boolean>> rewrites = findSuggestedRewrites(foundEquivalences, 5);
+		List<Tuple4<RewriterStatement, RewriterStatement, Long, Boolean>> rewrites = findSuggestedRewrites(foundEquivalences, 10);
 		foundEquivalences.clear();
 		exactExprDB.clear();
 		canonicalExprDB.clear();
@@ -500,7 +500,7 @@ public class RewriterClusteringTest {
 				for (int i = 1; i < mEq.size(); i++)
 					RewriterAssertionUtils.buildImplicitAssertions(mEq.get(1), assertions, ctx);
 
-				List<Tuple2<List<Number>, List<Long>>> costs = RewriterCostEstimator.compareCosts(mEq, assertions, ctx, true, 1);
+				List<Tuple2<List<Number>, List<Long>>> costs = RewriterCostEstimator.compareCosts(mEq, assertions, ctx, true, sample_size);
 				Set<Tuple2<Integer, Integer>> rewriteProposals = RewriterCostEstimator.findOptima(costs);
 				long mId = idCtr.incrementAndGet();
 

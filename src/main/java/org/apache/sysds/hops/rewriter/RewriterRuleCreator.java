@@ -56,7 +56,7 @@ public class RewriterRuleCreator {
 		List<RewriterRule> appliedRules = new ArrayList<>();
 
 		for (int i = 0; i < 500; i++) {
-			RewriterRuleSet.ApplicableRule applicableRule = ruleSet.acceleratedFindFirst(newStmt);
+			RewriterRuleSet.ApplicableRule applicableRule = ruleSet.acceleratedFindFirst(newStmt, true);
 
 			if (applicableRule == null) {
 				converged = true;
@@ -71,12 +71,12 @@ public class RewriterRuleCreator {
 		}
 
 		if (!converged)
-			throw new IllegalArgumentException("The existing rule-set did not seem to converge for the example: \n" + toTest.toParsableString(ctx, true) + "\n" + String.join("\n", appliedRules.stream().map(rl -> rl.toParsableString(ctx)).collect(Collectors.toList())));
+			throw new IllegalArgumentException("The existing rule-set did not seem to converge for the example: \n" + toTest.toParsableString(ctx, true) + "\n" + String.join("\n", appliedRules.subList(appliedRules.size()-5, appliedRules.size()).stream().map(rl -> rl.toParsableString(ctx)).collect(Collectors.toList())));
 
 		appliedRules.clear();
 
 		for (int i = 0; i < 500; i++) {
-			RewriterRuleSet.ApplicableRule applicableRule = ruleSet.acceleratedFindFirst(toTest);
+			RewriterRuleSet.ApplicableRule applicableRule = ruleSet.acceleratedFindFirst(toTest, true);
 
 			if (applicableRule == null) {
 				converged = true;
@@ -482,10 +482,10 @@ public class RewriterRuleCreator {
 		namedVariables.values().forEach(ref -> {
 			if (reversed) {
 				if (!assoc.containsValue(ref))
-					ref.rename("?" + rd.nextInt(100000));
+					ref.rename("u_" + rd.nextInt(100000));
 			} else {
 				if (!assoc.containsKey(ref))
-					ref.rename("?" + rd.nextInt(100000));
+					ref.rename("u_" + rd.nextInt(100000));
 			}
 		});
 

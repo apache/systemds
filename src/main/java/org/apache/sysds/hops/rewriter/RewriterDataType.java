@@ -167,6 +167,11 @@ public class RewriterDataType extends RewriterStatement {
 	}
 
 	@Override
+	public String trueTypedInstruction(boolean allowImplicitConversions, RuleContext ctx) {
+		return null;
+	}
+
+	@Override
 	public RewriterStatement consolidate(final RuleContext ctx) {
 		if (consolidated)
 			return this;
@@ -249,7 +254,7 @@ public class RewriterDataType extends RewriterStatement {
 		}
 
 		if (!dType.equals(type)) {
-			if (!mCtx.allowImplicitTypeConversions && !RewriterUtils.isImplicitlyConvertible(dType, type)) {
+			if (!mCtx.allowImplicitTypeConversions || !RewriterUtils.isImplicitlyConvertible(dType, type)) {
 				if (!mCtx.allowTypeHierarchy) {
 					mCtx.setFirstMismatch(this, stmt);
 					return false;
@@ -263,19 +268,19 @@ public class RewriterDataType extends RewriterStatement {
 			}
 		}
 
-		// TODO: This way of literal matching might cause confusion later on
 		if (mCtx.literalsCanBeVariables) {
-			if (isLiteral())
-				if (!mCtx.ignoreLiteralValues && (!stmt.isLiteral() || !getLiteral().equals(stmt.getLiteral()))) {
+			if (isLiteral()) {
+				if (!mCtx.ignoreLiteralValues && (!stmt.isLiteral() || !RewriterUtils.compareLiterals(this, (RewriterDataType)stmt, mCtx.allowImplicitTypeConversions))) {
 					mCtx.setFirstMismatch(this, stmt);
 					return false;
 				}
+			}
 		} else {
 			if (isLiteral() != stmt.isLiteral()) {
 				mCtx.setFirstMismatch(this, stmt);
 				return false;
 			}
-			if (!mCtx.ignoreLiteralValues && isLiteral() && !getLiteral().equals(stmt.getLiteral())) {
+			if (!mCtx.ignoreLiteralValues && isLiteral() && !RewriterUtils.compareLiterals(this, (RewriterDataType)stmt, mCtx.allowImplicitTypeConversions)) {
 				mCtx.setFirstMismatch(this, stmt);
 				return false;
 			}

@@ -727,6 +727,21 @@ public class RewriterUtils {
 		return "BOOL";
 	}
 
+	public static String convertImplicitly(String type, boolean allowTypeConversions) {
+		if (!allowTypeConversions)
+			return type;
+		return convertImplicitly(type);
+	}
+
+	public static String convertImplicitly(String type) {
+		if (type == null)
+			return null;
+
+		if (type.equals("INT") || type.equals("BOOL"))
+			return "FLOAT";
+		return type;
+	}
+
 	public static void putAsBinaryPrintable(String instr, List<String> types, HashMap<String, BiFunction<RewriterStatement, RuleContext, String>> printFunctions, BiFunction<RewriterStatement, RuleContext, String> function) {
 		for (String type1 : types)
 			for (String type2 : types)
@@ -1135,6 +1150,25 @@ public class RewriterUtils {
 			return true;
 
 		return false;
+	}
+
+	public static boolean compareLiterals(RewriterDataType lit1, RewriterDataType lit2, boolean allowImplicitTypeConversions) {
+		if (allowImplicitTypeConversions)
+			return lit1.getLiteral().equals(literalAs(lit1.getType(), lit2));
+		return lit1.getLiteral().equals(lit2.getLiteral());
+	}
+
+	public static Object literalAs(String type, RewriterDataType literal) {
+		switch (type) {
+			case "FLOAT":
+				return literal.floatLiteral();
+			case "INT":
+				return literal.intLiteral(false);
+			case "BOOL":
+				return literal.boolLiteral();
+			default:
+				return null;
+		}
 	}
 
 	public static int compare(RewriterStatement stmt1, RewriterStatement stmt2, /*RewriterStatement p1, RewriterStatement p2, Map<Tuple2<RewriterRule.IdentityRewriterStatement, RewriterRule.IdentityRewriterStatement>, Integer> globalOrders, BiFunction<RewriterStatement, RewriterStatement, Boolean> arrangable,*/ final RuleContext ctx) {

@@ -137,9 +137,10 @@ public class RewriterRuleSet {
 		MutableObject<Map<RewriterStatement, RewriterRule.LinkObject>> linkObjects = new MutableObject<>(new HashMap<>());
 
 		root.forEachPreOrder((el, pred) -> {
-			String typedStr = el.isInstruction() ? el.trueTypedInstruction(ctx) : el.getResultingDataType(ctx);
+			// TODO: invariant type checks
+			String typedStr = el.isInstruction() ? el.trueTypedInstruction(allowImplicitTypeConversions, ctx) : RewriterUtils.convertImplicitly(el.getResultingDataType(ctx), allowImplicitTypeConversions);
 			Set<String> props = el instanceof RewriterInstruction ? ((RewriterInstruction)el).getProperties(ctx) : Collections.emptySet();
-			boolean found = acceleratedMatch(root, el, matches, typedStr, el.getResultingDataType(ctx), props, pred, dependencyMap, links, linkObjects, findFirst, allowImplicitTypeConversions);
+			boolean found = acceleratedMatch(root, el, matches, typedStr, RewriterUtils.convertImplicitly(el.getResultingDataType(ctx), allowImplicitTypeConversions), props, pred, dependencyMap, links, linkObjects, findFirst, allowImplicitTypeConversions);
 			return !findFirst || !found;
 		}, true);
 
@@ -161,15 +162,12 @@ public class RewriterRuleSet {
 	}
 
 	public boolean acceleratedMatch(RewriterStatement exprRoot, RewriterStatement stmt, List<Tuple3<RewriterRule, Boolean, RewriterStatement.MatchingSubexpression>> appRules, String realTypedInstr, String realType, Set<String> properties, RewriterStatement.RewriterPredecessor pred, MutableObject<HashMap<RewriterStatement, RewriterStatement>> dependencyMap, MutableObject<List<RewriterRule.ExplicitLink>> links, MutableObject<Map<RewriterStatement, RewriterRule.LinkObject>> linkObjects, boolean findFirst, boolean allowImplicitTypeConversions) {
-		//System.out.println("AccMatch: " + stmt);
 		List<Tuple2<RewriterRule, Boolean>> potentialMatches;
 		boolean foundMatch = false;
 
 		if (realTypedInstr != null) {
-			//System.out.println("RealType: " + realTypedInstr);
 			potentialMatches = accelerator.get(realTypedInstr);
 			if (potentialMatches != null) {
-				//System.out.println("PotentialMatche");
 				foundMatch |= checkPotentialMatches(stmt, potentialMatches, appRules, pred, dependencyMap, links, linkObjects, exprRoot, findFirst, allowImplicitTypeConversions);
 
 				if (foundMatch && findFirst)

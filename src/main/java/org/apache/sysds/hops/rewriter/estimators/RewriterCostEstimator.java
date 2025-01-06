@@ -974,8 +974,10 @@ public class RewriterCostEstimator {
 				//assertions.addEqualityAssertion(map.get("nrowA"), RewriterStatement.literal(ctx, 1L));
 				return RewriterStatement.literal(ctx, INSTRUCTION_OVERHEAD);
 			case "const(MATRIX,FLOAT)":
-			case "_nnz":
+			case "_nnz(MATRIX)":
 				return RewriterStatement.literal(ctx, 0L);
+			case "_EClass(INT)":
+				throw new IllegalArgumentException();
 		}
 
 		long opCost = atomicOpCost(instr.trueInstruction());

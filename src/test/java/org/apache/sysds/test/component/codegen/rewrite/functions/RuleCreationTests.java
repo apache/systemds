@@ -2,6 +2,7 @@ package org.apache.sysds.test.component.codegen.rewrite.functions;
 
 import org.apache.sysds.hops.rewriter.RewriterRule;
 import org.apache.sysds.hops.rewriter.RewriterRuleBuilder;
+import org.apache.sysds.hops.rewriter.RewriterRuleCollection;
 import org.apache.sysds.hops.rewriter.RewriterRuleCreator;
 import org.apache.sysds.hops.rewriter.RewriterRuleSet;
 import org.apache.sysds.hops.rewriter.RewriterStatement;
@@ -20,7 +21,7 @@ public class RuleCreationTests {
 	@BeforeClass
 	public static void setup() {
 		ctx = RewriterUtils.buildDefaultContext();
-		canonicalConverter = RewriterUtils.buildCanonicalFormConverter(ctx, true);
+		canonicalConverter = RewriterUtils.buildCanonicalFormConverter(ctx, false);
 	}
 
 	@Test
@@ -228,5 +229,15 @@ public class RuleCreationTests {
 
 		RewriterRule rule = RewriterRuleCreator.createRule(from, to, canonicalForm1, canonicalForm2, ctx);
 		System.out.println(rule);
+	}
+
+	@Test
+	public void testTypeInvariantRuleRegistration() {
+		RewriterRule rule1 = RewriterUtils.parseRule("FLOAT:a\nLITERAL_FLOAT:0\n*(a,0)\n=>\na", ctx);
+		RewriterRule rule2 = RewriterUtils.parseRule("INT:a\nLITERAL_INT:0\n*(a,0)\n=>\na", ctx);
+		RewriterRuleCreator ruleCreator = new RewriterRuleCreator(ctx);
+		ruleCreator.registerRule(rule1, canonicalConverter, ctx);
+
+		assert !ruleCreator.registerRule(rule2, canonicalConverter, ctx);
 	}
 }

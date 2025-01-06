@@ -606,6 +606,7 @@ public abstract class RewriterStatement {
 	public abstract boolean isEClass();
 	public abstract String trueInstruction();
 	public abstract String trueTypedInstruction(final RuleContext ctx);
+	public abstract String trueTypedInstruction(boolean allowImplicitConversions, final RuleContext ctx);
 	public abstract int structuralHashCode();
 	public abstract RewriterStatement rename(String id);
 	public void prepareDefinitions(final RuleContext ctx, final List<String> strDefs, final Set<String> varDefs) {

@@ -202,7 +202,7 @@ public class RewriterInstruction extends RewriterStatement {
 			}
 		}
 
-		if (stmt instanceof RewriterInstruction && (getResultingDataType(ctx).equals(stmt.getResultingDataType(ctx)) || (mCtx.allowImplicitTypeConversions && RewriterUtils.isImplicitlyConvertible(getResultingDataType(ctx), stmt.getResultingDataType(ctx))))) {
+		if (stmt instanceof RewriterInstruction && (getResultingDataType(ctx).equals(stmt.getResultingDataType(ctx)) || (mCtx.allowImplicitTypeConversions && RewriterUtils.isImplicitlyConvertible(stmt.getResultingDataType(ctx), getResultingDataType(ctx))))) {
 			RewriterInstruction inst = (RewriterInstruction)stmt;
 
 			if(!inst.instr.equals(this.instr)) {
@@ -492,25 +492,32 @@ public class RewriterInstruction extends RewriterStatement {
 	}*/
 
 	public String typedInstruction(final RuleContext ctx) {
-		return typedInstruction(this.instr, ctx);
+		return typedInstruction(this.instr, false, ctx);
 	}
 
 	public String getInstr() {
 		return instr;
 	}
 
-	private String typedInstruction(String instrName, final RuleContext ctx) {
+	private String typedInstruction(String instrName, boolean allowImplicitConversions, final RuleContext ctx) {
 		StringBuilder builder = new StringBuilder();
 		builder.append(instrName);
 		builder.append("(");
 
-		if (!operands.isEmpty())
-			builder.append(operands.get(0).getResultingDataType(ctx));
+		if (!operands.isEmpty()) {
+			String resultingDataType = operands.get(0).getResultingDataType(ctx);
+			if (allowImplicitConversions)
+				resultingDataType = RewriterUtils.convertImplicitly(resultingDataType);
+			builder.append(resultingDataType);
+		}
 
 		if (!isArgumentList()) {
 			for (int i = 1; i < operands.size(); i++) {
 				builder.append(",");
-				builder.append(operands.get(i).getResultingDataType(ctx));
+				String resultingDataType = operands.get(i).getResultingDataType(ctx);
+				if (allowImplicitConversions)
+					resultingDataType = RewriterUtils.convertImplicitly(resultingDataType);
+				builder.append(resultingDataType);
 			}
 		}
 
@@ -560,7 +567,7 @@ public class RewriterInstruction extends RewriterStatement {
 			return varName.toString();
 
 		Object trueInstrObj = getMeta("trueInstr");
-		String typedInstr = trueInstrObj != null ? typedInstruction((String)trueInstrObj, ctx) : typedInstruction(ctx);
+		String typedInstr = trueInstrObj != null ? typedInstruction((String)trueInstrObj, false, ctx) : typedInstruction(ctx);
 		BiFunction<RewriterStatement, RuleContext, String> customStringFunc = ctx.customStringRepr.get(typedInstr);
 		if (customStringFunc != null)
 			return customStringFunc.apply(this, ctx);
@@ -624,7 +631,11 @@ public class RewriterInstruction extends RewriterStatement {
 	}
 
 	public String trueTypedInstruction(final RuleContext ctx) {
-		return typedInstruction(trueInstruction(), ctx);
+		return typedInstruction(trueInstruction(), false, ctx);
+	}
+
+	public String trueTypedInstruction(boolean allowImplicitConversions, final RuleContext ctx) {
+		return typedInstruction(trueInstruction(), allowImplicitConversions, ctx);
 	}
 
 	public Set<String> getProperties(final RuleContext ctx) {

@@ -17,21 +17,27 @@
  * under the License.
  */
 
-package org.apache.sysds.runtime.compress.colgroup;
+package org.apache.sysds.test.component.misc;
 
-import java.util.List;
+import static org.junit.Assert.assertTrue;
 
-public interface IContainDefaultTuple {
-	public double[] getDefaultTuple();
+import org.apache.sysds.hops.OptimizerUtils;
+import org.junit.Test;
 
-	public static double[] combineDefaultTuples(double[] defTup,  List<AColGroup> right) {
-		final int l = defTup.length;
-		final double[] out = new double[l * right.size() + l];
-		System.arraycopy(defTup, 0, out, 0, l);
-		for(int i = l, j = 0; j < right.size(); i += l, j++) {
-			final IContainDefaultTuple dtg = (IContainDefaultTuple) right.get(j);
-			System.arraycopy(dtg.getDefaultTuple(), 0, out, i, l);
-		}
-		return out;
+public class OptimizerUtilsTest {
+
+	@Test
+	public void estimateFrameSize() {
+		Long size = OptimizerUtils.estimateSizeExactFrame(10, 10);
+		assertTrue(size > 10 * 10);
+	}
+
+	@Test
+	public void estimateFrameSizeMoreRowsThanInt() {
+		// Currently we do not support frames larger than INT. Therefore we estimate their size to be extremely large.
+		// The large size force spark operations
+		Long size = OptimizerUtils.estimateSizeExactFrame(Integer.MAX_VALUE + 1L, 10);
+
+		assertTrue(size == Long.MAX_VALUE);
 	}
 }

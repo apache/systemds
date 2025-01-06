@@ -19,9 +19,6 @@
 
 package org.apache.sysds.runtime.compress.estim.encoding;
 
-import java.util.HashMap;
-import java.util.Map;
-
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.sysds.runtime.compress.CompressedMatrixBlock;
@@ -33,6 +30,7 @@ import org.apache.sysds.runtime.compress.colgroup.offset.AIterator;
 import org.apache.sysds.runtime.compress.colgroup.offset.AOffset;
 import org.apache.sysds.runtime.compress.colgroup.offset.OffsetFactory;
 import org.apache.sysds.runtime.compress.estim.EstimationFactors;
+import org.apache.sysds.runtime.compress.utils.HashMapLongInt;
 import org.apache.sysds.runtime.compress.utils.IntArrayList;
 
 /**
@@ -80,7 +78,7 @@ public class SparseEncoding extends AEncode {
 	}
 
 	@Override
-	public Pair<IEncode, Map<Integer, Integer>> combineWithMap(IEncode e) {
+	public Pair<IEncode, HashMapLongInt> combineWithMap(IEncode e) {
 		if(e instanceof EmptyEncoding || e instanceof ConstEncoding)
 			return new ImmutablePair<>(this, null);
 		else if(e instanceof SparseEncoding) {
@@ -90,7 +88,7 @@ public class SparseEncoding extends AEncode {
 			return combineSparseNoResizeDense(es);
 		}
 		else
-			throw new DMLCompressionException("Not allowed other to be dense");
+			throw new DMLCompressionException("Not allowed other to be dense. We should instead combine other way with sparse");
 	}
 
 	protected IEncode combineSparse(SparseEncoding e) {
@@ -132,7 +130,7 @@ public class SparseEncoding extends AEncode {
 		}
 	}
 
-	private Pair<IEncode, Map<Integer, Integer>> combineSparseNoResizeDense(SparseEncoding e) {
+	private Pair<IEncode, HashMapLongInt> combineSparseNoResizeDense(SparseEncoding e) {
 
 		final int fl = off.getOffsetToLast();
 		final int fr = e.off.getOffsetToLast();
@@ -162,7 +160,7 @@ public class SparseEncoding extends AEncode {
 		retMap.set(fr, retMap.getIndex(fr) + (e.map.getIndex(itr.getDataIndex()) + 1) * nVl);
 
 		// Full iteration to set unique elements.
-		final Map<Integer, Integer> m = new HashMap<>();
+		final HashMapLongInt m = new HashMapLongInt(100);
 		for(int i = 0; i < retMap.size(); i++)
 			addValHashMap(retMap.getIndex(i), i, m, retMap);
 
@@ -170,11 +168,12 @@ public class SparseEncoding extends AEncode {
 
 	}
 
-	protected static void addValHashMap(final int nv, final int r, final Map<Integer, Integer> map,
+
+	protected static void addValHashMap(final int nv, final int r, final HashMapLongInt map,
 		final AMapToData d) {
 		final int v = map.size();
-		final Integer mv = map.putIfAbsent(nv, v);
-		if(mv == null)
+		final int mv = map.putIfAbsent(nv, v);
+		if(mv == -1)
 			d.set(r, v);
 		else
 			d.set(r, mv);

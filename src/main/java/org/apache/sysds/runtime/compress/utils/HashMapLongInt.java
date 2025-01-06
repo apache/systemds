@@ -144,8 +144,8 @@ public class HashMapLongInt implements Iterable<KV> {
 
 		protected Itt() {
 			if(size == 0) {
-				lastBucket = 0;
-				lastCell = 0;
+				lastBucket = -1;
+				lastCell = -1;
 			}
 			else {
 				int tmpLastBucket = keys.length - 1;
@@ -164,7 +164,8 @@ public class HashMapLongInt implements Iterable<KV> {
 
 		@Override
 		public boolean hasNext() {
-			return bucketId < lastBucket || (bucketId == lastBucket && bucketCell <= lastCell);
+			return lastBucket != -1 && //
+				(bucketId < lastBucket || (bucketId == lastBucket && bucketCell <= lastCell));
 		}
 
 		@Override

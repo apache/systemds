@@ -23,7 +23,6 @@ import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
 import java.util.Arrays;
-import java.util.BitSet;
 
 import org.apache.commons.lang3.NotImplementedException;
 import org.apache.sysds.runtime.compress.colgroup.IMapToDataGroup;
@@ -37,7 +36,7 @@ public class MapToInt extends AMapToData {
 	private final int[] _data;
 
 	protected MapToInt(int size) {
-		this(Character.MAX_VALUE + 1, size);
+		this(Integer.MAX_VALUE, size);
 	}
 
 	public MapToInt(int unique, int size) {
@@ -89,6 +88,13 @@ public class MapToInt extends AMapToData {
 	@Override
 	public void set(int n, int v) {
 		_data[n] = v;
+	}
+
+	@Override
+	public void set(int l, int u, int off, AMapToData tm) {
+		for(int i = l; i < u; i++, off++) {
+			set(i, tm.getIndex(off));
+		}
 	}
 
 	@Override
@@ -182,15 +188,9 @@ public class MapToInt extends AMapToData {
 	}
 
 	@Override
-	public void copyInt(int[] d) {
-		for(int i = 0; i < _data.length; i++)
+	public void copyInt(int[] d, int start, int end) {
+		for(int i = start; i < end; i++)
 			_data[i] = d[i];
-	}
-
-	@Override
-	public void copyBit(BitSet d) {
-		for(int i = d.nextSetBit(0); i >= 0; i = d.nextSetBit(i + 1))
-			_data[i] = 1;
 	}
 
 	@Override
@@ -219,11 +219,11 @@ public class MapToInt extends AMapToData {
 			return new MapToZero(size);
 		else if(unique == 2 && size > 32)
 			ret = new MapToBit(unique, size);
-		else if(unique <= 127)
+		else if(unique < 128)
 			ret = new MapToUByte(unique, size);
 		else if(unique < 256)
 			ret = new MapToByte(unique, size);
-		else if(unique < Character.MAX_VALUE - 1)
+		else if(unique < Character.MAX_VALUE)
 			ret = new MapToChar(unique, size);
 		else if(unique < MapToCharPByte.max)
 			ret = new MapToCharPByte(unique, size);
@@ -277,11 +277,6 @@ public class MapToInt extends AMapToData {
 		}
 
 		return new MapToInt(getUnique(), ret);
-	}
-
-	@Override
-	public int getMaxPossible() {
-		return Integer.MAX_VALUE;
 	}
 
 	@Override

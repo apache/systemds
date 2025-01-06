@@ -5778,6 +5778,10 @@ public class MatrixBlock extends MatrixValue implements CacheBlock<MatrixBlock>,
 		return false;
 	}
 
+	public MatrixBlock reshape(int rows, int cols, boolean byRow){
+		return LibMatrixReorg.reshape(this, null, rows, cols, byRow, -1);
+	}
+
 	/**
 	 * Analyze if the matrixBlocks are equivalent, the comparsion supports if the differnet sides are differently
 	 * allocated such as sparse and dense.

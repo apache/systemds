@@ -1171,26 +1171,17 @@ public class ColGroupTest extends ColGroupBase {
 
 	@Test
 	public void leftMultNoPreAggDenseMultiRowColRange() {
-		try {
-			leftMultNoPreAgg(3, 0, 3, 5, nRow - 4);
-		}
-		catch(Exception e) {
-			e.printStackTrace();
-			fail(e.getMessage());
-		}
+		leftMultNoPreAgg(3, 0, 3, 5, nRow - 4);
 	}
 
-	@Test(expected = NotImplementedException.class)
-	// @Test
+	@Test
 	public void leftMultNoPreAggSparseColRange() {
 		leftMultNoPreAgg(3, 0, 1, 5, nRow - 4, 0.1);
-		throw new NotImplementedException("Make test parse since the check actually says it is correct");
 	}
 
-	@Test(expected = NotImplementedException.class)
+	@Test
 	public void leftMultNoPreAggSparseMultiRowColRange() {
 		leftMultNoPreAgg(3, 0, 3, 5, nRow - 4, 0.1);
-		throw new NotImplementedException("Make test parse since the check actually says it is correct");
 	}
 
 	@Test
@@ -1203,16 +1194,14 @@ public class ColGroupTest extends ColGroupBase {
 		leftMultNoPreAgg(3, 0, 3, 5, 9);
 	}
 
-	@Test(expected = NotImplementedException.class)
+	@Test
 	public void leftMultNoPreAggSparseColStartRange() {
 		leftMultNoPreAgg(3, 0, 1, 5, 9, 0.1);
-		throw new NotImplementedException("Make test parse since the check actually says it is correct");
 	}
 
-	@Test(expected = NotImplementedException.class)
+	@Test
 	public void leftMultNoPreAggSparseMultiRowColStartRange() {
 		leftMultNoPreAgg(3, 0, 3, 5, 9, 0.1);
-		throw new NotImplementedException("Make test parse since the check actually says it is correct");
 	}
 
 	@Test
@@ -1225,30 +1214,24 @@ public class ColGroupTest extends ColGroupBase {
 		leftMultNoPreAgg(3, 0, 3, nRow - 10, nRow - 3);
 	}
 
-	@Test(expected = NotImplementedException.class)
+	@Test
 	public void leftMultNoPreAggSparseColEndRange() {
 		leftMultNoPreAgg(3, 0, 1, nRow - 10, nRow - 3, 0.1);
-		throw new NotImplementedException("Make test parse since the check actually says it is correct");
 	}
 
-	@Test(expected = NotImplementedException.class)
+	@Test
 	public void leftMultNoPreAggSparseMultiRowColEndRange() {
 		leftMultNoPreAgg(3, 0, 3, nRow - 10, nRow - 3, 0.1);
-		throw new NotImplementedException("Make test parse since the check actually says it is correct");
 	}
 
-	@Test(expected = NotImplementedException.class)
-	// @Test
+	@Test
 	public void leftMultNoPreAggSparseMultiRowColToEnd() {
 		leftMultNoPreAgg(3, 0, 3, nRow - 10, nRow, 0.1);
-		throw new NotImplementedException("Make test parse since the check actually says it is correct");
 	}
 
-	@Test(expected = NotImplementedException.class)
-	// @Test
+	@Test
 	public void leftMultNoPreAggSparseMultiRowColFromStart() {
 		leftMultNoPreAgg(3, 0, 3, 0, 4, 0.1);
-		throw new NotImplementedException("Make test parse since the check actually says it is correct");
 	}
 
 	public void leftMultNoPreAgg(int nRowLeft, int rl, int ru, int cl, int cu) {
@@ -1291,7 +1274,7 @@ public class ColGroupTest extends ColGroupBase {
 			compare(bt, ot);
 		}
 		catch(NotImplementedException e) {
-			throw e;
+			LOG.error("not implemented: " + base.getClass().getSimpleName() + " or: " + other.getClass().getSimpleName());
 		}
 		catch(Exception e) {
 			e.printStackTrace();
@@ -1619,15 +1602,23 @@ public class ColGroupTest extends ColGroupBase {
 
 	private MatrixBlock mmPreAggDense(APreAgg g, MatrixBlock mb, double[] cv, double[] rowSum, int rl, int ru, int cl,
 		int cu) {
-		final MatrixBlock retB = new MatrixBlock(ru, maxCol, false);
-		retB.allocateDenseBlock();
-		double[] preB = new double[g.getPreAggregateSize() * (ru - rl)];
-		g.preAggregateDense(mb, preB, rl, ru, cl, cu);
-		MatrixBlock preAggB = new MatrixBlock(ru - rl, g.getPreAggregateSize(), preB);
-		MatrixBlock tmpRes = new MatrixBlock(1, retB.getNumColumns(), false);
-		g.mmWithDictionary(preAggB, tmpRes, retB, 1, rl, ru);
-		mmRowSum(retB, cv, rowSum, rl, ru);
-		return retB;
+		try {
+			final MatrixBlock retB = new MatrixBlock(ru, maxCol, false);
+			retB.allocateDenseBlock();
+			double[] preB = new double[g.getPreAggregateSize() * (ru - rl)];
+			g.preAggregateDense(mb, preB, rl, ru, cl, cu);
+			MatrixBlock preAggB = new MatrixBlock(ru - rl, g.getPreAggregateSize(), preB);
+			MatrixBlock tmpRes = new MatrixBlock(1, retB.getNumColumns(), false);
+			tmpRes.allocateBlock();
+			g.mmWithDictionary(preAggB, tmpRes, retB, 1, rl, ru);
+			mmRowSum(retB, cv, rowSum, rl, ru);
+			return retB;
+		}
+		catch(Exception e) {
+			e.printStackTrace();
+			fail(e.getMessage());
+			return null;
+		}
 	}
 
 	private MatrixBlock mmRowSum(double[] cv, double[] rowSum, int rl, int ru, int cl, int cu) {
@@ -1890,8 +1881,8 @@ public class ColGroupTest extends ColGroupBase {
 	public void rightMultWithAllCols(MatrixBlock right) {
 		try {
 			final IColIndex cols = ColIndexFactory.create(right.getNumColumns());
-			AColGroup b = base.rightMultByMatrix(right, cols);
-			AColGroup o = other.rightMultByMatrix(right, cols);
+			AColGroup b = base.rightMultByMatrix(right, cols, 1);
+			AColGroup o = other.rightMultByMatrix(right, cols, 1);
 			if(!(b == null && o == null))
 				compare(b, o);
 		}

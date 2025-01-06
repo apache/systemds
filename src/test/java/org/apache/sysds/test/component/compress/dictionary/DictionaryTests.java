@@ -381,10 +381,17 @@ public class DictionaryTests {
 
 	@Test
 	public void sumSq() {
-		int[] counts = getCounts(nRow, 2323);
-		double as = a.sumSq(counts, nCol);
-		double bs = b.sumSq(counts, nCol);
-		assertEquals(as, bs, 0.0001);
+		try{
+
+			int[] counts = getCounts(nRow, 2323);
+			double as = a.sumSq(counts, nCol);
+			double bs = b.sumSq(counts, nCol);
+			assertEquals(as, bs, 0.0001);
+		}
+		catch(Exception e){
+			e.printStackTrace();
+			fail(e.getMessage());
+		}
 	}
 
 	@Test

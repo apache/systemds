@@ -1,0 +1,53 @@
+#-------------------------------------------------------------
+#
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+#
+#-------------------------------------------------------------
+
+source("scripts/nn/layers/multi_attention.dml") as multi_attention
+
+batch_size = as.integer($1)
+seq_length = as.integer($2)
+heads = as.integer($3)
+embedding_dim = as.integer($4)
+debug = as.logical(as.integer($5))
+
+query = matrix(read($6, format="csv"), rows=batch_size, cols=seq_length*heads*embedding_dim)
+key = matrix(read($7, format="csv"), rows=batch_size, cols=seq_length*heads*embedding_dim)
+value = matrix(read($8, format="csv"), rows=batch_size, cols=seq_length*heads*embedding_dim)
+
+expected_context = read($9, format="csv")
+expected_attention = read($10, format="csv")
+
+[context, attention, dropout_mask] = multi_attention::forward(query, key, value, heads, seq_length, embedding_dim, 0.0)
+
+if (debug) {
+    print(toString(context))
+    print(toString(attention))
+}
+
+context_error = max(abs(expected_context - context))
+attention_error = max(abs(expected_attention - attention))
+
+if (debug) {
+    print(context_error)
+    print(attention_error)
+}
+
+write(context_error, $11, format="text")
+write(attention_error, $12, format="text")

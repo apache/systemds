@@ -1,0 +1,205 @@
+
+#-------------------------------------------------------------
+#
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+#
+#-------------------------------------------------------------
+
+source("nn/layers/softmax.dml") as softmax
+source("nn/layers/dropout.dml") as dropout
+source("scripts/nn/util.dml") as util
+
+
+forward = function(matrix[double] Q, matrix[double] K,
+      matrix[double] V, int H, int T, int D, double dropout_p)
+    return (matrix[double] context, matrix[double] attention, matrix[double] dropout_mask) {
+  /*
+   * Computes the forward pass for a multi-head attention layer.
+   *
+   * Inputs (B: Batch size, T: Sequence length, D: Embedding length, H: Heads):
+   * - Q: Input querys, of shape (B,T*H*D).
+   * - K: Input keys, of shape (B,T*H*D).
+   * - V: Input values, of shape (B,T*H*D).
+   * - H: Head count.
+   * - T: Sequence length.
+   * - D: Embedding length of single query, value, key,
+   * - dropout_p: Dropout probability.
+   *
+   * Outputs:
+   * - context: Token context embeddings, of shape (B, T*H*D)
+   * - attention: Attention on value(s) for given query(s), of shape (B, H*T*T)
+   * - dropout_mask: Dropout mask used on attention, of shape (B, H*T*T)
+   */
+  B = nrow(Q)
+
+  # Transpose head and token dimension for per-head computation
+  Q = util::transpose_ABCD_to_ACBD(Q, T, H)  # Shape (B, H*T*D)
+  K = util::transpose_ABCD_to_ACBD(K, T, H)  # Shape (B, H*T*D)
+  V = util::transpose_ABCD_to_ACBD(V, T, H)  # Shape (B, H*T*D)
+
+  attention = matrix(0, rows=B, cols=H*T*T)
+  dropout_mask = matrix(0, rows=B, cols=H*T*T)
+  context = matrix(0, rows=B, cols=H*T*D)
+  K_norm = K / sqrt(D)
+
+  # For loops for tensor operations
+  for (batch in 1:B) {
+    attention_probs_b = matrix(0, rows=H, cols=T*T)
+    if (dropout_p > 0.0) {
+      dropout_mask_b = matrix(0, rows=H, cols=T*T)
+    }
+    context_b = matrix(0, rows=H, cols=T*D)
+    Q_b = matrix(Q[batch], rows=H, cols=T*D)
+    K_norm_b = matrix(K_norm[batch], rows=H, cols=T*D)
+    V_b = matrix(V[batch], rows=H, cols=T*D)
+
+    for (head in 1:H) {
+      Q_h = matrix(Q_b[head], rows=T, cols=D)
+      K_norm_h = matrix(K_norm_b[head], rows=T, cols=D)
+      V_h = matrix(V_b[head], rows=T, cols=D)
+
+      attention_scores = Q_h %*% t(K_norm_h)  # Shape (T, T)
+      
+      # TODO: Add support for attention mask here
+      
+      # Column-wise softmax
+      attention_probs_h = softmax::forward(attention_scores)
+
+      if (dropout_p > 0.0) {
+        [attention_probs_h, dropout_mask_h] = dropout::forward(attention_probs_h, dropout_p, -1)
+      }
+
+      context_h = attention_probs_h %*% V_h  # Shape (T, D)
+
+      attention_probs_b[head] = matrix(attention_probs_h, rows=1, cols=T*T)
+      if (dropout_p > 0.0) {
+        dropout_mask_b[head] = matrix(dropout_mask_h, rows=1, cols=T*T)
+      }
+      context_b[head] = matrix(context_h, rows=1, cols=T*D)
+    }
+
+    attention[batch] = matrix(attention_probs_b, rows=1, cols=H*T*T)
+    if (dropout_p > 0.0) {
+      dropout_mask[batch] = matrix(dropout_mask_b, rows=1, cols=H*T*T)
+    }
+    context[batch] = matrix(context_b, rows=1, cols=H*T*D)
+  }
+
+  # Swap head and token dimension for original shape
+  context = util::transpose_ABCD_to_ACBD(context, H, T)
+}
+
+
+backward = function(matrix[double] dcontext, 
+      matrix[double] dropout_mask, matrix[double] attention, matrix[double] Q, 
+      matrix[double] K, matrix[double] V, int H, int T, 
+      int D, double dropout_p)
+    return (matrix[double] dQ, matrix[double] dK, matrix[double] dV) {
+  /*
+   * Computes the backward pass for a multi-head attention layer.
+   *
+   * Inputs (B: Batch size, T: Sequence length, D: Embedding length, H: Heads):
+   * - dcontext: Gradient w.r.t. the context matrix of shape (B, T*H*D)
+   * - dropout_mask: Dropout mask from forward pass of shape (B, H*T*T)
+   * - attention: Attention output from forward pass of shape (B, H*T*T)
+   * - Q: Input querys, of shape (B,T*H*D).
+   * - K: Input keys, of shape (B,T*H*D).
+   * - V: Input values, of shape (B,T*H*D).
+   * - H: Head count.
+   * - T: Sequence length.
+   * - D: Embedding length of single query, value, key,
+   * - dropout_p: Dropout probability.
+   *
+   * Outputs:
+   * - dQ: Gradient w.r.t. input querys, of shape (B,T*H*D).
+   * - dK: Gradient w.r.t. input keys, of shape (B,T*H*D).
+   * - dV: Gradient w.r.t. input values, of shape (B,T*H*D).
+   */
+  B = nrow(Q)
+
+  # Transpose head and token dimension for per-head computation
+  dcontext = util::transpose_ABCD_to_ACBD(dcontext, T, H)  # Shape (B, H*T*D)
+  Q = util::transpose_ABCD_to_ACBD(Q, T, H)  # Shape (B, H*T*D)
+  K = util::transpose_ABCD_to_ACBD(K, T, H)  # Shape (B, H*T*D)
+  V = util::transpose_ABCD_to_ACBD(V, T, H)  # Shape (B, H*T*D)
+
+  dQ = matrix(0, rows=B, cols=H*T*D)  # Shape (B, H*T*D)
+  dK = matrix(0, rows=B, cols=H*T*D)  # Shape (B, H*T*D)
+  dV = matrix(0, rows=B, cols=H*T*D)  # Shape (B, H*T*D)
+
+  K_norm = K / sqrt(D)
+
+  # For loops for tensor operations
+  for (batch in 1:B) {
+    dcontext_b = matrix(dcontext[batch], rows=H, cols=T*D)
+    if (dropout_p > 0.0) {
+      dropout_mask_b = matrix(dropout_mask[batch], rows=H, cols=T*T) 
+    }
+    attention_b = matrix(attention[batch], rows=H, cols=T*T) 
+
+    Q_b = matrix(Q[batch], rows=H, cols=T*D)
+    K_norm_b = matrix(K_norm[batch], rows=H, cols=T*D)
+    V_b = matrix(V[batch], rows=H, cols=T*D)
+
+    dQ_b = matrix(0, rows=H, cols=T*D)
+    dK_b = matrix(0, rows=H, cols=T*D)
+    dV_b = matrix(0, rows=H, cols=T*D)
+
+    for (head in 1:H) {
+      dcontext_h = matrix(dcontext_b[head], rows=T, cols=D)
+      if (dropout_p > 0.0) {
+        dropout_mask_h = matrix(dropout_mask_b[head], rows=T, cols=T)
+      }
+      attention_h = matrix(attention_b[head], rows=T, cols=T)
+
+      # Compute dV early to release attention_h
+      dV_h = t(attention_h) %*% dcontext_h
+
+      Q_h = matrix(Q_b[head], rows=T, cols=D)
+      K_norm_h = matrix(K_norm_b[head], rows=T, cols=D)
+      V_h = matrix(V_b[head], rows=T, cols=D)
+
+      dattention_probs = dcontext_h %*% t(V_h)
+
+      if (dropout_p > 0.0) {
+        # Provide unnecessary required X input matrix via empty matrix
+        dattention_probs = dropout::backward(dattention_probs, matrix(0, rows=1, cols=1), dropout_p, dropout_mask_h)
+      }
+      attention_scores = Q_h %*% t(K_norm_h)  # Shape (T, T)
+      dattention_scores = softmax::backward(dattention_probs, attention_scores)
+
+      dQ_h = dattention_scores %*% K_norm_h
+      dK_h = t(dattention_scores) %*% (Q_h / sqrt(D))
+
+      # Append to batch matrices
+      dK_b[head] = matrix(dK_h, rows=1, cols=T*D)
+      dQ_b[head] = matrix(dQ_h, rows=1, cols=T*D)
+      dV_b[head] = matrix(dV_h, rows=1, cols=T*D)
+    }
+    
+    # Append to output matrices
+    dK[batch] = matrix(dK_b, rows=1, cols=H*T*D)
+    dQ[batch] = matrix(dQ_b, rows=1, cols=H*T*D)
+    dV[batch] = matrix(dV_b, rows=1, cols=H*T*D)
+  }
+
+  # Swap head and token dimensions
+  dK = util::transpose_ABCD_to_ACBD(dK, H, T)
+  dQ = util::transpose_ABCD_to_ACBD(dQ, H, T)
+  dV = util::transpose_ABCD_to_ACBD(dV, H, T)
+}

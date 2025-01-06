@@ -41,7 +41,13 @@ public class RewriterRuleCreator {
 	}
 
 	public boolean registerRule(RewriterRule rule, Function<RewriterStatement, RewriterStatement> canonicalFormConverter, final RuleContext ctx) {
-		return registerRule(rule, RewriterCostEstimator.estimateCost(rule.getStmt1(), ctx), RewriterCostEstimator.estimateCost(rule.getStmt2(), ctx), false, canonicalFormConverter);
+		try {
+			return registerRule(rule, RewriterCostEstimator.estimateCost(rule.getStmt1(), ctx), RewriterCostEstimator.estimateCost(rule.getStmt2(), ctx), false, canonicalFormConverter);
+		} catch (Exception e) {
+			System.err.println("Error while registering a rule: " + rule);
+			e.printStackTrace();
+			return false;
+		}
 	}
 
 	public synchronized boolean registerRule(RewriterRule rule, long preCost, long postCost, boolean validateCorrectness, Function<RewriterStatement, RewriterStatement> canonicalFormCreator) {

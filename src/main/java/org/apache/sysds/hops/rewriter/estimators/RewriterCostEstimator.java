@@ -733,12 +733,6 @@ public class RewriterCostEstimator {
 		RewriterStatement argList = RewriterStatement.argList(ctx, includedCosts);
 		RewriterStatement add = new RewriterInstruction().as(UUID.randomUUID().toString()).withInstruction("+").withOps(argList).consolidate(ctx);
 		add.unsafePutMeta("_assertions", assertions);
-
-		//System.out.println("Cost0: " + add.toParsableString(ctx));
-		//System.out.println("Assertions: " + assertions);
-
-		// TODO: Validate that this is not needed
-		//add = RewriterUtils.buildCanonicalFormConverter(ctx, false).apply(add);
 		return add;
 	}
 
@@ -976,8 +970,6 @@ public class RewriterCostEstimator {
 			case "const(MATRIX,FLOAT)":
 			case "_nnz(MATRIX)":
 				return RewriterStatement.literal(ctx, 0L);
-			case "_EClass(INT)":
-				throw new IllegalArgumentException();
 		}
 
 		long opCost = atomicOpCost(instr.trueInstruction());

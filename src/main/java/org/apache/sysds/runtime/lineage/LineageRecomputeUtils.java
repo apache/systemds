@@ -81,7 +81,7 @@ import org.apache.sysds.utils.Statistics;
 public class LineageRecomputeUtils {
 	private static final String LVARPREFIX = "lvar";
 	public static final String LPLACEHOLDER = "IN#";
-	private static final boolean DEBUG = true;
+	private static final boolean DEBUG = false;
 	public static Map<String, DedupLoopItem> loopPatchMap = new HashMap<>();
 
 	public static Data parseNComputeLineageTrace(String mainTrace) {

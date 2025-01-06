@@ -308,11 +308,11 @@ public class RewriterClusteringTest {
 			}
 		}
 
-		printEquivalences(/*foundEquivalences*/ Collections.emptyList(), System.currentTimeMillis() - startTime, generatedExpressions.longValue(), evaluatedExpressions.longValue(), totalCanonicalizationMillis.longValue(), failures.longValue(), true);
+		//printEquivalences(/*foundEquivalences*/ Collections.emptyList(), System.currentTimeMillis() - startTime, generatedExpressions.longValue(), evaluatedExpressions.longValue(), totalCanonicalizationMillis.longValue(), failures.longValue(), true);
 
 		System.out.println("===== SUGGESTED REWRITES =====");
 		//List<Tuple5<Double, Long, Long, RewriterStatement, RewriterStatement>> rewrites = findSuggestedRewrites(foundEquivalences);
-		List<Tuple4<RewriterStatement, RewriterStatement, Long, Boolean>> rewrites = findSuggestedRewrites(foundEquivalences);
+		List<Tuple4<RewriterStatement, RewriterStatement, Long, Boolean>> rewrites = findSuggestedRewrites(foundEquivalences, 5);
 		foundEquivalences.clear();
 		exactExprDB.clear();
 		canonicalExprDB.clear();
@@ -409,75 +409,6 @@ public class RewriterClusteringTest {
 		}
 	}
 
-	private static void computeCost(RewriterStatement subExpr, final RuleContext ctx) {
-		if (subExpr.isLiteral())
-			return;
-
-		if (subExpr.getMeta("_cost") == null) {
-			long cost = -1;
-			try {
-				cost = RewriterCostEstimator.estimateCost(subExpr, el -> 2000L, ctx);
-			} catch (Exception e) {
-			}
-			subExpr.unsafePutMeta("_cost", cost);
-		}
-	}
-
-	// This function should be called regularly if the number of equivalent expressions get too big
-	/*private void updateOptimum(RewriterStatement dbEntry) {
-		long optimalCost = -1;
-		RewriterStatement currentOptimum = (RewriterStatement) dbEntry.getMeta("_optimum");
-		List<RewriterStatement> equivalences = (List<RewriterStatement>) dbEntry.getMeta("equivalentExpressions");
-
-		if (currentOptimum == null) {
-			for (int i = 0; i < equivalences.size(); i++) {
-				currentOptimum = equivalences.get(i);
-				// TODO: Failures will be recomputed as _cost is still null
-				if (currentOptimum.getMeta("_cost") == null) {
-					try {
-						optimalCost = RewriterCostEstimator.estimateCost(currentOptimum, el -> 2000L, ctx);
-						currentOptimum.unsafePutMeta("_cost", optimalCost);
-					} catch (Exception e) {
-						currentOptimum.unsafePutMeta("_cost", -1L);
-					}
-				} else {
-					optimalCost = (Long) currentOptimum.getMeta("_cost");
-				}
-
-				if (optimalCost != -1)
-					break;
-			}
-		}
-
-		if (optimalCost == -1)
-			return;
-
-		for (RewriterStatement eq : equivalences) {
-			if (eq != currentOptimum) {
-				Object obj = eq.getMeta("_cost");
-				long cost;
-				if (obj == null) {
-					try {
-						cost = RewriterCostEstimator.estimateCost(eq, el -> 2000L, ctx);
-						eq.unsafePutMeta("_cost", cost);
-					} catch (Exception e) {
-						cost = -1;
-						eq.unsafePutMeta("_cost", -1L);
-					}
-				} else {
-					cost = (Long) obj;
-				}
-
-				if (cost != -1 && cost < optimalCost) {
-					currentOptimum = eq;
-					optimalCost = cost;
-				}
-			}
-		}
-
-		dbEntry.unsafePutMeta("_optimum", currentOptimum);
-	}*/
-
 	private static void printEquivalences(List<RewriterStatement> equivalentStatements, long cpuTime, long generatedExpressions, long evaluatedExpressions, long canonicalizationMillis, long failures, boolean preFilter) {
 		System.out.println("===== ALL EQUIVALENCES =====");
 		if (preFilter)
@@ -549,7 +480,14 @@ public class RewriterClusteringTest {
 		return !match;
 	}
 
-	private static /*List<Tuple5<Double, Long, Long, RewriterStatement, RewriterStatement>>*/List<Tuple4<RewriterStatement, RewriterStatement, Long, Boolean>> findSuggestedRewrites(List<RewriterEquivalenceDatabase.DBEntry> equivalences) {
+	/**
+	 * This function computes rewrite suggestions based on cost-estimates. To enable random sampling, sample_size should be bigger than 1.
+	 * Note that random sampling might generate incorrect suggestions due to inaccurate cost-estimates (especially for fused ops)
+	 * @param equivalences
+	 * @param sample_size how many sparsity and dimension values should be sampled; a sample size of 1 uses a fixed cost esimtate with ncols=nrows=2000 and fully dense matrices
+	 * @return
+	 */
+	private static /*List<Tuple5<Double, Long, Long, RewriterStatement, RewriterStatement>>*/List<Tuple4<RewriterStatement, RewriterStatement, Long, Boolean>> findSuggestedRewrites(List<RewriterEquivalenceDatabase.DBEntry> equivalences, int sample_size) {
 		//List<Tuple5<Double, Long, Long, RewriterStatement, RewriterStatement>> suggestedRewrites = SynchronizedList.decorate(new ArrayList<>());
 		List<Tuple4<RewriterStatement, RewriterStatement, Long, Boolean>> suggestions = SynchronizedList.decorate(new ArrayList<>());
 
@@ -562,19 +500,15 @@ public class RewriterClusteringTest {
 				for (int i = 1; i < mEq.size(); i++)
 					RewriterAssertionUtils.buildImplicitAssertions(mEq.get(1), assertions, ctx);
 
-				//System.out.println(mEq);
-				List<Tuple2<List<Number>, List<Long>>> costs = RewriterCostEstimator.compareCosts(mEq, assertions, ctx, true, 5);
-				//System.out.println("DONE");
+				List<Tuple2<List<Number>, List<Long>>> costs = RewriterCostEstimator.compareCosts(mEq, assertions, ctx, true, 1);
 				Set<Tuple2<Integer, Integer>> rewriteProposals = RewriterCostEstimator.findOptima(costs);
 				long mId = idCtr.incrementAndGet();
 
 				if (!rewriteProposals.isEmpty()) {
 					int targetIdx = rewriteProposals.stream().findFirst().get()._2;
 					boolean hasOneTarget = rewriteProposals.stream().allMatch(t -> t._2 == targetIdx);
-					for (Tuple2<Integer, Integer> proposal : rewriteProposals) {
-						//if (proposal._2 != targetIdx)
-						//	hasOneTarget = false;
 
+					for (Tuple2<Integer, Integer> proposal : rewriteProposals) {
 						suggestions.add(new Tuple4<>(mEq.get(proposal._1), mEq.get(proposal._2), mId, hasOneTarget));
 					}
 				}

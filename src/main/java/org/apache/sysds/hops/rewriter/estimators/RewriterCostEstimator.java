@@ -164,21 +164,6 @@ public class RewriterCostEstimator {
 			}
 		}).collect(Collectors.toList());
 
-		/*long cost1 = computeCostFunction(costFn1Cpy, el -> {
-			dimsToPopulate.add(el);
-			return 2000L;
-		}, (nnz, tpl) -> {
-			nnzsToPopulate.add(nnz.getChild(0));
-			return tpl._1 * tpl._2;
-		}, jointAssertionsCpy, ctx);
-		long cost2 = computeCostFunction(costFn2Cpy, el -> {
-			dimsToPopulate.add(el);
-			return 2000L;
-		}, (nnz, tpl) -> {
-			nnzsToPopulate.add(nnz.getChild(0));
-			return tpl._1 * tpl._2;
-		}, jointAssertionsCpy, ctx);*/
-
 		int nDimsToPopulate = dimsToPopulate.size();
 		int nNNZsToPopulate = nnzsToPopulate.size();
 
@@ -191,8 +176,8 @@ public class RewriterCostEstimator {
 		List<Tuple2<List<Number>, List<Long>>> out = new ArrayList<>();
 		out.add(new Tuple2<>(firstList, costs));
 
-		//if (returnOnDifference && cost1 != cost2)
-		//	return out;
+		if (sampleSize < 2)
+			return out;
 
 		List<List<Number>> nums = new ArrayList<>();
 		List<Number> dimList = Arrays.stream(dimVals).mapToObj(dim -> ((Number)dim)).collect(Collectors.toList());

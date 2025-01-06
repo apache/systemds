@@ -126,8 +126,8 @@ public interface EncoderFactory {
 			rcIDs = unionDistinct(rcIDs, except(except(dcIDs, binIDs), haIDs));
 			// Error out if the first level encoders have overlaps
 			if (intersect(rcIDs, binIDs, haIDs, weIDs, bowIDs))
-				throw new DMLRuntimeException("More than one encoders (recode, binning, hashing, word_embedding, bag_of_words) on one column is not allowed");
-			
+				throw new DMLRuntimeException("More than one encoders (recode, binning, hashing, word_embedding, bag_of_words) on one column is not allowed:\n" + spec);
+
 			List<Integer> ptIDs = except(UtilFunctions.getSeqList(1, clen, 1), naryUnionDistinct(rcIDs, haIDs, binIDs, weIDs, bowIDs));
 			List<Integer> oIDs = new ArrayList<>(Arrays.asList(ArrayUtils
 				.toObject(TfMetaUtils.parseJsonIDList(jSpec, colnames, TfMethod.OMIT.toString(), minCol, maxCol))));

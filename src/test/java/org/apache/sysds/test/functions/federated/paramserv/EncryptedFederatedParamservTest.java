@@ -160,7 +160,6 @@ public class EncryptedFederatedParamservTest extends AutomatedTestBase {
 				threads.add(startLocalFedWorkerThread(port,
 						i==(_numFederatedWorkers-1) ? FED_WORKER_WAIT : FED_WORKER_WAIT_S));
 				ports.add(port);
-				System.out.println("Worker with port " + port + " started!");
 
 				if ( threads.get(i).isInterrupted() || !threads.get(i).isAlive() )
 					throw new DMLRuntimeException("Federated worker thread dead or interrupted! Port " + port);
@@ -215,7 +214,7 @@ public class EncryptedFederatedParamservTest extends AutomatedTestBase {
 
 			programArgs = programArgsList.toArray(new String[0]);
 			String log = runTest(null).toString();
-			System.out.println(log);
+
 			if (!heavyHittersContainsAllString("paramserv"))
 				fail("The following expected heavy hitters are missing: "
 					+ Arrays.toString(missingHeavyHitters("paramserv")));

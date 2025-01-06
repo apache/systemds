@@ -86,7 +86,8 @@ public class BuiltinAdasynRealDataTest extends AutomatedTestBase {
 			runTest(true, false, null, -1);
 
 			double acc = readDMLMatrixFromOutputDir("R").get(new CellIndex(1,1));
-			Assert.assertTrue(acc >= minAcc);
+
+			Assert.assertTrue("Accuracy should be greater than min: " + acc + "  min: " + minAcc, acc >= minAcc);
 			Assert.assertEquals(0, Statistics.getNoOfExecutedSPInst());
 		}
 		finally {

@@ -367,7 +367,6 @@ public final class CLALibDecompress {
 			for(int i = 0; i < rlen; i += blklen)
 				tasks.add(new DecompressSparseTask(filteredGroups, ret, i, Math.min(i + blklen, rlen)));
 
-			LOG.error("tasks:" + tasks);
 			for(Future<Object> rt : pool.invokeAll(tasks))
 				rt.get();
 		}

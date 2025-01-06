@@ -306,7 +306,6 @@ public class TransformFrameEncodeBagOfWords extends AutomatedTestBase
 				String[] tuple = dict.getString(j, frameCol).split("\u00b7");
 				indices[i].put(tuple[0], Integer.parseInt(tuple[1]) - 1);
 			}
-			System.out.println("Bow dict size: " + indices[i].size());
 			frameCol++;
 			if(recodeColumn != null){
 				for (int j = 0; j < dict.getNumRows(); j++) {
@@ -318,7 +317,6 @@ public class TransformFrameEncodeBagOfWords extends AutomatedTestBase
 				}
 				frameCol++;
 			}
-			System.out.println("Rec dict size: " + rcdMaps[i].size());
 		}
 
 		// only check the first 100 rows

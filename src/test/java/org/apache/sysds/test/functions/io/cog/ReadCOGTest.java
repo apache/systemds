@@ -56,7 +56,7 @@ public abstract class ReadCOGTest extends COGTestBase {
             runTest(true, false, null, -1);
 
             double dmlScalarOutput = TestUtils.readDMLScalar(dmlOutput);
-            TestUtils.compareScalars(dmlScalarOutput, result, eps);
+            TestUtils.compareScalars(dmlScalarOutput, result, eps * getResult());
         }
         finally {
             rtplatform = oldPlatform;

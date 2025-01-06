@@ -128,7 +128,6 @@ public class COGHeader {
      * @return empty string if compatible, error message otherwise
      */
     public static String isCompatible(IFDTag[] IFD) {
-        // TODO: Check if tile offsets exist
         boolean hasTileOffsets = false;
         for (IFDTag tag : IFD) {
             // Only 8 bit, 16 bit, 32 bit images are supported
@@ -141,7 +140,7 @@ public class COGHeader {
                         return "Unsupported bit depth: " + data[i];
                     }
                 }
-            } else if (tag.getTagId() == IFDTagDictionary.TileOffsets) {
+            } else if (tag.getTagId() == IFDTagDictionary.TileOffsets && tag.getData().length > 0) {
                 hasTileOffsets = true;
             }
         }

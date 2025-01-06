@@ -1,6 +1,7 @@
 package org.apache.sysds.runtime.io.cog;
 
 public enum IFDTagDictionary {
+    Unknown(-1),
     // Right now we will only support baseline TIFF
     // not the extended version
     NewSubfileType(254),

@@ -20,7 +20,9 @@
 #-------------------------------------------------------------
 
 # junit test class: org.apache.sysds.test.functions.unary.matrix.DetTest.java
+# mvn test -Dtest="**DetTest"
 
+print("Det Local Computation Testing");
 A = read($1);
 d = det(A);
 write(d, $2);

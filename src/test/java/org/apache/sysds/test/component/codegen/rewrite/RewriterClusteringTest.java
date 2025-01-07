@@ -78,9 +78,9 @@ public class RewriterClusteringTest {
 		boolean useSystematic = true;
 		boolean pruneNovelExpressions = true; // To drop all "irrelevant" statements (those that don't appear in the data set)
 		boolean useRandomLarge = false;
-		int systematicSearchDepth = 2;
+		int systematicSearchDepth = 3;
 		int BATCH_SIZE = 1000;
-		int pruneDataSubexrBiggerThan = 10;
+		int pruneDataSubexrBiggerThan = 1000;
 		int maxCostSamples = 50;
 
 		long startTime = System.currentTimeMillis();

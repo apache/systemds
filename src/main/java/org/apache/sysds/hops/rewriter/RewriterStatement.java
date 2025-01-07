@@ -1153,7 +1153,7 @@ public abstract class RewriterStatement {
 	public int countInstructions() {
 		MutableInt i = new MutableInt();
 		forEachPreOrder(cur -> {
-			if (!cur.isDataOrigin()) {
+			if (!cur.isDataOrigin() || cur.isLiteral()) {
 				i.increment();
 			}
 			return true;

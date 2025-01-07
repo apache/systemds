@@ -129,23 +129,53 @@ public class COGHeader {
      */
     public static String isCompatible(IFDTag[] IFD) {
         boolean hasTileOffsets = false;
+        int imageWidth = -1;
+        int imageHeight = -1;
+        int tileWidth = -1;
+        int tileHeight = -1;
         for (IFDTag tag : IFD) {
             // Only 8 bit, 16 bit, 32 bit images are supported
             // This is common practice in TIFF readers
             // 12 bit values e.g. should instead be scaled to 16 bit
-            if (tag.getTagId() == IFDTagDictionary.BitsPerSample) {
-                Number[] data = tag.getData();
-                for (int i = 0; i < data.length; i++) {
-                    if (data[i].intValue() != 8 && data[i].intValue() != 16 && data[i].intValue() != 32) {
-                        return "Unsupported bit depth: " + data[i];
+            switch (tag.getTagId()) {
+                case BitsPerSample:
+                    Number[] data = tag.getData();
+                    for (int i = 0; i < data.length; i++) {
+                        if (data[i].intValue() != 8 && data[i].intValue() != 16 && data[i].intValue() != 32) {
+                            return "Unsupported bit depth: " + data[i];
+                        }
                     }
-                }
-            } else if (tag.getTagId() == IFDTagDictionary.TileOffsets && tag.getData().length > 0) {
-                hasTileOffsets = true;
+                    break;
+                case TileOffsets:
+                    if (tag.getData().length > 0) {
+                        hasTileOffsets = true;
+                    }
+                    break;
+                case Compression:
+                    // TODO: After implementing decompression, change this so compressed images are actually supported
+                    if (tag.getData()[0].intValue() != 1) {
+                        return "Unsupported compression: " + tag.getData()[0];
+                    }
+                    break;
+                case ImageWidth:
+                    imageWidth = tag.getData()[0].intValue();
+                    break;
+                case ImageLength:
+                    imageHeight = tag.getData()[0].intValue();
+                    break;
+                case TileWidth:
+                    tileWidth = tag.getData()[0].intValue();
+                    break;
+                case TileLength:
+                    tileHeight = tag.getData()[0].intValue();
+                    break;
             }
         }
         if (!hasTileOffsets) {
             return "No tile offsets found";
+        }
+        if (imageWidth % tileWidth != 0 || imageHeight % tileHeight != 0) {
+            return "Image can't be split into tiles equally";
         }
         return "";
     }

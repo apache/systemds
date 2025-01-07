@@ -229,51 +229,61 @@ public class ReaderCOG extends MatrixReader{
         int[] tileOffsets = null;
         int[] bytesPerTile = null;
         int compression = -1;
+        Number noDataIndicator = null;
 
         // Set the attributes correctly from the IFD tags
         for (IFDTag ifd : cogHeader.getIFD()) {
             IFDTagDictionary tag = ifd.getTagId();
-            if (tag == IFDTagDictionary.ImageWidth) {
-                cols = ifd.getData()[0].intValue();
-            } else if (tag == IFDTagDictionary.ImageLength) {
-                rows = ifd.getData()[0].intValue();
-            }
-            // = Number of bands effectively
-            else if (tag == IFDTagDictionary.SamplesPerPixel) {
-                bands = ifd.getData()[0].intValue();
-            } else if (tag == IFDTagDictionary.BitsPerSample) {
-                bitsPerSample = Arrays.stream(ifd.getData()).mapToInt(Number::intValue).toArray();
-            } else if (tag == IFDTagDictionary.TileWidth) {
-                tileWidth = ifd.getData()[0].intValue();
-            } else if (tag == IFDTagDictionary.TileLength) {
-                tileLength = ifd.getData()[0].intValue();
-            } else if (tag == IFDTagDictionary.TileOffsets) {
-                tileOffsets = Arrays.stream(ifd.getData()).mapToInt(Number::intValue).toArray();
-            } else if (tag == IFDTagDictionary.TileByteCounts) {
-                bytesPerTile = Arrays.stream(ifd.getData()).mapToInt(Number::intValue).toArray();
-            } else if (tag == IFDTagDictionary.SampleFormat) {
-                int dataCount = ifd.getDataCount();
-                sampleFormat = new SampleFormatDataTypes[dataCount];
-                for (int i = 0; i < dataCount; i++) {
-                    sampleFormat[i] = SampleFormatDataTypes.valueOf(ifd.getData()[i].intValue());
-                }
-            } else if (tag == IFDTagDictionary.PlanarConfiguration) {
-                planarConfiguration = ifd.getData()[0].intValue();
-            } else if (tag == IFDTagDictionary.Compression) {
-                compression = ifd.getData()[0].intValue();
+            switch (tag) {
+                case ImageWidth:
+                    cols = ifd.getData()[0].intValue();
+                    break;
+                case ImageLength:
+                    rows = ifd.getData()[0].intValue();
+                    break;
+                case SamplesPerPixel:
+                    bands = ifd.getData()[0].intValue();
+                    break;
+                case BitsPerSample:
+                    bitsPerSample = Arrays.stream(ifd.getData()).mapToInt(Number::intValue).toArray();
+                    break;
+                case TileWidth:
+                    tileWidth = ifd.getData()[0].intValue();
+                    break;
+                case TileLength:
+                    tileLength = ifd.getData()[0].intValue();
+                    break;
+                case TileOffsets:
+                    tileOffsets = Arrays.stream(ifd.getData()).mapToInt(Number::intValue).toArray();
+                    break;
+                case TileByteCounts:
+                    bytesPerTile = Arrays.stream(ifd.getData()).mapToInt(Number::intValue).toArray();
+                    break;
+                case SampleFormat:
+                    int dataCount = ifd.getDataCount();
+                    sampleFormat = new SampleFormatDataTypes[dataCount];
+                    for (int i = 0; i < dataCount; i++) {
+                        sampleFormat[i] = SampleFormatDataTypes.valueOf(ifd.getData()[i].intValue());
+                    }
+                    break;
+                case PlanarConfiguration:
+                    planarConfiguration = ifd.getData()[0].intValue();
+                    break;
+                case Compression:
+                    compression = ifd.getData()[0].intValue();
+                    break;
+                case GDALNoData:
+                    noDataIndicator = ifd.getData()[0];
             }
         }
-        // ensure correctness
-        assert (rows % tileLength == 0);
-        assert (cols % tileWidth == 0);
-        double sum = 0;
 
         // number of tiles for Width and Length
         int tileCols = cols / tileWidth;
         int tileRows = rows / tileLength;
 
-        // total number of tiles for COG in overview
+        // total number of tiles if every tile contains all bands
         int calculatedAmountTiles = tileCols * tileRows;
+        // actual given number of tiles, longer for PlanarConfiguration=2
         int actualAmountTiles = tileOffsets.length;
 
         int currentTileCol = 0;
@@ -325,6 +335,10 @@ public class ReaderCOG extends MatrixReader{
                             case FLOATING_POINT:
                                 value = cogHeader.parseByteArray(currentTileData, sampleLength, bytesRead, true, false, false).doubleValue();
                                 break;
+                        }
+
+                        if (noDataIndicator != null && value == noDataIndicator.doubleValue()) {
+                            value = Double.NaN;
                         }
                         bytesRead += sampleLength;
                         outputMatrix.set((currentTileRow * tileLength) + currentRow,

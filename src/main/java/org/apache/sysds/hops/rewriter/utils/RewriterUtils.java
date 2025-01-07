@@ -391,7 +391,14 @@ public class RewriterUtils {
 			parseDataTypes(def, dataTypes, ctx);
 
 		RewriterStatement parsed = parseExpression(expr, new HashMap<>(), dataTypes, ctx);
-		return ctx.metaPropagator != null ? ctx.metaPropagator.apply(parsed) : parsed;
+		if (ctx.metaPropagator == null)
+			return parsed;
+		else {
+			RewriterStatement out = ctx.metaPropagator.apply(parsed);
+			out.prepareForHashing();
+			out.recomputeHashCodes(ctx);
+			return out;
+		}
 	}
 
 	public static RewriterRule parseRule(String exprFrom, String exprTo, final RuleContext ctx, Map<String, RewriterStatement> dataTypes, Set<Integer> allowedMultiRefs, boolean allowCombinations, String... varDefinitions) {

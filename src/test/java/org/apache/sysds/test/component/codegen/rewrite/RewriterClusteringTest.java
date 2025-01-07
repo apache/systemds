@@ -32,6 +32,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Map;
 import java.util.Random;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicLong;
@@ -76,9 +77,11 @@ public class RewriterClusteringTest {
 		boolean useData = true;
 		boolean useSystematic = true;
 		boolean pruneNovelExpressions = true; // To drop all "irrelevant" statements (those that don't appear in the data set)
-		int systematicSearchDepth = 3;
-		int BATCH_SIZE = 1000;
 		boolean useRandomLarge = false;
+		int systematicSearchDepth = 2;
+		int BATCH_SIZE = 1000;
+		int pruneDataSubexrBiggerThan = 10;
+		int maxCostSamples = 50;
 
 		long startTime = System.currentTimeMillis();
 		AtomicLong generatedExpressions = new AtomicLong(0);
@@ -106,10 +109,10 @@ public class RewriterClusteringTest {
 				//	return; // Skip
 				// First, build all possible subtrees
 				//System.out.println("Eval:\n" + expr.toParsableString(ctx, true));
-				List<RewriterStatement> subExprs = RewriterUtils.generateSubtrees(expr, ctx, 1000);
-				if (subExprs.size() > 1000)
+				List<RewriterStatement> subExprs = RewriterUtils.generateSubtrees(expr, ctx, pruneDataSubexrBiggerThan);
+				if (subExprs.size() > pruneDataSubexrBiggerThan)
 					System.out.println("Critical number of subtrees: " + subExprs.size());
-				if (subExprs.size() > 2000) {
+				if (subExprs.size() > 2 * pruneDataSubexrBiggerThan) {
 					System.out.println("Skipping subtrees...");
 					subExprs = List.of(expr);
 				}
@@ -312,7 +315,7 @@ public class RewriterClusteringTest {
 
 		System.out.println("===== SUGGESTED REWRITES =====");
 		//List<Tuple5<Double, Long, Long, RewriterStatement, RewriterStatement>> rewrites = findSuggestedRewrites(foundEquivalences);
-		List<Tuple4<RewriterStatement, RewriterStatement, Long, Boolean>> rewrites = findSuggestedRewrites(foundEquivalences, 10);
+		List<Tuple4<RewriterStatement, List<RewriterStatement>, Long, Boolean>> rewrites = findSuggestedRewrites(foundEquivalences, maxCostSamples);
 		foundEquivalences.clear();
 		exactExprDB.clear();
 		canonicalExprDB.clear();
@@ -322,18 +325,23 @@ public class RewriterClusteringTest {
 		List<Tuple4<RewriterRule, Long, Integer, Boolean>> allRules = new ArrayList<>();
 		int mCtr = 0;
 		//for (Tuple5<Double, Long, Long, RewriterStatement, RewriterStatement> rewrite : rewrites) {
-		for (Tuple4<RewriterStatement, RewriterStatement, Long, Boolean> rewrite : rewrites) {
+		for (Tuple4<RewriterStatement, List<RewriterStatement>, Long, Boolean> rewrite : rewrites) {
 			if (++mCtr % 100 == 0)
 				System.out.println("Creating rule: " + mCtr + " / " + rewrites.size());
 
 			try {
-				RewriterRule rule = RewriterRuleCreator.createRuleFromCommonStatements(rewrite._1(), rewrite._2(), ctx);
+				RewriterRule rule;
+				if (rewrite._4())
+					rule = RewriterRuleCreator.createRuleFromCommonStatements(rewrite._1(), rewrite._2().get(0), ctx);
+				else
+					rule = RewriterRuleCreator.createConditionalRuleFromCommonStatements(rewrite._1(), rewrite._2(), ctx);
 
 				allRules.add(new Tuple4<>(rule, rewrite._3(), rule.getStmt1().countInstructions(), rewrite._4()));
 			} catch (Exception e) {
 				System.err.println("An error occurred while trying to create a rule:");
 				System.err.println(rewrite._1().toParsableString(ctx, true));
-				System.err.println(rewrite._2().toParsableString(ctx, true));
+				for (RewriterStatement stmt : rewrite._2())
+					System.err.println(stmt.toParsableString(ctx, true));
 				e.printStackTrace();
 			}
 		}
@@ -348,7 +356,7 @@ public class RewriterClusteringTest {
 			try {
 				// First, without validating correctness
 				// This might throw out some fallback options if a rule turns out to be incorrect but we there is a huge performance benefit
-				if (t._4()) {
+				if (!t._1().isConditionalMultiRule()) {
 					ruleCreator.registerRule(t._1(), converter, ctx);
 				} else {
 					conditionalRules.add(t._1());
@@ -378,18 +386,6 @@ public class RewriterClusteringTest {
 
 		ruleCreator.throwOutInvalidRules(false, true);
 
-		/*RewriterRuleCreator ruleCreator = new RewriterRuleCreator(ctx);
-
-		for (Tuple3<RewriterRule, Long, Long> t : allRules)
-			ruleCreator.registerRule(t._1(), t._2(), t._3());*/
-
-		/*ruleCreator.forEachRule(rule -> {
-			System.out.println(rule);
-			//System.out.println("Score: " + rewrite._1());
-			System.out.println("Cost1: " + rule.getStmt1().getCost(ctx));
-			System.out.println("Cost2: " + rule.getStmt2().getCost(ctx));
-		});*/
-
 
 
 		try (FileWriter writer = new FileWriter(RewriteAutomaticallyGenerated.FILE_PATH)) {
@@ -407,35 +403,6 @@ public class RewriterClusteringTest {
 		} catch (IOException ex) {
 			ex.printStackTrace();
 		}
-	}
-
-	private static void printEquivalences(List<RewriterStatement> equivalentStatements, long cpuTime, long generatedExpressions, long evaluatedExpressions, long canonicalizationMillis, long failures, boolean preFilter) {
-		System.out.println("===== ALL EQUIVALENCES =====");
-		if (preFilter)
-			System.out.println("Pre-filtering is active! Note that this hides some (probably less impactful) equivalences");
-
-		for (RewriterStatement eStmt : equivalentStatements) {
-			List<RewriterStatement> equivalences = (List<RewriterStatement>)eStmt.getMeta("equivalentExpressions");
-			if (preFilter && !checkRelevance(equivalences))
-				continue; // Then this equivalence is not that relevant as it is just a shuffling of operands
-
-			System.out.println();
-			System.out.println();
-			System.out.println("===================================");
-			System.out.println("Canonical form: " + eStmt.toParsableString(ctx) + "\n");
-			equivalences.forEach(stmt -> System.out.println(stmt.toParsableString(ctx, true) + "\nHC: " + stmt.hashCode()  + "\n"));
-
-			if (equivalences.size() == 0)
-				System.out.println("All statements were actually equivalent!");
-			//System.out.println(equivalences.get(0).match(new RewriterStatement.MatcherContext(ctx, equivalences.get(0))));
-		}
-
-		System.out.println();
-		System.out.println("Total rewriter CPU time: " + cpuTime + "ms");
-		System.out.println("Total generated expressions: " + generatedExpressions);
-		System.out.println("Total evaluated unique expressions: " + evaluatedExpressions);
-		System.out.println("Avg canonicalization time: " + Math.round(((double)canonicalizationMillis)/evaluatedExpressions) + "ms");
-		System.out.println("Total failures: " + failures);
 	}
 
 	private static boolean checkRelevance(List<RewriterStatement> stmts) {
@@ -487,9 +454,9 @@ public class RewriterClusteringTest {
 	 * @param sample_size how many sparsity and dimension values should be sampled; a sample size of 1 uses a fixed cost esimtate with ncols=nrows=2000 and fully dense matrices
 	 * @return
 	 */
-	private static /*List<Tuple5<Double, Long, Long, RewriterStatement, RewriterStatement>>*/List<Tuple4<RewriterStatement, RewriterStatement, Long, Boolean>> findSuggestedRewrites(List<RewriterEquivalenceDatabase.DBEntry> equivalences, int sample_size) {
+	private static /*List<Tuple5<Double, Long, Long, RewriterStatement, RewriterStatement>>*/List<Tuple4<RewriterStatement, List<RewriterStatement>, Long, Boolean>> findSuggestedRewrites(List<RewriterEquivalenceDatabase.DBEntry> equivalences, int sample_size) {
 		//List<Tuple5<Double, Long, Long, RewriterStatement, RewriterStatement>> suggestedRewrites = SynchronizedList.decorate(new ArrayList<>());
-		List<Tuple4<RewriterStatement, RewriterStatement, Long, Boolean>> suggestions = SynchronizedList.decorate(new ArrayList<>());
+		List<Tuple4<RewriterStatement, List<RewriterStatement>, Long, Boolean>> suggestions = SynchronizedList.decorate(new ArrayList<>());
 
 		AtomicLong idCtr = new AtomicLong();
 		equivalences.parallelStream().forEach(entry -> {
@@ -498,7 +465,7 @@ public class RewriterClusteringTest {
 				RewriterAssertions assertions = RewriterAssertionUtils.buildImplicitAssertions(mEq.get(0), ctx);
 
 				for (int i = 1; i < mEq.size(); i++)
-					RewriterAssertionUtils.buildImplicitAssertions(mEq.get(1), assertions, ctx);
+					RewriterAssertionUtils.buildImplicitAssertions(mEq.get(i), assertions, ctx);
 
 				List<Tuple2<List<Number>, List<Long>>> costs = RewriterCostEstimator.compareCosts(mEq, assertions, ctx, true, sample_size);
 				Set<Tuple2<Integer, Integer>> rewriteProposals = RewriterCostEstimator.findOptima(costs);
@@ -508,9 +475,27 @@ public class RewriterClusteringTest {
 					int targetIdx = rewriteProposals.stream().findFirst().get()._2;
 					boolean hasOneTarget = rewriteProposals.stream().allMatch(t -> t._2 == targetIdx);
 
-					for (Tuple2<Integer, Integer> proposal : rewriteProposals) {
-						suggestions.add(new Tuple4<>(mEq.get(proposal._1), mEq.get(proposal._2), mId, hasOneTarget));
+					// Group by origin expression
+					Map<Integer, List<Tuple2<Integer, Integer>>> grouped = rewriteProposals.stream().collect(Collectors.groupingBy(Tuple2::_1));
+
+					//System.out.println("Grouped: " + grouped.values());
+					int found = 0;
+					List<Integer> idx = null;
+
+					for (List<Tuple2<Integer, Integer>> proposalsFromSameOrigin : grouped.values()) {
+						if (mEq.get(proposalsFromSameOrigin.get(0)._1).toParsableString(ctx).matches("%\\*%\\(\\*\\((\\w+,\\w+)\\),t\\(\\w+\\)\\)")) {
+							found++;
+							if (idx == null)
+								idx = new ArrayList<>();
+							idx.add(proposalsFromSameOrigin.get(0)._1);
+						}
+						suggestions.add(new Tuple4<>(mEq.get(proposalsFromSameOrigin.get(0)._1), proposalsFromSameOrigin.stream().map(t -> mEq.get(t._2)).collect(Collectors.toList()), mId, hasOneTarget));
 					}
+
+					/*for (Tuple2<Integer, Integer> proposal : rewriteProposals) {
+						if (!proposal._1.equals(proposal._2))
+							suggestions.add(new Tuple4<>(mEq.get(proposal._1), mEq.get(proposal._2), mId, hasOneTarget));
+					}*/
 				}
 			} catch (Exception e) {
 				e.printStackTrace();

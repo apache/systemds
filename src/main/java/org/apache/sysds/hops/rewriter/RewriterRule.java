@@ -26,6 +26,7 @@ public class RewriterRule extends AbstractRewriterRule {
 	private final String name;
 	private final RewriterStatement fromRoot;
 	private final RewriterStatement toRoot;
+	private List<RewriterStatement> toRoots;
 	private final HashMap<RewriterStatement, LinkObject> linksStmt1ToStmt2; // Contains the explicit links a transformation has (like instructions, (a+b)-c = a+(b-c), but '+' and '-' are the same instruction still [important if instructions have metadata])
 	private final HashMap<RewriterStatement, LinkObject> linksStmt2ToStmt1;
 	private final List<Tuple2<RewriterStatement, BiConsumer<RewriterStatement, RewriterStatement.MatchingSubexpression>>> applyStmt1ToStmt2;
@@ -118,6 +119,18 @@ public class RewriterRule extends AbstractRewriterRule {
 	public void setAllowedMultiReferences(Set<RewriterStatement> allowed, boolean allowCombinations) {
 		this.allowedMultiReferences = allowed;
 		this.allowCombinations = allowCombinations;
+	}
+
+	/**
+	 *  Overwrites the rule as a conditional rule
+	 * @param targets
+	 */
+	public void setConditional(List<RewriterStatement> targets) {
+		toRoots = targets;
+	}
+
+	public boolean isConditionalMultiRule() {
+		return toRoots != null;
 	}
 
 	public String getName() {
@@ -457,7 +470,14 @@ public class RewriterRule extends AbstractRewriterRule {
 		int refIdx = fromRoot.toParsableString(sb, refs, 0, varDefs, allowedMultiReferences, ctx);
 		String stmt1 = sb.toString();
 		sb = new StringBuilder();
-		toRoot.toParsableString(sb, refs, refIdx, varDefs, allowedMultiReferences, ctx);
+		if (toRoot != null) {
+			toRoot.toParsableString(sb, refs, refIdx, varDefs, allowedMultiReferences, ctx);
+		} else {
+			for (RewriterStatement mToRoot : toRoots) {
+				mToRoot.toParsableString(sb, refs, refIdx, varDefs, allowedMultiReferences, ctx);
+				sb.append('\n');
+			}
+		}
 		String stmt2 = sb.toString();
 		//String stmt1 = fromRoot.toParsableString(ctx, varDefs, allowedMultiReferences);
 		//String stmt2 = toRoot.toParsableString(ctx, varDefs, allowedMultiReferences);
@@ -468,7 +488,11 @@ public class RewriterRule extends AbstractRewriterRule {
 		}
 
 		String defs = RewriterStatement.parsableDefinitions(varDefs);
-		return multiRefDefs + defs + "\n" + stmt1 + "\n=>\n" + stmt2;
+
+		if (toRoot != null)
+			return multiRefDefs + defs + "\n" + stmt1 + "\n=>\n" + stmt2;
+		else
+			return multiRefDefs + defs + "\n" + stmt1 + "\n=>\n{\n" + stmt2 + "}";
 	}
 
 	// TODO: Rework

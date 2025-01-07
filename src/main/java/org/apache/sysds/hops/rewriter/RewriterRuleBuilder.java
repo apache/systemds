@@ -27,6 +27,7 @@ public class RewriterRuleBuilder {
 	private ArrayList<Tuple2<RewriterStatement, BiConsumer<RewriterStatement, RewriterStatement.MatchingSubexpression>>> applyStmt2ToStmt1 = new ArrayList<>();
 	private RewriterStatement fromRoot = null;
 	private RewriterStatement toRoot = null;
+	private List<RewriterStatement> multiRuleRoots = null;
 	private Function<RewriterStatement.MatchingSubexpression, Boolean> iff1to2 = null;
 	private Function<RewriterStatement.MatchingSubexpression, Boolean> iff2to1 = null;
 	private boolean isUnidirectional = false;
@@ -145,9 +146,15 @@ public class RewriterRuleBuilder {
 			if (getCurrentInstruction() != null)
 				getCurrentInstruction().consolidate(ctx);
 			fromRoot.prepareForHashing();
-			toRoot.prepareForHashing();
+			if (toRoot != null)
+				toRoot.prepareForHashing();
+			else
+				multiRuleRoots.forEach(RewriterStatement::prepareForHashing);
 			fromRoot.recomputeHashCodes(ctx);
-			toRoot.recomputeHashCodes(ctx);
+			if (toRoot != null)
+				toRoot.recomputeHashCodes(ctx);
+			else
+				multiRuleRoots.forEach(rt -> rt.recomputeHashCodes(ctx));
 			canBeModified = false;
 		}
 
@@ -161,13 +168,15 @@ public class RewriterRuleBuilder {
 			throw new IllegalArgumentException("No mapping expression");
 		if (fromRoot == null)
 			throw new IllegalArgumentException("From-root statement cannot be null");
-		if (toRoot == null)
+		if (toRoot == null && multiRuleRoots == null)
 			throw new IllegalArgumentException("To-root statement cannot be null");
 		if (getCurrentInstruction() != null)
 			getCurrentInstruction().consolidate(ctx);
 		prepare();
 		RewriterRule rule = new RewriterRule(ctx, ruleName, fromRoot, toRoot, isUnidirectional, linksStmt1ToStmt2, linksStmt2ToStmt1, iff1to2, iff2to1, applyStmt1ToStmt2, applyStmt2ToStmt1);
 		rule.setAllowedMultiReferences(allowedMultiReferences, allowCombinations);
+		if (multiRuleRoots != null)
+			rule.setConditional(multiRuleRoots);
 		return rule;
 	}
 
@@ -194,6 +203,8 @@ public class RewriterRuleBuilder {
 				return mappingSeq.get(mappingSeq.size()-1);
 			else if (toRoot != null)
 				return toRoot;
+			else if (multiRuleRoots != null)
+				return multiRuleRoots.get(0); // Just as a dummy
 			else
 				throw new IllegalArgumentException("There is no current instruction in the mapping sequence");
 		else
@@ -245,6 +256,17 @@ public class RewriterRuleBuilder {
 			throw new IllegalArgumentException("Cannot add an instruction when a mapping instruction was already defined");
 		this.fromRoot = from;
 		this.toRoot = to;
+		this.mappingState = true;
+		return this;
+	}
+
+	public RewriterRuleBuilder completeConditionalRule(RewriterStatement from, List<RewriterStatement> to) {
+		if (!canBeModified)
+			throw new IllegalArgumentException("The DAG is final and cannot be modified");
+		if (mappingState)
+			throw new IllegalArgumentException("Cannot add an instruction when a mapping instruction was already defined");
+		this.fromRoot = from;
+		this.multiRuleRoots = to;
 		this.mappingState = true;
 		return this;
 	}

@@ -458,7 +458,10 @@ public class RewriterRule extends AbstractRewriterRule {
 
 	public String toString() {
 		if (isUnidirectional())
-			return fromRoot.toParsableString(ctx) + " => " + toRoot.toParsableString(ctx);
+			if (isConditionalMultiRule())
+				return fromRoot.toParsableString(ctx) + " => {" + toRoots.stream().map(stmt -> stmt.toParsableString(ctx)).collect(Collectors.joining("; ")) + "}";
+			else
+				return fromRoot.toParsableString(ctx) + " => " + toRoot.toParsableString(ctx);
 		else
 			return fromRoot.toParsableString(ctx) + " <=> " + toRoot.toParsableString(ctx);
 	}

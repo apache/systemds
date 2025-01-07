@@ -127,4 +127,20 @@ public class RuleSerializationTest {
 
 		assert serialized.equals(newSerialized);
 	}
+
+	@Test
+	public void test4() {
+		String ruleStr1 = "MATRIX:W1_rand,tmp29911\n" +
+				"FLOAT:tmp65095\n" +
+				"\n" +
+				"*(tmp65095,%*%(W1_rand,t(tmp29911)))\n" +
+				"=>\n" +
+				"{\n" +
+				"t(%*%(*(tmp65095,tmp29911),t(W1_rand)))\n" +
+				"%*%(*(tmp65095,W1_rand),t(tmp29911))\n" +
+				"*(tmp65095,t(%*%(tmp29911,t(W1_rand))))\n" +
+				"}";
+		RewriterRule rule1 = RewriterUtils.parseRule(ruleStr1, ctx);
+		System.out.println(rule1.toString());
+	}
 }

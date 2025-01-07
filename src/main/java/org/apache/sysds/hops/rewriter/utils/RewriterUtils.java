@@ -363,6 +363,7 @@ public class RewriterUtils {
 		Set<Integer> allowedMultiRefs = Collections.emptySet();
 		boolean allowCombinations = false;
 		boolean parsedExtendedHeader = false;
+
 		if (split[0].startsWith("AllowedMultiRefs:")) {
 			split[0] = split[0].substring(17);
 			String[] sSplit = split[0].split(",");
@@ -375,6 +376,22 @@ public class RewriterUtils {
 			allowCombinations = Boolean.parseBoolean(split[1]);
 			parsedExtendedHeader = true;
 		}
+
+		int condIdxStart = -1;
+		for (int i = 2; i < split.length; i++) {
+			if (split[i].startsWith("{")) {
+				// Then we have a conditional rule
+				condIdxStart = i;
+				break;
+			}
+		}
+
+		if (condIdxStart != -1) {
+			// Then we have a conditional rule
+			List<String> toExprs = Arrays.asList(split).subList(condIdxStart+1, split.length-1);
+			return parseRule(split[condIdxStart-2], toExprs, allowedMultiRefs, allowCombinations, ctx, Arrays.copyOfRange(split, parsedExtendedHeader ? 2 : 0, condIdxStart-2));
+		}
+
 		return parseRule(split[split.length-3], split[split.length-1], allowedMultiRefs, allowCombinations, ctx, Arrays.copyOfRange(split, parsedExtendedHeader ? 2 : 0, split.length-3));
 	}
 
@@ -384,6 +401,10 @@ public class RewriterUtils {
 
 	public static RewriterRule parseRule(String exprFrom, String exprTo, Set<Integer> allowedMultiRefs, boolean allowCombinations, final RuleContext ctx, String... varDefinitions) {
 		return parseRule(exprFrom, exprTo, ctx, new HashMap<>(), allowedMultiRefs, allowCombinations, varDefinitions);
+	}
+
+	public static RewriterRule parseRule(String exprFrom, List<String> exprsTo, Set<Integer> allowedMultiRefs, boolean allowCombinations, final RuleContext ctx, String... varDefinitions) {
+		return parseRule(exprFrom, exprsTo, ctx, new HashMap<>(), allowedMultiRefs, allowCombinations, true, varDefinitions);
 	}
 
 	public static RewriterStatement parse(String expr, final RuleContext ctx, Map<String, RewriterStatement> dataTypes, String... varDefinitions) {
@@ -416,6 +437,39 @@ public class RewriterUtils {
 		}
 
 		return new RewriterRuleBuilder(ctx).completeRule(parsedFrom, parsedTo).withAllowedMultiRefs(allowedMultiRefs.stream().map(mmap::get).collect(Collectors.toSet()), allowCombinations).setUnidirectional(true).build();
+	}
+
+	public static RewriterRule parseRule(String exprFrom, List<String> exprsTo, final RuleContext ctx, Map<String, RewriterStatement> dataTypes, Set<Integer> allowedMultiRefs, boolean allowCombinations, boolean asConditional, String... varDefinitions) {
+		if (!asConditional && exprsTo.size() > 1)
+			throw new IllegalArgumentException();
+
+		for (String def : varDefinitions)
+			parseDataTypes(def, dataTypes, ctx);
+
+		HashMap<Integer, RewriterStatement> mmap = new HashMap<>();
+
+		RewriterStatement parsedFrom = parseExpression(exprFrom, mmap, dataTypes, ctx);
+		if (ctx.metaPropagator != null) {
+			parsedFrom = ctx.metaPropagator.apply(parsedFrom);
+		}
+
+		List<RewriterStatement> parsedTos = new ArrayList<>();
+		for (String exprTo : exprsTo) {
+			RewriterStatement parsedTo = parseExpression(exprTo, mmap, dataTypes, ctx);
+
+			if (ctx.metaPropagator != null) {
+				parsedTo = ctx.metaPropagator.apply(parsedTo);
+				parsedTo.prepareForHashing();
+				parsedTo.recomputeHashCodes(ctx);
+			}
+
+			parsedTos.add(parsedTo);
+		}
+
+		return new RewriterRuleBuilder(ctx)
+				.completeConditionalRule(parsedFrom, parsedTos)
+				.withAllowedMultiRefs(allowedMultiRefs.stream().map(mmap::get).collect(Collectors.toSet()), allowCombinations)
+				.setUnidirectional(true).build();
 	}
 
 	/**

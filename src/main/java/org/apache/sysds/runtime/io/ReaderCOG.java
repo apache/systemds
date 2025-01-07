@@ -27,16 +27,25 @@ public class ReaderCOG extends MatrixReader{
         FileSystem fs = IOUtilFunctions.getFileSystem(path, job);
 
         BufferedInputStream bis = new BufferedInputStream(fs.open(path));
-        return readCOG(bis, rlen, clen, blen, estnnz);
+        return readCOG(bis);
     }
 
     @Override
     public MatrixBlock readMatrixFromInputStream(InputStream is, long rlen, long clen, int blen, long estnnz) throws IOException, DMLRuntimeException {
         BufferedInputStream bis = new BufferedInputStream(is);
-        return readCOG(bis, rlen, clen, blen, estnnz);
+        return readCOG(bis);
     }
 
-    private MatrixBlock readCOG(BufferedInputStream bis, long rlen, long clen, int blen, long estnnz) {
+    /**
+     * Reads a COG file from a BufferedInputStream.
+     * Not handling number of columns or rows, as this can be inferred from the data, but
+     * may be used in the future for validation or possibly removed as a requirement for COG.
+     * Specific to COG files, normal TIFFs will break because they aren't tiled, only
+     * tiled data is supported.
+     * @param bis
+     * @return
+     */
+    private MatrixBlock readCOG(BufferedInputStream bis) {
         // Read first 4 bytes to determine byte order and make sure it is a valid TIFF
         byte[] header = readBytes(bis, 4);
 

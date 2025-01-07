@@ -52,7 +52,9 @@ public enum IFDTagDictionary {
     TileWidth(322),
     TileLength(323),
     TileOffsets(324),
-    TileByteCounts(325);
+    TileByteCounts(325),
+    // TODO: Support nodata values
+    GDALNoData(42113);
 
 
 

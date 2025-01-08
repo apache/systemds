@@ -267,11 +267,6 @@ public class RaggedArray<T> extends Array<T> {
 		return _a.changeTypeBoolean(retA, l, u);
 	}
 
-	// @Override
-	// protected Array<Double> changeTypeDouble() {
-	// 	return _a.changeTypeDouble();
-	// }
-
 	@Override
 	protected Array<Double> changeTypeDouble(Array<Double> retA, int l, int u) {
 		return _a.changeTypeDouble(retA, l, u);

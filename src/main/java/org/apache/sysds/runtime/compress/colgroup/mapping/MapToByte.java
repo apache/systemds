@@ -95,18 +95,17 @@ public class MapToByte extends AMapToData {
 	}
 
 	@Override
-	public void set(int l, int u, int off, AMapToData tm){
-		if(tm instanceof MapToByte){
-			MapToByte tbm = (MapToByte)tm;
+	public void set(int l, int u, int off, AMapToData tm) {
+		if(tm instanceof MapToByte) {
+			MapToByte tbm = (MapToByte) tm;
 			byte[] tbv = tbm._data;
 			for(int i = l; i < u; i++, off++) {
-				_data[i]  =  tbv[off];
+				_data[i] = tbv[off];
 			}
 		}
-		else{
-
+		else {
 			for(int i = l; i < u; i++, off++) {
-				_data[i]  =   (byte)tm.getIndex(off);
+				_data[i] = (byte) tm.getIndex(off);
 			}
 		}
 	}
@@ -320,7 +319,6 @@ public class MapToByte extends AMapToData {
 		c[r + 6] += values[getIndex(r + 6)];
 		c[r + 7] += values[getIndex(r + 7)];
 	}
-
 
 	@Override
 	public void decompressToRange(double[] c, int rl, int ru, int offR, double[] values) {

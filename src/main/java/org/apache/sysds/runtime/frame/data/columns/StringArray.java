@@ -496,13 +496,11 @@ public class StringArray extends Array<String> {
 	}
 
 	protected void changeTypeIntegerNormal(Array<Integer> ret, int l, int u) {
-	
-			for(int i = l; i < u; i++) {
-				final String s = _data[i];
-				if(s != null)
-					ret.set(i, parseInt(s));
-			}
-		
+		for(int i = l; i < u; i++) {
+			final String s = _data[i];
+			if(s != null)
+				ret.set(i, parseInt(s));
+		}
 	}
 
 	protected int parseInt(String s) {

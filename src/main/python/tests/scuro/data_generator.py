@@ -79,7 +79,7 @@ class TestDataGenerator:
         np.save(f"{self.path}/labels.npy", np.array(self.labels))
 
     def __create_video_data(self, idx, duration, fps, speed_factor):
-        path = f"{self.path}/video/{idx}.mp4"
+        path = f"{self.path}/VIDEO/{idx}.mp4"
 
         width, height = 160, 120
         fourcc = cv2.VideoWriter_fourcc(*"mp4v")
@@ -105,13 +105,13 @@ class TestDataGenerator:
         out.release()
 
     def __create_text_data(self, idx, speed_factor):
-        path = f"{self.path}/text/{idx}.txt"
+        path = f"{self.path}/TEXT/{idx}.txt"
 
         with open(path, "w") as f:
             f.write(f"The ball moves at speed factor {speed_factor:.2f}.")
 
     def __create_audio_data(self, idx, duration, speed_factor):
-        path = f"{self.path}/audio/{idx}.wav"
+        path = f"{self.path}/AUDIO/{idx}.wav"
         sample_rate = 44100
 
         t = np.linspace(0, duration, int(sample_rate * duration), endpoint=False)

@@ -19,6 +19,7 @@ import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 public class RewriterRule extends AbstractRewriterRule {
 
@@ -40,7 +41,7 @@ public class RewriterRule extends AbstractRewriterRule {
 	private boolean allowCombinations = false;
 	private boolean requireCostCheck = false;
 	private RewriterStatement fromCost = null;
-	private RewriterStatement toCost = null;
+	private List<RewriterStatement> toCosts = null;
 
 	public RewriterRule(final RuleContext ctx, String name, RewriterStatement fromRoot, RewriterStatement toRoot, boolean unidirectional, HashMap<RewriterStatement, LinkObject> linksStmt1ToStmt2, HashMap<RewriterStatement, LinkObject> linksStmt2ToStmt1) {
 		this(ctx, name, fromRoot, toRoot, unidirectional, linksStmt1ToStmt2, linksStmt2ToStmt1, null, null, null, null, null);
@@ -69,25 +70,27 @@ public class RewriterRule extends AbstractRewriterRule {
 	public boolean determineConditionalApplicability() {
 		RewriterAssertions assertions = new RewriterAssertions(ctx);
 		RewriterAssertionUtils.buildImplicitAssertion(fromRoot, assertions, fromRoot, ctx);
-		RewriterAssertionUtils.buildImplicitAssertion(toRoot, assertions, toRoot, ctx);
+		for (RewriterStatement root : getStmt2AsList())
+			RewriterAssertionUtils.buildImplicitAssertion(root, assertions, root, ctx);
 
-		List<Tuple3<List<Number>, Long, Long>> costs = RewriterCostEstimator.compareCosts(fromRoot, toRoot, assertions, ctx, false, -1, false);
+		List<Tuple3<List<Number>, Long, Long>> costs = RewriterCostEstimator.compareCosts(fromRoot, getStmt2(), assertions, ctx, false, -1, false);
 
-		requireCostCheck = RewriterCostEstimator.doesHaveAnImpactOnOptimalExpression(costs, false, true, 20);
+		requireCostCheck = isConditionalMultiRule() || RewriterCostEstimator.doesHaveAnImpactOnOptimalExpression(costs, false, true, 20);
 
 		if (!requireCostCheck)
 			return false;
 
-		boolean integrateSparsityInCosts = RewriterCostEstimator.doesHaveAnImpactOnOptimalExpression(costs, true, false, 20);
+		boolean integrateSparsityInCosts = isConditionalMultiRule() || RewriterCostEstimator.doesHaveAnImpactOnOptimalExpression(costs, true, false, 20);
 
 		System.out.println("Require cost check (sparsity >> " + integrateSparsityInCosts + "): " + this);
 
 		MutableObject<RewriterAssertions> assertionRef = new MutableObject<>(assertions);
 		fromCost = RewriterCostEstimator.getRawCostFunction(fromRoot, ctx, assertionRef, !integrateSparsityInCosts);
-		toCost = RewriterCostEstimator.getRawCostFunction(toRoot, ctx, assertionRef, !integrateSparsityInCosts);
+		toCosts = getStmt2AsList().stream().map(root -> RewriterCostEstimator.getRawCostFunction(root, ctx, assertionRef, !integrateSparsityInCosts)).collect(Collectors.toList());
 
 		fromCost = RewriterSparsityEstimator.rollupSparsities(fromCost, RewriterSparsityEstimator.estimateAllNNZ(fromRoot, ctx), ctx);
-		toCost = RewriterSparsityEstimator.rollupSparsities(toCost, RewriterSparsityEstimator.estimateAllNNZ(toRoot, ctx), ctx);
+		toCosts = IntStream.range(0, toCosts.size()).mapToObj(i -> RewriterSparsityEstimator.rollupSparsities(toCosts.get(i), RewriterSparsityEstimator.estimateAllNNZ(toRoots.get(i), ctx), ctx)).collect(Collectors.toList());
+		//toCosts = toCosts.stream().map(toCost -> RewriterSparsityEstimator.rollupSparsities(toCost, RewriterSparsityEstimator.estimateAllNNZ(toCost, ctx), ctx)).collect(Collectors.toList());
 
 		return requireCostCheck;
 	}
@@ -101,12 +104,21 @@ public class RewriterRule extends AbstractRewriterRule {
 	}
 
 	public RewriterStatement getStmt2Cost() {
-		return toCost;
+		return toCosts.get(0);
+	}
+
+	public List<RewriterStatement> getStmt2Costs() {
+		return toCosts;
 	}
 
 	public void buildCombinedAssertions() {
 		combinedAssertions = RewriterAssertionUtils.buildImplicitAssertions(fromRoot, ctx);
-		RewriterAssertionUtils.buildImplicitAssertions(toRoot, combinedAssertions, ctx);
+		if (toRoot != null)
+			RewriterAssertionUtils.buildImplicitAssertions(toRoot, combinedAssertions, ctx);
+		else {
+			for (RewriterStatement root : toRoots)
+				RewriterAssertionUtils.buildImplicitAssertions(root, combinedAssertions, ctx);
+		}
 	}
 
 	public RewriterAssertions getCombinedAssertions() {
@@ -133,6 +145,10 @@ public class RewriterRule extends AbstractRewriterRule {
 		return toRoots != null;
 	}
 
+	public List<RewriterStatement> getConditionalMultiRuleTargets() {
+		return toRoots;
+	}
+
 	public String getName() {
 		return name;
 	}
@@ -141,8 +157,17 @@ public class RewriterRule extends AbstractRewriterRule {
 		return fromRoot;
 	}
 
+	/**
+	 * Returns the target statement.
+	 * In case of a multi-rule, this will return the first option of the multi-rule targets.
+	 * @return
+	 */
 	public RewriterStatement getStmt2() {
-		return toRoot;
+		return toRoot != null ? toRoot : toRoots.get(0);
+	}
+
+	public List<RewriterStatement> getStmt2AsList() {
+		return toRoot != null ? List.of(toRoot) : toRoots;
 	}
 
 	public boolean isUnidirectional() {

@@ -2,6 +2,7 @@ package org.apache.sysds.hops.rewriter.dml;
 
 import org.apache.sysds.api.DMLScript;
 import org.apache.sysds.hops.Hop;
+import org.apache.sysds.hops.OptimizerUtils;
 
 import java.io.OutputStream;
 import java.io.PrintStream;
@@ -41,6 +42,10 @@ public class DMLExecutor {
 				APPLY_INJECTED_REWRITES = true;
 				REWRITE_FUNCTION = injectedRewriteClass;
 			}
+
+			// To allow the discovery of sum((a*A)*B) which would usually be converted to n*
+			OptimizerUtils.ALLOW_SUM_PRODUCT_REWRITES = false;
+			OptimizerUtils.ALLOW_OPERATOR_FUSION = false;
 
 			DMLScript.executeScript(args);
 

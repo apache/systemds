@@ -69,6 +69,10 @@ public class RewriterRuleSet {
 		return ctx;
 	}
 
+	public void determineConditionalApplicability() {
+		rules.forEach(RewriterRule::determineConditionalApplicability);
+	}
+
 	public void forEachRule(BiConsumer<RewriterRule, RuleContext> consumer) {
 		rules.forEach(r -> consumer.accept(r, ctx));
 	}

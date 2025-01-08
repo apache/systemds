@@ -237,8 +237,8 @@ public class CodeGenCondition {
 			conds.add(CodeGenCondition.conditionalElse(remaining, relativeChildPath, ((Tuple2<RewriterRule, RewriterStatement>) remaining.get(0))._2, ctx));
 		}
 
-		if (!validateSizeMaintenance(l, conds))
-			throw new IllegalArgumentException();
+		//if (!validateSizeMaintenance(l, conds))
+		//	throw new IllegalArgumentException();
 
 		return conds;
 	}

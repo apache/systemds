@@ -231,10 +231,30 @@ public class CodeGenTests {
 		System.out.println(code);
 	}
 
-	//@Test
+	@Test
+	public void testConditional() {
+		String ruleStr = "MATRIX:Xm,tmp852\n" +
+				"FLOAT:tmp65855\n" +
+				"\n" +
+				"%*%(t(/(Xm,tmp65855)),tmp852)\n" +
+				"=>\n" +
+				"{\n" +
+				"%*%(t(Xm),/(tmp852,tmp65855))\n" +
+				"/(%*%(t(Xm),tmp852),tmp65855)\n" +
+				"t(/(%*%(t(tmp852),Xm),tmp65855))\n" +
+				"}";
+		RewriterRule rule = RewriterUtils.parseRule(ruleStr, ctx);
+		RewriterRuleSet rs = new RewriterRuleSet(ctx, List.of(rule));
+		rs.determineConditionalApplicability();
+		RewriterCodeGen.DEBUG = false;
+		String code = rs.toJavaCode("Test", false, false, true, false);
+		System.out.println(code);
+	}
+
+	@Test
 	public void codeGen() {
 		try {
-			List<String> lines = Files.readAllLines(Paths.get(RewriteAutomaticallyGenerated.FILE_PATH));
+			List<String> lines = Files.readAllLines(Paths.get(RewriteAutomaticallyGenerated.FILE_PATH_CONDITIONAL));
 			RewriterRuleSet ruleSet = RewriterRuleSet.deserialize(lines, ctx);
 
 			RewriterRuntimeUtils.printUnknowns = false;
@@ -247,7 +267,7 @@ public class CodeGenTests {
 			}*/
 
 			RewriterCodeGen.DEBUG = false;
-			String javaCode = ruleSet.toJavaCode("GeneratedRewriteClass", true, true, true, true);
+			String javaCode = ruleSet.toJavaCode("GeneratedRewriteClass", false, true, true, true);
 			String filePath = "/Users/janniklindemann/Dev/MScThesis/other/GeneratedRewriteClass.java";
 
 			try (FileWriter writer = new FileWriter(filePath)) {

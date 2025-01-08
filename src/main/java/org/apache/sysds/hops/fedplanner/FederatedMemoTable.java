@@ -75,8 +75,8 @@ public class FederatedMemoTable {
 	 * @param childFedOutType ?
 	 * @return ?
 	 */
-	public FedPlan getMinCostChildFedPlan(long childHopID, FederatedOutput childFedOutType) {
-		FedPlanVariants fedPlanVariantList = hopMemoTable.get(new ImmutablePair<>(childHopID, childFedOutType));
+	public FedPlan getMinCostFedPlan(long hopID, FederatedOutput fedOutType) {
+		FedPlanVariants fedPlanVariantList = hopMemoTable.get(new ImmutablePair<>(hopID, fedOutType));
 		return fedPlanVariantList._fedPlanVariants.stream()
 				.min(Comparator.comparingDouble(FedPlan::getTotalCost))
 				.orElse(null);
@@ -84,6 +84,12 @@ public class FederatedMemoTable {
 
 	public FedPlanVariants getFedPlanVariants(long hopID, FederatedOutput fedOutType) {
 		return hopMemoTable.get(new ImmutablePair<>(hopID, fedOutType));
+	}
+
+	public FedPlan getFedPlanAfterPrune(long hopID, FederatedOutput fedOutType) {
+		// Todo: Consider whether to verify if pruning has been performed
+		FedPlanVariants fedPlanVariantList = hopMemoTable.get(new ImmutablePair<>(hopID, fedOutType));
+		return fedPlanVariantList._fedPlanVariants.get(0);
 	}
 
 	/**
@@ -117,6 +123,7 @@ public class FederatedMemoTable {
 		}
 	}
 
+	// Todo: Separate print functions from FederatedMemoTable
 	/**
 	 * Recursively prints a tree representation of the DAG starting from the given root FedPlan.
 	 * Includes information about hopID, fedOutType, TotalCost, SelfCost, and NetCost for each node.
@@ -222,38 +229,52 @@ public class FederatedMemoTable {
 	}
 
 	/**
-	 * Represents a collection of federated execution plan variants for a specific Hop.
-	 * Contains cost information and references to the associated plans.
+	 * Represents common properties and costs associated with a Hop.
+	 * This class holds a reference to the Hop and tracks its execution and network transfer costs.
 	 */
-	public static class FedPlanVariants {
-		protected final Hop hopRef;		 // Reference to the associated Hop
-		protected double selfCost;	   // Current execution cost (compute + memory access)
+	public static class HopCommon {
+		protected final Hop hopRef;         // Reference to the associated Hop
+		protected double selfCost;          // Current execution cost (compute + memory access)
 		protected double netTransferCost;   // Network transfer cost
-		private final FederatedOutput fedOutType;	   // Output type (FOUT/LOUT)
-		protected List<FedPlan> _fedPlanVariants;	// List of plan variants
 
-		public FedPlanVariants(Hop hopRef, FederatedOutput fedOutType) {
+		protected HopCommon(Hop hopRef) {
 			this.hopRef = hopRef;
-			this.fedOutType = fedOutType;
 			this.selfCost = 0;
 			this.netTransferCost = 0;
+		}
+	}
+
+	/**
+	 * Represents a collection of federated execution plan variants for a specific Hop and FederatedOutput.
+	 * This class contains cost information and references to the associated plans.
+	 * It uses HopCommon to store common properties and costs related to the Hop.
+	 */
+	public static class FedPlanVariants {
+		protected HopCommon hopCommon;      // Common properties and costs for the Hop
+		private final FederatedOutput fedOutType;  // Output type (FOUT/LOUT)
+		protected List<FedPlan> _fedPlanVariants;  // List of plan variants
+
+		public FedPlanVariants(Hop hopRef, FederatedOutput fedOutType) {
+			this.hopCommon = new HopCommon(hopRef);
+			this.fedOutType = fedOutType;
 			this._fedPlanVariants = new ArrayList<>();
 		}
 
-		public int size() {return _fedPlanVariants.size();}
 		public void addFedPlan(FedPlan fedPlan) {_fedPlanVariants.add(fedPlan);}
 		public List<FedPlan> getFedPlanVariants() {return _fedPlanVariants;}
 	}
 
 	/**
 	 * Represents a single federated execution plan with its associated costs and dependencies.
-	 * Contains:
+	 * This class contains:
 	 * 1. selfCost: Cost of current hop (compute + input/output memory access)
 	 * 2. totalCost: Cumulative cost including this plan and all child plans
 	 * 3. netTransferCost: Network transfer cost for this plan to parent plan.
+	 * 
+	 * FedPlan is linked to FedPlanVariants, which in turn uses HopCommon to manage common properties and costs.
 	 */
 	public static class FedPlan {
-		private double totalCost;				  // Total cost including child plans
+		private double totalCost;                  // Total cost including child plans
 		private final FedPlanVariants fedPlanVariants;  // Reference to variant list
 		private final List<Pair<Long, FederatedOutput>> childFedPlans;  // Child plan references
 
@@ -264,25 +285,26 @@ public class FederatedMemoTable {
 		}
 
 		public void setTotalCost(double totalCost) {this.totalCost = totalCost;}
-		public void setSelfCost(double selfCost) {fedPlanVariants.selfCost = selfCost;}
-		public void setNetTransferCost(double netTransferCost) {fedPlanVariants.netTransferCost = netTransferCost;}
-
-		public Hop getHopRef() {return fedPlanVariants.hopRef;}
+		public void setSelfCost(double selfCost) {fedPlanVariants.hopCommon.selfCost = selfCost;}
+		public void setNetTransferCost(double netTransferCost) {fedPlanVariants.hopCommon.netTransferCost = netTransferCost;}
+		
+		public Hop getHopRef() {return fedPlanVariants.hopCommon.hopRef;}
+		public long getHopID() {return fedPlanVariants.hopCommon.hopRef.getHopID();}
 		public FederatedOutput getFedOutType() {return fedPlanVariants.fedOutType;}
 		public double getTotalCost() {return totalCost;}
-		public double getSelfCost() {return fedPlanVariants.selfCost;}
-		private double getNetTransferCost() {return fedPlanVariants.netTransferCost;}
+		public double getSelfCost() {return fedPlanVariants.hopCommon.selfCost;}
+		public double getNetTransferCost() {return fedPlanVariants.hopCommon.netTransferCost;}
 		public List<Pair<Long, FederatedOutput>> getChildFedPlans() {return childFedPlans;}
 
 		/**
 		 * Calculates the conditional network transfer cost based on output type compatibility.
 		 * Returns 0 if output types match, otherwise returns the network transfer cost.
-		 * @param parentFedOutType ?
-		 * @return ?
+		 * @param parentFedOutType The federated output type of the parent plan.
+		 * @return The conditional network transfer cost.
 		 */
 		public double getCondNetTransferCost(FederatedOutput parentFedOutType) {
 			if (parentFedOutType == getFedOutType()) return 0;
-			return fedPlanVariants.netTransferCost;
+			return fedPlanVariants.hopCommon.netTransferCost;
 		}
 	}
 }

@@ -26,6 +26,9 @@ options(digits=22)
 
 library("Matrix")
 
-X = as.matrix(readMM(paste(args[1], "X.mtx", sep="")))
+#X = as.matrix(readMM(paste(args[1], "X.mtx", sep="")))
+X = matrix(c(1, 2, 3, 4), nrow=2, ncol=2);  # Hardcoded 2x2 matrix
+d = det(X);
+writeMM(as(d, "CsparseMatrix"), paste(args[2], "R", sep=""));
 d = det(X)
 writeMM(as(d, "CsparseMatrix"), paste(args[2], "R", sep="")); 

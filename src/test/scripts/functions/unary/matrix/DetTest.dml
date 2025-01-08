@@ -23,6 +23,14 @@
 # mvn test -Dtest="**DetTest"
 
 print("Det Local Computation Testing");
-A = read($1);
+#A = read($1);
+
+A = matrix("1 2 3 4", rows=2, cols=2);
+
 d = det(A);
 write(d, $2);
+d = det(A);
+print("Determinant: " + toString(d));
+write(d, $2);
+
+

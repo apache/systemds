@@ -209,6 +209,7 @@ public class CPInstructionParser extends InstructionParser {
 		String2CPInstructionType.put( "stop"  , CPType.Unary);
 		String2CPInstructionType.put( "inverse", CPType.Unary);
 		String2CPInstructionType.put( "cholesky",CPType.Unary);
+		String2CPInstructionType.put("det", CPType.Unary);
 		String2CPInstructionType.put( "sprop", CPType.Unary);
 		String2CPInstructionType.put( "sigmoid", CPType.Unary);
 		String2CPInstructionType.put( "typeOf", CPType.Unary);
@@ -335,6 +336,7 @@ public class CPInstructionParser extends InstructionParser {
 		
 		String2CPInstructionType.put( "qr",    CPType.MultiReturnBuiltin);
 		String2CPInstructionType.put( "lu",    CPType.MultiReturnBuiltin);
+		//String2CPInstructionType.put("det", CPType.MultiReturnBuiltin);
 		String2CPInstructionType.put( "eigen", CPType.MultiReturnBuiltin);
 		String2CPInstructionType.put( "fft",   CPType.MultiReturnBuiltin);
 		String2CPInstructionType.put( "ifft",  CPType.MultiReturnComplexMatrixBuiltin);

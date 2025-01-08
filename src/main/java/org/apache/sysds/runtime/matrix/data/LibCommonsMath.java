@@ -80,7 +80,7 @@ public class LibCommonsMath
 	}
 	
 	public static boolean isSupportedUnaryOperation( String opcode ) {
-		return ( opcode.equals("inverse") || opcode.equals("cholesky") );
+		return ( opcode.equals("inverse") || opcode.equals("cholesky")|| opcode.equals("det") );
 	}
 	
 	public static boolean isSupportedMultiReturnOperation( String opcode ) {
@@ -111,6 +111,8 @@ public class LibCommonsMath
 			return computeMatrixInverse(matrixInput);
 		else if (opcode.equals("cholesky"))
 			return computeCholesky(matrixInput);
+		else if (opcode.equals("det"))
+			return computeDeterminant(matrixInput);
 		return null;
 	}
 
@@ -140,8 +142,8 @@ public class LibCommonsMath
 			return computeQR2(in, threads);
 		else if (opcode.equals("lu"))
 			return computeLU(in);
-		else if(opcode.equals("det"))
-			return new MatrixBlock[]{computeDeterminant(in)};
+		/*else if(opcode.equals("det"))
+			return new MatrixBlock[]{computeDeterminant(in)};*/
 		else if (opcode.equals("eigen"))
 			return computeEigen(in);
 		else if (opcode.equals("eigen_lanczos"))
@@ -268,56 +270,32 @@ public class LibCommonsMath
 		return new MatrixBlock[] { mbP, mbL, mbU };
 	}
 
-	/**
-	 * Function to compute the determinant of a square matrix.
-	 * 
-	 * @param in matrix object
-	 * @return determinant of the matrix as a 1x1 Matrixblock
-	 */
-	private static MatrixBlock computeDeterminant(MatrixBlock in) {
-    if (in.getNumRows() != in.getNumColumns()) {
-        throw new DMLRuntimeException(
-            "Determinant can only be computed for a square matrix. Input matrix is rectangular (rows="
-                + in.getNumRows() + ", cols=" + in.getNumColumns() + ")");
-    }
-    Array2DRowRealMatrix matrixInput = DataConverter.convertToArray2DRowRealMatrix(in);
-
-    // Perform LU decomposition
-    LUDecomposition ludecompose = new LUDecomposition(matrixInput);
-    
-    // Check for singular matrix
-    if (ludecompose.getDeterminant() == 0) {
-        throw new DMLRuntimeException("Determinant computation failed: matrix is singular (det = 0).");
-    }
-	// MatrixBlock for representing the determinant (1x1 matrix)
-    MatrixBlock determinantResult = new MatrixBlock(1, 1, false);
-    determinantResult.set(0, 0, ludecompose.getDeterminant());  
-    return determinantResult;
-	}
-
 	// /**
 	//  * Function to compute the determinant of a square matrix.
 	//  * 
-	//  * @param in Array2DRowRealMatrix object
+	//  * @param in matrix object
 	//  * @return determinant of the matrix as a 1x1 Matrixblock
 	//  */
-	// private static MatrixBlock computeDeterminant(Array2DRowRealMatrix in) {
-	// 	if(!in.isSquare()) {
-	// 		throw new DMLRuntimeException("Determinant can only be computed for a square matrix. Input matrix is rectangular");
-	// 	}
-	// 	// Perform LU decomposition
-    // 	LUDecomposition ludecompose = new LUDecomposition(in);
-    
-    // 	// Check for singular matrix
-    // 	if (ludecompose.getDeterminant() == 0) {
-    //     throw new DMLRuntimeException("Determinant computation failed: matrix is singular (det = 0).");
-    // 	}
-	// 	// MatrixBlock for representing the determinant (1x1 matrix)
-    // 	MatrixBlock determinantResult = new MatrixBlock(1, 1, false);
-    // 	determinantResult.set(0, 0, ludecompose.getDeterminant());  
-    // 	return determinantResult;
-	// }
+	// private static MatrixBlock computeDeterminant(MatrixBlock in) {
+    // if (in.getNumRows() != in.getNumColumns()) {
+    //     throw new DMLRuntimeException(
+    //         "Determinant can only be computed for a square matrix. Input matrix is rectangular (rows="
+    //             + in.getNumRows() + ", cols=" + in.getNumColumns() + ")");
+    // }
+    // Array2DRowRealMatrix matrixInput = DataConverter.convertToArray2DRowRealMatrix(in);
 
+    // // Perform LU decomposition
+    // LUDecomposition ludecompose = new LUDecomposition(matrixInput);
+    
+    // // Check for singular matrix
+    // if (ludecompose.getDeterminant() == 0) {
+    //     throw new DMLRuntimeException("Determinant computation failed: matrix is singular (det = 0).");
+    // }
+	// // MatrixBlock for representing the determinant (1x1 matrix)
+    // MatrixBlock determinantResult = new MatrixBlock(1, 1, false);
+    // determinantResult.set(0, 0, ludecompose.getDeterminant());  
+    // return determinantResult;
+	// }
 	
 	/**
 	 * Function to perform Eigen decomposition on a given matrix.
@@ -599,6 +577,56 @@ public class LibCommonsMath
 			CholeskyDecomposition.DEFAULT_ABSOLUTE_POSITIVITY_THRESHOLD);
 		RealMatrix rmL = cholesky.getL();
 		return DataConverter.convertToMatrixBlock(rmL.getData());
+	}
+
+	// /**
+	//  * Function to compute the determinant of a square matrix.
+	//  * 
+	//  * @param in matrix object
+	//  * @return determinant as 1x1 matrix block
+	//  */
+	// private static MatrixBlock computeDeterminant(MatrixBlock in) {
+	// 	if (in.getNumRows() != in.getNumColumns()) {
+	// 		throw new DMLRuntimeException(
+	// 			"Determinant can only be computed for a square matrix. Input matrix is rectangular (rows="
+	// 				+ in.getNumRows() + ", cols=" + in.getNumColumns() + ")");
+	// 	}
+	// 	Array2DRowRealMatrix matrixInput = DataConverter.convertToArray2DRowRealMatrix(in);
+	
+	// 	// Perform LU decomposition
+	// 	LUDecomposition ludecompose = new LUDecomposition(matrixInput);
+		
+	// 	// Check for singular matrix
+	// 	if (ludecompose.getDeterminant() == 0) {
+	// 		throw new DMLRuntimeException("Determinant computation failed: matrix is singular (det = 0).");
+	// 	}
+	// 	// MatrixBlock for representing the determinant (1x1 matrix)
+	// 	MatrixBlock determinantResult = new MatrixBlock(1, 1, false);
+	// 	determinantResult.set(0, 0, ludecompose.getDeterminant());  
+	// 	return determinantResult;
+	// }
+
+	/**
+	 * Function to compute the determinant of a square matrix.
+	 * 
+	 * @param in Array2DRowRealMatrix object
+	 * @return determinant of the matrix as a 1x1 Matrixblock
+	 */
+	private static MatrixBlock computeDeterminant(Array2DRowRealMatrix in) {
+		if(!in.isSquare()) {
+			throw new DMLRuntimeException("Determinant can only be computed for a square matrix. Input matrix is rectangular");
+		}
+		// Perform LU decomposition
+    	LUDecomposition ludecompose = new LUDecomposition(in);
+    
+    	// Check for singular matrix
+    	if (ludecompose.getDeterminant() == 0) {
+        throw new DMLRuntimeException("Determinant computation failed: matrix is singular (det = 0).");
+    	}
+		// MatrixBlock for representing the determinant (1x1 matrix)
+    	MatrixBlock determinantResult = new MatrixBlock(1, 1, false);
+    	determinantResult.set(0, 0, ludecompose.getDeterminant());  
+    	return determinantResult;
 	}
 
 	/**

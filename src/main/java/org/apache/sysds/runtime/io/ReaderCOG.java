@@ -27,13 +27,13 @@ public class ReaderCOG extends MatrixReader{
         FileSystem fs = IOUtilFunctions.getFileSystem(path, job);
 
         BufferedInputStream bis = new BufferedInputStream(fs.open(path));
-        return readCOG(bis);
+        return readCOG(bis, estnnz);
     }
 
     @Override
     public MatrixBlock readMatrixFromInputStream(InputStream is, long rlen, long clen, int blen, long estnnz) throws IOException, DMLRuntimeException {
         BufferedInputStream bis = new BufferedInputStream(is);
-        return readCOG(bis);
+        return readCOG(bis, estnnz);
     }
 
     /**
@@ -45,7 +45,7 @@ public class ReaderCOG extends MatrixReader{
      * @param bis
      * @return
      */
-    private MatrixBlock readCOG(BufferedInputStream bis) {
+    private MatrixBlock readCOG(BufferedInputStream bis, long estnnz) throws IOException {
         // Read first 4 bytes to determine byte order and make sure it is a valid TIFF
         byte[] header = readBytes(bis, 4);
 
@@ -290,7 +290,7 @@ public class ReaderCOG extends MatrixReader{
         int currentTileRow = 0;
         int currentBand = 0;
 
-        MatrixBlock outputMatrix = new MatrixBlock(rows, cols * bands, false);
+        MatrixBlock outputMatrix = createOutputMatrixBlock(rows, cols * bands, rows, estnnz, true, true);
 
         for (int currenTileIdx = 0; currenTileIdx < actualAmountTiles; currenTileIdx++) {
             int bytesToRead = (tileOffsets[currenTileIdx] - totalBytesRead) + bytesPerTile[currenTileIdx];
@@ -365,8 +365,6 @@ public class ReaderCOG extends MatrixReader{
                 }
 
                 int sampleLength = bitsPerSample[currentBand] / 8;
-                pixelsRead = 0;
-                currentRow = 0;
 
                 while (currentRow < tileLength && pixelsRead < tileWidth) {
                     double value = 0;
@@ -406,6 +404,7 @@ public class ReaderCOG extends MatrixReader{
 
         }
 
+        outputMatrix.examSparsity();
         return outputMatrix;
     }
 

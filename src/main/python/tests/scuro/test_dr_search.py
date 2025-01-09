@@ -103,9 +103,9 @@ class TestDataLoaders(unittest.TestCase):
 
         cls.num_instances = 8
         cls.indizes = [str(i) for i in range(0, cls.num_instances)]
-        video_data_loader = VideoLoader(cls.test_file_path + "/video/", cls.indizes)
-        audio_data_loader = AudioLoader(cls.test_file_path + "/audio/", cls.indizes)
-        text_data_loader = TextLoader(cls.test_file_path + "/text/", cls.indizes)
+        video_data_loader = VideoLoader(cls.test_file_path + "/VIDEO/", cls.indizes)
+        audio_data_loader = AudioLoader(cls.test_file_path + "/AUDIO/", cls.indizes)
+        text_data_loader = TextLoader(cls.test_file_path + "/TEXT/", cls.indizes)
         video = UnimodalModality(video_data_loader, ModalityType.VIDEO)
         audio = UnimodalModality(audio_data_loader, ModalityType.AUDIO)
         text = UnimodalModality(text_data_loader, ModalityType.TEXT)

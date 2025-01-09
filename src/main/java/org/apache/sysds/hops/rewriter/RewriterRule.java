@@ -132,7 +132,7 @@ public class RewriterRule extends AbstractRewriterRule {
 
 	/**
 	 *  Overwrites the rule as a conditional rule
-	 * @param targets
+	 * @param targets all possible target statements
 	 */
 	public void setConditional(List<RewriterStatement> targets) {
 		toRoots = targets;
@@ -156,8 +156,7 @@ public class RewriterRule extends AbstractRewriterRule {
 
 	/**
 	 * Returns the target statement.
-	 * In case of a multi-rule, this will return the first option of the multi-rule targets.
-	 * @return
+	 * @return the target statement; in case of a multi-rule, this will return the first option
 	 */
 	public RewriterStatement getStmt2() {
 		return toRoot != null ? toRoot : toRoots.get(0);

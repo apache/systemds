@@ -52,10 +52,10 @@ public class RewriterCodeGen {
 	}
 
 	public static String generateClass(String className, List<Tuple2<String, RewriterRule>> rewrites, boolean optimize, boolean includePackageInfo, final RuleContext ctx, boolean ignoreErrors, boolean printErrors) {
-		return generateClass(className, rewrites, optimize, includePackageInfo, ctx, ignoreErrors, printErrors, false);
+		return generateClass(className, rewrites, optimize, 2, includePackageInfo, ctx, ignoreErrors, printErrors, false);
 	}
 
-	public static String generateClass(String className, List<Tuple2<String, RewriterRule>> rewrites, boolean optimize, boolean includePackageInfo, final RuleContext ctx, boolean ignoreErrors, boolean printErrors, boolean maintainRewriteStats) {
+	public static String generateClass(String className, List<Tuple2<String, RewriterRule>> rewrites, boolean optimize, int maxOptimizationDepth, boolean includePackageInfo, final RuleContext ctx, boolean ignoreErrors, boolean printErrors, boolean maintainRewriteStats) {
 		StringBuilder msb = new StringBuilder();
 
 		if (includePackageInfo)
@@ -124,7 +124,7 @@ public class RewriterCodeGen {
 			for (Tuple2<String, RewriterRule> t : implementedRewrites)
 				ruleNames.put(t._2, t._1);
 
-			List<CodeGenCondition> conditions = CodeGenCondition.buildCondition(rules, 5, ctx);
+			List<CodeGenCondition> conditions = CodeGenCondition.buildCondition(rules, maxOptimizationDepth, 5, ctx);
 			CodeGenCondition.buildSelection(msb, conditions, 2, ruleNames, ctx);
 		} else {
 			for (Tuple2<String, RewriterRule> appliedRewrites : rewrites) {
@@ -147,7 +147,9 @@ public class RewriterCodeGen {
 
 		msb.append('\n');
 		buildTypeCastFunction(msb, 1);
-
+		msb.append('\n');
+		buildMinIdxFunction(msb, 1);
+		msb.append('\n');
 		msb.append("}");
 		return msb.toString();
 	}
@@ -246,28 +248,47 @@ public class RewriterCodeGen {
 			// Then we build the cost functions
 			sb.append('\n');
 			indent(indentation, sb);
-			sb.append("double costFrom = ");
-			sb.append(msb.get(0));
-			sb.append(";\n");
+			sb.append("double[] costs = new double[");
+			sb.append(msb.size());
+			sb.append("];\n");
+			/*indent(indentation, sb);
+			sb.append("double[] costTo = new double[");
+			sb.append(msb.size()-1);
+			sb.append("];\n");*/
 
-			for (int i = 1; i < msb.size(); i++) {
+			for (int i = 0; i < msb.size(); i++) {
 				indent(indentation, sb);
-				sb.append("double costTo");
+				sb.append("costs[");
 				sb.append(i);
-				sb.append(" = ");
+				sb.append("] = ");
 				sb.append(msb.get(i));
 				sb.append(";\n");
-				indent(indentation, sb);
 
+				/*indent(indentation, sb);
 				sb.append('\n');
 				indent(indentation, sb);
 				sb.append("if ( costTo" + i + " < costFrom ) {\n");
 				buildNewHop(name, from, tos.get(i-1), sb, combinedAssertions, vars, ctx, indentation+1, maintainRewriteStats);
-				//indent(indentation + 1, sb);
-				//sb.append("return hi;\n\n");
 				indent(indentation, sb);
-				sb.append("}\n\n");
+				sb.append("}\n\n");*/
 			}
+
+			indent(indentation, sb);
+			sb.append("int minIdx = minIdx(costs);\n\n");
+			indent(indentation, sb);
+			sb.append("switch( minIdx ) {\n");
+
+			for (int i = 1; i < msb.size(); i++) {
+				indent(indentation+1, sb);
+				sb.append("case " + i + ": {");
+				buildNewHop(name, from, tos.get(i-1), sb, combinedAssertions, vars, ctx, indentation+2, maintainRewriteStats);
+				indent(indentation+1, sb);
+				sb.append("}\n");
+			}
+
+			indent(indentation, sb);
+			sb.append("}\n");
+
 			indent(indentation, sb);
 			sb.append("return hi;\n");
 		} else {
@@ -330,7 +351,9 @@ public class RewriterCodeGen {
 	private static void buildNewHop(String rewriteName, RewriterStatement from, RewriterStatement to, StringBuilder sb, RewriterAssertions combinedAssertions, Map<RewriterStatement, String> vars, final RuleContext ctx, int indentation, boolean maintainRewriteStats) {
 		sb.append('\n');
 		indent(indentation, sb);
-		sb.append("// Now, we start building the new Hop\n");
+		sb.append("// Now, we start building the new HOP-DAG: ");
+		sb.append(to.toParsableString(ctx));
+		sb.append('\n');
 
 		if (DEBUG) {
 			//indent(indentation, sb);
@@ -416,6 +439,31 @@ public class RewriterCodeGen {
 		sb.append("return new UnaryOp(\"tmp\", oldRoot.getDataType(), oldRoot.getValueType(), cast, newRoot);\n");
 		indent(indentation, sb);
 		sb.append("}\n");
+	}
+
+	private static void buildMinIdxFunction(StringBuilder sb, int indentation) {
+		String str = "private static int minIdx(double[] l) {\n" +
+				"\tdouble minValue = Double.MAX_VALUE;\n" +
+				"\tint minIdx = -1;\n" +
+				"\n" +
+				"\tfor (int i = 0; i < l.length; i++) {\n" +
+				"\t\tif (l[i] < minValue) {\n" +
+				"\t\t\tminValue = l[i];\n" +
+				"\t\t\tminIdx = i;\n" +
+				"\t\t}\n" +
+				"\t}\n" +
+				"\n" +
+				"\treturn minIdx;\n" +
+				"}\n";
+
+		sb.append(indentMultilineString(str, indentation));
+	}
+
+	private static String indentMultilineString(String str, int indentation) {
+		String tabs = "\t".repeat(indentation);
+		return str.lines() // Split the string into lines
+				.map(line -> tabs + line) // Add tabs to the beginning of each line
+				.collect(Collectors.joining("\n")); // Join the lines back together
 	}
 
 	private static void buildCostFnRecursively(RewriterStatement costFn, Map<RewriterStatement, String> vars, final RuleContext ctx, StringBuilder sb, Set<Tuple2<String, String>> requirements) {
@@ -658,6 +706,8 @@ public class RewriterCodeGen {
 				sb.append("else\n");
 				indent(indentation + 2, sb);
 				sb.append("_multiReference = true;\n");
+				indent(indentation + 1, sb);
+				sb.append("}\n");
 			}
 		}
 
@@ -794,7 +844,6 @@ public class RewriterCodeGen {
 	}
 
 	public static void indent(int depth, StringBuilder sb) {
-		for (int i = 0; i < depth; i++)
-			sb.append('\t');
+		sb.append("\t".repeat(depth));
 	}
 }

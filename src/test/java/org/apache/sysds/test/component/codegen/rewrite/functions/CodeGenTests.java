@@ -247,7 +247,7 @@ public class CodeGenTests {
 		RewriterRuleSet rs = new RewriterRuleSet(ctx, List.of(rule));
 		rs.determineConditionalApplicability();
 		RewriterCodeGen.DEBUG = false;
-		String code = rs.toJavaCode("Test", false, false, true, false);
+		String code = rs.toJavaCode("GeneratedRewriteClass", false, true, true, false);
 		System.out.println(code);
 	}
 
@@ -267,7 +267,7 @@ public class CodeGenTests {
 			}*/
 
 			RewriterCodeGen.DEBUG = false;
-			String javaCode = ruleSet.toJavaCode("GeneratedRewriteClass", false, true, true, true);
+			String javaCode = ruleSet.toJavaCode("GeneratedRewriteClass", true, 2, true, true, true);
 			String filePath = "/Users/janniklindemann/Dev/MScThesis/other/GeneratedRewriteClass.java";
 
 			try (FileWriter writer = new FileWriter(filePath)) {

@@ -46,16 +46,20 @@ public class CodeGenCondition {
 	}
 
 	public static List<CodeGenCondition> buildCondition(List<RewriterRule> rules, int maxNumRules, final RuleContext ctx) {
+		return buildCondition(rules, 3, maxNumRules, ctx);
+	}
+
+	public static List<CodeGenCondition> buildCondition(List<RewriterRule> rules, int maxDepth, int maxNumRules, final RuleContext ctx) {
 		if (rules.isEmpty())
 			return Collections.emptyList();
 		List<Object> transformed = rules.stream().map(rule -> new Tuple2<RewriterRule, RewriterStatement>(rule, rule.getStmt1())).collect(Collectors.toList());
-		List<Object> out = populateLayerRecursively(transformed, Collections.emptyList(), new LinkedList<>(), maxNumRules, ctx);
+		List<Object> out = populateLayerRecursively(transformed, Collections.emptyList(), new LinkedList<>(), maxDepth, maxNumRules, ctx);
 		List<CodeGenCondition> cond = out.stream().filter(o -> o instanceof CodeGenCondition).map(o -> ((CodeGenCondition)o)).collect(Collectors.toList());
 		return cond.isEmpty() ? List.of(conditionalElse(transformed, Collections.emptyList(), ((Tuple2<RewriterRule, RewriterStatement>) transformed.get(0))._2, ctx)) : cond;
 	}
 
-	private static List<Object> populateLayerRecursively(List<Object> rules, List<Integer> relativeChildPath, Queue<Tuple2<List<Object>, List<Integer>>> queue, int maxNumRules, final RuleContext ctx) {
-		if (rules.size() <= maxNumRules)
+	private static List<Object> populateLayerRecursively(List<Object> rules, List<Integer> relativeChildPath, Queue<Tuple2<List<Object>, List<Integer>>> queue, int maxDepth, int maxNumRules, final RuleContext ctx) {
+		if (rules.size() <= maxNumRules || maxDepth == 0)
 			return rules;
 
 		List<Object> out = populateDataTypeLayer(rules, relativeChildPath, ctx);
@@ -84,14 +88,11 @@ public class CodeGenCondition {
 
 					c3.rulesIf = populateInputSizeLayer(c3.rulesIf, relativeChildPath, ctx);
 
-					//int maxChildSize = c3.rulesIf.stream().flatMap(o -> ((CodeGenCondition)o).rulesIf.stream()).mapToInt(o -> ((Tuple2<RewriterRule, RewriterStatement>) o)._2.getOperands().size()).max().getAsInt();
-
 					for (int l = 0; l < c3.rulesIf.size(); l++) {
 						CodeGenCondition c4 = (CodeGenCondition) c3.rulesIf.get(l);
 
-						if (((Tuple2<RewriterRule, RewriterStatement>) c4.rulesIf.get(0))._2 == null) {
-							continue; // TODO: Is that correct?
-						}
+						if (((Tuple2<RewriterRule, RewriterStatement>) c4.rulesIf.get(0))._2 == null)
+							continue;
 
 						final int maxIndex = ((Tuple2<RewriterRule, RewriterStatement>) c4.rulesIf.get(0))._2.getOperands().size();
 						Set<RewriterRule> activeRules = c4.rulesIf.stream().map(o -> ((Tuple2<RewriterRule, RewriterStatement>) o)._1).collect(Collectors.toSet());
@@ -122,17 +123,10 @@ public class CodeGenCondition {
 						}
 
 						if (!mQueue.isEmpty()) {
-							// TODO: Filter unnecessary elements from previous queue
 							Tuple2<List<Object>, List<Integer>> next = mQueue.poll();
-							c4.rulesIf = populateLayerRecursively(next._1, next._2(), mQueue, maxNumRules, ctx);
+							c4.rulesIf = populateLayerRecursively(next._1, next._2(), mQueue, maxDepth-1, maxNumRules, ctx);
 						}
 					}
-
-					/*for (int childIndex = 0; childIndex < maxChildSize; childIndex++) {
-						final List<Integer> newRelativeChildPath = new ArrayList<>(relativeChildPath);
-						newRelativeChildPath.add(childIndex);*/
-
-					//}
 				}
 			}
 		}

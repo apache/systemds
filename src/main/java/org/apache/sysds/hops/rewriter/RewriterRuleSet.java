@@ -335,20 +335,20 @@ public class RewriterRuleSet {
 			currentLines.clear();
 		}
 
-		for (RewriterRule rule : rules) {
-			System.out.println("Checking: " + rule);
+		for (RewriterRule rule : rules)
 			rule.determineConditionalApplicability();
-
-			if (rule.requiresCostCheck())
-				System.out.println("Rule requires cost check: " + rule);
-		}
 
 		return new RewriterRuleSet(ctx, rules);
 	}
 
 	public String toJavaCode(String className, boolean optimize, boolean includePackageInfo, boolean printErrors, boolean maintainStatistics) {
 		List<Tuple2<String, RewriterRule>> mRules = IntStream.range(0, rules.size()).mapToObj(i -> new Tuple2<>("_applyRewrite" + i, rules.get(i))).collect(Collectors.toList());
-		return RewriterCodeGen.generateClass(className, mRules, optimize, includePackageInfo, ctx, true, printErrors, maintainStatistics);
+		return RewriterCodeGen.generateClass(className, mRules, optimize, 2, includePackageInfo, ctx, true, printErrors, maintainStatistics);
+	}
+
+	public String toJavaCode(String className, boolean optimize, int maxOptimizationDepth, boolean includePackageInfo, boolean printErrors, boolean maintainStatistics) {
+		List<Tuple2<String, RewriterRule>> mRules = IntStream.range(0, rules.size()).mapToObj(i -> new Tuple2<>("_applyRewrite" + i, rules.get(i))).collect(Collectors.toList());
+		return RewriterCodeGen.generateClass(className, mRules, optimize, maxOptimizationDepth, includePackageInfo, ctx, true, printErrors, maintainStatistics);
 	}
 
 	public Function<Hop, Hop> compile(String className, boolean printErrors) {

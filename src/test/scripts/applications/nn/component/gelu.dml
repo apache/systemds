@@ -44,3 +44,25 @@ gradient = gelu::backward(dout, X)
 test_util::check_all_close(gradient, gradient_expected, 0.00001)
 print(toString(gradient))
 print(toString(abs(gradient - gradient_expected)))
+
+# Test case 2
+
+X = matrix("0.5 -1.5
+            1.  -2.", rows=2, cols=2)
+dout = matrix("1 1
+               1 1", rows=2, cols=2)
+out_expected = matrix("0.345714   -0.10042843
+                       0.841192   -0.04540229", rows=2, cols=2)
+gradient_expected = matrix("0.8673699  -0.1277108
+                            1.0829641  -0.08609922", rows=2, cols=2)
+
+out = gelu::forward(X)
+
+print(toString(out))
+print(toString(abs(out - out_expected)))
+test_util::check_all_close(out, out_expected, 0.00001)
+
+gradient = gelu::backward(dout, X)
+test_util::check_all_close(gradient, gradient_expected, 0.00001)
+print(toString(gradient))
+print(toString(abs(gradient - gradient_expected)))

@@ -1396,7 +1396,7 @@ public class RewriteAlgebraicSimplificationDynamic extends HopRewriteRule
 						// Row vector case (1 x n)
 						if (right.getDim1() == 1) {
 							// Create nrow(A) operation using dimensions
-							LiteralOp nRows = new LiteralOp(left.getDim1());
+							UnaryOp nRows = HopRewriteUtils.createUnary(left, OpOp1.NROW);
 							BinaryOp scaledSum = HopRewriteUtils.createBinary(nRows, sum2, OpOp2.MULT);
 							BinaryOp newBin = HopRewriteUtils.createBinary(sum1, scaledSum, applyOp);
 							//rewire new subdag
@@ -1410,7 +1410,7 @@ public class RewriteAlgebraicSimplificationDynamic extends HopRewriteRule
 						// Column vector case (n x 1)
 						else if (right.getDim2() == 1) {
 							// Create ncol(A) operation using dimensions
-							LiteralOp nCols = new LiteralOp(left.getDim2());
+							UnaryOp nCols = HopRewriteUtils.createUnary(left, OpOp1.NCOL);
 							BinaryOp scaledSum = HopRewriteUtils.createBinary(nCols, sum2, OpOp2.MULT);
 							BinaryOp newBin = HopRewriteUtils.createBinary(sum1, scaledSum, applyOp);
 							//rewire new subdag
